@@ -52,7 +52,7 @@ typedef struct same {
 %token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')' ' ' '\t'
 %type <same> target target1 assignment assign1 actions action
 %type <same> command_list command list
-%type <same> for_statement maybe_at_minus tokens token
+%type <same> for_statement maybe_at_minus ignore_ws tokens token
 %type <same> maybe_white_space
 %type <intval> white_space macro_char
 %%
@@ -69,7 +69,7 @@ line : NL
     ;
 
 assignment :
-    assign1 tokens NL
+    assign1 ignore_ws NL
     {
 	assign($1, $2);
     }
@@ -79,7 +79,7 @@ assignment :
     }
     ;
 
-assign1: tokens maybe_white_space '=' maybe_white_space
+assign1: token maybe_white_space '=' maybe_white_space
     ;
 
 target_action: target actions
@@ -124,7 +124,7 @@ action:	white_space command_list NL
     ;
 
 for_statement: maybe_at_minus FOR white_space token
-		in tokens semi_colon
+		in ignore_ws semi_colon
     {
 	$$ = for_statement($1, $4, expand_variables($6, 0));
     }
@@ -143,17 +143,14 @@ semi_colon:	';'
 command_list: list
     | '(' list maybe_white_space ')'
     {
-	$$ = $2;
+	$$ = same_cat($2, same_copy(cwd_line));
     }
     ;
 
 list: command
-    {
-	$$ = $1;
-    }
     | list semi_colon maybe_white_space command
     {
-	$$ = same_cat($1, same_cat(same_char('\n'), $4));
+	$$ = same_cat($1, same_cat(same_copy(newline), $4));
     }
     ;
 
@@ -179,6 +176,13 @@ maybe_at_minus: /* empty */
 	buffer[0] = $1;
 	buffer[1] = 0;
 	$$ = same_item(string_lookup(buffer));
+    }
+    ;
+
+ignore_ws: token
+    | ignore_ws maybe_white_space token
+    {
+	$$ = same_cat($1, $3);
     }
     ;
 
@@ -266,6 +270,7 @@ static same_t
 static same_t
     *null,
     *blank,
+    *cwd_line,
     *newline;
 
 extern char *malloc();
@@ -473,6 +478,23 @@ same_t
     return tmp;
 }
 
+void
+same_replace(old, new)
+same_t
+    *old,
+    *new;
+{
+    new->lasttoken->nexttoken = old->nexttoken;
+    old->nexttoken->lasttoken = new->lasttoken;
+    new->lasttoken = old->lasttoken;
+    /* rather than
+     * old->lasttoken->nexttoken = new
+     * we update in place (for the case where there isn't anything else)
+     */
+    *old = *new;
+}
+
+
 same_t *
 same_char(ch)
 char ch;
@@ -484,6 +506,7 @@ char ch;
 
     return same_item(string_lookup(buffer));
 }
+
 
 same_t *
 add_target(target)
@@ -501,6 +524,7 @@ same_t
 	return ptr;
     }
 }
+
 
 same_t *
 add_targets_actions(target, actions)
@@ -672,7 +696,41 @@ same_t
     *forlist,
     *commands;
 {
-    return same_cat(forlist, commands);
+    same_t
+	*special,
+	*command_list = 0,
+	*new_commands,
+	*tmp,
+	*shell_item,
+	*value_list = forlist->value_list;
+    char
+	*tmpstr,
+	*variable_name = forlist->string->string;
+
+    special = forlist->shell_item;
+    if (same_unlink(forlist->shell_item) != 0) {
+	yyerror("Unexpected second item in special part of do_command");
+	exit(1);
+    }
+
+    while ((shell_item = value_list) != 0) {
+	value_list = same_unlink(shell_item);
+	/* Visit each item in commands.  For each shell variable which
+	 * matches ours, replace it with ours.
+	 */
+	new_commands = same_copy(commands);
+	for (visit(new_commands, tmp); !visited(tmp); visit_next(tmp)) {
+	    tmpstr = tmp->string->string;
+	    if ((tmpstr[0] == '$') && (tmpstr[1] == '$')) {
+		if (strcmp(tmpstr+2, variable_name) == 0) {
+		    same_replace(tmp, same_copy(shell_item));
+		}
+	    }
+	}
+	visit_end();
+	command_list = same_cat(command_list, new_commands);
+    }
+    return same_cat(command_list, same_copy(newline));
 }
 
 
@@ -842,10 +900,15 @@ main()
     null = same_item(string_lookup(""));
     newline = same_item(string_lookup("\n"));
     blank = same_item(string_lookup(" "));
+    cwd_line = same_cat(same_copy(newline),
+			same_cat(same_item(string_lookup("cd ${CWD}")),
+				 same_copy(newline)));
 
     yyparse();
 
     do_dump();
+
+    return 0;
 }
 
 #if	defined(YYDEBUG)
@@ -878,7 +941,7 @@ do_dump()
 	printf("%s =\t", same->string->string);
 	for (visit(same->value_list, same2); !visited(same2);
 						visit_next(same2)) {
-	    printf(same2->string->string);
+	    printf("%s ", same2->string->string);
 	}
 	visit_end();
 	printf("\n");
