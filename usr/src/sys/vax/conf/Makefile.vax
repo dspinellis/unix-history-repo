@@ -1,15 +1,15 @@
-#	Makefile.vax	4.6	%G%
+#	Makefile.vax	4.7	%G%
 #
-# Makefile for 4.1c bsd
+# Makefile for 4.2 bsd
 #
 # This makefile is constructed from a machine description:
 #	config machine
 # Most changes should be made in the machine description
-#	/usr/sys/conf/``machineid''
+#	/sys/conf/``machineid''
 # after which you should do
 #	 config machineid
 # Generic makefile changes should be made in
-#	/usr/sys/conf/makefile
+#	/sys/conf/makefile
 # after which config should be rerun for all machines.
 #
 # N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
