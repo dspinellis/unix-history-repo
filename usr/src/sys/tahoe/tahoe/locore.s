@@ -1,4 +1,4 @@
-/*	locore.s	1.12	87/02/17	*/
+/*	locore.s	1.13	87/02/26	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -809,6 +809,7 @@ l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
 	movab	(sp),fp
 	kcall	$SYS_execv
+	pushl	r0
 	kcall	$SYS_exit
 
 init:	.asciz	"/etc/init"
