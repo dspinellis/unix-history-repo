@@ -91,8 +91,9 @@ ptsread(dev, uio)
 again:
 	if (pti->pt_flags & PF_REMOTE) {
 		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
-			if (u.u_signal[SIGTTIN] == SIG_IGN ||
-			    u.u_signal[SIGTTIN] == SIG_HOLD ||
+#define bit(a) (1<<(a-1))
+			if ((u.u_procp->p_sigignore & bit(SIGTTIN)) ||
+			    (u.u_procp->p_sigmask & bit(SIGTTIN)) ||
 	/*
 			    (u.u_procp->p_flag&SDETACH) ||
 	*/
@@ -101,6 +102,7 @@ again:
 			gsignal(u.u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
+#undef	bit
 		if (tp->t_rawq.c_cc == 0) {
 			if (tp->t_state & TS_NBIO)
 				return (EWOULDBLOCK);
