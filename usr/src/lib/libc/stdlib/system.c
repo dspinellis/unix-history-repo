@@ -16,12 +16,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)system.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <sys/signal.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <paths.h>
 
