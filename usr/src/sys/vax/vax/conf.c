@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.5 (Berkeley) %G%
+ *	@(#)conf.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -515,6 +515,22 @@ struct tty dmz_tty[];
 #define dmz_tty 0
 #endif
 
+#include "qv.h"
+#if NQV > 0
+int	qvopen(), qvclose(), qvread(), qvwrite(), qvioctl(), qvstop(),
+	qvreset(), qvselect(), qvcons_init();
+#else
+#define qvopen	nodev
+#define qvclose	nodev
+#define qvread	nodev
+#define qvwrite	nodev
+#define qvioctl	nodev
+#define qvstop	nodev
+#define qvreset	nulldev
+#define qvselect	nodev
+#define qvcons_init	nodev
+#endif
+
 #if defined(INGRES)
 int	iiioctl(), iiclose(), iiopen();
 #else
@@ -648,9 +664,9 @@ struct cdevsw	cdevsw[] =
 	npopen,		npclose,	npread,		npwrite,	/*39*/
 	npioctl,	nodev,		npreset,	0,
 	seltrue,	nodev,
-	nodev,		nodev,		nodev,		nodev,		/*40*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	qvopen,		qvclose,	qvread, 	qvwrite,	/*40*/
+	qvioctl,	qvstop,		qvreset,	0,
+	qvselect,	nodev,
 	nodev,		nodev,		nodev,		nodev,		/*41*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
