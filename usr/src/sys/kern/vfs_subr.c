@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.63 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.64 (Berkeley) %G%
  */
 
 /*
@@ -214,6 +214,8 @@ getnewvnode(tag, mp, vops, vpp)
 		vp->v_freeb = NULL;
 		if (vp->v_type != VBAD)
 			vgone(vp);
+		if (vp->v_data)
+			panic("cleaned vnode isn't");
 		vp->v_flag = 0;
 		vp->v_lastr = 0;
 		vp->v_socket = 0;
