@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
-CFLAGS= -O -DV7
+CFLAGS= -O -DV7 -w
 OBJS= allow.o board.o check.o extra.o fancy.o init.o main.o move.o\
 	odds.o one.o save.o subs.o table.o text.o message.o
 TOBJS= allow.o board.o check.o data.o fancy.o init.o odds.o one.o save.o subs.o\
