@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sio.c	7.8 (Berkeley) %G%
+ *	@(#)sio.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -76,6 +76,17 @@ struct speedtab siospeedtab[] = {
 
 extern	struct tty *constty;
 
+#ifdef KGDB
+/*
+ * Kernel GDB support
+ */
+#include <machine/remote-sl.h>
+
+extern dev_t kgdb_dev;
+extern int kgdb_rate;
+extern int kgdb_debug_init;
+#endif
+
 /*
  *  probe routines
  */
@@ -91,15 +102,39 @@ sioprobe(hd)
 		pc = sc->sc_pc;
 		printf("sio%d: port %d, address 0x%x, intr 0x%x (console)\n",
 		       pc->pc_unit, pc->pc_port, pc->pc_addr, pc->pc_intr);
-		return(0);
+		return(1);
 	}
 
-	sc->sc_pc = pc = sio_port_assign(SIO_PORT, siomajor, unit, siointr);
+	sc->sc_pc = pc = sio_port_assign(unit, siomajor, unit, siointr);
 
 	printf("sio%d: port %d, address 0x%x, intr 0x%x\n",
 	       pc->pc_unit, pc->pc_port, pc->pc_addr, pc->pc_intr);
 
 	sio_active |= 1 << unit;
+
+#ifdef KGDB
+	if (major(kgdb_dev) == siomajor) {
+#ifdef	notdef
+		if (sioconsole == siounit(kgdb_dev)) {
+			kgdb_dev = NODEV; /* can't debug over console port */
+		} else {
+#endif
+		/*
+		 * The following could potentially be replaced
+		 * by the corresponding code in dcmcnprobe.
+		 */
+			if (kgdb_debug_init) {
+				printf("sio%d: ", siounit(kgdb_dev));
+				kgdb_connect(1);
+			} else
+				printf("sio%d: kgdb enabled\n", siounit(kgdb_dev));
+#ifdef	notdef
+		}
+#endif
+		/* end could be replaced */
+	}
+#endif
+
 	siosoftCAR |= 1 << unit;
 	return(1);
 }
@@ -437,11 +472,24 @@ start:
 		code = sio->sio_data;
 		if ((tp->t_state & TS_ISOPEN) != 0)
 			(*linesw[tp->t_line].l_rint)(code, tp);
-
+#ifdef KGDB
+		else {
+			if (code == FRAME_END &&
+			    kgdb_dev == makedev(siomajor, unit))
+				kgdb_connect(0); /* trap into kgdb */
+		}
+#endif
 		while ((rr = siogetreg(sio)) & RR_RXRDY) {
 			code = sio->sio_data;
 			if ((tp->t_state & TS_ISOPEN) != 0)
 				(*linesw[tp->t_line].l_rint)(code, tp);
+#ifdef KGDB
+			else {
+				if (code == FRAME_END &&
+				    kgdb_dev == makedev(siomajor, unit))
+					kgdb_connect(0); /* trap into kgdb */
+			}
+#endif
 		}
 	}
 
@@ -468,8 +516,15 @@ sioeint(unit, stat, sio)
 
 	sio->sio_cmd = WR0_ERRRST;
 
-	if ((tp->t_state & TS_ISOPEN) == 0)
+	if ((tp->t_state & TS_ISOPEN) == 0) {
+#ifdef KGDB
+		/* we don't care about parity errors */
+		if (((stat & (RR_FRAMING|RR_PARITY)) == RR_PARITY) &&
+		    kgdb_dev == makedev(siomajor, unit) && code == FRAME_END)
+			kgdb_connect(0); /* trap into kgdb */
+#endif
 		return;
+	}
 
 	if (stat & RR_FRAMING)
 		code |= TTY_FE;
