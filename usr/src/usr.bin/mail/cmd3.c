@@ -201,7 +201,13 @@ respond(msgvec)
 	}
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
-	rcv = nameof(mp, 1);
+	rcv = NOSTR;
+	cp = nameof(mp, 1);
+	if (cp != NOSTR)
+	    rcv = cp;
+	cp = hfield("from", mp);
+	if (cp != NOSTR)
+	    rcv = cp;
 	replyto = skin(hfield("reply-to", mp));
 	strcpy(buf, "");
 	if (replyto != NOSTR)
@@ -661,13 +667,16 @@ Respond(msgvec)
 {
 	struct header head;
 	struct message *mp;
-	register int s, *ap;
-	register char *cp, *subject;
+	register int i, s, *ap;
+	register char *cp, *cp2, *subject;
 
 	for (s = 0, ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
 		dot = mp;
-		s += strlen(nameof(mp, 2)) + 1;
+		if ((cp = hfield("from", mp)) != NOSTR)
+		    s+= strlen(cp) + 1;
+		else
+		    s += strlen(nameof(mp, 2)) + 1;
 	}
 	if (s == 0)
 		return(0);
@@ -675,7 +684,9 @@ Respond(msgvec)
 	head.h_to = cp;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
-		cp = copy(nameof(mp, 2), cp);
+		if ((cp2 = hfield("from", mp)) == NOSTR)
+		    cp2 = nameof(mp, 2);
+		cp = copy(cp2, cp);
 		*cp++ = ' ';
 	}
 	*--cp = 0;
