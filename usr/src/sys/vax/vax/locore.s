@@ -1,4 +1,4 @@
-/*	locore.s	6.5	84/02/07	*/
+/*	locore.s	6.6	84/02/15	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -19,6 +19,7 @@
 #include "uu.h"
 #include "ps.h"
 #include "mba.h"
+#include "uba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into scb of machine check vector
@@ -527,7 +528,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,512*MAXNUBA	)
+	SYSMAP(UMEMmap	,umem		,512*NUBA	)
 	SYSMAP(UMBAend	,umbaend	,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
