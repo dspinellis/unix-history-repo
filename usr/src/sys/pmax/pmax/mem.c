@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.1 (Berkeley) %G%
+ *	@(#)mem.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -42,7 +42,7 @@ mmrw(dev, uio, flags)
 	register struct iovec *iov;
 	int error = 0;
 	caddr_t zbuf = NULL;
-	extern u_int lowram;
+	extern vm_offset_t avail_end;
 
 	while (uio->uio_resid > 0 && error == 0) {
 		iov = uio->uio_iov;
@@ -67,12 +67,18 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
-			c = iov->iov_len;
-			if (!kernacc((caddr_t)uio->uio_offset, c,
-			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
+			if (uio->uio_offset < MACH_CACHED_MEMORY_ADDR)
 				return (EFAULT);
-			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
-			continue;
+			c = iov->iov_len;
+			if (uio->uio_offset + c <= avail_end ||
+			    uio->uio_offset >= MACH_KSEG2_ADDR &&
+			    kernacc((caddr_t)uio->uio_offset, c,
+			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE)) {
+				error = uiomove((caddr_t)uio->uio_offset,
+					(int)c, uio);
+				continue;
+			}
+			return (EFAULT);
 
 /* minor device 2 is EOF/RATHOLE */
 		case 2:
