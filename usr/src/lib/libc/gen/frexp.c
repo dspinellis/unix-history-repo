@@ -1,4 +1,4 @@
-/* @(#)frexp.c	4.1 (Berkeley) %G% */
+/* @(#)frexp.c	4.2 (Berkeley) %G% */
 /*
 	the call
 		x = frexp(arg,&exp);
@@ -6,6 +6,7 @@
 	and the corresponding binary exponent "exp".
 	such that
 		arg = x*2^exp
+	if the argument is 0.0, return 0.0 mantissa and 0 exponent.
 */
 
 double
@@ -21,12 +22,12 @@ int *i;
 		x = -x;
 		neg = 1;
 		}
-	if(x>1.0)
-		while(x>1){
+	if(x>=1.0)
+		while(x>=1.0){
 			j = j+1;
 			x = x/2;
 			}
-	else if(x<0.5)
+	else if(x<0.5 && x != 0.0)
 		while(x<0.5){
 			j = j-1;
 			x = 2*x;
