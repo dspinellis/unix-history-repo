@@ -1,4 +1,4 @@
-/* graph.c	1.6	83/07/09
+/* graph.c	1.7	83/07/09
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -222,7 +222,7 @@ int pic;
  *----------------------------------------------------------------------------*/
 
 drawthick(s)
-int s
+int s;
 {
     linethickness = s;
 }
@@ -236,7 +236,7 @@ int s
  *----------------------------------------------------------------------------*/
 
 drawstyle(s)
-int s
+int s;
 {
     linmod = s;
 }
