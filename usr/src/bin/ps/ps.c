@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.13 (Berkeley) 81/07/08";
+static	char *sccsid = "@(#)ps.c	4.14 (Berkeley) 81/09/03";
 /*
  * ps; VAX 4BSD version
  */
@@ -51,6 +51,7 @@ struct	savcom {
 		float	u_pctcpu;
 		struct	vsav *vp;
 		int	s_ssiz;
+		struct	sssav *ssp;	/* RAND 2/81 */
 	} sun;
 	struct	asav *ap;
 } *savcom;
@@ -74,6 +75,13 @@ struct	lsav {
 	int	l_addr;
 	caddr_t	l_wchan;
 };
+
+char	*sshdr;				/* RAND 2/81 */
+struct	sssav {				/* RAND 2/81 */
+	short 	ss_ppid;		/* RAND 2/81 */
+	short	ss_brother;		/* RAND 2/81 */
+	short	ss_sons;		/* RAND 2/81 */
+};					/* RAND 2/81 */
 
 char	*uhdr;
 char	*shdr;
@@ -100,9 +108,11 @@ int	paduser2;		/* avoid hardware mem clobbering botch */
 #define clear(x) 	((int)x & 0x7fffffff)
 
 int	chkpid;
-int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, uflg, vflg, xflg;
+int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, ssflg,  /* RAND 2/81 */
+	nonssflg, uflg, vflg, xflg;
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
+char	*rindex();		/* RAND 2/81 */
 double	pcpu(), pmem();
 int	pscomp();
 int	nswap, maxslp;
@@ -144,6 +154,14 @@ main(argc, argv)
 		exit(1);
 	}
 	twidth = 80;
+
+	if (ap = rindex(argv[0], '/'))		/* RAND 2/81 */
+		ap++;
+	else
+		ap = argv[0];
+	if (*ap == 's')				/* If name starts with 's' */
+		ssflg++;
+
 	setbuf(stdout, _sobuf);
 	argc--, argv++;
 	if (argc > 0) {
@@ -151,7 +169,7 @@ main(argc, argv)
 		while (*ap) switch (*ap++) {
 
 		case 'C':
-			rawcpu++;
+			rawcpu++; nonssflg++;
 			break;
 		case 'S':
 			sumcpu++;
@@ -160,39 +178,39 @@ main(argc, argv)
 			aflg++;
 			break;
 		case 'c':
-			cflg = !cflg;
+			cflg = !cflg; nonssflg++;
 			break;
 		case 'e':
-			eflg++;
+			eflg++; nonssflg++;
 			break;
 		case 'g':
-			gflg++;
+			gflg++; nonssflg++;
 			break;
 		case 'k':
-			kflg++;
+			kflg++; nonssflg++;
 			break;
 		case 'l':
-			lflg++;
+			lflg++; nonssflg++;
 			break;
 		case 's':
-			sflg++;
+			sflg++; nonssflg++;
 			break;
 		case 't':
 			if (*ap)
 				tptr = ap;
-			aflg++;
+			aflg++; nonssflg++;
 			gflg++;
 			if (*tptr == '?')
 				xflg++;
 			while (*ap)
 				ap++;
 			break;
-		case 'u':
-			uflg++;
+		case 'u': 
+			uflg++; nonssflg++;
 			break;
 		case 'v':
 			cflg = 1;
-			vflg++;
+			vflg++; nonssflg++;
 			break;
 		case 'w':
 			if (twidth == 80)
@@ -203,16 +221,28 @@ main(argc, argv)
 		case 'x':
 			xflg++;
 			break;
+		case 'y':		/* Rand 2/81 */
+			ssflg++;
+			break;
 		default:
 			if (!isdigit(ap[-1]))
 				break;
 			chkpid = atoi(--ap);
 			*ap = 0;
-			aflg++;
+			aflg++;	nonssflg++;
 			xflg++;
 			break;
 		}
 	}
+	if (ssflg) {			/* RAND 2/81 */
+		if (nonssflg) {
+			fprintf (stderr, "Usage: ss [axwS]\n");
+			exit(1);
+		}
+		uflg++;
+		gflg++;
+	}
+
 	openfiles(argc, argv);
 	getkvars(argc, argv);
 	getdev();
@@ -255,6 +285,10 @@ main(argc, argv)
 		}
 	}
 	qsort(savcom, npr, sizeof(savcom[0]), pscomp);
+	if (ssflg) {			/* RAND 2/81 */
+		walk(npr);
+		exit (npr == 0);
+	}
 	for (i=0; i<npr; i++) {
 		register struct savcom *sp = &savcom[i];
 		if (lflg)
@@ -385,7 +419,10 @@ printhdr()
 		fprintf(stderr, "ps: specify only one of s,l,v and u\n");
 		exit(1);
 	}
-	hdr = lflg ? lhdr : (vflg ? vhdr : (uflg ? uhdr : shdr));
+	hdr = ssflg ? sshdr : 		/* RAND 2/81 */
+		(lflg ? lhdr : 
+			(vflg ? vhdr : 
+				(uflg ? uhdr : shdr))); 
 	if (lflg+vflg+uflg+sflg == 0)
 		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
@@ -583,7 +620,7 @@ save()
 	if (mproc->p_stat != SZOMB && getu() == 0)
 		return;
 	ttyp = gettty();
-	if (xflg == 0 && ttyp[0] == '?' || tptr && strcmpn(tptr, ttyp, 2))
+	if (xflg == 0 && ttyp[0] == '?' || tptr && strncmp(tptr, ttyp, 2))
 		return;
 	sp = &savcom[npr];
 	cmdp = getcmd();
@@ -641,9 +678,16 @@ save()
 		}
 		vp->v_pctcpu = pcpu();
 #undef e
-	} else if (uflg)
-		sp->sun.u_pctcpu = pcpu();
-	else if (sflg) {
+	} else if (uflg) {
+		if (!ssflg) 		/* RAND 2/18 */
+			sp->sun.u_pctcpu = pcpu();
+		else {
+			register struct sssav *ssp;
+
+			sp->sun.ssp =ssp= (struct sssav *)alloc(sizeof (struct sssav));
+			ssp->ss_ppid = mproc->p_ppid;
+		}
+	} else if (sflg) {
 		if (ap->a_stat != SZOMB) {
 			for (cp = (char *)u.u_stack;
 			    cp < &user.upages[UPAGES][0]; )
@@ -652,6 +696,7 @@ save()
 			sp->sun.s_ssiz = (&user.upages[UPAGES][0] - cp);
 		}
 	}
+
 	npr++;
 }
 
@@ -1017,7 +1062,7 @@ pscomp(s1, s2)
 {
 	register int i;
 
-	if (uflg)
+	if (uflg && !ssflg)
 		return (s2->sun.u_pctcpu > s1->sun.u_pctcpu ? 1 : -1);
 	if (vflg)
 		return (vsize(s2) - vsize(s1));
@@ -1111,4 +1156,92 @@ savestr(cp)
 	dp = (char *)alloc(len+1);
 	strcpy(dp, cp);
 	return (dp);
+}
+
+walk(np)
+	int np;
+{
+	register int i, j, k, l, m;
+#undef afl
+#undef sfl
+#define afl(i,f) savcom[i].ap -> f
+#define sfl(i,f) savcom[i].sun.ssp -> f
+
+	for(i = 0; i < np; i = j) {
+		for(j = i; afl(j,a_ttyd) == afl(i,a_ttyd); j++) {
+			sfl(j,ss_brother) = -1;
+			sfl(j,ss_sons) = -1;
+		}
+		for(k = i+1; k < j; k++) {
+			if(sfl(k,ss_ppid) == sfl(i,ss_ppid)) {
+				for(l=i; sfl(l,ss_brother) != -1; 
+					l=sfl(l,ss_brother)) ;
+				sfl(l,ss_brother) = k;
+				goto next;
+			}
+			for(l = i; l < j; l++) {
+				if(l == k) continue;
+				if(sfl(k,ss_ppid) == afl(l,a_pid)) {
+					if(sfl(l,ss_sons) == -1)
+					    sfl(l,ss_sons) = k;
+					else {
+					    for(m = sfl(l,ss_sons);
+						sfl(m,ss_brother) != -1;
+						m = sfl(m,ss_brother)) ;
+					    sfl(m,ss_brother) = k;
+					}
+					goto next;
+				}
+			}
+			for(l = i; l < j; l++) {
+				if(l == k) continue;
+				if(sfl(k,ss_ppid) == sfl(l,ss_ppid)) {
+					for(m = k; sfl(m,ss_brother) != -1;
+					    m = sfl(m,ss_brother)) ;
+					sfl(m,ss_brother) = l;
+				}
+			}
+		next: ;
+		}
+		walk1(i, 0);
+	}
+}
+
+walk1(pno, depth)
+	int pno, depth;
+{
+	if(pno == -1)
+		return;
+/***    printf("%5d, %d\n",outargs[pno].o_pid, depth);  ***/
+	walkpr(&savcom[pno], depth);
+	walk1(sfl(pno,ss_sons), depth+1);
+	walk1(sfl(pno,ss_brother), depth);
+}
+
+char *sshdr =
+"TTY User     SZ RSS  CPU  S      PID  ";
+
+walkpr(a, depth)
+	register struct savcom *a;
+	int depth;
+{
+	long tm;
+
+	if(!depth) {
+		printf("%-2.2s", a->ap->a_tty);
+		printf(" %-8.8s", getname(a->ap->a_uid));
+	} else
+		printf("   %-8s", &".......*"[8-(depth<=8?depth:8)]);
+	printf("%4d%4d", a->ap->a_size/2, a->ap->a_rss/2);
+	ptime(a->ap);
+	/* Once there was a "CCPU" field here.  Subsumed by -S now. */
+	printf(" %4.4s", state(a->ap));
+	printf("%6u ", a->ap->a_pid);
+	if (a->ap->a_pid == 0)
+		printf(" swapper");
+	else if (a->ap->a_pid == 2)
+		printf(" pagedaemon");
+	else
+		printf(" %.*s", twidth - cmdstart - 2, a->ap->a_cmdp);
+	putchar('\n');
 }
