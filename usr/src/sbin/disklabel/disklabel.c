@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1987 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Symmetric Computer Systems.
@@ -9,13 +9,13 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1987 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1987, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	8.1 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
