@@ -1,6 +1,6 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c 4.5 %G%";
-#endif lint
+static	char sccsid[] = "@(#)opset.c 4.6 %G%";
+#endif /* lint */
 /*
  *	UNIX debugger
  *	Instruction printing routines.
@@ -9,17 +9,17 @@ static	char sccsid[] = "@(#)opset.c 4.5 %G%";
 
 #ifdef ADB
 #include "defs.h"
-#endif ADB
+#endif /* ADB */
 #ifdef SDB
 #include "head.h"
-#endif SDB
+#endif /* SDB */
 
 L_INT		dot;
 INT		dotinc;
 L_INT		insoutvar[36];
 #ifdef ADB
 L_INT		var[36];
-#endif ADB
+#endif /* ADB */
 
 #undef	INSTTAB
 #include "instrs.h"
@@ -114,7 +114,7 @@ static	short	argno;		/* which argument one is working on */
 static	char	insoutfmt[2];	/* how to format the relocated symbols */
 #ifdef SDB
 static	struct	proct	*procp;
-#endif SDB
+#endif /* SDB */
 
 static savevar(val)
 	long	val;
@@ -152,14 +152,14 @@ printins(fmt, Idsp, ins)
 		incp = 2;
 		goto ret;
 	}
-#endif SDB
+#endif /* SDB */
 
 #ifdef ADB
 	insoutfmt[0] = 0;
-#endif ADB
+#endif /* ADB */
 #ifdef SDB
 	insoutfmt[0] = fmt;
-#endif SDB
+#endif /* SDB */
 
 	incp = 1;
 	if ((mapchar = mapescbyte(ins)) != 0){
@@ -223,10 +223,10 @@ printins(fmt, Idsp, ins)
 
 #ifdef SDB
 	oincr = incp;
-#endif SDB
+#endif /* SDB */
 #ifdef ADB
 	dotinc = incp;
-#endif ADB
+#endif /* ADB */
 }
 
 casebody(base, limit)
@@ -244,10 +244,10 @@ casebody(base, limit)
 		printc(EOR);
 #ifdef SDB
 		printf("    %d:  ", i + base);
-#endif SDB
+#endif /* SDB */
 #ifdef ADB
 		printf("    %R:  ", i + base);
-#endif ADB
+#endif /* ADB */
 		valuep = snarfreloc(OSIZE, 0);
 		advincp = incp;
 		incp = baseincp;
@@ -390,11 +390,11 @@ dispaddress(valuep, mode)
 	else {				/* } */
 		printf(LPRMODE, valuep->num_ulong[0]);
 		printf(insoutfmt);
-#endif ADB
+#endif /* ADB */
 #ifdef SDB
 	if(psymoff(valuep->num_ulong[0], regnumber, &insoutfmt[0])
 	   && (regnumber != R_PC)){
-#endif SDB
+#endif /* SDB */
 		printf("(%s)", insregname(regnumber));
 	}
 	savevar((long)valuep->num_ulong[0]);
@@ -414,7 +414,7 @@ char *insregname(regnumber)
 	    && (adrtoregvar(regnumber, procp) != -1)) {
 		r = sl_name;
 	}
-#endif SDB
+#endif /* SDB */
 	return(r);
 }
 /*
@@ -435,10 +435,10 @@ shortliteral(mode, optype)
 	default:
 #ifdef ADB
 		printf("$%r", mode);
-#endif ADB
+#endif /* ADB */
 #ifdef SDB
 		printf("$%d", mode);
-#endif SDB
+#endif /* SDB */
 		break;
 	}
 }
@@ -571,4 +571,4 @@ prdiff(diff)
 	}
 }
 
-#endif SDB
+#endif /* SDB */
