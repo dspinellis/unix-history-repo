@@ -1,4 +1,4 @@
-/*	mbuf.h	4.12	82/05/18	*/
+/*	mbuf.h	4.13	82/06/14	*/
 
 /*
  * Constants related to memory allocator.
@@ -72,15 +72,9 @@ struct mbuf {
 	  splx(ms); }
 
 /*
- * Mbuf statistics.  Clients can committ hunks of space until we are
- * overcommitted by the fraction represented by MBUFOVERALLOCFRAG.
- * We keep track of the amount of space committed, the number
- * of mbufs and clusters allocated from the free memory pool, and
- * the number of mbufs and clusters on our free lists.
+ * Mbuf statistics.
  */
-#define	MBUFOVERALLOCFRACTION	3 / 2		/* don't parenthesize ! */
 struct mbstat {
-	short	m_mbcommitted;		/* most we'll allow pool size to get */
 	short	m_mbufs;		/* mbufs obtained from page pool */
 	short	m_mbfree;		/* mbufs on our free list */
 	short	m_clusters;		/* clusters obtained from page pool */
