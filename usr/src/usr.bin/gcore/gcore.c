@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)gcore.c	5.6 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <nlist.h>
+#include <varargs.h>
 
 /* Various macros for efficiency. */
 
@@ -117,11 +118,11 @@ main(argc, argv)
 	}
 	openfiles();
 	getkvars();
-	procbase = getw(nl[X_PROC].n_value);
-	nproc = getw(nl[X_NPROC].n_value);
-	nswap = getw(nl[X_NSWAP].n_value);
-	dmmin = getw(nl[X_DMMIN].n_value);
-	dmmax = getw(nl[X_DMMAX].n_value);
+	procbase = getword(nl[X_PROC].n_value);
+	nproc = getword(nl[X_NPROC].n_value);
+	nswap = getword(nl[X_NSWAP].n_value);
+	dmmin = getword(nl[X_DMMIN].n_value);
+	dmmax = getword(nl[X_DMMAX].n_value);
 	while (--argc > 0) {
 		if ((pid = atoi(*++argv)) <= 0 || setjmp(cont_frame))
 			continue;
@@ -170,7 +171,7 @@ main(argc, argv)
 	}
 }
 
-getw(loc)
+getword(loc)
 	off_t loc;
 {
 	int word;
@@ -287,7 +288,8 @@ core(p)
 		showpt(p0, p->p_dsize, "p0");
 		showpt(p1, p->p_ssize + UPAGES, "p1");
 #endif
-	}
+	} else
+		p0 = p1 = NULL;			/* not actually used */
 	getu(p, &p1[p->p_ssize]);			/* u area */
 	getseg(p, p->p_dsize, p0, &u.u_dmap, 0);	/* data */
 	getseg(p, p->p_ssize, p1, &u.u_smap, 1);	/* stack */
@@ -333,6 +335,7 @@ getseg(p, segsize, pages, map, rev)
 	int segsize;
 	register struct pte *pages;
 	struct dmap *map;
+	int rev;
 {
 	register int i;
 	struct dblock db;
@@ -363,6 +366,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	int vssize;
 	struct dmap *dmp;
 	register struct dblock *dbp;
+	int rev;
 {
 	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
@@ -381,14 +385,30 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
 
+#ifdef lint
 /*VARARGS1*/
-panic(cp, a, b, c, d)
-	char *cp;
+panic(fmt)
+	char *fmt;
 {
-	printf(cp, a, b, c, d);
-	printf("\n");
+
+	fmt = fmt;
 	longjmp(cont_frame, 1);
 }
+#else /* lint */
+panic(va_alist)
+	va_dcl
+{
+	va_list ap;
+	char *fmt;
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vprintf(fmt, ap);
+	va_end(ap);
+	(void) printf("\n");
+	longjmp(cont_frame, 1);
+}
+#endif /* lint */
 
 /* 
  * Debugging routine to print out page table.
