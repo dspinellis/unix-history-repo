@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -95,9 +95,9 @@ p_query(buf)
 			cp = p_cdname(cp, buf);
 			if (cp == NULL)
 				return;
-			printf(", type = %s", p_type(ntohs(*(u_short *)cp)));
+			printf(", type = %s", p_type(getshort(cp)));
 			cp += sizeof(u_short);
-			printf(", class = %s\n\n", p_class(ntohs(*(u_short *)cp)));
+			printf(", class = %s\n\n", p_class(getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -169,13 +169,13 @@ p_rr(cp, buf)
 
 	if ((cp = p_cdname(cp, buf)) == NULL)
 		return (NULL);			/* compression error */
-	printf("\n\ttype = %s", p_type(type = ntohs(*(u_short *)cp)));
+	printf("\n\ttype = %s", p_type(type = getshort(cp)));
 	cp += sizeof(u_short);
-	printf(", class = %s", p_class(class = ntohs(*(u_short *)cp)));
+	printf(", class = %s", p_class(class = getshort(cp)));
 	cp += sizeof(u_short);
-	printf(", ttl = %d", ntohl(*(u_int *)cp));
+	printf(", ttl = %ld", getlong(cp));
 	cp += sizeof(u_long);
-	printf(", dlen = %d\n", dlen = ntohs(*(u_short *)cp));
+	printf(", dlen = %d\n", dlen = getshort(cp));
 	cp += sizeof(u_short);
 	cp1 = cp;
 	/*
@@ -185,7 +185,7 @@ p_rr(cp, buf)
 	case T_A:
 		switch (class) {
 		case C_IN:
-			inaddr.s_addr = *(u_long *)cp;
+			bcopy(cp, (char *)&inaddr, sizeof(inaddr));
 			if (dlen == 4) {
 				printf("\tinternet address = %s\n",
 					inet_ntoa(inaddr));
@@ -230,15 +230,15 @@ p_rr(cp, buf)
 		cp = p_cdname(cp, buf);
 		printf("\n\tmail addr = ");
 		cp = p_cdname(cp, buf);
-		printf("\n\tserial=%d", ntohl(*(u_long *)cp));
+		printf("\n\tserial=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", refresh=%d", ntohl(*(u_long *)cp));
+		printf(", refresh=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", retry=%d", ntohl(*(u_long *)cp));
+		printf(", retry=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", expire=%d", ntohl(*(u_long *)cp));
+		printf(", expire=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", min=%d\n", ntohl(*(u_long *)cp));
+		printf(", min=%ld\n", getlong(cp));
 		cp += sizeof(u_long);
 		break;
 
@@ -250,7 +250,7 @@ p_rr(cp, buf)
 	case T_UID:
 	case T_GID:
 		if (dlen == 4) {
-			printf("\t%d\n", ntohl(*(int *)cp));
+			printf("\t%ld\n", getlong(cp));
 			cp += sizeof(int);
 		}
 		break;
@@ -258,7 +258,7 @@ p_rr(cp, buf)
 	case T_WKS:
 		if (dlen < sizeof(u_long) + 1)
 			break;
-		inaddr.s_addr = *(u_long *)cp;
+		bcopy(cp, (char *)&inaddr, sizeof(inaddr));
 		cp += sizeof(u_long);
 		printf("\tinternet address = %s, protocol = %d\n\t",
 			inet_ntoa(inaddr), *cp++);
