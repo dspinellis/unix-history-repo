@@ -1,4 +1,4 @@
-/*	rx.c	4.13	83/04/15	*/
+/*	rx.c	4.14	83/04/15	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -12,8 +12,7 @@
  *	- clean up the code for multisector transfers using
  *	  a 'transfer in progress' flag
  *	- Test Deleted Data read/write 
- *	- Test error handling/reporting and 'volume valid'
- *	  handling.
+ *	- Test error handling/reporting and 'volume valid' stuff
  *
  * 	Note: If the drive subsystem is
  * 	powered off at boot time, the controller won't interrupt!
@@ -33,6 +32,7 @@
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
+
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/rxreg.h"
@@ -191,7 +191,7 @@ rxopen(dev, flag)
 		if (rxwstart++ == 0) {
 			rxc = &rx_ctlr[ui->ui_mi->um_ctlr];
 			rxc->rxc_tocnt = 0;
-			rxtimo();			/* start watchdog */
+			timeout(rxtimo(), (caddr_t)0, hz);  /* start watchdog */
 		}
 #ifdef RXDEBUG
 		printf("rxopen: csbits=0x%x\n", sc->sc_csbits);
@@ -211,14 +211,8 @@ rxclose(dev, flag)
 	int flag;
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
-	register struct buf *dp = &rxutab[RXUNIT(dev)];
 
-	if (--sc->sc_open == 0 ) {
-		if (dp->b_active)
-			iowait(dp->b_actl);
-		sc->sc_csbits = 0;
-		rxwstart--;
-	}
+	--sc->sc_open;
 	printf("rxclose: dev=0x%x, sc_open=%d\n", dev, sc->sc_open);
 }
 
@@ -358,6 +352,7 @@ loop:
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
+	um->um_tab.b_active++;
 	unit = RXUNIT(bp->b_dev);
 	sc = &rx_softc[unit];
 	if (dp->b_active == 1) {
@@ -367,7 +362,6 @@ loop:
 		sc->sc_offset += sc->sc_bcnt;
 		dp->b_active++;
 	}
-	um->um_tab.b_active++;
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
 	bp->b_bcount = sc->sc_resid;
@@ -456,7 +450,7 @@ rxintr(ctlr)
 	register struct rx_softc *sc;
 	struct uba_device *ui;
 	struct rxerr *er;
-	register struct rx_ctlr *rxc;
+	struct rx_ctlr *rxc;
 
 	if (!um->um_tab.b_active)
 		return;
@@ -567,8 +561,8 @@ rxintr(ctlr)
 error:
 	/*
 	 * In case of an error:
-	 *  (a) Give up now if a format (ioctl) was in progress, or if a
-	 *	  density error was detected.
+	 *  (a) Give up now if a format (ioctl) was in progress, if a
+	 *	  density error was detected, or if the drive went offline
 	 *  (b) Retry up to nine times if a CRC (data) error was detected,
 	 *	  then give up if the error persists.
 	 *  (c) In all other cases, reinitialize the drive and try the
@@ -588,6 +582,9 @@ error:
 	/* no way to get an interrupt for "init done", so just wait */
 	while ((rxaddr->rxcs&RX_DONE) == 0)
 		;
+	/* if someone opened the drive: give up */
+	if ((rxaddr->rxdb&RXES_READY) == 0)
+		goto giveup;
 retry:
 	/*
 	 * In case we already have UNIBUS resources, give
@@ -683,37 +680,35 @@ rdone:
 
 /*ARGSUSED*/
 
-/* 
- * Wake up every second, check if an interrupt is pending
- * on one (or more) of the present controllers.
- * If it is, but nothing has happened increment a counter.
- * If nothing happens for RX_MAXTIMEOUT seconds, 
- * call the interrupt routine with the 'dead' controller
- * as an argument, thereby simulating an interrupt.
- * If this occurs, the error bit will probably be set
- * in the controller, and the interrupt routine will
- * be able to recover ( or at least report) the error
- * appropriately.
- */
 rxtimo()
 {
-	register struct rx_ctlr *rxc;
+	register struct uba_device *ui;
 	register struct uba_ctlr *um;
-	int i;
+	register struct rx_softc *sc;
+	struct rx_ctlr *rxc;
+	int i, dopen = 0;
 
-	if (rxwstart > 0) {
-		timeout(rxtimo, (caddr_t)0, hz);
-		for (i=0; i<NFX; i++) {
-			um = rxminfo[i];
-			if (um == 0 || um->um_alive || um->um_tab.b_active == 0)
-				continue;
-			rxc = &rx_ctlr[i];
-			if (++rxc->rxc_tocnt < RX_MAXTIMEOUT) {
-				printf("fx%d: timeout\n", i);
-				rxintr(i);
-			}
+	for (i=0; i<NRX; i++) {
+		ui = rxdinfo[i];
+		sc = &rx_softc[i];
+		um = ui->ui_mi;
+		if (ui == 0 || ui->ui_alive == 0)
+			continue;
+		if ((sc->sc_open == 0) && (um->um_tab.b_active == 0)) {
+			sc->sc_csbits = 0;
+			continue;
+		}
+		dopen++;
+		rxc = &rx_ctlr[um->um_ctlr];
+		if (++rxc->rxc_tocnt < RX_MAXTIMEOUT) {
+			printf("fx%d: timeout\n", um->um_ctlr);
+			rxintr(um->um_ctlr);
 		}
 	}
+	if (dopen)
+		timeout(rxtimo(), (caddr_t)0, hz);
+	else
+		rxwstart = 0;
 }
 
 rxreset(uban)
