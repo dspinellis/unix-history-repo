@@ -1,4 +1,4 @@
-/*	dmf.c	4.8	82/10/10	*/
+/*	dmf.c	4.9	82/10/13	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -317,7 +317,7 @@ dmfwrite(dev, uio)
 	register struct tty *tp;
 
 	tp = &dmf_tty[minor(dev)];
-	(*linesw[tp->t_line].l_write)(tp, uio);
+	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
 /*
