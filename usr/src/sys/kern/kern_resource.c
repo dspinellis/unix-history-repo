@@ -1,4 +1,4 @@
-/*	kern_resource.c	3.3	%G%	*/
+/*	kern_resource.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
