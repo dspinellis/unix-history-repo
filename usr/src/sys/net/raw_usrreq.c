@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.23	82/12/14	*/
+/*	raw_usrreq.c	4.24	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -144,11 +144,10 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
-raw_usrreq(so, req, m, nam, opt)
+raw_usrreq(so, req, m, nam)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam;
-	struct socketopt *opt;
 {
 	register struct rawcb *rp = sotorawcb(so);
 	int error = 0;

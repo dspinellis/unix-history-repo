@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.34	83/01/08	*/
+/*	uipc_socket2.c	4.35	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -125,7 +125,7 @@ sonewconn(head)
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, (struct mbuf *)0,
-	  (struct mbuf *)0, (struct sockopt *)0)) {
+	  (struct mbuf *)0)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;
