@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.24 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.25 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -282,7 +282,7 @@ R$+			$#local $: $1			regular local names
 S5
 
 R$+			$: $1 < @ $R >
-R$+ < @ $+ >		$#smtp $@ $2 $: $1		send to relay')
+R$+ < @ $+ >		$#smtp $@ $2 $: $1 < @ $2 >	send to relay')
 #
 ######################################################################
 ######################################################################
