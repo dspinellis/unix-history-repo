@@ -14,10 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)locate.h	5.1 (Berkeley) %G%
+ *	@(#)locate.h	5.2 (Berkeley) %G%
  */
 
-/* Symbolic constants shared by find.c and code.c */
+/* Symbolic constants shared by locate.c and code.c */
 
 #define	NBG		128		/* number of bigrams considered */
 #define	OFFSET		14		/* abs value of max likely diff */
