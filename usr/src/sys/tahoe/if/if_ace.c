@@ -1,4 +1,4 @@
-/*	if_ace.c	1.12	86/12/15	*/
+/*	if_ace.c	1.13	87/06/30	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -144,7 +144,11 @@ aceattach(ui)
 	/*
 	 * Allocate and map dual ported VERSAbus memory.
 	 */
-	vbmemalloc(32, (caddr_t)ui->ui_flags, &is->is_map, &is->is_dpm);
+	if (vbmemalloc(32, (caddr_t)ui->ui_flags,
+	    &is->is_map, &is->is_dpm) == 0) {
+		printf("ace%d: can't allocate VERSAbus memory map\n", unit);
+		return;
+	}
 
 	ifp->if_init = aceinit;
 	ifp->if_output = aceoutput;
