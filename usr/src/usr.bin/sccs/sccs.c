@@ -1,11 +1,10 @@
 # include <stdio.h>
-# include <sys/types.h>
+# include <sys/param.h>
 # include <sys/stat.h>
-# include <sys/dir.h>
+# include <dir.h>
 # include <errno.h>
 # include <signal.h>
 # include <sysexits.h>
-# include <whoami.h>
 # include <pwd.h>
 
 /*
@@ -93,27 +92,9 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.61.1.1 %G%";
+static char SccsId[] = "@(#)sccs.c	1.61.1.2 %G%";
 
 /*******************  Configuration Information  ********************/
-
-/* special defines for local berkeley systems */
-# include <whoami.h>
-
-# ifdef CSVAX
-# define UIDUSER
-# define PROGPATH(name)	"/usr/local/name"
-# endif CSVAX
-
-# ifdef INGVAX
-# define PROGPATH(name)	"/usr/local/name"
-# endif INGVAX
-
-# ifdef CORY
-# define PROGPATH(name)	"/usr/eecs/bin/name"
-# endif CORY
-
-/* end of berkeley systems defines */
 
 # ifndef SCCSPATH
 # define SCCSPATH	"SCCS"	/* pathname in which to find s-files */
@@ -124,7 +105,7 @@ static char SccsId[] = "@(#)sccs.c	1.61.1.1 %G%";
 # endif NOT MYNAME
 
 # ifndef PROGPATH
-# define PROGPATH(name)	"/usr/sccs/name"	/* place to find binaries */
+# define PROGPATH(name)	"/usr/local/name"	/* place to find binaries */
 # endif PROGPATH
 
 /****************  End of Configuration Information  ****************/
@@ -890,10 +871,10 @@ clean(mode, argv)
 	int mode;
 	char **argv;
 {
-	struct direct dir;
+	struct direct *dir;
 	char buf[100];
 	char *bufend;
-	register FILE *dirfd;
+	register DIR *dirfd;
 	register char *basefile;
 	bool gotedit;
 	bool gotpfent;
@@ -957,7 +938,7 @@ clean(mode, argv)
 	strcat(buf, SccsPath);
 	bufend = &buf[strlen(buf)];
 
-	dirfd = fopen(buf, "r");
+	dirfd = opendir(buf);
 	if (dirfd == NULL)
 	{
 		usrerr("cannot open %s", buf);
@@ -971,16 +952,14 @@ clean(mode, argv)
 	*/
 
 	gotedit = FALSE;
-	while (fread((char *)&dir, sizeof dir, 1, dirfd) != NULL)
-	{
-		if (dir.d_ino == 0 || strncmp(dir.d_name, "s.", 2) != 0)
+	while (dir = readdir(dirfd)) {
+		if (strncmp(dir->d_name, "s.", 2) != 0)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
 		strcpy(bufend, "/p.");
 		basefile = bufend + 3;
-		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
-		basefile[sizeof dir.d_name - 2] = '\0';
+		strcpy(basefile, &dir->d_name[2]);
 
 		/*
 		**  open and scan the p-file.
@@ -1015,14 +994,13 @@ clean(mode, argv)
 		/* the s. file exists and no p. file exists -- unlink the g-file */
 		if (mode == CLEANC && !gotpfent)
 		{
-			strncpy(buf, &dir.d_name[2], sizeof dir.d_name - 2);
-			buf[sizeof dir.d_name - 2] = '\0';
+			strcpy(buf, &dir->d_name[2]);
 			unlink(buf);
 		}
 	}
 
 	/* cleanup & report results */
-	fclose(dirfd);
+	closedir(dirfd);
 	if (!gotedit && mode == INFOC)
 	{
 		printf("Nothing being edited");
