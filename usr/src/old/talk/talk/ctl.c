@@ -58,7 +58,7 @@ open_ctl()
     ctl_sockt = socket(AF_INET, SOCK_DGRAM, 0);
     if (ctl_sockt <= 0)
 	p_error("Bad socket");
-    if (bind(ctl_sockt, &ctl_addr, sizeof(ctl_addr), 0) != 0)
+    if (bind(ctl_sockt, &ctl_addr, sizeof(ctl_addr)) != 0)
 	p_error("Couldn't bind to control socket");
     length = sizeof(ctl_addr);
     if (getsockname(ctl_sockt, &ctl_addr, &length) == -1)
