@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vdreg.h	7.5 (Berkeley) %G%
+ *	@(#)vdreg.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -152,7 +152,7 @@ struct vddevice {
 #define	VDRF_DSL	0x0100	/* data strobe late */
 
 #define	VDRF_NONE	0
-#define	VDRF_NORMAL	(VDRF_RTZ|VDRF_OCF|VDRF_OSP|VDRF_OSM|VDRF_DSE|VDRF_DSE)
+#define	VDRF_NORMAL	(VDRF_RTZ|VDRF_OCF|VDRF_OSP|VDRF_OSM|VDRF_DSE|VDRF_DSL)
 
 /*
  * Perform a reset on the controller.
@@ -431,9 +431,12 @@ typedef union {
 
 /* input register assignments for DIOCWFORMAT ioctl */
 #define	dk_op		df_reg[0]	/* opcode */
-#define	dk_althdr	df_reg[1]	/* alt. sect. header, in an int! */
+#define	dk_althdr	df_reg[1]	/* alt. sect. dskadr, in an int! */
 #define	dk_fmtflags	df_reg[2]	/* header format flags */
 
 /* output register assignments for DIOCWFORMAT ioctl */
 #define	dk_operrsta	df_reg[0]	/* dcb operrsta */
-#define	dk_ecode	df_reg[1]	/* smd-e err_code */
+#define	dk_ecodecnt	df_reg[1]	/* smd-e ecode and error word count */
+#define	dk_ecode(ecodecnt)	((u_long)(ecodecnt) >> 2)
+#define	dk_errcnt(ecodecnt)	(((ecodecnt) & 0xffff) << 1)
+#define	dk_erraddr	df_reg[2]	/* error dskadr, in an int! */
