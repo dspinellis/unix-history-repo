@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -48,7 +48,7 @@ __rec_put(dbp, key, data, flags)
 
 	switch (flags) {
 	case R_CURSOR:
-		if (!ISSET(t, BTF_SEQINIT))
+		if (!ISSET(t, B_SEQINIT))
 			goto einval;
 		nrec = t->bt_rcursor;
 		break;
@@ -83,7 +83,7 @@ einval:		errno = EINVAL;
 	 * already in the database.  If skipping records, create empty ones.
 	 */
 	if (nrec > t->bt_nrecs) {
-		if (!ISSET(t, BTF_EOF | BTF_RINMEM) &&
+		if (!ISSET(t, R_EOF | R_INMEM) &&
 		    t->bt_irec(t, nrec) == RET_ERROR)
 			return (RET_ERROR);
 		if (nrec > t->bt_nrecs + 1) {
@@ -99,10 +99,10 @@ einval:		errno = EINVAL;
 	if ((status = __rec_iput(t, nrec - 1, data, flags)) != RET_SUCCESS)
 		return (status);
 
-	SET(t, BTF_MODIFIED);
 	if (flags == R_SETCURSOR)
 		t->bt_rcursor = nrec;
 	
+	SET(t, R_MODIFIED);
 	return (__rec_ret(t, NULL, nrec, key, NULL));
 }
 
@@ -203,7 +203,9 @@ __rec_iput(t, nrec, data, flags)
 	dest = (char *)h + h->upper;
 	WR_RLEAF(dest, data, dflags);
 
-	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	++t->bt_nrecs;
+	SET(t, B_MODIFIED);
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+
 	return (RET_SUCCESS);
 }
