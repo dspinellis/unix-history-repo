@@ -1,0 +1,19 @@
+To: usenix@boulder.colorado.edu
+Subject: USENIX - `instructions' for `A Pageable Memory Based Filesystem'
+--------
+The paper is submitted with the requested macros. Three additional
+macros are used which are defined at the top of the file. The
+biographies are placed at the end of the paper as requested, though
+I believe that they would be better placed after the body of the
+paper and before the appendix.  The comments before each biography
+describe where to get the faces from the uunet database. The hardcopy
+paper has the appendix run through the `vgrind' preprocessor, though
+the paper as submitted uses .DS/.DE surrounding the code. A copy
+of the appendix run through `vgrind' has been submitted separately
+as a figure should you wish to print it in that form. Should you
+need to contact me, I can be reached at 415-843-9535 (home) or
+415-642-4948 (work). All authors will be out of town Sunday April
+22 until Wednesday April 25 at a POSIX meeting in Utah. I will
+leave the hotel phone number with people at both phone numbers above.
+
+	Kirk McKusick
