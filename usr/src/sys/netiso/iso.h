@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.h	8.1 (Berkeley) %G%
+ *	@(#)iso.h	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -131,7 +131,9 @@ struct sockaddr_iso {
 #define TSEL(s) ((caddr_t)((s)->siso_data + (s)->siso_nlen))
 
 #define SAME_ISOADDR(a, b) \
-	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)(a)->siso_nlen)==0)
+	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)(a)->siso_nlen) == 0)
+#define SAME_ISOIFADDR(a, b)  (bcmp((a)->siso_data, (b)->siso_data, \
+	(unsigned)((b)->siso_nlen - (b)->siso_tlen)) == 0)
 /*
  * The following are specific values for siso->siso_data[0],
  * otherwise known as the AFI:
