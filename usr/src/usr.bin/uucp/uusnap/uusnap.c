@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "uucp.h"
@@ -69,9 +69,9 @@ main()
 	register int i, j, nlen = 0;
 	time_t	curtime, t;
 
-	scandir(CMDSDIR, "C.", CMDSLEN, NULL, CMDTYPE);
-	scandir(DATADIR, "D.", DATALEN, NULL, DATTYPE);
-	scandir(XEQTDIR, "X.", XEQTLEN, 'X', XEQTYPE);
+	dodir(CMDSDIR, "C.", CMDSLEN, '\0', CMDTYPE);
+	dodir(DATADIR, "D.", DATALEN, '\0', DATTYPE);
+	dodir(XEQTDIR, "X.", XEQTLEN, 'X', XEQTYPE);
 	getstst(SPOOL);
 	time(&curtime);
 	for(i=0; i<sndx; ++i)
@@ -102,7 +102,7 @@ main()
 				sys[i].cntr[XEQTYPE]>1?"s":" ");
 		else
 			printf("   ---   ");
-		if(*sys[i].stst == NULL || sys[i].locked > sys[i].st_lastime) {
+		if(*sys[i].stst == '\0' || sys[i].locked > sys[i].st_lastime) {
 			if(sys[i].locked)
 				printf("LOCKED\n");
 			else
@@ -143,8 +143,11 @@ main()
 	exit(0);
 }
 
-scandir(dnam, prfx, flen, fchr, type)
-char *dnam, *prfx, fchr;
+dodir(dnam, prfx, flen, fchr, type)
+char *dnam, *prfx;
+int flen;
+char fchr;
+int type;
 {
 	register struct direct *dentp;
 	register DIR *dirp;
@@ -172,12 +175,12 @@ char *dnam, *prfx, fchr;
 		fnamlen = strlen(fnam);
 		if(flen > 0) {
 			fnamlen -= flen;
-			fnam[fnamlen] = NULL;
-			fnamlen = MAXBASENAME; /* yes, after = NULL*/
+			fnam[fnamlen] = '\0';
+			fnamlen = MAXBASENAME; /* yes, after = '\0'*/
 		} else {
 			for(; fnamlen>0; --fnamlen) {
 				if(fnam[fnamlen] == fchr) {
-					fnam[fnamlen] = NULL;
+					fnam[fnamlen] = '\0';
 					break;
 				}
 			}
@@ -276,7 +279,7 @@ char *sdir;
 		fgets(buff, sizeof(buff), st);
 		fclose(st);
 		if(tp = rindex(buff, ' '))
-			*tp = NULL;		/* drop system name */
+			*tp = '\0';		/* drop system name */
 		else
 			continue;
 		for(i=0, tp=buff;  i<4;  ++i, ++tp)
