@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_union.8	8.5 (Berkeley) %G%
+.\"	@(#)mount_union.8	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_UNION 8
@@ -16,10 +16,8 @@
 .Nd mount union filesystems
 .Sh SYNOPSIS
 .Nm mount_union
+.Op Fl br
 .Op Fl o Ar options
-.Op Fl above
-.Op Fl below
-.Op Fl replace
 .Ar directory
 .Ar uniondir
 .Sh DESCRIPTION
@@ -43,6 +41,15 @@ layer.
 .Pp
 The options are as follows:
 .Bl -tag -width indent
+.It Fl b
+Invert the default position, so that
+.Ar directory
+becomes the lower layer and
+.Ar uniondir
+becomes the upper layer.
+However,
+.Ar uniondir
+remains the mount point.
 .It Fl o
 Options are specified with a
 .Fl o
@@ -50,6 +57,11 @@ flag followed by a comma separated string of options.
 See the
 .Xr mount 8
 man page for possible options and their meanings.
+.It Fl r
+Hide the lower layer completely in the same way as mounting with
+.Xr mount_lofs 8
+or
+.Xr mount_null 8 .
 .El
 .Pp
 To enforce filesystem security, the user mounting the filesystem
@@ -106,37 +118,11 @@ option to
 .Xr mount 8
 which only applies the union operation to the mount point itself,
 and then only for lookups.
-.Sh OPTIONS
-The options are:
-.Bl -tag -width indent
-.It Fl above
-This is the default mode of operation, where
-.Ar directory
-becomes the upper layer,
-and
-.Ar uniondir
-becomes the lower layer.
-.It Fl below
-This inverts the sense of
-.Fl above
-such that
-.Ar directory
-becomes the lower layer and
-.Ar uniondir
-becomes the upper layer.
-.Ar uniondir
-remains the mount point.
-.It Fl replace
-This simply hides the lower layer completely in
-the same way as mounting with
-.Xr mount_lofs 8
-or
-.Xr mount_null 8 .
 .Sh EXAMPLES
 The commands
 .Bd -literal -offset indent
 mount -t cd9660 -o ro /dev/cd0a /usr/src
-mount -t union -o -above /var/obj /usr/src
+mount -t union -o /var/obj /usr/src
 .Ed
 .Pp
 mount the CD-ROM drive
@@ -152,7 +138,7 @@ even though it is stored on a CD-ROM.
 .Pp
 The command
 .Bd -literal -offset indent
-mount -t union -o -below /sys $HOME/sys
+mount -t union -o -b /sys $HOME/sys
 .Ed
 .Pp
 attaches the system source tree below the
@@ -178,7 +164,7 @@ there is no way that delete and rename operations on lower layer
 objects can be done.
 .Dv EROFS
 is returned for this kind of operations along with any others
-which would make modifictions to the lower layer, such as
+which would make modifications to the lower layer, such as
 .Xr chmod 1 .
 .Pp
 Running
