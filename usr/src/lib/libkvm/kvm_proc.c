@@ -30,7 +30,7 @@
 #include <sys/tty.h>
 #include <kvm.h>
 #include <ctype.h>
-#include <cencode.h>
+#include <vis.h>
 #include <nlist.h>
 #include <pwd.h>
 #include <string.h>
