@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)wd.c	5.6 (Berkeley) %G%
+ *	@(#)wd.c	5.7 (Berkeley) %G%
  */
 
 #include "wd.h"
@@ -27,7 +27,6 @@
 #include "uio.h"
 #include "machine/pte.h"
 #include "machine/isa/device.h"
-#include "atio.h"
 #include "icu.h"
 #include "wdreg.h"
 #include "syslog.h"
