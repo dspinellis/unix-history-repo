@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)date.1	8.1 (Berkeley) %G%
+.\"     @(#)date.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DATE 1
@@ -135,6 +135,16 @@ date 1432
 sets the time to
 .Li "2:32 PM" ,
 without modifying the date.
+.Sh ENVIRONMENTAL VARIABLES
+The following environment variables affect the execution of
+.Nm date :
+.Bl -tag -width TZ
+.It Ev TZ
+The timezone to use when displaying dates.
+See
+.Xr environ 7
+for more information.
+.El
 .Sh FILES
 .Bl -tag -width /var/log/messages -compact
 .It Pa /var/log/wtmp
