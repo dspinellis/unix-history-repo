@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	6.8 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -313,7 +313,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 	register struct mbuf *m;
 
 	if (level != IPPROTO_TCP)
-		return (ip_ctloutput(op, so, level, optname, m));
+		return (ip_ctloutput(op, so, level, optname, mp));
 
 	switch (op) {
 

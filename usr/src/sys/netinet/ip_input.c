@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.16 (Berkeley) %G%
+ *	@(#)ip_input.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -193,7 +193,7 @@ next:
 		    ia->ia_ifp == ifp &&
 #endif
 		    (ia->ia_ifp->if_flags & IFF_BROADCAST)) {
-			u_long i;
+			u_long t;
 
 			if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
 			    ip->ip_dst.s_addr)
@@ -204,10 +204,10 @@ next:
 			 * Look for all-0's host part (old broadcast addr),
 			 * either for subnet or net.
 			 */
-			i = ntohl(ip->ip_dst.s_addr);
-			if (i == ia->ia_subnet)
+			t = ntohl(ip->ip_dst.s_addr);
+			if (t == ia->ia_subnet)
 				goto ours;
-			if (i == ia->ia_net)
+			if (t == ia->ia_net)
 				goto ours;
 		}
 	}
