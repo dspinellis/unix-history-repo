@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.108 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.109 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -562,6 +562,12 @@ init_md(argc, argv)
 {
 #ifdef _AUX_SOURCE
 	setcompat(getcompat() | COMPAT_BSDPROT);
+#endif
+
+#ifdef VENDOR_DEFAULT
+	VendorCode = VENDOR_DEFAULT;
+#else
+	VendorCode = VENDOR_BERKELEY;
 #endif
 }
 /*
