@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.49 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -72,7 +72,6 @@ lfs_valloc(ap)
 		vp = fs->lfs_ivnode;
 		ip = VTOI(vp);
 		blkno = lblkno(fs, ip->i_size);
-printf("Extending ifile: blkno = %d\n", blkno);
 		bp = getblk(vp, blkno, fs->lfs_bsize);
 		if (!bp) {
 			uprintf("\n%s: no inodes left\n", fs->lfs_fsmnt);
@@ -82,10 +81,8 @@ printf("Extending ifile: blkno = %d\n", blkno);
 		}
 		i = (blkno - fs->lfs_segtabsz - fs->lfs_cleansz) *
 		    fs->lfs_ifpb;
-printf("Extending ifile: first inum = %d\n", i);
 		fs->lfs_free = i;
 		max = i + fs->lfs_ifpb;
-printf("Extending ifile: max inum = %d\n", max);
 		for (ifp = (struct ifile *)bp->b_un.b_words; i < max; ++ifp) {
 			ifp->if_version = 1;
 			ifp->if_daddr = LFS_UNUSED_DADDR;
@@ -97,7 +94,6 @@ printf("Extending ifile: max inum = %d\n", max);
 		ip->i_blocks += btodb(fs->lfs_bsize);
 		fs->lfs_bfree -= btodb(fs->lfs_bsize);
 		ip->i_size += fs->lfs_bsize;
-printf("Extending ifile: blocks = %d size = %d\n", ip->i_blocks, ip->i_size);
 		vnode_pager_setsize(vp, (u_long)ip->i_size);
 		vnode_pager_uncache(vp);
 		LFS_UBWRITE(bp);
