@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dhar.c	1.2	CWI 1.2	%G%";
+static char *sccsid = "@(#)dhar.c	1.3	CWI 1.3	%G%";
 #endif
 /*
  * Drive the Harris 7500 tyepsetter
@@ -81,7 +81,21 @@ short	*chtab;
 char	*fitab[NFONT+1];
 char	*widthtab[NFONT+1];	/* widtab would be a better name */
 char	*codetab[NFONT+1];	/* device codes */
-short	*fonttab[NFONT+1];	/*MC:jna optional fontcodes */
+#if	pdp
+#define	tosh(a,b)	(a)[2*(b)] & BMASK | ((a)[2*(b) + 1] & BMASK) << BYTE
+typedef	char f_code;
+f_code	*fonttab[2*(NFONT+1)];	/*MC:jna optional fontcodes */
+#endif pdp
+#if	tahoe
+#define	tosh(a,b)	(a)[2*(b) + 1] & BMASK | ((a)[2*(b)] & BMASK) << BYTE
+typedef	char f_code;
+f_code	*fonttab[2*(NFONT+1)];	/*MC:jna optional fontcodes */
+#endif tahoe
+#if	vax
+#define	tosh(a,b)	(a)[b]
+typedef	short f_code;
+f_code	*fonttab[NFONT+1];	/*MC:jna optional fontcodes */
+#endif vax
 
 #define	FATAL	1
 #define	BMASK	0377
@@ -429,7 +443,7 @@ fileinit()	/* read in font and code files, etc. */
 		fitab[i] = p + 3 * nw;
 		p += 3 * nw + dev.nchtab + 128 - 32;
 		if(fontbase[i]->fonttab == 1) {	/*MC:jna There is a fonttable */
-			fonttab[i] = (short *)p;	/*MC:jna get it */
+			fonttab[i] = (f_code *)p;	/*MC:jna get it */
 			p += nw * sizeof( short );	/* and skip it */
 		}
 		t_fp(i, fontbase[i]->namefont, fontbase[i]->intname);
@@ -539,7 +553,7 @@ if(dbg > 3)
 	codetab[n] = (char *) widthtab[n] + 2 * nw;
 	fitab[n] = (char *) widthtab[n] + 3 * nw;
 	if(fontbase[n]->fonttab == 1)
-		fonttab[n] = (short *) (widthtab[n] + 3*nw + nchtab+128-32);
+		fonttab[n] = (f_code *) (widthtab[n] + 3*nw + nchtab+128-32);
 	t_fp(n, fontbase[n]->namefont, fontbase[n]->intname);
 	fontbase[n]->nwfont = norig;	/* so can later use full original size */
 	if(fontbase[n]->fonttab == 0 && forig != 0)
@@ -595,7 +609,7 @@ int f;
 char	devname[20] = "har";
 int	fcut;
 int	nocutting;
-int	papuse;
+unsigned	short	papuse;
 char	harcode;
 
 t_init(reinit)	/* initialize device */
@@ -930,7 +944,7 @@ hor_move( amount )
 int amount;
 {	int high, low;
 
-#ifdef VAX
+#if	vax || tahoe
 	if ( abs(amount) > 0177777)
 		error(FATAL, "Impossible escape");
 #endif
@@ -984,7 +998,7 @@ ver_move( amount )
 int amount;
 {	int high, low;
 
-#ifdef VAX
+#if	vax || tahoe
 	if ( abs(amount) > 0177777)
 		error(FATAL, "Impossible leading");
 #endif
@@ -1206,7 +1220,7 @@ int c;
 		return;
 	}
 	if (fontbase[k]->fonttab == 1)
-		f = fonttab[k][i];
+		f = tosh( fonttab[k], i);
 	else
 		f = fontname[k].number;
 	hflush();
@@ -1235,7 +1249,7 @@ char code; short f;
 {
 	static short phfont;
 
-#ifdef VAX
+#if	vax || tahoe
 	if ( f > 0177777)
 		error(FATAL, "Impossible font selected");
 #endif
