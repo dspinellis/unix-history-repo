@@ -1,4 +1,6 @@
-char version[] = "@(#)main.c	2.23	(Berkeley)	%G%";
+#ifndef lint
+char version[] = "@(#)main.c	2.24 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -232,7 +234,8 @@ main(argc, argv)
 			errexit("Can't open checklist file: %s\n", FSTAB);
 		while ((fsp = getfsent()) != 0) {
 			if (strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RO))
+			    strcmp(fsp->fs_type, FSTAB_RO) &&
+			    strcmp(fsp->fs_type, FSTAB_RQ))
 				continue;
 			if (preen == 0 ||
 			    passno == 1 && fsp->fs_passno == passno) {
