@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)cmac1	6.2 (Berkeley) %G%
+.\"	@(#)cmac1	8.1 (Berkeley) %G%
 .\"
 .if t .nr L 9i
 .if t .nr W 4.5i \"changes page width from default 6i to 4.5i
