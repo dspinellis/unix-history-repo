@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	5.6 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)htable.c	5.7 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * htable - convert NIC host table into a UNIX format.
@@ -26,7 +32,7 @@ static char sccsid[] = "@(#)htable.c	5.6 (Berkeley) %G%";
 #include "htable.h"		/* includes <sys/types.h> */
 
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define	DATELINES	3	/* these lines usually contain the date */
 #define	MAXNETS		30	/* array size for local, connected nets */
@@ -89,7 +95,7 @@ main(argc, argv)
 		perror("gateways");
 		exit(1);
 	}
-	copygateways(gf, "localgateways");
+	copygateways("localgateways");
 	nf = fopen("networks", "w");
 	if (nf == NULL) {
 		perror("networks");
@@ -337,8 +343,7 @@ copylocal(f, filename)
 	fclose(lhf);
 }
 
-copygateways(f, filename)
-	FILE *f;
+copygateways(filename)
 	char *filename;
 {
 	register FILE *lhf;
@@ -348,7 +353,7 @@ copygateways(f, filename)
 	char gname[80];
 	char junk[80];
 	char buf[500];
-	u_long addr;
+	struct in_addr addr;
 	int net, metric;
 	extern int errno;
 
@@ -375,7 +380,7 @@ copygateways(f, filename)
 			continue;
 		if (!getnetaddr(dname, &net))
 			continue;
-		if (!gethostaddr(gname, &addr))
+		if (!gethostaddr(gname, &addr.s_addr))
 			continue;
 		nl = newname(gname);
 		(void) savegateway(nl, net, addr, metric);
@@ -388,7 +393,6 @@ getnetaddr(name, addr)
 	int *addr;
 {
 	struct netent *np = getnetbyname(name);
-	int n;
 
 	if (np == 0) {
 		*addr = inet_network(name);
@@ -420,10 +424,8 @@ copycomments(in, out, ccount)
 	FILE *in, *out;
 	int ccount;
 {
-	char buf[BUFSIZ];
-	int length;
 	int count;
-	char *fgets();
+	char buf[BUFSIZ], *fgets();
 
 	for (count=0; count < ccount; count++) {
 		if ((fgets(buf, sizeof(buf), in) == NULL) || (buf[0] != ';'))
@@ -453,14 +455,9 @@ putnet(f, v)
 
 putaddr(f, v)
 	FILE *f;
-	u_long v;
+	struct in_addr v;
 {
-	register char *a = (char *)&v;
-	char buf[32];
-
-	(void) sprintf(buf,"%d.%d.%d.%d",
-		UC(a[0]), UC(a[1]), UC(a[2]), UC(a[3]));
-	fprintf(f, "%-16.16s", buf);
+	fprintf(f, "%-16.16s", inet_ntoa(v));
 }
 
 freenames(list)
@@ -504,7 +501,7 @@ gatewayto(net)
 struct gateway *
 savegateway(namelist, net, addr, metric)
 	struct name *namelist;
-	u_long addr;
+	struct in_addr addr;
 	int net, metric;
 {
 	register struct gateway *gp;
