@@ -1,4 +1,6 @@
-static	char sccsid[] = "@(#)c21.c 4.14 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)c21.c 4.15 %G%";
+#endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -34,6 +36,7 @@ char *lastrand; /* last operand of instruction */
 struct node *bflow();
 struct node *bicopt();
 char *findcon();
+char *strcpy();
 
 redun3(p,split) register struct node *p; int split; {
 /* check for 3 addr instr which should be 2 addr */
@@ -207,7 +210,7 @@ bmove() {
 		if (regs[RT1][0] != '$') goto std;
 		if ((shcnt = getnum(&regs[RT1][1])) < 1 || shcnt > 3) goto std;
 		if ((shfrom = isreg(regs[RT2])) >= 0)
-			regfrom = copy(regs[RT2],"]");
+			regfrom = copy(regs[RT2]);
 		if ((shto = isreg(regs[RT3])) >= 0 && shto<NUSE)
 		{
 			int	regnum;
@@ -236,6 +239,8 @@ bmove() {
 					uses[shto] = NULL; splitrand(pf);
 					cp2=regs[RT1]; while (*cp2++!='[');
 					cp1=regfrom; while (*cp2++= *cp1++);
+					*--cp2 = ']';
+					*++cp2 = '\0';
 					newcode(pf);
 				}
 			}
@@ -409,13 +414,12 @@ ashadd:
 
 rmove()
 {
-	register struct node *p, *lastp;
+	register struct node *p;
 	register int r;
 	int r1;
 
 	clearreg();
 	for (p=first.forw; p!=0; p = p->forw) {
-	lastp=p;
 	if (debug) {
 		if (*conloc) {
 			r1=conval[0];
@@ -600,7 +604,7 @@ register struct node *p;
 			if (0<=(r2=isreg(lastrand)) && r2<NUSE) {
 				uses[r2]=uses[r]; uses[r]=0;
 			}
-			redun3(p,0);
+			(void) redun3(p,0);
 			newcode(p); redunm++; flow=r;
 		} else if (p->op==MOV && p->forw->op!=EXTV && p->forw->op!=EXTZV) {
 			/* superfluous fetch */
@@ -626,7 +630,7 @@ register struct node *p;
 				if (0<=(r2=isreg(src)) && r2<NUSE) {
 					uses[r2]=uses[r]; uses[r]=0;
 				}
-				redun3(p,0);
+				(void) redun3(p,0);
 				newcode(p); redunm++; flow=r;
 			} else splitrand(p);
 		}
@@ -659,14 +663,18 @@ register struct node *p;
 			flow=r;
 		}
 	}
-	if (0<=(r=flow)) {olduse=uses[r]; uses[r]=0; *(short *)(regs[r])=0;}
+	if (0<=(r=flow)) {
+		olduse=uses[r];
+		uses[r]=0;
+		regs[r][0]=regs[r][1]=0;
+	}
 		/* these two are here, rather than in bmove(),
 		/* because I decided that it was better to go for 3-address code
 		/* (save time) rather than fancy jbxx (save 1 byte)
 		/* on sequences like  bisl2 $64,r0; movl r0,foo
 		*/
 	if (p->op==BIC) {p=bicopt(p); splitrand(p); lastrand=byondrd(p);}
-	if (p->op==BIS) {bixprep(p,JBSS);           lastrand=byondrd(p);}
+	if (p->op==BIS) {(void) bixprep(p,JBSS);    lastrand=byondrd(p);}
 	/* now look for 'read' or 'modify' (read & write) uses */
 	preg=regs+RT1; 
 	while (*(cp1= *preg++)) {
@@ -767,10 +775,10 @@ bitopt(p) register struct node *p; {
 }
 
 isfield(n) register long n; {/* -1 -> no; else -> position of low bit */
-	register int pos; register long t;
+	register int p; register long t;
 	t= ((n-1)|n) +1;
 	if (n!=0 && (0==t || 0<=ispow2(t))) {
-		pos=0; while(!(n&1)) {n >>= 1; ++pos;} return(pos);
+		p=0; while(!(n&1)) {n >>= 1; ++p;} return(p);
 	} else return(-1);
 }
 
@@ -801,7 +809,7 @@ bicopt(p) register struct node *p; {
 */
 	register char *cp1,*cp2; int r;
 	char src[C2_ASIZE];
-	char lhssiz, subop;
+	char lhssiz, sop;
 	if (!bixprep(p,JBCC)) return(p);
 	if (f==0) {/* the BIC isolates low order bits */
 		siz=pos; pos=0;
@@ -836,13 +844,13 @@ bicopt(p) register struct node *p; {
 				 * However, if the CVT is from a float or
 				 * double, forget it!
 				 */
-				subop = p->back->subop&0xF;	/* type of LHS of CVT/MOVZ */
+				sop = p->back->subop&0xF;	/* type of LHS of CVT/MOVZ */
 				if (equstr(src,cp2) && okio(cp1)
-				  && subop != FFLOAT && subop != DFLOAT
-				  && subop != GFLOAT && subop != HFLOAT
-				  && ((!indexa(cp1) && !autoid(cp1)) || lhssiz == subop)
+				  && sop != FFLOAT && sop != DFLOAT
+				  && sop != GFLOAT && sop != HFLOAT
+				  && ((!indexa(cp1) && !autoid(cp1)) || lhssiz == sop)
 				  && 0<=(r=isreg(cp2)) && r<NUSE
-				  && bitsize[subop]>=(pos+siz)
+				  && bitsize[sop]>=(pos+siz)
 				  && bitsize[p->back->subop>>4]>=(pos+siz)) {/* good CVT */
 					cp1=regs[RT1]; cp2=src; while (*cp2++= *cp1++);
 					delnode(p->back);
@@ -876,13 +884,16 @@ bicopt(p) register struct node *p; {
 jumpsw()
 {
 	register struct node *p, *p1;
-	register t;
+	register struct node *tp;
+	long tl;
+	char *tcp;
+	int ti;
 	int nj;
 
-	t = 0;
+	ti = 0;
 	nj = 0;
 	for (p=first.forw; p!=0; p = p->forw)
-		p->seq = ++t;
+		p->seq = ++ti;
 	for (p=first.forw; p!=0; p = p1) {
 		p1 = p->forw;
 		if (p->op == CBR && p1->op==JBR && p->ref && p1->ref
@@ -891,15 +902,17 @@ jumpsw()
 				continue;
 			p->subop = revbr[p->subop];
 			p->pop=0;
-			t = p1->ref;
+			tp = p1->ref;
 			p1->ref = p->ref;
-			p->ref = t;
-			t = p1->labno;
+			p->ref = tp;
+			tl = p1->labno;
 			p1->labno = p->labno;
-			p->labno = t;
+			p->labno = tl;
 #ifdef COPYCODE
 			if (p->labno == 0) {
-				t = p1->code; p1->code = p->code; p->code = t;
+				tcp = p1->code;
+				p1->code = p->code;
+				p->code = tcp;
 			}
 #endif
 			nrevbr++;
@@ -960,11 +973,6 @@ addsob()
 	}
 }
 
-abs(x)
-{
-	return(x<0? -x: x);
-}
-
 equop(p1, p2)
 register struct node *p1;
 struct node *p2;
@@ -975,6 +983,14 @@ struct node *p2;
 		return(0);
 	if (p1->op>0 && p1->op<MOV)
 		return(0);
+	switch (p1->combop) {
+	case EROU:	case JSW:	case TEXT:	case DATA:
+	case BSS:	case ALIGN:	case WGEN:	case END:
+		/*
+		 * Consider all pseudo-ops to be unique.
+		 */
+		return(0);
+	}
 	if (p1->op==MOVA && p1->labno!=p2->labno) return(0);
 	cp1 = p1->code;
 	cp2 = p2->code;
@@ -988,11 +1004,14 @@ struct node *p2;
 	return(0);
 }
 
+#ifndef delnode
 delnode(p) register struct node *p; {
 	p->back->forw = p->forw;
 	p->forw->back = p->back;
 }
+#endif
 
+#ifndef decref
 decref(p)
 register struct node *p;
 {
@@ -1001,6 +1020,7 @@ register struct node *p;
 		delnode(p);
 	}
 }
+#endif
 
 struct node *
 nonlab(ap)
@@ -1020,9 +1040,13 @@ clearuse() {
 }
 
 clearreg() {
-	register short **i;
-	for (i=regs+NREG; i>regs;) **--i=0;
-	conloc[0] = 0; ccloc[0] = 0;
+	register char **i;
+	for (i=regs; i<regs+NREG; ++i) {
+		**i = 0;
+		*(*i+1) = 0;
+	}
+	conloc[0] = 0;
+	ccloc[0] = 0;
 }
 
 savereg(ai, s, type)
@@ -1045,50 +1069,48 @@ register char *s;
 {
 	register int i;
 
-	source(s); /* handle addressing side effects */
+	(void) source(s); /* handle addressing side effects */
 	if (!natural(s)) {
 		/* wild store, everything except constants vanishes */
 		for (i=NREG; --i>=0;)
-			if (regs[i][1] != '$') *(short *)(regs[i]) = 0;
+			if (regs[i][1] != '$')
+				regs[i][0] = regs[i][1] = 0;
 		conloc[0] = 0; ccloc[0] = 0;
 		return;
 	}
 	if ((i = isreg(s)) >= 0) {
-		*(short *)(regs[i]) = 0; /* if register destination, that reg is a goner */
+		/* if register destination, that reg is a goner */
+		regs[i][0] = regs[i][1] = 0;
 		switch(type & 0xF){
 		case DFLOAT:	/* clobber two at once */
 			/*FALLTHROUGH*/
 		case GFLOAT:
-			*(short *)(regs[i+1]) = 0;
+			regs[i+1][0] = regs[i+1][1] = 0;
 			break;
 		case HFLOAT:	/* clobber four at once */
-			*(short *)(regs[i+1]) = 0;
-			*(short *)(regs[i+2]) = 0;
-			*(short *)(regs[i+3]) = 0;
+			regs[i+1][0] = regs[i+1][1] = 0;
+			regs[i+2][0] = regs[i+2][1] = 0;
+			regs[i+3][0] = regs[i+3][1] = 0;
 			break;
 		}
 		switch((type>>4)&0xF){
 		case DFLOAT:	/* clobber two at once */
 			/*FALLTHROUGH*/
 		case GFLOAT:
-			*(short *)(regs[i+1]) = 0;
+			regs[i+1][0] = regs[i+1][1] = 0;
 			break;
 		case HFLOAT:	/* clobber four at once */
-			*(short *)(regs[i+1]) = 0;
-			*(short *)(regs[i+2]) = 0;
-			*(short *)(regs[i+3]) = 0;
+			regs[i+1][0] = regs[i+1][1] = 0;
+			regs[i+2][0] = regs[i+2][1] = 0;
+			regs[i+3][0] = regs[i+3][1] = 0;
 			break;
 		}
-		/*
-		if (DFLOAT==(type&0xF) || DFLOAT==((type>>4)&0xF))
-			*(short *)(regs[i+1]) = 0;
-		*/
 	}
 	for (i=NREG; --i>=0;)
 		if (regs[i][1]=='*' && equstr(s, regs[i]+2))
-			*(short *)(regs[i]) = 0; /* previous indirection through destination is invalid */
+			regs[i][0] = regs[i][1] = 0; /* previous indirection through destination is invalid */
 	while ((i = findrand(s,0)) >= 0) /* previous values of destination are invalid */
-		*(short *)(regs[i]) = 0;
+		regs[i][0] = regs[i][1] = 0;
 	if (*conloc && equstr(conloc, s))
 		conloc[0] = 0;
 	setcc(s, type); /* natural destinations set condition codes */
@@ -1151,8 +1173,10 @@ check()
 
 	lp = &first;
 	for (p=first.forw; p!=0; p = p->forw) {
-		if (p->back != lp)
-			abort(-1);
+		if (p->back != lp) {
+			fprintf(stderr, "c2: failed internal consistency check -- help!\n");
+			exit(-1);
+		}
 		lp = p;
 	}
 }
@@ -1172,8 +1196,12 @@ char *ap;
 	 || *(p2-2)=='+') {
 		while (*p1 && *p1++!='r');
 		if (isdigit(*p1++))
-			if (isdigit(*p1)) *(short *)(regs[10+*p1-'0'])=0;
-			else *(short *)(regs[*--p1-'0'])=0;
+			if (isdigit(*p1))
+				regs[10+*p1-'0'][0] = regs[10+*p1-'0'][1] = 0;
+			else {
+				--p1;
+				regs[*p1-'0'][0] = regs[*p1-'0'][1] = 0;
+			}
 		return(1);
 	}
 	return(0);
@@ -1191,7 +1219,7 @@ repladdr(p)
 struct node *p;
 {
 	register r;
-	register char *p1, *p2;
+	register char *p1;
 	char **preg; int nrepl;
 
 	preg=regs+RT1; nrepl=0;
@@ -1309,7 +1337,7 @@ findcon(i, type)
 	return(p);
 }
 
-compare(op, acp1, acp2)
+compare(opc, acp1, acp2)
 char *acp1, *acp2;
 {
 	register char *cp1, *cp2;
@@ -1333,30 +1361,28 @@ char *acp1, *acp2;
 		if (*cp1++ != *cp2)
 			return(0);
 	} while (*cp2++);
-	cp1 = n1;
-	cp2 = n2;
-	switch(op) {
+	switch(opc) {
 
 	case JEQ:
-		return(cp1 == cp2);
+		return(n1 == n2);
 	case JNE:
-		return(cp1 != cp2);
+		return(n1 != n2);
 	case JLE:
-		return(((int)cp1) <= ((int)cp2));
+		return(n1 <= n2);
 	case JGE:
-		return(((int)cp1) >= ((int)cp2));
+		return(n1 >= n2);
 	case JLT:
-		return(((int)cp1) < ((int)cp2));
+		return(n1 < n2);
 	case JGT:
-		return(((int)cp1) > ((int)cp2));
+		return(n1 > n2);
 	case JLO:
-		return(cp1 < cp2);
+		return((unsigned) n1 < (unsigned) n2);
 	case JHI:
-		return(cp1 > cp2);
+		return((unsigned) n1 > (unsigned) n2);
 	case JLOS:
-		return(cp1 <= cp2);
+		return((unsigned) n1 <= (unsigned) n2);
 	case JHIS:
-		return(cp1 >= cp2);
+		return((unsigned) n1 >= (unsigned) n2);
 	}
 	return(0);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c20.c	4.8 (Berkeley) %G%";
+static	char sccsid[] = "@(#)c20.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,8 +9,10 @@ static	char sccsid[] = "@(#)c20.c	4.8 (Berkeley) %G%";
 #include "c2.h"
 #include <stdio.h>
 #include <ctype.h>
+#include <sys/types.h>
 
 char _sibuf[BUFSIZ], _sobuf[BUFSIZ];
+caddr_t sbrk();
 int ioflag;
 int fflag;
 long	isn	= 2000000;
@@ -19,23 +21,25 @@ struct optab *getline();
 long lgensym[10] =
   {100000L,200000L,300000L,400000L,500000L,600000L,700000L,800000L,900000L,1000000L};
 
+#define ALLOCSIZE	4096
+
 struct node *
 alloc(an)
 {
 	register int n;
-	register char *p;
+	register struct node *p;
 
 	n = an;
 	n+=sizeof(char *)-1;
 	n &= ~(sizeof(char *)-1);
 	if (lasta+n >= lastr) {
-		if (sbrk(2000) == -1) {
+		if ((int) sbrk(ALLOCSIZE) == -1) {
 			fprintf(stderr, "Optimizer: out of space\n");
 			exit(1);
 		}
-		lastr += 2000;
+		lastr += ALLOCSIZE;
 	}
-	p = lasta;
+	p = (struct node *) lasta;
 	lasta += n;
 	return(p);
 }
@@ -67,9 +71,9 @@ char **argv;
 	}
 	setbuf(stdin, _sibuf);
 	setbuf(stdout, _sobuf);
-	lasta = lastr = sbrk(2);
+	lasta = lastr = (char *) sbrk(2);
 	opsetup();
-	lasta = firstr = lastr = alloc(0);
+	lasta = firstr = lastr = (char *) alloc(0);
 	maxiter = 0;
 	do {
 		isend = input();
@@ -119,15 +123,15 @@ char **argv;
 input()
 {
 	register struct node *p, *lastp;
-	struct optab *op; register char *cp1;
+	struct optab *opp; register char *cp1;
 	static struct optab F77JSW = {".long", T(JSW,1)};
 
 	lastp = &first;
 	for (;;) {
 	  top:
-		op = getline();
-		if (debug && op==0) fprintf(stderr,"? %s\n",line);
-		switch (op->opcode&0377) {
+		opp = getline();
+		if (debug && opp==0) fprintf(stderr,"? %s\n",line);
+		switch (opp->opcode&0377) {
 	
 		case LABEL:
 			p = alloc(sizeof first);
@@ -145,15 +149,15 @@ input()
 	
 		case LGEN:
 			if (*curlp!='L' && !locuse(curlp)) goto std;
-			op= &F77JSW;
+			opp= &F77JSW;
 		case JBR:
-			if (op->opcode==T(JBR,RET) || op->opcode==T(JBR,RSB)) goto std;
+			if (opp->opcode==T(JBR,RET) || opp->opcode==T(JBR,RSB)) goto std;
 		case CBR:
 		case JMP:
 		case JSW:
 		case SOBGEQ: case SOBGTR: case AOBLEQ: case AOBLSS: case ACB:
 			p = alloc(sizeof first);
-			p->combop = op->opcode; p->code=0; cp1=curlp;
+			p->combop = opp->opcode; p->code=0; cp1=curlp;
 			if ((!isdigit(*cp1) || 0==(p->labno=locuse(cp1))) &&
 			  (*cp1!='L' || 0==(p->labno = getnum(cp1+1)))) {/* jbs, etc.? */
 				while (*cp1++); while (*--cp1!=',' && cp1!=curlp);
@@ -169,7 +173,7 @@ input()
 
 		case MOVA:
 			p=alloc(sizeof first);
-			p->combop=op->opcode; p->code=0; cp1=curlp+1;
+			p->combop=opp->opcode; p->code=0; cp1=curlp+1;
 			if (cp1[-1]=='L' || isdigit(cp1[-1])) {
 				while (*cp1++!=','); *--cp1=0;
 				if (0!=(p->labno=locuse(curlp)) ||
@@ -186,9 +190,9 @@ input()
 		case BSS:
 		case DATA:
 			for (;;) {
-				printf("%s%c",line,(op->opcode==LABEL ? ':' : '\n'));
-				if (op->opcode==TEXT) goto top;
-				if (END==(op=getline())->opcode) {/* dangling .data is bad for you */
+				printf("%s%c",line,(opp->opcode==LABEL ? ':' : '\n'));
+				if (opp->opcode==TEXT) goto top;
+				if (END==(opp=getline())->opcode) {/* dangling .data is bad for you */
 					printf(".text\n");
 					break;
 				}
@@ -197,7 +201,7 @@ input()
 		std:
 		default:
 			p = alloc(sizeof first);
-			p->combop = op->opcode;
+			p->combop = opp->opcode;
 			p->labno = 0;
 			p->code = copy(curlp);
 			break;
@@ -205,16 +209,22 @@ input()
 		}
 		p->forw = 0;
 		p->back = lastp;
-		p->pop = op;
+		p->pop = opp;
 		lastp->forw = p;
 		lastp = p;
 		p->ref = 0;
 		if (p->op==CASE) {
 			char *lp; int ncase;
 			lp=curlp; while (*lp++); while (*--lp!='$'); ncase=getnum(lp+1);
-			if (LABEL!=(getline())->opcode) abort(-2);
+			if (LABEL!=(getline())->opcode) {
+				fprintf(stderr, "c2: garbled 'case' instruction\n");
+				exit(-2);
+			}
 			do {
-				if (WGEN!=(getline())->opcode) abort(-3);
+				if (WGEN!=(getline())->opcode) {
+					fprintf(stderr, "c2: garbled 'case' instruction\n");
+					exit(-3);
+				}
 				p = alloc(sizeof first); p->combop = JSW; p->code = 0;
 				lp=curlp; while(*lp++!='-'); *--lp=0; p->labno=getnum(curlp+1);
 				if (isn<=p->labno) isn=1+p->labno;
@@ -222,9 +232,9 @@ input()
 				p->ref = 0; p->pop=0;
 			} while (--ncase>=0);
 		}
-		if (op->opcode==EROU)
+		if (opp->opcode==EROU)
 			return(1);
-		if (op->opcode==END)
+		if (opp->opcode==END)
 			return(0);
 	}
 }
@@ -273,8 +283,6 @@ register char *p;
 locuse(p)
 register char *p;
 {
-	register c; int neg; register long n;
-
 	if (!isdigit(p[0]) || p[1] != 'f' && p[1] != 'b' || p[2]) return(0);
 	return (lgensym[p[0] - '0'] - (p[1] == 'b'));
 }
@@ -382,7 +390,7 @@ char *ap;
 		while (*p++)
 			n++;
 	}
-	onp = np = alloc(n);
+	onp = np = (char *) alloc(n);
 	p = ap;
 	while (*np++ = *p++);
 	if (na>1) {
@@ -401,7 +409,7 @@ opsetup()
 	register struct optab *optp, **ophp;
 	register int i,t;
 
-	for(i=NREG+5;--i>=0;) regs[i]=alloc(C2_ASIZE);
+	for(i=NREG+5;--i>=0;) regs[i]=(char *) alloc(C2_ASIZE);
 	for (optp = optab; optp->opstring[0]; optp++) {
 		t=7; i=0; while (--t>=0) i+= i+optp->opstring[t];
 		ophp = &ophash[i % OPHS];
@@ -438,7 +446,7 @@ oplook()
 
 refcount()
 {
-	register struct node *p, *lp;
+	register struct node *p, *lp, *tp;
 	struct node *labhash[LABHS];
 	register struct node **hp;
 
@@ -461,10 +469,10 @@ refcount()
 					break;
 			}
 			if (lp) {
-				hp = nonlab(lp)->back;
-				if (hp!=lp) {
-					p->labno = hp->labno;
-					lp = hp;
+				tp = nonlab(lp)->back;
+				if (tp!=lp) {
+					p->labno = tp->labno;
+					lp = tp;
 				}
 				p->ref = lp;
 				lp->refc++;
@@ -555,42 +563,39 @@ xjump(p1)
 register struct node *p1;
 {
 	register struct node *p2, *p3;
-	int nxj;
 
-	nxj = 0;
 	if ((p2 = p1->ref)==0)
-		return(0);
+		return;
 	for (;;) {
 		while ((p1 = p1->back) && p1->op==LABEL);
 		while ((p2 = p2->back) && p2->op==LABEL);
 		if (!equop(p1, p2) || p1==p2)
-			return(nxj);
+			return;
 		p3 = insertl(p2);
 		p1->combop = JBR;
 		p1->pop=0;
 		p1->ref = p3;
 		p1->labno = p3->labno;
 		p1->code = 0;
-		nxj++;
 		nxjump++;
 		nchange++;
 	}
 }
 
 struct node *
-insertl(op)
-register struct node *op;
+insertl(np)
+register struct node *np;
 {
 	register struct node *lp;
 
-	if (op->op == LABEL) {
-		op->refc++;
-		return(op);
+	if (np->op == LABEL) {
+		np->refc++;
+		return(np);
 	}
-	if (op->back->op == LABEL) {
-		op = op->back;
-		op->refc++;
-		return(op);
+	if (np->back->op == LABEL) {
+		np = np->back;
+		np->refc++;
+		return(np);
 	}
 	lp = alloc(sizeof first);
 	lp->combop = LABEL;
@@ -598,10 +603,10 @@ register struct node *op;
 	lp->ref = 0;
 	lp->code = 0;
 	lp->refc = 1;
-	lp->back = op->back;
-	lp->forw = op;
-	op->back->forw = lp;
-	op->back = lp;
+	lp->back = np->back;
+	lp->forw = np;
+	np->back->forw = lp;
+	np->back = lp;
 	return(lp);
 }
 

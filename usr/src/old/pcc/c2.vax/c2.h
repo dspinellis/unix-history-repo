@@ -1,4 +1,4 @@
-/*	c2.h	4.8	85/01/16	*/
+/*	c2.h	4.9	85/03/19	*/
 
 /*
  * Header for object code improver
@@ -126,8 +126,13 @@ struct optab {
 } optab[];
 
 struct node {
-	char	op;
-	char	subop;
+	union {
+		struct {
+			char op_op;
+			char op_subop;
+		} un_op;
+		short	un_combop;
+	} op_un;
 	short	refc;
 	struct	node	*forw;
 	struct	node	*back;
@@ -138,9 +143,9 @@ struct node {
 	short	seq;
 };
 
-struct {
-	short	combop;
-};
+#define op op_un.un_op.op_op
+#define subop op_un.un_op.op_subop
+#define combop op_un.un_combop
 
 char	line[512];
 struct	node	first;
@@ -164,7 +169,7 @@ int nbj;
 int nfield;
 
 int	nchange;
-int	isn;
+long	isn;
 int	debug;
 char	*lasta;
 char	*lastr;
@@ -182,10 +187,16 @@ char	ccloc[C2_ASIZE];
 #define RT4 15
 #define	LABHS	127
 
-struct { char lbyte; };
-
 char *copy();
 long getnum();
 struct node *codemove();
 struct node *insertl();
 struct node *nonlab();
+struct node *alloc();
+
+#ifdef notdef
+#define decref(p) \
+	((p) && --(p)->refc <= 0 ? nrlab++, delnode(p) : 0)
+#define delnode(p) \
+	((p)->back->forw = (p)->forw, (p)->forw->back = (p)->back)
+#endif notdef
