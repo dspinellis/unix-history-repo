@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	8.3 (Berkeley) %G%
+.\"	@(#)sysctl.3	8.4 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -91,7 +91,7 @@ listed here, and described in separate sections below.
 .Bl -column CTLXMACHDEPXXX "Next level namesXXXXXX" -offset indent
 .It Sy Pa Name	Next level names	Description
 .It CTL\_DEBUG	sys/sysctl.h	Debugging
-.It CTL\_FS	sys/sysctl.h	File system
+.It CTL\_VFS	sys/mount.h	Filesystem
 .It CTL\_HW	sys/sysctl.h	Generic CPU, I/O
 .It CTL\_KERN	sys/sysctl.h	High kernel limits
 .It CTL\_MACHDEP	sys/sysctl.h	Machine dependent
@@ -150,8 +150,23 @@ as a debugging variable, the following declaration would be used:
 int dospecialcheck = 1;
 struct ctldebug debug5 = { "dospecialcheck", &dospecialcheck };
 .Ed
-.Sh CTL_FS
-There are currently no second level names for the file system.
+.Sh CTL_VFS
+A distinguished second level name, VFS_GENERIC,
+is used to get general information about all filesystems.
+One of its third level identifiers is VFS_MAXTYPENUM
+that gives the highest valid filesystem type number.
+Its other third level identifier is VFS_CONF that
+returns configuration information about the filesystem
+type given as a fourth level identifier (see
+.Xr getvfsbyname 3
+as an example of its use).
+The remaining second level identifiers are the
+filesystem type number returned by a
+.Xr statfs 2
+call or from VFS_CONF.
+The third level identifiers available for each filesystem
+are given in the header file that defines the mount
+argument structure for that filesystem.
 .Sh CTL_HW
 The string and integer information available for the CTL_HW level
 is detailed below.
