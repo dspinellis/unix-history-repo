@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.27 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.28 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -535,7 +535,12 @@ R$+ < @ >		$#local $: $1			no relay or hub: local
 R$+ < @ $j  >		$#local $: $1			we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		deliver to relay/hub
 R$+ < @ $+ >		$#relay $@ $2 $: $1		deliver to relay/hub',
-`# handle locally delivered names
+
+`# if this is quoted, strip the quotes and try again
+R$+			$: $(dequote $1 $)		strip quotes
+R$* $=O $*		$@ $>7 $1 $2 $3			try again
+
+# handle locally delivered names
 R$=L			$#local $: @ $1			special local names
 R$+			$#local $: $1			regular local names
 
@@ -545,11 +550,6 @@ R$+			$#local $: $1			regular local names
 ###########################################################################
 
 S5
-
-# if this is quoted, strip the quotes and try again
-R$+.			$1				strip trailing dots
-R$+			$: $(dequote $1 $)		strip quotes
-R$* $=O $*		$>7 $1 $2 $3			try again
 
 # see if we have a relay or a hub
 R$+			$: $1 < @ $R >
