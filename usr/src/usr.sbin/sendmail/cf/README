@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.19 (Berkeley) %G%
+		@(#)README	6.20 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -291,6 +291,11 @@ bitdomain	Look up bitnet hosts in a table to try to turn them into
 			hash /etc/bitdomain.db -o
 		Keys are the bitnet hostname; values are the corresponding
 		internet hostname.
+uucpdomain	Similar feature for UUCP hosts.  The default map definition
+		is:
+			hash /etc/uudomain.db -o
+		At the moment there is no automagic tool to build this
+		database.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
