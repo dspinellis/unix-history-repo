@@ -462,10 +462,9 @@ sbappendaddr(sb, asa, m0, rights0)		/* XXX */
 			m_freem(m);
 			return (0);
 		}
-		sballoc(sb, m);
 		sballoc(sb, m->m_act);
-	} else
-		sballoc(sb, m);
+	}
+	sballoc(sb, m);
 	if (n = sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
@@ -478,7 +477,8 @@ sbappendaddr(sb, asa, m0, rights0)		/* XXX */
 	m->m_act = m0;
 	m = m0->m_next;
 	m0->m_next = 0;
-	sbcompress(sb, m, m0);
+	if (m)
+		sbcompress(sb, m, m0);
 	return (1);
 }
 
@@ -514,7 +514,8 @@ sbappendrights(sb, rights, m0)
 	m->m_act = m0;
 	m = m0->m_next;
 	m0->m_next = 0;
-	sbcompress(sb, m, m0);
+	if (m)
+		sbcompress(sb, m, m0);
 	return (1);
 }
 #endif
