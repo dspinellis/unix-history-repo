@@ -12,19 +12,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	4.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
-#include <fts.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-int dflag, fflag, iflag, retval, stdin_ok;
+#include <err.h>
+#include <fts.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+int dflag, fflag, iflag, eval, stdin_ok;
+
+int	check __P((char *, char *, struct stat *));
+void	checkdot __P((char **));
+void	rmfile __P((char **));
+void	rmtree __P((char **));
+void	usage __P((void));
 
 /*
  * rm --
@@ -33,12 +41,11 @@ int dflag, fflag, iflag, retval, stdin_ok;
  *	has two specific effects now, ignore non-existent files and force
  * 	file removal.
  */
-
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern char *optarg;
 	extern int optind;
 	int ch, rflag;
 
@@ -72,7 +79,7 @@ main(argc, argv)
 
 	checkdot(argv);
 	if (!*argv)
-		exit(retval);
+		exit (eval);
 
 	stdin_ok = isatty(STDIN_FILENO);
 
@@ -80,16 +87,16 @@ main(argc, argv)
 		rmtree(argv);
 	else
 		rmfile(argv);
-	exit(retval);
+	exit (eval);
 }
 
+void
 rmtree(argv)
 	char **argv;
 {
 	register FTS *fts;
 	register FTSENT *p;
 	register int needstat;
-	struct stat sb;
 
 	/*
 	 * Remove a file hierarchy.  If forcing removal (-f), or interactive
@@ -105,36 +112,38 @@ rmtree(argv)
 
 	if (!(fts = fts_open(argv,
 	    needstat ? FTS_PHYSICAL : FTS_PHYSICAL|FTS_NOSTAT,
-	    (int (*)())NULL))) {
-		(void)fprintf(stderr, "rm: %s.\n", strerror(errno));
-		exit(1);
-	}
+	    (int (*)())NULL)))
+		err(1, NULL);
 	while (p = fts_read(fts)) {
-		switch(p->fts_info) {
+		switch (p->fts_info) {
 		case FTS_DNR:
 		case FTS_ERR:
-			error(p->fts_path, errno);
-			exit(1);
-		/*
-		 * FTS_NS: assume that if can't stat the file, it can't be
-		 * unlinked.
-		 */
+			err(1, "%s", p->fts_path);
+
 		case FTS_NS:
+			/*
+			 * FTS_NS: assume that if can't stat the file, it
+			 * can't be unlinked.
+			 */
 			if (!needstat)
 				break;
-			if (!fflag || errno != ENOENT)
-				error(p->fts_path, errno);
+			if (!fflag || errno != ENOENT) {
+				warn("%s", p->fts_path);
+				eval = 1;
+			}
 			continue;
-		/* Pre-order: give user chance to skip. */
+
 		case FTS_D:
+			/* Pre-order: give user chance to skip. */
 			if (iflag && !check(p->fts_path, p->fts_accpath,
 			    p->fts_statp)) {
 				(void)fts_set(fts, p, FTS_SKIP);
 				p->fts_number = SKIPPED;
 			}
 			continue;
-		/* Post-order: see if user skipped. */
+
 		case FTS_DP:
+			/* Post-order: see if user skipped. */
 			if (p->fts_number == SKIPPED)
 				continue;
 			break;
@@ -156,14 +165,15 @@ rmtree(argv)
 				if (fflag)
 					continue;
 			} else if (p->fts_info != FTS_DP)
-				(void)fprintf(stderr,
-				    "rm: unable to read %s.\n", p->fts_path);
+				warnx("%s: unable to read", p->fts_path);
 		} else if (!unlink(p->fts_accpath) || fflag && errno == ENOENT)
 			continue;
-		error(p->fts_path, errno);
+		warn("%s", p->fts_path);
+		eval = 1;
 	}
 }
 
+void
 rmfile(argv)
 	char **argv;
 {
@@ -179,29 +189,34 @@ rmfile(argv)
 	while (f = *argv++) {
 		/* Assume if can't stat the file, can't unlink it. */
 		if (lstat(f, &sb)) {
-			if (!fflag || errno != ENOENT)
-				error(f, errno);
+			if (!fflag || errno != ENOENT) {
+				warn("%s", f);
+				eval = 1;
+			}
 			continue;
 		}
 		if (S_ISDIR(sb.st_mode) && !df) {
-			(void)fprintf(stderr, "rm: %s: is a directory\n", f);
-			retval = 1;
+			warnx("%s: is a directory", f);
+			eval = 1;
 			continue;
 		}
 		if (!fflag && !check(f, f, &sb))
 			continue;
 		if ((S_ISDIR(sb.st_mode) ? rmdir(f) : unlink(f)) &&
-		    (!fflag || errno != ENOENT))
-			error(f, errno);
+		    (!fflag || errno != ENOENT)) {
+			warn("%s", f);
+			eval = 1;
+		}
 	}
 }
 
+int
 check(path, name, sp)
 	char *path, *name;
 	struct stat *sp;
 {
 	register int first, ch;
-	char modep[15], *user_from_uid(), *group_from_gid();
+	char modep[15];
 
 	/* Check -i first. */
 	if (iflag)
@@ -213,7 +228,7 @@ check(path, name, sp)
 		 * because their permissions are meaningless.
 		 */
 		if (S_ISLNK(sp->st_mode) || !stdin_ok || !access(name, W_OK))
-			return(1);
+			return (1);
 		strmode(sp->st_mode, modep);
 		(void)fprintf(stderr, "override %s%s%s/%s for %s? ",
 		    modep + 1, modep[9] == ' ' ? "" : " ",
@@ -225,10 +240,11 @@ check(path, name, sp)
 	first = ch = getchar();
 	while (ch != '\n' && ch != EOF)
 		ch = getchar();
-	return(first == 'y');
+	return (first == 'y');
 }
 
 #define ISDOT(a)	((a)[0] == '.' && (!(a)[1] || (a)[1] == '.' && !(a)[2]))
+void
 checkdot(argv)
 	char **argv;
 {
@@ -237,15 +253,14 @@ checkdot(argv)
 
 	complained = 0;
 	for (t = argv; *t;) {
-		if (p = rindex(*t, '/'))
+		if (p = strrchr(*t, '/'))
 			++p;
 		else
 			p = *t;
 		if (ISDOT(p)) {
 			if (!complained++)
-			    (void)fprintf(stderr,
-				"rm: \".\" and \"..\" may not be removed.\n");
-			retval = 1;
+				warnx("\".\" and \"..\" may not be removed");
+			eval = 1;
 			for (save = t; t[0] = t[1]; ++t);
 			t = save;
 		} else
@@ -253,14 +268,7 @@ checkdot(argv)
 	}
 }
 
-error(name, val)
-	char *name;
-	int val;
-{
-	(void)fprintf(stderr, "rm: %s: %s.\n", name, strerror(val));
-	retval = 1;
-}
-
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: rm [-dfiRr] file ...\n");
