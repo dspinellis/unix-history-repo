@@ -6,14 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)key.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)key.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
+#include <err.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "stty.h"
 #include "extern.h"
 
@@ -42,27 +45,28 @@ static struct key {
 #define	F_OFFOK		0x02			/* can turn off */
 	int flags;
 } keys[] = {
-	"all",		f_all,		0,
-	"cbreak",	f_cbreak,	F_OFFOK,
-	"cols",		f_columns,	F_NEEDARG,
-	"columns",	f_columns,	F_NEEDARG,
-	"cooked", 	f_sane,		0,
-	"dec",		f_dec,		0,
-	"everything",	f_everything,	0,
-	"extproc",	f_extproc,	F_OFFOK,
-	"ispeed",	f_ispeed,	F_NEEDARG,
-	"new",		f_tty,		0,
-	"nl",		f_nl,		F_OFFOK,
-	"old",		f_tty,		0,
-	"ospeed",	f_ospeed,	F_NEEDARG,
-	"raw",		f_raw,		F_OFFOK,
-	"rows",		f_rows,		F_NEEDARG,
-	"sane",		f_sane,		0,
-	"size",		f_size,		0,
-	"speed",	f_speed,	0,
-	"tty",		f_tty,		0,
+	{ "all",	f_all,		0 },
+	{ "cbreak",	f_cbreak,	F_OFFOK },
+	{ "cols",	f_columns,	F_NEEDARG },
+	{ "columns",	f_columns,	F_NEEDARG },
+	{ "cooked", 	f_sane,		0 },
+	{ "dec",	f_dec,		0 },
+	{ "everything",	f_everything,	0 },
+	{ "extproc",	f_extproc,	F_OFFOK },
+	{ "ispeed",	f_ispeed,	F_NEEDARG },
+	{ "new",	f_tty,		0 },
+	{ "nl",		f_nl,		F_OFFOK },
+	{ "old",	f_tty,		0 },
+	{ "ospeed",	f_ospeed,	F_NEEDARG },
+	{ "raw",	f_raw,		F_OFFOK },
+	{ "rows",	f_rows,		F_NEEDARG },
+	{ "sane",	f_sane,		0 },
+	{ "size",	f_size,		0 },
+	{ "speed",	f_speed,	0 },
+	{ "tty",	f_tty,		0 },
 };
 
+int
 ksearch(argvp, ip)
 	char ***argvp;
 	struct info *ip;
@@ -82,20 +86,24 @@ ksearch(argvp, ip)
 	tmp.name = name;
 	if (!(kp = (struct key *)bsearch(&tmp, keys,
 	    sizeof(keys)/sizeof(struct key), sizeof(struct key), c_key)))
-		return(0);
-	if (!(kp->flags & F_OFFOK) && ip->off)
-		err("illegal option -- %s\n%s", name, usage);
-	if (kp->flags & F_NEEDARG && !(ip->arg = *++*argvp))
-		err("option requires an argument -- %s\n%s", name, usage);
+		return (0);
+	if (!(kp->flags & F_OFFOK) && ip->off) {
+		errx(1, "illegal option -- %s", name);
+		usage();
+	}
+	if (kp->flags & F_NEEDARG && !(ip->arg = *++*argvp)) {
+		errx(1, "option requires an argument -- %s", name);
+		usage();
+	}
 	kp->f(ip);
-	return(1);
+	return (1);
 }
 
-static
+static int
 c_key(a, b)
         const void *a, *b;
 {
-        return(strcmp(((struct key *)a)->name, ((struct key *)b)->name));
+        return (strcmp(((struct key *)a)->name, ((struct key *)b)->name));
 }
 
 void
@@ -251,5 +259,5 @@ f_tty(ip)
 
 	tmp = TTYDISC;
 	if (ioctl(0, TIOCSETD, &tmp) < 0)
-		err("TIOCSETD: %s", strerror(errno));
+		err(1, "TIOCSETD");
 }
