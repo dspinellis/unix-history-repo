@@ -30,6 +30,8 @@
  *  PPS		      - supply loopfilter with PPS samples (if configured)
  *  PPSPPS            - notify loopfilter of PPS file descriptor
  *
+ *  FREEBSD_CONRAD    - Make very cheap "Conrad DCF77 RS-232" gadget work
+ *			with FreeBSD.
  * TTY defines:
  *  HAVE_BSD_TTYS     - currently unsupported
  *  HAVE_SYSV_TTYS    - will use termio.h
@@ -82,6 +84,9 @@
 #include <time.h>
 
 #include <sys/errno.h>
+#ifdef FREEBSD_CONRAD
+#include <sys/ioctl.h>
+#endif
 extern int errno;
 
 #if !defined(STREAM) && !defined(HAVE_SYSV_TTYS) && !defined(HAVE_BSD_TTYS) && !defined(HAVE_TERMIOS)
@@ -440,7 +445,12 @@ static poll_info_t wsdcf_pollinfo = { WS_POLLRATE, WS_POLLCMD, WS_CMDSIZE };
 #define RAWDCF_ROOTDELAY	0x00000364 /* 13 ms */
 #define RAWDCF_FORMAT		"RAW DCF77 Timecode"
 #define RAWDCF_MAXUNSYNC	(0) /* sorry - its a true receiver - no signal - no time */
+
+#ifdef FREEBSD_CONRAD
+#define RAWDCF_CFLAG            (CS8|CREAD|CLOCAL)
+#else
 #define RAWDCF_CFLAG            (B50|CS8|CREAD|CLOCAL)
+#endif
 #define RAWDCF_IFLAG		0
 #define RAWDCF_OFLAG		0
 #define RAWDCF_LFLAG		0
@@ -1482,11 +1492,22 @@ local_receive(rbufp)
   struct parseunit *parse = (struct parseunit *)rbufp->recv_srcclock;
   register int count;
   register char *s;
+#ifdef FREEBSD_CONRAD
+  struct timeval foo;
+#endif
+
   /*
    * eat all characters, parsing then and feeding complete samples
    */
   count = rbufp->recv_length;
   s = rbufp->recv_buffer;
+#ifdef FREEBSD_CONRAD
+  ioctl(parse->fd,TIOCTIMESTAMP,&foo);
+  TVTOTS(&foo, &rbufp->recv_time);
+  rbufp->recv_time.l_uf += TS_ROUNDBIT;
+  rbufp->recv_time.l_ui += JAN_1970;
+  rbufp->recv_time.l_uf &= TS_MASK;
+#endif
 
   while (count--)
     {
@@ -2269,7 +2290,10 @@ parse_start(sysunit, peer)
       tm.c_iflag     = clockinfo[type].cl_iflag;
       tm.c_oflag     = clockinfo[type].cl_oflag;
       tm.c_lflag     = clockinfo[type].cl_lflag;
-	
+#ifdef FREEBSD_CONRAD
+      tm.c_ispeed    = 50;
+      tm.c_ospeed    = 50;
+#endif
       if (TTY_SETATTR(fd232, &tm) == -1)
 	{
 	  syslog(LOG_ERR, "PARSE receiver #%d: parse_start: tcsetattr(%d, &tm): %m", unit, fd232);
@@ -2312,6 +2336,21 @@ parse_start(sysunit, peer)
       return 0;		/* well, ok - special initialisation broke */
     }
   
+#ifdef FREEBSD_CONRAD
+      {
+	int i,j;
+	struct timeval tv;
+	ioctl(parse->fd,TIOCTIMESTAMP,&tv);
+	j = TIOCM_RTS;
+	i = ioctl(fd232, TIOCMBIC, &j);
+	if (i < 0) {
+	  syslog(LOG_ERR, 
+	    "PARSE receiver #%d: lowrts_poll: failed to lower RTS: %m", 
+	    CL_UNIT(parse->unit));
+	}
+      }
+#endif
+	
   strcpy(tmp_ctl.parseformat.parse_buffer, parse->parse_type->cl_format);
   tmp_ctl.parseformat.parse_count = strlen(tmp_ctl.parseformat.parse_buffer);
 
