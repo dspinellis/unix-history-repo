@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.2 (Berkeley) %G%
+#	@(#)vnode_if.src	8.3 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -236,6 +236,11 @@ vop_valloc {
 	IN int mode;
 	IN struct ucred *cred;
 	OUT struct vnode **vpp;
+};
+
+vop_reallocblks {
+	IN struct vnode *vp;
+	IN struct cluster_save *buflist;
 };
 
 vop_vfree {
