@@ -1,0 +1,6 @@
+To: eric
+Subject: test/mime02
+MIME-Version: 1.0
+
+test 02
+MIME-Version header, no others, no 8-bit

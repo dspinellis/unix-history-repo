@@ -1,0 +1,8 @@
+To: eric
+Subject: test/mime05
+MIME-Version: 1.0
+
+test 05
+MIME-Version header, no others, much 8-bit data
+ ¡¢£¤¥¦§¨©ª«¬­®¯
+°±²³´µ¶·¸¹º»¼½¾¿

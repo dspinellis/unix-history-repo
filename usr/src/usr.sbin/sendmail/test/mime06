@@ -1,0 +1,12 @@
+To: eric
+Subject: test/mime06
+MIME-Version: 1.0
+Content-Type: message/rfc822; boundary=foobar
+
+--foobar
+
+test 06
+MIME-Version header, message/rfc822, with small 8-bit data
+¯
+
+--foobar--
