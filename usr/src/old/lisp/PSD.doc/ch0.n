@@ -1,0 +1,149 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ch0.n	4.1 (Berkeley) %G%
+.\"
+." @(#)ch0.n	34.2 7/9/81
+.pp
+\ \ 
+.sp 2i
+.tl ''\s14The\ \s16F\s14RANZ\ \s16L\s14ISP\ \s14Manual''
+.ps 10
+.sp 1v
+.tl ''by''
+.sp 2v
+.tl ''\fIJohn\ K.\ Foderaro\fP''
+.sp 2v
+.tl ''\fIKeith\ L.\ Sklower\fP''
+.sp 4i
+.tl '''A document in'
+.tl '''four movements'
+.bp
+.sp 1i
+.ft I
+.ll 5.5i
+.in .5i
+.tl ''Overture''
+.sp 2v
+A chorus of students, 
+under the direction of
+Richard Fateman, have contributed to
+building 
+.Fr
+from a mere melody into a full
+symphony .
+The major contributors to the initial system were
+Mike Curry,  John Breedlove and Jeff Levinsky.
+Bill Rowan added the garbage collector and array package.
+Tom London worked on an early compiler and helped in 
+overall system design.
+Keith Sklower has contributed much to 
+.Fr ,
+adding the 
+bignum package and rewriting most of code to increase
+its efficiency and clarity.
+Kipp Hickman and Charles Koester added hunks.
+Mitch Marcus added *rset, evalhook and evalframe.
+Don Cohen and others at Carnegie-Mellon 
+made some improvements to evalframe and 
+maintain the software to use it.
+John Foderaro wrote the compiler, added a few functions,
+and wrote this modest manual.
+.sp 3i
+.ft R
+.ll 6.5i
+.in 0
+\(co 1980 by the Regents of the University of California.
+.br
+All rights reserved.
+.br
+.sp 2v
+Work reported herein was supported in part by 
+the U. S. Department
+of Energy, Contract DE-AT03-76SF00034, Project Agreement
+DE-AS03-79ER10358, and the National Science
+Foundation under Grant No.  MCS 7807291
+.sp 2v
+UNIX is a trademark of Bell Laboratories.
+.bp
+.ps 16
+.sp 1i
+.tl ''Score''
+.sp .5i
+.ps 12
+.in 1i.
+.ti 2i
+\fBFirst Movement \fI(allegro non troppo)\fR
+.ps 10
+.sp 1v
+.de CH
+.ti -.5i
+\fR\\$1 \\$2\fP
+.br
+..
+.ft I
+.CH 1. F\s-2RANZ\s0\ L\s-2ISZT\s0 
+Introduction to 
+.Fr ,
+details of data types,
+and description of notation
+.CH 2. Data\ Structure\ Access
+Functions for the creation, destruction  
+and  manipulation of lisp data objects.
+.CH 3. Arithmetic\ Functions
+Functions to perform arithmetic operations.
+.CH 4. Special\ Functions
+Functions for altering flow of control.
+Functions for mapping other functions over lists.
+.CH 5. I/O\ Functions
+Functions for reading and writing from ports.
+Functions for the modification of the reader's syntax.
+.CH 6. System\ Functions 
+Functions for storage management, debugging, and for the reading 
+and setting of global Lisp status variables.
+Functions for doing UNIX specific tasks such as process control.
+.ft R
+.sp 2v
+.ps 12
+.ti 2i
+\fBSecond Movement \fI(Largo)\fR
+.ps 10
+.sp 1v
+.ft I
+.CH 7. The\ Reader
+A description of the syntax codes used by the reader.
+An explanation of character macros.
+.CH 8. Functions\ and\ Macros 
+A description of the various types of functions and macros.
+An example of the use of foreign functions.
+.CH 9. Arrays  
+A detailed description of the parts of an array and of 
+Maclisp compatible arrays.
+.CH 10. Exception\ Handling 
+A description of the error handling sequence and of autoloading.
+.ft R
+.sp 2v
+.ps 12
+.ti 2i
+\fBThird Movement \fI(Scherzo)\fR
+.ps 10
+.sp 1v
+.ft I
+.CH 11. The\ Joseph\ Lister\ Trace\ Package 
+A description of a very useful debugging aid.
+.CH 12. Liszt,\ the\ lisp\ compiler 
+A description of the operation of the
+compiler and hints for making functions compilable.
+.ft R
+.sp 2v
+.ps 12
+.ti 2i
+\fBFinal Movement \fI(allegro)\fR
+.ps 10
+.sp 1v
+.ft I
+.CH Appendix\ A -\ Function\ Index 
+.CH Appendix\ B -\ List\ of\ Special\ Symbols
+.CH Appendix\ C -\ Short\ Subjects
+Garbage collector, Debugging, Top Level
