@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987, 1993, 1994
+ * Copyright (c) 1987, 1993, 1994, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1987, 1993\n\
+"@(#) Copyright (c) 1987, 1993, 1994, 1995\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
