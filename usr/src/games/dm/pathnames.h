@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
+#define	_PATH_CONFIG	"/etc/dm.conf"
 #define	_PATH_HIDE	"/usr/games/hide/"
-#define	_PATH_CONFIG	"/etc/dm.config"
-#define	_PATH_NOGAMES	"/usr/games/nogames"
-#define	_PATH_LOG	"/var/log/dm.log"
+#define	_PATH_LOG	"/var/log/games.log"
+#define	_PATH_NOGAMES	"/etc/nogames"

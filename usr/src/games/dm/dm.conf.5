@@ -3,14 +3,17 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dm.conf.5	5.5 (Berkeley) %G%
+.\"	@(#)dm.conf.5	5.6 (Berkeley) %G%
 .\"
-.TH DM.CONFIG 5 ""
+.TH DMCONF 5 ""
 .UC 5
 .SH NAME
-dm.config \- dm configuration file
+dm.conf \- dm configuration file
 .SH DESCRIPTION
-\fIDm.config\fP is the configuration file for the \fIdm\fP(8) program.
+.I Dm.conf
+is the configuration file for the
+.IR dm (8)
+program.
 It consists of lines beginning with one of three keywords, ``badtty'',
 ``game'', and ``time''.  All other lines are ignored.
 .PP
@@ -21,7 +24,7 @@ to keep the uucp dialout, ``tty19'', from being used for games, the
 entry would be:
 .PP
 .RS
-	badtty	/dev/tty19
+badtty	/dev/tty19
 .RE
 .PP
 Any day/hour combination listed after the keyword ``time'' will disallow
@@ -33,7 +36,7 @@ the following entry allows games playing before 8AM and after 5PM on
 Mondays.
 .PP
 .RS
-	time		Monday	8	17
+time		Monday	8	17
 .RE
 .PP
 Any game listed after the keyword ``game'' will set parameters for a specific
@@ -50,8 +53,10 @@ users and a load average of 5 or less; all other games may be run any time
 the system has 15 or less users.
 .PP
 .RS
-	game		hack		5	10	*
-	game		default	*	15	*
+game		hack		5	10	*
+game		default	*	15	*
 .RE
+.SH FILES
+/etc/dm.conf	\fIdm\fP(8) configuration file
 .SH "SEE ALSO"
 setpriority(2), ttyname(3), dm(8)
