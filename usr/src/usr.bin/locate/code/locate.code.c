@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -158,6 +158,9 @@ main(argc, argv)
 			oldpath = buf2;
 		}
 	}
+	/* Non-zero status if there were errors */
+	if (fflush(stdout) != 0 || ferror(stdout))
+		exit(1);
 	exit(0);
 }
 
