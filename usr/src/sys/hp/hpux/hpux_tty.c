@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.11 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -164,15 +164,15 @@ hpuxtermio(fp, com, data, p)
 	case HPUXTCSETA:
 	case HPUXTCSETAW:
 	case HPUXTCSETAF:
-		if (newi)
-			bcopy(data, (char *)&htios, sizeof htios);
-		else
-			termiototermios((struct termio *)data, &htios);
 		/*
 		 * Get old characteristics and determine if we are a tty.
 		 */
 		if (error = (*ioctlrout)(fp, TIOCGETA, (caddr_t)&tios, p))
 			break;
+		if (newi)
+			bcopy(data, (char *)&htios, sizeof htios);
+		else
+			termiototermios((struct termio *)data, &htios, &tios);
 		/*
 		 * Set iflag.
 		 * Same through ICRNL, no HP-UX equiv for IMAXBEL
@@ -306,9 +306,10 @@ hpuxtermio(fp, com, data, p)
 	return(error);
 }
 
-termiototermios(tio, tios)
+termiototermios(tio, tios, bsdtios)
 	struct hpuxtermio *tio;
 	struct hpuxtermios *tios;
+	struct termios *bsdtios;
 {
 	int i;
 
@@ -329,6 +330,11 @@ termiototermios(tio, tios)
 		tios->c_cc[HPUXVMINS] = tio->c_cc[HPUXVMIN];
 		tios->c_cc[HPUXVTIMES] = tio->c_cc[HPUXVTIME];
 	}
+	tios->c_cc[HPUXVMINS] = bsdtios->c_cc[VMIN];
+	tios->c_cc[HPUXVTIMES] = bsdtios->c_cc[VTIME];
+	tios->c_cc[HPUXVSUSP] = bsdtios->c_cc[VSUSP];
+	tios->c_cc[HPUXVSTART] = bsdtios->c_cc[VSTART];
+	tios->c_cc[HPUXVSTOP] = bsdtios->c_cc[VSTOP];
 }
 
 termiostotermio(tios, tio)
@@ -344,7 +350,7 @@ termiostotermio(tios, tio)
 	tio->c_line = tios->c_reserved;
 	for (i = 0; i <= HPUXVSWTCH; i++)
 		tio->c_cc[i] = tios->c_cc[i];
-	if (tios->c_lflag & ICANON) {
+	if (tios->c_lflag & TIO_ICANON) {
 		tio->c_cc[HPUXVEOF] = tios->c_cc[HPUXVEOF];
 		tio->c_cc[HPUXVEOL] = tios->c_cc[HPUXVEOL];
 	} else {
