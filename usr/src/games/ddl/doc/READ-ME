@@ -1,0 +1,17 @@
+
+This directory contains the following documentation files.
+
+doc.ms		Nroff -ms document describing DDL syntax
+builtins.ms	Nroff -ms document describing builtin routines
+	Use "tbl doc.ms builtins.ms|troff -ms" to typeset the manual.
+
+ddlcomp.6	Manual page for the DDL compiler
+ddlrun.6	Manual page for the DDL interpreter (runtime package)
+
+tiny.ddl	A minimal-size (nearly) ddl sample.
+demo.sc		Output from tiny.ddl
+
+wishlist	Plans for changes to DDL, including changes which
+		have been made to DDL since April '80 (which is
+		the date of the document most people have seen
+		as well as being the version that UCB distributes.
