@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	4.3 %G%";
+static	char sccsid[] = "@(#)format.c	4.4 %G%";
 #endif
 /*
  *
@@ -65,10 +65,7 @@ STRING		ifp;
 		FI
 
 		IF *fp==0 THEN break; FI
-		IF exact ANDF dot==savdot ANDF itype==ISP ANDF cursym->n_un.n_name[0]=='_' ANDF *fp=='i'
-		THEN exform(1,"x",itype,ptype); fp++; printc(EOR); /* entry mask */
-		ELSE fp=exform(fcount,fp,itype,ptype);
-		FI
+		fp=exform(fcount,fp,itype,ptype);
 	    OD
 	    dotinc=dot-savdot;
 	    dot=savdot;
