@@ -1,5 +1,5 @@
 #
-#	Makefile	1.10	88/01/15
+#	Makefile	1.11	89/03/06
 #
 # Makefile for tahoe pcc
 #
@@ -139,6 +139,9 @@ clean:
 	${RM} *.o ccom f1 cgram.c rodata.c pcctokens pcclocal.h \
 	    gram.in ${SSRCS} ${FSRCS}
 
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
 lint:
 	lint -hx ${OPTS} -DPASS1COMMON cgram.c \
 	    ${MIP}/xdefs.c ${MIP}/scan.c ${MIP}/pftn.c ${MIP}/trees.c \
@@ -152,55 +155,3 @@ tags:	${SRCS}
 # XXX this is less than complete
 depend: ${SRCS} ${MIP}/fort.c pcclocal.h pcctokens
 	mkdep ${CFLAGS} ${INCS} ${SRCS} ${MIP}/fort.c
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-code.o: code.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-code.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-code.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-code.o: /usr/include/stab.h
-local.o: local.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-local.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-local2.o: local2.c ../../mip/pass2.h macdefs.h mac2defs.h ../../mip/manifest.h
-local2.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-local2.o: /usr/include/ctype.h
-order.o: order.c ../../mip/pass2.h macdefs.h mac2defs.h ../../mip/manifest.h
-order.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-rel.o: rel.c
-stab.o: stab.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-stab.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-stab.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-stab.o: /usr/include/stab.h
-common.o: ../../mip/common.c
-match.o: ../../mip/match.c ../../mip/pass2.h macdefs.h mac2defs.h
-match.o: ../../mip/manifest.h /usr/include/stdio.h pcclocal.h
-match.o: ../../mip/config.h ../../mip/ndu.h
-optim.o: ../../mip/optim.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-optim.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-pftn.o: ../../mip/pftn.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-pftn.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-reader.o: ../../mip/reader.c ../../mip/pass2.h macdefs.h mac2defs.h
-reader.o: ../../mip/manifest.h /usr/include/stdio.h pcclocal.h
-reader.o: ../../mip/config.h ../../mip/ndu.h
-scan.o: ../../mip/scan.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-scan.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-scan.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/stab.h
-scan.o: /usr/include/ctype.h /usr/include/signal.h /usr/include/machine/trap.h
-xdefs.o: ../../mip/xdefs.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-xdefs.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-cgram.o: ../../mip/cgram.y ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-cgram.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-allo.o: ../../mip/allo.c ../../mip/pass2.h macdefs.h mac2defs.h
-allo.o: ../../mip/manifest.h /usr/include/stdio.h pcclocal.h ../../mip/config.h
-allo.o: ../../mip/ndu.h
-trees.o: ../../mip/trees.c ../../mip/pass1.h macdefs.h ../../mip/manifest.h
-trees.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-trees.o: /usr/include/setjmp.h
-table.o: table.c ../../mip/pass2.h macdefs.h mac2defs.h ../../mip/manifest.h
-table.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
-fort.o: ../../mip/fort.c ../../mip/pass2.h macdefs.h mac2defs.h
-fort.o: ../../mip/manifest.h /usr/include/stdio.h pcclocal.h ../../mip/config.h
-fort.o: ../../mip/ndu.h fort.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
