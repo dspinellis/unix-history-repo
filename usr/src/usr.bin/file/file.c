@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -167,9 +167,7 @@ char *file;
 		break;
 #if defined(hp300) || defined(hp800)
 	case MID_HPUX:
-		if (((struct hpux_exec *)buf)->ha_version == BSDVNUM)
-			printf("BSD generated ");
-		printf("HP-UX series 200/300 ");
+		printf("HP-UX series [234]00 ");
 		ishpux300 = 1;
 		if (hdr->a_magic == 0406) {
 			printf("relocatable object\n");
@@ -221,6 +219,12 @@ char *file;
 			printf("relocatable object\n");
 			return;
 		}
+#if defined(hp300)
+		if (ishpux300) {
+			if (((int *)buf)[2] & 0x40000000)
+				printf("dynamically-linked ");
+		}
+#endif
 		printf("executable");
 #if defined(hp300) || defined(hp800)
 		if (ishpux300) {
@@ -235,6 +239,11 @@ char *file;
 			printf(" not stripped");
 		printf("\n");
 		return;
+#if defined(hp300)
+	case 0x10e:
+		printf("shared library, version %d\n", ((short *)buf)[2]);
+		return;
+#endif
 	}
 
 	switch (*(int *)buf) {
