@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dkbad.h	7.2 (Berkeley) 2/15/91
+ *	from: @(#)dkbad.h	7.2 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 /*

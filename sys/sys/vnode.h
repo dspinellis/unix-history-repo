@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vnode.h	7.39 (Berkeley) 6/27/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00129
- * --------------------         -----   ----------------------
- *
- * 02 Apr 93	Paul Popelka		Added support for PCFS
- *
+ *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #ifndef KERNEL

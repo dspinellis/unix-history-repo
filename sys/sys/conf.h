@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)conf.h	7.9 (Berkeley) 5/5/91
+ *	from: @(#)conf.h	7.9 (Berkeley) 5/5/91
+ *	$Id$
  */
 
 /*

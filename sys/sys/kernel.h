@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kernel.h	7.4 (Berkeley) 2/15/91
+ *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 /* Global variables for the kernel. */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tablet.h	7.5 (Berkeley) 2/15/91
+ *	from: @(#)tablet.h	7.5 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 #ifndef _TABLET_H_

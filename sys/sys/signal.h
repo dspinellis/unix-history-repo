@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)signal.h	7.16 (Berkeley) 3/17/91
+ *	from: @(#)signal.h	7.16 (Berkeley) 3/17/91
+ *	$Id$
  */
 
 #ifndef	_SIGNAL_H_

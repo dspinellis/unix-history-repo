@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)wait.h	7.17 (Berkeley) 6/19/91
+ *	from: @(#)wait.h	7.17 (Berkeley) 6/19/91
+ *	$Id$
  */
 
 #ifndef _SYS_WAIT_H_

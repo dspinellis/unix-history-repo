@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ipc.h	7.2 (Berkeley) 2/5/91
+ *	from: @(#)ipc.h	7.2 (Berkeley) 2/5/91
+ *	$Id$
  */
 
 /*

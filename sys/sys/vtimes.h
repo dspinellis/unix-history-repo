@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vtimes.h	7.2 (Berkeley) 5/5/91
+ *	from: @(#)vtimes.h	7.2 (Berkeley) 5/5/91
+ *	$Id$
  */
 
 /*

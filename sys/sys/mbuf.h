@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mbuf.h	7.14 (Berkeley) 12/5/90
+ *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
+ *	$Id$
  */
 
 #ifndef M_WAITOK

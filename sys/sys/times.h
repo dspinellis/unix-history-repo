@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)times.h	7.6 (Berkeley) 3/9/91
+ *	from: @(#)times.h	7.6 (Berkeley) 3/9/91
+ *	$Id$
  */
 
 #include <machine/ansi.h>

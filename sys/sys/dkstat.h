@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dkstat.h	7.5 (Berkeley) 2/15/91
+ *	from: @(#)dkstat.h	7.5 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 #define	CP_USER		0

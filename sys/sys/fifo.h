@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fifo.h	7.1 (Berkeley) 4/15/91
+ *	from: @(#)fifo.h	7.1 (Berkeley) 4/15/91
+ *	$Id$
  */
 
 #ifdef FIFO

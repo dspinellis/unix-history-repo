@@ -30,18 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty.h	7.10 (Berkeley) 6/26/91
- * $Header: /a/cvs/386BSD/src/sys/sys/tty.h,v 1.2 1993/07/30 10:52:01 jkh Exp $
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00061
- * --------------------         -----   ----------------------
- *
- * 18 Aug 92	Stephen McKay		Fixed RB_LEN macro
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- * --------------------         -----   ----------------------
- *
+ *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
+ *	$Id$
  */
 
 #ifndef _SYS_TTY_H_
