@@ -1,4 +1,4 @@
-/*	mt.c	6.3	84/09/25	*/
+/*	mt.c	6.4	85/03/13	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -31,6 +31,7 @@
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "mbareg.h"
@@ -81,6 +82,7 @@ struct	mu_softc {
 	char	*sc_mesg;		/* text for interrupt type code */
 	char	*sc_fmesg;		/* text for tape error code */
 #endif
+	struct	tty *sc_ttyp;		/* record user's tty for errors */
 } mu_softc[NMU];
 
 struct	buf	rmtbuf[NMT];		/* data transfer buffer structures */
@@ -203,6 +205,7 @@ mtopen(dev, flag)
 		      ? (daddr_t)0
 		      : (daddr_t)INF;
 	sc->sc_flags = 0;
+	sc->sc_ttyp = u.u_ttyp;
 	return (0);
 }
 
@@ -504,7 +507,7 @@ mtdtint(mi, mbsr)
 	case MTER_OFFLINE:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			printf("mu%d: offline\n", MUUNIT(bp->b_dev));
+			tprintf(sc->sc_ttyp, "mu%d: offline\n", MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
 		break;
@@ -512,13 +515,14 @@ mtdtint(mi, mbsr)
 	case MTER_NOTAVL:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			printf("mu%d: offline (port selector)\n", MUUNIT(bp->b_dev));
+			tprintf(sc->sc_ttyp, "mu%d: offline (port selector)\n",
+			    MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
 		break;
 
 	case MTER_FPT:
-		printf("mu%d: no write ring\n", MUUNIT(bp->b_dev));
+		tprintf(sc->sc_ttyp, "mu%d: no write ring\n", MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		break;
 
@@ -530,7 +534,7 @@ mtdtint(mi, mbsr)
 		/* Code 010 means a garbage record, nothing serious. */
 
 		if (((er & MTER_FAILCODE) >> 10) == 010) {
-			printf("mu%d: rn=%d bn=%d unreadable record\n",
+			tprintf(sc->sc_ttyp, "mu%d: rn=%d bn=%d unreadable record\n",
 			    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno);
 			bp->b_flags |= B_ERROR;
 			break;
@@ -547,7 +551,7 @@ mtdtint(mi, mbsr)
 		/* error processing.  This is a bit messy, so leave	*/
 		/* well enough alone.					*/
 
-		printf("mu%d: hard error (data transfer) rn=%d bn=%d mbsr=%b er=%o (octal) ds=%b\n",
+		tprintf(sc->sc_ttyp, "mu%d: hard error (data transfer) rn=%d bn=%d mbsr=%b er=%o (octal) ds=%b\n",
 		    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno,
 		    mbsr, mbsr_bits, er,
 		    MASKREG(sc->sc_dsreg), mtds_bits);
@@ -668,7 +672,7 @@ mtndtint(mi)
 		return (MBN_SKIP);	/* ignore "rewind started" interrupt */
 
 	case MTER_NOTCAP:
-		printf("mu%d: blank tape\n", MUUNIT(bp->b_dev));
+		tprintf(sc->sc_ttyp, "mu%d: blank tape\n", MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 
@@ -699,7 +703,7 @@ mtndtint(mi)
 		return (MBN_RETRY);
 
 	case MTER_FPT:
-		printf("mu%d: no write ring\n", MUUNIT(bp->b_dev));
+		tprintf(sc->sc_ttyp, "mu%d: no write ring\n", MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 
@@ -712,7 +716,7 @@ mtndtint(mi)
 			return(MBN_DONE);
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			printf("mu%d: offline\n", MUUNIT(bp->b_dev));
+			tprintf(sc->sc_ttyp, "mu%d: offline\n", MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
@@ -720,7 +724,7 @@ mtndtint(mi)
 	case MTER_NOTAVL:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			printf("mu%d: offline (port selector)\n", MUUNIT(bp->b_dev));
+			tprintf(sc->sc_ttyp, "mu%d: offline (port selector)\n", MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
@@ -732,7 +736,7 @@ mtndtint(mi)
 		/* fall through */
 
 	default:
-		printf("mu%d: hard error (non data transfer) rn=%d bn=%d er=%o (octal) ds=%b\n",
+		tprintf(sc->sc_ttyp, "mu%d: hard error (non data transfer) rn=%d bn=%d er=%o (octal) ds=%b\n",
 		    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno,
 		    er, MASKREG(sc->sc_dsreg), mtds_bits);
 #ifdef MTLERRM
