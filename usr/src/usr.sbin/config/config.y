@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
 %token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA
 %{
-/*	config.y	1.6	81/04/02	*/
+/*	config.y	1.7	81/04/02	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -81,7 +81,7 @@ Device_spec:
 	DISK Dev_name Dev_info Int_spec =
 				{  cur.d_dk = 1; cur.d_type = DEVICE; } |
 	CONTROLLER Dev_name Dev_info Int_spec = {  cur.d_type = CONTROLLER; } |
-	PSEUDO_DEVICE Dev_name = { cur.d_type = PSEUDO_DEVICE ; }
+	PSEUDO_DEVICE Init_dev Dev = { cur.d_type = PSEUDO_DEVICE ; }
 	;
 
 Dev_name:
