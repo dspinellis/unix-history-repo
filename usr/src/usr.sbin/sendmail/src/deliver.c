@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.64 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -783,7 +783,7 @@ openmailer(m, pvp, ctladdr, clever, e)
 				continue;
 
 			/* try the connection */
-			setproctitle("%s %s: %s", e->e_id, mxhosts[1], "user open");
+			setproctitle("%s %s: %s", e->e_id, mxhosts[j], "user open");
 			message(Arpa_Info, "Connecting to %s (%s)...",
 				mxhosts[j], m->m_name);
 			i = makeconnection(mxhosts[j], port, mci,
