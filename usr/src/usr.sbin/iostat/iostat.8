@@ -3,65 +3,62 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)iostat.8	6.3 (Berkeley) %G%
+.\"	@(#)iostat.8	6.4 (Berkeley) %G%
 .\"
 .TH IOSTAT 8 ""
 .UC 4
 .SH NAME
 iostat \- report I/O statistics
 .SH SYNOPSIS
-.B iostat
-[ drives ]
-[ interval [ count ] ]
+.nf
+.ft B
+iostat [ \-c count ] [ \-i interval ] [ drives ]
+.ft R
+.fi
 .SH DESCRIPTION
 .I Iostat
 iteratively reports the number of characters read and written to terminals
-per second,
-and, for each disk, the number of transfers per second, kilobytes
-transferred per second,
-and the milliseconds per average seek.
-It also gives the percentage of time the system has
-spent in user mode, in user mode running low priority (niced) processes,
-in system mode, and idling.
+per second, and, for each disk, the number of transfers per second,
+kilobytes transferred per second, and the milliseconds per average seek.
+It also gives the percentage of time the system has spent in user mode,
+in user mode running low priority (niced) processes, in system mode, and
+idling.
 .PP
-To compute this information, for each disk, seeks and data transfer completions
-and number of words transferred are counted;
-for terminals collectively, the number
-of input and output characters are counted.
-Also, each sixtieth of a second,
-the state of each disk is examined
-and a tally is made if the disk is active.
-From these numbers and given the transfer rates
-of the devices it is possible to determine
-average seek times for each device.
+To compute this information, for each disk, seeks and data transfer
+completions and number of words transferred are counted; for terminals
+collectively, the number of input and output characters are counted.
+Also, each sixtieth of a second, the state of each disk is examined and
+a tally is made if the disk is active.
+From these numbers and given the transfer rates of the devices it is
+possible to determine average seek times for each device.
 .PP
-The optional
-.I interval
-argument causes
-.I iostat
-to report once each
-.I interval
-seconds.
-The first report is for  all time since a reboot and each
-subsequent report is for the last interval only.
-.PP
-The optional
+The options are as follows:
+.TP
+\-c
+Display the information
 .I count
-argument restricts the number of reports.
+times.
+The first dislpay is for all time since a reboot and each subsequent report
+is for the time period since the last display.
+.TP
+\-i
+Sleep
+.I interval
+seconds between each display of the information.
 .PP
 If more than 4 disk drives are configured in the system,
 .I iostat
-displays only the first 4 drives, with priority given
-to Massbus disk drives (i.e. if both Unibus and Massbus
-drives are present and the total number of drives exceeds
-4, then some number of Unibus drives will not be displayed
-in favor of the Massbus drives).  To force
+displays only the first 4 drives, with priority given to Massbus disk
+drives (i.e. if both Unibus and Massbus drives are present and the total
+number of drives exceeds 4, then some number of Unibus drives will not be
+displayed in favor of the Massbus drives).
+To force
 .I iostat
-to display specific drives, their names may be supplied on
-the command line.
+to display specific drives, their names may be supplied on the command
+line.
 .SH FILES
 /dev/kmem
 .br
 /vmunix
 .SH SEE ALSO
-vmstat(1)
+systat(1), vmstat(1)
