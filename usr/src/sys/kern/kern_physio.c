@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.10 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -94,7 +94,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 		bp->b_blkno = dblkno;
 		if (bp->b_vp)
 			brelvp(bp);
-		VREF(vp);
+		VHOLD(vp);
 		bp->b_vp = vp;
 		bp->b_dev = vp->v_rdev;
 		bp->b_bcount = nbytes;
