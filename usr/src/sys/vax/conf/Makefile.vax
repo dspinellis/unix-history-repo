@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.18 (Berkeley) %G%
+#	@(#)Makefile.vax	6.19 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -23,7 +23,6 @@
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
 # -DUUDMA	compile in unibus tu58 pseudo-dma code
-# -DSWABIPS	compile in code to byte swap ip packets on 3Mb/s Ethernet
 #
 C2=	/lib/c2
 LD=	/bin/ld
@@ -46,9 +45,9 @@ clean:
 	rm -f eddep *vmunix tags *.o locore.i [a-tv-z]*.s \
 		errs linterrs makelinks
 
-lint: /tmp
+lint: /tmp param.c
 	@lint -hbxn -DGENERIC ${COPTS} ${PARAM} ../vax/Locore.c \
-	  ${CFILES} ../vax/swapgeneric.c ioconf.c | \
+	  ${CFILES} ../vax/swapgeneric.c ioconf.c param.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 
