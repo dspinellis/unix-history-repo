@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.25 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -65,6 +65,7 @@ extern	struct ifnet loif;
  * packet leaves a multiple of 512 bytes of data in remainder.
  * Assumes that ifp is actually pointer to arpcom structure.
  */
+int
 ether_output(ifp, m0, dst, rt0)
 	register struct ifnet *ifp;
 	struct mbuf *m0;
@@ -110,8 +111,7 @@ ether_output(ifp, m0, dst, rt0)
 
 #ifdef INET
 	case AF_INET:
-		if (!arpresolve(ac, rt, m, (struct sockaddr_in *)dst,
-				edst))
+		if (!arpresolve(ac, rt, m, dst, edst))
 			return (0);	/* if not yet resolved */
 		/* If broadcasting on a simplex interface, loopback a copy */
 		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX))
@@ -275,6 +275,7 @@ bad:
  * the packet is in the mbuf chain m without
  * the ether header, which is provided separately.
  */
+void
 ether_input(ifp, eh, m)
 	struct ifnet *ifp;
 	register struct ether_header *eh;
@@ -455,6 +456,7 @@ ether_sprintf(ap)
 /*
  * Perform common duties while attaching to interface list
  */
+void
 ether_ifattach(ifp)
 	register struct ifnet *ifp;
 {
