@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.1 (Berkeley) %G%
+ *	@(#)up.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -12,15 +12,15 @@
  * Also supports header operation and write
  * check for data and/or header.
  */
-#include "../h/param.h" 
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/dkbad.h"
-#include "../h/vmmac.h"
+#include "param.h" 
+#include "inode.h"
+#include "fs.h"
+#include "dkbad.h"
+#include "vmmac.h"
 
-#include "../vax/pte.h"
-#include "../vaxuba/upreg.h"
-#include "../vaxuba/ubareg.h"
+#include "vax/pte.h"
+#include "vaxuba/upreg.h"
+#include "vaxuba/ubareg.h"
 
 #include "saio.h"
 #include "savax.h"
@@ -35,7 +35,9 @@ u_short	ubastd[] = { 0776700 };
 
 extern	struct st upst[];
 
+#ifndef SMALL
 struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
+#endif
 int 	sectsiz;			/* real sector size */
 
 struct	up_softc {
@@ -82,6 +84,7 @@ upopen(io)
 		st = &upst[sc->type];
 		if (st->off[io->i_boff] == -1)
 			_stop("up bad unit");
+#ifndef SMALL
 		/*
 		 * Read in the bad sector table.
 		 */
@@ -102,6 +105,7 @@ upopen(io)
 				upbad[unit].bt_bad[i].bt_trksec = -1;
 			}
 		}	
+#endif
 		sc->gottype = 1;
 	}
 	st = &upst[sc->type];
@@ -171,6 +175,7 @@ restart:
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn = sn%st->nsect;
+#ifndef SMALL
 	if (sc->debug & (UPF_ECCDEBUG|UPF_BSEDEBUG)) {
 		printf("up error: sn%d (cyl,trk,sec)=(%d,%d,%d) ",
 		   bn, cn, tn, sn);
@@ -178,9 +183,11 @@ restart:
 	    	  upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
 		  UPER1_BITS, upaddr->uper2, UPER2_BITS, upaddr->upwc);
 	}
+#endif
 	waitdry = 0;
 	while ((upaddr->upds&UPDS_DRY) == 0 && ++waitdry < sectsiz)
 		DELAY(5);
+#ifndef SMALL
 	if (upaddr->uper1&UPER1_WLE) {
 		/*
 		 * Give up on write locked devices immediately.
@@ -213,6 +220,7 @@ restart:
 	if ((upaddr->uper1&UPER1_HCRC) && (io->i_flgs&F_NBSF) == 0 &&
 	     upecc(io, BSE) == 0)
 		goto success;
+#endif
 	if (++io->i_errcnt > sc->retries) {
 		/*
 		 * After 28 retries (16 without offset, and
@@ -288,6 +296,7 @@ done:
 	return (rv);
 }
 
+#ifndef SMALL
 /*
  * Correct an ECC error, and restart the
  * i/o to complete the transfer (if necessary). 
@@ -424,6 +433,7 @@ upecc(io, flag)
 		up->upwc = twc;
 	return (0);
 }
+#endif
 
 upstart(io, bn)
 	register struct iob *io;
@@ -450,6 +460,7 @@ upstart(io, bn)
 		upaddr->upcs1 = UP_WCOM|UP_GO;
 		break;
 
+#ifndef SMALL
 	case F_HDR|F_RDDATA:	
 		upaddr->upcs1 = UP_RHDR|UP_GO;
 		break;
@@ -467,6 +478,7 @@ upstart(io, bn)
 	case F_HCHECK|F_RDDATA:
 		upaddr->upcs1 = UP_WCHDR|UP_GO;
 		break;
+#endif
 
 	default:
 		io->i_error = ECMD;
@@ -482,6 +494,7 @@ upioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
+#ifndef SMALL
 	int unit = io->i_unit;
 	register struct up_softc *sc = &up_softc[unit];
 	struct st *st = &upst[sc->type];
@@ -512,4 +525,7 @@ upioctl(io, cmd, arg)
 		return (ECMD);
 	}
 	return (0);
+#else SMALL
+	return (ECMD);
+#endif
 }
