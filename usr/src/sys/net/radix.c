@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	8.3 (Berkeley) %G%
+ *	@(#)radix.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -553,7 +553,7 @@ rn_addroute(v_arg, n_arg, head, treenodes)
 	if (netmask) {
 		tt->rn_mask = netmask;
 		tt->rn_b = x->rn_b;
-		tt->rn_flags = x->rn_flags;
+		tt->rn_flags |= x->rn_flags & RNF_NORMAL;
 	}
 	t = saved_tt->rn_p;
 	if (keyduplicated)
