@@ -186,10 +186,20 @@ char *
 tgetstr(id, area)
 	char *id, **area;
 {
+	char ids[3];
 	char *s;
 	int i;
 	
-	if ((i = cgetstr(tbuf, id, &s)) < 0)
+	/*
+	 * XXX
+	 * This is for all the boneheaded programs that relied on tgetstr
+	 * to look only at the first 2 characters of the string passed...
+	 */
+	*ids = *id;
+	ids[1] = id[1];
+	ids[2] = '\0';
+
+	if ((i = cgetstr(tbuf, ids, &s)) < 0)
 		return NULL;
 	
 	strcpy(*area, s);
