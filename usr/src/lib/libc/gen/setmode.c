@@ -16,17 +16,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setmode.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setmode.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <stdio.h>
 
-static mode_t setbits, clrbits, Xbits;
+#define	setbits	set[0]
+#define	clrbits	set[1]
+#define	Xbits	set[2]
 
 mode_t
-getmode(omode)
-	mode_t omode;
+getmode(set, omode)
+	mode_t *set, omode;
 {
 	register mode_t newmode;
 
@@ -40,13 +44,16 @@ getmode(omode)
 #define	STANDARD_BITS	(S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO)
 #define	CLR(a)		{ clrbits |= a; setbits &= ~(a); Xbits &= ~(a); }
 
+mode_t *
 setmode(p)
 	register char *p;
 {
+	extern int errno;
 	register int perm, who;
 	register char op;
-	mode_t mask;
+	mode_t mask, *set;
 	int permXbits;
+	char *malloc();
 
 	/*
 	 * get a copy of the mask for the permissions that are mask
@@ -54,6 +61,11 @@ setmode(p)
 	 */
 	(void)umask(mask = umask(0));
 	mask = ~mask;
+
+	if (!(set = (mode_t *)malloc((u_int)(sizeof(mode_t) * 3)))) {
+		errno = ENOMEM;
+		return(NULL);
+	}
 
 	setbits = clrbits = Xbits = 0;
 
@@ -67,14 +79,14 @@ setmode(p)
 		Xbits = 0;
 		while (*++p)
 			if (*p < '0' || *p > '7')
-				return(-1);
+				return(NULL);
 		if (setbits & clrbits)
-			return(-1);
-		return(0);
+			return(NULL);
+		return(set);
 	}
 
 	if (!*p)
-		return(-1);
+		return(NULL);
 	/*
 	 * accumulate bits to add and subtract from each clause of
 	 * the symbolic mode
@@ -99,7 +111,7 @@ setmode(p)
 			}
 
 getop:		if ((op = *p++) != '+' && op != '-' && op != '=')
-			return(-1);
+			return(NULL);
 
 		who &= ~S_ISTXT;
 		for (perm = 0;; ++p)
@@ -180,5 +192,5 @@ apply:		switch(op) {
 		++p;
 	}
 	clrbits = ~clrbits;
-	return(0);
+	return(set);
 }
