@@ -1,0 +1,87 @@
+.ds s 1
+.TH FP 1 "18 January 1983"
+.SH NAME
+fp \-  Functional Programming language compiler/interpreter
+.SH SYNOPSIS
+.B fp
+.SH DESCRIPTION
+.PP
+.I Fp
+is an
+interpreter/compiler that implements the applicative language proposed
+by John Backus.  It is written in
+.SM
+.BR "FRANZ LISP" .
+.PP
+Functional languages express intent
+in  a mathematical style devoid of assigment statements
+and variables.
+Functional languages are also
+.I applicative
+since
+the result depends solely on the inputs.  Computation, therefore,
+is by
+value only; there are no side effects.
+.PP
+.I Fp
+"programs" consist of
+.I functional expressions \-
+primitive and user-defined 
+.I fp
+functions
+combined by 
+.I functional forms.
+These forms take functional arguments
+and return functional results.
+For example, the composition
+operator 
+.I '@'
+takes two functional arguments and returns a function
+which represents their composition.
+.PP
+There exists a single operation in 
+.I fp
+\&\-
+.I application.
+This operation causes the system to evaluate the indicated function using
+the single argument (all functions are monadic) as input.
+.SH GETTING STARTED
+.PP
+.I Fp
+invokes the system.  
+.I Fp
+compiles functions into
+.IR lisp (1)
+source code; the 
+.I lisp
+system
+interprets this code.  To exit back to the shell type 
+.I control D.
+.I Break
+terminates any computation in progress;  any open file units are
+reset.
+.SH FILES
+/usr/ucb/fp is the executable file.
+.br
+/usr/ucb/lisp is the lisp interpreter binary.
+.SH SEE ALSO
+.PP
+lisp (\*s), liszt (\*s).
+.PP
+.I The Berkeley FP user's manual,
+available on-line.
+The language is described  in  the August 1978 issue of  
+.I CACM
+(Turing award lecture by John Backus).
+.SH BUGS
+.PP
+If a non-terminating function is applied as the result of loading a file,
+then control is returned to the user immediately, everything
+after that position in the file is ignored.
+.PP
+The system would run ten times faster if the lisp code were compiled
+using the 
+.IR liszt (\*s)
+compiler.  This improvement will be made in the future.
+.SH AUTHOR
+Scott B. Baden
