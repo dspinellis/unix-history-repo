@@ -1,5 +1,4 @@
-LOCAL = /usr/ucb/
-
+#	Makefile	4.6	83/07/02
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -38,7 +37,6 @@ LOCAL = /usr/ucb/
 #	instrs		included in pseudo.c; instructions and semantic info
 #				for each instructions
 #
-
 HDRS = astoks.H astokfix.awk as.h asscan.h assyms.h asexpr.h 
 
 SRCS = asscan1.c asscan2.c asscan3.c asscan4.c \
