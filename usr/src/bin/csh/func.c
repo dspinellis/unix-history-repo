@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.2 %G%";
+static	char *sccsid = "@(#)func.c 4.3 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -827,6 +827,7 @@ struct limits {
 	LIM_DATA,	"datasize",	1024,	"kbytes",
 	LIM_STACK,	"stacksize",	1024,	"kbytes",
 	LIM_CORE,	"coredumpsize",	1024,	"kbytes",
+	LIM_MAXRSS,	"memoryuse",	1024,	"kbytes",
 	-1,		0,
 };
 
