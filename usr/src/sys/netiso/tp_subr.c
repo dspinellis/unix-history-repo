@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
- *	@(#)tp_subr.c	7.4 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.5 (Berkeley) %G%
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -137,6 +137,7 @@ tp_goodXack(tpcb, seq)
 					0,0,0);
 			ENDTRACE
 			sbdrop( &tpcb->tp_Xsnd, (int)(tpcb->tp_Xsnd.sb_cc));
+			CONG_ACK(tpcb, seq);
 			return 1;
 	} 
 	return 0;
@@ -240,17 +241,17 @@ tp_goodack(tpcb, cdt, seq, subseq)
 		/* increase congestion window but don't let it get too big */
 		{
 			register int maxcdt = tpcb->tp_xtd_format?0xffff:0xf;
-			
-			if( ++tpcb->tp_cong_win > maxcdt )
-				tpcb->tp_cong_win = maxcdt; 
+			CONG_ACK(tpcb, seq);
 		}
 
 		/* Compute smoothed round trip time.
 		 * Only measure rtt for tp_snduna if tp_snduna was among 
-		 * the last TP_RTT_NUM seq numbers sent.
+		 * the last TP_RTT_NUM seq numbers sent, and if the data
+		 * were not retransmitted.
 		 */
 		if (SEQ_GEQ(tpcb, tpcb->tp_snduna, 
-			SEQ(tpcb, tpcb->tp_sndhiwat - TP_RTT_NUM))) {
+			SEQ(tpcb, tpcb->tp_sndhiwat - TP_RTT_NUM))
+			&& SEQ_GT(tpcb, seq, SEQ_ADD(tpcb, tpcb->tp_retrans_hiwat, 1))) {
 
 			struct timeval *t = &tpcb->tp_rttemit[tpcb->tp_snduna & TP_RTT_NUM];
 			struct timeval x;
@@ -318,6 +319,7 @@ tp_goodack(tpcb, cdt, seq, subseq)
 			}
 		}
 		tpcb->tp_snduna = seq;
+		tpcb->tp_retrans = tpcb->tp_Nretrans; /* CE_BIT */
 
 		bang++;
 	} 

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.5 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -354,6 +354,8 @@ tp_init()
 	tp_inpcb.inp_next = tp_inpcb.inp_prev = &tp_inpcb;
 	/* FOR ISO */
 	tp_isopcb.isop_next = tp_isopcb.isop_prev = &tp_isopcb;
+
+    tp_start_win = 2;
 
 	tp_timerinit();
 	bzero((caddr_t)&tp_stat, sizeof(struct tp_stat));
