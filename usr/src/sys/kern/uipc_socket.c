@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.42	82/06/20	*/
+/*	uipc_socket.c	4.43	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -494,9 +494,9 @@ soioctl(so, cmd, cmdp)
 			return;
 		}
 		if (keep)
-			so->so_options &= ~SO_KEEPALIVE;
-		else
 			so->so_options |= SO_KEEPALIVE;
+		else
+			so->so_options &= ~SO_KEEPALIVE;
 		return;
 	}
 
