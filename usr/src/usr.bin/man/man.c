@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,12 +30,13 @@ static char sccsid[] = "@(#)man.c	5.19 (Berkeley) %G%";
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include "pathnames.h"
 
 extern int errno;
 
-char *command, *machine, *p_augment, *p_path, *pager, *progname;
 int f_all, f_cat, f_where;
+char *command, *machine, *p_augment, *p_path, *pager, *progname;
 
 main(argc, argv)
 	int argc;
@@ -43,8 +44,8 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	int ch;
-	char *check_pager(), *config(), *getenv();
+	int ch, res;
+	char *section[2], *check_pager(), *getpath();
 
 	progname = "man";
 	while ((ch = getopt(argc, argv, "-acfkM:m:P:w")) != EOF)
@@ -63,11 +64,10 @@ main(argc, argv)
 		case 'P':		/* backward compatibility */
 			p_path = optarg;
 			break;
-			/*
-			 * "man -f" and "man -k" are backward compatible,
-			 * undocumented ways of calling whatis(1) and
-			 * apropos(1).
-			 */
+		/*
+		 * "man -f" and "man -k" are backward compatible, undocumented
+		 * ways of calling whatis(1) and apropos(1).
+		 */
 		case 'f':
 			jump(argv, "-f", "whatis");
 			/* NOTREACHED */
@@ -97,76 +97,37 @@ main(argc, argv)
 	if (!(machine = getenv("MACHINE")))
 		machine = MACHINE;
 
-	if (!p_path && !(p_path = getenv("MANPATH")))
-		p_path = config();
+	/* see if checking in a specific section */
+	if (argc > 1 && getsection(*argv)) {
+		section[0] = *argv++;
+		section[1] = (char *)NULL;
+	} else {
+		section[0] = "_default";
+		section[1] = (char *)NULL;
+	}
 
-	man(argv);
+	if (!p_path && !(p_path = getenv("MANPATH")) &&
+	    !(p_path = getpath(section)) && !p_augment) {
+		(void)fprintf(stderr,
+		    "man: no place to search for those manual pages.\n");
+		exit(1);
+	}
+
+	for (; *argv; ++argv) {
+		if (p_augment)
+			res = manual(p_augment, *argv);
+		res = manual(p_path, *argv);
+		if (res || f_where)
+			continue;
+		(void)fprintf(stderr,
+		    "man: no entry for %s in the manual.\n", *argv);
+		exit(1);
+	}
 
 	/* use system(3) in case someone's pager is "pager arg1 arg2" */
 	if (command)
 		(void)system(command);
 	exit(0);
-}
-
-typedef struct {
-	char	*name, *msg;
-} DIR;
-static DIR	list1[] = {		/* section one list */
-	"cat1", "1st",		"cat8", "8th",		"cat6", "6th",
-	"cat.old", "old",	NULL, NULL,
-},		list2[] = {		/* rest of the list */
-	"cat2", "2nd",		"cat3", "3rd",		"cat4", "4th",
-	"cat5", "5th", 		"cat7", "7th",		"cat3f", "3rd (F)",
-	NULL, NULL,
-},		list3[2];		/* single section */
-
-/*
- * man --
- *	main loop to find the manual page and print it out.
- */
-man(argv)
-	char **argv;
-{
-	DIR *section, *getsect();
-	int res;
-
-	for (; *argv; ++argv) {
-		section = isdigit(**argv) ? getsect(*argv++) : NULL;
-		if (*argv) {
-			if (p_augment)
-				if (section)
-					res = manual(p_augment, section, *argv);
-				else {
-					res = manual(p_augment, list1, *argv);
-					if (!res || f_all)
-						res += manual(p_augment, list2,
-						    *argv);
-				}
-			if (p_path)
-				if (section)
-					res = manual(p_path, section, *argv);
-				else {
-					res = manual(p_path, list1, *argv);
-					if (!res || f_all)
-						res += manual(p_path, list2,
-						    *argv);
-				}
-			if (res || f_where)
-				continue;
-			(void)fprintf(stderr,
-			    "man: no entry for %s in the ", *argv);
-		} else
-			(void)fprintf(stderr,
-			    "man: what do you want from the ");
-		if (section)
-			(void)fprintf(stderr,
-			    "%s section of the ", section->msg);
-		if (*argv)
-			(void)fprintf(stderr, "manual.\n");
-		else
-			(void)fprintf(stderr, "manual?\n");
-		exit(1);
-	}
 }
 
 /*
@@ -175,42 +136,42 @@ man(argv)
  *	that matches; check ${directory}/${dir}/{file name} and
  *	${directory}/${dir}/${machine}/${file name}.
  */
-manual(path, section, name)
+manual(path, name)
 	char *path, *name;
-	DIR *section;
 {
-	register char *end;
-	register DIR *dp;
 	register int res;
+	register char *end;
 	char fname[MAXPATHLEN + 1];
 
 	for (res = 0;; path = end + 1) {
-		if (end = index(path, ':'))
+		if (!*path)				/* foo: */
+			break;
+		if (end = index(path, ':')) {
+			if (end == path + 1)		/* foo::bar */
+				continue;
 			*end = '\0';
-		for (dp = section; dp->name; ++dp) {
-			(void)sprintf(fname, "%s/%s/%s.0",
-			    path, dp->name, name);
-			if (access(fname, R_OK)) {
-				(void)sprintf(fname, "%s/%s/%s/%s.0", path,
-				    dp->name, machine, name);
-				if (access(fname, R_OK))
-					continue;
-			}
-			if (f_where)
-				(void)printf("man: found in %s.\n", fname);
-			else if (f_cat)
-				cat(fname);
-			else
-				add(fname);
-			if (!f_all)
-				return(1);
-			res = 1;
 		}
+		(void)sprintf(fname, "%s/%s.0", path, name);
+		if (access(fname, R_OK)) {
+			(void)sprintf(fname, "%s/%s/%s.0", path, machine, name);
+			if (access(fname, R_OK))
+				continue;
+		}
+
+		if (f_where)
+			(void)printf("man: found in %s.\n", fname);
+		else if (f_cat)
+			cat(fname);
+		else
+			add(fname);
+		if (!f_all)
+			return(1);
+		res = 1;
 		if (!end)
-			return(res);
+			break;
 		*end = ':';
 	}
-	/* NOTREACHED */
+	return(res);
 }
 
 /*
@@ -251,7 +212,6 @@ add(fname)
 	static int len;
 	static char *cp;
 	int flen;
-	char *malloc(), *realloc(), *strcpy();
 
 	if (!command) {
 		if (!(command = malloc(buflen = 1024)))
@@ -272,72 +232,6 @@ add(fname)
 }
 
 /*
- * getsect --
- *	return a point to the section structure for a particular suffix
- */
-DIR *
-getsect(s)
-	char *s;
-{
-	switch(*s++) {
-	case '1':
-		if (!*s)
-			return(list1);
-		break;
-	case '2':
-		if (!*s) {
-			list3[0] = list2[0];
-			return(list3);
-		}
-		break;
-	/* sect. 3 requests are for either section 3, or section 3[fF]. */
-	case '3':
-		if (!*s) {
-			list3[0] = list2[1];
-			return(list3);
-		}
-		else if ((*s == 'f'  || *s == 'F') && !*++s) {
-			list3[0] = list2[5];
-			return(list3);
-		}
-		break;
-	case '4':
-		if (!*s) {
-			list3[0] = list2[2];
-			return(list3);
-		}
-		break;
-	case '5':
-		if (!*s) {
-			list3[0] = list2[3];
-			return(list3);
-		}
-		break;
-	case '6':
-		if (!*s) {
-			list3[0] = list1[2];
-			return(list3);
-		}
-		break;
-	case '7':
-		if (!*s) {
-			list3[0] = list2[4];
-			return(list3);
-		}
-		break;
-	case '8':
-		if (!*s) {
-			list3[0] = list1[1];
-			return(list3);
-		}
-		break;
-	}
-	(void)fprintf(stderr, "man: unknown manual section.\n");
-	exit(1);
-	/* NOTREACHED */
-}
-
-/*
  * check_pager --
  *	check the user supplied page information
  */
@@ -346,7 +240,7 @@ check_pager(name)
 	char *name;
 {
 	register char *p;
-	char *save, *malloc();
+	char *save;
 
 	/*
 	 * if the user uses "more", we make it "more -s"; watch out for
@@ -386,7 +280,7 @@ jump(argv, flag, name)
 	for (; *arg; ++arg)
 		arg[0] = arg[1];
 	execvp(name, argv);
-	fprintf(stderr, "%s: Command not found.\n", name);
+	(void)fprintf(stderr, "%s: Command not found.\n", name);
 	exit(1);
 }
 
