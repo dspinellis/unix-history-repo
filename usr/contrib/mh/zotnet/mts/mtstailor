@@ -1,0 +1,4 @@
+mmdfldir:	/usr/spool/mail
+mmdflfil:	
+hostable:	/usr/new/lib/mh/hosts
+servers:	localhost \01localnet
