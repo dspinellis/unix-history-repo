@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.1	83/07/29	*/
+/*	kern_exec.c	6.2	83/08/23	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -394,6 +394,7 @@ getxfile(ip, nargc, uid, gid)
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
+	u.u_prof.pr_scale = 0;
 bad:
 	return;
 }
