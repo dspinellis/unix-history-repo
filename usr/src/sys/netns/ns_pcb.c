@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.c	6.2 (Berkeley) %G%
+ *	@(#)ns_pcb.c	6.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -126,13 +126,16 @@ ns_pcbconnect(nsp, nam)
 			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
 				/* No route yet, so try to acquire one */
 				ro->ro_dst.sa_family = AF_NS;
-				((struct sockaddr_ns *) &ro->ro_dst)->sns_addr =
+				satosns(&ro->ro_dst)->sns_addr =
 					sns->sns_addr;
 				rtalloc(ro);
 				if (ro->ro_rt == 0)
-					ia = (struct ns_ifaddr *) 0;
+					ifp = (struct ifnet *)0;
 				else
-				    for (ia = ns_ifaddr; ia; ia = ia->ia_next)
+					ifp = ro->ro_rt->rt_ifp;
+			}
+			if (ifp) {
+				for (ia = ns_ifaddr; ia; ia = ia->ia_next)
 					if (ia->ia_ifp == ifp)
 					    break;
 			}
@@ -141,7 +144,7 @@ ns_pcbconnect(nsp, nam)
 			if (ia == 0)
 				return (EADDRNOTAVAIL);
 		}
-		ifaddr = (struct sockaddr_ns *)&ia->ia_addr;
+		ifaddr = satosns(&ia->ia_addr);
 		nsp->nsp_laddr.x_net = ifaddr->sns_addr.x_net;
 		nsp->nsp_lastnet = sns->sns_addr.x_net;
 	}
