@@ -1,0 +1,233 @@
+Notes on EGP user process under Unix 4.2 BSD
+Modified to reflect modifications for 4.3BSD (MJK 11/86)
+--------------------------------------------
+(See also the RFC and/or ISI report on the 4.2 EGP by Paul Kirton).
+
+
+/* EGP User Process, ISI 23-Jun-84 */
+
+1. The necessary files are:
+
+Makefile, egp.conf, defs.h, include.h, ext.c, main.c, egp.h, egp_param.h,
+egp.c, rt_egp.c, rt_table.h, rt_table.c, if.h, if.c, trace_egp.h, trace_egp.c,
+init.c, rt_init.c
+
+
+2. File "defs.h" defines a few compiler switches. The main one of interest is
+INSTALL which allows kernel route updating to be turned on or off.
+
+Also EGPINITFILE defines the name of the initialization file for defining
+EGP peer addresses and the number you want to peer with at any one time.
+This is currently set for "/etc/egp.conf".
+
+3. Details of the information in the initialization file is given in comments
+at the start of "egp.conf". A sample for the Berkeley configuration is
+given.
+
+4. The object code name is currently "egpup" defined in "Makefile".  Details
+of the arguments when running the code are given at the start of "main.c".
+
+5. When the kill command is used to terminate the process an EGP cease "going
+down" message is sent to all acquired EGP peers. If any initialization
+information is to be changed the process should be killed and restarted. On
+startup it reads the kernel routes so consistency is maintained.
+
+6. The code is predominantly in accord with RFC 904. The main exception is
+that it regards a peer as up after acquisition is complete so that it can
+respond to the first poll received from the core gateway. However poling does
+not commence until after the neighbor advises that he does not consider me
+down. Only active reachability determination is implemented.
+Various EGP constants are defined in "egp_param.h".
+
+7. Routes are deleted after 4 minutes or 3 poll intervals, whichever is
+longer, if no update has been received. This gives sufficient time to change
+over dynamically to another neighbor on the list when one goes down.
+These parameters are defined in "rt_table.h".
+
+8. Some notes I made for my talk at the recent Gateway Workshop at ISI are
+included below for extra general information.
+
+
+EGP GATEWAY UNDER BERKELEY UNIX 4.2
+-----------------------------------
+Paul Kirton, presented at Gateway SIG Workshop, ISI Feb 28-29, 1984.
+
+Reasons for Gateway Development
+-------------------------------
+
+At ISI we have several Vax's one of which acts as a non-routing gateway to
+UCInet.  With the proposed elimination of non-routing gateways from the core
+gateway tables it will be necesary to inform the core ISI gateway of the
+existence of UCInet via EGP. Also we would like a backup gateway in case the
+BBN maintained gateway is down.
+
+Unix is a fairly popular operating system.  There are several non-routing
+gateways based on unix.  It would be helpful to have an EGP implementation for
+a VAX under Berkeley Unix 4.2.  Hence the current development.
+
+
+Configuration at ISI
+--------------------
+
+		 ARPANET . . . . . . . . . . . .
+		/	\			\
+	       /         \			 \
+	PNG11		  \			  \
+	Arpanet Addr	  ISI-gateway (core)	ISI-Hobgoblin
+	logical			|		Vax 750 Unix 4.2
+	multiplexer		|		/
+	    |		  Ethernet (10 Mb/s)   /
+	    |			|  (net 128.9)
+(net 10) Ethernet		|
+	 (3 Mb/s)	    ISI-Troll
+			    Vax 750 Unix 4.1a
+			    Non-routing
+				|
+				| 9600 baud link
+				|
+			    UCI Vax 750
+			    Unix 4.1a
+				|
+				|
+			     UCInet (net 192.5.19)
+
+
+UCInet interface will eventually move to Hobgoblin. Hobgoblin will conduct EGP
+with a core gateway to inform the world of the UCInet status.  Hobgoblin also
+provides a second path to ISInet which violates the conditions for a stub. The
+core will ignore this route in preference to its internal core path via
+ISI-gateway. Provided ISI-gateway never knows that Hobgoblin provides an
+alternative path to Arpanet, no routing loops can occur.  If this topology is
+considered a problem, then Hobgoblin could just advise ISI-gateway about
+UCInet and not ISInet. The latter could just be turned on manually in case of
+an ISI-gateway failure or automatically if the ISI-gateway status is monitored
+continually. Such backup gateways could be a common approach to providing
+increased reliability.
+
+
+Gateway Design
+--------------
+
+EGP is a polling protocol with loose timing constraints. Thus the only
+gateway function requiring good performance is packet forwarding.
+
+Unix 4.2 already has packet forwarding built into the kernel where best
+performance can be achieved. Unfortunately Unix 4.2 does not send ICMP
+redirect messages.
+
+The EGP and route update functions are implemented in C as a user process.
+This facilitates development and distribution as no (or minor) changes need to
+be made to the unix kernel.  This is a similar approach to the Unix route
+distribution program "routed" which is based on the Xerox NS Routing
+Information Protocol.  The EGP code is based on the C-code written by Liza
+Martin.
+
+
+Routing Tables
+--------------
+
+There are thus two sets of routing tables, the kernel tables and the EGP
+process tables. The latter are updated from EGP NR messages and when a route
+is changed the kernel tables are updated via a system call.  Redirects will
+update the kernel tables first and then be passed to the EGP process where its
+routing tables are updated.
+
+The EGP process routing tables are maintained as two separate tables. One that
+is updated by external EGP NR messages and one that is updated by internal
+information. This facilitates the preparation of brief stub NR messages and
+also permits alternate external routes to the internal routes to be saved.
+But if such an alternative exists it is not a true stub gateway. This
+idea is motivated by the ISI backup topology.
+
+If a particular route entry is not updated by EGP within 10 minutes it is
+deleted. (**see 7. above)
+
+
+Facilities provided by the gateway
+----------------------------------
+
+- configuration:
+ At start up a configuration file is read which lists the addresses of trusted
+EGP peer gateways (on the same shared net). It also lists the addresses of
+non-routing gateways which provide access to other networks via the stub
+network. It is these nets plus the directly attached nets (other than the
+shared net) that make up the internal routing data that is supplied in NR
+messages. The distance to these networks is set to 255 if any of the
+interfaces are down.
+
+- Acquisition:
+ A predetermined number of these gateways will be acquired. Typically this is
+expected to be just one. Provided a change over to an alternate EGP peer can
+be achieved within the ten minute route lifetime this should be satisfactory.
+This should be the case with 30 sec. hello intervals used by the core gateways
+at present.
+
+The gateway will only accept acquisitions from neighbors on the trusted list
+and will not accept them if it already has acquired its quota.
+
+The ability to acquire core gateways that have been learned of independently
+via NR messages, i.e. members of a trusted AS, could be considered later, but
+as all core gateways will not run EGP the static trusted neighbor list should
+be sufficient. This will be site dependent.
+
+
+Unix Interface
+--------------
+
+The EGP process uses the raw ip socket interface. This currently lacks a
+facility for assigning a protocol number to a socket so a minor fiddle of
+internal tables is needed.
+
+Redirects update the kernel routing tables directly. Redirect messages are
+also available at the user level (with a small fiddle at present) which can
+then be used to update the EGP process tables.
+
+System calls are provided for altering the kernel routing tables, and
+determining the interface configuration and interface status as needed for
+preparing NR messages.
+
+
+Performance
+-----------
+
+EGP functions average 60 ms per packet pair. Based on a poll interval of one
+minute and a single EGP peer the total CPU utilization is ~ 0.8%.
+Route update processing has not been included yet.
+This does not include the packet forwarding function which is the most
+significant gateway load.
+
+
+Current Status
+--------------
+
+Most of the EGP protocol aspects are complete and tested OK.
+
+Incomplete:
+  - The route update functions have been designed but not implemented yet.
+  - Information about non-routing gateways.
+  - Selection of a restricted number of neighbors from those on list.
+
+
+Possible Future Extensions
+--------------------------
+
+- Independent treatment of different AS's so that EGP could be conducted over
+multiple shared nets rather than a single shared net as at present.
+
+- More regular monitoring of the interface status and the sending of an
+unsolicited NR message when a change is detected. This is one area where the
+slow response of EGP polling could be improved. This is of particular interest
+to networks that may be connected by dial-in lines.  When such a network dials
+in it will not be able to receive packets until the changed routing
+information is propagated by EGP. This is one case where the unsolicited NR
+message would help, but there is still the delay for other non-core gateways
+to poll core EGP gateways for the new routing information.
+
+This was one case where it was initially thought that a kernel EGP
+implementation might help. But the kernel does not presently pass interface
+status changes by interrupts so a new facility would need to be incorporated.
+If this was done it may be just as easy to provide a user level signal when an
+interface status changes.
+
+
+Paul Kirton (Kirton@USC-ISIF.ARPA)
