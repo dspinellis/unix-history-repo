@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -21,12 +21,12 @@ static char sccsid[] = "@(#)res_comp.c	6.9 (Berkeley) %G%";
  * Return size of compressed name or -1 if there was an error.
  */
 dn_expand(msg, eomorig, comp_dn, exp_dn, length)
-	char *msg, *eomorig, *comp_dn, *exp_dn;
+	u_char *msg, *eomorig, *comp_dn, *exp_dn;
 	int length;
 {
-	register char *cp, *dn;
+	register u_char *cp, *dn;
 	register int n, c;
-	char *eom;
+	u_char *eom;
 	int len = -1, checked = 0;
 
 	dn = exp_dn;
@@ -100,14 +100,14 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
  * is NULL, we don't update the list.
  */
 dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
-	char *exp_dn, *comp_dn;
+	u_char *exp_dn, *comp_dn;
 	int length;
-	char **dnptrs, **lastdnptr;
+	u_char **dnptrs, **lastdnptr;
 {
-	register char *cp, *dn;
+	register u_char *cp, *dn;
 	register int c, l;
-	char **cpp, **lpp, *sp, *eob;
-	char *msg;
+	u_char **cpp, **lpp, *sp, *eob;
+	u_char *msg;
 
 	dn = exp_dn;
 	cp = comp_dn;
@@ -168,14 +168,14 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 /*
  * Skip over a compressed domain name. Return the size or -1.
  */
-dn_skip(comp_dn)
-	char *comp_dn;
+dn_skipname(comp_dn, eom)
+	u_char *comp_dn, *eom;
 {
-	register char *cp;
+	register u_char *cp;
 	register int n;
 
 	cp = comp_dn;
-	while (n = *cp++) {
+	while (cp < eom && (n = *cp++)) {
 		/*
 		 * check for indirection
 		 */
@@ -198,12 +198,12 @@ dn_skip(comp_dn)
  * Return the offset from msg if found or -1.
  */
 dn_find(exp_dn, msg, dnptrs, lastdnptr)
-	char *exp_dn, *msg;
-	char **dnptrs, **lastdnptr;
+	u_char *exp_dn, *msg;
+	u_char **dnptrs, **lastdnptr;
 {
-	register char *dn, *cp, **cpp;
+	register u_char *dn, *cp, **cpp;
 	register int n;
-	char *sp;
+	u_char *sp;
 
 	for (cpp = dnptrs + 1; cpp < lastdnptr; cpp++) {
 		dn = exp_dn;
@@ -230,7 +230,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 				return (-1);
 
 			case INDIR_MASK:	/* indirection */
-				cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
+				cp = msg + (((n & 0x3f) << 8) | *cp);
 			}
 		}
 		if (*dn == '\0')
@@ -248,7 +248,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 
 u_short
 _getshort(msgp)
-	char *msgp;
+	u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
 #ifdef vax
@@ -266,7 +266,7 @@ _getshort(msgp)
 
 u_long
 _getlong(msgp)
-	char *msgp;
+	u_char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
 	register u_long u;
@@ -280,7 +280,7 @@ _getlong(msgp)
 
 putshort(s, msgp)
 	register u_short s;
-	register char *msgp;
+	register u_char *msgp;
 {
 
 	msgp[1] = s;
@@ -289,7 +289,7 @@ putshort(s, msgp)
 
 putlong(l, msgp)
 	register u_long l;
-	register char *msgp;
+	register u_char *msgp;
 {
 
 	msgp[3] = l;
