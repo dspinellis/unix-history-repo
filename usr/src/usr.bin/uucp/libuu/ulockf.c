@@ -1,80 +1,71 @@
 #ifndef lint
-static char sccsid[] = "@(#)ulockf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ulockf.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+#include <errno.h>
 
-/* File mode for lock files */
-#define	LCKMODE	0444
+#define	LCKMODE	0444	/* File mode for lock files */
+#define MAXLOCKS 16	/* Maximum number of lock files */
+
+char *Lockfile[MAXLOCKS];
+char *LockDirectory = LOCKDIR;
+int Nlocks = 0;
 
 /*LINTLIBRARY*/
 
 /*
- *	this routine will create a lock file (file).
- *	If one already exists, the create time is checked for
- *	older than the age time (atime).
- *	If it is older, an attempt will be made to unlink it
- *	and create a new one.
+ *	This routine will attempt to create a lock file (file).
+ *	It makes sure that the lock file is valid if it already exists.
  *
  *	return codes:  SUCCESS  |  FAIL
  */
-
 ulockf(hfile, atime)
 char *hfile;
 time_t atime;
 {
-	struct stat stbuf;
-	time_t ptime;
-	register int ret;
-	static int pid = -1;
+	register char *p;
+	register int i;
 	static char tempfile[NAMESIZE];
 	char file[NAMESIZE];
+	static int pid = -1;
+	extern int errno;
 
 	if (pid < 0) {
 		pid = getpid();
-		sprintf(tempfile, "%s/LTMP.%d", LOCKDIR, pid);
+		sprintf(tempfile, "%s/LTMP.%d", LockDirectory, pid);
 	}
-	sprintf(file, "%s/%s", LOCKDIR, hfile);
-	if (onelock(pid, tempfile, file) == -1) {
-		/* lock file exists */
+	sprintf(file, "%s/LCK..%s", LockDirectory, hfile);
+	i = 0;
+	while (onelock(pid, tempfile, file) == -1) { /* lock file exists */
+#if !defined(BSD4_2) && !defined(USG)
+		struct stat stbuf;
+		time_t ptime;
 		/* get status to check age of the lock file */
-		ret = stat(file, &stbuf);
-		if (ret != -1) {
-			time(&ptime);
-			if ((ptime - stbuf.st_ctime) < atime) {
-				/* file not old enough to delete */
-				return FAIL;
-			}
-			ret = unlink(file);
-			logent(file, "DEAD LOCK");
-			sleep(5);	/* rti!trt: avoid a race */
-			ret = onelock(pid, tempfile, file);
+		if (stat(file, &stbuf) == 0) {
+			(void) time(&ptime);
+			if ((ptime - stbuf.st_ctime) < atime)
+				return FAIL; /* file not old enough to delete */
 		}
-		if (ret != 0)
-			return FAIL;
+#else	BSD4_2 || USG
+		register int fd;
+		fd = open(file, 0);
+		if (fd >= 0) {
+			int upid, ret;
+			ret = read(fd, &upid, sizeof upid);
+			close(fd);
+			if (ret == sizeof upid && (kill(upid, 0) == 0
+				|| errno != ESRCH))
+				return FAIL; /* process is still running */
+		}
+#endif BSD4_2 || USG
+		assert("DEAD LOCK", file, errno);
+		logent(file, "DEAD LOCK");
+		(void) unlink(file);
+		sleep(5);	/* avoid a possible race */
+		ASSERT(i++ < 5, "CAN'T GET LOCKFILE", tempfile, errno);
 	}
-	stlock(file);
-	return SUCCESS;
-}
-
-
-#define MAXLOCKS 10	/* maximum number of lock files */
-char *Lockfile[MAXLOCKS];
-int Nlocks = 0;
-
-/***
- *	stlock(name)	put name in list of lock files
- *	char *name;
- *
- *	return codes:  none
- */
-
-stlock(name)
-register char *name;
-{
-	register char *p;
-	register int i;
 
 	for (i = 0; i < Nlocks; i++) {
 		if (Lockfile[i] == NULL)
@@ -83,24 +74,27 @@ register char *name;
 	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS", CNULL, i);
 	if (i >= Nlocks)
 		i = Nlocks++;
-	p = calloc((unsigned)(strlen(name)+1), sizeof (char));
-	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR", name, 0);
-	strcpy(p, name);
+	p = malloc((unsigned)(strlen(file)+1));
+	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR", file, 0);
+	strcpy(p, file);
 	Lockfile[i] = p;
+
+	return SUCCESS;
 }
 
-
 /*
- *	remove all lock files in list *	or name
- *
- *	return codes: none
+ *	remove all lock files in list or name
  */
-
 rmlock(name)
 register char *name;
 {
 	register int i;
+	char file[MAXFULLNAME];
 
+	if (name != NULL) {
+		sprintf(file, "%s/LCK..%s", LockDirectory, name);
+		name = file;
+	}
 	for (i = 0; i < Nlocks; i++) {
 		if (Lockfile[i] == NULL)
 			continue;
@@ -113,102 +107,48 @@ register char *name;
 }
 
 /*
- *	isalock(name) returns 0 if the name is a lock.
- *	unlock(name)  unlocks name if it is a lock.
- *	onelock(pid,tempfile,name) makes lock a name
- *	on behalf of pid.  Tempfile must be in the same
+ *	makes lock a name on behalf of pid. Tempfile must be in the same
  *	file system as name.
- *	lock(pid,tempfile,names) either locks all the
- *	names or none of them.
  */
-isalock(name)
-char *name;
-{
-	struct stat xstat;
-	if (stat(name,&xstat) < 0)
-		return 0;
-	if (xstat.st_size != sizeof(int))
-		return 0;
-	return 1;
-}
-unlock(name)
-char *name;
-{
-	if (isalock(name))
-		return unlink(name);
-	else
-		return -1;
-}
 onelock(pid, tempfile, name)
 int pid;
-char *tempfile,*name;
+char *tempfile, *name;
 {
-	register int fd;
+	register int fd, ret;
 #ifdef VMS
 	fd = creat(name, LCKMODE, "1version");
 #else !VMS
 	fd = creat(tempfile, LCKMODE);
 #endif !VMS
-	if (fd < 0)
+	if (fd < 0) {
+		DEBUG(1,"Can't creat temp file %s ", tempfile);
+		DEBUG(1,"-- errno %d", errno);
 		return FAIL;
-	write(fd, (char *)&pid, sizeof(int));
-	close(fd);
-#ifndef	VMS
+	}
+	ret = write(fd, (char *)&pid, sizeof(int));
+	(void) close(fd);
+
+	if (ret != sizeof(int)) {
+		DEBUG(1,"Temp file write failed -- errno %d\n", errno);
+#ifdef VMS
+		(void) unlink(name);
+#else !VMS
+		(void) unlink(tempfile);
+#endif !VMS
+		return FAIL;
+	}
+#ifndef VMS
 	if (link(tempfile, name) < 0) {
-		unlink(tempfile);
+		(void) unlink(tempfile);
 		return FAIL;
 	}
 	unlink(tempfile);
-#endif
+#endif	!VMS
 	return SUCCESS;
 }
 
-
-lock(pid, tempfile, names)
-char *tempfile;
-register char **names;
-{
-	register int i, j;
-
-	for(i=0; names[i] != 0; i++) {
-		if (onelock(pid, tempfile, names[i]) == 0)
-			continue;
-		for(j=0; j < i ;j++)
-			unlink(names[j]);
-		return FAIL;
-	}
-	return SUCCESS;
-}
-
-#define LOCKPRE "LCK."
-
+#if !defined(BSD4_2) && !defined(USG)
 /*
- *	remove a lock file
- */
-delock(s)
-char *s;
-{
-	char ln[NAMESIZE];
-
-	sprintf(ln, "%s/%s.%s", LOCKDIR, LOCKPRE, s);
-	rmlock(ln);
-}
-
-/*
- *	create system lock
- *
- *	return codes:  SUCCESS  |  FAIL
- */
-mlock(sys)
-char *sys;
-{
-	char lname[NAMESIZE];
-
-	sprintf(lname, "%s.%s", LOCKPRE, sys);
-	return ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : SUCCESS;
-}
-
-/***
  *	update 'change' time for lock files
  *
  *	Only update ctime, not mtime or atime.
@@ -222,7 +162,6 @@ char *sys;
 
 ultouch()
 {
-	time_t time();
 	static time_t lasttouch = 0;
 	register int i;
 	struct ut {
@@ -230,7 +169,13 @@ ultouch()
 		time_t modtime;
 	} ut;
 
-	ut.actime = time(&ut.modtime);
+#ifdef USG
+	time(&Now.time);
+	t1.millitm = 0;
+#else !USG
+	ftime(&Now);
+#endif !USG
+	ut.actime = ut.modtime = Now.time;
 	/* Do not waste time touching locking files too often */
 	/* (But, defend against backward time changes) */
 	if (ut.actime >= lasttouch && ut.actime < lasttouch+60)
@@ -246,11 +191,6 @@ ultouch()
 #else 	!OLDTOUCH
 		chmod(Lockfile[i], LCKMODE);
 #endif !OLDTOUCH
-	/*
-	 * set 'nologinflag' if the file /etc/nologin exists.
-	 * This permits graceful shutdown of uucp.
-	 */
-	if (nologinflag == 0 && access(NOLOGIN, 0) == 0)
-		nologinflag = 1;
 	}
 }
+#endif !BSD4_2 && ! USG
