@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.15 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.16 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.15 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.16 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -57,6 +57,8 @@ struct cmd
 /* non-standard commands */
 # define CMDONEX	16	/* onex -- sending one transaction only */
 # define CMDVERB	17	/* verb -- go into verbose mode */
+/* use this to catch and log "door handle" attempts on your system */
+# define CMDLOGBOGUS	23	/* bogus command that should be logged */
 /* debugging-only commands, only enabled if SMTPDEBUG is defined */
 # define CMDDBGQSHOW	24	/* showq -- show send queue */
 # define CMDDBGDEBUG	25	/* debug -- set debug mode */
@@ -84,6 +86,7 @@ static struct cmd	CmdTab[] =
 	 */
 	"showq",	CMDDBGQSHOW,
 	"debug",	CMDDBGDEBUG,
+	"wiz",		CMDLOGBOGUS,
 	NULL,		CMDERROR,
 };
 
@@ -641,18 +644,18 @@ smtp(e)
 			break;
 
 # else /* not SMTPDEBUG */
-
 		  case CMDDBGQSHOW:	/* show queues */
 		  case CMDDBGDEBUG:	/* set debug mode */
+# endif /* SMTPDEBUG */
+		  case CMDLOGBOGUS:	/* bogus command */
 # ifdef LOG
 			if (LogLevel > 0)
-				syslog(LOG_NOTICE,
+				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
 				    c->cmdname, RealHostName,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
-# endif /* SMTPDEBUG */
 
 		  case CMDERROR:	/* unknown command */
 			message("500 Command unrecognized");
