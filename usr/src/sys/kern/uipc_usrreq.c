@@ -11,7 +11,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- *	@(#)uipc_usrreq.c	7.13 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,10 +39,10 @@ struct	sockaddr sun_noname = { sizeof(sun_noname), AF_UNIX };
 ino_t	unp_ino;			/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
-uipc_usrreq(so, req, m, nam, rights)
+uipc_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *control;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
@@ -50,7 +50,7 @@ uipc_usrreq(so, req, m, nam, rights)
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);
-	if (req != PRU_SEND && rights && rights->m_len) {
+	if (req != PRU_SEND && control && control->m_len) {
 		error = EOPNOTSUPP;
 		goto release;
 	}
@@ -146,8 +146,8 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_SEND:
-		if (rights) {
-			error = unp_internalize(rights);
+		if (control) {
+			error = unp_internalize(control);
 			if (error)
 				break;
 		}
@@ -176,7 +176,7 @@ uipc_usrreq(so, req, m, nam, rights)
 			else
 				from = &sun_noname;
 			if (sbspace(&so2->so_rcv) > 0 &&
-			    sbappendaddr(&so2->so_rcv, from, m, rights)) {
+			    sbappendaddr(&so2->so_rcv, from, m, control)) {
 				sorwakeup(so2);
 				m = 0;
 			} else
@@ -201,8 +201,8 @@ uipc_usrreq(so, req, m, nam, rights)
 			 * send buffer hiwater marks to maintain backpressure.
 			 * Wake up readers.
 			 */
-			if (rights)
-				(void)sbappendrights(rcv, m, rights);
+			if (control)
+				(void)sbappendrights(rcv, m, control);
 			else
 				sbappend(rcv, m);
 			snd->sb_mbmax -=
@@ -429,7 +429,7 @@ unp_connect(so, nam)
 	}
 	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
 		if ((so2->so_options & SO_ACCEPTCONN) == 0 ||
-		    (so3 = sonewconn(so2)) == 0) {
+		    (so3 = sonewconn(so2, 0)) == 0) {
 			error = ECONNREFUSED;
 			goto bad;
 		}
@@ -467,8 +467,8 @@ unp_connect2(so, so2)
 
 	case SOCK_STREAM:
 		unp2->unp_conn = unp;
-		soisconnected(so2);
 		soisconnected(so);
+		soisconnected(so2);
 		break;
 
 	default:
@@ -555,10 +555,11 @@ unp_drain()
 unp_externalize(rights)
 	struct mbuf *rights;
 {
-	int newfds = rights->m_len / sizeof (int);
 	register int i;
-	register struct file **rp = mtod(rights, struct file **);
+	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
+	register struct file **rp = (struct file **)(cm + 1);
 	register struct file *fp;
+	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
 	if (newfds > ufavail()) {
@@ -589,14 +590,19 @@ unp_internalize(rights)
 	int oldfds = rights->m_len / sizeof (int);
 	register int i, fd;
 	register struct file *fp;
+	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
 
-	rp = mtod(rights, struct file **);
+	if (cm->cmsg_type != SCM_RIGHTS || cm->cmsg_level != SOL_SOCKET)
+		return (EINVAL);
+	oldfds = (cm->cmsg_len - sizeof (*cm)) / sizeof (int);
+	MCHTYPE(rights, MT_RIGHTS);
+	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		fd = *(int *)rp++;
 		if ((unsigned)fd >= NOFILE || u.u_ofile[fd] == NULL)
 			return (EBADF);
 	}
-	rp = mtod(rights, struct file **);
+	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		fp = u.u_ofile[*(int *)rp];
 		*rp++ = fp;
@@ -681,8 +687,11 @@ unp_scan(m0, op)
 	while (m0) {
 		for (m = m0; m; m = m->m_next)
 			if (m->m_type == MT_RIGHTS && m->m_len) {
-				qfds = m->m_len / sizeof (struct file *);
-				rp = mtod(m, struct file **);
+				register struct cmsghdr *cm;
+				cm = mtod(m, struct cmsghdr *);
+				qfds = (cm->cmsg_len - sizeof *cm)
+						/ sizeof (struct file *);
+				rp = (struct file **)(cm + 1);
 				for (i = 0; i < qfds; i++)
 					(*op)(*rp++);
 				break;		/* XXX, but saves time */
