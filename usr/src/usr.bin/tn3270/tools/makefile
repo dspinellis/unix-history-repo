@@ -63,8 +63,11 @@ ALLPRINT =	${ALLH} ${ALLC} ${ALLY}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
+MKMAKE		= mkmake$X
+#PC_MKMAKE	=
+
 ALLEXE	=	mkastods$X mkastosc$X mkdctype$X mkdstoas$X \
-			mkhits$X mkmake$X prt3270$X
+			mkhits$X ${MKMAKE} prt3270$X
 
 .c.obj:
 	${CC} ${CFLAGS} -c $<
