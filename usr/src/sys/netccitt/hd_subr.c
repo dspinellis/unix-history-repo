@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_subr.c	7.7 (Berkeley) %G%
+ *	@(#)hd_subr.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,7 +64,10 @@ struct sockaddr *addr;
 			return (ENOBUFS);
 		bzero((caddr_t)hdp, sizeof(*hdp));
 		hdp->hd_pkp =
-			pk_newlink ((struct x25_ifaddr *)ifa, (caddr_t)hdp);
+			(caddr_t) pk_newlink ((struct x25_ifaddr *) ifa, 
+					      (caddr_t) hdp);
+		((struct x25_ifaddr *)ifa)->ia_pkcb = 
+			(struct pkcb *) hdp->hd_pkp;
 		if (hdp -> hd_pkp == 0) {
 			free(hdp, M_PCB);
 			return (ENOBUFS);
@@ -76,6 +79,16 @@ struct sockaddr *addr;
 		hdp->hd_output = hd_ifoutput;
 		hdp->hd_next = hdcbhead;
 		hdcbhead = hdp;
+	} else if (hdp->hd_pkp == 0) { /* interface got reconfigured */
+		hdp->hd_pkp =
+			(caddr_t) pk_newlink ((struct x25_ifaddr *) ifa, 
+					      (caddr_t) hdp);
+		((struct x25_ifaddr *)ifa)->ia_pkcb = 
+			(struct pkcb *) hdp->hd_pkp;
+		if (hdp -> hd_pkp == 0) {
+			free(hdp, M_PCB);
+			return (ENOBUFS);
+		}
 	}
 
 	switch (prc) {
@@ -91,6 +104,14 @@ struct sockaddr *addr;
 		if (hdp->hd_state == ABM)
 			hd_message (hdp, "Operator shutdown: link closed");
 		(void) pk_ctlinput (PRC_LINKDOWN, hdp->hd_pkp);
+
+		/* fall thru to ... */
+
+	case PRC_DISCONNECT_REQUEST:
+		/* drop reference to pkcb --- it's dead meat */
+		hdp->hd_pkp = (caddr_t) 0;
+		((struct x25_ifaddr *)ifa)->ia_pkcb = (struct pkcb *) 0;
+
 		hd_writeinternal (hdp, DISC, POLLON);
 		hdp->hd_state = DISC_SENT;
 		SET_TIMER (hdp);
