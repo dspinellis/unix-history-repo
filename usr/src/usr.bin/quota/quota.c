@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	4.2 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)quota.c	4.3 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -114,11 +114,11 @@ showquotas(uid, name)
 		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfilename, FRDONLY);
+			register fd = open(qfilename, O_RDONLY);
 
 			if (fd < 0)
 				continue;
-			lseek(fd, (long)(uid * sizeof (dqblk)), FSEEK_ABSOLUTE);
+			lseek(fd, (long)(uid * sizeof (dqblk)), L_SET);
 			if (read(fd, &dqblk, sizeof dqblk) != sizeof (dqblk)) {
 				close(fd);
 				continue;
@@ -166,15 +166,15 @@ showquotas(uid, name)
 			heading(uid, name);
 			printf("%8s%8d%c%7d%8d%8s%8d%c%7d%8d%8s\n"
 				, fs->fs_file
-				, (dqblk.dqb_curblocks / (1024/DEV_BSIZE)) 
+				, (dqblk.dqb_curblocks / btodb(1024)) 
 				, (msgb == (char *)0) ? ' ' : '*'
-				, (dqblk.dqb_bsoftlimit / (1024/DEV_BSIZE)) 
-				, ((dqblk.dqb_bhardlimit-1) / (1024/DEV_BSIZE)) 
+				, (dqblk.dqb_bsoftlimit / btodb(1024)) 
+				, (dqblk.dqb_bhardlimit / btodb(1024)) 
 				, dwarn
 				, dqblk.dqb_curinodes
 				, (msgi == (char *)0) ? ' ' : '*'
 				, dqblk.dqb_isoftlimit
-				, dqblk.dqb_ihardlimit-1
+				, dqblk.dqb_ihardlimit
 				, iwarn
 			);
 		}
