@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -171,8 +171,8 @@ struct protox isoprotox[] = {
 
 struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULL };
 
-char	*vmunix = _PATH_UNIX;
-char	*kmemf;
+char	*nlistf;
+char	*memf;
 int	kmem;
 int	kflag;
 int	Aflag;
@@ -246,14 +246,14 @@ main(argc, argv)
 			iflag = 1;
 			break;
 		case 'M':
-			kmemf = optarg;
+			memf = optarg;
 			kflag = 1;
 			break;
 		case 'm':
 			mflag = 1;
 			break;
 		case 'N':
-			vmunix = optarg;
+			nlistf = optarg;
 			break;
 		case 'n':
 			nflag = 1;
@@ -300,20 +300,27 @@ main(argc, argv)
 			iflag = 1;
 		}
 		if (*argv) {
-			vmunix = *argv;
+			nlistf = *argv;
 			if (*++argv) {
-				kmemf = *argv;
+				memf = *argv;
 				kflag = 1;
 			}
 		}
 	}
 #endif
-	if (kvm_openfiles(vmunix, kmemf, NULL) == -1) {
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL)
+		setgid(getgid());
+
+	if (kvm_openfiles(nlistf, memf, NULL) == -1) {
 		fprintf(stderr, "netstat: kvm_openfiles: %s\n", kvm_geterr());
 		exit(1);
 	}
 	if (kvm_nlist(nl) < 0 || nl[0].n_type == 0) {
-		fprintf(stderr, "%s: no namelist\n", vmunix);
+		fprintf(stderr, "netstat: no namelist\n");
 		exit(1);
 	}
 	if (mflag) {
