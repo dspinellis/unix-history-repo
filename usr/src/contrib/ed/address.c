@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)address.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)address.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -73,14 +73,16 @@ num_to_address(num, errnum)
 	int l_line = 1;
 	LINE *temp1;
 
-	for (temp1 = top; temp1->below != NULL; temp1 = temp1->below) {
-		/* find the matching line number in the buffer */
-		if (l_line >= num)
-			break;
-		l_line++;
+	if (top) {
+		for (temp1 = top; temp1->below != NULL; temp1 = temp1->below) {
+			/* find the matching line number in the buffer */
+			if (l_line >= num)
+				break;
+			l_line++;
+		}
 	}
 
-	if (l_line < num) {
+	if ((l_line < num) || (!top)) {
 		/* the number was wacko */
 		*errnum = -1;
 		strcpy(help_msg, "bad line number");
