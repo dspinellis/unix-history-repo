@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.9 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,14 +32,17 @@
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode();
 struct kinfo_lock kinfo_lock;
 
-getkerninfo()
-{
-	register struct a {
+/* ARGSUSED */
+getkerninfo(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	op;
 		char	*where;
 		int	*size;
 		int	arg;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
 	int	bufsize,	/* max size of users buffer */
 		needed,	locked, (*server)(), error = 0;
@@ -99,10 +102,9 @@ release:
 	if (kinfo_lock.kl_want)
 		wakeup(&kinfo_lock);
 done:
-	if (error)
-		u.u_error = error;
-	else
-		u.u_r.r_val1 = needed;
+	if (!error)
+		*retval = needed;
+	return (error);
 }
 
 /* 
