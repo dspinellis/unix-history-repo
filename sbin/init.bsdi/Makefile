@@ -1,4 +1,4 @@
-#	BSDI $Id: Makefile,v 1.1 1993/08/02 23:17:24 nate Exp $
+#	BSDI $Id: Makefile,v 1.2 1993/08/02 23:18:35 nate Exp $
 #	@(#)Makefile	5.3 (Berkeley) 5/11/90
 
 PROG=	init
@@ -8,5 +8,10 @@ CFLAGS+=-DSECURE -DNOSYSCTL
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 BINMODE=500
+
+.if exists(/usr/lib/libcrypt.a)
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
 
 .include <bsd.prog.mk>
