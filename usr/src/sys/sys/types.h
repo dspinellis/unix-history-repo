@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.4 (Berkeley) %G%
+ *	@(#)types.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -47,6 +47,8 @@ typedef	long	off_t;
 typedef	u_short	uid_t;
 typedef	u_short	gid_t;
 typedef	short	pid_t;
+typedef	short	nlink_t;
+typedef	u_short	mode_t;
 
 #define	NBBY	8		/* number of bits in a byte */
 /*
@@ -74,4 +76,4 @@ typedef	struct fd_set {
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
-#endif
+#endif /* _TYPES_ */
