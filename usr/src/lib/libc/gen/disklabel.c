@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.8 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -360,27 +360,10 @@ gettype(t, names)
 	register char **nm;
 
 	for (nm = names; *nm; nm++)
-		if (ustrcmp(t, *nm) == 0)
+		if (strcasecmp(t, *nm) == 0)
 			return (nm - names);
 	if (isdigit(*t))
 		return (atoi(t));
-	return (0);
-}
-
-static
-ustrcmp(s1, s2)
-	register char *s1, *s2;
-{
-#define	lower(c)	(islower(c) ? (c) : tolower(c))
-
-	for (; *s1; s1++, s2++) {
-		if (*s1 == *s2)
-			continue;
-		if (isalpha(*s1) && isalpha(*s2) &&
-		    lower(*s1) == lower(*s2))
-			continue;
-		return (*s2 - *s1);
-	}
 	return (0);
 }
 
