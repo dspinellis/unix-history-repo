@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)connect.2	6.2 (Berkeley) %G%
+.\"	@(#)connect.2	6.3 (Berkeley) %G%
 .\"
 .TH CONNECT 2 ""
 .UC 5
@@ -31,7 +31,7 @@ if it is of type SOCK_STREAM,
 then this call attempts to make a connection to
 another socket.
 The other socket is specified by
-.I name
+.I name,
 which is an address in the communications space of the socket.
 Each communications space interprets the
 .I name
