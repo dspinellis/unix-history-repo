@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	3.4	%H%	*/
+/*	vfs_cluster.c	3.5	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -642,7 +642,7 @@ swkill(p, rout)
 	 * done by user) after killing it so noone will try
 	 * to swap it out.
 	 */
-	psignal(p, SIGKIL);
+	psignal(p, SIGKILL);
 	p->p_flag |= SULOCK;
 }
 
