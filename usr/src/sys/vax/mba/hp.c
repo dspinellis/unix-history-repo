@@ -1,4 +1,4 @@
-/*	hp.c	4.17	81/02/28	*/
+/*	hp.c	4.18	81/03/01	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -223,37 +223,51 @@ hpdtint(mi, mbasr)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
+	int retry = 0;
 
-	while ((hpaddr->hpds & HP_DRY) == 0)	/* shouldn't happen */
-		printf("hp dry not set\n");
-	if (hpaddr->hpds&HP_ERR || mbasr&MBAEBITS)
-		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&HP_WLE)==0) {
-			if ((hpaddr->hper1&0xffff) != HP_DCK) {
-				hpaddr->hpcs1 = HP_DCLR|HP_GO;
-				if ((mi->mi_tab.b_errcnt&07) == 4) {
-					hpaddr->hpcs1 = HP_RECAL|HP_GO;
-					while (hpaddr->hpds & HP_PIP)
-						;
-					mbclrattn(mi);
-				}
-				return (MBD_RETRY);
-			} else if (hpecc(mi))
-				return (MBD_RESTARTED);
-		} else {
-			if (hpaddr->hper1&HP_WLE)	
-				printf("hp%d is write locked\n", dkunit(bp));
-			else {
-				harderr(bp);
-				printf("hp%d mbasr %b er1 %b er2 %b\n",
-				    dkunit(bp), mbasr, mbasr_bits,
-				    hpaddr->hper1, HPER1_BITS,
-				    hpaddr->hper2, HPER2_BITS);
-			}
-			hpaddr->hpcs1 = HP_DCLR|HP_GO;
-			bp->b_flags |= B_ERROR;
+	if (hpaddr->hpds&HP_ERR || mbasr&MBAEBITS) {
+		int dready = 0;
+
+		while ((hpaddr->hpds & HP_DRY) == 0) {
+			if (++dready > 32)
+				break;
 		}
+		if ((hpaddr->hpds&HP_DREADY) != HP_DREADY) {
+			printf("hp%d not ready\n", dkunit(bp));
+			bp->b_flags |= B_ERROR;
+		} else if (hpaddr->hper1&HP_WLE) {
+			printf("hp%d is write locked\n", dkunit(bp));
+			bp->b_flags |= B_ERROR;
+		} else if (++mi->mi_tab.b_errcnt > 27 ||
+		    mbasr & MBASR_HARD ||
+		    hpaddr->hper1 & HPER1_HARD ||
+		    hpaddr->hper2 & HPER2_HARD) {
+			harderr(bp);
+			printf("hp%d mbasr=%b er1=%b er2=%b\n",
+			    dkunit(bp), mbasr, mbasr_bits,
+			    hpaddr->hper1, HPER1_BITS,
+			    hpaddr->hper2, HPER2_BITS);
+			bp->b_flags |= B_ERROR;
+		} else if ((hpaddr->hper1&(HP_DCK|HP_ECH)) == HP_DCK) {
+			if (hpecc(mi))
+				return (MBD_RESTARTED);
+			/* else done */
+		} else
+			retry = 1;
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		if ((mi->mi_tab.b_errcnt&07) == 4) {
+			hpaddr->hpcs1 = HP_RECAL|HP_GO;
+			/* SHOULD SET AN INTERRUPT AND RETURN */
+			/* AND HANDLE ALA rk.c OR up.c */
+			while (hpaddr->hpds & HP_PIP)
+				;
+			mbclrattn(mi);
+		}
+		if (retry)
+			return (MBD_RETRY);
+	}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
-	if (mi->mi_tab.b_errcnt) {
+	if (mi->mi_tab.b_errcnt > 16) {
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
 		while (hpaddr->hpds & HP_PIP)
 			;
@@ -305,10 +319,9 @@ hpecc(mi)
 	npf = btop(bcr + bp->b_bcount) - 1;
 	reg = npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("%D ", bp->b_blkno + npf);
-	prdev("ECC", bp->b_dev);
+	printf("SOFT ECC hp%d%c bn%d\n", dkunit(bp),
+	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rp->hpec2&0xffff;
-
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
@@ -321,7 +334,6 @@ hpecc(mi)
 		i++;
 		bit -= 8;
 	}
-	mi->mi_hd->mh_active++;		/* Either complete or continuing */
 	if (bcr == 0)
 		return (0);
 #ifdef notdef
