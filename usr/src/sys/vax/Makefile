@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.7 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Makefile for vax link, tags file
 
