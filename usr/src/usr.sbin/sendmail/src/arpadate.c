@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)arpadate.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)arpadate.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include "conf.h"
@@ -75,7 +75,6 @@ arpadate(ud)
 # else OLDTIME
 	struct timeb t;
 	extern struct timeb *ftime();
-	extern char *timezone();
 # endif OLDTIME
 # ifdef V6
 	extern char *StdTimezone, *DstTimezone;
@@ -149,7 +148,7 @@ arpadate(ud)
 	else
 		p = tzname[0];
 # else
-	p = timezone(t.timezone, localtime(&t.time)->tm_isdst);
+	p = localtime(&t.time)->tm_zone;
 # endif USG
 # endif V6
 	if ((strncmp(p, "GMT", 3) == 0 || strncmp(p, "gmt", 3) == 0) &&
