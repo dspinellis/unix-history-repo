@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)read.2	5.1 (Berkeley) %G%
+.\"	@(#)read.2	6.1 (Berkeley) %G%
 .\"
-.TH READ 2 "27 July 1983"
+.TH READ 2 ""
 .UC 4
 .SH NAME
 read, readv \- read input
@@ -105,7 +105,7 @@ and
 will fail if one or more of the following are true:
 .TP 15
 [EBADF]
-\fIFildes\fP is not a valid file descriptor open for reading.
+\fID\fP is not a valid file or socket descriptor open for reading.
 .TP 15
 [EFAULT]
 \fIBuf\fP points outside the allocated address space.
