@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.18 (Berkeley) %G%
+ *	@(#)nfs.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -41,9 +41,9 @@
  */
 #define	NFS_ATTRTIMEO(np) \
 	((((np)->n_flag & NMODIFIED) || \
-	 5 * (time.tv_sec - (np)->n_mtime) < NFS_MINATTRTIMO) ? NFS_MINATTRTIMO : \
-	 (5 * (time.tv_sec - (np)->n_mtime) > NFS_MAXATTRTIMO ? NFS_MAXATTRTIMO : \
-	  5 * (time.tv_sec - (np)->n_mtime)))
+	 (time.tv_sec - (np)->n_mtime) / 10 < NFS_MINATTRTIMO) ? NFS_MINATTRTIMO : \
+	 ((time.tv_sec - (np)->n_mtime) / 10 > NFS_MAXATTRTIMO ? NFS_MAXATTRTIMO : \
+	  (time.tv_sec - (np)->n_mtime) / 10))
 
 /*
  * Structures for the nfssvc(2) syscall. Not that anyone but nfsd and mount_nfs
