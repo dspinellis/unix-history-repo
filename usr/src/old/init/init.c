@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -19,8 +19,6 @@ static char sccsid[] = "@(#)init.c	5.12 (Berkeley) %G%";
 #include <sys/syslog.h>
 #include <sys/stat.h>
 
-struct utmp ut;
-#define	LINSIZ	sizeof(ut.ut_line)
 #define	CMDSIZ	200	/* max string length for getty or window command*/
 #define	ALL	p = itab; p ; p = p->next
 #define	EVER	;;
@@ -35,7 +33,7 @@ char	ctty[]	= "/dev/console";
 
 struct	tab
 {
-	char	line[LINSIZ];
+	char	line[UT_LINESIZE];
 	char	comn[CMDSIZ];
 	char	xflag;
 	int	pid;
