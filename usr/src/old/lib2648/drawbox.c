@@ -1,4 +1,13 @@
-/*	drawbox.c	4.1	83/03/09	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)drawbox.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Draw a box around a window.  The lower left corner of the box is at (r, c).
  * Color is 1 for drawing a box, 0 for erasing.

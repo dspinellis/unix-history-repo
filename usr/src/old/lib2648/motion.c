@@ -1,4 +1,13 @@
-/*	motion.c	4.1	83/03/09	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)motion.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Move the pen to x, y.  We assume we are already in ESCP mode.
  */

@@ -1,4 +1,12 @@
-/*	@(#)gcd.c	4.1	%G%	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)gcd.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <mp.h>
 gcd(a,b,c) MINT *a,*b,*c;
