@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -43,12 +43,11 @@ static char sccsid[] = "@(#)strfile.c	5.4 (Berkeley) %G%";
  * lines starting with two consecutive delimiting character (default
  * character is '%') and creates another file which consists of a table
  * describing the file (structure from "strfile.h"), a table of seek
- * pointers to the start of the strings, and the strings, each terinated
+ * pointers to the start of the strings, and the strings, each terminated
  * by a null byte.  Usage:
  *
- *	% strfile [ - ] [ -cC ] [ -sv ] [ -oir ] sourcefile [ datafile ]
+ *	% strfile [-iorsv] [ -cC ] sourcefile [ datafile ]
  *
- *	- - Give a usage summary useful for jogging the memory
  *	c - Change delimiting character from '%' to 'C'
  *	s - Silent.  Give no summary of data processed at the end of
  *	    the run.
@@ -58,11 +57,6 @@ static char sccsid[] = "@(#)strfile.c	5.4 (Berkeley) %G%";
  *	r - randomize the order of the strings
  *
  *		Ken Arnold	Sept. 7, 1978 --
- *
- *	Added method to indicate dividers.  A "%-" will cause the address
- * to be added to the structure in one of the pointer elements.
- *
- *		Ken Arnold	Nov., 1984 --
  *
  *	Added ordering options.
  */
@@ -100,18 +94,7 @@ typedef struct {
 
 char	*Infile		= NULL,		/* input file name */
 	Outfile[MAXPATHLEN] = "",	/* output file name */
-	Delimch		= '%',		/* delimiting character */
-	*Usage[]	= {		/* usage summary */
-       "usage:	strfile [ - ] [ -cC ] [ -sv ] [ -oir ] inputfile [ datafile ]",
-       "	- - Give this usage summary",
-       "	c - Replace delimiting character with 'C'",
-       "	s - Silent.  Give no summary",
-       "	v - Verbose.  Give summary.  (default)",
-       "	o - order strings alphabetically",
-       "	i - ignore case in ordering",
-       "	r - randomize the order of the strings",
-       "	Default \"datafile\" is inputfile.dat",
-	};
+	Delimch		= '%';		/* delimiting character */
 
 int	Sflag		= FALSE;	/* silent run flag */
 int	Oflag		= FALSE;	/* ordering flag */
@@ -180,30 +163,30 @@ char	**av;
 		if (Num_pts > 508)
 			atoi("1");
 		sp = fgets(string, 256, inf);
-		if (sp == NULL || (sp[0] == dc && sp[1] == dc)) {
+		if (sp == NULL || sp[0] == dc && sp[1] == '\n') {
 			pos = ftell(inf);
-			add_offset(outf, pos);
 			length = pos - last_off - strlen(sp);
 			last_off = pos;
+			if (!length)
+				continue;
+			add_offset(outf, pos);
 			if (Tbl.str_longlen < length)
 				Tbl.str_longlen = length;
 			if (Tbl.str_shortlen > length)
 				Tbl.str_shortlen = length;
 			first = Oflag;
 		}
-		else {
-			if (first) {
-				for (nsp = sp; !isalnum(*nsp); nsp++)
-					continue;
-				ALLOC(Firstch, Num_pts);
-				fp = &Firstch[Num_pts - 1];
-				if (Iflag && isupper(*nsp))
-					fp->first = tolower(*nsp);
-				else
-					fp->first = *nsp;
-				fp->pos = Seekpts[Num_pts - 1];
-				first = FALSE;
-			}
+		else if (first) {
+			for (nsp = sp; !isalnum(*nsp); nsp++)
+				continue;
+			ALLOC(Firstch, Num_pts);
+			fp = &Firstch[Num_pts - 1];
+			if (Iflag && isupper(*nsp))
+				fp->first = tolower(*nsp);
+			else
+				fp->first = *nsp;
+			fp->pos = Seekpts[Num_pts - 1];
+			first = FALSE;
 		}
 	} while (sp != NULL);
 
@@ -243,72 +226,61 @@ char	**av;
 /*
  *	This routine evaluates arguments from the command line
  */
-getargs(ac, av)
-register int	ac;
-register char	**av;
+getargs(argc, argv)
+int	argc;
+char	**argv;
 {
-	register char	*sp;
-	register int	i;
-	register int	bad, j;
+	extern char	*optarg;
+	extern int	optind;
+	int	ch;
 
-	bad = 0;
-	for (i = 1; i < ac; i++)
-		if (*av[i] == '-' && av[i][1]) {
-			for (sp = &av[i][1]; *sp; sp++)
-				switch (*sp) {
-				  case 'c': /* new delimiting char */
-					if ((Delimch = *++sp) == '\0') {
-						--sp;
-						Delimch = *av[++i];
-					}
-					if (!isascii(Delimch)) {
-						printf("bad delimiting character: '\\%o\n'",
-						       Delimch);
-						bad++;
-					}
-					break;
-				  case 's':	/* silent */
-					Sflag++;
-					break;
-				  case 'v':	/* verbose */
-					Sflag = 0;
-					break;
-				  case 'o':	/* order strings */
-					Oflag++;
-					break;
-				  case 'i':	/* ignore case in ordering */
-					Iflag++;
-					break;
-				  case 'r':	/* ignore case in ordering */
-					Rflag++;
-					break;
-				  default:	/* unknown flag */
-					bad++;
-					printf("bad flag: '%c'\n", *sp);
-					break;
-				}
+	while ((ch = getopt(argc, argv, "c:iors")) != EOF)
+		switch(ch) {
+		case 'c':			/* new delimiting char */
+			Delimch = *optarg;
+			if (!isascii(Delimch)) {
+				printf("bad delimiting character: '\\%o\n'",
+				       Delimch);
+			}
+			break;
+		case 'i':			/* ignore case in ordering */
+			Iflag++;
+			break;
+		case 'o':			/* order strings */
+			Oflag++;
+			break;
+		case 'r':			/* ignore case in ordering */
+			Rflag++;
+			break;
+		case 's':			/* silent */
+			Sflag++;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		else if (*av[i] == '-') {
-			for (j = 0; Usage[j]; j++)
-				puts(Usage[j]);
-			exit(0);
-		}
-		else if (Infile)
-			(void) strcpy(Outfile, av[i]);
-		else
-			Infile = av[i];
-	if (!Infile) {
-		bad++;
-		puts("No input file name");
+	argv += optind;
+
+	if (*argv) {
+		Infile = *argv;
+		if (*++argv)
+			(void) strcpy(Outfile, *argv);
 	}
-	if (*Outfile == '\0' && !bad) {
+	if (!Infile) {
+		puts("No input file name");
+		usage();
+	}
+	if (*Outfile == '\0') {
 		(void) strcpy(Outfile, Infile);
 		(void) strcat(Outfile, ".dat");
 	}
-	if (bad) {
-		puts("use \"strfile -\" to get usage");
-		exit(-1);
-	}
+}
+
+usage()
+{
+	(void) fprintf(stderr,
+	    "strfile [-iors] [-c char] sourcefile [datafile]\n");
+	exit(1);
 }
 
 /*
