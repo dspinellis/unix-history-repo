@@ -183,7 +183,7 @@ eninit(unit)
 }
 
 int	enalldelay = 0;
-int	enlastdel = 25;
+int	enlastdel = 50;
 int	enlastmask = (~0) << 5;
 
 /*
