@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.32 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.33 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.32 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.33 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -539,9 +539,6 @@ myhostname(hostbuf, size)
 **
 **	Returns:
 **		The user@host information associated with this descriptor.
-**
-**	Side Effects:
-**		Sets RealHostName to the name of the host at the other end.
 */
 
 #if IDENTPROTO
@@ -579,16 +576,11 @@ getauthinfo(fd)
 	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0 ||
 	    fa.sa.sa_family == 0)
 	{
-		RealHostName = "localhost";
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
 		if (tTd(9, 1))
 			printf("getauthinfo: %s\n", hbuf);
 		return hbuf;
 	}
-
-	p = hostnamebyanyaddr(&fa);
-	RealHostName = newstr(p);
-	RealHostAddr = fa;
 
 #if IDENTPROTO
 	if (TimeOuts.to_ident == 0)
@@ -700,16 +692,23 @@ closeident:
 		continue;
 
 	/* p now points to the authenticated name */
-	(void) sprintf(hbuf, "%s@%s", p, RealHostName);
+	(void) sprintf(hbuf, "%s@%s",
+		p, RealHostName == NULL ? "localhost" : RealHostName);
 	goto finish;
 
 #endif /* IDENTPROTO */
 
 noident:
+	if (RealHostName == NULL)
+	{
+		if (tTd(9, 1))
+			printf("getauthinfo: NULL\n");
+		return NULL;
+	}
 	(void) strcpy(hbuf, RealHostName);
 
 finish:
-	if (RealHostName[0] != '[')
+	if (RealHostName != NULL && RealHostName[0] != '[')
 	{
 		p = &hbuf[strlen(hbuf)];
 		(void) sprintf(p, " [%s]", anynet_ntoa(&RealHostAddr));
