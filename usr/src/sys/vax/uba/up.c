@@ -1,33 +1,10 @@
-/*	up.c	3.28	%G%	*/
+/*	up.c	3.29	%G%	*/
 
 #include "../conf/up.h"
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
- *
- * This driver works marginally on an Emulex SC-11B controller with rev
- * level J microcode, defining:
- *	int	olducode = 1;
- * to force CPU stalling delays.
- *
- * It has worked with no delays and no problems on a prototype
- * SC-21 controller.  Emulex intends to upgrade all SC-11s on VAXes to SC-21s.
- * You should get a SC-21 to replace any SC-11 on a VAX.
- *
- * SC-11B Controller switch settings:
- *	SW1-1	5/19 surfaces	(off, 19 surfaces on Ampex 9300)
- *	SW1-2	chksum enable	(off, checksum disabled)
- *	SW1-3	volume select	(off, 815 cylinders)
- *	SW1-4	sector select	(on, 32 sectors)
- *	SW1-5	unused		(off)
- *	SW1-6	port select	(on, single port)
- *	SW1-7	npr delay	(off, disable)
- *	SW1-8	ecc test mode	(off, disable)
- * and top mounted switches:
- *	SW2-1	extend opcodes	(off=open, disable)
- *	SW2-2	extend diag	(off=open, disable)
- *	SW2-3	4 wd dma burst	(on=closed, enable)
- *	SW2-4	unused		(off=open)
  */
+#define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -109,6 +86,9 @@ int	upRDIST = _upRDIST;
  * On systems with RP06'es, we normally use only 291346 blocks of the H
  * area, and use DEF or G to cover the rest of the drive.  The C system
  * covers the whole drive and can be used for pack-pack copying.
+ *
+ * Note: sizes here are for AMPEX drives with 815 cylinders.
+ * CDC drives can make the F,G, and H areas larger as they have 823 cylinders.
  */
 struct	size
 {
@@ -122,8 +102,6 @@ struct	size
 	55936,	589,		/* E=cyl 589 thru 680 */
 	81472,	681,		/* F=cyl 681 thru 814 */
 	153824,	562,		/* G=cyl 562 thru 814 */
-	445664,	82,		/* H=cyl 82 thru 814 */
-/* Later, and more safely for H area...
 	291346,	82,		/* H=cyl 82 thru 561 */
 };
 
@@ -133,7 +111,7 @@ struct	size
  * +/- microinches.  Note that header compare inhibit (HCI) is not
  * tried (this makes sense only during read, in any case.)
  *
- * NOT ALL OF THESE ARE IMPLEMENTED ON 9300!?!
+ * NB: Not all drives/controllers emulate all of these.
  */
 #define	P400	020
 #define	M400	0220
@@ -204,24 +182,6 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 #define	b_cylin b_resid
 
 int	up_ubinfo;		/* Information about UBA usage saved here */
-/*
- * The EMULEX controller balks if accessed quickly after
- * certain operations.  With rev J delays seem to be needed only
- * when selecting a new unit, and in drive initialization type
- * like PRESET and DCLR.  The following variables control the delay
- * DELAY(n) is approximately n usec.
- */
-int	olducode = 1;
-int	idelay = 500;		/* Delay after PRESET or DCLR */
-int	osdelay = 150;		/* Old delay after selecting drive in upcs2 */
-int	ordelay = 100;		/* Old delay after SEARCH */
-int	oasdel = 100;		/* Old delay after clearing bit in upas */
-int	nsdelay = 25;
-
-#define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
- 
-int	nwaitcs2;		/* How many sdelay loops ? */
-int	neasycs2;		/* How many sdelay loops not needed ? */
 
 int	up_wticks;		/* Ticks waiting for interrupt */
 int	upwstart;		/* Have started guardian */
@@ -293,12 +253,9 @@ register unit;
 	 * Other drivers tend to say something like
 	 *	upaddr->upcs1 = IE;
 	 *	upaddr->upas = 1<<unit;
-	 * here, but the SC-11B will cancel a command which
+	 * here, but some controllers will cancel a command
 	 * happens to be sitting in the cs1 if you clear the go
-	 * bit by storing there (so the first is not safe),
-	 * and it also does not like being bothered with operations
-	 * such as clearing upas when a transfer is active (as
-	 * it may well be.)
+	 * bit by storing there (so the first is not safe).
 	 *
 	 * Thus we keep careful track of when we re-enable IE
 	 * after an interrupt and do it only if we didn't issue
@@ -314,8 +271,8 @@ register unit;
 	if ((bp = dp->b_actf) == NULL)
 		goto out;
 	/*
-	 * The SC-11B doesn't start SEARCH commands when transfers are
-	 * in progress.  In fact, it tends to get confused when given
+	 * Most controllers don't start SEARCH commands when transfers are
+	 * in progress.  In fact, some tend to get confused when given
 	 * SEARCH'es during transfers, generating interrupts with neither
 	 * RDY nor a bit in the upas register.  Thus we defer
 	 * until an interrupt when a transfer is pending.
@@ -327,12 +284,8 @@ register unit;
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
-	if ((upaddr->upcs2 & 07) != unit) {
+	if ((upaddr->upcs2 & 07) != unit)
 		upaddr->upcs2 = unit;
-		DELAY(olducode ? osdelay : nsdelay);
-		nwaitcs2++;
-	} else
-		neasycs2++;
 	/*
 	 * If we have changed packs or just initialized,
 	 * then the volume will not be valid; if so, clear
@@ -340,9 +293,7 @@ register unit;
 	 */
 	if ((upaddr->upds & VV) == 0) {
 		upaddr->upcs1 = IE|DCLR|GO;
-		DELAY(idelay);
 		upaddr->upcs1 = IE|PRESET|GO;
-		DELAY(idelay);
 		upaddr->upof = FMT22;
 		didie = 1;
 	}
@@ -388,8 +339,6 @@ search:
 		dk_busy |= 1<<unit;
 		dk_seek[unit]++;
 	}
-	if (olducode)
-		DELAY(ordelay);
 	goto out;
 
 done:
@@ -448,13 +397,9 @@ loop:
 	tn = sn/NSECT;
 	sn %= NSECT;
 	upaddr = UPADDR;
-	if ((upaddr->upcs2 & 07) != dn) {
+	if ((upaddr->upcs2 & 07) != dn)
 		upaddr->upcs2 = dn;
-		/* DELAY(sdelay);		Provided by ubasetup() */
-		nwaitcs2++;
-	} else
-		neasycs2++;
-	up_ubinfo = ubasetup(bp, 1);	/* Providing delay */
+	up_ubinfo = ubasetup(bp, 1);
 	/*
 	 * If drive is not present and on-line, then
 	 * get rid of this with an error and loop to get
@@ -484,7 +429,6 @@ loop:
 	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE) == 0) {
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
-		DELAY(idelay);
 		while (upaddr->upds & PIP)
 			DELAY(25);
 	}
@@ -560,12 +504,8 @@ upintr()
 		unit = dkunit(bp);
 		if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
-		if ((upaddr->upcs2 & 07) != unit) {
+		if ((upaddr->upcs2 & 07) != unit)
 			upaddr->upcs2 = unit;
-			DELAY(olducode ? osdelay : nsdelay);
-			nwaitcs2++;
-		} else
-			neasycs2++;
 		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {
 			/*
 			 * An error occurred, indeed.  Select this unit
@@ -604,11 +544,9 @@ upintr()
 			 * to hopefully help clear up seek positioning problems.
 			 */
 			upaddr->upcs1 = TRE|IE|DCLR|GO;
-			DELAY(idelay);
 			needie = 0;
 			if ((uptab.b_errcnt&07) == 4) {
 				upaddr->upcs1 = RECAL|GO|IE;
-				DELAY(idelay);
 				while(upaddr->upds & PIP)
 					DELAY(25);
 			}
@@ -625,7 +563,6 @@ upintr()
 		if (uptab.b_active) {
 			if (uptab.b_errcnt >= 16) {
 				upaddr->upcs1 = RTC|GO|IE;
-				DELAY(idelay);
 				while (upaddr->upds & PIP)
 					DELAY(25);
 				needie = 0;
@@ -650,10 +587,8 @@ upintr()
 		upsoftas &= ~(1<<unit);
 		ubafree(up_ubinfo), up_ubinfo = 0;
 	} else {
-		if (upaddr->upcs1 & TRE) {
+		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
-			DELAY(idelay);
-		}
 	}
 	/*
 	 * If we have a unit with an outstanding SEARCH,
@@ -667,11 +602,8 @@ upintr()
 	upsoftas = 0;
 	for (unit = 0; unit < NUP; unit++)
 		if ((as|oupsoftas) & (1<<unit)) {
-			if (as & (1<<unit)) {
+			if (as & (1<<unit))
 				upaddr->upas = 1<<unit;
-				if (olducode)
-					DELAY(oasdel);
-			}
 			if (upustart(unit))
 				needie = 0;
 		}
@@ -725,7 +657,6 @@ register struct buf *bp;
 	mask = up->upec2;
 	if (mask == 0) {
 		up->upof = FMT22;		/* == RTC ???? */
-		DELAY(idelay);
 		return (0);
 	}
 	/*
@@ -763,7 +694,6 @@ register struct buf *bp;
 	 * restart at offset o of next sector (i.e. in UBA register reg+1).
 	 */
 	up->upcs1 = TRE|IE|DCLR|GO;
-	DELAY(idelay);
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
 	sn = bn%(NSECT*NTRAC) + npf + 1;
@@ -798,7 +728,6 @@ upreset()
 		ubafree(up_ubinfo), up_ubinfo = 0;
 	}
 	UPADDR->upcs2 = CLR;		/* clear controller */
-	DELAY(idelay);
 	for (unit = 0; unit < NUP; unit++) {
 		uputab[unit].b_active = 0;
 		(void) upustart(unit);
