@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.17 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.18 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.17 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.18 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -612,9 +612,19 @@ cnameloop:
 			  case T_CNAME:
 				if (loopcnt++ > MAXCNAMEDEPTH)
 				{
-					syserr("DNS failure: CNAME loop for %s",
+					/*XXX should notify postmaster XXX*/
+					message("DNS failure: CNAME loop for %s",
 						host);
-					continue;
+					if (CurEnv->e_message == NULL)
+					{
+						char ebuf[MAXLINE];
+
+						sprintf(ebuf, "Deferred: DNS failure: CNAME loop for %s",
+							host);
+						CurEnv->e_message = newstr(ebuf);
+					}
+					h_errno = NO_RECOVERY;
+					return FALSE;
 				}
 
 				/* value points at name */

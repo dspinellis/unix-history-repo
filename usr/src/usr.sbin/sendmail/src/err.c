@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -88,6 +88,8 @@ syserr(fmt, va_alist)
 			ExitStat = EX_SOFTWARE;
 		else
 			ExitStat = EX_OSERR;
+		if (tTd(54, 1))
+			printf("syserr: ExitStat = %d\n", ExitStat);
 	}
 
 # ifdef LOG
