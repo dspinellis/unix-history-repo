@@ -8,7 +8,7 @@ PUSHDIVERT(-1)
 #
 
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
-ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f -gC $h!rmail ($u)')')
+ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -a$f -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
 ifdef(`UUCP_MAX_SIZE',, `define(`UUCP_MAX_SIZE', 100000)')
 POPDIVERT
@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.13 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.14 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
