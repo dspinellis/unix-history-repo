@@ -6,14 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/param.h>
+#include <sys/stat.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+#include <dirent.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "lp.h"
 
 /*
  * Routines and data common to all the line printer functions.
  */
-
-#include "lp.h"
 
 int	DU;		/* daeomon user-id */
 int	MX;		/* maximum number of blocks to copy */
@@ -60,14 +73,18 @@ char	pbuf[BUFSIZ/2];	/* buffer for printcap strings */
 char	*bp = pbuf;	/* pointer into pbuf for pgetent() */
 char	*name;		/* program name */
 char	*printer;	/* printer name */
-char	host[32];	/* host machine name */
+			/* host machine name */
+char	host[MAXHOSTNAMELEN];
 char	*from = host;	/* client's machine name */
 int	sendtorem;	/* are we sending to a remote? */
+
+static int compar __P((const void *, const void *));
 
 /*
  * Create a connection to the remote printer server.
  * Most of this code comes from rcmd.c.
  */
+int
 getport(rhost)
 	char *rhost;
 {
@@ -123,6 +140,7 @@ retry:
  *  new-line to null and leaves it in line.
  * Returns 0 at EOF or the number of characters read.
  */
+int
 getline(cfp)
 	FILE *cfp;
 {
@@ -152,16 +170,16 @@ getline(cfp)
  * creation time.
  * Return the number of entries and a pointer to the list.
  */
+int
 getq(namelist)
 	struct queue *(*namelist[]);
 {
-	register struct direct *d;
+	register struct dirent *d;
 	register struct queue *q, **queue;
 	register int nitems;
 	struct stat stbuf;
 	DIR *dirp;
 	int arraysz;
-	static int compar();
 
 	if ((dirp = opendir(SD)) == NULL)
 		return(-1);
@@ -214,13 +232,13 @@ errdone:
 /*
  * Compare modification times.
  */
-static
+static int
 compar(p1, p2)
-	register struct queue **p1, **p2;
+	const void *p1, *p2;
 {
-	if ((*p1)->q_time < (*p2)->q_time)
+	if ((*(struct queue **)p1)->q_time < (*(struct queue **)p2)->q_time)
 		return(-1);
-	if ((*p1)->q_time > (*p2)->q_time)
+	if ((*(struct queue **)p1)->q_time > (*(struct queue **)p2)->q_time)
 		return(1);
 	return(0);
 }
@@ -243,7 +261,7 @@ checkremote()
 		name[sizeof(name)-1] = '\0';
 		hp = gethostbyname(name);
 		if (hp == (struct hostent *) NULL) {
-		    (void) sprintf(errbuf,
+		    (void) snprintf(errbuf, sizeof(errbuf),
 			"unable to get official name for local machine %s",
 			name);
 		    return errbuf;
@@ -252,7 +270,7 @@ checkremote()
 		/* get the official name of RM */
 		hp = gethostbyname(RM);
 		if (hp == (struct hostent *) NULL) {
-		    (void) sprintf(errbuf,
+		    (void) snprintf(errbuf, sizeof(errbuf),
 			"unable to get official name for remote machine %s",
 			RM);
 		    return errbuf;
@@ -268,16 +286,34 @@ checkremote()
 	return (char *)0;
 }
 
-/*VARARGS1*/
-fatal(msg, a1, a2, a3)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+fatal(const char *msg, ...)
+#else
+fatal(msg, va_alist)
 	char *msg;
+        va_dcl
+#endif
 {
+	va_list ap;
+#if __STDC__
+	va_start(ap, msg);
+#else
+	va_start(ap);
+#endif
 	if (from != host)
-		printf("%s: ", host);
-	printf("%s: ", name);
+		(void)printf("%s: ", host);
+	(void)printf("%s: ", name);
 	if (printer)
-		printf("%s: ", printer);
-	printf(msg, a1, a2, a3);
-	putchar('\n');
+		(void)printf("%s: ", printer);
+	(void)vprintf(msg, ap);
+	va_end(ap);
+	(void)putchar('\n');
 	exit(1);
 }

@@ -4,30 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lp.h	5.5 (Berkeley) %G%
+ *	@(#)lp.h	5.6 (Berkeley) %G%
  */
 
 /*
  * Global definitions for the line printer system.
  */
-
-#include <stdio.h>
-#include <sys/param.h>
-#include <sys/file.h>
-#include <sys/dir.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <pwd.h>
-#include <syslog.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <sgtty.h>
-#include <ctype.h>
-#include <errno.h>
-#include "lp.local.h"
 
 extern int	DU;		/* daeomon user-id */
 extern int	MX;		/* maximum number of blocks to copy */
@@ -74,10 +56,10 @@ extern char	pbuf[];		/* buffer for printcap entry */
 extern char	*bp;		/* pointer into ebuf for pgetent() */
 extern char	*name;		/* program name */
 extern char	*printer;	/* printer name */
-extern char	host[32];	/* host machine name */
+				/* host machine name */
+extern char	host[MAXHOSTNAMELEN];
 extern char	*from;		/* client's machine name */
 extern int	sendtorem;	/* are we sending to a remote? */
-extern int	errno;
 
 /*
  * Structure used for building a sorted list of control files.
@@ -87,9 +69,37 @@ struct queue {
 	char	q_name[MAXNAMLEN+1];	/* control file name */
 };
 
-char	*pgetstr();
-char	*malloc();
-char	*getenv();
-char	*index();
-char	*rindex();
-char	*checkremote();
+#include <sys/cdefs.h>
+struct dirent;
+
+void     blankfill __P((int));
+char	*checkremote __P((void));
+int      chk __P((char *));
+void     displayq __P((int));
+void     dump __P((char *, char *, int));
+void     endprent __P((void));
+void	 fatal __P((const char *, ...));
+int	 getline __P((FILE *));
+int	 getport __P((char *));
+int      getprent __P((char *));
+int	 getq __P((struct queue *(*[])));
+void     header __P((void));
+void     inform __P((char *));
+int      inlist __P((char *, char *));
+int      iscf __P((struct dirent *));
+int      isowner __P((char *, char *));
+void     ldump __P((char *, char *, int));
+int      lockchk __P((char *));
+void     prank __P((int));
+void     process __P((char *));
+void     rmjob __P((void));
+void     rmremote __P((void));
+void     show __P((char *, char *, int));
+int      startdaemon __P((char *));
+int      pgetent __P((char *, char *));
+int      pgetflag __P((char *));
+int      pgetnum __P((char *));
+char    *pgetstr __P((char *, char **));
+int      pnamatch __P((char *));
+int      pnchktc __P((void));
+void     warn __P((void));

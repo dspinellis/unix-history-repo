@@ -6,15 +6,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/param.h>
+
+#include <signal.h>
+#include <errno.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include "lp.h"
+#include "lp.local.h"
+#include "pathnames.h"
 
 /*
  * rmjob - remove the specified jobs from the queue.
  */
-
-#include "lp.h"
-#include "pathnames.h"
 
 /*
  * Stuff for handling lprm specifications
@@ -30,13 +41,12 @@ int	all = 0;		/* eliminate all files (root only) */
 int	cur_daemon;		/* daemon's pid */
 char	current[40];		/* active control file name */
 
-int	iscf();
-
+void
 rmjob()
 {
 	register int i, nitems;
 	int assasinated = 0;
-	struct direct **files;
+	struct dirent **files;
 	char *cp;
 
 	if ((i = pgetent(line, printer)) < 0)
@@ -110,6 +120,7 @@ rmjob()
  *  daemon and the file name of the active spool entry.
  * Return boolean indicating existence of a lock file.
  */
+int
 lockchk(s)
 	char *s;
 {
@@ -145,6 +156,7 @@ lockchk(s)
 /*
  * Process a control file.
  */
+void
 process(file)
 	char *file;
 {
@@ -172,6 +184,7 @@ process(file)
 /*
  * Do the dirty work in checking
  */
+int
 chk(file)
 	char *file;
 {
@@ -226,6 +239,7 @@ chk(file)
  * files sent from the remote machine to be removed.
  * Normal users can only remove the file from where it was sent.
  */
+int
 isowner(owner, file)
 	char *owner, *file;
 {
@@ -243,6 +257,7 @@ isowner(owner, file)
  * Check to see if we are sending files to a remote machine. If we are,
  * then try removing files on the remote machine.
  */
+void
 rmremote()
 {
 	register char *cp;
@@ -258,7 +273,7 @@ rmremote()
 	 */
 	fflush(stdout);
 
-	sprintf(buf, "\5%s %s", RP, all ? "-all" : person);
+	(void)snprintf(buf, sizeof(buf), "\5%s %s", RP, all ? "-all" : person);
 	cp = buf;
 	for (i = 0; i < users; i++) {
 		cp += strlen(cp);
@@ -288,8 +303,9 @@ rmremote()
 /*
  * Return 1 if the filename begins with 'cf'
  */
+int
 iscf(d)
-	struct direct *d;
+	struct dirent *d;
 {
 	return(d->d_name[0] == 'c' && d->d_name[1] == 'f');
 }
