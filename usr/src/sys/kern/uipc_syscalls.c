@@ -1,5 +1,4 @@
 /*
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
@@ -13,19 +12,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)uipc_syscalls.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -279,7 +266,7 @@ socketpair()
 		return;
 	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
 	if (u.u_error)
-		goto freeit;
+		goto free1;
 	if (u.u_error = falloc(&fp1, &fd))
 		goto free2;
 	sv[0] = fd;
@@ -318,9 +305,8 @@ free3:
 	fp1->f_count = 0;
 	u.u_ofile[sv[0]] = 0;
 free2:
-	so2->so_state |= SS_NOFDREF;
 	(void)soclose(so2);
-freeit:
+free1:
 	(void)soclose(so1);
 }
 
@@ -856,7 +842,7 @@ pipe()
 		return;
 	u.u_error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
 	if (u.u_error)
-		goto freeit;
+		goto free1;
 	if (u.u_error = falloc(&rf, &fd))
 		goto free2;
 	u.u_r.r_val1 = fd;
@@ -883,9 +869,8 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
-	wso->so_state |= SS_NOFDREF;
 	(void)soclose(wso);
-freeit:
+free1:
 	(void)soclose(rso);
 }
 
