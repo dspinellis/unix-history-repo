@@ -1,38 +1,14 @@
 .\" Copyright (c) 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\" This document is derived from software contributed to Berkeley by
+.\" Rick Macklem at The University of Guelph.
+.\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	5.1 (Berkeley) %G%
+.\"	@(#)1.t	5.2 (Berkeley) %G%
 .\"
-.\" run off as psroff -me
-.tp
-.sp 2
-.(l C
-Notes on the 4.4 BSD NFS Implementation
-.sp
-Rick Macklem
-.br
-University of Guelph
-.sp
-ABSTRACT
-.)l
-.pp
-The 4.4BSD implementation of the Network File System (NFS)\** is intended to interoperate with
-.(f
-\**Network File System (NFS) is believed to be a registered trademark of
-Sun Microsystems Inc.
-.)f
-other NFS Version 2 Protocol (RFC1094) implementations but also
-allows use of an alternate protocol that is hoped to provide better performance
-in certain environments.
-This paper will informally discuss these various protocol features and
-their use.
-There is a brief overview of the implementation followed by several sections
-on various problem areas related to NFS and some hints on how to deal with
-them.
-.sp
-.sh 1 "Implementation"
+.sh 1 "NFS Implementation"
 .pp
 The 4.4BSD implementation of NFS and the alternate protocol nicknamed
 Not Quite NFS (NQNFS) are kernel resident, but make use of a few system
@@ -45,9 +21,9 @@ sockets via. the kernel interface available in
 There are connection management routines for support of sockets for connection
 oriented protocols and timeout/retransmit support for datagram sockets on
 the client side.
-For connection oriented transport protocols, such as TCP/IP, there is one connection
-for each client to server mount point that is maintained until a
-umount.
+For connection oriented transport protocols,
+such as TCP/IP, there is one connection
+for each client to server mount point that is maintained until an umount.
 If the connection breaks, the client will attempt a reconnect with a new
 socket.
 The client side can operate without any daemons running, but performance
@@ -66,7 +42,8 @@ Mountd handles remote mount protocol (RFC1094, Appendix A) requests.
 The nfsd master daemon forks off children that enter the kernel
 via. the nfssvc system call. The children normally remain kernel
 resident, providing a process context for the NFS RPC servers. The only
-exception to this is when a Kerberos [Steiner88] ticket is received and at that time
+exception to this is when a Kerberos [Steiner88]
+ticket is received and at that time
 the nfsd exits the kernel temporarily to verify the ticket via. the
 Kerberos libraries and then returns to the kernel with the results.
 (This only happens for Kerberos mount points as described further under
@@ -99,7 +76,8 @@ If problems are encountered,
 the safest fix is to kill all the daemons and then restart them in
 the order portmap, mountd and nfsd.
 Other server side problems are normally caused by problems with the format
-of the exports file, which is covered under Security and in the exports man page.
+of the exports file, which is covered under
+Security and in the exports man page.
 .pp
 On the client side, there are several mount options useful for dealing
 with server problems.
@@ -139,19 +117,19 @@ Finally, the
 option sets the maximum size of the group list in the credentials passed
 to an NFS server in every RPC request. Although RFC1057 specifies a maximum
 size of 16 for the group list, some servers can't handle that many.
-If a user, particularly root doing a mount, keeps getting access denied from a file server, try temporarily
+If a user, particularly root doing a mount,
+keeps getting access denied from a file server, try temporarily
 reducing the number of groups that user is in to less than 5
 by editing /etc/group. If the user can then access the file system, slowly
 increase the number of groups for that user until the limit is found and
-then peg the limit there
-with the
+then peg the limit there with the
 \fB-g=\fInum\fR
 option.
-This implies that the server
-will only see the first \fInum\fR groups that the user is in, which can cause some
-accessibility problems.
+This implies that the server will only see the first \fInum\fR
+groups that the user is in, which can cause some accessibility problems.
 .pp
-For sites that have many NFS servers, amd [Pendry93] is a useful administration tool.
+For sites that have many NFS servers, amd [Pendry93]
+is a useful administration tool.
 It also reduces the number of actual NFS mount points, alleviating problems
 with commands such as df(1) that hang when any of the NFS servers is
 unreachable.
@@ -170,11 +148,12 @@ and/or access to the file system is critical for normal system operation.
 .lp
 There are two other alternatives:
 .ip 1)
-A soft mount (\fB-s\fR option) retries an RPC \fIn\fR times and then the corresponding
+A soft mount (\fB-s\fR option) retries an RPC \fIn\fR
+times and then the corresponding
 system call returns -1 with errno set to EINTR.
 For TCP transport, the actual RPC request is not retransmitted, but the
-timeout intervals waiting for a reply from the server are done in the same manner
-as UDP for this purpose.
+timeout intervals waiting for a reply from the server are done
+in the same manner as UDP for this purpose.
 The problem with this type of mount is that most applications do not
 expect an EINTR error return from file I/O system calls (since it never
 occurs for a local file system) and get confused by the error return
@@ -189,8 +168,9 @@ time, due to a crashed server or network partitioning.
 An interruptible mount (\fB-i\fR option) checks to see if a termination signal
 is pending for the process when waiting for server response and if it is,
 the I/O system call posts an EINTR. Normally this results in the process
-being terminated by the signal when returning from the system call. This allows you to
-``^C'' out of processes that are hung due to unresponsive servers.
+being terminated by the signal when returning from the system call.
+This feature allows you to ``^C'' out of processes that are hung
+due to unresponsive servers.
 The problem with this approach is that signals that are caught by
 a process are not recognized as termination signals
 and the process will remain hung.\**
@@ -202,7 +182,8 @@ will not terminate.
 .sh 1 "RPC Transport Issues"
 .pp
 The NFS Version 2 protocol runs over UDP/IP transport by
-sending each Sun Remote Procedure Call (RFC1057) request/reply message in a single UDP
+sending each Sun Remote Procedure Call (RFC1057)
+request/reply message in a single UDP
 datagram. Since UDP does not guarantee datagram delivery, the
 Remote Procedure Call (RPC) layer
 times out and retransmits an RPC request if
@@ -214,26 +195,28 @@ for even a moderately loaded NFS server.
 As a result, the RTO interval must be a conservation (large) estimate, in
 order to avoid extraneous RPC request retransmits.\**
 .(f
-\**At best, an extraneous RPC request retransmit increases the load on the server and
-at worst can result in damaged files on the server when non-idempotent RPCs
-are redone. [Juszczak89]
+\**At best, an extraneous RPC request retransmit increases
+the load on the server and at worst can result in damaged files
+on the server when non-idempotent RPCs are redone [Juszczak89].
 .)f
 Also, with an 8Kbyte read/write data size
 (the default), the read/write reply/request will be an 8+Kbyte UDP datagram
 that must normally be fragmented at the IP layer for transmission.\**
 .(f
-\**6 IP fragments for an Ethernet, which has an maximum transmission unit of 1500bytes.
+\**6 IP fragments for an Ethernet,
+which has an maximum transmission unit of 1500bytes.
 .)f
-For IP fragments to be successfully reassembled into the IP datagram at the receive end, all
+For IP fragments to be successfully reassembled into
+the IP datagram at the receive end, all
 fragments must be received within a fairly short ``time to live''.
-If one fragment is lost/damaged in transit, the entire RPC must be retransmitted
-and redone.
+If one fragment is lost/damaged in transit,
+the entire RPC must be retransmitted and redone.
 This problem can be exaggerated by a network interface on the receiver that
 cannot handle the reception of back to back network packets. [Kent87]
 .pp
 There are several tuning mount
-options on the client side that can prove useful when trying to alleviate performance
-problems related to UDP RPC transport.
+options on the client side that can prove useful when trying to
+alleviate performance problems related to UDP RPC transport.
 The options
 \fB-r=\fInum\fR
 and
@@ -245,10 +228,12 @@ maximum of 8Kbytes
 whenever IP fragmentation is causing problems. The best indicator of
 IP fragmentation problems is a significant number of
 \fIfragments dropped after timeout\fR
-reported by the \fIip:\fR section of a \fBnetstat -s\fR command on either the client or server.
+reported by the \fIip:\fR section of a \fBnetstat -s\fR
+command on either the client or server.
 Of course, if the fragments are being dropped at the server, it can be
 fun figuring out which client(s) are involved.
-The most likely candidates are clients that are not on the same local area network as the
+The most likely candidates are clients that are not
+on the same local area network as the
 server or have network interfaces that do not receive several
 back to back network packets properly.
 .pp
@@ -273,7 +258,8 @@ be a significant number\** in the \fIX Replies\fR field and a
 .(f
 \**Even 0.1% of the total RPCs is probably significant.
 .)f
-large number in the \fIRetries\fR field in the \fIRpc Info:\fR section as reported
+large number in the \fIRetries\fR field
+in the \fIRpc Info:\fR section as reported
 by the \fBnfsstat\fR command.
 On the server, there would be significant numbers of \fIInprog\fR recent
 request cache hits in the \fIServer Cache Stats:\fR section as reported
@@ -287,8 +273,9 @@ on the server. It is probably best to err on the safe side and use a large
 seems to be causing problems.
 .pp
 An alternative to all this fiddling is to run NFS over TCP transport instead
-of UDP. Since the 4.4BSD TCP implementation provides reliable delivery with congestion control, it
-avoids all of the above problems.
+of UDP.
+Since the 4.4BSD TCP implementation provides reliable
+delivery with congestion control, it avoids all of the above problems.
 It also permits the use of read and write data sizes greater than the 8Kbyte
 limit for UDP transport.\**
 .(f
@@ -310,8 +297,8 @@ and these may well be worth exploring.
 .)f
 .sh 1 "Other Tuning Tricks"
 .pp
-Another mount option that may improve performance over certain network interconnects is
-\fB-a=\fInum\fR
+Another mount option that may improve performance over
+certain network interconnects is \fB-a=\fInum\fR
 which sets the number of blocks that the system will
 attempt to read-ahead during sequential reading of a file. The default value
 of 1 seems to be appropriate for most situations, but a larger value might
@@ -323,8 +310,9 @@ can also improve performance for some environments that use NFS heavily.
 Under some workloads, a buffer cache of 4-6Mbytes can result in significant
 performance improvements over 1-2Mbytes, both in client side system call
 response time and reduced server RPC load.
-The buffer cache size defaults to 10% of physical memory, but this can
-be overridden by specifying the BUFPAGES option in the machine's config file.\**
+The buffer cache size defaults to 10% of physical memory,
+but this can be overridden by specifying the BUFPAGES option
+in the machine's config file.\**
 .(f
 BUFPAGES is the number of physical machine pages allocated to the buffer cache.
 ie. BUFPAGES * NBPG = buffer cache size in bytes
@@ -336,10 +324,12 @@ available for paging, which implies that making the buffer cache larger
 will increase paging rate, with possibly disastrous results.
 .sh 1 "Security Issues"
 .pp
-When a machine is running an NFS server it opens up a great big security
-hole. For ordinary NFS, the server receives client credentials in the RPC request as a user id
+When a machine is running an NFS server it opens up a great big security hole.
+For ordinary NFS, the server receives client credentials
+in the RPC request as a user id
 and a list of group ids and trusts them to be authentic!
-The only tool available to restrict remote access to file systems with is the exports(5) file,
+The only tool available to restrict remote access to
+file systems with is the exports(5) file,
 so file systems should be exported with great care.
 The exports file is read by mountd upon startup and after a hangup signal
 is posted for it and then as much of the access specifications as possible are
@@ -355,17 +345,19 @@ dangerous and should only be used for public information. It is also
 strongly recommended that file systems exported to ``the world'' be exported
 read-only.
 For each host or group of hosts, the file system can be exported read-only or
-read/write. You can also define one of three client user id to server credential
+read/write.
+You can also define one of three client user id to server credential
 mappings to help control access.
 Root (user id == 0) can be mapped to some default credentials while all other
-user ids are accepted as given. If the default credentials for user id equal zero
+user ids are accepted as given.
+If the default credentials for user id equal zero
 are root, then there is essentially no remapping.
 Most NFS file systems are exported this way, most commonly mapping
 user id == 0 to the credentials for the user nobody.
 Since the client user id and group id list is used unchanged on the server
 (except for root), this also implies that
-the user id and group id space must be common between the client and server. (ie. user id N on
-the client must refer to the same user on the server)
+the user id and group id space must be common between the client and server.
+(ie. user id N on the client must refer to the same user on the server)
 All user ids can be mapped to a default set of credentials, typically that of
 the user nobody. This essentially gives world access to all
 users on the corresponding hosts.
@@ -379,8 +371,8 @@ these credentials is then cached.
 The use of TCP transport is strongly recommended,
 since the scheme depends on the TCP connection to avert replay attempts.
 Unfortunately, this option is only usable
-between BSD clients and servers since it is not compatible with other known ``kerberized'' NFS
-systems.
+between BSD clients and servers since it is
+not compatible with other known ``kerberized'' NFS systems.
 To enable use of this Kerberos option, both mount_nfs on the client and
 nfsd on the server must be rebuilt with the -DKERBEROS option and
 linked to KerberosIV libraries.
@@ -401,13 +393,14 @@ TGT for the server's Realm, as provided by kinit or similar.
 .pp
 As well as the standard NFS Version 2 protocol (RFC1094) implementation, BSD
 systems can use a variant of the protocol called Not Quite NFS (NQNFS) that
-supports a variety of protocol extensions. This protocol uses 64bit file offsets
+supports a variety of protocol extensions.
+This protocol uses 64bit file offsets
 and sizes, an \fIaccess rpc\fR, an \fIappend\fR option on the write rpc
 and extended file attributes to support 4.4BSD file system functionality
 more fully.
-It also makes use of a variant of short term \fIleases\fR [Gray89] with delayed write
-client caching, in an effort to provide full cache consistency and better
-performance.
+It also makes use of a variant of short term
+\fIleases\fR [Gray89] with delayed write client caching,
+in an effort to provide full cache consistency and better performance.
 This protocol is available between 4.4BSD systems only and is used when
 the \fB-q\fR mount option is specified.
 It can be used with any of the aforementioned options for NFS, such as TCP
@@ -415,8 +408,9 @@ transport (\fB-T\fR) and KerberosIV authentication (\fB-K\fR).
 Although this protocol is experimental, it is recommended over NFS for
 mounts between 4.4BSD systems.\**
 .(f
-\**I would appreciate email from anyone who can provide NFS vs. NQNFS performance
-measurements, particularly fast clients, many clients or over an internetwork
+\**I would appreciate email from anyone who can provide
+NFS vs. NQNFS performance measurements,
+particularly fast clients, many clients or over an internetwork
 connection with a large ``bandwidth * RTT'' product.
 .)f
 .sh 1 "Monitoring NFS Activity"
@@ -429,13 +423,15 @@ and server. Of particular interest on the server are the fields in the
 in the first three fields and total RPCs in the fourth. The first three fields
 should remain a very small percentage of the total. If not, it
 would indicate one or more clients doing retries too aggressively and the fix
-would be to isolate these clients, disable the dynamic RTO estimation on them and
+would be to isolate these clients,
+disable the dynamic RTO estimation on them and
 make their initial timeout interval a conservative (ie. large) value.
 .pp
 On the client side, the fields in the \fIRpc Info:\fR section are of particular
 interest, as they give an overall picture of NFS activity.
 The \fITimedOut\fR field is the number of I/O system calls that returned -1
-for ``soft'' mounts and can be reduced by increasing the retry limit or changing
+for ``soft'' mounts and can be reduced
+by increasing the retry limit or changing
 the mount type to ``intr'' or ``hard''.
 The \fIInvalid\fR field is a count of trashed RPC replies that are received
 and should remain zero.\**
@@ -461,7 +457,8 @@ The \fIRequests\fR field is the total count of RPCs done on all servers.
 .pp
 The \fBnetstat -s\fR comes in useful during investigation of RPC transport
 problems.
-The field \fIfragments dropped after timeout\fR in the \fIip:\fR section indicates IP fragments are
+The field \fIfragments dropped after timeout\fR in
+the \fIip:\fR section indicates IP fragments are
 being lost and a significant number of these occurring indicates that the
 use of TCP transport or a smaller read/write data size is in order.
 A significant number of \fIbad checksums\fR reported in the \fIudp:\fR
@@ -537,9 +534,10 @@ and swdevt[0].sw_dev == NODEV if it is to do nfs swapping as well
 run diskless_offset on the vmunix file to find out the byte offset
 of the nfs_diskless structure
 .ip \(bu
-Run diskless_setup on the server to set up the server and fill in the nfs_diskless structure
-for that client.
-The nfs_diskless structure can either be written into the vmunix file (the -x option) or
+Run diskless_setup on the server to set up the server and fill in the
+nfs_diskless structure for that client.
+The nfs_diskless structure can either be written into the
+vmunix file (the -x option) or
 saved in /var/diskless/setup.<official-hostname>.
 .ip \(bu
 Set up the bootstrap server. If the nfs_diskless structure was written into
@@ -562,61 +560,3 @@ Create a /var subtree for each client in an appropriate place on the server,
 such as /var/diskless/var/<client-hostname>/...
 By using the <client-hostname> to differentiate /var for each host,
 /etc/rc can be modified to mount the correct /var from the server.
-.sh 1 "Summary"
-.pp
-The configuration and tuning of an NFS environment tends to be a bit of a
-mystic art, but hopefully this paper along with the man pages and other
-reading will be helpful. Good Luck.
-.sh 1 "Bibliography"
-.ip [Gray89] 16
-Cary G. Gray and David R. Cheriton, Leases: An Efficient Fault-Tolerant
-Mechanism for Distributed File Cache Consistency, In \fIProc. of the
-Twelfth ACM Symposium on Operating Systems Principals\fR, pg. 202-210,
-Litchfield Park, AZ, Dec. 1989.
-.ip [Juszczak89] 16
-Chet Juszczak, Improving the Performance and Correctness of an NFS Server,
-In \fIProc. Winter 1989 USENIX Conference\fR, pg. 53-63, San Diego, CA, January 1989.
-.ip [Keith90] 16
-Bruce E. Keith, Perspectives on NFS File Server Performance Characterization,
-In \fIProc. Summer 1990 USENIX Conference\fR, pg. 267-277, Anaheim, CA, June 1990.
-.ip [Kent87] 16
-Christopher. A. Kent and Jeffrey C. Mogul, \fIFragmentation Considered Harmful\fR, Research Report 87/3,
-Digital Equipment Corporation Western Research Laboratory, Dec. 1987.
-.ip [Macklem91] 16
-Rick Macklem, Lessons Learned Tuning the 4.3BSD Reno Implementation of the
-NFS Protocol, In \fIProc. Winter USENIX Conference\fR, pg. 53-64,
-Dallas, TX, January 1991.
-.ip [Nowicki89] 16
-Bill Nowicki, Transport Issues in the Network File System, In
-\fIComputer Communication Review\fR, pg. 16-20, Vol. 19, Number 2, April 1989.
-.ip [Pendry93] 16
-Jan-Simon Pendry, 4.4 BSD Automounter Reference Manual, In
-\fIsrc/usr.sbin/amd/doc directory of 4.4 BSD distribution tape\fR.
-.ip [Reid90] 16
-Jim Reid, N(e)FS: the Protocol is the Problem, In
-\fIProc. Summer 1990 UKUUG Conference\fR,
-London, England, July 1990.
-.ip [Sandberg85] 16
-Russel Sandberg, David Goldberg, Steve Kleiman, Dan Walsh, and Bob Lyon,
-Design and Implementation of the Sun Network filesystem, In \fIProc. Summer
-1985 USENIX Conference\fR, pages 119-130, Portland, OR, June 1985.
-.ip [Srinivasan89] 16
-V. Srinivasan and Jeffrey C. Mogul, \fISpritely NFS: Implementation and
-Performance of Cache-Consistency Protocols\fR, Research Report 89/5,
-Digital Equipment Corporation Western Research Laboratory, May 1989.
-.ip [Steiner88] 16
-Jennifer G. Steiner, Clifford Neuman and Jeffrey I. Schiller,
-Kerberos: An Authentication Service for Open Network Systems, In
-\fIProc. Winter 1988 USENIX Conference\fR, Dallas, TX, February 1988.
-.ip [Stern] 16
-Hal Stern, \fIManaging NFS and NIS\fR, O'Reilly and Associates,
-ISBN 0-937175-75-7.
-.ip [Sun87] 16
-Sun Microsystems Inc., \fIXDR: External Data Representation Standard\fR,
-RFC1014, Network Information Center, SRI International, June 1987.
-.ip [Sun88] 16
-Sun Microsystems Inc., \fIRPC: Remote Procedure Call Protocol Specification Version 2\fR,
-RFC1057, Network Information Center, SRI International, June 1988.
-.ip [Sun89] 16
-Sun Microsystems Inc., \fINFS: Network File System Protocol Specification\fR,
-RFC1094, Network Information Center, SRI International, March 1989.
