@@ -1,4 +1,4 @@
-#	@(#)Makefile.luna68k	7.5 (Berkeley) %G%
+#	@(#)Makefile.luna68k	7.6 (Berkeley) %G%
 #
 # from: hp300/conf/Makefile.hp300	7.21 (Berkeley) 2/12/93
 #
@@ -76,7 +76,10 @@ SYSTEM_LD_TAIL=	@size $@; chmod 755 $@
 %LOAD
 
 libkern.a:
-	ln -s $S/libkern/obj/libkern.a libkern.a; \
+	-@if [ X${PROF} = X ]; \
+	then ln -s $S/libkern/obj/libkern.a libkern.a; \
+	else ln -s $S/libkern/obj/libkern_p.a libkern.a; \
+	fi; \
 	echo ln -s $S/libkern/obj/libkern.a libkern.a
 
 newvers:
