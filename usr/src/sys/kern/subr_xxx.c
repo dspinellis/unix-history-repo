@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.6	81/03/11	*/
+/*	subr_xxx.c	4.7	81/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,7 @@ register c;
 	return(u.u_count == 0? -1: 0);
 }
 
-#include "ct."
+#include "ct.h"
 #if NCT > 0
 /*
  * Pick up and return the next character from the user's
