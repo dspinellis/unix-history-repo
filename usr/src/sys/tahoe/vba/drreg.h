@@ -1,4 +1,4 @@
-/*	drreg.h	1.1	86/07/20	*/
+/*	drreg.h	1.2	86/11/23	*/
 
 /*
     ------------------------------------------
@@ -172,9 +172,9 @@ struct dr11io {
 
 /* --- Define ioctl call used by dr11 utility device --  */
 
-#define DR11STAT	_IOWR(d,1,struct dr11io)   /* Get status dr11, unit 
+#define DR11STAT	_IOWR(d,30,struct dr11io)   /* Get status dr11, unit 
 						   number is dr11io.arg[0] */
-#define DR11LOOP	_IOR(d,2,struct dr11io)   /* Perform loopback test */
+#define DR11LOOP	_IOR(d,31,struct dr11io)   /* Perform loopback test */
 
 /* ---------------------------------------------------- */
 

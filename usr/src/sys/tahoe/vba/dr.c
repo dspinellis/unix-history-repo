@@ -482,6 +482,25 @@ int flag;
     	dra->currenttimo = 0;
 	break;
 
+    case DR11STAT:
+    	/* Copy back dr11 status to user */
+    	data->arg[0] = dra->dr_flags;
+    	data->arg[1] = rsaddr->dr_cstat;
+    	data->arg[2] = dra->dr_istat;	/* Status reg. at last interrupt */
+    	data->arg[3] = rsaddr->dr_data;	/* P-i/o input data */
+    	status = (ushort)((rsaddr->dr_addmod << 8) & 0xff00);
+    	data->arg[4] = status | (ushort)(rsaddr->dr_intvect & 0xff);
+    	data->arg[5] = rsaddr->dr_range;
+    	data->arg[6] = rsaddr->dr_rahi;
+    	data->arg[7] = rsaddr->dr_ralo;
+	break;
+    case DR11LOOP:
+	/* Perform loopback test -- MUST HAVE LOOPBACK CABLE ATTACHED --
+	   Test results are printed on system console */
+	if (suser())
+		dr11loop(rsaddr,dra,unit);
+	break;
+
     default:
 	printf("\ndrioctl: Invalid ioctl cmd : %lx",cmd);
 	return EINVAL;
@@ -492,6 +511,181 @@ int flag;
     	printf("**** (data[0]:%lx)",data[0]);
 #endif
     return 0;
+}
+
+#define NPAT 2
+#define DMATBL 20
+ushort tstpat[DMATBL] = { 0xAAAA, 0x5555};
+long DMAin = 0;
+
+dr11loop(dr,dra,unit)
+struct rsdevice *dr;
+struct dr_aux *dra;
+long unit;
+{	register long result, ix;
+	long baddr, wait;
+
+	dr->dr_cstat = MCLR;		/* Clear board & device, disable intr */
+
+	/* Perform loopback test -- MUST HAVE LOOPBACK CABLE ATTACHED --
+	   Test results are printed on system console */
+	printf("\n\t ----- DR11 unit %ld loopback test -----",unit);
+
+	printf("\n\t Program I/O ...");
+	for (ix=0;ix<NPAT;ix++) {
+		dr->dr_data = tstpat[ix];	/* Write to Data out register */
+		result = (dr->dr_data & 0xFFFF);	/* Read it back */
+		if (result != tstpat[ix]) {
+			printf("Failed, expected : %lx --- actual : %lx",
+				tstpat[ix],result);
+			return;
+		}
+	}
+
+	printf("OK\n\t Functions & Status Bits ...");
+	dr->dr_cstat = (FCN1 | FCN3);
+	result = dr->dr_cstat & 0xffff;		/* Read them back */
+	if ((result & (STTC | STTA)) != (STTC |STTA)) {
+		printf("Failed, expected : %lx --- actual : %lx, ISR:%lx",
+			(STTA|STTC),(result & (STTA|STTC)), result);
+		return;
+	}
+	dr->dr_cstat = FCN2;
+	result = dr->dr_cstat & 0xffff;		/* Read them back */
+	if ((result & STTB) != STTB) {
+		printf("Failed, expected : %lx --- actual : %lx, ISR:%lx",
+			STTB,(result & STTB), result);
+		return;
+	}
+
+	printf("OK\n\t DMA output ...");
+
+	if (DMAin) goto dmain;
+
+	/* Initialize DMA data buffer */
+	for(ix=0;ix<DMATBL;ix++) tstpat[ix] = 0xCCCC + ix;
+	tstpat[DMATBL-1] = 0xCCCC;	/* Last word output */
+
+	/* Setup normal DMA */
+	baddr = (long)vtoph(0,tstpat);		/* Virtual --> physical */
+    	dr->dr_walo = (ushort)((baddr >> 1) & 0xffff);
+    	dr->dr_wahi = (ushort)((baddr >> 17) & 0x7fff);
+
+    	/* Set DMA range count: (number of words - 1) */
+    	dr->dr_range = (ushort)(DMATBL - 1);
+
+    	/* Set  address modifier code to be used for DMA access to memory */
+    	dr->dr_addmod = (char)DRADDMOD;
+
+    	/* Clear dmaf and attf to assure a clean dma start, also disable
+	   attention interrupt
+	*/
+    	dr->dr_pulse = (ushort)(RDMA|RATN|RMSK);  /* Use pulse register */
+    	dr->dr_cstat = (GO|CYCL);		  /* GO...... */
+
+	/* Wait for DMA complete; REDY and DMAF are true in ISR */
+	wait = 0;
+	while ((result=(dr->dr_cstat & (REDY | DMAF))) != (REDY|DMAF)) {
+		printf("\n\tWait for DMA complete...ISR : %lx",result);
+		if (++wait > 5) {
+			printf("\n\t DMA output fails...timeout!!, ISR:%lx",
+				result);
+			return;
+		}
+	}
+
+	result = dr->dr_data & 0xffff;		/* Read last word output */	
+	if (result != 0xCCCC) {
+		printf("\n\t Fails, expected : %lx --- actual : %lx",
+			0xCCCC,result);
+		return;
+	}
+
+	printf("OK\n\t DMA input ...");
+
+dmain:
+	dr->dr_data = 0x1111;		/* DMA input data */
+	/* Setup normal DMA */
+	baddr = (long)vtoph(0,tstpat);		/* Virtual --> physical */
+    	dr->dr_walo = (ushort)((baddr >> 1) & 0xffff);
+    	dr->dr_wahi = (ushort)((baddr >> 17) & 0x7fff);
+
+    	/* Set DMA range count: (number of words - 1) */
+    	dr->dr_range = (ushort)(DMATBL - 1);
+
+    	/* Set  address modifier code to be used for DMA access to memory */
+    	dr->dr_addmod = (char)DRADDMOD;
+	/* Set FCN1 in ICR to DMA in*/
+	dr->dr_cstat = FCN1;
+
+	if (!(dra->dr_flags & DR_LOOPTST)) {
+		/* Use pulse reg */  
+    		dr->dr_pulse = (ushort)(RDMA|RATN|RMSK|CYCL|GO);
+		/* Wait for DMA complete; REDY and DMAF are true in ISR */
+		wait = 0;
+		while ((result=(dr->dr_cstat & (REDY | DMAF))) 
+						!= (REDY|DMAF)) {
+			printf("\n\tWait for DMA to complete...ISR:%lx",result);
+			if (++wait > 5) {
+				printf("\n\t DMA input timeout!!, ISR:%lx",
+					result);
+				return;
+			}
+		}
+	}
+	else  {
+		/* Enable DMA e-o-r interrupt */
+    		dr->dr_pulse = (ushort)(IENB|RDMA|RATN|CYCL|GO);
+		/* Wait for DMA complete; DR_LOOPTST is false in dra->dr_flags*/
+		wait = 0;
+		while (dra->dr_flags & DR_LOOPTST) { 
+			result = dr->dr_cstat & 0xffff;
+			printf("\n\tWait for DMA e-o-r intr...ISR:%lx",result);
+			if (++wait > 7) {
+				printf("\n\t DMA e-o-r timeout!!, ISR:%lx",
+					result);
+				dra->dr_flags &= ~DR_LOOPTST;
+				return;
+			}
+		}
+		dra->dr_flags |= DR_LOOPTST;
+	}
+
+	mtpr(tstpat,P1DC);			/* Purge cache */
+	mtpr((0x3ff+(long)tstpat),P1DC);
+	for(ix=0;ix<DMATBL;ix++) {
+		if (tstpat[ix] != 0x1111) {
+			printf("\n\t Fails, ix:%ld,expected : %lx --- actual : %lx",
+				ix,0x1111,tstpat[ix]);
+			return;
+		}
+	}
+	if (!(dra->dr_flags & DR_LOOPTST)) {
+		dra->dr_flags |= DR_LOOPTST;
+		printf(" OK..\n\tDMA end of range interrupt...");
+		goto dmain;
+	}
+
+
+	printf(" OK..\n\tAttention interrupt....");
+	/* Pulse FCN2 in pulse register with IENB */
+    	dr->dr_pulse = (ushort)(IENB|RDMA);
+    	dr->dr_pulse = (ushort)FCN2;
+
+	/* Wait for ATTN interrupt; DR_LOOPTST is false in dra->dr_flags*/
+	wait = 0;
+	while (dra->dr_flags & DR_LOOPTST) { 
+		result = dr->dr_cstat & 0xffff;
+		printf("\n\tWait for Attention intr...ISR:%lx",result);
+		if (++wait > 7) {
+			printf("\n\t Attention interrupt timeout!!, ISR:%lx",
+				result);
+			dra->dr_flags &= ~DR_LOOPTST;
+			return;
+		}
+	}
+	dra->dr_flags &= ~DR_LOOPTST;
+	printf(" OK..\n\tDone...");
 }
 
 /* Reset state on Unibus reset */
