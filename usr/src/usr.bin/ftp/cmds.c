@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)cmds.c	5.17 (Berkeley) %G%";
 #include <time.h>
 
 #include "ftp_var.h"
-
+#include "pathnames.h"
 
 extern	char *globerr;
 extern	char **glob();
@@ -46,6 +46,7 @@ extern	char *remglob();
 extern	char *getenv();
 extern	char *index();
 extern	char *rindex();
+extern	int allbinary;
 extern off_t restart_point;
 extern char reply_string[];
 
@@ -110,6 +111,7 @@ setpeer(argc, argv)
 		overbose = verbose;
 		if (debug == 0)
 			verbose = -1;
+		allbinary = 0;
 		if (command("SYST") == COMPLETE && overbose) {
 			register char *cp, c;
 			cp = index(reply_string+4, ' ');
@@ -129,6 +131,7 @@ setpeer(argc, argv)
 		}
 		if (!strncmp(reply_string, "215 UNIX Type: L8", 17)) {
 			setbinary();
+			allbinary = 1;
 			if (overbose)
 			    printf("Using %s mode to transfer files.\n",
 				typename);
@@ -738,7 +741,7 @@ remglob(argv,doswitch)
 		return (cp);
 	}
 	if (ftemp == NULL) {
-		(void) strcpy(temp, "/tmp/ftpXXXXXX");
+		(void) strcpy(temp, _PATH_TMP);
 		(void) mktemp(temp);
 		oldverbose = verbose, verbose = 0;
 		oldhash = hash, hash = 0;
@@ -1220,7 +1223,7 @@ shell(argc, argv)
 		(void) signal(SIGQUIT, SIG_DFL);
 		shell = getenv("SHELL");
 		if (shell == NULL)
-			shell = "/bin/sh";
+			shell = _PATH_BSHELL;
 		namep = rindex(shell,'/');
 		if (namep == NULL)
 			namep = shell;
