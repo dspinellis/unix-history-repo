@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stkrval.c 1.1 %G%";
+static	char sccsid[] = "@(#)stkrval.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -276,7 +276,6 @@ cstrng:
 		default:
 			panic("stkrvid");
 		}
-	case T_CSET:
 	case T_PLUS:
 	case T_MINUS:
 	case T_NOT:
@@ -301,7 +300,9 @@ cstrng:
 			    put(1, O_STOI);
 #		endif OBJ
 		return (p);
-
+	case T_CSET:
+		p = rvalue(r, contype , required );
+		return (p);
 	default:
 		if (r[2] == NIL)
 			return (NIL);
