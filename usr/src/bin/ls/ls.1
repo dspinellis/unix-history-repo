@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	6.20 (Berkeley) %G%
+.\"     @(#)ls.1	6.21 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -56,9 +56,8 @@ Display a slash (/) immediately after each pathname
 that is a directory, an asterisk (*) after each that is
 executable,
 and an at sign (@) after each symbolic link.
-.\"and a vertical bar (|) after
-.\"each that is a
-.\".Tn FIFO . 
+.\" and a vertical bar (|) after each that is a
+.\" .Tn FIFO . 
 .It Fl L
 If argument is a symbolic link, list the file or directory the link references
 rather than the link itself.
@@ -86,10 +85,6 @@ If the group is not a known group name, the numeric ID
 is printed.
 .It Fl i
 For each file, print the file's file serial number (inode number).
-.It Fl k
-Modifies the
-.Fl s
-option, causing the sizes to be reported in kilobytes.
 .It Fl l
 (The lowercase letter ``ell.'')  List in long format. (See below.)
 If the output is to a terminal, a total sum for all the file
@@ -105,9 +100,8 @@ the character `?'; this is the default when output is to a terminal.
 Reverse the order of the sort to get reverse
 lexicographical order or the oldest entries first.
 .It Fl s
-Display the number of file system bytes actually
-used by each file, in units of 512, where partial
-units are rounded up to the next integer value.
+Display the number of file system blocks actually used by each file, in units
+of 512 bytes, where partial units are rounded up to the next integer value.
 If the output is to a terminal, a total sum for all the file
 sizes is output on a line before the listing.
 .It Fl t
@@ -161,7 +155,7 @@ options.
 If the
 .Fl l
 option is given, the following information
-is be displayed:
+is displayed for each file:
 file mode,
 number of links, owner name,
 .\" group name,
@@ -169,6 +163,10 @@ number of bytes in the file, abbreviated
 month, day-of-month file was last modified,
 hour file last modified, minute file last
 modified, and the pathname.
+In addition, for each directory whose contents are displayed, the total
+number of 512-byte blocks used by the files in the directory is displayed
+on a line by itself immediately before the information for the files in the
+directory.
 .Pp
 If the owner name is not a known user name
 the numeric ID is displayed.
@@ -266,10 +264,17 @@ or
 The
 .Nm ls
 utility exits 0 on success, and >0 if an error occurs.
-.Sh ENVIRONMENT
+.Sh ENVIRONMENTAL VARIABLES
 The following environment variables affect the execution of
 .Nm ls :
-.Bl -tag -width COLUMNS
+.Bl -tag -width BLOCKSIZE
+.It Ev BLOCKSIZE
+If the environmental variable
+.Ev BLOCKSIZE
+is set, the block counts
+(see
+.Fl s )
+will be displayed in units of that size block.
 .It COLUMNS
 If this variable contains a string representing a
 decimal integer, it is used as the
@@ -291,9 +296,9 @@ A
 .Nm ls
 command appeared in
 .At v6 .
-.\" .Sh STANDARDS
-.\" .The
-.\" .Nm ls
-.\" function is expected to be
-.\" .Tn POSIX
-.\" 1003.2 compatible.
+.Sh STANDARDS
+The
+.Nm ls
+function is expected to be a superset of the
+.St -p1003.2
+specification.

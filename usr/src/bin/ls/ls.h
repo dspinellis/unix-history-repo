@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.14 (Berkeley) %G%
+ *	@(#)ls.h	5.15 (Berkeley) %G%
  */
 
 /*
@@ -18,11 +18,12 @@
 	
 #define NO_PRINT	1
 
+extern int blocksize;		/* block size units */
+
 extern int f_accesstime;	/* use time of last access */
 extern int f_group;		/* show group ownership of a file */
 extern int f_flags;		/* show flags associated with a file */
 extern int f_inode;		/* print inode */
-extern int f_kblocks;		/* print size in kilobytes */
 extern int f_longform;		/* long listing format */
 extern int f_sectime;		/* print the real time for all files */
 extern int f_singlecol;		/* use single column output */
