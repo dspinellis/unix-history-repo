@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_cksum.c	7.10 (Berkeley) %G%
+ *	@(#)ns_cksum.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

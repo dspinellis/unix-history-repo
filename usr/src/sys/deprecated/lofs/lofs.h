@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs.h	7.1 (Berkeley) %G%
+ *	@(#)lofs.h	8.1 (Berkeley) %G%
  *
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */

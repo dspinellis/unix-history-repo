@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spp_debug.h	7.4 (Berkeley) %G%
+ *	@(#)spp_debug.h	8.1 (Berkeley) %G%
  */
 
 struct	spp_debug {

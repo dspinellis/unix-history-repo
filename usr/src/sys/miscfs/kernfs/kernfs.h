@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs.h	7.3 (Berkeley) %G%
+ *	@(#)kernfs.h	8.1 (Berkeley) %G%
  */
 
 #define	_PATH_KERNFS	"/kern"		/* Default mountpoint */

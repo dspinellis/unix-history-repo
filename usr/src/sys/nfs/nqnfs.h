@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Rick Macklem at The University of Guelph.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nqnfs.h	7.6 (Berkeley) %G%
+ *	@(#)nqnfs.h	8.1 (Berkeley) %G%
  */
 
 /*
