@@ -1,4 +1,4 @@
-/*	pass2.h	4.2	86/10/29	*/
+/*	pass2.h	4.3	87/12/10	*/
 
 #ifndef _PASS2_
 #define	_PASS2_
@@ -64,6 +64,7 @@
 #define SCCON	(SPECIAL|3)	/* -256 <= constant < 256 */
 #define SSCON	(SPECIAL|4)	/* -32768 <= constant < 32768 */
 #define SSOREG	(SPECIAL|5)	/* non-indexed OREG */
+#define SMCON	(SPECIAL|6)	/* constant < 0 */
 /* FORARG and INTEMP are carefully not conflicting with shapes */
 
 /* types */
