@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.64 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.65 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.64 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.65 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -1001,24 +1001,32 @@ help(topic)
 {
 	register FILE *hf;
 	int len;
-	char buf[MAXLINE];
 	bool noinfo;
+	char buf[MAXLINE];
+	extern char Version[];
+
 
 	if (HelpFile == NULL || (hf = fopen(HelpFile, "r")) == NULL)
 	{
 		/* no help */
 		errno = 0;
-		message("502 HELP not implemented");
+		message("502 Sendmail %s -- HELP not implemented", Version);
 		return;
 	}
 
 	if (topic == NULL || *topic == '\0')
+	{
 		topic = "smtp";
+		message("214-This is Sendmail version %s", Version);
+		noinfo = FALSE;
+	}
 	else
+	{
 		makelower(topic);
+		noinfo = TRUE;
+	}
 
 	len = strlen(topic);
-	noinfo = TRUE;
 
 	while (fgets(buf, sizeof buf, hf) != NULL)
 	{
