@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,12 +23,16 @@ static char sccsid[] = "@(#)ar.c	5.8 (Berkeley) %G%";
 #include <dirent.h>
 #include <stdio.h>
 #include <ar.h>
+#include <string.h>
+#include <stdlib.h>
 #include <paths.h>
 #include "archive.h"
+#include "extern.h"
 
 CHDR chdr;
 u_int options;
 char *archive, *envtmp, *posarg, *posname;
+static void badoptions(), usage();
 
 /*
  * main --
@@ -45,7 +49,6 @@ main(argc, argv)
 	char *p;
 	int (*fcall)(), append(), contents(), delete(), extract(),
 	    move(), print(), replace();
-	char *rname();
 
 	if (argc < 3)
 		usage();
@@ -185,6 +188,7 @@ main(argc, argv)
 	exit(rval);
 }
 
+static void
 badoptions(arg)
 	char *arg;
 {
@@ -193,6 +197,7 @@ badoptions(arg)
 	usage();
 }
 
+static void
 usage()
 {
 	(void)fprintf(stderr, "usage:  ar -d [-sv] archive file ...\n");
