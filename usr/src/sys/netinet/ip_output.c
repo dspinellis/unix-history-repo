@@ -1,4 +1,4 @@
-/* ip_output.c 1.1 81/10/14 */
+/* ip_output.c 1.2 81/10/18 */
 #include "../h/param.h"
 #include "../bbnnet/net.h"
 #include "../bbnnet/tcp.h"
@@ -6,19 +6,8 @@
 #include "../bbnnet/imp.h"
 #include "../bbnnet/ucb.h"
 
-/*****************************************************************************
-*                                                                            *
-*         internet level output:  called from higher level protocol          *
-*         or "raw internet driver."  passed a pointer to an mbuf             *
-*         chain containing the message to be sent, a partially filled        *
-*         in ip leader, and room for an 1822 leader and 2 pointers.          *
-*         this routine does fragmentation and mapping of ip parameters       *
-*         to 1822 ones.                                                      *
-*                                                                            *
-*****************************************************************************/
-
 ip_output(mp)
-struct mbuf *mp;
+	struct mbuf *mp;
 {
 	register i, rnd;
 	register struct mbuf *m, *n;
@@ -28,11 +17,12 @@ struct mbuf *mp;
 
 COUNT(IP_OUTPUT);
 	p = (struct ip *)((int)mp + mp->m_off); /* -> ip header */
-	hlen = sizeof(struct ip);               /* header length */
+	hlen = sizeof (struct ip);               /* header length */
 
-	/* fill in unspecified fields and byte swap others */
-
-	p->ip_v = IPVERSION;    
+	/*
+	 * Fill in and byte swap ip header.
+	 */
+	p->ip_v = IPVERSION;
 	p->ip_hl = hlen >> 2;
 	p->ip_off = 0 | (p->ip_off & ip_df);
 	p->ip_ttl = MAXTTL;
@@ -40,7 +30,7 @@ COUNT(IP_OUTPUT);
 
 	if (p->ip_len > MTU) {          /* must fragment */
 		if (p->ip_off & ip_df)
-			return(FALSE);
+			return (0);
 		max = MTU - hlen;       /* maximum data length in fragment */
 		len = p->ip_len - hlen; /* data length */
 		off = 0;                /* fragment offset */
@@ -73,7 +63,7 @@ COUNT(IP_OUTPUT);
 				/* allocate header mbuf for next fragment */
 
 				if ((mm = m_get(1)) == NULL)    /* no more bufs */
-					return(FALSE);
+					return(0);
 
 				p->ip_off |= ip_mf;
 
@@ -82,13 +72,13 @@ COUNT(IP_OUTPUT);
 				i -= m->m_len;
         			rnd = i & ~7;           /* fragment length */
 				adj = i - rnd;          /* leftover in mbuf */
-				p->ip_len = rnd + hlen; 
+				p->ip_len = rnd + hlen;
 
-				/* setup header for next fragment and 
+				/* setup header for next fragment and
 				   append remaining fragment data */
 
-				n->m_next = NULL;                   
-				mm->m_next = m;        
+				n->m_next = NULL;
+				mm->m_next = m;
 				m = mm;
 				m->m_off = MSIZE - hlen - adj;
 				m->m_len = hlen + adj;
@@ -112,7 +102,7 @@ COUNT(IP_OUTPUT);
 			len -= rnd;
 			off += rnd;
 		}
-	} 
+	}
 
 	return(ip_send(p));     /* pass datagram to local net level */
 }
@@ -122,6 +112,7 @@ struct ip *p;
 {
 	register struct mbuf *m;
 	register struct imp *l;
+	int s;
 COUNT(IP_SEND);
 
 	m = dtom(p);                    /* ->header mbuf */
@@ -138,8 +129,10 @@ COUNT(IP_SEND);
 	l->i_htype = 0;
 	l->i_stype = 0;
 */
-	l->i_shost = arpa_ether(p->ip_src.s_host);
-	l->i_dhost = arpa_ether(p->ip_dst.s_host);
+	if ((l->i_shost = p->ip_src.s_host) == 0)
+		l->i_shost = 253;
+	if ((l->i_dhost = p->ip_dst.s_host) == 0)
+		l->i_dhost = 253;
 	l->i_type = IPTYPE;
 
 	/* finish ip leader by calculating checksum and doing
@@ -147,12 +140,41 @@ COUNT(IP_SEND);
 
 	p->ip_sum = 0;
  	ip_bswap(p);
-	p->ip_sum = cksum(m, sizeof(struct ip));     
+	p->ip_sum = cksum(m, sizeof(struct ip));
 
 	m->m_off -= L1822;              /* -> 1822 leader */
 	m->m_len += L1822;
 
-	return(imp_snd(m));             /* pass frag to 1822 */
+	m->m_act = NULL;
+
+#ifndef IMPLOOP
+
+	/* put output message on queue */
+
+	s = spl_imp();
+	if (imp_stat.outq_head != NULL)
+		imp_stat.outq_tail->m_act = m;
+	else
+		imp_stat.outq_head = m;
+	imp_stat.outq_tail = m;
+	splx(s);
+
+	/* if no outstanding output, start some */
+
+	if (!imp_stat.outactive)
+		imp_output(0);
+
+#else
+	/* software looping: put msg chain on input queue */
+
+	if (imp_stat.inq_head != NULL)
+		imp_stat.inq_tail->m_act = m;
+	else
+		imp_stat.inq_head = m;
+	imp_stat.inq_tail = m;
+
+#endif IMPLOOP
+	return (1);
 }
 
 ip_setup(up, m, len)            /* setup an ip header for raw write */
@@ -176,25 +198,4 @@ COUNT(IP_SETUP);
 
 	ip->ip_src.s_addr = netcb.n_lhost.s_addr;
         ip->ip_dst.s_addr = up->uc_host->h_addr.s_addr;
-}
-
-
-/*
- * Convert logical host on imp to ethernet address.
- * (Primitive; use gateway table in next version.)
- *	0/78	arpavax		253
- *	1/78	ucb-c70		-
- *	-	csvax		252
- *	-	ucb-comet	223
- */
-arpa_ether(n)
-	int n;
-{
-COUNT(ARPA_ETHER);
-	switch (n) {
-	case 0:			/* arpavax */
-		return 253;
-	default:
-		return n;
-	}
 }

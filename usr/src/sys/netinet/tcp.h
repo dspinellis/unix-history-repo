@@ -1,4 +1,4 @@
-/* tcp.h 1.1 81/10/14 */
+/* tcp.h 1.2 81/10/18 */
 struct th {                     /* tcp header (fits over ip header) */
 	struct th *t_next;              /* -> next tcp on rcv chain */
 	struct th *t_prev;              /* -> prev tcp on rcv chain */
