@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.43		%G%);
+SCCSID(@(#)conf.c	3.44		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -105,7 +105,7 @@ char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
 
 int	DefUid = 1;		/* the uid to execute mailers as */
 int	DefGid = 1;		/* ditto for gid */
-time_t	TimeOut = 3*24*60*60;	/* default timeout for queue files */
+time_t	TimeOut = 3*24*60*60L;	/* default timeout for queue files */
 
 
 
