@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.97 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.98 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1289,16 +1289,25 @@ int
 ufs_symlink(ap)
 	struct vop_symlink_args *ap;
 {
-	register struct vnode **vpp = ap->a_vpp;
-	int error;
+	register struct vnode *vp, **vpp = ap->a_vpp;
+	register struct inode *ip;
+	int len, error;
 
 	if (error = ufs_makeinode(IFLNK | ap->a_vap->va_mode, ap->a_dvp,
 	    vpp, ap->a_cnp))
 		return (error);
-	error = vn_rdwr(UIO_WRITE, *vpp, ap->a_target, strlen(ap->a_target),
-	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED, ap->a_cnp->cn_cred,
-	    (int *)0, (struct proc *)0);
-	vput(*vpp);
+	vp = *vpp;
+	len = strlen(ap->a_target);
+	if (len < vp->v_mount->mnt_maxsymlinklen) {
+		ip = VTOI(vp);
+		bcopy(ap->a_target, (char *)ip->i_shortlink, len);
+		ip->i_size = len;
+		ip->i_flag |= IUPD|ICHG;
+	} else
+		error = vn_rdwr(UIO_WRITE, vp, ap->a_target, len, (off_t)0,
+		    UIO_SYSSPACE, IO_NODELOCKED, ap->a_cnp->cn_cred, (int *)0,
+		    (struct proc *)0);
+	vput(vp);
 	return (error);
 }
 
@@ -1342,9 +1351,15 @@ int
 ufs_readlink(ap)
 	struct vop_readlink_args *ap;
 {
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
 	USES_VOP_READ;
 
-	return (VOP_READ(ap->a_vp, ap->a_uio, 0, ap->a_cred));
+	if (ip->i_size < vp->v_mount->mnt_maxsymlinklen) {
+		uiomove((char *)ip->i_shortlink, (int)ip->i_size, ap->a_uio);
+		return (0);
+	}
+	return (VOP_READ(vp, ap->a_uio, 0, ap->a_cred));
 }
 
 /*
