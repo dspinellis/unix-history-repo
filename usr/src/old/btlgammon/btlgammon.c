@@ -139,9 +139,14 @@ retry:
 			exit(0);
 
 		case '!':			/* escape to Shell */
+#ifdef ADD_A_MAJOR_SECURITY_HOLE
 			if(s[1] != '\0')
 				system(s+1);
-			else if((pid = fork()) == 0) {
+			else
+#endif
+			if (!(pid = vfork()) == 0) {
+				(void)setuid(getuid());
+				(void)setgid(getgid());
 				execl("/bin/sh", "sh", "-", 0);
 				fprintf(stderr, "back: cannot exec /bin/sh!\n");
 				exit(2);
