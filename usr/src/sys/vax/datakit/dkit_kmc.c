@@ -1,6 +1,7 @@
 /*
  * Datakit driver
  * KMC assistance, with or without DR11C
+ *	@(#)dkit_kmc.c	1.3 (Berkeley) %G%
  */
 
 #include "dkitkmc.h"
@@ -183,8 +184,8 @@ dk_init()
 
 	/* append new init info here, if it is needed */
 
-	dkkaddr->un.wsel.sel2 = (short)(kt & 0xFFFF);	/* bits 0-15 */
-	dkkaddr->un.bsel.bsel4 = (char)((kt & 0xFF0000) >> 16);	/* bits 16-23 */
+	dkkaddr->un.wsel.sel2 = (short)(UBAI_ADDR(kt) & 0xFFFF);/* bits 0-15 */
+	dkkaddr->un.bsel.bsel4 = (char)(UBAI_ADDR(kt) >> 16);	/* bits 16-17 */
 
 	csr0 = 1;	/* tell KMC to read csr2 */
 	kseq = 0 ;
@@ -216,17 +217,18 @@ dk_ubainit()
 	/* Command input buffer */
 	t = uballoc(ui->ui_ubanum, (caddr_t) dkkcmdbuf, sizeof dkkcmdbuf, UBA_CANTWAIT) ;
 	if (t == 0) return 0;
-	dkkmcinit.cmdaddr = (caddr_t) ((t<<16) + ((t>>16) & 03));	/* must swap bytes for unibus */
+	dkkmcinit.cmdaddr = (caddr_t)((UBAI_ADDR(t)<<16) | ((UBAI_ADDR(t)>>16)));	/* must swap bytes for unibus */
 
 	/* Status out buffer */
 	t = uballoc(ui->ui_ubanum, (caddr_t) dkkstat, sizeof dkkstat, UBA_CANTWAIT);
 	if (t == 0) return 0;
-	dkkmcinit.stataddr = (caddr_t) ((t<<16) + ((t>>16) & 03));
+	dkkmcinit.stataddr = (caddr_t)((UBAI_ADDR(t)<<16) | (UBAI_ADDR(t)>>16));
 
 	/* KMC buffer */
 	dkubmbuf = uballoc(ui->ui_ubanum, (caddr_t) dkkbuf, sizeof dkkbuf, UBA_CANTWAIT);
-	if (t == 0) return 0;
-	dkkmcinit.bufaddr = (caddr_t) ((dkubmbuf<<16) + ((dkubmbuf>>16) & 03));
+	if (dkubmbuf == 0) return 0;
+	dkkmcinit.bufaddr = (caddr_t) ((UBAI_ADDR(dkubmbuf)<<16) |
+	    (UBAI_ADDR(dkubmbuf)>>16));
 	if (dkdebug < dk_nchan)
 		log(LOG_ERR, "dk_ubainit: bufaddr %x mapped %x\n", (caddr_t)dkkbuf,
 		    dkubmbuf);
