@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.22 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.23 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -307,7 +307,7 @@ S3
 
 # handle null input and list syntax (translate to <@> special case)
 R$@			$@ <@>
-R$*:;$*			$@ $1 ;: <@>
+R$*:;$*			$@ $1 :; <@>
 
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		<$2>$3$4$5			strip multiple <> <>
