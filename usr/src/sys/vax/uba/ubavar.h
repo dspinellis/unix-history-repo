@@ -1,4 +1,4 @@
-/*	ubavar.h	6.1	83/07/29	*/
+/*	ubavar.h	4.26	83/08/13	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -173,12 +173,15 @@ extern	struct pte UMEMmap[][512];	/* uba device addr pte's */
 extern	char umem[][512*NBPG];		/* uba device addr space */
 
 /*
- * Since some VAXen vector their first (and only) unibus interrupt
- * vector just adjacent to the system control block, we must
+ * Since some VAXen vector their unibus interrupts
+ * just adjacent to the system control block, we must
  * allocate space there when running on ``any'' cpu.  This space is
- * used for the vector for uba0 on all cpu's.
+ * used for the vectors for uba0 and uba1 on all cpu's.
  */
 extern	int (*UNIvec[])();			/* unibus vec for uba0 */
+#if NUBA > 1
+extern	int (*UNI1vec[])();			/* unibus vec for uba1 */
+#endif
 
 #if VAX780
 /*
