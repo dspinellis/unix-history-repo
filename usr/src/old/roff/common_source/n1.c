@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.10 %G%";
+static char sccsid[] = "@(#)n1.c	4.11 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -334,7 +334,7 @@ kcatch(){
 }
 #ifndef NROFF
 acctg() {
-	static char *acct_file = "/usr/adm/tracct";
+	static char *acct_file = _PATH_TRACCT;
 	acctf = open(acct_file,1);
 	setuid(getuid());
 }
