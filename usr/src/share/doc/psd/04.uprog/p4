@@ -1,4 +1,4 @@
-.\"	@(#)p4	6.1 (Berkeley) %G%
+.\"	@(#)p4	6.2 (Berkeley) %G%
 .\"
 .NH
 LOW-LEVEL I/O
@@ -378,7 +378,7 @@ error(s1, s2)	/* print error message and die */
 char *s1, *s2;
 {
 	printf(s1, s2);
-	printf("\n");
+	printf("\en");
 	exit(1);
 }
 .P2
