@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socketvar.h	6.6 (Berkeley) %G%
+ *	@(#)socketvar.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -40,17 +40,17 @@ struct socket {
  * Variables for socket buffering.
  */
 	struct	sockbuf {
-		short	sb_cc;		/* actual chars in buffer */
-		short	sb_hiwat;	/* max actual char count */
-		short	sb_mbcnt;	/* chars of mbufs used */
-		short	sb_mbmax;	/* max chars of mbufs to use */
-		short	sb_lowat;	/* low water mark (not used yet) */
+		u_short	sb_cc;		/* actual chars in buffer */
+		u_short	sb_hiwat;	/* max actual char count */
+		u_short	sb_mbcnt;	/* chars of mbufs used */
+		u_short	sb_mbmax;	/* max chars of mbufs to use */
+		u_short	sb_lowat;	/* low water mark (not used yet) */
 		short	sb_timeo;	/* timeout (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
-#define	SB_MAX		32767		/* max chars in sockbuf */
+#define	SB_MAX		65535		/* max chars in sockbuf */
 #define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
