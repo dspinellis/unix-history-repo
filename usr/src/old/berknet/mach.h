@@ -1,4 +1,4 @@
-/*	@(#)mach.h	4.3	(Berkeley)	%G%	*/
+/*	@(#)mach.h	4.4	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *mach_h_sid = "@(#)mach.h	1.11";
