@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwpty.c	3.5 83/12/08";
+static	char *sccsid = "@(#)wwpty.c	3.6 84/01/16";
 #endif
 
 #include "ww.h"
@@ -10,6 +10,7 @@ register struct ww *w;
 	register char c;
 	register int i;
 	int tty;
+	int on = 1;
 #define PTY "/dev/XtyXX"
 #define _PT	5
 #define _PQRS	8
@@ -33,6 +34,10 @@ register struct ww *w;
 				continue;
 			}
 			(void) close(tty);
+			if (ioctl(w->ww_pty, (int)TIOCPKT, &on) < 0) {
+				(void) close(w->ww_pty);
+				continue;
+			}
 			return 0;
 		}
 	}

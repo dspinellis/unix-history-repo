@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.19 83/12/09";
+static	char *sccsid = "@(#)cmd.c	3.20 84/01/16";
 #endif
 
 #include "defs.h"
@@ -14,7 +14,7 @@ docmd()
 	if (selwin != 0)
 		wwcursor(selwin, 1);
 	for (;;) {
-		while ((c = bgetc()) >= 0) {
+		while ((c = wwgetc()) >= 0) {
 			if (!terse)
 				(void) wwputs("\r\n", cmdwin);
 			switch (c) {
@@ -186,8 +186,8 @@ docmd()
 			(void) wwputs("Command: ", cmdwin);
 			wwcurtowin(cmdwin);
 		}
-		while (bpeekc() < 0)
-			bread();
+		while (wwpeekc() < 0)
+			wwiomux();
 	}
 	if (!quit) {
 		if (!terse) {
@@ -207,8 +207,8 @@ getwin()
 	if (!terse)
 		(void) wwputs("Which window? ", cmdwin);
 	wwcurtowin(cmdwin);
-	while ((c = bgetc()) < 0)
-		bread();
+	while ((c = wwgetc()) < 0)
+		wwiomux();
 	if (debug && c == 'c')
 		w = cmdwin;
 	else if (debug && c == 'f')

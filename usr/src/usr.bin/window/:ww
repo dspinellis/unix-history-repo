@@ -8,5 +8,6 @@
 +/"i.t"16t"i.b"16t"i.l"16t"i.r"nDDDD
 +/"cur.r"16t"cur.c"nDD
 +/"win"16t"buf"16t"fmap"16t"nvis"npppp
-+/"pty"16t"pid"16t"ttyname"nDD11C
-+/t
++/"pty"16t"pid"16t"ttyname"nDD11C+
++/"ob"16t"obe"16t"obp"16t"obc"n3pD
++/"stopped"nb

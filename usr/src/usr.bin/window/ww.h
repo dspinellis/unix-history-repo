@@ -1,11 +1,11 @@
 /*
- *	@(#)ww.h	3.24 84/01/11	
+ *	@(#)ww.h	3.25 84/01/16	
  */
 
 #include <stdio.h>
 #include <sgtty.h>
 
-#define NWW	30
+#define NWW	30		/* maximum number of windows */
 
 	/* a rectangle */
 struct ww_dim {
@@ -51,6 +51,11 @@ struct ww {
 	int ww_pty;		/* file descriptor of pty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
+	char *ww_ob;		/* output buffer */
+	char *ww_obe;		/* end of ww_ob */
+	char *ww_obp;		/* current position in ww_ob */
+	int ww_obc;		/* character count */
+	char ww_stopped;	/* flow control */
 
 		/* things for the user, they really don't belong here */
 	char ww_center :1;	/* center the label */
@@ -132,10 +137,12 @@ union ww_char {
 #define WWU_TOUCHED	0x01		/* touched */
 #define WWU_MAJOR	0x02		/* major change */
 
+	/* the window structures */
 struct ww wwhead;
 struct ww *wwindex[NWW + 1];		/* last location is for wwnobody */
 struct ww wwnobody;
 
+	/* tty things */
 struct ww_tty wwoldtty;		/* the old (saved) terminal settings */
 struct ww_tty wwnewtty;		/* the new (current) terminal settings */
 struct ww_tty wwwintty;		/* the terminal settings for windows */
@@ -143,6 +150,7 @@ char *wwterm;			/* the terminal name */
 char wwtermcap[1024];		/* place for the termcap */
 char wwkeys[512];		/* termcap fields for the function keys */
 
+	/* generally useful variables */
 int wwnrow, wwncol;		/* the screen size */
 char wwavailmodes;		/* actually supported modes */
 char wwcursormodes;		/* the modes for the fake cursor */
@@ -160,6 +168,9 @@ int wwerrno;			/* error number */
 	/* statistics */
 int wwnwrite, wwnwritec;
 int wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss;
+int wwnread, wwnreade, wwnreadz, wwnreadc;
+int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
+int wwnselect, wwnselecte, wwnselectz;
 
 	/* quicky macros */
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
@@ -168,6 +179,15 @@ int wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss;
 #define wwunbox(w)	wwunframe(w)
 #define wwclreol(w,r,c)	wwclreol1((w), (r), (c), 0)
 #define wwredrawwin(w)	wwredrawwin1((w), (w)->ww_i.t, (w)->ww_i.b, 0)
+
+	/* things for handling input */
+char *wwib;		/* input (keyboard) buffer */
+char *wwibe;		/* wwib + sizeof buffer */
+char *wwibp;		/* current position in buffer */
+int wwibc;		/* character count */
+#define wwgetc()	(wwibc ? wwibc--, *wwibp++&0x7f : -1)
+#define wwpeekc()	(wwibc ? *wwibp&0x7f : -1)
+#define wwungetc(c)	(wwibp > wwib ? wwibc++, *--wwibp = (c) : -1)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"

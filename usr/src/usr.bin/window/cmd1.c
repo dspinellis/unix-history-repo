@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.19 84/01/13";
+static	char *sccsid = "@(#)cmd1.c	3.20 84/01/16";
 #endif
 
 #include "defs.h"
@@ -19,8 +19,8 @@ c_window()
 	for (;;) {
 		wwbox(boxwin, row - 1, col - 1, 3, 3);
 		wwsetcursor(row, col);
-		while (bpeekc() < 0)
-			bread();
+		while (wwpeekc() < 0)
+			wwiomux();
 		switch (getpos(&row, &col, row > 1, 0,
 			wwnrow - 1, wwncol - 1)) {
 		case 3:
@@ -46,8 +46,8 @@ c_window()
 			xrow - row + 3, xcol - col + 3);
 		wwsetcursor(xrow, xcol);
 		wwflush();
-		while (bpeekc() < 0)
-			bread();
+		while (wwpeekc() < 0)
+			wwiomux();
 		switch (getpos(&xrow, &xcol, row, col, wwnrow - 1, wwncol - 1))
 		{
 		case 3:
@@ -82,7 +82,7 @@ int maxrow, maxcol;
 	char c;
 	int oldrow = *row, oldcol = *col;
 
-	while ((c = bgetc()) >= 0) {
+	while ((c = wwgetc()) >= 0) {
 		switch (c) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':

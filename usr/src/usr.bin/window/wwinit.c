@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.13 83/12/17";
+static	char *sccsid = "@(#)wwinit.c	3.14 84/01/16";
 #endif
 
 #include "ww.h"
@@ -57,6 +57,12 @@ wwinit()
 		wwcursormodes = WWM_REV | wwavailmodes & WWM_BLK;
 	else if (wwavailmodes & WWM_UL)
 		wwcursormodes = WWM_UL;
+
+	if ((wwib = malloc((unsigned) 512)) == 0)
+		goto bad;
+	wwibe = wwib + 512;
+	wwibp = wwib;
+	wwibc = 0;
 
 	if ((wwsmap = wwalloc(0, 0, wwnrow, wwncol, sizeof (char))) == 0)
 		goto bad;

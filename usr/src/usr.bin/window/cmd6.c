@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.6 84/01/13";
+static	char *sccsid = "@(#)cmd6.c	3.7 84/01/16";
 #endif
 
 #include "defs.h"
@@ -16,11 +16,11 @@ c_debug()
 	if (!terse)
 		(void) wwputs("[m(smap) n(ns) o(os) s(string) v(nvis) w(win)]? ", cmdwin);
 	wwcurtowin(cmdwin);
-	while (bpeekc() < 0)
-		bread();
+	while (wwpeekc() < 0)
+		wwiomux();
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
-	switch (bgetc()) {
+	switch (wwgetc()) {
 	case 'm':
 		wwdumpsmap();
 		break;

@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.7 83/11/30	
+ *	@(#)defs.h	3.8 84/01/16	
  */
 
 #include "ww.h"
@@ -11,21 +11,9 @@
 
 #define NWINDOW 9
 
-int nread;
-int nreade;
-int nreadz;
-int nreadc;
 #ifndef O_4_1A
 struct timeval starttime;
 #endif
-
-	/* things for handling input */
-char ibuf[512];
-char *ibufp;
-int ibufc;
-#define bgetc()		(ibufc ? ibufc--, *ibufp++&0x7f : -1)
-#define bpeekc()	(ibufc ? *ibufp&0x7f : -1)
-#define bungetc(c)	(ibufp > ibuf ? ibufc++, *--ibufp = (c) : -1)
 
 struct ww *window[NWINDOW];	/* the windows */
 struct ww *selwin;		/* the selected window */

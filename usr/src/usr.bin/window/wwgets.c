@@ -1,43 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwgets.c	3.2 83/08/26";
+static	char *sccsid = "@(#)wwgets.c	3.3 84/01/16";
 #endif
 
-#include "defs.h"
+#include "ww.h"
 
-char *ibufp = ibuf;
-
-bread()
-{
-	register n;
-	register char *p;
-	int imask;
-
-	while (ibufc == 0) {
-		wwupdate();
-		wwflush();
-		while (imask = 1, wwforce(&imask) < 0)
-			;
-		if ((imask & 1) == 0)
-			continue;
-		if (ibufc == 0) {
-			p = ibufp = ibuf;
-			n = sizeof ibuf;
-		} else {
-			p = ibufp + ibufc;
-			n = (ibuf + sizeof ibuf) - p;
-		}
-		if ((n = read(0, p, n)) > 0) {
-			ibufc += n;
-			nreadc += n;
-		} else if (n == 0)
-			nreadz++;
-		else
-			nreade++;
-		nread++;
-	}
-}
-
-bgets(buf, n, w)
+wwgets(buf, n, w)
 char *buf;
 int n;
 register struct ww *w;
@@ -47,8 +14,8 @@ register struct ww *w;
 
 	for (;;) {
 		wwcurtowin(w);
-		while ((c = bgetc()) < 0)
-			bread();
+		while ((c = wwgetc()) < 0)
+			wwiomux();
 		if (c == wwoldtty.ww_sgttyb.sg_erase) {
 			if (p > buf)
 				rub(*--p, w);
@@ -75,6 +42,7 @@ register struct ww *w;
 	*p = 0;
 }
 
+static
 rub(c, w)
 struct ww *w;
 {
