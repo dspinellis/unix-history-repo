@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.5 (Berkeley) %G%
+ *	@(#)rl.c	7.6 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -493,7 +493,7 @@ rlintr(rl21)
 				    diff << 7 | RLDA_LOW | head << 4;
 			rladdr->rlcs = (ui->ui_slave << 8) | RL_SEEK;
 			npf = btop( bp->b_bcount - st->rl_bleft );
-			reg = btop(um->um_ubinfo&0x3ffff) + npf;
+			reg = btop(UBAI_ADDR(um->um_ubinfo)) + npf;
 			o = (int)bp->b_un.b_addr & PGOFSET;
 			ubapurge(um);
 			um->um_tab.b_active++;

@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.5 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -166,6 +166,7 @@ struct tmscp_softc {
 	short   sc_credits;     /* transfer credits */
 	short   sc_lastcmd;     /* pointer into command ring */
 	short   sc_lastrsp;     /* pointer into response ring */
+	short   sc_ipl;		/* interrupt priority (Q-bus) */
 } tmscp_softc[NTMSCP];
 
 struct tmscp {
@@ -282,7 +283,7 @@ tmscpprobe(reg, ctlr)
 	register struct tmscp_softc *sc = &tmscp_softc[ctlr];
 				/* ptr to software controller structure */
 	struct tmscpdevice *tmscpaddr; /* ptr to tmscpdevice struct (IP & SA) */
-	int count;		/* for probe delay time out */
+	int count, s;		/* for probe delay time out */
 
 #	ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
@@ -296,6 +297,9 @@ tmscpprobe(reg, ctlr)
 	 * The device is not really initialized at this point, this is just to
 	 * find out if the device exists.
 	 */
+#ifdef QBA
+	s = spl6();
+#endif
 	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
 	tmscpaddr->tmscpip = 0;
 
@@ -307,8 +311,10 @@ tmscpprobe(reg, ctlr)
 		DELAY(10000);
 		count=count+1;
 		}
-	if (count == DELAYTEN)
+	if (count == DELAYTEN) {
+		splx(s);
 		return(0);		
+	}
 
 	tmscpaddr->tmscpsa = TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->sc_ivec/4);
 
@@ -320,12 +326,13 @@ tmscpprobe(reg, ctlr)
 		DELAY(10000);
 		count = count+1;
 		}
-	if (count == DELAYTEN)
+	if (count == DELAYTEN) {
+		splx(s);
 		return(0);
+	}
 
 #ifdef QBA
-	if (cpu == VAX_630 || cpu == VAX_650)
-		br = 0x15;	/* screwy interrupt structure */
+	sc->sc_ipl = br = qbgetpri();
 #endif
 	return(sizeof (struct tmscpdevice));
 }
@@ -456,6 +463,9 @@ tmscpintr (d)
 	printd10("tmscpintr: state %d, tmscpsa %o\n", sc->sc_state, tmscpaddr->tmscpsa);
 #	endif	
 
+#ifdef QBA
+	splx(sc->sc_ipl);
+#endif
 	/*
 	 * How the interrupt is handled depends on the state of the controller.
 	 */
@@ -957,12 +967,7 @@ tmscpinit (d)
 		 * space.
 		 */
 		sc->sc_ubainfo = uballoc(um->um_ubanum, (caddr_t)t, sizeof (struct tmscp), 0);
-#		ifdef MVAX
-		if (cpu == MVAX_I)
-			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3fffff);
-		else
-#		endif MVAX
-			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3ffff);
+		sc->sc_tmscp = (struct tmscp *)(UBAI_ADDR(sc->sc_ubainfo));
 		sc->sc_mapped = 1;
 		}
 
@@ -1242,15 +1247,7 @@ tmscpstart(um)
 		{
 		mp->mscp_opcode = bp->b_flags&B_READ ? M_OP_READ : M_OP_WRITE;
 		mp->mscp_bytecnt = bp->b_bcount;
-#       	if MVAX
-		if (cpu == MVAX_I)
-			{
-			mp->mscp_buffer = (i & 0x3ffff) | TMSCP_MAP;
-			mp->mscp_mapbase = (long)&(uba_hd[um->um_ubanum].uh_physuba->uba_map[0]);
-			}
-		else
-#		endif MVAX
-			mp->mscp_buffer = (i & 0x3ffff) | (((i>>28)&0xf)<<24);
+		mp->mscp_buffer = UBAI_ADDR(i) | (UBAI_BDP(i) << 24);
 
 		bp->b_ubinfo = tempi;			/* save mapping info */
 		}

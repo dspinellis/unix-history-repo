@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.5 (Berkeley) %G%
+ *	@(#)idc.c	7.6 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -447,7 +447,7 @@ idcdgo(um)
 	/*
 	 * VERY IMPORTANT: must load registers in this order.
 	 */
-	idcaddr->idcbar = sc->sc_ubaddr = um->um_ubinfo&0x3ffff;
+	idcaddr->idcbar = sc->sc_ubaddr = UBAI_ADDR(um->um_ubinfo);
 	idcaddr->idcbcr = -sc->sc_bcnt;
 	idcaddr->idcdar = sc->sc_dar;
 	printd("idcdgo, ubinfo 0x%x, cmd 0x%x\n", um->um_ubinfo, um->um_cmd);

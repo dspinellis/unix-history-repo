@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ik.c	7.1 (Berkeley) %G%
+ *	@(#)ik.c	7.2 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -151,7 +151,7 @@ ikstrategy(bp)
 	ikp->ik_state |= IKBUSY;
 	ikp->ik_bp = bp;
 	ikp->ik_ubinfo = ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP);
-	ikp->ik_bufp = ikp->ik_ubinfo & 0x3ffff;
+	ikp->ik_bufp = UBAI_ADDR(ikp->ik_ubinfo);
 	ikp->ik_count = -(bp->b_bcount>>1);	/* its a word count */
 	ikstart(ui);
 	while (ikp->ik_state&IKBUSY)
