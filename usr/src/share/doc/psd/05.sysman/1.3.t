@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.3.t	5.1 (Berkeley) %G%
+.\"	@(#)1.3.t	6.1 (Berkeley) %G%
 .\"
-.\" 1.3.t 5.1 86/05/08
 .sh "Signals
 .PP
 .NH 3
@@ -60,6 +59,8 @@ to be generated; SIGHUP and SIGTERM that cause graceful
 process termination, either because a user has ``hung up'', or
 by user or program request; and SIGKILL, a more powerful termination
 signal which a process cannot catch or ignore.
+Programs may define their own asynchronous events using SIGUSR1
+and SIGUSR2.
 Other software signals (SIGALRM, SIGVTALRM, SIGPROF)
 indicate the expiration of interval timers.
 .PP
@@ -95,7 +96,7 @@ The call
 struct sigvec {
 	int	(*sv_handler)();
 	int	sv_mask;
-	int	sv_onstack;
+	int	sv_flags;
 };
 
 sigvec(signo, sv, osv)
@@ -110,8 +111,10 @@ if the signal occurs.
 The constants
 SIG_IGN and SIG_DEF used as values for \fIsv_handler\fP
 cause ignoring or defaulting of a condition.
-The \fIsv_mask\fP and \fIsv_onstack\fP values specify the
-signal mask to be used when the handler is invoked and
+The \fIsv_mask\fP value specifies the
+signal mask to be used when the handler is invoked.
+\fISv_flags\fP specifies whether system calls should be
+restarted if the signal handler returns and
 whether the handler should operate on the normal run-time
 stack or a special signal stack (see below).  If \fIosv\fP
 is non-zero, the previous signal vector is returned.
