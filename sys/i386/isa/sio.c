@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.50 1994/05/31 02:13:30 ache Exp $
+ *	$Id: sio.c,v 1.51 1994/05/31 02:49:11 ache Exp $
  */
 
 #include "sio.h"
@@ -319,6 +319,13 @@ static Port_t likely_com_ports[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8, };
 #define	FAIL(x)	(printf("sioprobe flunked test %d\n", (x)), 1)
 #endif
 
+#ifdef COM_MULTIPORT
+#define	NEED_IRQ(dev)	(!COM_ISMULTIPORT(dev) || \
+			 !COM_NOMASTER(dev) || (dev)->id_irq !=	0)
+#else
+#define	NEED_IRQ(dev)	1
+#endif
+
 static int
 sioprobe(dev)
 	struct isa_device	*dev;
@@ -456,9 +463,9 @@ sioprobe(dev)
 	if (   inb(iobase + com_cfcr) != CFCR_8BITS && FAIL(0)
 	    || inb(iobase + com_ier) != IER_ETXRDY && FAIL(1)
 	    || inb(iobase + com_mcr) != mcr_image && FAIL(2)
-	    || !isa_irq_pending(tdev) && FAIL(3)
+	    || NEED_IRQ(tdev) && !isa_irq_pending(tdev)	&& FAIL(3)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY && FAIL(4)
-	    || isa_irq_pending(tdev) &&	FAIL(5)
+	    || NEED_IRQ(tdev) && isa_irq_pending(tdev) && FAIL(5)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(6))
 		result = 0;
 
@@ -474,7 +481,7 @@ sioprobe(dev)
 	outb(iobase + com_ier, 0);
 	outb(iobase + com_cfcr, CFCR_8BITS);	/* dummy to avoid bus echo */
 	if (   inb(iobase + com_ier) != 0 && FAIL(7)
-	    || isa_irq_pending(tdev) &&	FAIL(8)
+	    || NEED_IRQ(tdev) && isa_irq_pending(tdev) && FAIL(8)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(9))
 		result = 0;
 	if (result == 0)
