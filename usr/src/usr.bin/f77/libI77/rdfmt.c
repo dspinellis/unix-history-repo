@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.7";
+char id_rdfmt[] = "@(#)rdfmt.c	1.8";
  *
  * formatted read routines
  */
@@ -11,6 +11,7 @@ char id_rdfmt[] = "@(#)rdfmt.c	1.7";
 #define isalpha(c)	(c>='a' && c<='z')
 
 extern char *s_init;
+extern int used_data;
 
 rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 {	int n;
@@ -241,6 +242,8 @@ rd_AW(p,w,len) char *p; ftnlen len;
 /* THIS IS NOT ALLOWED IN THE NEW STANDARD 'CAUSE IT'S WEIRD */
 rd_H(n,s) char *s;
 {	int i,ch = 0;
+
+	used_data = YES;
 	for(i=0;i<n;i++)
 	{	if (ch != '\n')
 			GET(ch);
@@ -255,6 +258,8 @@ rd_H(n,s) char *s;
 rd_POS(s) char *s;
 {	char quote;
 	int ch = 0;
+
+	used_data = YES;
 	quote = *s++;
 	while(*s)
 	{	if(*s==quote && *(s+1)!=quote)
