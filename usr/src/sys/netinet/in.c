@@ -1,4 +1,10 @@
-/*	in.c	6.7	85/04/16	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)in.c	6.8 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "ioctl.h"

@@ -1,4 +1,10 @@
-/*	boot.c	6.2	84/09/18	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)boot.c	6.3 (Berkeley) %G%
+ */
 
 #include "../h/param.h"
 #include "../h/inode.h"
