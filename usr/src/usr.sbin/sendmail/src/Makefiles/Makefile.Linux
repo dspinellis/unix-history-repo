@@ -7,7 +7,7 @@
 #
 #  This has been tested on Linux 0.99p10.
 #
-#	@(#)Makefile.Linux	8.3 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.4 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -28,19 +28,19 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/LOCAL/include
+INCDIRS=-I/usr/local/include
 
 # library directories
-LIBDIRS=-L/usr/LOCAL/lib
+LIBDIRS=-L/usr/local/lib
 
 # libraries required on your system
-LIBS=	-lresolv
+LIBS=	-lndbm
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
-BINDIR=	${DESTDIR}/usr/lib
+BINDIR=	${DESTDIR}/usr/sbin
 
 # location of sendmail.st file (usually /var/log or /usr/lib)
-STDIR=	${DESTDIR}/usr/lib
+STDIR=	${DESTDIR}/etc
 
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
 HFDIR=	${DESTDIR}/usr/lib
@@ -104,10 +104,10 @@ install-sendmail: sendmail
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
 
 # doesn't actually install them -- you may want to install pre-nroff versions
-install-docs: aliases.0 newaliases.0 sendmail.0
+install-docs: aliases.0 mailq.0 newaliases.0 sendmail.0
 
 clean:
-	rm -f ${OBJS} sendmail aliases.0 newaliases.0 sendmail.0
+	rm -f ${OBJS} sendmail aliases.0 mailq.0 newaliases.0 sendmail.0
 
 # dependencies
 #   gross overkill, and yet still not quite enough....

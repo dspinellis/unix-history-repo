@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.80 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.81 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -802,7 +802,7 @@ getla()
 
 
 #else
-#if LA_TYPE == LA_PROC
+#if LA_TYPE == LA_PROCSTR
 
 /*
 **  Read /proc/loadavg for the load average.  This is assumed to be
@@ -822,8 +822,6 @@ getla()
 	register double avenrun;
 	register int result;
 	static FILE *fp = NULL;
-
-	avenrun = 0.0;
 
 	if (fp == NULL)
 	{
