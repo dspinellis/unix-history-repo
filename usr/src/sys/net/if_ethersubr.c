@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.3 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -201,7 +201,7 @@ gottype:
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if ((ifp->if_flags & IFF_OACTIVE) == 0)
-		error = (*ifp->if_start)(ifp);
+		(*ifp->if_start)(ifp);
 	splx(s);
 	if (mcopy)
 		(void) looutput(&loif, mcopy, dst);
@@ -216,9 +216,9 @@ bad:
 }
 
 /*
- * Pull packet off interface.  Off is nonzero if packet
- * has trailing header; we still have to drop
- * the type and length which are at the front of any trailer data.
+ * Process a received Ethernet packet;
+ * the packet is in the mbuf chain m without
+ * the ether header, which is provided separately.
  */
 ether_input(ifp, eh, m)
 	struct ifnet *ifp;
@@ -254,6 +254,7 @@ ether_input(ifp, eh, m)
 
 #endif
 	default:
+#ifdef	ISO
 		if (eh->ether_type > ETHERMTU)
 			goto dropanyway;
 		l = mtod(m, struct llc *);
@@ -262,8 +263,10 @@ ether_input(ifp, eh, m)
 		/* LLC_UI_P forbidden in class 1 service */
 		    if ((l->llc_dsap == LLC_ISO_LSAP) &&
 			(l->llc_ssap == LLC_ISO_LSAP)) {
-#ifdef	ISO
 				/* LSAP for ISO */
+			m->m_data += 3;		/* XXX */
+			m->m_len -= 3;		/* XXX */
+			m->m_pkthdr.len -= 3;	/* XXX */
 			M_PREPEND(m, sizeof *eh, M_DONTWAIT);
 			if (m == 0)
 				return;
@@ -273,22 +276,10 @@ ether_input(ifp, eh, m)
 			ENDDEBUG
 			schednetisr(NETISR_ISO);
 			inq = &clnlintrq;
-			if (IF_QFULL(inq)){
-				IFDEBUG(D_ETHER)
-				    printf(" qfull\n");
-				ENDDEBUG
-				IF_DROP(inq);
-				m_freem(m);
-			} else {
-				IF_ENQUEUE(inq, m);
-				IFDEBUG(D_ETHER)
-				    printf(" queued\n");
-				ENDDEBUG
-			}
-			return;
-#endif	ISO
+			break;
 		    }
-		    break;
+		    goto dropanyway;
+
 		case LLC_XID:
 		case LLC_XID_P:
 		    if(m->m_len < 6)
@@ -327,6 +318,10 @@ ether_input(ifp, eh, m)
 		    m_freem(m);
 		    return;
 	    }
+#else
+	    m_freem(m);
+	    return;
+#endif	ISO
 	}
 
 	s = splimp();
