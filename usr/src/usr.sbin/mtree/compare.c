@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,10 @@ compare(name, s, p)
 		break;
 	case F_DIR:
 		if (!S_ISDIR(p->fts_statb.st_mode))
+			goto typeerr;
+		break;
+	case F_FIFO:
+		if (!S_ISFIFO(p->fts_statb.st_mode))
 			goto typeerr;
 		break;
 	case F_FILE:
@@ -151,6 +155,8 @@ ftype(type)
 		return("char");
 	case F_DIR:
 		return("dir");
+	case F_FIFO:
+		return("fifo");
 	case F_FILE:
 		return("file");
 	case F_LINK:

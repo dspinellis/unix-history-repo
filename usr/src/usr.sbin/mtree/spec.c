@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -165,6 +165,8 @@ set(ip)
 			case 'f':
 				if (!strcmp(val, "file"))
 					ip->type = F_FILE;
+				if (!strcmp(val, "fifo"))
+					ip->type = F_FIFO;
 				break;
 			case 'l':
 				if (!strcmp(val, "link"))
