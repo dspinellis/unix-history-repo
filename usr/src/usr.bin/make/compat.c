@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -134,6 +134,15 @@ CompatRunCommand (cmd, gn)
     Boolean 	  local;    	/* TRUE if command should be executed
 				 * locally */
 
+    /*  
+     * Avoid clobbered variable warnings by forcing the compiler
+     * to ``unregister'' variables
+     */ 
+#if __GNUC__
+    (void) &av; 
+    (void) &errCheck;
+#endif 
+
     silent = gn->type & OP_SILENT;
     errCheck = !(gn->type & OP_IGNORE);
 
@@ -171,6 +180,9 @@ CompatRunCommand (cmd, gn)
 	}
 	cmd++;
     }
+
+    while (isspace((unsigned char)*cmd))
+	cmd++;
     
     /*
      * Search for meta characters in the command. If there are no meta
