@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.38 (Berkeley) %G%
+.\"	@(#)op.me	8.39 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,9 +43,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.38
+Version 8.39
 .sp
-For Sendmail Version 8.6
+For Sendmail Version 8.7
 .)l
 .sp 2
 .pp
@@ -3165,6 +3165,9 @@ destined for particular mailers.
 .nr ii 4n
 .ip a
 Run Extended SMTP (ESMTP) protocol (defined in RFCs 1425, 1426, and 1427).
+.ip A
+Look up the user part of the address in the alias database.
+Normally this is only set for local mailers.
 .ip b
 Force a blank line on the end of a message.
 This is intended to work around some stupid versions of
@@ -3258,6 +3261,16 @@ This option is not required
 (i.e.,
 if this option is omitted the transmission will still operate successfully,
 although perhaps not as efficiently as possible).
+.ip k
+Normally when
+.i sendmail
+connects to a host via SMTP,
+it checks to make sure that this isn't accidently the same host name
+as might happen if
+.i sendmail
+is misconfigured or if a long-haul network interface is set in loopback mode.
+This flag disables the loopback check.
+It should only be used under very unusual circumstances.
 .ip l
 This mailer is local
 (i.e.,
@@ -3291,6 +3304,20 @@ header line.
 Do not insert a UNIX-style
 .q From
 line on the front of the message.
+.ip o
+Always run as the owner of the recipient mailbox.
+Normally
+.i sendmail
+runs as the recipient for locally generated mail
+or as
+.q daemon
+(actually, the user specified in the
+.b u
+option)
+when delivering network mail.
+The normal behaviour is required by most local mailers,
+which will not allow the envelope sender address
+to be set unless the mailer is running as daemon.
 .ip p
 Use the route-addr style reverse-path in the SMTP
 .q "MAIL FROM:"
@@ -3333,6 +3360,13 @@ This mailer wants Unix-style
 lines with the ugly UUCP-style
 .q "remote from <host>"
 on the end.
+.ip w
+The user must have a valid account on this machine.
+If not,
+the mail is bounced.
+This is required to get
+.q \&.forward
+capability.
 .ip x
 This mailer wants a
 .q Full-Name:
@@ -3346,6 +3380,10 @@ will have an extra dot prepended
 (to be stripped at the other end).
 This insures that lines in the message containing a dot
 will not terminate the message prematurely.
+.ip 5
+If no aliases are found for this address,
+pass the address through ruleset 5 for possible alternate resolution.
+This is intended to forward the mail to an alternate delivery spot.
 .ip 7
 Strip all output to seven bits.
 This is the default if the
@@ -3358,6 +3396,29 @@ If the
 .b 7
 option is set, this is essentially always set,
 since the eighth bit was stripped on input.
+.ip :
+Check addresses to see if they begin
+.q :include: ;
+if they do, convert them to the
+.q *include*
+mailer.
+.ip |
+Check addresses to see if they begin with a `|';
+if they do, convert them to the
+.q prog
+mailer.
+.ip /
+Check addresses to see if they begin with a `/';
+if they do, convert them to the
+.q *file*
+mailer.
+.ip @
+Look up addresses in the user database.
+.pp
+Configuration files prior to level 6
+assume the `A', `w', `5', `:', `|', `/', and `@' options
+on the mailer named
+.q local .
 .pp
 The mailer with the special name
 .q error
@@ -4185,6 +4246,13 @@ Version level five configuration files
 change the default definition of
 .b $w
 to be just the first component of the hostname.
+.pp
+Version level six configuration files
+change many of the local processing options
+(such as aliasing and matching the beginning of the address for
+`|' characters)
+to be mailer flags;
+this allows fine-grained control over the special local processing.
 .pp
 The
 .b V
@@ -5757,10 +5825,10 @@ checkcompat(to, e)
 		usrerr("No private net mail allowed through this machine");
 		return (EX_UNAVAILABLE);
 	}
-	if (MsgSize > 50000 && to\->q_mailer != LocalMailer)
+	if (MsgSize > 50000 && bitnset(M_LOCALMAILER, to\->q_mailer))
 	{
 		usrerr("Message too large for non-local delivery");
-		NoReturn = TRUE;
+		e\->e_flags |= EF_NORETURN;
 		return (EX_UNAVAILABLE);
 	}
 	return (EX_OK);
@@ -5770,8 +5838,10 @@ checkcompat(to, e)
 This would reject messages greater than 50000 bytes
 unless they were local.
 The
-.i NoReturn
-flag can be sent to suppress the return of the actual body
+.i EF_NORETURN
+flag can be set in
+.i e\(->e_flags
+to suppress the return of the actual body
 of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
@@ -6824,7 +6894,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.38
+.\"Version 8.39
 .\".ce 0
 .bp 2
 .rs
