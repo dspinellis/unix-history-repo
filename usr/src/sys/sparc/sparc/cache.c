@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cache.c	7.6 (Berkeley) %G%
+ *	@(#)cache.c	8.1 (Berkeley) %G%
  *
  * from: $Header: cache.c,v 1.9 93/05/05 09:16:17 torek Exp $ (LBL)
  */

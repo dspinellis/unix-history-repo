@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1982, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.3 (Berkeley) %G%
+ *	@(#)if_le.c	8.1 (Berkeley) %G%
  *
  * from: $Header: if_le.c,v 1.23 93/04/21 02:39:38 torek Exp $
  */

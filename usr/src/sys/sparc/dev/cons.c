@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.c	7.4 (Berkeley) %G%
+ *	@(#)cons.c	8.1 (Berkeley) %G%
  *
  * from: $Header: cons.c,v 1.11 92/11/26 01:09:28 torek Exp $
  */

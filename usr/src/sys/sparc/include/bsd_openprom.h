@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_openprom.h	7.2 (Berkeley) %G%
+ *	@(#)bsd_openprom.h	8.1 (Berkeley) %G%
  *
  * from: $Header: bsd_openprom.h,v 1.3 92/09/09 00:41:33 leres Exp $
  */

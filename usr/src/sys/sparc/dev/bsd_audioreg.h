@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audioreg.h	7.3 (Berkeley) %G%
+ *	@(#)bsd_audioreg.h	8.1 (Berkeley) %G%
  *
  * from: $Header: bsd_audioreg.h,v 1.3 92/06/07 21:12:50 mccanne Exp $ (LBL)
  */

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	8.1 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
