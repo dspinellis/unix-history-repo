@@ -29,18 +29,18 @@ typedef	struct sgttyb	SGTTY;
  * Capabilities from termcap
  */
 
-bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL, XN;
-char    *AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO, *ED,
-	*EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF, *SO, *SR,
-	*TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
+extern bool     AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL,
+		XN;
+extern char     *AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO,
+		*ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF,
+		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE,
+		*VS, PC;
 
 /*
  * From the tty modes...
  */
 
-bool	NONL, UPPERCASE;
-
-bool	normtty, _pfast;
+extern bool	NONL, UPPERCASE, normtty, _pfast;
 
 struct _win_st {
 	short	_cury, _curx;
@@ -63,9 +63,9 @@ extern char	*Def_term, ttytype[];
 
 extern int	LINES, COLS, _tty_ch, _res_flg;
 
-SGTTY		_tty;
+extern SGTTY	_tty;
 
-WINDOW		*stdscr, *curscr;
+extern WINDOW	*stdscr, *curscr;
 
 /*
  *	Define VOID to stop lint from generating "null effect"
