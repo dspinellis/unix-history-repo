@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)radixsort.3	5.2 (Berkeley) %G%
+.\"	@(#)radixsort.3	5.3 (Berkeley) %G%
 .\"
 .TH radixsort 3 ""
 .SH NAME
@@ -53,12 +53,18 @@ is stable, that is, if two elements compare as equal, their order in
 the sorted array is unchanged.
 .PP
 .I Radixsort
-is a variant of most-significant-byte radix sorting; see Knuth Vol. 3,
-page 177, and 5.2.5, Ex. 10.
+is a variant of most-significant-byte radix sorting; in particular, see
+D.E. Knuth's Algorithm R and section 5.2.5, exercise 10.
 .I Radixsort
 takes linear time relative to the number of bytes in the strings.
 .SH SEE ALSO
 sort(1), qsort(3)
+.sp
+Knuth, D.E. [1968]. "The Art of Computer Programming Vol. 3:
+Sorting and Searching", pp. 170-178.
+.br
+Paige, R. [1987]. "Three Partition Refinement Algorithms", 
+SIAM J. Comput. Vol. 16, No. 6.
 .SH "RETURN VALUES"
 Upon successful completion 0 is returned.
 Otherwise, \-1 is returned and the global variable 
