@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.2 %G%";
+static char sccsid[] = "@(#)scanner.c 1.3 %G%";
 
 /*
  * Debugger scanner.
@@ -449,8 +449,8 @@ private Token getstring()
 	if (*p == '\n' or *p == '\0') {
 	    error("non-terminated string");
 	    endofstring = true;
-	} else if (*p == '"') {
-	    if (*(p+1) != '"') {
+	} else if (*p == '"' or *p == '\'') {
+	    if (*(p+1) != *p) {
 		endofstring = true;
 	    } else {
 		*q++ = *p;
