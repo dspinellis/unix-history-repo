@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.10 %G%";
+static	char sccsid[] = "@(#)cc.c 4.11 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -10,6 +10,7 @@ static	char sccsid[] = "@(#)cc.c 4.10 %G%";
 
 char	*cpp = "/lib/cpp";
 char	*ccom = "/lib/ccom";
+char	*sccom = "/lib/sccom";
 char	*c2 = "/lib/c2";
 char	*as = "/bin/as";
 char	*ld = "/bin/ld";
@@ -22,7 +23,7 @@ char	*savestr(), *strspl(), *setsuf();
 int	idexit();
 char	**av, **clist, **llist, **plist;
 int	cflag, eflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
-int	gflag, Gflag, Mflag, debug;
+int	fflag, gflag, Gflag, Mflag, debug;
 char	*dflag;
 int	exfail;
 char	*chpass;
@@ -74,6 +75,9 @@ main(argc, argv)
 			crt0 = "/lib/mcrt0.o";
 			if (argv[i][2] == 'g')
 				crt0 = "/usr/lib/gcrt0.o";
+			continue;
+		case 'f':
+			fflag++;
 			continue;
 		case 'g':
 			if (argv[i][2] == 'o') {
@@ -158,7 +162,10 @@ main(argc, argv)
 		switch (*t) {
 
 		case '0':
-			ccom = strspl(npassname, "ccom");
+			if (fflag)
+				sccom = strspl(npassname, "sccom");
+			else
+				ccom = strspl(npassname, "ccom");
 			continue;
 		case '2':
 			c2 = strspl(npassname, "c2");
@@ -217,7 +224,8 @@ main(argc, argv)
 				tmp3 = setsuf(clist[i], 's');
 			assource = tmp3;
 		}
-		av[0] = "ccom"; av[1] = tmp4; av[2] = oflag?tmp5:tmp3; na = 3;
+		av[0] = fflag ? "sccom" : "ccom";
+		av[1] = tmp4; av[2] = oflag?tmp5:tmp3; na = 3;
 		if (proflag)
 			av[na++] = "-XP";
 		if (gflag) {
@@ -228,7 +236,7 @@ main(argc, argv)
 		if (wflag)
 			av[na++] = "-w";
 		av[na] = 0;
-		if (callsys(ccom, av)) {
+		if (callsys(fflag ? sccom : ccom, av)) {
 			cflag++;
 			eflag++;
 			continue;
