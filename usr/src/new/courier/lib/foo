@@ -1,0 +1,67 @@
+
+static
+CourierActivate(program_name, host)
+	String program_name, host;
+{
+	struct hostent *hp;
+	struct servent *srvp;
+	int f;
+	struct sockaddr_in sin;
+	Unspecified buf[50];
+	Cardinal n;
+	char c;
+
+	hp = gethostbyname(host);
+	if (hp == 0) {
+		fprintf(stderr, "%s: unknown host\n", host);
+		return (-1);
+	}
+	srvp = getservbyname("courier", "tcp");
+	if (srvp == 0) {
+		fprintf(stderr, "tcp/courier: unknown service\n");
+		return (-1);
+	}
+	f = socket(AF_INET, SOCK_STREAM, 0, 0);
+	if (f < 0) {
+		if (errno != EMFILE)
+			perror("socket");
+		return (-1);
+	}
+	sin.sin_family = AF_INET;
+	sin.sin_port = 0;
+	sin.sin_addr.s_addr = 0;
+	if (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+		perror("bind");
+		goto bad;
+	}
+	sin.sin_family = hp->h_addrtype;
+	sin.sin_addr = *(struct in_addr *) hp->h_addr;
+	sin.sin_port = srvp->s_port;
+	if (connect(f, (caddr_t)&sin, sizeof(sin), 0) < 0) {
+		perror(hp->h_name);
+		goto bad;
+	}
+#if DEBUG
+	if (CourierClientDebuggingFlag)
+		fprintf(stderr, "[CourierActivate: connected to %s]\n", hp->h_name);
+#endif
+	n = PackString(&program_name, buf, 1);
+	write(f, buf, n*sizeof(Unspecified));
+	if (read(f, &c, 1) != 1) {
+		perror(host);
+		goto bad;
+	}
+	if (c != 0) {
+		do write(fileno(stderr), &c, 1);
+		while (read(f, &c, 1) == 1 && c != 0);
+		goto bad;
+	}
+#if DEBUG
+	if (CourierClientDebuggingFlag)
+		fprintf(stderr, "[CourierActivate: running %s]\n", program_name);
+#endif
+	return (f);
+bad:
+	close(f);
+	return (-1);
+}
