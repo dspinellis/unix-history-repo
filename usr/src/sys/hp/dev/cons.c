@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cons.c 1.4 88/12/03$
+ * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	7.3 (Berkeley) %G%
+ *	@(#)cons.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"

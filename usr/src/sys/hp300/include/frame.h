@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: frame.h 1.6 89/02/24$
+ * from: Utah $Hdr: frame.h 1.1 90/07/09$
  *
- *	@(#)frame.h	7.1 (Berkeley) %G%
+ *	@(#)frame.h	7.2 (Berkeley) %G%
  */
 
 struct frame {
