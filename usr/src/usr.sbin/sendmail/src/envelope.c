@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.7		%G%);
+SCCSID(@(#)envelope.c	3.8		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -273,7 +273,7 @@ initsys()
 	/* time as integer, unix time, arpa time */
 	now = curtime();
 	tm = gmtime(&now);
-	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon,
+	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
 			tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf, CurEnv);
 	(void) strcpy(dbuf, ctime(&now));
@@ -284,9 +284,6 @@ initsys()
 	if (macvalue('a', CurEnv) == NULL)
 		define('a', p, CurEnv);
 	define('b', p, CurEnv);
-
-	/* version */
-	define('v', Version, CurEnv);
 
 	/* tty name */
 	if (macvalue('y', CurEnv) == NULL)

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.19		%G%);
+SCCSID(@(#)macro.c	3.20		%G%);
 
 char	*Macro[128];
 
@@ -146,6 +146,7 @@ char	*Macro[128];
 **		     the message) in ARPANET format
 **		$c   hop count
 **		$d   (current) date in UNIX (ctime) format
+**		$e   the SMTP entry message+
 **		$f   raw from address
 **		$g   translated from address
 **		$h   to host
