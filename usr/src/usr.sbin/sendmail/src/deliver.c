@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.133 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.134 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -345,15 +345,17 @@ sendall(e, mode)
 		**  then restart from scratch in the child.
 		*/
 
-		/* save id for future use */
-		qid = e->e_id;
+		{
+			/* save id for future use */
+			char *qid = e->e_id;
 
-		/* now drop the envelope in the parent */
-		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
-		dropenvelope(e);
+			/* now drop the envelope in the parent */
+			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+			dropenvelope(e);
 
-		/* and reacquire in the child */
-		(void) dowork(qid, TRUE, FALSE, e);
+			/* and reacquire in the child */
+			(void) dowork(qid, TRUE, FALSE, e);
+		}
 
 		return;
 
