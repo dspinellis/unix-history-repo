@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)register.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)register.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -73,7 +73,7 @@ main(argc, argv)
 			SERVICE);
 		exit(1);
 	}
-	if ((rval = krb_get_lrealm(realm,1)) != KSUCCESS) {
+	if ((rval = krb_get_lrealm(realm,0)) != KSUCCESS) {
 		fprintf(stderr, "couldn't get local Kerberos realm: %s\n",
 			krb_err_txt[rval]);
 		exit(1);
