@@ -1,4 +1,8 @@
-/*	2.def.h	4.2	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)2.def.h	4.3 (Berkeley) %G%
+ */
 
 extern int accessnum;		/* number of nodes accessible from START */
 extern VERT *after;		/* node numbers associated with after numbers of depth first search */

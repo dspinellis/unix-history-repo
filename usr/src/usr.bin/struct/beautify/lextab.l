@@ -1,8 +1,11 @@
 %{
+/*-
+ * %sccs.include.proprietary.c%
+ */
 
 #ifndef lint
-static char sccsid[] = "@(#)lextab.l	4.4	(Berkeley)	%G%";
-#endif not lint
+static char sccsid[] = "@(#)lextab.l	5.1 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "y.tab.h"
 #include "b.h"

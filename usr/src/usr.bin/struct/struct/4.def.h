@@ -1,4 +1,8 @@
-/*	4.def.h	4.2	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)4.def.h	4.3 (Berkeley) %G%
+ */
 
 #define YESTAB	TRUE
 #define NOTAB	FALSE

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	4.4	(Berkeley)	%G%";
-#endif not lint
+static char sccsid[] = "@(#)tree.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
 
 # include "y.tab.h"
 #include "b.h"
