@@ -11,7 +11,7 @@
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
  *
- *	@(#)cd9660_lookup.c	8.2 (Berkeley) %G%
+ *	@(#)cd9660_lookup.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -109,7 +109,7 @@ cd9660_lookup(ap)
 	 * Check accessiblity of directory.
 	 */
 	if (vdp->v_type != VDIR)
-	    return (ENOTDIR);
+		return (ENOTDIR);
 	if (error = VOP_ACCESS(vdp, VEXEC, cred, cnp->cn_proc))
 		return (error);
 	
