@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)sbus.c	7.1 (Berkeley) %G%
+ *
+ * from: $Header: sbus.c,v 1.8 92/06/17 06:59:43 torek Exp $ (LBL)
+ */
+
+/*
+ * Sbus stuff.
+ */
+
+/* #include "sbus.h" */
+#define NSBUS 1	/* XXX */
+
+#include "sys/param.h"
+#include "sys/device.h"
+
+#include "machine/autoconf.h"
+
+#include "sbusreg.h"
+#include "sbusvar.h"
+
+/* autoconfiguration driver */
+void	sbus_attach __P((struct device *, struct device *, void *));
+struct cfdriver sbuscd =
+    { NULL, "sbus", matchbyname, sbus_attach,
+      DV_DULL, sizeof(struct sbus_softc) };
+
+/*
+ * Print the location of some sbus-attached device (called just
+ * before attaching that device).  If `sbus' is not NULL, the
+ * device was found but not configured; print the sbus as well.
+ * Return UNCONF (config_find ignores this if the device was configured).
+ */
+int
+sbus_print(args, sbus)
+	void *args;
+	char *sbus;
+{
+	register struct sbus_attach_args *sa = args;
+
+	if (sbus)
+		printf("%s at %s", sa->sa_ra.ra_name, sbus);
+	printf(" slot %d offset 0x%x", sa->sa_slot, sa->sa_offset);
+	return (UNCONF);
+}
+
+/*
+ * Attach an Sbus.
+ */
+void
+sbus_attach(parent, self, aux)
+	struct device *parent;
+	struct device *self;
+	void *aux;
+{
+	register struct sbus_softc *sc = (struct sbus_softc *)self;
+	register int base, node, slot;
+	register char *name;
+	struct sbus_attach_args sa;
+
+	/*
+	 * XXX there is only one Sbus, for now -- do not know how to
+	 * address children on others
+	 */
+	if (sc->sc_dev.dv_unit > 0) {
+		printf(" unsupported\n");
+		return;
+	}
+
+	/*
+	 * Record clock frequency for synchronous SCSI.
+	 * IS THIS THE CORRECT DEFAULT??
+	 */
+	node = ((struct romaux *)aux)->ra_node;
+	sc->sc_clockfreq = getpropint(node, "clock-frequency", 25*1000*1000);
+	printf(": clock = %s MHz\n", clockfreq(sc->sc_clockfreq));
+
+	/*
+	 * Loop through ROM children, fixing any relative addresses
+	 * and then configuring each device.
+	 */
+	for (node = firstchild(node); node; node = nextsibling(node)) {
+		name = getpropstring(node, "name");
+		if (!romprop(&sa.sa_ra, name, node))
+			continue;
+		base = (int)sa.sa_ra.ra_paddr;
+		if (SBUS_ABS(base)) {
+			sa.sa_slot = SBUS_ABS_TO_SLOT(base);
+			sa.sa_offset = SBUS_ABS_TO_OFFSET(base);
+		} else {
+			sa.sa_slot = slot = sa.sa_ra.ra_iospace;
+			sa.sa_offset = base;
+			sa.sa_ra.ra_paddr = (void *)SBUS_ADDR(slot, base);
+		}
+		(void) config_found(&sc->sc_dev, (void *)&sa, sbus_print);
+	}
+}
+
+/*
+ * Each attached device calls sbus_establish after it initializes
+ * its sbusdev portion.
+ */
+void
+sbus_establish(sd, dev)
+	register struct sbusdev *sd;
+	register struct device *dev;
+{
+	register struct sbus_softc *sc = (struct sbus_softc *)dev->dv_parent;
+
+	sd->sd_dev = dev;
+	sd->sd_bchain = sc->sc_sbdev;
+	sc->sc_sbdev = sd;
+}
+
+/*
+ * Reset the given sbus. (???)
+ */
+void
+sbusreset(sbus)
+	int sbus;
+{
+	register struct sbusdev *sd;
+	struct sbus_softc *sc = sbuscd.cd_devs[sbus];
+	struct device *dev;
+
+	printf("reset %s:", sc->sc_dev.dv_xname);
+	for (sd = sc->sc_sbdev; sd != NULL; sd = sd->sd_bchain) {
+		if (sd->sd_reset) {
+			dev = sd->sd_dev;
+			(*sd->sd_reset)(dev);
+			printf(" %s", dev->dv_xname);
+		}
+	}
+}
