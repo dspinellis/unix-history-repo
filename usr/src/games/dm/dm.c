@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,7 +60,6 @@ main(argc, argv)
  * play --
  *	play the game
  */
-static
 play(args)
 	char **args;
 {
@@ -80,7 +79,6 @@ play(args)
  * read_config --
  *	read through config file, looking for key words.
  */
-static
 read_config()
 {
 	FILE *cfp;
@@ -115,7 +113,6 @@ read_config()
  * c_day --
  *	if day is today, see if okay to play
  */
-static
 c_day(s_day, s_start, s_stop)
 	char *s_day, *s_start, *s_stop;
 {
@@ -148,7 +145,6 @@ c_day(s_day, s_start, s_stop)
  * c_tty --
  *	decide if this tty can be used for games.
  */
-static
 c_tty(tty)
 	char *tty;
 {
@@ -171,7 +167,6 @@ c_tty(tty)
  * c_game --
  *	see if game can be played now.
  */
-static
 c_game(s_game, s_load, s_users, s_priority)
 	char *s_game, *s_load, *s_users, *s_priority;
 {
@@ -199,7 +194,7 @@ c_game(s_game, s_load, s_users, s_priority)
  * load --
  *	return 15 minute load average
  */
-static double
+double
 load()
 {
 	double avenrun[3];
@@ -217,7 +212,6 @@ load()
  *	todo: check idle time; if idle more than X minutes, don't
  *	count them.
  */
-static
 users()
 {
 	
@@ -235,7 +229,6 @@ users()
 	return(nusers);
 }
 
-static
 nogamefile()
 {
 	register int fd, n;
@@ -254,7 +247,6 @@ nogamefile()
  * hour --
  *	print out the hour in human form
  */
-static
 hour(h)
 	int h;
 {
@@ -278,7 +270,6 @@ hour(h)
  * logfile --
  *	log play of game
  */
-static
 logfile()
 {
 	struct passwd *pw, *getpwuid();
