@@ -3,15 +3,13 @@
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
+.\" %sccs.include.redist.roff%
 .\"
-.\" %sccs.include.redist.man%
+.\"	@(#)printenv.1	6.7 (Berkeley) %G%
 .\"
-.\"     @(#)printenv.1	6.6 (Berkeley) %G%
-.\"
-.Vx
 .Dd 
 .Dt PRINTENV 1
-.UC
+.Os BSD 3
 .Sh NAME
 .Nm printenv , env
 .Nd print out the environment, set and print environment
@@ -20,7 +18,7 @@
 .Op Ar name
 .Nm env
 .Op Fl
-.Op Ar name=value \&...
+.Op Ar name=value ...
 .Op Ar command
 .Sh DESCRIPTION
 .Nm Printenv
@@ -64,8 +62,10 @@ of the variables in the environment, with one name/value pair per line.
 .Xr execvp 3 ,
 .Xr environ 7
 .Sh HISTORY
-.Nm Printenv
-appeared in 3 BSD.
+The
+.Nm printenv
+command appeared in
+.Bx 3.0 .
 .Sh BUGS
 .Nm Env
 doesn't handle commands with equal (``='') signs in their

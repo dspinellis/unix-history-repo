@@ -1,14 +1,12 @@
 .\" Copyright (c) 1981, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mt.1	6.6 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-.Vx
-.Vx
+.\"	@(#)mt.1	6.7 (Berkeley) %G%
+.\"
 .Dd 
-.Os
 .Dt MT 1
 .Os BSD 4
 .Sh NAME
@@ -22,56 +20,56 @@
 .Sh DESCRIPTION
 .Nm Mt
 is used to give commands to a magnetic tape drive.
-If a tape name is not specified, the environment variable
-.Ev TAPE
-is used;  if
-.Ev TAPE
-does not exist,
-.Nm mt
-uses the device
-.Pa /dev/rmt12 .
-Note
-that
-.Ar tapename
-must reference a raw (not block) tape device.
 By default
 .Nm mt
 performs the requested operation once.  Operations
 may be performed multiple times by specifying
 .Ar count  .
+Note
+that
+.Ar tapename
+must reference a raw (not block) tape device.
 .Pp
 The available commands are listed below.  Only as many
 characters as are required to uniquely identify a command
 need be specified.
-.Tp Cm eof , weof
+.Bl -tag -width "eof, weof"
+.It Cm eof , weof
 Write
 .Ar count
 end-of-file marks at the current position on the tape.
-.Tp Cm fsf
+.It Cm fsf
 Forward space
 .Ar count
 files.
-.Tp Cm fsr
+.It Cm fsr
 Forward space
 .Ar count
 records.
-.Tp Cm bsf
+.It Cm bsf
 Back space
 .Ar count
 files.
-.Tp Cm bsr
+.It Cm bsr
 Back space
 .Ar count
 records.
-.Tp Cm rewind
+.It Cm rewind
 Rewind the tape
 (Count is ignored).
-.Tp Cm offline , rewoffl
+.It Cm offline , rewoffl
 Rewind the tape and place the tape unit off-line
 (Count is ignored).
-.Tp Cm status
+.It Cm status
 Print status information about the tape unit.
-.Tp
+.El
+.Pp
+If a tape name is not specified, and the environment variable
+.Ev TAPE
+does not exist;
+.Nm mt
+uses the device
+.Pa /dev/rmt12 .
 .Pp
 .Nm Mt
 returns a 0 exit status when the operation(s) were successful,
@@ -79,8 +77,8 @@ returns a 0 exit status when the operation(s) were successful,
 .Sh ENVIRONMENT
 If the following environment variable exists, it is utilized by
 .Nm mt .
-.Tw Fl
-.Tp Ev TAPE
+.Bl -tag -width Fl
+.It Ev TAPE
 .Nm Mt
 checks the
 .Ev TAPE
@@ -89,17 +87,18 @@ argument
 .Ar tapename
 is not given.
 .Sh FILES
-.Dw /dev/rmt*
-.Di L
-.Dp Pa /dev/rmt*
+.Bl -tag -width /dev/rmt* -compact
+.It Pa /dev/rmt*
 Raw magnetic tape interface
-.Dp
+.El
 .Sh SEE ALSO
 .\".Xr mtio 4 ,
 .Xr dd 1 ,
 .Xr ioctl 2 ,
 .Xr environ 7
 .Sh HISTORY
-.Nm Mt
-appeared in 4.3 BSD.
+The
+.Nm mt
+command appeared in
+.Bx 4.3 .
 .\" mt.1: mtio(4) missing
