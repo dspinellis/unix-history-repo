@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -352,6 +352,33 @@ nameof(mp, reptype)
 }
 
 /*
+ * Start of a "comment".
+ * Ignore it.
+ */
+char *
+skip_comment(cp)
+	register char *cp;
+{
+	register nesting = 1;
+
+	for (; nesting > 0 && *cp; cp++) {
+		switch (*cp) {
+		case '\\':
+			if (cp[1])
+				cp++;
+			break;
+		case '(':
+			nesting++;
+			break;
+		case ')':
+			nesting--;
+			break;
+		}
+	}
+	return cp;
+}
+
+/*
  * Skin an arpa net address according to the RFC 822 interpretation
  * of "host-phrase."
  */
@@ -364,7 +391,6 @@ skin(name)
 	char *bufend;
 	int gotlt, lastsp;
 	char nbuf[BUFSIZ];
-	int nesting;
 
 	if (name == NOSTR)
 		return(NOSTR);
@@ -377,32 +403,7 @@ skin(name)
 	for (cp = name, cp2 = bufend; c = *cp++; ) {
 		switch (c) {
 		case '(':
-			/*
-			 * Start of a "comment".
-			 * Ignore it.
-			 */
-			nesting = 1;
-			while ((c = *cp) != 0) {
-				cp++;
-				switch (c) {
-				case '\\':
-					if (*cp == 0)
-						goto outcm;
-					cp++;
-					break;
-				case '(':
-					nesting++;
-					break;
-
-				case ')':
-					--nesting;
-					break;
-				}
-
-				if (nesting <= 0)
-					break;
-			}
-		outcm:
+			cp = skip_comment(cp);
 			lastsp = 0;
 			break;
 
@@ -411,20 +412,17 @@ skin(name)
 			 * Start of a "quoted-string".
 			 * Copy it in its entirety.
 			 */
-			while ((c = *cp) != 0) {
+			while (c = *cp) {
 				cp++;
-				switch (c) {
-				case '\\':
-					if ((c = *cp) == 0)
-						goto outqs;
-					cp++;
+				if (c == '"')
 					break;
-				case '"':
-					goto outqs;
+				if (c != '\\')
+					*cp2++ = c;
+				else if (c = *cp) {
+					*cp2++ = c;
+					cp++;
 				}
-				*cp2++ = c;
 			}
-		outqs:
 			lastsp = 0;
 			break;
 
@@ -447,16 +445,22 @@ skin(name)
 		case '>':
 			if (gotlt) {
 				gotlt = 0;
-				while (*cp != ',' && *cp != 0)
+				while ((c = *cp) && c != ',') {
 					cp++;
-				if (*cp == 0 )
-					goto done;
-				*cp2++ = ',';
-				*cp2++ = ' ';
-				bufend = cp2;
+					if (c == '(')
+						cp = skip_comment(cp);
+					else if (c == '"')
+						while (c = *cp) {
+							cp++;
+							if (c == '"')
+								break;
+							if (c == '\\' && *cp)
+								cp++;
+						}
+				}
+				lastsp = 0;
 				break;
 			}
-
 			/* Fall into . . . */
 
 		default:
@@ -465,10 +469,15 @@ skin(name)
 				*cp2++ = ' ';
 			}
 			*cp2++ = c;
-			break;
+			if (c == ',' && !gotlt) {
+				*cp2++ = ' ';
+				for (; *cp == ' '; cp++)
+					;
+				lastsp = 0;
+				bufend = cp2;
+			}
 		}
 	}
-done:
 	*cp2 = 0;
 
 	return(savestr(nbuf));
