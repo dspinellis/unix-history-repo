@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symbols.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symbols.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: symbols.c,v 1.6 84/12/26 10:42:31 linton Exp $";
@@ -124,6 +124,8 @@ boolean showaggrs;
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
 #define isinline(f) ((f)->symvalue.funcv.inline)
+
+#define isreg(s)		(s->level < 0)
 
 #include "tree.h"
 
@@ -550,7 +552,6 @@ Symbol s;
 #define isglobal(s)		(s->level == 1)
 #define islocaloff(s)		(s->level >= 2 and s->symvalue.offset < 0)
 #define isparamoff(s)		(s->level >= 2 and s->symvalue.offset >= 0)
-#define isreg(s)		(s->level < 0)
 
 public Address address (s, frame)
 Symbol s;

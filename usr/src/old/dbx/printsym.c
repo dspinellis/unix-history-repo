@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printsym.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printsym.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $";
@@ -282,7 +282,6 @@ Frame frame;
 {
     Address addr;
     int len;
-    Symbol t;
 
     if (isambiguous(s) and ismodule(container(s))) {
 	printname(stdout, s);
@@ -297,11 +296,14 @@ Frame frame;
 	addr = address(s, frame);
     }
     len = size(s);
-    if (canpush(len)) {
-	rpush(addr, len);
+    if (not canpush(len)) {
+	printf("*** expression too large ***");
+    } else if (isreg(s)) {
+	push(Address, addr);
 	printval(s->type);
     } else {
-	printf("*** expression too large ***");
+	rpush(addr, len);
+	printval(s->type);
     }
 }
 
@@ -514,7 +516,7 @@ Symbol t;
 
 	default:
 	    if (t->language == nil or t->language == primlang) {
-		(*language_op(findlanguage(".c"), L_PRINTVAL))(t);
+		(*language_op(findlanguage(".s"), L_PRINTVAL))(t);
 	    } else {
 		(*language_op(t->language, L_PRINTVAL))(t);
 	    }
