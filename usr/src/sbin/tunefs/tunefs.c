@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,6 +33,7 @@ union {
 #define	sblock sbun.sb
 
 int fi;
+long dev_bsize = 1;
 
 main(argc, argv)
 	int argc;
@@ -178,7 +179,7 @@ again:
 	}
 	if (argc != 1)
 		goto usage;
-	bwrite(SBLOCK, (char *)&sblock, SBSIZE);
+	bwrite(SBOFF / dev_bsize, (char *)&sblock, SBSIZE);
 	if (Aflag)
 		for (i = 0; i < sblock.fs_ncg; i++)
 			bwrite(fsbtodb(&sblock, cgsblock(&sblock, i)),
@@ -207,7 +208,7 @@ getsb(fs, file)
 		perror(file);
 		exit(3);
 	}
-	if (bread(SBLOCK, (char *)fs, SBSIZE)) {
+	if (bread(SBOFF, (char *)fs, SBSIZE)) {
 		fprintf(stderr, "bad super block");
 		perror(file);
 		exit(4);
@@ -216,6 +217,7 @@ getsb(fs, file)
 		fprintf(stderr, "%s: bad magic number\n", file);
 		exit(5);
 	}
+	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
 }
 
 bwrite(blk, buf, size)
@@ -223,7 +225,7 @@ bwrite(blk, buf, size)
 	daddr_t blk;
 	register size;
 {
-	if (lseek(fi, blk * DEV_BSIZE, 0) < 0) {
+	if (lseek(fi, blk * dev_bsize, 0) < 0) {
 		perror("FS SEEK");
 		exit(6);
 	}
@@ -239,7 +241,7 @@ bread(bno, buf, cnt)
 {
 	register i;
 
-	if (lseek(fi, bno * DEV_BSIZE, 0) < 0)
+	if (lseek(fi, bno * dev_bsize, 0) < 0)
 		return(1);
 	if ((i = read(fi, buf, cnt)) != cnt) {
 		for(i=0; i<sblock.fs_bsize; i++)

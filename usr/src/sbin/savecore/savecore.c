@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -317,7 +317,7 @@ check_space()
 	}
 	ddev = find_dev(dsb.st_dev, S_IFBLK);
 	dfd = Open(ddev, O_RDONLY);
-	Lseek(dfd, (long)(SBLOCK * DEV_BSIZE), L_SET);
+	Lseek(dfd, SBOFF, L_SET);
 	Read(dfd, (char *)&fs, sizeof (fs));
 	close(dfd);
  	spacefree = freespace(&fs, fs.fs_minfree) * fs.fs_fsize / 1024;

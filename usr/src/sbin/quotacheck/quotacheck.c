@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -68,6 +68,7 @@ char *qfname = "quotas";
 char quotafile[MAXPATHLEN + 1];
 struct dqblk zerodqbuf;
 struct fileusage zerofileusage;
+long dev_bsize = 1;
 
 main(argc, argv)
 	int argc;
@@ -270,7 +271,8 @@ chkquota(fsdev, fsfile, qffile)
 		    "*** Warning: Quotas are not compiled into this kernel\n");
 	}
 	sync();
-	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	bread(SBOFF, (char *)&sblock, SBSIZE);
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	ino = 0;
 	for (cg = 0; cg < sblock.fs_ncg; cg++) {
 		dp = NULL;
@@ -370,11 +372,8 @@ bread(bno, buf, cnt)
 	long unsigned bno;
 	char *buf;
 {
-	extern	off_t lseek();
-	register off_t pos;
 
-	pos = (off_t)dbtob(bno);
-	if (lseek(fi, pos, 0) != pos) {
+	if (lseek(fi, bno * dev_bsize, 0) < 0) {
 		perror("lseek");
 		exit(1);
 	}

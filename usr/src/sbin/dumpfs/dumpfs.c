@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -36,6 +36,8 @@ union {
 	char pad[MAXBSIZE];
 } cgun;
 #define	acg	cgun.cg
+
+long	dev_bsize = 1;
 
 main(argc, argv)
 	char **argv;
@@ -66,11 +68,12 @@ dumpfs(name)
 		perror(name);
 		return;
 	}
-	lseek(0, SBLOCK * DEV_BSIZE, 0);
+	lseek(0, SBOFF, 0);
 	if (read(0, &afs, SBSIZE) != SBSIZE) {
 		perror(name);
 		return;
 	}
+	dev_bsize = afs.fs_fsize / fsbtodb(&afs, 1);
 	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_ndir,
@@ -130,7 +133,7 @@ dumpfs(name)
 		    afs.fs_cssize - i : afs.fs_bsize;
 		afs.fs_csp[j] = (struct csum *)calloc(1, size);
 		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + j * afs.fs_frag)) *
-		    DEV_BSIZE, 0);
+		    dev_bsize, 0);
 		if (read(0, afs.fs_csp[j], size) != size) {
 			perror(name);
 			return;
@@ -163,7 +166,7 @@ dumpcg(name, c)
 	int i,j;
 
 	printf("\ncg %d:\n", c);
-	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * DEV_BSIZE, 0);
+	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * dev_bsize, 0);
 	i = lseek(0, 0, 1);
 	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
 		printf("dumpfs: %s: error reading cg\n", name);

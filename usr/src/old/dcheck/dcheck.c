@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dcheck.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dcheck.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -47,6 +47,7 @@ ino_t	ino;
 ino_t	*ecount;
 int	headpr;
 int	nfiles;
+long	dev_bsize = 1;
 
 int	nerror;
 daddr_t	bmap();
@@ -99,12 +100,13 @@ char *file;
 	headpr = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	bread(SBOFF, (char *)&sblock, SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;
 		return;
 	}
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
 	ecount = (ino_t *)malloc((nfiles+1) * sizeof (*ecount));
 	if (ecount == 0) {
@@ -218,7 +220,7 @@ char *buf;
 {
 	register i;
 
-	lseek(fi, bno * DEV_BSIZE, 0);
+	lseek(fi, bno * dev_bsize, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		printf("read error %d\n", bno);
 		for(i=0; i < cnt; i++)

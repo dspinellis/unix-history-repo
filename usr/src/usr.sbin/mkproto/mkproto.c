@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,6 +40,7 @@ int	fso, fsi;
 FILE	*proto;
 char	token[BUFSIZ];
 int	errs;
+long	dev_bsize = 1;
 int	ino = 10;
 long	getnum();
 char	*strcpy();
@@ -61,7 +62,8 @@ main(argc, argv)
 		exit(1);
 	}
 	fs = &sblock;
-	rdfs(SBLOCK, SBSIZE, (char *)fs);
+	rdfs(SBOFF, SBSIZE, (char *)fs);
+	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
 	fscs = (struct csum *)calloc(1, fs->fs_cssize);
 	for (i = 0; i < fs->fs_cssize; i += fs->fs_bsize)
 		rdfs(fsbtodb(fs, fs->fs_csaddr + numfrags(fs, i)),
@@ -70,7 +72,7 @@ main(argc, argv)
 			((char *)fscs) + i);
 	proto = fopen(argv[2], "r");
 	descend((struct inode *)0);
-	wtfs(SBLOCK, SBSIZE, (char *)fs);
+	wtfs(SBOFF / dev_bsize, SBSIZE, (char *)fs);
 	for (i = 0; i < fs->fs_cssize; i += fs->fs_bsize)
 		wtfs(fsbtodb(&sblock, fs->fs_csaddr + numfrags(&sblock, i)),
 			(int)(fs->fs_cssize - i < fs->fs_bsize ?
@@ -450,7 +452,7 @@ rdfs(bno, size, bf)
 {
 	int n;
 
-	if (lseek(fsi, bno * DEV_BSIZE, 0) < 0) {
+	if (lseek(fsi, bno * dev_bsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("rdfs");
 		exit(1);
@@ -472,8 +474,7 @@ wtfs(bno, size, bf)
 {
 	int n;
 
-	lseek(fso, bno * DEV_BSIZE, 0);
-	if (lseek(fso, bno * DEV_BSIZE, 0) < 0) {
+	if (lseek(fso, bno * dev_bsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
 		exit(1);

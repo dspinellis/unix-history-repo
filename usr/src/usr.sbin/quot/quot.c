@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.11 (Berkeley) 85/09/09";
+static char *sccsid = "@(#)quot.c	4.12 (Berkeley) 87/02/23";
 #endif
 
 /*
@@ -46,6 +46,7 @@ int	cflg;
 int	vflg;
 int	hflg;
 long	now;
+long	dev_bsize = 1;
 
 unsigned	ino;
 
@@ -153,7 +154,8 @@ check(file, fsdir)
 		printf(" (%s)", fsdir);
 	printf(":\n");
 	sync();
-	bread(fd, SBLOCK, (char *)&sblock, SBSIZE);
+	bread(fd, SBOFF, (char *)&sblock, SBSIZE);
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	if (nflg) {
 		if (isdigit(c = getchar()))
 			ungetc(c, stdin);
@@ -269,7 +271,7 @@ bread(fd, bno, buf, cnt)
 	char *buf;
 {
 
-	lseek(fd, (long)bno * DEV_BSIZE, L_SET);
+	lseek(fd, (long)bno * dev_bsize, L_SET);
 	if (read(fd, buf, cnt) != cnt) {
 		fprintf(stderr, "quot: read error at block %u\n", bno);
 		exit(1);

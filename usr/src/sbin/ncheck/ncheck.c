@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -60,6 +60,7 @@ int	fi;
 ino_t	ino;
 int	nhent;
 int	nxfile;
+long	dev_bsize = 1;
 
 int	nerror;
 daddr_t	bmap();
@@ -126,12 +127,13 @@ check(file)
 	nhent = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	bread(SBOFF, (char *)&sblock, SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;
 		return;
 	}
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	hsize = sblock.fs_ipg * sblock.fs_ncg - sblock.fs_cstotal.cs_nifree + 1;
 	htab = (struct htab *)malloc(hsize * sizeof(struct htab));
 	strngtab = (char *)malloc(30 * hsize);
@@ -359,7 +361,7 @@ bread(bno, buf, cnt)
 {
 	register i;
 
-	lseek(fi, bno * DEV_BSIZE, 0);
+	lseek(fi, bno * dev_bsize, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		fprintf(stderr, "ncheck: read error %d\n", bno);
 		for(i=0; i < cnt; i++)
