@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -168,7 +168,7 @@ ndrele(ndp)
  * Routines having to do with the management of the vnode table.
  */
 struct vnode *vfreeh, **vfreet;
-extern struct vnodeops dead_vnodeops, blk_vnodeops;
+extern struct vnodeops dead_vnodeops, spec_vnodeops;
 struct speclist *speclisth;
 struct speclist {
 	struct speclist *sl_next;
@@ -302,7 +302,7 @@ bdevvp(dev, vpp)
 	struct vnode *nvp;
 	int error;
 
-	error = getnewvnode(VT_NON, (struct mount *)0, &blk_vnodeops, &nvp);
+	error = getnewvnode(VT_NON, (struct mount *)0, &spec_vnodeops, &nvp);
 	if (error) {
 		*vpp = 0;
 		return (error);
