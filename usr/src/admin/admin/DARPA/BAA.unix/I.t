@@ -1,7 +1,9 @@
-.\"     @(#)I.t	1.1     89/02/23
+.\"     @(#)I.t	1.2     89/02/23
 .LP
 \fB\s+4I. Accomplishments of the Berkeley UNIX Project\fP\s-4
 .PP
+The investigators in this proposal have been involved in the
+Berkeley UNIX project for many years.
 The last major release of Berkeley UNIX,
 in June, 1986, was 4.3BSD [CSRG86].
 The release of 4.3BSD in April of 1986 addressed many of the 
@@ -137,26 +139,35 @@ Standard error is now buffered within a single call to do output.
 .LP
 \fB\s+2I.2 Work since the release of 4.3BSD\fP\s-2
 .PP
-There have been several changes in the system since the release of 4.3BSD.
-The largest change has been the incorporation of support for the first
-non-VAX processor, the CCI Power 6/32.
-The Power 6 version of 4.3BSD is based upon the compilers and
-device drivers done for CCI's 4.2BSD UNIX,
-and is otherwise similar to the VAX release of 4.3.
-The kernel source tree and the sources for all user-level software
-have been merged using a structure that will accommodate addition
-of other processor families.
-The 4.3BSD release for the CCI Power 6 (and for OEM versions
-sold by Harris and Sperry) is now in beta test.
+There have been several changes in the system that were included
+in the recent 4.3BSD Tahoe release.
 .PP
-In the course of the work on the CCI machine, it was finally
-resolved that disk geometry and filesystem layout information
+The largest change has been the incorporation of support for the first
+non-VAX processor, the CCI Power 6/32 and 6/32SX.  (This addition also
+supports the
+Harris HCX-7 and HCX-9, as well as the Sperry 7000/40 and ICL machines.)
+The Power 6 version of 4.3BSD is largely based on the compilers and
+device drivers done for CCI's 4.2BSD UNIX,
+and is otherwise similar to the VAX release of 4.3BSD.
+The entire source tree, including all kernel and user-level sources,
+has been merged using a structure that will easily accommodate the addition
+of other processor families.  A MIPS M1000 has been donated to us,
+making the MIPS architecture a likely candidate for inclusion into a future
+BSD release.
+.PP
+Support has been added for the DEC VAX 8600/8650, VAX 8200/8250, 
+MicroVAXII and MicroVAXIII.
+.PP
+During the work on the CCI machine,
+it became obvious that disk geometry and filesystem layout information
 must be stored on each disk in a pack label.
-This was implemented for the CCI disks and for the most common
+Disk labels were implemented for the CCI disks and for the most common
 types of disk controllers on the VAX.
 A utility was written to create and maintain the disk information,
 and other user-level programs that use such information now obtain
 it from the disk label.
+The use of this facility has allowed improvements in the file system's
+knowledge of irregular disk geometries such as track-to-track skew.
 .PP
 The Internet and the Berkeley collection of local-area networks
 have both grown at high rates in the last year.
@@ -170,4 +181,34 @@ We have made several changes in the local routing algorithm
 to keep accommodating the current topology,
 and are participating in the development of new routing algorithms
 and protocols.
+.PP
+A new general purpose kernel memory allocator has been added to replace
+many special purpose memory allocators.
+The 4.3BSD UNIX kernel used 10 different memory allocation mechanisms,
+each designed for the particular needs of the utilizing subsystem.
+These mechanisms have been replaced by a general purpose dynamic
+memory allocator that can be used by all of the kernel subsystems.
+The design of this allocator takes advantage of known memory usage
+patterns in the UNIX kernel and a hybrid strategy that is time-efficient
+for small allocations and space-efficient for large allocations.
+This allocator replaces the multiple memory allocation interfaces 
+with a single easy-to-program interface,
+results in more efficient use of global memory by eliminating
+partitioned and specialized memory pools,
+and is quick enough (approximately 15 VAX instructions) that no
+performance loss is observed relative to the current implementations.
+[McKusick88].
+.PP
+The 4.2 fast file system [McKusick84]
+contained several statically sized structures,
+imposing limits on the number of cylinders per cylinder group,
+inodes per cylinder group,
+and number of distinguished rotational positions.
+The new ``fat'' filesystem allows these limits to be set at filesystem
+creation time.
+Old kernels will treat the new filesystems as read-only,
+and new kernels
+will accommodate both formats.
+The filesystem check facility, \fIfsck\fP, has also been modified to check
+either type.
 .bp
