@@ -14,9 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_BSHELL	"/bin/sh"
+#include <paths.h>
+
 #define	_PATH_CP	"/bin/cp"
-#define	_PATH_RSH	"/usr/ucb/rsh"
+#define	_PATH_RSH	"/usr/bin/rsh"

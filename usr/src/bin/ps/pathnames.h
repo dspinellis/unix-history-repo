@@ -14,13 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_DEV		"/dev"
-#define	_PATH_DEVDRUM		"/dev/drum"
-#define	_PATH_DEVMEM		"/dev/mem"
-#define	_PATH_KMEM		"/dev/kmem"
-#define	_PATH_PSDATABASE	"/etc/psdatabase"
+#include <paths.h>
+
+#define	_PATH_PSDATABASE	"/var/run/psdatabase"
 #define	_PATH_VMCORE		"/vmcore"
-#define	_PATH_VMUNIX		"/vmunix"
