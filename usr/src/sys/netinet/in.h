@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	6.8 (Berkeley) %G%
+ *	@(#)in.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -30,8 +30,11 @@
 /*
  * Ports < IPPORT_RESERVED are reserved for
  * privileged processes (e.g. root).
+ * Ports > IPPORT_USERRESERVED are reserved
+ * for servers, not necessarily privileged.
  */
 #define	IPPORT_RESERVED		1024
+#define	IPPORT_USERRESERVED	5000
 
 /*
  * Link numbers
