@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.7 (Berkeley) %G%
+ *	@(#)if_apx.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -33,20 +33,13 @@
 #ifdef CCITT
 #include "netccitt/x25.h"
 int x25_rtrequest(), x25_ifoutput();
-struct mbuf_cache {
-	int	mbc_size;
-	int	mbc_num;
-	int	mbc_oldsize;
-	struct	mbuf **mbc_cache;
-} apx_cache = { 20 };
 #endif
 
 #include "if_apxreg.h"
 
 int	apxprobe(), apxattach(), apxstart(), apx_uprim(), apx_meminit();
-int	apxinit(), apxoutput(), apxioctl(), apxreset(), apxdebug = 1;
+int	apxinit(), apxoutput(), apxioctl(), apxreset(), apxdebug = 0;
 void	apx_ifattach(), apxtest(), apxinput(), apxintr(), apxtint(), apxrint();
-int	apxipdebug = 1;
 
 struct apx_softc {
 	struct	ifnet apx_if;
@@ -61,8 +54,6 @@ struct apx_softc {
 	int	apx_txnum;		/* Last tranmistter dx we stomped on */
 	int	apx_txcnt;		/* Number of packets queued for tx*/
 	u_int	apx_msize;
-	u_short	apx_csr0;
-	u_short	apx_csr1;
 	struct	sgae apx_csr23;		/* 24 bit init addr, as seen by chip */
 	u_short	apx_csr4;		/* byte gender, set in mach dep code */
 	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
@@ -130,7 +121,7 @@ apxprobe(id)
 		apx->apx_msize	= id->id_msize >> 1;
 		apx->apx_hmem	= (struct apc_mem *) (id->id_maddr + moffset);
 		apx->apx_dmem	= (struct apc_mem *) moffset;
-		apx->apx_device = (caddr_t) id;
+		apx->apx_device	= (caddr_t) id;
 		apx->apx_reg	= reg;
 		apx->apx_sgcp	= reg->axr_sgcp + subunit;
 		apx->apx_csr4	= 0x0210;	/* no byte swapping for PC-AT */
@@ -217,10 +208,6 @@ apxtest(apx)
 	if (SG_RCSR(apx, 1) & 0x8000)
 		SG_WCSR(apx, 1, 0x8040);
 	SG_WCSR(apx, 4, apx->apx_csr4);
-	if (apxdebug && i) {
-		apxerror(apx, "counter 2 value", i);
-		apxerror(apx, "mk5025 csr4 value", SG_RCSR(apx, 4));
-	}
 	SG_WCSR(apx, 5, 0x08);		/* Set DTR mode in SGS thompson chip */
 	if (((i = SG_RCSR(apx, 5)) & 0xff08) != 0x08)
 		apxerror(apx, "no mk5025, csr5 high bits are", i);
@@ -253,15 +240,11 @@ apxreset(unit)
 	SG_WCSR(apx, 3, apx->apx_csr23.lo);
 	if (apx_uprim(apx, SG_INIT, "init request") ||
 	    apx_uprim(apx, SG_STAT, "status request") ||
-	    apx_uprim(apx, SG_TRANS, "transparent mode")) {
-		apxstat.rstfld++;
+	    apx_uprim(apx, SG_TRANS, "transparent mode"))
 		return 0;
-	}
 	SG_WCSR(apx, 0, SG_INEA);
 	return 1;
 }
-int apx_doinit = 1, apx_dostat = 1;
-int apx_didinit = 0, apx_didstat = 0;
 
 apx_uprim(apx, request, ident)
 	register struct apx_softc *apx;
@@ -272,26 +255,18 @@ apx_uprim(apx, request, ident)
 
 	if ((apx->apx_flags & APXF_CHIPHERE) == 0)
 		return 1;	/* maybe even should panic . . . */
-
-if (request == SG_STAT) { if (apx_dostat) apx_didstat = 1; else return 0;}
-if (request == SG_INIT) { if (apx_doinit) apx_didinit = 1; else return 0;}
-
 	if ((reply = SG_RCSR(apx, 1)) & 0x8040)
 		SG_WCSR(apx, 1, 0x8040); /* Magic! */
-	apx->apx_csr0 = SG_RCSR(apx, 0);
-	if (request == SG_STOP && (apx->apx_csr0 & SG_STOPPED))
+	if (request == SG_STOP && (SG_RCSR(apx, 0) & SG_STOPPED))
 		return 0;
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
-		apx->apx_csr1 = reply = SG_RCSR(apx, 1);
+		reply = SG_RCSR(apx, 1);
 		if (timo++ >= TIMO || (reply & 0x8000)) {
-			if (request != SG_STOP || apxdebug)
 				apxerror(apx, ident, reply);
-			if (request != SG_STOP)
 				return 1;
 		}
 	} while (reply & SG_UAV);
-	apx->apx_csr0 = SG_RCSR(apx, 0);
 	return 0;
 }
 
@@ -308,9 +283,8 @@ apx_meminit(apc, apx)
 	{SET_SGAE((d).sgdx_ae, f, a); (d).sgdx_mcnt = (d).sgdx_bcnt = (b);}
 
 	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = 0;
-	bzero((caddr_t)apc, apx->apx_msize);
-	/*bzero((caddr_t)apc, ((caddr_t)(&apc->apc_rxmd[0])) - (caddr_t)apc);*/
-	apc->apc_mode = 0x0108;	/* 2 flag spacing, leave addr&ctl, do CRC16 */
+	bzero((caddr_t)apc, ((caddr_t)(&apc->apc_rxmd[0])) - (caddr_t)apc);
+	apc->apc_mode = 0x0108;	/* 2 flag spacing, leave addr & ctl, do CRC16 */
 	apc->apc_sgop = apx->apx_modes.apm_sgop;
 	SET_SGAE(apx->apx_csr23, SG_UIE | SG_PROM, apc_mode);
 	SET_SGAE(apc->apc_rxdd, SG_RLEN, apc_rxmd[0]);
@@ -355,8 +329,6 @@ apxstart(ifp)
 			(0xff & dx->sgdx_flags);
 		SG_WCSR(apx, 0, SG_INEA | SG_TDMD);
 		DELAY(20);
-		apx->apx_csr1 = SG_RCSR(apx, 1);
-		apx->apx_csr0 = SG_RCSR(apx, 0);
 		if (++apx->apx_txnum >= SGTBUF)
 			apx->apx_txnum = 0;
 	} while (++apx->apx_txcnt < SGTBUF);
@@ -375,8 +347,7 @@ apxintr()
 	for (apx = apx_softc + NAPX + NAPX; --apx >= apx_softc;) {
 		if (apx->apx_flags & APXF_CHIPHERE)
 		    /* Try to turn off interrupt cause */
-		    while ((apx->apx_csr0 = SG_RCSR(apx, 0)) & 0xff) {
-			reply = apx->apx_csr0;
+		    while ((reply = SG_RCSR(apx, 0)) & 0xff) {
 			SG_WCSR(apx, 0, SG_INEA | 0xfe);
 			if (reply & (SG_MERR|SG_TUR|SG_ROR)) {
 				apxerror(apx, "mem, rx, or tx error", reply);
@@ -507,10 +478,6 @@ apxinput(ifp, buffer, len)
 	m = m_devget(buffer, len, 0, ifp, (void (*)())0);
 	if (m == 0)
 		return;
-#ifdef CCITT
-	if (apxipdebug)
-		mbuf_cache(&apx_cache, m);
-#endif
 	if(IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
@@ -537,11 +504,7 @@ apxioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 #ifdef CCITT
-		if (apxipdebug) {
-			ifp->if_flags |= IFF_UP;
-			apxinit(ifp->if_unit);
-		} else 
-			ifa->ifa_rtrequest = x25_rtrequest;
+		ifa->ifa_rtrequest = x25_rtrequest;
 		break;
 
 	case SIOCSIFCONF_X25:
@@ -580,22 +543,23 @@ apxerror(apx, msg, data)
 	log(LOG_WARNING, "apc%d: %s, stat=0x%x\n",
 		apx->apx_if.if_unit, msg, data);
 }
+
 /*
  * For debugging loopback activity.
  */
-static char pppheader[4] = { -1, 3, 0, 0x21 };
-
 apxoutput(ifp, m, dst, rt)
 register struct ifnet *ifp;
 register struct mbuf *m;
 struct sockaddr *dst;
 struct rtentry *rt;
 {
+	int s = splimp(), error = 0;
+	static char pppheader[4] = { -1, 3, 0, 0x21 };
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
 	 */
-	int s = splimp(), error = 0;
+	ifp->if_opackets++;
 	M_PREPEND(m, sizeof pppheader, M_DONTWAIT);
 	if (m == 0) {
 		splx(s);
@@ -604,8 +568,6 @@ struct rtentry *rt;
 	bcopy(pppheader, mtod(m, caddr_t), sizeof pppheader);
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-	    /* printf("%s%d: HDLC says OK to send but queue full, may hang\n",
-			ifp->if_name, ifp->if_unit);*/
 		m_freem(m);
 		error = ENOBUFS;
 	} else {
@@ -616,5 +578,4 @@ struct rtentry *rt;
 	splx(s);
 	return (error);
 }
-
 #endif /* NAPX */

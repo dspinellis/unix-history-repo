@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apxreg.h	7.3 (Berkeley) %G%
+ *	@(#)if_apxreg.h	7.4 (Berkeley) %G%
  */
 
 
@@ -16,8 +16,8 @@
  * Device Control Ports (Multiplexed CSR's)
  */
 struct sgcp {
-	u_short sgcp_rdp;
-	u_short sgcp_rap;
+	u_short	sgcp_rdp;
+	u_short	sgcp_rap;
 };
 
 /*
@@ -25,8 +25,8 @@ struct sgcp {
  * (Suitable for reseting by ioctl).
  */ 
 struct sgop {
-	u_short lsaddr;
-	u_short rsaddr;
+	u_short	lsaddr;
+	u_short	rsaddr;
 	u_short	n1;
 	u_short	n2_scale;
 	u_short	t1;
@@ -35,14 +35,22 @@ struct sgop {
 };
 
 /*
+ * Common addressing element rife through chip
+ */
+struct sgae {
+	u_short	f_hi;
+	u_short	lo;
+};
+/*
  * Common format for tx/rx descriptors
  */
 
 struct sgdx {
-	u_short	sgdx_flags;
-	u_short	sgdx_addr;
+	struct	sgae sgdx_ae;
+#define		sgdx_flags sgdx_ae.f_hi
+#define		sgdx_addr sgdx_ae.lo
 	short	sgdx_bcnt;
-	u_short	sgdx_mcnt;
+	short	sgdx_mcnt;
 };
 
 /*
@@ -63,7 +71,7 @@ struct sger {
 struct sgsb {
 	u_short	sgsb_vrvs;
 	u_short	sgsb_lsrs;
-	u_short sgsb_phzva;
+	u_short	sgsb_phzva;
 	u_short	sgsb_hirxcnt;
 	u_short	sgsb_lorxcnt;
 	u_short	sgsb_hitxcnt;
@@ -86,14 +94,11 @@ struct apc_mem {
 	/* Initialization Block */
 	u_short	apc_mode;
 	struct	sgop apc_sgop;
-	u_short	apc_rlen;
-	u_short	apc_rdra;
-	u_short	apc_tlen;
-	u_short	apc_tdra;
+	struct	sgae apc_rxdd;
+	struct	sgae apc_txdd;
 	struct	sgdx apc_txtid;
 	struct	sgdx apc_rxtid;
-	u_short	apc_stathi;
-	u_short	apc_statlo;
+	struct	sgae apc_stdd;
 	struct	sger apc_sger;
 	struct	sgsb apc_sgsb;		/* Status Buffer */
 	struct	sgdx apc_rxmd[SGRBUF];	/* Receive Message Descriptors */
@@ -129,7 +134,7 @@ struct apc_modes {
 	u_char	apm_txwin;	/* set parameter for transmit window */
 	u_char	apm_apxmode;
 	u_char	apm_apxaltmode;
-	u_char 	apm_iftype;	/* someday indicate PPP vs X.25 */
+	u_char	apm_iftype;	/* someday indicate PPP vs X.25 */
 };
 
 #define	SIOCSIFMODE	_IOW('i', 127, struct apc_modes) /* set parameters */
@@ -161,7 +166,7 @@ struct apc_modes {
 #define SG_UAV	0x4000
 #define SG_PAV	0x40
 #define SG_STOP	0
-#define	SG_INIT	(2 << 8)
+#define SG_INIT	(2 << 8)
 #define SG_TRANS (3 << 8)
 #define SG_STAT	(4 << 8)
 
