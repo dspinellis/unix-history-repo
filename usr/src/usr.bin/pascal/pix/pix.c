@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)pix.c 1.2 %G%";
+static char sccsid[] = "@(#)pix.c 1.3 %G%";
 
 /*
  * pix - pi then px
@@ -81,10 +81,12 @@ main(argc, argv)
 		onintr();
 	}
 	ac--;
-	argv[ac] = name - 2;
+	argv[ac] = name;
+	ac--;
+	argv[ac] = "pix";
 	argv[argc] = 0;
 	do
-		execv(PX_INTRP, &argv[ac]);
+		execv(PX_DEBUG, &argv[ac]);
 	while (errno == ETXTBSY);
 	write(2, "Can't find px\n", 14);
 	onintr();
