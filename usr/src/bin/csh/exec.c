@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)exec.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)exec.c	4.11 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -211,6 +211,7 @@ texec(f, t)
 
 			vp = lastsh;
 			vp[0] = adrof("shell") ? value("shell") : SHELLPATH;
+			vp[1] = (char *) NULL;
 #ifdef OTHERSH
 			if (ff != -1 && read(ff, &ch, 1) == 1 && ch != '#')
 				vp[0] = OTHERSH;
