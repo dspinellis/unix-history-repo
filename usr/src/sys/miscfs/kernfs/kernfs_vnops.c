@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,10 @@
 #define KSTRING	256		/* Largest I/O available via this filesystem */
 #define	UIO_MX 32
 
+#define	READ_MODE	(S_IRUSR|S_IRGRP|S_IROTH)
+#define	WRITE_MODE	(S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH)
+#define DIR_MODE	(S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
+
 struct kern_target {
 	char *kt_name;
 	void *kt_data;
@@ -45,27 +49,24 @@ struct kern_target {
 #define KTT_HOSTNAME 47
 #define KTT_AVENRUN 53
 	int kt_tag;
-#define	KTM_RO	0
-#define	KTM_RO_MODE		(S_IRUSR|S_IRGRP|S_IROTH)
-#define	KTM_RW	43
-#define	KTM_RW_MODE		(S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH)
-#define KTM_DIR_MODE (S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
 	int kt_rw;
 	int kt_vtype;
 } kern_targets[] = {
 /* NOTE: The name must be less than UIO_MX-16 chars in length */
 	/* name		data		tag		ro/rw */
-	{ ".",		0,		KTT_NULL,	KTM_RO,	VDIR },
-	{ "copyright",	copyright,	KTT_STRING,	KTM_RO,	VREG },
-	{ "hostname",	0,		KTT_HOSTNAME,	KTM_RW,	VREG },
-	{ "hz",		&hz,		KTT_INT,	KTM_RO,	VREG },
-	{ "loadavg",	0,		KTT_AVENRUN,	KTM_RO,	VREG },
-	{ "pagesize",	&cnt.v_page_size, KTT_INT,	KTM_RO,	VREG },
-	{ "physmem",	&physmem,	KTT_INT,	KTM_RO,	VREG },
-	{ "root",	0,		KTT_NULL,	KTM_RO,	VDIR },
-	{ "rootdev",	0,		KTT_NULL,	KTM_RO,	VBLK },
-	{ "time",	0,		KTT_TIME,	KTM_RO,	VREG },
-	{ "version",	version,	KTT_STRING,	KTM_RO,	VREG },
+	{ ".",		0,		KTT_NULL,	VREAD,		VDIR },
+	{ "..",		0,		KTT_NULL,	VREAD,		VDIR },
+	{ "copyright",	copyright,	KTT_STRING,	VREAD,		VREG },
+	{ "hostname",	0,		KTT_HOSTNAME,	VREAD|VWRITE,	VREG },
+	{ "hz",		&hz,		KTT_INT,	VREAD,		VREG },
+	{ "loadavg",	0,		KTT_AVENRUN,	VREAD,		VREG },
+	{ "pagesize",	&cnt.v_page_size, KTT_INT,	VREAD,		VREG },
+	{ "physmem",	&physmem,	KTT_INT,	VREAD,		VREG },
+	{ "root",	0,		KTT_NULL,	VREAD,		VDIR },
+	{ "rootdev",	0,		KTT_NULL,	VREAD,		VBLK },
+	{ "rrootdev",	0,		KTT_NULL,	VREAD,		VCHR },
+	{ "time",	0,		KTT_TIME,	VREAD,		VREG },
+	{ "version",	version,	KTT_STRING,	VREAD,		VREG },
 };
 
 static int nkern_targets = sizeof(kern_targets) / sizeof(kern_targets[0]);
@@ -204,6 +205,20 @@ kernfs_lookup(ap)
 		return (0);
 	}
 
+	/*
+	 * /kern/rrootdev is the raw root device
+	 */
+	if (cnp->cn_namelen == 8 && bcmp(pname, "rrootdev", 8) == 0) {
+		if (rrootvp) {
+			*vpp = rrootvp;
+			VREF(rrootvp);
+			VOP_LOCK(rrootvp);
+			return (0);
+		}
+		error = ENXIO;
+		goto bad;
+	}
+
 	error = ENOENT;
 
 	for (i = 0; i < nkern_targets; i++) {
@@ -266,7 +281,7 @@ kernfs_open(ap)
 			ap->a_mode, VTOKERN(vp)->kf_kt->kt_name);
 #endif
 
-	if ((ap->a_mode & FWRITE) && VTOKERN(vp)->kf_kt->kt_rw != KTM_RW)
+	if ((ap->a_mode & FWRITE) && VTOKERN(vp)->kf_kt->kt_rw != VWRITE)
 		return (EBADF);
 
 	return (0);
@@ -293,7 +308,7 @@ kernfs_access(ap)
 	}
 
 	if (cred->cr_uid == 0) {
-		if ((mode & VWRITE) && (kt->kt_rw != KTM_RW))
+		if ((mode & VWRITE) && (kt->kt_rw != VWRITE))
 			return (EROFS);
 		return (0);
 	}
@@ -340,7 +355,7 @@ kernfs_getattr(ap)
 		printf("kernfs_getattr: stat rootdir\n");
 #endif
 		vap->va_type = VDIR;
-		vap->va_mode = KTM_DIR_MODE;
+		vap->va_mode = DIR_MODE;
 		vap->va_nlink = 2;
 		vap->va_fileid = 2;
 		vap->va_size = DEV_BSIZE;
@@ -350,7 +365,7 @@ kernfs_getattr(ap)
 		printf("kernfs_getattr: stat target %s\n", kt->kt_name);
 #endif
 		vap->va_type = kt->kt_vtype;
-		vap->va_mode = (kt->kt_rw ? KTM_RW_MODE : KTM_RO_MODE);
+		vap->va_mode = (kt->kt_rw & VWRITE ? WRITE_MODE : READ_MODE);
 		vap->va_nlink = 1;
 		vap->va_fileid = 3 + (kt - kern_targets) / sizeof(*kt);
 		error = kernfs_xread(kt, strbuf, sizeof(strbuf), &nbytes);
