@@ -21,9 +21,8 @@
 # EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 # PURPOSE.
-#	@(#)Makefile	5.1 (Berkeley) %G%
-CC=gcc
-AS=a386
+#	@(#)Makefile	5.2 (Berkeley) %G%
+AS=as
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -44,8 +43,9 @@ install: ${OBJS}
 crt0.o:	crt0.c
 	${CC} -S ${DFLAGS} -DCRT0 crt0.c
 	grep -v "^#[ _]" <crt0.s >x.s 
+	ed x.s <:fix
 	mv x.s crt0.s
-	/lib/cpp crt0.s > x.s
+	/lib/cpp -traditional crt0.s > x.s
 	${AS} -o x.o x.s
 	ld -x -r -o crt0.o x.o
 	rm -f x.s x.o crt0.s
@@ -54,7 +54,7 @@ moncrt0.o: crt0.c
 	${CC} -S ${DFLAGS} -DMCRT0 crt0.c
 	grep -v "^#[ _]" <crt0.s >x.s 
 	mv x.s crt0.s
-	/lib/cpp crt0.s > x.s
+	/lib/cpp -traditional crt0.s > x.s
 	${AS} -o x.o x.s
 	ld -x -r -o moncrt0.o x.o
 	rm -f x.s x.o crt0.s
