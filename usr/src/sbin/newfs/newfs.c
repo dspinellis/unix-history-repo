@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,6 +38,7 @@ int	nsectors;		/* # sectors/track */
 int	sectorsize;		/* bytes/sector */
 int	cpg;			/* cylinders/cylinder group */
 int	minfree = -1;		/* free space threshold */
+int	opt;			/* optimization preference (space or time) */
 int	rpm;			/* revolutions/minute of drive */
 int	density;		/* number of bytes per inode */
 
@@ -103,6 +104,20 @@ main(argc, argv)
 				ntracks = atoi(*argv);
 				if (ntracks < 0)
 					fatal("%s: bad total tracks", *argv);
+				goto next;
+
+			case 'o':
+				if (argc < 1)
+					fatal("-o: missing optimization preference");
+				argc--, argv++;
+				if (strcmp(*argv, "space") == 0)
+					opt = FS_OPTSPACE;
+				else if (strcmp(*argv, "time") == 0)
+					opt = FS_OPTTIME;
+				else
+					fatal("%s: bad optimization preference %s",
+					    *argv,
+					    "(options are `space' or `time')");
 				goto next;
 
 			case 'b':
@@ -188,6 +203,8 @@ next:
 		fprintf(stderr, "\t-t tracks/cylinder\n");
 		fprintf(stderr, "\t-c cylinders/group\n");
 		fprintf(stderr, "\t-m minimum free space %%\n");
+		fprintf(stderr, "\t-o optimization preference %s\n",
+			"(`space' or `time')");
 		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
 		fprintf(stderr, "\t-i number of bytes per inode\n");
@@ -256,6 +273,11 @@ next:
 		density = 2048;
 	if (minfree < 0)
 		minfree = 10;
+	if (minfree < 10 && opt != FS_OPTSPACE) {
+		fprintf(stderr, "setting optimization for space ");
+		fprintf(stderr, "with minfree less than 10%\n");
+		opt = FS_OPTSPACE;
+	}
 	if (cpg == 0)
 		cpg = 16;
 	i = 0;
@@ -271,6 +293,7 @@ next:
 	av[i++] = sprintf(a8, "%d", minfree);
 	av[i++] = sprintf(a9, "%d", rpm / 60);
 	av[i++] = sprintf(a10, "%d", density);
+	av[i++] = opt == FS_OPTSPACE ? "s" : "t";
 	av[i++] = 0;
 	strcpy(cmd, "/etc/mkfs");
 	for (i = 0; av[i] != 0; i++) {
