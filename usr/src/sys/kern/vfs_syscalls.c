@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.36 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -118,7 +118,7 @@ mount(p, uap, retval)
 			}
 			SCARG(uap, flags) |= MNT_NOSUID | MNT_NODEV;
 		}
-		VOP_UNLOCK(vp);
+		VOP_UNLOCK(vp, 0, p);
 		goto update;
 	}
 	/*
@@ -235,7 +235,7 @@ update:
 	if (!error) {
 		CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 		checkdirs(vp);
-		VOP_UNLOCK(vp);
+		VOP_UNLOCK(vp, 0, p);
 		vfs_unlock(mp);
 		error = VFS_START(mp, 0, p);
 	} else {
@@ -594,7 +594,7 @@ fchdir(p, uap, retval)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	VREF(vp);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
@@ -610,7 +610,7 @@ fchdir(p, uap, retval)
 		vput(vp);
 		vp = tdp;
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (error) {
 		vrele(vp);
 		return (error);
@@ -691,7 +691,7 @@ change_dir(ndp, p)
 		error = ENOTDIR;
 	else
 		error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p);
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (error)
 		vrele(vp);
 	return (error);
@@ -759,17 +759,17 @@ open(p, uap, retval)
 		type = F_FLOCK;
 		if ((flags & FNONBLOCK) == 0)
 			type |= F_WAIT;
-		VOP_UNLOCK(vp);
+		VOP_UNLOCK(vp, 0, p);
 		if (error = VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, type)) {
 			(void) vn_close(vp, fp->f_flag, fp->f_cred, p);
 			ffree(fp);
 			fdp->fd_ofiles[indx] = NULL;
 			return (error);
 		}
-		VOP_LOCK(vp);
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		fp->f_flag |= FHASLOCK;
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	*retval = indx;
 	return (0);
 }
@@ -1074,7 +1074,7 @@ unlink(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 
 	if (vp->v_type != VDIR ||
 	    (error = suser(p->p_ucred, &p->p_acflag)) == 0) {
@@ -1530,7 +1530,7 @@ chflags(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1564,7 +1564,7 @@ fchflags(p, uap, retval)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1572,7 +1572,7 @@ fchflags(p, uap, retval)
 		vattr.va_flags = SCARG(uap, flags);
 		error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -1599,7 +1599,7 @@ chmod(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1633,7 +1633,7 @@ fchmod(p, uap, retval)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1641,7 +1641,7 @@ fchmod(p, uap, retval)
 		vattr.va_mode = SCARG(uap, mode) & ALLPERMS;
 		error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -1669,7 +1669,7 @@ chown(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1705,7 +1705,7 @@ fchown(p, uap, retval)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1714,7 +1714,7 @@ fchown(p, uap, retval)
 		vattr.va_gid = SCARG(uap, gid);
 		error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -1750,7 +1750,7 @@ utimes(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
@@ -1788,7 +1788,7 @@ truncate(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_type == VDIR)
 		error = EISDIR;
 	else if ((error = vn_writechk(vp)) == 0 &&
@@ -1826,7 +1826,7 @@ ftruncate(p, uap, retval)
 		return (EINVAL);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vp->v_type == VDIR)
 		error = EISDIR;
 	else if ((error = vn_writechk(vp)) == 0) {
@@ -1834,7 +1834,7 @@ ftruncate(p, uap, retval)
 		vattr.va_size = SCARG(uap, length);
 		error = VOP_SETATTR(vp, &vattr, fp->f_cred, p);
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -1907,9 +1907,9 @@ fsync(p, uap, retval)
 	if (error = getvnode(p->p_fd, SCARG(uap, fd), &fp))
 		return (error);
 	vp = (struct vnode *)fp->f_data;
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	error = VOP_FSYNC(vp, fp->f_cred, MNT_WAIT, p);
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
@@ -2142,7 +2142,7 @@ unionread:
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_procp = p;
 	auio.uio_resid = SCARG(uap, count);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	loff = auio.uio_offset = fp->f_offset;
 #	if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
@@ -2195,7 +2195,7 @@ unionread:
 		}
 		FREE(dirbuf, M_TEMP);
 	}
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (error)
 		return (error);
 
@@ -2225,7 +2225,7 @@ unionread:
 		
 		if (lvp != NULLVP) {
 			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
-			VOP_UNLOCK(lvp);
+			VOP_UNLOCK(lvp, 0, p);
 
 			if (error) {
 				vrele(lvp);
@@ -2298,12 +2298,12 @@ unionread:
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_procp = p;
 	auio.uio_resid = SCARG(uap, count);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	loff = auio.uio_offset = fp->f_offset;
 	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
 			    (int *)0, (u_long *)0);
 	fp->f_offset = auio.uio_offset;
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (error)
 		return (error);
 
@@ -2333,7 +2333,7 @@ unionread:
 		
 		if (lvp != NULLVP) {
 			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
-			VOP_UNLOCK(lvp);
+			VOP_UNLOCK(lvp, 0, p);
 
 			if (error) {
 				vrele(lvp);

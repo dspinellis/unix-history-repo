@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.15 (Berkeley) %G%
+ *	@(#)init_main.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -229,7 +229,7 @@ main(framep)
 		panic("cannot find root vnode");
 	fdp->fd_fd.fd_cdir = rootvnode;
 	VREF(fdp->fd_fd.fd_cdir);
-	VOP_UNLOCK(rootvnode);
+	VOP_UNLOCK(rootvnode, 0, p);
 	fdp->fd_fd.fd_rdir = NULL;
 	swapinit();
 

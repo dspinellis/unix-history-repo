@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	8.8 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -395,7 +395,7 @@ unp_bind(unp, nam, p)
 	vp->v_socket = unp->unp_socket;
 	unp->unp_vnode = vp;
 	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (0);
 }
 

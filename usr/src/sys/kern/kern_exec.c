@@ -9,7 +9,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	8.9 (Berkeley) %G%
+ *	@(#)kern_exec.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -99,7 +99,7 @@ execve(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, cred, LEASE_READ);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	indir = 0;
 	uid = cred->cr_uid;
 	gid = cred->cr_gid;
@@ -293,7 +293,7 @@ execve(p, uap, retval)
 			return (error);
 		vp = nd.ni_vp;
 		VOP_LEASE(vp, p, cred, LEASE_READ);
-		VOP_LOCK(vp);
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		if (error = VOP_GETATTR(vp, &vattr, cred, p))
 			goto bad;
 		uid = cred->cr_uid;	/* shell scripts can't be setuid */

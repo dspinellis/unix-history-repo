@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	8.13 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.14 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1169,7 +1169,7 @@ coredump(p)
 		    (off_t)ctob(UPAGES) + ctob(vm->vm_dsize), UIO_USERSPACE,
 		    IO_NODELOCKED|IO_UNIT, cred, (int *) NULL, p);
 out:
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	error1 = vn_close(vp, FWRITE, cred, p);
 	if (error == 0)
 		error = error1;
