@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)syslogd.c	5.21 (Berkeley) %G%";
  */
 
 #define	MAXLINE		1024		/* maximum line length */
-#define	MAXSVLINE	100		/* maximum saved line length */
+#define	MAXSVLINE	120		/* maximum saved line length */
 #define DEFUPRI		(LOG_USER|LOG_NOTICE)
 #define DEFSPRI		(LOG_KERN|LOG_CRIT)
 #define TIMERINTVL	30		/* interval for checking flush, mark */
@@ -81,7 +81,7 @@ char	ctty[] = CTTY;
 #define MAXFNAME	200	/* max file pathname length */
 
 #define NOPRI		0x10	/* the "no priority" priority */
-#define	LOG_MARK	(LOG_NFACILITIES << 3)	/* mark "facility" */
+#define	LOG_MARK	LOG_MAKEPRI(LOG_NFACILITIES, 0)	/* mark "facility" */
 
 /*
  * Flags to logmsg().
@@ -377,13 +377,13 @@ printline(hname, msg)
 			pri = 10 * pri + (*p - '0');
 		if (*p == '>')
 			++p;
-		if (pri <= 0 || pri >= (LOG_NFACILITIES << 3))
-			pri = DEFUPRI;
 	}
+	if (pri &~ (LOG_FACMASK|LOG_PRIMASK))
+		pri = DEFUPRI;
 
 	/* don't allow users to log kernel messages */
-	if ((pri & LOG_PRIMASK) == LOG_KERN)
-		pri |= LOG_USER;
+	if (LOG_FAC(pri) == LOG_KERN)
+		pri = LOG_MAKEPRI(LOG_USER, LOG_PRI(pri));
 
 	q = line;
 
@@ -424,12 +424,12 @@ printsys(msg)
 				pri = 10 * pri + (*p - '0');
 			if (*p == '>')
 				++p;
-			if (pri <= 0 || pri >= (LOG_NFACILITIES << 3))
-				pri = DEFSPRI;
 		} else {
 			/* kernel printf's come out on console */
 			flags |= IGN_CONS;
 		}
+		if (pri &~ (LOG_FACMASK|LOG_PRIMASK))
+			pri = DEFSPRI;
 		q = lp;
 		while (*p != '\0' && (c = *p++) != '\n' &&
 		    q < &line[MAXLINE])
@@ -478,10 +478,11 @@ logmsg(pri, msg, from, flags)
 	}
 
 	/* extract facility and priority level */
-	fac = (pri & LOG_FACMASK) >> 3;
 	if (flags & MARK)
 		fac = LOG_NFACILITIES;
-	prilev = pri & LOG_PRIMASK;
+	else
+		fac = LOG_FAC(pri);
+	prilev = LOG_PRI(pri);
 
 	/* log the message to the particular outputs */
 	if (!Initialized) {
@@ -490,7 +491,7 @@ logmsg(pri, msg, from, flags)
 
 		if (f->f_file >= 0) {
 			untty();
-			fprintlog(f, flags);
+			fprintlog(f, flags, (char *)NULL);
 			(void) close(f->f_file);
 		}
 		(void) sigsetmask(omask);
@@ -499,6 +500,9 @@ logmsg(pri, msg, from, flags)
 	for (f = Files; f; f = f->f_next) {
 		/* skip messages that are incorrect priority */
 		if (f->f_pmask[fac] < prilev || f->f_pmask[fac] == NOPRI)
+			continue;
+
+		if (f->f_type == F_CONSOLE && (flags & IGN_CONS))
 			continue;
 
 		/* don't output marks to recently written files */
@@ -523,34 +527,36 @@ logmsg(pri, msg, from, flags)
 			 * in the future.
 			 */
 			if (now > REPEATTIME(f)) {
-				fprintlog(f, flags);
+				fprintlog(f, flags, (char *)NULL);
 				BACKOFF(f);
 			}
 		} else {
 			/* new line, save it */
-			if (f->f_prevcount) {
-				fprintlog(f, 0);
-				f->f_repeatcount = 0;
-			}
+			if (f->f_prevcount)
+				fprintlog(f, 0, (char *)NULL);
+			f->f_repeatcount = 0;
 			(void) strncpy(f->f_lasttime, timestamp, 15);
-			if (msglen < MAXSVLINE && (f->f_type != F_CONSOLE ||
-			    (flags & IGN_CONS) == 0)) {
+			(void) strncpy(f->f_prevhost, from,
+					sizeof(f->f_prevhost));
+			if (msglen < MAXSVLINE) {
 				f->f_prevlen = msglen;
 				f->f_prevpri = pri;
 				(void) strcpy(f->f_prevline, msg);
-				(void) strncpy(f->f_prevhost, from,
-					sizeof(f->f_prevhost));
-			} else
+				fprintlog(f, flags, (char *)NULL);
+			} else {
 				f->f_prevline[0] = 0;
-			fprintlog(f, flags);
+				f->f_prevlen = 0;
+				fprintlog(f, flags, msg);
+			}
 		}
 	}
 	(void) sigsetmask(omask);
 }
 
-fprintlog(f, flags)
+fprintlog(f, flags, msg)
 	register struct filed *f;
 	int flags;
+	char *msg;
 {
 	struct iovec iov[6];
 	register struct iovec *v = iov;
@@ -570,7 +576,10 @@ fprintlog(f, flags)
 	v->iov_base = " ";
 	v->iov_len = 1;
 	v++;
-	if (f->f_prevcount > 1) {
+	if (msg) {
+		v->iov_base = msg;
+		v->iov_len = strlen(msg);
+	} else if (f->f_prevcount > 1) {
 		(void) sprintf(repbuf, "last message repeated %d times",
 		    f->f_prevcount);
 		v->iov_base = repbuf;
@@ -815,7 +824,7 @@ domark()
 			dprintf("flush %s: repeated %d times, %d sec.\n",
 			    TypeNames[f->f_type], f->f_prevcount,
 			    repeatinterval[f->f_repeatcount]);
-			fprintlog(f, 0);
+			fprintlog(f, 0, (char *)NULL);
 			BACKOFF(f);
 		}
 	}
@@ -849,7 +858,7 @@ die(sig)
 	for (f = Files; f != NULL; f = f->f_next) {
 		/* flush any pending output */
 		if (f->f_prevcount)
-			fprintlog(f, 0);
+			fprintlog(f, 0, (char *)NULL);
 	}
 	if (sig) {
 		dprintf("syslogd: exiting on signal %d\n", sig);
@@ -882,7 +891,7 @@ init()
 	for (f = Files; f != NULL; f = next) {
 		/* flush any pending output */
 		if (f->f_prevcount)
-			fprintlog(f, 0);
+			fprintlog(f, 0, (char *)NULL);
 
 		switch (f->f_type) {
 		  case F_FILE:
