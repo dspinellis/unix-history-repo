@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.14 (Berkeley) %G%
+ *	@(#)sysctl.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -133,7 +133,8 @@
  * to be interpreted.  The namelen parameter is the number of integers
  * in the name.
  */
-typedef int (sysctlfn) __P((int *, u_int, void *, u_int *, void *, u_int));
+typedef int (sysctlfn) __P((int *, u_int, void *, u_int *, void *, u_int,
+	struct proc *));
 int sysctl_int __P((void *, u_int *, void *, u_int, int *));
 int sysctl_rdint __P((void *, u_int *, void *, int));
 int sysctl_string __P((void *, u_int *, void *, u_int, char *, int));
