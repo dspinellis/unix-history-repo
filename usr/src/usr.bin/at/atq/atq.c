@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -379,7 +379,7 @@ char *filename;
 	int year  =  0;				/* year file will be executed */
 	int get_mth_day();			/* convert a day of year to a
 						   month and day of month */
-	char date[18];				/* reformatted execution date */
+	char date[19];				/* reformatted execution date */
 
 	/*
 	 * Pick off the necessary info from the file name and convert the day
