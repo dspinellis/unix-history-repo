@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwclose.c	3.11 %G%";
+static char sccsid[] = "@(#)wwclose.c	3.12 %G%";
 #endif
 
 #include "ww.h"
@@ -14,7 +14,7 @@ register struct ww *w;
 	if (w->ww_socket >= 0)
 		(void) close(w->ww_socket);
 	wwfree((char **)w->ww_win, w->ww_w.t);
-	wwfree((char **)w->ww_buf, w->ww_w.t);
+	wwfree((char **)w->ww_buf, w->ww_b.t);
 	if (w->ww_fmap != 0)
 		wwfree((char **)w->ww_fmap, w->ww_w.t);
 	free((char *)(w->ww_nvis + w->ww_w.t));
