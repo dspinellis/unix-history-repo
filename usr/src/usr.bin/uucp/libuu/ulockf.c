@@ -1,23 +1,23 @@
 #ifndef lint
-static char sccsid[] = "@(#)ulockf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ulockf.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
 
-extern time_t	time();
-
 /* File mode for lock files */
 #define	LCKMODE	0444
 
+/*LINTLIBRARY*/
+
 /*
- *	ulockf  -  this routine will create a lock file (file).
+ *	this routine will create a lock file (file).
  *	If one already exists, the create time is checked for
  *	older than the age time (atime).
  *	If it is older, an attempt will be made to unlink it
  *	and create a new one.
  *
- *	return codes:  0  |  FAIL
+ *	return codes:  SUCCESS  |  FAIL
  */
 
 ulockf(hfile, atime)
@@ -87,7 +87,6 @@ register char *name;
 	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR", name, 0);
 	strcpy(p, name);
 	Lockfile[i] = p;
-	return;
 }
 
 
@@ -140,7 +139,8 @@ char *name;
 	else
 		return -1;
 }
-onelock(pid,tempfile,name)
+onelock(pid, tempfile, name)
+int pid;
 char *tempfile,*name;
 {
 	register int fd;
@@ -149,9 +149,9 @@ char *tempfile,*name;
 #else !VMS
 	fd = creat(tempfile, LCKMODE);
 #endif !VMS
-	if (fd<0)
+	if (fd < 0)
 		return FAIL;
-	write(fd, (char *) &pid, sizeof(int));
+	write(fd, (char *)&pid, sizeof(int));
 	close(fd);
 #ifndef	VMS
 	if (link(tempfile, name) < 0) {

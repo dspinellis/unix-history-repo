@@ -1,14 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.3 (Berkeley) %G%";
 #endif
 
+#include <signal.h>
 #include "uucp.h"
 #include <setjmp.h>
-#include <signal.h>
 #include <sys/stat.h>
 
 extern int pkfail();
-extern	time_t	time();
 #define TPACKSIZE	512
 #define TBUFSIZE	1024
 #define min(a,b)	(((a)<(b))?(a):(b))
@@ -31,12 +30,7 @@ struct tbuf {
 	char t_data[TBUFSIZE];
 };
 
-jmp_buf Failbuf;
-
-tnullf()
-{
-	return SUCCESS;
-}
+extern jmp_buf Failbuf;
 
 twrmsg(type, str, fn)
 char type;
@@ -123,7 +117,7 @@ FILE *fp1;
 		DEBUG(8,"twrdata sending %d bytes\n",len);
 		len += sizeof(long);
 		alarm(MAXMSGTIME);
-		ret = twrblk(&bufr, len, fn);
+		ret = twrblk((char *)&bufr, len, fn);
 		alarm(0);
 		if (ret != len)
 			return FAIL;
@@ -133,7 +127,7 @@ FILE *fp1;
 	bufr.t_nbytes = 0;
 	len = sizeof(long);
 	alarm(MAXMSGTIME);
-	ret = twrblk(&bufr, len, fn);
+	ret = twrblk((char *)&bufr, len, fn);
 	alarm(0);
 	if (ret != len)
 		return FAIL;
@@ -180,7 +174,7 @@ FILE *fp2;
 	bytes = 0L;
 	for (;;) {
 		alarm(MAXMSGTIME);
-		len = trdblk(&Nbytes,sizeof Nbytes,fn);
+		len = trdblk((char *)&Nbytes,sizeof Nbytes,fn);
 		alarm(0);
 		if (len != sizeof Nbytes)
 			return FAIL;
