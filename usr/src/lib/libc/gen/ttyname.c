@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ ttyname(fd)
 			continue;
 		(void)strcpy(buf + sizeof(_PATH_DEV) - 1, dirp->d_name);
 		if (stat(buf, &sb2) < 0 || sb1.st_dev != sb2.st_dev ||
-		    sb1.st_ino != sb1.st_ino)
+		    sb1.st_ino != sb2.st_ino)
 			continue;
 		closedir(dp);
 		rval = buf;
