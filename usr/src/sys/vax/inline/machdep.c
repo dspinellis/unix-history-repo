@@ -1,16 +1,57 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machdep.c	1.3	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
+#include "inline.h"
 
 /*
- * The routines in this file must be rewritten for each
- * new machine that this program is ported to.
+ * The routines and tables in this file must be rewritten
+ * for each new machine that this program is ported to.
  */
+
+/*
+ * Instruction stop table.
+ * All instructions that implicitly modify any of the temporary
+ * registers, change control flow, or implicitly loop must be
+ * listed in this table. It is used to find the end of a basic
+ * block when scanning backwards through the instruction stream
+ * trying to merge the inline expansion.
+ */
+struct inststoptbl inststoptable[] = {
+	{ "jbc" }, { "jlbc" }, { "jbs" }, { "jlbs" }, { "jbcc" },
+	{ "jbsc" }, { "jbcs" }, { "jbss" }, { "jbr" }, { "jcc" },
+	{ "jcs" }, { "jvc" }, { "jvs" }, { "jlss" }, { "jlssu" },
+	{ "jleq" }, { "jlequ" }, { "jeql" }, { "jeqlu" }, { "jneq" },
+	{ "jnequ" }, { "jgeq" }, { "jgequ" }, { "jgtr" }, { "jgtru" },
+	{ "chmk" }, { "chme" }, { "chms" }, { "chmu" }, { "rei" },
+	{ "ldpctx" }, { "svpctx" }, { "xfc" }, { "bpt" },
+	{ "bugw" }, { "bugl" }, { "halt" }, { "pushr" }, { "popr" },
+	{ "polyf" }, { "polyd" }, { "polyg" }, { "polyh" },
+	{ "bneq" }, { "bnequ" }, { "beql" }, { "beqlu" }, { "bgtr" },
+	{ "bleq" }, { "bgeq" }, { "blss" }, { "bgtru" }, { "blequ" },
+	{ "bvc" }, { "bvs" }, { "bgequ" }, { "bcc" }, { "blssu" },
+	{ "bcs" }, { "brb" }, { "brw" }, { "jmp" },
+	{ "bbs" }, { "bbc" }, { "bbss" }, { "bbcs" }, { "bbsc" },
+	{ "bbcc" }, { "bbssi" }, { "bbcci" }, { "blbs" }, { "blbc" },
+	{ "acbb" }, { "acbw" }, { "acbl" }, { "acbf" }, { "acbd" },
+	{ "acbg" }, { "acbh" }, { "aoblss" }, { "aobleq" },
+	{ "sobgeq" }, { "sobgtr" }, { "caseb" }, { "casew" }, { "casel" },
+	{ "bsbb" }, { "bsbw" }, { "jsb" }, { "rsb" },
+	{ "callg" }, { "calls" }, { "ret" },
+	{ "movc3" }, { "movc5" }, { "movtc" }, { "movtuc" },
+	{ "cmpc3" }, { "cmpc5" }, { "scanc" }, { "spanc" },
+	{ "locc" }, { "skpc" }, { "matchc" }, { "crc" },
+	{ "movp" }, { "cmpp3" }, { "cmpp4" }, { "addp4" }, { "addp6" },
+	{ "subp4" }, { "subp6" }, { "mulp" }, { "divp" }, { "cvtlp" },
+	{ "cvtpl" }, { "cvtpt" }, { "cvttp" }, { "cvtps" }, { "cvtsp" },
+	{ "ashp" }, { "editpc" },
+	{ "escd" }, { "esce" }, { "escf" },
+	{ "" }
+};
 
 /*
  * Check to see if a line is a candidate for replacement.
