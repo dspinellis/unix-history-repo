@@ -1,4 +1,4 @@
-/*	proc.h	4.2	%G%	*/
+/*	proc.h	4.3	81/02/19	*/
 
 /*
  * One structure allocated per active

@@ -1,4 +1,4 @@
-/*	cpu.h	4.1	81/02/19	*/
+/*	cpu.h	4.2	81/02/19	*/
 
 /*
  * Cpu identification, from SID register.

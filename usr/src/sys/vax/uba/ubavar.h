@@ -1,4 +1,4 @@
-/*	ubavar.h	4.7	%G%	*/
+/*	ubavar.h	4.8	81/02/19	*/
 
 /*
  * UNIBUS adaptor

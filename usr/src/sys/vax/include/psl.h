@@ -1,4 +1,4 @@
-/*	psl.h	4.1	%G%	*/
+/*	psl.h	4.2	81/02/19	*/
 
 /*
  * VAX program status longword

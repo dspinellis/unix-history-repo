@@ -1,3 +1,5 @@
+/*	tmreg.h	4.2	81/02/19	*/
+
 struct device {
 	u_short	tmer;
 	u_short	tmcs;

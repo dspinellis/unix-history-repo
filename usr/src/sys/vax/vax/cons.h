@@ -1,4 +1,4 @@
-/*	cons.h	4.4	%G%	*/
+/*	cons.h	4.5	81/02/19	*/
 
 /*
  * VAX console interface registers

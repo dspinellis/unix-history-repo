@@ -1,4 +1,4 @@
-/*	mtpr.h	4.2	%G%	*/
+/*	mtpr.h	4.3	81/02/19	*/
 
 /*
  * VAX processor register numbers

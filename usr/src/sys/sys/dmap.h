@@ -1,4 +1,4 @@
-/*	dmap.h	4.1	%G%	*/
+/*	dmap.h	4.2	81/02/19	*/
 
 /*
  * Definitions for the mapping of vitual swap

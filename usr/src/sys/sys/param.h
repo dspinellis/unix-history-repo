@@ -1,4 +1,4 @@
-/*	param.h	4.5	%G%	*/
+/*	param.h	4.6	81/02/19	*/
 
 /*
  * tunable variables

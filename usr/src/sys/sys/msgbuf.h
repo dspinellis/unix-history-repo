@@ -1,4 +1,4 @@
-/*	msgbuf.h	4.1	%G%	*/
+/*	msgbuf.h	4.2	81/02/19	*/
 
 #define	MSG_MAGIC	0x063060
 #define	MSG_BSIZE	(NBPG*CLSIZE - 2 * sizeof (long))

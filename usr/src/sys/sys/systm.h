@@ -1,4 +1,4 @@
-/*	systm.h	4.10	%G%	*/
+/*	systm.h	4.11	81/02/19	*/
 
 /*
  * Random set of variables
