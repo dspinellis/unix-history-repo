@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)wd.c	7.2 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00004
+ * --------------------         -----   ----------------------
+ *
+ * 19 Aug 92    Frank Maclachlan	Fixed bug when first sector of a
+ *					multisector read is in bad144 table.
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -379,8 +387,8 @@ loop:
 	 * See if the current block is in the bad block list.
 	 * (If we have one, and not formatting.)
 	 */
-	if ((du->dk_flags & (/*DKFL_SINGLE|*/DKFL_BADSECT))
-		== (/*DKFL_SINGLE|*/DKFL_BADSECT))
+	if ((du->dk_flags & (DKFL_SINGLE|DKFL_BADSECT))		/* 19 Aug 92*/
+		== (DKFL_SINGLE|DKFL_BADSECT))
 	    for (bt_ptr = du->dk_bad.bt_bad; bt_ptr->bt_cyl != -1; bt_ptr++) {
 		if (bt_ptr->bt_cyl > cylin)
 			/* Sorted list, and we passed our cylinder. quit. */
