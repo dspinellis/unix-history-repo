@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -201,16 +201,22 @@ evaltree(n, flags)
 	case NBACKGND:
 		evalsubshell(n, flags);
 		break;
-	case NIF:
+	case NIF: {
+		int status = 0; 
+
 		evaltree(n->nif.test, EV_TESTED);
 		if (evalskip)
 			goto out;
 		if (exitstatus == 0) {
 			evaltree(n->nif.ifpart, flags);
+			status = exitstatus;
 		} else if (n->nif.elsepart) {
 			evaltree(n->nif.elsepart, flags);
+			status = exitstatus;
 		}
+		exitstatus = status;
 		break;
+	}
 	case NWHILE:
 	case NUNTIL:
 		evalloop(n);
