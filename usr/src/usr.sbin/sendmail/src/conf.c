@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.10 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -563,6 +563,7 @@ getla()
 # else
 	double avenrun[3];
 # endif
+	extern off_t lseek();
 
 	if (kmem < 0)
 	{

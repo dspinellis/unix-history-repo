@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -507,7 +507,7 @@ markfailure(e, q, rcode)
 		if (pid >= 0)\
 			break;\
 		if (i > 0)\
-			sleep(NFORKTRIES - i);\
+			sleep((unsigned) NFORKTRIES - i);\
 	}\
 }
 /*

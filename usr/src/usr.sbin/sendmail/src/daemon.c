@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.14 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.15 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.14 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.14 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.15 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -394,11 +394,11 @@ maphostname(hbuf, hbsize)
 	extern struct hostent *gethostbyname();
 
 	/*
-	 * If first character is a bracket, then it is an address
-	 * lookup.  Address is copied into a temporary buffer to
-	 * strip the brackets and to preserve hbuf if address is
-	 * unknown.
-	 */
+	**  If first character is a bracket, then it is an address
+	**  lookup.  Address is copied into a temporary buffer to
+	**  strip the brackets and to preserve hbuf if address is
+	**  unknown.
+	*/
 
 	if (*hbuf == '[')
 	{
@@ -407,13 +407,13 @@ maphostname(hbuf, hbsize)
 		char ptr[256];
 		char *bptr;
 
-		strcpy(ptr,hbuf);
+		(void) strcpy(ptr, hbuf);
 		bptr = index(ptr,']');
 		*bptr = '\0';
 		in_addr = inet_addr(&ptr[1]);
-		hp = gethostbyaddr(&in_addr, sizeof(struct in_addr), AF_INET);
-		if(hp == NULL)
-			return(NULL);
+		hp = gethostbyaddr((char *) &in_addr, sizeof(struct in_addr), AF_INET);
+		if (hp == NULL)
+			return;
 	}
 	else
 	{

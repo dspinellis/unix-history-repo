@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)util.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)util.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -469,7 +469,7 @@ dfopen(filename, mode)
 
 	for (tries = 0; tries < 10; tries++)
 	{
-		sleep(10 * tries);
+		sleep((unsigned) (10 * tries));
 		errno = 0;
 		fp = fopen(filename, mode);
 		if (fp != NULL)
