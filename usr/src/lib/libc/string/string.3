@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)string.3	6.3 (Berkeley) %G%
+.\"	@(#)string.3	6.4 (Berkeley) %G%
 .\"
 .TH STRING 3  ""
 .UC 4
 .SH NAME
-strcat, strncat, strcmp, strncmp, strcasecmp, strcasencmp, strcpy,
+strcat, strncat, strcmp, strncmp, strcasecmp, strncasecmp, strcpy,
 strncpy, strlen, index, rindex \- string operations
 .SH SYNOPSIS
 .nf
@@ -28,7 +28,7 @@ strncpy, strlen, index, rindex \- string operations
 .B strcasecmp(s1, s2)
 .B char *s1, *s2;
 .PP
-.B strcasencmp(s1, s2, n)
+.B strncasecmp(s1, s2, n)
 .B char *s1, *s2;
 .PP
 .B char *strcpy(s1, s2)
@@ -69,7 +69,7 @@ is lexicographically greater than, equal to, or less than
 .I Strncmp
 makes the same comparison but looks at at most
 .I n
-characters.  \fIStrcasecmp\fP and \fIstrcasencmp\fP are identical
+characters.  \fIStrcasecmp\fP and \fIstrncasecmp\fP are identical
 in function, but are case insensitive.  The returned lexicographic
 difference reflects a conversion to lower-case.
 .PP
