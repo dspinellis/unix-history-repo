@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ct.c	6.4 (Berkeley) %G%
+ *	@(#)ct.c	6.5 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -15,6 +15,7 @@
 
 #include "param.h"
 #include "systm.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "map.h"
 #include "buf.h"
