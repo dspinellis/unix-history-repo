@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.8 (Berkeley) %G% */
+/* @(#)filbuf.c	4.9 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -16,7 +16,7 @@ register FILE *iop;
 
 	if ((iop->_flag&_IOREAD) == 0)
 		return(EOF);
-	if (iop->_flag&_IOSTRG)
+	if (iop->_flag&(_IOSTRG|_IOEOF))
 		return(EOF);
 tryagain:
 	if (iop->_base==NULL) {
