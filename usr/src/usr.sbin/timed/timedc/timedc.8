@@ -1,19 +1,9 @@
 .\" Copyright (c) 1980 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)timedc.8	6.4 (Berkeley) %G%
+.\"	@(#)timedc.8	6.5 (Berkeley) %G%
 .\"
 .TH TIMEDC 8 ""
 .UC 6
@@ -21,7 +11,7 @@
 .SH NAME
 timedc \- timed control program
 .SH SYNOPSIS
-.B /etc/timedc
+.B timedc
 [ command [ argument ... ] ]
 .SH DESCRIPTION
 .I Timedc
@@ -64,7 +54,7 @@ and the clocks of the machines given as arguments.
 trace { on | off }
 .br
 Enable or disable the tracing of incoming messages to \fItimed\fP
-in the file /usr/adm/timed.log.
+in the file /var/log/timed.log.
 .TP
 quit
 .br
@@ -76,9 +66,9 @@ the help command and
 the program source may be consulted for details.
 .SH FILES
 .nf
-.ta \w'/usr/adm/masterlog       'u
-/usr/adm/timed.log		tracing file for timed
-/usr/adm/timed.masterlog	log file for master timed
+.ta \w'/var/log/masterlog       'u
+/var/log/timed.log		tracing file for timed
+/var/log/timed.masterlog	log file for master timed
 .fi
 .SH "SEE ALSO"
 date(1), adjtime(2), icmp(4), timed(8), 
