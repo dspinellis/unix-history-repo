@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.14 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -229,6 +229,7 @@ dirloop:
 		for (;;) {
 			if (dp == ndp->ni_rdir || dp == rootdir) {
 				ndp->ni_dvp = dp;
+				ndp->ni_vp = dp;
 				VREF(dp);
 				goto nextname;
 			}
@@ -237,8 +238,8 @@ dirloop:
 			tdp = dp;
 			dp = dp->v_mount->m_vnodecovered;
 			vput(tdp);
-			VOP_LOCK(dp);
 			VREF(dp);
+			VOP_LOCK(dp);
 		}
 	}
 
