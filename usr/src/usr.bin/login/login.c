@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -63,7 +63,7 @@ char	*envinit[1];			/* now set by setenv calls */
  * This bounds the time given to login.  We initialize it here
  * so it can be patched on machines where it's too small.
  */
-int	timeout = 60;
+int	timeout = 300;
 
 char	term[64];
 
