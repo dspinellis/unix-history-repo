@@ -2,9 +2,12 @@
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Edward Wang at The University of California, Berkeley.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)xx.h	3.4 (Berkeley) %G%
+ *	@(#)xx.h	3.5 (Berkeley) %G%
  */
 
 struct xx {
