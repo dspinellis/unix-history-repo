@@ -10,10 +10,19 @@
  *	Operator messages are ruined if they aren't at the end of a buffer
  *
  * So to harprot we send a buffer with a header containing a bufferlenght
- * and (for histrorical reasons, the amount of paper used.)
+ * and (for historical reasons, the amount of paper used.)
  * The paper use will have to be counted by harprot in future.
  *
+#ifdef tahoe
+ * For the sake of compbatibilty we will generate the same file format
+ * as on the vaxes
+#endif tahoe
+ *
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)llio.c	1.2 (CWI) 88/03/18";
+#endif
 
 #include <stdio.h>
 #include "hcodes.h"
@@ -25,7 +34,7 @@ char	*eobufp = &obuf[BUFSIZE-1];
 int	typeset;	/* if set, we are really typesetting */
 
 extern int	fcut;	/* if set, we have just cut the paper */
-extern int	papuse;	/* used paper in feed */
+extern unsigned	short	papuse;	/* used paper in feed */
 extern int	tf;
 extern char	harcode;
 extern int	eflag;
@@ -48,18 +57,43 @@ char	c;
 }
 
 flusho()
-{	int length, i;
+{	unsigned short length;
+	int i;
 	if ( length = (int )(obufp - obuf )) {
 		if ( !papuse )
 			papuse++;	/* account always at least 1 foot */
 		/* for testing only */
 		/*papuse = 1;*/
+#ifdef vax
 		if ( write( tf, (char *)&length, 2) != 2 ||
 		     write( tf, (char *)&papuse, 2) != 2 ||
-		     (i = write( tf, obuf, length)) <= 0) {
+		     (i = write( tf, obuf, length)) != length) {
 			printf("dhar: write error\n");
 			exit(1);
 		}
+#endif vax
+#ifdef tahoe
+		{	char c1, c2;
+			c1 = length & BMASK;
+			c2 = (length >> 8) & BMASK;
+			if( write(tf, &c1, 1) != 1 ||
+			    write(tf, &c2, 1) != 1) {
+				printf("dhar: write error\n");
+				exit(1);
+			}
+			c1 = papuse & BMASK;
+			c2 = (papuse >> 8) & BMASK;
+			if( write(tf, &c1, 1) != 1 ||
+			    write(tf, &c2, 1) != 1) {
+				printf("dhar: write error\n");
+				exit(1);
+			}
+			if((i = write( tf, obuf, length)) != length) {
+				printf("dhar: write error\n");
+				exit(1);
+			}
+		}
+#endif tahoe
 		obufp = obuf;
 	}
 }
