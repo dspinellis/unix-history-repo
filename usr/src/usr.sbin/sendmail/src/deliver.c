@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.14 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -931,7 +931,7 @@ giveresponse(stat, m, e)
 	register char *statmsg;
 	extern char *SysExMsg[];
 	register int i;
-	extern int N_SysEx;
+	extern int N_SysEx, h_errno;
 	char buf[MAXLINE];
 
 #ifdef lint
