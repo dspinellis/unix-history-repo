@@ -68,9 +68,4 @@ keyboard problems.
 	"fstype isofs" argument to get it working. The bug seems to be 
 	in the "fts(3)" routines that find uses.
 
-/usr/bin/awk
-	awk dumps core for the following command line "awk '' blubber".
-	Problem is already known by the gawk maintainers and will be fixed
-	in the next release of gawk.
-
-$Id: KNOWNBUGS,v 1.12 1994/03/29 08:52:55 jkh Exp $
+$Id: KNOWNBUGS,v 1.13 1994/05/01 20:59:41 rgrimes Exp $
