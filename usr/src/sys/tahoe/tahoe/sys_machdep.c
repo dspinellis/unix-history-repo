@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -21,13 +21,14 @@
 #ifdef TRACE
 int	nvualarm;
 
+struct vtrace_args {
+	int	request;
+	int	value;
+};
 /* ARGSUSED */
 vtrace(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		int	request;
-		int	value;
-	} *uap;
+	register struct vtrace_args *uap;
 	int *retval;
 {
 	int vdoualarm();

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_machdep.c	7.7 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.8 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -21,12 +21,13 @@
 #include "../uba/ubareg.h"
 #include "../uba/ubavar.h"
 
+struct resuba_args {
+	int	value;
+};
 /* ARGSUSED */
 resuba(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	value;
-	} *uap;
+	struct resuba_args *uap;
 	int *retval;
 {
 	int error;
@@ -41,12 +42,13 @@ resuba(p, uap, retval)
 #ifdef TRACE
 int	nvualarm;
 
+struct vtrace_args {
+	int	request;
+	int	value;
+};
 vtrace(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	request;
-		int	value;
-	} *uap;
+	register struct vtrace_args *uap;
 	int *retval;
 {
 	int vdoualarm();
