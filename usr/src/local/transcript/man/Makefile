@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.1 (Berkeley) %G%
+#	@(#)Makefile	1.2 (Berkeley) %G%
 # transcript/man/Makefile
 #
 # Copyright 1985 Adobe Systems Incorporated
@@ -15,7 +15,7 @@
 .SUFFIXES: .1 .1p .7 .7p .8 .8p
 
 PAGES1 = enscript.1 ps4014.1 ps630.1 pscat.1 psdit.1 psplot.1 psrev.1 \
-	psroff.1 ptroff.1
+	psroff.1 ptroff.1 loadseal.1
 PAGES7 = afm.7 postscript.7
 PAGES8 = pscatmap.8 transcript.8
 
