@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.7 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.8 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -423,6 +423,14 @@ pcproc(r)
 			 * implement the default.
 			 */
 			switch (typ) {
+			case TPTR:
+				warning();
+				if (opt('s')) {
+					standard();
+				}
+				error("Writing %ss to text files is non-standard",
+				    clnames[typ]);
+				/* and fall through */
 			case TINT:
 				if (fmt == 'f') {
 					typ = TDOUBLE;
@@ -449,7 +457,8 @@ pcproc(r)
 				if (opt('s')) {
 					standard();
 				}
-				error("Writing scalars to text files is non-standard");
+				error("Writing %ss to text files is non-standard",
+				    clnames[typ]);
 			case TBOOL:
 				fmt = 's';
 				break;
@@ -717,6 +726,7 @@ pcproc(r)
 				 * evaluate the thing we want printed.
 				 */
 				switch ( typ ) {
+				case TPTR:
 				case TCHAR:
 				case TINT:
 				    stkrval( alv , NIL , RREQ );
@@ -746,6 +756,9 @@ pcproc(r)
 				case TSTR:
 				    putCONG( "" , 0 , LREQ );
 				    putop( P2LISTOP , P2INT );
+				    break;
+				default:
+				    panic("fmt3");
 				    break;
 				}
 				putop( P2CALL , P2INT );
