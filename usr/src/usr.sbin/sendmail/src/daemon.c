@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.28		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.29		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.28		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.29		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -134,10 +134,8 @@ getconnection()
 			return (s);
 		(void) close(s);
 		if (errno != EINTR)
-		{
 			syserr("getconnection: accept");
-			sleep(5);
-		}
+		sleep(5);
 	}
 }
 /*
