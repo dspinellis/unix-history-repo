@@ -1,0 +1,7 @@
+cc -O -I../h -c main.c
+ar rvu ctlmod main.o
+r - main.o
+chmod 664 ctlmod
+ranlib ctlmod
+cp ctlmod ../../lib/ctlmod
+ranlib ../../lib/ctlmod
