@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.16 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,7 +51,7 @@ loadav(avg)
 	register int i, nrun;
 	register struct proc *p;
 
-	for (nrun = 0, p = allproc; p != NULL; p = p->p_nxt) {
+	for (nrun = 0, p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		switch (p->p_stat) {
 		case SSLEEP:
 			if (p->p_pri > PZERO || p->p_slptime != 0)
@@ -156,7 +156,7 @@ vmtotal(totalp)
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_flag & SSYS)
 			continue;
 		switch (p->p_stat) {
