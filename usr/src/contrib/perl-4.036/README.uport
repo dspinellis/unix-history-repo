@@ -1,0 +1,34 @@
+From dwm@uf.msc.umn.edu  Tue Dec 19 15:03:27 1989
+Subject: perl on Microport Un*x 2.4
+
+Here are the steps to get perl patchlevel 6 running on Microport Un*x 2.4.
+
+(1) Get the directory routines (opendir, readdir, etc) from an archive 
+    somewhere.   I got mine from uunet:  comp.sources.unix/volume9/gwyn-dir-lib
+    and comp.sources.unix/volume10/dir-lib.pch.   Compile a large memory
+    version of the library and put it in /usr/lib/large/dir.a.  Also put
+    the dir.h include file in /usr/include/sys.  [ If you don't want to
+    do this make sure I_SYSDIR does not defined in config.sh ]
+
+(2) Configure causes sh to get a segmentation fault when it does the
+    ". config.sh" near line 2551.   You will have to remove that line 
+    from Configure and make sure you get your configuration info right 
+    the first time or start over if you make a mistake.  
+
+[Or just run the .SH files by hand and proceed to the make depend.]
+
+(3) If you are using C-shell, put a blank line at the start of Configure so it
+    wont get executed by the C-shell.   If you are using ksh, you will have to
+    execute Configure with 'sh Configure'.  Configure does not work with
+    ksh.
+
+(4) When you run Configure, select compilation option -DCRIPPLED_CC.
+    I also selected -DDEBUGGING to make debugging easier.  I recommend it.
+    You can use -O, but you will then have to compile consarg.c and util.c
+    separately without -O because the optimizer generates bad code for these
+    routines.   The optimizer also dies harmlessly while optimizing cmd.c,
+    eval.c (who can blame it? [sorry, Larry]), and toke.c.   
+    I am still trying to isolate the remaining optimization problems in 
+    consarg.c and util.c.
+
+[The rest of the previously published instructions are no longer necessary.]
