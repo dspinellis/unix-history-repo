@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -8,6 +8,8 @@ static	char *sccsid = "@(#)vmstat.c	4.12 (Berkeley) %G%";
 #include <sys/dk.h>
 #include <nlist.h>
 #include <sys/buf.h>
+#include <sys/dir.h>
+#include <sys/nami.h>
 #ifdef vax
 #include <vaxuba/ubavar.h>
 #include <vaxmba/mbavar.h>
@@ -45,14 +47,16 @@ struct nlist nl[] = {
 	{ "_hz" },
 #define	X_PHZ		13
 	{ "_phz" },
+#define X_NCHSTATS	14
+	{ "_nchstats" },
 #ifdef vax
-#define X_MBDINIT	14
+#define X_MBDINIT	15
 	{ "_mbdinit" },
-#define X_UBDINIT	15
+#define X_UBDINIT	16
 	{ "_ubdinit" },
 #endif
 #ifdef sun
-#define X_MBDINIT	14
+#define X_MBDINIT	15
 	{ "_mbdinit" },
 #endif
 	{ "" },
@@ -268,6 +272,8 @@ dotimes()
 
 dosum()
 {
+	struct nchstats statbuf;
+	long nchtotal;
 
 	lseek(mf, (long)nl[X_SUM].n_value, 0);
 	read(mf, &sum, sizeof sum);
@@ -301,6 +307,14 @@ dosum()
 	printf("%9d pseduo-dma dz interrupts\n", sum.v_pdma);
 	printf("%9d traps\n", sum.v_trap);
 	printf("%9d system calls\n", sum.v_syscall);
+	lseek(mf, (long)nl[X_NCHSTATS].n_value, 0);
+	read(mf, &statbuf, sizeof statbuf);
+	nchtotal = statbuf.ncs_goodhits + statbuf.ncs_badhits +
+		statbuf.ncs_miss + statbuf.ncs_long;
+	printf("%9d total name lookups", nchtotal);
+	printf(" (cache hits %d%% system %d%% per-process)\n",
+		statbuf.ncs_goodhits * 100 / nchtotal,
+		statbuf.ncs_pass2 * 100 / nchtotal);
 }
 
 doforkst()
