@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)strerror.3	6.5 (Berkeley) %G%
+.\"	@(#)strerror.3	6.6 (Berkeley) %G%
 .\"
-.TH PERROR 3  ""
+.TH STRERROR 3  ""
 .UC 4
 .SH NAME
 perror, strerror, sys_errlist, sys_nerr \- system error messages
@@ -48,8 +48,8 @@ The message strings can be accessed directly using the external
 character array
 .IR sys_errlist .
 .I Sys_nerr
-is the total number of messages in the array.  The use of these
-variables is deprecated;
+is the total number of messages in the array.
+The use of these variables is deprecated;
 .I strerror
 should be used instead.
 .SH "SEE ALSO"
