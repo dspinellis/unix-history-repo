@@ -1,4 +1,4 @@
-/*	ts.c	4.13	81/05/05	*/
+/*	ts.c	4.14	81/05/08	*/
 
 #include "ts.h"
 #include "te.h"
@@ -282,7 +282,7 @@ tsinit(unit)
 	 * Now initialize the TS11 controller.
 	 * Set the characteristics.
 	 */
-	if (addr->tssr & TS_NBA) {
+	if (addr->tssr & (TS_NBA|TS_OFL)) {
 		addr->tssr = 0;		/* subsystem initialize */
 		tswait(addr);
 		i = (int)&ts_ubaddr[unit].sc_cmd;	/* Unibus addr of cmd */
