@@ -1,4 +1,4 @@
-/*	mbavar.h	4.9	81/02/25	*/
+/*	mbavar.h	4.10	81/02/26	*/
 
 /*
  * VAX Massbus adapter registers
@@ -205,7 +205,9 @@ struct mba_driver {
  * Kernel definitions related to mba.
  */
 #ifdef KERNEL
+#if NMBA > 0
 extern	Xmba0int(), Xmba1int(), Xmba2int(), Xmba3int();
 extern	struct	mba_info mbinit[];	/* blanks for filling mba_info */
 int	nummba;
+#endif
 #endif

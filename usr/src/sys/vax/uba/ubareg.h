@@ -1,4 +1,4 @@
-/*	ubareg.h	4.13	81/02/26	*/
+/*	ubareg.h	4.14	81/02/26	*/
 
 /*
  * UNIBUS adaptor
@@ -8,7 +8,6 @@
 #define	UMEM750	((u_short *)0xfc0000)
 #endif
 
-#if VAX780
 /*
  * UBA registers
  */
@@ -29,6 +28,7 @@ struct uba_regs
 	int	pad3[16];		/* no maps for device address space */
 };
 
+#if VAX780
 /* UBA control register, UBACR */
 #define	UBA_MRD16	0x40000000	/* map reg disable bit 4 */
 #define	UBA_MRD8	0x20000000	/* map reg disable bit 3 */
