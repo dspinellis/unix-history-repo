@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 1.2'DRAFT'Last Mod %G%'
+.fo 'Version 1.3'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -2826,55 +2826,41 @@ Let's look at a sample
 specification:
 .(b
 .sz -2
-.ta 4n +\w'"return-receipt-to",  'u +\w'H_FROM|H_ACHECK,  'u
+.ta 4n +\w'"return-receipt-to",  'u
 struct hdrinfo	HdrInfo[] =
 {
-		/* date information */
-	"date",	H_CHECK,	M_NEEDDATE,
-	"received-date",	H_CHECK,	M_LOCAL,
 		/* originator fields, most to least significant  */
-	"resent-sender",	H_FROM,	0,
-	"resent-from",	H_FROM,	0,
-	"sender",	H_FROM,	0,
-	"from",	H_FROM|H_CHECK,	M_NEEDFROM,
-	"full-name",	H_ACHECK,	M_FULLNAME,
-	"received-from",	H_CHECK,	M_LOCAL,
+	"resent-sender",	H_FROM,
+	"resent-from",	H_FROM,
+	"sender",	H_FROM,
+	"from",	H_FROM,
+	"full-name",	H_ACHECK,
 		/* destination fields */
-	"to",	H_RCPT,	0,
-	"resent-to",	H_RCPT,	0,
-	"cc",	H_RCPT,	0,
+	"to",	H_RCPT,
+	"resent-to",	H_RCPT,
+	"cc",	H_RCPT,
 		/* message identification and control */
-	"message-id",	0,	0,
-	"message",	H_EOH,	0,
-	"text",	H_EOH,	0,
+	"message",	H_EOH,
+	"text",	H_EOH,
 		/* trace fields */
-	"received",	H_TRACE|H_FORCE,	0,
+	"received",	H_TRACE|H_FORCE,
 
-	NULL,	0,	0,
+	NULL,	0,
 };
 .sz
 .)b
-This specification says that the
-.q Date: ,
-.q From: ,
-.q Message-Id: ,
-.q Received-Date: ,
-.q Full-Name: ,
-and
-.q Received-From:
-must be requested by the mailer to be inserted.
-However,
-if they were in the message as received by
-.i sendmail
-they will be propagated
-with the exception of the
-.q Full-Name:
-field.
+This structure indicates that the
 .q To: ,
 .q Resent-To: ,
 and
 .q Cc:
+fields
 all specify recipient addresses.
+Any
+.q Full-Name:
+field will be deleted unless the required mailer flag
+(indicated in the configuration file)
+is specified.
 The
 .q Message:
 and
@@ -2887,10 +2873,6 @@ The
 .q Received:
 field will always be added,
 and can be used to trace messages.
-The
-other fields
-field are used internally,
-although no cliched special processing occurs.
 .pp
 There are a number of important points here.
 First,

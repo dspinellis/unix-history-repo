@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.45		%G%);
+SCCSID(@(#)savemail.c	3.46		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -275,6 +275,10 @@ errhdr(fp, m, xdot)
 	char *oldfmac;
 	char *oldgmac;
 
+	/*
+	**  Output transcript of errors
+	*/
+
 	oldfmac = macvalue('f');
 	define('f', "$n");
 	oldgmac = macvalue('g');
@@ -283,7 +287,18 @@ errhdr(fp, m, xdot)
 	(void) fflush(stdout);
 	(void) fflush(Xscript);
 	if ((xfile = fopen(Transcript, "r")) == NULL)
+	{
 		syserr("Cannot open %s", Transcript);
+		fprintf(fp, "  ----- Transcript of session is unavailable -----\n");
+	}
+	else
+	{
+		fprintf(fp, "   ----- Transcript of session follows -----\n");
+		(void) fflush(Xscript);
+		while (fgets(buf, sizeof buf, xfile) != NULL)
+			putline(buf, fp, fullsmtp);
+		(void) fclose(xfile);
+	}
 	errno = 0;
 
 	/*
@@ -321,15 +336,6 @@ errhdr(fp, m, xdot)
 	define('g', oldgmac);
 
 	/*
-	**  Output transcript of errors
-	*/
-
-	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
-	(void) fflush(Xscript);
-	while (fgets(buf, sizeof buf, xfile) != NULL)
-		putline(buf, fp, fullsmtp);
-
-	/*
 	**  Output text of original message
 	*/
 
@@ -357,7 +363,6 @@ errhdr(fp, m, xdot)
 	**  Cleanup and exit
 	*/
 
-	(void) fclose(xfile);
 	if (errno != 0)
 		syserr("errhdr: I/O error");
 }

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.127		%G%);
+SCCSID(@(#)main.c	3.128		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -109,6 +109,7 @@ SCCSID(@(#)main.c	3.127		%G%);
 
 int		NextMailer = 0;	/* "free" index into Mailer struct */
 static char	*FullName;	/* sender's full name */
+ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
 ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */
 
 #ifdef DAEMON
@@ -131,13 +132,14 @@ main(argc, argv)
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
+	STAB *st;
 	register int i;
 	bool safecf = TRUE;		/* this conf file is sys default */
-	char jbuf[30];			/* holds HostName */
 	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
+	static bool reenter = FALSE;
+	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
-	STAB *st;
 	extern time_t convtime();
 
 	argv[argc] = NULL;
@@ -154,7 +156,10 @@ main(argc, argv)
 # ifndef V6
 	FullName = getenv("NAME");
 # endif V6
-	CurEnv = &MainEnvelope;
+	/* set up the blank envelope */
+	BlankEnvelope.e_puthdr = putheader;
+	BlankEnvelope.e_putbody = putbody;
+	CurEnv = &BlankEnvelope;
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
@@ -364,6 +369,12 @@ main(argc, argv)
 		}
 	}
 # endif DEBUG
+
+	/*
+	**  Switch to the main envelope.
+	*/
+
+	CurEnv = newenvelope(&MainEnvelope);
 
 	/*
 	**  If test mode, read addresses from stdin and process.
@@ -858,7 +869,7 @@ openxscrpt()
 		syserr("Can't create %s", p);
 	}
 	Transcript = p;
-	(void) chmod(p, FileMode);
+	(void) chmod(p, 0644);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
