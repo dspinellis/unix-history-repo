@@ -1,12 +1,12 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 FILES=	airport ascii birthday eqnchar greek inter.phone man.template \
-	na.phone noredist.c operator redist.c redist.man redist.sh
+	na.phone noredist.c operator redist.c redist.man redist.sh redist.gas
 
 all: ${FILES}
 
 clean cleandir:
-	rm -f redist.c redist.sh redist.man
+	rm -f redist.c redist.sh redist.man redist.gas
 
 install:
 	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FILES} \
@@ -28,5 +28,10 @@ redist.man: redist
 	rm -f redist.man
 	sed 's/^/.\\"/' < redist > redist.man
 	chmod 444 redist.man
+
+redist.gas: redist
+	rm -f redist.gas
+	sed 's/^/|/' < redist > redist.gas
+	chmod 444 redist.gas
 
 .include <bsd.own.mk>
