@@ -11,7 +11,7 @@
  * From:
  *	$Id: procfs_i386.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
  *
- *	@(#)procfs_machdep.c	8.1 (Berkeley) %G%
+ *	@(#)procfs_machdep.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -106,11 +106,12 @@ procfs_write_fpregs(p, fpregs)
 }
 
 int
-procfs_sstep(p)
+procfs_sstep(p, sstep)
 	struct proc *p;
+	int sstep;
 {
 
-	if (cpu_singlestep(p))
+	if (sstep && cpu_singlestep(p))
 		return (EIO);
 
 	return (0);
