@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds.c	4.2 %G%";
+static char *sccsid = "@(#)ex_cmds.c	5.1 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -650,7 +650,7 @@ quit:
 /* version */
 				tail("version");
 				setNAEOL();
-				printf("@(#) Version 3.4, %G%"+5);
+				printf("@(#) Version 3.5, %G%"+5);
 				noonl();
 				continue;
 

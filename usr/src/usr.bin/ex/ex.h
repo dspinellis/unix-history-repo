@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex.h	4.3 %G%  */
+/* sccs id:	@(#)ex.h	5.1 %G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
