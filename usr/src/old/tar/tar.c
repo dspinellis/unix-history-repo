@@ -3,28 +3,6 @@ static	char *sccsid = "@(#)tar.c	4.22 (Berkeley) %G%";
 #endif
 
 /*
- *			T A R . C 
- *
- * $Revision: 1.4 $
- *
- * $Log:	tar.c,v $
- * Revision 1.4  84/11/14  00:08:15  root
- * New more efficient version.  Minimizes the number of bcopys
- * and maximizes block buffering.  Page aligns block buffers.
- * 
- * Revision 1.3  84/02/23  20:24:42  dpk
- * Added missing close(infile) to prevent running out of fd's
- * 
- * Revision 1.2  84/02/23  20:17:02  dpk
- * Added distinctive RCS header
- * 
- */
-#ifndef lint
-static char RCSid[] = "@(#)$Header: tar.c,v 1.4 84/11/14 00:08:15 root Exp $";
-#endif
-
-
-/*
  * Tape Archival Program
  */
 #include <stdio.h>
@@ -105,6 +83,7 @@ daddr_t	low;
 daddr_t	high;
 daddr_t	bsrch();
 
+FILE	*vfile = stdout;
 FILE	*tfile;
 char	tname[] = "/tmp/tarXXXXXX";
 char	*usefile;
@@ -245,26 +224,6 @@ char	*argv[];
 
 	if (!rflag && !xflag && !tflag)
 		usage();
-#ifndef vax
-	tbuf = (union hblock *)malloc(nblock*TBLOCK);
-#else
-	/*
-	 *  The following is for 4.2BSD and related systems to force
-	 *  the buffer to be page aligned.  The kernel will avoid
-	 *  bcopy()'s on disk IO this way by manipulating the page tables.
-	 */
-	{
-		int pagesize = getpagesize();
-
-		tbuf = (union hblock *)malloc((nblock*TBLOCK)+pagesize);
-		tbuf = (union hblock *)(((int)tbuf+pagesize)&~(pagesize-1));
-	}
-#endif vax
-	if (tbuf == NULL) {
-		fprintf(stderr, "tar: blocksize %d too big, can't get memory\n",
-		    nblock);
-		done(1);
-	}
 	if (rflag) {
 		if (cflag && tfile != NULL)
 			usage();
@@ -284,6 +243,8 @@ char	*argv[];
 			 "tar: can only create standard output archives\n");
 				done(1);
 			}
+			vfile = stderr;
+			setlinebuf(vfile);
 			mt = dup(1);
 			nblock = 1;
 		} else if ((mt = open(usefile, 2)) < 0) {
@@ -448,9 +409,7 @@ putfile(longname, shortname, parent)
 	int infile = 0;
 	long blocks;
 	char buf[TBLOCK];
-#ifdef vax
 	char *origbuf;
-#endif
 	char *bigbuf;
 	register char *cp, *cp2;
 	struct direct *dp;
@@ -560,8 +519,8 @@ putfile(longname, shortname, parent)
 		dblock.dbuf.linkname[i] = '\0';
 		dblock.dbuf.linkflag = '2';
 		if (vflag) {
-			fprintf(stderr, "a %s ", longname);
-			fprintf(stderr, "symbolic link to %s\n",
+			fprintf(vfile, "a %s ", longname);
+			fprintf(vfile, "symbolic link to %s\n",
 			    dblock.dbuf.linkname);
 		}
 		sprintf(dblock.dbuf.size, "%11lo", 0);
@@ -598,8 +557,8 @@ putfile(longname, shortname, parent)
 				sprintf(dblock.dbuf.chksum, "%6o", checksum());
 				writetape( (char *) &dblock);
 				if (vflag) {
-					fprintf(stderr, "a %s ", longname);
-					fprintf(stderr, "link to %s\n",
+					fprintf(vfile, "a %s ", longname);
+					fprintf(vfile, "link to %s\n",
 					    lp->pathname);
 				}
 				lp->count--;
@@ -624,34 +583,16 @@ putfile(longname, shortname, parent)
 		}
 		blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
 		if (vflag) {
-			fprintf(stderr, "a %s ", longname);
-			fprintf(stderr, "%ld blocks\n", blocks);
+			fprintf(vfile, "a %s ", longname);
+			fprintf(vfile, "%ld blocks\n", blocks);
 		}
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		hint = writetape((char *)&dblock);
 		maxread = max(stbuf.st_blksize, (nblock * TBLOCK));
-#ifndef vax
 		if ((bigbuf = malloc(maxread)) == 0) {
 			maxread = TBLOCK;
 			bigbuf = buf;
 		}
-#else
-		/*
-		 *  The following is for 4.2BSD and related systems to force
-		 *  the buffer to be page aligned.  The kernel will avoid
-		 *  bcopy()'s on disk IO this way by manipulating the page tables.
-		 */
-		{
-			int pagesize = getpagesize();
-
-			if ((origbuf = malloc(maxread+pagesize)) == 0) {
-				maxread = TBLOCK;
-				bigbuf = buf;
-			} else {
-				bigbuf = (char *)(((int)origbuf+pagesize)&~(pagesize-1));
-			}
-		}
-#endif vax
 
 		while ((i = read(infile, bigbuf, min((hint*TBLOCK), maxread))) > 0
 		  && blocks > 0) {
@@ -665,11 +606,7 @@ putfile(longname, shortname, parent)
 		}
 		close(infile);
 		if (bigbuf != buf)
-#ifndef vax
 			free(bigbuf);
-#else
-			free(origbuf);
-#endif
 		if (blocks != 0 || i != 0)
 			fprintf(stderr, "tar: %s: file changed size\n",
 			    longname);
@@ -730,23 +667,8 @@ gotit:
 				continue;
 			}
 			if (vflag)
-				fprintf(stderr, "x %s symbolic link to %s\n",
+				fprintf(vfile, "x %s symbolic link to %s\n",
 				    dblock.dbuf.name, dblock.dbuf.linkname);
-#ifdef notdef
-			/* ignore alien orders */
-			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
-			if (mflag == 0) {
-				struct timeval tv[2];
-
-				tv[0].tv_sec = time(0);
-				tv[0].tv_usec = 0;
-				tv[1].tv_sec = stbuf.st_mtime;
-				tv[1].tv_usec = 0;
-				utimes(dblock.dbuf.name, tv);
-			}
-			if (pflag)
-				chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
-#endif
 			continue;
 		}
 		if (dblock.dbuf.linkflag == '1') {
@@ -757,7 +679,7 @@ gotit:
 				continue;
 			}
 			if (vflag)
-				fprintf(stderr, "%s linked to %s\n",
+				fprintf(vfile, "%s linked to %s\n",
 				    dblock.dbuf.name, dblock.dbuf.linkname);
 			continue;
 		}
@@ -770,7 +692,7 @@ gotit:
 		chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 		blocks = ((bytes = stbuf.st_size) + TBLOCK-1)/TBLOCK;
 		if (vflag)
-			fprintf(stderr, "x %s, %ld bytes, %ld tape blocks\n",
+			fprintf(vfile, "x %s, %ld bytes, %ld tape blocks\n",
 			    dblock.dbuf.name, bytes, blocks);
 		for (; blocks > 0;) {
 			register int nread;
@@ -1019,8 +941,11 @@ checkf(name, mode, howmuch)
 {
 	int l;
 
-	if ((mode & S_IFMT) == S_IFDIR)
-		return (strcmp(name, "SCCS") != 0);
+	if ((mode & S_IFMT) == S_IFDIR){
+		if ((strcmp(name, "SCCS")==0) || (strcmp(name, "RCS")==0)) 
+			return(0); 
+		return(1);
+	}
 	if ((l = strlen(name)) < 3)
 		return (1);
 	if (howmuch > 1 && name[l-2] == '.' && name[l-1] == 'o')
@@ -1153,6 +1078,7 @@ readtape (buffer)
 	char *bufp;
 	int nread;
 
+	if (first==0) getbuf();
 	readtbuf (&bufp, TBLOCK);
 	bcopy(bufp, buffer, TBLOCK);
 	return(TBLOCK);
@@ -1194,6 +1120,7 @@ writetbuf(buffer, n)
 	register char *buffer;
 	register int n;
 {
+	if (first==0) getbuf();
 	first = 1;
 	if (recno >= nblock) {
 		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
@@ -1289,4 +1216,32 @@ getcwd(buf)
 		exit(1);
 	}
 	return (buf);
+}
+
+getbuf()
+{
+#ifdef nodef
+	if ( mtdev == 1) {
+		fstat(mt, &stbuf);
+		if ((stbuf.st_mode & S_IFMT) == S_IFCHR)
+			mtdev = 0;
+		else
+			mtdev = -1;
+	}
+	if (first==0 && nblock==0) {
+		if (mtdev == 0)
+			nblock = FILEBLOCK;
+		else {
+			fstat(mt, &stbuf);
+			nblock = stbuf.st_blocks / TBLOCK;
+		}
+	}
+	if (nblock ==0) nblock = FILEBLOCK;
+#endif nodef
+	tbuf = (union hblock *)malloc(nblock*TBLOCK);
+	if (tbuf == NULL) {
+		fprintf(stderr, "tar: blocksize %d too big, can't get memory\n",
+		    nblock);
+		done(1);
+	}
 }
