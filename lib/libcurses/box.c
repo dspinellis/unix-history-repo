@@ -43,9 +43,7 @@ static char sccsid[] = "@(#)box.c	8.1 (Berkeley) 6/4/93";
  *	delimiting char, and "hor", as the horizontal one.
  */
 int
-box(win, vert, hor)
-	register WINDOW *win;
-	char vert, hor;
+box(register WINDOW *win, char vert, char hor)
 {
 	register int endy, endx, i;
 	register __LDATA *fp, *lp;

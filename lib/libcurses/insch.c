@@ -43,9 +43,7 @@ static char sccsid[] = "@(#)insch.c	8.1 (Berkeley) 6/4/93";
  *	Do an insert-char on the line, leaving (cury, curx) unchanged.
  */
 int
-winsch(win, ch)
-	register WINDOW *win;
-	char ch;
+winsch(register WINDOW *win, char ch)
 {
 
 	register __LDATA *end, *temp1, *temp2;

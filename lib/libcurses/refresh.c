@@ -44,7 +44,7 @@ static short ly, lx;
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
 static void	quickch __P((WINDOW *));	
-static void	scrolln __P((WINDOW *, int, int, int, int, int));
+static void     scrolln __P((int, int, int, int, int));
 
 /*
  * wrefresh --
@@ -129,16 +129,18 @@ wrefresh(win)
 				__CTRACE("%x", 
 			           curscr->lines[i]->line[j].attr);
 			__CTRACE("\n");
-			__CTRACE("W: %d:", i);
-			__CTRACE(" 0x%x \n", win->lines[i]->hash);
-			__CTRACE(" 0x%x ", win->lines[i]->flags);
+			if (i < win->begy || i > win->begy + win->maxy - 1)
+				continue;
+			__CTRACE("W: %d:", i - win->begy);
+			__CTRACE(" 0x%x \n", win->lines[i - win->begy]->hash);
+			__CTRACE(" 0x%x ", win->lines[i - win->begy]->flags);
 			for (j = 0; j < win->maxx; j++) 
 				__CTRACE("%c", 
-			           win->lines[i]->line[j].ch);
+				   win->lines[i - win->begy]->line[j].ch);
 			__CTRACE("\n");
 			for (j = 0; j < win->maxx; j++) 
 				__CTRACE("%x", 
-			           win->lines[i]->line[j].attr);
+				   win->lines[i - win->begy]->line[j].attr);
 			__CTRACE("\n");
 		}
 }
@@ -150,7 +152,7 @@ wrefresh(win)
 		    wy, *win->lines[wy]->firstchp, *win->lines[wy]->lastchp);
 #endif
 		if (!curwin)
-			curscr->lines[wy]->hash = win->lines[wy]->hash;
+			curscr->lines[win->begy + wy]->hash = win->lines[wy]->hash;
 		if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT)) {
 			if (makech(win, wy) == ERR)
 				return (ERR);
@@ -298,17 +300,17 @@ makech(win, wy)
 			if (ce != NULL && win->maxx + win->begx == 
 			    curscr->maxx && wx >= nlsp && nsp->ch == ' ') {
 				/* Check for clear to end-of-line. */
-				cep = &curscr->lines[wy]->line[win->maxx - 1];
+				cep = &curscr->lines[win->begy + wy]->line[win->begx + win->maxx - 1];
 				while (cep->ch == ' ' && cep->attr == 0)
 					if (cep-- <= csp)
 						break;
-				clsp = cep - curscr->lines[wy]->line - 
-				       win->begx * __LDATASIZE;
+				clsp = cep - curscr->lines[win->begy + wy]->line -
+				       win->begx;
 #ifdef DEBUG
 			__CTRACE("makech: clsp = %d, nlsp = %d\n", clsp, nlsp);
 #endif
 				if ((clsp - nlsp >= strlen(CE) 
-				    && clsp < win->maxx * __LDATASIZE) ||
+				    && clsp < win->maxx) ||
 				    wy == win->maxy - 1) {
 #ifdef DEBUG
 					__CTRACE("makech: using CE\n");
@@ -439,27 +441,28 @@ quickch(win)
 	/* 
 	 * Find how many lines from the top of the screen are unchanged.
 	 */
-	for (top = 0; top < win->maxy; top++) 
-		if (win->lines[top]->flags & __FORCEPAINT ||
-		    win->lines[top]->hash != curscr->lines[top]->hash 
-		    || memcmp(win->lines[top]->line, 
+	for (top = win->begy; top < win->begy + win->maxy; top++)
+		if (win->lines[top - win->begy]->flags & __FORCEPAINT ||
+		    win->lines[top - win->begy]->hash != curscr->lines[top]->hash
+		    || memcmp(win->lines[top - win->begy]->line,
 		    curscr->lines[top]->line, 
 		    win->maxx * __LDATASIZE) != 0)
 			break;
 		else
-			win->lines[top]->flags &= ~__ISDIRTY;
+			win->lines[top - win->begy]->flags &= ~__ISDIRTY;
        /*
 	* Find how many lines from bottom of screen are unchanged. 
 	*/
-	for (bot = win->maxy - 1; bot >= 0; bot--)
-		if (win->lines[bot]->flags & __FORCEPAINT ||
-		    win->lines[bot]->hash != curscr->lines[bot]->hash 
-		    || memcmp(win->lines[bot]->line, 
+	for (bot = win->begy + win->maxy - 1; bot >= (int) win->begy; bot--) {
+		if (win->lines[bot - win->begy]->flags & __FORCEPAINT ||
+		    win->lines[bot - win->begy]->hash != curscr->lines[bot]->hash
+		    || memcmp(win->lines[bot - win->begy]->line,
 		    curscr->lines[bot]->line, 
 		    win->maxx * __LDATASIZE) != 0)
 			break;
 		else
-			win->lines[bot]->flags &= ~__ISDIRTY;
+			win->lines[bot - win->begy]->flags &= ~__ISDIRTY;
+	}
 
 #ifdef NO_JERKINESS
 	/*
@@ -468,7 +471,7 @@ quickch(win)
 	 * This will increase the number of characters sent to the screen
 	 * but it looks better.
 	 */
-	if (bot < win->maxy - 1)
+	if (bot < (int) win->begy + win->maxy - 1)
 		return;
 #endif /* NO_JERKINESS */
 
@@ -478,8 +481,8 @@ quickch(win)
 	 * - Startw is the index of the beginning of the examined block in win.
          * - Starts is the index of the beginning of the examined block in 
 	 *    curscr.
-	 * - Curs is the index of one past the end of the exmined block in win.
-	 * - Curw is the index of one past the end of the exmined block in 
+	 * - Curw is the index of one past the end of the exmined block in win.
+	 * - Curs is the index of one past the end of the exmined block in
 	 *   curscr.
 	 * - bsize is the current size of the examined block.
          */
@@ -489,11 +492,11 @@ quickch(win)
 			     starts++) {
 				for (curw = startw, curs = starts;
 				     curs < starts + bsize; curw++, curs++)
-					if (win->lines[curw]->flags &
+					if (win->lines[curw - win->begy]->flags &
 					    __FORCEPAINT ||
-					    (win->lines[curw]->hash !=
+					    (win->lines[curw - win->begy]->hash !=
 					    curscr->lines[curs]->hash ||
-				            memcmp(win->lines[curw]->line, 
+					    memcmp(win->lines[curw - win->begy]->line,
 					    curscr->lines[curs]->line, 
 					    win->maxx * __LDATASIZE) != 0))
 						break;
@@ -535,16 +538,18 @@ quickch(win)
 				__CTRACE("%x", 
 			           curscr->lines[i]->line[j].attr);
 			__CTRACE("\n");
-			__CTRACE("W: %d:", i);
-			__CTRACE(" 0x%x \n", win->lines[i]->hash);
-			__CTRACE(" 0x%x ", win->lines[i]->flags);
+			if (i < win->begy || i > win->begy + win->maxy - 1)
+				continue;
+			__CTRACE("W: %d:", i - win->begy);
+			__CTRACE(" 0x%x \n", win->lines[i - win->begy]->hash);
+			__CTRACE(" 0x%x ", win->lines[i - win->begy]->flags);
 			for (j = 0; j < win->maxx; j++) 
 				__CTRACE("%c", 
-			           win->lines[i]->line[j].ch);
+				   win->lines[i - win->begy]->line[j].ch);
 			__CTRACE("\n");
 			for (j = 0; j < win->maxx; j++) 
 				__CTRACE("%x", 
-			           win->lines[i]->line[j].attr);
+				   win->lines[i - win->begy]->line[j].attr);
 			__CTRACE("\n");
 		}
 #endif 
@@ -607,7 +612,7 @@ quickch(win)
 #ifdef DEBUG
 			__CTRACE("-- notdirty");
 #endif
-			win->lines[target]->flags &= ~__ISDIRTY;
+			win->lines[target - win->begy]->flags &= ~__ISDIRTY;
 		} else if ((n > 0 && target >= top && target < top + n) ||
 		           (n < 0 && target <= bot && target > bot + n)) {
 			if (clp->hash != blank_hash ||  memcmp(clp->line, 
@@ -618,9 +623,9 @@ quickch(win)
 				__CTRACE("-- blanked out: dirty");
 #endif
 				clp->hash = blank_hash;
-				__touchline(win, target, 0, win->maxx - 1, 0);
+				__touchline(win, target - win->begy, 0, win->maxx - 1, 0);
 			} else {
-				__touchline(win, target, 0, win->maxx - 1, 0);
+				__touchline(win, target - win->begy, 0, win->maxx - 1, 0);
 #ifdef DEBUG
 				__CTRACE(" -- blank line already: dirty");
 #endif
@@ -629,7 +634,7 @@ quickch(win)
 #ifdef DEBUG
 			__CTRACE(" -- dirty");
 #endif
-			__touchline(win, target, 0, win->maxx - 1, 0);
+			__touchline(win, target - win->begy, 0, win->maxx - 1, 0);
 		}
 #ifdef DEBUG
 		__CTRACE("\n");
@@ -651,16 +656,18 @@ quickch(win)
 				__CTRACE("%c", 
 			           curscr->lines[i]->line[j].ch);
 			__CTRACE("\n");
-			__CTRACE("W: %d:", i);
+			if (i < win->begy || i > win->begy + win->maxy - 1)
+				continue;
+			__CTRACE("W: %d:", i - win->begy);
 			for (j = 0; j < win->maxx; j++) 
 				__CTRACE("%c", 
-			           win->lines[i]->line[j].ch);
+				   win->lines[i - win->begy]->line[j].ch);
 			__CTRACE("\n");
 		}
 #endif
 	if (n != 0) {
 		WINDOW *wp;
-		scrolln(win, starts, startw, curs, bot, top);
+		scrolln(starts, startw, curs, bot, top);
 		/*
 		 * Need to repoint any subwindow lines to the rotated
 		 * line structured. 
@@ -674,8 +681,7 @@ quickch(win)
  * Scrolln performs the scroll by n lines, where n is starts - startw.
  */
 static void
-scrolln(win, starts, startw, curs, bot, top)
-	WINDOW *win;
+scrolln(starts, startw, curs, bot, top)
 	int starts, startw, curs, bot, top;
 {
 	int i, oy, ox, n;
