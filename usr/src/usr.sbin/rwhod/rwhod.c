@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -114,7 +114,10 @@ main()
 	  }
 	}
 #endif
-	(void) chdir("/dev");
+	if (chdir(RWHODIR) < 0) {
+		perror(RWHODIR);
+		exit(1);
+	}
 	(void) signal(SIGHUP, getkmem);
 	openlog("rwhod", LOG_PID, LOG_DAEMON);
 	/*
@@ -186,8 +189,14 @@ main()
 				from.sin_addr);
 			continue;
 		}
-		(void) sprintf(path, "%s/whod.%s", RWHODIR, wd.wd_hostname);
-		whod = creat(path, 0666);
+		(void) sprintf(path, "whod.%s", wd.wd_hostname);
+		whod = open(path, O_WRONLY);	/* much faster than creat() */
+		{	struct stat s;
+			if (whod < 0 || fstat(whod, &s) < 0 || s.st_size > cc) {
+				(void) close(whod);
+				whod = creat(path, 0666);
+			}
+		}
 		if (whod < 0) {
 			syslog(LOG_WARNING, "%s: %m", path);
 			continue;
@@ -292,7 +301,9 @@ onalrm()
 	}
 	we = mywd.wd_we;
 	for (i = 0; i < utmpent; i++) {
-		if (stat(we->we_utmp.out_line, &stb) >= 0)
+		char path[64];
+		(void) sprintf(path, "/dev/%s", we->we_utmp.out_line);
+		if (stat(path, &stb) >= 0)
 			we->we_idle = htonl(now - stb.st_atime);
 		we++;
 	}
