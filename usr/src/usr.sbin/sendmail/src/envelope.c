@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.19.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -650,9 +650,7 @@ setsender(from, e, delimptr, internal)
 			    strcmp(pw->pw_name, e->e_from.q_user) == 0 &&
 			    !internal)
 			{
-				if (buildfname(pw->pw_gecos, e->e_from.q_user, buf) &&
-					hvalue("MIME-Version", e) == NULL)
-						addheader("MIME-Version", "1.0", e);
+				buildfname(pw->pw_gecos, e->e_from.q_user, buf);
 				if (buf[0] != '\0')
 					FullName = newstr(buf);
 			}
