@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.4 (Berkeley) %G%";
 #endif
 
-# include "mfile2"
-# include "ctype.h"
+# include "pass2.h"
+# include <ctype.h>
 # ifdef FORT
 int ftlab1, ftlab2;
 # endif
@@ -570,9 +570,11 @@ setregs(){ /* set up temporary registers */
 	fregs = 6;	/* tbl- 6 free regs on Tahoe (0-5) */
 	}
 
+#ifndef szty
 szty(t) TWORD t;{ /* size, in registers, needed to hold thing of type t */
 	return(t==DOUBLE ? 2 : 1 );
 	}
+#endif
 
 rewfld( p ) NODE *p; {
 	return(1);
@@ -657,9 +659,11 @@ canaddr( p ) NODE *p; {
 	return(0);
 	}
 
+#ifndef shltype
 shltype( o, p ) register NODE *p; {
 	return( o== REG || o == NAME || o == ICON || o == OREG || ( o==UNARY MUL && shumul(p->in.left)) );
 	}
+#endif
 
 flshape( p ) NODE *p; {
 	register int o = p->in.op;
@@ -942,6 +946,7 @@ optim2( p ) register NODE *p; {
 # ifdef ONEPASS
 	/* do local tree transformations and optimizations */
 # define RV(p) p->in.right->tn.lval
+# define nncon(p)	((p)->in.op == ICON && (p)->in.name[0] == 0)
 	register int o = p->in.op;
 	register int i;
 
