@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -184,37 +184,31 @@ main(argc, argv)
 	struct sockaddr_un sunx, fromunix;
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
+	int ch;
 	char line[MSG_BSIZE + 1];
-	extern int die(), domark(), reapchild();
+	extern int optind, die(), domark(), reapchild();
+	extern char *optarg;
 
-	while (--argc > 0) {
-		p = *++argv;
-		if (p[0] != '-')
-			usage();
-		switch (p[1]) {
-		case 'f':		/* configuration file */
-			if (p[2] != '\0')
-				ConfFile = &p[2];
-			break;
-
+	while ((ch = getopt(argc, argv, "df:m:p:")) != EOF)
+		switch((char)ch) {
 		case 'd':		/* debug */
 			Debug++;
 			break;
-
-		case 'p':		/* path */
-			if (p[2] != '\0')
-				LogName = &p[2];
+		case 'f':		/* configuration file */
+			ConfFile = optarg;
 			break;
-
 		case 'm':		/* mark interval */
-			if (p[2] != '\0')
-				MarkInterval = atoi(&p[2]) * 60;
+			MarkInterval = atoi(optarg) * 60;
 			break;
-
+		case 'p':		/* path */
+			LogName = optarg;
+			break;
+		case '?':
 		default:
 			usage();
 		}
-	}
+	if (argc -= optind)
+		usage();
 
 	if (!Debug) {
 		if (fork())
@@ -348,7 +342,7 @@ main(argc, argv)
 
 usage()
 {
-	fprintf(stderr, "usage: syslogd [-d] [-mmarkinterval] [-ppath] [-fconffile]\n");
+	fprintf(stderr, "usage: syslogd [-d] [-m markinterval] [-p path] [-f conffile]\n");
 	exit(1);
 }
 
@@ -398,14 +392,15 @@ printline(hname, msg)
 
 	q = line;
 
-	while ((c = *p++ & 0177) != '\0' && c != '\n' &&
-	    q < &line[sizeof(line) - 1]) {
-		if (iscntrl(c)) {
+	while ((c = *p++ & 0177) != '\0' &&
+	    q < &line[sizeof(line) - 1])
+		if (c == '\n')
+			*q++ = ' ';
+		else if (iscntrl(c)) {
 			*q++ = '^';
 			*q++ = c ^ 0100;
 		} else
 			*q++ = c;
-	}
 	*q = '\0';
 
 	logmsg(pri, line, hname, 0);
@@ -528,7 +523,7 @@ logmsg(pri, msg, from, flags)
 		    !strcmp(from, f->f_prevhost)) {
 			(void) strncpy(f->f_lasttime, timestamp, 15);
 			f->f_prevcount++;
-			dprintf("msg repeated %d times, %d sec of %d\n",
+			dprintf("msg repeated %d times, %ld sec of %d\n",
 			    f->f_prevcount, now - f->f_time,
 			    repeatinterval[f->f_repeatcount]);
 			/*
@@ -1082,8 +1077,6 @@ cfline(line, f)
 
 		/* scan facilities */
 		while (*p && !index("\t.;", *p)) {
-			int i;
-
 			for (bp = buf; *p && !index("\t,;.", *p); )
 				*bp++ = *p++;
 			*bp = '\0';
