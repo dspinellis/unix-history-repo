@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.9 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)server.c	4.10 (Berkeley) 83/12/01";
 #endif
 
 #include "defs.h"
@@ -584,7 +584,6 @@ recvf(cmd, isdir)
 	}
 	*cp++ = '\0';
 
-	new[0] = '\0';
 	if (isdir) {
 		if (catname >= sizeof(stp)) {
 			error("%s: too many directory levels\n", target);
@@ -618,6 +617,7 @@ recvf(cmd, isdir)
 		return;
 	}
 
+	new[0] = '\0';
 	if (catname)
 		(void) sprintf(tp, "/%s", cp);
 	if (stat(target, &stb) == 0) {
@@ -714,11 +714,14 @@ recvf(cmd, isdir)
 	tvp[0].tv_usec = 0;
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
-	if (utimes(new, tvp) < 0 || chog(new, owner, group, mode) < 0) {
+	if (utimes(new, tvp) < 0) {
 bad1:
 		error("%s: %s\n", new, sys_errlist[errno]);
-		if (new[0])
-			(void) unlink(new);
+		(void) unlink(new);
+		return;
+	}
+	if (chog(new, owner, group, mode) < 0) {
+		(void) unlink(new);
 		return;
 	}
 	
