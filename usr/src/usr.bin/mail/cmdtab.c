@@ -8,14 +8,15 @@
  * Define all of the command names and bindings.
  */
 
-static char *SccsId = "@(#)cmdtab.c	1.3 %G%";
+static char *SccsId = "@(#)cmdtab.c	1.4 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
 extern int edstop(), exit(), pcmdlist(), sendmail(), from();
 extern int messize(), psalloc(), deltype(), unset(), set(), source();
 extern int pversion(), group(), top(), core(), null(), stouch(), visual();
-extern int swrite(), dosh(), file(), echo(), Respond(), scroll();
+extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
+extern int elsecmd(), endifcmd();
 
 struct cmd cmdtab[] = {
 	"next",		next,		NDMLIST,	0,	MMNDEL,
@@ -44,7 +45,7 @@ struct cmd cmdtab[] = {
 	"group",	group,		M|RAWLIST,	0,	1000,
 	"write",	swrite,		STRLIST,	0,	0,
 	"from",		from,		MSGLIST,	0,	MMNORM,
-	"file",		file,		M|RAWLIST,	0,	1,
+	"file",		file,		T|M|RAWLIST,	0,	1,
 	"?",		help,		M|NOLIST,	0,	0,
 	"z",		scroll,		M|STRLIST,	0,	0,
 	"headers",	headers,	MSGLIST,	0,	MMNDEL,
@@ -62,6 +63,9 @@ struct cmd cmdtab[] = {
 	"exit",		exit,		M|NOLIST,	0,	0,
 	"size",		messize,	MSGLIST,	0,	MMNDEL,
 	"hold",		preserve,	W|MSGLIST,	0,	MMNDEL,
+	"if",		ifcmd,		C|RAWLIST,	1,	1,
+	"else",		elsecmd,	C|RAWLIST,	0,	0,
+	"endif",	endifcmd,	C|RAWLIST,	0,	0,
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,
 	0,		0,		0,		0,	0
