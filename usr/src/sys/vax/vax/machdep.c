@@ -1,4 +1,4 @@
-/*	machdep.c	4.14	81/02/25	*/
+/*	machdep.c	4.15	81/02/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.14) 81/02/25 14:48:03 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.15) 81/02/25 23:30:34 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -412,8 +412,9 @@ boot(panic, arghowto)
 			doadump();
 		tocons(TXDB_BOOT);
 	}
-#if VAX==750
-	{ asm("movl r11,r5"); }		/* where boot flags go on comet */
+#if VAX750
+	if (cpu == VAX_750)
+		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
 	for (;;)
 		asm("halt");
