@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.2 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -437,14 +437,16 @@ findpcb:
 		}
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
-		tp->snd_una = ti->ti_ack;
-		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
-			tp->snd_nxt = tp->snd_una;
+		if (tiflags & TH_ACK) {
+			tp->snd_una = ti->ti_ack;
+			if (SEQ_LT(tp->snd_nxt, tp->snd_una))
+				tp->snd_nxt = tp->snd_una;
+		}
 		tp->t_timer[TCPT_REXMT] = 0;
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
-		if (SEQ_GT(tp->snd_una, tp->iss)) {
+		if (tiflags & TH_ACK && SEQ_GT(tp->snd_una, tp->iss)) {
 			tcpstat.tcps_connects++;
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
