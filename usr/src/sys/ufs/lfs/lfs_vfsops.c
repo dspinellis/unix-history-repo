@@ -196,7 +196,9 @@ lfs_mountfs(devvp, mp, p)
 	struct partinfo dpart;
 	dev_t dev;
 	int error, i, ronly, size;
+	struct ucred *cred;
 
+	cred = p ? p->p_ucred : NOCRED;
 	/*
 	 * Disallow multiple mounts of the same device.
 	 * Disallow mounting of a device that is currently in use
@@ -207,14 +209,14 @@ lfs_mountfs(devvp, mp, p)
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p, 0, 0))
+	if (error = vinvalbuf(devvp, V_SAVE, cred, p, 0, 0))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, FSCRED, p))
 		return (error);
 
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
 		size = DEV_BSIZE;
 	else {
 		size = dpart.disklab->d_secsize;
@@ -231,7 +233,7 @@ lfs_mountfs(devvp, mp, p)
 	ump = NULL;
 
 	/* Read in the superblock. */
-	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, NOCRED, &bp))
+	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, cred, &bp))
 		goto out;
 	fs = (struct lfs *)bp->b_data;
 
@@ -298,7 +300,7 @@ lfs_mountfs(devvp, mp, p)
 out:
 	if (bp)
 		brelse(bp);
-	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, cred, p);
 	if (ump) {
 		free(ump->um_lfs, M_UFSMNT);
 		free(ump, M_UFSMNT);
