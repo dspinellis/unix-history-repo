@@ -7,7 +7,7 @@
 #
 #	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>.
 #
-#	@(#)Makefile.NCR3000	8.1 (Berkeley) %G%
+#	@(#)Makefile.NCR3000	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -37,7 +37,7 @@ LDOPTS=
 LIBDIRS=-L/usr/ucblib
 
 # libraries required on your system
-LIBS=	-lc -lelf -lucb -ldbm -lnet -lnsl
+LIBS=	-lsocket -lc -lelf -lucb -ldbm -lnet -lnsl
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/ucblib
