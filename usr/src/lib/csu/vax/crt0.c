@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crt0.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -21,12 +21,6 @@ static char sccsid[] = "@(#)crt0.c	5.6 (Berkeley) %G%";
  *	which points to the base of the kernel calling frame.
  *	Do NOT believe the documentation in exec(2) regarding the
  *	values of fp and ap.
- *	3) We can allocate as many register variables as we want,
- *	and don't have to save them for anybody.
- *	4) Because of the ways that asm's work, we can't have
- *	any automatic variables allocated on the stack, because
- *	we must catch the value of sp before any automatics are
- *	allocated.
  */
 
 char **environ = (char **)0;
