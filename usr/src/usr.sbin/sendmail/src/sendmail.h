@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.47 (Berkeley) %G%
+ *	@(#)sendmail.h	8.48 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.47		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.48		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -169,6 +169,8 @@ struct mailer
 	long	m_maxsize;	/* size limit on message to this mailer */
 	int	m_linelimit;	/* max # characters per line */
 	char	*m_execdir;	/* directory to chdir to before execv */
+	uid_t	m_uid;		/* UID to run as */
+	gid_t	m_gid;		/* GID to run as */
 };
 
 typedef struct mailer	MAILER;
@@ -201,7 +203,7 @@ typedef struct mailer	MAILER;
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
 # define M_SECURE_PORT	'R'	/* try to send on a reserved TCP port */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
-# define M_RESTR	'S'	/* must be daemon to execute */
+# define M_SPECFIC_UID	'S'	/* run as specific uid/gid */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
 		/*	'V'	/* UIUC: !-relativize all addresses */
