@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ungetc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ungetc.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -12,7 +12,10 @@ ungetc(c, iop)
 		return (EOF);
 
 	if (iop->_ptr == iop->_base)
-		iop->_ptr++;
+		if (iop->_cnt == 0)
+			iop->_ptr++;
+		else
+			return (EOF);
 
 	iop->_cnt++;
 	*--iop->_ptr = c;
