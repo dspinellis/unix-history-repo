@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dd.h	5.3 (Berkeley) %G%
+ *	@(#)dd.h	5.4 (Berkeley) %G%
  */
 
 /* Input/output stream state. */
@@ -42,6 +42,8 @@ typedef struct {
 	u_long	out_part;		/* # of partial output blocks */
 	u_long	trunc;			/* # of truncated records */
 	u_long	swab;			/* # of odd-length swab blocks */
+	u_long	bytes;			/* # of bytes written */
+	time_t	start;			/* start time of dd */
 } STAT;
 
 /* Flags (in ddflags). */

@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,6 +45,7 @@ u_long	cpy_cnt;		/* # of blocks to copy */
 u_int	ddflags;		/* conversion options */
 u_int	cbsz;			/* conversion block size */
 u_int	files_cnt = 1;		/* # of files to copy */
+int	errstats;		/* show statistics on error */
 u_char	*ctab;			/* conversion table */
 
 main(argc, argv)
@@ -57,7 +58,7 @@ main(argc, argv)
 	(void)signal(SIGINFO, summary);
 	(void)signal(SIGINT, terminate);
 
-	while (files_cnt--)
+	for (errstats = 1; files_cnt--;)
 		dd_in();
 
 	dd_close();
@@ -175,6 +176,7 @@ setup()
 			}
 		else
 			ctab = ddflags & C_LCASE ? u2l : l2u;
+	(void)time(&st.start);			/* Statistics timestamp. */
 }
 
 static void
@@ -317,6 +319,7 @@ dd_out(force)
 	for (n = force ? out.dbcnt : out.dbsz;; n = out.dbsz) {
 		for (cnt = n;; cnt -= nw) {
 			outp += nw = write(out.fd, outp, cnt);
+			st.bytes += nw;
 			if (nw == n) {
 				if (n != out.dbsz)
 					++st.out_part;

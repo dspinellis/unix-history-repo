@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,13 +25,18 @@ void
 summary(notused)
 	int notused;
 {
+	time_t secs;
 	int len;
 	char buf[100];
 
+	(void)time(&secs);
+	if ((secs -= st.start) == 0)
+		secs = 1;
 	/* Use snprintf(3) so that we don't reenter stdio(3). */
 	len = snprintf(buf, sizeof(buf),
-	    "%u+%u records in\n%u+%u records out\n",
-	    st.in_full, st.in_part, st.out_full, st.out_part);
+	    "%u+%u records in\n%u+%u records out\n%u bytes transferred in %u secs (%u bytes/sec)\n",
+	    st.in_full, st.in_part, st.out_full, st.out_part, st.bytes,
+	    secs, st.bytes / secs);
 	(void)write(STDERR_FILENO, buf, len);
 	if (st.swab) {
 		len = snprintf(buf, sizeof(buf), "%u odd length swab %s\n",
@@ -69,6 +74,7 @@ err(fmt, va_alist)
 	va_dcl
 #endif
 {
+	extern int errstats;
 	va_list ap;
 #if __STDC__
 	va_start(ap, fmt);
@@ -79,6 +85,8 @@ err(fmt, va_alist)
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
+	if (errstats)
+		summary(0);
 	exit(1);
 	/* NOTREACHED */
 }
