@@ -1,0 +1,1 @@
+#define NQV 1
