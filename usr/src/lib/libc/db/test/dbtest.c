@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -184,7 +184,8 @@ ldata:			switch(command) {
 				err("line %lu: command doesn't take data",
 				    lineno);
 			}
-			free(key.data);
+			if (type != DB_RECNO)
+				free(key.data);
 			free(data.data);
 			state = COMMAND;
 			break;
