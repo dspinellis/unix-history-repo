@@ -1,45 +1,63 @@
 #
-#	@(#)Makefile	1.8	(Berkeley)	%G%
+#	@(#)Makefile	1.9	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-LOAD1=
-LOAD2=
-CFLAGS=-O -DFLEXNAMES
+P=/usr/src/lib/pcc
+CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lm.ln llib-lmp.ln llib-lcurses.ln
 
 all:	lpass1 lpass2 ${LINTLIBS}
 
-lpass1: cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o hash.o
-	${CC} cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o \
+lpass1: cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
+	lint.o hash.o
+	${CC} cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
 		lint.o hash.o -o lpass1
 
-trees.o: $M/manifest macdefs $M/mfile1 $M/trees.c
-	${CC} -c ${CFLAGS} -I$M -I. $M/trees.c
+cgram.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h cgram.c
+	$(CC) -c $(CFLAGS) -I$M -I. cgram.c
 
-optim.o: $M/manifest macdefs $M/mfile1 $M/optim.c
-	${CC} -c ${CFLAGS} -I$M -I. $M/optim.c
+rodata.o: rodata.c
+	$(CC) -c $(CFLAGS) -R rodata.c
 
-pftn.o: $M/manifest macdefs $M/mfile1 $M/pftn.c
-	${CC} -c ${CFLAGS} -I$M -I. $M/pftn.c
+comm1.o: $M/manifest.h $M/pass1.h pcclocal.h $M/common.c macdefs.h
+	ln $M/common.c comm1.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DPASS1COMMON comm1.c
+	rm -f comm1.c
 
-lint.o: $M/manifest macdefs $M/mfile1 lmanifest
-	${CC} -c ${CFLAGS} -I$M -I. lint.c
+optim.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/optim.c
+	$(CC) -c $(CFLAGS) -I$M -I. $M/optim.c
 
-scan.o: $M/manifest macdefs $M/mfile1 $M/scan.c
-	${CC} -c ${CFLAGS} -I$M -I. $M/scan.c
+pftn.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/pftn.c
+	$(CC) -c $(CFLAGS) -I$M -I. $M/pftn.c
 
-xdefs.o: $M/manifest $M/mfile1 macdefs $M/xdefs.c
-	${CC} -c ${CFLAGS} -I$M -I. $M/xdefs.c
+scan.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/scan.c
+	$(CC) -c $(CFLAGS) -I$M -I. $M/scan.c
 
-cgram.o: $M/manifest $M/mfile1 macdefs cgram.c
-	${CC} -c ${CFLAGS} -I$M -I. cgram.c
+trees.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/trees.c
+	$(CC) -c $(CFLAGS) -I$M -I. $M/trees.c
 
-cgram.c: $M/cgram.y
-	yacc $M/cgram.y
+xdefs.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h $M/xdefs.c
+	$(CC) -c $(CFLAGS) -I$M -I. $M/xdefs.c
+
+rodata.c cgram.c: $M/cgram.y pcctokens
+	cat pcctokens $M/cgram.y > gram.in
+	$(YACC) gram.in
+	rm -f rodata.c
+	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
 
-comm1.o: $M/manifest $M/mfile1 $M/common macdefs $M/comm1.c
-	${CC} -c ${CFLAGS} -I. -I$M $M/comm1.c
+GREP=	egrep
+
+pcclocal.h: $P/localdefs.h /usr/include/pcc.h
+	rm -f pcclocal.h
+	cat /usr/include/pcc.h $P/localdefs.h | $(GREP) '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
+
+pcctokens: $P/localdefs.h /usr/include/pcc.h
+	rm -f pcctokens
+	cat /usr/include/pcc.h $P/localdefs.h | $(GREP) '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
+
+lint.o: $M/manifest.h macdefs.h $M/pass1.h lmanifest.h
+	${CC} -c ${CFLAGS} -I$M -I. lint.c
 
 llib-port.ln: llib-port lpass1
 	-(/lib/cpp -C -Dlint llib-port | ./lpass1 -puv > llib-port.ln )
@@ -59,7 +77,7 @@ llib-lcurses.ln: llib-lcurses lpass1
 lpass2: lpass2.o hash.o
 	${CC} lpass2.o hash.o -o lpass2
 
-lpass2.o: $M/manifest lmanifest
+lpass2.o: $M/manifest.h lmanifest.h pcclocal.h macdefs.h
 	${CC} ${CFLAGS} -c -I$M -I. lpass2.c
 	
 lintall:
@@ -73,7 +91,7 @@ install: all SHELL
 	install -c SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
-	rm -f *.o
+	rm -f *.o errs
 
 clean: shrink
-	rm -f lpass1 lpass2 cgram.c ${LINTLIBS}
+	rm -f lpass1 lpass2 cgram.c gram.in ${LINTLIBS}

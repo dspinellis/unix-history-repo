@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.6	(Berkeley)	%G%";
 #endif lint
 
-# include "mfile1"
+# include "pass1.h"
 
-# include "lmanifest"
+# include "lmanifest.h"
 
 # include <ctype.h>
 
@@ -283,7 +283,7 @@ lpta( p ) NODE *p; {
 	t.extra = (p->in.op==ICON);
 	t.extra1 = 0;
 
-	if( !astype( &t, p->in.csiz ) ) {
+	if( !astype( &t, p->fn.csiz ) ) {
 		switch( t.aty ){
 
 			case CHAR:
