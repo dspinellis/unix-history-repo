@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.175 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.176 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3001,7 +3001,35 @@ sm_gethostbyname(name)
 	return __switch_gethostbyname(name);
 # endif
 #else
-	return gethostbyname(name);
+	struct hostent *h;
+	int nmaps;
+	int i;
+	char *maptype[MAXMAPSTACK];
+	short mapreturn[MAXMAPACTIONS];
+	char hbuf[MAXNAME];
+
+	h = gethostbyname(name);
+# if defined(NIS)
+	if (h != NULL)
+		return h;
+	nmaps = switch_map_find("hosts", maptype, mapreturn);
+	while (--nmaps >= 0)
+		if (strcmp(maptype[nmaps], "nis") == 0)
+			break;
+	if (nmaps >= 0)
+	{
+		/* try short name */
+		if (strlen(name) > sizeof hbuf - 1)
+			return NULL;
+		strcpy(hbuf, name);
+		shorten_hostname(hbuf);
+
+		/* if it hasn't been shortened, there's no point */
+		if (strcmp(hbuf, name) != 0)
+			return gethostbyname(hbuf);
+	}
+# endif
+	return h;
 #endif
 }
 
