@@ -1,0 +1,495 @@
+
+                                  FreeBSD
+                          Freqently Asked Questions
+                          For Version 1.1 and above
+   Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
+
+
+Last updated:	Fri Apr 15 11:25:20 GMT 1994
+
+
+
+Table of Contents
+-----------------
+
+0.0 Preface
+1.0 Installation
+2.0 Hardware Compatibility
+3.0 Commercial applications
+4.0 User Applications
+5.0 Misc Questions
+6.0 Kernel Configuration 
+7.0 System Admin
+8.0 Networking
+9.0 Communications
+
+
+0.0 Preface
+-----------
+
+Welcome to the FreeBSD 1.1 FAQ!  This document tries to answer some of
+the most frequently asked questions about FreeBSD 1.1 (or later, unless
+specifically indicated).  If there's something you're having trouble
+with and you just don't see it here, then please send mail to:
+
+	freebsd-questions@freefall.cdrom.com
+
+Or, if it's a bug you wish to report, to:
+
+	freebsd-bugs@freefall.cdrom.com
+
+Some of the instructions here will also refer to auxilliary utilities
+in the /usr/src/share/FAQ directory.  CDROM purchasers and net folks who've
+grabbed the FreeBSD 1.1 `srcdist' will have these files.  If you don't have
+the source distribution, then you can either grab the whole thing from:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-1.1
+
+Or you can grab only those files you're interested in straight out of the
+FreeBSD-current distribution in:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/src
+
+Thanks!
+
+
+
+1.0 Installation
+----------------
+
+1.0.1:	I just installed my system and rebooted.  Now I can't find the
+	extract or configure programs, where did they go?
+
+
+These two commands are just shell builtins.  To get these back, either
+create a account [adding a user] with /.profile as its profile or
+boot FreeBSD with a '-s' at the boot prompt.
+
+
+1.0.2:  I want to install FreeBSD unto a SCSI disk that has more than
+        1024 cylinders.  How do I do it?
+
+This depends.  If you don't have DOS (or another operating system) on the
+system, you can just keep the drive in native mode and simply make sure that
+your root partition is below 1024 so the bios can boot the kernel from it.
+It you also have DOS/some other OS on the drive then your best bet is to find
+out what parameters that it thinks you have before installing FreeBSD.  When
+FreeBSD's installation procedure prompts you for these values, you should then
+enter them rather than simply going with the defaults.
+
+There is a freely available utility distributed with FreeBSD called `pfdisk'
+(located in the tools/ subdirectory) which can be used for this purpose.
+
+
+1.0.3:	When I boot FreeBSD it says "Missing Operating System".
+
+See above (1.0.2).  This is classicaly a case of FreeBSD and DOS or some other
+OS conflicting over their ideas of disk geometry.  You will have to reinstall
+FreeBSD, but obeying the instructions given above will almost always get you
+going.
+
+
+1.0.4:	I have an IDE drive with lots of bad blocks on it and FreeBSD doesn't
+	seem to install properly.
+
+FreeBSD's bad block (bad144) handling is still not 100% (to put it charitably)
+and it must unfortunately be said that if you've got an IDE or ESDI drive
+with lots of bad blocks, then FreeBSD is probably not for you!  That said, it
+does work on thousands of IDE based systems, so you'd do well to try it first
+before simply iving up.
+
+
+1.0.5:	I have 32MB of memory, should I expect any special problems?
+
+If you have an IDE controller, no.  Likewise, if you have a full EISA system
+with EISA disk controller or a working local bus controller (read further)
+you'll have no problems. If you have an ISA system, or an EISA system with an
+ISA disk controller then you will most certainly have problems with the upper
+16MB of memory due to the ISA 24 bit DMA limitation (which ISA cards in EISA
+systems will also exhibit).  If you have a local bus disk controller, and it's
+NOT a Buslogic Bt445S with a revision less than `D' (BIOS 3.36 or earlier),
+then you should be OK.  Never fear, however, as all is not lost.
+FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer support that
+make all of the above scenarios work with a full 32MB of memory or more.  You
+are therefore advised to simply pull 16MB of memory out, install, and then see
+about upgrading to FreeBSD-current or FreeBSD 1.2 (when it comes out) so that
+you can put it back. 
+
+
+
+2.0 Hardware compatibility
+--------------------------
+
+2.0.1:	What kind of hard drives does FreeBSD run on?
+
+FreeBSD supports MFM, RLL, ESDI, IDE and SCSI hard drives.
+
+
+2.0.2:	What SCSI controllers are supported?
+
+FreeBSD supports the following SCSI controllers:
+
+Adaptec              AH-1542 Series (ISA>
+                     AH-1742 Series <EISA>
+Buslogic             BT-445 Series <VLB> (*)
+                     BT-545 Series <ISA>
+                     BT-742 Series <EISA>
+UltraStor            UH-14f Series <ISA>
+                     UH-34f Series <EISA>
+
+There is supposed to be a UltraStor 24f driver floating around, but we're
+not sure where (could someone please point us at it?).  Note that we do
+NOT support `Future Domain' or `IN2000' SCSI controllers, typically
+the little $50 specials you get with some CDROM drives.  You will have to
+buy a more mainstream (and capable) SCSI controller.
+
+(*)  See section 1.0.5.
+
+
+2.0.3:	What CD-ROM drives are supported by FreeBSD?
+
+Any SCSI drive connected to a supported controller.
+Mitsumi LU002(8bit), LU005(16bit) and FX001D(16bit 2x Speed).
+
+FreeBSD does NOT support drives connected to a Sound Blaster or non-SCSI
+SONY or Panasonic drives.  A general rule of thumb when selecting a CDROM
+drive for FreeBSD use is to buy a very standard SCSI model; they cost more,
+but deliver very solid performance in return.  Do not be fooled by very cheap
+Mitsumi solutions that, in turn, deliver VERY LOW performance!  As always,
+you get what you pay for.
+
+
+2.0.4:	What multi-port serial cards are supported by FreeBSD?
+
+AST/4 and BOCA 4/8 port cards.  Some unnamed clone cards have also been
+known to work, especially those that claim to be AST compatible.  Check
+the man page for `sio' to get more information on configuring such cards.
+
+
+2.0.5:	Does FreeBSD support the AHA-2742 SCSI adapter from Adaptec?
+
+No, FreeBSD does not.  This is due to Adaptec's unwillingness to supply
+programing information under other than non-disclosure.  This is unfortunate.
+
+ 
+2.0.6:	I have a XXXX bus mouse.  Is it supported and if so, how do I set
+	it up for XFree86?
+
+FreeBSD supports the Logitech, ATI Inport and PS/2 bus mice.  You need to add
+the following line to the kernel config file and recompile for the Logitech
+and ATI mice:  
+
+	device        mse0    at isa? port 0x23c tty irq6 vector mseintr
+
+
+2.0.7:	I have a PS/2 mouse (`keyboard' mouse) [Alternatively:  I have a
+	laptop with a trackball mouse].  How do I use it?
+
+For the PS/2 mouse you need to look in /usr/src/share/FAQ/programs/psm.tar.z,
+which is John Solhed's port of the Linux PS/2 mouse driver. 
+
+Follow the directions in the package.  You will also need to change your
+Xconfig file to point to the mouse.
+
+
+2.0.8:	What types of tape drives are supported under FreeBSD?
+
+FreeBSD supports SCSI, QIC-02 and QIC-40/80 (Floppy based) tape drives.
+This includes Exabyte and DAT drives.
+
+
+2.0.9:	What sound cards are supported by FreeBSD?
+
+FreeBSD supports the SoundBlaster, SoundBlaster Pro, Pro Audio Spectrum 16,
+AdLib and Gravis UltraSound sound cards. There is also limited support
+for MPU-401 and compatible midi cards.  The SoundBlaster 16 and 
+SoundBlaster 16 ASP cards are not yet supported.
+NOTE:  This is only for sound!  This driver does not support CD-ROMs, SCSI
+or joysticks on these cards.
+
+
+2.0.10:	What network cards does FreeBSD support?
+
+There is support for the following cards:
+NE2000 and 1000
+WD/SMC 8003,8013 and Elite Ultra (8216)
+3Com 3c503 
+And clones of the above
+AT&T EN100/StarLAN 10
+Isolan AT 4141-0
+Isolink 4110
+3com 3c509 (BETA)
+
+
+
+3.0 Commercial Applications
+---------------------------
+
+Note:  This section is still very sparse, though we're hoping, of course,
+that companies will add to it! :)  The FreeBSD group has no ties with any
+of the companies listed here but simply lists them as a public service
+(and feels that commercial interest in FreeBSD can have very positive
+effects on FreeBSD's long-term viability).  We encourage commercial software
+vendors to send their entries here for inclusion.
+
+
+3.0.1	Where can I get Motif for FreeBSD?
+
+Sequoia Communications provides commercial quality Motif 1.2.3
+development kits for FreeBSD 1.1 (with full shared library support).
+Due to licensing restrictions from the OSF, and the fact that Sequoia
+needs to make a living, these are NOT FREE, but nonetheless quite reasonably
+priced in comparison to many other commercial Motif distributions.  Send
+electronic mail to `info@seq.com' for further information.
+>>>> please make sure this is correct! 
+
+3.0.8	What about other commercial quality development systems for FreeBSD?
+
+ParcPlace Systems, Inc. provides their excellent "Object Interface & Object
+Builder" GUI development environment free of charge to FreeBSD users.  Using
+OI, you can develop Motif or OpenLook compliant applications in C++ with all
+the benefits of a true GUI object hierarchy.  This will be announced and
+made available as part of the FreeBSD distribution very soon.
+
+
+
+4.0 User Applications
+---------------------
+
+4.0.1:	I want to run X, how do I go about it?
+
+First, get the XFree86 distribution of X11R5 from XFree86.cdrom.com.  The
+version you want for FreeBSD 1.1 and later is XFree86 2.1.  Follow the
+instructions for installation carefully. You may then wish to read the
+documentation for the ConfigXF86 tool, which assists you in configuring
+XFree86 for your particular graphics card/mouse/etc.
+
+
+4.0.1:	I've been trying to run ghostscript on a 386 with no math-co but
+        keep getting errors.  Whats up?
+
+The problem here is due to the current FreeBSD math-emulator.  You need to
+pick up the package in /usr/src/share/FAQ/programs/math-emulator.tar.gz
+
+Run the install program, recompile your kernel and install the new kernel.
+This is a port of an older Linux math-emulator.  At some point, FreeBSD's
+default math emulator will be good enough to enable you to forget about
+having to do this.
+
+
+4.0.2:	If I want something like seyon, term, kermit, emacs or any one of
+	hundreds of popular freeware utilities, is there a good place to
+	search through first?
+
+Yes, the FreeBSD `ports collection' was put together for just that purpose.
+It contains some of the most often requested languages, editors, mail and
+news reading programs, network software and many many megabytes of other
+types of useful goodies.  CDROM people will probably have the ports collection
+already in /usr/ports, other folks can get at the latest snapshot of the
+entire collection in:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/ports
+
+Note that freebsd's ftp server permits getting entire directories as one
+(optionally gzip'd or compressed) tar file.  Read the ftp welcome banner
+carefully for details.
+
+
+4.0.3:	I want all this neat software, but I haven't got the space or
+	CPU power to compile it all myself.  Is there any way of getting
+	binaries?
+
+Yes.  FreeBSD supports the concept of a `package', which is
+essentially a gzip'd binary distribution with a little extra
+intelligence imbeded in it for doing any custom installation work
+required.  Packages can also be installed or deinstalled again easily
+without having to know the gory details.  CDROM people will have a
+packages/ directory on their CD, others can get the currently
+available packages from:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/packages-1.1
+
+Note that all ports may not be available as packages, and that new
+packages are constantly being added.  It is always a good idea to
+check periodically to see which packages are available.  A README
+file in the packages directory provides more details on the care
+and feeding of the package software, so no explicit details will
+be given here.
+
+
+5.0 Misc Questions
+------------------
+
+5.0.1:	I've heard of something called FreeBSD-current.  How do I run it, and
+	where can I get more information?
+
+Read the file /usr/src/share/FAQ/OTHER-FAQS/FreeBSD.current.policy, it
+will tell you all you need to know.
+
+
+5.0.2:	What is this thing called `sup', and how do I use it?
+
+SUP stands for Software Update Protocol, and was developed by CMU for
+keeping their development trees in sync.  We use it to keep remote sites
+in sync with our central development sources.
+
+To use it, you need to have direct internet connectivity (not just
+mail or news).  First, pick up the sup_bin.tgz package from:
+
+	freebsd.cdrom.com:/pub/FreeBSD/packages
+
+Second, read the file /usr/src/share/FAQ/OTHER-FAQS/FreeBSD.sup.faq.
+
+This file describes how to setup sup on your machine.  You may also
+want to look at `/usr/src/share/FAQ/other/FreeBSD.*.supfile',
+which are a set of supfiles for supping from freefall.cdrom.com
+
+
+
+6.0 Kernel Configuration
+
+6.0.1:	When I compile a kernel with multi-port serial code, it tells me
+	that only the first port is probed and the rest skiped due to 
+	interupt conflicts.  How do I fix this?
+
+The problem here is that FreeBSD has code built-in to keep the kernel from
+getting trashed due to hardware or software conflicts.  The way to fix this
+is to leave out the irq settings on other ports besides the first.  Here is
+a example:
+
+#
+# Multiport high-speed serial line - 16550 UARTS
+#
+device    sio2    at isa? port 0x2a0 tty irq 5 flags 0x501 vector siointr
+device    sio3    at isa? port 0x2a8 tty flags 0x501 vector siointr
+device    sio4    at isa? port 0x2b0 tty flags 0x501 vector siointr
+device    sio5    at isa? port 0x2b8 tty flags 0x501 vector siointr
+
+You may also want to look at the multi-port serial FAQ in
+/usr/src/share/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
+
+
+6.0.2:	FreeBSD is supposed to come with support for QIC-40/80 drives but
+	when I look, I can't find it.
+
+You need to uncomment the following line in the generic config file (or add
+it to your config file) and recompile.
+
+controller      fdc0    at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk            fd0     at fdc0 drive 0
+disk            fd1     at fdc0 drive 1
+#tape           ft0     at fdc0 drive 2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+6.0.3:	Does FreeBSD support SYSV IPC, shared memory, etc?
+
+Yes, FreeBSD supports SYSV IPC.  This includes shared memory, messages and
+semaphores.  You need to add the following lines to your kernel config to
+enable them.
+
+options         SYSVSHM
+options         "SHMMAXPGS=64"          # 256Kb of sharable memory
+options         SYSVSEM			# enable for semaphores
+options         SYSVMSG			# enable for messaging
+
+Recompile and install.
+
+
+
+7.0 System Administration
+-------------------------
+
+7.0.1:	How do I add a user easily?  I read the man page and am more confused
+        than ever!  [Alternatively:  I didn't read the man page, I never read
+	man pages! :-) ]
+
+Look at Gary Clark's perl package "AddIt", which may be found in
+/usr/src/share/FAQ/programs/AddIt-0.1B.tar.gz 
+
+
+7.0.2: I'm trying to use my printer and keep running into problems.  I tried
+        looking at /etc/printcap, but it's close to useless.  Any ideas?
+
+Yes, you can pick up Andreas Klemm's apsfilter package from:
+
+	ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
+
+This is a compleate package for printing text, PS and DVI files.  It
+requires ghostscript and dvips.  For a smaller package where you just
+want to print simple text files and postscript or just plain want a
+simpler package, look in the file: /usr/src/share/FAQ/programs/printcap01.gz
+
+This includes a printcap for a epson printer and a filter for postscript.
+
+NOTE: We're looking for printcap entrys for all printers.  If you have
+one, or a filter for one, please send it or mail us a pointer to
+FreeBSD-FAQ@freefall.cdrom.com.  Thanks!
+
+
+
+8.0 Networking
+--------------
+
+8.0.1:	Where can I get information booting FreeBSD `diskless', that is
+	booting and running a FreeBSD box from a server rather than having
+	a local disk?
+
+Look in the directory /src/sys/i386/netboot for the file netboot.doc.
+
+
+8.0.2:	I've heard that you can use a FreeBSD box as a dedicated network
+	router - is there any easy support for this?
+
+After a fashion, yes.  There is a standard `router floppy' that you can
+boot on a FreeBSD machine to configure it as a network router.  [>>>> put
+pointer to router floppy image here ]
+
+
+8.0.3:	Does FreeBSD support SLIP and PPP?
+
+Yes.  See the man pages for slattach and/or pppd if you're using FreeBSD
+to connect to another site.  If you're using FreeBSD as a server for other
+machines, look at the man page for `sliplogin'.
+
+
+
+9.0 Communications
+------------------
+
+9.0.1: When I do a set line in kermit it locks up, whats the problem?
+
+The problem here is that FreeBSD thinks it's talking to a incoming
+modem connection, and is waiting for carrier to come up on it before
+completing the open.  To disable modem control, do an:
+
+	stty -f /dev/ttyXX clocal
+
+(Where `ttyXX' is the tty port you're using).  If you use a given port
+only for outgoing connections, you may wish to put this command in
+your /etc/rc.local to avoid having to do it every time you reboot
+your system.
+
+
+NOTE:  Anyone wishing to submit a FAQ entry on how to get tip and cu working
+       would have it much appreciated!  We all use kermit over here! :-)
+
+
+-----------------------------------------------------------------------------
+If you see a problem with this FAQ, or wish to submit an entry, please mail
+us at FreeBSD-FAQ@freefall.cdrom.com.  We appreciate your feedback, and cannot
+make this a better FAQ without your help!
+
+
+					FreeBSD Core Team
+
+-----------------------------------------------------------------------------
+
+ACKNOWLEDGEMENTS:
+
+Gary Clark II		- Our head FreeBSD FAQ maintanance man
+Jordan Hubbard		- Janitorial services (I don't do windows)
+Robert Oliver, Jr.	- Invaluable feedback and contributions
+The FreeBSD Team	- Kvetching, moaning, submitting data
+
+And to any others we've forgotten, apologies and heartfelt thanks!
