@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.11 (Berkeley) %G%
+ *	@(#)if_il.c	6.12 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -28,9 +28,6 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
-#ifdef	BBNNET
-#define	INET
-#endif
 #ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -82,6 +79,7 @@ struct	il_softc {
 #define	ILF_RCVPENDING	0x2		/* start rcv in ilcint */
 #define	ILF_STATPENDING	0x4		/* stat cmd pending */
 #define	ILF_RUNNING	0x8		/* board is running */
+#define	ILF_SETADDR	0x10		/* physical address is changed */
 	short	is_lastcmd;		/* can't read csr, so must save it */
 	short	is_scaninterval;	/* interval of stat collection */
 #define	ILWATCHINTERVAL	60		/* once every 60 seconds */
@@ -133,33 +131,23 @@ ilattach(ui)
 	 * buffer onto the Unibus.
 	 */
 	addr->il_csr = ILC_RESET;
-	while ((addr->il_csr&IL_CDONE) == 0)
-		;
-	if (addr->il_csr&IL_STATUS)
-		printf("il%d: reset failed, csr=%b\n", ui->ui_unit,
-			addr->il_csr, IL_BITS);
+	(void)ilwait(ui, "reset");
 	
 	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
 	    sizeof (struct il_stats), 0);
 	addr->il_bar = is->is_ubaddr & 0xffff;
 	addr->il_bcr = sizeof (struct il_stats);
 	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
-	while ((addr->il_csr&IL_CDONE) == 0)
-		;
-	if (addr->il_csr&IL_STATUS)
-		printf("il%d: status failed, csr=%b\n", ui->ui_unit,
-			addr->il_csr, IL_BITS);
+	(void)ilwait(ui, "status");
 	ubarelse(ui->ui_ubanum, &is->is_ubaddr);
 #ifdef notdef
-	printf("il%d: addr=%x:%x:%x:%x:%x:%x module=%s firmware=%s\n",
-		ui->ui_unit,
-		is->is_stats.ils_addr[0]&0xff, is->is_stats.ils_addr[1]&0xff,
-		is->is_stats.ils_addr[2]&0xff, is->is_stats.ils_addr[3]&0xff,
-		is->is_stats.ils_addr[4]&0xff, is->is_stats.ils_addr[5]&0xff,
+	printf("il%d: module=%s firmware=%s\n", ui->ui_unit,
 		is->is_stats.ils_module, is->is_stats.ils_firmware);
 #endif
  	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
  	    sizeof (is->is_addr));
+	printf("il%d: hardware address %s\n", ui->ui_unit,
+		ether_sprintf(is->is_addr));
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
 	ifp->if_ioctl = ilioctl;
@@ -169,6 +157,22 @@ ilattach(ui)
 	is->is_ifuba.ifu_flags |= UBA_NEEDBDP;
 #endif
 	if_attach(ifp);
+}
+
+ilwait(ui, op)
+	struct uba_device *ui;
+	char *op;
+{
+	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
+
+	while ((addr->il_csr&IL_CDONE) == 0)
+		;
+	if (addr->il_csr&IL_STATUS) {
+		printf("il%d: %s failed, csr=%b\n", ui->ui_unit, op,
+			addr->il_csr, IL_BITS);
+		return (-1);
+	}
+	return (0);
 }
 
 /*
@@ -231,11 +235,7 @@ ilinit(unit)
 	 */
 	s = splimp();
 	addr->il_csr = ILC_RESET;
-	while ((addr->il_csr & IL_CDONE) == 0)
-		;
- 	if (addr->il_csr & IL_STATUS) {
- 		printf("il%d failed hardware diag 0x%X\n", unit,
- 		   addr->il_csr & 0xffff);
+	if (ilwait(ui, "hardware diag")) {
  		is->is_if.if_flags &= ~IFF_UP;
  		splx(s);
  		return;
@@ -262,6 +262,8 @@ ilinit(unit)
 	is->is_flags = ILF_OACTIVE;
 	is->is_if.if_flags |= IFF_RUNNING;
 	is->is_flags |= ILF_RUNNING;
+	if (is->is_flags & ILF_SETADDR)
+		(void) il_setaddr(is->is_addr, is->is_if.if_unit);
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
@@ -516,6 +518,7 @@ iloutput(ifp, m0, dst)
 	register struct mbuf *m = m0;
 	register struct ether_header *il;
 	register int off;
+	int usetrailers;
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
@@ -526,12 +529,10 @@ iloutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
- 		if (!arpresolve(&is->is_ac, m, &idst, edst))
+ 		if (!arpresolve(&is->is_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* need per host negotiation */
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
-		if (off > 0 && (off & 0x1ff) == 0 &&
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
@@ -691,10 +692,18 @@ ilioctl(ifp, cmd, data)
 #endif
 #ifdef NS
 		case AF_NS:
-			IA_SNS(ifa)->sns_addr.x_host =
-				* (union ns_host *) 
-				     (is->is_addr);
+		    {
+			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+			
+			if (ns_nullhost(*ina)) {
+				ina->x_host = * (union ns_host *) 
+				     (il_softc[ifp->if_unit].is_addr);
+			} else {
+			    return
+				il_setaddr(ina->x_host.c_host, ifp->if_unit);
+			}
 			break;
+		    }
 #endif
 		}
 		break;
@@ -714,6 +723,46 @@ ilioctl(ifp, cmd, data)
 		error = EINVAL;
 	}
 	splx(s);
+	return (error);
+}
+
+/*
+ * set ethernet address for unit
+ */
+il_setaddr(physaddr, unit)
+u_char *physaddr;
+int unit;
+{
+	register struct il_softc *is = &il_softc[unit];
+	register struct uba_device *ui = ilinfo[unit];
+	register struct ildevice *addr= (struct ildevice *)ui->ui_addr;
+	int error = 0, ubaddr;
+	
+	if (! (is->is_flags & ILF_RUNNING))
+		return;
+		
+	bcopy((caddr_t)physaddr, (caddr_t)&is->is_stats, sizeof is->is_addr);
+	addr->il_bar = is->is_ubaddr & 0xffff;
+	addr->il_bcr = sizeof is->is_addr;
+	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_LDPA;
+	if (ilwait(ui, "setaddr"))
+		error = EADDRNOTAVAIL;
+	addr->il_bar = is->is_ubaddr & 0xffff;
+	addr->il_bcr = sizeof (struct il_stats);
+	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
+	if (ilwait(ui, "status"))
+		error = ESRCH;
+	if (is->is_flags & ILF_STATPENDING)
+		is->is_flags &= ~ILF_STATPENDING;
+	if (error == 0 &&
+	    bcmp((caddr_t)is->is_stats.ils_addr, (caddr_t)physaddr,
+						sizeof (is->is_addr)) == 0) {
+		is->is_flags |= ILF_SETADDR;
+		bcopy(physaddr, is->is_addr, sizeof is->is_addr);
+	} else {
+		error = EBUSY;
+		printf("il%d: setaddr didn't work\n", ui->ui_unit);
+	}
 	return (error);
 }
 #endif
