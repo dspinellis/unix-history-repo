@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.16 (Berkeley) %G%
+ *	@(#)mount.h	7.17 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -212,6 +212,7 @@ struct nfs_args {
 #define	NFSMNT_SCKLOCK	0x0100	/* Lock socket against others */
 #define	NFSMNT_WANTSCK	0x0200	/* Want a socket lock */
 #define	NFSMNT_SPONGY	0x0400	/* spongy mount (soft for stat and lookup) */
+#define	NFSMNT_COMPRESS	0x0800	/* Compress nfs rpc xdr */
 #define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
 #endif NFS
 
