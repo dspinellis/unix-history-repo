@@ -1,9 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)chgrp.c	4.7 83/11/23";
+static	char *sccsid = "@(#)chgrp.c	4.8 85/03/20";
 #endif
 
 /*
- * chgrp gid file ...
+ * chgrp -fR gid file ...
  */
 
 #include <stdio.h>
@@ -12,13 +12,14 @@ static	char *sccsid = "@(#)chgrp.c	4.7 83/11/23";
 #include <sys/stat.h>
 #include <grp.h>
 #include <pwd.h>
+#include <sys/dir.h>
 
 struct	group *gr, *getgrnam(), *getgrgid();
 struct	passwd *getpwuid(), *pwd;
 struct	stat stbuf;
 int	gid, uid;
 int	status;
-int	fflag;
+int	fflag, rflag;
 /* VARARGS */
 int	fprintf();
 
@@ -27,36 +28,45 @@ main(argc, argv)
 	char *argv[];
 {
 	register c, i;
+	register char *flags;
 
 	argc--, argv++;
-	if (argc > 0 && strcmp(argv[0], "-f") == 0) {
-		fflag++;
+	if (*argv[0] == '-') {
+		for (flags = argv[0]; *flags; ++flags)
+			switch (*flags) {
+			  case '-':			break;
+			  case 'f': 	fflag++;	break;
+			  case 'R':	rflag++;	break;
+			  default:
+				printf("chgrp: unknown option: %s\n", *flags);
+				exit(255);
+			}
 		argv++, argc--;
 	}
 	if (argc < 2) {
-		printf("usage: chgrp [-f] gid file ...\n");
-		exit(2);
+		fprintf(stderr, "usage: chgrp [-fR] gid file ...\n");
+		exit(255);
 	}
 	uid = getuid();
 	if (isnumber(argv[0])) {
 		gid = atoi(argv[0]);
 		gr = getgrgid(gid);
 		if (uid && gr == NULL) {
-			printf("%s: unknown group\n", argv[0]);
-			exit(2);
+			fprintf(stderr, "%s: unknown group\n", argv[0]);
+			exit(255);
 		}
 	} else {
 		gr = getgrnam(argv[0]);
 		if (gr == NULL) {
-			printf("%s: unknown group\n", argv[0]);
-			exit(2);
+			fprintf(stderr, "%s: unknown group\n", argv[0]);
+			exit(255);
 		}
 		gid = gr->gr_gid;
 	}
 	pwd = getpwuid(uid);
 	if (pwd == NULL) {
 		fprintf(stderr, "Who are you?\n");
-		exit(2);
+		exit(255);
 	}
 	if (uid && pwd->pw_gid != gid) {
 		for (i=0; gr->gr_mem[i]; i++)
@@ -65,8 +75,8 @@ main(argc, argv)
 		if (fflag)
 			exit(0);
 		fprintf(stderr, "You are not a member of the %s group.\n",
-		    argv[0]);
-		exit(2);
+		    		argv[0]);
+		exit(255);
 	}
 ok:
 	for (c = 1; c < argc; c++) {
@@ -77,12 +87,14 @@ ok:
 		if (uid && uid != stbuf.st_uid) {
 			if (fflag)
 				continue;
-			fprintf(stderr, "You are not the owner of %s\n",
-			    argv[c]);
-			status = 1;
+			fprintf(stderr, "You are not the owner of %s\n"
+				      , argv[c]);
+			++status;
 			continue;
 		}
-		if (chown(argv[c], stbuf.st_uid, gid) && !fflag)
+		if (rflag && stbuf.st_mode & S_IFDIR)
+			status += chownr(argv[c], stbuf.st_uid, gid);
+		else if (chown(argv[c], stbuf.st_uid, gid) && !fflag)
 			perror(argv[c]);
 	}
 	exit(status);
@@ -97,4 +109,47 @@ isnumber(s)
 		if (!isdigit(c))
 			return (0);
 	return (1);
+}
+
+chownr(dir, uid, gid)
+	char	*dir;
+{
+	register DIR		*dirp;
+	register struct direct	*dp;
+	register struct stat	st;
+	char			savedir[1024];
+
+	if (getwd(savedir) == 0) {
+		fprintf(stderr, "chgrp: %s\n", savedir);
+		exit(255);
+	}
+	if (chown(dir, uid, gid) < 0 && !fflag) {
+		perror(dir);
+		return(1);
+	}
+
+	chdir(dir);
+	if ((dirp = opendir(".")) == NULL) {
+		perror(dir);
+		exit(status);
+	}
+	dp = readdir(dirp);
+	dp = readdir(dirp); /* read "." and ".." */
+
+	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
+		if (lstat(dp->d_name, &st) < 0) {
+			fprintf(stderr, "chgrp: can't access %s\n", dp->d_name);
+			return(1);
+		}
+		if (st.st_mode & S_IFDIR)
+			chownr(dp->d_name, st.st_uid, gid);
+		else
+			if (chown(dp->d_name, st.st_uid, gid) < 0 && !fflag) {
+				perror(dp->d_name);
+				return(1);
+			}
+	}
+	closedir(dirp);
+	chdir(savedir);
+	return(0);
 }
