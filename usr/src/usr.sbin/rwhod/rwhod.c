@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.20 (Berkeley) 83/10/11";
+static char sccsid[] = "@(#)rwhod.c	4.21 (Berkeley) 83/11/14";
 #endif
 
 #include <sys/types.h>
@@ -19,6 +19,12 @@ static char sccsid[] = "@(#)rwhod.c	4.20 (Berkeley) 83/10/11";
 #include <ctype.h>
 #include <netdb.h>
 #include "rwhod.h"
+
+/*
+ * Alarm interval. Don't forget to change the down time check in ruptime
+ * if this is changed.
+ */
+#define AL_INTERVAL (5 * 60)
 
 struct	sockaddr_in sin = { AF_INET };
 
@@ -274,7 +280,7 @@ onalrm()
 		(void) sendto(s, (char *)&mywd, cc, 0,
 			np->n_addr, np->n_addrlen);
 done:
-	(void) alarm(60);
+	(void) alarm(AL_INTERVAL);
 }
 
 getkmem()
