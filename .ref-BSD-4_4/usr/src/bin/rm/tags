@@ -1,7 +1,0 @@
-ISDOT	rm.c	/^#define ISDOT(a)	((a)[0] == '.' && (!(a)[1] || (a)/
-Mrm	rm.c	/^main(argc, argv)$/
-check	rm.c	/^check(path, name, sp)$/
-checkdot	rm.c	/^checkdot(argv)$/
-rmfile	rm.c	/^rmfile(argv)$/
-rmtree	rm.c	/^rmtree(argv)$/
-usage	rm.c	/^usage()$/

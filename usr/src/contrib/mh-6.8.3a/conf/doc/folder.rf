@@ -1,0 +1,210 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: folder.rf,v 1.15 1993/08/27 18:13:47 jromine Exp $
+.SC FOLDER 1
+.NA
+folder, folders \- set/list current folder/message
+.SY
+folder
+\%[+folder] \%[msg]
+\%[\-all]
+\%[\-create] \%[\-nocreate]
+\%[\-print]
+.\" \%[\-noprint]
+\%[\-fast] \%[\-nofast]
+\%[\-header] \%[\-noheader]
+\%[\-recurse] \%[\-norecurse]
+\%[\-total] \%[\-nototal]
+\%[\-list] \%[\-nolist]
+\%[\-push] \%[\-pop]
+\%[\-pack] \%[\-nopack]
+\%[\-verbose] \%[\-noverbose]
+\%[\-help]
+
+.ti .5i
+folders
+.DE
+Since the \fIMH\fR environment is the shell, it is easy to lose
+track of the current folder from day to day.
+When \fIfolder\fR is given the `\-print' switch (the default),
+\fIfolder\fR will
+list the current folder, the number of messages in it, the
+range of the messages (low\-high), and the current message within
+the folder, and will flag extra files if they exist.
+An example of this summary is:
+
+.nf
+.if t .in +.5i
+.ta \w'/rnd/phyl/Mail/EP 'u +\w'has ddd messages 'u +\w'(ddd\-ddd); 'u
+inbox+	has \016 messages	(\0\03\-\022);	cur=\0\05.
+.re
+.if t .in -.5i
+.fi
+
+If a `+folder' and/or `msg' are specified, they will
+become the current folder and/or message.
+By comparison,
+when a `+folder' argument is given,
+this corresponds to a \*(lqcd\*(rq operation in the \fIshell\fR;
+when no `+folder' argument is given,
+this corresponds roughly to a \*(lqpwd\*(rq operation in the \fIshell\fR.
+
+If the specified (or default) folder doesn't exist,
+the default action is to query the user
+as to whether the folder should be created;
+when standard input is not a tty, the answer to 
+the query is assumed to be \*(lqyes\*(rq.
+
+Specifying `\-create' will cause \fIfolder\fP to create
+new folders without any query.
+(This is the easy way to create an empty folder for use later.)
+Specifying `\-nocreate' will 
+cause \fIfolder\fP to exit without creating a non-existant folder.
+.\"
+.\" note - this doesn't work at present
+.\" If `\-noprint' is specified, 
+.\" a `+folder' and/or `msg' may still be specified
+.\" to set the current folder and/or message,
+.\" but the folder summary will not be printed.
+.Uh "Multiple Folders"
+Specifying `\-all'
+will produce a summary line for each top-level
+folder in the user's MH directory, sorted alphabetically.
+(If \fIfolder\fR
+is invoked by a name ending with \*(lqs\*(rq (e.g., \fIfolders\fR\0),
+`\-all' is assumed).
+Specifying `\-recurse' with `\-all' will also 
+produce a line for all sub-folders.
+These folders are all preceded by the read\-only folders,
+which occur as \*(lqatr\-cur\-\*(rq entries in the user's \fIMH\fR context.
+For example,
+
+.ne 9
+.nf
+.if t .in +.5i
+.ta \w'/rnd/phyl/Mail/EP 'u +\w'has ddd messages 'u +\w'(ddd\-ddd); 'u
+Folder	\0\0\0# of messages	(\0range\0)	cur msg (other files)
+/fsd/rs/m/tacc	has \035 messages	(\0\01\-\035);	cur=\023.
+/rnd/phyl/Mail/EP	has \082 messages	(\0\01\-108);	cur=\082.
+ff	has \0no messages.
+inbox+	has \016 messages	(\0\03\-\022);	cur=\0\05.
+mh	has \076 messages	(\0\01\-\076);	cur=\070.
+notes	has \0\02 messages	(\0\01\-\0\02);	cur=\0\01.
+ucom	has 124 messages	(\0\01\-124);	cur=\0\06; (others).
+.ta \w'/rnd/phyl/Mail/EP has 'u
+\0\0\0\0\0\0\0\0\0\0TOTAL=	339 messages in 7 folders
+.re
+.if t .in -.5i
+.fi
+
+The \*(lq+\*(rq after inbox indicates that it is the current folder.
+The \*(lq(others)\*(rq indicates that the folder `ucom' has files
+which aren't messages.
+These files may either be sub\-folders,
+or files that don't belong under the MH file naming scheme.
+
+The header is output if either a `\-all' or a `\-header' switch
+is specified; it is suppressed by `\-noheader'.
+A `\-total' switch will produce only the
+summary line.
+
+If `\-fast' is given, only the folder name (or names in the
+case of `\-all') will be listed.
+(This is faster because the
+folders need not be read.)
+
+If a `+folder' 
+is given along with the `\-all' switch,
+\fIfolder\fR will,
+in addition to setting the current folder,
+list the top\-level folders for the current folder (with `\-norecurse')
+or list all sub-folders under the current folder recursively (with `\-recurse').
+In this case, if a `msg' is also supplied,
+it will become the current message of `+folder'.
+
+The `\-recurse' switch lists each folder recursively, so
+use of this option effectively defeats the speed enhancement of the `\-fast'
+option,
+since each folder must be searched for subfolders.
+Nevertheless, the combination of these options is useful.
+
+.Uh "Compacting a Folder"
+The `\-pack' switch will compress the message names in the
+designated folders, removing holes in message numbering.
+The `\-verbose' switch directs \fIfolder\fR to tell the user the general
+actions that it is taking to compress the folder.
+
+.Uh "The Folder Stack"
+The `\-push' switch directs \fIfolder\fR to push the current folder onto the
+\fIfolder\-stack\fR,
+and make the `+folder' argument the current folder.
+If `+folder' is not given,
+the current folder and the top of the \fIfolder\-stack\fR are exchanged.
+This corresponds to the \*(lqpushd\*(rq operation in the \fICShell\fR.
+
+The `\-pop' switch directs \fIfolder\fR to discard the top of the
+\fIfolder\-stack\fR,
+after setting the current folder to that value.
+No `+folder' argument is allowed.
+This corresponds to the \*(lqpopd\*(rq operation in the \fICShell\fR.
+The `\-push' switch and the `\-pop' switch are mutually exclusive:
+the last occurrence of either one overrides any previous occurrence of the
+other.  Both of these switches also set `\-list' by default.
+
+The `\-list' switch directs \fIfolder\fR to list the contents of the
+\fIfolder\-stack\fR.
+No `+folder' argument is allowed.
+After a successful `\-push' or `\-pop', the `\-list' action is taken,
+unless a `\-nolist' switch follows them on the command line.
+This corresponds to the \*(lqdirs\*(rq operation in the \fICShell\fR.
+The `\-push', `\-pop', and `\-list' switches turn
+off `\-print'.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current\-Folder:~^To find the default current folder
+.Ps
+^Folder\-Protect:~^To set mode when creating a new folder
+.Ps
+^Folder\-Stack:~^To determine the folder stack
+.\" .Ps
+.\" ^lsproc:~^Program to list the contents of a folder
+.Sa
+refile(1), mhpath(1)
+.De
+`+folder' defaults to the current folder
+.Ds
+`msg' defaults to none
+.Ds
+`\-nofast'
+.Ds
+`\-noheader'
+.Ds
+`\-nototal'
+.Ds
+`\-nopack'
+.Ds
+`\-norecurse'
+.Ds
+`\-noverbose'
+.Ds
+`\-print' is the default if no `\-list', `\-push', or `\-pop' is specified
+.Ds
+`\-list' is the default if `\-push', or `\-pop' is specified
+.Co
+If `+folder' and/or `msg' are given, they will become the
+current folder and/or message.
+.Hi
+In previous versions of \fIMH\fR,
+the `\-fast' switch prevented context changes from
+occurring for the current folder.
+This is no longer the case: if `+folder' is given,
+then \fIfolder\fR will always change the current folder to that.
+.Bu
+`\-all' forces `\-header' and `\-total'.
+.sp
+There is no way to restore the default behavior 
+(to ask the user whether to create a non-existant folder)
+after `\-create' or `\-nocreate' is given.
+.En

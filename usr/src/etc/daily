@@ -1,0 +1,164 @@
+#!/bin/sh -
+#
+#	@(#)daily	8.2 (Berkeley) 1/25/94
+#
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
+host=`hostname`
+echo "Subject: $host daily run output"
+bak=/var/backups
+
+echo ""
+echo "Removing scratch and junk files:"
+if [ -d /tmp ]; then
+	cd /tmp && {
+	find . -type f -atime +3 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
+fi
+
+if [ -d /var/tmp -a "X$CLEANVARTMP" = X1 ]; then
+	cd /var/tmp && {
+	find . ! -name . -atime +7 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
+fi
+
+if [ -d /scratch ]; then
+	cd /scratch && {
+	find . ! -name . -atime +1 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
+fi
+
+if [ -d /var/preserve ]; then
+	cd /var/preserve && {
+	find . ! -name . -mtime +7 -exec rm -f -- {} \; ; }
+fi
+
+if [ -d /var/rwho ] ; then
+	cd /var/rwho && {
+	find . ! -name . -mtime +7 -exec rm -f -- {} \; ; }
+fi
+
+cd /tmp
+TMP=daily.$$
+find / \( ! -fstype local -o -fstype rdonly \) -a -prune -o \
+	-name 'lost+found' -a -prune -o \
+	-name '*.core' -a -print -o \
+	\( -name '[#,]*' -o -name '.#*' -o -name a.out \
+	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
+		-a -atime +3 -a -exec rm -f -- {} \; -a -print > $TMP
+echo ""
+echo "Possible core dumps:"
+egrep '\.core' $TMP
+
+echo ""
+echo "Deleted files:"
+egrep -v '\.core' $TMP
+
+rm -f $TMP
+	
+msgs -c
+if [ -f /etc/news.expire ]; then
+	/etc/news.expire
+fi
+
+echo ""
+echo "Purging accounting records:"
+mv /var/account/acct.2 /var/account/acct.3
+mv /var/account/acct.1 /var/account/acct.2
+mv /var/account/acct.0 /var/account/acct.1
+cp /var/account/acct /var/account/acct.0
+sa -s > /dev/null
+
+# If ROOTBACKUP is set to 1 in the environment, and
+# if filesystem named /altroot is type ufs, on /dev/* and mounted "xx",
+# use it as a backup root filesystem to be updated daily.
+[ "X$ROOTBACKUP" = X1 ] && {
+	rootdev=`awk '$2 == "/" && $1 ~ /^\/dev\// && $3 == "ufs" && \
+	    $4 == "rw" \
+		 { print substr($1, 6) }' < /etc/fstab`
+	rootbak=`awk '$2 == "/altroot" && $1 ~ /^\/dev\// && $3 == "ufs" && \
+	    $4 == "xx" \
+		{ print substr($1, 6) }' < /etc/fstab`
+	[ X$rootdev != X -a X$rootbak != X ] && {
+		sync
+		echo ""
+		echo "Backing up root filesystem:"
+		echo "copying /dev/r$rootdev to /dev/r$rootbak"
+		dd if=/dev/r$rootdev of=/dev/r$rootbak bs=16b seek=1 skip=1 \
+			conv=noerror,sync
+		fsck -y /dev/r$rootbak
+	}
+}
+
+echo ""
+echo "Running calendar:"
+calendar -a
+
+echo ""
+echo "Rotating mail log:"
+cd /var/log
+rm -f maillog.7
+if [ -f maillog.6 ]; then mv -f maillog.6  maillog.7; fi
+if [ -f maillog.5 ]; then mv -f maillog.5  maillog.6; fi
+if [ -f maillog.4 ]; then mv -f maillog.4  maillog.5; fi
+if [ -f maillog.3 ]; then mv -f maillog.3  maillog.4; fi
+if [ -f maillog.2 ]; then mv -f maillog.2  maillog.3; fi
+if [ -f maillog.1 ]; then mv -f maillog.1  maillog.2; fi
+if [ -f maillog.0 ]; then mv -f maillog.0  maillog.1; fi
+mv -f maillog maillog.0
+cp /dev/null maillog
+chmod 644    maillog
+kill -1 `cat /var/run/syslog.pid`
+cd /
+
+if [ -d /var/spool/uucp -a -f /etc/uuclean.daily ]; then
+	echo ""
+	echo "Cleaning up UUCP:"
+	echo /etc/uuclean.daily | su daemon
+fi
+
+echo ""
+echo ""
+echo "Checking subsystem status:"
+echo ""
+echo "disks:"
+env BLOCKSIZE=1k df
+echo ""
+dump W
+echo ""
+
+
+echo ""
+echo "mail:"
+mailq
+
+if [ -d /var/spool/uucp ]; then
+	echo ""
+	echo "uucp:"
+	uusnap
+fi
+
+echo ""
+echo "network:"
+netstat -i
+echo ""
+ruptime
+
+echo ""
+echo "Checking filesystems:"
+fsck -n | grep -v '^\*\* Phase'
+
+echo ""
+if [ -f /etc/Distfile ]; then
+	echo "Running rdist:"
+	if [ -d /var/log/rdist ]; then
+		logf=`date | awk '{printf "%s.%s.%s", $6, $2, $3}'`
+		rdist -f /etc/Distfile 2>&1 | tee /var/log/rdist/$logf
+	else
+		rdist -f /etc/Distfile 
+	fi
+fi
+
+sh /etc/security 2>&1 | mail -s "$host daily insecurity output" root

@@ -1,3 +1,0 @@
-.\"	@(MHWARNING)
-.\" include the -mh macro file
-.so @(MHETCPATH)/tmac.h

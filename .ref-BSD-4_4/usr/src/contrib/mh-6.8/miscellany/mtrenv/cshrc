@@ -1,7 +1,0 @@
-alias af	'rf `ali \!*`'
-alias cscan    	'clear; scan'
-alias cshow    	'clear; show'
-alias dp	'rmm; prev'
-alias dt    	'rmm; next'
-alias push    	'mhmail \!^ -subject \!$ < \!$ > /dev/null &'
-alias remind	'mhmail $USER -subject "\!*" -body "" -from "Reminder Service <$cwd@$LOCAL>" > /dev/null &'

@@ -1,4 +1,0 @@
-Mcap_mkdb	cap_mkdb.c	/^main(argc, argv)$/
-db_build	cap_mkdb.c	/^db_build(ifiles)$/
-dounlink	cap_mkdb.c	/^dounlink()$/
-usage	cap_mkdb.c	/^usage()$/

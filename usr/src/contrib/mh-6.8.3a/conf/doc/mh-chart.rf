@@ -1,0 +1,621 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mh-chart.rf,v 2.25 1993/10/26 20:12:45 jromine Exp $
+.if '\*(ZZ'-man' \{\
+.SC MH-CHART 1
+.NA
+mh-chart \- Chart of MH Commands
+.SY
+.\}
+.in 1i
+.na
+.ti .5i
+.ne 7
+ali
+\%[\-alias\ aliasfile]
+\%[\-list] \%[\-nolist]
+\%[\-normalize] \%[\-nonormalize]
+\%[\-user] \%[\-nouser]
+aliases\ ...
+\%[\-help] 
+
+.ti .5i
+.ne 6
+anno
+\%[+folder] \%[msgs]
+\%[\-component\ field]
+\%[\-inplace] \%[\-noinplace]
+\%[\-date] \%[\-nodate]
+\%[\-text\ body]
+\%[\-help]
+
+@BEGIN: BBOARDS
+.ti .5i
+.ne 12
+bbc
+\%[bboards\ ...]
+\%[\-topics] \%[\-check] \%[\-read]
+\%[\-quiet] \%[\-verbose]
+\%[\-archive] \%[\-noarchive]
+\%[\-protocol] \%[\-noprotocol]
+\%[\-mshproc\ program]
+\%[switches\ for\ \fImshproc\fR]
+\%[\-rcfile rcfile] \%[\-norcfile]
+\%[\-file\ BBoardsfile] \%[\-user\ BBoardsuser]
+@BEGIN: BPOP
+\%[\-host\ host]
+\%[\-rpop] \%[\-norpop]
+@END: BPOP
+@BEGIN: NNTP
+\%[\-host\ host]
+@END: NNTP
+\%[\-help]
+
+@BEGIN: BBSERVER
+.ti .5i
+.ne 6
+bbl
+\%[+folder] 
+\%[\-shell\ program]
+\%[\-verbose] \%[\-noverbose]
+bboard
+\%[\-help]
+
+@END: BBSERVER
+@END: BBOARDS
+.ti .5i
+.ne 6
+burst
+\%[+folder] \%[msgs]
+\%[\-inplace] \%[\-noinplace]
+\%[\-quiet] \%[\-noquiet]
+\%[\-verbose] \%[\-noverbose]
+\%[\-help]
+@BEGIN: TMA
+
+.ti .5i
+.ne 7
+cipher
+\%[\-cbc] \%[\-cks] \%[\-ecb]
+\%[\-encipher] \%[\-decipher]
+\%[\-kd\ key] \%[\-iv\ vector]
+\%[\-auto] \%[\-noauto]
+\%[\-echo] \%[\-noecho]
+\%[\-help]
+@END: TMA
+
+.ti .5i
+.ne 9
+comp
+\%[+folder] \%[msg]
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-file\ file]
+\%[\-form\ formfile]
+\%[\-use] \%[\-nouse]
+\%[\-whatnowproc\ program] \%[\-nowhatnowproc]
+\%[\-help]
+@BEGIN: TMA
+
+.ti .5i
+.ne 5
+decipher
+\%[+folder] \%[msgs]
+\%[\-insitu] \%[\-noinsitu]
+\%[\-verbose] \%[\-noverbose]
+\%[\-help]
+@END: TMA
+
+.ti .5i
+.ne 9
+dist
+\%[+folder] \%[msg] 
+\%[\-annotate] \%[\-noannotate] 
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-form\ formfile] 
+\%[\-inplace] \%[\-noinplace] 
+\%[\-whatnowproc\ program] \%[\-nowhatnowproc]
+\%[\-help]
+
+.ti .5i
+.ne 4
+@(MHETCPATH)/fmtdump
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-help]
+
+.ti .5i
+.ne 12
+folder
+\%[+folder] \%[msg]
+\%[\-all]
+\%[\-fast] \%[\-nofast]
+\%[\-header] \%[\-noheader]
+\%[\-pack] \%[\-nopack]
+\%[\-recurse] \%[\-norecurse]
+\%[\-total] \%[\-nototal]
+\%[\-print] \%[\-noprint]
+\%[\-list] \%[\-nolist]
+\%[\-push] \%[\-pop]
+\%[\-help]
+
+.ti .5i
+folders
+
+.ti .5i
+.ne 11
+forw
+\%[+folder] \%[msgs]
+\%[\-annotate] \%[\-noannotate]
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-filter\ filterfile]
+\%[\-form\ formfile]
+\%[\-format] \%[\-noformat]
+\%[\-inplace] \%[\-noinplace]
+@BEGIN: MIME
+\%[\-mime] \%[\-nomime]
+@END: MIME
+\%[\-whatnowproc\ program] \%[\-nowhatnowproc]
+\%[\-help]
+
+.ti .5i
+.ne 5
+forw
+\%[+folder] \%[msgs]
+\%[\-digest\ list] \%[\-issue\ number] \%[\-volume\ number]
+\%[other\ switches\ for\ \fIforw\fR]
+\%[\-help]
+
+.ti .5i
+.ne 11
+@BEGIN: MF
+.ne 12
+@END: MF
+@BEGIN: POP
+.ne 13
+@END: POP
+inc
+\%[+folder]
+\%[\-audit\ audit\-file] \%[\-noaudit]
+\%[\-changecur] \%[\-nochangecur]
+@BEGIN: TMA
+\%[\-decrypt] \%[\-nodecrypt] 
+@END: TMA
+\%[\-file\ name]
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-silent] \%[\-nosilent]
+\%[\-truncate] \%[\-notruncate]
+\%[\-width\ columns]
+@BEGIN: MF
+\%[\-uucp] \%[\-nouucp]
+@END: MF
+@BEGIN: POP
+\%[\-host\ host] \%[\-user\ user]
+\%[\-apop] \%[\-noapop]
+\%[\-rpop] \%[\-norpop]
+\%[\-pack\ file] \%[\-nopack]
+@END: POP
+\%[\-help]
+
+.ti .5i
+.ne 7
+mark
+\%[+folder] \%[msgs]
+\%[\-sequence\ name\ ...]
+\%[\-add] \%[\-delete] \%[\-list] 
+\%[\-public] \%[\-nopublic]
+\%[\-zero] \%[\-nozero]
+\%[\-help]
+
+.ti .5i
+.ne 9
+@(MHETCPATH)/mhl 
+\%[\-bell] \%[\-nobell]
+\%[\-clear] \%[\-noclear]
+\%[\-folder\ +folder]
+\%[\-form\ formfile]
+\%[\-length\ lines] \%[\-width\ columns] 
+\%[\-moreproc\ program] \%[\-nomoreproc]
+\%[files\ ...]
+\%[\-help] 
+
+.ti .5i
+.ne 8
+mhmail
+\%[
+addrs\ ... 
+\%[\-body\ text]
+\%[\-cc\ addrs\ ...]
+\%[\-from\ addr]
+\%[\-subject subject]]
+\%[\-help]
+@BEGIN: MIME
+
+.ti .5i
+.ne 9
+mhn
+\%[\%[+folder] \%[msgs] | \%[\-file\0file]]
+.br
+\%[\-part\0number]... \%[\-type\0content]...
+.br
+\%[\-list\0\%[\-headers]\0\%[\-noheaders]
+.br
+       \%[\-realsize]\0\%[\-norealsize]] \%[-nolist]
+.br
+\%[\-show\0\%[\-serialonly]\0\%[\-noserialonly]
+.br
+       \%[\-form\0formfile]\0\%[\-pause]\0\%[\-nopause]] \%[\-noshow]
+.br
+\%[\-store\0\%[\-auto]\0\%[\-noauto]] \%[\-nostore]
+.br
+\%[\-cache] \%[\-nocache] \%[\-rcache\0policy] \%[\-wcache\0policy]
+.br
+\%[\-check]\0\%[\-nocheck]
+.br
+\%[\-ebcdicsafe]\0\%[\-noebcdicsafe]
+.br
+\%[\-rfc934mode]\0\%[\-norfc934mode]
+.br
+\%[\-verbose]\0\%[\-noverbose]
+.br
+\%[\-help]
+@END: MIME
+
+.ti .5i
+.ne 5
+mhparam
+\%[profile-components]
+\%[\-components] \%[\-nocomponents]
+\%[\-all]
+\%[\-help]
+
+.ti .5i
+.ne 3
+mhpath
+\%[+folder] \%[msgs]
+\%[\-help]
+
+.ti .5i
+.ne 5
+@BEGIN: POP
+.ne 7
+@END: POP
+msgchk
+\%[\-date] \%[\-nodate]
+\%[\-notify\ all/mail/nomail] \%[\-nonotify\ all/mail/nomail]
+@BEGIN: POP
+\%[\-host\ host] \%[\-user\ user]
+\%[\-apop] \%[\-noapop]
+\%[\-rpop] \%[\-norpop]
+@END: POP
+\%[users\ ...]
+\%[\-help]
+
+.ti .5i
+.ne 5
+msh
+\%[\-prompt\ string]
+\%[\-scan] \%[\-noscan]
+\%[\-topcur] \%[\-notopcur]
+\%[file]
+\%[\-help]
+
+.ti .5i
+.ne 6
+next 
+\%[+folder] 
+\%[\-header] \%[\-noheader]
+\%[\-showproc\ program] \%[\-noshowproc]
+\%[switches\ for\ \fIshowproc\fR]
+\%[\-help]
+
+.ti .5i
+.ne 4
+packf
+\%[+folder] \%[msgs]
+\%[-file\ name]
+\%[\-help]
+
+.ie t \{\
+.ta .4i 1.8i
+.nf
+.in .5i
+.ne 7
+^pick~^^\0\-cc~^ \%[+folder] \%[msgs] \%[\-help]
+^^^\0\-date~^ \%[\-before\ date] \%[\-after\ date] \%[\-datefield\ field]
+^^^\0\-from~^
+^^^\s+2\b'\(lt\(bv\(bv\(lk\(bv\(bv\(lb'\s0\-search~\s+2\b'\(rt\(bv\(bv\(rk\(bv\(bv\(rb'\s0^ pattern \%[\-and\ ...] \%[\-or\ ...] \%[\-not\ ...] \%[\-lbrace\ ...\ \-rbrace]
+^^^\0\-subject~^
+^^^\0\-to~^ \%[\-sequence\ name\ ...] \%[\-public] \%[\-nopublic] \%[\-zero] \%[\-nozero]
+^^^\0\-\|\-component~^ \%[\-list] \%[\-nolist]
+.fi
+.re
+.in 1i
+.\}
+.el \{\
+.ti .5i
+.ne 10
+pick
+\%[+folder] \%[msgs]
+\%[\-and\ ...] \%[\-or\ ...] \%[\-not\ ...] \%[\-lbrace\ ...\ \-rbrace]
+\%[\-\|\-component\ pattern]
+\%[\-after\ date] \%[\-before\ date] \%[\-datefield\ field]
+\%[\-sequence\ name\ ...]
+\%[\-public] \%[\-nopublic]
+\%[\-zero] \%[\-nozero]
+\%[\-list] \%[\-nolist]
+\%[\-help]
+.\}
+@BEGIN: MPOP
+
+.ti .5i
+.ne 11
+popi
+\%[+folder]
+\%[\-host\ host] \%[\-user\ user]
+\%[\-apop] \%[\-noapop]
+\%[\-rpop] \%[\-norpop]
+@BEGIN: BPOP
+\%[\-auto] \%[\-noauto]
+\%[\-mshproc\ program]
+@END: BPOP
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-width\ columns]
+\%[\-help]
+@END: MPOP
+
+
+.ti .5i
+.ne 6
+prev 
+\%[+folder] 
+\%[\-header] \%[\-noheader]
+\%[\-showproc\ program] \%[\-noshowproc]
+\%[switches\ for\ \fIshowproc\fR]
+\%[\-help]
+
+.ti .5i
+.ne 7
+prompter
+\%[\-erase\ chr]
+\%[\-kill\ chr]
+\%[\-prepend] \%[\-noprepend]
+\%[\-rapid] \%[\-norapid]
+\%[\-doteof] \%[\-nodoteof]
+file
+\%[\-help]
+
+.ti .5i
+.ne 7
+@(MHETCPATH)/rcvstore
+\%[+folder]
+\%[\-create] \%[\-nocreate]
+\%[\-sequence\ name\ ...]
+\%[\-public] \%[\-nopublic]
+\%[\-zero] \%[\-nozero]
+\%[\-help]
+
+.ti .5i
+.ne 9
+refile 
+\%[msgs] 
+\%[\-draft]
+\%[\-link] \%[\-nolink] 
+\%[\-preserve] \%[\-nopreserve]
+\%[\-src\ +folder] 
+\%[\-file\ file] 
++folder ...
+\%[\-help]
+
+.ti .5i
+.ne 15
+repl
+\%[+folder] \%[msg]
+\%[\-annotate] \%[\-noannotate]
+\%[\-cc\ all/to/cc/me] \%[\-nocc\ all/to/cc/me]
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-fcc\ +folder]
+\%[\-filter\ filterfile]
+\%[\-form\ formfile]
+.\" \%[\-format] \%[\-noformat]
+\%[\-inplace] \%[\-noinplace]
+\%[\-query] \%[\-noquery]
+\%[\-whatnowproc\ program] \%[\-nowhatnowproc]
+\%[\-width\ columns]
+\%[\-help]
+
+.ti .5i
+.ne 4
+rmf 
+\%[+folder]
+\%[\-interactive] \%[\-nointeractive]
+\%[\-help]
+
+.ti .5i
+.ne 3
+rmm
+\%[+folder] \%[msgs]
+\%[\-help]
+
+.ti .5i
+.ne 8
+scan
+\%[+folder] \%[msgs]
+\%[\-clear] \%[\-noclear]
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-header] \%[\-noheader]
+\%[\-width\ columns]
+\%[\-reverse] \%[\-noreverse]
+\%[\-file filename]
+\%[\-help]
+
+.ti .5i
+.ne 15
+send
+\%[\-alias\ aliasfile]
+\%[\-draft] 
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+@BEGIN: TMA
+\%[\-encrypt] \%[\-noencrypt] 
+@END: TMA
+\%[\-filter\ filterfile] \%[\-nofilter]
+\%[\-format] \%[\-noformat]
+\%[\-forward] \%[\-noforward]
+@BEGIN: MIME
+\%[\-mime] \%[\-nomime]
+@END: MIME
+\%[\-msgid] \%[\-nomsgid]
+\%[\-push] \%[\-nopush]
+@BEGIN: MIME
+\%[\-split\ seconds]
+@END: MIME
+\%[\-verbose] \%[\-noverbose]
+\%[\-watch] \%[\-nowatch]
+\%[\-width\ columns]
+\%[file\ ...] 
+\%[\-help]
+
+.ti .5i
+.ne 7
+show
+\%[+folder] \%[msgs]
+\%[\-draft]
+\%[\-header] \%[\-noheader]
+\%[\-showproc\ program] \%[\-noshowproc]
+\%[switches\ for\ \fIshowproc\fR]
+\%[\-help]
+
+.ti .5i
+.ne 5
+sortm
+\%[+folder] \%[msgs]
+\%[\-datefield\ field]
+\%[\-textfield\ field] \%[\-notextfield]
+\%[\-limit days] \%[\-nolimit]
+\%[\-verbose] \%[\-noverbose]
+\%[\-help]
+@BEGIN: TMA
+
+.ti .5i
+.ne 11
+tma
+\%[\-boot\ file] \%[\-id\ kdsid] \%[\-mk\ key]
+\%[\-kds\ server]
+\%[\-add] \%[\-delete] \%[\-list] \%[\-reset]
+\%[\-user\ name]
+\%[\-fetch] \%[\-nofetch]
+\%[\-expire\ days] \%[\-fexpire\ days]
+\%[\-count\ uses] \%[\-fcount\ uses]
+\%[\-echo] \%[\-noecho]
+\%[\-verbose] \%[\-noverbose]
+addrs\ ...
+\%[\-help]
+@END: TMA
+
+.ti .5i
+.ne 5
+vmh
+\%[\-prompt\ string]
+\%[\-vmhproc\ program] \%[\-novmhproc]
+\%[switches\ for\ \fIvmhproc\fR]
+\%[\-help]
+
+.ti .5i
+.ne 6
+whatnow
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-prompt\ string]
+\%[file]
+\%[\-help]
+
+.ti .5i
+.ne 7
+whom
+\%[\-alias\ aliasfile]
+\%[\-check] \%[\-nocheck]
+\%[\-draft]
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[file]
+\%[\-help]
+
+.ti .5i
+.ne 7
+@(MHETCPATH)/ap
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-normalize] \%[\-nonormalize]
+\%[\-width\ columns]
+addrs\ ...
+\%[\-help] 
+
+.ti .5i
+.ne 5
+@(MHETCPATH)/conflict
+\%[\-mail\ name]
+\%[\-search\ directory]
+\%[aliasfiles\ ...]
+\%[\-help]
+
+.ti .5i
+.ne 5
+@(MHETCPATH)/dp
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-width\ columns]
+dates\ ...
+\%[\-help]
+
+.ti .5i
+.ne 3
+@(MHETCPATH)/install\-mh
+\%[\-auto]
+\%[\-compat]
+@BEGIN: APOP
+
+.ti .5i
+.ne 3
+popauth
+\%[\-init] \%[\-list] \%[\-user\ name]
+\%[\-help]
+@END: APOP
+
+.ti .5i
+.ne 11
+@(MHETCPATH)/post 
+\%[\-alias\ aliasfile]
+@BEGIN: TMA
+\%[\-encrypt] \%[\-noencrypt] 
+@END: TMA
+\%[\-filter\ filterfile] \%[\-nofilter]
+\%[\-format] \%[\-noformat]
+@BEGIN: MIME
+\%[\-mime] \%[\-nomime]
+@END: MIME
+\%[\-msgid] \%[\-nomsgid]
+\%[\-verbose] \%[\-noverbose]
+\%[\-watch] \%[\-nowatch]
+\%[\-width\ columns]
+file
+\%[\-help]
+
+.ti .5i
+.ne 10
+@(MHETCPATH)/slocal \%[address\ info\ sender]
+\%[\-addr\ address]
+\%[\-info\ data]
+\%[\-sender\ sender]
+\%[\-user\ username]
+\%[\-mailbox\ mbox]
+\%[\-file\ file]
+\%[\-maildelivery\ deliveryfile]
+\%[\-verbose] \%[\-noverbose]
+\%[\-debug]
+\%[\-help]
+.ad
+.in 0

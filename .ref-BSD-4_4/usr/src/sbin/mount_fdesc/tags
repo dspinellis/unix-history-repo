@@ -1,2 +1,0 @@
-Mmount_fdesc	mount_fdesc.c	/^main(argc, argv)$/
-usage	mount_fdesc.c	/^usage()$/

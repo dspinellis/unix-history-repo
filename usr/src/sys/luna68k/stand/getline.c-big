@@ -1,0 +1,370 @@
+/*
+ * Copyright (c) 1992 OMRON Corporation.
+ * Copyright (c) 1992
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * OMRON Corporation.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)getline.c-big	8.2 (Berkeley) 3/21/94
+ */
+
+/*
+ * getline -- getline function with EMACS like key operation
+ * by A.Fujita, FEB-01-1992
+ */
+
+#define MAXLINE 80
+
+struct key_bind_table {
+	int (*func)();
+};
+
+char linebuff[MAXLINE];
+int  lineleft;
+int  lineright = MAXLINE - 1;
+int  cursole;
+int  endline;
+
+int
+nil_operation(c)
+	char c;
+{
+	return(1);
+}
+
+int
+self_insert(c)
+	char c;
+{
+	register int n;
+
+	if (cursole <= endline) {
+		linebuff[cursole++] = c;
+
+		cnputc(c);
+
+		for (n = endline; n < MAXLINE; n++)
+			cnputc(linebuff[n]);
+		for (n = endline + 1; n < MAXLINE; n++)
+			cnputc('\x08');			/* le: move the cursor left one column */
+	}
+
+	return(1);
+}
+
+/*
+int
+self_insert(c)
+	char c;
+{
+	register int n;
+
+	if (cursole <= endline) {
+		linebuff[cursole++] = c;
+
+		cnputc('\x1b');
+		cnputc('[');
+		cnputc('4');
+		cnputc('h');
+
+		cnputc(c);
+
+		cnputc('\x1b');
+		cnputc('[');
+		cnputc('4');
+		cnputc('l');
+	}
+
+	return(1);
+}
+ */
+
+int
+accept_line(c)
+	char c;
+{
+	cnputc('\r');
+	cnputc('\n');
+
+	return(0);
+}
+
+int
+beginning_of_line(c)
+	char c;
+{
+	while (cursole > lineleft) {
+		linebuff[endline--] = linebuff[--cursole];
+		cnputc('\x08');		/* le: move the cursor left one column */
+	}		
+
+	return(1);
+}
+
+int
+end_of_line(c)
+	char c;
+{
+	while (endline < lineright) {
+		linebuff[cursole++] = linebuff[++endline];
+		cnputc('\x1b');		/* nd: move the cursor right one column */
+		cnputc('[');
+		cnputc('C');
+	}
+
+	return(1);
+}
+
+int
+forward_char(c)
+	char c;
+{
+	if (endline < lineright) {
+		linebuff[cursole++] = linebuff[++endline];
+		cnputc('\x1b');		/* nd: move the cursor right one column */
+		cnputc('[');
+		cnputc('C');
+	}
+
+	return(1);
+}	
+
+int
+backward_char(c)
+	char c;
+{
+	if (cursole > lineleft) {
+		linebuff[endline--] = linebuff[--cursole];
+		cnputc('\x08');
+	}
+
+	return(1);
+}
+
+int
+delete_char(c)
+	char c;
+{
+	register int n;
+
+	if (cursole > lineleft || endline < lineright) {
+		endline++;
+		cnputc('\x1b');		/* dc: delete one character position at the cursor */
+		cnputc('[');
+		cnputc('P');
+	}
+}		
+		
+int
+backward_delete_char(c)
+	char c;
+{
+	if (cursole > lineleft) {
+		cursole--;
+		cnputc('\x08');		/* le: move the cursor left one column */
+		cnputc('\x1b');		/* dc: delete one character position at the cursor */
+		cnputc('[');
+		cnputc('P');
+	}
+
+	return(1);
+}
+
+int
+kill_line(c)
+{
+	register int n = lineright - endline;
+
+	while(endline < lineright) {
+		endline++;
+		cnputc('\x1b');		/* dc: delete one character position at the cursor */
+		cnputc('[');
+		cnputc('P');
+	}
+
+	return(1);
+}
+
+struct key_bind_table keybind[] = {
+{ nil_operation	},			/* 0x00 NUL */
+{ beginning_of_line },			/* 0x01 SOH */
+{ backward_char },			/* 0x02 STX */
+{ nil_operation },			/* 0x03 ETX */
+{ delete_char   },			/* 0x04 EOT */
+{ end_of_line   },			/* 0x05 ENQ */
+{ forward_char  },			/* 0x06 ACK */
+{ nil_operation },			/* 0x07 BEL */
+{ backward_delete_char },		/* 0x08 BS  */
+{ nil_operation },			/* 0x09 HT  */
+{ accept_line   },			/* 0x0A NL  */
+{ kill_line     },			/* 0x0B VT  */
+{ nil_operation },			/* 0x0C NP  */
+{ accept_line   },			/* 0x0D CR  */
+{ nil_operation },			/* 0x0E SO  */
+{ nil_operation },			/* 0x0F SI  */
+{ nil_operation	},			/* 0x10 DLE */
+{ nil_operation },			/* 0x11 DC1 */
+{ nil_operation },			/* 0x12 DC2 */
+{ nil_operation },			/* 0x13 DC3 */
+{ nil_operation },			/* 0x14 DC4 */
+{ nil_operation },			/* 0x15 NAK */
+{ nil_operation },			/* 0x16 SYN */
+{ nil_operation },			/* 0x17 ETB */
+{ nil_operation },			/* 0x18 CAN */
+{ nil_operation },			/* 0x19 EM  */
+{ nil_operation },			/* 0x1A SUB */
+{ nil_operation },			/* 0x1B ESC */
+{ nil_operation },			/* 0x1C FS  */
+{ nil_operation },			/* 0x1D GS  */
+{ nil_operation },			/* 0x1E RS  */
+{ nil_operation },			/* 0x1F US  */
+{ self_insert },			/* 0x20 ( ) */
+{ self_insert },			/* 0x21 (!) */
+{ self_insert },			/* 0x22 (") */
+{ self_insert },			/* 0x23 (#) */
+{ self_insert },			/* 0x24 ($) */
+{ self_insert },			/* 0x25 (%) */
+{ self_insert },			/* 0x26 (&) */
+{ self_insert },			/* 0x27 (') */
+{ self_insert },			/* 0x28 (() */
+{ self_insert },			/* 0x29 ()) */
+{ self_insert },			/* 0x2A (*) */
+{ self_insert },			/* 0x2B (+) */
+{ self_insert },			/* 0x2C (,) */
+{ self_insert },			/* 0x2D (-) */
+{ self_insert },			/* 0x2E (.) */
+{ self_insert },			/* 0x2F (/) */
+{ self_insert },			/* 0x30 (0) */
+{ self_insert },			/* 0x31 (1) */
+{ self_insert },			/* 0x32 (2) */
+{ self_insert },			/* 0x33 (3) */
+{ self_insert },			/* 0x34 (4) */
+{ self_insert },			/* 0x35 (5) */
+{ self_insert },			/* 0x36 (6) */
+{ self_insert },			/* 0x37 (7) */
+{ self_insert },			/* 0x38 (8) */
+{ self_insert },			/* 0x39 (9) */
+{ self_insert },			/* 0x3A (:) */
+{ self_insert },			/* 0x3B (;) */
+{ self_insert },			/* 0x3C (<) */
+{ self_insert },			/* 0x3D (=) */
+{ self_insert },			/* 0x3E (>) */
+{ self_insert },			/* 0x3F (?) */
+{ self_insert },			/* 0x40 (@) */
+{ self_insert },			/* 0x41 (A) */
+{ self_insert },			/* 0x42 (B) */
+{ self_insert },			/* 0x43 (C) */
+{ self_insert },			/* 0x44 (D) */
+{ self_insert },			/* 0x45 (E) */
+{ self_insert },			/* 0x46 (F) */
+{ self_insert },			/* 0x47 (G) */
+{ self_insert },			/* 0x48 (H) */
+{ self_insert },			/* 0x49 (I) */
+{ self_insert },			/* 0x4A (J) */
+{ self_insert },			/* 0x4B (K) */
+{ self_insert },			/* 0x4C (L) */
+{ self_insert },			/* 0x4D (M) */
+{ self_insert },			/* 0x4E (N) */
+{ self_insert },			/* 0x4F (O) */
+{ self_insert },			/* 0x50 (P) */
+{ self_insert },			/* 0x51 (Q) */
+{ self_insert },			/* 0x52 (R) */
+{ self_insert },			/* 0x53 (S) */
+{ self_insert },			/* 0x54 (T) */
+{ self_insert },			/* 0x55 (U) */
+{ self_insert },			/* 0x56 (V) */
+{ self_insert },			/* 0x57 (W) */
+{ self_insert },			/* 0x58 (X) */
+{ self_insert },			/* 0x59 (W) */
+{ self_insert },			/* 0x5A (Z) */
+{ self_insert },			/* 0x5B ([) */
+{ self_insert },			/* 0x5C (\) */
+{ self_insert },			/* 0x5D (]) */
+{ self_insert },			/* 0x5E (^) */
+{ self_insert },			/* 0x5F (_) */
+{ self_insert },			/* 0x60 (`) */
+{ self_insert },			/* 0x61 (a) */
+{ self_insert },			/* 0x62 (b) */
+{ self_insert },			/* 0x63 (c) */
+{ self_insert },			/* 0x64 (d) */
+{ self_insert },			/* 0x65 (e) */
+{ self_insert },			/* 0x66 (f) */
+{ self_insert },			/* 0x67 (g) */
+{ self_insert },			/* 0x68 (h) */
+{ self_insert },			/* 0x69 (i) */
+{ self_insert },			/* 0x6A (j) */
+{ self_insert },			/* 0x6B (k) */
+{ self_insert },			/* 0x6C (l) */
+{ self_insert },			/* 0x6D (m) */
+{ self_insert },			/* 0x6E (n) */
+{ self_insert },			/* 0x6F (o) */
+{ self_insert },			/* 0x70 (p) */
+{ self_insert },			/* 0x71 (q) */
+{ self_insert },			/* 0x72 (r) */
+{ self_insert },			/* 0x73 (s) */
+{ self_insert },			/* 0x74 (t) */
+{ self_insert },			/* 0x75 (u) */
+{ self_insert },			/* 0x76 (v) */
+{ self_insert },			/* 0x77 (w) */
+{ self_insert },			/* 0x78 (x) */
+{ self_insert },			/* 0x79 (y) */
+{ self_insert },			/* 0x7A (z) */
+{ self_insert },			/* 0x7B ({) */
+{ self_insert },			/* 0x7C (|) */
+{ self_insert },			/* 0x7D (}) */
+{ self_insert },			/* 0x7E (~) */
+{ backward_delete_char },		/* 0x7F DEL */
+};
+
+int
+getline(prompt, buff)
+	char *prompt, *buff;
+{
+	register int c;
+
+	bzero(linebuff, MAXLINE);
+	cursole = lineleft  = strlen(prompt);
+	endline = lineright = MAXLINE - 1;
+	printf("%s", prompt);
+
+	do {
+		c = cngetc();
+		c &= 0x7F;
+	} while((*keybind[c].func)(c));
+
+	bcopy(&linebuff[lineleft],
+	      &buff[0], cursole - lineleft);
+	bcopy(&linebuff[endline+1],
+	      &buff[cursole - lineleft], lineright - endline);
+
+	return(strlen(buff));
+}

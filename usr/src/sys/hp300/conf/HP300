@@ -1,0 +1,93 @@
+#	@(#)HP300	8.2 (Berkeley) 4/22/94
+#
+# PICASSO (HP300)
+#
+machine		"hp300"
+cpu		"HP320"
+cpu		"HP330"
+cpu		"HP340"
+cpu		"HP350"
+cpu		"HP360"
+cpu		"HP370"
+cpu		"HP380"
+ident		PICASSO
+
+timezone	8 dst
+maxusers	16
+
+# Standard options
+options		QUOTA
+options		INET,MULTICAST,MROUTING
+options		FFS,MFS,NFS,LFS,FIFO
+options		PROCFS,UNION,KERNFS,FDESC,PORTAL,NULLFS,UMAPFS
+options		"CD9660"
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+options		SWAPPAGER,VNODEPAGER,DEVPAGER
+options		CLUSTERED_PAGEOUT
+
+# Options for all HP machines
+options		SYSVSHM
+options		HPUXCOMPAT,COMPAT_OHPUX
+options		COMPAT_NOLABEL
+options		MAPPEDCOPY
+
+# Options specific to this host.
+options		DEBUG,DIAGNOSTIC
+options		PANICBUTTON
+options		KTRACE
+options		"NKMEMCLUSTERS=512"
+options		KGDB,"KGDBDEV=15*256+0","KGDBRATE=19200"
+options		HPFPLIB
+
+config		vmunix root on sd0 swap on sd0b and rd0b
+config		vgvmunix root on sd0 swap on sd0d and sd1d and sd2d
+config		rdvmunix root on rd0 swap on rd0b and rd1b
+config		genvmunix swap generic
+
+master		hpib0	at scode7
+master		hpib1	at scode?
+master		hpib2	at scode?
+disk		rd0	at hpib? slave ?
+disk		rd1	at hpib? slave ?
+disk		rd2	at hpib? slave ?
+disk		rd3	at hpib? slave ?
+tape		ct0	at hpib0 slave ?
+tape		ct1	at hpib0 slave ?
+
+master		scsi0	at scode?
+master		scsi1	at scode?
+master		scsi2	at scode?
+disk		sd0	at scsi? slave ?
+disk		sd1	at scsi? slave ?
+disk		sd2	at scsi? slave ?
+disk		sd3	at scsi? slave ?
+disk		sd4	at scsi? slave ?
+disk		sd5	at scsi? slave ?
+disk		sd6	at scsi? slave ?
+disk		sd7	at scsi? slave ?
+disk		sd8	at scsi? slave ?
+disk		sd9	at scsi? slave ?
+disk		sd10	at scsi? slave ?
+disk		sd11	at scsi? slave ?
+tape		st0	at scsi? slave ?
+tape		st1	at scsi? slave ?
+
+device		le0	at scode?
+device		le1	at scode?
+device		dca0	at scode9 flags 1
+device		dcm0	at scode? flags 0xe
+device		dcm1	at scode? flags 0x0
+device		dcm2	at scode? flags 0xe
+device		dcm3	at scode? flags 0xe
+
+device		grf0	at scode?
+device		grf1	at scode?
+device		grf2	at scode?
+
+pseudo-device	sl	4
+pseudo-device	bpfilter 16
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	ite

@@ -1,6 +1,0 @@
-# Host: Merlin running utek 2.1
-XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
-XM_FILE= xm-merlin.h
-# See SHELL_FILE in m-merlin.h for a explanation of this.
-M_INSTALL=cp /bin/sh /usr/local/lib/gdb-sh; \
-chmod ogu+rw /usr/local/lib/gdb-sh

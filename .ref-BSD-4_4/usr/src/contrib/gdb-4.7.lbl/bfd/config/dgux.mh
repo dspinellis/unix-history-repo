@@ -1,2 +1,0 @@
-CC=gcc -Wall -ansi -D__using_DGUX
-RANLIB=echo

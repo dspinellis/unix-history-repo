@@ -1,8 +1,0 @@
-%<(cur)>%| %>\
-%<{status} %|N%>\
-%<{replied}R%?{encrypted}E%| %>\
-%4(msg)\
- %<(mymbox{from})%<{to}To: %13(friendly{to})%>%>%<(zero)%17(friendly{from})%>\
- %3(day{date}) %3(month{date}) %02(mday{date})\
- %02(hour{date}):%02(min{date})\
- %{subject}

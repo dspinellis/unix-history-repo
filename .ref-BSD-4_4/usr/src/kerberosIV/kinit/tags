@@ -1,4 +1,0 @@
-Mkinit	kinit.c	/^main(argc, argv)$/
-_gets	kinit.c	/^_gets(p, n)$/
-gets	kinit.c	/^#define	gets(buf) _gets(buf, sizeof(buf))	\/* hack/
-usage	kinit.c	/^usage()$/

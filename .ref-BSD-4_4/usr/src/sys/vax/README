@@ -1,4 +1,0 @@
-
-The VAX architecture does not compile in 4.4BSD, as it has
-not been converted to the new VM.  It is here for porting
-information purposes only.

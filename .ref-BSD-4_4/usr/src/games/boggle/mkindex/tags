@@ -1,2 +1,0 @@
-Mmkindex	mkindex.c	/^main(argc, argv)$/
-nextword	mkindex.c	/^nextword(fp, buffer, clen, rlen)$/

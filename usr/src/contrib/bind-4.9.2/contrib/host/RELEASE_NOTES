@@ -1,0 +1,372 @@
+	@(#)RELEASE_NOTES       e07@nikhef.nl (Eric Wassenaar) 930926
+
+yymmdd		Description of changes per release
+TODO		Things that still need to be done
+WISHLIST	Wishes expressed by various people
+NOTES		Important issues to keep in mind
+MISC		Miscellaneous reminders
+
+# ----------------------------------------------------------------------
+# Description of changes per release
+# ----------------------------------------------------------------------
+
+930926
+	Extend -I option with argument containing allowed chars.
+		This string specifies formally illegal, but silently
+		allowed characters when checking illegal domain names.
+		The -I option is still necessary to enable checking.
+		Still done only for resource record names in listings.
+		Note that some hesiod names contain the '/' character.
+		Indicated by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Additional SOA record checks.
+		Check hostmaster field for illegal chars, such as '@'
+		(needed as long as data field names are not checked).
+	Revised SOA record checks.
+		Check primary field against list of known nameservers.
+		Issue warning if not among the authoritative servers.
+		This may be intentional in special cases, however.
+		Required some code reshuffling.
+	Add new -M option to list mailable subdomains in a zone.
+		This is a new variant of the zone listing specials.
+		A zone transfer is done (without listing anything by
+		default) to determine the available delegated zones.
+		For each of these zones, the MX records are printed.
+		Experimental, undocumented. Insufficient too: you
+		really want to see also the domains for which only
+		an MX record exist.
+	Cleanup terminology in the code documentation.
+		Remove the word 'subdomain' and cleanup the confusion
+		between 'domain' versus 'zone'.
+	Update manual page.
+		Use terminology that is technically more correct.
+		Explain various things that were still missing.
+
+930919
+	Print actual name that was queried in error messages.
+		Formerly, only the (possibly abbreviated) queryname
+		as specified on the command line was printed. 
+		Special care must be given if domain search is enabled,
+		especially in the enforced BIND compatibility mode.
+		Looks much better. Asked by <Piete.Brooks@cl.cam.ac.uk>
+	Some more SOA record tests.
+		Some records have the name of the zone specified in the
+		field that should contain the name of the primary server.
+	Miscellaneous minor changes.
+		Slightly modify the nameserver name printout during -C.
+		Set proper h_errno when answer buffer counts are corrupt.
+	Add new -V option to print version number.
+		Define version in separate vers.c
+	Use class mnemonics as defined in RFC 1035.
+		Print 'CH' instead of 'CHAOS'. Anyone using this ?
+		Recognize obsolete 'CS' or 'CSNET'. Pretty useless.
+		Just for ultimate completeness.
+	Check for invalid characters in domain names.
+		Only alphanumeric characters and hyphen '-' are valid.
+		Unfortunately, the use of underscore '_' is widespread,
+		so issuing a warning by default is unrealistic. Therefore:
+	Add new -I option to warn about illegal domain names.
+		Currently done only for resource record names during zone
+		listing. Could be extended to domain names in data fields.
+		Perhaps a warning by default in case illegal other than
+		underscore. Option is still undocumented as the semantics
+		are subject to change.
+
+930915
+	Add -R option to always first try search domains.
+		Normally querynames are assumed to be fully qualified
+		and are tried as such, unless it is a single name which
+		is always tried, and only once, in the default domain.
+		This option sets RES_DNSRCH and simulates the default
+		BIND behaviour, with the exception that NO_DATA status
+		terminates the search immediately.
+		With the additional otherwise undocumented -B option the
+		BIND behaviour is fully enforced and the search continues.
+		Added only for testing purposes, not for general use.
+	Few more BIND 4.9 compatibility changes.
+		Some resolver routines have gotten new argument types.
+	Adapt Makefile to BIND conventions.
+		The Makefile can be used completely stand-alone,
+		or can be invoked from the master BIND Makefile.
+		Affects names of various (inherited) make variables.
+		Change BIND_RES_SEND to HOST_RES_SEND with opposite
+		meaning. Default is HOST_RES_SEND in case stand-alone.
+
+930911
+	Extension of user interface.
+		Allow multiple arguments on command line or from stdin.
+		Requires new syntax for specifying explicit server.
+		New options -x and '-X server' indicate extended syntax.
+		Quite a lot reshuffling of code. Urgently requested by
+		<Piete.Brooks@cl.cam.ac.uk> and Paul Vixie <paul@vix.com>
+	Configurable default options.
+		Use an environment variable HOST_DEFAULTS to pre-define
+		default options and parameters. These are interpolated
+		in front of the command line arguments before scanning.
+		Syntax is the same as the command line syntax.
+	Fix bug when querying single name without dot.
+		Not only the default domain, but also the eventual other
+		search domains would be tried, although DNSRCH is off.
+		This is a long-standing bug. Very important fix.
+
+930908
+	Various declaration changes for portability.
+	Print TXT/HINFO/UINFO strings within double quotes.
+		It is done both in regular and zone listing output.
+		This is conforming the syntax for zone input files.
+	Add trailing dot to domain names in zone listing.
+		This is conforming the syntax for zone input files.
+		The trailing dot is not added in regular output.
+	Define exit codes in new exit.h header file.
+		This avoids the need to include /usr/ucbinclude when
+		running in non-BSD mode on solaris 2.x platforms.
+	Attempt to diagnose lame delegations.
+		Error messages about lame delegations are given during
+		zone listings and when checking SOA records (but only when
+		the contacted servers are supposed to be authoritative).
+		Also in case servers from NS records turn out not to exist.
+		This may need some refinement for special cases.
+	Perform some extra checks during zone listings.
+		Check for unexpected error status in packets. Only the
+		very first packet in response to a transfer query can
+		have an error status.
+	Issue warning if only a single nameserver found.
+		Not an error per se, but not much redundancy then.
+		Suggested by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Check for anomalous empty zone transfers.
+		Transfers consisting of only SOA records could occur if
+		we queried the victim of a lame delegation which happened
+		to have the SOA record present. Fake an error that will
+		result in a lame delegation message.
+		Mentioned by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Indicate list/check failure/success via exit code.
+		Failure status is returned in case any error has been
+		reported via errmsg or pr_error (not pr_warning).
+		For Ruediger Volk <rv@deins.informatik.uni-dortmund.de>
+	Add -o option to suppress rr output to stdout.
+		Can be used in combination with -f to separate rr output
+		from verbose comments and error output.
+	Perform some SOA timer consistency checks.
+		Check timer values for anomalies, such as (retry > refresh)
+		or (refresh + retry > expire).
+		Suggested by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+		Also compare all values instead of just serial.
+	More accurate reporting of zones processed.
+		Print total number of successful zone transfers versus the
+		number of attempted transfers. Print count of zones which
+		were successfully processed (transferred or -C checked)
+		versus the number of zones requested to be processed.
+		From this we can deduce the number of transfers that failed
+		and the number of times we couldn't find any nameservers.
+
+930901
+	Increase MAXNSNAME from 12 to 16.
+		This is conforming NSMAX in ns.h
+	Don't accumulate statistics if not necessary.
+		Skip the costly host count scan in case nothing would
+		be reported at all according to the command line options.
+	Add some extra checks during zone listings.
+		Check for invalid nonzero nscount and arcount.
+	Special handling for non-authoritative answers.
+		We had already NO_RREC for non-authoritative NO_DATA, but
+		non-authoritative HOST_NOT_FOUND would yield TRY_AGAIN.
+		Change this to NO_HOST to issue a separate error message.
+		This identifies some special cases, e.g. queries for a
+		non-existing name using class C_ANY when the nameserver
+		is authoritative only for one specific class.
+		Use TRY_AGAIN in both cases during zone listing errors.
+	Minor declaration changes for portability.
+	Add -F option to exchange role of stdout and logfile.
+		The '-F file' is the same as '-f file' but all stdout
+		output goes to the logfile, and stdout only gets the extra
+		resource record output (so that it can be used in pipes).
+		Implementation is inherently unportable. Supported only on
+		a few platforms where it happens to work.
+	Explain status messages in the manual page.
+ 	Include address and name of server in perror messages.
+		This gives a lot more information in case stderr and stdout
+		are differently redirected.
+
+930830
+	Make error checking in some routines uniform.
+	Miscellaneous declaration changes.
+	Filter resource record class appropriately.
+		In zone listings records of different class can show up,
+		e.g. HS records are mixed with IN records. Only records
+		of the requested class should be processed. This fixes
+		problems with recursive zone traversals and inaccurate
+		statistics. Pointed out by <Yves.Devillers@inria.fr>
+		and <Piet.Beertema@EU.net>. Important fix.
+	Include record class, if special, in some output.
+		Show the class if it is not the default IN class.
+	Include address of duplicate hosts in message.
+		This may help to locate the problem.
+	Properly concatenate long TXT strings that are split.
+		Long TXT strings (>255) are split as of BIND 4.8.3.
+		They were displayed incorrectly with TAB separators.
+		Problem noted by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Cleanup some DNS terminology in output messages.
+		Fix some confusion between '(sub)domain' and 'zone'. Only
+		done in the output of host, not yet in the documentation.
+		Pointed out by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Implement host address list as hashed list.
+		The linear list is replaced with a hashed list, using the
+		low-order address bits as the key. This may dramatically
+		speed up recursive zone listings. Very important fix.
+		Suggested by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Miscellaneous portability hooks.
+		Add new port.h header file.
+	Change u_long to u_int for resource record fields.
+		These are fixed 32-bit quantities.
+		Note that BIND 4.9 uses u_int32_t for these, but still uses
+		(inconsistently) u_short instead of u_int16_t.
+		Necessary for port to alpha and BIND 4.9.
+	Change u_long to ipaddr_t for 32-bit address fields.
+		For the time being, make this identical to u_long for non-
+		alpha machines with pre-BIND 4.9 to avoid lint warnings.
+		Note that BIND 4.9 uses u_int32_t for these.
+		Necessary for port to alpha and BIND 4.9.
+	Introduce new typedef for 'struct state'.
+		Necessary for BIND 4.9.
+	Make all arguments to vararg routines same type.
+		No more mixing of arbitrary pointers and ints. Only number
+		of arguments is variable. Requires few silly interfaces.
+		Necessary for port to alpha.
+	Add the RELEASE_NOTES file to explain changes.
+
+930209
+	Lookup server name with default resolver values.
+	Check SOA records without nameserver recursion.
+	Implement new RR types from RFC 1183 and 1348.
+
+921005
+	Anticipate ultrix specific resolv.h
+	Miscellaneous declaration changes.
+	Some reshuffling of code.
+
+920702
+	Recognize alternative program call names.
+	Distinguish between auth and non-auth NO_DATA.
+
+920624
+	Lookup server name before changing nameserver address.
+	Handle possible truncation in zone transfers.
+	Provide private simplified version of res_send().
+	Add -u option to force virtual circuit connections.
+	Move all socket I/O routines to separate send.c.
+
+920616
+	Allocate list of zonenames dynamically, not statically.
+	Move and slightly modify the test for fake hosts.
+	Suppress host count statistics during inverse listing.
+	Miscellaneous documentation updates.
+
+920315
+	Improve counting of hosts within domain.
+	Discard glue records not directly within domain.
+	Keep track of hosts with duplicate address.
+	Add -D option to list duplicate hosts.
+	Add -E option to list extrazone hosts.
+	Miscellaneous casting and typing cleanup.
+	Increase (static) number of possible subdomains.
+
+911201
+	Option -T also prints MX preference value.
+	Save name of longest hostname found (just for fun).
+	Undocumented option -g to select long names (fun).
+
+911010
+	Don't recurse on cnames if querytype is cname.
+
+910923
+	Count gateway hosts (with multiple addresses).
+	Add -G option to list gateway hosts.
+
+910905
+	Improve counting of hosts within domain.
+	Allow hosts not directly within domain.
+	Increase (static) maximum number of hosts.
+
+910415
+	Improve finding of subdomain names.
+	Allow subdomains not directly within domain.
+	Check for unauthoritative glue records.
+	Add -T option to print ttl when non-verbose.
+	Improve connect timeout handling.
+	Improve dotted quad parsing.
+	Minimum ttl is now called default ttl.
+
+910129
+	Maintain count of hosts during domain listings.
+	Check for hosts with same name as subdomain.
+	Add -H option for special host count mode.
+	Recognize obsolete T_MAILA.
+
+# ----------------------------------------------------------------------
+# TODO
+# ----------------------------------------------------------------------
+
+	More BIND 4.9 compatibility.
+		BIND 4.9.2 now uses u_int16_t instead of u_short.
+	Documentation changes.
+		References to BIND 4.9, not only 4.8.
+
+# ----------------------------------------------------------------------
+# WISHLIST
+# ----------------------------------------------------------------------
+
+	TTL consistency checks.
+		Multiple records of same name/type/class should have the
+		same ttl value in zone listings.
+	Skip printing of second SOA in zone listing.
+		Asked by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+
+# ----------------------------------------------------------------------
+# NOTES
+# ----------------------------------------------------------------------
+
+	Old resolver libraries.
+		The res_mkquery() routine in the SUN-supplied resolver
+		library on SunOS <= 4.1.3 adds the default domain to given
+		single names if REF_DEFNAMES is set. This is not correct and
+		leads to undesired results if you query about toplevel domains.
+		It may be a pre-BIND 4.8.2 problem.
+		The same behaviour is reported in the default ultrix resolver.
+		This will not be fixed in host. The documentation states that
+		you need BIND 4.8.2 or higher.
+		Problem noted by Peter Koch <pk@TechFak.Uni-Bielefeld.DE>.
+	Vendor-specific resolver libraries.
+		Some vendors supply resolver libraries with configurable
+		lookup strategies for gethostbyname/gethostbyaddr, e.g. to
+		consult DNS, NIS, /etc/hosts, or other databases, in specific
+		order. Such libraries are to be avoided when linking host.
+		It is meant to query the DNS and DNS only.
+	SUN's resolver library on solaris 2.x
+		If you are on solaris 2.x and you don't have a proper BIND
+		resolver library to link with, but have to use the broken
+		default library, you can define NO_YP_LOOKUP in the Makefile
+		to prevent gethostbyname/gethostbyaddr querying the YP/NIS.
+
+# ----------------------------------------------------------------------
+# MISC
+# ----------------------------------------------------------------------
+
+	Port to DEC/Alpha with OSF/1.
+		Requested by various people.
+		This requires basically two adaptations:
+		- sizeof(u_long) is 64 bits instead of 32 bits.
+		  Affects ip address fields and some fixed fields in the
+		  nameserver query/answer buffers.
+		- pointers in C subroutine arguments are 64 bit quantities.
+		  Affects the varargs modules.
+		Suggestions by Dietrich Wiegandt <dietrich@dxcern.cern.ch>
+		and David Cherkus <cherkus@zk3.dec.com>.
+	Compatibility with BIND 4.9.
+		Don't use the u_long types any more.
+		The 'struct state' is now 'struct __res_state'.
+		New resolver library has various hooks for 'dig'.
+		New resolver library prints to stdout with leading ";" but
+		unfortunately not everywhere. It prints to stderr sometimes
+		also with ";" but does not so in the perror() messages.
+		BIND 4.9 prints FQDN with trailing dot.
+		BIND 4.9 prints TXT strings within double quotes.
+
