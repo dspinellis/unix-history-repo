@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.144 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.145 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -105,10 +105,11 @@ sendall(e, mode)
 		errno = 0;
 		queueup(e, TRUE, mode == SM_QUEUE);
 		e->e_flags |= EF_FATALERRS|EF_PM_NOTIFY|EF_CLRQUEUE;
-		syserr("554 too many hops %d (%d max): from %s via %s, to %s",
+		syserr("554 Too many hops %d (%d max): from %s via %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
 			RealHostName == NULL ? "localhost" : RealHostName,
 			e->e_sendqueue->q_paddr);
+		e->e_sendqueue->q_status = "5.4.6";
 		return;
 	}
 
@@ -922,6 +923,7 @@ deliver(e, firstto)
 				     bitset(QPINGONSUCCESS, to->q_flags)))
 				{
 					to->q_flags |= QREPORT;
+					to->q_status = "2.1.5";
 					fprintf(e->e_xfp, "%s... Successfully delivered\n",
 						to->q_paddr);
 				}
@@ -1611,6 +1613,7 @@ tryhost:
 			     bitset(QPINGONSUCCESS, to->q_flags)))
 			{
 				to->q_flags |= QREPORT;
+				to->q_status = "2.1.5";
 				fprintf(e->e_xfp, "%s... Successfully delivered\n",
 					to->q_paddr);
 			}
@@ -1727,7 +1730,7 @@ markfailure(e, q, mci, rcode)
 		stat = "4.2.0";
 		break;
 	}
-	if (stat != NULL && q->q_status == NULL)
+	if (stat != NULL)
 		q->q_status = stat;
 
 	q->q_statdate = curtime();
@@ -2229,7 +2232,7 @@ putfromline(mci, e)
 	}
 # endif /* UGLYUUCP */
 	expand(template, buf, sizeof buf, e);
-	putxline(buf, mci, FALSE);
+	putxline(buf, mci, PXLF_NOTHINGSPECIAL);
 }
 /*
 **  PUTBODY -- put the body of a message.
