@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.36		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.37		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.36		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.36		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.37		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -79,7 +79,7 @@ getrequests()
 	}
 	SendmailAddress.sin_family = AF_INET;
 	SendmailAddress.sin_addr.s_addr = INADDR_ANY;
-	SendmailAddress.sin_port = htons(sp->s_port);
+	SendmailAddress.sin_port = sp->s_port;
 
 	/*
 	**  Try to actually open the connection.
