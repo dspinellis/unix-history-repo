@@ -1,0 +1,201 @@
+.if t .ds dg \(dg
+.if n .ds dg +
+.SH
+.ce
+\s+4Ex differences \- version 1.1 to 2.0\s0
+.sp .4i
+.PP
+This sheet summarizes the differences between the old version 1.1 of
+.I ex
+and the new version 2.0.
+The new
+.I ex
+is available as the standard
+.I ex
+on the \s-2VAX\s0 on the 5th floor of Evans,
+and as a new and experimental version
+in /usr/new on the Cory 11/70.
+It will soon be available in /usr/new on the Computer Center and Ingres
+Machines.
+Send problems over the Berkeley network to ``vax:bill''.
+.SH
+\s+2Changes to existing features\s0
+.SH
+Options.
+.PP
+The options
+.I editany,
+.I edited,
+.I fork,
+.I hush,
+.I printall
+and
+.I sticky
+have been deleted because of lack of use.
+The
+.I notify
+option has been renamed
+.I report.
+.PP
+The
+.I home
+option will soon be superseded by the environment feature of version 7
+\s-2UNIX\s0 and has been deleted.
+Similarly the
+.I mode
+option is superseded by the
+.I umask
+of version 7 and has also been deleted.
+.PP
+The
+.I visualmessage
+option has been deleted; use ``mesg n'' at the system command level
+to inhibit interconsole messages.
+.PP
+The
+.I iul
+option is replaced by a more general mechanism which allows portions of the
+buffer to be processed through specified commands; you can get
+.I iul
+processing on lines 1 to 100 of a file by doing ``1,100!iul''.
+This replaces the lines 1 to 100 by the output of an
+.I iul
+command, giving the command these lines as input.
+.SH
+Invocation
+.PP
+The options
+.B \-o,
+.B \-n
+and
+.B \-p
+have been deleted.
+.SH
+Filename formation
+.PP
+The alternate filename is now represented as `#' rather than `\`', since
+`\`' is a shell metacharacter.  The editor now uses a shell to expand
+filenames containing shell metacharacters.  If you use
+.I csh,
+then you can use all the shell metasyntax in forming new filenames,
+including home directory references with `~' and variables you define in
+.I \&.cshrc
+using `$'.
+.SH
+Character representation
+.PP
+Control characters are now represented as `^\fIx\fR'; thus a control X is
+printed as `^X'; the delete character is represented `^?'.
+.SH
+Command changes
+.PP
+There have been major changes to open/visual (incompatible ones are described
+below).
+.PP
+It is no longer possible to
+discard changes by repeating the
+.I quit
+command twice.
+You must use the variant form \fBquit!\fR to get out of the editor discarding
+changes.
+Similarly the variant forms \fBe!\fR and \fBnext!\fR must be used to edit
+a new file or the next file without saving changes you have made.\*(dg
+.FS
+\*(dg
+Less useful are \fBrewind!\fR and \fBrecover!\fR.
+.FE
+.PP
+A new form of the `!' shell escape replaces the
+.I expand
+and
+.I tabulate
+commands.
+Thus the command ``1,10expand'' of the old version is replaced by
+``1,10!expand'' in the new.
+Note also that the command abbreviation 
+.B ta
+no longer refers to the
+.I tabulate
+command, which has been deleted, but rather refers to the new
+.I tag
+command.
+.PP
+The format of the
+.I args
+command has been changed; the files are no longer numbered, rather
+the entire argument list is always printed with the current file name
+enclosed by `[' and `]'.
+.PP
+The format of the
+.I file
+command output has been changed;
+the editor says `[Not edited]' in the rare case that this is true rather
+than saying `[Edited]'.  The command also gives the percentage of the way
+into the buffer that the current line is.
+.PP
+The format of the
+.I set
+command has been improved;
+``set all'' now prints in a three column format.
+The commands ``set %'', ``set !'' and ``set \`'' have been deleted.
+The command ``set'' now prints in a one line format rather than down
+the screen.
+.PP
+The commands
+.I echo,
+.I expand,
+.I help,
+.I reset,
+.I sync,
+.I tabulate
+and
+.I xpand
+have been deleted.
+.SH
+.SH
+\s+2Changes to open and visual\s0
+.PP
+A large number of changes have been made to open and visual;
+we summarize only the most noticeable ones here.  See the attached reference
+card for more information, and (even if you know
+how to use visual already) you should look at
+.I "An Introduction to Text Editing with Vi".
+We do not discuss any of the new commands in visual here.\(dg
+.FS
+\(dg It is now possible to edit with the focus of the editing
+being
+.I visual
+using a command
+.I vi
+rather than
+.I ex
+on the command line, and
+using a new \fB:\fR command from within visual to run command mode commands.
+.FE
+.PP
+The delete line command is now \fBdd\fR rather than \fB\e\e\fR (\fB\e\e\fR
+no longer works!.)
+In fact, \fBd\fR and other operators can now operate on lines; thus
+\fBdL\fR deletes to the last line on the screen.
+The shift commands \fB<\fR and \fB>\fR are now operators, thus
+\fB<<\fR and \fB>>\fR now have the effect that \fB<\fR and \fB>\fR used
+to have.
+.PP
+The command \fBv\fR has been deleted; only its synonym \fBz\fR remains.
+The \fBK\fR operation has been moved to \fBm\fR; \fBK\fR has no meaning
+in the new version.
+The \fB^S\fR operation has been deleted, but \fB^G\fR does a sync, and
+also prints some information.
+The \fB^W\fR operation has been deleted (use \fBB\fR).
+The \fB#\fR, \fB@\fR and \fB^X\fR operations have been deleted.
+To delete to the beginning of the line use \fBd0\fR; the commands and
+\fBx\fR and \fBX\fR are similar to \fB#\fR.
+.PP
+During inputs, \fB^W\fR backs up like \fBb\fR rather than \fBB\fR.
+.PP
+Terminal support has been vastly improved; the editor will now drive most
+any display terminal, using all terminal features such as cursor addressing,
+clear to end of line, insert and delete line and insert and delete character.
+To help performance on slow terminals some options are now set based on the
+intelligence and speed of the terminal; in particular, the default window
+size is 1/2 a full screen at 300 baud, or 2/3 of a full screen at 1200 baud.
