@@ -10,8 +10,10 @@
 # their  experiences (good or bad) with these elementary function  codes,
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
-
-# @(#)cbrt.s	1.1 (Berkeley) 5/23/85; 1.2 (ucb.elefunt) %G%
+	.data
+	.align	2
+_sccsid:
+.asciz	"@(#)cbrt.s	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%"
 
 # double cbrt(double arg)
 # W. Kahan, 10/13/80. revised 1/13/84 for keeping sign symmetry

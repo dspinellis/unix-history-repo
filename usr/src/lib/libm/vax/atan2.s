@@ -10,8 +10,10 @@
 # their  experiences (good or bad) with these elementary function  codes,
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
-
-# @(#)atan2.s	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
+	.data
+	.align	2
+_sccsid:
+.asciz	"@(#)atan2.s	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
 
 # ATAN2(Y,X)
 # RETURN ARG (X+iY)

@@ -9,10 +9,13 @@
  * ongoing  research  project and hence should  feel  obligated  to report
  * their  experiences (good or bad) with these elementary function  codes,
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
- *
- *
- * @(#)sqrt.s	1.1 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
- *
+ */
+	.data
+	.align	2
+_sccsid:
+.asciz	"@(#)sqrt.s	1.1 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
+
+/*
  * double sqrt(arg)   revised August 15,1982
  * double arg;
  * if(arg<0.0) { _errno = EDOM; return(<a reserved operand>); }
