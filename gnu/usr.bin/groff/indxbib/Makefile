@@ -12,7 +12,7 @@ DPADD+= 	$(LIBBIB) $(LIBGROFF) $(LIBMATH)
 #
 afterinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/eign \
-		/usr/share/${common_words_file}
+		$(DESTDIR)/usr/share/dict
 
 .include <bsd.prog.mk>
 .include "../../../usr.bin/Makefile.inc"
