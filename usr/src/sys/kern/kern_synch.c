@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.2	%H%	*/
+/*	kern_synch.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,9 +10,6 @@
 #include "../h/vm.h"
 #include "../h/pte.h"
 
-#ifdef FASTVAX
-asm(" .globl _eintr");
-#endif
 
 #define SQSIZE 0100	/* Must be power of 2 */
 #define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
@@ -77,16 +74,7 @@ caddr_t chan;
 	 * (see trap1/trap.c)
 	 */
 psig:
-#ifndef FASTVAX
 	longjmp(u.u_qsav);
-#else
-	asm(".set U_SSAV,140");
-	asm("movl _u+U_SSAV,fp");
-	asm("movl _u+U_SSAV+4,sp");
-	asm("movl _u+U_SSAV+8,r11");
-	u.u_error = EINTR;
-	asm("jmp _eintr");
-#endif
 	/*NOTREACHED*/
 }
 
