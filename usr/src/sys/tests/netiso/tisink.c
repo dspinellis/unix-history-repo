@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisink.c	7.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisink.c	7.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,7 +46,7 @@ struct  sockaddr_iso faddr, laddr = { sizeof(laddr), AF_ISO };
 struct  sockaddr_iso *siso = &laddr;
 char **xenvp;
 
-long size, count = 10, forkp, confp, mynamep, verbose = 1, playtag, echop = 1;
+long size, count = 10, forkp, confp, mynamep, verbose = 1, playtag, echop = 0;
 long records, intercept = 0, isode_mode = 0, dgramp = 0, tp0mode = 0;
 void savedata();
 
