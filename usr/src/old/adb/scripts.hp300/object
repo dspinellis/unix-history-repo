@@ -1,0 +1,5 @@
+./"memq.prev"16t"memq.next"16t"obj.prev"16t"obj.next"n4X
++/"lock"16t"lockholder"16t"ref_count"16t"size"n2XDX
++/"res_count"16t"copy"16t"pager"16t"pager_ready"nDXXD8+
++/"paging_off"16t"shadow"16t"shadow_off"n3X
++/"pinprog"8t"flags"8t"cache.prev"16t"cache.next"n2x2X
