@@ -1,4 +1,8 @@
-#	@(#)Makefile.BSD-OS	8.2 (Berkeley) %G%
+#
+#  This Makefile is for BSDI boxes running BSD-OS (formerly BSD-386).
+#
+#	@(#)Makefile.BSD-OS	8.3 (Berkeley) %G%
+#
 
 PROG=	sendmail
 DBMDEF=	-DNEWDB
