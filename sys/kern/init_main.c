@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.10 1993/11/25 13:16:07 davidg Exp $
+ *	$Id: init_main.c,v 1.11 1993/12/19 00:51:18 wollman Exp $
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@
 
 #include "vm/vm.h"
 
-char	copyright[] =
+const char	copyright[] =
 "Copyright (c) 1989,1990,1991,1992 William F. Jolitz. All rights reserved.\n\
 Copyright (c) 1982,1986,1989,1991 The Regents of the University\n\
 of California.  All rights reserved.\n\n";
@@ -91,6 +91,15 @@ struct	proc *updateproc;
 #if __GNUC__ >= 2
 void __main() {}
 #endif
+
+/*
+ * This table is filled in by the linker with functions that need to be
+ * called to initialize various pseudo-devices and whatnot.
+ */
+typedef void (*pseudo_func_t)(void);
+extern const struct linker_set pseudo_set;
+static const pseudo_func_t *pseudos = 
+  (const pseudo_func_t *)&pseudo_set.ls_items[0];
 
 /*
  * System startup; initialize the world, create process 0,
@@ -223,21 +232,11 @@ main()
 	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
 	mbinit();
-#ifdef SYSVSHM
-	shminit();
-#endif
-#include "sl.h"
-#if NSL > 0
-	slattach();			/* XXX */
-#endif
-#include "ppp.h"
-#if NPPP > 0
-	pppattach();			/* XXX */
-#endif
-#include "loop.h"
-#if NLOOP > 0
-	loattach();			/* XXX */
-#endif
+
+	while(*pseudos) {
+		(**pseudos)();
+	}
+
 	/*
 	 * Block reception of incoming packets
 	 * until protocols have been initialized.

@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.10 1993/12/12 12:23:19 davidg Exp $
+ *	$Id: kern_execve.c,v 1.11 1993/12/19 00:51:23 wollman Exp $
  */
 
 #include "param.h"
@@ -36,6 +36,7 @@
 #include "signalvar.h"
 #include "resourcevar.h"
 #include "imgact.h"
+#include "kernel.h"
 #include "mount.h"
 #include "file.h"
 #include "acct.h"
@@ -57,28 +58,16 @@
 int exec_extract_strings __P((struct image_params *));
 caddr_t exec_copyout_strings __P((struct image_params *));
 
-int exec_aout_imgact __P((struct image_params *));
-int exec_shell_imgact __P((struct image_params *));
-
-struct execsw {
-	int (*imgact) __P((struct image_params *));
-};
-
-struct execsw execsw[] = {
-	{ exec_aout_imgact },
-	{ exec_shell_imgact },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-};
+/*
+ * execsw_set is constructed for us by the linker.  Each of the items
+ * is a pointer to a `const struct execsw', hence the double pointer here.
+ */
+extern const struct linker_set execsw_set;
+const struct execsw **execsw = (const struct execsw **)&execsw_set.ls_items[0];
 
 /*
  * execve() system call.
  */
-
 int
 execve(p, uap, retval)
 	struct proc *p;
@@ -203,9 +192,9 @@ interpret:
 	 *	image is interpreted, loop back up and try activating
 	 *	the interpreter.
 	 */
-	for (i = 0; i < sizeof(execsw)/sizeof(execsw[0]); ++i) {
-		if (execsw[i].imgact)
-			error = (*execsw[i].imgact)(iparams);
+	for (i = 0; execsw[i]; ++i) {
+		if (execsw[i]->ex_imgact)
+			error = (*execsw[i]->ex_imgact)(iparams);
 		else
 			continue;
 

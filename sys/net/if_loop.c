@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_loop.c	7.13 (Berkeley) 4/26/91
- *	$Id: if_loop.c,v 1.4 1993/11/15 20:45:58 wollman Exp $
+ *	$Id: if_loop.c,v 1.5 1993/11/25 01:34:03 wollman Exp $
  */
 
 /*
@@ -44,6 +44,7 @@
 #include "socket.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/if_types.h"
@@ -71,8 +72,8 @@
 
 #include "bpfilter.h"
 #if NBPFILTER > 0
-#include <sys/time.h>
-#include <net/bpf.h>
+#include "sys/time.h"
+#include "net/bpf.h"
 static caddr_t lo_bpf;
 #endif
 
@@ -105,6 +106,8 @@ loattach(void)
 	bpfattach(&lo_bpf, ifp, DLT_NULL, sizeof(u_int));
 #endif
 }
+
+TEXT_SET(pseudo_set, loattach);
 
 int
 looutput(ifp, m, dst, rt)

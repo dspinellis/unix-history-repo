@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.6 1993/11/25 01:33:24 wollman Exp $
+ *	$Id: sysv_shm.c,v 1.7 1993/12/19 00:51:37 wollman Exp $
  */
 
 /*
@@ -113,6 +113,8 @@ shminit()
 		shmsegs[i].shm_perm.seq = 0;
 	}
 }
+
+TEXT_SET(pseudo_set, shminit);
 
 /*
  * Entry point for all SHM calls

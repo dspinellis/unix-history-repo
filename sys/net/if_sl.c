@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *	$Id: if_sl.c,v 1.5 1993/11/16 02:47:24 wollman Exp $
+ *	$Id: if_sl.c,v 1.6 1993/11/25 01:34:06 wollman Exp $
  */
 
 /*
@@ -65,7 +65,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Id: if_sl.c,v 1.5 1993/11/16 02:47:24 wollman Exp $ */
+/* $Id: if_sl.c,v 1.6 1993/11/25 01:34:06 wollman Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -95,7 +95,7 @@
 #include "netinet/in_var.h"
 #include "netinet/ip.h"
 #else
-Huh? Slip without inet?
+#error "Huh? Slip without inet?"
 #endif
 
 #include "machine/mtpr.h"
@@ -106,8 +106,8 @@ Huh? Slip without inet?
 
 #include "bpfilter.h"
 #if NBPFILTER > 0
-#include <sys/time.h>
-#include <net/bpf.h>
+#include "sys/time.h"
+#include "net/bpf.h"
 #endif
 
 /*
@@ -261,6 +261,8 @@ slattach(void)
 #endif
 	}
 }
+
+TEXT_SET(pseudo_set, slattach);
 
 static int
 slinit(sc)

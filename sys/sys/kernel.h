@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.6 1993/12/19 00:55:17 wollman Exp $
+ *	$Id: kernel.h,v 1.7 1993/12/20 16:13:05 wollman Exp $
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -70,8 +70,8 @@ extern char *s_lowpc;
 #endif
 
 extern const char *panicstr;	/* panic message */
-extern char version[];		/* system version */
-extern char copyright[];	/* system copyright */
+extern const char version[];	/* system version */
+extern const char copyright[];	/* system copyright */
 
 extern int nblkdev;		/* number of entries in bdevsw */
 extern int nchrdev;		/* number of entries in cdevsw */
