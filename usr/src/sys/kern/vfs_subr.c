@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.53 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.54 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,7 @@
 #include "specdev.h"
 #include "namei.h"
 #include "ucred.h"
+#include "buf.h"
 #include "errno.h"
 #include "malloc.h"
 
@@ -296,6 +297,277 @@ insmntque(vp, mp)
 		mp->mnt_mounth = vp;
 		vp->v_mountb = &mp->mnt_mounth;
 		vp->v_mountf = NULL;
+	}
+}
+
+/*
+ * Make sure all write-behind blocks associated
+ * with mount point are flushed out (from sync).
+ */
+mntflushbuf(mountp, flags)
+	struct mount *mountp;
+	int flags;
+{
+	register struct vnode *vp;
+
+	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
+		panic("mntflushbuf: not busy");
+loop:
+	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (VOP_ISLOCKED(vp))
+			continue;
+		if (vget(vp))
+			goto loop;
+		vflushbuf(vp, flags);
+		vput(vp);
+		if (vp->v_mount != mountp)
+			goto loop;
+	}
+}
+
+/*
+ * Flush all dirty buffers associated with a vnode.
+ */
+vflushbuf(vp, flags)
+	register struct vnode *vp;
+	int flags;
+{
+	register struct buf *bp;
+	struct buf *nbp;
+	int s;
+
+loop:
+	s = splbio();
+	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		if ((bp->b_flags & B_BUSY))
+			continue;
+		if ((bp->b_flags & B_DELWRI) == 0)
+			panic("vflushbuf: not dirty");
+		bremfree(bp);
+		bp->b_flags |= B_BUSY;
+		splx(s);
+		/*
+		 * Wait for I/O associated with indirect blocks to complete,
+		 * since there is no way to quickly wait for them below.
+		 * NB: This is really specific to ufs, but is done here
+		 * as it is easier and quicker.
+		 */
+		if (bp->b_vp == vp || (flags & B_SYNC) == 0) {
+			(void) bawrite(bp);
+			s = splbio();
+		} else {
+			(void) bwrite(bp);
+			goto loop;
+		}
+	}
+	splx(s);
+	if ((flags & B_SYNC) == 0)
+		return;
+	s = splbio();
+	while (vp->v_numoutput) {
+		vp->v_flag |= VBWAIT;
+		sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
+	}
+	splx(s);
+	if (vp->v_dirtyblkhd) {
+		vprint("vflushbuf: dirty", vp);
+		goto loop;
+	}
+}
+
+/*
+ * Update outstanding I/O count and do wakeup if requested.
+ */
+vwakeup(bp)
+	register struct buf *bp;
+{
+	register struct vnode *vp;
+
+	bp->b_dirtyoff = bp->b_dirtyend = 0;
+	if (vp = bp->b_vp) {
+		vp->v_numoutput--;
+		if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
+			if (vp->v_numoutput < 0)
+				panic("vwakeup: neg numoutput");
+			vp->v_flag &= ~VBWAIT;
+			wakeup((caddr_t)&vp->v_numoutput);
+		}
+	}
+}
+
+/*
+ * Invalidate in core blocks belonging to closed or umounted filesystem
+ *
+ * Go through the list of vnodes associated with the file system;
+ * for each vnode invalidate any buffers that it holds. Normally
+ * this routine is preceeded by a bflush call, so that on a quiescent
+ * filesystem there will be no dirty buffers when we are done. Binval
+ * returns the count of dirty buffers when it is finished.
+ */
+mntinvalbuf(mountp)
+	struct mount *mountp;
+{
+	register struct vnode *vp;
+	int dirty = 0;
+
+	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
+		panic("mntinvalbuf: not busy");
+loop:
+	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (vget(vp))
+			goto loop;
+		dirty += vinvalbuf(vp, 1);
+		vput(vp);
+		if (vp->v_mount != mountp)
+			goto loop;
+	}
+	return (dirty);
+}
+
+/*
+ * Flush out and invalidate all buffers associated with a vnode.
+ * Called with the underlying object locked.
+ */
+vinvalbuf(vp, save)
+	register struct vnode *vp;
+	int save;
+{
+	register struct buf *bp;
+	struct buf *nbp, *blist;
+	int s, dirty = 0;
+
+	for (;;) {
+		if (blist = vp->v_dirtyblkhd)
+			/* void */;
+		else if (blist = vp->v_cleanblkhd)
+			/* void */;
+		else
+			break;
+		for (bp = blist; bp; bp = nbp) {
+			nbp = bp->b_blockf;
+			s = splbio();
+			if (bp->b_flags & B_BUSY) {
+				bp->b_flags |= B_WANTED;
+				sleep((caddr_t)bp, PRIBIO + 1);
+				splx(s);
+				break;
+			}
+			bremfree(bp);
+			bp->b_flags |= B_BUSY;
+			splx(s);
+			if (save && (bp->b_flags & B_DELWRI)) {
+				dirty++;
+				(void) bwrite(bp);
+				break;
+			}
+			if (bp->b_vp != vp)
+				reassignbuf(bp, bp->b_vp);
+			else
+				bp->b_flags |= B_INVAL;
+			brelse(bp);
+		}
+	}
+	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
+		panic("vinvalbuf: flush failed");
+	return (dirty);
+}
+
+/*
+ * Associate a buffer with a vnode.
+ */
+bgetvp(vp, bp)
+	register struct vnode *vp;
+	register struct buf *bp;
+{
+
+	if (bp->b_vp)
+		panic("bgetvp: not free");
+	VHOLD(vp);
+	bp->b_vp = vp;
+	if (vp->v_type == VBLK || vp->v_type == VCHR)
+		bp->b_dev = vp->v_rdev;
+	else
+		bp->b_dev = NODEV;
+	/*
+	 * Insert onto list for new vnode.
+	 */
+	if (vp->v_cleanblkhd) {
+		bp->b_blockf = vp->v_cleanblkhd;
+		bp->b_blockb = &vp->v_cleanblkhd;
+		vp->v_cleanblkhd->b_blockb = &bp->b_blockf;
+		vp->v_cleanblkhd = bp;
+	} else {
+		vp->v_cleanblkhd = bp;
+		bp->b_blockb = &vp->v_cleanblkhd;
+		bp->b_blockf = NULL;
+	}
+}
+
+/*
+ * Disassociate a buffer from a vnode.
+ */
+brelvp(bp)
+	register struct buf *bp;
+{
+	struct buf *bq;
+	struct vnode *vp;
+
+	if (bp->b_vp == (struct vnode *) 0)
+		panic("brelvp: NULL");
+	/*
+	 * Delete from old vnode list, if on one.
+	 */
+	if (bp->b_blockb) {
+		if (bq = bp->b_blockf)
+			bq->b_blockb = bp->b_blockb;
+		*bp->b_blockb = bq;
+		bp->b_blockf = NULL;
+		bp->b_blockb = NULL;
+	}
+	vp = bp->b_vp;
+	bp->b_vp = (struct vnode *) 0;
+	HOLDRELE(vp);
+}
+
+/*
+ * Reassign a buffer from one vnode to another.
+ * Used to assign file specific control information
+ * (indirect blocks) to the vnode to which they belong.
+ */
+reassignbuf(bp, newvp)
+	register struct buf *bp;
+	register struct vnode *newvp;
+{
+	register struct buf *bq, **listheadp;
+
+	if (newvp == NULL)
+		panic("reassignbuf: NULL");
+	/*
+	 * Delete from old vnode list, if on one.
+	 */
+	if (bp->b_blockb) {
+		if (bq = bp->b_blockf)
+			bq->b_blockb = bp->b_blockb;
+		*bp->b_blockb = bq;
+	}
+	/*
+	 * If dirty, put on list of dirty buffers;
+	 * otherwise insert onto list of clean buffers.
+	 */
+	if (bp->b_flags & B_DELWRI)
+		listheadp = &newvp->v_dirtyblkhd;
+	else
+		listheadp = &newvp->v_cleanblkhd;
+	if (*listheadp) {
+		bp->b_blockf = *listheadp;
+		bp->b_blockb = listheadp;
+		bp->b_blockf->b_blockb = &bp->b_blockf;
+		*listheadp = bp;
+	} else {
+		*listheadp = bp;
+		bp->b_blockb = listheadp;
+		bp->b_blockf = NULL;
 	}
 }
 
