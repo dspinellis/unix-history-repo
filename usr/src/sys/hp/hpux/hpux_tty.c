@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.7 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -19,18 +19,16 @@
  */
 #ifdef HPUXCOMPAT
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/filedesc.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/proc.h"
-#include "sys/file.h"
-#include "sys/conf.h"
-#include "sys/buf.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "filedesc.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "proc.h"
+#include "file.h"
+#include "conf.h"
+#include "buf.h"
+#include "kernel.h"
 
 #include "hpux.h"
 #include "hpux_termio.h"
@@ -38,9 +36,10 @@
 /*
  * Map BSD/POSIX style termios info to and from SYS5 style termio stuff.
  */
-hpuxtermio(fp, com, data)
+hpuxtermio(fp, com, data, p)
 	struct file *fp;
 	caddr_t data;
+	struct proc *p;
 {
 	struct termios tios;
 	int line, error, (*ioctlrout)();
@@ -54,7 +53,7 @@ hpuxtermio(fp, com, data)
 		 * Get BSD terminal state
 		 */
 		bzero(data, sizeof(struct hpuxtermio));
-		if (error = (*ioctlrout)(fp, TIOCGETA, (caddr_t)&tios))
+		if (error = (*ioctlrout)(fp, TIOCGETA, (caddr_t)&tios, p))
 			break;
 		/*
 		 * Set iflag.
@@ -127,7 +126,7 @@ hpuxtermio(fp, com, data)
 		 * Line discipline
 		 */
 		line = 0;
-		(void) (*ioctlrout)(fp, TIOCGETD, (caddr_t)&line);
+		(void) (*ioctlrout)(fp, TIOCGETD, (caddr_t)&line, p);
 		tiop->c_line = line;
 		/*
 		 * Set editing chars
@@ -151,7 +150,7 @@ hpuxtermio(fp, com, data)
 		/*
 		 * Get old characteristics and determine if we are a tty.
 		 */
-		if (error = (*ioctlrout)(fp, TIOCGETA, (caddr_t)&tios))
+		if (error = (*ioctlrout)(fp, TIOCGETA, (caddr_t)&tios, p))
 			break;
 		/*
 		 * Set iflag.
@@ -249,13 +248,13 @@ hpuxtermio(fp, com, data)
 			com = TIOCSETAW;
 		else
 			com = TIOCSETAF;
-		error = (*ioctlrout)(fp, com, (caddr_t)&tios);
+		error = (*ioctlrout)(fp, com, (caddr_t)&tios, p);
 		if (error == 0) {
 			/*
 			 * Set line discipline
 			 */
 			line = tiop->c_line;
-			(void) (*ioctlrout)(fp, TIOCSETD, (caddr_t)&line);
+			(void) (*ioctlrout)(fp, TIOCSETD, (caddr_t)&line, p);
 			/*
 			 * Set non-blocking IO if VMIN == VTIME == 0.
 			 * Should handle the other cases as well.  It also
@@ -266,7 +265,11 @@ hpuxtermio(fp, com, data)
 			 */
 			line = (tiop->c_cc[HPUXVMIN] == 0 &&
 				tiop->c_cc[HPUXVTIME] == 0);
-			(void) fset(fp, FNDELAY, line);
+			if (line)
+				fp->f_flag |= FNDELAY;
+			else
+				fp->f_flag &= ~FNDELAY;
+			(void) (*ioctlrout)(fp, FIONBIO, (caddr_t)&line, p);
 		}
 		break;
 
@@ -354,8 +357,8 @@ getsettty(p, fdes, com, cmarg)
 	struct sgttyb sb;
 	int error;
 
-	if (((unsigned)fdes) >= fdp->fd_maxfiles ||
-	    (fp = OFILE(fdp, fdes)) == NULL)
+	if (((unsigned)fdes) >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[fdes]) == NULL)
 		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
 		return (EBADF);
@@ -370,13 +373,14 @@ getsettty(p, fdes, com, cmarg)
 		if (hsb.sg_flags & V7_XTABS)
 			sb.sg_flags |= XTABS;
 		if (hsb.sg_flags & V7_HUPCL)
-			(void)(*fp->f_ops->fo_ioctl)(fp, TIOCHPCL, (caddr_t)0);
+			(void)(*fp->f_ops->fo_ioctl)
+				(fp, TIOCHPCL, (caddr_t)0, p);
 		com = TIOCSETP;
 	} else {
 		bzero((caddr_t)&hsb, sizeof hsb);
 		com = TIOCGETP;
 	}
-	error = (*fp->f_ops->fo_ioctl)(fp, com, (caddr_t)&sb);
+	error = (*fp->f_ops->fo_ioctl)(fp, com, (caddr_t)&sb, p);
 	if (error == 0 && com == TIOCGETP) {
 		hsb.sg_ispeed = sb.sg_ispeed;
 		hsb.sg_ospeed = sb.sg_ospeed;
