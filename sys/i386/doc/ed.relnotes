@@ -3,19 +3,20 @@
 		    David Greenman, 24-May-1993
 		------------------------------------
 
-Last updated: 16-October-1993
+Last updated: 22-November-1993
 
 INTRODUCTION
 ------------
    The 'ed' device driver is a new, high performance device driver supporting
-the Western Digital/SMC 80x3 series (including 'EtherCard PLUS' 'Elite16'), the
-3Com 3c503 (both 8 and 16 bit versions), and the Novell NE1000/2000. All of the
-ethernet controllers use the DS8390 or 83C690 Network Interface Controller
-(NIC). The differences between the boards are in their memory capacity, bus
-width (8/16 bits), special logic (asic) used to configure the board, and the
-host access method to the NIC memory (shared or programmed I/O). Every effort
-has been made to conform to the manufactures' specifications for the NIC and
-asic. This includes both normal operation and error recovery.
+the Western Digital/SMC 80x3 series (including 'EtherCard PLUS' 'Elite16' and
+'Ultra'), the 3Com 3c503 (both 8 and 16 bit versions), and the Novell NE1000/
+NE2000. All of the ethernet controllers use the DS8390, 83C690, or 83C790
+Network Interface Controller (NIC). The differences between the boards are in
+their memory capacity, bus width (8/16 bits), special logic (asic) used to
+configure the board, and the host access method to the NIC memory (shared or
+programmed I/O). Every effort has been made to conform to the manufactures'
+specifications for the NIC and asic. This includes both normal operation and
+error recovery.
 
 PERFORMANCE
 -----------
