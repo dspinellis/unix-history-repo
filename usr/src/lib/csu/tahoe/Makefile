@@ -1,75 +1,43 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.8 (Berkeley) %G%
-#
-DEFS=	-DLIBC_SCCS
-CFLAGS=	-O ${DEFS}
-CSRCS=	gmon.c mon.c
-ASRCS=	crt0.s  mcrt0.s
+#	@(#)Makefile	5.9 (Berkeley) %G%
+
+CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
-TAGSFILE=tags
 
 .s.o:
-	${AS} -o $*.o $*.s
-	ld -x -r $*.o
-	mv ${OBJDIR}a.out ${OBJDIR}$*.o
+	${AS} -o ${.TARGET} ${.IMPSRC}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 all: ${OBJS}
 
 mcrt0.o: moncrt0.o mon.o
-	ld -x -r -o $@ moncrt0.o mon.o
+	${LD} -x -r -o ${.TARGET} moncrt0.o mon.o
 
 gcrt0.o: moncrt0.o gmon.o
-	ld -x -r -o $@ moncrt0.o gmon.o
+	${LD} -x -r -o ${.TARGET} ${.ALLSRC}
 
 moncrt0.o: mcrt0.s
-	${AS} -o $@ mcrt0.s
+	${AS} -o ${.TARGET} ${.ALLSRC}
 
-mon.o: mon.c
-	${CC} -S ${CFLAGS} mon.c
-	ex - mon.s < mon.ex
-	${AS} -o $@ mon.s
+mon.o: mon.c mon.ex
+	${CC} -S ${CFLAGS} ${.IMPSRC}
+	ex - mon.s < ${.CURDIR}/mon.ex
+	${AS} -o ${.TARGET} mon.s
 	rm -f mon.s
 
-gmon.o: gmon.c
-	${CC} -S ${CFLAGS} gmon.c
-	ex - gmon.s < mon.ex
+gmon.o: gmon.c mon.ex
+	${CC} -S ${CFLAGS} ${.IMPSRC}
+	ex - gmon.s < ${.CURDIR}/mon.ex
 	${AS} -o $@ gmon.s
 	rm -f gmon.s
 
 install:
-	install -o bin -g bin -m 444 crt0.o ${DESTDIR}/usr/lib/crt0.o
-	install -o bin -g bin -m 444 mcrt0.o ${DESTDIR}/usr/lib/mcrt0.o
-	install -o bin -g bin -m 444 gcrt0.o ${DESTDIR}/usr/lib/gcrt0.o
+	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
+	    ${DESTDIR}/usr/lib
 
-clean:
-	rm -f ${OBJDIR}*.o ${OBJDIR}a.out core
+cleandir clean:
+	rm -f ${OBJS} core a.out
 
-cleandir: clean
-	rm -f ${MAN} tags .depend
+depend lint tags:
 
-tags:
-	cwd=`pwd`; \
-	for i in ${CSRCS}; do \
-		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
-	done
-	(P=`pwd`; \
-	egrep "^ENTRY(.*)|^SYSCALL(.*)" ${ASRCS} | sed \
-"s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 $$P/\1 /^\2(\3\4$$/;" \
-		>> ${TAGSFILE})
-
-depend:
+.include <bsd.own.mk>

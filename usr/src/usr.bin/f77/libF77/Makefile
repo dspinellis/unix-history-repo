@@ -1,36 +1,6 @@
-#
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	5.10 (Berkeley) %G%
-#
-# Makefile for f77 math & startup lib, libF77.a
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
-CFLAGS=	-O
-FFLAGS=	-O
-DEST=	${DESTDIR}/usr/lib
-LIBRARY=libF77.a
-LIBRARY_P=libF77_p.a
-OPTIONS=-DUCBVAX
-OBJS=	abort_.o besj0_.o besj1_.o besjn_.o besy0_.o besy1_.o besyn_.o \
-	c_abs.o c_cos.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o d_abs.o \
-	d_acos.o d_asin.o d_atan.o d_atn2.o d_cnjg.o d_cos.o d_cosh.o \
-	d_dim.o d_dprod.o d_exp.o d_imag.o d_int.o d_lg10.o d_log.o \
-	d_mod.o d_nint.o d_prod.o d_sign.o d_sin.o d_sinh.o d_tan.o \
-	d_tanh.o dbesj0_.o dbesj1_.o dbesjn_.o dbesy0_.o dbesy1_.o \
-	dbesyn_.o derf_.o derfc_.o ef1asc_.o ef1cmc_.o erf_.o erfc_.o \
-	exit_.o h_abs.o h_dim.o h_dnnt.o h_indx.o h_len.o h_mod.o h_nint.o \
-	h_sign.o hl_ge.o hl_gt.o hl_le.o hl_lt.o i_abs.o i_dim.o i_dnnt.o \
-	i_indx.o i_len.o i_mod.o i_nint.o i_sign.o l_ge.o l_gt.o l_le.o \
-	l_lt.o lnblnk_.o long_.o main.o pow_ci.o pow_dd.o pow_di.o pow_hh.o \
-	pow_ii.o pow_ri.o pow_zi.o pow_zz.o r_abs.o r_acos.o r_asin.o \
-	r_atan.o r_atn2.o r_cnjg.o r_cos.o r_cosh.o r_dim.o r_exp.o \
-	r_imag.o r_int.o r_lg10.o r_log.o r_mod.o r_nint.o r_sign.o r_sin.o \
-	r_sinh.o r_sqrt.o r_tan.o r_tanh.o rand_.o random_.o range.o \
-	rindex_.o s_cat.o s_cmp.o s_copy.o s_paus.o s_rnge.o s_stop.o \
-	short_.o signal_.o subout.o traper_.o trapov_.o trpfpe_.o z_cos.o \
-	z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o
+LIB=	F77
 SRCS=	abort_.c besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
 	c_abs.c c_cos.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c d_abs.c \
 	d_acos.c d_asin.c d_atan.c d_atn2.c d_cnjg.c d_cos.c d_cosh.c \
@@ -50,77 +20,46 @@ SRCS=	abort_.c besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
 	subout.c traper_.c trapov_.c trpfpe_.c z_cos.c z_div.c z_exp.c \
 	z_log.c z_sin.c z_sqrt.c
 
-all: Version ${LIBRARY} ${LIBRARY_P}
+LDADD=		Version.o
+CLEANFILES+=	Usef Version.o Version.c mkvers
 
-${LIBRARY}: ${OBJS}
-		@echo "Loading ${LIBRARY} ... "
-		@if [ -d obj ]; then cd obj; fi; \
-			ar cru ${LIBRARY} ${OBJS} Version; \
-			ranlib ${LIBRARY}
+all: Usef Version.o
 
-${LIBRARY_P}: ${OBJS}
-		@echo "Loading ${LIBRARY_P} ... "
-		@if [ -d obj ]; then cd obj; fi; \
-			cd profiled; ar cru ../${LIBRARY_P} ${OBJS} Version; \
-			ranlib ../${LIBRARY_P}
-
-Version: ${SRCS} obj/mkvers
-	@rm -f Version.c
-	./obj/mkvers ${LIBRARY} ${SRCS} > Version.c
+Version.o: Version.c
 	${CC} -c Version.c
-	mv -f obj/Version.o obj/Version
-	@rm -f profiled/Version
-	ln obj/Version profiled/Version
+
+Version.c: mkvers ${SRCS}
+	mkvers libF77.a ${.ALLSRC:M*.c} > ${.TARGET}
 
 mkvers: mkvers.c
-	@${CC} mkvers.c -o mkvers
-
-clean:
-	rm -f ${OBJS} obj/Usef profiled/*.o ${LIBRARY} ${LIBRARY_P} obj/mkvers
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend:
-	mkdep ${SRCS}
-
-install: ${MAN}
-	install -o bin -g bin -m 644 ${LIBRARY} ${DEST}/${LIBRARY}
-	ranlib -t ${DEST}/${LIBRARY}
-	install -o bin -g bin -m 644 ${LIBRARY_P} ${DEST}/${LIBRARY_P}
-	ranlib -t ${DEST}/${LIBRARY_P}
-
-tags: ${SRCS}
-	ctags ${SRCS}
-
-trapov_.o: trapov_.c
-	${CC} -S $(OPTIONS) trapov_.c;
-	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
-		| ex - trapov_.s;
-	as trapov_.s -o trapov_.o;
-	mv obj/trapov_.o profiled/trapov_.o
-	rm trapov_.s
-	${CC} -S $(OPTIONS) trapov_.c
-	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
-		| ex - trapov_.s
-	as trapov_.s -o trapov_.o
-	rm trapov_.s
-
-#	'Usef' is part of a kuldge to get around a bug in the C compiler.
-#	C (sec. 9.10 of C ref manual) should round the return value of
-#	functions of type float from double to float.  It doesn't, so f77
-#	truncates it losing a half bit of accuracy.  See file Test_float
-#	for a test.  When it is fixed, get rid of Usef & the extraneous stores
-#	in  pow_ri, r_dim, r_mod, r_nint .
-
-${OBJS}: Usef
+	${CC} ${CFLAGS} ${.CURDIR}/mkvers.c -o ${.TARGET}
 
 Usef: Usef.c
-	${CC} -O Usef.c -o Usef
+	${CC} ${CFLAGS} ${.CURDIR}/Usef.c -o ${.TARGET}
+
+trapov_.o trapov_.po: trapov_.c
+	${CC} -S -DUCBVAX ${.CURDIR}/trapov_.c
+	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") | \
+	    ex - trapov_.s;
+	${AS} trapov_.s -o ${.TARGET}
+	rm -f trapov_.s
+
+.include <bsd.lib.mk>
+
+# 'Usef' is part of a kuldge to get around a bug in the C compiler.
+# C (sec. 9.10 of C ref manual) should round the return value of
+# functions of type float from double to float.  It doesn't, so f77
+# truncates it losing a half bit of accuracy.  See file Test_float
+# for a test.  When it is fixed, get rid of Usef & the extraneous
+# stores in pow_ri, r_dim, r_mod, r_nint.
 
 .c.o:
-	@${CC} -p `obj/Usef $*` ${CFLAGS} -c $*.c
-	@-ld -x -r -o profiled/$*.o $*.o
-	${CC} `obj/Usef $*` ${CFLAGS} -c $*.c
-	@-ld -x -r $*.o
-	@if [ -d obj ]; then cd obj; fi; mv a.out $*.o
+	${CC} `Usef ${.PREFIX}` ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+
+.c.po:
+	${CC} -p `Usef ${.PREFIX}` ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+

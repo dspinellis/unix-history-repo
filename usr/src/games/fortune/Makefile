@@ -1,72 +1,48 @@
-#
-# Copyright (c) 1989 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	1.8 (Berkeley) %G%
-#
-CFLAGS=	-O
-LIBC=	/lib/libc.a
+#	@(#)Makefile	5.1 (Berkeley) %G%
+
+PROGS=	fortune strfile unstr
 SRCS=	fortune.c strfile.c unstr.c
-OBJS=
-MAN=	fortune.0
+MAN6=	fortune.0
+BINOWN=	games
+DATFILES=fortunes.dat fortunes-o.dat startrek.dat zippy.dat
+.PATH:	${.CURDIR} ${.CURDIR}/datfiles
 
-all: fortune strfile # unstr
+all: ${PROGS} ${MAN6} ${DATFILES}
 
-fortune: ${LIBC}
-	${CC} ${CFLAGS} -o $@ $@.c
+${PROGS}: ${LIBC} ${.PREFIX}.c
+	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${.PREFIX}.c
 
-strfile: ${LIBC}
-	${CC} ${CFLAGS} -o $@ $@.c
-
-unstr: ${LIBC}
-	${CC} ${CFLAGS} -o $@ $@.c
+${DATFILES}: ${.TARGET:R}
+	./strfile -rs ${.CURDIR}/datfiles/${.TARGET:R} ${.TARGET}
 
 clean:
-	rm -f fortune strfile unstr core *.dat
+	rm -f ${PROGS} core *.dat
 
 cleandir: clean
-	rm -f ${MAN} tags .depend
+	rm -f ${MAN6} tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${.ALLSRC}
 
-install: ${MAN}
-	install -s -o games -g bin -m 4755 fortune ${DESTDIR}/usr/games
-	install -c -o bin -g bin -m 444 fortune.0 ${DESTDIR}/usr/man/cat6
-	./strfile -rs fortunes
-	./strfile -rs startrek
-	./strfile -rs zippy
-	install -c -o bin -g bin -m 444 fortunes startrek zippy \
+install:
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} fortune \
+	    ${DESTDIR}/usr/games
+	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} fortune.0 \
+	    ${DESTDIR}/usr/share/man/cat6
+	(cd ${.CURDIR}/datfiles; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    ${DATFILES:R} ${DESTDIR}/usr/share/games/fortune)
+	install -o ${BINOWN} -g ${BINGRP} -m 444 ${DATFILES} \
 	    ${DESTDIR}/usr/share/games/fortune
-	install -o bin -g bin -m 444 fortunes.dat startrek.dat zippy.dat \
-	    ${DESTDIR}/usr/share/games/fortune
-#	./strfile -rsx noobscene
-#	install -c -o bin -g bin -m 444 noobscene \
-#	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
-#	install -o bin -g bin -m 444 noobscene.dat \
-#	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
-	./strfile -rsx fortunes-o.rot
-	install -c -o bin -g bin -m 444 fortunes-o.rot \
-	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
-	install -o bin -g bin -m 444 fortunes-o.rot.dat \
-	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
 
 lint: ${SRCS}
-	lint ${CFLAGS} fortune.c
-	lint ${CFLAGS} strfile.c
-	lint ${CFLAGS} unstr.c
+	cd ${.CURDIR}; lint ${CFLAGS} ${LINTFLAGS} fortune.c
+	cd ${.CURDIR}; lint ${CFLAGS} ${LINTFLAGS} strfile.c
+	cd ${.CURDIR}; lint ${CFLAGS} ${LINTFLAGS} unstr.c
 
 tags: ${SRCS}
-	ctags ${SRCS}
+	cd ${.CURDIR}; ctags fortune.c
+	cd ${.CURDIR}; ctags strfile.c
+	cd ${.CURDIR}; ctags unstr.c
+	cd ${.CURDIR}; sort -o tags tags
+
+.include <bsd.prog.mk>
