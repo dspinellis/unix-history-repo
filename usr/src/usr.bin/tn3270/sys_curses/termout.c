@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -188,8 +188,10 @@ SlowScreen()
     register int fieldattr, termattr;
     register int columnsleft;
 
+#define	NORMAL		0		
 #define	HIGHLIGHT	1		/* Mask bits */
 #define	NONDISPLAY	4		/* Mask bits */
+#define	UNDETERMINED	8		/* Mask bits */
 
 #define	DoAttributes(x) \
 	    switch (x&ATTR_DSPD_MASK) { \
@@ -298,10 +300,18 @@ SlowScreen()
 	    move(ScreenLine(pointer), ScreenLineOffset(pointer));
 
 		/* what is the field attribute of the current position */
-	    fieldattr = FieldAttributes(pointer);
-	    DoAttributes(fieldattr);
-	    termattr = TermAttributes(pointer);
-	    DoAttributes(termattr);
+	    if (FormattedScreen()) {
+		fieldattr = FieldAttributes(pointer);
+		DoAttributes(fieldattr);
+	    } else {
+		fieldattr = NORMAL;
+	    }
+	    if (TerminalFormattedScreen()) {
+		termattr = TermAttributes(pointer);
+		DoAttributes(termattr);
+	    } else {
+		termattr = NORMAL;
+	    }
 
 	    SetHighlightMode(fieldattr);
 	    /*
@@ -326,8 +336,7 @@ SlowScreen()
 		if (TermIsStartField(pointer)) {
 		    is = DISP_BLANK;
 		    isattr = 0;
-		    termattr = GetTerminal(pointer);
-		    DoAttributes(termattr);
+		    termattr = UNDETERMINED; /* Need to find out AFTER update */
 		} else {
 		    if (termattr&NONDISPLAY) {
 			is = DISP_BLANK;
@@ -350,8 +359,23 @@ SlowScreen()
 		DoCharacterAt(shouldbe, pointer);
 		if (IsStartField(pointer)) {
 		    TermNewField(pointer, FieldAttributes(pointer));
+		    termattr = GetTerminal(pointer);
+		    DoAttributes(termattr);
 		} else {
 		    SetTerminal(pointer, GetHost(pointer));
+		    /*
+		     * If this USED to be a start field location,
+		     * recompute the terminal attributes.
+		     */
+		    if (termattr == UNDETERMINED) {
+			termattr = WhereTermAttrByte(pointer);
+			if ((termattr != 0) || TermIsStartField(0)) {
+			    termattr = GetTerminal(termattr);
+			    DoAttributes(termattr);
+			} else {	/* Unformatted screen */
+			    termattr = NORMAL;
+			}
+		    }
 		}
 		pointer = ScreenInc(pointer);
 		if (!(--columnsleft)) {
