@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)traceroute.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)traceroute.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -200,11 +200,15 @@ static char sccsid[] = "@(#)traceroute.c	5.4 (Berkeley) %G%";
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/udp.h>
-#include <netdb.h>
 
+#include <arpa/inet.h>
+
+#include <netdb.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define	MAXPACKET	65535	/* max ip packet size */
 #ifndef MAXHOSTNAMELEN
@@ -223,10 +227,6 @@ static char sccsid[] = "@(#)traceroute.c	5.4 (Berkeley) %G%";
 #define Fprintf (void)fprintf
 #define Sprintf (void)sprintf
 #define Printf (void)printf
-extern	int errno;
-extern  char *malloc();
-extern  char *inet_ntoa();
-extern  u_long inet_addr();
 
 /*
  * format of a (udp) probe packet.
@@ -241,7 +241,15 @@ struct opacket {
 
 u_char	packet[512];		/* last inbound (icmp) packet */
 struct opacket	*outpacket;	/* last output (udp) packet */
-char *inetname();
+
+int wait_for_reply __P((int, struct sockaddr_in *));
+void send_probe __P((int, int));
+double deltaT __P((struct timeval *, struct timeval *));
+int packet_ok __P((u_char *, int, struct sockaddr_in *, int));
+void print __P((u_char *, int, struct sockaddr_in *));
+void tvsub __P((struct timeval *, struct timeval *));
+char *inetname __P((struct in_addr));
+void usage __P(());
 
 int s;				/* receive (icmp) socket file descriptor */
 int sndsock;			/* send (udp) socket file descriptor */
@@ -262,7 +270,9 @@ int verbose;
 int waittime = 5;		/* time to wait for response (in seconds) */
 int nflag;			/* print addresses numerically */
 
+int
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	extern char *optarg;
@@ -342,7 +352,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1) 
+	if (argc < 1)
 		usage();
 
 	setlinebuf (stdout);
@@ -350,7 +360,7 @@ main(argc, argv)
 	(void) bzero((char *)&whereto, sizeof(struct sockaddr));
 	to->sin_family = AF_INET;
 	to->sin_addr.s_addr = inet_addr(*argv);
-	if (to->sin_addr.s_addr != -1) 
+	if (to->sin_addr.s_addr != -1)
 		hostname = *argv;
 	else {
 		hp = gethostbyname(*argv);
@@ -364,7 +374,7 @@ main(argc, argv)
 			exit(1);
 		}
 	}
-	if (*++argv) 
+	if (*++argv)
 		datalen = atoi(*argv);
 	if (datalen < 0 || datalen >= MAXPACKET - sizeof(struct opacket)) {
 		Fprintf(stderr,
@@ -456,19 +466,20 @@ main(argc, argv)
 		Printf("%2d ", ttl);
 		for (probe = 0; probe < nprobes; ++probe) {
 			int cc;
-			struct timeval tv;
+			struct timeval t1, t2;
+			struct timezone tz;
 			struct ip *ip;
 
-			(void) gettimeofday(&tv, &tz);
+			(void) gettimeofday(&t1, &tz);
 			send_probe(++seq, ttl);
 			while (cc = wait_for_reply(s, &from)) {
+				(void) gettimeofday(&t2, &tz);
 				if ((i = packet_ok(packet, cc, &from, seq))) {
-					int dt = deltaT(&tv);
 					if (from.sin_addr.s_addr != lastaddr) {
 						print(packet, cc, &from);
 						lastaddr = from.sin_addr.s_addr;
 					}
-					Printf("  %d ms", dt);
+					Printf("  %g ms", deltaT(&t1, &t2));
 					switch(i - 1) {
 					case ICMP_UNREACH_PORT:
 #ifndef ARCHAIC
@@ -512,6 +523,7 @@ main(argc, argv)
 	}
 }
 
+int
 wait_for_reply(sock, from)
 	int sock;
 	struct sockaddr_in *from;
@@ -533,7 +545,9 @@ wait_for_reply(sock, from)
 }
 
 
+void
 send_probe(seq, ttl)
+	int seq, ttl;
 {
 	struct opacket *op = outpacket;
 	struct ip *ip = &op->ip;
@@ -566,14 +580,15 @@ send_probe(seq, ttl)
 }
 
 
-deltaT(tp)
-	struct timeval *tp;
+double
+deltaT(t1p, t2p)
+	struct timeval *t1p, *t2p;
 {
-	struct timeval tv;
+	register double dt;
 
-	(void) gettimeofday(&tv, &tz);
-	tvsub(&tv, tp);
-	return (tv.tv_sec*1000 + (tv.tv_usec + 500)/1000);
+	dt = (double)(t2p->tv_sec - t1p->tv_sec) * 1000.0 +
+	     (double)(t2p->tv_usec - t1p->tv_usec) / 1000.0;
+	return (dt);
 }
 
 
@@ -599,6 +614,7 @@ pr_type(t)
 }
 
 
+int
 packet_ok(buf, cc, from, seq)
 	u_char *buf;
 	int cc;
@@ -655,6 +671,7 @@ packet_ok(buf, cc, from, seq)
 }
 
 
+void
 print(buf, cc, from)
 	u_char *buf;
 	int cc;
@@ -682,9 +699,10 @@ print(buf, cc, from)
 /*
  * Checksum routine for Internet Protocol family headers (C Version)
  */
+u_short
 in_cksum(addr, len)
-u_short *addr;
-int len;
+	u_short *addr;
+	int len;
 {
 	register int nleft = len;
 	register u_short *w = addr;
@@ -720,8 +738,9 @@ int len;
  * Subtract 2 timeval structs:  out = out - in.
  * Out is assumed to be >= in.
  */
+void
 tvsub(out, in)
-register struct timeval *out, *in;
+	register struct timeval *out, *in;
 {
 	if ((out->tv_usec -= in->tv_usec) < 0)   {
 		out->tv_sec--;
@@ -733,7 +752,7 @@ register struct timeval *out, *in;
 
 /*
  * Construct an Internet address representation.
- * If the nflag has been supplied, give 
+ * If the nflag has been supplied, give
  * numeric value, otherwise try for symbolic name.
  */
 char *
@@ -775,9 +794,10 @@ inetname(in)
 	return (line);
 }
 
+void
 usage()
 {
-	(void)fprintf(stderr, 
+	(void)fprintf(stderr,
 "usage: traceroute [-dnrv] [-m max_ttl] [-p port#] [-q nqueries]\n\t\
 [-s src_addr] [-t tos] [-w wait] host [data size]\n");
 	exit(1);
