@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -193,19 +193,22 @@ umountfs(name)
 	if (!selected(type))
 		return (1);
 
-	if ((delimp = strchr(name, '@')) != NULL) {
-		hostp = delimp + 1;
-		*delimp = '\0';
-		hp = gethostbyname(hostp);
-		*delimp = '@';
-	} else if ((delimp = strchr(name, ':')) != NULL) {
-		*delimp = '\0';
-		hostp = name;
-		hp = gethostbyname(hostp);
-		name = delimp + 1;
-		*delimp = ':';
-	} else
-		hp = NULL;
+	hp = NULL;
+	if (type == MOUNT_NFS) {
+		if ((delimp = strchr(name, '@')) != NULL) {
+			hostp = delimp + 1;
+			*delimp = '\0';
+			hp = gethostbyname(hostp);
+			*delimp = '@';
+		} else if ((delimp = strchr(name, ':')) != NULL) {
+			*delimp = '\0';
+			hostp = name;
+			hp = gethostbyname(hostp);
+			name = delimp + 1;
+			*delimp = ':';
+		}
+	}
+
 	if (!namematch(hp))
 		return (1);
 
