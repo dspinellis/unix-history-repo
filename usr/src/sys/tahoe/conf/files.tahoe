@@ -7,7 +7,7 @@ tahoe/tahoe/kdb_opset.c		optional kadb
 tahoe/tahoe/in_cksum.c		optional inet
 tahoe/tahoe/machdep.c		standard config-dependent
 tahoe/tahoe/mem.c		standard
-tahoe/tahoe/ns_cksum.c		optional ns
+netns/ns_cksum.c		optional ns
 tahoe/tahoe/sys_machdep.c	standard
 tahoe/tahoe/trap.c		standard
 tahoe/tahoe/vm_machdep.c	standard
