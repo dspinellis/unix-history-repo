@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)dmesg.c	5.1 (Berkeley) %G%";
 #include <sys/param.h>
 #include <nlist.h>
 #include <signal.h>
+#include <sys/file.h>
 #include <sys/vm.h>
 #include <sys/msgbuf.h>
 
@@ -39,18 +40,15 @@ char **argv;
 {
 	int mem;
 	register char *mp, *omp, *mstart;
-	int timeout();
-	int samef;
+	int samef, sawnl, ignore;
 
-	signal(SIGALRM, timeout);
-	alarm(30);
 	if (argc>1 && argv[1][0] == '-') {
 		sflg++;
 		argc--;
 		argv++;
 	}
 	if (sflg) {
-		of = open("/usr/adm/msgbuf", 2);
+		of = open("/usr/adm/msgbuf", O_RDWR | O_CREAT, 0644);
 		if (of < 0)
 			done("Can't open /usr/adm/msgbuf\n");
 		read(of, (char *)&omesg, sizeof(omesg));
@@ -86,10 +84,16 @@ char **argv;
 	if (samef && omesg.msg_bufx == msgbuf.msg_bufx)
 		exit(0);
 	mp = mstart;
+	pdate();
+	sawnl = 1;
 	do {
-		pdate();
-		if (*mp && (*mp & 0200) == 0)
+		if (sawnl && *mp == '<')
+			ignore = 1;
+		if (*mp && (*mp & 0200) == 0 && !ignore)
 			putchar(*mp);
+		if (ignore && *mp == '>')
+			ignore = 0;
+		sawnl = (*mp == '\n');
 		mp++;
 		if (mp == &msgbuf.msg_bufc[MSG_BSIZE])
 			mp = msgbuf.msg_bufc;
@@ -102,11 +106,11 @@ char *s;
 {
 	register char *p, *q;
 
-	if (s && s!=(char *)omesg.msg_magic && sflg==0) {
+	if (s) {
 		pdate();
 		printf(s);
-	}
-	write(of, (char *)&msgbuf, sizeof(msgbuf));
+	} else if (of != -1)
+		write(of, (char *)&msgbuf, sizeof(msgbuf));
 	exit(s!=NULL);
 }
 
@@ -121,9 +125,4 @@ pdate()
 		time(&tbuf);
 		printf("\n%.12s\n", ctime(&tbuf)+4);
 	}
-}
-
-timeout()
-{
-	done("Buffer file screwed up\n");
 }
