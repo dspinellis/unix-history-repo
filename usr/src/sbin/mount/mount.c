@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)mount.c	4.10 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,6 +10,7 @@ static char *sccsid = "@(#)mount.c	4.10 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <mtab.h>
+#include <errno.h>
 
 #define	DNMAX	(sizeof (mtab[0].m_dname) - 1)
 #define	PNMAX	(sizeof (mtab[0].m_path) - 1)
@@ -122,8 +123,25 @@ mountfs(spec, name, type)
 
 	if (!fake) {
 		if (mount(spec, name, strcmp(type, FSTAB_RO) == 0) < 0) {
+			extern int errno;
+			char *cp;
+
 			fprintf(stderr, "%s on ", spec);
-			perror(name);
+			switch (errno) {
+
+			case EMFILE:
+				cp = "Mount table full";
+				break;
+
+			case EINVAL:
+				cp = "Bogus super block";
+				break;
+
+			default:
+				perror(name);
+				return;
+			}
+			fprintf(stderr, "%s: %s\n", name, cp);
 			return;
 		}
 		/* we don't do quotas.... */
