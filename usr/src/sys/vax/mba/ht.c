@@ -1,4 +1,4 @@
-/*	ht.c	3.4	%G%	*/
+/*	ht.c	3.5	%G%	*/
 
 /*
  * TJU16 tape driver
@@ -12,6 +12,7 @@
 #include "../h/file.h"
 #include "../h/user.h"
 #include "../h/map.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 
 struct	device
@@ -41,7 +42,8 @@ daddr_t	h_blkno[NUNIT];
 char	h_flags[NUNIT];
 daddr_t	h_nxrec[NUNIT];
 
-#define	HTADDR	((struct device *)(MBA1 + MBA_ERB))
+#define	HTMBA		MBA1
+#define	HTMBANUM	1
 
 #define	GO	01
 #define	WCOM	060
@@ -83,6 +85,8 @@ htopen(dev, flag)
 {
 	register unit, ds;
 
+	if ((mbaact&(1<<HTMBANUM)) == 0)
+		mbainit(HTMBANUM);
 	httab.b_flags |= B_TAPE;
 	unit = minor(dev) & 03;
 	if (unit >= NUNIT || h_openf[unit]) {
@@ -178,6 +182,7 @@ htstart()
 	register struct buf *bp;
 	register unit, den;
 	daddr_t blkno;
+	register struct device *htp = mbadev(HTMBA,0);
 
     loop:
 	if ((bp = httab.b_actf) == NULL)
@@ -186,35 +191,35 @@ htstart()
 	den = P800 | (unit&03);
 	if(unit >= 8)
 		den = P1600 | (unit&03);
-	if((HTADDR->httc&03777) != den)
-		HTADDR->httc = den;
+	if((htp->httc&03777) != den)
+		htp->httc = den;
 	unit &= 03;
 	blkno = h_blkno[unit];
 	if (bp == &chtbuf) {
 		if (bp->b_resid==NOP) {
-			bp->b_resid = HTADDR->htds & 0xffff;
+			bp->b_resid = htp->htds & 0xffff;
 			goto next;
 		}
 		httab.b_active = SCOM;
-		HTADDR->htfc = 0;
-		HTADDR->htcs1 = bp->b_resid|GO;
+		htp->htfc = 0;
+		htp->htcs1 = bp->b_resid|GO;
 		return;
 	}
 	if (h_openf[unit] < 0 || dbtofsb(bp->b_blkno) > h_nxrec[unit])
 		goto abort;
 	if (blkno == dbtofsb(bp->b_blkno)) {
 		httab.b_active = SIO;
-		HTADDR->htfc = -bp->b_bcount;
-		mbastart(bp, (int *)HTADDR);
+		htp->htfc = -bp->b_bcount;
+		mbastart(bp, (int *)htp);
 	} else {
 		if (blkno < dbtofsb(bp->b_blkno)) {
 			httab.b_active = SSFOR;
-			HTADDR->htfc = blkno - dbtofsb(bp->b_blkno);
-			HTADDR->htcs1 = SFORW|GO;
+			htp->htfc = blkno - dbtofsb(bp->b_blkno);
+			htp->htcs1 = SFORW|GO;
 		} else {
 			httab.b_active = SSREV;
-			HTADDR->htfc = dbtofsb(bp->b_blkno) - blkno;
-			HTADDR->htcs1 = SREV|GO;
+			htp->htfc = dbtofsb(bp->b_blkno) - blkno;
+			htp->htcs1 = SREV|GO;
 		}
 	}
 	return;
@@ -234,52 +239,53 @@ htintr(mbastat, as)
 	register struct buf *bp;
 	register int unit, state;
 	int err;
+	register struct device *htp = mbadev(HTMBA,0);
 
 	if ((bp = httab.b_actf)==NULL)
 		return;
 	unit = minor(bp->b_dev) & 03;
 	state = httab.b_active;
 	httab.b_active = 0;
-	if (HTADDR->htds&(ERR|EOT|TM) || mbastat & MBAEBITS) {
-		err = HTADDR->hter & 0xffff;
+	if (htp->htds&(ERR|EOT|TM) || mbastat & MBAEBITS) {
+		err = htp->hter & 0xffff;
 		if ((mbastat & MBAEBITS) || (err&HARD))
 			state = 0;
 		if (bp == &rhtbuf)
 			err &= ~FCE;
-		if ((bp->b_flags&B_READ) && (HTADDR->htds&PES))
+		if ((bp->b_flags&B_READ) && (htp->htds&PES))
 			err &= ~(CS|COR);
-		if(HTADDR->htds&EOT || (HTADDR->htds&MOL)==0) {
+		if(htp->htds&EOT || (htp->htds&MOL)==0) {
 			if(h_openf[unit])
 				h_openf[unit] = -1;
 		}
-		else if(HTADDR->htds&TM) {
-			HTADDR->htfc = 0;
+		else if(htp->htds&TM) {
+			htp->htfc = 0;
 			h_nxrec[unit] = dbtofsb(bp->b_blkno);
 			state = SOK;
 		}
 		else if(state && err == 0)
 			state = SOK;
 		if(httab.b_errcnt > 4)
-			deverror(bp, HTADDR->hter, mbastat);
-		((struct mba_regs *)MBA1)->mba_cr &= ~MBAIE;
-		HTADDR->htcs1 = DCLR|GO;
-		((struct mba_regs *)MBA1)->mba_cr |= MBAIE;
+			deverror(bp, htp->hter, mbastat);
+		HTMBA->mba_cr &= ~MBAIE;
+		htp->htcs1 = DCLR|GO;
+		HTMBA->mba_cr |= MBAIE;
 		if (state==SIO && ++httab.b_errcnt < 10) {
 			httab.b_active = SRETRY;
 			h_blkno[unit]++;
-			HTADDR->htfc = -1;
-			HTADDR->htcs1 = SREV|GO;
+			htp->htfc = -1;
+			htp->htcs1 = SREV|GO;
 			return;
 		}
 		if (state!=SOK) {
 			bp->b_flags |= B_ERROR;
 			state = SIO;
 		}
-	} else if (HTADDR->htcs1 < 0) {	/* SC */
-		if(HTADDR->htds & ERR) {
-			((struct mba_regs *)MBA1)->mba_cr &= ~MBAIE;
-			HTADDR->htcs1 = DCLR|GO;
-			((struct mba_regs *)MBA1)->mba_cr |= MBAIE;
+	} else if (htp->htcs1 < 0) {	/* SC */
+		if(htp->htds & ERR) {
+			HTMBA->mba_cr &= ~MBAIE;
+			htp->htcs1 = DCLR|GO;
+			HTMBA->mba_cr |= MBAIE;
 		}
 	}
 	switch(state) {
@@ -290,7 +296,7 @@ htintr(mbastat, as)
 	case SCOM:
 		httab.b_errcnt = 0;
 		httab.b_actf = bp->av_forw;
-		bp->b_resid = - (HTADDR->htfc & 0xffff);
+		bp->b_resid = - (htp->htfc & 0xffff);
 		if (bp->b_flags & B_READ)
 			bp->b_resid += bp->b_bcount;
 		iodone(bp);
@@ -299,20 +305,20 @@ htintr(mbastat, as)
 	case SRETRY:
 		if((bp->b_flags&B_READ)==0) {
 			httab.b_active = SSFOR;
-			HTADDR->htcs1 = ERASE|GO;
+			htp->htcs1 = ERASE|GO;
 			return;
 		}
 
 	case SSFOR:
 	case SSREV:
 #define blk dbtofsb(bp->b_blkno)
-		if(HTADDR->htds & TM) {
+		if(htp->htds & TM) {
 			if(state == SSREV) {
-				h_nxrec[unit] = blk - (HTADDR->htfc&0xffff);
+				h_nxrec[unit] = blk - (htp->htfc&0xffff);
 				h_blkno[unit] = h_nxrec[unit];
 			} else {
-				h_nxrec[unit] = blk + (HTADDR->htfc&0xffff) - 1;
-				h_blkno[unit] = blk + (HTADDR->htfc & 0xffff);
+				h_nxrec[unit] = blk + (htp->htfc&0xffff) - 1;
+				h_blkno[unit] = blk + (htp->htfc & 0xffff);
 			}
 		} else
 			h_blkno[unit] = blk;
