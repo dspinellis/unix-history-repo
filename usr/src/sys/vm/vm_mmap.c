@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.6 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -179,10 +179,17 @@ mmap(p, uap, retval)
 	/*
 	 * Address (if FIXED) must be page aligned.
 	 * Size is implicitly rounded to a page boundary.
+	 *
+	 * XXX most (all?) vendors require that the file offset be
+	 * page aligned as well.  However, we already have applications
+	 * (e.g. nlist) that rely on unrestricted alignment.  Since we
+	 * support it, let it happen.
 	 */
 	addr = (vm_offset_t) uap->addr;
 	if (((flags & MAP_FIXED) && (addr & PAGE_MASK)) ||
+#if 0
 	    ((flags & MAP_ANON) == 0 && (pos & PAGE_MASK)) ||
+#endif
 	    (ssize_t)uap->len < 0 || ((flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
@@ -385,9 +392,12 @@ munmap(p, uap, retval)
 	map = &p->p_vmspace->vm_map;
 	/*
 	 * Make sure entire range is allocated.
+	 * XXX this seemed overly restrictive, so we relaxed it.
 	 */
+#if 0
 	if (!vm_map_check_protection(map, addr, addr + size, VM_PROT_NONE))
 		return(EINVAL);
+#endif
 	/* returns nothing but KERN_SUCCESS anyway */
 	(void) vm_map_remove(map, addr, addr+size);
 	return(0);
