@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.10 (Berkeley) %G%
+#       @(#)makesendmail	8.11 (Berkeley) %G%
 #
 
 #
@@ -43,7 +43,7 @@ then
 	in
 	  5.3*)		os=Altos;;
 	esac
-esac
+fi
 
 if [ -r /unix -a -r /usr/lib/libseq.a -a -r /lib/cpp ]
 then
