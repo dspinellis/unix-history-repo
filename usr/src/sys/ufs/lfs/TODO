@@ -1,0 +1,81 @@
+#	@(#)TODO	5.1 (Berkeley) %G%
+
+TODO:  =======================
+
+Keith:
+	XXX The problem is that the IFILE vnode isn't getting entered into
+	    the vnode cache (nor is the underlying inode being placed into
+	    the inode cache).  Q: Should the underlying inode be in the
+	    inode cache (does it get flushed)?  Q: Should the mount code
+	    update the ifile inode slot to reflect the current disk address?
+	Make syncs reentrant.
+
+Margo:
+	Extend IFILE as necessary.
+	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
+	Document where the checkpoint information is.
+	Variable block sizes (Margo/Keith).
+	Switch the byte accounting to sector accounting.
+	Check lfs.h and make sure that the #defines/structures are all
+		actually needed.
+	Add a check in lfs_segment.c so that if the segment is empty,
+		we don't write it.
+	Need to keep vnode v_numoutput up to date for pending writes?
+
+Carl:
+	lfsck:	If delete a file that's being executed, the version number
+		isn't updated, and lfsck has to figure this out; case is			the same as if have an inode that no directory references,
+		so the file should be reattached into lost+found.
+	USENIX paper (Carl/Margo).
+	Investigate: clustering of reads (if blocks in the segment are ordered,
+		should read them all) and writes (McVoy paper).
+	Investigate: should the access time be part of the IFILE:
+		pro: theoretically, saves disk writes
+		con: cacheing inodes should obviate this advantage
+		     the IFILE is already humongous
+	Cleaner.
+	Recovery/fsck.
+	Port to OSF/1 (Carl/Keith).
+	Currently there's no notion of write error checking.
+		+ Failed data/inode writes should be rescheduled (kernel level
+		  bad blocking).
+		+ Failed superblock writes should cause selection of new
+		  superblock for checkpointing.
+
+FUTURE FANTASIES: ============
+
++ unrm
+	- versioning
++ transactions
++ extended cleaner policies
+	- hot/cold data, data placement
+
+==============================
+Problem with the concept of multiple buffer headers referencing the segment:
+Positives:
+	Don't lock down 1 segment per file system of physical memory.
+	Don't copy from buffers to segment memory.
+	Don't tie down the bus to transfer 1M.
+	Works on controllers supporting less than large transfers.
+	Disk can start writing immediately instead of waiting 1/2 rotation
+	    and the full transfer.
+Negatives:
+	Have to do segment write then segment summary write, since the latter
+	is what verifies that the segment is okay.  (Is there another way
+	to do this?)
+==============================
+
+We don't plan on doing the DIROP log until we try to do roll-forward.
+This is part of what happens if random blocks get trashed and we try to
+recover, i.e. the same information that DIROP tries to provided is
+required for general recovery.  I believe that we're going to need an
+fsck-like tool that resolves the disk (possibly a combination of
+resolution, checkpoints and checksums).  The problem is that the current
+implementation does not handle the destruction of, for example, the root
+inode.
+==============================
+
+The algorithm for selecting the disk addresses of the super-blocks
+has to be available to the user program which checks the file system.
+
+(Currently in newfs, becomes a common subroutine.)
