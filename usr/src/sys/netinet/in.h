@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	6.5 (Berkeley) %G%
+ *	@(#)in.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -47,6 +47,8 @@ struct in_addr {
 
 /*
  * Definitions of bits in internet address integers.
+ * On subnets, the decomposition of addresses to host and net parts
+ * is done according to subnet mask, not the masks here.
  */
 #define	IN_CLASSA(i)		((((long)(i))&0x80000000)==0)
 #define	IN_CLASSA_NET		0xff000000
@@ -66,30 +68,7 @@ struct in_addr {
 #define	IN_CLASSC_HOST		0x000000ff
 
 #define	INADDR_ANY		0x00000000
-#define	INADDR_BROADCAST	0xffffffff
-
-/*
- * Macros for subnetworks.  A subnet is distinguished by
- * 	(1) the network number is a `local' network number, and
- *	(2) the most significant bit of the host part is set.
- * Such addresses include one additional byte in the network number,
- * and use one less byte in the host part (i.e., a subnet of a Class A
- * network uses the rules for Class B net/host number extraction,
- * a Class B subnet is dealt with as if it were a Class C net).
- * Subnets of Class C nets are not supported.
- */
-#define	SUBNETSHIFT		8  /* used to get main net number from subnet */
-
-#define	IN_SUBNETA(i)		((((long)(i))&0x80800000)==0x00800000)
-#define	IN_CLASSA_SUBNET	0xffff0000
-#define	IN_CLASSA_SUBNSHIFT	(IN_CLASSA_NSHIFT - SUBNETSHIFT)
-#define	IN_CLASSA_SUBHOST	0x0000ffff
-
-#define	IN_SUBNETB(i)		((((long)(i))&0xc0008000)==0x80008000)
-#define	IN_CLASSB_SUBNET	0xffffff00
-#define	IN_CLASSB_SUBNSHIFT	(IN_CLASSB_NSHIFT - SUBNETSHIFT)
-#define	IN_CLASSA_SUBHOST	0x0000ffff
-#define	IN_CLASSB_SUBHOST	0x000000ff
+#define	INADDR_BROADCAST	0xffffffff		/* must be masked */
 
 /*
  * Socket address, internet style.
