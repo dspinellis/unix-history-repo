@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.90		%G%);
+SCCSID(@(#)deliver.c	3.91		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -654,14 +654,15 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	if (strcmp(m->m_mailer, "[IPC]") == 0)
 	{
 		register int i;
+		register u_short port;
 
 		if (!clever)
 			syserr("non-clever IPC");
 		if (pvp[2] != NULL)
-			i = atoi(pvp[2]);
+			port = atoi(pvp[2]);
 		else
-			i = 0;
-		i = makeconnection(pvp[1], i, pmfile, prfile);
+			port = 0;
+		i = makeconnection(pvp[1], port, pmfile, prfile);
 		if (i != EX_OK)
 		{
 			ExitStat = i;
@@ -1059,7 +1060,7 @@ putheader(fp, m)
 			if (p == NULL || *p == '\0' || nooutput)
 				continue;
 			obp = obuf;
-			sprintf(obp, "%s: ", capitalize(h->h_field));
+			(void) sprintf(obp, "%s: ", capitalize(h->h_field));
 			opos = strlen(h->h_field) + 2;
 			obp += opos;
 			while (*p != '\0')
@@ -1126,7 +1127,7 @@ putheader(fp, m)
 				while (*p != '\0' && (isspace(*p) || *p == ','))
 					p++;
 			}
-			strcpy(obp, "\n");
+			(void) strcpy(obp, "\n");
 			putline(obuf, fp, fullsmtp);
 			nooutput = TRUE;
 		}
