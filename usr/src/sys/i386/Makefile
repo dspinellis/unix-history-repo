@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 
 # Makefile for i386 tags file
 
@@ -10,7 +10,7 @@ SI386=	../i386/i386/*.[ch] ../i386/include/*.h ../i386/isa/*.[ch]
 AI386=	../i386/i386/*.s
 
 # Directories in which to place i386 tags links
-DI386=	isa i386 include
+DI386=	eisa isa mca include
 
 tags:
 	-ctags -dtf ${TI386} ${COMM} ${SI386}

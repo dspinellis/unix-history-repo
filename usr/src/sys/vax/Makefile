@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 
 # Makefile for vax tags file
 
@@ -11,7 +11,7 @@ SVAX=	../vax/if/*.[ch]  ../vax/mba/*.[ch] ../vax/uba/*.[ch] \
 AVAX=	../vax/vax/*.s
 
 # Directories in which to place vax tags links
-DVAX=	if mba uba bi vax include
+DVAX=	if mba uba bi include
 
 tags:
 	-ctags -dtf ${TVAX} ${COMM} ${SVAX}

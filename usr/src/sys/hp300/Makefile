@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 
 COMM=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
 	../netiso/*.[ch] ../netccitt/*.[ch] \
@@ -15,7 +15,7 @@ SHP300=	../hp300/hp300/*.[ch] ../hp300/include/*.h \
 AHP300=	../hp300/hp300/*.s
 
 # Directories in which to place hp300 tags links
-DHP300=	hp300 dev hpux include
+DHP300=	dev hpux include
 
 tags:
 	-ctags -dtf ${THP300} ${COMM} ${SHP300}
