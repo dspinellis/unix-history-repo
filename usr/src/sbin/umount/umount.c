@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,7 +20,10 @@ static char sccsid[] = "@(#)umount.c	5.5 (Berkeley) %G%";
 #include <sys/param.h>
 #include <stdio.h>
 #include <fstab.h>
+#include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
 #ifdef NFS
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -32,13 +35,15 @@ static char sccsid[] = "@(#)umount.c	5.5 (Berkeley) %G%";
 #include <nfs/rpcv2.h>
 #endif
 
-char	*rindex();
-int	vflag, all, errs;
 #ifdef NFS
 extern int errno;
 int xdr_dir();
 char	*index();
 #endif
+int	vflag, all, errs;
+char	*rindex(), *getmntinfo();
+#define MNTON	1
+#define MNTFROM	2
 
 main(argc, argv)
 	int argc;
@@ -96,8 +101,7 @@ umountall()
 		freefsent(fs);
 		return;
 	}
-	if (umountfs(fs->fs_file) < 0)
-		perror(fs->fs_file);
+	(void) umountfs(fs->fs_file);
 	freefsent(fs);
 }
 
@@ -140,8 +144,8 @@ freefsent(fs)
 umountfs(name)
 	char *name;
 {
-	register char *p1, *p2;
-	struct fstab *fs;
+	char *mntpt;
+	struct stat stbuf;
 #ifdef NFS
 	register CLIENT *clp;
 	struct hostent *hp;
@@ -153,54 +157,95 @@ umountfs(name)
 	char *hostp, *delimp;
 #endif
 
-	fs = getfsspec(name);
-	if (fs != NULL)
-		name = fs->fs_file;
-#ifdef NFS
-	else
-		fs = getfsfile(name);
-#endif
-	if (umount(name, MNT_NOFORCE) < 0) {
-		perror(name);
+	if (stat(name, &stbuf) < 0) {
+		if ((mntpt = getmntinfo(name, MNTON)) == 0)
+			return (0);
+	} else if ((stbuf.st_mode & IFMT) == IFBLK) {
+		if ((mntpt = getmntinfo(name, MNTON)) == 0)
+			return (0);
+	} else if ((stbuf.st_mode & IFMT) == IFDIR) {
+		mntpt = name;
+		if ((name = getmntinfo(mntpt, MNTFROM)) == 0)
+			return (0);
+	} else {
+		fprintf(stderr, "%s: not a directory or special device\n");
 		return (0);
 	}
-#ifdef NFS
-	if (fs != NULL) {
-		if ((delimp = index(fs->fs_spec, '@')) != NULL) {
-			hostp = delimp+1;
-			*delimp = '\0';
-		} else {
-			goto out;
-		}
-		if ((hp = gethostbyname(hostp)) != NULL) {
-			bcopy(hp->h_addr,(caddr_t)&saddr.sin_addr,hp->h_length);
-			saddr.sin_family = AF_INET;
-			saddr.sin_port = 0;
-			pertry.tv_sec = 3;
-			pertry.tv_usec = 0;
-			if ((clp = clntudp_create(&saddr, RPCPROG_MNT,
-				RPCMNT_VER1, pertry, &so)) == NULL) {
-				clnt_pcreateerror("Cannot MNT PRC");
-				goto out;
-			}
-			clp->cl_auth = authunix_create_default();
-			try.tv_sec = 20;
-			try.tv_usec = 0;
-			clnt_stat = clnt_call(clp, RPCMNT_UMOUNT, xdr_dir, fs->fs_spec,
-				xdr_void, (caddr_t)0, try);
-			if (clnt_stat != RPC_SUCCESS) {
-				clnt_perror(clp, "Bad MNT RPC");
-				goto out;
-			}
-			auth_destroy(clp->cl_auth);
-			clnt_destroy(clp);
-		}
+	if (umount(mntpt, MNT_NOFORCE) < 0) {
+		perror(mntpt);
+		return (0);
 	}
-out:
-#endif NFS
 	if (vflag)
-		fprintf(stderr, "%s: Unmounted\n", name);
+		fprintf(stderr, "%s: Unmounted from %s\n", name, mntpt);
+#ifdef NFS
+	if ((delimp = index(name, '@')) != NULL) {
+		hostp = delimp + 1;
+		*delimp = '\0';
+	} else {
+		return (1);
+	}
+	if ((hp = gethostbyname(hostp)) != NULL) {
+		bcopy(hp->h_addr,(caddr_t)&saddr.sin_addr,hp->h_length);
+		saddr.sin_family = AF_INET;
+		saddr.sin_port = 0;
+		pertry.tv_sec = 3;
+		pertry.tv_usec = 0;
+		if ((clp = clntudp_create(&saddr, RPCPROG_MNT, RPCMNT_VER1,
+		    pertry, &so)) == NULL) {
+			clnt_pcreateerror("Cannot MNT PRC");
+			return (1);
+		}
+		clp->cl_auth = authunix_create_default();
+		try.tv_sec = 20;
+		try.tv_usec = 0;
+		clnt_stat = clnt_call(clp, RPCMNT_UMOUNT, xdr_dir, name,
+			xdr_void, (caddr_t)0, try);
+		if (clnt_stat != RPC_SUCCESS) {
+			clnt_perror(clp, "Bad MNT RPC");
+			return (1);
+		}
+		auth_destroy(clp->cl_auth);
+		clnt_destroy(clp);
+	}
+#endif NFS
 	return (1);
+}
+
+char *
+getmntinfo(name, what)
+	char *name;
+	int what;
+{
+	long mntsize, i;
+	struct statfs statfsbuf, *mntbuf;
+
+	if ((mntsize = getfsstat(0, 0)) < 0) {
+		perror("umount");
+		return (0);
+	}
+	mntbuf = 0;
+	do {
+		if (mntbuf)
+			free(mntbuf);
+		i = (mntsize + 1) * sizeof(struct statfs);
+		if ((mntbuf = (struct statfs *)malloc(i)) == 0) {
+			fprintf(stderr,
+				"no space for umount table buffer\n");
+			return (0);
+		}
+		if ((mntsize = getfsstat(mntbuf, i)) < 0) {
+			perror("umount");
+			return (0);
+		}
+	} while (i == mntsize * sizeof(struct statfs));
+	for (i = 0; i < mntsize; i++) {
+		if (what == MNTON && !strcmp(mntbuf[i].f_mntfromname, name))
+			return (mntbuf[i].f_mntonname);
+		if (what == MNTFROM && !strcmp(mntbuf[i].f_mntonname, name))
+			return (mntbuf[i].f_mntfromname);
+	}
+	fprintf(stderr, "%s: not currently mounted\n", name);
+	return (0);
 }
 
 #ifdef NFS
