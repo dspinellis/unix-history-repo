@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.6 (Berkeley) %G%
+ *	@(#)dcm.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -56,6 +56,7 @@ struct	driver dcmdriver = {
 #define NDCMLINE (NDCM*4)
 
 struct	tty dcm_tty[NDCMLINE];
+char	mcndlast[NDCMLINE];	/* XXX last modem status for line */
 int	ndcm = NDCMLINE;
 
 int	dcm_active;
@@ -233,7 +234,7 @@ dcmprobe(hd)
 		dcmsetischeme(brd, DIS_RESET|DIS_TIMER);
 	else
 		dcmsetischeme(brd, DIS_RESET|DIS_PERCHAR);
-	dcm->dcm_mdmmsk = MI_CD;	/* enable modem carrier detect intr */
+	dcm->dcm_mdmmsk = MI_CD|MI_CTS;	/* DCD (modem) and CTS (flow ctrl) */
 	dcm->dcm_ic = IC_IE;		/* turn all interrupts on */
 	/*
 	 * Need to reset baud rate, etc. of next print so reset dcmconsole.
@@ -396,7 +397,7 @@ dcmintr(brd)
 	if (code & IIR_PORT3)
 		dcmpint(MKUNIT(brd, 3), pcnd[3], dcm);
 	if (code & IIR_MODM)
-		dcmmint(MKUNIT(brd, 0), mcnd, dcm);	/* always port 0 */
+		dcmmint(MKUNIT(brd, 0), mcnd, dcm);	/* XXX always port 0 */
 
 	dis = &dcmischeme[brd];
 	/*
@@ -576,22 +577,34 @@ dcmmint(unit, mcnd, dcm)
         int mcnd;
 {
 	register struct tty *tp;
+	int delta;
 
 #ifdef DEBUG
 	if (dcmdebug & DDB_MODEM)
-		printf("dcmmint: unit %x mcnd %x\n", unit, mcnd);
+		printf("dcmmint: unit %x mcnd %x mcndlast\n",
+		       unit, mcnd, mcndlast[unit]);
 #endif
 	tp = &dcm_tty[unit];
-	if ((dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0) {
+	delta = mcnd ^ mcndlast[unit];
+	mcndlast[unit] = mcnd;
+	if ((delta & MI_CD) &&
+	    (dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0) {
 		if (mcnd & MI_CD)
-			(void) (*linesw[tp->t_line].l_modem)(tp, 1);
+			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 		else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
-			dcm->dcm_mdmout &= ~(MO_DTR | MO_RTS);
+			dcm->dcm_mdmout &= ~(MO_DTR|MO_RTS);
 			SEM_LOCK(dcm);
 			dcm->dcm_cr |= CR_MODM;
 			SEM_UNLOCK(dcm);
 			DELAY(10); /* time to change lines */
 		}
+	} else if ((delta & MI_CTS) &&
+		   (tp->t_state & TS_ISOPEN) && (tp->t_flags & CRTSCTS)) {
+		if (mcnd & MI_CTS) {
+			tp->t_state &= ~TS_TTSTOP;
+			ttstart(tp);
+		} else
+			tp->t_state |= TS_TTSTOP;	/* inline dcmstop */
 	}
 }
 
@@ -843,7 +856,7 @@ again:
 	}
 	/*
 	 * Kick it one last time in case it finished while we were
-	 * loading the last time.
+	 * loading the last bunch.
 	 */
 	if (bp > &buf[1]) {
 		tp->t_state |= TS_BUSY;
@@ -879,7 +892,7 @@ dcmstop(tp, flag)
 	s = spltty();
 	if (tp->t_state & TS_BUSY) {
 		/* XXX is there some way to safely stop transmission? */
-		if ((tp->t_state&TS_TTSTOP)==0)
+		if ((tp->t_state&TS_TTSTOP) == 0)
 			tp->t_state |= TS_FLUSH;
 	}
 	splx(s);
