@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.8 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.8.1.1 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -42,6 +42,7 @@ format()
 	else
 		bad_map->bs_id = D_INFO->id;
 
+#ifndef ONE
 	/* Re-Initialize bad sector map relocation pointers */
 	zero_bad_sector_map();
 	write_bad_sector_map();
@@ -51,13 +52,16 @@ format()
 	/* format the disk surface */
 	format_relocation_area();
 	format_maintenence_area();
+#endif /* ONE */
 	format_users_data_area();
 
 
+#ifndef ONE
 	/* verify the surface */
 	verify_relocation_area();
 	verify_maintenence_area();
 	verify_users_data_area();
+#endif /* ONE */
 
 	(void) writelabel();
 }
@@ -92,15 +96,26 @@ format_users_data_area()
 	register int		cyl;
 
 	cur.substate = sub_fmt;
+#ifndef ONE
 	sector_count = (long)(lab->d_ntracks * lab->d_nsectors);
+#else /* ONE */
+	sector_count = (long)(lab->d_nsectors);
+#endif /* ONE */
 	dskaddr.track = (char)0;
 	dskaddr.sector = (char)0;
+#ifndef ONE
 	for(cyl=0; cyl < (lab->d_ncylinders - NUMSYS); cyl++) {
 		dskaddr.cylinder = cyl;
+#else /* ONE */
+		dskaddr.cylinder = 183;
+		dskaddr.track = 7;
+#endif /* ONE */
 		format_sectors(&dskaddr, &dskaddr, NRM, sector_count);
 		if (kill_processes)
 			return;
+#ifndef ONE
 	}
+#endif /* ONE */
 }
 
 
@@ -164,6 +179,9 @@ long	count;
 	dcb.devselect = (char)cur.drive | lab->d_devflags;
 	dcb.trailcnt = (char)(sizeof(struct trfmt) / sizeof(long));
 	dcb.trail.fmtrail.addr = (char *)scratch; 
+#ifdef ONE
+printf("format %d @ %d/%d/%d\n", count, dskaddr->cylinder, dskaddr->track, dskaddr->sector);
+#endif /* ONE */
 	dcb.trail.fmtrail.nsectors = count;
 	dcb.trail.fmtrail.disk.cylinder = dskaddr->cylinder | flags;
 	dcb.trail.fmtrail.disk.track = dskaddr->track;
