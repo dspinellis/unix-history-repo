@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cd.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,11 +45,6 @@ STATIC char *getcomponent();
 
 char *curdir;			/* current working directory */
 STATIC char *cdcomppath;
-
-#if UDIR
-extern int didudir;		/* set if /u/logname expanded */
-#endif
-
 
 int
 cdcmd(argc, argv)  char **argv; {
@@ -89,10 +84,6 @@ STATIC int
 docd(dest, print)
 	char *dest;
 	{
-#if UDIR
-	if (didudir)
-		print = 1;
-#endif
 	INTOFF;
 	if (chdir(dest) < 0) {
 		INTON;
@@ -122,10 +113,6 @@ docd(dest, print)
 	int i;
 
 	TRACE(("docd(\"%s\", %d) called\n", dest, print));
-#if UDIR
-	if (didudir)
-		print = 1;
-#endif
 
 top:
 	cdcomppath = dest;
