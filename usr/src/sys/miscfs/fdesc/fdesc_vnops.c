@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.9 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -382,7 +382,7 @@ fdesc_getattr(ap)
 	struct vnode *vp = ap->a_vp;
 	struct vattr *vap = ap->a_vap;
 	unsigned fd;
-	int error;
+	int error = 0;
 
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_getattr: stat type = %d\n", VTOFDESC(vp)->fd_type);
