@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -297,6 +297,7 @@ doit(fromp)
 		 * in a remote net; look up the name and check that this
 		 * address corresponds to the name.
 		 */
+		hostname = hp->h_name;
 #ifdef	KERBEROS
 		if (!use_kerberos)
 #endif
@@ -346,6 +347,7 @@ doit(fromp)
 			rc = sizeof(local_addr);
 			if (getsockname(0, &local_addr, &rc) < 0) {
 				syslog(LOG_ERR, "getsockname: %m");
+				error("rlogind: getsockname: %m");
 				exit(1);
 			}
 			authopts = KOPT_DO_MUTUAL;
@@ -361,8 +363,7 @@ doit(fromp)
 				kdata, "", (bit_64 *) 0, version);
 		}
 		if (rc != KSUCCESS) {
-			fprintf(stderr,
-				"Kerberos authentication failure: %s\r\n",
+			error("Kerberos authentication failure: %s\n",
 				  krb_err_txt[rc]);
 			exit(1);
 		}
