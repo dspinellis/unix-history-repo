@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -329,10 +329,13 @@ pfile(pfname)			/* absorb expression from file */
 egsecute(file)
 	char *file;
 {
+	extern int errno;
+
 	if (file == NULL)
 		fd = 0;
 	else if ((fd = open(file, O_RDONLY, 0)) <= 0) {
-		fprintf(stderr, "%s: can't open %s\n", progname, file);
+		fprintf(stderr,
+		    "%s: %s: %s\n", progname, file, strerror(errno));
 		nsuccess = 2;
 		return;
 	}
