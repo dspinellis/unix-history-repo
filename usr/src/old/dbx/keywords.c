@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)keywords.c	1.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)keywords.c	1.6 (Berkeley) %G%";
 
 /*
  * Keyword and alias management.
@@ -181,7 +181,7 @@ Node p;
 
     t = findkeyword(cmd);
     if (t != nil) {
-	error("\"%s\" can't redefine a command", ident(cmd));
+	error("\"%s\" can't alias a command", ident(cmd));
 	return;
     }
     if (p->op == O_SCON)
@@ -201,14 +201,33 @@ Name cmd, n;
     for (a = aliashashtab[h]; a != nil && a->name != cmd; a = a->chain)
 	;
     if (a != nil) {
-	a->expansion = n;
+	/* interpret ``alias x x'' as ``unalias x'' */
+	if (streq(ident(cmd), ident(n)))
+	    unalias(h, a);
+	else
+	    a->expansion = n;
 	return;
     }
-    a = new(Alias);
-    a->name = cmd;
-    a->expansion = n;
-    a->chain = aliashashtab[h];
-    aliashashtab[h] = a;
+    if (!streq(ident(cmd), ident(n))) {		/* as above */
+	a = new(Alias);
+	a->name = cmd;
+	a->expansion = n;
+	a->chain = aliashashtab[h];
+	aliashashtab[h] = a;
+    }
+}
+
+private unalias(h, a)
+Alias a;
+Hashvalue h;
+{
+    register Alias *ap;
+
+    for (ap = &aliashashtab[h]; *ap != nil && *ap != a; ap = &(*ap)->chain)
+	;
+    assert(*ap == a);
+    *ap = a->chain;
+    dispose(a);
 }
 
 /*
@@ -223,7 +242,8 @@ Name cmd;
 
     if (cmd != nil) {
 	s = findalias(cmd);
-	printf(s == nil ? "\n" : "%s\n", s);
+	if (s != nil)
+	    printf("%s\n", s);
 	return;
     }
     /*
