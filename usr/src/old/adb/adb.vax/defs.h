@@ -1,4 +1,4 @@
-/*	defs.h	4.4	84/10/13	*/
+/*	defs.h	4.5	85/09/09	*/
 
 /*
  * adb - vax string table version; common definitions
@@ -80,7 +80,6 @@
 #define MAXOFF	255
 #define MAXPOS	80
 #define MAXLIN	128
-#define EOF	0
 #define EOR	'\n'
 #define SP	' '
 #define TB	'\t'

@@ -1,4 +1,4 @@
-/*	mac.h	4.1	81/05/14	*/
+/*	mac.h	4.2	85/09/09	*/
 
 /*
  *	UNIX debugger
@@ -45,4 +45,3 @@
 #define SP	' '
 #define TB	'\t'
 #define NL	'\n'
-#define EOF	0
