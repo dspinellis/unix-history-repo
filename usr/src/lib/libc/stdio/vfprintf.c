@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.27 (Berkeley) %G%";
 
 #define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 
-#define	PUTC(ch)	{++cnt; putc((char)ch, fp);}
+#define	PUTC(ch)	(void) putc(ch, fp)
 
 #define	ARG() \
 	_ulong = flags&LONGINT ? va_arg(argp, long) : \
@@ -43,46 +43,60 @@ static char sccsid[] = "@(#)vfprintf.c	5.27 (Berkeley) %G%";
 #define	SHORTINT	0x04		/* short integer */
 #define	ALT		0x08		/* alternate form */
 #define	LADJUST		0x10		/* left adjustment */
+#define	ZEROPAD		0x20		/* zero (as opposed to blank) pad */
+#define	HEXPREFIX	0x40		/* add 0x or 0X prefix */
 
 _doprnt(fmt0, argp, fp)
 	u_char *fmt0;
 	va_list argp;
 	register FILE *fp;
 {
-	register u_char *fmt;
-	register int ch, cnt, n;
-	register char *t;
-	double _double;
-	u_long _ulong;
-	int base, flags, fpprec, prec, size, width;
-	char padc, sign, *digs, buf[BUF], *_cvt();
+	register u_char *fmt;	/* format string */
+	register int ch;	/* character from fmt */
+	register int cnt;	/* return value accumulator */
+	register int n;		/* random handy integer */
+	register char *t;	/* buffer pointer */
+	double _double;		/* double precision arguments %[eEfgG] */
+	u_long _ulong;		/* integer arguments %[diouxX] */
+	int flags;		/* flags as above */
+	int dprec;		/* decimal precision in [diouxX] */
+	int fpprec;		/* `extra' floating precision in [eEfgG] */
+	int width;		/* width from format (%8d), or 0 */
+	int prec;		/* precision from format (%.3d), or -1 */
+	int size;		/* size of converted field or string */
+	int fieldsz;		/* field size expanded by sign, etc */
+	int realsz;		/* field size expanded by decimal precision */
+	char sign;		/* sign prefix (+ - or \0) */
+	int base;		/* base for [diouxX] conversion */
+	char *digs;		/* digits for [diouxX] conversion */
+	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
+	char *_cvt();		/* handles [eEfgG] formats */
 
 	fmt = fmt0;
 	digs = "0123456789abcdef";
 	for (cnt = 0;; ++fmt) {
 		n = fp->_cnt;
-		for (t = fp->_ptr; (ch = *fmt) && ch != '%'; ++cnt, ++fmt)
+		for (t = (char *)fp->_ptr; (ch = *fmt) && ch != '%';
+		     ++cnt, ++fmt)
 			if (--n < 0
 #ifdef NEGATIVE_COUNT_KLUDGE
 			    && (!(fp->_flag & _IOLBF) || -n >= fp->_bufsiz)
 #endif
-			    || ch == '\n' && fp->_flag&_IOLBF) {
+			    || ch == '\n' && fp->_flag & _IOLBF) {
 				fp->_cnt = n;
-				fp->_ptr = t;
-				(void)_flsbuf(ch, fp);
+				fp->_ptr = (u_char *)t;
+				(void) _flsbuf((u_char)ch, fp);
 				n = fp->_cnt;
-				t = fp->_ptr;
-			}
-			else
+				t = (char *)fp->_ptr;
+			} else
 				*t++ = ch;
 		fp->_cnt = n;
-		fp->_ptr = t;
+		fp->_ptr = (u_char *)t;
 		if (!ch)
-			return(cnt);
+			return (cnt);
 
-		flags = fpprec = width = 0;
+		flags = dprec = fpprec = width = 0;
 		prec = -1;
-		padc = ' ';
 		sign = '\0';
 
 rflag:		switch (*++fmt) {
@@ -102,7 +116,7 @@ rflag:		switch (*++fmt) {
 			if ((width = va_arg(argp, int)) >= 0)
 				goto rflag;
 			width = -width;
-			/*FALLTHROUGH*/
+			/* FALLTHROUGH */
 		case '-':
 			flags |= LADJUST;
 			goto rflag;
@@ -112,23 +126,22 @@ rflag:		switch (*++fmt) {
 		case '.':
 			if (*++fmt == '*')
 				n = va_arg(argp, int);
-			else if (isascii(*fmt) && isdigit(*fmt)) {
-				n = 0;
-				do {
-					n = 10 * n + todigit(*fmt);
-				} while (isascii(*++fmt) && isdigit(*fmt));
-				--fmt;
-			}
 			else {
+				n = 0;
+				while (isascii(*fmt) && isdigit(*fmt))
+					n = 10 * n + todigit(*fmt++);
 				--fmt;
-				prec = 0;
-				goto rflag;
 			}
 			prec = n < 0 ? -1 : n;
 			goto rflag;
 		case '0':
-			padc = '0';
-			/*FALLTHROUGH*/
+			/*
+			 * ``Note that 0 is taken as a flag, not as the
+			 * beginning of a field width.''
+			 *	-- ANSI X3J11
+			 */
+			flags |= ZEROPAD;
+			goto rflag;
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			n = 0;
@@ -148,9 +161,9 @@ rflag:		switch (*++fmt) {
 			flags |= LONGINT;
 			goto rflag;
 		case 'c':
-			buf[0] = va_arg(argp, int);
+			*(t = buf) = va_arg(argp, int);
 			size = 1;
-			t = buf;
+			sign = '\0';
 			goto pforw;
 		case 'd':
 		case 'i':
@@ -176,22 +189,14 @@ rflag:		switch (*++fmt) {
 				fpprec = prec - MAXFRACT;
 				prec = MAXFRACT;
 			}
-			size = _cvt(_double, prec, flags, *fmt, padc, &sign,
-			    buf, buf + sizeof(buf)) - buf;
 			t = buf;
-			/*
-			 * zero-padded sign put out here; blank padded sign
-			 * placed in number in _cvt().
-			 */
-			if (sign && padc == '0') {
-				PUTC(sign);
-				--width;
-			}
+			size = _cvt(_double, prec, flags, *fmt, &sign,
+				    t, t + sizeof(buf)) - t;
 			goto pforw;
 		case 'n':
-			if (flags&LONGINT)
+			if (flags & LONGINT)
 				*va_arg(argp, long *) = cnt;
-			else if (flags&SHORTINT)
+			else if (flags & SHORTINT)
 				*va_arg(argp, short *) = cnt;
 			else
 				*va_arg(argp, int *) = cnt;
@@ -208,7 +213,7 @@ rflag:		switch (*++fmt) {
 			 * defined manner.''
 			 *	-- ANSI X3J11
 			 */
-			/*NOSTRICT*/
+			/* NOSTRICT */
 			_ulong = (u_long)va_arg(argp, void *);
 			base = 16;
 			goto nosign;
@@ -227,12 +232,11 @@ rflag:		switch (*++fmt) {
 					size = p - t;
 					if (size > prec)
 						size = prec;
-				}
-				else
+				} else
 					size = prec;
-			}
-			else
+			} else
 				size = strlen(t);
+			sign = '\0';
 			goto pforw;
 		case 'u':
 			ARG();
@@ -240,103 +244,113 @@ rflag:		switch (*++fmt) {
 			goto nosign;
 		case 'X':
 			digs = "0123456789ABCDEF";
-			/*FALLTHROUGH*/
+			/* FALLTHROUGH */
 		case 'x':
 			ARG();
 			base = 16;
 			/* leading 0x/X only if non-zero */
-			if (!_ulong)
-				flags &= ~ALT;
+			if (flags & ALT && _ulong != 0)
+				flags |= HEXPREFIX;
 
 			/* unsigned conversions */
-nosign:			sign = NULL;
+nosign:			sign = '\0';
 			/*
 			 * ``... diouXx conversions ... if a precision is
 			 * specified, the 0 flag will be ignored.''
 			 *	-- ANSI X3J11
 			 */
-number:			if (prec >= 0)
-				padc = ' ';
+number:			if ((dprec = prec) >= 0)
+				flags &= ~ZEROPAD;
+
 			/*
 			 * ``The result of converting a zero value with an
 			 * explicit precision of zero is no characters.''
 			 *	-- ANSI X3J11
 			 */
-			if (!_ulong && !prec) {
-				size = 0;
-				goto pforw;
+			t = buf + BUF;
+			if (_ulong != 0 || prec != 0) {
+				do {
+					*--t = digs[_ulong % base];
+					_ulong /= base;
+				} while (_ulong);
+				digs = "0123456789abcdef";
+				if (flags & ALT && base == 8 && *t != '0')
+					*--t = '0'; /* octal leading 0 */
 			}
+			size = buf + BUF - t;
 
-			t = buf + BUF - 1;
-			do {
-				*t-- = digs[_ulong % base];
-				_ulong /= base;
-			} while(_ulong);
-			for (size = buf + BUF - 1 - t; size < prec; ++size)
-				*t-- = '0';
-			digs = "0123456789abcdef";
+pforw:
+			/*
+			 * All reasonable formats wind up here.  At this
+			 * point, `t' points to a string which (if not
+			 * flags&LADJUST) should be padded out to `width'
+			 * places.  If flags&ZEROPAD, it should first be
+			 * prefixed by any sign or other prefix; otherwise,
+			 * it should be blank padded before the prefix is
+			 * emitted.  After any left-hand padding and
+			 * prefixing, emit zeroes required by a decimal
+			 * [diouxX] precision, then print the string proper,
+			 * then emit zeroes required by any leftover floating
+			 * precision; finally, if LADJUST, pad with blanks.
+			 */
 
-			/* alternate mode for hex and octal numbers */
-			if (flags&ALT)
-				switch (base) {
-				case 16:
-					/* avoid "00000x35" */
-					if (padc == ' ') {
-						*t-- = *fmt;
-						*t-- = '0';
-						size += 2;
-					}
-					else {
-						PUTC('0');
-						PUTC(*fmt);
-						width -= 2;
-					}
-					break;
-				case 8:
-					if (t[1] != '0') {
-						*t-- = '0';
-						++size;
-					}
-					break;
-				}
+			/* compute actual size, so we know how much to pad */
+			/* this code is not terribly satisfactory */
+			/* fieldsz excludes decimal prec; realsz includes it */
+			fieldsz = size + fpprec;
+			if (sign)
+				fieldsz++;
+			if (flags & HEXPREFIX)
+				fieldsz += 2;
+			realsz = dprec > fieldsz ? dprec : fieldsz;
 
-			if (sign) {
-				/* avoid "0000-3" */
-				if (padc == ' ') {
-					*t-- = sign;
-					++size;
-				}
-				else {
-					PUTC(sign);
-					--width;
-				}
-			}
-			++t;
-
-pforw:			if (!(flags&LADJUST) && width)
-				for (n = size + fpprec; n++ < width;)
-					PUTC(padc);
-			if (fp->_cnt - (n = size) >= 0) {
-				cnt += n;
-				fp->_cnt -= n;
-				bcopy(t, fp->_ptr, n);
-				fp->_ptr += n;
-			}
-			else for (; n--; ++t)
-				PUTC(*t);
-			while (fpprec--)
-				PUTC('0');
-			if (flags&LADJUST)
-				for (n = size + fpprec; ++n < width;)
+			/* right-adjusting blank padding */
+			if ((flags & (LADJUST|ZEROPAD)) == 0 && width)
+				for (n = realsz; n < width; n++)
 					PUTC(' ');
+			/* prefix */
+			if (sign)
+				PUTC(sign);
+			if (flags & HEXPREFIX) {
+				PUTC('0');
+				PUTC((char)*fmt);
+			}
+			/* right-adjusting zero padding */
+			if ((flags & (LADJUST|ZEROPAD)) == ZEROPAD)
+				for (n = realsz; n < width; n++)
+					PUTC('0');
+			/* leading zeroes from decimal precision */
+			for (n = fieldsz; n < dprec; n++)
+				PUTC('0');
+
+			/* the string or number proper */
+			if (fp->_cnt - (n = size) >= 0 &&
+			    (fp->_flag & _IOLBF) == 0) {
+				fp->_cnt -= n;
+				bcopy(t, (char *)fp->_ptr, n);
+				fp->_ptr += n;
+			} else
+				while (--n >= 0)
+					PUTC(*t++);
+			/* trailing f.p. zeroes */
+			while (--fpprec >= 0)
+				PUTC('0');
+			/* left-adjusting padding (always blank) */
+			if (flags & LADJUST)
+				for (n = realsz; n < width; n++)
+					PUTC(' ');
+
+			/* finally, adjust cnt */
+			cnt += width > realsz ? width : realsz;
 			break;
-		case '\0':		/* "%?" prints ?, unless ? is NULL */
-			return(cnt);
+		case '\0':	/* "%?" prints ?, unless ? is NULL */
+			return (cnt);
 		default:
-			PUTC(*fmt);
+			PUTC((char)*fmt);
+			cnt++;
 		}
 	}
-	/*NOTREACHED*/
+	/* NOTREACHED */
 }
 
 #define	EFORMAT	0x01
@@ -345,12 +359,12 @@ pforw:			if (!(flags&LADJUST) && width)
 #define	DEFPREC	6
 
 static char *
-_cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
+_cvt(number, prec, flags, fmtch, sign, startp, endp)
 	double number;
 	register int prec;
 	int flags;
 	u_char fmtch;
-	char padc, *sign, *startp, *endp;
+	char *sign, *startp, *endp;
 {
 	register char *p, *t;
 	register int expcnt, format;
@@ -365,10 +379,6 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 		*sign = '-';
 		number = -number;
 	}
-
-	/* if blank padded, add sign in as part of the number */
-	if (*sign && padc == ' ')
-		*startp++ = *sign;
 
 	switch(fmtch) {
 	case 'e':
