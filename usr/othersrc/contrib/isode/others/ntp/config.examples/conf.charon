@@ -1,0 +1,41 @@
+# $Source: /usr/users/louie/ntp/RCS/ntp.conf,v $ $Revision: 3.4.1.1 $ $Date: 89/03/22 18:33:02 $
+#
+# 		Local clock parameters
+#
+#
+#	Precision of the local clock to the nearest power of 2
+#		ex.
+#			60-HZ   = 2**-6
+#			100-HZ  = 2**-7
+#			1000-HZ = 2**-10
+#precision -7
+#
+#	Peers - please refer to the README file for proper selection of
+#		NTP peers
+#
+# Us - charon for now...
+#
+osilisten	Janet=00000511168019+PID+03030303
+#
+# Notts - J.Onions 
+#
+peer 		OSI:Janet=000021000018+PID+03030303
+#
+# NSFnet eg primary
+#
+peer		INET:umd1.umd.edu
+#
+# ARPANET East peer INET:dcn5.udel.edu primary
+#
+peer		INET:128.4.0.5
+#
+# JVNC/NSFnet - secondary
+# useful to UCL if routed right INET: fuzz.csc.org
+#
+peer		INET:128.121.54.20
+#
+# local host...perky
+#
+client		INET:perky.cs.ucl.ac.uk
+logfile		/tmp/ntp.log
+logclock	yes
