@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)checknr.1	4.1 (Berkeley) %G%
+.\"	@(#)checknr.1	5.1 (Berkeley) %G%
 .\"
-.TH CHECKNR 1 4/5/80
+.TH CHECKNR 1 "5 April 1980"
 .UC 4
 .SH NAME
 checknr \- check nroff/troff files
@@ -18,8 +18,9 @@ checknr \- check nroff/troff files
 .BR \-a ".x1.y1.x2.y2. ... .xn.yn"
 ] [
 .BR \-c ".x1.x2.x3 ... .xn"
-]
+] [
 \fIfile\fP ...
+]
 .SH DESCRIPTION
 .I Checknr
 checks a list of
@@ -29,6 +30,9 @@ or
 input files for certain kinds of errors
 involving mismatched opening and closing delimiters
 and unknown commands.
+If no files are specified,
+.I checknr
+checks the standard input.
 Delimiters checked are:
 .IP (1)
 Font changes using \efx ... \efP.
@@ -91,7 +95,7 @@ Since it is probably better to use the \efP and \es0 forms anyway,
 you should think of this as a contribution to your document
 preparation style.
 .SH SEE\ ALSO
-nroff(1), troff(1), ms(7), me(7), checkeqn(1)
+nroff(1), troff(1), checkeq(1), ms(7), me(7)
 .SH DIAGNOSTICS
 Complaints about unmatched delimiters.
 .br
@@ -102,4 +106,7 @@ Various complaints about the syntax of commands.
 Mark Horton
 .SH BUGS
 There is no way to define a 1 character macro name using
-.B \-a
+.BR \-a .
+.br
+Does not correctly recognize certain reasonable constructs,
+such as conditionals.
