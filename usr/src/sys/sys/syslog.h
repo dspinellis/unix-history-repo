@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	7.7 (Berkeley) %G%
+ *	@(#)syslog.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,8 @@
 #define LOG_NFACILITIES	24	/* maximum number of facilities */
 #define LOG_FACMASK	0x03f8	/* mask to extract facility part */
 
+#define LOG_FAC(p)	(((p) & LOG_FACMASK) >> 3)	/* facility of pri */
+
 /*
  *  Priorities (these are ordered)
  */
@@ -46,6 +48,13 @@
 #define LOG_DEBUG	7	/* debug-level messages */
 
 #define LOG_PRIMASK	0x0007	/* mask to extract priority part (internal) */
+#define LOG_PRI(p)	((p) & LOG_PRIMASK)	/* extract priority */
+
+#define	LOG_MAKEPRI(fac, pri)	(((fac) << 3) | (pri))
+
+#ifdef KERNEL
+#define LOG_PRINTF	-1	/* pseudo-priority to indicate use of printf */
+#endif
 
 /*
  * arguments to setlogmask.
