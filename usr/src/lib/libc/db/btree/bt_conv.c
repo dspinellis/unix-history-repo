@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -86,7 +86,7 @@ kdswap(h)
 	PAGE *h;
 {
 	register int i, top;
-	register void *p;
+	register char *p;			/* Really void, thanks ANSI! */
 	u_char flags;
 
 	top = NEXTINDEX(h);
@@ -94,7 +94,7 @@ kdswap(h)
 	case P_BINTERNAL:
 		for (i = 0; i < top; i++) {
 			BSSWAP(h->linp[i]);
-			p = GETBINTERNAL(h, i);
+			p = (char *)GETBINTERNAL(h, i);
 			BLPSWAP(p);
 			p += sizeof(size_t);
 			BLPSWAP(p);
@@ -110,7 +110,7 @@ kdswap(h)
 	case P_BLEAF:
 		for (i = 0; i < top; i++) {
 			BSSWAP(h->linp[i]);
-			p = GETBLEAF(h, i);
+			p = (char *)GETBLEAF(h, i);
 			BSPSWAP(p);
 			p += sizeof(size_t);
 			BSPSWAP(p);
