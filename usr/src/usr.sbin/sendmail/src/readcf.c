@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.26		%G%);
+SCCSID(@(#)readcf.c	3.27		%G%);
 
 /*
 **  READCF -- read control file.
@@ -58,6 +58,7 @@ readcf(cfname, safe)
 	int class;
 	int ruleset = 0;
 	char exbuf[MAXLINE];
+	char *q;
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
