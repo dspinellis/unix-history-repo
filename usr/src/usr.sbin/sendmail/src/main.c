@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1449,15 +1449,6 @@ disconnect(droplev, e)
 	if (droplev > 1)
 	{
 		(void) setsid();
-#ifdef TIOCNOTTY
-		fd = open("/dev/tty", 2);
-		if (fd >= 0)
-		{
-			(void) ioctl(fd, (int) TIOCNOTTY, (char *) 0);
-			(void) close(fd);
-		}
-		(void) setpgrp(0, 0);
-#endif /* TIOCNOTTY */
 		errno = 0;
 	}
 

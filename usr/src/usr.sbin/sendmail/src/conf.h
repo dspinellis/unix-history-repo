@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.20 (Berkeley) %G%
+ *	@(#)conf.h	8.21 (Berkeley) %G%
  */
 
 /*
@@ -117,7 +117,7 @@
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define FORK		fork	/* no vfork primitive available */
-# define setpgrp	BSDsetpgrp
+# define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
 # endif
 
@@ -195,6 +195,7 @@
 # define HASFLOCK	1	/* has flock(2) call */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define sleep		sleepX
+# define setpgid	setpgrp
 # define LA_TYPE	LA_ZERO
 typedef int		pid_t;
 # ifndef _PATH_SENDMAILCF
@@ -232,6 +233,7 @@ typedef int		pid_t;
 # define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define ARBPTR_T	char *
+# define setpgid	setpgrp
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
@@ -283,6 +285,21 @@ typedef int		pid_t;
 # define LA_AVENRUN	"avenrun"
 # define _PATH_UNIX	"/unix"
 #endif
+
+/*
+**  Linux 0.99pl10 and above...
+**	From Karl London <karl@borg.demon.co.uk>.
+*/
+
+#ifdef linux
+# define BSD		1	/* pretend to be BSD based today */
+# undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_FLOAT
+# endif
+#endif
+
 
 /**********************************************************************
 **  End of Per-Operating System defines
