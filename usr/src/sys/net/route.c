@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.13 (Berkeley) %G%
+ *	@(#)route.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -148,7 +148,7 @@ rtredirect(dst, gateway, flags, src)
 		rt = 0;
 	}
 	if (rt == 0) {
-		rtinit(dst, gateway,
+		rtinit(dst, gateway, SIOCADDRT,
 		    (flags & RTF_HOST) | RTF_GATEWAY | RTF_DYNAMIC);
 		rtstat.rts_dynamic++;
 		return;
@@ -163,7 +163,7 @@ rtredirect(dst, gateway, flags, src)
 			 * Changing from route to net => route to host.
 			 * Create new route, rather than smashing route to net.
 			 */
-			rtinit(dst, gateway, flags);
+			rtinit(dst, gateway, SIOCADDRT, flags);
 		} else {
 			/*
 			 * Smash the current notion of the gateway to
