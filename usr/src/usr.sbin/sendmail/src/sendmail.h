@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.104		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.105		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -419,7 +419,7 @@ EXTERN u_char	tTdvect[100];
 /* useful functions */
 
 extern char	*newstr();
-extern ADDRESS	*parse();
+extern ADDRESS	*parseaddr();
 extern char	*xalloc();
 extern char	*expand();
 extern bool	sameaddr();
