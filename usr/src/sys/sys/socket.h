@@ -1,4 +1,4 @@
-/*	socket.h	4.24	83/01/13	*/
+/*	socket.h	4.25	83/01/22	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -21,12 +21,13 @@
  */
 #define	SO_DEBUG	0x01		/* turn on debugging info recording */
 #define	SO_ACCEPTCONN	0x02		/* willing to accept connections */
-#define	SO_DONTLINGER	0x04		/* don't linger on close */
+#define	SO_REUSEADDR	0x04		/* allow local address reuse (gag) */
 #define	SO_KEEPALIVE	0x08		/* keep connections alive */
 #define	SO_DONTROUTE	0x10		/* just use interface addresses */
 #define	SO_NEWFDONCONN	0x20		/* give new fd on connection */
 #define	SO_USELOOPBACK	0x40		/* bypass hardware when possible */
-#define	SO_LINGER	0x80		/* ~SO_DONTLINGER */
+#define	SO_LINGER	0x80		/* linger on close if data present */
+#define	SO_DONTLINGER	(~SO_LINGER)	/* ~SO_LINGER */
 
 /*
  * Generic socket protocol format.
