@@ -1,0 +1,5 @@
+# Host: OMRON LUNA-I/II, running BSD
+XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
+XM_FILE= xm-luna68k.h
+REGEX= regex.o
+REGEX1= regex.o
