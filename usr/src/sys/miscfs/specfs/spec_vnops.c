@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.46 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,7 +69,6 @@ struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
 	{ &vop_islocked_desc, spec_islocked },		/* islocked */
 	{ &vop_advlock_desc, spec_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, spec_blkatoff },		/* blkatoff */
-	{ &vop_vget_desc, spec_vget },		/* vget */
 	{ &vop_valloc_desc, spec_valloc },		/* valloc */
 	{ &vop_vfree_desc, spec_vfree },		/* vfree */
 	{ &vop_truncate_desc, spec_truncate },		/* truncate */
@@ -110,8 +109,6 @@ spec_open(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	register struct vnode *vp = ap->a_vp;
 	dev_t dev = (dev_t)vp->v_rdev;
 	register int maj = major(dev);
@@ -152,8 +149,6 @@ spec_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	register struct vnode *vp = ap->a_vp;
 	register struct uio *uio = ap->a_uio;
  	struct proc *p = uio->uio_procp;
@@ -235,8 +230,6 @@ spec_write(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	register struct vnode *vp = ap->a_vp;
 	register struct uio *uio = ap->a_uio;
 	struct proc *p = uio->uio_procp;
