@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.57 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.58 (Berkeley) %G%
  */
 
 /*
@@ -1548,9 +1548,15 @@ again:
 			 */
 			if (VFS_VGET(vp->v_mount, dp->d_fileno, &nvp))
 				goto invalid;
+			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
+			fl.fl_nfh.fh_generic.fh_fsid =
+				nvp->v_mount->mnt_stat.f_fsid;
+			if (VFS_VPTOFH(nvp, &fl.fl_nfh.fh_generic.fh_fid)) {
+				vput(nvp);
+				goto invalid;
+			}
 			(void) nqsrv_getlease(nvp, &duration2, NQL_READ, nfsd,
 				nam, &cache2, &frev2, cred);
-			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
 			fl.fl_duration = txdr_unsigned(duration2);
 			fl.fl_cachable = txdr_unsigned(cache2);
 			txdr_hyper(&frev2, fl.fl_frev);
