@@ -1,4 +1,4 @@
-/*	tm.c	4.1	%G%	*/
+/*	tm.c	4.2	%G%	*/
 
 #include "../conf/tm.h"
 #if NTM > 0
@@ -145,8 +145,7 @@ tmwaitrws(dev)
 
 	spl5();
 	for (;;) {
-		tcommand(dev, NOP, 1);
-		if ((t_erreg&RWS) == 0) {
+		if ((TMADDR->tmer&RWS) == 0) {
 			spl0();		/* rewind complete */
 			return;
 		}
@@ -200,9 +199,7 @@ tmstrategy(bp)
 {
 	register daddr_t *p;
 
-	tcommand(bp->b_dev, NOP, 1);
-	if (t_erreg&RWS)
-		tmwaitrws(bp->b_dev);
+	tmwaitrws(bp->b_dev);
 	if (bp != &ctmbuf) {
 		p = &t_nxrec;
 		if (dbtofsb(bp->b_blkno) > *p) {
@@ -313,7 +310,6 @@ tmintr()
 	if ((bp = tmtab.b_actf) == NULL)
 		return;
 	t_dsreg = TMADDR->tmcs;
-	TMADDR->tmcs = IENABLE;
 	t_erreg = TMADDR->tmer;
 	t_resid = TMADDR->tmbc;
 	if ((bp->b_flags & B_READ) == 0)
@@ -332,11 +328,11 @@ tmintr()
 		if ((bp->b_flags&B_READ) && (TMADDR->tmer&(HARD|SOFT)) == RLE)
 			goto out;
 		if ((TMADDR->tmer&HARD)==0 && state==SIO) {
-			if (++tmtab.b_errcnt < 3) {
+			if (++tmtab.b_errcnt < 7) {
 				if((TMADDR->tmer&SOFT) == NXM)
 					printf("TM UBA late error\n");
 				else
-					t_blkno++;
+					t_blkno += 2;		/* ???????? */
 				if (tm_ubinfo) {
 					ubafree(tm_ubinfo);
 					tm_ubinfo = 0;
@@ -346,7 +342,7 @@ tmintr()
 			}
 		} else if (t_openf>0 && bp != &rtmbuf)
 			t_openf = -1;
-		deverror(bp, t_erreg, 0);
+		deverror(bp, t_erreg, t_dsreg);
 		bp->b_flags |= B_ERROR;
 		state = SIO;
 	}
@@ -523,20 +519,19 @@ twall(start, num)
 		start += blk;
 		num -= blk;
 	}
+	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] |= BNE;
 }
 
 tmdwrite(buf, num)
 register buf, num;
 {
 	register int *io, npf;
+
 	tmwait();
-	/* Flush buffered data path 0 */
-	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] = 0;
-	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] = BNE;
-	/* Map unibus address 0 to section of interest */
+	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] |= BNE;
 	io = (int *)((struct uba_regs *)PHYSUBA0)->uba_map;
 	npf = num+1;
-	while(--npf != 0)
+	while (--npf != 0)
 		 *io++ = (int)(buf++ | (1<<21) | MRV);
 	*io = 0;
 	TMPHYS->tmbc = -(num*NBPG);
@@ -546,7 +541,7 @@ register buf, num;
 
 tmwait()
 {
-	register short s;
+	register s;
 
 	do
 		s = TMPHYS->tmcs;
