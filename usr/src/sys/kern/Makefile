@@ -14,14 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.8 (Berkeley) %G%
+#	@(#)Makefile	7.9 (Berkeley) %G%
 #
 # Put the ../sys stuff near the end so that subroutine definitions win when
 # there is a struct tag with the same name (eg., vmmeter).  The real
 # solution would probably be for ctags to generate "struct vmmeter" tags.
 
 COMM=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
-	../kern/*.[ch] ../ufs/*.[ch] ../nfs/*.[ch]
+	../kern/*.[ch] ../ufs/*.[ch] ../nfs/*.[ch] ../vm/*.[ch]
 HDR=	../sys/*.h
 TVAX=	../vax/tags
 SVAX=	../vaxif/*.[ch]  ../vaxmba/*.[ch] ../vaxuba/*.[ch] ../vax/*.[ch]
