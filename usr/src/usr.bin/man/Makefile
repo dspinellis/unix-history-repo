@@ -9,28 +9,26 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 ASRCS=	apropos.c
-AOBJS=	apropos.o
 MSRCS=	man.c
-MOBJS=	man.o
 
 all: man apropos
 
-apropos: ${AOBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${AOBJS}
+apropos: ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${ASRCS}
 
-man:	${MOBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${MOBJS}
+man: ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${MSRCS}
 
 clean: FRC
-	rm -f ${AOBJS} ${MOBJS} core apropos man
+	rm -f core apropos man
 
 depend: FRC
-	mkdep ${CFLAGS} ${ASRCS} ${MSRCS}
+	mkdep -p ${CFLAGS} ${ASRCS} ${MSRCS}
 
 install: FRC
 	rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
@@ -52,11 +50,13 @@ FRC:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-apropos.o: apropos.c /usr/include/sys/param.h /usr/include/sys/types.h
-apropos.o: /usr/include/signal.h /usr/include/machine/machparam.h
-apropos.o: /usr/include/stdio.h /usr/include/ctype.h
-man.o: man.c /usr/include/sys/param.h /usr/include/sys/types.h
-man.o: /usr/include/signal.h /usr/include/machine/machparam.h
-man.o: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
+apropos: apropos.c /usr/include/sys/param.h /usr/include/sys/types.h
+apropos: /usr/include/signal.h /usr/include/machine/trap.h
+apropos: /usr/include/machine/machparam.h /usr/include/machine/endian.h
+apropos: /usr/include/stdio.h /usr/include/ctype.h
+man: man.c /usr/include/sys/param.h /usr/include/sys/types.h
+man: /usr/include/signal.h /usr/include/machine/trap.h
+man: /usr/include/machine/machparam.h /usr/include/machine/endian.h
+man: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
