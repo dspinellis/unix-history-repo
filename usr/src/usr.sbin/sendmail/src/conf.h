@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.191 (Berkeley) %G%
+ *	@(#)conf.h	8.192 (Berkeley) %G%
  */
 
 /*
@@ -330,6 +330,7 @@ extern char		*getenv();
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define IP_SRCROUTE	0	/* does not have <netinet/ip_var.h> */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
@@ -340,6 +341,9 @@ extern char		*getenv();
 /* these include files must be included early on DG/UX */
 # include <netinet/in.h>
 # include <arpa/inet.h>
+
+/* compiler doesn't understand const? */
+# define const
 
 # ifdef DGUX_5_4_2
 #  define inet_addr	dgux_inet_addr
