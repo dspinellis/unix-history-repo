@@ -1,4 +1,4 @@
-/*	machdep.c	4.7	%G%	*/
+/*	machdep.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +21,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version machdep.c) 81/02/07 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.8) %D% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -216,19 +216,6 @@ vmtime(otime, olbolt, oicr)
 }
 #endif
 
-#ifdef TRACE
-/*
- * Put the current time into the trace,
- * in fractional seconds (i.e. 12345 means the
- * current time is ``n.12345'' for some n.
- */
-ttime()
-{
-
-	trace("%d ", (lbolt*16667 + mfpr(ICR)));
-}
-#endif
-
 /*
  * Send an interrupt to process
  *
@@ -326,33 +313,33 @@ dorti()
 #define	MEMINTVL	(60*60*10)		/* 10 minutes */
 int	memintvl = MEMINTVL;
 
-#if VAX==780
-#define	MHIERR	0x20000000
-#define	MERLOG	0x10000000
-#else
-#define	MUNCORR	0xc0000000
-#define	MCORERR	0x40000000
-#define	MERLOG	(MUNCORR|MCORERR)
-#endif
-
+#define	M780_HIERR	0x20000000
+#define	M780_ERLOG	0x10000000
+#define	M750_UNCORR	0xc0000000
+#define	M750_CORERR	0x40000000
+#define	M750_ERLOG	(MUNCORR|MCORERR)
 
 memchk()
 {
-#if VAX==780
-	register int c = mcr[2];
-#else
-	register int c = mcr[0];
-#endif
+	register int c;
+	int error;
 
-	if (c & MERLOG) {
 #if VAX==780
-		printf("MEMERR: mcra %X mcrb %X mcrc %X\n", mcr[0], mcr[1], c);
-		mcr[2] = (MERLOG|MHIERR);
+	error = mcr[2] & M780_ERLOG;
 #else
-		printf("MEMERR: csr0 %X csr1 %X csr2 %X\n", c, mcr[1], mcr[2]);
+	error = mcr[0] & M750_ERLOG;
+#endif
+	if (error) {
+		printf("MEMERR: %x %x %x\n", mcr[0], mcr[1], mcr[2]);
+#if VAX==780
+		mcr[2] = M780_ERLOG|M780_MHIERR;
+#else
 		mcr[0] = MERLOG;
 #endif
 	}
+#if VAX==750
+	mcr[1] = 0;		/* report errors */
+#endif
 	if (memintvl > 0)
 		timeout(memchk, (caddr_t)0, memintvl);
 }
