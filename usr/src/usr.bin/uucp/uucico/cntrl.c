@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.11	(Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.12	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -155,6 +155,7 @@ top:
 	for (i = 0; i < sizeof wrkvec / sizeof wrkvec[0]; i++)
 		wrkvec[i] = 0;
 	DEBUG(4, "*** TOP ***  -  role=%s\n", role ? "MASTER" : "SLAVE");
+	setproctitle("%s: %s", Rmtname, role ? "MASTER" : "SLAVE");
 	setupline(RESET);
 	if (Now.time > (LastCheckedNoLogin.time+60)) {
 		LastCheckedNoLogin = Now;
@@ -204,7 +205,7 @@ top:
 			goto top;
 		}
 		sprintf(User, "%.9s", W_USER);
-		sprintf(rqstr, "%s %s %s %s", W_TYPE, W_FILE1,
+		sprintf(rqstr, "(%s %s %s %s)", W_TYPE, W_FILE1,
 		  W_FILE2, W_USER);
 		logent(rqstr, "REQUEST");
 		if (wrktype == SNDFILE ) {
@@ -460,7 +461,8 @@ process:
 			Wfile[0] = '\0';
 			goto top;
 		}
-		sprintf(rqstr, "%s %s %s %s", W_TYPE, W_FILE1, W_FILE2, W_USER);
+		sprintf(rqstr, "(%s %s %s %s)", W_TYPE, W_FILE1, W_FILE2,
+			W_USER);
 		logent(rqstr, "REQUESTED");
 		DEBUG(4, "msg - %s\n", msg);
 		strcpy(filename, W_FILE2);
@@ -639,7 +641,7 @@ process:
 		}
 
 		/* request to send file */
-		strcpy(rqstr, msg);
+		sprintf(rqstr,"(%s)", msg);
 		logent(rqstr, "REQUESTED");
 
 		/* check permissions */
