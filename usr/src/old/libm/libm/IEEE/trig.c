@@ -13,46 +13,66 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trig.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trig.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* SIN(X), COS(X), TAN(X)
  * RETURN THE SINE, COSINE, AND TANGENT OF X RESPECTIVELY
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/8/85; 
- * REVISED BY K.C. NG on 1/31/85, 3/17/85, 3/24/85.
+ * REVISED BY W. Kahan and K.C. NG, 8/17/85.
  *
  * Required system supported functions:
  *      copysign(x,y)
  *      finite(x)
  *      drem(x,p)
  *
- * Kernel functions:
+ * Static kernel functions:
  *      sin__S(z)       ....sin__S(x*x) return (sin(x)-x)/x
  *      cos__C(z)       ....cos__C(x*x) return cos(x)-1-x*x/2
  *
- * Method :
+ * Method.
  *      Let S and C denote the polynomial approximations to sin and cos 
  *      respectively on [-PI/4, +PI/4].
- *      1. Reduce the argument into [-PI , +PI] by the remainder function.  
- *      2. For x in (-PI,+PI), let k=|x|*4/PI rounded. According to the value 
- *         of k,  sin, cos, and tan of x are computed by:
  *
- *         k         sin(x)      cos(x)       tan (x)        remark
- *     -----------------------------------------------------------------------
- *        k=0        S(x)         C(x)       S(x)/C(x)
- *        k=1,2  sign(x)*C(y)     S(y)   sign(x)*C(y)/S(y)  y=PI/2-|x|
- *        k=3        S(y)        -C(y)      S(-y)/C(-y)      y=sign(x)*(PI-|x|)
- *     -----------------------------------------------------------------------
+ *      SIN and COS:
+ *      1. Reduce the argument into [-PI , +PI] by the remainder function.  
+ *      2. For x in (-PI,+PI), there are three cases:
+ *			case 1:	|x| < PI/4
+ *			case 2:	PI/4 <= |x| < 3PI/4
+ *			case 3:	3PI/4 <= |x|.
+ *	   SIN and COS of x are computed by:
+ *
+ *                   sin(x)      cos(x)       remark
+ *     ----------------------------------------------------------
+ *        case 1     S(x)         C(x)       
+ *        case 2 sign(x)*C(y)     S(y)      y=PI/2-|x|
+ *        case 3     S(y)        -C(y)      y=sign(x)*(PI-|x|)
+ *     ----------------------------------------------------------
+ *
+ *      TAN:
+ *      1. Reduce the argument into [-PI/2 , +PI/2] by the remainder function.  
+ *      2. For x in (-PI/2,+PI/2), there are two cases:
+ *			case 1:	|x| < PI/4
+ *			case 2:	PI/4 <= |x| < PI/2
+ *         TAN of x is computed by:
+ *
+ *                   tan (x)            remark
+ *     ----------------------------------------------------------
+ *        case 1     S(x)/C(x)
+ *        case 2     C(y)/S(y)     y=sign(x)*(PI/2-|x|)
+ *     ----------------------------------------------------------
  *
  *   Notes:
  *      1. S(y) and C(y) were computed by:
  *              S(y) = y+y*sin__S(y*y) 
- *              C(y) = 1-(y*y/2-cos__C(x*x))              ... if y*y <  0.5,
- *                   = 0.5-((y*y/2-0.5)-cos__C(x*x))      ... if y*y >= 0.5.
+ *              C(y) = 1-(y*y/2-cos__C(x*x))          ... if y*y/2 <  thresh,
+ *                   = 0.5-((y*y/2-0.5)-cos__C(x*x))  ... if y*y/2 >= thresh.
+ *         where
+ *              thresh = 0.5*(acos(3/4)**2)
  *
  *      2. For better accuracy, we use the following formula for S/C for tan
- *         (k=0,3): let ss=sin__S(y*y), and cc=cos__C(y*y), then
+ *         (k=0): let ss=sin__S(y*y), and cc=cos__C(y*y), then
  *
  *                            y+y*ss             (y*y/2-cc)+ss
  *             S(y)/C(y)   = -------- = y + y * ---------------.
@@ -61,10 +81,10 @@ static char sccsid[] = "@(#)trig.c	1.1 (Berkeley) %G%";
  *
  * Special cases:
  *      Let trig be any of sin, cos, or tan.
- *      trig(+-INF) is NAN, with signals;
- *      trig(NAN)   is that NAN;
- *      trig(n*PI/2) is exact for any integer n, provided n*PI is representable;
- *      otherwise, trig(x) is inexact. 
+ *      trig(+-INF)  is NaN, with signals;
+ *      trig(NaN)    is that NaN;
+ *      trig(n*PI/2) is exact for any integer n, provided n*PI is 
+ *      representable; otherwise, trig(x) is inexact. 
  *
  * Accuracy:
  *      trig(x) returns the exact trig(x*pi/PI) nearly rounded, where
@@ -76,13 +96,12 @@ static char sccsid[] = "@(#)trig.c	1.1 (Berkeley) %G%";
  *
  *      Hexadecimal:
  *              pi = 3.243F6A8885A308D313198A2E....
- *              pi = 3.243F6A8885A308D313198A2E....
  *    53 bits   PI = 3.243F6A8885A30  =  2 * 1.921FB54442D18    error=.276ulps
  *    56 bits   PI = 3.243F6A8885A308 =  4 * .C90FDAA22168C2    error=.206ulps
  *
  *      In a test run with 1,024,000 random arguments on a VAX, the maximum
  *      observed errors (compared with the exact trig(x*pi/PI)) were
- *                      tan(x) : 2.08 ulps (units in the last place)
+ *                      tan(x) : 2.09 ulps (around 4.716340404662354)
  *                      sin(x) : .861 ulps
  *                      cos(x) : .857 ulps
  *
@@ -94,174 +113,127 @@ static char sccsid[] = "@(#)trig.c	1.1 (Berkeley) %G%";
  */
 
 #ifdef VAX
-/*thresh =  5.2234479296242364299E-1    , Hex  2^  0   *  .85B8636B026EA0 */
-/*ivPIo4 =  1.2732395447351626816E0     , Hex  2^  1   *  .A2F9836E4E4415 */
+/*thresh =  2.6117239648121182150E-1    , Hex  2^ -1   *  .85B8636B026EA0 */
+/*PIo4   =  7.8539816339744830676E-1    , Hex  2^  0   *  .C90FDAA22168C2 */
 /*PIo2   =  1.5707963267948966135E0     , Hex  2^  1   *  .C90FDAA22168C2 */
+/*PI3o4  =  2.3561944901923449203E0     , Hex  2^  2   *  .96CBE3F9990E92 */
 /*PI     =  3.1415926535897932270E0     , Hex  2^  2   *  .C90FDAA22168C2 */
 /*PI2    =  6.2831853071795864540E0     ; Hex  2^  3   *  .C90FDAA22168C2 */
-static long    threshx[] = { 0xb8634005, 0x6ea06b02};
+static long    threshx[] = { 0xb8633f85, 0x6ea06b02};
 #define   thresh    (*(double*)threshx)
-static long    ivPIo4x[] = { 0xf98340a2, 0x44156e4e};
-#define   ivPIo4    (*(double*)ivPIo4x)
+static long      PIo4x[] = { 0x0fda4049, 0x68c2a221};
+#define     PIo4    (*(double*)PIo4x)
 static long      PIo2x[] = { 0x0fda40c9, 0x68c2a221};
 #define     PIo2    (*(double*)PIo2x)
+static long      PI3o4x[] = { 0xcbe34116, 0x0e92f999};
+#define     PI3o4    (*(double*)PI3o4x)
 static long        PIx[] = { 0x0fda4149, 0x68c2a221};
 #define       PI    (*(double*)PIx)
 static long       PI2x[] = { 0x0fda41c9, 0x68c2a221};
 #define      PI2    (*(double*)PI2x)
 #else   /* IEEE double  */
 static double
-thresh =  5.2234479296242364299E-1    , /*Hex  2^ -1   *  1.0B70C6D604DD4 */
-ivPIo4 =  1.2732395447351627649E0     , /*Hex  2^  0   *  1.45F306DC9C883 */
+thresh =  2.6117239648121182150E-1    , /*Hex  2^ -2   *  1.0B70C6D604DD4 */
+PIo4   =  7.8539816339744827900E-1    , /*Hex  2^ -1   *  1.921FB54442D18 */
 PIo2   =  1.5707963267948965580E0     , /*Hex  2^  0   *  1.921FB54442D18 */
+PI3o4  =  2.3561944901923448370E0     , /*Hex  2^  1   *  1.2D97C7F3321D2 */
 PI     =  3.1415926535897931160E0     , /*Hex  2^  1   *  1.921FB54442D18 */
 PI2    =  6.2831853071795862320E0     ; /*Hex  2^  2   *  1.921FB54442D18 */
 #endif
-static double zero=0, one=1, negone= -1, half=1.0/2.0, small=1E-9, big=1E20;
+static double zero=0, one=1, negone= -1, half=1.0/2.0, 
+	      small=1E-10, /* 1+small**2==1; better values for small:
+					small = 1.5E-9 for VAX D
+					      = 1.2E-8 for IEEE Double
+					      = 2.8E-10 for IEEE Extended */
+	      big=1E20;    /* big = 1/(small**2) */
 
 double tan(x) 
 double x;
 {
-        double copysign(),drem(),cos__C(),sin__S(),a,z,ss,cc,t;
+        double copysign(),drem(),cos__C(),sin__S(),a,z,ss,cc,c;
         int finite(),k;
 
-        if(x!=x) return(x);              /* tan(NAN) is NAN */
-        if(finite(x)) 
-        {
+        /* tan(NaN) and tan(INF) must be NaN */
+            if(!finite(x))  return(x-x);
+        x=drem(x,PI);        /* reduce x into [-PI/2, PI/2] */
+        a=copysign(x,one);   /* ... = abs(x) */
+	if ( a >= PIo4 ) {k=1; x = copysign( PIo2 - a , x ); }
+	   else { k=0; if(a < small ) { big + a; return(x); }}
 
-                x=drem(x,PI2);        /* reduce x into [-PI, PI] */
-                a=copysign(x,one);
-                k=a*ivPIo4;
+        z  = x*x;
+        cc = cos__C(z);
+        ss = sin__S(z);
+	z  = z*half ;		/* Next get c = cos(x) accurately */
+	c  = (z >= thresh )? half-((z-half)-cc) : one-(z-cc);
+	if (k==0) return ( x + (x*(z-(cc-ss)))/c );  /* sin/cos */
+	return( c/(x+x*ss) );	/*                  ... cos/sin */
 
-                switch(k) {
-                case 0: break;
-
-                case 1: 
-                case 2: 
-                    a=PIo2-a;
-                    z=a*a;
-                    cc=cos__C(z);
-                    ss=copysign(a+a*sin__S(z),x);
-                                        /* return C(y)/S(y), y=sign(x)*PI-x */
-                    return
-                    (((z>=thresh)?half-((z*half-half)-cc):one-(z*half-cc))/ss);
-
-                default :
-                    x = copysign(PI-a, -x);
-                }
-
-
-                                        /* return S/C */
-                if(copysign(x,one) > small) 
-                {
-                    z=x*x;
-                    cc = cos__C(z);
-                    ss = sin__S(z);
-                    t=z*half;
-                    return 
-                (x+(x*(t-(cc-ss)))/((z>=thresh)?half-((t-half)-cc):one-(t-cc)));
-                }
-                else /* tan(x) := x for small x (inexact if x is not zero) */
-                    { if( x != zero ) big+small; return(x); } 
-        }
-
-        else
-            return(zero/zero);      /* tan(INF) is NAN with signal */
 
 }
-
 double sin(x)
 double x;
 {
         double copysign(),drem(),sin__S(),cos__C(),a,c,z;
-        int finite(),k;
+        int finite();
 
-        if(x!=x) return(x);              /* sin(NAN) is NAN */
-        if(finite(x)) 
-        {
-                x=drem(x,PI2);        /* reduce x into [-PI, PI] */
-                a=copysign(x,one);
-                k=a*ivPIo4;
+        /* sin(NaN) and sin(INF) must be NaN */
+            if(!finite(x))  return(x-x);
+	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
+        a=copysign(x,one);
+	if( a >= PIo4 ) {
+	     if( a >= PI3o4 )   /* 	.. in [3PI/4,  PI ]  */
+		x=copysign((a=PI-a),x);
 
-                switch(k) {             
-                   case 0: break;
+	     else {	       /* 	.. in [PI/4, 3PI/4]  */
+		a=PIo2-a;      /* return sign(x)*C(PI/2-|x|) */
+		z=a*a;
+		c=cos__C(z);
+		z=z*half;
+		a=(z>=thresh)?half-((z-half)-c):one-(z-c);
+		return(copysign(a,x));
+		}
+             }
 
-                   case 1: 
-                   case 2: 
-                        a=PIo2-a;
-                        z=a*a;          
-                        c=cos__C(z);
-                        a=(z>=thresh)?half-((z*half-half)-c):one-(z*half-c);
-                                        /* return sign(x)*C(PI/2-|x|) */
-                        return(copysign(a,x));
-                
-                   default: 
-                        x=copysign(PI-a,x);
-                }
-
-                                        /* return S(x) */
-                   if(copysign(x,one) > small) return(x+x*sin__S(x*x));
-                   else /* sin(x) := x for small x (inexact if x is not zero) */
-                       { if( x != zero ) big+small; return(x); } 
-
-        }
-
-        else
-            return(zero/zero);      /* sin(INF) is NAN with signal */
-
+        /* return S(x) */
+            if( a < small) { big + a; return(x);}
+            return(x+x*sin__S(x*x));
 }
 
 double cos(x) 
 double x;
 {
-        double copysign(),drem(),sin__S(),cos__C(),a,c,z;
-        int finite(),k;
+        double copysign(),drem(),sin__S(),cos__C(),a,c,z,s=1.0;
+        int finite();
 
-        if(x!=x) return(x);              /* cos(NAN) is NAN */
-        if(finite(x)) 
-        {
-                x=drem(x,PI2);        /* reduce x into [-PI, PI] */
-                a=copysign(x,one);
-                k=a*ivPIo4;
+        /* cos(NaN) and cos(INF) must be NaN */
+            if(!finite(x))  return(x-x);
+	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
+        a=copysign(x,one);
+	if ( a >= PIo4 ) {
+	     if ( a >= PI3o4 )  /* 	.. in [3PI/4,  PI ]  */
+		{ a=PI-a; s= negone; }
 
-                switch(k) {             
-                   case 0: x = one; break;
+	     else 	       /* 	.. in [PI/4, 3PI/4]  */
+                               /*        return  S(PI/2-|x|) */ 
+		{ a=PIo2-a; return(a+a*sin__S(a*a));}
+	     }
 
-                   case 1: 
-                   case 2: 
-                        a=PIo2-a;
-                                        /* return S(PI/2-|x|) */
-                        return(a+a*sin__S(a*a));
-                
-                   default: 
-                        a=PI-a; x= negone;
-                }
 
-                                        /* return C or -C */
-                if(copysign(a,one) > small) 
-                {
-                    z=a*a;
-                    c=cos__C(z);
-                    a=(z>=thresh)?half-((z*half-half)-c):one-(z*half-c);
-                    return(copysign(a,x));
-                }
-                else
-                        /* cos(x) := 1 for small x (inexact if x is not zero) */
-                    { if( x != zero ) big+small; return(copysign(one,x)); } 
-
-        }
-
-        else
-            return(zero/zero);      /* cos(INF) is NAN with signal */
-
+        /* return s*C(a) */
+            if( a < small) { big + a; return(s);}
+	    z=a*a;
+	    c=cos__C(z);
+	    z=z*half;
+	    a=(z>=thresh)?half-((z-half)-c):one-(z-c);
+	    return(copysign(a,s));
 }
 
 
 /* sin__S(x*x)
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * KERNEL FUNCTION OF SIN(X), COS(X), AND TAN(X) 
+ * STATIC KERNEL FUNCTION OF SIN(X), COS(X), AND TAN(X) 
  * CODED IN C BY K.C. NG, 1/21/85; 
- * REVISED BY K.C. NG on 1/31/85, 3/7/85.
+ * REVISED BY K.C. NG on 8/13/85.
  *
  *	    sin(x*k) - x
  * RETURN  --------------- on [-PI/4,PI/4] , where k=pi/PI, PI is the rounded
@@ -330,7 +302,7 @@ S4     = -2.5050225177523807003E-8    , /*Hex  2^-26   * -1.AE5C0E319A4EF */
 S5     =  1.5868926979889205164E-10   ; /*Hex  2^-33   *  1.5CF61DF672B13 */
 #endif
 
-double sin__S(z)
+static double sin__S(z)
 double z;
 {
 #ifdef VAX
@@ -343,9 +315,9 @@ double z;
 
 /* cos__C(x*x)
  * DOUBLE PRECISION (VAX D FORMAT 56 BITS, IEEE DOUBLE 53 BITS)
- * KERNEL FUNCTION OF SIN(X), COS(X), AND TAN(X) 
+ * STATIC KERNEL FUNCTION OF SIN(X), COS(X), AND TAN(X) 
  * CODED IN C BY K.C. NG, 1/21/85; 
- * REIVSED BY K.C. NG on 1/31/85, 3/7/85.
+ * REVISED BY K.C. NG on 8/13/85.
  *
  *	   		    x*x	
  * RETURN   cos(k*x) - 1 + ----- on [-PI/4,PI/4],  where k = pi/PI,
@@ -373,7 +345,7 @@ double z;
  *
  * Accuracy:
  *	In the absence of rounding error, the approximation has absolute error 
- *	less that 2**(-64) for VAX D FORMAT, 2**(-58.3) for IEEE DOUBLE. 
+ *	less than 2**(-64) for VAX D FORMAT, 2**(-58.3) for IEEE DOUBLE. 
  *	
  *
  * Constants:
@@ -413,7 +385,7 @@ C4     =  2.0873958177697780076E-9    , /*Hex  2^-29   *  1.1EE3B60DDDC8C */
 C5     = -1.1250289076471311557E-11   ; /*Hex  2^-37   * -1.8BD5986B2A52E */
 #endif
 
-double cos__C(z)
+static double cos__C(z)
 double z;
 {
 	return(z*z*(C0+z*(C1+z*(C2+z*(C3+z*(C4+z*C5))))));
