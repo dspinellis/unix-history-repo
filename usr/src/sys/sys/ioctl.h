@@ -1,4 +1,4 @@
-/*	ioctl.h	4.14	82/01/19	*/
+/*	ioctl.h	4.15	82/01/24	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -60,8 +60,8 @@ struct ltchars {
 #define	TIOCGETP	(('t'<<8)|8)	/* get parameters - like old gtty */
 #define	TIOCSETP	(('t'<<8)|9)	/* set parameters - like old stty */
 #define	TIOCSETN	(('t'<<8)|10)	/* set params w/o flushing buffers */
-/* 13 was EXCL */
-/* 14 was NEXCL */
+#define	TIOCEXCL	(('t'<<8)|13)	/* set exclusive use of tty */
+#define	TIOCNXCL	(('t'<<8)|14)	/* reset exclusive use of tty */
 #define	TIOCFLUSH	(('t'<<8)|16)	/* flush buffers */
 #define	TIOCSETC	(('t'<<8)|17)	/* set special characters */
 #define	TIOCGETC	(('t'<<8)|18)	/* get special characters */
