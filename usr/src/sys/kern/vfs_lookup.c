@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.28 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -243,7 +243,7 @@ dirloop:
 	/*
 	 * We now have a segment name to search for, and a directory to search.
 	 */
-	if (error = VOP_LOOKUP(dp, ndp)) {
+	if (error = VOP_LOOKUP(dp, ndp, p)) {
 		if (ndp->ni_vp != NULL)
 			panic("leaf should be empty");
 #ifdef NAMEI_DIAGNOSTIC
@@ -300,6 +300,7 @@ dirloop:
 		auio.uio_offset = 0;
 		auio.uio_rw = UIO_READ;
 		auio.uio_segflg = UIO_SYSSPACE;
+		auio.uio_procp = (struct proc *)0;
 		auio.uio_resid = MAXPATHLEN;
 		if (error = VOP_READLINK(dp, &auio, p->p_ucred)) {
 			if (ndp->ni_pathlen > 1)
