@@ -57,5 +57,5 @@ struct mfsnode {
 #define mfs_valloc ((int (*) __P((struct  vop_valloc_args *)))mfs_badop)
 #define mfs_vfree ((int (*) __P((struct  vop_vfree_args *)))mfs_badop)
 #define mfs_truncate ((int (*) __P((struct  vop_truncate_args *)))mfs_badop)
-#define mfs_update ((int (*) __P((struct  vop_update_args *)))nullop)
-#define mfs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))nullop)
+#define mfs_update ((int (*) __P((struct  vop_update_args *)))mfs_badop)
+#define mfs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))vn_bwrite)
