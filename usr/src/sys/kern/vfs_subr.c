@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.12 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -322,7 +322,7 @@ bdevvp(dev, vpp)
  * for which we already have a vnode (either because of
  * bdevvp() or because of a different vnode representing
  * the same block device). If such an alias exists, deallocate
- * the existing contents and return the aliased inode. The
+ * the existing contents and return the aliased vnode. The
  * caller is responsible for filling it with its new contents.
  */
 struct vnode *
@@ -445,6 +445,64 @@ void vrele(vp)
 	vp->v_freef = NULL;
 	vfreet = &vp->v_freef;
 	VOP_INACTIVE(vp);
+}
+
+/*
+ * Remove any vnodes in the vnode table belonging to mount point mp.
+ *
+ * If MNT_NOFORCE is specified, there should not be any active ones,
+ * return error if any are found (nb: this is a user error, not a
+ * system error). If MNT_FORCE is specified, detach any active vnodes
+ * that are found.
+ */
+int busyprt = 0;	/* patch to print out busy vnodes */
+
+vflush(mp, skipvp, flags)
+	struct mount *mp;
+	struct vnode *skipvp;
+	int flags;
+{
+	register struct vnode *vp, *nvp;
+	int busy = 0;
+
+	for (vp = mp->m_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
+		/*
+		 * Skip over a selected vnode.
+		 * Used by ufs to skip over the quota structure inode.
+		 */
+		if (vp == skipvp)
+			continue;
+		/*
+		 * With v_count == 0, all we need to do is clear
+		 * out the vnode data structures and we are done.
+		 */
+		if (vp->v_count == 0) {
+			vgone(vp);
+			continue;
+		}
+		/*
+		 * For block or character devices, revert to an
+		 * anonymous device. For all other files, just kill them.
+		 */
+		if (flags & MNT_FORCE) {
+			if (vp->v_type != VBLK && vp->v_type != VCHR) {
+				vgone(vp);
+			} else {
+				vclean(vp, 0);
+				vp->v_op = &spec_vnodeops;
+				insmntque(vp, (struct mount *)0);
+			}
+			continue;
+		}
+		if (busyprt)
+			printf("vflush: busy vnode count %d type %d tag %d\n",
+			    vp->v_count, vp->v_type, vp->v_tag);
+		busy++;
+	}
+	if (busy)
+		return (EBUSY);
+	return (0);
 }
 
 /*
