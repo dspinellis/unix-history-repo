@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stab.5	6.2 (Berkeley) %G%
+.\"	@(#)stab.5	6.3 (Berkeley) %G%
 .\"
 .TH STAB 5 ""
 .UC 4
@@ -144,50 +144,9 @@ of the given n_type.
 .I Sdb
 uses the n_desc field to hold a type specifier in the form used
 by the Portable C Compiler,
-.IR cc (1),
-in which a base type is qualified in the following structure:
-.PP
-.nf
-.ta \w'#define\ 'u +\w'short\ \ 'u
-struct desc {
-	short	q6:2,
-		q5:2,
-		q4:2,
-		q3:2,
-		q2:2,
-		q1:2,
-		basic:4;
-};
-.DT
-.fi
-.PP
-There are four qualifications, with q1 the most significant and q6 the least
-significant:
-.nf
-	0	none
-	1	pointer
-	2	function
-	3	array
-.fi
-The sixteen basic types are assigned as follows:
-.nf
-	0	undefined
-	1	function argument
-	2	character
-	3	short
-	4	int
-	5	long
-	6	float
-	7	double
-	8	structure
-	9	union
-	10	enumeration
-	11	member of enumeration
-	12	unsigned character
-	13	unsigned short
-	14	unsigned int
-	15	unsigned long
-.fi
+.IR cc (1);
+see the header file \fIpcc.h\fP
+for details on the format of these type values.
 .PP
 The Berkeley Pascal compiler,
 .IR pc (1),
