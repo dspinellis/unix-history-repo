@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.2 (Berkeley) %G%
+	@(#)syscalls.master	8.3 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from HP-UX).
 ; Processed to created hpux_sysent.c, hpux_syscalls.c and hpux_syscall.h.
 ;
@@ -96,7 +96,7 @@
 70	UNIMPL	0 nosys
 71	STD	6 hpuxmmap mmap
 72	UNIMPL	0 nosys
-73	UNIMPL	0 nosys
+73	STD	2 munmap
 74	NOTIMPL	3 mprotect
 75	UNIMPL	0 nosys
 76	UNIMPL	0 nosys
