@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)time.1	6.1 (Berkeley) %G%
+.\"	@(#)time.1	6.2 (Berkeley) %G%
 .\"
 .TH TIME 1 ""
 .UC 4
@@ -10,37 +10,25 @@
 time \- time a command
 .SH SYNOPSIS
 .B time
-command
+[-l] command
 .SH DESCRIPTION
-The
-given command is executed; after it is complete,
-.I time
-prints the elapsed time during the command, the time
-spent in the system, and the time spent in execution
-of the command.
-Times are reported in seconds.
+The given command is executed; after it is complete, \fItime\fP
+prints the elapsed time during the command, the time spent in the
+system, and the time spent in execution of the command.  Times are
+reported in seconds.  If the \fB-l\fP option is supplied, the
+contents of the \fIrusage\fP structure are printed as well.
 .PP
 On a PDP-11, the execution time can depend on what kind of memory
-the program happens to land in;
-the user time in MOS is often half what it is in core.
+the program happens to land in; the user time in MOS is often half
+what it is in core.
 .PP
-The times are printed on the diagnostic output stream.
+The times are printed on the diagnostic output stream, ``stderr''.
 .PP
-.I Time
-is built in to
-.IR csh (1),
-using a different output format.
+\fITime\fP is a built-in command to \fIcsh\fP(1), with a much different
+syntax.  This command is available as ``/bin/time'' to \fIcsh\fP users.
 .SH BUGS
-Elapsed time is accurate to the second,
-while the CPU times are measured
-to the 100th second.
-Thus the sum of the CPU times can be up to a second larger
-than the elapsed time.
-.PP
-.I Time
-is a built-in command to
-.IR csh (1),
-with a much different syntax.  This command is available as
-``/bin/time'' to
-.I csh
-users.
+Elapsed time is accurate to the second, while the CPU times are measured
+to the 100th second.  Thus the sum of the CPU times can be up to a second
+larger than the elapsed time.
+.SH "SEE ALSO"
+include/sys/h/resource.h
