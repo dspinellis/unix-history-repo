@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.13 1994/03/07 11:39:13 davidg Exp $
+ *	$Id: vm_page.c,v 1.14 1994/03/14 21:54:28 davidg Exp $
  */
 
 /*
@@ -570,6 +570,7 @@ vm_page_alloc(object, offset)
 	mem->flags = PG_BUSY|PG_CLEAN|PG_FAKE;
 	vm_page_insert(mem, object, offset);
 	mem->wire_count = 0;
+	mem->hold_count = 0;
 	mem->deact = 0;
 	vm_set_intr(spl);
 

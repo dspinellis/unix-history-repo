@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.12 1994/03/07 11:39:18 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.13 1994/03/14 21:54:34 davidg Exp $
  */
 
 /*
@@ -573,21 +573,23 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 	object = m[reqpage]->object;	/* all vm_page_t items are in same object */
 	paging_offset = object->paging_offset;
 
-	/*
-	 * get the UNDERLYING device for the file
-	 */
 	vp = vnp->vnp_vp;
 	bsize = vp->v_mount->mnt_stat.f_bsize;
-	VOP_BMAP(vp, 0, &dp, 0);
 
+	/* get the UNDERLYING device for the file with VOP_BMAP() */
+	/*
+	 * originally, we did not check for an error return
+	 * value -- assuming an fs always has a bmap entry point
+	 * -- that assumption is wrong!!!
+	 */
 	/*
 	 * we only do direct I/O if the file is on a local
 	 * BLOCK device and currently if it is a read operation only.
 	 */
-
 	kva = 0;
 	mapsize = 0;
-	if (rw == UIO_READ && dp->v_type == VBLK &&
+	if (!VOP_BMAP(vp, 0, &dp, 0) &&
+		rw == UIO_READ && dp->v_type == VBLK &&
 		vp->v_mount->mnt_stat.f_type == MOUNT_UFS) {
 		/*
 		 * we do not block for a kva, notice we default to a kva conservative behavior
