@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)readlink.2	6.5 (Berkeley) %G%
+.\"	@(#)readlink.2	6.6 (Berkeley) %G%
 .\"
 .TH READLINK 2 ""
 .UC 5
@@ -43,7 +43,7 @@ if it succeeds, or a \-1 if an error occurs, placing the error
 code in the global variable \fIerrno\fP.
 .SH "ERRORS
 .I Readlink
-will fail and the file mode will be unchanged if:
+will fail if:
 .TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
