@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.1 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.54 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -35,13 +35,13 @@
 #include <vm/vm_kern.h>
 
 /*
- * Exit system call: pass back caller's arg
+ * exit --
+ *	Death of process.
  */
 struct rexit_args {
 	int	rval;
 };
-/* ARGSUSED */
-rexit(p, uap, retval)
+exit(p, uap, retval)
 	struct proc *p;
 	struct rexit_args *uap;
 	int *retval;
@@ -52,10 +52,9 @@ rexit(p, uap, retval)
 }
 
 /*
- * Exit: deallocate address space and other resources,
- * change proc state to zombie, and unlink proc from allproc
- * and parent's lists.  Save exit status and rusage for wait().
- * Check for child processes and orphan them.
+ * Exit: deallocate address space and other resources, change proc state
+ * to zombie, and unlink proc from allproc and parent's lists.  Save exit
+ * status and rusage for wait().  Check for child processes and orphan them.
  */
 exit1(p, rv)
 	register struct proc *p;
