@@ -1,8 +1,8 @@
-static	char *sccsid = "@(#)tar.c	4.5 (Berkeley) 81/04/02";
+static	char *sccsid = "@(#)tar.c	4.6 (Berkeley) 82/02/21";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <ndir.h>
 #include <sys/mtio.h>
 #include <signal.h>
 
@@ -319,7 +319,8 @@ char *shortname;
 	long blocks;
 	char buf[TBLOCK];
 	register char *cp, *cp2;
-	struct direct dbuf;
+	struct direct *dp;
+	DIR *dirp;
 	int i, j;
 
 	infile = open(shortname, 0);
@@ -343,7 +344,6 @@ char *shortname;
 		for (i = 0, cp = buf; *cp++ = longname[i++];);
 		*--cp = '/';
 		*++cp = 0  ;
-		i = 0;
 		if (!oflag) {
 		    if( (cp - buf) >= NAMSIZ) {
 			fprintf(stderr, "%s: file name too long\n", longname);
@@ -357,26 +357,24 @@ char *shortname;
 		    writetape( (char *) &dblock);
 		}
 		chdir(shortname);
-		while (read(infile, (char *)&dbuf, sizeof(dbuf)) > 0 && !term) {
-			if (dbuf.d_ino == 0) {
-				i++;
-				continue;
-			}
-			if (strcmp(".", dbuf.d_name) == 0 || strcmp("..", dbuf.d_name) == 0) {
-				i++;
-				continue;
-			}
-			cp2 = cp;
-			for (j=0; j < DIRSIZ; j++)
-				*cp2++ = dbuf.d_name[j];
-			*cp2 = '\0';
-			close(infile);
-			putfile(buf, cp);
-			infile = open(".", 0);
-			i++;
-			lseek(infile, (long) (sizeof(dbuf) * i), 0);
-		}
 		close(infile);
+		if ((dirp = opendir(".")) == NULL) {
+			fprintf(stderr, "%s: directory read error\n", longname);
+			return;
+		}
+		while ((dp = readdir(dirp)) != NULL && !term) {
+			if (dp->d_ino == 0)
+				continue;
+			if (!strcmp(".", dp->d_name) || !strcmp("..", dp->d_name))
+				continue;
+			strcpy(cp, dp->d_name);
+			i = telldir(dirp);
+			closedir(dirp);
+			putfile(buf, cp);
+			dirp = opendir(".");
+			seekdir(dirp, i);
+		}
+		closedir(dirp);
 		chdir("..");
 		return;
 	}
