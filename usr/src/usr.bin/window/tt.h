@@ -1,42 +1,59 @@
 /*
- *	@(#)tt.h	3.7 83/08/24
+ *	@(#)tt.h	3.8 83/09/15
  */
 
+/*
+ * Interface structure for the terminal drivers.
+ */
 struct tt {
+		/* startup and cleanup */
 	int (*tt_init)();
 	int (*tt_end)();
-	int (*tt_setinsert)();
-	int (*tt_setmodes)();
+
+		/* terminal functions */
 	int (*tt_move)();
 	int (*tt_insline)();
 	int (*tt_delline)();
 	int (*tt_delchar)();
-	int (*tt_write)();
-	int (*tt_putc)();
-	int (*tt_blank)();
+	int (*tt_write)();		/* write a whole block */
+	int (*tt_putc)();		/* write one character */
 	int (*tt_clreol)();
 	int (*tt_clreos)();
 	int (*tt_clear)();
-	int tt_nrow;
-	int tt_ncol;
-	char tt_availmodes;
+
+		/* internal variables */
+	char tt_modes;			/* the current display modes */
+	char tt_nmodes;			/* the new modes for next write */
+	char tt_insert;			/* currently in insert mode */
+	char tt_ninsert;		/* insert mode on next write */
+	int tt_row;			/* cursor row */
+	int tt_col;			/* cursor column */
+
+		/* terminal info */
+	int tt_nrow;			/* number of display rows */
+	int tt_ncol;			/* number of display columns */
+	char tt_hasinsert;		/* has insert character */
+	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */
+
+		/* the frame characters */
 	char *tt_frame;
 };
-
 struct tt tt;
 
+/*
+ * List of terminal drivers.
+ */
 struct tt_tab {
 	char *tt_name;
 	int tt_len;
 	int (*tt_func)();
 };
-
 struct tt_tab tt_tab[];
 
 /*
- * nicer interface to termcap routines
+ * Clean interface to termcap routines.
  */
 char tt_strings[1024];		/* string buffer */
 char *tt_strp;			/* pointer for it */

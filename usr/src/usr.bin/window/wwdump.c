@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.5 83/09/15";
+static	char *sccsid = "@(#)wwdump.c	3.6 83/09/15";
 #endif
 
 #include "ww.h"
@@ -12,7 +12,7 @@ register struct ww *w;
 {
 	register i, j;
 
-	(*tt.tt_setmodes)(0);
+	tt.tt_nmodes = 0;
 	(*tt.tt_clear)();
 	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
 		(*tt.tt_move)(i, w->ww_i.l);
@@ -26,7 +26,7 @@ register struct ww *w;
 {
 	register i, j;
 
-	(*tt.tt_setmodes)(0);
+	tt.tt_nmodes = 0;
 	(*tt.tt_clear)();
 	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
 		(*tt.tt_move)(i, w->ww_i.l);
@@ -40,7 +40,7 @@ register struct ww *w;
 {
 	register i;
 
-	(*tt.tt_setmodes)(0);
+	tt.tt_nmodes = 0;
 	(*tt.tt_clear)();
 	for (i = 0; i < w->ww_w.nr; i++) {
 		(*tt.tt_move)(i, w->ww_w.l);
@@ -54,7 +54,7 @@ wwdumpsmap()
 {
 	register i, j;
 
-	(*tt.tt_setmodes)(0);
+	tt.tt_nmodes = 0;
 	(*tt.tt_clear)();
 	for (i = 0; i < wwnrow; i++) {
 		(*tt.tt_move)(i, 0);
@@ -72,7 +72,7 @@ wwdumpns()
 	for (i = 0; i < wwnrow; i++) {
 		(*tt.tt_move)(i, 0);
 		for (j = 0; j < wwncol; j++) {
-			(*tt.tt_setmodes)(wwns[i][j].c_m);
+			tt.tt_nmodes = wwns[i][j].c_m & tt.tt_availmodes;
 			(*tt.tt_putc)(wwns[i][j].c_c);
 		}
 	}
@@ -86,7 +86,7 @@ wwdumpos()
 	for (i = 0; i < wwnrow; i++) {
 		(*tt.tt_move)(i, 0);
 		for (j = 0; j < wwncol; j++) {
-			(*tt.tt_setmodes)(wwns[i][j].c_m);
+			tt.tt_nmodes = wwos[i][j].c_m & tt.tt_availmodes;
 			(*tt.tt_putc)(wwns[i][j].c_c);
 		}
 	}
