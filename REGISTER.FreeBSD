@@ -1,22 +1,32 @@
-
 In the absence of any other mechanism for counting the number of users
-of FreeBSD, we ask you to please register with the counter set up by
+of FreeBSD, we like to as kindly suggest that you take a few minutes
+to please register with the counter set up by
 <Harald.T.Alvestrand@uninett.no>.  
 
-The reason for this counting is two things, firstly we sincerely do
-want to know what our user-base is, secondly a lot of people use this
-counter to measure the merits of the various PC-UNIX offerings.
+The justification for such "registration" is twofold:  First, we sincerely do
+wish to know just what the size and demographics of our user-base are 
+in order to better support its needs.  Second, it's a sad fact that many
+people rely on counters and statistics (even when highly dubious) rather
+than actual experience when chosing an operating system, and the best we
+can hope to do in such circumstances is to at least try to provide some
+indication of how popular we are (or are not).  This is not how we recommend
+that people go about chosing an operating system, but the necessity of
+"marketing" remains an undeniable fact of life.
 
-The FreeBSD team does not think this is a perfect way of doing things,
-but as I said, in the absence of any other mechanism.  But even as it 
-has shortcommings, it is usefull, and we thank Harald for his service.
+The FreeBSD team does not necessarily feel that Harald's counter represents
+the best approach to such statistics gathering, and its accuracy will only
+be as good as people's willingness to register with it (which may not reflect
+the actual OS population at any single point in time), but in the total absence
+of any other mechanism for providing such useful statistics, it's certainly a
+start and we thank Harald for his efforts in providing this service.
+It's a community service, and of potential benefit to everyone (all *BSD
+users), so let's see if we can't make it work!
 
-Included below is the blurp from the counter.
+Included below is the standard blurb from the counter.
 
 Thanks in advance,
 
-				for the FreeBSD-team,
-				Poul-Henning Kamp <phk@login.dkuug.dk>
+				The FreeBSD team.
 
 
 How to get registered
@@ -24,6 +34,7 @@ How to get registered
 
 In brief:
 
+  [To register a running installation of FreeBSD]
   Send E-mail to bsd-counter@uninett.no with the SUBJECT line
   
     "I use FreeBSD at <place>"
@@ -52,9 +63,10 @@ Send E-mail to bsd-counter@uninett.no
 
 The subject should be
 
-  I use FreeBSD at <place>
+  I use FreeBSD|NetBSD|386BSD at <place>
 
-"place" can be school, work or home, or a combination of these.
+Where FreeBSD, NetBSD or 386BSD is the particular variant you're using
+and "place" can be school, work or home, or a combination of these.
 
 You will get back a letter with 3 things:
 
@@ -71,4 +83,4 @@ directory pub/misc/386bsd-counter, file "short", is given below.
 
 For all questions, contact Harald.T.Alvestrand@uninett.no!
 
-$Id$
+$Id: REGISTER.FreeBSD,v 1.1 1994/06/03 21:42:33 phk Exp $

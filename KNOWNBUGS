@@ -11,9 +11,6 @@ installed on your hard-drive is to 'bounce' on a key like shift or
 num-lock (which works well since you can see when the keyboard comes
 back to life) until the boot sequence is finished.  The keyboard will
 work fine for installing FreeBSD onto the hard-drive.
-	Generally the problems go away at this point, but if it doesn't
-you should install a SYSCONS kernel which doesn't experience these
-keyboard problems.
 
 /usr/bin/gdb:
 	The gdb in the release will not work on shared objects nor will it
@@ -73,4 +70,4 @@ fsck:
 	"UPDATE STANDARD SUPERBLOCK" with yes and get always the same
 	error message on the next fsck.
 
-$Id: KNOWNBUGS,v 1.14 1994/06/01 06:33:14 alm Exp $
+$Id: KNOWNBUGS,v 1.15 1994/06/03 22:22:41 ats Exp $
