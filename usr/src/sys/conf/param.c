@@ -1,4 +1,4 @@
-/*	param.c	4.12	82/04/03	*/
+/*	param.c	4.13	82/08/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../h/clist.h"
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
+#include "../h/quota.h"
 /*
  * System parameter formulae.
  *
@@ -35,6 +36,10 @@ int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
+#if	QUOTA
+int	nquota = (MAXUSERS * 9)/7 + 3;
+int	ndquot = (MAXUSERS*NMOUNT)/4 + NPROC;
+#endif
 
 /*
  * These are initialized at bootstrap time
@@ -57,3 +62,7 @@ short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
+#if	QUOTA
+struct	quota *quota, *quotaNQUOTA;
+struct	dquot *dquot, *dquotNDQUOT;
+#endif
