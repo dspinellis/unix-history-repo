@@ -1,0 +1,8 @@
+To test mkmf, carry out the following steps:
+
+1. set the PROJECT environment variable to the top directory of the mkmf
+   hierarchy.
+
+2. Copy mkmf to this (tmp) directory.
+
+3. Execute ptest.
