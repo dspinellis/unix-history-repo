@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.3 (Berkeley) %G%
+ *	@(#)nhpib.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@ nhpibtype(hc)
 	register struct hpib_softc *hs = &hpib_softc[hc->hp_unit];
 	register struct nhpibdevice *hd = (struct nhpibdevice *)hc->hp_addr;
 
-	if ((int)hc->hp_addr == internalhpib) {
+	if (hc->hp_addr == internalhpib) {
 		hs->sc_type = HPIBA;
 		hs->sc_ba = HPIBA_BA;
 		hc->hp_ipl = HPIBA_IPL;
