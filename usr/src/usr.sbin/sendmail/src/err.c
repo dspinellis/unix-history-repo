@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.39		%G%);
+SCCSID(@(#)err.c	3.40		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -25,7 +25,7 @@ SCCSID(@(#)err.c	3.39		%G%);
 int	sys_nerr;
 char	*sys_errlist[];
 # endif lint
-static char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
+char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 /*VARARGS1*/
 syserr(fmt, a, b, c, d, e)
