@@ -9,7 +9,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	8.5 (Berkeley) %G%
+ *	@(#)kern_acct.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
