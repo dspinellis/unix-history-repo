@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)pstat.c	5.32 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/map.h>
@@ -46,6 +45,7 @@ static char sccsid[] = "@(#)pstat.c	5.32 (Berkeley) %G%";
 #ifndef NEWVM
 #include <sys/vm.h>
 #include <machine/pte.h>
+#include <sys/text.h>
 #endif
 #include <sys/kinfo.h>
 
@@ -454,7 +454,7 @@ ufs_print(vp)
 	printf(" %6d %5s", ip->i_number, flagbuf);
 	type = ip->i_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(ip->i_rdev, type)) == NULL))
+		if (nflg || ((name = devname(ip->i_rdev, S_IFBLK)) == NULL))
 			printf("   %2d,%-2d", 
 				major(ip->i_rdev), minor(ip->i_rdev));
 		else
@@ -495,7 +495,7 @@ nfs_print(vp)
 	printf(" %6d %5s", VT.va_fileid, flagbuf);
 	type = VT.va_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(VT.va_rdev, type)) == NULL))
+		if (nflg || ((name = devname(VT.va_rdev, S_IFBLK)) == NULL))
 			printf("   %2d,%-2d", 
 				major(VT.va_rdev), minor(VT.va_rdev));
 		else
@@ -970,7 +970,7 @@ struct tty *atp;
 	pid_t pgid;
 
 	tp = atp;
-	if (nflg || tp->t_dev == 0 || 	/* XXX */
+	if (nflg || tp->t_dev == 0 ||
 	   (name = devname(tp->t_dev, S_IFCHR)) == NULL)
 		printf("%7d ", line); 
 	else
