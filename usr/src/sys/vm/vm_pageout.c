@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	7.3 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -127,7 +127,8 @@ vm_pageout_scan()
 					m = next;
 					continue;
 				}
-				pmap_remove_all(VM_PAGE_TO_PHYS(m));
+				pmap_page_protect(VM_PAGE_TO_PHYS(m),
+						  VM_PROT_NONE);
 				vm_page_free(m);	/* will dequeue */
 				pages_freed++;
 				vm_object_unlock(object);
@@ -174,7 +175,8 @@ vm_pageout_scan()
 					continue;
 				}
 
-				pmap_remove_all(VM_PAGE_TO_PHYS(m));
+				pmap_page_protect(VM_PAGE_TO_PHYS(m),
+						  VM_PROT_NONE);
 				m->busy = TRUE;
 				vm_stat.pageouts++;
 
@@ -250,16 +252,19 @@ vm_pageout_scan()
 				}
 
 				pmap_clear_reference(VM_PAGE_TO_PHYS(m));
-				m->busy = FALSE;
-				PAGE_WAKEUP(m);
 
 				/*
-				 * If the operation is still going, leave the
-				 * paging in progress indicator set so that we
-				 * don't attempt an object collapse.
+				 * If the operation is still going, leave
+				 * the page busy to block all other accesses.
+				 * Also, leave the paging in progress
+				 * indicator set so that we don't attempt an
+				 * object collapse.
 				 */
-				if (pageout_status != VM_PAGER_PEND)
+				if (pageout_status != VM_PAGER_PEND) {
+					m->busy = FALSE;
+					PAGE_WAKEUP(m);
 					object->paging_in_progress--;
+				}
 				thread_wakeup((int) object);
 				vm_object_unlock(object);
 				m = next;
