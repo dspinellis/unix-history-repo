@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kdebug.ms	6.1 (Berkeley) %G%
+.\"	@(#)kdebug.ms	6.2 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -41,27 +41,24 @@ Berkeley, California  94720
 *DEC and VAX are trademarks of
 Digital Equipment Corporation.
 .FE
-This document describes the use of extensions made
-to the 4.1bsd release of the VAX*
+This document describes the facilities found in
+the 4.3BSD version of the VAX*
 .UX
 debugger
 .I adb
-for the purpose of debugging the
+which may be used to debug the
 .UX
 kernel.
-It discusses the changes made to allow
-standard
+It discusses how standard
 .I adb
-commands to
-function properly with the kernel and
+commands may be used in examining the kernel and
 introduces the basics necessary for users
 to write
 .I adb
-command scripts which
-may be used to augment the standard
+command scripts which can augment the standard
 .I adb
 command set.  The examination techniques described here
-may be applied to running systems, as well as 
+may be applied both to running systems and
 the post-mortem dumps automatically created
 by the 
 .IR savecore (8)
@@ -80,16 +77,10 @@ Revised
 .ds RH Introduction
 .ds CF \*(DY
 .LP
-.nr H1 1
 .ds CH "
-.bp
-.LG
-.B
-.ce
-1. INTRODUCTION
-.sp 2
-.R
-.NL
+.ne 2i
+.NH
+Introduction
 .PP
 Modifications have been made to the
 standard VAX
@@ -113,12 +104,11 @@ Invocation
 .PP
 When examining the
 .UX
-kernel a new option,
-\fB\-k\fP, should be used, e.g.
-.sp 1
-.ti +5
-adb \-k /vmunix /dev/mem
-.sp 1
+kernel the
+\fB\-k\fP option should be used, e.g.
+.DS
+\f(CW% adb \-k /vmunix /dev/mem\fP
+.DE
 This flag causes
 .I adb
 to partially simulate
@@ -133,10 +123,9 @@ data structures maintained by the
 kernel explicitly for debugging\(dd.
 A post-mortem dump may be examined in a similar
 fashion,
-.sp 1
-.ti +5
-adb \-k vmunix.? vmcore.?
-.sp 1
+.DS
+\f(CW% adb \-k vmunix.? vmcore.?\fP
+.DE
 where the appropriate version of the saved operating system
 image and core dump are supplied in place of ``?''.
 .FS
@@ -164,68 +153,59 @@ was set executing by the \fISwtch\fP routine.
 \fIMasterpaddr\fP normally provides sufficient information
 to locate the current stack frame (via the stack
 pointers found in the context block).
-By locating the VAX process context block for the
-process,
+By locating the process context block for the process
 .I adb
 may then perform virtual to
 physical address translation using that process's
 in-core page tables.
 .PP
 When examining post-mortem dumps locating the
-most recent stack frame of the
-``currently active process'' is nontrivial.
-This is due to the different ways in which the
-VAX may save state after a nonrecoverable error. 
+most recent stack frame of the last
+currently active process can be nontrivial.
+This is due to the different ways in which
+state may be saved after a nonrecoverable error. 
 Crashes may or may not be ``clean'' (i.e.
-the top of the interrupt stack contains the process's
+the top of the interrupt stack contains a pointer
+to the process's
 kernel mode stack pointer and program counter);
 an ``unclean'' crash will occur, for instance,
-if the interrupt stack overflows.
-Thus, one must manually try one of two possible techniques
-to get a stack trace from a post-mortem dump.  If the
-crash was clean the current stack pointer is present in the
-restart parameter block, at \fIscb\-4\fP (or \fIrpb\fP+1fc),
-and the command
-.sp 1
-.ti +5
-*(\fBscb\fP\-4)$c
-.sp 1
-will generate a stack trace all the way from the kernel
+if the interrupt stack overflows.  When
+.I adb
+is invoked on a post-mortem crash dump it tries
+to automatically establish the proper stack frame.
+This is done by first checking the stack pointer
+normally saved in the restart parameter
+block at \fIscb\-4\fP (or \fIrpb\fP+1fc).  If this
+value does not point to a valid stack frame,
+.I adb
+searches the interrupt stack looking for a valid stack
+frame.  Should this also fail 
+.I adb
+then searches the kernel
+stack located in the user structure associated with
+the last executing process.  If
+.I adb
+is able to locate a valid stack frame using this procedure
+the command
+.DS
+\f(CW$c\fP
+.DE
+will generate a stack trace from the last point at which
+the kernel was executing on behalf of the user process
+all the way
 to the top of the user process's stack (e.g. to the
-\fImain\fP routine in the user process which was running).
-Otherwise, one must scan through the interrupt stack
-looking for the stack frame.  This is usually indicated
-by a zero longword entry (the procedure call handler)
-followed by a longword entry with bit 29 set (indicating
-the call frame was generated as a result of a ``calls''
-instruction).
-.sp 1
-.in +5
-.nf
-\fBintstack\fP/\fBX\fP
-.fi
-.in -5
-.sp 1
-Once the stack pointer has been located, the command
-.sp 1
-.ti +5
-\&\fB.\^$\^c\fP
-.sp 1
-will generate a stack trace.
-An alternate method may be used when a trace of a particular
-process is required, see section 2.3.
+\fImain\fP routine in the user process).
+Should
+.I adb
+be unable to locate a valid stack frame it prints a message
+and the current state is left undefined.
+When a stack trace of a particular process (other than that
+which was currently executing) is desired, an
+alternate method, described in \(sc2.3, should be used.
 .ds RH "Command Scripts
-.LP
-.nr H1 2
-.bp
-.LG
-.B
-.ce
-2. ADB COMMAND SCRIPTS
-.sp 2
-.R
-.nr H2 0
-.NL
+.ne 2i
+.NH
+Command Scripts
 .NH 2
 Extending the Formatting Facilities
 .PP
@@ -241,154 +221,233 @@ referenced kernel data structures.  The scripts normally
 reside in
 the directory \fI/usr/lib/adb\fP, and are invoked
 with the ``$<'' operator.
-(A later table lists the ``standard'' scripts.)
+(A later table lists the standard scripts
+distributed with the system.)
 .PP
 As an example, consider the following listing which
 contains a dump of a faulty process's state
 (our typing is shown emboldened).
-.sp 1
-.nf
+.ID
 .DT
-% \fBadb \-k vmunix.17 vmcore.17\fP
-sbr 8001d064 slr d9c
-p0br 800efa00 p0lr 34 p1br 7f8efe00 p1lr 1ffff2
-\fB*(intstack\-4)$c\fP
-_boot() from 80004025
-_boot(0,4) from 80004025
-_panic(80021185) from 800057e2
-_soreceive(8017478c,0) from 80007c90
-_read() from 800098d7
-_syscall() from 8000b6e2
-_Xsyscall(3,7fffe834,258) from 80000f64
-?() from c1c
-?() from 26a
-?(0,7fffef18,7fffef1c) from 1d3
-?() from 2f
-\fB800021185/s\fP
-_icpreg+99:	receive
+.ft CW
+% \fBadb \-k vmunix.175 vmcore.175\fP
+sbr 5868 slr 2770
+p0br 5a00 p0lr 236 p1br	6600 p1lr fff0
+panic: dup biodone
+\fB$c\fP
+_boot()	from _boot+f3
+_boot(0,0) from	_panic+3a
+_panic(800413d0) from _biodone+17
+_biodone(800791e8) from	_rxpurge+23
+_rxpurge(80044754) from	_rxstart+5a
+_rxstart(80044754) from	80031df8
+_rxintr(0) from	_Xrxintr0+11
+_Xrxintr0(45b01,3aaf4) from 457f
+_Syssize(3aaf4)	from 365a
+_Syssize() from	19a8
+?() from 2ff3
+_Syssize(4,7fffe834) from 9cf3
+_Syssize(4,7fffe834,7fffe848) from 37
+?()
 \fBu$<u\fP
 _u:
 _u:		ksp		usp
-		7fffff9c	7fffe59c
+		7fffff94	7fffe24c
 		r0		r1		r2		r3
-		155c00		800237d4	80041800	3
+		12e000		80044e60	800661bc	15fd1
 		r4		r5		r6		r7
-		0		0		11090		80041800
+		13		4		80065114	16544
 		r8		r9		r10		r11
-		80021244	c		7fffe5b4	80000000
+		a0		80066de8	15a08		80000000
 		ap		fp		pc		psl
-		7fffffe8		7fffffa4		8000b784	d80004
+		7fffffe8	7fffffa4	80029ed2	180000
 		p0br		p0lr		p1br		p1lr
-		800efa00	4000034	7f8efe00	1ffff2
+		802f5a00	4000236		7faf6600	1ffff0
 		szpt		cmap2		sswap
-		2		94000307	0
-		sigc1		sigc2		sigc3
-		1af03fb		fa007f02	40cbc6c
-_u+78:		arg0		arg1		arg2
-		3		7fffe834	258
-_u+8c:		segflg	error	uid	gid	ruid	rgid	procp
-		0	0	4	a	4	a	80041800
+		6		94000e59	0
+_u+80:		procp		ar0		comm
+		80066de8	80000000	ccom^@^@^@^@^@^@^@^@^@^@^@^@
+_u+9c:		arg0		arg1		arg2
+		46bfc		3aefc		0
+_u+bc:		uap		qsave
+		7fffec9c	7fffffa4	8002a11a
+_u+f8:		rv1		rv2		error	eosys
+		0		3aafa		0	03
+7fffed02:	uid	ruid	gid	rgid
+		2025	2025	10	10
+7fffed0a:	groups
+		10	0	2	3	11	79	-1	-1
+		-1	-1	-1	-1	-1	-1	-1	-1
 
-_u+d4:		uap		rv1		rv2		ubase
-		7ffff078		0		1		7fffe834
-		count		off		cdir		rdir
-		258		150		8003cf00	0
-_u+f4:		pathname
-		.netrc
-		dirp		dino	entry	pdir
-		3		1395	.netrc0
-7ffff11c:	ofiles
-		80040818	80040818	80040818	800406b0
-		800406d4	800406ec	0		0
+7fffed2c:	tsize		dsize		ssize
+		aa		18c		6
+7fffeff0:	odsize		ossize		outime
+		52		40		0
+7fffeffc:	signal
+		0		0		0		0
+		0		0		0		0
+		7a10		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		sigmask
+		0		4000		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		1
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+7ffff0fc:	onstack		sigintr		oldmask
+		0		0		80002
+7ffff108:	code		sigstack	onsigstack
+		0		0		0
+7ffff114:	ofile
+		80063e40	80063e58	80064ce0	0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
+		0		0		0		0
 		0		0		0		0
 		0		0		0		0
 		0		0		0		0
 
-		ofileflg
+		pofile
 		0	0	0	0	0	0	0	0
 		0	0	0	0	0	0	0	0
-		0	0	0	0
-7ffff180:	sigs
-		0		360c		1		360c
-		0		0		0		aae
-		0		0		0		0
-		0		0		0		0
-		0		0		0		0
-		1		0		0		0
-		0		0		0		0
-		0		0		0		0
+		0	0	0	0	0	0	0	0
+		0	0	0	0	0	0	0	0
+		0	0	0	0	0	0	0	0
+		0	0	0	0	0	0	0	0
+		0	0	0	0	0	0	0	0
+		0	0	0	0	0	0	0	0
+7ffff254:	lastfile
+		2
+7ffff258:	cdir		rdir		ttyp		ttyd	cmask
+		80060f80	0		80056be8	106	02
 
-		code		ar0		prbase		prsize
-		0		80000000	0		0
-
-.ne 2
-7ffff248:	proff		prscal		eosys	sep	ttyp
-		0		0		0	0	800288b4
-
-7ffff258:	ttymin	ttymaj
-		0	0
-7ffff25e:	xmag		xtsiz		xdsiz		xbsiz
-		3c000000	10000000	108c0000	a680000
-
-		xssiz		entloc		relflg
-		0		0		6c720000
-7ffff27e:	directory
-		ogin
-		start		acflg	fpflg	cmsk	tsiz	dsiz
-		11688		0	12	0	160000		60000
-
-7ffff2a2:	ssiz
-		80000
-\fB80041800$<proc\fP
-80041800:	link		rlink		addr
-		800237d4	0		800efde0
-8004180c:	upri	pri	cpu	stat	time	nice	slp	cursig
-		073	073	045	03	023	024	0	0
-80041814:	sig		siga0		siga1		flag
-		0		80002		45		8001
-80041824:	uid	pgrp	pid	ppid	poip	szpt	tsize
-		4	bb	bc	bb	0	2	1e
-80041834:	dsize		ssize		rssize		maxrss
-		16		6		14		3fffff
-80041844:	swrss		swaddr		wchan		textp
-		0		0		0		80044ee0
-80041854:	clktim		p0br		xlink		ticks
-		0		800efa00	80041720	22
-80041864:	%cpu				ndx	idhash	pptr
-		+5.1369253545999527e\-02	1c	8	80041720
-\fB80044ee0$<text\fP
-80044ee0:	daddr
-		7e2		0		0		0
+		ru
+7ffff268:	utime				stime
+		1		15f90		1		cf850
+7ffff278:	maxrss		ixrss		idrss		isrss
+		432		28250		79590		0
+7ffff288:	minflt		majflt		nswap
+		64		7		0
+7ffff294:	inblock		oublock		msgsnd		msgrcv
+		12		19		0		0
+7ffff2a4:	nsignals	nvcsw		nivcsw
+		0		12		22
+7ffff2b0:	cru
+7ffff2b0:	utime				stime
+		0		0		0		0
+7ffff2c0:	maxrss		ixrss		idrss		isrss
+		0		0		0		0
+7ffff2d0:	minflt		majflt		nswap
+		0		0		0
+7ffff2dc:	inblock		oublock		msgsnd		msgrcv
+		0		0		0		0
+7ffff2ec:	nsignals	nvcsw		nivcsw
+		0		0		0
+7ffff2f8:	itimers
 		0		0		0		0
 		0		0		0		0
+		0		0		0		0
+7ffff328:	XXX
+		0		0		0
+7ffff334:	start			acflag
+		1985 Nov  1 21:27:18	0
+7ffff340:	pr_base		pr_size		pr_off		scale
+		0		0		0		0
+7ffff350:	limits
+		7fffffff	7fffffff	7fffffff	7fffffff
+		600000		1000000		80000		1000000
+		7fffffff	7fffffff	123000		123000
+7ffff380:	quota		qflags
+		80074a18	0
+7ffff388:	nc_off		nc_inum		nc_dev	nc_time
+		284		2		8	1985 Nov  1 21:27:19
+7ffff398:	ni_dirp		nameiop	ni_err	ni_pdir		ni_bp
+		7fffe8a8	41	0	200		800606c4
+7ffff3a8:	ni_base		ni_count	ni_iovec	ni_iovcnt
+		0		92		7ffff3a8	1
+7ffff3b8:	ni_offset	ni_segflg	ni_resid
+		284		0		0
+7ffff3c4:	ni_dent.d_inum	reclen	namlen	name
+		19		72	9	ctm110435^@c^@^@^@
+\fB80066de8$<proc\fP
+80066de8:	link		rlink		next		prev
+		80044e50	0		80067dec	8004e198
 
-		ptdaddr	size		caddr		iptr
-		352		1e		80041800	8003cfa0
+80066df8:	addr		upri	pri	cpu	stat	time
+		802f65d8	0150	0150	0330	03	04
+80066e01:	nice	slp	cursig		sig
+		0	0	0		0
+80066e08:	mask		ignore		catch
+		0		0		80
+80066e14:	flag		uid	pgrp	pid	ppid
+		1008001		2025	11019	11045	11043
+80066e20:	xstat		ru		poip	szpt	tsize
+		0		0		0	6	aa
+80066e30:	dsize		ssize		rssize		maxrss
+		18c		6		13c		918
+80066e40:	swrss		swaddr		wchan		textp
+		0		6d8		0		8006b400
+80066e50:	p0br		xlink		ticks
+		802f5a00	0		0
+80066e5c:	%cpu				ndx	idhash	pptr
+		+0.0000000000000000e+00		3ea4	106a	2e
+80066e68:	cptr		osptr		ysptr
+		80067dec	0		0
+80066e74:	real itimer
+		0		0		0		0
+80066e84:	quota		0
+\fB8006b400$<text\fP
+8006b400:	forw		back
+		1f30		0
+		daddr
+		0		0		0		0
+		0		0		0		0
+		0		0		2c2		aa
+
+		ptdaddr		size		caddr		iptr
+		80066de8	8005f4a0	74		10001
 
 		rssize	swrss	count	ccount	flag	slptim	poip
-		1a	0	02	02	042	0	0
-.sp 1
-.fi
-.PP
+		22	0	0100	031	0	0	0
+.DE
 The cause of the crash was a ``panic''
-(see the stack trace) due to the 0
-argument passed the \fIsoreceive\fP routine.  The majority
+(see the stack trace) due to an inconsistency recognized
+inside the \fIbiodone\fP routine.  The majority
 of the dump was done to illustrate the use of two command
 scripts used to format kernel data structures.  The ``u''
-script, invoked by the command ``u$<u'', is a lengthy series
-of commands which pretty-prints the user vector.  Likewise,
+script, invoked with the command ``u$<u'', is a lengthy series
+of commands which pretty-prints the user structure.  Likewise,
 ``proc'' and ``text'' are scripts used to format the obvious
 data structures.  Let's quickly examine the ``text'' script (the
 script has been broken into a number of lines for convenience
 here; in actuality it is a single line of text).
-.sp 1
-.nf
-\&./"daddr"n12Xn\e
+.DS
+.ft CW
+\&./"forw"16t"back"n2Xn\e
+"daddr"n12Xn\e
 "ptdaddr"16t"size"16t"caddr"16t"iptr"n4Xn\e
 "rssize"8t"swrss"8t"count"8t"ccount"8t"flag"8t"slptim"8t"poip"n2x4bx++n
-.sp 1
-.fi
-The first line produces the list of disk block addresses associated
+.ft P
+.DE
+The first line displays the pointers associated with the doubly
+linked list used in managing text segments.
+The second line produces the list of disk block addresses associated
 with a swapped out text segment.  The ``n'' format forces a new-line
 character, with 12 hexadecimal integers printed immediately after.
 Likewise, the remaining two lines of the command format the remainder
@@ -406,13 +465,14 @@ When possible, the formatting scripts print a data structure
 with a single format to allow subsequent reuse when interrogating
 arrays of structures.  That is, the previous script could have
 been written
-.sp 1
-.nf
-\&./"daddr"n12Xn
+.DS
+.ft CW
+\&./"forw"16t"back"n2Xn
++/"daddr"n12Xn
 +/"ptdaddr"16t"size"16t"caddr"16t"iptr"n4Xn
 +/"rssize"8t"swrss"8t"count"8t"ccount"8t"flag"8t"slptim"8t"poip"n2x4bx++n
-.sp 1
-.fi
+.ft P
+.DE
 but then reuse of the format would have invoked only the last
 line of the format.
 .NH 2
@@ -421,37 +481,34 @@ Traversing Data Structures
 The
 .I adb
 command language can be used to traverse complex data
-structures.  One such data structure, a linked list, occurs
+structures.  One data structure, a linked list, occurs
 quite often in the kernel.  By using
 .I adb
 variables and the
 normal expression operators it is a simple matter to construct
-a script which chains down the list printing each element
+a script which chains down a list printing each element
 along the way.
 .PP
 For instance, the queue of processes awaiting timer events,
 the callout queue, is printed with the following two scripts:
-.sp 1
-.nf
-.ne 4
-\fBcallout\fP:
+.ID
+.ft CW
 .in +5
-.sp 1
+.ne 3
+.ti -5
+\fBcallout\fP:
 calltodo/"time"16t"arg"16t"func"12+
 *+$<callout.next
 .sp 1
 .ne 6
 .ti -5
 \fBcallout.next\fP:
-.sp 1
 \&./Dpp
 *+>l
 ,#<l$<
 <l$<callout.next
-.sp 1
 .in -5
-.fi
-.PP
+.DE
 The first line of the script \fBcallout\fP starts the traversal
 at the global symbol
 \fIcalltodo\fP and prints a set of headings.
@@ -474,21 +531,19 @@ If the value stored in ``<l'' is non-zero, then the current
 input stream (i.e. the script \fBcallout.next\fP) is terminated.
 Otherwise, the expression ``#<l'' will be zero, and the ``$<''
 will be ignored.  That is, the combination of the logical negation
-operator ``#'',
+operator ``#'', the
 .I adb
-variable ``<l'', and ``$<'' operator
+variable ``<l'', and the ``$<'' operator
 creates a statement of the form,
-.sp 1
-.ti +0.5i
-if (!link) exit;
-.sp 1
+.DS
+\f(CWif (!link) exit;\fP
+.DE
 The remaining line of \fBcallout.next\fP simply reapplies the
 script on the next element in the linked list.
 .LP
 A sample \fIcallout\fP dump is shown below.
-.nf
-.sp 1
-.ne 14
+.ID
+.ft CW
 % \fBadb \-k /vmunix /dev/mem\fP
 sbr 8001f864 slr d9c
 p0br 800efa00 p0lr 8e p1br 7f8efe00 p1lr 1ffff2
@@ -503,8 +558,7 @@ _calltodo:	time		arg			func
 8004ecfc:	52		0			_dzscan
 8004ed2c:	68		_Syssize+70	_tmtimer
 8004ed3c:	2920		0			_memenable
-.fi
-.sp 1
+.DE
 .NH 2
 Supplying Parameters
 .PP
@@ -514,34 +568,27 @@ and count portions of an
 command as parameters.  An example of
 this is the \fBsetproc\fP script used to switch to the
 context of a process with a known process-id;
-.sp 1
-.ti +5
-\fB0t99$<setproc\fP
-.sp 1
+.DS
+\f(CW0t99$<setproc\fP
+.DE
 The body of \fBsetproc\fP is
-.sp 1
-.in +5
-.nf
+.DS
+.ft CW
 \&.>4
 *nproc>l
 *proc>f
 $<setproc.nxt
-.in -5
-.sp 1
-.fi
+.DE
 while \fBsetproc.nxt\fP is
-.sp 1
-.nf
-.in +5
-(*(<f+28))&0xffff="pid "X
-,#((*(<f+28)&0xffff)-<4)$<setproc.done
+.DS
+.ft CW
+(*(<f+0t52))&0xffff="pid "D
+,#((*(<f+0t52)&0xffff)-<4)$<setproc.done
 <l-1>l
-<f+70>f
+<f+0t164>f
 ,#<l$<
 $<setproc.nxt
-.in -5
-.sp 1
-.fi
+.DE
 The process-id, supplied as the parameter, is stored in the
 variable ``<4'', the number of processes is placed in ``<l'',
 and the base of the array of process structures in ``<f''.
@@ -553,9 +600,9 @@ process, then exits.
 .NH 2
 Standard Scripts
 .PP
-The following table summarizes the command scripts currently
-available in the directory \fI/usr/lib/adb\fP.
-.TS
+The following table summarizes the command scripts supplied
+with 4.3BSD; these scripts are found in the directory \fI/usr/lib/adb\fP.
+.TS H
 center, box;
 c s s
 l | l | l
@@ -564,85 +611,84 @@ Standard Command Scripts
 _
 Name	Use	Description
 _
+.TH
 buf	\fIaddr\fP$<\fBbuf\fP	format block I/O buffer
 callout	$<\fBcallout\fP	print timer queue
 clist	\fIaddr\fP$<\fBclist\fP	format character I/O linked list
 dino	\fIaddr\fP$<\fBdino\fP	format directory inode
 dir	\fIaddr\fP$<\fBdir\fP	format directory entry
 dirblk	\fIaddr\fP$<\fBdirblk\fP	scan directory entries
+dmap	\fIaddr\fP$<\fBdmap\fP	format a disk-map structure
+dmcstats	$<\fBdmcstats\fP	dump statistics for dmc0
 file	\fIaddr\fP$<\fBfile\fP	format open file structure
-fs	\fIaddr\fP$<\fBfilsys\fP	format in-core super block structure
+filsys	\fIaddr\fP$<\fBfilsys\fP	format in-core super block structure
+findinode	\fIinum\fP$<\fBfindinode\fP	find an inode in the in-core inode table
 findproc	\fIpid\fP$<\fBfindproc\fP	find process by process id
+frame	\fIaddr\fP,\fIcount\fP$<\fBframe\fP	trace \fIcount\fP stack frames starting at \fIaddr\fP
 hosts	\fIaddr\fP$<\fBhosts\fP	format IMP host table entries
 hosttable	\fIaddr\fP$<\fBhosttable\fP	show all IMP host table entries
+ifaddr	\fIaddr\fP$<\fBifaddr\fP	format a network interface address structure
 ifnet	\fIaddr\fP$<\fBifnet\fP	format network interface structure
 ifuba	\fIaddr\fP$<\fBifuba\fP	format UNIBUS resource structure
+imp	\fIaddr\fP$<\fBimp\fP	format an IMP interface state structure
+in_ifaddr	\fIaddr\fP$<\fBin_ifaddr\fP	format internet network addresses for an interface
 inode	\fIaddr\fP$<\fBinode\fP	format in-core inode structure
 inpcb	\fIaddr\fP$<\fBinpcb\fP	format internet protocol control block
 iovec	\fIaddr\fP$<\fBiovec\fP	format a list of \fIiov\fP structures
 ipreass	\fIaddr\fP$<\fBipreass\fP	format an ip reassembly queue
 mact	\fIaddr\fP$<\fBmact\fP	show ``active'' list of mbuf's
+mba_device	\fIaddr\fP$<\fBmba_device\fP	format an MBA device structure
+mba_hd	\fIaddr\fP$<\fBmba_hd\fP	format an MBA queue head
 mbstat	$<\fBmbstat\fP	show mbuf statistics
 mbuf	\fIaddr\fP$<\fBmbuf\fP	show ``next'' list of mbuf's
+mbufchain	\fIaddr\fP$<\fBmbufchain\fP	display a chain of mbufs queued at a socket
 mbufs	\fIaddr\fP$<\fBmbufs\fP	show a number of mbuf's
 mount	\fIaddr\fP$<\fBmount\fP	format mount structure
+nameidata	\fIaddr\fP$<\fBnameidata\fP	format a namei parameter block
+packetchain	\fIaddr\fP$<\fBpacketchain\fP	format a chain of packets
 pcb	\fIaddr\fP$<\fBpcb\fP	format process context block
 proc	\fIaddr\fP$<\fBproc\fP	format process table entry
+protosw	\fIaddr\fP$<\fBprotosw\fP	format a protocol switch entry
+quota	\fIaddr\fP$<\fBquota\fP	format a disk quota structure
 rawcb	\fIaddr\fP$<\fBrawcb\fP	format a raw protocol control block
 rtentry	\fIaddr\fP$<\fBrtentry\fP	format a routing table entry
+rusage	\fIaddr\fP$<\fBrusage\fP	format a resource usage structure
 setproc	\fIpid\fP$<\fBsetproc\fP	switch process context to \fIpid\fP
 socket	\fIaddr\fP$<\fBsocket\fP	format socket structure
+stat	\fIaddr\fP$<\fBstat\fP	format a stat structure
 tcpcb	\fIaddr\fP$<\fBtcpcb\fP	format TCP control block
 tcpip	\fIaddr\fP$<\fBtcpip\fP	format a TCP/IP packet header
 tcpreass	\fIaddr\fP$<\fBtcpreass\fP	show a TCP reassembly queue
 text	\fIaddr\fP$<\fBtext\fP	format text structure
 traceall	$<\fBtraceall\fP	show stack trace for all processes
+trapframe	\fIaddr\fP$<\fBtrapframe\fP	format a stack frame generated by a trap
 tty	\fIaddr\fP$<\fBtty\fP	format tty structure
 u	\fIaddr\fP$<\fBu\fP	format user vector, including pcb
+ubadev	\fIaddr\fP$<\fBubadev\fP	format a UBA device structure
 ubahd	\fIaddr\fP$<\fBubahd\fP	format a UNIBUS header structure
+unpcb	\fIaddr\fP$<\fBunpcb\fP	format a UNIX domain protocol control block
 .TE
 .ds RH "Summary
-.LP
-.nr H1 2
-.bp
-.LG
-.B
-.ce
-3. SUMMARY
-.sp 2
-.R
-.nr H2 0
-.NL
+.NH
+Summary
 .PP
 The extensions made to
 .I adb
 provide basic support for debugging the
 .UX
 kernel by eliminating the need for a user to carry
-out virtual to physical address translation.  A collection
-of scripts have been written to nicely format the major
+out virtual to physical address translation and by automatically
+locating the stack frame after a system crash.  A collection
+of scripts have been written to format the major
 kernel data structures and aid in switching between
-process contexts.  This has been carried out with
-only minimal changes to the debugger.
-.PP
-More work is needed to provide enough information
-for the debugger to automatically establish context
-after a system crash.  The system currently does not
-always save enough state to allow the debugger to reliably
-locate the stack frame just prior to an exception.
-.PP
-More work is also required on the user interface
-to \fIadb\fP.  It appears the inscrutable
+process contexts.  These facilities have been implemented with
+only minimal changes to the debugger.  While the symbolic debugger
+.I dbx
+provides facilities similar to those described here it is
+not yet a viable alternative to
 .I adb
-command language
-has limited widespread use of much of the power of
-\fIadb\fP.  One possibility is to provide a more comprehensible
-``adb frontend'', just as \fIbc\fP(1) is used to
-frontend \fIdc\fP(1).
-.PP
-Finally,
-.I adb
-could be significantly improved if it
-were knowledgeable about a program's data structures.
-This would eliminate the use of numeric offsets into
-C structures.
+because
+.I dbx
+takes too long to read in the symbol table.  As soon as
+this problem is corrected there will be only limited need for
+the facilities provided by \fIadb\fP.
