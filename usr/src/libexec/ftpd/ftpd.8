@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ftpd.8	8.1 (Berkeley) %G%
+.\"     @(#)ftpd.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTPD 8
@@ -71,7 +71,7 @@ If the file
 .Pa /etc/motd
 exists,
 .Nm
-prints it after a successsful login.
+prints it after a successful login.
 .Pp
 The ftp server currently supports the following ftp requests.
 The case of the requests is ignored.
@@ -226,7 +226,7 @@ The password field in
 is not used, and should not contain real passwords.
 The file
 .Pa motd ,
-if present, will be printed after a sucessful login.
+if present, will be printed after a successful login.
 These files should be mode 444.
 .It Pa ~ftp/pub
 Make this directory mode 777 and owned by

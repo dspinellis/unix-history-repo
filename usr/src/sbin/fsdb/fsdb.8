@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)fsdb.8	8.3 (Berkeley) %G%
+.\"	@(#)fsdb.8	8.5 (Berkeley) %G%
 .\"
 .TH FSDB 8 ""
 .UC 7
@@ -113,7 +113,7 @@ or set the input/output base.
 Once set,
 all input will default to this base
 and all output will be shown in this base.
-The base can be overriden temporarily for input by
+The base can be overridden temporarily for input by
 preceding hexadecimal numbers with '0x', preceding
 decimal numbers with '0t', or
 octal numbers with '0'.
@@ -283,7 +283,7 @@ The value of
 .IR count
 will remain until a new command is run.
 A count specifier of '*' will attempt to show a
-.IR blocks's
+.IR block's
 worth of information.
 The default for
 .IR count
@@ -593,9 +593,7 @@ to get more information.
 .TP 7.2n
 .B override
 toggle the value of override.
-Some error conditions may be
-overriden
-if override is toggled on.
+Some error conditions may be overridden if override is toggled on.
 .TP 7.2n
 .BI prompt " p\^"
 change the fsdb prompt to

@@ -9,7 +9,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)amd.8	5.8 (Berkeley) %G%
+.\"     @(#)amd.8	5.10 (Berkeley) %G%
 .\"
 .\" $Id: amd.8,v 5.2.2.1 1992/02/09 15:11:39 jsp beta $
 .\"
@@ -92,7 +92,7 @@ the log messages will be sent to the system log daemon by
 .Xr syslog 3 .
 .It Fl n
 Normalize hostnames.
-The name refered to by ${rhost} is normalized relative to the
+The name referred to by ${rhost} is normalized relative to the
 host database before being used.  The effect is to translate
 aliases into ``official'' names.
 .It Fl p
@@ -117,7 +117,7 @@ in tenths of a second, between
 .Tn NFS/RPC/UDP
 retries.
 The default is 0.8 seconds.
-The second values alters the restransmit counter.
+The second values alters the retransmit counter.
 Useful defaults are supplied if either or both
 values are missing.
 .It Fl v
