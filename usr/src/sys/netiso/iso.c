@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	8.1 (Berkeley) %G%
+ *	@(#)iso.c	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -52,7 +52,6 @@ SOFTWARE.
 
 #include <net/if.h>
 #include <net/route.h>
-#include <net/af.h>
 
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.c	8.1 (Berkeley) %G%
+ *	@(#)ns.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -17,7 +17,6 @@
 
 #include <net/if.h>
 #include <net/route.h>
-#include <net/af.h>
 
 #include <netns/ns.h>
 #include <netns/ns_if.h>
