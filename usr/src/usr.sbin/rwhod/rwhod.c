@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,9 +20,12 @@ static char sccsid[] = "@(#)rwhod.c	5.20 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/signal.h>
 #include <sys/ioctl.h>
+#include <sys/kinfo.h>
 #include <sys/file.h>
 
 #include <net/if.h>
+#include <net/if_dl.h>
+#include <net/route.h>
 #include <netinet/in.h>
 
 #include <nlist.h>
@@ -60,7 +63,7 @@ struct	nlist nl[] = {
 struct	neighbor {
 	struct	neighbor *n_next;
 	char	*n_name;		/* interface name */
-	char	*n_addr;		/* who to send to */
+	struct	sockaddr *n_addr;		/* who to send to */
 	int	n_addrlen;		/* size of address */
 	int	n_flags;		/* should forward?, interface flags */
 };
@@ -302,7 +305,7 @@ onalrm()
 	mywd.wd_type = WHODTYPE_STATUS;
 	for (np = neighbors; np != NULL; np = np->n_next)
 		(void) sendto(s, (char *)&mywd, cc, 0,
-			(struct sockaddr *)np->n_addr, np->n_addrlen);
+				np->n_addr, np->n_addrlen);
 	if (utmpent && chdir(_PATH_RWHODIR)) {
 		syslog(LOG_ERR, "chdir(%s): %m", _PATH_RWHODIR);
 		exit(1);
@@ -346,6 +349,35 @@ loop:
 	mywd.wd_boottime = htonl(mywd.wd_boottime);
 }
 
+void
+quit(msg)
+char *msg;
+{
+	syslog(LOG_ERR, msg);
+	exit(1);
+}
+
+#define ROUNDUP(a) \
+	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+#define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
+
+void
+rt_xaddrs(cp, cplim, rtinfo)
+	register caddr_t cp, cplim;
+	register struct rt_addrinfo *rtinfo;
+{
+	register struct sockaddr *sa;
+	register int i;
+
+	bzero(rtinfo->rti_info, sizeof(rtinfo->rti_info));
+	for (i = 0; (i < RTAX_MAX) && (cp < cplim); i++) {
+		if ((rtinfo->rti_addrs & (1 << i)) == 0)
+			continue;
+		rtinfo->rti_info[i] = sa = (struct sockaddr *)cp;
+		ADVANCE(cp, sa);
+	}
+}
+
 /*
  * Figure out device configuration and select
  * networks which deserve status information.
@@ -353,90 +385,67 @@ loop:
 configure(s)
 	int s;
 {
-	char buf[BUFSIZ], *cp, *cplim;
-	struct ifconf ifc;
-	struct ifreq ifreq, *ifr;
-	struct sockaddr_in *sin;
 	register struct neighbor *np;
+	register struct if_msghdr *ifm;
+	register struct ifa_msghdr *ifam;
+	struct sockaddr_in *sin;
+	struct sockaddr_dl *sdl;
+	int needed, rlen = 0, flags = 0, len;
+	char *buf, *lim, *next;
+	struct rt_addrinfo info;
 
-	ifc.ifc_len = sizeof (buf);
-	ifc.ifc_buf = buf;
-	if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
-		syslog(LOG_ERR, "ioctl (get interface configuration)");
-		return (0);
-	}
-	ifr = ifc.ifc_req;
-#ifdef AF_LINK
-#define max(a, b) (a > b ? a : b)
-#define size(p)	max((p).sa_len, sizeof(p))
-#else
-#define size(p) (sizeof (p))
-#endif
-	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
-	for (cp = buf; cp < cplim;
-			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
-		ifr = (struct ifreq *)cp;
+	if ((needed = getkerninfo(KINFO_RT_IFLIST, 0, 0, 0)) < 0)
+		quit("route-getkerninfo-estimate");
+	if ((buf = malloc(needed)) == NULL)
+		quit("malloc");
+	if ((rlen = getkerninfo(KINFO_RT_IFLIST, buf, &needed, 0)) < 0)
+		quit("actual retrieval of interface table");
+	lim = buf + rlen;
+
+	for (next = buf; next < lim; next += ifm->ifm_msglen) {
+		ifm = (struct if_msghdr *)next;
+		if (ifm->ifm_type == RTM_IFINFO) {
+			sdl = (struct sockaddr_dl *)(ifm + 1);
+			flags = ifm->ifm_flags;
+			continue;
+		}
+		if ((flags & IFF_UP) == 0 ||
+		    (flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0)
+			continue;
+		if (ifm->ifm_type != RTM_NEWADDR)
+			quit("out of sync parsing KINFO_RT_IFLIST");
+		ifam = (struct ifa_msghdr *)ifm;
+		info.rti_addrs = ifam->ifam_addrs;
+		rt_xaddrs((char *)(ifam + 1), ifam->ifam_msglen + (char *)ifam,
+			&info);
+		/* gag, wish we could get rid of Internet dependencies */
+#define dstaddr	info.rti_info[RTAX_BRD]
+#define IPADDR_SA(x) ((struct sockaddr_in *)(x))->sin_addr.s_addr
+#define PORT_SA(x) ((struct sockaddr_in *)(x))->sin_port
+		if (dstaddr == 0 || dstaddr->sa_family != AF_INET)
+			continue;
+		PORT_SA(dstaddr) = sp->s_port;
 		for (np = neighbors; np != NULL; np = np->n_next)
-			if (np->n_name &&
-			    strcmp(ifr->ifr_name, np->n_name) == 0)
+			if (bcmp(sdl->sdl_data, np->n_name, sdl->sdl_nlen) == 0
+			    && IPADDR_SA(np->n_addr) == IPADDR_SA(dstaddr))
 				break;
 		if (np != NULL)
 			continue;
-		ifreq = *ifr;
-		np = (struct neighbor *)malloc(sizeof (*np));
+		len = sizeof(*np) + dstaddr->sa_len + sdl->sdl_nlen + 1;
+		np = (struct neighbor *)malloc(len);
 		if (np == NULL)
-			continue;
-		np->n_name = malloc(strlen(ifr->ifr_name) + 1);
-		if (np->n_name == NULL) {
-			free((char *)np);
-			continue;
-		}
-		strcpy(np->n_name, ifr->ifr_name);
-		np->n_addrlen = sizeof (ifr->ifr_addr);
-		np->n_addr = malloc(np->n_addrlen);
-		if (np->n_addr == NULL) {
-			free(np->n_name);
-			free((char *)np);
-			continue;
-		}
-		bcopy((char *)&ifr->ifr_addr, np->n_addr, np->n_addrlen);
-		if (ioctl(s, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
-			syslog(LOG_ERR, "ioctl (get interface flags)");
-			free((char *)np);
-			continue;
-		}
-		if ((ifreq.ifr_flags & IFF_UP) == 0 ||
-		    (ifreq.ifr_flags & (IFF_BROADCAST|IFF_POINTOPOINT)) == 0) {
-			free((char *)np);
-			continue;
-		}
-		np->n_flags = ifreq.ifr_flags;
-		if (np->n_flags & IFF_POINTOPOINT) {
-			if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
-				syslog(LOG_ERR, "ioctl (get dstaddr)");
-				free((char *)np);
-				continue;
-			}
-			/* we assume addresses are all the same size */
-			bcopy((char *)&ifreq.ifr_dstaddr,
-			  np->n_addr, np->n_addrlen);
-		}
-		if (np->n_flags & IFF_BROADCAST) {
-			if (ioctl(s, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
-				syslog(LOG_ERR, "ioctl (get broadaddr)");
-				free((char *)np);
-				continue;
-			}
-			/* we assume addresses are all the same size */
-			bcopy((char *)&ifreq.ifr_broadaddr,
-			  np->n_addr, np->n_addrlen);
-		}
-		/* gag, wish we could get rid of Internet dependencies */
-		sin = (struct sockaddr_in *)np->n_addr;
-		sin->sin_port = sp->s_port;
+			quit("malloc of neighbor structure");
+		bzero((char *)np, len);
+		np->n_flags = flags;
+		np->n_addr = (struct sockaddr *)(np + 1);
+		np->n_addrlen = dstaddr->sa_len;
+		np->n_name = np->n_addrlen + (char *)np->n_addr;
 		np->n_next = neighbors;
 		neighbors = np;
+		bcopy((char *)dstaddr, (char *)np->n_addr, np->n_addrlen);
+		bcopy(sdl->sdl_data, np->n_name, sdl->sdl_nlen);
 	}
+	free(buf);
 	return (1);
 }
 
