@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -77,8 +77,10 @@ readc () {
 	buflush();
 	if (read(0,&c,1) != 1)
 		errexit ("readc");
+#ifdef WHY_IS_THIS_HARDWIRED_IN_HERE
 	if (c == '\177')
 		getout();
+#endif
 	if (c == '\033' || c == '\015')
 		return ('\n');
 	if (cflag)
