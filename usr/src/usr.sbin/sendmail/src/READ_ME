@@ -1,0 +1,221 @@
+This directory contains the files for sendmail.  On some
+installations it may also contain the source files for
+auxiliary mailers.
+
+INSTALLING SENDMAIL
+
+This is a non-trivial task -- please plan to take time to think
+about this process carefully.
+
+Creating a Makefile
+
+You may have to create a new makefile.  There are only two
+basic types: for a v6 system & for a v7 system.  All pathnames &
+system dependent stuff should be in conf.c.  The makefile distributed
+is for our ARPAVAX site, and should work for you.  You may want to
+change some of the compile flags as listed in the makefile; these
+control things like logging, hashed alias tables, and debugging
+info.  We distribute makefile.m4 which can be turned into a makefile;
+it may be easier in the long run to modify this file.
+
+Creating a Configuration Table
+
+The configuration table describes the mail world to sendmail.  This
+table is quite complex, but in general the table from Berkeley can
+be modified to work.  We use an m4 file to specify configuration for
+multiple machines; the file whoami.m4 can probably be modified to
+set the correct parameters for cf.m4 to generate a sendmail.cf.
+
+Whoami.m4 defines or may define the following macros:
+
+WHOAMI		From /usr/include/whoami, this drives the entire
+		configuration.
+BNHOST		If defined, the name of this host on BerkNet.
+UNHOST		If defined, the name of this host on UUCPnet.
+ANHOST		If defined, the name of this host on ArpaNet.
+ENHOST		If defined, the name of this host on EtherNet.
+m4_SCCS		If defined, we have the SCCS files here.
+m4_VAX		If defined, this is a VAX.
+m4_VFORK	If defined, we should use the VFORK syscall.
+m4_DBMLIB	If defined, we have the DBM version of the alias
+		file.
+
+You should really read sendmail.doc before trying anything with
+sendmail.  You can run this off using:
+	nroff -me sendmail.doc
+Among other things, this describes how to build a configuration file.
+
+Creating Pseudo-Users.
+
+Sometimes (particularly in Arpa-land) mail comes from a person who
+doesn't really exist.  Some mail will be returned to them from a
+pseudo-user named MAILER-DAEMON, which will of course be returned.
+But MAILER-DAEMON does not exist, so it is returned.... and you have
+a loop.  To break this, every site should have the entry:
+	MAILER-DAEMON:root
+in their aliases file.
+
+Actual Installation
+
+You will have to do the following things as root:
+
+Put the new sysexits.h in /usr/include.  This defines some other
+exit codes used by sendmail.  This is not dangerous unless you
+have extended sysexits yourself.
+
+Create the following files:
+-rw-rw-rw- 1 root    5161 Jan 10 17:47 /usr/lib/aliases
+-rw-rw-rw- 1 root    4096 Jan 10 17:47 /usr/lib/aliases.dir
+-rw-rw-rw- 1 root   37888 Jan 10 17:47 /usr/lib/aliases.pag
+drwxr-xr-x 2 eric      64 Nov  8 12:56 /usr/lib/mailers
+-rwxr-xr-x 1 eric   63162 Jan  5 10:01 /usr/lib/sendmail
+-rw-r--r-- 1 eric    3484 Jan  1 18:42 /usr/lib/sendmail.cf
+-rw-r--r-- 1 eric     708 Nov  7 15:34 /usr/lib/sendmail.hf
+-rw-rw-rw- 1 eric     168 Jan 10 19:11 /usr/lib/sendmail.st
+drwxrwxrwx 2 eric     176 Jan 10 19:11 /usr/spool/mqueue
+
+/usr/spool/mqueue may be some less permissive mode if sendmail
+runs setuid to the owner (root is recommended, as sendmail will
+then do certain file ownerships correctly).  Likewise, the
+alias files need not be mode 666 unless you want users to be
+able to update the alias file directly.  /usr/lib/sendmail.st
+stores statistics and may be safely removed.
+
+DESCRIPTION OF FILES
+
+FILES		A list of "interesting" files.
+READ_ME		This file.
+TODO		New features to be put in (maybe) at some time.
+Version.c	The version number and information about this
+		version of sendmail.  Theoretically, this gets
+		modified on every change.
+alias.c		Does name aliasing in all forms.
+aliases.5	Documentation for the alias file used by sendmail.
+arpa-mailer.8	Documentation for arpa.c.
+arpa.c		The auxiliary mailer for the ARPANET.
+arpadate.c	A subroutine used by sendmail & arpa.c which
+		creates ARPANET standard dates.
+bmove.c		A core-to-core move.  This is in a separate file
+		because it can easily be replaced by a blindingly
+		efficient version on Vaxes.
+cf.m4		The m4 version of sendmail.cf.  This may be somewhat
+		inscrutable.
+collect.c	The routine that actually reads the mail into a temp
+		file.  It also does a certain amount of parsing of
+		the header, etc.
+conf.c		The configuration file.  This contains information
+		that is presumed to be quite static and non-
+		controversial, or code compiled in for efficiency
+		reasons.  Most of the configuration is in sendmail.cf.
+convtime.c	A routine to sanely process times.
+daemon.c	Routines to implement daemon mode.
+deliver.c	Routines to deliver mail.
+err.c		Routines to print error messages.
+headers.c	Routines to process message headers.
+macro.c		The macro expander.  This is used internally to
+		insert information from the configuration file.
+macros.m4 	Macros used by M4 when doing .cf configuration at
+		Berkeley.
+mailstats.c	A program to print out the mail statistics.
+main.c		The main routine to sendmail.  This file also
+		contains some miscellaneous routines.
+makefile	The makefile used here; this is created from
+		makefile.m4.
+makefile.m4	A makefile template.
+matchhdr.c	A routine used by arpa.c to perform a match on
+		ARPANET format header items.
+parse.c		The routines which do address parsing.
+praliases.c	A debugging routine to print out the DBM version of
+		the alias file.
+queue.c		Routines to implement message queueing.
+readcf.c	The routine that reads the configuration file and
+		translates it to internal form.
+rmail.c		A program to replace /bin/rmail that reads those
+		ugly UUCP header lines and replaces them by a real
+		From line with a real address.
+savemail.c	Routines which save the letter on processing errors.
+sendmail.8	Documentation for sendmail.
+sendmail.cf	A sample configuration file.
+sendmail.doc	A large paper on sendmail.
+sendmail.h	Main header file for sendmail.
+sendmail.hf	The help file.  This is used by the SMTP HELP command.
+sendto.c	Routines to do address queueing.
+spell.good	A list of words that spell chokes on for sendmail.doc
+		but which are still ok.
+srvrsmtp.c	Routines to implement server SMTP.
+stab.c		Routines to manage the symbol table.
+stats.c		Routines to collect and post the statistics.
+sysexits.c	List of error messages associated with error codes
+		in sysexits.h.
+sysexits.h	List of exit statuses that could someday become a
+		standard.  In any case, they are what sendmail &
+		a handful of other programs use.
+useful.h	A header file containing a few things that appear to
+		be useful for even the most various programs.
+userdbm.h	A header file for the -ldbm stuff.  This should be
+		in /usr/include.
+usersmtp.c	Routines to implement user SMTP.
+util.c		Some general purpose routines used by sendmail.
+v6-mail.c	Local mailer under version 6.  This is included to
+		permit you to see the sorts of modifications that
+		had to take place.
+vacation.1	Documentation for the vacation program.
+vacation.c	A program that lets you automatically send a message
+		to people saying "I am on vacation."
+vax-mail.c	Local mailer under VM/UNIX (similar for V7).  This
+		is also included as an example.  This is more complex
+		than v6-mail.c because it has to be able to deal with
+		UUCP mail also.  Beware of local hacks that will not
+		apply to your installation.
+version.c	A master file for Version.c -- it may not exist in
+		your distribution.
+whoami.m4	An m4 file describing who we are.  This is driven by
+		the file /usr/include/whoami, which should contain a
+		single word giving your system name.
+
+[This list was current as of 9/9/81]
+
+CHANGES TO OTHER PROGRAMS
+
+You will have to change your equivalent of /bin/mail to take a
+"-d" flag.  If this flag is not asserted, /bin/mail should just
+turn itself into /usr/lib/sendmail (this is probably in a routine
+called "bulkmail" or "sendmail").  The code looks like something
+like:
+
+# ifdef SENDMAIL
+	{search argv for a -d flag}
+	if (!dflag)
+	{
+		argv[0] = "-sendmail";
+		argv[argc] = 0;
+		execv(SENDMAIL, argv);
+		perror(SENDMAIL);
+	}
+	{ignore -d flag in further processing}
+# endif
+
+This is actually somewhat oversimplified.  See the example mailers
+for something more realistic.  Besides the mailers in this directory,
+see ../berknet/v6mail.c.
+
+Argv[0] should begin with a "-" to indicate that it is being called
+from /bin/mail.  [This is currently unused, but I have tentative
+plans... isn't it easier to do it now?]
+
+If you are running server FTP on arpanet, you will have to change
+the incoming mail routine to accept mail for any address (rather than
+checking to see that the user exists).  Instead of writing the
+mail in some non-standard mailbox, pipe the mail to /usr/lib/sendmail
+instead (include the -a flag).  Sendmail will give the "350 Enter
+Mail" message, etc.  Our "mail-dm.c" is given as an example.
+
+MISCELLANEOUS
+
+This version of sendmail can really truly run as root if you want
+it to.  It does some neat stuff if you do, but it is not necessary.
+
+
+Eric Allman
+
+(Version 3.1, last update %G% 22:09:48)
