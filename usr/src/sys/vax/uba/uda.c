@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.10 (Berkeley) %G%
+ *	@(#)uda.c	6.11 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -79,6 +79,8 @@ struct uda {
 	struct mscp     uda_rsp[NRSP];  /* response packets */
 	struct mscp     uda_cmd[NCMD];  /* command packets */
 } uda[NUDA];
+
+#define udunit(dev)	(minor(dev) >> 3)
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct size {
@@ -318,7 +320,7 @@ udopen(dev, flag)
 #ifdef lint
 	flag = flag; i = i;
 #endif
-	unit = minor(dev) >> 3;
+	unit = udunit(dev);
 	if (unit >= nNRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &uda_softc[ui->ui_ctlr];
@@ -432,19 +434,27 @@ udstrategy(bp)
 	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
-	unit = dkunit(bp);
-	if (unit >= nNRA)
+	unit = udunit(bp->b_dev);
+	if (unit >= nNRA) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	rasizes = ra_info[unit].ra_sizes;
 	ui = uddinfo[unit];
 	um = ui->ui_mi;
-	if (ui == 0 || ui->ui_alive == 0)
+	if (ui == 0 || ui->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	if ((maxsz = rasizes[xunit].nblocks) < 0)
 		maxsz = ra_info[unit].radsize - rasizes[xunit].blkoff;
 	if (bp->b_blkno < 0 || bp->b_blkno+sz > maxsz ||
-	    rasizes[xunit].blkoff >= ra_info[unit].radsize)
+	    rasizes[xunit].blkoff >= ra_info[unit].radsize) {
+		if (bp->b_blkno == maxsz +1)
+		        goto done;
+		bp->b_error = EINVAL;
 		goto bad;
+	}
 	s = spl5();
 	/*
 	 * Link the buffer onto the drive queue
@@ -487,6 +497,7 @@ udstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -543,7 +554,7 @@ loop:
 		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE UDRESET */
 		return (0);
 	}
-	ui = uddinfo[dkunit(bp)];
+	ui = uddinfo[udunit(bp->b_dev)];
 	rasizes = ra_info[ui->ui_unit].ra_sizes;
 	if (ui->ui_flags == 0) {        /* not online */
 		if ((mp = udgetcp(um)) == NULL){
@@ -1129,7 +1140,7 @@ udread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = udunit(dev);
 
 	if (unit >= nNRA)
 		return (ENXIO);
@@ -1140,7 +1151,7 @@ udwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = udunit(dev);
 
 	if (unit >= nNRA)
 		return (ENXIO);
@@ -1180,7 +1191,7 @@ udreset(uban)
 			/*
 			 * Link the buffer onto the drive queue
 			 */
-			dp = &udutab[dkunit(bp)];
+			dp = &udutab[udunit(bp->b_dev)];
 			if (dp->b_actf == 0)
 				dp->b_actf = bp;
 			else
@@ -1228,7 +1239,7 @@ uddump(dev)
 	register struct pte *io;
 	register int i;
 	struct  size    *rasizes;
-	unit = minor(dev) >> 3;
+	unit = udunit(dev);
 	if (unit >= nNRA)
 		return (ENXIO);
 #define phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
@@ -1344,7 +1355,7 @@ udcmd(op, udp, udaddr)
 udsize(dev)
 	dev_t dev;
 {
-	int unit = minor(dev) >> 3;
+	int unit = udunit(dev);
 	struct uba_device *ui;
 	struct	size	*rasizes;
 

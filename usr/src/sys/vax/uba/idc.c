@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.7 (Berkeley) %G%
+ *	@(#)idc.c	6.8 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -67,6 +67,8 @@ struct idc_softc {
 #define	sc_trk		sc_un.dar_trk
 #define	sc_sect		sc_un.dar_sect
 
+#define idcunit(dev)	(minor(dev) >> 3)
+
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct size {
 	daddr_t	nblocks;
@@ -117,10 +119,6 @@ struct	idcst {
 struct	buf ridcbuf[NRB];
 
 #define	b_cylin	b_resid
-
-#ifdef INTRLVE
-daddr_t	dkblock();
-#endif
 
 int	idcwstart, idcwticks, idcwatch();
 
@@ -204,7 +202,7 @@ idcattach(ui)
 idcopen(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NRB || (ui = idcdinfo[unit]) == 0 || ui->ui_alive == 0)
@@ -223,16 +221,24 @@ idcstrategy(bp)
 	long bn, sz;
 
 	sz = (bp->b_bcount+511) >> 9;
-	unit = dkunit(bp);
-	if (unit >= NRB)
+	unit = idcunit(bp->b_dev);
+	if (unit >= NRB) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	ui = idcdinfo[unit];
-	if (ui == 0 || ui->ui_alive == 0)
+	if (ui == 0 || ui->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	st = &idcst[ui->ui_type];
 	if (bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+	    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
+		if (bp->b_blkno == st->sizes[xunit].nblocks + 1)
+			goto done;
+		bp->b_error = EINVAL;
 		goto bad;
+	}
 	if (ui->ui_type == 0)
 		bn *= 2;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
@@ -252,6 +258,7 @@ idcstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -290,7 +297,7 @@ idcustart(ui)
 	}
 	dp->b_active = 1;
 	/* CHECK DRIVE READY? */
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	trace("seek", bn);
 	if (ui->ui_type == 0)
 		bn *= 2;
@@ -386,8 +393,8 @@ loop:
 		goto loop;
 	}
 	um->um_tab.b_active = 1;
-	ui = idcdinfo[dkunit(bp)];
-	bn = dkblock(bp);
+	ui = idcdinfo[idcunit(bp->b_dev)];
+	bn = bp->b_blkno;
 	trace("star",bp);
 	if (ui->ui_type == 0)
 		bn *= 2;
@@ -407,7 +414,7 @@ loop:
 		cmd = IDC_IE|IDC_WRITE|(ui->ui_slave<<8);
 	idcaddr->idccsr = IDC_CRDY|cmd;
 	if ((idcaddr->idccsr&IDC_DRDY) == 0) {
-		printf("rb%d: not ready\n", dkunit(bp));
+		printf("rb%d: not ready\n", idcunit(bp->b_dev));
 		um->um_tab.b_active = 0;
 		um->um_tab.b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
@@ -471,7 +478,7 @@ top:
 		um->um_tab.b_active = 1;
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
-		ui = idcdinfo[dkunit(bp)];
+		ui = idcdinfo[idcunit(bp->b_dev)];
 		unit = ui->ui_slave;
 		st = &idcst[ui->ui_type];
 		idcaddr->idccsr = IDC_IE|IDC_CRDY|(unit<<8);
@@ -486,7 +493,8 @@ top:
 			}
 			printd(", er 0x%x, ds 0x%x", er, ds);
 			if (ds & IDCDS_WL) {
-				printf("rb%d: write locked\n", dkunit(bp));
+				printf("rb%d: write locked\n",
+					idcunit(bp->b_dev));
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 || er&IDC_HARD) {
 hard:
@@ -660,7 +668,7 @@ idcread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 
 	if (unit >= NRB)
 		return (ENXIO);
@@ -671,7 +679,7 @@ idcwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 
 	if (unit >= NRB)
 		return (ENXIO);
@@ -701,7 +709,7 @@ idcecc(ui)
 	tn = idc_softc.sc_trk;
 	sn = idc_softc.sc_sect;
 	um->um_tab.b_active = 1;	/* Either complete or continuing... */
-	log(KERN_RECOV, "rb%d%c: soft ecc sn%d\n", dkunit(bp),
+	log(KERN_RECOV, "rb%d%c: soft ecc sn%d\n", idcunit(bp->b_dev),
 	    'a'+(minor(bp->b_dev)&07),
 	    (cn*st->ntrak + tn) * st->nsect + sn + npf);
 	mask = idc->idceccpat;
@@ -787,7 +795,7 @@ idcdump(dev)
 	union idc_dar dar;
 	int nspg;
 
-	unit = minor(dev) >> 3;
+	unit = idcunit(dev);
 	if (unit >= NRB)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
@@ -873,7 +881,7 @@ idcdump(dev)
 idcsize(dev)
 	dev_t dev;
 {
-	int unit = minor(dev) >> 3;
+	int unit = idcunit(dev);
 	struct uba_device *ui;
 	struct idcst *st;
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	6.6 (Berkeley) %G%
+ *	@(#)up.c	6.7 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -46,6 +46,8 @@ struct	up_softc {
 	int	sc_wticks;
 	int	sc_recal;
 } up_softc[NSC];
+
+#define upunit(dev)	(minor(dev) >> 3)
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size {
@@ -151,10 +153,6 @@ struct	dkbad	upbad[NUP];
 
 #define	b_cylin b_resid
 
-#ifdef INTRLVE
-daddr_t dkblock();
-#endif
-
 int	upwstart, upwatch();		/* Have started guardian */
 int	upseek;
 int	upwaitdry;
@@ -234,7 +232,7 @@ upmaptype(ui)
 upopen(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = upunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NUP || (ui = updinfo[unit]) == 0 || ui->ui_alive == 0)
@@ -254,16 +252,24 @@ upstrategy(bp)
 	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
-	unit = dkunit(bp);
-	if (unit >= NUP)
+	unit = upunit(bp->b_dev);
+	if (unit >= NUP) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	ui = updinfo[unit];
-	if (ui == 0 || ui->ui_alive == 0)
+	if (ui == 0 || ui->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	st = &upst[ui->ui_type];
 	if (bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+	    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
+		if (bp->b_blkno == st->sizes[xunit].nblocks + 1)
+			goto done;
+		bp->b_error = EINVAL;
 		goto bad;
+	}
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	s = spl5();
 	dp = &uputab[ui->ui_unit];
@@ -279,6 +285,7 @@ upstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -377,7 +384,7 @@ upustart(ui)
 	 * and see if we are close enough to justify not searching.
 	 */
 	st = &upst[ui->ui_type];
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	sn = bn%st->nspc;
 	sn = (sn + st->nsect - st->sdist) % st->nsect;
 	if (bp->b_cylin - upaddr->updc)
@@ -457,8 +464,8 @@ loop:
 	 * determine destination of this request.
 	 */
 	um->um_tab.b_active++;
-	ui = updinfo[dkunit(bp)];
-	bn = dkblock(bp);
+	ui = updinfo[upunit(bp->b_dev)];
+	bn = bp->b_blkno;
 	dn = ui->ui_slave;
 	st = &upst[ui->ui_type];
 	sn = bn%st->nspc;
@@ -475,13 +482,13 @@ loop:
 	 */
 	waitdry = 0;
 	while ((upaddr->upds&UPDS_DRY) == 0) {
-		printf("up%d: ds wait ds=%o\n",dkunit(bp),upaddr->upds);
+		printf("up%d: ds wait ds=%o\n",upunit(bp->b_dev),upaddr->upds);
 		if (++waitdry > 512)
 			break;
 		upwaitdry++;
 	}
 	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
-		printf("up%d: not ready", dkunit(bp));
+		printf("up%d: not ready", upunit(bp->b_dev));
 		if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
 			printf("\n");
 			um->um_tab.b_active = 0;
@@ -561,7 +568,7 @@ upintr(sc21)
 	 */
 	dp = um->um_tab.b_actf;
 	bp = dp->b_actf;
-	ui = updinfo[dkunit(bp)];
+	ui = updinfo[upunit(bp->b_dev)];
 	dk_busy &= ~(1 << ui->ui_dk);
 	if ((upaddr->upcs2&07) != ui->ui_slave)
 		upaddr->upcs2 = ui->ui_slave;
@@ -585,7 +592,7 @@ upintr(sc21)
 			 * Give up on write locked devices
 			 * immediately.
 			 */
-			printf("up%d: write locked\n", dkunit(bp));
+			printf("up%d: write locked\n", upunit(bp->b_dev));
 			bp->b_flags |= B_ERROR;
 		} else if (++um->um_tab.b_errcnt > 27) {
 			/*
@@ -735,7 +742,7 @@ upread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = upunit(dev);
 
 	if (unit >= NUP)
 		return (ENXIO);
@@ -746,7 +753,7 @@ upwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = upunit(dev);
 
 	if (unit >= NUP)
 		return (ENXIO);
@@ -790,7 +797,7 @@ upecc(ui, flag)
 	printf("npf %d reg %x o %d mask %o pos %d\n", npf, reg, o, mask,
 	    up->upec1);
 #endif
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	st = &upst[ui->ui_type];
 	cn = bp->b_cylin;
 	sn = bn%st->nspc + npf;
@@ -808,7 +815,7 @@ upecc(ui, flag)
 		npf--;
 		reg--;
 		mask = up->upec2;
-		log(KERN_RECOV, "up%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "up%d%c: soft ecc sn%d\n", upunit(bp->b_dev),
 			'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		/*
 		 * Flush the buffered data path, and compute the
@@ -999,7 +1006,7 @@ updump(dev)
 	struct upst *st;
 	register int retry;
 
-	unit = minor(dev) >> 3;
+	unit = upunit(dev);
 	if (unit >= NUP)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
@@ -1078,7 +1085,7 @@ updump(dev)
 upsize(dev)
 	dev_t dev;
 {
-	int unit = minor(dev) >> 3;
+	int unit = upunit(dev);
 	struct uba_device *ui;
 	struct upst *st;
 
