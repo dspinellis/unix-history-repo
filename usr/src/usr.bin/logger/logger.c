@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -78,17 +78,22 @@ main(argc, argv)
 
 		for (p = buf, endp = buf + sizeof(buf) - 1;;) {
 			len = strlen(*argv);
-			if (p + len < endp) {
+			if (p + len < endp && p > buf) {
+				*--p = '\0';
+				syslog(pri, buf);
+				p = buf;
+			}
+			if (len > sizeof(buf) - 1) {
+				syslog(pri, *argv++);
+				if (!--argc)
+					break;
+			} else {
 				bcopy(*argv++, p, len);
 				p += len;
 				if (!--argc)
 					break;
 				*p++ = ' ';
-			}
-			else {
 				*--p = '\0';
-				syslog(pri, buf);
-				p = buf;
 			}
 		}
 		if (p != buf) {
