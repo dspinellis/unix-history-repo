@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.41 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.42 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.41 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.42 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -446,7 +446,7 @@ dns_getcanonname(host, hbsize, trymx, statp)
 	extern char *gethostalias();
 
 	if (tTd(8, 2))
-		printf("getcanonname(%s)\n", host);
+		printf("dns_getcanonname(%s, trymx=%d)\n", host, trymx);
 
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 	{
@@ -514,7 +514,8 @@ cnameloop:
 		if (qtype == T_ANY)
 			gotmx = FALSE;
 		if (tTd(8, 5))
-			printf("getcanonname: trying %s.%s (%s)\n", host, *dp,
+			printf("dns_getcanonname: trying %s.%s (%s)\n",
+				host, *dp,
 				qtype == T_ANY ? "ANY" : qtype == T_A ? "A" :
 				qtype == T_MX ? "MX" : "???");
 		ret = res_querydomain(host, *dp, C_IN, qtype,
