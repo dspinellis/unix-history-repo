@@ -11,9 +11,9 @@
 #					Added contrib, games, and share
 #
 
-SUBDIR=	bin contrib gnu include lib libexec sbin share usr.bin usr.sbin
+SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
 
 # Special cases: etc sys.386bsd
-# Not ported: games kerberosIV
+# Not ported: kerberosIV
 
 .include <bsd.subdir.mk>
