@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)cset.c 1.1 %G%";
+static	char sccsid[] = "@(#)cset.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -66,9 +66,21 @@ precset( r , settype , csetp )
 	    e = r[2];
 	    if (e == NIL) {
 		    /*
-		     *	tentative for []
+		     *	tentative for [], return type of `intset'
 		     */
-		csetp -> csettype = nl + TSET;
+		settype = lookup( intset );
+		if ( settype == NIL ) {
+		    panic( "empty set" );
+		}
+		settype = settype -> type;
+		if ( settype == NIL ) {
+		    return csetp -> comptime;
+		}
+		if ( isnta( settype , "t" ) ) {
+		    error("Set default type \"intset\" is not a set");
+		    return csetp -> comptime;
+		}
+		csetp -> csettype = settype;
 		return csetp -> comptime;
 	    }
 	    e = e[1];
@@ -298,9 +310,6 @@ postcset( r , csetp )
 	char		labelname[ BUFSIZ ];
 
 	if ( csetp -> comptime ) {
-	    if ( csetp -> csettype == nl + TSET ) {
-		return;
-	    }
 	    setran( ( csetp -> csettype ) -> type );
 	    limit = &tempset[ ( set.uprbp / BITSPERLONG ) + 1 ];
 	    for ( lp = &tempset[0] ; lp < limit ; lp++ ) {
