@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.28 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,7 +41,6 @@ nfs_bioread(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	USES_VOP_GETATTR;
 	register struct nfsnode *np = VTONFS(vp);
 	register int biosize;
 	struct buf *bp;
@@ -266,7 +265,7 @@ again:
 /*
  * Vnode op for write using bio
  */
-nfs_write (ap)
+nfs_write(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
 		struct uio *a_uio;
@@ -274,7 +273,6 @@ nfs_write (ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	USES_VOP_GETATTR;
 	register int biosize;
 	register struct uio *uio = ap->a_uio;
 	struct proc *p = uio->uio_procp;
