@@ -4,9 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)endian.h	7.7 (Berkeley) %G%
+ *	@(#)endian.h	7.8 (Berkeley) %G%
  */
 
+/*
+ * Define _NOQUAD if the compiler does NOT support 64-bit integers.
+ */
+/* #define _NOQUAD */
+
+/*
+ * Define the order of 32-bit words in 64-bit words.
+ */
+#define _QUAD_HIGHWORD 0
+#define _QUAD_LOWWORD 1
+
+#ifndef _POSIX_SOURCE
 /*
  * Definitions for byte order, according to byte significance from low
  * address to high.
@@ -17,9 +29,7 @@
 
 #define	BYTE_ORDER	BIG_ENDIAN
 
-#ifndef KERNEL
 #include <sys/cdefs.h>
-#endif
 
 __BEGIN_DECLS
 unsigned long	htonl __P((unsigned long));
@@ -49,3 +59,4 @@ __END_DECLS
 #define	HTONL(x)	(x) = htonl((u_long)x)
 #define	HTONS(x)	(x) = htons((u_short)x)
 #endif
+#endif /* !_POSIX_SOURCE */
