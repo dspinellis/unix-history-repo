@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.10 %G%";
+static char sccsid[] = "@(#)assyms.c 4.11 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -69,12 +69,8 @@ syminstall()
 	for (i = 0; i < NINST; i++)
 		itab[i] = (Iptr*)BADPOINT;
 
-#ifdef FLEXNAMES
-	for (ip = (Iptr)instab; ip->s_name != 0; ip++) {
-#else not FLEXNAMES
-	for (ip = (Iptr)instab; ip->s_name[0] != '\0'; ip++){
-#endif not FLEXNAMES
-		p1 = ip->s_name;
+	for (ip = (Iptr)instab; FETCHNAME(ip)[0]; ip++) {
+		p1 = FETCHNAME(ip);
 		p2 = yytext;
 		while (*p2++ = *p1++);
 		hp = lookup(0);		/* 0 => don't install this*/
@@ -133,7 +129,7 @@ freezesymtab()
 			hdr.a_bss += bs;
 		}
 	   assignindex:
-		if (    (sp->s_name[0] != 'L')
+		if (    (FETCHNAME(sp)[0] != 'L')
 		     || (sp->s_tag != LABELID)
 		     || savelabels
 		     )			/*then, we will write it later on*/
@@ -324,12 +320,12 @@ dumpsymtab()
 		SEGITERATE(segno, 0, 0, cosp, sp, ub, ++){
 #ifdef FLEXNAMES
 			printf("\tSeg: %d \"%s\" value: %d index: %d tag %s\n",
-				segno, sp->s_name,
+				segno, FETCHNAME(sp),
 				sp->s_value, sp->s_index,
 				tagstring(sp->s_tag));
 #else not FLEXNAMES
 			printf("\tSeg: %d \"%*.*s\" value: %d index: %d tag %s\n",
-				segno, NCPName, NCPName, sp->s_name,
+				segno, NCPName, NCPName, FETCHNAME(sp),
 				sp->s_value, sp->s_index,
 				tagstring(sp->s_tag));
 #endif not FLEXNAMES
@@ -400,10 +396,11 @@ struct symtab **lookup(instflg)
 	register char		*to;
 	register	int	len;
 	register	int	nprobes;
-	static	 struct hashdallop *hdallop;
-	static	 struct symtab	**emptyslot;
-	static 	 struct hashdallop *emptyhd;
-	static	 struct	symtab	**hp_ub;
+	static	struct	hashdallop *hdallop;
+	static	struct	symtab	**emptyslot;
+	static 	struct	hashdallop *emptyhd;
+	static	struct	symtab	**hp_ub;
+	static	struct	strdesc	strdp;
 
 	emptyslot = 0;
 	for (nprobes = 0, from = yytext;
@@ -426,7 +423,7 @@ struct symtab **lookup(instflg)
 				nprobes += 2)
 		{
 			from = yytext;
-			to = (*hp)->s_name;
+			to = FETCHNAME(*hp);
 #ifndef FLEXNAMES
 			for (len = 0; (len<NCPName) && *from; len++)
 				if (*from++ != *to++)
@@ -463,37 +460,46 @@ struct symtab **lookup(instflg)
 		*hp = symalloc();
 		hdallop->h_nused++;
 #ifndef FLEXNAMES
-		strncpy((*hp)->s_name, yytext, NCPName);
+		strncpy(FETCHNAME(*hp), yytext, NCPName);
 #else FLEXNAMES
 		for (from = yytext, len = 0; *from++; len++)
 			continue;
 		/*
-		 *	save string and trailing null
+		 *	save string and trailing null, both
+		 *	internally, and in the string temporary file
 		 */
-		(*hp)->s_name = savestr(yytext, len + 1);
+		strdp.sd_stroff = strfilepos;
+		strdp.sd_place = STR_BOTH;
+		strdp.sd_strlen = len + 1;	/* length and null */
+		fputs(yytext, strfile);		/* string */
+		putc(0, strfile);		/* null */
+		strfilepos += strdp.sd_strlen;
+		(*hp)->s_name = (char *)savestr(yytext, &strdp);
 #endif FLEXNAMES
 	}
 	return(hp);
 }	/*end of lookup*/
 /*
- *	save a string str, length len in the string pool.
- *	string known just by its length; can have or not have trailing nulls.
- *
- *	The length of the string occurs as a short just before
- *	the character pointer returned.
+ *	save a string str, descriptor strdp, in the string pool
  */
-char *savestr(str, len)
+struct strdesc *savestr(str, strdp)
 	char	*str;
-	int	len;
+	struct	strdesc	*strdp;
 {
-	char	*res;
+	reg	struct	strdesc	*res;
+		int	tlen;
 
-	if (len + sizeof(lgtype) >= (STRPOOLDALLOP - strplhead->str_nalloc))
+	tlen = sizeof(struct strdesc) - sizeof(res->sd_string);
+	if (strdp->sd_place & STR_FILE)
+		tlen += strdp->sd_strlen;
+
+	if (tlen >= (STRPOOLDALLOP - strplhead->str_nalloc))
 		strpoolalloc();
-	res = strplhead->str_names + strplhead->str_nalloc;
-	plgtype(res, len);
-	movestr(res, str, len);
-	strplhead->str_nalloc += sizeof(lgtype) + len;
+	res = (struct strdesc *)(strplhead->str_names + strplhead->str_nalloc);
+	res[0] = *strdp;
+	if (strdp->sd_place & STR_FILE)
+		movestr(res[0].sd_string, str, strdp->sd_strlen);
+	strplhead->str_nalloc += tlen;
 	return(res);
 }
 
@@ -669,12 +675,14 @@ int sizesymtab()
 int symwrite(symfile)
 	BFILE *symfile;
 {
-	int	symsout;			/*those actually written*/
-	int	symsdesired = NOUTSYMS;
-	register	struct	symtab *sp, *ub;
+		int	symsout;		/*those actually written*/
+		int	symsdesired = NOUTSYMS;
+	reg	struct	symtab *sp, *ub;
 #ifdef FLEXNAMES
-	char		*name;			/* temp to save the name */
-	long		stroff	= sizeof (stroff);
+		char	*name;			/* temp to save the name */
+		int	nread;
+		char	rbuf[2048];
+		int	i;
 	/*
 	 *	We use sp->s_index to hold the length of the
 	 *	name; it isn't used for anything else
@@ -688,7 +696,7 @@ int symwrite(symfile)
 	{
 		if (sp->s_tag >= IGNOREBOUND) 
 			continue;
-		if ((sp->s_name[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
+		if ((FETCHNAME(sp)[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
 			continue;
 		symsout++;
 
@@ -698,13 +706,15 @@ int symwrite(symfile)
 		 *	the length of the symbol table string
 		 *	always includes the trailing null
 		 */
-		if (sp->s_name && (sp->s_index = STRLEN(sp->s_name))){
-			sp->s_nmx = stroff;	/* clobber pointer */
-			stroff += sp->s_index;
+		if (sp->s_name && (sp->s_index = STRLEN(sp))){
+			sp->s_nmx = STROFF(sp);	/* clobber */
 		} else {
 			sp->s_nmx = 0;
 		}
-#endif
+#ifdef DEBUG
+		printf("symbol %d: nmx == %d\n", symsout, sp->s_nmx);
+#endif DEBUG
+#endif FLEXNAMES
 		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
 		if (readonlydata && (sp->s_type&~N_EXT) == N_DATA)
 			sp->s_type = N_TEXT | (sp->s_type & N_EXT);
@@ -718,21 +728,21 @@ int symwrite(symfile)
 			symsout, symsdesired);
 #ifdef FLEXNAMES
 	/*
-	 *	Pass 2 through the string pool
+	 *	Copy the string temporary file to the symbol file,
+	 *	copying all the strings and symbols we ever saw,
+	 *	including labels, stabs strings, ascii strings, etc.
+	 *	This is slightly wasteful.
 	 */
-	symsout = 0;
-	bwrite((char *)&stroff, sizeof (stroff), symfile);
-	stroff = sizeof (stroff);
-	symsout = 0;
-	DECLITERATE(allocwalk, sp, ub)
-	{
-		if (sp->s_tag >= IGNOREBOUND) 
-			continue;
-		if ((sp->s_name[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
-			continue;
-		if (sp->s_name && (sp->s_index = STRLEN(sp->s_name))){
-			bwrite(sp->s_name, sp->s_index, symfile);
+	i = 0;
+	while((nread = read(strfile->_file, rbuf, sizeof(rbuf))) > 0){
+		if (i == 0){
+#ifdef DEBUG
+			printf("%d bytes of strings\n", strfilepos);
+#endif DEBUG
+			((int *)rbuf)[0] = strfilepos;
 		}
+		bwrite(rbuf, nread, symfile);
+		i++;
 	}
 #endif FLEXNAMES
 }

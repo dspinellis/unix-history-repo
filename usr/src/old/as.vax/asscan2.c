@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.9 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.10 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -73,10 +73,11 @@ scan_dot_s(bufferbox)
 		ptrall	lgbackpatch;	/* where to stuff a string length */
 	reg	ptrall	bufptr;		/* where to stuff tokens */
 		ptrall	bufub;		/* where not to stuff tokens */
-	reg	int	maxstrlg;	/* how long a string can be */
+	reg	int	strlg;		/* the length of a string */
 		long	intval;		/* value of int */
 		int	linescrossed;	/* when doing strings and comments */
 		struct	Opcode		opstruct;
+		struct	strdesc	strd;	/* for building DQ strings */
 
 	(bytetoktype *)bufptr = (bytetoktype *) & (bufferbox->toks[0]);	
 	(bytetoktype *)bufub = &(bufferbox->toks[AVAILTOKS]);
@@ -84,7 +85,13 @@ scan_dot_s(bufferbox)
 	MEMTOREGBUF;
 	if (newfflag){
 		newfflag = 0;
-		ryylval = (int)savestr(newfname, strlen(newfname) + 1);
+		strd.sd_stroff = strfilepos;
+		strd.sd_place = STR_BOTH;
+		strd.sd_strlen = strlen(newfname) + 1;
+		fputs(newfname, strfile);
+		putc(0, strfile);
+		strfilepos += strd.sd_strlen;
+		ryylval = (int)savestr(newfname, &strd);
 
 		ptoken(bufptr, IFILE);
 		ptoken(bufptr, STRING);
@@ -253,7 +260,7 @@ scan_dot_s(bufferbox)
 		case 0:
 		case LABELID:
 			/*
-			 *	Its a name... (Labels are subsets ofname)
+			 *	Its a name... (Labels are subsets of name)
 			 */
 			ryylval = (int)op;
 			val = NAME;
@@ -316,13 +323,15 @@ scan_dot_s(bufferbox)
 	case DQ:
 	   eatstr:
 		linescrossed = 0;
-		for(rcp = strtext, maxstrlg = NCPString; maxstrlg > 0; --maxstrlg){
+		strd.sd_stroff = strfilepos;
+		strd.sd_place = STR_FILE;
+		for (strd.sd_strlen = 0; /*VOID*/; strd.sd_strlen++){
 		    switch(ch = getchar()){
 		    case '"':
 			goto tailDQ;
 		    default:
 		    stuff:
-			pchar(rcp, ch);
+			putc(ch, strfile);
 			break;
 		    case '\n':
 			yywarning("New line in a string constant");
@@ -331,7 +340,7 @@ scan_dot_s(bufferbox)
 			ch = getchar();
 			switch(ch){
 			case EOFCHAR:
-				pchar(rcp, '\n');
+				putc('\n', strfile);
 				ungetc(EOFCHAR);
 				goto tailDQ;
 			default:
@@ -378,18 +387,17 @@ scan_dot_s(bufferbox)
 		/*
 		 *	put the string in strtext into the string pool
 		 *
-		 *	The value in ryylval points to the string;
-		 *	the previous 2 bytes is the length of the string
-		 *
 		 *	Cheat: append a trailing null to the string
 		 *	and then adjust the string length to ignore
 		 *	the trailing null.  If any STRING client requires
 		 *	the trailing null, the client can just change STRLEN
 		 */
 		val = STRING;
-		*rcp++ = 0;
-		ryylval = (int)savestr(strtext, rcp - strtext);
-		STRLEN(((char *)ryylval)) -= 1;
+		putc(0, strfile);
+		strd.sd_strlen += 1;
+		strfilepos += strd.sd_strlen;
+		ryylval = (int)savestr(strtext, &strd);
+		((struct strdesc *)ryylval)->sd_strlen -= 1;
 		goto ret;
 
 	case BADCHAR:

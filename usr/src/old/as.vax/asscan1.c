@@ -2,12 +2,12 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan1.c 4.4 %G%";
+static char sccsid[] = "@(#)asscan1.c 4.5 %G%";
 #endif not lint
 
 #include "asscanl.h"
 
-inittmpfile()
+inittokfile()
 {
 	if (passno == 1){
 		if (useVM){
@@ -27,7 +27,7 @@ inittmpfile()
 	tokub = 0;
 }
 
-closetmpfile()
+closetokfile()
 {
 	if (passno == 1){
 		if (useVM){
@@ -38,7 +38,7 @@ closetmpfile()
 			 *	written out yet
 			 */
 			if (tokbuf[bufno ^ 1].tok_count >= 0){
-				if (writeTEST((char *)&tokbuf[bufno ^ 1], sizeof *emptybuf, 1, tmpfil)){
+				if (writeTEST((char *)&tokbuf[bufno ^ 1], sizeof *emptybuf, 1, tokfile)){
 				  badwrite:
 					yyerror("Unexpected end of file writing the interpass tmp file");
 				exit(2);
@@ -50,7 +50,7 @@ closetmpfile()
 			 *	in the argument list
 			 */
 			tokbuf[bufno].toks[tokbuf[bufno].tok_count++] = PARSEEOF;
-			if (writeTEST((char *)&tokbuf[bufno], sizeof *emptybuf, 1, tmpfil))
+			if (writeTEST((char *)&tokbuf[bufno], sizeof *emptybuf, 1, tokfile))
 				goto badwrite;
 		}
 	}	/*end of being pass 1*/
@@ -148,7 +148,7 @@ inttoktype yylex()
 		case 	BIGNUM: bignumprint(((struct exp*)yylval)->e_number);
 				break;
 		case	NAME:	printf("\"%.8s\"",
-					((struct symtab *)yylval)->s_name);
+					FETCHNAME((struct symtab *)yylval));
 				break;
 		case	REG:	printf(" r%d",
 					yylval);
@@ -156,7 +156,8 @@ inttoktype yylex()
 		case	IJXXX:
 		case	INST0:	
 		case	INSTn:	if (ITABCHECK(yyopcode))
-					printf("%.8s", ITABFETCH(yyopcode)->s_name);
+					printf("%.8s",
+						FETCHNAME(ITABFETCH(yyopcode)));
 				else
 					printf("IJXXX or INST0 or INSTn can't get into the itab\n");
 				break;
@@ -208,14 +209,14 @@ inttoktype yylex()
 			 *	out at all
 			 */
 			if (emptybuf->tok_count >= 0){
-			    if (writeTEST((char *)emptybuf, sizeof *emptybuf, 1, tmpfil)){
+			    if (writeTEST((char *)emptybuf, sizeof *emptybuf, 1, tokfile)){
 				yyerror("Unexpected end of file writing the interpass tmp file");
 				exit(2);
 			    }
 			}
 			scan_dot_s(emptybuf);
 		} else {	/*pass 2*/
-		    if (readTEST((char *)emptybuf, sizeof *emptybuf, 1, tmpfil)){
+		    if (readTEST((char *)emptybuf, sizeof *emptybuf, 1, tokfile)){
 			 badread:
 			     yyerror("Unexpected end of file while reading the interpass tmp file");
 			     exit(1);
