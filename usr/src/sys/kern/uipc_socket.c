@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.13	85/06/03	*/
+/*	uipc_socket.c	6.14	85/06/08	*/
 
 #include "param.h"
 #include "systm.h"
@@ -743,15 +743,10 @@ sogetopt(so, level, optname, mp)
 sohasoutofband(so)
 	register struct socket *so;
 {
+	struct proc *p;
 
-	if (so->so_pgrp == 0)
-		return;
-	if (so->so_pgrp > 0)
-		gsignal(so->so_pgrp, SIGURG);
-	else {
-		struct proc *p = pfind(-so->so_pgrp);
-
-		if (p)
-			psignal(p, SIGURG);
-	}
+	if (so->so_pgrp < 0)
+		gsignal(-so->so_pgrp, SIGURG);
+	else if (so->so_pgrp > 0 && (p = pfind(so->so_pgrp)) != 0)
+		psignal(p, SIGURG);
 }
