@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.4";
+char id_open[] = "@(#)open.c	1.5";
  *
  * open.c  -  f77 file open routines
  */
@@ -15,6 +15,7 @@ char id_open[] = "@(#)open.c	1.4";
 #define OPEN	(b->ufd)
 #define FROM_OPEN	"\1"	/* for use in f_clos() */
 
+short	opnbof_;		/* open at beginning of file */
 extern char *tmplate;
 extern char *fortfile;
 
@@ -63,9 +64,11 @@ f_open(a) olist *a;
 		else	err(errflag,errno,buf)
 	}
 	else
-	{	if((b->ufd = fopen(buf, "a")) != NULL) b->uwrt = YES;
+	{	if(!opnbof_ && (b->ufd = fopen(buf, "a")) != NULL)
+			b->uwrt = YES;
 		else if((b->ufd = fopen(buf, "r")) != NULL)
-		{	fseek(b->ufd, 0L, 2);
+		{	if (!opnbof_)
+				fseek(b->ufd, 0L, 2);
 			b->uwrt = NO;
 		}
 		else	err(errflag, errno, buf)
