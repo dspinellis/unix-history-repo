@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.22		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.23		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.22		%G%);
+SCCSID(@(#)usersmtp.c	3.23		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -255,14 +255,14 @@ reply()
 		/* actually do the read */
 		(void) fflush(Xscript);			/* for debugging */
 		p = sfgets(buf, sizeof buf, SmtpIn);
-
 		if (p == NULL)
 			return (-1);
+		fixcrlf(buf, TRUE);
 
 		/* log the input in the transcript for future error returns */
 		if (Verbose && !HoldErrs)
-			fputs(buf, stdout);
-		fputs(buf, Xscript);
+			nmessage(Arpa_Info, "%s", buf);
+		fprintf(Xscript, "%s\n", buf);
 
 		/* if continuation is required, we can go on */
 		if (buf[3] == '-' || !isdigit(buf[0]))
@@ -300,8 +300,8 @@ smtpmessage(f, a, b, c)
 
 	(void) sprintf(buf, f, a, b, c);
 	if (tTd(18, 1) || (Verbose && !HoldErrs))
-		printf(">>> %s\n", buf);
-	fprintf(Xscript, ">>> %s\n", buf);
+		nmessage(Arpa_Info, ">>> %s", buf);
+	fprintf(Xscript, " >>> %s\n", buf);
 	fprintf(SmtpOut, "%s\r\n", buf);
 }
 
