@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.42 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -511,10 +511,12 @@ fts_children(sp, instr)
  *
  * The real slowdown in walking the tree is the stat calls.  If FTS_NOSTAT is
  * set and it's a physical walk (so that symbolic links can't be directories),
- * we assume that the number of subdirectories in a node is equal to the number
- * of links to the parent.  This allows stat calls to be skipped in any leaf
- * directories and for any nodes after the directories in the parent node have
- * been found.  This empirically cuts the stat calls by about 2/3.
+ * we can do things quickly.  First, if it's a 4.4BSD file system, the type
+ * of the file is in the directory entry.  Otherwise, we assume that the number
+ * of subdirectories in a node is equal to the number of links to the parent.
+ * The former skips all stat calls.  The latter skips stat calls in any leaf
+ * directories and for any files after the subdirectories in the directory have
+ * been found, cutting the stat calls by about 2/3.
  */
 static FTSENT *
 fts_build(sp, type)
@@ -649,21 +651,29 @@ mem1:				saved_errno = errno;
 			} else
 				p->fts_info = FTS_NSOK;
 			p->fts_accpath = cur->fts_accpath;
-		} else if (nlinks) {
+		} else if (nlinks == 0
+#ifdef DT_DIR
+		    || nlinks > 0 && 
+		    dp->d_type != DT_DIR && dp->d_type != DT_UNKNOWN
+#endif
+		    ) {
+			p->fts_accpath =
+			    ISSET(FTS_NOCHDIR) ? p->fts_path : p->fts_name;
+			p->fts_info = FTS_NSOK;
+		} else {
 			/* Build a file name for fts_stat to stat. */
 			if (ISSET(FTS_NOCHDIR)) {
 				p->fts_accpath = p->fts_path;
 				bcopy(p->fts_name, cp, p->fts_namelen + 1);
 			} else
 				p->fts_accpath = p->fts_name;
+			/* Stat it. */
 			p->fts_info = fts_stat(sp, p, 0);
+
+			/* Decrement link count if applicable. */
 			if (nlinks > 0 && (p->fts_info == FTS_D ||
 			    p->fts_info == FTS_DC || p->fts_info == FTS_DOT))
 				--nlinks;
-		} else {
-			p->fts_accpath =
-			    ISSET(FTS_NOCHDIR) ? p->fts_path : p->fts_name;
-			p->fts_info = FTS_NSOK;
 		}
 
 		/* We walk in directory order so "ls -f" doesn't get upset. */
