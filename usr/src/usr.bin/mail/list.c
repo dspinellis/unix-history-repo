@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)list.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -353,40 +353,86 @@ getrawlist(line, argv, argc)
 	char **argv;
 	int  argc;
 {
-	register char **ap, *cp, *cp2;
-	char linebuf[BUFSIZ], quotec;
-	register char **last;
+	register char c, *cp, *cp2, quotec;
+	int argn;
+	char linebuf[BUFSIZ];
 
-	ap = argv;
+	argn = 0;
 	cp = line;
-	last = argv + argc - 1;
-	while (*cp != '\0') {
-		while (any(*cp, " \t"))
-			cp++;
+	for (;;) {
+		for (; *cp == ' ' || *cp == '\t'; cp++)
+			;
+		if (*cp == '\0')
+			break;
+		if (argn >= argc - 1) {
+			printf(
+			"Too many elements in the list; excess discarded.\n");
+			break;
+		}
 		cp2 = linebuf;
-		quotec = 0;
-		if (any(*cp, "'\""))
-			quotec = *cp++;
-		if (quotec == 0)
-			while (*cp != '\0' && !any(*cp, " \t"))
-				*cp2++ = *cp++;
-		else {
-			while (*cp != '\0' && *cp != quotec)
-				*cp2++ = *cp++;
-			if (*cp != '\0')
-				cp++;
+		quotec = '\0';
+		while ((c = *cp) != '\0') {
+			cp++;
+			if (quotec != '\0') {
+				if (c == quotec)
+					quotec = '\0';
+				else if (c == '\\')
+					switch (c = *cp++) {
+					case '\0':
+						*cp2++ = *--cp;
+						break;
+					case '0': case '1': case '2': case '3':
+					case '4': case '5': case '6': case '7':
+						c -= '0';
+						if (*cp >= '0' && *cp <= '7')
+							c = c * 8 + *cp++ - '0';
+						if (*cp >= '0' && *cp <= '7')
+							c = c * 8 + *cp++ - '0';
+						*cp2++ = c;
+						break;
+					case 'b':
+						*cp2++ = '\b';
+						break;
+					case 'f':
+						*cp2++ = '\f';
+						break;
+					case 'n':
+						*cp2++ = '\n';
+						break;
+					case 'r':
+						*cp2++ = '\r';
+						break;
+					case 't':
+						*cp2++ = '\t';
+						break;
+					case 'v':
+						*cp2++ = '\v';
+						break;
+					}
+				else if (c == '^') {
+					c = *cp++;
+					if (c == '?')
+						*cp2++ = '\177';
+					/* null doesn't show up anyway */
+					else if (c >= 'A' && c <= '_' ||
+						 c >= 'a' && c <= 'z')
+						*cp2++ &= 037;
+					else
+						*cp2++ = *--cp;
+				} else
+					*cp2++ = c;
+			} else if (c == '"' || c == '\'')
+				quotec = c;
+			else if (c == ' ' || c == '\t')
+				break;
+			else
+				*cp2++ = c;
 		}
 		*cp2 = '\0';
-		if (cp2 == linebuf)
-			break;
-		if (ap >= last) {
-			printf("Too many elements in the list; excess discarded\n");
-			break;
-		}
-		*ap++ = savestr(linebuf);
+		argv[argn++] = savestr(linebuf);
 	}
-	*ap = NOSTR;
-	return(ap-argv);
+	argv[argn] = NOSTR;
+	return argn;
 }
 
 /*
