@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.10 %G%";
+static char *SccsId = "@(#)lex.c	1.11 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -179,7 +179,7 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
-		if (execute(linebuf))
+		if (execute(linebuf, 0))
 			return;
 more:		;
 	}
@@ -189,9 +189,10 @@ more:		;
  * Execute a single command.  If the command executed
  * is "quit," then return non-zero so that the caller
  * will know to return back to main, if he cares.
+ * Contxt is non-zero if called while composing mail.
  */
 
-execute(linebuf)
+execute(linebuf, contxt)
 	char linebuf[];
 {
 	char word[LINESIZE];
@@ -280,7 +281,8 @@ execute(linebuf)
 	if (!rcvmode && (com->c_argtype & M) == 0) {
 		printf("May not execute \"%s\" while sending\n",
 		    com->c_name);
-		unstack();
+		if (sourcing)
+			unstack();
 		return(0);
 	}
 	if (sourcing && com->c_argtype & I) {
@@ -296,8 +298,12 @@ execute(linebuf)
 			unstack();
 		return(0);
 	}
+	if (contxt && com->c_argtype & R) {
+		printf("Cannot recursively invoke \"%s\"\n", com->c_name);
+		return(0);
+	}
 	e = 1;
-	switch (com->c_argtype & ~(F|P|I|M|T|W)) {
+	switch (com->c_argtype & ~(F|P|I|M|T|W|R)) {
 	case MSGLIST:
 		/*
 		 * A message list defaulting to nearest forward
