@@ -1,5 +1,5 @@
 /*
-char id_c_iio[] = "@(#)c_iio.c	1.1";
+char id_c_iio[] = "@(#)c_iio.c	1.2";
  *
  * internal (character array) i/o: common portions
  */
@@ -8,17 +8,32 @@ char id_c_iio[] = "@(#)c_iio.c	1.1";
 #include "lio.h"
 
 LOCAL icilist *svic;		/* active internal io list */
+LOCAL lio_nl;
 
 int z_wnew();
 
 z_getc()
 {
+	if(formatted == LISTDIRECTED )
+	{
+		if( lio_nl == YES )
+		{
+			recnum++;
+			recpos = 0;
+		}
+		else if (recpos == svic->icirlen)
+		{
+			lio_nl = YES;
+			return('\n');
+		}
+		lio_nl = NO;
+	}
+
 	if(icptr >= icend && !recpos)	/* new rec beyond eof */
 	{	leof = EOF;
 		return(EOF);
 	}
 	if(recpos++ < svic->icirlen) return(*icptr++);
-	if(formatted == LISTDIRECTED) return(EOF);
 	return(' ');
 }
 
@@ -42,7 +57,13 @@ z_putc(c) char c;
 }
 
 z_ungetc(ch,cf) char ch;
-{	if(ch==EOF || --recpos >= svic->icirlen) return(OK);
+{	
+	if( lio_nl == YES )
+	{
+		lio_nl = NO;
+		return(OK);
+	}
+	if(ch==EOF || --recpos >= svic->icirlen) return(OK);
 	if(--icptr < svic->iciunit || recpos < 0) err(errflag,F_ERBREC,"ilio")
 	*icptr = ch;
 	return(OK);
@@ -129,6 +150,7 @@ c_li(a) icilist *a;
 	svic = a;
 	recnum = recpos = 0;
 	cplus = cblank = NO;
+	lio_nl = NO;
 	icptr = a->iciunit;
 	icend = icptr + a->icirlen * a->icirnum;
 	errflag = a->icierr;
