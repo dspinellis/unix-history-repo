@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	1.4 (Berkeley) %G%
+ *	@(#)dmx.c	1.5 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,6 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "dmx.h"
 #include "ubareg.h"
@@ -88,7 +87,7 @@ dmxopen(tp, sc, flag)
 	register struct tty *tp;
 	register struct dmx_softc *sc;
 {
-	int s, unit;
+	int s, unit, error = 0;
 	int dmxparam();
 
 	s = spltty();
@@ -134,9 +133,13 @@ dmxopen(tp, sc, flag)
 		    tp->t_cflag&CLOCAL)
 			break;
 		tp->t_state |= TS_WOPEN;
-		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DMX_OPN, 0);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	splx(s);
+	if (error)
+		return (error);
 	return ((*linesw[tp->t_line].l_open)(tp->t_dev, tp));
 }
 
@@ -148,7 +151,7 @@ dmxclose(tp)
 	(void) dmxmctl(tp, DMF_BRK, DMBIC);
 	if (tp->t_cflag & HUPCL || (tp->t_state & TS_ISOPEN) == 0)
 		(void) dmxmctl(tp, DMF_OFF, DMSET);
-	ttyclose(tp);
+	return (ttyclose(tp));
 }
 
 dmxrint(sc)
