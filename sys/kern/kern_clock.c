@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.10 1993/11/25 01:32:51 wollman Exp $
+ *	$Id: kern_clock.c,v 1.11 1993/12/19 00:51:20 wollman Exp $
  */
 
 #include "param.h"
@@ -248,16 +248,6 @@ hardclock(frame)
 		}
 		BUMPTIME(&time, delta);
 	}
-#ifdef DCFCLK
-	/*
-	 * This is lousy, but until I can get the $&^%&^(!!! signal onto one
-	 * of the interrupt's I'll have to poll it.  No, it will not work if
-	 * you attempt -DHZ=1000, things break.
-	 * But keep the NDCFCLK low, to avoid waste of cycles...
-	 * phk@data.fls.dk
-	 */
-	dcfclk_worker();
-#endif
 	if (needsoft) {
 #if 0
 /*
