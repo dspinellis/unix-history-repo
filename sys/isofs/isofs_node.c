@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)isofs_inode.c
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00151
- * --------------------         -----   ----------------------
- *
- * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ *	from: @(#)isofs_inode.c
+ *	$Id: isofs_node.c,v 1.4 1993/07/19 13:40:04 cgd Exp $
  */
 
 #include "param.h"
@@ -52,6 +46,7 @@
 
 #include "iso.h"
 #include "isofs_node.h"
+#include "iso_rrip.h"
 
 #define	INOHSZ	512
 #if	((INOHSZ&(INOHSZ-1)) == 0)
@@ -107,7 +102,7 @@ iso_iget(xp, ino, ipp, isodir)
 	struct buf *bp;
 	struct dinode *dp;
 	union iso_ihead *ih;
-	int i, error;
+	int i, error, result;
 	struct iso_mnt *imp;
 
 	ih = &iso_ihead[INOHASH(dev, ino)];
@@ -139,7 +134,6 @@ loop:
 	ip->i_flag = 0;
 	ip->i_devvp = 0;
 	ip->i_diroff = 0;
-	/* The following two are req for NFS FH. -Jagane D Sundar.- */
 	ip->iso_parent = xp->i_diroff; /* Parent directory's */
 	ip->iso_parent_ext = xp->iso_extent;
 	ip->i_lockf = 0;
@@ -158,22 +152,43 @@ loop:
 	ip->iso_extlen = isonum_711 (isodir->ext_attr_length);
 	ip->iso_extent = isonum_733 (isodir->extent);
 	ip->i_size = isonum_733 (isodir->size);
-	bcopy (isodir->date, ip->iso_time, sizeof ip->iso_time);
 	ip->iso_flags = isonum_711 (isodir->flags);
 	ip->iso_unit_size = isonum_711 (isodir->file_unit_size);
 	ip->iso_interleave_gap = isonum_711 (isodir->interleave);
 	ip->iso_volume_seq = isonum_723 (isodir->volume_sequence_number);
 	ip->iso_namelen = isonum_711 (isodir->name_len);
 
+	imp = VFSTOISOFS (mntp);
+	vp = ITOV(ip);
+	/*
+	 * Setup time stamp, attribute , if CL or PL, set loc but not yet..
+	 */
+	switch ( imp->iso_ftype ) {
+		case ISO_FTYPE_9660:
+			isofs_rrip_defattr  ( isodir, &(ip->inode) );
+			isofs_rrip_deftstamp( isodir, &(ip->inode) );
+			goto FlameOff;
+			break;  
+		case ISO_FTYPE_RRIP:
+			result = isofs_rrip_analyze( isodir, &(ip->inode) );
+			break;  
+		default:
+			printf("unknown iso_ftype.. %d\n", imp->iso_ftype );
+			break;
+	}
 	/*
 	 * Initialize the associated vnode
 	 */
-	vp = ITOV(ip);
-
-	if (ip->iso_flags & 2)
-		vp->v_type = VDIR;
-	else
-		vp->v_type = VREG;
+	if ( result & ISO_SUSP_SLINK ) {
+		vp->v_type = VLNK;	      /* Symbolic Link */
+	} else {
+FlameOff:
+		if (ip->iso_flags & 2) {
+			vp->v_type = VDIR;
+		} else {
+			vp->v_type = VREG;
+		}
+	}
 
 	imp = VFSTOISOFS (mntp);
 

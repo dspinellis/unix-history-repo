@@ -29,6 +29,7 @@ isofs/isofs_node.c	optional isofs
 isofs/isofs_util.c	optional isofs
 isofs/isofs_vfsops.c	optional isofs
 isofs/isofs_vnops.c	optional isofs
+isofs/isofs_rrip.c      optional isofs
 kern/dead_vnops.c	standard
 kern/fifo_vnops.c	optional fifo
 kern/init_main.c	standard

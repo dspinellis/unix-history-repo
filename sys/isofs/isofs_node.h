@@ -1,11 +1,19 @@
 /*
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00151
- * --------------------         -----   ----------------------
- *
- * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ *	$Id: isofs_node.h,v 1.5 1993/07/19 13:40:05 cgd Exp $
  */
+
+
+typedef	struct	{
+	unsigned	iso_cln;	/* Child link */
+	unsigned	iso_pln;	/* Parents link */
+	struct timeval	iso_atime;	/* time of last access */
+	struct timeval	iso_mtime;	/* time of last modification */
+	struct timeval	iso_ctime;	/* time file changed */
+	u_short		iso_mode;	/* files access mode and type */
+	uid_t		iso_uid;	/* owner user id */
+	gid_t		iso_gid;	/* owner group id */
+} ISO_RRIP_INODE;
+
 struct iso_node {
 	struct	iso_node *i_chain[2]; /* hash chain, MUST be first */
 	struct	vnode *i_vnode;	/* vnode associated with this inode */
@@ -25,15 +33,14 @@ struct iso_node {
 	int iso_extlen;
 	int iso_extent;
 	int i_size;
-	unsigned char iso_time[7];
 	int iso_flags;
 	int iso_unit_size;
 	int iso_interleave_gap;
 	int iso_volume_seq;
-	int iso_namelen;
-	/* The following are reqd for NFS FH. -Jagane D Sundar- */
-	int iso_parent;
-	int iso_parent_ext;
+	int iso_namelen;	/* ISO9660/RRIP name len */
+	int iso_parent;		/* byte offset in beginning of dir record */
+	int iso_parent_ext;	/* block number of dir record */
+	ISO_RRIP_INODE  inode;
 };
 
 #define	i_forw		i_chain[0]
@@ -49,8 +56,6 @@ struct iso_node {
 
 #define ISO_ILOCK(ip)	iso_ilock(ip)
 #define ISO_IUNLOCK(ip)	iso_iunlock(ip)
-
-#define VT_ISOFS (VT_MFS+1)
 
 /*
  * Prototypes for ISOFS vnode operations

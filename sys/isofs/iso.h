@@ -1,3 +1,7 @@
+/*
+ *	$Id: iso.h,v 1.3 1993/07/19 13:40:01 cgd Exp $
+ */
+
 #define ISODCL(from, to) (to - from + 1)
 
 struct iso_volume_descriptor {
@@ -12,6 +16,7 @@ struct iso_volume_descriptor {
 #define ISO_VD_END 255
 
 #define ISO_STANDARD_ID "CD001"
+#define ISO_ECMA_ID     "CDW01"
 
 struct iso_primary_descriptor {
 	char type			[ISODCL (  1,   1)]; /* 711 */
@@ -52,8 +57,8 @@ struct iso_primary_descriptor {
 struct iso_directory_record {
 	char length			[ISODCL (1, 1)]; /* 711 */
 	char ext_attr_length		[ISODCL (2, 2)]; /* 711 */
-	char extent			[ISODCL (3, 10)]; /* 733 */
-	char size			[ISODCL (11, 18)]; /* 733 */
+	unsigned char extent		[ISODCL (3, 10)]; /* 733 */
+	unsigned char size		[ISODCL (11, 18)]; /* 733 */
 	char date			[ISODCL (19, 25)]; /* 7 by 711 */
 	char flags			[ISODCL (26, 26)];
 	char file_unit_size		[ISODCL (27, 27)]; /* 711 */
@@ -62,6 +67,9 @@ struct iso_directory_record {
 	char name_len			[ISODCL (33, 33)]; /* 711 */
 	char name			[0];
 };
+
+/* CD-ROM Fromat type */
+enum ISO_FTYPE  { ISO_FTYPE_9660, ISO_FTYPE_RRIP, ISO_FTYPE_ECMA };
 
 struct iso_mnt {
 	int logical_block_size;
@@ -81,6 +89,7 @@ struct iso_mnt {
 	char root[ISODCL (157, 190)];
 	int root_extent;
 	int root_size;
+	enum ISO_FTYPE  iso_ftype;
 };
 
 #define VFSTOISOFS(mp)	((struct iso_mnt *)((mp)->mnt_data))

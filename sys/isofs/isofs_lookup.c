@@ -2,6 +2,9 @@
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
+ * Copyright (c) 1983 Atsushi Murai (amurai@spec.co.jp)
+ * All rights reserved for Rock Ridge Extension Support.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -30,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00151
- * --------------------         -----   ----------------------
- *
- * 10 Aug 92    Scott Burris            Fixed "delete from CD-ROM" bug
- * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
+ *	$Id: isofs_lookup.c,v 1.5 1993/07/19 13:40:03 cgd Exp $
  */
 
 #include "param.h"
@@ -50,6 +46,8 @@
 
 #include "iso.h"
 #include "isofs_node.h"
+#include "iso_rrip.h"
+#include "isofs_rrip.h"
 
 struct	nchstats nchstats;
 
@@ -115,6 +113,8 @@ isofs_lookup(vdp, ndp, p)
 
 	int reclen;
 	int namelen;
+	char altname[251];
+	int i;
 
 	ndp->ni_dvp = vdp;
 	ndp->ni_vp = NULL;
@@ -260,14 +260,11 @@ searchloop:
 			/* illegal entry, stop */
 			break;
 
-		if ((namelen == 1
+		if (namelen == 1
 		     && ((ndp->ni_namelen == 1
 			  && ndp->ni_ptr[0] == '.'
 			  && ep->name[0] == 0)
-			 || (ndp->ni_isdotdot && ep->name[0] == 1)))
-		    || (namelen >= ndp->ni_namelen
-			&& isofncmp(ndp->ni_ptr, ndp->ni_namelen, ep->name,
-				namelen))) {
+			 || (ndp->ni_isdotdot && ep->name[0] == 1))) {
 			/*
 			 * Save directory entry's inode number and
 			 * reclen in ndp->ni_ufs area, and release
@@ -276,6 +273,28 @@ searchloop:
 			ndp->ni_ufs.ufs_ino = isonum_733 (ep->extent);
 			brelse(bp);
 			goto found;
+		} else {
+			switch ( imp->iso_ftype ) {
+				case ISO_FTYPE_9660:
+				if( ( namelen  >= ndp->ni_namelen ) &&
+					    ( isofncmp( ndp->ni_ptr, ndp->ni_namelen, ep->name, namelen ) ) ) {
+						ndp->ni_ufs.ufs_ino = isonum_733 (ep->extent);
+						brelse(bp);
+						goto found;
+					}
+					break;
+				case ISO_FTYPE_RRIP:
+					isofs_rrip_getname( ep, altname, &namelen );
+					if ( ( namelen == ndp->ni_namelen ) &&
+					     ( !bcmp( ndp->ni_ptr, altname, ndp->ni_namelen ) ) ) {
+						ndp->ni_ufs.ufs_ino = isonum_733 (ep->extent);
+						brelse(bp);
+						goto found;
+					}
+					break;
+				default:
+					break;
+			}
 		}
 		ndp->ni_ufs.ufs_offset += reclen;
 		entryoffsetinblock += reclen;
@@ -391,5 +410,3 @@ iso_blkatoff(ip, offset, res, bpp)
 
 	return (0);
 }
-
-

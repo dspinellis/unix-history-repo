@@ -1,11 +1,7 @@
 /*
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00151
- * --------------------         -----   ----------------------
- *
- * 23 Apr 93	Jagane D Sundar		support nfs exported isofs
+ *	$Id: isofs_vfsops.c,v 1.5 1993/07/19 13:40:09 cgd Exp $
  */
+
 #include "param.h"
 #include "systm.h"
 #include "namei.h"
@@ -174,6 +170,16 @@ isofs_mount(mp, path, data, ndp, p)
 		return (error);
 	}
 	imp = VFSTOISOFS(mp);
+
+	/* Check the Rock Ridge Extention support */
+	if ( args.exflags & ISOFSMNT_NORRIP ) {
+		imp->iso_ftype = ISO_FTYPE_9660;
+		mp->mnt_flag  |= ISOFSMNT_NORRIP;
+	} else {
+		imp->iso_ftype = ISO_FTYPE_RRIP;
+		mp->mnt_flag  &= ~ISOFSMNT_NORRIP;
+	}
+
 	(void) copyinstr(path, imp->im_fsmnt, sizeof(imp->im_fsmnt)-1, &size);
 	bzero(imp->im_fsmnt + size, sizeof(imp->im_fsmnt) - size);
 	bcopy((caddr_t)imp->im_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
@@ -273,7 +279,7 @@ iso_mountfs(devvp, mp, p)
 
 	rootp = (struct iso_directory_record *)pri->root_directory_record;
 
-	isomp = (struct iso_mnt *)malloc(sizeof *isomp,M_UFSMNT,M_WAITOK);
+	isomp = (struct iso_mnt *)malloc(sizeof *isomp,M_ISOFSMNT,M_WAITOK);
 	isomp->logical_block_size = logical_block_size;
 	isomp->volume_space_size = isonum_733 (pri->volume_space_size);
 	bcopy (rootp, isomp->root, sizeof isomp->root);
@@ -311,7 +317,7 @@ out:
 	if (needclose)
 		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (isomp) {
-		free((caddr_t)isomp, M_UFSMNT);
+		free((caddr_t)isomp, M_ISOFSMNT);
 		mp->mnt_data = (qaddr_t)0;
 	}
 	return (error);
@@ -359,7 +365,7 @@ isofs_unmount(mp, mntflags, p)
 	error = VOP_CLOSE(isomp->im_devvp, ronly ? FREAD : FREAD|FWRITE,
 		NOCRED, p);
 	vrele(isomp->im_devvp);
-	free((caddr_t)isomp, M_UFSMNT);
+	free((caddr_t)isomp, M_ISOFSMNT);
 	mp->mnt_data = (qaddr_t)0;
 	mp->mnt_flag &= ~MNT_LOCAL;
 	return (error);
@@ -406,7 +412,6 @@ isofs_root(mp, vpp)
 	ip->i_dev = imp->im_dev;
 	ip->i_diroff = 0;
 	ip->iso_extent = imp->root_extent;
-	ip->i_diroff = 0;
 	error = iso_iget(ip, imp->root_extent, &nip,
 			 (struct iso_directory_record *) imp->root);
 	if (error)
@@ -455,9 +460,11 @@ isofs_sync(mp, waitfor)
 /*
  * File handle to vnode
  *
- * Less complicated than ufs file systems 'cos of read only.
- * 
- * -Jagane D Sundar-
+ * Have to be really careful about stale file handles:
+ * - check that the inode number is in range
+ * - call iget() to get the locked inode
+ * - check for an unallocated inode (i_mode == 0)
+ * - check that the generation number matches
  */
 
 
@@ -495,8 +502,8 @@ isofs_fhtovp(mp, fhp, vpp)
 
 	lbn = ifhp->ifid_lbn;
 	off = ifhp->ifid_offset;
-	ifhp->ifid_lbn += (ifhp->ifid_offset >> 12);
-	ifhp->ifid_offset &= 0x7fff;
+	ifhp->ifid_lbn += (ifhp->ifid_offset >> 11);
+	ifhp->ifid_offset &= 0x7ff;
 
 	if (ifhp->ifid_lbn >= imp->volume_space_size)
 		return (EINVAL);
