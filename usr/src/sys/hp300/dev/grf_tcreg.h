@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_tcreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: grf_tcreg.h 1.10 91/03/25$
  *
- *	@(#)grf_tcreg.h	7.2 (Berkeley) %G%
+ *	@(#)grf_tcreg.h	7.3 (Berkeley) %G%
  */
 
 #define tccm_waitbusy(regaddr) \
@@ -94,15 +94,26 @@ struct tcboxfb {
   vu_short	wwidth;			/* block mover pixel width    0x4102 */
   u_char	f18[0x4106-0x4102-2];
   vu_short 	wheight;		/* block mover pixel height   0x4106 */
-  u_char 	f19[0x6002-0x4106-2];
+  /* Catseye */
+  u_char	f19[0x4206-0x4106-2];
+  vu_short	rug_cmdstat;		/* RUG Command/Staus	      0x4206 */
+  u_char	f20[0x4510-0x4206-2];
+  vu_short	vb_select;		/* Vector/BitBlt Select	      0x4510 */
+  vu_short	tcntrl;			/* Three Operand Control      0x4512 */
+  vu_short	acntrl;			/* BitBlt Mode		      0x4514 */
+  vu_short	pncntrl;		/* Plane Control	      0x4516 */
+  u_char	f21[0x4800-0x4516-2];
+  vu_short	catseye_status;		/* Catseye Status	      0x4800 */
+  /* End of Catseye */
+  u_char 	f22[0x6002-0x4800-2];
   vu_short	cmap_busy;		/* Color Ram busy	      0x6002 */
-  u_char 	f20[0x60b2-0x6002-2];
+  u_char 	f23[0x60b2-0x6002-2];
   vu_short	rdata;			/* color map red data 	      0x60b2 */
   vu_short 	gdata;			/* color map green data       0x60b4 */
   vu_short	bdata;			/* color map blue data 	      0x60b6 */
   vu_short	cindex;			/* color map index 	      0x60b8 */
   vu_short	plane_mask;		/* plane mask select	      0x60ba */
-  u_char 	f21[0x60f0-0x60ba-2];
+  u_char 	f24[0x60f0-0x60ba-2];
   vu_short 	strobe;			/* color map trigger 	      0x60f0 */
 };
 
