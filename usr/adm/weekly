@@ -1,0 +1,34 @@
+#! /bin/sh -
+echo "Subject: weekly run output"
+
+#echo ""
+#echo "Removing old .o files:"
+#find /usr/src -name '*.o' -atime +21 -print -a -exec rm -f {} \;
+
+echo ""
+echo "Cleaning up UUCP:"
+su uucp << EOF
+	sh /usr/lib/uucp/clean.weekly
+EOF
+
+echo ""
+echo "Rotating messages:"
+cd /usr/adm
+mv messages.2 messages.3
+mv messages.1 messages.2
+mv messages.0 messages.1
+mv messages   messages.0
+cp /dev/null  messages
+chmod 644 messages
+kill -1 `cat /etc/syslog.pid`
+cd /
+
+echo ""
+echo "Rebuilding catman:"
+/etc/catman
+
+echo ""
+echo "Rebuilding find database:"
+su nobody << EOF
+	/usr/lib/find/updatedb
+EOF
