@@ -1,4 +1,4 @@
-/*	hp.c	4.34	81/03/22	*/
+/*	hp.c	4.35	81/04/02	*/
 int	hpdebug;
 
 #include "hp.h"
@@ -9,7 +9,6 @@ int	hpdebug;
  * TODO:
  *	check RM80 skip sector handling, esp when ECC's occur later
  *	check offset recovery handling
- *	see if DCLR and/or RELEASE set attention status
  */
 
 #include "../h/param.h"
@@ -46,7 +45,7 @@ struct	size {
 	15884,	0,		/* A=cyl 0 thru 99 */
 	33440,	100,		/* B=cyl 100 thru 309 */
 	131680,	0,		/* C=cyl 0 thru 822 */
-	2720,	291,
+	0,	0,
 	0,	0,
 	0,	0,
 	82080,	310,		/* G=cyl 310 thru 822 */
