@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)def.h	5.11 (Berkeley) %G%
+ *	@(#)def.h	5.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -252,15 +252,13 @@ struct ignoretab {
  */
 
 FILE	*Fdopen();
+FILE	*Popen();
 FILE	*collect();
 FILE	*infix();
 FILE	*mesedit();
 FILE	*mespipe();
-FILE	*popen();
 FILE	*setinput();
 char	**unpack();
-char	*addto();
-char	*arpafix();
 char	*calloc();
 char	*copy();
 char	*copyin();
@@ -275,12 +273,8 @@ char	*getenv();
 char	*findmail();
 char	*ishfield();
 char	*malloc();
-char	*netmap();
-char	*netname();
 char	*readtty();
 char	*reedit();
-char	*revarpa();
-char	*rpair();
 char	*salloc();
 char	*savestr();
 char	*skin();
@@ -297,7 +291,6 @@ struct	name	*delname();
 struct	name	*elide();
 struct	name	*extract();
 struct	name	*gexpand();
-struct	name	*map();
 struct	name	*outof();
 struct	name	*put();
 struct	name	*usermap();

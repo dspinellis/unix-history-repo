@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -27,21 +27,15 @@ static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
 static	int	popen_pid[20];
 
 FILE *
-popen(cmd,mode)
+Popen(cmd,mode)
 char	*cmd;
 char	*mode;
 {
 	int p[2];
 	register int myside, hisside;
-	int pid, doshell;
-	char *shell, buf[LINESIZE], *argv[MAXARGC];
+	int pid;
+	char *argv[MAXARGC];
 
-	doshell = 1;
-	if ((shell = value("shell")) || (shell = value("SHELL"))) {
-		if (!*shell)
-			doshell = 0;
-	} else
-		shell = SHELL;
 	if (pipe(p) < 0)
 		return NULL;
 	myside = tst(p[WTR], p[RDR]);
@@ -51,14 +45,8 @@ char	*mode;
 		close(myside);
 		dup2(hisside, tst(0, 1));
 		close(hisside);
-		if (doshell) {
-			sprintf(buf, "%s -c %s", shell, cmd);
-			(void) getrawlist(buf, argv, MAXARGC);
-			execvp(argv[0], argv);
-		} else {
-			(void) getrawlist(cmd, argv, MAXARGC);
-			execvp(argv[0], argv);
-		}
+		(void) getrawlist(cmd, argv, MAXARGC);
+		execvp(argv[0], argv);
 		fprintf(stderr, "Cannot execute %s\n", argv[0]);
 		_exit(1);
 	}
@@ -69,7 +57,7 @@ char	*mode;
 	return fdopen(myside, mode);
 }
 
-pclose(ptr)
+Pclose(ptr)
 FILE *ptr;
 {
 	register f, r;

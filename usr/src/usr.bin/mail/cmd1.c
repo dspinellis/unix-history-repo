@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd1.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.10 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -308,7 +308,7 @@ type1(msgvec, doign, page)
 	if (setjmp(pipestop)) {
 		if (obuf != stdout) {
 			pipef = NULL;
-			pclose(obuf);
+			Pclose(obuf);
 		}
 		signal(SIGPIPE, SIG_DFL);
 		return(0);
@@ -324,7 +324,7 @@ type1(msgvec, doign, page)
 			cp = value("PAGER");
 			if (cp == NULL || *cp == '\0')
 				cp = MORE;
-			obuf = popen(cp, "w");
+			obuf = Popen(cp, "w");
 			if (obuf == NULL) {
 				perror(cp);
 				obuf = stdout;
@@ -345,7 +345,7 @@ type1(msgvec, doign, page)
 	}
 	if (obuf != stdout) {
 		pipef = NULL;
-		pclose(obuf);
+		Pclose(obuf);
 	}
 	signal(SIGPIPE, SIG_DFL);
 	return(0);
