@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.94		%G%);
+SCCSID(@(#)deliver.c	3.95		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1039,6 +1039,7 @@ putheader(fp, m)
 		}
 		else if (bitset(H_DEFAULT, h->h_flags))
 		{
+			/* macro expand value if generated internally */
 			(void) expand(h->h_value, buf, &buf[sizeof buf]);
 			p = buf;
 		}
@@ -1059,13 +1060,31 @@ putheader(fp, m)
 			(void) sprintf(obp, "%s: ", capitalize(h->h_field));
 			opos = strlen(h->h_field) + 2;
 			obp += opos;
+
+			/*
+			**  Run through the list of values.
+			*/
+
 			while (*p != '\0')
 			{
-				register char *name = p;
+				register char *name;
 				extern char *remotename();
 				char savechar;
 
-				/* find the end of the name */
+				/*
+				**  Find the end of the name.  New style names
+				**  end with a comma, old style names end with
+				**  a space character.  However, spaces do not
+				**  necessarily delimit an old-style name -- at
+				**  signs mean keep going.
+				*/
+
+				/* clean up the leading trash in source */
+				while (*p != '\0' && (isspace(*p) || *p == ','))
+					p++;
+				name = p;
+
+				/* find end of name */
 				while (*p != '\0' && *p != ',')
 				{
 					extern bool isatword();
@@ -1076,9 +1095,12 @@ putheader(fp, m)
 						p++;
 						continue;
 					}
+
+					/* look to see if we have an at sign */
 					oldp = p;
 					while (*p != '\0' && isspace(*p))
 						p++;
+
 					if (*p != '@' && !isatword(p))
 					{
 						p = oldp;
@@ -1088,13 +1110,23 @@ putheader(fp, m)
 					while (*p != '\0' && isspace(*p))
 						p++;
 				}
+				/* at the end of one complete name */
+
+				/* strip off trailing white space */
+				while (p >= name && (isspace(*p) || *p == ','))
+					p--;
+				if (++p == name)
+					continue;
 				savechar = *p;
 				*p = '\0';
 
 				/* translate the name to be relative */
 				name = remotename(name, m, FALSE);
 				if (*name == '\0')
+				{
+					*p = savechar;
 					continue;
+				}
 
 				/* output the name with nice formatting */
 				opos += strlen(name);
@@ -1117,11 +1149,7 @@ putheader(fp, m)
 				(void) sprintf(obp, "%s", name);
 				obp += strlen(obp);
 				firstone = FALSE;
-
-				/* clean up the source string */
 				*p = savechar;
-				while (*p != '\0' && (isspace(*p) || *p == ','))
-					p++;
 			}
 			(void) strcpy(obp, "\n");
 			putline(obuf, fp, fullsmtp);
