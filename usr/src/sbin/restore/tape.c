@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.23	(Berkeley)	85/01/14";
+static char sccsid[] = "@(#)tape.c	3.24	(Berkeley)	85/01/14";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -66,8 +66,12 @@ nohost:
 		 */
 		terminal = fopen("/dev/tty", "r");
 		if (terminal == NULL) {
-			perror("open(\"/dev/tty\")");
-			done(1);
+			perror("Cannot open(\"/dev/tty\")");
+			terminal = fopen("/dev/null", "r");
+			if (terminal == NULL) {
+				perror("Cannot open(\"/dev/null\")");
+				done(1);
+			}
 		}
 		pipein++;
 	}
@@ -239,7 +243,8 @@ again:
 	fprintf(stderr, "Mount tape volume %d then type return ", newvol);
 	(void) fflush(stderr);
 	while (getc(terminal) != '\n')
-		;
+		if (feof(terminal))
+			done(1);
 #ifdef RRESTORE
 	if ((mt = rmtopen(magtape, 0)) == -1)
 #else
