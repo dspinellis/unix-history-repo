@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)compile.c	5.4 (Berkeley) %G%";
 static char	 *compile_addr __P((char *, struct s_addr *));
 static char	 *compile_delimited __P((char *, char *));
 static char	 *compile_flags __P((char *, struct s_subst *));
-static char	 *compile_re __P((char *, regex_t **, int));
+static char	 *compile_re __P((char *, regex_t **));
 static char	 *compile_subst __P((char *, struct s_subst *));
 static char	 *compile_text __P((void));
 static char	 *compile_tr __P((char *, char **));
@@ -82,9 +82,6 @@ static struct s_format cmd_fmts[] = {
 	{'\0', 0, COMMENT},
 };
 
-/* Maximum number of parenthesized regular expressions found. */
-static int nsub_max;
-
 /* The compiled program. */
 struct s_command *prog;
 
@@ -98,6 +95,7 @@ compile()
 	*compile_stream(NULL, &prog, NULL) = NULL;
 	fixuplabel(prog, prog);
 	appends = xmalloc(sizeof(struct s_appends) * appendnum);
+	match = xmalloc((maxnsub + 1) * sizeof(regmatch_t));
 }
 
 #define EATSPACE() do {							\
@@ -255,12 +253,9 @@ nonsel:		/* Now parse the command */
 				err(COMPILE,
 "substitute pattern can not be delimited by newline or backslash");
 			cmd->u.s = xmalloc(sizeof(struct s_subst));
-			p = compile_re(p, &cmd->u.s->re, 0);
+			p = compile_re(p, &cmd->u.s->re);
 			if (p == NULL)
 				err(COMPILE, "unterminated substitute pattern");
-			if (cmd->u.s->re != NULL &&
-			    nsub_max < cmd->u.s->re->re_nsub)
-				nsub_max = cmd->u.s->re->re_nsub;
 			--p;
 			p = compile_subst(p, cmd->u.s);
 			p = compile_flags(p, cmd->u.s);
@@ -336,10 +331,9 @@ compile_delimited(p, d)
  * Cflags are passed to regcomp.
  */
 static char *
-compile_re(p, repp, cflags)
+compile_re(p, repp)
 	char *p;
 	regex_t **repp;
-	int cflags;
 {
 	int eval;
 	char re[_POSIX2_LINE_MAX + 1];
@@ -350,8 +344,10 @@ compile_re(p, repp, cflags)
 		return (p);
 	}
 	*repp = xmalloc(sizeof(regex_t));
-	if (p && (eval = regcomp(*repp, re, cflags)) != 0)
+	if (p && (eval = regcomp(*repp, re, 0)) != 0)
 		err(COMPILE, "RE error: %s", strregerror(eval, *repp));
+	if (maxnsub < (*repp)->re_nsub)
+		maxnsub = (*repp)->re_nsub;
 	return (p);
 }
 
@@ -386,12 +382,12 @@ compile_subst(p, s)
 				if (strchr("123456789", *p) != NULL) {
 					*sp++ = '\\';
 					ref = *p - '0';
-					if (s->maxbref < ref)
-						s->maxbref = ref;
 					if (s->re != NULL &&
 					    ref > s->re->re_nsub)
 						err(COMPILE,
 "\\%c not defined in the RE", *p);
+					if (s->maxbref < ref)
+						s->maxbref = ref;
 				} else if (*p == '&')
 					*sp++ = '\\';
 			} else if (*p == c) {
@@ -584,7 +580,7 @@ compile_addr(p, a)
 		++p;
 		/* FALLTHROUGH */
 	case '/':				/* Context address */
-		p = compile_re(p, &a->u.r, REG_NOSUB);
+		p = compile_re(p, &a->u.r);
 		if (p == NULL)
 			err(COMPILE, "unterminated regular expression");
 		a->type = AT_RE;
@@ -674,15 +670,6 @@ fixuplabel(root, cp)
 				err(COMPILE2, "undefined label '%s'", cp->t);
 			free(cp->t);
 			cp->u.c = cp2;
-			break;
-		case 's':
-			if (cp->u.s->re == NULL)
-				cp->u.s->pmatch = xmalloc((nsub_max + 1) *
-				    sizeof(regmatch_t));
-			else
-				cp->u.s->pmatch =
-				    xmalloc((cp->u.s->re->re_nsub + 1) *
-				    sizeof(regmatch_t));
 			break;
 		case '{':
 			fixuplabel(root, cp->u.c);
