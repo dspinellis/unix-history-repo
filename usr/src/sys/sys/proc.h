@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.8 (Berkeley) %G%
+ *	@(#)proc.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,10 @@ struct	pgrp {
  * Other per process data (user.h)
  * is swapped with the process.
  */
+
+#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+#define	MAXLOGNAME	12		/* >= UT_NAMESIZE */
+
 struct	proc {
 	struct	proc *p_link;	/* linked list of running processes */
 	struct	proc *p_rlink;
@@ -92,10 +96,36 @@ struct	proc {
 	struct	quota *p_quota;	/* quotas for this process */
 	int	p_traceflag;	/* kernel trace points */
 	struct	vnode *p_tracep;/* trace to vnode */
+	char	p_comm[MAXCOMLEN+1];
+	char	p_logname[MAXLOGNAME];
+	char	*p_wmesg;
 #if defined(tahoe)
 	int	p_ckey;		/* code cache key */
 	int	p_dkey;		/* data cache key */
 #endif
+};
+
+/* 
+ * proc ops return arrays of augmented proc structures
+ */
+struct kinfo_proc {
+	struct	proc kp_proc;			/* proc structure */
+	struct	eproc {
+		struct	proc *e_paddr;		/* address of proc */
+		struct	session *e_sess;	/* session pointer */
+		pid_t	e_pgid;			/* process group id */
+		short	e_jobc;			/* job control counter */
+		dev_t	e_tdev;			/* controlling tty */
+		pid_t	e_tpgid;		/* tty process group id */
+		struct	session *e_tsess;	/* tty session pointer */
+#define	WMESGLEN	7
+		char	e_wmesg[WMESGLEN+1];	/* wchan message */
+		size_t	e_xsize;		/* text size */
+		short	e_xrssize;		/* text rss */
+		short	e_xccount;		/* text references */
+		short	e_xswrss;
+		long	e_spare[8];
+	} kp_eproc;
 };
 
 #define	PIDHSZ		64
@@ -155,7 +185,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SCTTY	0x0100000	/* has a controlling terminal */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
-#define	SLOGIN	0x0800000	/* a login process (legit child of init) */
+#define SEXEC	0x0800000	/* process called exec */
 #define	SPTECHG	0x1000000	/* pte's for process have changed */
-#define SKTR	0x2000000	/* pass kernel tracing flags to children */
-#define SEXEC	0x8000000	/* process called exec */
+#define	SLOGIN	0x2000000	/* a login process (legit child of init) */
