@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.2		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.3		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.2		%G%);
+SCCSID(@(#)usersmtp.c	4.3		%G%);
 
 
 
@@ -20,6 +20,7 @@ SCCSID(@(#)usersmtp.c	4.2		%G%);
 #define REPLYCLASS(r)	(((r) / 10) % 10)	/* second digit of reply code */
 #define SMTPCLOSING	421			/* "Service Shutting Down" */
 
+char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 FILE	*SmtpOut;			/* output file */
 FILE	*SmtpIn;			/* input file */
@@ -366,11 +367,20 @@ reply(m)
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
 
-		/* log the input in the transcript for future error returns */
+		if (CurEnv->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
+		{
+			/* serious error -- log the previous command */
+			if (SmtpMsgBuffer[0] != '\0')
+				fprintf(CurEnv->e_xfp, ">>> %s\n", SmtpMsgBuffer);
+			SmtpMsgBuffer[0] = '\0';
+
+			/* now log the message as from the other side */
+			fprintf(CurEnv->e_xfp, "<<< %s\n", SmtpReplyBuffer);
+		}
+
+		/* display the input for verbose mode */
 		if (Verbose && !HoldErrs)
 			nmessage(Arpa_Info, "%s", SmtpReplyBuffer);
-		else if (CurEnv->e_xfp != NULL)
-			fprintf(CurEnv->e_xfp, "%s\n", SmtpReplyBuffer);
 
 		/* if continuation is required, we can go on */
 		if (SmtpReplyBuffer[3] == '-' || !isdigit(SmtpReplyBuffer[0]))
@@ -414,15 +424,11 @@ smtpmessage(f, m, a, b, c)
 	char *f;
 	MAILER *m;
 {
-	char buf[MAXLINE];
-
-	(void) sprintf(buf, f, a, b, c);
+	(void) sprintf(SmtpMsgBuffer, f, a, b, c);
 	if (tTd(18, 1) || (Verbose && !HoldErrs))
-		nmessage(Arpa_Info, ">>> %s", buf);
-	else if (CurEnv->e_xfp != NULL)
-		fprintf(CurEnv->e_xfp, ">>> %s\n", buf);
+		nmessage(Arpa_Info, ">>> %s", SmtpMsgBuffer);
 	if (SmtpOut != NULL)
-		fprintf(SmtpOut, "%s%s", buf, m->m_eol);
+		fprintf(SmtpOut, "%s%s", SmtpMsgBuffer, m->m_eol);
 }
 
 # endif SMTP
