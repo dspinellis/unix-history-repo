@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.35.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)rcp.c	5.35.1.1 (Berkeley) %G%";
 
 #include <ctype.h>
 #include <dirent.h>
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -136,16 +137,12 @@ main(argc, argv)
 #else
 	sp = getservbyname(shell = "shell", "tcp");
 #endif
-	if (sp == NULL) {
-		(void)fprintf(stderr, "rcp: %s/tcp: unknown service\n", shell);
-		exit(1);
-	}
+	if (sp == NULL)
+		errx(1, "%s/tcp: unknown service", shell);
 	port = sp->s_port;
 
-	if ((pwd = getpwuid(userid = getuid())) == NULL) {
-		(void)fprintf(stderr, "rcp: unknown user %d.\n", (int)userid);
-		exit(1);
-	}
+	if ((pwd = getpwuid(userid = getuid())) == NULL)
+		errx(1, "unknown user %d", (int)userid);
 
 	rem = STDIN_FILENO;		/* XXX */
 
@@ -204,7 +201,7 @@ toremote(targ, argc, argv)
 	if (*targ == 0)
 		targ = ".";
 
-	if (thost = index(argv[argc - 1], '@')) {
+	if (thost = strchr(argv[argc - 1], '@')) {
 		/* user@host */
 		*thost++ = 0;
 		tuser = argv[argc - 1];
@@ -223,12 +220,12 @@ toremote(targ, argc, argv)
 			*src++ = 0;
 			if (*src == 0)
 				src = ".";
-			host = index(argv[i], '@');
+			host = strchr(argv[i], '@');
 			len = strlen(_PATH_RSH) + strlen(argv[i]) +
 			    strlen(src) + (tuser ? strlen(tuser) : 0) +
 			    strlen(thost) + strlen(targ) + CMDNEEDS + 20;
 			if (!(bp = malloc(len)))
-				nospace();
+				err(1, NULL);
 			if (host) {
 				*host++ = 0;
 				suser = argv[i];
@@ -253,7 +250,7 @@ toremote(targ, argc, argv)
 			if (rem == -1) {
 				len = strlen(targ) + CMDNEEDS + 20;
 				if (!(bp = malloc(len)))
-					nospace();
+					err(1, NULL);
 				(void)snprintf(bp, len, "%s -t %s", cmd, targ);
 				host = thost;
 #ifdef KERBEROS
@@ -271,9 +268,7 @@ toremote(targ, argc, argv)
 				tos = IPTOS_THROUGHPUT;
 				if (setsockopt(rem, IPPROTO_IP, IP_TOS,
 				    &tos, sizeof(int)) < 0)
-					(void)fprintf(stderr,
-					    "rcp: TOS (ignored): %s\n",
-					    strerror(errno));
+					warn("TOS (ignored)");
 				if (response() < 0)
 					exit(1);
 				(void)free(bp);
@@ -297,7 +292,7 @@ tolocal(argc, argv)
 			len = strlen(_PATH_CP) + strlen(argv[i]) +
 			    strlen(argv[argc - 1]) + 20;
 			if (!(bp = malloc(len)))
-				nospace();
+				err(1, NULL);
 			(void)snprintf(bp, len, "%s%s%s %s %s", _PATH_CP,
 			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
 			    argv[i], argv[argc - 1]);
@@ -309,7 +304,7 @@ tolocal(argc, argv)
 		*src++ = 0;
 		if (*src == 0)
 			src = ".";
-		if ((host = index(argv[i], '@')) == NULL) {
+		if ((host = strchr(argv[i], '@')) == NULL) {
 			host = argv[i];
 			suser = pwd->pw_name;
 		} else {
@@ -322,7 +317,7 @@ tolocal(argc, argv)
 		}
 		len = strlen(src) + CMDNEEDS + 20;
 		if ((bp = malloc(len)) == NULL)
-			nospace();
+			err(1, NULL);
 		(void)snprintf(bp, len, "%s -f %s", cmd, src);
 		rem = 
 #ifdef KERBEROS
@@ -338,8 +333,7 @@ tolocal(argc, argv)
 		(void)seteuid(userid);
 		tos = IPTOS_THROUGHPUT;
 		if (setsockopt(rem, IPPROTO_IP, IP_TOS, &tos, sizeof(int)) < 0)
-			(void)fprintf(stderr, "rcp: TOS (ignored): %s\n",
-			    strerror(errno));
+			warn("TOS (ignored)");
 		sink(1, argv + argc - 1);
 		(void)seteuid(0);
 		(void)close(rem);
@@ -364,7 +358,7 @@ source(argc, argv)
 		if ((fd = open(name, O_RDONLY, 0)) < 0)
 			goto syserr;
 		if (fstat(fd, &stb)) {
-syserr:			err("%s: %s", name, strerror(errno));
+syserr:			run_err("%s: %s", name, strerror(errno));
 			goto next;
 		}
 		switch (stb.st_mode & S_IFMT) {
@@ -377,10 +371,10 @@ syserr:			err("%s: %s", name, strerror(errno));
 			}
 			/* FALLTHROUGH */
 		default:
-			err("%s: not a regular file", name);
+			run_err("%s: not a regular file", name);
 			goto next;
 		}
-		if ((last = rindex(name, '/')) == NULL)
+		if ((last = strrchr(name, '/')) == NULL)
 			last = name;
 		else
 			++last;
@@ -429,7 +423,7 @@ next:			(void)close(fd);
 		if (!haderr)
 			(void)write(rem, "", 1);
 		else
-			err("%s: %s", name, strerror(haderr));
+			run_err("%s: %s", name, strerror(haderr));
 		(void)response();
 	}
 }
@@ -444,10 +438,10 @@ rsource(name, statp)
 	char *last, *vect[1], path[MAXPATHLEN];
 
 	if (!(dirp = opendir(name))) {
-		err("%s: %s", name, strerror(errno));
+		run_err("%s: %s", name, strerror(errno));
 		return;
 	}
-	last = rindex(name, '/');
+	last = strrchr(name, '/');
 	if (last == 0)
 		last = name;
 	else
@@ -474,7 +468,7 @@ rsource(name, statp)
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
 		if (strlen(name) + 1 + strlen(dp->d_name) >= MAXPATHLEN - 1) {
-			err("%s/%s: name too long", name, dp->d_name);
+			run_err("%s/%s: name too long", name, dp->d_name);
 			continue;
 		}
 		(void)snprintf(path, sizeof(path), "%s/%s", name, dp->d_name);
@@ -511,7 +505,7 @@ sink(argc, argv)
 	if (!pflag)
 		(void)umask(mask);
 	if (argc != 1) {
-		err("ambiguous target");
+		run_err("ambiguous target");
 		exit(1);
 	}
 	targ = *argv;
@@ -579,7 +573,7 @@ sink(argc, argv)
 			 * followed.
 			 */
 			if (first) {
-				err("%s", cp);
+				run_err("%s", cp);
 				exit(1);
 			}
 			SCREWUP("expected control record");
@@ -605,7 +599,7 @@ sink(argc, argv)
 			need = strlen(targ) + strlen(cp) + 250;
 			if (need > cursize) {
 				if (!(namebuf = malloc(need)))
-					err("%s", strerror(errno));
+					run_err("%s", strerror(errno));
 			}
 			(void)snprintf(namebuf, need, "%s%s%s", targ,
 			    *targ ? "/" : "", cp);
@@ -633,7 +627,7 @@ sink(argc, argv)
 			if (setimes) {
 				setimes = 0;
 				if (utimes(np, tv) < 0)
-				    err("can't set times on %s: %s",
+				    run_err("%s: set times: %s",
 					np, strerror(errno));
 			}
 			if (mod_flag)
@@ -643,7 +637,7 @@ sink(argc, argv)
 		omode = mode;
 		mode |= S_IWRITE;
 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
-bad:			err("%s: %s", np, strerror(errno));
+bad:			run_err("%s: %s", np, strerror(errno));
 			continue;
 		}
 		(void)write(rem, "", 1);
@@ -661,7 +655,7 @@ bad:			err("%s: %s", np, strerror(errno));
 			do {
 				j = read(rem, cp, amt);
 				if (j <= 0) {
-					err("%s", j ? strerror(errno) :
+					run_err("%s", j ? strerror(errno) :
 					    "dropped connection");
 					exit(1);
 				}
@@ -687,29 +681,33 @@ bad:			err("%s: %s", np, strerror(errno));
 			wrerrno = j >= 0 ? EIO : errno; 
 		}
 		if (ftruncate(ofd, size)) {
-			err("can't truncate %s: %s", np, strerror(errno));
+			run_err("%s: truncate: %s", np, strerror(errno));
 			wrerr = DISPLAYED;
 		}
 		if (pflag) {
 			if (exists || omode != mode)
-				(void)fchmod(ofd, omode);
+				if (fchmod(ofd, omode))
+					run_err("%s: set mode: %s",
+					    np, strerror(errno));
 		} else {
 			if (!exists && omode != mode)
-				(void)fchmod(ofd, omode & ~mask);
+				if (fchmod(ofd, omode & ~mask))
+					run_err("%s: set mode: %s",
+					    np, strerror(errno));
 		}
 		(void)close(ofd);
 		(void)response();
 		if (setimes && wrerr == NO) {
 			setimes = 0;
 			if (utimes(np, tv) < 0) {
-				err("can't set times on %s: %s",
+				run_err("%s: set times: %s",
 				    np, strerror(errno));
 				wrerr = DISPLAYED;
 			}
 		}
 		switch(wrerr) {
 		case YES:
-			err("%s: %s", np, strerror(wrerrno));
+			run_err("%s: %s", np, strerror(wrerrno));
 			break;
 		case NO:
 			(void)write(rem, "", 1);
@@ -719,7 +717,7 @@ bad:			err("%s: %s", np, strerror(errno));
 		}
 	}
 screwup:
-	err("protocol error: %s", why);
+	run_err("protocol error: %s", why);
 	exit(1);
 }
 
@@ -741,11 +739,8 @@ again:
 
 		if (rem < 0) {
 			use_kerberos = 0;
-			if ((sp = getservbyname("shell", "tcp")) == NULL) {
-				(void)fprintf(stderr,
-			    	    "rcp: unknown service shell/tcp\n");
-				exit(1);
-			}
+			if ((sp = getservbyname("shell", "tcp")) == NULL)
+				errx(1, "unknown service shell/tcp");
 			if (errno == ECONNREFUSED)
 			    oldw("remote host doesn't support Kerberos");
 			else if (errno == ENOENT)
@@ -839,9 +834,9 @@ oldw(fmt, va_alist)
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+run_err(const char *fmt, ...)
 #else
-err(fmt, va_alist)
+run_err(fmt, va_alist)
 	char *fmt;
         va_dcl
 #endif
@@ -855,17 +850,16 @@ err(fmt, va_alist)
 #endif
 
 	++errs;
-	if (!fp && !(fp = fdopen(rem, "w")))
+	if (fp == NULL && !(fp = fdopen(rem, "w")))
 		return;
 	(void)fprintf(fp, "%c", 0x01);
 	(void)fprintf(fp, "rcp: ");
 	(void)vfprintf(fp, fmt, ap);
 	(void)fprintf(fp, "\n");
-	if (!iamremote) {
-		(void)fprintf(stderr, "rcp: ");
-		(void)vfprintf(stderr, fmt, ap);
-		(void)fprintf(stderr, "\n");
-	}
-	va_end(ap);
 	(void)fflush(fp);
+
+	if (!iamremote)
+		vwarnx(fmt, ap);
+
+	va_end(ap);
 }
