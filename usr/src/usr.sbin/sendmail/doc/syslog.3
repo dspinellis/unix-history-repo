@@ -1,26 +1,28 @@
-.TH syslog 3
-.\"	@(#)syslog.3	1.1		%G%
+.TH SYSLOG 3
+.\"	@(#)syslog.3	1.2		%G%
 .SH NAME
 syslog, openlog, closelog -- control system log
 .SH SYNOPSIS
 # include <syslog.h>
-
+.PP
 openlog(ident, logstat)
 .br
 char *ident;
-
+.PP
 syslog(priority, message, parameters ... )
 .br
 char *message;
-
+.PP
 closelog()
 .SH DESCRIPTION
 .I Syslog
-writes the
+arranges to
+write the
 .I message
-onto the log file
-.I /dev/log.
-The message is tagged with priority
+onto the
+system log maintained by
+.IR syslog (8).
+The message is tagged with
 .I priority.
 The message looks like a
 .I printf(3)
@@ -43,6 +45,7 @@ Parameters are
 which is prepended to every message,
 and
 .I logstat
+which is
 a bit field indicating special status;
 current values are:
 .IP LOG_PID \w'LOG_PID'u+3
