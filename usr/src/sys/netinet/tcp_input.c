@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.63	82/03/24	*/
+/*	tcp_input.c	1.64	82/03/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -73,7 +73,7 @@ COUNT(TCP_INPUT);
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
 		ti->ti_len = (u_short)tlen;
-#if vax
+#if vax || pdp11
 		ti->ti_len = htons((u_short)ti->ti_len);
 #endif
 		if (ti->ti_sum = in_cksum(m, len)) {
@@ -122,7 +122,7 @@ COUNT(TCP_INPUT);
 	m->m_off += off;
 	m->m_len -= off;
 
-#if vax
+#if vax || pdp11
 	/*
 	 * Convert TCP protocol specific fields to host format.
 	 */
@@ -212,6 +212,7 @@ COUNT(TCP_INPUT);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
+			tp = 0;
 			goto drop;
 		}
 		in_setsockaddr(inp);
@@ -242,8 +243,10 @@ COUNT(TCP_INPUT);
 		     SEQ_GT(ti->ti_ack, tp->snd_max)))
 			goto dropwithreset;
 		if (tiflags & TH_RST) {
-			if (tiflags & TH_ACK)
+			if (tiflags & TH_ACK) {
 				tcp_drop(tp, ECONNREFUSED);
+				tp = 0;
+			}
 			goto drop;
 		}
 		if ((tiflags & TH_SYN) == 0)
@@ -378,9 +381,11 @@ trimthenstep6:
 			inp->inp_faddr.s_addr = 0;
 			inp->inp_fport = 0;
 			inp->inp_laddr.s_addr = 0;	/* not quite right */
+			tp = 0;
 			goto drop;
 		}
 		tcp_drop(tp, ECONNREFUSED);
+		tp = 0;
 		goto drop;
 
 	case TCPS_ESTABLISHED:
@@ -388,12 +393,14 @@ trimthenstep6:
 	case TCPS_FIN_WAIT_2:
 	case TCPS_CLOSE_WAIT:
 		tcp_drop(tp, ECONNRESET);
+		tp = 0;
 		goto drop;
 
 	case TCPS_CLOSING:
 	case TCPS_LAST_ACK:
 	case TCPS_TIME_WAIT:
 		tcp_close(tp);
+		tp = 0;
 		goto drop;
 	}
 
@@ -540,8 +547,10 @@ trimthenstep6:
 		 * and return.
 		 */
 		case TCPS_LAST_ACK:
-			if (ourfinisacked)
+			if (ourfinisacked) {
 				tcp_close(tp);
+				tp = 0;
+			}
 			goto drop;
 
 		/*
@@ -750,7 +759,7 @@ tcp_dooptions(tp, om)
 			if (optlen != 4)
 				continue;
 			tp->t_maxseg = *(u_short *)(cp + 2);
-#if vax
+#if vax || pdp11
 			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
 #endif
 			break;
@@ -780,7 +789,7 @@ printf("bad seq\n");
 			tp->t_iobseq = cp[2];
 			tp->t_iobc = cp[3];
 			mark = *(tcp_seq *)(cp + 4);
-#if vax
+#if vax || pdp11
 			mark = ntohl(mark);
 #endif
 			so->so_oobmark = so->so_rcv.sb_cc + (mark-tp->rcv_nxt);
