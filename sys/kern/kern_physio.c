@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_physio.c,v 1.5 1994/03/30 02:31:26 davidg Exp $
+ *	$Id: kern_physio.c,v 1.6 1994/04/14 07:54:54 davidg Exp $
  */
 
 #include "param.h"
@@ -178,8 +178,7 @@ int physio(strat, dev, bp, off, rw, base, len, p)
  */
 			v = trunc_page(((vm_offset_t)vtopte(adr)));
 			if (v != lastv) {
-				
-				*(volatile int *)v += 0;
+				vm_fault_quick(v, VM_PROT_READ);
 				pa = pmap_extract(&p->p_vmspace->vm_pmap, v);
 				vm_page_hold(PHYS_TO_VM_PAGE(pa));
 				lastv = v;
@@ -189,27 +188,13 @@ int physio(strat, dev, bp, off, rw, base, len, p)
  * do the vm_fault if needed, do the copy-on-write thing when
  * reading stuff off device into memory.
  */
-			if (ftype & VM_PROT_WRITE) {
-				/*
-				 * properly handle copy-on-write
-				 */
-				*(volatile int *) adr += 0;
-			} 
-#if defined(HOLD_WORKS_FOR_SHARING)
-			else {
-				*(volatile int *) adr;
-			}
+			vm_fault_quick(adr, ftype);
 			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
 /*
  * hold the data page
  */
 			vm_page_hold(PHYS_TO_VM_PAGE(pa));
-#endif
 		}
-
-#if !defined(HOLD_WORKS_FOR_SHARING)
-		vslock(base, bp->b_bufsize);
-#endif
 
 		vmapbuf(bp);
 
@@ -224,10 +209,6 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 
 		vunmapbuf(bp);
 
-#if !defined(HOLD_WORKS_FOR_SHARING)
-		vsunlock(base, bp->b_bufsize);
-#endif
-
 /*
  * unhold the pde, and data pages
  */
@@ -240,10 +221,8 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 				vm_page_unhold(PHYS_TO_VM_PAGE(pa));
 				lastv = v;
 			}
-#if defined(HOLD_WORKS_FOR_SHARING)
 			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
 			vm_page_unhold(PHYS_TO_VM_PAGE(pa));
-#endif
 		}
 			
 
