@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.2";
+char id_dofio[] = "@(#)dofio.c	1.3";
  *
  * fortran format executer
  */
@@ -14,7 +14,7 @@ char *dfio = "dofio";
 
 en_fio()
 {	ftnint one=1;
-	return(do_fio(&one,NULL,0l));
+	return(do_fio(&one,NULL,0L));
 }
 
 do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
