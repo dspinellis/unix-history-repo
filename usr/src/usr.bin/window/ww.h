@@ -1,4 +1,4 @@
-/*	@(#)ww.h	1.6 83/07/27		*/
+/*	@(#)ww.h	1.7 83/07/28		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -49,9 +49,10 @@ struct ww_tty {
 #define WW_SOCKET	1		/* has socket pair */
 #define WW_NONE		2		/* has nothing */
 
-#ifndef CTRL
-#define CTRL(c)	('c'&0x1f)
-#endif
+#undef CTRL
+#define CTRL(c)		('c'&0x1f)
+#define DEL		0x7f
+#define ISCTRL(c)	((c) < ' ' || (c) >= DEL)
 
 extern struct ww *wwhead, *curwin;
 extern struct ww_tty wwoldtty, wwnewtty;
@@ -67,3 +68,4 @@ extern int wwnrow, wwncol;		/* the screen size */
 struct ww *wwopen();
 struct ww *wwfind();
 int wwchild();
+char *unctrl();
