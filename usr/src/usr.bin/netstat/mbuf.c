@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -63,31 +63,35 @@ mbpr(mbaddr)
 		printf("mbstat: bad read\n");
 		return;
 	}
-	printf("%d/%d mbufs in use:\n",
+	printf("%u/%u mbufs in use:\n",
 		mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE], mbstat.m_mbufs);
 	totmbufs = 0;
 	for (mp = mbtypes; mp->mt_name; mp++)
 		if (mbstat.m_mtypes[mp->mt_type]) {
 			seen[mp->mt_type] = YES;
-			printf("\t%d mbufs allocated to %s\n",
+			printf("\t%u mbufs allocated to %s\n",
 			    mbstat.m_mtypes[mp->mt_type], mp->mt_name);
 			totmbufs += mbstat.m_mtypes[mp->mt_type];
 		}
 	seen[MT_FREE] = YES;
 	for (i = 0; i < nmbtypes; i++)
 		if (!seen[i] && mbstat.m_mtypes[i]) {
-			printf("\t%d mbufs allocated to <mbuf type %d>\n",
+			printf("\t%u mbufs allocated to <mbuf type %d>\n",
 			    mbstat.m_mtypes[i], i);
 			totmbufs += mbstat.m_mtypes[i];
 		}
 	if (totmbufs != mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE])
-		printf("*** %d mbufs missing ***\n",
+		printf("*** %u mbufs missing ***\n",
 			(mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE]) - totmbufs);
-	printf("%d/%d mapped pages in use\n",
+	printf("%u/%u mapped pages in use\n",
 		mbstat.m_clusters - mbstat.m_clfree, mbstat.m_clusters);
-	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES;
+	printf("%u interface pages allocated\n", mbstat.m_space);
+	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES +
+	    mbstat.m_space * CLBYTES;
 	totfree = mbstat.m_mtypes[MT_FREE]*MSIZE + mbstat.m_clfree * CLBYTES;
-	printf("%d Kbytes allocated to network (%d%% in use)\n",
+	printf("%u Kbytes allocated to network (%d%% in use)\n",
 		totmem / 1024, (totmem - totfree) * 100 / totmem);
-	printf("%d requests for memory denied\n", mbstat.m_drops);
+	printf("%u requests for memory denied\n", mbstat.m_drops);
+	printf("%u requests for memory delayed\n", mbstat.m_wait);
+	printf("%u calls to protocol drain routines\n", mbstat.m_drain);
 }
