@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_init.c	8.1 (Berkeley) %G%
+ *	@(#)vfs_init.c	8.2 (Berkeley) %G%
  */
 
 
@@ -196,6 +196,10 @@ vfsinit()
 {
 	struct vfsops **vfsp;
 
+	/*
+	 * Initialize the vnode table
+	 */
+	vntblinit();
 	/*
 	 * Initialize the vnode name cache
 	 */
