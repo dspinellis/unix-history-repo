@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.4
+ * %G% (Berkeley) @(#)setterm.c	1.5
  */
 
 # undef	DEBUG
@@ -47,6 +47,7 @@ gettmode() {
 	GT = ((_tty.sg_flags & XTABS) == 0);
 	NONL = ((_tty.sg_flags & CRMOD) == 0);
 	_tty.sg_flags &= ~XTABS;
+	stty(_tty_ch, &_tty);
 # ifdef DEBUG
 	fprintf(outf, "GETTMODE: UPPERCASE = %s\n", UPPERCASE ? "TRUE":"FALSE");
 	fprintf(outf, "GETTMODE: GT = %s\n", GT ? "TRUE" : "FALSE");
