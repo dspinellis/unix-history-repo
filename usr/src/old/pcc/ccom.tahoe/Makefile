@@ -1,5 +1,5 @@
 #
-#	Makefile	1.9	88/01/13
+#	Makefile	1.10	88/01/15
 #
 # Makefile for tahoe pcc
 #
@@ -150,8 +150,8 @@ tags:	${SRCS}
 	ctags ${SRCS}
 
 # XXX this is less than complete
-depend: ${SRCS} pcclocal.h pcctokens
-	mkdep ${CFLAGS} ${INCS} ${SRCS}
+depend: ${SRCS} ${MIP}/fort.c pcclocal.h pcctokens
+	mkdep ${CFLAGS} ${INCS} ${SRCS} ${MIP}/fort.c
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
@@ -199,5 +199,8 @@ trees.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
 trees.o: /usr/include/setjmp.h
 table.o: table.c ../../mip/pass2.h macdefs.h mac2defs.h ../../mip/manifest.h
 table.o: /usr/include/stdio.h pcclocal.h ../../mip/config.h ../../mip/ndu.h
+fort.o: ../../mip/fort.c ../../mip/pass2.h macdefs.h mac2defs.h
+fort.o: ../../mip/manifest.h /usr/include/stdio.h pcclocal.h ../../mip/config.h
+fort.o: ../../mip/ndu.h fort.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
