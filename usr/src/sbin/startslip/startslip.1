@@ -1,43 +1,54 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)startslip.1	5.1 (Berkeley) %G%
+.\"     @(#)startslip.1	5.2 (Berkeley) %G%
 .\"
-.TH STARTSLIP 1 ""
-.UC 7
-.SH NAME
-startslip \- dial up and log in to a slip server
-.SH SYNOPSIS
-.B startslip
-[
-.B \-d
-] [
-.B \-s
-string
-]
-dev user passwd
-.SH DESCRIPTION
-.I Startslip
-opens the specified device.
-If the
-.B \-s
-option is specified, the optional string is written to the device.
+.Dd 
+.Dt STARTSLIP 1
+.Os BSD 4.4
+.Sh NAME
+.Nm startslip
+.Nd dial up and login to a slip server
+.Sh SYNOPSIS
+.Nm startslip
+.Op Fl d
+.Op Fl s Ar string
+.Ar device user passwd
+.Sh DESCRIPTION
+.Nm Startslip
+opens the specified
+.Ar device .
+.Pp
+Once carrier is asserted
+.Nm startslip
+attempts to login as the specified
+.Ar user
+with the given
+.Ar password .
+If successful, it puts the device into the slip line discipline.
+If carrier drops and a
+.Dv SIGHUP
+is sent to
+.Nm startslip ,
+it closes the device and attempts to repeat the dialup and login sequence.
+.Pp
+Available options:
+.Bl -tag -width Ar
+.It Fl d
+.Nm Startslip
+prints out debugging information about what it is trying to do.
+.It Fl s Ar string
+The optional
+.Ar string
+is written to
+.Ar device .
 For a dialup modem,
 the string is used to specify a dial sequence.
-Once carrier is asserted
-.I startslip
-attempts to login as the specified user with the given password.
-If successful, it sets the device into the slip line discipline.
-If carrier drops and a SIGHUP is sent to
-.I startslip ,
-it closes the device and attempts to repeat the dialup and login sequence.
-.PP
-If the
-.B \-d
-option is specified,
-.B startslip
-prints out debugging information about what it is trying to do.
-.SH "SEE ALSO"
-sliplogin(8)
+.El
+.Pp
+.Sh SEE ALSO
+.Xr sliplogin 8
+.Sh HISTORY
+.Ud .
