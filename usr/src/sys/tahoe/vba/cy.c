@@ -1,4 +1,4 @@
-/*	cy.c	1.14	87/06/30	*/
+/*	cy.c	1.15	88/05/14	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -307,12 +307,12 @@ cyopen(dev, flag)
 	}
 	cycommand(dev, CY_SENSE, 1);
 	if ((yc->yc_status&CYS_OL) == 0) {	/* not on-line */
-		uprintf("yc%d: not online\n", ycunit);
+		uprintf("cy%d: not online\n", ycunit);
 		yc->yc_openf = 0;
 		return (EIO);
 	}
 	if ((flag&FWRITE) && (yc->yc_status&CYS_WP)) {
-		uprintf("yc%d: no write ring\n", ycunit);
+		uprintf("cy%d: no write ring\n", ycunit);
 		yc->yc_openf = 0;
 		return (EIO);
 	}
@@ -341,7 +341,8 @@ cyclose(dev, flag)
 	struct yc_softc *yc = &yc_softc[YCUNIT(dev)];
 
 	if (flag == FWRITE || (flag&FWRITE) && yc->yc_lastiow) {
-		cycommand(dev, CY_WEOF, 2);
+		cycommand(dev, CY_WEOF, 1);	/* can't use count with WEOF */
+		cycommand(dev, CY_WEOF, 1);
 		cycommand(dev, CY_SREV, 1);
 	}
 	if ((minor(dev)&T_NOREWIND) == 0)
@@ -772,7 +773,8 @@ cyintr(cyunit)
 		 * If error is not hard, and this was an i/o operation
 		 * retry up to 8 times.
 		 */
-		if (((1<<err)&CYER_SOFT) && state == SIO) {
+		if (state == SIO && (CYMASK(err) &
+		    ((bp->b_flags&B_READ) ? CYER_RSOFT : CYER_WSOFT))) {
 			if (++vm->um_tab.b_errcnt < 7) {
 				yc->yc_blkno++;
 				goto opcont;
