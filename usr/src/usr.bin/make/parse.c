@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -246,11 +246,9 @@ Parse_Error(type, va_alist)
 	va_list ap;
 	char *fmt;
 
-	if (type == PARSE_WARNING && noWarnings)
-		return;
 	(void)fprintf(stderr, "\"%s\", line %d: ", fname, lineno);
 	if (type == PARSE_WARNING)
-		(void)fprintf(stderr, "Warning: ");
+		(void)fprintf(stderr, "warning: ");
 	va_start(ap);
 	fmt = va_arg(ap, char *);
 	(void)vfprintf(stderr, fmt, ap);
