@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.9 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.10 (Berkeley) %G%
  */
 
 /*
@@ -145,6 +145,7 @@ idpip_input(m, ifp)
 		return;
 	}
 	ip = mtod(m, struct ip *);
+#ifndef	BBNNET
 	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
 		ip_stripoptions(ip, (struct mbuf *)0);
 		if (m->m_len < s) {
@@ -155,6 +156,7 @@ idpip_input(m, ifp)
 			ip = mtod(m, struct ip *);
 		}
 	}
+#endif
 
 	/*
 	 * Make mbuf data length reflect IDP length.
@@ -396,11 +398,13 @@ nsip_rtchange(dst)
 	register struct mbuf *m;
 	register struct ifnet_en *ifn;
 
-	for (m = nsip_list; m; m = m->m_next)
+	for (m = nsip_list; m; m = m->m_next) {
+		ifn = mtod(m, struct ifnet_en *);
 		if (ifn->ifen_dst.s_addr == dst->s_addr &&
 			ifn->ifen_route.ro_rt) {
 				RTFREE(ifn->ifen_route.ro_rt);
 				ifn->ifen_route.ro_rt = 0;
 		}
+	}
 }
 #endif
