@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	8.1 (Berkeley) %G%
+ *	@(#)ppi.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,8 @@
 #include <hp/dev/device.h>
 #include <hp300/dev/ppiioctl.h>
 
-int	ppiattach(), ppistart(), ppitimo();
+int	ppiattach(), ppistart();
+void	ppitimo();
 struct	driver ppidriver = {
 	ppiattach, "ppi", ppistart,
 };
@@ -126,8 +127,10 @@ ppistart(unit)
 #endif
 	ppi_softc[unit].sc_flags &= ~PPIF_DELAY;
 	wakeup(&ppi_softc[unit]);
+	return (0);
 }
 
+void
 ppitimo(unit)
 	int unit;
 {
@@ -189,7 +192,7 @@ ppirw(dev, uio)
 	sc->sc_flags |= PPIF_UIO;
 	if (sc->sc_timo > 0) {
 		sc->sc_flags |= PPIF_TIMO;
-		timeout(ppitimo, unit, sc->sc_timo);
+		timeout(ppitimo, (void *)unit, sc->sc_timo);
 	}
 	while (uio->uio_resid > 0) {
 		len = min(buflen, uio->uio_resid);
@@ -214,7 +217,7 @@ again:
 				       sc->sc_flags);
 #endif
 			if (sc->sc_flags & PPIF_TIMO) {
-				untimeout(ppitimo, unit);
+				untimeout(ppitimo, (void *)unit);
 				sc->sc_flags &= ~PPIF_TIMO;
 			}
 			splx(s);
@@ -271,7 +274,8 @@ again:
 		 */
 		if (sc->sc_delay > 0) {
 			sc->sc_flags |= PPIF_DELAY;
-			timeout(ppistart, unit, sc->sc_delay);
+			timeout((void (*)__P((void *)))ppistart, (void *)unit,
+			    sc->sc_delay);
 			error = tsleep(sc, PCATCH|PZERO+1, "hpib", 0);
 			if (error) {
 				splx(s);
@@ -292,11 +296,11 @@ again:
 	}
 	s = splsoftclock();
 	if (sc->sc_flags & PPIF_TIMO) {
-		untimeout(ppitimo, unit);
+		untimeout(ppitimo, (void *)unit);
 		sc->sc_flags &= ~PPIF_TIMO;
 	}
 	if (sc->sc_flags & PPIF_DELAY) {
-		untimeout(ppistart, unit);
+		untimeout((void (*)__P((void *)))ppistart, (void *)unit);
 		sc->sc_flags &= ~PPIF_DELAY;
 	}
 	splx(s);
