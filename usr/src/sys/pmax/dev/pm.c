@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pm.c	7.4 (Berkeley) %G%
+ *	@(#)pm.c	7.5 (Berkeley) %G%
  *
  *  devGraphics.c --
  *
@@ -637,6 +637,7 @@ pmopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	int s;
 
 	if (!initialized)
 		return (ENXIO);
@@ -654,6 +655,11 @@ pmopen(dev, flag)
 	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
 	pmu.scrInfo.qe.tcNext = 0;
 	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
+	s = spltty();
+	dcDivertXInput = pmKbdEvent;
+	dcMouseEvent = pmMouseEvent;
+	dcMouseButtons = pmMouseButtons;
+	splx(s);
 	return (0);
 }
 
