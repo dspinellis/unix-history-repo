@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)pl_main.c	2.2 85/04/23";
+static	char *sccsid = "@(#)pl_main.c	2.3 85/04/25";
 #endif
 
 #include "player.h"

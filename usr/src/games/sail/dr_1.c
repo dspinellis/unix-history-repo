@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.12 85/04/23";
+static	char *sccsid = "@(#)dr_1.c	2.13 85/04/25";
 #endif
 
 #include "driver.h"
@@ -382,7 +382,7 @@ next()
 				p = "Driver";
 			if (islower(*p))
 				*p = toupper(*p);
-			strncpy(bestship->file->captain, p,
+			(void) strncpy(bestship->file->captain, p,
 				sizeof bestship->file->captain);
 			bestship->file->captain
 				[sizeof bestship->file->captain - 1] = 0;
