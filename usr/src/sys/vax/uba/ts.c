@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.10 (Berkeley) %G%
+ *	@(#)ts.c	7.11 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -825,7 +825,7 @@ tsioctl(dev, cmd, data, flag)
 	register struct ts_softc *sc = &ts_softc[tsdinfo[tsunit]->ui_ctlr];
 	register struct buf *bp = &ctsbuf[TSUNIT(dev)];
 	register int callcount;
-	int fcount;
+	int fcount, error = 0;
 	struct mtop *mtop;
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
@@ -868,7 +868,10 @@ tsioctl(dev, cmd, data, flag)
 			    sc->sc_ts.t_sts.s_xs0&TS_BOT)
 				break;
 		}
-		return (geterror(bp));
+		if (bp->b_flags&B_ERROR)
+			if ((error = bp->b_error)==0)
+				return (EIO);
+		return (error);
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.10 (Berkeley) %G%
+ *	@(#)tm.c	7.11 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -856,7 +856,7 @@ tmioctl(dev, cmd, data, flag)
 	register struct te_softc *sc = &te_softc[teunit];
 	register struct buf *bp = &ctmbuf[TMUNIT(dev)];
 	register callcount;
-	int fcount;
+	int fcount, error = 0;
 	struct mtop *mtop;
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
@@ -902,7 +902,10 @@ tmioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || sc->sc_erreg&TMER_BOT)
 				break;
 		}
-		return (geterror(bp));
+		if (bp->b_flags&B_ERROR)
+			if ((error = bp->b_error)==0)
+				return (EIO);
+		return (error);
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
