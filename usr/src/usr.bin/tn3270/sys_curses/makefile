@@ -13,9 +13,9 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLC = termout.c
+ALLC = system.c termout.c
 
-ALLO = termout.o
+ALLO = system.o termout.o
 
 ALLH = terminal.h
 
@@ -27,7 +27,7 @@ clean:
 	rm -f $(ALLO) errs makefile.bak sys.lib
 
 print:
-	${PRINT} ${ALLC} ${ALLH}
+	${PRINT} ${ALLH} ${ALLC}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
@@ -61,6 +61,8 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
+system.o: ../general/general.h ../api/api.h ../apilib/api_exch.h
+system.o: ../general/globals.h
 termout.o: ../general/general.h terminal.h ../telnet.ext ../ascii/disp_asc.h
 termout.o: ../ctlr/hostctlr.h ../ctlr/inbound.ext ../ctlr/oia.h
 termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
