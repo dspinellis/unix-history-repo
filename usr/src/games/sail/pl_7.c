@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.2 83/11/08";
+static	char *sccsid = "@(#)pl_7.c	2.3 83/11/08";
 #endif
 
 #include "player.h"
@@ -33,10 +33,9 @@ initscreen()
 cleanupscreen()
 {
 	if (done_curses) {
+		(void) wmove(scroll_w, SCROLL_Y - 1, 0);
+		(void) wclrtoeol(scroll_w);
 		draw_screen();
-		(void) move(LINES - 1, 0);
-		(void) clrtoeol();
-		(void) refresh();
 		endwin();
 	}
 }
