@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)player.h	1.2 %G%";
+ * sccsid = "@(#)player.h	2.1 %G%";
  */
 #include <curses.h>
 #include "externs.h"

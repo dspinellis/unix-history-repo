@@ -1,6 +1,6 @@
 /*LINTLIBRARY*/
 #ifndef lint
-static	char *sccsid = "@(#)globals.c	1.8 83/10/31";
+static	char *sccsid = "@(#)globals.c	2.1 83/10/31";
 #endif
 
 #include "externs.h"

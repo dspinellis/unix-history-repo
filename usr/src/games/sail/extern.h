@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	1.9 83/10/28
+ * @(#)extern.h	2.1 83/10/31
  */
 #include <stdio.h>
 #include <signal.h>
