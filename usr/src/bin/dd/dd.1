@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dd.1	4.1 (Berkeley) %G%
+.\"	@(#)dd.1	5.1 (Berkeley) %G%
 .\"
-.TH DD 1 
+.TH DD 1  "18 January 1983"
 .UC 4
 .SH NAME
 dd \- convert and copy a file
@@ -74,9 +74,10 @@ input records before starting copy
 .ns
 .TP
 .RI files= n
-skip
+copy
 .I n
-input files before starting copy
+input files before terminating (makes sense only
+where input is a magtape or similar device).
 .br
 .ns
 .TP 
@@ -203,3 +204,8 @@ the CACM Nov, 1968.
 The `ibm' conversion, while less blessed as a standard,
 corresponds better to certain IBM print train conventions.
 There is no universal solution.
+.br
+One must specify ``conv=noerror,sync'' when copying
+raw disks with bad sectors to insure 
+.I dd
+stays synchronized.
