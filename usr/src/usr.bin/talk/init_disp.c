@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init_disp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)init_disp.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,8 +14,10 @@ static char sccsid[] = "@(#)init_disp.c	5.4 (Berkeley) %G%";
  * as well as the signal handling routines.
  */
 
-#include "talk.h"
+#include <sys/ioctl.h>
+#include <sys/ioctl_compat.h>
 #include <signal.h>
+#include "talk.h"
 
 /* 
  * Set up curses, catch the appropriate signals,
