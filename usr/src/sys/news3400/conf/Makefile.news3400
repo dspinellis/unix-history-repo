@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.8 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.9 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -20,8 +20,8 @@
 # -DUUDMA	compile in unibus tu58 pseudo-dma code
 #
 
-CC=	gcc -traditional -fno-builtin -nostdinc
-AS=	cc2.0 -I
+CC=	gcc -traditional-cpp -fno-builtin -nostdinc
+AS=	cc2.11 -I
 LD=	/usr/local/gnu/lib/gcc-lib/mips-sony-bsd/2.2.2/ld
 
 S=	../..
