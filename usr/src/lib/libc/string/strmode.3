@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strmode.3	5.3 (Berkeley) %G%
+.\"     @(#)strmode.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRMODE 3
@@ -25,10 +25,12 @@ converts a file
 .Xr stat 2 )
 into a symbolic string which is stored in the location referenced by
 .Fa bp .
-This stored string is eleven characters in length plus a trailing NULL.
+This stored string is eleven characters in length plus a trailing
+.Dv NULL .
 .Pp
 The first character is the inode type, and will be one of the following:
-.Bl -tag -width xxxx
+.Pp
+.Bl -tag -width flag -offset indent -compact
 .It \-
 regular file
 .It b
