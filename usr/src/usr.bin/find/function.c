@@ -9,13 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
+#include <sys/errno.h>
 #include <grp.h>
 #include <pwd.h>
 #include <fts.h>
@@ -60,6 +61,7 @@ find_parsenum(plan, option, str, endch)
 {
 	long value;
 	char *endchar;		/* pointer to character ending conversion */
+	void bad_arg();
     
 	/* determine comparison from leading + or - */
 	switch(*str) {
@@ -169,7 +171,7 @@ c_depth()
 	extern int depth;
 	PLAN *new;
     
-	depth = 1;
+	isdepth = 1;
 
 	NEW(T_DEPTH, f_always_true);
 	return(new);
@@ -192,9 +194,9 @@ f_exec(plan, entry)
 	FTSENT *entry;
 {
 	register int cnt;
-	char *find_subst();
 	union wait pstat;
 	pid_t pid, waitpid();
+	void find_subst();
 
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
 		if (plan->e_len[cnt])
@@ -232,14 +234,14 @@ c_exec(argvp, isok)
 	char ***argvp;
 	int isok;
 {
-	extern int relative;
 	PLAN *new;			/* node returned */
 	register int cnt;
 	register char **argv, **ap, *p;
+	void bad_arg();
 
-	if (!relative)
+	if (!isrelative)
 		ftsoptions |= FTS_NOCHDIR;
-	output_specified = 1;
+	isoutput = isstopdnx = 1;
     
 	NEW(T_EXEC, f_exec);
 	new->flags = isok;
@@ -389,6 +391,7 @@ c_group(gname)
 	PLAN *new;
 	struct group *g;
 	gid_t gid;
+	void bad_arg();
     
 	ftsoptions &= ~FTS_NOSTAT;
 
@@ -465,6 +468,8 @@ f_ls(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
+	void printlong();
+
 	printlong(entry->fts_path, entry->fts_accpath, &entry->fts_statb);
 	return(1);
 }
@@ -475,7 +480,7 @@ c_ls()
 	PLAN *new;
     
 	ftsoptions &= ~FTS_NOSTAT;
-	output_specified = 1;
+	isoutput = 1;
     
 	NEW(T_LS, f_ls);
 	return(new);
@@ -549,7 +554,9 @@ f_nogroup(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(group_from_gid(entry->fts_statb.st_gid, 1));
+	char *group_from_gid();
+
+	return(group_from_gid(entry->fts_statb.st_gid, 1) ? 1 : 0);
 }
  
 PLAN *
@@ -574,7 +581,9 @@ f_nouser(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(user_from_uid(entry->fts_statb.st_uid, 1));
+	char *user_from_uid();
+
+	return(user_from_uid(entry->fts_statb.st_uid, 1) ? 1 : 0);
 }
  
 PLAN *
@@ -616,6 +625,7 @@ c_perm(perm)
 {
 	PLAN *new;
 	mode_t *set, *setmode();
+	void bad_arg();
 
 	ftsoptions &= ~FTS_NOSTAT;
 
@@ -653,7 +663,7 @@ c_print()
 {
 	PLAN *new;
     
-	output_specified = 1;
+	isoutput = 1;
 
 	NEW(T_PRINT, f_print);
 	return(new);
@@ -671,7 +681,7 @@ f_prune(plan, entry)
 {
 	extern FTS *tree;
 
-	if (ftsset(tree, entry, FTS_SKIP)) {
+	if (fts_set(tree, entry, FTS_SKIP)) {
 		(void)fprintf(stderr,
 		    "find: %s: %s.\n", entry->fts_path, strerror(errno));
 		exit(1);
@@ -745,6 +755,7 @@ c_type(typestring)
 {
 	PLAN *new;
 	mode_t  mask;
+	void bad_arg();
     
 	ftsoptions &= ~FTS_NOSTAT;
 
@@ -800,6 +811,7 @@ c_user(username)
 	PLAN *new;
 	struct passwd *p;
 	uid_t uid;
+	void bad_arg();
     
 	ftsoptions &= ~FTS_NOSTAT;
 
@@ -827,7 +839,6 @@ c_xdev()
 {
 	PLAN *new;
     
-	ftsoptions &= ~FTS_NOSTAT;
 	ftsoptions |= FTS_XDEV;
 
 	NEW(T_XDEV, f_always_true);
