@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.31		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.32		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.31		%G%);
+SCCSID(@(#)usersmtp.c	3.32		%G%);
 
 
 
@@ -209,9 +209,9 @@ smtpfinish(m, e)
 		return (EX_UNAVAILABLE);
 	else if (r != 354)
 		return (EX_PROTOCOL);
-	(*e->e_puthdr)(SmtpOut, m, CurEnv);
-	fprintf(SmtpOut, "\n");
-	(*e->e_putbody)(SmtpOut, m, TRUE, CurEnv);
+	(*e->e_puthdr)(SmtpOut, m, CurEnv, TRUE);
+	fprintf(SmtpOut, "\r\n");
+	(*e->e_putbody)(SmtpOut, m, TRUE, CurEnv, TRUE);
 	smtpmessage(".");
 	r = reply();
 	if (r < 0 || REPLYTYPE(r) == 4)

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.53		%G%);
+SCCSID(@(#)savemail.c	3.54		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -294,6 +294,7 @@ returntosender(msg, returnto, sendbody)
 **		fp -- the output file.
 **		xdot -- if set, use the SMTP hidden dot algorithm.
 **		e -- the envelope we are working in.
+**		crlf -- set if we want CRLF's at the end of lines.
 **
 **	Returns:
 **		none
@@ -302,11 +303,12 @@ returntosender(msg, returnto, sendbody)
 **		Outputs the body of an error message.
 */
 
-errbody(fp, m, xdot, e)
+errbody(fp, m, xdot, e, crlf)
 	register FILE *fp;
 	register struct mailer *m;
 	bool xdot;
 	register ENVELOPE *e;
+	bool crlf;
 {
 	register FILE *xfile;
 	char buf[MAXLINE];
@@ -330,7 +332,7 @@ errbody(fp, m, xdot, e)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
-			putline(buf, fp, fullsmtp);
+			putline(buf, fp, crlf, fullsmtp);
 		(void) fclose(xfile);
 	}
 	errno = 0;
@@ -347,15 +349,15 @@ errbody(fp, m, xdot, e)
 		{
 			fprintf(fp, "\n   ----- Unsent message follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
+			putheader(fp, m, e->e_parent, crlf);
 			fprintf(fp, "\n");
-			putbody(fp, m, xdot, e->e_parent);
+			putbody(fp, m, xdot, e->e_parent, crlf);
 		}
 		else
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
+			putheader(fp, m, e->e_parent, crlf);
 		}
 	}
 	else

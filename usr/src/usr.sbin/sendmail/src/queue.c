@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.59		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.60		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.59		%G%);
+SCCSID(@(#)queue.c	3.60		%G%);
 
 /*
 **  Work queue.
@@ -88,7 +88,7 @@ queueup(e, queueall, announce)
 			return;
 		}
 		(void) chmod(e->e_df, FileMode);
-		(*e->e_putbody)(dfp, ProgMailer, FALSE, e);
+		(*e->e_putbody)(dfp, ProgMailer, FALSE, e, FALSE);
 		(void) fclose(dfp);
 		e->e_putbody = putbody;
 	}
@@ -159,7 +159,7 @@ queueup(e, queueall, announce)
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			commaize(h, h->h_value, tfp, bitset(EF_OLDSTYLE, e->e_flags),
-				 (MAILER *) NULL);
+				 (MAILER *) NULL, FALSE);
 		}
 		else
 			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);
