@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.17 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -105,6 +105,15 @@ indir(d, n, filesize)
 	}
 }
 
+dirdump(ip)
+	struct dinode *ip;
+{
+	/* watchout for dir inodes deleted and maybe reallocated */
+	if ((ip->di_mode & IFMT) != IFDIR)
+		return;
+	dump(ip);
+}
+
 dump(ip)
 	struct dinode *ip;
 {
@@ -120,6 +129,8 @@ dump(ip)
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
 	i = ip->di_mode & IFMT;
+	if (i == 0) /* free inode */
+		return;
 	if ((i != IFDIR && i != IFREG && i != IFLNK) || ip->di_size == 0) {
 		spclrec();
 		return;
