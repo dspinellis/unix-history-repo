@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_atan.c	5.1	%G%
+ *	@(#)r_atan.c	5.2	%G%
  */
 
-double r_atan(x)
+float r_atan(x)
 float *x;
 {
 double atan();

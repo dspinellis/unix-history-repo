@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_abs.c	5.1	%G%
+ *	@(#)r_abs.c	5.2	%G%
  */
 
-double r_abs(x)
+float r_abs(x)
 float *x;
 {
 if(*x >= 0)

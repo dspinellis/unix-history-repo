@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_sqrt.c	5.1	%G%
+ *	@(#)r_sqrt.c	5.2	%G%
  */
 
-double r_sqrt(x)
+float r_sqrt(x)
 float *x;
 {
 double sqrt();
