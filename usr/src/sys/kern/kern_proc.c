@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	8.6 (Berkeley) %G%
+ *	@(#)kern_proc.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -144,13 +144,13 @@ pgfind(pgid)
 /*
  * Move p to a new or existing process group (and session)
  */
+int
 enterpgrp(p, pgid, mksess)
 	register struct proc *p;
 	pid_t pgid;
 	int mksess;
 {
 	register struct pgrp *pgrp = pgfind(pgid);
-	int n;
 
 #ifdef DIAGNOSTIC
 	if (pgrp != NULL && mksess)	/* firewalls */
@@ -222,6 +222,7 @@ enterpgrp(p, pgid, mksess)
 /*
  * remove process from process group
  */
+int
 leavepgrp(p)
 	register struct proc *p;
 {

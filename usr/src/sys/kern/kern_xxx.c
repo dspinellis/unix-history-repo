@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_xxx.c	8.2 (Berkeley) %G%
+ *	@(#)kern_xxx.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -15,50 +15,54 @@
 #include <vm/vm.h>
 #include <sys/sysctl.h>
 
-struct reboot_args {
-	int	opt;
-};
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
+
 /* ARGSUSED */
+int
 reboot(p, uap, retval)
 	struct proc *p;
-	struct reboot_args *uap;
-	int *retval;
+	struct reboot_args /* {
+		syscallarg(int) opt;
+	} */ *uap;
+	register_t *retval;
 {
 	int error;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	boot(uap->opt);
+	boot(SCARG(uap, opt));
 	return (0);
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 
-struct gethostname_args {
-	char	*hostname;
-	u_int	len;
-};
 /* ARGSUSED */
-ogethostname(p, uap, retval)
+int
+compat_43_gethostname(p, uap, retval)
 	struct proc *p;
-	struct gethostname_args *uap;
-	int *retval;
+	struct compat_43_gethostname_args /* {
+		syscallarg(char *) hostname;
+		syscallarg(u_int) len;
+	} */ *uap;
+	register_t *retval;
 {
 	int name;
 
 	name = KERN_HOSTNAME;
-	return (kern_sysctl(&name, 1, uap->hostname, &uap->len, 0, 0));
+	return (kern_sysctl(&name, 1, SCARG(uap, hostname), &SCARG(uap, len),
+	    0, 0));
 }
 
-struct sethostname_args {
-	char	*hostname;
-	u_int	len;
-};
 /* ARGSUSED */
-osethostname(p, uap, retval)
+int
+compat_43_sethostname(p, uap, retval)
 	struct proc *p;
-	register struct sethostname_args *uap;
-	int *retval;
+	register struct compat_43_sethostname_args /* {
+		syscallarg(char *) hostname;
+		syscallarg(u_int) len;
+	} */ *uap;
+	register_t *retval;
 {
 	int name;
 	int error;
@@ -66,41 +70,42 @@ osethostname(p, uap, retval)
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	name = KERN_HOSTNAME;
-	return (kern_sysctl(&name, 1, 0, 0, uap->hostname, uap->len));
+	return (kern_sysctl(&name, 1, 0, 0, SCARG(uap, hostname),
+	    SCARG(uap, len)));
 }
 
-extern long hostid;
-
-struct gethostid_args {
-	int	dummy;
-};
 /* ARGSUSED */
-ogethostid(p, uap, retval)
+int
+compat_43_gethostid(p, uap, retval)
 	struct proc *p;
-	struct gethostid_args *uap;
-	int *retval;
+	void *uap;
+	register_t *retval;
 {
 
-	*(long *)retval = hostid;
+	*(int32_t *)retval = hostid;
 	return (0);
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
 #ifdef COMPAT_43
-struct sethostid_args {
-	long	hostid;
-};
 /* ARGSUSED */
-osethostid(p, uap, retval)
+int
+compat_43_sethostid(p, uap, retval)
 	struct proc *p;
-	struct sethostid_args *uap;
-	int *retval;
+	struct compat_43_sethostid_args /* {
+		syscallarg(int32_t) hostid;
+	} */ *uap;
+	register_t *retval;
 {
 	int error;
 
 }
 
-oquota()
+int
+compat_43_quota(p, uap, retval)
+	struct proc *p;
+	void *uap;
+	register_t *retval;
 {
 
 	return (ENOSYS);
