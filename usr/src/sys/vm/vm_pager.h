@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.h	7.1 (Berkeley) %G%
+ *	@(#)vm_pager.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,14 +20,6 @@
 #ifndef	_VM_PAGER_
 #define	_VM_PAGER_
 
-#ifdef KERNEL
-#include "types.h"
-#include "queue.h"
-#else
-#include <sys/types.h>
-#include <sys/queue.h>
-#endif
-
 struct	pager_struct {
 	queue_head_t	pg_list;	/* links for list management */
 	caddr_t		pg_handle;	/* external handle (vp, dev, fp) */
@@ -36,9 +28,6 @@ struct	pager_struct {
 	caddr_t		pg_data;	/* private pager data */
 };
 typedef	struct pager_struct *vm_pager_t;
-
-#define	vm_pager_null	((vm_pager_t) 0)	/* XXX MACH compat */
-#define	VM_PAGER_NULL	((vm_pager_t) 0)
 
 /* pager types */
 #define PG_DFLT		-1
@@ -54,7 +43,6 @@ struct	pagerops {
 	int		(*pgo_putpage)();	/* put (write) page */
 	boolean_t  	(*pgo_haspage)();	/* does pager have page? */
 };
-#define PAGER_OPS_NULL	((struct pagerops *)0)
 
 /*
  * get/put return values

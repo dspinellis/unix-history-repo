@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_page.h	7.1 (Berkeley) %G%
+ *	@(#)vm_page.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,11 +19,6 @@
 
 #ifndef	_VM_PAGE_
 #define	_VM_PAGE_
-
-#include "../vm/vm_param.h"
-#include "../vm/vm_object.h"
-#include "../vm/vm_prot.h"
-#include "lock.h"
 
 /*
  *	Management of resident (logical) pages.
@@ -91,8 +86,6 @@ struct vm_page {
 };
 
 typedef struct vm_page	*vm_page_t;
-
-#define	VM_PAGE_NULL		((vm_page_t) 0)
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \

@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_object.h	7.1 (Berkeley) %G%
+ *	@(#)vm_object.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,17 +20,7 @@
 #ifndef	_VM_OBJECT_
 #define	_VM_OBJECT_
 
-#ifdef KERNEL
-#include "types.h"
-#include "lock.h"
-#include "queue.h"
-#include "../vm/vm_pager.h"
-#else
-#include <sys/types.h>
-#include <sys/lock.h>
-#include <sys/queue.h>
 #include <vm/vm_pager.h>
-#endif
 
 /*
  *	Types defined:
@@ -88,8 +78,6 @@ vm_object_t	kmem_object;
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
 #endif	KERNEL
-
-#define	VM_OBJECT_NULL		((vm_object_t) 0)
 
 /*
  *	Declare procedures that operate on VM objects.

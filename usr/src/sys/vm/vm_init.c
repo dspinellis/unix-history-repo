@@ -10,20 +10,18 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_init.c	7.1 (Berkeley) %G%
+ *	@(#)vm_init.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	Initialize the Virtual Memory subsystem.
  */
 
-#include "types.h"
-#include "../vm/vm_param.h"
-#include "lock.h"
-#include "../vm/vm_object.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_kern.h"
+#include "param.h"
+
+#include "vm.h"
+#include "vm_page.h"
+#include "vm_kern.h"
 
 /*
  *	vm_init initializes the virtual memory system.
@@ -48,7 +46,7 @@ void vm_mem_init()
 	 * Initialize other VM packages
 	 */
 	vm_object_init();
-	vm_map_init();
+	vm_map_startup();
 	kmem_init(virtual_avail, virtual_end);
 	pmap_init(avail_start, avail_end);
 	vm_pager_init();

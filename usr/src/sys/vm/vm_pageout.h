@@ -10,14 +10,12 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_pageout.h	7.1 (Berkeley) %G%
+ *	@(#)vm_pageout.h	7.2 (Berkeley) %G%
  */
 
 /*
  *	Header file for pageout daemon.
  */
-
-#include "lock.h"
 
 /*
  *	Exported data structures.

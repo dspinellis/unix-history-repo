@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
  *
- *	@(#)vm_unix.c	7.1 (Berkeley) %G%
+ *	@(#)vm_unix.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,11 +19,10 @@
  */
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "proc.h"
+#include "resourcevar.h"
 
-#include "../vm/vm_param.h"
-#include "machine/vmparam.h"
+#include "vm.h"
 
 /* ARGSUSED */
 obreak(p, uap, retval)
@@ -33,61 +32,64 @@ obreak(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct vmspace *vm = p->p_vmspace;
 	vm_offset_t new, old;
 	int rv;
 	register int diff;
 
-	old = (vm_offset_t)u.u_daddr;
+	old = (vm_offset_t)vm->vm_daddr;
 	new = round_page(uap->nsiz);
-	if ((int)(new - old) > u.u_rlimit[RLIMIT_DATA].rlim_cur)
+	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
 		return(ENOMEM);
-	old = round_page(old + ctob(u.u_dsize));
+	old = round_page(old + ctob(vm->vm_dsize));
 	diff = new - old;
 	if (diff > 0) {
-		rv = vm_allocate(p->p_map, &old, diff, FALSE);
+		rv = vm_allocate(&vm->vm_map, &old, diff, FALSE);
 		if (rv != KERN_SUCCESS) {
 			uprintf("sbrk: grow failed, return = %d\n", rv);
 			return(ENOMEM);
 		}
-		u.u_dsize += btoc(diff);
+		vm->vm_dsize += btoc(diff);
 	} else if (diff < 0) {
 		diff = -diff;
-		rv = vm_deallocate(p->p_map, new, diff);
+		rv = vm_deallocate(&vm->vm_map, new, diff);
 		if (rv != KERN_SUCCESS) {
 			uprintf("sbrk: shrink failed, return = %d\n", rv);
 			return(ENOMEM);
 		}
-		u.u_dsize -= btoc(diff);
+		vm->vm_dsize -= btoc(diff);
 	}
 	return(0);
 }
 
 /*
- * grow the stack to include the SP
- * true return if successful.
+ * Enlarge the "stack segment" to include the specified
+ * stack pointer for the process.
  */
-grow(sp)
+grow(p, sp)
+	struct proc *p;
 	unsigned sp;
 {
+	register struct vmspace *vm = p->p_vmspace;
 	register int si;
 
 	/*
 	 * For user defined stacks (from sendsig).
 	 */
-	if (sp < (unsigned)u.u_maxsaddr)
+	if (sp < (unsigned)vm->vm_maxsaddr)
 		return (0);
 	/*
 	 * For common case of already allocated (from trap).
 	 */
-	if (sp >= USRSTACK-ctob(u.u_ssize))
+	if (sp >= USRSTACK - ctob(vm->vm_ssize))
 		return (1);
 	/*
 	 * Really need to check vs limit and increment stack size if ok.
 	 */
-	si = clrnd(btoc(USRSTACK-sp) - u.u_ssize);
-	if (u.u_ssize+si > btoc(u.u_rlimit[RLIMIT_STACK].rlim_cur))
+	si = clrnd(btoc(USRSTACK-sp) - vm->vm_ssize);
+	if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur))
 		return (0);
-	u.u_ssize += si;
+	vm->vm_ssize += si;
 	return (1);
 }
 
@@ -100,4 +102,5 @@ ovadvise(p, uap, retval)
 	int *retval;
 {
 
+	return (EINVAL);
 }

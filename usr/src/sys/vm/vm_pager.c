@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_pager.c	7.1 (Berkeley) %G%
+ *	@(#)vm_pager.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,35 +19,34 @@
  */
 
 #include "param.h"
-#include "queue.h"
 #include "malloc.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_pager.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_prot.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_kern.h"
+#include "vm.h"
+#include "vm_page.h"
+#include "vm_kern.h"
 
-#include "../vm/pmap.h"
+#ifdef hp300
+#include "../hp300/hp300/pte.h"			/* XXX XXX XXX */
+#endif
 
 #include "swappager.h"
+
 #if NSWAPPAGER > 0
 extern struct pagerops swappagerops;
 #else
-#define	swappagerops	PAGER_OPS_NULL
+#define	swappagerops	NULL
 #endif
 #include "vnodepager.h"
 #if NVNODEPAGER > 0
 extern struct pagerops vnodepagerops;
 #else
-#define	vnodepagerops	PAGER_OPS_NULL
+#define	vnodepagerops	NULL
 #endif
 #include "devpager.h"
 #if NDEVPAGER > 0
 extern struct pagerops devicepagerops;
 #else
-#define	devicepagerops	PAGER_OPS_NULL
+#define	devicepagerops	NULL
 #endif
 
 struct pagerops *pagertab[] = {
@@ -57,7 +56,7 @@ struct pagerops *pagertab[] = {
 };
 int npagers = sizeof (pagertab) / sizeof (pagertab[0]);
 
-struct pagerops *dfltpagerops = PAGER_OPS_NULL;	/* default pager */
+struct pagerops *dfltpagerops = NULL;	/* default pager */
 
 /*
  * Kernel address space for mapping pages.
@@ -82,7 +81,7 @@ vm_pager_init()
 	 */
 	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
 		(*(*pgops)->pgo_init)();
-	if (dfltpagerops == PAGER_OPS_NULL)
+	if (dfltpagerops == NULL)
 		panic("no default pager");
 }
 
@@ -107,7 +106,7 @@ void
 vm_pager_deallocate(pager)
 	vm_pager_t	pager;
 {
-	if (pager == vm_pager_null)
+	if (pager == NULL)
 		panic("vm_pager_deallocate: null pager");
 
 	VM_PAGER_DEALLOC(pager);
@@ -120,7 +119,7 @@ vm_pager_get(pager, m, sync)
 {
 	extern boolean_t vm_page_zero_fill();
 
-	if (pager == vm_pager_null)
+	if (pager == NULL)
 		return(vm_page_zero_fill(m) ? VM_PAGER_OK : VM_PAGER_FAIL);
 	return(VM_PAGER_GET(pager, m, sync));
 }
@@ -130,7 +129,7 @@ vm_pager_put(pager, m, sync)
 	vm_page_t	m;
 	boolean_t	sync;
 {
-	if (pager == vm_pager_null)
+	if (pager == NULL)
 		panic("vm_pager_put: null pager");
 	return(VM_PAGER_PUT(pager, m, sync));
 }
@@ -140,7 +139,7 @@ vm_pager_has_page(pager, offset)
 	vm_pager_t	pager;
 	vm_offset_t	offset;
 {
-	if (pager == vm_pager_null)
+	if (pager == NULL)
 		panic("vm_pager_has_page");
 	return(VM_PAGER_HASPAGE(pager, offset));
 }
@@ -155,7 +154,7 @@ vm_pager_sync()
 	struct pagerops **pgops;
 
 	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		(*(*pgops)->pgo_putpage)(VM_PAGER_NULL, VM_PAGE_NULL, FALSE);
+		(*(*pgops)->pgo_putpage)(NULL, NULL, FALSE);
 }
 
 vm_offset_t
@@ -165,7 +164,7 @@ vm_pager_map_page(m)
 	vm_offset_t kva;
 
 	kva = kmem_alloc_wait(pager_map, PAGE_SIZE);
-#if 1
+#ifdef hp300
 	/*
 	 * XXX: cannot use pmap_enter as the mapping would be
 	 * removed by a pmap_remove_all().
@@ -183,7 +182,7 @@ void
 vm_pager_unmap_page(kva)
 	vm_offset_t	kva;
 {
-#if 1
+#ifdef hp300
 	*(int *)kvtopte(kva) = PG_NV;
 	TBIS(kva);
 #endif
@@ -203,7 +202,7 @@ vm_pager_lookup(list, handle)
 			return(pager);
 		pager = (vm_pager_t) queue_next(&pager->pg_list);
 	}
-	return(VM_PAGER_NULL);
+	return(NULL);
 }
 
 /*
@@ -214,7 +213,7 @@ pager_cache(object, should_cache)
 	vm_object_t	object;
 	boolean_t	should_cache;
 {
-	if (object == VM_OBJECT_NULL)
+	if (object == NULL)
 		return(KERN_INVALID_ARGUMENT);
 
 	vm_object_cache_lock();

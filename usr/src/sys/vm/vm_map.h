@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_map.h	7.1 (Berkeley) %G%
+ *	@(#)vm_map.h	7.1 (Berkeley) 12/5/90
  */
 
 /*
@@ -19,22 +19,6 @@
 
 #ifndef	_VM_MAP_
 #define	_VM_MAP_
-
-#ifdef KERNEL
-#include "types.h"
-#include "lock.h"
-#include "../vm/pmap.h"
-#include "../vm/vm_prot.h"
-#include "../vm/vm_inherit.h"
-#include "../vm/vm_object.h"
-#else
-#include <sys/types.h>
-#include <sys/lock.h>
-#include <vm/pmap.h>
-#include <vm/vm_prot.h>
-#include <vm/vm_inherit.h>
-#include <vm/vm_object.h>
-#endif
 
 /*
  *	Types defined:
@@ -85,8 +69,6 @@ struct vm_map_entry {
 
 typedef struct vm_map_entry	*vm_map_entry_t;
 
-#define	VM_MAP_ENTRY_NULL	((vm_map_entry_t) 0)
-
 /*
  *	Maps are doubly-linked lists of map entries, kept sorted
  *	by address.  A single hint is provided to start
@@ -94,10 +76,10 @@ typedef struct vm_map_entry	*vm_map_entry_t;
  *	insertion, or removal.
  */
 struct vm_map {
+	struct pmap *		pmap;		/* Physical map */
 	lock_data_t		lock;		/* Lock for map data */
 	struct vm_map_entry	header;		/* List of entries */
 	int			nentries;	/* Number of entries */
-	pmap_t			pmap;		/* Physical map */
 	vm_size_t		size;		/* virtual size */
 	boolean_t		is_main_map;	/* Am I a main map? */
 	int			ref_count;	/* Reference count */
@@ -112,8 +94,6 @@ struct vm_map {
 };
 
 typedef	struct vm_map	*vm_map_t;
-
-#define		VM_MAP_NULL	((vm_map_t) 0)
 
 /*
  *	Map versions are used to validate a previous lookup attempt.
@@ -156,7 +136,6 @@ void		vm_map_lookup_done();
 int		vm_map_protect();
 int		vm_map_inherit();
 int		vm_map_copy();
-vm_map_t	vm_map_fork();
 void		vm_map_print();
 void		vm_map_copy_entry();
 boolean_t	vm_map_verify();

@@ -10,20 +10,18 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_pageout.c	7.1 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	The proverbial page-out daemon.
  */
 
-#include "types.h"
-#include "../vm/vm_page.h"
-#include "../vm/pmap.h"
-#include "../vm/vm_object.h"
-#include "../vm/vm_pageout.h"
-#include "../vm/vm_statistics.h"
-#include "../vm/vm_param.h"
+#include "param.h"
+
+#include "vm.h"
+#include "vm_page.h"
+#include "vm_pageout.h"
 
 int	vm_pages_needed;		/* Event on which pageout daemon sleeps */
 int	vm_pageout_free_min = 0;	/* Stop pageout to wait for pagers at this free level */
@@ -184,12 +182,12 @@ vm_pageout_scan()
 				 *	later.
 				 */
 
-				if ((pager = object->pager) == vm_pager_null) {
+				if ((pager = object->pager) == NULL) {
 					pager = vm_pager_allocate(PG_DFLT,
 								  (caddr_t)0,
 								  object->size,
 								  VM_PROT_ALL);
-					if (pager != vm_pager_null) {
+					if (pager != NULL) {
 						vm_object_setpager(object,
 							pager, 0, FALSE);
 					}
