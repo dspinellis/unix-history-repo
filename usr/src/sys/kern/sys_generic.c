@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.19 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -77,7 +77,7 @@ read(p, uap, retval)
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_GENIO) && error == 0)
-		ktrgenio(p->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt);
+		ktrgenio(p->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt, error);
 #endif
 	*retval = cnt;
 	RETURN (error);
@@ -155,7 +155,8 @@ readv(p, uap, retval)
 #ifdef KTRACE
 	if (ktriov != NULL) {
 		if (error == 0)
-			ktrgenio(p->p_tracep, uap->fdes, UIO_READ, ktriov, cnt);
+			ktrgenio(p->p_tracep, uap->fdes, UIO_READ, ktriov,
+			    cnt, error);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
@@ -216,7 +217,7 @@ write(p, uap, retval)
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_GENIO) && error == 0)
 		ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
-		    &ktriov, cnt);
+		    &ktriov, cnt, error);
 #endif
 	*retval = cnt;
 	RETURN (error);
@@ -298,7 +299,7 @@ writev(p, uap, retval)
 	if (ktriov != NULL) {
 		if (error == 0)
 			ktrgenio(p->p_tracep, uap->fdes, UIO_WRITE,
-				ktriov, cnt);
+				ktriov, cnt, error);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
