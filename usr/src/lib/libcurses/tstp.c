@@ -5,7 +5,7 @@
 /*
  * handle stop and start signals
  *
- * %G% (Berkeley) @(#)tstp.c	1.2
+ * %G% (Berkeley) @(#)tstp.c	1.3
  */
 tstp() {
 
