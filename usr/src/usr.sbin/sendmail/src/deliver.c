@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -21,6 +21,497 @@ static char sccsid[] = "@(#)deliver.c	6.54 (Berkeley) %G%";
 #endif
 
 /*
+**  SENDALL -- actually send all the messages.
+**
+**	Parameters:
+**		e -- the envelope to send.
+**		mode -- the delivery mode to use.  If SM_DEFAULT, use
+**			the current e->e_sendmode.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Scans the send lists and sends everything it finds.
+**		Delivers any appropriate error messages.
+**		If we are running in a non-interactive mode, takes the
+**			appropriate action.
+*/
+
+sendall(e, mode)
+	ENVELOPE *e;
+	char mode;
+{
+	register ADDRESS *q;
+	char *owner;
+	int otherowners;
+	register ENVELOPE *ee;
+	ENVELOPE *splitenv = NULL;
+
+	/* determine actual delivery mode */
+	if (mode == SM_DEFAULT)
+	{
+		extern bool shouldqueue();
+
+		mode = e->e_sendmode;
+		if (mode != SM_VERIFY &&
+		    shouldqueue(e->e_msgpriority, e->e_ctime))
+			mode = SM_QUEUE;
+	}
+
+	if (tTd(13, 1))
+	{
+		printf("\nSENDALL: mode %c, e_from ", mode);
+		printaddr(&e->e_from, FALSE);
+		printf("sendqueue:\n");
+		printaddr(e->e_sendqueue, TRUE);
+	}
+
+	/*
+	**  Do any preprocessing necessary for the mode we are running.
+	**	Check to make sure the hop count is reasonable.
+	**	Delete sends to the sender in mailing lists.
+	*/
+
+	CurEnv = e;
+
+	if (e->e_hopcount > MaxHopCount)
+	{
+		errno = 0;
+		syserr("554 too many hops %d (%d max): from %s, to %s",
+			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
+			e->e_sendqueue->q_paddr);
+		return;
+	}
+
+	if (!MeToo)
+	{
+		extern ADDRESS *recipient();
+
+		if (tTd(13, 5))
+		{
+			printf("sendall: QDONTSEND ");
+			printaddr(&e->e_from, FALSE);
+		}
+		e->e_from.q_flags |= QDONTSEND;
+		(void) recipient(&e->e_from, &e->e_sendqueue, e);
+	}
+
+	/*
+	**  Handle alias owners.
+	**
+	**	We scan up the q_alias chain looking for owners.
+	**	We discard owners that are the same as the return path.
+	*/
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		register struct address *a;
+
+		for (a = q; a != NULL && a->q_owner == NULL; a = a->q_alias)
+			continue;
+		if (a != NULL)
+			q->q_owner = a->q_owner;
+				
+		if (q->q_owner != NULL &&
+		    !bitset(QDONTSEND, q->q_flags) &&
+		    strcmp(q->q_owner, e->e_from.q_paddr) == 0)
+			q->q_owner = NULL;
+	}
+		
+	owner = "";
+	otherowners = 1;
+	while (owner != NULL && otherowners > 0)
+	{
+		owner = NULL;
+		otherowners = 0;
+
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (bitset(QDONTSEND, q->q_flags))
+				continue;
+
+			if (q->q_owner != NULL)
+			{
+				if (owner == NULL)
+					owner = q->q_owner;
+				else if (owner != q->q_owner)
+				{
+					if (strcmp(owner, q->q_owner) == 0)
+					{
+						/* make future comparisons cheap */
+						q->q_owner = owner;
+					}
+					else
+					{
+						otherowners++;
+					}
+					owner = q->q_owner;
+				}
+			}
+			else
+			{
+				otherowners++;
+			}
+		}
+
+		if (owner != NULL && otherowners > 0)
+		{
+			extern HDR *copyheader();
+			extern ADDRESS *copyqueue();
+
+			/*
+			**  Split this envelope into two.
+			*/
+
+			ee = (ENVELOPE *) xalloc(sizeof(ENVELOPE));
+			*ee = *e;
+			ee->e_id = NULL;
+			(void) queuename(ee, '\0');
+
+			if (tTd(13, 1))
+				printf("sendall: split %s into %s\n",
+					e->e_id, ee->e_id);
+
+			ee->e_header = copyheader(e->e_header);
+			ee->e_sendqueue = copyqueue(e->e_sendqueue);
+			ee->e_errorqueue = copyqueue(e->e_errorqueue);
+			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
+			setsender(owner, ee, NULL, TRUE);
+			if (tTd(13, 5))
+			{
+				printf("sendall(split): QDONTSEND ");
+				printaddr(&ee->e_from, FALSE);
+			}
+			ee->e_from.q_flags |= QDONTSEND;
+			ee->e_dfp = NULL;
+			ee->e_xfp = NULL;
+			ee->e_lockfp = NULL;
+			ee->e_df = NULL;
+			ee->e_errormode = EM_MAIL;
+			ee->e_sibling = splitenv;
+			splitenv = ee;
+			
+			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+				if (q->q_owner == owner)
+					q->q_flags |= QDONTSEND;
+			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
+				if (q->q_owner != owner)
+					q->q_flags |= QDONTSEND;
+
+			if (e->e_df != NULL && mode != SM_VERIFY)
+			{
+				ee->e_dfp = NULL;
+				ee->e_df = newstr(queuename(ee, 'd'));
+				if (link(e->e_df, ee->e_df) < 0)
+				{
+					syserr("sendall: link(%s, %s)",
+						e->e_df, ee->e_df);
+				}
+			}
+
+			if (mode != SM_VERIFY)
+				openxscript(ee);
+#ifdef LOG
+			if (LogLevel > 4)
+				syslog(LOG_INFO, "%s: clone %s",
+					ee->e_id, e->e_id);
+#endif
+		}
+	}
+
+	if (owner != NULL)
+	{
+		setsender(owner, e, NULL, TRUE);
+		if (tTd(13, 5))
+		{
+			printf("sendall(owner): QDONTSEND ");
+			printaddr(&e->e_from, FALSE);
+		}
+		e->e_from.q_flags |= QDONTSEND;
+		e->e_errormode = EM_MAIL;
+	}
+
+# ifdef QUEUE
+	if ((mode == SM_QUEUE || mode == SM_FORK ||
+	     (mode != SM_VERIFY && SuperSafe)) &&
+	    !bitset(EF_INQUEUE, e->e_flags))
+	{
+		/* be sure everything is instantiated in the queue */
+		queueup(e, TRUE, mode == SM_QUEUE);
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+			queueup(ee, TRUE, mode == SM_QUEUE);
+	}
+#endif /* QUEUE */
+
+	if (splitenv != NULL)
+	{
+		if (tTd(13, 1))
+		{
+			printf("\nsendall: Split queue; remaining queue:\n");
+			printaddr(e->e_sendqueue, TRUE);
+		}
+
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+		{
+			CurEnv = ee;
+			sendenvelope(ee, mode);
+		}
+
+		CurEnv = e;
+	}
+	sendenvelope(e, mode);
+
+	for (; splitenv != NULL; splitenv = splitenv->e_sibling)
+		dropenvelope(splitenv);
+}
+
+sendenvelope(e, mode)
+	register ENVELOPE *e;
+	char mode;
+{
+	bool oldverbose;
+	int pid;
+	register ADDRESS *q;
+#ifdef LOCKF
+	struct flock lfd;
+#endif
+
+	oldverbose = Verbose;
+	switch (mode)
+	{
+	  case SM_VERIFY:
+		Verbose = TRUE;
+		break;
+
+	  case SM_QUEUE:
+  queueonly:
+		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+		return;
+
+	  case SM_FORK:
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);
+
+# ifdef LOCKF
+		/*
+		**  Since lockf has the interesting semantic that the
+		**  lock is lost when we fork, we have to risk losing
+		**  the lock here by closing before the fork, and then
+		**  trying to get it back in the child.
+		*/
+
+		if (e->e_lockfp != NULL)
+		{
+			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+			e->e_lockfp = NULL;
+		}
+# endif /* LOCKF */
+
+		pid = fork();
+		if (pid < 0)
+		{
+			goto queueonly;
+		}
+		else if (pid > 0)
+		{
+			/* be sure we leave the temp files to our child */
+			e->e_id = e->e_df = NULL;
+# ifndef LOCKF
+			if (e->e_lockfp != NULL)
+			{
+				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+				e->e_lockfp = NULL;
+			}
+# endif
+
+			/* close any random open files in the envelope */
+			if (e->e_dfp != NULL)
+			{
+				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
+				e->e_dfp = NULL;
+			}
+			if (e->e_xfp != NULL)
+			{
+				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
+				e->e_xfp = NULL;
+			}
+			return;
+		}
+
+		/* double fork to avoid zombies */
+		if (fork() > 0)
+			exit(EX_OK);
+
+		/* be sure we are immune from the terminal */
+		disconnect(FALSE, e);
+
+# ifdef LOCKF
+		/*
+		**  Now try to get our lock back.
+		*/
+
+		lfd.l_type = F_WRLCK;
+		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
+		if (e->e_lockfp == NULL ||
+		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
+		{
+			/* oops....  lost it */
+			if (tTd(13, 1))
+				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
+					e->e_id, e->e_lockfp, errstring(errno));
+
+# ifdef LOG
+			if (LogLevel > 29)
+				syslog(LOG_NOTICE, "%s: lost lock: %m",
+					e->e_id);
+# endif /* LOG */
+			exit(EX_OK);
+		}
+# endif /* LOCKF */
+
+		/*
+		**  Close any cached connections.
+		**
+		**	We don't send the QUIT protocol because the parent
+		**	still knows about the connection.
+		**
+		**	This should only happen when delivering an error
+		**	message.
+		*/
+
+		mci_flush(FALSE, NULL);
+
+		break;
+	}
+
+	/*
+	**  Run through the list and send everything.
+	*/
+
+	e->e_nsent = 0;
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (mode == SM_VERIFY)
+		{
+			e->e_to = q->q_paddr;
+			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
+				message("deliverable");
+		}
+		else if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
+		{
+# ifdef QUEUE
+			/*
+			**  Checkpoint the send list every few addresses
+			*/
+
+			if (e->e_nsent >= CheckpointInterval)
+			{
+				queueup(e, TRUE, FALSE);
+				e->e_nsent = 0;
+			}
+# endif /* QUEUE */
+			(void) deliver(e, q);
+		}
+	}
+	Verbose = oldverbose;
+
+	/*
+	**  Now run through and check for errors.
+	*/
+
+	if (mode == SM_VERIFY)
+	{
+		return;
+	}
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (tTd(13, 3))
+		{
+			printf("Checking ");
+			printaddr(q, FALSE);
+		}
+
+		/* only send errors if the message failed */
+		if (!bitset(QBADADDR, q->q_flags))
+			continue;
+
+		e->e_flags |= EF_FATALERRS;
+
+		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
+			(void) sendtolist(e->e_from.q_paddr, NULL,
+					  &e->e_errorqueue, e);
+	}
+
+	if (mode == SM_FORK)
+		finis();
+}
+/*
+**  DOFORK -- do a fork, retrying a couple of times on failure.
+**
+**	This MUST be a macro, since after a vfork we are running
+**	two processes on the same stack!!!
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		From a macro???  You've got to be kidding!
+**
+**	Side Effects:
+**		Modifies the ==> LOCAL <== variable 'pid', leaving:
+**			pid of child in parent, zero in child.
+**			-1 on unrecoverable error.
+**
+**	Notes:
+**		I'm awfully sorry this looks so awful.  That's
+**		vfork for you.....
+*/
+
+# define NFORKTRIES	5
+
+# ifndef FORK
+# define FORK	fork
+# endif
+
+# define DOFORK(fORKfN) \
+{\
+	register int i;\
+\
+	for (i = NFORKTRIES; --i >= 0; )\
+	{\
+		pid = fORKfN();\
+		if (pid >= 0)\
+			break;\
+		if (i > 0)\
+			sleep((unsigned) NFORKTRIES - i);\
+	}\
+}
+/*
+**  DOFORK -- simple fork interface to DOFORK.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		pid of child in parent.
+**		zero in child.
+**		-1 on error.
+**
+**	Side Effects:
+**		returns twice, once in parent and once in child.
+*/
+
+dofork()
+{
+	register int pid;
+
+	DOFORK(fork);
+	return (pid);
+}
+/*
 **  DELIVER -- Deliver a message to a list of addresses.
 **
 **	This routine delivers to everyone on the same host as the
@@ -59,6 +550,10 @@ deliver(e, firstto)
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	int rcode;			/* response code */
 	char *firstsig;			/* signature of firstto */
+	int pid;
+	char *curhost;
+	int mpvect[2];
+	int rpvect[2];
 	char *pv[MAXPV+1];
 	char tobuf[TOBUFSIZE];		/* text line of to people */
 	char buf[MAXNAME];
@@ -66,8 +561,8 @@ deliver(e, firstto)
 	extern int checkcompat();
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
-	extern MCI *openmailer();
 	extern char *hostsignature();
+	extern FILE *fdopen();
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -378,14 +873,313 @@ deliver(e, firstto)
 	if (ConfigLevel < 2)
 		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
 #endif
-	mci = openmailer(m, pv, ctladdr, clever, e);
-	if (mci == NULL)
+
+	if (tTd(11, 1))
 	{
-		/* catastrophic error */
-		rcode = EX_OSERR;
-		goto give_up;
+		printf("openmailer:");
+		printav(pv);
 	}
-	else if (mci->mci_state != MCIS_OPEN)
+	errno = 0;
+
+	CurHostName = m->m_mailer;
+
+	/*
+	**  Deal with the special case of mail handled through an IPC
+	**  connection.
+	**	In this case we don't actually fork.  We must be
+	**	running SMTP for this to work.  We will return a
+	**	zero pid to indicate that we are running IPC.
+	**  We also handle a debug version that just talks to stdin/out.
+	*/
+
+	curhost = NULL;
+
+	/* check for Local Person Communication -- not for mortals!!! */
+	if (strcmp(m->m_mailer, "[LPC]") == 0)
+	{
+		mci = (MCI *) xalloc(sizeof *mci);
+		bzero((char *) mci, sizeof *mci);
+		mci->mci_in = stdin;
+		mci->mci_out = stdout;
+		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
+		mci->mci_mailer = m;
+	}
+	else if (strcmp(m->m_mailer, "[IPC]") == 0 ||
+		 strcmp(m->m_mailer, "[TCP]") == 0)
+	{
+#ifdef DAEMON
+		register int i;
+		register u_short port;
+		extern MCI *mci_get();
+		extern char *hostsignature();
+
+		CurHostName = pv[1];
+		curhost = hostsignature(m, pv[1], e);
+
+		if (curhost == NULL || curhost[0] == '\0')
+		{
+			syserr("null signature");
+			rcode = EX_OSERR;
+			goto give_up;
+		}
+
+		if (!clever)
+		{
+			syserr("554 non-clever IPC");
+			rcode = EX_OSERR;
+			goto give_up;
+		}
+		if (pv[2] != NULL)
+			port = atoi(pv[2]);
+		else
+			port = 0;
+tryhost:
+		mci = NULL;
+		while (*curhost != '\0')
+		{
+			register char *p;
+			static char hostbuf[MAXNAME];
+
+			mci = NULL;
+
+			/* pull the next host from the signature */
+			p = strchr(curhost, ':');
+			if (p == NULL)
+				p = &curhost[strlen(curhost)];
+			strncpy(hostbuf, curhost, p - curhost);
+			hostbuf[p - curhost] = '\0';
+			if (*p != '\0')
+				p++;
+			curhost = p;
+
+			/* see if we already know that this host is fried */
+			CurHostName = hostbuf;
+			mci = mci_get(hostbuf, m);
+			if (mci->mci_state != MCIS_CLOSED)
+			{
+				if (tTd(11, 1))
+				{
+					printf("openmailer: ");
+					mci_dump(mci);
+				}
+				CurHostName = mci->mci_host;
+				break;
+			}
+			mci->mci_mailer = m;
+			if (mci->mci_exitstat != EX_OK)
+				continue;
+
+			/* try the connection */
+			setproctitle("%s %s: %s", e->e_id, hostbuf, "user open");
+			message("Connecting to %s (%s)...",
+				hostbuf, m->m_name);
+			i = makeconnection(hostbuf, port, mci,
+				bitnset(M_SECURE_PORT, m->m_flags));
+			mci->mci_exitstat = i;
+			mci->mci_errno = errno;
+			if (i == EX_OK)
+			{
+				mci->mci_state = MCIS_OPENING;
+				mci_cache(mci);
+				break;
+			}
+			else if (tTd(11, 1))
+				printf("openmailer: makeconnection => stat=%d, errno=%d\n",
+					i, errno);
+
+
+			/* enter status of this host */
+			setstat(i);
+		}
+		mci->mci_pid = 0;
+#else /* no DAEMON */
+		syserr("554 openmailer: no IPC");
+		if (tTd(11, 1))
+			printf("openmailer: NULL\n");
+		return NULL;
+#endif /* DAEMON */
+	}
+	else
+	{
+		/* create a pipe to shove the mail through */
+		if (pipe(mpvect) < 0)
+		{
+			syserr("openmailer: pipe (to mailer)");
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
+			rcode = EX_OSERR;
+			goto give_up;
+		}
+
+		/* if this mailer speaks smtp, create a return pipe */
+		if (clever && pipe(rpvect) < 0)
+		{
+			syserr("openmailer: pipe (from mailer)");
+			(void) close(mpvect[0]);
+			(void) close(mpvect[1]);
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
+			rcode = EX_OSERR;
+			goto give_up;
+		}
+
+		/*
+		**  Actually fork the mailer process.
+		**	DOFORK is clever about retrying.
+		**
+		**	Dispose of SIGCHLD signal catchers that may be laying
+		**	around so that endmail will get it.
+		*/
+
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);		/* for debugging */
+		(void) fflush(stdout);
+# ifdef SIGCHLD
+		(void) signal(SIGCHLD, SIG_DFL);
+# endif /* SIGCHLD */
+		DOFORK(FORK);
+		/* pid is set by DOFORK */
+		if (pid < 0)
+		{
+			/* failure */
+			syserr("openmailer: cannot fork");
+			(void) close(mpvect[0]);
+			(void) close(mpvect[1]);
+			if (clever)
+			{
+				(void) close(rpvect[0]);
+				(void) close(rpvect[1]);
+			}
+			if (tTd(11, 1))
+				printf("openmailer: NULL\n");
+			rcode = EX_OSERR;
+			goto give_up;
+		}
+		else if (pid == 0)
+		{
+			int i;
+			int saveerrno;
+			char **ep;
+			char *env[MAXUSERENVIRON];
+			extern char **environ;
+			extern int DtableSize;
+
+			/* child -- set up input & exec mailer */
+			/* make diagnostic output be standard output */
+			(void) signal(SIGINT, SIG_IGN);
+			(void) signal(SIGHUP, SIG_IGN);
+			(void) signal(SIGTERM, SIG_DFL);
+
+			/* close any other cached connections */
+			mci_flush(FALSE, mci);
+
+			/* arrange to filter std & diag output of command */
+			if (clever)
+			{
+				(void) close(rpvect[0]);
+				(void) dup2(rpvect[1], STDOUT_FILENO);
+				(void) close(rpvect[1]);
+			}
+			else if (OpMode == MD_SMTP || HoldErrs)
+			{
+				/* put mailer output in transcript */
+				(void) dup2(fileno(e->e_xfp), STDOUT_FILENO);
+			}
+			(void) dup2(STDOUT_FILENO, STDERR_FILENO);
+
+			/* arrange to get standard input */
+			(void) close(mpvect[1]);
+			if (dup2(mpvect[0], STDIN_FILENO) < 0)
+			{
+				syserr("Cannot dup to zero!");
+				_exit(EX_OSERR);
+			}
+			(void) close(mpvect[0]);
+			if (!bitnset(M_RESTR, m->m_flags))
+			{
+				if (ctladdr == NULL || ctladdr->q_uid == 0)
+				{
+					(void) setgid(DefGid);
+					(void) initgroups(DefUser, DefGid);
+					(void) setuid(DefUid);
+				}
+				else
+				{
+					(void) setgid(ctladdr->q_gid);
+					(void) initgroups(ctladdr->q_ruser?
+						ctladdr->q_ruser: ctladdr->q_user,
+						ctladdr->q_gid);
+					(void) setuid(ctladdr->q_uid);
+				}
+			}
+
+			/* arrange for all the files to be closed */
+			for (i = 3; i < DtableSize; i++)
+			{
+				register int j;
+				if ((j = fcntl(i, F_GETFD, 0)) != -1)
+					(void)fcntl(i, F_SETFD, j|1);
+			}
+
+			/* set up the mailer environment */
+			i = 0;
+			env[i++] = "AGENT=sendmail";
+			for (ep = environ; *ep != NULL; ep++)
+			{
+				if (strncmp(*ep, "TZ=", 3) == 0)
+					env[i++] = *ep;
+			}
+			env[i++] = NULL;
+
+			/* try to execute the mailer */
+			execve(m->m_mailer, pv, env);
+			saveerrno = errno;
+			syserr("Cannot exec %s", m->m_mailer);
+			if (m == LocalMailer)
+				_exit(EX_TEMPFAIL);
+			if (transienterror(saveerrno))
+				_exit(EX_TEMPFAIL);
+			_exit(EX_UNAVAILABLE);
+		}
+
+		/*
+		**  Set up return value.
+		*/
+
+		mci = (MCI *) xalloc(sizeof *mci);
+		bzero((char *) mci, sizeof *mci);
+		mci->mci_mailer = m;
+		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
+		mci->mci_pid = pid;
+		(void) close(mpvect[0]);
+		mci->mci_out = fdopen(mpvect[1], "w");
+		if (clever)
+		{
+			(void) close(rpvect[1]);
+			mci->mci_in = fdopen(rpvect[0], "r");
+		}
+		else
+		{
+			mci->mci_flags |= MCIF_TEMP;
+			mci->mci_in = NULL;
+		}
+	}
+
+	/*
+	**  If we are in SMTP opening state, send initial protocol.
+	*/
+
+	if (clever && mci->mci_state != MCIS_CLOSED)
+	{
+		smtpinit(m, mci, e);
+	}
+	if (tTd(11, 1))
+	{
+		printf("openmailer: ");
+		mci_dump(mci);
+	}
+
+	if (mci->mci_state != MCIS_OPEN)
 	{
 		/* couldn't open the mailer */
 		rcode = mci->mci_exitstat;
@@ -446,6 +1240,7 @@ deliver(e, firstto)
 			/* now send the data */
 			if (tobuf[0] == '\0')
 			{
+				rcode = EX_OK;
 				e->e_to = NULL;
 				if (bitset(MCIF_CACHED, mci->mci_flags))
 					smtprset(m, mci, e);
@@ -459,6 +1254,11 @@ deliver(e, firstto)
 			/* now close the connection */
 			if (!bitset(MCIF_CACHED, mci->mci_flags))
 				smtpquit(m, mci, e);
+		}
+		if (rcode != EX_OK && *curhost != '\0')
+		{
+			/* try next MX site */
+			goto tryhost;
 		}
 	}
 #else /* not SMTP */
@@ -580,69 +1380,6 @@ markfailure(e, q, rcode)
 	}
 }
 /*
-**  DOFORK -- do a fork, retrying a couple of times on failure.
-**
-**	This MUST be a macro, since after a vfork we are running
-**	two processes on the same stack!!!
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		From a macro???  You've got to be kidding!
-**
-**	Side Effects:
-**		Modifies the ==> LOCAL <== variable 'pid', leaving:
-**			pid of child in parent, zero in child.
-**			-1 on unrecoverable error.
-**
-**	Notes:
-**		I'm awfully sorry this looks so awful.  That's
-**		vfork for you.....
-*/
-
-# define NFORKTRIES	5
-
-# ifndef FORK
-# define FORK	fork
-# endif
-
-# define DOFORK(fORKfN) \
-{\
-	register int i;\
-\
-	for (i = NFORKTRIES; --i >= 0; )\
-	{\
-		pid = fORKfN();\
-		if (pid >= 0)\
-			break;\
-		if (i > 0)\
-			sleep((unsigned) NFORKTRIES - i);\
-	}\
-}
-/*
-**  DOFORK -- simple fork interface to DOFORK.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		pid of child in parent.
-**		zero in child.
-**		-1 on error.
-**
-**	Side Effects:
-**		returns twice, once in parent and once in child.
-*/
-
-dofork()
-{
-	register int pid;
-
-	DOFORK(fork);
-	return (pid);
-}
-/*
 **  ENDMAILER -- Wait for mailer to terminate.
 **
 **	We should never get fatal errors (e.g., segmentation
@@ -713,334 +1450,6 @@ endmailer(mci, e, pv)
 	/* normal death -- return status */
 	st = (st >> 8) & 0377;
 	return (st);
-}
-/*
-**  OPENMAILER -- open connection to mailer.
-**
-**	Parameters:
-**		m -- mailer descriptor.
-**		pvp -- parameter vector to pass to mailer.
-**		ctladdr -- controlling address for user.
-**		clever -- create a full duplex connection.
-**
-**	Returns:
-**		The mail connection info struct for this connection.
-**		NULL on failure.
-**
-**	Side Effects:
-**		creates a mailer in a subprocess.
-*/
-
-MCI *
-openmailer(m, pvp, ctladdr, clever, e)
-	MAILER *m;
-	char **pvp;
-	ADDRESS *ctladdr;
-	bool clever;
-	ENVELOPE *e;
-{
-	int pid;
-	register MCI *mci;
-	int mpvect[2];
-	int rpvect[2];
-	extern FILE *fdopen();
-
-	if (tTd(11, 1))
-	{
-		printf("openmailer:");
-		printav(pvp);
-	}
-	errno = 0;
-
-	CurHostName = m->m_mailer;
-
-	/*
-	**  Deal with the special case of mail handled through an IPC
-	**  connection.
-	**	In this case we don't actually fork.  We must be
-	**	running SMTP for this to work.  We will return a
-	**	zero pid to indicate that we are running IPC.
-	**  We also handle a debug version that just talks to stdin/out.
-	*/
-
-	/* check for Local Person Communication -- not for mortals!!! */
-	if (strcmp(m->m_mailer, "[LPC]") == 0)
-	{
-		mci = (MCI *) xalloc(sizeof *mci);
-		bzero((char *) mci, sizeof *mci);
-		mci->mci_in = stdin;
-		mci->mci_out = stdout;
-		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
-		mci->mci_mailer = m;
-	}
-	else if (strcmp(m->m_mailer, "[IPC]") == 0 ||
-		 strcmp(m->m_mailer, "[TCP]") == 0)
-	{
-#ifdef DAEMON
-		register int i;
-		register u_short port;
-		char *curhost;
-		extern MCI *mci_get();
-		extern char *hostsignature();
-
-		CurHostName = pvp[1];
-		curhost = hostsignature(m, pvp[1], e);
-
-		if (curhost == NULL || curhost[0] == '\0')
-		{
-			syserr("null signature");
-			return NULL;
-		}
-
-		if (!clever)
-		{
-			syserr("554 non-clever IPC");
-			return NULL;
-		}
-		if (pvp[2] != NULL)
-			port = atoi(pvp[2]);
-		else
-			port = 0;
-		while (*curhost != '\0')
-		{
-			register char *p;
-			static char hostbuf[MAXNAME];
-
-			/* pull the next host from the signature */
-			p = strchr(curhost, ':');
-			if (p == NULL)
-				p = &curhost[strlen(curhost)];
-			strncpy(hostbuf, curhost, p - curhost);
-			hostbuf[p - curhost] = '\0';
-			if (*p != '\0')
-				p++;
-			curhost = p;
-
-			/* see if we already know that this host is fried */
-			CurHostName = hostbuf;
-			mci = mci_get(hostbuf, m);
-			if (mci->mci_state != MCIS_CLOSED)
-			{
-				if (tTd(11, 1))
-				{
-					printf("openmailer: ");
-					mci_dump(mci);
-				}
-				CurHostName = mci->mci_host;
-				return mci;
-			}
-			mci->mci_mailer = m;
-			if (mci->mci_exitstat != EX_OK)
-				continue;
-
-			/* try the connection */
-			setproctitle("%s %s: %s", e->e_id, hostbuf, "user open");
-			message("Connecting to %s (%s)...",
-				hostbuf, m->m_name);
-			i = makeconnection(hostbuf, port, mci,
-				bitnset(M_SECURE_PORT, m->m_flags));
-			mci->mci_exitstat = i;
-			mci->mci_errno = errno;
-			if (i == EX_OK)
-			{
-				mci->mci_state = MCIS_OPENING;
-				mci_cache(mci);
-				break;
-			}
-			else if (tTd(11, 1))
-				printf("openmailer: makeconnection => stat=%d, errno=%d\n",
-					i, errno);
-
-
-			/* enter status of this host */
-			setstat(i);
-		}
-		mci->mci_pid = 0;
-#else /* no DAEMON */
-		syserr("554 openmailer: no IPC");
-		if (tTd(11, 1))
-			printf("openmailer: NULL\n");
-		return NULL;
-#endif /* DAEMON */
-	}
-	else
-	{
-		/* create a pipe to shove the mail through */
-		if (pipe(mpvect) < 0)
-		{
-			syserr("openmailer: pipe (to mailer)");
-			if (tTd(11, 1))
-				printf("openmailer: NULL\n");
-			return NULL;
-		}
-
-		/* if this mailer speaks smtp, create a return pipe */
-		if (clever && pipe(rpvect) < 0)
-		{
-			syserr("openmailer: pipe (from mailer)");
-			(void) close(mpvect[0]);
-			(void) close(mpvect[1]);
-			if (tTd(11, 1))
-				printf("openmailer: NULL\n");
-			return NULL;
-		}
-
-		/*
-		**  Actually fork the mailer process.
-		**	DOFORK is clever about retrying.
-		**
-		**	Dispose of SIGCHLD signal catchers that may be laying
-		**	around so that endmail will get it.
-		*/
-
-		if (e->e_xfp != NULL)
-			(void) fflush(e->e_xfp);		/* for debugging */
-		(void) fflush(stdout);
-# ifdef SIGCHLD
-		(void) signal(SIGCHLD, SIG_DFL);
-# endif /* SIGCHLD */
-		DOFORK(FORK);
-		/* pid is set by DOFORK */
-		if (pid < 0)
-		{
-			/* failure */
-			syserr("openmailer: cannot fork");
-			(void) close(mpvect[0]);
-			(void) close(mpvect[1]);
-			if (clever)
-			{
-				(void) close(rpvect[0]);
-				(void) close(rpvect[1]);
-			}
-			if (tTd(11, 1))
-				printf("openmailer: NULL\n");
-			return NULL;
-		}
-		else if (pid == 0)
-		{
-			int i;
-			int saveerrno;
-			char **ep;
-			char *env[MAXUSERENVIRON];
-			extern char **environ;
-			extern int DtableSize;
-
-			/* child -- set up input & exec mailer */
-			/* make diagnostic output be standard output */
-			(void) signal(SIGINT, SIG_IGN);
-			(void) signal(SIGHUP, SIG_IGN);
-			(void) signal(SIGTERM, SIG_DFL);
-
-			/* close any other cached connections */
-			mci_flush(FALSE, mci);
-
-			/* arrange to filter std & diag output of command */
-			if (clever)
-			{
-				(void) close(rpvect[0]);
-				(void) dup2(rpvect[1], STDOUT_FILENO);
-				(void) close(rpvect[1]);
-			}
-			else if (OpMode == MD_SMTP || HoldErrs)
-			{
-				/* put mailer output in transcript */
-				(void) dup2(fileno(e->e_xfp), STDOUT_FILENO);
-			}
-			(void) dup2(STDOUT_FILENO, STDERR_FILENO);
-
-			/* arrange to get standard input */
-			(void) close(mpvect[1]);
-			if (dup2(mpvect[0], STDIN_FILENO) < 0)
-			{
-				syserr("Cannot dup to zero!");
-				_exit(EX_OSERR);
-			}
-			(void) close(mpvect[0]);
-			if (!bitnset(M_RESTR, m->m_flags))
-			{
-				if (ctladdr == NULL || ctladdr->q_uid == 0)
-				{
-					(void) setgid(DefGid);
-					(void) initgroups(DefUser, DefGid);
-					(void) setuid(DefUid);
-				}
-				else
-				{
-					(void) setgid(ctladdr->q_gid);
-					(void) initgroups(ctladdr->q_ruser?
-						ctladdr->q_ruser: ctladdr->q_user,
-						ctladdr->q_gid);
-					(void) setuid(ctladdr->q_uid);
-				}
-			}
-
-			/* arrange for all the files to be closed */
-			for (i = 3; i < DtableSize; i++)
-			{
-				register int j;
-				if ((j = fcntl(i, F_GETFD, 0)) != -1)
-					(void)fcntl(i, F_SETFD, j|1);
-			}
-
-			/* set up the mailer environment */
-			i = 0;
-			env[i++] = "AGENT=sendmail";
-			for (ep = environ; *ep != NULL; ep++)
-			{
-				if (strncmp(*ep, "TZ=", 3) == 0)
-					env[i++] = *ep;
-			}
-			env[i++] = NULL;
-
-			/* try to execute the mailer */
-			execve(m->m_mailer, pvp, env);
-			saveerrno = errno;
-			syserr("Cannot exec %s", m->m_mailer);
-			if (m == LocalMailer)
-				_exit(EX_TEMPFAIL);
-			if (transienterror(saveerrno))
-				_exit(EX_TEMPFAIL);
-			_exit(EX_UNAVAILABLE);
-		}
-
-		/*
-		**  Set up return value.
-		*/
-
-		mci = (MCI *) xalloc(sizeof *mci);
-		bzero((char *) mci, sizeof *mci);
-		mci->mci_mailer = m;
-		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
-		mci->mci_pid = pid;
-		(void) close(mpvect[0]);
-		mci->mci_out = fdopen(mpvect[1], "w");
-		if (clever)
-		{
-			(void) close(rpvect[1]);
-			mci->mci_in = fdopen(rpvect[0], "r");
-		}
-		else
-		{
-			mci->mci_flags |= MCIF_TEMP;
-			mci->mci_in = NULL;
-		}
-	}
-
-	/*
-	**  If we are in SMTP opening state, send initial protocol.
-	*/
-
-	if (clever && mci->mci_state != MCIS_CLOSED)
-	{
-		smtpinit(m, mci, e);
-	}
-	if (tTd(11, 1))
-	{
-		printf("openmailer: ");
-		mci_dump(mci);
-	}
-
-	return mci;
 }
 /*
 **  GIVERESPONSE -- Interpret an error response from a mailer
@@ -1498,434 +1907,6 @@ mailfile(filename, ctladdr, e)
 			return ((st >> 8) & 0377);
 		/*NOTREACHED*/
 	}
-}
-/*
-**  SENDALL -- actually send all the messages.
-**
-**	Parameters:
-**		e -- the envelope to send.
-**		mode -- the delivery mode to use.  If SM_DEFAULT, use
-**			the current e->e_sendmode.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Scans the send lists and sends everything it finds.
-**		Delivers any appropriate error messages.
-**		If we are running in a non-interactive mode, takes the
-**			appropriate action.
-*/
-
-sendall(e, mode)
-	ENVELOPE *e;
-	char mode;
-{
-	register ADDRESS *q;
-	char *owner;
-	int otherowners;
-	register ENVELOPE *ee;
-	ENVELOPE *splitenv = NULL;
-
-	/* determine actual delivery mode */
-	if (mode == SM_DEFAULT)
-	{
-		extern bool shouldqueue();
-
-		mode = e->e_sendmode;
-		if (mode != SM_VERIFY &&
-		    shouldqueue(e->e_msgpriority, e->e_ctime))
-			mode = SM_QUEUE;
-	}
-
-	if (tTd(13, 1))
-	{
-		printf("\nSENDALL: mode %c, e_from ", mode);
-		printaddr(&e->e_from, FALSE);
-		printf("sendqueue:\n");
-		printaddr(e->e_sendqueue, TRUE);
-	}
-
-	/*
-	**  Do any preprocessing necessary for the mode we are running.
-	**	Check to make sure the hop count is reasonable.
-	**	Delete sends to the sender in mailing lists.
-	*/
-
-	CurEnv = e;
-
-	if (e->e_hopcount > MaxHopCount)
-	{
-		errno = 0;
-		syserr("554 too many hops %d (%d max): from %s, to %s",
-			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
-			e->e_sendqueue->q_paddr);
-		return;
-	}
-
-	if (!MeToo)
-	{
-		extern ADDRESS *recipient();
-
-		if (tTd(13, 5))
-		{
-			printf("sendall: QDONTSEND ");
-			printaddr(&e->e_from, FALSE);
-		}
-		e->e_from.q_flags |= QDONTSEND;
-		(void) recipient(&e->e_from, &e->e_sendqueue, e);
-	}
-
-	/*
-	**  Handle alias owners.
-	**
-	**	We scan up the q_alias chain looking for owners.
-	**	We discard owners that are the same as the return path.
-	*/
-
-	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-	{
-		register struct address *a;
-
-		for (a = q; a != NULL && a->q_owner == NULL; a = a->q_alias)
-			continue;
-		if (a != NULL)
-			q->q_owner = a->q_owner;
-				
-		if (q->q_owner != NULL &&
-		    !bitset(QDONTSEND, q->q_flags) &&
-		    strcmp(q->q_owner, e->e_from.q_paddr) == 0)
-			q->q_owner = NULL;
-	}
-		
-	owner = "";
-	otherowners = 1;
-	while (owner != NULL && otherowners > 0)
-	{
-		owner = NULL;
-		otherowners = 0;
-
-		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-		{
-			if (bitset(QDONTSEND, q->q_flags))
-				continue;
-
-			if (q->q_owner != NULL)
-			{
-				if (owner == NULL)
-					owner = q->q_owner;
-				else if (owner != q->q_owner)
-				{
-					if (strcmp(owner, q->q_owner) == 0)
-					{
-						/* make future comparisons cheap */
-						q->q_owner = owner;
-					}
-					else
-					{
-						otherowners++;
-					}
-					owner = q->q_owner;
-				}
-			}
-			else
-			{
-				otherowners++;
-			}
-		}
-
-		if (owner != NULL && otherowners > 0)
-		{
-			extern HDR *copyheader();
-			extern ADDRESS *copyqueue();
-
-			/*
-			**  Split this envelope into two.
-			*/
-
-			ee = (ENVELOPE *) xalloc(sizeof(ENVELOPE));
-			*ee = *e;
-			ee->e_id = NULL;
-			(void) queuename(ee, '\0');
-
-			if (tTd(13, 1))
-				printf("sendall: split %s into %s\n",
-					e->e_id, ee->e_id);
-
-			ee->e_header = copyheader(e->e_header);
-			ee->e_sendqueue = copyqueue(e->e_sendqueue);
-			ee->e_errorqueue = copyqueue(e->e_errorqueue);
-			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
-			setsender(owner, ee, NULL, TRUE);
-			if (tTd(13, 5))
-			{
-				printf("sendall(split): QDONTSEND ");
-				printaddr(&ee->e_from, FALSE);
-			}
-			ee->e_from.q_flags |= QDONTSEND;
-			ee->e_dfp = NULL;
-			ee->e_xfp = NULL;
-			ee->e_lockfp = NULL;
-			ee->e_df = NULL;
-			ee->e_errormode = EM_MAIL;
-			ee->e_sibling = splitenv;
-			splitenv = ee;
-			
-			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-				if (q->q_owner == owner)
-					q->q_flags |= QDONTSEND;
-			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
-				if (q->q_owner != owner)
-					q->q_flags |= QDONTSEND;
-
-			if (e->e_df != NULL && mode != SM_VERIFY)
-			{
-				ee->e_dfp = NULL;
-				ee->e_df = newstr(queuename(ee, 'd'));
-				if (link(e->e_df, ee->e_df) < 0)
-				{
-					syserr("sendall: link(%s, %s)",
-						e->e_df, ee->e_df);
-				}
-			}
-
-			if (mode != SM_VERIFY)
-				openxscript(ee);
-#ifdef LOG
-			if (LogLevel > 4)
-				syslog(LOG_INFO, "%s: clone %s",
-					ee->e_id, e->e_id);
-#endif
-		}
-	}
-
-	if (owner != NULL)
-	{
-		setsender(owner, e, NULL, TRUE);
-		if (tTd(13, 5))
-		{
-			printf("sendall(owner): QDONTSEND ");
-			printaddr(&e->e_from, FALSE);
-		}
-		e->e_from.q_flags |= QDONTSEND;
-		e->e_errormode = EM_MAIL;
-	}
-
-# ifdef QUEUE
-	if ((mode == SM_QUEUE || mode == SM_FORK ||
-	     (mode != SM_VERIFY && SuperSafe)) &&
-	    !bitset(EF_INQUEUE, e->e_flags))
-	{
-		/* be sure everything is instantiated in the queue */
-		queueup(e, TRUE, mode == SM_QUEUE);
-		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-			queueup(ee, TRUE, mode == SM_QUEUE);
-	}
-#endif /* QUEUE */
-
-	if (splitenv != NULL)
-	{
-		if (tTd(13, 1))
-		{
-			printf("\nsendall: Split queue; remaining queue:\n");
-			printaddr(e->e_sendqueue, TRUE);
-		}
-
-		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-		{
-			CurEnv = ee;
-			sendenvelope(ee, mode);
-		}
-
-		CurEnv = e;
-	}
-	sendenvelope(e, mode);
-
-	for (; splitenv != NULL; splitenv = splitenv->e_sibling)
-		dropenvelope(splitenv);
-}
-
-sendenvelope(e, mode)
-	register ENVELOPE *e;
-	char mode;
-{
-	bool oldverbose;
-	int pid;
-	register ADDRESS *q;
-#ifdef LOCKF
-	struct flock lfd;
-#endif
-
-	oldverbose = Verbose;
-	switch (mode)
-	{
-	  case SM_VERIFY:
-		Verbose = TRUE;
-		break;
-
-	  case SM_QUEUE:
-  queueonly:
-		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
-		return;
-
-	  case SM_FORK:
-		if (e->e_xfp != NULL)
-			(void) fflush(e->e_xfp);
-
-# ifdef LOCKF
-		/*
-		**  Since lockf has the interesting semantic that the
-		**  lock is lost when we fork, we have to risk losing
-		**  the lock here by closing before the fork, and then
-		**  trying to get it back in the child.
-		*/
-
-		if (e->e_lockfp != NULL)
-		{
-			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-			e->e_lockfp = NULL;
-		}
-# endif /* LOCKF */
-
-		pid = fork();
-		if (pid < 0)
-		{
-			goto queueonly;
-		}
-		else if (pid > 0)
-		{
-			/* be sure we leave the temp files to our child */
-			e->e_id = e->e_df = NULL;
-# ifndef LOCKF
-			if (e->e_lockfp != NULL)
-			{
-				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-				e->e_lockfp = NULL;
-			}
-# endif
-
-			/* close any random open files in the envelope */
-			if (e->e_dfp != NULL)
-			{
-				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
-				e->e_dfp = NULL;
-			}
-			if (e->e_xfp != NULL)
-			{
-				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
-				e->e_xfp = NULL;
-			}
-			return;
-		}
-
-		/* double fork to avoid zombies */
-		if (fork() > 0)
-			exit(EX_OK);
-
-		/* be sure we are immune from the terminal */
-		disconnect(FALSE, e);
-
-# ifdef LOCKF
-		/*
-		**  Now try to get our lock back.
-		*/
-
-		lfd.l_type = F_WRLCK;
-		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
-		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
-		if (e->e_lockfp == NULL ||
-		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
-		{
-			/* oops....  lost it */
-			if (tTd(13, 1))
-				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
-					e->e_id, e->e_lockfp, errstring(errno));
-
-# ifdef LOG
-			if (LogLevel > 29)
-				syslog(LOG_NOTICE, "%s: lost lock: %m",
-					e->e_id);
-# endif /* LOG */
-			exit(EX_OK);
-		}
-# endif /* LOCKF */
-
-		/*
-		**  Close any cached connections.
-		**
-		**	We don't send the QUIT protocol because the parent
-		**	still knows about the connection.
-		**
-		**	This should only happen when delivering an error
-		**	message.
-		*/
-
-		mci_flush(FALSE, NULL);
-
-		break;
-	}
-
-	/*
-	**  Run through the list and send everything.
-	*/
-
-	e->e_nsent = 0;
-	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-	{
-		if (mode == SM_VERIFY)
-		{
-			e->e_to = q->q_paddr;
-			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-				message("deliverable");
-		}
-		else if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-		{
-# ifdef QUEUE
-			/*
-			**  Checkpoint the send list every few addresses
-			*/
-
-			if (e->e_nsent >= CheckpointInterval)
-			{
-				queueup(e, TRUE, FALSE);
-				e->e_nsent = 0;
-			}
-# endif /* QUEUE */
-			(void) deliver(e, q);
-		}
-	}
-	Verbose = oldverbose;
-
-	/*
-	**  Now run through and check for errors.
-	*/
-
-	if (mode == SM_VERIFY)
-	{
-		return;
-	}
-
-	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-	{
-		if (tTd(13, 3))
-		{
-			printf("Checking ");
-			printaddr(q, FALSE);
-		}
-
-		/* only send errors if the message failed */
-		if (!bitset(QBADADDR, q->q_flags))
-			continue;
-
-		e->e_flags |= EF_FATALERRS;
-
-		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
-			(void) sendtolist(e->e_from.q_paddr, NULL,
-					  &e->e_errorqueue, e);
-	}
-
-	if (mode == SM_FORK)
-		finis();
 }
 /*
 **  HOSTSIGNATURE -- return the "signature" for a host.
