@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.2 %G%
+#	@(#)Makefile	1.3 %G%
 # transcript/src/Makefile.bsd
 #
 # Copyright (C) 1985 Adobe Systems Incorporated
@@ -6,8 +6,9 @@
 # RCSID: $Header: Makefile.bsd,v 2.1 85/11/24 11:48:44 shore Rel $
 
 
-LPROGS = psbanner pscomm psrv pstext
-BPROGS = enscript ps4014 ps630 pscat pscatmap psdit psplot psrev psgrind
+LIBPROGS = psbanner pscatmap pscomm psrv pstext
+BINPROGS = enscript ps4014 ps630 psplot psgrind
+LNPROGS = pscat psdit psplot psrev psrev
 
 OBJECTS = psbanner.o pscomm.o psrv.o pstext.o \
 	enscript.o ps4014.o ps630.o pscat.o pscatmap.o \
@@ -26,7 +27,7 @@ PSTEMPDIR = /tmp
 
 CFLAGS = -O -DBSD
 
-programs all:	${LPROGS} ${BPROGS}
+programs all:	${LIBPROGS} ${BINPROGS}
 
 enscript: enscript.o psutil.o config.o getopt.o
 	cc ${CFLAGS} -o enscript enscript.o psutil.o config.o getopt.o
@@ -79,25 +80,14 @@ config.c: config.proto ../config
 		-e s,PSTEMPDIR,$(PSTEMPDIR),g \
 		config.proto >config.c
 
-install: ${LPROGS} ${BPROGS}
-	-cd $$PSLIBDIR; rm -f ${LPROGS} ${BPROGS}
-	install -c -o $$OWNER -g $$GROUP -s psbanner	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s pscomm	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s psrv	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s pstext	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s enscript	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s ps4014	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s ps630	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s pscat	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s pscatmap	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s psdit	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s psplot	$$PSLIBDIR
-	install -c -o $$OWNER -g $$GROUP -s psrev	$$PSLIBDIR
-	-cd $$BINDIR ; rm -f ${BPROGS}
-	for i in ${BPROGS} ;\
+install: ${LIBPROGS} ${BINPROGS}
+	install -s -o $$OWNER -g $$GROUP $(LIBPROGS) $$PSLIBDIR
+	install -s -o $$OWNER -g $$GROUP $(BINPROGS) $$BINDIR
+	-cd $$BINDIR ; rm -f ${LNPROGS}
+	for i in ${LNPROGS} ;\
 	do ln -s $$PSLIBDIR/$$i $$BINDIR ;\
 	done
 
 clean:
-	rm -f - *.o config.c ${BPROGS} ${LPROGS} *BAK *CKP .emacs* *~
+	rm -f - *.o config.c ${BINPROGS} ${LIBPROGS} *BAK *CKP .emacs* *~
 
