@@ -1,4 +1,4 @@
-/*	autoconf.c	1.13	87/04/02	*/
+/*	autoconf.c	1.14	87/06/22	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -17,6 +17,7 @@
 #include "conf.h"
 #include "dmap.h"
 #include "reboot.h"
+#include "malloc.h"
 
 #include "pte.h"
 #include "mem.h"
@@ -143,7 +144,7 @@ vbafind(vban, vumem, memmap)
 	struct vba_hd *vhp;
 	struct vba_driver *udp;
 	int i, octlr, (**ivec)();
-	caddr_t valloc, zmemall();
+	caddr_t valloc;
 	extern long catcher[SCB_LASTIV*2];
 
 #ifdef lint
@@ -175,9 +176,10 @@ vbafind(vban, vumem, memmap)
 	 * we are going to give it back anyway, and that would make the
 	 * code here bigger (which we can't give back), so ...
 	 */
-	valloc = zmemall(memall, ctob(VBIOSIZE));
+	valloc = (caddr_t)malloc(ctob(VBIOSIZE), M_TEMP, M_NOWAIT);
 	if (valloc == (caddr_t)0)
 		panic("no mem for vbafind");
+	bzero(valloc, ctob(VBIOSIZE));
 
 	/*
 	 * Check each VERSAbus mass storage controller.
@@ -308,7 +310,7 @@ vbafind(vban, vumem, memmap)
 		break;
 	    }
 	}
-	wmemfree(valloc, ctob(VBIOSIZE));
+	free(valloc, M_TEMP);
 }
 
 /*
