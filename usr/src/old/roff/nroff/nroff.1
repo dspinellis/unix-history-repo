@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nroff.1	6.1 (Berkeley) %G%
+.\"	@(#)nroff.1	6.2 (Berkeley) %G%
 .\"
 .TH NROFF 1 ""
 .UC 5
@@ -89,20 +89,63 @@ Invoke the simultaneous input-output mode of the
 request.
 .TP
 .BI \-T name
-Prepare output for specified terminal.  Known
-.I names
-are
-.B 37
-for the (default) Teletype Corporation Model 37 terminal,
-.B tn300
-for the GE TermiNet\ 300 (or any terminal without half-line capability),
-.B 300S
-for the \s-1DASI\s+1-300S,
-.B 300
-for the \s-1DASI\s+1-300,
-and
-.B 450
-for the \s-1DASI\s+1-450 (Diablo Hyterm).
+Prepare output for specified terminal.  Known \fInames\fP are:
+.PP
+.RS
+.TP
+.BR 37
+for the Teletype Corporation Model 37 terminal,
+.TP
+.BR crt
+the default; linked to lpr and tn300, for the GE TermiNet 300 (or any
+terminal without reverse-line or half-line capability),
+.TP
+.BR 300
+for the DTC 300,
+.TP
+.BR 302
+for the DTC 302S and the DTC 300S,
+.TP
+.BR 382
+for the DTC 382,
+.TP
+.BR 450
+for the DTC 450 and the IPSI 1622,
+.TP
+.BR 833
+for the AJ 832/833,
+.TP
+.BR epson
+for the Epson FX80,
+.TP
+.BR itoh
+for the C:ITOH Prowriter
+.TP
+.BR nec
+for the NEC-55?0/77?0 Spinwriter, with the Courier-72/Manifold
+thimble,
+.TP
+.BR nec-t
+for the NEC-55?0/77?0 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.TP
+.BR nec25-t
+for the NEC-5525/7725 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.TP
+.BR qume
+for the Qume Sprint 5 or 9,
+.TP
+.BR x-ecs
+for the Xerox/Diablo 1730/630, extended character set,
+.TP
+.BR xerox
+for the Xerox 17?0 or the Diablo 16?0.
+
+Most of these also have versions for 12 pitch; see
+\fI/usr/lib/term/README\fP for more information.
+.RE
+.PP
 .TP
 .B \-e
 Produce equally-spaced words in adjusted lines, using full terminal resolution.
