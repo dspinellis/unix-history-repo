@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ifconfig.8	8.2 (Berkeley) %G%
+.\"     @(#)ifconfig.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IFCONFIG 8
@@ -215,7 +215,7 @@ These three options are interface specific in actual effect, however,
 they are in general used to select special modes of operation. An example
 of this is to enable SLIP compression. Currently, only used by SLIP.
 .It Fl link[0-2]
-Disables special processing at the link level with the specified interface.
+Disable special processing at the link level with the specified interface.
 .It Cm up
 Mark an interface ``up''. 
 This may be used to enable an interface after an ``ifconfig down.''
