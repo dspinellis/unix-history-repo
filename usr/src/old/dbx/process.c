@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.6 %G%";
+static char sccsid[] = "@(#)process.c 1.7 %G%";
 
 /*
  * Process management.
@@ -366,6 +366,9 @@ public resume()
 	    process->reg[PROGCTR], p->signo);
 	fflush(stdout);
     }
+    if (p->status != STOPPED) {
+	error("program unexpectedly exited with %d", p->exitval);
+    }
 }
 
 /*
@@ -706,7 +709,7 @@ String outfile;
 	    }
 	    fswap(1, out);
 	}
-	execvp(argv[0], argv);
+	execv(argv[0], argv);
 	write(2, "can't exec ", 11);
 	write(2, argv[0], strlen(argv[0]));
 	write(2, "\n", 1);
