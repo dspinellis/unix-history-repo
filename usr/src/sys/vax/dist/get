@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)get	4.10	%G%
+#	@(#)get	4.11	%G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -68,13 +68,16 @@ cat >xtr <<'EOF'
 : ${disk?'Usage: disk=xx type=tt tape=yy xtr'}
 : ${type?'Usage: disk=xx type=tt tape=yy xtr'}
 : ${tape?'Usage: disk=xx type=tt tape=yy xtr'}
-set -x
+echo 'Build root file system'
 newfs ${disk}0a ${type}
 sync
+echo 'Check the file system'
 fsck /dev/r${disk}0a
 mount /dev/${disk}0a /a
 cd /a
+echo 'Rewind tape'
 mt -t /dev/${tape}0 rew
+echo 'Restore the dump image of the root'
 restor xsf 3 /dev/${tape}0
 cd /
 sync
