@@ -1,15 +1,18 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)libpc.h 1.6 %G%"; */
+/* static char sccsid[] = "@(#)libpc.h 1.7 %G%"; */
 
 extern FILE *ACTFILE();
 extern long *ADDT();
+extern double ATAN();
 extern long CARD();
 extern char CHR();
 extern long CLCK();
+extern double COS();
 extern long *CTTOT();
 extern long ERROR();
 extern int EXCEPT();
+extern double EXP();
 extern long EXPO();
 extern char *FNIL();
 extern struct formalrtn *FSAV();
@@ -42,6 +45,7 @@ extern long RANG4();
 extern long RSNG4();
 extern long SCLCK();
 extern long SEED();
+extern double SIN();
 extern double SQRT();
 extern long SUBSC();
 extern long SUBSCZ();
