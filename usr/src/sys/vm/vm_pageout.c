@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	7.5 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -67,11 +67,11 @@ vm_pageout_scan()
 
 	s = splimp();
 	simple_lock(&vm_page_queue_free_lock);
-	free = vm_stat.free_count;
+	free = cnt.v_free_count;
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(s);
 
-	if (free < vm_stat.free_target) {
+	if (free < cnt.v_free_target) {
 		swapout_threads();
 
 		/*
@@ -102,18 +102,18 @@ vm_pageout_scan()
 
 		s = splimp();
 		simple_lock(&vm_page_queue_free_lock);
-		free = vm_stat.free_count;
+		free = cnt.v_free_count;
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(s);
 
-		if (free >= vm_stat.free_target)
+		if (free >= cnt.v_free_target)
 			break;
 
 		if (m->clean) {
 			next = (vm_page_t) queue_next(&m->pageq);
 			if (pmap_is_referenced(VM_PAGE_TO_PHYS(m))) {
 				vm_page_activate(m);
-				vm_stat.reactivations++;
+				cnt.v_reactivated++;
 			}
 			else {
 				register vm_object_t	object;
@@ -177,7 +177,7 @@ vm_pageout_scan()
 				pmap_page_protect(VM_PAGE_TO_PHYS(m),
 						  VM_PROT_NONE);
 				m->busy = TRUE;
-				vm_stat.pageouts++;
+				cnt.v_pageouts++;
 
 				/*
 				 *	Try to collapse the object before
@@ -195,7 +195,7 @@ vm_pageout_scan()
 				 *	Do a wakeup here in case the following
 				 *	operations block.
 				 */
-				thread_wakeup((int) &vm_stat.free_count);
+				thread_wakeup((int) &cnt.v_free_count);
 
 				/*
 				 *	If there is no pager for the page,
@@ -279,8 +279,8 @@ vm_pageout_scan()
 	 *	to inactive.
 	 */
 
-	page_shortage = vm_stat.inactive_target - vm_stat.inactive_count;
-	page_shortage -= vm_stat.free_count;
+	page_shortage = cnt.v_inactive_target - cnt.v_inactive_count;
+	page_shortage -= cnt.v_free_count;
 
 	if ((page_shortage <= 0) && (pages_freed == 0))
 		page_shortage = 1;
@@ -313,26 +313,26 @@ void vm_pageout()
 	 *	Initialize some paging parameters.
 	 */
 
-	if (vm_stat.free_min == 0) {
-		vm_stat.free_min = vm_stat.free_count / 20;
-		if (vm_stat.free_min < 3)
-			vm_stat.free_min = 3;
+	if (cnt.v_free_min == 0) {
+		cnt.v_free_min = cnt.v_free_count / 20;
+		if (cnt.v_free_min < 3)
+			cnt.v_free_min = 3;
 
-		if (vm_stat.free_min > vm_page_free_min_sanity)
-			vm_stat.free_min = vm_page_free_min_sanity;
+		if (cnt.v_free_min > vm_page_free_min_sanity)
+			cnt.v_free_min = vm_page_free_min_sanity;
 	}
 
-	if (vm_stat.free_target == 0)
-		vm_stat.free_target = (vm_stat.free_min * 4) / 3;
+	if (cnt.v_free_target == 0)
+		cnt.v_free_target = (cnt.v_free_min * 4) / 3;
 
-	if (vm_stat.inactive_target == 0)
-		vm_stat.inactive_target = vm_stat.free_min * 2;
+	if (cnt.v_inactive_target == 0)
+		cnt.v_inactive_target = cnt.v_free_min * 2;
 
-	if (vm_stat.free_target <= vm_stat.free_min)
-		vm_stat.free_target = vm_stat.free_min + 1;
+	if (cnt.v_free_target <= cnt.v_free_min)
+		cnt.v_free_target = cnt.v_free_min + 1;
 
-	if (vm_stat.inactive_target <= vm_stat.free_target)
-		vm_stat.inactive_target = vm_stat.free_target + 1;
+	if (cnt.v_inactive_target <= cnt.v_free_target)
+		cnt.v_inactive_target = cnt.v_free_target + 1;
 
 	/*
 	 *	The pageout daemon is never done, so loop
@@ -346,6 +346,6 @@ void vm_pageout()
 		vm_pageout_scan();
 		vm_pager_sync();
 		simple_lock(&vm_pages_needed_lock);
-		thread_wakeup((int) &vm_stat.free_count);
+		thread_wakeup((int) &cnt.v_free_count);
 	}
 }
