@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -51,7 +51,7 @@ main(argc, argv)
 	int ch, rflag;
 
 	Pflag = rflag = 0;
-	while ((ch = getopt(argc, argv, "dfiPRrW")) != EOF)
+	while ((ch = getopt(argc, argv, "dfiPRrW")) != -1)
 		switch(ch) {
 		case 'd':
 			dflag = 1;
@@ -85,15 +85,16 @@ main(argc, argv)
 		usage();
 
 	checkdot(argv);
-	if (!*argv)
-		exit (eval);
 
-	stdin_ok = isatty(STDIN_FILENO);
+	if (*argv) {
+		stdin_ok = isatty(STDIN_FILENO);
 
-	if (rflag)
-		rm_tree(argv);
-	else
-		rm_file(argv);
+		if (rflag)
+			rm_tree(argv);
+		else
+			rm_file(argv);
+	}
+
 	exit (eval);
 }
 
@@ -151,7 +152,7 @@ rm_tree(argv)
 			continue;
 		case FTS_D:
 			/* Pre-order: give user chance to skip. */
-			if (iflag && !check(p->fts_path, p->fts_accpath,
+			if (!fflag && !check(p->fts_path, p->fts_accpath,
 			    p->fts_statp)) {
 				(void)fts_set(fts, p, FTS_SKIP);
 				p->fts_number = SKIPPED;
@@ -162,10 +163,11 @@ rm_tree(argv)
 			if (p->fts_number == SKIPPED)
 				continue;
 			break;
+		default:
+			if (!fflag &&
+			    !check(p->fts_path, p->fts_accpath, p->fts_statp))
+				continue;
 		}
-		if (!fflag &&
-		    !check(p->fts_path, p->fts_accpath, p->fts_statp))
-			continue;
 
 		/*
 		 * If we can't read or search the directory, may still be
@@ -175,13 +177,8 @@ rm_tree(argv)
 		switch (p->fts_info) {
 		case FTS_DP:
 		case FTS_DNR:
-			if (!rmdir(p->fts_accpath))
+			if (!rmdir(p->fts_accpath) || fflag && errno == ENOENT)
 				continue;
-			if (errno == ENOENT) {
-				if (fflag)
-					continue;
-			} else if (p->fts_info != FTS_DP)
-				warnx("%s: unable to read", p->fts_path);
 			break;
 
 		case FTS_W:
@@ -208,10 +205,9 @@ rm_file(argv)
 	char **argv;
 {
 	struct stat sb;
-	int df, rval;
+	int rval;
 	char *f;
 
-	df = dflag;
 	/*
 	 * Remove a file.  POSIX 1003.2 states that, by default, attempting
 	 * to remove a directory is an error, so must always stat the file.
@@ -234,7 +230,7 @@ rm_file(argv)
 			continue;
 		}
 
-		if (S_ISDIR(sb.st_mode) && !df) {
+		if (S_ISDIR(sb.st_mode) && !dflag) {
 			warnx("%s: is a directory", f);
 			eval = 1;
 			continue;
@@ -364,7 +360,8 @@ checkdot(argv)
 			if (!complained++)
 				warnx("\".\" and \"..\" may not be removed");
 			eval = 1;
-			for (save = t; (t[0] = t[1]) != NULL; ++t);
+			for (save = t; (t[0] = t[1]) != NULL; ++t)
+				continue;
 			t = save;
 		} else
 			++t;
@@ -375,6 +372,6 @@ void
 usage()
 {
 
-	(void)fprintf(stderr, "usage: rm [-dfiRr] file ...\n");
+	(void)fprintf(stderr, "usage: rm [-dfiPRrW] file ...\n");
 	exit(1);
 }
