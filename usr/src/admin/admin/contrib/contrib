@@ -1,29 +1,30 @@
 The following list are people and organizations that have contributed
-source code that will be part of the 4.4BSD release.  The first group
-each provided a large subsystems, the second, a specific program or
-library routine.
+source code that will be part of the 4.4BSD release.  Each person or
+organization listed in the first group provided a large subsystem, the
+second, a specific program or library routine.
 
-@	HP300 support			Systems Programming Group of the University of
-@					Utah Computer Science Department.
 @	386 support			William Jolitz
-	CCI 6/32 support		Computer Consoles Inc.
-	VAX device support		Digital Equipment Corp.
-	VAX BI support			Chris Torek
-@	Stdio				Chris Torek
 @	ANSI C library support		Chris Torek
-	Compiler support		The Free Software Foundation
-	NFS support			Rick Macklem
-	RPC support			Sun Microsystems Inc.
-	NFS automounter			Jan Pendry
 	Autoconfiguration		Robert Elz
-	Quota support			Robert Elz
+	C library documentation		American National Standards Committee X3
+	CCI 6/32 support		Computer Consoles Inc.
+	GCC				The Free Software Foundation
+@	HP300 support			Systems Programming Group; University
+					of Utah Computer Science Department.
 	Job control			Jim Kulp
+	Kerberos			Project Athena, MIT
+	NFS automounter			Jan Pendry
+	NFS support			Rick Macklem
 	Network device drivers		Micom-Interlan, Excelan
-	X11				Project Athena, MIT
+	Quota support			Robert Elz
+	RPC support			Sun Microsystems Inc.
+@	Stdio				Chris Torek
+	System documentation		IEEE (POSIX)
 	Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
 	VAX 3000 support		Mt. Xinu and Tom Ferrin
-	C library documentation		American National Standards Committee X3
-	System documentation		IEEE (POSIX)
+	VAX BI support			Chris Torek
+	VAX device support		Digital Equipment Corp.
+	X11				Project Athena, MIT
 
 	cal(1)				Kim Letkeman
 	cat(1)				Kevin Fall
