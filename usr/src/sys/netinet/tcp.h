@@ -1,4 +1,4 @@
-/* tcp.h 1.11 81/10/30 */
+/* tcp.h 1.12 81/11/03 */
 
 /*
  * Tcp header.  Fits over the ip header after option removed.
@@ -113,11 +113,12 @@ struct tcbhead {
 /*
  * TCP timers.
  */
-#define	TINIT		1
-#define	TREXMT		2
-#define	TREXMTTL	3
-#define	TPERSIST	4
-#define	TFINACK		5
+#define	TINIT		0
+#define	TREXMT		1
+#define	TREXMTTL	2
+#define	TPERSIST	3
+#define	TFINACK		4
+#define	TNTIMERS	5
 
 /*
  * Tcp machine predicates
