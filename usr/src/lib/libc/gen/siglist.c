@@ -6,13 +6,47 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)siglist.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)siglist.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
-#include <unistd.h>
 
-char	*sys_siglist[NSIG] = {
+char *sys_signame[NSIG] = {
+	"Signal 0",
+	"hup",				/* SIGHUP */
+	"int",				/* SIGINT */
+	"quit",				/* SIGQUIT */
+	"ill",				/* SIGILL */
+	"trap",				/* SIGTRAP */
+	"abrt",				/* SIGABRT */
+	"emt",				/* SIGEMT */
+	"fpe",				/* SIGFPE */
+	"kill",				/* SIGKILL */
+	"bus",				/* SIGBUS */
+	"segv",				/* SIGSEGV */
+	"sys",				/* SIGSYS */
+	"pipe",				/* SIGPIPE */
+	"alrm",				/* SIGALRM */
+	"term",				/* SIGTERM */
+	"urg",				/* SIGURG */
+	"stop",				/* SIGSTOP */
+	"tstp",				/* SIGTSTP */
+	"cont",				/* SIGCONT */
+	"chld",				/* SIGCHLD */
+	"ttin",				/* SIGTTIN */
+	"ttou",				/* SIGTTOU */
+	"io",				/* SIGIO */
+	"xcpu",				/* SIGXCPU */
+	"xfsz",				/* SIGXFSZ */
+	"vtalrm",			/* SIGVTALRM */
+	"prof",				/* SIGPROF */
+	"winch",			/* SIGWINCH */
+	"info",				/* SIGINFO */
+	"usr1",				/* SIGUSR1 */
+	"usr2",				/* SIGUSR2 */
+};
+
+char *sys_siglist[NSIG] = {
 	"Signal 0",
 	"Hangup",			/* SIGHUP */
 	"Interrupt",			/* SIGINT */
@@ -30,8 +64,8 @@ char	*sys_siglist[NSIG] = {
 	"Alarm clock",			/* SIGALRM */
 	"Terminated",			/* SIGTERM */
 	"Urgent I/O condition",		/* SIGURG */
-	"Stopped (signal)",		/* SIGSTOP */
-	"Stopped",			/* SIGTSTP */
+	"Suspended (signal)",		/* SIGSTOP */
+	"Suspended",			/* SIGTSTP */
 	"Continued",			/* SIGCONT */
 	"Child exited",			/* SIGCHLD */
 	"Stopped (tty input)",		/* SIGTTIN */
