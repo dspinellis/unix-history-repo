@@ -1,5 +1,5 @@
 /*
-char	id_trapov[] = "@(#)trapov_.c	1.2";
+char	id_trapov[] = "@(#)trapov_.c	1.3";
  *
  *	Fortran/C floating-point overflow handler
  *

@@ -1,5 +1,5 @@
 /*
- *	"@(#)abort_.c	1.1"
+ *	"@(#)abort_.c	1.2"
  */
 
 #include <stdio.h>
