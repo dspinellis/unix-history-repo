@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.141 (Berkeley) %G%
+ *	@(#)conf.h	8.142 (Berkeley) %G%
  */
 
 /*
@@ -158,12 +158,14 @@ extern int	syslog(int, char *, ...);
 **
 **	Compiles on 4.0.1.
 **
-**	Use IRIX64 instead of IRIX for 64-bit IRIX.
+**	Use IRIX64 instead of IRIX for 64-bit IRIX (6.0).
+**	Use IRIX5 instead of IRIX for IRIX 5.x.
 **
 **	IRIX64 changes from Mark R. Levinson <ml@cvdev.rochester.edu>.
+**	IRIX5 changes from Kari E. Hurtta <Kari.Hurtta@fmi.fi>.
 */
 
-#ifdef IRIX64
+#if defined(IRIX64) || defined(IRIX5)
 # define IRIX
 #endif
 
@@ -173,7 +175,7 @@ extern int	syslog(int, char *, ...);
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
-# ifndef IRIX64			/* IRIX 6.0 */
+# if !defined(IRIX64) && !defined(IRIX5)
 #  define WAITUNION	1	/* use "union wait" as wait argument type */
 # endif
 # define setpgid	BSDsetpgrp
