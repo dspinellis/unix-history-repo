@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.14 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.15 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -42,20 +42,20 @@ bool	enterhist = 0;
 extern	gid_t getegid(), getgid();
 extern	uid_t geteuid(), getuid();
 
-main(c, av)
-	int c;
-	char **av;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
 	register char **v, *cp;
 	register int f;
 	struct sigvec osv;
 
 	settimes();			/* Immed. estab. timing base */
-	v = av;
+	v = argv;
 	if (eq(v[0], "a.out"))		/* A.out's are quittable */
 		quitit = 1;
 	uid = getuid();
-	loginsh = **v == '-' && c == 1;
+	loginsh = **v == '-' && argc == 1;
 	if (loginsh)
 		(void) time(&chktim);
 
@@ -127,8 +127,8 @@ main(c, av)
 	 * Note that processing of -v/-x is actually delayed till after
 	 * script processing.
 	 */
-	c--, v++;
-	while (c > 0 && (cp = v[0])[0] == '-' && *++cp != '\0' && !batch) {
+	argc--, v++;
+	while (argc > 0 && (cp = v[0])[0] == '-' && *++cp != '\0' && !batch) {
 		do switch (*cp++) {
 
 		case 'b':		/* -b	Next arg is input file */
@@ -136,9 +136,9 @@ main(c, av)
 			break;
 
 		case 'c':		/* -c	Command input from arg */
-			if (c == 1)
+			if (argc == 1)
 				exit(0);
-			c--, v++;
+			argc--, v++;
 			arginp = v[0];
 			prompt = 0;
 			nofile++;
@@ -196,7 +196,7 @@ main(c, av)
 			break;
 
 		} while (*cp);
-		v++, c--;
+		v++, argc--;
 	}
 
 	if (quitit)			/* With all due haste, for debugging */
@@ -207,7 +207,7 @@ main(c, av)
 	 * are remaining arguments the first of them is the name
 	 * of a shell file from which to read commands.
 	 */
-	if (nofile == 0 && c > 0) {
+	if (nofile == 0 && argc > 0) {
 		nofile = open(v[0], 0);
 		if (nofile < 0) {
 			child++;		/* So this ... */
@@ -217,7 +217,7 @@ main(c, av)
 		SHIN = dmove(nofile, FSHIN);	/* Replace FSHIN */
 		(void) ioctl(SHIN, FIOCLEX, (char *)0);
 		prompt = 0;
-		c--, v++;
+		argc--, v++;
 	}
 	if (!batch && (uid != geteuid() || getgid() != getegid())) {
 		errno = EACCES;
@@ -259,7 +259,7 @@ main(c, av)
 	shpgrp = getpgrp(0);
 	opgrp = tpgrp = -1;
 	if (setintr) {
-		**av = '-';
+		**argv = '-';
 		if (!quitit)		/* Wary! */
 			(void) signal(SIGQUIT, SIG_IGN);
 		(void) signal(SIGINT, pintr);
