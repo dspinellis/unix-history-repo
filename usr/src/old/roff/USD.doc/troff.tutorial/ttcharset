@@ -1,4 +1,4 @@
-.\"	@(#)ttcharset	5.1 (Berkeley) %G%
+.\"	@(#)ttcharset	6.1 (Berkeley) %G%
 .\"
 .bp
 .tr __
@@ -6,7 +6,7 @@
 .vs 12p
 .1C
 .SH
-Appendix A: Phototypesetter Character Set
+Appendix A: Phototypesetter Character Set (APS-5)
 .LP
 These characters exist in roman, italic, and bold.
 To get the one on the left, type the
