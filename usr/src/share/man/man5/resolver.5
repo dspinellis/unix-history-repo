@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)resolver.5	5.8 (Berkeley) %G%
+.\"	@(#)resolver.5	5.9 (Berkeley) %G%
 .\"
 .TH RESOLVER 5 ""
 .UC 4
@@ -79,6 +79,9 @@ Note that this process may be slow and will generate a lot of network
 traffic if the servers for the listed domains are not local,
 and that queries will time out if no server is available
 for one of the domains.
+.IP
+The search list is currently limited to six domains
+with a total of 256 characters.
 .LP
 The \fIdomain\fP and \fIsearch\fP keywords are mutually exclusive.
 If more than one instance of these keywords is present,
