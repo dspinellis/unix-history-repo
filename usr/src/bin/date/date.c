@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.19 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -48,8 +48,10 @@ char	*ctime();
 char	*asctime();
 struct	tm *localtime();
 struct	tm *gmtime();
-char	*strcpy();
+char	*strcpy(), *strncpy();
 char	*username, *getlogin();
+long	time();
+uid_t	getuid();
 
 main(argc, argv)
 	int argc;
@@ -261,7 +263,7 @@ settime(tv)
 			perror("date: socket");
 		goto bad;
 	}
-	bzero(&sin, sizeof (sin));
+	bzero((char *)&sin, sizeof (sin));
 	sin.sin_family = AF_INET;
 	for (port = IPPORT_RESERVED - 1; port > IPPORT_RESERVED / 2; port--) {
 		sin.sin_port = htons((u_short)port);
@@ -289,7 +291,7 @@ settime(tv)
 		perror("date: connect");
 		goto bad;
 	}
-	if (send(s, &msg, sizeof (struct tsp), 0) < 0) {
+	if (send(s, (char *)&msg, sizeof (struct tsp), 0) < 0) {
 		if (errno != ECONNREFUSED)
 			perror("date: send");
 		goto bad;
@@ -303,7 +305,8 @@ loop:
 	FD_SET(s, &ready);
 	found = select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout);
 	length = sizeof(err);
-	if (getsockopt(s, SOL_SOCKET, SO_ERROR, &err, &length) == 0 && err) {
+	if (getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&err, &length) == 0
+	    && err) {
 		errno = err;
 		if (errno != ECONNREFUSED)
 			perror("date: send (delayed error)");
@@ -311,7 +314,7 @@ loop:
 	}
 	if (found > 0 && FD_ISSET(s, &ready)) {
 		length = sizeof (struct sockaddr_in);
-		if (recvfrom(s, &msg, sizeof (struct tsp), 0, &from,
+		if (recvfrom(s, (char *)&msg, sizeof (struct tsp), 0, &from,
 		    &length) < 0) {
 			if (errno != ECONNREFUSED)
 				perror("date: recvfrom");
@@ -328,7 +331,7 @@ loop:
 			goto loop;
 
 		case TSP_DATEACK:
-			close(s);
+			(void)close(s);
 			return (1);
 
 		default:
@@ -343,22 +346,7 @@ loop:
 		fprintf(stderr,
 		    "date: Can't reach time daemon, time set locally.\n");
 bad:
-	close(s);
+	(void)close(s);
 	retval = 2;
 	return (0);
-}
-
-timevalsub(t1, t2)
-	register struct timeval *t1, *t2;
-{
-	t1->tv_sec -= t2->tv_sec;
-	t1->tv_usec -= t2->tv_usec;
-	if (t1->tv_usec < 0) {
-		t1->tv_sec--;
-		t1->tv_usec += 1000000;
-	}
-	if (t1->tv_usec >= 1000000) {
-		t1->tv_sec++;
-		t1->tv_usec -= 1000000;
-	}
 }
