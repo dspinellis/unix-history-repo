@@ -227,12 +227,6 @@ inline Complex  operator - (double x, const Complex& y)
   return Complex(x - y.real(), -y.imag());
 }
 
-inline Complex  operator * (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() * y.real() - x.imag() * y.imag(), 
-                 x.real() * y.imag() + x.imag() * y.real());
-}
-
 inline Complex  operator * (const Complex& x, double y)
 {
   return Complex(x.real() * y, x.imag() * y);

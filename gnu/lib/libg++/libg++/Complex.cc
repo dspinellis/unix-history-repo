@@ -253,4 +253,9 @@ istream& operator >> (istream& s, Complex& x)
   x = Complex(r, i);
   return s;
 }
- 
+
+Complex  operator * (const Complex& x, const Complex& y)
+{
+  return Complex(x.real() * y.real() - x.imag() * y.imag(), 
+                 x.real() * y.imag() + x.imag() * y.real());
+}
