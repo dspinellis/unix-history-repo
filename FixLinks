@@ -1,0 +1,33 @@
+#!/bin/csh
+#
+#	A silly little script to Fix the Links that cvs does not
+# import/ checkout.  These need to be made by the Makefiles, this
+# is just here as a stop gap solution.
+#
+# $Header$
+#
+# $Log$
+
+pushd sys.386bsd/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
+pushd lib/libc/db ; ln -s VERSION README ; popd
+pushd lib/libc/db/PORT ; ln -s include sys ; popd
+pushd libexec/uucp ; ln -s sys1.unx sys1.c ; popd
+pushd libexec/uucp ; ln -s sys3.unx sys3.c ; popd
+pushd libexec/uucp ; ln -s sys4.unx sys4.c ; popd
+pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
+pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
+pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
+pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
+pushd usr.bin/tn3270/sys_curses ; ln -s ../telextrn.h telextrn.h ; popd
+pushd usr.bin/tn3270/tools ; ln -s ../api/ebc_disp.h ebc_disp.h ; popd
+pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
+pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
+pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
+pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
+pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
+pushd usr.sbin/timed/timed ; ln -s cksum.tahoe.c cksum.i386.c ; popd
+pushd share/tmac ; ln -s ../me/strip.sed strip.sed ; popd
+pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
+pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
+pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
+pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
