@@ -1,0 +1,96 @@
+.TH RMDIR 1 "1 April 1981"
+.SH NAME
+rmdir, rm  \- remove (unlink) directories or files
+.SH SYNOPSIS
+.B rmdir
+dir ...
+.PP
+.B rm
+[
+.B \-f
+] [
+.B \-r
+] [
+.B \-i
+] [
+.B \-
+] file ...
+.PP
+.SH DESCRIPTION
+.PP
+.I Rmdir
+removes entries for the named directories, which must be empty.
+.PP
+.I Rm
+removes the entries for one or more files from a directory.
+If an entry was the last link to the file, the file is destroyed.
+Removal of a file requires write permission in its directory,
+but neither read nor write permission on the file itself.
+.PP
+If a file has no write permission and the standard input is a terminal,
+its permissions are printed and a line is read from the standard input.
+If that line begins with `y' the file is deleted, otherwise the file remains.
+No questions are asked and no errors are reported when the
+.B \-f
+(force) option is given.
+.PP
+If a designated file is a directory,
+an error comment is printed unless the optional argument
+.B \-r
+has been used.  In that case,
+.I rm
+recursively deletes the entire contents of the specified directory,
+and the directory itself.
+.PP
+If the
+.B \-i
+(interactive) option is in effect,
+.I rm
+asks whether to delete each file, and, under
+.BR \-r ,
+whether to examine each directory.
+.PP
+The null option
+.B \-
+indicates that all the arguments following it are to be treated as
+file names.  This allows the specification of file names starting with
+a minus.
+.SH "SEE ALSO"
+rm(1), unlink(2), rmdir(2)
+.SH MESSAGES
+.IP "rmdir: arg count" 10
+.br
+You must specify at least one directory name for \fIrmdir\fP.
+.IP "rmdir: cannot remove . or .." 10
+.br
+You cannot remove the current directory or the parent directory of the
+current directory.
+.IP "rmdir: \fIdirectory\fP non-existent" 10
+.br
+The directory specified by \fIdirectory\fP could not be found \(em check
+the spelling.
+.IP "rmdir: cannot stat " 10
+.br
+The indicated directory cannot be found, or you don't have search
+permission for it.
+.IP "rmdir: \fIdirectory\fP not a directory" 10
+.br
+The object specified by \fIdirectory\fP is not a directory \(em
+\fIrmdir\fP will not remove ordinary files.
+.IP "rmdir: cannot remove current directory" 10
+.br
+You cannot remove the current directory.
+.IP "rmdir: \fIdirectory\fP unreadable" 10
+.br
+The directory specified by \fIdirectory\fP cannot be read \(em the
+permissions are probably not correct.
+.IP "rmdir: \fIdirectory\fP not empty" 10
+.br
+A directory cannot be removed while it still has files in it.
+.IP "rmdir: \fIdirectory\fP: no permission" 10
+.br
+The parent directory containing the directory specified by
+\fIdirectory\fP does not have write permission.
+.IP "rmdir: \fIdirectory\fP not removed" 10
+.br
+This message indicates you are trying to remove a directory you don't own.

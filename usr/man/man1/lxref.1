@@ -1,0 +1,36 @@
+.TH LXREF 1 "24 September 1980"
+.UC 4
+.SH NAME
+lxref \- lisp cross reference program
+.SH SYNOPSIS
+.B lxref
+[
+.B \-N
+] file ...
+.SH DESCRIPTION
+.I Lxref
+reads cross reference file(s) written by the lisp compiler 
+.I liszt
+and prints a cross reference listing on the standard output.
+.I Liszt
+will create a cross reference file during compilation when it is 
+given the \-x switch.
+Cross reference files usually end in `.x' and consequently
+.I lxref
+will append a `.x' to the file names given if necessary.
+The one option to 
+.I lxref
+is a decimal integer, N, which sets the 
+.I ignorelevel.
+If a function is called more than 
+.I ignorelevel 
+times, the cross reference listing will just print the number of calls 
+instead of listing each one of them.
+The default for
+.I ignorelevel 
+is 50.
+.SH AUTHOR
+John Foderaro
+.SH SEE ALSO
+lisp(1),
+liszt(1)

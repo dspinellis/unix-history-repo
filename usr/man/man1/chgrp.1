@@ -1,0 +1,23 @@
+.TH CHGRP 1 "17 March 1982"
+.UC 4.1a Provisional
+.SH NAME
+chgrp \- change group
+.SH SYNOPSIS
+.B chgrp
+group file ...
+.SH DESCRIPTION
+.I Chgrp
+changes the group-ID of the
+.I files
+to
+.IR group .
+The group may be either a decimal GID or
+a group name found in the group-ID file.
+.PP
+The user invoking \fIchgrp\fP must belong
+to the specified group, or be the super-user.
+.SH FILES
+/etc/group
+.SH "SEE ALSO"
+chgrp(8), chown(2),
+passwd(5), group(5)
