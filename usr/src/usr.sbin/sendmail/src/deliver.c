@@ -778,8 +778,6 @@ buildargv(tmplt, flags, host, user, from)
 				while (bp < &buf[sizeof buf - 1] && (*bp++ = *q++) != '\0')
 					continue;
 				bp--;
-				if (q[-2] == '"')
-					bp--;
 			}
 			else if (bp < &buf[sizeof buf - 1])
 				*bp++ = *p;
