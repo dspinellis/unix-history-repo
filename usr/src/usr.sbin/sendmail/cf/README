@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.9 (Berkeley) %G%
+		@(#)README	6.10 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -199,6 +199,11 @@ The domain file can also be used to define a domain name, if needed
 at your site masquerade behind one email name, you could also use
 MASQUERADE_AS here.
 
+You do not have to define a domain -- in particular, if you are a
+single machine sitting off somewhere, it is probably more work than
+it's worth.  This is just a mechanism for combining "domain dependent
+knowledge" into one place.
+
 +---------+
 | MAILERS |
 +---------+
@@ -254,6 +259,8 @@ use_cw_file	Read the file /etc/sendmail.cw file to get alternate
 		on a host that MXed for a dynamic set of other
 		hosts.  If the set is static, just including the line
 		"Cw<name1> <name2> ..." is probably superior.
+		The actual filename can be overridden by redefining
+		confCW_FILE.
 redirect	Reject all mail addressed to "address.REDIRECT" with
 		a ``551 User not local; please try <address>'' message.
 		If this is set, you can alias people who have left
@@ -636,6 +643,9 @@ confWORK_RECIPIENT_FACTOR
 			(undefined)	OY	Cost of each recipient.
 confWORK_CLASS_FACTOR	(undefined)	Oz	Priority multiplier for class.
 confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
+confCW_FILE		/etc/sendmail.cw	Name of file used to get the
+					Fw	local additions to the $=w
+						class.
 
 
 +-----------+
