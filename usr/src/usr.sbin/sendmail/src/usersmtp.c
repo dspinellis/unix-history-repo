@@ -1,13 +1,12 @@
 # include <ctype.h>
-# include <signal.h>
 # include <sysexits.h>
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.16		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.17		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.16		%G%);
+SCCSID(@(#)usersmtp.c	3.17		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -60,7 +59,6 @@ smtpinit(m, pvp, ctladdr)
 # endif DEBUG
 		return (ExitStat);
 	}
-	(void) signal(SIGALRM, tick);
 
 	/*
 	**  Get the greeting message.

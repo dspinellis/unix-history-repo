@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.28		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.29		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.28		%G%);
+SCCSID(@(#)queue.c	3.29		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -193,20 +193,10 @@ runqueue(forkflag)
 		if (QueuePid > 0)
 		{
 			/* parent */
+			if (QueueIntvl != 0)
+				setevent(QueueIntvl, reordersig, TRUE);
 			return;
 		}
-		else
-			(void) alarm(0);
-	}
-
-	/*
-	**  Arrange to reorder the queue at polite intervals.
-	*/
-
-	if (QueueIntvl != 0)
-	{
-		(void) signal(SIGALRM, reordersig);
-		(void) alarm(QueueIntvl);
 	}
 
 	/*
@@ -225,7 +215,11 @@ runqueue(forkflag)
 	{
 		/* order the existing work requests */
 		orderq();
+
+		/* arrange to reorder later */
 		ReorderQueue = FALSE;
+		if (QueueIntvl != 0)
+			setevent(QueueIntvl, reordersig, FALSE);
 
 		/* process them once at a time */
 		while (WorkQ != NULL)
@@ -242,21 +236,23 @@ runqueue(forkflag)
 
 		/* if we are just doing one pass, then we are done */
 		if (QueueIntvl == 0)
-			break;
+			finis();
 
 		/* wait for work -- note (harmless) race condition here */
-		if (!ReorderQueue)
+		while (!ReorderQueue)
+		{
+			if (forkflag)
+				finis();
 			pause();
+		}
 	}
-
-	/* no work to do -- just exit */
-	finis();
 }
 /*
-**  REORDERSIG -- catch the alarm signal and tell sendmail to reorder queue.
+**  REORDERSIG -- catch the reorder signal and tell sendmail to reorder queue.
 **
 **	Parameters:
-**		none.
+**		parent -- if set, called from parent (i.e., not
+**			really doing the work).
 **
 **	Returns:
 **		none.
@@ -265,29 +261,32 @@ runqueue(forkflag)
 **		sets the "reorder work queue" flag.
 */
 
-reordersig()
+reordersig(parent)
+	bool parent;
 {
-	if (QueuePid == 0)
+	if (!parent)
 	{
 		/* we are in a child doing queueing */
 		ReorderQueue = TRUE;
 	}
 	else
 	{
-		/* we are in a parent -- poke child or start new one */
+		/*
+		**  In parent.  If the child still exists, we want
+		**  to do nothing.  If the child is gone, we will
+		**  start up a new one.
+		**  If the child exists, it is responsible for
+		**  doing a queue reorder.
+		**  This code really sucks.
+		*/
+
 		if (kill(QueuePid, SIGALRM) < 0)
 		{
 			/* no child -- get zombie & start new one */
 			static int st;
 
 			(void) wait(&st);
-			QueuePid = dofork();
-			if (QueuePid == 0)
-			{
-				/* new child; run queue */
-				runqueue(FALSE);
-				finis();
-			}
+			runqueue(TRUE);
 		}
 	}
 
@@ -295,8 +294,7 @@ reordersig()
 	**  Arrange to get this signal again.
 	*/
 
-	(void) signal(SIGALRM, reordersig);
-	(void) alarm(QueueIntvl);
+	setevent(QueueIntvl, reordersig, parent);
 }
 /*
 **  ORDERQ -- order the work queue.
