@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uupoll.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uupoll.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -23,7 +23,7 @@ register char **argv;
 	int ret;
 	char wrkpre[MAXFULLNAME];
 	char file[MAXFULLNAME];
-	char grade = 'z';
+	char grade = 'A';
 	int nocall = 0;
 
 	if (argc < 2) {
@@ -55,13 +55,13 @@ register char **argv;
 			continue;
 		}
 		/* Remove any STST file that might stop the poll */
-		sprintf(wrkpre, "%s/LCK..%.7s", LOCKDIR, argv[0]);
+		sprintf(wrkpre, "%s/LCK..%.*s", LOCKDIR, MAXBASENAME, argv[0]);
 		if (access(wrkpre, 0) < 0)
 			rmstat(argv[0]);
-		sprintf(wrkpre, "%c.%.7s", CMDPRE, argv[0]);
+		sprintf(wrkpre, "%c.%.*s", CMDPRE, SYSNSIZE, argv[0]);
 		if (!iswrk(file, "chk", Spool, wrkpre)) {
-			sprintf(file, "%s/%c.%.7s%cPOLL", subdir(Spool, CMDPRE),
-				CMDPRE, argv[0], grade);
+			sprintf(file, "%s/%c.%.*s%cPOLL", subdir(Spool, CMDPRE),
+				CMDPRE, SYSNSIZE, argv[0], grade);
 			close(creat(file, 0666));
 		}
 		/* Attempt the call */
