@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1158,7 +1158,7 @@ openpr()
 	/*
 	 * Start up an output filter, if needed.
 	 */
-	if (OF) {
+	if (!remote && OF) {
 		int p[2];
 		char *cp;
 
