@@ -22,17 +22,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whatis.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <strings.h>
-#include "pathnames.h"
+#include <string.h>
+#include "../man/pathnames.h"
 
-#define	MAXLINELEN	1000			/* max line handled */
-#define	WHATIS		"whatis"		/* database name */
+#define	MAXLINELEN	256			/* max line handled */
+
+int *found, foundman;
+char *progname;
 
 main(argc, argv)
 	int argc;
@@ -40,16 +42,19 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	register char *beg, *end, **p;
-	int ch, foundman = 0, *found;
-	char *manpath, buf[MAXLINELEN + 1], fname[MAXPATHLEN + 1];
-	char wbuf[MAXLINELEN + 1], *getenv(), *malloc();
+	register char *beg, **p;
+	int ch;
+	char *p_augment, *p_path, *config(), *getenv(), *malloc();
 
-	while ((ch = getopt(argc, argv, "M:P:")) != EOF)
+	progname = "whatis";
+	while ((ch = getopt(argc, argv, "M:m:P:")) != EOF)
 		switch((char)ch) {
 		case 'M':
 		case 'P':		/* backward compatible */
-			manpath = optarg;
+			p_path = optarg;
+			break;
+		case 'm':
+			p_augment = optarg;
 			break;
 		case '?':
 		default:
@@ -57,29 +62,50 @@ main(argc, argv)
 		}
 	argv += optind;
 	argc -= optind;
+
 	if (argc < 1)
 		usage();
 
-	if (!(manpath = getenv("MANPATH")))
-		manpath = _PATH_DEFAULT;
+	if (!p_path && !(p_path = getenv("MANPATH")))
+		p_path = config();
 
 	/*NOSTRICT*/
-	if (!(found = (int *)malloc((u_int)argc))) {
-		fprintf(stderr, "whatis: out of space.\n");
-		exit(1);
-	}
+	if (!(found = (int *)malloc((u_int)argc)))
+		enomem();
 	bzero((char *)found, argc * sizeof(int));
 
 	for (p = argv; *p; ++p)			/* trim full paths */
 		if (beg = rindex(*p, '/'))
 			*p = beg + 1;
 
-	for (beg = manpath; beg; beg = end) {	/* through path list */
+	if (p_augment)
+		whatis(argv, p_augment);
+	if (p_path)
+		whatis(argv, p_path);
+
+	if (!foundman) {
+		fprintf(stderr, "whatis: no %s file found.\n", _PATH_WHATIS);
+		exit(1);
+	}
+	for (p = argv; *p; ++p)
+		if (!found[p - argv])
+			printf("%s: not found\n", *p);
+}
+
+whatis(argv, path)
+	char **argv, *path;
+{
+	register char *beg, *end, **p;
+	char fname[MAXPATHLEN + 1];
+	char buf[MAXLINELEN + 1], wbuf[MAXLINELEN + 1];
+
+	for (beg = path; beg; beg = end) {	/* through path list */
 		end = index(beg, ':');
 		if (!end)
-			(void)sprintf(fname, "%s/%s", beg, WHATIS);
+			(void)sprintf(fname, "%s/%s", beg, _PATH_WHATIS);
 		else {
-			(void)sprintf(fname, "%.*s/%s", end - beg, beg, WHATIS);
+			(void)sprintf(fname, "%.*s/%s", end - beg, beg,
+			    _PATH_WHATIS);
 			++end;
 		}
 		if (!freopen(fname, "r", stdin))
@@ -101,14 +127,6 @@ main(argc, argv)
 				}
 		}
 	}
-	if (!foundman) {
-		fprintf(stderr, "whatis: no %s file found in %s.\n",
-		    WHATIS, manpath);
-		exit(1);
-	}
-	for (p = argv; *p; ++p)
-		if (!found[p - argv])
-			printf("%s: not found\n", *p);
 }
 
 /*
@@ -156,6 +174,7 @@ dashtrunc(from, to)
  */
 usage()
 {
-	fprintf(stderr, "usage: whatis [-M path] string ...\n");
+	(void)fprintf(stderr,
+	    "usage: whatis [-M path] [-m path] command ...\n");
 	exit(1);
 }
