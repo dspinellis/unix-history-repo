@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbufs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -74,9 +74,9 @@ showmbufs()
 
 	if (mb == 0)
 		return;
-	for (j = 0; j < wnd->_maxy; j++) {
+	for (j = 0; j < wnd->maxy; j++) {
 		max = 0, index = -1; 
-		for (i = 0; i < wnd->_maxy; i++)
+		for (i = 0; i < wnd->maxy; i++)
 			if (mb->m_mtypes[i] > max) {
 				max = mb->m_mtypes[i];
 				index = i;
