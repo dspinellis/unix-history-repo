@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.4 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,6 +71,9 @@ disksort(dp, bp)
 				do {
 					if (bp->b_cylin < ap->av_forw->b_cylin)
 						goto insert;
+					if (bp->b_cylin == ap->av_forw->b_cylin &&
+					    bp->b_blkno < ap->av_forw->b_blkno)
+						goto insert;
 					ap = ap->av_forw;
 				} while (ap->av_forw);
 				goto insert;		/* after last */
@@ -95,7 +98,9 @@ disksort(dp, bp)
 		 * the next request is a larger cylinder than our request.
 		 */
 		if (ap->av_forw->b_cylin < ap->b_cylin ||
-		    bp->b_cylin < ap->av_forw->b_cylin)
+		    bp->b_cylin < ap->av_forw->b_cylin ||
+		    (bp->b_cylin == ap->av_forw->b_cylin &&
+		    bp->b_blkno < ap->av_forw->b_blkno))
 			goto insert;
 		ap = ap->av_forw;
 	}
@@ -166,6 +171,94 @@ readdisklabel(dev, strat, lp)
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
 	return (msg);
+}
+
+/*
+ * Check new disk label for sensibility
+ * before setting it.
+ */
+setdisklabel(olp, nlp, openmask)
+	register struct disklabel *olp, *nlp;
+	u_long openmask;
+{
+	register i;
+	register struct partition *opp, *npp;
+
+	if (nlp->d_magic != DISKMAGIC || nlp->d_magic2 != DISKMAGIC ||
+	    dkcksum(nlp) != 0)
+		return (EINVAL);
+	while ((i = ffs(openmask)) != 0) {
+		i--;
+		openmask &= ~(1 << i);
+		if (nlp->d_npartitions <= i)
+			return (EBUSY);
+		opp = &olp->d_partitions[i];
+		npp = &nlp->d_partitions[i];
+		if (npp->p_offset != opp->p_offset || npp->p_size < opp->p_size)
+			return (EBUSY);
+		/*
+		 * Copy internally-set partition information
+		 * if new label doesn't include it.		XXX
+		 */
+		if (npp->p_fstype == FS_UNUSED && opp->p_fstype != FS_UNUSED) {
+			npp->p_fstype = opp->p_fstype;
+			npp->p_fsize = opp->p_fsize;
+			npp->p_frag = opp->p_frag;
+			npp->p_cpg = opp->p_cpg;
+		}
+	}
+	*olp = *nlp;
+	return (0);
+}
+
+/* encoding of disk minor numbers, should be elsewhere... */
+#define dkunit(dev)		(minor(dev) >> 3)
+#define dkpart(dev)		(minor(dev) & 07)
+#define dkminor(unit, part)	(((unit) << 3) | (part))
+
+/*
+ * Write disk label back to device after modification.
+ */
+writedisklabel(dev, strat, lp)
+	dev_t dev;
+	int (*strat)();
+	register struct disklabel *lp;
+{
+	struct buf *bp;
+	struct disklabel *dlp;
+	int labelpart;
+	int error = 0;
+
+	labelpart = dkpart(dev);
+	if (lp->d_partitions[labelpart].p_offset != 0) {
+		if (lp->d_partitions[0].p_offset != 0)
+			return (EXDEV);			/* not quite right */
+		labelpart = 0;
+	}
+	bp = geteblk(lp->d_secsize);
+	bp->b_dev = makedev(major(dev), dkminor(dkunit(dev), labelpart));
+	bp->b_blkno = LABELSECTOR;
+	bp->b_bcount = lp->d_secsize;
+	bp->b_flags = B_READ;
+	(*strat)(bp);
+	biowait(bp);
+	if (bp->b_flags & B_ERROR) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;
+		goto bad;
+	}
+	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+	*dlp = *lp;
+	bp->b_flags = B_WRITE;
+	(*strat)(bp); biowait(bp);
+	biowait(bp);
+	if (bp->b_flags & B_ERROR) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;
+	}
+bad:
+	brelse(bp);
+	return (error);
 }
 
 /*
