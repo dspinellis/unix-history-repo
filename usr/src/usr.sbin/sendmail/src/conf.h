@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)conf.h	5.9 (Berkeley) %G%
+ *	@(#)conf.h	5.10 (Berkeley) %G%
  *
  *  Sendmail
  *  Copyright (c) 1983  Eric P. Allman
@@ -54,6 +54,5 @@
 # define QUEUE		1	/* enable queueing */
 # define UGLYUUCP	1	/* output ugly UUCP From lines */
 # define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
-# define FLOCK		1	/* use flock file locking */
 # define SETPROCTITLE	1	/* munge argv to display current status */
 /* # define WIZ		1	/* allow wizard mode */
