@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+#
+# $Id: dnsmkptr,v 2.0 90/09/11 11:07:34 hakanson Rel $
+#
+# Convert DNS master (RFC-1035) file A records to PTR records.
+#   Marion Hakanson (hakanson@cse.ogi.edu)
+#   Oregon Graduate Institute of Science and Technology
+#
+# Copyright (c) 1990, Marion Hakanson.
+#
+# You may distribute under the terms of the GNU General Public License
+# as specified in the README file that comes with the dnsparse kit.
+#
+# Read the master files, and produce PTR records based on the A records
+# contained in them.  Note that if multiple names are found mapping to
+# a single address, we print out only the first mapping encountered.
+#
+# This is quite rudimentary, sorts the output by number, and does not
+# attempt to split the file by net or subnet number.  Hence it lumps
+# multiple domain zones into a single PTR zone file, and thus may be
+# less useful than it could be.
+
+do "dnsparse.pl"; die "$@, aborted" if $@;
+
+do dns_init(@ARGV);
+
+open(OFILE, '| sort -n -t. +3 -4 +2 -3 +1 -2 +0 -1')
+    || die "Cannot start 'sort', aborted";
+
+# bug -- can we guarantee this goes out first after being sorted?
+print OFILE "\$ORIGIN IN-ADDR.ARPA.\n";	# in case we get fed to a nameserver
+
+rr: while ( (@rr = do dns_getrr()) && @rr ) {
+    ($domain, $ttl, $class, $type, @data) = @rr;
+
+    next rr if ( $class ne 'IN' || $type ne 'A' );
+
+    # only print out the first one
+    next rr if ( defined($addr{$data[0]}) );
+    
+    $addr{$data[0]} = 1;
+    
+    $revaddr = join('.',reverse(split(/\./, $data[0])));
+    print OFILE "$revaddr\tIN\tPTR\t$domain.\n";
+}

@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+#
+# $Id: dnstest,v 2.0 90/09/11 11:07:39 hakanson Rel $
+#
+# Test program used for exercising dnsparse.pl subroutines.
+#   Marion Hakanson (hakanson@cse.ogi.edu)
+#   Oregon Graduate Institute of Science and Technology
+#
+# Copyright (c) 1990, Marion Hakanson.
+#
+# You may distribute under the terms of the GNU General Public License
+# as specified in the README file that comes with the dnsparse kit.
+#
+# This program is useful for printing out DNS master files in
+# their canonical (fully-qualified) form, and for doing a simple
+# scan for some syntax errors.  It's also an example skeleton for
+# other programs which want to use the dnsparse routines.
+
+do "dnsparse.pl";
+
+
+do dns_init(@ARGV);
+
+print "\$ORIGIN .\n";	# in case our output gets fed to a nameserver
+
+$" = ' ';	# output separator between array elements
+
+while ( (@rr = do dns_getrr()) && @rr ) {
+    ($domain, $ttl, $class, $type, @data) = @rr; 
+    print "$domain $ttl $class $type @data\n";
+}
