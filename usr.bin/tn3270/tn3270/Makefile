@@ -31,7 +31,7 @@ CFLAGS += -I${.CURDIR} -I.
 LDADD += -lcurses -ltermcap -ltelnet
 DPADD += ${LIBCURSES} /usr/lib/libtermcap.a /usr/lib/libtelnet.a
 
-MAN1 = tn3270.0
+MAN1 = tn3270.1
 
 SRCS += apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c
 SRCS += disp_asc.c ebc_disp.c
