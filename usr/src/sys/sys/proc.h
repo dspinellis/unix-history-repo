@@ -1,4 +1,4 @@
-/*	proc.h	4.7	81/04/13	*/
+/*	proc.h	4.8	81/04/23	*/
 
 /*
  * One structure allocated per active
@@ -97,8 +97,8 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SVFDONE	0x002000	/* another vfork flag */
 #define	SNOVM	0x004000	/* no vm, parent in a vfork() */
 #define	SPAGI	0x008000	/* init data space on demand, from inode */
-#define	SANOM	0x010000	/* system detected anomalous vm behavior */
-#define	SUANOM	0x020000	/* user warned of anomalous vm behavior */
+#define	SSEQL	0x010000	/* user warned of sequential vm behavior */
+#define	SUANOM	0x020000	/* user warned of random vm behavior */
 #define	STIMO	0x040000	/* timing out during sleep */
 #define	SDETACH	0x080000	/* detached inherited by init */
 #define	SNUSIG	0x100000	/* using new signal mechanism */
