@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.15 %G%";
+char version[] = "@(#)main.c 2.16 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -1191,22 +1191,12 @@ checkdir(name)
 	int i;
 
 	for (cp = name; *cp; cp++) {
-		if (*cp == '/') {
-			*cp = '\0';
-			if (access(name, 01) < 0) {
-				register int pid, rp;
-
-				if ((pid = vfork()) == 0) {
-					execl("/bin/mkdir", "mkdir", name, 0);
-					execl("/usr/bin/mkdir", "mkdir", name, 0);
-					fprintf(stderr, "restor: cannot find mkdir!\n");
-					done(0);
-				}
-				while ((rp = wait(&i)) >= 0 && rp != pid)
-					;
-			}
-			*cp = '/';
-		}
+		if (*cp != '/')
+			continue;
+		*cp = '\0';
+		if (access(name, 01) < 0 && mkdir(name, 0777) < 0)
+			fprintf(stderr, "restor: "), perror(name);
+		*cp = '/';
 	}
 }
 
