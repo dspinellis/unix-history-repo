@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.60		%G%);
+SCCSID(@(#)main.c	3.61		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -351,6 +351,14 @@ main(argc, argv)
 # endif QUEUE
 			break;
 
+		  case 'p':	/* fork politely after initial verification */
+			ForkOff = TRUE;
+			break;
+
+		  case 'o':	/* take old-style headers (no commas) */
+			OldStyle = TRUE;
+			break;
+
 		  default:
 			/* at Eric Schmidt's suggestion, this will not be an error....
 			syserr("Unknown flag %s", p);
@@ -488,6 +496,29 @@ main(argc, argv)
 	if (!verifyonly || GrabTo)
 		collect(FALSE);
 	errno = 0;
+
+	/*
+	**  If we don't want to wait around for actual delivery, this
+	**  is a good time to fork off.
+	**	We have examined what we can without doing actual
+	**		delivery, so we will inform our caller of
+	**		whatever we can now.
+	**	Since the parent process will go away immediately,
+	**		the child will be caught by init.
+	**	If the fork fails, we will just continue in the
+	**		parent; this is perfectly safe, albeit
+	**		slower than it must be.
+	*/
+
+	if (ForkOff)
+	{
+		if (fork() > 0)
+		{
+			/* parent -- quit */
+			exit(ExitStat);
+		}
+	}
+
 	initsys();
 
 	/* collect statistics */
@@ -606,6 +637,11 @@ setfrom(from, realname)
 # ifndef V6
 	From.q_home = getenv("HOME");
 # endif V6
+	if (From.q_uid != 0)
+	{
+		DefUid = From.q_uid;
+		DefGid = From.q_gid;
+	}
 
 	/*
 	**  Set up the $r and $s macros to show who it came from.

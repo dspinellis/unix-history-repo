@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.37		%G%);
+SCCSID(@(#)parseaddr.c	3.38		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -771,14 +771,15 @@ buildaddr(tv, a)
 	tv++;
 	if (!bitset(M_LOCAL, m->m_flags))
 	{
-		if (**tv != CANONHOST)
+		if (**tv++ != CANONHOST)
 		{
 			syserr("buildaddr: no host");
 			return (NULL);
 		}
-		tv++;
-		a->q_host = *tv;
-		tv++;
+		buf[0] = '\0';
+		while (*tv != NULL && **tv != CANONUSER)
+			strcat(buf, *tv++);
+		a->q_host = newstr(buf);
 	}
 	else
 		a->q_host = NULL;

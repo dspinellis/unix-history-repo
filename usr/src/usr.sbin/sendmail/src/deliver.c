@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.62		%G%);
+SCCSID(@(#)deliver.c	3.63		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -651,8 +651,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		{
 			if (ctladdr->q_uid == 0)
 			{
-				extern int DefUid, DefGid;
-
 				(void) setgid(DefGid);
 				(void) setuid(DefUid);
 			}
@@ -1052,7 +1050,6 @@ mailfile(filename, ctladdr)
 	{
 		/* child -- actually write to file */
 		struct stat stb;
-		extern int DefUid, DefGid;
 
 		(void) signal(SIGINT, SIG_DFL);
 		(void) signal(SIGHUP, SIG_DFL);

@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.28		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.29		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.28		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.29		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -55,7 +55,6 @@ typedef struct
 	char	*dptr;
 	int	dsize;
 } DATUM;
-DATUM lhs, rhs;
 extern DATUM fetch();
 #endif DBM
 
@@ -65,9 +64,7 @@ alias(a, sendq)
 {
 	register char *p;
 	extern ADDRESS *sendto();
-# ifndef DBM
-	register STAB *s;
-# endif DBM
+	extern char *aliaslookup();
 
 	if (NoAlias)
 		return;
@@ -86,22 +83,9 @@ alias(a, sendq)
 	**  Look up this name
 	*/
 
-# ifdef DBM
-	/* create a key for fetch */
-	lhs.dptr = a->q_user;
-	lhs.dsize = strlen(a->q_user) + 1;
-	rhs = fetch(lhs);
-
-	/* find this alias? */
-	p = rhs.dptr;
+	p = aliaslookup(a->q_user);
 	if (p == NULL)
 		return;
-# else DBM
-	s = stab(a->q_user, ST_ALIAS, ST_FIND);
-	if (s == NULL)
-		return;
-	p = s->s_alias;
-# endif DBM
 
 	/*
 	**  Match on Alias.
@@ -118,6 +102,44 @@ alias(a, sendq)
 	AliasLevel++;
 	a->q_child = sendto(p, 1, a, 0);
 	AliasLevel--;
+}
+/*
+**  ALIASLOOKUP -- look up a name in the alias file.
+**
+**	Parameters:
+**		name -- the name to look up.
+**
+**	Returns:
+**		the value of name.
+**		NULL if unknown.
+**
+**	Side Effects:
+**		none.
+**
+**	Warnings:
+**		The return value will be trashed across calls.
+*/
+
+char *
+aliaslookup(name)
+	char *name;
+{
+# ifdef DBM
+	DATUM rhs, lhs;
+
+	/* create a key for fetch */
+	lhs.dptr = name;
+	lhs.dsize = strlen(name) + 1;
+	rhs = fetch(lhs);
+	return (rhs.dptr);
+# else DBM
+	register STAB *s;
+
+	s = stab(name, ST_ALIAS, ST_FIND);
+	if (s == NULL)
+		return (NULL);
+	return (s->s_alias);
+# endif DBM
 }
 /*
 **  INITALIASES -- initialize for aliasing
@@ -456,4 +478,38 @@ forward(user, sendq)
 
 	/* we do have an address to forward to -- do it */
 	include(buf, "forwarding", user, sendq);
+}
+/*
+**  HOSTALIAS -- alias a host name
+**
+**	Given a host name, look it up in the host alias table
+**	and return it's value.  If nothing, return NULL.
+**
+**	Parameters:
+**		a -- address to alias.
+**
+**	Returns:
+**		text result of aliasing.
+**		NULL if none.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+hostalias(a)
+	register ADDRESS *a;
+{
+	char buf[MAXNAME+2];
+	register char *p;
+
+	strcpy(buf, "/");
+	strcat(buf, a->q_host);
+	makelower(buf);
+
+	p = aliaslookup(buf);
+	if (p == NULL)
+		return (NULL);
+	sprintf(buf, p, a->q_user);
+	return (newstr(buf));
 }

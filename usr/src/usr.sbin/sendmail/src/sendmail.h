@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.57		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.58		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -332,6 +332,8 @@ EXTERN bool	QueueUp;	/* queue this message for future xmission */
 EXTERN bool	QueueRun;	/* currently running something from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
+EXTERN bool	ForkOff;	/* fork after initial verification */
+EXTERN bool	OldStyle;	/* spaces (not commas) delimit addresses */
 extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
@@ -339,6 +341,8 @@ EXTERN FILE	*TempFile;	/* mail temp file */
 EXTERN FILE	*Xscript;	/* mail transcript file */
 EXTERN int	RealUid;	/* when Daemon, real uid of caller */
 EXTERN int	RealGid;	/* when Daemon, real gid of caller */
+extern int	DefUid;		/* default uid to run as */
+extern int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Debug;		/* debugging level */
 EXTERN int	Errors;		/* set if errors */
