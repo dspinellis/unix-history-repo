@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -126,6 +126,8 @@ main(argc, argv)
 		if (ok) {
 			if (rename(temp, passwd) < 0)
 				fprintf(stderr, "vipw: "), perror("rename");
+			else
+				exit(0);
 		} else
 			fprintf(stderr,
 			    "vipw: you mangled the temp file, %s unchanged\n",
@@ -133,4 +135,5 @@ main(argc, argv)
 	}
 bad:
 	unlink(temp);
+	exit(1);
 }
