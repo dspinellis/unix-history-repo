@@ -1,5 +1,5 @@
 #!/bin/sh
-# 1.2	(CWI)	87/03/31
+# 1.3	(CWI)	87/09/10
 
 for i in $*
 do
@@ -9,4 +9,4 @@ do
 		exit 1
 	fi
 done
-awk -f chem.awk $*
+nawk -f chem.awk $*
