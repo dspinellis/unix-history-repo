@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.7 (Berkeley) %G%
+#	@(#)Files.base	8.8 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -74,6 +74,7 @@ src/mailstats.h
 src/main.c
 src/map.c
 src/mci.c
+src/mime.c
 src/newaliases.1
 src/parseaddr.c
 src/pathnames.h
