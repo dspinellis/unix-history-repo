@@ -1,0 +1,173 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ;
+comment  @ * @;
+
+
+1.1
+date     83.03.01.16.32.45;  author cooper;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Library routines for Courier servers.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#include <courier.h>
+#include <time.h>
+
+#if DEBUG
+int CourierServerDebuggingFlag = 0;
+#endif
+
+/*
+ * Message stream handle.
+ */
+static int msgs = -1;
+
+/*
+ * Information about user-specified I/O dispatch function.
+ */
+static void (*selectfunc)() = 0;
+static int readmask, writemask, exceptmask, blockflag;
+static struct timeval timeout;
+
+Unspecified *
+ReceiveCallMessage(procp)
+	Cardinal *procp;
+{
+	Cardinal proc, n, nwords;
+	Unspecified *bp;
+
+	if (readmsg(&proc, 1) == 0)
+		exit(0);				/* clean EOF */
+	if (readmsg(&nwords, 1) == 0)
+		goto eof;
+	UnpackCardinal(procp, &proc);
+	UnpackCardinal(&n, &nwords);
+#if DEBUG
+	if (CourierServerDebuggingFlag)
+		fprintf(stderr, "[ReceiveCallMessage %d %d]\n", *procp, n);
+#endif
+	bp = Allocate(n);
+	if (readmsg(bp, n) == 0)
+		goto eof;
+	return (bp);
+eof:
+	exit(1);
+}
+
+SendReturnMessage(n, results)
+	Cardinal n;
+	Unspecified *results;
+{
+	Cardinal nwords;
+
+#if DEBUG
+	if (CourierServerDebuggingFlag)
+		fprintf(stderr, "[SendReturnMessage %d]\n", n);
+#endif
+	PackCardinal(&n, &nwords, 1);
+	writemsg(&nwords, 1);
+	writemsg(results, n);
+}
+
+NoSuchProcedureValue(prog_name, proc)
+	String prog_name;
+	Cardinal proc;
+{
+	fprintf(stderr, "Courier program %s: no such procedure value %d\n",
+		prog_name, proc);
+}
+
+static
+readmsg(addr, nwords)
+	char *addr;
+	int nwords;
+{
+	register int nbytes, n;
+	register char *p;
+	int rbits, wbits, ebits;
+
+	for (p = addr, nbytes = 2*nwords; nbytes > 0; nbytes -= n, p += n) {
+		while (selectfunc != 0) {
+			rbits = (1 << msgs) | readmask;
+			wbits = writemask;
+			ebits = exceptmask;
+			if (blockflag)
+				select(32, &rbits, &wbits, &ebits, 0);
+			else
+				select(32, &rbits, &wbits, &ebits, &timeout);
+			if (rbits & (1 << msgs))
+				break;
+			rbits &= ~(1 << msgs);
+			(*selectfunc)(rbits, wbits, ebits);
+		}
+		n = read(msgs, p, nbytes);
+		if (n <= 0)
+			return (0);
+	}
+	return (1);
+}
+
+static
+writemsg(addr, nwords)
+	char *addr;
+	int nwords;
+{
+	register int n;
+	int rbits, wbits, ebits;
+
+	for (;;) {
+		rbits = readmask;
+		wbits = (1 << msgs) | writemask;
+		ebits = exceptmask;
+		if (blockflag)
+			select(32, &rbits, &wbits, &ebits, 0);
+		else
+			select(32, &rbits, &wbits, &ebits, &timeout);
+		if (wbits & (1 << msgs))
+			break;
+		wbits &= ~(1 << msgs);
+		(*selectfunc)(rbits, wbits, ebits);
+	}
+	write(msgs, addr, 2*nwords);
+	return (1);
+}
+
+CourierSelect(func, in, out, except, timelimit)
+	void (*func)();
+	int in, out, except;
+	struct timeval *timelimit;
+{
+	if ((selectfunc = func) != 0) {
+		readmask = in;
+		writemask = out;
+		exceptmask = except;
+		if (!(blockflag = (timelimit == 0)))
+			timeout = *timelimit;
+	}
+}
+
+ServerInit()
+{
+	write(1, "\0", 1);
+	msgs = 20;
+	while (dup2(0, msgs) < 0)
+		--msgs;
+	close(0); close(1);
+}
+
+main()
+{
+	Server();
+}
+@
