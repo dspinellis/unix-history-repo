@@ -1,13 +1,13 @@
-/*	param.c	4.8	81/11/07	*/
+/*	param.c	4.9	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#ifdef BBNNET
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/imp.h"
+#ifdef INET
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/imp.h"
+#endif INET
 #include "../h/socket.h"
-#endif BBNNET
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
@@ -17,7 +17,7 @@
 #include "../h/callout.h"
 #include "../h/clist.h"
 #include "../h/cmap.h"
-#include "../h/port.h"
+#include "../h/mbuf.h"
 /*
  * System parameter formulae.
  *
@@ -39,11 +39,11 @@ int	nfile = 8 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
-#ifdef BBNNET
-int     nnetpages = NNETPAGES;
+int     nmbpages = NMBPAGES;
+#ifdef INET
 int     nnetcon = NCON;
 int     nhost = NHOST;
-#endif BBNNET
+#endif INET
 
 /*
  * These are initialized at bootstrap time
@@ -66,9 +66,8 @@ short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
-#ifdef BBNNET
-struct  ucb *contab, *conNCON;
+#ifdef INET
 struct  host *host, *hostNHOST;
 struct  net_stat netstat;
 struct  impstat imp_stat;
-#endif BBNNET
+#endif INET
