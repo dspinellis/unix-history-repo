@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	7.22 (Berkeley) %G%
+ *	@(#)esis.c	7.23 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -71,7 +71,7 @@ SOFTWARE.
  *
  */
 struct rawcb	esis_pcb;
-int				esis_config(), snpac_age();
+void				esis_config(), snpac_age();
 int				esis_sendspace = 2048;
 int				esis_recvspace = 2048;
 short			esis_holding_time = ESIS_HT;
@@ -716,6 +716,7 @@ bad: ;    /* Needed by ESIS_NEXT_OPTION */
  *
  * NOTES:			Called every esis_config_time seconds
  */
+void
 esis_config()
 {
 	register struct ifnet	*ifp;
