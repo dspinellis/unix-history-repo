@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.14	%G%";
+static char SccsId[] = "@(#)readcf.c	3.15	%G%";
 
 /*
 **  READCF -- read control file.
@@ -279,6 +279,7 @@ makemailer(line, safe)
 	char *margv[MAXPV + 1];
 	register int i;
 	extern int NextMailer;
+	STAB *s;
 
 	if (NextMailer >= MAXMAILERS)
 	{
@@ -313,6 +314,7 @@ makemailer(line, safe)
 	m->m_from = newstr(mfrom);
 	m->m_badstat = EX_UNAVAILABLE;
 	m->m_sendq = NULL;
+	m->m_mno = NextMailer;
 	Mailer[NextMailer++] = m;
 
 	/* collect the argument vector */
@@ -326,6 +328,8 @@ makemailer(line, safe)
 	/* save the argv */
 	m->m_argv = (char **) xalloc((unsigned) (sizeof margv[0] * i));
 	bmove((char *) margv, (char *) m->m_argv, sizeof margv[0] * i);
+	s = stab(m->m_name, ST_MAILER, ST_ENTER);
+	s->s_mailer = m;
 }
 /*
 **  PRINTRULES -- print rewrite rules (for debugging)

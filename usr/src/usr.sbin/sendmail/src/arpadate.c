@@ -1,11 +1,11 @@
-# include "conf.h"
 # include <time.h>
 # ifndef V6
 # include <sys/types.h>
 # include <sys/timeb.h>
 # endif
+# include "useful.h"
 
-static char SccsId[] = "@(#)arpadate.c	3.6.1.1	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.7	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -32,8 +32,6 @@ static char SccsId[] = "@(#)arpadate.c	3.6.1.1	%G%";
 **		local date.  This routine should figure out what
 **		the format is and work appropriately.
 */
-
-# define NULL		0
 
 struct cvttab
 {

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.8	%G%";
+static char SccsId[] = "@(#)stab.c	3.9	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -54,16 +54,13 @@ stab(name, type, op)
 		hfunc = ((hfunc << 7) | lower(*p)) % STABSIZE;
 
 # ifdef DEBUG
-	if (Debug > 15)
+	if (Debug > 5)
 		printf("(hfunc=%d) ", hfunc);
 # endif DEBUG
 
 	ps = &SymTab[hfunc];
 	while ((s = *ps) != NULL && (!sameword(name, s->s_name) || s->s_type != type))
-	{
 		ps = &s->s_next;
-		s = s->s_next;
-	}
 
 	/*
 	**  Dispose of the entry.
