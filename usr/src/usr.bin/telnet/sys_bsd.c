@@ -637,6 +637,8 @@ TerminalNewMode(f)
 #endif
     } else {
 #ifdef	SIGINFO
+	SIG_FUNC_RET ayt_status();
+
 	(void) signal(SIGINFO, ayt_status);
 #endif	SIGINFO
 #ifdef	SIGTSTP

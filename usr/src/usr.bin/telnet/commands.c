@@ -593,12 +593,12 @@ static int togglehelp P((void));
 #if	defined(AUTHENTICATION)
 extern int auth_togdebug P((int));
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 extern int EncryptAutoEnc P((int));
 extern int EncryptAutoDec P((int));
 extern int EncryptDebug P((int));
 extern int EncryptVerbose P((int));
-#endif
+#endif	/* ENCRYPTION */
 
 struct togglelist {
     char	*name;		/* name of toggle */
@@ -631,7 +631,7 @@ static struct togglelist Togglelist[] = {
 		0,
 		     "print authentication debugging information" },
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     { "autoencrypt",
 	"automatic encryption of data stream",
 	    EncryptAutoEnc,
@@ -652,7 +652,7 @@ static struct togglelist Togglelist[] = {
 	    EncryptDebug,
 		0,
 		    "print encryption debugging information" },
-#endif
+#endif	/* ENCRYPTION */
     { "skiprc",
 	"don't read ~/.telnetrc file",
 	    0,
@@ -1270,9 +1270,9 @@ display(argc, argv)
 	}
     }
 /*@*/optionstatus();
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     EncryptStatus();
-#endif
+#endif	/* ENCRYPTION */
     return 1;
 #undef	doset
 #undef	dotog
@@ -1424,7 +1424,7 @@ bye(argc, argv)
 	resettermname = 1;
 #if	defined(AUTHENTICATION) || defined(ENCRYPTION)
 	auth_encrypt_connect(connected);
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION) */
 	/* reset options */
 	tninit();
 #if	defined(TN3270)
@@ -1948,7 +1948,7 @@ auth_cmd(argc, argv)
 }
 #endif
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 /*
  * The ENCRYPT command.
  */
@@ -2061,7 +2061,7 @@ encrypt_cmd(argc, argv)
 			argc > 1 ? argv[3] : 0,
 			argc > 2 ? argv[4] : 0));
 }
-#endif
+#endif	/* ENCRYPTION */
 
 #if	defined(unix) && defined(TN3270)
     static void
@@ -2128,9 +2128,9 @@ status(argc, argv)
 	    printf("%s character echo\n", (mode&MODE_ECHO) ? "Local" : "Remote");
 	    if (my_want_state_is_will(TELOPT_LFLOW))
 		printf("%s flow control\n", (mode&MODE_FLOW) ? "Local" : "No");
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	    encrypt_display();
-#endif
+#endif	/* ENCRYPTION */
 	}
     } else {
 	printf("No connection.\n");
@@ -2387,7 +2387,7 @@ tn(argc, argv)
 	connected++;
 #if	defined(AUTHENTICATION) || defined(ENCRYPTION)
 	auth_encrypt_connect(connected);
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION) */
     } while (connected == 0);
     cmdrc(hostp, hostname);
     if (autologin && user == NULL) {
@@ -2435,9 +2435,9 @@ static char
 #if	defined(AUTHENTICATION)
 	authhelp[] =	"turn on (off) authentication ('auth ?' for more)",
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	encrypthelp[] =	"turn on (off) encryption ('encrypt ?' for more)",
-#endif
+#endif	/* ENCRYPTION */
 #if	defined(unix)
 	zhelp[] =	"suspend telnet",
 #endif	/* defined(unix) */
@@ -2466,9 +2466,9 @@ static Command cmdtab[] = {
 #if	defined(AUTHENTICATION)
 	{ "auth",	authhelp,	auth_cmd,	0 },
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	{ "encrypt",	encrypthelp,	encrypt_cmd,	0 },
-#endif
+#endif	/* ENCRYPTION */
 #if	defined(unix)
 	{ "z",		zhelp,		suspend,	0 },
 #endif	/* defined(unix) */

@@ -9,7 +9,7 @@
 static char sccsid[] = "@(#)authenc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#if	defined(ENCRYPTION) || defined(AUTHENTICATION)
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION)
 #include <sys/types.h>
 #include <arpa/telnet.h>
 #include <libtelnet/encrypt.h>
@@ -38,12 +38,12 @@ net_write(str, len)
 	void
 net_encrypt()
 {
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (encrypt_output)
 		ring_encrypt(&netoring, encrypt_output);
 	else
 		ring_clearto(&netoring);
-#endif
+#endif	/* ENCRYPTION */
 }
 
 	int
@@ -82,4 +82,4 @@ telnet_gets(prompt, result, length, echo)
 	TerminalNewMode(om);
 	return(res);
 }
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION) */

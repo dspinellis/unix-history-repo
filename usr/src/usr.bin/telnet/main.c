@@ -46,26 +46,26 @@ usage()
 	fprintf(stderr, "Usage: %s %s%s%s%s\n",
 	    prompt,
 #ifdef	AUTHENTICATION
-	    " [-8] [-E] [-K] [-L] [-X atype] [-a] [-d] [-e char] [-k realm]",
-	    "\n\t[-l user] [-n tracefile] ",
+	    "[-8] [-E] [-K] [-L] [-S tos] [-X atype] [-a] [-c] [-d] [-e char]",
+	    "\n\t[-k realm] [-l user] [-n tracefile] ",
 #else
-	    " [-8] [-E] [-L] [-a] [-d] [-e char] [-l user] [-n tracefile]",
-	    "\n\t",
+	    "[-8] [-E] [-L] [-S tos] [-a] [-c] [-d] [-e char] [-l user]",
+	    "\n\t[-n tracefile]",
 #endif
 #if defined(TN3270) && defined(unix)
 # ifdef AUTHENTICATION
-	    "[-noasynch] [-noasynctty] [-noasyncnet]\n\t[-r] [-t transcom] ",
+	    "[-noasynch] [-noasynctty]\n\t[-noasyncnet] [-r] [-t transcom] ",
 # else
-	    "[-noasynch] [-noasynctty] [-noasyncnet] [-r] [-t transcom]\n\t",
+	    "[-noasynch] [-noasynctty] [-noasyncnet] [-r]\n\t[-t transcom]",
 # endif
 #else
 	    "[-r] ",
 #endif
 #ifdef	ENCRYPTION
 	    "[-x] [host-name [port]]"
-#else
+#else	/* ENCRYPTION */
 	    "[host-name [port]]"
-#endif
+#endif	/* ENCRYPTION */
 	);
 	exit(1);
 }
@@ -201,11 +201,11 @@ main(argc, argv)
 #ifdef	ENCRYPTION
 			encrypt_auto(1);
 			decrypt_auto(1);
-#else
+#else	/* ENCRYPTION */
 			fprintf(stderr,
 			    "%s: Warning: -x ignored, no ENCRYPT support.\n",
 								prompt);
-#endif
+#endif	/* ENCRYPTION */
 			break;
 		case '?':
 		default:
