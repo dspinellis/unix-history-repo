@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass3.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass3.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -17,7 +17,7 @@ int	pass2check();
 
 pass3()
 {
-	register DINODE *dp;
+	register struct dinode *dp;
 	struct inodesc idesc;
 	ino_t inumber, orphan;
 	int loopcnt;
@@ -35,7 +35,7 @@ pass3()
 			loopcnt = 0;
 			do {
 				orphan = idesc.id_parent;
-				if (orphan < ROOTINO || orphan > imax)
+				if (orphan < ROOTINO || orphan > maxino)
 					break;
 				dp = ginode(orphan);
 				idesc.id_parent = 0;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -20,9 +20,9 @@ int pass1check();
 pass1()
 {
 	register int c, i, j;
-	register DINODE *dp;
+	register struct dinode *dp;
 	struct zlncnt *zlnp;
-	int ndb, partial, cgd;
+	int ndb, cgd;
 	struct inodesc idesc;
 	ino_t inumber;
 
@@ -52,7 +52,7 @@ pass1()
 			if (inumber < ROOTINO)
 				continue;
 			dp = ginode(inumber);
-			if (!ALLOC(dp)) {
+			if ((dp->di_mode & IFMT) == 0) {
 				if (bcmp((char *)dp->di_db, (char *)zino.di_db,
 					NDADDR * sizeof(daddr_t)) ||
 				    bcmp((char *)dp->di_ib, (char *)zino.di_ib,
@@ -61,7 +61,7 @@ pass1()
 					pfatal("PARTIALLY ALLOCATED INODE I=%u",
 						inumber);
 					if (reply("CLEAR") == 1) {
-						zapino(dp);
+						clearinode(dp);
 						inodirty();
 					}
 				}
@@ -88,7 +88,8 @@ pass1()
 						dp->di_size, ndb);
 				goto unknown;
 			}
-			if (SPECIAL(dp))
+			if ((dp->di_mode & IFMT) == IFBLK ||
+			    (dp->di_mode & IFMT) == IFCHR)
 				ndb++;
 			for (j = ndb; j < NDADDR; j++)
 				if (dp->di_db[j] != 0) {
@@ -122,8 +123,9 @@ pass1()
 					zlnhead = zlnp;
 				}
 			}
-			statemap[inumber] = DIRCT(dp) ? DSTATE : FSTATE;
-			badblk = dupblk = 0; maxblk = 0;
+			statemap[inumber] =
+			    (dp->di_mode & IFMT) == IFDIR ? DSTATE : FSTATE;
+			badblk = dupblk = 0;
 			idesc.id_number = inumber;
 			(void)ckinode(dp, &idesc);
 			idesc.id_entryno *= btodb(sblock.fs_fsize);
@@ -143,7 +145,7 @@ pass1()
 			statemap[inumber] = FCLEAR;
 			if (reply("CLEAR") == 1) {
 				statemap[inumber] = USTATE;
-				zapino(dp);
+				clearinode(dp);
 				inodirty();
 			}
 		}
@@ -159,8 +161,8 @@ pass1check(idesc)
 	register struct dups *dlp;
 	struct dups *new;
 
-	if ((anyout = outrange(blkno, idesc->id_numfrags)) != 0) {
-		blkerr(idesc->id_number, "BAD", blkno);
+	if ((anyout = chkrange(blkno, idesc->id_numfrags)) != 0) {
+		blkerror(idesc->id_number, "BAD", blkno);
 		if (++badblk >= MAXBAD) {
 			pwarn("EXCESSIVE BAD BLKS I=%u",
 				idesc->id_number);
@@ -172,13 +174,13 @@ pass1check(idesc)
 		}
 	}
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
-		if (anyout && outrange(blkno, 1)) {
+		if (anyout && chkrange(blkno, 1)) {
 			res = SKIP;
-		} else if (!getbmap(blkno)) {
+		} else if (!testbmap(blkno)) {
 			n_blks++;
 			setbmap(blkno);
 		} else {
-			blkerr(idesc->id_number, "DUP", blkno);
+			blkerror(idesc->id_number, "DUP", blkno);
 			if (++dupblk >= MAXDUP) {
 				pwarn("EXCESSIVE DUP BLKS I=%u",
 					idesc->id_number);

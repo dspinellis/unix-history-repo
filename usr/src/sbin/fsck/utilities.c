@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -21,7 +21,7 @@ long	lseek();
 char	*malloc();
 
 ftypeok(dp)
-	DINODE *dp;
+	struct dinode *dp;
 {
 	switch (dp->di_mode & IFMT) {
 
@@ -40,16 +40,16 @@ ftypeok(dp)
 	}
 }
 
-reply(s)
-	char *s;
+reply(mesg)
+	char *mesg;
 {
 	char line[80];
-	int cont = (strcmp(s, "CONTINUE") == 0);
+	int cont = (strcmp(mesg, "CONTINUE") == 0);
 
 	if (preen)
 		pfatal("INTERNAL ERROR: GOT TO reply()");
-	printf("\n%s? ", s);
-	if (!cont && (nflag || dfile.wfdes < 0)) {
+	printf("\n%s? ", mesg);
+	if (!cont && (nflag || fswritefd < 0)) {
 		printf(" no\n\n");
 		return (0);
 	}
@@ -69,8 +69,9 @@ reply(s)
 getline(fp, loc, maxlen)
 	FILE *fp;
 	char *loc;
+	int maxlen;
 {
-	register n;
+	register long n;
 	register char *p, *lastloc;
 
 	p = loc;
@@ -90,11 +91,11 @@ getline(fp, loc, maxlen)
  */
 bufinit()
 {
-	register BUFAREA *bp;
+	register struct bufarea *bp;
 	long bufcnt, i;
 	char *bufp;
 
-	bufp = malloc(sblock.fs_bsize);
+	bufp = malloc((unsigned int)sblock.fs_bsize);
 	if (bufp == 0)
 		errexit("cannot allocate buffer pool\n");
 	cgblk.b_un.b_buf = bufp;
@@ -104,8 +105,8 @@ bufinit()
 	if (bufcnt < MINBUFS)
 		bufcnt = MINBUFS;
 	for (i = 0; i < bufcnt; i++) {
-		bp = (BUFAREA *)malloc(sizeof(BUFAREA));
-		bufp = malloc(sblock.fs_bsize);
+		bp = (struct bufarea *)malloc(sizeof(struct bufarea));
+		bufp = malloc((unsigned int)sblock.fs_bsize);
 		if (bp == NULL || bufp == NULL) {
 			if (i >= MINBUFS)
 				break;
@@ -124,12 +125,12 @@ bufinit()
 /*
  * Manage a cache of directory blocks.
  */
-BUFAREA *
+struct bufarea *
 getdatablk(blkno, size)
 	daddr_t blkno;
 	long size;
 {
-	register BUFAREA *bp;
+	register struct bufarea *bp;
 
 	for (bp = bufhead.b_next; bp != &bufhead; bp = bp->b_next)
 		if (bp->b_bno == fsbtodb(&sblock, blkno))
@@ -153,30 +154,28 @@ foundit:
 	return (bp);
 }
 
-BUFAREA *
+struct bufarea *
 getblk(bp, blk, size)
-	register BUFAREA *bp;
+	register struct bufarea *bp;
 	daddr_t blk;
 	long size;
 {
-	register struct filecntl *fcp;
 	daddr_t dblk;
 
-	fcp = &dfile;
 	dblk = fsbtodb(&sblock, blk);
 	if (bp->b_bno == dblk)
 		return (bp);
-	flush(fcp, bp);
+	flush(fswritefd, bp);
 	diskreads++;
-	bp->b_errs = bread(fcp, bp->b_un.b_buf, dblk, size);
+	bp->b_errs = bread(fsreadfd, bp->b_un.b_buf, dblk, size);
 	bp->b_bno = dblk;
 	bp->b_size = size;
 	return (bp);
 }
 
-flush(fcp, bp)
-	struct filecntl *fcp;
-	register BUFAREA *bp;
+flush(fd, bp)
+	int fd;
+	register struct bufarea *bp;
 {
 	register int i, j;
 
@@ -188,46 +187,46 @@ flush(fcp, bp)
 		    bp->b_bno);
 	bp->b_dirty = 0;
 	bp->b_errs = 0;
-	bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
+	bwrite(fd, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
 	if (bp != &sblk)
 		return;
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
-		bwrite(&dfile, (char *)sblock.fs_csp[j],
+		bwrite(fswritefd, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
 		    sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize);
 	}
 }
 
-rwerr(s, blk)
-	char *s;
+rwerror(mesg, blk)
+	char *mesg;
 	daddr_t blk;
 {
 
 	if (preen == 0)
 		printf("\n");
-	pfatal("CANNOT %s: BLK %ld", s, blk);
+	pfatal("CANNOT %s: BLK %ld", mesg, blk);
 	if (reply("CONTINUE") == 0)
 		errexit("Program terminated\n");
 }
 
 ckfini()
 {
-	register BUFAREA *bp, *nbp;
+	register struct bufarea *bp, *nbp;
 	int cnt = 0;
 
-	flush(&dfile, &sblk);
+	flush(fswritefd, &sblk);
 	if (havesb && sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
 		sblk.b_bno = SBOFF / dev_bsize;
 		sbdirty();
-		flush(&dfile, &sblk);
+		flush(fswritefd, &sblk);
 	}
-	flush(&dfile, &cgblk);
+	flush(fswritefd, &cgblk);
 	free(cgblk.b_un.b_buf);
 	for (bp = bufhead.b_prev; bp != &bufhead; bp = nbp) {
 		cnt++;
-		flush(&dfile, bp);
+		flush(fswritefd, bp);
 		nbp = bp->b_prev;
 		free(bp->b_un.b_buf);
 		free((char *)bp);
@@ -237,12 +236,12 @@ ckfini()
 	if (debug)
 		printf("cache missed %d of %d (%d%%)\n", diskreads,
 		    totalreads, diskreads * 100 / totalreads);
-	(void)close(dfile.rfdes);
-	(void)close(dfile.wfdes);
+	(void)close(fsreadfd);
+	(void)close(fswritefd);
 }
 
-bread(fcp, buf, blk, size)
-	register struct filecntl *fcp;
+bread(fd, buf, blk, size)
+	int fd;
 	char *buf;
 	daddr_t blk;
 	long size;
@@ -250,19 +249,19 @@ bread(fcp, buf, blk, size)
 	char *cp;
 	int i, errs;
 
-	if (lseek(fcp->rfdes, blk * dev_bsize, 0) < 0)
-		rwerr("SEEK", blk);
-	else if (read(fcp->rfdes, buf, (int)size) == size)
+	if (lseek(fd, blk * dev_bsize, 0) < 0)
+		rwerror("SEEK", blk);
+	else if (read(fd, buf, (int)size) == size)
 		return (0);
-	rwerr("READ", blk);
-	if (lseek(fcp->rfdes, blk * dev_bsize, 0) < 0)
-		rwerr("SEEK", blk);
+	rwerror("READ", blk);
+	if (lseek(fd, blk * dev_bsize, 0) < 0)
+		rwerror("SEEK", blk);
 	errs = 0;
-	bzero(buf, size);
+	bzero(buf, (int)size);
 	printf("THE FOLLOWING DISK SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
-		if (read(fcp->rfdes, cp, secsize) < 0) {
-			lseek(fcp->rfdes, blk * dev_bsize + i + secsize, 0);
+		if (read(fd, cp, (int)secsize) < 0) {
+			lseek(fd, blk * dev_bsize + i + secsize, 0);
 			if (secsize != dev_bsize && dev_bsize != 1)
 				printf(" %d (%d),",
 				    (blk * dev_bsize + i) / secsize,
@@ -276,8 +275,8 @@ bread(fcp, buf, blk, size)
 	return (errs);
 }
 
-bwrite(fcp, buf, blk, size)
-	register struct filecntl *fcp;
+bwrite(fd, buf, blk, size)
+	int fd;
 	char *buf;
 	daddr_t blk;
 	long size;
@@ -285,21 +284,21 @@ bwrite(fcp, buf, blk, size)
 	int i;
 	char *cp;
 
-	if (fcp->wfdes < 0)
+	if (fd < 0)
 		return;
-	if (lseek(fcp->wfdes, blk * dev_bsize, 0) < 0)
-		rwerr("SEEK", blk);
-	else if (write(fcp->wfdes, buf, (int)size) == size) {
-		fcp->mod = 1;
+	if (lseek(fd, blk * dev_bsize, 0) < 0)
+		rwerror("SEEK", blk);
+	else if (write(fd, buf, (int)size) == size) {
+		fsmodified = 1;
 		return;
 	}
-	rwerr("WRITE", blk);
-	if (lseek(fcp->wfdes, blk * dev_bsize, 0) < 0)
-		rwerr("SEEK", blk);
+	rwerror("WRITE", blk);
+	if (lseek(fd, blk * dev_bsize, 0) < 0)
+		rwerror("SEEK", blk);
 	printf("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
-		if (write(fcp->wfdes, cp, dev_bsize) < 0) {
-			lseek(fcp->rfdes, blk * dev_bsize + i + dev_bsize, 0);
+		if (write(fd, cp, (int)dev_bsize) < 0) {
+			lseek(fd, blk * dev_bsize + i + dev_bsize, 0);
 			printf(" %d,", blk + i / dev_bsize);
 		}
 	printf("\n");
@@ -310,18 +309,18 @@ bwrite(fcp, buf, blk, size)
  * allocate a data block with the specified number of fragments
  */
 allocblk(frags)
-	int frags;
+	long frags;
 {
 	register int i, j, k;
 
 	if (frags <= 0 || frags > sblock.fs_frag)
 		return (0);
-	for (i = 0; i < fmax - sblock.fs_frag; i += sblock.fs_frag) {
+	for (i = 0; i < maxfsblock - sblock.fs_frag; i += sblock.fs_frag) {
 		for (j = 0; j <= sblock.fs_frag - frags; j++) {
-			if (getbmap(i + j))
+			if (testbmap(i + j))
 				continue;
 			for (k = 1; k < frags; k++)
-				if (getbmap(i + j + k))
+				if (testbmap(i + j + k))
 					break;
 			if (k < frags) {
 				j += k;
@@ -341,7 +340,7 @@ allocblk(frags)
  */
 freeblk(blkno, frags)
 	daddr_t blkno;
-	int frags;
+	long frags;
 {
 	struct inodesc idesc;
 
@@ -366,7 +365,7 @@ getpathname(namebuf, curdir, ino)
 		strcpy(namebuf, "?");
 		return;
 	}
-	bzero(&idesc, sizeof(struct inodesc));
+	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
 	cp = &namebuf[BUFSIZ - 1];
 	*cp = '\0';
@@ -449,7 +448,7 @@ dofix(idesc, msg)
 
 	case DONTKNOW:
 		if (idesc->id_type == DATA)
-			direrr(idesc->id_number, msg);
+			direrror(idesc->id_number, msg);
 		else
 			pwarn(msg);
 		if (preen) {
@@ -485,8 +484,8 @@ errexit(s1, s2, s3, s4)
 }
 
 /*
- * An inconsistency occured which shouldn't during normal operations.
- * Die if preening, otherwise just printf.
+ * An unexpected inconsistency occured.
+ * Die if preening, otherwise just print message and continue.
  */
 /* VARARGS1 */
 pfatal(s, a1, a2, a3)
@@ -505,7 +504,7 @@ pfatal(s, a1, a2, a3)
 }
 
 /*
- * Pwarn is like printf when not preening,
+ * Pwarn just prints a message when not preening,
  * or a warning (preceded by filename) when preening.
  */
 /* VARARGS1 */

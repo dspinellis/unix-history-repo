@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.24 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)setup.c	5.23 (Berkeley) %G%";
 #include <ctype.h>
 #include "fsck.h"
 
-BUFAREA asblk;
+struct bufarea asblk;
 #define altsblock (*asblk.b_un.b_fs)
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
@@ -45,7 +45,8 @@ setup(dev)
 	char *dev;
 {
 	dev_t rootdev;
-	long cg, ncg, size, asked, i, j;
+	long cg, size, asked, i, j;
+	long bmapsize;
 	struct disklabel *lp;
 	struct stat statb;
 	struct fs proto;
@@ -59,33 +60,28 @@ setup(dev)
 		printf("Can't stat %s\n", dev);
 		return (0);
 	}
-	rawflg = 0;
-	if ((statb.st_mode & S_IFMT) == S_IFBLK)
-		;
-	else if ((statb.st_mode & S_IFMT) == S_IFCHR)
-		rawflg++;
-	else {
-		if (reply("file is not a block or character device; OK") == 0)
-			return (0);
-	}
+	if ((statb.st_mode & S_IFMT) != S_IFBLK &&
+	    (statb.st_mode & S_IFMT) != S_IFCHR &&
+	    reply("file is not a block or character device; OK") == 0)
+		return (0);
 	if (rootdev == statb.st_rdev)
 		hotroot++;
-	if ((dfile.rfdes = open(dev, O_RDONLY)) < 0) {
+	if ((fsreadfd = open(dev, O_RDONLY)) < 0) {
 		perror(dev);
 		printf("Can't open %s\n", dev);
 		return (0);
 	}
 	if (preen == 0)
 		printf("** %s", dev);
-	if (nflag || (dfile.wfdes = open(dev, O_WRONLY)) < 0) {
-		dfile.wfdes = -1;
+	if (nflag || (fswritefd = open(dev, O_WRONLY)) < 0) {
+		fswritefd = -1;
 		if (preen)
 			pfatal("NO WRITE ACCESS");
 		printf(" (NO WRITE)");
 	}
 	if (preen == 0)
 		printf("\n");
-	dfile.mod = 0;
+	fsmodified = 0;
 	lfdir = 0;
 	initbarea(&sblk);
 	initbarea(&asblk);
@@ -93,7 +89,7 @@ setup(dev)
 	asblk.b_un.b_buf = malloc(SBSIZE);
 	if (sblk.b_un.b_buf == NULL || asblk.b_un.b_buf == NULL)
 		errexit("cannot allocate space for superblock\n");
-	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
+	if (lp = getdisklabel((char *)NULL, fsreadfd))
 		dev_bsize = secsize = lp->d_secsize;
 	else
 		dev_bsize = secsize = DEV_BSIZE;
@@ -101,7 +97,7 @@ setup(dev)
 	 * Read in the superblock, looking for alternates if necessary
 	 */
 	if (readsb(1) == 0) {
-		if (bflag || preen || calcsb(dev, dfile.rfdes, &proto) == 0)
+		if (bflag || preen || calcsb(dev, fsreadfd, &proto) == 0)
 			return(0);
 		if (reply("LOOK FOR ALTERNATE SUPERBLOCKS") == 0)
 			return (0);
@@ -122,8 +118,8 @@ setup(dev)
 		}
 		pwarn("USING ALTERNATE SUPERBLOCK AT %d\n", bflag);
 	}
-	fmax = sblock.fs_size;
-	imax = sblock.fs_ncg * sblock.fs_ipg;
+	maxfsblock = sblock.fs_size;
+	maxino = sblock.fs_ncg * sblock.fs_ipg;
 	/*
 	 * Check and potentially fix certain fields in the super block.
 	 */
@@ -216,8 +212,9 @@ setup(dev)
 		}
 	}
 	if (asblk.b_dirty) {
-		bcopy((char *)&sblock, (char *)&altsblock, sblock.fs_sbsize);
-		flush(&dfile, &asblk);
+		bcopy((char *)&sblock, (char *)&altsblock,
+			(int)sblock.fs_sbsize);
+		flush(fswritefd, &asblk);
 	}
 	/*
 	 * read in the summary info.
@@ -227,7 +224,7 @@ setup(dev)
 		size = sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize;
 		sblock.fs_csp[j] = (struct csum *)calloc(1, (unsigned)size);
-		if (bread(&dfile, (char *)sblock.fs_csp[j],
+		if (bread(fsreadfd, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
 		    size) != 0 && !asked) {
 			pfatal("BAD SUMMARY INFORMATION");
@@ -239,21 +236,21 @@ setup(dev)
 	/*
 	 * allocate and initialize the necessary maps
 	 */
-	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
-	blockmap = calloc((unsigned)bmapsz, sizeof (char));
+	bmapsize = roundup(howmany(maxfsblock, NBBY), sizeof(short));
+	blockmap = calloc((unsigned)bmapsize, sizeof (char));
 	if (blockmap == NULL) {
-		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
+		printf("cannot alloc %d bytes for blockmap\n", bmapsize);
 		goto badsb;
 	}
-	statemap = calloc((unsigned)(imax + 1), sizeof(char));
+	statemap = calloc((unsigned)(maxino + 1), sizeof(char));
 	if (statemap == NULL) {
-		printf("cannot alloc %d bytes for statemap\n", imax + 1);
+		printf("cannot alloc %d bytes for statemap\n", maxino + 1);
 		goto badsb;
 	}
-	lncntp = (short *)calloc((unsigned)(imax + 1), sizeof(short));
+	lncntp = (short *)calloc((unsigned)(maxino + 1), sizeof(short));
 	if (lncntp == NULL) {
 		printf("cannot alloc %d bytes for lncntp\n", 
-		    (imax + 1) * sizeof(short));
+		    (maxino + 1) * sizeof(short));
 		goto badsb;
 	}
 
@@ -271,10 +268,9 @@ badsb:
 readsb(listerr)
 	int listerr;
 {
-	off_t sboff;
 	daddr_t super = bflag ? bflag : SBOFF / dev_bsize;
 
-	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
+	if (bread(fsreadfd, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
 	sblk.b_size = SBSIZE;
@@ -392,7 +388,7 @@ calcsb(dev, devfd, fs)
 			fstypenames[pp->p_fstype] : "unknown");
 		return (0);
 	}
-	bzero(fs, sizeof(struct fs));
+	bzero((char *)fs, sizeof(struct fs));
 	fs->fs_fsize = pp->p_fsize;
 	fs->fs_frag = pp->p_frag;
 	fs->fs_cpg = pp->p_cpg;

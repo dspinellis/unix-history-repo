@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -96,13 +96,13 @@ main(argc, argv)
 			printf("** lost+found creation mode %o\n", lfmode);
 			break;
 
-		case 'n':	/* default no answer flag */
+		case 'n':
 		case 'N':
 			nflag++;
 			yflag = 0;
 			break;
 
-		case 'y':	/* default yes answer flag */
+		case 'y':
 		case 'Y':
 			yflag++;
 			nflag = 0;
@@ -245,7 +245,7 @@ finddisk(name)
 	if ((*dkp = (struct disk *)malloc(sizeof(struct disk))) == NULL)
 		errexit("out of memory");
 	dk = *dkp;
-	if ((dk->name = malloc(len + 1)) == NULL)
+	if ((dk->name = malloc((unsigned int)len + 1)) == NULL)
 		errexit("out of memory");
 	strncpy(dk->name, name, len);
 	dk->name[len] = '\0';
@@ -270,10 +270,10 @@ addpart(name, fsname)
 	if ((*ppt = (struct part *)malloc(sizeof(struct part))) == NULL)
 		errexit("out of memory");
 	pt = *ppt;
-	if ((pt->name = malloc(strlen(name) + 1)) == NULL)
+	if ((pt->name = malloc((unsigned int)strlen(name) + 1)) == NULL)
 		errexit("out of memory");
 	strcpy(pt->name, name);
-	if ((pt->fsname = malloc(strlen(fsname) + 1)) == NULL)
+	if ((pt->fsname = malloc((unsigned int)strlen(fsname) + 1)) == NULL)
 		errexit("out of memory");
 	strcpy(pt->fsname, fsname);
 	pt->next = NULL;
@@ -369,14 +369,15 @@ checkfilesys(filesys)
 	    n_files, n_blks, n_ffree + sblock.fs_frag * n_bfree);
 	printf("(%d frags, %d blocks, %.1f%% fragmentation)\n",
 	    n_ffree, n_bfree, (float)(n_ffree * 100) / sblock.fs_dsize);
-	if (debug && (n_files -= imax - ROOTINO - sblock.fs_cstotal.cs_nifree))
+	if (debug &&
+	    (n_files -= maxino - ROOTINO - sblock.fs_cstotal.cs_nifree))
 		printf("%d files missing\n", n_files);
 	if (debug) {
 		n_blks += sblock.fs_ncg *
 			(cgdmin(&sblock, 0) - cgsblock(&sblock, 0));
 		n_blks += cgsblock(&sblock, 0) - cgbase(&sblock, 0);
 		n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
-		if (n_blks -= fmax - (n_ffree + sblock.fs_frag * n_bfree))
+		if (n_blks -= maxfsblock - (n_ffree + sblock.fs_frag * n_bfree))
 			printf("%d blocks missing\n", n_blks);
 		if (duplist != NULL) {
 			printf("The following duplicate blocks remain:");
@@ -393,7 +394,7 @@ checkfilesys(filesys)
 	}
 	zlnhead = (struct zlncnt *)0;
 	duplist = (struct dups *)0;
-	if (dfile.mod) {
+	if (fsmodified) {
 		(void)time(&sblock.fs_time);
 		sbdirty();
 	}
@@ -401,7 +402,7 @@ checkfilesys(filesys)
 	free(blockmap);
 	free(statemap);
 	free((char *)lncntp);
-	if (!dfile.mod)
+	if (!fsmodified)
 		return;
 	if (!preen) {
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
@@ -420,16 +421,16 @@ blockcheck(name)
 {
 	struct stat stslash, stblock, stchar;
 	char *raw;
-	int looped = 0;
+	int retried = 0;
 
 	hotroot = 0;
-	if (stat("/", &stslash) < 0){
+	if (stat("/", &stslash) < 0) {
 		perror("/");
 		printf("Can't stat root\n");
 		return (0);
 	}
 retry:
-	if (stat(name, &stblock) < 0){
+	if (stat(name, &stblock) < 0) {
 		perror(name);
 		printf("Can't stat %s\n", name);
 		return (0);
@@ -440,24 +441,20 @@ retry:
 			return (name);
 		}
 		raw = rawname(name);
-		if (stat(raw, &stchar) < 0){
+		if (stat(raw, &stchar) < 0) {
 			perror(raw);
 			printf("Can't stat %s\n", raw);
 			return (name);
 		}
-		if ((stchar.st_mode & S_IFMT) == S_IFCHR)
+		if ((stchar.st_mode & S_IFMT) == S_IFCHR) {
 			return (raw);
-		else {
+		} else {
 			printf("%s is not a character device\n", raw);
 			return (name);
 		}
-	} else if ((stblock.st_mode & S_IFMT) == S_IFCHR) {
-		if (looped) {
-			printf("Can't make sense out of name %s\n", name);
-			return (0);
-		}
+	} else if ((stblock.st_mode & S_IFMT) == S_IFCHR && !retried) {
 		name = unrawname(name);
-		looped++;
+		retried++;
 		goto retry;
 	}
 	printf("Can't make sense out of name %s\n", name);
@@ -465,37 +462,37 @@ retry:
 }
 
 char *
-unrawname(cp)
-	char *cp;
+unrawname(name)
+	char *name;
 {
-	char *dp = rindex(cp, '/');
+	char *dp;
 	struct stat stb;
 
-	if (dp == 0)
-		return (cp);
-	if (stat(cp, &stb) < 0)
-		return (cp);
-	if ((stb.st_mode&S_IFMT) != S_IFCHR)
-		return (cp);
-	if (*(dp+1) != 'r')
-		return (cp);
-	(void)strcpy(dp+1, dp+2);
-	return (cp);
+	if ((dp = rindex(name, '/')) == 0)
+		return (name);
+	if (stat(name, &stb) < 0)
+		return (name);
+	if ((stb.st_mode & S_IFMT) != S_IFCHR)
+		return (name);
+	if (*(dp + 1) != 'r')
+		return (name);
+	(void)strcpy(dp + 1, dp + 2);
+	return (name);
 }
 
 char *
-rawname(cp)
-	char *cp;
+rawname(name)
+	char *name;
 {
 	static char rawbuf[32];
-	char *dp = rindex(cp, '/');
+	char *dp;
 
-	if (dp == 0)
+	if ((dp = rindex(name, '/')) == 0)
 		return (0);
 	*dp = 0;
-	(void)strcpy(rawbuf, cp);
+	(void)strcpy(rawbuf, name);
 	*dp = '/';
 	(void)strcat(rawbuf, "/r");
-	(void)strcat(rawbuf, dp+1);
+	(void)strcat(rawbuf, dp + 1);
 	return (rawbuf);
 }
