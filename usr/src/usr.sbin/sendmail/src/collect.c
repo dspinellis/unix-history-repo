@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -437,7 +437,6 @@ eatfrom(fm, e)
 		q = xalloc(25);
 		(void) strncpy(q, p, 25);
 		q[24] = '\0';
-		define('d', q, e);
 		q = arpadate(q);
 		define('a', newstr(q), e);
 	}
