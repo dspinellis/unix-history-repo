@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -101,6 +101,7 @@ cfsetospeed(t, speed)
 	struct termios *t;
 	speed_t speed;
 {
+
 	t->c_ospeed = speed;
 	return (0);
 }
@@ -110,6 +111,7 @@ cfsetispeed(t, speed)
 	struct termios *t;
 	speed_t speed;
 {
+
 	t->c_ispeed = speed;
 	return (0);
 }
@@ -119,6 +121,7 @@ cfsetspeed(t, speed)
 	struct termios *t;
 	speed_t speed;
 {
+
 	t->c_ispeed = t->c_ospeed = speed;
 	return (0);
 }
@@ -131,6 +134,7 @@ void
 cfmakeraw(t)
 	struct termios *t;
 {
+
 	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
 	t->c_oflag &= ~OPOST;
 	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
@@ -157,7 +161,8 @@ tcsendbreak(fd, len)
 tcdrain(fd)
 	int fd;
 {
-	return (ioctl(fd, TIOCDRAIN, 0) == -1 ? -1 : 0);
+
+	return (ioctl(fd, TIOCDRAIN, 0));
 }
 
 tcflush(fd, which)
@@ -179,7 +184,7 @@ tcflush(fd, which)
 		errno = EINVAL;
 		return (-1);
 	}
-	return (ioctl(fd, TIOCFLUSH, &com) == -1 ? -1 : 0);
+	return (ioctl(fd, TIOCFLUSH, &com));
 }
 
 tcflow(fd, action)
@@ -190,9 +195,9 @@ tcflow(fd, action)
 
 	switch (action) {
 	case TCOOFF:
-		return (ioctl(fd, TIOCSTOP, 0) == -1 ? -1 : 0);
+		return (ioctl(fd, TIOCSTOP, 0));
 	case TCOON:
-		return (ioctl(fd, TIOCSTART, 0) == -1 ? -1 : 0);
+		return (ioctl(fd, TIOCSTART, 0));
 	case TCION:
 	case TCIOFF:
 		if (tcgetattr(fd, &term) == -1)
