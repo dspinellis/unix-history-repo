@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.5 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,7 @@
 #include "netisr.h"
 #include "route.h"
 #include "if_llc.h"
+#include "if_dl.h"
 
 #include "machine/mtpr.h"
 
@@ -61,10 +62,11 @@ extern	struct ifnet loif;
  * packet leaves a multiple of 512 bytes of data in remainder.
  * Assumes that ifp is actually pointer to arpcom structure.
  */
-ether_output(ifp, m0, dst)
+ether_output(ifp, m0, dst, rt)
 	register struct ifnet *ifp;
 	struct mbuf *m0;
 	struct sockaddr *dst;
+	struct rtentry *rt;
 {
 	short type;
 	int s, error = 0;
@@ -123,6 +125,15 @@ ether_output(ifp, m0, dst)
 		int	ret;
 		struct	llc *l;
 
+		if (rt && rt->rt_gateway &&
+		    rt->rt_gateway->sa_family == AF_LINK) {
+			register struct sockaddr_dl *sdl;
+			sdl = (struct sockaddr_dl *)rt->rt_gateway;
+			if (len = sdl->sdl_nlen) {
+				bcopy(LLADDR(sdl), (char *)edst, len);
+				goto iso_resolved;
+			}
+		}
 		if ((ret = iso_tryloopback(m, (struct sockaddr_iso *)dst)) >= 0)
 			return (ret);
 		ret = iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
@@ -131,6 +142,7 @@ ether_output(ifp, m0, dst)
 			m_freem(m); /* Not Resolved */
 			return(ret);
 		}
+	iso_resolved:
 		M_PREPEND(m, 3, M_DONTWAIT);
 		if (m == NULL)
 			return(0);
