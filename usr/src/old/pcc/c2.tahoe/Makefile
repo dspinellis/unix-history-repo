@@ -1,4 +1,4 @@
-#	Makefile	1.3	86/08/14
+#	Makefile	1.3	87/05/30
 #
 DESTDIR=
 CFLAGS=	-O
