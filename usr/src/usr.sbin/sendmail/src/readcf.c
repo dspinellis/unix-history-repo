@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -967,7 +967,7 @@ setoption(opt, val, sticky)
 	**  See if this option is preset for us.
 	*/
 
-	if (safe && bitnset(opt, StickyOpt))
+	if (!sticky && bitnset(opt, StickyOpt))
 	{
 		if (tTd(37, 1))
 			printf(" (ignored)\n");
