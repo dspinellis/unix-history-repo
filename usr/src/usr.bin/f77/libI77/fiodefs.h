@@ -1,5 +1,5 @@
 /*
-char id_fiodefs[] = "@(#)fiodefs.h	1.1";
+char id_fiodefs[] = "@(#)fiodefs.h	1.2";
  *
  * fortran file i/o type definitions
  */
@@ -133,3 +133,11 @@ typedef union
 	long il;
 } uint;
 
+struct ioiflg {
+	short if_obof;
+	short if_ctrl;
+	short if_bzro;
+};
+#define	opnbof	ioiflg_.if_obof
+#define	ccntrl	ioiflg_.if_ctrl
+#define	blzero	ioiflg_.if_bzro
