@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.10 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.11 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -271,19 +271,40 @@ zzzcode( p, c ) register NODE *p; {
 				return;
 				}
 
-		if (l->in.op == REG && l->in.type != FLOAT && l->in.type != DOUBLE) {
-			if (tlen(l) < tlen(r) && !mixtypes(l,r)) {
-				if (ISUNSIGNED(l->in.type))
+		if (p->in.op == SCONV &&
+		    !(l->in.type == FLOAT || l->in.type == DOUBLE) &&
+		    !mixtypes(l, r)) {
+			/*
+			 * Because registers must always contain objects
+			 * of the same width as INTs, we may have to
+			 * perform two conversions to get an INT.  Can
+			 * the conversions be collapsed into one?
+			 */
+			if (m = collapsible(l, r))
+				r->in.type = m;
+			else {
+				/*
+				 * Two steps are required.
+				 */
+				NODE *x = &resc[1];
+
+				*x = *l;
+				if (tlen(x) > tlen(r) && ISUNSIGNED(r->in.type))
 					printf("movz");
 				else
 					printf("cvt");
-				prtype(l);
-				printf("l");
-				goto ops;
+				prtype(r);
+				prtype(x);
+				printf("\t");
+				adrput(r);
+				printf(",");
+				adrput(x);
+				printf("\n\t");
+				r = x;
 				}
-			else
-				l->in.type = INT;
+			l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
 			}
+
 		if (!mixtypes(l,r)) {
 			if (tlen(l) == tlen(r)) {
 				printf("mov");
@@ -474,6 +495,46 @@ zzzcode( p, c ) register NODE *p; {
 	default:
 		cerror( "illegal zzzcode" );
 		}
+	}
+
+/*
+ * collapsible(dest, src) -- if a conversion with a register destination
+ *	can be accomplished in one instruction, return the type of src
+ *	that will do the job correctly; otherwise return 0.  Note that
+ *	a register must always end up having type INT or UNSIGNED.
+ */
+int
+collapsible(dest, src)
+NODE *dest, *src;
+{
+	int st = src->in.type;
+	int dt = dest->in.type;
+	int newt = 0;
+
+	/*
+	 * Are there side effects of evaluating src?
+	 * If the derived type will not be the same size as src,
+	 * we have to use two steps.
+	 */
+	if (tlen(src) > tlen(dest) && tshape(src, STARREG))
+		return (0);
+
+	/*
+	 * Can we get an object of dest's type by punning src?
+	 * Praises be to great Cthulhu for little-endian machines...
+	 */
+	if (st == CHAR && dt == USHORT)
+		/*
+		 * Special case -- we must sign-extend to 16 bits.
+		 */
+		return (0);
+
+	if (tlen(src) < tlen(dest))
+		newt = st;
+	else
+		newt = dt;
+
+	return (newt);
 	}
 
 rmove( rt, rs, t ) TWORD t; {
