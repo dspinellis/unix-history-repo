@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.69 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -91,7 +91,16 @@ sendall(e, mode)
 		return;
 	}
 
-	if (!MeToo)
+	/*
+	**  Do sender deletion.
+	**
+	**	If the sender has the QQUEUEUP flag set, skip this.
+	**	This can happen if the name server is hosed when you
+	**	are trying to send mail.  The result is that the sender
+	**	is instantiated in the queue as a recipient.
+	*/
+
+	if (!MeToo && !bitset(QQUEUEUP, e->e_from.q_flags))
 	{
 		extern ADDRESS *recipient();
 
