@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.3 %G%";
+static	char sccsid[] = "@(#)print.c 4.4 %G%";
 /*
  *
  *	UNIX debugger
@@ -189,6 +189,18 @@ printtrace(modif)
 		}
 		break;
 
+	    case 'p':
+		IF kernel == 0 THEN
+			printf("not debugging kernel\n");
+		ELSE
+			IF adrflg THEN
+				int pte = access(RD, dot, DSP, 0);
+				masterpcbb = (pte&PG_PFNUM)*512;
+			FI
+			getpcb();
+		FI
+		break;
+
 	    case 'd':
 		if (adrflg) {
 			if (adrval<2 || adrval>16) {printf("must have 2 <= radix <= 16"); break;}
@@ -244,7 +256,11 @@ printtrace(modif)
 			ELSE /* 'callg', can't tell where argp is */ argp=frame;
 			FI
 			callpc=get(frame+16,DSP);
-		ELSE argp= *(ADDR *)(((ADDR)&u)+AP);
+		ELIF kcore THEN
+			argp = pcb.pcb_ap;
+			frame = pcb.pcb_fp;
+			callpc = pcb.pcb_pc;
+		ELSE	argp= *(ADDR *)(((ADDR)&u)+AP);
 			frame= *(ADDR *)(((ADDR)&u)+FP);
 			callpc= *(ADDR *)(((ADDR)&u)+PC);
 		FI
