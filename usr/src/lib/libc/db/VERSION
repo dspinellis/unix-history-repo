@@ -1,6 +1,6 @@
-#	@(#)VERSION	8.1 (Berkeley) %G%
+#	@(#)VERSION	5.10 (Berkeley) %G%
 
-This is version 1.5 of the Berkeley DB code.
+This is version 1.6 of the Berkeley DB code.
 
 If your version of the DB code doesn't have a copy of
 this version file, it's really old, please update it!
@@ -13,6 +13,10 @@ Email questions may be addressed to Keith Bostic at
 bostic@cs.berkeley.edu.
 
 ============================================
+1.5 -> 1.6	06 Jun 1993
+	hash:	In PAIRFITS, the first comparison should look at (P)[2].
+		The hash_realloc function was walking off the end of memory.
+		The overflow page number was wrong when bumping splitpoint.
 1.4 -> 1.5	23 May 1993
 	hash:	Set hash default fill factor dynamically.
 	recno:	Fixed bug in sorted page splits.
