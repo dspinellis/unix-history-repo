@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -530,7 +530,8 @@ setsender(from, e, delimptr, internal)
 	char *realname = NULL;
 	register struct passwd *pw;
 	char delimchar;
-	char buf[MAXNAME];
+	char *bp;
+	char buf[MAXNAME + 2];
 	char pvpbuf[PSBUFSIZE];
 	extern struct passwd *getpwnam();
 	extern char *FullName;
@@ -681,8 +682,15 @@ setsender(from, e, delimptr, internal)
 	(void) rewrite(pvp, 3, e);
 	(void) rewrite(pvp, 1, e);
 	(void) rewrite(pvp, 4, e);
-	cataddr(pvp, NULL, buf, sizeof buf, '\0');
-	e->e_sender = newstr(buf);
+	bp = buf + 1;
+	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
+	if (*bp == '@')
+	{
+		/* heuristic: route-addr: add angle brackets */
+		strcat(bp, ">");
+		*--bp = '<';
+	}
+	e->e_sender = newstr(bp);
 	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */
