@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -44,6 +44,8 @@ res_send(buf, buflen, answer, anslen)
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
 
+	extern u_short htons(), ntohs();
+
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
 		printf("res_send()\n");
@@ -64,7 +66,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("Querying server (# %d) address = %s\n", ns+1,
-			      inet_ntoa(_res.nsaddr_list[ns].sin_addr.s_addr)); 
+			      inet_ntoa(_res.nsaddr_list[ns].sin_addr.s_addr));
 #endif DEBUG
 		if (v_circuit) {
 			/*
@@ -75,15 +77,15 @@ res_send(buf, buflen, answer, anslen)
 				if (s < 0) {
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
-					    printf("socket failed %d\n",errno);
+					    perror("socket failed");
 #endif DEBUG
 					continue;
 				}
-				if (connect(s, &(_res.nsaddr_list[ns]), 
+				if (connect(s, &(_res.nsaddr_list[ns]),
 				   sizeof(struct sockaddr)) < 0) {
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
-					    printf("connect failed %d\n",errno);
+					    perror("connect failed");
 #endif DEBUG
 					(void) close(s);
 					s = -1;
@@ -94,11 +96,11 @@ res_send(buf, buflen, answer, anslen)
 			 * Send length & message
 			 */
 			len = htons((u_short)buflen);
-			if (write(s, &len, sizeof(len)) != sizeof(len) ||
-				    write(s, buf, buflen) != buflen) {
+			if (write(s, (char *)&len, sizeof(len)) != sizeof(len)||
+			    write(s, buf, buflen) != buflen) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
-					printf("write failed %d\n", errno);
+					perror("write failed");
 #endif DEBUG
 				(void) close(s);
 				s = -1;
@@ -109,14 +111,15 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			cp = answer;
 			len = sizeof(short);
-			while (len > 0 && (n = read(s, cp, len)) > 0) {
+			while (len > 0 &&
+			    (n = read(s, (char *)cp, (int)len)) > 0) {
 				cp += n;
 				len -= n;
 			}
 			if (n <= 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
-					printf("read failed %d\n", errno);
+					perror("read failed");
 #endif DEBUG
 				(void) close(s);
 				s = -1;
@@ -124,14 +127,15 @@ res_send(buf, buflen, answer, anslen)
 			}
 			cp = answer;
 			resplen = len = ntohs(*(u_short *)cp);
-			while (len > 0 && (n = read(s, cp, len)) > 0) {
+			while (len > 0 &&
+			   (n = read(s, (char *)cp, (int)len)) > 0) {
 				cp += n;
 				len -= n;
 			}
 			if (n <= 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
-					printf("read failed %d\n", errno);
+					perror("read failed");
 #endif DEBUG
 				(void) close(s);
 				s = -1;
@@ -148,9 +152,8 @@ res_send(buf, buflen, answer, anslen)
 			    sizeof(struct sockaddr)) < 0 ||
 			    send(s, buf, buflen, 0) != buflen) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG) 
-					printf("connect/send errno = %d\n",
-					    errno);
+				if (_res.options & RES_DEBUG)
+					perror("connect");
 #endif DEBUG
 				continue;
 			}
@@ -158,17 +161,19 @@ res_send(buf, buflen, answer, anslen)
 			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
 			    sizeof(struct sockaddr)) != buflen) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG) 
-					printf("sendto errno = %d\n", errno);
+				if (_res.options & RES_DEBUG)
+					perror("sendto");
 #endif DEBUG
 				continue;
 			}
 #endif BSD
 			/*
-			 * Wait for reply 
+			 * Wait for reply
 			 */
-			timeout.tv_sec = 
-				((_res.retrans * _res.retry) / _res.nscount);
+			timeout.tv_sec = (_res.retrans << (_res.retry - retry))
+				/ _res.nscount;
+			if (timeout.tv_sec <= 0)
+				timeout.tv_sec = 1;
 			timeout.tv_usec = 0;
 wait:
 			dsmask = 1 << s;
@@ -176,7 +181,7 @@ wait:
 			if (n < 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
-					printf("select errno = %d\n", errno);
+					perror("select");
 #endif DEBUG
 				continue;
 			}
@@ -194,7 +199,7 @@ wait:
 			if ((resplen = recv(s, answer, anslen, 0)) <= 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
-					printf("recvfrom, errno=%d\n", errno);
+					perror("recvfrom");
 #endif DEBUG
 				continue;
 			}
