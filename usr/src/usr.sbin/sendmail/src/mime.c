@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.19.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -299,6 +299,7 @@ mime8to7x(mci, header, e, boundaries, flags)
 			boundaries[i] = bbuf;
 			boundaries[i + 1] = NULL;
 		}
+		mci->mci_flags |= MCIF_INMIME;
 
 		/* skip the early "comment" prologue */
 		putline("", mci);
@@ -334,6 +335,7 @@ mime8to7x(mci, header, e, boundaries, flags)
 		if (tTd(43, 35))
 			printf("  ...%s\n", buf);
 		boundaries[i] = NULL;
+		mci->mci_flags &= ~MCIF_INMIME;
 
 		/* skip the late "comment" epilogue */
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
@@ -370,6 +372,7 @@ mime8to7x(mci, header, e, boundaries, flags)
 
 			putline("", mci);
 
+			mci->mci_flags |= MCIF_INMIME;
 			collect(e->e_dfp, FALSE, FALSE, &hdr, e);
 			if (tTd(43, 101))
 				putline("+++after collect", mci);
@@ -377,6 +380,7 @@ mime8to7x(mci, header, e, boundaries, flags)
 			if (tTd(43, 101))
 				putline("+++after putheader", mci);
 			bt = mime8to7(mci, hdr, e, boundaries, flags);
+			mci->mci_flags &= ~MCIF_INMIME;
 			return bt;
 		}
 	}
