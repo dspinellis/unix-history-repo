@@ -9,23 +9,34 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)skeleton.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)skeleton.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
 
-/*  The banner used here should be replaced with an #ident directive	*/
-/*  if the target C compiler supports #ident directives.		*/
+/*  The definition of yysccsid in the banner should be replaced with	*/
+/*  a #pragma ident directive if the target C compiler supports		*/
+/*  #pragma ident directives.						*/
 /*									*/
 /*  If the skeleton is changed, the banner should be changed so that	*/
-/*  the altered version can easily be distinguished from the original.	*/
+/*  the altered version can be easily distinguished from the original.	*/
+/*									*/
+/*  The #defines included with the banner are there because they are	*/
+/*  useful in subsequent code.  The macros #defined in the header or	*/
+/*  the body either are not useful outside of semantic actions or	*/
+/*  are conditional.							*/
 
 char *banner[] =
 {
     "#ifndef lint",
-    "static char yysccsid[] = \"@(#)yaccpar	1.8 (Berkeley) 01/20/90\";",
+    "static char yysccsid[] = \"@(#)yaccpar	1.9 (Berkeley) 02/21/93\";",
     "#endif",
     "#define YYBYACC 1",
+    "#define YYMAJOR 1",
+    "#define YYMINOR 9",
+    "#define yyclearin (yychar=(-1))",
+    "#define yyerrok (yyerrflag=0)",
+    "#define YYRECOVERING (yyerrflag!=0)",
     0
 };
 
@@ -51,12 +62,9 @@ char *tables[] =
 
 char *header[] =
 {
-    "#define yyclearin (yychar=(-1))",
-    "#define yyerrok (yyerrflag=0)",
     "#ifdef YYSTACKSIZE",
-    "#ifndef YYMAXDEPTH",
+    "#undef YYMAXDEPTH",
     "#define YYMAXDEPTH YYSTACKSIZE",
-    "#endif",
     "#else",
     "#ifdef YYMAXDEPTH",
     "#define YYSTACKSIZE YYMAXDEPTH",
@@ -83,6 +91,7 @@ char *header[] =
 char *body[] =
 {
     "#define YYABORT goto yyabort",
+    "#define YYREJECT goto yyabort",
     "#define YYACCEPT goto yyaccept",
     "#define YYERROR goto yyerrlab",
     "int",
@@ -120,8 +129,8 @@ char *body[] =
     "            yys = 0;",
     "            if (yychar <= YYMAXTOKEN) yys = yyname[yychar];",
     "            if (!yys) yys = \"illegal-symbol\";",
-    "            printf(\"yydebug: state %d, reading %d (%s)\\n\", yystate,",
-    "                    yychar, yys);",
+    "            printf(\"%sdebug: state %d, reading %d (%s)\\n\",",
+    "                    YYPREFIX, yystate, yychar, yys);",
     "        }",
     "#endif",
     "    }",
@@ -130,8 +139,8 @@ char *body[] =
     "    {",
     "#if YYDEBUG",
     "        if (yydebug)",
-    "            printf(\"yydebug: state %d, shifting to state %d\\n\",",
-    "                    yystate, yytable[yyn]);",
+    "            printf(\"%sdebug: state %d, shifting to state %d\\n\",",
+    "                    YYPREFIX, yystate, yytable[yyn]);",
     "#endif",
     "        if (yyssp >= yyss + yystacksize - 1)",
     "        {",
@@ -171,8 +180,8 @@ char *body[] =
     "            {",
     "#if YYDEBUG",
     "                if (yydebug)",
-    "                    printf(\"yydebug: state %d, error recovery shifting\\",
-    " to state %d\\n\", *yyssp, yytable[yyn]);",
+    "                    printf(\"%sdebug: state %d, error recovery shifting\\",
+    " to state %d\\n\", YYPREFIX, *yyssp, yytable[yyn]);",
     "#endif",
     "                if (yyssp >= yyss + yystacksize - 1)",
     "                {",
@@ -186,9 +195,9 @@ char *body[] =
     "            {",
     "#if YYDEBUG",
     "                if (yydebug)",
-    "                    printf(\"yydebug: error recovery discarding state %d\
+    "                    printf(\"%sdebug: error recovery discarding state %d\
 \\n\",",
-    "                            *yyssp);",
+    "                            YYPREFIX, *yyssp);",
     "#endif",
     "                if (yyssp <= yyss) goto yyabort;",
     "                --yyssp;",
@@ -205,9 +214,9 @@ char *body[] =
     "            yys = 0;",
     "            if (yychar <= YYMAXTOKEN) yys = yyname[yychar];",
     "            if (!yys) yys = \"illegal-symbol\";",
-    "            printf(\"yydebug: state %d, error recovery discards token %d\
+    "            printf(\"%sdebug: state %d, error recovery discards token %d\
  (%s)\\n\",",
-    "                    yystate, yychar, yys);",
+    "                    YYPREFIX, yystate, yychar, yys);",
     "        }",
     "#endif",
     "        yychar = (-1);",
@@ -216,8 +225,8 @@ char *body[] =
     "yyreduce:",
     "#if YYDEBUG",
     "    if (yydebug)",
-    "        printf(\"yydebug: state %d, reducing by rule %d (%s)\\n\",",
-    "                yystate, yyn, yyrule[yyn]);",
+    "        printf(\"%sdebug: state %d, reducing by rule %d (%s)\\n\",",
+    "                YYPREFIX, yystate, yyn, yyrule[yyn]);",
     "#endif",
     "    yym = yylen[yyn];",
     "    yyval = yyvsp[1-yym];",
@@ -238,8 +247,8 @@ char *trailer[] =
     "    {",
     "#if YYDEBUG",
     "        if (yydebug)",
-    "            printf(\"yydebug: after reduction, shifting from state 0 to\\",
-    " state %d\\n\", YYFINAL);",
+    "            printf(\"%sdebug: after reduction, shifting from state 0 to\\",
+    " state %d\\n\", YYPREFIX, YYFINAL);",
     "#endif",
     "        yystate = YYFINAL;",
     "        *++yyssp = YYFINAL;",
@@ -253,8 +262,8 @@ char *trailer[] =
     "                yys = 0;",
     "                if (yychar <= YYMAXTOKEN) yys = yyname[yychar];",
     "                if (!yys) yys = \"illegal-symbol\";",
-    "                printf(\"yydebug: state %d, reading %d (%s)\\n\",",
-    "                        YYFINAL, yychar, yys);",
+    "                printf(\"%sdebug: state %d, reading %d (%s)\\n\",",
+    "                        YYPREFIX, YYFINAL, yychar, yys);",
     "            }",
     "#endif",
     "        }",
@@ -268,8 +277,8 @@ char *trailer[] =
     "        yystate = yydgoto[yym];",
     "#if YYDEBUG",
     "    if (yydebug)",
-    "        printf(\"yydebug: after reduction, shifting from state %d \\",
-    "to state %d\\n\", *yyssp, yystate);",
+    "        printf(\"%sdebug: after reduction, shifting from state %d \\",
+    "to state %d\\n\", YYPREFIX, *yyssp, yystate);",
     "#endif",
     "    if (yyssp >= yyss + yystacksize - 1)",
     "    {",
@@ -292,13 +301,20 @@ char *trailer[] =
 write_section(section)
 char *section[];
 {
+    register int c;
     register int i;
-    register FILE *fp;
+    register char *s;
+    register FILE *f;
 
-    fp = code_file;
-    for (i = 0; section[i]; ++i)
+    f = code_file;
+    for (i = 0; s = section[i]; ++i)
     {
 	++outline;
-	fprintf(fp, "%s\n", section[i]);
+	while (c = *s)
+	{
+	    putc(c, f);
+	    ++s;
+	}
+	putc('\n', f);
     }
 }

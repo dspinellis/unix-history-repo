@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.5 (Berkeley) %G%
+ *	@(#)defs.h	5.6 (Berkeley) %G%
  */
 
 #include <assert.h>
@@ -195,6 +195,7 @@ extern char lflag;
 extern char rflag;
 extern char tflag;
 extern char vflag;
+extern char *symbol_prefix;
 
 extern char *myname;
 extern char *cptr;

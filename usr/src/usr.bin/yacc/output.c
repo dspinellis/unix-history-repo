@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -36,6 +36,7 @@ output()
     free_itemsets();
     free_shifts();
     free_reductions();
+    output_prefix();
     output_stored_text();
     output_defines();
     output_rule_data();
@@ -53,13 +54,73 @@ output()
 }
 
 
+output_prefix()
+{
+    if (symbol_prefix == NULL)
+	symbol_prefix = "yy";
+    else
+    {
+	++outline;
+	fprintf(code_file, "#define yyparse %sparse\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yylex %slex\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyerror %serror\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yychar %schar\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyval %sval\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yylval %slval\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yydebug %sdebug\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yynerrs %snerrs\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyerrflag %serrflag\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyss %sss\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyssp %sssp\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyvs %svs\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyvsp %svsp\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yylhs %slhs\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yylen %slen\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yydefred %sdefred\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yydgoto %sdgoto\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yysindex %ssindex\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyrindex %srindex\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yygindex %sgindex\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yytable %stable\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yycheck %scheck\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyname %sname\n", symbol_prefix);
+	++outline;
+	fprintf(code_file, "#define yyrule %srule\n", symbol_prefix);
+    }
+    ++outline;
+    fprintf(code_file, "#define YYPREFIX \"%s\"\n", symbol_prefix);
+}
+
+
 output_rule_data()
 {
     register int i;
     register int j;
 
   
-    fprintf(output_file, "short yylhs[] = {%42d,",
+    fprintf(output_file, "short %slhs[] = {%42d,", symbol_prefix,
 	    symbol_value[start_symbol]);
 
     j = 10;
@@ -79,7 +140,7 @@ output_rule_data()
     if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
 
-    fprintf(output_file, "short yylen[] = {%42d,", 2);
+    fprintf(output_file, "short %slen[] = {%42d,", symbol_prefix, 2);
 
     j = 10;
     for (i = 3; i < nrules; i++)
@@ -104,7 +165,7 @@ output_yydefred()
 {
     register int i, j;
 
-    fprintf(output_file, "short yydefred[] = {%39d,",
+    fprintf(output_file, "short %sdefred[] = {%39d,", symbol_prefix,
 	    (defred[0] ? defred[0] - 2 : 0));
 
     j = 10;
@@ -246,7 +307,7 @@ goto_actions()
     state_count = NEW2(nstates, short);
 
     k = default_goto(start_symbol + 1);
-    fprintf(output_file, "short yydgoto[] = {%40d,", k);
+    fprintf(output_file, "short %sdgoto[] = {%40d,", symbol_prefix, k);
     save_column(start_symbol + 1, k);
 
     j = 10;
@@ -570,7 +631,7 @@ output_base()
 {
     register int i, j;
 
-    fprintf(output_file, "short yysindex[] = {%39d,", base[0]);
+    fprintf(output_file, "short %ssindex[] = {%39d,", symbol_prefix, base[0]);
 
     j = 10;
     for (i = 1; i < nstates; i++)
@@ -588,7 +649,7 @@ output_base()
     }
 
     if (!rflag) outline += 2;
-    fprintf(output_file, "\n};\nshort yyrindex[] = {%39d,",
+    fprintf(output_file, "\n};\nshort %srindex[] = {%39d,", symbol_prefix,
 	    base[nstates]);
 
     j = 10;
@@ -607,7 +668,7 @@ output_base()
     }
 
     if (!rflag) outline += 2;
-    fprintf(output_file, "\n};\nshort yygindex[] = {%39d,",
+    fprintf(output_file, "\n};\nshort %sgindex[] = {%39d,", symbol_prefix,
 	    base[2*nstates]);
 
     j = 10;
@@ -639,7 +700,8 @@ output_table()
 
     ++outline;
     fprintf(code_file, "#define YYTABLESIZE %d\n", high);
-    fprintf(output_file, "short yytable[] = {%40d,", table[0]);
+    fprintf(output_file, "short %stable[] = {%40d,", symbol_prefix,
+	    table[0]);
 
     j = 10;
     for (i = 1; i <= high; i++)
@@ -668,7 +730,8 @@ output_check()
     register int i;
     register int j;
 
-    fprintf(output_file, "short yycheck[] = {%40d,", check[0]);
+    fprintf(output_file, "short %scheck[] = {%40d,", symbol_prefix,
+	    check[0]);
 
     j = 10;
     for (i = 1; i <= high; i++)
@@ -770,7 +833,8 @@ output_defines()
 	if (union_file == NULL) open_error(union_file_name);
 	while ((c = getc(union_file)) != EOF)
 	    putc(c, defines_file);
-	fprintf(defines_file, " YYSTYPE;\nextern YYSTYPE yylval;\n");
+	fprintf(defines_file, " YYSTYPE;\nextern YYSTYPE %slval;\n",
+		symbol_prefix);
     }
 }
 
@@ -835,7 +899,7 @@ output_debug()
     symnam[0] = "end-of-file";
 
     if (!rflag) ++outline;
-    fprintf(output_file, "#if YYDEBUG\nchar *yyname[] = {");
+    fprintf(output_file, "#if YYDEBUG\nchar *%sname[] = {", symbol_prefix);
     j = 80;
     for (i = 0; i <= max; ++i)
     {
@@ -961,7 +1025,7 @@ output_debug()
     FREE(symnam);
 
     if (!rflag) ++outline;
-    fprintf(output_file, "char *yyrule[] = {\n");
+    fprintf(output_file, "char *%srule[] = {\n", symbol_prefix);
     for (i = 2; i < nrules; ++i)
     {
 	fprintf(output_file, "\"%s :", symbol_name[rlhs[i]]);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)warshall.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)warshall.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -19,7 +19,7 @@ unsigned *R;
 int n;
 {
     register int rowsize;
-    register unsigned mask;
+    register unsigned i;
     register unsigned *rowj;
     register unsigned *rp;
     register unsigned *rend;
@@ -32,7 +32,7 @@ int n;
     relend = R + n*rowsize;
 
     cword = R;
-    mask = 1;
+    i = 0;
     rowi = R;
     while (rowi < relend)
     {
@@ -41,7 +41,7 @@ int n;
 
 	while (rowj < relend)
 	{
-	    if (*ccol & mask)
+	    if (*ccol & (1 << i))
 	    {
 		rp = rowi;
 		rend = rowj + rowsize;
@@ -56,10 +56,9 @@ int n;
 	    ccol += rowsize;
 	}
 
-	mask <<= 1;
-	if (mask == 0)
+	if (++i >= BITS_PER_WORD)
 	{
-	    mask = 1;
+	    i = 0;
 	    cword++;
 	}
 
@@ -72,7 +71,7 @@ unsigned *R;
 int n;
 {
     register int rowsize;
-    register unsigned mask;
+    register unsigned i;
     register unsigned *rp;
     register unsigned *relend;
 
@@ -81,15 +80,14 @@ int n;
     rowsize = WORDSIZE(n);
     relend = R + n*rowsize;
 
-    mask = 1;
+    i = 0;
     rp = R;
     while (rp < relend)
     {
-	*rp |= mask;
-	mask <<= 1;
-	if (mask == 0)
+	*rp |= (1 << i);
+	if (++i >= BITS_PER_WORD)
 	{
-	    mask = 1;
+	    i = 0;
 	    rp++;
 	}
 
