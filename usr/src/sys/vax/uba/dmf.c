@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.16 (Berkeley) %G%
+ *	@(#)dmf.c	6.17 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -30,7 +30,8 @@
  *			if 0, 132 will be used.
  * 16-23	number of lines/page on the line printer
  *			if 0, 66 will be used.
- *
+ * 24		if 1 DO NOT use the auto format mode of the
+ *			line printer parallel port
  */
 #include "../machine/pte.h"
 
@@ -92,6 +93,7 @@ struct dmfl_softc {
 	int	dmfl_info;		/* uba info */
 	u_short	dmfl_lines;		/* lines per page (66 def.) */
 	u_short	dmfl_cols; 		/* cols per line (132 def.) */
+	u_short	dmfl_format;		/* fflag for auto form feed */
 	char	dmfl_buf[DMFL_BUFSIZ];
 } dmfl_softc[NDMF];
 
@@ -104,6 +106,7 @@ struct dmfl_softc {
 #define OPEN 2		/* line printer is open */
 #define ERROR 4		/* error while printing, driver
 			 refuses to do anything till closed */
+#define MOREIO 8	/* more data for printer */
 
 #ifndef lint
 int	ndmf = NDMF*8;			/* used by iostat */
@@ -203,6 +206,10 @@ dmfattach(ui)
 	dmfsoftCAR[ui->ui_unit] = ui->ui_flags & 0xff;
 	dmfl_softc[ui->ui_unit].dmfl_cols = cols==0?DMFL_DEFCOLS:cols;
 	dmfl_softc[ui->ui_unit].dmfl_lines = lines==0?DMFL_DEFLINES:lines;
+ 	if ((ui->ui_flags >> 24) & 0x1)
+ 		dmfl_softc[ui->ui_unit].dmfl_format = (2 << 8);
+ 	else
+ 		dmfl_softc[ui->ui_unit].dmfl_format = (2 << 8) | DMFL_FORMAT;
 	cbase[ui->ui_ubanum] = -1;
 }
 
@@ -253,23 +260,27 @@ dmfopen(dev, flag)
 	}
 	splx(s);
 	/*
-	 * If this is first open, initialze tty state to default.
+	 * If this is first open, initialize tty state to default.
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ispeed = ISPEED;
-		tp->t_ospeed = ISPEED;
-		tp->t_flags = IFLAGS;
+		if (tp->t_ispeed == 0) {
+			tp->t_ispeed = ISPEED;
+			tp->t_ospeed = ISPEED;
+			tp->t_flags = IFLAGS;
+		}
 		dmfparam(unit);
 	}
 	/*
 	 * Wait for carrier, then process line discipline specific open.
 	 */
-	if ((dmfmctl(dev, DMF_ON, DMSET) & (DMF_CAR<<8)) ||
-	    (dmfsoftCAR[dmf] & (1<<(unit&07))))
-		tp->t_state |= TS_CARR_ON;
 	s = spltty();
-	while ((tp->t_state & TS_CARR_ON) == 0) {
+	for (;;) {
+		if ((dmfmctl(dev, DMF_ON, DMSET) & (DMF_CAR<<8)) ||
+		    (dmfsoftCAR[dmf] & (1<<(unit&07))))
+			tp->t_state |= TS_CARR_ON;
+		if (tp->t_state & TS_CARR_ON)
+			break;
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
@@ -814,6 +825,7 @@ dmfreset(uban)
 	}
 }
 
+#if NDMF > 0
 /*
  * dmflopen -- open the line printer port on a dmf32
  */
@@ -828,20 +840,25 @@ dmflopen(dev, flag)
 	register struct dmfdevice *addr;
 
 	dmf = DMFL_UNIT(dev);
-	if (((sc= &dmfl_softc[dmf])->dmfl_state & OPEN) ||
-		((ui=dmfinfo[dmf]) == 0) || ui->ui_alive == 0)
-			return(ENXIO);
+	if (dmf >= NDMF || (ui = dmfinfo[dmf]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	sc = &dmfl_softc[dmf];
+	if (sc->dmfl_state & OPEN)
+		return (EBUSY);
 	addr = (struct dmfdevice *)ui->ui_addr;
-	if ((addr->dmfl[0] & DMFL_OFFLINE)) {
-		/*printf("dmf: line printer offline/jammed\n");*/
+	if (addr->dmfl_ctrl & DMFL_OFFLINE) {
+#ifdef notdef
+		log(LOG_WARNING, "dmf%d: line printer offline/jammed\n",
+			dmf);
+#endif
 		return (EIO);
 	}
-	if ((addr->dmfl[0] & DMFL_CONV)) {
-		printf("dmf:line printer disconnected\n");
+	if ((addr->dmfl_ctrl & DMFL_CONV)) {
+		log(LOG_WARNING, "dmf%d: line printer disconnected\n", dmf);
 		return (EIO);
 	}
 
-	addr->dmfl[0] = 0;
+	addr->dmfl_ctrl = 0;
 	sc->dmfl_state |= OPEN;
 	return (0);
 }
@@ -851,16 +868,15 @@ dmflclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register int dmf= DMFL_UNIT(dev);
+	register int dmf = DMFL_UNIT(dev);
 	register struct dmfl_softc *sc = &dmfl_softc[dmf];
+	register struct uba_device *ui = dmfinfo[dmf];
 
-	(void)dmflout(dev, "\f", 1);
 	sc->dmfl_state = 0;
 	if (sc->dmfl_info != 0)
-		ubarelse((int)dmfinfo[dmf]->ui_ubanum,
-			&(sc->dmfl_info));
+		ubarelse((int)ui->ui_ubanum, &sc->dmfl_info);
 
-	((struct dmfdevice *)(dmfinfo[dmf]->ui_addr))->dmfl[0] = 0;
+	((struct dmfdevice *)ui->ui_addr)->dmfl_ctrl = 0;
 }
 
 dmflwrite(dev, uio)
@@ -872,14 +888,17 @@ dmflwrite(dev, uio)
 	register struct dmfl_softc *sc;
 
 	sc = &dmfl_softc[DMFL_UNIT(dev)];
-	if (sc->dmfl_state&ERROR)
-		return(EIO);
-	while (n = MIN(DMFL_BUFSIZ, (unsigned)uio->uio_resid)) {
-		if (error = uiomove(&sc->dmfl_buf[0], (int)n, UIO_WRITE, uio)) {
-			printf("uio move error\n");
+	if (sc->dmfl_state & ERROR)
+		return (EIO);
+	while (n = (unsigned)uio->uio_resid) {
+		if (n > DMFL_BUFSIZ) {
+			n = DMFL_BUFSIZ;
+			sc->dmfl_state |= MOREIO;
+		} else
+			sc->dmfl_state &= ~MOREIO;
+		if (error = uiomove(sc->dmfl_buf, (int)n, UIO_WRITE, uio))
 			return (error);
-		}
-		if (error = dmflout(dev, &sc->dmfl_buf[0], n))
+		if (error = dmflout(dev, sc->dmfl_buf, n))
 			return (error);
 	}
 	return (0);
@@ -903,7 +922,7 @@ dmflout(dev, cp, n)
 	register int dmf;
 	register struct uba_device *ui;
 	register struct dmfdevice *d;
-	int i;
+	int s;
 
 	dmf = DMFL_UNIT(dev);
 	sc = &dmfl_softc[dmf];
@@ -914,37 +933,32 @@ dmflout(dev, cp, n)
 	 * allocate unibus resources, will be released when io
 	 * operation is done.
 	 */
-	sc->dmfl_info = uballoc(ui->ui_ubanum,cp,n,0);
+	if (sc->dmfl_info == 0)
+		sc->dmfl_info = uballoc(ui->ui_ubanum, cp, n, 0);
 	d = (struct dmfdevice *)ui->ui_addr;
-	d->dmfl[0] = (2<<8) | DMFL_FORMAT;	/* indir reg 2 */
+	d->dmfl_ctrl = sc->dmfl_format;		/* indir reg 2 */
 	/* indir reg auto increments on r/w */
 	/* SO DON'T CHANGE THE ORDER OF THIS CODE */
-	d->dmfl[1] = 0;			/* prefix chars & num */
-	d->dmfl[1] = 0;			/* suffix chars & num */
-	d->dmfl[1] = sc->dmfl_info; 		/* dma lo 16 bits addr */
+	d->dmfl_indrct = 0;			/* prefix chars & num */
+	d->dmfl_indrct = 0;			/* suffix chars & num */
+	d->dmfl_indrct = sc->dmfl_info; 	/* dma lo 16 bits addr */
+	d->dmfl_indrct = -n;			/* number of chars */
 
-	/* NOT DOCUMENTED !! */
-	d->dmfl[1] = -n;		/* number of chars */
-	/* ----------^-------- */
-
-	d->dmfl[1] = ((sc->dmfl_info>>16)&3) /* dma hi 2 bits addr */
-		| (1<<8) /* auto cr insert */
-		| (1<<9) /* use real ff */
-		| (1<<15); /* no u/l conversion */
-	d->dmfl[1] = sc->dmfl_lines 	/* lines per page */
-		| (sc->dmfl_cols<<8);	/* carriage width */
+	d->dmfl_indrct = ((sc->dmfl_info>>16)&3) | DMFL_OPTIONS;
+						/* dma hi 2 bits addr */
+	d->dmfl_indrct = sc->dmfl_lines 	/* lines per page */
+		| (sc->dmfl_cols<<8);		/* carriage width */
 	sc->dmfl_state |= ASLP;
-	i = spltty();
-	d->dmfl[0] |= DMFL_PEN|DMFL_IE;
+	s = spltty();
+	d->dmfl_ctrl |= DMFL_PEN | DMFL_IE;
 	while (sc->dmfl_state & ASLP) {
-		sleep(&sc->dmfl_buf[0], (PZERO+8));
+		sleep(sc->dmfl_buf, PZERO + 8);
 		while (sc->dmfl_state & ERROR) {
-			timeout(dmflint, (caddr_t)dmf, 10*hz);
-			sleep((caddr_t)&sc->dmfl_state, (PZERO+8));
+			timeout(dmflint, (caddr_t)dmf, 10 * hz);
+			sleep((caddr_t)&sc->dmfl_state, PZERO + 8);
 		}
-		/*if (sc->dmfl_state&ERROR) return (EIO);*/
 	}
-	splx(i);
+	splx(s);
 	return (0);
 }
 
@@ -957,37 +971,36 @@ dmflint(dmf)
 	register struct uba_device *ui;
 	register struct dmfl_softc *sc;
 	register struct dmfdevice *d;
+	short dmfl_stats;
 
 	ui = dmfinfo[dmf];
 	sc = &dmfl_softc[dmf];
 	d = (struct dmfdevice *)ui->ui_addr;
 
-	d->dmfl[0] &= ~DMFL_IE;
-
+	d->dmfl_ctrl &= ~DMFL_IE;
+	dmfl_stats = d->dmf_ctrl;
 	if (sc->dmfl_state & ERROR) {
-		printf("dmfl: intr while in error state \n");
-		if ((d->dmfl[0]&DMFL_OFFLINE) == 0)
+		if ((dmfl_stats & DMFL_OFFLINE) == 0)
 			sc->dmfl_state &= ~ERROR;
 		wakeup((caddr_t)&sc->dmfl_state);
 		return;
 	}
-	if (d->dmfl[0] & DMFL_DMAERR)
-		printf("dmf:NXM\n");
-	if (d->dmfl[0] & DMFL_OFFLINE) {
-		printf("dmf:printer error\n");
+	if (dmfl_stats & DMFL_DMAERR)
+		log(LOG_WARNING, "dmf%d: NXM\n", dmf);
+	if (dmfl_stats & DMFL_OFFLINE) {
+		log(LOG_WARNING, "dmf%d: printer error\n", dmf);
 		sc->dmfl_state |= ERROR;
 	}
-	if (d->dmfl[0] & DMFL_PDONE) {
 #ifdef notdef
-		printf("bytes= %d\n", d->dmfl[1]);
-		printf("lines= %d\n", d->dmfl[1]);
-#endif
+	if (dmfl_stats & DMFL_PDONE) {
+		printf("bytes= %d\n", d->dmfl_indrct);
+		printf("lines= %d\n", d->dmfl_indrct);
 	}
+#endif
 	sc->dmfl_state &= ~ASLP;
-	wakeup((caddr_t)&sc->dmfl_buf[0]);
-	if (sc->dmfl_info != 0)
+	wakeup((caddr_t)sc->dmfl_buf);
+	if (sc->dmfl_info && (sc->dmfl_state & MOREIO) == 0)
 		ubarelse(ui->ui_ubanum, &sc->dmfl_info);
-	sc->dmfl_info = 0;
 }
 
 /* stubs for interrupt routines for devices not yet supported */
@@ -1011,4 +1024,4 @@ dmfdbint()
 {
 	printf("dmfdbint\n");
 }
-#endif
+#endif NDMF
