@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.13 (Berkeley) 84/09/21";
+static	char *sccsid = "@(#)main.c	4.13 (Berkeley) 84/12/06";
 #endif
 
 #include "defs.h"
@@ -125,11 +125,12 @@ main(argc, argv)
 			}
 	}
 
+	setreuid(0, userid);
 	mktemp(tmpfile);
 
 	if (iamremote) {
 		server();
-		exit(nerrs);
+		exit(nerrs != 0);
 	}
 
 	if (cmdargs)
@@ -144,7 +145,7 @@ main(argc, argv)
 			docmds(argc, argv);
 	}
 
-	exit(nerrs);
+	exit(nerrs != 0);
 }
 
 usage()

@@ -1,9 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.21 (Berkeley) 84/06/28";
+static	char *sccsid = "@(#)docmd.c	4.22 (Berkeley) 84/12/06";
 #endif
 
 #include "defs.h"
 #include <setjmp.h>
+
+#ifndef RDIST
+#define RDIST "/usr/local/rdist"
+#endif
 
 FILE	*lfp;			/* log file for recording files updated */
 struct	subcmd *subcmds;	/* list of sub-commands for current cmd */
@@ -149,6 +153,7 @@ makeconn(rhost)
 	static char *cur_host = NULL;
 	int n;
 	extern char user[];
+	extern int userid;
 
 	if (debug)
 		printf("makeconn(%s)\n", rhost);
@@ -168,7 +173,7 @@ makeconn(rhost)
 		ruser = user;
 	if (!qflag)
 		printf("updating host %s\n", rhost);
-	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
+	(void) sprintf(buf, "%s -Server%s", RDIST, qflag ? " -q" : "");
 
 	if (debug) {
 		printf("luser = %s, ruser = %s\n", user, ruser);
@@ -177,7 +182,9 @@ makeconn(rhost)
 
 	fflush(stdout);
 	cur_host = rhost;
+	setreuid(userid, 0);
 	rem = rcmd(&rhost, IPPORT_CMDSERVER, user, ruser, buf, 0);
+	setreuid(0, userid);
 	if (rem < 0)
 		return(0);
 	cp = buf;
