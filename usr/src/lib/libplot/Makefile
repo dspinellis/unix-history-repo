@@ -1,4 +1,4 @@
-#	Makefile	4.11	86/08/29
+#	Makefile	4.12	87/06/19
 #
 ALL=	libf77plot libplot lib300 lib300s lib4013 lib4014 lib450 libvt0 \
 	libplotaed libplotbg libplotdumb libplotgigi libplot2648 \
