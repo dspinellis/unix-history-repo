@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.19 (Berkeley) %G%
+		@(#)README	8.20 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -50,6 +50,13 @@ it demonstrates some interesting techniques.
 I'm not pretending that this README describes everything that these
 configuration files can do; clever people can probably tweak them
 to great effect.  But it should get you started.
+
+*******************************************************************
+***  BE SURE YOU CUSTOMIZE THESE FILES!  They have some		***
+***  Berkeley-specific assumptions built in, such as the name	***
+***  of our UUCP-relay.  You'll want to create your own domain	***
+***  description, and use that in place of domain/Berkeley.m4.	***
+*******************************************************************
 
 
 +--------------------------+
