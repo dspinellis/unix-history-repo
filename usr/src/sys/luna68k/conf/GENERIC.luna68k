@@ -1,0 +1,54 @@
+#	@(#)GENERIC.luna68k	7.1 (Berkeley) %G%
+#
+
+machine		"luna68k"
+
+cpu		"luna1"
+
+ident		GENERIC
+
+timezone	5 dst
+
+hz		60
+
+# Standard 4.3-Reno options
+maxusers	48
+options		INET
+options		NS
+options		QUOTA
+options		FIFO
+options		FFS
+options		MFS
+options		NFS
+options		DIAGNOSTIC
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+options		"COMPAT_42"
+options		KTRACE
+#options	GATEWAY		# slip needs this for packet forwarding
+
+# OSI stuff:
+#options	ISO
+#options	TPIP
+#options	EON
+
+options		DEBUGPRINT
+
+config		vmunix swap generic
+
+master		sc0	at scode?
+disk		sd0	at sc0 slave 6
+disk		sd1	at sc0 slave 5
+tape		st0	at sc0 slave 4
+
+device		sio0	at scode? flags 0x0
+device		bmc0	at scode? flags 0x0
+device		le0	at scode?
+
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager
