@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.13	(Berkeley)	83/05/03";
+static char sccsid[] = "@(#)tape.c	3.14	(Berkeley)	83/05/06";
 #endif
 
 #include "restore.h"
@@ -228,7 +228,7 @@ gethdr:
 		goto again;
 	}
 	if (tmpbuf.c_date != dumpdate || tmpbuf.c_ddate != dumptime) {
-		fprintf(stderr, "Wrong dump date got: %swanted %s",
+		fprintf(stderr, "Wrong dump date\n\tgot: %s\twanted %s",
 			ctime(&tmpbuf.c_date), ctime(dumpdate));
 		volno = 0;
 		goto again;
@@ -821,7 +821,7 @@ findinode(header, complain)
 			skipcnt++;
 	}
 	if (skipcnt > 0 && complain)
-		fprintf(stderr, "resync restor, skipped %d blocks\n", skipcnt);
+		fprintf(stderr, "resync restore, skipped %d blocks\n", skipcnt);
 	skipcnt = 0;
 }
 
