@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.17	(Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.18	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -123,7 +123,7 @@ char **envp;
 	signal(SIGQUIT, onintr);
 	signal(SIGTERM, onintr);
 	signal(SIGPIPE, onintr);	/* 4.1a tcp-ip stupidity */
-	signal(SIGFPE, dbg_signal);
+	signal(SIGUSR1, dbg_signal);
 	ret = guinfo(getuid(), User, msg);
 	strcpy(Loginuser, User);
 	uucpname(Myname);
@@ -849,7 +849,7 @@ register int inter;
 
 /*
  * Catch a special signal
- * (SIGFPE, ugh), and toggle debugging between 0 and 30.
+ * (SIGUSR1), and toggle debugging between 0 and 30.
  * Handy for looking in on long running uucicos.
  */
 dbg_signal()
