@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.8 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,40 +45,42 @@ int	mfs_open(),
 	mfs_ioctl(),
 	mfs_close(),
 	mfs_inactive(),
+	mfs_print(),
 	mfs_badop(),
 	mfs_nullop();
 
 struct vnodeops mfs_vnodeops = {
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_open,
-	mfs_close,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_ioctl,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_inactive,
-	mfs_nullop,
-	mfs_badop,
-	mfs_badop,
-	mfs_badop,
-	mfs_strategy,
+	mfs_badop,		/* lookup */
+	mfs_badop,		/* create */
+	mfs_badop,		/* mknod */
+	mfs_open,		/* open */
+	mfs_close,		/* close */
+	mfs_badop,		/* access */
+	mfs_badop,		/* getattr */
+	mfs_badop,		/* setattr */
+	mfs_badop,		/* read */
+	mfs_badop,		/* write */
+	mfs_ioctl,		/* ioctl */
+	mfs_badop,		/* select */
+	mfs_badop,		/* mmap */
+	mfs_badop,		/* fsync */
+	mfs_badop,		/* seek */
+	mfs_badop,		/* remove */
+	mfs_badop,		/* link */
+	mfs_badop,		/* rename */
+	mfs_badop,		/* mkdir */
+	mfs_badop,		/* rmdir */
+	mfs_badop,		/* symlink */
+	mfs_badop,		/* readdir */
+	mfs_badop,		/* readlink */
+	mfs_badop,		/* abortop */
+	mfs_inactive,		/* inactive */
+	mfs_nullop,		/* reclaim */
+	mfs_badop,		/* lock */
+	mfs_badop,		/* unlock */
+	mfs_badop,		/* bmap */
+	mfs_strategy,		/* strategy */
+	mfs_print,		/* print */
 };
 
 /*
@@ -235,8 +237,8 @@ mfs_close(vp, flag, cred)
 	 * we must invalidate any in core blocks, so that
 	 * we can, free up its vnode.
 	 */
-	bflush(vp->v_mounton);
-	if (binval(vp->v_mounton))
+	vflushbuf(vp, 0);
+	if (vinvalbuf(vp, 1))
 		return (0);
 	/*
 	 * There should be no way to have any more uses of this
@@ -265,6 +267,18 @@ mfs_inactive(vp)
 	if (VTOMFS(vp)->mfs_buflist != (struct buf *)(-1))
 		panic("mfs_inactive: not inactive");
 	return (0);
+}
+
+/*
+ * Print out the contents of an mfsnode.
+ */
+mfs_print(vp)
+	struct vnode *vp;
+{
+	register struct mfsnode *mfsp = VTOMFS(vp);
+
+	printf("tag VT_MFS, pid %d, base %d, size %d\n", mfsp->mfs_pid,
+		mfsp->mfs_baseoff, mfsp->mfs_size);
 }
 
 /*
