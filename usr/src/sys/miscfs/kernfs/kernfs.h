@@ -1,14 +1,13 @@
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
- * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs.h	8.3 (Berkeley) %G%
+ *	@(#)kernfs.h	8.4 (Berkeley) %G%
  */
 
 #define	_PATH_KERNFS	"/kern"		/* Default mountpoint */

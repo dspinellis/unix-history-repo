@@ -1,14 +1,13 @@
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
- * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc.h	8.4 (Berkeley) %G%
+ *	@(#)fdesc.h	8.5 (Berkeley) %G%
  *
  * $Id: fdesc.h,v 1.8 1993/04/06 15:28:33 jsp Exp $
  */

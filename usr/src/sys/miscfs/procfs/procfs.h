@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1993 Jan-Simon Pendry
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs.h	8.3 (Berkeley) %G%
+ *	@(#)procfs.h	8.4 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs.h,v 3.2 1993/12/15 09:40:17 jsp Exp $

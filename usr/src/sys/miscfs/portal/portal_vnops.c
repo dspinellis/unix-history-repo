@@ -1,14 +1,13 @@
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
- * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.8 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
