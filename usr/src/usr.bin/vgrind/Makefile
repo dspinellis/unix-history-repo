@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 PROG=	vfontedpr
 SRCS=	regexp.c vfontedpr.c
@@ -6,8 +6,6 @@ MAN1=	vgrind.0
 MAN5=	vgrindefs.0
 BINDIR=	/usr/libexec
 CLEANFILES+= vgrindefs.src.db
-
-vgrindefs.src.db: vgrindefs.src
 
 beforeinstall:
 	cap_mkdb ${.CURDIR}/vgrindefs.src
