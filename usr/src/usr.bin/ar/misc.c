@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,16 +46,12 @@ tmp()
 	else
 		bcopy(_PATH_ARTMP, path, sizeof(_PATH_ARTMP));
 	
-	sigemptyset(&set);
-	sigaddset(&set, SIGHUP);
-	sigaddset(&set, SIGINT);
-	sigaddset(&set, SIGQUIT);
-	sigaddset(&set, SIGTERM);
+	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 	if ((fd = mkstemp(path)) == -1)
 		error(tname);
         (void)unlink(path);
-	(void)sigprocmask(SIG_SETMASK, &oset, (sigset_t *)NULL);
+	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 	return(fd);
 }
 

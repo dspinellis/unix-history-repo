@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tmpfile.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmpfile.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,27 +31,23 @@ tmpfile()
 	bcopy(_PATH_TMP, buf, sizeof(_PATH_TMP) - 1);
 	bcopy(TRAILER, buf + sizeof(_PATH_TMP) - 1, sizeof(TRAILER));
 
-	sigemptyset(&set);
-	sigaddset(&set, SIGHUP);
-	sigaddset(&set, SIGINT);
-	sigaddset(&set, SIGQUIT);
-	sigaddset(&set, SIGTERM);
+	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 
 	fd = mkstemp(buf);
 	if (fd != -1)
 		(void)unlink(buf);
 
-	(void)sigprocmask(SIG_SETMASK, &oset, (sigset_t *)NULL);
+	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 
 	if (fd == -1)
-		return(NULL);
+		return (NULL);
 
 	if (!(fp = fdopen(fd, "w+"))) {
 		sverrno = errno;
 		(void)close(fd);
 		errno = sverrno;
-		return(NULL);
+		return (NULL);
 	}
-	return(fp);
+	return (fp);
 }
