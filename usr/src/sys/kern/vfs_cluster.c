@@ -14,13 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.14 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
 #include "buf.h"
 #include "vnode.h"
+#include "mount.h"
 #include "trace.h"
 #include "ucred.h"
 
@@ -159,7 +160,7 @@ bwrite(bp)
 	if ((flag&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
 	trace(TR_BWRITE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bcount), bp->b_blkno);
+	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bcount), bp->b_lblkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
 	VOP_STRATEGY(bp);
@@ -193,22 +194,15 @@ bdwrite(bp)
 
 	if ((bp->b_flags&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
-#ifdef notdef
 	/*
-	 * This does not work for buffers associated with
-	 * vnodes that are remote - they have no dev.
-	 * Besides, we don't use bio with tapes, so rather
-	 * than develop a fix, we just ifdef this out for now.
+	 * If this is a tape drive, the write must be initiated.
 	 */
 	if (bdevsw[major(bp->b_dev)].d_flags & B_TAPE)
 		bawrite(bp);
-	else {
+	} else {
 		bp->b_flags |= B_DELWRI | B_DONE;
 		brelse(bp);
 	}
-#endif
-	bp->b_flags |= B_DELWRI | B_DONE;
-	brelse(bp);
 }
 
 /*
@@ -232,10 +226,10 @@ brelse(bp)
 	register s;
 
 	trace(TR_BRELSE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_blkno);
+	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_lblkno);
 	/*
-	 * If someone's waiting for the buffer, or
-	 * is waiting for a buffer wake 'em up.
+	 * If a process is waiting for the buffer, or
+	 * is waiting for a free buffer, awaken it.
 	 */
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
@@ -243,15 +237,22 @@ brelse(bp)
 		bfreelist[0].b_flags &= ~B_WANTED;
 		wakeup((caddr_t)bfreelist);
 	}
-	if (bp->b_flags & B_NOCACHE) {
-		bp->b_flags |= B_INVAL;
-	}
-	if (bp->b_flags&B_ERROR)
-		if (bp->b_flags & B_LOCKED)
-			bp->b_flags &= ~B_ERROR;	/* try again later */
-		else
-			brelvp(bp); 	 		/* no assoc */
+	/*
+	 * Retry I/O for locked buffers rather than invalidating them.
+	 */
+	if ((bp->b_flags & B_ERROR) && (bp->b_flags & B_LOCKED))
+		bp->b_flags &= ~B_ERROR;
 
+	/*
+	 * Disassociate buffers that are no longer valid.
+	 */
+	if (bp->b_flags & (B_NOCACHE|B_ERROR))
+		bp->b_flags |= B_INVAL;
+	if ((bp->b_bufsize <= 0) || (bp->b_flags & (B_ERROR|B_INVAL))) {
+		if (bp->b_vp)
+			brelvp(bp);
+		bp->b_flags &= ~B_DELWRI;
+	}
 	/*
 	 * Stick the buffer back on a free list.
 	 */
@@ -290,12 +291,15 @@ incore(vp, blkno)
 
 	dp = BUFHASH(vp, blkno);
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
-		if (bp->b_blkno == blkno && bp->b_vp == vp &&
+		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
 			return (1);
 	return (0);
 }
 
+/*
+ * Return a block if it is in memory.
+ */
 baddr(vp, blkno, size, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno;
@@ -318,13 +322,6 @@ baddr(vp, blkno, size, cred, bpp)
  * Assign a buffer for the given block.  If the appropriate
  * block is already associated, return it; otherwise search
  * for the oldest non-busy buffer and reassign it.
- *
- * If we find the buffer, but it is dirty (marked DELWRI) and
- * its size is changing, we must write it out first. When the
- * buffer is shrinking, the write is done by brealloc to avoid
- * losing the unwritten data. When the buffer is growing, the
- * write is done by getblk, so that bread will not read stale
- * disk data over the modified data in the buffer.
  *
  * We use splx here because this routine may be called
  * on the interrupt stack during a dump, and we don't
@@ -354,9 +351,13 @@ getblk(vp, blkno, size)
 	 * without overflow. This is historic code; what bug it fixed,
 	 * or whether it is still a reasonable thing to do is open to
 	 * dispute. mkm 9/85
+	 *
+	 * Make it a panic to see if it ever really happens. mkm 11/89
 	 */
-	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-DEV_BSHIFT))
+	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-DEV_BSHIFT)) {
+		panic("getblk: blkno too big");
 		blkno = 1 << ((sizeof(int)*NBBY-DEV_BSHIFT) + 1);
+	}
 	/*
 	 * Search the cache for the block.  If we hit, but
 	 * the buffer is in use for i/o, then we wait until
@@ -365,7 +366,7 @@ getblk(vp, blkno, size)
 	dp = BUFHASH(vp, blkno);
 loop:
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
-		if (bp->b_blkno != blkno || bp->b_vp != vp ||
+		if (bp->b_lblkno != blkno || bp->b_vp != vp ||
 		    bp->b_flags&B_INVAL)
 			continue;
 		s = splbio();
@@ -378,27 +379,19 @@ loop:
 		splx(s);
 		notavail(bp);
 		if (bp->b_bcount != size) {
-			if (bp->b_bcount < size && (bp->b_flags&B_DELWRI)) {
-				bp->b_flags &= ~B_ASYNC;
-				(void) bwrite(bp);
-				goto loop;
-			}
-			if (brealloc(bp, size) == 0)
-				goto loop;
-		}
-		if (bp->b_bcount != size && brealloc(bp, size) == 0)
+			printf("getblk: stray size");
+			bp->b_flags |= B_INVAL;
+			bwrite(bp);
 			goto loop;
+		}
 		bp->b_flags |= B_CACHE;
 		return (bp);
 	}
 	bp = getnewbuf();
 	bfree(bp);
 	bremhash(bp);
-	if (bp->b_vp)
-		brelvp(bp);
-	VREF(vp);
-	bp->b_vp = vp;
-	bp->b_dev = vp->v_rdev;
+	bgetvp(vp, bp);
+	bp->b_lblkno = blkno;
 #ifdef SECSIZE
 	bp->b_blksize = secsize;
 #endif SECSIZE
@@ -406,8 +399,7 @@ loop:
 	bp->b_error = 0;
 	bp->b_resid = 0;
 	binshash(bp, dp);
-	if (brealloc(bp, size) == 0)
-		goto loop;
+	brealloc(bp, size);
 	return (bp);
 }
 
@@ -423,27 +415,23 @@ geteblk(size)
 
 	if (size > MAXBSIZE)
 		panic("geteblk: size too big");
-loop:
 	bp = getnewbuf();
 	bp->b_flags |= B_INVAL;
 	bfree(bp);
 	bremhash(bp);
 	flist = &bfreelist[BQ_AGE];
-	brelvp(bp);
 #ifdef SECSIZE
 	bp->b_blksize = DEV_BSIZE;
 #endif SECSIZE
 	bp->b_error = 0;
 	bp->b_resid = 0;
 	binshash(bp, flist);
-	if (brealloc(bp, size) == 0)
-		goto loop;
+	brealloc(bp, size);
 	return (bp);
 }
 
 /*
  * Allocate space associated with a buffer.
- * If can't get space, buffer is released
  */
 brealloc(bp, size)
 	register struct buf *bp;
@@ -454,72 +442,9 @@ brealloc(bp, size)
 	struct buf *dp;
 	int s;
 
-	/*
-	 * First need to make sure that all overlapping previous I/O
-	 * is dispatched with.
-	 */
 	if (size == bp->b_bcount)
-		return (1);
-	if (size < bp->b_bcount) { 
-		if (bp->b_flags & B_DELWRI) {
-			(void) bwrite(bp);
-			return (0);
-		}
-		if (bp->b_flags & B_LOCKED)
-			panic("brealloc");
-		return (allocbuf(bp, size));
-	}
-	bp->b_flags &= ~B_DONE;
-	if (bp->b_vp == (struct vnode *)0)
-		return (allocbuf(bp, size));
-
-	trace(TR_BREALLOC,
-	    pack(bp->b_vp->v_mount->m_fsid[0], size), bp->b_blkno);
-	/*
-	 * Search cache for any buffers that overlap the one that we
-	 * are trying to allocate. Overlapping buffers must be marked
-	 * invalid, after being written out if they are dirty. (indicated
-	 * by B_DELWRI) A disk block must be mapped by at most one buffer
-	 * at any point in time. Care must be taken to avoid deadlocking
-	 * when two buffer are trying to get the same set of disk blocks.
-	 */
-	start = bp->b_blkno;
-#ifdef SECSIZE
-	last = start + size/bp->b_blksize - 1;
-#else SECSIZE
-	last = start + btodb(size) - 1;
-#endif SECSIZE
-	dp = BUFHASH(bp->b_vp, bp->b_blkno);
-loop:
-	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-		if (ep == bp || ep->b_vp != bp->b_vp ||
-		    (ep->b_flags & B_INVAL))
-			continue;
-		/* look for overlap */
-		if (ep->b_bcount == 0 || ep->b_blkno > last ||
-#ifdef SECSIZE
-		    ep->b_blkno + ep->b_bcount/ep->b_blksize <= start)
-#else SECSIZE
-		    ep->b_blkno + btodb(ep->b_bcount) <= start)
-#endif SECSIZE
-			continue;
-		s = splbio();
-		if (ep->b_flags&B_BUSY) {
-			ep->b_flags |= B_WANTED;
-			sleep((caddr_t)ep, PRIBIO+1);
-			splx(s);
-			goto loop;
-		}
-		splx(s);
-		notavail(ep);
-		if (ep->b_flags & B_DELWRI) {
-			(void) bwrite(ep);
-			goto loop;
-		}
-		ep->b_flags |= B_INVAL;
-		brelse(ep);
-	}
-	return (allocbuf(bp, size));
+		return;
+	allocbuf(bp, size);
 }
 
 /*
@@ -553,8 +478,9 @@ loop:
 		goto loop;
 	}
 	trace(TR_BRELSE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_blkno);
-	brelvp(bp);
+	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_lblkno);
+	if (bp->b_vp)
+		brelvp(bp);
 	if (bp->b_rcred != NOCRED) {
 		cred = bp->b_rcred;
 		bp->b_rcred = NOCRED;
@@ -624,7 +550,7 @@ biodone(bp)
 /*
  * Ensure that no part of a specified block is in an incore buffer.
 #ifdef SECSIZE
- * "size" is given in device blocks (the units of b_blkno).
+ * "size" is given in device blocks (the units of b_lblkno).
 #endif SECSIZE
 #ifdef SECSIZE
  * "size" is given in device blocks (the units of b_blkno).
@@ -661,8 +587,8 @@ loop:
 			if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
 				continue;
 			/* look for overlap */
-			if (ep->b_bcount == 0 || ep->b_blkno > ecurblk ||
-			    ep->b_blkno + btodb(ep->b_bcount) <= curblk)
+			if (ep->b_bcount == 0 || ep->b_lblkno > ecurblk ||
+			    ep->b_lblkno + btodb(ep->b_bcount) <= curblk)
 				continue;
 			s = splbio();
 			if (ep->b_flags&B_BUSY) {
@@ -688,92 +614,213 @@ loop:
  * Make sure all write-behind blocks associated
  * with mount point are flushed out (from sync).
  */
-bflush(mountp)
+mntflushbuf(mountp, flags)
 	struct mount *mountp;
+	int flags;
+{
+	register struct vnode *vp;
+
+loop:
+	for (vp = mountp->m_mounth; vp; vp = vp->v_mountf) {
+		if (vget(vp))
+			goto loop;
+		vflushbuf(vp, flags);
+		vput(vp);
+	}
+}
+
+/*
+ * Flush all dirty buffers associated with a vnode.
+ */
+vflushbuf(vp, flags)
+	register struct vnode *vp;
+	int flags;
 {
 	register struct buf *bp;
-	register struct vnode *vp;
-	register struct buf *flist;
+	struct buf *nbp;
 	int s;
 
 loop:
 	s = splbio();
-	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++) {
-		for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
-			if ((bp->b_flags & B_BUSY))
-				continue;
-			if ((bp->b_flags & B_DELWRI) == 0)
-				continue;
-			if ((vp = bp->b_vp) == NULL)
-				continue;
-			if (vp->v_mount == mountp ||
-			    (vp->v_type == VBLK && vp->v_mounton == mountp)) {
-				splx(s);
-				notavail(bp);
-				(void) bawrite(bp);
-				goto loop;
-			}
-		}
+	for (bp = vp->v_blockh; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		if ((bp->b_flags & B_BUSY))
+			continue;
+		if ((bp->b_flags & B_DELWRI) == 0)
+			continue;
+		splx(s);
+		notavail(bp);
+		(void) bawrite(bp);
+		goto loop;
 	}
-	splx(s);
+	if ((flags & B_SYNC) == 0)
+		return;
+wloop:
+	s = splbio();
+	for (bp = vp->v_blockh; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		if (bp->b_flags & B_BUSY) {
+			bp->b_flags |= B_WANTED;
+			sleep((caddr_t)bp, PRIBIO+1);
+			splx(s);
+			goto wloop;
+		}
+		if ((bp->b_flags & B_DELWRI))
+			goto loop;
+	}
 }
 
 /*
  * Invalidate in core blocks belonging to closed or umounted filesystem
  *
- * We walk through the buffer pool and invalidate any buffers for the
- * indicated mount point. Normally this routine is preceeded by a bflush
- * call, so that on a quiescent filesystem there will be no dirty
- * buffers when we are done. We return the count of dirty buffers when
- * we are finished.
+ * Go through the list of vnodes associated with the file system;
+ * for each vnode invalidate any buffers that it holds. Normally
+ * this routine is preceeded by a bflush call, so that on a quiescent
+ * filesystem there will be no dirty buffers when we are done. Binval
+ * returns the count of dirty buffers when it is finished.
  */
-binval(mountp)
+mntinvalbuf(mountp)
 	struct mount *mountp;
 {
-	register struct buf *bp;
-	register struct bufhd *hp;
 	register struct vnode *vp;
-	int s, dirty = 0;
-#define dp ((struct buf *)hp)
+	int dirty = 0;
 
 loop:
-	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
-		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
-			if ((vp = bp->b_vp) == NULL)
-				continue;
-			if (vp->v_mount != mountp &&
-			    (vp->v_type != VBLK || vp->v_mounton != mountp))
-				continue;
-			s = splbio();
-			if (bp->b_flags & B_BUSY) {
-				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO+1);
-				splx(s);
-				goto loop;
-			}
-			splx(s);
-			notavail(bp);
-			if (bp->b_flags & B_DELWRI) {
-				(void) bawrite(bp);
-				dirty++;
-				continue;
-			}
-			bp->b_flags |= B_INVAL;
-			brelvp(bp);
-			brelse(bp);
-		}
+	for (vp = mountp->m_mounth; vp; vp = vp->v_mountf) {
+		if (vget(vp))
+			goto loop;
+		dirty += vinvalbuf(vp, 1);
+		vput(vp);
 	}
 	return (dirty);
 }
 
-brelvp(bp)
-	struct buf *bp;
+/*
+ * Flush out and invalidate all buffers associated with a vnode.
+ * Called with the underlying object locked.
+ */
+vinvalbuf(vp, save)
+	register struct vnode *vp;
+	int save;
 {
+	register struct buf *bp;
+	struct buf *nbp;
+	int s, dirty = 0;
+
+loop:
+	for (bp = vp->v_blockh; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		s = splbio();
+		if (bp->b_flags & B_BUSY) {
+			bp->b_flags |= B_WANTED;
+			sleep((caddr_t)bp, PRIBIO+1);
+			splx(s);
+			goto loop;
+		}
+		splx(s);
+		notavail(bp);
+		if (save) {
+			if (bp->b_flags & B_DELWRI) {
+				dirty++;
+				(void) bwrite(bp);
+				goto loop;
+			}
+		}
+		bp->b_flags |= B_INVAL;
+		brelse(bp);
+	}
+	if (vp->v_blockh != 0)
+		panic("vinvalbuf: flush failed");
+	return (dirty);
+}
+
+/*
+ * Associate a buffer with a vnode.
+ */
+bgetvp(vp, bp)
+	register struct vnode *vp;
+	register struct buf *bp;
+{
+
+	if (bp->b_vp)
+		panic("bgetvp: not free");
+	VREF(vp);
+	bp->b_vp = vp;
+	if (vp->v_type == VBLK || vp->v_type == VCHR)
+		bp->b_dev = vp->v_rdev;
+	else
+		bp->b_dev = NODEV;
+	/*
+	 * Insert onto list for new vnode.
+	 */
+	if (vp->v_blockh) {
+		bp->b_blockf = vp->v_blockh;
+		bp->b_blockb = &vp->v_blockh;
+		vp->v_blockh->b_blockb = &bp->b_blockf;
+		vp->v_blockh = bp;
+	} else {
+		vp->v_blockh = bp;
+		bp->b_blockb = &vp->v_blockh;
+		bp->b_blockf = NULL;
+	}
+}
+
+/*
+ * Disassociate a buffer from a vnode.
+ */
+brelvp(bp)
+	register struct buf *bp;
+{
+	struct buf *bq;
 	struct vnode *vp;
 
 	if (bp->b_vp == (struct vnode *) 0)
-		return;
+		panic("brelvp: NULL");
+	/*
+	 * Delete from old vnode list, if on one.
+	 */
+	if (bp->b_blockb) {
+		if (bq = bp->b_blockf)
+			bq->b_blockb = bp->b_blockb;
+		*bp->b_blockb = bq;
+		bp->b_blockf = NULL;
+		bp->b_blockb = NULL;
+	}
 	vp = bp->b_vp;
 	bp->b_vp = (struct vnode *) 0;
 	vrele(vp);
+}
+
+/*
+ * Reassign a buffer from one vnode to another.
+ * Used to assign file specific control information
+ * (indirect blocks) to the vnode to which they belong.
+ */
+reassignbuf(bp, newvp)
+	register struct buf *bp;
+	register struct vnode *newvp;
+{
+	register struct buf *bq;
+
+	/*
+	 * Delete from old vnode list, if on one.
+	 */
+	if (bp->b_blockb) {
+		if (bq = bp->b_blockf)
+			bq->b_blockb = bp->b_blockb;
+		*bp->b_blockb = bq;
+	}
+	/*
+	 * Insert onto list for new vnode.
+	 */
+	if (newvp->v_blockh) {
+		bp->b_blockf = newvp->v_blockh;
+		bp->b_blockb = &newvp->v_blockh;
+		newvp->v_blockh->b_blockb = &bp->b_blockf;
+		newvp->v_blockh = bp;
+	} else {
+		newvp->v_blockh = bp;
+		bp->b_blockb = &newvp->v_blockh;
+		bp->b_blockf = NULL;
+	}
 }
