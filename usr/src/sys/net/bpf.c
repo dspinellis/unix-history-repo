@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.9 (Berkeley) %G%
+ *      @(#)bpf.c	7.10 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -22,7 +22,7 @@
 #ifndef __GNUC__
 #define inline
 #else
-#define inline __inline__
+#define inline __inline
 #endif
 
 #include <sys/param.h>
