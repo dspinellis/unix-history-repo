@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftp.1	6.5 (Berkeley) %G%
+.\"	@(#)ftp.1	6.6 (Berkeley) %G%
 .\"
 .TH FTP 1C "April 29, 1985"
 .UC 5
@@ -430,7 +430,7 @@ command should be an
 to establish the secondary control connection.
 Enter the command "proxy ?" to see other ftp commands executable on the
 secondary connection.
-The following commands behave diffrently when prefaced by
+The following commands behave differently when prefaced by
 .BR proxy :
 .B open
 will not define new macros during the auto-login process,
@@ -603,14 +603,14 @@ A synonym for help.
 Command arguments which have embedded spaces may be quoted with
 quote (") marks.
 .SH "ABORTING A FILE TRANSFER"
-To abort a file transfer, enter the terminal interrupt key sequence
+To abort a file transfer, use the terminal interrupt key
 (usually Ctrl-C).
 Sending transfers will be immediately halted.
 Receiving transfers will be halted by sending a ftp protocol ABOR
 command to the remote server, and discarding any further data received.
 The speed at which this is accomplished depends upon the remote
 server's support for ABOR processing.
-If the remote server does not support the ABOR command, a "ftp>"
+If the remote server does not support the ABOR command, an "ftp>"
 prompt will not appear until the remote server has completed
 sending the requested file.
 .PP
@@ -808,8 +808,9 @@ auto-login process.
 Correct execution of many commands depends upon proper behavior
 by the remote server.
 .PP
-A protocol violation present in the UNIX 4.2 ascii transfer code
+An error in the treatment of carriage returns
+in the 4.2BSD UNIX ascii-mode transfer code
 has been corrected.
 This correction may result in incorrect transfers of binary files
-to and from UNIX 4.2 remote servers using the ascii type.
+to and from 4.2BSD servers using the ascii type.
 Avoid this problem by using the binary image type.
