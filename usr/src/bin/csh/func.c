@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1230,9 +1230,13 @@ getval(lp, v)
 badscal:
 	stderror(ERR_NAME | ERR_SCALEF);
     }
-    if ((f + 0.5) >= (float) 0x7fffffff || (f + 0.5) < (float) 0x80000000)
-	stderror(ERR_NAME | ERR_SCALEF);
-    return ((RLIM_TYPE) (f + 0.5));
+    f += 0.5;
+    if (f > (float) 0x7fffffff)
+	return 0x7fffffff;
+    else if (f < (float) 0x80000000)
+	return 0x80000000;
+    else
+	return ((RLIM_TYPE) f);
 }
 
 static void

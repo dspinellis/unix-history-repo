@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -734,23 +734,39 @@ srcunit(unit, onlyown, hflg)
 void
 rechist()
 {
-    Char    buf[BUFSIZ];
+    Char    buf[BUFSIZ], hbuf[BUFSIZ], *hfile;
     int     fp, ftmp, oldidfds;
+    struct  varent *shist;
 
     if (!fast) {
-	if (value(STRsavehist)[0] == '\0')
-	    return;
-	(void) Strcpy(buf, value(STRhome));
-	(void) Strcat(buf, STRsldthist);
-	fp = creat(short2str(buf), 0600);
-	if (fp == -1)
-	    return;
+	/*
+	 * If $savehist is just set, we use the value of $history
+	 * else we use the value in $savehist
+	 */
+	if (shist = adrof(STRsavehist)) {
+	    if (shist->vec[0][0] != '\0')
+		(void) Strcpy(hbuf, shist->vec[0]);
+	    else if ((shist = adrof(STRhistory)) && shist->vec[0][0] != '\0')
+		(void) Strcpy(hbuf, shist->vec[0]);
+	    else
+		return;
+	}
+	else
+  	    return;
+
+  	if ((hfile = value(STRhistfile)) == STRNULL) {
+  	    hfile = Strcpy(buf, value(STRhome));
+  	    (void) Strcat(buf, STRsldthist);
+  	}
+
+  	if ((fp = creat(short2str(hfile), 0600)) == -1) 
+  	    return;
+
 	oldidfds = didfds;
 	didfds = 0;
 	ftmp = SHOUT;
 	SHOUT = fp;
-	(void) Strcpy(buf, value(STRsavehist));
-	dumphist[2] = buf;
+	dumphist[2] = hbuf;
 	dohist(dumphist, NULL);
 	SHOUT = ftmp;
 	(void) close(fp);
@@ -1172,8 +1188,11 @@ vis_fputc(ch, fp)
 
     if (ch & QUOTE) 
 	return fputc(ch & TRIM, fp);
-    (void) vis(uenc, ch & TRIM, 
-	       AsciiOnly ? VIS_NOSLASH : (VIS_NLS | VIS_NOSLASH), 0);
+    /* 
+     * XXX: When we are in AsciiOnly we want all characters >= 0200 to
+     * be encoded, but currently there is no way in vis to do that.
+     */
+    (void) vis(uenc, ch & TRIM, VIS_NOSLASH, 0);
     return fputs(uenc, fp);
 }
 
