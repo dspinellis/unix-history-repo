@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.22 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,7 +140,7 @@ exit(p, rv)
 		vput(u.u_rdir);
 	}
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
-	acct();
+	(void) acct(p);
 	crfree(u.u_cred);
 #ifdef KTRACE
 	/* 
