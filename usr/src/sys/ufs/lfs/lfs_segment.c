@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.5 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -68,7 +68,7 @@ static void	 lfs_gather __P((struct lfs *,
 		     SEGMENT *, VNODE *, int (*) __P((struct lfs *, BUF *))));
 static void	 lfs_initseg __P((struct lfs *, SEGMENT *));
 static BUF	*lfs_newbuf __P((struct lfs *, SEGMENT *, daddr_t, size_t));
-static daddr_t	 lfs_newseg __P((struct lfs *));
+static void	 lfs_newseg __P((struct lfs *));
 static void	 lfs_updatemeta __P((struct lfs *,
 		     SEGMENT *, VNODE *, daddr_t *, BUF **, int));
 static void	 lfs_writefile __P((struct lfs *, SEGMENT *, VNODE *));
@@ -166,8 +166,8 @@ loop:
 		lfs_writesuper(fs, sp);
 	}
 
-	(void)free(sp->bpp, M_SEGMENT);
-	(void)free(sp, M_SEGMENT);
+	free(sp->bpp, M_SEGMENT);
+	free(sp, M_SEGMENT);
 
 	/* Wake up any cleaning processes waiting on this file system. */
 	wakeup(&fs->lfs_nextseg);
@@ -484,22 +484,18 @@ lfs_initseg(fs, sp)
 	printf("lfs_initseg\n");
 #endif
 	/* Advance to the next segment. */
-	if (1 || !LFS_PARTIAL_FITS(fs)) {
-		LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_curseg), bp);
-		sup->su_flags &= ~SEGUSE_ACTIVE;
-		lfs_bwrite(bp);
-		fs->lfs_curseg = fs->lfs_offset = fs->lfs_nextseg;
-		fs->lfs_nextseg = lfs_newseg(fs);
+	if (!LFS_PARTIAL_FITS(fs)) {
+		lfs_newseg(fs);
+		fs->lfs_offset = fs->lfs_curseg;
 		sp->seg_number = datosn(fs, fs->lfs_curseg);
 		sp->seg_bytes_left = fs->lfs_dbpseg * DEV_BSIZE;
 
 		/*
-		 * If su_nbytes is non-zero after the segment was cleaned,
-		 * the segment contains a super-block.  Update offset and
-		 * summary address to skip over the superblock.
+		 * If the segment contains a superblock, update the offset
+		 * and summary address to skip over it.
 		 */
 		LFS_SEGENTRY(sup, fs, sp->seg_number, bp); 
-		if (sup->su_nbytes != 0) {
+		if (sup->su_flags & SEGUSE_SUPERBLOCK) {
 			fs->lfs_offset += LFS_SBPAD / DEV_BSIZE;
 			sp->seg_bytes_left -= LFS_SBPAD;
 		}
@@ -537,24 +533,42 @@ lfs_initseg(fs, sp)
 /*
  * Return the next segment to write.
  */
-static daddr_t
+static void
 lfs_newseg(fs)
 	struct lfs *fs;
 {
+	CLEANERINFO *cip;
 	SEGUSE *sup;
 	struct buf *bp;
-	int isdirty, segnum, sn;
+	int curseg, isdirty, sn;
 
 #ifdef VERBOSE
 	printf("lfs_newseg\n");
 #endif
-	segnum = datosn(fs, fs->lfs_nextseg);
-	LFS_SEGENTRY(sup, fs, segnum, bp);
-	sup->su_flags |= SEGUSE_ACTIVE;
+	/*
+	 * Turn off the active bit for the current segment, turn on the
+	 * active and dirty bits for the next segment, update the cleaner
+	 * info.  Set the current segment to the next segment, get a new
+	 * next segment.
+	 */
+	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_curseg), bp);
+	sup->su_flags &= ~SEGUSE_ACTIVE;
 	lfs_bwrite(bp);
-	for (sn = segnum;;) {
+
+	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
+	sup->su_flags |= SEGUSE_ACTIVE | SEGUSE_DIRTY;
+	lfs_bwrite(bp);
+
+	LFS_CLEANERINFO(cip, fs, bp);
+	--cip->clean;
+	++cip->dirty;
+	lfs_bwrite(bp);
+
+	fs->lfs_lastseg = fs->lfs_curseg;
+	fs->lfs_curseg = fs->lfs_nextseg;
+	for (sn = curseg = datosn(fs, fs->lfs_curseg);;) {
 		sn = (sn + 1) % fs->lfs_nseg;
-		if (sn == segnum)
+		if (sn == curseg)
 			panic("lfs_nextseg: no clean segments");
 		LFS_SEGENTRY(sup, fs, sn, bp);
 		isdirty = sup->su_flags & SEGUSE_DIRTY;
@@ -562,7 +576,7 @@ lfs_newseg(fs)
 		if (!isdirty)
 			break;
 	}
-	return (sntoda(fs, sn));
+	fs->lfs_nextseg = sntoda(fs, sn);
 }
 
 static void
@@ -576,21 +590,11 @@ lfs_writeseg(fs, sp)
 	dev_t i_dev;
 	u_long *datap, *dp;
 	void *pmeta;
-	int flags, i, nblocks, s, (*strategy) __P((BUF *));
+	int flags, i, nblocks, s, (*strategy)__P((BUF *));
 
 #ifdef VERBOSE
 	printf("lfs_writeseg\n");
 #endif
-	/* Update superblock segment address. */
-	fs->lfs_lastseg = sntoda(fs, sp->seg_number);
-	nblocks = sp->cbpp - sp->bpp;
-	
-	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
-	sup->su_nbytes += LFS_SUMMARY_SIZE + (nblocks - 1 << fs->lfs_bshift);
-	sup->su_lastmod = time.tv_sec;
-	sup->su_flags = SEGUSE_DIRTY;
-	lfs_bwrite(bp);
-
 	/*
 	 * Compute checksum across data and then across summary;
 	 * the first block (the summary block) is skipped.
@@ -598,6 +602,7 @@ lfs_writeseg(fs, sp)
 	 * XXX
 	 * Fix this to do it inline, instead of malloc/copy.
 	 */
+	nblocks = sp->cbpp - sp->bpp;
 	datap = dp = malloc(nblocks * sizeof(u_long), M_SEGMENT, M_WAITOK);
 	for (bpp = sp->bpp, i = nblocks - 1; i--;)
 		*dp++ = (*++bpp)->b_un.b_words[0];
@@ -606,7 +611,7 @@ lfs_writeseg(fs, sp)
 	segp->ss_datasum = cksum(datap, nblocks * sizeof(u_long));
 	segp->ss_sumsum = cksum(&segp->ss_datasum, 
 	    LFS_SUMMARY_SIZE - sizeof(segp->ss_sumsum));
-	(void)free(datap, M_SEGMENT);
+	free(datap, M_SEGMENT);
 
 	/*
 	 * When we gathered the blocks for I/O we did not mark them busy or
@@ -641,6 +646,12 @@ lfs_writeseg(fs, sp)
 	
 	for (bpp = sp->bpp, i = nblocks; i--;)
 		(strategy)(*bpp++);
+
+	/* Update the segment usage information. */
+	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
+	sup->su_nbytes += LFS_SUMMARY_SIZE + (nblocks - 1 << fs->lfs_bshift);
+	sup->su_lastmod = time.tv_sec;
+	lfs_bwrite(bp);
 }
 
 static void
