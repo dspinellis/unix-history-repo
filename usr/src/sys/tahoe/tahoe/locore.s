@@ -1,4 +1,4 @@
-/*	locore.s	1.18	87/06/22	*/
+/*	locore.s	1.19	87/06/26	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -541,7 +541,7 @@ SCBVEC(sfexcep):
 
 SCBVEC(transflt):
 	CHECK_SFE(12)
-	bitl	$1,(sp)+
+	bitl	$2,(sp)+
 	bneq	tableflt
 pageflt:
 	SAVE_FPSTAT(8)
@@ -610,9 +610,9 @@ _/**/mname:	.globl	_/**/mname;		\
 	 * by tahoe controllers.
 	 */
 #include "dk.h"
-	SYSMAP(_vdmap	,_vdbase	,NVD*MAXPHYS/NBPG+CLSIZE )
+	SYSMAP(_vdmap	,_vdbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
 #include "yc.h"
-	SYSMAP(_cymap	,_cybase	,NCY*MAXPHYS/NBPG+CLSIZE )
+	SYSMAP(_cymap	,_cybase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
@@ -620,8 +620,9 @@ _/**/mname:	.globl	_/**/mname;		\
 #include "ace.h"
 	SYSMAP(_acemap1	,_acemem	,NACE*32	)
 	SYSMAP(VMEMend	,vmemend	,0		)
-	SYSMAP(VBmap	,vbbase		,0		)
-	SYSMAP(_vdbmap	,_vdbbase	,NVD*MAXPHYS/NBPG+CLSIZE )
+	SYSMAP(VBmap	,vbbase		,CLSIZE		)
+	SYSMAP(_vdbmap	,_vdbbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
+	SYSMAP(_cybmap	,_cybbase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
 	SYSMAP(eVBmap	,vbend		,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 eSysmap:
