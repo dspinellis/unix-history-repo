@@ -1,0 +1,52 @@
+.pa 1
+.he 'LS (I)'3/15/72'LS (I)'
+.ti 0
+NAME		ls  --  list contents of directory
+.sp
+.ti 0
+SYNOPSIS	ls__ [ -_ltasd_____ ] name\d1\u ...
+.sp
+.ti 0
+DESCRIPTION	ls__
+lists the contents of one or more directories under
+control of several options:
+.sp
+.in +5
+.ti -3
+-l list in l_ong format, giving i-number, mode, owner,
+size in bytes, and time of last modification
+for each file.
+(see stat____ for format of the mode)
+
+.ti -3
+-t sort by time modified (latest first) instead of
+by name, as is normal
+
+.ti -3
+-a list all entries; usually those beginning with "." are
+suppressed
+
+.ti -3
+-s give size in blocks for each entry
+
+.ti -3
+-d if argument is a directory, list only its name, not
+its contents (mostly used with "-l" to get status
+on directory)
+.sp
+.in -5
+If no argument is given, "." is listed.
+If an argument is not a directory, its name is given.
+.sp
+.ti 0
+FILES		/etc/passwd to get user ID's for ls -l
+.sp
+.ti 0
+SEE ALSO	stat(I)
+.sp
+.ti 0
+DIAGNOSTICS	"name
+nonexistent"; "name unreadable"; "name unstatable."
+.sp
+.ti 0
+BUGS		--
