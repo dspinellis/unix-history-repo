@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)primes.h	8.2 (Berkeley) %G%
+ *	@(#)primes.h	8.3 (Berkeley) %G%
  */
 
 /*
