@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.26 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -36,9 +36,15 @@ static char *host_addrs[2];
 static int stayopen = 0;
 static char *any();
 
+#if PACKETSZ > 1024
+#define MAXPACKET	PACKETSZ
+#else
+#define MAXPACKET	1024
+#endif
+
 typedef union {
     HEADER qb1;
-    char qb2[PACKETSZ];
+    char qb2[MAXPACKET];
 } querybuf;
 
 static union {
@@ -100,7 +106,10 @@ getanswer(msg, msglen, iquery)
 				h_errno = TRY_AGAIN;
 				break;
 			case NOERROR:
-				h_errno = NO_ADDRESS;
+				if (hp->aa)
+					h_errno = NO_ADDRESS;
+				else
+					h_errno = TRY_AGAIN;
 				break;
 			case FORMERR:
 			case NOTIMP:
@@ -125,9 +134,9 @@ getanswer(msg, msglen, iquery)
 			bp += n;
 			buflen -= n;
 		} else
-			cp += dn_skip(cp) + QFIXEDSZ;
+			cp += dn_skipname(cp, eom) + QFIXEDSZ;
 		while (--qdcount > 0)
-			cp += dn_skip(cp) + QFIXEDSZ;
+			cp += dn_skipname(cp, eom) + QFIXEDSZ;
 	} else if (iquery) {
 		if (hp->aa)
 			h_errno = HOST_NOT_FOUND;
@@ -297,9 +306,10 @@ gethostdomain(name, domain)
 	int n;
 
 	if (domain == NULL)
-		sprintf(nbuf, "%.*s", MAXDNAME, name);
+		(void)sprintf(nbuf, "%.*s", MAXDNAME, name);
 	else
-		sprintf(nbuf, "%.*s.%.*s", MAXDNAME, name, MAXDNAME, domain);
+		(void)sprintf(nbuf, "%.*s.%.*s",
+		    MAXDNAME, name, MAXDNAME, domain);
 	n = res_mkquery(QUERY, nbuf, C_IN, T_A, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
