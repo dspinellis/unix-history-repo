@@ -1,4 +1,4 @@
-/*	sys.c	4.6	82/07/15	*/
+/*	sys.c	4.7	82/12/22	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -320,8 +320,6 @@ read(fdesc, buf, count)
 	if ((file->i_flgs&F_READ) == 0)
 		return(-1);
 	if ((file->i_flgs & F_FILE) == 0) {
-		if (count % DEV_BSIZE)
-			printf("count=%d?\n", count);
 		file->i_cc = count;
 		file->i_ma = buf;
 		file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
@@ -360,8 +358,6 @@ write(fdesc, buf, count)
 		return(-1);
 	if ((file->i_flgs&F_WRITE) == 0)
 		return(-1);
-	if (count % DEV_BSIZE)
-		printf("count=%d?\n", count);
 	file->i_cc = count;
 	file->i_ma = buf;
 	file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
