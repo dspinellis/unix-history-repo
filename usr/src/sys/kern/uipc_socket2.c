@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.6	81/11/21	*/
+/*	uipc_socket2.c	4.7	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -163,7 +163,7 @@ sbrelease(sb)
 {
 
 	sbflush(sb);
-	m_release(sb->sb_mbmax);
+	m_release(sb->sb_mbmax/MSIZE);
 	sb->sb_hiwat = sb->sb_mbmax = 0;
 }
 
