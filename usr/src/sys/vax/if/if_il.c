@@ -1,4 +1,4 @@
-/*	if_il.c	6.2	83/09/24	*/
+/*	if_il.c	6.3	84/01/02	*/
 
 #include "il.h"
 
@@ -363,7 +363,7 @@ ilrint(unit)
 	struct ildevice *addr = (struct ildevice *)ilinfo[unit]->ui_addr;
 	register struct il_rheader *il;
     	struct mbuf *m;
-	int len, off, resid;
+	int len, off, resid, s;
 	register struct ifqueue *inq;
 
 	is->is_if.if_ipackets++;
@@ -433,12 +433,13 @@ ilrint(unit)
 		goto setup;
 	}
 
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-		goto setup;
-	}
-	IF_ENQUEUE(inq, m);
+	} else
+		IF_ENQUEUE(inq, m);
+	splx(s);
 
 setup:
 	/*
