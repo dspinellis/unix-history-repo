@@ -1,4 +1,4 @@
-/*	machdep.c	4.3	%G%	*/
+/*	machdep.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,8 +42,20 @@ startup(firstaddr)
 	register struct pte *pte;
 
 	/*
+	 * Initialize error message buffer (at end of core).
+	 */
+	maxmem -= CLSIZE;
+	pte = msgbufmap;
+	for (i = 0; i < CLSIZE; i++)
+		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
+	mtpr(TBIA, 1);
+
+	/*
 	 * Good {morning,afternoon,evening,night}.
 	 */
+	printf(version);
+	printf("real mem  = %d\n", ctob(maxmem));
+
 
 #if VAX==780
 	tocons(TXDB_CWSI);
@@ -51,9 +63,6 @@ startup(firstaddr)
 #if VAX==750
 	tocons(TXDB_CCSF);
 #endif
-	printf(version);
-	printf("real mem  = %d\n", ctob(maxmem));
-
 	/*
 	 * Allow for the u. area of process 0 and its (single)
 	 * page of page tables.
@@ -67,7 +76,6 @@ startup(firstaddr)
 	for (i = 0; i < NBUF * CLSIZE; i++)
 		*(int *)pte++ = PG_V | PG_KW | unixsize++;
 	mtpr(TBIA, 1);
-
 #ifdef ERNIE
 	if (coresw)
 		maxmem = 4096;

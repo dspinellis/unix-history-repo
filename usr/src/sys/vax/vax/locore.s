@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.10	%G%
+ *	locore.s		4.11	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -476,6 +476,11 @@ _bufmap:
 	.globl	_buffers
 	.set	_buffers,((_bufmap-_Sysmap)/4)*NBPG+0x80000000
 	.globl	eSysmap
+	.globl	_msgbufmap
+_msgbufmap:
+	.space	4*CLSIZE
+	.globl	_msgbuf
+	.set	_msgbuf,((_msgbufmap-_Sysmap)/4)*NBPG+0x80000000
 eSysmap:
 	.set	Syssize,(eSysmap-_Sysmap)/4
 	.text
@@ -671,7 +676,6 @@ start:
 /*
  * Initialize UBA
  */
-	movl	$1,PHYSUBA+4		# init
 	movl	$0x78,PHYSUBA+4		# ienable
 #endif
 
@@ -1215,6 +1219,7 @@ kacc3:
 	mfpr	$P1LR,r3
 kacc2:
 	addl3	8(ap),r0,r1	# ending virtual address
+	addl2	$NBPG-1,r1
 	ashl	$-9,r0,r0	# page number
 	ashl	$-9,r1,r1
 	bbs	$31,4(ap),kacc6
@@ -1224,7 +1229,7 @@ kacc2:
 	brb	kacc4
 kacc6:
 	cmpl	r1,r3		# compare last page to P0LR or SLR
-	bgeq	kacerr		# address too high
+	bgtr	kacerr		# address too high
 kacc4:	
 	movl	(r2)[r0],r3
 	bbc	$31,4(ap),kacc4a
@@ -1237,7 +1242,7 @@ kacc4a:
 	cmpzv	$27,$2,r3,$3	# check low 2 bits of prot code
 	beql	kacerr		# no write access
 kacc5:
-	aobleq	r1,r0,kacc4	# next page
+	aoblss	r1,r0,kacc4	# next page
 	movl	$1,r0		# no errors
 	ret
 kacerr:

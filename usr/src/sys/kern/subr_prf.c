@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.3	%G%	*/
+/*	subr_prf.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,8 @@
 #include "../h/conf.h"
 #include "../h/mtpr.h"
 #include "../h/reboot.h"
+#include "../h/vm.h"
+#include "../h/msgbuf.h"
 
 #ifdef TRACE
 #define	TRCBUFS	4096
@@ -194,7 +196,6 @@ dumptrc(nch)
 }
 #endif
 
-char	*msgbufp = msgbuf;	/* Next saved printf character */
 /*
  * Print a character on console or in internal trace buffer.
  * If destination is console then the last MSGBUFS characters
@@ -216,9 +217,13 @@ register c;
 	}
 #endif
 	if (c != '\0' && c != '\r' && c != 0177) {
-		*msgbufp++ = c;
-		if (msgbufp >= &msgbuf[MSGBUFS])
-			msgbufp = msgbuf;
+		if (msgbuf.msg_magic != MSG_MAGIC) {
+			msgbuf.msg_bufx = 0;
+			msgbuf.msg_magic = MSG_MAGIC;
+		}
+		if (msgbuf.msg_bufx < 0 || msgbuf.msg_bufx >= MSG_BSIZE)
+			msgbuf.msg_bufx = 0;
+		msgbuf.msg_bufc[msgbuf.msg_bufx++] = c;
 	}
 	if (c == 0)
 		return;
