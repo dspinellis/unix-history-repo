@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,18 +99,13 @@ create_knlist(name, db)
 			off_t cur_off, rel_off, vers_off;
 
 			/* Offset relative to start of text image in VM. */
-#ifdef hp300
-			rel_off = nbuf.n_value;
-#endif
+			rel_off = nbuf.n_value & ~KERNBASE;
 #ifdef tahoe
 			/*
 			 * On tahoe, first 0x800 is reserved for communication
 			 * with the console processor.
 			 */
-			rel_off = ((nbuf.n_value & ~KERNBASE) - 0x800);
-#endif
-#ifdef vax
-			rel_off = nbuf.n_value & ~KERNBASE;
+			rel_off -= 0x800;
 #endif
 			/*
 			 * When loaded, data is rounded to next page cluster
@@ -161,6 +156,6 @@ badfmt(p)
 	char *p;
 {
 	(void)fprintf(stderr,
-	    "symorder: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
+	    "kvm_mkdb: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
 	exit(1);
 }
