@@ -1,11 +1,14 @@
 /*
- * "@(#)dump.h	1.2 (Berkeley) %G%"
+ * "@(#)dump.h	1.3 (Berkeley) %G%"
  */
 #define	NI	16
 #define	DIRPB	(BSIZE/sizeof(struct direct))
 
 #include <stdio.h>
 #include <ctype.h>
+#include <fstab.h>
+#include <signal.h>
+#include <utmp.h>
 #include "include.4.1/sys/param.h"
 #include "include.4.1/sys/stat.h"
 #include "include.4.1/sys/filsys.h"
@@ -13,11 +16,8 @@
 #include "include.4.1/sys/inode.h"
 #include "include.4.1/sys/fblk.h"
 #include "include.4.1/sys/dir.h"
-#include "include.4.1/utmp.h"
 #include "include.4.1/time.h"
-#include "include.4.1/signal.h"
 #include "include.4.1/dumprestor.h"
-#include "include.4.1/fstab.h"
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/MLEN])
 #define	MBIT(i)		(1<<((unsigned)(i-1)%MLEN))
@@ -97,10 +97,7 @@ int	interrupt();		/* in case operator bangs on console */
 #define	OPGRENT	"operator"		/* group entry to notify */
 #define DIALUP	"ttyd"			/* prefix for dialups */
 
-#define	MAXFSTAB		32
-struct	fstab	fstab[MAXFSTAB];
 struct	fstab	*fstabsearch();	/* search in fs_file and fs_spec */
-int	nfstab;
 
 /*
  *	The contents of the file NINCREM is maintained both on
