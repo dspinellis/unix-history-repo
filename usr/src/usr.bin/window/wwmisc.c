@@ -3,6 +3,8 @@ static	char *sccsid = "@(#)wwmisc.c	3.7 84/04/09";
 #endif
 
 #include "ww.h"
+#include "tt.h"
+#include "char.h"
 
 /*
  * Sufficient but not necessary test for total visibility.
@@ -21,4 +23,9 @@ register struct ww *w;
 	    && wwsmap[w->ww_cur.r][w->ww_cur.c] == w->ww_index)
 		nvis++;
 	return nvis == w->ww_i.nr * w->ww_i.nc;
+}
+
+wwbell()
+{
+	ttputc(ctrl(g));
 }
