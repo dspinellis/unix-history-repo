@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.15	82/10/05	*/
+/*	uipc_pipe.c	4.16	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,7 +7,6 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/in_systm.h"		/* XXX */
 
 int	piusrreq();
 #define	PIPSIZ	4096

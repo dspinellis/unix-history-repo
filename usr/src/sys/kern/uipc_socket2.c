@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.27	82/10/05	*/
+/*	uipc_socket2.c	4.28	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,8 +12,6 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 
 /*
  * Primitive routines for operating on sockets and socket buffers
