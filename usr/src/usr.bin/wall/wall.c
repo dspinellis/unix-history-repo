@@ -27,16 +27,18 @@ static char sccsid[] = "@(#)wall.c	5.2 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#define	USERS	128
 #define IGNOREUSER	"sleeper"
 
 char	hostname[32];
 char	mesg[3000];
 int	msize,sline;
-struct	utmp utmp[USERS];
+struct	utmp *utmp;
 char	*strcpy();
 char	*strcat();
+char	*malloc();
 char	who[9] = "???";
 long	clock, time();
 struct tm *localtime();
@@ -49,18 +51,22 @@ char *argv[];
 {
 	register int i, c;
 	register struct utmp *p;
-	FILE *f;
+	int f;
+	struct stat statb;
 
-	gethostname(hostname, sizeof (hostname));
-	if ((f = fopen("/etc/utmp", "r")) == NULL) {
+	(void) gethostname(hostname, sizeof (hostname));
+	if ((f = open("/etc/utmp", O_RDONLY, 0)) < 0) {
 		fprintf(stderr, "Cannot open /etc/utmp\n");
 		exit(1);
 	}
 	clock = time( 0 );
 	localclock = localtime( &clock );
 	sline = ttyslot();	/* 'utmp' slot no. of sender */
-	c = fread((char *)utmp, sizeof(struct utmp), USERS, f);
-	fclose(f);
+	(void) fstat(f, &statb);
+	utmp = (struct utmp *)malloc(statb.st_size);
+	c = read(f, (char *)utmp, statb.st_size);
+	(void) close(f);
+	c /= sizeof(struct utmp);
 	if (sline)
 		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
 	sprintf(mesg,
