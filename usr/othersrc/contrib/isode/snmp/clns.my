@@ -1,0 +1,852 @@
+-- clns.my - CLNS MIB
+
+-- $Header: /f/osi/snmp/RCS/clns.my,v 7.13 91/02/28 17:17:12 mrose Exp $
+--
+-- Contributed by NYSERNet Inc.  This work was partially supported by the
+-- U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+-- Center of the U.S. Air Force Systems Command under contract number
+-- F30602-88-C-0016.
+--
+--
+-- $Log:	clns.my,v $
+-- Revision 7.13  91/02/28  17:17:12  mrose
+-- touch-up
+-- 
+-- Revision 7.12  91/02/22  09:43:01  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.11  90/09/26  19:20:51  mrose
+-- touch-up
+-- 
+-- Revision 7.10  90/08/29  12:23:35  mrose
+-- touch-up
+-- 
+-- Revision 7.9  90/08/28  10:29:33  mrose
+-- touch-up
+-- 
+-- Revision 7.8  90/05/31  10:38:31  mrose
+-- update
+-- 
+-- Revision 7.7  90/05/28  21:50:02  mrose
+-- not-accessible
+-- 
+-- Revision 7.6  90/05/21  17:07:16  mrose
+-- OBJECT-TYPE
+-- 
+-- Revision 7.5  90/05/13  15:54:26  mrose
+-- update
+-- 
+-- Revision 7.4  90/01/11  18:34:01  mrose
+-- real-sync
+-- 
+-- Revision 7.3  89/12/20  16:02:40  mrose
+-- clns
+-- 
+-- Revision 7.2  89/12/20  15:49:00  mrose
+-- update
+-- 
+-- Revision 7.1  89/12/20  15:45:56  mrose
+-- update
+-- 
+-- Revision 7.0  89/11/23  22:22:59  mrose
+-- Release 6.0
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+CLNS-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+        experimental, OBJECT-TYPE, Counter
+		FROM RFC1155-SMI;
+
+-- new type of NetworkAddress
+
+-- ClnpAddress ::=
+--         OCTET STRING (SIZE (1..21))
+
+
+clns    OBJECT IDENTIFIER ::=   { experimental 1 }
+
+clnp    OBJECT IDENTIFIER ::=   { clns 1 }
+error   OBJECT IDENTIFIER ::=   { clns 2 }
+echo    OBJECT IDENTIFIER ::=   { clns 3 }
+es-is   OBJECT IDENTIFIER ::=   { clns 4 }
+
+
+-- the General CLNP group
+
+clnpForwarding OBJECT-TYPE
+        SYNTAX  INTEGER {
+                    is(1),  -- entity is an intermediate system
+                    es(2)   -- entity is an end system and does
+                            -- not forward pdus
+		}
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnp 1 }
+
+clnpDefaultLifeTime OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnp 2 }
+
+clnpInReceives OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 3 }
+
+clnpInHdrErrors OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 4 }
+
+clnpInAddrErrors OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 5 }
+
+clnpForwPDUs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 6 }
+
+clnpInUnknownNLPs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 7 }
+
+clnpInUnknownULPs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 8 }
+
+clnpInDiscards OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 9 }
+
+clnpInDelivers OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 10 }
+
+clnpOutRequests OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 11 }
+
+clnpOutDiscards OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 12 }
+
+clnpOutNoRoutes OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 13 }
+
+clnpReasmTimeout OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 14 }
+
+clnpReasmReqds  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 15 }
+
+clnpReasmOKs    OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 16 }
+
+clnpReasmFails  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 17 }
+
+clnpSegOKs      OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 18 }
+
+clnpSegFails    OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 19 }
+
+clnpSegCreates  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnp 20 }
+
+clnpInOpts      OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	::= { clnp 25 }
+
+clnpOutOpts     OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	::= { clnp 26 }
+
+-- the CLNP Interface table
+
+clnpAddrTable   OBJECT-TYPE
+        SYNTAX  SEQUENCE OF ClnpAddrEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+        ::= { clnp 21 }
+
+clnpAddrEntry   OBJECT-TYPE
+        SYNTAX  ClnpAddrEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+	INDEX	{ clnpAdEntAddr }
+        ::= { clnpAddrTable 1 }
+
+ClnpAddrEntry ::= SEQUENCE {
+    clnpAdEntAddr
+        ClnpAddress,
+    clnpAdEntIfIndex
+        INTEGER,
+    clnpAdEntReasmMaxSize
+        INTEGER (0..65535)
+}
+
+clnpAdEntAddr OBJECT-TYPE
+        SYNTAX  ClnpAddress
+        ACCESS  read-only
+        STATUS  mandatory
+        ::=  { clnpAddrEntry 1 }
+
+clnpAdEntIfIndex OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-only
+        STATUS  mandatory
+        ::=  { clnpAddrEntry 2 }
+
+clnpAdEntReasmMaxSize OBJECT-TYPE
+        SYNTAX  INTEGER (0..65535)
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnpAddrEntry 3 }
+
+-- the CLNP Routing table
+
+clnpRoutingTable OBJECT-TYPE
+        SYNTAX  SEQUENCE OF ClnpRouteEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+        ::= { clnp 22 }
+
+clnpRouteEntry OBJECT-TYPE
+        SYNTAX  ClnpRouteEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+	INDEX	{ clnpRouteDest }
+        ::= { clnpRoutingTable 1 }
+
+ClnpRouteEntry ::= SEQUENCE {
+    clnpRouteDest
+        ClnpAddress,
+    clnpRouteIfIndex
+        INTEGER,
+    clnpRouteMetric1
+        INTEGER,
+    clnpRouteMetric2
+        INTEGER,
+    clnpRouteMetric3
+        INTEGER,
+    clnpRouteMetric4
+        INTEGER,
+    clnpRouteNextHop
+        ClnpAddress,
+    clnpRouteType
+        INTEGER,
+    clnpRouteProto
+        INTEGER,
+    clnpRouteAge
+        INTEGER
+}
+
+clnpRouteDest OBJECT-TYPE
+        SYNTAX  ClnpAddress
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 1 }
+
+clnpRouteIfIndex  OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 2 }
+
+clnpRouteMetric1 OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 3 }
+
+clnpRouteMetric2 OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 4 }
+
+clnpRouteMetric3 OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 5 }
+
+clnpRouteMetric4 OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 6 }
+
+clnpRouteNextHop OBJECT-TYPE
+        SYNTAX  ClnpAddress
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 7 }
+
+clnpRouteType OBJECT-TYPE
+        SYNTAX  INTEGER {
+                    other(1),      -- none of the following
+
+                    invalid(2),    -- an invalidated route
+
+                                   -- route to directly
+                    direct(3),     -- connected (sub-)network
+
+                                   -- route to a non-local
+                    remote(4)      -- host/network/sub-network
+		}
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 8 }
+
+clnpRouteProto OBJECT-TYPE
+        SYNTAX  INTEGER {
+                    other(1),     -- none of the following
+
+                                  -- non-protocol information
+                                  --   e.g., manually
+                    local(2),     --   configured entries
+
+                                  -- set via a network
+                    netmgmt(3),   --   management protocol
+
+                                  -- similar to ipRouteProto
+                                  -- but omits several
+                                  -- IP-specific protocols
+
+                    is-is(9),
+                    ciscoIgrp(11),
+                    bbnSpfIgp(12),
+                    ospf(13),
+		    bgp(14)
+		}
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { clnpRouteEntry 9 }
+
+clnpRouteAge OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpRouteEntry 10 }
+
+-- the CLNP Address Translation tables
+
+clnpNetToMediaTable OBJECT-TYPE
+        SYNTAX  SEQUENCE OF ClnpNetToMediaEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+        ::= { clnp 23 }
+
+clnpNetToMediaEntry OBJECT-TYPE
+        SYNTAX  ClnpNetToMediaEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+	INDEX	{ clnpNetToMediaIfIndex, clnpNetToMediaNetAddress }
+        ::= { clnpNetToMediaTable 1 }
+
+ClnpNetToMediaEntry ::= SEQUENCE {
+    clnpNetToMediaIfIndex
+        INTEGER,
+    clnpNetToMediaPhysAddress
+        OCTET STRING,
+    clnpNetToMediaNetAddress
+        ClnpAddress,
+    clnpNetToMediaType
+	INTEGER,
+    clnpNetToMediaAge
+	INTEGER,
+    clnpNetToMediaHoldTime
+	INTEGER
+}
+
+clnpNetToMediaIfIndex OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpNetToMediaEntry 1 }
+
+clnpNetToMediaPhysAddress OBJECT-TYPE
+        SYNTAX  OCTET STRING
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpNetToMediaEntry 2 }
+
+clnpNetToMediaNetAddress OBJECT-TYPE
+        SYNTAX  ClnpAddress
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpNetToMediaEntry 3 }
+
+clnpNetToMediaType OBJECT-TYPE
+	SYNTAX INTEGER {
+		    other(1),	-- none of the following
+		    invalid(2),	-- an invalidated mapping
+		    dynamic(3),
+		    static(4)
+		}
+	ACCESS	read-write
+	STATUS	mandatory
+	::= { clnpNetToMediaEntry 4}
+
+clnpNetToMediaAge OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	::= { clnpNetToMediaEntry 5 }
+
+clnpNetToMediaHoldTime OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	::= { clnpNetToMediaEntry 6 }
+
+clnpMediaToNetTable OBJECT-TYPE
+        SYNTAX  SEQUENCE OF ClnpMediaToNetEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+        ::= { clnp 24 }
+
+clnpMediaToNetEntry OBJECT-TYPE
+        SYNTAX  ClnpMediaToNetEntry
+        ACCESS  not-accessible
+        STATUS  mandatory
+	INDEX	{ clnpMediaToNetIfIndex, clnpMediaToNetPhysAddress }
+        ::= { clnpMediaToNetTable 1 }
+
+ClnpMediaToNetEntry ::= SEQUENCE {
+    clnpMediaToNetIfIndex
+        INTEGER,
+    clnpMediaToNetNetAddress
+        ClnpAddress,
+    clnpMediaToNetPhysAddress
+        OCTET STRING,
+    clnpMediaToNetType
+	INTEGER,
+    clnpMediaToNetAge
+	INTEGER,
+    clnpMediaToNetHoldTime
+	INTEGER
+}
+
+clnpMediaToNetIfIndex OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpMediaToNetEntry 1 }
+
+clnpMediaToNetNetAddress OBJECT-TYPE
+        SYNTAX  ClnpAddress
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpMediaToNetEntry 2 }
+
+clnpMediaToNetPhysAddress OBJECT-TYPE
+        SYNTAX  OCTET STRING
+        ACCESS  read-write
+        STATUS  mandatory
+        ::= { clnpMediaToNetEntry 3 }
+
+clnpMediaToNetType OBJECT-TYPE
+	SYNTAX INTEGER {
+		    other(1),	-- none of the following
+		    invalid(2),	-- an invalidated mapping
+		    dynamic(3),
+		    static(4)
+		}
+	ACCESS	read-write
+	STATUS	mandatory
+	::= { clnpMediaToNetEntry 4}
+
+clnpMediaToNetAge OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	::= { clnpMediaToNetEntry 5 }
+
+clnpMediaToNetHoldTime OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	::= { clnpMediaToNetEntry 6 }
+
+-- the CLNP Error Group
+
+clnpInErrors    OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 1 }
+
+clnpOutErrors   OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 2 }
+
+clnpInErrUnspecs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 3 }
+
+clnpInErrProcs  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 4 }
+
+clnpInErrCksums OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 5 }
+
+clnpInErrCongests OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 6 }
+
+clnpInErrHdrs   OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 7 }
+
+clnpInErrSegs   OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 8 }
+
+clnpInErrIncomps OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 9 }
+
+clnpInErrDups   OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 10 }
+
+clnpInErrUnreachDsts OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 11 }
+
+clnpInErrUnknownDsts OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 12 }
+
+clnpInErrSRUnspecs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 13 }
+
+clnpInErrSRSyntaxes OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 14 }
+
+clnpInErrSRUnkAddrs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 15 }
+
+clnpInErrSRBadPaths OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 16 }
+
+clnpInErrHops   OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 17 }
+
+clnpInErrHopReassms OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 18 }
+
+clnpInErrUnsOptions OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 19 }
+
+clnpInErrUnsVersions OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 20 }
+
+clnpInErrUnsSecurities OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 21 }
+
+clnpInErrUnsSRs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 22 }
+
+clnpInErrUnsRRs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 23 }
+
+clnpInErrInterferences OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 24 }
+
+clnpOutErrUnspecs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 25 }
+
+clnpOutErrProcs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 26 }
+
+clnpOutErrCksums OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 27 }
+
+clnpOutErrCongests OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 28 }
+
+clnpOutErrHdrs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 29 }
+
+clnpOutErrSegs  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 30 }
+
+clnpOutErrIncomps OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 31 }
+
+clnpOutErrDups  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 32 }
+
+clnpOutErrUnreachDsts OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 33 }
+
+clnpOutErrUnknownDsts OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 34 }
+
+clnpOutErrSRUnspecs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 35 }
+
+clnpOutErrSRSyntaxes OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 36 }
+
+clnpOutErrSRUnkAddrs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 37 }
+
+clnpOutErrSRBadPaths OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 38 }
+
+clnpOutErrHops  OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 39 }
+
+clnpOutErrHopReassms OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 40 }
+
+clnpOutErrUnsOptions OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 41 }
+
+clnpOutErrUnsVersions OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 42 }
+
+clnpOutErrUnsSecurities OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 43 }
+
+clnpOutErrUnsSRs OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 44 }
+
+clnpOutErrUnsRRs        OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 45 }
+
+clnpOutErrInterferences OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { error 46 }
+
+
+-- the CLNP Echo Group
+
+-- the ES-IS Group
+
+esisESHins      OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 1 }
+
+esisESHouts     OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 2 }
+
+esisISHins      OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 3 }
+
+esisISHouts     OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 4 }
+
+esisRDUins      OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 5 }
+
+esisRDUouts     OBJECT-TYPE
+        SYNTAX  Counter
+        ACCESS  read-only
+        STATUS  mandatory
+        ::= { es-is 6 }
+
+END
