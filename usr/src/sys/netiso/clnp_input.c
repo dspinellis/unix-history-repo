@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp_input.c,v 4.4 88/09/08 08:38:15 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_input.c,v $ */
+/*	@(#)clnp_input.c	7.2 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: clnp_input.c,v 4.4 88/09/08 08:38:15 hagens Exp $";
@@ -130,8 +131,23 @@ clnlintr()
 next:
 	s = splimp();
 
-	IF_DEQUEUESNPAHDR(&clnlintrq, m, sh);
+	/* IF_DEQUEUESNPAHDR(&clnlintrq, m, sh);*/
+	IF_DEQUEUE(&clnlintrq, m);
 
+
+	splx(s);
+	if (m == 0)		/* nothing to do */
+		return;
+	if (m->m_flags & M_PKTHDR == 0) {
+		m_freem(m);
+		goto next;
+	}
+	bcopy((caddr_t)(mtod(m, struct llc_etherhdr *)->dst),
+		(caddr_t)sh.snh_dhost, 2*sizeof(sh.snh_dhost));
+	m->m_data += sizeof (struct llc_etherhdr);
+	m->m_len -= sizeof (struct llc_etherhdr);
+	m->m_pkthdr.len -= sizeof (struct llc_etherhdr);
+	sh.snh_ifp = m->m_pkthdr.rcvif;
 	IFDEBUG(D_INPUT)
 		int i;
 		printf("clnlintr: src:");
@@ -142,10 +158,6 @@ next:
 			printf("%x%c", sh.snh_dhost[i] & 0xff, (i<5) ? ':' : ' ');
 		printf("\n");
 	ENDDEBUG
-
-	splx(s);
-	if (m == 0)		/* nothing to do */
-		return;
 
 	/*
 	 *	Get the fixed part of the clnl header into the first mbuf.
