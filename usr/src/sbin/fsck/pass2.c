@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -221,6 +221,7 @@ again:
 				break;
 			dp = ginode(dirp->d_ino);
 			statemap[dirp->d_ino] = DIRCT(dp) ? DSTATE : FSTATE;
+			lncntp[dirp->d_ino] = dp->di_nlink;
 			goto again;
 
 		case DFOUND:
