@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.3 (Berkeley) %G%
+ *	@(#)machdep.c	7.4 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -744,13 +744,8 @@ boot(howto)
 	}
 	(void) splhigh();		/* extreme priority */
 	if (howto & RB_HALT) {
-#ifdef DEBUG
-		void (*f)() = (void (*)())MACH_MON_RESTART;
-#else
 		void (*f)() = (void (*)())MACH_MON_REINIT;
-#endif
 
-		trapDump("boot"); /* XXX */
 		(*f)();	/* jump back to prom monitor */
 	} else {
 		void (*f)() = (void (*)())MACH_MON_AUTOBOOT;
