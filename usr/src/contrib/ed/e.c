@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -115,9 +115,6 @@ e2(inputt, errnum)
 	int *errnum;
 {
 	char *tmp_path;
-#ifdef DBI
-	RECNOINFO l_dbaccess;
-#endif
 
 	sigspecial++;
 #ifndef MEMORY
@@ -140,17 +137,12 @@ e2(inputt, errnum)
 	file_seek = 0;
 #endif
 #ifdef DBI
-/*
-	(l_dbaccess.bval) = (u_char) '\0';
-	(l_dbaccess.cachesize) = 0;
-	(l_dbaccess.flags) = R_NOKEY;
-	(l_dbaccess.lorder) = 0;
-	(l_dbaccess.reclen) = 0;
+	/* open using btree only, recno will mess things up
+	 * because of garbage collection and how recno operates
+	 * with delete.
+	 */
 	dbhtmp = dbopen(template, O_CREAT | O_RDWR,
-	    S_IRUSR | S_IWUSR, (DBTYPE) DB_RECNO, &l_dbaccess);
-*/
-	dbhtmp = dbopen(template, O_CREAT | O_RDWR,
-	    S_IRUSR | S_IWUSR, (DBTYPE) DB_RECNO, NULL);
+	    S_IRUSR | S_IWUSR, (DBTYPE) DB_BTREE, NULL);
 	if (dbhtmp == NULL) {
 		ed_exit(5); /* unable to create buffer */
 	}
