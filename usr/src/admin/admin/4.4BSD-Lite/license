@@ -1,8 +1,8 @@
-.\"	@(#)license	1.8 (Berkeley) %G%
+.\"	@(#)license	1.9 (Berkeley) %G%
 .\"
 .nr LL 6.8i
-.OF '(June 1992)'''
-.EF '(June 1992)'''
+.OF '(3/94)'''
+.EF '(3/94)'''
 .ll 6.8i
 .ce 2
 .ps 11
@@ -82,10 +82,7 @@ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 LICENSEE ACKNOWLEDGES THAT THE
 LICENSED MATERIAL
 IS BEING SUPPLIED ``AS IS,'' WITHOUT ANY
-ACCOMPANYING SERVICES FROM THE REGENTS,
-FOR THE PURPOSES
-OF EDUCATIONAL AND SCIENTIFIC COLLABORATION AIMED AT FURTHER DEVELOPMENT
-AND APPLICATION OF THE PROGRAM AND THE EXCHANGE OF TECHNICAL DATA.
+ACCOMPANYING SERVICES FROM THE REGENTS.
 THE REGENTS DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM
 WILL BE UNINTERRUPTED OR ERROR-FREE.
 .IP 6.
@@ -110,7 +107,7 @@ PROPRIETARY OR CONTRACTUAL RIGHTS.
 .IP 8.
 .I Indemnification. 
 LICENSEE agrees to indemnify, defend and hold harmless The Regents of
-the University of California, their successors,
+the University of California, its successors,
 agents, officers, and employees, either in their individual capacities
 or by reason of their relationship to The Regents of the University of
 California, with respect to any expense,
@@ -151,31 +148,23 @@ or derivative works, in source or binary form,
 as long as the original copyright notice is retained by
 LICENSEE in redistributed source code, and appropriate
 credit is given to the
-Electrical Engineering and Computer Science
-Department of the University of California at Berkeley.
+University of California at Berkeley and its contributors.
 This obligation will be considered met if
-LICENSEE includes
-``Copyright (c) 1989, 1991, 1992, The Regents of the University of California''
-on the label for electronic media
+LICENSEE includes the copyright notices found in the files that they
+are distributing on the label for electronic media
 containing source or binary code, and the
 statement regarding derivation appears on the
 cover page of the installation or release documentation
-accompanying the electronic media,
-such statement to include
-``This software and documentation
-is based in part on 4.4BSD-Lite 
-licensed from The Regents of the University of
-California.  We acknowledge the
-role of the
-Computer Systems Research Group and the
-Electrical Engineering and Computer Sciences Department
-of the University of California at Berkeley and the Other
-Contributors in its development.''
+accompanying the electronic media.
+Such statement is to include:
+``This product includes software developed by the University of
+California, Berkeley and its contributors.''
 Advertisements or other promotional literature for
 products or features based on LICENSED MATERIAL
 should acknowledge the role of the University
-of California, Berkeley.
-However, the name of the University may not be used to
+of California, Berkeley and its contributors.
+However, neither the name of the University
+nor the names of its contributors may be used to
 endorse or promote products derived from this software
 without specific prior written permission.
 .IP 11.
