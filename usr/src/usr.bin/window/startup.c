@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.6 83/11/22";
+static	char *sccsid = "@(#)startup.c	3.7 83/12/06";
 #endif
 
 #include "defs.h"
+#include "value.h"
+#include "var.h"
 
 doconfig()
 {
@@ -33,4 +35,17 @@ dodefault()
 	return;
 bad:
 	(void) wwputs("Can't open default windows.  ", cmdwin);
+}
+
+setvars()
+{
+	/* use a good ordering to balance the tree */
+	(void) var_setnum("ncol", wwncol);
+	(void) var_setnum("nrow", wwnrow);
+	(void) var_setnum("availmodes", wwavailmodes);
+	(void) var_setnum("baud", wwbaud);
+	(void) var_setnum("m_rev", WWM_REV);
+	(void) var_setnum("m_blk", WWM_BLK);
+	(void) var_setnum("m_ul", WWM_UL);
+	(void) var_setstr("term", wwterm);
 }
