@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.21 (Berkeley) %G%
+.\"	@(#)contrib	5.22 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -74,7 +74,7 @@ item, program, library routine or program maintenance for the BSD system.
 .TS
 l l l l.
 386 device drivers	Carnegie-Mellon University Mach project
-386 device drivers	Don Ahn, Sean Fagin and Tim Tucker
+386 device drivers	Don Ahn, Sean Fagan and Tim Tucker
 HCX device drivers	Harris Corp.
 Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone,
 	Piers Lauder, John Lions, Tim Long,
