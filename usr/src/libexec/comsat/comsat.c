@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.6 83/05/27";
+static	char *sccsid = "@(#)comsat.c	4.7 83/06/12";
 #endif
 
 #include <sys/types.h>
@@ -59,8 +59,8 @@ char **argv;
 		wait(0);
 	sleep(10);
 	onalrm();
-	sigset(SIGALRM, onalrm);
-	sigignore(SIGTTOU);
+	signal(SIGALRM, onalrm);
+	signal(SIGTTOU, SIG_IGN);
 	s = socket(AF_INET, SOCK_DGRAM, 0, 0);
 	if (s < 0) {
 		perror("socket");
@@ -194,7 +194,7 @@ jkfprintf(tp, name, offset)
 
 		if (linecnt <= 0 || charcnt <= 0) {  
 			fprintf(tp,"...more...%s\n", cr);
-			break;
+			return;
 		}
 		cp = index(line, ':');
 		if (cp &&

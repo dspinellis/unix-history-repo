@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	4.4 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)edquota.c	4.5 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -15,7 +15,6 @@ static char sccsid[] = "@(#)edquota.c	4.4 (Berkeley, from Melbourne) %G%";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#define QUOTA
 #include <sys/quota.h>
 
 #define	DEFEDITOR	"/usr/ucb/vi"
@@ -102,12 +101,10 @@ getentry(name)
 editit()
 {
 	register pid, xpid;
-	int stat;
+	int stat, omask;
 
-	sighold(SIGINT);
-	sighold(SIGQUIT);
-	sighold(SIGHUP);
-
+#define	mask(s)	(1<<((s)-1))
+	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
  top:
 	if ((pid = fork()) < 0) {
 		extern errno;
@@ -126,12 +123,9 @@ editit()
 	if (pid == 0) {
 		register char *ed;
 
-		sigrelse(SIGINT);
-		sigrelse(SIGQUIT);
-		sigrelse(SIGHUP);
+		sigsetmask(omask);
 		setgid(getgid());
 		setuid(getuid());
-
 		if ((ed = getenv("EDITOR")) == (char *)0)
 			ed = DEFEDITOR;
 		execlp(ed, ed, tmpfil, 0);
@@ -141,9 +135,7 @@ editit()
 	while ((xpid = wait(&stat)) >= 0)
 		if (xpid == pid)
 			break;
-	sigrelse(SIGINT);
-	sigrelse(SIGQUIT);
-	sigrelse(SIGHUP);
+	sigsetmask(omask);
 	return (!stat);
 }
 
