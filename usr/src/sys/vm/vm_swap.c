@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.10	82/10/21	*/
+/*	vm_swap.c	4.11	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -129,13 +129,14 @@ swfree(index)
 			 * hunk which needs special treatment anyways.
 			 */
 			argdev = swdevt[0].sw_dev;
-			rminit(argmap, blk/2-CLSIZE, CLSIZE,
+			rminit(argmap, (long)(blk/2-CLSIZE), (long)CLSIZE,
 			    "argmap", ARGMAPSIZE);
 			/*
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.
 			 */
-			rminit(swapmap, blk/2, blk/2, "swap", nswapmap);
+			rminit(swapmap, (long)blk/2, (long)blk/2,
+			    "swap", nswapmap);
 		} else
 			rmfree(swapmap, blk, vsbase);
 	}

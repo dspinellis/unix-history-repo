@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.59	82/10/21	*/
+/*	uipc_socket.c	4.60	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -383,7 +383,7 @@ soreceive(so, aname, uio, flags)
 			if (len > m->m_len)
 				len = m->m_len;
 			error =
-			    (void) uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
+			    uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
 			m = m_free(m);
 		} while (uio->uio_resid && error == 0 && m);
 		if (m)
@@ -460,7 +460,7 @@ SBCHECK(&so->so_snd, "soreceive afteraddr");
 			len = m->m_len - moff;
 		splx(s);
 		error =
-		    (void) uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
+		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
 		s = splnet();
 		if (len == m->m_len) {
 			eor = (int)m->m_act;

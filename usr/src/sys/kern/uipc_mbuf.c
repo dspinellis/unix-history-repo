@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.39	82/10/21	*/
+/*	uipc_mbuf.c	1.40	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -35,7 +35,7 @@ m_clalloc(ncl, how)
 
 	npg = ncl * CLSIZE;
 	s = splimp();		/* careful: rmalloc isn't reentrant */
-	mbx = rmalloc(mbmap, npg);
+	mbx = rmalloc(mbmap, (long)npg);
 	splx(s);
 	if (mbx == 0)
 		return (0);
