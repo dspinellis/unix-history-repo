@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.1 (Berkeley) %G%
+ *	@(#)SYS.h	5.2 (Berkeley) %G%
  */
 
 #include <syscall.h>
@@ -24,5 +24,7 @@
 #define	CALL(x,y)	call _/**/y; addl $4*x,%esp
 /* gas fucks up offset -- although we don't currently need it, do for BCS */
 #define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
+
+#define	ASMSTR		.asciz
 
 	.globl	cerror
