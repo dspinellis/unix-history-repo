@@ -1,28 +1,33 @@
-.\"	@(#)strip.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)strip.1	6.2 (Berkeley) %G%
 .\"
 .TH STRIP 1 ""
 .AT 3
 .SH NAME
-strip \- remove symbols and relocation bits
+strip \- remove unnecessary information from executable files
 .SH SYNOPSIS
-.B strip
-name ...
+.ft B
+strip file ...
+.ft R
 .SH DESCRIPTION
 .I Strip
-removes the symbol
-table and relocation bits ordinarily attached to the output
-of the assembler and loader.
-This is useful to save space after a program has been
-debugged.
-.PP
-The effect of
-.I strip
-is the same as use of the
-.B \-s
-option
-of
-.IR ld .
-.SH FILES
-/tmp/stm?	temporary file
+removes the relocation information and symbol table used by
+assemblers and loaders.
+This save disk space by decreasing the size of the installed binaries.
+It also significantly decreases the usefulness of debuggers.
 .SH "SEE ALSO"
-ld(1)
+as(1), cc(1), install(1), ld(1)
