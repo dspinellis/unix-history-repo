@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 LIB=	curses
 SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
@@ -10,7 +10,8 @@ SRCS=	addbytes.c addch.c addstr.c box.c clear.c clrtobot.c clrtoeol.c \
 MAN3=	curses.0
 
 beforeinstall:
-	-cd ${.CURDIR}; cmp -s curses.h ${DESTDIR}/usr/include/curses.h || \
+	-cd ${.CURDIR}; cmp -s curses.h ${DESTDIR}/usr/include/curses.h > \
+	    /dev/null 2>&1 || \
 	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 curses.h \
 	    ${DESTDIR}/usr/include
 
