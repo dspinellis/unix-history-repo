@@ -1,4 +1,7 @@
-/*	necf.c	1.6	83/04/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)necf.c	1.7 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <sgtty.h>
 

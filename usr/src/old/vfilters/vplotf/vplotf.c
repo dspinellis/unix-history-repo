@@ -1,4 +1,7 @@
-/*	vplotf.c	4.2	83/05/23	*/
+#ifndef lint
+static char sccsid[] = "@(#)vplotf.c	4.3 (Berkeley) %G%";
+#endif
+
 /*
  *  Lpd filter to read standard graphics input and produce a plot on the
  *  Varian or Versatec

@@ -1,4 +1,7 @@
-/*	fcvt.c	4.1	83/04/28	*/
+#ifndef lint
+static char sccsid[] = "@(#)fcvt.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  * Convert from the SAIL font format to the Unix font format.
  * Usage: fcvt sailfile unixfile

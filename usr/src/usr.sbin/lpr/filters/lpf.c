@@ -1,4 +1,8 @@
-/*		lpf.c	4.11	83/05/19
+#ifndef lint
+static char sccsid[] = "@(#)lpf.c	4.12 (Berkeley) %G%";
+#endif
+
+/*
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites

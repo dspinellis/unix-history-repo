@@ -1,4 +1,7 @@
-/*	vpf.c	4.6	83/05/16	*/
+#ifndef lint
+static char sccsid[] = "@(#)vpf.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * Varian/Versatec printer filter
  */

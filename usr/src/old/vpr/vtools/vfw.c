@@ -1,4 +1,7 @@
-/*	vfw.c	4.1	83/04/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)vfw.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  * Quick hack to see the values in a troff width table.
  */

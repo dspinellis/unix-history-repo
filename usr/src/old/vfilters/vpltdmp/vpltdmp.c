@@ -1,11 +1,10 @@
-/****************************************************************/
-/*								*/
-/*								*/
-/* Copyright (C) 1981, Regents of the University of California	*/
-/*	All rights reserved					*/
-/*								*/
-/****************************************************************/
-/*  VPLTDMP: version 4.4			updated %G%
+#ifndef lint
+static char sccsid[] = "@(#)vpltdmp.c	4.5 (Berkeley) %G%";
+#endif
+
+/*
+ * Copyright (C) 1981, Regents of the University of California
+ *	All rights reserved
  *
  *  reads raster file created by vplot and dumps it onto the
  *  Varian or Versatec plotter.
@@ -17,7 +16,7 @@
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.4\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	4.5\t%G%";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]  = { VPRINT };

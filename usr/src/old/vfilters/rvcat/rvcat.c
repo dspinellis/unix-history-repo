@@ -1,4 +1,7 @@
-/*	rvcat.c	4.4	83/05/16	*/
+#ifndef lint
+static char sccsid[] = "@(#)rvcat.c	4.5 (Berkeley) %G%";
+#endif
+
 /*
  * Cat Simulator for Versatec and Varian
  * Modified for Varian with rotated fonts: wnj 5/30/80.
