@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -440,7 +440,7 @@ ufs_chown(vp, uid, gid, cred, p)
 	 * the caller must be superuser or the call fails.
 	 */
 	if ((cred->cr_uid != ip->i_uid || uid != ip->i_uid ||
-	    !groupmember((gid_t)gid, cred)) &&
+	    (gid != ip->i_gid && !groupmember((gid_t)gid, cred))) &&
 	    (error = suser(cred, &p->p_acflag)))
 		return (error);
 	ogid = ip->i_gid;
