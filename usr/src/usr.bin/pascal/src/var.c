@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.15 %G%";
+static char sccsid[] = "@(#)var.c 1.16 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -240,8 +240,11 @@ loop:
 			return (bytes(p->range[0], p->range[1]));
 		case SET:
 			setran(p->type);
+			/*
+			 * Sets are some multiple of longs
+			 */
 			return roundup((int)((set.uprbp >> 3) + 1),
-				(long)(A_SET));
+				(long)(sizeof(long)));
 		case STR:
 		case RECORD:
 			return ( p->value[NL_OFFS] );
@@ -280,6 +283,7 @@ align( np )
     struct nl	*np;
     {
 	register struct nl *p;
+	long elementalign;
 
 	p = np;
 	if ( p == NIL ) {
@@ -301,15 +305,12 @@ alignit:
 		    }
 	    case ARRAY:
 			/*
-			 * strings are structures, since they can get
+			 * arrays are structures, since they can get
 			 * assigned form/to as structure assignments.
-			 * other arrays are aligned as their component types
+			 * preserve internal alignment if it is greater.
 			 */
-		    if ( p -> type == nl+T1CHAR ) {
-			return A_STRUCT;
-		    }
-		    p = p -> type;
-		    goto alignit;
+		    elementalign = align(p -> type);
+		    return elementalign > A_STRUCT ? elementalign : A_STRUCT;
 	    case PTR:
 		    return A_POINT;
 	    case FILET:
