@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)hash.3	8.3 (Berkeley) %G%
+.\"	@(#)hash.3	8.4 (Berkeley) %G%
 .\"
 .TH HASH 3 ""
 .UC 7
@@ -35,15 +35,15 @@ typedef struct {
 .RS
 int bsize;
 .br
-int cachesize;
-.br
 int ffactor;
+.br
+int nelem;
+.br
+int cachesize;
 .br
 u_long (*hash)(const void *, size_t);
 .br
 int lorder;
-.br
-int nelem;
 .RE
 } HASHINFO;
 .PP
@@ -55,19 +55,26 @@ defines the hash table bucket size, and is, by default, 256 bytes.
 It may be preferable to increase the page size for disk-resident tables
 and tables with large data items.
 .TP
-cachesize
-A suggested maximum size, in bytes, of the memory cache.
-This value is
-.B only
-advisory, and the access method will allocate more memory rather
-than fail.
-.TP
 ffactor
 .I Ffactor
 indicates a desired density within the hash table.
 It is an approximation of the number of keys allowed to accumulate in any
 one bucket, determining when the hash table grows or shrinks.
 The default value is 8.
+.TP
+nelem
+.I Nelem
+is an estimate of the final size of the hash table.
+If not set or set too low, hash tables will expand gracefully as keys
+are entered, although a slight performance degradation may be noticed.
+The default value is 1.
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+This value is
+.B only
+advisory, and the access method will allocate more memory rather
+than fail.
 .TP
 hash
 .I Hash
@@ -87,13 +94,6 @@ If
 is 0 (no order is specified) the current host order is used.
 If the  file already exists, the specified value is ignored and the
 value specified when the tree was created is used.
-.TP
-nelem
-.I Nelem
-is an estimate of the final size of the hash table.
-If not set or set too low, hash tables will expand gracefully as keys
-are entered, although a slight performance degradation may be noticed.
-The default value is 1.
 .PP
 If the file already exists (and the O_TRUNC flag is not specified), the
 values specified for the parameters bsize, ffactor, lorder and nelem are
