@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
 OBJS=	talkd.o announce.o process.o table.o print.o
@@ -16,7 +16,7 @@ talkd: ${OBJS}
 	cc ${CFLAGS} -o talkd ${OBJS}
 
 install: talkd
-	install -s talkd ${DESTDIR}/etc/talkd
+	install -s talkd ${DESTDIR}/etc/ntalkd
 
 clean:
 	rm -f ${OBJS} errs core a.out talkd
