@@ -1,0 +1,61 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fd.4	5.1 (Berkeley) %G%
+.\"
+.TH FD 4 ""
+.UC 7
+.SH NAME
+fd, stdin, stdout, stderr \- file descriptor files
+.SH DESCRIPTION
+The files
+.I /dev/fd/0
+through
+.I /dev/fd/#
+refer to file descriptors which can be accessed through the file
+system.
+If the file descriptor is open and the mode the file is being opened
+with is a subset of the mode of the existing descriptor, the call:
+.sp
+.RS
+fd = open("/dev/fd/0", mode);
+.RE
+.sp
+and the call:
+.sp
+.RS
+fd = fcntl(0, F_DUPFD, 0);
+.RE
+.sp
+are equivalent.
+.PP
+Opening the files
+.IR /dev/stdin ,
+.I /dev/stdout
+and
+.I /dev/stderr
+is equivalent to the following calls:
+.sp
+.RS
+fd = fcntl(STDIN_FILENO,  F_DUPFD, 0);
+.br
+fd = fcntl(STDOUT_FILENO, F_DUPFD, 0);
+.br
+fd = fcntl(STDERR_FILENO, F_DUPFD, 0);
+.RE
+.PP
+Flags to the
+.IR open (2)
+call other than O_RDONLY, O_WRONLY and O_RDWR are ignored.
+.SH FILES
+/dev/fd/#
+.br
+/dev/stdin
+.br
+/dev/stdout
+.br
+/dev/stderr
+.SH SEE ALSO
+tty(4)
