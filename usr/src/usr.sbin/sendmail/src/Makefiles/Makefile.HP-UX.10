@@ -8,7 +8,7 @@
 #  This has been tested on HP-UX 10.x.  Changes for 10.0 contributed
 #  by John Beck of Hewlett-Packard.
 #
-#	@(#)Makefile.HP-UX.10	8.5 (Berkeley) %G%
+#	@(#)Makefile.HP-UX.10	8.6 (Berkeley) %G%
 #
 
 # if running the unbundled compiler, uncomment the following
@@ -43,13 +43,13 @@ LIBDIRS=-L/usr/sww/lib
 LIBS=	-ldb -lndbm -lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
-BINDIR=	${DESTDIR}/usr/lib
+BINDIR=	${DESTDIR}/usr/sbin
 
 # location of sendmail.st file (usually /var/log or /usr/lib)
-STDIR=	${DESTDIR}/usr/lib
+STDIR=	${DESTDIR}/etc/mail
 
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
-HFDIR=	${DESTDIR}/usr/lib
+HFDIR=	${DESTDIR}/usr/share/lib
 
 # additional .o files needed
 OBJADD=
