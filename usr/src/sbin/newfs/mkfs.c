@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -873,7 +873,7 @@ isblock(fs, cp, h)
 #else
 		fprintf(stderr, "isblock bad fs_frag %d\n", fs->fs_frag);
 #endif
-		return;
+		return (0);
 	}
 }
 
