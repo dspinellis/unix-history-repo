@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkswapconf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkswapconf.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -136,7 +136,7 @@ nametodev(name, defunit, defpartition)
 	}
 	if (devtablenotread)
 		initdevtable();
-	for (dp = devtable; dp->dev_next; dp = dp->dev_next)
+	for (dp = devtable; dp; dp = dp->dev_next)
 		if (eq(name, dp->dev_name))
 			break;
 	if (dp == 0) {
@@ -155,7 +155,7 @@ devtoname(dev)
 
 	if (devtablenotread)
 		initdevtable();
-	for (dp = devtable; dp->dev_next; dp = dp->dev_next)
+	for (dp = devtable; dp; dp = dp->dev_next)
 		if (major(dev) == dp->dev_major)
 			break;
 	if (dp == 0)
