@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.49 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -53,6 +53,64 @@ ufs_iput(ip)
 		panic("iput");
 	IUNLOCK(ip);
 	vrele(ITOV(ip));
+}
+
+/*
+ * Last reference to an inode, write the inode out and if necessary,
+ * truncate and deallocate the file.
+ */
+int
+ufs_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
+{
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
+	struct timeval tv;
+	int mode, error;
+	extern int prtactive;
+
+	if (prtactive && vp->v_usecount != 0)
+		vprint("ffs_inactive: pushing active", vp);
+
+	/* Get rid of inodes related to stale file handles. */
+	if (ip->i_mode == 0) {
+		if ((vp->v_flag & VXLOCK) == 0)
+			vgone(vp);
+		return (0);
+	}
+
+	error = 0;
+#ifdef DIAGNOSTIC
+	if (VOP_ISLOCKED(vp))
+		panic("ffs_inactive: locked inode");
+#endif
+	ip->i_flag |= ILOCKED;
+	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+#ifdef QUOTA
+		if (!getinoquota(ip))
+			(void)chkiq(ip, -1, NOCRED, 0);
+#endif
+		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
+		mode = ip->i_mode;
+		ip->i_mode = 0;
+		ip->i_rdev = 0;
+		ip->i_flag |= IUPD|ICHG;
+		VOP_VFREE(vp, ip->i_number, mode);
+	}
+	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) {
+		tv = time;
+		VOP_UPDATE(vp, &tv, &tv, 0);
+	}
+	VOP_UNLOCK(vp);
+	/*
+	 * If we are done with the inode, reclaim it
+	 * so that it can be reused immediately.
+	 */
+	if (vp->v_usecount == 0 && ip->i_mode == 0)
+		vgone(vp);
+	return (error);
 }
 
 /*
