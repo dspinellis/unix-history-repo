@@ -1,4 +1,4 @@
-/* @(#)nlist.c	4.3 (Berkeley) %G% */
+/* @(#)nlist.c	4.4 (Berkeley) %G% */
 #include <sys/types.h>
 #include <a.out.h>
 #include <stdio.h>
@@ -34,7 +34,7 @@ nlist(name, list)
 		return (NULL);
 	fread((char *)&buf, sizeof buf, 1, f);
 	if (N_BADMAG(buf)) {
-		close(f);
+		fclose(f);
 		return (-1);
 	}
 	sa = N_SYMOFF(buf);
