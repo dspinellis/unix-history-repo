@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.20 (Berkeley) %G%
+ *	@(#)proc.h	7.21 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,7 @@ struct	proc {
 	char	p_time;		/* resident time for scheduling */
 	char	p_nice;		/* nice for cpu usage */
 	char	p_slptime;	/* time since last block */
-	u_char	p_dupfd;	/* sideways return value from fdopen XXX */
+	char	p_dupfd;	/* sideways return value from fdopen XXX */
 	int	p_sig;		/* signals pending to this process */
 	int	p_sigmask;	/* current signal mask */
 	int	p_sigignore;	/* signals being ignored */
