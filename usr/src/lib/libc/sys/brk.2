@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)brk.2	8.2 (Berkeley) %G%
+.\"     @(#)brk.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BRK 2
@@ -77,18 +77,19 @@ for the definition of
 .Em etext ) .
 .Sh RETURN VALUES
 .Nm Brk
-returns a pointer to the new end of memory if successful;
+returns 0 if successful;
 otherwise -1 with
 .Va errno
 set to indicate why the allocation failed.
-The
-.Nm sbrk
+.Nm Sbrk
 returns a pointer to the base of the new storage if successful;
 otherwise -1 with
 .Va errno
 set to indicate why the allocation failed.
 .Sh ERRORS
-.Xr Sbrk
+.Xr Brk
+or
+.Xr sbrk
 will fail and no additional memory will be allocated if
 one of the following are true:
 .Bl -tag -width [ENOMEM]
