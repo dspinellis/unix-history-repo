@@ -1,6 +1,7 @@
-/*	getprotoent.c	4.5	83/01/02	*/
+/*	getprotoent.c	4.6	83/05/23	*/
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <ctype.h>
