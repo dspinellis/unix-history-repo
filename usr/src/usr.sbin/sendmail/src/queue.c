@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.36		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.37		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.36		%G%);
+SCCSID(@(#)queue.c	3.37		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -159,8 +159,8 @@ queueup(e, queueall)
 
 # ifdef LOG
 	/* save log info */
-	if (LogLevel > 9)
-		syslog(LOG_INFO, "%s queueup: qf=%s, df=%s\n", e->e_id, qf, e->e_df);
+	if (LogLevel > 15)
+		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif LOG
 
 	/* disconnect this temp file from the job */
