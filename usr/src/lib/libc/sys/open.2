@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)open.2	6.8 (Berkeley) %G%
+.\"     @(#)open.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt OPEN 2
@@ -43,11 +43,13 @@ the following values
 O_RDONLY	open for reading only
 O_WRONLY	open for writing only
 O_RDWR		open for reading and writing
-O_NDELAY	do not block on open
+O_NONBLOCK	do not block on open
 O_APPEND	append on each write
 O_CREAT		create file if it does not exist
 O_TRUNC		truncate size to 0
 O_EXCL		error if create and file exists
+O_SHLOCK	atomically obtain a shared lock
+O_EXLOCK	atomically obtain an exclusive lock
 .Ed
 .Pp
 Opening a file with
@@ -74,7 +76,7 @@ a symbolic link,
 will fail even if the symbolic
 link points to a non-existent name.
 If the
-.Dv O_NDELAY
+.Dv O_NONBLOCK
 flag is specified and the
 .Fn open
 call would result
@@ -84,6 +86,18 @@ carrier on a dialup line),
 returns immediately.
 The first time the process attempts to perform I/O on the open
 file it will block (not currently implemented).
+.Pp
+When opening a file, a lock with
+.Xr flock 2
+semantics can be obtained by setting
+.Dv O_SHLOCK
+for a shared lock, or
+.Dv O_EXLOCK
+for an exclusive lock.
+If creating a file with
+.Dv O_CREAT ,
+the request for the lock will never fail
+(provided that the underlying filesystem supports locking).
 .Pp
 If successful,
 .Fn open
@@ -108,8 +122,6 @@ The named file is opened unless:
 .Bl -tag -width Er
 .It Bq Er ENOTDIR
 A component of the path prefix is not a directory.
-.It Bq Er EINVAL
-The pathname contains a character with the high-order bit set.
 .It Bq Er ENAMETOOLONG
 A component of a pathname exceeded 255 characters,
 or an entire path name exceeded 1023 characters.
@@ -145,6 +157,15 @@ The system file table is full.
 The named file is a character special or block
 special file, and the device associated with this special file
 does not exist.
+.It Bq Er EINTR
+The
+.Nm
+operation was interrupted by a signal.
+.It Bq Er EOPNOTSUPP
+.Dv O_SHLOCK
+or
+.Dv O_EXLOCK
+is specified but the underlying filesystem does not support locking.
 .It Bq Er ENOSPC
 .Dv O_CREAT
 is specified,
@@ -162,7 +183,7 @@ file is being created.
 .Dv O_CREAT
 is specified,
 the file does not exist,
-and the directory in which the entry for the new fie
+and the directory in which the entry for the new file
 is being placed cannot be extended because the
 user's quota of disk blocks on the file system
 containing the directory has been exhausted.
