@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mailst.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mailst.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -17,12 +17,11 @@ mailst(user, str, file)
 char *user, *str, *file;
 {
 	register FILE *fp, *fi;
-	extern FILE *popen(), *pclose();
 	char cmd[100], buf[BUFSIZ];
 	register int nc;
 
 	sprintf(cmd, "mail %s", user);
-	if ((fp = popen(cmd, "w")) == NULL)
+	if ((fp = rpopen(cmd, "w")) == NULL)
 		return;
 	fprintf(fp, "%s", str);
 

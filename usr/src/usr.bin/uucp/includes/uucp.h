@@ -1,4 +1,4 @@
-/*	uucp.h	5.1	83/07/02	*/
+/*	uucp.h	5.2	83/07/19	*/
 
 #include "stdio.h"
 
@@ -268,3 +268,4 @@ extern	char *ttyname(), *strcpy(), *strcat(), *index(), *rindex(),
 		*fgets(), *calloc(), *malloc(),
 		*cfgets();
 extern	long lseek();
+extern	FILE *rpopen();

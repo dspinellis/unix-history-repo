@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)sdmail.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sdmail.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -48,11 +48,10 @@ mailst(user, str)
 char *user, *str;
 {
 	register FILE *fp;
-	extern FILE *popen(), *pclose();
 	char cmd[100];
 
 	sprintf(cmd, "mail %s", user);
-	if ((fp = popen(cmd, "w")) == NULL)
+	if ((fp = rpopen(cmd, "w")) == NULL)
 		return;
 /* \n added to mail message.  uw-beave!jim (Jim Rees) */
 	fprintf(fp, "%s\n", str);
