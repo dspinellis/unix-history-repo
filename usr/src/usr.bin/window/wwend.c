@@ -9,12 +9,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwend.c	3.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwend.c	3.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include "tt.h"
 
-wwend()
+/*ARGSUSED*/
+wwend(exit)
 {
 }
