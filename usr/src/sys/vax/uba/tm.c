@@ -1,4 +1,4 @@
-/*	tm.c	4.7	%G%	*/
+/*	tm.c	4.8	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -18,6 +18,7 @@
 #include "../h/mtio.h"
 #include "../h/ioctl.h"
 #include "../h/vm.h"
+#include "../h/cmap.h"
 
 struct device {
 	u_short	tmer;
@@ -492,7 +493,17 @@ tmioctl(dev, cmd, addr, flag)
 
 #define	DBSIZE	20
 
-twall(start, num)
+tmdump()
+{
+
+	tmwall((char *)0, maxfree);	/* write out memory */
+	tmeof();
+	tmeof();
+	tmrewind();
+	tmwait();
+}
+
+tmwall(start, num)
 	int start, num;
 {
 #if VAX==780
@@ -507,7 +518,7 @@ twall(start, num)
 		;
 #endif
 	DELAY(1000000);
-	twait();
+	tmwait();
 	TMPHYS->tmcs = DCLR | GO;
 	while (num > 0) {
 		blk = num > DBSIZE ? DBSIZE : num;
@@ -517,6 +528,7 @@ twall(start, num)
 	}
 	bdp = 1;		/* crud to fool c compiler */
 	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
+	return (0);
 }
 
 tmdwrite(buf, num)
@@ -525,7 +537,7 @@ register buf, num;
 	register int *io, npf;
 	int bdp;
 
-	twait();
+	tmwait();
 	bdp = 1;		/* more dastardly tricks on pcc */
 	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
 	io = (int *)((struct uba_regs *)PHYSUBA0)->uba_map;
@@ -538,7 +550,7 @@ register buf, num;
 	TMPHYS->tmcs = WCOM | GO;
 }
 
-twait()
+tmwait()
 {
 	register s;
 
@@ -547,17 +559,17 @@ twait()
 	while ((s & CUR) == 0);
 }
 
-rewind()
+tmrewind()
 {
 
-	twait();
+	tmwait();
 	TMPHYS->tmcs = REW | GO;
 }
 
-teof()
+tmeof()
 {
 
-	twait();
+	tmwait();
 	TMPHYS->tmcs = WEOF | GO;
 }
 #endif
