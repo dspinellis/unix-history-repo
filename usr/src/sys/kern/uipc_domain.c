@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	7.11 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@
 #include <sys/mbuf.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
+#include <sys/sysctl.h>
 
 #define	ADDDOMAIN(x)	{ \
 	extern struct domain __CONCAT(x,domain); \
@@ -106,6 +107,42 @@ found:
 			maybe = pr;
 	}
 	return (maybe);
+}
+
+net_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
+{
+	register struct domain *dp;
+	register struct protosw *pr;
+	int family, protocol;
+
+	/*
+	 * All sysctl names at this level are nonterminal;
+	 * next two components are protocol family and protocol number,
+	 * then at least one addition component.
+	 */
+	if (namelen <= 3)
+		return (EISDIR);		/* overloaded */
+	family = name[0];
+	protocol = name[1];
+
+	if (family == 0)
+		return (0);
+	for (dp = domains; dp; dp = dp->dom_next)
+		if (dp->dom_family == family)
+			goto found;
+	return (ENOPROTOOPT);
+found:
+	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
+		if (pr->pr_protocol == protocol && pr->pr_sysctl)
+			return ((*pr->pr_sysctl)(name + 2, namelen - 2,
+			    oldp, oldlenp, newp, newlen));
+	return (ENOPROTOOPT);
 }
 
 pfctlinput(cmd, sa)
