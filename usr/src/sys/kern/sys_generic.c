@@ -1,12 +1,12 @@
-/*	sys_generic.c	5.23	82/11/17	*/
+/*	sys_generic.c	5.24	82/12/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/file.h"
-#define	IDEBUG
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/proc.h"

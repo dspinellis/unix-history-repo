@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.7	82/10/17	*/
+/*	tty_bk.c	4.8	82/12/05	*/
 
 #include "bk.h"
 
@@ -7,6 +7,7 @@
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/proc.h"
 #include "../h/inode.h"
