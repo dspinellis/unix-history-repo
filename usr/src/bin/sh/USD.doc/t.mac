@@ -1,4 +1,4 @@
-.\"	@(#)t.mac	4.1 (Berkeley) %G%
+.\"	@(#)t.mac	5.1 (Berkeley) %G%
 .\"
 .ds ZZ \fB.\|.\|.\fP
 .ds ST \v'.3m'\s+2*\s0\v'-.3m'
