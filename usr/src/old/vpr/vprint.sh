@@ -1,5 +1,6 @@
+#!/bin/csh -f
 #
-#	@(#)vprint.sh	1.2	(Berkeley)	%G%
+#	@(#)vprint.sh	1.3	(Berkeley)	%G%
 #
 set remote = ucbernie
 set execdir = /usr/ucb
