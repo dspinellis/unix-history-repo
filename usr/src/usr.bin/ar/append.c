@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)append.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)append.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -19,7 +19,9 @@ static char sccsid[] = "@(#)append.c	5.3 (Berkeley) %G%";
 #include <unistd.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <string.h>
 #include "archive.h"
+#include "extern.h"
 
 extern char *archive;			/* archive name */
 
@@ -36,7 +38,6 @@ append(argv)
 	struct stat sb;
 	CF cf;
 	int rval;
-	char *rname();
 
 	afd = open_archive(O_CREAT|O_RDWR);
 	if (lseek(afd, (off_t)0, SEEK_END) == (off_t)-1)
