@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spp_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,7 +97,7 @@ spp_input(m, nsp)
 	if (so->so_options & SO_ACCEPTCONN) {
 		struct sppcb *ocb = cb;
 
-		so = sonewconn(so);
+		so = sonewconn(so, 0);
 		if (so == 0) {
 			goto drop;
 		}
@@ -1239,10 +1239,10 @@ spp_ctloutput(req, so, level, name, value)
 }
 
 /*ARGSUSED*/
-spp_usrreq(so, req, m, nam, rights, controlp)
+spp_usrreq(so, req, m, nam, controlp)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *controlp;
+	struct mbuf *m, *nam, *controlp;
 {
 	struct nspcb *nsp = sotonspcb(so);
 	register struct sppcb *cb;
@@ -1253,11 +1253,7 @@ spp_usrreq(so, req, m, nam, rights, controlp)
 
 	if (req == PRU_CONTROL)
                 return (ns_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
-	if (rights && rights->m_len) {
-		error = EINVAL;
-		goto release;
-	}
+			(struct ifnet *)controlp));
 	if (nsp == NULL) {
 		if (req != PRU_ATTACH) {
 			error = EINVAL;
@@ -1491,12 +1487,12 @@ release:
 	return (error);
 }
 
-spp_usrreq_sp(so, req, m, nam, rights, controlp)
+spp_usrreq_sp(so, req, m, nam, controlp)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *controlp;
+	struct mbuf *m, *nam, *controlp;
 {
-	int error = spp_usrreq(so, req, m, nam, rights, controlp);
+	int error = spp_usrreq(so, req, m, nam, controlp);
 
 	if (req == PRU_ATTACH && error == 0) {
 		struct nspcb *nsp = sotonspcb(so);
