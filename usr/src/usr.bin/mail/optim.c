@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)optim.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)optim.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,8 +16,6 @@ static char *sccsid = "@(#)optim.c	5.6 (Berkeley) %G%";
 
 #include "rcv.h"
 #include "configdefs.h"
-#include <ctype.h>
-#include <strings.h>
 
 /*
  * Map a name into the correct network "view" of the
@@ -53,43 +51,6 @@ netmap(name, from)
 	if (!icequal(name, cp))
 		return(savestr(cp));
 	return(name);
-}
-
-/*
- * Rename the given network path to use
- * the kinds of names that we would right here.
- */
-
-char *
-rename(str)
-	char str[];
-{
-	register char *cp, *cp2;
-	char buf[BUFSIZ], path[BUFSIZ];
-	register int c, host;
-
-	cp = str;
-	strcpy(path, "");
-	for (;;) {
-		if ((c = *cp++) == 0)
-			break;
-		cp2 = buf;
-		while (!any(c, metanet) && c != 0) {
-			*cp2++ = c;
-			c = *cp++;
-		}
-		*cp2 = 0;
-		if (c == 0) {
-			strcat(path, buf);
-			break;
-		}
-		host = netlook(buf, ntype(c));
-		strcat(path, netname(host));
-		stradd(path, c);
-	}
-	if (strcmp(str, path) != 0)
-		return(savestr(path));
-	return(str);
 }
 
 /*
@@ -191,7 +152,7 @@ arpafix(name, from)
 	if (cp == NOSTR)
 		cp = rindex(name, '%');
 	if (cp == NOSTR) {
-		fprintf(stderr, "Somethings amiss -- no @ or % in arpafix\n");
+		fprintf(stderr, "Somethings amiss -- no @ or %% in arpafix\n");
 		return(name);
 	}
 	cp++;
@@ -270,7 +231,6 @@ short	midfree;			/* Next free machine id */
 minit()
 {
 	register struct xtrahash *xp, **tp;
-	register int i;
 
 	midfree = 0;
 	tp = &xtab[0];
@@ -470,7 +430,7 @@ err:
 			printf("Made up bad net name\n");
 			printf("Machine code %c (0%o)\n", cp[-1], cp[-1]);
 			printf("Sorry -- dumping now.  Alert K. Shoens\n");
-			core(0);
+			core();
 			goto err;
 		}
 		strcat(name, cp2);
@@ -871,18 +831,4 @@ yylex()
 	*cp = 0;
 	yylval = dot;
 	return(WORD);
-}
-
-/*
- * Add a single character onto a string.
- */
-
-stradd(str, c)
-	register char *str;
-	register int c;
-{
-
-	str += strlen(str);
-	*str++ = c;
-	*str = 0;
 }

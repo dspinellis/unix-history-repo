@@ -3,33 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)def.h	5.2 (Berkeley) %G%
+ *	@(#)def.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
-#include <signal.h>
+#include <sys/signal.h>
 #include <stdio.h>
 #include <sgtty.h>
+#include <ctype.h>
+#include <strings.h>
 #include "local.h"
-
-#undef isalpha
-#undef isdigit
 
 /*
  * Mail -- a mail program
- *
- * Commands are:
- *	t <message list>		print out these messages
- *	r <message list>		reply to messages
- *	m <user list>			mail to users (analogous to send)
- *	e <message list>		edit messages
- *	c [directory]			chdir to dir or home if none
- *	x				exit quickly
- *	w <message list> file		save messages in file
- *	q				quit, save remaining stuff in mbox
- *	d <message list>		delete messages
- *	u <message list>		undelete messages
- *	h				print message headers
  *
  * Author: Kurt Shoens (UCB) March 25, 1978
  */
@@ -46,6 +32,7 @@
 #define	MAXARGC		1024		/* Maximum list of raw strings */
 #define	NOSTR		((char *) 0)	/* Null string pointer */
 #define	MAXEXP		25		/* Maximum expansion of aliases */
+
 #define	equal(a, b)	(strcmp(a,b)==0)/* A nice function to string compare */
 
 struct message {
@@ -71,6 +58,13 @@ struct message {
 #define	MREAD		(1<<8)		/* message has been read sometime. */
 #define	MSTATUS		(1<<9)		/* message status has changed */
 #define	MBOX		(1<<10)		/* Send this to mbox, regardless */
+
+/*
+ * Given a file address, determine the block number it represents.
+ */
+#define blockof(off)			((int) ((off) / 4096))
+#define offsetof(off)			((int) ((off) % 4096))
+#define positionof(block, offset)	((off_t)(block) * 4096 + (offset))
 
 /*
  * Format of the command description table.
@@ -238,26 +232,6 @@ struct ignore {
 #define	reset(x)	longjmp(srbuf, x)
 
 /*
- * VM/UNIX has a vfork system call which is faster than forking.  If we
- * don't have it, fork(2) will do . . .
- */
-
-#ifndef VMUNIX
-#define	vfork()	fork()
-#endif
-#ifndef	SIGRETRO
-#define	sigchild()
-#endif
-
-/*
- * 4.2bsd signal interface help...
- */
-#ifdef VMUNIX
-#define	sigset(s, a)	signal(s, a)
-#define	sigsys(s, a)	signal(s, a)
-#endif
-
-/*
  * Truncate a file to the last character written. This is
  * useful just before closing an old file that was opened
  * for read/write.
@@ -285,34 +259,28 @@ char	*detract();
 char	*expand();
 char	*gets();
 char	*hfield();
-char	*index();
 char	*name1();
 char	*nameof();
 char	*nextword();
 char	*getenv();
 char	*getfilename();
-char	*hcontents();
+char	*ishfield();
+char	*malloc();
 char	*netmap();
 char	*netname();
 char	*readtty();
 char	*reedit();
-char	*rename();
 char	*revarpa();
-char	*rindex();
 char	*rpair();
 char	*salloc();
 char	*savestr();
 char	*skin();
 char	*snarf();
-char	*strcat();
-char	*strcpy();
+char	*sprintf();
 char	*value();
 char	*vcopy();
 char	*yankword();
 off_t	fsize();
-#ifndef VMUNIX
-int	(*sigset())();
-#endif
 struct	cmd	*lex();
 struct	grouphead	*findgroup();
 struct	name	*cat();
@@ -328,4 +296,3 @@ struct	name	*verify();
 struct	var	*lookup();
 long	transmit();
 int	icequal();
-int	cmpdomain();

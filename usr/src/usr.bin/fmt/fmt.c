@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)fmt.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)fmt.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -38,7 +38,7 @@ int	pfx;			/* Current leading blank count */
 int	lineno;			/* Current input line */
 int	mark;			/* Last place we saw a head line */
 
-char	*calloc();		/* for lint . . . */
+char	*malloc();		/* for lint . . . */
 char	*headnames[] = {"To", "Subject", "Cc", 0};
 
 /*
@@ -412,12 +412,12 @@ savestr(str)
 {
 	register char *top;
 
-	top = calloc(strlen(str) + 1, 1);
+	top = malloc(strlen(str) + 1);
 	if (top == NOSTR) {
 		fprintf(stderr, "fmt:  Ran out of memory\n");
 		exit(1);
 	}
-	copy(str, top);
+	strcpy(top, str);
 	return (top);
 }
 

@@ -5,13 +5,11 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)aux.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)aux.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
-#include <ctype.h>
-#include <strings.h>
 
 /*
  * Mail -- a mail program
@@ -41,59 +39,17 @@ savestr(str)
 }
 
 /*
- * Copy the name from the passed header line into the passed
- * name buffer.  Null pad the name buffer.
- */
-
-copyname(linebuf, nbuf)
-	char *linebuf, *nbuf;
-{
-	register char *cp, *cp2;
-
-	for (cp = linebuf + 5, cp2 = nbuf; *cp != ' ' && cp2-nbuf < 8; cp++)
-		*cp2++ = *cp;
-	while (cp2-nbuf < 8)
-		*cp2++ = 0;
-}
-
-/*
  * Announce a fatal error and die.
  */
 
-panic(str)
-	char *str;
+/*VARARGS1*/
+panic(fmt, a, b)
+	char *fmt;
 {
-	prs("panic: ");
-	prs(str);
-	prs("\n");
+	fprintf(stderr, "panic: ");
+	fprintf(stderr, fmt, a, b);
+	putc('\n', stderr);
 	exit(1);
-}
-
-/*
- * Catch stdio errors and report them more nicely.
- */
-
-_error(str)
-	char *str;
-{
-	prs("Stdio Error: ");
-	prs(str);
-	prs("\n");
-	abort();
-}
-
-/*
- * Print a string on diagnostic output.
- */
-
-prs(str)
-	char *str;
-{
-	register char *s;
-
-	for (s = str; *s; s++)
-		;
-	write(2, str, s-str);
 }
 
 /*
@@ -138,38 +94,9 @@ argcount(argv)
 {
 	register char **ap;
 
-	for (ap = argv; *ap != NOSTR; ap++)
+	for (ap = argv; *ap++ != NOSTR;)
 		;	
-	return(ap-argv);
-}
-
-/*
- * Given a file address, determine the
- * block number it represents.
- */
-
-blockof(off)
-	off_t off;
-{
-	off_t a;
-
-	a = off >> 9;
-	a &= 077777;
-	return((int) a);
-}
-
-/*
- * Take a file address, and determine
- * its offset in the current block.
- */
-
-offsetof(off)
-	off_t off;
-{
-	off_t a;
-
-	a = off & 0777;
-	return((int) a);
+	return ap - argv - 1;
 }
 
 /*
@@ -185,156 +112,104 @@ hfield(field, mp)
 	register FILE *ibuf;
 	char linebuf[LINESIZE];
 	register int lc;
+	register char *hfield;
+	char *colon;
 
 	ibuf = setinput(mp);
-	if ((lc = mp->m_lines) <= 0)
-		return(NOSTR);
+	if ((lc = mp->m_lines - 1) < 0)
+		return NOSTR;
 	if (readline(ibuf, linebuf) < 0)
-		return(NOSTR);
-	lc--;
-	do {
-		lc = gethfield(ibuf, linebuf, lc);
-		if (lc == -1)
-			return(NOSTR);
-		if (ishfield(linebuf, field))
-			return(savestr(hcontents(linebuf)));
-	} while (lc > 0);
-	return(NOSTR);
+		return NOSTR;
+	while (lc > 0) {
+		if ((lc = gethfield(ibuf, linebuf, lc, &colon)) < 0)
+			return NOSTR;
+		if (hfield = ishfield(linebuf, colon, field))
+			return savestr(hfield);
+	}
+	return NOSTR;
 }
 
 /*
  * Return the next header field found in the given message.
- * Return > 0 if something found, <= 0 elsewise.
+ * Return >= 0 if something found, < 0 elsewise.
+ * "colon" is set to point to the colon in the header.
  * Must deal with \ continuations & other such fraud.
  */
 
-gethfield(f, linebuf, rem)
+gethfield(f, linebuf, rem, colon)
 	register FILE *f;
 	char linebuf[];
 	register int rem;
+	char **colon;
 {
 	char line2[LINESIZE];
-	long loc;
 	register char *cp, *cp2;
 	register int c;
 
-
 	for (;;) {
-		if (rem <= 0)
-			return(-1);
-		if (readline(f, linebuf) < 0)
-			return(-1);
-		rem--;
-		if (strlen(linebuf) == 0)
-			return(-1);
-		if (isspace(linebuf[0]))
+		if (--rem < 0)
+			return -1;
+		if ((c = readline(f, linebuf)) <= 0)
+			return -1;
+		for (cp = linebuf; isprint(*cp) && *cp != ' ' && *cp != ':';
+		     cp++)
+			;
+		if (*cp != ':' || cp == linebuf)
 			continue;
-		if (linebuf[0] == '>')
-			continue;
-		cp = index(linebuf, ':');
-		if (cp == NOSTR)
-			continue;
-		for (cp2 = linebuf; cp2 < cp; cp2++)
-			if (isdigit(*cp2))
-				continue;
-		
 		/*
 		 * I guess we got a headline.
 		 * Handle wraparounding
 		 */
-		
+		*colon = cp;
+		cp = linebuf + c;
 		for (;;) {
+			while (--cp >= linebuf && (*cp == ' ' || *cp == '\t'))
+				;
+			cp++;
 			if (rem <= 0)
 				break;
-#ifdef CANTELL
-			loc = ftell(f);
-			if (readline(f, line2) < 0)
+			ungetc(c = getc(f), f);
+			if (c != ' ' && c != '\t')
+				break;
+			if ((c = readline(f, line2)) < 0)
 				break;
 			rem--;
-			if (!isspace(line2[0])) {
-				fseek(f, loc, 0);
-				rem++;
-				break;
-			}
-#else
-			c = getc(f);
-			ungetc(c, f);
-			if (!isspace(c) || c == '\n')
-				break;
-			if (readline(f, line2) < 0)
-				break;
-			rem--;
-#endif
-			cp2 = line2;
-			for (cp2 = line2; *cp2 != 0 && isspace(*cp2); cp2++)
+			for (cp2 = line2; *cp2 == ' ' || *cp2 == '\t'; cp2++)
 				;
-			if (strlen(linebuf) + strlen(cp2) >= LINESIZE-2)
+			c -= cp2 - line2;
+			if (cp + c >= linebuf + LINESIZE - 2)
 				break;
-			cp = &linebuf[strlen(linebuf)];
-			while (cp > linebuf &&
-			    (isspace(cp[-1]) || cp[-1] == '\\'))
-				cp--;
 			*cp++ = ' ';
-			for (cp2 = line2; *cp2 != 0 && isspace(*cp2); cp2++)
-				;
-			strcpy(cp, cp2);
+			bcopy(cp2, cp, c);
+			cp += c;
 		}
-		if ((c = strlen(linebuf)) > 0) {
-			cp = &linebuf[c-1];
-			while (cp > linebuf && isspace(*cp))
-				cp--;
-			*++cp = 0;
-		}
-		return(rem);
+		*cp = 0;
+		return rem;
 	}
 	/* NOTREACHED */
 }
 
 /*
  * Check whether the passed line is a header line of
- * the desired breed.
+ * the desired breed.  Return the field body, or 0.
  */
 
-ishfield(linebuf, field)
+char*
+ishfield(linebuf, colon, field)
 	char linebuf[], field[];
+	char *colon;
 {
-	register char *cp;
-	register int c;
+	register char *cp = colon;
 
-	if ((cp = index(linebuf, ':')) == NOSTR)
-		return(0);
-	if (cp == linebuf)
-		return(0);
-	cp--;
-	while (cp > linebuf && isspace(*cp))
-		cp--;
-	c = *++cp;
 	*cp = 0;
-	if (icequal(linebuf ,field)) {
-		*cp = c;
-		return(1);
+	if (!icequal(linebuf, field)) {
+		*cp = ':';
+		return 0;
 	}
-	*cp = c;
-	return(0);
-}
-
-/*
- * Extract the non label information from the given header field
- * and return it.
- */
-
-char *
-hcontents(hfield)
-	char hfield[];
-{
-	register char *cp;
-
-	if ((cp = index(hfield, ':')) == NOSTR)
-		return(NOSTR);
-	cp++;
-	while (*cp && isspace(*cp))
-		cp++;
-	return(cp);
+	*cp = ':';
+	for (cp++; *cp == ' ' || *cp == '\t'; cp++)
+		;
+	return cp;
 }
 
 /*
@@ -344,26 +219,35 @@ hcontents(hfield)
 icequal(s1, s2)
 	register char *s1, *s2;
 {
+	register c1, c2;
 
-	while (raise(*s1++) == raise(*s2))
-		if (*s2++ == 0)
-			return(1);
-	return(0);
+	for (;;) {
+		if ((c1 = (unsigned char)*s1++) !=
+		    (c2 = (unsigned char)*s2++)) {
+			if (isupper(c1))
+				c1 = tolower(c1);
+			if (c1 != c2)
+				return 0;
+		}
+		if (c1 == 0)
+			return 1;
+	}
+	/*NOTREACHED*/
 }
 
 /*
  * Copy a string, lowercasing it as we go.
  */
 istrcpy(dest, src)
-	char *dest, *src;
+	register char *dest, *src;
 {
-	register char *cp, *cp2;
 
-	cp2 = dest;
-	cp = src;
 	do {
-		*cp2++ = little(*cp);
-	} while (*cp++ != 0);
+		if (isupper(*src))
+			*dest++ = tolower(*src);
+		else
+			*dest++ = *src;
+	} while (*src++ != 0);
 }
 
 /*
@@ -410,21 +294,6 @@ source(name)
 	input = fi;
 	sourcing++;
 	return(0);
-}
-
-/*
- * Source a file, but do nothing if the file cannot be opened.
- */
-
-source1(name)
-	char name[];
-{
-	register int f;
-
-	if ((f = open(name, 0)) < 0)
-		return(0);
-	close(f);
-	source(name);
 }
 
 /*
@@ -542,7 +411,7 @@ skin(name)
 	if (name == NOSTR)
 		return(NOSTR);
 	if (index(name, '(') == NOSTR && index(name, '<') == NOSTR
-	&& index(name, ' ') == NOSTR)
+	    && index(name, ' ') == NOSTR)
 		return(name);
 	gotlt = 0;
 	lastsp = 0;
@@ -666,23 +535,23 @@ name1(mp, reptype)
 	int first = 1;
 
 	if ((cp = hfield("from", mp)) != NOSTR)
-		return(cp);
+		return cp;
 	if (reptype == 0 && (cp = hfield("sender", mp)) != NOSTR)
-		return(cp);
+		return cp;
 	ibuf = setinput(mp);
-	copy("", namebuf);
-	if (readline(ibuf, linebuf) <= 0)
+	namebuf[0] = 0;
+	if (readline(ibuf, linebuf) < 0)
 		return(savestr(namebuf));
 newname:
-	for (cp = linebuf; *cp != ' '; cp++)
+	for (cp = linebuf; *cp && *cp != ' '; cp++)
 		;
-	while (any(*cp, " \t"))
-		cp++;
-	for (cp2 = &namebuf[strlen(namebuf)]; *cp && !any(*cp, " \t") &&
-	    cp2-namebuf < LINESIZE-1; *cp2++ = *cp++)
+	for (; *cp == ' ' || *cp == '\t'; cp++)
 		;
+	for (cp2 = &namebuf[strlen(namebuf)];
+	     *cp && *cp != ' ' && *cp != '\t' && cp2 < namebuf + LINESIZE - 1;)
+		*cp2++ = *cp++;
 	*cp2 = '\0';
-	if (readline(ibuf, linebuf) <= 0)
+	if (readline(ibuf, linebuf) < 0)
 		return(savestr(namebuf));
 	if ((cp = index(linebuf, 'F')) == NULL)
 		return(savestr(namebuf));
@@ -698,7 +567,7 @@ newname:
 				break;
 			cp++;
 			if (first) {
-				copy(cp, namebuf);
+				strcpy(namebuf, cp);
 				first = 0;
 			} else
 				strcpy(rindex(namebuf, '!')+1, cp);
@@ -726,33 +595,58 @@ charcount(str, c)
 }
 
 /*
- * See if the string is a number.
- */
-
-numeric(str)
-	char str[];
-{
-	register char *cp = str;
-
-	while (*cp)
-		if (!isdigit(*cp++))
-			return(0);
-	return(1);
-}
-
-/*
  * Are any of the characters in the two strings the same?
  */
 
 anyof(s1, s2)
 	register char *s1, *s2;
 {
-	register int c;
 
-	while (c = *s1++)
-		if (any(c, s2))
-			return(1);
-	return(0);
+	while (*s1)
+		if (index(s2, *s1++))
+			return 1;
+	return 0;
+}
+
+/*
+ * Convert c to upper case
+ */
+
+raise(c)
+	register c;
+{
+
+	if (islower(c))
+		return toupper(c);
+	return c;
+}
+
+/*
+ * Copy s1 to s2, return pointer to null in s2.
+ */
+
+char *
+copy(s1, s2)
+	register char *s1, *s2;
+{
+
+	while (*s2++ = *s1++)
+		;
+	return s2 - 1;
+}
+
+/*
+ * Add a single character onto a string.
+ */
+
+stradd(str, c)
+	register char *str;
+{
+
+	while (*str++)
+		;
+	str[-1] = c;
+	*str = 0;
 }
 
 /*
@@ -768,7 +662,6 @@ isign(field)
 	 * will hash to the same place.
 	 */
 	istrcpy(realfld, field);
-
 	if (nretained > 0)
 		return (!member(realfld, retain));
 	else
@@ -777,13 +670,13 @@ isign(field)
 
 member(realfield, table)
 	register char *realfield;
-	register struct ignore **table;
+	struct ignore **table;
 {
 	register struct ignore *igp;
 
 	for (igp = table[hash(realfield)]; igp != 0; igp = igp->i_link)
-		if (equal(igp->i_field, realfield))
+		if (*igp->i_field == *realfield &&
+		    equal(igp->i_field, realfield))
 			return (1);
-
 	return (0);
 }

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)temp.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)temp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -25,10 +25,10 @@ char	tempMesg[14];
 
 tinit()
 {
-	register char *cp, *cp2;
+	register char *cp;
 	char uname[PATHSIZE];
-	register int err = 0;
 	register int pid;
+	uid_t getuid();
 
 	pid = getpid();
 	sprintf(tempMail, "/tmp/Rs%05d", pid);
@@ -47,29 +47,23 @@ tinit()
 		}
 	}
 	else {
-		uid = getuid() & UIDMASK;
+		uid = getuid();
 		if (username(uid, uname) < 0) {
-			copy("ubluit", myname);
-			err++;
+			strcpy(myname, "ubluit");
 			if (rcvmode) {
 				printf("Who are you!?\n");
 				exit(1);
 			}
-		}
-		else
-			copy(uname, myname);
+		} else
+			strcpy(myname, uname);
 	}
-	cp = value("HOME");
-	if (cp == NOSTR)
+	if ((cp = value("HOME")) == NOSTR)
 		cp = ".";
-	copy(cp, homedir);
+	strcpy(homedir, cp);
 	findmail();
-	cp = copy(homedir, mbox);
-	copy("/mbox", cp);
-	cp = copy(homedir, mailrc);
-	copy("/.mailrc", cp);
-	cp = copy(homedir, deadletter);
-	copy("/dead.letter", cp);
+	strcpy(copy(homedir, mbox), "/mbox");
+	strcpy(copy(homedir, mailrc), "/.mailrc");
+	strcpy(copy(homedir, deadletter), "/dead.letter");
 	if (debug) {
 		printf("uid = %d, user = %s, mailname = %s\n",
 		    uid, myname, mailname);

@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd2.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd2.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -275,7 +276,7 @@ snarf(linebuf, flag)
 	 * Strip away trailing blanks.
 	 */
 
-	while (*cp == ' ' && cp > linebuf)
+	while (cp > linebuf && isspace(*cp))
 		cp--;
 	*++cp = 0;
 
@@ -283,13 +284,13 @@ snarf(linebuf, flag)
 	 * Now search for the beginning of the file name.
 	 */
 
-	while (cp > linebuf && !any(*cp, "\t "))
+	while (cp > linebuf && !isspace(*cp))
 		cp--;
 	if (*cp == '\0') {
 		printf("No file specified.\n");
 		return(NOSTR);
 	}
-	if (any(*cp, " \t"))
+	if (isspace(*cp))
 		*cp++ = 0;
 	else
 		*flag = 0;
@@ -404,14 +405,13 @@ undelete(msgvec)
 core()
 {
 	register int pid;
-	int status;
+	union wait status;
 
 	if ((pid = vfork()) == -1) {
 		perror("fork");
 		return(1);
 	}
 	if (pid == 0) {
-		sigchild();
 		abort();
 		_exit(1);
 	}
@@ -419,10 +419,11 @@ core()
 	fflush(stdout);
 	while (wait(&status) != pid)
 		;
-	if (status & 0200)
+	if (status.w_coredump)
 		printf(" -- Core dumped\n");
 	else
 		printf("\n");
+	return 0;
 }
 
 /*
@@ -477,7 +478,8 @@ retfield(list)
 
 		h = hash(field);
 		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
-		igp->i_field = calloc(strlen(field) + 1, sizeof (char));
+		igp->i_field = calloc((unsigned) strlen(field) + 1,
+			sizeof (char));
 		strcpy(igp->i_field, field);
 		igp->i_link = retain[h];
 		retain[h] = igp;
@@ -510,7 +512,7 @@ retshow()
 		for (igp = retain[h]; igp != 0; igp = igp->i_link)
 			*ap++ = igp->i_field;
 	*ap = 0;
-	qsort(ring, count, sizeof (char *), igcomp);
+	qsort((char *) ring, count, sizeof (char *), igcomp);
 	for (ap = ring; *ap != 0; ap++)
 		printf("%s\n", *ap);
 	return(0);
@@ -536,7 +538,8 @@ igfield(list)
 		istrcpy(field, *ap);
 		h = hash(field);
 		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
-		igp->i_field = calloc(strlen(field) + 1, sizeof (char));
+		igp->i_field = calloc((unsigned) strlen(field) + 1,
+			sizeof (char));
 		strcpy(igp->i_field, field);
 		igp->i_link = ignore[h];
 		ignore[h] = igp;
@@ -568,7 +571,7 @@ igshow()
 		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
 			*ap++ = igp->i_field;
 	*ap = 0;
-	qsort(ring, count, sizeof (char *), igcomp);
+	qsort((char *) ring, count, sizeof (char *), igcomp);
 	for (ap = ring; *ap != 0; ap++)
 		printf("%s\n", *ap);
 	return(0);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)names.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)names.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,6 +15,7 @@ static char *sccsid = "@(#)names.c	5.3 (Berkeley) %G%";
  */
 
 #include "rcv.h"
+#include <sys/wait.h>
 
 /*
  * Allocate a single element of a name list,
@@ -194,12 +195,13 @@ struct name *
 verify(names)
 	struct name *names;
 {
+#ifdef SENDMAIL
+
+	return(names);
+#else
 	register struct name *np, *top, *t, *x;
 	register char *cp;
 
-#ifdef SENDMAIL
-	return(names);
-#else
 	top = names;
 	np = names;
 	while (np != NIL) {
@@ -258,12 +260,16 @@ outof(names, fo, hp)
 	struct header *hp;
 {
 	register int c;
-	register struct name *np, *top, *t, *x;
-	long now;
+	register struct name *np, *top;
+#ifdef CRAZYWOW
+	register struct name *t, *x;
+#endif
+	time_t now, time();
 	char *date, *fname, *shell, *ctime();
 	FILE *fout, *fin;
-	int ispipe, s, pid;
+	int ispipe;
 	extern char tempEdit[];
+	union wait s;
 
 	top = names;
 	np = names;
@@ -321,12 +327,11 @@ outof(names, fo, hp)
 
 		if (ispipe) {
 			wait(&s);
-			switch (pid = fork()) {
+			switch (fork()) {
 			case 0:
-				sigchild();
-				sigsys(SIGHUP, SIG_IGN);
-				sigsys(SIGINT, SIG_IGN);
-				sigsys(SIGQUIT, SIG_IGN);
+				signal(SIGHUP, SIG_IGN);
+				signal(SIGINT, SIG_IGN);
+				signal(SIGQUIT, SIG_IGN);
 				close(0);
 				dup(image);
 				close(image);
@@ -437,13 +442,11 @@ usermap(names)
 	struct name *names;
 {
 	register struct name *new, *np, *cp;
-	struct name *getto;
 	struct grouphead *gh;
 	register int metoo;
 
 	new = NIL;
 	np = names;
-	getto = NIL;
 	metoo = (value("metoo") != NOSTR);
 	while (np != NIL) {
 		if (np->n_name[0] == '\\') {
@@ -790,16 +793,6 @@ count(np)
 	return(c);
 }
 
-cmpdomain(name, dname)
-	register char *name, *dname;
-{
-	char buf[BUFSIZ];
-
-	strcpy(buf, dname);
-	buf[strlen(name)] = '\0';
-	return(icequal(name, buf));
-}
-
 /*
  * Delete the given name from a namelist, using the passed
  * function to compare the names.
@@ -851,6 +844,7 @@ mapf(np, from)
  * Uncomment it if you need it.
  */
 
+/*
 prettyprint(name)
 	struct name *name;
 {
@@ -863,3 +857,4 @@ prettyprint(name)
 	}
 	fprintf(stderr, "\n");
 }
+*/

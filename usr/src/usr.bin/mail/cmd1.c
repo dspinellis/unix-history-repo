@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd1.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd1.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -82,9 +83,9 @@ local(namelist)
 	}
 	if (localnames != 0)
 		cfree((char *) localnames);
-	localnames = (char **) calloc(c, sizeof (char *));
+	localnames = (char **) calloc((unsigned) c, sizeof (char *));
 	for (ap = namelist, ap2 = localnames; *ap; ap++, ap2++) {
-		cp = (char *) calloc(strlen(*ap) + 1, sizeof (char));
+		cp = (char *) calloc((unsigned) strlen(*ap) + 1, sizeof (char));
 		strcpy(cp, *ap);
 		*ap2 = cp;
 	}
@@ -132,37 +133,16 @@ scroll(arg)
 }
 
 /*
- * Compute what the screen size should be.
- * We use the following algorithm:
- *	If user specifies with screen option, use that.
- *	If baud rate < 1200, use  5
- *	If baud rate = 1200, use 10
- *	If baud rate > 1200, use 20
+ * Compute screen size.
  */
 screensize()
 {
-	register char *cp;
-	register int s;
-#ifdef	TIOCGWINSZ
-	struct winsize ws;
-#endif
+	int s;
+	char *cp;
 
-	if ((cp = value("screen")) != NOSTR) {
-		s = atoi(cp);
-		if (s > 0)
-			return(s);
-	}
-	if (baud < B1200)
-		s = 5;
-	else if (baud == B1200)
-		s = 10;
-#ifdef	TIOCGWINSZ
-	else if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_row != 0)
-		s = ws.ws_row - 4;
-#endif
-	else
-		s = 20;
-	return(s);
+	if ((cp = value("screen")) != NOSTR && (s = atoi(cp)) > 0)
+		return s;
+	return screenheight - 4;
 }
 
 /*
@@ -192,26 +172,18 @@ from(msgvec)
 printhead(mesg)
 {
 	struct message *mp;
-	FILE *ibuf;
 	char headline[LINESIZE], wcount[LINESIZE], *subjline, dispc, curind;
 	char pbuf[BUFSIZ];
-	int s;
 	struct headline hl;
-	register char *cp;
+	int subjlen;
 
 	mp = &message[mesg-1];
-	ibuf = setinput(mp);
-	readline(ibuf, headline);
-	subjline = hfield("subject", mp);
-	if (subjline == NOSTR)
+	readline(setinput(mp), headline);
+	if ((subjline = hfield("subject", mp)) == NOSTR)
 		subjline = hfield("subj", mp);
-
 	/*
 	 * Bletch!
 	 */
-
-	if (subjline != NOSTR && strlen(subjline) > 28)
-		subjline[29] = '\0';
 	curind = dot == mp ? '>' : ' ';
 	dispc = ' ';
 	if (mp->m_flag & MSAVED)
@@ -225,18 +197,15 @@ printhead(mesg)
 	if (mp->m_flag & MBOX)
 		dispc = 'M';
 	parse(headline, &hl, pbuf);
-	sprintf(wcount, " %d/%ld", mp->m_lines, mp->m_size);
-	s = strlen(wcount);
-	cp = wcount + s;
-	while (s < 7)
-		s++, *cp++ = ' ';
-	*cp = '\0';
-	if (subjline != NOSTR)
-		printf("%c%c%3d %-8s %16.16s %s \"%s\"\n", curind, dispc, mesg,
-		    nameof(mp, 0), hl.l_date, wcount, subjline);
+	sprintf(wcount, "%3d/%-4ld", mp->m_lines, mp->m_size);
+	subjlen = screenwidth - 50 - strlen(wcount);
+	if (subjline == NOSTR || subjlen < 0)		/* pretty pathetic */
+		printf("%c%c%3d %-20.20s  %16.16s %s\n",
+			curind, dispc, mesg, nameof(mp, 0), hl.l_date, wcount);
 	else
-		printf("%c%c%3d %-8s %16.16s %s\n", curind, dispc, mesg,
-		    nameof(mp, 0), hl.l_date, wcount);
+		printf("%c%c%3d %-20.20s  %16.16s %s \"%.*s\"\n",
+			curind, dispc, mesg, nameof(mp, 0), hl.l_date, wcount,
+			subjlen, subjline);
 }
 
 /*
@@ -325,9 +294,9 @@ type1(msgvec, doign, page)
 	register struct message *mp;
 	register int mesg;
 	register char *cp;
-	int c, nlines;
+	int nlines;
 	int brokpipe();
-	FILE *ibuf, *obuf;
+	FILE *obuf;
 
 	obuf = stdout;
 	if (setjmp(pipestop)) {
@@ -335,7 +304,7 @@ type1(msgvec, doign, page)
 			pipef = NULL;
 			pclose(obuf);
 		}
-		sigset(SIGPIPE, SIG_DFL);
+		signal(SIGPIPE, SIG_DFL);
 		return(0);
 	}
 	if (intty && outtty && (page || (cp = value("crt")) != NOSTR)) {
@@ -352,25 +321,26 @@ type1(msgvec, doign, page)
 			if (obuf == NULL) {
 				perror(cp);
 				obuf = stdout;
-			}
-			else {
+			} else {
 				pipef = obuf;
-				sigset(SIGPIPE, brokpipe);
+				signal(SIGPIPE, brokpipe);
 			}
 		}
 	}
-	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
+	for (ip = msgvec; *ip && ip - msgvec < msgCount; ip++) {
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
 		dot = mp;
-		print(mp, obuf, doign);
+		if (value("quiet") == NOSTR)
+			fprintf(obuf, "Message %d:\n", mesg);
+		send(mp, obuf, doign);
 	}
 	if (obuf != stdout) {
 		pipef = NULL;
 		pclose(obuf);
 	}
-	sigset(SIGPIPE, SIG_DFL);
+	signal(SIGPIPE, SIG_DFL);
 	return(0);
 }
 
@@ -381,25 +351,7 @@ type1(msgvec, doign, page)
 
 brokpipe()
 {
-# ifndef VMUNIX
-	signal(SIGPIPE, brokpipe);
-# endif
 	longjmp(pipestop, 1);
-}
-
-/*
- * Print the indicated message on standard output.
- */
-
-print(mp, obuf, doign)
-	register struct message *mp;
-	FILE *obuf;
-{
-
-	if (value("quiet") == NOSTR)
-		fprintf(obuf, "Message %2d:\n", mp - &message[0] + 1);
-	touch(mp - &message[0] + 1);
-	send(mp, obuf, doign);
 }
 
 /*
@@ -438,7 +390,7 @@ top(msgvec)
 		if (!lineb)
 			printf("\n");
 		for (lines = 0; lines < c && lines <= topl; lines++) {
-			if (readline(ibuf, linebuf) <= 0)
+			if (readline(ibuf, linebuf) < 0)
 				break;
 			puts(linebuf);
 			lineb = blankline(linebuf);
@@ -487,8 +439,9 @@ mboxit(msgvec)
  */
 folders()
 {
-	char dirname[BUFSIZ], cmd[BUFSIZ];
-	int pid, s, e;
+	char dirname[BUFSIZ];
+	int pid, e;
+	union wait s;
 
 	if (getfold(dirname) < 0) {
 		printf("No value set for \"folder\"\n");
@@ -496,7 +449,6 @@ folders()
 	}
 	switch ((pid = fork())) {
 	case 0:
-		sigchild();
 		execlp("ls", "ls", dirname, 0);
 		_exit(1);
 

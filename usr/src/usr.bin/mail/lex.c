@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -125,6 +125,7 @@ setfile(name, isedit)
  */
 
 int	*msgvec;
+jmp_buf	commjmp;
 
 commands()
 {
@@ -133,14 +134,12 @@ commands()
 	char linebuf[LINESIZE];
 	int hangup(), contin();
 
-# ifdef VMUNIX
-	sigset(SIGCONT, SIG_DFL);
-# endif VMUNIX
+	signal(SIGCONT, SIG_DFL);
 	if (rcvmode && !sourcing) {
-		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
-			sigset(SIGINT, stop);
-		if (sigset(SIGHUP, SIG_IGN) != SIG_IGN)
-			sigset(SIGHUP, hangup);
+		if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+			signal(SIGINT, stop);
+		if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
+			signal(SIGHUP, hangup);
 	}
 	shudprompt = intty && !sourcing;
 	for (;;) {
@@ -156,13 +155,11 @@ commands()
 		eofloop = 0;
 top:
 		if (shudprompt) {
+			setjmp(commjmp);
+			signal(SIGCONT, contin);
 			printf(prompt);
-			fflush(stdout);
-# ifdef VMUNIX
-			sigset(SIGCONT, contin);
-# endif VMUNIX
-		} else
-			fflush(stdout);
+		}
+		fflush(stdout);
 		sreset();
 
 		/*
@@ -172,7 +169,7 @@ top:
 
 		n = 0;
 		for (;;) {
-			if (readline(input, &linebuf[n]) <= 0) {
+			if (readline(input, &linebuf[n]) < 0) {
 				if (n != 0)
 					break;
 				if (loading)
@@ -198,9 +195,7 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
-# ifdef VMUNIX
-		sigset(SIGCONT, SIG_DFL);
-# endif VMUNIX
+		signal(SIGCONT, SIG_DFL);
 		if (execute(linebuf, 0))
 			return;
 more:		;
@@ -234,9 +229,8 @@ execute(linebuf, contxt)
 	 * lexical conventions.
 	 */
 
-	cp = linebuf;
-	while (any(*cp, " \t"))
-		cp++;
+	for (cp = linebuf; isspace(*cp); cp++)
+		;
 	if (*cp == '!') {
 		if (sourcing) {
 			printf("Can't \"!\" while sourcing\n");
@@ -259,7 +253,7 @@ execute(linebuf, contxt)
 	 * confusion.
 	 */
 
-	if (sourcing && equal(word, ""))
+	if (sourcing && *word == '\0')
 		return(0);
 	com = lex(word);
 	if (com == NONE) {
@@ -293,7 +287,7 @@ execute(linebuf, contxt)
 		return(0);
 	}
 	if (!edit && com->c_func == edstop) {
-		sigset(SIGINT, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
 		return(1);
 	}
 
@@ -378,7 +372,7 @@ execute(linebuf, contxt)
 		 * Just the straight string, with
 		 * leading blanks removed.
 		 */
-		while (any(*cp, " \t"))
+		while (isspace(*cp))
 			cp++;
 		e = (*com->c_func)(cp);
 		break;
@@ -440,17 +434,18 @@ execute(linebuf, contxt)
 /*
  * When we wake up after ^Z, reprint the prompt.
  */
+/*ARGSUSED*/
 contin(s)
 {
 
-	printf(prompt);
-	fflush(stdout);
+	longjmp(commjmp, 1);
 }
 
 /*
  * Branch here on hangup signal and simulate quit.
  */
-hangup()
+/*ARGSUSED*/
+hangup(s)
 {
 
 	holdsigs();
@@ -472,8 +467,8 @@ hangup()
 setmsize(sz)
 {
 
-	if (msgvec != (int *) 0)
-		cfree(msgvec);
+	if (msgvec != 0)
+		cfree((char *) msgvec);
 	msgvec = (int *) calloc((unsigned) (sz + 1), sizeof *msgvec);
 }
 
@@ -514,12 +509,10 @@ isprefix(as1, as2)
 }
 
 /*
- * The following gets called on receipt of a rubout.  This is
+ * The following gets called on receipt of an interrupt.  This is
  * to abort printout of a command, mainly.
  * Dispatching here when command() is inactive crashes rcv.
  * Close all open files except 0, 1, 2, and the temporary.
- * The special call to getuserid() is needed so it won't get
- * annoyed about losing its open file.
  * Also, unstack all source files.
  */
 
@@ -553,20 +546,16 @@ xclose(iop)
 	}
 }
 
+/*ARGSUSED*/
 stop(s)
 {
-	register FILE *fp;
 
-# ifndef VMUNIX
-	s = SIGINT;
-# endif VMUNIX
 	noreset = 0;
 	if (!inithdr)
 		sawcom++;
 	inithdr = 0;
 	while (sourcing)
 		unstack();
-	getuserid((char *) -1);
 
 	/*
 	 * Walk through all the open FILEs, applying xclose() to them
@@ -578,9 +567,6 @@ stop(s)
 		image = -1;
 	}
 	fprintf(stderr, "Interrupt\n");
-# ifndef VMUNIX
-	signal(s, stop);
-# endif
 	reset(0);
 }
 
@@ -668,14 +654,14 @@ newfileinfo()
 	return(mdot);
 }
 
-strace() {}
-
 /*
  * Print the current version number.
  */
 
+/*ARGSUSED*/
 pversion(e)
 {
+
 	printf("Version %s\n", version);
 	return(0);
 }

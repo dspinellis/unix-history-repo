@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)fio.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)fio.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/wait.h>
 #include <errno.h>
-#include <strings.h>
 
 /*
  * Mail -- a mail program
@@ -23,90 +24,86 @@ static char *sccsid = "@(#)fio.c	5.4 (Berkeley) %G%";
  * Set up the input pointers while copying the mail file into
  * /tmp.
  */
-
 setptr(ibuf)
-	FILE *ibuf;
+	register FILE *ibuf;
 {
-	register int c;
+	register c;
 	register char *cp, *cp2;
-	register int count, l;
-	long s;
-	off_t offset;
+	register count;
 	char linebuf[LINESIZE];
-	char wbuf[LINESIZE];
-	int maybe, mestmp, flag, inhead;
+	int maybe, inhead;
+	FILE *mestmp;
+	off_t offset;
 	struct message this;
 	extern char tempSet[];
 
-	if ((mestmp = opentemp(tempSet)) < 0)
+	if ((c = opentemp(tempSet)) < 0)
 		exit(1);
+	if ((mestmp = fdopen(c, "r+")) == NULL)
+		panic("Can't open temporary");
 	msgCount = 0;
-	offset = 0;
-	s = 0L;
-	l = 0;
 	maybe = 1;
-	flag = MUSED|MNEW;
+	inhead = 0;
+	offset = 0;
+	this.m_flag = MUSED|MNEW;
+	this.m_size = 0;
+	this.m_lines = 0;
+	this.m_block = 0;
+	this.m_offset = 0;
 	for (;;) {
 		if (fgets(linebuf, LINESIZE, ibuf) == NULL) {
-			this.m_flag = flag;
-			flag = MUSED|MNEW;
-			this.m_offset = offsetof(offset);
-			this.m_block = blockof(offset);
-			this.m_size = s;
-			this.m_lines = l;
 			if (append(&this, mestmp)) {
 				perror(tempSet);
 				exit(1);
 			}
 			fclose(ibuf);
 			makemessage(mestmp);
-			close(mestmp);
 			return;
 		}
 		count = strlen(linebuf);
-		fputs(linebuf, otf);
-		cp = linebuf + (count - 1);
-		if (*cp == '\n')
-			*cp = 0;
+		fwrite(linebuf, sizeof *linebuf, count, otf);
 		if (ferror(otf)) {
 			perror("/tmp");
 			exit(1);
 		}
+		linebuf[count - 1] = 0;
 		if (maybe && linebuf[0] == 'F' && ishead(linebuf)) {
 			msgCount++;
-			this.m_flag = flag;
-			flag = MUSED|MNEW;
-			inhead = 1;
-			this.m_block = blockof(offset);
-			this.m_offset = offsetof(offset);
-			this.m_size = s;
-			this.m_lines = l;
-			s = 0L;
-			l = 0;
 			if (append(&this, mestmp)) {
 				perror(tempSet);
 				exit(1);
 			}
-		}
-		if (linebuf[0] == 0)
+			this.m_flag = MUSED|MNEW;
+			this.m_size = 0;
+			this.m_lines = 0;
+			this.m_block = blockof(offset);
+			this.m_offset = offsetof(offset);
+			inhead = 1;
+		} else if (linebuf[0] == 0) {
 			inhead = 0;
-		if (inhead && (cp = index(linebuf, ':'))) {
-			*cp = 0;
-			if (icequal(linebuf, "status")) {
-				++cp;
-				if (index(cp, 'R'))
-					flag |= MREAD;
-				if (index(cp, 'O'))
-					flag &= ~MNEW;
-				inhead = 0;
+		} else if (inhead) {
+			for (cp = linebuf, cp2 = "status";; cp++) {
+				if ((c = *cp2++) == 0) {
+					while (isspace(*cp++))
+						;
+					if (cp[-1] != ':')
+						break;
+					while (c = *cp++)
+						if (c == 'R')
+							this.m_flag |= MREAD;
+						else if (c == 'O')
+							this.m_flag &= ~MNEW;
+					inhead = 0;
+					break;
+				}
+				if (*cp != c && *cp != toupper(c))
+					break;
 			}
 		}
 		offset += count;
-		s += (long) count;
-		l++;
-		maybe = 0;
-		if (linebuf[0] == 0)
-			maybe = 1;
+		this.m_size += count;
+		this.m_lines++;
+		maybe = linebuf[0] == 0;
 	}
 }
 
@@ -115,7 +112,6 @@ setptr(ibuf)
  * If a write error occurs, return -1, else the count of
  * characters written, including the newline.
  */
-
 putline(obuf, linebuf)
 	FILE *obuf;
 	char *linebuf;
@@ -123,11 +119,11 @@ putline(obuf, linebuf)
 	register int c;
 
 	c = strlen(linebuf);
-	fputs(linebuf, obuf);
+	fwrite(linebuf, sizeof *linebuf, c, obuf);
 	putc('\n', obuf);
 	if (ferror(obuf))
-		return(-1);
-	return(c+1);
+		return (-1);
+	return (c + 1);
 }
 
 /*
@@ -135,7 +131,6 @@ putline(obuf, linebuf)
  * buffer.  Return the number of characters read.  Do not
  * include the newline at the end.
  */
-
 readline(ibuf, linebuf)
 	FILE *ibuf;
 	char *linebuf;
@@ -144,84 +139,69 @@ readline(ibuf, linebuf)
 
 	clearerr(ibuf);
 	if (fgets(linebuf, LINESIZE, ibuf) == NULL)
-		return(0);
+		return -1;
 	n = strlen(linebuf);
-	if (n >= 1 && linebuf[n-1] == '\n')
-		linebuf[n-1] = '\0';
-	return(n);
+	if (n > 0 && linebuf[n - 1] == '\n')
+		linebuf[--n] = '\0';
+	return n;
 }
 
 /*
  * Return a file buffer all ready to read up the
  * passed message pointer.
  */
-
 FILE *
 setinput(mp)
 	register struct message *mp;
 {
-	off_t off;
 
 	fflush(otf);
-	off = mp->m_block;
-	off <<= 9;
-	off += mp->m_offset;
-	if (fseek(itf, off, 0) < 0) {
+	if (fseek(itf, positionof(mp->m_block, mp->m_offset), 0) < 0) {
 		perror("fseek");
 		panic("temporary file seek");
 	}
-	return(itf);
+	return (itf);
 }
 
 /*
  * Take the data out of the passed ghost file and toss it into
  * a dynamically allocated message structure.
  */
-
 makemessage(f)
+	FILE *f;
 {
-	register struct message *m;
-	register char *mp;
-	register count;
+	register size = (msgCount + 1) * sizeof (struct message);
+	off_t lseek();
 
-	mp = calloc((unsigned) (msgCount + 1), sizeof *m);
-	if (mp == NOSTR) {
-		printf("Insufficient memory for %d messages\n", msgCount);
-		exit(1);
-	}
-	if (message != (struct message *) 0)
-		cfree((char *) message);
-	message = (struct message *) mp;
+	if (message != 0)
+		free((char *) message);
+	if ((message = (struct message *) malloc((unsigned) size)) == 0)
+		panic("Insufficient memory for %d messages", msgCount);
 	dot = message;
-	lseek(f, 0L, 0);
-	while (count = read(f, mp, BUFSIZ))
-		mp += count;
-	for (m = &message[0]; m < &message[msgCount]; m++) {
-		m->m_size = (m+1)->m_size;
-		m->m_lines = (m+1)->m_lines;
-		m->m_flag = (m+1)->m_flag;
-	}
-	message[msgCount].m_size = 0L;
+	size -= sizeof (struct message);
+	fflush(f);
+	lseek(fileno(f), (long) sizeof *message, 0);
+	if (read(fileno(f), (char *) message, size) != size)
+		panic("Message temporary file corrupted");
+	message[msgCount].m_size = 0;
 	message[msgCount].m_lines = 0;
+	fclose(f);
 }
 
 /*
  * Append the passed message descriptor onto the temp file.
  * If the write fails, return 1, else 0
  */
-
 append(mp, f)
 	struct message *mp;
+	FILE *f;
 {
-	if (write(f, (char *) mp, sizeof *mp) != sizeof *mp)
-		return(1);
-	return(0);
+	return fwrite((char *) mp, sizeof *mp, 1, f) != 1;
 }
 
 /*
  * Delete a file, but only if the file is a plain file.
  */
-
 remove(name)
 	char name[];
 {
@@ -234,7 +214,7 @@ remove(name)
 		errno = EISDIR;
 		return(-1);
 	}
-	return(unlink(name));
+	return unlink(name);
 }
 
 /*
@@ -248,7 +228,7 @@ edstop()
 	FILE *obuf, *ibuf, *readstat;
 	struct stat statb;
 	char tempname[30], *id;
-	int (*sigs[3])();
+	char *mktemp();
 
 	if (readonly)
 		return;
@@ -349,67 +329,53 @@ done:
 static int sigdepth = 0;		/* depth of holdsigs() */
 static int omask = 0;
 /*
- * Hold signals SIGHUP - SIGQUIT.
+ * Hold signals SIGHUP, SIGINT, and SIGQUIT.
  */
 holdsigs()
 {
-	register int i;
 
 	if (sigdepth++ == 0)
 		omask = sigblock(sigmask(SIGHUP)|sigmask(SIGINT)|sigmask(SIGQUIT));
 }
 
 /*
- * Release signals SIGHUP - SIGQUIT
+ * Release signals SIGHUP, SIGINT, and SIGQUIT.
  */
 relsesigs()
 {
-	register int i;
 
 	if (--sigdepth == 0)
 		sigsetmask(omask);
 }
 
 /*
- * Open a temp file by creating, closing, unlinking, and
- * reopening.  Return the open file descriptor.
+ * Open a temp file by creating and unlinking.
+ * Return the open file descriptor.
  */
-
 opentemp(file)
 	char file[];
 {
-	register int f;
+	int f;
 
-	if ((f = creat(file, 0600)) < 0) {
+	if ((f = open(file, O_CREAT|O_EXCL|O_RDWR, 0600)) < 0)
 		perror(file);
-		return(-1);
-	}
-	close(f);
-	if ((f = open(file, 2)) < 0) {
-		perror(file);
-		remove(file);
-		return(-1);
-	}
 	remove(file);
-	return(f);
+	return (f);
 }
 
 /*
  * Determine the size of the file possessed by
  * the passed buffer.
  */
-
 off_t
 fsize(iob)
 	FILE *iob;
 {
-	register int f;
 	struct stat sbuf;
 
-	f = fileno(iob);
-	if (fstat(f, &sbuf) < 0)
-		return(0);
-	return(sbuf.st_size);
+	if (fstat(fileno(iob), &sbuf) < 0)
+		return 0;
+	return sbuf.st_size;
 }
 
 /*
@@ -417,17 +383,17 @@ fsize(iob)
  * in it and expand it by using "sh -c echo filename"
  * Return the file name as a dynamic string.
  */
-
 char *
 expand(name)
 	char name[];
 {
 	char xname[BUFSIZ];
 	char cmdbuf[BUFSIZ];
-	register int pid, l, rc;
+	register int pid, l;
 	register char *cp, *Shell;
-	int s, pivec[2], (*sigint)();
+	int pivec[2];
 	struct stat sbuf;
+	union wait s;
 
 	if (name[0] == '+' && getfold(cmdbuf) >= 0) {
 		sprintf(xname, "%s/%s", cmdbuf, name + 1);
@@ -441,7 +407,6 @@ expand(name)
 	}
 	sprintf(cmdbuf, "echo %s", name);
 	if ((pid = vfork()) == 0) {
-		sigchild();
 		Shell = value("SHELL");
 		if (Shell == NOSTR)
 			Shell = SHELL;
@@ -464,8 +429,7 @@ expand(name)
 	close(pivec[0]);
 	while (wait(&s) != pid);
 		;
-	s &= 0377;
-	if (s != 0 && s != SIGPIPE) {
+	if (s.w_status != 0 && s.w_termsig != SIGPIPE) {
 		fprintf(stderr, "\"Echo\" failed\n");
 		goto err;
 	}
@@ -504,30 +468,27 @@ getfold(name)
 	char *folder;
 
 	if ((folder = value("folder")) == NOSTR)
-		return(-1);
+		return (-1);
 	if (*folder == '/')
 		strcpy(name, folder);
 	else
 		sprintf(name, "%s/%s", homedir, folder);
-	return(0);
+	return (0);
 }
 
 /*
  * A nicer version of Fdopen, which allows us to fclose
  * without losing the open file.
  */
-
 FILE *
 Fdopen(fildes, mode)
 	char *mode;
 {
-	register int f;
-	FILE *fdopen();
+	int f;
 
-	f = dup(fildes);
-	if (f < 0) {
+	if ((f = dup(fildes)) < 0) {
 		perror("dup");
-		return(NULL);
+		return (NULL);
 	}
-	return(fdopen(f, mode));
+	return fdopen(f, mode);
 }

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmdtab.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)cmdtab.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "def.h"
@@ -17,7 +17,7 @@ static char *sccsid = "@(#)cmdtab.c	5.3 (Berkeley) %G%";
  */
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
-extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
+extern int save(), help(), headers(), pdot(), respond(), editor();
 extern int edstop(), rexit(), pcmdlist(), sendmail(), from(), copycmd();
 extern int messize(), psalloc(), deltype(), unset(), set(), source();
 extern int pversion(), group(), top(), core(), null(), stouch(), visual();
