@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -62,6 +62,7 @@ extern int __addel();
 /* my internals */
 static u_short overflow_page();
 static int open_temp();
+static int ugly_split();
 static void squeeze_key();
 static void putpair();
 
