@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1980, 1987, 1988, 1991, 1993
+ * Copyright (c) 1980, 1987, 1988, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1980, 1987, 1988, 1991, 1993\n\
+"@(#) Copyright (c) 1980, 1987, 1988, 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -421,7 +421,7 @@ main(argc, argv)
 
 	if (!quietlog) {
 		(void)printf("%s\n\t%s  %s\n\n",
-		    "Copyright (c) 1980, 1983, 1986, 1988, 1990, 1991, 1993",
+	    "Copyright (c) 1980, 1983, 1986, 1988, 1990, 1991, 1993, 1994",
 		    "The Regents of the University of California. ",
 		    "All rights reserved.");
 		motd();
