@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -135,8 +135,8 @@ again:
 
 	for (i = 0; i < argc; i++)
 		if ((done & (1 << i)) == 0)
-			fprintf(stderr, "%s not found in /etc/fstab\n",
-				argv[i]);
+			fprintf(stderr, "%s not found in %s\n",
+				argv[i], FSTAB);
 	exit(errs);
 }
 
@@ -411,7 +411,7 @@ makerawname(name)
 
 	strcpy(rawname, name);
 	cp = rindex(rawname, '/');
-	if (cp == NULL || cp[1] == 'r')
+	if (cp == NULL)
 		return (name);
 	else
 		cp++;
