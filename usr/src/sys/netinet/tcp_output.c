@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.12 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -389,8 +389,13 @@ send:
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
 	    so->so_options & SO_DONTROUTE);
-	if (error)
+	if (error) {
+		if (error == ENOBUFS) {
+			tcp_quench(tp->t_inpcb);
+			return (0);
+		}
 		return (error);
+	}
 	tcpstat.tcps_sndtotal++;
 
 	/*
