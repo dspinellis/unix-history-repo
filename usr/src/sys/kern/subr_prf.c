@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.28 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,7 +45,7 @@ extern	cnpoll();
 int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
 #endif
 extern	cnputc();			/* standard console putc */
-int	(*v_putc)() = cnputc;          	/* routine to putc on virtual console */
+int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
 
 static void  logpri __P((int level));
 static void  putchar __P((int ch, int flags, struct tty *tp));
@@ -73,7 +73,6 @@ panic(msg)
 	char *msg;
 {
 	int bootopt = RB_AUTOBOOT | RB_DUMP;
-	int s;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
@@ -85,7 +84,7 @@ panic(msg)
 #endif
 #ifdef KADB
 	if (boothowto & RB_KDB) {
-		s = splnet();		/* below kdb pri */
+		int s = splnet();	/* below kdb pri */
 		setsoftkdb();
 		splx(s);
 	}
@@ -120,16 +119,18 @@ uprintf(fmt /*, va_alist */)
 	register struct proc *p = curproc;
 	va_list ap;
 
-	va_start(ap, fmt);
-	if (p->p_flag & SCTTY && p->p_session->s_ttyvp)
+	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
+		va_start(ap, fmt);
 		kprintf(fmt, TOTTY, p->p_session->s_ttyp, ap);
-	va_end(ap);
+		va_end(ap);
+	}
 }
 
 tpr_t
 tprintf_open(p)
 	register struct proc *p;
 {
+
 	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
 		SESSHOLD(p->p_session);
 		return ((tpr_t) p->p_session);
@@ -141,6 +142,7 @@ void
 tprintf_close(sess)
 	tpr_t sess;
 {
+
 	if (sess)
 		SESSRELE((struct session *) sess);
 }
@@ -211,16 +213,19 @@ log(level, fmt /*, va_alist */)
 	char *fmt;
 #endif
 {
-	register s = splhigh();
+	register int s = splhigh();
 	va_list ap;
 
 	logpri(level);
 	va_start(ap, fmt);
 	kprintf(fmt, TOLOG, NULL, ap);
 	splx(s);
-	if (!log_open)
-		kprintf(fmt, TOCONS, NULL, ap);
 	va_end(ap);
+	if (!log_open) {
+		va_start(ap, fmt);
+		kprintf(fmt, TOCONS, NULL, ap);
+		va_end(ap);
+	}
 	logwakeup();
 }
 
@@ -245,19 +250,24 @@ addlog(fmt /*, va_alist */)
 	char *fmt;
 #endif
 {
-	register s = splhigh();
+	register int s = splhigh();
 	va_list ap;
 
 	va_start(ap, fmt);
 	kprintf(fmt, TOLOG, NULL, ap);
 	splx(s);
-	if (!log_open)
-		kprintf(fmt, TOCONS, NULL, ap);
 	va_end(ap);
+	if (!log_open) {
+		va_start(ap, fmt);
+		kprintf(fmt, TOCONS, NULL, ap);
+		va_end(ap);
+	}
 	logwakeup();
 }
 
+#if defined(tahoe)
 int	consintr = 1;			/* ok to handle console interrupts? */
+#endif
 
 void
 #ifdef __STDC__
@@ -267,17 +277,21 @@ printf(fmt /*, va_alist */)
 	char *fmt;
 #endif
 {
-	register int savintr;
 	va_list ap;
+#ifdef tahoe
+	register int savintr;
 
 	savintr = consintr;		/* disable interrupts */
 	consintr = 0;
+#endif
 	va_start(ap, fmt);
 	kprintf(fmt, TOCONS | TOLOG, NULL, ap);
 	va_end(ap);
 	if (!panicstr)
 		logwakeup();
+#ifdef tahoe
 	consintr = savintr;		/* reenable interrupts */
+#endif
 }
 
 /*
@@ -306,11 +320,12 @@ printf(fmt /*, va_alist */)
  * list recursively.
  * Its usage is:
  *
- * fn(otherstuff, fmt [, arg1, ... ])
- *	char *fmt;
- *	u_int arg1, ...;
- *
+ * fn(otherstuff, char *fmt, ...)
+ * {
+ *	va_list ap;
+ *	va_start(ap, fmt);
  *	printf("prefix: %r, other stuff\n", fmt, ap);
+ *	va_end(ap);
  *
  * Space or zero padding and a field width are supported for the numeric
  * formats only.
@@ -397,7 +412,7 @@ reswitch:	switch (ch = *(u_char *)fmt++) {
 		case 'o':
 			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
 			base = 8;
-			goto number;;
+			goto number;
 		case 'u':
 			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
 			base = 10;
@@ -435,7 +450,7 @@ putchar(c, flags, tp)
 	struct tty *tp;
 {
 	extern int msgbufmapped;
-	register struct msgbuf *mbp;
+	register struct msgbuf *mbp = msgbufp;
 
 	if (panicstr)
 		constty = NULL;
@@ -452,14 +467,9 @@ putchar(c, flags, tp)
 		constty = NULL;
 	if ((flags & TOLOG) &&
 	    c != '\0' && c != '\r' && c != 0177 && msgbufmapped) {
- 		mbp = msgbufp;
 		if (mbp->msg_magic != MSG_MAGIC) {
-			register int i;
-
+			bzero((caddr_t)mbp, sizeof(*mbp));
 			mbp->msg_magic = MSG_MAGIC;
-			mbp->msg_bufx = mbp->msg_bufr = 0;
-			for (i = 0; i < MSG_BSIZE; i++)
-				mbp->msg_bufc[i] = 0;
 		}
 		mbp->msg_bufc[mbp->msg_bufx++] = c;
 		if (mbp->msg_bufx < 0 || mbp->msg_bufx >= MSG_BSIZE)
