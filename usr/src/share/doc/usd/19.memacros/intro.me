@@ -1,17 +1,30 @@
+.ll 6.5i
+.lt 6.5i
+.pn 0
+.ds MO 2.22\"		version of -me to which this applies
 .nr si 3n
-.he 'USING NROFF AND \-ME''%'
+\".he 'USING NROFF AND \-ME''%'
+.eh 'USD:22-%''Writing Papers with NROFF using \-me'
+.oh 'Writing Papers with NROFF using \-me''USD:22-%'
 .ds U \s-1UNIX\s0
 .ds N \s-1NROFF\s0
 .ds T \s-1TROFF\s0
 .+c
 .(l C
 .sz 14
-.b "WRITING PAPERS WITH NROFF USING \-ME"
+.b "Writing Papers with NROFF using \-me"
 .sz
 .sp 2
 .ul
-Eric P. Allman
+Eric P. Allman*
+.(f
+*Author's current address:
+Britton Lee, Inc.,
+1919 Addison Suite 105,
+Berkeley, California 94704.
+.)f
 .sp
+Project INGRES
 Electronics Research Laboratory
 University of California, Berkeley
 Berkeley, California  94720
@@ -22,8 +35,8 @@ This document describes
 the text processing facilities
 available on the \*U\(dg
 .(f
-\(dg\*U, \*N, and \*T are Trademarks
-of Bell Laboratories
+\(dg\*U is a trademark
+of AT&T Bell Laboratories
 .)f
 operating system
 via \*N\(dg and the
@@ -298,7 +311,7 @@ of the paragraphs
 .i "must not"
 begin with a space,
 since blank lines
-and lines begining with spaces
+and lines beginning with spaces
 cause a break.
 For example,
 if I had typed:
@@ -636,7 +649,7 @@ of the text
 without quote marks
 around them.
 These can be generated
-using the commmands
+using the commands
 .b .(q
 and
 .b .)q
@@ -1137,7 +1150,7 @@ the normal index is
 .b x .
 Thus,
 several
-.q indicies
+.q indices
 may be maintained simultaneously
 (such as a list of tables, table of contents, etc.).
 .pp
@@ -1357,6 +1370,43 @@ This paragraph will reset numbering by .np.
 .np
 For example,
 we have reverted to numbering from one now.
+.pp
+The
+.b .bu
+request gives lists of this sort that are identified with
+bullets rather than numbers.
+The paragraphs are also crunched together.
+For example,
+the input:
+.(b
+\&.bu
+\&One egg yolk
+\&.bu
+\&One tablespoon cream or top milk
+\&.bu
+\&Salt, cayenne, and lemon juice to taste
+\&.bu
+\&A generous two tablespoonfuls of butter
+.)b
+produces\**:
+.(f
+\**By the way,
+if you put the first three ingredients in a a heavy, deep pan
+and whisk the ingredients madly over a medium flame
+(never taking your hand off the handle of the pot)
+until the mixture reaches the consistency of custard
+(just a minute or two),
+then mix in the butter off-heat,
+you will have a wonderful Hollandaise sauce.
+.)f
+.bu
+One egg yolk
+.bu
+One tablespoon cream or top milk
+.bu
+Salt, cayenne, and lemon juice to taste
+.bu
+A generous two tablespoonfuls of butter
 .sh 2 "Section Headings"
 .pp
 Section numbers
@@ -1703,7 +1753,7 @@ and
 programs are described fully
 in the document
 .ul
-Typesetting Mathematics \- Users' Guide
+Typesetting Mathematics \- User's Guide
 by Brian W. Kernighan
 and Lorinda L. Cherry.
 Equations are centered,
@@ -2083,7 +2133,7 @@ to indicate
 .q "continue text processing" ;
 this allows input lines
 to be joined together
-without a space inbetween them.
+without a space between them.
 For example, the input:
 .(b
 \&.u under \ec
@@ -2128,10 +2178,52 @@ between adjacent lines)
 is set to be proportional
 to the type size.
 .pp
+These pointsize changes are
+.i temporary !!!
+For example,
+to reset the pointsize of basic text to twelve point, use:
+.(b
+\&.nr pp 12
+\&.nr sp 12
+\&.nr tp 12
+.)b
+to reset the default pointsize of
+paragraphs,
+section headers,
+and titles respectively.
+If you only want to set the names of sections in a larger pointsize,
+use:
+.(b
+\&.nr sp 11
+.)b
+alone \*- this sets section titles
+(e.g.,
+.b "Point Sizes"
+above)
+in a larger font than the default.
+.pp
+A single word or phrase can be set in a smaller pointsize
+than the surrounding text
+using the
+.b .sm
+request.
+This is especially convenient for words that are all capitals,
+due to the optical illusion that makes them look even larger
+than they actually are.
+For example:
+.(b
+\&.sm UNIX
+.)b
+prints as
+.sm UNIX
+rather than
+UNIX.
+.pp
 Warning:
 changing point sizes
 on the phototypesetter
 is a slow mechanical operation.
+On laser printers it may require loading new fonts.
 Size changes
 should be considered carefully.
 .sh 2 "Quotes"
@@ -2202,6 +2294,12 @@ Ricki Blau,
 Pamela Humphrey,
 and Jim Joyce
 for their help with the documentation phase;
+peter kessler
+for numerous complaints years after I was
+.q done
+with this project,
+most accompanied by fixes
+(hence forcing me to fix several small bugs);
 and the plethora of people who have contributed ideas
 and have given support for the project.
 .sp 1i
@@ -2210,5 +2308,5 @@ This document was
 .if t \*T'ed
 on \*(td
 and applies to version
-1.1
+\*(MO
 of the \-me macros.
