@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.4 (Berkeley) %G% *
+ *	@(#)if_eon.c	7.5 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -57,7 +57,7 @@ static char *rcsid = "$Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $";
 #include "types.h"
 
 #include "../net/if.h"
-#include "../net/iftypes.h"
+#include "../net/if_types.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 #include "machine/mtpr.h"
@@ -75,6 +75,7 @@ extern struct snpa_cache all_es, all_is;
 #include "argo_debug.h"
 #include "iso_errno.h"
 #include "eonvar.h"
+extern struct timeval time;
 
 #define EOK 0
 
@@ -552,6 +553,8 @@ eonoutput(ifp, morig, dst)
 		printf("eonoutput \n" );
 	ENDDEBUG
 
+	ifp->if_lastchange = time;
+	ifp->if_opackets++;
 	if( dst->siso_family != AF_ISO ) {
 	einval:
 		error =  EINVAL;
@@ -662,7 +665,8 @@ eonoutput(ifp, morig, dst)
 	bzero((caddr_t)iphdr, sizeof (*iphdr));
 
 	iphdr->ip_p = IPPROTO_EON;
-	iphdr->ip_len = (u_short)(mh->m_pkthdr.len = EONIPLEN + datalen);
+	ifp->if_obytes +=
+		(iphdr->ip_len = (u_short)(mh->m_pkthdr.len = EONIPLEN + datalen));
 	iphdr->ip_ttl = MAXTTL;	
 	iphdr->ip_src.s_addr = INADDR_ANY;
 
@@ -744,6 +748,11 @@ done:
 flush:
 		m_freem(morig);
 	}
+	if (error) {
+		ifp->if_oerrors++;
+		ifp->if_opackets--;
+		ifp->if_obytes -= datalen + EONIPLEN;
+	}
 	return error;
 }
 
@@ -781,6 +790,8 @@ drop:
 			return;
 		}
 	}
+	eonif->if_ibytes += m->m_pkthdr.len;
+	eonif->if_lastchange = time;
 	iphdr = mtod(m, struct ip *);
 	/* do a few checks for debugging */
 	if( iphdr->ip_p != IPPROTO_EON ) {
@@ -825,7 +836,7 @@ drop:
 			m->m_flags |= M_MCAST;
 			break;
 	}
-	eonifp->if_ipackets ++;
+	eonifp->if_ipackets++;
 
 	{
 		/* put it on the CLNP queue and set soft interrupt */
@@ -841,7 +852,8 @@ drop:
 		if (IF_QFULL(ifq)) {
 			IF_DROP(ifq);
 			m_freem(m);
-			eonifp->if_ierrors ++;
+			eonifp->if_iqdrops++;
+			eonifp->if_ipackets--;
 			splx(s);
 			return;
 		}

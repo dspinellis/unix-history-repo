@@ -32,44 +32,32 @@ SOFTWARE.
 #define __CLNP_STAT__
 
 struct clnp_stat {
-	u_short cns_total;			/* total pkts received */
-	u_short	cns_toosmall;		/* fixed part of header too small */
-	u_short	cns_badhlen;		/* header length is not reasonable */
-	u_short	cns_badcsum;		/* checksum on packet failed */
-	u_short cns_badaddr;		/* address fields were not reasonable */
-	u_short cns_noseg;			/* segment information forgotten */
-	u_short cns_badid;			/* incorrect protocol id */
-	u_short	cns_badvers;		/* incorrect version */
-	u_short	cns_ttlexpired;		/* ttl has expired */
-	u_short cns_forward;		/* forwarded packets */
-	u_short cns_errcvd;			/* ER packets received */
-	u_short cns_frag;			/* fragments generated */
-	u_short cns_sent;			/* total packets sent */
-	u_short	cns_cachemiss;		/* cache misses */
-	u_short cns_congest_set;	/* congestion experienced bit set */
-	u_short cns_congest_rcvd;	/* congestion experienced bit received */
-	u_short	er_protoerr;		/*	GEN_NOREAS
-									GEN_PROTOERR
-									GEN_HDRSYNTAX
-									GEN_INCOMPLETE
-									GEN_DUPOPT */
-	u_short	er_badcsum;			/*	GEN_BADCSUM */
-	u_short	er_congest;			/*	GEN_CONGEST */
-	u_short er_segneeded;		/*	GEN_SEGNEEDED */
-	u_short	er_reassfail;		/*	REASS_INTERFERE */
-	u_short	er_dstunreach;		/*	ADDR_DESTUNREACH
-									ADDR_DESTUNKNOWN */
-	u_short	er_srcrterr;		/*	SRCRT_UNSPECERR
-									SRCRT_SYNTAX
-									SRCRT_UNKNOWNADDR
-									SRCRT_BADPATH */
-	u_short er_ttlexpired;		/*	TTL_EXPTRANSIT
-									TTL_EXPREASS */
-	u_short	er_unsupported;		/*	DISC_UNSUPPOPT
-									DISC_UNSUPPVERS
-									DISC_UNSUPPSECURE
-									DISC_UNSUPPSRCRT
-									DISC_UNSUPPRECRT */
+	int cns_total;			/* total pkts received */
+	int	cns_toosmall;		/* fixed part of header too small */
+	int	cns_badhlen;		/* header length is not reasonable */
+	int	cns_badcsum;		/* checksum on packet failed */
+	int cns_badaddr;		/* address fields were not reasonable */
+	int	cns_badvers;		/* incorrect version */
+	int cns_noseg;			/* segment information forgotten */
+	int cns_noproto;		/* incorrect protocol id */
+	int	cns_delivered;		/* packets consumed by protocol */
+	int	cns_ttlexpired;		/* ttl has expired */
+	int cns_forward;		/* forwarded packets */
+	int cns_sent;			/* total packets sent */
+	int cns_odropped;		/* o.k. packets discarded, e.g. ENOBUFS */
+	int cns_cantforward;	/* non-forwarded packets */
+	int cns_fragmented;		/* packets fragmented */
+	int cns_fragments;		/* fragments received */
+	int cns_fragdropped;	/* fragments discarded */
+	int cns_fragtimeout;	/* fragments timed out */
+	int cns_ofragments;		/* fragments generated */
+	int cns_cantfrag;		/* fragmentation prohibited */
+	int cns_reassembled;	/* packets reconstructed */
+	int	cns_cachemiss;		/* cache misses */
+	int cns_congest_set;	/* congestion experienced bit set */
+	int cns_congest_rcvd;	/* congestion experienced bit received */
+	int cns_er_inhist[CLNP_ERRORS + 1];
+	int cns_er_outhist[CLNP_ERRORS + 1];
 } clnp_stat ;
 
 #ifdef INCSTAT

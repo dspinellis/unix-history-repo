@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -43,7 +43,7 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/
 #include "time.h"
 
 #include "../net/if.h"
-#include "../net/iftypes.h"
+#include "../net/if_types.h"
 #include "../net/route.h"
 
 #include "iso.h"
@@ -447,6 +447,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		if ((m0 = clnp_reass(m, &src, &dst, &seg_part)) != NULL) {
 			m = m0;
 			clnp = mtod(m, struct clnp_fixed *);
+			INCSTAT(cns_reassembled);
 		} else {
 			return;
 		}
@@ -460,6 +461,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	or, if absent, the segment length field of the
 	 *	header.
 	 */
+	INCSTAT(cns_delivered);
 	switch (clnp->cnf_type & CNF_TYPE) {
 	case CLNP_ER:
 		/*
@@ -519,6 +521,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	default:
  		printf("clnp_input: unknown clnp pkt type %d\n",
 			clnp->cnf_type & CNF_TYPE);
+		clnp_stat.cns_delivered--;
+		clnp_stat.cns_noproto++;
 		clnp_discard(m, GEN_HDRSYNTAX);
  		break;
 	}

@@ -26,15 +26,12 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
 #endif lint
 
-#ifdef ISO
-
-#include "types.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -97,7 +94,7 @@ int				flags;		/* flags passed to clnp_output */
 		extern int 			clnp_id;			/* id of datagram */
 		int					error = 0;
 
-		INCSTAT(cns_frag);
+		INCSTAT(cns_fragmented);
 
 		seg_part.cng_id = clnp_id++;
 		seg_part.cng_off = 0;
@@ -169,6 +166,7 @@ int				flags;		/* flags passed to clnp_output */
 					m_freem(frag_hdr);
 					return(ENOBUFS);
 				}
+				INCSTAT(cns_fragments);
 			}
 			clnp = mtod(frag_hdr, struct clnp_fixed *);
 
@@ -262,6 +260,7 @@ int				flags;		/* flags passed to clnp_output */
 		}
 		return(0);
 	} else {
+		INCSTAT(cns_cantfrag);
 		clnp_discard(m, GEN_SEGNEEDED);
 		return(EMSGSIZE);
 	}
@@ -324,6 +323,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 	 */
 	/* TODO: don't let one src hog all the reassembly buffers */
 	if (!clnp_newpkt(m, src, dst, seg) /* || this src is a hog */) {
+		INCSTAT(cns_fragdropped);
 		clnp_discard(m, GEN_CONGEST);
 	}
 
@@ -816,4 +816,3 @@ struct sockaddr	*dst;
 }
 
 #endif	TROLL
-#endif	ISO

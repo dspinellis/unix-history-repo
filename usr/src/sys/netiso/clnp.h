@@ -1,3 +1,4 @@
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,7 +27,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
-/*	@(#)clnp.h	7.4 (Berkeley) %G% */
+/*	@(#)clnp.h	7.5 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*
@@ -324,6 +325,23 @@ struct clnp_optidx {
 
 /* reassembly */
 #define REASS_INTERFERE		0xc0	/* reassembly interference */
+#define CLNP_ERRORS		22
+
+
+#ifdef KERNEL
+int clnp_er_index();
+#endif
+
+#ifdef CLNP_ER_CODES
+u_char clnp_er_codes[CLNP_ERRORS] =  {
+GEN_NOREAS, GEN_PROTOERR, GEN_BADCSUM, GEN_CONGEST,
+GEN_HDRSYNTAX, GEN_SEGNEEDED, GEN_INCOMPLETE, GEN_DUPOPT,
+ADDR_DESTUNREACH, ADDR_DESTUNKNOWN,
+SRCRT_UNSPECERR, SRCRT_SYNTAX, SRCRT_UNKNOWNADDR, SRCRT_BADPATH,
+TTL_EXPTRANSIT, TTL_EXPREASS,
+DISC_UNSUPPOPT, DISC_UNSUPPVERS, DISC_UNSUPPSECURE,
+DISC_UNSUPPSRCRT, DISC_UNSUPPRECRT, REASS_INTERFERE };
+#endif
 
 #ifdef	TROLL
 
