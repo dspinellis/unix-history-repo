@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	5.7 (Berkeley) %G%
+ *	@(#)conf.c	5.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -158,6 +158,9 @@ struct cdevsw	cdevsw[] =
 	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*1*/
 	  cttyioctl,	nullop,		nullop,		NULL,
 	  cttyselect,	enodev,		NULL },
+        { nullop,       nullop,         mmrw,           mmrw,           /*2*/
+          enodev,       nullop,         nullop,         NULL,
+          mmselect,     enodev,         NULL },
 	{ wdopen,	wdclose,	wdread,		wdwrite,	/*3*/
 	  wdioctl,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		wdstrategy },
