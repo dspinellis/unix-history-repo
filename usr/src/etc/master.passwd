@@ -34,4 +34,6 @@ rich:*:41:31::0:0:& Hyde:/usr/guest/rich:/bin/csh
 jim:*:42:10::0:0:& McKie:/usr/guest/jim:/bin/csh
 donn:*:43:31::0:0:& Seeley:/usr/guest/donn:/bin/csh
 falcon:*:32766:31::0:0:Prof. Steven &:/usr/games:/usr/games/wargames
-kfall:*:2164:19::0:0:Kevin Fall:/usr/guest/kfall:/bin/csh
+kfall:*:2164:19::0:0:Kevin Fall:/usr/guest/kfall:/usr/games/worms
+marc:*:714:10::0:0:Marc Teitelbaum:/usr/guest/marc:
+garcia:*:45:31::0:0:Jerry Garcia:/usr/guest/garcia:/bin/csh
