@@ -1,4 +1,4 @@
-/*	df.c	4.2	81/10/09	*/
+/*	df.c	4.3	81/10/21	*/
 /*
  * Dial the DF02-AC or DF03-AC
  */
@@ -14,7 +14,7 @@ static timeout();
 df02_dialer(num, acu)
 char *num, *acu;
 {
-	return(df_dialer(acu, num, 0));
+	return(df_dialer(num, acu, 0));
 }
 #endif
 
@@ -22,7 +22,7 @@ char *num, *acu;
 df03_dialer(num, acu)
 char *num, *acu;
 {
-	return(df_dialer(acu, num, 1));
+	return(df_dialer(num, acu, 1));
 }
 #endif
 
@@ -33,7 +33,9 @@ int df03;
 	register int f = FD;
 	struct sgttyb buf;
 	int speed = 0, c = 0;
+#ifdef TIOCMSET
 	int st = MST;		/* Secondary Transmit flag, for speed select */
+#endif
 
 	ioctl(f, TIOCHPCL, 0);		/* make sure it hangs up when done */
 	if (setjmp(Sjbuf)) {
