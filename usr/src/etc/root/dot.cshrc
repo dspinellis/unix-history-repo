@@ -8,27 +8,15 @@ alias	cd	'set old=$cwd; chdir \!*'
 alias	h	history
 alias	j	jobs -l
 alias	ll	ls -lg
-alias	ls	ls -g -k
+alias	ls	ls -g
 alias	back	'set back=$old; set old=$cwd; cd $back; unset back; dirs'
 
-# sccs stuff: sd/co/ci/allout/out/unedit
-alias	sd	sccs diffs
-alias	co	sccs get -e
-alias	ci	sccs delget
-alias	allout	"(cd ..; echo */SCCS/p.*|sed s/SCCS\\/p.//g)"
-alias	out	"echo SCCS/p.*|sed s/SCCS\\/p.//g"
-alias	info	sccs info
-alias	unedit	sccs unedit
-alias	get	sccs get
-alias	prt	sccs prt
-alias	z		suspend
+alias	z	suspend
 alias	x	exit
 alias	pd	pushd
 alias	pd2	pushd +2
 alias	pd3	pushd +3
 alias	pd4	pushd +4
-alias	df	df -k
-alias	du 	du -k
 alias	tset	'set noglob histchars=""; eval `\tset -s \!*`; unset noglob histchars'
 
 if ($?prompt) then
