@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -90,7 +90,7 @@ main(argc, argv)
 			break;
 		case FTS_DP:
 			p->fts_parent->fts_number += 
-			    p->fts_number += p->fts_statb.st_blocks;
+			    p->fts_number += p->fts_statp->st_blocks;
 			/*
 			 * If listing each directory, or not listing files
 			 * or directories and this is post-order of the
@@ -114,7 +114,7 @@ main(argc, argv)
 			}
 			/* FALLTHROUGH */
 		default:
-			if (p->fts_statb.st_nlink > 1 && linkchk(p))
+			if (p->fts_statp->st_nlink > 1 && linkchk(p))
 				break;
 			/*
 			 * If listing each file, or a non-directory file was
@@ -122,9 +122,9 @@ main(argc, argv)
 			 */
 			if (listfiles || !p->fts_level)
 				(void)printf("%ld\t%s\n", kvalue ?
-				    howmany(p->fts_statb.st_blocks, 2) :
-				    p->fts_statb.st_blocks, p->fts_path);
-			p->fts_parent->fts_number += p->fts_statb.st_blocks;
+				    howmany(p->fts_statp->st_blocks, 2) :
+				    p->fts_statp->st_blocks, p->fts_path);
+			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
 	exit(0);
 }
@@ -143,8 +143,8 @@ linkchk(p)
 	register ino_t ino;
 	register dev_t dev;
 
-	ino = p->fts_statb.st_ino;
-	dev = p->fts_statb.st_dev;
+	ino = p->fts_statp->st_ino;
+	dev = p->fts_statp->st_dev;
 	if (start = files)
 		for (fp = start + nfiles - 1; fp >= start; --fp)
 			if (ino == fp->inode && dev == fp->dev)
