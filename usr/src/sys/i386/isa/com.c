@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.1 (Berkeley) %G%
+ *	@(#)com.c	7.2 (Berkeley) %G%
  */
 
-#include "dca.h"
-#if NDCA > 0
+#include "com.h"
+#if NCOM > 0
 /*
  * COM driver, from hp300 dca.c 98626/98644/internal serial interface
  */
@@ -19,7 +19,7 @@
 #include "sys/systm.h"
 #include "sys/ioctl.h"
 #include "sys/tty.h"
-#include "sys/user.h"
+#include "sys/proc.h"
 #include "sys/conf.h"
 #include "sys/file.h"
 #include "sys/uio.h"
@@ -38,11 +38,11 @@ struct	isa_driver comdriver = {
 
 int	comsoftCAR;
 int	com_active;
-int	ncom = NDCA;
+int	ncom = NCOM;
 int	comconsole = -1;
 int	comdefaultrate = TTYDEF_SPEED;
-short com_addr[NDCA];
-struct	tty com_tty[NDCA];
+short com_addr[NCOM];
+struct	tty com_tty[NCOM];
 
 struct speedtab comspeedtab[] = {
 	0,	0,
@@ -129,15 +129,22 @@ comsoftCAR |= (1 << unit);
 	return (1);
 }
 
-comopen(dev, flag)
+/* ARGSUSED */
+#ifdef __STDC__
+comopen(dev_t dev, int flag, int mode, struct proc *p)
+#else
+comopen(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
+#endif
 {
 	register struct tty *tp;
 	register int unit;
 	int error = 0;
  
 	unit = UNIT(dev);
-	if (unit >= NDCA || (com_active & (1 << unit)) == 0)
+	if (unit >= NCOM || (com_active & (1 << unit)) == 0)
 		return (ENXIO);
 	tp = &com_tty[unit];
 	tp->t_oproc = comstart;
@@ -153,7 +160,7 @@ comopen(dev, flag)
 		tp->t_ispeed = tp->t_ospeed = comdefaultrate;
 		comparam(tp, &tp->t_termios);
 		ttsetwater(tp);
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	(void) spltty();
 	(void) commctl(dev, MCR_DTR | MCR_RTS, DMSET);
