@@ -1,4 +1,4 @@
-/*	tftpd.c	4.9	83/06/12	*/
+/*	tftpd.c	4.10	83/06/12	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -20,7 +20,6 @@
 #include <netdb.h>
 #include <setjmp.h>
 
-#define	DEBUG	1
 #define	TIMEOUT		5
 
 extern	int errno;
