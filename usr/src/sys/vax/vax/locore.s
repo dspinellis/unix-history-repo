@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.28 (Berkeley) %G%
+ *	@(#)locore.s	7.29 (Berkeley) %G%
  */
 
 #include "vax/include/psl.h"
@@ -1204,6 +1204,7 @@ sigcode:
 	.globl	_icode
 	.globl	_initflags
 	.globl	_szicode
+	.data
 /*
  * Icode is copied out to process 1 to exec /etc/init.
  * If the exec fails, process 1 exits.
@@ -1226,6 +1227,7 @@ argv:	.long	init+6-_icode
 	.long	0
 _szicode:
 	.long	_szicode-_icode
+	.text
 
 /*
  * Primitives
