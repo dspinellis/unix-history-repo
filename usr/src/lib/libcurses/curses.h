@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.26 (Berkeley) %G%
+ *	@(#)curses.h	5.27 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -237,9 +237,9 @@ int	 touchoverlap __P((WINDOW *, WINDOW *));
 int	 touchwin __P((WINDOW *));
 int 	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int      vwscanw __P((WINDOW *, const char *, _BSD_VA_LIST_));
-int	 waddbytes __P((WINDOW *, char *, int));
+int	 waddbytes __P((WINDOW *, const char *, int));
 int	 waddch __P((WINDOW *, int));
-int	 waddstr __P((WINDOW *, char *));
+int	 waddstr __P((WINDOW *, const char *));
 int	 wclear __P((WINDOW *));
 int	 wclrtobot __P((WINDOW *));
 int	 wclrtoeol __P((WINDOW *));
@@ -270,7 +270,7 @@ void	 __swflags __P((WINDOW *));
 int	 __touchline __P((WINDOW *, int, int, int, int));
 int	 __touchwin __P((WINDOW *));
 char	*__tscroll __P((const char *, int));
-int	 __waddbytes __P((WINDOW *, char *, int, int));
+int	 __waddbytes __P((WINDOW *, const char *, int, int));
 
 /* Private #defines. */
 #define	min(a,b)	(a < b ? a : b)
