@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.6 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.7 (Berkeley) %G%
  */
 
 /*
@@ -111,12 +111,12 @@ struct mbuf *nsip_badlen;
 struct mbuf *nsip_lastin;
 int nsip_hold_input;
 
-idpip_input(m0)
-	struct mbuf *m0;
+idpip_input(m, ifp)
+	register struct mbuf *m;
+	struct ifnet *ifp;
 {
 	register struct ip *ip;
 	register struct idp *idp;
-	register struct mbuf *m;
 	register struct ifqueue *ifq = &nsintrq;
 	int len, s;
 
@@ -124,13 +124,12 @@ idpip_input(m0)
 		if(nsip_lastin) {
 			m_freem(nsip_lastin);
 		}
-		nsip_lastin = m_copy(m0, 0, (int)M_COPYALL);
+		nsip_lastin = m_copy(m, 0, (int)M_COPYALL);
 	}
 	/*
 	 * Get IP and IDP header together in first mbuf.
 	 */
 	nsipif.if_ipackets++;
-	m = m0;
 	s = sizeof (struct ip) + sizeof (struct idp);
 	if ((m->m_off > MMAXOFF || m->m_len < s) &&
 	    (m = m_pullup(m, s))==0) {
@@ -138,18 +137,6 @@ idpip_input(m0)
 		return;
 	}
 	ip = mtod(m, struct ip *);
-#ifndef BBNNET
-	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
-		ip_stripoptions(ip, (struct mbuf *)0);
-		if (m->m_len < s) {
-			if ((m = m_pullup(m, s))==0) {
-				nsipif.if_ierrors++;
-				return;
-			}
-			ip = mtod(m, struct ip *);
-		}
-	}
-#endif
 
 	/*
 	 * Make mbuf data length reflect IDP length.
@@ -169,17 +156,39 @@ idpip_input(m0)
 		}
 		/* Any extra will be trimmed off by the NS routines */
 	}
+
+	/*
+	 * Place interface pointer before the data
+	 * for the receiving protocol.
+	 */
+	if (m->m_off >= MMINOFF + sizeof(struct ifnet *)) {
+		m->m_off -= sizeof(struct ifnet *);
+		m->m_len += sizeof(struct ifnet *);
+	} else {
+		struct mbuf *n;
+
+		n = m_get(M_DONTWAIT, MT_HEADER);
+		if (n == (struct mbuf *)0)
+			goto bad;
+		n->m_off = MMINOFF;
+		n->m_len = sizeof(struct ifnet *);
+		n->m_next = m;
+		m = n;
+	}
+	*(mtod(m, struct ifnet **)) = ifp;
+
 	/*
 	 * Deliver to NS
 	 */
 	s = splimp();
 	if (IF_QFULL(ifq)) {
 		IF_DROP(ifq);
-		m_freem(m0);
+bad:
+		m_freem(m);
 		splx(s);
 		return;
 	}
-	IF_ENQUEUE(ifq, m0);
+	IF_ENQUEUE(ifq, m);
 	schednetisr(NETISR_NS);
 	splx(s);
 	return;
