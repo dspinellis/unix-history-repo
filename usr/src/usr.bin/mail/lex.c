@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.14 %G%";
+static char *SccsId = "@(#)lex.c	1.15 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -452,13 +452,17 @@ isprefix(as1, as2)
  * Also, unstack all source files.
  */
 
+int	inithdr;			/* am printing startup headers */
+
 stop()
 {
 	register FILE *fp;
 
 	noreset = 0;
 	signal(SIGINT, SIG_IGN);
-	sawcom++;
+	if (!inithdr)
+		sawcom++;
+	inithdr = 0;
 	while (sourcing)
 		unstack();
 	getuserid((char *) -1);
@@ -504,8 +508,11 @@ announce(pr)
 	if (pr && value("quiet") == NOSTR)
 		printf(greeting, version);
 	dot = &message[mdot - 1];
-	if (msgCount > 0 && !noheader)
+	if (msgCount > 0 && !noheader) {
+		inithdr++;
 		headers(vec);
+		inithdr = 0;
+	}
 }
 
 /*
