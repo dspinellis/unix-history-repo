@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)xdefs.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)xdefs.c	4.2 (Berkeley) %G%";
+#endif lint
+
 # include "mfile1"
 
 /*	communication between lexical routines	*/
@@ -8,6 +11,7 @@ char	ititle[100] = "";   	/* title of initial file */
 int	lineno;		/* line number of the input file */
 
 CONSZ lastcon;  /* the last constant read by the lexical analyzer */
+float fcon;   /* the last float read by the lexical analyzer */
 double dcon;   /* the last double read by the lexical analyzer */
 
 

@@ -161,12 +161,12 @@ union ndu {
 		int rall;
 		TWORD type;
 		int su;
-		int stalign;  /* alignment of structure objects */
 #ifndef FLEXNAMES
 		char name[NCHNAM];
 #else
 		char *name;
 #endif
+		int stalign;  /* alignment of structure objects */
 		NODE *left;
 		NODE *right;
 		}in; /* interior node */
@@ -176,12 +176,12 @@ union ndu {
 		int rall;
 		TWORD type;
 		int su;
-		int stalign;  /* alignment of structure objects */
 #ifndef FLEXNAMES
 		char name[NCHNAM];
 #else
 		char *name;
 #endif
+		int stalign;  /* alignment of structure objects */
 		CONSZ lval;
 		int rval;
 		}tn; /* terminal node */
@@ -190,7 +190,6 @@ union ndu {
 		int op, rall;
 		TWORD type;
 		int su;
-		int stalign;  /* alignment of structure objects */
 		int label;  /* for use with branching */
 		}bn; /* branch node */
 
@@ -198,8 +197,8 @@ union ndu {
 		int op, rall;
 		TWORD type;
 		int su;
-		int stalign;  /* alignment of structure objects */
 		int stsize;  /* sizes of structure objects */
+		int stalign;  /* alignment of structure objects */
 		}stn; /* structure node */
 
 	};
@@ -250,6 +249,9 @@ extern int lineno;
 extern char filename[];
 extern int fldshf, fldsz;
 extern int lflag, xdebug, udebug, edebug, odebug, rdebug, radebug, tdebug, sdebug;
+#ifdef FORT
+extern int Oflag;
+#endif
 
 #ifndef callchk
 #define callchk(x) allchk()

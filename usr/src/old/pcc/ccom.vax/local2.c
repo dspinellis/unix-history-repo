@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)local2.c	1.7 (Berkeley) %G%";
+# ifndef lint
+static char *sccsid ="@(#)local2.c	1.8 (Berkeley) %G%";
+# endif
+
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -211,7 +214,7 @@ zzzcode( p, c ) register NODE *p; {
 			l = getlr(p, 'L');
 		else if (p->in.op == SCONV) {
 			l = resc;
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 			l->in.type = r->in.type;
 #else
 			l->in.type = r->in.type==FLOAT ? DOUBLE : r->in.type;
@@ -220,7 +223,7 @@ zzzcode( p, c ) register NODE *p; {
 			}
 		else {		/* OPLTYPE */
 			l = resc;
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
 #else
 			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
@@ -284,7 +287,20 @@ zzzcode( p, c ) register NODE *p; {
 		if (!mixtypes(l,r)) {
 			if (tlen(l) == tlen(r)) {
 				printf("mov");
+#ifdef FORT
+				if (Oflag)
+					prtype(l);
+				else {
+					if (l->in.type == DOUBLE)
+						printf("q");
+					else if(l->in.type == FLOAT)
+						printf("l");
+					else
+						prtype(l);
+					}
+#else
 				prtype(l);
+#endif FORT
 				goto ops;
 				}
 			else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
@@ -460,8 +476,11 @@ zzzcode( p, c ) register NODE *p; {
 		}
 	}
 
-rmove( rt, rs, t ){
+rmove( rt, rs, t ) TWORD t; {
 	printf( "	%s	%s,%s\n",
+#ifdef FORT
+		!Oflag ? (t==DOUBLE ? "movq" : "movl") :
+#endif
 		(t==FLOAT ? "movf" : (t==DOUBLE ? "movd" : "movl")),
 		rnames[rs], rnames[rt] );
 	}
@@ -480,8 +499,8 @@ setregs(){ /* set up temporary registers */
 	;
 	}
 
-szty(t){ /* size, in registers, needed to hold thing of type t */
-#ifdef FORT
+szty(t) TWORD t; { /* size, in registers, needed to hold thing of type t */
+#if defined(FORT) || defined(SPRECC)
 	return( (t==DOUBLE) ? 2 : 1 );
 #else
 	return( (t==DOUBLE||t==FLOAT) ? 2 : 1 );
@@ -636,7 +655,8 @@ shumul( p ) register NODE *p; {
 				break;
 
 			default:
-				if ( ISPTR(p->in.type) ) {
+				if ( ISPTR(p->in.type) &&
+				     ISPTR(DECREF(p->in.type)) ) {
 					o = 4;
 					break;
 					}
@@ -746,6 +766,8 @@ adrput( p ) register NODE *p; {
 				}
    tbl */
 			q = p->in.left;
+			if( q->in.right->tn.lval != tlen(p) )
+				cerror("adrput: bad auto-increment/decrement");
 			printf("%s(%s)%s", (q->in.op==INCR ? "" : "-"),
 				rnames[q->in.left->tn.rval], 
 				(q->in.op==INCR ? "+" : "") );
@@ -976,7 +998,7 @@ optim2( p ) register NODE *p; {
 		break;
 
 	case SCONV:
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
 		    (l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE )
 			break;
@@ -1008,7 +1030,7 @@ optim2( p ) register NODE *p; {
 		}
 	}
 
-NODE * addroreg(l)
+NODE * addroreg(l) NODE *l;
 				/* OREG was built in clocal()
 				 * for an auto or formal parameter
 				 * now its address is being taken
@@ -1018,6 +1040,7 @@ NODE * addroreg(l)
 				 */
 {
 	cerror("address of OREG taken");
+	/*NOTREACHED*/
 }
 
 
@@ -1046,11 +1069,13 @@ hardops(p)  register NODE *p; {
 	register NODE *q;
 	register struct functbl *f;
 	register o;
-	register TWORD t;
+	NODE *old,*temp;
 
 	o = p->in.op;
-	t = p->in.type;
-	if( t!=UNSIGNED && t!=ULONG ) return;
+	if( ! (optype(o)==BITYPE &&
+	       (ISUNSIGNED(p->in.left->in.type) ||
+		ISUNSIGNED(p->in.right->in.type))) )
+		return;
 
 	for( f=opfunc; f->fop; f++ ) {
 		if( o==f->fop ) goto convert;
@@ -1059,7 +1084,32 @@ hardops(p)  register NODE *p; {
 
 	convert:
 	if( asgop( o ) ) {
+		old = NIL;
 		switch( p->in.left->in.op ){
+		case FLD:
+			q = p->in.left->in.left;
+			/*
+			 * rewrite (lval.fld /= rval); as
+			 *  ((*temp).fld = udiv((*(temp = &lval)).fld,rval));
+			 * else the compiler will evaluate lval twice.
+			 */
+			if( q->in.op == UNARY MUL ){
+				/* first allocate a temp storage */
+				temp = talloc();
+				temp->in.op = OREG;
+				temp->tn.rval = TMPREG;
+				temp->tn.lval = BITOOR(freetemp(1));
+				temp->in.type = INCREF(p->in.type);
+#ifdef FLEXNAMES
+				temp->in.name = "";
+#else
+				temp->in.name[0] = '\0';
+#endif
+				old = q->in.left;
+				q->in.left = temp;
+			}
+			/* fall thru ... */
+
 		case REG:
 		case NAME:
 		case OREG:
@@ -1074,6 +1124,22 @@ hardops(p)  register NODE *p; {
 			p->in.right = q;
 			p = q;
 			f -= 2; /* Note: this depends on the table order */
+			/* on the right side only - replace *temp with
+			 *(temp = &lval), build the assignment node */
+			if( old ){
+				temp = q->in.left->in.left; /* the "*" node */
+				q = talloc();
+				q->in.op = ASSIGN;
+				q->in.left = temp->in.left;
+				q->in.right = old;
+				q->in.type = old->in.type;
+#ifdef FLEXNAMES
+				q->in.name = "";
+#else
+				q->in.name[0] = '\0';
+#endif
+				temp->in.left = q;
+			}
 			break;
 
 		case UNARY MUL:
@@ -1086,8 +1152,7 @@ hardops(p)  register NODE *p; {
 		default:
 			cerror( "hardops: can't compute & LHS" );
 			}
-
-	}
+		}
 
 	/* build comma op for args to function */
 	q = talloc();
@@ -1114,11 +1179,53 @@ hardops(p)  register NODE *p; {
 
 	}
 
+zappost(p) NODE *p; {
+	/* look for ++ and -- operators and remove them */
+
+	register o, ty;
+	register NODE *q;
+	o = p->in.op;
+	ty = optype( o );
+
+	switch( o ){
+
+	case INCR:
+	case DECR:
+			q = p->in.left;
+			p->in.right->in.op = FREE;  /* zap constant */
+			ncopy( p, q );
+			q->in.op = FREE;
+			return;
+
+		}
+
+	if( ty == BITYPE ) zappost( p->in.right );
+	if( ty != LTYPE ) zappost( p->in.left );
+}
+
+fixpre(p) NODE *p; {
+
+	register o, ty;
+	o = p->in.op;
+	ty = optype( o );
+
+	switch( o ){
+
+	case ASG PLUS:
+			p->in.op = PLUS;
+			break;
+	case ASG MINUS:
+			p->in.op = MINUS;
+			break;
+		}
+
+	if( ty == BITYPE ) fixpre( p->in.right );
+	if( ty != LTYPE ) fixpre( p->in.left );
+}
+
 myreader(p) register NODE *p; {
+	canon( p );		/* expands r-vals for fields */
 	walkf( p, hardops );	/* convert ops to function calls */
-	canon( p );		/* expands r-vals for fileds */
 	walkf( p, optim2 );
 	/* jwf toff = 0;  /* stack offset swindle */
 	}
-
-

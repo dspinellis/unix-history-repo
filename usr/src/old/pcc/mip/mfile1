@@ -1,4 +1,4 @@
-/*	@(#)mfile1	4.2	(Berkeley)	83/04/04	*/
+/*	@(#)mfile1	4.3	(Berkeley)	85/01/18	*/
 
 # include "macdefs"
 # include "manifest"
@@ -110,15 +110,24 @@ union ndu {
 		CONSZ lval;
 		int rval;
 		}tn; /* terminal node */
-	
+
 	struct {
-		/* this structure is used when a floating point constant
+		/* this structure is used when a single precision constant
+		   is being computed */
+		int op;
+		TWORD type;
+		int cdim, csiz;
+		float fval;
+		}fpn; /* FCON node */
+
+	struct {
+		/* this structure is used when a double precision constant
 		   is being computed */
 		int op;
 		TWORD type;
 		int cdim, csiz;
 		double dval;
-		}fpn; /* floating point node */
+		}dpn; /* DCON node */
 
 	};
 # endif
@@ -144,6 +153,7 @@ typedef union {
 extern YYSTYPE yylval;
 
 extern CONSZ lastcon;
+extern float fcon;
 extern double dcon;
 
 extern char ftitle[];
@@ -236,7 +246,7 @@ extern NODE
 	*doszof(),
 	*talloc(),
 	*optim(),
-	*strargs(),
+	*fixargs(),
 	*clocal();
 
 OFFSZ	tsize(),
@@ -274,16 +284,16 @@ char *exname(), *exdcon();
 	STROP	DOT,STREF
 
 	*/
-# define ASOP 25
-# define RELOP 26
-# define EQUOP 27
-# define DIVOP 28
-# define SHIFTOP 29
-# define INCOP 30
-# define UNOP 31
-# define STROP 32
+# define ASOP 28
+# define RELOP 29
+# define EQUOP 30
+# define DIVOP 31
+# define SHIFTOP 32
+# define INCOP 33
+# define UNOP 34
+# define STROP 35
 
-# define LP 50
-# define RP 51
-# define LC 52
-# define RC 53
+# define LP 53
+# define RP 54
+# define LC 55
+# define RC 56

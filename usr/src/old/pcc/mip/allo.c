@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)allo.c	4.2 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)allo.c	4.3 (Berkeley) %G%";
+#endif lint
+
 # include "mfile2"
 
 NODE resc[3];
@@ -471,7 +474,7 @@ reclaim( p, rw, cookie ) NODE *p; {
 			/* the "T" command in match supresses this type changing */
 			if( p->in.type == CHAR || p->in.type == SHORT ) p->in.type = INT;
 			else if( p->in.type == UCHAR || p->in.type == USHORT ) p->in.type = UNSIGNED;
-#ifndef FORT
+#if !defined(FORT) && !defined(SPRECC)
 			else if( p->in.type == FLOAT ) p->in.type = DOUBLE;
 #endif
 			}
