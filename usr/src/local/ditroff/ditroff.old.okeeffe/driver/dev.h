@@ -3,7 +3,7 @@
 */
 
 struct dev {
-	short	filesize;	/* number of bytes in file, */
+      unsigned  short filesize;	/* number of bytes in file, */
 				/* excluding dev part */
 	short	res;		/* basic resolution in goobies/inch */
 	short	hor;		/* goobies horizontally */
