@@ -48,32 +48,34 @@ again:
 		user = argv[1];
 		argc--, argv++;
 	}
-	if (strcmp(user, "root") == 0) {
+	if ((pwd = getpwuid(getuid())) == NULL) {
+		fprintf(stderr, "Who are you?\n");
+		exit(1);
+	}
+	strcpy(buf, pwd->pw_name);
+	if ((pwd = getpwnam(user)) == NULL) {
+		fprintf(stderr, "Unknown login: %s\n", user);
+		exit(1);
+	}
+	/*
+	 * Only allow those in group zero to su to root.
+	 */
+	if (pwd->pw_uid == 0) {
 		struct	group *gr;
 		int i;
 
-		/*
-		 * Only allow those in group zero to su.
-		 */
-		if ((pwd = getpwuid(getuid())) == NULL) {
-			fprintf(stderr, "Who are you?\n");
-			exit(1);
-		}
 		if ((gr = getgrgid(0)) != NULL) {
 			for (i = 0; gr->gr_mem[i] != NULL; i++)
-				if (strcmp(pwd->pw_name, gr->gr_mem[i]) == 0)
+				if (strcmp(buf, gr->gr_mem[i]) == 0)
 					goto userok;
-			fprintf(stderr, "You do not have permission to su root\n");
+			fprintf(stderr, "You do not have permission to su %s\n",
+				user);
 			exit(1);
 		}
 	userok:
 		setpriority(PRIO_PROCESS, 0, -2);
 	}
 
-	if ((pwd = getpwnam(user)) == NULL) {
-		fprintf(stderr, "Unknown login: %s\n", user);
-		exit(1);
-	}
 	if (pwd->pw_passwd[0] == '\0' || getuid() == 0)
 		goto ok;
 	password = getpass("Password:");
