@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -370,7 +370,7 @@ alloc(size)
 again:
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, cg)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
-	if (acg.cg_magic != CG_MAGIC) {
+	if (!cg_chkmagic(&acg)) {
 		printf("cg %d: bad magic number\n", cg);
 		return (0);
 	}
@@ -383,17 +383,18 @@ again:
 		goto again;
 	}
 	for (d = 0; d < acg.cg_ndblk; d += sblock.fs_frag)
-		if (isblock(&sblock, (u_char *)acg.cg_free, d / sblock.fs_frag))
+		if (isblock(&sblock, (u_char *)cg_blksfree(&acg),
+		    d / sblock.fs_frag))
 			goto goth;
 	printf("internal error: can't find block in cyl %d\n", cg);
 	return (0);
 goth:
-	clrblock(&sblock, (u_char *)acg.cg_free, d / sblock.fs_frag);
+	clrblock(&sblock, (u_char *)cg_blksfree(&acg), d / sblock.fs_frag);
 	acg.cg_cs.cs_nbfree--;
 	sblock.fs_cstotal.cs_nbfree--;
 	fscs[cg].cs_nbfree--;
-	acg.cg_btot[cbtocylno(&sblock, d)]--;
-	acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]--;
+	cg_blktot(&acg)[cbtocylno(&sblock, d)]--;
+	cg_blks(&sblock, &acg, cbtocylno(&sblock, d))[cbtorpos(&sblock, d)]--;
 	if (size != sblock.fs_bsize) {
 		frag = howmany(size, sblock.fs_fsize);
 		fscs[cg].cs_nffree += sblock.fs_frag - frag;
@@ -401,7 +402,7 @@ goth:
 		acg.cg_cs.cs_nffree += sblock.fs_frag - frag;
 		acg.cg_frsum[sblock.fs_frag - frag]++;
 		for (i = frag; i < sblock.fs_frag; i++)
-			setbit(acg.cg_free, d + i);
+			setbit(cg_blksfree(&acg), d + i);
 	}
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, cg)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
@@ -420,7 +421,7 @@ ialloc(ip)
 	c = itog(&sblock, ip->i_number);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, c)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
-	if (acg.cg_magic != CG_MAGIC) {
+	if (!cg_chkmagic(&acg)) {
 		printf("cg %d: bad magic number\n", c);
 		exit(1);
 	}
@@ -430,7 +431,7 @@ ialloc(ip)
 		fscs[c].cs_ndir++;
 	}
 	acg.cg_cs.cs_nifree--;
-	setbit(acg.cg_iused, ip->i_number);
+	setbit(cg_inosused(&acg), ip->i_number);
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, c)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
 	sblock.fs_cstotal.cs_nifree--;

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -137,13 +137,13 @@ chkuse(blkno, cnt)
 	}
 	rdfs(fsbtodb(fs, cgtod(fs, cg)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
-	if (acg.cg_magic != CG_MAGIC) {
+	if (!cg_chkmagic(&acg)) {
 		fprintf(stderr, "cg %d: bad magic number\n", cg);
 		errs++;
 		return (1);
 	}
 	bn = dtogd(fs, fsbn);
-	if (isclr(acg.cg_free, bn))
+	if (isclr(cg_blksfree(&acg), bn))
 		printf("Warning: sector %d is in use\n", blkno);
 	return (0);
 }
