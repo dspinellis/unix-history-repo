@@ -1,4 +1,4 @@
-/*	boot.c	1.4	86/11/25	*/
+/*	boot.c	1.5	86/12/18	*/
 
 #include "../machine/mtpr.h"
 
@@ -130,9 +130,9 @@ copyunix(howto, devtype, io)
 	printf("%d", x.a_text);
 	if (x.a_magic == 0413 && lseek(io, 0x400, 0) == -1)
 		goto shread;
-	if (read(io, (char *)0x800, x.a_text) != x.a_text)
+	if (read(io, (char *)RELOC, x.a_text) != x.a_text)
 		goto shread;
-	addr = (char *)(x.a_text + 0x800);
+	addr = (char *)(x.a_text + RELOC);
 	if (x.a_magic == 0413 || x.a_magic == 0410)
 		while ((int)addr & CLOFSET)
 			*addr++ = 0;
