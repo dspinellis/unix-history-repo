@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -187,8 +187,8 @@ notify(utp, offset)
 	cr = (gttybuf.sg_flags&CRMOD) && !(gttybuf.sg_flags&RAW) ? "" : "\r";
 	strncpy(name, utp->ut_name, sizeof (utp->ut_name));
 	name[sizeof (name) - 1] = '\0';
-	fprintf(tp,"%s\n\007New mail for %s@%s\007 has arrived:%s\n",
-	    cr, name, hostname, cr);
+	fprintf(tp,"%s\n\007New mail for %s@%.*s\007 has arrived:%s\n",
+	    cr, name, sizeof (hostname), hostname, cr);
 	fprintf(tp,"----%s\n", cr);
 	jkfprintf(tp, name, offset);
 	exit(0);
