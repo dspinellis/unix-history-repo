@@ -1,0 +1,35 @@
+.TH TAC 1L \" -*- nroff -*-
+.SH NAME
+tac \- concatenate and print files in reverse
+.SH SYNOPSIS
+.B tac
+[\-br] [\-s separator] [\-\-before] [\-\-regex] [\-\-separator=separator]
+[file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR tac .
+.B tac
+copies each given file, or the standard input if none are given or
+when a file name of `-' is encountered, to the standard output with
+the order of the records reversed.  The records are separated by
+instances of a string, or a newline if none is given.  By default, the
+separator string is attached to the end of the record that it follows
+in the file.
+.SS OPTIONS
+.TP
+.I "\-b, \-\-before"
+The separator is attached to the beginning of the record that it
+precedes in the file.
+.TP
+.I "\-r, \-\-regex"
+The separator is a regular expression.
+.TP
+.I "\-s, \-\-separator separator"
+Use
+.I separator
+as the record separator.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
