@@ -18,6 +18,7 @@ DRIVE=	/dev/crl
 # build a boot console rl02 from a DEC console rl02 pack
 update:	${OBJS}
 	arff rmf ${DRIVE} ${OBJS}
+	-rm -f defboo.com
 
 defboo.com:
 	@echo You must copy one of ${DEFBOOS} to defboo.com.
