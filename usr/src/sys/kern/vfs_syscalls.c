@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.41 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,6 @@
 #include "file.h"
 #include "stat.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
 #include "mount.h"
 #include "proc.h"
 #include "uio.h"
@@ -528,7 +527,7 @@ copen(scp, fmode, cmode, ndp, resultfd)
 		return (error);
 	fp = nfp;
 	scp->sc_retval1 = indx;	/* XXX for fdopen() */
-	if (error = vn_open(ndp, fmode, (cmode & 07777) &~ ISVTX)) {
+	if (error = vn_open(ndp, fmode, (cmode & 07777) &~ S_ISVTX)) {
 		crfree(fp->f_cred);
 		fp->f_count--;
 		if (error == -1)	/* XXX from fdopen */
@@ -574,15 +573,15 @@ mknod(scp)
 		goto out;
 	}
 	vattr_null(&vattr);
-	switch (uap->fmode & IFMT) {
+	switch (uap->fmode & S_IFMT) {
 
-	case IFMT:	/* used by badsect to flag bad sectors */
+	case S_IFMT:	/* used by badsect to flag bad sectors */
 		vattr.va_type = VBAD;
 		break;
-	case IFCHR:
+	case S_IFCHR:
 		vattr.va_type = VCHR;
 		break;
-	case IFBLK:
+	case S_IFBLK:
 		vattr.va_type = VBLK;
 		break;
 	default:
