@@ -1,4 +1,4 @@
-/*	machdep.c	6.1	83/08/14	*/
+/*	machdep.c	4.88	83/08/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -256,71 +256,76 @@ vmtime(otime, olbolt, oicr)
 sendsig(p, sig, sigmask)
 	int (*p)(), sig, sigmask;
 {
-	register int *usp, *regs, *osp;
+	register struct sigcontext *scp;	/* know to be r11 */
+	register int *regs;
+	register struct sigframe {
+		int	sf_signum;
+		int	sf_code;
+		struct	sigcontext *sf_scp;
+		int	(*sf_handler)();
+		struct	sigcontext *sf_scpcopy;
+	} *fp;					/* known to be r9 */
 	int oonstack;
 
 	regs = u.u_ar0;
 	oonstack = u.u_onstack;
-	osp = (int *)regs[SP];
+	scp = (struct sigcontext *)regs[SP] - 1;
 #define	mask(s)	(1<<((s)-1))
 	if (!u.u_onstack && (u.u_sigonstack & mask(sig))) {
-		usp = (int *)u.u_sigsp;
+		fp = (struct sigframe *)u.u_sigsp - 1;
 		u.u_onstack = 1;
 	} else
-		usp = osp - 5;
+		fp = (struct sigframe *)scp - 1;
 	/*
-	 * Must build signal context on stack to be returned to
+	 * Must build signal handler context on stack to be returned to
 	 * so that rei instruction in sigcode will pop ps and pc
 	 * off correct stack.  The remainder of the signal state
 	 * used in calling the handler must be placed on the stack
 	 * on which the handler is to operate so that the calls
 	 * in sigcode will save the registers and such correctly.
 	 */
-	osp -= 5;
-	if (!oonstack && (int)osp <= USRSTACK - ctob(u.u_ssize))
-		(void) grow((unsigned)osp);
+	if (!oonstack && (int)fp <= USRSTACK - ctob(u.u_ssize)) 
+		grow((unsigned)fp);
 	;
 #ifndef lint
 	asm("probew $3,$20,(r9)");
 	asm("jeql bad");
 #else
-	if (useracc((caddr_t)osp, 20, 1))
+	if (useracc((caddr_t)fp, sizeof (struct sigframe), 1))
 		goto bad;
 #endif
-	usp -= 5;
-	if (!u.u_onstack && (int)usp <= USRSTACK - ctob(u.u_ssize))
-		(void) grow((unsigned)usp);
+	if (!u.u_onstack && (int)scp <= USRSTACK - ctob(u.u_ssize))
+		grow((unsigned)scp);
 	;			/* Avoid asm() label botch */
 #ifndef lint
 	asm("probew $3,$20,(r11)");
 	asm("beql bad");
 #else
-	if (useracc((caddr_t)usp, 20, 1))
+	if (useracc((caddr_t)scp, sizeof (struct sigcontext), 1))
 		goto bad;
 #endif
-	*usp++ = sig;
+	fp->sf_signum = sig;
 	if (sig == SIGILL || sig == SIGFPE) {
-		*usp++ = u.u_code;
+		fp->sf_code = u.u_code;
 		u.u_code = 0;
 	} else
-		*usp++ = 0;
-	*usp++ = (int)osp;
-	*usp++ = (int)p;
+		fp->sf_code = 0;
+	fp->sf_scp = scp;
+	fp->sf_handler = p;
 	/*
 	 * Duplicate the pointer to the sigcontext structure.
 	 * This one doesn't get popped by the ret, and is used 
-	 * by sigcleanup to reset the stack as well as locate
-	 * the information for reseting the signal state on
-	 * inward return.
+	 * by sigcleanup to reset the signal state on inward return.
 	 */
-	*usp++ = (int)osp;
+	fp->sf_scpcopy = scp;
 	/* sigcontext goes on previous stack */
-	*osp++ = oonstack;
-	*osp++ = sigmask;
-	*osp = (int)(osp + 1); osp++;
-	*osp++ = regs[PC];
-	*osp++ = regs[PS];
-	regs[SP] = (int)(usp - 5);
+	scp->sc_onstack = oonstack;
+	scp->sc_mask = sigmask;
+	/* setup rei */
+	scp->sc_sp = (int)&scp->sc_pc;
+	scp->sc_pc = regs[PC];
+	scp->sc_ps = regs[PS];
+	regs[SP] = (int)fp;
 	regs[PS] &= ~(PSL_CM|PSL_FPD);
 	regs[PC] = (int)u.u_pcb.pcb_sigc;
 	return;
@@ -354,6 +359,7 @@ sigcleanup()
 	if ((int)scp == -1)
 		return;
 #ifndef lint
+	/* only probe 12 here because that's all we need */
 	asm("prober $3,$12,(r11)");
 	asm("bnequ 1f; ret; 1:");
 #else
