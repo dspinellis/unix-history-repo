@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
 #ifndef lint
-static	char *sccsid = "@(#)misc.c	2.3 84/02/23";
+static	char *sccsid = "@(#)misc.c	2.4 85/04/23";
 #endif
+
 #include "externs.h"
 
 #define distance(x,y) (abs(x) >= abs(y) ? abs(x) + abs(y)/2 : abs(y) + abs(x)/2)

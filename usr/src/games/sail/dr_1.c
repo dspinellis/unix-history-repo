@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.11 85/03/04";
+static	char *sccsid = "@(#)dr_1.c	2.12 85/04/23";
 #endif
 
 #include "driver.h"

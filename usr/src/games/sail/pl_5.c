@@ -1,5 +1,11 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	2.5 83/12/21";
+static	char *sccsid = "@(#)pl_5.c	2.6 85/04/23";
 #endif
 
 #include "player.h"
