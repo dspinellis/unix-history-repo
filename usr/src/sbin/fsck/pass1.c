@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -69,7 +69,8 @@ pass1()
 				continue;
 			}
 			lastino = inumber;
-			if (dp->di_size < 0) {
+			if (dp->di_size < 0 ||
+			    dp->di_size + sblock.fs_bsize - 1 < 0) {
 				if (debug)
 					printf("bad size %d:", dp->di_size);
 				goto unknown;
