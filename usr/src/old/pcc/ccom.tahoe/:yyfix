@@ -1,0 +1,14 @@
+>rodata.c
+for i in $*
+do ed - y.tab.c <<!
+/^\(.*\)$i[ 	]*\[]/s//extern \1 $i[];\\
+\1 $i []/
+.ka
+/}/kb
+'br rodata.c
+'a,.w rodata.c
+'a,.d
+w
+q
+!
+done
