@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.5 (Berkeley) %G%
+ *	@(#)fcntl.h	5.6 (Berkeley) %G%
  */
 
 #ifndef F_DUPFD
@@ -78,6 +78,11 @@
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
 #if __STDC__ || c_plusplus
+#ifdef KERNEL
+#include "types.h"
+#else
+#include <sys/types.h>
+#endif
 extern int fcntl(int, int, int);
 extern int creat(const char *, mode_t);
 extern int open(const char *, int, ...);
