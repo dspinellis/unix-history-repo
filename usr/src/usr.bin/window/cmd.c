@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.1 83/08/11";
+static	char *sccsid = "@(#)cmd.c	3.2 83/08/17";
 #endif
 
 #include "defs.h"
@@ -29,6 +29,8 @@ top:
 		case CTRL(d):
 		case CTRL(b):
 		case CTRL(f):
+		case CTRL(s):
+		case CTRL(q):
 		case CTRL([):
 		foo:
 			if (selwin == 0) {
@@ -58,12 +60,6 @@ top:
 			break;
 		case 'C':
 			doclose((struct ww *)0);
-			break;
-		case 'Z':
-			if (terse)
-				Ding();
-			else
-				wwputs("Command Z is now C.  ", cmdwin);
 			break;
 		case 'w':
 			dowindow();
