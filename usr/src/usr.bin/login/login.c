@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,8 +55,18 @@ static char sccsid[] = "@(#)login.c	5.40 (Berkeley) %G%";
 #ifdef	KERBEROS
 #include <kerberos/krb.h>
 #include <sys/termios.h>
-char	realm[REALM_SZ];
-int	kerror = KSUCCESS, notickets = 1;
+#include <netdb.h>
+char		realm[REALM_SZ];
+int		kerror = KSUCCESS, notickets = 1;
+KTEXT_ST	ticket;
+AUTH_DAT	authdata;
+char		savehost[MAXHOSTNAMELEN];
+unsigned long	faddr;
+struct	hostent	*hp;
+#define	PRINCIPAL_NAME	pwd->pw_name
+#define	PRINCIPAL_INST	""
+#define	INITIAL_TICKET	"krbtgt"
+#define	VERIFY_SERVICE	"rcmd"
 #endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
@@ -98,6 +108,7 @@ main(argc, argv)
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
+	char localhost[MAXHOSTNAMELEN];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
 	off_t lseek();
@@ -115,8 +126,11 @@ main(argc, argv)
 	 * -h is used by other servers to pass the name of the remote
 	 *    host to login so that it may be placed in utmp and wtmp
 	 */
-	(void)gethostname(tbuf, sizeof(tbuf));
-	domain = index(tbuf, '.');
+	domain = NULL;
+	if (gethostname(localhost, sizeof(localhost)) < 0)
+		syslog(LOG_ERR, "couldn't get local hostname: %m");
+	else
+		domain = index(localhost, '.');
 
 	fflag = hflag = pflag = 0;
 	passwd_req = 1;
@@ -241,19 +255,64 @@ main(argc, argv)
 		 * in without issueing any tickets.
 		 */
 
-		if (pwd && !krb_get_lrealm(realm,1)) {
+		if (pwd && (krb_get_lrealm(realm,1) == KSUCCESS)) {
 			/*
 			 * get TGT for local realm; be careful about uid's
 			 * here for ticket file ownership
 			 */
 			(void)setreuid(geteuid(),pwd->pw_uid);
-			kerror = krb_get_pw_in_tkt(pwd->pw_name, "", realm,
-				"krbtgt", realm, DEFAULT_TKT_LIFE, pp);
+			kerror = krb_get_pw_in_tkt(
+				PRINCIPAL_NAME, PRINCIPAL_INST, realm,
+				INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, pp);
 			(void)setuid(0);
+			/*
+			 * If we got a TGT, get a local "rcmd" ticket and
+			 * check it so as to ensure that we are not
+			 * talking to a bogus Kerberos server
+			 */
 			if (kerror == INTK_OK) {
-				bzero(pp, strlen(pp));
-				notickets = 0;	/* user got ticket */
-				break;
+				(void) strncpy(savehost,
+					krb_get_phost(localhost),
+					sizeof(savehost));
+				savehost[sizeof(savehost)-1] = NULL;
+				kerror = krb_mk_req(&ticket, VERIFY_SERVICE,
+					savehost, realm, 33);
+				if (kerror == KDC_PR_UNKNOWN) {
+					syslog(LOG_WARNING,
+					    "Warning: TGT not verified (%s)",
+						krb_err_txt[kerror]);
+					bzero(pp, strlen(pp));
+					notickets = 0;
+					break;		/* ok */
+				} else if (kerror != KSUCCESS) {
+					printf("Unable to use TGT: (%s)\n",
+						krb_err_txt[kerror]);
+					syslog(LOG_WARNING,
+					    "Unable to use TGT: (%s)",
+						krb_err_txt[kerror]);
+					dest_tkt();
+					/* fall thru: no login */
+				} else {
+					if (!(hp = gethostbyname(localhost))) {
+						syslog(LOG_ERR, "couldn't get local host address");
+					} else {
+					    bcopy((char *) hp->h_addr,
+						(char *) &faddr, sizeof(faddr));
+					    if ((kerror = krb_rd_req(&ticket,
+						VERIFY_SERVICE, savehost, faddr,
+						&authdata, "")) != KSUCCESS) {
+						    printf("Unable to verify rcmd ticket: (%s)\n",
+							krb_err_txt[kerror]);
+						syslog(LOG_WARNING, "couldn't verify rcmd ticket: %s",
+							krb_err_txt[kerror]);
+					    } else {
+						bzero(pp, strlen(pp));
+						notickets = 0;	/* got ticket */
+						break;		/* ok */
+					    }
+					}
+				}
+
 			}
 		}
 #endif
