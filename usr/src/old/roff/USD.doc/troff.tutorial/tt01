@@ -1,4 +1,4 @@
-.\"	@(#)tt01	5.1 (Berkeley) %G%
+.\"	@(#)tt01	6.1 (Berkeley) %G%
 .\"
 .NH
 Introduction
@@ -7,14 +7,12 @@ Introduction
 .UL troff
 [1]
 is a text-formatting program,
-written by J. F. Ossanna,
+written originally by J. F. Ossanna,
 for producing
 high-quality printed output from the phototypesetter
 on the
 .UC UNIX
-and
-.UC GCOS
-operating systems.
+operating system.
 This document is an example of
 .UL troff
 output.
@@ -58,20 +56,20 @@ and reduce the amount of
 direct contact with 
 .UL troff .
 In particular, the `\-ms'
-[4]
-and PWB/MM [5]
+[4], 
+PWB/MM [5], and `\-me' [6]
 packages
-for Bell Labs internal memoranda and external papers
+for internal memoranda and external papers
 provide most of the facilities needed
-for a wide range of document preparation.
+for a wide range of document preparation.\(dg
+.FS
+\(dg Most Berkeley Unix sites only have \-ms and \-me.
+.FE
 (This memo was prepared with `\-ms'.)
 There are also packages for viewgraphs,
 for simulating the older
 .UL roff
-formatters on
-.UC UNIX
-and
-.UC GCOS ,
+formatters,
 and for other special applications.
 Typically you will find these packages easier to use
 than
@@ -122,11 +120,9 @@ The contents of the remaining sections are:
 .fi
 The
 .UL troff
-described here is the C-language version running on
+described here is the C-language version supplied with 
 .UC UNIX
-at
-Murray Hill,
-as documented in [1].
+Version 7 and 32V as documented in [1].
 .WS
 .PP
 To use
