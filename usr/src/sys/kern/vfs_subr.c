@@ -163,34 +163,12 @@ void vattr_null(vap)
 /*
  * Routines having to do with the management of the vnode table.
  */
-struct vnode *vfreeh, **vfreet;
+extern struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops;
 extern struct vnodeops spec_vnodeops;
 extern void vclean();
 long numvnodes;
-struct vattr va_null;
-
-/*
- * Initialize the vnode structures and initialize each file system type.
- */
-vfsinit()
-{
-	struct vfsops **vfsp;
-
-	/*
-	 * Initialize the vnode name cache
-	 */
-	nchinit();
-	/*
-	 * Initialize each file system type.
-	 */
-	vattr_null(&va_null);
-	for (vfsp = &vfssw[0]; vfsp <= &vfssw[MOUNT_MAXTYPE]; vfsp++) {
-		if (*vfsp == NULL)
-			continue;
-		(*(*vfsp)->vfs_init)();
-	}
-}
+extern struct vattr va_null;
 
 /*
  * Return the next vnode from the free list.
