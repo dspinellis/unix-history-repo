@@ -1,143 +1,200 @@
-static char *sccsid = "@(#)uniq.c	4.1 (Berkeley) %G%";
 /*
- * Deal with duplicated lines in a file
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Case Larsen.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)uniq.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <stdio.h>
 #include <ctype.h>
-int	fields;
-int	letters;
-int	linec;
-char	mode;
-int	uniq;
-char	*skip();
 
-main(argc, argv)
-int argc;
-char *argv[];
+int cflag, dflag, uflag;
+int numchars, numfields, repeats;
+
+#define	MAXLINELEN	(2048 + 1)
+
+main (argc,argv)
+	int argc;
+	char **argv;
 {
-	static char b1[1000], b2[1000];
+	extern int optind;
+	FILE *ifp, *ofp, *file();
+	int ch;
+	register char *t1, *t2;
+	char *prevline, *thisline, *malloc(), *skip();
 
-	while(argc > 1) {
-		if(*argv[1] == '-') {
-			if (isdigit(argv[1][1]))
-				fields = atoi(&argv[1][1]);
-			else mode = argv[1][1];
-			argc--;
-			argv++;
-			continue;
+	while ((ch = getopt(argc, argv, "-cdu123456789")) != EOF)
+		switch (ch) {
+		case '-':
+			--optind;
+			goto done;
+		case 'c':
+			cflag = 1;
+			break;
+		case 'd':
+			dflag = 1;
+			break;
+		case 'u':
+			uflag = 1;
+			break;
+		/*
+		 * since -n is a valid option that could be picked up by
+		 * getopt, but is better handled by the +n and -n code, we
+		 * break out.
+		 */
+		case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			--optind;
+			goto done;
+		case '?':
+		default:
+			usage();
+	}
+
+done:	argc -= optind;
+	argv +=optind;
+
+	/* if no flags are set, default is -d -u */
+	if (cflag) {
+		if (dflag || uflag)
+			usage();
+	} else if (!dflag && !uflag)
+		dflag = uflag = 1;
+
+	/* because of the +, getopt is messed up */
+	for (; **argv == '+' || **argv == '-'; ++argv, --argc)
+		switch (**argv) {
+		case '+':
+			if ((numchars = atoi(*argv + 1)) < 0)
+				goto negerr;
+			break;
+		case '-':
+			if ((numfields = atoi(*argv + 1)) < 0) {
+negerr:				(void)fprintf(stderr,
+				    "uniq: negative field/char skip value.\n");
+				usage();
+			}
+			break;
 		}
-		if(*argv[1] == '+') {
-			letters = atoi(&argv[1][1]);
-			argc--;
-			argv++;
-			continue;
-		}
-		if (freopen(argv[1], "r", stdin) == NULL)
-			printe("cannot open %s\n", argv[1]);
+    
+	switch(argc) {
+	case 0:
+		ifp = stdin;
+		ofp = stdout;
 		break;
-	}
-	if(argc > 2 && freopen(argv[2], "w", stdout) == NULL)
-		printe("cannot create %s\n", argv[2]);
-
-	if(gline(b1))
-		exit(0);
-	for(;;) {
-		linec++;
-		if(gline(b2)) {
-			pline(b1);
-			exit(0);
-		}
-		if(!equal(b1, b2)) {
-			pline(b1);
-			linec = 0;
-			do {
-				linec++;
-				if(gline(b1)) {
-					pline(b2);
-					exit(0);
-				}
-			} while(equal(b1, b2));
-			pline(b2);
-			linec = 0;
-		}
-	}
-}
-
-gline(buf)
-register char buf[];
-{
-	register c;
-
-	while((c = getchar()) != '\n') {
-		if(c == EOF)
-			return(1);
-		*buf++ = c;
-	}
-	*buf = 0;
-	return(0);
-}
-
-pline(buf)
-register char buf[];
-{
-
-	switch(mode) {
-
-	case 'u':
-		if(uniq) {
-			uniq = 0;
-			return;
-		}
+	case 1:
+		ifp = file(argv[0], "r");
+		ofp = stdout;
 		break;
-
-	case 'd':
-		if(uniq) break;
-		return;
-
-	case 'c':
-		printf("%4d ", linec);
+	case 2:
+		ifp = file(argv[0], "r");
+		ofp = file(argv[1], "w");
+		break;
+	default:
+		usage();
 	}
-	uniq = 0;
-	fputs(buf, stdout);
-	putchar('\n');
+
+	prevline = malloc(MAXLINELEN);
+	thisline = malloc(MAXLINELEN);
+	(void)fgets(prevline, MAXLINELEN, ifp);
+
+	while (fgets(thisline, MAXLINELEN, ifp)) {
+		/* if requested get the chosen fields + character offsets */
+		if (numfields || numchars) {
+			t1 = skip(thisline);
+			t2 = skip(prevline);
+		} else {
+			t1 = thisline;
+			t2 = prevline;
+		}
+
+		/* if different, print; set previous to new value */
+		if (strcmp(t1, t2)) {
+			show(ofp, prevline);
+			t1 = prevline;
+			prevline = thisline;
+			thisline = t1;
+			repeats = 0;
+		}
+		else
+			++repeats;
+	}
+	show(ofp, prevline);
+	exit(0);
 }
 
-equal(b1, b2)
-register char b1[], b2[];
+/*
+ * show --
+ *	output a line depending on the flags and number of repetitions
+ *	of the line.
+ */
+show(ofp, str)
+	FILE *ofp;
+	char *str;
 {
-	register char c;
-
-	b1 = skip(b1);
-	b2 = skip(b2);
-	while((c = *b1++) != 0)
-		if(c != *b2++) return(0);
-	if(*b2 != 0)
-		return(0);
-	uniq++;
-	return(1);
+	if (cflag)
+		(void)fprintf(ofp, "%4d %s", repeats + 1, str);
+	if (dflag && repeats || uflag && !repeats)
+		(void)fprintf(ofp, "%s", str);
 }
 
 char *
-skip(s)
-register char *s;
+skip(str)
+	register char *str;
 {
-	register nf, nl;
+	register int infield, nchars, nfields;
 
-	nf = nl = 0;
-	while(nf++ < fields) {
-		while(*s == ' ' || *s == '\t')
-			s++;
-		while( !(*s == ' ' || *s == '\t' || *s == 0) ) 
-			s++;
-	}
-	while(nl++ < letters && *s != 0) 
-			s++;
-	return(s);
+	for (nfields = numfields, infield = 0; nfields && *str; ++str)
+		if (isspace(*str)) {
+			if (infield) {
+				infield = 0;
+				--nfields;
+			}
+		} else if (!infield)
+			infield = 1;
+	for (nchars = numchars; nchars-- && *str; ++str);
+	return(str);
 }
 
-printe(p,s)
-char *p,*s;
+FILE *
+file(name, mode)
+	char *name, *mode;
 {
-	fprintf(stderr, p, s);
+	FILE *fp;
+
+	if (!(fp = fopen(name, mode))) {
+		(void)fprintf(stderr, "uniq: can't open %s.\n", name);
+		exit(1);
+	}
+	return(fp);
+}
+
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: uniq [-c | -du] [- #fields] [+ #chars] [input [output]]\n");
 	exit(1);
 }
