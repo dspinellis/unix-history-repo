@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)banner.6	4.1 (Berkeley) %G%
+.\"	@(#)banner.6	5.1 (Berkeley) %G%
 .\"
-.TH BANNER 6
+.TH BANNER 6 "1 February 1983"
 .UC
 .SH NAME
 banner \- print large banner on printer
@@ -18,17 +18,13 @@ message ...
 .I Banner
 prints a large, high quality banner on the standard output.
 If the message is omitted, it prompts for and
-reads one line of its standard input.
-If
+reads one line of its standard input.  If
 .B \-w
-is given, the output is scrunched down from a width
-of 132 to
+is given, the output is scrunched down from a width of 132 to
 .I n ,
-suitable for a narrow terminal.
-If
+suitable for a narrow terminal.  If
 .I n
-is omitted,
-it defaults to 80.
+is omitted, it defaults to 80.
 .PP
 The output should be printed on a hard-copy device, up to 132 columns wide,
 with no breaks between the pages. The volume is enough that you want
