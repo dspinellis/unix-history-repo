@@ -2,19 +2,19 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.34 (Berkeley) %G%
+ *	@(#)init_main.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "systm.h"
-#include "dir.h"
-#include "user.h"
 #include "filedesc.h"
 #include "kernel.h"
 #include "fs.h"
 #include "mount.h"
 #include "map.h"
 #include "proc.h"
+#include "resourcevar.h"
+#include "signalvar.h"
+#include "systm.h"
 #include "inode.h"
 #include "seg.h"
 #include "conf.h"
@@ -24,12 +24,12 @@
 #include "protosw.h"
 #include "quota.h"
 #include "reboot.h"
+#include "user.h"
+
 
 #include "machine/cpu.h"
 
 #include "vm/vm.h"
-#include "vm/vm_param.h"
-#include "vm/vm_map.h"
 
 /*
  * Components of process 0;
@@ -39,11 +39,10 @@ struct	session session0;
 struct	pgrp pgrp0;
 struct	proc proc0;
 struct	pcred cred0;
-struct	filedesc filedesc0;
-struct	file *fd0[NOEXTENT];
-char	fdflags0[NOEXTENT];
+struct	filedesc0 filedesc0;
 struct	plimit limit0;
 struct	vmspace vmspace0;
+struct	proc *curproc = &proc0;
 struct	proc *initproc, *pageproc;
 
 int	cmask = CMASK;
@@ -60,7 +59,7 @@ main(firstaddr)
 {
 	register int i;
 	register struct proc *p;
-	register struct filedesc *fdp;
+	register struct filedesc0 *fdp;
 	int s, rval[2];
 
 	/*
@@ -110,12 +109,12 @@ main(firstaddr)
 	 * Create the file descriptor table for process 0.
 	 */
 	fdp = &filedesc0;
-	p->p_fd = fdp;
-	fdp->fd_refcnt = 1;
-	fdp->fd_cmask = cmask;
-	fdp->fd_ofiles = fd0;
-	fdp->fd_ofileflags = fdflags0;
-	fdp->fd_nfiles = NOEXTENT;
+	p->p_fd = &fdp->fd_fd;
+	fdp->fd_fd.fd_refcnt = 1;
+	fdp->fd_fd.fd_cmask = cmask;
+	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
+	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
+	fdp->fd_fd.fd_nfiles = NDFILE;
 
 	/*
 	 * Set initial limits
@@ -143,8 +142,8 @@ main(firstaddr)
 	 * We continue to place resource usage info
 	 * and signal actions in the user struct so they're pageable.
 	 */
-	p->p_stats = &u.u_stats;
-	p->p_sigacts = &u.u_sigacts;
+	p->p_stats = &((struct user *)p->p_addr)->u_stats;
+	p->p_sigacts = &((struct user *)p->p_addr)->u_sigacts;
 
 	rqinit();
 
@@ -211,7 +210,7 @@ main(firstaddr)
 	iunlock(rootdir);
 	u.u_cdir = iget(rootdev, fs, (ino_t)ROOTINO);
 	iunlock(u.u_cdir);
-	fdp->fd_rdir = NULL;
+	fdp->fd_fd.fd_rdir = NULL;
 	swapinit();
 
 	/*
