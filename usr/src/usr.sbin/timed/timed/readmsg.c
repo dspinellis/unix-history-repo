@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.7 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -25,11 +25,11 @@ extern char *tsptype[];
 	(((netp)->mask & (froms).sin_addr.s_addr) == (netp)->net))) \
 	? 1 : 0)
 
-#define ISTOUTOFF(rtime, rtout) \
+#define MORETIME(rtime, rtout) \
 	(((rtime).tv_sec > (rtout).tv_sec || \
 	    ((rtime).tv_sec == (rtout).tv_sec && \
 		(rtime).tv_usec >= (rtout).tv_usec)) \
-	? 1 : 0)
+	? 0 : 1)
 
 struct timeval rtime, rwait, rtout;
 struct tsp msgin;
@@ -59,11 +59,8 @@ struct netinfo *netfrom;
 {
 	int length;
 	fd_set ready;
-	struct tsp *ret = NULL;
 	static struct tsplist *head = &msgslist;
 	static struct tsplist *tail = &msgslist;
-	int inet_netof();
-	int bytenetorder(), bytehostorder();
 	struct tsplist *prev;
 	register struct netinfo *ntp;
 	register struct tsplist *ptr;
@@ -90,22 +87,32 @@ struct netinfo *netfrom;
 
 	while (ptr != NULL) {
 		if (LOOKAT(ptr->info, type, machfrom, netfrom, ptr->addr)) {
-			ret = (struct tsp *)malloc(sizeof(struct tsp)); 
-			*ret = ptr->info;
+			msgin = ptr->info;
 			from = ptr->addr;
 			prev->p = ptr->p;
 			if (ptr == tail) 
 				tail = prev;
 			free((char *)ptr);
-			break;
+			if (netfrom == NULL)
+			    for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				    if ((ntp->mask & from.sin_addr.s_addr) ==
+					ntp->net) {
+					    fromnet = ntp;
+					    break;
+				    }
+			    }
+			else
+			    fromnet = netfrom;
+			if (trace) {
+				fprintf(fd, "readmsg: ");
+				print(&msgin, &from);
+			}
+			return(&msgin);
 		} else {
 			prev = ptr;
 			ptr = ptr->p;
 		}
 	}
-
-	if (ret != NULL)
-		goto out;
 
 	/*
 	 * If the message was not in the linked list, it may still be
@@ -123,7 +130,8 @@ struct netinfo *netfrom;
 	}
 
 	FD_ZERO(&ready);
-	for (;;) {
+	for (; MORETIME(rtime, rtout);
+	    (void)gettimeofday(&rtime, (struct timezone *)0)) {
 		rwait.tv_sec = rtout.tv_sec - rtime.tv_sec;
 		rwait.tv_usec = rtout.tv_usec - rtime.tv_usec;
 		if (rwait.tv_usec < 0) {
@@ -149,6 +157,25 @@ struct netinfo *netfrom;
 
 			bytehostorder(&msgin);
 
+			fromnet = NULL;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next)
+				if ((ntp->mask & from.sin_addr.s_addr) ==
+				    ntp->net) {
+					fromnet = ntp;
+					break;
+				}
+
+			/*
+			 * drop packets from nets we are ignoring permanently
+			 */
+			if (fromnet == NULL) {
+				if (trace) {
+					fprintf(fd, "readmsg: discarded: ");
+					print(&msgin, &from);
+				}
+				continue;
+			}
+
 			/*
 			 * Throw away messages coming from this machine, unless
 			 * they are of some particular type.
@@ -169,11 +196,7 @@ struct netinfo *netfrom;
 					fprintf(fd, "readmsg: discarded: ");
 					print(&msgin, &from);
 				}
-				(void)gettimeofday(&rtime,(struct timezone *)0);
-				if (ISTOUTOFF(rtime, rtout))
-					break;
-				else
-					continue;
+				continue;
 			}
 
 			/*
@@ -182,19 +205,16 @@ struct netinfo *netfrom;
 			 * higher level routine.  Different acknowledgements are
 			 * necessary, depending on status.
 			 */
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net) {
-					if (ntp->status == MASTER)
-						masterack();
-					else
-						slaveack();
-					break;
-				}
-			}
+			if (fromnet->status == MASTER)
+				masterack();
+			else if (fromnet->status == SLAVE)
+				slaveack();
 			if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
-				ret = &msgin;
-				break;
+				if (trace) {
+					fprintf(fd, "readmsg: ");
+					print(&msgin, &from);
+				}
+				return(&msgin);
 			} else {
 				tail->p = (struct tsplist *)
 						malloc(sizeof(struct tsplist)); 
@@ -203,30 +223,11 @@ struct netinfo *netfrom;
 				tail->info = msgin;
 				tail->addr = from;
 			}
-
-			(void)gettimeofday(&rtime, (struct timezone *)0);
-			if (ISTOUTOFF(rtime, rtout))
-				break;
 		} else {
 			break;
 		}
 	}
-out:
-	if (ret != NULL) {
-		if (trace) {
-			fprintf(fd, "readmsg: ");
-			print(ret, &from);
-		}
-		fromnet = NULL;
-		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-			if ((ntp->mask & from.sin_addr.s_addr) ==
-			    ntp->net) {
-				fromnet = ntp;
-				break;
-			}
-		}
-	}
-	return(ret);
+	return((struct tsp *)NULL);
 }
 
 /*
