@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -83,14 +83,11 @@ asm("eprol:");
 
 #ifdef CRT0
 /*
- * null mcount and moncontrol,
- * just in case some routine is compiled for profiling
+ * null moncontrol just in case some routine is compiled for profiling
  */
 moncontrol(val)
 	int val;
 {
 
 }
-asm(".globl mcount");
-asm("mcount: ret");
-#endif CRT0
+#endif /* CRT0 */
