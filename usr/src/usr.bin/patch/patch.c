@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -87,7 +87,7 @@ static char sccsid[] = "@(#)patch.c	5.6 (Berkeley) %G%";
 #define TRUE (1)
 #define FALSE (0)
 
-#define MAXHUNKSIZE 500
+#define MAXHUNKSIZE 2000
 #define MAXLINELEN 1024
 #define BUFFERSIZE 1024
 #define ORIGEXT ".orig"
@@ -504,7 +504,10 @@ abort_hunk()
     for (i=0; i<=pat_end; i++) {
 	switch (pch_char(i)) {
 	case '*':
-	    fprintf(rejfp,"*** %d,%d\n", oldfirst, oldlast);
+	    if (diff_type == NEW_CONTEXT_DIFF)
+		fprintf(rejfp,"*** %d,%d ****\n", oldfirst, oldlast);
+	    else
+		fprintf(rejfp,"*** %d,%d\n", oldfirst, oldlast);
 	    break;
 	case '=':
 	    fprintf(rejfp,"--- %d,%d -----\n", newfirst, newlast);
@@ -1404,10 +1407,15 @@ another_hunk()
 		context = 0;
 		p_line[p_end] = savestr(buf);
 		for (s=buf; *s && !isdigit(*s); s++) ;
+		if (!isdigit(*s))
+		    fatal("Malformed patch at line %d: %s", p_input_line, buf);
 		p_first = (LINENUM) atol(s);
 		while (isdigit(*s)) s++;
 		for (; *s && !isdigit(*s); s++) ;
-		p_ptrn_lines = ((LINENUM)atol(s)) - p_first + 1;
+		if (!isdigit(*s))
+		    p_ptrn_lines = 1;
+		else
+		    p_ptrn_lines = ((LINENUM)atol(s)) - p_first + 1;
 		break;
 	    case '-':
 		if (buf[1] == '-') {
@@ -1420,10 +1428,20 @@ another_hunk()
 		    p_line[p_end] = savestr(buf);
 		    p_char[p_end] = '=';
 		    for (s=buf; *s && !isdigit(*s); s++) ;
+		    if (!isdigit(*s))
+			fatal("Malformed patch at line %d: %s",
+			      p_input_line, buf);
 		    p_newfirst = (LINENUM) atol(s);
 		    while (isdigit(*s)) s++;
 		    for (; *s && !isdigit(*s); s++) ;
-		    p_max = ((LINENUM)atol(s)) - p_newfirst + 1 + p_end;
+		    if (!isdigit(*s))
+			p_max = p_newfirst;
+		    else
+			p_max = ((LINENUM)atol(s));
+		    p_max += 1 + p_end - p_newfirst;
+		    if (p_max >= MAXHUNKSIZE)
+			fatal("Hunk too large (%d lines) at line %d: %s",
+			      p_max - p_end, p_input_line, buf);
 		    break;
 		}
 		/* FALL THROUGH */
@@ -1449,11 +1467,12 @@ another_hunk()
 	    default:
 		fatal("Malformed patch at line %d: %s",p_input_line,buf);
 	    }
-	    p_len[p_end] = 0;
-	    if (p_line[p_end] != 0)
+	    /* set up p_len for strncmp() so we don't have to */
+	    /* assume null termination */
+	    if (p_line[p_end])
 		p_len[p_end] = strlen(p_line[p_end]);
-					/* for strncmp() so we do not have */
-					/* to assume null termination */
+	    else
+		p_len[p_end] = 0;
 	}
 	if (p_end >=0 && !p_ptrn_lines)
 	    fatal("No --- found in patch at line %d\n", pch_hunk_beg());
@@ -1473,58 +1492,35 @@ another_hunk()
 	}
 	p_context = 0;
 	while (p_end < p_max) {
-	    line_beginning = ftell(pfp);
 	    ret = pgets(buf,sizeof buf, pfp);
 	    if (ret == Nullch) {
 		if (p_max - p_end < 4)
 		    Strcpy(buf,"  \n");	/* assume blank lines got chopped */
-		else if (p_end == repl_beginning) {
-		    /* redundant 'new' context lines were omitted - set up */
-		    /* to fill them in from the the old file's context */
-		    fillsrc = 1;
-		    filldst = p_end + 1;
-		    fillcnt = p_max - repl_beginning;
-		    p_end = p_max;
-		    break;
-		} else
+		else
 		    fatal("Unexpected end of file in patch.\n");
 	    }
 	    p_input_line++;
 	    p_char[++p_end] = *buf;
 	    switch (*buf) {
 	    case '*':	/* another hunk */
-	    case 'd':	/* another hunk in a different file */
-	    case 'B':	/* ditto */
-	    case 'C':	/* ditto */
-	    case 'F':	/* ditto */
-	    case 'O':	/* ditto */
-		if (strnEQ(buf,"********",8) ||
-		    strnEQ(buf,"diff",4) ||
-	    	    strnEQ(buf,"Binary files ",13) ||
-	    	    strnEQ(buf,"Files ",6) ||
-		    strnEQ(buf,"Common subdirectories: ",23) ||
-		    strnEQ(buf,"Only in ",8)) {
-		    if (p_end != repl_beginning + 1)
-			fatal("Unexpected end of hunk at line %d.\n",
-				p_input_line);
-		    /* redundant 'new' context lines were omitted - set up */
-		    /* to fill them in from the the old file's context */
-		    fillsrc = 1;
-		    filldst = p_end;
-		    fillcnt = p_max - repl_beginning;
-		    p_end = p_max;
-		    Fseek(pfp, line_beginning, 0); /* backup the diff input */
-		    break;
-		}
+		if (strnEQ(buf,"********",8))
+		    fatal("Unexpected end of hunk at line %d.\n",
+			    p_input_line);
+
 		if (p_end != 0)
 		    fatal("Unexpected *** at line %d: %s", p_input_line, buf);
 		context = 0;
 		p_line[p_end] = savestr(buf);
 		for (s=buf; *s && !isdigit(*s); s++) ;
+		if (!isdigit(*s))
+		    fatal("Malformed patch at line %d: %s", p_input_line, buf);
 		p_first = (LINENUM) atol(s);
 		while (isdigit(*s)) s++;
 		for (; *s && !isdigit(*s); s++) ;
-		p_ptrn_lines = ((LINENUM)atol(s)) - p_first + 1;
+		if (!isdigit(*s))
+		    p_ptrn_lines = 1;
+		else
+		    p_ptrn_lines = ((LINENUM)atol(s)) - p_first + 1;
 		break;
 	    case '-':
 		if (buf[1] == '-') {
@@ -1544,10 +1540,29 @@ another_hunk()
 		    p_line[p_end] = savestr(buf);
 		    p_char[p_end] = '=';
 		    for (s=buf; *s && !isdigit(*s); s++) ;
+		    if (!isdigit(*s))
+			fatal("Malformed patch at line %d: %s",
+			      p_input_line, buf);
 		    p_newfirst = (LINENUM) atol(s);
 		    while (isdigit(*s)) s++;
 		    for (; *s && !isdigit(*s); s++) ;
-		    p_max = ((LINENUM)atol(s)) - p_newfirst + 1 + p_end;
+		    if (!isdigit(*s))
+			p_max = p_newfirst;
+		    else
+			p_max = ((LINENUM)atol(s));
+		    p_max += 1 + p_end - p_newfirst;
+		    if (p_max >= MAXHUNKSIZE)
+			fatal("Hunk too large (%d lines) at line %d: %s",
+			      p_max - p_end, p_input_line, buf);
+		    if (p_max - p_end == context) {
+			/* redundant 'new' context lines were omitted */
+			/* set up to fill them in from the the old file's */
+			/* context */
+			fillsrc = 1;
+			filldst = p_end + 1;
+			fillcnt = p_max - repl_beginning;
+			p_end = p_max;
+		    }
 		    break;
 		}
 		/* FALL THROUGH */
@@ -1571,11 +1586,12 @@ another_hunk()
 	    default:
 		fatal("Malformed patch at line %d: %s",p_input_line,buf);
 	    }
-	    p_len[p_end] = 0;
-	    if (p_line[p_end] != 0)
+	    /* set up p_len for strncmp() so we don't have to */
+	    /* assume null termination */
+	    if (p_line[p_end])
 		p_len[p_end] = strlen(p_line[p_end]);
-					/* for strncmp() so we do not have */
-					/* to assume null termination */
+	    else
+		p_len[p_end] = 0;
 	}
 	if (p_end >=0 && !p_ptrn_lines)
 	    fatal("No --- found in patch at line %d\n", pch_hunk_beg());
@@ -1585,11 +1601,15 @@ another_hunk()
 	    while (fillcnt-- > 0) {
 		while (p_char[fillsrc] != ' ')
 		    fillsrc++;
-		p_line[filldst] = p_line[fillsrc];
+		if (p_line[fillsrc])
+		    p_line[filldst] = savestr (p_line[fillsrc]);
+		else
+		    p_line[filldst] = p_line[fillsrc];
 		p_char[filldst] = p_char[fillsrc];
 		p_len[filldst] = p_len[fillsrc];
 		fillsrc++; filldst++;
 	    }
+	    assert(filldst==p_end+1 || filldst==repl_beginning);
 	}
 	p_repl_lines = p_end - repl_beginning;
     }
@@ -1640,9 +1660,10 @@ another_hunk()
 	    if (*buf != '<')
 		fatal("< expected at line %d of patch.\n", p_input_line);
 	    p_line[i] = savestr(buf+2);
-	    p_len[i] = 0;
-	    if (p_line[i] != 0)
+	    if (p_line[i])
 		p_len[i] = strlen(p_line[i]);
+	    else
+		p_len[i] = 0;
 	    p_char[i] = '-';
 	}
 	if (hunk_type == 'c') {
@@ -1666,9 +1687,12 @@ another_hunk()
 	    if (*buf != '>')
 		fatal("> expected at line %d of patch.\n", p_input_line);
 	    p_line[i] = savestr(buf+2);
-	    p_len[i] = 0;
-	    if (p_line[i] != 0)
+	    /* set up p_len for strncmp() so we don't have to */
+	    /* assume null termination */
+	    if (p_line[i])
 		p_len[i] = strlen(p_line[i]);
+	    else
+		p_len[i] = 0;
 	    p_char[i] = '+';
 	}
     }
