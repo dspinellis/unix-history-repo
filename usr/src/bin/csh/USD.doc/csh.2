@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.2	5.1 (Berkeley) %G%
+.\"	@(#)csh.2	6.1 (Berkeley) %G%
 .\"
 .nr H1 1
 .NH
@@ -40,7 +40,7 @@ set mail=(/usr/spool/mail/bill)
 echo "${prompt}users" ; users
 alias ts \e
 	\'set noglob ; eval \`tset \-s \-m dialup:c100rv4pna \-m plugboard:?hp2621nl \!*\`\';
-ts; stty intr \(uaC kill \(uaU crt
+ts; stty intr ^C kill ^U crt
 set time=15 history=10
 msgs \-f
 if (\-e $mail) then
@@ -56,7 +56,7 @@ The first is a
 command which is interpreted directly by the shell.  It sets the shell
 variable
 .I ignoreeof
-which causes the shell to not log me off if I hit \(uaD.  Rather,
+which causes the shell to not log me off if I hit ^D.  Rather,
 I use the
 .I logout
 command to log off of the system.
@@ -89,8 +89,8 @@ The parameters to
 indicate the kinds of terminal which I usually use when not on a hardwired
 port.  I then execute ``ts'' and also use the
 .I stty
-command to change the interrupt character to \(uaC and the line kill
-character to \(uaU.
+command to change the interrupt character to ^C and the line kill
+character to ^U.
 .PP
 I then run the `msgs' program, which provides me with any
 system messages which I have not seen before; the `\-f' option here prevents
@@ -191,6 +191,10 @@ set
 again to see that the value assigned to
 .I path
 has changed.
+.FS \(dg
+Another directory that might interest you is /usr/new, which contains
+many useful user-contributed programs provided with Berkeley Unix.
+.FE
 .PP
 One thing you should be aware of is that the shell examines each directory
 which you insert into your path and determines which commands are contained
@@ -331,7 +335,7 @@ ls \-l a.out bug
 hello
 % num bug.c | spp
 spp: Command not found.
-% \(uaspp\(uassp
+% ^spp^ssp
 num bug.c | ssp 
     1	main()
     3	{
@@ -374,7 +378,7 @@ Finally we ran the program `bug' to see that its output is indeed correct.
 To make a numbered listing of the program we ran the `num' command on the file `bug.c'.
 In order to compress out blank lines in the output of `num' we ran the
 output through the filter `ssp', but misspelled it as spp.  To correct this
-we used a shell substitute, placing the old text and new text between `\(ua'
+we used a shell substitute, placing the old text and new text between `^'
 characters.  This is similar to the substitute command in the editor.
 Finally, we repeated the same command with `!!', but sent its output to the
 line printer.
@@ -386,7 +390,7 @@ they can be referenced.  There is a way to refer to a previous command
 by searching for a string which appeared in it, and there are other,
 less useful, ways to select arguments to include in a new command.
 A complete description of all these mechanisms
-is given in the C shell manual pages in the \s-2UNIX\s0 Programmers Manual.
+is given in the C shell manual pages in the \s-2UNIX\s0 Programmer's Manual.
 .NH 2
 Aliases
 .PP
@@ -470,7 +474,7 @@ The `;' separating commands is used here
 to indicate that one command is to be done and then the next.
 Similarly the definition
 .DS
-alias whois \'grep \e!\(ua /etc/passwd\'
+alias whois \'grep \e!^ /etc/passwd\'
 .DE
 defines a command which looks up its first argument in the password file.
 .PP
@@ -511,13 +515,13 @@ command |\|& lpr
 .DE
 to route both standard and diagnostic output through the pipe
 to the line printer daemon
-.I lpr.#
+.I lpr.\(dd
 .FS
-#A command form
-.sp
+\(dd A command of the form
+.br
 .ti +5
 command >&! file
-.sp
+.br
 exists, and is used when
 .I noclobber
 is set and
@@ -531,7 +535,7 @@ command >> file
 .DE
 to place output at the end of an existing file.\(dg
 .FS
-\(dgIf
+\(dg If
 .I noclobber
 is set, then an error will result if
 .I file
@@ -539,10 +543,10 @@ does not exist, otherwise the shell will create
 .I file
 if it doesn't exist.
 A form
-.sp
+.br
 .ti +5
 command >>! file
-.sp
+.br
 makes it not be an error for file to not exist when
 .I noclobber
 is set.
@@ -663,7 +667,7 @@ a new command, leaving the job running simultaneously.
 .PP
 As mentioned in section 1.8, foreground jobs become
 .I suspended
-by typing \(uaZ
+by typing ^Z
 which sends a \s-2STOP\s0 signal to the currently running
 foreground job.  A background job can become suspended by using the
 .I stop
@@ -674,7 +678,7 @@ reports this fact, much like it reports the termination of background jobs.
 For foreground jobs this looks like
 .DS
 % du > usage
-\(uaZ
+^Z
 Stopped
 %
 .DE
@@ -702,7 +706,7 @@ command, allowing you to continue other work and
 stop waiting for the foreground job to finish.  Thus
 .DS
 % du > usage
-\(uaZ
+^Z
 Stopped
 % bg
 [1] du > usage &
@@ -754,7 +758,7 @@ typed.
 % ls \-s | sort \-n > myfile &
 [2] 3405
 % mail bill
-\(uaZ
+^Z
 Stopped
 % jobs
 .ta 1.75i
@@ -822,7 +826,7 @@ text editor might take a long time.
 % ed bigfile
 120000
 1,$s/thisword/thatword/
-\(uaZ
+^Z
 Stopped
 % bg
 [1] ed bigfile &
@@ -838,7 +842,7 @@ q
 % 
 .so tabs
 .DE
-So after the `s' command was issued, the `ed' job was stopped with \(uaZ
+So after the `s' command was issued, the `ed' job was stopped with ^Z
 and then put in the background using
 .I bg.
 Some time later when the `s' command was finished,
@@ -1058,7 +1062,7 @@ from that of the shell.
 ~/myproject
 % ed prog.c
 1143
-\(uaZ
+^Z
 Stopped
 % cd ..
 % ls
@@ -1216,7 +1220,7 @@ source .cshrc
 .DE
 can be used after editing in a change to the
 .I \&.cshrc
-file which you wish to take effect before the next time you login.
+file which you wish to take effect right away.
 .PP
 The
 .I time
@@ -1269,6 +1273,6 @@ built-in command which can be used to run the same command
 sequence with a number of different arguments.
 .PP
 If you intend to use \s-2UNIX\s0 a lot you you should look through
-the rest of this document and the shell manual pages to become familiar
+the rest of this document and the csh manual pages (section1) to become familiar
 with the other facilities which are available to you.
 .bp
