@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.1 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,6 +16,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "stat.h"
+#include "buf.h"				/* XXX */
 
 /*
  * Read system call.
@@ -162,7 +163,10 @@ ioctl()
 	} *uap;
 	register int com;
 	register u_int size;
-	char data[IOCPARM_MASK+1];
+	struct buf *bp = 0;
+#define STK_PARAMS	128
+	char buf[STK_PARAMS];
+	caddr_t data = buf;
 
 	uap = (struct a *)u.u_ap;
 	GETF(fp, uap->fdes);
@@ -199,15 +203,19 @@ ioctl()
 	 * amount of data to be copied to/from the
 	 * user's address space.
 	 */
-	size = (com &~ (IOC_INOUT|IOC_VOID)) >> 16;
-	if (size > sizeof (data)) {
+	size = IOCPARM_LEN(com);
+	if (size > IOCPARM_MAX) {
 		u.u_error = EFAULT;
 		return;
+	}
+	if (size > sizeof (buf)) {
+		bp = geteblk(IOCPARM_MAX);		/* XXX */
+		data = bp->b_un.b_addr;
 	}
 	if (com&IOC_IN) {
 		if (size) {
 			u.u_error =
-			    copyin(uap->cmarg, (caddr_t)data, (u_int)size);
+			    copyin(uap->cmarg, data, (u_int)size);
 			if (u.u_error)
 				return;
 		} else
@@ -217,7 +225,7 @@ ioctl()
 		 * Zero the buffer on the stack so the user
 		 * always gets back something deterministic.
 		 */
-		bzero((caddr_t)data, size);
+		bzero(data, size);
 	else if (com&IOC_VOID)
 		*(caddr_t *)data = uap->cmarg;
 
@@ -225,27 +233,34 @@ ioctl()
 
 	case FIONBIO:
 		u.u_error = fset(fp, FNDELAY, *(int *)data);
-		return;
+		break;
 
 	case FIOASYNC:
 		u.u_error = fset(fp, FASYNC, *(int *)data);
-		return;
+		break;
 
 	case FIOSETOWN:
 		u.u_error = fsetown(fp, *(int *)data);
-		return;
+		break;
 
 	case FIOGETOWN:
 		u.u_error = fgetown(fp, (int *)data);
-		return;
+		break;
+	default:
+		if (setjmp(&u.u_qsave))
+			u.u_error = EINTR;
+		else
+			u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, data);
+		/*
+		 * Copy any data to user, size was
+		 * already set and checked above.
+		 */
+		if (u.u_error == 0 && (com&IOC_OUT) && size)
+			u.u_error = copyout(data, uap->cmarg, (u_int)size);
+		break;
 	}
-	u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, data);
-	/*
-	 * Copy any data to user, size was
-	 * already set and checked above.
-	 */
-	if (u.u_error == 0 && (com&IOC_OUT) && size)
-		u.u_error = copyout(data, uap->cmarg, (u_int)size);
+	if (bp)
+		brelse(bp);
 }
 
 int	unselect();
