@@ -1,0 +1,93 @@
+cc -O -c backspace.c
+ar ru libI77.a backspace.o
+ar: creating libI77.a
+rm backspace.o
+> backspace.x
+cc -O -c dfe.c
+ar ru libI77.a dfe.o
+rm dfe.o
+> dfe.x
+cc -O -c due.c
+ar ru libI77.a due.o
+rm due.o
+> due.x
+cc -O -c iio.c
+ar ru libI77.a iio.o
+rm iio.o
+> iio.x
+cc -O -c inquire.c
+ar ru libI77.a inquire.o
+rm inquire.o
+> inquire.x
+cc -O -c lib.c
+ar ru libI77.a lib.o
+rm lib.o
+> lib.x
+cc -O -c rewind.c
+ar ru libI77.a rewind.o
+rm rewind.o
+> rewind.x
+cc -O -c rsfe.c
+ar ru libI77.a rsfe.o
+rm rsfe.o
+> rsfe.x
+cc -O -c rdfmt.c
+ar ru libI77.a rdfmt.o
+rm rdfmt.o
+> rdfmt.x
+cc -O -c sue.c
+ar ru libI77.a sue.o
+rm sue.o
+> sue.x
+cc -O -c uio.c
+ar ru libI77.a uio.o
+rm uio.o
+> uio.x
+cc -O -c wsfe.c
+ar ru libI77.a wsfe.o
+rm wsfe.o
+> wsfe.x
+cc -O -c sfe.c
+ar ru libI77.a sfe.o
+rm sfe.o
+> sfe.x
+cc -O -c fmt.c
+ar ru libI77.a fmt.o
+rm fmt.o
+> fmt.x
+cc -O -c lio.c
+ar ru libI77.a lio.o
+rm lio.o
+> lio.x
+cc -O -c lread.c
+ar ru libI77.a lread.o
+rm lread.o
+> lread.x
+cc -O -c open.c
+ar ru libI77.a open.o
+rm open.o
+> open.x
+cc -O -c close.c
+ar ru libI77.a close.o
+rm close.o
+> close.x
+cc -O -c util.c
+ar ru libI77.a util.o
+rm util.o
+> util.x
+cc -O -c endfile.c
+ar ru libI77.a endfile.o
+rm endfile.o
+> endfile.x
+cc -O -c wrtfmt.c
+ar ru libI77.a wrtfmt.o
+rm wrtfmt.o
+> wrtfmt.x
+cc -O -c err.c
+ar ru libI77.a err.o
+rm err.o
+> err.x
+cc -O -c fmtlib.c
+ar ru libI77.a fmtlib.o
+rm fmtlib.o
+> fmtlib.x
