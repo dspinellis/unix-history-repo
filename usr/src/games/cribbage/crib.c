@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)crib.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)crib.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/signal.h>
@@ -154,8 +154,6 @@ game()
 	BOOLEAN			flag;
 	BOOLEAN			compcrib;
 
-	makeboard();
-	refresh();
 	makedeck(deck);
 	shuffle(deck);
 	if (gamecount == 0) {
@@ -186,6 +184,9 @@ game()
 		else
 		    compcrib = (deck[i].rank > deck[j].rank);
 	    } while (flag);
+	    clear();
+	    makeboard();
+	    refresh();
 	}
 	else {
 	    werase(Tablewin);
