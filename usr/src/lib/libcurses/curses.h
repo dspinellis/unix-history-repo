@@ -14,33 +14,33 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)curses.h	5.5 (Berkeley) %G%
+ *	@(#)curses.h	5.6 (Berkeley) %G%
  */
 
-# ifndef WINDOW
+#ifndef WINDOW
 
-# include	<stdio.h>
+#include	<stdio.h>
  
-# include	<sys/ioctl.h>
+#include	<sys/ioctl.h>
 
-# define	bool	char
-# define	reg	register
+#define	bool	char
+#define	reg	register
 
-# define	TRUE	(1)
-# define	FALSE	(0)
-# define	ERR	(0)
-# define	OK	(1)
+#define	TRUE	(1)
+#define	FALSE	(0)
+#define	ERR	(0)
+#define	OK	(1)
 
-# define	_ENDLINE	001
-# define	_FULLWIN	002
-# define	_SCROLLWIN	004
-# define	_FLUSH		010
-# define	_FULLLINE	020
-# define	_IDLINE		040
-# define	_STANDOUT	0200
-# define	_NOCHANGE	-1
+#define	_ENDLINE	001
+#define	_FULLWIN	002
+#define	_SCROLLWIN	004
+#define	_FLUSH		010
+#define	_FULLLINE	020
+#define	_IDLINE		040
+#define	_STANDOUT	0200
+#define	_NOCHANGE	-1
 
-# define	_puts(s)	tputs(s, 0, _putchar)
+#define	_puts(s)	tputs(s, 0, _putchar)
 
 typedef	struct sgttyb	SGTTY;
 
@@ -80,7 +80,7 @@ struct _win_st {
 	struct _win_st	*_nextp, *_orig;
 };
 
-# define	WINDOW	struct _win_st
+#define	WINDOW	struct _win_st
 
 extern bool	My_term, _echoit, _rawmode, _endwin;
 
@@ -96,34 +96,34 @@ extern WINDOW	*stdscr, *curscr;
  *	Define VOID to stop lint from generating "null effect"
  * comments.
  */
-# ifdef lint
+#ifdef lint
 int	__void__;
-# define	VOID(x)	(__void__ = (int) (x))
-# else
-# define	VOID(x)	(x)
-# endif
+#define	VOID(x)	(__void__ = (int) (x))
+#else
+#define	VOID(x)	(x)
+#endif
 
 /*
  * psuedo functions for standard screen
  */
-# define	addch(ch)	VOID(waddch(stdscr, ch))
-# define	getch()		VOID(wgetch(stdscr))
-# define	addbytes(da,co)	VOID(waddbytes(stdscr, da,co))
-# define	addstr(str)	VOID(waddbytes(stdscr, str, strlen(str)))
-# define	getstr(str)	VOID(wgetstr(stdscr, str))
-# define	move(y, x)	VOID(wmove(stdscr, y, x))
-# define	clear()		VOID(wclear(stdscr))
-# define	erase()		VOID(werase(stdscr))
-# define	clrtobot()	VOID(wclrtobot(stdscr))
-# define	clrtoeol()	VOID(wclrtoeol(stdscr))
-# define	insertln()	VOID(winsertln(stdscr))
-# define	deleteln()	VOID(wdeleteln(stdscr))
-# define	refresh()	VOID(wrefresh(stdscr))
-# define	inch()		VOID(winch(stdscr))
-# define	insch(c)	VOID(winsch(stdscr,c))
-# define	delch()		VOID(wdelch(stdscr))
-# define	standout()	VOID(wstandout(stdscr))
-# define	standend()	VOID(wstandend(stdscr))
+#define	addch(ch)	VOID(waddch(stdscr, ch))
+#define	getch()		VOID(wgetch(stdscr))
+#define	addbytes(da,co)	VOID(waddbytes(stdscr, da,co))
+#define	addstr(str)	VOID(waddbytes(stdscr, str, strlen(str)))
+#define	getstr(str)	VOID(wgetstr(stdscr, str))
+#define	move(y, x)	VOID(wmove(stdscr, y, x))
+#define	clear()		VOID(wclear(stdscr))
+#define	erase()		VOID(werase(stdscr))
+#define	clrtobot()	VOID(wclrtobot(stdscr))
+#define	clrtoeol()	VOID(wclrtoeol(stdscr))
+#define	insertln()	VOID(winsertln(stdscr))
+#define	deleteln()	VOID(wdeleteln(stdscr))
+#define	refresh()	VOID(wrefresh(stdscr))
+#define	inch()		VOID(winch(stdscr))
+#define	insch(c)	VOID(winsch(stdscr,c))
+#define	delch()		VOID(wdelch(stdscr))
+#define	standout()	VOID(wstandout(stdscr))
+#define	standend()	VOID(wstandend(stdscr))
 
 /*
  * mv functions
@@ -193,4 +193,4 @@ char	*longname(), *getcap();
  */
 #define	unctrl(c)	_unctrl[(c) & 0177]
 extern char *_unctrl[];
-# endif
+#endif
