@@ -24,6 +24,14 @@
  * 
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00159
+ * --------------------         -----   ----------------------
+ *
+ * 23 May 93	Rodney W. Grimes	Added pad to kernel size for structs
+ *					allocated by locore.s
  */
 
 /*
@@ -150,7 +158,11 @@ loadprog(howto)
 			printf("kernel will not fit below loader\n");
 			return;
 		}
-		if((addr + head.a_text + head.a_data + head.a_bss) > 0xa0000)
+		/*
+		 * The +28672 is for memory allocated by locore.s that must
+		 * fit in the bss!
+		 */
+		if((addr + head.a_text + head.a_data + head.a_bss + 28672) > 0xa0000)
 		{
 			printf("kernel too big, won't fit in 640K with bss\n");
 			printf("Only hope is to link the kernel for > 1MB\n");
