@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -47,7 +47,7 @@ wwiomux()
 	register char *p;
 	char c;
 	struct timeval tv;
-	char noblock;
+	char noblock = 0;
 
 	for (w = wwhead; w; w = w->ww_next)
 		if (w->ww_pty >= 0)
