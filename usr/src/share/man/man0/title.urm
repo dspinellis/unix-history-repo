@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)title.urm	4.1 (Berkeley) %G%
+.\"	@(#)title.urm	5.1 (Berkeley) %G%
 .\"
 .tl '--''--'
 .ps20
@@ -14,12 +14,12 @@ UNIX PROGRAMMER'S MANUAL
 .sp |5i
 .ft I
 .ce
-Seventh Edition
+4.2 Berkeley Software Distribution
 .ce
 Virtual VAX\-11 Version
 .sp |5.75i
 .ce
-November, 1980
+August, 1983
 .sp |9.2i
 .ft R
 .ce
