@@ -1,4 +1,4 @@
-/*	kern_resource.c	6.5	85/03/08	*/
+/*	kern_resource.c	6.6	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -126,7 +126,7 @@ donice(p, n)
 
 	if (u.u_uid && u.u_ruid &&
 	    u.u_uid != p->p_uid && u.u_ruid != p->p_uid) {
-		u.u_error = EACCES;
+		u.u_error = EPERM;
 		return;
 	}
 	if (n > PRIO_MAX)
