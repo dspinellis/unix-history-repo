@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_subr.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,7 +43,7 @@ lfs_blkatoff(ap)
 	ip = VTOI(ap->a_vp);
 	fs = ip->i_lfs;
 	lbn = lblkno(fs, ap->a_offset);
-	bsize = blksize(fs);
+	bsize = blksize(fs, ip, lbn);
 
 	*ap->a_bpp = NULL;
 	if (error = bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.6 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ lfs_bwrite(ap)
 	register struct buf *bp = ap->a_bp;
 	struct lfs *fs;
 	struct inode *ip;
-	int error, s;
+	int db, error, s;
 
 	/*
 	 * Set the delayed write flag and use reassignbuf to move the buffer
@@ -68,7 +68,8 @@ lfs_bwrite(ap)
 	 */
 	if (!(bp->b_flags & B_LOCKED)) {
 		fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
-		while (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp) &&
+		db = fragstodb(fs, numfrags(fs, bp->b_bcount));
+		while (!LFS_FITS(fs, db) && !IS_IFILE(bp) &&
 		    bp->b_lblkno > 0) {
 			/* Out of space, need cleaner to run */
 			wakeup(&lfs_allclean_wakeup);
@@ -82,7 +83,7 @@ lfs_bwrite(ap)
 		if (!(ip->i_flag & IN_MODIFIED))
 			++fs->lfs_uinodes;
 		ip->i_flag |= IN_CHANGE | IN_MODIFIED | IN_UPDATE;
-		fs->lfs_avail -= fsbtodb(fs, 1);
+		fs->lfs_avail -= db;
 		++locked_queue_count;
 		bp->b_flags |= B_DELWRI | B_LOCKED;
 		bp->b_flags &= ~(B_READ | B_ERROR);

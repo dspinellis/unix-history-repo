@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	8.5 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,7 +69,7 @@ lfs_valloc(ap)
 		vp = fs->lfs_ivnode;
 		ip = VTOI(vp);
 		blkno = lblkno(fs, ip->i_size);
-		lfs_balloc(vp, fs->lfs_bsize, blkno, &bp);
+		lfs_balloc(vp, 0, fs->lfs_bsize, blkno, &bp);
 		ip->i_size += fs->lfs_bsize;
 		vnode_pager_setsize(vp, (u_long)ip->i_size);
 		vnode_pager_uncache(vp);
@@ -152,8 +152,6 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_flag = IN_MODIFIED;
 	ip->i_dev = ump->um_dev;
 	ip->i_number = ip->i_din.di_inumber = ino;
-ip->i_din.di_spare[0] = 0xdeadbeef;
-ip->i_din.di_spare[1] = 0xdeadbeef;
 	ip->i_lfs = ump->um_lfs;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
