@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.3	81/11/18	*/
+/*	uipc_socket2.c	4.4	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,8 +150,8 @@ sbreserve(sb, cc)
 
 	if (m_reserve(cc) == 0)
 		return (0);
-	sb->sb_cc = cc;
-	sb->sb_mbcnt = (cc*2)/MSIZE;
+	sb->sb_hiwat = cc;
+	sb->sb_mbmax = (cc*2)/MSIZE;
 	return (1);
 }
 
@@ -163,8 +163,8 @@ sbrelease(sb)
 {
 
 	sbflush(sb);
-	m_release(sb->sb_cc);
-	sb->sb_cc = sb->sb_mbcnt = 0;
+	m_release(sb->sb_hiwat);
+	sb->sb_hiwat = sb->sb_mbmax = 0;
 }
 
 /*
