@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -407,6 +407,7 @@ makedb(file)
 
 	if (!(pid = vfork())) {
 		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
+		(void)fprintf(stderr, "chpass: can't find \"mkpasswd\".\n");
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1);
@@ -431,6 +432,7 @@ edit(file)
 		(void)setgid(getgid());
 		(void)setuid(getuid());
 		execlp(editor, p, file, NULL);
+		(void)fprintf(stderr, "chpass: can't find \"%s\".\n", editor);
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1);
