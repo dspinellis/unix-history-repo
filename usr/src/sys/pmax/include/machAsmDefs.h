@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machAsmDefs.h	7.2 (Berkeley) %G%
+ *	@(#)machAsmDefs.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,21 @@
 #include <machine/regdef.h>
 
 /*
+ * Define -pg profile entry code.
+ */
+#ifdef PROF
+#define	MCOUNT	.set noreorder; \
+		.set noat; \
+		move $1,$31; \
+		jal _mount; \
+		subu sp,sp,8;
+		.set reorder; \
+		.set at;
+#else
+#define	MCOUNT
+#endif PROF
+
+/*
  * LEAF(x)
  *
  *	Declare a leaf routine.
@@ -41,10 +56,22 @@
 	.globl x; \
 	.ent x, 0; \
 x: ; \
+	.frame sp, 0, ra \
+	MCOUNT
+
+/*
+ * NLEAF(x)
+ *
+ *	Declare a non-profiled leaf routine.
+ */
+#define NLEAF(x) \
+	.globl x; \
+	.ent x, 0; \
+x: ; \
 	.frame sp, 0, ra
 
 /*
- * ALEAF -- declare alternate entry to leaf routine
+ * ALEAF -- declare alternate entry to a leaf routine.
  */
 #define	ALEAF(x)					\
 	.globl	x;					\
@@ -60,7 +87,8 @@ x:
 	.globl x; \
 	.ent x, 0; \
 x: ; \
-	.frame sp, fsize, retpc
+	.frame sp, fsize, retpc \
+	MCOUNT
 
 /*
  * END(x)
