@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 4.3 %G%";
+static	char sccsid[] = "@(#)ld.c 4.4 %G%";
 /*
  * ld - string table version for VAX
  */
