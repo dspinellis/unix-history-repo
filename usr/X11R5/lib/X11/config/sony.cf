@@ -1,0 +1,55 @@
+XCOMM platform:  $XConsortium: sony.cf,v 1.36.1.1 92/11/11 09:52:20 rws Exp $
+
+#ifdef SonyBsdArchitecture
+
+#define OSName                  NEWS-OS 4.1
+#define OSMajorVersion          4
+#define OSMinorVersion          1
+#define SetTtyGroup             YES
+#define HasVoidSignalReturn     NO
+#define HasNdbm                 YES
+#define DirFailPrefix -
+#define InstKmemFlags		-g sys -m 2755
+#define DefaultUserPath :/bin:/usr/bin:$(BINDIR):/usr/ucb:/usr/sony/bin:
+#define DefaultSystemPath /etc:/usr/etc:/bin:/usr/bin:$(BINDIR):/usr/ucb:/usr/sony/bin:
+#ifdef MipsArchitecture
+#define ExtraLibraries		-lmld
+#define LintOpts		-ax
+#define LintLibFlag		-o
+#define DefaultCCOptions	-Wf,-XNh2000,-XNd6000,-XNp10000 -Olimit 2000
+#define PexCCOptions		-Wf,-XNh2000,-XNd15000,-XNp15000 -Olimit 2000
+#else
+#define HasFortran		YES
+#endif
+#if OSMajorVersion >= 4
+#define HasShm			YES
+#define HasPutenv		YES
+#define HasSecureRPC		YES
+#define XdmDir			/etc/xdm
+#if OSMinorVersion >= 1
+#define HasBsearch		YES
+#else
+#define HasBsearch		NO
+#endif
+#else
+#define StandardDefines		-DNOSTDHDRS
+#define HasBsearch		NO
+#endif
+
+#else
+
+#define OSName			NEWS-OS 5.0U
+#define OSMajorVersion		5
+#define OSMinorVersion		0
+#define BootstrapCFlags		-Dsony
+#define SystemV4		YES
+#define CcCmd			/usr/bin/cc
+#define HasSockets		YES
+#define DefaultCCOptions	-Wf,-XNp8000,-XNd6000
+#define PexCCOptions		-Wf,-XNp15000,-XNd15000
+
+#endif
+XCOMM operating system:  OSName
+
+#define BuildServer             NO
+#define BuildXimp		YES

@@ -1,0 +1,82 @@
+XCOMM platform:  $XConsortium: sgi.cf,v 1.19.1.1 92/11/11 09:51:39 rws Exp $
+
+#define OSName			IRIX
+XCOMM operating system:  OSName
+#define OSMajorVersion		4
+#define OSMinorVersion		0
+
+#define SystemV			YES
+#define HasPutenv		YES
+#define ExecableScripts		YES
+#define SetTtyGroup		YES
+#define HasNdbm			YES
+#define HasVFork		YES
+#define Malloc0ReturnsNull	YES
+#define ExpandManNames          YES
+/* At SGI, in 3.2 we have TCP/IP sockets only, 3.3 has unix domain also ! */
+#define HasSockets		YES
+#define BuildXInputExt		YES
+
+#if OSMajorVersion > 3 || (OSMajorVersion == 3 && OSMinorVersion > 2)
+#define NeedVarargsPrototypes	YES
+#define NeedConstPrototypes	YES
+#define NeedWidePrototypes	NO
+#endif
+
+/* Extra libraries provide : yp, sysV malloc & shared libc */
+#define ExtraLibraries -lsun -lmalloc -lc_s
+
+/* #include <sgiLib.rules> */
+
+#define CCPreprocessorFlags /* As Nothing For the Standard "cpp" */
+
+#define SymbolTables -Wf,-XNp9000,-XNd8000,-XNh2000
+#define PexSymbolTables -Wf,-XNp15000,-XNd15000,-XNh2000
+
+/* NOTE: the SGI cc driver invoking the ANSI cpp does NOT define __STDC__ */
+/* #define CCPreprocessorFlags -acpp -D__STDC__ -D__EXTENSIONS__ SymbolTables */
+
+/* this is for floating point, ANSI cpp */
+#define DefaultCCOptions -prototypes -float CCPreprocessorFlags SymbolTables
+#define PexCCOptions -prototypes -float CCPreprocessorFlags PexSymbolTables
+
+/* At SGI, we don't need this */
+#define ConstructMFLAGS		NO	/* build MFLAGS from MAKEFLAGS */
+
+/* Used only for compressed fonts */
+#define UNCOMPRESSPATH /usr/bsd/uncompress
+
+/* Normally used only to conditionally chose the default font path order */
+#define PrimaryScreenResolution 96
+
+/* Override Imake.tmpl's "-X" flag */
+#define LdCombineFlags -r
+
+/* Installation Build Parameters */
+#define InstKmemFlags -m 2755 -g sys
+
+#define ArCmd ar scq
+#define LnCmd ln -s
+
+/* for xdm or anyone else to use */
+#define DefaultUserPath :/usr/sbin:/usr/bsd:/usr/bin:/bin:$(BINDIR):/etc:/usr/etc
+#define DefaultSystemPath /usr/sbin:/usr/bsd:/bin:/etc:/usr/bin:/usr/etc:$(BINDIR)
+
+#define BuildServer             NO
+
+/* Changed to a single shell command for pmake/smake */
+
+/*
+ * ObjectCompile - compile fragment for a normal object file
+ */
+#define	ObjectCompile(options) $(RM) $@ $*.os \				@@\
+	&& $(CC) -c options $(CFLAGS) $*.c \				@@\
+	&& $(LD) -x -r $@ -o $*.os \					@@\
+	&& $(MV) $*.os $@
+
+/*
+ * LibObjCompile - compile fragment for shared/profiled/debugged objects
+ */
+#define LibObjCompile(dir,options) $(RM) $@ dir/$@ \			@@\
+	&& $(CC) -c options $(CFLAGS) $*.c \				@@\
+	&& $(MV) $@ dir/$@

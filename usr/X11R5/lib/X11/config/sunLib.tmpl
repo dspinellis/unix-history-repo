@@ -1,0 +1,78 @@
+XCOMM $XConsortium: sunLib.tmpl,v 1.14.1.2 92/11/11 09:55:02 rws Exp $
+
+/*
+ * SunOS shared library template
+ */
+
+#ifndef SharedXlibRev
+#define SharedXlibRev 4.10
+#endif
+#ifndef SharedOldXRev
+#define SharedOldXRev 4.10
+#endif
+#ifndef SharedXtRev
+#define SharedXtRev 4.10
+#endif
+#ifndef SharedXawRev
+#define SharedXawRev 5.0
+#endif
+#ifndef SharedXmuRev
+#define SharedXmuRev 4.10
+#endif
+#ifndef SharedXextRev
+#define SharedXextRev 4.10
+#endif
+#ifndef SharedXinputRev
+#define SharedXinputRev 4.10
+#endif
+#ifndef SharedXTrapRev
+#define SharedXTrapRev 1.0
+#endif
+#ifndef SharedPexRev
+#define SharedPexRev 1.0
+#endif
+
+SHLIBLDFLAGS = SharedLibraryLoadFlags
+PICFLAGS = PositionIndependentCFlags
+
+/*
+ * and now a little bit of magic for using imake without source tree; if we
+ * are using shared libraries, we really do not need to depend on anything
+ */
+#if SharedLibXext
+  DEPEXTENSIONLIB = /* _UseCat($(USRLIBDIR),$(EXTENSIONSRC)/lib,/libXext.sa.$(SOXEXTREV)) */
+     EXTENSIONLIB = _Use(-lXext,-L$(EXTENSIONSRC)/lib -lXext)
+#endif
+#if SharedLibX
+          DEPXLIB = $(DEPEXTENSIONLIB) /* _UseCat($(USRLIBDIR),$(XLIBSRC),/libX11.sa.$(SOXLIBREV)) */
+             XLIB = $(EXTENSIONLIB) _Use(-lX11,-L$(XLIBSRC) -lX11)
+#endif
+#if SharedLibXmu
+/* Sun shared libraries are deficient in link semantics */
+        DEPXMULIB = _UseCat($(USRLIBDIR),$(XMUSRC),/libXmu.sa.$(SOXMUREV))
+       XMULIBONLY = _Use(-lXmu,-L$(XMUSRC) -lXmu)
+           XMULIB = _Use(-lXmu,-L$(XMUSRC) -lXmu -L$(TOOLKITSRC) -L$(EXTENSIONSRC)/lib -L$(XLIBSRC))
+#if !defined(UseInstalled) && !defined(XawClientLibs)
+#define XawClientLibs $(XAWLIB) $(XMULIBONLY) $(XTOOLLIB) $(XLIB)
+#endif
+#endif
+#if SharedOldLibX
+       DEPOLDXLIB = /* _UseCat($(USRLIBDIR),$(OLDXLIBSRC),/liboldX.sa.$(SOOLDXREV)) */
+          OLDXLIB = _Use(-loldX,-L$(OLDXLIBSRC) -loldX)
+#endif
+#if SharedLibXt
+      DEPXTOOLLIB = _UseCat($(USRLIBDIR),$(TOOLKITSRC),/libXt.sa.$(SOXTREV))
+         XTOOLLIB = _Use(-lXt,-L$(TOOLKITSRC) -lXt)
+#endif
+#if SharedLibXaw
+        DEPXAWLIB = _UseCat($(USRLIBDIR),$(AWIDGETSRC),/libXaw.sa.$(SOXAWREV))
+           XAWLIB = _Use(-lXaw,-L$(AWIDGETSRC) -lXaw)
+#endif
+#if SharedLibXinput
+        DEPXILIB = /* _UseCat($(USRLIBDIR),$(XILIBSRC),/libXi.sa.$(SOXINPUTREV)) */
+           XILIB = _Use(-lXi,-L$(XILIBSRC) -lXi)
+#endif
+#if SharedLibPex
+        DEPPEXLIB = /* _UseCat($(USRLIBDIR),$(PEXLIBSRC),/libPEX5.sa.$(SOPEXREV)) */
+           PEXLIB = _Use(-lPEX5,-L$(PEXLIBSRC) -lPEX5)
+#endif

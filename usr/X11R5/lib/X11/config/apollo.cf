@@ -1,0 +1,21 @@
+XCOMM platform:  $XConsortium: apollo.cf,v 1.30 91/08/25 14:46:56 rws Exp $
+
+/*
+ * Minimally tested, and only in the bsd4.3 environment.  X_NOT_POSIX is not
+ * in Xosdefs.h, because we suspect someone might want to try building with
+ * POSIX support in the sysv environment (the OS doc seems to imply that
+ * POSIX is supported in sysv).
+ */
+
+#define OSName            Domain/OS SR10.3
+XCOMM operating system:  OSName
+#define OSMajorVersion    10
+#define OSMinorVersion    3
+
+#define CCompilerMajorVersion 6
+#define CCompilerMinorVersion 8
+
+#define StandardDefines -DX_NOT_POSIX
+#define BuildServer	NO
+#define HasNdbm		YES
+#define ConnectionFlags	-DTCPCONN

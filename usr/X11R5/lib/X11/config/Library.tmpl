@@ -1,0 +1,112 @@
+/*
+ * Library imakefile info  - this contains any special redefinitions, etc.
+ * that Imakefiles in the various library subtrees will need.
+ *
+ * Before including this, you must set the following boolean variables:
+ * DoNormalLib, DoSharedLib, DoDebugLib, DoProfileLib
+ */
+
+XCOMM $XConsortium: Library.tmpl,v 1.12 92/03/20 15:05:19 rws Exp $
+
+#ifndef LibraryCcCmd
+#if DoSharedLib && defined(SharedLibraryCcCmd)
+#define LibraryCcCmd SharedLibraryCcCmd
+#else
+#define LibraryCcCmd CcCmd
+#endif
+#endif
+#ifndef LibraryCCOptions
+#if DoSharedLib && defined(SharedLibraryCCOptions)
+#define LibraryCCOptions SharedLibraryCCOptions
+#else
+#define LibraryCCOptions DefaultCCOptions
+#endif
+#endif
+#ifndef LibraryDefines
+#define LibraryDefines StandardDefines
+#endif
+#ifndef LibraryCDebugFlags
+#define LibraryCDebugFlags OptimizedCDebugFlags
+#endif
+#ifndef AvoidNullMakeCommand
+#define AvoidNullMakeCommand NO
+#endif
+#if AvoidNullMakeCommand
+_NULLCMD_ = @ echo -n
+#endif
+
+         CC = LibraryCcCmd
+  CCOPTIONS = LibraryCCOptions
+STD_DEFINES = LibraryDefines
+CDEBUGFLAGS = LibraryCDebugFlags
+
+#if DoDebugLib
+#define _DebuggedLibMkdir() LibMkdir(debugger)
+#define _DebuggedObjCompile(options) DebuggedLibObjCompile(options)
+#define _DebuggedCleanDir() LibCleanDir(debugger)
+#else
+#define _DebuggedLibMkdir() $(_NULLCMD_)
+#define _DebuggedObjCompile(options) $(_NULLCMD_)
+#define _DebuggedCleanDir() $(_NULLCMD_)
+#endif
+
+#if DoProfileLib
+#define _ProfiledLibMkdir() LibMkdir(profiled)
+#define _ProfiledObjCompile(options) ProfiledLibObjCompile(options)
+#define _ProfiledCleanDir() LibCleanDir(profiled)
+#else
+#define _ProfiledLibMkdir() $(_NULLCMD_)
+#define _ProfiledObjCompile(options) $(_NULLCMD_)
+#define _ProfiledCleanDir() $(_NULLCMD_)
+#endif
+
+#if DoSharedLib && DoNormalLib
+#define _SharedLibMkdir() LibMkdir(shared)
+#define _SharedObjCompile(options) SharedLibObjCompile(options)
+#define _SharedCleanDir() LibCleanDir(shared)
+#else
+#define _SharedLibMkdir() $(_NULLCMD_)
+#define _SharedObjCompile(options) $(_NULLCMD_)
+#define _SharedCleanDir() $(_NULLCMD_)
+#endif
+
+#if DoSharedLib && !DoNormalLib
+#define _NormalObjCompile(options) NormalSharedLibObjCompile(options)
+#else
+#define _NormalObjCompile(options) NormalLibObjCompile(options)
+#endif
+
+#ifndef LibraryObjectRule
+#define LibraryObjectRule()						@@\
+all::									@@\
+	_DebuggedLibMkdir()						@@\
+	_ProfiledLibMkdir()						@@\
+	_SharedLibMkdir()						@@\
+									@@\
+includes::								@@\
+	_DebuggedLibMkdir()						@@\
+	_ProfiledLibMkdir()						@@\
+	_SharedLibMkdir()						@@\
+									@@\
+.c.o:									@@\
+	_DebuggedObjCompile($(_NOOP_))					@@\
+	_ProfiledObjCompile($(_NOOP_))					@@\
+	_SharedObjCompile($(_NOOP_))					@@\
+	_NormalObjCompile($(_NOOP_))					@@\
+									@@\
+clean::									@@\
+	_DebuggedCleanDir()						@@\
+	_ProfiledCleanDir()						@@\
+	_SharedCleanDir()						@@\
+
+#endif /* LibraryObjectRule */
+
+#ifndef SpecialLibObjectRule
+#define SpecialLibObjectRule(objs,depends,options)			@@\
+objs: depends								@@\
+	_DebuggedObjCompile(options)					@@\
+	_ProfiledObjCompile(options)					@@\
+	_SharedObjCompile(options)					@@\
+	_NormalObjCompile(options)					@@\
+
+#endif /* SpecialLibObjectRule */

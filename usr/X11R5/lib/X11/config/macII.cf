@@ -1,0 +1,35 @@
+XCOMM platform:  $XConsortium: macII.cf,v 1.40 91/09/10 09:02:30 rws Exp $
+
+#define OSName            A/UX 2.0.1
+#define OSMajorVersion    2
+#define OSMinorVersion    0
+XCOMM operating system:  OSName
+
+#if HasGcc
+#define BootstrapCFlags   -DmacII
+#endif
+#define SystemV             YES
+#define NeedBerklib         YES
+#define ExtraLibraries      $(XBSDLIB) -lposix
+#define Malloc0ReturnsNull  YES
+#define StandardDefines     -DmacII -DSYSV
+#define LnCmd               ln -s
+#define ExecableScripts     NO
+#define RemoveTargetProgramByMoving YES
+#define ExpandManNames      YES
+#define HasSockets          YES
+#define PexShmIPC           NO
+#define HasVoidSignalReturn NO
+#define XmacIIServer        YES
+
+#if !HasGcc
+#define DefaultCCOptions -A 3
+#define PexCCOptions -A 4
+#endif
+
+/*
+ * If you wish to override the man page directories, do so here using just
+ * one tab between the parameter name (e.g. ManDirectoryRoot) and the
+ * value so that cpp doesn't get confused.
+ */
+#define ManDirectoryRoot	/usr/catman/u_man

@@ -1,0 +1,35 @@
+XCOMM platform:  $XConsortium: bsd.cf,v 1.18 91/07/30 12:10:52 rws Exp $
+
+#define OSName            4.3bsd
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    3
+
+#define BootstrapCFlags -DNOSTDHDRS
+#define StandardDefines -DNOSTDHDRS
+#define HasVoidSignalReturn NO
+#define HasBsearch NO
+#define DirFailPrefix -
+#define AvoidNullMakeCommand	YES
+
+#ifdef VaxArchitecture
+#define XqdssServer YES
+#define XqvssServer YES
+#if HasGcc
+#define BuildPexExt XqdssServer
+#else
+#define BuildPex 	NO	/* compiler runs out of table space */
+#define BuildXInputLib 	NO	/* compiler runs out of table space */
+#endif
+#define HasSaberC YES
+#else
+#define BuildServer NO
+#endif
+
+#ifdef VaxArchitecture
+#define UnalignedReferencesAllowed YES	       /* if arbitrary deref is okay */
+#endif
+
+#if OSMajorVersion >= 4 && OSMinorVersion >= 3
+#define SetTtyGroup YES
+#endif
