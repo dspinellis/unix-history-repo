@@ -1,4 +1,4 @@
-/*	locore.s	4.22	81/02/17	*/
+/*	locore.s	4.23	81/02/18	*/
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -72,13 +72,13 @@ _doadump:
 #define	POPR		popr $0x3f
 
 SCBVEC(machcheck):
-	PANIC("Machine check");
+	PUSHR; PANIC("Machine check");
 SCBVEC(kspnotval):
-	PANIC("KSP not valid");
+	PUSHR; PANIC("KSP not valid");
 SCBVEC(powfail):
 	halt
 SCBVEC(chme): SCBVEC(chms): SCBVEC(chmu):
-	PANIC("CHM? in kernel");
+	PUSHR; PANIC("CHM? in kernel");
 SCBVEC(stray):
 	PUSHR; PRINTF(0,"Stray interrupt\n"); POPR;
 	rei
@@ -206,21 +206,25 @@ dzpcall:
  */
 	.data
 	.align	2
+#define	PJ	PUSHR;jsb _Xustray
 	.globl	_catcher
 _catcher:
-	PUSHR
-	jsb	_Xustray		# this (& PUSHR) make exactly 8 bytes
-	.space	1016			# makes exactly 1 K bytes
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 
 	.text
 SCBVEC(ustray):
-	PUSHR
+	subl3	$_catcher+8,(sp)+,r0
+	ashl	$-1,r0,-(sp)
 	mfpr	$IPL,-(sp)
-	subl3	$_catcher,6*4+4(sp),-(sp)
-	ashl	$-1,(sp),(sp)
-	PRINTF(2, "Stray unibus interrupt (%o) (IPL %x)\n")
+	PRINTF(2, "STRAY UNIBUS INTR IPL %x VEC %o\n")
 	POPR
-	tstl	(sp)+
 	rei
 
 /*
