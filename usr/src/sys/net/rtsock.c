@@ -14,12 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.4 (Berkeley) %G%
+ *	@(#)rtsock.c	7.5 (Berkeley) %G%
  */
 
 #ifndef RTF_UP
 #include "param.h"
 #include "mbuf.h"
+#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "socket.h"
@@ -92,7 +93,6 @@ route_output(m, so)
 {
 	register struct rt_msghdr *rtm = 0;
 	register struct rtentry *rt = 0;
-	struct mbuf *m0 = m;
 	struct rtentry *saved_nrt;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *author;
 	struct rt_metrics *rmm = 0;
@@ -100,10 +100,13 @@ route_output(m, so)
 	int len, error = 0;
 
 #define FLUSH(e) { error = e; goto flush;}
-	if (m == 0 || (m = m_pullup(m, sizeof(long))) == 0)
-		FLUSH(ENOBUFS);
+	if (m == 0)
+		return (ENOBUFS);
+	if (m->m_len < sizeof(long))
+		if ((m = m_pullup(m, sizeof(long))) == 0)
+			return (ENOBUFS);
 	if ((m->m_flags & M_PKTHDR) == 0)
-		return (EOPNOTSUPP);
+		panic("route_output");
 	len = m->m_pkthdr.len;
 	rtm = mtod(m, struct rt_msghdr *);
 	if (len < rtm->rtm_msglen)
@@ -235,14 +238,12 @@ flush:
 cleanup:
 	if (rt)
 		rtfree(rt);
-	cp = (caddr_t)rtm;
-	m_copyback(m = m0, 0, len, cp);
-	/*if (m->m_pkthdr.len != len) {
-		m_freem(m);
-		return (error);
-	} */
+	if (cp = (caddr_t)rtm) {
+		m_copyback(m, 0, len, cp);
+		Free(rtm);
+	}
 	route_proto.sp_protocol = dst->sa_family;
-	raw_input(m0, &route_proto, &route_src, &route_dst);
+	raw_input(m, &route_proto, &route_src, &route_dst);
 	return (error);
 }
 
