@@ -1,4 +1,6 @@
-/*	param.h	4.16	82/03/30	*/
+/* "@(#)param.h 2.1 3/25/82" */
+
+/*	param.h	4.17	82/04/19	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -68,9 +70,6 @@
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
-#define	ROOTINO	((ino_t)2)	/* i number of all roots */
-#define	SUPERB	((daddr_t)1)	/* block number of the super block */
-#define	DIRSIZ	14		/* max characters per directory */
 #define	NGRPS	256		/* max number groups */
 
 /*
@@ -95,65 +94,14 @@
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
 
-#define DEV_BSIZE 512
-#if CLSIZE==1
-#define	BSIZE	512		/* size of secondary block (bytes) */
-#define	INOPB	8		/* 8 inodes per block */
-#define	BMASK	0777		/* BSIZE-1 */
-#define	BSHIFT	9		/* LOG2(BSIZE) */
-#define	NMASK	0177		/* NINDIR-1 */
-#define	NSHIFT	7		/* LOG2(NINDIR) */
-#define	NICINOD	100		/* number of superblock inodes */
-#define	NICFREE	50		/* number of superblock free blocks */
-
-#endif
-
-#if CLSIZE==2
-#define	BSIZE	1024
-#define	INOPB	16
-#define	BMASK	01777
-#define	BSHIFT	10
-#define	NMASK	0377
-#define	NSHIFT	8
-#define	NICINOD	100
-#define	NICFREE	178
-#endif
-
-#if CLSIZE==4
-#define	BSIZE	2048
-#define	INOPB	32
-#define	BMASK	03777
-#define	BSHIFT	11
-#define	NMASK	0777
-#define	NSHIFT	9
-#define	NICINOD	100
-#define	NICFREE	434
-#endif
-
 #ifndef INTRLVE
 /* macros replacing interleaving functions */
 #define	dkblock(bp)	((bp)->b_blkno)
 #define	dkunit(bp)	(minor((bp)->b_dev) >> 3)
 #endif
 
-/* inumber to disk address and inumber to disk offset */
-#define	itod(x)	((daddr_t)((((unsigned)(x)+2*INOPB-1)/INOPB)))
-#define	itoo(x)	((int)(((x)+2*INOPB-1)%INOPB))
-
-/* file system blocks to disk blocks and back */
-#define	fsbtodb(b)	((b)*CLSIZE)
-#define	dbtofsb(b)	((b)/CLSIZE)
-
-#define	NINDIR	(BSIZE/sizeof(daddr_t))
-
 #define	CBSIZE	28		/* number of chars in a clist block */
 #define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
-
-/*
- * Macros for fast min/max
- */
-#define	MIN(a,b) (((a)<(b))?(a):(b))
-#define	MAX(a,b) (((a)>(b))?(a):(b))
 
 /*
  * Some macros for units conversion
@@ -186,6 +134,57 @@
 #define	BASEPRI(ps)	(((ps) & PSL_IPL) != 0)
 
 /*
- * Provide about n microseconds of delay
+ * File system parameters and macros.
+ *
+ * The file system is made out of blocks of at most MAXBSIZE units,
+ * with smaller units (fragments) only in the last direct block.
+ * MAXBSIZE primarily determines the size of buffers in the buffer
+ * pool. It may be made larger without any effect on existing
+ * file systems; however making it smaller make make some file
+ * systems unmountable.
+ *
+ * Note that the blocked devices are assumed to have DEV_BSIZE
+ * "sectors" and that fragments must be some multiple of this size.
+ */
+#define	MAXBSIZE	8192
+#define	DEV_BSIZE	512
+#define MAXFRAG 	8
+
+/*
+ * MAXPATHLEN defines the longest permissable path length
+ * after expanding symbolic links. It is used to allocate
+ * a temporary buffer from the buffer pool in which to do the
+ * name expansion, hence should be a power of two, and must
+ * be less than or equal to MAXBSIZE.
+ * MAXSYMLINKS defines the maximum number of symbolic links
+ * that may be expanded in a path name. It should be set high
+ * enough to allow all legitimate uses, but halt infinite loops
+ * reasonably quickly.
+ */
+#define MAXPATHLEN	1024
+#define MAXSYMLINKS	8
+
+/*
+ * bit map related macros
+ */
+#define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
+#define	clrbit(a,i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
+#define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a,i)	(((a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
+
+/*
+ * Macros for fast min/max.
+ */
+#define	MIN(a,b) (((a)<(b))?(a):(b))
+#define	MAX(a,b) (((a)>(b))?(a):(b))
+
+/*
+ * Macros for counting and rounding.
+ */
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+
+/*
+ * Provide about n microseconds of delay.
  */
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }

@@ -1,4 +1,6 @@
-/*	vfs_bio.c	4.28	82/03/31	*/
+/*	vfs_bio.c	4.29	82/04/19	*/
+
+/* merged into kernel:	 @(#)bio.c 2.3 4/8/82 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,9 +40,10 @@ struct	buf bfreelist[BQUEUES];
 struct	buf bswlist, *bclnlist;
 
 #define	BUFHSZ	63
+#define RND	(MAXBSIZE/DEV_BSIZE)
 struct	bufhd bufhash[BUFHSZ];
 #define	BUFHASH(dev, dblkno)	\
-		((struct buf *)&bufhash[((int)(dev)+(int)(dblkno)) % BUFHSZ])
+	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND)) % BUFHSZ])
 
 /*
  * Initialize hash links for buffers.
@@ -97,13 +100,14 @@ int	*swpf;
  * Read in (if necessary) the block and return a buffer pointer.
  */
 struct buf *
-bread(dev, blkno)
-dev_t dev;
-daddr_t blkno;
+bread(dev, blkno, size)
+	dev_t dev;
+	daddr_t blkno;
+	int size;
 {
 	register struct buf *bp;
 
-	bp = getblk(dev, blkno);
+	bp = getblk(dev, blkno, size);
 	if (bp->b_flags&B_DONE) {
 #ifdef	TRACE
 		trace(TR_BREADHIT, dev, blkno);
@@ -114,7 +118,6 @@ daddr_t blkno;
 		return(bp);
 	}
 	bp->b_flags |= B_READ;
-	bp->b_bcount = BSIZE;
 	(*bdevsw[major(dev)].d_strategy)(bp);
 #ifdef	TRACE
 	trace(TR_BREADMISS, dev, blkno);
@@ -132,18 +135,18 @@ daddr_t blkno;
  * read-ahead block (which is not allocated to the caller)
  */
 struct buf *
-breada(dev, blkno, rablkno)
-dev_t dev;
-daddr_t blkno, rablkno;
+breada(dev, blkno, rablkno, size)
+	dev_t dev;
+	daddr_t blkno, rablkno;
+	int size;
 {
 	register struct buf *bp, *rabp;
 
 	bp = NULL;
 	if (!incore(dev, blkno)) {
-		bp = getblk(dev, blkno);
+		bp = getblk(dev, blkno, size);
 		if ((bp->b_flags&B_DONE) == 0) {
 			bp->b_flags |= B_READ;
-			bp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(bp);
 #ifdef	TRACE
 			trace(TR_BREADMISS, dev, blkno);
@@ -159,7 +162,7 @@ daddr_t blkno, rablkno;
 #endif
 	}
 	if (rablkno && !incore(dev, rablkno)) {
-		rabp = getblk(dev, rablkno);
+		rabp = getblk(dev, rablkno, size);
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
 #ifdef	TRACE
@@ -167,7 +170,6 @@ daddr_t blkno, rablkno;
 #endif
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
-			rabp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(rabp);
 #ifdef	TRACE
 			trace(TR_BREADMISSRA, dev, rablock);
@@ -179,7 +181,7 @@ daddr_t blkno, rablkno;
 		}
 	}
 	if(bp == NULL)
-		return(bread(dev, blkno));
+		return(bread(dev, blkno, size));
 	iowait(bp);
 	return(bp);
 }
@@ -195,7 +197,6 @@ register struct buf *bp;
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI | B_AGE);
-	bp->b_bcount = BSIZE;
 #ifdef	DISKMON
 	io_info.nwrite++;
 #endif
@@ -303,24 +304,24 @@ daddr_t blkno;
 {
 	register struct buf *bp;
 	register struct buf *dp;
-	register int dblkno = fsbtodb(blkno);
 
-	dp = BUFHASH(dev, dblkno);
+	dp = BUFHASH(dev, blkno);
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
-		if (bp->b_blkno == dblkno && bp->b_dev == dev &&
+		if (bp->b_blkno == blkno && bp->b_dev == dev &&
 		    !(bp->b_flags & B_INVAL))
 			return (1);
 	return (0);
 }
 
 struct buf *
-baddr(dev, blkno)
-dev_t dev;
-daddr_t blkno;
+baddr(dev, blkno, size)
+	dev_t dev;
+	daddr_t blkno;
+	int size;
 {
 
 	if (incore(dev, blkno))
-		return (bread(dev, blkno));
+		return (bread(dev, blkno, size));
 	return (0);
 }
 
@@ -334,12 +335,12 @@ daddr_t blkno;
  * want to lower the ipl back to 0.
  */
 struct buf *
-getblk(dev, blkno)
-dev_t dev;
-daddr_t blkno;
+getblk(dev, blkno, size)
+	dev_t dev;
+	daddr_t blkno;
+	int size;
 {
 	register struct buf *bp, *dp, *ep;
-	register int dblkno = fsbtodb(blkno);
 #ifdef	DISKMON
 	register int i;
 #endif
@@ -347,11 +348,10 @@ daddr_t blkno;
 
 	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
 		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);
-	dblkno = fsbtodb(blkno);
-	dp = BUFHASH(dev, dblkno);
+	dp = BUFHASH(dev, blkno);
     loop:
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
-		if (bp->b_blkno != dblkno || bp->b_dev != dev ||
+		if (bp->b_blkno != blkno || bp->b_dev != dev ||
 		    bp->b_flags&B_INVAL)
 			continue;
 		s = spl6();
@@ -373,6 +373,7 @@ daddr_t blkno;
 			io_info.bufcount[i]++;
 #endif
 		notavail(bp);
+		brealloc(bp, size);
 		bp->b_flags |= B_CACHE;
 		return(bp);
 	}
@@ -400,6 +401,7 @@ daddr_t blkno;
 	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
 #endif
 	bp->b_flags = B_BUSY;
+	bfree(bp);
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
 	bp->b_forw = dp->b_forw;
@@ -407,7 +409,8 @@ daddr_t blkno;
 	dp->b_forw->b_back = bp;
 	dp->b_forw = bp;
 	bp->b_dev = dev;
-	bp->b_blkno = dblkno;
+	bp->b_blkno = blkno;
+	brealloc(bp, size);
 	return(bp);
 }
 
@@ -416,7 +419,8 @@ daddr_t blkno;
  * not assigned to any particular device
  */
 struct buf *
-geteblk()
+geteblk(size)
+	int size;
 {
 	register struct buf *bp, *dp;
 	int s;
@@ -450,7 +454,88 @@ loop:
 	dp->b_forw->b_back = bp;
 	dp->b_forw = bp;
 	bp->b_dev = (dev_t)NODEV;
+	bp->b_bcount = size;
 	return(bp);
+}
+
+/*
+ * Allocate space associated with a buffer.
+ */
+brealloc(bp, size)
+	register struct buf *bp;
+	int size;
+{
+	daddr_t start, last;
+	register struct buf *ep;
+	struct buf *dp;
+	int s;
+
+	/*
+	 * First need to make sure that all overlaping previous I/O
+	 * is dispatched with.
+	 */
+	if (size == bp->b_bcount)
+		return;
+	if (size < bp->b_bcount) {
+		bp->b_bcount = size;
+		return;
+	}
+	start = bp->b_blkno + (bp->b_bcount / DEV_BSIZE);
+	last = bp->b_blkno + (size / DEV_BSIZE) - 1;
+	if (bp->b_bcount == 0) {
+		start++;
+		if (start == last)
+			goto allocit;
+	}
+	dp = BUFHASH(bp->b_dev, bp->b_blkno);
+loop:
+	(void) spl0();
+	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
+		if (ep->b_blkno < start || ep->b_blkno > last ||
+		    ep->b_dev != bp->b_dev || ep->b_flags&B_INVAL)
+			continue;
+		s = spl6();
+		if (ep->b_flags&B_BUSY) {
+			ep->b_flags |= B_WANTED;
+			sleep((caddr_t)ep, PRIBIO+1);
+			splx(s);
+			goto loop;
+		}
+		(void) spl0();
+		/*
+		 * What we would really like to do is kill this
+		 * I/O since it is now useless. We cannot do that
+		 * so we force it to complete, so that it cannot
+		 * over-write our useful data later.
+		 */
+		if (ep->b_flags & B_DELWRI) {
+			notavail(ep);
+			ep->b_flags |= B_ASYNC;
+			bwrite(ep);
+			goto loop;
+		}
+	}
+allocit:
+	/*
+	 * Here the buffer is already available, so all we
+	 * need to do is set the size. Someday a better memory
+	 * management scheme will be implemented.
+	 */
+	bp->b_bcount = size;
+}
+
+/*
+ * Release space associated with a buffer.
+ */
+bfree(bp)
+	struct buf *bp;
+{
+	/*
+	 * Here the buffer does not change, so all we
+	 * need to do is set the size. Someday a better memory
+	 * management scheme will be implemented.
+	 */
+	bp->b_bcount = 0;
 }
 
 /*
@@ -458,7 +543,7 @@ loop:
  * to the user.
  */
 iowait(bp)
-register struct buf *bp;
+	register struct buf *bp;
 {
 	int s;
 
@@ -530,13 +615,13 @@ register struct buf *bp;
  * Zero the core associated with a buffer.
  */
 clrbuf(bp)
-struct buf *bp;
+	struct buf *bp;
 {
-	register *p;
-	register c;
+	register int *p;
+	register int c;
 
 	p = bp->b_un.b_words;
-	c = BSIZE/sizeof(int);
+	c = bp->b_bcount/sizeof(int);
 	do
 		*p++ = 0;
 	while (--c);
@@ -673,6 +758,7 @@ swkill(p, rout)
  * on dev (or NODEV for all)
  * are flushed out.
  * (from umount and update)
+ * (and temporarily pagein)
  */
 bflush(dev)
 dev_t dev;
@@ -769,6 +855,7 @@ struct buf *bp;
 	if (bp->b_bcount > 63 * 1024)
 		bp->b_bcount = 63 * 1024;
 }
+
 
 /*
  * Pick up the device's error number and pass it to the user;

@@ -1,52 +1,84 @@
-/*	inode.h	4.10	82/02/27	*/
+/*	inode.h	4.11	82/04/19	*/
+
+/*	inode.h	2.1	3/25/82	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
  * There is a unique inode allocated for each active file,
  * each current directory, each mounted-on file, text file, and the root.
  * An inode is 'named' by its dev/inumber pair. (iget/iget.c)
- * Data, from mode on, is read in from permanent inode on volume.
+ * Data in icommon is read in from permanent inode on volume.
  */
-#define	NADDR	13
+
+#define	NDADDR	8		/* direct addresses in inode */
+#define	NIADDR	2		/* indirect addresses in inode */
 
 struct inode {
 	char	i_flag;
 	char	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
-/* begin read from disk */
-	u_short	i_mode;
-	short	i_nlink;	/* directory entries */
-	short	i_uid;		/* owner */
-	short	i_gid;		/* group of owner */
-	off_t	i_size;		/* size of file */
+	long	i_hlink;	/* link in hash chain (iget/iput/ifind) */
+	struct	fs *i_fs;	/* file sys associated with this inode */
 	union {
-		struct i_f {
-			daddr_t	if_addr[NADDR];	/* if normal file/directory */
-			daddr_t	if_lastr;	/* last read (read-ahead) */
-		} i_f;
-		struct i_d {
-			daddr_t	id_rdev;	/* i_addr[0] */
-		} i_d;
-		struct i_s {
-			struct	socket *is_socket;
-		} i_s;
-#define	i_addr		i_f.if_addr
-#define	i_lastr		i_f.if_lastr
-#define	i_rdev		i_d.id_rdev
-#define	i_socket	i_s.is_socket
+		daddr_t	if_lastr;	/* last read (read-ahead) */
+		struct	socket *is_socket;
 	} i_un;
-/* end read from disk */
-	short	i_XXXXXX;	/* ### */
-/* SHOULD USE POINTERS, NOT INDICES, FOR HAS CHAIN */
-	short	i_hlink;	/* link in hash chain (iget/iput/ifind) */
+	struct 	icommon
+	{
+		u_short	ic_mode;	/*  0: mode and type of file */
+		short	ic_nlink;	/*  2: number of links to file */
+		short	ic_uid;		/*  4: owner's user id */
+		short	ic_gid;		/*  6: owner's group id */
+		off_t	ic_size;	/*  8: number of bytes in file */
+		daddr_t	ic_db[NDADDR];	/* 12: disk block addresses */
+		daddr_t	ic_ib[NIADDR];	/* 44: indirect blocks */
+		time_t	ic_atime;	/* 52: time last accessed */
+		time_t	ic_mtime;	/* 56: time last modified */
+		time_t	ic_ctime;	/* 60: time created */
+	} i_ic;
 };
 
-#ifdef KERNEL
-struct	inode *inode, *inodeNINODE;
-int	ninode;
+struct dinode {
+	union {
+		struct	icommon di_icom;
+		char	di_size[64];
+	} di_un;
+};
 
-struct	inode *rootdir;		/* pointer to inode of root directory */
+#define	i_mode		i_ic.ic_mode
+#define	i_nlink		i_ic.ic_nlink
+#define	i_uid		i_ic.ic_uid
+#define	i_gid		i_ic.ic_gid
+#define	i_size		i_ic.ic_size
+#define	i_db		i_ic.ic_db
+#define	i_ib		i_ic.ic_ib
+#define	i_atime		i_ic.ic_atime
+#define	i_mtime		i_ic.ic_mtime
+#define	i_ctime		i_ic.ic_ctime
+#define	i_rdev		i_ic.ic_db[0]
+#define	i_lastr		i_un.if_lastr
+#define	i_socket	is_socket
+
+#define di_ic		di_un.di_icom
+#define	di_mode		di_ic.ic_mode
+#define	di_nlink	di_ic.ic_nlink
+#define	di_uid		di_ic.ic_uid
+#define	di_gid		di_ic.ic_gid
+#define	di_size		di_ic.ic_size
+#define	di_db		di_ic.ic_db
+#define	di_ib		di_ic.ic_ib
+#define	di_atime	di_ic.ic_atime
+#define	di_mtime	di_ic.ic_mtime
+#define	di_ctime	di_ic.ic_ctime
+#define	di_rdev		di_ic.ic_db[0]
+
+#ifdef KERNEL
+extern	struct inode *inode;		/* The inode table itself */
+extern	struct inode *inodeNINODE;	/* The end of the inode table */
+extern	int ninode;			/* number of slots in the table */
+
+struct	inode *rootdir;			/* pointer to inode of root directory */
 
 struct	inode *ialloc();
 struct	inode *ifind();
@@ -66,16 +98,16 @@ struct	inode *namei();
 #define	ICHG	0100		/* inode has been changed */
 
 /* modes */
-#define	IFMT	0170000		/* type of file */
-#define		IFCHR		0020000		/* character special */
-#define		IFDIR		0040000		/* directory */
-#define		IFBLK		0060000		/* block special */
-#define		IFREG		0100000		/* regular */
-#define		IFLNK		0120000		/* symbolic link */
-#define		IFPORTAL	0140000		/* portal */
-#define	ISUID	04000		/* set user id on execution */
-#define	ISGID	02000		/* set group id on execution */
-#define	ISVTX	01000		/* save swapped text even after use */
-#define	IREAD	0400		/* read, write, execute permissions */
-#define	IWRITE	0200
-#define	IEXEC	0100
+#define	IFMT		0170000		/* type of file */
+#define	IFCHR		0020000		/* character special */
+#define	IFDIR		0040000		/* directory */
+#define	IFBLK		0060000		/* block special */
+#define	IFREG		0100000		/* regular */
+#define	IFLNK		0120000		/* symbolic link */
+#define	IFPORTAL	0140000		/* portal */
+#define	ISUID		04000		/* set user id on execution */
+#define	ISGID		02000		/* set group id on execution */
+#define	ISVTX		01000		/* save swapped text even after use */
+#define	IREAD		0400		/* read, write, execute permissions */
+#define	IWRITE		0200
+#define	IEXEC		0100
