@@ -1,10 +1,11 @@
-/*	cons.c	4.7	81/03/09	*/
+/*	cons.c	4.8	81/03/11	*/
 
 /*
  * Vax console driver and floppy interface
  *
- * WE AVOID USE THE READY BIT IN TXCS BECAUSE IT DOESN'T
- * WORK ON AN 11/750 WITH AN RDM PLUGGED IN.
+ * Note:
+ *	We avoid use the ready bit in txcs because it doesn't
+ *	work on an 11/750 with an rdm plugged in.
  */
 #include "../h/param.h"
 #include "../h/conf.h"
@@ -16,12 +17,6 @@
 #include "../h/mtpr.h"
 #include "../h/mx.h"
 #include "../h/cpu.h"
-
-#define	NL1	000400
-#define	NL2	001000
-#define	CR2	020000
-#define	FF1	040000
-#define	TAB1	002000
 
 struct	tty cons;
 int	cnstart();
