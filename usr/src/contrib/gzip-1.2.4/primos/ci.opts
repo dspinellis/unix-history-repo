@@ -1,0 +1,6 @@
+-define PRIMOS
+-include *>PRIMOS>INCLUDE
+-ignoreregister
+-packbytes
+-sof
+
