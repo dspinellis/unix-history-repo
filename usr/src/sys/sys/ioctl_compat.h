@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl_compat.h	7.1 (Berkeley) %G%
+ *	@(#)ioctl_compat.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -130,6 +130,7 @@ struct sgttyb {
 #define		LNOFLSH		(NOFLSH>>16)
 #define	TIOCSLTC	_IOW('t',117,struct ltchars)/* set local special chars*/
 #define	TIOCGLTC	_IOR('t',116,struct ltchars)/* get local special chars*/
+#define OTIOCCONS	_IO('t', 98)	/* for hp300 -- sans int arg */
 #define	OTTYDISC	0
 #define	NETLDISC	1
 #define	NTTYDISC	2
