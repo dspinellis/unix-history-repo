@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printgprof.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)printgprof.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "gprof.h"
@@ -14,7 +14,7 @@ printprof()
 {
     register nltype	*np;
     nltype		**sortednlp;
-    int			index;
+    int			index, timecmp();
 
     actime = 0.0;
     printf( "\f\n" );
