@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -168,9 +168,7 @@ iread(fd, buf, len)
 	public void
 intread()
 {
-#if SIGSETMASK
-	sigsetmask(0);
-#endif
+	sigsetmask(0L);
 	longjmp(read_label, 1);
 }
 
