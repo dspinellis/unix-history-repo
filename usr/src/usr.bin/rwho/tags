@@ -1,0 +1,3 @@
+Mrwho	rwho.c	/^main(argc, argv)$/
+down	rwho.c	/^#define	down(w,now)	((now) - (w)->wd_recvtime > 11/
+utmpcmp	rwho.c	/^utmpcmp(u1, u2)$/

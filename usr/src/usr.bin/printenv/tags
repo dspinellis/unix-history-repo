@@ -1,0 +1,2 @@
+Mprintenv	printenv.c	/^main(argc, argv)$/
+usage	printenv.c	/^usage()$/

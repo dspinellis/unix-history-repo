@@ -1,0 +1,46 @@
+ASSERT	beauty.c	/^#define ASSERT(X,Y)	if (!(X)) error("struct bug: a/
+Mbeauty	beauty.c	/^main()$/
+YY_FATAL_ERROR	lextab.c	/^#define YY_FATAL_ERROR(msg) \\$/
+YY_INPUT	lextab.c	/^#define YY_INPUT(buf,result,max_size) \\$/
+YY_PROTO	lextab.c	/^#define YY_PROTO(proto) proto$/
+YY_STATE_EOF	lextab.c	/^#define YY_STATE_EOF(state) (YY_END_OF_BUFFER + st/
+accum	beauty.c	/^accum(token)		\/* fill output buffer, generate con/
+addbuf	lextab.c	/^addbuf(c)$/
+addroot	tree.c	/^addroot(string,type,n1,n2)$/
+backup	lextab.c	/^backup(c)$/
+checkneg	tree.c	/^checkneg(tree,neg)		\/* eliminate nots if possible/
+error	beauty.c	/^error(mess1, mess2, mess3)$/
+fixval	lextab.c	/^fixval()$/
+forst	beauty.c	/^forst()$/
+freenode	tree.c	/^freenode(treenode)$/
+freetree	tree.c	/^freetree(tree)$/
+newline	beauty.c	/^newline()$/
+ninput	lextab.c	/^ninput()$/
+pop	beauty.c	/^pop()$/
+prec	tree.c	/^prec(oper)$/
+push	beauty.c	/^push(type)$/
+putback	lextab.c	/^putback(str)$/
+putout	beauty.c	/^putout(type,string)			\/* output string with prope/
+puttree	tree.c	/^puttree(tree)$/
+rdchar	lextab.c	/^rdchar()$/
+slength	tree.c	/^slength(s)			\/* return number of chars in s, not /
+str_copy	tree.c	/^str_copy(s,ptr,length)	\/* copy s at ptr, return l/
+str_eq	tree.c	/^str_eq(s,t)$/
+tab	beauty.c	/^tab(n)$/
+unput	lextab.c	/^#define unput(c) yyunput( c, yytext )$/
+yield	tree.c	/^yield(tree,fprec)$/
+yy_create_buffer	lextab.c	/^YY_BUFFER_STATE yy_create_buffer( file, size )$/
+yy_delete_buffer	lextab.c	/^void yy_delete_buffer( b )$/
+yy_get_next_buffer	lextab.c	/^static int yy_get_next_buffer()$/
+yy_get_previous_state	lextab.c	/^static yy_state_type yy_get_previous_state()$/
+yy_init_buffer	lextab.c	/^void yy_init_buffer( b, file )$/
+yy_switch_to_buffer	lextab.c	/^void yy_switch_to_buffer( new_buffer )$/
+yy_try_NUL_trans	lextab.c	/^static yy_state_type yy_try_NUL_trans( yy_current_/
+yyerror	beauty.c	/^yyerror(s)$/
+yyinit	beauty.c	/^yyinit(argc, argv)			\/* initialize pushdown store/
+yyless	lextab.c	/^#define yyless(n) \\$/
+yymore	lextab.c	/^#define yymore() yymore_used_but_not_detected$/
+yyparse	beauty.c	/^yyparse()$/
+yyrestart	lextab.c	/^void yyrestart( input_file )$/
+yyterminate	lextab.c	/^#define yyterminate() return ( YY_NULL )$/
+yyunput	lextab.c	/^static void yyunput( c, yy_bp )$/
