@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.10 83/06/11";
+static	char *sccsid = "@(#)func.c 4.11 84/07/03";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -995,7 +995,10 @@ setlim(lp, limit)
 	struct rlimit rlim;
 
 	getrlimit(lp->limconst, &rlim);
-	rlim.rlim_cur = limit;
+  	if(limit == RLIM_INFINITY && geteuid() != 0)
+ 		rlim.rlim_cur = rlim.rlim_max;
+ 	else
+ 		rlim.rlim_cur = limit;     
 	if (setrlimit(lp->limconst, &rlim) < 0)
 		Perror(bname);
 }
