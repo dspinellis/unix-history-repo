@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.7 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.8 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -16,6 +16,14 @@ format()
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
 	printf("type %s.\n", lab->d_typename);
 
+	if (lab->d_nsectors >  MAXSECS_PER_TRK ||
+	    lab->d_ntracks >  MAXTRKS) {
+		print(
+		"Drive geometry (number of sectors or tracks) is too large;\n");
+		print("vdformat must be recompiled with larger value\n");
+		print("for MAXTRKS or  MAXSECS_PER_TRK.\n");
+		 _longjmp(abort_environ, 1);
+	}
 	/* Read the flaw map from the disk (where ever it may be) */
 	if(read_bad_sector_map() == true) {
 		if(bad_map->bs_id != D_INFO->id) {
@@ -153,7 +161,7 @@ long	count;
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	dcb.devselect = (char)cur.drive;
+	dcb.devselect = (char)cur.drive | lab->d_devflags;
 	dcb.trailcnt = (char)(sizeof(struct trfmt) / sizeof(long));
 	dcb.trail.fmtrail.addr = (char *)scratch; 
 	dcb.trail.fmtrail.nsectors = count;

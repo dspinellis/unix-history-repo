@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)disklabel.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -66,7 +66,7 @@ int	ctlr, drive, op_mask;
 	}
 check:
 	plp = findproto(lp->d_typename);
-	while (op_mask & FORMAT_OP && lp->d_traksize == 0) {
+	while (lp->d_traksize == 0) {
 		print("number of bytes per track");
 		if (plp && plp->d_traksize)
 			printf(" (%d)", plp->d_traksize);
@@ -210,6 +210,7 @@ lab_help()
 }
 
 static char labelsector[VD_MAXSECSIZE];
+
 /*
  * Fetch disklabel for disk.
  */
@@ -238,8 +239,11 @@ readlabel()
 
 writelabel()
 {
-	register struct disklabel *lp = lab;
+	register struct disklabel *lp;
 
+	bzero(labelsector, sizeof(labelsector));
+	lp = (struct disklabel *)(labelsector + LABELOFFSET);
+	*lp = *lab;
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
 	lp->d_checksum = 0;

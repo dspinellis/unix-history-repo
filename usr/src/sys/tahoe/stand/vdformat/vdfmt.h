@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.7	88/06/07	*/
+/*	vdfmt.h	1.8	90/06/24	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -8,8 +8,10 @@
 #include "param.h"
 #include "buf.h"
 #include "disklabel.h" 
-#include "inode.h" 
-#include "fs.h"
+#include "time.h"
+#include "vnode.h"
+#include "ufs/inode.h" 
+#include "ufs/fs.h"
 #include "tahoevba/vbaparam.h"
 #include "tahoevba/vdreg.h"
 
@@ -33,7 +35,7 @@ extern	struct cpdcb_i cpin;		/* found in cons.c */
 #define	NUMREL		3		/* # Cyls in relocation area */
 #define	NUMSYS	(NUMREL+NUMMNT+NUMMAP)	/* Total cyls used by system */
 
-#define	MAXTRKS		24
+#define	MAXTRKS		32
 #define	MAXSECS_PER_TRK	72		/* at 512 bytes/sector */
 #define	MAXERR		1000
 #define	MAXTRKSIZ	((512/sizeof(long)) * MAXSECS_PER_TRK)
@@ -215,16 +217,41 @@ struct	disklabel vdproto[];
 int	ndrives;
 int	smddrives;
 
+/*
+ * Structure of the bad-sector map on the disk.
+ * The original bs_map did not have the magic number or "checksum,"
+ * thus the fudges below.
+ */
 typedef struct {
+	unsigned int	bs_magic;	/* magic (0x12344321) */
+	unsigned int	bs_cksum;	/* checksum (0) */
 	unsigned int	bs_id;		/* Pack id */
 	unsigned int	bs_count;	/* number of known bad sectors */
 	unsigned int	bs_max;		/* Maximum allowable bad sectors */
 	bs_entry	list[1];
 } bs_map;
 
-#define MAX_FLAWS (((MAXTRKSIZ*sizeof(long))-sizeof(bs_map))/sizeof(bs_entry))
+#define MAX_FLAWMAP(x)	(((x) - sizeof(bs_map)) / sizeof(bs_entry))
+#define MAX_FLAWS	MAX_FLAWMAP(MAXTRKSIZ*sizeof(long))
+#define BSMAGIC		0x12344321
 
-long	bs_map_space[MAXTRKSIZ];
+union {
+	bs_map	Offset_bad_map;			/* offset by bs_magic+cksum */
+#define offset_bad_map	bs_map_space.Offset_bad_map
+	struct {
+		unsigned int	bs_magic;
+		unsigned int	bs_cksum;
+		bs_map		bs_map;		/* aligned with track buffer */
+	} Norm_bad_map;
+#define norm_bad_map	bs_map_space.Norm_bad_map.bs_map
+	struct {
+		unsigned int	bs_magic;
+		unsigned int	bs_cksum;
+		long	track[MAXTRKSIZ];	/* disk track is read here */
+	} space;
+#define map_space	bs_map_space.space.track
+} bs_map_space;
+
 bs_map	*bad_map;
 
 boolean	kill_processes;

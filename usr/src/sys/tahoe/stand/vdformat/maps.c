@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.7 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.8 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -39,42 +39,54 @@ read_map(flags)
 short	flags;
 {
 	register int	trk, i;
+	register bs_map	*map;
 	dskadr		dskaddr;
 
 	dskaddr.cylinder = (lab->d_ncylinders - 1) | flags;
-	for(i=0; i < 100; i++)
-		scratch[i] = -1;
 	for(trk=0; trk < lab->d_ntracks; trk++) {
 		dskaddr.track = trk;
 		dskaddr.sector = 0;
-		if(access_dsk((char *)save,&dskaddr, VDOP_RD,
-		    lab->d_nsectors,1)& VDERR_HARD)
+		if(access_dsk((char *)map_space, &dskaddr, VDOP_RD,
+		    lab->d_nsectors, 1) & VDERR_HARD)
 			continue;
-		if(bcmp((char *)scratch, (char *)save, bytes_trk) == true) {
-			bcopy((char *)save, (char *)bad_map, bytes_trk);
-			if(bad_map->bs_count <= MAX_FLAWS) {
-				for(i=0; i < bad_map->bs_count; i++) {
-					if(bad_map->list[i].bs_cyl >=
-					    lab->d_ncylinders)
-						break;
-					if(bad_map->list[i].bs_trk >=
-					    lab->d_ntracks)
-						break;
-					if(bad_map->list[i].bs_offset >=
-					    lab->d_traksize)
-						break;
-				}
-				if(i == bad_map->bs_count) {
-					load_free_table();
-					return true;
-				}
+		map = &norm_bad_map;
+		/*
+		 * If this doesn't look like a new-style map,
+		 * but (as an old-style map) bs_count and bs_max are sensible,
+		 * munge pointer to prepend fields missing in old map.
+		 */
+		if (map->bs_magic != BSMAGIC &&
+		    map->bs_cksum <= MAX_FLAWMAP(bytes_trk) /* bs_count */
+		    && map->bs_id <= MAX_FLAWMAP(bytes_trk)) /* bs_max */
+			map = &offset_bad_map;
+		if (trk > 0 && 
+		    bcmp((char *)map_space, (char *)save, bytes_trk) == 0 &&
+		    map->bs_count <= MAX_FLAWMAP(bytes_trk)) {
+			for (i=0; i < map->bs_count; i++) {
+				if (map->list[i].bs_cyl >=
+				    lab->d_ncylinders)
+					break;
+				if (map->list[i].bs_trk >=
+				    lab->d_ntracks)
+					break;
+				if (map->list[i].bs_offset >=
+				    lab->d_traksize)
+					break;
 			}
-			bzero(bad_map, bytes_trk);
-			bad_map->bs_id = 0;
-			bad_map->bs_max = MAX_FLAWS;
+			if (i == map->bs_count) {
+				bad_map = map;
+				load_free_table();
+				return true;
+			}
 		}
-		bcopy((char *)save, (char *)scratch, bytes_trk);
+		bcopy((char *)map_space, (char *)save, bytes_trk);
 	}
+	map = &norm_bad_map;
+	bad_map = map;
+	bzero((char *)map, bytes_trk);
+	map->bs_magic = BSMAGIC;
+	map->bs_id = 0;
+	map->bs_max = MAX_FLAWS;
 	return false;
 }
 
@@ -90,8 +102,12 @@ boolean read_bad_sector_map()
 	dskaddr.cylinder = lab->d_ncylinders - 1;
 	dskaddr.track = 0;
 	dskaddr.sector = 0;
+	offset_bad_map.bs_magic = BSMAGIC;
+	offset_bad_map.bs_cksum = 0;
+	bad_map = &norm_bad_map;
 	/* start with nothing in map */
-	bzero(bad_map, bytes_trk);
+	bzero(map_space, bytes_trk);
+	bad_map->bs_magic = BSMAGIC;
 	bad_map->bs_id = 0;
 	bad_map->bs_max = MAX_FLAWS;
 	if (C_INFO->type == VDTYPE_SMDE) {
@@ -272,10 +288,12 @@ write_bad_sector_map()
 	register int	trk, sec;
 	dskadr		dskaddr;
 
+	bad_map->bs_magic = BSMAGIC;
+	bad_map->bs_id = 0;
 	dskaddr.cylinder = (lab->d_ncylinders - NUMMAP);
 	for(trk=0; trk < lab->d_ntracks; trk++) {
 		for(sec = 0; sec < lab->d_nsectors; sec++) {
-			bcopy((char *)bs_map_space + (sec * lab->d_secsize),
+			bcopy((char *)bad_map + (sec * lab->d_secsize),
 			    (char *)scratch, lab->d_secsize);
 			dskaddr.track = trk;
 			dskaddr.sector = sec;
@@ -507,17 +525,20 @@ print_bad_sector_list()
 	fmt_err		errloc;
 	register bs_entry *bad;
 
+	if(bad_map->bs_magic != BSMAGIC)
+		print("Bad-sector map magic number wrong! (%x != %x)\n",
+		    bad_map->bs_magic, BSMAGIC);
 	if(bad_map->bs_count == 0) {
 		print("There are no bad sectors in bad sector map.\n");
 		return;
 	}
-	print("The following sector%s known to be bad:\n",
-	    (bad_map->bs_count == 1) ? " is" : "s are");
-	indent();
+	print("The following %d sector%s known to be bad:\n",
+	    bad_map->bs_count, (bad_map->bs_count == 1) ? " is" : "s are");
+	exdent(0);
 	for(i=0, bad = bad_map->list; i < bad_map->bs_count; i++, bad++) {
 		(*C_INFO->decode_pos)(bad, &errloc);
-		print("%s %d cn %d tn %d sn %d pos %d len %d ",
-			errloc.err_stat & HEADER_ERROR ? "Track@" : "Sector",
+		print("%c %d cn %d tn %d sn %d pos %d len %d ",
+			errloc.err_stat & HEADER_ERROR ? 'T' : 'S',
 			to_sector(errloc.err_adr),
 			bad->bs_cyl,
 			bad->bs_trk,
@@ -538,7 +559,6 @@ print_bad_sector_list()
 		}
 		printf("\n");
 	}
-	exdent(1);
 }
 
 

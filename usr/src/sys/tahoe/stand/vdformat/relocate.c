@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)relocate.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)relocate.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -70,7 +70,7 @@ get_new_relocations()
 	register int	block;
 
 	dskaddr.cylinder = lab->d_ncylinders - 1;
-	dskaddr.cylinder = lab->d_ntracks - 1;
+	dskaddr.track = lab->d_ntracks - 1;
 	max_track = to_track(dskaddr);
 	for(;;) {
 		print("Location? ");
