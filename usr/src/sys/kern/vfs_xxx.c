@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.1	82/10/20	*/
+/*	vfs_xxx.c	4.2	82/12/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
