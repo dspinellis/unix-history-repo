@@ -1,4 +1,4 @@
-/*	callout.h	4.5	81/03/09	*/
+/*	callout.h	4.6	81/04/18	*/
 
 /*
  * The callout structure is for
@@ -10,13 +10,13 @@
  * delays on typewriters.
  */
 
-struct	callout
-{
+struct	callout {
 	int	c_time;		/* incremental time */
 	caddr_t	c_arg;		/* argument to routine */
 	int	(*c_func)();	/* routine */
+	struct	callout *c_next;
 };
 #ifdef KERNEL
-struct	callout *callout;
+struct	callout *callfree, *callout, calltodo;
 int	ncallout;
 #endif
