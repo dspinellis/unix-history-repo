@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
 #include "output.h"
 #include "parser.h"
 #include "nodes.h"
+#include "expand.h"
 #include "eval.h"
 #include "jobs.h"
 #include "input.h"
@@ -285,9 +286,15 @@ dotcmd(argc, argv)
 	int argc;
 	char **argv; 
 {
+	struct strlist *sp;
 	exitstatus = 0;
+
+	for (sp = cmdenviron; sp ; sp = sp->next)
+		setvareq(savestr(sp->text), VSTRFIXED|VTEXTFIXED);
+
 	if (argc >= 2) {		/* That's what SVR2 does */
 		char *fullname = find_dot_file(argv[1]);
+
 		setinputfile(fullname, 1);
 		commandname = fullname;
 		cmdloop(0);
