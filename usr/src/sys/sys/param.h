@@ -1,4 +1,4 @@
-/*	param.h	3.10	%G%	*/
+/*	param.h	3.11	%G%	*/
 
 /*
  * tunable variables
@@ -25,7 +25,7 @@
 #define	TIMEZONE (8*60)		/* Minutes westward from Greenwich */
 #define	DSTFLAG	1		/* Daylight Saving Time applies in this locality */
 #define	MSGBUFS	128		/* Characters saved from error messages */
-#define	NCARGS	5120		/* # characters in exec arglist */
+#define	NCARGS	10240		/* # characters in exec arglist */
 /*
  * priorities
  * probably should not be
