@@ -8,7 +8,7 @@
 .\" software without specific prior written permission. This software
 .\" is provided ``as is'' without express or implied warranty.
 .\"
-.\"	@(#)getopt.3	6.6 (Berkeley) %G%
+.\"	@(#)getopt.3	6.7 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -27,6 +27,8 @@ char *optstring;
 extern char *optarg;
 .br
 extern int optind;
+.br
+extern int opterr;
 .ft
 .SH DESCRIPTION
 .I Getopt
@@ -74,6 +76,7 @@ and returns a question mark
 .RB ( ? )
 when it encounters an option letter not included in
 .IR optstring .
+Setting \fIopterr\fP to a zero will disable this error message.
 .SH EXAMPLE
 The following code fragment shows how one might process the arguments
 for a command that can take the mutually exclusive options
