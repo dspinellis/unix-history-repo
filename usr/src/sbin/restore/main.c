@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.7 %G%";
+char version[] = "@(#)main.c 2.8 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -56,7 +56,7 @@ struct odirect {
 
 ino_t	ino;
 
-int	eflag = 0, hflag = 0, mflag = 0, cvtdir = 0;
+int	eflag = 0, hflag = 0, mflag = 0, cvtflag = 0, cvtdir = 0;
 
 long	fssize;
 char	tapename[] = "/dev/rmt8";
@@ -135,6 +135,9 @@ usage:
 	for (cp = *argv++; *cp; cp++) {
 		switch (*cp) {
 		case '-':
+			break;
+		case 'c':
+			cvtflag++;
 			break;
 		case 'f':
 			magtape = *argv++;
@@ -536,6 +539,7 @@ finish:
 				}
 				fprintf(stderr, "converting to new directory format\n");
 				cvtdir = 1;
+				cvtflag = 1;
 			}
 			if (!savedir && !cvtdir) {
 				/* if no conversion, just return */
@@ -1014,10 +1018,64 @@ readhdr(b)
 gethead(buf)
 	struct s_spcl *buf;
 {
+	union u_ospcl {
+		char dummy[TP_BSIZE];
+		struct	s_ospcl {
+			int	c_type;
+			time_t	c_date;
+			time_t	c_ddate;
+			int	c_volume;
+			daddr_t	c_tapea;
+			ino_t	c_inumber;
+			int	c_magic;
+			int	c_checksum;
+			struct odinode {
+				unsigned short odi_mode;
+				short	odi_nlink;
+				short	odi_uid;
+				short	odi_gid;
+				off_t	odi_size;
+				daddr_t	odi_rdev;
+				char	odi_addr[36];
+				time_t	odi_atime;
+				time_t	odi_mtime;
+				time_t	odi_ctime;
+			} c_dinode;
+			int	c_count;
+			char	c_addr[TP_NINDIR];
+		} s_ospcl;
+	} u_ospcl;
 
-	readtape((char *)buf);
-	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
+	if (!cvtflag) {
+		readtape((char *)buf);
+		if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
+			return(0);
+		return(1);
+	}
+	readtape((char *)(&u_ospcl.s_ospcl));
+	if (u_ospcl.s_ospcl.c_magic != MAGIC ||
+	    checksum((int *)(&u_ospcl.s_ospcl)) == 0)
 		return(0);
+	blkclr((char *)buf, TP_BSIZE);
+	buf->c_type = u_ospcl.s_ospcl.c_type;
+	buf->c_date = u_ospcl.s_ospcl.c_date;
+	buf->c_ddate = u_ospcl.s_ospcl.c_ddate;
+	buf->c_volume = u_ospcl.s_ospcl.c_volume;
+	buf->c_tapea = u_ospcl.s_ospcl.c_tapea;
+	buf->c_inumber = u_ospcl.s_ospcl.c_inumber;
+	buf->c_magic = u_ospcl.s_ospcl.c_magic;
+	buf->c_checksum = u_ospcl.s_ospcl.c_checksum;
+	buf->c_dinode.di_mode = u_ospcl.s_ospcl.c_dinode.odi_mode;
+	buf->c_dinode.di_nlink = u_ospcl.s_ospcl.c_dinode.odi_nlink;
+	buf->c_dinode.di_uid = u_ospcl.s_ospcl.c_dinode.odi_uid;
+	buf->c_dinode.di_gid = u_ospcl.s_ospcl.c_dinode.odi_gid;
+	buf->c_dinode.di_size = u_ospcl.s_ospcl.c_dinode.odi_size;
+	buf->c_dinode.di_rdev = u_ospcl.s_ospcl.c_dinode.odi_rdev;
+	buf->c_dinode.di_atime = u_ospcl.s_ospcl.c_dinode.odi_atime;
+	buf->c_dinode.di_mtime = u_ospcl.s_ospcl.c_dinode.odi_mtime;
+	buf->c_dinode.di_ctime = u_ospcl.s_ospcl.c_dinode.odi_ctime;
+	buf->c_count = u_ospcl.s_ospcl.c_count;
+	blkcpy(u_ospcl.s_ospcl.c_addr, buf->c_addr, TP_NINDIR);
 	return(1);
 }
 
@@ -1028,7 +1086,7 @@ ishead(buf)
 	struct s_spcl *buf;
 {
 
-	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
+	if (buf->c_magic != MAGIC)
 		return(0);
 	return(1);
 }
@@ -1064,7 +1122,7 @@ readbits(mapp)
 }
 
 checksum(b)
-	int *b;
+	register int *b;
 {
 	register int i, j;
 
