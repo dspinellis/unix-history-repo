@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.69 (Berkeley) %G%
+ *	@(#)sendmail.h	6.70 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.69		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.70		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -874,17 +874,17 @@ extern time_t		curtime __P(());
 extern bool		transienterror __P((int));
 extern const char	*errstring __P((int));
 extern void		expand __P((char *, char *, char *, ENVELOPE *));
-extern void		define __P((char, char *, ENVELOPE *));
-extern char		*macvalue __P((char, ENVELOPE *));
-extern char		**prescan __P((char *, char, char[], char **));
+extern void		define __P((int, char *, ENVELOPE *));
+extern char		*macvalue __P((int, ENVELOPE *));
+extern char		**prescan __P((char *, int, char[], char **));
 extern char		*fgetfolded __P((char *, int, FILE *));
 extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, ENVELOPE *));
 extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
 extern void		dropenvelope __P((ENVELOPE *));
-extern void		clearenvelope __P((ENVELOPE *, bool));
+extern void		clearenvelope __P((ENVELOPE *, int));
 extern char		*username __P(());
 extern MCI		*mci_get __P((char *, MAILER *));
-extern char		*pintvl __P((time_t, bool));
+extern char		*pintvl __P((time_t, int));
 extern char		*sfgets __P((char *, int, FILE *, time_t));
 extern char		*map_rewrite __P((MAP *, char *, int, char **));
 extern ADDRESS		*getctladdr __P((ADDRESS *));
