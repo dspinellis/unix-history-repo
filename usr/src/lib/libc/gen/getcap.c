@@ -733,7 +733,15 @@ cgetnext(bp, db_array)
 				*rp++ = *cp;
 
 		*rp = '\0';
-		status = getent(bp, &dummy, db_array, -1, buf, 0, nbuf);
+		/* 
+		 * XXX 
+		 * Last argument of getent here should be nbuf if we want true
+		 * sequential access in the case of duplicates.  
+		 * With NULL, getent will return the first entry found
+		 * rather than the duplicate entry record.  This is a 
+		 * matter of semantics that should be resolved.
+		 */
+		status = getent(bp, &dummy, db_array, -1, buf, 0, NULL);
 		if (status == -2 || status == -3)
 			(void)cgetclose();
 
