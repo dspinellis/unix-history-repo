@@ -1,4 +1,4 @@
-/*	kdb_trap.c	7.1	86/11/20	*/
+/*	kdb_trap.c	7.2	86/11/20	*/
 
 /*
  * Trap handler - command loop entry point.
@@ -9,10 +9,8 @@ char	*NOEOR;
 
 int	executing;
 char	*lp;
-long	maxpos;
 
 char	lastc;
-int	eof;
 
 ADDR	userpc;
 int	lastcom;
@@ -58,8 +56,6 @@ kdb(type, sp, curproc)
 		}
 		kdbwrite("kdb> ", 5);
 		lp=0; rdc(); lp--;
-		if (eof)
-			return (1);
 		command(0, lastcom);
 		if (lp && lastc!='\n')
 			error(NOEOR);
@@ -84,5 +80,5 @@ error(n)
 {
 
 	errflg = n;
-	reset(1);
+	reset(ERROR);
 }
