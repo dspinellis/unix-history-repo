@@ -67,6 +67,15 @@
 #define	MAX_INPUT	TTYHOG
 
 static int proc_compare __P((struct proc *p1, struct proc *p2));
+static void ttyblock __P((struct tty *tp));
+static void ttyecho __P((int c, struct tty *tp));
+static int ttyoutput __P((int c, register struct tty *tp));
+static void ttyoutstr __P((char *cp, struct tty *tp));
+static void ttypend __P((struct tty *tp));
+static void ttyretype __P((struct tty *tp));
+static void ttyrub __P((int c, struct tty *tp));
+static void ttyrubo __P((struct tty *tp, int cnt));
+static void ttyunblock __P((struct tty *tp));
 
 /* symbolic sleep message strings */
 const char ttyin[] = "ttyin";
@@ -152,6 +161,7 @@ char partab[] = {
 #undef	CR
 
 extern struct tty *constty;		/* temporary virtual console */
+extern int nldisp;
 
 /*
  * Is 'c' a line delimiter ("break" character)?
@@ -193,6 +203,21 @@ ttywait(tp)
 	while ((RB_LEN(&tp->t_out) || tp->t_state&TS_BUSY) &&
 	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
 	    tp->t_oproc) {
+		/*
+		 * XXX temporary fix for deadlock.
+		 *
+		 * If two processes wait for output to drain from the same
+		 * tty, and the amount of output to drain is > 0 and
+		 * <= tp->t_lowat, then the processes will take turns
+		 * uselessly waking each other up until the output drains,
+		 * with cpl higher than spltty() throughout.
+		 *
+		 * The sleep address and TS_ASLEEP flag ought to be different
+		 * for the different events (output done) and (output almost
+		 * done).
+		 */
+		tp->t_lowat = 0;
+
 		(*tp->t_oproc)(tp);
 		if ((RB_LEN(&tp->t_out) || tp->t_state&TS_BUSY) &&
 		    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL)) {
@@ -200,10 +225,11 @@ ttywait(tp)
 			if (error = ttysleep(tp, (caddr_t)&tp->t_out,
 			    TTOPRI | PCATCH, ttyout, 0))
 				break;
-		}
-		else
+		} else
 			break;
 	}
+	if (tp->t_lowat == 0)
+		ttsetwater(tp);
 	splx(s);
 	return (error);
 }
@@ -233,7 +259,7 @@ ttyflush(tp, rw)
 		flushq(&tp->t_raw);
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
-		tp->t_state &= ~(TS_LOCAL|TS_TBLOCK);	/* XXX - should be TS_RTSBLOCK */
+		tp->t_state &= ~TS_LOCAL;
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
@@ -279,8 +305,7 @@ ttyflush(tp, rw)
  * on all enabled input flow control bits and propagate the change to the
  * driver.
  */
-/* static void */
-void
+static void
 ttyblock(tp)
 	struct tty *tp;
 {
@@ -300,8 +325,7 @@ ttyblock(tp)
  * Handle input low water.  Send start character for the IXOFF case.  Turn
  * off our input flow control bits and propagate the change to the driver.
  */
-/* static */
-void
+static void
 ttyunblock(tp)
 	struct tty *tp;
 {
@@ -352,7 +376,6 @@ ttioctl(tp, com, data, flag)
 	int flag;
 {
 	register struct proc *p = curproc;		/* XXX */
-	extern int nldisp;
 	int s, error;
 
 	/*
@@ -529,6 +552,22 @@ ttioctl(tp, com, data, flag)
 				splx(s);
 				return (error);
 			} else {
+				/*
+				 * XXX doubtful.  We mostly check both CLOCAL
+				 * and TS_CARR_ON before doing anything, and
+				 * changing TS_ISOPEN here just give another
+				 * flag to worry about, and is probably
+				 * inconsistent with not changing TS_ISOPEN
+				 * when carrier drops or CLOCAL rises.  OTOH
+				 * we should maintain a flag to keep track
+				 * of the combination of CLOCAL and TS_CARR_ON.
+				 * This could be just TS_CARR_ON (if we don't
+				 * need to 
+				 *
+				 * XXX ttselect() doesn't worry about
+				 * TS_ISOPEN, so it is inconsistent with
+				 * ttread() after TS_ISOPEN gets cleared here.
+				 */
 				if ((tp->t_state&TS_CARR_ON) == 0 &&
 				    (tp->t_cflag&CLOCAL) &&
 				    (t->c_cflag&CLOCAL) == 0) {
@@ -659,11 +698,15 @@ ttnread(tp)
 {
 	int nread = 0;
 
+	/* XXX races. */
 	if (tp->t_lflag & PENDIN)
 		ttypend(tp);
 	nread = RB_LEN(&tp->t_can);
-	if ((tp->t_lflag & ICANON) == 0)
+	if ((tp->t_lflag & ICANON) == 0) {
 		nread += RB_LEN(&tp->t_raw);
+		if (nread < tp->t_cc[VMIN])
+			nread = 0;
+	}
 	return (nread);
 }
 
@@ -834,11 +877,10 @@ nullmodem(tp, flag)
  * reinput pending characters after state switch
  * call at spltty().
  */
-void
+static void
 ttypend(tp)
 	register struct tty *tp;
 {
-	register c;
 	char *hd, *tl;
 
 	tp->t_lflag &= ~PENDIN;
@@ -861,9 +903,9 @@ ttyinput(c, tp)
 	register int c;
 	register struct tty *tp;
 {
-	register int iflag = tp->t_iflag;
-	register int lflag = tp->t_lflag;
-	register u_char *cc = tp->t_cc;
+	register tcflag_t iflag = tp->t_iflag;
+	register tcflag_t lflag = tp->t_lflag;
+	register cc_t *cc = tp->t_cc;
 	int i, err;
 
 	/*
@@ -1056,7 +1098,6 @@ parmrk:
 		 */
 		if (CCEQ(cc[VWERASE], c)) {	
 			int ctype;
-			int alt = lflag&ALTWERASE;
 
 			/* 
 			 * erase whitespace 
@@ -1090,7 +1131,8 @@ parmrk:
 				if (c == -1)
 					goto endcase;
 			} while (c != ' ' && c != '\t' && 
-				(alt == 0 || ISALPHA(c) == ctype));
+				((lflag & ALTWERASE) == 0
+				 || ISALPHA(c) == ctype));
 			(void) putc(c, &tp->t_raw);
 			goto endcase;
 		}
@@ -1152,7 +1194,7 @@ input_overflow:
 			/*
 			 * Place the cursor over the '^' of the ^D.
 			 */
-			i = MIN(2, tp->t_col - i);
+			i = imin(2, tp->t_col - i);
 			while (i > 0) {
 				(void) ttyoutput('\b', tp);
 				i--;
@@ -1179,13 +1221,13 @@ startoutput:
  * Returns < 0 if putc succeeds, otherwise returns char to resend.
  * Must be recursive.
  */
-int
+static int
 ttyoutput(c, tp)
 	register int c;
 	register struct tty *tp;
 {
 	register int col;
-	register long oflag = tp->t_oflag;
+	register tcflag_t oflag = tp->t_oflag;
 	
 	if ((oflag&OPOST) == 0) {
 		if (tp->t_lflag&FLUSHO) 
@@ -1215,11 +1257,11 @@ ttyoutput(c, tp)
 #ifdef was
 			c -= b_to_q("        ", c, &tp->t_outq);
 #else
-			i = min (c, RB_CONTIGPUT(&tp->t_out));
+			i = imin(c, RB_CONTIGPUT(&tp->t_out));
 			bcopy("        ", tp->t_out.rb_tl, i);
 			tp->t_out.rb_tl =
 				RB_ROLLOVER(&tp->t_out, tp->t_out.rb_tl+i);
-			i = min (c-i, RB_CONTIGPUT(&tp->t_out));
+			i = imin(c - i, RB_CONTIGPUT(&tp->t_out));
 
 			/* off end and still have space? */
 			if (i) {
@@ -1288,10 +1330,13 @@ ttread(tp, uio, flag)
 {
 	register struct ringb *qp;
 	register int c;
-	register long lflag;
-	register u_char *cc = tp->t_cc;
+	register tcflag_t lflag;
+	register cc_t *cc = tp->t_cc;
 	register struct proc *p = curproc;
-	int s, first, error = 0, not_enough, rblen;
+	int s, first, error = 0, rblen;
+	struct timeval stime;
+	int has_stime = 0, last_cc = 0;
+	long slp = 0;
 
 loop:
 	lflag = tp->t_lflag;
@@ -1326,38 +1371,120 @@ loop:
 	 * else use the raw queue.
 	 */
 	qp = lflag&ICANON ? &tp->t_can : &tp->t_raw;
-	not_enough = lflag&ICANON ? 0 : (int) cc[VMIN] - 1;
 	rblen = RB_LEN(qp);
 
-	/*
-	 * If there is no input, sleep on rawq
-	 * awaiting hardware receipt and notification.
-	 * If we have data, we don't need to check for carrier.
-	 */
-	if (rblen == 0 || rblen <= not_enough) {
+	if ((lflag & ICANON) == 0) {
+		int m = cc[VMIN];
+		long t = cc[VTIME];
+
+		/*
+		 * Check each of the four combinations.
+		 * (m > 0 && t == 0) is the normal read case.
+		 * It should be fairly efficient, so we check that and its
+		 * companion case (m == 0 && t == 0) first.
+		 * For the other two cases, we compute the target sleep time
+		 * into slp.
+		 */
+		if (t == 0) {
+			if (rblen < m)
+				goto sleep;
+			if (rblen > 0)
+				goto read;
+			/* Cheat here */
+			flag |= IO_NDELAY;
+			goto sleep;
+		}
+		t *= 100000;		/* time in us */
+#define diff(t1, t2) (((t1).tv_sec - (t2).tv_sec) * 1000000 + \
+			 ((t1).tv_usec - (t2).tv_usec))
+		if (m > 0) {
+			if (rblen <= 0)
+				goto sleep;
+			if (rblen >= m)
+				goto read;
+			if (!has_stime) {
+				/* first character, start timer */
+				has_stime = 1;
+				stime = time;
+				slp = t;
+			} else if (rblen > last_cc) {
+				/* got a character, restart timer */
+				stime = time;
+				slp = t;
+			} else {
+				/* nothing, check expiration */
+				slp = t - diff(time, stime);
+			}
+			last_cc = rblen;
+		} else {	/* m == 0 */
+			if (rblen > 0)
+				goto read;
+			if (!has_stime) {
+				has_stime = 1;
+				stime = time;
+				slp = t;
+			} else {
+				slp = t - diff(time, stime);
+				/* Cheat here */
+				if (slp <= 0) {
+					slp = 0;
+					flag |= IO_NDELAY;
+					goto sleep;
+				}
+			}
+		}
+#undef diff
+		if (slp > 0) {
+			/*
+			 * Rounding down may make us wake up just short
+			 * of the target, so we round up.
+			 * The formula is ceiling(slp * hz/1000000).
+			 * 32-bit arithmetic is enough for hz < 169.
+			 *
+			 * Also, use plain wakeup() not ttwakeup().
+			 */
+			slp = (long) (((u_long)slp * hz) + 999999) / 1000000;
+			timeout((timeout_func_t)wakeup, (caddr_t)qp, slp);
+			goto sleep;
+		}
+		else
+			slp = 0;
+	}
+	if (rblen <= 0) {
 		int carrier;
 
+sleep:
+		/*
+		 * If there is no input, sleep on rawq
+		 * awaiting hardware receipt and notification.
+		 * If we have data, we don't need to check for carrier.
+		 */
 		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
 		if (!carrier && tp->t_state&TS_ISOPEN) {
+			if (slp)
+				untimeout((timeout_func_t)wakeup, (caddr_t)qp);
 			splx(s);
 			return (0);	/* EOF */
 		}
-		if ((flag&IO_NDELAY) || not_enough < 0) {
+		if (flag & IO_NDELAY) {
+			if (slp)
+				untimeout((timeout_func_t)wakeup, (caddr_t)qp);
 			splx(s);
 			return (EWOULDBLOCK);
 		}
-		/*
-		 * XXX: needs some extention here,
-		 * now always acts like cc[VTIME] == 0 (inactive)
-		 */
 		error = ttysleep(tp, (caddr_t)&tp->t_raw, TTIPRI | PCATCH,
 		    carrier ? ttyin : ttopen, 0);
+		if (slp) {
+			slp = 0;
+			untimeout((timeout_func_t)wakeup, (caddr_t)qp);
+		}
 		splx(s);
 		if (error)
 			return (error);
 		goto loop;
 	}
 
+read:
 	/*
 	 * Input present, check for input mapping and processing.
 	 */
@@ -1380,7 +1507,7 @@ loop:
 		}
 		error = uiomove(qp->rb_hd, rcc, uio);
 		if (error)
-			splx(s);
+			break;
 		qp->rb_hd = RB_ROLLOVER(qp, qp->rb_hd + rcc);
 		splx(s);
 		s = spltty();
@@ -1492,7 +1619,7 @@ ttwrite(tp, uio, flag)
 	register struct uio *uio;
 	int flag;
 {
-	register char *cp = 0;
+	register char *cp = NULL;
 	register int cc = 0, ce;
 	register struct proc *p = curproc;
 	int i, hiwat, cnt, error, s;
@@ -1549,14 +1676,27 @@ loop:
 			uio->uio_resid = 0;
 			return (0);
 		}
-		if (RB_LEN(&tp->t_out) > hiwat)
+		/*
+		 * The output queue may be changed by the interrupt handler:
+		 *	(1) certain inputs flush it
+		 *	(2) sio hacks on it for output completion.
+		 * The queue length always (?) shrinks so stale counts from
+		 * RB_LEN() are not a problem.  However, incorrect counts
+		 * caused by in-between pointers are a problem.  The locking
+		 * to fix this is messy because of all the gotos.
+		 */
+		s = spltty();
+		if (RB_LEN(&tp->t_out) > hiwat) {
+			splx(s);
 			goto ovhiwat;
+		}
+		splx(s);
 		/*
 		 * Grab a hunk of data from the user,
 		 * unless we have some leftover from last time.
 		 */
 		if (cc == 0) {
-			cc = min(uio->uio_resid, OBUFSIZ);
+			cc = imin(uio->uio_resid, OBUFSIZ);
 			cp = obuf;
 			error = uiomove(cp, cc, uio);
 			if (error) {
@@ -1595,9 +1735,13 @@ loop:
 					    goto loop;
 					}
 					cp++, cc--;
+					s = spltty();
 					if ((tp->t_lflag&FLUSHO) ||
-					    RB_LEN(&tp->t_out) > hiwat)
+					    RB_LEN(&tp->t_out) > hiwat) {
+						splx(s);
 						goto ovhiwat;
+					}
+					splx(s);
 					continue;
 				}
 			}
@@ -1615,7 +1759,8 @@ loop:
 			ce -= i;
 #else
 			i = ce;
-			ce = min (ce, RB_CONTIGPUT(&tp->t_out));
+			s = spltty();
+			ce = imin(ce, RB_CONTIGPUT(&tp->t_out));
 			bcopy(cp, tp->t_out.rb_tl, ce);
 			tp->t_out.rb_tl = RB_ROLLOVER(&tp->t_out,
 				tp->t_out.rb_tl + ce);
@@ -1623,30 +1768,41 @@ loop:
 			if (i > 0) {
 				int ii;
 
-				ii = min (i, RB_CONTIGPUT(&tp->t_out));
+				ii = imin(i, RB_CONTIGPUT(&tp->t_out));
 				bcopy(cp + ce, tp->t_out.rb_tl, ii);
 				tp->t_out.rb_tl = RB_ROLLOVER(&tp->t_out,
 					tp->t_out.rb_tl + ii);
 				i -= ii;
 				ce += ii;
 			}
+			splx(s);
 #endif
 			tp->t_col += ce;
 			cp += ce, cc -= ce, tk_nout += ce;
 			tp->t_outcc += ce;
 			if (i > 0) {
 				ttstart(tp);
-				if (RB_CONTIGPUT(&tp->t_out) > 0)
+				s = spltty();
+				if (RB_CONTIGPUT(&tp->t_out) > 0) {
+					splx(s);
 					goto loop;	/* synchronous/fast */
+				}
 				/* out of space, wait a bit */
 				tp->t_state |= TS_ASLEEP;
 				if (error = ttysleep(tp, (caddr_t)&tp->t_out,
-					    TTOPRI | PCATCH, ttybuf, 0))
+					    TTOPRI | PCATCH, ttybuf, 0)) {
+					splx(s);
 					break;
+				}
+				splx(s);
 				goto loop;
 			}
-			if (tp->t_lflag&FLUSHO || RB_LEN(&tp->t_out) > hiwat)
+			s = spltty();
+			if (tp->t_lflag&FLUSHO || RB_LEN(&tp->t_out) > hiwat) {
+				splx(s);
 				break;
+			}
+			splx(s);
 		}
 		ttstart(tp);
 	}
@@ -1690,7 +1846,7 @@ ovhiwat:
  * Rubout one character from the rawq of tp
  * as cleanly as possible.
  */
-void
+static void
 ttyrub(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -1779,7 +1935,7 @@ ttyrub(c, tp)
  * Crt back over cnt chars perhaps
  * erasing them.
  */
-void
+static void
 ttyrubo(tp, cnt)
 	register struct tty *tp;
 	int cnt;
@@ -1793,7 +1949,7 @@ ttyrubo(tp, cnt)
  * Reprint the rawq line.
  * We assume c_cc has already been checked.
  */
-void
+static void
 ttyretype(tp)
 	register struct tty *tp;
 {
@@ -1821,21 +1977,17 @@ ttyretype(tp)
 /*
  * Echo a typed character to the terminal.
  */
-void
+static void
 ttyecho(c, tp)
 	register int c;
 	register struct tty *tp;
 {
 	if ((tp->t_state & TS_CNTTB) == 0)
 		tp->t_lflag &= ~FLUSHO;
-	if (tp->t_lflag & EXTPROC)
+	if (tp->t_lflag & EXTPROC
+	    || (tp->t_lflag & ECHO) == 0
+		&& (c != '\n' || (tp->t_lflag & ECHONL) == 0))
 		return;
-	if ((tp->t_lflag & ECHO) == 0) {
-		if ((tp->t_lflag & ECHONL) == 0)
-			return;
-		else if  (c != '\n')
-			return;
-	}
 	if (tp->t_lflag & ECHOCTL) {
 		if ((c & TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
 		    c == 0177) {
@@ -1853,7 +2005,7 @@ ttyecho(c, tp)
 /*
  * send string cp to tp
  */
-void
+static void
 ttyoutstr(cp, tp)
 	register char *cp;
 	register struct tty *tp;
@@ -1975,7 +2127,7 @@ ttyinfo(tp)
 
 #define	pgtok(a)	(((a) * NBPG) / 1024)
 		/* Print percentage cpu, resident set size. */
-		tmp = pick->p_pctcpu * 10000 + FSCALE / 2 >> FSHIFT;
+		tmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
 		ttyprintf(tp, "%d%% %dk\n",
 		   tmp / 100, pgtok(pick->p_vmspace->vm_pmap.pm_stats.resident_count));
 	}
@@ -2095,7 +2247,7 @@ ttysleep(tp, chan, pri, wmesg, timo)
 	int timo;
 {
 	int error;
-	short gen = tp->t_gen;
+	int gen = tp->t_gen;
 
 	if (error = tsleep(chan, pri, wmesg, timo))
 		return (error);
