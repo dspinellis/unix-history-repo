@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.42 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.43 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -116,13 +116,13 @@ loop:
 	np->n_direofoffset = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_size = 0;
+	np->n_mtime = 0;
 	if (VFSTONFS(mntp)->nm_flag & NFSMNT_NQNFS) {
 		np->n_brev = 0;
 		np->n_lrev = 0;
 		np->n_expiry = (time_t)0;
 		np->n_tnext = (struct nfsnode *)0;
-	} else
-		np->n_mtime = 0;
+	}
 	*npp = np;
 	return (0);
 }

@@ -55,10 +55,16 @@
 /* Sizes in bytes of various nfs rpc components */
 #define	NFSX_FH		32
 #define	NFSX_UNSIGNED	4
-#define	NFSX_FATTR	68
-#define	NFSX_SATTR	32
+#define	NFSX_NFSFATTR	68
+#define	NFSX_NQFATTR	92
+#define	NFSX_NFSSATTR	32
+#define	NFSX_NQSATTR	44
 #define	NFSX_COOKIE	4
-#define NFSX_STATFS	20
+#define NFSX_NFSSTATFS	20
+#define	NFSX_NQSTATFS	28
+#define	NFSX_FATTR(isnq)	((isnq) ? NFSX_NQFATTR : NFSX_NFSFATTR)
+#define	NFSX_SATTR(isnq)	((isnq) ? NFSX_NQSATTR : NFSX_NFSSATTR)
+#define	NFSX_STATFS(isnq)	((isnq) ? NFSX_NQSTATFS : NFSX_NFSSTATFS)
 
 /* nfs rpc procedure numbers */
 #define	NFSPROC_NULL		0
@@ -102,35 +108,119 @@ typedef enum { NFNON=0, NFREG=1, NFDIR=2, NFBLK=3, NFCHR=4, NFLNK=5 } nfstype;
 
 /* Structs for common parts of the rpc's */
 struct nfsv2_time {
-	u_long	tv_sec;
-	u_long	tv_usec;
+	u_long	nfs_sec;
+	u_long	nfs_usec;
 };
 
+struct nqnfs_time {
+	u_long	nq_sec;
+	u_long	nq_nsec;
+};
+
+/*
+ * File attributes and setable attributes. These structures cover both
+ * NFS version 2 and the NQNFS protocol. Note that the union is only
+ * used to that one pointer can refer to both variants. These structures
+ * go out on the wire and must be densely packed, so no quad data types
+ * are used. (all fields are longs or u_longs or structures of same)
+ * NB: You can't do sizeof(struct nfsv2_fattr), you must use the
+ *     NFSX_FATTR(isnq) macro.
+ */
 struct nfsv2_fattr {
 	u_long	fa_type;
 	u_long	fa_mode;
 	u_long	fa_nlink;
 	u_long	fa_uid;
 	u_long	fa_gid;
-	u_long	fa_size;
-	u_long	fa_blocksize;
-	u_long	fa_rdev;
-	u_long	fa_blocks;
-	u_long	fa_fsid;
-	u_long	fa_fileid;
-	struct nfsv2_time fa_atime;
-	struct nfsv2_time fa_mtime;
-	struct nfsv2_time fa_ctime;
+	union {
+		struct {
+			u_long	nfsfa_size;
+			u_long	nfsfa_blocksize;
+			u_long	nfsfa_rdev;
+			u_long	nfsfa_blocks;
+			u_long	nfsfa_fsid;
+			u_long	nfsfa_fileid;
+			struct nfsv2_time nfsfa_atime;
+			struct nfsv2_time nfsfa_mtime;
+			struct nfsv2_time nfsfa_ctime;
+		} fa_nfsv2;
+		struct {
+			struct {
+				u_long	nqfa_qsize[2];
+			} nqfa_size;
+			u_long	nqfa_blocksize;
+			u_long	nqfa_rdev;
+			struct {
+				u_long	nqfa_qbytes[2];
+			} nqfa_bytes;
+			u_long	nqfa_fsid;
+			u_long	nqfa_fileid;
+			struct nqnfs_time nqfa_atime;
+			struct nqnfs_time nqfa_mtime;
+			struct nqnfs_time nqfa_ctime;
+			u_long	nqfa_flags;
+			u_long	nqfa_gen;
+			struct {
+				u_long	nqfa_qfilerev[2];
+			} nqfa_filerev;
+		} fa_nqnfs;
+	} fa_un;
 };
+
+/* and some ugly defines for accessing union components */
+#define	fa_nfssize		fa_un.fa_nfsv2.nfsfa_size
+#define	fa_nfsblocksize		fa_un.fa_nfsv2.nfsfa_blocksize
+#define	fa_nfsrdev		fa_un.fa_nfsv2.nfsfa_rdev
+#define	fa_nfsblocks		fa_un.fa_nfsv2.nfsfa_blocks
+#define	fa_nfsfsid		fa_un.fa_nfsv2.nfsfa_fsid
+#define	fa_nfsfileid		fa_un.fa_nfsv2.nfsfa_fileid
+#define	fa_nfsatime		fa_un.fa_nfsv2.nfsfa_atime
+#define	fa_nfsmtime		fa_un.fa_nfsv2.nfsfa_mtime
+#define	fa_nfsctime		fa_un.fa_nfsv2.nfsfa_ctime
+#define	fa_nqsize		fa_un.fa_nqnfs.nqfa_size
+#define	fa_nqblocksize		fa_un.fa_nqnfs.nqfa_blocksize
+#define	fa_nqrdev		fa_un.fa_nqnfs.nqfa_rdev
+#define	fa_nqbytes		fa_un.fa_nqnfs.nqfa_bytes
+#define	fa_nqfsid		fa_un.fa_nqnfs.nqfa_fsid
+#define	fa_nqfileid		fa_un.fa_nqnfs.nqfa_fileid
+#define	fa_nqatime		fa_un.fa_nqnfs.nqfa_atime
+#define	fa_nqmtime		fa_un.fa_nqnfs.nqfa_mtime
+#define	fa_nqctime		fa_un.fa_nqnfs.nqfa_ctime
+#define	fa_nqflags		fa_un.fa_nqnfs.nqfa_flags
+#define	fa_nqgen		fa_un.fa_nqnfs.nqfa_gen
+#define	fa_nqfilerev		fa_un.fa_nqnfs.nqfa_filerev
 
 struct nfsv2_sattr {
 	u_long	sa_mode;
 	u_long	sa_uid;
 	u_long	sa_gid;
-	u_long	sa_size;
-	struct nfsv2_time sa_atime;
-	struct nfsv2_time sa_mtime;
+	union {
+		struct {
+			u_long	nfssa_size;
+			struct nfsv2_time nfssa_atime;
+			struct nfsv2_time nfssa_mtime;
+		} sa_nfsv2;
+		struct {
+			struct {
+				u_long	nqsa_qsize[2];
+			} nqsa_size;
+			struct nqnfs_time nqsa_atime;
+			struct nqnfs_time nqsa_mtime;
+			u_long	nqsa_flags;
+			u_long	nqsa_rdev;
+		} sa_nqnfs;
+	} sa_un;
 };
+
+/* and some ugly defines for accessing the unions */
+#define	sa_nfssize		sa_un.sa_nfsv2.nfssa_size
+#define	sa_nfsatime		sa_un.sa_nfsv2.nfssa_atime
+#define	sa_nfsmtime		sa_un.sa_nfsv2.nfssa_mtime
+#define	sa_nqsize		sa_un.sa_nqnfs.nqsa_size
+#define	sa_nqatime		sa_un.sa_nqnfs.nqsa_atime
+#define	sa_nqmtime		sa_un.sa_nqnfs.nqsa_mtime
+#define	sa_nqflags		sa_un.sa_nqnfs.nqsa_flags
+#define	sa_nqrdev		sa_un.sa_nqnfs.nqsa_rdev
 
 struct nfsv2_statfs {
 	u_long	sf_tsize;
@@ -138,4 +228,6 @@ struct nfsv2_statfs {
 	u_long	sf_blocks;
 	u_long	sf_bfree;
 	u_long	sf_bavail;
+	u_long	sf_files;	/* Nqnfs only */
+	u_long	sf_ffree;	/* ditto      */
 };

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.62 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.63 (Berkeley) %G%
  */
 
 /*
@@ -638,26 +638,32 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct nfsnode *np, *nq, **nhpp;
 	register long t1;
 	caddr_t dpos, cp2;
-	int error = 0;
+	int error = 0, isnq;
 	struct mbuf *md;
 	enum vtype vtyp;
 	u_short vmode;
 	long rdev;
-	struct timeval mtime;
+	struct timespec mtime;
 	struct vnode *nvp;
 
 	md = *mdp;
 	dpos = *dposp;
 	t1 = (mtod(md, caddr_t) + md->m_len) - dpos;
-	if (error = nfsm_disct(&md, &dpos, NFSX_FATTR, t1, TRUE, &cp2))
+	isnq = (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS);
+	if (error = nfsm_disct(&md, &dpos, NFSX_FATTR(isnq), t1, TRUE, &cp2))
 		return (error);
 	fp = (struct nfsv2_fattr *)cp2;
 	vtyp = nfstov_type(fp->fa_type);
 	vmode = fxdr_unsigned(u_short, fp->fa_mode);
 	if (vtyp == VNON || vtyp == VREG)
 		vtyp = IFTOVT(vmode);
-	rdev = fxdr_unsigned(long, fp->fa_rdev);
-	fxdr_time(&fp->fa_mtime, &mtime);
+	if (isnq) {
+		rdev = fxdr_unsigned(long, fp->fa_nqrdev);
+		fxdr_nqtime(&fp->fa_nqmtime, &mtime);
+	} else {
+		rdev = fxdr_unsigned(long, fp->fa_nfsrdev);
+		fxdr_nfstime(&fp->fa_nfsmtime, &mtime);
+	}
 	/*
 	 * If v_type == VNON it is a new node, so fill in the v_type,
 	 * n_mtime fields. Check to see if it represents a special 
@@ -706,8 +712,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				*vpp = vp = nvp;
 			}
 		}
-		if ((VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) == 0)
-			np->n_mtime = mtime.tv_sec;
+		np->n_mtime = mtime.ts_sec;
 	}
 	vap = &np->n_vattr;
 	vap->va_type = vtyp;
@@ -715,30 +720,42 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_nlink = fxdr_unsigned(u_short, fp->fa_nlink);
 	vap->va_uid = fxdr_unsigned(uid_t, fp->fa_uid);
 	vap->va_gid = fxdr_unsigned(gid_t, fp->fa_gid);
-	vap->va_size = fxdr_unsigned(u_long, fp->fa_size);
-	if ((np->n_flag & NMODIFIED) == 0 || vap->va_size > np->n_size) {
+	vap->va_rdev = (dev_t)rdev;
+	vap->va_mtime = mtime;
+	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
+	if (isnq) {
+		fxdr_hyper(&fp->fa_nqsize, &vap->va_size);
+		vap->va_blocksize = fxdr_unsigned(long, fp->fa_nqblocksize);
+		fxdr_hyper(&fp->fa_nqbytes, &vap->va_bytes);
+		vap->va_fileid = fxdr_unsigned(long, fp->fa_nqfileid);
+		fxdr_nqtime(&fp->fa_nqatime, &vap->va_atime);
+		vap->va_flags = fxdr_unsigned(u_long, fp->fa_nqflags);
+		fxdr_nqtime(&fp->fa_nqctime, &vap->va_ctime);
+		vap->va_gen = fxdr_unsigned(u_long, fp->fa_nqgen);
+		fxdr_hyper(&fp->fa_nqfilerev, &vap->va_filerev);
+	} else {
+		vap->va_size = fxdr_unsigned(u_long, fp->fa_nfssize);
+		vap->va_blocksize = fxdr_unsigned(long, fp->fa_nfsblocksize);
+		vap->va_bytes = fxdr_unsigned(long, fp->fa_nfsblocks) * NFS_FABLKSIZE;
+		vap->va_fileid = fxdr_unsigned(long, fp->fa_nfsfileid);
+		vap->va_atime.ts_sec = fxdr_unsigned(long, fp->fa_nfsatime.nfs_sec);
+		vap->va_atime.ts_nsec = 0;
+		vap->va_flags = fxdr_unsigned(u_long, fp->fa_nfsatime.nfs_usec);
+		vap->va_ctime.ts_sec = fxdr_unsigned(long, fp->fa_nfsctime.nfs_sec);
+		vap->va_ctime.ts_nsec = 0;
+		vap->va_gen = fxdr_unsigned(u_long, fp->fa_nfsctime.nfs_usec);
+		vap->va_filerev = 0;
+	}
+	if (vap->va_size > np->n_size) {
 		np->n_size = vap->va_size;
 		vnode_pager_setsize(vp, (u_long)np->n_size);
 	}
-	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
-	vap->va_rdev = (dev_t)rdev;
-	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * NFS_FABLKSIZE;
-	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
-	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
-	vap->va_atime.ts_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
-	vap->va_atime.ts_nsec = 0;
-	vap->va_flags = fxdr_unsigned(u_long, fp->fa_atime.tv_usec);
-	vap->va_mtime.ts_sec = mtime.tv_sec;
-	vap->va_mtime.ts_nsec = mtime.tv_usec * 1000;
-	vap->va_ctime.ts_sec = fxdr_unsigned(long, fp->fa_ctime.tv_sec);
-	vap->va_ctime.ts_nsec = 0;
-	vap->va_gen = fxdr_unsigned(u_long, fp->fa_ctime.tv_usec);
 	np->n_attrstamp = time.tv_sec;
 	*dposp = dpos;
 	*mdp = md;
 	if (vaper != NULL) {
 		bcopy((caddr_t)vap, (caddr_t)vaper, sizeof(*vap));
-		if ((np->n_flag & NMODIFIED) && (np->n_size > vap->va_size))
+		if (np->n_size > vap->va_size)
 			vaper->va_size = np->n_size;
 		if (np->n_flag & NCHG) {
 			if (np->n_flag & NACC) {
@@ -768,18 +785,18 @@ nfs_getattrcache(vp, vap)
 	register struct nfsnode *np;
 
 	np = VTONFS(vp);
-	if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) {
+	if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQLOOKLEASE) {
 		if (!NQNFS_CKCACHABLE(vp, NQL_READ) || np->n_attrstamp == 0) {
 			nfsstats.attrcache_misses++;
 			return (ENOENT);
 		}
-	} else if ((time.tv_sec - np->n_attrstamp) >= NFS_ATTRTIMEO) {
+	} else if ((time.tv_sec - np->n_attrstamp) >= NFS_ATTRTIMEO(np)) {
 		nfsstats.attrcache_misses++;
 		return (ENOENT);
 	}
 	nfsstats.attrcache_hits++;
 	bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
-	if ((np->n_flag & NMODIFIED) == 0) {
+	if (vap->va_size > np->n_size) {
 		np->n_size = vap->va_size;
 		vnode_pager_setsize(vp, (u_long)np->n_size);
 	} else if (np->n_size > vap->va_size)

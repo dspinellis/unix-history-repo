@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -302,6 +302,7 @@ nfs_write(ap)
 	if (ioflag & (IO_APPEND | IO_SYNC)) {
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
+			np->n_attrstamp = 0;
 			vinvalbuf(vp, TRUE, cred, p);
 		}
 		if (ioflag & IO_APPEND) {
@@ -352,7 +353,7 @@ nfs_write(ap)
 			}
 		}
 		if (np->n_flag & NQNFSNONCACHE)
-			return (nfs_writerpc(vp, uio, cred));
+			return (nfs_writerpc(vp, uio, cred, 0));
 		nfsstats.biocache_writes++;
 		lbn = uio->uio_offset / biosize;
 		on = uio->uio_offset & (biosize-1);
@@ -397,8 +398,10 @@ again:
 			}
 			if (np->n_lrev != np->n_brev ||
 			    (np->n_flag & NQNFSNONCACHE)) {
+				brelse(bp);
 				vinvalbuf(vp, TRUE, cred, p);
 				np->n_brev = np->n_lrev;
+				goto again;
 			}
 		}
 		if (error = uiomove(bp->b_un.b_addr + on, n, uio)) {

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.13 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -221,18 +221,36 @@ extern struct mbuf *nfsm_reqh();
 	fp->fa_nlink = txdr_unsigned(vap->va_nlink); \
 	fp->fa_uid = txdr_unsigned(vap->va_uid); \
 	fp->fa_gid = txdr_unsigned(vap->va_gid); \
-	fp->fa_size = txdr_unsigned(vap->va_size); \
-	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize); \
-	if (vap->va_type == VFIFO) \
-		fp->fa_rdev = 0xffffffff; \
-	else \
-		fp->fa_rdev = txdr_unsigned(vap->va_rdev); \
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / NFS_FABLKSIZE); \
-	fp->fa_fsid = txdr_unsigned(vap->va_fsid); \
-	fp->fa_fileid = txdr_unsigned(vap->va_fileid); \
-	fp->fa_atime.tv_sec = txdr_unsigned(vap->va_atime.ts_sec); \
-	fp->fa_atime.tv_usec = txdr_unsigned(vap->va_flags); \
-	txdr_time(&vap->va_mtime, &fp->fa_mtime); \
-	fp->fa_ctime.tv_sec = txdr_unsigned(vap->va_ctime.ts_sec); \
-	fp->fa_ctime.tv_usec = txdr_unsigned(vap->va_gen)
+	if (nfsd->nd_nqlflag == NQL_NOVAL) { \
+		fp->fa_nfsblocksize = txdr_unsigned(vap->va_blocksize); \
+		if (vap->va_type == VFIFO) \
+			fp->fa_nfsrdev = 0xffffffff; \
+		else \
+			fp->fa_nfsrdev = txdr_unsigned(vap->va_rdev); \
+		fp->fa_nfsfsid = txdr_unsigned(vap->va_fsid); \
+		fp->fa_nfsfileid = txdr_unsigned(vap->va_fileid); \
+		fp->fa_nfssize = txdr_unsigned(vap->va_size); \
+		fp->fa_nfsblocks = txdr_unsigned(vap->va_bytes / NFS_FABLKSIZE); \
+		fp->fa_nfsatime.nfs_sec = txdr_unsigned(vap->va_atime.ts_sec); \
+		fp->fa_nfsatime.nfs_usec = txdr_unsigned(vap->va_flags); \
+		txdr_nfstime(&vap->va_mtime, &fp->fa_nfsmtime); \
+		fp->fa_nfsctime.nfs_sec = txdr_unsigned(vap->va_ctime.ts_sec); \
+		fp->fa_nfsctime.nfs_usec = txdr_unsigned(vap->va_gen); \
+	} else { \
+		fp->fa_nqblocksize = txdr_unsigned(vap->va_blocksize); \
+		if (vap->va_type == VFIFO) \
+			fp->fa_nqrdev = 0xffffffff; \
+		else \
+			fp->fa_nqrdev = txdr_unsigned(vap->va_rdev); \
+		fp->fa_nqfsid = txdr_unsigned(vap->va_fsid); \
+		fp->fa_nqfileid = txdr_unsigned(vap->va_fileid); \
+		txdr_hyper(&vap->va_size, &fp->fa_nqsize); \
+		txdr_hyper(&vap->va_bytes, &fp->fa_nqbytes); \
+		txdr_nqtime(&vap->va_atime, &fp->fa_nqatime); \
+		txdr_nqtime(&vap->va_mtime, &fp->fa_nqmtime); \
+		txdr_nqtime(&vap->va_ctime, &fp->fa_nqctime); \
+		fp->fa_nqflags = txdr_unsigned(vap->va_flags); \
+		fp->fa_nqgen = txdr_unsigned(vap->va_gen); \
+		txdr_hyper(&vap->va_filerev, &fp->fa_nqfilerev); \
+	}
 

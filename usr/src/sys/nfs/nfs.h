@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.17 (Berkeley) %G%
+ *	@(#)nfs.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,8 @@
 #define	NFS_MAXWINDOW	1024		/* Max number of outstanding requests */
 #define	NFS_RETRANS	10		/* Num of retrans for soft mounts */
 #define	NFS_MAXGRPS	16		/* Max. size of groups list */
-#define	NFS_ATTRTIMEO	5		/* Attribute cache timeout in sec */
+#define	NFS_MINATTRTIMO 5		/* Attribute cache timeout in sec */
+#define	NFS_MAXATTRTIMO 60
 #define	NFS_WSIZE	8192		/* Def. write data size <= 8192 */
 #define	NFS_RSIZE	8192		/* Def. read data size <= 8192 */
 #define	NFS_DEFRAHEAD	1		/* Def. read ahead # blocks */
@@ -34,6 +35,15 @@
 #define	NFS_MAXASYNCDAEMON 20	/* Max. number async_daemons runable */
 #define	NFS_DIRBLKSIZ	1024		/* Size of an NFS directory block */
 #define	NMOD(a)		((a) % nfs_asyncdaemons)
+
+/*
+ * Set the attribute timeout based on how recently the file has been modified.
+ */
+#define	NFS_ATTRTIMEO(np) \
+	((((np)->n_flag & NMODIFIED) || \
+	 5 * (time.tv_sec - (np)->n_mtime) < NFS_MINATTRTIMO) ? NFS_MINATTRTIMO : \
+	 (5 * (time.tv_sec - (np)->n_mtime) > NFS_MAXATTRTIMO ? NFS_MAXATTRTIMO : \
+	  5 * (time.tv_sec - (np)->n_mtime)))
 
 /*
  * Structures for the nfssvc(2) syscall. Not that anyone but nfsd and mount_nfs
