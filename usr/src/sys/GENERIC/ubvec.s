@@ -1,0 +1,13 @@
+#define	I_CLOCK	0
+#define	I_CNR	4
+#define	I_CNX	8
+#define	I_TUR	12
+#define	I_TUX	16
+#define	I_MBA0	20
+#define	I_MBA1	24
+#define	I_MBA2	28
+#define	I_MBA3	32
+#define	I_UBA0	36
+#define	I_UBA1	40
+#define	I_UBA2	44
+#define	I_UBA3	48
