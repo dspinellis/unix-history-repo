@@ -59,7 +59,7 @@ Adaptec 174x series EISA SCSI controller in standard and enhanced mode.
 
 Buslogic 545S.
 
-Bustec 742A.
+Bustec 742A and 747.
 
 DTC 3290 EISA SCSI controller in 1542 emulation mode as long as
 you have less than 16MB of memory.
@@ -262,4 +262,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.15 1993/10/18 19:32:45 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.16 1993/12/13 08:36:31 rgrimes Exp $
