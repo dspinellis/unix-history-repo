@@ -2,6 +2,7 @@
 % included prolog for enscript files
 % last edit: shore Sat Nov  9 13:28:41 1985
 % Copyright (c) 1983, 1984 Adobe Systems Incorporated
+% @(#)enscript.pro	1.3 (Berkeley) %G%
 % RCSID: $Header: enscript.pro,v 1.5 89/03/10 00:45:30 van Exp $
 save/EnscriptJob exch def
 /StartEnscriptDoc{$enscript begin}def
@@ -35,7 +36,7 @@ save/EnscriptJob exch def
  .25 U 10.2 U BarLength .1 sub U .25 U [File] $fd 2 get .97 0 14 LB
  .25 U 10.45 U BarLength .1 sub U .25 U [Comment] $fd 1 get 1 0 14 LB
  .25 U 10.2 U .75 U .5 U Date $fd 3 get .97 0 12 LB
- BarLength .5 sub U 10.2 U .75 U .5 U [Page] $fd 4 get .97 1 30 LB
+ BarLength .5 sub U 10.2 U .75 U .5 U [Page] $fd 4 get .97 0 30 LB
  TwoColumn{BarLength 2 div .19 add U 10.2 U moveto 0 -10 U rlineto stroke}if
 }def
 end
