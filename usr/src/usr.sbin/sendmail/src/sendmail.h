@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.21 (Berkeley) %G%
+ *	@(#)sendmail.h	5.22 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.21		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.22		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -115,6 +115,7 @@ typedef struct address ADDRESS;
 # define QPRIMARY	000010	/* set from argv */
 # define QQUEUEUP	000020	/* queue for later transmission */
 # define QSENT		000040	/* has been successfully delivered */
+# define QNOTREMOTE	000100	/* not an address for remote forwarding */
 # define QPSEUDO	000040	/* only on the list for verification */
 /*
 **  Mailer definition structure.
@@ -556,6 +557,7 @@ EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	NoWildcardMX;	/* we don't have wildcard MX records */
 EXTERN char	*UdbFileName;	/* user database file name [udbexpand.c] */
 EXTERN int	MaxHopCount;	/* number of hops until we give an error */
+EXTERN int	ConfigLevel;	/* config file level -- what does .cf expect? */
 /*
 **  Trace information
 */
