@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -149,9 +149,7 @@ CompatRunCommand (cmd, gn)
      */
      
     if (*cmdStart == '\0') {
-	if (!noWarnings) {
-	    Error("%s expands to empty string", cmd);
-	}
+	Error("%s expands to empty string", cmd);
 	return(0);
     } else {
 	cmd = cmdStart;
