@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -52,7 +52,7 @@ extern int __big_delete();
 extern int __find_bigpair();
 
 /* dynahash.c */
-extern	int	__call_hash();
+extern	u_int	__call_hash();
 extern	int	__expand_table();
 
 /* my externals */
@@ -67,6 +67,7 @@ static int open_temp();
 static int ugly_split();
 static void squeeze_key();
 static void putpair();
+static u_long *fetch_bitmap();
 
 #ifdef HASH_STATISTICS
 extern long hash_accesses, hash_collisions, hash_expansions, hash_overflows;
@@ -164,8 +165,8 @@ register int ndx;
 */
 extern int
 __split_page(obucket, nbucket)
-int obucket;
-int nbucket;
+u_int obucket;
+u_int nbucket;
 {
 	DBT key;
 	DBT val;
@@ -260,7 +261,7 @@ int nbucket;
 */
 static int
 ugly_split( obucket, old_bufp, new_bufp, copyto, moved )
-int	obucket;	/* Same as __split_page */
+u_int	obucket;	/* Same as __split_page */
 BUFHEAD	*old_bufp;		
 BUFHEAD	*new_bufp;
 u_short	copyto;		/* First byte on page which contains key/data values */
@@ -485,7 +486,7 @@ BUFHEAD	*bufp;
 extern	int
 __get_page ( p, bucket, is_bucket, is_disk, is_bitmap )
 char	*p;
-int	bucket;
+u_int	bucket;
 int	is_bucket;
 int	is_disk;
 int	is_bitmap;
@@ -547,7 +548,7 @@ int	is_bitmap;
 extern int
 __put_page ( p, bucket, is_bucket, is_bitmap )
 char	*p;
-int	bucket;
+u_int	bucket;
 int	is_bucket;
 int	is_bitmap;
 {
@@ -605,7 +606,7 @@ int	ndx;
     int		clearbytes;
 
     if ( !(ip = (u_long *)malloc (hashp->BSIZE)) ) return (NULL);
-    hashp->exmaps++;
+    hashp->nmaps++;
     clearints = ((nbits - 1) >> INT_BYTE_SHIFT) + 1;
     clearbytes = clearints << INT_TO_BYTE;
     memset ((char *)ip, 0, clearbytes );
@@ -655,7 +656,10 @@ overflow_page ( )
 
     /* Look through all the free maps to find the first free block */
     for ( i = 0; i <= free_page; i++ ) {
-	if (!(freep = (u_long *)hashp->mapp[i]) ) return(NULL);
+	if (!(freep = (u_long *)hashp->mapp[i])  &&
+	    !(freep = fetch_bitmap(i)) ) {
+	    return ( NULL );
+	}
 	if ( i == free_page ) in_use_bits = free_bit;
 	else in_use_bits = (hashp->BSIZE << BYTE_SHIFT) -1;
 
@@ -764,8 +768,15 @@ BUFHEAD	*obufp;
     free_page = (bit_address >> (hashp->BSHIFT + BYTE_SHIFT));
     free_bit  = bit_address & ((hashp->BSIZE << BYTE_SHIFT) - 1);
 
-    freep = hashp->mapp[free_page];
-    assert(freep);
+    if ( !(freep = hashp->mapp[free_page]) &&
+	 !(freep = fetch_bitmap( free_page )) ) {
+	/* 
+	    This had better never happen.  It means we tried to
+	    read a bitmap that has already had overflow pages allocated
+	    off it, and we failed to read it from the file
+	*/
+	assert(0);
+    }
     CLRBIT(freep, free_bit);
 #ifdef DEBUG2
     fprintf ( stderr, "FREE_OVFLPAGE: ADDR: %d BIT: %d PAGE %d\n",
@@ -833,6 +844,18 @@ DBT	*val;
     OFFSET(sp) = off;
 }
 
+static u_long *
+fetch_bitmap ( ndx ) 
+int	ndx;
+{
+    if ( ndx >= hashp->nmaps  ||
+	!(hashp->mapp[ndx] = (u_long *)malloc ( hashp->BSIZE )) ||
+	 __get_page ((char *)hashp->mapp[ndx], hashp->BITMAPS[ndx], 0, 1, 1)) {
+
+	    return(NULL);
+    }
+    return ( hashp->mapp[ndx] );
+}
 #ifdef DEBUG4
 print_chain ( addr )
 short	addr;
