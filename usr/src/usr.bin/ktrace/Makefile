@@ -1,7 +1,6 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	ktrace
 SRCS=	ktrace.c subr.c
 
-.include "../../Makefile.inc"
 .include <bsd.prog.mk>
