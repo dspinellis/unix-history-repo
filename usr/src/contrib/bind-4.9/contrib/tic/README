@@ -1,0 +1,83 @@
+# Copyright (c) 1992 by Texas Internet Consulting
+# This code may be freely copied and used so long as this
+# copyright notice is attached.  This code may not be sold
+# without the express written permission of Texas Internet Consulting.
+# Texas Internet Consulting makes no warranty as to the correctness
+# nor the applicability of this code for any purpose.
+
+Generic host configuration files.
+
+This is a brief overview of a set of utilities used to manage
+host files when running DNS or NIS nameservice or both.
+
+File description:
+
+README - this file
+etc.named - files installed in /etc/named
+gendns - shell script to generate DNS tables
+genstatic - shell script to generate static host file
+make_rev - automatically creates the reverse DNS map
+poke_ns.c - C program to help manage DNS servers
+readinfo - shell script to extract fields from hst files
+updatehosts - shell scrip to automate host update
+
+This host database system organizes host information in a set of
+flat tables.  All host updates are made in these tables.  From these
+tables both the static host table and the DNS database files are created.
+This eliminates potential errors caused by having to maintain two sets of
+host tables.
+
+The static host table is used to update NIS maps, if you run NIS.  It can
+also be used on machines which may not have DNS or NIS support.
+
+Install the scripts in /usr/local/etc.  Compile and install poke_ns in
+/usr/local/etc making it setuid to root, but only executable by the group
+of users which will be maintainingg the host database.  Do not make it
+executable by everyone.  Check the define NAMED and be sure it points to
+the pathname for your nameserver.
+
+The next step is to install the files in etc.named in the /etc/named
+directory or the directory where the DNS database files will be maintained.
+
+Now populate the host database files.  These files are organized like a
+relational database and consist of several files.  They are all under SCCS
+control and must be checked out to be populated.  Be sure and check the
+files back in under SCCS before continuing.
+
+hosts.main - the main host file.  Required fields are the host and IP
+address field.  Note the #FIELDS line.  This describes the fields to the
+readinfo script which extracts particular fields from the host.* files.
+Each field is described by its fieldname, followed by an optional prefix=,
+suffix=, or no= descriptor.  The prefix= and suffix= describe what will be
+prepended or appended to the field value when readinfo outputs the field.
+For host names the suffix is equal to the default domain.  For host
+addresses the prefix is equal to the network number.  This facility is a
+useful shorthand.  The no= field gives a character which says to display
+the host value as given and ignore any prefix or suffix.  For example if
+your default domain is tic.com and you have a host named tic.com enter it
+in the file as @tic.com@.
+
+hosts.cname - host alias file.  This has two fields the real host name
+followed an alias for the host.  If a host has more than a single alias,
+renteer the host name followed by the second alias.
+
+hosts.mx - DNS MX information is entered here.  This file has three fields:
+the domain name to MX for, the priority of the MX record and the host to
+forward mail to for this domain.
+
+The other hosts.* and remaining files are helper files
+for creating the static host tables and DNS files.  No data needs to be entered into them.
+
+Create a file in nisservers of the host names for NIS servers for doing
+host lookups.  If you have no NIS servers performing this function do not
+create this file.
+
+Run the command updatehosts -u.  This will generate the DNS tables and
+start the DNS server or cause the currently running server to reload its
+data files.  If you are replacing an existing DNS server it is best to
+bring it down first  before typing this command.  When you update the host
+files in the future, type updatehosts followed by the names of the files
+which need to be updated. e.g. updatehosts hosts.main.  This can be done in
+any directory.  Updatehosts knows how to find the files.  The -u option is
+used when you want to update the server without modifying any files or you
+modified the files by manually running SCCS.
