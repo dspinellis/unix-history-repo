@@ -189,7 +189,7 @@ prompt()
 			putstr(pbuf);
 		}
 		if ((pos = position(BOTTOM)) != NULL_POSITION) {
-			(void)sprintf(pbuf, " byte %d", pos);
+			(void)sprintf(pbuf, " byte %ld", pos);
 			putstr(pbuf);
 			if (!ispipe && (len = ch_length())) {
 				(void)sprintf(pbuf, "/%ld pct %ld%%",
