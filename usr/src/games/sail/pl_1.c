@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.6 84/01/27";
+static	char *sccsid = "@(#)pl_1.c	2.7 84/02/23";
 #endif
 
 #include "player.h"
@@ -7,8 +7,6 @@ static	char *sccsid = "@(#)pl_1.c	2.6 84/01/27";
 #include <sys/wait.h>
 
 int choke(), child();
-
-static char hasdriver;
 
 /*ARGSUSED*/
 main(argc, argv)
@@ -56,6 +54,11 @@ char randomize, nodriver, debug;
 	register int n;
 	char *nameptr;
 	int nat[NNATION];
+
+	if (!SCREENTEST()) {
+		printf("Can't sail on this terminal.\n");
+		exit(1);
+	}
 
 	(void) srand(getpid());
 
@@ -112,7 +115,8 @@ reprint:
 	if (hasdriver) {
 		(void) puts("Synchronizing with the other players...");
 		(void) fflush(stdout);
-		Sync();
+		if (Sync() < 0)
+			leave(LEAVE_SYNC);
 	}
 	for (;;) {
 		foreachship(sp)
@@ -152,7 +156,8 @@ reprint:
 		}
 		if (player < 0)
 			continue;
-		Sync();
+		if (Sync() < 0)
+			leave(LEAVE_SYNC);
 		fp = SHIP(player)->file;
 		if (fp->captain[0] || fp->struck || fp->captured != 0)
 			(void) puts("That ship is taken.");
@@ -165,7 +170,8 @@ reprint:
 	mc = ms->specs;
 
 	Write(W_BEGIN, ms, 0, 0, 0, 0, 0);
-	Sync();
+	if (Sync() < 0)
+		leave(LEAVE_SYNC);
 
 	(void) signal(SIGCHLD, child);
 	if (!hasdriver && !nodriver) {
@@ -181,7 +187,7 @@ reprint:
 			break;
 		case -1:
 			perror("fork");
-			leave(LEAVE_QUIT);
+			leave(LEAVE_FORK);
 			break;
 		default:
 			hasdriver++;
@@ -235,9 +241,7 @@ reprint:
 	}
 
 	initscreen();
-	blockalarm();
 	draw_board();
-	unblockalarm();
 	(void) sprintf(message, "Captain %s assuming command", captain);
 	Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
 	newturn();
@@ -248,16 +252,12 @@ reprint:
  * we don't want to update the score file, or do any Write's either.
  * We can assume the sync file is already created and may need
  * to be removed.
+ * Of course, we don't do any more Sync()'s if we got here
+ * because of a Sync() failure.
  */
 leave(conditions)
 int conditions;
 {
-	FILE *fp;
-	int persons;
-	float net;
-	register int n;
-	struct logs log[10], temp;
-
 	(void) signal(SIGHUP, SIG_IGN);
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
@@ -279,8 +279,10 @@ int conditions;
 				(struct ship *)0);
 			break;
 		case LEAVE_DRIVER:
-			/* don't clear 'hasdriver' here */
 			Signal("The driver died.", (struct ship *)0);
+			break;
+		case LEAVE_SYNC:
+			Signal("Synchronization error.", (struct ship *)0);
 			break;
 		default:
 			Signal("A funny thing happened (%d).",
@@ -294,8 +296,10 @@ int conditions;
 			printf("The driver died.\n");
 			break;
 		case LEAVE_FORK:
-			hasdriver = 0;
-			printf("Can't fork.\n");
+			perror("fork");
+			break;
+		case LEAVE_SYNC:
+			printf("Synchronization error\n.");
 			break;
 		default:
 			printf("A funny thing happened (%d).\n",
@@ -304,42 +308,13 @@ int conditions;
 	}
 
 	if (ms != 0) {
-		if (fp = fopen(LOGFILE, "r+")) {
-			net = (float)mf->points / mc->pts;
-			persons = getw(fp);
-			n = fread((char *)log, sizeof(struct logs), 10, fp);
-			for (; n < 10; n++)
-				log[n].l_name[0]
-					= log[n].l_uid
-					= log[n].l_shipnum
-					= log[n].l_gamenum
-					= log[n].l_netpoints = 0;
-			rewind(fp);
-			if (persons < 0)
-				(void) putw(1, fp);
-			else
-				(void) putw(persons + 1, fp);
-			for (n = 0; n < 10; n++)
-				if (net > (float) log[n].l_netpoints / scene[log[n].l_gamenum].ship[log[n].l_shipnum].specs->pts) {
-					(void) fwrite((char *)log,
-						sizeof (struct logs), n, fp);
-					(void) strcpy(temp.l_name, mf->captain);
-					temp.l_uid = getuid();
-					temp.l_shipnum = player;
-					temp.l_gamenum = game;
-					temp.l_netpoints = mf->points;
-					(void) fwrite((char *)&temp,
-						sizeof temp, 1, fp);
-					(void) fwrite((char *)&log[n],
-						sizeof (struct logs), 9-n, fp);
-					break;
-				}
-			(void) fclose(fp);
+		log(ms);
+		if (conditions != LEAVE_SYNC) {
+			makesignal(ms, "Captain %s relinquishing.",
+				(struct ship *)0, mf->captain);
+			Write(W_END, ms, 0, 0, 0, 0, 0);
+			(void) Sync();
 		}
-		makesignal(ms, "Captain %s relinquishing.", (struct ship *)0,
-			mf->captain);
-		Write(W_END, ms, 0, 0, 0, 0, 0);
-		Sync();
 	}
 	sync_close(!hasdriver);
 	cleanupscreen();
@@ -360,7 +335,7 @@ child()
 	do {
 		pid = wait3(&status, WNOHANG|WUNTRACED, (struct rusage *)0);
 		if (pid < 0 || pid > 0 && !WIFSTOPPED(status))
-			leave(LEAVE_DRIVER);
+			hasdriver = 0;
 	} while (pid != 0);
 	(void) signal(SIGCHLD, child);
 }
