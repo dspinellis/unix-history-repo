@@ -26,6 +26,12 @@
 #define	NULL	((char *) 0)
 #endif
 
+/*
+ * Pre-define the page block size to be the old dbm size.
+ */
+
+#define PBLKSIZ 1024
+
 #include <ndbm.h>
 
 datum	fetch();
