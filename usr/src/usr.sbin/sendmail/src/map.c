@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -619,7 +619,7 @@ extract_canonname(name, line, cbuf)
 	if (line[0] == '#')
 		return FALSE;
 
-	for (i = 1; !found; i++)
+	for (i = 1; ; i++)
 	{
 		char nbuf[MAXNAME + 1];
 
