@@ -226,7 +226,7 @@ The protocol module is supplied two sockets and requested to
 establish a connection between the two without binding any
 addresses, if possible.  This call is used in implementing
 the
-.IR socketpair (2)
+.I socketpair (2)
 system call.
 .PP
 The following requests are used internally by the protocol modules

@@ -10,4 +10,4 @@ MACROS=	-me
 .include <bsd.doc.mk>
 
 ${DOC}.${PRINTER}: ${SRCS}
-	( cd ${.CURDIR} ; ${PIC} ${SRCS} ) | ${ROFF} > ${.TARGET}
+	( cd ${.CURDIR} ; ${PIC} ${SRCS} ) | ${ROFF} ${COMPAT} > ${.TARGET}

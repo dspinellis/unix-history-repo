@@ -8,9 +8,8 @@ SRCS=	00macs.me 00title.me intro.me build.me types.me setup.me \
 	files.me named.boot.primary named.boot.secondary named.boot.cache \
 	resolv.conf root.cache named.local ucbhosts ucbhosts.rev manage.me
 MACROS=	-me
-NROFF=	nroff -rb3
 
 .include <bsd.doc.mk>
 
 ${DOC}.${PRINTER}: ${SRCS}
-	( cd ${.CURDIR} ; ${TBL} ${SRCS} ) | ${ROFF} > ${.TARGET}
+	( cd ${.CURDIR} ; ${TBL} ${SRCS} ) | ${ROFF} ${COMPAT} > ${.TARGET}

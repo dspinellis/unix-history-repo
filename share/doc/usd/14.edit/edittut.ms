@@ -89,19 +89,19 @@ September 1981
 .nf
 Introduction\ \ \ 3
 .sp
-Session 1\ \ \4
+Session 1\ \ \ 4
 .in +.5i
 Making contact with \s-2UNIX\s+2\ \ \ 4
-Logging in\ \ \4
+Logging in\ \ \ 4
 Asking for \fIedit\fR\ \ \ 4
 The ``Command not found'' message\ \ \ 5
-A summary\ \ \5
+A summary\ \ \ 5
 Entering text\ \ \ 5
 Messages from \fIedit\fR\ \ \ 5
 Text input mode\ \ \ 6
 Making corrections\ \ \ 6
 Writing text to disk\ \ \ 7
-Signing off\ \ \7
+Signing off\ \ \ 7
 .in -.5i
 .sp
 Session 2\ \ \ 8

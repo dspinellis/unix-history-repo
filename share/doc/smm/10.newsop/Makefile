@@ -4,9 +4,13 @@
 DIR=	smm/10.newsop
 DOC=	10.newsop
 
-SRCS=	 tmac.n install.mn
+SSRC=	tmac.n standard.mn
+SRCS=	tmac.n install.mn
 
 .include <bsd.doc.mk>
 
-${DOC}.${PRINTER}: ${SRCS}
+${DOC}.${PRINTER}: ${SRCS} ${DOC}.standard.${PRINTER}
 	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}
+
+${DOC}.standard.${PRINTER}: ${SSRC}
+	( cd ${.CURDIR} ; ${ROFF} ${SSRC} ) > ${.TARGET}

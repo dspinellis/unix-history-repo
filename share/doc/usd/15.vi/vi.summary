@@ -434,7 +434,7 @@ c	change
 <	left shift
 >	right shift
 !	filter through command
-\&\=	indent for \s-2LISP\s0
+\&=	indent for \s-2LISP\s0
 y	yank lines to buffer
 .TE
 .h "Miscellaneous operations"

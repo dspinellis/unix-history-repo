@@ -6,7 +6,6 @@ DOC=	14.edit
 
 SRCS=	edittut.ms
 MACROS=	-ms
-CLEANFILES+=	editvindex
 
 .include <bsd.doc.mk>
 
@@ -19,4 +18,4 @@ ${DOC}.${PRINTER}: ${SRCS}
 # you should just use the index in edit.tut, and ignore editvindex.
 
 editvindex:
-	( cd ${.CURDIR} ; ${ROFF} ${MACROS} -n22 edit.vindex ) > ${.TARGET}
+	( cd ${.CURDIR} ; ${ROFF} -n22 edit.vindex ) > ${DOC}.${.TARGET}.${PRINTER}

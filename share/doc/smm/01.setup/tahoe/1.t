@@ -161,7 +161,7 @@ The Power 6/32 (and most related machines being shipped) use a \*(Vs
 for all I/O peripherals.
 The console processor used for bootstrap and
 diagnostic purposes is also located on the \*(Vs.
-The Harris HCX-9 uses a \*(Vm instead of a \(*Vs; however, the architecture
+The Harris HCX-9 uses a \*(Vm instead of a \*(Vs; however, the architecture
 is completely analogous, and the following discussion applies with the
 exception of the name of the bus and the name of the disk controller.
 The device naming

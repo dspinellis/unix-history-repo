@@ -15,73 +15,14 @@
 #	and a typesetter. Hopefully the only changes to make it
 #	run again under nroff will be in page length/width statements.
 
-DISTDIR	= p:/usr/src/uiuc/notesfiles
-DCP=	rcp
-NROPTS	= 
-TROPTS	= 
-PRINTER	= -Pdp
-#	ditroff actually prints the mother
-TROFF	= ditroff
-NROFF	= nroff
-NOUT	= qprx
-FILES=	0.long 0.short \
-	1 2.1 2.2 3.1 3.2 \
-	4.0 4.1 4.2 4.3 4.4 4.5 4.6 4.7 \
-	5 \
-	a.checklist b.interface c.changes
-LONGFILES= 0.long \
+DIR=	usd/11.notes
+DOC=	11.notes
+
+SRCS=	macros 0.long \
 	1 2.1 2.2 3.1 3.2 4.0 4.1 4.2 4.3 4.4 4.5 4.6 4.7 \
-	5 a.checklist b.interface c.changes
-SHORTFILES= 0.short \
-	1 2.1 2.2 4.0 4.1 4.2 4.3 4.4 4.5
-OTHERS	= macros vtoc Makefile acks
+	5 a.checklist b.interface c.changes vtoc acks
 
-man:	shortman
-all:	longman shortman
+.include <bsd.doc.mk>
 
-longman:	$(LONGFILES) macros vtoc acks
-	$(TROFF) $(TROPTS) $(PRINTER) macros $(LONGFILES) vtoc acks
-
-shortman: $(SHORTFILES) macros vtoc
-	$(TROFF) $(TROPTS) $(PRINTER) macros $(SHORTFILES) vtoc
-
-longout: $(LONGFILES) macros vtoc acks
-	$(NROFF) $(NROPTS) macros $(LONGFILES) vtoc acks > longout
-
-shortout: $(SHORTFILES) macros vtoc
-	$(NROFF) $(NROPTS) macros $(SHORTFILES) vtoc > shortout
-
-print: longout
-	$(NOUT) longout
-
-printsh: shortout
-	$(NOUT) shortout
-
-help:
-	@echo "make longman/shortman for long/abridged user man via ditroff"
-	@echo "make longout/shortout for long/abridged user man via nroff"
-	@echo "make print prints long nroff output"
-
-#
-#	Maintainence.
-#
-
-spell:	$(FILES)
-	sp $?
-	touch spell
-
-diction: out
-	diction out > diction
-
-style:	out
-	style out > style
-
-dist:	$(FILES) $(OTHERS)
-	${DCP} $? $(DISTDIR)/doc/.
-	touch dist
-
-clean:
-	rm -f man out Make.errs
-	rm -f diction style spell sp.*
-
-install:
+${DOC}.${PRINTER}: ${SRCS}
+	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}

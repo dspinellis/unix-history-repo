@@ -4,9 +4,13 @@
 DIR=	usd/09.newsread
 DOC=	09.newsread
 
+CSRC=	../../smm/10.newsop/tmac.n copyright.mn
 SRCS=	../../smm/10.newsop/tmac.n howto.mn
 
 .include <bsd.doc.mk>
 
-${DOC}.${PRINTER}: ${SRCS}
+${DOC}.${PRINTER}: ${SRCS} ${DOC}.copyright.${PRINTER}
 	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}
+
+${DOC}.copyright.${PRINTER}: ${CSRC}
+	( cd ${.CURDIR} ; ${ROFF} ${CSRC} ) > ${.TARGET}

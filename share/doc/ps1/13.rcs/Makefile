@@ -4,10 +4,15 @@
 DIR=	ps1/13.rcs
 DOC=	13.rcs
 
+MSRC=	rcs.man
 SRCS=	rcs.ms
-MACROS=	-ms
+MACS=	-ms
+MMACS=	-mandoc
 
 .include <bsd.doc.mk>
 
-${DOC}.${PRINTER}: ${SRCS}
-	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}
+${DOC}.${PRINTER}: ${SRCS} ${DOC}.man.${PRINTER}
+	( cd ${.CURDIR} ; ${ROFF} ${MACS} ${SRCS} ) > ${.TARGET}
+
+${DOC}.man.${PRINTER}: ${MSRC}
+	( cd ${.CURDIR} ; ${ROFF} ${MMACS} ${MSRC} ) > ${.TARGET}

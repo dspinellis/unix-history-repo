@@ -845,11 +845,11 @@ so that it will be checked and mounted when the system is bootstrapped.
 .PP
 As an example, consider a system with \*(Dn's.  On the first \*(Dn, \*(Dk0,
 we will put the root file system in \*(Dk0a, and the /usr
-file system in \*(Dk0\*(pa, which has enough space to hold it and then some.
+file system in \*(Dk0\*(Pa, which has enough space to hold it and then some.
 The /tmp directory will be part of the root file system,
 as no file system will be mounted on /tmp.
 If we had only one \*(Dn, we would put user files
-in the \*(Dk0\*(pa partition with the system source and binaries.
+in the \*(Dk0\*(Pa partition with the system source and binaries.
 .PP
 If we had a second \*(Dn, we would place \fI/usr\fP in \*(Dk1\*(Pa.
 We would put user files in \*(Dk0g, calling the file system /a.

@@ -11,4 +11,4 @@ MACROS=	-me
 .include <bsd.doc.mk>
 
 ${DOC}.${PRINTER}: ${SRCS}
-	( cd ${.CURDIR} ; ${TBL} ${SRCS} ) | ${ROFF} > ${.TARGET}
+	( cd ${.CURDIR} ; ${TBL} ${SRCS} ) | ${ROFF} ${COMPAT} > ${.TARGET}

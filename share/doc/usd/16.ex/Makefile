@@ -6,7 +6,6 @@ DOC=	16.ex
 
 SRCS=	ex.rm
 MACROS=	-ms
-CLEANFILES=summary.*
 
 .include <bsd.doc.mk>
 

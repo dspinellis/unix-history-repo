@@ -4,16 +4,16 @@
 DIR=	ps1/18.curses
 DOC=	18.curses
 
-SRCS=	Master macros appen.A appen.B appen.C intro.0 intro.1 \
-	intro.2 intro.3 intro.4 intro.5
+SRCS=	Master
 MACROS=	-me
 
 CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl
 
 .include <bsd.doc.mk>
 
-${DOC}.${PRINTER}: ${SRCS}
-	( cd ${.CURDIR} ; ${ROFF} ${SRCS} ) > ${.TARGET}
+${DOC}.${PRINTER}: ${SRCS} win_st.gr twinkle1.gr twinkle2.gr life.gr \
+			intro.2.tbl appen.A.tbl
+	( cd ${.CURDIR} ; ${ROFF} ${COMPAT} ${SRCS} ) > ${.TARGET}
 
 .SUFFIXES:
 .SUFFIXES: .c .gr

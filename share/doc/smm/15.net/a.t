@@ -154,7 +154,7 @@ by means of their \fIpr_ctlinput\fP entries.
 Statistics are kept by the routing table routines
 on the use of routing redirect messages and their
 affect on the routing tables.  These statistics may be viewed using
-.IR netstat (1).
+.I netstat (1).
 .PP
 Status information other than routing redirect control messages
 may be used in the future, but at present they are ignored.

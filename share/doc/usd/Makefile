@@ -4,13 +4,11 @@
 #Missing: 01.begin 02.learn 03.shell 05.dc 06.bc 08.mh 12.edtut 13.edadv
 #	  17.jove 18.sed 19.awk 20.msmacros 24.troff 25.trofftut 26.eqn
 #	  27.eqnguide 28.tbl 29.refer 30.invert 31.bib 32.diction
-#
-#Broken:  11.notes
 
 BINDIR=	/usr/share/doc/usd
 FILES=	00.contents Makefile Title
 SUBDIR=	04.csh 07.Mail \
-	09.newsread 10.etiq 14.edit 15.vi \
+	09.newsread 10.etiq 11.notes 14.edit 15.vi \
 	16.ex 21.msdiffs 22.memacros \
 	23.meref \
 	33.rogue 34.trek
