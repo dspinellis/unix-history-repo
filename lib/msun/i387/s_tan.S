@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1993,94 Winning Strategies, Inc.
+ * Copyright (c) 1994 Winning Strategies, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,13 +35,22 @@
 
 #include "DEFS.h"
 
-
-ENTRY(__ieee754_fmod)
-	fldl	12(%esp)
+ENTRY(tan)
 	fldl	4(%esp)
-1:	fprem
+	fptan
+	fnstsw	%ax
+	andw	$0x400,%ax
+	jnz	1f
+	fstp	%st(0)
+	ret
+1:	fldpi
+	fadd	%st(0)
+	fxch	%st(1)
+2:	fprem1
 	fstsw	%ax
-	sahf
-	jp	1b
-	fstpl	%st(1)
+	andw	$0x400,%ax
+	jnz	2b
+	fstp	%st(1)
+	fptan
+	fstp	%st(0)
 	ret
