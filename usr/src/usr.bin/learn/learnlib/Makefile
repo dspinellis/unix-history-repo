@@ -1,4 +1,4 @@
-#	Makefile	4.3	87/06/19
+#	Makefile	4.3	87/07/22
 #
 # Make install will build the learn lesson libraries
 # from this directory. 
