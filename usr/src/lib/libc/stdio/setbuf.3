@@ -2,38 +2,30 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setbuf.3	6.4 (Berkeley) %G%
+.\"	@(#)setbuf.3	6.4 (Berkeley) 4/1/89
 .\"
-.TH SETBUF 3  ""
+.TH SETBUF 3
 .UC 4
 .SH NAME
-setbuf, setbuffer, setlinebuf \- assign buffering to a stream
+setbuf, setbuffer, setlinebuf, setvbuf \- assign buffering to a stream
 .SH SYNOPSIS
-.B #include <stdio.h>
-.PP
-.B setbuf(stream, buf)
-.br
-.SM
-.B FILE
-.B *stream;
-.br
-.B char *buf;
-.PP
-.B setbuffer(stream, buf, size)
-.br
-.SM
-.B FILE
-.B *stream;
-.br
-.B char *buf;
-.br
-.B int size;
-.PP
-.B setlinebuf(stream)
-.br
-.SM
-.B FILE
-.B *stream;
+.nf
+.ft B
+#include <stdio.h>
+
+int
+setbuf(FILE *stream, char *buf);
+
+int
+setbuffer(FILE *stream, char *buf, size_t size);
+
+int
+setlinebuf(FILE *stream);
+
+int
+setvbuf(FILE *stream, char *buf, int mode, size_t size);
+.ft R
+.fi
 .SH DESCRIPTION
 The three types of buffering available are unbuffered, block buffered,
 and line buffered.
@@ -41,93 +33,91 @@ When an output stream is unbuffered, information appears on the
 destination file or terminal as soon as written;
 when it is block buffered many characters are saved up and written as a block;
 when it is line buffered characters are saved up until a newline is
-encountered or input is read from stdin.
+output or input is read from any stream attached to a terminal device
+(typically stdin).
 .I Fflush
 (see 
 .IR fclose (3))
 may be used to force the block out early.
 Normally all files are block buffered.
 A buffer is obtained from
-.IR  malloc (3)
-upon the first
-.I getc
-or
-.IR  putc (3)
-on the file.
-If the standard stream
+.IR malloc (3)
+upon the first read or write operation on the file.
+If a stream refers to a terminal
+(as
 .B stdout
-refers to a terminal it is line buffered.
+normally does) it is line buffered.
 The standard stream
 .B stderr
 is always unbuffered.
 .PP
-.I Setbuf
-is used after a stream has been opened but before it is read or written.
-The character array
+.I Setvbuf
+may be used at any time on any open stream
+to change its buffer.
+The
+.I mode
+parameter must be one of the following three macros:
+.RS
+.TP 8
+.B _IONBF
+unbuffered
+.br
+.ns
+.TP 8
+.B _IOLBF
+line buffered
+.br
+.ns
+.TP 8
+.B _IOFBF
+fully buffered
+.RE
+.LP
+Except for unbuffered files, the 
 .I buf
-is used instead of an automatically allocated buffer.  If
-.I buf
-is the constant pointer
-.SM
-.B NULL,
-input/output will be completely unbuffered.
-A manifest constant 
-.SM
-.B BUFSIZ
-tells how big an array is needed:
-.IP
-.B char
-buf[BUFSIZ];
-.PP
-.IR Setbuffer ,
-an alternate form of 
-.IR setbuf ,
-is used after a stream has been opened but before it is read or written.
-The character array
-.I buf
-whose size is determined by the 
+argument should point to a buffer at least
 .I size
-argument is used instead of an automatically allocated buffer.  If
+bytes long;
+this buffer will be used instead of the current buffer.
+If
 .I buf
-is the constant pointer
-.SM
-.BR NULL ,
-input/output will be completely unbuffered.
+is NULL,
+only the mode is affected;
+a new buffer will be allocated on the next read or write operation.
+.I Setvbuf
+may be used at any time,
+but can only change the mode of a stream
+when it is not ``active'':
+that is, before any I/O,
+or immediately after a call to
+.IR fflush .
 .PP
+The other three calls are, in effect, simply aliases
+for calls to
+.IR setvbuf .
+.I Setbuf
+is exactly equivalent to the call
+.sp
+.ti +0.5i
+setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+.sp
+.I Setbuffer
+is the same, except that the size of the buffer is up to the caller,
+rather than being determined by the manifest constant
+.SM
+.BR BUFSIZ .
 .I Setlinebuf
-is used to change
-.I stdout
-or
-.I stderr
-from block buffered or unbuffered to line buffered.
-Unlike
-.I setbuf
-and
-.I setbuffer
-it can be used at any time that the file descriptor is active.
-.PP
-A file can be changed from unbuffered or line buffered to block buffered
-by using
-.I freopen
-(see
-.IR fopen (3)).
-A file can be changed from block buffered or line buffered to unbuffered
-by using
-.I freopen
-followed by
-.I setbuf
-with a buffer argument of 
-.SM
-.BR NULL .
+is exactly equivalent to the call
+.sp
+.ti +0.5i
+setvbuf(stream, (char *)NULL, _IOLBF, 0);
 .SH "SEE ALSO"
-fopen(3),
-getc(3),
-putc(3),
-malloc(3),
-fclose(3),
-puts(3),
-printf(3),
-fread(3)
+fopen(3), fclose(3), fread(3), malloc(3), puts(3), printf(3)
+.SH STANDARDS
+.I Setbuf  
+and
+.I setvbuf
+onform to ANSI X3.159-1989 (``ANSI C'').
 .SH BUGS
 The
 .I setbuffer
@@ -137,6 +127,3 @@ functions are not portable to non-4.2BSD versions of UNIX.
 On 4.2BSD and 4.3BSD systems,
 .I setbuf
 always uses a suboptimal buffer size and should be avoided.
-.I Setbuffer
-is not usually needed
-as the default file I/O buffer sizes are optimal.
