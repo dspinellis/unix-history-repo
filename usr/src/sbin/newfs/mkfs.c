@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -953,9 +953,13 @@ realloc(ptr, size)
 	char *ptr;
 	u_long size;
 {
+	void *p;
 
-	/* always fail for now */
-	return ((caddr_t)0);
+	if ((p = malloc(size)) == NULL)
+		return (NULL);
+	bcopy(ptr, p, size);
+	free(ptr);
+	return (p);
 }
 
 /*
