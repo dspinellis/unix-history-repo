@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,11 +26,11 @@ static char sccsid[] = "@(#)rec_put.c	5.11 (Berkeley) %G%";
  *	dbp:	pointer to access method
  *	key:	key
  *	data:	data
- *	flag:	R_CURSORLOG, R_CURSOR, R_IAFTER, R_IBEFORE, R_NOOVERWRITE
+ *	flag:	R_CURSOR, R_IAFTER, R_IBEFORE, R_NOOVERWRITE
  *
  * Returns:
- *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is already in the
- *	tree and R_NOOVERWRITE specified.
+ *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is
+ *	already in the tree and R_NOOVERWRITE specified.
  */
 int
 __rec_put(dbp, key, data, flags)
@@ -51,10 +51,6 @@ __rec_put(dbp, key, data, flags)
 		if (!ISSET(t, BTF_SEQINIT))
 			goto einval;
 		nrec = t->bt_rcursor;
-		break;
-	case R_CURSORLOG:
-		nrec = t->bt_rcursor + 1;
-		SET(t, BTF_SEQINIT);
 		break;
 	case R_SETCURSOR:
 		if ((nrec = *(recno_t *)key->data) == 0)
@@ -104,14 +100,8 @@ einval:		errno = EINVAL;
 		return (status);
 
 	SET(t, BTF_MODIFIED);
-	switch(flags) {
-	case R_CURSORLOG:
-		++t->bt_rcursor;
-		break;
-	case R_SETCURSOR:
+	if (flags == R_SETCURSOR)
 		t->bt_rcursor = nrec;
-		break;
-	}
 	
 	return (__rec_ret(t, NULL, nrec, key, NULL));
 }
