@@ -1,4 +1,4 @@
-/*	swapgeneric.c	1.5	86/11/25	*/
+/*	swapgeneric.c	1.6	88/02/08	*/
 
 #include "../machine/pte.h"
 
@@ -43,6 +43,7 @@ setconf()
 {
 	register struct vba_device *ui;
 	register struct genericconf *gc;
+	register char *cp;
 	int unit, swaponroot = 0;
 
 	if (rootdev != NODEV)
@@ -56,20 +57,19 @@ retry:
 			if (gc->gc_name[0] == name[0] &&
 			    gc->gc_name[1] == name[1])
 				goto gotit;
-		goto bad;
-gotit:
-		if (name[3] == '*') {
-			name[3] = name[4];
-			swaponroot++;
-		}
-		if (name[2] >= '0' && name[2] <= '7' && name[3] == 0) {
-			unit = name[2] - '0';
-			goto found;
-		}
-		printf("bad/missing unit number\n");
-bad:
 		printf("use dk%%d\n");
 		goto retry;
+gotit:
+		cp = name + 2;
+		if (*cp < '0' || *cp > '9') {
+			printf("bad/missing unit number\n");
+			goto retry;
+		}
+		unit = 0;
+		while (*cp >= '0' && *cp <= '9')
+			unit = 10 * unit + *cp++ - '0';
+		if (*cp == '*')
+			swaponroot++;
 	}
 	unit = 0;
 	for (gc = genericconf; gc->gc_driver; gc++) {
