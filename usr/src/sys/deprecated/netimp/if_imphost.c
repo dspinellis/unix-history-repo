@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.11	82/05/10	*/
+/*	if_imphost.c	4.12	82/05/11	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -217,12 +217,11 @@ COUNT(HOSTSLOWTIMO);
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
-		while (hm->hm_count > 0 && hp < lp) {
+		for (; hm->hm_count > 0 && hp < lp; hp++) {
 			if (hp->h_flags & HF_INUSE)
 				continue;
 			if (hp->h_timer && --hp->h_timer == 0)
 				hostrelease(hp);
-			hp++;
 		}
 	}
 	splx(s);
