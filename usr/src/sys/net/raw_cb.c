@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_cb.c	7.13 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@ u_long	raw_recvspace = RAWRCVQ;
  * Allocate a control block and a nominal amount
  * of buffer space for the socket.
  */
+int
 raw_attach(so, proto)
 	register struct socket *so;
 	int proto;
@@ -64,6 +65,7 @@ raw_attach(so, proto)
  * Detach the raw connection block and discard
  * socket resources.
  */
+void
 raw_detach(rp)
 	register struct rawcb *rp;
 {
@@ -83,6 +85,7 @@ raw_detach(rp)
 /*
  * Disconnect and possibly release resources.
  */
+void
 raw_disconnect(rp)
 	struct rawcb *rp;
 {
@@ -97,6 +100,7 @@ raw_disconnect(rp)
 }
 
 #ifdef notdef
+int
 raw_bind(so, nam)
 	register struct socket *so;
 	struct mbuf *nam;
