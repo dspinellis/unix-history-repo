@@ -1,21 +1,49 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.3 83/08/16";
+static	char *sccsid = "@(#)wwscroll.c	3.4 83/08/18";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
+wwscroll(w, n)
+register struct ww *w;
+register n;
+{
+	int dir;
+	register scroll;
+
+	if (n == 0)
+		return;
+	dir = n < 0 ? -1 : 1;
+	scroll = w->ww_scroll + n;
+	if (scroll < 0)
+		scroll = 0;
+	else if (scroll > w->ww_nline - w->ww_w.nr)
+		scroll = w->ww_nline - w->ww_w.nr;
+	n = abs(scroll - w->ww_scroll);
+	if (n < w->ww_w.nr) {
+		while (--n >= 0) {
+			wwscroll1(w, 0, w->ww_w.nr - 1, dir, 0);
+			w->ww_scroll += dir;
+		}
+	} else {
+		w->ww_scroll = scroll;
+		wwredrawwin(w);
+	}
+}
+
 /*
- * Scroll down one line, starting at 'line'.
+ * Scroll one line, between 'srow' and 'erow', in direction 'dir'.
  * Don't adjust ww_scroll.
+ * And don't redraw 'leaveit' lines.
  */
 wwscroll1(w, srow, erow, dir, leaveit)
 register struct ww *w;
 int srow, erow, dir;
-char leaveit;
+int leaveit;
 {
 	register i;
-	int startrow, endrow;
+	int srow1, erow1;
 	int nvis;
 	int nvismax;
 	int deleted = 0;
@@ -26,22 +54,22 @@ char leaveit;
 	 */
 	for (i = srow; i <= erow && w->ww_nvis[i] == 0; i++)
 		;
-	if ((startrow = i) > erow) {
+	if ((srow1 = i) > erow) {
 		/* can't do any fancy stuff */
-		endrow = startrow - 1;
+		erow1 = srow1 - 1;
 		goto out;
 	}
 	for (i = erow; i >= srow && w->ww_nvis[i] == 0; i--)
 		;
-	if ((endrow = i) == startrow)
+	if ((erow1 = i) == srow1)
 		goto out;		/* just one line is easy */
 
 	/*
 	 * See how much of this window is visible.
 	 */
-	nvismax = wwncol * (endrow - startrow + 1);
+	nvismax = wwncol * (erow1 - srow1 + 1);
 	nvis = 0;
-	for (i = startrow; i <= endrow; i++)
+	for (i = srow1; i <= erow1; i++)
 		nvis += w->ww_nvis[i];
 
 	/*
@@ -53,37 +81,37 @@ char leaveit;
 		register union ww_char **cpp, **cqq;
 
 		if (dir > 0) {
-			(*tt.tt_move)(startrow + w->ww_w.t, 0);
+			(*tt.tt_move)(srow1 + w->ww_w.t, 0);
 			(*tt.tt_delline)();
-			if (endrow + w->ww_w.t != wwnrow - 1) {
-				(*tt.tt_move)(endrow + w->ww_w.t, 0);
+			if (erow1 + w->ww_w.t != wwnrow - 1) {
+				(*tt.tt_move)(erow1 + w->ww_w.t, 0);
 				(*tt.tt_insline)();
 			}
 			/*
 			 * Fix up the old screen.
 			 */
-			cpp = &wwos[startrow + w->ww_w.t];
+			cpp = &wwos[srow1 + w->ww_w.t];
 			cqq = cpp + 1;
 			tmp = *cpp;
-			for (i = endrow - startrow; --i >= 0;)
+			for (i = erow1 - srow1; --i >= 0;)
 				*cpp++ = *cqq++;
 			*cpp = tmp;
 			for (i = wwncol; --i >= 0;)
 				tmp++->c_w = ' ';
 		} else {
-			if (endrow + w->ww_w.t != wwnrow - 1) {
-				(*tt.tt_move)(endrow + w->ww_w.t, 0);
+			if (erow1 + w->ww_w.t != wwnrow - 1) {
+				(*tt.tt_move)(erow1 + w->ww_w.t, 0);
 				(*tt.tt_delline)();
 			}
-			(*tt.tt_move)(startrow + w->ww_w.t, 0);
+			(*tt.tt_move)(srow1 + w->ww_w.t, 0);
 			(*tt.tt_insline)();
 			/*
 			 * Fix up the old screen.
 			 */
-			cqq = &wwos[endrow + w->ww_w.t];
+			cqq = &wwos[erow1 + w->ww_w.t];
 			cpp = cqq + 1;
 			tmp = *cqq;
-			for (i = endrow - startrow; --i >= 0;)
+			for (i = erow1 - srow1; --i >= 0;)
 				*--cpp = *--cqq;
 			*cqq = tmp;
 			for (i = wwncol; --i >= 0;)
@@ -104,49 +132,49 @@ char leaveit;
 				register union ww_char *tmp;
 				register union ww_char **cpp, **cqq;
 
-				cpp = &wwns[startrow + w->ww_w.t];
+				cpp = &wwns[srow1 + w->ww_w.t];
 				cqq = cpp + 1;
 				tmp = *cpp;
-				for (i = endrow - startrow; --i >= 0;)
+				for (i = erow1 - srow1; --i >= 0;)
 					*cpp++ = *cqq++;
 				*cpp = tmp;
 			}
 			{
 				register char *p, *q;
 
-				p = &wwtouched[startrow + w->ww_w.t];
+				p = &wwtouched[srow1 + w->ww_w.t];
 				q = p + 1;
-				for (i = endrow - startrow; --i >= 0;)
+				for (i = erow1 - srow1; --i >= 0;)
 					*p++ = *q++;
 				*p = 1;
 			}
-			wwredrawwin1(w, srow, startrow - 1, w->ww_scroll + dir);
-			wwredrawwin1(w, endrow + 1, erow - leaveit,
+			wwredrawwin1(w, srow, srow1 - 1, w->ww_scroll + dir);
+			wwredrawwin1(w, erow1, erow - leaveit,
 				w->ww_scroll + dir);
 		} else {
 			{
 				register union ww_char *tmp;
 				register union ww_char **cpp, **cqq;
 
-				cqq = &wwns[endrow + w->ww_w.t];
+				cqq = &wwns[erow1 + w->ww_w.t];
 				cpp = cqq + 1;
 				tmp = *cqq;
-				for (i = endrow - startrow; --i >= 0;)
+				for (i = erow1 - srow1; --i >= 0;)
 					*--cpp = *--cqq;
 				*cqq = tmp;
 			}
 			{
 				register char *p, *q;
 
-				q = &wwtouched[endrow + w->ww_w.t];
+				q = &wwtouched[erow1 + w->ww_w.t];
 				p = q + 1;
-				for (i = endrow - startrow; --i >= 0;)
+				for (i = erow1 - srow1; --i >= 0;)
 					*--p = *--q;
 				*q = 1;
 			}
-			wwredrawwin1(w, srow + leaveit, startrow - 1,
+			wwredrawwin1(w, srow + leaveit, srow1,
 				w->ww_scroll + dir);
-			wwredrawwin1(w, endrow + 1, erow, w->ww_scroll + dir);
+			wwredrawwin1(w, erow1 + 1, erow, w->ww_scroll + dir);
 		}
 	} else {
 out:

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.2 83/08/17";
+static	char *sccsid = "@(#)cmd.c	3.3 83/08/18";
 #endif
 
 #include "defs.h"
@@ -25,6 +25,8 @@ top:
 				goto foo;
 			break;
 		case 'h': case 'j': case 'k': case 'l':
+		case CTRL(y):
+		case CTRL(e):
 		case CTRL(u):
 		case CTRL(d):
 		case CTRL(b):
