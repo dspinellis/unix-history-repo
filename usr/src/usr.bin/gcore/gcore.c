@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,15 +42,14 @@ static char sccsid[] = "@(#)gcore.c	5.4 (Berkeley) %G%";
  * accordingly.  It must also be recompiled whenever system data structures
  * change.
  */
-#include <stdio.h>
-#include <nlist.h>
+#include <machine/pte.h>
 #include <sys/param.h>
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <machine/pte.h>
 #include <sys/vm.h>
 #include <setjmp.h>
+#include <stdio.h>
+#include <nlist.h>
 
 /* Various macros for efficiency. */
 
