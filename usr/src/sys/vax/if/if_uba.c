@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_uba.c	7.10 (Berkeley) %G%
+ *	@(#)if_uba.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "map.h"
 #include "buf.h"
@@ -26,7 +27,6 @@
 #include "vmmac.h"
 #include "socket.h"
 #include "syslog.h"
-#include "malloc.h"
 
 #include "../net/if.h"
 
@@ -61,12 +61,12 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 	int i, nclbytes, off;
 
 	if (hlen)
-		off = CLBYTES - hlen;
+		off = MCLBYTES - hlen;
 	else
 		off = 0;
-	nclbytes = CLBYTES * (clrnd(nmr) / CLSIZE);
+	nclbytes = roundup(nmr * NBPG, MCLBYTES);
 	if (hlen)
-		nclbytes += CLBYTES;
+		nclbytes += MCLBYTES;
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
@@ -168,15 +168,19 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 {
 	struct mbuf *top, **mp;
 	register struct mbuf *m;
-	int off = off0, len;
 	register caddr_t cp = ifr->ifrw_addr + ifu->iff_hlen, pp;
+	register int len, off = off0;
 
 	top = 0;
 	mp = &top;
 	if (ifr->ifrw_flags & IFRW_W)
 		rcv_xmtbuf((struct ifxmt *)ifr);
 	while (totlen > 0) {
-		MGET(m, M_DONTWAIT, MT_DATA);
+		if (top == 0) {
+			MGETHDR(m, M_DONTWAIT, MT_DATA);
+		} else {
+			MGET(m, M_DONTWAIT, MT_DATA);
+		}
 		if (m == 0) {
 			m_freem(top);
 			top = 0;
@@ -187,23 +191,21 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			cp = ifr->ifrw_addr + ifu->iff_hlen + off;
 		} else
 			len = totlen;
-		if (len >= CLBYTES/2) {
+		if (top == 0) {
+			m->m_pkthdr.rcvif = ifp;
+			m->m_pkthdr.len = totlen; /* should subtract trailer */
+			m->m_len = MHLEN;
+		} else
+			m->m_len = MLEN;
+		if (len >= MINCLSIZE) {
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
 
-			/*
-			 * If doing the first mbuf and
-			 * the interface pointer hasn't been put in,
-			 * put it in a separate mbuf to preserve alignment.
-			 */
-			if (ifp) {
-				len = 0;
+			MCLGET(m, M_DONTWAIT);
+			if ((m->m_flags & M_EXT) == 0)
 				goto nopage;
-			}
-			MCLGET(m);
-			if (m->m_len != CLBYTES)
-				goto nopage;
-			m->m_len = MIN(len, CLBYTES);
+			len = MIN(len, MCLBYTES);
+			m->m_len = len;
 			if (!claligned(cp))
 				goto copy;
 
@@ -216,11 +218,11 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			ppte = kvtopte(pp);
 			x = btop(cp - ifr->ifrw_addr);
 			ip = (int *)&ifr->ifrw_mr[x];
-			for (i = 0; i < CLSIZE; i++) {
+			for (i = 0; i < MCLBYTES/NBPG; i++) {
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
 				*ip++ = cpte++->pg_pfnum|ifr->ifrw_proto;
-				mtpr(TBIS, cp);
+			/*	mtpr(TBIS, cp); */
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)pp);
 				pp += NBPG;
@@ -228,40 +230,31 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			goto nocopy;
 		}
 nopage:
-		m->m_off = MMINOFF;
-		if (ifp) {
+		if (len < m->m_len) {
 			/*
-			 * Leave room for ifp.
+			 * Place initial small packet/header at end of mbuf.
 			 */
-			m->m_len = MIN(MLEN - sizeof(ifp), len);
-			m->m_off += sizeof(ifp);
-		} else 
-			m->m_len = MIN(MLEN, len);
+			if (top == 0 && len + max_linkhdr <= m->m_len)
+				m->m_data += max_linkhdr;
+			m->m_len = len;
+		} else
+			len = m->m_len;
 copy:
-		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
-		cp += m->m_len;
+		bcopy(cp, mtod(m, caddr_t), (unsigned)len);
+		cp += len;
 nocopy:
 		*mp = m;
 		mp = &m->m_next;
 		if (off) {
 			/* sort of an ALGOL-W style for statement... */
-			off += m->m_len;
+			off += len;
 			if (off == totlen) {
 				cp = ifr->ifrw_addr + ifu->iff_hlen;
 				off = 0;
 				totlen = off0;
 			}
 		} else
-			totlen -= m->m_len;
-		if (ifp) {
-			/*
-			 * Prepend interface pointer to first mbuf.
-			 */
-			m->m_len += sizeof(ifp);
-			m->m_off -= sizeof(ifp);
-			*(mtod(m, struct ifnet **)) = ifp;
-			ifp = (struct ifnet *)0;
-		}
+			totlen -= len;
 	}
 out:
 	if (ifr->ifrw_flags & IFRW_W)
@@ -287,7 +280,7 @@ rcv_xmtbuf(ifw)
 	char *cp;
 
 	while (i = ffs((long)ifw->ifw_xswapd)) {
-		cp = ifw->ifw_base + i * CLBYTES;
+		cp = ifw->ifw_base + i * MCLBYTES;
 		i--;
 		ifw->ifw_xswapd &= ~(1<<i);
 		mprev = &ifw->ifw_xtofree;
@@ -295,7 +288,7 @@ rcv_xmtbuf(ifw)
 			mprev = &m->m_next;
 		if (m == NULL)
 			break;
-		bcopy(mtod(m, caddr_t), cp, CLBYTES);
+		bcopy(mtod(m, caddr_t), cp, MCLBYTES);
 		(void) m_free(m);
 		*mprev = NULL;
 	}
@@ -340,16 +333,16 @@ if_ubaput(ifu, ifw, m)
 	while (m) {
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp) &&
-		    (m->m_len == CLBYTES || m->m_next == (struct mbuf *)0)) {
+		    (m->m_len == MCLBYTES || m->m_next == (struct mbuf *)0)) {
 			struct pte *pte;
 			int *ip;
 
 			pte = kvtopte(dp);
 			x = btop(cp - ifw->ifw_addr);
 			ip = (int *)&ifw->ifw_mr[x];
-			for (i = 0; i < CLSIZE; i++)
+			for (i = 0; i < MCLBYTES/NBPG; i++)
 				*ip++ = ifw->ifw_proto | pte++->pg_pfnum;
-			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
+			xswapd |= 1 << (x>>(MCLSHIFT-PGSHIFT));
 			mp = m->m_next;
 			m->m_next = ifw->ifw_xtofree;
 			ifw->ifw_xtofree = m;
@@ -370,15 +363,15 @@ if_ubaput(ifu, ifw, m)
 	 * should be unmapped so original pages will be accessed by the device.
 	 */
 	cc = cp - ifw->ifw_addr;
-	x = ((cc - ifu->iff_hlen) + CLBYTES - 1) >> CLSHIFT;
+	x = ((cc - ifu->iff_hlen) + MCLBYTES - 1) >> MCLSHIFT;
 	ifw->ifw_xswapd &= ~xswapd;
 	while (i = ffs((long)ifw->ifw_xswapd)) {
 		i--;
 		if (i >= x)
 			break;
 		ifw->ifw_xswapd &= ~(1<<i);
-		i *= CLSIZE;
-		for (t = 0; t < CLSIZE; t++) {
+		i *= MCLBYTES/NBPG;
+		for (t = 0; t < MCLBYTES/NBPG; t++) {
 			ifw->ifw_mr[i] = ifw->ifw_wmap[i];
 			i++;
 		}
