@@ -1,0 +1,3 @@
+#	@(#)Makefile.vax	6.1 (Berkeley) %G%
+
+SRCS+=		vax.c atof-vax.c
