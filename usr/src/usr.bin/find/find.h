@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)find.h	5.5 (Berkeley) %G%
+ *	@(#)find.h	5.6 (Berkeley) %G%
  */
 
 /* node definition */
@@ -83,5 +83,5 @@ typedef struct _plandata {
 	(void)fprintf(stderr, "find: %s: %s\n", name, strerror(number));
 
 extern int ftsoptions;
-extern int isdeprecated, isdepth, isoutput, isrelative;
+extern int isdeprecated, isdepth, isoutput, isrelative, isxargs;
 void *emalloc();

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ int isdeprecated;		/* using deprecated syntax */
 int isdepth;			/* do directories on post-order visit */
 int isoutput;			/* user specified output operator */
 int isrelative;			/* can do -exec/ok on relative path */
+int isxargs;			/* don't permit xargs delimiting chars */
 
 main(argc, argv)
 	int argc;
@@ -197,6 +198,13 @@ find_execute(plan, paths)
 			continue;
 		}
 
+#define	BADCH	" \t\n\\'\""
+		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
+			(void)fprintf(stderr,
+			    "find: illegal path: %s\n", entry->fts_path);
+			continue;
+		}
+		 
 		/*
 		 * call all the functions in the execution plan until one is
 		 * false or all have been executed.  This is where we do all

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.19 (Berkeley) %G%
+.\"     @(#)find.1	6.20 (Berkeley) %G%
 .\"
 .Vx
 .Vx
@@ -15,7 +15,7 @@
 .Nd walk a file hierarchy
 .Sh SYNOPSIS
 .Nm find
-.Op Fl drsx
+.Op Fl drsXx
 .Op Ar path
 .Ar expression
 .Nm find
@@ -86,6 +86,19 @@ returned for each symbolic link to be those of the file referenced by the
 link, not the link itself.
 If the referenced file does not exist, the file information and type will
 be for the link itself.
+.Tp Fl X
+The
+.Fl X
+option is a modification to permit
+.Nm
+to be safely used in conjunction with
+.Xr xargs 1 .
+If a file name contains any of the delimiting characters used by
+.Xr xargs ,
+a diagnostic message is displayed on standard error, and the file
+is skipped.
+The delimiting characters include single (`` ' '') and double (`` " '')
+quotes, backslash (``\e''), space, tab and newline characters.
 .Tp Fl x
 The
 .Fl x
