@@ -111,14 +111,21 @@
 #define CONV_BADBUFLEN -4
 
 #ifndef BYTE_ORDER
-#if defined(vax) || defined(ns32000) || defined(BIT_ZERO_ON_RIGHT)
+#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
+#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
+#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+
+#if defined(vax) || defined(ns32000) || defined(sun386) || \
+    defined(BIT_ZERO_ON_RIGHT)
 #define BYTE_ORDER	LITTLE_ENDIAN
+
 #endif
-#if defined(sun) || defined(sel) || defined(pyr) || defined(mc68000) || \
+#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
     defined(is68k) || defined (tahoe) || defined (BIT_ZERO_ON_LEFT)
 #define BYTE_ORDER	BIG_ENDIAN
 #endif
 #endif /* BYTE_ORDER */
+
 #ifndef BYTE_ORDER
 	/* you must determine what the correct bit order is for your compiler */
 	UNDEFINED_BIT_ORDER;
