@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)misc.c 4.1 %G%";
+static	char *sccsid = "@(#)misc.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -278,6 +278,7 @@ renum(i, j)
 	return (k);
 }
 
+#ifndef copy
 copy(to, from, size)
 	register char *to, *from;
 	register int size;
@@ -288,6 +289,7 @@ copy(to, from, size)
 			*to++ = *from++;
 		while (--size != 0);
 }
+#endif
 
 /*
  * Left shift a command argument list, discarding
