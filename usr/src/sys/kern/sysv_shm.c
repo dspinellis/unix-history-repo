@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	8.3 (Berkeley) %G%
+ *	@(#)sysv_shm.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -349,9 +349,10 @@ shmdt(p, uap, retval)
 		    shmd->shmd_uva == (vm_offset_t)uap->shmaddr)
 			break;
 	if (i == shminfo.shmseg)
-		return(EINVAL);
+		return (EINVAL);
 	shmufree(p, shmd);
 	shmsegs[shmd->shmd_id % SHMMMNI].shm_lpid = p->p_pid;
+	return (0);
 }
 
 shmfork(p1, p2, isvfork)
