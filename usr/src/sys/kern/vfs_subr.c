@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.22 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.23 (Berkeley) %G%
  */
 
 /*
@@ -137,6 +137,68 @@ vfs_unbusy(mp)
 		mp->mnt_flag &= ~MNT_MPWANT;
 		wakeup((caddr_t)&mp->mnt_flag);
 	}
+}
+
+/*
+ * Lookup a filesystem type, and if found allocate and initialize
+ * a mount structure for it.
+ *
+ * Devname is usually updated by mount(8) after booting.
+ */
+int
+vfs_rootmountalloc(fstypename, devname, mpp)
+	char *fstypename;
+	char *devname;
+	struct mount **mpp;
+{
+	struct vfsconf *vfsp;
+	struct mount *mp;
+
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+		if (!strcmp(vfsp->vfc_name, fstypename))
+			break;
+	if (vfsp == NULL)
+		return (ENODEV);
+	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
+	bzero((char *)mp, (u_long)sizeof(struct mount));
+	LIST_INIT(&mp->mnt_vnodelist);
+	mp->mnt_vfc = vfsp;
+	mp->mnt_op = vfsp->vfc_vfsops;
+	mp->mnt_flag = MNT_RDONLY;
+	mp->mnt_vnodecovered = NULLVP;
+	vfsp->vfc_refcount++;
+	mp->mnt_stat.f_type = vfsp->vfc_typenum;
+	mp->mnt_flag |= vfsp->vfc_flags & MNT_VISFLAGMASK;
+	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
+	mp->mnt_stat.f_mntonname[0] = '/';
+	(void) copystr(devname, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 0);
+	*mpp = mp;
+	return (0);
+}
+
+/*
+ * Find an appropriate filesystem to use for the root. If a filesystem
+ * has not been preselected, walk through the list of known filesystems
+ * trying those that have mountroot routines, and try them until one
+ * works or we have tried them all.
+ */
+int
+vfs_mountroot()
+{
+	struct vfsconf *vfsp;
+	extern int (*mountroot)(void);
+	int error;
+
+	if (mountroot != NULL)
+		return ((*vfsp->vfc_mountroot)());
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next) {
+		if (vfsp->vfc_mountroot == NULL)
+			continue;
+		if ((error = (*vfsp->vfc_mountroot)()) == 0)
+			return (0);
+		printf("%s_mountroot failed: %d\n", vfsp->vfc_name, error);
+	}
+	return (ENODEV);
 }
 
 /*
@@ -502,8 +564,10 @@ bdevvp(dev, vpp)
 	struct vnode *nvp;
 	int error;
 
-	if (dev == NODEV)
-		return (0);
+	if (dev == NODEV) {
+		*vpp = NULLVP;
+		return (ENODEV);
+	}
 	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeop_p, &nvp);
 	if (error) {
 		*vpp = NULLVP;
