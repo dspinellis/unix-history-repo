@@ -1,4 +1,4 @@
-/*	conf.c	4.5	%G%	*/
+/*	conf.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,6 +58,20 @@ struct	buf	rktab;
 #define	RKTAB		0
 #endif
 
+#include "../conf/tm.h"
+#if NTM > 0
+int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
+struct	buf	tmtab;
+#define	TMTAB	&tmtab
+#else
+#define	tmopen		nodev
+#define	tmclose		nodev
+#define	tmstrategy	nodev
+#define	tmread		nodev
+#define	tmwrite		nodev
+#define	TMTAB		0
+#endif
+
 #include "../conf/ts.h"
 #if NTS > 0
 int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
@@ -70,6 +84,16 @@ struct	buf	tstab;
 #define	tsread		nodev
 #define	tswrite		nodev
 #define	TSTAB		0
+
+#include "../conf/lp.h"
+#if NLP > 0
+int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
+#else
+#define	lpopen		nodev
+#define	lpclose		nodev
+#define	lpwrite		nodev
+#define	lpioctl		nodev
+#define	lpreset		nulldev
 #endif
 
 #include "../conf/up.h"
@@ -94,8 +118,7 @@ struct bdevsw	bdevsw[] =
 	nulldev,	nulldev,	upstrategy,	UPTAB,		/*2*/
 	nulldev,	nulldev,	rkstrategy,	RKTAB,		/*3*/
 	nodev,		nodev,		swstrategy,	0,		/*4*/
-/* 5 reserved for tm03 */
-	nodev,		nodev,		nodev,		0,		/*5*/
+	tmopen,		tmclose,	tmstrategy,	TMTAB,		/*5*/
 	tsopen,		tsclose,	tsstrategy,	TSTAB,		/*6*/
 	0,
 };
@@ -268,12 +291,10 @@ struct cdevsw	cdevsw[] =
 	dhioctl,	dhstop,		dhreset,	dh11,
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
-/* 14 reserved for tm03 */
-	nodev,		nodev,		nodev,		nodev,		/*14*/
-	nodev,		nodev,		nodev,		0,
-/* 15 reserved for lp11 */
-	nodev,		nodev,		nodev,		nodev,		/*15*/
-	nodev,		nodev,		nodev,		0,
+	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
+	nodev,		nodev,		nulldev,	0,
+	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
+	lpioctl,	nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	nodev,		nodev,		nulldev,	0,
 	dkopen,		dkclose,	dkread,		dkwrite,	/*17*/
