@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)passwd.5	6.7 (Berkeley) %G%
+.\"     @(#)passwd.5	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PASSWD 5
@@ -136,6 +136,23 @@ is assumed.
 .Xr vipw 8
 .Sh BUGS
 User information should (and eventually will) be stored elsewhere.
+.Sh COMPATIBILITY
+The password file format has changed since 4.3BSD.
+The following awk script can be used to convert your old-style password
+file into a new style password file.
+The additional fields
+.Dq class ,
+.Dq change
+and
+.Dq expire
+are added, but are turned off by default.
+Class is currently not implemented, but change and expire are; to set them,
+use the current day in seconds from the epoch + whatever number of seconds
+of offset you want.
+.Bd -literal -offset indent
+BEGIN { FS = ":"}
+{ print $1 ":" $2 ":" $3 ":" $4 "::0:0:" $5 ":" $6 ":" $7 }
+.Ed
 .Sh HISTORY
 A
 .Nm
