@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.4 (Berkeley) %G%
+ *	@(#)sys_process.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

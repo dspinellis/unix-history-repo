@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	8.1 (Berkeley) %G%
  *
  * from: $Header: locore.s,v 1.51 93/04/21 06:19:37 torek Exp $
  */

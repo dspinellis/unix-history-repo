@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to the Computer Systems
  * Engineering Group at Lawrence Berkeley Laboratory and to the University
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gallant19.h	7.2 (Berkeley) %G%
+ *	@(#)gallant19.h	8.1 (Berkeley) %G%
  *
  * from: $Header: gallant19.h,v 1.3 93/05/28 03:40:36 torek Exp $
  */

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	7.4 (Berkeley) %G%
+ *	@(#)vmparam.h	8.1 (Berkeley) %G%
  *
  * from: $Header: vmparam.h,v 1.8 93/05/25 09:52:16 torek Exp $
  */

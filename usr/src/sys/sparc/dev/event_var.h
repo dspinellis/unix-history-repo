@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)event_var.h	7.3 (Berkeley) %G%
+ *	@(#)event_var.h	8.1 (Berkeley) %G%
  *
  * from: $Header: event_var.h,v 1.5 92/11/26 01:11:51 torek Exp $ (LBL)
  */

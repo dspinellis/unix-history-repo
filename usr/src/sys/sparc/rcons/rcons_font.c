@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rcons_font.c	7.4 (Berkeley) %G%
+ *	@(#)rcons_font.c	8.1 (Berkeley) %G%
  *
  * from: $Header: rcons_font.c,v 1.10 93/04/20 11:15:38 torek Exp $
  */
