@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # Makefile for f77 math & startup lib, libF77.a
 
@@ -356,10 +356,23 @@ trapov_.o:	trapov_.c
 			| ex - trapov_.s
 		as trapov_.s -o trapov_.o
 		rm trapov_.s
+
+#	'Usef' is part of a kuldge to get around a bug in the C compiler.
+#	C (sec. 9.10 of C ref manual) should round the return value of
+#	functions of type float from double to float.  It doesn't, so f77
+#	truncates it losing a half bit of accuracy.  See file Test_float
+#	for a test.  When it is fixed, get rid of Usef & the extraneous stores
+#	in  pow_ri, r_dim, r_mod, r_nint .
+
+$(OBJS):	Usef
+
+Usef:		Usef.c
+		cc -O Usef.c -o Usef
+
 .c.o:
-		$(CC) -p $(CFLAGS) -c $*.c
+		$(CC) -p `Usef $*` $(CFLAGS) -c $*.c
 		-ld -x -r $*.o
 		mv a.out profiled/$*.o
-		$(CC) $(CFLAGS) -c $*.c
+		$(CC) `Usef $*` $(CFLAGS) -c $*.c
 		-ld -x -r $*.o
 		mv a.out $*.o
