@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)enc-proto.h	5.2 (Berkeley) %G%
+ *	@(#)enc-proto.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -34,7 +34,7 @@
 #endif
 #endif
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 void encrypt_init P((char *, int));
 Encryptions *findencryption P((int));
 void encrypt_send_supprt P((void));
@@ -61,6 +61,15 @@ void encrypt_wait P((void));
 int encrypt_cmd P((int, char **));
 void encrypt_display P((void));
 #endif
+
+void krbdes_encrypt P((unsigned char *, int));
+int krbdes_decrypt P((int));
+int krbdes_is P((unsigned char *, int));
+int krbdes_reply P((unsigned char *, int));
+void krbdes_init P((int));
+int krbdes_start P((int, int));
+void krbdes_session P((Session_Key *, int));
+void krbdes_printsub P((unsigned char *, int, unsigned char *, int));
 
 void cfb64_encrypt P((unsigned char *, int));
 int cfb64_decrypt P((int));

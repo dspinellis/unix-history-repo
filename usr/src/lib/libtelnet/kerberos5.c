@@ -1,3 +1,17 @@
+/*
+ *	$Source: /afs/athena.mit.edu/astaff/project/krb5/src/appl/telnet/libtelnet/RCS/kerberos5.c,v $
+ *	$Author: jtkohl $
+ *	$Id: kerberos5.c,v 1.3 91/07/19 16:37:57 jtkohl Exp Locker: tytso $
+ */
+
+#if !defined(lint) && !defined(SABER)
+static
+#ifdef __STDC__
+const
+#endif
+char rcsid_kerberos5_c[] = "$Id: kerberos5.c,v 1.3 91/07/19 16:37:57 jtkohl Exp Locker: tytso $";
+#endif /* lint */
+
 /*-
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -6,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos5.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos5.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,53 +49,52 @@ static char sccsid[] = "@(#)kerberos5.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <krb5/krb5.h>
 #include <krb5/crc-32.h>
-#include <krb5/libos-proto.h>
+#include <krb5/los-proto.h>
+#include <krb5/ext-proto.h>
+#include <com_err.h>
 #include <netdb.h>
 #include <ctype.h>
 
-#ifdef	__STDC__
-#include <stdlib.h>
-#endif
-#ifdef	NO_STRING_H
-#include <strings.h>
-#else
-#include <string.h>
-#endif
 
+/* kerberos 5 include files (ext-proto.h) will get an appropriate stdlib.h
+   and string.h/strings.h */
+ 
 #include "encrypt.h"
 #include "auth.h"
 #include "misc.h"
 
 extern auth_debug_mode;
 
-char *malloc();
 
 static unsigned char str_data[1024] = { IAC, SB, TELOPT_AUTHENTICATION, 0,
 			  		AUTHTYPE_KERBEROS_V5, };
-static unsigned char str_name[1024] = { IAC, SB, TELOPT_AUTHENTICATION,
-					TELQUAL_NAME, };
+/*static unsigned char str_name[1024] = { IAC, SB, TELOPT_AUTHENTICATION,
+					TELQUAL_NAME, };*/
 
 #define	KRB_AUTH	0		/* Authentication data follows */
 #define	KRB_REJECT	1		/* Rejected (reason might follow) */
 #define	KRB_ACCEPT	2		/* Accepted */
-#define	KRB_CHALLANGE	3		/* Challange for mutual auth. */
-#define	KRB_RESPONSE	4		/* Response for mutual auth. */
+#define	KRB_RESPONSE	3		/* Response for mutual auth. */
 
 static	krb5_data auth;
 	/* telnetd gets session key from here */
 static	krb5_tkt_authent *authdat = NULL;
+/* telnet matches the AP_REQ and AP_REP with this */
+static	krb5_authenticator authenticator;
 
-#if	defined(ENCRYPT)
+/* some compilers can't hack void *, so we use the Kerberos krb5_pointer,
+   which is either void * or char *, depending on the compiler. */
+
+#define Voidptr krb5_pointer
+
+#if	defined(ENCRYPTION)
 Block	session_key;
 #endif
-static Schedule sched;
-static Block	challange;
-
 	static int
 Data(ap, type, d, c)
 	Authenticator *ap;
 	int type;
-	void *d;
+	Voidptr d;
 	int c;
 {
         unsigned char *p = str_data + 4;
@@ -134,17 +147,21 @@ kerberos5_send(ap)
 	char *p1, *p2;
 	krb5_checksum ksum;
 	krb5_octet sum[CRC32_CKSUM_LENGTH];
-	krb5_data *server[4];
-	krb5_data srvdata[3];
+ 	krb5_principal server;
 	krb5_error_code r;
 	krb5_ccache ccache;
 	krb5_creds creds;		/* telnet gets session key from here */
 	extern krb5_flags krb5_kdc_default_options;
+	int ap_opts;
+
+#if     defined(ENCRYPTION)
+	krb5_keyblock *newkey = 0;
+#endif
 
 	ksum.checksum_type = CKSUMTYPE_CRC32;
 	ksum.contents = sum;
 	ksum.length = sizeof(sum);
-	bzero((void *)sum, sizeof(sum));
+	bzero((Voidptr )sum, sizeof(sum));
 	
         if (!UserNameRequested) {
                 if (auth_debug_mode) {
@@ -182,49 +199,85 @@ kerberos5_send(ap)
 		++p2;
 	}
 
-	srvdata[0].data = realms[0];
-	srvdata[0].length = strlen(realms[0]);
-	srvdata[1].data = "rcmd";
-	srvdata[1].length = 4;
-	srvdata[2].data = name;
-	srvdata[2].length = p2 - name;
-
-	server[0] = &srvdata[0];
-	server[1] = &srvdata[1];
-	server[2] = &srvdata[2];
-	server[3] = 0;
+	if (r = krb5_build_principal_ext(&server,
+					 strlen(realms[0]), realms[0],
+					 4, "rcmd",
+					 p2 - name, name,
+					 0)) {
+		if (auth_debug_mode) {
+			printf("Kerberos V5: failure setting up principal (%s)\r\n",
+			       error_message(r));
+		}
+		free(name);
+		krb5_free_host_realm(realms);
+		return(0);
+	}
+					 
 
 	bzero((char *)&creds, sizeof(creds));
-	creds.server = (krb5_principal)server;
+	creds.server = server;
 
 	if (r = krb5_cc_get_principal(ccache, &creds.client)) {
 		if (auth_debug_mode) {
-			printf("Keberos V5: failure on principal (%d)\r\n",
+			printf("Kerberos V5: failure on principal (%s)\r\n",
 				error_message(r));
 		}
 		free(name);
+		krb5_free_principal(server);
 		krb5_free_host_realm(realms);
 		return(0);
 	}
 
 	if (r = krb5_get_credentials(krb5_kdc_default_options, ccache, &creds)) {
 		if (auth_debug_mode) {
-			printf("Keberos V5: failure on credentials(%d)\r\n",r);
+			printf("Kerberos V5: failure on credentials(%d)\r\n",r);
 		}
 		free(name);
 		krb5_free_host_realm(realms);
+		krb5_free_principal(server);
 		return(0);
 	}
 
-	r = krb5_mk_req_extended(0, &ksum, &creds.times,
-				 krb5_kdc_default_options,
-				 ccache, &creds, 0, &auth);
+	if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL)
+	    ap_opts = AP_OPTS_MUTUAL_REQUIRED;
+	else
+	    ap_opts = 0;
+	    
+	r = krb5_mk_req_extended(ap_opts, &ksum, krb5_kdc_default_options, 0,
+#if	defined(ENCRYPTION)
+				 &newkey,
+#else
+				 0,
+#endif
+				 ccache, &creds, &authenticator, &auth);
+	/* don't let the key get freed if we clean up the authenticator */
+	authenticator.subkey = 0;
 
 	free(name);
 	krb5_free_host_realm(realms);
+	krb5_free_principal(server);
+#if	defined(ENCRYPTION)
+	if (newkey) {
+	    /* keep the key in our private storage, but don't use it
+	       yet---see kerberos5_reply() below */
+	    if (newkey->keytype != KEYTYPE_DES) {
+		if (creds.keyblock.keytype == KEYTYPE_DES)
+		    /* use the session key in credentials instead */
+		    memcpy((char *)session_key,
+			   (char *)creds.keyblock.contents, sizeof(Block));
+		else
+		    /* XXX ? */;
+	    } else {
+		memcpy((char *)session_key, (char *)newkey->contents,
+		       sizeof(Block));
+	    }
+	    krb5_free_keyblock(newkey);
+	}
+#endif
 	if (r) {
 		if (auth_debug_mode) {
-			printf("Keberos V5: mk_req failed\r\n");
+			printf("Kerberos V5: mk_req failed (%s)\r\n",
+			       error_message(r));
 		}
 		return(0);
 	}
@@ -239,32 +292,6 @@ kerberos5_send(ap)
 			printf("Not enough room for authentication data\r\n");
 		return(0);
 	}
-	/*
-	 * If we are doing mutual authentication, get set up to send
-	 * the challange, and verify it when the response comes back.
-	 */
-	if (((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL)
-	    && (creds.keyblock.keytype == KEYTYPE_DES)) {
-		register int i;
-
-		des_key_sched(creds.keyblock.contents, sched);
-		des_set_random_generator_seed(creds.keyblock.contents);
-		des_new_random_key(challange);
-		des_ecb_encrypt(challange, session_key, sched, 1);
-		/*
-		 * Increment the challange by 1, and encrypt it for
-		 * later comparison.
-		 */
-		for (i = 7; i >= 0; --i) {
-			register int x;
-			x = (unsigned int)challange[i] + 1;
-			challange[i] = x;	/* ignore overflow */
-			if (x < 256)		/* if no overflow, all done */
-				break;
-		}
-		des_ecb_encrypt(challange, challange, sched, 1);
-	}
-	
 	if (auth_debug_mode) {
 		printf("Sent Kerberos V5 credentials to server\r\n");
 	}
@@ -281,9 +308,10 @@ kerberos5_is(ap, data, cnt)
 	struct hostent *hp;
 	char *p1, *p2;
 	static char *realm = NULL;
-	krb5_data *server[4];
-	krb5_data srvdata[3];
-        Session_Key skey;
+	krb5_principal server;
+	krb5_ap_rep_enc_part reply;
+	krb5_data outbuf;
+	Session_Key skey;
 	char *name;
 	char *getenv();
 
@@ -304,7 +332,7 @@ kerberos5_is(ap, data, cnt)
 
 		if (!realm && (krb5_get_default_realm(&realm))) {
 			if (auth_debug_mode)
-				printf("Could not get defualt realm\r\n");
+				printf("Could not get default realm\r\n");
 			Data(ap, KRB_REJECT, "Could not get default realm.", -1);
 			auth_finished(ap, AUTH_REJECT);
 			return;
@@ -327,23 +355,22 @@ kerberos5_is(ap, data, cnt)
 			++p2;
 		}
 
-		srvdata[0].data = realm;
-		srvdata[0].length = strlen(realm);
-		srvdata[1].data = "rcmd";
-		srvdata[1].length = 4;
-		srvdata[2].data = name;
-		srvdata[2].length = p2 - name;
-
-		server[0] = &srvdata[0];
-		server[1] = &srvdata[1];
-		server[2] = &srvdata[2];
-		server[3] = 0;
-
 		if (authdat)
 			krb5_free_tkt_authent(authdat);
-		if (r = krb5_rd_req_simple(&auth, server, 0, &authdat)) {
+
+	        r = krb5_build_principal_ext(&server,
+					     strlen(realm), realm,
+					     4, "rcmd",
+					     p2 - name, name,
+					     0);
+		if (!r) {
+		    r = krb5_rd_req_simple(&auth, server, 0, &authdat);
+		    krb5_free_principal(server);
+		}
+		if (r) {
 			char errbuf[128];
 
+		    errout:
 			authdat = 0;
 			(void) strcpy(errbuf, "Read req failed: ");
 			(void) strcat(errbuf, error_message(r));
@@ -353,60 +380,50 @@ kerberos5_is(ap, data, cnt)
 			return;
 		}
 		free(name);
+		if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) {
+		    /* do ap_rep stuff here */
+		    reply.ctime = authdat->authenticator->ctime;
+		    reply.cusec = authdat->authenticator->cusec;
+		    reply.subkey = 0;	/* use the one he gave us, so don't
+					   need to return one here */
+		    reply.seq_number = 0; /* we don't do seq #'s. */
+
+		    if (r = krb5_mk_rep(&reply,
+					authdat->authenticator->subkey ?
+					authdat->authenticator->subkey :
+					authdat->ticket->enc_part2->session,
+					&outbuf)) {
+			goto errout;
+		    }
+		    Data(ap, KRB_RESPONSE, outbuf.data, outbuf.length);
+		} 
 		if (krb5_unparse_name(authdat->ticket->enc_part2 ->client,
 				      					&name))
 			name = 0;
 		Data(ap, KRB_ACCEPT, name, name ? -1 : 0);
 		if (auth_debug_mode) {
-			printf("Kerberos5 accepting him as ``%s''\r\n",
+			printf("Kerberos5 identifies him as ``%s''\r\n",
 							name ? name : "");
 		}
                 auth_finished(ap, AUTH_USER);
-		if (authdat->ticket->enc_part2->session->keytype != KEYTYPE_DES)
-			break;
-		bcopy((void *)authdat->ticket->enc_part2->session->contents,
-		      (void *)session_key, sizeof(Block));
-		break;
+		
+		free(name);
+	    	if (authdat->authenticator->subkey &&
+		    authdat->authenticator->subkey->keytype == KEYTYPE_DES) {
+		    bcopy((Voidptr )authdat->authenticator->subkey->contents,
+			  (Voidptr )session_key, sizeof(Block));
+		} else if (authdat->ticket->enc_part2->session->keytype ==
+			   KEYTYPE_DES) {
+		    bcopy((Voidptr )authdat->ticket->enc_part2->session->contents,
+			  (Voidptr )session_key, sizeof(Block));
+		} else
+		    break;
 
-	case KRB_CHALLANGE:
-		if (!VALIDKEY(session_key)) {
-			/*
-			 * We don't have a valid session key, so just
-			 * send back a response with an empty session
-			 * key.
-			 */
-			Data(ap, KRB_RESPONSE, (void *)0, 0);
-			break;
-		}
-
-		des_key_sched(session_key, sched);
-		bcopy((void *)data, (void *)datablock, sizeof(Block));
-		/*
-		 * Take the received encrypted challange, and encrypt
-		 * it again to get a unique session_key for the
-		 * ENCRYPT option.
-		 */
-		des_ecb_encrypt(datablock, session_key, sched, 1);
 		skey.type = SK_DES;
 		skey.length = 8;
 		skey.data = session_key;
 		encrypt_session_key(&skey, 1);
-		/*
-		 * Now decrypt the received encrypted challange,
-		 * increment by one, re-encrypt it and send it back.
-		 */
-		des_ecb_encrypt(datablock, challange, sched, 0);
-		for (r = 7; r >= 0; r++) {
-			register int t;
-			t = (unsigned int)challange[r] + 1;
-			challange[r] = t;	/* ignore overflow */
-			if (t < 256)		/* if no overflow, all done */
-				break;
-		}
-		des_ecb_encrypt(challange, challange, sched, 1);
-		Data(ap, KRB_RESPONSE, (void *)challange, sizeof(challange));
 		break;
-
 	default:
 		if (auth_debug_mode)
 			printf("Unknown Kerberos option %d\r\n", data[-1]);
@@ -422,6 +439,7 @@ kerberos5_reply(ap, data, cnt)
 	int cnt;
 {
         Session_Key skey;
+	static int mutual_complete = 0;
 
 	if (cnt-- < 1)
 		return;
@@ -435,39 +453,55 @@ kerberos5_reply(ap, data, cnt)
 		auth_send_retry();
 		return;
 	case KRB_ACCEPT:
-		printf("[ Kerberos V5 accepts you ]\n", cnt, data);
+		if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL &&
+		    !mutual_complete) {
+		    printf("[ Kerberos V5 accepted you, but didn't provide mutual authentication! ]\n");
+		    auth_send_retry();
+		    return;
+		}
+		if (cnt)
+		    printf("[ Kerberos V5 accepts you as ``%.*s'' ]\n", cnt, data);
+		else
+		    printf("[ Kerberos V5 accepts you ]\n");
+		auth_finished(ap, AUTH_USER);
+		break;
+	case KRB_RESPONSE:
 		if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) {
-			/*
-			 * Send over the encrypted challange.
-		 	 */
-			Data(ap, KRB_CHALLANGE, (void *)session_key,
-						sizeof(session_key));
-#if	defined(ENCRYPT)
-			des_ecb_encrypt(session_key, session_key, sched, 1);
+		    /* the rest of the reply should contain a krb_ap_rep */
+		    krb5_ap_rep_enc_part *reply;
+		    krb5_data inbuf;
+		    krb5_error_code r;
+		    krb5_keyblock tmpkey;
+
+		    inbuf.length = cnt;
+		    inbuf.data = (char *)data;
+
+		    tmpkey.keytype = KEYTYPE_DES;
+		    tmpkey.contents = session_key;
+		    tmpkey.length = sizeof(Block);
+
+		    if (r = krb5_rd_rep(&inbuf, &tmpkey, &reply)) {
+			printf("[ Mutual authentication failed: %s ]\n",
+			       error_message(r));
+			auth_send_retry();
+			return;
+		    }
+		    if (reply->ctime != authenticator.ctime ||
+			reply->cusec != authenticator.cusec) {
+			printf("[ Mutual authentication failed (mismatched KRB_AP_REP) ]\n");
+			auth_send_retry();
+			return;
+		    }
+		    krb5_free_ap_rep_enc_part(reply);
+#if	defined(ENCRYPTION)
 			skey.type = SK_DES;
 			skey.length = 8;
 			skey.data = session_key;
 			encrypt_session_key(&skey, 0);
 #endif
-			return;
+		    mutual_complete = 1;
 		}
-		auth_finished(ap, AUTH_USER);
 		return;
-	case KRB_RESPONSE:
-		/*
-		 * Verify that the response to the challange is correct.
-		 */
-		if ((cnt != sizeof(Block)) ||
-		    (0 != memcmp((void *)data, (void *)challange,
-						sizeof(challange))))
-		{
-			printf("[ Kerberos V5 challange failed!!! ]\r\n");
-			auth_send_retry();
-			return;
-		}
-		printf("[ Kerberos V5 challange successful ]\r\n");
-		auth_finished(ap, AUTH_USER);
-		break;
 	default:
 		if (auth_debug_mode)
 			printf("Unknown Kerberos option %d\r\n", data[-1]);
@@ -494,7 +528,7 @@ kerberos5_status(ap, name, level)
 }
 
 #define	BUMP(buf, len)		while (*(buf)) {++(buf), --(len);}
-#define	ADDC(buf, len, c)	if ((len) > 0) {*(buf)++ = (c); --(len));}
+#define	ADDC(buf, len, c)	if ((len) > 0) {*(buf)++ = (c); --(len);}
 
 	void
 kerberos5_printsub(data, cnt, buf, buflen)
@@ -525,12 +559,9 @@ kerberos5_printsub(data, cnt, buf, buflen)
 		ADDC(buf, buflen, '\0');
 		break;
 
+
 	case KRB_AUTH:			/* Authentication data follows */
 		strncpy((char *)buf, " AUTH", buflen);
-		goto common2;
-
-	case KRB_CHALLANGE:
-		strncpy((char *)buf, " CHALLANGE", buflen);
 		goto common2;
 
 	case KRB_RESPONSE:

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)encrypt.h	5.2 (Berkeley) %G%
+ *	@(#)encrypt.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -27,8 +27,8 @@
  * or implied warranty.
  */
 
-#ifndef	__ENCRYPT__
-#define	__ENCRYPT__
+#ifndef	__ENCRYPTION__
+#define	__ENCRYPTION__
 
 #define	DIR_DECRYPT		1
 #define	DIR_ENCRYPT		2
