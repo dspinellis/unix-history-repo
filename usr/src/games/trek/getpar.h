@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)getpar.h	5.4 (Berkeley) %G%
+ *	@(#)getpar.h	8.1 (Berkeley) %G%
  */
 
 struct cvntab		/* used for getcodpar() paramater list */
