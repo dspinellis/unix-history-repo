@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -818,7 +818,12 @@ main(argc, argv, envp)
 				p = q;
 				while (*p != '\0')
 				{
-					rewrite(pvp, atoi(p), CurEnv);
+					int stat;
+
+					stat = rewrite(pvp, atoi(p), CurEnv);
+					if (stat != EX_OK)
+						printf("== Ruleset %s status %d\n",
+							p, stat);
 					while (*p != '\0' && *p++ != ',')
 						continue;
 				}

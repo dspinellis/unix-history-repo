@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.36 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.37 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.36 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.37 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -673,6 +673,8 @@ finish:
 **		hbsize -- the size of hbuf.
 **		avp -- unused -- for compatibility with other mapping
 **			functions.
+**		statp -- an exit status (out parameter) -- set to
+**			EX_TEMPFAIL if the name server is unavailable.
 **
 **	Returns:
 **		The mapping, if found.
@@ -685,11 +687,12 @@ finish:
 */
 
 char *
-maphostname(map, hbuf, hbsize, avp)
+maphostname(map, hbuf, hbsize, avp, statp)
 	MAP *map;
 	char *hbuf;
 	int hbsize;
 	char **avp;
+	int *statp;
 {
 	register struct hostent *hp;
 	u_long in_addr;
@@ -721,9 +724,46 @@ maphostname(map, hbuf, hbsize, avp)
 		}
 		else
 		{
+			register struct hostent *hp;
+			extern int h_errno;
+
 			if (tTd(9, 1))
-				printf("FAIL\n");
-			return NULL;
+				printf("FAIL (%d)\n", h_errno);
+			switch (h_errno)
+			{
+			  case TRY_AGAIN:
+				*statp = EX_TEMPFAIL;
+				break;
+
+			  case HOST_NOT_FOUND:
+				*statp = EX_NOHOST;
+				break;
+
+			  case NO_RECOVERY:
+				*statp = EX_SOFTWARE;
+				break;
+
+			  default:
+				*statp = EX_UNAVAILABLE;
+				break;
+			}
+			if (*statp != EX_TEMPFAIL || UseNameServer)
+				return NULL;
+
+			/*
+			**  Try to look it up in /etc/hosts
+			*/
+
+			hp = gethostbyname(hbuf);
+			if (hp == NULL)
+			{
+				/* no dice there either */
+				*statp = EX_NOHOST;
+				return NULL;
+			}
+
+			*statp = EX_OK;
+			return hp->h_name;
 		}
 	}
 	if ((cp = strchr(hbuf, ']')) == NULL)
@@ -922,7 +962,9 @@ getauthinfo(fd)
 **	Parameters:
 **		map -- a pointer to the database map.
 **		hbuf -- a buffer containing a hostname.
+**		hbsize -- size of hbuf.
 **		avp -- a pointer to a (cf file defined) argument vector.
+**		statp -- an exit status (out parameter).
 **
 **	Returns:
 **		mapped host name
@@ -937,12 +979,19 @@ getauthinfo(fd)
 
 /*ARGSUSED*/
 char *
-maphostname(map, hbuf, hbsize, avp)
+maphostname(map, hbuf, hbsize, avp, statp)
 	MAP *map;
 	char *hbuf;
 	int hbsize;
 	char **avp;
+	char *statp;
 {
+	register struct hostent *hp;
+
+	hp = gethostbyname(hbuf);
+	if (hp != NULL)
+		return hp->h_name;
+	*statp = EX_NOHOST;
 	return NULL;
 }
 
