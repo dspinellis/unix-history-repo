@@ -1,0 +1,9 @@
+DEFS=" -DSTDC_HEADERS -DHAVE_UNISTD_H"
+LIBS=""
+CC="gcc -O"
+INSTALL="/usr/local/bin/install -c"
+INSTALLDATA="/usr/local/bin/install -c -m 644"
+RANLIB="ranlib "
+LIBOBJS=" stpcpy.o"
+ALLOCA=""
+
