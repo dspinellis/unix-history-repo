@@ -6,14 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)SCLCK.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)SCLCK.c	1.4 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/time.h>
+#include <sys/resource.h>
 
 long
 SCLCK()
 {
-	long	tim[4];
+	struct rusage ru;
 
-	times(tim);
-	return (tim[1] * 50) / 3;
+	if (getrusage(RUSAGE_SELF, &ru) < 0)
+		return (-1);
+	return (ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000);
 }
