@@ -11,15 +11,15 @@
  *
  * from: Utah $Hdr: clock.c 1.17 89/11/30$
  *
- *	@(#)clock.c	7.4 (Berkeley) %G%
+ *	@(#)clock.c	7.5 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/user.h"
-#include "sys/kernel.h"
+#include "param.h"
+#include "kernel.h"
 #include "../dev/hilreg.h"
 #include "clockreg.h"
 
+#include "vm/vm.h"
 #include "../include/psl.h"
 #include "../include/cpu.h"
 
@@ -164,27 +164,28 @@ clockopen(dev, flags)
 clockclose(dev, flags)
 	dev_t dev;
 {
-	(void) clockunmmap(dev, (caddr_t)0);
+	(void) clockunmmap(dev, (caddr_t)0, curproc);	/* XXX */
 	stopclock();
 	clockon = 0;
 	return(0);
 }
 
 /*ARGSUSED*/
-clockioctl(dev, cmd, data, flag)
+clockioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	caddr_t data;
+	struct proc *p;
 {
 	int error = 0;
 	
 	switch (cmd) {
 
 	case CLOCKMAP:
-		error = clockmmap(dev, (caddr_t *)data);
+		error = clockmmap(dev, (caddr_t *)data, p);
 		break;
 
 	case CLOCKUNMAP:
-		error = clockunmmap(dev, *(caddr_t *)data);
+		error = clockunmmap(dev, *(caddr_t *)data, p);
 		break;
 
 	case CLOCKGETRES:
@@ -205,11 +206,11 @@ clockmap(dev, off, prot)
 	return((off + (IOBASE+CLKBASE+CLKSR-1)) >> PGSHIFT);
 }
 
-clockmmap(dev, addrp)
+clockmmap(dev, addrp, p)
 	dev_t dev;
 	caddr_t *addrp;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 	int error;
 	struct vnode vn;
 	struct specinfo si;
@@ -223,21 +224,21 @@ clockmmap(dev, addrp)
 	vn.v_type = VCHR;			/* XXX */
 	vn.v_specinfo = &si;			/* XXX */
 	vn.v_rdev = dev;			/* XXX */
-	error = vm_mmap(u.u_procp->p_map, (vm_offset_t *)addrp,
+	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)addrp,
 			PAGE_SIZE, VM_PROT_ALL, flags, (caddr_t)&vn, 0);
 	return(error);
 }
 
-clockunmmap(dev, addr)
+clockunmmap(dev, addr, p)
 	dev_t dev;
 	caddr_t addr;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 	int rv;
 
 	if (addr == 0)
 		return(EINVAL);		/* XXX: how do we deal with this? */
-	rv = vm_deallocate(u.u_procp->p_map, (vm_offset_t)addr, PAGE_SIZE);
+	rv = vm_deallocate(p->p_vmspace->vm_map, (vm_offset_t)addr, PAGE_SIZE);
 	return(rv == KERN_SUCCESS ? 0 : EINVAL);
 }
 
@@ -288,16 +289,19 @@ char profon    = 0;		/* Is profiling clock on? */
 #define	PRF_USER	0x01
 #define	PRF_KERNEL	0x80
 
+
+#ifdef notcalled
 initprofclock()
 {
 #if NCLOCK > 0
+	struct proc *p = curproc;		/* XXX */
 	/*
 	 * If the high-res timer is running, force profiling off.
 	 * Unfortunately, this gets reflected back to the user not as
 	 * an error but as a lack of results.
 	 */
 	if (clockon) {
-		u.u_prof.pr_scale = 0;
+		p->p_stats->p_prof.pr_scale = 0;
 		return;
 	}
 	/*
@@ -310,7 +314,7 @@ initprofclock()
 	 * Also assumes you don't do any forks or execs.  Oh well, there
 	 * is always adb...
 	 */
-	if (u.u_prof.pr_scale)
+	if (p->p_stats->p_prof.pr_scale)
 		profprocs++;
 	else
 		profprocs--;
@@ -324,6 +328,7 @@ initprofclock()
 		profint = CLK_INTERVAL;
 	profscale = CLK_INTERVAL / profint;
 }
+#endif
 
 startprofclock()
 {
@@ -358,8 +363,8 @@ profclock(pc, ps)
 	 * If this process is being profiled record the tick.
 	 */
 	if (USERMODE(ps)) {
-		if (u.u_prof.pr_scale)
-			addupc(pc, &u.u_prof, 1);
+		if (p->p_stats.p_prof.pr_scale)
+			addupc(pc, &curproc->p_stats.p_prof, 1);
 	}
 	/*
 	 * Came from kernel (supervisor) mode.
