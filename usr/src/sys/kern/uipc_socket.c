@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.38	82/04/01	*/
+/*	uipc_socket.c	4.39	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -614,10 +614,8 @@ COUNT(SOIOCTL);
 	case SIOCDELRT:
 	case SIOCCHGRT: {
 		struct rtentry route;
-#ifdef notdef
 		if (!suser())
 			return;
-#endif
 		if (copyin(cmdp, (caddr_t)&route, sizeof (route))) {
 			u.u_error = EFAULT;
 			return;
