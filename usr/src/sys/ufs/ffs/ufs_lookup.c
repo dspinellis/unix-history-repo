@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_lookup.c	7.4 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -238,6 +238,35 @@ dirloop2:
 		}
 		FREE(nbp, M_NAMEI);
 		return (dp);
+	}
+
+	/*
+	 * Special handling for ".." allowing chdir out of mounted
+	 * file system: indirect .. in root inode to reevaluate
+	 * in directory file system was mounted on.
+	 */
+	if (isdotdot) {
+		for (;;) {
+			if (dp == u.u_rdir || dp == rootdir) {
+				ndp->ni_dent.d_ino = dp->i_number;
+				pdp = dp;
+				dp->i_count++;
+				goto haveino;
+			}
+			if (dp->i_number != ROOTINO)
+				break;
+			for (i = 1; i < NMOUNT; i++) {
+				if (mount[i].m_fs != NULL &&
+				    mount[i].m_dev == dp->i_dev) {
+					iput(dp);
+					dp = mount[i].m_inodp;
+					ILOCK(dp);
+					dp->i_count++;
+					fs = dp->i_fs;
+					break;
+				}
+			}
+		}
 	}
 
 	/*
@@ -620,31 +649,6 @@ found:
 		}
 		FREE(nbp, M_NAMEI);
 		return (dp);
-	}
-
-	/*
-	 * Special handling for ".." allowing chdir out of mounted
-	 * file system: indirect .. in root inode to reevaluate
-	 * in directory file system was mounted on.
-	 */
-	if (isdotdot) {
-		if (dp == u.u_rdir) {
-			ndp->ni_dent.d_ino = dp->i_number;
-			makeentry = 0;
-		} else if (ndp->ni_dent.d_ino == ROOTINO &&
-		   dp->i_number == ROOTINO) {
-			for (i = 1; i < NMOUNT; i++)
-			if (mount[i].m_fs != NULL &&
-			   mount[i].m_dev == dp->i_dev) {
-				iput(dp);
-				dp = mount[i].m_inodp;
-				ILOCK(dp);
-				dp->i_count++;
-				fs = dp->i_fs;
-				cp -= 2;     /* back over .. */
-				goto dirloop2;
-			}
-		}
 	}
 
 	/*
