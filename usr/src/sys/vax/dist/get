@@ -1,53 +1,61 @@
-#! /bin/sh -x
-#	@(#)get	4.3	%G%
+#! /bin/sh
+#	@(#)get	4.4	%G%
+#
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
 # The file system created here is image copied onto
 # tape, then image copied onto disk as the "first"
 # step in a cold boot of 4.1b-4.2 systems.
 #
+DISTROOT=/nbsd
+#
 if [ `pwd` = '/' ]
 then
 	echo You just '(almost)' destroyed the root
 	exit
 fi
-cp /sys/GENERIC/vmunix .
+cp $DISTROOT/a/sys/GENERIC/vmunix .
 rm -rf bin; mkdir bin
 rm -rf etc; mkdir etc
 rm -rf a; mkdir a
 rm -fr tmp; mkdir tmp
 rm -fr usr; mkdir usr usr/mdec
 rm -fr floppy; mkdir floppy
-cp /etc/mkfs etc; strip etc/mkfs
-cp /etc/restor etc; strip etc/restor
-cp /etc/init etc; strip etc/init
-cp /etc/mount etc; strip etc/mount
-cp /etc/mknod etc; strip etc/mknod
-cp /etc/fsck etc; strip etc/fsck
-cp /etc/umount etc; strip etc/umount
-cp /etc/arff etc; strip etc/arff
-cp /etc/flcopy etc; strip etc/flcopy
-cp /bin/mt bin; strip bin/mt
-cp /bin/ls bin; strip bin/ls
-cp /bin/sh bin; strip bin/sh
-cp /bin/mv bin; strip bin/mv
-cp /bin/sync bin; strip bin/sync
-cp /bin/cat bin; strip bin/cat
-cp /bin/mkdir bin; strip bin/mkdir
-cp /bin/stty bin; strip bin/stty; ln bin/stty bin/STTY
-cp /bin/echo bin; strip bin/echo
-cp /bin/rm bin; strip bin/rm
-cp /bin/cp bin; strip bin/cp
-cp /bin/expr bin; strip bin/expr
-cp /bin/awk bin; strip bin/awk
-cp /usr/mdec/* usr/mdec
-cp /sys/floppy/*boo* floppy
-cp /boot boot
-cp /.profile .profile
+cp $DISTROOT/etc/disktab etc
+cp $DISTROOT/etc/makefs etc; strip etc/makefs
+cp $DISTROOT/etc/mkfs etc; strip etc/mkfs
+cp $DISTROOT/etc/restor etc; strip etc/restor
+cp $DISTROOT/etc/init etc; strip etc/init
+cp $DISTROOT/etc/mount etc; strip etc/mount
+cp $DISTROOT/etc/mknod etc; strip etc/mknod
+cp $DISTROOT/etc/fsck etc; strip etc/fsck
+cp $DISTROOT/etc/umount etc; strip etc/umount
+cp $DISTROOT/etc/arff etc; strip etc/arff
+cp $DISTROOT/etc/flcopy etc; strip etc/flcopy
+cp $DISTROOT/bin/mt bin; strip bin/mt
+cp $DISTROOT/bin/ls bin; strip bin/ls
+cp $DISTROOT/bin/sh bin; strip bin/sh
+cp $DISTROOT/bin/mv bin; strip bin/mv
+cp $DISTROOT/bin/sync bin; strip bin/sync
+cp $DISTROOT/bin/cat bin; strip bin/cat
+cp $DISTROOT/bin/mkdir bin; strip bin/mkdir
+cp $DISTROOT/bin/stty bin; strip bin/stty; ln bin/stty bin/STTY
+cp $DISTROOT/bin/echo bin; strip bin/echo
+cp $DISTROOT/bin/rm bin; strip bin/rm
+cp $DISTROOT/bin/cp bin; strip bin/cp
+cp $DISTROOT/bin/expr bin; strip bin/expr
+cp $DISTROOT/bin/awk bin; strip bin/awk
+cp $DISTROOT/usr/mdec/* usr/mdec
+cp $DISTROOT/a/sys/floppy/*boo* floppy
+cp $DISTROOT/a/sys/floppy/format floppy
+cp $DISTROOT/a/sys/floppy/copy floppy
+cp $DISTROOT/a/sys/stand/boot boot
+cp $DISTROOT/.profile .profile
 cat >etc/passwd <<EOF
 root::0:10::/:/bin/sh
 EOF
 cat >etc/group <<EOF
+wheel:*:0:
 staff:*:10:
 EOF
 cat >etc/fstab <<EOF
@@ -66,7 +74,9 @@ set -x
 sync
 /etc/fsck /dev/r${disc}0a
 /etc/mount /dev/${disc}0a /a
-/etc/restor rsf 3 /dev/${tape}0 /dev/${disc}0a
+cd /a
+/etc/restor x .
+cd /
 sync
 /etc/umount /dev/${disc}0a
 /usr/mdec/installboot /usr/mdec/${disc}boot /usr/mdec/boot${disc} /dev/${disc}0a
@@ -79,7 +89,8 @@ echo 'If this is a 730, update the cassette'
 EOF
 chmod +x xtr
 rm -rf dev; mkdir dev
-cp /sys/dist/MAKEDEV dev
+cp $DISTROOT/sys/dist/MAKEDEV dev
+chmod +x dev/MAKEDEV
 cp /dev/null dev/MAKEDEV.local
 cd dev
 ./MAKEDEV std hp0 hk0 up0 ra0 rb0
