@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,11 +25,10 @@ static char sccsid[] = "@(#)getpwent.c	5.5 (Berkeley) %G%";
 #include <pwd.h>
 #include <ndbm.h>
 
-#define static
 static DBM *_pw_db;
 static FILE *_pw_fp;
 static struct passwd _pw_passwd;
-static int _pw_euid = -1, _pw_fd, _pw_rewind = 1, _pw_set, _pw_stayopen;
+static int _pw_fd, _pw_rewind = 1, _pw_set, _pw_stayopen;
 static char _pw_flag, *_pw_file = _PATH_MASTERPASSWD;
 
 #define	MAXLINELENGTH	1024
@@ -50,10 +49,7 @@ getpwent()
 		} else /* _pw_fp */
 			rval = scanpw();
 	} while (rval && _pw_flag != _PW_KEYBYNAME);
-	if (_pw_euid == -1)
-		_pw_euid = geteuid();
-	if (!_pw_euid)
-		getpw();
+	getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -79,10 +75,7 @@ getpwnam(nam)
 			}
 	if (!_pw_stayopen)
 		endpwent();
-	if (_pw_euid == -1)
-		_pw_euid = geteuid();
-	if (!_pw_euid)
-		getpw();
+	getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -108,10 +101,7 @@ getpwuid(uid)
 			}
 	if (!_pw_stayopen)
 		endpwent();
-	if (_pw_euid == -1)
-		_pw_euid = geteuid();
-	if (!_pw_euid)
-		getpw();
+	getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -261,10 +251,13 @@ static
 getpw()
 {
 	static char pwbuf[50];
+	off_t lseek();
 	long pos, atol();
 	int n;
 	char *p;
 
+	if (geteuid())
+		return;
 	if (!_pw_fd && (_pw_fd = open(_pw_file, O_RDONLY, 0)) < 0)
 		goto bad;
 	pos = atol(_pw_passwd.pw_passwd);
@@ -279,6 +272,5 @@ getpw()
 			_pw_passwd.pw_passwd = pwbuf;
 			break;
 		}
-	if (!_pw_stayopen)
-bad:		(void)close(_pw_fd);
+bad:	(void)close(_pw_fd);
 }
