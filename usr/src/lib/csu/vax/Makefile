@@ -1,4 +1,4 @@
-# @(#)Makefile	4.3 (Berkeley) %G%
+# @(#)Makefile	4.4 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -30,9 +30,9 @@ gcrt0.s: cmgt.crt0.c gcrt0.h
 	as -o $*.o $*.s
 	ld -x -r $*.o
 	mv a.out $*.o
-	rm -f $*.s
+
 clean:
-	rm -f ${OBJS}
+	rm -f ${OBJS} *.s
 
 lint:	cmgt.crt0.c
 	lint cmgt.crt0.c -DMCRT0
