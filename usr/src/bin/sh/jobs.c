@@ -106,7 +106,9 @@ MKINIT int jobctl;
 
 void
 setjobctl(on) {
+#ifdef OLD_TTY_DRIVER
 	int ldisc;
+#endif
 
 	if (on == jobctl || rootshell == 0)
 		return;
@@ -833,14 +835,15 @@ int job_warning = 0;
 int
 stoppedjobs() 
 {
-	int i;
+	register int jobno;
+	register struct job *jp;
 
 	if (job_warning)
 		return (0);
-	for (i = 0; i <= njobs; i++) {
-		if (jobtab[i].used == 0)
+	for (jobno = 1, jp = jobtab; jobno <= njobs; jobno++, jp++) {
+		if (jp->used == 0)
 			continue;
-		if (jobtab[i].state == JOBSTOPPED) {
+		if (jp->state == JOBSTOPPED) {
 			out2str("You have stopped jobs.\n");
 			job_warning = 2;
 			return (1);
