@@ -32,8 +32,6 @@ char type;
 			if (Timenow < dt.d_datetime)
 				fprintf(stderr,"Clock may be set wrong! (co11)");
 			timediff = Timenow - dt.d_datetime;
-			if (timediff > ONEYEAR && pkt->p_verbose)
-				fprintf(stderr,"Clock may be set wrong! (co11)\n");
 			pkt->p_idel = alloc(n = ((dt.d_serial + 1) * sizeof(*pkt->p_idel)));
 			bzero(pkt->p_idel,n);
 			pkt->p_apply = alloc(n = ((dt.d_serial + 1) * sizeof(*pkt->p_apply)));
