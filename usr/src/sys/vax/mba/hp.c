@@ -1,4 +1,4 @@
-/*	hp.c	4.40	81/06/03	*/
+/*	hp.c	4.41	81/07/09	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -340,7 +340,7 @@ hard:
 				goto hard;
 		} else if (hptypes[mi->mi_type] == MBDT_RM80 &&
 		    hpaddr->hper2&HPER2_SSE) {
-			hpecc(mi, SSE);
+			(void) hpecc(mi, SSE);
 			return (MBD_RESTARTED);
 		} else if ((hpaddr->hper1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
 			if (hpecc(mi, ECC))

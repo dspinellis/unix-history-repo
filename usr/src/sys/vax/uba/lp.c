@@ -1,4 +1,4 @@
-/*	lp.c	4.18	81/04/02	*/
+/*	lp.c	4.19	81/07/09	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -81,6 +81,9 @@ lpprobe(reg)
 {
 	register int br, cvec;			/* value-result */
 	register struct lpdevice *lpaddr = (struct lpdevice *)reg;
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+#endif
 
 	lpaddr->lpsr = IENABLE;
 	DELAY(5);
@@ -114,7 +117,7 @@ lpopen(dev, flag)
 	(void) spl4();
 	if ((sc->sc_state&TOUT) == 0) {
 		sc->sc_state |= TOUT;
-		timeout(lptout, dev, 10*hz);
+		timeout(lptout, (caddr_t)dev, 10*hz);
 	}
 	(void) spl0();
 	lpcanon(dev, '\f');
@@ -135,7 +138,7 @@ lpclose(dev, flag)
 lpwrite(dev)
 	dev_t dev;
 {
-	register int n;
+	register unsigned n;
 	register char *cp;
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
@@ -300,7 +303,7 @@ lptout(dev)
 	lpaddr = (struct lpdevice *) ui->ui_addr;
 	if ((sc->sc_state&MOD) != 0) {
 		sc->sc_state &= ~MOD;		/* something happened */
-		timeout(lptout, dev, 2*hz);	/* so don't sweat */
+		timeout(lptout, (caddr_t)dev, 2*hz);	/* so don't sweat */
 		return;
 	}
 	if ((sc->sc_state&OPEN) == 0) {
@@ -310,7 +313,7 @@ lptout(dev)
 	}
 	if (sc->sc_outq.c_cc && (lpaddr->lpsr&DONE) && (lpaddr->lpsr&ERROR)==0)
 		lpintr(LPUNIT(dev));			/* ready to go */
-	timeout(lptout, dev, 10*hz);
+	timeout(lptout, (caddr_t)dev, 10*hz);
 }
 
 lpreset(uban)

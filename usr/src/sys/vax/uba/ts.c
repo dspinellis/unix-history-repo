@@ -1,4 +1,4 @@
-/*	ts.c	4.17	81/07/09	*/
+/*	ts.c	4.19	81/07/09	*/
 
 #include "ts.h"
 #include "te.h"
@@ -118,6 +118,7 @@ extern	havetm;
  * a ts at address reg.  Our goal is to make the
  * device interrupt.
  */
+/*ARGSUSED*/
 tsprobe(reg)
 	caddr_t reg;
 {
@@ -796,7 +797,6 @@ tsreset(uban)
 {
 	register struct uba_ctlr *um;
 	register ts11;
-	register struct buf *dp;
 
 	for (ts11 = 0; ts11 < NTS; ts11++) {
 		if ((um = tsminfo[ts11]) == 0 || um->um_alive == 0 ||
@@ -810,7 +810,7 @@ tsreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		tsinit(ts11);
+		(void) tsinit(ts11);
 		tsstart(um);
 	}
 }
