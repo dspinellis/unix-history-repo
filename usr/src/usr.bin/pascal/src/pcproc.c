@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.15 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.16 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -385,7 +385,8 @@ pcproc(r)
 				    case TCHAR:
 				    case TINT:
 				    case TSCAL:
-					    postcheck( filetype );
+					    postcheck(filetype, ap);
+					    sconv(p2type(ap), p2type(filetype));
 						/* and fall through */
 				    case TDOUBLE:
 				    case TPTR:
@@ -748,8 +749,8 @@ pcproc(r)
 				    break;
 				case TDOUBLE:
 				    ap = stkrval( alv , NIL , RREQ );
-				    if ( isnta( ap , "d" ) ) {
-					putop( P2SCONV , P2DOUBLE );
+				    if (isnta(ap, "d")) {
+					sconv(p2type(ap), P2DOUBLE);
 				    }
 				    putop( P2LISTOP , P2INT );
 				    break;
@@ -1002,7 +1003,8 @@ pcproc(r)
 				    case TCHAR:
 				    case TINT:
 				    case TSCAL:
-					    postcheck( ap );
+					    postcheck(ap, filetype);
+					    sconv(p2type(filetype), p2type(ap));
 						/* and fall through */
 				    case TDOUBLE:
 				    case TPTR:
@@ -1087,8 +1089,9 @@ pcproc(r)
 			}
 			putop( P2CALL , readtype );
 			if ( isa( ap , "bcsi" ) ) {
-			    postcheck( ap );
+			    postcheck(ap, readtype==P2INT?nl+T4INT:nl+TDOUBLE);
 			}
+			sconv(readtype, p2type(ap));
 			putop( P2ASSIGN , p2type( ap ) );
 			putdot( filename , line );
 		}
