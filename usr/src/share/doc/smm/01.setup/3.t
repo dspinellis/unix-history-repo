@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.5 (Berkeley) %G%
+.\"	@(#)3.t	6.6 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -486,11 +486,19 @@ It is also used by many of the system daemons
 to monitor system problems more closely, for example
 network routing changes.
 .PP
-If you are using the name server, 
-your \fIsendmail\fP configuration file will need some minor
-updates to accommodate it.
+If you are using the name server, your \fIsendmail\fP configuration
+file will need some minor updates to accommodate it.
 See the ``Sendmail Installation and Operation Guide'' and the sample
 \fIsendmail\fP configuration files in /usr/src/usr.lib/sendmail/cf.
+The sendmail.cf's supplied with this release are alleged to be
+``generic'', but have only really seen use at Berkeley.  In particular
+there are two points to watch out for.  First, all host names in the
+sendmail.cf itself must be fully qualified names.  Second, the
+sendmail.cf's assume you have a /usr/lib/sendmail that was compiled
+with the resolver library (i.e., not hosttables). This is necessary
+to canonicalize unqualified names into fully-qualified names (e.g.,
+foo -> foo.bar.com).  Using these .cf files with a host table can
+probably be done, but it will be difficult.
 Be sure to regenerate your sendmail frozen configuration file after
 installation of your updated configuration file with the command
 \fI/usr/lib/sendmail -bz\fP.
@@ -651,7 +659,7 @@ Fortunately, the previous return value from
 .I sprintf
 was essentially useless.
 .PP
-The ownership and modes of some of these directories have changed.
+The ownership and modes of some directories have changed.
 The \fIat\fP programs now run set-user-id ``root'' instead of ``daemon.''
 Also, the uucp directory no longer needs to be publicly writable,
 as \fItip\fP reverts to privileged status to remove its lock files.
