@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.7	81/11/08	*/
+/*	ufs_inode.c	4.8	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -379,7 +379,7 @@ maknode(mode)
 	ip->i_mode = mode & ~u.u_cmask;
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
-	ip->i_gid = u.u_gid;
+	ip->i_gid = u.u_pdir->i_gid;
 
 	/*
 	 * Make sure inode goes to disk before directory entry.

@@ -1,4 +1,4 @@
-/*	init_main.c	4.24	81/12/09	*/
+/*	init_main.c	4.25	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,9 +48,6 @@ main(firstaddr)
 
 	rqinit();
 #include "loop.h"
-#if NLOOP > 0
-	loattach();			/* XXX */
-#endif
 	startup(firstaddr);
 
 	/*
@@ -88,6 +85,9 @@ main(firstaddr)
 	mbinit();
 #ifdef INET
 	pfinit();
+#if NLOOP > 0
+	loattach();			/* XXX */
+#endif
 	ifinit();
 #endif
 	ihinit();
