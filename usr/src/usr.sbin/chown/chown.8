@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.8	5.1 (Berkeley) %G%
+.\"	@(#)chown.8	6.1 (Berkeley) %G%
 .\"
-.TH CHOWN 8 "18 July 1983"
+.TH CHOWN 8 ""
 .UC 4
 .SH NAME
 chown \- change owner
@@ -12,8 +12,9 @@ chown \- change owner
 .B /etc/chown
 [
 .B \-f
+.B \-R
 ]
-owner file ...
+owner[.group] file ...
 .SH DESCRIPTION
 .I Chown
 changes the owner of the
@@ -22,12 +23,22 @@ to
 .IR owner .
 The owner may be either a decimal UID or
 a login name found in the password file.
+An optional group may also be specified.
+The group may be either a decimal GID or
+a group name found in the group-ID file.
 .PP
 Only the super-user can change owner,
 in order to simplify accounting procedures.
 No errors are reported when the
 .B \-f
 (force) option is given.
+.PP
+When the
+.B \-R
+option is given, 
+.I chown
+recursively descends its directory arguments
+setting the specified owner.
 .SH FILES
 /etc/passwd
 .SH "SEE ALSO"
