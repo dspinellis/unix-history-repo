@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.10 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,8 +13,6 @@
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
-#include "vm.h"
-#include "text.h"
 
 #include "machine/reg.h"
 #include "machine/psl.h"
@@ -160,19 +158,6 @@ hardclock(frame)
 		if (timerisset(&u.u_timer[ITIMER_PROF].it_value) &&
 		    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
 			psignal(p, SIGPROF);
-		s = p->p_rssize;
-		u.u_ru.ru_idrss += s;
-#ifdef notdef
-		u.u_ru.ru_isrss += 0;		/* XXX (haven't got this) */
-#endif
-		if (p->p_textp) {
-			register int xrss = p->p_textp->x_rssize;
-
-			s += xrss;
-			u.u_ru.ru_ixrss += xrss;
-		}
-		if (s > u.u_ru.ru_maxrss)
-			u.u_ru.ru_maxrss = s;
 	}
 
 	/*
