@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pr.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)pr.c	4.8 (Berkeley) %G%";
 
 /*
  *   print file with headings
@@ -51,7 +51,7 @@ main(argc, argv)
 char **argv;
 {
 	int nfdone;
-	int onintr();
+	void onintr();
 
 	setbuf(stdout, obuf);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -143,6 +143,7 @@ numeric(str)
 	return(1);
 }
 
+void
 onintr()
 {
 

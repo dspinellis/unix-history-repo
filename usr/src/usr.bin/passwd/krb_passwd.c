@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krb_passwd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)krb_passwd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -46,8 +46,9 @@ krb_passwd()
 	struct sockaddr_in sin;
 	CREDENTIALS cred;
 	fd_set readfds;
-	int rval, finish();
+	int rval;
 	char pass[_PASSWORD_LEN], password[_PASSWORD_LEN];
+	static void finish();
 
 	static struct rlimit rl = { 0, 0 };
 
@@ -279,6 +280,7 @@ cleanup()
 	(void)bzero((char *)random_schedule, sizeof(random_schedule));
 }
 
+static void
 finish()
 {
 	(void)close(sock);

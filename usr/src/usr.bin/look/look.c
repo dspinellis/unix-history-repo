@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	4.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -78,7 +78,8 @@ main(argc, argv)
 	canon(*argv, *argv);
 	len = strlen(*argv);		/* may have changed */
 	if (len > MAXLINELEN - 1) {
-		fputs("look: search string is too long.\n", stderr);
+		(void)fprintf(stderr,
+		    "look: search string is too long.\n");
 		exit(2);
 	}
 
@@ -125,7 +126,6 @@ main(argc, argv)
  * getline --
  *	get a line
  */
-static
 getline(buf)
 	register char	*buf;
 {
@@ -146,7 +146,6 @@ getline(buf)
  * canon --
  *	create canonical version of word
  */
-static
 canon(src, copy)
 	register char	*src, *copy;
 {
@@ -163,9 +162,8 @@ canon(src, copy)
  * usage --
  *	print a usage message and die
  */
-static
 usage()
 {
-	fputs("usage: look [-df] string [file]\n", stderr);
+	(void)fprintf(stderr, "usage: look [-df] string [file]\n");
 	exit(1);
 }

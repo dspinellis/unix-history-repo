@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -558,7 +558,6 @@ again:		if (sigs)
 	}
 }
 
-static
 editfile()
 {
 	extern char *current_file;
@@ -584,7 +583,6 @@ editfile()
 	lsystem(buf);
 }
 
-static
 showlist()
 {
 	extern int sc_width;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)ptx.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ptx.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	permuted title index
@@ -75,7 +75,7 @@ char **argv;
 	register char *bufp;
 	int pid;
 	char *pend;
-	extern onintr();
+	extern void onintr();
 
 	char *xfile;
 	FILE *xptr;
@@ -496,6 +496,7 @@ char *strt, *end;
 	}
 }
 
+void
 onintr()
 {
 
