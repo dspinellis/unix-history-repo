@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -102,24 +102,24 @@ main(argc, argv)
 	register int i;
 	long tmp;
 	int ch, hdrcnt, reps, interval, phz, ndrives;
-	char *arg, **cp, *memfile, *namelist, buf[30];
+	char **cp, *memfile, *namelist, buf[30];
 	void printhdr(), read_names(), stats(), stat1(), usage(), error();
 
 	interval = reps = 0;
 	namelist = memfile = NULL;
-	while ((ch = getopt(argc, argv, "c:i:M:N:")) != EOF)
+	while ((ch = getopt(argc, argv, "c:M:N:w:")) != EOF)
 		switch(ch) {
 		case 'c':
 			reps = atoi(optarg);
-			break;
-		case 'i':
-			interval = atoi(optarg);
 			break;
 		case 'M':
 			memfile = optarg;
 			break;
 		case 'N':
 			namelist = optarg;
+			break;
+		case 'w':
+			interval = atoi(optarg);
 			break;
 		case '?':
 		default:
@@ -162,10 +162,9 @@ main(argc, argv)
 	dr_name = calloc(dk_ndrive, sizeof(char *));
 	dk_wpms = calloc(dk_ndrive, sizeof(long));
 
-	for (arg = buf, i = 0; i < dk_ndrive; i++) {
-		dr_name[i] = arg;
-		(void)sprintf(dr_name[i], "dk%d", i);
-		arg += strlen(dr_name[i]) + 1;
+	for (i = 0; i < dk_ndrive; i++) {
+		(void)sprintf(buf, "dk%d", i);
+		dr_name[i] = strdup(buf);
 	}
 	read_names();
 	(void)nlread(X_HZ, hz);
@@ -344,7 +343,7 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-"usage: iostat [-c count] [-i interval] [-M core] [-N system] [drives]\n");
+"usage: iostat [-c count] [-M core] [-N system] [-w wait] [drives]\n");
 	exit(1);
 }
 
