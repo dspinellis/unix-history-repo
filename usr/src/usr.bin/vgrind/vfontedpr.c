@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vfontedpr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfontedpr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
@@ -264,11 +264,6 @@ main(argc, argv)
 	ps("'-F\n");
 	if (!filter) {
 	    printf(".ds =F %s\n", fname);
-	    fstat(fileno(stdin), &stbuf);
-	    cp = ctime(&stbuf.st_mtime);
-	    cp[16] = '\0';
-	    cp[24] = '\0';
-	    printf(".ds =M %s %s\n", cp+4, cp+20);
 	    ps("'wh 0 vH\n");
 	    ps("'wh -1i vF\n");
 	}
@@ -276,6 +271,13 @@ main(argc, argv)
 	    needbp = 0;
 	    printf(".()\n");
 	    printf(".bp\n");
+	}
+	if (!filter) {
+	    fstat(fileno(stdin), &stbuf);
+	    cp = ctime(&stbuf.st_mtime);
+	    cp[16] = '\0';
+	    cp[24] = '\0';
+	    printf(".ds =M %s %s\n", cp+4, cp+20);
 	}
 
 	/*
