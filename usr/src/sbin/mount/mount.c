@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -179,6 +179,10 @@ main(argc, argv, arge)
 			exit(1);
 		}
 		mnttype = mntbuf->f_type;
+		if (!strcmp(mntbuf->f_mntfromname, "root_device")) {
+			fs = getfsfile("/");
+			strcpy(mntbuf->f_mntfromname, fs->fs_spec);
+		}
 		exit(mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
 		    updateflg, type, options, NULL));
 	}
