@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.13 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.14 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -665,7 +665,7 @@ dqinit()
 		NBPG * CLSIZE);
 	dqhashtbl = (union dqhead *)malloc(dqhashsize, M_DQUOT, M_WAITOK);
 	for (dqhash = 1; dqhash <= dqhashsize / sizeof *dhp; dqhash <<= 1)
-		/* void */;
+		continue;
 	dqhash = (dqhash >> 1) - 1;
 	for (dhp = &dqhashtbl[dqhash]; dhp >= dqhashtbl; dhp--) {
 		dhp->dqh_head[0] = dhp;
