@@ -237,11 +237,14 @@ setdraw()	/* generate internal cookies for a drawing function */
 	/* this does drawing function f with character c and the */
 	/* specified x,y pairs interpreted as appropriate */
 
+	/* t x		set line thickness to x */
+	/* s x		set line style to bit-map x (x BETTER be in "u")*/
 	/* l x y:	line from here by x,y */
 	/* c x:		circle of diameter x, left side here */
 	/* e x y:	ellipse of diameters x,y, left side here */
 	/* a x y r:	arc to x,y with radius r (ccw) */
-	/* ~ x y ...:	wiggly line */
+	/* ~ x y ...:	wiggly line  -or-  */
+	/* g x y ...:	for gremlin-style curves */
 
 	if (ismot(c = getch()))
 		return;
