@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Sony Corp. and Kazumasa Utashiro of Software Research Associates, Inc.
@@ -9,7 +9,7 @@
  *
  * from: $Hdr: kb.c,v 4.300 91/06/09 06:42:44 root Rel41 $ SONY
  *
- *	@(#)kb.c	7.3 (Berkeley) %G%
+ *	@(#)kb.c	8.1 (Berkeley) %G%
  */
 
 #include "kb.h"
