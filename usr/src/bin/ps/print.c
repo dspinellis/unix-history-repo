@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -217,7 +217,7 @@ pri(k, ve)
 	VAR *v;
 
 	v = ve->var;
-	(void)printf("%*d", v->width, KI_PROC(k)->p_pri - PZERO);
+	(void)printf("%*d", v->width, KI_PROC(k)->p_priority - PZERO);
 }
 
 void
@@ -492,12 +492,12 @@ getpcpu(k)
 #define	fxtofl(fixpt)	((double)(fixpt) / fscale)
 
 	/* XXX - I don't like this */
-	if (p->p_time == 0 || (p->p_flag & SLOAD) == 0)
+	if (p->p_swtime == 0 || (p->p_flag & SLOAD) == 0)
 		return (0.0);
 	if (rawcpu)
 		return (100.0 * fxtofl(p->p_pctcpu));
 	return (100.0 * fxtofl(p->p_pctcpu) /
-		(1.0 - exp(p->p_time * log(fxtofl(ccpu)))));
+		(1.0 - exp(p->p_swtime * log(fxtofl(ccpu)))));
 }
 
 void
