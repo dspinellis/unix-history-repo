@@ -1,0 +1,33 @@
+.TH APROPOS UCB 2/24/79 UCB
+.SH NAME
+apropos \- locate commands by keyword lookup
+.SH SYNOPSIS
+.B apropos
+word ...
+.SH DESCRIPTION
+.I Apropos
+shows which manual sections contain instances of any of the given
+keywords in their title.
+Each word is considered separately and case of letters is ignored.
+Words which are part of other words are considered thus looking for
+compile will hit all instances of `compiler' also.
+Try
+.IP
+apropos password
+.PP
+and
+.IP
+apropos ucb
+.PP
+If the line starts `name(section) ...' you can do
+`man section name' to get the documentation for it.
+Try `apropos format' and then `man 3s printf' to get the manual
+on the subroutine
+.I printf.
+.SH FILES
+.DT
+/usr/lib/whatis		data base
+.SH "SEE ALSO"
+makewhatis(UCB), man(UCB), whatis(UCB)
+.SH AUTHOR
+Bill Joy
