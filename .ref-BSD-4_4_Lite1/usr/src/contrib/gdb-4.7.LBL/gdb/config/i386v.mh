@@ -1,9 +1,0 @@
-# Host: Intel 386 running System V
-XDEPFILES= 
-XM_FILE= xm-i386v.h
-NAT_FILE= nm-i386v.h
-NATDEPFILES= exec.o infptrace.o inftarg.o fork-child.o coredep.o corelow.o i386v-nat.o
-XM_CLIBS= -lPW
-SYSV_DEFINE=-DSYSV
-REGEX=regex.o
-REGEX1=regex.o

@@ -1,7 +1,0 @@
-# %Z% %M% %I% %E% %Z%
-#FIELDS domain server suffix=.tic.com no=@ contact suffix=.tic.com refresh retry expire min
-#domain                  server     contact refresh    retry   expire  min
-tic.com                  akasha     root    86400      3600    3600000 604800
-localhost                localhost@ root    86400      3600    3600000 604800
-128.135.192.in-addr.arpa akasha     root    86400      3600    3600000 604800
-127.in-addr.arpa         localhost@ root    86400      3600    3600000 604800

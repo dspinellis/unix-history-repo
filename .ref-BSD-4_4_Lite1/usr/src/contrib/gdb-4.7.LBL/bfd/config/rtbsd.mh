@@ -1,4 +1,0 @@
-# The IBM RT/PC has only been supported as a host in a cross-development
-# environment.  If you don't have gcc, I was able to get 'hc -Hnocpp -ma'
-# to compile most of the modules, but didn't try running anything.
-CC=gcc 			# hc/pcc just can't cut it

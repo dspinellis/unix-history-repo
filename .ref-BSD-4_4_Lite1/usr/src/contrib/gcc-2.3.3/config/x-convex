@@ -1,3 +1,0 @@
-# Use -pcc to avoid surprises.
-
-CC = cc -pcc

@@ -1,2 +1,0 @@
-Maccton	accton.c	/^main(argc, argv)$/
-usage	accton.c	/^usage()$/

@@ -1,0 +1,171 @@
+#	@(#)README	8.101 (Berkeley) 12/3/94
+
+This is the README for nex/nvi, a freely redistributable replacement for
+the ex/vi text editors originally distributed as part of the Fourth
+Berkeley Software Distribution (4BSD), by the University of California,
+Berkeley.
+
+The source code for nex/nvi can be retrieved by using anonymous ftp to
+ftp.cs.berkeley.edu.  The files ucb/4bsd/nvi.tar.Z and ucb/4bsd/nvi.tar.gz
+are the compressed and gzip'd archives, respectively, of version 1.34 of
+nex/nvi.  This version is believed to be stable and relatively problem
+free.  The file ucb/4bsd/nvi.ALPHA.tar.gz is a gzip'd archive of the
+current alpha release of nex/nvi, version 1.43.  This version reflects
+the current development tree, and is more likely to have unanticipated
+problems.
+
+Don't try and build nvi from the top-level Makefile, it's only correct
+for the 4.4BSD distribution.  The directory "PORT" has subdirectories for
+specific OS/machine combinations (each including a V7-style Makefile) for
+building nex/nvi on different platforms.  See the file PORT/README for
+specific information.
+
+The nex/nvi reference manual is in USD.doc/vi.ref/, and the manual page
+is in USD.doc/vi.man/.  The files ending in the letters ".ps" are already
+formatted Postscript versions, the files ending in the letters ".txt" are
+already formatted flat text versions.
+
+If you have any questions about nex/nvi, or problems making it work,
+please contact me by electronic mail at one of the following addresses:
+
+	uunet!bostic
+	bostic@cs.berkeley.edu
+
+Keith Bostic
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+o Credit where it's due:
+
+	This software was originally derived from software contributed
+	to the University of California, Berkeley by Steve Kirkendall,
+	the author of the vi clone elvis.  Without his work, this work
+	would have been far more difficult.
+
+	IEEE POSIX 1003.2 style regular expression support is courtesy
+	of Henry Spencer, for which I am *very* grateful.
+
+	The curses library was originally done by Ken Arnold.  Scrolling
+	and general reworking for 4.4BSD was done by Elan Amir.
+
+o From the original vi acknowledgements, by William Joy and Mark Horton:
+
+	Bruce Englar encouraged the early development of this display
+	editor.  Peter Kessler helped bring sanity to version 2's
+	command layout.  Bill Joy wrote versions 1 and 2.0 through 2.7,
+	and created the framework that users see in the present editor.
+	Mark Horton added macros and other features and made the editor
+	work on a large number of terminals and Unix systems.
+
+o And...
+	The financial support of UUNET Communications Services is gratefully
+	acknowledged.
+
+=-=-=-=-=-=-=-=-=-=-=
+o Status:
+
+This software is in beta test, and it's pretty stable.  Almost all of the
+historic functionality in ex/vi is there, the only major missing pieces
+are open mode and the lisp option.  (Also, the options hardtabs, optimize,
+redraw, and slowopen are recognized, but ignored.)
+
+Nvi is largely 8-bit clean.  This isn't difficult to fix, and was left in
+during initial development to keep things simple.  Wide character support
+will be integrated at the same time that it is made fully 8-bit clean.
+
+There aren't a lot of new features in nex/nvi, but there are a few things
+you might like.  The "Additional Features" section of the reference page
+(USD.doc/vi.ref/vi.ref.txt, USD.doc/vi.ref/vi.ref.ps) has more information.
+
+=-=-=-=-=-=-=-=-=-=-=
+o Debugging:
+
+Code fixes are appreciated, of course, but if you can't provide them,
+please email me as much information as you can as to how to reproduce
+the bug, and I'll try to fix it locally.  Stack traces of core dumps
+are only rarely helpful -- an example file with a set of keystrokes that
+causes the problem is almost invariably necessary.
+
+Please include the following in the bug report;
+
+	o The version of nvi you're running (use :version to get it).
+	o The row/column dimensions of the screen (80 x 32).
+	o Unless you're confident that they're not part of the problem,
+	  your startup files (.exrc, .nexrc) and the environment variable
+	  (EXININT, NEXINIT) values.  (Cutting and pasting the output
+	  of ":set all" is usually sufficient.)
+
+If you're running a memory checker (e.g. Purify) on nvi, you will want
+to  recompile everything with "-DPURIFY" in the CFLAGS, first.  By
+default, allocated pages are not initialized by the DB code, and they
+will show up as reads of uninitialized memory in the buffer write routines.
+
+=-=-=-=-=-=-=-=-=-=-=
+o Directory layout:
+
+nvi/USD.doc:
+	Ex/vi documentation, both historic and current.
+
+	edit/		Roff source for "Edit: A tutorial", USD:14 in the
+			4.3BSD manuals.
+	exref/		Roff source for "Ex Reference Manual -- Version
+			3.7", USD:16 in the 4.3BSD manuals.
+	vi.man/		Manual page for nex/nvi; an updated version of
+			the document distributed with 4.4BSD-Lite.
+	vi.ref/		Reference document for nex/nvi; an updated version
+			of the document distributed with 4.4BSD-Lite.
+	vitut/		Roff source for "An Introduction to Display
+			Editing with Vi", USD:15 in the 4.3BSD manuals.
+			Includes the "Vi Quick Reference" card.
+
+nvi/common:
+	Source files for pieces of code that are shared by all the editors,
+	like searching and logging code or code translating line numbers
+	into requests to the dbopen(3) database code.  It also has the
+	interface code for modifying "records" in the underlying database.
+
+nvi/docs:
+	Random nvi documentation:
+
+	README		-- Nvi main README file.
+	bugs.current	-- Major known bugs in the current nvi.
+	changelog	-- Log of changes from version to version.
+	features	-- Todo list, suggested features list.
+	internals/
+	    autowrite	-- Vi autowrite option discussion.
+	    gdb.script	-- GDB debugging scripts.
+	    input	-- Vi maps, executable buffers, and input discussion.
+	    quoting	-- Vi quoting discussion.
+	    structures	-- Out-of-date nvi internal structure description.
+	tutorial/	-- Historic vi tutorial(s), of unknown quality.
+
+nvi/ex:
+	The ex source code.  Because vi has the colon command, lots of
+	this code is used by vi.  Generally, if functionality is shared
+	by both ex and vi, it's in nvi/ex.  If it's vi only, it's in
+	nvi/vi.  Files are generally named by the command(s) they support,
+	but occasionally with a name that describes their functionality.
+
+nvi/install:
+	Things to install on the local system.
+
+	recover.script	-- Vi recovery script.
+
+nvi/PORT:
+	Porting directories, one per OS/architecture combination.  See
+	nvi/PORT/README for porting information.
+
+	curses/		-- 4.4BSD curses implementation
+	db/		-- 4.4BSD DB routines.
+	regex/		-- Henry Spencer's POSIX.2 RE support.
+
+nvi/sex:
+	The screen support for the ex editor.
+
+nvi/svi:
+	The screen support for a curses based vi editor.
+
+nvi/vi:
+	The vi source code.
+
+nvi/xaw:
+	Place reserved for an X11 (Athena Widget) screen.

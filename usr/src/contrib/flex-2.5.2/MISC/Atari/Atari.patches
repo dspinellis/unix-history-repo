@@ -1,0 +1,911 @@
+(Message inbox:32)
+Date:          Mon, 03 Jul 89 21:15:32 CET
+From:  V61%DHDURZ1.BITNET@lbl.gov
+Subject:       Flex, bug fix, improvments, patches for Minix & TOS
+To:  vern@lbl-csam.arpa
+
+At first I have to thank you for your wonderful program. I had ported the
+old version to OS9,TOS (Atari ST) and Minix and the new version 2.1 Beta
+to Minix and TOS.
+     
+While porting and using flex I detected a bug and made some improvements.
+I have included a  shared, compressed and uuencoded file contaning all cdiffs
+and additional files (Sorry, but I'm on EBCDIC-Bitnet) and a short discussion
+of the changes. Even some of the TOS specific changes might be of general
+interest !
+     
+I posted these cdiffs to the minix discussion group, but I think it's up
+to you to post them to the unix-sources group. If you plan to post even
+the TOS compiler specific patches please contact me because there might be
+further compiler (P.D.) additions. If you have an interest I could also
+port the new version to OS9 -- this is a little bit more difficult, because
+OS9 uses CR as end of line character (the EOL char. is coded into the
+initscan.c tables,...). It is necessary to change all occurences of '\n' to
+macros and variables and it's useful to add a new -n options (see commented
+line in main.c)
+     
+     
+     
+The changes:                                                  (1.7.89 RAL)
+     
+ - Bug fix: The original flex didn't like trailing spaces in exclusive start
+     condition lists ! If you add an trailing space to line 68 in scan.l
+     
+     "%x SECT2 SECT2PROLOG SECT3 CODEBLOCK PICKUPDEF SC CARETISBOL NUM QUOTE "
+     
+     you get a misleading error message:
+     
+     "Syntax error at line 69: bad start condition list"
+     
+     This bug can either be fixed in parse.y or in scan.l . I have chosen the
+     last because there the fix is minimal: Just change the rule (line 128)
+     
+      "\n"    to   "{OPTWS}\n"
+     
+ - Enhancements:
+    - new option "-?" that provides some help information about the other
+      flags (main.c)
+    - new option "-aTMPPATH" that allows a redefinition of the standard
+      path for the temporary file (this might be rather large >200k if
+      F,f options are selected). (main.c, flexdef.h (l.376))
+    - hexdump of illegal characters -- this proved to be a useful debugging
+      tool especialy if invisible control characters occur which weren't
+      covered by the rules. (scan.l  fprintf statement line 129,...)
+     
+ - Patches due to TOS
+    - General: TOS uses CR,LF as end of line char., Flex wants only a single
+      LF as EOL char. Therefore all I/O must be translated using f* calls.
+      This is done everywhere besides the YY_INPUT macro (flex.skel (scan.c),
+      line 31) that uses a low level 'read'. This should be definitly changed
+      to fread, so that all I/O calls occur on the same level.
+    - the short action_file_name has been "flexXXXXXX.tmp", but that's too
+      much for TOS,MSDOS ! I changed it to "flexXXXX.tmp" in main.c (patch
+      covered by the -a option additions)
+    - some compilers don't like external names that are ambiguous within
+      the first 8 characters. I defined macros that change all these long
+      external names to names that are unique within the first 8 characters.
+      Just define SHORT_EXTERNAL_NAMES to use this feature (flexdef.h)
+    - some statement changes that some compiler don't like:
+      typedef *xxx[]  -> typedef **xxx       (flexdef.h.,l.308)
+      "/*" -> '/','*' within a comment in (scan.l, l.209)
+    - changed short "lexyy.c" to "lex_yy.c" what's more similar to the unix
+      "lex.yy.c" (main.c).
+    - a few further really compiler dependent changes provided with
+      #ifdef ATARI && LATTICE res. TURBO braces.
+     
+ - Additional TOS only files
+    - Makefile.tos: Common makefile for all TOS compilers. If you add further
+      ones please email me the new makefile.
+    - flex.lnk: Lattice - GST linker argument extension file
+    - flex.tlk: Turbo linker argument extension file
+     
+     
+Additional remarks:
+     
+I didn't add a new initscan.c (= flex -ist scan.l). The current one is good
+enough for a first compilation. With this first version of flex you can
+rebuild your own scan.c and the final flex version !
+     
+Minix ST :
+  - I had to "chmem =70000 cv" (>50000) to get flex linked
+  - 'memset' (PC 1.3, EFTH40,...) is necessary
+  - chmem =90000 flex may be sufficient
+     
+Minix PC :
+  It should be possible to port Flex to Minix PC. The current sizes of flex
+  are:
+                        Minix ST (ACK)    Lattice (TOS)    Turbo (TOS)
+     
+       size               75300             83305             57957
+       compilation time      22'               15'             3'40"
+       flex -is scan.l     1'49"               43"               30"
+     
+  The Minix ST size includes the bad generated code using only a subset of
+  the 68000 commands, long addresses only and a huge relocation table.
+  Therefore the PC size will be <64 k ! More serious is the fact that I had
+  to chmem =90000 flex to get scan.l converted to scan.c . But I never saw
+  a more complex lex source than scan.l -- so it should be possible to
+  reduce some array sizes without limitation for all day usage.
+     
+  No one volunteered yet for a Minix PC port -- but if someone will try it
+  I would provide him with a new scan.c and some hints.
+     
+TOS:
+  Don't forget to adapt the flexskel path within flexdef.h !
+     
+     
+Bitnet:  V61@DHDURZ1                               Ronald Lamprecht
+UUCP:    ...!unido!DHDURZ1.bitnet!V61              Theoretische Physik
+ARPAnet: V61%DHDURZ1.BITNET@CUNYVM.CUNY.EDU       (Heidelberg, West Germany)
+(Message inbox:36)
+Date:          Wed, 05 Jul 89 21:16:07 CET
+From:  V61%DHDURZ1.BITNET@csa2.lbl.gov
+Subject:       Re: What is TOS
+To:  vern@lbl-csam.arpa
+
+TOS is the name of the Atari ST operating system that is very similar
+to MSDOS (Both use CR,LF as end of line character). Therefore I have
+been astonished that no EOL convertion porblems occur within MSDOS.
+     
+I have been aware of the double buffering when changing read to fread and  I
+accept your argument of a possible slow down. But if you integrate the other
+Atari - TOS changes, please insert a
+        #ifdef ATARI
+              fread ....
+        #else
+              read  ....
+        #endif
+in flex.skel .
+     
+Bitnet:  V61@DHDURZ1                               Ronald Lamprecht
+UUCP:    ...!unido!DHDURZ1.bitnet!V61              Theoretische Physik
+ARPAnet: V61%DHDURZ1.BITNET@CUNYVM.CUNY.EDU       (Heidelberg, West Germany)
+
+
+
+
+echo x - Makefile_cdiff
+sed '/^X/s///' > Makefile_cdiff << '/'
+X*** Src_2.1/Makefile	Thu Jun 28 00:06:42 1989
+X--- Makefile	Thu Jul  3 02:12:48 1989
+X***************
+X*** 5,10 ****
+X--- 5,11 ----
+X  # Porting considerations:
+X  #
+X  #    For System V Unix machines, add -DSYS_V to CFLAGS.
+X+ #    For Minix (ST), add -DSYS_V to CFLAGS
+X  #    For Vax/VMS, add -DSYS_V to CFLAGS.
+X  #    For MS-DOS, add "-DMS_DOS -DSYS_V" to CFLAGS.  Create \tmp if not present.
+X  #         You will also want to rename flex.skel to something with a three
+X***************
+X*** 21,28 ****
+X  SKELETON_DIR = /usr/local/lib
+X  SKELETON_FILE = flex.skel
+X  SKELFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_DIR)/$(SKELETON_FILE)\"
+X! CFLAGS = -O
+X! LDFLAGS = -s
+X  
+X  FLEX_FLAGS =
+X  FLEX = ./flex
+X--- 22,29 ----
+X  SKELETON_DIR = /usr/local/lib
+X  SKELETON_FILE = flex.skel
+X  SKELFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_DIR)/$(SKELETON_FILE)\"
+X! CFLAGS = -O -DSYS_V
+X! LDFLAGS = 
+X  
+X  FLEX_FLAGS =
+X  FLEX = ./flex
+X***************
+X*** 57,63 ****
+X  	yylex.c
+X  
+X  flex : $(FLEXOBJS)
+X! 	$(CC) $(CFLAGS) -o flex $(LDFLAGS) $(FLEXOBJS)
+X  
+X  first_flex:
+X  	cp initscan.c scan.c
+X--- 58,65 ----
+X  	yylex.c
+X  
+X  flex : $(FLEXOBJS)
+X! 	$(CC) $(CFLAGS) -o flex $(FLEXOBJS) $(LDFLAGS)
+X! 	chmem =150000 flex
+X  
+X  first_flex:
+X  	cp initscan.c scan.c
+/
+echo x - flex.skel_cdif
+sed '/^X/s///' > flex.skel_cdif << '/'
+X*** Src_2.1/flex.skel	Thu Jun 28 00:19:20 1989
+X--- flex.skel	Thu Jul  2 22:18:31 1989
+X***************
+X*** 28,34 ****
+X   * is returned in "result".
+X   */
+X  #define YY_INPUT(buf,result,max_size) \
+X! 	if ( (result = read( fileno(yyin), buf, max_size )) < 0 ) \
+X  	    YY_FATAL_ERROR( "read() in flex scanner failed" );
+X  #define YY_NULL 0
+X  #define yyterminate() return ( YY_NULL )
+X--- 28,34 ----
+X   * is returned in "result".
+X   */
+X  #define YY_INPUT(buf,result,max_size) \
+X! 	if ( (result = fread( buf,1, max_size, yyin )) < 0 ) \
+X  	    YY_FATAL_ERROR( "read() in flex scanner failed" );
+X  #define YY_NULL 0
+X  #define yyterminate() return ( YY_NULL )
+/
+echo x - flexdef.h_cdif
+sed '/^X/s///' > flexdef.h_cdif << '/'
+X*** Src_2.1/flexdef.h	Thu Jun 28 00:43:27 1989
+X--- flexdef.h	Thu Jul  3 02:45:50 1989
+X***************
+X*** 26,31 ****
+X--- 26,40 ----
+X  
+X  /* @(#) $Header: flexdef.h,v 2.0 89/06/20 15:49:50 vern Locked $ (LBL) */
+X  
+X+ #ifdef ATARI
+X+ #define SYS_V
+X+ #define abs(x) ((x) < 0 ? -(x) : (x))
+X+ #define SHORT_FILE_NAMES
+X+ #ifdef TURBO
+X+ #define SHORT_EXTERNAL_NAMES
+X+ #endif
+X+ #endif
+X+ 
+X  #ifndef FILE
+X  #include <stdio.h>
+X  #endif
+X***************
+X*** 41,47 ****
+X  #endif
+X  
+X  #ifndef VMS
+X! char *memset();
+X  #else
+X  /* memset is needed for old versions of the VMS C runtime library */
+X  #define memset(s, c, n) \
+X--- 50,58 ----
+X  #endif
+X  
+X  #ifndef VMS
+X! #ifndef ATARI && TURBO
+X! char *memset();
+X! #endif
+X  #else
+X  /* memset is needed for old versions of the VMS C runtime library */
+X  #define memset(s, c, n) \
+X***************
+X*** 81,91 ****
+X--- 92,129 ----
+X  #define true 1
+X  #define false 0
+X  
+X+ #ifdef ATARI
+X+ #define DEFAULT_SKELETON_FILE "D:\\include\\flexskel"
+X+ #endif
+X+ 
+X  
+X  #ifndef DEFAULT_SKELETON_FILE
+X  #define DEFAULT_SKELETON_FILE "flex.skel"
+X  #endif
+X  
+X+ #ifdef SHORT_EXTERNAL_NAMES
+X+ /* avoid long external names that are ambiguous within the first 8 characters */
+X+ #define current_mns                 c__mns
+X+ #define current_max_rules           c__max_rules
+X+ #define current_max_state_type      c__max_state_type
+X+ #define current_max_scs             c__max_scs
+X+ #define current_max_dfa_size        c__max__size
+X+ #define current_max_xpairs          c__max_xpairs
+X+ #define current_max_template_xpairs c__max_template_xpairs
+X+ #define current_max_dfas            c__max_dfas
+X+ #define current_maxccls             c__maxccles
+X+ #define current_max_ccl_tbl_size    c__max_ccl_tbl_size
+X+ #define indent_puts                 ind_puts
+X+ #define indent_put2s                ind_put2s
+X+ #define gen_next_compressed_state   gen_n_comressed_state
+X+ #define gen_next_match              gen_n_match
+X+ #define gen_next_state              gen_n_state
+X+ #define variable_trailing_context_rules  var_tr_context_rules
+X+ #define variable_trailing_rule           var_tr_rule
+X+ #define backtrack_report            backtr_report
+X+ #define backtrack_file              backtr_file
+X+ #endif
+X+ 
+X  /* special chk[] values marking the slots taking by end-of-buffer and action
+X   * numbers
+X   */
+X***************
+X*** 305,311 ****
+X      int int_val;
+X      } ;
+X  
+X! typedef struct hash_entry *hash_table[];
+X  
+X  #define NAME_TABLE_HASH_SIZE 101
+X  #define START_COND_HASH_SIZE 101
+X--- 343,349 ----
+X      int int_val;
+X      } ;
+X  
+X! typedef struct hash_entry **hash_table;
+X  
+X  #define NAME_TABLE_HASH_SIZE 101
+X  #define START_COND_HASH_SIZE 101
+X***************
+X*** 372,378 ****
+X  extern int datapos, dataline, linenum;
+X  extern FILE *skelfile, *yyin, *temp_action_file, *backtrack_file;
+X  extern char *infilename;
+X! extern char action_file_name[];
+X  
+X  
+X  /* variables for stack of states having only one out-transition:
+X--- 410,416 ----
+X  extern int datapos, dataline, linenum;
+X  extern FILE *skelfile, *yyin, *temp_action_file, *backtrack_file;
+X  extern char *infilename;
+X! extern char *action_file_name;
+X  
+X  
+X  /* variables for stack of states having only one out-transition:
+/
+echo x - main.c_cdiff
+sed '/^X/s///' > main.c_cdiff << '/'
+X*** Src_2.1/main.c	Thu Jun 28 00:30:39 1989
+X--- main.c	Thu Jul  3 02:27:47 1989
+X***************
+X*** 81,96 ****
+X  FILE *temp_action_file;
+X  FILE *backtrack_file;
+X  int end_of_buffer_state;
+X! #ifndef SHORT_FILE_NAMES
+X! char action_file_name[] = "/tmp/flexXXXXXX";
+X! #else
+X! char action_file_name[] = "flexXXXXXX.tmp";
+X! #endif
+X! 
+X  #ifndef SHORT_FILE_NAMES
+X  static char outfile[] = "lex.yy.c";
+X  #else
+X! static char outfile[] = "lexyy.c";
+X  #endif
+X  static int outfile_created = 0;
+X  
+X--- 81,91 ----
+X  FILE *temp_action_file;
+X  FILE *backtrack_file;
+X  int end_of_buffer_state;
+X! char *action_file_name;
+X  #ifndef SHORT_FILE_NAMES
+X  static char outfile[] = "lex.yy.c";
+X  #else
+X! static char outfile[] = "lex_yy.c";
+X  #endif
+X  static int outfile_created = 0;
+X  
+X***************
+X*** 328,333 ****
+X--- 323,329 ----
+X      {
+X      int i, sawcmpflag, use_stdout;
+X      char *arg, *skelname = NULL, *flex_gettime(), clower(), *mktemp();
+X+     char *tmp_action =(char *)0, *malloc();
+X  
+X      printstats = syntaxerror = trace = spprdflt = interactive = caseins = false;
+X      backtrack_report = performance_report = ddebug = fulltbl = fullspd = false;
+X***************
+X*** 349,354 ****
+X--- 345,355 ----
+X  	for ( i = 1; arg[i] != '\0'; ++i )
+X  	    switch ( arg[i] )
+X  		{
+X+ 		case 'a':
+X+ 		    if ( i != 1 )
+X+ 			flexerror( "-a flag must be given separately" );
+X+ 		    tmp_action = &arg[i+1];
+X+ 		    goto get_next_arg;
+X  		case 'b':
+X  		    backtrack_report = true;
+X  		    break;
+X***************
+X*** 445,452 ****
+X  		    printstats = true;
+X  		    break;
+X  
+X! 		default:
+X! 		    lerrif( "unknown flag %c", (int) arg[i] );
+X  		    break;
+X  		}
+X  
+X--- 446,458 ----
+X  		    printstats = true;
+X  		    break;
+X  
+X! 		case '?':
+X! 		    flexinfo(0);
+X! 		    break;
+X! 
+X! 		default:
+X! 		    fprintf(stderr,"flex : unknown flag %c\n", (int) arg[i] );
+X! 		    flexinfo(1);
+X  		    break;
+X  		}
+X  
+X***************
+X*** 454,459 ****
+X--- 460,493 ----
+X  	;
+X  	}
+X  
+X+ 
+X+ /* if you change the default tmp file names don't forget to change the
+X+    initialization for i, too !
+X+    
+X+ */
+X+ #ifndef SHORT_FILE_NAMES
+X+     i = 10;
+X+     if (!tmp_action) i += 5;
+X+ #else
+X+     i = 12;
+X+ #endif
+X+     if (tmp_action) 
+X+         i += strlen(tmp_action) + 1;
+X+     if((action_file_name = malloc(i+1)) == (char *)0)
+X+         flexerror("No memory for action_file_name");
+X+     *action_file_name = (char) NULL;
+X+     if (tmp_action) 
+X+         strcat(action_file_name,tmp_action);
+X+ #ifndef SHORT_FILE_NAMES
+X+     else
+X+         strcat(action_file_name,"/tmp");
+X+     strcat(action_file_name,"/flexXXXXXX");
+X+ #else
+X+     if (tmp_action)
+X+         strcat(action_file_name,"/");
+X+     strcat(action_file_name,"flexXXXX.tmp");
+X+ #endif
+X+     
+X      if ( (fulltbl || fullspd) && usemecs )
+X  	flexerror( "full table and -cm don't make sense together" );
+X  
+X***************
+X*** 520,526 ****
+X      if ( (skelfile = fopen( skelname, "r" )) == NULL )
+X  	lerrsf( "can't open skeleton file %s", skelname );
+X  
+X!     (void) mktemp( action_file_name );
+X  
+X      if ( (temp_action_file = fopen( action_file_name, "w" )) == NULL )
+X  	lerrsf( "can't open temporary action file %s", action_file_name );
+X--- 554,562 ----
+X      if ( (skelfile = fopen( skelname, "r" )) == NULL )
+X  	lerrsf( "can't open skeleton file %s", skelname );
+X  
+X! #ifndef ATARI && LATTICE
+X!     (void) mktemp( action_file_name );
+X! #endif
+X  
+X      if ( (temp_action_file = fopen( action_file_name, "w" )) == NULL )
+X  	lerrsf( "can't open temporary action file %s", action_file_name );
+X***************
+X*** 566,571 ****
+X--- 602,640 ----
+X      }
+X  
+X  
+X+ flexinfo(status)
+X+ int status;
+X+ {
+X+    fprintf(stderr,"Syntax  :  FLEX  inp_file\n");
+X+    fprintf(stderr,"Function: fast lexical analyzer generator  V%s\n",flex_version);
+X+    fprintf(stderr,"Options : a dir_path  : directory path for temporary files\n");
+X+    fprintf(stderr,"	- b  : generate backtracking information to lex.backtrack\n");
+X+    fprintf(stderr,"	- c  : compressed table, no equiv., no meta equiv.classes\n");
+X+    fprintf(stderr,"	   e : equivalence classes\n");
+X+    fprintf(stderr,"	   F : fast table\n");
+X+    fprintf(stderr,"	  |f : full table\n");
+X+    fprintf(stderr,"	  |m : meta equivalence classes\n");
+X+    fprintf(stderr,"	- d  : generate debugging scanner\n");
+X+    fprintf(stderr,"	- F  : fast table\n");
+X+    fprintf(stderr,"	- f  : full (not compressed) table\n");
+X+    fprintf(stderr,"	- I  : generate interactive scanner\n");
+X+    fprintf(stderr,"	- i  : generate case-insensitive scanner\n");
+X+    fprintf(stderr,"	- L  : supress #line directives\n");
+X+ /*   fprintf(stderr,"	- n hexnum : generate scanner using <hexnum> as newline char.\n");*/
+X+    fprintf(stderr,"	- p  : generate performance report to stderr\n");
+X+    fprintf(stderr,"	- S skeleton_path : file path for skeleton file\n");
+X+    fprintf(stderr,"	- s  : suppress echo of unmatched scanner input to stdout\n");
+X+    fprintf(stderr,"	- T  : run flex in trace mode\n");
+X+ #ifdef ATARI
+X+    fprintf(stderr,"	- t  : place result on stdout instead of lex_yy.c\n");
+X+ #else
+X+    fprintf(stderr,"	- t  : place result on stdout instead of lex.yy.c\n");
+X+ #endif
+X+    fprintf(stderr,"	- v  : print statistics of generated scanner\n");
+X+    fprintf(stderr,"     default =  -cem\n");
+X+    exit(status);
+X+ }
+X+ 
+X  /* readin - read in the rules section of the input file(s)
+X   *
+X   * synopsis
+/
+echo x - scan.l_cdiff
+sed '/^X/s///' > scan.l_cdiff << '/'
+X*** Src_2.1/scan.l	Thu Jun 30 19:42:00 1989
+X--- scan.l	Thu Jul  2 22:19:26 1989
+X***************
+X*** 125,132 ****
+X  
+X  {SCNAME}		RETURNNAME;
+X  ^{OPTWS}\n		++linenum; /* allows blank lines in section 1 */
+X! \n			++linenum; return ( '\n' );
+X! .			synerr( "illegal character" ); BEGIN(RECOVER);
+X  
+X  
+X  <C_COMMENT>"*/"		ECHO; BEGIN(0);
+X--- 125,136 ----
+X  
+X  {SCNAME}		RETURNNAME;
+X  ^{OPTWS}\n		++linenum; /* allows blank lines in section 1 */
+X! {OPTWS}\n		++linenum; return ( '\n' );
+X! .			{
+X! 			synerr( "illegal character" );
+X! 			fprintf(stderr,"Char : $%x\n",yytext[yyleng-1]);
+X! 			BEGIN(RECOVER);
+X! 			}
+X  
+X  
+X  <C_COMMENT>"*/"		ECHO; BEGIN(0);
+X***************
+X*** 206,212 ****
+X  <SECT2>^{OPTWS}\n	++linenum; /* allow blank lines in section 2 */
+X  
+X  	/* this horrible mess of a rule matches indented lines which
+X! 	 * do not contain "/*".  We need to make the distinction because
+X  	 * otherwise this rule will be taken instead of the rule which
+X  	 * matches the beginning of comments like this one
+X  	 */
+X--- 210,216 ----
+X  <SECT2>^{OPTWS}\n	++linenum; /* allow blank lines in section 2 */
+X  
+X  	/* this horrible mess of a rule matches indented lines which
+X! 	 * do not contain '/','*'.  We need to make the distinction because
+X  	 * otherwise this rule will be taken instead of the rule which
+X  	 * matches the beginning of comments like this one
+X  	 */
+/
+echo x - Makefile.tos
+sed '/^X/s///' > Makefile.tos << '/'
+X# make file for "flex" tool
+X
+X# @(#) $Header: Makefile,v 2.3 89/06/20 17:27:12 vern Exp $ (LBL)
+X
+X# Porting considerations:
+X#
+X#    For System V Unix machines, add -DSYS_V to CFLAGS.
+X#    For Vax/VMS, add -DSYS_V to CFLAGS.
+X#    For MS-DOS, add "-DMS_DOS -DSYS_V" to CFLAGS.  Create \tmp if not present.
+X#         You will also want to rename flex.skel to something with a three
+X#         character extension, change SKELETON_FILE below appropriately,
+X#    For Amiga, add "-DAMIGA -DSYS_V" to CFLAGS.
+X#
+X# A long time ago, flex was successfully built using Microsoft C and
+X# the following options: /AL, /stack:10000, -LARGE, -Ml, -Mt128, -DSYS_V
+X
+X
+X# the first time around use "make first_flex"
+X
+X# The following definitions must be set according to your compiler -
+X# examples for a Lattice Compiler with GST assembler and TURBO C with
+X# assembler are provided below and must just be updated (don't forget to
+X# update the linker argument extension files (*.lnk,*.tlk), too) :
+X#
+X#CCPATH  = path to compiler directory without trailing \
+X#CHPATH  = path to header files without trailing \
+X#CC      = filename of the compiler
+X#CFLAGS  = compiler option flags
+X#CIEXT   = extension of C sources that should be used for input filenames
+X#ASMPATH = path to assembler directory without trailing \
+X#ASM     = filename of the assembler
+X#AFLAGS  = assembler option flags
+X#AIEXT   = extension of assembler sources that should be used for assembler
+X#          input filenames
+X#AEXT    = general assembler filename extension
+X#LNKPATH = path to linker directory without trailing \
+X#LINK    = filename of the linker
+X#LFLAG0  = first option (full pathname of C startupcode) 
+X#LFLAG1  = further options + option flag for argument extension filename
+X#LFLAG2  = further options + option flag for output-filename 
+X#LNKEXT  = extension of linker argument extension file
+X#OIEXT   = extension of objects that should be used for linker input files
+X#OEXT    = general object file extension
+X
+X# Lattice definitions
+XCCPATH  = d:\latt
+XCHPATH  = d:\latt\include
+XCC      = lc.ttp
+XCFLAGS  = -h -n -cw -cc -i$(CHPATH)\ -g$(CCPATH)\ -dLATTICE -dATARI
+XCIEXT   =
+XASMPATH = d:\gst
+XASM     = assem.ttp
+XAFLAGS  = -nolist -errors errors.out
+XAIEXT   =
+XAEXT    = .asm
+XLNKPATH = d:\gst
+XLINK    = ld.ttp
+XLFLAG0  =
+XLFLAG1  = -with 
+XLFLAG2  = -nolist -sec -mem 200 -prog 
+XLNKEXT  = .lnk
+XOIEXT   =
+XOEXT    = .bin
+X
+X# Turbo definitions
+X#CCPATH  = d:\turbo
+X#CHPATH  = d:\turbo\include
+X#CC      = tcc.prg
+X#CFLAGS  = -GJMPRZ -H=$(CHPATH)\ -w- -DTURBO -DATARI
+X#CIEXT   = .c
+X#ASMPATH = d:\turbo
+X#ASM     = mas.prg
+X#AFLAGS  =
+X#AIEXT   = .s
+X#AEXT    = .s
+X#LNKPATH = d:\turbo
+X#LINK    = tlink.ttp
+X#LFLAG0  = $(LNKPATH)\lib\tcstart.o
+X#LFLAG1  = -I=
+X#LFLAG2  = -O=
+X#LNKEXT  = .tlk
+X#OIEXT   = .o
+X#OEXT    = .o
+X
+X# Other definitions
+X# (not used for Atari because of short argument string - defined in flexdef.h
+X
+XSKELETON_DIR = /usr/lib
+XSKELETON_FILE = flex.skel
+XSKELFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_DIR)/$(SKELETON_FILE)\"
+X
+X
+XFLEX       = d:\etc\flex.ttp
+XFLEX_FLAGS = -is
+XYACC       = d:\etc\yacc.ttp
+XRENAME     = d:\bin\rename
+XDEL        = d:\bin\del
+X
+X# Internal definitions
+XLNK     = $(LNKPATH)\$(LINK)
+X
+XFLEXOBJS = \
+X	ccl$(OEXT) \
+X	dfa$(OEXT) \
+X	ecs$(OEXT) \
+X	gen$(OEXT) \
+X	main$(OEXT) \
+X	misc$(OEXT) \
+X	nfa$(OEXT) \
+X	parse$(OEXT) \
+X	scan$(OEXT) \
+X	sym$(OEXT) \
+X	tblcmp$(OEXT) \
+X	yylex$(OEXT)
+X
+XFLEX_C_SOURCES = \
+X	ccl.c \
+X	dfa.c \
+X	ecs.c \
+X	gen.c \
+X	main.c \
+X	misc.c \
+X	nfa.c \
+X	parse.c \
+X	scan.c \
+X	sym.c \
+X	tblcmp.c \
+X	yylex.c
+X
+Xflex : $(FLEXOBJS)
+X	 $(LNK) $(LFLAG0) $(LFLAG1)flex$(LNKEXT) $(LFLAG2)flex.ttp
+X
+Xfirst_flex:
+X	cp initscan.c scan.c
+X	make $(MFLAGS) flex
+X
+Xparse.h parse.c : parse.y
+X	$(YACC)   -d parse.y
+X	$(DEL)    parse.c
+X	$(RENAME) y_tab.c parse.c
+X	$(DEL)    parse.h
+X	$(RENAME) y_tab.h parse.h
+X
+Xscan.c : scan.l
+X	$(FLEX)   $(FLEX_FLAGS) scan.l
+X	$(RENAME) lex_yy.c scan.c
+X
+Xscan$(OEXT) : scan.c parse.h flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS) scan$(CIEXT)
+X
+Xmain$(OEXT) : main.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  main$(CIEXT)
+X
+Xccl$(OEXT) : ccl.c flexdef.h 
+X	 $(CCPATH)\$(CC) $(CFLAGS)  ccl$(CIEXT)
+X
+Xdfa$(OEXT) : dfa.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  dfa$(CIEXT)
+X
+Xecs$(OEXT) : ecs.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  ecs$(CIEXT)
+X
+Xgen$(OEXT) : gen.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  gen$(CIEXT)
+X
+Xmisc$(OEXT) : misc.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  misc$(CIEXT)
+X
+Xnfa$(OEXT) : nfa.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  nfa$(CIEXT)
+X
+Xparse$(OEXT) : parse.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  parse$(CIEXT)
+X
+Xsym$(OEXT) : sym.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  sym$(CIEXT)
+X
+Xtblcmp$(OEXT) : tblcmp.c flexdef.h
+X	 $(CCPATH)\$(CC) $(CFLAGS)  tblcmp$(CIEXT)
+X
+Xyylex$(OEXT) : yylex.c flexdef.h 
+X	 $(CCPATH)\$(CC) $(CFLAGS)  yylex$(CIEXT)
+X
+Xflex.man : flex.1
+X	nroff -man flex.1 >flex.man
+X
+Xlint : $(FLEX_C_SOURCES)
+X	lint $(FLEX_C_SOURCES) > flex.lint
+X
+Xdistrib :
+X	mv scan.c initscan.c
+X	chmod 444 initscan.c
+X	$(MAKE) $(MFLAGS) clean
+X
+Xclean :
+X	rm -f core errs flex *$(OEXT) parse.c *.lint parse.h flex.man tags
+X
+Xtags :
+X	ctags $(FLEX_C_SOURCES)
+X
+Xvms :	flex.man
+X	$(MAKE) $(MFLAGS) distrib
+X
+Xtest :
+X	$(FLEX) $(FLEX_FLAGS) scan.l
+X	$(RENAME) lex_yy.c scan.ctest
+X	cmp scan.c scan.ctest
+X
+/
+echo x - Readme2
+sed '/^X/s///' > Readme2 << '/'
+XThe changes:                                                  (1.7.89 RAL)
+X
+X - Bug fix: The original flex didn't like trailing spaces in exclusive start
+X     condition lists ! If you add an trailing space to line 68 in scan.l
+X     
+X     "%x SECT2 SECT2PROLOG SECT3 CODEBLOCK PICKUPDEF SC CARETISBOL NUM QUOTE "
+X     
+X     you get a misleading error message: 
+X     
+X     "Syntax error at line 69: bad start condition list"
+X     
+X     This bug can either be fixed in parse.y or in scan.l . I have chosen the
+X     last because there the fix is minimal: Just change the rule (line 128)
+X     
+X      "\n"    to   "{OPTWS}\n"
+X      
+X - Enhancements:
+X    - new option "-?" that provides some help information about the other
+X      flags (main.c)
+X    - new option "-aTMPPATH" that allows a redefinition of the standard
+X      path for the temporary file (this might be rather large >200k if 
+X      F,f options are selected). (main.c, flexdef.h (l.376))
+X    - hexdump of illegal characters -- this proved to be a useful debugging
+X      tool especialy if invisible control characters occur which weren't
+X      covered by the rules. (scan.l  fprintf statement line 129,...)
+X      
+X - Patches due to TOS
+X    - General: TOS uses CR,LF as end of line char., Flex wants only a single
+X      LF as EOL char. Therefore all I/O must be translated using f* calls.
+X      This is done everywhere besides the YY_INPUT macro (flex.skel (scan.c),
+X      line 31) that uses a low level 'read'. This should be definitly changed
+X      to fread, so that all I/O calls occur on the same level.
+X    - the short action_file_name has been "flexXXXXXX.tmp", but that's too 
+X      much for TOS,MSDOS ! I changed it to "flexXXXX.tmp" in main.c (patch
+X      covered by the -a option additions)
+X    - some compilers don't like external names that are ambiguous within
+X      the first 8 characters. I defined macros that change all these long
+X      external names to names that are unique within the first 8 characters.
+X      Just define SHORT_EXTERNAL_NAMES to use this feature (flexdef.h)
+X    - some statement changes that some compiler don't like:
+X      typedef *xxx[]  -> typedef **xxx       (flexdef.h.,l.308)
+X      "/*" -> '/','*' within a comment in (scan.l, l.209)
+X    - changed short "lexyy.c" to "lex_yy.c" what's more similar to the unix
+X      "lex.yy.c" (main.c).
+X    - a few further really compiler dependent changes provided with
+X      #ifdef ATARI && LATTICE res. TURBO braces.
+X      
+X - Additional TOS only files
+X    - Makefile.tos: Common makefile for all TOS compilers. If you add further
+X      ones please email me the new makefile.
+X    - flex.lnk: Lattice - GST linker argument extension file
+X    - flex.tlk: Turbo linker argument extension file
+X      
+X    
+XAdditional remarks:
+X 
+XI didn't add a new initscan.c (= flex -ist scan.l). The current one is good
+Xenough for a first compilation. With this first version of flex you can
+Xrebuild your own scan.c and the final flex version !
+X
+XMinix ST :
+X  - I had to "chmem =70000 cv" (>50000) to get flex linked
+X  - 'memset' (PC 1.3, EFTH40,...) is necessary
+X  - chmem =90000 flex may be sufficient
+X  
+XMinix PC :
+X  It should be possible to port Flex to Minix PC. The current sizes of flex
+X  are:
+X                        Minix ST (ACK)    Lattice (TOS)    Turbo (TOS)
+X       
+X       size               75300             83305             57957
+X       compilation time      22'               15'             3'40"
+X       flex -is scan.l     1'49"               43"               30"
+X       
+X  The Minix ST size includes the bad generated code using only a subset of
+X  the 68000 commands, long addresses only and a huge relocation table.
+X  Therefore the PC size will be <64 k ! More serious is the fact that I had
+X  to chmem =90000 flex to get scan.l converted to scan.c . But I never saw
+X  a more complex lex source than scan.l -- so it should be possible to
+X  reduce some array sizes without limitation for all day usage.
+X  
+X  No one volunteered yet for a Minix PC port -- but if someone will try it
+X  I would provide him with a new scan.c and some hints.
+X  
+XTOS: 
+X  Don't forget to adapt the flexskel path within flexdef.h !
+X
+X
+/
+echo x - flex.lnk
+sed '/^X/s///' > flex.lnk << '/'
+X*
+X*
+X*  linker control file for flex.ttp
+X*
+X*
+X*
+XINPUT   d:\latt\lib\startup.bin
+X*
+XINPUT ccl.bin
+XINPUT dfa.bin
+XINPUT ecs.bin
+XINPUT gen.bin
+XINPUT misc.bin
+XINPUT nfa.bin
+XINPUT parse.bin
+XINPUT sym.bin
+XINPUT tblcmp.bin
+XINPUT main.bin
+XINPUT yylex.bin
+XINPUT scan.bin
+X*
+XLIBRARY d:\latt\lib\clib.bin
+X
+/
+echo x - flex.tlk
+sed '/^X/s///' > flex.tlk << '/'
+Xccl.o
+Xdfa.o
+Xecs.o
+Xgen.o
+Xmisc.o
+Xnfa.o
+Xparse.o
+Xsym.o
+Xtblcmp.o
+Xyylex.o
+Xmain.o
+Xscan.o
+Xd:\turbo\lib\tcstdlib.lib   ; standard lib
+Xd:\turbo\lib\tcextlib.lib   ; extended lib
+Xd:\turbo\lib\tctoslib.lib   ; TOS lib
+Xd:\turbo\lib\tcgemlib.lib   ; AES and VDI lib
+X-S=200000
+/

@@ -1,8 +1,0 @@
-Mscript	script.c	/^main(argc, argv)$/
-done	script.c	/^done()$/
-dooutput	script.c	/^dooutput()$/
-doshell	script.c	/^doshell()$/
-err	script.c	/^err(fmt, va_alist)$/
-fail	script.c	/^fail()$/
-finish	script.c	/^finish(signo)$/
-scriptflush	script.c	/^scriptflush(signo)$/

@@ -1,1 +1,0 @@
-../../../contrib/gdb-4.7.LBL/gdb/doc

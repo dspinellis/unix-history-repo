@@ -1,6 +1,0 @@
-Mchown	chown.c	/^main(argc, argv)$/
-a_gid	chown.c	/^a_gid(s)$/
-a_uid	chown.c	/^a_uid(s)$/
-chownerr	chown.c	/^chownerr(file)$/
-id	chown.c	/^id(name, type)$/
-usage	chown.c	/^usage()$/

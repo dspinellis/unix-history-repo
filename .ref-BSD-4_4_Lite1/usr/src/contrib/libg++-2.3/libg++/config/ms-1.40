@@ -1,9 +1,0 @@
-# Makefile fragment to compile libg++ with g++ 1.40
-LIBDIR = $(libdir)
-
-TEST_INSTALL = test-40
-VERIFY_GXX_INSTALLATION = foo_main
-ALL = verify-gxx-installation genclass src tests
-
-GXX_OPTIMIZATION_FLAGS = -O -felide-constructors -fsave-memoized -fno-handle-exceptions
-GCC_OPTIMIZATION_FLAGS = -O

@@ -1,4 +1,0 @@
-#!/bin/sh
-# GCC was configured as follows:
-./configure --target=m68k-hp-bsd --with-gnu-ld
-echo host=m68k-hp-bsd target=m68k-hp-bsd build=m68k-hp-bsd

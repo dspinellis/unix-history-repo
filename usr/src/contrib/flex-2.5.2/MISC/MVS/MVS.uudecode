@@ -1,0 +1,341 @@
+Received: from CU-ARPA.CS.CORNELL.EDU by loki.cs.cornell.edu (5.61/I-1.91f)
+	id AA25874; Wed, 18 Jul 90 12:02:22 -0400
+Message-Id: <9007181320.AA24810@cu-arpa.cs.cornell.edu>
+Received: from CORNELLC.CIT.CORNELL.EDU by cu-arpa.cs.cornell.edu (5.61+2/1.91d)
+	id AA24810; Wed, 18 Jul 90 09:20:21 -0400
+Received: from CORNELLC by CORNELLC.cit.cornell.edu (IBM VM SMTP R1.2.1MX) with BSMTP id 6769; Wed, 18 Jul 90 09:18:46 EDT
+Received: from CAS.BITNET (MAILER) by CORNELLC (Mailer R2.05X) with BSMTP id
+ 5378; Wed, 18 Jul 90 09:18:38 EDT
+From: swl26%CAS.BITNET@CORNELLC.cit.cornell.edu
+Date: Wed, 18 Jul 1990 09:16 EDT
+Subject: Re(2): diffs for mvs port of flex-2.3
+In-Reply-To: Your message of Tue, 17 Jul 90 17:42:3
+To: vern@cs.cornell.edu
+
+Sorry about the trailing blank problem.  It's farily common with data sent
+through bitnet paths, but ever the optimist ...
+
+>I think there should be an 'M' at the beginning of the second line.
+
+This isn't a problem.  I believe that the first byte of the line indicates
+it's length (in some manner).
+
+Rather than re-send the data, how about a uudecode that compensates for
+the trailing blank problem?  I manually mangled the uuencoded file and ran
+the following decode, and it seemed to work.
+
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then feed it
+# into a shell via "sh file" or similar.  To overwrite existing files,
+# type "sh file -c".
+# The tool that generated this appeared in the comp.sources.unix newsgroup;
+# send mail to comp-sources-unix@uunet.uu.net if you want that tool.
+# If this archive is complete, you will see the following message at the end:
+#               "End of shell archive."
+# Contents:  uudecode.c
+# Wrapped by swl26@swl26aws on Wed Jul 18 08:59:24 1990
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f 'uudecode.c' -a "${1}" != "-c" ; then
+  echo shar: Will not clobber existing file \"'uudecode.c'\"
+else
+echo shar: Extracting \"'uudecode.c'\" \(6418 characters\)
+sed "s/^X//" >'uudecode.c' <<'END_OF_FILE'
+X/* #ifndef lint
+Xstatic char sccsid[] = "@(#)uudecode.c  5.3-1 (Berkeley) 9/1/87";
+X#endif */
+X
+X/* Written by Mark Horton */
+X/* Modified by ajr (Alan J Rosenthatl,flaps@utcsri.UUCP) to use checksums */
+X/* Modified by fnf (Fred Fish,well!fnf) to use Keith Pyle's suggestion for
+X   compatibility */
+X/* Modified by bcn (Bryce Nesbitt,ucbvax!cogsci!bryce) to fix a misleading
+X   error message on the Amiga port, to fix a bug that prevented decoding
+X   certain files, to work even if trailing spaces have been removed from a
+X   file, to check the filesize (if present), to add some error checking, to
+X   loop for multiple decodes from a single file, and to handle common
+X   BITNET mangling.  Also kludged around a missing string function in Aztec
+X   C */
+X
+X/*
+X * uudecode [input]
+X *
+X * Decode a file encoded with uuencode.  WIll extract multiple encoded
+X * modules from a single file. Can deal with most mangled files, including
+X * BITNET.
+X */
+X
+X#include <stdio.h>
+X#include <ctype.h>
+X
+X#ifdef AMIGA
+X#define AMIGA_LATTICE      /* Set for Amiga Lattice C */
+X#define MCH_AMIGA
+X#define MPU68000
+X#endif
+X
+X#ifdef unix
+X#include <pwd.h>
+X#include <sys/types.h>
+X#include <sys/stat.h>
+X#endif
+X
+X#define SUMSIZE 64
+X#define DEC(c) (((c) - ' ') & 077)    /* single character decode */
+X
+Xmain(argc, argv)
+Xchar **argv;
+X{
+XFILE   *in, *out;
+Xint    through_loop=0; /* Dejavu indicator */
+Xint    mode;           /* file's mode (from header) */
+Xlong   filesize;       /* theoretical file size (from header) */
+Xchar   dest[128];
+Xchar   buf[80];
+X
+X#ifdef AMIGA_LATTICE
+Xextern int Enable_Abort;
+X       Enable_Abort=1;
+X#endif
+X
+X    /* A filename can be specified to be uudecoded, or nothing can
+X    be specified, and the input will come from STDIN */
+X
+X    switch (argc)
+X       {
+X       case 1:
+X       in=stdin;
+X       break;
+X
+X       case 2:
+X       if ((in = fopen(argv[1], "r")) == NULL)
+X           {
+X           fprintf(stderr, "ERROR: can't find %s\n", argv[1]);
+X           fprintf(stderr, "USAGE: uudecode [infile]\n");
+X           exit(10);
+X           }
+X       break;
+X
+X       default:
+X       fprintf(stderr, "USAGE: uudecode [infile]\n");
+X       exit(11);
+X       break;
+X       }
+X
+X    /* Loop through file, searching for headers.  Decode anything with a
+X       header, complain if there where no headers. */
+X
+Xfor (;;)
+X{
+X    /* search file for header line */
+X    for (;;)
+X       {
+X       if (fgets(buf, sizeof buf, in) == NULL)
+X           {
+X           if (!through_loop)
+X               {
+X               fprintf(stderr, "ERROR: no `begin' line!\n");
+X               exit(12);
+X               }
+X           else
+X               {
+X               exit(0);
+X               }
+X           }
+X       if (strncmp(buf, "begin ", 6) == 0)
+X           break;
+X       }
+X    sscanf(buf, "begin %o %s", &mode, dest);
+X
+X#ifdef unix
+X    /* handle ~user/file format */
+X    if (dest[0] == '~')
+X       {
+X       char *sl;
+X       struct passwd *getpwnam();
+X       char *index();
+X       struct passwd *user;
+X       char dnbuf[100];
+X
+X       sl = index(dest, '/');
+X       if (sl == NULL)
+X           {
+X           fprintf(stderr, "Illegal ~user\n");
+X               exit(13);
+X           }
+X       *sl++ = 0;
+X       user = getpwnam(dest+1);
+X       if (user == NULL)
+X           {
+X           fprintf(stderr, "No such user as %s\n", dest);
+X           exit(14);
+X           }
+X       strcpy(dnbuf, user->pw_dir);
+X       strcat(dnbuf, "/");
+X       strcat(dnbuf, sl);
+X       strcpy(dest, dnbuf);
+X       }
+X#endif
+X
+X    /* create output file */
+X    if ((out = fopen(dest, "w")) == NULL)
+X       {
+X       fprintf(stderr, "ERROR: can't open output file %s\n", dest);
+X       exit(15);
+X       }
+X#ifdef unix
+X    chmod(dest, mode);
+X#endif
+X
+X    decode(in, out, dest);
+X
+X    if (fgets(buf, sizeof buf, in) == NULL || strncmp(buf,"end",3))
+X       {              /* don't be overly picky about newline ^ */
+X       fprintf(stderr, "ERROR: no `end' line\n");
+X       exit(16);
+X       }
+X
+X    if (!(fgets(buf,sizeof buf,in) == NULL || strncmp(buf,"size ",3)))
+X       {
+X       sscanf(buf, "size %ld", &filesize);
+X       if (ftell(out) != filesize)
+X           {
+X           fprintf(stderr, "ERROR: file should have been %ld bytes long but was
+X           exit(17);
+X           }
+X       }
+X    through_loop = 1;
+X}   /* forever */
+X}   /* main */
+X
+X/*
+X * Copy from in to out, decoding as you go.
+X * If a return or newline is encountered too early in a line, it is
+X * assumed that means that some editor has truncated trailing spaces.
+X */
+Xdecode(in, out, dest)
+XFILE *in;
+XFILE *out;
+Xchar *dest;
+X{
+Xchar buf[81];
+Xchar *bp;
+Xint nosum=0;
+X#ifndef unix
+Xextern errno;
+X#endif
+Xregister int j;
+Xregister int n;
+Xint checksum, line;
+X
+X    for (line = 1; ; line++)   /* for each input line */
+X       {
+X       if (fgets(buf, sizeof buf, in) == NULL)
+X           {
+X           fprintf(stderr, "ERROR: input ended unexpectedly!\n");
+X           exit(18);
+X           }
+X
+X       /* Pad end of lines in case some editor truncated trailing
+X          spaces */
+X
+X       for (n=0;n<79;n++)  /* search for first \r, \n or \000 */
+X           {
+X           if (buf[n]=='\176')     /* If BITNET made a twiddle, */
+X               buf[n]='\136';     /* we make a caret           */
+X           if (buf[n]=='\r'||buf[n]=='\n'||buf[n]=='\000')
+X               break;
+X           }
+X       for (;n<79;n++)     /* when found, fill rest of line with space */
+X           {
+X           buf[n]=' ';
+X           }
+X       buf[79]=0;          /* terminate new string */
+X
+X       checksum = 0;
+X       n = DEC(buf[0]);
+X       if (n <= 0)
+X           break;      /* 0 bytes on a line??  Must be the last line */
+X
+X       bp = &buf[1];
+X
+X       /* FOUR input characters go into each THREE output charcters */
+X
+X       while (n >= 4)
+X           {
+X           j = DEC(bp[0]) << 2 | DEC(bp[1]) >> 4; putc(j, out); checksum += j;
+X           j = DEC(bp[1]) << 4 | DEC(bp[2]) >> 2; putc(j, out); checksum += j;
+X           j = DEC(bp[2]) << 6 | DEC(bp[3]);      putc(j, out); checksum += j;
+X           checksum = checksum % SUMSIZE;
+X           bp += 4;
+X           n -= 3;
+X           }
+X
+X           j = DEC(bp[0]) << 2 | DEC(bp[1]) >> 4;
+X               checksum += j;
+X               if (n >= 1)
+X                   putc(j, out);
+X           j = DEC(bp[1]) << 4 | DEC(bp[2]) >> 2;
+X               checksum += j;
+X               if (n >= 2)
+X                   putc(j, out);
+X           j = DEC(bp[2]) << 6 | DEC(bp[3]);
+X               checksum += j;
+X               if (n >= 3)
+X                   putc(j, out);
+X           checksum = checksum % SUMSIZE;
+X           bp += 4;
+X           n -= 3;
+X
+X#ifndef unix
+X        /* Error checking under UNIX??? You must be kidding... */
+X        /* Check if an error occured while writing to that last line */
+X       if (errno)
+X           {
+X           fprintf(stderr, "ERROR: error writing to %s\n",dest);
+X           exit(19);
+X           }
+X#endif
+X
+X       /* The line has been decoded; now check that sum */
+X
+X       nosum |= !isspace(*bp);
+X       if (nosum)                      /* Is there a checksum at all?? */
+X           {
+X           if (checksum != DEC(*bp))   /* Does that checksum match? */
+X               {
+X               fprintf(stderr, "ERROR: checksum mismatch decoding %s, line %d.\
+X               }
+X           }   /* sum */
+X    }  /* line */
+X}   /* function */
+X
+X#ifdef unix
+X/*
+X * Return the ptr in sp at which the character c appears;
+X * 0 if not found
+X */
+Xchar *
+Xindex(sp, c)
+Xregister char *sp, c;
+X{
+X    do
+X       {
+X       if (*sp == c)
+X           return(sp);
+X       }
+X    while (*sp++);
+X
+X    return(0);
+X}
+X#endif unix
+X
+
+END_OF_FILE
+echo shar: NEWLINE appended to \"'uudecode.c'\"
+if test 6419 -ne `wc -c <'uudecode.c'`; then
+    echo shar: \"'uudecode.c'\" unpacked with wrong size!
+fi
+# end of 'uudecode.c'
+fi
+echo shar: End of shell archive.
+exit 0

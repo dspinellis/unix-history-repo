@@ -1,0 +1,195 @@
+# @(#) $Header: Makefile.in,v 1.2 94/01/04 14:33:19 vern Exp $ (LBL)
+
+# If your version of "make" does not define $(MAKE), comment in the
+# definition of "MAKE" below.  (You only need to do this if you intend
+# to do "make bigcheck" or "make dist".)
+MAKE = smake
+
+# Possible values for DEFS:
+#
+# For flex to always generate 8-bit scanners, add "-DDEFAULT_CSIZE=256"
+# to DEFS.
+#
+# For Vax/VMS, add "-DVMS" to DEFS.
+#
+# For MS-DOS, add "-DMS_DOS" to DEFS.  See the directory MISC/MSDOS for
+# additional info.
+
+CFLAGS = data=far ignore=85 noicons stackextend optimize
+DEFS = define=YYBISON=1 define=YY_NEVER_INTERACTIVE=1
+LDFLAGS = noicons
+LIBS =
+
+# Installation targeting.  Files will be installed under the tree
+# rooted at prefix.  flex will be installed in bindir, libfl.lib in
+# libdir, FlexLexer.h will be installed in includedir, and the manual
+# pages will be installed in mandir with extension manext.
+# 
+# Raw, unformatted troff source will be installed if INSTALLMAN=man,
+# nroff preformatted versions will be installed if INSTALLMAN=cat.
+
+prefix = Programmer:other # Change this for your AMIGA system.
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+includedir = $(prefix)/include
+manext = 1
+mandir = $(prefix)/man/man$(manext)
+
+# You can define this to be "lex" if you want to replace lex at your site.
+FLEX = flex
+
+INSTALLMAN = man
+
+SHELL =
+srcdir = .
+VPATH =
+
+LN_S =
+YACC = bison -y
+SED = sed
+CC = sc
+WMERGE = wmerge # from the CWEB distribution
+AR = oml
+RANLIB =
+INSTALL = copy clone
+INSTALL_DATA = $(INSTALL)
+INSTALL_PROGRAM = $(INSTALL)
+
+# You normally do not need to modify anything below this point.
+# ------------------------------------------------------------
+
+CPPFLAGS = idir=. idir=$(srcdir) $(DEFS)
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) $<
+
+HEADERS = flexdef.h version.h
+
+SOURCES = ccl.c dfa.c ecs.c gen.c main.c misc.c nfa.c parse.y \
+	scan.l skel.c sym.c tblcmp.c yylex.c
+OBJECTS = ccl.o dfa.o ecs.o gen.o main.o misc.o nfa.o parse.o \
+	skel.o sym.o tblcmp.o yylex.o \
+	$(libdir)/alloca.o $(libdir)/xmalloc.o
+
+LIBSRCS = libmain.c libyywrap.c
+LIBOBJS = ansilibmain.o ansilibyywrap.o
+
+LINTSRCS = ccl.c dfa.c ecs.c gen.c main.c misc.c nfa.c parse.c \
+	scan.c skel.c sym.c tblcmp.c yylex.c
+
+DISTFILES = README NEWS COPYING INSTALL FlexLexer.h \
+	configure.in conf.in Makefile.in mkskel.sh skel.c flex.skl \
+	$(HEADERS) $(SOURCES) $(LIBSRCS) MISC \
+	flex.1 scan.c install.sh mkinstalldirs configure
+
+DIST_NAME = flex
+
+# which "flex" to use to generate scan.c from scan.l
+FLEX_EXEC = ./$(FLEX)
+FLEX_FLAGS = -t $(PERF_REPORT)
+COMPRESSION =
+PERF_REPORT = -p
+
+FLEXLIB = libfl.lib
+
+all: $(FLEX)
+
+$(FLEX): $(OBJECTS) $(FLEXLIB) scan.o
+	$(CC) $(CFLAGS) link to $(FLEX) $(LDFLAGS) $(OBJECTS) scan.o $(FLEXLIB) $(LIBS)
+
+bootflex: $(OBJECTS) $(FLEXLIB) initscan.o
+	$(CC) $(CFLAGS) link to $(FLEX) $(LDFLAGS) $(OBJECTS) initscan.o $(FLEXLIB) $(LIBS)
+
+parse.c: ansiparse.y
+	$(YACC) -d ansiparse.y
+	$(SED) "/extern char.*malloc/d" <y.tab.c >parse.tmp
+	copy parse.tmp parse.c
+	copy y.tab.h parse.h
+	@delete y.tab.c y.tab.h parse.tmp
+ansiparse.y: $(srcdir)/parse.y parse.ych
+	$(WMERGE) $(srcdir)/parse.y parse.ych ansiparse.y
+
+parse.h: parse.c
+
+scan.c: scan.l
+	$(FLEX_EXEC) $(FLEX_FLAGS) $(COMPRESSION) $(srcdir)/scan.l >scan.tmp
+	$(SED) s,\"$(srcdir)/scan.l\",\"scan.l\", <scan.tmp >scan.c
+	@delete scan.tmp
+
+scan.o: scan.c parse.h flexdef.h config.h
+initscan.o: initscan.c parse.h flexdef.h config.h
+yylex.o: yylex.c parse.h flexdef.h config.h
+
+skel.c: flex.skl mkskel.sh
+	$(SHELL) $(srcdir)/mkskel.sh $(srcdir)/flex.skl >skel.c
+
+main.o: main.c flexdef.h config.h version.h
+ccl.o: ccl.c flexdef.h config.h
+dfa.o: dfa.c flexdef.h config.h
+ecs.o: ecs.c flexdef.h config.h
+gen.o: gen.c flexdef.h config.h
+misc.o: misc.c flexdef.h config.h
+nfa.o: nfa.c flexdef.h config.h
+parse.o: parse.c flexdef.h config.h
+skel.o: skel.c flexdef.h config.h
+sym.o: sym.c flexdef.h config.h
+tblcmp.o: tblcmp.c flexdef.h config.h
+
+alloca.o: alloca.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) define=xmalloc=yy_flex_xmalloc alloca.c
+
+alloca.c: $(srcdir)/MISC/alloca.c
+	@delete alloca.c
+	copy $(srcdir)/MISC/alloca.c .
+
+test: check
+check: flex
+	$(FLEX_EXEC) $(FLEX_FLAGS) $(COMPRESSION) $(srcdir)/scan.l > temp_a
+	$(SED) s,"$(srcdir)/scan.l","scan.l", < temp_a > temp_b
+	-diff scan.c temp_b -l10000 -w
+	@delete temp_?
+	@echo "Check successful, using COMPRESSION='$(COMPRESSION)'"
+
+bigcheck:
+	delete scan.c
+	$(MAKE) COMPRESSION=-C check
+	delete scan.c
+	$(MAKE) COMPRESSION=-Ce check
+	delete scan.c
+	$(MAKE) COMPRESSION=-Cm check
+	delete scan.c
+	$(MAKE) COMPRESSION=-Cfea check
+	delete scan.c
+	$(MAKE) COMPRESSION=-CFer check
+	delete scan.c
+	$(MAKE) COMPRESSION=-l PERF_REPORT= check
+	delete scan.c
+	$(MAKE)
+	@echo "All checks successful"
+
+$(FLEXLIB): $(LIBOBJS)
+	$(AR) $(FLEXLIB) R $(LIBOBJS)
+
+$(FLEX).man: flex.1 # SMAKE can't `cd', sorry.  And, I don't have nroff.
+#	cd $(srcdir), nroff -man flex.1 >$(FLEX).man
+
+install: $(FLEX) $(FLEXLIB)
+	$(INSTALL_PROGRAM) $(FLEX) $(bindir)/$(FLEX)
+#	@delete $(bindir)/$(FLEX)++
+	$(INSTALL_DATA) $(FLEXLIB) $(libdir)/libfl.lib
+	$(INSTALL_DATA) $(srcdir)/FlexLexer.h $(includedir)/FlexLexer.h
+
+ansilibmain.o: ansilibmain.c
+ansilibmain.c: libmain.c libmain.ch
+	$(WMERGE) libmain.c libmain.ch ansilibmain.c
+ansilibyywrap.o: ansilibyywrap.c
+ansilibyywrap.c: libyywrap.c libyywrap.ch
+	$(WMERGE) libyywrap.c libyywrap.ch ansilibyywrap.c
+
+clean:
+	-delete parse.(c|h) ansi\#? \#?.(bak|o|lnk) \
+	alloca.c lex.yy.(c|cc) $(FLEXLIB)
+
+veryclean: clean
+	-delete $(FLEX) scan.c

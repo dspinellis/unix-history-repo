@@ -1,3 +1,0 @@
-HDEFINES=-DTRAD_CORE
-HDEPFILES=trad-core.o
-#CC=gcc -Wall -ansi

@@ -1,0 +1,419 @@
+Received: from 128.140.1.1 by ee.lbl.gov for <vern@ee.lbl.gov> (8.6.9/1.43r)
+	id HAA01193; Thu, 29 Sep 1994 07:26:54 -0700
+Received: from larry-le0.cc.emory.edu by
+	emoryu1.cc.emory.edu (5.65/Emory_cc.4.0.1) via SMTP
+	id AA07292 ; Thu, 29 Sep 94 10:26:41 -0400
+From: tkane01@unix.cc.emory.edu (Terrence O Kane)
+Received: by larry.cc.emory.edu (5.0) id AA11757; Thu, 29 Sep 1994 10:26:43 +0500
+Message-Id: <9409291426.AA11757@larry.cc.emory.edu>
+Subject: patches and makefile for Borland C 4.02, flex 2.4.7
+To: vern@ee.lbl.gov
+Date: Thu, 29 Sep 1994 10:26:42 -0400 (EDT)
+X-Mailer: ELM [version 2.4 PL23]
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Length: 9900      
+
+Enclosed are unified diffs and a makefile for Borland 4.02
+
+The changes in the enclosed are 1) make the size parameters for memory
+allocation "size_t", 2) change an include file when the lexer is 
+compiled within 'extern "C" {...}' in a C++ file, and 3) include pragmas 
+in the header suitable for BCC 4.02 to hush on warnings.
+
+The latter is done because of the limit on command line size.  A tradeoff 
+exists between putting pragmas in the header, or #defines in the header - 
+I put in the pragmas since they're suppoed to be ignored unless 
+understood - *and* they're enclosed in BCC specific ifdefs, anyway.
+
+All changes are enclosed in "#ifdef __BORLANDC__".
+
+
+
+
+
+--- misc.c	Tue Jan 04 14:33:10 1994
++++ ../misc.c	Wed Sep 28 18:44:32 1994
+@@ -55,15 +55,19 @@
+ 	action_index += len;
+ 	}
+ 
+ 
+ /* allocate_array - allocate memory for an integer array of the given size */
+ 
+ void *allocate_array( size, element_size )
++#ifndef __BORLANDC__
+ int size, element_size;
++#else /* __BORLANDC__ */
++size_t size, element_size;
++#endif /* __BORLANDC__ */
+ 	{
+ 	register void *mem;
+ 
+ 	/* On 16-bit int machines (e.g., 80286) we might be trying to
+ 	 * allocate more than a signed int can hold, and that won't
+ 	 * work.  Cheap test:
+ 	 */
+@@ -634,15 +638,19 @@
+ 	}
+ 
+ 
+ /* reallocate_array - increase the size of a dynamic array */
+ 
+ void *reallocate_array( array, size, element_size )
+ void *array;
++#ifndef __BORLANDC__
+ int size, element_size;
++#else /* __BORLANDC__ */
++size_t size, element_size;
++#endif /* __BORLANDC__ */
+ 	{
+ 	register void *new_array;
+ 
+ 	/* Same worry as in allocate_array(): */
+ 	if ( size * element_size <= 0 )
+ 		flexfatal(
+ 			"attempt to increase array size by less than 1 byte" );
+@@ -739,15 +747,19 @@
+ 	}
+ 
+ 
+ /* The following is only needed when building flex's parser using certain
+  * broken versions of bison.
+  */
+ void *yy_flex_xmalloc( size )
++#ifndef __BORLANDC__
+ int size;
++#else /* __BORLANDC__ */
++size_t size;
++#endif /* __BORLANDC__ */
+ 	{
+ 	void *result = flex_alloc( size );
+ 
+ 	if ( ! result  )
+ 		flexfatal( "memory allocation failed in yy_flex_xmalloc()" );
+ 
+ 	return result;
+
+
+
+
+
+--- skel.c	Wed Aug 03 11:38:32 1994
++++ ../skel.c	Wed Sep 28 18:50:58 1994
+@@ -26,15 +26,19 @@
+   "",
+   "#ifdef __cplusplus",
+   "",
+   "#include <stdlib.h>",
+   "%+",
+   "class istream;",
+   "%*",
++  "#ifndef __BORLANDC__",
+   "#include <unistd.h>",
++  "#else /* __BORLANDC__ */",
++  "#include <io.h>",
++  "#endif /* __BORLANDC__ */",
+   "",
+   "/* Use prototypes in function declarations. */",
+   "#define YY_USE_PROTOS",
+   "",
+   "/* The \"const\" storage-class-modifier is valid. */",
+   "#define YY_USE_CONST",
+   "",
+@@ -240,16 +244,21 @@
+   "static int yy_start_stack_depth = 0;",
+   "static int *yy_start_stack = 0;",
+   "static void yy_push_state YY_PROTO(( int new_state ));",
+   "static void yy_pop_state YY_PROTO(( void ));",
+   "static int yy_top_state YY_PROTO(( void ));",
+   "%*",
+   "",
++  "#ifndef __BORLANDC__",
+   "static void *yy_flex_alloc YY_PROTO(( unsigned int ));",
+   "static void *yy_flex_realloc YY_PROTO(( void *, unsigned int ));",
++  "#else /* __BORLANDC__ */",
++  "static void *yy_flex_alloc YY_PROTO(( size_t ));",
++  "static void *yy_flex_realloc YY_PROTO(( void *, size_t ));",
++  "#endif /* __BORLANDC__ */",
+   "static void yy_flex_free YY_PROTO(( void * ));",
+   "",
+   "#define yy_new_buffer yy_create_buffer",
+   "",
+   "%% yytext/yyin/yyout/yy_state_type/yylineno etc. def's & init go here",
+   "",
+   "#ifndef yytext_ptr",
+
+
+
+
+
+--- initscan.c	Wed Aug 03 11:42:46 1994
++++ ../initscan.c	Wed Sep 28 18:51:34 1994
+@@ -16,15 +16,19 @@
+ #endif
+ #endif
+ 
+ 
+ #ifdef __cplusplus
+ 
+ #include <stdlib.h>
++#ifndef __BORLANDC__
+ #include <unistd.h>
++#else /* __BORLANDC__ */
++#include <io.h>
++#endif /* __BORLANDC__ */
+ 
+ /* Use prototypes in function declarations. */
+ #define YY_USE_PROTOS
+ 
+ /* The "const" storage-class-modifier is valid. */
+ #define YY_USE_CONST
+ 
+@@ -220,16 +224,21 @@
+ static int yy_start_stack_ptr = 0;
+ static int yy_start_stack_depth = 0;
+ static int *yy_start_stack = 0;
+ static void yy_push_state YY_PROTO(( int new_state ));
+ static void yy_pop_state YY_PROTO(( void ));
+ static int yy_top_state YY_PROTO(( void ));
+ 
++#ifndef __BORLANDC__
+ static void *yy_flex_alloc YY_PROTO(( unsigned int ));
+ static void *yy_flex_realloc YY_PROTO(( void *, unsigned int ));
++#else /* __BORLANDC__ */
++static void *yy_flex_alloc YY_PROTO(( size_t ));
++static void *yy_flex_realloc YY_PROTO(( void *, size_t ));
++#endif /* __BORLANDC__ */
+ static void yy_flex_free YY_PROTO(( void * ));
+ 
+ #define yy_new_buffer yy_create_buffer
+ 
+ #define INITIAL 0
+ #define SECT2 1
+ #define SECT2PROLOG 2
+
+
+
+
+
+--- flexdef.h	Tue Jan 04 14:33:14 1994
++++ ../flexdef.h	Wed Sep 28 18:53:44 1994
+@@ -27,14 +27,25 @@
+  */
+ 
+ /* @(#) $Header: flexdef.h,v 1.2 94/01/04 14:33:14 vern Exp $ (LBL) */
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+ 
++#ifdef __BORLANDC__
++#include <malloc.h>
++
++#pragma warn -pro
++#pragma warn -rch
++#pragma warn -use
++#pragma warn -aus
++#pragma warn -par
++#pragma warn -pia
++
++#endif /* __BORLANDC__ */
+ #if HAVE_STRING_H
+ #include <string.h>
+ #else
+ #include <strings.h>
+ #endif
+ 
+ #if __STDC__
+@@ -607,19 +618,29 @@
+  */
+ 
+ extern char nmstr[MAXLINE];
+ extern int sectnum, nummt, hshcol, dfaeql, numeps, eps2, num_reallocs;
+ extern int tmpuses, totnst, peakpairs, numuniq, numdup, hshsave;
+ extern int num_backing_up, bol_needed;
+ 
++#ifndef __BORLANDC__
+ void *allocate_array PROTO((int, int));
+ void *reallocate_array PROTO((void*, int, int));
++#else /* __BORLANDC__ */
++void *allocate_array PROTO((size_t, size_t));
++void *reallocate_array PROTO((void*, size_t, size_t));
++#endif /* __BORLANDC__ */
+ 
++#ifndef __BORLANDC__
+ void *flex_alloc PROTO((unsigned int));
+ void *flex_realloc PROTO((void*, unsigned int));
++#else /* __BORLANDC__ */
++void *flex_alloc PROTO((size_t));
++void *flex_realloc PROTO((void*, size_t));
++#endif /* __BORLANDC__ */
+ void flex_free PROTO((void*));
+ 
+ #define allocate_integer_array(size) \
+ 	(int *) allocate_array( size, sizeof( int ) )
+ 
+ #define reallocate_integer_array(array,size) \
+ 	(int *) reallocate_array( (void *) array, size, sizeof( int ) )
+@@ -772,15 +793,19 @@
+ /* Write out one section of the skeleton file. */
+ extern void skelout PROTO((void));
+ 
+ /* Output a yy_trans_info structure. */
+ extern void transition_struct_out PROTO((int, int));
+ 
+ /* Only needed when using certain broken versions of bison to build parse.c. */
++#ifndef __BORLANDC__
+ extern void *yy_flex_xmalloc PROTO(( int ));
++#else /* __BORLANDC__ */
++extern void *yy_flex_xmalloc PROTO(( size_t ));
++#endif /* __BORLANDC__ */
+ 
+ /* Set a region of memory to 0. */
+ extern void zero_out PROTO((char *, int));
+ 
+ 
+ /* from file nfa.c */
+
+
+
+
+
+###############################################################################
+# Makefile for flex 2.4.7 with Borland C/C++ version 4.02
+#
+# This will probably need to be adjusted for your existing lexer/parser
+# generators.  See definitions for FLEX and YACC near the bottom of the
+# makefile.
+#
+# Copy initscan.c to scan.c to make your first executable.  After that,
+# you may choose to try alternate compression options for your everyday
+# flex executable.
+#
+# This will build flex with the large model.  Don't use huge, but if you
+# feel like experimenting with other models, post your success stories to 
+# comp.compilers, OK?
+#
+# This makefile does *not* implement the big testing found in "makefile.in".
+#
+# I also assume the availability of sed and the gnu file utilities on the
+# system - they're readily available, so if you don't have them, why not?
+#                                                                 <grin>
+#
+# The resulting generated lexer (the real goal, right?) will compile
+# (and run nicely, too) as a .c file, as well as being included such as
+# extern "C" { #include "lexyyc" } in a .cplusplus file.
+#
+###############################################################################
+
+DEBUG = 1
+
+.autodepend
+
+all:	flex.exe
+
+###############################################################################
+#
+# standard utilitities? ha.
+#
+
+CC	= bcc
+CPP     = bcc
+
+###############################################################################
+#
+
+MODEL	= l
+
+!if $(DEBUG) == 1
+!message Building with debug.
+debugCompile = -v
+debugLink = /v
+!else
+!message Building without debug.
+debugCompile =
+debugLink =
+!endif
+
+LOADER	= c0$(MODEL).obj
+LIBS	= c$(MODEL).lib
+LINKFLAGS = $(debugLink)
+
+DATASEG	= -dc -Ff
+SizeOPT	= -Os -G-
+Defines = -DSHORT_FILE_NAMES=1 -DHAVE_STRING_H=1
+
+COMMON	= -A -c -m$(MODEL) $(SizeOPT) $(DATASEG) $(Defines) $(debugCompile)
+CFLAGS  = -o$@ $(COMMON)
+CCFLAGS  = -o$@ $(COMMON) -Pcc
+
+###############################################################################
+
+.SUFFIXES:	.cc
+
+.cc.obj:
+	$(CPP) $(CCFLAGS) $<
+
+.c.obj:
+	$(CPP) $(CFLAGS) $<
+
+###############################################################################
+#
+# source & object files
+#
+
+SRC =	ccl.c dfa.c ecs.c gen.c main.c misc.c nfa.c parse.c \
+	scan.c sym.c tblcmp.c yylex.c skel.c
+
+OBJS = $(SRC:.c=.obj)
+
+objects:	$(OBJS)
+	@echo $(OBJS)
+
+###############################################################################
+#
+# Executable
+#
+
+flex.exe:      $(OBJS)
+	tlink $(LINKFLAGS) @&&!
+$(LOADER) $**
+$&.exe
+$&.map
+$(LIBS)
+!
+
+# 
+###############################################################################
+#
+# Lex files
+#
+
+FLEX	= .\flex
+FLEX_FLAGS = -ist
+
+scan.c: scan.l
+	$(FLEX) $(FLEX_FLAGS) scan.l >scan.tmp
+	sed s,\"$(srcdir)/scan.l\",\"scan.l\", <scan.tmp >scan.c
+	@rm scan.tmp
+
+###############################################################################
+#
+# YACC files
+#
+
+YACC	= .\bison
+YFLAGS  = -vdyl
+
+parse.c: parse.y
+	$(YACC) -ydl parse.y
+	@sed "/extern char.*malloc/d" <y_tab.c >parse.c
+	@rm -f y_tab.c
+	@mv y_tab.h parse.h
+
+#
+# end Makefile
+#
+###############################################################################
+ 

@@ -1,6 +1,0 @@
-forkpty	pty.c	/^forkpty(amaster, name, termp, winp)$/
-login	login.c	/^login(ut)$/
-login_tty	login_tty.c	/^login_tty(fd)$/
-logout	logout.c	/^logout(line)$/
-logwtmp	logwtmp.c	/^logwtmp(line, name, host)$/
-openpty	pty.c	/^openpty(amaster, aslave, name, termp, winp)$/

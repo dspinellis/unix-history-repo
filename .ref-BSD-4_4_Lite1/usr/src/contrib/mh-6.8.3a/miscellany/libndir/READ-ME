@@ -1,4 +1,0 @@
-The purpose of this library is to simulate the new flexible length
-directory names on top of the old directory structure. It allows
-programs to be converted to the new directory access interface, so
-that they need only be relinked when used on a 4.2BSD or 4.3BSD system.
