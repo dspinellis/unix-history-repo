@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -1007,7 +1007,7 @@ rdfs(bno, size, bf)
 		exit(33);
 	}
 	n = read(fsi, bf, size);
-	if(n != size) {
+	if (n != size) {
 		printf("read error: %ld\n", bno);
 		perror("rdfs");
 		exit(34);
@@ -1030,13 +1030,13 @@ wtfs(bno, size, bf)
 	}
 	if (Nflag)
 		return;
-	if (lseek(fso, (off_t)bno * sectorsize, 0) < 0) {
+	if (lseek(fso, (off_t)bno * sectorsize, SEEK_SET) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
 		exit(35);
 	}
 	n = write(fso, bf, size);
-	if(n != size) {
+	if (n != size) {
 		printf("write error: %ld\n", bno);
 		perror("wtfs");
 		exit(36);
