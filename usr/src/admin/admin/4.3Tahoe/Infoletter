@@ -113,6 +113,9 @@ Most of the kernel memory allocation is now done using this allocator.
 The source code has been reorganized to ease support of multiple
 machine types.
 .IP \(bu
+The Olson/Harris/Elz timezone implementation has been added to the
+system.
+.IP \(bu
 Numerous bug fixes and enhancements have been made throughout the system,
 including new versions of the nameserver \fInamed\fP and the routing daemon
 \fIrouted\fP.
