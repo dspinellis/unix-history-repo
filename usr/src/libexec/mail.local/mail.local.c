@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -80,33 +80,12 @@ extern int	snprintf __P((char *, int, const char *, ...));
 #endif
 
 /*
- * Compile with -DHAS_SAVED_IDS=0 if you don't have saved uids.  It will
- * swap the effective uid (root) into the real uid using setreuid(),
- * setting the effective uid to the recipient user, and then swap root
- * back to effective uid when done.
- *
- * Use -DHAS_SAVED_IDS=1 if you can use seteuid(x) several times for
- * various values of "x" -- that is, if your system will notice that you
- * were originally invoked as root, and hence will allow future swaps.
- *
- * The following heuristic works for most common systems.  Note that
- * SunOS claims to have _POSIX_SAVED_IDS, but doesn't -- but it does
- * have an older version of _POSIX_VERSION.
- *
- * If you have a pure Posix system that does not have seteuid() or
- * setreuid() (emulations don't count!) then you are out of luck.
+ * If you don't have setreuid, and you have saved uids, and you have
+ * a seteuid() call that doesn't try to emulate using setuid(), then
+ * you can try defining USE_SETEUID.
  */
-
-#ifndef HASSAVEDUIDS
-# if defined(_POSIX_SAVED_IDS) && _POSIX_VERSION >= 199009L
-#  define HAS_SAVED_IDS	1
-# else
-#  define HAS_SAVED_IDS	0
-# endif
-#endif
-
-#ifdef __hpux
-# define seteuid(e)	setresuid(-1, e, -1)
+#ifdef USE_SETEUID
+# define setreuid(r, e)		seteuid(e)
 #endif
 
 #ifndef _PATH_LOCTMP
@@ -374,20 +353,12 @@ tryagain:
 		warn("temporary file: %s", strerror(errno));
 		goto err1;
 	}
-#if HAS_SAVED_IDS
-	if (seteuid(pw->pw_uid) < 0) {
-		e_to_sys(errno);
-		warn("seteuid(%d): %s", pw->pw_uid, strerror(errno));
-		goto err1;
-	}
-#else
 	if (setreuid(0, pw->pw_uid) < 0) {
 		e_to_sys(errno);
 		warn("setreuid(0, %d): %s (r=%d, e=%d)",
 		     pw->pw_uid, strerror(errno), getuid(), geteuid());
 		goto err1;
 	}
-#endif
 #ifdef DEBUG
 	printf("new euid = %d\n", geteuid());
 #endif
@@ -409,14 +380,12 @@ tryagain:
 		e_to_sys(errno);
 		warn("%s: %s", path, strerror(errno));
 err3:
-#if !HAS_SAVED_IDS
 		if (setreuid(0, 0) < 0) {
 			e_to_sys(errno);
 			warn("setreuid(0, 0): %s", strerror(errno));
 		}
-# ifdef DEBUG
+#ifdef DEBUG
 		printf("reset euid = %d\n", geteuid());
-# endif
 #endif
 err2:		(void)ftruncate(mbfd, curoff);
 err1:		(void)close(mbfd);
@@ -432,14 +401,12 @@ err0:		unlockmbox();
 		return;
 	}
 
-#if !HAS_SAVED_IDS
 	if (setreuid(0, 0) < 0) {
 		e_to_sys(errno);
 		warn("setreuid(0, 0): %s", strerror(errno));
 	}
-# ifdef DEBUG
+#ifdef DEBUG
 	printf("reset euid = %d\n", geteuid());
-# endif
 #endif
 	unlockmbox();
 	notifybiff(biffmsg);
