@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	6.1 (Berkeley) %G%
+.\"	@(#)login.1	6.2 (Berkeley) %G%
 .\"
 .TH LOGIN 1 ""
 .UC 4
@@ -34,31 +34,32 @@ session.
 After a successful login,
 accounting files are updated and
 the user is informed of the
-existence of mail,
-and
-the message of the day is printed,
-as is the time he last logged in (unless he has a \*(lq.hushlogin\*(rq
-file in his home directory \- this
+existence of mail.
+The message of the day is printed,
+as is the time of his last login.
+Both are suppressed if he has a \*(lq.hushlogin\*(rq
+file in his home directory; this
 is mostly used to make life easier for non-human users, such as
-.IR uucp ).
+.IR uucp .
 .PP
 .I Login
 initializes the user and group IDs and the working directory,
 then executes a command interpreter (usually
-.IR  sh (1))
+.IR  csh (1))
 according to specifications found in a password file.
-Argument 0 of the command interpreter is \*(lq\-sh\*(rq, or
-more generally the name of the command interpreter with
-a leading dash (\*(lq\-\*(rq) prepended.
+Argument 0 of the command interpreter is
+the name of the command interpreter with
+a leading dash (\*(lq\-\*(rq).
 .PP
 Login also modifies the
 environment
 .IR environ (7)
 with information specifying home directory, command interpreter, terminal
 type (if available) and user name.
-The `-p' argument causes the environment to be preserved from getty.
+The `\-p' argument causes the remainder of the environment to be preserved,
+otherwise any previous environment is discarded.
 .PP
-If the file /etc/nologin exists
+If the file /etc/nologin exists,
 .I login
 prints its contents on the user's terminal and exits. This is
 used by
@@ -87,7 +88,7 @@ and executed directly (without forking).
 \&.hushlogin	makes login quieter
 .SH "SEE ALSO"
 init(8), getty(8), mail(1), passwd(1), passwd(5), environ(7),
-shutdown(8)
+shutdown(8), rlogin(1c)
 .SH DIAGNOSTICS
 \*(lqLogin incorrect,\*(rq
 if the name or the password is bad.
@@ -103,3 +104,7 @@ is used by the remote login server,
 to force
 .I login
 to enter into an initial connection protocol.
+.B \-h is used by
+.IR telnetd (8C)
+and other servers to list the host from which
+the connection was received.
