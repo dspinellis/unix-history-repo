@@ -1,0 +1,54 @@
+.TH CR3 UCB 2/24/79 UCB
+.SH NAME
+cr3 \- controlled output flow filter for crt previewing
+.SH SYNOPSIS
+.B cr3
+[
+name ...
+]
+.SH DESCRIPTION
+.I Cr3
+is a filter which allows causual examination of a continuous text
+on a soft-copy terminal.
+It normally pauses after each 23 lines of output.
+If the user then hits a carriage-return, 23 more lines are displayed.
+If the user hits control-d,
+11 more lines are displayed (a `scroll').
+.PP
+It is also possible to type positive numbers to
+.I cr3
+causing that
+many lines to be printed, or negative numbers causing that many lines
+to be discarded followed by a scroll.
+.PP
+The terminal is set to
+.I noecho
+mode by this program so that the output can be continuous.
+The numbers and carriage returns you type will thus not show on your terminal.
+.PP
+.DT
+A sample usage of
+.I cr3
+in previewing
+.I nroff
+output would be
+.PP
+	nroff \-ms +2 doc.n | cr3
+.SH AUTHOR
+William Joy
+.SH ETYMOLOGY
+.I Cr3
+has its unusual name because Charles Haley
+implemented such a feature,
+which was enabled by
+.DT
+.PP
+	stty cr3
+.SH BUGS
+The function of
+.I cr3
+should be done optionally by the teletype driver in the system,
+akin to the ``more'' feature of the ITS systems at MIT.
+.s3
+It should be possible to scan forward throwing away or keeping
+output ala `/pattern'.
