@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtpr.h	7.4 (Berkeley) %G%
+ *	@(#)mtpr.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,8 @@
 #if VAX8200 || VAX750 || VAX730 || VAX650
 #define	TBDR	0x24		/* translation buffer disable register */
 #define	CADR	0x25		/* cache disable register */
+#endif
+#if VAX8200 || VAX750 || VAX730
 #define	MCESR	0x26		/* machine check error summary register */
 #endif
 #if VAX750 || VAX730 || VAX650
