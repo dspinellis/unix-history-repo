@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)colrm.c	4.1 (Berkeley) %G%";
+static	char *Sccsid = "@(#)colrm.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 /*
 COLRM removes unwanted columns from a file
@@ -29,7 +29,12 @@ start:
 loop1:
 	if ((c=getc(stdin))<0)
 		goto fin;
-	ct++;
+	if (c == '\t')
+		ct = (ct + 8) &~ 7;
+	else if (c == '\b')
+		ct = ct ? ct - 1 : 0;
+	else
+		ct++;
 	if (c=='\n') {
 		putc(c,stdout);
 		goto start;
