@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)idp_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,7 +42,7 @@
  * IDP protocol implementation.
  */
 
-struct	sockaddr_ns idp_ns = { AF_NS };
+struct	sockaddr_ns idp_ns = { sizeof(idp_ns), AF_NS };
 
 /*
  *  This may also be called for raw listeners.
@@ -62,12 +62,12 @@ idp_input(m, nsp)
 	 */
 	idp_ns.sns_addr = idp->idp_sna;
 	if (ns_neteqnn(idp->idp_sna.x_net, ns_zeronet) && ifp) {
-		register struct ifaddr *ia;
+		register struct ifaddr *ifa;
 
-		for (ia = ifp->if_addrlist; ia; ia = ia->ifa_next) {
-			if (ia->ifa_addr.sa_family == AF_NS) {
+		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next) {
+			if (ifa->ifa_addr->sa_family == AF_NS) {
 				idp_ns.sns_addr.x_net =
-					IA_SNS(ia)->sns_addr.x_net;
+					IA_SNS(ifa)->sns_addr.x_net;
 				break;
 			}
 		}

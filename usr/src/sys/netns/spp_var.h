@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spp_var.h	7.5 (Berkeley) %G%
+ *	@(#)spp_var.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -90,6 +90,9 @@ struct sppcb {
 	u_short	s_want;			/* Last candidate for sending */
 	char	s_outx;			/* exit taken from spp_output */
 	char	s_inx;			/* exit taken from spp_input */
+	u_short	s_flags2;		/* more flags for testing */
+#define SF_NEWCALL	0x100		/* for new_recvmsg */
+#define SO_NEWCALL	10		/* for new_recvmsg */
 };
 
 #define	nstosppcb(np)	((struct sppcb *)(np)->nsp_pcb)

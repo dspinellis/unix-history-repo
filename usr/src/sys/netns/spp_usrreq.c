@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spp_usrreq.c	7.9 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -151,6 +151,7 @@ spp_input(m, nsp)
 			goto drop;
 		am->m_len = sizeof (struct sockaddr_ns);
 		sns = mtod(am, struct sockaddr_ns *);
+		sns->sns_len = sizeof(*sns);
 		sns->sns_family = AF_NS;
 		sns->sns_addr = si->si_sna;
 		laddr = nsp->nsp_laddr;
@@ -722,11 +723,12 @@ spp_output(cb, m0)
 
 				cb->s_cc &= ~SP_EM;
 				while (len > mtu) {
-					m = m_copy(m0, 0, mtu);
-					if (m == NULL) {
-						error = ENOBUFS;
-						goto bad_copy;
-					}
+					/*
+					 * Here we are only being called
+					 * from usrreq(), so it is OK to
+					 * block.
+					 */
+					m = m_copym(m0, 0, mtu, M_WAIT);
 					if (cb->s_flags & SF_NEWCALL) {
 					    struct mbuf *mm = m;
 					    spp_newchecks[7]++;
@@ -737,7 +739,6 @@ spp_output(cb, m0)
 					}
 					error = spp_output(cb, m);
 					if (error) {
-					bad_copy:
 						cb->s_cc |= oldEM;
 						m_freem(m0);
 						return(error);
@@ -1449,10 +1450,10 @@ spp_usrreq(so, req, m, nam, rights, controlp)
 		/* fall into */
 	case PRU_SEND:
 		if (controlp) {
-			u_short *s = mtod(controlp, u_short *);
+			u_short *p = mtod(controlp, u_short *);
 			spp_newchecks[2]++;
-			if ((s[0] == 5) && s[1] == 1 ) { /* XXXX, for testing */
-				cb->s_shdr.sp_dt = *(u_char *)(&s[2]);
+			if ((p[0] == 5) && p[1] == 1) { /* XXXX, for testing */
+				cb->s_shdr.sp_dt = *(u_char *)(&p[2]);
 				spp_newchecks[3]++;
 			}
 		}
@@ -1666,7 +1667,8 @@ spp_slowtimo()
 			if (cb->s_timer[i] && --cb->s_timer[i] == 0) {
 				(void) spp_usrreq(cb->s_nspcb->nsp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
-				    (struct mbuf *)i, (struct mbuf *)0);
+				    (struct mbuf *)i, (struct mbuf *)0,
+				    (struct mbuf *)0);
 				if (ipnxt->nsp_prev != ip)
 					goto tpgone;
 			}

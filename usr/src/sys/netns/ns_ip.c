@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_ip.c	7.3 (Berkeley) %G%
+ *	@(#)ns_ip.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,6 +24,7 @@
 #ifdef NSIP
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -41,9 +42,7 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
+#include "../machine/mtpr.h"
 
 #include "../netns/ns.h"
 #include "../netns/ns_if.h"
@@ -54,36 +53,48 @@ struct ifnet_en {
 	struct route ifen_route;
 	struct in_addr ifen_src;
 	struct in_addr ifen_dst;
+	struct ifnet_en *ifen_next;
 };
 
-int	nsipoutput(), nsipioctl();
+int	nsipoutput(), nsipioctl(), nsipstart();
 #define LOMTU	(1024+512);
 
 struct ifnet nsipif;
-struct mbuf *nsip_list;		/* list of all hosts and gateways or
+struct ifnet_en *nsip_list;		/* list of all hosts and gateways or
 					broadcast addrs */
 
-struct mbuf *
+struct ifnet_en *
 nsipattach()
 {
-	register struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
+	register struct ifnet_en *m;
 	register struct ifnet *ifp;
 
+	if (nsipif.if_mtu == 0) {
+		ifp = &nsipif;
+		ifp->if_name = "nsip";
+		ifp->if_mtu = LOMTU;
+		ifp->if_ioctl = nsipioctl;
+		ifp->if_output = nsipoutput;
+		ifp->if_start = nsipstart;
+		ifp->if_flags = IFF_POINTOPOINT;
+	}
+
+	MALLOC((m), struct ifnet_en *, sizeof(*m), M_PCB, M_NOWAIT);
 	if (m == NULL) return (NULL);
-	m->m_off = MMINOFF;
-	m->m_len = sizeof(struct ifnet_en);
-	m->m_next = nsip_list;
+	m->ifen_next = nsip_list;
 	nsip_list = m;
-	ifp = mtod(m, struct ifnet *);
+	ifp = &m->ifen_ifnet;
 
 	ifp->if_name = "nsip";
 	ifp->if_mtu = LOMTU;
 	ifp->if_ioctl = nsipioctl;
 	ifp->if_output = nsipoutput;
+	ifp->if_start = nsipstart;
 	ifp->if_flags = IFF_POINTOPOINT;
 	ifp->if_unit = nsipif.if_unit++;
 	if_attach(ifp);
-	return (dtom(ifp));
+
+	return (m);
 }
 
 
@@ -140,14 +151,14 @@ idpip_input(m, ifp)
 		if (nsip_lastin) {
 			m_freem(nsip_lastin);
 		}
-		nsip_lastin = m_copy(m, 0, (int)M_COPYALL);
+		nsip_lastin = m_copym(m, 0, (int)M_COPYALL, M_DONTWAIT);
 	}
 	/*
 	 * Get IP and IDP header together in first mbuf.
 	 */
 	nsipif.if_ipackets++;
 	s = sizeof (struct ip) + sizeof (struct idp);
-	if ((m->m_off > MMAXOFF || m->m_len < s) &&
+	if (((m->m_flags & M_EXT) || m->m_len < s) &&
 	    (m = m_pullup(m, s)) == 0) {
 		nsipif.if_ierrors++;
 		return;
@@ -168,8 +179,9 @@ idpip_input(m, ifp)
 	 * Make mbuf data length reflect IDP length.
 	 * If not enough data to reflect IDP length, drop.
 	 */
-	m->m_off += sizeof (struct ip);
+	m->m_data += sizeof (struct ip);
 	m->m_len -= sizeof (struct ip);
+	m->m_pkthdr.len -= sizeof (struct ip);
 	idp = mtod(m, struct idp *);
 	len = ntohs(idp->idp_len);
 	if (len & 1) len++;		/* Preserve Garbage Byte */
@@ -187,22 +199,7 @@ idpip_input(m, ifp)
 	 * Place interface pointer before the data
 	 * for the receiving protocol.
 	 */
-	if (m->m_off >= MMINOFF + sizeof(struct ifnet *)) {
-		m->m_off -= sizeof(struct ifnet *);
-		m->m_len += sizeof(struct ifnet *);
-	} else {
-		struct mbuf *n;
-
-		n = m_get(M_DONTWAIT, MT_HEADER);
-		if (n == (struct mbuf *)0)
-			goto bad;
-		n->m_off = MMINOFF;
-		n->m_len = sizeof(struct ifnet *);
-		n->m_next = m;
-		m = n;
-	}
-	*(mtod(m, struct ifnet **)) = ifp;
-
+	m->m_pkthdr.rcvif = ifp;
 	/*
 	 * Deliver to NS
 	 */
@@ -221,23 +218,18 @@ bad:
 }
 
 /* ARGSUSED */
-nsipoutput(ifn, m0, dst)
+nsipoutput(ifn, m, dst)
 	struct ifnet_en *ifn;
-	struct mbuf *m0;
+	register struct mbuf *m;
 	struct sockaddr *dst;
 {
 
-	register struct mbuf *m = dtom(ifn);
 	register struct ip *ip;
 	register struct route *ro = &(ifn->ifen_route);
 	register int len = 0;
-	register struct idp *idp = mtod(m0, struct idp *);
+	register struct idp *idp = mtod(m, struct idp *);
 	int error;
 
-	if (m->m_len != sizeof(struct ifnet_en)) {
-		printf("nsipoutput: bad dst ifp %x\n", ifn);
-		goto bad;
-	}
 	ifn->ifen_ifnet.if_opackets++;
 	nsipif.if_opackets++;
 
@@ -248,19 +240,24 @@ nsipoutput(ifn, m0, dst)
 	 */
 	len =  ntohs(idp->idp_len);
 	if (len & 1) len++;		/* Preserve Garbage Byte */
-	m = m0;
-	if (m->m_off < MMINOFF + sizeof (struct ip)) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			m_freem(m0);
+	/* following clause not necessary on vax */
+	if (3 & (int)m->m_data) {
+		/* force longword alignment of ip hdr */
+		struct mbuf *m0 = m_gethdr(MT_HEADER, M_DONTWAIT);
+		if (m0 == 0) {
+			m_freem(m);
 			return (ENOBUFS);
 		}
-		m->m_off = MMAXOFF - sizeof (struct ip);
-		m->m_len = sizeof (struct ip);
-		m->m_next = m0;
+		MH_ALIGN(m0, sizeof (struct ip));
+		m0->m_flags = m->m_flags & M_COPYFLAGS;
+		m0->m_next = m;
+		m0->m_len = sizeof (struct ip);
+		m0->m_pkthdr.len = m0->m_len + m->m_len;
+		m->m_flags &= ~M_PKTHDR;
 	} else {
-		m->m_off -= sizeof (struct ip);
-		m->m_len += sizeof (struct ip);
+		M_PREPEND(m, sizeof (struct ip), M_DONTWAIT);
+		if (m == 0)
+			return (ENOBUFS);
 	}
 	/*
 	 * Fill in IP header.
@@ -283,8 +280,14 @@ nsipoutput(ifn, m0, dst)
 	}
 	return (error);
 bad:
-	m_freem(m0);
+	m_freem(m);
 	return (ENETUNREACH);
+}
+
+nsipstart(ifp)
+struct ifnet *ifp;
+{
+	panic("nsip_start called\n");
 }
 
 struct ifreq ifr = {"nsip0"};
@@ -337,19 +340,16 @@ nsip_route(m)
 	/*
 	 * Is there a free (pseudo-)interface or space?
 	 */
-	for (m = nsip_list; m; m = m->m_next) {
-		struct ifnet *ifp = mtod(m, struct ifnet *);
-		if ((ifp->if_flags & IFF_UP) == 0)
+	for (ifn = nsip_list; ifn; ifn = ifn->ifen_next) {
+		if ((ifn->ifen_ifnet.if_flags & IFF_UP) == 0)
 			break;
 	}
-	if (m == (struct mbuf *) 0)
-		m = nsipattach();
-	if (m == NULL) {
+	if (ifn == NULL)
+		ifn = nsipattach();
+	if (ifn == NULL) {
 		RTFREE(ro.ro_rt);
 		return (ENOBUFS);
 	}
-	ifn = mtod(m, struct ifnet_en *);
-
 	ifn->ifen_route = ro;
 	ifn->ifen_dst =  ip_dst->sin_addr;
 	ifn->ifen_src = src->sin_addr;
@@ -411,11 +411,9 @@ nsip_ctlinput(cmd, sa)
 nsip_rtchange(dst)
 	register struct in_addr *dst;
 {
-	register struct mbuf *m;
 	register struct ifnet_en *ifn;
 
-	for (m = nsip_list; m; m = m->m_next) {
-		ifn = mtod(m, struct ifnet_en *);
+	for (ifn = nsip_list; ifn; ifn = ifn->ifen_next) {
 		if (ifn->ifen_dst.s_addr == dst->s_addr &&
 			ifn->ifen_route.ro_rt) {
 				RTFREE(ifn->ifen_route.ro_rt);

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_pcb.c	7.6 (Berkeley) %G%
+ *	@(#)ns_pcb.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,7 +58,7 @@ ns_pcbbind(nsp, nam)
 	register struct sockaddr_ns *sns;
 	u_short lport = 0;
 
-	if(nsp->nsp_lport || !ns_nullhost(nsp->nsp_laddr))
+	if (nsp->nsp_lport || !ns_nullhost(nsp->nsp_laddr))
 		return (EINVAL);
 	if (nam == 0)
 		goto noname;
@@ -155,6 +155,7 @@ ns_pcbconnect(nsp, nam)
 	     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
 		    /* No route yet, so try to acquire one */
 		    ro->ro_dst.sa_family = AF_NS;
+		    ro->ro_dst.sa_len = sizeof(ro->ro_dst);
 		    *dst = sns->sns_addr;
 		    dst->x_port = 0;
 		    rtalloc(ro);
@@ -232,6 +233,7 @@ ns_setsockaddr(nsp, nam)
 	nam->m_len = sizeof (*sns);
 	sns = mtod(nam, struct sockaddr_ns *);
 	bzero((caddr_t)sns, sizeof (*sns));
+	sns->sns_len = sizeof(*sns);
 	sns->sns_family = AF_NS;
 	sns->sns_addr = nsp->nsp_laddr;
 }
@@ -245,6 +247,7 @@ ns_setpeeraddr(nsp, nam)
 	nam->m_len = sizeof (*sns);
 	sns = mtod(nam, struct sockaddr_ns *);
 	bzero((caddr_t)sns, sizeof (*sns));
+	sns->sns_len = sizeof(*sns);
 	sns->sns_family = AF_NS;
 	sns->sns_addr  = nsp->nsp_faddr;
 }
@@ -325,8 +328,8 @@ ns_pcblookup(faddr, lport, wildp)
 			else {
 				if (!ns_hosteq(nsp->nsp_faddr, *faddr))
 					continue;
-				if( nsp->nsp_fport != fport) {
-					if(nsp->nsp_fport != 0)
+				if (nsp->nsp_fport != fport) {
+					if (nsp->nsp_fport != 0)
 						continue;
 					else
 						wildcard++;
