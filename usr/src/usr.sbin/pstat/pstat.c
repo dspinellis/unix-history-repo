@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.24 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.25 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -74,6 +74,10 @@ struct nlist nl[] = {
 	{ "_nswdev" },
 #define	SSWDEVT	21
 	{ "_swdevt" },
+#define	SDMF	22
+	{ "_dmf_tty" },
+#define	SNDMF	23
+	{ "_ndmf" },
 	{ "" }
 };
 
@@ -400,7 +404,7 @@ dotty()
 		ttyprt(tp, tp - dz_tty);
 dh:
 	if (nl[SNDH].n_type == 0)
-		goto pty;
+		goto dmf;
 	if (kflg) {
 		nl[SNDH].n_value = clear(nl[SNDH].n_value);
 		nl[SDH].n_value = clear(nl[SDH].n_value);
@@ -412,9 +416,23 @@ dh:
 	read(fc, dz_tty, ndz * sizeof(struct tty));
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
+dmf:
+	if (nl[SNDMF].n_type == 0)
+		goto pty;
+	if (kflg) {
+		nl[SNDMF].n_value = clear(nl[SNDMF].n_value);
+		nl[SDMF].n_value = clear(nl[SDMF].n_value);
+	}
+	lseek(fc, (long)nl[SNDMF].n_value, 0);
+	read(fc, &ndz, sizeof(ndz));
+	printf("%d dmf lines\n", ndz);
+	lseek(fc, (long)nl[SDMF].n_value, 0);
+	read(fc, dz_tty, ndz * sizeof(struct tty));
+	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
+		ttyprt(tp, tp - dz_tty);
 pty:
 	if (nl[SPTY].n_type == 0)
-		goto pty;
+		return;
 	if (kflg) {
 		nl[SPTY].n_value = clear(nl[SPTY].n_value);
 	}
