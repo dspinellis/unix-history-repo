@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.17 (Berkeley) %G%
+#	@(#)Makefile	7.18 (Berkeley) %G%
 
 DESTDIR=
 INCPATH=-I. -I../..
@@ -101,8 +101,9 @@ dcopy:	copy.o srt0.o conf.o ${LIBS}
 mkboot: mkboot.c
 	${CC} ${CFLAGS} -o mkboot mkboot.c
 
-installboot: installboot.c
-	${CC} ${CFLAGS} -o installboot installboot.c
+installboot: installboot.sh
+	@rm -f installboot
+	cp -p installboot.sh installboot
 
 # utilities
 
@@ -114,20 +115,24 @@ clean cleandir:
 	rm -f libdrive.a mkboot tboot tcopy dboot nboot installboot *.lif
 	cd libsa; make cleandir
 
-install:
+install: mkboot installboot ${ALL}
 	./mkboot dboot diskboot.lif
 	./mkboot nboot ndiskboot.lif
 	./mkboot tboot tcopy tapeboot.lif
-	install -s -o bin -g bin -m 555 installboot ${DESTDIR}/usr/mdec
-	install -o bin -g bin -m 444 diskboot.lif ${DESTDIR}/usr/mdec/bootrd
+	install -o bin -g bin -m 555 installboot ${DESTDIR}/usr/mdec
+	install -o bin -g bin -m 444 diskboot.lif ${DESTDIR}/usr/mdec/rdboot
+	rm -f ${DESTDIR}/usr/mdec/bootrd
+	ln ${DESTDIR}/usr/mdec/rdboot ${DESTDIR}/usr/mdec/bootrd
+	rm -f ${DESTDIR}/usr/mdec/sdboot
+	ln ${DESTDIR}/usr/mdec/rdboot ${DESTDIR}/usr/mdec/sdboot
 	rm -f ${DESTDIR}/usr/mdec/bootsd
-	ln ${DESTDIR}/usr/mdec/bootrd ${DESTDIR}/usr/mdec/bootsd
-	install -o bin -g bin -m 444 tapeboot.lif ${DESTDIR}/usr/mdec/bootct
+	ln ${DESTDIR}/usr/mdec/sdboot ${DESTDIR}/usr/mdec/bootsd
+	install -o bin -g bin -m 444 tapeboot.lif ${DESTDIR}/usr/mdec/ctboot
 #	mv diskboot.lif ndiskboot.lif tapeboot.lif ${DESTDIR}/sys/hpdist/tp
 
 depend: ${SRCS}
 	mkdep ${INCPATH} ${DEFS} ${SRCS}
-	mkdep -a -p ${INCPATH} ${DEFS} mkboot.c installboot.c
+	mkdep -a -p ${INCPATH} ${DEFS} mkboot.c
 	cd libsa; make depend
 
 FRC:
