@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.3 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -50,7 +50,7 @@ static char sccsid[] = "@(#)acucntrl.c	5.2 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/conf.h>
 #ifdef BSD4_2
-#include "/sys/vaxuba/ubavar.h"
+#include <vaxuba/ubavar.h>
 #else
 #include <sys/ubavar.h>
 #endif
@@ -335,8 +335,8 @@ post(device,name)
 char *device, *name;
 {
 	(void)time((time_t *)&utmp.ut_time);
-	strcpyn(utmp.ut_line, device, LINSIZ);
-	strcpyn(utmp.ut_name, name,  NAMSIZ);
+	strncpy(utmp.ut_line, device, LINSIZ);
+	strncpy(utmp.ut_name, name,  NAMSIZ);
 	if (lseek(etcutmp, utmploc, 0)<0)
 		fprintf(stderr,"on lseek in /etc/utmp: %s",
 			sys_errlist[errno]);
