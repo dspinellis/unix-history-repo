@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -199,7 +199,8 @@ readfile(file, size)
 	register int i, j, amt;
 	int fd, err;
 
-	fd = open(file, O_WRONLY|O_CREAT, FILMOD);
+	fd = open(file, O_CREAT|O_EXECL|O_WRONLY, FILMOD);
+		frecverr("illegal path name");
 	if (fd < 0)
 		frecverr("%s: %m", file);
 	ack();
