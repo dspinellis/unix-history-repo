@@ -32,6 +32,7 @@ INSTALL	= /usr/ucb/pdx
 # LDFLAGS should be -i for pdp-11
 #
 
+RM	= /bin/rm -f
 CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -DVAX -O
 LDFLAGS	=
 
@@ -156,11 +157,11 @@ profile: ${OBJS}
 
 ${COMMAND}y.tab.o: ${COMMAND}grammar.yacc
 	chdir ${COMMAND}; yacc -d grammar.yacc; cc -c ${CFLAGS} y.tab.c
-	rm ${COMMAND}y.tab.c
+	${RM} ${COMMAND}y.tab.c
 
 ${COMMAND}lex.yy.o: ${COMMAND}token.lex ${COMMAND}y.tab.h
 	chdir ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
-	rm ${COMMAND}lex.yy.c
+	${RM} ${COMMAND}lex.yy.c
 
 ${BPOBJ}:	${BREAKPOINT}bp.rep
 ${RUNTIMEOBJ}:	${RUNTIME}frame.rep
@@ -174,7 +175,7 @@ install: a.out
 	mv a.out ${INSTALL}
 
 clean:
-	rm a.out */*.o
+	${RM} a.out */*.o
 
 #
 # Warning:  This will produce a very long listing.  You would be better
