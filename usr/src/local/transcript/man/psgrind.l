@@ -1,8 +1,9 @@
-.\"	@(#)psgrind.l	1.1 %G%
+.\"	@(#)psgrind.l	1.2 %G%
 .TH PSGRIND 1
-.ds PS P\s-2OST\s+2S\s-2CRIPT\s+2
+.if t .ds PS P\s-2OST\s+2S\s-2CRIPT\s+2
+.if n .ds PS PostScript
 .SH NAME
-psgrind \- convert C source files to P\s-2OST\s+2S\s-2CRIPT\s+2 format for printing
+psgrind \- convert C source files to \*(PS for printing
 .SH SYNOPSIS
 .B psgrind
 [ 
