@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_output.c	7.18 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,9 +29,9 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "tcp.h"
 #define	TCPOUTFLAGS
@@ -165,15 +165,15 @@ again:
 	 * Compare available window to amount of window
 	 * known to peer (as advertised window less
 	 * next expected input).  If the difference is at least two
-	 * max size segments or at least 35% of the maximum possible
+	 * max size segments, or at least 50% of the maximum possible
 	 * window, then want to send a window update to peer.
 	 */
 	if (win > 0) {
 		int adv = win - (tp->rcv_adv - tp->rcv_nxt);
 
-		if (so->so_rcv.sb_cc == 0 && adv >= 2 * tp->t_maxseg)
+		if (adv >= 2 * tp->t_maxseg)
 			goto send;
-		if (100 * adv / so->so_rcv.sb_hiwat >= 35)
+		if (2 * adv >= so->so_rcv.sb_hiwat)
 			goto send;
 	}
 
@@ -401,7 +401,7 @@ send:
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	if (m->m_flags & M_PKTHDR)
 		m->m_pkthdr.len = ((struct ip *)ti)->ip_len;
-	((struct ip *)ti)->ip_ttl = TCP_TTL;
+	((struct ip *)ti)->ip_ttl = tcp_ttl;
 #if BSD>=43
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
 	    so->so_options & SO_DONTROUTE);
