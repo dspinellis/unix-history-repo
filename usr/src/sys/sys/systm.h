@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.6 (Berkeley) %G%
+ *	@(#)systm.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -36,22 +36,21 @@ int	maxmem;			/* actual max memory per process */
 int	physmem;		/* physical memory on this CPU */
 
 int	nswap;			/* size of swap space */
-int	updlock;		/* lock for sync */
-daddr_t	rablock;		/* block to be read ahead */
-int	rasize;			/* size of block in rablock */
 extern	int intstack[];		/* stack for interrupts */
 dev_t	rootdev;		/* device of the root */
+struct	vnode *rootvp;		/* vnode of root filesystem */
 dev_t	dumpdev;		/* device to take dumps on */
 long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
+struct	vnode *swapdev_vp;	/* vnode equivalent to above */
 dev_t	argdev;			/* device for argument lists */
+struct	vnode *argdev_vp;	/* vnode equivalent to above */
 
 #if defined(vax) || defined(tahoe)
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
 #endif
 
-daddr_t	bmap();
 int	memall();
 int	vmemall();
 swblk_t	vtod();
