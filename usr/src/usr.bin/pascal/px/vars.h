@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.8 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.9 %G%"; */
 
 #include <stdio.h>
 
@@ -27,8 +27,6 @@
  *	interp.c	Driver including main interpreter loop and
  *			the interpreter instructions grouped by their
  *			positions in the interpreter table.
- *	except.c	Handlers for interpreter specific errors not
- *			included in libpc.
  *	utilities.c	Interpreter exit, backtrace, and runtime statistics.
  *
  * In addition there are several headers defining mappings for panic
@@ -76,7 +74,6 @@ extern char *malloc();
 extern long time();
 extern intr();
 extern memsize();
-extern except();
 extern syserr();
 extern liberr();
 

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)int.c 1.6 %G%";
+static char sccsid[] = "@(#)int.c 1.7 %G%";
 
 /*
  * px - interpreter for Berkeley Pascal
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)int.c 1.6 %G%";
 #include	<signal.h>
 #include	"whoami.h"
 #include	"vars.h"
+#include	"libpc.h"
 #include	"objfmt.h"
 
 /*
@@ -128,7 +129,7 @@ main(ac,av)
 	if (signal(SIGINT,SIG_IGN) != SIG_IGN)
 		signal(SIGINT,intr);
 	signal(SIGSEGV,memsize);
-	signal(SIGFPE,except);
+	signal(SIGFPE,EXCEPT);
 	signal(SIGTRAP,liberr);
 
 	/*
@@ -153,7 +154,6 @@ main(ac,av)
 	signal(SIGBUS,SIG_DFL);
 	signal(SIGSYS,SIG_DFL);
 	PFLUSH();
-	/* pfree(objprog); */
 	psexit(0);
 }
 

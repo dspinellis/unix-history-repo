@@ -1,10 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.4 %G%";
+static char sccsid[] = "@(#)utilities.c 1.5 %G%";
 
+#include	<signal.h>
 #include	"whoami.h"
 #include	"vars.h"
-#include	"panics.h"
 #include	"h02opcs.h"
 
 stats()
@@ -62,8 +62,8 @@ skipprof:
 		_stcnt,l);
 }
 
-backtrace(errnum)
-	int	errnum;
+backtrace(type)
+	char	*type;
 {
 	register struct disp *mydp;
 	register struct stack *ap;
@@ -76,12 +76,7 @@ backtrace(errnum)
 		return;
 	}
 	disp = _display;
-	if (errnum == PINTR)
-		fputs("\n\tInterrupted in \"",stderr);
-	else if (errnum == PHALT)
-		fputs("\n\tHalted in \"",stderr);
-	else
-		fputs("\n\tError in \"",stderr);
+	fprintf(stderr, "\n\t%s in \"", type);
 	mydp = _dp;
 	linum = _lino;
 	for (;;) {
@@ -94,7 +89,7 @@ backtrace(errnum)
 		*mydp = (ap)->odisp;
 		if (mydp <= &_display.frame[1]){
 			_display = disp;
-			psexit(errnum);
+			return;
 		}
 		mydp = (ap)->dp;
 		linum = (ap)->lino;
@@ -117,4 +112,44 @@ psexit(code)
 	}
 	stats();
 	exit(code);
+}
+
+/*
+ * Routines to field various types of signals
+ *
+ * catch a library error and generate a backtrace
+ */
+liberr()
+{
+	backtrace("Error");
+	psexit(2);
+}
+
+/*
+ * catch an interrupt and generate a backtrace
+ */
+intr()
+{
+	signal(SIGINT, intr);
+	backtrace("Interrupted");
+	psexit(1);
+}
+
+/*
+ * catch memory faults
+ */
+memsize()
+{
+	signal(SIGSEGV, memsize);
+	ERROR("Run time stack overflow\n");
+}
+
+/*
+ * catch random system faults
+ */
+syserr(signum)
+	int signum;
+{
+	signal(signum, syserr);
+	ERROR("Panic: Computational error in interpreter\n");
 }
