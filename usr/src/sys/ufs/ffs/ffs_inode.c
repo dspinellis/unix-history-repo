@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_inode.c	7.2 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -469,7 +469,7 @@ itrunc(oip, length)
 			    indirtrunc(ip, bn, lastiblock[level], level);
 			if (lastiblock[level] < 0) {
 				ip->i_ib[level] = 0;
-				free(ip, bn, (off_t)fs->fs_bsize);
+				blkfree(ip, bn, (off_t)fs->fs_bsize);
 				blocksreleased += nblocks;
 			}
 		}
@@ -488,7 +488,7 @@ itrunc(oip, length)
 			continue;
 		ip->i_db[i] = 0;
 		bsize = (off_t)blksize(fs, ip, i);
-		free(ip, bn, bsize);
+		blkfree(ip, bn, bsize);
 		blocksreleased += btodb(bsize);
 	}
 	if (lastblock < 0)
@@ -518,7 +518,7 @@ itrunc(oip, length)
 			 * required for the storage we're keeping.
 			 */
 			bn += numfrags(fs, newspace);
-			free(ip, bn, oldspace - newspace);
+			blkfree(ip, bn, oldspace - newspace);
 			blocksreleased += btodb(oldspace - newspace);
 		}
 	}
@@ -605,7 +605,7 @@ indirtrunc(ip, bn, lastbn, level)
 		if (level > SINGLE)
 			blocksreleased +=
 			    indirtrunc(ip, nb, (daddr_t)-1, level - 1);
-		free(ip, nb, (off_t)fs->fs_bsize);
+		blkfree(ip, nb, (off_t)fs->fs_bsize);
 		blocksreleased += nblocks;
 	}
 
