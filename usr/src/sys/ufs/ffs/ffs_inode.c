@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.6	81/10/11	*/
+/*	ffs_inode.c	4.7	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,8 +41,8 @@ ihinit()
  */
 struct inode *
 ifind(dev, ino)
-dev_t dev;
-ino_t ino;
+	dev_t dev;
+	ino_t ino;
 {
 	register struct inode *ip;
 
@@ -70,8 +70,8 @@ ino_t ino;
  */
 struct inode *
 iget(dev, ino)
-dev_t dev;
-ino_t ino;
+	dev_t dev;
+	ino_t ino;
 {
 	register struct inode *ip;
 	register struct mount *mp;
@@ -83,15 +83,15 @@ loop:
 	slot = INOHASH(dev, ino);
 	ip = &inode[inohash[slot]];
 	while (ip != &inode[-1]) {
-		if(ino == ip->i_number && dev == ip->i_dev) {
-			if((ip->i_flag&ILOCK) != 0) {
+		if (ino == ip->i_number && dev == ip->i_dev) {
+			if ((ip->i_flag&ILOCK) != 0) {
 				ip->i_flag |= IWANT;
 				sleep((caddr_t)ip, PINOD);
 				goto loop;
 			}
-			if((ip->i_flag&IMOUNT) != 0) {
+			if ((ip->i_flag&IMOUNT) != 0) {
 				for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-				if(mp->m_inodp == ip) {
+				if (mp->m_inodp == ip) {
 					dev = mp->m_dev;
 					ino = ROOTINO;
 					goto loop;
@@ -104,7 +104,7 @@ loop:
 		}
 		ip = &inode[ip->i_hlink];
 	}
-	if(ifreel < 0) {
+	if (ifreel < 0) {
 		tablefull("inode");
 		u.u_error = ENFILE;
 		return(NULL);
@@ -122,7 +122,7 @@ loop:
 	/*
 	 * Check I/O errors
 	 */
-	if((bp->b_flags&B_ERROR) != 0) {
+	if ((bp->b_flags&B_ERROR) != 0) {
 		brelse(bp);
 		iput(ip);
 		return(NULL);
@@ -135,8 +135,8 @@ loop:
 }
 
 iexpand(ip, dp)
-register struct inode *ip;
-register struct dinode *dp;
+	register struct inode *ip;
+	register struct dinode *dp;
 {
 	register char *p1, *p2;
 	register int i;
@@ -164,21 +164,21 @@ register struct dinode *dp;
  * truncate and deallocate the file.
  */
 iput(ip)
-register struct inode *ip;
+	register struct inode *ip;
 {
 	register int i, x;
 	register struct inode *jp;
 
-	if(ip->i_count == 1) {
+	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCK;
-		if(ip->i_nlink <= 0) {
+		if (ip->i_nlink <= 0) {
 			itrunc(ip);
 			ip->i_mode = 0;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip->i_dev, ip->i_number);
 		}
 		IUPDAT(ip, &time, &time, 0);
-		prele(ip);
+		irele(ip);
 		i = INOHASH(ip->i_dev, ip->i_number);
 		x = ip - inode;
 		if (inohash[i] == x) {
@@ -198,7 +198,7 @@ done:
 		ip->i_flag = 0;
 		ip->i_number = 0;
 	} else
-		prele(ip);
+		irele(ip);
 	ip->i_count--;
 }
 
@@ -211,17 +211,17 @@ done:
  * i/o order so wait for write to complete.
  */
 iupdat(ip, ta, tm, waitfor)
-register struct inode *ip;
-time_t *ta, *tm;
-int waitfor;
+	register struct inode *ip;
+	time_t *ta, *tm;
+	int waitfor;
 {
 	register struct buf *bp;
 	struct dinode *dp;
 	register char *p1, *p2;
 	register int i;
 
-	if((ip->i_flag&(IUPD|IACC|ICHG)) != 0) {
-		if(getfs(ip->i_dev)->s_ronly)
+	if ((ip->i_flag&(IUPD|IACC|ICHG)) != 0) {
+		if (getfs(ip->i_dev)->s_ronly)
 			return;
 		bp = bread(ip->i_dev, itod(ip->i_number));
 		if (bp->b_flags & B_ERROR) {
@@ -241,14 +241,14 @@ int waitfor;
 			*p1++ = *p2++;
 			*p1++ = *p2++;
 			*p1++ = *p2++;
-			if(*p2++ != 0)
+			if (*p2++ != 0)
 				printf("iaddress > 2^24\n");
 		}
-		if(ip->i_flag&IACC)
+		if (ip->i_flag&IACC)
 			dp->di_atime = *ta;
-		if(ip->i_flag&IUPD)
+		if (ip->i_flag&IUPD)
 			dp->di_mtime = *tm;
-		if(ip->i_flag&ICHG)
+		if (ip->i_flag&ICHG)
 			dp->di_ctime = time;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
 		if (waitfor)
@@ -268,15 +268,13 @@ int waitfor;
  * than FIFO.
  */
 itrunc(ip)
-register struct inode *ip;
+	register struct inode *ip;
 {
 	register i;
 	dev_t dev;
 	daddr_t bn;
 	struct inode itmp;
 
-	if (ip->i_vfdcnt)
-		panic("itrunc");
 	i = ip->i_mode & IFMT;
 	if (i!=IFREG && i!=IFDIR)
 		return;
@@ -300,7 +298,7 @@ register struct inode *ip;
 	dev = ip->i_dev;
 	for(i=NADDR-1; i>=0; i--) {
 		bn = ip->i_un.i_addr[i];
-		if(bn == (daddr_t)0)
+		if (bn == (daddr_t)0)
 			continue;
 		ip->i_un.i_addr[i] = (daddr_t)0;
 		switch(i) {
@@ -339,7 +337,7 @@ daddr_t bn;
 
 	bp = NULL;
 	for(i=NINDIR-1; i>=0; i--) {
-		if(bp == NULL) {
+		if (bp == NULL) {
 			bp = bread(dev, bn);
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
@@ -348,16 +346,16 @@ daddr_t bn;
 			bap = bp->b_un.b_daddr;
 		}
 		nb = bap[i];
-		if(nb == (daddr_t)0)
+		if (nb == (daddr_t)0)
 			continue;
-		if(f1) {
+		if (f1) {
 			brelse(bp);
 			bp = NULL;
 			tloop(dev, nb, f2, 0);
 		} else
 			free(dev, nb);
 	}
-	if(bp != NULL)
+	if (bp != NULL)
 		brelse(bp);
 	free(dev, bn);
 }
@@ -371,12 +369,12 @@ maknode(mode)
 	register struct inode *ip;
 
 	ip = ialloc(u.u_pdir->i_dev);
-	if(ip == NULL) {
+	if (ip == NULL) {
 		iput(u.u_pdir);
 		return(NULL);
 	}
 	ip->i_flag |= IACC|IUPD|ICHG;
-	if((mode&IFMT) == 0)
+	if ((mode&IFMT) == 0)
 		mode |= IFREG;
 	ip->i_mode = mode & ~u.u_cmask;
 	ip->i_nlink = 1;
@@ -398,7 +396,7 @@ maknode(mode)
  * to a call to namei.
  */
 wdir(ip)
-struct inode *ip;
+	struct inode *ip;
 {
 
 	u.u_dent.d_ino = ip->i_number;
@@ -410,22 +408,20 @@ struct inode *ip;
 	iput(u.u_pdir);
 }
 
-#ifdef plock
-#undef plock
+#ifdef ilock
+#undef ilock
 #endif
-#ifdef prele
-#undef prele
+#ifdef irele
+#undef irele
 #endif
 /*
- * Lock an inode (should be called ilock).
- * If its already locked,
- * set the WANT bit and sleep.
+ * Lock an inode. If its already locked, set the WANT bit and sleep.
  */
-plock(ip)
-register struct inode *ip;
+ilock(ip)
+	register struct inode *ip;
 {
 
-	while(ip->i_flag&ILOCK) {
+	while (ip->i_flag&ILOCK) {
 		ip->i_flag |= IWANT;
 		sleep((caddr_t)ip, PINOD);
 	}
@@ -433,16 +429,14 @@ register struct inode *ip;
 }
 
 /*
- * Unlock an inode.
- * If WANT bit is on,
- * wakeup.
+ * Unlock an inode.  If WANT bit is on, wakeup.
  */
-prele(ip)
-register struct inode *ip;
+irele(ip)
+	register struct inode *ip;
 {
 
 	ip->i_flag &= ~ILOCK;
-	if(ip->i_flag&IWANT) {
+	if (ip->i_flag&IWANT) {
 		ip->i_flag &= ~IWANT;
 		wakeup((caddr_t)ip);
 	}
