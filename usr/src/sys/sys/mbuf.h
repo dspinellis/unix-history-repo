@@ -80,7 +80,7 @@ struct mbuf {
 	  if ((m)->m_type == MT_FREE) panic("mfree"); \
 	  mbstat.m_mtypes[(m)->m_type]--; (m)->m_type = MT_FREE; \
 	  if ((m)->m_off > MSIZE) { \
-		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
+		(n) = (struct mbuf *)(mtod(m, int)&~CLOFSET); \
 		if (--mclrefcnt[mtocl(n)] == 0) \
 		    { (n)->m_next = mclfree;mclfree = (n);mbstat.m_clfree++;} \
 	  } \
