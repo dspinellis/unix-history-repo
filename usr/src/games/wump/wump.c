@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
- * Copyright (c) 1989 Dave Taylor, Intuitive Systems.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -10,13 +10,13 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1989, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wump.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)wump.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
