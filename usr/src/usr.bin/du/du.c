@@ -1,8 +1,13 @@
-static char *sccsid = "@(#)du.c	4.2 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)du.c	4.3 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <ndir.h>
+
+#define howmany(x, y)	((x + y - 1) / y)
 #define EQ(x,y)	(strcmp(x,y)==0)
 #define ML	1000
 
@@ -39,8 +44,8 @@ char **argv;
 		++Noarg;
 
 	do {
-		strcpy(path, Noarg? ".": argv[i]);
-		strcpy(name, path);
+		(void) strcpy(path, Noarg? ".": argv[i]);
+		(void) strcpy(name, path);
 		if(np = rindex(name, '/')) {
 			*np++ = '\0';
 			if(chdir(*name? name: "/") == -1) {
@@ -57,22 +62,17 @@ char **argv;
 	exit(0);
 }
 
+DIR *dirp = NULL;
 long
 descend(np, fname)
 char *np, *fname;
 {
-	int dir = 0, /* open directory */
-		offset,
-		dsize,
-		entries,
-		dirsize;
-
-	struct direct dentry[BUFSIZ / sizeof (struct direct)];
 	register  struct direct *dp;
-	register char *c1, *c2;
+	register char *c1;
 	int i;
 	char *endofname;
 	long blocks = 0;
+	long curoff = NULL;
 
 	if(stat(fname,&Statb)<0) {
 		fprintf(stderr, "--bad status < %s >\n", name);
@@ -91,8 +91,9 @@ char *np, *fname;
 			++linked;
 		}
 	}
-	blocks = (Statb.st_size + 1023-1) >> 10;
-	if((Statb.st_mode&S_IFMT)!=S_IFDIR) {
+	blocks = howmany(Statb.st_size, 1024);
+
+	if((Statb.st_mode&S_IFMT) != S_IFDIR) {
 		if(Aflag)
 			printf("%ld	%s\n", blocks, np);
 		return(blocks);
@@ -102,59 +103,41 @@ char *np, *fname;
 	if(*(c1-1) == '/')
 		--c1;
 	endofname = c1;
-	dirsize = Statb.st_size;
 	if(chdir(fname) == -1)
 		return 0;
-	for(offset=0; offset < dirsize; offset += BUFSIZ) { /* each block */
-		dsize = BUFSIZ<(dirsize-offset)? BUFSIZ: (dirsize-offset);
-		if(!dir) {
-			if((dir=open(".",0))<0) {
-				fprintf(stderr, "--cannot open < %s >\n",
-					np);
-				goto ret;
-			}
-			if(offset) lseek(dir, (long)offset, 0);
-			if(read(dir, (char *)dentry, dsize)<0) {
-				fprintf(stderr, "--cannot read < %s >\n",
-					np);
-				goto ret;
-			}
-			if(dir > 10) {
-				close(dir);
-				dir = 0;
-			}
-		} else 
-			if(read(dir, (char *)dentry, dsize)<0) {
-				fprintf(stderr, "--cannot read < %s >\n",
-					np);
-				goto ret;
-			}
-		for(dp=dentry, entries=dsize>>4; entries; --entries, ++dp) {
-			/* each directory entry */
-			if(dp->d_ino==0
-			|| EQ(dp->d_name, ".")
-			|| EQ(dp->d_name, ".."))
-				continue;
-			c1 = endofname;
-			*c1++ = '/';
-			c2 = dp->d_name;
-			for(i=0; i<DIRSIZ; ++i)
-				if(*c2)
-					*c1++ = *c2++;
-				else
-					break;
-			*c1 = '\0';
-			if(c1 == endofname) /* ?? */
-				return 0L;
-			blocks += descend(np, endofname+1);
+	if (dirp != NULL)
+		closedir(dirp);
+	if ((dirp = opendir(".")) == NULL) {
+		fprintf(stderr, "--cannot open < %s >\n", np);
+		goto ret;
+	}
+	if ((dp = readdir(dirp)) == NULL) {
+		fprintf(stderr, "--cannot read < %s >\n", np);
+		closedir(dirp);
+		dirp = NULL;
+		goto ret;
+	}
+	for ( ; dp != NULL; dp = readdir(dirp)) {
+		/* each directory entry */
+		if (EQ(dp->d_name, ".") || EQ(dp->d_name, ".."))
+			continue;
+		c1 = endofname;
+		*c1++ = '/';
+		(void) strcpy(c1, dp->d_name);
+		curoff = telldir(dirp);
+		blocks += descend(np, endofname+1);
+		if (dirp == NULL) {
+			/* previous entry was a directory */
+			dirp = opendir(".");
+			seekdir(dirp, curoff);
 		}
 	}
+	closedir(dirp);
+	dirp = NULL;
 	*endofname = '\0';
 	if(!Sflag)
 		printf("%ld	%s\n", blocks, np);
 ret:
-	if(dir)
-		close(dir);
 	if(chdir("..") == -1) {
 		*endofname = '\0';
 		fprintf(stderr, "Bad directory <%s>\n", np);
