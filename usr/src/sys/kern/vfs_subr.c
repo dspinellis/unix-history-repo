@@ -176,7 +176,7 @@ extern struct vattr va_null;
 getnewvnode(tag, mp, vops, vpp)
 	enum vtagtype tag;
 	struct mount *mp;
-	struct vnodeops *vops;
+	int (**vops)();
 	struct vnode **vpp;
 {
 	register struct vnode *vp, *vq;
