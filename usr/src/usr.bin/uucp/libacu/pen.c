@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)pen.c	4.4 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)pen.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	Speaker's quick and dirty penril hack.  STA 4/1/85.

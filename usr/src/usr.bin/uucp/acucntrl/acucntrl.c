@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1985, 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.16	(Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1985, 1986 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)acucntrl.c	5.17 (Berkeley) %G%";
+#endif /* not lint */
 
 /*  acucntrl - turn around tty line between dialin and dialout
  * 
