@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ctype.3	6.7 (Berkeley) %G%
+.\"     @(#)ctype.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CTYPE 3
@@ -47,10 +47,11 @@
 .Fn tolower "int c"
 .Fn toupper "int c"
 .Sh DESCRIPTION
-The above fucntions perform character tests and conversions on the integer
+The above functions perform character tests and conversions on the integer
 .Ar c .
-They are available as macros, defined in the include file <ctype.h>, and
-as true functions in the C library.
+They are available as macros, defined in the include file
+.Aq Pa ctype.h ,
+or as true functions in the C library.
 See the specific manual pages for more information.
 .Sh SEE ALSO
 .Xr isalnum 3 ,
