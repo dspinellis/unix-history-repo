@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c	4.4 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -69,8 +69,8 @@ char **argv;
 	nice(-100);
 	nice(20);
 	nice(0);
-	ioctl(0, TIOCSETD, &ldisc);
 	ioctl(0, TIOCLSET, 0);
+	ioctl(0, TIOCNXCL, 0);
 	gtty(0, &ttyb);
 	ttyb.sg_erase = '#';
 	ttyb.sg_kill = '@';
@@ -84,6 +84,8 @@ char **argv;
 		ttyn = "/dev/tty??";
 
     loop:
+	ldisc = 0;
+	ioctl(0, TIOCSETD, &ldisc);
 	SCPYN(utmp.ut_name, "");
 	if (argc>1) {
 		SCPYN(utmp.ut_name, argv[1]);
@@ -105,8 +107,14 @@ char **argv;
 	if ((pwd = getpwnam(utmp.ut_name)) == NULL)
 		pwd = &nouser;
 	endpwent();
+	if (!strcmp(pwd->pw_shell, "/bin/csh")) {
+		ldisc = NTTYDISC;
+		ioctl(0, TIOCSETD, &ldisc);
+	}
 	if (*pwd->pw_passwd != '\0') {
+		nice(-4);
 		namep = crypt(getpass("Password:"),pwd->pw_passwd);
+		nice(4);
 		if (strcmp(namep, pwd->pw_passwd)) {
 bad:
 			printf("Login incorrect\n");
