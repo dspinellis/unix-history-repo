@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
+ * Copyright (c) 1987, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,42 +16,50 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
 /*
- * bcopy -- vax movc3 instruction
+ * bcopy -- copy memory block, handling overlap of source and destination
+ *	(vax movc3 instruction)
  */
+
+typedef int word;		/* size of "word" used for optimal copy speed */
+
 bcopy(src, dst, length)
-	register long *src, *dst;
+	register char *src, *dst;
 	register int length;
 {
 	if (length && src != dst)
 		if ((u_int)dst < (u_int)src)
-			if (((int)src | (int)dst | length) & 3)
+			if (((int)src | (int)dst | length) & (sizeof(word) - 1))
 				do	/* copy by bytes */
 					*dst++ = *src++;
 				while (--length);
 			else {
-				length >>= 2;
-				do	/* copy by longs */
-					*((long *)dst)++ = *((long *)src)++;
-				while (--length);
+				length /= sizeof(word);
+				do {	/* copy by words */
+					*(word *)dst = *(word *)src;
+					src += sizeof(word);
+					dst += sizeof(word);
+				} while (--length);
 			}
 		else {			/* copy backwards */
 			src += length;
 			dst += length;
-			if (((int)src | (int)dst | length) & 3)
+			if (((int)src | (int)dst | length) & (sizeof(word) - 1))
 				do	/* copy by bytes */
 					*--dst = *--src;
 				while (--length);
 			else {
-				length >>= 2;
-				do	/* copy by shorts */
-					*--((long *)dst) = *--((long *)src);
-				while (--length);
+				length /= sizeof(word);
+				do {	/* copy by words */
+					*(word *)dst = *(word *)src;
+					src -= sizeof(word);
+					dst -= sizeof(word);
+				} while (--length);
 			}
 		}
 }
