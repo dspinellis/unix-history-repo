@@ -1,0 +1,29 @@
+#
+#   Seperate index entries where the first letter of the entry
+#	changes.  Produce a ".LB" at the break point.  Provide
+#	the macro with the new letter
+#	
+
+procedure main()
+	local doubleQuote,
+	      line,
+	      oldFirstChar,
+	      firstChar
+
+	doubleQuote := cset("\"")
+	oldFirstChar := ""
+
+	# read until end of file
+	while line := read() do  {
+		line ? {
+			tab(upto(doubleQuote)) | write("can't find double q")
+			move(1)
+			firstChar :=  &subject[&pos] }
+	
+		# are the first two letters different?
+		if firstChar ~== oldFirstChar then {
+			write(".LB ", firstChar) }
+
+		oldFirstChar := firstChar
+		write(line) }
+	end
