@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.54		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.55		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.54		%G%);
+SCCSID(@(#)queue.c	3.55		%G%);
 
 /*
 **  Work queue.
@@ -80,13 +80,6 @@ queueup(df)
 	/* output list of recipient addresses */
 	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
 	{
-# ifdef DEBUG
-		if (tTd(40, 1))
-		{
-			printf("queueing ");
-			printaddr(q, FALSE);
-		}
-# endif DEBUG
 		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
 			       bitset(QQUEUEUP, q->q_flags))
 		{
@@ -386,6 +379,7 @@ dowork(w)
 		(void) alarm(0);
 		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
+		SendMode = SM_DELIVER;
 		ErrorMode = EM_MAIL;
 		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
