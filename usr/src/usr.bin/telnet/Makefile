@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.9 (Berkeley) %G%
+#	@(#)Makefile	1.10 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -37,7 +37,7 @@ telnet:	${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean: FRC
-	rm -f ${OBJS} core telnet
+	rm -f ${OBJS} core errs l.errs tags telnet
 
 clist:	FRC ${SRCS}
 	@for i in ${SRCS} ; \
