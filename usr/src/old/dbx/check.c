@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)check.c 1.4 %G%";
+static char sccsid[] = "@(#)check.c 1.5 %G%";
 
 /*
  * Check a tree for semantic correctness.
@@ -113,7 +113,7 @@ Node p;
     place = p->value.arg[1];
     cond = p->value.arg[2];
     if (exp != nil) {
-	if (exp->op != O_RVAL and exp->op != O_SYM) {
+	if (exp->op != O_RVAL and exp->op != O_SYM and exp->op != O_LCON) {
 	    beginerrmsg();
 	    fprintf(stderr, "expected variable, found ");
 	    prtree(stderr, exp);
