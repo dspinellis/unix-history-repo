@@ -1,0 +1,3 @@
+Mnvi.recover	nvi.recover.c	/^main(argc, argv)$/
+mail	nvi.recover.c	/^mail(host, id, when, fname)$/
+usage	nvi.recover.c	/^usage()$/

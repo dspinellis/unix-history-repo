@@ -1,0 +1,8 @@
+HASH	quot.c	/^#define	HASH(u)	((u) % DUHASH)$/
+Mquot	quot.c	/^main(argc, argv)$/
+bread	quot.c	/^bread(fd, bno, buf, cnt)$/
+check	quot.c	/^check(file, fsdir)$/
+qacct	quot.c	/^qacct(ip)$/
+qcmp	quot.c	/^qcmp(p1, p2)$/
+quotall	quot.c	/^quotall()$/
+report	quot.c	/^report()$/

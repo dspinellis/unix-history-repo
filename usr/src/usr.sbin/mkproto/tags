@@ -1,0 +1,14 @@
+Mmkproto	mkproto.c	/^main(argc, argv)$/
+alloc	mkproto.c	/^alloc(size)$/
+clrblock	mkproto.c	/^clrblock(fs, cp, h)$/
+descend	mkproto.c	/^descend(par, parinum)$/
+entry	mkproto.c	/^entry(ip, inum, str, buf)$/
+getnum	mkproto.c	/^getnum()$/
+getstr	mkproto.c	/^getstr()$/
+gmode	mkproto.c	/^gmode(c, s, m0, m1, m2, m3)$/
+ialloc	mkproto.c	/^ialloc(ip)$/
+iput	mkproto.c	/^iput(ip, aibc, ib, inum)$/
+isblock	mkproto.c	/^isblock(fs, cp, h)$/
+newblk	mkproto.c	/^newblk(buf, aibc, ib, size)$/
+rdfs	mkproto.c	/^rdfs(bno, size, bf)$/
+wtfs	mkproto.c	/^wtfs(bno, size, bf)$/
