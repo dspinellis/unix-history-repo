@@ -1,10 +1,13 @@
 #if !defined(lint) && !defined(LINT)
-static char rcsid[] = "$Header: do_command.c,v 2.1 90/07/18 00:23:38 vixie Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/libexec/crond/do_command.c,v 1.1.1.1 1993/06/12 14:55:03 rgrimes Exp $";
 #endif
 
-/* $Source: /jove_u3/vixie/src/cron/RCS/do_command.c,v $
- * $Revision: 2.1 $
- * $Log:	do_command.c,v $
+/* $Source: /a/cvs/386BSD/src/libexec/crond/do_command.c,v $
+ * $Revision: 1.1.1.1 $
+ * $Log: do_command.c,v $
+ * Revision 1.1.1.1  1993/06/12  14:55:03  rgrimes
+ * Initial import, 0.1 + pk 0.2.4-B1
+ *
  * Revision 2.1  90/07/18  00:23:38  vixie
  * Baseline for 4.4BSD release
  * 
@@ -61,6 +64,7 @@ static char rcsid[] = "$Header: do_command.c,v 2.1 90/07/18 00:23:38 vixie Exp $
 #include "cron.h"
 #include <signal.h>
 #include <pwd.h>
+#include <unistd.h>
 #if defined(BSD)
 # include <sys/wait.h>
 #endif /*BSD*/
@@ -75,7 +79,6 @@ do_command(cmd, u)
 	char	*cmd;
 	user	*u;
 {
-	extern int	fork(), _exit();
 	extern void	child_process(), log_it();
 	extern char	*env_get();
 
