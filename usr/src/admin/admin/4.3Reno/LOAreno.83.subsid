@@ -1,4 +1,4 @@
-.\" @(#)LOAreno.83.subsid	1.1 (CSRG - distribution) %G%
+.\" @(#)LOAreno.83.subsid	1.2 (CSRG - distribution) %G%
 .\" .so/usr3/staff/sellgren/BSD/LETTERS/UCHEADERS
 .ll 6.8i
 .nr LL 6.8i
@@ -35,6 +35,12 @@ execute this document on behalf of their respective companies and
 bind said companies to the extent set forth in this document.
 The University hereby agrees to provide a copy of 4.3 BSD-Reno to
 (Subsidiary name) based upon the forgoing warranties.
+.sp
+.LP
+The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee,
+on the type of media and for the fee indicated on Exhibit A, under the
+same terms and conditions set forth in the Agreement.
+.sp
 .nf
 .sp 2
 (Parent name)
