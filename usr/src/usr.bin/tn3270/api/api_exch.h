@@ -8,42 +8,43 @@
  */
 
 
-#define	EXCH_ASSOCIATE	23	/* Connect request [client->server] */
-#define	EXCH_SEND_AUTH	44	/* Send auth (password) [server->client] */
+#define	EXCH_ASSOCIATE		23	/* Connect [client->server] */
+#define	EXCH_DISASSOCIATE	39	/* Disconnect [client->server] */
+#define	EXCH_SEND_AUTH		44	/* Send password [server->client] */
 	/*
 	 * struct storeage_desc
 	 * char prompt[]
 	 * struct storeage_desc
 	 * char seed[]
 	 */
-#define	EXCH_AUTH	65	/* Authorization [client->server] */
+#define	EXCH_AUTH		65	/* Authorization [client->server] */
 	/*
 	 * struct storeage_desc
 	 * char authenticator[]
 	 */
-#define	EXCH_ASSOCIATED	78	/* You are now connected [server->client] */
-#define	EXCH_REJECTED	93	/* Too bad [server->client] */
+#define	EXCH_ASSOCIATED		78	/* Connected [server->client] */
+#define	EXCH_REJECTED		93	/* Too bad [server->client] */
 	/*
 	 * struct storeage_desc
 	 * char message[]
 	 */
 
-#define	EXCH_REQUEST	19	/* A request [client->server] */
+#define	EXCH_REQUEST		19	/* A request [client->server] */
 	/* struct regs,
 	 * struct sregs,
 	 * struct storage_desc
 	 * char bytes[]
 	 */
-#define	EXCH_GIMME	20	/* I need client storage [server->client] */
+#define	EXCH_GIMME		20	/* Send storage [server->client] */
 	/*
 	 * struct storage_desc
 	 */
-#define	EXCH_HEREIS	49	/* Here is some storage [BOTH WAYS] */
+#define	EXCH_HEREIS		49	/* Here is storage [BOTH WAYS] */
 	/*
 	 * struct storage_desc
 	 * char bytes[]
 	 */
-#define	EXCH_REPLY	87	/* End of discussion */
+#define	EXCH_REPLY		87	/* End of discussion */
 	/*
 	 * struct regs,
 	 * struct sregs,
