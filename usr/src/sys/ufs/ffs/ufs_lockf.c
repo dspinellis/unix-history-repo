@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.8 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -131,8 +131,19 @@ lf_setlock(lock)
 		}
 #endif /* LOCKF_DEBUG */
 		if (error = tsleep((caddr_t)lock, priority, lockstr, 0)) {
-			free(lock, M_LOCKF);
-			return (error);
+			/*
+			 * Delete ourselves from the waiting to lock list.
+			 */
+			for (block = lock->lf_next;
+			     block != NOLOCKF;
+			     block = block->lf_block) {
+				if (block->lf_block != lock)
+					continue;
+				block->lf_block = block->lf_block->lf_block;
+				free(lock, M_LOCKF);
+				return (error);
+			}
+			panic("lf_setlock: lost lock");
 		}
 	}
 	/*
