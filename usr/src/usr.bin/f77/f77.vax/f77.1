@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.1	5.1 (Berkeley) %G%
+.\"	@(#)f77.1	6.1 (Berkeley) %G%
 .\"
-.TH F77 1 "13 May 1983"
+.TH F77 1 ""
 .UC 4
 .SH NAME
 f77 \- Fortran 77 compiler
@@ -109,6 +109,9 @@ On machines which support short integers, make the default integer constants
 and variables short.
 .RB ( \-i4
 is the standard value of this option). All logical quantities will be short.
+.TP
+.B \-q
+Suppress printing of file names and program unit names during compilation.
 .TP
 .BR \-m
 Apply the M4 preprocessor to each `.r' file before transforming
@@ -220,13 +223,6 @@ itself are intended to be
 self-explanatory.
 Occasional messages may be produced by the loader.
 .SH BUGS
-This compiler is still somewhat experimental.
-The optimizer occasionally makes mistakes;
-it should be avoided when debugging if apparently incorrect results
-are obtained.
-Because of an assembler error, complaints about long branches may occur
-with very large source files; such errors can be avoided by splitting
-the sources into smaller sections.
-If necessary, the old version of
-.I f77
-can be resurrected from /usr/src/old.
+Formats in format statements are translated by the compiler;
+formats in I/O statements are translated during execution by the
+I/O library.
