@@ -12,7 +12,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_usrreq.c	7.14 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,7 +48,7 @@ uipc_usrreq(so, req, m, nam, control)
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
-	int error = 0;
+	register int error = 0;
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);
@@ -148,11 +148,8 @@ uipc_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_SEND:
-		if (control) {
-			error = unp_internalize(control);
-			if (error)
-				break;
-		}
+		if (control && (error = unp_internalize(control)))
+			break;
 		switch (so->so_type) {
 
 		case SOCK_DGRAM: {
@@ -177,10 +174,10 @@ uipc_usrreq(so, req, m, nam, control)
 				from = mtod(unp->unp_addr, struct sockaddr *);
 			else
 				from = &sun_noname;
-			if (sbspace(&so2->so_rcv) > 0 &&
-			    sbappendaddr(&so2->so_rcv, from, m, control)) {
+			if (sbappendaddr(&so2->so_rcv, from, m, control)) {
 				sorwakeup(so2);
 				m = 0;
+				control = 0;
 			} else
 				error = ENOBUFS;
 			if (nam)
@@ -203,9 +200,10 @@ uipc_usrreq(so, req, m, nam, control)
 			 * send buffer hiwater marks to maintain backpressure.
 			 * Wake up readers.
 			 */
-			if (control)
-				(void)sbappendrights(rcv, m, control);
-			else
+			if (control) {
+				(void)sbappendcontrol(rcv, m, control);
+				control = 0;
+			} else
 				sbappend(rcv, m);
 			snd->sb_mbmax -=
 			    rcv->sb_mbcnt - unp->unp_conn->unp_mbcnt;
@@ -271,6 +269,8 @@ uipc_usrreq(so, req, m, nam, control)
 		panic("piusrreq");
 	}
 release:
+	if (control)
+		m_freem(control);
 	if (m)
 		m_freem(m);
 	return (error);
@@ -576,19 +576,19 @@ unp_externalize(rights)
 	return (0);
 }
 
-unp_internalize(rights)
-	struct mbuf *rights;
+unp_internalize(control)
+	struct mbuf *control;
 {
+	register struct cmsghdr *cm = mtod(control, struct cmsghdr *);
 	register struct file **rp;
-	int oldfds = rights->m_len / sizeof (int);
-	register int i, fd;
 	register struct file *fp;
-	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
+	register int i, fd;
+	int oldfds;
 
-	if (cm->cmsg_type != SCM_RIGHTS || cm->cmsg_level != SOL_SOCKET)
+	if (cm->cmsg_type != SCM_RIGHTS || cm->cmsg_level != SOL_SOCKET ||
+	    cm->cmsg_len != control->m_len)
 		return (EINVAL);
 	oldfds = (cm->cmsg_len - sizeof (*cm)) / sizeof (int);
-	MCHTYPE(rights, MT_RIGHTS);
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		fd = *(int *)rp++;
@@ -674,14 +674,18 @@ unp_scan(m0, op)
 {
 	register struct mbuf *m;
 	register struct file **rp;
+	register struct cmsghdr *cm;
 	register int i;
 	int qfds;
 
 	while (m0) {
 		for (m = m0; m; m = m->m_next)
-			if (m->m_type == MT_RIGHTS && m->m_len) {
-				register struct cmsghdr *cm;
+			if (m->m_type == MT_CONTROL &&
+			    m->m_len >= sizeof(*cm)) {
 				cm = mtod(m, struct cmsghdr *);
+				if (cm->cmsg_level != SOL_SOCKET ||
+				    cm->cmsg_type != SCM_RIGHTS)
+					continue;
 				qfds = (cm->cmsg_len - sizeof *cm)
 						/ sizeof (struct file *);
 				rp = (struct file **)(cm + 1);
