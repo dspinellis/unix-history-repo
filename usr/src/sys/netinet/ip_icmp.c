@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.14 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,6 +34,8 @@
 #ifdef ICMPPRINTFS
 int	icmpprintfs = 0;
 #endif
+
+extern	struct protosw inetsw[];
 
 /*
  * Generate an error packet of type error
