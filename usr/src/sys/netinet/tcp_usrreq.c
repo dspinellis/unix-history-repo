@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_usrreq.c	8.3 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
