@@ -23,7 +23,7 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- *	@(#)eonvar.h	7.3 (Berkeley) %G%
+ *	@(#)eonvar.h	7.4 (Berkeley) %G%
  */
 
 #define EON_986_VERSION 0x3
@@ -126,6 +126,7 @@ typedef struct qhdr {
 struct eon_llinfo {
 	struct	qhdr el_qhdr;		/* keep all in a list */
 	int	el_flags;		/* cache valid ? */
+	int	el_snpaoffset;		/* IP address contained in dst nsap */
 	struct	rtentry *el_rt;		/* back pointer to parent route */
 	struct	eon_iphdr el_ei;	/* precomputed portion of hdr */
 	struct	route el_iproute;	/* if direct route cache IP info */
