@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.9	81/11/23	*/
+/*	uipc_socket2.c	4.10	81/11/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -268,17 +268,16 @@ sbdrop(sb, len)
 	while (len > 0) {
 		if (m == 0)
 			panic("sbdrop");
-		if (m->m_len <= len) {
-			len -= m->m_len;
-			sbfree(sb, m);
-			MFREE(m, mn);
-			m = mn;
-		} else {
+		if (m->m_len > len) {
 			m->m_len -= len;
 			m->m_off += len;
 			sb->sb_cc -= len;
 			break;
 		}
+		len -= m->m_len;
+		sbfree(sb, m);
+		MFREE(m, mn);
+		m = mn;
 	}
 	sb->sb_mb = m;
 }
