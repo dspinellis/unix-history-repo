@@ -1,4 +1,4 @@
-/* ip_input.c 1.7 81/10/28 */
+/* ip_input.c 1.8 81/10/28 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -354,7 +354,7 @@ ip_timeo()
 	int s = splnet();
 COUNT(IP_TIMEO);
 
-	for (fp = &ipq; fp; )
+	for (fp = ipq.next; fp != &ipq; )
 		if (--fp->ipq_ttl == 0)
 			fp = ip_freef(fp);
 		else
