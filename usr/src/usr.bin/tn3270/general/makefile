@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.2 (Berkeley) %G%
+#	@(#)makefile	3.3 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -90,7 +90,8 @@ SUBSO = genbsubs$O
 
 ALLS = vaxbsubs.s
 
-ALLPRINT =	${ALLH} ${ALLC} vaxbsubs.s genbsubs.c
+ALLHC=	${ALLH} ${ALLC}
+ALLPRINT =	${ALLHC} vaxbsubs.s genbsubs.c
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
@@ -116,6 +117,14 @@ clean:
 sccsclean:
 	-sccs clean
 	-sccs get makefile
+
+clist:	${ALLC}
+	@for i in ${ALLC} ; \
+		do (echo ${DIRPATH}$$i); done
+
+hclist:	${ALLHC}
+	@for i in ${ALLHC} ; \
+		do (echo ${DIRPATH}$$i); done
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \

@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.2 (Berkeley) %G%
+#	@(#)makefile	3.3 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -60,7 +60,9 @@ ALLC = apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c \
 
 ALLH = apilib.h api_exch.h asc_ebc.h astosc.h disp_asc.h dctype.h ebc_disp.h
 
-ALLPRINT = ${ALLH} ${ALLC}
+
+ALLHC=	${ALLH} ${ALLC}
+ALLPRINT =	${ALLHC}
 
 ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
@@ -103,6 +105,13 @@ t2:	apilib.a t2$O
 print:
 	${PRINT} ${ALLPRINT}
 
+clist:	${ALLC}
+	@for i in ${ALLC} ; \
+		do (echo ${DIRPATH}$$i); done
+
+hclist:	${ALLHC}
+	@for i in ${ALLHC} ; \
+		do (echo ${DIRPATH}$$i); done
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
