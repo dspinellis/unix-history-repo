@@ -7,7 +7,7 @@
 # include <ctype.h>
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.13		%G%);
+SCCSID(@(#)util.c	3.14		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -365,7 +365,7 @@ fullname(pw, buf)
 
 	if (*p == '*')
 		p++;
-	while (*p != '\0' && *p != ',' && *p != ';')
+	while (*p != '\0' && *p != ',' && *p != ';' && *p != '%')
 	{
 		if (*p == '&')
 		{
