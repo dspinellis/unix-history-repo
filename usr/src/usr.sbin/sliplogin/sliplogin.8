@@ -3,87 +3,136 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sliplogin.8	5.1 (Berkeley) %G%
+.\"	@(#)sliplogin.8	5.2 (Berkeley) %G%
 .\"
 .TH SLIPLOGIN 8 ""
-.UC 7
 .SH NAME
 sliplogin \- attach a serial line network interface
 .SH SYNOPSIS
 .B sliplogin
-[ {
-.I loginname
-|
-.I local
-.I remote
 [
-.I mask
-] } ]
+.I loginname
+]
 .SH DESCRIPTION
 .B sliplogin
-is used to turn the terminal line on the standard input of the process into
-a Serial Line IP link to a remote host.  In order to do this, the program
-needs to know the local interface address of the link, the remote interface
-address, and the applicable (sub)net mask.  There are three ways it may
-determine this information:
-.IP -
-If run by a non-root user id, the program will ignore any arguments and
-instead search a table (the
-.B /etc/hosts.slip
-file) for an entry matching that user id's login name, and set the parameters
-it needs from the contents of the matching entry.  This would be the typical
-usage when sliplogin is the shell for a remote site connecting via dialup
-SLIP.
-.IP -
-If run by root with a single argument, the described search procedure will
-be performed using the argument as a key.
-.IP -
-If run by root with two or three arguments, they are assumed to set the
-needed parameters explicitly.  A missing
-.I mask
-will cause the default network mask for that class network to be used.
+is used to turn the terminal line on standard input into
+a Serial Line IP (SLIP) link to a remote host.  To do this, the program
+searches the file
+.B /etc/slip.hosts
+for an entry matching
+.I loginname
+(which defaults to the current login name if omitted).
+If a matching entry is found, the line is configured appropriately
+for slip (8-bit transparent i/o) and converted to SLIP line
+discipline.  Then a shell script is invoked to initialize the slip
+interface with the appropriate local and remote IP address,
+netmask, etc.
 .PP
-The parameters may be specified either by name (which will be looked up
-using
-.BR gethostbyname (3N)
-and
-.BR getnetbyname (3N)),
-or as a dotted quad that the
-.BR inet_addr (3N)
-function can interpret.
-.PP
-The line speed is unchanged, but other terminal line parameters are
-initialized properly for the purpose.
+The usual initialization script is
+.B /etc/slip.login
+but, if particular hosts need special initialization, the file
+.BI /etc/slip.login. loginname
+will be executed instead if it exists.
+The script is invoked with the parameters
+.TP
+.I slipunit
+The unit number of the slip interface assigned to this line.  E.g.,
+.B 0
+for
+.BR sl0 .
+.TP
+.I speed
+The speed of the line.
+.TP
+.I args
+The arguments from the
+.B /etc/slip.hosts
+entry, in order starting with
+.IR loginname .
 .PP
 Only the super-user may attach a network interface.  The interface is
-automatically detached when the
+automatically detached when the other end hangs up or the
 .B sliplogin
-process dies.  If the kernel
-.B slip
+process dies.  If the kernel slip
 module has been configured for it, all routes through that interface will
-also disappear at the same time.
-.SH "TABLE FORMAT"
-The format of the
-.B /etc/hosts.slip
-file is as follows:
-.IP -
-blank lines and lines with a leading # are ignored.
-.IP -
-all other lines should have the form:
-.sp
-.br
-\fIname mode local-address remote-address netmask\fP
-.br
-.sp
-The
-.I name
-is usually the login name of a remote host that wishes to connect by
-dialup slip.  More generally it is any key you wish for the address
-and mask parameters specified on that line.  The
-.I mode
-is currently unused but must be specified.  Use
-.BR normal .
-The remaining parameters have been discussed.
+also disappear at the same time.  If there is other processing a site
+would like done on hangup, the file
+.B /etc/slip.logout
+or
+.BI /etc/slip.logout. loginname
+is executed if it exists.  It is given the same arguments as the login script.
+.SS Format of /etc/slip.hosts
+Comments (lines starting with a `#') and blank lines are ignored.
+Other lines must start with a
+.I loginname
+but the remaining arguments can be whatever is appropriate for the
+.B slip.login
+file that will be executed for that name.
+Arguments are separated by white space and follow normal
+.BR sh (1)
+quoting conventions (however,
+.I loginname
+cannot be quoted).
+Usually, lines have the form
+.RS
+.I
+loginname local-address remote-address netmask opt-args
+.RE
+where
+.I local-address
+and
+.I remote-address
+are the IP host names or addresses of the local and remote ends of the
+slip line and
+.I netmask
+is the appropriate IP netmask.  These arguments are passed
+directly to
+.BR ifconfig (8).
+.I Opt-args
+are optional arguments used to configure the line.
+.SH EXAMPLE
+The normal use of
+.B sliplogin
+is to create a
+.B /etc/passwd
+entry for each legal, remote slip site with
+.B sliplogin
+as the shell for that entry.  E.g.,
+.RS
+Sfoo:ikhuy6:2010:1:slip line to foo:/tmp:/etc/sliplogin
+.RE
+(Our convention is to name the account used by remote host
+.I hostname
+as
+.IR Shostname .)
+Then an entry is added to
+.B slip.hosts
+that looks like:
+.RS
+Sfoo	`hostname`	foo	netmask
+.RE
+where
+.I `hostname`
+will be evaluated by
+.B sh
+to the local host name and
+.I netmask
+is the local host IP netmask.
+.PP
+Note that
+.B sliplogin
+must be setuid to root and, while not a security hole, moral defectives
+can use it to place terminal lines in an unusable state and/or deny
+access to legitimate users of a remote slip line.  To prevent this,
+a site can create a group, say
+.IR slip ,
+that only the slip login accounts are put in then make sure that
+.B /etc/sliplogin
+is in group
+.I slip
+and mode 4550 (setuid root, only group
+.I slip
+can execute binary).
 .SH "DIAGNOSTICS"
 .B sliplogin
 logs various information to the system log daemon,
@@ -105,76 +154,22 @@ A
 .B ioctl
 to set the line parameters failed.
 .TP
-.BI "ioctl (I_PUSH): " reason
-A
-.SB I_PUSH
-.B ioctl
-to push the
-.B slip
-streams module onto the line failed.
-.TP
-.BI "ioctl (SLIOGUNIT): " reason
-A
-.SB SLIOGUNIT
-.B ioctl
-to get the interface unit number failed.
-.TP
-.BI "ioctl (SIOCSIFNETMASK): " reason
-A
-.SB SIOCSIFNETMASK
-.B ioctl
-to set the network mask for the SLIP interface failed.
-.TP
-.BI "ioctl (SIOCSIFDSTADDR): " reason
-A
-.SB SIOCSIFDSTADDR
-.B ioctl
-to set the destination address for the SLIP interface failed.
-.TP
-.BI "ioctl (SIOCSIFADDR): " reason
-A
-.SB SIOCSIFADDR
-.B ioctl
-to set the source address for the SLIP interface failed.
-.TP
-.BI "UID (" uid ") is unknown"
-An attempt was made to run
-.B sliplogin
-with an effective user
-.SM ID
-not in the password file.
-.TP
-.BI "/etc/hosts.slip: " reason
+.BI "/etc/slip.hosts: " reason
 The
-.B /etc/hosts.slip
+.B /etc/slip.hosts
 file could not be opened.
 .TP
-.BI "SLIP access denied for " user
-Access to SLIP logins was denied for the user
-.IR user .
-.TP
-.IB addr ": bad value"
-The address specification
-.I addr
-could not be converted to an Internet address.
+.BI "access denied for " user
+No entry for
+.I user
+was found in
+.BR /etc/slip.hosts .
 .SS Notice Severity
 .TP
-.BI "attaching slip" unit ": local " local " remote " remote " mask" mask
+.BI "attaching slip unit " unit " for " loginname
 SLIP unit
 .I unit
-was successfully attached, with a source address of
-.IR local ,
-a destination address of
-.IR remote ,
-and a netmask of
-.IR mask .
-.SH EXAMPLES
-.ta 8
-	sliplogin ip_utai < /dev/ttyb &
-.sp
-	sliplogin us-sl them-sl 255.255.255.0 < /dev/ttyb &
-.sp
-	sliplogin 192.12.174.1 192.12.174.2 < /dev/ttyb &
+was successfully attached.
 .SH "SEE ALSO"
-.BR slip (4M),
+.BR slattach (8),
 .BR syslogd (8)
