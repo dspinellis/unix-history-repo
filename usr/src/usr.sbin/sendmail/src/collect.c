@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.21	%G%";
+static char	SccsId[] = "@(#)collect.c	3.22	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -185,7 +185,7 @@ maketemp(from)
 	/* from person */
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
-		xfrom = hvalue("original-from");
+		xfrom = OrigFrom;
 	if (ArpaMode != ARPA_NONE)
 		setfrom(xfrom, (char *) NULL);
 
@@ -208,6 +208,8 @@ maketemp(from)
 		*/
 
 		p = hvalue("original-from");
+		if (p == NULL)
+			p = OrigFrom;
 		q = index(p, '(');
 		if (q != NULL)
 		{

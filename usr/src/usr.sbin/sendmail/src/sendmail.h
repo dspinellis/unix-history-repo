@@ -1,11 +1,16 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.38	%G%
+**	@(#)sendmail.h	3.39	%G%
 */
 
 
 
+# ifdef _DEFINE
+# define EXTERN
+# else  _DEFINE
+# define EXTERN extern
+# endif _DEFINE
 
 # include <stdio.h>
 # include <ctype.h>
@@ -113,7 +118,7 @@ typedef struct mailer	MAILER;
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
-extern MAILER *Mailer[];
+EXTERN MAILER *Mailer[MAXMAILERS+1];
 
 /* special mailer numbers */
 # define MN_LOCAL	0	/* local mailer */
@@ -138,7 +143,7 @@ struct header
 
 typedef struct header	HDR;
 
-extern HDR	*Header;	/* head of header list */
+EXTERN HDR	*Header;	/* head of header list */
 
 /*
 **  Header information structure.
@@ -243,7 +248,7 @@ struct statistics
 	long	stat_bt[MAXMAILERS];	/* kbytes to each mailer */
 };
 
-extern struct statistics	Stat;
+EXTERN struct statistics	Stat;
 extern long			kbytes();	/* for _bf, _bt */
 
 
@@ -253,33 +258,36 @@ extern long			kbytes();	/* for _bf, _bt */
 **  Global variables.
 */
 
-extern bool	FromFlag;	/* if set, "From" person is explicit */
-extern bool	MailBack;	/* mail back response on error */
-extern bool	BerkNet;	/* called from BerkNet */
-extern bool	WriteBack;	/* write back response on error */
-extern bool	NoAlias;	/* if set, don't do any aliasing */
-extern bool	ForceMail;	/* if set, mail even if already got a copy */
-extern bool	MeToo;		/* send to the sender also */
-extern bool	IgnrDot;	/* don't let dot end messages */
-extern bool	SaveFrom;	/* save leading "From" lines */
-extern bool	Verbose;	/* set if blow-by-blow desired */
-extern bool	GrabTo;		/* if set, get recipients from msg */
-extern bool	DontSend;	/* mark recipients as QDONTSEND */
-extern bool	NoReturn;	/* don't return letter to sender */
-extern int	OldUmask;	/* umask when sendmail starts up */
-extern int	Debug;		/* debugging level */
-extern int	Errors;		/* set if errors */
-extern int	ExitStat;	/* exit status code */
-extern int	ArpaMode;	/* ARPANET handling mode */
-extern long	MsgSize;	/* size of the message in bytes */
+EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
+EXTERN bool	MailBack;	/* mail back response on error */
+EXTERN bool	BerkNet;	/* called from BerkNet */
+EXTERN bool	WriteBack;	/* write back response on error */
+EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
+EXTERN bool	ForceMail;	/* if set, mail even if already got a copy */
+EXTERN bool	MeToo;		/* send to the sender also */
+EXTERN bool	IgnrDot;	/* don't let dot end messages */
+EXTERN bool	SaveFrom;	/* save leading "From" lines */
+EXTERN bool	Verbose;	/* set if blow-by-blow desired */
+EXTERN bool	GrabTo;		/* if set, get recipients from msg */
+EXTERN bool	DontSend;	/* mark recipients as QDONTSEND */
+EXTERN bool	NoReturn;	/* don't return letter to sender */
+EXTERN int	OldUmask;	/* umask when sendmail starts up */
+EXTERN int	Debug;		/* debugging level */
+EXTERN int	Errors;		/* set if errors */
+EXTERN int	ExitStat;	/* exit status code */
+EXTERN int	ArpaMode;	/* ARPANET handling mode */
+EXTERN long	MsgSize;	/* size of the message in bytes */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
-extern FILE	*TempFile;	/* mail temp file */
-extern ADDRESS	From;		/* the person it is from */
-extern char	*To;		/* the target person */
-extern int	HopCount;	/* hop count */
-extern long	CurTime;	/* time of this message */
-extern int	AliasLevel;	/* depth of aliasing */
+EXTERN FILE	*TempFile;	/* mail temp file */
+EXTERN ADDRESS	From;		/* the person it is from */
+EXTERN char	*To;		/* the target person */
+EXTERN int	HopCount;	/* hop count */
+EXTERN long	CurTime;	/* time of this message */
+EXTERN int	AliasLevel;	/* depth of aliasing */
+EXTERN char	*OrigFrom;	/* the From: line read from the message */
+EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
+EXTERN bool	HasXscrpt;	/* set if we have a transcript */
 
 
 # include	<sysexits.h>

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.6	%G%";
+static char	SccsId[] = "@(#)headers.c	3.7	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -46,13 +46,16 @@ chompheader(line, def)
 	*++p = '\0';
 	makelower(fname);
 
-	/* hack, hack -- save the old From: address */
-	if (!def && strcmp(fname, "from") == 0)
-		fname = "original-from";
-
 	/* strip field value on front */
 	if (*fvalue == ' ')
 		fvalue++;
+
+	/* hack, hack -- save From: line specially */
+	if (!def && strcmp(fname, "from") == 0)
+	{
+		OrigFrom = newstr(fvalue);
+		return (0);
+	}
 
 	/* search header list for this header */
 	for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)

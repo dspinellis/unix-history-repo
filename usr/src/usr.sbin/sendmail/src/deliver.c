@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.36	%G%";
+static char SccsId[] = "@(#)deliver.c	3.37	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -556,6 +556,8 @@ putmessage(fp, m)
 	extern char *arpadate();
 	bool anyheader = FALSE;
 	extern char *capitalize();
+	extern char *hvalue();
+	extern bool samefrom();
 	extern char SentDate[];
 
 	/*
@@ -575,13 +577,20 @@ putmessage(fp, m)
 	for (h = Header; h != NULL; h = h->h_link)
 	{
 		register char *p;
+		char *origfrom = OrigFrom;
 
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
 		{
 			p = ")><(";		/* can't happen (I hope) */
 			goto checkfrom;
 		}
-		if (bitset(H_DEFAULT, h->h_flags))
+		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
+		    strcmp(m->m_from, "$f") == 0)
+		{
+			p = origfrom;
+			origfrom = NULL;
+		}
+		else if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf]);
 			p = buf;
@@ -596,13 +605,11 @@ putmessage(fp, m)
 
 		/* hack, hack -- output Original-From field if different */
 	checkfrom:
-		if (strcmp(h->h_field, "from") == 0)
+		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
+		    !samefrom(p, origfrom) && hvalue("original-from") == NULL)
 		{
-			extern char *hvalue();
-			char *ofrom = hvalue("original-from");
-
-			if (ofrom != NULL && strcmp(p, ofrom) != 0)
-				fprintf(fp, "Original-From: %s\n", ofrom);
+			fprintf(fp, "Original-From: %s\n", origfrom);
+			anyheader = TRUE;
 		}
 	}
 	if (anyheader)
@@ -622,6 +629,28 @@ putmessage(fp, m)
 		setstat(EX_IOERR);
 	}
 	errno = 0;
+}
+/*
+**  SAMEFROM -- tell if two text addresses represent the same from address.
+**
+**	Parameters:
+**		ifrom -- internally generated form of from address.
+**		efrom -- external form of from address.
+**
+**	Returns:
+**		TRUE -- if they convey the same info.
+**		FALSE -- if any information has been lost.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+samefrom(ifrom, efrom)
+	char *ifrom;
+	char *efrom;
+{
+	return (strcmp(ifrom, efrom) == 0);
 }
 /*
 **  MAILFILE -- Send a message to a file.
