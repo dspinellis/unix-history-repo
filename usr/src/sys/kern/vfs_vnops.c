@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	6.3	84/08/29	*/
+/*	vfs_vnops.c	6.4	85/03/18	*/
 
 #include "../machine/reg.h"
 
@@ -34,7 +34,7 @@ access(ip, mode)
 	int mode;
 {
 	register m;
-	register int *gp;
+	register gid_t *gp;
 
 	m = mode;
 	if (m == IWRITE) {
