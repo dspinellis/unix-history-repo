@@ -331,7 +331,8 @@ kvm_getprocs(what, arg)
 			return (-1);
 		}
 		if (copysize % sizeof (struct kinfo_proc)) {
-			seterr("proc size mismatch");
+			seterr("proc size mismatch (kinfo_proc: %d)",
+				sizeof (struct kinfo_proc));
 			return (-1);
 		}
 		kvmnprocs = copysize / sizeof (struct kinfo_proc);
