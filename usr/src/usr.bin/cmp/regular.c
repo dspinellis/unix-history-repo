@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regular.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regular.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,10 +40,10 @@ c_regular(fd1, file1, skip1, len1, fd2, file2, skip2, len2)
 
 	length = MIN(len1, len2);
 	if ((p1 = (u_char *)mmap(NULL,
-	    (int)length, PROT_READ, MAP_FILE, fd1, skip1)) == (u_char *)-1)
+	    (size_t)length, PROT_READ, MAP_FILE, fd1, skip1)) == (u_char *)-1)
 		err("%s: %s", file1, strerror(errno));
 	if ((p2 = (u_char *)mmap(NULL,
-	    (int)length, PROT_READ, MAP_FILE, fd2, skip2)) == (u_char *)-1)
+	    (size_t)length, PROT_READ, MAP_FILE, fd2, skip2)) == (u_char *)-1)
 		err("%s: %s", file2, strerror(errno));
 
 	dfound = 0;
