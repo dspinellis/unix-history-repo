@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.bigram.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.bigram.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,7 +46,7 @@ main ( )
   	register char *cp;
 	register char *oldpath = buf1, *path = buf2;
 
-     	while ( gets ( path ) != NULL ) {
+     	while ( fgets ( path, sizeof(buf2), stdin ) != NULL ) {
 
 		/* skip longest common prefix */
 		for ( cp = path; *cp == *oldpath; cp++, oldpath++ )
