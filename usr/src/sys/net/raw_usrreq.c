@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,7 +19,7 @@
 #include "netisr.h"
 #include "raw_cb.h"
 
-#include "../vax/mtpr.h"
+#include "../machine/mtpr.h"
 
 /*
  * Initialize raw connection block q.
