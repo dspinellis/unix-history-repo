@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lpc.8	8.4 (Berkeley) %G%
+.\"     @(#)lpc.8	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LPC 8
@@ -140,7 +140,7 @@ abbreviation matches more than one command
 .It Sy "?Invalid command"
 no match was found
 .It Sy "?Privileged command"
-command can be executed by root only
+you must be a member of group "operator" or root to execute this command
 .El
 .Sh HISTORY
 The
