@@ -1,6 +1,6 @@
 	/* LINTLIBRARY */
 /*
- *	@(#)llib-port	1.2	(Berkeley)	%G%
+ *	@(#)llib-port	1.3	(Berkeley)	%G%
  */
 #include <stdio.h>
 	exit(s) {;}
@@ -43,5 +43,5 @@ char	*sprintf( s, f ) char *s, *f; { return(s);}
 	sscanf( s, f ) char *s, *f; { return(1); }
 	ungetc( c, f ) FILE *f; {  return(c); }
 	wdleng(){return(0); }
-extern	struct _iobuf _iob[];
+struct _iobuf _iob[1];
 char	_ctype_[129];
