@@ -1,4 +1,4 @@
-/*	va.c	4.12	82/04/01	*/
+/*	va.c	4.13	82/05/19	*/
 
 #include "va.h"
 #if NVA > 0
@@ -91,7 +91,7 @@ vaprobe(reg)
 	vaaddr->vacsh = VAPLOT;
 	vaaddr->vacsl = 0;
 	vaaddr->vawc = -1;
-	DELAY(10000);
+	DELAY(100000);
 	vaaddr->vacsl = 0;
 }
 
