@@ -1,4 +1,4 @@
-/*	config.h	1.12	83/05/18	*/
+/*	config.h	1.13	83/06/16	*/
 
 /*
  * Config.
@@ -10,7 +10,8 @@
 struct file_list {
 	struct	file_list *f_next;	
 	char	*f_fn;			/* the name */
-	short	f_type;			/* see below */
+	u_char	f_type;			/* see below */
+	u_char	f_flags;		/* see below */
 	short	f_special;		/* requires special make rule */
 	char	*f_needs;
 	/*
@@ -35,12 +36,21 @@ struct file_list {
 #define	f_argdev	fun.fus.fus_argdev
 #define	f_dumpdev	fun.fus.fus_dumpdev
 };
+
+/*
+ * Types.
+ */
 #define DRIVER		1
 #define NORMAL		2
 #define	INVISIBLE	3
 #define	PROFILING	4
 #define	SYSTEMSPEC	5
 #define	SWAPSPEC	6
+
+/*
+ * Attributes (flags).
+ */
+#define	CONFIGDEP	1
 
 struct	idlst {
 	char	*id;
