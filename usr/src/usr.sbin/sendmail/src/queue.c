@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -155,18 +155,18 @@ queueup(e, queueall, announce)
 	**  If there is no data file yet, create one.
 	*/
 
-	if (e->e_df == NULL)
+	if (!bitset(EF_HAS_DF, e->e_flags))
 	{
 		register FILE *dfp;
+		char dfname[20];
 		struct stat stbuf;
 		extern putbody();
 
-		e->e_df = queuename(e, 'd');
-		e->e_df = newstr(e->e_df);
-		fd = open(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode);
+		strcpy(dfname, queuename(e, 'd'));
+		fd = open(dfname, O_WRONLY|O_CREAT|O_TRUNC, FileMode);
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
 			syserr("!queueup: cannot create data temp file %s, uid=%d",
-				e->e_df, geteuid());
+				dfname, geteuid());
 		if (fstat(fd, &stbuf) < 0)
 			e->e_dfino = -1;
 		else
@@ -174,6 +174,7 @@ queueup(e, queueall, announce)
 			e->e_dfdev = stbuf.st_dev;
 			e->e_dfino = stbuf.st_ino;
 		}
+		e->e_flags |= EF_HAS_DF;
 		bzero(&mcibuf, sizeof mcibuf);
 		mcibuf.mci_out = dfp;
 		mcibuf.mci_mailer = FileMailer;
@@ -209,10 +210,9 @@ queueup(e, queueall, announce)
 		fprintf(tfp, "I%d/%d/%ld\n",
 			major(e->e_dfdev), minor(e->e_dfdev), e->e_dfino);
 
-	/* output type and name of data file */
+	/* output body type */
 	if (e->e_bodytype != NULL)
 		fprintf(tfp, "B%s\n", e->e_bodytype);
-	fprintf(tfp, "D%s\n", e->e_df);
 
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
@@ -365,8 +365,8 @@ queueup(e, queueall, announce)
 		/* rename (locked) tf to be (locked) qf */
 		qf = queuename(e, 'q');
 		if (rename(tf, qf) < 0)
-			syserr("cannot rename(%s, %s), df=%s, uid=%d",
-				tf, qf, e->e_df, geteuid());
+			syserr("cannot rename(%s, %s), uid=%d",
+				tf, qf, geteuid());
 
 		/* close and unlock old (locked) qf */
 		if (e->e_lockfp != NULL)
@@ -381,7 +381,7 @@ queueup(e, queueall, announce)
 # ifdef LOG
 	/* save log info */
 	if (LogLevel > 79)
-		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
+		syslog(LOG_DEBUG, "%s: queueup, qf=%s", e->e_id, qf);
 # endif /* LOG */
 
 	if (tTd(40, 1))
@@ -1258,10 +1258,10 @@ readqf(e)
 	OpMode = MD_DELIVER;
 	ctladdr = NULL;
 	e->e_dfino = -1;
+	e->e_msgsize = -1;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
 		register char *p;
-		struct stat st;
 		u_long qflags;
 		ADDRESS *q;
 
@@ -1311,19 +1311,7 @@ readqf(e)
 			break;
 
 		  case 'D':		/* data file name */
-			e->e_df = newstr(&bp[1]);
-			e->e_dfp = fopen(e->e_df, "r");
-			if (e->e_dfp == NULL)
-			{
-				syserr("readqf: cannot open %s", e->e_df);
-				e->e_msgsize = -1;
-			}
-			else if (fstat(fileno(e->e_dfp), &st) >= 0)
-			{
-				e->e_msgsize = st.st_size;
-				e->e_dfdev = st.st_dev;
-				e->e_dfino = st.st_ino;
-			}
+			/* obsolete -- ignore */
 			break;
 
 		  case 'T':		/* init time */
@@ -1400,6 +1388,26 @@ readqf(e)
 		errno = 0;
 		e->e_flags |= EF_CLRQUEUE | EF_FATALERRS | EF_RESPONSE;
 	}
+	else
+	{
+		/*
+		**  Arrange to read the data file.
+		*/
+
+		p = queuename(e, 'd');
+		e->e_dfp = fopen(p, "r");
+		if (e->e_dfp == NULL)
+		{
+			syserr("readqf: cannot open %s", p);
+		}
+		else if (fstat(fileno(e->e_dfp), &st) >= 0)
+		{
+			e->e_msgsize = st.st_size;
+			e->e_dfdev = st.st_dev;
+			e->e_dfino = st.st_ino;
+		}
+	}
+
 	return TRUE;
 }
 /*

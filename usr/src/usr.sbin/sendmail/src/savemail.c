@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -891,7 +891,7 @@ errbody(mci, e, separator)
 	*/
 
 	putline("", mci);
-	if (e->e_parent->e_df != NULL)
+	if (bitset(EF_HAS_DF, e->e_parent->e_flags))
 	{
 		sendbody = !bitset(EF_NO_BODY_RETN, e->e_parent->e_flags);
 

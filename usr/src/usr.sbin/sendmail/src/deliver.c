@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.131 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.132 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -358,7 +358,6 @@ sendall(e, mode)
 			ee->e_from.q_flags |= QDONTSEND;
 			ee->e_dfp = NULL;
 			ee->e_xfp = NULL;
-			ee->e_df = NULL;
 			ee->e_errormode = EM_MAIL;
 			
 			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
@@ -374,15 +373,17 @@ sendall(e, mode)
 					q->q_flags &= ~QQUEUEUP;
 				}
 
-			if (e->e_df != NULL && mode != SM_VERIFY)
+			if (mode != SM_VERIFY && bitset(EF_HAS_DF, e->e_flags))
 			{
+				char df1buf[20], df2buf[20];
+
 				ee->e_dfp = NULL;
-				ee->e_df = queuename(ee, 'd');
-				ee->e_df = newstr(ee->e_df);
-				if (link(e->e_df, ee->e_df) < 0)
+				strcpy(df1buf, queuename(e, 'd'));
+				strcpy(df2buf, queuename(ee, 'd'));
+				if (link(df1buf, df2buf) < 0)
 				{
 					syserr("sendall: link(%s, %s)",
-						e->e_df, ee->e_df);
+						df1buf, df2buf);
 				}
 			}
 #ifdef LOG
@@ -2245,12 +2246,14 @@ putbody(mci, e, separator)
 	**  Output the body of the message
 	*/
 
-	if (e->e_dfp == NULL && e->e_df != NULL)
+	if (e->e_dfp == NULL && bitset(EF_HAS_DF, e->e_flags))
 	{
-		e->e_dfp = fopen(e->e_df, "r");
+		char *df = queuename(e, 'd');
+
+		e->e_dfp = fopen(df, "r");
 		if (e->e_dfp == NULL)
 			syserr("putbody: Cannot open %s for %s from %s",
-			e->e_df, e->e_to, e->e_from.q_paddr);
+				df, e->e_to, e->e_from.q_paddr);
 	}
 	if (e->e_dfp == NULL)
 	{
@@ -2466,7 +2469,7 @@ putch:
 
 	if (ferror(e->e_dfp))
 	{
-		syserr("putbody: %s: read error", e->e_df);
+		syserr("putbody: df%s: read error", e->e_id);
 		ExitStat = EX_IOERR;
 	}
 
@@ -2585,13 +2588,15 @@ mailfile(filename, ctladdr, e)
 		}
 
 		/* we have to open the dfile BEFORE setuid */
-		if (e->e_dfp == NULL && e->e_df != NULL)
+		if (e->e_dfp == NULL && bitset(EF_HAS_DF, e->e_flags))
 		{
-			e->e_dfp = fopen(e->e_df, "r");
+			char *df = queuename(e, 'd');
+
+			e->e_dfp = fopen(df, "r");
 			if (e->e_dfp == NULL)
 			{
 				syserr("mailfile: Cannot open %s for %s from %s",
-					e->e_df, e->e_to, e->e_from.q_paddr);
+					df, e->e_to, e->e_from.q_paddr);
 			}
 		}
 
