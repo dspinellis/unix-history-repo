@@ -2,10 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	4.1 (Berkeley) %G%
+.\"	@(#)termcap.5	5.1 (Berkeley) %G%
 .\"
 .tr ||
-.TH TERMCAP 5 5/10/80
+.TH TERMCAP 5 "10 May 1980"
 .UC 3
 .SH NAME
 termcap \- terminal capability data base
@@ -19,7 +19,7 @@ used,
 by
 .IR vi (1)
 and
-.IR curses (3).
+.IR curses (3X).
 Terminals are described in
 .I termcap
 by giving a set of capabilities which they have, and by describing
@@ -275,7 +275,7 @@ while the Lear Siegler \s-2ADM\-3\s0 is described as
 .PP
 Cursor addressing in the terminal is described by a
 \fBcm\fR string capability, with 
-.IR printf (3s)
+.IR printf (3S)
 like escapes \fB%x\fR in it.
 These substitute to encodings of the current line or column position,
 while other characters are passed through unchanged.
@@ -562,7 +562,7 @@ must not exceed 1024. Since
 routines search the entry from left to right, and since the tc capability is
 replaced by the corresponding entry, the capabilities given at the left
 override the ones in the similar terminal.
-A capability can be cancelled with \fBxx@\fR where xx is the capability.
+A capability can be canceled with \fBxx@\fR where xx is the capability.
 For example, the entry
 .PP
 	hn\||\|2621nl:ks@:ke@:tc=2621:
@@ -575,7 +575,7 @@ user preferences.
 .DT
 /etc/termcap	file containing terminal descriptions
 .SH SEE ALSO
-ex(1), curses(3), termcap(3), tset(1), vi(1), ul(1), more(1)
+ex(1), curses(3X), termcap(3X), tset(1), vi(1), ul(1), more(1)
 .SH AUTHOR
 William Joy
 .br
@@ -584,7 +584,7 @@ Mark Horton added underlining and keypad support
 .I Ex
 allows only 256 characters for string capabilities, and the routines
 in 
-.I termcap(3)
+.IR termcap (3X)
 do not check for overflow of this buffer.
 The total length of a single entry (excluding only escaped newlines)
 may not exceed 1024.
