@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,11 +91,11 @@ main(argc, argv)
 	}
 #endif
 	if (kvm_openfiles(kernel, kmemf, NULL) == -1) {
-		fprintf(stderr, "nfsstate: kvm_openfiles: %s", kvm_geterr());
+		fprintf(stderr, "nfsstate: kvm_openfiles: %s\n", kvm_geterr());
 		exit(1);
 	}
 	if (kvm_nlist(nl) != 0) {
-		fprintf(stderr, "nfsstate: kvm_nlist: can't get names");
+		fprintf(stderr, "nfsstate: kvm_nlist: can't get names\n");
 		exit(1);
 	}
 
