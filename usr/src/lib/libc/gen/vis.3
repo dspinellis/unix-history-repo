@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)vis.3	5.1 (Berkeley) %G%
+.\"	@(#)vis.3	5.2 (Berkeley) %G%
 .\"
 .TH <CENCODE> <3> ""
 .UC 7
@@ -127,11 +127,11 @@ The decoder is not done recognizing a control sequence; pass it
 another character in c.
 .TP
 .I CDEC_OK
-A character was recognized and has been placed in *c.
+A character was recognized and has been placed in *cp.
 .TP
 .I CDEC_OKPUSH
-A character was recognized and has been placed in *c; however,
-the character which was just passed in c is not yet needed.
+A character was recognized and has been placed in *cp; however,
+the character that was just passed in c is not yet needed.
 When processing a stream of characters, the current character
 should be used again.
 .TP
