@@ -1,11 +1,14 @@
 %{
-/*	lang.l	1.1	81/02/24	*/
+/*	lang.l	1.2	81/02/24	*/
 
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
 
 #define tprintf if (do_trace) printf
+
+int yylval;
+
 /*
  * Key word table
  */
@@ -22,7 +25,7 @@ struct kt {
 	0,0,
 };
 %}
-WORD	[A-Za-z_]+
+WORD	[A-Za-z_][-A-Za-z_]*
 %%
 {WORD}		{
 			int i;
