@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)disktab.5	6.4 (Berkeley) %G%
+.\"	@(#)disktab.5	6.5 (Berkeley) %G%
 .\"
 .TH DISKTAB 5 ""
 .UC 5
@@ -12,8 +12,14 @@ disktab \- disk description file
 .B #include <disktab.h>
 .SH DESCRIPTION
 .I Disktab
-is a simple date base which describes disk geometries and
-disk partition characteristics.  The format is patterned
+is a simple database which describes disk geometries and
+disk partition characteristics.
+It is used
+.\"by the formatter(\c
+.\"IR format (8))
+.\"to determine how to format the disk, and
+to initialize the disk label on the disk.
+The format is patterned
 after the
 .IR termcap (5)
 terminal data base.  Entries in 
@@ -28,11 +34,27 @@ The following list indicates the normal values
 stored for each disk entry.
 .nf
 
-.ta \w'Name  'u +\w'Type  'u
+.ta \w'd[0-4] 'u +\w'Type  'u
 \fBName	Type	Description\fP
+
+ty	str	Type of disk (e.g. removable, winchester)
+dt	str	Type of controller (e.g. SMD, ESDI, floppy)
 ns	num	Number of sectors per track
 nt	num	Number of tracks per cylinder
 nc	num	Total number of cylinders on the disk
+sc	num	Number of sectors per cylinder, nc*nt default
+su	num	Number of sectors per unit, sc*nc default
+se	num	Sector size in bytes, DEV_BSIZE default
+sf	bool	Controller supports bad144-style bad sector forwarding
+rm	num	Rotation speed, rpm, 3600 default
+sk	num	Sector skew per track, default 0
+cs	num	Sector skew per cylinder, default 0
+hs	num	Headswitch time, usec, default 0
+ts	num	One-cylinder seek time, usec, default 0
+il	num	Sector interleave (n:1), 1 default
+d[0-4]	num	Drive-type-dependent parameters
+bs	num	Boot block size, default BBSIZE
+sb	num	Superblock size, default SBSIZE
 ba	num	Block size for partition `a' (bytes)
 bd	num	Block size for partition `d' (bytes)
 be	num	Block size for partition `e' (bytes)
@@ -41,10 +63,18 @@ bg	num	Block size for partition `g' (bytes)
 bh	num	Block size for partition `h' (bytes)
 fa	num	Fragment size for partition `a' (bytes)
 fd	num	Fragment size for partition `d' (bytes)
-fe	num	Fragment size for partition `e' (bytes)
+fe	num	Fragment size or partition `e' (bytes)
 ff	num	Fragment size for partition `f' (bytes)
 fg	num	Fragment size for partition `g' (bytes)
 fh	num	Fragment size for partition `h' (bytes)
+oa	num	Offset of partition `a' in sectors
+ob	num	Offset of partition `b' in sectors
+oc	num	Offset of partition `c' in sectors
+od	num	Offset of partition `d' in sectors
+oe	num	Offset of partition `e' in sectors
+of	num	Offset of partition `f' in sectors
+og	num	Offset of partition `g' in sectors
+oh	num	Offset of partition `h' in sectors
 pa	num	Size of partition `a' in sectors
 pb	num	Size of partition `b' in sectors
 pc	num	Size of partition `c' in sectors
@@ -53,20 +83,16 @@ pe	num	Size of partition `e' in sectors
 pf	num	Size of partition `f' in sectors
 pg	num	Size of partition `g' in sectors
 ph	num	Size of partition `h' in sectors
-se	num	Sector size in bytes
-sf	bool	supports bad144-style bad sector forwarding
-so	bool	partition offsets in sectors
-ty	str	Type of disk (e.g. removable, winchester)
+ta	str	Partition type of partition `a' (4.2BSD filesystem, swap, etc)
+tb	str	Partition type of partition `b'
+tc	str	Partition type of partition `c'
+td	str	Partition type of partition `d'
+te	str	Partition type of partition `e'
+tf	str	Partition type of partition `f'
+tg	str	Partition type of partition `g'
+th	str	Partition type of partition `h'
 .fi
-.PP
-.I Disktab
-entries may be automatically generated with the
-.I diskpart
-program.
 .SH FILES
 /etc/disktab
 .SH "SEE ALSO"
-newfs(8), diskpart(8), getdiskbyname(3)
-.SH BUGS
-This file shouldn't exist, the information should be
-stored on each disk pack.
+getdiskbyname(3), disklabel(5), disklabel(8), newfs(8)
