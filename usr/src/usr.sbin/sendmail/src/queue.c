@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.27		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.28		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.27		%G%);
+SCCSID(@(#)queue.c	3.28		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -508,9 +508,8 @@ dowork(w)
 		(void) mktemp(buf);
 		if (link(w->w_name, buf) < 0)
 		{
-			syserr("dowork: link(%s, %s)", w->w_name, buf);
-
-			/* it's ok to lie -- it will be run later */
+			/* this can happen normally; another queuer sneaks in */
+			/* syserr("dowork: link(%s, %s)", w->w_name, buf); */
 			exit(EX_OK);
 		}
 		ControlFile = newstr(buf);
