@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exit.c	6.11 (Berkeley) %G%
+ *	@(#)kern_exit.c	6.12 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -101,7 +101,6 @@ exit(rv)
 #endif
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
-	(void) spl5();		/* hack for mem alloc race XXX */
 	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
 	if (p->p_nxt = zombproc)		/* onto zombproc */
