@@ -3,24 +3,25 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 SRCS=	bibdoc.ms
-MACROS=	-msU
-PRINTER=Pdp
+MACROS=	-i char.macros -ms
+PRINTER=Plp
 BIB=	bib
 TROFF=	ditroff -${PRINTER}
 
-paper:	paper.${PRINTER}
+paper:	paper.${PRINTER} INDEX
 	lpr -${PRINTER} -n paper.${PRINTER}
 
-paper.${PRINTER}: ${SRCS}
-	${BIB} ${SRCS} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
+paper.${PRINTER}: ${SRCS} INDEX
+	${BIB} ${SRCS} | tbl | ${TROFF} ${MACROS} -t > paper.${PRINTER}
 
 clean:
 	rm -f paper.[PT]* *.spell errs Errs make.out
 
-spell:	${SRCS}
-	@for i in ${SRCS}; do \
-		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
-	done
+spell:	bibdoc.ms
+	spell bibdoc.ms | sort | comm -23 - spell.ok > bibdoc.spell 
+
+INDEX:	testrefs
+	invert testrefs
