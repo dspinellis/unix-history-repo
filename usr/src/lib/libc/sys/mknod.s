@@ -1,7 +1,6 @@
-/* mknod.s 4.1 82/12/04 */
+/* mknod.s 4.2 83/06/30 */
 
 #include "SYS.h"
 
 SYSCALL(mknod)
-	clrl	r0
 	ret

@@ -1,7 +1,6 @@
-/* close.s 4.1 82/12/04 */
+/* close.s 4.2 83/06/30 */
 
 #include "SYS.h"
 
 SYSCALL(close)
-	clrl	r0
 	ret
