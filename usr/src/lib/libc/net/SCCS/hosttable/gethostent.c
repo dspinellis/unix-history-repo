@@ -1,4 +1,4 @@
-/*	gethostent.c	4.5	83/01/02	*/
+/*	gethostent.c	4.6	83/12/21	*/
 
 #include <stdio.h>
 #include <sys/types.h>
