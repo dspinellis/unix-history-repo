@@ -1,4 +1,7 @@
-static char *sccsid = "@(#)spline.c	4.2 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)spline.c	4.3 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <math.h>
 
@@ -17,49 +20,49 @@ float zero = 0.;
 
 /* Spline fit technique
 let x,y be vectors of abscissas and ordinates
-    h   be vector of differences h9i8=x9i8-x9i-1988
+    h   be vector of differences hi=xi-xi-1
     y"  be vector of 2nd derivs of approx function
 If the points are numbered 0,1,2,...,n+1 then y" satisfies
 (R W Hamming, Numerical Methods for Engineers and Scientists,
 2nd Ed, p349ff)
-	h9i8y"9i-1988+2(h9i8+h9i+18)y"9i8+h9i+18y"9i+18
+	hiy"i-1+2(hi+hi+1)y"i+hi+1y"i+1
 	
-	= 6[(y9i+18-y9i8)/h9i+18-(y9i8-y9i-18)/h9i8]   i=1,2,...,n
+	= 6[(yi+1-yi)/hi+1-(yi-yi-1)/hi]   i=1,2,...,n
 
-where y"908 = y"9n+18 = 0
+where y"0 = y"n+1 = 0
 This is a symmetric tridiagonal system of the form
 
-	| a918 h928               |  |y"918|      |b918|
-	| h928 a928 h938            |  |y"928|      |b928|
-	|    h938 a938 h948         |  |y"938|  =   |b938|
+	| a1 h2               |  |y"1|      |b1|
+	| h2 a2 h3            |  |y"2|      |b2|
+	|    h3 a3 h4         |  |y"3|  =   |b3|
 	|         .           |  | .|      | .|
 	|            .        |  | .|      | .|
 It can be triangularized into
-	| d918 h928               |  |y"918|      |r918|
-	|    d928 h938            |  |y"928|      |r928|
-	|       d938 h948         |  |y"938|  =   |r938|
+	| d1 h2               |  |y"1|      |r1|
+	|    d2 h3            |  |y"2|      |r2|
+	|       d3 h4         |  |y"3|  =   |r3|
 	|          .          |  | .|      | .|
 	|             .       |  | .|      | .|
 where
-	d918 = a918
+	d1 = a1
 
-	r908 = 0
+	r0 = 0
 
-	d9i8 = a9i8 - h9i8829/d9i-18	1<i<_n
+	di = ai - hi2/di-1	1<i<_n
 
-	r9i8 = b9i8 - h9i8r9i-18/d9i-1i8	1<_i<_n
+	ri = bi - hiri-1/di-1i	1<_i<_n
 
 the back solution is
-	y"9n8 = r9n8/d9n8
+	y"n = rn/dn
 
-	y"9i8 = (r9i8-h9i+18y"9i+18)/d9i8	1<_i<n
+	y"i = (ri-hi+1y"i+1)/di	1<_i<n
 
-superficially, d9i8 and r9i8 don't have to be stored for they can be
+superficially, di and ri don't have to be stored for they can be
 recalculated backward by the formulas
 
-	d9i-18 = h9i8829/(a9i8-d9i8)	1<i<_n
+	di-1 = hi2/(ai-di)	1<i<_n
 
-	r9i-18 = (b9i8-r9i8)d9i-18/h9i8	1<i<_n
+	ri-1 = (bi-ri)di-1/hi	1<i<_n
 
 unhappily it turns out that the recursion forward for d
 is quite strongly geometrically convergent--and is wildly
@@ -69,74 +72,74 @@ results must be kept.
 
 Note that n-1 in the program below plays the role of n+1 in the theory
 
-Other boundary conditions_________________________
+Other boundary conditions_________________________
 
 The boundary conditions are easily generalized to handle
 
-	y908" = ky918", y9n+18"   = ky9n8"
+	y0" = ky1", yn+1"   = kyn"
 
 for some constant k.  The above analysis was for k = 0;
 k = 1 fits parabolas perfectly as well as stright lines;
 k = 1/2 has been recommended as somehow pleasant.
 
-All that is necessary is to add h918 to a918 and h9n+18 to a9n8.
+All that is necessary is to add h1 to a1 and hn+1 to an.
 
 
-Periodic case_____________
+Periodic case_____________
 
 To do this, add 1 more row and column thus
 
-	| a918 h928            h918 |  |y918"|     |b918|
-	| h928 a928 h938            |  |y928"|     |b928|
-	|    h938 a948 h948         |  |y938"|     |b938|
+	| a1 h2            h1 |  |y1"|     |b1|
+	| h2 a2 h3            |  |y2"|     |b2|
+	|    h3 a4 h4         |  |y3"|     |b3|
 	|                     |  | .|  =  | .|
 	|             .       |  | .|     | .|
-	| h918            h908 a908 |  | .|     | .|
+	| h1            h0 a0 |  | .|     | .|
 
-where h908=_ h9n+18
+where h0=_ hn+1
 
 The same diagonalization procedure works, except for
-the effect of the 2 corner elements.  Let s9i8 be the part
-of the last element in the i8th9 "diagonalized" row that
+the effect of the 2 corner elements.  Let si be the part
+of the last element in the ith "diagonalized" row that
 arises from the extra top corner element.
 
-		s918 = h918
+		s1 = h1
 
-		s9i8 = -s9i-18h9i8/d9i-18	2<_i<_n+1
+		si = -si-1hi/di-1	2<_i<_n+1
 
 After "diagonalizing", the lower corner element remains.
-Call t9i8 the bottom element that appears in the i8th9 colomn
+Call ti the bottom element that appears in the ith colomn
 as the bottom element to its left is eliminated
 
-		t918 = h918
+		t1 = h1
 
-		t9i8 = -t9i-18h9i8/d9i-18
+		ti = -ti-1hi/di-1
 
-Evidently t9i8 = s9i8.
+Evidently ti = si.
 Elimination along the bottom row
 introduces further corrections to the bottom right element
 and to the last element of the right hand side.
 Call these corrections u and v.
 
-	u918 = v918 = 0
+	u1 = v1 = 0
 
-	u9i8 = u9i-18-s9i-18*t9i-18/d9i-18
+	ui = ui-1-si-1*ti-1/di-1
 
-	v9i8 = v9i-18-r9i-18*t9i-18/d9i-18	2<_i<_n+1
+	vi = vi-1-ri-1*ti-1/di-1	2<_i<_n+1
 
 The back solution is now obtained as follows
 
-	y"9n+18 = (r9n+18+v9n+18)/(d9n+18+s9n+18+t9n+18+u9n+18)
+	y"n+1 = (rn+1+vn+1)/(dn+1+sn+1+tn+1+un+1)
 
-	y"9i8 = (r9i8-h9i+18*y9i+18-s9i8*y9n+18)/d9i8	1<_i<_n
+	y"i = (ri-hi+1*yi+1-si*yn+1)/di	1<_i<_n
 
-Interpolation in the interval x9i8<_x<_x9i+18 is by the formula
+Interpolation in the interval xi<_x<_xi+1 is by the formula
 
-	y = y9i8x9+8 + y9i+18x9-8 -(h8299i+18/6)[y"9i8(x9+8-x9+8839)+y"9i+18(x9-8-x9-8839)]
+	y = yix+ + yi+1x- -(h2i+1/6)[y"i(x+-x+3)+y"i+1(x--x-3)]
 where
-	x9+8 = x9i+18-x
+	x+ = xi+1-x
 
-	x9-8 = x-x9i8
+	x- = x-xi
 */
 
 float
