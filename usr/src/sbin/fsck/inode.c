@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ ckinode(dp, idesc)
 	register daddr_t *ap;
 	long ret, n, ndb, offset;
 	struct dinode dino;
+	quad_t remsize, sizepb;
 
 	if (idesc->id_fix != IGNORE)
 		idesc->id_fix = DONTKNOW;
@@ -54,21 +55,24 @@ ckinode(dp, idesc)
 			return (ret);
 	}
 	idesc->id_numfrags = sblock.fs_frag;
+	remsize = dino.di_size - sblock.fs_bsize * NDADDR;
+	sizepb = sblock.fs_bsize;
 	for (ap = &dino.di_ib[0], n = 1; n <= NIADDR; ap++, n++) {
 		if (*ap) {
 			idesc->id_blkno = *ap;
-			ret = iblock(idesc, n,
-				dino.di_size - sblock.fs_bsize * NDADDR);
+			ret = iblock(idesc, n, remsize);
 			if (ret & STOP)
 				return (ret);
 		}
+		sizepb *= NINDIR(&sblock);
+		remsize -= sizepb;
 	}
 	return (KEEPON);
 }
 
 iblock(idesc, ilevel, isize)
 	struct inodesc *idesc;
-	register long ilevel;
+	long ilevel;
 	quad_t isize;
 {
 	register daddr_t *ap;
@@ -91,7 +95,7 @@ iblock(idesc, ilevel, isize)
 	ilevel--;
 	for (sizepb = sblock.fs_bsize, i = 0; i < ilevel; i++)
 		sizepb *= NINDIR(&sblock);
-	nif = isize / sizepb + 1;
+	nif = howmany(isize , sizepb);
 	if (nif > NINDIR(&sblock))
 		nif = NINDIR(&sblock);
 	if (idesc->id_func == pass1check && nif < NINDIR(&sblock)) {
@@ -109,13 +113,15 @@ iblock(idesc, ilevel, isize)
 		flush(fswritefd, bp);
 	}
 	aplim = &bp->b_un.b_indir[nif];
-	for (ap = bp->b_un.b_indir, i = 1; ap < aplim; ap++, i++) {
+	for (ap = bp->b_un.b_indir; ap < aplim; ap++) {
 		if (*ap) {
 			idesc->id_blkno = *ap;
-			if (ilevel > 0)
-				n = iblock(idesc, ilevel, isize - i * sizepb);
-			else
+			if (ilevel == 0) {
 				n = (*func)(idesc);
+			} else {
+				n = iblock(idesc, ilevel, isize);
+				isize -= sizepb;
+			}
 			if (n & STOP) {
 				bp->b_flags &= ~B_INUSE;
 				return (n);
