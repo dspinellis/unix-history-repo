@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.16 (Berkeley) %G%
+ *	@(#)ip_output.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -245,12 +245,13 @@ panic("ip_output no HDR");
 	 * Update first fragment by trimming what's been copied out
 	 * and updating header, then send each fragment (in order).
 	 */
-	m_adj(m0, hlen + firstlen - ip->ip_len);
+	m = m0;
+	m_adj(m, hlen + firstlen - ip->ip_len);
 	m->m_pkthdr.len = hlen + firstlen;
 	ip->ip_len = htons((u_short)m->m_pkthdr.len);
 	ip->ip_off = htons((u_short)(ip->ip_off | IP_MF));
 	ip->ip_sum = 0;
-	ip->ip_sum = in_cksum(m0, hlen);
+	ip->ip_sum = in_cksum(m, hlen);
 sendorfree:
 	for (m = m0; m; m = m0) {
 		m0 = m->m_nextpkt;
