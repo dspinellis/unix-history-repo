@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	7.14 (Berkeley) %G%
+ *	@(#)ufsmount.h	7.15 (Berkeley) %G%
  */
 
 struct buf;
@@ -32,6 +32,9 @@ struct ufsmount {
 #define	um_lfs	ufsmount_u.lfs
 	struct	vnode *um_quotas[MAXQUOTAS];	/* pointer to quota files */
 	struct	ucred *um_cred[MAXQUOTAS];	/* quota file access cred */
+	u_long	um_nindir;			/* indirect ptrs per block */
+	u_long	um_bptrtodb;			/* indir ptr to disk block */
+	u_long	um_seqinc;			/* inc between seq blocks */
 	time_t	um_btime[MAXQUOTAS];		/* block quota time limit */
 	time_t	um_itime[MAXQUOTAS];		/* inode quota time limit */
 	char	um_qflags[MAXQUOTAS];		/* quota specific flags */
