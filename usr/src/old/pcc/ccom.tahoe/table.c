@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.19 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -738,11 +738,12 @@ MOD,	INAREG|FOREFF,
 		"	movl	AL,U1\n	clrl	A1\n	ediv	AR,A1,U1,A1\n",
 
 /* should only see UNSIGNED lhs here if converted from UCHAR/USHORT lhs */
+/* beware -- the ediv remainder operand must be a register */
 ASG MOD,	INAREG|FOREFF,
 	SAREG|AWD,	TINT|TLONG|TUNSIGNED|TULONG,
 	SAREG|AWD,	TINT|TLONG,
 		NAREG|NEVEN,	RLEFT|RESCC,
-		"	ZM	ediv	AR,A1,A1,AL\n",
+		"	ZM	ediv	AR,A1,U1,A1\n	movl	A1,AL\n",
 
 ASG MOD,	INAREG|FOREFF,
 	SAREG|AWD,	TINT|TLONG|TUNSIGNED|TULONG,
@@ -754,7 +755,7 @@ ASG MOD,	INAREG|FOREFF,
 	SAREG|AWD,	TINT|TLONG|TUNSIGNED|TULONG,
 	SCON,	ANYUSIGNED,
 		NAREG|NEVEN,	RLEFT,
-		"	movl	AL,U1\n	clrl	A1\n	ediv	AR,A1,A1,AL\n",
+		"	movl	AL,U1\n	clrl	A1\n	ediv	AR,A1,U1,A1\n	movl	A1,AL\n",
 
 /* XXX is this supposed to help on overflow? */
 ASG MUL,	INAREG|FOREFF|FORCC,
