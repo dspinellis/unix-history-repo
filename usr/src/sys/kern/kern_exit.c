@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.16 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,7 +110,10 @@ exit(rv)
 			vgoneall(p->p_session->s_ttyvp);
 			vrele(p->p_session->s_ttyvp);
 			p->p_session->s_ttyvp = NULL;
-			p->p_session->s_ttyp = NULL;
+			/*
+			 * s_ttyp is not zero'd; we use this to indicate
+			 * that the session once had a controlling terminal.
+			 */
 		}
 	}
 	VOP_LOCK(u.u_cdir);
@@ -167,6 +170,10 @@ done:
 	}
 	p->p_xstat = rv;
 	*p->p_ru = u.u_ru;
+	i = splclock();
+	p->p_ru->ru_stime = p->p_stime;
+	p->p_ru->ru_utime = p->p_utime;
+	splx(i);
 	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
