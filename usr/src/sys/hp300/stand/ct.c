@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.2 (Berkeley) %G%
+ *	@(#)ct.c	7.3 (Berkeley) %G%
  */
 
 /*
  * CS80 tape driver
  */
-#include "sys/types.h"
+#include <sys/param.h>
 #include "../dev/ctreg.h"
 
 #include "saio.h"
@@ -156,12 +156,12 @@ ctstrategy(io, func)
 	ct_ioc.slen = C_SLEN;
 	ct_ioc.nop3 = C_NOP;
 top:
-	if (func == READ) {
+	if (func == F_READ) {
 		ct_ioc.cmd = C_READ;
 		ct_ioc.addr = rs->sc_blkno;
 		ct_ioc.len = io->i_cc;
 	}
-	else if (func == WRITE) {
+	else if (func == F_WRITE) {
 		ct_ioc.cmd = C_WRITE;
 		ct_ioc.addr = rs->sc_blkno;
 		ct_ioc.len = io->i_cc;
@@ -184,7 +184,7 @@ retry:
 	if (func != MTREW) {
 		hpibswait(unit);
 		hpibgo(unit, C_EXEC, io->i_ma, io->i_cc,
-			func != WRITE ? READ : WRITE);
+			func != F_WRITE ? F_READ : F_WRITE);
 		hpibswait(unit);
 	}
 	else {
