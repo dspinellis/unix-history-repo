@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.15 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -604,7 +604,7 @@ OPLTYPE,	FORARG,
 
 OPLTYPE,	FORARG,
 	SANY,	TANY,
-	SAREG|AWD,	TDOUBLE,
+	SAREG|SNAME|SOREG,	TDOUBLE,
 		0,	RNULL,
 		"	pushl	UR\n	pushl	AR\n",
 
@@ -950,13 +950,25 @@ OPSIMP,	INAREG|INTAREG|FORCC,
 		"	movl	AL,A1\n",
 
 OPSIMP,	INAREG|INTAREG|FORCC,
-	AWD,	TDOUBLE,
+	SIREG,	TDOUBLE,
+	SZERO,	TANY,
+		NAREG,	RESC1|RESCC,
+		"	ldd	AL\n	std	A1\n",
+
+OPSIMP,	INAREG|INTAREG|FORCC,
+	SAREG|SNAME|SOREG,	TDOUBLE,
 	SZERO,	TANY,
 		NAREG,	RESC1|RESCC,
 		"	movl	UL,U1\n	movl	AL,A1\n",
 
 MUL,	INAREG|INTAREG|FORCC,
-	SAREG|AWD,	TDOUBLE,
+	SIREG,	TDOUBLE,
+	SZERO,	TANY,
+		NAREG|NASR,	RESC1|RESCC,
+		"	cvld	$0\n	std	A1\n",
+
+MUL,	INAREG|INTAREG|FORCC,
+	SAREG|SNAME|SOREG,	TDOUBLE,
 	SZERO,	TANY,
 		NAREG|NASR,	RESC1|RESCC,
 		"	clrl	U1\n	clrl	A1\n",
