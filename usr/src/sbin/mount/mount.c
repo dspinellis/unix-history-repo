@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)mount.c	5.28 (Berkeley) %G%";
 #include <fstab.h>
 #include <errno.h>
 #include <stdio.h>
+#include <signal.h>
 #include <strings.h>
 #include <sys/mount.h>
 #ifdef NFS
@@ -93,10 +94,11 @@ main(argc, argv, arge)
 	extern int optind;
 	register struct fstab *fs;
 	register int cnt;
-	int all, ch, rval, flags, i;
+	int all, ch, rval, flags, ret, pid, i;
 	long mntsize;
 	struct statfs *mntbuf, *getmntpt();
 	char *type, *options = NULL;
+	FILE *pidfile;
 
 	envp = arge;
 	all = 0;
@@ -185,11 +187,9 @@ main(argc, argv, arge)
 			fs = getfsfile("/");
 			strcpy(mntbuf->f_mntfromname, fs->fs_spec);
 		}
-		exit(mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
-		    updateflg, type, options, NULL));
-	}
-
-	if (argc == 1) {
+		ret = mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
+		    updateflg, type, options, NULL);
+	} else if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
 			fprintf(stderr,
 			    "mount: unknown special file or file system %s.\n",
@@ -202,14 +202,22 @@ main(argc, argv, arge)
 			exit(1);
 		}
 		mnttype = getmnttype(fs->fs_vfstype);
-		exit(mountfs(fs->fs_spec, fs->fs_file, updateflg,
-		    type, options, fs->fs_mntops));
-	}
-
-	if (argc != 2)
+		ret = mountfs(fs->fs_spec, fs->fs_file, updateflg,
+		    type, options, fs->fs_mntops);
+	} else if (argc != 2) {
 		usage();
-
-	exit(mountfs(argv[0], argv[1], updateflg, type, options, NULL));
+		ret = 1;
+	} else {
+		ret = mountfs(argv[0], argv[1], updateflg, type, options, NULL);
+	}
+	if ((pidfile = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
+		pid = 0;
+		fscanf(pidfile, "%d", &pid);
+		fclose(pidfile);
+		if (pid > 0)
+			kill(pid, SIGHUP);
+	}
+	exit (ret);
 }
 
 mountfs(spec, name, flags, type, options, mntopts)
@@ -237,7 +245,10 @@ mountfs(spec, name, flags, type, options, mntopts)
 			getufsopts(options, &flags);
 		args.fspec = spec;
 		args.exroot = DEFAULT_ROOTUID;
-		args.exflags = getexportflags(name, flags);
+		if (flags & M_RDONLY)
+			args.exflags = M_EXRDONLY;
+		else
+			args.exflags = 0;
 		argp = (caddr_t)&args;
 		break;
 
@@ -523,32 +534,6 @@ makevfslist(fslist)
 	}
 	av[i++] = 0;
 	return (av);
-}
-
-/*
- * Check to see if a UFS filesystem is being exported.
- */
-getexportflags(name, mntflags)
-	char *name;
-	int mntflags;
-{
-	FILE *fd;
-	int flags = 0;
-	char *cp, line[BUFSIZ];
-
-	if (mntflags & M_RDONLY)
-		flags |= M_EXRDONLY;
-	if ((fd = fopen(_PATH_EXPORTS, "r")) == NULL)
-		return (flags);
-	while (fgets(line, BUFSIZ, fd)) {
-		cp = strtok(line, " \t\n");
-		if (strcmp(cp, name))
-			continue;
-		flags |= M_EXPORTED;
-		break;
-	}
-	fclose(fd);
-	return (flags);
 }
 
 #ifdef NFS
