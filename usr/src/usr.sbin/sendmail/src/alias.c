@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.33.1.1		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.34		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.33.1.1		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.34		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -505,38 +505,4 @@ forward(user, sendq)
 
 	/* we do have an address to forward to -- do it */
 	include(buf, "forwarding", user, sendq);
-}
-/*
-**  HOSTALIAS -- alias a host name
-**
-**	Given a host name, look it up in the host alias table
-**	and return it's value.  If nothing, return NULL.
-**
-**	Parameters:
-**		a -- address to alias.
-**
-**	Returns:
-**		text result of aliasing.
-**		NULL if none.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-hostalias(a)
-	register ADDRESS *a;
-{
-	char buf[MAXNAME+2];
-	register char *p;
-
-	(void) strcpy(buf, "/");
-	(void) strcat(buf, a->q_host);
-	makelower(buf);
-
-	p = aliaslookup(buf);
-	if (p == NULL)
-		return (NULL);
-	(void) sprintf(buf, p, a->q_user);
-	return (newstr(buf));
 }

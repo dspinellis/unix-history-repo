@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.83		%G%);
+SCCSID(@(#)deliver.c	3.84		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1221,30 +1221,14 @@ remotename(name, m, force)
 
 	define('x', getxpart(name));
 	pvp = prescan(name, '\0');
-	for (;;)
+	rewrite(pvp, 1);
+	rewrite(pvp, 3);
+	if (**pvp == CANONNET)
 	{
-		rewrite(pvp, 1);
-		rewrite(pvp, 3);
-		if (**pvp == CANONNET)
-		{
-			auto ADDRESS a;
-			register char *p;
-			extern char *hostalias();
-
-			/* oops... resolved to something */
-			if (buildaddr(pvp, &a) == NULL)
-				return (name);
-			p = hostalias(&a);
-			if (p == NULL)
-				return (name);
-			pvp = prescan(p, '\0');
-		}
-		else
-		{
-			cataddr(pvp, lbuf, sizeof lbuf);
-			break;
-		}
+		/* oops... resolved to something */
+		return (name);
 	}
+	cataddr(pvp, lbuf, sizeof lbuf);
 
 	/* make the name relative to the receiving mailer */
 	define('f', lbuf);
