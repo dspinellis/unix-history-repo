@@ -1,3 +1,4 @@
+/*	printcap.c	1.3	81/06/01	*/
 /* Copyright (c) 1979 Regents of the University of California */
 #define	BUFSIZ	1024
 #define MAXHOP	32	/* max number of tc= indirections */
