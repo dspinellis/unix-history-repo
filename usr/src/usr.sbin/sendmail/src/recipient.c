@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -289,7 +289,7 @@ recipient(a, sendq, aliaslevel, e)
 			else if (bitset(QSELFREF, q->q_flags))
 				q->q_flags |= a->q_flags & ~QDONTSEND;
 			a = q;
-			goto testselfdestruct;
+			goto done;
 		}
 	}
 
