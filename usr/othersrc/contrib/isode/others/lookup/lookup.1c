@@ -1,0 +1,59 @@
+.TH LOOKUP 1C "03 Jul 1988"
+.\" $Header: /f/osi/others/lookup/RCS/lookup.1c,v 7.1 91/02/22 09:27:31 mrose Interim $
+.\"
+.\"
+.\" $Log:	lookup.1c,v $
+.\" Revision 7.1  91/02/22  09:27:31  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:56:35  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+lookup \- password lookup service -- initiator
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B lookup
+host
+\%[operation\0[\0arguments\0...\0]\0]
+.in -.5i
+.SH DESCRIPTION
+The \fIlookup\fR program requests an operation from the password
+lookup service provided by a server using remote operations.
+The currently supported operations are:
+.sp
+.in +.5i
+.nf
+.ta \w'\fBlookupUser\fR  'u
+\fIoperation\fR	\fIdescription\fR
+\fBlookupUser\fR	lookup based on user-name
+\fBlookupUID\fR	lookup based on user-ID
+.re
+.fi
+.in -.5i
+.sp
+This program is provided primarily as an example of how one can use
+\fIThe Application Cookbook\fR to write programs which use remote operations.
+It initiates remote operations to the \*(lqisode passwd lookup
+demo\*(rq service. 
+.PP
+If no operation is given on the command line,
+then \fIlookup\fR enters interactive mode:
+\fIlookup\fR will examine each line of the standard\-input,
+treating the first word as the operation, and any remaining words as
+arguments.
+.PP
+The pseudo\-operations \fIhelp\fR and \fIquit\fR do the obvious things.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH DIAGNOSTICS
+Obvious.
+.SH AUTHOR
+Marshall T. Rose

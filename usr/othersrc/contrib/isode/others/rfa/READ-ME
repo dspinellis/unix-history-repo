@@ -1,0 +1,26 @@
+[ READ-ME - Mon Jan 14 13:52:06 1991 - Remote File Access - /mtr ]
+
+
+ RFA - Remote File Access -  Contributed by Oliver Wenzel, GMD Berlin 1990
+
+ Access and Management for a partial file system tree that exists
+ at two sites, either as master files or slave files. 
+
+ See config.h for compile time options
+
+ See file $(ETCDIR)/rfatailor for run-time configuration setup
+ 
+ See file rfa.tr for a detailed description ([t|n]roff -ms rfa.tr).
+ See file rfa.ps for a PostScript version of rfa.tr
+
+
+ Comments to:
+
+ ****************************************************************************
+ * Dipl.Inf. ******** Internet: wenzel%fokus.berlin.gmd.dbp.de@relay.cs.net *
+ ***  Oliver Wenzel  ****  UUCP: wenzel%fokus.berlin.gmd.dbp.de@unido.uucp **
+ ******  GMD - FOKUS  *********  X.400: wenzel@fokus.berlin.gmd.dbp.de ******
+ *********  D-1000 Berlin 12  ******* Phone: +49 03 254-232  **************** 
+ ************  Hardenbergplatz 2  ********* FAX: +49 03 254-202  ************
+ ****************************************************************************
+
