@@ -7,56 +7,110 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cga.c	7.2 (Berkeley) %G%
+ *	@(#)cga.c	7.3 (Berkeley) %G%
  */
 
-typedef unsigned short u_short;
-typedef unsigned char u_char;
+#include "param.h"
 
-#define	CRT_TXTADDR	((u_short *)0xb8000)
 #define	COL		80
 #define	ROW		25
 #define	CHR		2
+#define MONO_BASE	0x3B4
+#define MONO_BUF	0xB0000
+#define CGA_BASE	0x3D4
+#define CGA_BUF		0xB8000
 
-u_short	*crtat;
-u_char	color = 0xe ;
-int row;
+static u_char	att = 0x7 ;
+u_char *Crtat = (u_char *)CGA_BUF;
 
-sput(c) u_char c; {
+static unsigned int addr_6845 = CGA_BASE;
+cursor(pos)
+int pos;
+{
+	outb(addr_6845,14);
+	outb(addr_6845+1,pos >> 8);
+	outb(addr_6845,15);
+	outb(addr_6845+1,pos&0xff);
+}
+
+sput(c)
+u_char c;
+{
+
+	static u_char *crtat = 0;
+	unsigned cursorat; u_short was;
+	u_char *cp;
 
 	if (crtat == 0) {
-		crtat = CRT_TXTADDR; bzero (crtat,COL*ROW*CHR);
+
+		/* XXX probe to find if a color or monochrome display */
+		was = *(u_short *)Crtat;
+		*(u_short *)Crtat = 0xA55A;
+		if (*(u_short *)Crtat != 0xA55A) {
+			Crtat = (u_char *) MONO_BUF;
+			addr_6845 = MONO_BASE;
+		}
+		*(u_short *)Crtat = was;
+
+		/* Extract cursor location */
+		outb(addr_6845,14);
+		cursorat = inb(addr_6845+1)<<8 ;
+		outb(addr_6845,15);
+		cursorat |= inb(addr_6845+1);
+
+		if(cursorat <= COL*ROW) {
+			crtat = Crtat + cursorat*CHR;
+			att = crtat[1];	/* use current attribute present */
+		} else	crtat = Crtat;
+
+		/* clean display */
+		for (cp = crtat; cp < Crtat+ROW*COL*CHR; cp += 2) {
+			cp[0] = ' ';
+			cp[1] = att;
+		}
 	}
-	if (crtat >= (CRT_TXTADDR+COL*ROW*CHR)) {
-		crtat = CRT_TXTADDR+COL*(ROW-1); row = 0;
-	}
-	switch(c) {
+
+	switch (c) {
 
 	case '\t':
-		do {
-			*crtat++ = (color<<8)| ' '; row++ ;
-		} while (row %8);
+		do
+			sput(' ');
+		while ((int)crtat % (8*CHR));
 		break;
 
 	case '\010':
-		crtat--; row--;
+		crtat -= CHR;
 		break;
 
 	case '\r':
-		bzero (crtat,(COL-row)*CHR) ; crtat -= row ; row = 0;
+		crtat -= (crtat - Crtat) % (COL*CHR);
 		break;
 
 	case '\n':
-		if (crtat >= CRT_TXTADDR+COL*(ROW-1)) { /* scroll */
-			bcopy(CRT_TXTADDR+COL, CRT_TXTADDR,COL*(ROW-1)*CHR);
-			bzero (CRT_TXTADDR+COL*(ROW-1),COL*CHR) ;
-			crtat -= COL ;
-		}
-		crtat += COL ;
+		crtat += COL*CHR ;
 		break;
 
 	default:
-		*crtat++ = (color<<8)| c; row++ ;
+		crtat[0] = c;
+		crtat[1] = att;
+		crtat += CHR;
 		break ;
 	}
+
+#ifndef SMALL
+	/* implement a scroll */
+	if (crtat >= Crtat+COL*ROW*CHR) {
+		/* move text up */
+		bcopy(Crtat+COL*CHR, Crtat, COL*(ROW-1)*CHR);
+
+		/* clear line */
+		for (cp = Crtat+ COL*(ROW-1)*CHR;
+			cp < Crtat + COL*ROW*CHR ; cp += 2)
+			cp[0] = ' ';
+
+		crtat -= COL*CHR ;
+	}
+#endif
+
+	cursor((crtat-Crtat)/CHR);
 }
