@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.6		%G%);
+SCCSID(@(#)envelope.c	4.7		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -539,6 +539,7 @@ setsender(from)
 	register struct passwd *pw = NULL;
 	char *realname = NULL;
 	char buf[MAXNAME];
+	char pvpbuf[PSBUFSIZE];
 	extern char *macvalue();
 	extern char **prescan();
 	extern bool safefile();
@@ -670,7 +671,7 @@ setsender(from)
 	**	links in the net.
 	*/
 
-	pvp = prescan(from, '\0');
+	pvp = prescan(from, '\0', pvpbuf);
 	if (pvp == NULL)
 	{
 		syserr("cannot prescan from (%s)", from);
