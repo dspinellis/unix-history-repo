@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.33 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -496,8 +496,10 @@ select(p, uap, retval)
 			error = EINVAL;
 			goto done;
 		}
-		s = splhigh(); timevaladd(&atv, &time); splx(s);
+		s = splhigh();
+		timevaladd(&atv, &time);
 		timo = hzto(&atv);
+		splx(s);
 	} else
 		timo = 0;
 retry:
