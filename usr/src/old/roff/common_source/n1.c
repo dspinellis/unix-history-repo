@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.6 %G%";
+static char sccsid[] = "@(#)n1.c	4.7 %G%";
 #endif lint
 
 #include "tdef.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+#include <time.h>
 extern
 #include "d.h"
 extern
@@ -393,26 +393,18 @@ init2()
 	nxf = frame + 1;
 	nx = mflg;
 }
-cvtime(){
+cvtime()
+{
+	extern time_t time();
+	time_t t;
+	register struct tm *tmp;
 
-	register i;
-	struct timeval t;
-	struct timezone tz;
-
-	gettimeofday(&t, &tz);
-	t.tv_sec -= 60*tz.tz_minuteswest;	/* 5hrs for EST */
-	v.dy = (t.tv_sec/86400L) + 1;
-	v.dw = (v.dy + 3)%7 + 1;
-	for(v.yr=70;; v.yr++){
-		if((v.yr)%4)ms[1]=28;else ms[1]=29;
-		for(i=0;i<12;){
-			if(v.dy<=ms[i]){
-				v.mo = i+1;
-				return;
-			}
-			v.dy -= ms[i++];
-		}
-	}
+	t = time((time_t *)0);
+	tmp = localtime(&t);
+	v.dy = tmp->tm_mday;
+	v.dw = tmp->tm_wday + 1;
+	v.yr = tmp->tm_year;
+	v.mo = tmp->tm_mon + 1;
 }
 cnum(a)
 char *a;
