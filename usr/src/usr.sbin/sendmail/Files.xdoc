@@ -1,0 +1,8 @@
+#	@(#)Files.xdoc	8.1 (Berkeley) %G%
+doc/intro/Makefile
+doc/intro/intro.me
+doc/intro/intro.ps
+doc/op/op.ps
+doc/usenix/Makefile
+doc/usenix/usenix.me
+doc/usenix/usenix.ps
