@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "dump.h"
+#include <fcntl.h>
 #include "pathnames.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -20,6 +21,7 @@ int	cartridge = 0;	/* Assume non-cartridge tape */
 long	dev_bsize = 1;	/* recalculated below */
 #ifdef RDUMP
 char	*host;
+int	rmthost();
 #endif
 int	anydskipped;	/* set true in mark() if any directories are skipped */
 			/* this lets us avoid map pass 2 in some cases */
@@ -40,10 +42,8 @@ main(argc, argv)
 	disk = _PATH_DEFDISK;
 	increm = _PATH_DUMPDATES;
 	temp = _PATH_DTMP;
-	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0) {
-		msg("TP_BSIZE must be a multiple of DEV_BSIZE\n");
-		dumpabort();
-	}
+	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0)
+		quit("TP_BSIZE must be a multiple of DEV_BSIZE\n");
 	incno = '9';
 	uflag = 0;
 	arg = "u";
@@ -228,11 +228,15 @@ main(argc, argv)
 	sblock = (struct fs *)buf;
 	sync();
 	bread(SBOFF, sblock, SBSIZE);
-	if (sblock->fs_magic != FS_MAGIC) {
-		msg("bad sblock magic number\n");
-		dumpabort();
-	}
+	if (sblock->fs_magic != FS_MAGIC)
+		quit("bad sblock magic number\n");
 	dev_bsize = sblock->fs_fsize / fsbtodb(sblock, 1);
+	dev_bshift = ffs(dev_bsize) - 1;
+	if (dev_bsize != (1 << dev_bshift))
+		quit("dev_bsize (%d) is not a power of 2", dev_bsize);
+	tp_bshift = ffs(TP_BSIZE) - 1;
+	if (TP_BSIZE != (1 << tp_bshift))
+		quit("TP_BSIZE (%d) is not a power of 2", TP_BSIZE);
 	msiz = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
 	clrmap = (char *)calloc(msiz, sizeof(char));
@@ -248,7 +252,7 @@ main(argc, argv)
 			msg("mapping (Pass II) [directories]\n");
 			nadded = 0;
 			pass(add, dirmap);
-		} while(nadded);
+		} while (nadded);
 	} else				/* keep the operators happy */
 		msg("mapping (Pass II) [directories]\n");
 
@@ -322,22 +326,14 @@ main(argc, argv)
 #endif
 	broadcast("DUMP IS DONE!\7\7\n");
 	Exit(X_FINOK);
+	/* NOTREACHED */
 }
 
-int	sighup(){	msg("SIGHUP()  try rewriting\n"); sigAbort();}
-int	sigtrap(){	msg("SIGTRAP()  try rewriting\n"); sigAbort();}
-int	sigfpe(){	msg("SIGFPE()  try rewriting\n"); sigAbort();}
-int	sigbus(){	msg("SIGBUS()  try rewriting\n"); sigAbort();}
-int	sigsegv(){	msg("SIGSEGV()  ABORTING!\n"); abort();}
-int	sigalrm(){	msg("SIGALRM()  try rewriting\n"); sigAbort();}
-int	sigterm(){	msg("SIGTERM()  try rewriting\n"); sigAbort();}
-
+void
 sigAbort()
 {
-	if (pipeout) {
-		msg("Unknown signal, cannot recover\n");
-		dumpabort();
-	}
+	if (pipeout)
+		quit("Unknown signal, cannot recover\n");
 	msg("Rewriting attempted as response to unknown signal.\n");
 	fflush(stderr);
 	fflush(stdout);
@@ -345,7 +341,16 @@ sigAbort()
 	exit(X_REWRITE);
 }
 
-char *rawname(cp)
+void	sighup(){	msg("SIGHUP()  try rewriting\n"); sigAbort();}
+void	sigtrap(){	msg("SIGTRAP()  try rewriting\n"); sigAbort();}
+void	sigfpe(){	msg("SIGFPE()  try rewriting\n"); sigAbort();}
+void	sigbus(){	msg("SIGBUS()  try rewriting\n"); sigAbort();}
+void	sigsegv(){	msg("SIGSEGV()  ABORTING!\n"); abort();}
+void	sigalrm(){	msg("SIGALRM()  try rewriting\n"); sigAbort();}
+void	sigterm(){	msg("SIGTERM()  try rewriting\n"); sigAbort();}
+
+char *
+rawname(cp)
 	char *cp;
 {
 	static char rawbuf[32];
