@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.7 (Berkeley) %G%
+ *	@(#)if_le.c	7.8 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -108,6 +108,10 @@ struct	le_softc {
 	int	sc_busy;
 	short	sc_iflags;
 	caddr_t sc_bpf;
+	int	sc_tmd;		/* predicted next tmd to process */
+	int	sc_txcnt;	/* transmissions in progress */
+	int	sc_txbad;
+	int	sc_txbusy;
 } le_softc[NLE];
 
 /* access LANCE registers */
@@ -239,7 +243,7 @@ lereset(unit)
 	LERDWR(ler0, LE_CSR0, ler1->ler1_rap);
 	LERDWR(ler0, LE_STOP, ler1->ler1_rdp);
 	ledrinit(le->sc_r2, le);
-	le->sc_rmd = 0;
+	le->sc_txcnt = le->sc_tmd = le->sc_rmd = 0;
 	LERDWR(ler0, LE_CSR1, ler1->ler1_rap);
 	LERDWR(ler0, (int)&lemem->ler2_mode, ler1->ler1_rdp);
 	LERDWR(ler0, LE_CSR2, ler1->ler1_rap);
@@ -297,25 +301,34 @@ lestart(ifp)
 	register struct mbuf *m;
 	int len;
 
+again:
 	if ((le->sc_if.if_flags & IFF_RUNNING) == 0)
 		return (0);
 	IF_DEQUEUE(&le->sc_if.if_snd, m);
 	if (m == 0)
 		return (0);
-	len = leput(le->sc_r2->ler2_tbuf[0], m);
+	tmd = le->sc_r2->ler2_tmd + le->sc_tmd;
+	if (tmd->tmd1 & LE_OWN)
+		return (le->sc_txbusy++, 0);
+	len = leput(le->sc_r2->ler2_tbuf[le->sc_tmd], m);
 #if NBPFILTER > 0
 	/*
 	 * If bpf is listening on this interface, let it
 	 * see the packet before we commit it to the wire.
 	 */
 	if (le->sc_bpf)
-                bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[0], len);
+                bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[le->sc_tmd], len);
 #endif
-	tmd = le->sc_r2->ler2_tmd;
 	tmd->tmd3 = 0;
 	tmd->tmd2 = -len;
 	tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
-	le->sc_if.if_flags |= IFF_OACTIVE;
+	if (++le->sc_tmd >= LETBUF)
+		le->sc_tmd = 0;
+	if (++le->sc_txcnt >= LETBUF) {
+		le->sc_txcnt = LETBUF;
+		le->sc_if.if_flags |= IFF_OACTIVE;
+	} else
+		goto again;
 	return (0);
 }
 
@@ -380,13 +393,19 @@ lexint(unit)
 	register int unit;
 {
 	register struct le_softc *le = &le_softc[unit];
-	register struct letmd *tmd = le->sc_r2->ler2_tmd;
+	register struct letmd *tmd;
+	int i, loopcount = 0;
 
 	if ((le->sc_if.if_flags & IFF_OACTIVE) == 0) {
 		le->sc_xint++;
 		return;
 	}
+again:
+	if ((i = le->sc_tmd - le->sc_txcnt) < 0) i += LETBUF;
+	tmd = le->sc_r2->ler2_tmd + i;
 	if (tmd->tmd1 & LE_OWN) {
+		if (loopcount)
+			goto out;
 		le->sc_xown++;
 		return;
 	}
@@ -413,6 +432,14 @@ err:
 		le->sc_if.if_collisions += 2;
 	else
 		le->sc_if.if_opackets++;
+	loopcount++;
+	if (--le->sc_txcnt > 0)
+		goto again;
+	if (le->sc_txcnt < 0) {
+		le->sc_txbad++;
+		le->sc_txcnt = 0;
+	}
+out:
 	le->sc_if.if_flags &= ~IFF_OACTIVE;
 	(void) lestart(&le->sc_if);
 }
