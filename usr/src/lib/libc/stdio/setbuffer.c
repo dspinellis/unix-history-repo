@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuffer.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)setbuffer.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -20,7 +20,8 @@ setbuffer(fp, buf, size)
 	char *buf;
 	int size;
 {
-	(void) setvbuf(fp, buf, buf ? _IONBF : _IOFBF, size);
+
+	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, size);
 }
 
 /*
@@ -29,6 +30,7 @@ setbuffer(fp, buf, size)
 setlinebuf(fp)
 	FILE *fp;
 {
+
 	(void) setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0);
 	return (0);	/* ??? */
 }
