@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -306,7 +306,7 @@ transmit(fd, eofchars, command)
 						}
 					}
 				} else
-					if (!boolean((int)value(RAWFTP)))
+					if (!boolean(value(RAWFTP)))
 						continue;
 			}
 			send(c);
