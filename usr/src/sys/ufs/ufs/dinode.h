@@ -1,4 +1,4 @@
-/*	dinode.h	4.12	82/06/29	*/
+/*	dinode.h	4.13	82/07/16	*/
 
 /*	inode.h	2.1	3/25/82	*/
 
@@ -16,11 +16,11 @@
 struct inode {
 	struct	inode *i_chain[2];	/* must be first */
 	char	i_flag;
-	char	i_count;	/* reference count */
+	u_short	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
-	long	i_hlink;	/* link in hash chain (iget/iput/ifind) */
 	struct	fs *i_fs;	/* file sys associated with this inode */
+	struct	dquot *i_dquot;	/* quota structure controlling this file */
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
