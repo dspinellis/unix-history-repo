@@ -1,6 +1,7 @@
+
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)ptrace.c 1.4 %G%";
+static char sccsid[] = "@(#)ptrace.c 1.4 12/29/82";
 
 /*
  * routines for tracing the execution of a process
@@ -21,12 +22,22 @@ static char sccsid[] = "@(#)ptrace.c 1.4 %G%";
 #       include "pxinfo.h"
 #   endif
 
+#ifndef vax
+#	define U_PAGE 0x2400
+#	define U_AR0  (14*sizeof(int))
+	LOCAL int ar0val = -1;
+#endif
+
 /*
  * This magic macro enables us to look at the process' registers
  * in its user structure.  Very gross.
  */
 
-#define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
+#ifdef vax
+#	define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
+#else
+#	define regloc(reg)     (ar0val + ( sizeof(int) * (reg) ))
+#endif
 
 #define WMASK           (~(sizeof(WORD) - 1))
 #define cachehash(addr) ((unsigned) ((addr >> 2) % CSIZE))
@@ -215,9 +226,15 @@ LOCAL sigs_on()
  * get PROCESS information from process's user area
  */
 
-LOCAL int rloc[] ={
-    R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
-};
+#if vax
+    LOCAL int rloc[] ={
+	R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
+    };
+#else
+    LOCAL int rloc[] ={
+	R0, R1, R2, R3, R4, R5, R6, R7, AR0, AR1, AR2, AR3, AR4, AR5,
+    };
+#endif
 
 LOCAL getinfo(p, status)
 register PROCESS *p;
@@ -235,14 +252,27 @@ register int status;
 	p->status = FINISHED;
 	return;
     }
+#ifndef vax
+    if (ar0val < 0){
+	ar0val = ptrace(UREAD, p->pid, U_AR0, 0);
+	ar0val -= U_PAGE;
+    }
+#endif
     for (i = 0; i < NREG; i++) {
 	p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
 	p->oreg[i] = p->reg[i];
     }
+#ifdef vax
     p->fp = p->ofp = ptrace(UREAD, p->pid, regloc(FP), 0);
     p->ap = p->oap = ptrace(UREAD, p->pid, regloc(AP), 0);
     p->sp = p->osp = ptrace(UREAD, p->pid, regloc(SP), 0);
     p->pc = p->opc = ptrace(UREAD, p->pid, regloc(PC), 0);
+#else
+    p->fp = p->ofp = ptrace(UREAD, p->pid, regloc(AR6), 0);
+    p->ap = p->oap = p->fp;
+    p->sp = p->osp = ptrace(UREAD, p->pid, regloc(SP), 0);
+    p->pc = p->opc = ptrace(UREAD, p->pid, regloc(PC), 0);
+#endif
 }
 
 /*
@@ -263,6 +293,7 @@ register PROCESS *p;
 	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
 	}
     }
+#if vax
     if ((r = p->fp) != p->ofp) {
 	ptrace(UWRITE, p->pid, regloc(FP), r);
     }
@@ -272,6 +303,14 @@ register PROCESS *p;
     if ((r = p->ap) != p->oap) {
 	ptrace(UWRITE, p->pid, regloc(AP), r);
     }
+#else
+    if ((r = p->fp) != p->ofp) {
+	ptrace(UWRITE, p->pid, regloc(AR6), r);
+    }
+    if ((r = p->sp) != p->osp) {
+	ptrace(UWRITE, p->pid, regloc(SP), r);
+    }
+#endif
     if ((r = p->pc) != p->opc) {
 	ptrace(UWRITE, p->pid, regloc(PC), r);
     }
