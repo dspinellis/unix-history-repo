@@ -1,0 +1,1696 @@
+This is Info file gcc.info, produced by Makeinfo-1.49 from the input
+file gcc.texi.
+
+   This file documents the use and the internals of the GNU compiler.
+
+   Copyright (C) 1988, 1989, 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Protect
+Your Freedom--Fight `Look And Feel'" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License" and "Protect Your Freedom--Fight `Look And Feel'", and this
+permission notice, may be included in translations approved by the Free
+Software Foundation instead of in the original English.
+
+
+File: gcc.info,  Node: Index,  Prev: Config,  Up: Top
+
+Index
+*****
+
+* Menu:
+
+* #pragma:                              Misc.
+* $:                                    Dollar Signs.
+* ':                                    Incompatibilities.
+* (nil):                                RTL Objects.
+* 3b1 installation:                     3b1 Install.
+* ?: side effect:                       Conditionals.
+* #pragma, reason for not using:        Function Attributes.
+* * in template:                        Output Statement.
+* ?: extensions:                        Conditionals.
+* ?: extensions:                        Lvalues.
+* absM2 instruction pattern:            Standard Names.
+* abs and attributes:                   Expressions.
+* ACCUMULATE_OUTGOING_ARGS and stack frames: Function Entry.
+* addM3 instruction pattern:            Standard Names.
+* addr_diff_vec, length of:             Insn Lengths.
+* addr_vec, length of:                  Insn Lengths.
+* aligned attribute:                    Variable Attributes.
+* allocate_stack instruction pattern:   Standard Names.
+* alloca and SunOs:                     Installation.
+* alloca vs variable-length arrays:     Variable Length.
+* alloca, for SunOs:                    Sun Install.
+* alloca, for Unos:                     Unos Install.
+* andM3 instruction pattern:            Standard Names.
+* and and attributes:                   Expressions.
+* and, canonicalization of:             Insn Canonicalizations.
+* ARG_POINTER_REGNUM and virtual registers: Regs and Memory.
+* ashiftrt and attributes:              Expressions.
+* ashift and attributes:                Expressions.
+* ashlM3 instruction pattern:           Standard Names.
+* ashrM3 instruction pattern:           Standard Names.
+* asm_operands, RTL sharing:            Sharing.
+* asm_operands, usage:                  Assembler.
+* asm expressions:                      Extended Asm.
+* bCOND instruction pattern:            Standard Names.
+* bcopy, implicit usage:                Library Calls.
+* BITS_BIG_ENDIAN, effect on sign_extract: Bit Fields.
+* BLKmode, and function return values:  Calls.
+* bzero, implicit usage:                Library Calls.
+* call_insn and /u:                     Flags.
+* call_pop instruction pattern:         Standard Names.
+* call_value_pop instruction pattern:   Standard Names.
+* call_value instruction pattern:       Standard Names.
+* call instruction pattern:             Standard Names.
+* call usage:                           Calls.
+* casesi instruction pattern:           Standard Names.
+* cc0, RTL sharing:                     Sharing.
+* cmpM instruction pattern:             Standard Names.
+* cmpstrM instruction pattern:          Standard Names.
+* code_label and /i:                    Flags.
+* compare, canonicalization of:         Insn Canonicalizations.
+* cond and attributes:                  Expressions.
+* const_double, RTL sharing:            Sharing.
+* const_int and attribute tests:        Expressions.
+* const_int and attributes:             Expressions.
+* const_int, RTL sharing:               Sharing.
+* const_string and attributes:          Expressions.
+* const applied to function:            Function Attributes.
+* define_insn example:                  Example.
+* divM3 instruction pattern:            Standard Names.
+* divmodM4 instruction pattern:         Standard Names.
+* div and attributes:                   Expressions.
+* EDOM, implicit usage:                 Library Calls.
+* ENCODE_SECTION_INFO and address validation: Addressing Modes.
+* ENCODE_SECTION_INFO usage:            Instruction Output.
+* eq and attributes:                    Expressions.
+* errno, implicit usage:                Library Calls.
+* extendMN instruction pattern:         Standard Names.
+* extv instruction pattern:             Standard Names.
+* extzv instruction pattern:            Standard Names.
+* ffsM2 instruction pattern:            Standard Names.
+* FIRST_PARM_OFFSET and virtual registers: Regs and Memory.
+* fixMN2 instruction pattern:           Standard Names.
+* fixunsMN2 instruction pattern:        Standard Names.
+* fixuns_truncMN2 instruction pattern:  Standard Names.
+* fix_truncMN2 instruction pattern:     Standard Names.
+* floatMN2 instruction pattern:         Standard Names.
+* floatunsMN2 instruction pattern:      Standard Names.
+* float as function value type:         Incompatibilities.
+* format attribute:                     Function Attributes.
+* FRAME_GROWS_DOWNWARD and virtual registers: Regs and Memory.
+* FRAME_POINTER_REGNUM and virtual registers: Regs and Memory.
+* fscanf, and constant strings:         Incompatibilities.
+* ftruncM2 instruction pattern:         Standard Names.
+* FUNCTION_EPILOGUE and trampolines:    Trampolines.
+* FUNCTION_PROLOGUE and trampolines:    Trampolines.
+* genflags, crash on Sun 4:             Installation Problems.
+* geu and attributes:                   Expressions.
+* ge and attributes:                    Expressions.
+* gprof:                                Debugging Options.
+* gtu and attributes:                   Expressions.
+* gt and attributes:                    Expressions.
+* HImode, in insn:                      Insns.
+* if_then_else and attributes:          Expressions.
+* if_then_else usage:                   Side Effects.
+* indirect_jump instruction pattern:    Standard Names.
+* insn and /i:                          Flags.
+* insn and /s:                          Flags.
+* insn and /u:                          Flags.
+* insv instruction pattern:             Standard Names.
+* integrated, in insn:                  Flags.
+* integrated, in reg:                   Flags.
+* in_struct, in code_label:             Flags.
+* in_struct, in insn:                   Flags.
+* in_struct, in insn:                   Flags.
+* in_struct, in label_ref:              Flags.
+* in_struct, in mem:                    Flags.
+* in_struct, in reg:                    Flags.
+* in_struct, in subreg:                 Flags.
+* iorM3 instruction pattern:            Standard Names.
+* ior and attributes:                   Expressions.
+* ior, canonicalization of:             Insn Canonicalizations.
+* label_ref and /s:                     Flags.
+* label_ref, RTL sharing:               Sharing.
+* leu and attributes:                   Expressions.
+* le and attributes:                    Expressions.
+* load_multiple instruction pattern:    Standard Names.
+* long long data types:                 Long Long.
+* longjmp and automatic variables:      Dialect Options.
+* longjmp and automatic variables:      Interface.
+* longjmp incompatibilities:            Incompatibilities.
+* longjmp warnings:                     Warning Options.
+* lshiftrt and attributes:              Expressions.
+* lshift and attributes:                Expressions.
+* lshlM3 instruction pattern:           Standard Names.
+* lshrM3 instruction pattern:           Standard Names.
+* lt and attributes:                    Expressions.
+* main and the exit status:             VMS Misc.
+* match_dup and attributes:             Insn Lengths.
+* match_operand and attributes:         Expressions.
+* maxM3 instruction pattern:            Standard Names.
+* memcpy, implicit usage:               Library Calls.
+* memset, implicit usage:               Library Calls.
+* mem and /s:                           Flags.
+* mem and /u:                           Flags.
+* mem and /v:                           Flags.
+* mem, RTL sharing:                     Sharing.
+* minM3 instruction pattern:            Standard Names.
+* minus and attributes:                 Expressions.
+* minus, canonicalization of:           Insn Canonicalizations.
+* mktemp, and constant strings:         Incompatibilities.
+* modM3 instruction pattern:            Standard Names.
+* mode attribute:                       Variable Attributes.
+* mod and attributes:                   Expressions.
+* movM instruction pattern:             Standard Names.
+* movstrM instruction pattern:          Standard Names.
+* movstrictM instruction pattern:       Standard Names.
+* mulM3 instruction pattern:            Standard Names.
+* mulhisi3 instruction pattern:         Standard Names.
+* mulqihi3 instruction pattern:         Standard Names.
+* mulsidi3 instruction pattern:         Standard Names.
+* mult and attributes:                  Expressions.
+* mult, canonicalization of:            Insn Canonicalizations.
+* MUST_PASS_IN_STACK, and FUNCTION_ARG: Register Arguments.
+* negM2 instruction pattern:            Standard Names.
+* neg and attributes:                   Expressions.
+* neg, canonicalization of:             Insn Canonicalizations.
+* ne and attributes:                    Expressions.
+* nop instruction pattern:              Standard Names.
+* not and attributes:                   Expressions.
+* not, canonicalization of:             Insn Canonicalizations.
+* one_cmplM2 instruction pattern:       Standard Names.
+* packed attribute:                     Variable Attributes.
+* pc and attributes:                    Insn Lengths.
+* pc, RTL sharing:                      Sharing.
+* plus and attributes:                  Expressions.
+* plus, canonicalization of:            Insn Canonicalizations.
+* prof:                                 Debugging Options.
+* PUSH_ROUNDING, interaction with STACK_BOUNDARY: Storage Layout.
+* QImode, in insn:                      Insns.
+* qsort, and global register variables: Global Reg Vars.
+* REG_PARM_STACK_SPACE, and FUNCTION_ARG: Register Arguments.
+* reg and /i:                           Flags.
+* reg and /s:                           Flags.
+* reg and /u:                           Flags.
+* reg and /v:                           Flags.
+* reg, RTL sharing:                     Sharing.
+* reload_in instruction pattern:        Standard Names.
+* reload_out instruction pattern:       Standard Names.
+* restore_stack_block instruction pattern: Standard Names.
+* restore_stack_function instruction pattern: Standard Names.
+* restore_stack_nonlocal instruction pattern: Standard Names.
+* return instruction pattern:           Standard Names.
+* rotlM3 instruction pattern:           Standard Names.
+* rotrM3 instruction pattern:           Standard Names.
+* sCOND instruction pattern:            Standard Names.
+* save_stack_block instruction pattern: Standard Names.
+* save_stack_function instruction pattern: Standard Names.
+* save_stack_nonlocal instruction pattern: Standard Names.
+* scanf, and constant strings:          Incompatibilities.
+* scratch, RTL sharing:                 Sharing.
+* setjmp incompatibilities:             Incompatibilities.
+* sign_extract, canonicalization of:    Insn Canonicalizations.
+* sqrtM2 instruction pattern:           Standard Names.
+* sscanf, and constant strings:         Incompatibilities.
+* STACK_DYNAMIC_OFFSET and virtual registers: Regs and Memory.
+* STACK_POINTER_OFFSET and virtual registers: Regs and Memory.
+* STACK_POINTER_REGNUM and virtual registers: Regs and Memory.
+* STARTING_FRAME_OFFSET and virtual registers: Regs and Memory.
+* subM3 instruction pattern:            Standard Names.
+* subreg and /s:                        Flags.
+* subreg and /u:                        Flags.
+* subreg, in strict_low_part:           RTL Declarations.
+* subreg, special reload handling:      Regs and Memory.
+* SYMBOL_REF_FLAG, in ENCODE_SECTION_INFO: Sections.
+* symbol_ref and /u:                    Flags.
+* symbol_ref and /v:                    Flags.
+* symbol_ref, RTL sharing:              Sharing.
+* tablejump instruction pattern:        Standard Names.
+* tcov:                                 Debugging Options.
+* truncMN instruction pattern:          Standard Names.
+* tstM instruction pattern:             Standard Names.
+* udivM3 instruction pattern:           Standard Names.
+* udivmodM4 instruction pattern:        Standard Names.
+* umaxM3 instruction pattern:           Standard Names.
+* uminM3 instruction pattern:           Standard Names.
+* umodM3 instruction pattern:           Standard Names.
+* umulhisi3 instruction pattern:        Standard Names.
+* umulqihi3 instruction pattern:        Standard Names.
+* umulsidi3 instruction pattern:        Standard Names.
+* unchanging, in call_insn:             Flags.
+* unchanging, in insn:                  Flags.
+* unchanging, in reg and mem:           Flags.
+* unchanging, in subreg:                Flags.
+* unchanging, in symbol_ref:            Flags.
+* used, in symbol_ref:                  Flags.
+* volatile applied to function:         Function Attributes.
+* volatil, in insn:                     Flags.
+* volatil, in mem:                      Flags.
+* volatil, in reg:                      Flags.
+* volatil, in symbol_ref:               Flags.
+* WORDS_BIG_ENDIAN, effect on subreg:   Regs and Memory.
+* xorM3 instruction pattern:            Standard Names.
+* xor, canonicalization of:             Insn Canonicalizations.
+* zero_extendMN instruction pattern:    Standard Names.
+* zero_extract, canonicalization of:    Insn Canonicalizations.
+* libgcc.a:                             Library Calls.
+* stdarg.h and register arguments:      Register Arguments.
+* stdarg.h and RT PC:                   RT Options.
+* tm.h macros:                          Target Macros.
+* varargs.h and RT PC:                  RT Options.
+* VAXCRTL:                              VMS Misc.
+* xm-MACHINE.h:                         Config.
+* ! in constraint:                      Multi-Alternative.
+* # in constraint:                      Modifiers.
+* % in constraint:                      Modifiers.
+* % in template:                        Output Template.
+* & in constraint:                      Modifiers.
+* * in constraint:                      Modifiers.
+* + in constraint:                      Modifiers.
+* /i in RTL dump:                       Flags.
+* /s in RTL dump:                       Flags.
+* /s in RTL dump:                       Flags.
+* /u in RTL dump:                       Flags.
+* /v in RTL dump:                       Flags.
+* 0 in constraint:                      Simple Constraints.
+* < in constraint:                      Simple Constraints.
+* = in constraint:                      Modifiers.
+* > in constraint:                      Simple Constraints.
+* ? in constraint:                      Multi-Alternative.
+* d in constraint:                      Simple Constraints.
+* E in constraint:                      Simple Constraints.
+* F in constraint:                      Simple Constraints.
+* g in constraint:                      Simple Constraints.
+* G in constraint:                      Simple Constraints.
+* H in constraint:                      Simple Constraints.
+* i in constraint:                      Simple Constraints.
+* I in constraint:                      Simple Constraints.
+* m in constraint:                      Simple Constraints.
+* n in constraint:                      Simple Constraints.
+* o in constraint:                      Simple Constraints.
+* p in constraint:                      Simple Constraints.
+* Q, in constraint:                     Simple Constraints.
+* r in constraint:                      Simple Constraints.
+* store_multiple instruction pattern:   Standard Names.
+* s in constraint:                      Simple Constraints.
+* V in constraint:                      Simple Constraints.
+* X in constraint:                      Simple Constraints.
+* _ in variables in macros:             Naming Types.
+* abort:                                Portability.
+* abs:                                  Arithmetic.
+* absolute value:                       Arithmetic.
+* access to operands:                   Accessors.
+* accessors:                            Accessors.
+* ACCUMULATE_OUTGOING_ARGS:             Stack Arguments.
+* ADDITIONAL_REGISTER_NAMES:            Instruction Output.
+* address:                              RTL Template.
+* address constraints:                  Simple Constraints.
+* address of a label:                   Labels as Values.
+* addressing modes:                     Addressing Modes.
+* ADDRESS_COST:                         Costs.
+* address_operand:                      Simple Constraints.
+* addr_diff_vec:                        Side Effects.
+* addr_vec:                             Side Effects.
+* ADJUST_COST:                          Costs.
+* ADJUST_INSN_LENGTH:                   Insn Lengths.
+* aggregates as return values:          Aggregate Return.
+* alignment:                            Alignment.
+* Alliant:                              Interoperation.
+* ALLOCATE_TRAMPOLINE:                  Trampolines.
+* ALL_REGS:                             Register Classes.
+* alternate keywords:                   Alternate Keywords.
+* AMD29K options:                       AMD29K Options.
+* analysis, data flow:                  Passes.
+* and:                                  Arithmetic.
+* ANSI support:                         Dialect Options.
+* apostrophes:                          Incompatibilities.
+* ARGS_GROW_DOWNWARD:                   Frame Layout.
+* argument passing:                     Interface.
+* arguments in frame (88k):             M88K Options.
+* arguments in registers:               Register Arguments.
+* arguments on stack:                   Stack Arguments.
+* ARG_POINTER_REGNUM:                   Frame Registers.
+* arg_pointer_rtx:                      Frame Registers.
+* arithmetic libraries:                 Interface.
+* arithmetic shift:                     Arithmetic.
+* arithmetic simplifications:           Passes.
+* arithmetic, in RTL:                   Arithmetic.
+* arrays of length zero:                Zero Length.
+* arrays of variable length:            Variable Length.
+* arrays, non-lvalue:                   Subscripting.
+* ashift:                               Arithmetic.
+* ashiftrt:                             Arithmetic.
+* ASM_APP_OFF:                          File Framework.
+* ASM_APP_ON:                           File Framework.
+* ASM_BYTE_OP:                          Data Output.
+* ASM_CLOSE_PAREN:                      Data Output.
+* ASM_COMMENT_START:                    File Framework.
+* ASM_DECLARE_FUNCTION_NAME:            Label Output.
+* ASM_DECLARE_FUNCTION_SIZE:            Label Output.
+* ASM_DECLARE_OBJECT_NAME:              Label Output.
+* ASM_FILE_END:                         File Framework.
+* ASM_FILE_START:                       File Framework.
+* ASM_FINAL_SPEC:                       Driver.
+* ASM_FORMAT_PRIVATE_NAME:              Label Output.
+* asm_fprintf:                          Instruction Output.
+* ASM_GENERATE_INTERNAL_LABEL:          Label Output.
+* ASM_GLOBALIZE_LABEL:                  Label Output.
+* ASM_IDENTIFY_GCC:                     File Framework.
+* asm_input:                            Side Effects.
+* asm_noperands:                        Insns.
+* ASM_NO_SKIP_IN_TEXT:                  Alignment Output.
+* ASM_OPEN_PAREN:                       Data Output.
+* ASM_OUTPUT_ADDR_DIFF_ELT:             Dispatch Tables.
+* ASM_OUTPUT_ADDR_VEC_ELT:              Dispatch Tables.
+* ASM_OUTPUT_ALIGN:                     Alignment Output.
+* ASM_OUTPUT_ALIGNED_COMMON:            Uninitialized Data.
+* ASM_OUTPUT_ALIGNED_LOCAL:             Uninitialized Data.
+* ASM_OUTPUT_ALIGN_CODE:                Alignment Output.
+* ASM_OUTPUT_ASCII:                     Data Output.
+* ASM_OUTPUT_BYTE:                      Data Output.
+* ASM_OUTPUT_CASE_END:                  Dispatch Tables.
+* ASM_OUTPUT_CASE_LABEL:                Dispatch Tables.
+* ASM_OUTPUT_CHAR:                      Data Output.
+* ASM_OUTPUT_COMMON:                    Uninitialized Data.
+* ASM_OUTPUT_CONSTRUCTOR:               Macros for Initialization.
+* ASM_OUTPUT_DESTRUCTOR:                Macros for Initialization.
+* ASM_OUTPUT_DOUBLE:                    Data Output.
+* ASM_OUTPUT_DOUBLE_INT:                Data Output.
+* ASM_OUTPUT_EXTERNAL:                  Label Output.
+* ASM_OUTPUT_EXTERNAL_LIBCALL:          Label Output.
+* ASM_OUTPUT_FLOAT:                     Data Output.
+* ASM_OUTPUT_IDENT:                     File Framework.
+* ASM_OUTPUT_INT:                       Data Output.
+* ASM_OUTPUT_INTERNAL_LABEL:            Label Output.
+* ASM_OUTPUT_LABEL:                     Label Output.
+* ASM_OUTPUT_LABELREF:                  Label Output.
+* ASM_OUTPUT_LABELREF_AS_INT:           Label Output.
+* ASM_OUTPUT_LOCAL:                     Uninitialized Data.
+* ASM_OUTPUT_LONG_DOUBLE:               Data Output.
+* ASM_OUTPUT_LOOP_ALIGN:                Alignment Output.
+* ASM_OUTPUT_OPCODE:                    Instruction Output.
+* ASM_OUTPUT_POOL_PROLOGUE:             Data Output.
+* ASM_OUTPUT_QUADRUPLE_INT:             Data Output.
+* ASM_OUTPUT_REG_POP:                   Instruction Output.
+* ASM_OUTPUT_REG_PUSH:                  Instruction Output.
+* ASM_OUTPUT_SHARED_COMMON:             Uninitialized Data.
+* ASM_OUTPUT_SHARED_LOCAL:              Uninitialized Data.
+* ASM_OUTPUT_SHORT:                     Data Output.
+* ASM_OUTPUT_SKIP:                      Alignment Output.
+* ASM_OUTPUT_SOURCE_FILENAME:           File Framework.
+* ASM_OUTPUT_SOURCE_LINE:               File Framework.
+* ASM_OUTPUT_SPECIAL_POOL_ENTRY:        Data Output.
+* ASM_SPEC:                             Driver.
+* ASM_STABD_OP:                         DBX Options.
+* ASM_STABN_OP:                         DBX Options.
+* ASM_STABS_OP:                         DBX Options.
+* assembler format:                     File Framework.
+* assembler instructions:               Extended Asm.
+* assembler instructions in RTL:        Assembler.
+* assembler names for identifiers:      Asm Labels.
+* assembler syntax, 88k:                M88K Options.
+* assemble_name:                        Label Output.
+* assembly code, invalid:               Bug Criteria.
+* assigning attribute values to insns:  Tagging Insns.
+* asterisk in template:                 Output Statement.
+* atof:                                 Cross-compilation.
+* attr:                                 Tagging Insns.
+* attribute expressions:                Expressions.
+* attribute of variables:               Variable Attributes.
+* attribute specifications:             Attr Example.
+* attribute specifications example:     Attr Example.
+* attributes, defining:                 Defining Attributes.
+* autoincrement addressing, availability: Portability.
+* autoincrement/decrement addressing:   Simple Constraints.
+* autoincrement/decrement analysis:     Passes.
+* backslash:                            Output Template.
+* backtrace for bug reports:            Bug Reporting.
+* barrier:                              Insns.
+* BASE_REG_CLASS:                       Register Classes.
+* basic blocks:                         Passes.
+* bcmp:                                 Config.
+* BIGGEST_ALIGNMENT:                    Storage Layout.
+* BIGGEST_FIELD_ALIGNMENT:              Storage Layout.
+* Bison parser generator:               Installation.
+* bit fields:                           Bit Fields.
+* bit shift overflow (88k):             M88K Options.
+* BITFIELD_NBYTES_LIMITED:              Storage Layout.
+* BITS_BIG_ENDIAN:                      Storage Layout.
+* BITS_PER_UNIT:                        Storage Layout.
+* BITS_PER_WORD:                        Storage Layout.
+* bitwise complement:                   Arithmetic.
+* bitwise exclusive-or:                 Arithmetic.
+* bitwise inclusive-or:                 Arithmetic.
+* bitwise logical-and:                  Arithmetic.
+* BLKmode:                              Machine Modes.
+* BLOCK_PROFILER:                       Profiling.
+* BRANCH_COST:                          Costs.
+* break_out_memory_refs:                Addressing Modes.
+* bug criteria:                         Bug Criteria.
+* bug report mailing lists:             Bug Lists.
+* bugs:                                 Bugs.
+* bugs, known:                          Trouble.
+* BYTES_BIG_ENDIAN:                     Storage Layout.
+* BYTE_LOADS_SIGN_EXTEND:               Misc.
+* BYTE_LOADS_ZERO_EXTEND:               Misc.
+* byte_mode:                            Machine Modes.
+* bzero:                                Config.
+* C language extensions:                Extensions.
+* C language, traditional:              Dialect Options.
+* C statements for assembler output:    Output Statement.
+* call:                                 Side Effects.
+* call-clobbered register:              Register Basics.
+* call-saved register:                  Register Basics.
+* call-used register:                   Register Basics.
+* CALLER_SAVE_PROFITABLE:               Caller Saves.
+* calling conventions:                  Stack and Calling.
+* calling functions in RTL:             Calls.
+* call_insn:                            Insns.
+* CALL_USED_REGISTERS:                  Register Basics.
+* call_used_regs:                       Register Basics.
+* canonicalization of instructions:     Insn Canonicalizations.
+* CAN_ELIMINATE:                        Elimination.
+* case labels in initializers:          Labeled Elements.
+* case ranges:                          Case Ranges.
+* case sensitivity and VMS:             VMS Misc.
+* CASE_DROPS_THROUGH:                   Misc.
+* CASE_VALUES_THRESHOLD:                Misc.
+* CASE_VECTOR_MODE:                     Misc.
+* CASE_VECTOR_PC_RELATIVE:              Misc.
+* cast to a union:                      Cast to Union.
+* casts as lvalues:                     Lvalues.
+* cc0:                                  Regs and Memory.
+* cc0_rtx:                              Regs and Memory.
+* CC1PLUS_SPEC:                         Driver.
+* CC1_SPEC:                             Driver.
+* CCmode:                               Machine Modes.
+* cc_status:                            Condition Code.
+* CC_STATUS_MDEP:                       Condition Code.
+* CC_STATUS_MDEP_INIT:                  Condition Code.
+* change_address:                       Standard Names.
+* CHAR_TYPE_SIZE:                       Type Layout.
+* CHECK_FLOAT_VALUE:                    Storage Layout.
+* class definitions, register:          Register Classes.
+* class preference constraints:         Class Preferences.
+* classes of RTX codes:                 Accessors.
+* CLASS_MAX_NREGS:                      Register Classes.
+* clobber:                              Side Effects.
+* code generation conventions:          Code Gen Options.
+* code generation RTL sequences:        Expander Definitions.
+* code motion:                          Passes.
+* codes, RTL expression:                RTL Objects.
+* code_label:                           Insns.
+* CODE_LABEL_NUMBER:                    Insns.
+* combiner pass:                        Regs and Memory.
+* command options:                      Invoking GCC.
+* common subexpression elimination:     Passes.
+* compare:                              Arithmetic.
+* compilation in a separate directory:  Other Dir.
+* compiler bugs, reporting:             Bug Reporting.
+* compiler passes and files:            Passes.
+* compiler version, specifying:         Target Options.
+* COMPILER_PATH:                        Environment Variables.
+* complement, bitwise:                  Arithmetic.
+* compound expressions as lvalues:      Lvalues.
+* computed gotos:                       Labels as Values.
+* computing the length of an insn:      Insn Lengths.
+* cond:                                 Comparisons.
+* condition code register:              Regs and Memory.
+* condition code status:                Condition Code.
+* condition codes:                      Comparisons.
+* conditional expressions as lvalues:   Lvalues.
+* conditional expressions, extensions:  Conditionals.
+* CONDITIONAL_REGISTER_USAGE:           Register Basics.
+* conditions, in patterns:              Patterns.
+* configuration file:                   Config.
+* conflicting types:                    Disappointments.
+* CONST0_RTX:                           Constants.
+* const0_rtx:                           Constants.
+* CONST1_RTX:                           Constants.
+* const1_rtx:                           Constants.
+* CONST2_RTX:                           Constants.
+* const2_rtx:                           Constants.
+* constant attributes:                  Constant Attributes.
+* constant folding:                     Passes.
+* constant folding and floating point:  Cross-compilation.
+* constant propagation:                 Passes.
+* constants in constraints:             Simple Constraints.
+* CONSTANT_ADDRESS_P:                   Addressing Modes.
+* CONSTANT_ALIGNMENT:                   Storage Layout.
+* CONSTANT_P:                           Addressing Modes.
+* CONSTANT_POOL_ADDRESS_P:              Flags.
+* constm1_rtx:                          Constants.
+* constraint modifier characters:       Modifiers.
+* constraint, matching:                 Simple Constraints.
+* constraints:                          Constraints.
+* constructor expressions:              Constructors.
+* constructors, output of:              Initialization.
+* CONST_CALL_P:                         Flags.
+* CONST_COSTS:                          Costs.
+* const_double:                         Constants.
+* CONST_DOUBLE_CHAIN:                   Constants.
+* CONST_DOUBLE_LOW:                     Constants.
+* CONST_DOUBLE_MEM:                     Constants.
+* CONST_DOUBLE_OK_FOR_LETTER_P:         Register Classes.
+* const_int:                            Constants.
+* CONST_OK_FOR_LETTER_P:                Register Classes.
+* const_string:                         Constants.
+* const_true_rtx:                       Constants.
+* contributors:                         Contributors.
+* controlling register usage:           Register Basics.
+* controlling the compilation driver:   Driver.
+* conventions, run-time:                Interface.
+* conversions:                          Conversions.
+* Convex options:                       Convex Options.
+* copy_rtx_if_shared:                   Sharing.
+* core dump:                            Bug Criteria.
+* costs of instructions:                Costs.
+* COSTS_N_INSNS:                        Costs.
+* CPLUS_INCLUDE_PATH:                   Environment Variables.
+* CPP_PREDEFINES:                       Run-time Target.
+* CPP_SPEC:                             Driver.
+* cross compilation and floating point: Cross-compilation.
+* cross compiling:                      Target Options.
+* cross-compiler, installation:         Cross-Compiler.
+* cross-jumping:                        Passes.
+* CUMULATIVE_ARGS:                      Register Arguments.
+* current_function_epilogue_delay_list: Function Entry.
+* current_function_outgoing_args_size:  Stack Arguments.
+* current_function_pops_args:           Function Entry.
+* current_function_pretend_args_size:   Function Entry.
+* C_INCLUDE_PATH:                       Environment Variables.
+* data flow analysis:                   Passes.
+* DATA_ALIGNMENT:                       Storage Layout.
+* data_section:                         Sections.
+* DATA_SECTION_ASM_OP:                  Sections.
+* DBR_OUTPUT_SEQEND:                    Instruction Output.
+* dbr_sequence_length:                  Instruction Output.
+* DBX:                                  Interoperation.
+* DBX_CONTIN_CHAR:                      DBX Options.
+* DBX_CONTIN_LENGTH:                    DBX Options.
+* DBX_DEBUGGING_INFO:                   DBX Options.
+* DBX_FUNCTION_FIRST:                   DBX Options.
+* DBX_LBRAC_FIRST:                      DBX Options.
+* DBX_MEMPARM_STABS_LETTER:             DBX Options.
+* DBX_NO_XREFS:                         DBX Options.
+* DBX_OUTPUT_ENUM:                      DBX Hooks.
+* DBX_OUTPUT_FUNCTION_END:              DBX Hooks.
+* DBX_OUTPUT_LBRAC:                     DBX Hooks.
+* DBX_OUTPUT_MAIN_SOURCE_DIRECTORY:     File Names and DBX.
+* DBX_OUTPUT_MAIN_SOURCE_FILENAME:      File Names and DBX.
+* DBX_OUTPUT_MAIN_SOURCE_FILE_END:      File Names and DBX.
+* DBX_OUTPUT_RBRAC:                     DBX Hooks.
+* DBX_OUTPUT_SOURCE_FILENAME:           File Names and DBX.
+* DBX_OUTPUT_STANDARD_TYPES:            DBX Hooks.
+* DBX_REGISTER_NUMBER:                  All Debuggers.
+* DBX_REGPARM_STABS_CODE:               DBX Options.
+* DBX_REGPARM_STABS_LETTER:             DBX Options.
+* DBX_STATIC_CONST_VAR_CODE:            DBX Options.
+* DBX_STATIC_STAB_DATA_SECTION:         DBX Options.
+* DBX_TYPE_DECL_STABS_CODE:             DBX Options.
+* DBX_WORKING_DIRECTORY:                File Names and DBX.
+* DCmode:                               Machine Modes.
+* De Morgan's law:                      Insn Canonicalizations.
+* dead code:                            Passes.
+* dead_or_set_p:                        Peephole Definitions.
+* deallocating variable length arrays:  Variable Length.
+* death notes:                          Obsolete Register Macros.
+* DEBUGGER_ARG_OFFSET:                  All Debuggers.
+* DEBUGGER_AUTO_OFFSET:                 All Debuggers.
+* debugging information generation:     Passes.
+* debugging information options:        Debugging Options.
+* debugging, 88k OCS:                   M88K Options.
+* debug_rtx:                            Bug Reporting.
+* DEBUG_SYMS_TEXT:                      DBX Options.
+* declaration scope:                    Incompatibilities.
+* declarations inside expressions:      Statement Exprs.
+* declarations, RTL:                    RTL Declarations.
+* declaring attributes of functions:    Function Attributes.
+* DEFAULT_CALLER_SAVES:                 Caller Saves.
+* DEFAULT_GDB_EXTENSIONS:               DBX Options.
+* DEFAULT_MAIN_RETURN:                  Misc.
+* DEFAULT_SHORT_ENUMS:                  Type Layout.
+* DEFAULT_SIGNED_CHAR:                  Type Layout.
+* define_asm_attributes:                Tagging Insns.
+* define_attr:                          Defining Attributes.
+* define_delay:                         Delay Slots.
+* define_expand:                        Expander Definitions.
+* define_function_unit:                 Function Units.
+* define_insn:                          Patterns.
+* define_peephole:                      Expander Definitions.
+* define_split:                         Insn Splitting.
+* defining attributes and their values: Defining Attributes.
+* defining jump instruction patterns:   Jump Patterns.
+* defining peephole optimizers:         Peephole Definitions.
+* defining RTL sequences for code generation: Expander Definitions.
+* delay slots, defining:                Delay Slots.
+* delayed branch scheduling:            Passes.
+* DELAY_SLOTS_FOR_EPILOGUE:             Function Entry.
+* dependencies for make as output:      Environment Variables.
+* dependencies, make:                   Preprocessor Options.
+* DEPENDENCIES_OUTPUT:                  Environment Variables.
+* Dependent Patterns:                   Dependent Patterns.
+* destructors, output of:               Initialization.
+* DFmode:                               Machine Modes.
+* dialect options:                      Dialect Options.
+* digits in constraint:                 Simple Constraints.
+* DImode:                               Machine Modes.
+* directory options:                    Directory Options.
+* disabling certain registers:          Register Basics.
+* dispatch table:                       Dispatch Tables.
+* div:                                  Arithmetic.
+* DIVDI3_LIBCALL:                       Library Calls.
+* divide instruction, 88k:              M88K Options.
+* division:                             Arithmetic.
+* division:                             Arithmetic.
+* division:                             Arithmetic.
+* DIVSI3_LIBCALL:                       Library Calls.
+* dollar signs in identifier names:     Dollar Signs.
+* DOLLARS_IN_IDENTIFIERS:               Misc.
+* DONE:                                 Expander Definitions.
+* DONT_REDUCE_ADDR:                     Costs.
+* double-word arithmetic:               Long Long.
+* DOUBLE_TYPE_SIZE:                     Type Layout.
+* downward funargs:                     Nested Functions.
+* driver:                               Driver.
+* DWARF_DEBUGGING_INFO:                 SDB and DWARF.
+* DYNAMIC_CHAIN_ADDRESS:                Frame Layout.
+* EASY_DIV_EXPR:                        Misc.
+* ELIGIBLE_FOR_EPILOGUE_DELAY:          Function Entry.
+* ELIMINABLE_REGS:                      Elimination.
+* empty constraints:                    No Constraints.
+* EMPTY_FIELD_BOUNDARY:                 Storage Layout.
+* ENCODE_SECTION_INFO:                  Sections.
+* ENDFILE_SPEC:                         Driver.
+* endianness:                           Portability.
+* enum machine_mode:                    Machine Modes.
+* enum reg_class:                       Register Classes.
+* environment variables:                Environment Variables.
+* epilogue:                             Function Entry.
+* eq:                                   Comparisons.
+* equal:                                Comparisons.
+* eq_attr:                              Expressions.
+* error:                                Storage Layout.
+* exclamation point:                    Multi-Alternative.
+* exclusive-or, bitwise:                Arithmetic.
+* EXECUTABLE_SUFFIX:                    Config.
+* exit status and VMS:                  VMS Misc.
+* EXIT_BODY:                            Misc.
+* EXIT_IGNORE_STACK:                    Function Entry.
+* expander definitions:                 Expander Definitions.
+* EXPAND_BUILTIN_SAVEREGS:              Varargs.
+* explicit register variables:          Explicit Reg Vars.
+* expression codes:                     RTL Objects.
+* expressions containing statements:    Statement Exprs.
+* expressions, compound, as lvalues:    Lvalues.
+* expressions, conditional, as lvalues: Lvalues.
+* expressions, constructor:             Constructors.
+* expr_list:                            Insns.
+* extended asm:                         Extended Asm.
+* extensible constraints:               Simple Constraints.
+* extensions, ?::                       Conditionals.
+* extensions, ?::                       Lvalues.
+* extensions, C language:               Extensions.
+* extern int target_flags:              Run-time Target.
+* external declaration scope:           Incompatibilities.
+* EXTRA_CC_MODES:                       Condition Code.
+* EXTRA_CC_NAMES:                       Condition Code.
+* EXTRA_CONSTRAINT:                     Register Classes.
+* EXTRA_SECTIONS:                       Sections.
+* EXTRA_SECTION_FUNCTIONS:              Sections.
+* FAIL:                                 Expander Definitions.
+* FAILURE_EXIT_CODE:                    Config.
+* fatal signal:                         Bug Criteria.
+* features, optional, in system conventions: Run-time Target.
+* ffs:                                  Arithmetic.
+* file name suffix:                     Overall Options.
+* file names:                           Link Options.
+* files and passes of the compiler:     Passes.
+* final pass:                           Passes.
+* FINALIZE_PIC:                         PIC.
+* FINAL_PRESCAN_INSN:                   Instruction Output.
+* FINAL_REG_PARM_STACK_SPACE:           Stack Arguments.
+* final_scan_insn:                      Function Entry.
+* final_sequence:                       Instruction Output.
+* FIRST_INSN_ADDRESS:                   Insn Lengths.
+* FIRST_PARM_OFFSET:                    Frame Layout.
+* FIRST_PSEUDO_REGISTER:                Register Basics.
+* FIRST_STACK_REG:                      Stack Registers.
+* FIRST_VIRTUAL_REGISTER:               Regs and Memory.
+* fix:                                  Conversions.
+* fix:                                  Conversions.
+* fixed register:                       Register Basics.
+* FIXED_REGISTERS:                      Register Basics.
+* fixed_regs:                           Register Basics.
+* FIXUNS_TRUNC_LIKE_FIX_TRUNC:          Misc.
+* flags in RTL expression:              Flags.
+* float:                                Conversions.
+* FLOATIFY:                             Library Calls.
+* floating point format and cross compilation: Cross-compilation.
+* FLOAT_ARG_TYPE:                       Library Calls.
+* float_extend:                         Conversions.
+* FLOAT_STORE_FLAG_VALUE:               Misc.
+* float_truncate:                       Conversions.
+* FLOAT_TYPE_SIZE:                      Type Layout.
+* FLOAT_VALUE_TYPE:                     Library Calls.
+* force_reg:                            Standard Names.
+* frame layout:                         Frame Layout.
+* FRAME_GROWS_DOWNWARD:                 Frame Layout.
+* frame_pointer_needed:                 Function Entry.
+* FRAME_POINTER_REGNUM:                 Frame Registers.
+* FRAME_POINTER_REQUIRED:               Elimination.
+* frame_pointer_rtx:                    Frame Registers.
+* function attributes:                  Function Attributes.
+* function call conventions:            Interface.
+* function entry and exit:              Function Entry.
+* function pointers, arithmetic:        Pointer Arith.
+* function prototype declarations:      Function Prototypes.
+* function units, for scheduling:       Function Units.
+* function, size of pointer to:         Pointer Arith.
+* function-call insns:                  Calls.
+* functions that have no side effects:  Function Attributes.
+* functions that never return:          Function Attributes.
+* functions, leaf:                      Leaf Functions.
+* FUNCTION_ARG:                         Register Arguments.
+* FUNCTION_ARG_ADVANCE:                 Register Arguments.
+* FUNCTION_ARG_BOUNDARY:                Register Arguments.
+* FUNCTION_ARG_PADDING:                 Register Arguments.
+* FUNCTION_ARG_PARTIAL_NREGS:           Register Arguments.
+* FUNCTION_ARG_PASS_BY_REFERENCE:       Register Arguments.
+* FUNCTION_ARG_REGNO_P:                 Register Arguments.
+* FUNCTION_BLOCK_PROFILER:              Profiling.
+* FUNCTION_BOUNDARY:                    Storage Layout.
+* FUNCTION_CONVERSION_BUG:              Config.
+* FUNCTION_EPILOGUE:                    Function Entry.
+* FUNCTION_INCOMING_ARG:                Register Arguments.
+* FUNCTION_MODE:                        Misc.
+* FUNCTION_OUTGOING_VALUE:              Scalar Return.
+* FUNCTION_PROFILER:                    Profiling.
+* FUNCTION_PROLOGUE:                    Function Entry.
+* FUNCTION_VALUE:                       Scalar Return.
+* FUNCTION_VALUE_REGNO_P:               Scalar Return.
+* GCC_EXEC_PREFIX:                      Environment Variables.
+* ge:                                   Comparisons.
+* gencodes:                             Passes.
+* genconfig:                            Passes.
+* generalized lvalues:                  Lvalues.
+* general_operand:                      RTL Template.
+* GENERAL_REGS:                         Register Classes.
+* generating assembler output:          Output Statement.
+* generating insns:                     RTL Template.
+* genflags:                             Passes.
+* GEN_ERRNO_RTX:                        Library Calls.
+* get_attr:                             Expressions.
+* get_attr_length:                      Insn Lengths.
+* GET_CLASS_NARROWEST_MODE:             Machine Modes.
+* GET_CODE:                             RTL Objects.
+* get_frame_size:                       Elimination.
+* get_insns:                            Insns.
+* get_last_insn:                        Insns.
+* GET_MODE:                             Machine Modes.
+* GET_MODE_ALIGNMENT:                   Machine Modes.
+* GET_MODE_BITSIZE:                     Machine Modes.
+* GET_MODE_CLASS:                       Machine Modes.
+* GET_MODE_MASK:                        Machine Modes.
+* GET_MODE_NAME:                        Machine Modes.
+* GET_MODE_NUNITS:                      Machine Modes.
+* GET_MODE_SIZE:                        Machine Modes.
+* GET_MODE_UNIT_SIZE:                   Machine Modes.
+* GET_MODE_WIDER_MODE:                  Machine Modes.
+* GET_RTX_CLASS:                        Accessors.
+* GET_RTX_FORMAT:                       Accessors.
+* GET_RTX_LENGTH:                       Accessors.
+* geu:                                  Comparisons.
+* global offset table:                  Code Gen Options.
+* global register after longjmp:        Global Reg Vars.
+* global register allocation:           Passes.
+* global register variables:            Global Reg Vars.
+* GLOBALDEF:                            Global Declarations.
+* GLOBALREF:                            Global Declarations.
+* GLOBALVALUEDEF:                       Global Declarations.
+* GLOBALVALUEREF:                       Global Declarations.
+* GNU CC and portability:               Portability.
+* GNU CC command options:               Invoking GCC.
+* GNU extensions to the C language:     Extensions.
+* goto with computed label:             Labels as Values.
+* GO_IF_LEGITIMATE_ADDRESS:             Addressing Modes.
+* GO_IF_MODE_DEPENDENT_ADDRESS:         Addressing Modes.
+* gp-relative references (MIPS):        MIPS Options.
+* greater than:                         Comparisons.
+* greater than:                         Comparisons.
+* greater than:                         Comparisons.
+* grouping options:                     Invoking GCC.
+* gt:                                   Comparisons.
+* gtu:                                  Comparisons.
+* HANDLE_PRAGMA:                        Misc.
+* hard registers:                       Regs and Memory.
+* hardware models and configurations, specifying: Submodel Options.
+* HARD_REGNO_MODE_OK:                   Values in Registers.
+* HARD_REGNO_NREGS:                     Values in Registers.
+* HAVE_ATEXIT:                          Misc.
+* HAVE_POST_DECREMENT:                  Addressing Modes.
+* HAVE_POST_INCREMENT:                  Addressing Modes.
+* HAVE_PRE_DECREMENT:                   Addressing Modes.
+* HAVE_PRE_INCREMENT:                   Addressing Modes.
+* HAVE_PUTENV:                          Config.
+* HAVE_VPRINTF:                         Config.
+* header files and VMS:                 Include Files and VMS.
+* high:                                 Constants.
+* HImode:                               Machine Modes.
+* HOST_BITS_PER_CHAR:                   Config.
+* HOST_BITS_PER_INT:                    Config.
+* HOST_BITS_PER_LONG:                   Config.
+* HOST_BITS_PER_SHORT:                  Config.
+* HOST_FLOAT_FORMAT:                    Config.
+* HOST_WORDS_BIG_ENDIAN:                Config.
+* HPPA Options:                         HPPA Options.
+* i386 Options:                         i386 Options.
+* IBM RS/6000 Options:                  RS/6000 Options.
+* IBM RT options:                       RT Options.
+* IBM RT PC:                            Interoperation.
+* identifier names, dollar signs in:    Dollar Signs.
+* identifiers, names in assembler code: Asm Labels.
+* identifying source, compiler (88k):   M88K Options.
+* IEEE_FLOAT_FORMAT:                    Storage Layout.
+* if_then_else:                         Comparisons.
+* immediate_operand:                    RTL Template.
+* IMMEDIATE_PREFIX:                     Instruction Output.
+* IMPLICIT_FIX_EXPR:                    Misc.
+* include files and VMS:                Include Files and VMS.
+* INCLUDE_DEFAULTS:                     Driver.
+* inclusive-or, bitwise:                Arithmetic.
+* incompatibilities of GNU CC:          Incompatibilities.
+* increment operators:                  Bug Criteria.
+* INDEX_REG_CLASS:                      Register Classes.
+* initialization routines:              Initialization.
+* initializations in expressions:       Constructors.
+* initializers with labeled elements:   Labeled Elements.
+* initializers, non-constant:           Initializers.
+* INITIALIZE_TRAMPOLINE:                Trampolines.
+* INITIAL_ELIMINATION_OFFSET:           Elimination.
+* INITIAL_FRAME_POINTER_OFFSET:         Elimination.
+* INIT_CUMULATIVE_ARGS:                 Register Arguments.
+* INIT_CUMULATIVE_INCOMING_ARGS:        Register Arguments.
+* INIT_SECTION_ASM_OP:                  Sections.
+* INIT_SECTION_ASM_OP:                  Macros for Initialization.
+* inline functions:                     Inline.
+* inline functions, omission of:        Inline.
+* inline, automatic:                    Passes.
+* insn:                                 Insns.
+* insn attributes:                      Insn Attributes.
+* insn canonicalization:                Insn Canonicalizations.
+* insn lengths, computing:              Insn Lengths.
+* insn splitting:                       Insn Splitting.
+* insn-attr.h:                          Defining Attributes.
+* insns:                                Insns.
+* insns, generating:                    RTL Template.
+* insns, recognizing:                   RTL Template.
+* INSN_ANNULLED_BRANCH_P:               Flags.
+* INSN_CACHE_DEPTH:                     Trampolines.
+* INSN_CACHE_LINE_WIDTH:                Trampolines.
+* INSN_CACHE_SIZE:                      Trampolines.
+* INSN_CLOBBERS_REGNO_P:                Obsolete Register Macros.
+* INSN_CODE:                            Insns.
+* INSN_DELETED_P:                       Flags.
+* INSN_FROM_TARGET_P:                   Flags.
+* insn_list:                            Insns.
+* INSN_UID:                             Insns.
+* installation trouble:                 Trouble.
+* installing GNU CC:                    Installation.
+* installing GNU CC on the 3b1:         3b1 Install.
+* installing GNU CC on the Sun:         Sun Install.
+* installing GNU CC on Unos:            Unos Install.
+* installing GNU CC on VMS:             VMS Install.
+* instruction attributes:               Insn Attributes.
+* instruction combination:              Passes.
+* instruction patterns:                 Patterns.
+* instruction recognizer:               Passes.
+* instruction scheduling:               Passes.
+* instruction scheduling:               Passes.
+* instruction splitting:                Insn Splitting.
+* integrated:                           Flags.
+* INTEGRATE_THRESHOLD:                  Misc.
+* integrating function code:            Inline.
+* Intel 386 Options:                    i386 Options.
+* Interdependence of Patterns:          Dependent Patterns.
+* interfacing to GNU CC output:         Interface.
+* INTIFY:                               Library Calls.
+* introduction:                         Top.
+* INT_TYPE_SIZE:                        Type Layout.
+* invalid assembly code:                Bug Criteria.
+* invalid input:                        Bug Criteria.
+* in_data:                              Sections.
+* in_struct:                            Flags.
+* in_text:                              Sections.
+* ior:                                  Arithmetic.
+* isinf:                                Cross-compilation.
+* isnan:                                Cross-compilation.
+* jump instruction patterns:            Jump Patterns.
+* jump instructions and set:            Side Effects.
+* jump optimization:                    Passes.
+* jump threading:                       Passes.
+* jump_insn:                            Insns.
+* JUMP_LABEL:                           Insns.
+* JUMP_TABLES_IN_TEXT_SECTION:          Sections.
+* keywords, alternate:                  Alternate Keywords.
+* known causes of trouble:              Trouble.
+* labeled elements in initializers:     Labeled Elements.
+* labels as values:                     Labels as Values.
+* LABEL_NUSES:                          Insns.
+* LABEL_OUTSIDE_LOOP_P:                 Flags.
+* LABEL_PRESERVE_P:                     Flags.
+* label_ref:                            Constants.
+* language dialect options:             Dialect Options.
+* large bit shifts (88k):               M88K Options.
+* large return values:                  Aggregate Return.
+* LAST_STACK_REG:                       Stack Registers.
+* LAST_VIRTUAL_REGISTER:                Regs and Memory.
+* ldexp:                                Cross-compilation.
+* le:                                   Comparisons.
+* leaf functions:                       Leaf Functions.
+* leaf_function:                        Leaf Functions.
+* leaf_function_p:                      Standard Names.
+* LEAF_REGISTERS:                       Leaf Functions.
+* LEAF_REG_REMAP:                       Leaf Functions.
+* left rotate:                          Arithmetic.
+* left shift:                           Arithmetic.
+* left shift:                           Arithmetic.
+* LEGITIMATE_CONSTANT_P:                Addressing Modes.
+* LEGITIMATE_PIC_OPERAND_P:             PIC.
+* LEGITIMIZE_ADDRESS:                   Addressing Modes.
+* length-zero arrays:                   Zero Length.
+* less than:                            Comparisons.
+* less than or equal:                   Comparisons.
+* leu:                                  Comparisons.
+* LIBCALL_VALUE:                        Scalar Return.
+* LIBGCC_NEEDS_DOUBLE:                  Library Calls.
+* Libraries:                            Link Options.
+* library subroutine names:             Library Calls.
+* LIBRARY_PATH:                         Environment Variables.
+* LIB_SPEC:                             Driver.
+* LIMIT_RELOAD_CLASS:                   Register Classes.
+* link options:                         Link Options.
+* LINK_LIBGCC_SPECIAL:                  Driver.
+* LINK_SPEC:                            Driver.
+* load address instruction:             Simple Constraints.
+* local labels:                         Local Labels.
+* local register allocation:            Passes.
+* local variables in macros:            Naming Types.
+* local variables, specifying registers: Local Reg Vars.
+* LOCAL_INCLUDE_DIR:                    Driver.
+* LOCAL_LABEL_PREFIX:                   Instruction Output.
+* logical shift:                        Arithmetic.
+* logical-and, bitwise:                 Arithmetic.
+* LOG_LINKS:                            Insns.
+* longjmp:                              Global Reg Vars.
+* LONGJMP_RESTORE_FROM_STACK:           Elimination.
+* LONG_DOUBLE_TYPE_SIZE:                Type Layout.
+* LONG_LONG_TYPE_SIZE:                  Type Layout.
+* LONG_TYPE_SIZE:                       Type Layout.
+* loop optimization:                    Passes.
+* lo_sum:                               Arithmetic.
+* lshift:                               Arithmetic.
+* lshiftrt:                             Arithmetic.
+* lt:                                   Comparisons.
+* ltu:                                  Comparisons.
+* lvalues, generalized:                 Lvalues.
+* M680x0 options:                       M680x0 Options.
+* M88k options:                         M88K Options.
+* machine dependent options:            Submodel Options.
+* machine description macros:           Target Macros.
+* machine descriptions:                 Machine Desc.
+* machine mode conversions:             Conversions.
+* machine modes:                        Machine Modes.
+* macro with variable arguments:        Macro Varargs.
+* macros containing asm:                Extended Asm.
+* macros, inline alternative:           Inline.
+* macros, local labels:                 Local Labels.
+* macros, local variables in:           Naming Types.
+* macros, statements in expressions:    Statement Exprs.
+* macros, target description:           Target Macros.
+* macros, types of arguments:           Typeof.
+* make:                                 Preprocessor Options.
+* make_safe_from:                       Expander Definitions.
+* matching constraint:                  Simple Constraints.
+* matching operands:                    Output Template.
+* match_dup:                            RTL Template.
+* match_operand:                        RTL Template.
+* match_operator:                       RTL Template.
+* match_op_dup:                         RTL Template.
+* match_parallel:                       RTL Template.
+* match_par_dup:                        RTL Template.
+* match_scratch:                        RTL Template.
+* math libraries:                       Interface.
+* math, in RTL:                         Arithmetic.
+* MAX_BITS_PER_WORD:                    Storage Layout.
+* MAX_FIXED_MODE_SIZE:                  Storage Layout.
+* MAX_OFILE_ALIGNMENT:                  Storage Layout.
+* MAX_REGS_PER_ADDRESS:                 Addressing Modes.
+* MAYBE_REG_PARM_STACK_SPACE:           Stack Arguments.
+* mcount:                               Profiling.
+* MD_CALL_PROTOTYPES:                   Config.
+* MD_EXEC_PREFIX:                       Driver.
+* MD_STARTFILE_PREFIX:                  Driver.
+* MD_STARTFILE_PREFIX_1:                Driver.
+* mem:                                  Regs and Memory.
+* memory reference, nonoffsettable:     Simple Constraints.
+* memory references in constraints:     Simple Constraints.
+* MEMORY_MOVE_COST:                     Costs.
+* MEM_IN_STRUCT_P:                      Flags.
+* MEM_VOLATILE_P:                       Flags.
+* messages, warning:                    Warning Options.
+* middle-operands, omitted:             Conditionals.
+* minus:                                Arithmetic.
+* MIPS options:                         MIPS Options.
+* mod:                                  Arithmetic.
+* MODDI3_LIBCALL:                       Library Calls.
+* mode classes:                         Machine Modes.
+* MODES_TIEABLE_P:                      Values in Registers.
+* MODE_CC:                              Machine Modes.
+* MODE_COMPLEX_FLOAT:                   Machine Modes.
+* MODE_COMPLEX_INT:                     Machine Modes.
+* MODE_FLOAT:                           Machine Modes.
+* MODE_FUNCTION:                        Machine Modes.
+* MODE_INT:                             Machine Modes.
+* MODE_PARTIAL_INT:                     Machine Modes.
+* MODE_RANDOM:                          Machine Modes.
+* modifiers in constraints:             Modifiers.
+* MODSI3_LIBCALL:                       Library Calls.
+* MOVE_MAX:                             Misc.
+* MOVE_RATIO:                           Costs.
+* MULDI3_LIBCALL:                       Library Calls.
+* MULSI3_LIBCALL:                       Library Calls.
+* mult:                                 Arithmetic.
+* MULTIBYTE_CHARS:                      Config.
+* multiple alternative constraints:     Multi-Alternative.
+* multiplication:                       Arithmetic.
+* multiprecision arithmetic:            Long Long.
+* name augmentation:                    VMS Misc.
+* named patterns and conditions:        Patterns.
+* names used in assembler code:         Asm Labels.
+* names, pattern:                       Standard Names.
+* naming types:                         Naming Types.
+* ne:                                   Comparisons.
+* neg:                                  Arithmetic.
+* nested functions:                     Nested Functions.
+* nested functions, trampolines for:    Trampolines.
+* next_cc0_user:                        Jump Patterns.
+* NEXT_INSN:                            Insns.
+* NEXT_OBJC_RUNTIME:                    Library Calls.
+* nil:                                  RTL Objects.
+* no constraints:                       No Constraints.
+* no-op move instructions:              Passes.
+* non-constant initializers:            Initializers.
+* non-static inline function:           Inline.
+* nongcc_SI_type:                       Library Calls.
+* nonoffsettable memory reference:      Simple Constraints.
+* NON_SAVING_SETJMP:                    Register Basics.
+* not:                                  Arithmetic.
+* not equal:                            Comparisons.
+* not using constraints:                No Constraints.
+* note:                                 Insns.
+* NOTE_INSN_BLOCK_BEG:                  Insns.
+* NOTE_INSN_BLOCK_END:                  Insns.
+* NOTE_INSN_DELETED:                    Insns.
+* NOTE_INSN_FUNCTION_END:               Insns.
+* NOTE_INSN_LOOP_BEG:                   Insns.
+* NOTE_INSN_LOOP_CONT:                  Insns.
+* NOTE_INSN_LOOP_END:                   Insns.
+* NOTE_INSN_LOOP_VTOP:                  Insns.
+* NOTE_INSN_SETJMP:                     Insns.
+* NOTE_LINE_NUMBER:                     Insns.
+* NOTE_SOURCE_FILE:                     Insns.
+* NOTICE_UPDATE_CC:                     Condition Code.
+* NO_DOLLAR_IN_LABEL:                   Misc.
+* NO_FUNCTION_CSE:                      Costs.
+* NO_MD_PROTOTYPES:                     Config.
+* NO_RECURSIVE_FUNCTION_CSE:            Costs.
+* NO_REGS:                              Register Classes.
+* NO_STAB_H:                            Config.
+* NO_SYS_SIGLIST:                       Config.
+* NUM_MACHINE_MODES:                    Machine Modes.
+* N_REG_CLASSES:                        Register Classes.
+* OBJC_GEN_METHOD_LABEL:                Label Output.
+* OBJC_INCLUDE_PATH:                    Environment Variables.
+* OBJC_INT_SELECTORS:                   Type Layout.
+* OBJC_PROLOGUE:                        File Framework.
+* OBJC_SELECTORS_WITHOUT_LABELS:        Type Layout.
+* OBJECT_FORMAT_COFF:                   Macros for Initialization.
+* OBJECT_FORMAT_ROSE:                   Macros for Initialization.
+* OBSTACK_CHUNK_ALLOC:                  Config.
+* OBSTACK_CHUNK_FREE:                   Config.
+* OBSTACK_CHUNK_SIZE:                   Config.
+* obstack_free:                         3b1 Install.
+* OCS (88k):                            M88K Options.
+* offsettable address:                  Simple Constraints.
+* old-style function definitions:       Function Prototypes.
+* omitted middle-operands:              Conditionals.
+* ONLY_INT_FIELDS:                      Config.
+* open coding:                          Inline.
+* operand access:                       Accessors.
+* operand constraints:                  Constraints.
+* operand substitution:                 Output Template.
+* operands:                             Patterns.
+* OPTIMIZATION_OPTIONS:                 Run-time Target.
+* optimize options:                     Optimize Options.
+* optional hardware or system features: Run-time Target.
+* options to control warnings:          Warning Options.
+* options, code generation:             Code Gen Options.
+* options, debugging:                   Debugging Options.
+* options, dialect:                     Dialect Options.
+* options, directory search:            Directory Options.
+* options, GNU CC command:              Invoking GCC.
+* options, grouping:                    Invoking GCC.
+* options, linking:                     Link Options.
+* options, optimization:                Optimize Options.
+* options, order:                       Invoking GCC.
+* options, preprocessor:                Preprocessor Options.
+* order of options:                     Invoking GCC.
+* order of register allocation:         Allocation Order.
+* Ordering of Patterns:                 Pattern Ordering.
+* ORDER_REGS_FOR_LOCAL_ALLOC:           Allocation Order.
+* other directory, compilation in:      Other Dir.
+* OUTGOING_REG_PARM_STACK_SPACE:        Stack Arguments.
+* output file option:                   Overall Options.
+* output of assembler code:             File Framework.
+* output statements:                    Output Statement.
+* output templates:                     Output Template.
+* output_addr_const:                    Data Output.
+* output_asm_insn:                      Output Statement.
+* overflow while constant folding:      Cross-compilation.
+* OVERLAPPING_REGNO_P:                  Obsolete Register Macros.
+* OVERRIDE_OPTIONS:                     Run-time Target.
+* parallel:                             Side Effects.
+* parameter forward declaration:        Variable Length.
+* parameters, miscellaneous:            Misc.
+* PARM_BOUNDARY:                        Storage Layout.
+* parser generator, Bison:              Installation.
+* parsing pass:                         Passes.
+* passes and files of the compiler:     Passes.
+* passing arguments:                    Interface.
+* PATTERN:                              Insns.
+* pattern conditions:                   Patterns.
+* pattern names:                        Standard Names.
+* Pattern Ordering:                     Pattern Ordering.
+* patterns:                             Patterns.
+* pc:                                   Regs and Memory.
+* PCC_BITFIELD_TYPE_MATTERS:            Storage Layout.
+* PCC_STATIC_STRUCT_RETURN:             Aggregate Return.
+* pc_rtx:                               Regs and Memory.
+* PDImode:                              Machine Modes.
+* peephole optimization:                Passes.
+* peephole optimization, RTL representation: Side Effects.
+* peephole optimizer definitions:       Peephole Definitions.
+* percent sign:                         Output Template.
+* perform_...:                          Library Calls.
+* PIC:                                  Code Gen Options.
+* PIC:                                  PIC.
+* PIC_OFFSET_TABLE_REGNUM:              PIC.
+* plus:                                 Arithmetic.
+* Pmode:                                Misc.
+* pointer arguments:                    Function Attributes.
+* POINTER_SIZE:                         Storage Layout.
+* portability:                          Portability.
+* position independent code:            PIC.
+* post_dec:                             Incdec.
+* post_inc:                             Incdec.
+* pragma:                               Misc.
+* pragma, reason for not using:         Function Attributes.
+* predefined macros:                    Run-time Target.
+* PREDICATE_CODES:                      Misc.
+* PREFERRED_OUTPUT_RELOAD_CLASS:        Register Classes.
+* PREFERRED_RELOAD_CLASS:               Register Classes.
+* preprocessor options:                 Preprocessor Options.
+* PRESERVE_DEATH_INFO_REGNO_P:          Obsolete Register Macros.
+* prev_cc0_setter:                      Jump Patterns.
+* PREV_INSN:                            Insns.
+* prev_nonnote_insn:                    Peephole Definitions.
+* pre_dec:                              Incdec.
+* pre_inc:                              Incdec.
+* PRINT_OPERAND:                        Instruction Output.
+* PRINT_OPERAND_ADDRESS:                Instruction Output.
+* PRINT_OPERAND_PUNCT_VALID_P:          Instruction Output.
+* product:                              Arithmetic.
+* PROFILE_BEFORE_PROLOGUE:              Profiling.
+* profiling, code generation:           Profiling.
+* program counter:                      Regs and Memory.
+* prologue:                             Function Entry.
+* PROMOTE_FUNCTION_ARGS:                Storage Layout.
+* PROMOTE_FUNCTION_RETURN:              Storage Layout.
+* PROMOTE_MODE:                         Storage Layout.
+* PROMOTE_PROTOTYPES:                   Stack Arguments.
+* promotion of formal parameters:       Function Prototypes.
+* pseudo registers:                     Regs and Memory.
+* PSImode:                              Machine Modes.
+* PTRDIFF_TYPE:                         Type Layout.
+* push address instruction:             Simple Constraints.
+* PUSH_ROUNDING:                        Stack Arguments.
+* putenv:                               Config.
+* PUT_CODE:                             RTL Objects.
+* PUT_MODE:                             Machine Modes.
+* PUT_REG_NOTE_KIND:                    Insns.
+* PUT_SDB_...:                          SDB and DWARF.
+* QImode:                               Machine Modes.
+* question mark:                        Multi-Alternative.
+* quotient:                             Arithmetic.
+* r0-relative references (88k):         M88K Options.
+* ranges in case statements:            Case Ranges.
+* read-only strings:                    Incompatibilities.
+* READONLY_DATA_SECTION:                Sections.
+* REAL_ARITHMETIC:                      Cross-compilation.
+* REAL_INFINITY:                        Cross-compilation.
+* REAL_NM_FILE_NAME:                    Macros for Initialization.
+* REAL_VALUES_EQUAL:                    Cross-compilation.
+* REAL_VALUES_LESS:                     Cross-compilation.
+* REAL_VALUE_ATOF:                      Cross-compilation.
+* REAL_VALUE_FIX:                       Cross-compilation.
+* REAL_VALUE_FIX_TRUNCATE:              Cross-compilation.
+* REAL_VALUE_FROM_INT:                  Cross-compilation.
+* REAL_VALUE_ISINF:                     Cross-compilation.
+* REAL_VALUE_ISNAN:                     Cross-compilation.
+* REAL_VALUE_LDEXP:                     Cross-compilation.
+* REAL_VALUE_NEGATE:                    Cross-compilation.
+* REAL_VALUE_TO_INT:                    Cross-compilation.
+* REAL_VALUE_TRUNCATE:                  Cross-compilation.
+* REAL_VALUE_TYPE:                      Cross-compilation.
+* REAL_VALUE_UNSIGNED_FIX:              Cross-compilation.
+* REAL_VALUE_UNSIGNED_FIX_TRUNCATE:     Cross-compilation.
+* recognizing insns:                    RTL Template.
+* recog_operand:                        Instruction Output.
+* reg:                                  Regs and Memory.
+* register allocation:                  Passes.
+* register allocation order:            Allocation Order.
+* register allocation, stupid:          Passes.
+* register class definitions:           Register Classes.
+* register class preference constraints: Class Preferences.
+* register class preference pass:       Passes.
+* register pairs:                       Values in Registers.
+* register positions in frame (88k):    M88K Options.
+* register positions in frame (88k):    M88K Options.
+* Register Transfer Language (RTL):     RTL.
+* register usage:                       Registers.
+* register use analysis:                Passes.
+* register variable after longjmp:      Global Reg Vars.
+* register-to-stack conversion:         Passes.
+* registers:                            Extended Asm.
+* registers arguments:                  Register Arguments.
+* registers for local variables:        Local Reg Vars.
+* registers in constraints:             Simple Constraints.
+* registers, global allocation:         Explicit Reg Vars.
+* registers, global variables in:       Global Reg Vars.
+* REGISTER_MOVE_COST:                   Costs.
+* REGISTER_NAMES:                       Instruction Output.
+* register_operand:                     RTL Template.
+* REGISTER_PREFIX:                      Instruction Output.
+* REGNO_OK_FOR_BASE_P:                  Register Classes.
+* REGNO_OK_FOR_INDEX_P:                 Register Classes.
+* REGNO_REG_CLASS:                      Register Classes.
+* regs_ever_live:                       Function Entry.
+* REG_ALLOC_ORDER:                      Allocation Order.
+* REG_CC_SETTER:                        Insns.
+* REG_CC_USER:                          Insns.
+* REG_CLASS_CONTENTS:                   Register Classes.
+* REG_CLASS_FROM_LETTER:                Register Classes.
+* REG_CLASS_NAMES:                      Register Classes.
+* REG_DEAD:                             Insns.
+* REG_DEP_ANTI:                         Insns.
+* REG_DEP_OUTPUT:                       Insns.
+* REG_EQUAL:                            Insns.
+* REG_EQUIV:                            Insns.
+* REG_FUNCTION_VALUE_P:                 Flags.
+* REG_INC:                              Insns.
+* REG_LABEL:                            Insns.
+* REG_LEAF_ALLOC_ORDER:                 Leaf Functions.
+* REG_LIBCALL:                          Insns.
+* REG_LOOP_TEST_P:                      Flags.
+* reg_names:                            Instruction Output.
+* REG_NONNEG:                           Insns.
+* REG_NOTES:                            Insns.
+* REG_NOTE_KIND:                        Insns.
+* REG_NO_CONFLICT:                      Insns.
+* REG_OK_FOR_BASE_P:                    Addressing Modes.
+* REG_OK_FOR_INDEX_P:                   Addressing Modes.
+* REG_OK_STRICT:                        Addressing Modes.
+* REG_PARM_STACK_SPACE:                 Stack Arguments.
+* REG_RETVAL:                           Insns.
+* REG_UNUSED:                           Insns.
+* REG_USERVAR_P:                        Flags.
+* REG_WAS_0:                            Insns.
+* relative costs:                       Costs.
+* RELATIVE_PREFIX_NOT_LINKDIR:          Driver.
+* reload pass:                          Regs and Memory.
+* reloading:                            Passes.
+* reload_completed:                     Standard Names.
+* reload_in_progress:                   Standard Names.
+* remainder:                            Arithmetic.
+* reporting bugs:                       Bugs.
+* representation of RTL:                RTL.
+* rest argument (in macro):             Macro Varargs.
+* rest_of_compilation:                  Passes.
+* rest_of_decl_compilation:             Passes.
+* return:                               Side Effects.
+* return value of main:                 VMS Misc.
+* return values in registers:           Scalar Return.
+* returning aggregate values:           Aggregate Return.
+* returning structures and unions:      Interface.
+* RETURN_IN_MEMORY:                     Aggregate Return.
+* RETURN_POPS_ARGS:                     Stack Arguments.
+* right rotate:                         Arithmetic.
+* right shift:                          Arithmetic.
+* rotate:                               Arithmetic.
+* rotate:                               Arithmetic.
+* rotatert:                             Arithmetic.
+* ROUND_TYPE_ALIGN:                     Storage Layout.
+* ROUND_TYPE_SIZE:                      Storage Layout.
+* RS/6000 Options:                      RS/6000 Options.
+* RT options:                           RT Options.
+* RT PC:                                Interoperation.
+* RTL addition:                         Arithmetic.
+* RTL comparison:                       Arithmetic.
+* RTL comparison operations:            Comparisons.
+* RTL constant expression types:        Constants.
+* RTL constants:                        Constants.
+* RTL declarations:                     RTL Declarations.
+* RTL difference:                       Arithmetic.
+* RTL expression:                       RTL Objects.
+* RTL expressions for arithmetic:       Arithmetic.
+* RTL format:                           Accessors.
+* RTL format characters:                Accessors.
+* RTL function-call insns:              Calls.
+* RTL generation:                       Passes.
+* RTL insn template:                    RTL Template.
+* RTL integers:                         RTL Objects.
+* RTL memory expressions:               Regs and Memory.
+* RTL object types:                     RTL Objects.
+* RTL postdecrement:                    Incdec.
+* RTL postincrement:                    Incdec.
+* RTL predecrement:                     Incdec.
+* RTL preincrement:                     Incdec.
+* RTL register expressions:             Regs and Memory.
+* RTL representation:                   RTL.
+* RTL side effect expressions:          Side Effects.
+* RTL strings:                          RTL Objects.
+* RTL structure sharing assumptions:    Sharing.
+* RTL subtraction:                      Arithmetic.
+* RTL sum:                              Arithmetic.
+* RTL vectors:                          RTL Objects.
+* RTX (See RTL):                        RTL Objects.
+* RTX_COSTS:                            Costs.
+* RTX_INTEGRATED_P:                     Flags.
+* RTX_UNCHANGING_P:                     Flags.
+* run-time conventions:                 Interface.
+* run-time options:                     Code Gen Options.
+* run-time target specification:        Run-time Target.
+* saveable_obstack:                     Addressing Modes.
+* scalars, returned as values:          Scalar Return.
+* SCCS_DIRECTIVE:                       Misc.
+* scheduling, delayed branch:           Passes.
+* scheduling, instruction:              Passes.
+* scheduling, instruction:              Passes.
+* SCHED_GROUP_P:                        Flags.
+* SCmode:                               Machine Modes.
+* scope of a variable length array:     Variable Length.
+* scope of declaration:                 Disappointments.
+* scope of external declarations:       Incompatibilities.
+* scratch:                              Regs and Memory.
+* scratch operands:                     Regs and Memory.
+* SDB_ALLOW_FORWARD_REFERENCES:         SDB and DWARF.
+* SDB_ALLOW_UNKNOWN_REFERENCES:         SDB and DWARF.
+* SDB_DEBUGGING_INFO:                   SDB and DWARF.
+* SDB_DELIM:                            SDB and DWARF.
+* SDB_GENERATE_FAKE:                    SDB and DWARF.
+* search path:                          Directory Options.
+* SECONDARY_INPUT_RELOAD_CLASS:         Register Classes.
+* SECONDARY_MEMORY_NEEDED:              Register Classes.
+* SECONDARY_OUTPUT_RELOAD_CLASS:        Register Classes.
+* SECONDARY_RELOAD_CLASS:               Register Classes.
+* SELECT_CC_MODE:                       Condition Code.
+* SELECT_RTX_SECTION:                   Sections.
+* SELECT_SECTION:                       Sections.
+* separate directory, compilation in:   Other Dir.
+* sequence:                             Side Effects.
+* sequential consistency on 88k:        M88K Options.
+* set:                                  Side Effects.
+* setjmp:                               Global Reg Vars.
+* SETUP_INCOMING_VARARGS:               Varargs.
+* set_attr:                             Tagging Insns.
+* set_attr_alternative:                 Tagging Insns.
+* SET_DEST:                             Side Effects.
+* SET_SRC:                              Side Effects.
+* SFmode:                               Machine Modes.
+* shared strings:                       Incompatibilities.
+* shared VMS run time system:           VMS Misc.
+* SHARED_SECTION_ASM_OP:                Sections.
+* sharing of RTL components:            Sharing.
+* shift:                                Arithmetic.
+* SHIFT_COUNT_TRUNCATED:                Misc.
+* SHORT_TYPE_SIZE:                      Type Layout.
+* side effect in ?::                    Conditionals.
+* side effects, macro argument:         Statement Exprs.
+* signed division:                      Arithmetic.
+* signed maximum:                       Arithmetic.
+* signed minimum:                       Arithmetic.
+* SIGNED_CHAR_SPEC:                     Driver.
+* sign_extend:                          Conversions.
+* sign_extract:                         Bit Fields.
+* SImode:                               Machine Modes.
+* simple constraints:                   Simple Constraints.
+* simplifications, arithmetic:          Passes.
+* sizeof:                               Typeof.
+* SIZE_TYPE:                            Type Layout.
+* SLOW_BYTE_ACCESS:                     Costs.
+* SLOW_UNALIGNED_ACCESS:                Costs.
+* SLOW_ZERO_EXTEND:                     Costs.
+* smaller data references (88k):        M88K Options.
+* smaller data references (MIPS):       MIPS Options.
+* SMALL_REGISTER_CLASSES:               Register Classes.
+* smax:                                 Arithmetic.
+* smin:                                 Arithmetic.
+* SPARC options:                        Sparc Options.
+* specified registers:                  Explicit Reg Vars.
+* specifying compiler version and target machine: Target Options.
+* specifying hardware config:           Submodel Options.
+* specifying machine version:           Target Options.
+* specifying registers for local variables: Local Reg Vars.
+* speed of instructions:                Costs.
+* splitting instructions:               Insn Splitting.
+* sqrt:                                 Arithmetic.
+* square root:                          Arithmetic.
+* stack arguments:                      Stack Arguments.
+* stack frame layout:                   Frame Layout.
+* STACK_BOUNDARY:                       Storage Layout.
+* STACK_DYNAMIC_OFFSET:                 Frame Layout.
+* STACK_GROWS_DOWNWARD:                 Frame Layout.
+* STACK_PARMS_IN_REG_PARM_AREA:         Stack Arguments.
+* STACK_POINTER_OFFSET:                 Frame Layout.
+* STACK_POINTER_REGNUM:                 Frame Registers.
+* stack_pointer_rtx:                    Frame Registers.
+* STACK_REGS:                           Stack Registers.
+* stage1:                               Installation.
+* standard pattern names:               Standard Names.
+* STANDARD_EXEC_PREFIX:                 Driver.
+* STANDARD_INCLUDE_DIR:                 Driver.
+* STANDARD_STARTFILE_PREFIX:            Driver.
+* STARTFILE_SPEC:                       Driver.
+* STARTING_FRAME_OFFSET:                Frame Layout.
+* statements inside expressions:        Statement Exprs.
+* STATIC_CHAIN:                         Frame Registers.
+* STATIC_CHAIN_INCOMING:                Frame Registers.
+* STATIC_CHAIN_INCOMING_REGNUM:         Frame Registers.
+* STATIC_CHAIN_REGNUM:                  Frame Registers.
+* STDC_VALUE:                           Run-time Target.
+* storage layout:                       Storage Layout.
+* STORE_FLAG_VALUE:                     Misc.
+* strcpy:                               Storage Layout.
+* strength-reduction:                   Passes.
+* STRICT_ALIGNMENT:                     Storage Layout.
+* strict_low_part:                      RTL Declarations.
+* string constants:                     Incompatibilities.
+* STRIP_NAME_ENCODING:                  Sections.
+* structure passing (88k):              M88K Options.
+* structure value address:              Aggregate Return.
+* structures:                           Incompatibilities.
+* structures, constructor expression:   Constructors.
+* structures, returning:                Interface.
+* STRUCTURE_SIZE_BOUNDARY:              Storage Layout.
+* STRUCT_VALUE:                         Aggregate Return.
+* STRUCT_VALUE_INCOMING:                Aggregate Return.
+* STRUCT_VALUE_INCOMING_REGNUM:         Aggregate Return.
+* STRUCT_VALUE_REGNUM:                  Aggregate Return.
+* stupid register allocation:           Passes.
+* submodel options:                     Submodel Options.
+* subreg:                               Regs and Memory.
+* SUBREG_PROMOTED_UNSIGNED_P:           Flags.
+* SUBREG_PROMOTED_VAR_P:                Flags.
+* SUBREG_REG:                           Regs and Memory.
+* SUBREG_WORD:                          Regs and Memory.
+* subscripting:                         Subscripting.
+* subscripting and function values:     Subscripting.
+* SUCCESS_EXIT_CODE:                    Config.
+* Sun installation:                     Sun Install.
+* suppressing warnings:                 Warning Options.
+* SVr4:                                 M88K Options.
+* SWITCHES_NEED_SPACES:                 Driver.
+* SWITCH_TAKES_ARG:                     Driver.
+* symbolic label:                       Sharing.
+* symbol_ref:                           Constants.
+* SYMBOL_REF_FLAG:                      Flags.
+* SYMBOL_REF_USED:                      Flags.
+* syntax checking:                      Warning Options.
+* SYSTEM_INCLUDE_DIR:                   Driver.
+* sys_siglist:                          Config.
+* tagging insns:                        Tagging Insns.
+* tail recursion optimization:          Passes.
+* target description macros:            Target Macros.
+* target machine, specifying:           Target Options.
+* target options:                       Target Options.
+* target specifications:                Run-time Target.
+* target-parameter-dependent code:      Passes.
+* TARGET_BELL:                          Type Layout.
+* TARGET_BS:                            Type Layout.
+* TARGET_CR:                            Type Layout.
+* TARGET_EDOM:                          Library Calls.
+* TARGET_FF:                            Type Layout.
+* TARGET_FLOAT_FORMAT:                  Storage Layout.
+* TARGET_MEM_FUNCTIONS:                 Library Calls.
+* TARGET_NEWLINE:                       Type Layout.
+* TARGET_OPTIONS:                       Run-time Target.
+* TARGET_SWITCHES:                      Run-time Target.
+* TARGET_TAB:                           Type Layout.
+* TARGET_VERSION:                       Run-time Target.
+* TARGET_VT:                            Type Layout.
+* TCmode:                               Machine Modes.
+* termination routines:                 Initialization.
+* text_section:                         Sections.
+* TEXT_SECTION_ASM_OP:                  Sections.
+* TFmode:                               Machine Modes.
+* thunks:                               Nested Functions.
+* TImode:                               Machine Modes.
+* TMPDIR:                               Environment Variables.
+* top level of compiler:                Passes.
+* traditional C language:               Dialect Options.
+* TRADITIONAL_RETURN_FLOAT:             Scalar Return.
+* trampolines for nested functions:     Trampolines.
+* TRAMPOLINE_ALIGNMENT:                 Trampolines.
+* TRAMPOLINE_SECTION:                   Trampolines.
+* TRAMPOLINE_SIZE:                      Trampolines.
+* TRAMPOLINE_TEMPLATE:                  Trampolines.
+* TRANSFER_FROM_TRAMPOLINE:             Trampolines.
+* TRULY_NOOP_TRUNCATION:                Misc.
+* truncate:                             Conversions.
+* type alignment:                       Alignment.
+* typedef names as function parameters: Incompatibilities.
+* typeof:                               Typeof.
+* udiv:                                 Arithmetic.
+* UDIVDI3_LIBCALL:                      Library Calls.
+* UDIVSI3_LIBCALL:                      Library Calls.
+* Ultrix calling convention:            Interoperation.
+* umax:                                 Arithmetic.
+* umin:                                 Arithmetic.
+* umod:                                 Arithmetic.
+* UMODDI3_LIBCALL:                      Library Calls.
+* UMODSI3_LIBCALL:                      Library Calls.
+* unchanging:                           Flags.
+* undefined behavior:                   Bug Criteria.
+* undefined function value:             Bug Criteria.
+* underscores in variables in macros:   Naming Types.
+* underscores, avoiding (88k):          M88K Options.
+* union, casting to a:                  Cast to Union.
+* unions:                               Incompatibilities.
+* unions, returning:                    Interface.
+* UNITS_PER_WORD:                       Storage Layout.
+* UNKNOWN_FLOAT_FORMAT:                 Storage Layout.
+* Unos installation:                    Unos Install.
+* unreachable code:                     Passes.
+* unshare_all_rtl:                      Sharing.
+* unsigned division:                    Arithmetic.
+* unsigned greater than:                Comparisons.
+* unsigned greater than:                Comparisons.
+* unsigned less than:                   Comparisons.
+* unsigned less than:                   Comparisons.
+* unsigned minimum and maximum:         Arithmetic.
+* unsigned_fix:                         Conversions.
+* unsigned_float:                       Conversions.
+* unspec:                               Side Effects.
+* unspec_volatile:                      Side Effects.
+* use:                                  Side Effects.
+* used:                                 Flags.
+* USER_LABEL_PREFIX:                    Instruction Output.
+* USE_C_ALLOCA:                         Config.
+* USE_PROTOTYPES:                       Config.
+* USG:                                  Config.
+* value after longjmp:                  Global Reg Vars.
+* values, returned by functions:        Scalar Return.
+* varargs implementation:               Varargs.
+* variable alignment:                   Alignment.
+* variable attributes:                  Variable Attributes.
+* variable number of arguments:         Macro Varargs.
+* variable-length array scope:          Variable Length.
+* variable-length arrays:               Variable Length.
+* variables in specified registers:     Explicit Reg Vars.
+* variables, local, in macros:          Naming Types.
+* Vax calling convention:               Interoperation.
+* VAX options:                          VAX Options.
+* VAX_FLOAT_FORMAT:                     Storage Layout.
+* VIRTUAL_INCOMING_ARGS_REGNUM:         Regs and Memory.
+* VIRTUAL_OUTGOING_ARGS_REGNUM:         Regs and Memory.
+* VIRTUAL_STACK_DYNAMIC_REGNUM:         Regs and Memory.
+* VIRTUAL_STACK_VARS_REGNUM:            Regs and Memory.
+* VMS:                                  Config.
+* VMS and case sensitivity:             VMS Misc.
+* VMS and include files:                Include Files and VMS.
+* VMS installation:                     VMS Install.
+* void pointers, arithmetic:            Pointer Arith.
+* void, size of pointer to:             Pointer Arith.
+* VOIDmode:                             Machine Modes.
+* volatil:                              Flags.
+* volatile memory references:           Flags.
+* voting between constraint alternatives: Class Preferences.
+* vprintf:                              Config.
+* warning messages:                     Warning Options.
+* WCHAR_TYPE:                           Type Layout.
+* WCHAR_TYPE_SIZE:                      Type Layout.
+* which_alternative:                    Output Statement.
+* whitespace:                           Incompatibilities.
+* WORDS_BIG_ENDIAN:                     Storage Layout.
+* word_mode:                            Machine Modes.
+* WORD_SWITCH_TAKES_ARG:                Driver.
+* XCmode:                               Machine Modes.
+* XCOFF_DEBUGGING_INFO:                 DBX Options.
+* XEXP:                                 Accessors.
+* XFmode:                               Machine Modes.
+* XINT:                                 Accessors.
+* xor:                                  Arithmetic.
+* XSTR:                                 Accessors.
+* XVEC:                                 Accessors.
+* XVECEXP:                              Accessors.
+* XVECLEN:                              Accessors.
+* XWINT:                                Accessors.
+* zero division on 88k:                 M88K Options.
+* zero-length arrays:                   Zero Length.
+* zero_extend:                          Conversions.
+* zero_extract:                         Bit Fields.
+* \:                                    Output Template.
+* __bb_init_func:                       Profiling.
+* __builtin_args_info:                  Varargs.
+* __builtin_classify_type:              Varargs.
+* __builtin_next_arg:                   Varargs.
+* __builtin_saveregs:                   Varargs.
+* __CTOR_LIST__:                        Initialization.
+* __DTOR_LIST__:                        Initialization.
+
+

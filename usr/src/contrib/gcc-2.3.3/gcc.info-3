@@ -1,0 +1,1235 @@
+This is Info file gcc.info, produced by Makeinfo-1.49 from the input
+file gcc.texi.
+
+   This file documents the use and the internals of the GNU compiler.
+
+   Copyright (C) 1988, 1989, 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Protect
+Your Freedom--Fight `Look And Feel'" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License" and "Protect Your Freedom--Fight `Look And Feel'", and this
+permission notice, may be included in translations approved by the Free
+Software Foundation instead of in the original English.
+
+
+File: gcc.info,  Node: Link Options,  Next: Directory Options,  Prev: Assembler Options,  Up: Invoking GCC
+
+Options for Linking
+===================
+
+   These options come into play when the compiler links object files
+into an executable output file.  They are meaningless if the compiler is
+not doing a link step.
+
+`OBJECT-FILE-NAME'
+     A file name that does not end in a special recognized suffix is
+     considered to name an object file or library.  (Object files are
+     distinguished from libraries by the linker according to the file
+     contents.)  If linking is done, these object files are used as
+     input to the linker.
+
+`-c'
+`-S'
+`-E'
+     If any of these options is used, then the linker is not run, and
+     object file names should not be used as arguments.  *Note Overall
+     Options::.
+
+`-lLIBRARY'
+     Search the library named LIBRARY when linking.
+
+     It makes a difference where in the command you write this option;
+     the linker searches processes libraries and object files in the
+     order they are specified.  Thus, `foo.o -lz bar.o' searches
+     library `z' after file `foo.o' but before `bar.o'.  If `bar.o'
+     refers to functions in `z', those functions may not be loaded.
+
+     The linker searches a standard list of directories for the library,
+     which is actually a file named `libLIBRARY.a'.  The linker then
+     uses this file as if it had been specified precisely by name.
+
+     The directories searched include several standard system
+     directories plus any that you specify with `-L'.
+
+     Normally the files found this way are library files--archive files
+     whose members are object files.  The linker handles an archive
+     file by scanning through it for members which define symbols that
+     have so far been referenced but not defined.  But if the file that
+     is found is an ordinary object file, it is linked in the usual
+     fashion.  The only difference between using an `-l' option and
+     specifying a file name is that `-l' surrounds LIBRARY with `lib'
+     and `.a' and searches several directories.
+
+`-lobjc'
+     This special case of the `-l' option is what you need to do when
+     you link an Objective C program.
+
+`-nostdlib'
+     Don't use the standard system libraries and startup files when
+     linking. Only the files you specify will be passed to the linker.
+
+`-static'
+     On systems that support dynamic linking, this prevents linking
+     with the shared libraries.  On other systems, this option has no
+     effect.
+
+`-shared'
+     Produce a shared object which can then be linked with other
+     objects to form an executable.  Only a few systems support this
+     option.
+
+`-symbolic'
+     Bind references to global symbols when building a shared object. 
+     Warn about any unresolved references (unless overridden by the
+     link editor option `-Xlinker -z -Xlinker defs').  Only a few
+     systems support this option.
+
+`-Xlinker OPTION'
+     Pass OPTION as an option to the linker.  You can use this to
+     supply system-specific linker options which GNU CC does not know
+     how to recognize.
+
+     If you want to pass an option that takes an argument, you must use
+     `-Xlinker' twice, once for the option and once for the argument.
+     For example, to pass `-assert definitions', you must write
+     `-Xlinker -assert -Xlinker definitions'.  It does not work to write
+     `-Xlinker "-assert definitions"', because this passes the entire
+     string as a single argument, which is not what the linker expects.
+
+`-Wl,OPTION'
+     Pass OPTION as an option to the linker.  If OPTION contains
+     commas, it is split into multiple options at the commas.
+
+`-u SYMBOL'
+     Pretend the symbol SYMBOL is undefined, to force linking of
+     library modules to define it.  You can use `-u' multiple times with
+     different symbols to force loading of additional library modules.
+
+
+File: gcc.info,  Node: Directory Options,  Next: Target Options,  Prev: Link Options,  Up: Invoking GCC
+
+Options for Directory Search
+============================
+
+   These options specify directories to search for header files, for
+libraries and for parts of the compiler:
+
+`-IDIR'
+     Append directory DIR to the list of directories searched for
+     include files.
+
+`-I-'
+     Any directories you specify with `-I' options before the `-I-'
+     option are searched only for the case of `#include "FILE"'; they
+     are not searched for `#include <FILE>'.
+
+     If additional directories are specified with `-I' options after
+     the `-I-', these directories are searched for all `#include'
+     directives.  (Ordinarily *all* `-I' directories are used this way.)
+
+     In addition, the `-I-' option inhibits the use of the current
+     directory (where the current input file came from) as the first
+     search directory for `#include "FILE"'.  There is no way to
+     override this effect of `-I-'.  With `-I.' you can specify
+     searching the directory which was current when the compiler was
+     invoked.  That is not exactly the same as what the preprocessor
+     does by default, but it is often satisfactory.
+
+     `-I-' does not inhibit the use of the standard system directories
+     for header files.  Thus, `-I-' and `-nostdinc' are independent.
+
+`-LDIR'
+     Add directory DIR to the list of directories to be searched for
+     `-l'.
+
+`-BPREFIX'
+     This option specifies where to find the executables, libraries and
+     data files of the compiler itself.
+
+     The compiler driver program runs one or more of the subprograms
+     `cpp', `cc1', `as' and `ld'.  It tries PREFIX as a prefix for each
+     program it tries to run, both with and without `MACHINE/VERSION/'
+     (*note Target Options::.).
+
+     For each subprogram to be run, the compiler driver first tries the
+     `-B' prefix, if any.  If that name is not found, or if `-B' was
+     not specified, the driver tries two standard prefixes, which are
+     `/usr/lib/gcc/' and `/usr/local/lib/gcc-lib/'.  If neither of
+     those results in a file name that is found, the unmodified program
+     name is searched for using the directories specified in your
+     `PATH' environment variable.
+
+     `-B' prefixes that effectively specify directory names also apply
+     to libraries in the linker, because the compiler translates these
+     options into `-L' options for the linker.
+
+     The run-time support file `libgcc.a' can also be searched for using
+     the `-B' prefix, if needed.  If it is not found there, the two
+     standard prefixes above are tried, and that is all.  The file is
+     left out of the link if it is not found by those means.
+
+     Another way to specify a prefix much like the `-B' prefix is to use
+     the environment variable `GCC_EXEC_PREFIX'.  *Note Environment
+     Variables::.
+
+
+File: gcc.info,  Node: Target Options,  Next: Submodel Options,  Prev: Directory Options,  Up: Invoking GCC
+
+Specifying Target Machine and Compiler Version
+==============================================
+
+   By default, GNU CC compiles code for the same type of machine that
+you are using.  However, it can also be installed as a cross-compiler,
+to compile for some other type of machine.  In fact, several different
+configurations of GNU CC, for different target machines, can be
+installed side by side.  Then you specify which one to use with the
+`-b' option.
+
+   In addition, older and newer versions of GNU CC can be installed side
+by side.  One of them (probably the newest) will be the default, but
+you may sometimes wish to use another.
+
+`-b MACHINE'
+     The argument MACHINE specifies the target machine for compilation.
+     This is useful when you have installed GNU CC as a cross-compiler.
+
+     The value to use for MACHINE is the same as was specified as the
+     machine type when configuring GNU CC as a cross-compiler.  For
+     example, if a cross-compiler was configured with `configure
+     i386v', meaning to compile for an 80386 running System V, then you
+     would specify `-b i386v' to run that cross compiler.
+
+     When you do not specify `-b', it normally means to compile for the
+     same type of machine that you are using.
+
+`-V VERSION'
+     The argument VERSION specifies which version of GNU CC to run.
+     This is useful when multiple versions are installed.  For example,
+     VERSION might be `2.0', meaning to run GNU CC version 2.0.
+
+     The default version, when you do not specify `-V', is controlled
+     by the way GNU CC is installed.  Normally, it will be a version
+     that is recommended for general use.
+
+   The `-b' and `-V' options actually work by controlling part of the
+file name used for the executable files and libraries used for
+compilation.  A given version of GNU CC, for a given target machine, is
+normally kept in the directory `/usr/local/lib/gcc-lib/MACHINE/VERSION'.
+
+   It follows that sites can customize the effect of `-b' or `-V'
+either by changing the names of these directories or adding alternate
+names (or symbolic links).  Thus, if `/usr/local/lib/gcc-lib/80386' is
+a link to `/usr/local/lib/gcc-lib/i386v', then `-b 80386' becomes an
+alias for `-b i386v'.
+
+   In one respect, the `-b' or `-V' do not completely change to a
+different compiler: the top-level driver program `gcc' that you
+originally invoked continues to run and invoke the other executables
+(preprocessor, compiler per se, assembler and linker) that do the real
+work.  However, since no real work is done in the driver program, it
+usually does not matter that the driver program in use is not the one
+for the specified target and version.
+
+   The only way that the driver program depends on the target machine is
+in the parsing and handling of special machine-specific options.
+However, this is controlled by a file which is found, along with the
+other executables, in the directory for the specified version and
+target machine.  As a result, a single installed driver program adapts
+to any specified target machine and compiler version.
+
+   The driver program executable does control one significant thing,
+however: the default version and target machine.  Therefore, you can
+install different instances of the driver program, compiled for
+different targets or versions, under different names.
+
+   For example, if the driver for version 2.0 is installed as `ogcc'
+and that for version 2.1 is installed as `gcc', then the command `gcc'
+will use version 2.1 by default, while `ogcc' will use 2.0 by default. 
+However, you can choose either version with either command with the
+`-V' option.
+
+
+File: gcc.info,  Node: Submodel Options,  Next: Code Gen Options,  Prev: Target Options,  Up: Invoking GCC
+
+Specifying Hardware Models and Configurations
+=============================================
+
+   Earlier we discussed the standard option `-b' which chooses among
+different installed compilers for completely different target machines,
+such as Vax vs. 68000 vs. 80386.
+
+   In addition, each of these target machine types can have its own
+special options, starting with `-m', to choose among various hardware
+models or configurations--for example, 68010 vs 68020, floating
+coprocessor or none.  A single installed version of the compiler can
+compile for any model or configuration, according to the options
+specified.
+
+   Some configurations of the compiler also support additional special
+options, usually for compatibility with other compilers on the same
+platform.
+
+   These options are defined by the macro `TARGET_SWITCHES' in the
+machine description.  The default for the options is also defined by
+that macro, which enables you to change the defaults.
+
+* Menu:
+
+* M680x0 Options::
+* VAX Options::
+* SPARC Options::
+* Convex Options::
+* AMD29K Options::
+* M88K Options::
+* RS/6000 Options::
+* RT Options::
+* MIPS Options::
+* i386 Options::
+* HPPA Options::
+* Intel 960 Options::
+* DEC Alpha Options::
+* System V Options::
+
+
+File: gcc.info,  Node: M680x0 Options,  Next: VAX Options,  Up: Submodel Options
+
+M680x0 Options
+--------------
+
+   These are the `-m' options defined for the 68000 series.  The default
+values for these options depends on which style of 68000 was selected
+when the compiler was configured; the defaults for the most common
+choices are given below.
+
+`-m68000'
+`-mc68000'
+     Generate output for a 68000.  This is the default when the
+     compiler is configured for 68000-based systems.
+
+`-m68020'
+`-mc68020'
+     Generate output for a 68020.  This is the default when the
+     compiler is configured for 68020-based systems.
+
+`-m68881'
+     Generate output containing 68881 instructions for floating point.
+     This is the default for most 68020 systems unless `-nfp' was
+     specified when the compiler was configured.
+
+`-m68030'
+     Generate output for a 68030.  This is the default when the
+     compiler is configured for 68030-based systems.
+
+`-m68040'
+     Generate output for a 68040.  This is the default when the
+     compiler is configured for 68040-based systems.
+
+`-m68020-40'
+     Generate output for a 68040, without using any of the new
+     instructions. This results in code which can run relatively
+     efficiently on either a 68020/68881 or a 68030 or a 68040.
+
+`-mfpa'
+     Generate output containing Sun FPA instructions for floating point.
+
+`-msoft-float'
+     Generate output containing library calls for floating point.
+     *Warning:* the requisite libraries are not part of GNU CC.
+     Normally the facilities of the machine's usual C compiler are
+     used, but this can't be done directly in cross-compilation.  You
+     must make your own arrangements to provide suitable library
+     functions for cross-compilation.
+
+`-mshort'
+     Consider type `int' to be 16 bits wide, like `short int'.
+
+`-mnobitfield'
+     Do not use the bit-field instructions.  `-m68000' implies
+     `-mnobitfield'.
+
+`-mbitfield'
+     Do use the bit-field instructions.  `-m68020' implies
+     `-mbitfield'.  This is the default if you use the unmodified
+     sources configured for a 68020.
+
+`-mrtd'
+     Use a different function-calling convention, in which functions
+     that take a fixed number of arguments return with the `rtd'
+     instruction, which pops their arguments while returning.  This
+     saves one instruction in the caller since there is no need to pop
+     the arguments there.
+
+     This calling convention is incompatible with the one normally used
+     on Unix, so you cannot use it if you need to call libraries
+     compiled with the Unix compiler.
+
+     Also, you must provide function prototypes for all functions that
+     take variable numbers of arguments (including `printf'); otherwise
+     incorrect code will be generated for calls to those functions.
+
+     In addition, seriously incorrect code will result if you call a
+     function with too many arguments.  (Normally, extra arguments are
+     harmlessly ignored.)
+
+     The `rtd' instruction is supported by the 68010 and 68020
+     processors, but not by the 68000.
+
+
+File: gcc.info,  Node: VAX Options,  Next: SPARC Options,  Prev: M680x0 Options,  Up: Submodel Options
+
+VAX Options
+-----------
+
+   These `-m' options are defined for the Vax:
+
+`-munix'
+     Do not output certain jump instructions (`aobleq' and so on) that
+     the Unix assembler for the Vax cannot handle across long ranges.
+
+`-mgnu'
+     Do output those jump instructions, on the assumption that you will
+     assemble with the GNU assembler.
+
+`-mg'
+     Output code for g-format floating point numbers instead of
+     d-format.
+
+
+File: gcc.info,  Node: Sparc Options,  Next: Convex Options,  Prev: VAX Options,  Up: Submodel Options
+
+SPARC Options
+-------------
+
+   These `-m' switches are supported on the Sparc:
+
+`-mforce-align'
+     Make sure all objects of type `double' are 8-byte aligned in memory
+     and use double-word instructions to reference them.
+
+`-mno-epilogue'
+     Generate separate return instructions for `return' statements.
+     This has both advantages and disadvantages; I don't recall what
+     they are.
+
+
+File: gcc.info,  Node: Convex Options,  Next: AMD29K Options,  Prev: SPARC Options,  Up: Submodel Options
+
+Convex Options
+--------------
+
+   These `-m' options are defined for the Convex:
+
+`-mc1'
+     Generate output for a C1.  This is the default when the compiler is
+     configured for a C1.
+
+`-mc2'
+     Generate output for a C2.  This is the default when the compiler is
+     configured for a C2.
+
+`-margcount'
+     Generate code which puts an argument count in the word preceding
+     each argument list.  Some nonportable Convex and Vax programs need
+     this word. (Debuggers don't, except for functions with
+     variable-length argument lists; this info is in the symbol table.)
+
+`-mnoargcount'
+     Omit the argument count word.  This is the default if you use the
+     unmodified sources.
+
+
+File: gcc.info,  Node: AMD29K Options,  Next: M88K Options,  Prev: Convex Options,  Up: Submodel Options
+
+AMD29K Options
+--------------
+
+   These `-m' options are defined for the AMD Am29000:
+
+`-mdw'
+     Generate code that assumes the `DW' bit is set, i.e., that byte and
+     halfword operations are directly supported by the hardware.  This
+     is the default.
+
+`-mnodw'
+     Generate code that assumes the `DW' bit is not set.
+
+`-mbw'
+     Generate code that assumes the system supports byte and halfword
+     write operations.  This is the default.
+
+`-mnbw'
+     Generate code that assumes the systems does not support byte and
+     halfword write operations.  `-mnbw' implies `-mnodw'.
+
+`-msmall'
+     Use a small memory model that assumes that all function addresses
+     are either within a single 256 KB segment or at an absolute
+     address of less than 256K.  This allows the `call' instruction to
+     be used instead of a `const', `consth', `calli' sequence.
+
+`-mlarge'
+     Do not assume that the `call' instruction can be used; this is the
+     default.
+
+`-m29050'
+     Generate code for the Am29050.
+
+`-m29000'
+     Generate code for the Am29000.  This is the default.
+
+`-mkernel-registers'
+     Generate references to registers `gr64-gr95' instead of
+     `gr96-gr127'.  This option can be used when compiling kernel code
+     that wants a set of global registers disjoint from that used by
+     user-mode code.
+
+     Note that when this option is used, register names in `-f' flags
+     must use the normal, user-mode, names.
+
+`-muser-registers'
+     Use the normal set of global registers, `gr96-gr127'.  This is the
+     default.
+
+`-mstack-check'
+     Insert a call to `__msp_check' after each stack adjustment.  This
+     is often used for kernel code.
+
+
+File: gcc.info,  Node: M88K Options,  Next: RS/6000 Options,  Prev: AMD29K Options,  Up: Submodel Options
+
+M88K Options
+------------
+
+   These `-m' options are defined for Motorola 88K architectures:
+
+`-m88000'
+     Generate code that works well on both the m88100 and the m88110.
+
+`-m88100'
+     Generate code that works best for the m88100, but that also runs
+     on the m88110.
+
+`-m88110'
+     Generate code that works best for the m88110, and may not run on
+     the m88100.
+
+`-midentify-revision'
+     Include an `ident' directive in the assembler output recording the
+     source file name, compiler name and version, timestamp, and
+     compilation flags used.
+
+`-mno-underscores'
+     In assembler output, emit symbol names without adding an underscore
+     character at the beginning of each name.  The default is to use an
+     underscore as prefix on each name.
+
+`-mocs-debug-info'
+`-mno-ocs-debug-info'
+     Include (or omit) additional debugging information (about
+     registers used in each stack frame) as specified in the 88open
+     Object Compatibility Standard, "OCS".  This extra information
+     allows debugging of code that has had the frame pointer
+     eliminated.  The default for DG/UX, SVr4, and Delta 88 SVr3.2 is
+     to include this information; other 88k configurations omit this
+     information by default.
+
+`-mocs-frame-position'
+     When emitting COFF debugging information for automatic variables
+     and parameters stored on the stack, use the offset from the
+     canonical frame address, which is the stack pointer (register 31)
+     on entry to the function.  The DG/UX, SVr4, Delta88 SVr3.2, and
+     BCS configurations use `-mocs-frame-position'; other 88k
+     configurations have the default `-mno-ocs-frame-position'.
+
+`-mno-ocs-frame-position'
+     When emitting COFF debugging information for automatic variables
+     and parameters stored on the stack, use the offset from the frame
+     pointer register (register 30).  When this option is in effect,
+     the frame pointer is not eliminated when debugging information is
+     selected by the -g switch.
+
+`-moptimize-arg-area'
+`-mno-optimize-arg-area'
+     Control how to store function arguments in stack frames.
+     `-moptimize-arg-area' saves space, but conflicts with the 88open
+     specifications.  `-mno-optimize-arg-area' conforms to the 88open
+     standards.  By default GNU CC does not optimize the argument area.
+
+`-mshort-data-NUM'
+     Generate smaller data references by making them relative to `r0',
+     which allows loading a value using a single instruction (rather
+     than the usual two).  You control which data references are
+     affected by specifying NUM with this option.  For example, if you
+     specify `-mshort-data-512', then the data references affected are
+     those involving displacements of less than 512 bytes.
+     `-mshort-data-NUM' is not effective for NUM greater than 64K.
+
+`-mserialize-volatile'
+`-mno-serialize-volatile'
+     Do, or don't, generate code to guarantee sequential consistency of
+     volatile memory references.
+
+     GNU CC always guarantees consistency by default, for the preferred
+     processor submodel.  How this is done depends on the submodel.
+
+     The m88100 processor does not reorder memory references and so
+     always provides sequential consistency.  If you use `-m88100', GNU
+     CC does not generate any special instructions for sequential
+     consistency.
+
+     The order of memory references made by the m88110 processor does
+     not always match the order of the instructions requesting those
+     references. In particular, a load instruction may execute before a
+     preceding store instruction.  Such reordering violates sequential
+     consistency of volatile memory references, when there are multiple
+     processors.  When you use `-m88000' or `-m88110', GNU CC generates
+     special instructions when appropriate, to force execution in the
+     proper order.
+
+     The extra code generated to guarantee consistency may affect the
+     performance of your application.  If you know that you can safely
+     forgo this guarantee, you may use `-mno-serialize-volatile'.
+
+     If you use `-m88100' but require sequential consistency when
+     running on the m88110 processor, you should use
+     `-mserialize-volatile'.
+
+`-msvr4'
+`-msvr3'
+     Turn on (`-msvr4') or off (`-msvr3') compiler extensions related
+     to System V release 4 (SVr4).  This controls the following:
+
+       1. Which variant of the assembler syntax to emit (which you can
+          select independently using `-mversion-03.00').
+
+       2. `-msvr4' makes the C preprocessor recognize `#pragma weak'
+          that is used on System V release 4.
+
+       3. `-msvr4' makes GNU CC issue additional declaration directives
+          used in SVr4.
+
+     `-msvr3' is the default for all m88K configurations except the
+     SVr4 configuration.
+
+`-mversion-03.00'
+     In the DG/UX configuration, there are two flavors of SVr4.  This
+     option modifies `-msvr4' to select whether the hybrid-COFF or
+     real-ELF flavor is used.  All other configurations ignore this
+     option.
+
+`-mno-check-zero-division'
+`-mcheck-zero-division'
+     Early models of the 88K architecture had problems with division by
+     zero; in particular, many of them didn't trap.  Use these options
+     to avoid including (or to include explicitly) additional code to
+     detect division by zero and signal an exception.  All GNU CC
+     configurations for the 88K use `-mcheck-zero-division' by default.
+
+`-muse-div-instruction'
+     Do not emit code to check both the divisor and dividend when doing
+     signed integer division to see if either is negative, and adjust
+     the signs so the divide is done using non-negative numbers. 
+     Instead, rely on the operating system to calculate the correct
+     value when the `div' instruction traps.  This results in different
+     behavior when the most negative number is divided by -1, but is
+     useful when most or all signed integer divisions are done with
+     positive numbers.
+
+`-mtrap-large-shift'
+`-mhandle-large-shift'
+     Include code to detect bit-shifts of more than 31 bits;
+     respectively, trap such shifts or emit code to handle them
+     properly.  By default GNU CC makes no special provision for large
+     bit shifts.
+
+`-mwarn-passed-structs'
+     Warn when a function passes a struct as an argument or result.
+     Structure-passing conventions have changed during the evolution of
+     the C language, and are often the source of portability problems. 
+     By default, GNU CC issues no such warning.
+
+
+File: gcc.info,  Node: RS/6000 Options,  Next: RT Options,  Prev: M88K Options,  Up: Submodel Options
+
+IBM RS/6000 Options
+-------------------
+
+   Only one pair of `-m' options is defined for the IBM RS/6000:
+
+`-mfp-in-toc'
+`-mno-fp-in-toc'
+     Control whether or not floating-point constants go in the Table of
+     Contents (TOC), a table of all global variable and function
+     addresses.  By default GNU CC puts floating-point constants there;
+     if the TOC overflows, `-mno-fp-in-toc' will reduce the size of the
+     TOC, which may avoid the overflow.
+
+
+File: gcc.info,  Node: RT Options,  Next: MIPS Options,  Prev: RS/6000 Options,  Up: Submodel Options
+
+IBM RT Options
+--------------
+
+   These `-m' options are defined for the IBM RT PC:
+
+`-min-line-mul'
+     Use an in-line code sequence for integer multiplies.  This is the
+     default.
+
+`-mcall-lib-mul'
+     Call `lmul$$' for integer multiples.
+
+`-mfull-fp-blocks'
+     Generate full-size floating point data blocks, including the
+     minimum amount of scratch space recommended by IBM.  This is the
+     default.
+
+`-mminimum-fp-blocks'
+     Do not include extra scratch space in floating point data blocks. 
+     This results in smaller code, but slower execution, since scratch
+     space must be allocated dynamically.
+
+`-mfp-arg-in-fpregs'
+     Use a calling sequence incompatible with the IBM calling
+     convention in which floating point arguments are passed in
+     floating point registers. Note that `varargs.h' and `stdargs.h'
+     will not work with floating point operands if this option is
+     specified.
+
+`-mfp-arg-in-gregs'
+     Use the normal calling convention for floating point arguments. 
+     This is the default.
+
+`-mhc-struct-return'
+     Return structures of more than one word in memory, rather than in a
+     register.  This provides compatibility with the MetaWare HighC (hc)
+     compiler.  Use `-fpcc-struct-return' for compatibility with the
+     Portable C Compiler (pcc).
+
+`-mnohc-struct-return'
+     Return some structures of more than one word in registers, when
+     convenient.  This is the default.  For compatibility with the
+     IBM-supplied compilers, use either `-fpcc-struct-return' or
+     `-mhc-struct-return'.
+
+
+File: gcc.info,  Node: MIPS Options,  Next: i386 Options,  Prev: RT Options,  Up: Submodel Options
+
+MIPS Options
+------------
+
+   These `-m' options are defined for the MIPS family of computers:
+
+`-mcpu=CPU TYPE'
+     Assume the defaults for the machine type CPU TYPE when scheduling
+     instructions.  The default CPU TYPE is `default', which picks the
+     longest cycles times for any of the machines, in order that the
+     code run at reasonable rates on all MIPS cpu's.  Other choices for
+     CPU TYPE are `r2000', `r3000', `r4000', and `r6000'.  While
+     picking a specific CPU TYPE will schedule things appropriately for
+     that particular chip, the compiler will not generate any code that
+     does not meet level 1 of the MIPS ISA (instruction set
+     architecture) without the `-mips2' or `-mips3' switches being used.
+
+`-mips2'
+     Issue instructions from level 2 of the MIPS ISA (branch likely,
+     square root instructions).  The `-mcpu=r4000' or `-mcpu=r6000'
+     switch must be used in conjunction with `-mips2'.
+
+`-mips3'
+     Issue instructions from level 3 of the MIPS ISA (64 bit
+     instructions). You must use the `-mcpu=r4000' switch along with
+     `-mips3'.
+
+`-mint64'
+`-mlong64'
+`-mlonglong128'
+     These options don't work at present.
+
+`-mmips-as'
+     Generate code for the MIPS assembler, and invoke `mips-tfile' to
+     add normal debug information.  This is the default for all
+     platforms except for the OSF/1 reference platform, using the
+     OSF/rose object format.  If the either of the `-gstabs' or
+     `-gstabs+' switches are used, the `mips-tfile' program will
+     encapsulate the stabs within MIPS ECOFF.
+
+`-mgas'
+     Generate code for the GNU assembler.  This is the default on the
+     OSF/1 reference platform, using the OSF/rose object format.
+
+`-mrnames'
+`-mno-rnames'
+     The `-mrnames' switch says to output code using the MIPS software
+     names for the registers, instead of the hardware names (ie, A0
+     instead of $4).  The GNU assembler does not support the `-mrnames'
+     switch, and the MIPS assembler will be instructed to run the MIPS
+     C preprocessor over the source file.  The `-mno-rnames' switch is
+     default.
+
+`-mgpopt'
+`-mno-gpopt'
+     The `-mgpopt' switch says to write all of the data declarations
+     before the instructions in the text section, this allows the MIPS
+     assembler to generate one word memory references instead of using
+     two words for short global or static data items.  This is on by
+     default if optimization is selected.
+
+`-mstats'
+`-mno-stats'
+     For each non-inline function processed, the `-mstats' switch
+     causes the compiler to emit one line to the standard error file to
+     print statistics about the program (number of registers saved,
+     stack size, etc.).
+
+`-mmemcpy'
+`-mno-memcpy'
+     The `-mmemcpy' switch makes all block moves call the appropriate
+     string function (`memcpy' or `bcopy') instead of possibly
+     generating inline code.
+
+`-mmips-tfile'
+`-mno-mips-tfile'
+     The `-mno-mips-tfile' switch causes the compiler not postprocess
+     the object file with the `mips-tfile' program, after the MIPS
+     assembler has generated it to add debug support.  If `mips-tfile'
+     is not run, then no local variables will be available to the
+     debugger.  In addition, `stage2' and `stage3' objects will have
+     the temporary file names passed to the assembler embedded in the
+     object file, which means the objects will not compare the same. 
+     The `-mno-mips-tfile' switch should only be used when there are
+     bugs in the `mips-tfile' program that prevents compilation.
+
+`-msoft-float'
+     Generate output containing library calls for floating point.
+     *Warning:* the requisite libraries are not part of GNU CC.
+     Normally the facilities of the machine's usual C compiler are
+     used, but this can't be done directly in cross-compilation.  You
+     must make your own arrangements to provide suitable library
+     functions for cross-compilation.
+
+`-mhard-float'
+     Generate output containing floating point instructions.  This is
+     the default if you use the unmodified sources.
+
+`-mfp64'
+     Assume that the FR bit in the status word is on, and that there
+     are 32 64-bit floating point registers, instead of 32 32-bit
+     floating point registers.  You must also specify the `-mcpu=r4000'
+     and `-mips3' switches.
+
+`-mfp32'
+     Assume that there are 32 32-bit floating point registers.  This is
+     the default.
+
+`-mabicalls'
+`-mno-abicalls'
+     Emit the `.abicalls', `.cpload', and `.cprestore' pseudo
+     operations that some System V.4 ports use for position independent
+     code.
+
+`-mhalf-pic'
+`-mno-half-pic'
+     Put pointers to extern references into the data section and load
+     them up, rather than put the references in the text section. 
+     These options do not work at present.
+
+`-G NUM'
+     Put global and static items less than or equal to NUM bytes into
+     the small data or bss sections instead of the normal data or bss
+     section.  This allows the assembler to emit one word memory
+     reference instructions based on the global pointer (GP or $28),
+     instead of the normal two words used.  By default, NUM is 8 when
+     the MIPS assembler is used, and 0 when the GNU assembler is used. 
+     The `-G NUM' switch is also passed to the assembler and linker.
+     All modules should be compiled with the same `-G NUM' value.
+
+`-nocpp'
+     Tell the MIPS assembler to not run it's preprocessor over user
+     assembler files (with a `.s' suffix) when assembling them.
+
+   These options are defined by the macro `TARGET_SWITCHES' in the
+machine description.  The default for the options is also defined by
+that macro, which enables you to change the defaults.
+
+
+File: gcc.info,  Node: i386 Options,  Next: HPPA Options,  Prev: MIPS Options,  Up: Submodel Options
+
+Intel 386 Options
+-----------------
+
+   These `-m' options are defined for the i386 family of computers:
+
+`-m486'
+`-mno-486'
+     Control whether or not code is optimized for a 486 instead of an
+     386.  Code generated for an 486 will run on a 386 and vice versa.
+
+`-msoft-float'
+     Generate output containing library calls for floating point.
+     *Warning:* the requisite libraries are not part of GNU CC.
+     Normally the facilities of the machine's usual C compiler are
+     used, but this can't be done directly in cross-compilation.  You
+     must make your own arrangements to provide suitable library
+     functions for cross-compilation.
+
+     On machines where a function returns floating point results in the
+     80387 register stack, some floating point opcodes may be emitted
+     even if `-msoft-float' is used.
+
+`-mno-fp-ret-in-387'
+     Don't use the FPU registers for return values of functions.
+
+     The usual calling convention has functions return values of types
+     `float' and `double' in an FPU register, even if there is no FPU. 
+     The idea is that the operating system should emulate an FPU.
+
+     The option `-mno-fp-ret-in-387' causes such values to be returned
+     in ordinary CPU registers instead.
+
+
+File: gcc.info,  Node: HPPA Options,  Next: Intel 960 Options,  Prev: i386 Options,  Up: Submodel Options
+
+HPPA Options
+------------
+
+   This `-m' option is defined for the HPPA family of computers:
+
+`-mno-bss'
+     Disable the use of the BSS section.  This may be necessary with
+     older versions of pa-gas.   It is highly recommended that you pick
+     up a new version of pa-gas from `jaguar.cs.utah.edu'.
+
+`-mpa-risc-1-0'
+     Generate code for a PA 1.0 processor.
+
+`-mpa-risc-1-1'
+     Generate code for a PA 1.1 processor.
+
+`-mkernel'
+     Generate code which is suitable for use in kernels.  Specifically,
+     avoid `add' instructions in which one of the arguments is the DP
+     register; generate `addil' instructions instead.  This avoids a
+     rather serious bug in the HP-UX linker.
+
+`-mshared-libs'
+     Generate code that can be linked against HP-UX shared libraries. 
+     This option is not fully function yet, and is not on by default
+     for any PA target.
+
+`-mno-shared-libs'
+     Don't generate code that will be linked against shared libraries. 
+     This is the default for all PA targets.
+
+`-mlong-calls'
+     Generate code which allows calls to functions greater than 256K
+     away from the caller when the caller and callee are in the same
+     source file.  Do not turn this option on unless code refuses to
+     link with "branch out of range errors" from the linker.
+
+
+File: gcc.info,  Node: Intel 960 Options,  Next: DEC Alpha Options,  Prev: HPPA Options,  Up: Submodel Options
+
+Intel 960 Options
+-----------------
+
+   These `-m' options are defined for the Intel 960 implementations:
+
+`-mCPU TYPE'
+     Assume the defaults for the machine type CPU TYPE for some of the
+     other options, including instruction scheduling, floating point
+     support, and addressing modes.  The choices for CPU TYPE are `ka',
+     `kb', `mc', `ca', `cf', `sa', and `sb'. The default is `kb'.
+
+`-mnumerics'
+`-msoft-float'
+     The `-mnumerics' option indicates that the processor does support
+     floating-point instructions.  The `-msoft-float' option indicates
+     that floating-point support should not be assumed.
+
+`-mleaf-procedures'
+`-mno-leaf-procedures'
+     Do (or do not) attempt to alter leaf procedures to be callable
+     with the `bal' instruction as well as `call'.  This will result in
+     more efficient code for explicit calls when the `bal' instruction
+     can be substituted by the assembler or linker, but less efficient
+     code in other cases, such as calls via function pointers, or using
+     a linker that doesn't support this optimization.
+
+`-mtail-call'
+`-mno-tail-call'
+     Do (or do not) make additional attempts (beyond those of the
+     machine-independent portions of the compiler) to optimize
+     tail-recursive calls into branches.  You may not want to do this
+     because the detection of cases where this is not valid is not
+     totally complete.  The default is `-mno-tail-call'.
+
+`-mcomplex-addr'
+`-mno-complex-addr'
+     Assume (or do not assume) that the use of a complex addressing
+     mode is a win on this implementation of the i960.  Complex
+     addressing modes may not be worthwhile on the K-series, but they
+     definitely are on the C-series. The default is currently
+     `-mcomplex-addr' for all processors except the CB and CC.
+
+`-mcode-align'
+`-mno-code-align'
+     Align code to 8-byte boundaries for faster fetching (or don't
+     bother). Currently turned on by default for C-series
+     implementations only.
+
+`-mic-compat'
+`-mic2.0-compat'
+`-mic3.0-compat'
+     Enable compatibility with iC960 v2.0 or v3.0.
+
+`-masm-compat'
+`-mintel-asm'
+     Enable compatibility with the iC960 assembler.
+
+`-mstrict-align'
+`-mno-strict-align'
+     Do not permit (do permit) unaligned accesses.
+
+`-mold-align'
+     Enable structure-alignment compatibility with Intel's gcc release
+     version 1.3 (based on gcc 1.37).  Currently this is buggy in that
+     `#pragma align 1' is always assumed as well, and cannot be turned
+     off.
+
+
+File: gcc.info,  Node: DEC Alpha Options,  Next: System V Options,  Prev: Intel 960 Options,  Up: Submodel Options
+
+DEC Alpha Options
+-----------------
+
+   These `-m' options are defined for the DEC Alpha implementations:
+
+`-mno-soft-float'
+`-msoft-float'
+     Use (do not use) the hardware floating-point instructions for
+     floating-point operations.  When `-msoft-float' is specified,
+     functions in `libgcc1.c' will be used to perform floating-point
+     operations.  Unless they are replaced by routines that emulate the
+     floating-point operations, or compiled in such a way as to call
+     such emulations routines, these routines will issue floating-point
+     operations.   If you are compiling for an Alpha without
+     floating-point operations, you must ensure that the library is
+     built so as not to call them.
+
+     Note that Alpha implementations without floating-point operations
+     are required to have floating-point registers.
+
+`-mfp-reg'
+`-mno-fp-regs'
+     Generate code that uses (does not use) the floating-point register
+     set. `-mno-fp-regs' implies `-msoft-float'.  If the floating-point
+     register set is not used, floating point operands are passed in
+     integer registers as if they were integers and floating-point
+     results are passed in $0 instead of $f0.  This is a non-standard
+     calling sequence, so any function with a floating-point argument
+     or return value called by code compiled with `-mno-fp-regs' must
+     also be compiled with that option.
+
+     A typical use of this option is building a kernel that does not
+     use, and hence need not save and restore, any floating-point
+     registers.
+
+
+File: gcc.info,  Node: System V Options,  Prev: DEC Alpha Options,  Up: Submodel Options
+
+Options for System V
+--------------------
+
+   These additional options are available on System V Release 4 for
+compatibility with other compilers on those systems:
+
+`-Qy'
+     Identify the versions of each tool used by the compiler, in a
+     `.ident' assembler directive in the output.
+
+`-Qn'
+     Refrain from adding `.ident' directives to the output file (this is
+     the default).
+
+`-YP,DIRS'
+     Search the directories DIRS, and no others, for libraries
+     specified with `-l'.
+
+`-Ym,DIR'
+     Look in the directory DIR to find the M4 preprocessor. The
+     assembler uses this option.
+
+
+File: gcc.info,  Node: Code Gen Options,  Next: Environment Variables,  Prev: Submodel Options,  Up: Invoking GCC
+
+Options for Code Generation Conventions
+=======================================
+
+   These machine-independent options control the interface conventions
+used in code generation.
+
+   Most of them have both positive and negative forms; the negative form
+of `-ffoo' would be `-fno-foo'.  In the table below, only one of the
+forms is listed--the one which is not the default.  You can figure out
+the other form by either removing `no-' or adding it.
+
+`-fpcc-struct-return'
+     Use the same convention for returning `struct' and `union' values
+     that is used by the usual C compiler on your system.  This
+     convention is less efficient for small structures, and on many
+     machines it fails to be reentrant; but it has the advantage of
+     allowing intercallability between GNU CC-compiled code and
+     PCC-compiled code.
+
+`-fshort-enums'
+     Allocate to an `enum' type only as many bytes as it needs for the
+     declared range of possible values.  Specifically, the `enum' type
+     will be equivalent to the smallest integer type which has enough
+     room.
+
+`-fshort-double'
+     Use the same size for `double' as for `float'.
+
+`-fshared-data'
+     Requests that the data and non-`const' variables of this
+     compilation be shared data rather than private data.  The
+     distinction makes sense only on certain operating systems, where
+     shared data is shared between processes running the same program,
+     while private data exists in one copy per process.
+
+`-fno-common'
+     Allocate even uninitialized global variables in the bss section of
+     the object file, rather than generating them as common blocks. 
+     This has the effect that if the same variable is declared (without
+     `extern') in two different compilations, you will get an error
+     when you link them. The only reason this might be useful is if you
+     wish to verify that the program will work on other systems which
+     always work this way.
+
+`-fno-ident'
+     Ignore the `#ident' directive.
+
+`-fno-gnu-linker'
+     Don't output global initializations such as C++ constructors and
+     destructors in the form used by the GNU linker (on systems where
+     the GNU linker is the standard method of handling them).  Use this
+     option when you want to use a "collect" program and a non-GNU
+     linker.
+
+`-finhibit-size-directive'
+     Don't output a `.size' assembler directive, or anything else that
+     would cause trouble if the function is split in the middle, and the
+     two halves are placed at locations far apart in memory.  This
+     option is used when compiling `crtstuff.c'; you should not need to
+     use it for anything else.
+
+`-fnonnull-objects'
+     Assume that objects reached through references are not null (C++
+     only).
+
+     Normally, GNU C++ makes conservative assumptions about objects
+     reached through references.  For example, the compiler must check
+     that `a' is not null in code like the following:
+
+          obj &a = g ();
+          a.f (2);
+
+     Checking that references of this sort have non-null values requires
+     extra code, however, and it is unnecessary for many programs.  You
+     can use `-fnonnull-objects' to omit the checks for null, if your
+     program doesn't require checking.
+
+`-fverbose-asm'
+     Put extra commentary information in the generated assembly code to
+     make it more readable.  This option is generally only of use to
+     those who actually need to read the generated assembly code
+     (perhaps while debugging the compiler itself).
+
+`-fvolatile'
+     Consider all memory references through pointers to be volatile.
+
+`-fpic'
+     If supported for the target machine, generate position-independent
+     code (PIC) suitable for use in a shared library.  All addresses
+     will be accessed through a global offset table (GOT).  If the GOT
+     size for the linked executable exceeds a machine-specific maximum
+     size, you will get an error message from the linker indicating
+     that `-fpic' does not work; recompile with `-fPIC' instead. 
+     (These maximums are 16k on the m88k, 8k on the Sparc, and 32k on
+     the m68k and RS/6000.  The 386 has no such limit.)
+
+     Position-independent code requires special support, and therefore
+     works only on certain machines.  For the 386, GNU CC supports PIC
+     for System V but not for the Sun 386i.  Code generated for the IBM
+     RS/6000 is always position-independent.
+
+     The GNU assembler does not fully support PIC.  Currently, you must
+     use some other assembler in order for PIC to work.  We would
+     welcome volunteers to upgrade GAS to handle this; the first part
+     of the job is to figure out what the assembler must do differently.
+
+`-fPIC'
+     If supported for the target machine, emit position-independent
+     code, suitable for dynamic linking and avoiding any limit on the
+     size of the global offset table.  This option makes a difference
+     on the m68k, m88k and the Sparc.
+
+     Position-independent code requires special support, and therefore
+     works only on certain machines.
+
+`-ffixed-REG'
+     Treat the register named REG as a fixed register; generated code
+     should never refer to it (except perhaps as a stack pointer, frame
+     pointer or in some other fixed role).
+
+     REG must be the name of a register.  The register names accepted
+     are machine-specific and are defined in the `REGISTER_NAMES' macro
+     in the machine description macro file.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+`-fcall-used-REG'
+     Treat the register named REG as an allocatable register that is
+     clobbered by function calls.  It may be allocated for temporaries
+     or variables that do not live across a call.  Functions compiled
+     this way will not save and restore the register REG.
+
+     Use of this flag for a register that has a fixed pervasive role in
+     the machine's execution model, such as the stack pointer or frame
+     pointer, will produce disastrous results.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+`-fcall-saved-REG'
+     Treat the register named REG as an allocatable register saved by
+     functions.  It may be allocated even for temporaries or variables
+     that live across a call.  Functions compiled this way will save
+     and restore the register REG if they use it.
+
+     Use of this flag for a register that has a fixed pervasive role in
+     the machine's execution model, such as the stack pointer or frame
+     pointer, will produce disastrous results.
+
+     A different sort of disaster will result from the use of this flag
+     for a register in which function values may be returned.
+
+     This flag does not have a negative form, because it specifies a
+     three-way choice.
+
+
