@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -120,9 +120,7 @@ void transition_handler __P((int));
 void alrm_handler __P((int));
 int clang;
 
-int start_logger __P((void));
 void clear_session_logs __P((session_t *));
-int logger_enable;
 
 int start_session_db __P((void));
 void add_session __P((session_t *));
@@ -165,7 +163,7 @@ main(argc, argv)
 	 * Create an initial session.
 	 */
 	if (setsid() < 0)
-		syslog(LOG_ERR, "setsid failed (initial) %m");
+		warning("initial setsid() failed: %m");
 
 	/*
 	 * This code assumes that we always get arguments through flags,
@@ -458,65 +456,6 @@ transition(s)
 }
 
 /*
- * We send requests for session logging to another process for two reasons.
- * First, we don't want to block if the log files go away (e.g. because
- * one or more are on hard-mounted NFS systems whose server crashes).
- * Second, despite all the crud already contained in init, it still isn't
- * right that init should care about session logging record formats and files.
- * We could use explicit 'Unix' IPC for this, but let's try to be POSIX...
- */
-int
-start_logger()
-{
-	static char *argv[] = { _PATH_SLOGGER, 0 };
-	int fd, pfd[2];
-	pid_t pid;
-	sigset_t mask;
-
-	if (pipe(pfd) == -1) {
-		warning("session logging disabled: can't make pipe to %s: %m",
-			  argv[0]);
-		return -1;
-	}
-	if ((pid = fork()) == -1) {
-		emergency("session logging disabled: can't fork for %s: %m",
-			  argv[0]);
-		return -1;
-	}
-
-	if (pid == 0) {
-		close(pfd[1]);
-		if (pfd[0] != 0) {
-			dup2(pfd[0], 0);
-			close(pfd[0]);
-		}
-		if ((fd = open(_PATH_DEVNULL, O_WRONLY)) != -1) {
-			if (fd != 1)
-				dup2(fd, 1);
-			if (fd != 2)
-				dup2(fd, 2);
-			if (fd != 1 && fd != 2)
-				close(fd);
-		} else {
-			/* paranoid */
-			close(1);
-			close(2);
-		}
-		sigemptyset(&mask);
-		sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
-		execv(argv[0], argv);
-		stall("can't exec %s: %m", argv[0]);
-		_exit(1);
-	}
-
-	close(pfd[0]);
-	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
-	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
-
-	return pfd[1];
-}
-
-/*
  * Close out the accounting files for a login session.
  * NB: should send a message to the session logger to avoid blocking.
  */
@@ -541,6 +480,7 @@ setctty(name)
 	int fd;
 
 	(void) revoke(name);
+	sleep (2);			/* leave DTR low */
 	if ((fd = open(name, O_RDWR)) == -1) {
 		stall("can't open %s: %m", name);
 		_exit(1);
@@ -567,7 +507,7 @@ single_user()
 	struct passwd *pp;
 	static const char banner[] =
 		"Enter root password, or ^D to go multi-user\n";
-	char *password;
+	char *clear, *password;
 #endif
 
 	/*
@@ -620,10 +560,11 @@ single_user()
 		if (typ && (typ->ty_status & TTY_SECURE) == 0 && pp) {
 			write(2, banner, sizeof banner - 1);
 			for (;;) {
-				password = getpass("Password:");
-				if (password == 0 || *password == '\0')
+				clear = getpass("Password:");
+				if (clear == 0 || *clear == '\0')
 					_exit(0);
-				password = crypt(password, pp->pw_passwd);
+				password = crypt(clear, pp->pw_passwd);
+				bzero(clear, _PASSWORD_LEN);
 				if (strcmp(password, pp->pw_passwd) == 0)
 					break;
 				warning("single-user login failed\n");
@@ -782,6 +723,16 @@ runcom()
 			wpid = -1;
 		}
 	} while (wpid != pid);
+
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM &&
+	    requested_transition == catatonia) {
+		/* /etc/rc executed /sbin/reboot; wait for the end quietly */
+		sigset_t s;
+
+		sigfillset(&s);
+		for (;;)
+			sigsuspend(&s);
+	}
 
 	if (!WIFEXITED(status)) {
 		warning("%s on %s terminated abnormally, going to single user mode",
@@ -1002,7 +953,6 @@ read_ttys()
 
 	endttyent();
 
-	logger_enable = 1;
 	return (state_func_t) multi_user;
 }
 
@@ -1160,7 +1110,6 @@ multi_user()
 	register session_t *sp;
 
 	requested_transition = 0;
-	logger_enable = 1;
 
 	/*
 	 * If the administrator has not set the security level to -1
@@ -1209,7 +1158,7 @@ clean_ttys()
 	while (typ = getttyent()) {
 		++session_index;
 
-		for (sp = sessions; sp; sprev = sp, sp = sp->se_next)
+		for (sprev = 0, sp = sessions; sp; sprev = sp, sp = sp->se_next)
 			if (strcmp(typ->ty_name, sp->se_device + devlen) == 0)
 				break;
 
@@ -1277,7 +1226,6 @@ death()
 
 	/* NB: should send a message to the session logger to avoid blocking. */
 	logwtmp("~", "shutdown", "");
-	logger_enable = 0;
 
 	for (i = 0; i < 3; ++i) {
 		if (kill(-1, death_sigs[i]) == -1 && errno == ESRCH)
