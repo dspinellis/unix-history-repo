@@ -10,7 +10,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	5.6 (Berkeley) %G%
+#	@(#)newvers.sh	8.1 (Berkeley) %G%
 #
 # $Id: newvers.sh,v 5.2.2.1 1992/02/09 15:11:19 jsp beta $
 #
