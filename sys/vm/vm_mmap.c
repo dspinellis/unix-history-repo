@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.13 1993/11/29 15:30:25 davidg Exp $
+ *	$Id: vm_mmap.c,v 1.14 1993/11/29 15:45:44 davidg Exp $
  */
 
 /*
@@ -529,13 +529,6 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 			goto out;
 		}
 		/*
-		 * The object of unnamed anonymous regions was just created
-		 * find it for pager_cache.
-		 */
-		if (handle == NULL)
-			object = vm_object_lookup(pager);
-
-		/*
 		 * Don't cache anonymous objects.
 		 * Loses the reference gained by vm_pager_allocate.
 		 */
@@ -845,7 +838,8 @@ vm_allocate_with_pager(map, addr, size, fitit, pager, poffset, internal)
 	vm_stat.lookups++;
 	if (object == NULL) {
 		object = vm_object_allocate(size);
-		vm_object_enter(object, pager);
+		if (!internal)
+			vm_object_enter(object, pager);
 	} else
 		vm_stat.hits++;
 	object->internal = internal;
