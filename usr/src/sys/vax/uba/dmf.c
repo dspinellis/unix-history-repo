@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.18 (Berkeley) %G%
+ *	@(#)dmf.c	6.19 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -190,7 +190,7 @@ dmfprobe(reg, ctlr)
 	printf(".\n");
 
 	if (dmfoptions & DMFC_LP)
-		dmfaddr->dmfl[0] = DMFL_RESET;
+		dmfaddr->dmfl_ctrl = DMFL_RESET;
 	return (sizeof (struct dmfdevice));
 }
 
@@ -983,7 +983,7 @@ dmflint(dmf)
 	d = (struct dmfdevice *)ui->ui_addr;
 
 	d->dmfl_ctrl &= ~DMFL_IE;
-	dmfl_stats = d->dmf_ctrl;
+	dmfl_stats = d->dmfl_ctrl;
 	if (sc->dmfl_state & ERROR) {
 		if ((dmfl_stats & DMFL_OFFLINE) == 0)
 			sc->dmfl_state &= ~ERROR;
