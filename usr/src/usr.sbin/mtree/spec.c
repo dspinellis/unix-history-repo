@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -147,6 +147,9 @@ set(ip)
 			if (!(ip->slink = strdup(val)))
 				nomem();
 			break;
+		case F_TIME:
+			ip->st_mtime = atol(val);
+			break;
 		case F_TYPE:
 			switch(*val) {
 			case 'b':
@@ -233,6 +236,8 @@ key(p)
 	case 't':
 		if (!strcmp(p, "type"))
 			return(F_TYPE);
+		if (!strcmp(p, "time"))
+			return(F_TIME);
 		break;
 	}
 	(void)fprintf(stderr, "mtree: unknown keyword %s.\n", p);

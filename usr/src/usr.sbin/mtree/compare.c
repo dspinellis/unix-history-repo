@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)compare.c	5.6 (Berkeley) %G%";
 #include <fts.h>
 #include <errno.h>
 #include <stdio.h>
+#include <time.h>
 #include "mtree.h"
 
 #define	LABEL \
@@ -114,6 +115,12 @@ typeerr:		LABEL;
 			LABEL;
 			(void)printf("\n\tlink ref (%s, %s)", cp, s->slink);
 		}
+	}
+	if (s->flags & F_TIME && s->st_mtime != p->fts_statb.st_mtime) {
+		LABEL;
+		(void)printf("\n\tmodification time (%.24s, ",
+		    ctime(&s->st_mtime));
+		(void)printf("%.24s)", ctime(&p->fts_statb.st_mtime));
 	}
 	if (label) {
 		exitval = 2;
