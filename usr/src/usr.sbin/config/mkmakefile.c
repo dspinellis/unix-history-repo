@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,7 +108,7 @@ makefile()
 	struct users *up;
 
 	read_files();
-	strcpy(line, "../conf/Makefile.");
+	strcpy(line, "Makefile.");
 	(void) strcat(line, machinename);
 	ifp = fopen(line, "r");
 	if (ifp == 0) {
@@ -223,7 +223,7 @@ read_files()
 	int nreqs, first = 1, configdep, isdup, std;
 
 	ftab = 0;
-	(void) strcpy(fname, "files");
+	(void) strcpy(fname, "../../conf/files");
 openit:
 	fp = fopen(fname, "r");
 	if (fp == 0) {
@@ -439,7 +439,7 @@ do_cfiles(fp)
 				lpos = 8;
 				fputs("\\\n\t", fp);
 			}
-			fprintf(fp, "../%s ", tp->f_fn);
+			fprintf(fp, "$S/%s ", tp->f_fn);
 			lpos += len + 1;
 		}
 	for (fl = conf_list; fl; fl = fl->f_next)
@@ -450,7 +450,8 @@ do_cfiles(fp)
 				fputs("\\\n\t", fp);
 			}
 			if (eq(fl->f_fn, "generic"))
-				fprintf(fp, "../%s/%s ", machinename, swapname);
+				fprintf(fp, "$S/%s/%s/%s ",
+				    machinename, machinename, swapname);
 			else
 				fprintf(fp, "%s ", swapname);
 			lpos += len + 1;
@@ -492,13 +493,13 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 	och = *cp;
 	*cp = '\0';
 	if (och == 'o') {
-		fprintf(f, "%so:\n\t-cp ../%so .\n\n", tail(np), np);
+		fprintf(f, "%so:\n\t-cp $S/%so .\n\n", tail(np), np);
 		continue;
 	}
-	fprintf(f, "%so: ../%s%c\n", tail(np), np, och);
+	fprintf(f, "%so: $S/%s%c\n", tail(np), np, och);
 	tp = tail(np);
 	if (och == 's') {
-		fprintf(f, "\t-ln -s ../%ss %sc\n", np, tp);
+		fprintf(f, "\t-ln -s $S/%ss %sc\n", np, tp);
 		fprintf(f, "\t${CC} -E ${COPTS} %sc | ${AS} -o %so\n",
 			tp, tp);
 		fprintf(f, "\trm -f %sc\n\n", tp);
@@ -515,7 +516,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 
 		case MACHINE_VAX:
 		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S ${COPTS} %s$S/%sc\n",
 				extras, np);
 			fprintf(f, "\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
 			    tp, tp);
@@ -523,7 +524,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
-			fprintf(f, "\t${CC} -c ${CFLAGS} %s../%sc\n\n",
+			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
 				extras, np);
 			break;
 		}
@@ -534,7 +535,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 
 		case MACHINE_VAX:
 		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S ${COPTS} %s$S/%sc\n",
 				extras, np);
 			fprintf(f,"\t${C2} -i %ss | ${INLINE} | ${AS} -o %so\n",
 			    tp, tp);
@@ -542,7 +543,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
-			fprintf(f, "\t${CC} -c ${CFLAGS} %s../%sc\n\n",
+			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
 				extras, np);
 			break;
 		}
@@ -559,7 +560,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f,"\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
@@ -568,7 +569,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f, "\t${INLINE} %ss | ${AS} -o %so\n", tp, tp);
@@ -576,7 +577,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_HP300:
-			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f, "\t${AS} -o %so %ss\n", tp, tp);
@@ -620,7 +621,7 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: Makefile machine/symbols.sort", fl->f_needs);
+	fprintf(f, "%s: Makefile symbols.sort", fl->f_needs);
 	if (machine == MACHINE_VAX)
 		fprintf(f, " ${INLINECMD} locore.o emulate.o");
 	else if (machine == MACHINE_TAHOE)
@@ -631,7 +632,7 @@ do_systemspec(f, fl, first)
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
 	if (first) {
-		fprintf(f, "\t@sh ../conf/newvers.sh\n");
+		fprintf(f, "\t@sh $S/conf/newvers.sh\n");
 		fprintf(f, "\t@${CC} ${CFLAGS} -c vers.c\n");
 	}
 	switch (machine) {
@@ -657,7 +658,7 @@ do_systemspec(f, fl, first)
 	}
 	fprintf(f, "swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
-	fprintf(f, "\t@-symorder machine/symbols.sort %s\n", fl->f_needs);
+	fprintf(f, "\t@-symorder symbols.sort %s\n", fl->f_needs);
 	fprintf(f, "\t@size %s\n", fl->f_needs);
 	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
 	do_swapspec(f, fl->f_fn);
@@ -676,13 +677,15 @@ do_swapspec(f, name)
 		fprintf(f, "\t${CC} -c -O ${COPTS} swap%s.c\n\n", name);
 		return;
 	}
-	fprintf(f, "swapgeneric.o: ../%s/swapgeneric.c\n", machinename);
+	fprintf(f, "swapgeneric.o: $S/%s/%s/swapgeneric.c\n", 
+	    machinename, machinename);
 	switch (machine) {
 
 	case MACHINE_VAX:
 	case MACHINE_TAHOE:
 		fprintf(f, "\t${CC} -c -S ${COPTS} ");
-		fprintf(f, "../%s/swapgeneric.c\n", machinename);
+		fprintf(f, "$S/%s/%s/swapgeneric.c\n",
+		    machinename, machinename);
 		fprintf(f, "\t${C2} swapgeneric.s | ${INLINE}");
 		fprintf(f, " | ${AS} -o swapgeneric.o\n");
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
@@ -690,7 +693,8 @@ do_swapspec(f, name)
 
 	case MACHINE_HP300:
 		fprintf(f, "\t${CC} -c ${CFLAGS} ");
-		fprintf(f, "../%s/swapgeneric.c\n\n", machinename);
+		fprintf(f, "$S/%s/%s/swapgeneric.c\n\n",
+		    machinename, machinename);
 		break;
 	}
 }
