@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)init.8	6.7 (Berkeley) %G%
+.\"     @(#)init.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INIT 8
@@ -155,13 +155,13 @@ will send a SIGHUP signal to the controlling process
 for the session associated with the line.
 For any lines that were previously turned off in the
 .Xr ttys
-file,
+file and are now on,
 .Nm init
 executes a new
 .Xr getty
-too enable a new login.
+to enable a new login.
 If the getty or window field for a line is changed,
-the change takes effect at the beginning of the next
+the change takes effect at the end of the current
 login session (e.g., the next time 
 .Nm init
 starts a process on the line).
@@ -169,8 +169,12 @@ If a line is commented out or deleted from
 .Xr ttys ,
 .Nm init
 will not do anything at all to that line.
-However, it will complain that the association between lines
-and the utmp is out of sync,
+However, it will complain that the relationship between lines
+in the
+.Xr ttys
+file and records in the
+.Xr utmp
+file is out of sync,
 so this practice is not recommended.
 .Pp
 .Nm Init
@@ -255,3 +259,7 @@ A
 .Nm
 command appeared in
 .At v6 .
+.Sh BUGS
+Systems without
+.Xr sysctl
+behave as though they have security level \-1.
