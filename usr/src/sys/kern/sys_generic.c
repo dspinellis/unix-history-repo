@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.27 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,6 +12,7 @@
 #include "filedesc.h"
 #include "ioctl.h"
 #include "file.h"
+#include "socketvar.h"
 #include "proc.h"
 #include "uio.h"
 #include "kernel.h"
@@ -54,6 +55,7 @@ read(p, uap, retval)
 	auio.uio_resid = uap->count;
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_procp = p;
 #ifdef KTRACE
 	/*
 	 * if tracing, save a copy of iovec
@@ -117,6 +119,7 @@ readv(p, uap, retval)
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_procp = p;
 	if (error = copyin((caddr_t)uap->iovp, (caddr_t)iov, iovlen))
 		goto done;
 	auio.uio_resid = 0;
@@ -194,6 +197,7 @@ write(p, uap, retval)
 	auio.uio_resid = uap->count;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_procp = p;
 #ifdef KTRACE
 	/*
 	 * if tracing, save a copy of iovec
@@ -260,6 +264,7 @@ writev(p, uap, retval)
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_procp = p;
 	if (error = copyin((caddr_t)uap->iovp, (caddr_t)iov, iovlen))
 		goto done;
 	auio.uio_resid = 0;
@@ -329,6 +334,7 @@ ioctl(p, uap, retval)
 #define STK_PARAMS	128
 	char stkbuf[STK_PARAMS];
 	caddr_t data = stkbuf;
+	int tmp;
 
 	if ((unsigned)uap->fdes >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fdes]) == NULL)
@@ -380,20 +386,52 @@ ioctl(p, uap, retval)
 	switch (com) {
 
 	case FIONBIO:
-		error = fset(fp, FNDELAY, *(int *)data);
+		if (tmp = *(int *)data)
+			fp->f_flag |= FNDELAY;
+		else
+			fp->f_flag &= ~FNDELAY;
+		error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
 		break;
 
 	case FIOASYNC:
-		error = fset(fp, FASYNC, *(int *)data);
+		if (tmp = *(int *)data)
+			fp->f_flag |= FASYNC;
+		else
+			fp->f_flag &= ~FASYNC;
+		error = (*fp->f_ops->fo_ioctl)(fp, FIOASYNC, (caddr_t)&tmp, p);
 		break;
 
 	case FIOSETOWN:
-		error = fsetown(fp, *(int *)data);
+		tmp = *(int *)data;
+		if (fp->f_type == DTYPE_SOCKET) {
+			((struct socket *)fp->f_data)->so_pgid = tmp;
+			error = 0;
+			break;
+		}
+		if (tmp <= 0) {
+			tmp = -tmp;
+		} else {
+			struct proc *p1 = pfind(tmp);
+			if (p1 == 0) {
+				error = ESRCH;
+				break;
+			}
+			tmp = p1->p_pgrp->pg_id;
+		}
+		error = (*fp->f_ops->fo_ioctl)
+			(fp, (int)TIOCSPGRP, (caddr_t)&tmp, p);
 		break;
 
 	case FIOGETOWN:
-		error = fgetown(fp, (int *)data);
+		if (fp->f_type == DTYPE_SOCKET) {
+			error = 0;
+			*(int *)data = ((struct socket *)fp->f_data)->so_pgid;
+			break;
+		}
+		error = (*fp->f_ops->fo_ioctl)(fp, (int)TIOCGPGRP, data, p);
+		*(int *)data = -*(int *)data;
 		break;
+
 	default:
 		error = (*fp->f_ops->fo_ioctl)(fp, com, data, p);
 		/*
