@@ -4,7 +4,7 @@
 #
 set P=paper
 date
-setenv PSLIBDIR ../patches
+setenv PSLIBDIR /usr/local/lib/transcript/
 if (! -e $PSLIBDIR/psdit.pro) then
 	echo You must patch psdit.pro first!
 	exit -1

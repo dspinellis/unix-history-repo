@@ -1203,7 +1203,7 @@ An example of MacDraw output is at the top of the next page.
 .KW
 .F+
 figure lab.ps {
-	file /usr/lib/ps/mac.pro
+	file figs/mac.pro
 } width 4.5i
 .F-
 .sp 
