@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.12 83/09/19";
+static	char *sccsid = "@(#)main.c	3.13 83/11/02";
 #endif
 
 #include "defs.h"
@@ -17,7 +17,9 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
+#ifndef O_4_1A
 	struct timezone timezone;
+#endif
 
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -57,7 +59,9 @@ char **argv;
 		shellname++;
 	else
 		shellname = shell;
+#ifndef O_4_1A
 	(void) gettimeofday(&starttime, &timezone);
+#endif
 	if (wwinit() < 0) {
 		(void) fflush(stdout);
 		(void) fprintf(stderr, "%s.\n", wwerror());

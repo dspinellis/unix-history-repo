@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.13 83/09/15";
+static	char *sccsid = "@(#)cmd.c	3.14 83/11/02";
 #endif
 
 #include "defs.h"
@@ -139,12 +139,14 @@ docmd()
 			case 's':
 				c_stat();
 				break;
+#ifndef O_4_1A
 			case 't':
 				c_time(RUSAGE_SELF);
 				break;
 			case 'T':
 				c_time(RUSAGE_CHILDREN);
 				break;
+#endif
 			/* debugging stuff */
 			case '&':
 				if (debug) {

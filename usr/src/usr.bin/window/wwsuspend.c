@@ -1,24 +1,22 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwsuspend.c	3.2 83/08/15";
+static	char *sccsid = "@(#)wwsuspend.c	3.3 83/11/02";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 #include <signal.h>
 
-#define mask(s)	(1 << (s) - 1)
-
 wwsuspend()
 {
-	int oldmask;
+	int (*oldsig)();
 
-	oldmask = sigblock(mask(SIGTSTP));
+	oldsig = signal(SIGTSTP, SIG_IGN);
 	wwend();
-	(void) sigsetmask(sigblock(0) & ~mask(SIGTSTP));
+	(void) signal(SIGTSTP, SIG_DFL);
 	(void) kill(0, SIGTSTP);
-	(void) sigblock(mask(SIGTSTP));
+	(void) signal(SIGTSTP, SIG_IGN);
 	(void) wwsettty(0, &wwnewtty);
 	(*tt.tt_init)();
 	wwredraw();
-	(void) sigsetmask(oldmask);
+	(void) signal(SIGTSTP, oldsig);
 }

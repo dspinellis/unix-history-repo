@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.17 83/10/19	
+ *	@(#)ww.h	3.18 83/11/02	
  */
 
 #include <stdio.h>
@@ -202,3 +202,8 @@ char *strcat();
 #define CTRL(c)		('c'&0x1f)
 #define DEL		0x7f
 #define ISCTRL(c)	((c) < ' ' || (c) >= DEL)
+
+#if defined(O_4_1A)||defined(O_4_1C)
+int (*sigset)();
+#define signal(s, v)	sigset((s), (v))
+#endif

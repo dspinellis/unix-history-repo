@@ -1,11 +1,13 @@
 /*
- *	@(#)defs.h	3.4 83/09/01	
+ *	@(#)defs.h	3.5 83/11/02	
  */
 
 #include "ww.h"
 #include <signal.h>
+#ifndef O_4_1A
 #include <sys/time.h>
 #include <sys/resource.h>
+#endif
 
 #define NWINDOW 9
 
@@ -13,7 +15,9 @@ int nread;
 int nreade;
 int nreadz;
 int nreadc;
+#ifndef O_4_1A
 struct timeval starttime;
+#endif
 
 	/* things for handling input */
 char ibuf[512];
