@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.9	(Berkeley)	83/04/11";
+static char sccsid[] = "@(#)restore.c	3.10	(Berkeley)	83/04/16";
 #endif
 
 #include "restore.h"
@@ -470,9 +470,12 @@ createleaves(symtabfile)
 			ep->e_flags &= ~(NEW|EXTRACT);
 			first = lowerbnd(first);
 		}
-		if (first != curfile.ino)
-			panic("expected next file %d, got %d\n",
+		if (first != curfile.ino) {
+			fprintf(stderr, "expected next file %d, got %d\n",
 				first, curfile.ino);
+			skipfile();
+			goto next;
+		}
 		ep = lookupino(curfile.ino);
 		if (ep == NIL)
 			panic("unknown file on tape\n");
@@ -494,6 +497,7 @@ createleaves(symtabfile)
 		 * as to simplify the amount of work re quired by the
 		 * 'R' command.
 		 */
+	next:
 		if (curvol != volno) {
 			dumpsymtable(symtabfile, volno);
 			skipmaps();
