@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.3 (Berkeley) %G%
+#	@(#)makefile	3.4 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -76,7 +76,7 @@ ALLO	= map3270$O termin$O
 
 
 ALLHC=	${ALLH} ${ALLC}
-ALLPRINT =	${ALLHC}
+ALLPRINT =	default.map ${ALLHC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
