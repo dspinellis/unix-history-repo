@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -546,26 +546,32 @@ dointr(nintv)
  * the types defined in <sys/malloc.h>.
  */
 char *kmemnames[] = {
-	"free",		/* M_FREE */
-	"mbuf",		/* M_MBUF */
-	"devbuf",	/* M_DEVBUF */
-	"socket",	/* M_SOCKET */
-	"pcb",		/* M_PCB */
-	"routetbl",	/* M_RTABLE */
-	"hosttbl",	/* M_HTABLE */
-	"fragtbl",	/* M_FTABLE */
-	"zombie",	/* M_ZOMBIE */
-	"ifaddr",	/* M_IFADDR */
-	"soopts",	/* M_SOOPTS */
-	"soname",	/* M_SONAME */
-	"namei",	/* M_NAMEI */
-	"gprof",	/* M_GPROF */
-	"ioctlops",	/* M_IOCTLOPS */
-	"superblk",	/* M_SUPERBLK */
-	"cred",		/* M_CRED */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	"temp",		/* M_TEMP */
+	"free",		/* 0 M_FREE */
+	"mbuf",		/* 1 M_MBUF */
+	"devbuf",	/* 2 M_DEVBUF */
+	"socket",	/* 3 M_SOCKET */
+	"pcb",		/* 4 M_PCB */
+	"routetbl",	/* 5 M_RTABLE */
+	"hosttbl",	/* 6 M_HTABLE */
+	"fragtbl",	/* 7 M_FTABLE */
+	"zombie",	/* 8 M_ZOMBIE */
+	"ifaddr",	/* 9 M_IFADDR */
+	"soopts",	/* 10 M_SOOPTS */
+	"soname",	/* 11 M_SONAME */
+	"namei",	/* 12 M_NAMEI */
+	"gprof",	/* 13 M_GPROF */
+	"ioctlops",	/* 14 M_IOCTLOPS */
+	"superblk",	/* 15 M_SUPERBLK */
+	"cred",		/* 16 M_CRED */
+	"pgrp",		/* 17 M_PGRP */
+	"session",	/* 18 M_SESSION */
+	0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0,
+	"temp",		/* 49 M_TEMP */
 };
 
 domem()
