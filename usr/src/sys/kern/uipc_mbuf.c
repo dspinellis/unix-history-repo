@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.33	82/05/18	*/
+/*	uipc_mbuf.c	1.34	82/05/19	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -44,7 +44,7 @@ COUNT(M_CLALLOC);
 	if (mbx == 0)
 		return (0);
 	m = cltom(mbx / CLSIZE);
-	if (memall(&Mbmap[mbx], ncl * CLSIZE, proc, CSYS) == 0)
+	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0)
 		return (0);
 	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
 	switch (how) {
