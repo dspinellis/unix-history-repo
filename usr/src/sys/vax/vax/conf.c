@@ -1,4 +1,4 @@
-/*	conf.c	3.6	%G%	*/
+/*	conf.c	3.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,6 +28,8 @@ int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
 #endif
 
+int	swstrategy(),swread(),swwrite();
+
 struct bdevsw	bdevsw[] =
 {
 /* 0 */	nulldev,	nulldev,	hpstrategy,	&hptab,
@@ -35,6 +37,8 @@ struct bdevsw	bdevsw[] =
 #ifdef ERNIE
 /* 2 */	nulldev,	nulldev,	upstrategy,	&uptab,
 #endif
+/* 3 */	nodev,		nodev,		nodev,		0,
+/* 4 */	nodev,		nodev,		swstrategy,	0,
 	0,
 };
 
@@ -56,12 +60,13 @@ int 	mmread(),mmwrite();
 
 #ifdef ERNIE
 int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
-int	vaopen(), vaclose(), vawrite(), vaioctl(),vareset();
+int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
 #endif
 
-int	mxopen(), mxclose(), mxread(), mxwrite(), mxioctl();
+int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
 int	mcread();
 char	*mcwrite();
+
 
 struct cdevsw	cdevsw[] =
 {
@@ -84,7 +89,7 @@ struct cdevsw	cdevsw[] =
 /*6*/	nodev,		nodev,		nodev,		nodev,
 	nodev,		nodev,		nulldev,	0,
 #endif
-/*7*/	nodev,		nodev,		nodev,		nodev,
+/*7*/	nulldev,	nulldev,	swread,		swwrite,
 	nodev,		nodev,		nulldev,	0,
 /*8*/	flopen,		flclose,	flread,		flwrite,
 	nodev,		nodev,		nulldev,	0,
@@ -126,17 +131,34 @@ struct	linesw linesw[] =
  
 int	nldisp = 3;
 dev_t	rootdev	= makedev(0, 0);
-dev_t	swapdev	= makedev(0, 1);	/* WRONG (eventually) */
 dev_t	pipedev	= makedev(0, 0);
-daddr_t swplo = 1;		/* (swplo-1) % CLSIZE must be 0 */
-int	nswap = 33439;
+dev_t	argdev = makedev(0, 1);
+
+/*
+ * Swapdev is a fake device implemented
+ * in sw.c used only internally to get to swstrategy.
+ * It cannot be provided to the users, because the
+ * swstrategy routine munches the b_dev and b_blkno entries
+ * before calling the appropriate driver.  This would horribly
+ * confuse, e.g. the hashing routines as well as the placement
+ * of the block on the d_tab chains.  Instead, /dev/drum is
+ * provided as a character (raw) device.
+ */
+dev_t	swapdev = makedev(4, 0);
+
+/*
+ * Nswap is the basic number of blocks of swap per
+ * swap device, and is multipliet by nswdev after
+ * nswdev is determined at boot.
+ */
+int	nswap = 33440;
 
 struct	swdevt swdevt[] =
 {
-	makedev(0, 1),	0,
+	makedev(0, 1),	0,		/* rp0b */
+	makedev(2, 9),  0,		/* up1b */
 	0,		0,
 };
-int	nswdev = 1;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
