@@ -72,7 +72,8 @@ display(win, text, size)
 
 	for (i = 0; i < size; i++) {
 		if (*text == '\n' || *text == '\r') {
-			xscroll(win, 0);
+			waddch(win->x_win, '\n');
+			getyx(win->x_win, win->x_line, win->x_col);
 			text++;
 			continue;
 		}
@@ -141,15 +142,9 @@ display(win, text, size)
 			text++;
 			continue;
 		}
-		if (win->x_col == COLS-1) {
-			/* check for wraparound */
-			xscroll(win, 0);
-		}
 		if (*text < ' ' && *text != '\t') {
 			waddch(win->x_win, '^');
 			getyx(win->x_win, win->x_line, win->x_col);
-			if (win->x_col == COLS-1) /* check for wraparound */
-				xscroll(win, 0);
 			cch = (*text & 63) + 64;
 			waddch(win->x_win, cch);
 		} else
@@ -174,28 +169,4 @@ readwin(win, line, col)
 	c = winch(win);
 	wmove(win, oldline, oldcol);
 	return (c);
-}
-
-/*
- * Scroll a window, blanking out the line following the current line
- * so that the current position is obvious
- */
-xscroll(win, flag)
-	register xwin_t *win;
-	int flag;
-{
-
-	if (flag == -1) {
-		wmove(win->x_win, 0, 0);
-		win->x_line = 0;
-		win->x_col = 0;
-		return;
-	}
-	win->x_line = (win->x_line + 1) % win->x_nlines;
-	win->x_col = 0;
-	wmove(win->x_win, win->x_line, win->x_col);
-	wclrtoeol(win->x_win);
-	wmove(win->x_win, (win->x_line + 1) % win->x_nlines, win->x_col);
-	wclrtoeol(win->x_win);
-	wmove(win->x_win, win->x_line, win->x_col);
 }
