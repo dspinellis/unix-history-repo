@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.3 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -89,6 +89,7 @@ static unsigned short	tolimit = 0;
 static char		*s_lowpc = 0;
 static char		*s_highpc = 0;
 static unsigned long	s_textsize = 0;
+static char		*minsbrk = 0;
 
 static int	ssiz;
 static int	*sbuf;
@@ -299,11 +300,20 @@ monitor( lowpc , highpc , buf , bufsiz )
 
 /*
  * This is a stub for the "brk" system call, which we want to
- * catch and ignore, so that it will not deallocate our data
- * space. (of which the program is not aware)
+ * catch so that it will not deallocate our data space.
+ * (of which the program is not aware)
  */
+asm("#define _curbrk curbrk");
+extern char *curbrk;
+
 brk(addr)
-	int *addr;
+	char *addr;
 {
-	;
+
+	if (addr < minsbrk)
+		addr = minsbrk;
+	asm("	chmk	$17");
+	asm("	jcs	cerror");
+	curbrk = addr;
+	return (0);
 }
