@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.5 81/06/19";
+static	char *sccsid = "@(#)func.c 4.6 81/08/20";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -155,6 +155,7 @@ dologin(v)
 {
 
 	islogin();
+	rechist();
 	signal(SIGTERM, parterm);
 	execl("/bin/login", "login", v[1], 0);
 	untty();
