@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.1	%G%	*/
+/*	lfs_inode.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,11 +24,12 @@ short	ifreel;
 ihinit()
 {
 	register int i;
+	register struct inode *ip = inode;
 
 	ifreel = 0;
-	for (i = 0; i < NINODE - 1; i++)
-		inode[i].i_hlink = i+1;
-	inode[NINODE - 1].i_hlink = -1;
+	for (i = 0; i < ninode-1; i++, ip++)
+		ip->i_hlink = i+1;
+	ip->i_hlink = -1;
 	for (i = 0; i < INOHSZ; i++)
 		inohash[i] = -1;
 }

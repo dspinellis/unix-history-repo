@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.6	%G%	*/
+/*	ufs_vnops.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -227,7 +227,7 @@ sumount()
 
 found:
 	stillopen = 0;
-	for(ip = &inode[0]; ip < &inode[NINODE]; ip++)
+	for(ip = inode; ip < inodeNINODE; ip++)
 		if (ip->i_number != 0 && dev == ip->i_dev) {
 			u.u_error = EBUSY;
 			return;
