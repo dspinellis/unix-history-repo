@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.29 (Berkeley) %G%";
 #endif
 
 /*
@@ -54,6 +54,7 @@ int	debug;
 int	timeout;
 int	logging;
 int	guest;
+int	wtmp;
 int	type;
 int	form;
 int	stru;			/* avoid C keyword */
@@ -234,6 +235,10 @@ pass(passwd)
 			pw->pw_name, pw->pw_dir);
 		goto bad;
 	}
+
+	if (guest)			/* grab wtmp before chroot */
+		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+
 	if (guest && chroot(pw->pw_dir) < 0) {
 		reply(550, "Can't set guest privileges.");
 		goto bad;
@@ -723,10 +728,12 @@ struct	utmp utmp;
 dologin(pw)
 	struct passwd *pw;
 {
-	int wtmp;
 	char line[32];
 
-	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	if (guest && (wtmp >= 0))
+		lseek(wtmp, 0, L_XTND);
+	else
+		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
 		/* hack, but must be unique and no tty line */
 		sprintf(line, "ftp%d", getpid());
@@ -735,7 +742,8 @@ dologin(pw)
 		SCPYN(utmp.ut_host, remotehost);
 		utmp.ut_time = time(0);
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-		(void) close(wtmp);
+		if (!guest)
+			(void) close(wtmp);
 	}
 }
 
@@ -746,12 +754,13 @@ dologin(pw)
 dologout(status)
 	int status;
 {
-	int wtmp;
-
 	if (!logged_in)
 		_exit(status);
 	seteuid(0);
-	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	if (guest && (wtmp >= 0))
+		lseek(wtmp, 0, L_XTND);
+	else
+		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
 		SCPYN(utmp.ut_name, "");
 		SCPYN(utmp.ut_host, "");
