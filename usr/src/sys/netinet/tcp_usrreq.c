@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	6.2	84/08/21	*/
+/*	tcp_usrreq.c	6.3	84/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -311,22 +311,22 @@ tcp_attach(so)
 
 	error = soreserve(so, tcp_sendspace, tcp_recvspace);
 	if (error)
-		goto bad;
+		return (error);
 	error = in_pcballoc(so, &tcb);
 	if (error)
-		goto bad;
+		return (error);
 	inp = sotoinpcb(so);
 	tp = tcp_newtcpcb(inp);
 	if (tp == 0) {
-		error = ENOBUFS;
-		goto bad2;
+		int nofd = so->so_state & SS_NOFDREF;	/* XXX */
+
+		so->so_state &= ~SS_NOFDREF;	/* don't free the socket yet */
+		in_pcbdetach(inp);
+		so->so_state |= nofd;
+		return (ENOBUFS);
 	}
 	tp->t_state = TCPS_CLOSED;
 	return (0);
-bad2:
-	in_pcbdetach(inp);
-bad:
-	return (error);
 }
 
 /*
