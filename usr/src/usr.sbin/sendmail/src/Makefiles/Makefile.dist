@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.dist	8.5 (Berkeley) %G%
+#	@(#)Makefile.dist	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -64,7 +64,11 @@ BINOWN=	root
 BINGRP=	kmem
 BINMODE=6555
 
-sendmail: ${OBJS}
+ALL=	sendmail aliases.0 newaliases.0 sendmail.0
+
+all: ${ALL}
+
+sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${LDOPTS} ${OBJS} ${LIBDIRS} ${LIBS}
 
 aliases.0: aliases.5
