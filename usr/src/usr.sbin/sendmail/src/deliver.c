@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.125		%G%);
+SCCSID(@(#)deliver.c	3.126		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -712,10 +712,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			(void) dup(rpvect[1]);
 			(void) close(rpvect[1]);
 		}
-		else if (OutChannel != stdout)
+		else if (Smtp || HoldErrs)
 		{
 			(void) close(1);
-			(void) dup(fileno(OutChannel));
+			(void) dup(fileno(Xscript));
 		}
 		(void) close(2);
 		(void) dup(1);

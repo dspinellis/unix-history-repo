@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.30		%G%);
+SCCSID(@(#)err.c	3.31		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -41,7 +41,7 @@ syserr(fmt, a, b, c, d, e)
 	else
 		p = Arpa_TSyserr;
 	fmtmsg(MsgBuf, (char *) NULL, p, fmt, a, b, c, d, e);
-	putmsg(MsgBuf);
+	putmsg(MsgBuf, HoldErrs);
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
@@ -88,7 +88,7 @@ usrerr(fmt, a, b, c, d, e)
 		return;
 
 	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
-	putmsg(MsgBuf);
+	putmsg(MsgBuf, HoldErrs);
 
 	if (QuickAbort)
 		longjmp(TopFrame, 1);
@@ -116,7 +116,7 @@ message(num, msg, a, b, c, d, e)
 {
 	errno = 0;
 	fmtmsg(MsgBuf, CurEnv->e_to, num, msg, a, b, c, d, e);
-	putmsg(MsgBuf);
+	putmsg(MsgBuf, FALSE);
 }
 /*
 **  NMESSAGE -- print message (not necessarily an error)
@@ -143,13 +143,15 @@ nmessage(num, msg, a, b, c, d, e)
 {
 	errno = 0;
 	fmtmsg(MsgBuf, NULL, num, msg, a, b, c, d, e);
-	putmsg(MsgBuf);
+	putmsg(MsgBuf, FALSE);
 }
 /*
 **  PUTMSG -- output error message to transcript and channel
 **
 **	Parameters:
 **		msg -- message to output (in SMTP format).
+**		holdmsg -- if TRUE, don't output a copy of the message to
+**			our output channel.
 **
 **	Returns:
 **		none.
@@ -160,14 +162,15 @@ nmessage(num, msg, a, b, c, d, e)
 **		Deletes SMTP reply code number as appropriate.
 */
 
-putmsg(msg)
+putmsg(msg, holdmsg)
 	char *msg;
+	bool holdmsg;
 {
 	/* output to transcript */
 	fprintf(Xscript, "%s\n", Smtp ? msg : &msg[4]);
 
 	/* output to channel if appropriate */
-	if (!HoldErrs && (Verbose || msg[0] != '0'))
+	if (!holdmsg && (Verbose || msg[0] != '0'))
 	{
 		(void) fflush(stdout);
 		if (ArpaMode)
