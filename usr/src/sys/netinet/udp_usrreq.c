@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.26	82/04/10	*/
+/*	udp_usrreq.c	4.27	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,11 +8,13 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/in.h"
+#include "../net/if.h"
 #include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/ip_icmp.h"
 #include "../net/udp.h"
 #include "../net/udp_var.h"
 #include <errno.h>
@@ -90,8 +92,15 @@ COUNT(UDP_INPUT);
 	inp = in_pcblookup(&udb,
 	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport,
 		INPLOOKUP_WILDCARD);
-	if (inp == 0)
-		goto bad;
+	if (inp == 0) {
+		struct in_addr broadcastaddr;
+
+		broadcastaddr = if_makeaddr(ui->ui_dst.s_net, INADDR_ANY);
+		if (ui->ui_dst.s_addr != broadcastaddr.s_addr)
+			goto bad;
+		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
+		return;
+	}
 
 	/*
 	 * Construct sockaddr format source address.
@@ -109,12 +118,21 @@ bad:
 	m_freem(m);
 }
 
-udp_ctlinput(m)
-	struct mbuf *m;
+udp_ctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
 {
 
 COUNT(UDP_CTLINPUT);
-	m_freem(m);
+}
+
+udp_abort(inp)
+	struct inpcb *inp;
+{
+	struct socket *so = inp->inp_socket;
+
+	in_pcbdisconnect(inp);
+	soisdisconnected(so);
 }
 
 udp_output(inp, m0)

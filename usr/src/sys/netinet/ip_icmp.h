@@ -1,4 +1,4 @@
-/* ip_icmp.h 4.3 81/12/03 */
+/* ip_icmp.h 4.4 82/04/24 */
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -19,11 +19,13 @@ struct icmp {
 			n_short	icd_id;
 			n_short	icd_seq;
 		} ih_idseq;
+		int ih_void;
 	} icmp_hun;
 #define	icmp_pptr	icmp_hun.ih_pptr
 #define	icmp_gwaddr	icmp_hun.ih_gwaddr
 #define	icmp_id		icmp_hun.ih_idseq.icd_id
 #define	icmp_seq	icmp_hun.ih_idseq.icd_seq
+#define	icmp_void	icmp_hun.ih_void
 	union {
 		struct id_ts {
 			n_time its_otime;

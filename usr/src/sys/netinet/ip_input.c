@@ -1,4 +1,4 @@
-/*	ip_input.c	1.40	82/04/07	*/
+/*	ip_input.c	1.41	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
+#include <errno.h>
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
@@ -45,8 +46,6 @@ COUNT(IP_INIT);
 
 u_char	ipcksum = 1;
 struct	ip *ip_reass();
-int	ipforwarding = 1;
-int	ipprintfs = 0;
 struct	sockaddr_in ipaddr = { AF_INET };
 
 /*
@@ -127,10 +126,12 @@ next:
 
 	/*
 	 * Process options and, if not destined for us,
-	 * ship it on.
+	 * ship it on.  ip_dooptions returns 1 when an
+	 * error was detected (causing an icmp message
+	 * to be sent).
 	 */
-	if (hlen > sizeof (struct ip))
-		ip_dooptions(ip);
+	if (hlen > sizeof (struct ip) && ip_dooptions(ip))
+		goto next;
 
 	/*
 	 * Fast check on the first internet
@@ -149,23 +150,7 @@ next:
 	}
 	ipaddr.sin_addr = ip->ip_dst;
 	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
-		if (ipprintfs)
-			printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
-				ip->ip_dst, ip->ip_ttl);
-		if (ipforwarding == 0)
-			goto bad;
-		if (ip->ip_ttl < IPTTLDEC) {
-			icmp_error(ip, ICMP_TIMXCEED, 0);
-			goto next;
-		}
-		ip->ip_ttl -= IPTTLDEC;
-		mopt = m_get(M_DONTWAIT);
-		if (mopt == 0)
-			goto bad;
-		ip_stripoptions(ip, mopt);
-
-		/* last 0 here means no directed broadcast */
-		(void) ip_output(m0, mopt, 0, 0);
+		ip_forward(ip);
 		goto next;
 	}
 
@@ -447,7 +432,7 @@ ip_dooptions(ip)
 	struct ip *ip;
 {
 	register u_char *cp;
-	int opt, optlen, cnt;
+	int opt, optlen, cnt, code, type;
 	struct in_addr *sin;
 	register struct ip_timestamp *ipt;
 	register struct ifnet *ifp;
@@ -484,6 +469,7 @@ COUNT(IP_DOOPTIONS);
 			sin = (struct in_addr *)(cp + cp[2]);
 			ipaddr.sin_addr = *sin;
 			ifp = if_ifwithaddr((struct sockaddr *)&ipaddr);
+			type = ICMP_UNREACH, code = ICMP_UNREACH_SRCFAIL;
 			if (ifp == 0) {
 				if (opt == IPOPT_SSRR)
 					goto bad;
@@ -500,6 +486,8 @@ COUNT(IP_DOOPTIONS);
 			break;
 
 		case IPOPT_TS:
+			code = cp - (u_char *)ip;
+			type = ICMP_PARAMPROB;
 			ipt = (struct ip_timestamp *)cp;
 			if (ipt->ipt_len < 5)
 				goto bad;
@@ -524,7 +512,7 @@ COUNT(IP_DOOPTIONS);
 
 			case IPOPT_TS_PRESPEC:
 				ipaddr.sin_addr = *sin;
-				if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
+				if (!if_ifwithaddr((struct sockaddr *)&ipaddr))
 					continue;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
@@ -538,10 +526,10 @@ COUNT(IP_DOOPTIONS);
 			ipt->ipt_ptr += 4;
 		}
 	}
-	return;
+	return (0);
 bad:
-	/* SHOULD FORCE ICMP MESSAGE */
-	return;
+	icmp_error(ip, type, code);
+	return (1);
 }
 
 /*
@@ -570,4 +558,95 @@ COUNT(IP_STRIPOPTIONS);
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
 	m->m_len -= olen;
+}
+
+static u_char ctlerrmap[] = {
+	ECONNABORTED,	ECONNABORTED,	0,		0,
+	0,
+#ifdef notdef
+	EHOSTUNREACH,	EHOSTDOWN,	ENETUNREACH,	EHOSTUNREACH,
+#else
+	ENETUNREACH,	ENETUNREACH,	ENETUNREACH,	ENETUNREACH,
+#endif
+	ECONNREFUSED,	ECONNREFUSED,	EMSGSIZE,	0,
+	0,		0,		0,		0
+};
+
+ip_ctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
+{
+	struct in_addr *sin;
+	extern int tcp_abort(), udp_abort();
+	extern struct inpcb tcb, udb;
+
+	if (cmd < 0 || cmd > PRC_NCMDS)
+		return;
+	if (ctlerrmap[cmd] == 0)
+		return;		/* XXX */
+	if (cmd == PRC_IFDOWN)
+		sin = &((struct sockaddr_in *)arg)->sin_addr;
+	else if (cmd == PRC_HOSTDEAD || cmd == PRC_HOSTUNREACH)
+		sin = (struct in_addr *)arg;
+	else
+		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+	in_pcbnotify(&tcb, sin, ctlerrmap[cmd], tcp_abort);
+	in_pcbnotify(&udb, sin, ctlerrmap[cmd], udp_abort);
+}
+
+int	ipprintfs = 0;
+int	ipforwarding = 1;
+/*
+ * Forward a packet.  If some error occurs return the sender
+ * and icmp packet.  Note we can't always generate a meaningful
+ * icmp message because icmp doesn't have a large enough repetoire
+ * of codes and types.
+ */
+ip_forward(ip)
+	register struct ip *ip;
+{
+	register int error, type, code;
+	struct mbuf *mopt;
+
+	if (ipprintfs)
+		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
+			ip->ip_dst, ip->ip_ttl);
+	if (ipforwarding == 0) {
+		/* can't tell difference between net and host */
+		type = ICMP_UNREACH, code = ICMP_UNREACH_NET;
+		goto sendicmp;
+	}
+	if (ip->ip_ttl < IPTTLDEC) {
+		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
+		goto sendicmp;
+	}
+	ip->ip_ttl -= IPTTLDEC;
+	mopt = m_get(M_DONTWAIT);
+	if (mopt == 0) {
+		m_freem(dtom(ip));
+		return;
+	}
+	ip_stripoptions(ip, mopt);
+
+	/* last 0 here means no directed broadcast */
+	if ((error = ip_output(dtom(ip), mopt, 0, 0)) == 0)
+		return;
+#ifdef notdef
+	/*
+	 * Want to generate a message, but lower
+	 * layers assume they can free up a message
+	 * in the event of an error.  This causes
+	 * the call to icmp_error to work on ``freed''
+	 * mbuf's, and worse.
+	 */
+	type = ICMP_UNREACH, code = 0;	/* need ``undefined'' */
+	if (error == ENETUNREACH || error == ENETDOWN)
+		code = ICMP_UNREACH_NET;
+	else if (error == EMSGSIZE)
+		code = ICMP_UNREACH_NEEDFRAG;
+#else
+	return;
+#endif
+sendicmp:
+	icmp_error(ip, type, code);
 }

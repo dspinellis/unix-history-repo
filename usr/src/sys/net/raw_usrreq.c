@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.14	82/04/11	*/
+/*	raw_usrreq.c	4.15	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -127,16 +127,23 @@ next:
 nospace:
 		last = rp->rcb_socket;
 	}
-	if (last == 0)
-		goto drop;
-	m = m_free(m);		/* header */
-	if (sbappendaddr(&last->so_rcv, &rh->raw_src, m) == 0)
-		goto drop;
-	sorwakeup(last);
-	goto next;
+	if (last) {
+		m = m_free(m);		/* header */
+		if (sbappendaddr(&last->so_rcv, &rh->raw_src, m) == 0)
+			goto drop;
+		sorwakeup(last);
+		goto next;
+	}
 drop:
 	m_freem(m);
 	goto next;
+}
+
+raw_ctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
+{
+COUNT(RAW_CTLINPUT);
 }
 
 /*ARGSUSED*/
@@ -162,7 +169,7 @@ COUNT(RAW_USRREQ);
 	 */
 	case PRU_ATTACH:
 		if ((so->so_state & SS_PRIV) == 0)
-			return (EPERM);
+			return (EACCES);
 		if (rp)
 			return (EINVAL);
 		error = raw_attach(so, (struct sockaddr *)addr);
