@@ -1,4 +1,4 @@
-/* inet_cksum.c 1.7 81/10/29 */
+/*	in_cksum.c	1.9	81/11/08	*/
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
