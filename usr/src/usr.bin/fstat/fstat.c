@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,7 +36,8 @@ static char sccsid[] = "@(#)fstat.c	5.18 (Berkeley) %G%";
 #include <sys/proc.h>
 #include <sys/text.h>
 #include <sys/stat.h>
-#include <sys/inode.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/domain.h>
@@ -46,6 +47,7 @@ static char sccsid[] = "@(#)fstat.c	5.18 (Berkeley) %G%";
 #define	KERNEL
 #include <sys/file.h>
 #undef	KERNEL
+#include <ufs/inode.h>
 #include <net/route.h>
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
@@ -55,16 +57,6 @@ static char sccsid[] = "@(#)fstat.c	5.18 (Berkeley) %G%";
 #include <pwd.h>
 #include <strings.h>
 #include <paths.h>
-
-#ifdef	ULTRIX
-		/* UFS -> GFS */
-#    define	inode	gnode
-#    define	x_iptr	x_gptr
-#    define	i_dev	g_dev
-#    define	i_number g_number
-#    define	i_mode	g_mode
-#    define	i_size	g_size
-#endif
 
 #define	TEXT	-2
 #define	WD	-1
@@ -88,6 +80,10 @@ static struct nlist nl[] = {
 #define	X_NPROC		2
 	{ "_usrpt" },
 #define	X_USRPT		3
+	{ "_ufs_vnodeops" },
+#define	X_UFSOPS	4
+	{ "_blk_vnodeops" },
+#define	X_BLKOPS	5
 	{ "" },
 };
 
@@ -259,28 +255,43 @@ dotext()
 		return;
 	}
 	if (text.x_flag)
-		itrans(DTYPE_INODE, text.x_iptr, TEXT);
+		vtrans(DTYPE_VNODE, text.x_vptr, TEXT);
 }
 
 static
-itrans(ftype, g, fno)
+vtrans(ftype, g, fno)
 	int ftype, fno;
-	struct inode *g;		/* if ftype is inode */
+	struct vnode *g;		/* if ftype is vnode */
 {
+	struct vnode vnode;
 	struct inode inode;
 	dev_t idev;
-	char *comm, *itype();
+	char *comm, *vtype();
 	char *name = (char *)NULL;	/* set by devmatch() on a match */
 
 	if (g || fflg) {
 		(void)lseek(kmem, (off_t)g, L_SET);
-		if (read(kmem, (char *)&inode, sizeof(inode)) != sizeof(inode)) {
-			rerr2((int)g, "inode");
+		if (read(kmem, (char *)&vnode, sizeof(vnode)) != sizeof(vnode)) {
+			rerr2((int)g, "vnode");
 			return;
 		}
-		idev = inode.i_dev;
-		if (fflg && !devmatch(idev, inode.i_number, &name))
-			return;
+		if (vnode.v_op != (struct vnodeops *)nl[X_UFSOPS].n_value &&
+		    (vnode.v_op != (struct vnodeops *)nl[X_BLKOPS].n_value ||
+		     vnode.v_data == (qaddr_t)0)) {
+			if (fflg)
+				return;
+			ftype = -1;
+		} else {
+			(void)lseek(kmem, (off_t)vnode.v_data, L_SET);
+			if (read(kmem, (char *)&inode, sizeof(inode))
+			    != sizeof(inode)) {
+				rerr2((int)vnode.v_data, "inode");
+				return;
+			}
+			idev = inode.i_dev;
+			if (fflg && !devmatch(idev, inode.i_number, &name))
+				return;
+		}
 	}
 	if (mproc->p_pid == 0)
 		comm = "swapper";
@@ -305,13 +316,15 @@ itrans(ftype, g, fno)
 	}
 
 	switch(ftype) {
-	case DTYPE_INODE:
+
+	case DTYPE_VNODE:
 		(void)printf("\t%2d, %2d\t%5lu\t", major(inode.i_dev),
 		    minor(inode.i_dev), inode.i_number);
 		switch(inode.i_mode & IFMT) {
 		case IFSOCK:
 			(void)printf("     0\t");
 			break;
+		case IFBLK:
 		case IFCHR:
 			(void)printf("%2d, %2d\t", major(inode.i_rdev),
 			    minor(inode.i_rdev));
@@ -319,38 +332,48 @@ itrans(ftype, g, fno)
 		default:
 			(void)printf("%6ld\t", inode.i_size);
 		}
-		(void)printf("%3s %s\n", itype(inode.i_mode), name ? name : "");
+		(void)printf("%3s %s\n", vtype(vnode.v_type), name ? name : "");
 		break;
+
+	case -1: /* DTYPE_VNODE for a remote filesystem */
+		(void)printf(" from remote filesystem\t");
+		(void)printf("%3s %s\n", vtype(vnode.v_type), name ? name : "");
+		break;
+
 	case DTYPE_SOCKET:
 		socktrans((struct socket *)g);
 		break;
+
 #ifdef DTYPE_PORT
 	case DTYPE_PORT:
 		(void)printf("* (fifo / named pipe)\n");
 		break;
 #endif
+
 	default:
 		(void)printf("* (unknown file type)\n");
 	}
 }
 
 static char *
-itype(mode)
-	u_short mode;
+vtype(type)
+	enum vtype type;
 {
-	switch(mode & IFMT) {
-	case IFCHR:
+	switch(type) {
+	case VCHR:
 		return("chr");
-	case IFDIR:
+	case VDIR:
 		return("dir");
-	case IFBLK:
+	case VBLK:
 		return("blk");
-	case IFREG:
+	case VREG:
 		return("reg");
-	case IFLNK:
+	case VLNK:
 		return("lnk");
-	case IFSOCK:
+	case VSOCK:
 		return("soc");
+	case VBAD:
+		return("bad");
 	default:
 		return("unk");
 	}
@@ -526,7 +549,7 @@ readf()
 	struct file lfile;
 	int i;
 
-	itrans(DTYPE_INODE, user.user.u_cdir, WD);
+	vtrans(DTYPE_VNODE, user.user.u_cdir, WD);
 	for (i = 0; i < NOFILE; i++) {
 		if (user.user.u_ofile[i] == 0)
 			continue;
@@ -536,7 +559,7 @@ readf()
 			rerr1("file", _PATH_KMEM);
 			continue;
 		}
-		itrans(lfile.f_type, (struct inode *)lfile.f_data, i);
+		vtrans(lfile.f_type, (struct vnode *)lfile.f_data, i);
 	}
 }
 
