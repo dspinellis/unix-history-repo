@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.5	82/05/07	*/
+/*	lfs_alloc.c	2.6	82/06/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -348,6 +348,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		brelse(bp);
 		return (NULL);
 	}
+	cgp->cg_time = time;
 	bno = dtogd(fs, bprev);
 	for (i = numfrags(fs, osize); i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
@@ -406,6 +407,7 @@ alloccg(ip, cg, bpref, size)
 		brelse(bp);
 		return (NULL);
 	}
+	cgp->cg_time = time;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
 		bdwrite(bp);
@@ -611,6 +613,7 @@ ialloccg(ip, cg, ipref, mode)
 		brelse(bp);
 		return (NULL);
 	}
+	cgp->cg_time = time;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
 		if (isclr(cgp->cg_iused, ipref))
@@ -678,6 +681,7 @@ fre(ip, bno, size)
 		brelse(bp);
 		return;
 	}
+	cgp->cg_time = time;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag)) {
@@ -766,6 +770,7 @@ ifree(ip, ino, mode)
 		brelse(bp);
 		return;
 	}
+	cgp->cg_time = time;
 	ino %= fs->fs_ipg;
 	if (isclr(cgp->cg_iused, ino)) {
 		printf("dev = 0x%x, ino = %d, fs = %s\n",
