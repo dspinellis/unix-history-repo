@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.18	81/12/12	*/
+/*	uipc_socket.c	4.19	81/12/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -171,14 +171,15 @@ soaccept(so, asa)
 	int error;
 
 COUNT(SOACCEPT);
-	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) {
-		error = EISCONN;
-		goto bad;
-	}
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
 		error = EINVAL;			/* XXX */
 		goto bad;
 	}
+	if ((so->so_state & SS_CONNAWAITING) == 0) {
+		error = ENOTCONN;
+		goto bad;
+	}
+	so->so_state &= ~SS_CONNAWAITING;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, 0, (caddr_t)asa);
 bad:
 	splx(s);
