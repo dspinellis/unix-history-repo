@@ -1,4 +1,4 @@
-/*	rx.c	4.7	83/03/26	*/
+/*	rx.c	4.8	83/03/28	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -7,6 +7,18 @@
  *
  * -- WARNING, NOT THOROUGHLY TESTED --
  */
+
+/*
+ * TODO:
+ *    -	Make the driver recognize when the drive subsystem 
+ * 	has been turned off, so it can initialize the controller. 
+ *    - Make it possible to access blocks containing less than
+ *	512 bytes properly.
+ *
+ * 	Note: If the drive subsystem is
+ * 	powered off at boot time, the controller won't interrupt!
+ */
+
 #include "../machine/pte.h"
 
 #include "../h/param.h"
@@ -39,6 +51,7 @@ struct	rx_ctlr {
 	u_short	rxc_rxcs;	/* extended error status */
 	u_short	rxc_rxdb;
 	u_short	rxc_rxxt[4];
+	int	rxc_tocnt;	/* for watchdog routine */
 #define	RX_MAXTIMEOUT	30	/* # seconds to wait before giving up */
 } rx_ctlr[NFX];
 
@@ -58,7 +71,6 @@ struct rx_softc {
 #define	RXF_DDMK	0x20	/* deleted-data mark detected */
 #define	RXF_USEWDDS	0x40	/* write deleted-data sector */
 	int	sc_csbits;	/* constant bits for CS register */
-	int	sc_tocnt;	/* for watchdog routine */
 	caddr_t	sc_uaddr;	/* save orig. unibus address while */
 				/* doing multisector transfers */
 	long	sc_bcnt;	/* save total transfer count for */
@@ -135,24 +147,24 @@ rxopen(dev, flag)
 	register int unit = RXUNIT(dev);
 	register struct rx_softc *sc;
 	register struct uba_device *ui;
-	register struct rxdevice *rxaddr;
+	struct rx_ctlr *rxc;
+	int ctlr;
 
 	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &rx_softc[unit];
 	if (sc->sc_flags & RXF_OPEN)
 		return (EBUSY);
+	ctlr = ui->ui_mi->um_ctlr;
+	rxc = &rx_ctlr[ctlr];
 	sc->sc_flags = RXF_OPEN | (minor(dev) & RXF_DEVTYPE);
 	sc->sc_csbits = RX_INTR;
 	sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
 	sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
-	rxaddr = (struct rxdevice *)rxminfo[unit]->um_addr;
-	if (rxaddr->rxcs == 0x800) {
-		/*
-		 * If the drive subsystem has been powered down,
-		 * the rx211 controller must be initialized.
-		 */
-		rxreset(rxminfo[unit]->um_ubanum);
+	rxc->rxc_tocnt = 0;
+	if (rxwstart == 0) {
+		rxtimo(ctlr);				/* start watchdog */
+		rxwstart++;
 	}
 	return (0);
 }
@@ -166,6 +178,8 @@ rxclose(dev, flag)
 
 	sc->sc_flags &= ~RXF_OPEN;
 	sc->sc_csbits = 0;
+	rxwstart = 0;
+	printf("rxclose: dev=0x%x\n", dev);
 }
 
 rxstrategy(bp)
@@ -267,7 +281,7 @@ rxmap(bp, psector, ptrack)
 	ptoff = 0;
 	if (sc->sc_flags&RXF_DIRECT)
 		ptoff = 77;
-	if (!sc->sc_flags&RXF_TRKZERO)
+	if (!(sc->sc_flags&RXF_TRKZERO))
 		ptoff++;
 	if (lt + ptoff < 77)
 		ls = ((ls << 1) + (ls >= 13) + (6*lt)) % 26;
@@ -301,11 +315,10 @@ loop:
 	sc = &rx_softc[unit];
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
-	sc->sc_tocnt = 0;
 	bp->b_bcount = bp->b_resid;
 	if (bp->b_bcount > NBPS)
 		bp->b_bcount = NBPS;
-	rxtimo(bp->b_dev);				/* start watchdog */
+	rxc->rxc_tocnt = 0;
 	if (bp->b_flags&B_CTRL) {			/* format */
 		rxc->rxc_state = RXS_FORMAT;
 		rxaddr->rxcs = RX_FORMAT | sc->sc_csbits;
@@ -314,23 +327,25 @@ loop:
 		rxaddr->rxdb = 'I';
 		return;
 	}
-	if (bp->b_flags&B_READ) {			/* read */
-		rxmap(bp, &sector, &track);
+
+	if (bp->b_flags&B_WRITE) {
+		rxc->rxc_state = RXS_FILL;			/* write */
+		um->um_cmd = RX_FILL;
+		(void) ubago(rxdinfo[unit]);
+
+	} else {
+		rxmap(bp, &sector, &track);			/* read */
 		rxc->rxc_state = RXS_READ;
 		rxaddr->rxcs = RX_READ | sc->sc_csbits;
-		printf("rxstart/r: tr=%d, sc=%d, bl=%d, cnt=%d\n", 
-			track, sector, bp->b_blkno, bp->b_bcount);
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = (u_short)sector;
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = (u_short)track;
-		return;
 	}
-	rxc->rxc_state = RXS_FILL;			/* write */
-	um->um_cmd = RX_FILL;
-	(void) ubago(rxdinfo[unit]);
+	printf("rxstart: flgs=0x%x, unit=%d, tr=%d, sc=%d, bl=%d, cnt=%d\n", 
+		bp->b_flags, unit, track, sector, bp->b_blkno, bp->b_bcount);
 }
 
 rxdgo(um)
@@ -346,37 +361,40 @@ rxdgo(um)
 	if (rxc->rxc_state != RXS_RDERR) {
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
-		rxaddr->rxdb = bp->b_bcount >> 1;
+		rxaddr->rxdb = (u_short) bp->b_bcount >> 1;
 	}
 	while ((rxaddr->rxcs&RX_TREQ) == 0)
 		;
-	rxaddr->rxdb = ubinfo;
+	rxaddr->rxdb = (u_short) ubinfo;
 }
 
-rxintr(dev)
-	dev_t dev;
+rxintr(ctlr)
+	int ctlr;
 {
-	int unit = RXUNIT(dev), sector, track;
-	struct uba_ctlr *um = rxminfo[unit];
+	int unit, sector, track;
+	struct uba_ctlr *um = rxminfo[ctlr];
 	register struct rxdevice *rxaddr;
 	register struct buf *bp, *dp;
-	register struct rx_softc *sc = &rx_softc[unit];
-	struct uba_device *ui = rxdinfo[unit];
+	register struct rx_softc *sc;
+	struct uba_device *ui;
 	struct rxerr *er;
 	register struct rx_ctlr *rxc;
 
-	sc->sc_tocnt = 0;
 	if (!um->um_tab.b_active)
 		return;
 	dp = um->um_tab.b_actf;
 	if (!dp->b_active)
 		return;
+	bp = dp->b_actf;
+	unit = RXUNIT(bp->b_dev);
+	sc = &rx_softc[unit];
+	ui = rxdinfo[unit];
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
+	rxc->rxc_tocnt = 0;
 	er = &rxerr[unit];
-	bp = dp->b_actf;
-	printf("rxintr: dev=%d, state=0x%x, status=0x%x\n", 
-		unit, rxc->rxc_state, rxaddr->rxcs);
+	printf("rxintr: dev=0x%x, state=0x%x, status=0x%x\n", 
+		bp->b_dev, rxc->rxc_state, rxaddr->rxcs);
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
 		goto error;
@@ -565,18 +583,24 @@ minrxphys(bp)
 }
 #endif
 
-rxtimo(dev)
-	dev_t dev;
+/* 
+ * Wake up every second and if an interrupt is pending
+ * but nothing has happened increment a counter.
+ * If nothing happens for RX_MAXTIMEOUT seconds, 
+ * call the interrupt routine (hoping that it will 
+ * detect an error condition in the controller)
+ */
+rxtimo(ctlr)
+	int ctlr;
 {
-	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	register struct rx_ctlr *rxc = &rx_ctlr[ctlr];
 
-	if (sc->sc_flags & RXF_OPEN)
-		timeout(rxtimo, (caddr_t)dev, hz);
-	if (++sc->sc_tocnt < RX_MAXTIMEOUT)
+	if (rxwstart > 0) 
+		timeout(rxtimo, (caddr_t)ctlr, hz);
+	if (++rxc->rxc_tocnt < RX_MAXTIMEOUT)
 		return;
-	printf("rx: timeout dev 0x%x\n", dev);
-	sc->sc_tocnt = 0;
-	rxintr(dev);
+	printf("rx: timeout\n");
+	rxintr(ctlr);
 }
 
 rxreset(uban)
