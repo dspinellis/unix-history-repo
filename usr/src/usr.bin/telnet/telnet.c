@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -151,7 +151,7 @@ init_telnet()
     ClearArray(options);
 
     connected = In3270 = ISend = localflow = donebinarytoggle = 0;
-#if	defined(AUTHENTICATION) || defined(ENCRYPTION) 
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION)
     auth_encrypt_connect(connected);
 #endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION)  */
     restartany = -1;
@@ -597,7 +597,7 @@ mklist(buf, name)
 	register char c, *cp, **argvp, *cp2, **argv, **avt;
 
 	if (name) {
-		if (strlen(name) > 40) {
+		if ((int)strlen(name) > 40) {
 			name = 0;
 			unknown[0] = name_unknown;
 		} else {
@@ -663,7 +663,7 @@ mklist(buf, name)
 		else if (islower(c))
 			*cp = toupper(c);
 	}
-	
+
 	/*
 	 * Check for an old V6 2 character name.  If the second
 	 * name points to the beginning of the buffer, and is
@@ -756,7 +756,7 @@ gettermname()
 				(setupterm(tname, 1, &err) == 0)) {
 			tnamep = mklist(termbuf, tname);
 		} else {
-			if (tname && (strlen(tname) <= 40)) {
+			if (tname && ((int)strlen(tname) <= 40)) {
 				unknown[0] = tname;
 				upcase(tname);
 			} else
@@ -1784,7 +1784,7 @@ telrcv()
 			TTYADD('\n');
 		    } else {
 #ifdef	ENCRYPTION
-		        if (decrypt_input)
+			if (decrypt_input)
 			    (*decrypt_input)(-1);
 #endif	/* ENCRYPTION */
 
@@ -1808,7 +1808,7 @@ telrcv()
 	case TS_IAC:
 process_iac:
 	    switch (c) {
-	    
+
 	    case WILL:
 		telrcv_state = TS_WILL;
 		continue;
@@ -2194,7 +2194,7 @@ Scheduler(block)
 					ring_full_consecutive(&ttyiring));
 	    if (c) {
 		returnValue = 1;
-	        ring_consumed(&ttyiring, c);
+		ring_consumed(&ttyiring, c);
 	    }
 	} else {
 #   endif /* defined(TN3270) */
@@ -2223,7 +2223,7 @@ telnet(user)
 {
     sys_telnet_init();
 
-#if	defined(AUTHENTICATION) || defined(ENCRYPTION) 
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION)
     {
 	static char local_host[256] = { 0 };
 
@@ -2405,7 +2405,7 @@ netclear()
 		next = nextitem(next);
 	    } while (wewant(next) && (nfrontp > next));
 	    length = next-thisitem;
-	    memcpy(good, thisitem, length);
+	    memmove(good, thisitem, length);
 	    good += length;
 	    thisitem = next;
 	} else {
