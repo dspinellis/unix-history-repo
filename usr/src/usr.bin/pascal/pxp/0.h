@@ -1,4 +1,4 @@
-/* static	char *sccsid = "@(#)0.h	2.2 (Berkeley) %G%";*/
+/* static	char *sccsid = "@(#)0.h	2.3 (Berkeley) %G%";*/
 /* Copyright (c) 1979 Regents of the University of California */
 /* #define DEBUG */
 #define	CHAR
@@ -127,7 +127,7 @@ int	optstk[26];
  */
 
 #define	STRINC	1024		/* string space increment */
-#define	TRINC	512		/* tree space increment */
+#define	TRINC	1024		/* tree space increment */
 #define	HASHINC	509		/* hash table size in words, each increment */
 
 /*
@@ -158,7 +158,7 @@ int	optstk[26];
 #define TABLE_MULTIPLIER	1
 #endif ADDR16
 #define	MAXHASH	(4 * TABLE_MULTIPLIER)
-#define	MAXTREE	(30 * TABLE_MULTIPLIER)
+#define	MAXTREE	(40 * TABLE_MULTIPLIER)
 /*
  * MAXDEPTH is the depth of the parse stack.
  * STACK_MULTIPLIER is for increasing its size.
