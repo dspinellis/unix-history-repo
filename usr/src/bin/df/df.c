@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)df.c	5.14 (Berkeley) %G%";
 #include <unistd.h>
 
 char	*getmntpt();
-int	iflag, kflag;
+int	iflag, kflag, nflag;
 #ifdef COMPAT_43
 int	oflag;
 #endif /* COMPAT_43 */
@@ -54,13 +54,16 @@ main(argc, argv)
 	struct statfs statfsbuf, *mntbuf;
 	struct ufs_args mdev;
 
-	while ((ch = getopt(argc, argv, "iko")) != EOF)
+	while ((ch = getopt(argc, argv, "ikon")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
 			break;
 		case 'k':
 			kflag = 1;
+			break;
+		case 'n':
+			nflag = 1;
 			break;
 #ifdef COMPAT_43
 		case 'o':
@@ -70,7 +73,7 @@ main(argc, argv)
 		case '?':
 		default:
 			fprintf(stderr,
-			    "usage: df [-ik] [file | file_system ...]\n");
+			    "usage: df [-ikn] [file | file_system ...]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -88,7 +91,7 @@ main(argc, argv)
 	}
 #endif /* COMPAT_43 */
 	if (!*argv) {
-		mntsize = getmntinfo(&mntbuf);
+		mntsize = getmntinfo(&mntbuf, (nflag ? MNT_NOWAIT : MNT_WAIT));
 		for (i = 0; i < mntsize; i++)
 			prtstat(&mntbuf[i]);
 		exit(0);
@@ -103,7 +106,7 @@ main(argc, argv)
 			}
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0)
-				mntpt = mktemp("/df.XXXXXX");
+				mntpt = mktemp("/tmp/df.XXXXXX");
 				mdev.fspec = *argv;
 				if (!mkdir(mntpt) &&
 				    !mount(MOUNT_UFS, mntpt, M_RDONLY, &mdev) &&
@@ -118,6 +121,10 @@ main(argc, argv)
 				continue;
 		} else
 			mntpt = *argv;
+		/*
+		 * Statfs does not take a `wait' flag, so we cannot
+		 * implement nflag here.
+		 */
 		if (statfs(mntpt, &statfsbuf) < 0) {
 			fprintf(stderr,
 			    "df: %s: %s\n", mntpt, strerror(errno));
@@ -135,7 +142,7 @@ getmntpt(name)
 	long mntsize, i;
 	struct statfs *mntbuf;
 
-	mntsize = getmntinfo(&mntbuf);
+	mntsize = getmntinfo(&mntbuf, (nflag ? MNT_NOWAIT : MNT_WAIT));
 	for (i = 0; i < mntsize; i++) {
 		if (!strcmp(mntbuf[i].f_mntfromname, name))
 			return (mntbuf[i].f_mntonname);

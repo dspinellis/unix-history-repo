@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)df.1	6.3 (Berkeley) %G%
+.\"	@(#)df.1	6.4 (Berkeley) %G%
 .\"
 .TH DF 1 ""
 .UC 4
@@ -22,18 +22,18 @@ df \- disk free
 .SH SYNOPSIS
 .B df
 [
-.B \-ik
-] [ file | file_system ... ]
+.B \-ikn
+] [ file | filesystem ... ]
 .SH DESCRIPTION
 .I Df
 displays statistics on the amount of free disk space on the
-file system
-.I file_system
-or on the file system of which
+filesystem
+.I filesystem
+or on the filesystem of which
 .I file
 is a part.
-If neither a file or a file system is specified, statistics for
-all mounted file systems are displayed.
+If neither a file or a filesystem is specified,
+statistics for all mounted filesystems are displayed.
 The following options are available:
 .TP
 -i
@@ -42,5 +42,25 @@ Include statistics on the number of free inodes.
 -k
 By default, all reported numbers are in 512-byte blocks.
 This causes the numbers to be reported in kilobytes.
+.TP
+-n
+Print out the previously obtained statistics from the filesystems.
+This option should be used
+if it is possible that one or more filesystems are
+in a state such that they will not be able
+to provide statistics without a long delay.
+When this option is specified,
+.I df
+will not request new statistics from the filesystems,
+but will respond with the possibly stale statistics
+that were previously obtained.
+.SH BUGS
+The
+.I -n
+flag is ignored if a file or filesystem is specified.
 .SH "SEE ALSO"
-quota(1), fstab(5), mount(8), quot(8)
+quota(1),
+statfs(2), fstatfs(2), getfsstat(2),
+getmntinfo(3),
+fstab(5),
+mount(8), quot(8)
