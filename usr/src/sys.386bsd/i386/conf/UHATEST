@@ -1,0 +1,59 @@
+#
+# SCSITEST -- Generic ISA machine -- scsi test kernel -ultrastore 14f adapter
+#
+machine		"i386"
+cpu		"i386"
+ident		UHATEST
+timezone	8 dst
+maxusers	10
+options		INET,ISOFS,NFS
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+
+config		"386bsd"	root on wd0 swap on wd0 and sd0
+
+controller	isa0
+controller	wd0	at isa? port "IO_WD1" bio irq 14 vector wdintr
+disk		wd0	at wd0 drive 0
+disk		wd0	at wd0 drive 1
+
+controller	fd0	at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk		fd0	at fd0 drive 0
+disk		fd1	at fd0 drive 1
+
+device		pc0	at isa? port "IO_KBD" tty irq 1 vector pcrint
+device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
+device		com1	at isa? port "IO_COM1" tty irq 4 vector comintr
+device		com2	at isa? port "IO_COM2" tty irq 3 vector comintr
+
+controller	uha0	at isa? port "IO_UHA0" bio irq 11 drq 5 vector uhaintr
+#controller	aha0	at isa? port "IO_AHA0" bio irq 11 drq 5 vector ahaintr
+#controller	bt0	at isa? port "IO_BT0" bio irq 12  vector btintr
+controller	scbus0
+
+device		sd0
+device		sd1
+device		sd2
+device		sd3
+
+device		st0
+device		st1
+device		st2
+device		st3
+
+device		cd0
+device		cd1
+
+device		we0 at isa? port 0x300 net irq 10 iomem 0xd0000 iosiz 8192 vector weintr
+
+
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	sl	2
+pseudo-device	log
+pseudo-device	ddb
+pseudo-device	pty	4
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager
