@@ -1,4 +1,4 @@
-/*	llib-lc	1.32	86/03/01	*/
+/*	llib-lc	1.33	86/03/04	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -36,6 +36,7 @@ int	dup(f) { return(f); }
 int	dup2( o, n) { return o; }
 	execve(s, v, e) char *s, *v[], *e[]; {;}
 	_exit(s) {;}
+int	fchmod(f, m) { return(0); }
 int	fcntl(f, c, a) { return (0); }
 int	flock( f, o ) { return 0; }
 int	fork() { return(0); }
@@ -51,6 +52,7 @@ long	gethostid() { return 1L; }
 int	gethostname( n, l ) char *n; int l; { return 0 ;}
 int	getitimer( w, v ) struct itimerval *v; { return 0; }
 int	getpagesize() { return 1; }
+int	getpeername(s, n, l) struct sockaddr *n; int *l; { return (0); }
 int	getpgrp(p) { return 1; }
 int	getpid() { return(1); }
 int	getppid() { return(1); }
@@ -58,10 +60,10 @@ int	getpriority( w, who) { return 1;}
 int	getrlimit( res, rip) struct rlimit *rip; { return 0;}
 int	getrusage( res, rip) struct rusage *rip; { return 0;}
 int	getsockname(s, name, namelen) char *name; int *namelen; { return(0); }
-int	getsockopt( s, level, opt, buf, len ) { return 0;}
+int	getsockopt( s, level, opt, buf, len ) char *buf; int *len; { return 0;}
 int	gettimeofday( t, z ) struct timeval *t; struct timezone *z; { return 0;}
 uid_t	getuid() { return((uid_t)1); }
-int	ioctl( d, r, p) char *p; { return 0;}
+int	ioctl( d, r, p) u_long r; char *p; { return 0;}
 int	kill(p, s) { return(0); }
 int	killpg( pg, s) { return 0;}
 int	link(a, b) char *a, *b; { return(0); }
@@ -85,7 +87,8 @@ int	munmap( a, l) char * a; { return 0;}
 int	open(f, m, stuff) char *f; { return(0); }
 int	pipe(f) int f[2]; { return(0); }
 	profil(b, s, o, i) char *b; {;}
-int	ptrace(r, p, a, d) { return(0); }
+int	ptrace(r, p, a, d) int *a; { return(0); }
+int	quota(c, u, a, ad) char *ad; { return(0); }
 int	read(f, b, l) char *b; { return(l); }
 int	readv( d, v, l) struct iovec *v; { return l; }
 int	readlink( p, b, s ) char *p, *b; { return 1; }
@@ -107,8 +110,9 @@ int	sethostname( n, l ) char *n; int l; { return 0 ;}
 int	setitimer( w, v, ov ) struct itimerval *v, *ov; { return 0; }
 int	setpgrp( g, pg) { return 0; }
 int	setpriority( w, who, pri ) { return 1;}
-int	setregid( r, e) gid_t r, e; { return 0; }
-int	setreuid( r, e) uid_t r, e; { return 0; }
+int	setquota(s, f) char *s, *f; { return 0; }
+int	setregid( r, e) int r, e; { return 0; }
+int	setreuid( r, e) int r, e; { return 0; }
 int	setrlimit( res, rip) struct rlimit *rip; { return 0;}
 	/* VARARGS */
 int	setsockopt( s, level, opt, buf, len ) char *buf; { return 0;}
@@ -119,6 +123,7 @@ int	sigvec(c, f, m) struct sigvec *f, *m; { return 0; }
 int	sigblock(m) { return (m); }
 int	sigsetmask(m) { return (m); }
 	sigpause(m) { ; }
+int	sigreturn(scp) struct sigcontext *scp; { return -1; }
 int	sigstack(ss, oss) struct sigstack *ss, *oss; { return 0 ; }
 int	socket( a, t, p) {return 1;}
 int	socketpair( d, t, p, s ) int s[2]; { return 0; }
@@ -127,14 +132,16 @@ int	stat(s, b) char *s; struct stat *b; { return(0); }
 char *	stk( a ) char * a; { return a; }
 char *	sstk( a ) int a; { return (char *)0; }
 #endif
-int	swapon( b, s ) char *b; { return 0;}
+int	swapon( s ) char *s; { return 0;}
 int	symlink( t, f) char *t, *f; { return 0;}
 	sync(){;}
 int	truncate( p, l) char *p; off_t l; { return 0;}
 int	umask( n ) { return n; }
+int	umount(s) char *s; { return 0; }
 int	unlink(s) char *s; { return(0); }
 int	utimes( f, t ) char *f; struct timeval t[2]; { return 0 ;}
 int	vfork() { return(0); }
+	vhangup() { ; }
 int	wait(s) union wait *s; { return(1); }
 int	wait3( s, o, r) union wait *s; struct rusage *r; { return 1;}
 int	write(f, b, l) char *b; { return(l); }
