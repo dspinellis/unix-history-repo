@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_get.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_get.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -157,9 +157,9 @@ __rec_vpipe(t, top)
 			}
 			if (sz == 0) {
 				len = p - t->bt_dbuf;
-				sz = t->bt_dbufsz += 256;
+				t->bt_dbufsz += (sz = 256);
 				if ((t->bt_dbuf =
-				    realloc(t->bt_dbuf, sz)) == NULL)
+				    realloc(t->bt_dbuf, t->bt_dbufsz)) == NULL)
 					return (RET_ERROR);
 				p = t->bt_dbuf + len;
 			}
