@@ -1,21 +1,20 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1976 Board of Trustees of the University of Illinois.
+ * All rights reserved.
  *
- *	@(#)indent_globs.h	5.4 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley and the University of
+ * Illinois at Urbana.  The name of either University may not be used
+ * to endorse or promote products derived from this software without
+ * specific prior written permission. This software is provided
+ * ``as is'' without express or implied warranty.
+ *
+ *	@(#)indent_globs.h	5.5 (Berkeley) %G%
  */
 
-/*-
-
-			  Copyright (C) 1976
-				by the
-			  Board of Trustees
-				of the
-			University of Illinois
-
-			 All rights reserved
-
+/*
 FILE NAME:
 	indent_globs.h
 
