@@ -1,25 +1,18 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ttydev.h	7.7 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ttydev.h	7.8 (Berkeley) %G%
  */
 
-/*
- * COMPATABILITY HEADER FILE --
- */
+/* COMPATABILITY HEADER FILE */
 
-/*
- * Terminal definitions related to underlying hardware.
- */
 #ifndef _TTYDEV_H_
 #define	_TTYDEV_H_
 
 #ifdef USE_OLD_TTY
-/*
- * Speeds
- */
 #define B0	0
 #define B50	1
 #define B75	2
