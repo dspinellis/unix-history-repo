@@ -1,11 +1,11 @@
-.\"	@(#)m0a	5.1 (Berkeley) %G%
+.\"	@(#)m0a	6.1 (Berkeley) %G%
 .\"
 .pn3
 .br
 .tr |
 .ce
 .ftB
-SUMMARY AND INDEX
+SUMMARY OF REQUESTS AND OUTLINE OF THIS MANUAL
 .ftR
 .de mx
 .ev2
@@ -32,10 +32,14 @@ Font and Character Size Control
 .bt
 \fB&ps\fI\|\(+-N\fR	10\|point	previous	E	Point size; also \fB\es\fI\(+-N\fR.\(dg
 .b1
+\fB&fz\fI|F|\(+-N\fR	off	-	E	font \fIF\fR to point size \fI\(+-N\fR.
+.b1
+\fB&fz|S|\fIF|\(+-N\fR	off	-	E	Special Font characters to point size \fI\(+-N\fR.
+.b1
 \fB&ss\fI|N\fR	12\(sl36\|em	ignored	E	Space-character size
 set to \fIN\fR\(sl36\|em.\(dg
 .b1
-\fB&cs\fI\|F\|N\|M\fR	off	-	P	Constant character
+\fB&cs\fI|F\|N\|M\fR	off	-	P	Constant character
 space (width)
 mode (font \fIF\^\fR\^).\(dg
 .b1
@@ -55,7 +59,7 @@ Also \fB\ef\fIx\fR,\|\fB\ef(\fIxx\fR,\|\fB\ef\fIN\fR.
 .mh
 Page Control
 .bt
-\fB&pl\fI\|\(+-N\fR	11\|in	11\|in	\fBv\fR	Page length.
+\fB&pl\fI|\(+-N\fR	11\|in	11\|in	\fBv\fR	Page length.
 .b1
 \fB&bp|\fI\(+-N\fR	\fIN\(eq\fR1	-	B\(dd,\fBv\fR	\
 Eject current page; next page number \fIN\fR.
@@ -189,9 +193,9 @@ Overstrike, Bracket, Line-drawing, and Zero-width Functions
 .mh
 Hyphenation.
 .bt
-\fB&nh\fR	hyphenate	-	E	No hyphenation.
+\fB&nh\fR	nohyphenate	-	E	No hyphenation.
 .b1
-\fB&hy\fI|N\fR	hyphenate	hyphenate	E	Hyphenate; \fIN =\fR mode.
+\fB&hy\fI|N\fR	nohyphenate	hyphenate	E	Hyphenate; \fIN =\fR mode.
 .b1
 \fB&hc\fI|c\fR	\fB\e%	\e%\fR	E	Hyphenation indicator character \fIc\fR.
 .b1
@@ -257,13 +261,15 @@ Miscellaneous
 \fB&mc\fI|c|N\fR	-	off	E,\fBm\fR	Set margin character \fIc\fR and separation \fIN\fR.
 .b1
 \fB&tm\fI|string\fR	-	newline	-	Print \fIstring\fR on terminal \
-(\s-1UNIX\s+1 standard message output).
+(\s-1UNIX\s+1 standard error output).
 .b1
 \fB&ig\fI|yy\fR	-	\fI.yy=\fB..\fR	-	Ignore till call of \fIyy\fR.
 .b1
 \fB&pm\fI|t\fR	-	all	-	Print macro names and sizes;
 .b1
 				if \fIt\fR present, print only total of sizes.
+.b1
+\fB&ab\fI|string\fR	-	-	-	Print a message and abort.
 .b1
 .lg0
 \fB&fl\fR	-	-	B	Flush output buffer.
@@ -301,6 +307,7 @@ Output and Error Messages
 .nf
 .ps 8
 .vs 10
+ab	20
 ad	4
 af	8
 am	7
@@ -330,6 +337,7 @@ fi	4
 fl	20
 fp	2
 ft	2
+fz	2
 hc	13
 hw	13
 hy	13
@@ -494,12 +502,13 @@ Reference	Name	Description
 .bd I
 .xx
 3	\fB%\fR	Current page number.
+19	\fBc&\fR	Number of \fIlines\fR read from current input file.
 11.2	\fBct\fR	Character type (set by \fIwidth\fR function).
 7.4	\fBdl\fR	Width (maximum) of last completed diversion.
 7.4	\fBdn\fR	Height (vertical size) of last completed diversion.
 -	\fBdw\fR	Current day of the week (1-7).
 -	\fBdy\fR	Current day of the month (1-31).
-11.3	\fBhp\fR	Current horizontal place on \fIinput\fR line.
+11.3	\fBhp\fR	Current horizontal place on \fIinput\fR line (not in ditroff)
 15	\fBln\fR	Output line number.
 -	\fBmo\fR	Current month (1-12).
 4.1	\fBnl\fR	Vertical position of last printed text base-line.
@@ -525,15 +534,19 @@ Reference	Name	Description
 7.3	\fB&$\fR	Number of arguments available at the current macro level.
 -	\fB&A\fR	Set to 1 in \*(TR, if \fB\-a\fR option used; always 1 in \*(NR.
 11.1	\fB&H\fR	Available horizontal resolution in basic units.
+5.3	\fB&L\fR	Set to current \fIline-spacing\fR (\fBls\fR) parameter
+-	\fB&P\fR	Set to 1 if the current page is being printed; otherwise 0.
 -	\fB&T\fR	Set to 1 in \*(NR, if \fB\-T\fR option used; always 0 in \*(TR.
 11.1	\fB&V\fR	Available vertical resolution in basic units.
 5.2	\fB&a\fR	Post-line extra line-space most recently utilized \
 using \fB\ex\fI\'N\|\'\fR.
--	\fB&c\fR	Number of \fIlines\fR read from current input file.
+19	\fB&c\fR	Number of \fIlines\fR read from current input file.
 7.4	\fB&d\fR	Current vertical place in current diversion; equal to \fBnl\fR, if no diversion.
 2.2	\fB&f\fR	Current font as physical quadrant (1-4).
 4	\fB&h\fR	Text base-line high-water mark on current page or diversion.
 6	\fB&i\fR	Current indent.
+4.2	\fB&j\fR	Current adjustment mode and type.
+4.1	\fB&k\fR	Length of text portion on current partial output line.
 6	\fB&l\fR	Current line length.
 4	\fB&n\fR	Length of text portion on previous output line.
 3	\fB&o\fR	Current page offset.
