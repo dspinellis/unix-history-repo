@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.19 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.20 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2075,11 +2075,8 @@ ye|w50|wyse50|Wyse 50:\
 	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
 	:so=\EG4:se=\EG0:
 #	:hs:ts=\Ef:fs=\Eg:	status line does not work with sysline
-yg|w50-132|wyse50-132|Wyse 50-132:\
-	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\Ea%i%dR%dC:co#132:\
-	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:\
-	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
-	:so=\EG4:se=\EG0:
+yg|w50-w|w50-132|wyse50-132|Wyse 50-132:\
+	:cm=\Ea%i%dR%dC:co#132:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:tc=w50:
 #
 # # --------------------------------
 #
