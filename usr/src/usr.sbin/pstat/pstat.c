@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -127,6 +127,14 @@ struct nlist nl[] = {
 #define	SNITE	(SNPTY+8)
 	{ "_nite" },
 #endif
+
+#ifdef mips
+#define SDC	(SNPTY+1)
+	{ "_dc_tty" },
+#define SNDC	(SNPTY+2)
+	{ "_dc_cnt" },
+#endif
+
 	{ "" }
 };
 
@@ -827,6 +835,10 @@ dotty()
 		dottytype("dcm", SDCM, SNDCM);
 	if (nl[SNDCL].n_type != 0)
 		dottytype("dcl", SDCL, SNDCL);
+#endif
+#ifdef mips
+	if (nl[SNDC].n_type != 0)
+		dottytype("dc", SDC, SNDC);
 #endif
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
