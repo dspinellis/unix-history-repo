@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.17 (Berkeley) %G%
+ *	@(#)wait.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,7 @@
 #endif
 
 /*
- * Option bits for the second argument of wait4.  WNOHANG causes the
+ * Option bits for the third argument of wait4.  WNOHANG causes the
  * wait to not hang if there are no stopped or terminated processes, rather
  * returning an error indication in this case (pid==0).  WUNTRACED
  * indicates that the caller should receive status about untraced children
