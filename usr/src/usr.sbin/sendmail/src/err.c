@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.36		%G%);
+SCCSID(@(#)err.c	3.37		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -41,7 +41,7 @@ syserr(fmt, a, b, c, d, e)
 	else
 		p = Arpa_TSyserr;
 	fmtmsg(MsgBuf, (char *) NULL, p, fmt, a, b, c, d, e);
-	putmsg(MsgBuf, HoldErrs);
+	puterrmsg(MsgBuf);
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
@@ -89,7 +89,7 @@ usrerr(fmt, a, b, c, d, e)
 		return;
 
 	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
-	putmsg(MsgBuf, HoldErrs);
+	puterrmsg(MsgBuf);
 
 	if (QuickAbort)
 		longjmp(TopFrame, 1);
@@ -181,18 +181,30 @@ putmsg(msg, holdmsg)
 			fprintf(OutChannel, "%s\n", &msg[4]);
 		(void) fflush(OutChannel);
 	}
+}
+/*
+**  PUTERRMSG -- like putmsg, but does special processing for error messages
+**
+**	Parameters:
+**		msg -- the message to output.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Sets the fatal error bit in the envelope as appropriate.
+*/
 
-	/* determine error status */
-	switch (msg[0])
-	{
-	  case '5':
+puterrmsg(msg)
+	char *msg;
+{
+	/* output the message as usual */
+	putmsg(msg, HoldErrs);
+
+	/* signal the error */
+	Errors++;
+	if (msg[0] == '5')
 		CurEnv->e_flags |= EF_FATALERRS;
-		/* fall through.... */
-
-	  case '4':
-		Errors++;
-		break;
-	}
 }
 /*
 **  FMTMSG -- format a message into buffer.
