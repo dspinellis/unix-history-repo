@@ -1,4 +1,4 @@
-/*	dz.c	3.4	%H%	*/
+/*	dz.c	3.5	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -14,6 +14,18 @@
 #include "../h/conf.h"
 #include "../h/pdma.h"
 #include "../h/bk.h"
+
+/*
+ * When running dz's using only SAE (silo alarm) on input
+ * it is necessary to call dzrint() at clock interrupt time.
+ * This is unsafe unless spl5()s in tty code are changed to
+ * spl6()s to block clock interrupts.  Note that the dh driver
+ * currently in use works the same way as the dz, even though
+ * we could try to more intelligently manage its silo.
+ * Thus don't take this out if you have no dz's unless you
+ * change clock.c and dhtimer().
+ */
+#define	spl5	spl6
  
 #define DZADDR  (UBA0_DEV + 0160100)
 #ifdef ERNIE
@@ -260,6 +272,8 @@ dzxint(tp)
 register struct tty *tp;
 {
 	register struct pdma *dp;
+	register s;
+	s = spl6();	/* block the clock */
  
 	dp = &dzpdma[tp-dz_tty];
 	tp->t_state &= ~BUSY;
@@ -273,6 +287,7 @@ register struct tty *tp;
 		dzstart(tp);
 	if (tp->t_outq.c_cc == 0 || (tp->t_state&BUSY)==0)
 		dp->p_addr->dztcr &= ~(1 << ((tp-dz_tty) % 8));
+	splx(s);
 }
 
 dzstart(tp)
