@@ -1,0 +1,52 @@
+*** lib/perldb.pl	Tue Oct 23 23:14:20 1990
+--- os2/perldb.pl	Tue Nov 06 21:13:42 1990
+***************
+*** 36,43 ****
+  #
+  #
+
+! open(IN, "</dev/tty") || open(IN,  "<&STDIN");	# so we don't dingle stdin
+! open(OUT,">/dev/tty") || open(OUT, ">&STDOUT");	# so we don't dongle stdout
+  select(OUT);
+  $| = 1;				# for DB'OUT
+  select(STDOUT);
+--- 36,43 ----
+  #
+  #
+
+! open(IN, "<con") || open(IN,  "<&STDIN");	# so we don't dingle stdin
+! open(OUT,">con") || open(OUT, ">&STDOUT");	# so we don't dongle stdout
+  select(OUT);
+  $| = 1;				# for DB'OUT
+  select(STDOUT);
+***************
+*** 517,530 ****
+      s/(.*)/'$1'/ unless /^-?[\d.]+$/;
+  }
+
+! if (-f '.perldb') {
+!     do './.perldb';
+  }
+! elsif (-f "$ENV{'LOGDIR'}/.perldb") {
+!     do "$ENV{'LOGDIR'}/.perldb";
+  }
+! elsif (-f "$ENV{'HOME'}/.perldb") {
+!     do "$ENV{'HOME'}/.perldb";
+  }
+
+  1;
+--- 517,530 ----
+      s/(.*)/'$1'/ unless /^-?[\d.]+$/;
+  }
+
+! if (-f 'perldb.ini') {
+!     do './perldb.ini';
+  }
+! elsif (-f "$ENV{'INIT'}/perldb.ini") {
+!     do "$ENV{'INIT'}/perldb.ini";
+  }
+! elsif (-f "$ENV{'HOME'}/perldb.ini") {
+!     do "$ENV{'HOME'}/perldb.ini";
+  }
+
+  1;
