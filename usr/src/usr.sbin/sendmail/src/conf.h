@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.9 (Berkeley) %G%
+ *	@(#)conf.h	8.10 (Berkeley) %G%
  */
 
 /*
@@ -197,6 +197,7 @@
 # define HASINITGROUPS	1	/* has initgroups(2) call */
 # define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
 # define HASSETREUID	1	/* have setreuid(2) call */
+# define HASSETENV	1	/* has setenv(3) call */
 # define LA_TYPE	LA_FLOAT
 #endif
 
@@ -254,6 +255,7 @@
 /* general POSIX defines */
 #ifdef _POSIX_VERSION
 # define HASSETSID	1	/* has setsid(2) call */
+# define HASWAITPID	1	/* has waitpid(2) call */
 #endif
 
 /*

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -848,7 +848,7 @@ setproctitle(fmt, va_alist)
 void
 reapchild()
 {
-# if defined(WIFEXITED) && !defined(__NeXT__)
+# ifdef HASWAITPID
 	auto int status;
 	int count;
 	int pid;
