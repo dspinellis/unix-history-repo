@@ -1,4 +1,4 @@
-/*	%H%	3.12	%G%	*/
+/*	%H%	3.13	%G%	*/
 
 #define	spl5	spl6
 /*
@@ -785,4 +785,29 @@ register struct buf *bp;
 	cmd |= IE|GO|RCOM;
 	up->upcs1 = cmd;
 	return (1);
+}
+
+/*
+ * Reset driver after UBA init.
+ * Cancel software state of all pending transfers
+ * and restart all units and the controller.
+ */
+upreset()
+{
+	int unit;
+
+	printf(" up");
+	uptab.b_active = 0;
+	uptab.b_actf = uptab.b_actl = 0;
+	if (DK_N+NUP == DK_NMAX)
+		dk_busy &= ~(1<<(DK_N+NUP));
+	if (up_ubinfo) {
+		printf("<%d>", (up_ubinfo>>28)&0xf);
+		ubafree(up_ubinfo), up_ubinfo = 0;
+	}
+	for (unit = 0; unit < NUP; unit++) {
+		uputab[unit].b_active = 0;
+		(void) upustart(unit);
+	}
+	(void) upstart();
 }
