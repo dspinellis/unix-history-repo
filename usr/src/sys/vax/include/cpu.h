@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	7.5 (Berkeley) %G%
+ *	@(#)cpu.h	7.6 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -55,6 +55,11 @@ union cpusid {
 			:8,
  			cp_type:8;		/* VAX_630 */
  	} cpu630;
+	struct cpu650 {
+		u_int	cp_urev:8,		/* ucode rev level */
+			:16,			/* reserved */
+			cp_type:8;		/* VAX_650 */
+	} cpu650;
 };
 #endif
 /*
@@ -70,8 +75,9 @@ union cpusid {
 #define	VAX_8500	6	/* same as 8800, 8700 */
 #define	VAX_610		7	/* uVAX I */
 #define	VAX_630		8	/* uVAX II */
+#define	VAX_650		10	/* uVAX 3000 */
 
-#define	VAX_MAX		8
+#define	VAX_MAX		10
 
 /*
  * Main IO backplane types.

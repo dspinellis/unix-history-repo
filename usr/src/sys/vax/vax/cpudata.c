@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	7.4 (Berkeley) %G%
+ *	@(#)cpudata.c	7.5 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -126,7 +126,7 @@ struct nexusconnect xxx730 = {
 };
 struct iobus io730[] = { IO_XXX730, 0, 0, (caddr_t)&xxx730 };
 #endif
-#if VAX630
+#if VAX630 || VAX650
 struct qbus qbus630 = {
 	QBA, QBAPAGES, QBAMAP630, (caddr_t)QMEM630, (caddr_t)QIOPAGE630
 };
@@ -154,6 +154,13 @@ struct clockops ka820_clockops = {
 int ka630_clkstartrt(), ka630_clkread(), ka630_clkwrite();
 struct clockops ka630_clockops = {
 	ka630_clkstartrt, ka630_clkread, ka630_clkwrite
+};
+#endif
+
+#if VAX650
+int ka650_clkstartrt(), vaxstd_clkread(), vaxstd_clkwrite();
+struct clockops ka650_clockops = {
+	ka650_clkstartrt, vaxstd_clkread, vaxstd_clkwrite
 };
 #endif
 
@@ -202,6 +209,13 @@ struct	cpuops ka630_ops = {
 };
 #endif
 
+#if VAX650
+int	ka650_memnop(), ka650_memerr(), ka650_mchk(), ka650_init();
+struct	cpuops ka650_ops = {
+	&ka650_clockops, ka650_memnop, ka650_memerr, ka650_mchk, ka650_init
+};
+#endif
+
 struct percpu percpu[] = {
 #if VAX8600
 	{ VAX_8600, 6, 2, io8600, &ka860_ops },
@@ -220,6 +234,9 @@ struct percpu percpu[] = {
 #endif
 #if VAX630
 	{ VAX_630, 2, 1, io630, &ka630_ops },
+#endif
+#if VAX650
+	{ VAX_650, 4, 1, io630, &ka650_ops },
 #endif
 	0,
 };

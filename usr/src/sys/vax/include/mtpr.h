@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtpr.h	7.3 (Berkeley) %G%
+ *	@(#)mtpr.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,7 @@
 #define	ICCS	0x18		/* interval clock control */
 #define	NICR	0x19		/* next interval count */
 #define	ICR	0x1a		/* interval count */
-#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730
+#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730 || VAX650
 #define	TODR	0x1b		/* time of year (day) */
 #endif
 #if VAX750 || VAX730
@@ -49,12 +49,12 @@
 #define	RXDB	0x21		/* console receiver data buffer */
 #define	TXCS	0x22		/* console transmitter control and status */
 #define	TXDB	0x23		/* console transmitter data buffer */
-#if VAX8200 || VAX750 || VAX730
+#if VAX8200 || VAX750 || VAX730 || VAX650
 #define	TBDR	0x24		/* translation buffer disable register */
 #define	CADR	0x25		/* cache disable register */
 #define	MCESR	0x26		/* machine check error summary register */
 #endif
-#if VAX750 || VAX730
+#if VAX750 || VAX730 || VAX650
 #define	CAER	0x27		/* cache error */
 #endif
 #define	ACCS	0x28		/* accelerator control and status */
@@ -77,8 +77,8 @@
 #define	SBITA	0x35		/* SBI timeout address */
 #define	SBIQC	0x36		/* SBI quadword clear */
 #endif
-#if VAX750 || VAX730 || VAX630
-#define	IUR	0x37		/* init unibus (Qbus on 630) register */
+#if VAX750 || VAX730 || VAX630 || VAX650
+#define	IUR	0x37		/* init unibus (Qbus on 6x0) register */
 #endif
 #define	MAPEN	0x38		/* memory management enable */
 #define	TBIA	0x39		/* translation buffer invalidate all */
@@ -91,7 +91,7 @@
 #endif
 #define	PMR	0x3d		/* performance monitor enable */
 #define	SID	0x3e		/* system identification */
-#if VAX8600 || VAX8200
+#if VAX8600 || VAX8200 || VAX650
 #define TBCHK	0x3f		/* Translation Buffer Check */
 #endif
 #if VAX8600

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.12 (Berkeley) %G%
+ *	@(#)locore.s	7.13 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -20,6 +20,7 @@
 #include "clock.h"
 #include "ioa.h"
 #include "ka630.h"
+#include "ka650.h"
 #include "ka820.h"
 #include "../vaxuba/ubareg.h"
 
@@ -113,6 +114,8 @@ SCBVEC(machcheck):
 	.word	1f-0b		# 6 is 8800 (unsupported)
 	.word	1f-0b		# 7 is 610  (unsupported)
 	.word	1f-0b		# 8 is 630
+	.word	1f-0b		# 9 is ???
+	.word	1f-0b		# 10 is 650
 5:
 #if defined(VAX8200) || defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
@@ -676,7 +679,7 @@ SCBVEC(ustray):
 	POPR
 	rei
 
-#ifdef VAX630
+#if VAX630 || VAX650
 /*
  * Emulation OpCode jump table:
  *	ONLY GOES FROM 0xf8 (-8) TO 0x3B (59)
@@ -775,7 +778,7 @@ segflt:
  */
 
 SCBVEC(emulate):
-#ifdef VAX630
+#if VAX630 || VAX650
 	movl	r11,32(sp)		# save register r11 in unused operand
 	movl	r10,36(sp)		# save register r10 in unused operand
 	cvtbl	(sp),r10		# get opcode
@@ -791,7 +794,7 @@ SCBVEC(emulate):
 	rei
 noemulate:
 	addl2	$48,sp			# adjust stack for
-#endif VAX630
+#endif
 	.word	0xffff			# "reserved instruction fault"
 SCBVEC(emulateFPD):
 	.word	0xffff			# "reserved instruction fault"
@@ -873,6 +876,15 @@ _/**/mname:	.globl	_/**/mname;		\
 #endif
 #if VAX630
 	SYSMAP(Ka630map	,ka630cpu	,1		)
+#endif
+#if VAX650
+ 	SYSMAP(KA650MERRmap	,ka650merr	,1		)
+ 	SYSMAP(KA650CBDmap	,ka650cbd	,1		)
+ 	SYSMAP(KA650SSCmap	,ka650ssc	,3		)
+ 	SYSMAP(KA650IPCRmap	,ka650ipcr	,1		)
+ 	SYSMAP(KA650CACHEmap	,ka650cache	,KA650_CACHESIZE/NBPG )
+#endif
+#ifdef QBA
 	/*
 	 * qvss and qdss can't coexist - one map will suffice
 	 * for either. qvss is 256K each and qdss is 64K each.
@@ -881,8 +893,8 @@ _/**/mname:	.globl	_/**/mname;		\
 #include "qd.h"
 #if NQV > 0 || NQD > 0
 	SYSMAP(QVmap	,qvmem		,((512*NQV)+(128*NQD)))
-#endif /* NQV || NQD */
-#endif /* VAX630 */
+#endif
+#endif
 	SYSMAP(UMBAend	,umbaend	,0		)
 
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
@@ -931,12 +943,15 @@ start:
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
 	acbl	$MAXMEM*1024-1,$64*1024,r7,1b
 9:
-#ifdef  VAX630
-/* leave an area for uVAX II console scratch pad at the top */
+#if  VAX630 || VAX650
+/* leave an area for uVAX console scratch pad at the top */
 	cmpb	_cpu,$VAX_630
-	bneq	1f
-	subl2   $4096,r7
+	beql	1f
+	cmpb	_cpu,$VAX_650
+	bneq	2f
 1:
+	subl2   $4096,r7
+2:
 #endif
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6; bicl2 $SYSTEM,r6
