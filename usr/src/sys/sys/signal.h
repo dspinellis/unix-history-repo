@@ -1,9 +1,10 @@
 /*
  * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
  *
- *	@(#)signal.h	7.7 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)signal.h	7.8 (Berkeley) %G%
  */
 
 #ifndef	NSIG
@@ -64,12 +65,27 @@
 
 #ifndef _POSIX_SOURCE
 typedef	void (*sig_t)();
-#endif	/* _POSIX_SOURCE */
+#endif
+
 #ifndef KERNEL
 void	(*signal())();
-#endif /* KERNEL */
+#endif
 
 typedef unsigned int sigset_t;
+
+#ifdef __STDC__
+int sigemptyset(sigset_t *);
+int sigfillset(sigset_t *);
+int sigaddset(sigset_t *, int);
+int sigdelset(sigset_t *, int);
+int sigismember(const sigset_t *, int);
+#else
+int sigemptyset();
+int sigfillset();
+int sigaddset();
+int sigdelset();
+int sigismember();
+#endif
 
 #define sigemptyset(set)	( *(set) = 0 )
 #define sigfillset(set)		( *(set) = ~(sigset_t)0 )
@@ -88,7 +104,7 @@ struct	sigaction {
 #ifndef _POSIX_SOURCE
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
 #define SA_RESTART	0x0002	/* do not restart system on signal return */
-#endif	/* _POSIX_SOURCE */
+#endif
 #define SA_NOCLDSTOP	0x0004	/* do not generate SIGCHLD on child stop */
 
 /*
@@ -169,5 +185,19 @@ struct	sigcontext {
 	    ((p)->p_flag&STRC) == 0 && ((p)->p_sig &~ (p)->p_sigmask) == 0) ? \
 	    0 : issig())
 
+#endif /* KERNEL */
+
+#ifdef __STDC__
+int kill(pid_t, int);
+int sigaction(int, const struct sigaction *, struct sigaction *);
+int sigprocmask(int, const sigset_t *, sigset_t *);
+int sigpending(sigset_t *);
+int sigsuspend(const sigset_t *);
+#else
+int kill();
+int sigaction();
+int sigprocmask();
+int sigpending();
+int sigsuspend();
 #endif
-#endif
+#endif /* NSIG */
