@@ -725,6 +725,29 @@ M6|sun-e|sun-nic|sune|Sun Microsystems Workstation without insert character:\
 	:ic@:im@:ei@:tc=sun:
 M7|sun-c|sun-cmd|Sun Microsystems Workstation console with scrollable history:\
 	:te=\E[>4h:ti=\E[>4l:tc=sun:
+# For NeWS's psterm from Eric Messick & Hugh Daniel
+p0|psterm|psterm-basic|psterm-80x34:\
+	:am:bs:al=\EA:cd=\EB:ce=\EC:cl=^L:cm=\E%d;%d;:cs=\EE%d;%d;:\
+	:dc=\EF:dl=\EK:do=\EP:ei=\ENi:el=\ENl:fs=\ENl:\
+	:ho=\ER:hs:im=\EOi:is=\EN*:km:kd=\E[B:ku=\E[A:kr=\E[C:kl=\E[D:\
+	:mb=\EOb:md=\EOd:me=\EN*:mr=\EOr:nd=\EV:pt:rc=\034:rs=\EN*:sc=\035:\
+	:se=\ENo:sf=\EW:sl=\EOl:so=\EOo:sr=\EX:te=\ENt:ti=\EOt:ts=\EOl:\
+	:ue=\ENu:le=\ET:ll=\EU:ul:up=\EY:us=\EOu:vb=\EZ:co#80:li#34:
+p1|psterm-96x48:\
+	:co#96:li#48:tc=psterm-basic:
+p2|psterm-90x28:\
+	:co#90:li#28:tc=psterm-basic:
+p3|psterm-80x24:\
+	:co#80:li#24:tc=psterm-basic:
+# This is a faster termcap for psterm.  Warning:  if you use this termcap,
+# some control characters you type will do strange things to the screen.
+p4|psterm-fast:\
+	:am:bs:al=^A:cd=^B:ce=^C:cl=^L:cm=^D%d;%d;:cs=^E%d;%d;:\
+	:dc=^F:dl=^K:do=^P:ei=^Ni:el=^Nl:fs=^Nl:\
+	:ho=^R:hs:im=^Oi:is=^N*:km:kd=\E[B:ku=\E[A:kr=\E[C:kl=\E[D:\
+	:mb=^Ob:md=^Od:me=^N*:mr=^Or:nd=^V:pt:rc=\034:rs=^N*:sc=\035:\
+	:se=^No:sf=^W:sl=^Ol:so=^Oo:sr=^X:te=^Nt:ti=^Ot:ts=^Ol:ue=^Nu:\
+	:le=^T:ll=^U:ul:up=^Y:us=^Ou:vb=^Z:co#80:li#34:
 LS|apollo:\
 	:al=\EI:am:bs:cd=\EJ:ce=\EK:ch=\EN%d:cl=^L:cm=\EM%+ %d):\
 	:cv=\EO+ :dc=\EP:dl=\EL:do=\EB:ei=\ER:im=\EQ:mi:nd=\EC:se=\ET:sf=\EE:\
