@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	8.2 (Berkeley) %G%
+.\"	@(#)mail.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -52,7 +52,7 @@ special
 character when sending mail is only active in interactive mode.
 .It Fl n
 Inhibits reading
-.Pa /usr/share/misc/Mail.rc
+.Pa /etc/mail.rc
 upon startup.
 .It Fl N
 Inhibits the initial display of message headers
@@ -769,7 +769,7 @@ Causes messages saved in
 .Ar mbox
 to be appended to the end rather than prepended.
 This should always be set (perhaps in
-.Pa /usr/share/misc/Mail.rc ) .
+.Pa /etc/mail.rc ) .
 .It Ar ask
 Causes
 .Nm mail
@@ -969,7 +969,7 @@ File giving initial mail commands.
 Temporary files.
 .It Pa /usr/share/misc/Mail.help*
 Help files.
-.It Pa /usr/share/misc/Mail.rc
+.It Pa /etc/mail.rc
 System initialization file.
 .El
 .Sh SEE ALSO
