@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -740,7 +740,10 @@ deliver(firstto, editfcn)
 		}
 
 		/* compute effective uid/gid when sending */
-		ctladdr = getctladdr(to);
+		/* XXX perhaps this should be to->q_mailer != LocalMailer ?? */
+		/* XXX perhaps it should be a mailer flag? */
+		if (to->q_mailer == ProgMailer || to->q_mailer == FileMailer)
+			ctladdr = getctladdr(to);
 
 		user = to->q_user;
 		e->e_to = to->q_paddr;
@@ -884,6 +887,10 @@ deliver(firstto, editfcn)
 	**	appropriate.
 	**	If we are running SMTP, we just need to clean up.
 	*/
+
+	/*XXX this seems a bit wierd */
+	if (ctladdr == NULL && bitset(QGOODUID, e->e_from.q_flags))
+		ctladdr = &e->e_from;
 
 	if (editfcn == NULL)
 		editfcn = putmessage;
