@@ -1,32 +1,39 @@
 # msdos versus unix defines
 O	= .o
-PC_O	= .obj
+#PC_O	= .obj
 
 X	=
-PC_X	= .exe
+#PC_X	= .exe
+
+L	=
+#PC_L	= -link
 
 CC	= cc
-PC_CC	= cl
+#PC_CC	= cl
 
 MV	= mv
-PC_MV	= rename
+#PC_MV	= rename
 
 RM	= rm -f
-PC_RM= erase
+#PC_RM= erase
 
 LINT_ARGS =
-PC_LINT_ARGS = -DLINT_ARGS
+#PC_LINT_ARGS = -DLINT_ARGS
 
 DEBUG_FLAGS = -g
-PC_DEBUG_FLAGS = -Zi -Od
+#PC_DEBUG_FLAGS = -Zi -Od
 
 AR	= ar
-C	=
-PC_AR	= lib
-PC_C	= +
+AR1	= cr
+AR2	=
+AR3	=
+#PC_AR	= lib
+#PC_AR1	=
+#PC_AR2	= +
+#PC_AR3	= ";"
 
 RANLIB	= ranlib
-PC_RANLIB = echo "Done with "
+#PC_RANLIB = echo "Done with "
 
 DEFINES = ${LINT_ARGS}
 
@@ -46,17 +53,17 @@ ALLO = tnrecv$O
 .c.obj:
 	${CC} ${CFLAGS} -c $<
 
-.DEFAULT:
-	sccs get $<
+all:	tnrecv$X
 
-all:	tnrecv
-
-tnrecv:	tnrecv$O
-	${CC} ${CFLAGS} -o $@ tnrecv$O ../apilib/apilib.a
+tnrecv$X:	tnrecv$O
+	${CC} ${CFLAGS} -o $@ tnrecv$O $L ../apilib/apiliblib.a
 
 clean:
-	for i in makefile.bak ${ALLO} errs; \
+	for i in makefile.bak ${ALLO} errs tnrecv$X; \
 		do (${RM} $$i); done
+
+.DEFAULT:
+	sccs get $<
 
 sccsclean:
 	-sccs clean
