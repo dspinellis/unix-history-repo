@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00072
+ * CURRENT PATCH LEVEL:         5       00115
  * --------------------         -----   ----------------------
  *
  * 17 Sep 92	Frank Maclachlan	Fixed I/O error reporting on raw device
@@ -49,6 +49,7 @@
  * 17 Jan 93	B. Evans & A.Chernov	Fixed bugs from previous patches,
  *					driver initialization, and cylinder
  *					boundary conditions.
+ * 28 Mar 93	Charles Hannum		Add missing splx calls.
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -909,8 +910,10 @@ wdsetctlr(dev_t dev, struct disk *du) {
 	outb(wdc+wd_seccnt, du->dk_dd.d_nsectors);
 	stat = wdcommand(du, WDCC_IDC);
 
-	if (stat < 0)
+	if (stat < 0) {
+	  	splx(x);
 		return(stat);
+      	}
 	if (stat & WDCS_ERR)
 		printf("wdsetctlr: status %b error %b\n",
 			stat, WDCS_BITS, inb(wdc+wd_error), WDERR_BITS);
@@ -932,11 +935,14 @@ wdgetctlr(int u, struct disk *du) {
 	outb(wdc+wd_sdh, WDSD_IBM | (u << 4));
 	stat = wdcommand(du, WDCC_READP);
 
-	if (stat < 0)
-		return(stat);
-	if (stat & WDCS_ERR) {
+	if (stat < 0) {
 		splx(x);
-		return(inb(wdc+wd_error));
+		return(stat);
+	}
+	if (stat & WDCS_ERR) {
+	  	stat = inb(wdc+wd_error);
+		splx(x);
+		return(stat);
 	}
 
 	/* obtain parameters */
