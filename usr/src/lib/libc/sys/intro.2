@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.5 (Berkeley) %G%
+.\"	@(#)intro.2	6.6 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -14,13 +14,16 @@
 .SH NAME
 intro \- introduction to system calls and error numbers
 .SH SYNOPSIS
-.B #include <errno.h>
+.B #include <sys/errno.h>
 .SH DESCRIPTION
 This section describes all of the system calls.  Most
 of these calls have one or more error returns.
 An error condition is indicated by an otherwise impossible return
 value.  This is almost always \-1; the individual descriptions
 specify the details.
+Note that a number of system calls overload the meanings of these
+error numbers, and that the meanings must be interpreted according
+to the type and circumstances of the call.
 .PP
 As with normal arguments, all return codes and values from
 functions are of type integer unless otherwise noted.
@@ -31,7 +34,7 @@ Thus \fIerrno\fP should be tested only after an error has occurred.
 .PP
 The following is a complete list of the errors and their
 names as given in
-.RI < errno.h >.
+.RI < sys/errno.h >.
 .en 0 \h'\w'EIO'u' "Error 0
 Unused.
 .en 1 EPERM "Not owner
@@ -46,17 +49,15 @@ This error occurs when a file name is specified
 and the file should exist but doesn't, or when one
 of the directories in a path name does not exist.
 .en 3 ESRCH "No such process
-The process whose number was given to
-.I kill
-and
-.I ptrace
-does not exist, or is already dead.
+The process or process group whose number was given
+does not exist, or any such process is already dead.
 .en 4 EINTR "Interrupted system call
 An asynchronous signal (such as interrupt or quit)
 that the user has elected to catch
 occurred during a system call.
 If execution is resumed
-after processing the signal,
+after processing the signal
+and the system call is not restarted,
 it will appear as if the interrupted system call
 returned this error condition.
 .en 5 EIO "I/O error
@@ -74,7 +75,8 @@ It may also occur when, for example, an illegal tape drive
 unit number is selected 
 or a disk pack is not loaded on a drive.
 .en 7 E2BIG "Arg list too long
-An argument list longer than 10240 bytes
+An argument list longer than 20480 bytes (or the current limit, NCARGS in
+.IR <sys/param.h> )
 is presented to
 .IR execve .
 .en 8 ENOEXEC "Exec format error
@@ -103,11 +105,13 @@ During an
 or
 .I break,
 a program asks for more core or swap space than the system is
-able to supply.
+able to supply,
+or a process size limit would be exceeded.
 A lack of swap space is normally a temporary condition, however
 a lack of core
 is not a temporary condition; the maximum size
 of the text, data, and stack segments is a system parameter.
+Soft limits may be increased to their corresponding hard limits.
 .en 13 EACCES "Permission denied
 An attempt was made to access a file in a way forbidden
 by the protection system.
@@ -122,8 +126,7 @@ e.g. in
 An attempt to mount a device that was already mounted or
 an attempt was made to dismount a device
 on which there is an active file
-directory.
-(open file, current directory, mounted-on file, active text segment).
+(open file, current directory, mounted-on file, or active text segment).
 A request was made to an exclusive access device that was already in use.
 .en 17 EEXIST "File exists
 An existing file was mentioned in an inappropriate context,
@@ -134,8 +137,9 @@ A hard link to a file on another device
 was attempted.
 .en 19 ENODEV "No such device
 An attempt was made to apply an inappropriate
-system call to a device;
-e.g. read a write-only device.
+system call to a device,
+e.g. to read a write-only device,
+or the device is not configured by the system.
 .en 20 ENOTDIR "Not a directory
 A non-directory was specified where a directory
 is required,
@@ -150,11 +154,9 @@ dismounting a non-mounted
 device,
 mentioning an unknown signal in
 .I signal,
-reading or writing a file for which
-.I seek
-has generated a negative pointer.
+or some other argument inappropriate for the call.
 Also set by math functions, see 
-.IR intro (3).
+.IR math (3).
 .en 23 ENFILE "File table overflow
 The system's table of open files is full,
 and temporarily no more
@@ -163,12 +165,14 @@ can be accepted.
 .en 24 EMFILE "Too many open files
 As released, the limit on the number of
 open files per process is 64.
+.IR Getdtablesize (2)
+will obtain the current limit.
 Customary configuration limit on most other UNIX systems
 is 20 per process.
 .en 25 ENOTTY "Inappropriate ioctl for device
 The file mentioned in an
 .I ioctl
-is not a terminal or one of the other
+is not a terminal or one of the
 devices to which this call applies.
 .en 26 ETXTBSY "Text file busy
 An attempt to execute a pure-procedure
@@ -177,8 +181,8 @@ Also an attempt to open for writing a pure-procedure
 program that is being executed.
 .en 27 EFBIG "File too large
 The size of a file exceeded the maximum (about
-.if t 10\u\s-29\s+2\d
-.if n 1.0E9
+.if t 2\u\s-231\s+2\d
+.if n 2.1E9
 bytes).
 .en 28 ENOSPC "No space left on device
 A
@@ -192,7 +196,7 @@ on the file system.
 .en 29 ESPIPE "Illegal seek
 An
 .I lseek
-was issued to a pipe.
+was issued to a socket or pipe.
 This error may also be issued for
 other non-seekable devices.
 .en 30 EROFS "Read-only file system
@@ -205,7 +209,7 @@ An attempt to make more than 32767 hard links to a file.
 A write on a pipe or socket for which there is no process
 to read the data.
 This condition normally generates a signal;
-the error is returned if the signal is ignored.
+the error is returned if the signal is caught or ignored.
 .en 33 EDOM "Argument too large
 The argument of a function in the math package (3M)
 is out of the domain of the function.
@@ -214,11 +218,11 @@ The value of a function in the math package (3M)
 is unrepresentable within machine precision.
 .en 35 EWOULDBLOCK "Operation would block"
 An operation that would cause a process to block was attempted
-on a object in non-blocking mode (see \fIioctl\fP (2)).
+on a object in non-blocking mode (see \fIfcntl\fP(2)).
 .en 36 EINPROGRESS "Operation now in progress"
 An operation that takes a long time to complete (such as
-a \fIconnect\fP (2)) was attempted on a non-blocking object (see
-\fIioctl\fP (2)).
+a \fIconnect\fP(2)) was attempted on a non-blocking object (see
+\fIfcntl\fP(2)).
 .en 37 EALREADY "Operation already in progress"
 An operation was attempted on a non-blocking object that already
 had an operation in progress.
@@ -227,13 +231,14 @@ Self-explanatory.
 .en 39 EDESTADDRREQ "Destination address required"
 A required address was omitted from an operation on a socket.
 .en 40 EMSGSIZE "Message too long"
-A message sent on a socket was larger than the internal message buffer.
+A message sent on a socket was larger than the internal message buffer
+or some other network limit.
 .en 41 EPROTOTYPE "Protocol wrong type for socket"
 A protocol was specified that does not support the semantics of the
 socket type requested. For example you cannot use the ARPA Internet
 UDP protocol with type SOCK_STREAM.
 .en 42 ENOPROTOOPT "Option not supported by protocol 
-A bad option was specified in a
+A bad option or level was specified in a
 .IR getsockopt (2)
 or
 .IR setsockopt (2)
@@ -251,8 +256,8 @@ The protocol family has not been configured into the
 system or no implementation for it exists.
 .en 47 EAFNOSUPPORT "Address family not supported by protocol family"
 An address incompatible with the requested protocol was used.
-For example, you shouldn't necessarily expect to be able to use PUP
-Internet addresses with ARPA Internet protocols.
+For example, you shouldn't necessarily expect to be able to use NS
+addresses with ARPA Internet protocols.
 .en 48 EADDRINUSE "Address already in use"
 Only one usage of each address is normally permitted.
 .en 49 EADDRNOTAVAIL "Can't assign requested address"
@@ -268,10 +273,11 @@ The host you were connected to crashed and rebooted.
 A connection abort was caused internal to your host machine.
 .en 54 ECONNRESET "Connection reset by peer"
 A connection was forcibly closed by a peer.  This normally
-results from the peer executing a \fIshutdown\fP (2) call.
+results from a loss of the connection on the remote socket
+due to a timeout or a reboot.
 .en 55 ENOBUFS "No buffer space available"
 An operation on a socket or pipe was not performed because
-the system lacked sufficient buffer space.
+the system lacked sufficient buffer space or because a queue was full.
 .en 56 EISCONN "Socket is already connected"
 A
 .I connect
@@ -281,10 +287,11 @@ a
 or
 .I sendmsg
 request on a connected socket specified a destination
-other than the connected party.
+when already connected.
 .en 57 ENOTCONN "Socket is not connected"
 An request to send or receive data was disallowed because
-the socket is not connected.
+the socket is not connected and (when sending on a  datagram socket)
+no address was supplied.
 .en 58 ESHUTDOWN "Can't send after socket shutdown"
 A request to send data was disallowed because the socket
 had already been shut down with a previous
@@ -294,6 +301,8 @@ call.
 .en 60 ETIMEDOUT "Connection timed out"
 A
 .I connect
+or
+.I send
 request failed because the connected party did not
 properly respond after a period of time.  (The timeout
 period is dependent on the communication protocol.)
@@ -304,8 +313,8 @@ to a service that is inactive on the foreign host.
 .en 62 ELOOP "Too many levels of symbolic links"
 A path name lookup involved more than 8 symbolic links.
 .en 63 ENAMETOOLONG "File name too long"
-A component of a path name exceeded 255 characters, or an entire
-path name exceeded 1023 characters.
+A component of a path name exceeded 255 (MAXNAMELEN) characters, or an entire
+path name exceeded 1023 (MAXPATHLEN-1) characters.
 .en 64 EHOSTDOWN "Host is down"
 A socket operation failed because the destination host was down.
 .en 65 EHOSTUNREACH "Host is unreachable"
@@ -317,7 +326,7 @@ was supplied to a remove directory or rename call.
 ...en 68 EUSERS "Too many users"
 .en 69 EDQUOT "Disc quota exceeded"
 A 
-.i write
+.I write
 to an ordinary file, the creation of a
 directory or symbolic link, or the creation of a directory
 entry failed because the user's quota of disk blocks was
@@ -329,7 +338,7 @@ was exhausted.
 Process ID
 .br
 Each active process in the system is uniquely identified by a positive
-integer called a process ID.  The range of this ID is from 0 to {PROC_MAX}.
+integer called a process ID.  The range of this ID is from 0 to 30000.
 .TP 5
 Parent process ID
 .br
@@ -341,7 +350,7 @@ Process Group ID
 .br
 Each active process is a member of a process group that is identified by
 a positive integer called the process group ID.  This is the process
-ID of the group leader.  This grouping permits the signalling of related
+ID of the group leader.  This grouping permits the signaling of related
 processes (see
 .IR killpg (2))
 and the job control mechanisms of
@@ -407,11 +416,11 @@ Descriptor
 .br
 An integer assigned by the system when a file is referenced
 by
-.IR open (2),
+.IR open (2)
+or
 .IR dup (2),
-or 
-.IR pipe (2)
-or when a socket is referenced by
+or when a socket is created by
+.IR pipe (2),
 .IR socket (2)
 or
 .IR socketpair (2),
@@ -420,7 +429,7 @@ a given process or any of its children.
 .TP 5
 File Name
 .br
-Names consisting of up to {FILENAME_MAX} characters may be used to name
+Names consisting of up to 255 (MAXNAMELEN) characters may be used to name
 an ordinary file, special file, or directory.
 .IP
 These characters may be selected from the set of all ASCII character
@@ -436,7 +445,7 @@ Path Name
 A path name is a null-terminated character string starting with an
 optional slash (/), followed by zero or more directory names separated
 by slashes, optionally followed by a file name.
-The total length of a path name must be less than {PATHNAME_MAX} characters.
+The total length of a path name must be less than 1024 (MAXPATHLEN) characters.
 .IP
 If a path name begins with a slash, the path search begins at the
 .I root
