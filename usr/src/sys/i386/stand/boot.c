@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)boot.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)boot.c	7.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "param.h"
@@ -30,12 +30,10 @@ static char sccsid[] = "@(#)boot.c	7.2 (Berkeley) %G%";
  * boot comes from.
  */
 
-#define	UNIX	"/vmunix"
-
 char line[100] = UNIX;
 extern	int opendev, bootdev, cyloffset;
 int	retry = 0;
-jmp_buf  exception;
+extern jmp_buf  exception;
 
 main(howto, dev, off)
 {
