@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.6 %G%
+\"	@(#)postp.me	1.7 %G%
 .EQ
 delim ##
 gsize 12
@@ -28,12 +28,10 @@ caller in addition to being charged to the callee.
 .(b
 .TS
 center;
-c s c c s.
-8		9	
-
-
-.T&
 c c c c c.
+8				9
+
+
 	3		7
 
 
@@ -41,6 +39,8 @@ c c c c c.
 
 
 	1		4
+
+
 .TE
 .ce 1
 Topological ordering
@@ -112,12 +112,10 @@ though they are listed in the call graph profile.
 .(b
 .TS
 center;
-c s c c s.
-o		o	
-
-
-.T&
 c c c c c.
+o				o
+
+
 	o		o
 
 
@@ -125,19 +123,20 @@ o		o		o
 
 
 	o		o
+
+
 .TE
 .ce 1
 Cycle to be collapsed.
+.ce 0
 .)b
 .(b
 .TS
 center;
-c s c c s.
-7		8	
-
-
-.T&
 c c c c c.
+7				8
+
+
 	6		6
 
 
@@ -145,6 +144,8 @@ c c c c c.
 
 
 	1		3
+
+
 .TE
 .ce 1
 Topological numbering after cycle collapsing.
