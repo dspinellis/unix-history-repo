@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	8.12 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.13 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -31,10 +31,15 @@
 #include <sys/syslog.h>
 #include <sys/stat.h>
 
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
+
 #include <machine/cpu.h>
 
 #include <vm/vm.h>
 #include <sys/user.h>		/* for coredump */
+
+void stop __P((struct proc *p));
 
 /*
  * Can process p, with pcred pc, send the signal signum to process q?
@@ -47,16 +52,16 @@
 	    (pc)->pc_ucred->cr_uid == (q)->p_ucred->cr_uid || \
 	    ((signum) == SIGCONT && (q)->p_session == (p)->p_session))
 
-struct sigaction_args {
-	int	signum;
-	struct	sigaction *nsa;
-	struct	sigaction *osa;
-};
 /* ARGSUSED */
+int
 sigaction(p, uap, retval)
 	struct proc *p;
-	register struct sigaction_args *uap;
-	int *retval;
+	register struct sigaction_args /* {
+		syscallarg(int) signum;
+		syscallarg(struct sigaction *) nsa;
+		syscallarg(struct sigaction *) osa;
+	} */ *uap;
+	register_t *retval;
 {
 	struct sigaction vec;
 	register struct sigaction *sa;
@@ -64,12 +69,12 @@ sigaction(p, uap, retval)
 	register int signum;
 	int bit, error;
 
-	signum = uap->signum;
+	signum = SCARG(uap, signum);
 	if (signum <= 0 || signum >= NSIG ||
 	    signum == SIGKILL || signum == SIGSTOP)
 		return (EINVAL);
 	sa = &vec;
-	if (uap->osa) {
+	if (SCARG(uap, osa)) {
 		sa->sa_handler = ps->ps_sigact[signum];
 		sa->sa_mask = ps->ps_catchmask[signum];
 		bit = sigmask(signum);
@@ -80,12 +85,12 @@ sigaction(p, uap, retval)
 			sa->sa_flags |= SA_RESTART;
 		if (p->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
-		if (error = copyout((caddr_t)sa, (caddr_t)uap->osa,
+		if (error = copyout((caddr_t)sa, (caddr_t)SCARG(uap, osa),
 		    sizeof (vec)))
 			return (error);
 	}
-	if (uap->nsa) {
-		if (error = copyin((caddr_t)uap->nsa, (caddr_t)sa,
+	if (SCARG(uap, nsa)) {
+		if (error = copyin((caddr_t)SCARG(uap, nsa), (caddr_t)sa,
 		    sizeof (vec)))
 			return (error);
 		setsigvec(p, signum, sa);
@@ -93,6 +98,7 @@ sigaction(p, uap, retval)
 	return (0);
 }
 
+void
 setsigvec(p, signum, sa)
 	register struct proc *p;
 	int signum;
@@ -207,31 +213,31 @@ execsigs(p)
  * and return old mask as return value;
  * the library stub does the rest.
  */
-struct sigprocmask_args {
-	int	how;
-	sigset_t mask;
-};
+int
 sigprocmask(p, uap, retval)
 	register struct proc *p;
-	struct sigprocmask_args *uap;
-	int *retval;
+	struct sigprocmask_args /* {
+		syscallarg(int) how;
+		syscallarg(sigset_t) mask;
+	} */ *uap;
+	register_t *retval;
 {
 	int error = 0;
 
 	*retval = p->p_sigmask;
 	(void) splhigh();
 
-	switch (uap->how) {
+	switch (SCARG(uap, how)) {
 	case SIG_BLOCK:
-		p->p_sigmask |= uap->mask &~ sigcantmask;
+		p->p_sigmask |= SCARG(uap, mask) &~ sigcantmask;
 		break;
 
 	case SIG_UNBLOCK:
-		p->p_sigmask &= ~uap->mask;
+		p->p_sigmask &= ~SCARG(uap, mask);
 		break;
 
 	case SIG_SETMASK:
-		p->p_sigmask = uap->mask &~ sigcantmask;
+		p->p_sigmask = SCARG(uap, mask) &~ sigcantmask;
 		break;
 	
 	default:
@@ -242,14 +248,12 @@ sigprocmask(p, uap, retval)
 	return (error);
 }
 
-struct sigpending_args {
-	int	dummy;
-};
 /* ARGSUSED */
+int
 sigpending(p, uap, retval)
 	struct proc *p;
-	struct sigpending_args *uap;
-	int *retval;
+	void *uap;
+	register_t *retval;
 {
 
 	*retval = p->p_siglist;
@@ -260,16 +264,16 @@ sigpending(p, uap, retval)
 /*
  * Generalized interface signal handler, 4.3-compatible.
  */
-struct osigvec_args {
-	int	signum;
-	struct	sigvec *nsv;
-	struct	sigvec *osv;
-};
 /* ARGSUSED */
-osigvec(p, uap, retval)
+int
+compat_43_sigvec(p, uap, retval)
 	struct proc *p;
-	register struct osigvec_args *uap;
-	int *retval;
+	register struct compat_43_sigvec_args /* {
+		syscallarg(int) signum;
+		syscallarg(struct sigvec *) nsv;
+		syscallarg(struct sigvec *) osv;
+	} */ *uap;
+	register_t *retval;
 {
 	struct sigvec vec;
 	register struct sigacts *ps = p->p_sigacts;
@@ -277,12 +281,12 @@ osigvec(p, uap, retval)
 	register int signum;
 	int bit, error;
 
-	signum = uap->signum;
+	signum = SCARG(uap, signum);
 	if (signum <= 0 || signum >= NSIG ||
 	    signum == SIGKILL || signum == SIGSTOP)
 		return (EINVAL);
 	sv = &vec;
-	if (uap->osv) {
+	if (SCARG(uap, osv)) {
 		*(sig_t *)&sv->sv_handler = ps->ps_sigact[signum];
 		sv->sv_mask = ps->ps_catchmask[signum];
 		bit = sigmask(signum);
@@ -295,12 +299,12 @@ osigvec(p, uap, retval)
 		if (p->p_flag & P_NOCLDSTOP)
 			sv->sv_flags |= SA_NOCLDSTOP;
 #endif
-		if (error = copyout((caddr_t)sv, (caddr_t)uap->osv,
+		if (error = copyout((caddr_t)sv, (caddr_t)SCARG(uap, osv),
 		    sizeof (vec)))
 			return (error);
 	}
-	if (uap->nsv) {
-		if (error = copyin((caddr_t)uap->nsv, (caddr_t)sv,
+	if (SCARG(uap, nsv)) {
+		if (error = copyin((caddr_t)SCARG(uap, nsv), (caddr_t)sv,
 		    sizeof (vec)))
 			return (error);
 #ifdef COMPAT_SUNOS
@@ -319,34 +323,34 @@ osigvec(p, uap, retval)
 	return (0);
 }
 
-struct osigblock_args {
-	int	mask;
-};
-osigblock(p, uap, retval)
+int
+compat_43_sigblock(p, uap, retval)
 	register struct proc *p;
-	struct osigblock_args *uap;
-	int *retval;
+	struct compat_43_sigblock_args /* {
+		syscallarg(int) mask;
+	} */ *uap;
+	register_t *retval;
 {
 
 	(void) splhigh();
 	*retval = p->p_sigmask;
-	p->p_sigmask |= uap->mask &~ sigcantmask;
+	p->p_sigmask |= SCARG(uap, mask) &~ sigcantmask;
 	(void) spl0();
 	return (0);
 }
 
-struct osigsetmask_args {
-	int	mask;
-};
-osigsetmask(p, uap, retval)
+int
+compat_43_sigsetmask(p, uap, retval)
 	struct proc *p;
-	struct osigsetmask_args *uap;
-	int *retval;
+	struct compat_43_sigsetmask_args /* {
+		syscallarg(int) mask;
+	} */ *uap;
+	register_t *retval;
 {
 
 	(void) splhigh();
 	*retval = p->p_sigmask;
-	p->p_sigmask = uap->mask &~ sigcantmask;
+	p->p_sigmask = SCARG(uap, mask) &~ sigcantmask;
 	(void) spl0();
 	return (0);
 }
@@ -357,14 +361,14 @@ osigsetmask(p, uap, retval)
  * in the meantime.  Note nonstandard calling convention:
  * libc stub passes mask, not pointer, to save a copyin.
  */
-struct sigsuspend_args {
-	sigset_t mask;
-};
 /* ARGSUSED */
+int
 sigsuspend(p, uap, retval)
 	register struct proc *p;
-	struct sigsuspend_args *uap;
-	int *retval;
+	struct sigsuspend_args /* {
+		syscallarg(int) mask;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct sigacts *ps = p->p_sigacts;
 
@@ -377,7 +381,7 @@ sigsuspend(p, uap, retval)
 	 */
 	ps->ps_oldmask = p->p_sigmask;
 	ps->ps_flags |= SAS_OLDMASK;
-	p->p_sigmask = uap->mask &~ sigcantmask;
+	p->p_sigmask = SCARG(uap, mask) &~ sigcantmask;
 	while (tsleep((caddr_t) ps, PPAUSE|PCATCH, "pause", 0) == 0)
 		/* void */;
 	/* always return EINTR rather than ERESTART... */
@@ -385,15 +389,15 @@ sigsuspend(p, uap, retval)
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-struct osigstack_args {
-	struct	sigstack *nss;
-	struct	sigstack *oss;
-};
 /* ARGSUSED */
-osigstack(p, uap, retval)
+int
+compat_43_sigstack(p, uap, retval)
 	struct proc *p;
-	register struct osigstack_args *uap;
-	int *retval;
+	register struct compat_43_sigstack_args /* {
+		syscallarg(struct sigstack *) nss;
+		syscallarg(struct sigstack *) oss;
+	} */ *uap;
+	register_t *retval;
 {
 	struct sigstack ss;
 	struct sigacts *psp;
@@ -402,11 +406,11 @@ osigstack(p, uap, retval)
 	psp = p->p_sigacts;
 	ss.ss_sp = psp->ps_sigstk.ss_base;
 	ss.ss_onstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
-	if (uap->oss && (error = copyout((caddr_t)&ss, (caddr_t)uap->oss,
-	    sizeof (struct sigstack))))
+	if (SCARG(uap, oss) && (error = copyout((caddr_t)&ss,
+	    (caddr_t)SCARG(uap, oss), sizeof (struct sigstack))))
 		return (error);
-	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
-	    sizeof (ss))) == 0) {
+	if (SCARG(uap, nss) && (error = copyin((caddr_t)SCARG(uap, nss),
+	    (caddr_t)&ss, sizeof (ss))) == 0) {
 		psp->ps_sigstk.ss_base = ss.ss_sp;
 		psp->ps_sigstk.ss_size = 0;
 		psp->ps_sigstk.ss_flags |= ss.ss_onstack & SA_ONSTACK;
@@ -416,15 +420,15 @@ osigstack(p, uap, retval)
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
-struct sigaltstack_args {
-	struct	sigaltstack *nss;
-	struct	sigaltstack *oss;
-};
 /* ARGSUSED */
+int
 sigaltstack(p, uap, retval)
 	struct proc *p;
-	register struct sigaltstack_args *uap;
-	int *retval;
+	register struct sigaltstack_args /* {
+		syscallarg(struct sigaltstack *) nss;
+		syscallarg(struct sigaltstack *) oss;
+	} */ *uap;
+	register_t *retval;
 {
 	struct sigacts *psp;
 	struct sigaltstack ss;
@@ -433,12 +437,13 @@ sigaltstack(p, uap, retval)
 	psp = p->p_sigacts;
 	if ((psp->ps_flags & SAS_ALTSTACK) == 0)
 		psp->ps_sigstk.ss_flags |= SA_DISABLE;
-	if (uap->oss && (error = copyout((caddr_t)&psp->ps_sigstk,
-	    (caddr_t)uap->oss, sizeof (struct sigaltstack))))
+	if (SCARG(uap, oss) && (error = copyout((caddr_t)&psp->ps_sigstk,
+	    (caddr_t)SCARG(uap, oss), sizeof (struct sigaltstack))))
 		return (error);
-	if (uap->nss == 0)
+	if (SCARG(uap, nss) == 0)
 		return (0);
-	if (error = copyin((caddr_t)uap->nss, (caddr_t)&ss, sizeof (ss)))
+	if (error = copyin((caddr_t)SCARG(uap, nss), (caddr_t)&ss,
+	    sizeof (ss)))
 		return (error);
 	if (ss.ss_flags & SA_DISABLE) {
 		if (psp->ps_sigstk.ss_flags & SA_ONSTACK)
@@ -454,57 +459,57 @@ sigaltstack(p, uap, retval)
 	return (0);
 }
 
-struct kill_args {
-	int	pid;
-	int	signum;
-};
 /* ARGSUSED */
+int
 kill(cp, uap, retval)
 	register struct proc *cp;
-	register struct kill_args *uap;
-	int *retval;
+	register struct kill_args /* {
+		syscallarg(int) pid;
+		syscallarg(int) signum;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct proc *p;
 	register struct pcred *pc = cp->p_cred;
 
-	if ((u_int)uap->signum >= NSIG)
+	if ((u_int)SCARG(uap, signum) >= NSIG)
 		return (EINVAL);
-	if (uap->pid > 0) {
+	if (SCARG(uap, pid) > 0) {
 		/* kill single process */
-		if ((p = pfind(uap->pid)) == NULL)
+		if ((p = pfind(SCARG(uap, pid))) == NULL)
 			return (ESRCH);
-		if (!CANSIGNAL(cp, pc, p, uap->signum))
+		if (!CANSIGNAL(cp, pc, p, SCARG(uap, signum)))
 			return (EPERM);
-		if (uap->signum)
-			psignal(p, uap->signum);
+		if (SCARG(uap, signum))
+			psignal(p, SCARG(uap, signum));
 		return (0);
 	}
-	switch (uap->pid) {
+	switch (SCARG(uap, pid)) {
 	case -1:		/* broadcast signal */
-		return (killpg1(cp, uap->signum, 0, 1));
+		return (killpg1(cp, SCARG(uap, signum), 0, 1));
 	case 0:			/* signal own process group */
-		return (killpg1(cp, uap->signum, 0, 0));
+		return (killpg1(cp, SCARG(uap, signum), 0, 0));
 	default:		/* negative explicit process group */
-		return (killpg1(cp, uap->signum, -uap->pid, 0));
+		return (killpg1(cp, SCARG(uap, signum), -SCARG(uap, pid), 0));
 	}
 	/* NOTREACHED */
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-struct okillpg_args {
-	int	pgid;
-	int	signum;
-};
 /* ARGSUSED */
-okillpg(p, uap, retval)
+int
+compat_43_killpg(p, uap, retval)
 	struct proc *p;
-	register struct okillpg_args *uap;
-	int *retval;
+	register struct compat_43_killpg_args /* {
+		syscallarg(int) pgid;
+		syscallarg(int) signum;
+	} */ *uap;
+	register_t *retval;
 {
 
-	if ((u_int)uap->signum >= NSIG)
+	if ((u_int)SCARG(uap, signum) >= NSIG)
 		return (EINVAL);
-	return (killpg1(p, uap->signum, uap->pgid, 0));
+	return (killpg1(p, SCARG(uap, signum), SCARG(uap, pgid), 0));
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
@@ -512,6 +517,7 @@ okillpg(p, uap, retval)
  * Common code for kill process group/broadcast kill.
  * cp is calling process.
  */
+int
 killpg1(cp, signum, pgid, all)
 	register struct proc *cp;
 	int signum, pgid, all;
@@ -572,7 +578,7 @@ gsignal(pgid, signum)
 }
 
 /*
- * Send a signal to a  process group.  If checktty is 1,
+ * Send a signal to a process group.  If checktty is 1,
  * limit to members which have a controlling terminal.
  */
 void
@@ -687,7 +693,7 @@ psignal(p, signum)
 		 */
 		if (prop & SA_TTYSTOP && p->p_pgrp->pg_jobc == 0 &&
 		    action == SIG_DFL)
-		        return;
+			return;
 		p->p_siglist &= ~contsigmask;
 	}
 	p->p_siglist |= mask;
@@ -841,6 +847,7 @@ out:
  *	while (signum = CURSIG(curproc))
  *		postsig(signum);
  */
+int
 issignal(p)
 	register struct proc *p;
 {
@@ -916,9 +923,9 @@ issignal(p)
 		 * Return the signal's number, or fall through
 		 * to clear it from the pending mask.
 		 */
-		switch ((int)p->p_sigacts->ps_sigact[signum]) {
+		switch ((long)p->p_sigacts->ps_sigact[signum]) {
 
-		case SIG_DFL:
+		case (long)SIG_DFL:
 			/*
 			 * Don't take default actions on system processes.
 			 */
@@ -961,7 +968,7 @@ issignal(p)
 				return (signum);
 			/*NOTREACHED*/
 
-		case SIG_IGN:
+		case (long)SIG_IGN:
 			/*
 			 * Masking above should prevent us ever trying
 			 * to take action on an ignored signal other
@@ -989,6 +996,7 @@ issignal(p)
  * via wakeup.  Signals are handled elsewhere.  The process must not be
  * on the run queue.
  */
+void
 stop(p)
 	register struct proc *p;
 {
@@ -1009,7 +1017,8 @@ postsig(signum)
 	register struct proc *p = curproc;
 	register struct sigacts *ps = p->p_sigacts;
 	register sig_t action;
-	int code, mask, returnmask;
+	u_long code;
+	int mask, returnmask;
 
 #ifdef DIAGNOSTIC
 	if (signum == 0)
@@ -1071,6 +1080,7 @@ postsig(signum)
 /*
  * Kill the current process for stated reason.
  */
+void
 killproc(p, why)
 	struct proc *p;
 	char *why;
@@ -1089,6 +1099,7 @@ killproc(p, why)
  * If dumping core, save the signal number for the debugger.  Calls exit and
  * does not return.
  */
+void
 sigexit(p, signum)
 	register struct proc *p;
 	int signum;
@@ -1108,6 +1119,7 @@ sigexit(p, signum)
  * Dump core, into a file named "progname.core", unless the process was
  * setuid/setgid.
  */
+int
 coredump(p)
 	register struct proc *p;
 {
