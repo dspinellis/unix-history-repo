@@ -1,4 +1,4 @@
-/*	if_ec.c	6.3	84/03/22	*/
+/*	if_ec.c	6.4	84/07/23	*/
 
 #include "ec.h"
 
@@ -34,7 +34,39 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-#define	ECMEM	0000000
+/*
+ * The memory address must be consecutive.  Any allocations 
+ * not in order will cause problems on a VAX 780.
+ */
+
+int ecmem[] = {
+#if NEC > 0
+	0000000,
+#endif
+#if NEC > 1
+	0100000,
+#endif
+#if NEC > 2
+	0200000,
+#endif
+#if NEC > 3
+	0300000,
+#endif
+#if NEC > 4
+	0400000,
+#endif
+#if NEC > 5
+	0500000,
+#endif
+#if NEC > 6
+	0600000,
+#endif
+#if NEC > 7
+	0700000,
+#endif
+	};
+
+int necmem = 0;			/* count of current memory number for ecprobe */
 
 int	ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
 struct	uba_device *ecinfo[NEC];
@@ -79,7 +111,7 @@ ecprobe(reg)
 {
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct ecdevice *addr = (struct ecdevice *)reg;
-	register caddr_t ecbuf = (caddr_t) &umem[numuba][ECMEM];
+	register caddr_t ecbuf = (caddr_t) &umem[numuba][ecmem[necmem]];
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -93,7 +125,7 @@ ecprobe(reg)
 	 * Disable map registers for ec unibus space,
 	 * but don't allocate yet.
 	 */
-	(void) ubamem(numuba, ECMEM, 32*2, 0);
+	(void) ubamem(numuba, ecmem[necmem], 32*2, 0);
 	/*
 	 * Check for existence of buffers on Unibus.
 	 */
@@ -103,6 +135,7 @@ ecprobe(reg)
 	bad2:
 		(void) ubamem(numuba, 0, 0, 0);	/* reenable map (780 only) */
 		addr->ec_rcr = EC_MDISAB;	/* disable memory */
+		necmem++;
 		return (0);
 	}
 #if VAX780
@@ -116,7 +149,7 @@ ecprobe(reg)
 	 * Tell the system that the board has memory here, so it won't
 	 * attempt to allocate the addresses later.
 	 */
-	if (ubamem(numuba, ECMEM, 32*2, 1) == 0) {
+	if (ubamem(numuba, ecmem[necmem], 32*2, 1) == 0) {
 		printf("ecprobe: cannot reserve uba addresses\n");
 		goto bad2;
 	}
@@ -141,6 +174,7 @@ ecprobe(reg)
 			br += 2;		/* rcv is xmit + 2 */
 		}
 	}
+	necmem++;
 	return (1);
 }
 
@@ -185,7 +219,8 @@ ecattach(ui)
 	ifp->if_output = ecoutput;
 	ifp->if_reset = ecreset;
 	for (i=0; i<16; i++)
-		es->es_buf[i] = (u_char *)&umem[ui->ui_ubanum][ECMEM+2048*i];
+		es->es_buf[i] 
+		    = (u_char *)&umem[ui->ui_ubanum][ecmem[ifp->if_unit]+2048*i];
 	if_attach(ifp);
 }
 
@@ -202,7 +237,7 @@ ecreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" ec%d", unit);
-	(void) ubamem(uban, ECMEM, 32*2, 0);	/* mr disable (no alloc) */
+	(void) ubamem(uban, ecmem[unit], 32*2, 0);	/* mr disable (no alloc) */
 	ec_softc[unit].es_if.if_flags &= ~IFF_RUNNING;
 	ecinit(unit);
 }
