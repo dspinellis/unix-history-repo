@@ -1,4 +1,8 @@
-static char sccsid[] = "@(#)unixtraps.c	4.2 83/07/31";
+#ifndef	lint
+static char sccsid[] = "@(#)unixtraps.c	4.3 84/05/05";
+#endif
+
+/* From Lou Salkind: compat/RCS/unixtraps.c,v 1.2 84/01/31 13:34:34 */
 
 /*
  * Function to execute version 6 and version 7 UNIX system calls from
@@ -12,6 +16,7 @@ static char sccsid[] = "@(#)unixtraps.c	4.2 83/07/31";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/dir.h>
 #ifdef V6UNIX
 #ifdef TRACE
 #define	RTSNAME	"/../../../../usr/local/v6trc"
@@ -36,7 +41,7 @@ static char sccsid[] = "@(#)unixtraps.c	4.2 83/07/31";
 #endif
 #include "defs.h"
 #define	CARRY	1
-#define	MAXSARGS	25
+#define	MAXSARGS	100
 #ifdef V6UNIX
 #define	ARGVLEN	512
 #define	ENVLEN	0
@@ -106,6 +111,22 @@ struct timeb {
 } timeb;
 #endif
 
+#define	NFILES	20
+#define	ODSIZE	16
+
+off_t	olseek();
+
+struct odirect {
+	u_short	od_ino;
+	char	od_name[14];
+};
+
+struct fdflags {
+	DIR	*fd_dirp;
+	struct odirect	fd_od;
+	off_t	fd_offset;
+} fdflags[NFILES];
+
 /* do the trap stuff for the trap with code */
 dotrap(code)
 	int code;
@@ -115,7 +136,10 @@ dotrap(code)
 	register char *avp, *oavp;
 	extern sigcatch();
 	extern errno;
+	extern int sigtrapped;
+	DIR *dp;
 
+	sigtrapped = 0;
 	/* clear out condition codes of psl */
 	psl &= ~017;
 	/* special case of indirect sys call */
@@ -252,7 +276,7 @@ experm:
 		if (i == -1)
 			break;
 		args[i] = 0;
-		for (j=0; j<i; j++) {
+		for (j=1; j<i; j++) {
 			oavp = (char *)args[j];
 			args[j] = (int)avp;
 			while (*avp++ = *oavp++)
@@ -262,8 +286,7 @@ experm:
 		if (code == EXECE) {
 			for (j = ++i; args[j] = *savep++; j++)
 				;
-			for ( ; j > i; j--) {
-				oavp = (char *)args[j];
+			for (j = i; oavp = (char *)args[j]; j++) {
 				args[j] = (int)avp;
 				while (*avp++ = *oavp++)
 					;
@@ -296,25 +319,32 @@ experm:
 			if (args[1] >= 32768)
 				args[1] -= 65536;
 		if (args[2] <= 2)
-			i = lseek(args[0], args[1], args[2]);
+			i = olseek(args[0], args[1], args[2]);
 		else
-			i = lseek(args[0], args[1]*512, args[2]-3);
+			i = olseek(args[0], args[1]*512, args[2]-3);
 		if (i != -1)
 			i = 0;
 #endif
 #ifdef	V7UNIX
-		i = lseek(args[0], (args[1]<<16)|(args[2]&0177777), args[3]);
+		i = olseek(args[0], (args[1]<<16)|(args[2]&0177777), args[3]);
 #endif
 		break;
 
-#ifdef	V6UNIX
 	case MKNOD:
-		/* version 6 uses allocated bit which means regular file here */
-		if (args[1] & S_IFBLK)
-			args[1] &= ~S_IFREG;
-		i = mknod(args[0], args[1], args[2]);
-		break;
+		if ((args[1] & S_IFMT) == S_IFDIR)
+			i = mkdir(args[0], args[1] & 0777);
+		else {
+#ifdef	V6UNIX
+			/*
+			 * version 6 uses allocated bit which
+			 * means regular file here
+			 */
+			if (args[1] & S_IFBLK)
+				args[1] &= ~S_IFREG;
 #endif	
+			i = mknod(args[0], args[1], args[2]);
+		}
+		break;
 
 	case PIPE:
 		i = pipe(pipes);
@@ -335,6 +365,8 @@ experm:
 		i = gtty(args[0], args[1]);
 		break;
 #endif
+
+	/* HAVE TO FAKE THE SIZE OF DIRECTORIES */
 
 	case STAT:
 		i = stat(args[0], &stat32v);
@@ -571,6 +603,35 @@ fprintf(stderr,"bad PWBSYS %d\n",args[3]);
 		}
 #endif
 		break;
+	case OPEN:
+		/*
+		 * check if we are opening a directory
+		 */
+		if (stat(args[0], &stat32v) >= 0  &&
+		    ((stat32v.st_mode & S_IFMT) == S_IFDIR) &&
+		    ((dp = opendir(args[0])) != NULL)) {
+#ifdef DTRACE
+			fprintf(stderr,"open directory fd %d\n", i);
+#endif
+			i = dp->dd_fd;
+			fdflags[i].fd_dirp = dp;
+			fdflags[i].fd_offset = 0;
+		} else
+			i = open(args[0], args[1]);
+		break;
+	case CLOSE:
+		i = close(args[0]);
+		if (i >= 0 && fdflags[args[0]].fd_dirp) {
+			closedir(fdflags[args[0]].fd_dirp);
+			fdflags[args[0]].fd_dirp = 0;
+		}
+		break;
+	case READ:
+		if ((unsigned)args[0] < NFILES && fdflags[args[0]].fd_dirp)
+			i = oread(args[0], args[1], args[2]);
+		else
+			i = read(args[0], args[1], args[2]);
+		break;
 	}
 #ifdef TRACE
 	fprintf(stderr," sys val -> 0%o\n",i);
@@ -579,7 +640,7 @@ fprintf(stderr,"bad PWBSYS %d\n",args[3]);
 	if (i == -1)
 		psl |= CARRY;
 	/* if not an indirect sys call, adjust the pc */
-	if (indirflg == 0)
+	if (!indirflg && !sigtrapped)
 		pc = argp;
 	/* do alternate return on one side of fork */
 	if (code == FORK && i != 0)
@@ -668,4 +729,107 @@ mapioctl(cmd)
 	if (c && (c&0xff) == (cmd&0xff))
 		return (c);
 	return (0);
+}
+
+/*
+ * emulate a read of n bytes on an old style directory
+ */
+oread(fd, buf, count)
+int fd, count;
+char *buf;
+{
+	struct fdflags *fp;
+	struct direct *dp;
+	DIR *dirp;
+	struct odirect *odp;
+	register int nleft = count;
+	int dir_off;
+	int i;
+
+	fp = &fdflags[fd];
+	dirp = fp->fd_dirp;
+	odp = &fp->fd_od;
+	if (dirp == NULL)
+		return(-1);
+	dir_off = fp->fd_offset % ODSIZE;
+	if (dir_off) {
+		i = ODSIZE - dir_off;
+		if (nleft < i)
+			i = nleft;
+		bcopy((caddr_t)odp + dir_off, buf, i);
+		fp->fd_offset += i;
+		if (i == nleft)
+			return(i);
+		buf += i;
+		nleft -= i;
+	}
+	while (nleft >= ODSIZE) {
+		if ((dp = readdir(dirp)) == NULL)
+			return(count - nleft);
+		odp->od_ino = dp->d_ino;
+		strncpy(odp->od_name, dp->d_name, 14);
+		bcopy((caddr_t)odp, buf, ODSIZE);
+		fp->fd_offset += ODSIZE;
+		buf += ODSIZE;
+		nleft -= ODSIZE;
+	}
+	if (nleft > 0) {
+		if ((dp = readdir(dirp)) == NULL)
+			return(count - nleft);
+		odp->od_ino = dp->d_ino;
+		strncpy(odp->od_name, dp->d_name, 14);
+		bcopy((caddr_t)odp, buf, nleft);
+		fp->fd_offset += nleft;
+		/* nleft = 0; */
+	}
+	return(count);
+}
+
+/*
+ * emulate the lseek system call
+ */
+off_t
+olseek(fd, n, whence)
+int fd, whence;
+off_t n;
+{
+	struct fdflags *fp;
+	char buf[512];
+	off_t newpos;
+	int i, j;
+
+	if ((unsigned)fd >= NFILES)
+		return(-1);
+	fp = &fdflags[fd];
+	/*
+	 * the system can handle everything
+	 * except directory files
+	 */
+	if (fp->fd_dirp == NULL)
+		return(lseek(fd, n, whence));
+	switch (whence) {
+	case 0:
+		newpos = n;
+		break;
+	case 1:
+		newpos = fp->fd_offset + n;
+		break;
+	case 2:		/* not yet implemented */
+	default:
+		return(-1);
+	}
+	if (newpos < 0)
+		return(-1);
+	if (newpos < fp->fd_offset) {
+		rewinddir(fdflags[fd].fd_dirp);
+		fp->fd_offset = 0;
+	}
+	i = newpos - fp->fd_offset;
+	while (i > 0) {
+		j = i < 512 ? i : 512;
+		if (oread(fd, buf, j) != j)
+			break;
+		i -= j;
+	}
+	return(fp->fd_offset);
 }

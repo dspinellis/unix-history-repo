@@ -1,6 +1,9 @@
 /*
- * 	unix7sys.h	4.2	83/07/31
+ * 	unix7sys.h	4.3	84/05/05
  */
+
+/* From Lou Salkind: compat/RCS/unix7sys.h,v 1.2 84/01/31 13:34:22 */
+
 #define	NSYSTRAPS	64
 #define	NSIGS	13
 #define	ILLSYS	-1
@@ -8,7 +11,10 @@
 #define	LONGRET	1
 #define	TWORET	2
 #define	FORK	2
+#define	READ	3
+#define	WRITE	4
 #define	OPEN	5
+#define	CLOSE	6
 #define	WAIT	7
 #define	CREAT	8
 #define	LINK	9

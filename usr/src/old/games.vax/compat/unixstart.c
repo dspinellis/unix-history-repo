@@ -1,5 +1,9 @@
-#
-static char sccsid[] = "	unixstart.c	4.1	82/05/12	";
+#ifndef lint
+static char sccsid[] = "	unixstart.c	4.2	84/05/05	";
+#endif
+
+/* From Lou Salkind: compat/RCS/unixstart.c,v 1.2 84/01/31 13:34:27 */
+
 /*	Start up a version 6 or version 7 pdp-11 UNIX compatability mode
  *	program. Must set up the memory layout with args etc.
  *	Art Wetzel	August 1979
@@ -67,14 +71,10 @@ start(argv, envp) unsigned char **argv, **envp; {
 	}
 	ssp = (unsigned short *)sp;
 #ifdef	V7UNIX
-	/* clear a word */
-	*(--ssp) = 0;
 	/* set up environment pointers */
 	for(i=envc; i>=0; i--) {
 		*(--ssp) = (short)(long)envps[i];
 	}
-	/* clear another word */
-	*(--ssp) = 0;
 #endif
 	/* set up argument pointers */
 	for(i=argc; i>=0; i--) {
