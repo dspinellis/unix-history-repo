@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.6	84/12/27	*/
+/*	sys_generic.c	6.7	85/02/08	*/
 
 #include "param.h"
 #include "systm.h"
@@ -293,7 +293,7 @@ select()
 			u.u_error = EINVAL;
 			goto done;
 		}
-		s = spl7(); timevaladd(&atv, &time); splx(s);
+		s = splhigh(); timevaladd(&atv, &time); splx(s);
 	}
 retry:
 	ncoll = nselcoll;
@@ -301,7 +301,7 @@ retry:
 	u.u_r.r_val1 = selscan(ibits, obits, uap->nd);
 	if (u.u_error || u.u_r.r_val1)
 		goto done;
-	s = spl6();
+	s = splhigh();
 	/* this should be timercmp(&time, &atv, >=) */
 	if (uap->tv && (time.tv_sec > atv.tv_sec ||
 	    time.tv_sec == atv.tv_sec && time.tv_usec >= atv.tv_usec)) {
@@ -348,7 +348,7 @@ done:
 unselect(p)
 	register struct proc *p;
 {
-	register int s = spl6();
+	register int s = splhigh();
 
 	switch (p->p_stat) {
 
@@ -421,7 +421,7 @@ selwakeup(p, coll)
 		wakeup((caddr_t)&selwait);
 	}
 	if (p) {
-		int s = spl6();
+		int s = splhigh();
 		if (p->p_wchan == (caddr_t)&selwait) {
 			if (p->p_stat == SSLEEP)
 				setrun(p);
