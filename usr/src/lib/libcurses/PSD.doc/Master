@@ -2,11 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Master	6.1 (Berkeley) %G%
+.\"	@(#)Master	6.2 (Berkeley) %G%
 .\"
 .ds Ln Screen Package
 .so macros
 .so intro.0
+.pn 3
 .bp
 .so intro.1
 .so intro.2.tbl
@@ -17,10 +18,10 @@
 .so c_macros
 .so appen.B
 .so appen.C
-.he ''\*(Ln''
+.pn 2
+.oh '\*(Ln''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln'
 .bp
-.nr % 1
-.af % i
 .bi Contents
 .sp
 .xp
