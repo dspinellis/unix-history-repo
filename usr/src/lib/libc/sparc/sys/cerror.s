@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- * from: $Header: cerror.s,v 1.1 92/06/25 12:56:39 torek Exp $
+ * from: $Header: cerror.s,v 1.3 92/07/02 04:17:59 torek Exp $
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)cerror.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)cerror.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
@@ -21,5 +21,6 @@
 FUNC(cerror)
 	sethi	%hi(_errno), %g1
 	st	%o0, [%g1 + %lo(_errno)]
+	mov	-1, %o0
 	retl
-	 mov	-1, %o0
+	 mov	-1, %o1
