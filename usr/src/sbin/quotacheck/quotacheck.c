@@ -15,21 +15,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Fix up / report on disk quotas & usage
  */
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <ufs/quota.h>
+#include <fcntl.h>
 #include <fstab.h>
 #include <pwd.h>
 #include <grp.h>
-#include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 char *qfname = QUOTAFILENAME;
 char *qfextension[] = INITQFNAMES;
@@ -153,10 +158,9 @@ main(argc, argv)
 
 usage()
 {
-
-	fprintf(stderr, "Usage:\n\t%s\n\t%s\n",
-		"quotacheck [-g] [-u] [-v] -a",
-		"quotacheck [-g] [-u] [-v] filesys ...");
+	(void) fprintf(stderr, "usage:\t%s\n\t%s\n",
+		"quotacheck -a [-guv]",
+		"quotacheck [-guv] filesys ...");
 	exit(1);
 }
 
@@ -264,27 +268,29 @@ update(fsname, quotafile, type)
 	register FILE *qfi, *qfo;
 	register u_long id, lastid;
 	struct dqblk dqbuf;
-	extern int errno;
 	static int warned = 0;
 	static struct dqblk zerodqbuf;
 	static struct fileusage zerofileusage;
 
 	if ((qfo = fopen(quotafile, "r+")) == NULL) {
-		if (errno != ENOENT) {
-			perror(quotafile);
+		if (errno == ENOENT)
+			qfo = fopen(quotafile, "w+");
+		if (qfo) {
+			(void) fprintf(stderr,
+			    "quotacheck: creating quota file %s\n", quotafile);
+#define	MODE	(S_IRUSR|S_IWUSR|S_IRGRP)
+			(void) fchown(fileno(qfo), getuid(), getquotagid());
+			(void) fchmod(fileno(qfo), MODE);
+		} else {
+			(void) fprintf(stderr,
+			    "quotacheck: %s: %s\n", quotafile, strerror(errno));
 			return (1);
 		}
-		if ((qfo = fopen(quotafile, "w+")) == NULL) {
-			perror(quotafile);
-			return (1);
-		}
-		fprintf(stderr, "Creating quota file %s\n", quotafile);
-		(void) fchown(fileno(qfo), getuid(), getquotagid());
-		(void) fchmod(fileno(qfo), 0640);
 	}
 	if ((qfi = fopen(quotafile, "r")) == NULL) {
-		perror(quotafile);
-		fclose(qfo);
+		(void) fprintf(stderr,
+		    "quotacheck: %s: %s\n", quotafile, strerror(errno));
+		(void) fclose(qfo);
 		return (1);
 	}
 	if (quotactl(fsname, QCMD(Q_SYNC, type), (u_long)0, (caddr_t)0) < 0 &&
@@ -439,7 +445,6 @@ addid(id, type, name)
 {
 	struct fileusage *fup, **fhp;
 	int len;
-	extern char *calloc();
 
 	if (fup = lookup(id, type))
 		return (fup);
