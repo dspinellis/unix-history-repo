@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -279,14 +279,13 @@ struct sstack {
  * Set the global flag "sourcing" so that others will realize
  * that they are no longer reading from a tty (in all probability).
  */
-
-source(name)
-	char name[];
+source(arglist)
+	char **arglist;
 {
-	register FILE *fi;
-	register char *cp;
+	FILE *fi;
+	char *cp;
 
-	if ((cp = expand(name)) == NOSTR)
+	if ((cp = expand(*arglist)) == NOSTR)
 		return(1);
 	if ((fi = fopen(cp, "r")) == NULL) {
 		perror(cp);
