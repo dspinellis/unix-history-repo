@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 # Possible options:
 #	make		compile source for all terminal tables below
 #	make <term>	compile table for a specific <term>
 #	make install	move tables to ${DEST}
 #	make clean	remove tab*.o files lying around
-CFLAGS=	-O
+CFLAGS=	-I../common_source
 LIBC=	/lib/libc.a
 DEST=	${DESTDIR}/usr/lib/term
 SRCS=	tab300-12.c tab300.c tab302-12.c tab302.c tab37.c tab382-12.c \
@@ -23,47 +23,53 @@ OBJS=	tab300-12.o tab300.o tab302-12.o tab302.o tab37.o tab382-12.o \
 	tabitoh.o tabitoh12.o tablpr.o tabnec-t.o tabnec.o tabnec12.o \
 	tabnec25-t.o tabqume.o tabqume12.o tabx-ecs.o tabx-ecs12.o \
 	tabxerox.o tabxerox12.o
-ALL=	37 lpr 300 300-12 302 302-12 382 382-12 450 450-12 833 833-12 \
-	epson itoh itoh12 nec nec12 nec-t nec25-t qume qume12 xerox \
-	xerox12 x-ecs x-ecs12
+ALL=	tab37 tablpr tab300 tab300-12 tab302 tab302-12 tab382 tab382-12 \
+	tab450 tab450-12 tab833 tab833-12 tabepson tabitoh tabitoh12 \
+	tabnec tabnec12 tabnec-t tabnec25-t tabqume tabqume12 tabxerox \
+	tabxerox12 tabx-ecs tabx-ecs12
 
 all: ${ALL}
 
-37:		tab37.o
-lpr:		tablpr.o
-300:		tab300.o 
-300-12:		tab300-12.o 
-302:		tab302.o 
-302-12:		tab302-12.o 
-382:		tab382.o 
-382-12:		tab382-12.o 
-450:		tab450.o 
-450-12:		tab450-12.o 
-833:		tab833.o 
-833-12:		tab833-12.o 
-epson:		tabepson.o
-itoh:		tabitoh.o 
-itoh12:		tabitoh12.o 
-nec:		tabnec.o 
-nec12:		tabnec12.o 
-nec-t:		tabnec-t.o
-nec25-t:	tabnec25-t.o
-qume:		tabqume.o
-qume12:		tabqume12.o
-xerox:		tabxerox.o 
-xerox12:	tabxerox12.o 
-x-ecs:		tabx-ecs.o 
-x-ecs12:	tabx-ecs12.o 
+tab37:		mktab.o tab37.o
+tablpr:		mktab.o tablpr.o
+tab300:		mktab.o tab300.o 
+tab300-12:	mktab.o tab300-12.o 
+tab302:		mktab.o tab302.o 
+tab302-12:	mktab.o tab302-12.o 
+tab382:		mktab.o tab382.o 
+tab382-12:	mktab.o tab382-12.o 
+tab450:		mktab.o tab450.o 
+tab450-12:	mktab.o tab450-12.o 
+tab833:		mktab.o tab833.o 
+tab833-12:	mktab.o tab833-12.o 
+tabepson:	mktab.o tabepson.o
+tabitoh:	mktab.o tabitoh.o 
+tabitoh12:	mktab.o tabitoh12.o 
+tabnec:		mktab.o tabnec.o 
+tabnec12:	mktab.o tabnec12.o 
+tabnec-t:	mktab.o tabnec-t.o
+tabnec25-t:	mktab.o tabnec25-t.o
+tabqume:	mktab.o tabqume.o
+tabqume12:	mktab.o tabqume12.o
+tabxerox:	mktab.o tabxerox.o 
+tabxerox12:	mktab.o tabxerox12.o 
+tabx-ecs:	mktab.o tabx-ecs.o 
+tabx-ecs12:	mktab.o tabx-ecs12.o 
+
+${ALL}:
+	${CC} mktab.o $@.o -o mktab
+	./mktab > $@
 
 clean: FRC
-	rm -f ${OBJS} core
+	rm -f ${OBJS} ${ALL} mktab.o mktab core
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	for file in tab*.o; do \
-		install -s -o bin -g bin -m 755 $$file ${DEST}/`basename $$file .o`; \
+	-mkdir ${DEST}
+	for file in ${ALL}; do \
+		install -c -o bin -g bin -m 755 $$file ${DEST}/$$file; \
 	done
 	rm -f ${DEST}/tabtn300; ln ${DEST}/tablpr ${DEST}/tabtn300
 	rm -f ${DEST}/tabcrt; ln ${DEST}/tablpr ${DEST}/tabcrt
