@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwtty.c	3.2 83/08/12";
+static	char *sccsid = "@(#)wwtty.c	3.3 83/08/23";
 #endif
 
 #include "ww.h"
@@ -25,7 +25,7 @@ register struct ww_tty *t;
 wwsettty(d, t)
 register struct ww_tty *t;
 {
-	if (ioctl(d, (int)TIOCSETP, (char *)&t->ww_sgttyb) < 0)
+	if (ioctl(d, (int)TIOCSETN, (char *)&t->ww_sgttyb) < 0)
 		return -1;
 	if (ioctl(d, (int)TIOCSETC, (char *)&t->ww_tchars) < 0)
 		return -1;
