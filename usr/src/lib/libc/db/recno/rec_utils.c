@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_utils.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_utils.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ __rec_ret(t, e, nrec, key, data)
 			t->bt_dbuf = p;
 			t->bt_dbufsz = rl->dsize + 1;
 		}
-		bcopy(rl->bytes, t->bt_dbuf, t->bt_dbufsz);
+		bcopy(rl->bytes, t->bt_dbuf, rl->dsize);
 		data->size = rl->dsize;
 	}
 	data->data = t->bt_dbuf;
