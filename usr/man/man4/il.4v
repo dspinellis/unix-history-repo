@@ -1,0 +1,38 @@
+.TH IL 4V "25 February 1983"
+.UC 4
+.SH NAME
+il \- Interlan 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device il0 at uba0 csr 161000 flags 0x4e000298 vector ilrint ilcint"
+.SH DESCRIPTION
+The
+.I il
+interface provides access to a 10 Mb/s Ethernet network through
+an Interlan controller.
+In configuring, the flags value is used to define the 
+network to which the interface is attached.
+The host's address
+is discovered at boot time by reading it from the device's command
+register.
+.PP
+The interface handles the Internet protocol family,
+with the interface address maintained in Internet format.
+The three low-order bytes of the board's built-in Ethernet address
+are used as the 24-bit Internet address, and the network number is
+taken from the flags as described above.  The software assumes that
+all Ethernet addresses on the network will have the same three high-order
+bytes.
+.SH DIAGNOSTICS
+\fBil%d: input error\fP.  The hardware indicated an error
+in reading a packet off the cable or an illegally sized packet.
+.PP
+\fBil%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+intro(4N), inet(4F)
+.SH BUGS
+The PUP protocol family should be added.
+.PP
+A better mapping from Ethernet to Internet addresses is needed if one is
+to mix controllers from different vendors on a network.
