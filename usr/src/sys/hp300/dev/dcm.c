@@ -11,11 +11,13 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.1 (Berkeley) %G%
+ *	@(#)dcm.c	7.2 (Berkeley) %G%
  */
 
 /*
- *  Console support is not finished.
+ * TODO:
+ *	Timeouts
+ *	Test console/kgdb support.
  */
 
 #include "dcm.h"
@@ -40,28 +42,26 @@
 #include "machine/cpu.h"
 #include "machine/isr.h"
 
-int	dcmprobe();
+#ifndef DEFAULT_BAUD_RATE
+#define DEFAULT_BAUD_RATE 9600
+#endif
+
+int	ttrstrt();
+int	dcmprobe(), dcmstart(), dcmintr(), dcmparam();
+
 struct	driver dcmdriver = {
 	dcmprobe, "dcm",
 };
 
 #define NDCMLINE (NDCM*4)
 
-int	dcmstart(), dcmparam(), dcmintr();
-int	dcmsoftCAR[NDCM];
-int     dcmintschm[NDCM];
-int	dcm_active;
-int	ndcm = NDCM;
-int	dcmconsole = -1;
-struct	dcmdevice *dcm_addr[NDCM];
 struct	tty dcm_tty[NDCMLINE];
-int	dcm_cnt = NDCMLINE;
-struct	isr dcmisr[NDCM];
-int     dcmintrval = 5; /* rate in secs that interschem is examined */
-long    dcmbang[NDCM];
-int	dcmchrrd[NDCM];	/* chars read during each sample time */
-int     dcmintrocc[NDCM];	/* # of interrupts for each sample time */
+int	ndcm = NDCMLINE;
 
+int	dcm_active;
+int	dcmsoftCAR[NDCM];
+struct	dcmdevice *dcm_addr[NDCM];
+struct	isr dcmisr[NDCM];
 
 struct speedtab dcmspeedtab[] = {
 	0,	BR_0,
@@ -82,6 +82,45 @@ struct speedtab dcmspeedtab[] = {
 	-1,	-1
 };
 
+/* u-sec per character based on baudrate (assumes 1 start/8 data/1 stop bit) */
+#define	DCM_USPERCH(s)	(10000000 / (s))
+
+/*
+ * Per board interrupt scheme.  16.7ms is the polling interrupt rate
+ * (16.7ms is about 550 buad, 38.4k is 72 chars in 16.7ms).
+ */
+#define DIS_TIMER	0
+#define DIS_PERCHAR	1
+#define DIS_RESET	2
+
+int	dcmistype = -1;		/* -1 == dynamic, 0 == timer, 1 == perchar */
+int     dcminterval = 5;	/* interval (secs) between checks */
+struct	dcmischeme {
+	int	dis_perchar;	/* non-zero if interrupting per char */
+	long	dis_time;	/* last time examined */
+	int	dis_intr;	/* recv interrupts during last interval */
+	int	dis_char;	/* characters read during last interval */
+} dcmischeme[NDCM];
+
+/*
+ * Console support
+ */
+int	dcmconsole = -1;
+int	dcmdefaultrate = DEFAULT_BAUD_RATE;
+int	dcmconbrdbusy = 0;
+extern	struct tty *constty;
+
+#ifdef KGDB
+/*
+ * Kernel GDB support
+ */
+extern int kgdb_dev;
+extern int kgdb_rate;
+extern int kgdb_debug_init;
+#endif
+
+/* #define IOSTATS */
+
 #ifdef DEBUG
 int	dcmdebug = 0x00;
 #define DDB_SIOERR	0x01
@@ -89,18 +128,30 @@ int	dcmdebug = 0x00;
 #define DDB_INPUT	0x04
 #define DDB_OUTPUT	0x08
 #define DDB_INTR	0x10
-#define DDB_IOCTL       0x20
-#define DDB_INTSCHM     0x40
-#define DDB_MOD         0x80
+#define DDB_IOCTL	0x20
+#define DDB_INTSCHM	0x40
+#define DDB_MODEM	0x80
 #define DDB_OPENCLOSE	0x100
-
-long unsigned int dcmrsize[33];	/* read sizes, 32 for over 31, 0 for 0 */
 #endif
 
-extern	struct tty *constty;
+#ifdef IOSTATS
+#define	DCMRBSIZE	94
+#define DCMXBSIZE	24
+
+struct	dcmstats {
+	long	xints;		    /* # of xmit ints */
+	long	xchars;		    /* # of xmit chars */
+	long	xempty;		    /* times outq is empty in dcmstart */
+	long	xrestarts;	    /* times completed while xmitting */
+	long	rints;		    /* # of recv ints */
+	long	rchars;		    /* # of recv chars */
+	long	xsilo[DCMXBSIZE+2]; /* times this many chars xmit on one int */
+	long	rsilo[DCMRBSIZE+2]; /* times this many chars read on one int */
+} dcmstats[NDCM];
+#endif
 
 #define UNIT(x)		minor(x)
-#define	BOARD(x)	((x) >> 2)
+#define	BOARD(x)	(((x) >> 2) & 0x3f)
 #define PORT(x)		((x) & 3)
 #define MKUNIT(b,p)	(((b) << 2) | (p))
 
@@ -110,67 +161,87 @@ dcmprobe(hd)
 	register struct dcmdevice *dcm;
 	register int i;
 	register int timo = 0;
-	int s, brd;
+	int s, brd, isconsole;
 
 	dcm = (struct dcmdevice *)hd->hp_addr;
 	if ((dcm->dcm_rsid & 0x1f) != DCMID)
 		return (0);
 	brd = hd->hp_unit;
+	isconsole = (brd == BOARD(dcmconsole));
+	/*
+	 * XXX selected console device (CONSUNIT) as determined by
+	 * dcmcnprobe does not agree with logical numbering imposed
+	 * by the config file (i.e. lowest address DCM is not unit
+	 * CONSUNIT).  Don't recognize this card.
+	 */
+	if (isconsole && dcm != dcm_addr[BOARD(dcmconsole)])
+		return(0);
+
+	/*
+	 * Empirically derived self-test magic
+	 */
 	s = spltty();
 	dcm->dcm_rsid = DCMRS;
 	DELAY(50000);	/* 5000 is not long enough */
 	dcm->dcm_rsid = 0; 
 	dcm->dcm_ic = IC_IE;
 	dcm->dcm_cr = CR_SELFT;
-	while ((dcm->dcm_ic & IC_IR) == 0) {
-		if (++timo == 20000) {
-			printf("dcm%d: timeout on selftest interrupt\n", brd);
-			printf("dcm%d:rsid %x, ic %x, cr %x, iir %x\n",
-			       brd, dcm->dcm_rsid, dcm->dcm_ic,
-			       dcm->dcm_cr, dcm->dcm_iir);
+	while ((dcm->dcm_ic & IC_IR) == 0)
+		if (++timo == 20000)
 			return(0);
-		}
-	}
 	DELAY(50000)	/* XXX why is this needed ???? */
-	while ((dcm->dcm_iir & IIR_SELFT) == 0) {
-		if (++timo == 400000) {
-			printf("dcm%d: timeout on selftest\n", brd);
-			printf("dcm%d:rsid %x, ic %x, cr %x, iir %x\n",
-			       brd, dcm->dcm_rsid, dcm->dcm_ic,
-			       dcm->dcm_cr, dcm->dcm_iir);
+	while ((dcm->dcm_iir & IIR_SELFT) == 0)
+		if (++timo == 400000)
 			return(0);
-		}
-	}
 	DELAY(50000)	/* XXX why is this needed ???? */
 	if (dcm->dcm_stcon != ST_OK) {
-		printf("dcm%d: self test failed: %x\n", brd, dcm->dcm_stcon);
+		if (!isconsole)
+			printf("dcm%d: self test failed: %x\n",
+			       brd, dcm->dcm_stcon);
 		return(0);
 	}
 	dcm->dcm_ic = IC_ID;
 	splx(s);
 
 	hd->hp_ipl = DCMIPL(dcm->dcm_ic);
-	dcmisr[brd].isr_ipl = hd->hp_ipl;
-	dcmisr[brd].isr_arg = brd;
-	dcmisr[brd].isr_intr = dcmintr;
 	dcm_addr[brd] = dcm;
 	dcm_active |= 1 << brd;
 	dcmsoftCAR[brd] = hd->hp_flags;
-	dcmintschm[brd] = 1;	/* start with interrupt/char */
-	for (i = 0; i < 256; i++)
-		dcm->dcm_bmap[i].data_data = 0x0f;
-	dcmintrocc[brd] = 0;
-	dcmchrrd[brd] = 0;
+	dcmisr[brd].isr_ipl = hd->hp_ipl;
+	dcmisr[brd].isr_arg = brd;
+	dcmisr[brd].isr_intr = dcmintr;
 	isrlink(&dcmisr[brd]);
-	dcm->dcm_mdmmsk = MI_CD;	/* Enable carrier detect interrupts */
-	dcm->dcm_ic = IC_IE;	/* turn interrupts on */
+#ifdef KGDB
+	if (major(kgdb_dev) == 2 && BOARD(kgdb_dev) == brd) {
+		if (dcmconsole == UNIT(kgdb_dev))
+			kgdb_dev = -1;	/* can't debug over console port */
+		else {
+			(void) dcminit(kgdb_dev, kgdb_rate);
+			if (kgdb_debug_init) {
+				printf("dcm%d: kgdb waiting...",
+				       UNIT(kgdb_dev));
+				/* trap into kgdb */
+				asm("trap #15;");
+				printf("connected.\n");
+			} else
+				printf("dcm%d: kgdb enabled\n",
+				       UNIT(kgdb_dev));
+		}
+	}
+#endif
+	if (dcmistype == DIS_TIMER)
+		dcmsetischeme(brd, DIS_RESET|DIS_TIMER);
+	else
+		dcmsetischeme(brd, DIS_RESET|DIS_PERCHAR);
+	dcm->dcm_mdmmsk = MI_CD;	/* enable modem carrier detect intr */
+	dcm->dcm_ic = IC_IE;		/* turn all interrupts on */
 	/*
 	 * Need to reset baud rate, etc. of next print so reset dcmconsole.
 	 * Also make sure console is always "hardwired"
 	 */
-	if (brd == BOARD(dcmconsole)) {
-		dcmsoftCAR[brd] |= (1 << PORT(dcmconsole));
+	if (isconsole) {
 		dcmconsole = -1;
+		dcmsoftCAR[brd] |= (1 << PORT(dcmconsole));
 	}
 	return (1);
 }
@@ -180,15 +251,19 @@ dcmopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit, brd;
+	int error;
 
 	unit = UNIT(dev);
 	brd = BOARD(unit);
-	dcmbang[brd] = time.tv_sec;	/* for interrupt scheme */
-	if (unit >= dcm_cnt || (dcm_active & (1 << brd)) == 0)
+	if (unit >= NDCMLINE || (dcm_active & (1 << brd)) == 0)
 		return (ENXIO);
+#ifdef KGDB
+	if (unit == UNIT(kgdb_dev))
+		return (EBUSY);
+#endif
 	tp = &dcm_tty[unit];
 	tp->t_oproc = dcmstart;
-	tp->t_param = dcaparam;
+	tp->t_param = dcmparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
@@ -197,7 +272,7 @@ dcmopen(dev, flag)
 		tp->t_cflag = TTYDEF_CFLAG;
 		tp->t_lflag = TTYDEF_LFLAG;
 		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
-		dcmparam(tp, &tp->t_termios);
+		(void) dcmparam(tp, &tp->t_termios);
 		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
@@ -213,7 +288,12 @@ dcmopen(dev, flag)
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				   ttopen, 0)) {
+			tp->t_state &= ~TS_WOPEN;
+			(void) spl0();
+			return (error);
+		}
 	}
 	(void) spl0();
 
@@ -265,19 +345,28 @@ dcmwrite(dev, uio, flag)
 	register struct tty *tp;
  
 	tp = &dcm_tty[unit];
-	if (unit == dcmconsole && constty &&
-	    (constty->t_state&(TS_CARR_ON|TS_ISOPEN))==(TS_CARR_ON|TS_ISOPEN))
-		tp = constty;
+	/*
+	 * XXX we disallow virtual consoles if the physical console is
+	 * a serial port.  This is in case there is a display attached that
+	 * is not the console.  In that situation we don't need/want the X
+	 * server taking over the console.
+	 */
+	if (constty && unit == dcmconsole)
+		constty = NULL;
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
  
 dcmintr(brd)
 	register int brd;
 {
-	register struct dcmdevice *dcm;
+	register struct dcmdevice *dcm = dcm_addr[brd];
+	register struct dcmischeme *dis;
 	int i, code, pcnd[4], mcnd, delta;
 
-	dcm = dcm_addr[brd];
+	/*
+	 * Do all guarded register accesses right off to minimize
+	 * block out of hardware.
+	 */
 	SEM_LOCK(dcm);
 	if ((dcm->dcm_ic & IC_IR) == 0) {
 		SEM_UNLOCK(dcm);
@@ -289,15 +378,16 @@ dcmintr(brd)
 	}
 	mcnd = dcm->dcm_mdmin;
 	code = dcm->dcm_iir & IIR_MASK;
-	dcm->dcm_iir = 0;
+	dcm->dcm_iir = 0;	/* XXX doc claims read clears interrupt?! */
 	SEM_UNLOCK(dcm);
 
 #ifdef DEBUG
 	if (dcmdebug & DDB_INTR)
-		printf("dcmintr: iir %x p0 %x p1 %x p2 %x p3 %x m %x\n", 
-			code, pcnd[0], pcnd[1], pcnd[2], 
-			pcnd[3], mcnd);
+		printf("dcmintr(%d): iir %x p0 %x p1 %x p2 %x p3 %x m %x\n", 
+		       brd, code, pcnd[0], pcnd[1], pcnd[2], pcnd[3], mcnd);
 #endif
+	if (code & IIR_TIMEO)
+		dcmrint(brd, dcm);
 	if (code & IIR_PORT0)
 		dcmpint(MKUNIT(brd, 0), pcnd[0], dcm);
 	if (code & IIR_PORT1)
@@ -308,34 +398,45 @@ dcmintr(brd)
 		dcmpint(MKUNIT(brd, 3), pcnd[3], dcm);
 	if (code & IIR_MODM)
 		dcmmint(MKUNIT(brd, 0), mcnd, dcm);	/* always port 0 */
-	if (code & IIR_TIMEO)
-		dcmrint(brd, dcm);
 
+	dis = &dcmischeme[brd];
 	/*
-	 * See if need to change interrupt rate.
-	 * 16.7ms is the polling interrupt rate.
-	 * Reference: 16.7ms is about 550 buad; 38.4k is 72 chars in 16.7ms
+	 * Chalk up a receiver interrupt if the timer running or one of
+	 * the ports reports a special character interrupt.
 	 */
-	if ((delta = time.tv_sec - dcmbang[brd]) >= dcmintrval) {  
-		dcmbang[brd] = time.tv_sec;
+	if ((code & IIR_TIMEO) ||
+	    ((pcnd[0]|pcnd[1]|pcnd[2]|pcnd[3]) & IT_SPEC))
+		dis->dis_intr++;
+	/*
+	 * See if it is time to check/change the interrupt rate.
+	 */
+	if (dcmistype < 0 &&
+	    (delta = time.tv_sec - dis->dis_time) >= dcminterval) {
 		/*
-		 * 66 threshold of 600 buad, use 70
+		 * If currently per-character and averaged over 70 interrupts
+		 * per-second (66 is threshold of 600 baud) in last interval,
+		 * switch to timer mode.
+		 *
+		 * XXX decay counts ala load average to avoid spikes?
 		 */
-		if (dcmintschm[brd] && dcmintrocc[brd] > 70 * delta)
-			dcm_setintrschm(dcm, 0, brd);
-		else if (!dcmintschm[brd] && dcmintrocc[brd] > dcmchrrd[brd]) {
-			dcm_setintrschm(dcm, 1, brd);
-			/*
-			 * Must check the receive queue after switch
-			 * from polling mode to interrupt/char
-			 */
+		if (dis->dis_perchar && dis->dis_intr > 70 * delta)
+			dcmsetischeme(brd, DIS_TIMER);
+		/*
+		 * If currently using timer and had more interrupts than
+		 * received characters in the last interval, switch back
+		 * to per-character.  Note that after changing to per-char
+		 * we must process any characters already in the queue
+		 * since they may have arrived before the bitmap was setup.
+		 *
+		 * XXX decay counts?
+		 */
+		else if (!dis->dis_perchar && dis->dis_intr > dis->dis_char) {
+			dcmsetischeme(brd, DIS_PERCHAR);
 			dcmrint(brd, dcm);
 		}
-		dcmintrocc[brd] = 0;
-		dcmchrrd[brd] = 0;
-	} else
-		dcmintrocc[brd]++;
-
+		dis->dis_intr = dis->dis_char = 0;
+		dis->dis_time = time.tv_sec;
+	}
 	return(1);
 }
 
@@ -346,79 +447,95 @@ dcmintr(brd)
  */
 dcmpint(unit, code, dcm)
 	int unit, code;
-	register struct dcmdevice *dcm;
+	struct dcmdevice *dcm;
 {
-	register struct tty *tp;
-	register int port = PORT(unit);
+	struct tty *tp = &dcm_tty[unit];
 
-	if (code & IT_SPEC) {
-		tp = &dcm_tty[unit];
-		if ((tp->t_state & TS_ISOPEN) != 0)
-			dcmreadbuf(unit, dcm, tp, port);
-		else
-			dcm->dcm_rhead[port].ptr = dcm->dcm_rtail[port].ptr & RX_MASK;
-	}
+	if (code & IT_SPEC)
+		dcmreadbuf(unit, dcm, tp);
 	if (code & IT_TX)
-		dcmxint(unit, dcm);
+		dcmxint(unit, dcm, tp);
 }
 
 dcmrint(brd, dcm)
 	int brd;
 	register struct dcmdevice *dcm;
 {
-	register struct tty *tp;
 	register int i, unit;
+	register struct tty *tp;
 
 	unit = MKUNIT(brd, 0);
 	tp = &dcm_tty[unit];
-	for (i = 0; i < 4; i++, tp++, unit++) {
-		/* TS_WOPEN catch race when switching to polling mode */
-		if ((tp->t_state & (TS_ISOPEN|TS_WOPEN)) != 0)
-			dcmreadbuf(unit, dcm, tp, i);
-		else
-			dcm->dcm_rhead[i].ptr = dcm->dcm_rtail[i].ptr & RX_MASK;
-	}
+	for (i = 0; i < 4; i++, tp++, unit++)
+		dcmreadbuf(unit, dcm, tp);
 }
 
-dcmreadbuf(unit, dcm, tp, port)
+dcmreadbuf(unit, dcm, tp)
 	int unit;
 	register struct dcmdevice *dcm;
 	register struct tty *tp;
-	register int port;
 {
+	int port = PORT(unit);
+	register struct dcmpreg *pp = dcm_preg(dcm, port);
+	register struct dcmrfifo *fifo;
 	register int c, stat;
 	register unsigned head;
-	unsigned tail;
-#ifdef DEBUG
-	int silocnt;
-	silocnt = 0;
-#endif /* DEBUG */
+	int nch = 0;
+#ifdef IOSTATS
+	struct dcmstats *dsp = &dcmstats[BOARD(unit)];
 
-readrestart:
-	head = dcm->dcm_rhead[port].ptr & RX_MASK;
-	tail = dcm->dcm_rtail[port].ptr & RX_MASK;
-
-	while (head != tail) {
-		c = dcm->dcm_rfifos[3 - port][head / 2].data_char;
-		stat = dcm->dcm_rfifos[3 - port][head / 2].data_stat;
-		dcmchrrd[BOARD(unit)]++;
-#ifdef DEBUG
-		silocnt++;
+	dsp->rints++;
 #endif
+	/*
+	 * TS_WOPEN catches a race when switching to polling mode from dcmrint
+	 */
+	if ((tp->t_state & (TS_ISOPEN|TS_WOPEN)) == 0) {
+#ifdef KGDB
+		if (unit == UNIT(kgdb_dev) &&
+		    (head = pp->r_head & RX_MASK) != (pp->r_tail & RX_MASK) &&
+		    dcm->dcm_rfifos[3-port][head>>1].data_char == '!') {
+			pp->r_head = (head + 2) & RX_MASK;
+			printf("kgdb trap from dcm%d\n", unit);
+			/* trap into kgdb */
+			asm("trap #15;");
+			return;
+		}
+#endif
+		pp->r_head = pp->r_tail & RX_MASK;
+		return;
+	}
+
+	head = pp->r_head & RX_MASK;
+	fifo = &dcm->dcm_rfifos[3-port][head>>1];
+	/*
+	 * XXX upper bound on how many chars we will take in one swallow?
+	 */
+	while (head != (pp->r_tail & RX_MASK)) {
+		/*
+		 * Get character/status and update head pointer as fast
+		 * as possible to make room for more characters.
+		 */
+		c = fifo->data_char;
+		stat = fifo->data_stat;
 		head = (head + 2) & RX_MASK;
-		dcm->dcm_rhead[port].ptr = head;
+		pp->r_head = head;
+		fifo = head ? fifo+1 : &dcm->dcm_rfifos[3-port][0];
+		nch++;
 
 #ifdef DEBUG
 		if (dcmdebug & DDB_INPUT)
-			printf("dcmreadbuf: u%d p%d c%x s%x f%x h%x t%x char %c\n",
-			       BOARD(unit), PORT(unit), c&0xFF, stat&0xFF,
-			       tp->t_flags, head, tail, c);
+			printf("dcmreadbuf(%d): c%x('%c') s%x f%x h%x t%x\n",
+			       unit, c&0xFF, c, stat&0xFF,
+			       tp->t_flags, head, pp->r_tail);
 #endif
-		if (stat & RD_MASK) {	/* Check for errors */
+		/*
+		 * Check for and handle errors
+		 */
+		if (stat & RD_MASK) {
 #ifdef DEBUG
-			if (dcmdebug & DDB_INPUT || dcmdebug & DDB_SIOERR)
-				printf("dcm%d port%d: data error: stat 0x%x data 0x%x chr %c\n",
-				       BOARD(unit), PORT(unit), stat, c, c);
+			if (dcmdebug & (DDB_INPUT|DDB_SIOERR))
+				printf("dcmreadbuf(%d): err: c%x('%c') s%x\n",
+				       unit, stat, c&0xFF, c);
 #endif
 			if (stat & (RD_BD | RD_FE))
 				c |= TTY_FE;
@@ -426,35 +543,28 @@ readrestart:
 				c |= TTY_PE;
 			else if (stat & RD_OVF)
 				log(LOG_WARNING,
-				    "dcm%d port%d: silo overflow\n",
-				    BOARD(unit), PORT(unit));
+				    "dcm%d: silo overflow\n", unit);
 			else if (stat & RD_OE)
 				log(LOG_WARNING,
-				    "dcm%d port%d: uart overflow\n",
-				    BOARD(unit), PORT(unit));
+				    "dcm%d: uart overflow\n", unit);
 		}
 		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
-	/* for higher speed need to processes everything that might
-	 * have arrived since we started; see if tail changed */
-	if (tail != dcm->dcm_rtail[port].ptr & RX_MASK)
-		goto readrestart;
-
-#ifdef DEBUG
-	if (silocnt < 33)
-		dcmrsize[silocnt]++;
+	dcmischeme[BOARD(unit)].dis_char += nch;
+#ifdef IOSTATS
+	dsp->rchars += nch;
+	if (nch <= DCMRBSIZE)
+		dsp->rsilo[nch]++;
 	else
-		dcmrsize[32]++;
+		dsp->rsilo[DCMRBSIZE+1]++;
 #endif
 }
 
-dcmxint(unit, dcm)
+dcmxint(unit, dcm, tp)
 	int unit;
 	struct dcmdevice *dcm;
-{
 	register struct tty *tp;
-
-	tp = &dcm_tty[unit];
+{
 	tp->t_state &= ~TS_BUSY;
 	if (tp->t_state & TS_FLUSH)
 		tp->t_state &= ~TS_FLUSH;
@@ -472,9 +582,9 @@ dcmmint(unit, mcnd, dcm)
 	register struct tty *tp;
 
 #ifdef DEBUG
-	if (dcmdebug & DDB_MOD)
+	if (dcmdebug & DDB_MODEM)
 		printf("dcmmint: unit %x mcnd %x\n", unit, mcnd);
-#endif DEBUG
+#endif
 	tp = &dcm_tty[unit];
 	if ((dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0) {
 		if (mcnd & MI_CD)
@@ -484,6 +594,7 @@ dcmmint(unit, mcnd, dcm)
 			SEM_LOCK(dcm);
 			dcm->dcm_cr |= CR_MODM;
 			SEM_UNLOCK(dcm);
+			DELAY(10); /* time to change lines */
 		}
 	}
 }
@@ -496,7 +607,7 @@ dcmioctl(dev, cmd, data, flag)
 	register int unit = UNIT(dev);
 	register struct dcmdevice *dcm;
 	register int port;
-	int error;
+	int error, s;
  
 #ifdef DEBUG
 	if (dcmdebug & DDB_IOCTL)
@@ -515,16 +626,23 @@ dcmioctl(dev, cmd, data, flag)
 	dcm = dcm_addr[BOARD(unit)];
 	switch (cmd) {
 	case TIOCSBRK:
-		dcm->dcm_cmdtab[port].dcm_data = CT_BRK;
+		/*
+		 * Wait for transmitter buffer to empty
+		 */
+		s = spltty();
+		while (dcm->dcm_thead[port].ptr != dcm->dcm_ttail[port].ptr)
+			DELAY(DCM_USPERCH(tp->t_ospeed));
 		SEM_LOCK(dcm);
-		dcm->dcm_cr = (1 << port);	/* start break */
+		dcm->dcm_cmdtab[port].dcm_data |= CT_BRK;
+		dcm->dcm_cr |= (1 << port);	/* start break */
 		SEM_UNLOCK(dcm);
+		splx(s);
 		break;
 
 	case TIOCCBRK:
-		dcm->dcm_cmdtab[port].dcm_data = CT_BRK;
 		SEM_LOCK(dcm);
-		dcm->dcm_cr = (1 << port);	/* end break */
+		dcm->dcm_cmdtab[port].dcm_data |= CT_BRK;
+		dcm->dcm_cr |= (1 << port);	/* end break */
 		SEM_UNLOCK(dcm);
 		break;
 
@@ -563,11 +681,9 @@ dcmparam(tp, t)
 	register struct termios *t;
 {
 	register struct dcmdevice *dcm;
-	register int mode, cflag = t->c_cflag;
-	register int port;
-	int unit = UNIT(tp->t_dev);
+	register int port, mode, cflag = t->c_cflag;
 	int ospeed = ttspeedtab(t->c_ospeed, dcmspeedtab);
- 
+
 	/* check requested parameters */
         if (ospeed < 0 || (t->c_ispeed && t->c_ispeed != t->c_ospeed))
                 return(EINVAL);
@@ -575,14 +691,12 @@ dcmparam(tp, t)
         tp->t_ispeed = t->c_ispeed;
         tp->t_ospeed = t->c_ospeed;
         tp->t_cflag = cflag;
-
-	dcm = dcm_addr[BOARD(unit)];
 	if (ospeed == 0) {
-		(void) dcmmctl(unit, MO_OFF, DMSET);	/* hang up line */
-		return;
+		(void) dcmmctl(UNIT(tp->t_dev), MO_OFF, DMSET);
+		return(0);
 	}
-	port = PORT(unit);
-	dcm->dcm_data[port].dcm_baud = ospeed;
+
+	mode = 0;
 	switch (cflag&CSIZE) {
 	case CS5:
 		mode = LC_5BITS; break;
@@ -605,36 +719,61 @@ dcmparam(tp, t)
 		mode |= LC_1STOP;
 #ifdef DEBUG
 	if (dcmdebug & DDB_PARAM)
-		printf("dcmparam: unit %d cflag %x mode %x speed %x\n",
-		       unit, cflag, mode, ospeed);
+		printf("dcmparam(%d): cflag %x mode %x speed %d uperch %d\n",
+		       UNIT(tp->t_dev), cflag, mode, tp->t_ospeed,
+		       DCM_USPERCH(tp->t_ospeed));
 #endif
-	/* wait for transmitter buffer to empty */
-	while (dcm->dcm_thead[port].ptr != dcm->dcm_ttail[port].ptr)
-		;
 
+	port = PORT(tp->t_dev);
+	dcm = dcm_addr[BOARD(tp->t_dev)];
+	/*
+	 * Wait for transmitter buffer to empty.
+	 */
+	while (dcm->dcm_thead[port].ptr != dcm->dcm_ttail[port].ptr)
+		DELAY(DCM_USPERCH(tp->t_ospeed));
+	/*
+	 * Make changes known to hardware.
+	 */
+	dcm->dcm_data[port].dcm_baud = ospeed;
 	dcm->dcm_data[port].dcm_conf = mode;
-	dcm->dcm_cmdtab[port].dcm_data = CT_CON;
 	SEM_LOCK(dcm);
-	dcm->dcm_cr = (1 << port);
+	dcm->dcm_cmdtab[port].dcm_data |= CT_CON;
+	dcm->dcm_cr |= (1 << port);
 	SEM_UNLOCK(dcm);
+	/*
+	 * Delay for config change to take place. Weighted by buad.
+	 * XXX why do we do this?
+	 */
+	DELAY(16 * DCM_USPERCH(tp->t_ospeed));
+	return(0);
 }
  
 dcmstart(tp)
 	register struct tty *tp;
 {
 	register struct dcmdevice *dcm;
-	int s, unit, c;
-	register int tail, next, head, port;
-	int restart = 0, nch = 0;
- 
-	unit = UNIT(tp->t_dev);
-	port = PORT(unit);
-	dcm = dcm_addr[BOARD(unit)];
+	register struct dcmpreg *pp;
+	register struct dcmtfifo *fifo;
+	register char *bp;
+	register unsigned tail, next;
+	register int port, nch;
+	unsigned head;
+	char buf[16];
+	int s;
+#ifdef IOSTATS
+	struct dcmstats *dsp = &dcmstats[BOARD(tp->t_dev)];
+	int tch = 0;
+#endif
+
 	s = spltty();
+#ifdef IOSTATS
+	dsp->xints++;
+#endif
 #ifdef DEBUG
 	if (dcmdebug & DDB_OUTPUT)
-		printf("dcmstart: unit %d state %x flags %x outcc %d\n",
-		       unit, tp->t_state, tp->t_flags, tp->t_outq.c_cc);
+		printf("dcmstart(%d): state %x flags %x outcc %d\n",
+		       UNIT(tp->t_dev), tp->t_state, tp->t_flags,
+		       tp->t_outq.c_cc);
 #endif
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
@@ -649,37 +788,87 @@ dcmstart(tp)
 			tp->t_state &= ~TS_WCOLL;
 		}
 	}
-	tail = dcm->dcm_ttail[port].ptr & TX_MASK;
-	next = (dcm->dcm_ttail[port].ptr + 1) & TX_MASK;
-	head = dcm->dcm_thead[port].ptr & TX_MASK;
-#ifdef DEBUG
-      if (dcmdebug & DDB_OUTPUT)
-              printf("\thead %x tail %x next %x\n",
-                     head, tail, next);
+	if (tp->t_outq.c_cc == 0) {
+#ifdef IOSTATS
+		dsp->xempty++;
 #endif
-	if (tail == head && tp->t_outq.c_cc)
-		restart++;
-	while (tp->t_outq.c_cc && next != head) {
-		nch++;
-		c = getc(&tp->t_outq);
-		dcm->dcm_tfifos[3 - port][tail].data_char = c;
-		dcm->dcm_ttail[port].ptr = next;
-		tail = next;
-		next = (tail + 1) & TX_MASK;
+		goto out;
 	}
-	if (restart && nch) {
+
+	dcm = dcm_addr[BOARD(tp->t_dev)];
+	port = PORT(tp->t_dev);
+	pp = dcm_preg(dcm, port);
+	tail = pp->t_tail & TX_MASK;
+	next = (tail + 1) & TX_MASK;
+	head = pp->t_head & TX_MASK;
+	if (head == next)
+		goto out;
+	fifo = &dcm->dcm_tfifos[3-port][tail];
+again:
+	nch = q_to_b(&tp->t_outq, buf, (head - next) & TX_MASK);
+#ifdef IOSTATS
+	tch += nch;
+#endif
+#ifdef DEBUG
+	if (dcmdebug & DDB_OUTPUT)
+		printf("\thead %x tail %x nch %d\n", head, tail, nch);
+#endif
+	/*
+	 * Loop transmitting all the characters we can.
+	 */
+	for (bp = buf; --nch >= 0; bp++) {
+		fifo->data_char = *bp;
+		pp->t_tail = next;
+		/*
+		 * If this is the first character,
+		 * get the hardware moving right now.
+		 */
+		if (bp == buf) {
+			tp->t_state |= TS_BUSY;
+			SEM_LOCK(dcm);
+			dcm->dcm_cmdtab[port].dcm_data |= CT_TX;
+			dcm->dcm_cr |= (1 << port);
+			SEM_UNLOCK(dcm);
+		}
+		tail = next;
+		fifo = tail ? fifo+1 : &dcm->dcm_tfifos[3-port][0];
+		next = (next + 1) & TX_MASK;
+	}
+	/*
+	 * Head changed while we were loading the buffer,
+	 * go back and load some more if we can.
+	 */
+	if (tp->t_outq.c_cc && head != (pp->t_head & TX_MASK)) {
+#ifdef IOSTATS
+		dsp->xrestarts++;
+#endif
+		head = pp->t_head & TX_MASK;
+		goto again;
+	}
+	/*
+	 * Kick it one last time in case it finished while we were
+	 * loading the last time.
+	 */
+	if (bp > &buf[1]) {
 		tp->t_state |= TS_BUSY;
 		SEM_LOCK(dcm);
-#ifdef DEBUG
-	if (dcmdebug & DDB_INTR)
-		printf("TX on port %d head %x tail %x cc %d\n",
-			port, tail, head, tp->t_outq.c_cc);
-#endif
-		dcm->dcm_cmdtab[port].dcm_data = CT_TX;
-		dcm->dcm_cr = (1 << port);
+		dcm->dcm_cmdtab[port].dcm_data |= CT_TX;
+		dcm->dcm_cr |= (1 << port);
 		SEM_UNLOCK(dcm);
 	}
+#ifdef DEBUG
+	if (dcmdebug & DDB_INTR)
+		printf("dcmstart(%d): head %x tail %x outqcc %d ch %d\n",
+		       UNIT(tp->t_dev), head, tail, tp->t_outq.c_cc, tch);
+#endif
 out:
+#ifdef IOSTATS
+	dsp->xchars += tch;
+	if (tch <= DCMXBSIZE)
+		dsp->xsilo[tch]++;
+	else
+		dsp->xsilo[DCMXBSIZE+1]++;
+#endif
 	splx(s);
 }
  
@@ -693,6 +882,7 @@ dcmstop(tp, flag)
 
 	s = spltty();
 	if (tp->t_state & TS_BUSY) {
+		/* XXX is there some way to safely stop transmission? */
 		if ((tp->t_state&TS_TTSTOP)==0)
 			tp->t_state |= TS_FLUSH;
 	}
@@ -708,8 +898,10 @@ dcmmctl(dev, bits, how)
 	register struct dcmdevice *dcm;
 	int s, hit = 0;
 
-	/* Only port 0 has modem control lines. For right now the following */
-	/* is ok, but needs to changed for the 8 port board. */
+	/*
+	 * Only port 0 has modem control lines.
+	 * XXX ok for now but needs to changed for the 8 port board.
+	 */
 	if (PORT(UNIT(dev)) != 0)
 		return(bits);
 
@@ -740,89 +932,193 @@ dcmmctl(dev, bits, how)
 		SEM_LOCK(dcm);
 		dcm->dcm_cr |= CR_MODM;
 		SEM_UNLOCK(dcm);
+		DELAY(10); /* delay until done */
 		(void) splx(s);
 	}
 	return(bits);
 }
 
-dcm_setintrschm(dcm, request, brd)
-     register struct dcmdevice *dcm;
-     int request, brd;
+/*
+ * Set board to either interrupt per-character or at a fixed interval.
+ */
+dcmsetischeme(brd, flags)
+	int brd, flags;
 {
+	register struct dcmdevice *dcm = dcm_addr[brd];
+	register struct dcmischeme *dis = &dcmischeme[brd];
 	register int i;
+	u_char mask;
+	int perchar = flags & DIS_PERCHAR;
 
 #ifdef DEBUG
-	if (dcmdebug & DDB_INTSCHM) {
-		printf("dcm%d set intr schm request %d int state %x silo hist \n\t",
-		       brd, request, dcmintschm[brd]);
-		for (i = 0; i < 33; i++)  {
-			printf("  %u", dcmrsize[i]);
-			dcmrsize[i] = 0;
-		}
-		printf("\n");
-	}
-#endif /* DEBUG */
-
-	/* if request true then we interrupt per char, else use card */
-	/* polling interrupt hardware */
-#ifdef DEBUG
-	if (request == dcmintschm[brd]) { 
-		printf("dcm%d setintrschm redundent request %x current %x\n",
-		       brd, request, dcmintschm[brd]);
+	if (dcmdebug & DDB_INTSCHM)
+		printf("dcmsetischeme(%d, %d): cur %d, ints %d, chars %d\n",
+		       brd, perchar, dis->dis_perchar,
+		       dis->dis_intr, dis->dis_char);
+	if ((flags & DIS_RESET) == 0 && perchar == dis->dis_perchar) {
+		printf("dcmsetischeme(%d):  redundent request %d\n",
+		       brd, perchar);
 		return;
 	}
-#endif /* DEBUG */
-	if (request) {
-		for (i = 0; i < 256; i++)
-			dcm->dcm_bmap[i].data_data = 0x0f;
-		dcmintschm[brd] = 1;
+#endif
+	/*
+	 * If perchar is non-zero, we enable interrupts on all characters
+	 * otherwise we disable perchar interrupts and use periodic
+	 * polling interrupts.
+	 */
+	dis->dis_perchar = perchar;
+	mask = perchar ? 0xf : 0x0;
+	for (i = 0; i < 256; i++)
+		dcm->dcm_bmap[i].data_data = mask;
+	/*
+	 * Don't slow down tandem mode, interrupt on flow control
+	 * chars for any port on the board.
+	 */
+	if (!perchar) {
+		register struct tty *tp = &dcm_tty[MKUNIT(brd, 0)];
+		int c;
+
+		for (i = 0; i < 4; i++, tp++) {
+			if ((c = tp->t_cc[VSTART]) != _POSIX_VDISABLE)
+				dcm->dcm_bmap[c].data_data |= (1 << i);
+			if ((c = tp->t_cc[VSTOP]) != _POSIX_VDISABLE)
+				dcm->dcm_bmap[c].data_data |= (1 << i);
+		}
 	}
-	else {
-		for (i = 0; i < 256; i++) 
-			dcm->dcm_bmap[i].data_data = 0x00;
-		/*
-		 * Don't slow down tandem mode, interrupt on these chars.
-		 * XXX bad assumption, everyone uses ^Q, ^S for flow
-		 */
-		dcm->dcm_bmap[0x11].data_data = 0x0f;
-		dcm->dcm_bmap[0x13].data_data = 0x0f;
-		dcmintschm[brd] = 0;
-	}
-	while (dcm->dcm_cr & CR_TIMER) ;
+	/*
+	 * Board starts with timer disabled so if first call is to
+	 * set perchar mode then we don't want to toggle the timer.
+	 */
+	if (flags == (DIS_RESET|DIS_PERCHAR))
+		return;
+	/*
+	 * Toggle card 16.7ms interrupts (we first make sure that card
+	 * has cleared the bit so it will see the toggle).
+	 */
+	while (dcm->dcm_cr & CR_TIMER)
+		;
 	SEM_LOCK(dcm);
-	dcm->dcm_cr |= CR_TIMER;	/* toggle card 16.7ms interrupts */
+	dcm->dcm_cr |= CR_TIMER;
 	SEM_UNLOCK(dcm);
 }
 
-#ifdef notdef
 /*
  * Following are all routines needed for DCM to act as console
  */
+#include "machine/cons.h"
 
-struct tty *
-dcmcninit(majordev)
-	dev_t majordev;
+dcmcnprobe(cp)
+	struct consdev *cp;
 {
-	register struct dcmdevice *dcm;
-	int unit, s;
-	short stat;
+	register struct hp_hw *hw;
+	int unit, i;
+	extern int dcmopen();
 
-	unit = CONUNIT;				/* XXX */
-	dcm_addr[BOARD(CONUNIT)] = CONADDR;	/* XXX */
+	/*
+	 * Implicitly assigns the lowest select code DCM card found to be
+	 * logical unit 0 (actually CONUNIT).  If your config file does
+	 * anything different, you're screwed.
+	 */
+	for (hw = sc_table; hw->hw_type; hw++)
+	        if (hw->hw_type == COMMDCM && !badaddr((short *)hw->hw_addr))
+			break;
+	if (hw->hw_type != COMMDCM) {
+		cp->cn_pri = CN_DEAD;
+		return;
+	}
+	unit = CONUNIT;
+	dcm_addr[BOARD(CONUNIT)] = (struct dcmdevice *)hw->hw_addr;
 
-	dcm = dcm_addr[unit];
+	/* locate the major number */
+	for (i = 0; i < nchrdev; i++)
+		if (cdevsw[i].d_open == dcmopen)
+			break;
+
+	/* initialize required fields */
+	cp->cn_dev = makedev(i, unit);
+	cp->cn_tp = &dcm_tty[unit];
+	switch (dcm_addr[BOARD(unit)]->dcm_rsid) {
+	case DCMID:
+		cp->cn_pri = CN_NORMAL;
+		break;
+	case DCMID|DCMCON:
+		cp->cn_pri = CN_REMOTE;
+		break;
+	default:
+		cp->cn_pri = CN_DEAD;
+		break;
+	}
+}
+
+dcmcninit(cp)
+	struct consdev *cp;
+{
+	dcminit(cp->cn_dev, dcmdefaultrate);
+	dcmconsole = UNIT(cp->cn_dev);
+}
+
+dcminit(dev, rate)
+	dev_t dev;
+	int rate;
+{
+	register struct dcmdevice *dcm = dcm_addr[BOARD(dev)];
+	int s, mode, port;
+
+	port = PORT(dev);
+	mode = LC_8BITS | LC_1STOP;
 	s = splhigh();
-	/* do something */
+	/*
+	 * Wait for transmitter buffer to empty.
+	 */
+	while (dcm->dcm_thead[port].ptr != dcm->dcm_ttail[port].ptr)
+		DELAY(DCM_USPERCH(rate));
+	/*
+	 * Make changes known to hardware.
+	 */
+	dcm->dcm_data[port].dcm_baud = ttspeedtab(rate, dcmspeedtab);
+	dcm->dcm_data[port].dcm_conf = mode;
+	SEM_LOCK(dcm);
+	dcm->dcm_cmdtab[port].dcm_data |= CT_CON;
+	dcm->dcm_cr |= (1 << port);
+	SEM_UNLOCK(dcm);
+	/*
+	 * Delay for config change to take place. Weighted by buad.
+	 * XXX why do we do this?
+	 */
+	DELAY(16 * DCM_USPERCH(rate));
 	splx(s);
-	dcmconsole = unit;
-	if (majordev)
-		dcm_tty[unit].t_dev = makedev(majordev, unit);
-	return(&dcm_tty[unit]);
 }
 
 dcmcngetc(dev)
+	dev_t dev;
 {
-	return(0);
+	register struct dcmdevice *dcm = dcm_addr[BOARD(dev)];
+	register struct dcmrfifo *fifo;
+	register struct dcmpreg *pp;
+	register unsigned head;
+	int s, c, stat, port;
+
+	port = PORT(dev);
+	pp = dcm_preg(dcm, port);
+	s = splhigh();
+	head = pp->r_head & RX_MASK;
+	fifo = &dcm->dcm_rfifos[3-port][head>>1];
+	while (head == (pp->r_tail & RX_MASK))
+		;
+	/*
+	 * If board interrupts are enabled, just let our received char
+	 * interrupt through in case some other port on the board was
+	 * busy.  Otherwise we must clear the interrupt.
+	 */
+	SEM_LOCK(dcm);
+	if ((dcm->dcm_ic & IC_IE) == 0)
+		stat = dcm->dcm_iir;
+	SEM_UNLOCK(dcm);
+	c = fifo->data_char;
+	stat = fifo->data_stat;
+	pp->r_head = (head + 2) & RX_MASK;
+	splx(s);
+	return(c);
 }
 
 /*
@@ -830,32 +1126,44 @@ dcmcngetc(dev)
  */
 dcmcnputc(dev, c)
 	dev_t dev;
-	register int c;
+	int c;
 {
 	register struct dcmdevice *dcm = dcm_addr[BOARD(dev)];
-	int port = PORT(dev);
-	short stat;
-	int head, tail, next;
-	int s = splhigh();
+	register struct dcmpreg *pp;
+	unsigned tail;
+	int s, port, stat;
 
-	if (dcmconsole == -1)
-		(void) dcmcninit(0);
-
-	do {
-		tail = dcm->dcm_ttail[port].ptr & TX_MASK;
-		head = dcm->dcm_thead[port].ptr & TX_MASK;
-	} while (tail != head);
-	next = (dcm->dcm_ttail[port].ptr + 1) & TX_MASK;
-
-	dcm->dcm_tfifos[3 - port][tail].data_char = c;
-	dcm->dcm_ttail[port].ptr = next;
-
-	dcm->dcm_cmdtab[port].dcm_data = CT_TX;
+	port = PORT(dev);
+	pp = dcm_preg(dcm, port);
+	s = splhigh();
+#ifdef KGDB
+	if (dev != kgdb_dev)
+#endif
+	if (dcmconsole == -1) {
+		(void) dcminit(dev, dcmdefaultrate);
+		dcmconsole = UNIT(dev);
+	}
+	tail = pp->t_tail & TX_MASK;
+	while (tail != (pp->t_head & TX_MASK))
+		;
+	dcm->dcm_tfifos[3-port][tail].data_char = c;
+	pp->t_tail = tail = (tail + 1) & TX_MASK;
 	SEM_LOCK(dcm);
-	dcm->dcm_cr = (1 << port);
+	dcm->dcm_cmdtab[port].dcm_data |= CT_TX;
+	dcm->dcm_cr |= (1 << port);
 	SEM_UNLOCK(dcm);
-
+	while (tail != (pp->t_head & TX_MASK))
+		;
+	/*
+	 * If board interrupts are enabled, just let our completion
+	 * interrupt through in case some other port on the board
+	 * was busy.  Otherwise we must clear the interrupt.
+	 */
+	if ((dcm->dcm_ic & IC_IE) == 0) {
+		SEM_LOCK(dcm);
+		stat = dcm->dcm_iir;
+		SEM_UNLOCK(dcm);
+	}
 	splx(s);
 }
-#endif
 #endif

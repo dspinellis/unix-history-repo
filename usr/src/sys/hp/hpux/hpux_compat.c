@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.4 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -115,10 +115,8 @@ notimp(code, nargs)
 /*
  * HPUX versions of wait and wait3 actually pass the parameters
  * (status pointer, options, rusage) into the kernel rather than
- * handling it in the C library stub.  For now, use COMPAT_43 version
- * of wait (owait), as it's most convenient (it leaves the status
- * in rval2 where we can muck with it before copying out).
- * We also need to map any termination signal from BSD to HPUX.
+ * handling it in the C library stub.  We also need to map any
+ * termination signal from BSD to HPUX.
  */
 hpuxwait3()
 {
@@ -148,6 +146,38 @@ hpuxwait()
 
 	statp = uap->status;	/* owait clobbers first arg */
 	owait();
+	/*
+	 * HP-UX wait always returns EINTR when interrupted by a signal
+	 * (well, unless its emulating a BSD process, but we don't bother...)
+	 */
+	if (u.u_error == ERESTART)
+		u.u_error = EINTR;
+	if (u.u_error)
+		return;
+	sig = u.u_r.r_val2 & 0xFF;
+	if (sig == WSTOPPED) {
+		sig = (u.u_r.r_val2 >> 8) & 0xFF;
+		u.u_r.r_val2 = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
+	} else if (sig)
+		u.u_r.r_val2 = (u.u_r.r_val2 & 0xFF00) |
+			bsdtohpuxsig(sig & 0x7F) | (sig & 0x80);
+	if (statp)
+		if (suword((caddr_t)statp, u.u_r.r_val2))
+			u.u_error = EFAULT;
+}
+
+hpuxwaitpid()
+{
+	int sig, *statp;
+	struct a {
+		int	pid;
+		int	*status;
+		int	options;
+		struct	rusage *rusage;	/* wait4 arg */
+	} *uap = (struct a *)u.u_ap;
+
+	uap->rusage = 0;
+	wait4();
 	/*
 	 * HP-UX wait always returns EINTR when interrupted by a signal
 	 * (well, unless its emulating a BSD process, but we don't bother...)

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: dcmreg.h 1.3 89/08/23$
  *
- *	@(#)dcmreg.h	7.1 (Berkeley) %G%
+ *	@(#)dcmreg.h	7.2 (Berkeley) %G%
  */
 
 struct dcmdevice {	   /* host address, only odd bytes addressed */
@@ -21,44 +21,44 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
 	volatile u_char	dcm_ic;		/* Interrupt control register	0003 */
 	u_char	dcm_pad2;
 	volatile u_char	dcm_sem;	/* Semaphore register		0005 */
-	u_char  dcm_pad3[0x7ffa];	/* Unaddressable   0006-7fff */
+	u_char  dcm_pad3[0x7ffa];	/* Unaddressable	0006-7fff */
 	u_char	dcm_pad4;
 	volatile u_char	dcm_iir;	/* Interrupt ident register	8001 */
 	u_char	dcm_pad5;
 	volatile u_char	dcm_cr;		/* Command register		8003 */
-	u_char  dcm_pad6[0x3fc];	/* Card scratch    8004-83ff */
+	u_char  dcm_pad6[0x3fc];	/* Card scratch		8004-83ff */
+	struct	dcmrfifo {
+		u_char	ptr_pad1;
+		volatile u_char	data_char;
+		u_char	ptr_pad2;
+		volatile u_char	data_stat;
+	} dcm_rfifos[4][0x80];		/* Receive queues		8400 */
 	struct  {
-	    u_char  ptr_pad1;
-	    volatile u_char  data_char;
-	    u_char  ptr_pad2;
-	    volatile u_char  data_stat;
-	} dcm_rfifos[4][0x80];	/* Receive queues		8400 */
+		u_char	ptr_pad1;
+		volatile u_char	data_data;
+	} dcm_bmap[0x100];		/* Bitmap table			8c00 */
 	struct  {
-	    u_char  ptr_pad1;
-	    volatile u_char  data_data;
-	} dcm_bmap[0x100];	/* Bitmap table			8c00 */
+		u_char	ptr_pad;
+		volatile u_char	ptr;
+	} dcm_rhead[4];			/* Fifo head - receive		8e00 */
 	struct  {
-	    u_char  ptr_pad;
-	    volatile u_char  ptr;
-	} dcm_rhead[4];		/* Fifo head - receive		8e00 */
+		u_char  ptr_pad;
+		volatile u_char  ptr;
+	} dcm_rtail[4];			/* Fifo tail - receive		8e08 */
 	struct  {
-	    u_char  ptr_pad;
-	    volatile u_char  ptr;
-	} dcm_rtail[4];		/* Fifo tail - receive		8e08 */
+		u_char	ptr_pad;
+		volatile u_char	ptr;
+	} dcm_thead[4];			/* Fifo head - transmit		8e10 */
 	struct  {
-	    u_char  ptr_pad;
-	    volatile u_char  ptr;
-	} dcm_thead[4];		/* Fifo head - transmit		8e10 */
+		u_char	ptr_pad;
+		volatile u_char	ptr;
+	} dcm_ttail[4];			/* Fifo tail - transmit		8e18 */
 	struct  {
-	    u_char  ptr_pad;
-	    volatile u_char  ptr;
-	} dcm_ttail[4];		/* Fifo tail - transmit		8e18 */
-	struct  {
-		u_char pad1;
-		volatile u_char dcm_conf;
-		u_char pad2;
-		volatile u_char dcm_baud;
-	} dcm_data[4];		/* Configuration registers	8e20 */
+		u_char	pad1;
+		volatile u_char	dcm_conf;
+		u_char	pad2;
+		volatile u_char	dcm_baud;
+	} dcm_data[4];			/* Configuration registers	8e20 */
 	u_char  dcm_pad7;
 	volatile u_char  dcm_mdmin;	/* Modem in			8e31 */
 	u_char  dcm_pad8;
@@ -68,19 +68,35 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
 	struct  {
 		u_char pad1;
 		volatile u_char dcm_data;
-	} dcm_cmdtab[4];	/* Command tables		8e36 */
+	} dcm_cmdtab[4];		/* Command tables		8e36 */
 	struct  {
 		u_char pad1;
 		volatile u_char dcm_data;
-	} dcm_icrtab[4];	/* Interrupt data		8e3e */
+	} dcm_icrtab[4];		/* Interrupt data		8e3e */
 	u_char  dcm_pad10;
 	volatile u_char  dcm_stcon;	/* Self test condition		8e47 */
-	u_char  dcm_pad11[0x98];	/* Undef SR regs   8e48-8edf */
-	struct  {
+	u_char  dcm_pad11[0x98];	/* Undef SR regs	8e48-8edf */
+	struct	dcmtfifo {
 	    u_char  ptr_pad1;
 	    volatile u_char  data_char;
-	} dcm_tfifos[4][0x10];	/* Transmit queues		8ee0 */
+	} dcm_tfifos[4][0x10];		/* Transmit queues		8ee0 */
 };
+
+/*
+ * Overlay structure for port specific queue "registers".
+ * Starts at offset 0x8E00+(port*2).
+ */
+struct	dcmpreg {
+	u_char		pad0;		/* +00 */
+	volatile u_char	r_head;		/* +01 */
+	u_char		pad1[7];	/* +02 */
+	volatile u_char	r_tail;		/* +09 */
+	u_char		pad2[7];	/* +0A */
+	volatile u_char	t_head;		/* +11 */
+	u_char		pad3[7];	/* +12 */
+	volatile u_char	t_tail;		/* +19 */
+};
+#define	dcm_preg(d, p)	((struct dcmpreg *)((u_int)(d)+0x8e00+(p)*2))
 
 /* interface reset/id */
 #define DCMCON          0x80	/* REMOTE/LOCAL switch, read */
@@ -196,7 +212,7 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
 
 /*
  * WARNING: Serial console is assumed to be at SC13
- * and CONUNIT must be 1, signeled by REMOTE/LOCAL switch on card
+ * and CONUNIT must be 1, signaled by REMOTE/LOCAL switch on card
  */
 #define CONADDR	((struct dcmdevice *)(IOV(EXTIOBASE + (13 * IOCARDSIZE))))
 #define CONUNIT	(1)

@@ -40,6 +40,7 @@ hpdev/dcm.c		optional dcm
 hpdev/scsi.c		optional scsi
 hpdev/sd.c		optional sd
 hpux/hpux_compat.c	optional hpuxcompat
+hpux/hpux_dir.c		optional hpuxcompat
 hpux/hpux_net.c		optional hpuxcompat
 hpux/hpux_sig.c		optional hpuxcompat
 hpux/hpux_syscalls.c	optional hpuxcompat
