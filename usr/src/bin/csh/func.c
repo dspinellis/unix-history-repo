@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1463,6 +1463,8 @@ doprintf(v, t)
     int ret;
 
     ret = progprintf(blklen(v), c = short2blk(v));
+    (void) fflush(cshout);
+    (void) fflush(csherr);
 
     blkfree((Char **) c);
     if (ret)
