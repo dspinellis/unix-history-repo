@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -239,13 +239,14 @@ protofail:
 }
 
 /* VARARGS 1 */
-error(fmt)
+error(fmt, a1, a2, a3)
 	char *fmt;
+	int a1, a2, a3;
 {
 	char buf[BUFSIZ];
 
 	buf[0] = 1;
-	(void) sprintf(buf+1, fmt);
+	(void) sprintf(buf+1, fmt, a1, a2, a3);
 	(void) write(2, buf, strlen(buf));
 }
 
