@@ -1,0 +1,198 @@
+1066 :testrefs 3023/47
+161 :testrefs 2476/161
+1814 :testrefs 1037/97
+1946 :testrefs 3071/72
+1971 :testrefs 916/120 1870/240
+1974 :testrefs 2780/92
+1976 :testrefs 1242/133
+1977 :testrefs 808/107 2111/179
+1978 :testrefs 150/132 653/154 1135/106 1674/195 2291/128
+1979 :testrefs 1376/142 1519/154 2476/161
+1980 :testrefs 2638/141
+1981 :testrefs 2420/55
+1982 :testrefs 0/66 426/118
+1984 :testrefs 283/57
+1986 :testrefs 341/84
+1987 :testrefs 67/82
+2a :testrefs 545/107
+69 :testrefs 653/154
+7th :testrefs 1376/142
+8117 :testrefs 2420/55
+821 :testrefs 0/66
+acpres :testrefs 1674/195 2291/128
+addiso :testrefs 283/57 341/84 808/107
+aho :testrefs 808/107
+alexan :testrefs 67/82
+alfred :testrefs 808/107
+algori :testrefs 1870/240
+analys :testrefs 2873/149
+apl :testrefs 2420/55
+applic :testrefs 653/154
+approa :testrefs 1870/240
+associ :testrefs 426/118
+author :testrefs 1376/142 3023/47
+automa :testrefs 426/118 2638/141
+axioma :testrefs 1870/240
+baldwi :testrefs 2476/161
+bell :testrefs 545/107 653/154
+bhs :testrefs 2873/149
+biblio :testrefs 67/82
+bishop :testrefs 1376/142
+book :testrefs 2291/128 3023/47
+brian :testrefs 150/132
+brooks :testrefs 2638/141
+budd :testrefs 0/66 2420/55 2873/149
+bullit :testrefs 3071/72
+cacm :testrefs 150/132 1242/133
+car :testrefs 1870/240
+cherry :testrefs 150/132
+colt :testrefs 1037/97
+compil :testrefs 808/107 2780/92
+compli :testrefs 2420/55
+comput :testrefs 653/154 1674/195 2291/128
+dakota :testrefs 3071/72
+data :testrefs 2638/141
+debugg :testrefs 1135/106
+demill :testrefs 1674/195 2291/128
+dennie :testrefs 1135/106
+design :testrefs 808/107 1135/106
+determ :testrefs 2476/161
+direct :testrefs 1519/154
+dobkin :testrefs 1674/195 2291/128
+docume :testrefs 341/84
+donald :testrefs 283/57
+dougla :testrefs 2476/161
+draft :testrefs 67/82
+dragon :testrefs 808/107
+editio :testrefs 916/120
+editor :testrefs 3023/47
+effici :testrefs 1135/106
+elba :testrefs 1037/97
+engele :testrefs 1870/240
+engine :testrefs 426/118
+eqn :testrefs 150/132
+equiva :testrefs 2476/161
+errors :testrefs 2638/141
+exper :testrefs 2873/149
+file :testrefs 0/66
+format :testrefs 0/66 545/107
+founda :testrefs 1674/195 2291/128
+freder :testrefs 2476/161 2873/149
+genera :testrefs 2638/141
+girard :testrefs 2111/179
+gooden :testrefs 1519/154
+griswo :testrefs 916/120
+guide :testrefs 2873/149
+harris :testrefs 1242/133
+having :testrefs 2638/141
+hess :testrefs 2873/149
+heuris :testrefs 2476/161
+hoare :testrefs 1037/97 1870/240
+hru :testrefs 1242/133
+ieee :testrefs 2111/179
+index :testrefs 426/118
+indexe :testrefs 653/154
+inform :testrefs 1376/142
+instit :testrefs 3071/72
+invert :testrefs 653/154
+island :testrefs 1037/97
+issues :testrefs 1519/154
+james :testrefs 67/82
+jc :testrefs 2111/179
+jeffre :testrefs 808/107
+john :testrefs 1519/154
+jones :testrefs 1674/195 2291/128
+kernig :testrefs 150/132
+knuth :testrefs 283/57
+labora :testrefs 545/107 653/154
+lampor :testrefs 341/84
+langua :testrefs 916/120 1870/240 2780/92
+latex :testrefs 341/84
+lectur :testrefs 1870/240
+lesk :testrefs 545/107 653/154
+leslie :testrefs 341/84
+lipton :testrefs 1674/195 2291/128
+listed :testrefs 1037/97
+lorind :testrefs 150/132
+manual :testrefs 545/107
+martin :testrefs 2638/141
+master :testrefs 2780/92
+mathem :testrefs 150/132 1870/240
+mit :testrefs 1519/154 2780/92
+mutati :testrefs 2476/161 2873/149
+notes :testrefs 1870/240
+number :testrefs 2476/161
+operat :testrefs 1242/133
+parame :testrefs 1870/240
+peter :testrefs 1519/154
+phd :testrefs 2638/141
+poage :testrefs 916/120
+polons :testrefs 916/120
+portab :testrefs 2780/92
+prepar :testrefs 341/84
+prepro :testrefs 67/82
+press :testrefs 1519/154
+prhall :testrefs 916/120 1135/106
+princi :testrefs 808/107
+proced :testrefs 1870/240
+procee :testrefs 1376/142
+progra :testrefs 545/107 916/120 1135/106 1519/154 2111/179 2476/161 2638/141
+protec :testrefs 1242/133 1376/142
+publis :testrefs 1037/97
+rault :testrefs 2111/179
+recurs :testrefs 2638/141
+refer :testrefs 653/154
+refere :testrefs 0/66
+reliab :testrefs 2111/179
+report :testrefs 653/154 2476/161
+resear :testrefs 426/118 1519/154
+robert :testrefs 2873/149
+ruzzo :testrefs 1242/133
+saywar :testrefs 2476/161 2873/149
+scienc :testrefs 653/154
+sdit :testrefs 3071/72
+second :testrefs 916/120
+secure :testrefs 1674/195 2291/128
+securi :testrefs 1674/195
+semant :testrefs 1870/240
+simple :testrefs 2638/141
+snobol :testrefs 916/120
+snyder :testrefs 1376/142 1674/195 2780/92
+softwa :testrefs 426/118 1519/154 2111/179
+sosp :testrefs 1376/142
+south :testrefs 3071/72
+spring :testrefs 1870/240
+sra :testrefs 426/118
+stanfo :testrefs 2638/141
+style :testrefs 1135/106
+survey :testrefs 1519/154
+sympos :testrefs 1870/240 2111/179
+synchr :testrefs 1674/195
+system :testrefs 150/132 341/84 653/154 1242/133 1376/142 2873/149
+tab :testrefs 1135/106
+tables :testrefs 545/107
+tassel :testrefs 1135/106
+tbl :testrefs 545/107
+techni :testrefs 653/154 2111/179 2476/161
+techno :testrefs 1519/154 3071/72
+test :testrefs 2638/141
+testin :testrefs 1135/106 1519/154
+tex :testrefs 67/82 283/57 341/84
+texboo :testrefs 283/57
+thesis :testrefs 2638/141 2780/92
+throug :testrefs 1037/97
+tib :testrefs 67/82
+timoth :testrefs 0/66 2873/149
+tools :testrefs 426/118
+tour :testrefs 1037/97
+transf :testrefs 1376/142
+typese :testrefs 150/132
+uatr :testrefs 0/66 2420/55
+ullman :testrefs 808/107 1242/133
+univer :testrefs 2476/161 2638/141
+unix :testrefs 545/107 653/154
+users :testrefs 2873/149
+van :testrefs 1135/106
+vol :testrefs 545/107
+wegner :testrefs 1519/154
+yale :testrefs 2476/161
