@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.2 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -20,7 +20,6 @@ static	char *sccsid = "@(#)mkfs.c	1.1 (Berkeley) %G%";
 #endif
 
 #include "../h/param.h"
-#include "../h/ino.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
 #include "../h/dir.h"
@@ -327,16 +326,6 @@ initcg(c)
 		dmax = sblock.fs_size;
 	d = cbase;
 	cs = fscs+c;
-tryagain:
-	for (i = cgdmin(c,&sblock) - FRAG; i >= 0; i -= FRAG)
-		if (badblk(d)) {
-			d += i + FRAG;
-			if (d + sblock.fs_ipg/INOPB >= dmax) {
-				printf("bad blocks: cyl grp %d unusable\n", c);
-				exit(1);
-			}
-			goto tryagain;
-		}
 	cs->cs_ndir = 0;
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
@@ -377,26 +366,18 @@ tryagain:
 	for (d = 0; d < dmin; d += FRAG)
 		clrblock(acg.cg_free, d/FRAG);
 	while ((d+FRAG) <= dmax - cbase) {
-		if (badblk(cbase+d))
-			clrblock(acg.cg_free, d/FRAG);
-		else {
-			setblock(acg.cg_free, d/FRAG);
-			acg.cg_nbfree++;
-			s = d * NSPF;
-			acg.cg_b[s/sblock.fs_spc]
-			    [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
-		}
+		setblock(acg.cg_free, d/FRAG);
+		acg.cg_nbfree++;
+		s = d * NSPF;
+		acg.cg_b[s/sblock.fs_spc]
+		    [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
 		d += FRAG;
 	}
 	if (d < dmax - cbase)
-		if (badblk(d))
-			for (; d < dmax - cbase; d++)
-				clrbit(acg.cg_free, d);
-		else
-			for (; d < dmax - cbase; d++) {
-				setbit(acg.cg_free, d);
-				acg.cg_nffree++;
-			}
+		for (; d < dmax - cbase; d++) {
+			setbit(acg.cg_free, d);
+			acg.cg_nffree++;
+		}
 	for (; d < MAXBPG; d++)
 		clrbit(acg.cg_free, d);
 	sblock.fs_nffree += acg.cg_nffree;
@@ -434,6 +415,9 @@ struct inode *par;
 	}
 	in.i_uid = getnum();
 	in.i_gid = getnum();
+	in.i_atime = utime;
+	in.i_mtime = utime;
+	in.i_ctime = utime;
 
 	/*
 	 * general initialization prior to
@@ -449,9 +433,9 @@ struct inode *par;
 	in.i_nlink = 1;
 	in.i_size = 0;
 	for(i=0; i<NDADDR; i++)
-		in.i_un.i_f.i_db[i] = (daddr_t)0;
+		in.i_db[i] = (daddr_t)0;
 	for(i=0; i<NIADDR; i++)
-		in.i_un.i_f.i_ib[i] = (daddr_t)0;
+		in.i_ib[i] = (daddr_t)0;
 	if(par == (struct inode *)0) {
 		par = &in;
 		in.i_nlink--;
@@ -489,7 +473,7 @@ struct inode *par;
 
 		i = getnum() & 0377;
 		f = getnum() & 0377;
-		in.i_un.i_d.i_rdev = makedev(i, f);
+		in.i_rdev = makedev(i, f);
 		break;
 
 	case IFDIR:
@@ -739,51 +723,19 @@ daddr_t *ib;
 	}
 	d = itod(ip->i_number,&sblock);
 	rdfs(d, BSIZE, buf);
-	dp = (struct dinode *)buf;
-	dp += itoo(ip->i_number);
-
-	dp->di_mode = ip->i_mode;
-	dp->di_nlink = ip->i_nlink;
-	dp->di_uid = ip->i_uid;
-	dp->di_gid = ip->i_gid;
-	dp->di_size = ip->i_size;
-	dp->di_atime = utime;
-	dp->di_mtime = utime;
-	dp->di_ctime = utime;
-
-	switch(ip->i_mode&IFMT) {
-
-	case IFDIR:
-	case IFREG:
-		for(i=0; i<*aibc; i++) {
-			if(i >= NDADDR)
-				break;
-			ip->i_un.i_f.i_db[i] = ib[i];
-		}
-		if(*aibc >= NDADDR) {
-			ip->i_un.i_f.i_ib[0] = alloc(BSIZE);
-			for(i=0; i<NINDIR-NDADDR; i++) {
-				ib[i] = ib[i+NDADDR];
-				ib[i+NDADDR] = (daddr_t)0;
-			}
-			wtfs(ip->i_un.i_f.i_ib[0], (char *)ib);
-		}
-
-	case IFBLK:
-	case IFCHR:
-		ltol3(dp->di_addr, ip->i_un.i_f.i_db, NDADDR+NIADDR);
-		break;
-
-	default:
-		printf("bad mode %o\n", ip->i_mode);
-		exit(1);
+	for(i=0; i<*aibc; i++) {
+		if(i >= NDADDR)
+			break;
+		ip->i_db[i] = ib[i];
 	}
+	if(*aibc >= NDADDR) {
+		ip->i_ib[0] = alloc(BSIZE);
+		for(i=0; i<NINDIR-NDADDR; i++) {
+			ib[i] = ib[i+NDADDR];
+			ib[i+NDADDR] = (daddr_t)0;
+		}
+		wtfs(ip->i_ib[0], (char *)ib);
+	}
+	((struct dinode *)buf+itoo(ip->i_number))->di_ic = ip->i_ic;
 	wtfs(d, BSIZE, buf);
-}
-
-badblk(bno)
-daddr_t bno;
-{
-
-	return(0);
 }

@@ -1,10 +1,9 @@
-static	char *sccsid = "@(#)main.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
 #include "../h/fs.h"
 #include "../h/dir.h"
-#include "../h/ino.h"
 #include "../h/inode.h"
 #include "../h/stat.h"
 #include <fstab.h>
@@ -731,14 +730,12 @@ ckinode(dp, flg)
 	register daddr_t *ap;
 	register ret;
 	int (*func)(), n, ndb, size;
-	daddr_t	iaddrs[NDADDR+NIADDR];
 
 	if (SPECIAL)
 		return (KEEPON);
-	l3tol(iaddrs, dp->di_addr, NDADDR+NIADDR);
 	func = (flg == ADDR) ? pfunc : dirscan;
 	ndb = howmany(dp->di_size, BSIZE);
-	for (ap = iaddrs; ap < &iaddrs[NDADDR]; ap++) {
+	for (ap = dp->di_db; ap < &dp->di_db[NDADDR]; ap++) {
 		if (--ndb == 0 && (dp->di_size&BMASK))
 			size = howmany(dp->di_size&BMASK, FSIZE);
 		else

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ncheck.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.2 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -10,13 +10,12 @@ static	char *sccsid = "@(#)ncheck.c	1.1 (Berkeley) %G%";
 #include <stdio.h>
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/ino.h"
 #include "../h/dir.h"
 #include "../h/fs.h"
 
 struct	fs	sblock;
 struct	dinode	itab[MAXIPG];
-daddr_t	iaddr[NDADDR+NIADDR];
+struct 	dinode	*gip;
 ino_t	ilist[NB];
 struct	htab
 {
@@ -150,7 +149,7 @@ register struct dinode *ip;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
-	l3tol(iaddr, ip->di_addr, NDADDR);
+	gip = ip;
 	doff = 0;
 	for(i=0;; i++) {
 		if(doff >= ip->di_size)
@@ -192,7 +191,7 @@ register struct dinode *ip;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
-	l3tol(iaddr, ip->di_addr, NDADDR);
+	gip = ip;
 	doff = 0;
 	for(i=0;; i++) {
 		if(doff >= ip->di_size)
@@ -298,13 +297,13 @@ bmap(i)
 {
 	daddr_t ibuf[NINDIR];
 
-	if(i < NDADDR-3)
-		return(iaddr[i]);
-	i -= NDADDR-3;
+	if(i < NDADDR)
+		return(gip->di_db[i]);
+	i -= NDADDR;
 	if(i > NINDIR) {
 		fprintf(stderr, "ncheck: %u - huge directory\n", ino);
 		return((daddr_t)0);
 	}
-	bread(iaddr[NDADDR-3], (char *)ibuf, sizeof(ibuf));
+	bread(gip->di_ib[i], (char *)ibuf, sizeof(ibuf));
 	return(ibuf[i]);
 }
