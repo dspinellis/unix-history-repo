@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)newfs.8	6.5 (Berkeley) %G%
+.\"	@(#)newfs.8	6.6 (Berkeley) %G%
 .\"
 .TH NEWFS 8 ""
 .UC 5
@@ -47,6 +47,9 @@ The fragment size of the file system in bytes.
 .B \-m free space %
 The percentage of space reserved from normal users; the minimum
 free space threshold.  The default value used is 10%.
+See
+.IR tunefs (8)
+for more details on how to set this option.
 .TP 10
 .B \-o optimization preference (``space'' or ``time'')
 The file system can either be instructed to try to minimize the time spent
@@ -55,6 +58,35 @@ If the value of minfree (see above) is less than 10%,
 the default is to optimize for space;
 if the value of minfree greater than or equal to 10%,
 the default is to optimize for time.
+See
+.IR tunefs (8)
+for more details on how to set this option.
+.TP 10
+.B \-a maxcontig
+This specifies the maximum number of contiguous blocks that will
+be laid out before forcing a rotational delay (see \-d below).
+The default value is one.
+See
+.IR tunefs (8)
+for more details on how to set this option.
+.TP 10
+.B \-d rotdelay
+This specifies the expected time (in milliseconds)
+to service a transfer completion
+interrupt and initiate a new transfer on the same disk.
+The default is 4 milliseconds.
+See
+.IR tunefs (8)
+for more details on how to set this option.
+.TP 10
+.B \-e maxbpg
+This indicates the maximum number of blocks any single file can
+allocate out of a cylinder group before it is forced to begin
+allocating blocks from another cylinder group.
+The default is about one quarter of the total blocks in a cylinder group.
+See
+.IR tunefs (8)
+for more details on how to set this option.
 .TP 10
 .B \-i number of bytes per inode
 This specifies the density of inodes in the file system.
@@ -87,7 +119,7 @@ The speed of the disk in revolutions per minute.
 .B \-S sector-size
 The size of a sector in bytes (almost never anything but 512).
 .TP 10
-.B \-d sectors/track
+.B \-u sectors/track
 The number of sectors/track available for data
 allocation by the file system.
 This does not include sectors reserved at the end of each track for
@@ -100,13 +132,13 @@ allocation by the file system.
 .B \-p spare sectors per track
 Spare sectors (bad sector replacements) are physical sectors
 that occupy space at the end of each track.
-They are not counted as part of the sectors/track (\fB\-d\fP)
+They are not counted as part of the sectors/track (\fB\-u\fP)
 since they are not available to the file system for data allocation.
 .TP 10
-.B \-a spare sectors per cylinder
+.B \-x spare sectors per cylinder
 Spare sectors (bad sector replacements) are physical sectors
 that occupy space at the end of the last track in the cylinder.
-They are deducted from the sectors/track (\fB\-d\fP)
+They are deducted from the sectors/track (\fB\-u\fP)
 of the last track of each cylinder
 since they are not available to the file system for data allocation.
 .TP 10
