@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.4 (Berkeley) %G%
+ *	@(#)dh.c	7.5 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -98,7 +98,6 @@ int	cbase[NUBA];		/* base address of clists in unibus map */
  */
 /*ARGSUSED*/
 dhprobe(reg)
-p
 	caddr_t reg;
 {
 	register int br, cvec;		/* these are ``value-result'' */
