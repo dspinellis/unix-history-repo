@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.33	83/02/20	*/
+/*	vfs_vnops.c	4.34	83/03/31	*/
 
 #include "../machine/reg.h"
 

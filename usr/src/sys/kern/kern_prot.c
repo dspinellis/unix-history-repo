@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.15	83/02/20	*/
+/*	kern_prot.c	5.16	83/03/31	*/
 
 /*
  * System calls related to processes and protection
@@ -226,7 +226,7 @@ setgroups()
 	if (u.u_error)
 		return;
 	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
-		*gp = -1;
+		*gp = NOGROUP;
 }
 
 /*
@@ -264,6 +264,13 @@ osetpgrp()
 }
 /* END DEFUNCT */
 
+/*
+ * Group utility functions.
+ */
+
+/*
+ * Delete gid from the group set.
+ */
 leavegroup(gid)
 	int gid;
 {
@@ -276,9 +283,12 @@ leavegroup(gid)
 found:
 	for (; gp < &u.u_groups[NGROUPS-1]; gp++)
 		*gp = *(gp+1);
-	*gp = -1;
+	*gp = NOGROUP;
 }
 
+/*
+ * Add gid to the group set.
+ */
 entergroup(gid)
 	int gid;
 {
@@ -293,4 +303,20 @@ entergroup(gid)
 			return (0);
 		}
 	return (-1);
+}
+
+/*
+ * Check if gid is a member of the group set.
+ */
+groupmember(gid)
+	int gid;
+{
+	register int *gp;
+
+	if (u.u_gid == gid)
+		return (1);
+	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS] && *gp != NOGROUP; gp++)
+		if (*gp == gid)
+			return (1);
+	return (0);
 }
