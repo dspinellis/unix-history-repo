@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gmon.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -38,7 +38,7 @@ static int	s_scale;
     /* see profil(2) where this is describe (incorrectly) */
 #define		SCALE_1_TO_1	0x10000L
 
-#define	MSG "No space for monitor buffer(s)\n"
+#define	MSG "No space for profiling buffer(s)\n"
 
 monstartup(lowpc, highpc)
     char	*lowpc;
@@ -46,6 +46,7 @@ monstartup(lowpc, highpc)
 {
     int			monsize;
     char		*buffer;
+    register int	o;
 
 	/*
 	 *	round lowpc and highpc to multiples of the density we're using
@@ -85,7 +86,20 @@ monstartup(lowpc, highpc)
     }
     minbrk = sbrk(0);
     tos[0].link = 0;
-    monitor( lowpc , highpc , buffer , monsize , tolimit );
+    sbuf = buffer;
+    ssiz = monsize;
+    ( (struct phdr *) buffer ) -> lpc = lowpc;
+    ( (struct phdr *) buffer ) -> hpc = highpc;
+    ( (struct phdr *) buffer ) -> ncnt = ssiz;
+    monsize -= sizeof(struct phdr);
+    if ( monsize <= 0 )
+	return;
+    o = highpc - lowpc;
+    if( monsize < o )
+	s_scale = ( (float) monsize / o ) * SCALE_1_TO_1;
+    else
+	s_scale = SCALE_1_TO_1;
+    moncontrol(1);
 }
 
 _mcleanup()
@@ -97,6 +111,7 @@ _mcleanup()
     int			toindex;
     struct rawarc	rawarc;
 
+    moncontrol(0);
     fd = creat( "gmon.out" , 0666 );
     if ( fd < 0 ) {
 	perror( "mcount: gmon.out" );
@@ -233,37 +248,6 @@ overflow:
 #   define	TOLIMIT	"mcount: tos overflow\n"
 	write(2, TOLIMIT, sizeof(TOLIMIT) - 1);
 	return;
-}
-
-/*VARARGS1*/
-monitor( lowpc , highpc , buf , bufsiz , nfunc )
-    char	*lowpc;
-    char	*highpc;
-    char	*buf;	/* declared ``short buffer[]'' in monitor(3) */
-    int		bufsiz;
-    int		nfunc;	/* not used, available for compatability only */
-{
-    register o;
-
-    if ( lowpc == 0 ) {
-	moncontrol(0);
-	_mcleanup();
-	return;
-    }
-    sbuf = buf;
-    ssiz = bufsiz;
-    ( (struct phdr *) buf ) -> lpc = lowpc;
-    ( (struct phdr *) buf ) -> hpc = highpc;
-    ( (struct phdr *) buf ) -> ncnt = ssiz;
-    bufsiz -= sizeof(struct phdr);
-    if ( bufsiz <= 0 )
-	return;
-    o = highpc - lowpc;
-    if( bufsiz < o )
-	s_scale = ( (float) bufsiz / o ) * SCALE_1_TO_1;
-    else
-	s_scale = SCALE_1_TO_1;
-    moncontrol(1);
 }
 
 /*
