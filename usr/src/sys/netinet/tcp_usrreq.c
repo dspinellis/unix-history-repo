@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.11 81/10/24 */
+/* tcp_usrreq.c 1.12 81/10/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,10 +58,7 @@ COUNT(TCP_USRREQ);
 	acounts[nstate][input]++;
 #ifdef TCPDEBUG
 	if ((tp->t_ucb->uc_flags & UDEBUG) || tcpconsdebug) {
-		tdb.td_tod = time;
-		tdb.td_tcb = tp;
-		tdb.td_old = nstate;
-		tdb.td_inp = input;
+		tdb_setup(tp, (struct th *)0, input, &tdb);
 		tdb.td_tim = timertype;
 	} else
 		tdb.td_tod = 0;
@@ -151,12 +148,8 @@ COUNT(TCP_USRREQ);
 		break;
 	}
 #ifdef TCPDEBUG
-	if (tdb.td_tod) {
-		tdb.td_new = nstate;
-		tcp_debug[tdbx++ % TDBSIZE] = tdb;
-		if (tcpconsdebug)
-			tcp_prt(&tdb);
-	}
+	if (tdb.td_tod)
+		tdb_stuff(&tdb, nstate);
 #endif
 	/* YECH */
 	switch (nstate) {
@@ -423,7 +416,7 @@ tcp_prt(tdp)
 {
 COUNT(TCP_PRT);
 
-	printf("TCP(%X) %s X %s",
+	printf("TCP(%x) %s x %s",
 	    tdp->td_tcb, tcpstates[tdp->td_old], tcpinputs[tdp->td_inp]);
 	if (tdp->td_inp == ISTIMER)
 		printf("(%s)", tcptimers[tdp->td_tim]);
@@ -432,6 +425,10 @@ COUNT(TCP_PRT);
 	/* GROSS... DEPENDS ON SIGN EXTENSION OF CHARACTERS */
 	if (tdp->td_new < 0)
 		printf(" (FAILED)");
+	if (tdp->td_sno) {
+		printf(" sno %x ano %x win %d len %d flags %x",
+		    tdp->td_sno, tdp->td_ano, tdp->td_wno, tdp->td_lno, tdp->td_flg);
+	}
 	printf("\n");
 }
 #endif
