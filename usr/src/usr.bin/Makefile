@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 # BROKEN: tn3270
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
@@ -8,7 +8,7 @@ SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	gcore gprof graph grep groff head hexdump id indent join last \
 	lastcomm learn leave lex locate lock logger login logname lorder \
 	m4 mail make man mesg mkdep mkfifo mkstr more msgs mt netstat \
-	nfsstat nice nm nohup pagesize passwd paste plot pr printenv \
+	nfsstat nice nm nohup nvi pagesize passwd paste plot pr printenv \
 	printf ptx quota ranlib ratfor rdist renice rev rlogin rsh ruptime \
 	rwho sccs script sed shar showmount size soelim sort spell spline \
 	split strings strip struct su systat talk tcopy tee telnet tftp \
