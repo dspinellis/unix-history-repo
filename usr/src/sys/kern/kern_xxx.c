@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.22 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
