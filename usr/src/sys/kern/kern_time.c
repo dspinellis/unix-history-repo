@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.5 (Berkeley) %G%
+ *	@(#)kern_time.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,7 +155,7 @@ getitimer()
 	struct itimerval aitv;
 	int s;
 
-	if (uap->which > 2) {
+	if (uap->which > ITIMER_PROF) {
 		u.u_error = EINVAL;
 		return;
 	}
@@ -186,24 +186,25 @@ setitimer()
 		u_int	which;
 		struct	itimerval *itv, *oitv;
 	} *uap = (struct a *)u.u_ap;
-	struct itimerval aitv, *aitvp;
+	struct itimerval aitv;
+	register struct itimerval *itvp;
 	int s;
 	register struct proc *p = u.u_procp;
 
-	if (uap->which > 2) {
+	if (uap->which > ITIMER_PROF) {
 		u.u_error = EINVAL;
 		return;
 	}
-	aitvp = uap->itv;
-	if (uap->oitv) {
-		uap->itv = uap->oitv;
-		getitimer();
-	}
-	if (aitvp == 0)
+	itvp = uap->itv;
+	if (itvp && (u.u_error = copyin((caddr_t)itvp, (caddr_t)&aitv,
+	    sizeof(struct itimerval))))
 		return;
-	u.u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv,
-	    sizeof (struct itimerval));
-	if (u.u_error)
+	if (uap->itv = uap->oitv) {
+		getitimer();
+		if (u.u_error)
+			return;
+	}
+	if (itvp == 0)
 		return;
 	if (itimerfix(&aitv.it_value) || itimerfix(&aitv.it_interval)) {
 		u.u_error = EINVAL;
