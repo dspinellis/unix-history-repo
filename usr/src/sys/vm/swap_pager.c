@@ -29,8 +29,8 @@
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/map.h>
-#include <sys/specdev.h>
 #include <sys/vnode.h>
+#include <sys/specdev.h>
 #include <sys/malloc.h>
 
 #include <vm/vm.h>
