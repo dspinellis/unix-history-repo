@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi_subr.c	8.1 (Berkeley) %G%
+ *	@(#)scsi_subr.c	5.5 (Berkeley) %G%
  *
  * from: $Header: scsi_subr.c,v 1.10 93/02/01 19:21:58 torek Exp $ (LBL)
  */
@@ -289,6 +289,8 @@ scsi_establish(u, dev, unit)
 		 * target too (possibly for the 2nd, 3rd, ..., time).
 		 */
 		t->t_units[t->t_firstunit]->u_start = scsi_targstart;
+		t->t_units[t->t_firstunit]->u_go = scsi_targgo;
+		t->t_units[t->t_firstunit]->u_rel = scsi_targrel;
 		t->t_units[t->t_firstunit]->u_updev = &t->t_dev;
 		u->u_start = scsi_targstart;
 		u->u_go = scsi_targgo;
