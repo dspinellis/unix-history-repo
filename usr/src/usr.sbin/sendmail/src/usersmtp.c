@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -108,7 +108,7 @@ smtpinit(m, mci, e)
 
 	SmtpPhase = mci->mci_phase = "greeting wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, (time_t) 300);
+	r = reply(m, mci, e, TimeOuts.to_initial);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -120,7 +120,7 @@ smtpinit(m, mci, e)
 	smtpmessage("HELO %s", m, mci, MyHostName);
 	SmtpPhase = mci->mci_phase = "HELO wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_helo);
 	if (r < 0)
 		goto tempfail1;
 	else if (REPLYTYPE(r) == 5)
@@ -137,7 +137,7 @@ smtpinit(m, mci, e)
 	{
 		/* tell it to be verbose */
 		smtpmessage("VERB", m, mci);
-		r = reply(m, mci, e, ReadTimeout);
+		r = reply(m, mci, e, TimeOuts.to_miscshort);
 		if (r < 0)
 			goto tempfail2;
 	}
@@ -200,7 +200,7 @@ smtpmailfrom(m, mci, e)
 	}
 	SmtpPhase = mci->mci_phase = "MAIL wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_mail);
 	if (r < 0 || REPLYTYPE(r) == 4)
 	{
 		mci->mci_exitstat = EX_TEMPFAIL;
@@ -262,7 +262,7 @@ smtprcpt(to, m, mci, e)
 
 	SmtpPhase = mci->mci_phase = "RCPT wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_rcpt);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 2)
@@ -315,7 +315,7 @@ smtpdata(m, mci, e)
 	smtpmessage("DATA", m, mci);
 	SmtpPhase = mci->mci_phase = "DATA wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_datainit);
 	if (r < 0 || REPLYTYPE(r) == 4)
 	{
 		smtpquit(m, mci, e);
@@ -352,7 +352,7 @@ smtpdata(m, mci, e)
 	/* check for the results of the transaction */
 	SmtpPhase = mci->mci_phase = "result wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_datafinal);
 	if (r < 0)
 	{
 		smtpquit(m, mci, e);
@@ -398,7 +398,7 @@ smtpquit(m, mci, e)
 	if (mci->mci_state != MCIS_ERROR)
 	{
 		smtpmessage("QUIT", m, mci);
-		(void) reply(m, mci, e, ReadTimeout);
+		(void) reply(m, mci, e, TimeOuts.to_quit);
 		if (mci->mci_state == MCIS_CLOSED)
 			return;
 	}
@@ -420,7 +420,7 @@ smtprset(m, mci, e)
 	int r;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e, (time_t) 300);
+	r = reply(m, mci, e, TimeOuts.to_rset);
 	if (r < 0)
 		mci->mci_state = MCIS_ERROR;
 	else if (REPLYTYPE(r) == 2)
@@ -443,7 +443,7 @@ smtpnoop(mci)
 	ENVELOPE *e = &BlankEnvelope;
 
 	smtpmessage("NOOP", m, mci);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_miscshort);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		smtpquit(m, mci, e);
 	return r;

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.15 (Berkeley) %G%
+ *	@(#)sendmail.h	6.16 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.15		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.16		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -627,7 +627,6 @@ EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN int	LineNumber;	/* line number in current input */
-EXTERN time_t	ReadTimeout;	/* timeout on reads */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN int	QueueLA;	/* load average starting forced queueing */
@@ -671,7 +670,32 @@ EXTERN int	MaxMciCache;	/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*ForwardPath;	/* path to search for .forward files */
 EXTERN long	MinBlocksFree;	/* minimum number of blocks free on queue fs */
-/*
+
+
+/*
+**  Timeouts
+**
+**	Indicated values are the MINIMUM per RFC 1123 section 5.3.2.
+*/
+
+EXTERN struct
+{
+	time_t	to_initial;	/* initial greeting timeout [5m] */
+	time_t	to_mail;	/* MAIL command [5m] */
+	time_t	to_rcpt;	/* RCPT command [5m] */
+	time_t	to_datainit;	/* DATA initiation [2m] */
+	time_t	to_datablock;	/* DATA block [3m] */
+	time_t	to_datafinal;	/* DATA completion [10m] */
+	time_t	to_nextcommand;	/* next command [5m] */
+			/* following timeouts are not mentioned in RFC 1123 */
+	time_t	to_rset;	/* RSET command */
+	time_t	to_helo;	/* HELO command */
+	time_t	to_quit;	/* QUIT command */
+	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
+} TimeOuts;
+
+
+/*
 **  Trace information
 */
 

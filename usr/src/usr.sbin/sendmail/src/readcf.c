@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1139,7 +1139,7 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'r':		/* read timeout */
-		ReadTimeout = convtime(val);
+		settimeouts(val);
 		break;
 
 	  case 'S':		/* status file */
@@ -1296,4 +1296,104 @@ makemapentry(line)
 
 	if ((*class->s_mapclass.map_init)(&map->s_map, mapname, p))
 		map->s_map.map_flags |= MF_VALID;
+}
+/*
+**  SETTIMEOUTS -- parse and set timeout values
+**
+**	Parameters:
+**		val -- a pointer to the values.  If NULL, do initial
+**			settings.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Initializes the TimeOuts structure
+*/
+
+#define MINUTES	* 60
+#define HOUR	* 3600
+
+settimeouts(val)
+	register char *val;
+{
+	register char *p;
+
+	if (val == NULL)
+	{
+		TimeOuts.to_initial = (time_t) 5 MINUTES;
+		TimeOuts.to_helo = (time_t) 5 MINUTES;
+		TimeOuts.to_mail = (time_t) 10 MINUTES;
+		TimeOuts.to_rcpt = (time_t) 1 HOUR;
+		TimeOuts.to_datainit = (time_t) 5 MINUTES;
+		TimeOuts.to_datablock = (time_t) 1 HOUR;
+		TimeOuts.to_datafinal = (time_t) 1 HOUR;
+		TimeOuts.to_rset = (time_t) 5 MINUTES;
+		TimeOuts.to_quit = (time_t) 2 MINUTES;
+		TimeOuts.to_nextcommand = (time_t) 1 HOUR;
+		TimeOuts.to_miscshort = (time_t) 2 MINUTES;
+		return;
+	}
+
+	for (;; val = p)
+	{
+		while (isascii(*val) && isspace(*val))
+			val++;
+		if (*val == '\0')
+			break;
+		for (p = val; *p != '\0' && *p != ','; p++)
+			continue;
+		if (*p != '\0')
+			*p++ = '\0';
+
+		if (isascii(*val) && isdigit(*val))
+		{
+			/* old syntax -- set everything */
+			TimeOuts.to_mail = convtime(val);
+			TimeOuts.to_rcpt = TimeOuts.to_mail;
+			TimeOuts.to_datainit = TimeOuts.to_mail;
+			TimeOuts.to_datablock = TimeOuts.to_mail;
+			TimeOuts.to_datafinal = TimeOuts.to_mail;
+			TimeOuts.to_nextcommand = TimeOuts.to_mail;
+			continue;
+		}
+		else
+		{
+			register char *q = strchr(val, '=');
+			time_t to;
+
+			if (q == NULL)
+			{
+				/* syntax error */
+				continue;
+			}
+			*q++ = '\0';
+			to = convtime(q);
+
+			if (strcasecmp(val, "initial") == 0)
+				TimeOuts.to_initial = to;
+			else if (strcasecmp(val, "mail") == 0)
+				TimeOuts.to_mail = to;
+			else if (strcasecmp(val, "rcpt") == 0)
+				TimeOuts.to_rcpt = to;
+			else if (strcasecmp(val, "datainit") == 0)
+				TimeOuts.to_datainit = to;
+			else if (strcasecmp(val, "datablock") == 0)
+				TimeOuts.to_datablock = to;
+			else if (strcasecmp(val, "datafinal") == 0)
+				TimeOuts.to_datafinal = to;
+			else if (strcasecmp(val, "command") == 0)
+				TimeOuts.to_nextcommand = to;
+			else if (strcasecmp(val, "rset") == 0)
+				TimeOuts.to_rset = to;
+			else if (strcasecmp(val, "helo") == 0)
+				TimeOuts.to_helo = to;
+			else if (strcasecmp(val, "quit") == 0)
+				TimeOuts.to_quit = to;
+			else if (strcasecmp(val, "misc") == 0)
+				TimeOuts.to_miscshort = to;
+			else
+				syserr("settimeouts: invalid timeout %s", val);
+		}
+	}
 }
