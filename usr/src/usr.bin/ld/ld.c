@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -3227,7 +3227,7 @@ write_output ()
   if (fstat (outdesc, &statbuf) < 0)
     perror_name (output_filename);
 
-  (void) fchflags(outdesc, statbuf.st_flags | NODUMP);
+  (void) fchflags(outdesc, statbuf.st_flags | UF_NODUMP);
 
   filemode = statbuf.st_mode;
   (void) fchmod (outdesc, filemode & ~0111);
