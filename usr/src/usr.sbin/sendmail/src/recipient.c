@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.22	%G%";
+static char SccsId[] = "@(#)recipient.c	3.23	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -34,6 +34,7 @@ sendto(list, copyf, ctladdr)
 	register char *p;
 	bool more;		/* set if more addresses to send to */
 	ADDRESS *al;		/* list of addresses to send to */
+	bool firstone;		/* set on first address sent */
 
 # ifdef DEBUG
 	if (Debug > 1)
@@ -41,6 +42,7 @@ sendto(list, copyf, ctladdr)
 # endif DEBUG
 
 	more = TRUE;
+	firstone = TRUE;
 	al = NULL;
 	for (p = list; more; )
 	{
@@ -68,7 +70,11 @@ sendto(list, copyf, ctladdr)
 		/* put it on the local send list */
 		a->q_next = al;
 		a->q_alias = ctladdr;
+		if (ctladdr == NULL ||
+		    (firstone && !more && bitset(QPRIMARY, ctladdr->q_flags)))
+			a->q_flags |= QPRIMARY;
 		al = a;
+		firstone = FALSE;
 	}
 
 	/* arrange to send to everyone on the local send list */
@@ -158,7 +164,8 @@ recipient(a)
 # endif DEBUG
 			if (Verbose && !bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
-			q->q_flags |= a->q_flags;
+			if (!bitset(QPRIMARY, q->q_flags))
+				q->q_flags |= a->q_flags;
 			return;
 		}
 	}
