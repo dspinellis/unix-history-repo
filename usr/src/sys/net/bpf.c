@@ -72,17 +72,15 @@ static char rcsid[] =
 int bpf_bufsize = MCLBYTES;
 
 /*
- *  'bpf_iftab' is the driver state table per logical unit number
- *  'bpf_dtab' holds the descriptors, indexed by minor device #
- *  'bpf_units' is the number of attached units
+ *  bpf_iflist is the list of interfaces; each corresponds to an ifnet
+ *  bpf_dtab holds the descriptors, indexed by minor device #
  *
  * We really don't need NBPFILTER bpf_if entries, but this eliminates
  * the need to account for all possible drivers here.
  * This problem will go away when these structures are allocated dynamically.
  */
-static struct bpf_if 	bpf_iftab[NBPFILTER];
+static struct bpf_if 	*bpf_iflist;
 static struct bpf_d	bpf_dtab[NBPFILTER];
-static u_int		bpf_units = 0;
 
 static void	bpf_ifname();
 static void	catchpacket();
@@ -334,7 +332,7 @@ bpfread(dev, uio)
 	 * as kernel buffers.
 	 */
 	if (uio->uio_resid != d->bd_bufsize)
-		return (EIO);
+		return (EINVAL);
 
 	s = splimp();
 	/*
@@ -436,7 +434,7 @@ bpfwrite(dev, uio)
 	if (uio->uio_resid > ifp->if_mtu)
 		return (EMSGSIZE);
 
-	error = bpf_movein(uio, (int)d->bd_bif->bif_devp.bdev_type, &m, &dst);
+	error = bpf_movein(uio, (int)d->bd_bif->bif_dlt, &m, &dst);
 	if (error)
 		return (error);
 
@@ -468,8 +466,6 @@ reset_d(d)
 }
 
 /*
- *  bpfioctl - packet filter control
- *
  *  FIONREAD		Check for read packet available.
  *  SIOCGIFADDR		Get interface address - convenient hook to driver.
  *  BIOCGFLEN		Get max filter len.
@@ -477,7 +473,7 @@ reset_d(d)
  *  BIOCSETF		Set ethernet read filter.
  *  BIOCFLUSH		Flush read packet buffer.
  *  BIOCPROMISC		Put interface into promiscuous mode.
- *  BIOCDEVP		Get device parameters.
+ *  BIOCGDLT		Get link layer type.
  *  BIOCGETIF		Get interface name.
  *  BIOCSETIF		Set interface.
  *  BIOCSRTIMEOUT	Set read timeout.
@@ -583,11 +579,11 @@ bpfioctl(dev, cmd, addr, flag)
 	/*
 	 * Get device parameters.
 	 */
-	case BIOCDEVP:
+	case BIOCGDLT:
 		if (d->bd_bif == 0)
 			error = EINVAL;
 		else
-			*(struct bpf_devp *)addr = d->bd_bif->bif_devp;
+			*(u_int *)addr = d->bd_bif->bif_dlt;
 		break;
 
 	/*
@@ -720,7 +716,7 @@ bpf_setif(d, ifr)
 {
 	struct bpf_if *bp;
 	char *cp;
-	int unit, i, s;
+	int unit, s;
 
 	/*
 	 * Separate string into name part and unit number.  Put a null
@@ -743,8 +739,7 @@ bpf_setif(d, ifr)
 	/*
 	 * Look through attached interfaces for the named one.
 	 */
-	bp = bpf_iftab;
-	for (i = 0; i < NBPFILTER; ++bp, ++i) {
+	for (bp = bpf_iflist; bp != 0; bp = bp->bif_next) {
 		struct ifnet *ifp = bp->bif_ifp;
 
 		if (ifp == 0 || unit != ifp->if_unit 
@@ -854,7 +849,6 @@ bpf_tap(arg, pkt, pktlen)
 	struct bpf_if *bp;
 	register struct bpf_d *d;
 	register u_int slen;
-	extern bcopy();
 	/*
 	 * Note that the ipl does not have to be raised at this point.
 	 * The only problem that could arise here is that if two different
@@ -863,13 +857,13 @@ bpf_tap(arg, pkt, pktlen)
 	bp = (struct bpf_if *)arg;
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		if (d->bd_filter) 
-			slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
-		else 
-			slen = (u_int)-1;
-
+		if (d->bd_filter == 0) {
+			catchpacket(d, pkt, pktlen, (u_int)-1, bcopy);
+			continue;
+		}
+		slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
 		if (slen != 0)
-			catchpacket(d, pkt, pktlen, slen, (void (*)())bcopy);
+			catchpacket(d, pkt, pktlen, slen, bcopy);
 	}
 }
 
@@ -878,7 +872,7 @@ bpf_tap(arg, pkt, pktlen)
  * from m_copydata in sys/uipc_mbuf.c.
  */
 static void
-bpf_m_copydata(src, dst, len)
+bpf_mcopy(src, dst, len)
 	u_char *src;
 	u_char *dst;
 	register int len;
@@ -888,12 +882,12 @@ bpf_m_copydata(src, dst, len)
 
 	while (len > 0) {
 		if (m == 0)
-			panic("bpf_m_copydata");
+			panic("bpf_mcopy");
 		count = MIN(m->m_len, len);
-		(void)bcopy(mtod(m, caddr_t), (caddr_t)dst, count);
-		len -= count;
-		dst += count;
+		bcopy(mtod(m, caddr_t), (caddr_t)dst, count);
 		m = m->m_next;
+		dst += count;
+		len -= count;
 	}
 }
 
@@ -907,32 +901,33 @@ bpf_m_copydata(src, dst, len)
  *   is in an mbuf chain
  */
 void
-bpf_mtap(arg, m0)
+bpf_mtap(arg, m)
 	caddr_t arg;
-	struct mbuf *m0;
+	struct mbuf *m;
 {
 	struct bpf_if *bp = (struct bpf_if *)arg;
 	struct bpf_d *d;
+	u_int pktlen, slen;
+	struct mbuf *m0;
+#ifdef notdef
 	u_char *cp;
-	u_int slen, pktlen;
 	int nbytes;
-	struct mbuf *m;
 	static u_char buf[BPF_MIN_SNAPLEN];
 
-	if (m0->m_len >= BPF_MIN_SNAPLEN) {
-		slen = m0->m_len;
-		cp = mtod(m0, u_char *);
+	if (m->m_len >= BPF_MIN_SNAPLEN) {
+		slen = m->m_len;
+		cp = mtod(m, u_char *);
 	} 
 	else {
 		nbytes = BPF_MIN_SNAPLEN;
 		cp = buf;
-		m = m0;
-		while (m && nbytes > 0) {		
-			slen = MIN(m->m_len, nbytes);
-			bcopy(mtod(m, char *), (char *)cp, slen);
+		m0 = m;
+		while (m0 && nbytes > 0) {		
+			slen = MIN(m0->m_len, nbytes);
+			bcopy(mtod(m0, char *), (char *)cp, slen);
 			cp += slen;
 			nbytes -= slen;
-			m = m->m_next;
+			m0 = m0->m_next;
 		}
 		if (nbytes > 0)
 			/* Packet too small? */
@@ -941,30 +936,32 @@ bpf_mtap(arg, m0)
 		slen = BPF_MIN_SNAPLEN;
 		cp = buf;
 	}
+#endif
 	pktlen = 0;
-	m = m0;
-	while (m) {
-		pktlen += m->m_len;
-		m = m->m_next;
+	m0 = m;
+	while (m0) {
+		pktlen += m0->m_len;
+		m0 = m0->m_next;
 	}
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		if (d->bd_filter)
-			slen = bpf_filter(d->bd_filter, cp, pktlen, slen);
-		else
-			slen = (u_int)-1;
+		if (d->bd_filter == 0) {
+			catchpacket(d, (u_char *)m, pktlen, (u_int)-1,
+				    bpf_mcopy);
+			continue;
+		}
+		slen = bpf_filter(d->bd_filter, (u_char *)m, pktlen, 0);
 		if (slen != 0)
-			catchpacket(d, (u_char *)m0, pktlen, slen,
-				    bpf_m_copydata);
+			catchpacket(d, (u_char *)m, pktlen, slen, bpf_mcopy);
 	}
 }
 
 /*
- * Move the packet data from interface memory ('pkt') into the
+ * Move the packet data from interface memory (pkt) into the
  * store buffer.  Return 1 if it's time to wakeup a listener (buffer full),
  * otherwise 0.  'copy' is the routine called to do the actual data 
  * transfer.  'bcopy' is passed in to copy contiguous chunks, while
- * 'bpf_m_copydata' is passed in to copy mbuf chains.  In the latter
+ * 'bpf_mcopy' is passed in to copy mbuf chains.  In the latter
  * case, 'pkt' is really an mbuf.
  */
 static void
@@ -1065,29 +1062,29 @@ bpf_initd(d)
 }
 
 /*
- * Register 'ifp' with bpf.  'devp' is the link-level device descriptor
+ * Register 'ifp' with bpf.  XXX
  * and 'driverp' is a pointer to the 'struct bpf_if *' in the driver's softc.
  */
 void
-bpfattach(driverp, ifp, devp)
+bpfattach(driverp, ifp, dlt, hdrlen)
 	caddr_t *driverp;
 	struct ifnet *ifp;
-	struct bpf_devp *devp;
+	u_int dlt, hdrlen;
 {
 	struct bpf_if *bp;
 	int i;
 
-	if (bpf_units >= NBPFILTER) {
-		printf("bpf: too many interfaces: %s%d not attached\n",
-		       ifp->if_name, ifp->if_unit);
-		return;
-	}
-	bp = &bpf_iftab[bpf_units++];
+	bp = (struct bpf_if *)malloc(sizeof(*bp), M_DEVBUF, M_DONTWAIT);
+	if (bp == 0)
+		panic("bpfattach");
 
 	bp->bif_dlist = 0;
 	bp->bif_driverp = (struct bpf_if **)driverp;
 	bp->bif_ifp = ifp;
-	bp->bif_devp = *devp;
+	bp->bif_dlt = dlt;
+
+	bp->bif_next = bpf_iflist;
+	bpf_iflist = bp;
 
 	*bp->bif_driverp = 0;
 
@@ -1097,8 +1094,7 @@ bpfattach(driverp, ifp, devp)
 	 * that the network layer header begins on a longword boundary (for 
 	 * performance reasons and to alleviate alignment restrictions).
 	 */
-	i = devp->bdev_hdrlen;
-	bp->bif_hdrlen = BPF_WORDALIGN(i + SIZEOF_BPF_HDR) - i;
+	bp->bif_hdrlen = BPF_WORDALIGN(hdrlen + SIZEOF_BPF_HDR) - hdrlen;
 
 	/*
 	 * Mark all the descriptors free if this hasn't been done.
