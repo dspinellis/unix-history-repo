@@ -29,11 +29,12 @@
  * the array of block pointers described by the dinode.
  */
 int
-ffs_bmap(vp, bn, vpp, bnp)
-	struct vnode *vp;
-	register daddr_t bn;
-	struct vnode **vpp;
-	daddr_t *bnp;
+ffs_bmap (ap)
+	struct vop_bmap_args *ap;
+#define vp (ap->a_vp)
+#define bn (ap->a_bn)
+#define vpp (ap->a_vpp)
+#define bnp (ap->a_bnp)
 {
 	register struct inode *ip;
 	register struct fs *fs;
@@ -109,6 +110,10 @@ ffs_bmap(vp, bn, vpp, bnp)
 	*bnp = fsbtodb(fs, nb);
 	return (0);
 }
+#undef vp
+#undef bn
+#undef vpp
+#undef bnp
 
 /*
  * Balloc defines the structure of file system storage

@@ -641,8 +641,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct vnode *vp = *vpp;
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
-	extern struct vnodeops spec_nfsv2nodeops;
-	extern struct vnodeops spec_vnodeops;
+	extern int (**spec_nfsv2nodeop_p)();
+	extern int (**spec_vnodeop_p)();
 	register struct nfsnode *np;
 	register long t1;
 	caddr_t dpos, cp2;
@@ -681,14 +681,14 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 			vp->v_type = vtyp;
 		if (vp->v_type == VFIFO) {
 #ifdef FIFO
-			extern struct vnodeops fifo_nfsv2nodeops;
-			vp->v_op = &fifo_nfsv2nodeops;
+			extern int (**fifo_nfsv2nodeop_p)();
+			vp->v_op = fifo_nfsv2nodeop_p;
 #else
 			return (EOPNOTSUPP);
 #endif /* FIFO */
 		}
 		if (vp->v_type == VCHR || vp->v_type == VBLK) {
-			vp->v_op = &spec_nfsv2nodeops;
+			vp->v_op = spec_nfsv2nodeop_p;
 			if (nvp = checkalias(vp, (dev_t)rdev, vp->v_mount)) {
 				/*
 				 * Discard unneeded vnode, but save its nfsnode.
@@ -696,7 +696,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				remque(np);
 				nvp->v_data = vp->v_data;
 				vp->v_data = NULL;
-				vp->v_op = &spec_vnodeops;
+				vp->v_op = spec_vnodeop_p;
 				vrele(vp);
 				vgone(vp);
 				/*
@@ -970,6 +970,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	struct mbuf *nam;
 	int *rdonlyp;
 {
+	USES_VOP_UNLOCK;
 	register struct mount *mp;
 	register struct netaddrhash *np;
 	register struct ufsmount *ump;

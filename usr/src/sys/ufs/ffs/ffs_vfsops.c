@@ -193,6 +193,9 @@ ffs_mountfs(devvp, mp, p)
 	struct mount *mp;
 	struct proc *p;
 {
+	USES_VOP_CLOSE;
+	USES_VOP_IOCTL;
+	USES_VOP_OPEN;
 	register struct ufsmount *ump = (struct ufsmount *)0;
 	struct buf *bp = NULL;
 	register struct fs *fs;
@@ -311,6 +314,7 @@ ffs_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
+	USES_VOP_CLOSE;
 	extern int doforce;
 	register struct ufsmount *ump;
 	register struct fs *fs;
@@ -364,10 +368,11 @@ ffs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
+	USES_VOP_VGET;
 	struct vnode *nvp;
 	int error;
 
-	if (error = ffs_vget(mp, (ino_t)ROOTINO, &nvp))
+	if (error = FFS_VGET(mp, (ino_t)ROOTINO, &nvp))
 		return (error);
 	*vpp = nvp;
 	return (0);
@@ -420,6 +425,8 @@ ffs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	USES_VOP_ISLOCKED;
+	USES_VOP_UPDATE;
 	extern int syncprt;
 	register struct vnode *vp;
 	register struct inode *ip;
@@ -466,7 +473,7 @@ loop:
 		if (vp->v_dirtyblkhd)
 			vflushbuf(vp, 0);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = ffs_update(vp, &time, &time, 0)))
+		    (error = VOP_UPDATE(vp, &time, &time, 0)))
 			allerror = error;
 		vput(vp);
 	}
@@ -496,6 +503,7 @@ ffs_fhtovp(mp, fhp, setgen, vpp)
 	int setgen;
 	struct vnode **vpp;
 {
+	USES_VOP_VGET;
 	register struct inode *ip;
 	register struct ufid *ufhp;
 	struct fs *fs;
@@ -507,7 +515,7 @@ ffs_fhtovp(mp, fhp, setgen, vpp)
 	if (ufhp->ufid_ino < ROOTINO ||
 	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
 		return (EINVAL);
-	if (error = ffs_vget(mp, ufhp->ufid_ino, &nvp)) {
+	if (error = FFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
 		*vpp = NULLVP;
 		return (error);
 	}

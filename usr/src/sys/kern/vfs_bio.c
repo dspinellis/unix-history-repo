@@ -72,6 +72,7 @@ bread(vp, blkno, size, cred, bpp)
 	struct ucred *cred;
 	struct buf **bpp;
 {
+	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp;
 
@@ -107,6 +108,7 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 	struct ucred *cred;
 	struct buf **bpp;
 {
+	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp, *rabp;
 	register int i;
@@ -175,6 +177,7 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 bwrite(bp)
 	register struct buf *bp;
 {
+	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register int flag;
 	int s, error = 0;
@@ -229,6 +232,7 @@ bwrite(bp)
 bdwrite(bp)
 	register struct buf *bp;
 {
+	USES_VOP_IOCTL;
 	struct proc *p = curproc;		/* XXX */
 
 	if ((bp->b_flags & B_DELWRI) == 0) {

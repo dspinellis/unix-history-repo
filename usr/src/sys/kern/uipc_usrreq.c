@@ -343,6 +343,9 @@ unp_bind(unp, nam, p)
 	struct mbuf *nam;
 	struct proc *p;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_CREATE;
+	USES_VOP_UNLOCK;
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
 	int error;
@@ -383,6 +386,7 @@ unp_connect(so, nam, p)
 	struct mbuf *nam;
 	struct proc *p;
 {
+	USES_VOP_ACCESS;
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
 	register struct socket *so2, *so3;

@@ -196,6 +196,7 @@ ktrace(curp, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_UNLOCK;
 	register struct vnode *vp = NULL;
 	register struct proc *p;
 	struct pgrp *pg;
@@ -362,6 +363,9 @@ ktrwrite(vp, kth)
 	struct vnode *vp;
 	register struct ktr_header *kth;
 {
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
+	USES_VOP_WRITE;
 	struct uio auio;
 	struct iovec aiov[2];
 	register struct proc *p = curproc;	/* XXX */

@@ -35,48 +35,53 @@ extern char mfsiobuf[];
 /*
  * mfs vnode operations.
  */
-struct vnodeops mfs_vnodeops = {
-	mfs_lookup,		/* lookup */
-	mfs_create,		/* create */
-	mfs_mknod,		/* mknod */
-	mfs_open,		/* open */
-	mfs_close,		/* close */
-	mfs_access,		/* access */
-	mfs_getattr,		/* getattr */
-	mfs_setattr,		/* setattr */
-	mfs_read,		/* read */
-	mfs_write,		/* write */
-	mfs_ioctl,		/* ioctl */
-	mfs_select,		/* select */
-	mfs_mmap,		/* mmap */
-	mfs_fsync,		/* fsync */
-	mfs_seek,		/* seek */
-	mfs_remove,		/* remove */
-	mfs_link,		/* link */
-	mfs_rename,		/* rename */
-	mfs_mkdir,		/* mkdir */
-	mfs_rmdir,		/* rmdir */
-	mfs_symlink,		/* symlink */
-	mfs_readdir,		/* readdir */
-	mfs_readlink,		/* readlink */
-	mfs_abortop,		/* abortop */
-	mfs_inactive,		/* inactive */
-	mfs_reclaim,		/* reclaim */
-	mfs_lock,		/* lock */
-	mfs_unlock,		/* unlock */
-	mfs_bmap,		/* bmap */
-	mfs_strategy,		/* strategy */
-	mfs_print,		/* print */
-	mfs_islocked,		/* islocked */
-	mfs_advlock,		/* advlock */
-	mfs_blkatoff,		/* blkatoff */
-	mfs_vget,		/* vget */
-	mfs_valloc,		/* valloc */
-	mfs_vfree,		/* vfree */
-	mfs_truncate,		/* truncate */
-	mfs_update,		/* update */
-	mfs_bwrite,		/* bwrite */
+int (**mfs_vnodeop_p)();
+struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
+	{ &vop_default_desc, vn_default_error },
+	{ &vop_lookup_desc, mfs_lookup },		/* lookup */
+	{ &vop_create_desc, mfs_create },		/* create */
+	{ &vop_mknod_desc, mfs_mknod },		/* mknod */
+	{ &vop_open_desc, mfs_open },		/* open */
+	{ &vop_close_desc, mfs_close },		/* close */
+	{ &vop_access_desc, mfs_access },		/* access */
+	{ &vop_getattr_desc, mfs_getattr },		/* getattr */
+	{ &vop_setattr_desc, mfs_setattr },		/* setattr */
+	{ &vop_read_desc, mfs_read },		/* read */
+	{ &vop_write_desc, mfs_write },		/* write */
+	{ &vop_ioctl_desc, mfs_ioctl },		/* ioctl */
+	{ &vop_select_desc, mfs_select },		/* select */
+	{ &vop_mmap_desc, mfs_mmap },		/* mmap */
+	{ &vop_fsync_desc, mfs_fsync },		/* fsync */
+	{ &vop_seek_desc, mfs_seek },		/* seek */
+	{ &vop_remove_desc, mfs_remove },		/* remove */
+	{ &vop_link_desc, mfs_link },		/* link */
+	{ &vop_rename_desc, mfs_rename },		/* rename */
+	{ &vop_mkdir_desc, mfs_mkdir },		/* mkdir */
+	{ &vop_rmdir_desc, mfs_rmdir },		/* rmdir */
+	{ &vop_symlink_desc, mfs_symlink },		/* symlink */
+	{ &vop_readdir_desc, mfs_readdir },		/* readdir */
+	{ &vop_readlink_desc, mfs_readlink },		/* readlink */
+	{ &vop_abortop_desc, mfs_abortop },		/* abortop */
+	{ &vop_inactive_desc, mfs_inactive },		/* inactive */
+	{ &vop_reclaim_desc, mfs_reclaim },		/* reclaim */
+	{ &vop_lock_desc, mfs_lock },		/* lock */
+	{ &vop_unlock_desc, mfs_unlock },		/* unlock */
+	{ &vop_bmap_desc, mfs_bmap },		/* bmap */
+	{ &vop_strategy_desc, mfs_strategy },		/* strategy */
+	{ &vop_print_desc, mfs_print },		/* print */
+	{ &vop_islocked_desc, mfs_islocked },		/* islocked */
+	{ &vop_advlock_desc, mfs_advlock },		/* advlock */
+	{ &vop_blkatoff_desc, mfs_blkatoff },		/* blkatoff */
+	{ &vop_vget_desc, mfs_vget },		/* vget */
+	{ &vop_valloc_desc, mfs_valloc },		/* valloc */
+	{ &vop_vfree_desc, mfs_vfree },		/* vfree */
+	{ &vop_truncate_desc, mfs_truncate },		/* truncate */
+	{ &vop_update_desc, mfs_update },		/* update */
+	{ &vop_bwrite_desc, mfs_bwrite },		/* bwrite */
+	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
+struct vnodeopv_desc mfs_vnodeop_opv_desc =
+	{ &mfs_vnodeop_p, mfs_vnodeop_entries };
 
 /*
  * Vnode Operations.
@@ -87,11 +92,12 @@ struct vnodeops mfs_vnodeops = {
  */
 /* ARGSUSED */
 int
-mfs_open(vp, mode, cred, p)
-	register struct vnode *vp;
-	int mode;
-	struct ucred *cred;
-	struct proc *p;
+mfs_open (ap)
+	struct vop_open_args *ap;
+#define vp (ap->a_vp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	if (vp->v_type != VBLK) {
@@ -100,30 +106,42 @@ mfs_open(vp, mode, cred, p)
 	}
 	return (0);
 }
+#undef vp
+#undef mode
+#undef cred
+#undef p
 
 /*
  * Ioctl operation.
  */
 /* ARGSUSED */
 int
-mfs_ioctl(vp, com, data, fflag, cred, p)
-	struct vnode *vp;
-	int com;
-	caddr_t data;
-	int fflag;
-	struct ucred *cred;
-	struct proc *p;
+mfs_ioctl (ap)
+	struct vop_ioctl_args *ap;
+#define vp (ap->a_vp)
+#define com (ap->a_command)
+#define data (ap->a_data)
+#define fflag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	return (ENOTTY);
 }
+#undef vp
+#undef com
+#undef data
+#undef fflag
+#undef cred
+#undef p
 
 /*
  * Pass I/O requests to the memory filesystem process.
  */
 int
-mfs_strategy(bp)
-	register struct buf *bp;
+mfs_strategy (ap)
+	struct vop_strategy_args *ap;
+#define bp (ap->a_bp)
 {
 	register struct mfsnode *mfsp;
 	struct vnode *vp;
@@ -151,6 +169,7 @@ mfs_strategy(bp)
 	}
 	return (0);
 }
+#undef bp
 
 #if defined(vax) || defined(tahoe)
 /*
@@ -257,11 +276,12 @@ mfs_doio(bp, base)
  * This is a noop, simply returning what one has been given.
  */
 int
-mfs_bmap(vp, bn, vpp, bnp)
-	struct vnode *vp;
-	daddr_t bn;
-	struct vnode **vpp;
-	daddr_t *bnp;
+mfs_bmap (ap)
+	struct vop_bmap_args *ap;
+#define vp (ap->a_vp)
+#define bn (ap->a_bn)
+#define vpp (ap->a_vpp)
+#define bnp (ap->a_bnp)
 {
 
 	if (vpp != NULL)
@@ -270,17 +290,22 @@ mfs_bmap(vp, bn, vpp, bnp)
 		*bnp = bn;
 	return (0);
 }
+#undef vp
+#undef bn
+#undef vpp
+#undef bnp
 
 /*
  * Memory filesystem close routine
  */
 /* ARGSUSED */
 int
-mfs_close(vp, flag, cred, p)
-	register struct vnode *vp;
-	int flag;
-	struct ucred *cred;
-	struct proc *p;
+mfs_close (ap)
+	struct vop_close_args *ap;
+#define vp (ap->a_vp)
+#define flag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
@@ -316,15 +341,20 @@ mfs_close(vp, flag, cred, p)
 	wakeup((caddr_t)vp);
 	return (0);
 }
+#undef vp
+#undef flag
+#undef cred
+#undef p
 
 /*
  * Memory filesystem inactive routine
  */
 /* ARGSUSED */
 int
-mfs_inactive(vp, p)
-	struct vnode *vp;
-	struct proc *p;
+mfs_inactive (ap)
+	struct vop_inactive_args *ap;
+#define vp (ap->a_vp)
+#define p (ap->a_p)
 {
 	register struct mfsnode *mfsp = VTOMFS(vp);
 
@@ -333,26 +363,31 @@ mfs_inactive(vp, p)
 			mfsp->mfs_buflist);
 	return (0);
 }
+#undef vp
+#undef p
 
 /*
  * Reclaim a memory filesystem devvp so that it can be reused.
  */
 int
-mfs_reclaim(vp)
-	register struct vnode *vp;
+mfs_reclaim (ap)
+	struct vop_reclaim_args *ap;
+#define vp (ap->a_vp)
 {
 
 	FREE(vp->v_data, M_MFSNODE);
 	vp->v_data = NULL;
 	return (0);
 }
+#undef vp
 
 /*
  * Print out the contents of an mfsnode.
  */
 int
-mfs_print(vp)
-	struct vnode *vp;
+mfs_print (ap)
+	struct vop_print_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct mfsnode *mfsp = VTOMFS(vp);
 
@@ -360,6 +395,7 @@ mfs_print(vp)
 		mfsp->mfs_baseoff, mfsp->mfs_size);
 	return (0);
 }
+#undef vp
 
 /*
  * Block device bad operation

@@ -106,6 +106,7 @@ vnopen(dev, flags, mode, p)
 vnstrategy(bp)
 	register struct buf *bp;
 {
+	USES_VOP_BMAP;
 	int unit = vnunit(bp->b_dev);
 	register struct vn_softc *vn = &vn_softc[unit];
 	register struct buf *nbp;
@@ -191,6 +192,7 @@ vnstrategy(bp)
  */
 vnstart(unit)
 {
+	USES_VOP_STRATEGY;
 	register struct vn_softc *vn = &vn_softc[unit];
 	register struct buf *bp;
 
@@ -285,6 +287,8 @@ vnioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
+	USES_VOP_GETATTR;
+	USES_VOP_UNLOCK;
 	int unit = vnunit(dev);
 	register struct vn_softc *vn;
 	struct vn_ioctl *vio;
@@ -367,6 +371,7 @@ vnsetcred(vn, cred)
 	register struct vn_softc *vn;
 	struct ucred cred;
 {
+	USES_VOP_READ;
 	struct uio auio;
 	struct iovec aiov;
 	char tmpbuf[DEV_BSIZE];
@@ -391,10 +396,10 @@ vnthrottle(vn, vp)
 	register struct vn_softc *vn;
 	struct vnode *vp;
 {
-	extern struct vnodeops ufs_vnodeops;
-	extern struct vnodeops nfsv2_vnodeops;
+	extern int (**ufs_vnodeop_p)();
+	extern int (**nfsv2_vnodeop_p)();
 
-	if (vp->v_op == &nfsv2_vnodeops)
+	if (vp->v_op == nfsv2_vnodeop_p)
 		vn->sc_maxactive = 2;
 	else
 		vn->sc_maxactive = 8;
@@ -415,6 +420,7 @@ vnshutdown()
 vnclear(vn)
 	register struct vn_softc *vn;
 {
+	USES_VOP_FSYNC;
 	register struct vnode *vp = vn->sc_vp;
 	struct proc *p = curproc;		/* XXX */
 

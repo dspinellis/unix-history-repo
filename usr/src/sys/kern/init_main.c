@@ -58,6 +58,7 @@ extern	struct user *proc0paddr;
  */
 main()
 {
+	USES_VOP_UNLOCK;
 	register int i;
 	register struct proc *p;
 	register struct filedesc0 *fdp;

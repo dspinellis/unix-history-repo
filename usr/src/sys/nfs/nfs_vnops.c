@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.73 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.74 (Berkeley) %G%
  */
 
 /*
@@ -47,138 +47,153 @@
 /*
  * Global vfs data structures for nfs
  */
-struct vnodeops nfsv2_vnodeops = {
-	nfs_lookup,		/* lookup */
-	nfs_create,		/* create */
-	nfs_mknod,		/* mknod */
-	nfs_open,		/* open */
-	nfs_close,		/* close */
-	nfs_access,		/* access */
-	nfs_getattr,		/* getattr */
-	nfs_setattr,		/* setattr */
-	nfs_read,		/* read */
-	nfs_write,		/* write */
-	nfs_ioctl,		/* ioctl */
-	nfs_select,		/* select */
-	nfs_mmap,		/* mmap */
-	nfs_fsync,		/* fsync */
-	nfs_seek,		/* seek */
-	nfs_remove,		/* remove */
-	nfs_link,		/* link */
-	nfs_rename,		/* rename */
-	nfs_mkdir,		/* mkdir */
-	nfs_rmdir,		/* rmdir */
-	nfs_symlink,		/* symlink */
-	nfs_readdir,		/* readdir */
-	nfs_readlink,		/* readlink */
-	nfs_abortop,		/* abortop */
-	nfs_inactive,		/* inactive */
-	nfs_reclaim,		/* reclaim */
-	nfs_lock,		/* lock */
-	nfs_unlock,		/* unlock */
-	nfs_bmap,		/* bmap */
-	nfs_strategy,		/* strategy */
-	nfs_print,		/* print */
-	nfs_islocked,		/* islocked */
-	nfs_advlock,		/* advlock */
-	nfs_blkatoff,		/* blkatoff */
-	nfs_vget,		/* vget */
-	nfs_valloc,		/* valloc */
-	nfs_vfree,		/* vfree */
-	nfs_truncate,		/* truncate */
-	nfs_update,		/* update */
-	bwrite,			/* bwrite */
+int (**nfsv2_vnodeop_p)();
+struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
+	{ &vop_default_desc, vn_default_error },
+	{ &vop_lookup_desc, nfs_lookup },		/* lookup */
+	{ &vop_create_desc, nfs_create },		/* create */
+	{ &vop_mknod_desc, nfs_mknod },		/* mknod */
+	{ &vop_open_desc, nfs_open },		/* open */
+	{ &vop_close_desc, nfs_close },		/* close */
+	{ &vop_access_desc, nfs_access },		/* access */
+	{ &vop_getattr_desc, nfs_getattr },		/* getattr */
+	{ &vop_setattr_desc, nfs_setattr },		/* setattr */
+	{ &vop_read_desc, nfs_read },		/* read */
+	{ &vop_write_desc, nfs_write },		/* write */
+	{ &vop_ioctl_desc, nfs_ioctl },		/* ioctl */
+	{ &vop_select_desc, nfs_select },		/* select */
+	{ &vop_mmap_desc, nfs_mmap },		/* mmap */
+	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
+	{ &vop_seek_desc, nfs_seek },		/* seek */
+	{ &vop_remove_desc, nfs_remove },		/* remove */
+	{ &vop_link_desc, nfs_link },		/* link */
+	{ &vop_rename_desc, nfs_rename },		/* rename */
+	{ &vop_mkdir_desc, nfs_mkdir },		/* mkdir */
+	{ &vop_rmdir_desc, nfs_rmdir },		/* rmdir */
+	{ &vop_symlink_desc, nfs_symlink },		/* symlink */
+	{ &vop_readdir_desc, nfs_readdir },		/* readdir */
+	{ &vop_readlink_desc, nfs_readlink },		/* readlink */
+	{ &vop_abortop_desc, nfs_abortop },		/* abortop */
+	{ &vop_inactive_desc, nfs_inactive },		/* inactive */
+	{ &vop_reclaim_desc, nfs_reclaim },		/* reclaim */
+	{ &vop_lock_desc, nfs_lock },		/* lock */
+	{ &vop_unlock_desc, nfs_unlock },		/* unlock */
+	{ &vop_bmap_desc, nfs_bmap },		/* bmap */
+	{ &vop_strategy_desc, nfs_strategy },		/* strategy */
+	{ &vop_print_desc, nfs_print },		/* print */
+	{ &vop_islocked_desc, nfs_islocked },		/* islocked */
+	{ &vop_advlock_desc, nfs_advlock },		/* advlock */
+	{ &vop_blkatoff_desc, nfs_blkatoff },		/* blkatoff */
+	{ &vop_vget_desc, nfs_vget },		/* vget */
+	{ &vop_valloc_desc, nfs_valloc },		/* valloc */
+	{ &vop_vfree_desc, nfs_vfree },		/* vfree */
+	{ &vop_truncate_desc, nfs_truncate },		/* truncate */
+	{ &vop_update_desc, nfs_update },		/* update */
+	{ &vop_bwrite_desc, bwrite },
+	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
+struct vnodeopv_desc nfsv2_vnodeop_opv_desc =
+	{ &nfsv2_vnodeop_p, nfsv2_vnodeop_entries };
 
 /*
  * Special device vnode ops
  */
-struct vnodeops spec_nfsv2nodeops = {
-	spec_lookup,		/* lookup */
-	spec_create,		/* create */
-	spec_mknod,		/* mknod */
-	spec_open,		/* open */
-	spec_close,		/* close */
-	nfs_access,		/* access */
-	nfs_getattr,		/* getattr */
-	nfs_setattr,		/* setattr */
-	spec_read,		/* read */
-	spec_write,		/* write */
-	spec_ioctl,		/* ioctl */
-	spec_select,		/* select */
-	spec_mmap,		/* mmap */
-	spec_fsync,		/* fsync */
-	spec_seek,		/* seek */
-	spec_remove,		/* remove */
-	spec_link,		/* link */
-	spec_rename,		/* rename */
-	spec_mkdir,		/* mkdir */
-	spec_rmdir,		/* rmdir */
-	spec_symlink,		/* symlink */
-	spec_readdir,		/* readdir */
-	spec_readlink,		/* readlink */
-	spec_abortop,		/* abortop */
-	nfs_inactive,		/* inactive */
-	nfs_reclaim,		/* reclaim */
-	nfs_lock,		/* lock */
-	nfs_unlock,		/* unlock */
-	spec_bmap,		/* bmap */
-	spec_strategy,		/* strategy */
-	nfs_print,		/* print */
-	nfs_islocked,		/* islocked */
-	spec_advlock,		/* advlock */
-	spec_blkatoff,		/* blkatoff */
-	spec_vget,		/* vget */
-	spec_valloc,		/* valloc */
-	spec_vfree,		/* vfree */
-	spec_truncate,		/* truncate */
-	nfs_update,		/* update */
-	bwrite,			/* bwrite */
+int (**spec_nfsv2nodeop_p)();
+struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
+	{ &vop_default_desc, vn_default_error },
+	{ &vop_lookup_desc, spec_lookup },		/* lookup */
+	{ &vop_create_desc, spec_create },		/* create */
+	{ &vop_mknod_desc, spec_mknod },		/* mknod */
+	{ &vop_open_desc, spec_open },		/* open */
+	{ &vop_close_desc, spec_close },		/* close */
+	{ &vop_access_desc, nfs_access },		/* access */
+	{ &vop_getattr_desc, nfs_getattr },		/* getattr */
+	{ &vop_setattr_desc, nfs_setattr },		/* setattr */
+	{ &vop_read_desc, spec_read },		/* read */
+	{ &vop_write_desc, spec_write },		/* write */
+	{ &vop_ioctl_desc, spec_ioctl },		/* ioctl */
+	{ &vop_select_desc, spec_select },		/* select */
+	{ &vop_mmap_desc, spec_mmap },		/* mmap */
+	{ &vop_fsync_desc, spec_fsync },		/* fsync */
+	{ &vop_seek_desc, spec_seek },		/* seek */
+	{ &vop_remove_desc, spec_remove },		/* remove */
+	{ &vop_link_desc, spec_link },		/* link */
+	{ &vop_rename_desc, spec_rename },		/* rename */
+	{ &vop_mkdir_desc, spec_mkdir },		/* mkdir */
+	{ &vop_rmdir_desc, spec_rmdir },		/* rmdir */
+	{ &vop_symlink_desc, spec_symlink },		/* symlink */
+	{ &vop_readdir_desc, spec_readdir },		/* readdir */
+	{ &vop_readlink_desc, spec_readlink },		/* readlink */
+	{ &vop_abortop_desc, spec_abortop },		/* abortop */
+	{ &vop_inactive_desc, nfs_inactive },		/* inactive */
+	{ &vop_reclaim_desc, nfs_reclaim },		/* reclaim */
+	{ &vop_lock_desc, nfs_lock },		/* lock */
+	{ &vop_unlock_desc, nfs_unlock },		/* unlock */
+	{ &vop_bmap_desc, spec_bmap },		/* bmap */
+	{ &vop_strategy_desc, spec_strategy },		/* strategy */
+	{ &vop_print_desc, nfs_print },		/* print */
+	{ &vop_islocked_desc, nfs_islocked },		/* islocked */
+	{ &vop_advlock_desc, spec_advlock },		/* advlock */
+	{ &vop_blkatoff_desc, spec_blkatoff },		/* blkatoff */
+	{ &vop_vget_desc, spec_vget },		/* vget */
+	{ &vop_valloc_desc, spec_valloc },		/* valloc */
+	{ &vop_vfree_desc, spec_vfree },		/* vfree */
+	{ &vop_truncate_desc, spec_truncate },		/* truncate */
+	{ &vop_update_desc, nfs_update },		/* update */
+	{ &vop_bwrite_desc, bwrite },
+	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
+struct vnodeopv_desc spec_nfsv2nodeop_opv_desc =
+	{ &spec_nfsv2nodeop_p, spec_nfsv2nodeop_entries };
 
 #ifdef FIFO
-struct vnodeops fifo_nfsv2nodeops = {
-	fifo_lookup,		/* lookup */
-	fifo_create,		/* create */
-	fifo_mknod,		/* mknod */
-	fifo_open,		/* open */
-	fifo_close,		/* close */
-	nfs_access,		/* access */
-	nfs_getattr,		/* getattr */
-	nfs_setattr,		/* setattr */
-	fifo_read,		/* read */
-	fifo_write,		/* write */
-	fifo_ioctl,		/* ioctl */
-	fifo_select,		/* select */
-	fifo_mmap,		/* mmap */
-	fifo_fsync,		/* fsync */
-	fifo_seek,		/* seek */
-	fifo_remove,		/* remove */
-	fifo_link,		/* link */
-	fifo_rename,		/* rename */
-	fifo_mkdir,		/* mkdir */
-	fifo_rmdir,		/* rmdir */
-	fifo_symlink,		/* symlink */
-	fifo_readdir,		/* readdir */
-	fifo_readlink,		/* readlink */
-	fifo_abortop,		/* abortop */
-	nfs_inactive,		/* inactive */
-	nfs_reclaim,		/* reclaim */
-	nfs_lock,		/* lock */
-	nfs_unlock,		/* unlock */
-	fifo_bmap,		/* bmap */
-	fifo_badop,		/* strategy */
-	nfs_print,		/* print */
-	nfs_islocked,		/* islocked */
-	fifo_advlock,		/* advlock */
-	fifo_blkatoff,		/* blkatoff */
-	fifo_vget,		/* vget */
-	fifo_valloc,		/* valloc */
-	fifo_vfree,		/* vfree */
-	fifo_truncate,		/* truncate */
-	nfs_update,		/* update */
-	bwrite,			/* bwrite */
+int (**fifo_nfsv2nodeop_p)();
+struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
+	{ &vop_default_desc, vn_default_error },
+	{ &vop_lookup_desc, fifo_lookup },		/* lookup */
+	{ &vop_create_desc, fifo_create },		/* create */
+	{ &vop_mknod_desc, fifo_mknod },		/* mknod */
+	{ &vop_open_desc, fifo_open },		/* open */
+	{ &vop_close_desc, fifo_close },		/* close */
+	{ &vop_access_desc, nfs_access },		/* access */
+	{ &vop_getattr_desc, nfs_getattr },		/* getattr */
+	{ &vop_setattr_desc, nfs_setattr },		/* setattr */
+	{ &vop_read_desc, fifo_read },		/* read */
+	{ &vop_write_desc, fifo_write },		/* write */
+	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
+	{ &vop_select_desc, fifo_select },		/* select */
+	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
+	{ &vop_fsync_desc, fifo_fsync },		/* fsync */
+	{ &vop_seek_desc, fifo_seek },		/* seek */
+	{ &vop_remove_desc, fifo_remove },		/* remove */
+	{ &vop_link_desc, fifo_link },		/* link */
+	{ &vop_rename_desc, fifo_rename },		/* rename */
+	{ &vop_mkdir_desc, fifo_mkdir },		/* mkdir */
+	{ &vop_rmdir_desc, fifo_rmdir },		/* rmdir */
+	{ &vop_symlink_desc, fifo_symlink },		/* symlink */
+	{ &vop_readdir_desc, fifo_readdir },		/* readdir */
+	{ &vop_readlink_desc, fifo_readlink },		/* readlink */
+	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
+	{ &vop_inactive_desc, nfs_inactive },		/* inactive */
+	{ &vop_reclaim_desc, nfs_reclaim },		/* reclaim */
+	{ &vop_lock_desc, nfs_lock },		/* lock */
+	{ &vop_unlock_desc, nfs_unlock },		/* unlock */
+	{ &vop_bmap_desc, fifo_bmap },		/* bmap */
+	{ &vop_strategy_desc, fifo_badop },		/* strategy */
+	{ &vop_print_desc, nfs_print },		/* print */
+	{ &vop_islocked_desc, nfs_islocked },		/* islocked */
+	{ &vop_advlock_desc, fifo_advlock },		/* advlock */
+	{ &vop_blkatoff_desc, fifo_blkatoff },		/* blkatoff */
+	{ &vop_vget_desc, fifo_vget },		/* vget */
+	{ &vop_valloc_desc, fifo_valloc },		/* valloc */
+	{ &vop_vfree_desc, fifo_vfree },		/* vfree */
+	{ &vop_truncate_desc, fifo_truncate },		/* truncate */
+	{ &vop_update_desc, nfs_update },		/* update */
+	{ &vop_bwrite_desc, bwrite },
+	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
+struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc =
+	{ &fifo_nfsv2nodeop_p, fifo_nfsv2nodeop_entries };
 #endif /* FIFO */
 
 /*
@@ -216,12 +231,14 @@ nfs_null(vp, cred, procp)
  * Essentially just get vattr and then imitate iaccess()
  */
 int
-nfs_access(vp, mode, cred, procp)
-	struct vnode *vp;
-	int mode;
-	register struct ucred *cred;
-	struct proc *procp;
+nfs_access (ap)
+	struct vop_access_args *ap;
+#define vp (ap->a_vp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define procp (ap->a_p)
 {
+	USES_VOP_GETATTR;
 	register struct vattr *vap;
 	register gid_t *gp;
 	struct vattr vattr;
@@ -235,7 +252,7 @@ nfs_access(vp, mode, cred, procp)
 	if (cred->cr_uid == 0)
 		return (0);
 	vap = &vattr;
-	if (error = nfs_getattr(vp, vap, cred, procp))
+	if (error = VOP_GETATTR(vp, vap, cred, procp))
 		return (error);
 	/*
 	 * Access check is based on only one of owner, group, public.
@@ -256,6 +273,10 @@ found:
 		return (0);
 	return (EACCES);
 }
+#undef vp
+#undef mode
+#undef cred
+#undef procp
 
 /*
  * nfs open vnode op
@@ -264,11 +285,12 @@ found:
  */
 /* ARGSUSED */
 int
-nfs_open(vp, mode, cred, procp)
-	register struct vnode *vp;
-	int mode;
-	struct ucred *cred;
-	struct proc *procp;
+nfs_open (ap)
+	struct vop_open_args *ap;
+#define vp (ap->a_vp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define procp (ap->a_p)
 {
 
 	if (vp->v_type != VREG && vp->v_type != VDIR && vp->v_type != VLNK)
@@ -277,6 +299,10 @@ nfs_open(vp, mode, cred, procp)
 		VTONFS(vp)->n_attrstamp = 0; /* For Open/Close consistency */
 	return (0);
 }
+#undef vp
+#undef mode
+#undef cred
+#undef procp
 
 /*
  * nfs close vnode op
@@ -284,11 +310,12 @@ nfs_open(vp, mode, cred, procp)
  */
 /* ARGSUSED */
 int
-nfs_close(vp, fflags, cred, procp)
-	register struct vnode *vp;
-	int fflags;
-	struct ucred *cred;
-	struct proc *procp;
+nfs_close (ap)
+	struct vop_close_args *ap;
+#define vp (ap->a_vp)
+#define fflags (ap->a_fflag)
+#define cred (ap->a_cred)
+#define procp (ap->a_p)
 {
 	register struct nfsnode *np = VTONFS(vp);
 	int error = 0;
@@ -306,16 +333,21 @@ nfs_close(vp, fflags, cred, procp)
 	}
 	return (error);
 }
+#undef vp
+#undef fflags
+#undef cred
+#undef procp
 
 /*
  * nfs getattr call from vfs.
  */
 int
-nfs_getattr(vp, vap, cred, procp)
-	register struct vnode *vp;
-	struct vattr *vap;
-	struct ucred *cred;
-	struct proc *procp;
+nfs_getattr (ap)
+	struct vop_getattr_args *ap;
+#define vp (ap->a_vp)
+#define vap (ap->a_vap)
+#define cred (ap->a_cred)
+#define procp (ap->a_p)
 {
 	register caddr_t cp;
 	caddr_t bpos, dpos;
@@ -333,16 +365,21 @@ nfs_getattr(vp, vap, cred, procp)
 	nfsm_reqdone;
 	return (error);
 }
+#undef vp
+#undef vap
+#undef cred
+#undef procp
 
 /*
  * nfs setattr call.
  */
 int
-nfs_setattr(vp, vap, cred, procp)
-	register struct vnode *vp;
-	register struct vattr *vap;
-	struct ucred *cred;
-	struct proc *procp;
+nfs_setattr (ap)
+	struct vop_setattr_args *ap;
+#define vp (ap->a_vp)
+#define vap (ap->a_vap)
+#define cred (ap->a_cred)
+#define procp (ap->a_p)
 {
 	register struct nfsv2_sattr *sp;
 	register caddr_t cp;
@@ -396,6 +433,10 @@ nfs_setattr(vp, vap, cred, procp)
 	nfsm_reqdone;
 	return (error);
 }
+#undef vp
+#undef vap
+#undef cred
+#undef procp
 
 /*
  * nfs lookup call, one step at a time...
@@ -403,11 +444,13 @@ nfs_setattr(vp, vap, cred, procp)
  * If not found, unlock the directory nfsnode and do the rpc
  */
 int
-nfs_lookup(dvp, vpp, cnp)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
+nfs_lookup (ap)
+	struct vop_lookup_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
 {
+	USES_VOP_GETATTR;
 	register struct vnode *vdp;
 	register u_long *tl;
 	register caddr_t cp;
@@ -466,7 +509,7 @@ nfs_lookup(dvp, vpp, cnp)
 						return (0);
 					}
 				}
-			   } else if (!nfs_getattr(vdp, &vattr, cnp->cn_cred, cnp->cn_proc) &&
+			   } else if (!VOP_GETATTR(vdp, &vattr, cnp->cn_cred, cnp->cn_proc) &&
 			       vattr.va_ctime.tv_sec == VTONFS(vdp)->n_ctime) {
 				nfsstats.lookupcache_hits++;
 				if (cnp->cn_nameiop != LOOKUP && (cnp->cn_flags&ISLASTCN))
@@ -615,36 +658,48 @@ nfsmout:
 	}
 	return (0);
 }
+#undef dvp
+#undef vpp
+#undef cnp
 
 /*
  * nfs read call.
  * Just call nfs_bioread() to do the work.
  */
 int
-nfs_read(vp, uiop, ioflag, cred)
-	register struct vnode *vp;
-	struct uio *uiop;
-	int ioflag;
-	struct ucred *cred;
+nfs_read (ap)
+	struct vop_read_args *ap;
+#define vp (ap->a_vp)
+#define uiop (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
 	if (vp->v_type != VREG)
 		return (EPERM);
 	return (nfs_bioread(vp, uiop, ioflag, cred));
 }
+#undef vp
+#undef uiop
+#undef ioflag
+#undef cred
 
 /*
  * nfs readlink call
  */
 int
-nfs_readlink(vp, uiop, cred)
-	struct vnode *vp;
-	struct uio *uiop;
-	struct ucred *cred;
+nfs_readlink (ap)
+	struct vop_readlink_args *ap;
+#define vp (ap->a_vp)
+#define uiop (ap->a_uio)
+#define cred (ap->a_cred)
 {
 	if (vp->v_type != VLNK)
 		return (EPERM);
 	return (nfs_bioread(vp, uiop, 0, cred));
 }
+#undef vp
+#undef uiop
+#undef cred
 
 /*
  * Do a readlink rpc.
@@ -777,12 +832,14 @@ nfsmout:
  */
 /* ARGSUSED */
 int
-nfs_mknod(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+nfs_mknod (ap)
+	struct vop_mknod_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
+	USES_VOP_ABORTOP;
 	register struct nfsv2_sattr *sp;
 	register u_long *tl;
 	register caddr_t cp;
@@ -823,16 +880,21 @@ nfs_mknod(dvp, vpp, cnp, vap)
 	vrele(dvp);
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * nfs file create call
  */
 int
-nfs_create(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+nfs_create (ap)
+	struct vop_create_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
 	register struct nfsv2_sattr *sp;
 	register u_long *tl;
@@ -863,6 +925,10 @@ nfs_create(dvp, vpp, cnp, vap)
 	vrele(dvp);
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * nfs file remove call
@@ -876,9 +942,11 @@ nfs_create(dvp, vpp, cnp, vap)
  *	  do the remove rpc
  */
 int
-nfs_remove(dvp, vp, cnp)
-	struct vnode *dvp, *vp;
-	struct componentname *cnp;
+nfs_remove (ap)
+	struct vop_remove_args *ap;
+#define dvp (ap->a_dvp)
+#define vp (ap->a_vp)
+#define cnp (ap->a_cnp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 	register u_long *tl;
@@ -929,6 +997,9 @@ nfs_remove(dvp, vp, cnp)
 	vrele(vp);
 	return (error);
 }
+#undef dvp
+#undef vp
+#undef cnp
 
 /*
  * nfs file remove rpc called from nfs_inactive
@@ -960,11 +1031,14 @@ nfs_removeit(sp, procp)
  * nfs file rename call
  */
 int
-nfs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
-	struct vnode *fdvp, *fvp;
-	struct componentname *fcnp;
-	struct vnode *tdvp, *tvp;
-	struct componentname *tcnp;
+nfs_rename (ap)
+	struct vop_rename_args *ap;
+#define fdvp (ap->a_fdvp)
+#define fvp (ap->a_fvp)
+#define fcnp (ap->a_fcnp)
+#define tdvp (ap->a_tdvp)
+#define tvp (ap->a_tvp)
+#define tcnp (ap->a_tcnp)
 {
 	register u_long *tl;
 	register caddr_t cp;
@@ -1005,6 +1079,12 @@ nfs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 		error = 0;
 	return (error);
 }
+#undef fdvp
+#undef fvp
+#undef fcnp
+#undef tdvp
+#undef tvp
+#undef tcnp
 
 /*
  * nfs file rename rpc called from nfs_remove() above
@@ -1041,10 +1121,11 @@ nfs_renameit(sdvp, scnp, sp)
  * nfs hard link create call
  */
 int
-nfs_link(tdvp, vp, cnp)
-	struct vnode *tdvp;
-	register struct vnode *vp;   /* source vnode */
-	struct componentname *cnp;
+nfs_link (ap)
+	struct vop_link_args *ap;
+#define tdvp (ap->a_vp)
+#define vp (ap->a_tdvp)
+#define cnp (ap->a_cnp)
 {
 	register u_long *tl;
 	register caddr_t cp;
@@ -1072,18 +1153,22 @@ nfs_link(tdvp, vp, cnp)
 		error = 0;
 	return (error);
 }
+#undef tdvp
+#undef vp
+#undef cnp
 
 /*
  * nfs symbolic link create call
  */
 /* start here */
 int
-nfs_symlink(dvp, vpp, cnp, vap, nm)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
-	char *nm;
+nfs_symlink (ap)
+	struct vop_symlink_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
+#define nm (ap->a_target)
 {
 	register struct nfsv2_sattr *sp;
 	register u_long *tl;
@@ -1119,16 +1204,22 @@ nfs_symlink(dvp, vpp, cnp, vap, nm)
 		error = 0;
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
+#undef nm
 
 /*
  * nfs make dir call
  */
 int
-nfs_mkdir(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+nfs_mkdir (ap)
+	struct vop_mkdir_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
 	register struct nfsv2_sattr *sp;
 	register u_long *tl;
@@ -1183,14 +1274,20 @@ nfs_mkdir(dvp, vpp, cnp, vap)
 	vrele(dvp);
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * nfs remove directory call
  */
 int
-nfs_rmdir(dvp, vp, cnp)
-	struct vnode *dvp, *vp;
-	struct componentname *cnp;
+nfs_rmdir (ap)
+	struct vop_rmdir_args *ap;
+#define dvp (ap->a_dvp)
+#define vp (ap->a_vp)
+#define cnp (ap->a_cnp)
 {
 	register u_long *tl;
 	register caddr_t cp;
@@ -1225,6 +1322,9 @@ nfs_rmdir(dvp, vp, cnp)
 		error = 0;
 	return (error);
 }
+#undef dvp
+#undef vp
+#undef cnp
 
 /*
  * nfs readdir call
@@ -1233,12 +1333,14 @@ nfs_rmdir(dvp, vp, cnp)
  * Ultrix implementation of NFS.
  */
 int
-nfs_readdir(vp, uiop, cred, eofflagp)
-	register struct vnode *vp;
-	struct uio *uiop;
-	struct ucred *cred;
-	int *eofflagp;
+nfs_readdir (ap)
+	struct vop_readdir_args *ap;
+#define vp (ap->a_vp)
+#define uiop (ap->a_uio)
+#define cred (ap->a_cred)
+#define eofflagp (ap->a_eofflagp)
 {
+	USES_VOP_GETATTR;
 	register struct nfsnode *np = VTONFS(vp);
 	int tresid, error;
 	struct vattr vattr;
@@ -1256,7 +1358,7 @@ nfs_readdir(vp, uiop, cred, eofflagp)
 				nfsstats.direofcache_hits++;
 				return (0);
 			}
-		} else if (nfs_getattr(vp, &vattr, cred, uiop->uio_procp) == 0 &&
+		} else if (VOP_GETATTR(vp, &vattr, cred, uiop->uio_procp) == 0 &&
 			np->n_mtime == vattr.va_mtime.tv_sec) {
 			*eofflagp = 1;
 			nfsstats.direofcache_hits++;
@@ -1277,6 +1379,10 @@ nfs_readdir(vp, uiop, cred, eofflagp)
 		*eofflagp = 0;
 	return (error);
 }
+#undef vp
+#undef uiop
+#undef cred
+#undef eofflagp
 
 /*
  * Readdir rpc call.
@@ -1729,11 +1835,12 @@ nfs_lookitup(sp, fhp, procp)
  *    context of the swapper process (2).
  */
 int
-nfs_bmap(vp, bn, vpp, bnp)
-	struct vnode *vp;
-	daddr_t bn;
-	struct vnode **vpp;
-	daddr_t *bnp;
+nfs_bmap (ap)
+	struct vop_bmap_args *ap;
+#define vp (ap->a_vp)
+#define bn (ap->a_bn)
+#define vpp (ap->a_vpp)
+#define bnp (ap->a_bnp)
 {
 	if (vpp != NULL)
 		*vpp = vp;
@@ -1741,6 +1848,10 @@ nfs_bmap(vp, bn, vpp, bnp)
 		*bnp = bn * btodb(vp->v_mount->mnt_stat.f_iosize);
 	return (0);
 }
+#undef vp
+#undef bn
+#undef vpp
+#undef bnp
 
 /*
  * Strategy routine for phys. i/o
@@ -1748,8 +1859,9 @@ nfs_bmap(vp, bn, vpp, bnp)
  * otherwise just call nfs_doio() to get it done
  */
 int
-nfs_strategy(bp)
-	register struct buf *bp;
+nfs_strategy (ap)
+	struct vop_strategy_args *ap;
+#define bp (ap->a_bp)
 {
 	register struct buf *dp;
 	register int i;
@@ -1796,6 +1908,7 @@ nfs_strategy(bp)
 		error = nfs_doio(bp);
 	return (error);
 }
+#undef bp
 
 /*
  * Fun and games with i/o
@@ -1920,15 +2033,20 @@ nfs_doio(bp)
  */
 /* ARGSUSED */
 int
-nfs_mmap(vp, fflags, cred, p)
-	struct vnode *vp;
-	int fflags;
-	struct ucred *cred;
-	struct proc *p;
+nfs_mmap (ap)
+	struct vop_mmap_args *ap;
+#define vp (ap->a_vp)
+#define fflags (ap->a_fflags)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	return (EINVAL);
 }
+#undef vp
+#undef fflags
+#undef cred
+#undef p
 
 /*
  * Flush all the blocks associated with a vnode.
@@ -1937,12 +2055,13 @@ nfs_mmap(vp, fflags, cred, p)
  */
 /* ARGSUSED */
 int
-nfs_fsync(vp, fflags, cred, waitfor, p)
-	register struct vnode *vp;
-	int fflags;
-	struct ucred *cred;
-	int waitfor;
-	struct proc *p;
+nfs_fsync (ap)
+	struct vop_fsync_args *ap;
+#define vp (ap->a_vp)
+#define fflags (ap->a_fflags)
+#define cred (ap->a_cred)
+#define waitfor (ap->a_waitfor)
+#define p (ap->a_p)
 {
 	register struct nfsnode *np = VTONFS(vp);
 	int error = 0;
@@ -1955,29 +2074,41 @@ nfs_fsync(vp, fflags, cred, waitfor, p)
 		error = np->n_error;
 	return (error);
 }
+#undef vp
+#undef fflags
+#undef cred
+#undef waitfor
+#undef p
 
 /*
  * NFS advisory byte-level locks.
  * Currently unsupported.
  */
 int
-nfs_advlock(vp, id, op, fl, flags)
-	struct vnode *vp;
-	caddr_t id;
-	int op;
-	struct flock *fl;
-	int flags;
+nfs_advlock (ap)
+	struct vop_advlock_args *ap;
+#define vp (ap->a_vp)
+#define id (ap->a_id)
+#define op (ap->a_op)
+#define fl (ap->a_fl)
+#define flags (ap->a_flags)
 {
 
 	return (EOPNOTSUPP);
 }
+#undef vp
+#undef id
+#undef op
+#undef fl
+#undef flags
 
 /*
  * Print out the contents of an nfsnode.
  */
 int
-nfs_print(vp)
-	struct vnode *vp;
+nfs_print (ap)
+	struct vop_print_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
@@ -1989,93 +2120,122 @@ nfs_print(vp)
 #endif /* FIFO */
 	printf("\n");
 }
+#undef vp
 
 /*
  * NFS directory offset lookup.
  * Currently unsupported.
  */
 int
-nfs_blkatoff(vp, offset, res, bpp)
-	struct vnode *vp;
-	off_t offset;
-	char **res;
-	struct buf **bpp;
+nfs_blkatoff (ap)
+	struct vop_blkatoff_args *ap;
+#define vp (ap->a_vp)
+#define offset (ap->a_offset)
+#define res (ap->a_res)
+#define bpp (ap->a_bpp)
 {
 
 	return (EOPNOTSUPP);
 }
+#undef vp
+#undef offset
+#undef res
+#undef bpp
 
 /*
  * NFS flat namespace lookup.
  * Currently unsupported.
  */
 int
-nfs_vget(mp, ino, vpp)
-	struct mount *mp;
-	ino_t ino;
-	struct vnode **vpp;
+nfs_vget (ap)
+	struct vop_vget_args *ap;
+#define mp (ap->a_mp)
+#define ino (ap->a_ino)
+#define vpp (ap->a_vpp)
 {
 
 	return (EOPNOTSUPP);
 }
+#undef mp
+#undef ino
+#undef vpp
 
 /*
  * NFS flat namespace allocation.
  * Currently unsupported.
  */
 int
-nfs_valloc(pvp, mode, cred, vpp)
-	struct vnode *pvp;
-	int mode;
-	struct ucred *cred;
-	struct vnode **vpp;
+nfs_valloc (ap)
+	struct vop_valloc_args *ap;
+#define pvp (ap->a_pvp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define vpp (ap->a_vpp)
 {
 
 	return (EOPNOTSUPP);
 }
+#undef pvp
+#undef mode
+#undef cred
+#undef vpp
 
 /*
  * NFS flat namespace free.
  * Currently unsupported.
  */
 void
-nfs_vfree(pvp, ino, mode)
-	struct vnode *pvp;
-	ino_t ino;
-	int mode;
+nfs_vfree (ap)
+	struct vop_vfree_args *ap;
+#define pvp (ap->a_pvp)
+#define ino (ap->a_ino)
+#define mode (ap->a_mode)
 {
 
 	return;
 }
+#undef pvp
+#undef ino
+#undef mode
 
 /*
  * NFS file truncation.
  */
 int
-nfs_truncate(vp, length, flags, cred)
-	struct vnode *vp;
-	off_t length;
-	int flags;
-	struct ucred *cred;
+nfs_truncate (ap)
+	struct vop_truncate_args *ap;
+#define vp (ap->a_vp)
+#define length (ap->a_length)
+#define flags (ap->a_flags)
+#define cred (ap->a_cred)
 {
 
 	/* Use nfs_setattr */
 	printf("nfs_truncate: need to implement!!");
 	return (EOPNOTSUPP);
 }
+#undef vp
+#undef length
+#undef flags
+#undef cred
 
 /*
  * NFS update.
  */
 int
-nfs_update(vp, ta, tm, waitfor)
-	struct vnode *vp;
-	struct timeval *ta;
-	struct timeval *tm;
-	int waitfor;
+nfs_update (ap)
+	struct vop_update_args *ap;
+#define vp (ap->a_vp)
+#define ta (ap->a_ta)
+#define tm (ap->a_tm)
+#define waitfor (ap->a_waitfor)
 {
 
 	/* Use nfs_setattr */
 	printf("nfs_update: need to implement!!");
 	return (EOPNOTSUPP);
 }
+#undef vp
+#undef ta
+#undef tm
+#undef waitfor

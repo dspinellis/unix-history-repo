@@ -46,6 +46,8 @@ int
 namei(ndp)
 	register struct nameidata *ndp;
 {
+	USES_VOP_READLINK;
+	USES_VOP_UNLOCK;
 	register struct filedesc *fdp;	/* pointer to file descriptor state */
 	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp;	/* the directory we are searching */
@@ -216,6 +218,9 @@ int
 lookup(ndp)
 	register struct nameidata *ndp;
 {
+	USES_VOP_LOCK;
+	USES_VOP_LOOKUP;
+	USES_VOP_UNLOCK;
 	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp = 0;	/* the directory we are searching */
 	struct vnode *tdp;		/* saved dp */

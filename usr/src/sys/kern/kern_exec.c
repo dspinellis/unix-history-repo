@@ -60,6 +60,8 @@ execve(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ACCESS;
+	USES_VOP_GETATTR;
 	register struct ucred *cred = p->p_ucred;
 	register struct filedesc *fdp = p->p_fd;
 	int na, ne, ucp, ap, cc, ssize;

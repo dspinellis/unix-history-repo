@@ -141,6 +141,9 @@ nqsrv_getlease(vp, duration, flags, nd, nam, cachablep, frev, cred)
 	u_quad_t *frev;
 	struct ucred *cred;
 {
+	USES_VOP_GETATTR;
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
 	register struct nqlease *lp;
 	register struct nqhost *lph;
 	struct nqlease *tlp = (struct nqlease *)0;
@@ -676,6 +679,7 @@ nqnfsrv_getlease(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
+	USES_VOP_GETATTR;
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;

@@ -440,6 +440,7 @@ swap_pager_io(swp, m, flags)
 	vm_page_t m;
 	int flags;
 {
+	USES_VOP_STRATEGY;
 	register struct buf *bp;
 	register sw_blk_t swb;
 	register int s;

@@ -24,11 +24,12 @@
  * remaining space in the directory.
  */
 int
-lfs_blkatoff(vp, offset, res, bpp)
-	struct vnode *vp;
-	off_t offset;
-	char **res;
-	struct buf **bpp;
+lfs_blkatoff (ap)
+	struct vop_blkatoff_args *ap;
+#define vp (ap->a_vp)
+#define offset (ap->a_offset)
+#define res (ap->a_res)
+#define bpp (ap->a_bpp)
 {
 	register struct lfs *fs;
 	struct inode *ip;
@@ -51,3 +52,7 @@ lfs_blkatoff(vp, offset, res, bpp)
 	*bpp = bp;
 	return (0);
 }
+#undef vp
+#undef offset
+#undef res
+#undef bpp

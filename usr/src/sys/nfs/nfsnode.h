@@ -87,178 +87,43 @@ struct nfsnode {
 /*
  * Prototypes for NFS vnode operations
  */
-int	nfs_lookup __P((
-		struct vnode *dvp,
-		struct vnode **vpp,
-		struct componentname *cnp));
-int	nfs_create __P((
-		struct vnode *dvp,
-		struct vnode **vpp,
-		struct componentname *cnp,
-		struct vattr *vap));
-int	nfs_mknod __P((
-		struct vnode *dvp,
-		struct vnode **vpp,
-		struct componentname *cnp,
-		struct vattr *vap));
-int	nfs_open __P((
-		struct vnode *vp,
-		int mode,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_close __P((
-		struct vnode *vp,
-		int fflag,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_access __P((
-		struct vnode *vp,
-		int mode,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_getattr __P((
-		struct vnode *vp,
-		struct vattr *vap,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_setattr __P((
-		struct vnode *vp,
-		struct vattr *vap,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_read __P((
-		struct vnode *vp,
-		struct uio *uio,
-		int ioflag,
-		struct ucred *cred));
-int	nfs_write __P((
-		struct vnode *vp,
-		struct uio *uio,
-		int ioflag,
-		struct ucred *cred));
-#define nfs_ioctl ((int (*) __P(( \
-		struct vnode *vp, \
-		int command, \
-		caddr_t data, \
-		int fflag, \
-		struct ucred *cred, \
-		struct proc *p))) enoioctl)
-#define nfs_select ((int (*) __P(( \
-		struct vnode *vp, \
-		int which, \
-		int fflags, \
-		struct ucred *cred, \
-		struct proc *p))) seltrue)
-int	nfs_mmap __P((
-		struct vnode *vp,
-		int fflags,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_fsync __P((
-		struct vnode *vp,
-		int fflags,
-		struct ucred *cred,
-		int waitfor,
-		struct proc *p));
-#define nfs_seek ((int (*) __P(( \
-		struct vnode *vp, \
-		off_t oldoff, \
-		off_t newoff, \
-		struct ucred *cred))) nullop)
-int	nfs_remove __P((
-		struct vnode *dvp,
-		struct vnode *vp,
-		struct componentname *cnp));
-int	nfs_link __P((
-		register struct vnode *vp,
-		struct vnode *tdvp,
-		struct componentname *cnp));
-int	nfs_rename __P((
-		struct vnode *fdvp,
-		struct vnode *fvp,
-		struct componentname *fcnp,
-		struct vnode *tdvp,
-		struct vnode *tvp,
-		struct componentname *tcnp));
-int	nfs_mkdir __P((
-		struct vnode *dvp,
-		struct vnode **vpp,
-		struct componentname *cnp,
-		struct vattr *vap));
-int	nfs_rmdir __P((
-		struct vnode *dvp,
-		struct vnode *vp,
-		struct componentname *cnp));
-int	nfs_symlink __P((
-		struct vnode *dvp,
-		struct vnode **vpp,
-		struct componentname *cnp,
-		struct vattr *vap,
-		char *nm));
-int	nfs_readdir __P((
-		struct vnode *vp,
-		struct uio *uio,
-		struct ucred *cred,
-		int *eofflagp));
-int	nfs_readlink __P((
-		struct vnode *vp,
-		struct uio *uio,
-		struct ucred *cred));
-int	nfs_abortop __P((
-		struct vnode *,
-		struct componentname *));
-int	nfs_inactive __P((
-		struct vnode *vp,
-		struct proc *p));
-int	nfs_reclaim __P((
-		struct vnode *vp));
-int	nfs_lock __P((
-		struct vnode *vp));
-int	nfs_unlock __P((
-		struct vnode *vp));
-int	nfs_bmap __P((
-		struct vnode *vp,
-		daddr_t bn,
-		struct vnode **vpp,
-		daddr_t *bnp));
-int	nfs_strategy __P((
-		struct buf *bp));
-int	nfs_print __P((
-		struct vnode *vp));
-int	nfs_islocked __P((
-		struct vnode *vp));
-int	nfs_advlock __P((
-		struct vnode *vp,
-		caddr_t id,
-		int op,
-		struct flock *fl,
-		int flags));
-int	nfs_blkatoff __P((
-		struct vnode *vp,
-		off_t offset,
-		char **res,
-		struct buf **bpp));
-int	nfs_vget __P((
-		struct mount *mp,
-		ino_t ino,
-		struct vnode **vpp));
-int	nfs_valloc __P((
-		struct vnode *pvp,
-		int mode,
-		struct ucred *cred,
-		struct vnode **vpp));
-void	nfs_vfree __P((
-		struct vnode *pvp,
-		ino_t ino,
-		int mode));
-int	nfs_truncate __P((
-		struct vnode *vp,
-		off_t length,
-		int flags,
-		struct ucred *cred));
-int	nfs_update __P((
-		struct vnode *vp,
-		struct timeval *ta,
-		struct timeval *tm,
-		int waitfor));
+int	nfs_lookup __P((struct vop_lookup_args *));
+int	nfs_create __P((struct vop_create_args *));
+int	nfs_mknod __P((struct vop_mknod_args *));
+int	nfs_open __P((struct vop_open_args *));
+int	nfs_close __P((struct vop_close_args *));
+int	nfs_access __P((struct vop_access_args *));
+int	nfs_getattr __P((struct vop_getattr_args *));
+int	nfs_setattr __P((struct vop_setattr_args *));
+int	nfs_read __P((struct vop_read_args *));
+int	nfs_write __P((struct vop_write_args *));
+#define nfs_ioctl ((int (*) __P((struct  vop_ioctl_args *)))enoioctl)
+#define nfs_select ((int (*) __P((struct  vop_select_args *)))seltrue)
+int	nfs_mmap __P((struct vop_mmap_args *));
+int	nfs_fsync __P((struct vop_fsync_args *));
+#define nfs_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
+int	nfs_remove __P((struct vop_remove_args *));
+int	nfs_link __P((struct vop_link_args *));
+int	nfs_rename __P((struct vop_rename_args *));
+int	nfs_mkdir __P((struct vop_mkdir_args *));
+int	nfs_rmdir __P((struct vop_rmdir_args *));
+int	nfs_symlink __P((struct vop_symlink_args *));
+int	nfs_readdir __P((struct vop_readdir_args *));
+int	nfs_readlink __P((struct vop_readlink_args *));
+int	nfs_abortop __P((struct vop_abortop_args *));
+int	nfs_inactive __P((struct vop_inactive_args *));
+int	nfs_reclaim __P((struct vop_reclaim_args *));
+int	nfs_lock __P((struct vop_lock_args *));
+int	nfs_unlock __P((struct vop_unlock_args *));
+int	nfs_bmap __P((struct vop_bmap_args *));
+int	nfs_strategy __P((struct vop_strategy_args *));
+int	nfs_print __P((struct vop_print_args *));
+int	nfs_islocked __P((struct vop_islocked_args *));
+int	nfs_advlock __P((struct vop_advlock_args *));
+int	nfs_blkatoff __P((struct vop_blkatoff_args *));
+int	nfs_vget __P((struct vop_vget_args *));
+int	nfs_valloc __P((struct vop_valloc_args *));
+void	nfs_vfree __P((struct vop_vfree_args *));
+int	nfs_truncate __P((struct vop_truncate_args *));
+int	nfs_update __P((struct vop_update_args *));
 int	bwrite();		/* NFS needs a bwrite routine */

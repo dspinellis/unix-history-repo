@@ -298,6 +298,8 @@ short chan, p0, p1, p2 ;
 /*ARGSUSED*/
 dkopen(dev, flag)
 {
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
 	register struct	dkdev	*tp;
 	register chan;
 	register struct nameidata *ndp = &u.u_nd;	/* XXX */

@@ -31,11 +31,12 @@ int lfs_getlbns __P((struct vnode *, daddr_t, INDIR *, int *));
  * number to index into the array of block pointers described by the dinode.
  */
 int
-lfs_bmap(vp, bn, vpp, bnp)
-	struct vnode *vp;
-	register daddr_t bn;
-	struct vnode **vpp;
-	daddr_t *bnp;
+lfs_bmap (ap)
+	struct vop_bmap_args *ap;
+#define vp (ap->a_vp)
+#define bn (ap->a_bn)
+#define vpp (ap->a_vpp)
+#define bnp (ap->a_bnp)
 {
 #ifdef VERBOSE
 	printf("lfs_bmap\n");
@@ -51,6 +52,10 @@ lfs_bmap(vp, bn, vpp, bnp)
 
 	return (lfs_bmaparray(vp, bn, bnp, NULL, NULL));
 }
+#undef vp
+#undef bn
+#undef vpp
+#undef bnp
 
 /*
  * LFS has a different version of bmap from FFS because of a naming conflict.
@@ -252,6 +257,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	daddr_t lbn;
 	struct buf **bpp;
 {
+	USES_VOP_BMAP;
 	struct buf *bp;
 	struct inode *ip;
 	struct lfs *fs;
@@ -269,7 +275,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	 * sure we don't count it as a new block or zero out its contents.
 	 */
 	newblock = ip->i_size <= lbn << fs->lfs_bshift;
-	if (!newblock && (error = lfs_bmap(vp, lbn, NULL, &daddr)))
+	if (!newblock && (error = VOP_BMAP(vp, lbn, NULL, &daddr)))
 		return (error);
 
 	if (newblock || daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
