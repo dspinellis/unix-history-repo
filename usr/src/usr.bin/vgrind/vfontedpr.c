@@ -564,8 +564,12 @@ putcp(c)
 		ps("\\&.");
 		break;
 
+	case '*':
+		ps("\\fI*\\fP");
+		break;
+
 	case '/':
-		ps("\\*/");
+		ps("\\fI\\h'\\w' 'u-\\w'/'u'/\\fP");
 		break;
 
 	default:
