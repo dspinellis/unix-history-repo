@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mountd.8	8.3 (Berkeley) %G%
+.\"     @(#)mountd.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNTD 8
@@ -67,7 +67,7 @@ After changing the exports file,
 a hangup signal should be sent to the mountd daemon
 to get it to reload the export information.
 After sending the SIGHUP
-(kill -HUP `cat /var/run/mountd.pid`),
+(kill \-s HUP `cat /var/run/mountd.pid`),
 check the syslog output to see if mountd logged any parsing
 errors in the exports file.
 .Sh FILES

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)leave.1	8.2 (Berkeley) %G%
+.\"	@(#)leave.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LEAVE 1
@@ -65,7 +65,7 @@ or
 .Pp
 Leave ignores interrupts, quits, and terminates.
 To get rid of it you should either log off or use
-.Ql kill \-9
+.Ql kill \-s KILL
 giving its process id.
 .Sh SEE ALSO
 .Xr calendar 1

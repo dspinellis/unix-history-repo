@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	8.2 (Berkeley) %G%
+.\"	@(#)4.t	8.3 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -286,7 +286,7 @@ then send a hangup signal to the
 .Xr init
 process, by doing
 .DS
-\fB#\fP \fIkill \-1 1\fP
+\fB#\fP \fIkill \-s HUP 1\fP
 .DE
 Terminals can similarly be enabled by changing the status field
 from \fBoff\fP to \fBon\fP and sending a hangup signal to
