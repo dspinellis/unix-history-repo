@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)robots.h	5.7 (Berkeley) %G%
+ *	@(#)robots.h	8.1 (Berkeley) %G%
  */
 
 # include	<curses.h>
