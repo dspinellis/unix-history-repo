@@ -1,45 +1,57 @@
-@(#)README	4.3	(Berkeley)	83/04/27
-
-The C script is not complete; use at your own risk.
+Note that play directories are created in /tmp, no longer
+in /usr/lib/learn/play.  The C script is not complete;
+use at your own risk.  The editor script still smacks of ed.
 
 Lessons are in
 	/usr/lib/learn/*
-Source is in
-	/usr/src/cmd/learn
-Miscellaneous supporting code is also in source.
+and auxilliary programs are in
+	/usr/lib/learn/bin
 
 Make a learn by
 	make
-When this seems right, extract the lessons by
-	make lessons
-This extracts the lesson archives
-for each course.  You can also do this one step at a
-time with "make files", "make editor", etc.,
-if you don't want all courses.
-If you do things separately, you must also say
-	make play; make log
-
-Finally, check that it's sensible with
+Check that it's sensible with
 	make check
 If that doesn't print any messages,
 you're probably in good shape.
 
-Learn requires general write permission on the user playpen
-directory .../lib/play.  Lesson directories may be protected.
+Lesson directories may be protected.
 
-Learn collects a log file for each script in the .../lib/log
-directory, with a file for each script (files,
-editor, etc.) containing an entry for each lesson
-attempted. These files will grow without bound,
+Learn collects a log file for each script in the .../learn/log
+directory, with a file for each script (files, editor, etc.)
+containing an entry for each lesson attempted.
+These files will grow without bound,
 unless they are periodically truncated. 
 The log files should have general write permission.
 If you don't want logging (a sensible position to take),
-set the variable "logging" to zero in source/lrndef
-before making learn.
+set the variable "logging" to zero in source/learn.c
+before making learn, remove the log directory, or just
+turn off write permission for a particular log file.
 
 Learn requires about 1500 blocks to make itself,
 and about 1000 when completely made.
 
-Please report problems, bad lessons, etc., to
-Brian Kernighan, MH 6021, 2C-518, or
-Mike Lesk, MH 6377, 2C-572.  Thanks.
+The best way to get ex to prompt within learn was to modify
+the user's environment variables PATH and EXINIT.
+
+Due to inane assumptions in the VAX versions of csh -i and ex
+when stdin and stdout are not terminals, kludges have been
+added with #if's.  In particular, I use the old terminal driver
+to keep #copyout working and make sh -i masquerades as
+a csh -i (by setting PS1=% ) to keep #pipe working.
+
+"#create" can now end in an incomplete last line with ....#\n
+On input the string %s is converted to the lesson directory.
+On output with "#copyout", prompt signs ("% ") are removed.
+"#cmp" now takes a trailing number specifying that only that
+many lines are to be compared.
+
+The new command "xyzzy" prints the answer (i.e. the last part
+of the lesson), and "xyzzy x" prints the whole lesson text.
+A new routine called getlesson tries to construct a valid
+lesson number from in invalid one before giving up.
+The commands "where", "skip", and "again" are also new.
+Greeting, closing, and reminder messages have been expanded.
+
+Please report problems, bad lessons, contributions, etc., to
+John Kunze, UC Berkeley, 415-642-1530, ucbvax!ucbernie.jak .
+Thanks.
