@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.16 (Berkeley) %G%
+.\"     @(#)fts.3	5.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -89,7 +89,7 @@ typedef struct _ftsent {
 	struct ftsent *fts_parent;	/* parent directory */
 	struct ftsent *fts_link;	/* next file structure */
 	struct ftsent *fts_cycle;	/* cycle structure */
-	struct stat fts_statb;		/* stat(2) information */
+	struct stat *fts_statp;		/* stat(2) information */
 } FTSENT;
 .Ed
 .Pp
@@ -156,7 +156,7 @@ A file for which no
 .Xr stat 2
 information was available.
 The contents of the
-.Fa fts_statb
+.Fa fts_statp
 field are undefined.
 This is an error return, and the
 .Fa fts_errno
@@ -166,15 +166,15 @@ A file for which no
 .Xr stat 2
 information was requested.
 The contents of the
-.Fa fts_statb
+.Fa fts_statp
 field are undefined.
 .It Dv FTS_SL
 A symbolic link.
 .It Dv FTS_SLNONE
 A symbolic link with a non-existent target.
 The contents of the
-.Fa fts_statb
-field contain the file characteristic information for the symbolic link
+.Fa fts_statp
+field reference the file characteristic information for the symbolic link
 itself.
 .El
 .It Fa fts_accpath
@@ -287,8 +287,9 @@ structure.
 Otherwise, the contents of the
 .Fa fts_cycle
 field are undefined.
-.It Fa fts_statb
-.Xr Stat 2
+.It Fa fts_statp
+A pointer to
+.Xr stat 2
 information for the file.
 .El
 .Pp
@@ -376,9 +377,8 @@ pathnames were provided as arguments to
 .It Dv FTS_NOSTAT
 By default, returned
 .Fa FTSENT
-structures contain file characteristic
-information (the
-.Fa statb
+structures reference file characteristic information (the
+.Fa statp
 field) for each file visited.
 This option relaxes that requirement as a performance optimization,
 allowing the
@@ -388,7 +388,7 @@ functions to set the
 field to
 .Dv FTS_NSOK
 and leave the contents of the
-.Fa statb
+.Fa statp
 field undefined.
 .It Dv FTS_PHYSICAL
 This option causes the
@@ -457,7 +457,7 @@ field is set to
 or
 .DV FTS_NSOK ,
 the
-.Fa fts_stab
+.Fa fts_statp
 field may not either.
 If the
 .Fn compar
@@ -615,7 +615,7 @@ the next call to
 returns the file with the
 .Fa fts_info
 and
-.Fa fts_statb
+.Fa fts_statp
 fields reinitialized to reflect the target of the symbolic link instead
 of the symbolic link itself.
 If the file is one of those most recently returned by
@@ -623,7 +623,7 @@ If the file is one of those most recently returned by
 the
 .Fa fts_info
 and
-.Fa fts_statb
+.Fa fts_statp
 fields of the structure, when returned by
 .Fn fts_read ,
 will reflect the target of the symbolic link instead of the symbolic link
