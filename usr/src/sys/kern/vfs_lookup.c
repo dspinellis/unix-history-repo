@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.36 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -382,13 +382,12 @@ dirloop:
 	 * Check to see if the vnode has been mounted on;
 	 * if so find the root of the mounted file system.
 	 */
-mntloop:
 	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
 	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
 		if (mp->mnt_flag & MNT_MLOCK) {
 			mp->mnt_flag |= MNT_MWAIT;
 			sleep((caddr_t)mp, PVFS);
-			goto mntloop;
+			continue;
 		}
 		if (error = VFS_ROOT(dp->v_mountedhere, &tdp))
 			goto bad2;
