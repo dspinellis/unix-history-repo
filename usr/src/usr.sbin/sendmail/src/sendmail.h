@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.111		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.112		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -23,6 +23,35 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.111		%G%";
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
+
+
+/*
+**  Data structure for bit maps.
+**
+**	Each bit in this map can be referenced by an ascii character.
+**	This is 128 possible bits, or 12 8-bit bytes.
+*/
+
+#define BITMAPBYTES	16	/* number of bytes in a bit map */
+#define BYTEBITS	8	/* number of bits in a byte */
+
+/* internal macros */
+#define _BITWORD(bit)	(bit / (BYTEBITS * sizeof (int)))
+#define _BITBIT(bit)	(1 << (bit % (BYTEBITS * sizeof (int))))
+
+typedef int	BITMAP[BITMAPBYTES / sizeof (int)];
+
+/* test bit number N */
+#define bitnset(bit, map)	((map)[_BITWORD(bit)] & _BITBIT(bit))
+
+/* set bit number N */
+#define setbitn(bit, map)	(map)[_BITWORD(bit)] |= _BITBIT(bit)
+
+/* clear bit number N */
+#define clrbitn(bit, map)	(map)[_BITWORD(bit)] &= ~_BITBIT(bit)
+
+/* clear an entire bit map */
+#define clrbitmap(map)		bzero((char *) map, BITMAPBYTES / sizeof (int))
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
@@ -82,38 +111,39 @@ struct mailer
 {
 	char	*m_name;	/* symbolic name of this mailer */
 	char	*m_mailer;	/* pathname of the mailer to use */
-	u_long	m_flags;	/* status flags, see below */
+	BITMAP	m_flags;	/* status flags, see below */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
 	short	m_s_rwset;	/* rewriting set for sender addresses */
 	short	m_r_rwset;	/* rewriting set for recipient addresses */
 	char	*m_eol;		/* end of line string */
+	long	m_maxsize;	/* size limit on message to this mailer */
 };
 
 typedef struct mailer	MAILER;
 
 /* bits for m_flags */
-# define M_FOPT		000000001L	/* mailer takes picky -f flag */
-# define M_ROPT		000000002L	/* mailer takes picky -r flag */
-# define M_RPATH	000000004L	/* wants a Return-Path: line */
-# define M_RESTR	000000010L	/* must be daemon to execute */
-# define M_NHDR		000000020L	/* don't insert From line */
-# define M_LOCAL	000000040L	/* delivery is to this host */
-# define M_STRIPQ	000000100L	/* strip quote chars from user/host */
-# define M_MUSER	000000200L	/* can handle multiple users at once */
-# define M_NEEDFROM	000000400L	/* need arpa-style From: line */
-# define M_NEEDDATE	000001000L	/* need arpa-style Date: line */
-# define M_MSGID	000002000L	/* need Message-Id: field */
-# define M_CANONICAL	000004000L	/* make addresses canonical "u@dom" */
-# define M_USR_UPPER	000010000L	/* preserve user case distinction */
-# define M_HST_UPPER	000020000L	/* preserve host case distinction */
-# define M_FULLNAME	000040000L	/* want Full-Name field */
-# define M_UGLYUUCP	000100000L	/* this wants an ugly UUCP from line */
-# define M_EXPENSIVE	000200000L	/* it costs to use this mailer.... */
-# define M_LIMITS	000400000L	/* must enforce SMTP line limits */
-# define M_INTERNAL	001000000L	/* SMTP to another sendmail site */
-# define M_FROMPATH	004000000L	/* use reverse-path in MAIL FROM: */
-# define M_XDOT		010000000L	/* use hidden-dot algorithm */
+# define M_FOPT		'f'	/* mailer takes picky -f flag */
+# define M_ROPT		'r'	/* mailer takes picky -r flag */
+# define M_RPATH	'P'	/* wants a Return-Path: line */
+# define M_RESTR	'S'	/* must be daemon to execute */
+# define M_NHDR		'n'	/* don't insert From line */
+# define M_LOCAL	'l'	/* delivery is to this host */
+# define M_STRIPQ	's'	/* strip quote chars from user/host */
+# define M_MUSER	'm'	/* can handle multiple users at once */
+# define M_NEEDFROM	'F'	/* need arpa-style From: line */
+# define M_NEEDDATE	'D'	/* need arpa-style Date: line */
+# define M_MSGID	'M'	/* need Message-Id: field */
+# define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
+# define M_USR_UPPER	'u'	/* preserve user case distinction */
+# define M_HST_UPPER	'h'	/* preserve host case distinction */
+# define M_FULLNAME	'x'	/* want Full-Name field */
+# define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
+# define M_EXPENSIVE	'e'	/* it costs to use this mailer.... */
+# define M_LIMITS	'L'	/* must enforce SMTP line limits */
+# define M_INTERNAL	'I'	/* SMTP to another sendmail site */
+# define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
+# define M_XDOT		'X'	/* use hidden-dot algorithm */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
@@ -132,7 +162,7 @@ struct header
 	char		*h_value;	/* the value of that field */
 	struct header	*h_link;	/* the next header */
 	u_short		h_flags;	/* status bits, see below */
-	u_long		h_mflags;	/* m_flags bits needed */
+	BITMAP		h_mflags;	/* m_flags bits needed */
 };
 
 typedef struct header	HDR;
@@ -286,7 +316,7 @@ struct symtab
 	struct symtab	*s_next;	/* pointer to next in chain */
 	union
 	{
-		long	sv_class;	/* bit-map of word classes */
+		BITMAP	sv_class;	/* bit-map of word classes */
 		ADDRESS	*sv_addr;	/* pointer to address header */
 		MAILER	*sv_mailer;	/* pointer to mailer */
 		char	*sv_alias;	/* alias */
