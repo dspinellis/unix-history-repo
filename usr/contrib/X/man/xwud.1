@@ -1,0 +1,78 @@
+.TH XWUD 1 "27 July 1985" "X Version 10"
+.SH NAME
+xwud - X Window System, window image undumper
+.SH SYNOPSIS
+.B "xwud"
+[ -debug ] [ -help ] [ -in \fIfile\fP ] [ \fIhost\fP:\fIdisplay\fP ]
+.SH DESCRIPTION
+.PP
+.I Xwud
+is an X Window System window image undumping utility.
+.I Xwud
+allows X users to display window images that were saved in a specially
+formatted window dump file.   The window  image  will  appear  at  the
+coordinates of the original window from which the dump was taken.
+This is a crude version of a more advanced utility that will be released
+in the near future.  The window dump file format is currently under
+development no guarantee of upward compatibility is made.
+.PP
+.B NOTE:
+Windows dumped in `Z' pixmap format can only be undumped on a
+color display!
+.SH ARGUMENT SUMMARY
+.PP
+.TP 8
+.B "-help"
+Print out the `Usage:' command syntax summary.
+.PP
+.TP 8
+.B "-in \fIfile\fP"
+This argument allows the user to explicitly specify the input 
+file on the command line.  The default is to take input from standard in.
+.PP
+.TP 8
+.B "\fIhost\fP:\fIdisplay\fP"
+This  argument  allow  you  to  specify the host and display number on
+which to display the window dump.  For example `xwud orpheus:1'
+would specify that the dump will appear on display `1' on the machine
+`orpheus'.  By default,
+.I xwud
+uses the host and display number stored in the environment variable
+DISPLAY, and therefore this argument is not normally specified.
+.SH ENVIRONMENT
+.PP
+.TP 8
+.B DISPLAY
+To get default host and display number.
+.SH FILES
+.PP
+.TP 8
+.B XWDFile.h
+X Window Dump File format definition file.
+.SH BUGS
+.PP
+Will fail on many implementations due to memory limitations.
+This program is a quick and dirty hack.
+Does not know how to handle color to monochrome at all.
+.SH FUTURE PLANS
+.PP
+If time ever presents itself...
+.PP
+.TP 8
+.B 1.
+Install complete color support.
+.PP
+.TP 8
+.B 2.
+Completely rework the 'XWDFile' dump file format.
+.SH SEE ALSO
+xwd(1), xpr(1), xdpr(1), X(1)
+.SH AUTHOR
+.PP
+Copyright 1985, Massachusetts Institute of Technology.
+.PP
+See \fIX(1)\fP for a full copyright notice.
+.PP
+Tony Della Fera, Digital Equipment Corp., MIT Project Athena
+
+

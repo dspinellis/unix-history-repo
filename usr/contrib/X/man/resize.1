@@ -1,0 +1,34 @@
+.TH RESIZE 1 "3 January 1985" "X Version 10"
+.SH NAME
+resize - reset TERMCAP with current size of a window
+.SH SYNOPSIS
+.B resize
+.SH DESCRIPTION
+\fIResize\fP prints on its standard output the TERM and TERMCAP commands for
+the C-shell of the current size of a window.  It is never executed directly,
+but should be aliased similarly to
+.I tset
+to cause the C-shell to execute the commands.
+.PP
+For example, the following alias when executed as a command will reset
+the environment of the current shell:
+.sp
+	alias xs	'set noglob; eval `resize`'
+.br
+.SH FILES
+/etc/termcap	for the base termcap entry to modify.
+.br
+~/.cshrc	user's alias for the command.
+.SH "SEE ALSO"
+csh(1), tset(1), xterm(1)
+.SH AUTHORS
+Mark Vandevoorde (MIT-Athena)
+.br
+Copyright (c) 1984, 1985 by Massachusetts Institute of Technology.
+.br
+See \fIX(1)\fP for a complete copyright notice.
+.SH BUGS
+Ought to be able to generate the strings for the Bourne shell.
+There should be some global notion of display size; termcap and
+terminfo need to be rethought in the context of window systems.
+(Fixed in 4.3BSD, and Ultrix-32 1.2)
