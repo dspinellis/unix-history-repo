@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	2.1	%G%
+**	@(#)useful.h	3.1	%G%
 */
 
 # define bool	char
@@ -11,3 +11,7 @@
 # ifndef NULL
 # define NULL	0
 # endif NULL
+
+# define setbit(bit, word)	(word |= bit)
+# define clrbit(bit, word)	(word &= ~bit)
+# define bitset(bit, word)	((word) & (bit))

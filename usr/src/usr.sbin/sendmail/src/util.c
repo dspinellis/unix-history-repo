@@ -2,7 +2,7 @@
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.1	%G%";
+static char	SccsId[] = "@(#)util.c	3.2	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -128,34 +128,4 @@ newstr(s)
 	p = xalloc(strlen(s) + 1);
 	strcpy(p, s);
 	return (p);
-}
-/*
-**  ANY -- Return TRUE if the character exists in the string.
-**
-**	Parameters:
-**		c -- the character.
-**		s -- the string
-**			(sounds like an avant garde script)
-**
-**	Returns:
-**		TRUE -- if c could be found in s.
-**		FALSE -- otherwise.
-**
-**	Side Effects:
-**		none.
-**
-**	Called By:
-**		prescan
-*/
-
-any(c, s)
-	register char c;
-	register char *s;
-{
-	register char c2;
-
-	while ((c2 = *s++) != '\0')
-		if (c2 == c)
-			return (TRUE);
-	return (FALSE);
 }
