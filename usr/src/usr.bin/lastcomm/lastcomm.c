@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -77,6 +77,7 @@ main(argc, argv)
 		exit(1);
 	}
 	(void)fstat(fd, &sb);
+	setpassent(1);
 	for (bn = btodb(sb.st_size); bn >= 0; bn--) {
 		(void)lseek(fd, (off_t)dbtob(bn), L_SET);
 		cc = read(fd, buf, DEV_BSIZE);
@@ -173,7 +174,6 @@ char *
 getname(uid)
 	uid_t uid;
 {
-	extern int _pw_stayopen;
 	static struct ncache {
 		uid_t	uid;
 		char	name[NMAX+1];
@@ -181,7 +181,6 @@ getname(uid)
 	register struct passwd *pw;
 	register struct ncache *cp;
 
-	_pw_stayopen = 1;
 	cp = c_uid + (uid & CAMASK);
 	if (cp->uid == uid && *cp->name)
 		return(cp->name);
