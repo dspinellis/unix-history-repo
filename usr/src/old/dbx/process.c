@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.2 %G%";
+static char sccsid[] = "@(#)process.c 1.3 %G%";
 
 /*
  * Process management.
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)process.c 1.2 %G%";
 #include <signal.h>
 #include <errno.h>
 #include <sys/param.h>
-#include <sys/reg.h>
+#include <machine/reg.h>
 #include <sys/stat.h>
 
 #ifndef public
@@ -429,31 +429,30 @@ Address addr;
 
 public printstatus()
 {
-    curfunc = whatblock(pc);
-    if (process->signo == SIGINT) {
-	isstopped = true;
-	printerror();
-    }
-    if (isbperr() and isstopped) {
-	printf("stopped ");
-	getsrcpos();
-	if (curline > 0) {
-	    printsrcpos();
-	    putchar('\n');
-	    printlines(curline, curline);
-	} else {
-	    printf("in ");
-	    printwhich(stdout, curfunc);
-	    printf(" at 0x%x\n", pc);
-	    printinst(pc, pc);
-	}
-	erecover();
+    if (process->status == FINISHED) {
+	exit(0);
     } else {
-	fixbps();
-	fixintr();
-	if (process->status == FINISHED) {
-	    exit(0);
+	curfunc = whatblock(pc);
+	getsrcpos();
+	if (process->signo == SIGINT) {
+	    isstopped = true;
+	    printerror();
+	} else if (isbperr() and isstopped) {
+	    printf("stopped ");
+	    if (curline > 0) {
+		printsrcpos();
+		putchar('\n');
+		printlines(curline, curline);
+	    } else {
+		printf("in ");
+		printwhich(stdout, curfunc);
+		printf(" at 0x%x\n", pc);
+		printinst(pc, pc);
+	    }
+	    erecover();
 	} else {
+	    fixbps();
+	    fixintr();
 	    isstopped = true;
 	    printerror();
 	}
