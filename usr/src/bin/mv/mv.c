@@ -15,20 +15,21 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/file.h>
-#include <sys/errno.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "pathnames.h"
 
-extern int errno;
 int fflg, iflg;
 
 main(argc, argv)
@@ -39,17 +40,17 @@ main(argc, argv)
 	extern int optind;
 	register int baselen, exitval, len;
 	register char *p, *endp;
-	struct stat sbuf;
+	struct stat sb;
 	int ch;
 	char path[MAXPATHLEN + 1];
 
 	while (((ch = getopt(argc, argv, "-if")) != EOF))
 		switch((char)ch) {
 		case 'i':
-			++iflg;
+			iflg = 1;
 			break;
 		case 'f':
-			++fflg;
+			fflg = 1;
 			break;
 		case '-':		/* undocumented; for compatibility */
 			goto endarg;
@@ -64,18 +65,16 @@ endarg:	argc -= optind;
 		usage();
 
 	/*
-	 * if stat fails on target, it doesn't exist (or can't be accessed
-	 * by the user, doesn't matter which) try the move.  If target exists,
-	 * and isn't a directory, try the move.  More than 2 arguments is an
-	 * error.
+	 * If the stat on the target fails or the target isn't a directory,
+	 * try the move.  More than 2 arguments is an error in this case.
 	 */
-	if (stat(argv[argc - 1], &sbuf) || !S_ISDIR(sbuf.st_mode)) {
+	if (stat(argv[argc - 1], &sb) || !S_ISDIR(sb.st_mode)) {
 		if (argc > 2)
 			usage();
 		exit(do_move(argv[0], argv[1]));
 	}
 
-	/* got a directory, move each file into it */
+	/* It's a directory, move each file into it. */
 	(void)strcpy(path, argv[argc - 1]);
 	baselen = strlen(path);
 	endp = &path[baselen];
@@ -100,11 +99,11 @@ endarg:	argc -= optind;
 do_move(from, to)
 	char *from, *to;
 {
-	struct stat sbuf;
+	struct stat sb;
 	int ask, ch;
 
 	/*
-	 * Check access.  If interactive and file exists ask user if it
+	 * Check access.  If interactive and file exists, ask user if it
 	 * should be replaced.  Otherwise if file exists but isn't writable
 	 * make sure the user wants to clobber it.
 	 */
@@ -114,9 +113,9 @@ do_move(from, to)
 			(void)fprintf(stderr, "overwrite %s? ", to);
 			ask = 1;
 		}
-		else if (access(to, W_OK) && !stat(to, &sbuf)) {
+		else if (access(to, W_OK) && !stat(to, &sb)) {
 			(void)fprintf(stderr, "override mode %o on %s? ",
-			    sbuf.st_mode & 07777, to);
+			    sb.st_mode & 07777, to);
 			ask = 1;
 		}
 		if (ask) {
@@ -128,22 +127,23 @@ do_move(from, to)
 	}
 	if (!rename(from, to))
 		return(0);
+
 	if (errno != EXDEV) {
 		(void)fprintf(stderr,
 		    "mv: rename %s to %s: %s\n", from, to, strerror(errno));
 		return(1);
 	}
+
 	/*
-	 * if rename fails, and it's a regular file, do the copy
-	 * internally; otherwise, use cp and rm.
+	 * If rename fails, and it's a regular file, do the copy internally;
+	 * otherwise, use cp and rm.
 	 */
-	if (stat(from, &sbuf)) {
-		(void)fprintf(stderr,
-		    "mv: %s: %s\n", from, strerror(errno));
+	if (stat(from, &sb)) {
+		(void)fprintf(stderr, "mv: %s: %s\n", from, strerror(errno));
 		return(1);
 	}
-	return(S_ISREG(sbuf.st_mode) ?
-	    fastcopy(from, to, &sbuf) : copy(from, to));
+	return(S_ISREG(sb.st_mode) ?
+	    fastcopy(from, to, &sb) : copy(from, to));
 }
 
 fastcopy(from, to, sbp)
@@ -154,31 +154,27 @@ fastcopy(from, to, sbp)
 	static u_int blen;
 	static char *bp;
 	register int nread, from_fd, to_fd;
-	char *malloc();
 
 	if ((from_fd = open(from, O_RDONLY, 0)) < 0) {
-		(void)fprintf(stderr,
-		    "mv: %s: %s\n", from, strerror(errno));
+		error(from);
 		return(1);
 	}
-	if ((to_fd = open(to, O_WRONLY|O_CREAT|O_TRUNC, sbp->st_mode)) < 0) {
-		(void)fprintf(stderr,
-		    "mv: %s: %s\n", to, strerror(errno));
+	if ((to_fd = open(to, O_CREAT|O_TRUNC|O_WRONLY, sbp->st_mode)) < 0) {
+		error(to);
 		(void)close(from_fd);
 		return(1);
 	}
 	if (!blen && !(bp = malloc(blen = sbp->st_blksize))) {
-		(void)fprintf(stderr, "mv: %s: out of memory.\n", from);
+		error(NULL);
 		return(1);
 	}
 	while ((nread = read(from_fd, bp, blen)) > 0)
 		if (write(to_fd, bp, nread) != nread) {
-			(void)fprintf(stderr, "mv: %s: %s\n",
-			    to, strerror(errno));
+			error(to);
 			goto err;
 		}
 	if (nread < 0) {
-		(void)fprintf(stderr, "mv: %s: %s\n", from, strerror(errno));
+		error(from);
 err:		(void)unlink(to);
 		(void)close(from_fd);
 		(void)close(to_fd);
@@ -205,7 +201,7 @@ copy(from, to)
 
 	if (!(pid = vfork())) {
 		execlp(_PATH_CP, "mv", "-pr", from, to);
-		(void)fprintf(stderr, "mv: can't exec %s.\n", _PATH_CP);
+		error(_PATH_CP);
 		_exit(1);
 	}
 	(void)waitpid(pid, &status, 0);
@@ -213,11 +209,20 @@ copy(from, to)
 		return(1);
 	if (!(pid = vfork())) {
 		execlp(_PATH_RM, "mv", "-rf", from);
-		(void)fprintf(stderr, "mv: can't exec %s.\n", _PATH_RM);
+		error(_PATH_RM);
 		_exit(1);
 	}
 	(void)waitpid(pid, &status, 0);
 	return(!WIFEXITED(status) || WEXITSTATUS(status));
+}
+
+error(s)
+	char *s;
+{
+	if (s)
+		(void)fprintf(stderr, "mv: %s: %s\n", s, strerror(errno));
+	else
+		(void)fprintf(stderr, "mv: %s\n", strerror(errno));
 }
 
 usage()
