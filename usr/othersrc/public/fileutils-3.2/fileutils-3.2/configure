@@ -1,0 +1,444 @@
+:
+# Guess values for system-dependent variables and create Makefiles.
+# Generated automatically by autoconf.
+# Copyright (C) 1991 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# Usage: configure [--srcdir=DIR] [--host=HOST] [--gas] [--nfp] [TARGET]
+# All args except --srcdir=DIR are ignored.
+
+trap 'rm -f conftest conftest.c; exit 1' 1 3 15
+
+set +u # Make sure unset variables are ok.
+
+for arg in $*; do
+  # Handle --srcdir with a space before the argument.
+  if test x$next_srcdir = xyes; then srcdir=$arg; next_srcdir=
+  # Handle --host with a space before the argument.
+  elif test x$next_host = xyes; then next_host=
+  else
+    case $arg in
+     +srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=* | --s=*)
+	srcdir=`echo $arg | sed 's/[+-]*s[a-z]*=//'` ;;
+     +srcdir | --srcdir | --srcdi | --srcd | --src | --sr | --s)
+	next_srcdir=yes ;;
+     +host=* | --host=* | --hos=* | --ho=* | --h=*) ;;
+     +host | --host | --hos | --ho | --h)
+	next_host=yes ;;
+     +gas | --gas | --ga | --g) ;;
+     +nfp | --nfp | --nf | --n) ;;
+     *) ;;
+    esac
+  fi
+done
+
+INCLUDEDIR=${INCLUDEDIR-/usr/include}
+
+rm -f conftest conftest.c
+compile='$CC $DEFS conftest.c -o conftest $LIBS >/dev/null 2>&1'
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+unique_file=src/ls.c
+
+# Makefile rules whose targets are searched for in VPATH need to use $<.
+# However, old makes do not support it, so we use a combination
+# construction in Makefile.in: `$file<'.
+# If srcdir is `.', we use sed to change that to `file' for old makes.
+# Otherwise, we use sed to change it to `$<'.
+# vpsub is the sed program, which changes `$file<' to one or the other.
+vpsub='s,\$\([-./a-zA-Z0-9_]*\)<,\1,g'
+# srsub changes `@srcdir@' in Makefile.in into either `.' or the path
+# of the top of the source tree for the package.
+srsub='s,@srcdir@[-./a-zA_Z0-9_]*,.,'
+
+# Find the source files, if location was not specified.
+if test x$srcdir = x; then
+  srcdirdefaulted=yes; srcdir=.
+  if test ! -r $unique_file; then srcdir=..; fi
+fi
+if test ! -r $srcdir/$unique_file; then
+  if test x$srcdirdefaulted = xyes; then
+    echo "configure: Can not find sources in \`.' or \`..'." 1>&2
+  else
+    echo "configure: Can not find sources in \`${srcdir}'." 1>&2
+  fi
+  exit 1
+fi
+if test $srcdir != .; then
+  VPATH='VPATH = $(srcdir)'
+  case $srcdir in
+    /*|~*) ;;
+    *) srcdir=`pwd`/$srcdir ;; # Make relative path absolute.
+  esac
+  vpsub='s,\$\([-./a-zA-Z0-9_]*\)<,\$<,g'
+  srsub="s,@srcdir@,$srcdir,"
+fi
+
+
+# The Bourne shell writes "command not found" to /dev/tty, so if we get
+# a usage message on stderr, we have the program.
+#
+# ksh and zsh write "command not found" to stderr, but test -n does not
+# want any output if there is no program.  So we use the `type' builtin
+# instead for them (and bash).
+if test "$RANDOM" = "$RANDOM"; then
+  checkfor='test -n "`$checkprog $checkargs 2>&1`"'
+else
+  checkfor='type $checkprog >/dev/null'
+fi
+
+echo checking for gcc
+checkprog=gcc checkargs=''
+test -z "$CC" && eval $checkfor && CC='gcc -O'
+CC=${CC-cc}
+
+echo checking for ranlib
+checkprog=ranlib checkargs='/dev/null'
+test -z "$RANLIB" && eval $checkfor && RANLIB='ranlib '
+RANLIB=${RANLIB-true}
+
+echo checking for POSIXized ISC
+if test -d /etc/conf/kconfig.d &&
+  grep _POSIX_VERSION /usr/include/sys/unistd.h >/dev/null 2>&1
+then
+  DEFS="$DEFS -D_POSIX_SOURCE"
+  case "$CC" in
+  gcc*) CC="$CC -posix" ;;
+  *) CC="$CC -Xp" ;;
+  esac
+fi
+
+echo checking for limits.h
+test -f $INCLUDEDIR/limits.h && DEFS="$DEFS -DHAVE_LIMITS_H"
+
+echo checking for major, minor and makedev header
+echo "#include <sys/types.h>
+main() { exit(0); } t() { return makedev(0, 0); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then
+  systypes_makedev=1
+fi
+rm -f conftest conftest.c
+
+if test -n "$systypes_makedev"; then :
+elif test -f $INCLUDEDIR/sys/mkdev.h; then
+  DEFS="$DEFS -DMAJOR_IN_MKDEV"
+elif test -f $INCLUDEDIR/sys/sysmacros.h; then
+  DEFS="$DEFS -DMAJOR_IN_SYSMACROS"
+fi
+
+echo checking for directory library header
+dirheader=sys/dir.h
+if test -f $INCLUDEDIR/dirent.h; then
+  DEFS="$DEFS -DDIRENT" dirheader=dirent.h
+elif test -f $INCLUDEDIR/sys/ndir.h; then
+  DEFS="$DEFS -DSYSNDIR" dirheader=sys/ndir.h
+fi
+echo checking for "void.*closedir" in "$dirheader"
+grep 'void.*closedir' $INCLUDEDIR/$dirheader >/dev/null 2>&1 && DEFS="$DEFS -DVOID_CLOSEDIR"
+
+echo checking for signal handler type
+pattern='void[ 	]*(\*signal[ 	]*\(__P(\)*('
+if grep "$pattern" $INCLUDEDIR/signal.h >/dev/null 2>&1 ||
+  grep "$pattern" $INCLUDEDIR/sys/signal.h >/dev/null 2>&1; then :
+else DEFS="$DEFS -DSIGTYPE=int"
+fi
+
+echo checking how to get list of mounted filesystems
+if grep putmntent $INCLUDEDIR/sys/mnttab.h >/dev/null 2>&1; then
+  # SVR4
+  DEFS="$DEFS -DMOUNTED_GETMNTENT2" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/sys/statfs.h && test -f $INCLUDEDIR/sys/fstyp.h &&
+  test -f $INCLUDEDIR/mnttab.h; then
+  # SVR3
+  DEFS="$DEFS -DMOUNTED_FREAD_FSTYP" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/mntent.h; then
+  # 4.3BSD
+  DEFS="$DEFS -DMOUNTED_GETMNTENT1" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif grep MOUNT_UFS $INCLUDEDIR/sys/mount.h >/dev/null 2>&1; then
+  # 4.4BSD
+  DEFS="$DEFS -DMOUNTED_GETMNTINFO" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/sys/fs_types.h && test -f $INCLUDEDIR/sys/mount.h; then
+  # Ultrix
+  DEFS="$DEFS -DMOUNTED_GETMNT" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/mnttab.h && test -f /etc/mnttab; then
+  # SVR2
+  DEFS="$DEFS -DMOUNTED_FREAD" PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+fi
+
+echo checking how to get filesystem space usage
+if test -f $INCLUDEDIR/sys/statvfs.h; then
+  # SVR4
+  DEFS="$DEFS -DSTAT_STATVFS"
+elif test -f $INCLUDEDIR/sys/statfs.h; then
+  # SVR3
+  DEFS="$DEFS -DSTAT_STATFS4"
+elif test -f $INCLUDEDIR/sys/vfs.h; then
+  # 4.3BSD
+  DEFS="$DEFS -DSTAT_STATFS2_BSIZE"
+elif grep MOUNT_UFS $INCLUDEDIR/sys/mount.h >/dev/null 2>&1; then
+  # 4.4BSD
+  DEFS="$DEFS -DSTAT_STATFS2_FSIZE"
+elif test -f $INCLUDEDIR/sys/mount.h; then
+  # Ultrix
+  DEFS="$DEFS -DSTAT_STATFS2_FS_DATA"
+elif test -f $INCLUDEDIR/sys/filsys.h; then
+  # SVR2
+  DEFS="$DEFS -DSTAT_READ"
+fi
+
+echo checking for uid_t in sys/types.h
+echo "#include <sys/types.h>
+main() { exit(0); } t() { uid_t x; }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -Duid_t=int" DEFS="$DEFS -Dgid_t=int"
+fi
+rm -f conftest conftest.c
+
+echo checking integer size
+echo "main() { exit(!(sizeof(long) > sizeof(int))); }" > conftest.c
+eval $compile
+./conftest && DEFS="$DEFS -DINT_16_BITS"
+rm -f conftest conftest.c
+
+echo checking for ANSI C header files
+test -r $INCLUDEDIR/stdlib.h && test -r $INCLUDEDIR/string.h &&
+  test -r $INCLUDEDIR/limits.h && DEFS="$DEFS -DSTDC_HEADERS"
+
+echo checking for unistd.h
+test -f $INCLUDEDIR/unistd.h && DEFS="$DEFS -DHAVE_UNISTD_H"
+
+echo checking for BSD string and memory functions
+echo "#include <strings.h>
+main() { exit(0); } t() { rindex(0, 0); bzero(0, 0); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -DUSG"
+fi
+rm -f conftest conftest.c
+
+for func in fnmatch mkdir mktime stpcpy strdup strstr rename
+do
+echo checking for $func
+echo "
+main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  LIBOBJS="$LIBOBJS ${func}.o"
+fi
+rm -f conftest conftest.c
+
+done
+
+for func in strerror fchmod ftime mkfifo
+do
+trfrom='[a-z]'; trto='[A-Z]'
+echo checking for $func
+echo "
+main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -D`echo $func|tr "$trfrom" "$trto"`_MISSING"
+fi
+rm -f conftest conftest.c
+
+done
+
+echo checking for ftruncate
+echo "
+main() { exit(0); } t() { ftruncate(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  ftruncate_missing=1
+fi
+rm -f conftest conftest.c
+
+if test -n "$ftruncate_missing"; then
+echo checking for fcntl emulation of ftruncate
+echo "#include <sys/types.h>
+#include <fcntl.h>
+main() { exit(0); } t() { 
+#if !defined(F_CHSIZE) && !defined(F_FREESP)
+chsize();
+#endif
+ }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then
+  LIBOBJS="$LIBOBJS ftruncate.o"
+fi
+rm -f conftest conftest.c
+
+fi
+
+case "$LIBOBJS" in
+*ftruncate.o*) ;;
+*) if test -n "$ftruncate_missing"; then DEFS="$DEFS -DFTRUNCATE_MISSING"; fi
+;;
+esac
+
+case "$LIBOBJS" in
+*rename.o*)
+  LIBPROGS="$LIBPROGS mvdir"
+  DEFS="$DEFS -DMVDIR=\\\\\"\$(libdir)/mvdir\\\\\""
+  ;;
+esac
+
+echo checking for vprintf
+echo "
+main() { exit(0); } t() { vprintf(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -DVPRINTF_MISSING"
+fi
+rm -f conftest conftest.c
+
+case "$DEFS" in
+*VPRINTF_MISSING*)
+echo checking for _doprnt
+echo "
+main() { exit(0); } t() { _doprnt(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -DDOPRNT_MISSING"
+fi
+rm -f conftest conftest.c
+
+;;
+esac
+
+echo checking for alloca
+echo "#ifdef __GNUC__
+#define alloca __builtin_alloca
+#else
+#ifdef sparc
+#include <alloca.h>
+#else
+#ifdef _AIX
+ #pragma alloca
+#else
+char *alloca ();
+#endif
+#endif
+#endif
+main() { exit(0); } t() { char *p = (char *) alloca(1); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  alloca_missing=1
+fi
+rm -f conftest conftest.c
+
+if test -n "$alloca_missing"; then
+  if test -f /usr/ucblib/libucb.a
+  then LIBS="$LIBS -L/usr/ucblib -lucb" # SVR4
+  elif test -f /lib/libPW.a
+  then LIBS="$LIBS -lPW" # SVR2 and SVR3
+  else ALLOCA=alloca.o
+  fi
+fi
+
+echo checking for st_blocks in struct stat
+echo "#include <sys/types.h>
+#include <sys/stat.h>
+main() { exit(0); } t() { struct stat s; s.st_blocks; }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else
+  DEFS="$DEFS -DST_BLOCKS_MISSING" LIBOBJS="$LIBOBJS fileblocks.o"
+fi
+rm -f conftest conftest.c
+
+echo checking utime with null argument
+rm -f uttest; > uttest
+# Sequent interprets utime(file, 0) to mean use start of epoch.  Wrong.
+echo '#include <sys/types.h>
+#include <sys/stat.h>
+main() {
+struct stat s, t;
+exit(!(stat ("uttest", &s) == 0 && utime("uttest", (long *)0) == 0
+&& stat("uttest", &t) == 0 && t.st_mtime >= s.st_mtime
+&& t.st_mtime - s.st_mtime < 120));
+}' > conftest.c
+eval $compile
+./conftest || DEFS="$DEFS -DUTIME_NULL_MISSING"
+rm -f conftest conftest.c uttest core
+
+echo checking for Minix
+test -d /usr/include/minix &&
+  DEFS="$DEFS -D_POSIX_SOURCE" DEFS="$DEFS -D_POSIX_1_SOURCE=2" DEFS="$DEFS -D_MINIX"
+
+echo checking for Xenix
+if test -f /xenix; then
+  DEFS="$DEFS -DVOID_CLOSEDIR"
+  LIBS="$LIBS -lx"
+  case "$DEFS" in
+  *SYSNDIR*) ;;
+  *) LIBS="-ldir $LIBS" ;; # Make sure -ldir precedes any -lx.
+  esac
+fi
+
+echo checking for IRIX
+if test -f /usr/lib/libsun.a; then
+  LIBS="$LIBS -lsun" # To get getmntent.
+fi
+
+echo checking for DYNIX/ptx
+if test -f /usr/lib/libseq.a; then
+  LIBS="$LIBS -lseq"
+fi
+
+trap 'for dir in . lib src man; do rm -f $dir/Makefile; done; rm -f config.status; exit 1' 1 3 15
+
+for dir in . lib src man; do
+  test -d $dir || mkdir $dir
+  echo creating $dir/Makefile
+  echo '# Generated automatically from Makefile.in by configure.' > $dir/Makefile
+  sed -e "
+$vpsub
+$srsub
+s,@VPATH@,$VPATH,
+s,@DEFS@,$DEFS,
+s,@LIBS@,$LIBS,
+s,@PROGS@,$PROGS,
+s,@LIBPROGS@,$LIBPROGS,
+s,@CC@,$CC,
+s,@RANLIB@,$RANLIB,
+s,@LIBOBJS@,$LIBOBJS,
+s,@ALLOCA@,$ALLOCA,
+" $srcdir/$dir/Makefile.in >> $dir/Makefile
+done
+
+echo creating config.status
+echo "\
+DEFS=\"$DEFS\"
+LIBS=\"$LIBS\"
+PROGS=\"$PROGS\"
+LIBPROGS=\"$LIBPROGS\"
+CC=\"$CC\"
+RANLIB=\"$RANLIB\"
+LIBOBJS=\"$LIBOBJS\"
+ALLOCA=\"$ALLOCA\"
+" > config.status
+
