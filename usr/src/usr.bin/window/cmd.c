@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.4 83/08/19";
+static	char *sccsid = "@(#)cmd.c	3.5 83/08/22";
 #endif
 
 #include "defs.h"
@@ -69,30 +69,6 @@ top:
 		case 'L':
 			c_list();
 			break;
-		case 's':
-			c_stat();
-			break;
-		case 'M':
-			wwdumpsmap();
-			break;
-		case 'V':
-			if ((w = getwin()) != 0)
-				wwdumpnvis(w);
-			break;
-		case 'D':
-			if ((w = getwin()) != 0)
-				wwdumpcov(w);
-			break;
-		case 'W':
-			if ((w = getwin()) != 0)
-				wwdumpwin(w);
-			break;
-		case 't':
-			c_time(RUSAGE_SELF);
-			break;
-		case 'T':
-			c_time(RUSAGE_CHILDREN);
-			break;
 		case ':':
 			c_colon();
 			break;
@@ -150,10 +126,42 @@ top:
 			if (quit)
 				goto out;
 			break;
-		case '.':
-			error("Use q to quit.");
+		/* undocumented commands */
+		case 's':
+			c_stat();
+			break;
+		case 't':
+			c_time(RUSAGE_SELF);
+			break;
+		case 'T':
+			c_time(RUSAGE_CHILDREN);
+			break;
+		/* debugging commands */
+		case 'M':
+			if (!debug)
+				goto badcmd;
+			wwdumpsmap();
+			break;
+		case 'V':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpnvis(w);
+			break;
+		case 'D':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpcov(w);
+			break;
+		case 'W':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpwin(w);
 			break;
 		default:
+		badcmd:
 			if (c == escapec) {
 				(void) write(selwin->ww_pty, &escapec, 1);
 				goto out;
@@ -201,6 +209,8 @@ getwin()
 		w = cmdwin;
 	else if (debug && c == 'f')
 		w = framewin;
+	else if (debug && c == 'b')
+		w = boxwin;
 	else if (c >= '1' && c < NWINDOW + '1')
 		w = window[c - '1'];
 	if (w == 0)
