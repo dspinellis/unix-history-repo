@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.21 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -344,14 +344,26 @@ tcp_drain()
  * (for now, won't do anything until can select for soft error).
  */
 tcp_notify(inp, error)
-	register struct inpcb *inp;
+	struct inpcb *inp;
 	int error;
 {
+	register struct tcpcb *tp = (struct tcpcb *)inp->inp_ppcb;
+	register struct socket *so = inp->inp_socket;
 
-	((struct tcpcb *)inp->inp_ppcb)->t_softerror = error;
-	wakeup((caddr_t) &inp->inp_socket->so_timeo);
-	sorwakeup(inp->inp_socket);
-	sowwakeup(inp->inp_socket);
+	/*
+	 * If connection hasn't completed, has retransmitted several times,
+	 * and receives a second error, give up now.  This is better
+	 * than waiting a long time to establish a connection that
+	 * can never complete.
+	 */
+	if (tp->t_state < TCPS_ESTABLISHED && tp->t_rxtshift > 3 &&
+	    tp->t_softerror)
+		so->so_error = error;
+	else
+		tp->t_softerror = error;
+	wakeup((caddr_t) &so->so_timeo);
+	sorwakeup(so);
+	sowwakeup(so);
 }
 
 tcp_ctlinput(cmd, sa, ip)
