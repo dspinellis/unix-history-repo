@@ -1,4 +1,4 @@
-/*	tty.c	4.1	%G%	*/
+/*	tty.c	4.2	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -197,6 +197,7 @@ register struct tty *tp;
 /*
  * Common code for tty ioctls.
  */
+/*ARGSUSED*/
 ttioctl(com, tp, addr, dev, flag)
 register struct tty *tp;
 caddr_t addr;

@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.1	%G%	*/
+/*	vm_swap.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -55,14 +55,10 @@ swwrite(dev)
  */
 vswapon()
 {
-	register struct a {
-		char	*sname;
-	} *uap;
 	register struct inode *ip;
 	dev_t dev;
 	register struct swdevt *sp;
 
-	uap = (struct a *)u.u_ap;
 	ip = namei(uchar, 0);
 	if (ip == NULL)
 		return;

@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.1	%G%	*/
+/*	subr_prf.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -200,10 +200,10 @@ char	*msgbufp = msgbuf;	/* Next saved printf character */
  * If destination is console then the last MSGBUFS characters
  * are saved in msgbuf for inspection later.
  */
+/*ARGSUSED*/
 putchar(c, trace)
 register c;
 {
-	register s, timo;
 
 #ifdef TRACE
 	if (trace) {
