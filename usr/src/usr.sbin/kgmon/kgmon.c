@@ -22,17 +22,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/param.h>
 #include <machine/pte.h>
+
+#include <sys/param.h>
 #include <sys/file.h>
 #include <sys/vm.h>
+#include <sys/gprof.h>
 #include <stdio.h>
 #include <nlist.h>
 #include <ctype.h>
-#include <sys/gprof.h>
+#include "pathnames.h"
 
 #define	PROFILING_ON	0
 #define	PROFILING_OFF	3
@@ -93,13 +95,14 @@ main(argc, argv)
 			rflag++;
 			break;
 		default:
-			fputs("usage: kgmon [-bhrp] [system [core]]\n", stderr);
+			(void)fprintf(stderr,
+			    "usage: kgmon [-bhrp] [system [core]]\n");
 			exit(1);
 		}
 
 	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
 
-	kmemf = "/dev/kmem";
+	kmemf = _PATH_KMEM;
 	if (argc > 0) {
 		system = *argv;
 		argv++, argc--;
@@ -109,14 +112,15 @@ main(argc, argv)
 		}
 	}
 	else
-		system = "/vmunix";
+		system = _PATH_UNIX;
 
 	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
-		fprintf(stderr, "%s: no namelist\n", system);
+		(void)fprintf(stderr, "kgmon: %s: no namelist\n", system);
 		exit(2);
 	}
 	if (!nl[N_PROFILING].n_value) {
-		fputs("profiling: not defined in kernel.\n", stderr);
+		(void)fprintf(stderr,
+		    "kgmon: profiling: not defined in kernel.\n");
 		exit(10);
 	}
 	kmem = open(kmemf, openmode);
@@ -127,13 +131,13 @@ main(argc, argv)
 			perror(kmemf);
 			exit(3);
 		}
-		fprintf(stderr, "%s opened read-only\n", kmemf);
+		(void)fprintf(stderr, "%s opened read-only\n", kmemf);
 		if (rflag)
-			fprintf(stderr, "-r supressed\n");
+			(void)fprintf(stderr, "-r supressed\n");
 		if (bflag)
-			fprintf(stderr, "-b supressed\n");
+			(void)fprintf(stderr, "-b supressed\n");
 		if (hflag)
-			fprintf(stderr, "-h supressed\n");
+			(void)fprintf(stderr, "-h supressed\n");
 		rflag = bflag = hflag = 0;
 	}
 	if (kflag) {
@@ -142,7 +146,8 @@ main(argc, argv)
 		Sysmap = (struct pte *)
 		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 		if (!Sysmap) {
-			fputs("arp: can't get memory for Sysmap.\n", stderr);
+			(void)fprintf(stderr,
+			    "kgmon: can't get memory for Sysmap.\n");
 			exit(1);
 		}
 		off = nl[N_SYSMAP].n_value & ~KERNBASE;
@@ -159,24 +164,26 @@ main(argc, argv)
 		disp = mode;
 	if (pflag) {
 		if (openmode == O_RDONLY && mode == PROFILING_ON)
-			fprintf(stderr, "data may be inconsistent\n");
+			(void)fprintf(stderr, "data may be inconsistent\n");
 		dumpstate();
 	}
 	if (rflag)
 		resetstate();
 	turnonoff(disp);
-	fprintf(stdout, "kernel profiling is %s.\n", disp ? "off" : "running");
+	(void)fprintf(stdout,
+	    "kernel profiling is %s.\n", disp ? "off" : "running");
 }
 
 dumpstate()
 {
+	extern int errno;
 	struct rawarc rawarc;
 	struct tostruct *tos;
 	u_long frompc;
 	off_t kfroms, ktos;
 	u_short *froms;		/* froms is a bunch of u_shorts indexing tos */
 	int i, fd, fromindex, endfrom, fromssize, tossize, toindex;
-	char buf[BUFSIZ], *s_lowpc, *malloc();
+	char buf[BUFSIZ], *s_lowpc, *malloc(), *strerror();
 
 	turnonoff(PROFILING_OFF);
 	fd = creat("gmon.out", 0666);
@@ -198,8 +205,8 @@ dumpstate()
 	(void)klseek(kmem, kfroms, L_SET);
 	i = read(kmem, ((char *)(froms)), fromssize);
 	if (i != fromssize) {
-		fprintf(stderr, "read froms: request %d, got %d", fromssize, i);
-		perror((char *)NULL);
+		(void)fprintf(stderr, "read kmem: request %d, got %d: %s",
+		    fromssize, i, strerror(errno));
 		exit(5);
 	}
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
@@ -208,13 +215,13 @@ dumpstate()
 	(void)klseek(kmem, ktos, L_SET);
 	i = read(kmem, ((char *)(tos)), tossize);
 	if (i != tossize) {
-		fprintf(stderr, "read tos: request %d, got %d", tossize, i);
-		perror((char *)NULL);
+		(void)fprintf(stderr, "read kmem: request %d, got %d: %s",
+		    tossize, i, strerror(errno));
 		exit(6);
 	}
 	s_lowpc = (char *)kfetch(N_S_LOWPC);
 	if (debug)
-		fprintf(stderr, "s_lowpc 0x%x, s_textsize 0x%x\n",
+		(void)fprintf(stderr, "s_lowpc 0x%x, s_textsize 0x%x\n",
 		    s_lowpc, s_textsize);
 	endfrom = fromssize / sizeof(*froms);
 	for (fromindex = 0; fromindex < endfrom; fromindex++) {
@@ -225,7 +232,7 @@ dumpstate()
 		for (toindex = froms[fromindex]; toindex != 0;
 		   toindex = tos[toindex].link) {
 			if (debug)
-			    fprintf(stderr,
+			    (void)fprintf(stderr,
 			    "[mcleanup] frompc 0x%x selfpc 0x%x count %d\n" ,
 			    frompc, tos[toindex].selfpc, tos[toindex].count);
 			rawarc.raw_frompc = frompc;
