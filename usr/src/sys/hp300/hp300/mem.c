@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.6 (Berkeley) %G%
+ *	@(#)mem.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,8 @@
 
 #include "vm/vm_param.h"
 #include "vm/lock.h"
-#include "vm/pmap.h"
 #include "vm/vm_prot.h"
+#include "vm/pmap.h"
 
 /*ARGSUSED*/
 mmrw(dev, uio, flags)
