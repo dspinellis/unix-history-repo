@@ -1,6 +1,6 @@
 /* "@(#)param.h 2.1 3/25/82" */
 
-/*	param.h	4.17	82/04/19	*/
+/*	param.h	4.18	82/06/11	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -145,9 +145,16 @@
  *
  * Note that the blocked devices are assumed to have DEV_BSIZE
  * "sectors" and that fragments must be some multiple of this size.
+ * Block devices are read in BLKDEV_IOSIZE units. This number must
+ * be a power of two and in the range of
+ *	DEV_BSIZE <= BLKDEV_IOSIZE <= MAXBSIZE
+ * This size has no effect upon the file system, but is usually set
+ * to the block size of the root file system, so as to maximize the
+ * speed of ``fsck''.
  */
 #define	MAXBSIZE	8192
 #define	DEV_BSIZE	512
+#define BLKDEV_IOSIZE	4096
 #define MAXFRAG 	8
 
 /*
