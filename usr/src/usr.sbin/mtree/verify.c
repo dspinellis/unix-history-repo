@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fts.h>
+#include <fnmatch.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
@@ -80,8 +81,8 @@ vwalk()
 		}
 
 		for (ep = level; ep; ep = ep->next)
-			if (ep->flags & F_MAGIC && fnmatch(ep->name,
-			    p->fts_name, FNM_PATHNAME|FNM_QUOTE) ||
+			if (ep->flags & F_MAGIC &&
+			    !fnmatch(ep->name, p->fts_name, FNM_PATHNAME) ||
 			    !strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
 				if (compare(ep->name, ep, p))
