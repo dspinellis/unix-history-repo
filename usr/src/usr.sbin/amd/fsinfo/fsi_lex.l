@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsi_lex.l	8.1 (Berkeley) %G%
+ *	@(#)fsi_lex.l	8.2 (Berkeley) %G%
  *
  * $Id: fsi_lex.l,v 5.2.2.1 1992/02/09 15:09:36 jsp beta $
  *
@@ -137,9 +137,9 @@ struct r {
 <Q>\\r			{ *optr++ = '\r'; /* escape */ }
 <Q>\\n			{ *optr++ = '\n'; /* escape */ }
 <Q>\\f			{ *optr++ = '\f'; /* escape */ }
+<Q>"\\ "		{ *optr++ = ' '; /* force space */ }
 <Q>\\.			{ yyerror("Unknown \\ sequence"); }
 <Q>([ \t]|"\\\n"){2,}	{ char *p = yytext-1; while (p = strchr(p+1, '\n')) yylineno++; }
-<Q>"\\ "		{ *optr++ = ' '; /* force space */ }
 <Q>\"			{ BEGIN F; quoted = 0;
 				*optr = '\0';
 				yylval.s = strdup(ostr);
