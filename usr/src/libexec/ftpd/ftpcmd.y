@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.4 83/01/16";
+static char sccsid[] = "@(#)ftpcmd.y	4.5 83/01/16";
 #endif
 
 #include <sys/types.h>
@@ -30,6 +30,7 @@ extern	int form;
 extern	int debug;
 extern	char hostname[];
 extern	char *globerr;
+extern	int usedefault;
 char	**glob();
 
 static	int cmd_type;
@@ -89,6 +90,7 @@ cmd:		USER SP username CRLF
 		}
 	|	PORT SP host_port CRLF
 		= {
+			usedefault = 0;
 			ack($1);
 		}
 	|	TYPE SP type_code CRLF
