@@ -25,20 +25,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)paste.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)paste.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
-extern int errno;
 char *delim;
 int delimcnt;
 
-main (argc, argv)
+main(argc, argv)
 	int argc;
 	char **argv;
 {
