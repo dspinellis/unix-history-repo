@@ -1,10 +1,5 @@
 /*
- *	$Source: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v $
- *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 5.2 89/07/31 19:30:04 kfall Exp $
- */
-
-/*
- * Copyright (c) 1988, 1989 The Regents of the University of California.
+ * Copyright (c) 1983, 1988, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -22,13 +17,19 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988, 1089 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.23 (Berkeley) 5/18/89";
+static char sccsid[] = "@(#)rshd.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
+
+/* From:
+ *	$Source: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v $
+ *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 5.2 89/07/31 19:30:04 kfall Exp $
+ */
+
 
 /*
  * remote shell server:
@@ -58,9 +59,11 @@ static char sccsid[] = "@(#)rshd.c	5.23 (Berkeley) 5/18/89";
 
 int	errno;
 int	keepalive = 1;
+int	check_all = 0;
 char	*index(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
+int	sent_null;
 
 /*ARGSUSED*/
 main(argc, argv)
@@ -69,9 +72,7 @@ main(argc, argv)
 {
 	
 	extern int opterr, optind;
-#if	BSD > 43
 	extern int _check_rhosts_file;
-#endif
 	struct linger linger;
 	int ch, on = 1, fromlen;
 	struct sockaddr_in from;
@@ -80,12 +81,13 @@ main(argc, argv)
 
 	opterr = 0;
 	while ((ch = getopt(argc, argv, "ln")) != EOF)
-		switch((char)ch) {
-#if	BSD > 43
+		switch (ch) {
+		case 'a':
+			check_all = 1;
+			break;
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
-#endif
 		case 'n':
 			keepalive = 0;
 			break;
@@ -101,8 +103,7 @@ main(argc, argv)
 
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getpeername");
+		syslog(LOG_ERR, "getpeername: %m");
 		_exit(1);
 	}
 	if (keepalive &&
@@ -258,7 +259,7 @@ doit(fromp)
 		 * in a remote net; look up the name and check that this
 		 * address corresponds to the name.
 		 */
-		if (local_domain(hp->h_name)) {
+		if (check_all || (!use_kerberos && local_domain(hp->h_name))) {
 			strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
 			remotehost[sizeof(remotehost) - 1] = 0;
 			hp = gethostbyname(remotehost);
@@ -266,7 +267,7 @@ doit(fromp)
 				syslog(LOG_INFO,
 				    "Couldn't look up address for %s",
 				    remotehost);
-				error("Couldn't look up address for your host");
+				error("Couldn't look up address for your host\n");
 				exit(1);
 			} else for (; ; hp->h_addr_list++) {
 				if (!bcmp(hp->h_addr_list[0],
@@ -278,7 +279,7 @@ doit(fromp)
 					  "Host addr %s not listed for host %s",
 					    inet_ntoa(fromp->sin_addr),
 					    hp->h_name);
-					error("Host address mismatch");
+					error("Host address mismatch\n");
 					exit(1);
 				}
 			}
@@ -315,6 +316,7 @@ doit(fromp)
 		exit(1);
 	}
 	(void) write(2, "\0", 1);
+	sent_null = 1;
 
 	if (port) {
 		if (pipe(pv) < 0) {
@@ -335,32 +337,31 @@ doit(fromp)
 #endif
 		pid = fork();
 		if (pid == -1)  {
-			error("Try again.\n");
+			error("Can't fork; try again.\n");
 			exit(1);
 		}
-		if (pv[0] > s)
-			nfd = pv[0];
-		else
-			nfd = s;
-		nfd++;
 		if (pid) {
 #ifdef	KERBEROS
 			if (encrypt) {
 				static char msg[] = SECURE_MESSAGE;
-				(void) close(pv[1]); (void) close(pv1[1]);
-				(void) close(pv2[1]); (void) close(2);
+				(void) close(pv1[1]);
+				(void) close(pv2[1]);
 				des_write(s, msg, sizeof(msg));
 
 			} else
 #endif
 			{
 				(void) close(0); (void) close(1);
-				(void) close(2); (void) close(pv[1]);
 			}
+			(void) close(2); (void) close(pv[1]);
 
 			FD_ZERO(&readfrom);
 			FD_SET(s, &readfrom);
 			FD_SET(pv[0], &readfrom);
+			if (pv[0] > s)
+				nfd = pv[0];
+			else
+				nfd = s;
 #ifdef	KERBEROS
 			if (encrypt) {
 				FD_ZERO(&writeto);
@@ -374,6 +375,7 @@ doit(fromp)
 				ioctl(pv[0], FIONBIO, (char *)&one);
 
 			/* should set s nbio! */
+			nfd++;
 			do {
 				ready = readfrom;
 #ifdef	KERBEROS
@@ -464,12 +466,12 @@ doit(fromp)
 	}
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
+#if	BSD > 43
+	if (setlogin(pwd->pw_name) < 0)
+		syslog(LOG_ERR, "setlogin() failed: %m");
+#endif
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
-#if	BSD > 43
-	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
-		syslog(LOG_NOTICE, "setlogname() failed: %m");
-#endif
 	(void) setuid((uid_t)pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
@@ -481,16 +483,16 @@ doit(fromp)
 	else
 		cp = pwd->pw_shell;
 	endpwent();
-	if (!pwd->pw_uid) {
+	if (pwd->pw_uid == 0) {
 #ifdef	KERBEROS
 		if (use_kerberos)
-			syslog(LOG_NOTICE|LOG_AUTH,
+			syslog(LOG_INFO|LOG_AUTH,
 				"ROOT Kerberos shell from %s.%s@%s on %s, comm: %s\n",
 				kdata->pname, kdata->pinst, kdata->prealm,
 				hostname, cmdbuf);
 		else
 #endif
-			syslog(LOG_NOTICE|LOG_AUTH,
+			syslog(LOG_INFO|LOG_AUTH,
 				"ROOT shell from %s@%s, comm: %s\n",
 				remuser, hostname, cmdbuf);
 	}
@@ -499,15 +501,22 @@ doit(fromp)
 	exit(1);
 }
 
+/*
+ * Report error to client.
+ * Note: can't be used until second socket has connected
+ * to client, or older clients will hang waiting
+ * for that connection first.
+ */
 /*VARARGS1*/
 error(fmt, a1, a2, a3)
 	char *fmt;
 	int a1, a2, a3;
 {
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *bp = buf;
 
-	buf[0] = 1;
-	(void) sprintf(buf+1, fmt, a1, a2, a3);
+	if (sent_null == 0)
+		*bp++ = 1;
+	(void) sprintf(bp, fmt, a1, a2, a3);
 	(void) write(2, buf, strlen(buf));
 }
 
@@ -531,8 +540,8 @@ getstr(buf, cnt, err)
 
 /*
  * Check whether host h is in our local domain,
- * as determined by the part of the name following
- * the first '.' in its name and in ours.
+ * defined as sharing the last two components of the domain part,
+ * or the entire domain part if the local domain has only one component.
  * If either name is unqualified (contains no '.'),
  * assume that the host is local, as it will be
  * interpreted as such.
@@ -541,28 +550,40 @@ local_domain(h)
 	char *h;
 {
 	char localhost[MAXHOSTNAMELEN];
-	char *p1, *p2 = index(h, '.');
+	char *p1, *p2, *topdomain();
 
+	localhost[0] = 0;
 	(void) gethostname(localhost, sizeof(localhost));
-	p1 = index(localhost, '.');
+	p1 = topdomain(localhost);
+	p2 = topdomain(h);
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
 }
 
+char *
+topdomain(h)
+	char *h;
+{
+	register char *p;
+	char *maybe = NULL;
+	int dots = 0;
+
+	for (p = h + strlen(h); p >= h; p--) {
+		if (*p == '.') {
+			if (++dots == 2)
+				return (p);
+			maybe = p;
+		}
+	}
+	return (maybe);
+}
+
 usage()
 {
 #ifdef	KERBEROS
-#if	BSD > 43
-	syslog(LOG_ERR, "usage: rshd [-ln]");
+	syslog(LOG_ERR, "usage: rshd [-aln]");
 #else
-	syslog(LOG_ERR, "usage: rshd [-n]");
-#endif
-#else
-#if	BSD > 43
-	syslog(LOG_ERR, "usage: rshd [-lknvx]");
-#else
-	syslog(LOG_ERR, "usage: rshd [-knvx]");
-#endif
+	syslog(LOG_ERR, "usage: rshd [-alknvx]");
 #endif
 }
