@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.20 (Berkeley) %G%
+.\"	@(#)contrib	5.21 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -158,7 +158,7 @@ phantasia(6)	Edward A. Estes and C. Robertson
 ping(8)	Mike Muuss
 pom(6)	Keith E. Brandt
 primes(6)	Landon Curt Noll
-quiz(6)	Jim R. Oldroyd
+quiz(6)	Jim R. Oldroyd and Keith Gabryelski
 radixsort(3)	Dan Bernstein
 ranlib(1)	Hugh A. Smith
 rcs(1)	Walter F. Tichy
