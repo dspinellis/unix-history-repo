@@ -3,15 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.7 (Berkeley) %G%
+ *	@(#)proc.h	7.8 (Berkeley) %G%
  */
 
 /*
  * One structure allocated per session.
  */
 struct	session {
-	struct	proc *s_leader;	/* pointer to session leader */
-	int	s_count;	/* number of pgrps in session */
+	int	s_count;	/* ref cnt; pgrps in session */
+	struct	proc *s_leader;	/* session leader */
+	struct	vnode *s_ttyvp;	/* vnode of controlling terminal */
+	struct	tty *s_ttyp;	/* controlling terminal */
 };
 
 /*
@@ -88,7 +90,7 @@ struct	proc {
 	struct	proc *p_pgrpnxt; /* pointer to next process in process group */
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
-	int	p_traceflag;	/* kernel tracing flags (facilities) */
+	int	p_traceflag;	/* kernel trace points */
 	struct	vnode *p_tracep;/* trace to vnode */
 #if defined(tahoe)
 	int	p_ckey;		/* code cache key */
@@ -150,7 +152,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SUANOM	0x0020000	/* user warned of random vm behavior */
 #define	STIMO	0x0040000	/* timing out during sleep */
 #define	SNOCLDSTOP 0x0080000	/* no SIGCHLD when children stop */
-/* was SOUSIG	0x0100000	/* using old signal mechanism */
+#define	SCTTY	0x0100000	/* has a controlling terminal */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
