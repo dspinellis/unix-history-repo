@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 
 # BROKEN: tn3270, lisp
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
@@ -26,6 +26,8 @@ SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
 SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
 .elif	${MACHINE} == "luna68k"
 SUBDIR+=cmp g++ gas gcc ktrace ld look tail
+.elif	${MACHINE} == "sparc"
+SUBDIR+=cmp ktrace ld look tail
 .elif	${MACHINE} == "tahoe"
 SUBDIR+=pascal
 .elif	${MACHINE} == "vax"
