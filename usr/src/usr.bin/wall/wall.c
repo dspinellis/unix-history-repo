@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.2 (Berkeley) 81/03/10";
+static char *sccsid = "@(#)wall.c	4.3 (Berkeley) 81/05/06";
 /*
  * wall.c - Broadcast a message to all users.
  *
