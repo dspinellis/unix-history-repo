@@ -1,4 +1,4 @@
-/*	Locore.c	4.1	%G%	*/
+/*	Locore.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,6 +59,73 @@ dzdma()
 addupc(pc, prof, n)
 	caddr_t pc;
 	struct uprof *prof;
+{
+
+}
+
+/*ARGSUSED*/
+copyin(udaddr, kaddr, n)
+	caddr_t udaddr, kaddr;
+	unsigned n;
+{
+
+	return (0);
+}
+
+/*ARGSUSED*/
+copyout(kaddr, udaddr, n)
+	caddr_t kaddr, udaddr;
+	unsigned n;
+{
+
+	return (0);
+}
+
+int	whichqs;
+struct {
+	struct proc *q_forw;
+	struct proc *q_rev;
+} qs[32];
+
+/*ARGSUSED*/
+setjmp(lp)
+	label_t *lp;
+{
+
+	/*NOTREACHED*/
+}
+
+/*ARGSUSED*/
+longjmp(lp)
+	label_t *lp;
+{
+
+	/*NOTREACHED*/
+}
+
+/*ARGSUSED*/
+setrq(p)
+	struct proc *p;
+{
+
+}
+
+/*ARGSUSED*/
+remrq(p)
+	struct proc *p;
+{
+
+}
+
+swtch()
+{
+
+	whichqs = 0;
+}
+
+/*ARGSUSED*/
+resume(pcbpf)
+	unsigned pcbpf;
 {
 
 }
@@ -125,44 +192,6 @@ suiword(base, i)
 {
 
 	return (0);
-}
-
-/*ARGSUSED*/
-copyin(udaddr, kaddr, n)
-	caddr_t udaddr, kaddr;
-	unsigned n;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-copyout(kaddr, udaddr, n)
-	caddr_t kaddr, udaddr;
-	unsigned n;
-{
-
-	return (0);
-}
-
-int	whichqs;
-struct {
-	struct proc *q_forw;
-	struct proc *q_rev;
-} qs[32];
-
-swtch()
-{
-
-	whichqs = 0;
-}
-
-/*ARGSUSED*/
-resume(pcbpf)
-	unsigned pcbpf;
-{
-
-	/*NOTREACHED*/
 }
 
 /*ARGSUSED*/
@@ -259,3 +288,54 @@ int	mcr[3];
 struct	pte Usrptmap[USRPTSIZE];
 
 char	buffers[NBUF][BSIZE];
+
+spl0()
+{
+
+	return (0);
+}
+
+spl1()
+{
+
+	return (0);
+}
+
+spl4()
+{
+
+	return (0);
+}
+
+spl5()
+{
+
+	return (0);
+}
+
+spl6()
+{
+
+	return (0);
+}
+
+spl7()
+{
+
+	return (0);
+}
+
+splx(s)
+	int s;
+{
+
+	return (s);
+}
+
+/*ARGSUSED*/
+bcopy(to, from, count)
+	caddr_t to, from;
+	int count;
+{
+
+}
