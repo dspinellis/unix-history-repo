@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)quit.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -355,6 +355,7 @@ writeback(res)
  */
 edstop()
 {
+	extern char *tmpdir;
 	register int gotcha, c;
 	register struct message *mp;
 	FILE *obuf, *ibuf, *readstat;
@@ -389,7 +390,7 @@ edstop()
 		goto done;
 	ibuf = NULL;
 	if (stat(mailname, &statb) >= 0 && statb.st_size > mailsize) {
-		strcpy(tempname, _PATH_TMP);
+		strcpy(tempname, tmpdir);
 		strcat(tempname, "mboxXXXXXX");
 		mktemp(tempname);
 		if ((obuf = Fopen(tempname, "w")) == NULL) {

@@ -6,9 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <errno.h>
 #include "rcv.h"
 
 /*
@@ -22,20 +23,36 @@ char	tempQuit[24];
 char	tempEdit[24];
 char	tempResid[24];
 char	tempMesg[24];
+char	*tmpdir;
 
 tinit()
 {
 	register char *cp;
+	int len;
 
-	strcpy(tempMail, _PATH_TMP);
+	if ((tmpdir = getenv("TMPDIR")) == NULL)
+		tmpdir = _PATH_TMP;
+	else {
+		len = strlen(tmpdir);
+		if ((cp = malloc(len + 2)) == NULL) {
+			(void)fprintf(stderr, "mail: %s\n", strerror(errno));
+			exit (1);
+		}
+		(void)strcpy(cp, tmpdir);
+		cp[len] = '/';
+		cp[len + 1] = '\0';
+		tmpdir = cp;
+	}
+			
+	strcpy(tempMail, tmpdir);
 	mktemp(strcat(tempMail, "RsXXXXXX"));
-	strcpy(tempResid, _PATH_TMP);
+	strcpy(tempResid, tmpdir);
 	mktemp(strcat(tempResid, "RqXXXXXX"));
-	strcpy(tempQuit, _PATH_TMP);
+	strcpy(tempQuit, tmpdir);
 	mktemp(strcat(tempQuit, "RmXXXXXX"));
-	strcpy(tempEdit, _PATH_TMP);
+	strcpy(tempEdit, tmpdir);
 	mktemp(strcat(tempEdit, "ReXXXXXX"));
-	strcpy(tempMesg, _PATH_TMP);
+	strcpy(tempMesg, tmpdir);
 	mktemp(strcat(tempMesg, "RxXXXXXX"));
 
 	/*
