@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.19 (Berkeley) %G%
+ *	@(#)signal.h	7.20 (Berkeley) %G%
  */
 
 #ifndef	_SIGNAL_H_
@@ -12,9 +12,11 @@
 
 #define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
-#ifndef _POSIX_SOURCE
-#include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
+#ifndef KERNEL
+#include <sys/types.h>
+#include <sys/cdefs.h>
 #endif
+#include <machine/signal.h>	/* sigcontext; codes for SIGILL, SIGFPE */
 
 #define	SIGHUP	1	/* hangup */
 #define	SIGINT	2	/* interrupt */
@@ -61,28 +63,11 @@
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
-#include <sys/cdefs.h>
+#define	SIG_DFL		(void (*)())0
+#define	SIG_IGN		(void (*)())1
+#define	SIG_ERR		(void (*)())-1
 
-#ifndef _POSIX_SOURCE
-typedef	void (*sig_t) __P((int));
-#endif
-
-typedef int sig_atomic_t;		/* XXX should be machine dependent. */
 typedef unsigned int sigset_t;
-
-__BEGIN_DECLS
-int	sigaddset __P((sigset_t *, int));
-int	sigdelset __P((sigset_t *, int));
-int	sigemptyset __P((sigset_t *));
-int	sigfillset __P((sigset_t *));
-int	sigismember __P((const sigset_t *, int));
-__END_DECLS
-
-#define sigemptyset(set)	( *(set) = 0 )
-#define sigfillset(set)		( *(set) = ~(sigset_t)0, 0 )
-#define sigaddset(set, signo)	( *(set) |= 1 << ((signo) - 1), 0)
-#define sigdelset(set, signo)	( *(set) &= ~(1 << ((signo) - 1)), 0)
-#define sigismember(set, signo)	( (*(set) & (1 << ((signo) - 1))) != 0)
 
 /*
  * Signal vector "template" used in sigaction call.
@@ -106,6 +91,8 @@ struct	sigaction {
 #define	SIG_SETMASK	3	/* set specified signal set */
 
 #ifndef _POSIX_SOURCE
+typedef	void (*sig_t) __P((int));	/* type of signal function */
+
 /*
  * 4.3 compatibility:
  * Signal vector "template" used in sigvec call.
@@ -115,6 +102,7 @@ struct	sigvec {
 	int	sv_mask;		/* signal mask to apply */
 	int	sv_flags;		/* see signal options below */
 };
+
 #define SV_ONSTACK	SA_ONSTACK
 #define SV_INTERRUPT	SA_RESTART	/* same bit, opposite sense */
 #define sv_onstack sv_flags	/* isn't compatibility wonderful! */
@@ -137,34 +125,6 @@ struct	sigstack {
 };
 
 /*
- * Information pushed on stack when a signal is delivered.
- * This is used by the kernel to restore state following
- * execution of the signal handler.  It is also made available
- * to the handler to allow it to restore state properly if
- * a non-standard exit is performed.
- */
-struct	sigcontext {
-#if defined(vax) || defined(tahoe) || defined(hp300) || defined(i386)
-	int	sc_onstack;	/* sigstack state to restore */
-	int	sc_mask;	/* signal mask to restore */
-	int	sc_sp;		/* sp to restore */
-	int	sc_fp;		/* fp to restore */
-	int	sc_ap;		/* ap to restore */
-	int	sc_pc;		/* pc to restore */
-	int	sc_ps;		/* psl to restore */
-#endif
-#if defined(mips)
-	int	sc_onstack;	/* sigstack state to restore */
-	int	sc_mask;	/* signal mask to restore */
-	int	sc_pc;		/* pc at time of signal */
-	int	sc_regs[34];	/* processor regs 0 to 31, mullo, mullhi */
-	int	sc_fpused;	/* fp has been used */
-	int	sc_fpregs[33];	/* fp regs 0 to 31 and csr */
-	int	sc_fpc_eir;	/* floating point exception instruction reg */
-#endif
-};
-
-/*
  * Macro for converting signal number to a mask suitable for
  * sigblock().
  */
@@ -173,13 +133,7 @@ struct	sigcontext {
 #define	BADSIG		SIG_ERR
 #endif	/* !_POSIX_SOURCE */
 
-#define	SIG_DFL		(void (*)())0
-#define	SIG_IGN		(void (*)())1
-#define	SIG_ERR		(void (*)())-1
-
 #ifndef KERNEL
-#include <sys/types.h>
-
 __BEGIN_DECLS
 void	(*signal __P((int, void (*) __P((int))))) __P((int));
 int	raise __P((int));
@@ -201,7 +155,18 @@ int	sigsetmask __P((int));
 int	sigstack __P((const struct sigstack *, struct sigstack *));
 int	sigvec __P((int, struct sigvec *, struct sigvec *));
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
+int	sigaddset __P((sigset_t *, int));
+int	sigdelset __P((sigset_t *, int));
+int	sigemptyset __P((sigset_t *));
+int	sigfillset __P((sigset_t *));
+int	sigismember __P((const sigset_t *, int));
 __END_DECLS
-
 #endif	/* !KERNEL */
+
+#define sigemptyset(set)	( *(set) = 0 )
+#define sigfillset(set)		( *(set) = ~(sigset_t)0, 0 )
+#define sigaddset(set, signo)	( *(set) |= 1 << ((signo) - 1), 0)
+#define sigdelset(set, signo)	( *(set) &= ~(1 << ((signo) - 1)), 0)
+#define sigismember(set, signo)	( (*(set) & (1 << ((signo) - 1))) != 0)
+
 #endif	/* !_SIGNAL_H_ */
