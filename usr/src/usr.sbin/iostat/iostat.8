@@ -1,108 +1,116 @@
-.\" Copyright (c) 1985, 1991 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)iostat.8	6.8 (Berkeley) %G%
+.\"	@(#)iostat.8	6.9 (Berkeley) %G%
 .\"
-.TH IOSTAT 8 ""
-.UC 4
-.SH NAME
-iostat \- report I/O statistics
-.SH SYNOPSIS
-.nf
-.ft B
-iostat [ \-c count ] [ \-M core ] [ \-N system ]
-.ti +5
-[ \-w wait ] [ drives ]
-.ft R
-.fi
-.SH DESCRIPTION
-.I Iostat
-reports certain kernel statistics kept about terminal, disk and cpu
-activity.
-.PP
+.Dd 
+.Dt IOSTAT 8
+.Os BSD 4
+.Sh NAME
+.Nm iostat
+.Nd report
+.Tn I/O
+statistics
+.Sh SYNOPSIS
+.Nm iostat
+.Op Fl c Ar count
+.Op Fl M Ar core
+.Op Fl N Ar system
+.Op Fl w Ar wait
+.Op Ar drives
+.Sh DESCRIPTION
+.Nm Iostat
+displays kernel
+.Tn I/O
+statistics on terminal, disk and cpu
+operations.
+.Pp
 The options are as follows:
-.TP
-\-c
+.Bl -tag -width flag
+.It Fl c
 Repeat the display
-.I count
+.Ar count
 times.
 The first display is for the time since a reboot and each subsequent
 report is for the time period since the last display.
 If no
-.I wait
+.Ar wait
 interval is specified, the default is 1 second.
-.TP
-\-M
+.It Fl M
 Extract values associated with the name list from the specified core
-instead of the default ``/dev/kmem''.
-.TP
-\-N
+instead of the default
+.Dq Pa /dev/kmem .
+.It Fl N
 Extract the name list from the specified system instead of the default
-``/vmunix''.
-.TP
-\-w
+.Dq Pa /vmunix .
+.It Fl w
 Pause
-.I wait
+.Ar wait
 seconds between each display.
 If no repeat
-.I count
+.Ar count
 is specified, the default is infinity.
-.PP
-.I Iostat
+.El
+.Pp
+.Nm Iostat
 displays its information in the following format:
-.TP
-tty
-.nf
-.RS
-tin	characters read from terminals
-tout	characters written to terminals
-.RE
-.fi
-.TP
-disks
+.Bl -tag -width flag
+.It tty
+.Bl -tag -width indent -compact
+.It tin
+characters read from terminals
+.It tout
+characters written to terminals
+.El
+.It disks
 Disk operations (this field is system dependent). 
 The header of the field is the disk name and unit number.
 If more than four disk drives are configured in the system,
-.I iostat
+.Nm iostat
 displays only the first four drives.
 To force
-.I iostat
+.Nm iostat
 to display specific drives, their names may be supplied on the command
 line.
-.sp
-.nf
-.RS
-sps	sectors transferred per second
-tps	transfers per second
-msps	milliseconds per average seek (including implied
-	seeks and rotational latency)
-.RE
-.fi
-.TP
-cpu
-.nf
-.RS
-us	% of cpu time in user mode
-ni	% of cpu time in user mode running niced processes
-sy	% of cpu time in system mode
-id	% of cpu time in idle mode
-.RE
-.fi
-.SH FILES
-.ta \w'/dev/kmem  'u
-/vmunix	default kernel namelist
-.br
-/dev/kmem	default memory file
-.SH SEE ALSO
-.IR fstat (1),
-.IR netstat (1),
-.IR nfsstat (1),
-.IR ps (1),
-.IR systat (1),
-.IR vmstat (1),
-.IR pstat (8)
-.sp
+.Pp
+.Bl -tag -width indent -compact
+.It sps
+sectors transferred per second
+.It tps
+transfers per second
+.It msps
+milliseconds per average seek (including implied
+seeks and rotational latency)
+.El
+.It cpu
+.Bl -tag -width indent -compact
+.It \&us
+% of cpu time in user mode
+.It \&ni
+% of cpu time in user mode running niced processes
+.It \&sy
+% of cpu time in system mode
+.It \&id
+% of cpu time in idle mode
+.El
+.El
+.Sh FILES
+.Bl -tag -width /dev/kmem -compact
+.It Pa /vmunix
+Default kernel namelist.
+.It Pa /dev/kmem
+Default memory file.
+.El
+.Sh SEE ALSO
+.Xr fstat 1 ,
+.Xr netstat 1 ,
+.Xr nfsstat 1 ,
+.Xr \&ps 1 ,
+.Xr systat 1 ,
+.Xr vmstat 1 ,
+.Xr pstat 8
+.Pp
 The sections starting with ``Interpreting system activity'' in
-.IR "Installing and Operating 4.3BSD" .
+.%T "Installing and Operating 4.3BSD" .
