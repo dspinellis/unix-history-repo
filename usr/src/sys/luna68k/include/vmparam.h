@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
- * OMRON: $Id: vmparam.h,v 1.3 92/06/14 18:08:16 moti Exp $
+ * from: hp300/include/vmparam.h	7.4 (Berkeley) 6/5/92
  *
- * from: hp300/include/vmparam.h	7.3 (Berkeley) 5/7/91
- *
- *	@(#)vmparam.h	7.1 (Berkeley) %G%
+ *	@(#)vmparam.h	7.2 (Berkeley) %G%
  */
 
 /*
