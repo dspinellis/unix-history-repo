@@ -5,14 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.2 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)gethead.c	5.3 (Berkeley) 87/05/02";
 #endif not lint
 
 #include <bug.h>
 #include <sys/stat.h>
 #include <stdio.h>
 
-static int	chk1();
+static int	chk1(), pbuf();
 
 #define ENT(X)	sizeof(X) - 1, X
 HEADER	mailhead[] = {				/* mail headers */
@@ -23,7 +23,7 @@ HEADER	mailhead[] = {				/* mail headers */
 	{ NO, YES,  NULL, ENT("Message-Id:"), },
 	{ NO,  NO,  NULL, ENT("Reply-To:"), },
 	{ NO,  NO,  NULL, ENT("Return-Path:"), },
-	{ NO,  NO,  NULL, ENT("Subject:"), },
+	{ NO,  NO,  pbuf, ENT("Subject:"), },
 	{ NO,  NO,  NULL, ENT("To:"), },
 	{ ERR, }
 };
@@ -96,5 +96,31 @@ chk1(line)
 	}
 	if (stat(dir, &sbuf) || (sbuf.st_mode & S_IFMT) != S_IFDIR)
 		return(NO);
+	(void)pbuf(line);
+	return(YES);
+}
+
+/*
+ * pbuf --
+ *	kludge so that summary file looks pretty
+ */
+static
+pbuf(line)
+	char	*line;
+{
+	register char	*rp,			/* tmp pointers */
+			*wp;
+
+	for (rp = line; *rp == ' ' || *rp == '\t'; ++rp);
+	for (wp = line; *rp; ++wp) {
+		if ((*wp = *rp++) != ' ' && *wp != '\t')
+			continue;
+		*wp = ' ';
+		while (*rp == ' ' || *rp == '\t')
+			++rp;
+	}
+	if (wp[-1] == ' ')			/* wp can't == line */
+		--wp;
+	*wp = EOS;
 	return(YES);
 }
