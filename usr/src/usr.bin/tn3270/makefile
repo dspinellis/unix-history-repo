@@ -137,7 +137,7 @@ SUBDIR =	api apilib ascii ctlr general ${SYS}
 EXTRADIR =	arpa sys_dos tools utilities
 
 # The libraries we use.  The order here is important.
-# ctlrlib.a and syslib.a should come first, then apilib.a
+# ctlrlib.a and syslib.a should come first, then apiliblib.a
 # then the rest.
 SUBLIB =	ctlr/ctlrlib.a ${SYS}/syslib.a \
 		api/apilib.a \
@@ -157,20 +157,19 @@ FRC:
 
 tn3270$X:	telnet$O ${SUBLIB}
 	${CC} ${CFLAGS} -o tn3270 telnet$O \
-		$L ${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
+		$L ${SUBLIB} apilib/apiliblib.a $(LIBCURSES) $(LIBTERM)
 
 #PC_tn3270$X:
-	link <@<
-	telnet
-	telnet
-	nul
-	${SUBLIB} apilib/apilib.a+
-	\lib\ublib\ubtcp
-	_PC_<
-
+#PC_	link <@<
+#PC_	telnet
+#PC_	telnet
+#PC_	nul
+#PC_	${SUBLIB} apilib/apiliblib.a+
+#PC_	\lib\ublib\ubtcp
+#PC_	_PC_<
 
 mset$X:	mset$O ascii/map3270$O
-	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L apilib/apilib.a
+	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L apilib/apiliblib.a
 
 telnet$O:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
@@ -228,12 +227,15 @@ lint:
 				${TNMAIN} -lcurses
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} map3270.c -lcurses
 
-makefiles.pc:
+makefiles.pc:	tools/mkmake
 	for i in . ${SUBDIR} ${EXTRADIR}; \
 	do (sed -e "s/lib\.a/.lib/g" -e "s/^#PC_//" < $$i/makefile | \
-		mkmake | \
+		./tools/mkmake | \
 		sed -e "sx/x\\\\xg" -e "s/[ 	]*_PC_//" > $$i/makefile.mak); \
 	    done
+
+tools/mkmake:
+	(cd tools; make mkmake)
 
 .DEFAULT:
 	sccs get $<
