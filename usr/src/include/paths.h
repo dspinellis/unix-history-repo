@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)paths.h	5.12 (Berkeley) %G%
+ *	@(#)paths.h	5.13 (Berkeley) %G%
  */
 
+/* Default search path. */
 #define	_PATH_DEFPATH	"/bin:/usr/bin:"
 
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CONSOLE	"/dev/console"
 #define	_PATH_CSHELL	"/bin/csh"
-#define	_PATH_DEV	"/dev/"
 #define	_PATH_DEVDB	"/var/run/dev.db"
 #define	_PATH_DEVNULL	"/dev/null"
 #define	_PATH_DRUM	"/dev/drum"
@@ -22,9 +22,12 @@
 #define	_PATH_MEM	"/dev/mem"
 #define	_PATH_NOLOGIN	"/etc/nologin"
 #define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
-#define	_PATH_TMP	"/tmp/"
 #define	_PATH_TTY	"/dev/tty"
 #define	_PATH_UNIX	"/vmunix"
-#define	_PATH_VARRUN	"/var/run"
-#define	_PATH_VARTMP	"/var/tmp"
 #define	_PATH_VI	"/usr/bin/vi"
+
+/* Provide trailing slash, since mostly used for building pathnames. */
+#define	_PATH_DEV	"/dev/"
+#define	_PATH_TMP	"/tmp/"
+#define	_PATH_VARRUN	"/var/run/"
+#define	_PATH_VARTMP	"/var/tmp/"
