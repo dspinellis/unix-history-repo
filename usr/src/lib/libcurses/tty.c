@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,8 +47,18 @@ gettmode()
 
 	norawt = __orig_termios;
 	norawt.c_oflag &= ~OXTABS;
+
+	/*
+	 * XXX
+	 * System V and SMI systems overload VMIN and VTIME, such that
+	 * VMIN is the same as the VEOF element, and VTIME is the same
+	 * as the VEOL element.  This means that, if VEOF was ^D, the
+	 * default VMIN is 4.  Majorly stupid.
+	 */
 	rawt = norawt;
 	cfmakeraw(&rawt);
+	rawt.c_cc[VMIN] = 1;
+	rawt.c_cc[VTIME] = 0;
 
 	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt) ? ERR : OK);
 }
