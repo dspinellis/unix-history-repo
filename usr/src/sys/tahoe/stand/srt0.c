@@ -1,6 +1,4 @@
-/*	srt0.c	1.1	86/01/12	*/
-/*	srt0.c	4.8	81/04/03	*/
-/*  Tahoe version.	82/11/09	*/
+/*	srt0.c	1.2	86/07/13	*/
 
 #include "../machine/mtpr.h"
 #define	LOCORE
@@ -10,7 +8,6 @@
  */
 
 	.globl	_end
-	.globl	_edata
 	.globl	_main
 	.globl	__rtt
 	.globl	_openfirst
@@ -23,34 +20,23 @@
 #endif
 _start:
 	mtpr	$HIGH,$IPL		# just in case
-	movl	$(RELOC),sp
-	movl	$RELOC,r0
-	subl2	aedata,r0
-	shar	$2,r0,r0
-	clrl	r1		/* used to clear the memory */
-clr:
-	pushl	r1
-	decl	r0		/* decrement counter */
-	jgeq	clr		/* more to clear */
-
 	movl	$RELOC,sp
+
 	movl	$0x800,r0	/* source address to copy from */
 	movl	$RELOC,r1	/* destination address */
 	movl	aend,r2		/* length */
-	subl2	$0x800,r2
- #	movblk
- # simple loop replaces movblk - until hardware people are ready
+	addl2	r2,r0
+	addl2	r2,r1
 mvloop:
+	decl	r0
+	decl	r1
 	movb	(r0),(r1)
-	incl	r0
-	incl	r1
 	decl	r2
-	bneq	mvloop
-	.globl	goup
+	bgeq	mvloop
+
 	mtpr	$0,$PACC
-jumphigh:
-	.set	goup,jumphigh+0x800-RELOC
 	jmp	*abegin
+
 begin:
 	movl	$1,_openfirst
 	callf	$4,_main
@@ -62,7 +48,7 @@ __rtt:
 
 	.data
 abegin:	.long	begin
-aend:	.long	_end-RELOC+0x800
-aedata:	.long	_edata-RELOC+0x800
+aend:	.long	_end-RELOC-0x800
+aedata:	.long	_edata-RELOC-0x800
 	.globl	_entry
 	.set	_entry,0x800
