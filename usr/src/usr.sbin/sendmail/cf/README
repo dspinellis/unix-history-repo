@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.4 (Berkeley) %G%
+		@(#)README	6.5 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -352,11 +352,12 @@ without @host) to a relay host.  For example, if you have a central
 email server, you might relay to that host so that users don't have
 to have .forward files or aliases.  You can do this using
 
-	define(`LOCAL_RELAY', hostname)
+	define(`LOCAL_RELAY', mailer:hostname)
 
-There are some user names that you don't want relayed, perhaps because
-of local aliases.  A common example is root, which may be locally
-aliased.  You can add entries to this list using
+The ``mailer:'' can be omitted, in which case the mailer defaults to
+"smtp".  There are some user names that you don't want relayed, perhaps
+because of local aliases.  A common example is root, which may be
+locally aliased.  You can add entries to this list using
 
 	LOCAL_USER(usernames)
 
@@ -367,13 +368,13 @@ This adds users to class L; you could also use something like
 If you want all mail sent to a centralized hub, as for a shared
 /var/spool/mail scheme, use
 
-	define(`MAIL_HUB', hostname)
+	define(`MAIL_HUB', mailer:hostname)
 
-If you define both LOCAL_RELAY and MAIL_HUB, unqualified names and
-names in class L will be sent to the LOCAL_RELAY and other local names
-will be sent to MAIL_HUB.  For example, if are on machine
-mastodon.CS.Berkeley.EDU, the following combinations of settings
-will have the indicated effects:
+Again, ``mailer:'' defaults to "smtp".  If you define both LOCAL_RELAY
+and MAIL_HUB, unqualified names and names in class L will be sent to
+the LOCAL_RELAY and other local names will be sent to MAIL_HUB.  For
+example, if are on machine mastodon.CS.Berkeley.EDU, the following
+combinations of settings will have the indicated effects:
 
 email sent to....	eric			  eric@mastodon.CS.Berkeley.EDU
 
@@ -385,6 +386,37 @@ mammoth.CS.Berkeley.EDU
 
 Both LOCAL_RELAY and	mail.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
 MAIL_HUB set as above
+
+
++-------------------------------+
+| NON-SMTP BASED CONFIGURATIONS |
++-------------------------------+
+
+These configuration files are designed primarily for use by SMTP-based
+sites.  I don't pretend that they are well tuned for UUCP-only or
+UUCP-primarily nodes (the latter is defined as a small local net
+connected to the rest of the world via UUCP).  However, there is one
+hook to handle some special cases.
+
+You can define a ``smart host'' that understands a richer address syntax
+using:
+
+	define(`SMART_HOST', mailer:hostname)
+
+In this case, the ``mailer:'' defaults to "suucp".  Any messages that
+can't be handled using the usual UUCP rules are passed to this host.
+
+If you are on a local SMTP-based net that connects to the outside
+world via UUCP, you can use LOCAL_NET_CONFIG to add appropriate rules.
+For example:
+
+	define(`SMART_HOST', suucp:uunet)
+	LOCAL_NET_CONFIG
+	R$* < @ $* .$m > $*	$#smtp $@ $2.$m $: $1 < @ $2.$m > $3
+
+This will cause all names that end in your domain name ($m) via
+SMTP; anything else will be sent via suucp (smart UUCP) to uunet.
+
 
 +--------------------------------+
 | TWEAKING CONFIGURATION OPTIONS |
@@ -568,7 +600,7 @@ MACROS
    P
    Q
    R	Relay (for unqualified names)
-   S
+   S	Smart Host
    T
    U	my UUCP name (if I have a UUCP connection)
    V	UUCP Relay (class V hosts)
@@ -611,9 +643,9 @@ CLASSES
 
 M4 DIVERSIONS
 
-   1
-   2	Local Ruleset 0 additions
-   3	Local Ruleset 3 additions
+   1	Local host detection and resolution
+   2	Local Ruleset 3 additions
+   3	Local Ruleset 0 additions
    4	UUCP Ruleset 0 additions
    5	locally interpreted names (overrides $R)
    6	local configuration (at top of file)
