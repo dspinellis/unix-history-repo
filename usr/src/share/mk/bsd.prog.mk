@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.28 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.29 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -189,4 +189,6 @@ tags: ${SRCS} _PROGSUBDIR
 
 .if !defined(NOMAN)
 .include <bsd.man.mk>
+.else
+maninstall:
 .endif
