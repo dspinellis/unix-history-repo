@@ -1,12 +1,19 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getNAME.c	5.3 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)getNAME.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Get name sections from manual pages.
@@ -22,26 +29,40 @@ int intro;
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
+	extern int optind;
+	int ch;
 
-	argc--, argv++;
-	if (!strcmp(argv[0], "-t"))
-		argc--, argv++, tocrc++;
-	if (!strcmp(argv[0], "-i"))
-		argc--, argv++, intro++;
-	while (argc > 0)
-		getfrom(*argv++), argc--;
+	while ((ch = getopt(argc, argv, "it")) != EOF)
+		switch(ch) {
+		case 'i':
+			intro = 1;
+			break;
+		case 't':
+			tocrc = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (!*argv)
+		usage();
+
+	for (; *argv; ++argv)
+		getfrom(*argv);
 	exit(0);
 }
 
 getfrom(name)
 	char *name;
 {
+	int i = 0;
 	char headbuf[BUFSIZ];
 	char linbuf[BUFSIZ];
-	register char *cp;
-	int i = 0;
 
 	if (freopen(name, "r", stdin) == 0) {
 		perror(name);
@@ -178,4 +199,10 @@ again:
 		dp++;
 	while (*dp)
 		putchar (*dp++);
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: getNAME [-it] file ...\n");
+	exit(1);
 }
