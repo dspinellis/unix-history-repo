@@ -1,4 +1,4 @@
-/*	tip.c	4.7	81/08/16	*/
+/*	tip.c	4.8	81/08/26	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -94,6 +94,7 @@ char *argv[];
 	}
 	if (i == -1) {
 		printf("link down\n");
+		delock(uucplock);
 		exit(3);
 	}
 	setbuf(stdout, NULL);
