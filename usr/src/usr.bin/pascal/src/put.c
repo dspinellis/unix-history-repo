@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.8 %G%";
+static	char sccsid[] = "@(#)put.c 1.9 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -63,15 +63,26 @@ put(a)
 		case O_ABORT:
 			cp = "*";
 			break;
+		case O_AS:
+			switch(p[1]) {
+			case 2:
+				op = O_AS2;
+				break;
+			case 4:
+				op = O_AS4;
+				break;
+			case 8:
+				op = O_AS8;
+				break;
+			default:
+				goto pack;
+			}
+			n = 1;
+			cp = otext[op];
+			break;
 		case O_LINO:
-/*****
-			if (line == codeline)
-				return (oldlc);
-			codeline = line;
-*****/
 		case O_NEW:
 		case O_DISPOSE:
-		case O_AS:
 		case O_IND:
 		case O_LVCON:
 		case O_CON:
@@ -106,6 +117,7 @@ put(a)
 				break;
 		case O_CON2:
 		case O_CON24:
+		pack:
 			if (p[1] < 128 && p[1] >= -128) {
 				suboppr = subop = p[1];
 				p++;
