@@ -14,15 +14,15 @@
  *  Berkeley, California
  */
 
-# include <errno.h>
-# include "sendmail.h"
+#include <errno.h>
+#include <sendmail.h>
 # include <sys/mx.h>
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.24 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.25 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.24 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.25 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -389,72 +389,52 @@ myhostname(hostbuf, size)
 	else
 		return (NULL);
 }
-/*
-**  MAPHOSTNAME -- turn a hostname into canonical form
-**
-**	Parameters:
-**		hbuf -- a buffer containing a hostname.
-**		hbsize -- the size of hbuf.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Looks up the host specified in hbuf.  If it is not
-**		the canonical name for that host, replace it with
-**		the canonical name.  If the name is unknown, or it
-**		is already the canonical name, leave it unchanged.
-*/
 
+/*
+ *  MAPHOSTNAME -- turn a hostname into canonical form
+ *
+ *	Parameters:
+ *		hbuf -- a buffer containing a hostname.
+ *		hbsize -- the size of hbuf.
+ *
+ *	Returns:
+ *		none.
+ *
+ *	Side Effects:
+ *		Looks up the host specified in hbuf.  If it is not
+ *		the canonical name for that host, replace it with
+ *		the canonical name.  If the name is unknown, or it
+ *		is already the canonical name, leave it unchanged.
+ */
 maphostname(hbuf, hbsize)
 	char *hbuf;
 	int hbsize;
 {
 	register struct hostent *hp;
-	extern struct hostent *gethostbyname();
+	u_long in_addr;
+	char ptr[256];
+	struct hostent *gethostbyaddr();
 
 	/*
-	**  If first character is a bracket, then it is an address
-	**  lookup.  Address is copied into a temporary buffer to
-	**  strip the brackets and to preserve hbuf if address is
-	**  unknown.
-	*/
-
-	if (*hbuf == '[')
-	{
-		extern struct hostent *gethostbyaddr();
-		u_long in_addr;
-		char ptr[256];
-		char *bptr;
-
-		(void) strcpy(ptr, hbuf);
-		bptr = index(ptr,']');
-		*bptr = '\0';
-		in_addr = inet_addr(&ptr[1]);
-		hp = gethostbyaddr((char *) &in_addr, sizeof(struct in_addr), AF_INET);
-		if (hp == NULL)
-			return;
-	}
-	else
-	{
-		makelower(hbuf);
-#ifdef MXDOMAIN
+	 * If first character is a bracket, then it is an address
+	 * lookup.  Address is copied into a temporary buffer to
+	 * strip the brackets and to preserve hbuf if address is
+	 * unknown.
+	 */
+	if (*hbuf != '[') {
 		getcanonname(hbuf, hbsize);
 		return;
-#else MXDOMAIN
-		hp = gethostbyname(hbuf);
-#endif
 	}
-	if (hp != NULL)
-	{
-		int i = strlen(hp->h_name);
-
-		if (i >= hbsize)
-			hp->h_name[hbsize - 1] = '\0';
-		(void) strcpy(hbuf, hp->h_name);
-	}
+	*index(strcpy(ptr, hbuf), ']') = '\0';
+	in_addr = inet_addr(&ptr[1]);
+	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
+	if (hp == NULL)
+		return;
+	if (strlen(hp->h_name) >= hbsize)
+		hp->h_name[hbsize - 1] = '\0';
+	(void)strcpy(hbuf, hp->h_name);
 }
-
+
 # else DAEMON
 /* code for systems without sophisticated networking */
 
