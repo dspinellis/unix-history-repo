@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.10 %G%";
+static	char sccsid[] = "@(#)print.c 4.11 %G%";
 /*
  *
  *	UNIX debugger
@@ -306,7 +306,7 @@ printtrace(modif)
 				IF --narg!=0 THEN printc(','); FI
 			POOL
 			IF ntramp == 1
-			THEN callpc=get(frame+84, DSP);
+			THEN callpc=get(frame+92, DSP);
 			ELSE callpc=get(frame+16, DSP);
 			FI
 			IF callpc != 0
