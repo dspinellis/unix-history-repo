@@ -1,0 +1,6 @@
+#!/bin/sh
+# This file was generated automatically by configure.  Do not edit.
+# This directory was configured as follows:
+cd ../
+.././configure m68k-hp-bsd -target=m68k-hp-bsd -norecursion -norecursion 
+# using "m68k-hp-bsd.mh"
