@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.7 (Berkeley) %G%
+ *	@(#)machdep.c	8.8 (Berkeley) %G%
  *
  * from: $Header: machdep.c,v 1.44 93/10/31 05:28:36 torek Exp $
  */
@@ -534,6 +534,11 @@ boot(howto)
 		if (panicstr == 0)
 			vnode_pager_umount((struct mount *)NULL);
 		sync(&proc0, (void *)NULL, (int *)NULL);
+		/*
+		 * Unmount filesystems
+		 */
+		if (panicstr == 0)
+			vfs_unmountall();
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;

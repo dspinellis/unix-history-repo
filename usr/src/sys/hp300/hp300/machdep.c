@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.11 (Berkeley) %G%
+ *	@(#)machdep.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1061,6 +1061,11 @@ boot(howto)
 #endif
 #endif
 		sync(&proc0, (void *)NULL, (int *)NULL);
+		/*
+		 * Unmount filesystems
+		 */
+		if (panicstr == 0)
+			vfs_unmountall();
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
