@@ -1,0 +1,49 @@
+Return-Path: fuat@ans.net
+Received: by cognition.pa.dec.com; id AA04201; Tue, 19 Jan 93 11:46:18 -0800
+Received: by inet-gw-1.pa.dec.com; id AA20795; Tue, 19 Jan 93 11:46:17 -0800
+Received: by interlock.ans.net id AA18502
+  (InterLock SMTP Gateway 1.1 for vixie@pa.dec.com);
+  Tue, 19 Jan 1993 14:45:33 -0500
+Received: by interlock.ans.net (Internal Mail Agent-2);
+  Tue, 19 Jan 1993 14:45:33 -0500
+Received: by interlock.ans.net (Internal Mail Agent-1);
+  Tue, 19 Jan 1993 14:45:33 -0500
+Date: Tue, 19 Jan 93 14:45:38 EST
+From: Fuat Baran <fuat@ans.net>
+To: vixie (Paul A Vixie)
+Cc: fuat@ans.net
+Phone: 914-789-5328, Fax: 914-789-5310
+Subject: bind 4.9 beta instructions
+Message-Id: <CMM.0.90.2.727472738.fuat@foo.ans.net>
+
+Since it is almost time for the Beta announcement for BIND 4.9, I
+thought I'd let you know how I compile BIND under AIX, in case you
+want to add compilation instructions.  (I'm assuming you'll resolve
+the business of LIBC=/usr/lib/libc.a vs /lib/libc.a which cropped up
+in the latest alpha.)
+
+1) Make sure you have bsdcc configured (see also: /usr/lpp/bos/bsdport):
+	a) link /bin/xlc to /bin/bsdcc
+	b) add the following stanza to near the end of /etc/xlc.cfg
+	   before the DEFLT stanza:
+
+* BSD compatibility
+bsdcc:	use	   = DEFLT
+	crt	   = /lib/crt0.o
+	mcrt	   = /lib/mcrt0.o
+	gcrt	   = /lib/gcrt0.o
+	libraries  = -lbsd, -lc
+	proflibs   = -L/lib/profiled,-L/usr/lib/profiled
+	options    = -H512,-T512,-qlanglvl=extended,-qnoro,-D_BSD,-D_NONSTD_TYPES,-D_NO_PROTO,-D_BSD_INCLUDES,-bnodelcsect,-U__STR__,-U__MATH__
+
+
+2) In the top level bind directory:
+	make CC="bsdcc -DBSD=43" all
+
+Note: If you prefer, you can either add a "-DBSD=43" to the bsdcc
+stanza (in the options section), or create a similar stanza with it
+(e.g. call it bsdcc43 and make the symlink to /bin/bsdcc43).  Then you
+can do a "make CC=bsdcc43" instead.
+
+						--Fuat
+
