@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -22,13 +22,8 @@ static char sccsid[] = "@(#)bugfiler.c	4.6 (Berkeley) %G%";
 #define	MAILCMD		"/usr/lib/sendmail -i -t"
 
 char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
-#ifdef notdef
 char	*bugperson = "bugs";
 char	*maildir = "mail";
-#else
-char	*bugperson = "sam";
-char	*maildir = "Mail";
-#endif
 char	ackfile[] = ".ack";
 char	errfile[] = ".format";
 char	sumfile[] = "summary";
