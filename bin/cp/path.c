@@ -32,13 +32,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)path.c	5.1 (Berkeley) 4/3/91";
+static char sccsid[] = "@(#)path.c	5.2 (Berkeley) 10/27/91";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <stdio.h>
 #include <string.h>
-#include "cp.h"
+#include "extern.h"
 
 /*
  * These functions manipulate paths in PATH_T structures.
@@ -59,13 +58,13 @@ static char sccsid[] = "@(#)path.c	5.1 (Berkeley) 4/3/91";
  * Move specified string into path.  Convert "" to "." to handle BSD
  * semantics for a null path.  Strip trailing slashes.
  */
+int
 path_set(p, string)
 	register PATH_T *p;
 	char *string;
 {
 	if (strlen(string) > MAXPATHLEN) {
-		(void)fprintf(stderr,
-		    "%s: %s: name too long.\n", progname, string);
+		err("%s: name too long", string);
 		return(0);
 	}
 
@@ -99,8 +98,7 @@ path_append(p, name, len)
 
 	/* The "+ 1" accounts for the '/' between old path and name. */
 	if ((len + p->p_end - p->p_path + 1) > MAXPATHLEN) {
-		(void)fprintf(stderr,
-		    "%s: %s/%s: name too long.\n", progname, p->p_path, name);
+		err("%s/%s: name too long", p->p_path, name);
 		return(0);
 	}
 
