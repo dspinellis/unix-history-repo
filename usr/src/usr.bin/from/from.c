@@ -22,9 +22,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)from.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)from.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
