@@ -5,14 +5,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "dump.h"
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <ufs/dir.h>
+#include <ufs/dinode.h>
+#include <ufs/fs.h>
+#include <signal.h>
 #include <fcntl.h>
+#include <protocols/dumprestore.h>
+#include <errno.h>
+#ifdef __STDC__
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+#include "dump.h"
 #include "pathnames.h"
 
 char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
@@ -22,7 +32,6 @@ int	trecno = 0;		/* next record to write in current block */
 extern	long blocksperfile;	/* number of blocks per output file */
 extern int ntrec;		/* blocking factor on tape */
 extern int cartridge;
-extern int read(), write();
 #ifdef RDUMP
 extern char *host;
 int	rmtopen(), rmtwrite();
@@ -147,6 +156,10 @@ sigpipe()
 void
 flushtape()
 {
+#ifndef __STDC__
+	int write();
+#endif
+
 	int siz = (char *)tblock - (char *)req;
 
 	if (atomic(write, slavefd[rotor], req, siz) != siz)
@@ -442,6 +455,9 @@ doslave(cmd, prev, next)
 	register int cmd, prev[2], next[2];
 {
 	register int nread, toggle = 0;
+#ifndef __STDC__
+	int read();
+#endif
 
 	/*
 	 * Need our own seek pointer.

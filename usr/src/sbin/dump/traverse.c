@@ -5,9 +5,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <ufs/dir.h>
+#include <ufs/dinode.h>
+#include <ufs/fs.h>
+#include <protocols/dumprestore.h>
+#ifdef __STDC__
+#include <unistd.h>
+#include <string.h>
+#endif
 #include "dump.h"
 
 void	dmpindir();

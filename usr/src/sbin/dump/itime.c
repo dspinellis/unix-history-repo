@@ -5,12 +5,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "dump.h"
-#include <sys/file.h>
+#include <sys/param.h>
+#include <ufs/dir.h>
+#include <ufs/dinode.h>
+#include <fcntl.h>
+#include <protocols/dumprestore.h>
 #include <errno.h>
+#include <stdio.h>
+#ifdef __STDC__
+#include <time.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+#include "dump.h"
 
 struct	dumpdates **ddatev = 0;
 int	nddates = 0;
