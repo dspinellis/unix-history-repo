@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	7.2 (Berkeley) %G%
+ *	@(#)vm_extern.h	7.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -19,6 +19,7 @@ struct vnode;
 void		 chgkprot __P((caddr_t, int, int));
 #endif
 
+#ifdef KERNEL
 #ifdef TYPEDEF_FOR_UAP
 int		 getpagesize __P((struct proc *p, void *, int *));
 int		 madvise __P((struct proc *, void *, int *));
@@ -100,3 +101,4 @@ void		 vnode_pager_umount __P((struct mount *));
 boolean_t	 vnode_pager_uncache __P((struct vnode *));
 void		 vslock __P((caddr_t, u_int));
 void		 vsunlock __P((caddr_t, u_int, int));
+#endif
