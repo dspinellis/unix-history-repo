@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)char.h	3.6 (Berkeley) %G%
+ *	@(#)char.h	3.7 (Berkeley) %G%
  */
 
 /*
@@ -30,8 +30,8 @@
  * using unctrl() by wwwrite() if ww_unctrl is set.
  */
 
-char *_unctrl[];
-char _cmap[];
+extern char *_unctrl[];
+extern char _cmap[];
 #define ctrl(c)		(c & 0x1f)
 #define unctrl(c)	(_unctrl[(unsigned char) (c)])
 #define _C		0x01
