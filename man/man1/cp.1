@@ -1,0 +1,34 @@
+.pa 1
+.he 'CP (I)'1/24/73'CP (I)'
+.ti 0
+NAME		cp -- copy
+.sp
+.ti 0
+SYNOPSIS	cp__ file918 file928
+.sp
+.ti 0
+DESCRIPTION	The
+first file is copied onto the second.
+The mode and owner of the target file
+are preserved if it already
+existed; the mode of the source file
+is used otherwise.
+.sp
+If file928 is a directory, then the target 
+file is a file in that directory with the file-name
+of file918.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	cat(I), pr(I), mv(I)
+.sp
+.ti 0
+DIAGNOSTICS	Error returns are
+checked at every system call, and
+appropriate diagnostics are produced.
+.sp
+.ti 0
+BUGS		Copying
+a file onto itself destroys its contents.
