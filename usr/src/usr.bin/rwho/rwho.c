@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	4.6 83/05/25";
+static char sccsid[] = "@(#)rwho.c	4.7 (Berkeley) 83/07/01";
 #endif
 
 #include <sys/param.h>
 #include <stdio.h>
-#include <dir.h>
-#include <rwhod.h>
+#include <sys/dir.h>
+#include "../etc/rwhod/rwhod.h"
 
 DIR	*etc;
 
