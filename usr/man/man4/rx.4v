@@ -1,0 +1,116 @@
+.TH RX 4V "9 February 1983"
+.UC 4
+.SH NAME
+rx \- DEC RX02 floppy disk interface
+.SH SYNOPSIS
+.B "controller fx0 at uba0 csr 0177170  vector rxintr"
+.br
+.B "disk rx0 at fx0 drive 0"
+.br
+.B "disk rx1 at fx0 drive 1"
+.SH DESCRIPTION
+The
+.I rx
+device provides access to a DEC RX02 floppy disk
+unit with M8256 interface module (RX211 configuration). 
+The RX02 uses 8-inch, single-sided, soft-sectored floppy
+disks (with pre-formatted industry-standard headers) in
+either single or double density.
+.PP
+Floppy disks handled by the RX02 contain 77 tracks, each with 26
+sectors (for a total of 2,002 sectors).  The sector size is 128
+bytes for single density, 256 bytes for double density.  Single 
+density disks are compatible with the RX01 floppy disk unit and with
+IBM 3740 Series Diskette 1 systems.  (Double density disks are not
+compatible with IBM systems.)
+.PP
+In addition to normal i/o, the driver supports
+formatting of disks for either density and
+the ability to invoke a 2 for 1 interleaved sector mapping
+compatible with the DEC operating system RT-11.
+.PP
+Drives are always opened with exclusive access.
+The minor device is interpreted as follows:
+.PP
+.nf
+.ta \w'Bit      'u
+\fBBit	Description\fP
+1	Density (0 for single, 1 for double)
+2	Sector interleaving  (1 disables interleaving)
+4	Logical sector 1 is on track 1 (0 yes, 1 no)
+8	Reserved (must be zero)
+Other	Drive number
+.fi
+.PP
+The two drives in a single RX02 unit are treated as
+two disks attached to a single controller.  Thus, if there are two
+RX02's on a system, the drives on the first RX02 are ``rx0'' and ``rx1'',
+while the drives on the second are ``rx2'' and ``rx3''. 
+.PP
+The density and interleaving parameters are represented in device
+names by the letters `a' through `h'.  Thus, unit 0, drive 0 is
+called by one of the following names:
+.PP
+.nf
+.ta \w'interleaved   'u +\w'Single density      'u +\w'Double density      'u
+\fBMapping	Single density	Double density	Starting track\fP
+interleaved	/dev/rx0a	/dev/rx0b	1
+direct	/dev/rx0c	/dev/rx0d	1
+interleaved	/dev/rx0e	/dev/rx0f	0
+direct	/dev/rx0g	/dev/rx0h	0
+.fi
+.PP
+The mapping used on the `a' and `b' devices is compatible with the
+DEC operating system RT-11.  The `g' and `h' devices access the
+sectors of the disk in strictly sequential order.  The `e' and `f'
+devices are the most efficient for disk-to-disk copying.
+.PP
+The DKIOCFORMAT
+.IR ioctl ,
+defined in
+.RI < vax/dkio.h >,
+may be used to format a floppy disk.  The density is implied
+by the minor device opened prior to the call.
+.PP
+I/O requests must start on a sector boundary, involve an integral
+number of complete sectors, and not go off the end of the disk.
+.SH ERRORS
+The following errors may be returned.
+.TP 15
+[EBUSY]
+Drive is already open (on open), or drive not ready (on a read or
+write); the latter is usually because no disk is in the drive or
+the drive door is open.
+.TP
+[ENXIO]
+Nonexistent drive (on open); or (on a read or write)
+offset is too large or not on a sector boundary, or
+byte count is not a multiple of the sector size.
+.TP
+[EIO]
+A physical error other than ``not ready'' or ``wrong density''.
+.TP
+[ENODEV]
+An attempt to use the wrong density.
+.SH FILES
+/dev/rx?
+.SH DIAGNOSTICS
+.BR "rx%d: hard error, lsn%d (trk %d psec %d) cs=%b, db=%b, err=%x" .
+An unrecoverable error was encountered.  The logical sector
+number and track and physical sector number are displayed.
+.PP
+.BR "rx%d: state %d (reset)" .
+The driver entered a bogus state.  This should not happen.
+.SH BUGS
+The only way to determine the density of a mystery floppy is
+to try reading it at an arbitrary density and checking for
+ENODEV.
+.PP
+A floppy may not be formatted if the
+header info on track 0 has been damaged.  Hence, it is not
+possible to format a completely degaussed disk. 
+(This is actually a problem in the hardware.)
+.PP
+This driver is untested with 4.1c.
+.SH AUTHORS
+Based on earlier drivers by Bill Shannon and Richard Wales.
