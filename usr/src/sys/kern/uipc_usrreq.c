@@ -11,7 +11,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- *	@(#)uipc_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -707,5 +707,5 @@ unp_discard(fp)
 
 	fp->f_msgcount--;
 	unp_rights--;
-	closef(fp);
+	(void) closef(fp);
 }
