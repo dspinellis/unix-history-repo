@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.2	(Berkeley)	82/11/06
+#	@(#)Makefile	4.3	(Berkeley)	82/11/06
 #
 #	make file for STYLE and DICTION
 #
@@ -8,27 +8,33 @@
 #	DICT is the full pathname of the file dict.d, the
 #		dictionary file used by DICTION
 #
+SRCS = \
+	abbrev.c conp.h dict.c dict.d \
+	diction.c diction.sh edict.c ehash.c \
+	explain.d \
+	end.l getopt.c names.h nhash.c \
+	nwords.l outp.c part.l pscan.c \
+	style.h style.sh explain.sh ydict.c \
+	README
+
 BIN = ${DESTDIR}/usr/lib
 DICT= -DDICT=\"/usr/lib/dict.d\"
 
-all: diction style suggest deroff
+all: diction style
+
 style: style1 style2 style3
 
-install: style diction
+install: style diction style.sh diction.sh explain.sh dict.d explain.d
 	install -s style1 ${DESTDIR}/usr/lib
 	install -s style2 ${DESTDIR}/usr/lib
 	install -s style3 ${DESTDIR}/usr/lib
 	install -s dprog ${DESTDIR}/usr/lib
-	install -s deroff ${DESTDIR}/usr/lib
-	rm -f ${DESTDIR}/usr/bin/deroff
-	ln ${DESTDIR}/usr/lib/deroff ${DESTDIR}/usr/bin/deroff
-	install -c style ${DESTDIR}/usr/bin
-	install -c diction ${DESTDIR}/usr/bin
-	install -c explain ${DESTDIR}/usr/bin
+	install -c style.sh ${DESTDIR}/usr/bin/style
+	install -c diction.sh ${DESTDIR}/usr/bin/diction
+	install -c explain.sh ${DESTDIR}/usr/bin/explain
 	install -c dict.d ${DESTDIR}/usr/lib
 	install -c explain.d ${DESTDIR}/usr/lib
 #	ln ${DESTDIR}/usr/bin/explain ${DESTDIR}/usr/bin/suggest
-#	ln ${DESTDIR}/usr/lib/explain.d ${DESTDIR}/usr/bin/suggest.d
 
 clean:
 	rm -f prtlex.c wdslex.c endlex.c
@@ -41,9 +47,9 @@ prtlex.c: part.l
 	mv lex.yy.c prtlex.c
 prtlex.o: names.h prtlex.c
 	cc -c -O prtlex.c
-pscan.o: names.h conp.h
+pscan.o: names.h conp.h pscan.c
 	cc -c -O pscan.c
-outp.o: names.h conp.h style.h 
+outp.o: names.h conp.h style.h outp.c
 	cc -c -O outp.c
 
 style1: wdslex.o
@@ -66,5 +72,10 @@ diction: dprog
 dprog: diction.c
 	cc -O $(DICT) diction.c -i -o dprog
 
-deroff:	deroff.c getopt.c
-	cc -O deroff.c  getopt.c -i -o deroff
+srcs:	sources
+
+sources: $(SRCS)
+
+$(SRCS):
+	sccs get $@
+
