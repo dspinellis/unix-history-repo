@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.3 %G%";
+static char sccsid[] = "@(#)object.c 1.4 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -178,12 +178,12 @@ Fileid f;
 		}
 	    }
 	    enterline(0, (linep-1)->addr + 1);
-	} else if (name[0] == '_') {
-	    if (afterlg) {
+	} else if (afterlg) {
+	    if (name[0] == '_') {
 		check_global(&name[1], np);
-	    } else if (curblock->name != nil) {
-		check_local(&name[1], np);
 	    }
+	} else if (name[0] == '_') {
+	    check_local(&name[1], np);
 	} else if ((np->n_type&N_TEXT) == N_TEXT) {
 	    check_filename(name);
 	}
