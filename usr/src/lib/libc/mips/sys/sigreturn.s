@@ -11,11 +11,11 @@
 #include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)sigreturn.s	5.1 (Berkeley) %G%")
+	ASMSTR("@(#)sigreturn.s	5.2 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * We must preserve the state of the registers as the user has set them up.
  */
 
-SYSCALL(sigreturn)
+RSYSCALL(sigreturn)
