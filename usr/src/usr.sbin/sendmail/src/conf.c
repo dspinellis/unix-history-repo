@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.144 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.145 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3011,4 +3011,36 @@ hard_syslog(pri, msg, va_alist)
 		continue;
 }
 
+#endif
+/*
+**  LOCAL_HOSTNAME_LENGTH
+**
+**	This is required to get sendmail to compile against BIND 4.9.x
+**	on Ultrix.
+*/
+
+#if defined(ultrix) && NAMED_BIND
+
+# include <resolv.h>
+# if __RES >= 19931104
+
+int
+local_hostname_length(hostname)
+	char *hostname;
+{
+	int len_host, len_domain;
+
+	if (!*_res.defdname)
+		res_init();
+	len_host = strlen(hostname);
+	len_domain = strlen(_res.defdname);
+	if (len_host > len_domain &&
+	    (strcasecmp(hostname + len_host - len_domain,_res.defdname) == 0) &&
+	    hostname[len_host - len_domain - 1] == '.')
+		return len_host - len_domain - 1;
+	else
+		return 0;
+}
+
+# endif
 #endif
