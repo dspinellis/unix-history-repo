@@ -17,14 +17,14 @@ diff \- differential file and directory comparator
 ] [
 .B \-s
 ] [
-\fB\-cefh\fR
+\fB\-cefhn\fR
 ] [
 .B \-biw
 ] dir1 dir2
 .br
 .B diff
 [
-\fB\-cefh
+\fB\-cefhn
 ] [
 \fB\-biw\fR
 ] file1 file2
@@ -187,6 +187,13 @@ not useful with
 .I ed,
 and in the opposite order.
 .TP 9
+.B \-n
+produces a script similar to that of
+.B \-e,
+but in the opposite order and with a count of changed lines on each
+insert or delete command.  This is the form used by
+.IR rcsdiff (1).
+.TP 9
 .B \-c
 produces a diff with lines of context.
 The default is to present 3 lines of context and may be changed, e.g to 10, by
@@ -199,14 +206,10 @@ their creation dates and then each change is separated
 by a line with a dozen *'s.
 The lines removed from
 .I file1
-are marked with `\(mi<'; those added to
+are marked with `\(mi '; those added to
 .I file2
-are marked `+>'.  Lines which are changed from one
-file to the other are marked in
-.I file1
-with `!<' and
-.I file2
-with `!>'.
+are marked `+ '.  Lines which are changed from one
+file to the other are marked in both files with with `! '.
 
 Changes which lie within <context> lines of each other are grouped
 together on output.  (This is a change from the previous ``diff -c''
