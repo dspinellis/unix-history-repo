@@ -207,9 +207,9 @@ chkquota(fsdev, fsfile, qffile)
 {
 	register struct fileusage *fup;
 	dev_t quotadev;
-	FILE *qf;
+	register FILE *qfi, *qfo;
 	u_short uid;
-	int cg, i;
+	int cg, i, fdo;
 	char *rawdisk;
 	struct stat statb;
 	struct dqblk dqbuf;
@@ -224,29 +224,42 @@ chkquota(fsdev, fsfile, qffile)
 		perror(rawdisk);
 		return (1);
 	}
-	qf = fopen(qffile, "r+");
-	if (qf == NULL) {
+	qfi = fopen(qffile, "r");
+	if (qfi == NULL) {
 		perror(qffile);
 		close(fi);
 		return (1);
 	}
-	if (fstat(fileno(qf), &statb) < 0) {
+	if (fstat(fileno(qfi), &statb) < 0) {
 		perror(qffile);
-		fclose(qf);
+		fclose(qfi);
 		close(fi);
 		return (1);
 	}
 	quotadev = statb.st_dev;
 	if (stat(fsdev, &statb) < 0) {
 		perror(fsdev);
-		fclose(qf);
+		fclose(qfi);
 		close(fi);
 		return (1);
 	}
 	if (quotadev != statb.st_rdev) {
 		fprintf(stderr, "%s dev (0x%x) mismatch %s dev (0x%x)\n",
 			qffile, quotadev, fsdev, statb.st_rdev);
-		fclose(qf);
+		fclose(qfi);
+		close(fi);
+		return (1);
+	}
+	/*
+	 * Must do fdopen(open(qffile, 1), "w") instead of fopen(qffile, "w")
+	 * because fopen(qffile, "w") would truncate the quota file.
+	 */
+	fdo = open(qffile, 1);
+	if (fdo < 0 || (qfo = fdopen(fdo, "w")) == NULL) {
+		perror(qffile);
+		if (fdo >= 0)
+			close(fdo);
+		fclose(qfi);
 		close(fi);
 		return (1);
 	}
@@ -265,8 +278,7 @@ chkquota(fsdev, fsfile, qffile)
 			acct(ginode());
 	}
 	for (uid = 0; uid <= highuid; uid++) {
-		fseek(qf, (long)uid * sizeof(struct dqblk), 0);
-		i = fread(&dqbuf, sizeof(struct dqblk), 1, qf);
+		i = fread(&dqbuf, sizeof(struct dqblk), 1, qfi);
 		if (i == 0)
 			dqbuf = zerodqbuf;
 		fup = lookup(uid);
@@ -276,6 +288,7 @@ chkquota(fsdev, fsfile, qffile)
 		    dqbuf.dqb_curblocks == fup->fu_usage.du_curblocks) {
 			fup->fu_usage.du_curinodes = 0;
 			fup->fu_usage.du_curblocks = 0;
+			fseek(qfo, (long)sizeof(struct dqblk), 1);
 			continue;
 		}
 		if (vflag) {
@@ -286,24 +299,24 @@ chkquota(fsdev, fsfile, qffile)
 			else
 				printf("#%-7d fixed:", uid);
 			if (dqbuf.dqb_curinodes != fup->fu_usage.du_curinodes)
-				fprintf(stdout, "  inodes %d -> %d",
+				fprintf(stdout, "\tinodes %d -> %d",
 					dqbuf.dqb_curinodes, fup->fu_usage.du_curinodes);
 			if (dqbuf.dqb_curblocks != fup->fu_usage.du_curblocks)
-				fprintf(stdout, "  blocks %d -> %d",
+				fprintf(stdout, "\tblocks %d -> %d",
 					dqbuf.dqb_curblocks, fup->fu_usage.du_curblocks);
 			fprintf(stdout, "\n");
 		}
 		dqbuf.dqb_curinodes = fup->fu_usage.du_curinodes;
 		dqbuf.dqb_curblocks = fup->fu_usage.du_curblocks;
-		fseek(qf, (long)uid * sizeof(struct dqblk), 0);
-		fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
+		fwrite(&dqbuf, sizeof(struct dqblk), 1, qfo);
 		quota(Q_SETDUSE, uid, quotadev, &fup->fu_usage);
 		fup->fu_usage.du_curinodes = 0;
 		fup->fu_usage.du_curblocks = 0;
 	}
-	fflush(qf);
-	ftruncate(fileno(qf), (highuid + 1) * sizeof(struct dqblk));
-	fclose(qf);
+	fflush(qfo);
+	ftruncate(fileno(qfo), (off_t)((highuid + 1) * sizeof(struct dqblk)));
+	fclose(qfi);
+	fclose(qfo);
 	close(fi);
 	return (0);
 }
@@ -357,8 +370,15 @@ bread(bno, buf, cnt)
 	long unsigned bno;
 	char *buf;
 {
+	extern	off_t lseek();
+	register off_t pos;
 
-	lseek(fi, (long)dbtob(bno), 0);
+	pos = (off_t)dbtob(bno);
+	if (lseek(fi, pos, 0) != pos) {
+		perror("lseek");
+		exit(1);
+	}
+
 	if (read(fi, buf, cnt) != cnt) {
 		perror("read");
 		exit(1);
