@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edhup.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)edhup.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,16 +45,16 @@ do_hup()
 
 	sigspecial++;
 	if (change_flag == 0)
-		exit(1);		/* No need to save buffer contents. */
+		exit(exit_code+2);		/* No need to save buffer contents. */
 	if ((l_fp = fopen("ed.hup", "w")) == NULL) {
 		/* Try writting ed.hup to the $HOME directory instead. */
 		l_temp = getenv("HOME");
 		if ((l_temp == NULL) || ((strlen(l_temp) + 7) > FILENAME_LEN))
-			exit(1);
+			exit(exit_code+2);
 		strcpy(l_filename, l_temp);
 		strcat(l_filename, "/ed.hup");
 		if ((l_fp = fopen(l_filename, "w")) == NULL)
-			exit(1);		/* We tried... */
+			exit(exit_code+2);		/* We tried... */
 	}
 	edwrite(l_fp, top, bottom);
 	fclose(l_fp);
@@ -66,5 +66,5 @@ do_hup()
 	(dbhtmp->close) (dbhtmp);
 	unlink(template);
 #endif
-	exit(1);				/* Hangup */
+	exit(exit_code+2);				/* Hangup */
 }

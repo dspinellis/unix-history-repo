@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -140,6 +140,7 @@ e2(inputt, errnum)
 	file_seek = 0;
 #endif
 #ifdef DBI
+/*
 	(l_dbaccess.bval) = (u_char) '\0';
 	(l_dbaccess.cachesize) = 0;
 	(l_dbaccess.flags) = R_NOKEY;
@@ -147,6 +148,9 @@ e2(inputt, errnum)
 	(l_dbaccess.reclen) = 0;
 	dbhtmp = dbopen(template, O_CREAT | O_RDWR,
 	    S_IRUSR | S_IWUSR, (DBTYPE) DB_RECNO, &l_dbaccess);
+*/
+	dbhtmp = dbopen(template, O_CREAT | O_RDWR,
+	    S_IRUSR | S_IWUSR, (DBTYPE) DB_RECNO, NULL);
 	if (dbhtmp == NULL) {
 		ed_exit(5); /* unable to create buffer */
 	}
@@ -164,6 +168,15 @@ e2(inputt, errnum)
 		/* So 'r' knows the filename is already read in. */
 		filename_flag = 1;
 		r(inputt, errnum);
+		gut_num = line_number(bottom) + 512;
+		if (gut == NULL) {
+			gut = malloc(sizeof(LINE **) * gut_num);
+			if (gut == NULL) {
+				*errnum = -1;
+				strcpy(help_msg, "out of memory error");
+				return;
+			}
+		}
 	}
 	change_flag = 0;
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ed.h	5.5 (Berkeley) %G%
+ *	@(#)ed.h	5.6 (Berkeley) %G%
  */
 
 #define	FILENAME_LEN	PATH_MAX
@@ -19,6 +19,9 @@
 #define SIGINT_ILACTION	longjmp(ctrl_position3, INTERUPT)
 #define	SIGHUP_ACTION	longjmp(ctrl_position, HANGUP)
 #define	NN_MAX_START	510
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1
 #endif
@@ -41,11 +44,6 @@ struct MARK {
 	LINE *address;
 };
 
-struct g_list {
-	struct g_list *next;
-	LINE *cell;
-};
-
 struct u_layer {
 	LINE *val, **cell;
 	struct u_layer *below;
@@ -59,12 +57,13 @@ struct d_layer {
 extern int nn_max, nn_max_flag, Start_default, End_default, address_flag;
 extern LINE *nn_max_start, *nn_max_end, *Start, *End, *current;
 extern char *text, *prompt_string, help_msg[];
+extern LINE **gut;
 extern struct MARK mark_matrix[];
 extern char *filename_current, *buf;
 extern int zsnum;  /* z sticky number */
 extern LINE *top, *bottom; /* ...of the buffer */
-extern int ss, explain_flag, name_set;
-extern int filename_flag, add_flag, join_flag;
+extern int ss, explain_flag, name_set, exit_code;
+extern int filename_flag, add_flag, join_flag, gut_num;
 extern long change_flag;
 extern int pat_err, flag, g_flag, GV_flag, printsfx;
 

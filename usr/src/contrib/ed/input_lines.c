@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -76,22 +76,22 @@ input_lines(fp, errnum)
 		l_ss = getc(fp);
         	sigspecial3 = 0;
 		if (l_ss == EOF) {
-			if (add_flag) {
-				l_text[l_nn++] = '\0';
-				goto eof_mk;
-			}
+				clearerr(fp);
+				if (l_nn) {
+					printf("<newline> added at end of line\n");
+					l_nn++;
+					goto eof_mk;
+				}
 			break;
 		}
-		/*if (!l_ss)*/ /* 8-bit okay, but NULL not */
-			/*continue;*/
 		l_text[l_nn++] = (char)l_ss;
 		if (l_ss == '\n') {
 			if (sigint_flag)
 				goto point;
+eof_mk:
 			l_text[l_nn - 1] = '\0';
 			if ((l_nn == 2) && (l_text[0] == '.') && add_flag)
 				break;
-eof_mk:
 			nn_max_end = (LINE *)malloc(sizeof(LINE));
 			if (nn_max_end == NULL) {
 				*errnum = -1;

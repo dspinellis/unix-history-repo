@@ -9,7 +9,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+char copyright[] =
+"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,7 +43,7 @@ static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 
 int nn_max, nn_max_flag, Start_default, End_default, address_flag;
 int zsnum, filename_flag, add_flag=0, join_flag=0;
-int help_flag=0;
+int help_flag=0, gut_num;
 #ifdef STDIO
 FILE *fhtmp;
 int file_seek;
@@ -52,6 +58,7 @@ LINE *nn_max_start, *nn_max_end;
 struct MARK mark_matrix[26]; /* in init set all to null */ 
 
 char *text;
+LINE **gut=NULL;
 char *filename_current, *prompt_string=NULL, help_msg[130];
 char *template=NULL;
 int prompt_str_flg=0, start_up_flag=0, name_set=0;
@@ -67,7 +74,7 @@ int RE_sol=0, RE_flag=0;
 char *RE_patt=NULL;
 
 int ss; /* for the getc() */
-int explain_flag=1, g_flag=0, GV_flag=0, printsfx=0;
+int explain_flag=1, g_flag=0, GV_flag=0, printsfx=0, exit_code=0;
 long change_flag=0L;
 int line_length;
 jmp_buf ctrl_position, ctrl_position2, ctrl_position3; /* For SIGnal handling. */
@@ -93,8 +100,8 @@ main(argc, argv)
 
 	setbuffer(stdin, buf, 1);
 	line_length = ((l_col = getenv("COLUMNS")) == NULL ? 0 : atoi(l_col));
-	if (line_length == 0 && isatty(STDOUT_FILENO) &&
-		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) != -1)
+	if ((line_length == 0 && isatty(STDOUT_FILENO) &&
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) != -1))
 		line_length = win.ws_col;
 	if (line_length == 0)
 		line_length = 78;
@@ -150,6 +157,7 @@ main(argc, argv)
 #ifdef POSIX
 				printf("ed: in POSIX mode:\n");
 #endif
+				break;
 			default:
 				l_err++;
 				ed_exit(l_err);
@@ -487,10 +495,21 @@ cmd_loop(inputt, errnum)
 			else if (*errnum < 0) {
 errmsg:				while (((ss = getc(inputt)) != '\n') &&
 				    (ss != EOF));
+				exit_code = 4;
 				if (help_flag == 1)
-					printf("%?: %s\n", help_msg);
+					printf("?: %s\n", help_msg);
 				else
 					printf("?\n");
+/* for people wanting scripts to carry on after a cmd error, then
+ * define NOENDONSCRIPT on the compile line.
+ */
+#ifndef NOENDONSCRIPT
+				if (!isatty(STDIN_FILENO)) {
+					ss = 'Q';
+					ungetc('\n', inputt);
+					q(inputt, errnum);
+				}
+#endif
 				if (g_flag > 0)
 					return;
 				break;
@@ -560,7 +579,6 @@ static void
 sighup_handler(signo)
 	int signo;
 {
-	(void)fprintf(stderr,"\n  SIGHUP \n");
 	sighup_flag = 1;
 	undo();
 	do_hup();

@@ -9,11 +9,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -40,9 +41,9 @@ w(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
-	FILE *fp;
-	int l_ttl = 0, l_q_flag = 0, l_sl;
-	char *filename_read=NULL, *temp;
+	FILE *l_fp;
+	int l_ttl = 0, l_q_flag = 0, l_sl, l_bang_flag=0;
+	char *filename_read=NULL, *l_temp;
 
 	if (Start_default && End_default) {
 		Start = top;
@@ -65,9 +66,9 @@ w(inputt, errnum)
 	else
 		ungetc(ss, inputt);
 
-	temp = filename(inputt, errnum);
+	l_temp = filename(inputt, errnum);
 	if (*errnum == 1)
-		filename_read = temp;
+		filename_read = l_temp;
 	else
 		if (*errnum == -2) {
 			while (((ss = getc(inputt)) != '\n') || (ss == EOF));
@@ -87,15 +88,35 @@ w(inputt, errnum)
 			filename_current = filename_read;
 	}
 	sigspecial++;
-	if (l_sl == 'W')
-		fp = fopen(filename_read, "a");
-	else
-		fp = fopen(filename_read, "w");
+	if (l_temp && l_temp[FILENAME_LEN+1]) { /* bang flag */
+		FILE *popen();
 
-	if (fp == NULL) {
+		if (l_temp[0] == '\0') {
+			strcpy(help_msg, "no command given");
+			*errnum = -1;
+			sigspecial--;
+			return;
+		}
+		if ((l_fp = popen(l_temp, "w")) == NULL) {
+			strcpy(help_msg, "error executing command");
+			*errnum = -1;
+			if (l_fp != NULL)
+				pclose(l_fp);
+			sigspecial--;
+			return;
+		}
+		l_bang_flag = 1;
+	}
+	else if (l_sl == 'W')
+		l_fp = fopen(filename_read, "a");
+	else
+		l_fp = fopen(filename_read, "w");
+
+	if (l_fp == NULL) {
 		strcpy(help_msg, "cannot write to file");
 		*errnum = -1;
 		ungetc('\n', inputt);
+		sigspecial--;
 		return;
 	}
 	sigspecial--;
@@ -103,11 +124,14 @@ w(inputt, errnum)
 		goto point;
 
 	/* Write it out and get a report on the number of bytes written. */
-	l_ttl = edwrite(fp, Start, End);
+	l_ttl = edwrite(l_fp, Start, End);
 	if (explain_flag > 0)		/* For -s option. */
 		printf("%d\n", l_ttl);
 
-point:	fclose(fp);
+point:	if (l_bang_flag)
+		pclose(l_fp);
+	else
+		fclose(l_fp);
 	if (filename_read != filename_current)
 		free(filename_read);
 	change_flag = 0L;

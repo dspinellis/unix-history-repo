@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filename.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)filename.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ filename(inputt, errnum)
 	char *l_fname;
 	int l_esc = 0, l_bang_flag = 0, l_len;
 
-	l_fname = calloc(FILENAME_LEN, sizeof(char));
+	l_fname = calloc(FILENAME_LEN+2, sizeof(char));
 	if (l_fname == NULL) {
 		*errnum = -1;
 		strcpy(help_msg, "out of memory error");
@@ -97,35 +97,14 @@ filename(inputt, errnum)
 		}
 	}
 
-	if (l_bang_flag == 1) {	/* user wants the name from a sh command */
-		FILE   *namestream, *popen();
-
-		if (l_fname[0] == '\0') {
-			strcpy(help_msg, "no command given");
-			*errnum = -1;
-			return (NULL);
-		}
-		if (((namestream = popen(l_fname, "r")) == NULL) ||
-		    ((fgets(l_fname, FILENAME_LEN - 1, namestream)) == NULL)) {
-			strcpy(help_msg, "error executing command");
-			*errnum = -1;
-			if (namestream != NULL)
-				pclose(namestream);
-			ungetc('\n', inputt);
-			return (NULL);
-		}
-		l_len = strlen(l_fname) - 1;
-		if (l_fname[l_len] == '\n')
-			l_fname[l_len] = '\0';
-		pclose(namestream);
-	} else
-		if (l_fname[0] == '\0') {
-			sigspecial++;
-			strcpy(l_fname, filename_current);
-			sigspecial--;
-			if (sigint_flag && (!sigspecial))
-				SIGINT_ACTION;
-		}
+	if (l_fname[0] == '\0') {
+		sigspecial++;
+		strcpy(l_fname, filename_current);
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
+	}
 	*errnum = 1;
+	l_fname[FILENAME_LEN+1] = l_bang_flag;
 	return (l_fname);
 }
