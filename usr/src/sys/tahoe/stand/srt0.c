@@ -1,4 +1,4 @@
-/*	srt0.c	1.5	87/02/17	*/
+/*	srt0.c	1.6	87/04/02	*/
 
 #include "../machine/mtpr.h"
 #define	LOCORE
@@ -12,6 +12,8 @@
 	.globl	__rtt
 	.globl	_openfirst
 	.globl	_start
+	.globl	_boothowto
+	.globl	_bootdev
 
 	.set	HIGH,31		# mask for total disable
 
@@ -59,6 +61,8 @@ zloop:
 
 begin:
 	movl	fp,ofp
+	movl	r11,_boothowto
+	movl	r10,_bootdev
 	movl	$1,_openfirst
 	callf	$4,_main
 #ifdef REL
@@ -81,3 +85,5 @@ aedata:	.long	_edata
 tdlen:	.long	_edata-BOOTRELOC
 #endif
 ofp:	.long	0
+_boothowto:	.long	0
+_bootdev:	.long	0
