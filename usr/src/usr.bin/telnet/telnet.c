@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.11 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -20,10 +20,7 @@ static char sccsid[] = "@(#)telnet.c	4.10 (Berkeley) %G%";
 #define	INFINITY	10000000
 
 char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
-char	netobuf[BUFSIZ] =
-	{ IAC, DO, TELOPT_ECHO, IAC, DO, TELOPT_SGA,
-	  IAC, WONT, TELOPT_SGA },
-	*nfrontp = netobuf + 9, *nbackp = netobuf;
+char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 
 char	hisopts[256];
 char	myopts[256];
@@ -52,7 +49,7 @@ extern	int errno;
 int	tn(), quit(), suspend(), bye(), help();
 int	setescape(), status(), toggle(), setoptions();
 
-#define HELPINDENT (sizeof("connect"))
+#define HELPINDENT (sizeof ("connect"))
 
 struct cmd {
 	char	*name;
@@ -88,6 +85,10 @@ char	*control();
 struct	cmd *getcmd();
 struct	servent *sp;
 
+struct	sgttyb ostbuf;
+struct	tchars otchars;
+int	odisc;
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -97,6 +98,9 @@ main(argc, argv)
 		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
 		exit(1);
 	}
+	ioctl(0, TIOCGETP, (char *)&ostbuf);
+	ioctl(0, TIOCGETC, (char *)&otchars);
+	ioctl(0, TIOCGETD, (char *)&odisc);
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
@@ -221,21 +225,29 @@ suspend()
 	register int save;
 
 	save = mode(0);
-	kill(0, SIGTSTP);	/* get whole process group */
-	mode(save);
+	kill(0, SIGTSTP);
+	/* reget parameters in case they were changed */
+	ioctl(0, TIOCGETP, (char *)&ostbuf);
+	ioctl(0, TIOCGETC, (char *)&otchars);
+	ioctl(0, TIOCGETD, (char *)&odisc);
+	(void) mode(save);
 }
 
 /*VARARGS*/
 bye()
 {
 	int how = 2;
+	register char *op;
 
-	mode(0);
+	(void) mode(0);
 	if (connected) {
 		ioctl(net, SIOCDONE, &how);
 		printf("Connection closed.\n");
 		close(net);
 		connected = 0;
+		/* reset his options */
+		for (op = hisopts; op < &hisopts[256]; op++)
+			*op = 0;
 	}
 }
 
@@ -294,32 +306,37 @@ call(routine, args)
 mode(f)
 	register int f;
 {
-	register int old;
 	struct sgttyb stbuf;
-	static int ttymode = 0;
-	int onoff;
+	static int prevmode = 0;
+	struct tchars tchars;
+	int onoff, disc, old;
 
-	ioctl(fileno(stdin), TIOCGETP, &stbuf);
-	old = ttymode;
-	ttymode = f;
+	if (prevmode == f)
+		return (f);
+	old = prevmode;
+	prevmode = f;
+	stbuf = ostbuf;
+	tchars = otchars;
 	switch (f) {
+
 	case 0:
-		stbuf.sg_flags &= ~RAW;
-		stbuf.sg_flags |= ECHO|CRMOD;
+		disc = odisc;
 		onoff = 0;
 		break;
 
 	case 1:
-		stbuf.sg_flags |= RAW;
-		stbuf.sg_flags &= ~(ECHO|CRMOD);
-		onoff = 1;
-		break;
-
 	case 2:
-		stbuf.sg_flags |= RAW;
-		stbuf.sg_flags |= ECHO|CRMOD;
+		stbuf.sg_flags |= CBREAK;
+		if (f == 1)
+			stbuf.sg_flags &= ~ECHO;
+		else
+			stbuf.sg_flags |= ECHO;
+		tchars.t_intrc = tchars.t_quitc = -1;
+		disc = OTTYDISC;
 		onoff = 1;
 	}
+	ioctl(fileno(stdin), TIOCSETD, &disc);
+	ioctl(fileno(stdin), TIOCSETC, &tchars);
 	ioctl(fileno(stdin), TIOCSETN, &stbuf);
 	ioctl(fileno(stdin), FIONBIO, &onoff);
 	ioctl(fileno(stdout), FIONBIO, &onoff);
@@ -340,19 +357,7 @@ telnet(s)
 	int tin = fileno(stdin), tout = fileno(stdout);
 	int on = 1;
 
-	mode(1);
-	printoption("SENT", doopt, TELOPT_ECHO);
-	sprintf(nfrontp, doopt, TELOPT_ECHO);
-	nfrontp += sizeof(doopt) - 2;
-	hisopts[TELOPT_ECHO] = 1;
-	printoption("SENT", doopt, TELOPT_SGA);
-	sprintf(nfrontp, doopt, TELOPT_SGA);
-	nfrontp += sizeof(doopt) - 2;
-	hisopts[TELOPT_SGA] = 1;
-	printoption("SENT", will, TELOPT_SGA);
-	sprintf(nfrontp, will, TELOPT_SGA);
-	nfrontp += sizeof(doopt) - 2;
-	myopts[TELOPT_SGA] = 1;
+	(void) mode(2);
 	ioctl(s, FIONBIO, &on);
 	for (;;) {
 		int ibits = 0, obits = 0;
@@ -377,7 +382,7 @@ telnet(s)
 		 * Something to read from the network...
 		 */
 		if (ibits & (1 << s)) {
-			scc = read(s, sibuf, sizeof(sibuf));
+			scc = read(s, sibuf, sizeof (sibuf));
 			if (scc < 0 && errno == EWOULDBLOCK)
 				scc = 0;
 			else {
@@ -391,7 +396,7 @@ telnet(s)
 		 * Something to read from the tty...
 		 */
 		if (ibits & (1 << tin)) {
-			tcc = read(tin, tibuf, sizeof(tibuf));
+			tcc = read(tin, tibuf, sizeof (tibuf));
 			if (tcc < 0 && errno == EWOULDBLOCK)
 				tcc = 0;
 			else {
@@ -421,7 +426,7 @@ telnet(s)
 		if ((obits & (1 << tout)) && (tfrontp - tbackp) > 0)
 			ttyflush(tout);
 	}
-	mode(0);
+	(void) mode(0);
 }
 
 command(top)
@@ -458,7 +463,7 @@ command(top)
 	if (!top) {
 		if (!connected)
 			longjmp(toplevel, 1);
-		mode(oldmode);
+		(void) mode(oldmode);
 	}
 }
 
@@ -547,7 +552,7 @@ telrcv()
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
-				nfrontp += sizeof(wont) - 2;
+				nfrontp += sizeof (wont) - 2;
 				printoption("SENT", wont, c);
 			}
 			state = TS_DATA;
@@ -564,7 +569,7 @@ willoption(option)
 	switch (option) {
 
 	case TELOPT_ECHO:
-		mode(1);
+		(void) mode(1);
 
 	case TELOPT_SGA:
 		hisopts[option] = 1;
@@ -580,7 +585,7 @@ willoption(option)
 		break;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(dont) - 2;
+	nfrontp += sizeof (dont) - 2;
 	printoption("SENT", fmt, option);
 }
 
@@ -592,7 +597,7 @@ wontoption(option)
 	switch (option) {
 
 	case TELOPT_ECHO:
-		mode(2);
+		(void) mode(2);
 
 	case TELOPT_SGA:
 		hisopts[option] = 0;
@@ -603,7 +608,7 @@ wontoption(option)
 		fmt = dont;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(doopt) - 2;
+	nfrontp += sizeof (doopt) - 2;
 	printoption("SENT", fmt, option);
 }
 
@@ -627,7 +632,7 @@ dooption(option)
 		break;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(doopt) - 2;
+	nfrontp += sizeof (doopt) - 2;
 	printoption("SENT", fmt, option);
 }
 
@@ -715,14 +720,14 @@ getcmd(name)
 deadpeer()
 {
 	sigset(SIGPIPE, deadpeer);
-	mode(0);
+	(void) mode(0);
 	longjmp(peerdied, -1);
 }
 
 intr()
 {
 	sigset(SIGINT, intr);
-	mode(0);
+	(void) mode(0);
 	longjmp(toplevel, -1);
 }
 
@@ -747,7 +752,7 @@ netflush(fd)
 		n = write(fd, nbackp, n);
 	if (n < 0) {
 		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
-			mode(0);
+			(void) mode(0);
 			perror(hostname);
 			close(fd);
 			longjmp(peerdied, -1);
