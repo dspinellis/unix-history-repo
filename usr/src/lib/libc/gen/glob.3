@@ -5,7 +5,7 @@
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	5.7 (Berkeley) %G%
+.\"     @(#)glob.3	5.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -17,7 +17,7 @@
 .Sh SYNOPSIS
 .Fd #include <glob.h>
 .Ft int
-.Fn glob "const char *pattern" "int flags" "const int (*errfunc)(char *, int)" "glob_t *pglob"
+.Fn glob "const char *pattern" "int flags" "const int (*errfunc)(const char *, int)" "glob_t *pglob"
 .Ft void 
 .Fn globfree "glob_t *pglob"
 .Sh DESCRIPTION
@@ -93,7 +93,7 @@ is the bitwise inclusive
 of any of the following
 values defined in
 .Pa glob.h :
-.Bl -tag -width GLOB_NOCHECK
+.Bl -tag -width GLOB_ALTDIRFUNC
 .It Dv GLOB_APPEND
 Append pathnames generated to the ones from a previous call (or calls)
 to
@@ -161,6 +161,55 @@ pathnames set to 0.
 If
 .Dv GLOB_QUOTE
 is set, its effect is present in the pattern returned.
+.It Dv GLOB_NOSORT
+By default, the pathnames are sorted in ascending
+.Tn ASCII
+order;
+this flag prevents that sorting (speeding up
+.Fn glob ) .
+.El
+.Pp
+The following values may also be included in
+.Fa flags ,
+however, they are non-standard extensions to
+.St -p1003.2 .
+.Bl -tag -width GLOB_ALTDIRFUNC
+.It Dv GLOB_ALTDIRFUNC
+The following additional fields in the pglob structure have been
+initialized with alternate functions for glob to use to open, read,
+and close directories and to get stat information on names found
+in those directories.
+.Bd -literal
+	void *(*gl_opendir)(const char * name);
+	struct dirent *(*gl_readdir)(void *);
+	void (*gl_closedir)(void *);
+	int (*gl_lstat)(const char *name, struct stat *st);
+	int (*gl_stat)(const char *name, struct stat *st);
+.Ed
+.Pp
+This extension is provided to allow programs such as
+.Xr restore 8
+to provide globbing from directories stored on tape.
+.It Dv GLOB_BRACE
+Pre-process the pattern string to expand 
+.Ql {pat,pat,...} 
+strings like 
+.Xr csh 1. The pattern 
+.Ql {}
+is left unexpanded for historical reasons
+.Xr (Csh 1 
+does the same thing to 
+ease typing
+of 
+.Xr find 1 
+patterns).
+.It Dv GLOB_MAGCHAR
+Set by the
+.Fn glob
+function if the pattern included globbing characters.
+See the description of the usage of the 
+.Fa gl_matchc
+structure member for more details.
 .It Dv GLOB_NOMAGIC
 Is the same as 
 .Dv GLOB_NOCHECK 
@@ -171,33 +220,16 @@ if it does not contain any of the special characters ``*'', ``?'' or ``[''.
 is provided to simplify implementing the historic
 .Xr csh 1
 globbing behavior and should probably not be used anywhere else.
-.It Dv GLOB_NOSORT
-By default, the pathnames are sorted in ascending
-.Tn ASCII
-order;
-this flag prevents that sorting (speeding up
-.Fn glob ) .
 .It Dv GLOB_QUOTE
 Use the backslash
 .Pq Ql \e
 character for quoting: every occurrence of
 a backslash followed by a character in the pattern is replaced by that
 character, avoiding any special interpretation of the character.
-.It Dv GLOB_ALTDIRFUNC
-The following additional fields in the pglob structure have been
-initialized with alternate functions for glob to use to open, read,
-and close directories and to get stat information on names found
-in those directories.
-.Bd -literal
-	void *(*gl_opendir)();
-	struct dirent *(*gl_readdir)();
-	void (*gl_closedir)();
-	int (*gl_lstat)();
-	int (*gl_stat)();
-.Ed
-.Pp
-This non-standard extension is provided to allow programs such
-as restore to provide globbing from directories stored on tape.
+.It Dv GLOB_TILDE
+Expand patterns that start with
+.Ql ~
+to user name home directories.
 .El
 .Pp
 If, during the search, a directory is encountered that cannot be opened
@@ -207,7 +239,7 @@ is
 .Pf non- Dv NULL , 
 .Fn glob
 calls
-.Fa (*errfunc)(path,errno) .
+.Fa (*errfunc)(path, errno) .
 This may be unintuitive: a pattern like
 .Ql */Makefile
 will try to
@@ -333,9 +365,13 @@ function is expected to be
 .St -p1003.2
 compatible with the exception
 that the flags
-.Dv GLOB_ALTDIRFUNC
+.Dv GLOB_ALTDIRFUNC,
+.Dv GLOB_BRACE
+.Dv GLOB_MAGCHAR,
+.Dv GLOB_NOMAGIC,
+.Dv GLOB_QUOTE,
 and
-.Dv GLOB_QUOTE
+.Dv GLOB_TILDE,
 and the fields 
 .Fa gl_matchc
 and 
