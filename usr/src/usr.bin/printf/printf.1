@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)printf.1	5.4 (Berkeley) %G%
+.\"	@(#)printf.1	5.5 (Berkeley) %G%
 .\"
 .TH PRINTF 1 "
 .AT 1
@@ -227,12 +227,9 @@ Print a `%'; no argument is used.
 In no case does a non-existent or small field width cause truncation of
 a field; padding takes place only if the specified field width exceeds
 the actual width.
-.SH DIAGNOSTICS
-None.
 .SH "RETURN VALUE"
-.IR Printf 's
-exit value is the number of characters printed.  If an error occurs,
-printf exits with a -1.
+.IR Printf
+exits 0 on success, 1 on failure.
 .SH "SEE ALSO"
 printf(3)
 .SH BUGS

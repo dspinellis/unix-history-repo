@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,13 +31,13 @@ static char sccsid[] = "@(#)printf.c	5.3 (Berkeley) %G%";
 #define PF(f, func) { \
 	if (fieldwidth) \
 		if (precision) \
-			cnt += printf(f, fieldwidth, precision, func); \
+			(void)printf(f, fieldwidth, precision, func); \
 		else \
-			cnt += printf(f, fieldwidth, func); \
+			(void)printf(f, fieldwidth, func); \
 	else if (precision) \
-		cnt += printf(f, precision, func); \
+		(void)printf(f, precision, func); \
 	else \
-		cnt += printf(f, func); \
+		(void)printf(f, func); \
 }
 
 char **gargv;
@@ -48,14 +48,14 @@ main(argc, argv)
 {
 	static char *skip1, *skip2;
 	register char *format, *fmt, *start;
-	register int end, cnt, fieldwidth, precision;
+	register int end, fieldwidth, precision;
 	char convch, nextch, *getstr(), *index(), *mklong();
 	double getdouble();
 	long getlong();
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: printf format [arg ...]\n");
-		exit(0);
+		exit(1);
 	}
 
 	/*
@@ -71,7 +71,7 @@ main(argc, argv)
 
 	escape(fmt = format = *++argv);		/* backslash interpretation */
 	gargv = ++argv;
-	for (cnt = 0;;) {
+	for (;;) {
 		end = 0;
 		/* find next format specification */
 next:		for (start = fmt;; ++fmt) {
@@ -80,13 +80,13 @@ next:		for (start = fmt;; ++fmt) {
 				if (end == 1) {
 					fprintf(stderr,
 					    "printf: missing format character.\n");
-					exit(0);
+					exit(1);
 				}
 				end = 1;
 				if (fmt > start)
-					cnt += printf("%s", start);
+					(void)printf("%s", start);
 				if (!*gargv)
-					exit(cnt);
+					exit(0);
 				fmt = format;
 				goto next;
 			}
@@ -109,7 +109,7 @@ next:		for (start = fmt;; ++fmt) {
 		for (; index(skip2, *fmt); ++fmt);
 		if (!*fmt) {
 			fprintf(stderr, "printf: missing format character.\n");
-			exit(-1);
+			exit(1);
 		}
 
 		convch = *fmt;
@@ -139,7 +139,7 @@ next:		for (start = fmt;; ++fmt) {
 		}
 		default:
 			fprintf(stderr, "printf: illegal format character.\n");
-			exit(-1);
+			exit(1);
 		}
 		*fmt = nextch;
 	}
@@ -156,7 +156,7 @@ mklong(str, ch)
 	len = strlen(str) + 2;
 	if (!(copy = malloc((u_int)len))) {	/* never freed; XXX */
 		fprintf(stderr, "printf: out of memory.\n");
-		exit(-1);
+		exit(1);
 	}
 	bcopy(str, copy, len - 3);
 	copy[len - 3] = 'l';
