@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>	
@@ -179,10 +179,11 @@ main(argc, argv)
 	if (f_listdir)
 		f_recursive = 0;
 
-	/* If not -F, -l -i, -s or -t options, don't require stat 
+	/*
+	 * If not -F, -i, -l, -s or -t options, don't require stat
 	 * information.
 	 */
-	if (!f_longform && !f_size && !f_timesort && !f_type && !f_inode)
+	if (!f_inode && !f_longform && !f_size && !f_timesort && !f_type)
 		fts_options |= FTS_NOSTAT;
 
 	/*
