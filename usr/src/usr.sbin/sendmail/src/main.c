@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.125		%G%);
+SCCSID(@(#)main.c	3.126		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -652,14 +652,12 @@ main(argc, argv)
 **	Under certain circumstances allow the user to say who
 **	s/he is (using -f or -r).  These are:
 **	1.  The user's uid is zero (root).
-**	2.  The user's login name is "network" (mail from
-**	    a network server).
-**	3.  The user's login name is "uucp" (mail from the
-**	    uucp network).
-**	4.  The address the user is trying to claim has a
-**	    "!" character in it (since #3 doesn't do it for
-**	    us if we are dialing out).
-**	A better check to replace #3 & #4 would be if the
+**	2.  The user's login name is in an approved list (typically
+**	    from a network server).
+**	3.  The address the user is trying to claim has a
+**	    "!" character in it (since #2 doesn't do it for
+**	    us if we are dialing out for UUCP).
+**	A better check to replace #3 would be if the
 **	effective uid is "UUCP" -- this would require me
 **	to rewrite getpwent to "grab" uucp as it went by,
 **	make getname more nasty, do another passwd file
@@ -706,9 +704,9 @@ setfrom(from, realname)
 
 	if (from != NULL)
 	{
-		if (strcmp(realname, "network") != 0 &&
-		    strcmp(realname, "uucp") != 0 &&
-		    strcmp(realname, "daemon") != 0 &&
+		extern bool trusteduser();
+
+		if (!trusteduser(realname) &&
 # ifdef DEBUG
 		    (!tTd(1, 9) || getuid() != geteuid()) &&
 # endif DEBUG
@@ -773,6 +771,32 @@ setfrom(from, realname)
 		if (*pvp != NULL)
 			CurEnv->e_fromdomain = copyplist(pvp, TRUE);
 	}
+}
+/*
+**  TRUSTEDUSER -- tell us if this user is to be trusted.
+**
+**	Parameters:
+**		user -- the user to be checked.
+**
+**	Returns:
+**		TRUE if the user is in an approved list.
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+trusteduser(user)
+	char *user;
+{
+	register char **ulist;
+	extern char *TrustedUsers[];
+
+	for (ulist = TrustedUsers; *ulist != NULL; ulist++)
+		if (strcmp(*ulist, user) == 0)
+			return (TRUE);
+	return (FALSE);
 }
 /*
 **  FINIS -- Clean up and exit.

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.37		%G%);
+SCCSID(@(#)readcf.c	3.38		%G%);
 
 /*
 **  READCF -- read control file.
@@ -45,20 +45,25 @@ SCCSID(@(#)readcf.c	3.37		%G%);
 **		Builds several internal tables.
 */
 
+# define MAXTRUST	10		/* maximum number of trusted users */
+
+char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
+
 readcf(cfname, safe)
 	char *cfname;
 	bool safe;
 {
 	FILE *cf;
+	int class;
+	int ruleset = 0;
+	char *q;
+	char **pv;
 	char buf[MAXLINE];
 	register char *p;
 	struct rewrite *rwp = NULL;
 	extern char **prescan();
 	extern char **copyplist();
-	int class;
-	int ruleset = 0;
 	char exbuf[MAXLINE];
-	char *q;
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
@@ -201,8 +206,7 @@ readcf(cfname, safe)
 		  case 'P':		/* set precedence */
 			if (NumPriorities >= MAXPRIORITIES)
 			{
-				syserr("readcf: line %d: too many P lines, %d max",
-					LineNumber, MAXPRIORITIES);
+				toomany('P', MAXPRIORITIES);
 				break;
 			}
 			for (p = &buf[1]; *p != '\0' && *p != '='; p++)
@@ -215,12 +219,57 @@ readcf(cfname, safe)
 			NumPriorities++;
 			break;
 
+		  case 'T':		/* trusted user(s) */
+			p = &buf[1];
+			while (*p != '\0')
+			{
+				while (isspace(*p))
+					p++;
+				q = p;
+				while (*p != '\0' && !isspace(*p))
+					p++;
+				if (*p != '\0')
+					*p++ = '\0';
+				if (*q == '\0')
+					continue;
+				for (pv = TrustedUsers; *pv != NULL; pv++)
+					continue;
+				if (pv >= &TrustedUsers[MAXTRUST])
+				{
+					toomany('T', MAXTRUST);
+					break;
+				}
+				*pv = newstr(q);
+			}
+			break;
+
 		  default:
 		  badline:
 			syserr("readcf: line %d: unknown control line \"%s\"",
 				LineNumber, buf);
 		}
 	}
+}
+/*
+**  TOOMANY -- signal too many of some option
+**
+**	Parameters:
+**		id -- the id of the error line
+**		maxcnt -- the maximum possible values
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		gives a syserr.
+*/
+
+toomany(id, maxcnt)
+	char id;
+	int maxcnt;
+{
+	syserr("readcf: line %d: too many %c lines, %d max",
+	       LineNumber, id, maxcnt);
 }
 /*
 **  FILECLASS -- read members of a class from a file
