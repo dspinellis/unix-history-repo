@@ -1,0 +1,38 @@
+Sun Mar 30 14:50:02 1986  Paul Rubin  (phr at calder.berkeley.edu)
+
+	* CHANGES IN THE EMACS DIRECTORY FOR THE 4.3BSD DISTRIBUTION
+	____________________________________________________________
+
+	* src/config.h, src/paths.h:
+	Provide sample versions of these files (see INSTALL for details).
+	These should work on VAXen with vanilla directories.  For other
+	CPU's, you'll have to change config.h; if you've moved directories
+	around, change paths.h.  If you are running the X window system,
+	change ``#undef HAVE_X_WINDOWS'' to ``#define HAVE_X_WINDOWS''
+	in config.h.
+
+	* lisp/mh-e.el (MH mail-handler front end):
+	Replace with latest version (3.3) by ucbvax!larus.  This
+	version incorporates some fixes/improvements that are not
+	yet in the FSF distribution (as of the date above).
+	Share and enjoy.
+
+	* etc/emacs.1 (troff'able man page):
+	Change pathnames in FILES section to reflect where they are
+	in this distribution.
+
+	* INSTALL (installation guide):
+	Say in LOSSAGES section to disregard `BSD redefined' and
+	`BSD4_3 redefined' warning messages.
+
+	* build-install (shell script to build and install emacs):
+	Rearrange the installation part somewhat, since 4.3 systems
+	typically have sources living in a different places from libraries.
+	(Here at Berkeley, sources are all maintained on one machine
+	and libraries are distributed to other machines over a local network;
+	the script is now set up for this kind of environment).
+
+	* README (note to installer):
+	Insert pointer to this file.
+
+	* dbx and cpp are not included on the distribution.
