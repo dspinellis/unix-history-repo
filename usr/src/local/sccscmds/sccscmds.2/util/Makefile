@@ -1,10 +1,10 @@
-#	@(#)Makefile	1.5	(Berkeley)	87/02/15
+#	@(#)Makefile	1.6	(Berkeley)	87/02/15
 #
 CFLAGS = -O -w
 PWOBJS=	giveup.o lockit.o rename.o userdir.o \
 	username.o xalloc.o xcreat.o xlink.o xopen.o \
 	xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o \
-	clean.o syswrite.o alloca.o anystr.o bal.o cat.o imatch.o \
+	clean.o syswrite.o anystr.o bal.o cat.o imatch.o \
 	patoi.o patol.o repeat.o repl.o satoi.o sname.o substr.o trnslat.o \
 	verify.o any.o zeropad.o
 WROBJS=	write.o syswrite.o
@@ -15,6 +15,9 @@ all: libpw.a libwrt.a libPW.a
 	ranlib ../libpw.a
 	ranlib ../libwrt.a
 	ranlib ../libPW.a
+
+syswrite.s: mksyswrite.sh
+	./mksyswrite.sh
 
 install:
 
@@ -31,4 +34,4 @@ libPW.a: ${PW2OBJS}
 	ar cr libPW.a ${PW2OBJS}
 
 clean:
-	-rm -f *.o
+	-rm -f *.o syswrite.s errs
