@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.h	6.3 (Berkeley) %G%
+ *	@(#)ns_pcb.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -18,7 +18,7 @@ struct nspcb {
 	struct	ns_addr nsp_laddr;	/* socket's address */
 	caddr_t	nsp_pcb;		/* protocol specific stuff */
 	struct	route nsp_route;	/* routing information */
-	union	ns_net nsp_lastnet;	/* validate cached route for dg socks*/
+	struct	ns_addr nsp_lastdst;	/* validate cached route for dg socks*/
 	long	nsp_notify_param;	/* extra info passed via ns_pcbnotify*/
 	short	nsp_flags;
 	u_char	nsp_dpt;		/* default packet type for idp_output*/
