@@ -1,13 +1,16 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.8 of %G%
+		         Version 8.9 of %G%
 
 
 This FAQ is specific to Version 8 of sendmail.  Other questions,
 particularly regarding compilation and configuration, are answered
 in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 
-----------------------------------------------------------------------
+======================================================================
+GENERAL QUESTIONS
+======================================================================
+
   * What do you wish everyone would do before sending you mail?
 
 	Read this FAQ completely.  Read src/READ_ME and cf/README
@@ -29,6 +32,30 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	was released, when everything on the 4.4 tape was set to be
 	version 8.1.  Version 7.x never existed.
 ----------------------------------------------------------------------
+  * What books are available describing sendmail?
+
+	There is one book available devoted to sendmail:
+
+	    Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
+		Associates.
+
+	Several books have sendmail chapters, for example:
+
+	    Nemeth, Snyder, and Seebass, _Unix System Administration
+		Handbook_.  Prentice-Hall.
+	    Carl-Mitchell and Quarterman, _Practical Internetworking with
+		TCP/IP and UNIX_.  Addison-Wesley.
+	    Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
+
+	Another book about sendmail is due out "soon":
+
+	    Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
+		Press (release date unknown).
+
+======================================================================
+COMPILING AND INSTALLING SENDMAIL 8
+======================================================================
+
   * Version 8 requires a new version of "make".  Where can I get this?
 
 	Actually, Version 8 does not require a new version of "make".
@@ -68,27 +95,11 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	(see above).
 
 	This macro set is also available with newer versions of groff.
-----------------------------------------------------------------------
-  * What books are available describing sendmail?
 
-	There is one book available devoted to sendmail:
+======================================================================
+CONFIGURATION QUESTIONS
+======================================================================
 
-	    Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
-		Associates.
-
-	Several books have sendmail chapters, for example:
-
-	    Nemeth, Snyder, and Seebass, _Unix System Administration
-		Handbook_.  Prentice-Hall.
-	    Carl-Mitchell and Quarterman, _Practical Internetworking with
-		TCP/IP and UNIX_.  Addison-Wesley.
-	    Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
-
-	Another book about sendmail is due out "soon":
-
-	    Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
-		Press (release date unknown).
-----------------------------------------------------------------------
   * How do I make all my addresses appear to be from a single host?
 
 	Using the V8 configuration macros, use:
@@ -170,50 +181,6 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	Finger services should be as fuzzy as possible (within
 	reason, of course).  Mail services should be unique.
 ----------------------------------------------------------------------
-  * I'm getting "Local configuration error" messages, such as:
-
-	553 relay.domain.net config error: mail loops back to myself
-	554 <user@domain.net>... Local configuration error
-
-    How can I solve this problem?
-
-	You have asked mail to the domain (e.g., domain.net) to be
-	forwarded to a specific host (in this case, relay.domain.net)
-	by using an MX record, but the relay machine doesn't recognize
-	itself as domain.net.  Add domain.net to /etc/sendmail.cw
-	(if you are using FEATURE(use_cw_file)) or add "Cw domain.net"
-	to your configuration file.
-
-	IMPORTANT:  Be sure you kill and restart the sendmail daemon
-	after you change the configuration file (for ANY change in
-	the configuration, not just this one):
-
-		kill `head -1 /etc/sendmail.pid`
-		sh -c "`tail -1 /etc/sendmail.pid`"
-
-	NOTA BENE:  kill -1 does not work!
-----------------------------------------------------------------------
-  * OK, I did that, and the problem still occurs.
-
-	You probably forgot to to resta
-----------------------------------------------------------------------
-  * When I use sendmail V8 with a Sun config file I get lines like:
-
-	/etc/sendmail.cf: line 273: replacement $3 out of bounds
-
-    the line in question reads:
-
-	R$*<@$%y>$*		$1<@$2.LOCAL>$3			user@ether
-
-    what does this mean?  How do I fix it?
-
-	V8 doesn't recognize the Sun "$%y" syntax, so as far as it
-	is concerned, there is only a $1 and a $2 (but no $3) in this
-	line.  Read Rick McCarty's paper on "Converting Standard Sun
-	Config Files to Sendmail Version 8", in the contrib directory
-	(file "converting.sun.configs") on the sendmail distribution
-	for a full discussion of how to do this.
-----------------------------------------------------------------------
   * Should I use a wildcard MX for my domain?
 
 	If at all possible, no.
@@ -223,58 +190,6 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	you don't explicitly test for unknown hosts in your domain,
 	you will get "config error: mail loops back to myself"
 	errors.
-----------------------------------------------------------------------
-  * I'm connected to the network via a SLIP link.  Sometimes my sendmail
-    process hangs (although it looks like part of the message has been
-    transfered).  Everything else works.  What's wrong?
-
-	Most likely, the problem isn't sendmail at all, but the low
-	level network connection.  It's important that the MTU (Maximum
-	Transfer Unit) for the SLIP connection be set properly at both
-	ends.  If they disagree, large packets will be trashed and
-	the connection will hang.
-----------------------------------------------------------------------
-  * I just upgraded to 8.x and suddenly I'm getting messages in my
-    syslog of the form "collect: I/O error on connection".  What is
-    going wrong?
-
-    	Nothing.  This is just a diagnosis of a condition that had
-    	not been diagnosed before.  If you are getting a lot of these
-    	from a single host, there is probably some incompatibility
-    	between 8.x and that host.  If you get a lot of them in general,
-    	you may have network problems that are causing connections to
-    	get reset.
-----------------------------------------------------------------------
-  * I just upgraded to 8.x and suddenly connections to the SMTP port
-    take a long time.  What is going wrong?
-
-	It's probably something wierd in your TCP implementation that
-	makes the IDENT code act oddly.  On most systems V8 tries to
-	do a ``callback'' to the connecting host to get a validated
-	user name (see RFC 1413 for details).  If the connecting
-	host does not support such a service it will normally fail
-	quickly with "Connection refused", but certain kinds of
-	packet filters and certain TCP implementations just time out.
-
-	To test this, set the IDENT timeout to zero using
-	``OrIdent=0'' in the configuration file.  This will
-	completely disable all use of the IDENT protocol.
-
-	Another possible problem is that you have your name server
-	and/or resolver configured improperly.  Make sure that
-	all "nameserver" entries in /etc/resolv.conf point to functional
-	servers.  If you are running your own server make certain that
-	all the servers listed in your root cache (usually called
-	something like "/var/namedb/root.cache"; see your
-	/etc/named.boot file to get your value) are up to date.
-	Either of these can cause long delays.
-----------------------------------------------------------------------
-  * I just upgraded to 8.x and suddenly I get errors such as ``mail:
-    options must follow recipients.''  What is going wrong?
-
-	You need OSTYPE(systype) in your .mc file -- otherwise the
-	configurations use a default that probably disagrees with
-	your local mail system.  See cf/README for details.
 ----------------------------------------------------------------------
   * How can I get sendmail to deliver local mail to $HOME/.mail
     instead of into /usr/spool/mail (or /usr/mail)?
@@ -292,24 +207,23 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	1993).  This is also available via public FTP from
 	ftp.cs.columbia.edu:/pub/hlfsd/{README.hlfsd,hlfsd.ps}.
 ----------------------------------------------------------------------
-  * Under V8, the "From " header gets mysteriously munged when I send
-    to an alias.
+  * I'm trying to to get my mail to go into queue only mode, and it
+    delivers the mail interactively anyway.  (Or, I'm trying to use
+    the "don't deliver to expensive mailer" flag, and it doesn't
+    delivers the mail interactively anyway.)  I can see it does it:
+    here's the output of "sendmail -v foo@somehost" (or Mail -v or
+    equivalent).
 
-	``It's not a bug, it's a feature.''  This happens when you have
-	a "owner-list" alias and you send to "list".  V8 propogates the
-	owner information into the envelope sender field (which appears
-	as the "From " header on UNIX mail or as the Return-Path: header)
-	so that downstream errors are properly returned to the mailing
-	list owner instead of to the sender.  In order to make this
-	appear as sensible as possible to end users, I recommend making
-	the owner point to a "request" address -- for example:
+	The -v flag to sendmail (which is implied by the -v flag to
+	Mail and other programs in that family) tells sendmail to
+	watch the transaction.  Since you have explicitly asked to
+	see what's going on, it assumes that you do not want to to
+	auto-queue, and turns that feature off.  Remove the -v flag
+	and use a "tail -f" of the log instead to see what's going on.
 
-		list:		:include:/path/name/list.list
-		owner-list:	list-request
-		list-request:	eric
-
-	This will make message sent to "list" come out as being
-	"From list-request" instead of "From eric".
+	If you are trying to use the "don't deliver to expensive mailer"
+	flag (mailer flag "e"), be sure you also turn on global option
+	"c" -- otherwise it ignores the mailer flag.
 ----------------------------------------------------------------------
   * There are four UUCP mailers listed in the configuration files.
     Which one should I use?
@@ -376,28 +290,152 @@ in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 	uucp-{old,new}	somehost!wolf	grasp!somehost!wolf
 	uucp-dom	somehost!wolf	somehost!wolf@grasp.insa-lyon.fr
 	uucp-uudom	somehost!wolf	grasp.insa-lyon.fr!somehost!wolf
+
+======================================================================
+RESOLVING PROBLEMS
+======================================================================
+
+  * When I compile, I get "undefined symbol inet_aton" messages.
+
+	You've probably replaced your resolver with the version from
+	BIND 4.9.3.  You need to cmpile with -l44bsd in order to get
+	the additional routines.
 ----------------------------------------------------------------------
-  * I'm trying to to get my mail to go into queue only mode, and it
-    delivers the mail interactively anyway.  (Or, I'm trying to use
-    the "don't deliver to expensive mailer" flag, and it doesn't
-    delivers the mail interactively anyway.)  I can see it does it:
-    here's the output of "sendmail -v foo@somehost" (or Mail -v or
-    equivalent).
+  * I'm getting "Local configuration error" messages, such as:
 
-	The -v flag to sendmail (which is implied by the -v flag to
-	Mail and other programs in that family) tells sendmail to
-	watch the transaction.  Since you have explicitly asked to
-	see what's going on, it assumes that you do not want to to
-	auto-queue, and turns that feature off.  Remove the -v flag
-	and use a "tail -f" of the log instead to see what's going on.
+	553 relay.domain.net config error: mail loops back to myself
+	554 <user@domain.net>... Local configuration error
 
-	If you are trying to use the "don't deliver to expensive mailer"
-	flag (mailer flag "e"), be sure you also turn on global option
-	"c" -- otherwise it ignores the mailer flag.
+    How can I solve this problem?
+
+	You have asked mail to the domain (e.g., domain.net) to be
+	forwarded to a specific host (in this case, relay.domain.net)
+	by using an MX record, but the relay machine doesn't recognize
+	itself as domain.net.  Add domain.net to /etc/sendmail.cw
+	(if you are using FEATURE(use_cw_file)) or add "Cw domain.net"
+	to your configuration file.
+
+	IMPORTANT:  Be sure you kill and restart the sendmail daemon
+	after you change the configuration file (for ANY change in
+	the configuration, not just this one):
+
+		kill `head -1 /etc/sendmail.pid`
+		sh -c "`tail -1 /etc/sendmail.pid`"
+
+	NOTA BENE:  kill -1 does not work!
+----------------------------------------------------------------------
+  * When I use sendmail V8 with a Sun config file I get lines like:
+
+	/etc/sendmail.cf: line 273: replacement $3 out of bounds
+
+    the line in question reads:
+
+	R$*<@$%y>$*		$1<@$2.LOCAL>$3			user@ether
+
+    what does this mean?  How do I fix it?
+
+	V8 doesn't recognize the Sun "$%y" syntax, so as far as it
+	is concerned, there is only a $1 and a $2 (but no $3) in this
+	line.  Read Rick McCarty's paper on "Converting Standard Sun
+	Config Files to Sendmail Version 8", in the contrib directory
+	(file "converting.sun.configs") on the sendmail distribution
+	for a full discussion of how to do this.
+----------------------------------------------------------------------
+  * I'm connected to the network via a SLIP link.  Sometimes my sendmail
+    process hangs (although it looks like part of the message has been
+    transfered).  Everything else works.  What's wrong?
+
+	Most likely, the problem isn't sendmail at all, but the low
+	level network connection.  It's important that the MTU (Maximum
+	Transfer Unit) for the SLIP connection be set properly at both
+	ends.  If they disagree, large packets will be trashed and
+	the connection will hang.
+----------------------------------------------------------------------
+  * I just upgraded to 8.x and suddenly I'm getting messages in my
+    syslog of the form "collect: I/O error on connection".  What is
+    going wrong?
+
+    	Nothing.  This is just a diagnosis of a condition that had
+    	not been diagnosed before.  If you are getting a lot of these
+    	from a single host, there is probably some incompatibility
+    	between 8.x and that host.  If you get a lot of them in general,
+    	you may have network problems that are causing connections to
+    	get reset.
+----------------------------------------------------------------------
+  * I just upgraded to 8.x and suddenly connections to the SMTP port
+    take a long time.  What is going wrong?
+
+	It's probably something wierd in your TCP implementation that
+	makes the IDENT code act oddly.  On most systems V8 tries to
+	do a ``callback'' to the connecting host to get a validated
+	user name (see RFC 1413 for details).  If the connecting
+	host does not support such a service it will normally fail
+	quickly with "Connection refused", but certain kinds of
+	packet filters and certain TCP implementations just time out.
+
+	To test this, set the IDENT timeout to zero using
+	``OrIdent=0'' in the configuration file.  This will
+	completely disable all use of the IDENT protocol.
+
+	Another possible problem is that you have your name server
+	and/or resolver configured improperly.  Make sure that
+	all "nameserver" entries in /etc/resolv.conf point to functional
+	servers.  If you are running your own server make certain that
+	all the servers listed in your root cache (usually called
+	something like "/var/namedb/root.cache"; see your
+	/etc/named.boot file to get your value) are up to date.
+	Either of these can cause long delays.
+----------------------------------------------------------------------
+  * I just upgraded to 8.x and suddenly I get errors such as ``mail:
+    options must follow recipients.''  What is going wrong?
+
+	You need OSTYPE(systype) in your .mc file -- otherwise the
+	configurations use a default that probably disagrees with
+	your local mail system.  See cf/README for details.
+----------------------------------------------------------------------
+  * Under V8, the "From " header gets mysteriously munged when I send
+    to an alias.
+
+	``It's not a bug, it's a feature.''  This happens when you have
+	a "owner-list" alias and you send to "list".  V8 propogates the
+	owner information into the envelope sender field (which appears
+	as the "From " header on UNIX mail or as the Return-Path: header)
+	so that downstream errors are properly returned to the mailing
+	list owner instead of to the sender.  In order to make this
+	appear as sensible as possible to end users, I recommend making
+	the owner point to a "request" address -- for example:
+
+		list:		:include:/path/name/list.list
+		owner-list:	list-request
+		list-request:	eric
+
+	This will make message sent to "list" come out as being
+	"From list-request" instead of "From eric".
 ----------------------------------------------------------------------
   * I want to run Sendmail version 8 on my DEC system, but you don't
     have MAIL11V3 support in sendmail.  How do I handle this?
 
 	Get Paul Vixie's reimplementation of the mail11 protocol
 	from gatekeeper.dec.com in /pub/DEC/gwtools.
+----------------------------------------------------------------------
+  * Messages seem to disappear from my queue unsent.  When I look in
+    the queue directory I see that they have been renamed from qf*
+    to Qf*, and sendmail doesn't see these.
+
+	If you look closely you should find that the Qf files are
+	owned by users other than root.  Since sendmail runs as root
+	it refuses to believe information in non-root-owned qf files,
+	and it renames them to Qf to get them out of the way and
+	make it easy for you to find.  The usual cause of this is
+	twofold:  first, you have the queue directory world writable
+	(which is probably a mistake -- this opens up other security
+	problems) and someone is calling sendmail with an "unsafe"
+	flag, usually a -o flag that sets an option that could
+	compromise security.  When sendmail sees this it gives up
+	setuid root permissions.
+
+	The usual solution is to not use the problematic flags.
+	If you must use them, you have to write a special queue
+	directory and have them processed by the same uid that
+	submitted the job in the first place.
 ----------------------------------------------------------------------
