@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	1.4 83/07/22";
+static	char *sccsid = "@(#)wwwrite.c	1.5 83/07/27";
 #endif
 
 #include "ww.h"
 
-int wwnwrite = 0;
+int wwnwrite;
+int wwnwritec;
 
 wwwrite(w, p, n)
 register struct ww *w;
@@ -15,7 +16,8 @@ register n;
 
 	if (w == 0 || w->ww_win == 0)
 		return -1;
-	wwnwrite += n;
+	wwnwrite++;
+	wwnwritec += n;
 	while (n-- > 0) {
 		c = *p++ & 0x7f;
 		switch (w->ww_wstate) {

@@ -1,4 +1,4 @@
-/*	@(#)ww.h	1.5 83/07/22		*/
+/*	@(#)ww.h	1.6 83/07/27		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -56,6 +56,7 @@ struct ww_tty {
 extern struct ww *wwhead, *curwin;
 extern struct ww_tty wwoldtty, wwnewtty;
 extern int wwnwrite;
+extern int wwnwritec;
 extern int wwnrow, wwncol;		/* the screen size */
 
 #define wwputchar(c)	wwputc((c), curwin)
