@@ -5,11 +5,6 @@ CFLAGS=-O
 
 all: ${ALL}
 
-.c.o:
-	${CC} -S ${CFLAGS} $*.c
-	sed -f ../asm.sed $*.s | as -o $*.o
-	rm -f $*.s
-
 tftp:	main.o tftp.o
 	${CC} main.o tftp.o -o tftp -ljobs
 
