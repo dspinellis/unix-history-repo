@@ -1,0 +1,46 @@
+.TH INTRO 3N "10 February 1983"
+.SH NAME
+intro \- introduction to network library functions
+.SH DESCRIPTION
+This section describes functions that are applicable to 
+the DARPA Internet network.
+.SH "LIST OF FUNCTIONS"
+Function names which are indented below others appear on the same manual
+page as the one which they are indented from.  For example, \fIendhostent\fP
+appears on the same manual page as does \fIgethostent\fP, but it is
+\fIgethostent\fP which actually appears at the head of the manual page.
+.sp
+.ta 0.3i 2.5i
+.nf
+byteorder		convert values between host and network byte order
+	htonl	convert long from host to network order
+	htons	convert short from host to network order
+	ntohl	convert long from networ to host order
+	ntohs	convert short from network to host order
+gethostent		network host entry
+	gethostbyaddr	network host entry (see gethostent.3n)
+	gethostbyname	network host entry (see gethostent.3n)
+	sethostent	network host entry (see gethostent.3n)
+	endhostent	network host entry (see gethostent.3n)
+getnetent		network entry
+	getnetbyaddr	network entry (see getnetent.3n)
+	getnetbyname	network entry (see getnetent.3n)
+	setnetent	network entry (see getnetent.3n)
+	endnetent	network entry (see getnetent.3n)
+getprotoent		protocol entry
+	getprotobynumber	protocol entry (see getprotoent.3n)
+	getprotobyname	protocol entry (see getprotoent.3n)
+	setprotoent	protocol entry (see getprotoent.3n)
+	endprotoent	protocol entry (see getprotoent.3n)
+getservent		protocol entry
+	getservbyport	protocol entry (see getservent.3n)
+	getservbyname	protocol entry (see getservent.3n)
+	setservent	protocol entry (see getservent.3n)
+	endservent	protocol entry (see getservent.3n)
+inet		Internet address manipulation routines
+	inet_addr	Internet address manipulation routines (see inet.3n)
+	inet_network	Internet address manipulation routines (see inet.3n)
+	inet_makeaddr	Internet address manipulation routines (see inet.3n)
+	inet_lnaof	Internet address manipulation routines (see inet.3n)
+	inet_netof	Internet address manipulation routines (see inet.3n)
+.fi
