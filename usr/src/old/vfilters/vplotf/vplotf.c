@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vplotf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vplotf.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -427,7 +427,7 @@ register x0, y0;
 		point(x1, y1);
 }
 
-#define labs(a) (a >= 0 ? a : -a)
+#define labs(a) ((a) >= 0 ? (a) : -(a))
 
 circle(x,y,c)
 {
