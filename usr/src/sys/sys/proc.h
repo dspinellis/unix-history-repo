@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.14 (Berkeley) %G%
+ *	@(#)proc.h	8.15 (Berkeley) %G%
  */
 
 #ifndef _SYS_PROC_H_
@@ -106,7 +106,8 @@ struct	proc {
 
 	struct	vnode *p_textvp;	/* Vnode of executable. */
 
-	int	p_locks;		/* DEBUG: lockmgr count of held locks */
+	short	p_locks;		/* DEBUG: lockmgr count of held locks */
+	short	p_simple_locks;		/* DEBUG: count of held simple locks */
 	long	p_spare[2];		/* pad to 256, avoid shifting eproc. */
 
 /* End area that is zeroed on creation. */
