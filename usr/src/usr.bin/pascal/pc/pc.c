@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -345,7 +345,7 @@ main(argc, argv)
 		if (dosys(as, asargs, 0, 0))
 			continue;
 		tfile[1] = 0;
-		remove();
+		removetemps();
 	}
 	if (errs || cflag || Sflag)
 		done();
@@ -523,7 +523,7 @@ dosys(cmd, argv, in, out)
 	}
 	if (status.w_retcode) {
 		errs = 1;
-		remove();
+		removetemps();
 	}
 	return (status.w_retcode);
 }
@@ -531,11 +531,11 @@ dosys(cmd, argv, in, out)
 done()
 {
 
-	remove();
+	removetemps();
 	exit(errs);
 }
 
-remove()
+removetemps()
 {
 
 	if (tfile[0])
@@ -567,6 +567,7 @@ getsuf(cp)
 char *
 setsuf(as, ch)
 	char *as;
+	int ch;
 {
 	register char *s, *s1;
 
