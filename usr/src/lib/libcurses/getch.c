@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getch.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)getch.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -25,7 +25,7 @@ wgetch(win)
 	    && win->curx == win->maxx - 1 && win->cury == win->maxy - 1)
 		return (ERR);
 #ifdef DEBUG
-	__TRACE("wgetch: __echoit = %d, __rawmode = %d\n",
+	__CTRACE("wgetch: __echoit = %d, __rawmode = %d\n",
 	    __echoit, __rawmode);
 #endif
 	if (__echoit && !__rawmode) {
@@ -36,7 +36,7 @@ wgetch(win)
 
 	inp = getchar();
 #ifdef DEBUG
-	__TRACE("wgetch got '%s'\n", unctrl(inp));
+	__CTRACE("wgetch got '%s'\n", unctrl(inp));
 #endif
 	if (__echoit) {
 		mvwaddch(curscr,

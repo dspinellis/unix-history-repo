@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.17 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -25,7 +25,7 @@ winsertln(win)
 	register __LINE *temp;
 
 #ifdef DEBUG
-	__TRACE("insertln: (%0.2o)\n", win);
+	__CTRACE("insertln: (%0.2o)\n", win);
 #endif
 	if (win->orig == NULL)
 		temp = win->lines[win->maxy - 1];

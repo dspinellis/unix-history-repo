@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.19 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -39,7 +39,7 @@ __mvcur(ly, lx, y, x, in_refresh)
 	int ly, lx, y, x, in_refresh;
 {
 #ifdef DEBUG
-	__TRACE("mvcur: moving cursor from (%d, %d) to (%d, %d)\n",
+	__CTRACE("mvcur: moving cursor from (%d, %d) to (%d, %d)\n",
 	    ly, lx, y, x);
 #endif
 	destcol = x;

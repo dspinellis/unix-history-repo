@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.17 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -43,7 +43,7 @@ newwin(nl, nc, by, bx)
 	win->ch_off = 0;
 
 #ifdef DEBUG
-	__TRACE("newwin: win->ch_off = %d\n", win->ch_off);
+	__CTRACE("newwin: win->ch_off = %d\n", win->ch_off);
 #endif
 
 	for (lp = win->lines[0], i = 0; i < nl; i++, lp = win->lines[i]) {
@@ -66,7 +66,7 @@ subwin(orig, nl, nc, by, bx)
 
 	/* Make sure window fits inside the original one. */
 #ifdef	DEBUG
-	__TRACE("subwin: (%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
+	__CTRACE("subwin: (%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
 #endif
 	if (by < orig->begy || bx < orig->begx
 	    || by + nl > orig->maxy + orig->begy
@@ -108,7 +108,7 @@ __set_subwin(orig, win)
 	}
 
 #ifdef DEBUG
-	__TRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
+	__CTRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
 #endif
 }
 
@@ -127,12 +127,12 @@ __makenew(nl, nc, by, bx, sub)
 	
 
 #ifdef	DEBUG
-	__TRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
+	__CTRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
 #endif
 	if ((win = malloc(sizeof(*win))) == NULL)
 		return (NULL);
 #ifdef DEBUG
-	__TRACE("makenew: nl = %d\n", nl);
+	__CTRACE("makenew: nl = %d\n", nl);
 #endif
 
 	/* 
@@ -175,7 +175,7 @@ __makenew(nl, nc, by, bx, sub)
 		}
 	}
 #ifdef DEBUG
-	__TRACE("makenew: nc = %d\n", nc);
+	__CTRACE("makenew: nc = %d\n", nc);
 #endif
 	win->cury = win->curx = 0;
 	win->maxy = nl;
@@ -186,11 +186,11 @@ __makenew(nl, nc, by, bx, sub)
 	win->flags = 0;
 	__swflags(win);
 #ifdef DEBUG
-	__TRACE("makenew: win->flags = %0.2o\n", win->flags);
-	__TRACE("makenew: win->maxy = %d\n", win->maxy);
-	__TRACE("makenew: win->maxx = %d\n", win->maxx);
-	__TRACE("makenew: win->begy = %d\n", win->begy);
-	__TRACE("makenew: win->begx = %d\n", win->begx);
+	__CTRACE("makenew: win->flags = %0.2o\n", win->flags);
+	__CTRACE("makenew: win->maxy = %d\n", win->maxy);
+	__CTRACE("makenew: win->maxx = %d\n", win->maxx);
+	__CTRACE("makenew: win->begy = %d\n", win->begy);
+	__CTRACE("makenew: win->begx = %d\n", win->begx);
 #endif
 	return (win);
 }

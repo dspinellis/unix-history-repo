@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.21 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -34,7 +34,7 @@ __waddbytes(win, bytes, count, so)
 	SYNCH_IN;
 
 #ifdef DEBUG
-	__TRACE("ADDBYTES('%c') at (%d, %d)\n", c, y, x);
+	__CTRACE("ADDBYTES('%c') at (%d, %d)\n", c, y, x);
 #endif
 	while (count--) {
 		c = *bytes++;
@@ -48,7 +48,7 @@ __waddbytes(win, bytes, count, so)
 
 		default:
 #ifdef DEBUG
-	__TRACE("ADDBYTES(%0.2o, %d, %d)\n", win, y, x);
+	__CTRACE("ADDBYTES(%0.2o, %d, %d)\n", win, y, x);
 #endif
 			
 			lp = win->lines[y];
@@ -75,7 +75,7 @@ newline:			if (y == win->maxy - 1) {
 			if (win->flags & __WSTANDOUT || so)
 				stand |= __STANDOUT;
 #ifdef DEBUG
-	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
+	__CTRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
 	    y, x, *win->lines[y]->firstchp, *win->lines[y]->lastchp);
 #endif
 			if (lp->line[x].ch != c || 
@@ -90,7 +90,7 @@ newline:			if (y == win->maxy - 1) {
 				else if (newx > *lp->lastchp)
 					*lp->lastchp = newx;
 #ifdef DEBUG
-	__TRACE("ADDBYTES: change gives f/l: %d/%d [%d/%d]\n",
+	__CTRACE("ADDBYTES: change gives f/l: %d/%d [%d/%d]\n",
 	    *lp->firstchp, *lp->lastchp,
 	    *lp->firstchp - win->ch_off,
 	    *lp->lastchp - win->ch_off);
@@ -106,7 +106,7 @@ newline:			if (y == win->maxy - 1) {
 			else
 				x++;
 #ifdef DEBUG
-	__TRACE("ADDBYTES: 2: y = %d, x = %d, firstch = %d, lastch = %d\n",
+	__CTRACE("ADDBYTES: 2: y = %d, x = %d, firstch = %d, lastch = %d\n",
 	    y, x, *win->lines[y]->firstchp, *win->lines[y]->lastchp);
 #endif
 			break;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overlay.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)overlay.c	5.13 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -25,14 +25,14 @@ overlay(win1, win2)
 	register __LDATA *sp, *end;
 
 #ifdef DEBUG
-	__TRACE("overlay: (%0.2o, %0.2o);\n", win1, win2);
+	__CTRACE("overlay: (%0.2o, %0.2o);\n", win1, win2);
 #endif
 	starty = max(win1->begy, win2->begy);
 	startx = max(win1->begx, win2->begx);
 	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
 	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
 #ifdef DEBUG
-	__TRACE("overlay: from (%d,%d) to (%d,%d)\n",
+	__CTRACE("overlay: from (%d,%d) to (%d,%d)\n",
 	    starty, startx, endy, endx);
 #endif
 	if (starty >= endy || startx >= endx)

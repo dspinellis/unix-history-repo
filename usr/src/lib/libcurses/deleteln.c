@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deleteln.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)deleteln.c	5.17 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,7 +24,7 @@ wdeleteln(win)
 	register __LINE *temp;
 
 #ifdef DEBUG
-	__TRACE("deleteln: (%0.2o)\n", win);
+	__CTRACE("deleteln: (%0.2o)\n", win);
 #endif
 	temp = win->lines[win->cury];
 	for (y = win->cury; y < win->maxy - 1; y++) {
