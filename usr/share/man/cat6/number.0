@@ -1,0 +1,21 @@
+NUMBER(6)                    BSD Reference Manual                    NUMBER(6)
+
+NNAAMMEE
+     number - convert Arabic numerals to English
+
+SSYYNNOOPPSSIISS
+     nnuummbbeerr [--ll] [_# _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnuummbbeerr utility prints the English equivalent of the number to the
+     standard output, with each 10^3 magnitude displayed on a separate line.
+     If no argument is specified, nnuummbbeerr reads lines from the standard input.
+
+     The options are as follows:
+
+     --ll      Display the number on a single line.
+
+BBUUGGSS
+     Although nnuummbbeerr understand fractions, it doesn't understand exponents.
+
+4.4BSD                          March 31, 1994                               1
