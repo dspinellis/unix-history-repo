@@ -1,11 +1,11 @@
 #
-#	@(#)Makefile	1.7	(Berkeley)	%G%
+#	@(#)Makefile	1.8	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 LOAD1=
 LOAD2=
 CFLAGS=-O -DFLEXNAMES
-LINTLIBS=llib-port.ln llib-lc.ln llib-lm.ln llib-lmp.ln
+LINTLIBS=llib-port.ln llib-lc.ln llib-lm.ln llib-lmp.ln llib-lcurses.ln
 
 all:	lpass1 lpass2 ${LINTLIBS}
 
@@ -52,6 +52,9 @@ llib-lmp.ln: llib-lmp lpass1
 
 llib-lc.ln: llib-lc lpass1
 	-(/lib/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
+
+llib-lcurses.ln: llib-lcurses lpass1
+	-(/lib/cpp -C -Dlint llib-lcurses | ./lpass1 -v > llib-lcurses.ln )
 
 lpass2: lpass2.o hash.o
 	${CC} lpass2.o hash.o -o lpass2
