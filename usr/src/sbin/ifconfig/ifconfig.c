@@ -29,6 +29,17 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00102
+ * --------------------         -----   ----------------------
+ *
+ * 06 Sep 92	Herb Peyerl		Added "aui"/"bnc" options to ifconfig
+ *					for 3COM 3C503 port selection
+ * 10 Mar 93	Rodney W. Grimes	Made the aui/bnc more general, you now
+ *					also have llc[0-2] and -llc[0-2].
+ *					Added the rest of the output flag bits.
  */
 
 #ifndef lint
@@ -107,6 +118,14 @@ struct	cmd {
 	{ "-arp",	IFF_NOARP,	setifflags },
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
+	{ "aui",	IFF_LLC0,	setifflags },	/* 06 Sep 92*/
+	{ "bnc",	-IFF_LLC0,	setifflags },
+	{ "llc0",	IFF_LLC0,	setifflags },	/* 10 Mar 93 */
+	{ "-llc0",	-IFF_LLC0,	setifflags },
+	{ "llc1",	IFF_LLC1,	setifflags },
+	{ "-llc1",	-IFF_LLC1,	setifflags },
+	{ "llc2",	IFF_LLC2,	setifflags },
+	{ "-llc2",	-IFF_LLC2,	setifflags },
 	{ "alias",	IFF_UP,		notealias },
 	{ "-alias",	-IFF_UP,	notealias },
 	{ "delete",	-IFF_UP,	notealias },
@@ -367,6 +386,7 @@ setsnpaoffset(val)
 
 #define	IFFBITS \
 "\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
+\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX\15LLC0\16LLC1\17LLC2\
 "
 
 /*
