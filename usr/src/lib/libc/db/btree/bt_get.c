@@ -9,14 +9,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_get.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_get.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
-#include <stdio.h>
+#include <errno.h>
 #include <stddef.h>
+#include <stdio.h>
+
 #include "btree.h"
 
 /*
@@ -111,8 +113,10 @@ __bt_first(t, key, exactp)
 	if (ISSET(t, BTF_DELCRSR)) {
 		cpgno = t->bt_bcursor.pgno;
 		cindex = t->bt_bcursor.index;
-	} else
+	} else {
 		cpgno = P_INVALID;
+		cindex = 0;		/* GCC thinks it's uninitialized. */
+	}
 
 	/*
 	 * Walk backwards, skipping empty pages, as long as the entry matches
