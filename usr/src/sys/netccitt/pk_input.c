@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.19 (Berkeley) %G%
+ *	@(#)pk_input.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ struct pkcb_q pkcb_q = {&pkcb_q, &pkcb_q};
  * employ boards that do all the stuff themselves, e.g. ADAX X.25 or TPS ISDN.)
  */
 void
-ccittintr()
+ccittintr ()
 {
 	extern struct ifqueue pkintrq;
 	extern struct ifqueue hdintrq;
@@ -65,13 +65,13 @@ pk_newlink (ia, llnext)
 struct x25_ifaddr *ia;
 caddr_t llnext;
 {
-	register struct x25config *xcp = &ia->ia_xc;
+	register struct x25config *xcp = &ia -> ia_xc;
 	register struct pkcb *pkp;
 	register struct pklcd *lcp;
 	register struct protosw *pp;
 	unsigned size;
 
-	pp = pffindproto (AF_CCITT, (int)xcp -> xc_lproto, 0);
+	pp = pffindproto (AF_CCITT, (int) xcp -> xc_lproto, 0);
 	if (pp == 0 || pp -> pr_output == 0) {
 		pk_message (0, xcp, "link level protosw error");
 		return ((struct pkcb *)0);
@@ -80,17 +80,17 @@ caddr_t llnext;
 	 * Allocate a network control block structure
 	 */
 	size = sizeof (struct pkcb);
-	pkp = (struct pkcb *)malloc(size, M_PCB, M_WAITOK);
+	pkp = (struct pkcb *) malloc (size, M_PCB, M_WAITOK);
 	if (pkp == 0)
 		return ((struct pkcb *)0);
-	bzero ((caddr_t)pkp, size);
+	bzero ((caddr_t) pkp, size);
 	pkp -> pk_lloutput = pp -> pr_output;
-	pkp -> pk_llctlinput = (caddr_t (*)())pp -> pr_ctlinput;
+	pkp -> pk_llctlinput = (caddr_t (*)()) pp -> pr_ctlinput;
 	pkp -> pk_xcp = xcp;
 	pkp -> pk_ia = ia;
 	pkp -> pk_state = DTE_WAITING;
 	pkp -> pk_llnext = llnext;
-	insque(pkp, &pkcb_q);
+	insque (pkp, &pkcb_q);
 
 	/*
 	 * set defaults
@@ -104,7 +104,7 @@ caddr_t llnext;
 	 * Allocate logical channel descriptor vector
 	 */
 
-	(void)pk_resize(pkp);
+	(void) pk_resize (pkp);
 	return (pkp);
 }
 
@@ -126,9 +126,9 @@ register struct pkcb *pkp;
 	 * For the time being we stick with (b)
 	 */
 	
-	for(i = 1; i < pkp->pk_maxlcn; ++i)
-		if (pkp->pk_chan[i])
-			pk_disconnect(pkp->pk_chan[i]);
+	for (i = 1; i < pkp -> pk_maxlcn; ++i)
+		if (pkp -> pk_chan[i])
+			pk_disconnect (pkp -> pk_chan[i]);
 
 	/*
 	 * Free the pkcb
@@ -139,17 +139,17 @@ register struct pkcb *pkp;
 	 * protocol to be notified that the packet level entity is
 	 * dissolving ...
 	 */
-	pp = pffindproto (AF_CCITT, (int)pkp ->pk_xcp -> xc_lproto, 0);
+	pp = pffindproto (AF_CCITT, (int) pkp -> pk_xcp -> xc_lproto, 0);
 	if (pp == 0 || pp -> pr_output == 0) {
 		pk_message (0, pkp -> pk_xcp, "link level protosw error");
-		return(EPROTONOSUPPORT);
+		return (EPROTONOSUPPORT);
 	}
 
 	pkp -> pk_refcount--;
 	if (!pkp -> pk_refcount) {
 		struct dll_ctlinfo ctlinfo;
 
-		remque(pkp);
+		remque (pkp);
 		if (pkp -> pk_rt -> rt_llinfo == (caddr_t) pkp)
 			pkp -> pk_rt -> rt_llinfo = (caddr_t) NULL;
 		
@@ -162,8 +162,8 @@ register struct pkcb *pkp;
 			(pp -> pr_ctlinput)(PRC_DISCONNECT_REQUEST, 
 					    pkp -> pk_xcp, &ctlinfo);
 		}
-		free((caddr_t) pkp -> pk_chan, M_IFADDR);
-		free((caddr_t) pkp, M_PCB);
+		free ((caddr_t) pkp -> pk_chan, M_IFADDR);
+		free ((caddr_t) pkp, M_PCB);
 	}
 
 	return (0);
@@ -179,7 +179,7 @@ register struct pkcb *pkp;
 	    (pkp -> pk_maxlcn != xcp -> xc_maxlcn)) {
 		pk_restart (pkp, X25_RESTART_NETWORK_CONGESTION);
 		dev_lcp = pkp -> pk_chan[0];
-		free ((caddr_t)pkp -> pk_chan, M_IFADDR);
+		free ((caddr_t) pkp -> pk_chan, M_IFADDR);
 		pkp -> pk_chan = 0;
 	}
 	if (pkp -> pk_chan == 0) {
@@ -189,7 +189,7 @@ register struct pkcb *pkp;
 		pkp -> pk_chan =
 			(struct pklcd **) malloc (size, M_IFADDR, M_WAITOK);
 		if (pkp -> pk_chan) {
-			bzero ((caddr_t)pkp -> pk_chan, size);
+			bzero ((caddr_t) pkp -> pk_chan, size);
 			/*
 			 * Allocate a logical channel descriptor for lcn 0
 			 */
@@ -218,7 +218,7 @@ pk_ctlinput (code, src, addr)
 	struct sockaddr *src;
 	caddr_t addr;
 {
-	register struct pkcb *pkp = (struct pkcb *)addr;
+	register struct pkcb *pkp = (struct pkcb *) addr;
 
 	switch (code) {
 	case PRC_LINKUP: 
@@ -240,20 +240,20 @@ pk_ctlinput (code, src, addr)
 
 		if ((llrt = rtalloc1(src, 0)) == 0)
 			return 0;
-		else llrt->rt_refcnt--;
+		else llrt -> rt_refcnt--;
 		
-		pkp = (((struct npaidbentry *)llrt->rt_llinfo)->np_rt) ?
-			(struct pkcb *)(((struct npaidbentry *)llrt->rt_llinfo)->np_rt->rt_llinfo) : (struct pkcb *) 0;
+		pkp = (((struct npaidbentry *) llrt -> rt_llinfo) -> np_rt) ?
+			(struct pkcb *)(((struct npaidbentry *) llrt -> rt_llinfo) -> np_rt -> rt_llinfo) : (struct pkcb *) 0;
 		if (pkp == (struct pkcb *) 0)
 			return 0;
-		pkp->pk_llnext = addr;
+		pkp -> pk_llnext = addr;
 
 		return ((caddr_t) pkp);
 	}
 	case PRC_DISCONNECT_INDICATION:
 		pk_restart (pkp, -1) ;  /* Clear all active circuits */
-		pkp->pk_state = DTE_WAITING;
-		pkp->pk_llnext = (caddr_t) 0;
+		pkp -> pk_state = DTE_WAITING;
+		pkp -> pk_llnext = (caddr_t) 0;
 	}
 	return (0);
 }
@@ -275,13 +275,13 @@ pkintr ()
 		splx (s);
 		if (m == 0)
 			break;
-		if (m->m_len < PKHEADERLN) {
+		if (m -> m_len < PKHEADERLN) {
 			printf ("pkintr: packet too short (len=%d)\n",
-				m->m_len);
+				m -> m_len);
 			m_freem (m);
 			continue;
 		}
-		pk_input(m);
+		pk_input (m);
 	}
 }
 struct mbuf *pk_bad_packet;
@@ -299,6 +299,7 @@ struct mbuf_cache pk_input_cache = {0 };
  *  m_pkthdr.rcvif (which has been overwritten by lower layers);
  *  That field is then restored for the benefit of upper layers which
  *  may make use of it, such as CLNP.
+ *
  */
 
 #define RESTART_DTE_ORIGINATED(xp) (((xp) -> packet_cause == X25_RESTART_DTE_ORIGINATED) || \
@@ -314,11 +315,11 @@ register struct mbuf *m;
 	int  ptype, lcn, lcdstate = LISTEN;
 
 	if (pk_input_cache.mbc_size || pk_input_cache.mbc_oldsize)
-		mbuf_cache(&pk_input_cache, m);
-	if ((m->m_flags & M_PKTHDR) == 0)
-		panic("pkintr");
+		mbuf_cache (&pk_input_cache, m);
+	if ((m -> m_flags & M_PKTHDR) == 0)
+		panic ("pkintr");
 
-	if ((pkp = (struct pkcb *)m->m_pkthdr.rcvif) == 0)
+	if ((pkp = (struct pkcb *) m -> m_pkthdr.rcvif) == 0)
 		return;
 	xp = mtod (m, struct x25_packet *);
 	ptype = pk_decode (xp);
@@ -382,7 +383,7 @@ register struct mbuf *m;
 	 *  the DCE will ignore it anyway. 
 	 */
 	case CALL + SENT_CALL: 
-		pk_message ((int)lcn, pkp -> pk_xcp, 
+		pk_message ((int) lcn, pkp -> pk_xcp, 
 			"incoming call collision");
 		break;
 
@@ -466,7 +467,7 @@ register struct mbuf *m;
 		 */
 
 		if (PS(xp) != ((lcp -> lcd_rsn + 1) % MODULUS) ||
-			PS(xp) == ((lcp -> lcd_input_window + lcp->lcd_windowsize) % MODULUS)) {
+			PS(xp) == ((lcp -> lcd_input_window + lcp -> lcd_windowsize) % MODULUS)) {
 			m_freem (m);
 			pk_procerror (RESET, lcp, "p(s) flow control error", 1);
 			break;
@@ -500,14 +501,14 @@ register struct mbuf *m;
 						"C.P.S. overflow", 128);
 					return;
 				}
-				q_and_d_bits = 0xc0 & *(octet *)xp;
+				q_and_d_bits = 0xc0 & *(octet *) xp;
 				xp = (struct x25_packet *)
-					(mtod(m, octet *) - PKHEADERLN);
-				*(octet *)xp |= q_and_d_bits;
+					(mtod (m, octet *) - PKHEADERLN);
+				*(octet *) xp |= q_and_d_bits;
 			}
 			if (mbit) {
 				lcp -> lcd_cps = m;
-				pk_flowcontrol(lcp, 0, 1);
+				pk_flowcontrol (lcp, 0, 1);
 				return;
 			}
 			lcp -> lcd_cps = 0;
@@ -522,7 +523,7 @@ register struct mbuf *m;
 			m -> m_data -= 1;
 			m -> m_len += 1;
 			m -> m_pkthdr.len += 1;
-			*mtod(m, octet *) = t;
+			*mtod (m, octet *) = t;
 		}
 
 		/*
@@ -538,7 +539,7 @@ register struct mbuf *m;
 			 * packet has not yet been passed up to the application
 			 * (RR's are normally generated via PRU_RCVD).
 			 */
-			pk_flowcontrol(lcp, 0, 1);
+			pk_flowcontrol (lcp, 0, 1);
 		} else {
 			sbappendrecord (&so -> so_rcv, m);
 			sorwakeup (so);
@@ -628,7 +629,7 @@ register struct mbuf *m;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET_CONFIRM);
 		pk_output (lcp);
 
-		pk_flush(lcp);
+		pk_flush (lcp);
 		if (so == 0)
 			break;
 		wakeup ((caddr_t) & so -> so_timeo);
@@ -693,7 +694,7 @@ register struct mbuf *m;
 			pk_message (0, pkp -> pk_xcp, 
 				    "Assuming DTE role");
 			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
-				pk_callcomplete(pkp);
+				pk_callcomplete (pkp);
 			break;
 
 		default: 
@@ -715,7 +716,7 @@ register struct mbuf *m;
 					 "Assuming DCE role");
 			}
 			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
-				pk_callcomplete(pkp);
+				pk_callcomplete (pkp);
 		}
 		break;
 
@@ -731,10 +732,10 @@ register struct mbuf *m;
 			pkp -> pk_dxerole &= ~DTE_PLAYDCE;
 			pk_message (0, pkp -> pk_xcp,
 				    "Packet level operational");
-			pk_message (0, pkp-> pk_xcp,
+			pk_message (0, pkp -> pk_xcp,
 				    "Assuming DTE role");
 			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
-				pk_callcomplete(pkp);
+				pk_callcomplete (pkp);
 			break;
 
 		default: 
@@ -765,16 +766,16 @@ register struct mbuf *m;
 }
 
 static
-prune_dnic(from, to, dnicname, xcp)
+prune_dnic (from, to, dnicname, xcp)
 char *from, *to, *dnicname;
 register struct x25config *xcp;
 {
 	register char *cp1 = from, *cp2 = from;
-	if (xcp->xc_prepnd0 && *cp1 == '0') {
+	if (xcp -> xc_prepnd0 && *cp1 == '0') {
 		from = ++cp1;
 		goto copyrest;
 	}
-	if (xcp->xc_nodnic) {
+	if (xcp -> xc_nodnic) {
 		for (cp1 = dnicname; *cp2 = *cp1++;)
 			cp2++;
 		cp1 = from;
@@ -810,7 +811,7 @@ register struct x25config *xcp;
 	octet *cp;
 	unsigned count;
 
-	bzero ((caddr_t)sa, sizeof (*sa));
+	bzero ((caddr_t) sa, sizeof (*sa));
 	sa -> x25_len = sizeof (*sa);
 	sa -> x25_family = AF_CCITT;
 	if (iscalling) {
@@ -821,17 +822,17 @@ register struct x25config *xcp;
 		count = X25GBITS(a -> addrlens, called_addrlen);
 		pk_simple_bsd (a -> address_field, buf, 0, count);
 	}
-	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp ->xc_prepnd0)) {
-		octet dnicname[sizeof(long) * NBBY/3 + 2];
+	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp -> xc_prepnd0)) {
+		octet dnicname[sizeof (long) * NBBY/3 + 2];
 
 		sprintf ((char *) dnicname, "%d", xcp -> xc_addr.x25_net);
-		prune_dnic ((char *)buf, sa -> x25_addr, dnicname, xcp);
+		prune_dnic ((char *) buf, sa -> x25_addr, dnicname, xcp);
 	} else
-		bcopy ((caddr_t)buf, (caddr_t)sa -> x25_addr, count + 1);
+		bcopy ((caddr_t) buf, (caddr_t) sa -> x25_addr, count + 1);
 }
 
 static
-save_extra(m0, fp, so)
+save_extra (m0, fp, so)
 struct mbuf *m0;
 octet *fp;
 struct socket *so;
@@ -840,17 +841,17 @@ struct socket *so;
 	struct cmsghdr cmsghdr;
 	if (m = m_copy (m, 0, (int)M_COPYALL)) {
 		int off = fp - mtod (m0, octet *);
-		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
+		int len = m -> m_pkthdr.len - off + sizeof (cmsghdr);
 		cmsghdr.cmsg_len = len;
 		cmsghdr.cmsg_level = AF_CCITT;
 		cmsghdr.cmsg_type = PK_FACILITIES;
 		m_adj (m, off);
-		M_PREPEND (m, sizeof(cmsghdr), M_DONTWAIT);
+		M_PREPEND (m, sizeof (cmsghdr), M_DONTWAIT);
 		if (m == 0)
 			return;
 		bcopy ((caddr_t)&cmsghdr, mtod (m, caddr_t), sizeof (cmsghdr));
 		MCHTYPE(m, MT_CONTROL);
-		sbappendrecord(&so -> so_rcv, m);
+		sbappendrecord (&so -> so_rcv, m);
 	}
 }
 
@@ -868,10 +869,10 @@ struct pkcb *pkp;
 	register struct sockaddr_x25 *sa;
 	register struct x25_calladdr *a;
 	register struct socket *so = 0;
-	struct	x25_packet *xp = mtod(m0, struct x25_packet *);
+	struct	x25_packet *xp = mtod (m0, struct x25_packet *);
 	struct	mbuf *m;
 	struct	x25config *xcp = pkp -> pk_xcp;
-	int len = m0->m_pkthdr.len;
+	int len = m0 -> m_pkthdr.len;
 	unsigned udlen;
 	char *errstr = "server unavailable";
 	octet *u, *facp;
@@ -888,12 +889,12 @@ struct pkcb *pkp;
 	facp = u = (octet *) (a -> address_field +
 		((X25GBITS(a -> addrlens, called_addrlen) + X25GBITS(a -> addrlens, calling_addrlen) + 1) / 2));
 	u += *u + 1;
-	udlen = min (16, ((octet *)xp) + len - u);
+	udlen = min (16, ((octet *) xp) + len - u);
 	if (udlen < 0)
 		udlen = 0;
 	pk_from_bcd (a, 1, sa, pkp -> pk_xcp); /* get calling address */
 	pk_parse_facilities (facp, sa);
-	bcopy ((caddr_t)u, sa -> x25_udata, udlen);
+	bcopy ((caddr_t) u, sa -> x25_udata, udlen);
 	sa -> x25_udlen = udlen;
 
 	/*
@@ -906,7 +907,7 @@ struct pkcb *pkp;
 	for (l = pk_listenhead; l; l = l -> lcd_listen) {
 		struct sockaddr_x25 *sxp = l -> lcd_ceaddr;
 
-		if (bcmp (sxp -> x25_udata, u, sxp->x25_udlen))
+		if (bcmp (sxp -> x25_udata, u, sxp -> x25_udlen))
 			continue;
 		if (sxp -> x25_net &&
 		    sxp -> x25_net != xcp -> xc_addr.x25_net)
@@ -932,7 +933,7 @@ struct pkcb *pkp;
 			if (so = sonewconn (l -> lcd_so, SS_ISCONNECTED))
 				    lcp = (struct pklcd *) so -> so_pcb;
 		} else 
-			lcp = pk_attach((struct socket *) 0);
+			lcp = pk_attach ((struct socket *) 0);
 		if (lcp == 0) {
 			/*
 			 * Insufficient space or too many unaccepted
@@ -950,11 +951,11 @@ struct pkcb *pkp;
 		pk_assoc (pkp, lcp, sa);
 		lcp -> lcd_faddr = *sa;
 		lcp -> lcd_laddr.x25_udlen = sxp -> x25_udlen;
-		lcp -> lcd_craddr = &lcp->lcd_faddr;
+		lcp -> lcd_craddr = &lcp -> lcd_faddr;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
 		if (lcp -> lcd_flags & X25_DBIT) {
 			if (X25GBITS(xp -> bits, d_bit))
-				X25SBITS(mtod(lcp -> lcd_template,
+				X25SBITS(mtod (lcp -> lcd_template,
 					struct x25_packet *) -> bits, d_bit, 1);
 			else
 				lcp -> lcd_flags &= ~X25_DBIT;
@@ -963,7 +964,7 @@ struct pkcb *pkp;
 			pk_output (lcp);
 			soisconnected (so);
 			if (so -> so_options & SO_OOBINLINE)
-				save_extra(m0, facp, so);
+				save_extra (m0, facp, so);
 		} else if (lcp -> lcd_upper) {
 			(*lcp -> lcd_upper) (lcp, m0);
 		}
@@ -977,19 +978,19 @@ struct pkcb *pkp;
 	 * CONFIRMATION.
 	 */
 #ifdef WATERLOO		/* be explicit */
-	if (l == 0 && bcmp(sa->x25_udata, "ean", 3) == 0)
+	if (l == 0 && bcmp (sa -> x25_udata, "ean", 3) == 0)
 		pk_message (lcn, pkp -> pk_xcp, "host=%s ean%c: %s",
-			sa->x25_addr, sa->x25_udata[3] & 0xff, errstr);
-	else if (l == 0 && bcmp(sa->x25_udata, "\1\0\0\0", 4) == 0)
+			sa -> x25_addr, sa -> x25_udata[3] & 0xff, errstr);
+	else if (l == 0 && bcmp (sa -> x25_udata, "\1\0\0\0", 4) == 0)
 		pk_message (lcn, pkp -> pk_xcp, "host=%s x29d: %s",
-			sa->x25_addr, errstr);
+			sa -> x25_addr, errstr);
 	else
 #endif
 	pk_message (lcn, pkp -> pk_xcp, "host=%s pid=%x %x %x %x: %s",
 		sa -> x25_addr, sa -> x25_udata[0] & 0xff,
 		sa -> x25_udata[1] & 0xff, sa -> x25_udata[2] & 0xff,
 		sa -> x25_udata[3] & 0xff, errstr);
-	if ((lcp = pk_attach((struct socket *)0)) == 0) {
+	if ((lcp = pk_attach ((struct socket *)0)) == 0) {
 		(void) m_free (m);
 		return;
 	}
@@ -1018,12 +1019,12 @@ struct mbuf *m;
 		ap = (struct x25_calladdr *) &xp -> packet_data;
 		fcp = (octet *) ap -> address_field + (X25GBITS(ap -> addrlens, calling_addrlen) +
 			X25GBITS(ap -> addrlens, called_addrlen) + 1) / 2;
-		if (fcp + *fcp <= ((octet *)xp) + len)
+		if (fcp + *fcp <= ((octet *) xp) + len)
 			pk_parse_facilities (fcp, lcp -> lcd_ceaddr);
 	}
 	pk_assoc (lcp -> lcd_pkp, lcp, lcp -> lcd_ceaddr);
 	if (lcp -> lcd_so == 0 && lcp -> lcd_upper)
-		lcp -> lcd_upper(lcp, m);
+		lcp -> lcd_upper (lcp, m);
 }
 
 pk_parse_facilities (fcp, sa)
