@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -19,10 +19,6 @@ static char sccsid[] = "@(#)input_lines.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef DBI
-#include <db.h>
-#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -42,7 +38,7 @@ input_lines(fp, errnum)
 	register char *l_text = text;
 	LINE *l_temp_line, *l_temp1;
 	long l_ttl = 0;
-	int l_nn_max = nn_max;
+	int l_nn_max = nn_max, l_jmp_flag;
 	char *l_text2;
 
 	if (End_default)
@@ -66,12 +62,15 @@ input_lines(fp, errnum)
 		SIGINT_ACTION;
 
 	sigspecial++;
+        if (l_jmp_flag = setjmp(ctrl_position3))
+                goto point;
 
 	for (;;) {
 		if (sigint_flag && (!sigspecial))
 			goto point;
-		/* If NULL or bit-8 high not text; chuck. */
+        	sigspecial3 = 1;
 		l_ss = getc(fp);
+        	sigspecial3 = 0;
 		if (l_ss == EOF) {
 			if (add_flag) {
 				l_text[l_nn++] = '\0';
@@ -79,7 +78,7 @@ input_lines(fp, errnum)
 			}
 			break;
 		}
-		if ((!l_ss) || (l_ss > 127))
+		if (!l_ss) /* 8-bit okay, but NULL not */
 			continue;
 		l_text[l_nn++] = (char)l_ss;
 		if (l_ss == '\n') {
@@ -89,7 +88,7 @@ input_lines(fp, errnum)
 			if ((l_nn == 2) && (l_text[0] == '.') && add_flag)
 				break;
 eof_mk:
-			nn_max_end = malloc(sizeof(LINE));
+			nn_max_end = (LINE *)malloc(sizeof(LINE));
 			if (nn_max_end == NULL) {
 				*errnum = -1;
 				strcpy(help_msg, "out of memory error");
@@ -139,10 +138,10 @@ point:	current = nn_max_end;
 		}
 	change_flag = 1;
 	sigspecial--;
+	sigspecial3 = 0;
 	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 	*errnum = 1;
 	ss = l_ss;
-	sigspecial = 0;
 	return (l_ttl);
 }
