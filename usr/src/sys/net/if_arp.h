@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_arp.h	7.5 (Berkeley) %G%
+ *	@(#)if_arp.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -19,13 +19,18 @@
  */
 struct	arphdr {
 	u_short	ar_hrd;		/* format of hardware address */
-#define ARPHRD_ETHER 	1	/* ethernet hardware address */
+#define ARPHRD_ETHER 	1	/* ethernet hardware format */
+#define ARPHRD_FRELAY 	15	/* frame relay hardware format */
 	u_short	ar_pro;		/* format of protocol address */
 	u_char	ar_hln;		/* length of hardware address */
 	u_char	ar_pln;		/* length of protocol address */
 	u_short	ar_op;		/* one of: */
 #define	ARPOP_REQUEST	1	/* request to resolve address */
 #define	ARPOP_REPLY	2	/* response to previous request */
+#define	ARPOP_REVREQUEST 3	/* request protocol address given hardware */
+#define	ARPOP_REVREPLY	4	/* response giving protocol address */
+#define ARPOP_INVREQUEST 8 	/* request to identify peer */
+#define ARPOP_INVREPLY	9	/* response identifying peer */
 /*
  * The remaining fields are variable in size,
  * according to the sizes above.
