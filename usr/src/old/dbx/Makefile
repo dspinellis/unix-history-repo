@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -191,7 +191,7 @@ print:
 clean:
 	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} mkdate mkdate.o \
 	    makedefs makedefs.o date.c core mon.out prof.out make.out \
-	    cerror.s ops.c machine.c
+	    cerror.s ops.c machine.c runtime.c
 
 cleandefs:
 	rm -f ${HDR} y.tab.h
