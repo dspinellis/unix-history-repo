@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)buf.h	7.8 (Berkeley) %G%
+ *	@(#)buf.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,7 @@ struct buf
 	long	b_flags;		/* too much goes here to describe */
 	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
+	struct	buf *b_blockf, **b_blockb;/* associated vnode */
 #define	b_actf	av_forw			/* alternate names for driver queue */
 #define	b_actl	av_back			/*    head - isn't history wonderful */
 	long	b_bcount;		/* transfer count */
@@ -68,6 +69,7 @@ struct buf
 	    struct dinode *b_dino;	/* ilist */
 	    daddr_t *b_daddr;		/* indirect block */
 	} b_un;
+	daddr_t	b_lblkno;		/* logical block number */
 	daddr_t	b_blkno;		/* block # on device */
 #ifdef SECSIZE
 	long	b_blksize;		/* size of device blocks */
@@ -210,3 +212,4 @@ unsigned minphys();
 	(bp)->b_resid = 0; \
 }
 #define B_CLRBUF	0x1	/* request allocated buffer be cleared */
+#define B_SYNC		0x2	/* do all allocations synchronously */
