@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -934,7 +934,7 @@ cfline(line, f)
 	char *bp;
 	int pri;
 	struct hostent *hp;
-	char buf[MAXLINE];
+	char buf[MAXLINE], ebuf[100];
 
 	dprintf("cfline(%s)\n", line);
 
@@ -962,14 +962,16 @@ cfline(line, f)
 			q++;
 
 		/* decode priority name */
-		pri = decode(buf, prioritynames);
-		if (pri < 0) {
-			char xbuf[200];
-
-			(void) sprintf(xbuf, "unknown priority name \"%s\"",
-			    buf);
-			logerror(xbuf);
-			return;
+		if (*buf == '*')
+			pri = LOG_PRIMASK + 1;
+		else {
+			pri = decode(buf, prioritynames);
+			if (pri < 0) {
+				(void) sprintf(ebuf,
+				    "unknown priority name \"%s\"", buf);
+				logerror(ebuf);
+				return;
+			}
 		}
 
 		/* scan facilities */
@@ -983,12 +985,10 @@ cfline(line, f)
 			else {
 				i = decode(buf, facilitynames);
 				if (i < 0) {
-					char xbuf[200];
-
-					(void) sprintf(xbuf,
+					(void) sprintf(ebuf,
 					    "unknown facility name \"%s\"",
 					    buf);
-					logerror(xbuf);
+					logerror(ebuf);
 					return;
 				}
 				f->f_pmask[i >> 3] = pri;
