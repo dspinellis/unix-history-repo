@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.5 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -503,7 +503,7 @@ telrcv()
 
 		case TS_WILL:
 			if (showoptions)
-				printoption("-->", will, c);
+				printoption("-->", will, c, !hisopts[c]);
 			if (!hisopts[c])
 				willoption(c);
 			state = TS_DATA;
@@ -511,7 +511,7 @@ telrcv()
 
 		case TS_WONT:
 			if (showoptions)
-				printoption("-->", wont, c);
+				printoption("-->", wont, c, hisopts[c]);
 			if (hisopts[c])
 				wontoption(c);
 			state = TS_DATA;
@@ -519,7 +519,7 @@ telrcv()
 
 		case TS_DO:
 			if (showoptions)
-				printoption("-->", doopt, c);
+				printoption("-->", doopt, c, !myopts[c]);
 			if (!myopts[c])
 				dooption(c);
 			state = TS_DATA;
@@ -527,7 +527,7 @@ telrcv()
 
 		case TS_DONT:
 			if (showoptions)
-				printoption("-->", dont, c);
+				printoption("-->", dont, c, myopts[c]);
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
@@ -740,9 +740,10 @@ netflush(fd)
 		nbackp = nfrontp = netobuf;
 }
 
-printoption(direction, fmt, option)
+/*VARARGS*/
+printoption(direction, fmt, option, what)
 	char *direction, *fmt;
-	int option;
+	int option, what;
 {
 	printf("%s ", direction);
 	if (fmt == doopt)
@@ -756,7 +757,12 @@ printoption(direction, fmt, option)
 	else
 		fmt = "???";
 	if (option < TELOPT_SUPDUP)
-		printf("%s %s\r\n", fmt, telopts[option]);
+		printf("%s %s", fmt, telopts[option]);
 	else
-		printf("%s %d\r\n", fmt, option);
+		printf("%s %d", fmt, option);
+	if (*direction == '<') {
+		printf("\r\n");
+		return;
+	}
+	printf(" (%s)\r\n", what ? "reply" : "don't reply");
 }
