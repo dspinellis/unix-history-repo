@@ -1,0 +1,131 @@
+MP(3)                       BSD Programmer's Manual                      MP(3)
+
+NNAAMMEE
+     ffmmiinn, ffmmoouutt, ggccdd, iinnvveerrtt, iittoomm mm__iinn, mm__oouutt, mmaadddd, mmccmmpp,, mmddiivv, mmiinn, mmoouutt,
+     mmoovvee, mmssqqrrtt, mmssuubb, mmuulltt, oommiinn, oommoouutt, ppooww, rrppooww, ssddiivv, - multiple preci-
+     sion integer arithmetic
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmpp..hh>>
+     ##iinncclluuddee <<ssttddiioo..hh>>
+     ttyyppeeddeeff ssttrruucctt mmiinntt {{ iinntt lleenn;; sshhoorrtt **vvaall;; }} MMIINNTT;;
+
+     mmaadddd(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_c);
+
+     mmssuubb(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_c);
+
+     mmuulltt(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_c);
+
+     mmddiivv(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_q, _s_h_o_r_t _r);
+
+     ppooww(_M_I_N_T _*_a, _M_I_N_T _*_b, _m, _M_I_N_T _*_c);
+
+     ggccdd(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_c);
+
+     iinnvveerrtt(_M_I_N_T _*_a, _M_I_N_T _*_b, _M_I_N_T _*_c);
+
+     rrppooww(_M_I_N_T _*_a, _s_h_o_r_t _n, _M_I_N_T _*_c);
+
+     mmssqqrrtt(_M_I_N_T _*_a, _M_I_N_T _*_b, _s_h_o_r_t _r);
+
+     mmccmmpp(_M_I_N_T _*_a, _M_I_N_T _*_b);
+
+     mmoovvee(_M_I_N_T _*_a, _M_I_N_T _*_b);
+
+     mmiinn(_M_I_N_T _*_a);
+
+     oommiinn(_M_I_N_T _*_a);
+
+     ffmmiinn(_M_I_N_T _*_a, _F_I_L_E _*_f);
+
+     mm__iinn(_M_I_N_T _*_a, _i_n_t _n, _F_I_L_E _*_f);
+
+     mmoouutt(_M_I_N_T _*_a);
+
+     oommoouutt(_M_I_N_T _*_a);
+
+     ffmmoouutt(_M_I_N_T _*_a, _F_I_L_E _*_f);
+
+     mm__oouutt(_M_I_N_T _*_a, _i_n_t _n, _F_I_L_E _*_f);
+
+     ssddiivv(_M_I_N_T _*_a, _s_h_o_r_t _n, _M_I_N_T _*_q, _s_h_o_r_t _r);
+
+     iittoomm(_s_h_o_r_t _n);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhee iinntteerrffaaccee ffoorr tthhiiss lliibbrraarryy iiss eexxppeecctteedd ttoo cchhaannggee..
+
+     These functions operate on integers of variable length.  The function
+     iittoomm() allocates space for an integer of length _n which may be accessed
+     via the returned _M_I_N_T pointer.  The underlying storage scheme is trans-
+     parent to the user.
+
+     ffmmiinn()
+     ffmmoouutt()  Convert decimal input and output using file _f.
+
+
+     ggccdd()    Finds the greatest common denominator of _a and _b, storing the
+              result in _c.
+
+     iinnvveerrtt()
+              Computes _c such that _a* _c mod _b = 1, for _a and _b relatively
+              prime.
+
+     mm__iinn()
+     mm__oouutt()  I/O with arbitrary radix _n.
+
+     mmaadddd()   The sum of _a and _b is stored in _c.
+
+     mmccmmpp()   Returns a negative, zero or positive integer value when _a is
+              less than, equal to or greater than _b, respectively.
+     mmoovvee()   Copies _a to _b.
+
+     mmiinn()
+     mmoouutt()   Convert decimal input and output.
+
+     mmddiivv()   Divides _a by _b and stores the quotient in _q and the remainder in
+              _r.
+
+     mmssqqrrtt()  Calculates the integer square root of _a in _b and places the re-
+              mainder in _r.
+
+     mmssuubb()   The difference of _a and _b is stored in _c.
+
+     mmuulltt()   The product of _a and _b is stored in _c.
+
+     oommiinn()
+     oommoouutt()  Convert octal input and output.
+
+     ppooww()    Calculates the value of _a raised to the full multiple precision
+              exponent _b, the result is reduced modulo _m and stored in _c.
+
+     rrppooww()   Calculates the value of _a raised to the (``regular'' integral)
+              power _n and stores the result in _c.
+
+     ssddiivv()   (Short divisor.)  Divides _a by the short integer _b and stores
+              the quotient in _q and the remainder in short integer _r. On in-
+              put, records should have the form of strings of digits terminat-
+              ed by a newline; output records have a similar form.
+
+FFIILLEESS
+     /usr/lib/libmp.a   object code library
+     /usr/include/mp.h  include file
+
+SSEEEE AALLSSOO
+     dc(1),  bc(1)
+
+HHIISSTTOORRYY
+     A ggccdd(), iittoomm(), mmaadddd(), mmddiivv(), mmiinn(), mmoouutt(), mmssqqrrtt(), mmssuubb(), mmuulltt(),
+     ppooww(), rrppooww(), and ssddiivv() function appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     Bases for input and output should be <= 10.
+
+     The interpreters dc(1) and bc(1) don't use this library.
+
+     The input and output routines are a crock.
+
+     The function name ppooww() is also the name of a standard math library rou-
+     tine.
+
+4.3 Berkeley Distribution        June 4, 1993                                2
