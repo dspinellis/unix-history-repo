@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.25.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1414,6 +1414,8 @@ nisplus_default_domain()
 
 #ifdef HESIOD
 
+#include <hesiod.h>
+
 char *
 hes_map_lookup(map, name, av, statp)
         MAP *map;
@@ -1421,33 +1423,31 @@ hes_map_lookup(map, name, av, statp)
         char **av;
         int *statp;
 {
-	struct hes_postoffice *pobox;
-	char keybuf[MAXNAME + 1];
+	char **hp;
+	char *retdata = NULL;
+	int i;
 
 	if (tTd(38, 20))
-		printf("hes_map_lookup(%s)\n", name);
+		printf("hes_map_lookup(%s, %s)\n", map->map_file, name);
 
-	pobox = hes_getmailhost(name);
-	if (pobox == NULL)
+	hp = hes_resolve(name, map->map_file);
+	if (hp == NULL)
 		return NULL;
-
-	/* We only know how to deal with the SMTP types right now */
-	if (strcmp(pobox->po_type, "SMTP") != 0 &&
-	    strcmp(pobox->po_type, "ESMTP") != 0)
-		return NULL;
-
-	/* if just checking for a match, we are done */
-	if (bitset(MF_MATCHONLY, map->map_mflags))
-		return map_rewrite(map, name, strlen(name), NULL);
-
-	/* Do the rewriting with new values */
-	if (strlen(pobox->po_name) + strlen(pobox->po_host) + 1 > sizeof keybuf)
+	
+	if (hp[0] != NULL)
 	{
-		*statp = EX_DATAERR;
-		return NULL;
+		if (tTd(38, 20))
+			printf("  %d %s\n", i, p);
+		if (bitset(MF_MATCHONLY, map->map_mflags))
+			retdata = map_rewrite(map, name, strlen(name), NULL);
+		else
+			retdata = map_rewrite(map, hp[0], strlen(hp[0]), av);
 	}
-	(void) sprintf(keybuf, "%s@%s", pobox->po_name, pobox->po_host);
-	return map_rewrite(map, keybuf, strlen(keybuf), av);
+
+	for (i = 0; hp[i] != NULL; i++)
+		free(hp[i]);
+	free(hp);
+	return retdata;
 }
 
 #endif
