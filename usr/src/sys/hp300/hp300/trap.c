@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.14.1.3 (Berkeley) %G%
+ *	@(#)trap.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,7 +101,6 @@ trap(type, code, v, frame)
 	register struct proc *p = curproc;
 	struct timeval syst;
 	unsigned ncode;
-	int s;
 
 	cnt.v_trap++;
 	syst = p->p_stime;
@@ -292,7 +291,7 @@ copyfault:
 		/*
 		 * If this was not an AST trap, we are all done.
 		 */
-		if (type != (T_ASTFLT|T_USER)) {
+		if (type != T_ASTFLT|T_USER) {
 			cnt.v_trap--;
 			return;
 		}
@@ -395,11 +394,10 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		s = splclock();
+		(void) splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
-		splx(s);
 		while (i = CURSIG(p))
 			psig(i);
 	}
@@ -433,7 +431,7 @@ syscall(code, frame)
 	register int i;
 	register struct sysent *callp;
 	register struct proc *p = curproc;
-	int error, opc, numsys, s;
+	int error, opc, numsys;
 	struct args {
 		int i[8];
 	} args;
@@ -495,14 +493,6 @@ syscall(code, frame)
 	else
 #endif
 	error = (*callp->sy_call)(p, &args, rval);
-#ifdef DIAGNOSTIC
-	if (curproc->p_spare[0])
-		panic("syscall: M_NAMEI");
-	if (curproc->p_spare[1])
-		panic("syscall: STARTSAVE");
-	if (curproc->p_spare[2])
-		panic("syscall: LOCK COUNT");
-#endif
 	if (error == ERESTART)
 		frame.f_pc = opc;
 	else if (error != EJUSTRETURN) {
@@ -540,11 +530,10 @@ done:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		s = splclock();
+		(void) splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
-		splx(s);
 		while (i = CURSIG(p))
 			psig(i);
 	}
