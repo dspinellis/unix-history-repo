@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)rval.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)rval.c	2.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -63,14 +63,31 @@ rvalue(r, par)
 			panic("rval");
 		case T_PLUS:
 		case T_MINUS:
+			/*
+			 * if child is relational (bogus) or adding operator,
+			 * parenthesize child.
+			 * this has the unaesthetic property that
+			 * --i prints as -(-i), but is needed to catch
+			 * -(a+b) which must print as -(a+b), not as -a+b.
+			 * otherwise child has higher precedence
+			 * and need not be parenthesized.
+			 */
 			ppop(r[0] == T_PLUS ? "+" : "-");
 			al = r[2];
-			rvalue(r[2], prec(al) > prec(r) || full);
+			rvalue(r[2], prec(al) <= prec(r) || full);
 			break;
 		case T_NOT:
+			/*
+			 * if child is of lesser precedence
+			 * (i.e. not another not operator)
+			 * parenthesize it.
+			 * nested not operators need not be parenthesized
+			 * because it's a prefix operator.
+			 */
 			ppkw(opname);
 			ppspac();
-			rvalue(r[2], 1);
+			al = r[2];
+			rvalue(r[2], prec(al) < prec(r) || full);
 			break;
 		case T_EQ:
 		case T_NE:
@@ -78,6 +95,12 @@ rvalue(r, par)
 		case T_LE:
 		case T_GT:
 		case T_LT:
+			/*
+			 * make the aesthetic choice to
+			 * fully parenthesize relational expressions,
+			 * in spite of left to right associativity.
+			 * note: there are no operators with lower precedence.
+			 */
 			al = r[2];
 			rvalue(al, prec(al) <= prec(r) || full);
 			goto rest;
@@ -90,6 +113,13 @@ rvalue(r, par)
 		case T_MOD:
 		case T_DIV:
 		case T_IN:
+			/*
+			 * need not parenthesize left child
+			 * if it has equal precedence,
+			 * due to left to right associativity.
+			 * right child needs to be parenthesized
+			 * if it has equal (or lesser) precedence.
+			 */
 			al = r[2];
 			rvalue(al, prec(al) < prec(r) || full);
 rest:
