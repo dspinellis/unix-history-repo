@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n9.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n9.c	2.2 (CWI) 93/02/25";
 #endif lint
 #include "tdef.h"
 #ifdef NROFF
@@ -91,8 +91,8 @@ register int	c;
 setov()
 {
 	register j, k;
-	tchar i, o[NOV];
-	int delim, w[NOV];
+	tchar i, o[NOV+1];
+	int delim, w[NOV+1];
 
 	if (ismot(i = getch()))
 		return;
@@ -241,11 +241,16 @@ setdraw()	/* generate internal cookies for a drawing function */
 	/* specified dx,dy pairs interpreted as appropriate */
 	/* pairs are deltas from last point, except for radii */
 
+	/* t x		set line thickness to x */
+	/* s x		set line style to bit-map x (x BETTER be in "u")*/
 	/* l dx dy:	line from here by dx,dy */
 	/* c x:		circle of diameter x, left side here */
 	/* e x y:	ellipse of diameters x,y, left side here */
 	/* a dx1 dy1 dx2 dy2:
 			ccw arc: ctr at dx1,dy1, then end at dx2,dy2 from there */
+	/* [Pp] s x y ...:	for polygons filled with stipple s */
+	/* ~ x y ...:	wiggly line  -or-  */
+	/* g x y ...:	for gremlin-style curves */
 	/* ~ dx1 dy1 dx2 dy2...:
 			spline to dx1,dy1 to dx2,dy2 ... */
 	/* f dx dy ...:	f is any other char:  like spline */
@@ -255,6 +260,8 @@ setdraw()	/* generate internal cookies for a drawing function */
 	delim = cbits(c);
 	type = cbits(getch());
 	for (i = 0; i < NPAIR ; i++) {
+		if (nlflg)
+			break;
 		c = getch();
 		if (cbits(c) == delim)
 			break;
@@ -262,6 +269,14 @@ setdraw()	/* generate internal cookies for a drawing function */
 		if (cbits(c) != ' ')
 			ch = c;
 		vflag = 0;
+		if (i == 0 && (type == DRAWPOLY || type == DRAWUBPOLY)) {
+			dfact = 1;
+			dx[0] = quant(atoi(), 1);
+			if (dx[0] < 0 || dx[0] > MAXMOT)
+				dx[0] = 0;
+			dy[0] = 0;
+			continue;
+		}
 		dfact = EM;
 		dx[i] = quant(atoi(), HOR);
 		if (dx[i] > MAXMOT)
@@ -285,16 +300,17 @@ setdraw()	/* generate internal cookies for a drawing function */
 #ifndef NROFF
 	drawbuf[0] = DRAWFCN | chbits | ZBIT;
 	drawbuf[1] = type | chbits | ZBIT;
-	drawbuf[2] = '.' | chbits | ZBIT;	/* use default drawing character */
-	for (k = 0, j = 3; k < i; k++) {
+	for (k = 0, j = 2; k < i; k++) {
 		drawbuf[j++] = MOT | ((dx[k] >= 0) ? dx[k] : (NMOT | -dx[k]));
 		drawbuf[j++] = MOT | VMOT | ((dy[k] >= 0) ? dy[k] : (NMOT | -dy[k]));
 	}
 	if (type == DRAWELLIPSE) {
-		drawbuf[5] = drawbuf[4] | NMOT;	/* so the net vertical is zero */
-		j = 6;
+		drawbuf[4] = drawbuf[3] | NMOT;	/* so the net vertical is zero */
+		j = 5;
+	} else if (type == DRAWTHICK || type == DRAWSTYLE) {
+		drawbuf[3] = drawbuf[2] | NMOT;	/* so net horizontal is zero */
 	}
-	drawbuf[j++] = DRAWFCN | chbits | ZBIT;	/* marks end for ptout */
+	drawbuf[j++] = '.' | chbits | ZBIT;	/* marks end for ptout */
 	drawbuf[j] = 0;
 	pushback(drawbuf);
 #endif
