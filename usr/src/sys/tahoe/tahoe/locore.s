@@ -1,4 +1,4 @@
-/*	locore.s	1.21.1.1	87/11/24	*/
+/*	locore.s	1.22	88/01/27	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -601,7 +601,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(camap	,cabase		,16*CLSIZE	 )
+	SYSMAP(kmempt	,kmembase	,1024*CLSIZE 	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
@@ -612,9 +612,7 @@ _/**/mname:	.globl	_/**/mname;		\
 #include "dk.h"
 	SYSMAP(_vdmap	,_vdbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
 #include "yc.h"
-#include "yc.h"
 	SYSMAP(_cymap	,_cybase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
-	SYSMAP(ecamap	,calimit	,0		)
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
@@ -1444,8 +1442,8 @@ res1:					# longjmp to saved context
 	/*NOTREACHED*/
 1:					# sp ok, complete return
 	movl	r1,sp			# restore sp
-	movl	(r2),(sp)		# return address
-	movl	$PSL_PRVMOD,4(sp)	# kernel mode, ipl 0
+	pushl	$PSL_PRVMOD		# kernel mode, ipl 0
+	pushl	(r2)			# return address
 	rei
 2:	.asciz	"ldctx"
 

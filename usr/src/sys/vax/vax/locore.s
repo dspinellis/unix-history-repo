@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.7 (Berkeley) %G%
+ *	@(#)locore.s	7.8 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -1495,20 +1495,20 @@ res0:
 res1:
 	movl	_u+PCB_SSWAP,r0			# longjmp to saved context
 	clrl	_u+PCB_SSWAP
-	movq	(r0)+,r6
-	movq	(r0)+,r8
-	movq	(r0)+,r10
-	movq	(r0)+,r12
-	movl	(r0)+,r1
+	movq	(r0)+,r6			# restore r6, r7
+	movq	(r0)+,r8			# restore r8, r9
+	movq	(r0)+,r10			# restore r10, r11
+	movq	(r0)+,r12			# restore ap, fp
+	movl	(r0)+,r1			# saved sp
 	cmpl	r1,sp				# must be a pop
 	bgequ	1f
 	pushab	2f
 	calls	$1,_panic
 	/* NOTREACHED */
 1:
-	movl	r1,sp
-	movl	(r0),(sp)			# address to return to
-	movl	$PSL_PRVMOD,4(sp)		# ``cheating'' (jfr)
+	movl	r1,sp				# restore sp
+	pushl	$PSL_PRVMOD			# return psl
+	pushl	(r0)				# address to return to
 	rei
 
 2:	.asciz	"ldctx"
