@@ -1,5 +1,6 @@
 #ifndef lint
-static	char	*sccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
+static	char	*sccsid = "@(#)qv.c	1.2 (Berkeley) %G%";
+static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
 #endif lint
 
 /************************************************************************
@@ -82,24 +83,25 @@ static	char	*sccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
 
 
 #include "qv.h"
-#if NQV > 0  || defined(BINARY)
+#if NQV > 0
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../vaxuba/qvioctl.h"
-#include "../h/tty.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/bk.h"
-#include "../h/clist.h"
-#include "../h/file.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "qvioctl.h"
+#include "tty.h"
+#include "map.h"
+#include "buf.h"
+#include "vm.h"
+#include "bk.h"
+#include "clist.h"
+#include "file.h"
+#include "uio.h"
+#include "kernel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -122,13 +124,16 @@ u_short	qvstd[] = { 0 };
 struct	uba_driver qvdriver =
 	{ qvprobe, 0, qvattach, 0, qvstd, "qv", qvinfo };
 
+extern	char qvmem[][512*NBPG];
+extern	struct pte QVmap[][512];
+
 /*
  * Local variables for the driver. Initialized for 15' screen
  * so that it can be used during the boot process.
  */
 
 #define QVWAITPRI 	(PZERO+1)
-#define QVSSMAJOR	35
+#define QVSSMAJOR	40
 /*
  * v_console is the switch that is used to redirect the console cnputc to the
  * virtual console vputc.
@@ -136,9 +141,9 @@ struct	uba_driver qvdriver =
 extern (*v_console)();
 /*
  * qv_def_scrn is used to select the appropriate tables. 0=15 inch 1=19 inch,
- * 2 = new display (untested).
+ * 2 = uVAXII (untested).
  */
-int qv_def_scrn = 0;
+int qv_def_scrn = 2;
 
 #define QVMAXEVQ	64	/* must be power of 2 */
 #define EVROUND(x)	((x) & (QVMAXEVQ - 1))
@@ -282,9 +287,7 @@ qvprobe(reg, ctlr)
 	if( ovec == cvec ) {
 		return 0;
 	} else
-		cvec = tvec;
-	/* can't do this until we know we have memory to write in */
-	qv_scn->qvaddr = qvaddr;
+		cvec -= 4;
 	return (sizeof (struct qvdevice));
 }
 
@@ -294,26 +297,14 @@ qvprobe(reg, ctlr)
 qvattach(ui)
         struct uba_device *ui;
 {
-        register struct qvdevice *qvaddr;
-        register i;
-        register int *pte;
-        char *qvssmem;
-
-        qvaddr = (struct qvdevice *)ui->ui_addr;
 
         /*
          * If not the console then we have to setup the screen
          */
-        if( v_console != qvputc ) 
-                qv_setup( qvaddr );
-
-        /*
-         * Map the qvss memory for use by users.
-         */
-        qvssmem = (char *)((qvaddr->qv_csr & QV_MEM_BANK) << 7);
-        pte = (int *)(UMEMmap[0] + btop( qvssmem ));
-        for( i=0 ; i<512 ; i++, pte++ )
-                *pte = (*pte & ~PG_PROT) | PG_UW | PG_V;
+        if( v_console != qvputc || ui->ui_unit != 0)
+                qv_setup((struct qvdevice *)ui->ui_addr, ui->ui_unit, 1);
+	else
+		qv_scn->qvaddr = (struct qvdevice *)ui->ui_addr;
 }
 
 
@@ -495,8 +486,9 @@ qvkint(qv)
 		 */
 		if( key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
 		    key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
-				mprintf("qv%d: Keyboard error, code = %x\n",qv,key);
-				return;
+			log(LOG_ERR,
+			    "qv%d: Keyboard error, code = %x\n",qv,key);
+			return;
 		}
 		if( key < LK_LOWEST ) return;
 		/*
@@ -1125,6 +1117,7 @@ char c;
 qvcons_init()
 {
         struct percpu *pcpu;            /* pointer to percpu structure  */
+	register struct qbus *qb;
         struct qvdevice *qvaddr;        /* device pointer               */
         short *devptr;                  /* vitual device space          */
 #define QVSSCSR 017200
@@ -1142,24 +1135,23 @@ qvcons_init()
          * we assume that there is a single q-bus and don't have to worry about
          * multiple adapters.
          *
-         * Map the bus memory and device registers.
+         * Map the device registers.
          */
-        ubaaccess(pcpu->pc_umaddr[0], UMEMmap[0],
-                pcpu->pc_umsize, PG_V|PG_KW);
-        ubaaccess(pcpu->pc_devaddr[0], UMEMmap[0]+btop(pcpu->pc_umsize),
-                DEVSPACESIZE ,PG_V|PG_KW);
-        
+	qb = (struct qbus *)pcpu->pc_io->io_details;
+	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize,
+	    UBAIOPAGES * NBPG);
+
         /*
          * See if the qvss is there.
          */
-        devptr = (short *)((char *)umem[0]+pcpu->pc_umsize);
+        devptr = (short *)((char *)umem[0] + (qb->qb_memsize * NBPG));
         qvaddr = (struct qvdevice *)((u_int)devptr + ubdevreg(QVSSCSR));
         if( badaddr( qvaddr, sizeof(short) ) )
                 return(0);
         /*
          * Okay the device is there lets set it up
          */
-        qv_setup( qvaddr );
+        qv_setup(qvaddr, 0, 0);
 	v_console = qvputc;
         cdevsw[0] = cdevsw[QVSSMAJOR];
 	return(1);
@@ -1167,21 +1159,49 @@ qvcons_init()
 /*
  * Do the board specific setup
  */
-qv_setup( qvaddr )
+qv_setup(qvaddr, unit, probed)
 struct qvdevice *qvaddr;
+int unit;
+int probed;
 {
-        char *qvssmem;                  /* pointer to the display mem   */
-        int i;                          /* simple index                 */
+        caddr_t qvssmem;		/* pointer to the display mem   */
+        register i;			/* simple index                 */
 	register struct qv_info *qp;
+        register int *pte;
+        struct percpu *pcpu;            /* pointer to percpu structure  */
+	register struct qbus *qb;
 
-        qvssmem = (char *)
-                (( (u_int)(qvaddr->qv_csr & QV_MEM_BANK) <<7 ) + (u_int)umem[0]);
-        qv_scn = (struct qv_info *)
-                ((u_int)qvssmem + 251*1024);
+        /*
+         * find the percpu entry that matches this machine.
+         */
+        for( pcpu = percpu ; pcpu && pcpu->pc_cputype != cpu ; pcpu++ )
+                ;
+        if( pcpu == NULL )
+                return(0);
+
+        /*
+         * Found an entry for this cpu. Because this device is Microvax specific
+         * we assume that there is a single q-bus and don't have to worry about
+         * multiple adapters.
+         *
+         * Map the device memory.
+         */
+	qb = (struct qbus *)pcpu->pc_io->io_details;
+
+        i = (u_int)(qvaddr->qv_csr & QV_MEM_BANK) << 7;
+	ioaccess(qb->qb_maddr + i, QVmap[unit], 512 * NBPG);
+	qvssmem = qvmem[unit];
+        pte = (int *)(QVmap[unit]);
+        for (i=0; i < 512; i++, pte++)
+                *pte = (*pte & ~PG_PROT) | PG_UW | PG_V;
+
+        qv_scn = (struct qv_info *)((u_int)qvssmem + 251*1024);
 	qp = qv_scn;
         if( (qvaddr->qv_csr & QV_19INCH) && qv_def_scrn == 0)
                 qv_def_scrn = 1;
         *qv_scn = qv_scn_defaults[ qv_def_scrn ];
+	if (probed)
+		qp->qvaddr = qvaddr;
  	qp->bitmap = qvssmem;
         qp->scanmap = (short *)((u_int)qvssmem + 254*1024);
         qp->cursorbits = (short *)((u_int)qvssmem + 256*1024-32);
