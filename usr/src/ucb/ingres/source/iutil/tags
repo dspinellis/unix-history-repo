@@ -1,0 +1,104 @@
+acc_addbuf	acc_addbuf.c	/^acc_addbuf(bufs, cnt)$/
+acc_close	accbuf.c	/^acc_close()$/
+acc_err	page.c	/^acc_err(errnum)$/
+acc_init	acc_init.c	/^acc_init()$/
+add_ovflo	add_ovflo.c	/^add_ovflo(dx, tid)$/
+add_prim	add_prim.c	/^add_prim(d, tidx)$/
+addabyte	rhash.c	/^addabyte(ch, word, knt1)$/
+addbatch	batch.c	/^addbatch(oldtid, newtuple, oldtuple)$/
+batchname	batchxtra.c	/^batchname()$/
+beginhdr	printup.c	/^beginhdr()$/
+bndxsearch	bndxsearch.c	/^bndxsearch(d, tidx, tuple, mode, keyok, path)$/
+canonical	put_tuple.c	/^canonical(d, tuple)$/
+checkadmin	checkadmin.c	/^checkadmin(fd)$/
+choose_buf	accbuf.c	/^choose_buf(dx, pageid)$/
+cleanrel	cleanrel.c	/^cleanrel(d)$/
+clearkeys	setkey.c	/^clearkeys(d)$/
+closeall	markopen.c	/^closeall(tell, ovect)$/
+closebatch	batch.c	/^closebatch()$/
+closecatalog	closecat.c	/^closecatalog(really)$/
+closer	closer.c	/^closer(d)$/
+clr_tuple	clr_tuple.c	/^clr_tuple(desc, tuple)$/
+comp_tup	put_tuple.c	/^comp_tup(d, src)$/
+db_lock	initucode.c	/^db_lock(mode)$/
+del_tuple	del_tuple.c	/^del_tuple(tid, width)$/
+delete	delete.c	/^delete(dx, tidx)$/
+do_u_flag	do_u_flag.c	/^do_u_flag(u_flag)$/
+dumptid	utility.c	/^dumptid(tid)$/
+dup_check	scan_dups.c	/^dup_check(d, tid, tuple1)$/
+errfilen	errfilen.c	/^errfilen(digit)$/
+find	find.c	/^find(d, mode, lotid, hightid, key)$/
+find_page	findbest.c	/^find_page(dx, tid, need)$/
+findbest	findbest.c	/^findbest(dx, tidx, tuple, need, checkdups)$/
+flush_rel	accbuf.c	/^flush_rel(d, resetflag)$/
+flushbatch	writebatch.c	/^flushbatch()$/
+formatpg	formatpg.c	/^formatpg(d, n)$/
+fullkey	find.c	/^fullkey(des)$/
+get	get.c	/^get(d, tid, limtid, tuple, getnxt)$/
+get_addr	get_tuple.c	/^get_addr(tid)$/
+get_attuples	openr.c	/^get_attuples(d)$/
+get_page	page.c	/^get_page(d, tid)$/
+get_reltup	get_reltup.c	/^get_reltup(d, name)$/
+get_tuple	get_tuple.c	/^get_tuple(d, tid, tuple)$/
+getequal	getequal.c	/^getequal(d, key, tuple, tid)$/
+getint_tuple	get_tuple.c	/^getint_tuple(d, tid, tuple)$/
+getmode	paramd.c	/^getmode(spec)$/
+getnuser	getnuser.c	/^getnuser(name, buf)$/
+gettree	gettree.c	/^gettree(treerelid, treeowner, treetype, treeid, in/
+getuser	getuser.c	/^getuser(code, buf)$/
+icompare	compare.c	/^icompare(ax, bx, frmt, frml)$/
+ingresname	ingresname.c	/^ingresname(iname, id, outname)$/
+initdbpath	initucode.c	/^initdbpath(database, dbpath, follow)$/
+initucode	initucode.c	/^initucode(argc, argv, dbflag, paramlist, waitmode)/
+inpcloser	inpcloser.c	/^inpcloser(d)$/
+insert	insert.c	/^insert(d, tid, tuple, checkdups)$/
+invalid	get_tuple.c	/^invalid(tid)$/
+kcompare	compare.c	/^kcompare (dx, tuple, key)$/
+last_page	last_page.c	/^last_page(d, tid, buf)$/
+markopen	markopen.c	/^markopen(ovect)$/
+ndxsearch	ndxsearch.c	/^ndxsearch(d, tid, tuple, mode, keyok)$/
+newlino	newlino.c	/^newlino(len)$/
+noclose	noclose.c	/^noclose(d)$/
+null_fn	null_fn.c	/^null_fn()$/
+openbatch	batch.c	/^openbatch(rel_desc, index_desc, mode)$/
+opencatalog	opencat.c	/^opencatalog(name, mode)$/
+openr	openr.c	/^openr(d, mode, name)$/
+pageflush	page.c	/^pageflush(buf)$/
+paramd	paramd.c	/^paramd(d, ap)$/
+parami	paramd.c	/^parami(ip, param)$/
+pluck_page	utility.c	/^pluck_page(t, var)$/
+printatt	printup.c	/^printatt(type, length, value)$/
+printdesc	printdesc.c	/^printdesc(d)$/
+printeh	printup.c	/^printeh()$/
+printeol	printup.c	/^printeol()$/
+printfatt	printup.c	/^printfatt(width, value)$/
+printhdr	printup.c	/^printhdr(type, length, value)$/
+printup	printup.c	/^printup(d, tuple)$/
+put_tuple	put_tuple.c	/^put_tuple(tid, tuple, length)$/
+readadmin	readadmin.c	/^readadmin()$/
+relntrrd	gettree.c	/^relntrrd(dummyx, ptr, cnt, treerelid, treeowner, t/
+replace	replace.c	/^replace(d, tid, tuple, checkdups)	$/
+resetacc	accbuf.c	/^resetacc(buf)$/
+rhash	rhash.c	/^rhash(d, key)$/
+rmbatch	batchxtra.c	/^rmbatch()$/
+rubcatch	rub.c	/^rubcatch()$/
+ruboff	rub.c	/^ruboff(why)$/
+rubon	rub.c	/^rubon()$/
+scan_dups	scan_dups.c	/^scan_dups(d, tid, tuple)$/
+setcsl	cslocks.c	/^setcsl(rtid)$/
+setdbl	dblocks.c	/^setdbl(act, mod)$/
+setkey	setkey.c	/^setkey(d, key, value, dom)$/
+setpgl	pglocks.c	/^setpgl(buf)$/
+setrll	rllocks.c	/^setrll(act, rtid, mod)$/
+space_left	put_tuple.c	/^space_left(bp)$/
+stuff_page	utility.c	/^stuff_page(t, var)$/
+top_acc	accbuf.c	/^top_acc(buf)$/
+trim_relname	trim_relna.c	/^trim_relname(name)$/
+tup_len	tup_len.c	/^tup_len(tid)$/
+uncomp_tup	get_tuple.c	/^uncomp_tup(d, cp, tuple)$/
+unlall	pglocks.c	/^unlall()$/
+unlcs	cslocks.c	/^unlcs(rtid)$/
+unldb	dblocks.c	/^unldb()$/
+unlpg	pglocks.c	/^unlpg(buf)$/
+unlrl	rllocks.c	/^unlrl(rtid)$/
+wrbatch	writebatch.c	/^wrbatch(cp, count)$/
