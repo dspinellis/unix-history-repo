@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	6.2	84/07/26	*/
+/*	raw_usrreq.c	6.3	84/08/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -284,13 +284,18 @@ raw_usrreq(so, req, m, nam, rights)
 		soisdisconnected(so);
 		break;
 
+	case PRU_SENSE:
+		/*
+		 * stat: don't bother with a blocksize.
+		 */
+		return (0);
+
 	/*
 	 * Not supported.
 	 */
 	case PRU_CONTROL:
 	case PRU_RCVOOB:
 	case PRU_RCVD:
-	case PRU_SENSE:
 		return(EOPNOTSUPP);
 
 	case PRU_ACCEPT:
