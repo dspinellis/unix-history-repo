@@ -1,0 +1,70 @@
+	Preliminary Notes on Porting BFD
+	--------------------------------
+
+The 'host' is the system a tool runs *on*.
+The 'target' is the system a tool runs *for*, i.e.
+a tool can read/write the binaries of the target.
+
+Porting to a new host
+---------------------
+Pick a name for your host. Call that <host>.
+(<host> might be sun4, ...)
+Create a file hosts/h-<host>.
+
+Porting to a new target
+-----------------------
+Pick a name for your target. Call that <target>.
+You need to create <target>.c and config/mt-<target>.
+
+config/mt-<target> is a Makefile fragment.
+The following usually is enough:
+TDEFINES = -DDEFAULT_VECTOR=<target>_vec
+
+The file <target>.c is the hard part.  It implements the
+bfd_target <target>_vec, which includes pointers to
+functions that do the actual <target>-specific methods.
+
+Porting to a <target> that uses the a.out binary format
+-------------------------------------------------------
+
+In this case, the include file aout-target.h probaby does most
+of what you need. The program gen-aout generates <target>.c for
+you automatically for many a.out systems.  Do:
+	make gen-aout
+	./gen-aout <target> > <target>.c
+(This only works if you are building on the target ("native").
+If you must make a cross-portt from scratch, copy  the most
+similar existing file that include aout-target.h, and fix what is wrong.)
+
+Check the parameters in <target>.c, and fix anything that is wrong.
+(Also let us know about it; perhaps we can improve gen-aout.c.)
+
+TARGET_IS_BIG_ENDIAN_P
+	Should be defined if <target> is big-endian.
+
+N_HEADER_IN_TEXT(x)
+	See discussion in ../include/aout/aout32.h.
+
+BYTES_IN_WORD
+	Number of bytes per word. (Usually 4 but can be 8.)
+
+ARCH
+	Number of bits per word.  (Usually 32, but can be 64.)
+
+ENTRY_CAN_BE_ZERO
+	Define if the extry point (start address of an
+	executable program) can be 0x0.
+
+TEXT_START_ADDR
+	The address of the start of the text segemnt in
+	virtual memory.  Normally, the same as the entry point.
+
+PAGE_SIZE
+
+SEGMENT_SIZE
+	Usually, teh same as the PAGE_SIZE.
+	Alignmement needed for the data segment.
+
+TARGETNAME
+	The name of the target, for run-time lookups.
+	Usually "a.out-<target>"
