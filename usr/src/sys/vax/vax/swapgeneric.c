@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.5 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -74,6 +74,7 @@ setconf()
 
 	if (rootdev != NODEV)
 		goto doswap;
+	unit = 0;
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
 retry:
@@ -91,13 +92,11 @@ gotit:
 			printf("bad/missing unit number\n");
 			goto retry;
 		}
-		unit = 0;
 		while (*cp >= '0' && *cp <= '9')
 			unit = 10 * unit + *cp++ - '0';
 		if (*cp == '*')
 			swaponroot++;
 	}
-	unit = 0;
 	for (gc = genericconf; gc->gc_driver; gc++) {
 #if NMBA > 0
 		for (mi = mbdinit; mi->mi_driver; mi++) {
