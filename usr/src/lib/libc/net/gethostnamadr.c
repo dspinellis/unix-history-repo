@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.16 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -138,7 +138,11 @@ getanswer(msg, msglen, iquery)
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
+#ifdef BSD4_3
 	host.h_addr_list = h_addr_ptrs;
+#else
+	host.h_addr = h_addr_ptrs[0];
+#endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
 		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
@@ -329,7 +333,9 @@ again:
 		goto again;
 	*cp++ = '\0';
 	/* THIS STUFF IS INTERNET SPECIFIC */
+#ifdef BSD4_3
 	host.h_addr_list = host_addrs;
+#endif
 	host.h_addr = hostaddr;
 	*((u_long *)host.h_addr) = inet_addr(p);
 	host.h_length = sizeof (u_long);
