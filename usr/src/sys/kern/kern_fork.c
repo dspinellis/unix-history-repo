@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.39 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -128,15 +128,31 @@ again:
 	}
 
 
-	/* Link onto allproc (this should probably be delayed). */
+	/*
+	 * Link onto allproc (this should probably be delayed).
+	 * Heavy use of volatile here to prevent the compiler from
+	 * rearranging code.  Yes, it *is* terribly ugly, but at least
+	 * it works.
+	 */
 	nprocs++;
 	p2 = newproc;
-	p2->p_stat = SIDL;			/* protect against others */
-	p2->p_pid = nextpid;
-	p2->p_nxt = (struct proc *)allproc;
-	p2->p_nxt->p_prev = &p2->p_nxt;		/* allproc is never NULL */
-	p2->p_prev = (struct proc **)&allproc;
-	allproc = p2;
+#define	Vp2 ((volatile struct proc *)p2)
+	Vp2->p_stat = SIDL;			/* protect against others */
+	Vp2->p_pid = nextpid;
+	/*
+	 * This is really:
+	 *	p2->p_nxt = allproc;
+	 *	allproc->p_prev = &p2->p_nxt;
+	 *	p2->p_prev = &allproc;
+	 *	allproc = p2;
+	 * The assignment via allproc is legal since it is never NULL.
+	 */
+	*(volatile struct proc **)&Vp2->p_nxt = allproc;
+	*(volatile struct proc ***)&allproc->p_prev =
+	    (volatile struct proc **)&Vp2->p_nxt;
+	*(volatile struct proc ***)&Vp2->p_prev = &allproc;
+	allproc = Vp2;
+#undef Vp2
 	p2->p_link = NULL;			/* shouldn't be necessary */
 	p2->p_rlink = NULL;			/* shouldn't be necessary */
 
