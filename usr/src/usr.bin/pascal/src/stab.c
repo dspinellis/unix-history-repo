@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.2 %G%";
+static	char sccsid[] = "@(#)stab.c 1.3 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -14,13 +14,13 @@ static	char sccsid[] = "@(#)stab.c 1.2 %G%";
 #   include	"0.h"
 #   include	<stab.h>
 
-/*
- *  the file "p.a.out" has an additional symbol definition for "a.out.h"
- *	that is used by the separate compilation facility --
- *	eventually, "a.out.h" must be updated to include this 
- */
+    /*
+     *  additional symbol definition for <stab.h>
+     *	that is used by the separate compilation facility --
+     *	eventually, <stab.h> should be updated to include this 
+     */
 
-#   include	"p.a.out.h"
+#   include	"pstab.h"
 #   include	"pc.h"
 
     /*
@@ -44,9 +44,8 @@ stabvar( name , type , level , offset , length , line )
 	     *	for separate compilation
 	     */
 	if ( level == 1 ) {
-	    putprintf( "	.stabs	\"" , 1 );
-	    putprintf( NAMEFORMAT , 1 , name );
-	    putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGVAR , ABS( line ) );
+	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+			, name , N_PC , N_PGVAR , ABS( line ) );
     	}
 	    /*
 	     *	for sdb
@@ -153,13 +152,11 @@ stabfunc( name , class , line , level )
 	     */
 	if ( level == 1 ) {
 	    if ( class == FUNC ) {
-		putprintf( "	.stabs	\"" , 1 );
-		putprintf( NAMEFORMAT , 1 , name );
-		putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGFUN , ABS( line ) );
+		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+			    , name , N_PC , N_PGFUNC , ABS( line ) );
 	    } else if ( class == PROC ) {
-		putprintf( "	.stabs	\"" , 1 );
-		putprintf( NAMEFORMAT , 1 , name );
-		putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGPRC , ABS( line ) );
+		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+			    , name , N_PC , N_PGPROC , ABS( line ) );
 	    }
 	}
 	    /*
@@ -200,9 +197,8 @@ stabsource( filename )
 	    /*
 	     *	for separate compilation
 	     */
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , filename );
-	putprintf( "\",0x%x,0,0,0" , 0 , N_PSO );
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0" , 0 
+		    , filename , N_PC , N_PSO );
 	    /*
 	     *	for sdb
 	     */
@@ -228,9 +224,11 @@ stabinclude( filename )
     {
 	int	label;
 	
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , filename );
-	putprintf( "\",0x%x,0,0,0" , 0 , N_PSOL );
+	    /*
+	     *	for separate compilation
+	     */
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0" , 0 
+		    , filename , N_PC , N_PSOL );
 	    /*
 	     *	for sdb
 	     */
@@ -257,40 +255,37 @@ stabinclude( filename )
     /*
      *	global labels
      */
-stabglab( label , line )
+stabglabel( label , line )
     char	*label;
     int		line;
     {
 
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( PREFIXFORMAT , 1 , PLABELPREFIX , label );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGLAB , ABS( line ) );
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+		    , label , N_PC , N_PGLABEL , ABS( line ) );
     }
 
     /*
      *	global constants
      */
-stabcname( name , line )
-    char	*name;
+stabgconst( const , line )
+    char	*const;
     int		line;
     {
 
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGCON , ABS( line ) );
+	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+			, const , N_PC , N_PGCONST , ABS( line ) );
     }
 
     /*
      *	global types
      */
-stabtname( name , line )
-    char	*name;
+stabgtype( type , line )
+    char	*type;
     int		line;
     {
 
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_PGTYP , ABS( line ) );
+	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+			, type , N_PC , N_PGTYPE , ABS( line ) );
     }
 
 
@@ -305,15 +300,14 @@ stabefunc( name , class , line )
 	int	type;
 
 	if ( class == FUNC ) {
-	    type = N_PEFUN;
+	    type = N_PEFUNC;
 	} else if ( class == PROC ) {
-	    type = N_PEPRC;
+	    type = N_PEPROC;
 	} else {
 	    return;
 	}
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , type , ABS( line ) );
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+		    , name , N_PC , type , ABS( line ) );
     }
 
 #endif PC

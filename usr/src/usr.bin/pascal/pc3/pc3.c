@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.4 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.5 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -28,7 +28,7 @@ static	char sccsid[] = "@(#)pc3.c 1.4 %G%";
      *	is:
      *	
      *	   - the name of the symbol;
-     *	   - a type specifier;
+     *	   - a subtype descriptor;
      *	   - for file symbols, their last modify time;
      *	   - the file which logically contains the declaration of
      *	     the symbol (not an include file);
@@ -71,7 +71,7 @@ char	program[] = "pc";
 #include <stab.h>
 #include <pagsiz.h>
 #include <stat.h>
-#include "/usr/src/new/pc0/p.a.out.h"
+#include "/usr/src/new/pc0/pstab.h"
 #include "pc3.h"
 
 int	errors = 0;
@@ -253,48 +253,36 @@ checksymbol( nlp , ofilep )
 		fprintf( stderr , "[checksymbol] pfile %s ifile %s\n"
 			, pfilep -> name , ifilep -> name );
 	    }
-	    fprintf( stderr , "[checksymbol] ->name %s ->n_type %x (%s)\n"
-		    , nlp -> n_un.n_name , nlp -> n_type
-		    , classify( nlp -> n_type ) );
+	    fprintf( stderr , "[checksymbol] ->name %s ->n_desc %x (%s)\n"
+		    , nlp -> n_un.n_name , nlp -> n_desc
+		    , classify( nlp -> n_desc ) );
 #	endif DEBUG
-	switch ( nlp -> n_type ) {
-	    case N_PGLAB:
-	    case N_PGCON:
-	    case N_PGTYP:
-	    case N_PGVAR:
-	    case N_PGFUN:
-	    case N_PGPRC:
-	    case N_PEFUN:
-	    case N_PEPRC:
-	    case N_PSO:
-	    case N_PSOL:
-		    symbolp = entersymbol( nlp -> n_un.n_name );
-		    break;
-	    default:
-			/* don't care about the others */
-		    return;
+	if ( nlp -> n_type != N_PC ) {
+		/* don't care about the others */
+	    return;
 	}
+	symbolp = entersymbol( nlp -> n_un.n_name );
 	if ( symbolp -> lookup == NEW ) {
 #	    ifdef DEBUG
 		fprintf( stderr , "[checksymbol] ->name %s is NEW\n"
 			, symbolp -> name );
 #	    endif DEBUG
-	    symbolp -> type = nlp -> n_type;
-	    switch ( symbolp -> type ) {
-		case N_PGLAB:
-		case N_PGCON:
-		case N_PGTYP:
+	    symbolp -> desc = nlp -> n_desc;
+	    switch ( symbolp -> desc ) {
+		case N_PGLABEL:
+		case N_PGCONST:
+		case N_PGTYPE:
 		case N_PGVAR:
-		case N_PGFUN:
-		case N_PGPRC:
+		case N_PGFUNC:
+		case N_PGPROC:
 			symbolp -> sym_un.sym_str.rfilep = ifilep;
 			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
 			symbolp -> sym_un.sym_str.fromp = pfilep;
 			symbolp -> sym_un.sym_str.fromi = ifilep;
 			symbolp -> sym_un.sym_str.iline = nlp -> n_value;
 			return;
-		case N_PEFUN:
-		case N_PEPRC:
+		case N_PEFUNC:
+		case N_PEPROC:
 			symbolp -> sym_un.sym_str.rfilep = NIL;
 			symbolp -> sym_un.sym_str.rline = 0;
 			    /*
@@ -305,7 +293,7 @@ checksymbol( nlp , ofilep )
 			    error( WARNING
 				    , "%s, line %d: %s %s must be declared in included file"
 				    , pfilep -> name , nlp -> n_value
-				    , classify( symbolp -> type )
+				    , classify( symbolp -> desc )
 				    , symbolp -> name );
 			}
 			symbolp -> sym_un.sym_str.fromp = pfilep;
@@ -329,7 +317,7 @@ checksymbol( nlp , ofilep )
 		fprintf( stderr , "[checksymbol] ->name %s is OLD\n"
 			, symbolp -> name );
 #	    endif DEBUG
-	    switch ( symbolp -> type ) {
+	    switch ( symbolp -> desc ) {
 		case N_PSO:
 			    /*
 			     *	finding a file again means you are back
@@ -351,15 +339,15 @@ checksymbol( nlp , ofilep )
 				    , ofilep -> name , symbolp -> name );
 			}
 			return;
-		case N_PEFUN:
-		case N_PEPRC:
+		case N_PEFUNC:
+		case N_PEPROC:
 			    /*
 			     *	we may see any number of external declarations,
 			     *	but they all have to come
 			     *	from the same include file.
 			     */
-			if (   nlp -> n_type == N_PEFUN
-			    || nlp -> n_type == N_PEPRC ) {
+			if (   nlp -> n_desc == N_PEFUNC
+			    || nlp -> n_desc == N_PEPROC ) {
 			    goto included;
 			}
 			    /*
@@ -368,10 +356,10 @@ checksymbol( nlp , ofilep )
 			     *	if the resolving file
 			     *	included the external declaration.
 			     */
-			if (    (  symbolp -> type == N_PEFUN
-				&& nlp -> n_type != N_PGFUN )
-			    ||  (  symbolp -> type == N_PEPRC
-				&& nlp -> n_type != N_PGPRC )
+			if (    (  symbolp -> desc == N_PEFUNC
+				&& nlp -> n_desc != N_PGFUNC )
+			    ||  (  symbolp -> desc == N_PEPROC
+				&& nlp -> n_desc != N_PGPROC )
 			    || symbolp -> sym_un.sym_str.fromp != pfilep ) {
 			    break;
 			}
@@ -384,17 +372,17 @@ checksymbol( nlp , ofilep )
 			symbolp -> sym_un.sym_str.rfilep = ifilep;
 			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
 			return;
-		case N_PGFUN:
-		case N_PGPRC:
+		case N_PGFUNC:
+		case N_PGPROC:
 			    /*
 			     *	functions may not be seen more than once.
 			     *	the loader will complain about
 			     *	`multiply defined', but we can, too.
 			     */
 			break;
-		case N_PGLAB:
-		case N_PGCON:
-		case N_PGTYP:
+		case N_PGLABEL:
+		case N_PGCONST:
+		case N_PGTYPE:
 		case N_PGVAR:
 			    /*
 			     *	labels, constants, types, variables
@@ -404,7 +392,7 @@ checksymbol( nlp , ofilep )
 			     *	make it look like they come from this .p file.
 			     */
 included:
-			if (  nlp -> n_type != symbolp -> type
+			if (  nlp -> n_desc != symbolp -> desc
 			   || symbolp -> sym_un.sym_str.fromi != ifilep ) {
 			    break;
 			}
@@ -728,21 +716,21 @@ classify( type )
 		return "source file";
 	    case N_PSOL:
 		return "include file";
-	    case N_PGLAB:
+	    case N_PGLABEL:
 		return "label";
-	    case N_PGCON:
+	    case N_PGCONST:
 		return "constant";
-	    case N_PGTYP:
+	    case N_PGTYPE:
 		return "type";
 	    case N_PGVAR:
 		return "variable";
-	    case N_PGFUN:
+	    case N_PGFUNC:
 		return "function";
-	    case N_PGPRC:
+	    case N_PGPROC:
 		return "procedure";
-	    case N_PEFUN:
+	    case N_PEFUNC:
 		return "external function";
-	    case N_PEPRC:
+	    case N_PEPROC:
 		return "external procedure";
 	    default:
 		return "unknown symbol";
