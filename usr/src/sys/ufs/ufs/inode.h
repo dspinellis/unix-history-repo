@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.7 (Berkeley) %G%
+ *	@(#)inode.h	7.8 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -109,6 +109,7 @@ extern ino_t	dirpref();
 /*
  * Lock and unlock inodes.
  */
+#ifdef notdef
 #define	ILOCK(ip) { \
 	while ((ip)->i_flag & ILOCKED) { \
 		(ip)->i_flag |= IWANT; \
@@ -124,6 +125,10 @@ extern ino_t	dirpref();
 		wakeup((caddr_t)(ip)); \
 	} \
 }
+#else
+#define ILOCK(ip)	ilock(ip)
+#define IUNLOCK(ip)	iunlock(ip)
+#endif
 
 #define	IUPDAT(ip, t1, t2, waitfor) { \
 	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) \
