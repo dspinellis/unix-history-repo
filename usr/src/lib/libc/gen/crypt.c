@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.11.1.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -634,9 +634,7 @@ des_cipher(in, out, salt, num_iter)
 	}
 	else
 	{		/* decryption */
-		num_iter = -num_iter;
-		kp = &KS[KS_SIZE-1];
-		ks_inc  = -sizeof(*kp);
+		return (1); /* always fail */
 	}
 
 	while (--num_iter >= 0) {
