@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chsh.sh	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)chsh.sh	4.2 (Berkeley) %G%";
 /*
  * chsh
  */
@@ -42,6 +42,12 @@ char *argv[];
 		printf("Only /bin/oldcsh or /bin/csh may be specified\n");
 		exit(1);
 	}
+	if (argc == 3)
+		if (stat(argv[2]) < 0)
+		{
+			printf("%s is unavailable\n",argv[2]);
+			exit(1);
+		}
 	while((pwd=getpwent()) != NULL){
 		if(strcmp(pwd->pw_name,argv[1]) == 0){
 			u = getuid();
