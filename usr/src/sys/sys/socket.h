@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.16 (Berkeley) %G%
+ *	@(#)socket.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@
 #define	SO_USELOOPBACK	0x0040		/* bypass hardware when possible */
 #define	SO_LINGER	0x0080		/* linger on close if data present */
 #define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
+#define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
 
 /*
  * Additional options, not kept in so_options.
