@@ -1,4 +1,4 @@
-/*	machdep.c	4.56	82/06/26	*/
+/*	machdep.c	4.57	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -206,8 +206,8 @@ clkinit(base)
 	 * Have been told that VMS keeps time internally with base TODRZERO.
 	 * If this is correct, then this routine and VMS should maintain
 	 * the same date, and switching shouldn't be painful.
-	 * (Unfortunately, VMS keeps local time, so when you run UNIX
-	 * and VMS, VMS runs on GMT...).
+	 * We must correct for the fact that VMS keeps local time
+	 * while UNIX wants GMT.
 	 */
 	if (todr < TODRZERO) {
 		printf("WARNING: todr too small");
@@ -226,10 +226,12 @@ clkinit(base)
 	 * seconds in the current year takes us to the end of the current year
 	 * and then around into the next year to the same position.
 	 */
-	for (time = (todr-TODRZERO)/100; time < base-SECYR/2; time += SECYR) {
+	time = (todr-TODRZERO)/100 + timezone*60;
+	while (time < base-SECYR/2) {
 		if (LEAPYEAR(year))
 			time += SECDAY;
 		year++;
+		time += SECYR;
 	}
 
 	/*
@@ -258,7 +260,7 @@ clkset()
 {
 	int year = YRREF;
 	unsigned secyr;
-	unsigned yrtime = time;
+	unsigned yrtime = time - timezone*60;
 
 	/*
 	 * Whittle the time down to an offset in the current year,
