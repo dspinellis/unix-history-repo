@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.5	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -30,7 +36,7 @@ y.tab.c: config.y
 clean: FRC
 	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config core
 
-depend: y.tab.c lex.yy.c y.tab.h FRC
+depend: y.tab.h ${SRCS} FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
@@ -49,8 +55,9 @@ FRC:
 
 y.tab.o: y.tab.c config.h /usr/include/sys/types.h /usr/include/ctype.h
 y.tab.o: /usr/include/stdio.h
-main.o: main.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h config.h
-main.o: /usr/include/sys/types.h
+main.o: main.c /usr/include/sys/types.h /usr/include/sys/stat.h
+main.o: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
+main.o: y.tab.h config.h /usr/include/sys/types.h
 lex.yy.o: lex.yy.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h config.h
 lex.yy.o: /usr/include/sys/types.h
 mkioconf.o: mkioconf.c /usr/include/stdio.h y.tab.h config.h
