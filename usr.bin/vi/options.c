@@ -626,6 +626,7 @@ opts_dump(sp, type)
 	} else
 		numrows = 1;
 
+if (s_num > 0) {
 	for (row = 0; row < numrows;) {
 		for (base = row, col = 0; col < numcols; ++col) {
 			cnt = opts_print(sp,
@@ -638,6 +639,7 @@ opts_dump(sp, type)
 		if (++row < numrows || b_num)
 			(void)ex_printf(EXCOOKIE, "\n");
 	}
+}
 
 	for (row = 0; row < b_num;) {
 		(void)opts_print(sp, &optlist[b_op[row]], &sp->opts[b_op[row]]);
