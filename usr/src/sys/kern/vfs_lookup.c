@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	8.4 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,12 +292,12 @@ dirloop:
 	 * e.g. like "/." or ".".
 	 */
 	if (cnp->cn_nameptr[0] == '\0') {
-		if (cnp->cn_nameiop != LOOKUP) {
-			error = EISDIR;
-			goto bad;
-		}
 		if (dp->v_type != VDIR) {
 			error = ENOTDIR;
+			goto bad;
+		}
+		if (cnp->cn_nameiop != LOOKUP) {
+			error = EISDIR;
 			goto bad;
 		}
 		if (wantparent) {
