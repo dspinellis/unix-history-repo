@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tar.c	4.13 (Berkeley) 82/12/19";
+static	char *sccsid = "@(#)tar.c	4.14 (Berkeley) 83/01/05";
 
 /*
  * Tape Archival Program
@@ -80,6 +80,7 @@ char	magtape[] = "/dev/rmt8";
 char	*malloc();
 char	*sprintf();
 char	*strcat();
+char	*getcwd();
 char	*getwd();
 
 main(argc, argv)
@@ -272,7 +273,7 @@ dorep(argv)
 		}
 	}
 
-	(void) getwd(wdir);
+	(void) getcwd(wdir);
 	while (*argv && ! term) {
 		cp2 = *argv;
 		if (!strcmp(cp2, "-C") && argv[1]) {
@@ -280,7 +281,7 @@ dorep(argv)
 			if (chdir(*argv) < 0)
 				perror(*argv);
 			else
-				(void) getwd(wdir);
+				(void) getcwd(wdir);
 			argv++;
 			continue;
 		}
@@ -294,7 +295,7 @@ dorep(argv)
 				perror(*argv);
 				continue;
 			}
-			parent = getwd(tempdir);
+			parent = getcwd(tempdir);
 			*cp2 = '/';
 			cp2++;
 		}
@@ -1050,4 +1051,16 @@ bread(fd, buf, size)
 		buf += lastread;
 	}
 	return (count);
+}
+
+char *
+getcwd(buf)
+	char *buf;
+{
+
+	if (getwd(buf) == NULL) {
+		fprintf(stderr, "tar: %s\n", buf);
+		exit(1);
+	}
+	return (buf);
 }
