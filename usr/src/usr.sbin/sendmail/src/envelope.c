@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -668,9 +668,11 @@ setsender(from, e, delimptr, internal)
 			**  Process passwd file entry.
 			*/
 
-
 			/* extract home directory */
-			e->e_from.q_home = newstr(pw->pw_dir);
+			if (strcmp(pw->pw_dir, "/") == 0)
+				e->e_from.q_home = newstr("");
+			else
+				e->e_from.q_home = newstr(pw->pw_dir);
 			define('z', e->e_from.q_home, e);
 
 			/* extract user and group id */
@@ -696,7 +698,11 @@ setsender(from, e, delimptr, internal)
 	else if (!internal && OpMode != MD_DAEMON)
 	{
 		if (e->e_from.q_home == NULL)
+		{
 			e->e_from.q_home = getenv("HOME");
+			if (strcmp(e->e_from.q_home, "/") == 0)
+				e->e_from.q_home++;
+		}
 		e->e_from.q_uid = RealUid;
 		e->e_from.q_gid = RealGid;
 		e->e_from.q_flags |= QGOODUID;

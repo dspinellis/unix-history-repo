@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -496,7 +496,10 @@ recipient(a, sendq, e)
 				(void) strcpy(buf, pw->pw_name);
 				goto trylocaluser;
 			}
-			a->q_home = newstr(pw->pw_dir);
+			if (strcmp(pw->pw_dir, "/") == 0)
+				a->q_home = "";
+			else
+				a->q_home = newstr(pw->pw_dir);
 			a->q_uid = pw->pw_uid;
 			a->q_gid = pw->pw_gid;
 			a->q_ruser = newstr(pw->pw_name);
