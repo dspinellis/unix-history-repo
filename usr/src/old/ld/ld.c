@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 4.6 %G%";
+static	char sccsid[] = "@(#)ld.c 4.7 %G%";
 
 /*
  * ld - string table version for VAX
@@ -514,7 +514,7 @@ delexit()
 	 */
 	fstat(biofd, &stbuf);
 	size = round(stbuf.st_size, BLKSIZE);
-	if (size > stbuf.st_size) {
+	if (!rflag && size > stbuf.st_size) {
 		lseek(biofd, size - 1, 0);
 		write(biofd, &c, 1);
 	}
