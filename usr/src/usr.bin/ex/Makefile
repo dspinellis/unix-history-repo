@@ -1,4 +1,4 @@
-#	Makefile	7.8	83/07/09
+#	Makefile	7.9	84/04/17
 VERSION=3.7
 #
 # Ex skeletal makefile for VAX VM/Unix 4.2BSD
@@ -76,8 +76,8 @@ tags:	/tmp
 
 ${OBJS}: ${HDRS}
 
-# ex_vars.h:
-# 	csh makeoptions ${CFLAGS}
+ex_vars.h:
+	csh makeoptions ${CFLAGS}
 
 bcopy.o:	bcopy.c
 	${CC} -c ${CFLAGS} bcopy.c
