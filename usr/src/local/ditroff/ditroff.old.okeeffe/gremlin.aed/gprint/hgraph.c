@@ -1,5 +1,4 @@
-/* hgraph.c-
- *
+/*	hgraph.c	1.3	83/03/30
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -9,7 +8,6 @@
  */
 
 #include "gprint.h"
-#include "grem2.h"
 #include <vfont.h>
 
 
@@ -39,18 +37,9 @@ extern int    linethickness;
 extern int    linmod;
 extern int    lastx;
 extern int    lasty;
-extern double    topx;
-extern double    topy;
-extern double    botx;
-extern double    boty;
-extern int    centx;
-extern int    centy;
-extern double    delx;
-extern double    dely;
-extern double    del;
+extern double    orgx;
+extern double    orgy;
 extern int DevRange;
-extern char device;
-
 
 
 line(x0, y0, x1, y1)
