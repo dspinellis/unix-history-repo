@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.8 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c22.c	1.9 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -600,6 +600,7 @@ register struct node *p;
 	} else if (p1->op==TST && equstr(regs[RT1],ccloc+1) &&
 			equtype(ccloc[0],p1->subop)) {
 		p1=insertl(p1->forw); decref(p->ref); p->ref=p1; 
+		p->labno=p1->labno;
 		nrtst++; nchange++;
 	}
 }
