@@ -1,4 +1,4 @@
-/*	machdep.c	4.46	81/11/20	*/
+/*	machdep.c	4.47	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,7 +115,7 @@ startup(firstaddr)
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
-	valloc(mbmap, struct map, nmbpages/2);
+	valloc(mbmap, struct map, nmbclusters/4);
 	/*
 	 * Now allocate space for core map
 	 */
@@ -157,7 +157,7 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
-	rminit(mbmap, nmbpages-1, 1, "mbpages", nmbpages/2);
+	rminit(mbmap, nmbclusters-1, 1, "mbclusters", nmbclusters/4);
 
 	/*
 	 * Configure the system.
@@ -493,6 +493,7 @@ boot(paniced, arghowto)
 	register int devtype;		/* r10 == major of root dev */
 
 #ifdef lint
+	howto = 0; devtype = 0;
 	printf("howto %d, devtype %d\n", howto, devtype);
 #endif
 	howto = arghowto;

@@ -1,4 +1,4 @@
-/*	Locore.c	4.15	81/11/20	*/
+/*	Locore.c	4.16	81/11/29	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -75,7 +75,8 @@ lowinit()
 	softclock((caddr_t)0, 0);
 	trap(0, 0, (unsigned)0, 0, 0);
 	syscall(0, 0, (unsigned)0, 0, 0);
-	netintr();
+	ipintr();
+	rawintr();
 
 	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
 		return;		/* use value */
@@ -123,8 +124,8 @@ struct	pte CMAP2;
 char	CADDR2[NBPG];
 struct	pte mmap[1];
 char	vmmap[NBPG];
-struct	pte Mbmap[NMBPAGES];
-struct	mbuf mbutl[NMBPAGES*NMBPG];
+struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
+struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
 struct	pte camap[32];

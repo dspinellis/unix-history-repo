@@ -1,4 +1,4 @@
-/*	locore.s	4.57	81/11/26	*/
+/*	locore.s	4.58	81/11/29	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -175,6 +175,11 @@ SCBVEC(ipintr):
 	calls $0,_ipintr
 	POPR
 	rei
+SCBVEC(rawintr):
+	PUSHR
+	calls $0,_rawintr
+	POPR
+	rei
 #endif
 #if defined(VAX750) || defined(VAX7ZZ)
 SCBVEC(consdin):
@@ -348,7 +353,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
 	SYSMAP(ecamap	,calimit	,0		)
-	SYSMAP(Mbmap	,mbutl		,NMBPAGES*CLSIZE)
+	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE)
 
 eSysmap:
 	.globl	_Syssize
