@@ -9,10 +9,8 @@
  *
  * from: $Hdr: bitmapif.c,v 4.300 91/06/09 06:14:40 root Rel41 $ SONY
  *
- *	@(#)bitmapif.c	7.2 (Berkeley) %G%
+ *	@(#)bitmapif.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include <sys/param.h>
@@ -38,13 +36,8 @@ extern int tmode;
 extern char *ext_fnt_addr[];
 extern char *ext_fnt24_addr[];
 #else /* CPU_SINGLE */
-#ifdef IPC_MRX
 extern char **ext_fnt_addr;
 extern char **ext_fnt24_addr;
-#else
-char **ext_fnt_addr = 0;
-char **ext_fnt24_addr = 0;
-#endif
 #define lock_bitmap()
 #define unlock_bitmap()
 #endif /* CPU_SINGLE */

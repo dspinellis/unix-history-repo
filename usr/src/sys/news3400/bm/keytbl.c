@@ -9,10 +9,8 @@
  *
  * from: $Hdr: keytbl.c,v 4.300 91/06/09 06:14:54 root Rel41 $ SONY
  *
- *	@(#)keytbl.c	7.2 (Berkeley) %G%
+ *	@(#)keytbl.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include <news3400/iop/keyboard.h>
 

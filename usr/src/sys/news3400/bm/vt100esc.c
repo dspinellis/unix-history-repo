@@ -9,14 +9,12 @@
  *
  * from: $Hdr: vt100esc.c,v 4.300 91/06/09 06:14:59 root Rel41 $ SONY
  *
- *	@(#)vt100esc.c	7.4 (Berkeley) %G%
+ *	@(#)vt100esc.c	7.5 (Berkeley) %G%
  */
 
 /*
  *  vt100 escape sequence handler
  */
-
-#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include "../../h/param.h"

@@ -9,13 +9,12 @@
  *
  * from: $Hdr: cons.c,v 4.300 91/06/09 06:34:41 root Rel41 $ SONY
  *
- *	@(#)bmcons.c	7.4 (Berkeley) %G%
+ *	@(#)bmcons.c	7.5 (Berkeley) %G%
  */
 
 /*
  * console driver
  */
-#include <machine/fix_machine_type.h>
 #include <sys/param.h>
 #include <machine/pte.h>
 #include <sys/conf.h>
