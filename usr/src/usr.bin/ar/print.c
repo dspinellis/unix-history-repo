@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,18 +33,24 @@ print(argv)
 	CF cf;
 	register int afd, all;
 	int eval;
+	char *file;
 
 	afd = open_archive(O_RDONLY);
 
 	/* Read from an archive, write to stdout; pad on read. */
 	SETCF(afd, archive, STDOUT_FILENO, "stdout", RPAD);
 	for (all = !*argv; get_header(afd);) {
-		if (!all && !files(argv)) {
-			skipobj(afd);
-			continue;
+		if (all)
+			file = chdr.name;
+		else {
+			file = *argv;
+			if (!files(argv)) {
+				skipobj(afd);
+				continue;
+			}
 		}
 		if (options & AR_V) {
-			(void)printf("\n<%s>\n\n", chdr.name);
+			(void)printf("\n<%s>\n\n", file);
 			(void)fflush(stdout);
 		}
 		copyfile(&cf, chdr.size);

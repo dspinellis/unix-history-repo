@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,10 +36,11 @@ extern char *tname;                     /* temporary file "name" */
 move(argv)
 	char **argv;
 {
-	extern char *posname;		/* positioning file name */
+	extern char *posarg, *posname;	/* positioning file names */
 	CF cf;
 	off_t size, tsize;
 	int afd, curfd, eval, mods, tfd1, tfd2, tfd3;
+	char *file;
 
 	afd = open_archive(O_RDWR);
 	mods = options & (AR_A|AR_B);
@@ -59,9 +60,9 @@ move(argv)
 	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, 0, tname, RPAD|WPAD);
 	for (curfd = tfd1; get_header(afd);) {	
-		if (*argv && files(argv)) {
+		if ((file = *argv) && files(argv)) {
 			if (options & AR_V)
-				(void)printf("m - %s\n", chdr.name);
+				(void)printf("m - %s\n", file);
 			cf.wfd = tfd2;
 			put_object(&cf, (struct stat *)NULL);
 			continue;
@@ -82,7 +83,7 @@ move(argv)
 
 	if (mods) {
 		(void)fprintf(stderr, "ar: %s: archive member not found.\n",
-		    posname);
+		    posarg);
 		close_archive(afd);
 		return(1);
 	}
