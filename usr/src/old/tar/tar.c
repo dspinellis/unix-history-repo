@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,9 @@ static char sccsid[] = "@(#)tar.c	5.17 (Berkeley) %G%";
 #define TBLOCK	512
 #define NBLOCK	20
 #define NAMSIZ	100
+
+#define ARGV 0
+#define PUTFILE 1
 
 #define	writetape(b)	writetbuf(b, 1)
 #define	min(a,b)  ((a) < (b) ? (a) : (b))
@@ -83,6 +86,7 @@ int	oflag;
 int	pflag;
 int	wflag;
 int	hflag;
+int     Hflag;
 int	Bflag;
 int	Fflag;
 
@@ -129,6 +133,9 @@ main(argc, argv)
 	for (cp = *argv++; *cp; cp++) 
 		switch(*cp) {
 
+		case 'H':
+			Hflag++;
+			break;
 		case 'f':
 			if (*argv == 0) {
 				fprintf(stderr,
@@ -380,7 +387,7 @@ dorep(argv)
 			*cp2 = '/';
 			cp2++;
 		}
-		putfile(*argv++, cp2, parent);
+		putfile(*argv++, cp2, parent, ARGV);
 		if (chdir(wdir) < 0)
 			fprintf(stderr, "tar: cannot change back?: %s: %s\n",
 			    wdir, strerror(errno));
@@ -455,7 +462,7 @@ passtape()
 		(void) readtbuf(&bufp, TBLOCK);
 }
 
-putfile(longname, shortname, parent)
+putfile(longname, shortname, parent, source)
 	char *longname;
 	char *shortname;
 	char *parent;
@@ -473,10 +480,11 @@ putfile(longname, shortname, parent)
 	int	maxread;
 	int	hint;		/* amount to write to get "in sync" */
 
-	if (!hflag)
-		i = lstat(shortname, &stbuf);
-	else
+	if (hflag || (Hflag && source == ARGV))
 		i = stat(shortname, &stbuf);
+	else
+		i = lstat(shortname, &stbuf);
+
 	if (i < 0) {
 		fprintf(stderr, "tar: %s: %s\n", longname, strerror(errno));
 		return;
@@ -529,7 +537,7 @@ putfile(longname, shortname, parent)
 			strcpy(cp, dp->d_name);
 			l = telldir(dirp);
 			closedir(dirp);
-			putfile(buf, cp, newparent);
+			putfile(buf, cp, newparent, PUTFILE);
 			dirp = opendir(".");
 			seekdir(dirp, l);
 		}

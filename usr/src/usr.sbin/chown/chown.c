@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,10 +41,12 @@ main(argc, argv)
 	register char *cp;
 	int ch;
 	int fts_options;
-
+	int hflag, Hflag;
+	
 	myname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
 	ischown = myname[2] == 'o';
-
+	
+	hflag = Hflag = 0;
 	fts_options = FTS_NOSTAT | FTS_PHYSICAL;
 	while ((ch = getopt(argc, argv, "HRfh")) != EOF)
 		switch((char)ch) {
@@ -55,10 +57,12 @@ main(argc, argv)
 			fflag = 1;
 			break;
 		case 'h':
+			hflag = 1;
 			fts_options &= ~FTS_PHYSICAL;
 			fts_options |= FTS_LOGICAL;
 			break;
 		case 'H':
+			Hflag = 1;
 			fts_options |= FTS_COMFOLLOW;
 			break;
 		case '?':
@@ -100,6 +104,9 @@ main(argc, argv)
 			else
 				fts_set(ftsp, p, FTS_SKIP);
 		}
+		if (p->fts_info == FTS_SL &&
+		    !(hflag || (Hflag && p->fts_level == FTS_ROOTLEVEL)))
+			continue;
 		if (p->fts_info == FTS_ERR) {
 			error(p->fts_path);
 			continue;
@@ -198,7 +205,7 @@ error(name)
 
 usage()
 {
-	(void)fprintf(stderr, "usage: %s [-Rf] %s file ...\n", myname,
+	(void)fprintf(stderr, "usage: %s [-HRfh] %s file ...\n", myname,
 	    ischown ? "[owner][:group]" : "group");
 	exit(1);
 }
