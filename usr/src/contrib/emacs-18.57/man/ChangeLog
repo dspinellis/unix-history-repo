@@ -1,0 +1,38 @@
+Thu Jan 24 12:41:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* texinfo.tex: Delete spurious character at beginning.
+
+Tue Aug 16 13:09:12 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* emacs.tex:  Corrected two typos.  No other changes before
+	Version 19 will be made.
+
+	* vip.texinfo: Removed menu entry Adding Lisp Code in node
+	Customization since the menu entry did not point to anything.
+	Also added an @finalout command to remove overfull hboxes from the
+	printed output.
+
+	* cl.texinfo:  Added @bye, \input line and @settitle to file.
+	This file is clearly intended to be a chapter of some other work,
+	but the other work does not yet exist.
+
+Mon Jul 25 17:47:38 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* texinfo.texinfo: Three typos corrected.
+
+Mon Jul 11 18:02:29 1988  Chris Hanson  (cph at kleph)
+
+	* texindex.c (indexify): when comparing to initial strings to
+	decide whether to change the header, must use `strncmp' to avoid
+	comparing entire strings of which initials are a substring.
+
+Sun Jun 26 18:46:16 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* texindex.c (sort_in_core, sort_offline, parsefile):
+	Give up on input file if any line doesn't start with backslash.
+
+Mon May 23 10:41:35 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
+
+	* emacs.tex: Update information for obtaining TeX distribution from the
+	University of Washington.
+
