@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)inetd.c	5.30 (Berkeley) 6/3/91";*/
-static char rcsid[] = "$Id: inetd.c,v 1.5 1993/12/30 18:06:21 jkh Exp $";
+static char rcsid[] = "$Id: inetd.c,v 1.6 1994/01/14 12:26:19 jkh Exp $";
 #endif /* not lint */
 
 /*
@@ -110,7 +110,7 @@ static char rcsid[] = "$Id: inetd.c,v 1.5 1993/12/30 18:06:21 jkh Exp $";
 #include <rpc/rpc.h>
 #include "pathnames.h"
 
-#define	TOOMANY		40		/* don't start more than TOOMANY */
+#define	TOOMANY		256		/* don't start more than TOOMANY */
 #define	CNT_INTVL	60		/* servers in CNT_INTVL sec. */
 #define	RETRYTIME	(60*10)		/* retry after bind or server fail */
 
@@ -359,6 +359,11 @@ main(int argc, char **argv, char **envp)
 						timingout = 1;
 						alarm(RETRYTIME);
 					}
+					/*
+					 * DON'T fork!
+					 */
+					sigsetmask(0L);
+					continue;
 				}
 			    }
 			    pid = fork();
