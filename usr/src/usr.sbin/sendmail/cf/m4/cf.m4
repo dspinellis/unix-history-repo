@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.5 (Berkeley) %G%
+#	@(#)cf.m4	2.6 (Berkeley) %G%
 #
 
 
@@ -39,8 +39,10 @@ define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')
 define(`SITECONFIG',
-`ifelse($2, -, `dnl', `CONCAT(D, $3, $2)')
-define(`SITE', CONCAT(C, $3, DOL(1)))dnl
+`CONCAT(D, $3, $2)
+define(`SITE', `ifelse(CONCAT($'2`, $3), SU,
+		CONCAT(CY, $'1`),
+		CONCAT(C, $3, $'1`))')
 sinclude(../siteconfig/$1.m4)')
 define(`LOCAL_NAME', `PUSHDIVERT(5)CL$1
 POPDIVERT`'dnl')
