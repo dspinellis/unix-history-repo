@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)deroff.c	4.4	(Berkeley)	83/04/29";
+static char sccsid[] = "@(#)deroff.c	4.5	(Berkeley)	84/12/18";
 #endif not lint
 
 #include <stdio.h>
@@ -719,19 +719,12 @@ msputwords(macline)
 		for(p = p1 ; (i=chars[*p]) != SPECIAL ; ++p)
 			if(i == LETTER) ++nlet;
 
-		if (   (macline && nlet > 1)
-		    || (!macline && nlet > 2 
-				 && chars[p1[0]] == LETTER
-				 && chars[p1[1]] == LETTER) )
-		{
+		if (nlet > 1 && chars[p1[0]] == LETTER) {
 			/*
 			 *	delete trailing ampersands and apostrophes
 			 */
-			while(  (p[-1]=='\'')
-			     || (p[-1]=='&')
-			     || (chars[p[-1]] == PUNCT) ){
+			while( (i=chars[p[-1]]) == PUNCT || i == APOS )
 				--p;
-			}
 			while(p1 < p)
 				putchar(*p1++);
 			putchar('\n');
