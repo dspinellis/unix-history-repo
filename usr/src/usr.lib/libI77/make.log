@@ -1,0 +1,54 @@
+Fri May 21 16:31:09 PDT 1982
+make
+cc -O -c dfe.c
+ld -r -x dfe.o
+mv a.out dfe.o
+cc -O -c due.c
+ld -r -x due.o
+mv a.out due.o
+cc -O -c iio.c
+ld -r -x iio.o
+mv a.out iio.o
+cc -O -c sue.c
+ld -r -x sue.o
+mv a.out sue.o
+cc -O -c sfe.c
+ld -r -x sfe.o
+mv a.out sfe.o
+cc -O -c lread.c
+"lread.c", line 147: warning: illegal pointer combination
+ld -r -x lread.o
+mv a.out lread.o
+cc -O -c lwrite.c
+"lwrite.c", line 86: warning: illegal pointer combination
+ld -r -x lwrite.o
+mv a.out lwrite.o
+cc -O -c dofio.c
+ld -r -x dofio.o
+mv a.out dofio.o
+cc -O -c douio.c
+ld -r -x douio.o
+mv a.out douio.o
+cc -O -c dolio.c
+ld -r -x dolio.o
+mv a.out dolio.o
+cc -O -c rdfmt.c
+ld -r -x rdfmt.o
+mv a.out rdfmt.o
+cc -O -c wrtfmt.c
+ld -r -x wrtfmt.o
+mv a.out wrtfmt.o
+cc -O -c fmt.c
+Fatal error in /lib/ccom
+*** Error code 8
+
+Stop.
+done
+Fri May 21 16:37:05 PDT 1982
+make
+cc -O -c fmt.c
+Fatal error in /lib/ccom
+*** Error code 8
+
+Stop.
+done

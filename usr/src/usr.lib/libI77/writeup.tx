@@ -1,0 +1,422 @@
+.ND
+.nr ll 7.0i
+.nr LL 7.0i
+.po 0.0i
+.rm PT
+.rm BT
+.LP
+.TL
+Introduction to the f77 I/O Library
+ September 1980
+.PP
+The fortran-77 I/O library, libI77.a,
+includes routines to perform all of the standard types of
+FORTRAN input and output.
+Several enhancements and extensions to FORTRAN I/O have been added.
+The f77 library routines use the C stdio library routines to provide
+efficient buffering for file I/O.
+.PP
+Some general concepts regarding f77 I/O deserve clarification. There are three
+forms of I/O:
+.B formatted,
+.B unformatted,
+and
+.B list-directed.
+The last is
+related to formatted but does not obey all the rules for formatted I/O.
+There are two modes of access to
+.B external
+and
+.B internal
+files:
+.B direct
+and
+.B sequential.
+The definition of a logical record depends upon the
+combination of I/O form and mode specified by the fortran I/O statement.
+.PP
+A logical record in a
+.B direct
+access
+.B external
+file is a string of bytes
+of a length specified when the file is opened.
+Read and write statements must not specify logical records longer than
+the original record size definition. Shorter logical records are allowed.
+.I Unformatted
+direct writes leave the unfilled part of the record undefined.
+.I Formatted
+direct writes cause the unfilled record to be padded with blanks.
+.PP
+Logical records in
+.B sequentially
+accessed
+.B external
+files may be of arbitrary
+and variable length.
+Logical record length for
+.I unformatted
+sequential files is determined by
+the size of items in the iolist.
+For
+.I formatted
+write statements, logical record length is determined by
+the format statement interacting with the iolist at execution time.
+Formatted sequential access causes one or more logical records
+ending with 'newline' characters to be read or written.
+.PP
+Logical record length for
+.B list-directed
+I/O is relatively meaningless.
+On output, the record length is dependent on the magnitude of the
+data items.
+On input, the record length is determined by the data types and the file
+contents.
+.PP
+The logical record length for an
+.B internal
+read or write is the length of the
+character variable or array element. Thus a simple character variable
+is a single logical record. A character variable array is similar to
+a fixed length direct access file, and obeys the same rules.
+.I Unformatted
+I/O is not allowed on "internal" files.
+.PP
+Note that each execution of a fortran unformatted I/O statement causes a single
+logical record to be read or written. Each execution of a fortran formatted
+I/O statement causes one or more logical records to be read or written.
+.PP
+Any error detected during I/O processing will cause the program to abort
+unless alternate action has been provided for specifically in the program.
+Any I/O statement may include an err= clause (and iostat= clause)
+to specify an
+alternate branch to be taken on errors (and return the specific error code).
+Read statements may include end= to branch on end-of-file.
+File position and the value of I/O list items is undefined following an error.
+
+I. Implementation details.
+.PP
+The maximum number of logical units that a program may have open at one
+time has been set to correspond with the UNIX system limit, currently 20.
+However, the I/O library uses UNIX file access for internal purposes.
+Therefore fatal errors are possible if the maximum number of files are open.
+Specifically, 'close' or 'endfile' on an old file,
+and "'inquire' by file" may fail.
+.PP
+Vertical format control is implemented. The logical unit must be opened
+for sequential access and "form = 'print'" (see below).
+Control codes '0' and '1' are replaced in the output file
+with '\\n' and '\\f' respectively.
+The control character '+' isn't implemented and, like
+any other character in the first position of a record
+written to a "print" file, is dropped.
+No vertical format control is recognized for direct formatted output
+or list directed output.
+.PP
+By default, logical units 0, 5, and 6
+are opened to ``stderr'', ``stdin'', and ``stdout'' respectively.
+However they can be re-defined with an 'open' statement.
+To preserve error reporting, it is an error to close logical unit 0.
+If you want to open the default filename for any preconnected logical unit,
+remember to 'close' the unit first.
+Redefining the standard units may impair normal console I/O.
+An alternative is to
+use shell re-direction to externally re-define the above units.
+To re-define default blank control or format of the standard input or output
+files, use the 'open' statement specifying the unit number and no
+filename (see below).
+.PP
+An 'open' statement need not specify a filename. If it refers to a logical
+unit that is already open, the "blank= " and "form= " specifiers may be
+redefined without affecting the current file position.
+Otherwise, if "status='scratch'" is specified, a temporary file with a
+name of the form 'tmp.FXXXXXX' will be opened,
+and, by default, will be deleted when closed or during
+termination of program execution.
+Any other "status= " specifier without an associated filename results in
+opening a file named 'fort.N' where N is the specified logical unit number.
+It is an error to try to open an existing file with "status='new'".
+It is an error to try to open a nonexistent file with "status='old'".
+By default "status='unknown'" will be assumed, and a file will be created
+if necessary.
+Existing files are never truncated on opening but are positioned
+at the end-of-file.
+.PP
+Sequentially accessed external files are truncated to the current file
+position on 'close', 'backspace', or 'rewind' only if the last
+access to the file was a write.
+.PP
+Upper as well as lower case characters are recognized in format statements
+and all alphabetic arguments to the I/O library routines.
+This has always been true for statements that are
+part of the source code, but not for format statements
+or character arguments from a file.
+.PP
+If the external representation of a datum
+is too large for the field width specified, the specified
+field is filled with asterisks (*).
+On 'Ew.dEe' output, the e field will be filled with asterisks if the
+exponent representation is too large.
+(This will only happen if e==0)
+.PP
+List-directed output of complex values now includes an appropriate comma.
+List-directed output now distinguishes between real*4 and real*8 values
+and formats them differently.
+Output of a character string that includes '\\n' now works correctly.
+.PP
+If I/O errors are not trapped by the user's program an appropriate
+error message will be written to 'stderr' before aborting.
+An error number will be printed in [ ] along with a brief error message
+showing the logical unit and I/O state.
+Error numbers < 100 refer to UNIX errors, and are described in the
+introduction to chapter 2 of the UNIX Programmer's Manual.
+Error numbers >= 100 come from the I/O library, and are described
+further in the appendix to this writeup.
+For internal I/O, part of the string will be printed with '|' at the
+current position in the string.
+For external I/O, part of the current record will be displayed if
+the error was caused during reading from a file that can backspace.
+.PP
+Direct access list-directed I/O is not allowed.
+Unformatted internal I/O is not allowed.
+Both the above will be caught by the compiler.
+All other flavors of I/O are allowed, although some are not part of the ANSI
+standard.
+.PP
+The standard units, 0, 5, and 6, are now named internally 'stderr', 'stdin',
+and 'stdout' respectively.
+These are not actual filenames and can not be used for opening these units.
+\'inquire' will not return these names and will indicate
+that the above units are not named unless they have been opened to real files.
+The names are meant to make error reporting more meaningful.
+.PP
+On output, a real value that is truly zero will display as '0.' to
+distinguish it from a very small non-zero value.
+This occurs in 'F', 'E', 'D', and 'G' format conversions.
+.PP
+Non-destructive tabbing is implemented for both internal and external
+formatted I/O.
+Tabbing left or right on output
+does not affect previously written portions of a record.
+Tabbing right on output
+causes unwritten portions of a record to be filled with blanks.
+Tabbing left or right off the end of a logical record is an error.
+The format specifier 'T' must be followed by a positive non-zero number.
+If it is not, it will have a different meaning (See below).
+Note that spacing with 'X' always writes blanks in the output record.
+
+II. Non-"ANSI Standard" Extensions
+.PP
+B is an acceptable edit control specifier. It causes return to the
+default mode of blank interpretation (NULL) and is identical to BN.
+This is consistent with S which returns to default sign control.
+.PP
+P by itself is equivalent to 0P. It resets the scale factor to the
+default value, 0.
+.PP
+The form of the 'Ew.dEe' format specifier has been extended to 'D' also.
+The form 'Ew.d.e' is allowed but is not standard.
+The 'e' field specifies the minimum number of digits or spaces in the
+exponent field on output.
+If the value of the exponent is too large, the exponent notation 'e'
+or 'd' will be dropped from the output to allow one
+more character position.
+If this is still not adequate, the 'e' field will be filled with
+asterisks (*). The default value for 'e' is 2.
+.PP
+An additional form of tab control specification has been added.
+The ANSI standard forms 'TRn', 'TLn', and 'Tn' are supported where n is
+a positive non-zero number. If 'T' or 'nT' is specified, tabbing will
+be to the next (or n-th) 8-column tab stop.
+Thus columns of alphanumerics can be lined up without counting.
+(See above for a description of the tabbing implementation.)
+.PP
+A format control specifier has been added to suppress the newline
+at the end of the last record of a formatted sequential write. The
+specifier is a dollar sign ($). It is constrained by the same rules
+as the colon (:). It is used typically for console prompts.
+For example:
+
+.DS
+write (*, "('enter value for x: ',$)")
+read (*,*) x
+.DE
+.PP
+Radices other than 10 can be specified for formatted integer I/O
+conversion. The specifier is patterned after P, the pre-scale factor for
+floating point conversion. It remains in effect until another radix is
+specified or format interpretation is complete. The specifier is defined
+as [n]R where 2 <= n <= 36. If n is omitted,
+the default decimal radix is restored.
+.PP
+In conjunction with the above, a sign control specifier has been added
+to cause integer values to be interpreted as unsigned during output
+conversion. The specifier is SU and remains in effect until another
+sign control specifier is encountered, or format interpretation is
+complete. Radix and 'unsigned' specifiers could be used to format
+a hexadecimal dump, as follows:
+
+.DS
+2000	format( SU, 16R, 8I10.8)
+.DE
+
+Note: Unsigned integer values greater than (2**30 - 1),
+i.e. any signed negative value, can not be read by FORTRAN input routines.
+All internal values will be output correctly.
+.PP
+The ANSI standard is ambiguous regarding the definition of a "print" file.
+Since UNIX has no default "print" file, an additional 'form' specifier
+is now recognized in the 'open' statement.
+Specifying "form='print'" implies 'formatted' and enables vertical format
+control for that logical unit (see above).
+Vertical format control is interpreted only on sequential formatted writes
+to a "print" file.
+.PP
+The 'inquire' statement will return 'print' in the 'FORM=' string variable
+for logical units opened as "print" files.
+It will return -1 for the unit number of an unconnected file.
+.PP
+If a logical unit is already open, an 'open' statement including the
+'form=' option or the 'blank=' option will do nothing but
+re-define those options.
+This instance of the 'open' statement need not include the filename, and
+must not include a filename if 'unit=' refers to the standard input or outputs.
+Therefore, to re-define the standard output as a "print" file, use:
+
+.DS
+open (unit=6, form='print')
+.DE
+.PP
+In a 'close' statement, "status='keep'" may be specified for temporary files.
+This is the default for all other files.
+Remember to get the file's real name,
+using 'inquire', if you want to re-open it later.
+.PP
+List directed read has been modified to allow input of a string not enclosed
+in quotes. The string must not start with a digit, and can not contain a
+separator (, or /) or blank (space or tab). A newline will terminate the
+string unless escaped with \\. Any string not meeting the above restrictions
+must be enclosed in quotes (" or ').
+.PP
+Internal list-directed I/O has been implemented. During internal list reads,
+bytes are consummed until the iolist is satisfied, or the 'end-of-file'
+is reached.
+During internal list writes, records are filled until the iolist is satisfied.
+The length of an internal array element should be at least 20 bytes to
+avoid logical record overflow when writing double precision values.
+Internal list read was implemented to make command line decoding easier.
+Internal list write should be avoided.
+.bp
+.ce 2
+Appendix A
+I/O Library Error Messages
+.PP
+The following error messages are generated by the I/O library.
+The error numbers are returned in the "iostat=" variable if the "err="
+return is taken. Error numbers < 100 are generated by UNIX. See the
+UNIX Programmers Manual, introduction to chapter 2.
+.DS
+/* 100 */	"error in format"
+		See error message output for the location
+		of the error in the format. Can be caused
+		by more than 10 levels of nested (), or
+		an extremely long format statement.
+
+/* 101 */	"illegal unit number"
+		It is illegal to close logical unit 0.
+		Negative unit numbers are not allowed.
+		The upper limit is system dependent.
+
+/* 102 */	"formatted io not allowed"
+		The logical unit was opened for
+		unformatted I/O.
+
+/* 103 */	"unformatted io not allowed"
+		The logical unit was opened for
+		formatted I/O.
+
+/* 104 */	"direct io not allowed"
+		The logical unit was opened for sequential
+		access, or the logical record length was
+		specified as 0.
+
+/* 105 */	"sequential io not allowed"
+		The logical unit was opened for direct
+		access I/O.
+
+/* 106 */	"can't backspace file"
+		The file associated with the logical unit
+		can't seek. May be a device or a pipe.
+
+/* 107 */	"off beginning of record"
+		The format specified a left tab off the
+		beginning of the record.
+
+/* 108 */	"can't stat file"
+		The system can't return status information
+		about the file. Perhaps the directory is
+		unreadable.
+
+/* 109 */	"no * after repeat count"
+		Repeat counts in list-directed I/O must be
+		followed by an * with no blank spaces.
+
+.DE
+.DS
+/* 110 */	"off end of record"
+		A formatted write tried to go beyond the
+		logical end-of-record. An unformatted read
+		or write will also cause this.
+
+/* 111 */	"truncation failed"
+		The truncation of external sequential files
+		on 'close', 'backspace', or 'rewind' tries
+		to do a copy. It failed. Perhaps the temp
+		file couldn't be created.
+
+/* 112 */	"incomprehensible list input"
+		List input has to be just right.
+
+/* 113 */	"out of free space"
+		The library dynamically creates buffers for
+		internal use. You ran out of memory for this.
+		Your program is too big!
+
+/* 114 */	"unit not connected"
+		The logical unit was not open.
+
+/* 115 */	"read unexpected character"
+		Certain format conversions can't tolerate
+		non-numeric data. Logical data must be
+		T or F.
+
+/* 116 */	"blank logical input field"
+
+/* 117 */	"'new' file exists"
+		You tried to open an existing file with
+		"status='new'".
+
+/* 118 */	"can't find 'old' file"
+		You tried to open a non-existent file
+		with "status='old'".
+
+/* 119 */	"unknown system error"
+		Shouldn't happen, but .....
+		(Send me a documented example.)
+
+/* 120 */	"requires seek ability"
+		Direct access requires seek ability.
+		Sequential unformatted I/O requires seek
+		ability on the file due to the special
+		data structure required. Tabbing left
+		also requires seek ability.
+
+/* 121 */	"illegal argument"
+		Certain arguments to 'open', etc. will be
+		checked for legitimacy. Often only non-
+		default forms are looked for.
+
+/* 122 */	"negative repeat count"
+		The repeat count for list directed input
+		must be a positive integer.
+.DE
