@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.17 1994/04/23 11:30:18 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.18 1994/04/23 11:35:22 jkh Exp $
 
 
 Table of Contents
@@ -773,6 +773,7 @@ ACKNOWLEDGMENTS:
 Gary Clark II           - Our head FreeBSD FAQ maintenance man
 Jordan Hubbard          - Janitorial services (I don't do windows)
 Garrett Wollman         - Networking and formatting
+Robert Oliver, Jr.      - Ideas and dumb questions (That made me think)
 Ollivier Robert         - Invaluable feedback and contributions
 The FreeBSD Team        - Kvetching, moaning, submitting data
 
