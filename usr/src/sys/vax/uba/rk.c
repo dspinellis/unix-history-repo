@@ -1,4 +1,4 @@
-/*	rk.c	4.36	81/07/25	*/
+/*	rk.c	4.37	81/11/18	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -118,6 +118,7 @@ rkprobe(reg)
 
 #ifdef lint	
 	br = 0; cvec = br; br = cvec;
+	rkintr(0);
 #endif
 	((struct rkdevice *)reg)->rkcs1 = RK_CDT|RK_IE|RK_CRDY;
 	DELAY(10);

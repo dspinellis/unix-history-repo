@@ -1,4 +1,4 @@
-/*	ts.c	4.19	81/07/09	*/
+/*	ts.c	4.20	81/11/18	*/
 
 #include "ts.h"
 #include "te.h"
@@ -126,19 +126,16 @@ tsprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	tsintr(0);
 #endif
-	/****************/
-	/*		*/
-	/*  K L U D G E */
-	/*		*/
-	/****************/
 
+	/*
+	 * Too hard to make it interrupt; don't try.
+	 */
 #if NTM > 0
 	if (havetm)
 		return (0);
 #endif
-	/* IT'S TOO HARD TO MAKE THIS THING INTERRUPT
-	   JUST TO FIND ITS VECTOR */
 	cvec = 0224;
 	br = 0x15;
 	return (1);

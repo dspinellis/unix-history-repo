@@ -1,4 +1,4 @@
-/*	lp.c	4.20	81/07/25	*/
+/*	lp.c	4.21	81/11/18	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -83,6 +83,7 @@ lpprobe(reg)
 	register struct lpdevice *lpaddr = (struct lpdevice *)reg;
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	lpintr(0);
 #endif
 
 	lpaddr->lpsr = IENABLE;

@@ -1,4 +1,4 @@
-/*	tm.c	4.43	81/11/10	*/
+/*	tm.c	4.44	81/11/18	*/
 
 #include "te.h"
 #include "ts.h"
@@ -135,6 +135,7 @@ tmprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	tmintr(0);
 #endif
 	((struct device *)reg)->tmcs = TM_IE;
 	/*

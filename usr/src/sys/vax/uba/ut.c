@@ -1,4 +1,4 @@
-/*	ut.c	4.8	81/11/13	*/
+/*	ut.c	4.9	81/11/18	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -75,18 +75,20 @@ struct	tj_softc {
 #define	SERASE		5	/* erase inter-record gap */
 #define	SERASED		6	/* erased inter-record gap */
 
+/*ARGSUSED*/
 utprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;
 #ifdef lint
 	br=0; cvec=br; br=cvec;
+	utintr(0);
 #endif
+#if 0
 	/*
 	 * It appears the controller won't interrupt unless the
 	 * slave is off-line...this is as bad as the TS-11.
 	 */
-#ifdef notdef
 	((struct utdevice *) reg)->utcs1 = UT_IE|UT_NOP|UT_GO;
 	DELAY(10000);
 	((struct utdevice *) reg)->utcs1 = UT_CLEAR|UT_GO;
@@ -823,10 +825,10 @@ utdump()
 		return (ENXIO);
 	ui = phys(tjdinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
-	ubainit();
+	ubainit(up);
 	DELAY(1000000);
-	utwait(addr);
 	addr = (struct utdevice *)ui->ui_physaddr;
+	utwait(addr);
 	/*
 	 * Be sure to set the appropriate density here.  We use
 	 * 6250, but maybe it should be done at 1600 to insure the

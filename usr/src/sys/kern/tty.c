@@ -1,4 +1,4 @@
-/*	tty.c	4.13	81/10/11	*/
+/*	tty.c	4.14	81/11/18	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -481,7 +481,7 @@ ttselect(dev, flag)
 		nread = ttnread(tp);
 		if (nread > 0)
 			return (1);
-		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)select)
+		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= RCOLL;
 		else
 			tp->t_rsel = u.u_procp;
