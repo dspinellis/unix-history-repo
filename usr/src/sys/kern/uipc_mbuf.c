@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -398,8 +398,8 @@ m_adj(mp, req_len)
 		}
 		if (m->m_len >= len) {
 			m->m_len -= len;
-			if ((mp = m)->m_flags & M_PKTHDR)
-				m->m_pkthdr.len -= len;
+			if (mp->m_flags & M_PKTHDR)
+				mp->m_pkthdr.len -= len;
 			return;
 		}
 		count -= len;
