@@ -11,37 +11,40 @@ echo ""
 echo "Removing scratch and junk files:"
 if [ -d /tmp ]; then
 	cd /tmp && {
-	find . -type f -atime +3 -exec rm -f {} \;
-	find . ! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
+	find . -type f -atime +3 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
 fi
 
 if [ -d /var/tmp ]; then
 	cd /var/tmp && {
-	find .	! -name . -atime +7 -exec rm -f {} \;
-	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
+	find . ! -name . -atime +7 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
 fi
 
 if [ -d /scratch ]; then
 	cd /scratch && {
-	find .	! -name . -atime +1 -exec rm -f {} \;
-	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
+	find . ! -name . -atime +1 -exec rm -f -- {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
+	    >/dev/null 2>&1; }
 fi
 
 if [ -d /var/preserve ]; then
 	cd /var/preserve && {
-	find .	! -name . -mtime +7 -exec rm -f {} \; ; }
+	find . ! -name . -mtime +7 -exec rm -f -- {} \; ; }
 fi
 
 if [ -d /var/rwho ] ; then
 	cd /var/rwho && {
-	find .	! -name . -mtime +7 -exec rm -f {} \; ; }
+	find . ! -name . -mtime +7 -exec rm -f -- {} \; ; }
 fi
 
 cd /tmp
-find /  ! -fstype local -a -prune -o \
+find / ! -fstype local -a -prune -o \
 	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
-		-a -atime +3 -exec rm -f {} \;
+		-a -atime +3 -exec rm -f -- {} \;
 msgs -c
 if [ -f /etc/news.expire ]; then
 	/etc/news.expire
@@ -139,7 +142,7 @@ fsck -n | grep -v '^\*\* Phase'
 echo ""
 if [ -f /etc/Distfile ]; then
 	echo "Running rdist:"
-	rdist -f /etc/Distfile 
+	rdist -f /etc/Distfile
 fi
 
 sh /etc/security | mail -s "daily insecurity output" root
