@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fgetln.3	5.4 (Berkeley) %G%
+.\"     @(#)fgetln.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FGETLINE 3
@@ -21,14 +21,18 @@ The
 function
 returns a pointer to the next line from the stream referenced by
 .Fa stream .
-The newline character at the end of the line is replaced by a
-.Dv NUL .
-.Pp
-If
+This line is
+.Em not
+a C string as it does not end with a terminating
+.Dv NUL
+character.
+The length of the line, including the final newline,
+is stored in the memory location to which
 .Fa len
-is non-NULL, the length of the line, not counting the terminating
-.Dv NUL ,
-is stored in the memory location it references.
+points.
+(Note, however, that if the line is the last
+in a file that does not end in a newline,
+the returned text will not contain a newline.)
 .Sh RETURN VALUES
 Upon successful completion a pointer is returned;
 this pointer becomes invalid after the next
@@ -60,8 +64,7 @@ cleared with
 .Xr clearerr 3 .
 .Pp
 The text to which the returned pointer points may be modified,
-provided that no changes are made beyond the terminating
-.Dv NUL .
+provided that no changes are made beyond the returned size.
 These changes are lost as soon as the pointer becomes invalid.
 .Sh ERRORS
 .Bl -tag -width [EBADF]
@@ -93,6 +96,3 @@ The
 .Fn fgetline
 function is
 .Ud .
-.Sh BUGS
-It is not possible to tell whether the final line of an input file
-was terminated with a newline.
