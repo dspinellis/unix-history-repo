@@ -103,7 +103,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	1.10	%G%";
+static char SccsId[] = "@(#)conf.c	2.1	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
