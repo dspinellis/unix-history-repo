@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.9	%G%
+#	@(#)makefile	1.10	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -36,10 +36,13 @@ $(LIB):	$(OBJECTS) Version
 	@chmod 664 $(LIB)
 	@echo "" > /dev/tty
 
-install:
+install:	$(LIB) libI66.a
 	@mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
+	chmod 644 $(LIBDIR)/$(LIB)
+	@mv libI66.a $(LIBDIR)
+	@chmod 644 $(LIBDIR)/libI66.a
 
 backspace.o:	fio.h backspace.c
 dfe.o:		fio.h dfe.c
@@ -115,3 +118,6 @@ order:
 tags:	$(SOURCES)
 	@ctags $(SOURCES)
 
+libI66.a:	yes_66.o
+	@rm -f libI66.a
+	@cp yes_66.o libI66.a
