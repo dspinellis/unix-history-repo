@@ -6,11 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -18,7 +17,7 @@ static char sccsid[] = "@(#)radixsort.c	5.1 (Berkeley) %G%";
 #define	NCHARS	(UCHAR_MAX + 1)
 
 /*
- * shellsort (diminishing increment sort) from Data Structures and
+ * Shellsort (diminishing increment sort) from Data Structures and
  * Algorithms, Aho, Hopcraft and Ullman, 1983 Edition, page 290;
  * see also Knuth Vol. 3, page 84.  The increments are selected from
  * formula (8), page 95.  Roughly O(N^3/2).
@@ -52,36 +51,41 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
 }
 
 /*
- * stack points to context structures.  Each structure defines a
- * scheduled partitioning.  Radixsort exits when the stack is empty.
+ * Stackp points to context structures, where each structure schedules a
+ * partitioning.  Radixsort exits when the stack is empty.
  *
- * The stack size is data dependent, and guessing is probably not
- * worthwhile.  The initial stack fits in 1K with four bytes left over
- * for malloc.  The initial size is exported, as the best value is
- * data, and possibly, system, dependent.
+ * If the buckets are placed on the stack randomly, the worst case is when:
+ *
+ *	(nbuckets - 1) contain (npartitions + 1) elements, with the last
+ *	bucket containing (nelements - ((npartitions + 1) * (nbuckets - 1))
+ *	keys.
+ *
+ * In this case, stack growth is bounded by:
+ *
+ *	(nelements / (npartitions + 1)) - 1
+ *
+ * Therefore, we force the largest bucket to be pushed on the stack first.
+ * Then the worst case is when:
+ *
+ * 	(nbuckets - 2) buckets contain (npartitions + 1) elements, with
+ *	the remaining elements split equally between the first bucket
+ *	pushed and the last bucket pushed.
+ *
+ * In this case, stack growth is bounded when:
+ *	
+ *	for (partition_cnt = 0; nelements > npartitions; ++partition_cnt) 
+ *		nelements =
+ *		    (nelements - (npartitions + 1) * (nbuckets - 2)) / 2;
+ * The bound is:
+ *
+ *	limit = partition_cnt * (nbuckets - 1);
  */
 typedef struct _stack {
 	u_char **bot;
 	int indx, nmemb;
 } CONTEXT;
 
-int __radix_stacksize = (1024 - 4) / sizeof(CONTEXT);
 #define	STACKPUSH { \
-	if (stackp == estack) { \
-		t1 = stackp - stack; \
-		stackp = stack; \
-		if (!(stack = (CONTEXT *)realloc((char *)stack, \
-		    (__radix_stacksize *= 2) * sizeof(CONTEXT)))) { \
-			t1 = errno; \
-			free((char *)l2); \
-			if (stackp) \
-				free((char *)stackp); \
-			errno = t1; \
-			return(-1); \
-		} \
-		stackp = stack + t1; \
-		estack = stack + __radix_stacksize; \
-	} \
 	stackp->bot = p; \
 	stackp->nmemb = nmemb; \
 	stackp->indx = indx; \
@@ -99,15 +103,16 @@ int __radix_stacksize = (1024 - 4) / sizeof(CONTEXT);
 
 /*
  * A variant of MSD radix sorting; see Knuth Vol. 3, page 177, and 5.2.5,
- * Ex. 10 and 12.  Also, "Three Partition Refinement Algorithms, Paige and
- * Tarjan, SIAM J. Comput. Vol. 16, No. 6, December 1987.
+ * Ex. 10 and 12.  Also, "Three Partition Refinement Algorithms, Paige
+ * and Tarjan, SIAM J. Comput. Vol. 16, No. 6, December 1987.
  *
- * This uses a simple sort as soon as a bucket crosses a cutoff point, rather
- * than sorting the entire list after partitioning is finished.
+ * This uses a simple sort as soon as a bucket crosses a cutoff point,
+ * rather than sorting the entire list after partitioning is finished.
+ * This should be an advantage.
  *
- * This is pure MSD instead of LSD of some number of MSD, switching to the
- * simple sort as soon as possible.  Takes linear time relative to the number
- * of bytes in the strings.
+ * This is pure MSD instead of LSD of some number of MSD, switching to
+ * the simple sort as soon as possible.  Takes linear time relative to
+ * the number of bytes in the strings.
  */
 radixsort(l1, nmemb, tab, endbyte)
 	u_char **l1, *tab, endbyte;
@@ -115,15 +120,32 @@ radixsort(l1, nmemb, tab, endbyte)
 {
 	register int i, indx, t1, t2;
 	register u_char **l2, **p, **bot, *tr;
-	CONTEXT *estack, *stack, *stackp;
-	int c[NCHARS + 1];
+	CONTEXT *stack, *stackp;
+	int c[NCHARS + 1], max;
 	u_char ltab[NCHARS];
 
 	if (nmemb <= 1)
 		return(0);
 
+	/* 
+	 * T1 is the constant part of the equation, the number of elements
+	 * represented on the stack between the top and bottom entries.
+	 * Don't round as the divide by 2 rounds down (correct for value
+	 * being subtracted).  The nelem value has to be rounded up before
+	 * each divide because we want an upper bound.
+	 */	
+	t1 = ((__rspartition + 1) * (UCHAR_MAX - 2)) >> 1;
+	for (i = 0, t2 = nmemb; t2 > __rspartition; i += UCHAR_MAX - 1) 
+		t2 = (++t2 >> 1) - t1;
+	if (i) {
+		if (!(stack = stackp =
+		    (CONTEXT *)malloc(i * sizeof(CONTEXT)))) 
+			return(-1);
+	} else
+		stack = stackp = NULL;
+
 	/*
-	 * there are two arrays, one provided by the user (l1), and the
+	 * There are two arrays, one provided by the user (l1), and the
 	 * temporary one (l2).  The data is sorted to the temporary stack,
 	 * and then copied back.  The speedup of using index to determine
 	 * which stack the data is on and simply swapping stacks back and
@@ -133,11 +155,8 @@ radixsort(l1, nmemb, tab, endbyte)
 	if (!(l2 = (u_char **)malloc(sizeof(u_char *) * nmemb)))
 		return(-1);
 
-	/* initialize stack */
-	stack = stackp = estack = NULL;
-
 	/*
-	 * tr references a table of sort weights; multiple entries may
+	 * Tr references a table of sort weights; multiple entries may
 	 * map to the same weight; EOS char must have the lowest weight.
 	 */
 	if (tab)
@@ -151,35 +170,41 @@ radixsort(l1, nmemb, tab, endbyte)
 			tr[t1] = t1;
 	}
 
-	/* first sort is entire stack */
+	/* First sort is entire stack */
 	bot = l1;
 	indx = 0;
 
 	for (;;) {
-		/* clear bucket count array */
+		/* Clear bucket count array */
 		bzero((char *)c, sizeof(c));
 
 		/*
-		 * compute number of items that sort to the same bucket
+		 * Compute number of items that sort to the same bucket
 		 * for this index.
 		 */
 		for (p = bot, i = nmemb; i--;)
 			++c[tr[(*p++)[indx]]];
 
 		/*
-		 * sum the number of characters into c, dividing the temp
+		 * Sum the number of characters into c, dividing the temp
 		 * stack into the right number of buckets for this bucket,
 		 * this index.  C contains the cumulative total of keys
 		 * before and included in this bucket, and will later be
 		 * used as an index to the bucket.  c[NCHARS] contains
 		 * the total number of elements, for determining how many
-		 * elements the last bucket contains.
+		 * elements the last bucket contains.  At the same time
+		 * find the largest bucket so it gets handled first.
 		 */
-		for (i = 1; i <= NCHARS; ++i)
-			c[i] += c[i - 1];
+		for (i = 1, t2 = -1; i <= NCHARS; ++i) {
+			if ((t1 = c[i - 1]) > t2) {
+				t2 = t1;
+				max = i;
+			}
+			c[i] += t1;
+		}
 
 		/*
-		 * partition the elements into buckets; c decrements
+		 * Partition the elements into buckets; c decrements
 		 * through the bucket, and ends up pointing to the
 		 * first element of the bucket.
 		 */
@@ -188,15 +213,15 @@ radixsort(l1, nmemb, tab, endbyte)
 			l2[--c[tr[(*p)[indx]]]] = *p;
 		}
 
-		/* copy the partitioned elements back to user stack */
+		/* Copy the partitioned elements back to user stack */
 		bcopy(l2, bot, nmemb * sizeof(u_char *));
 
 		++indx;
 		/*
-		 * sort buckets as necessary; don't sort c[0], it's the
+		 * Sort buckets as necessary; don't sort c[0], it's the
 		 * EOS character bucket, and nothing can follow EOS.
 		 */
-		for (i = NCHARS - 1; i; i--) {
+		for (i = max; i; --i) {
 			if ((nmemb = c[i + 1] - (t1 = c[i])) < 2)
 				continue;
 			p = bot + t1;
@@ -205,14 +230,20 @@ radixsort(l1, nmemb, tab, endbyte)
 			else
 				SHELLSORT
 		}
-		/* break out when stack is empty */
+		for (i = max + 1; i < NCHARS; ++i) {
+			if ((nmemb = c[i + 1] - (t1 = c[i])) < 2)
+				continue;
+			p = bot + t1;
+			if (nmemb > __rspartition)
+				STACKPUSH
+			else
+				SHELLSORT
+		}
+		/* Break out when stack is empty */
 		STACKPOP
 	}
 
 	free((char *)l2);
 	free((char *)stack);
-#ifdef STATS
-	(void)fprintf(stderr, "max stack %u.\n", __radix_stacksize);
-#endif
 	return(0);
 }
