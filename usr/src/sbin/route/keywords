@@ -1,23 +1,35 @@
-#	@(#)keywords	5.2 (Berkeley) %G%
+#	@(#)keywords	5.3 (Berkeley) %G%
 
 add
 change
+cloning
 delete
 destination
+expire
 flush
 gateway
 genmask
 get
 host
+hopcount
 iface
+interface
 ifaddr
 inet
 iso
 link
 lock
+lockrest
 mask
 monitor
+mtu
 net
 netmask
 osi
+recvpipe
+rtt
+rttvar
+sendpipe
+ssthresh
 xns
+xresolve
