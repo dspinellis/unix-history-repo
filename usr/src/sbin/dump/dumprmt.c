@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumprmt.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.9 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mtio.h>
@@ -61,8 +61,9 @@ rmtgetconn()
 		name = pw->pw_name;
 	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, "/etc/rmt", 0);
 	size = ntrec * TP_BSIZE;
-	if (setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
-		fprintf(stderr, "rdump: Warning: setsockopt buffer size failed.\n");
+	while (size > TP_BSIZE &&
+	    setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
+		size -= TP_BSIZE;
 }
 
 rmtopen(tape, mode)
