@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.25 (Berkeley) %G%
+#	@(#)security	5.26 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -212,10 +212,13 @@ if grep -w uudecode /etc/aliases; then
 	printf "\nThere is an entry for uudecode in the /etc/aliases file.\n"
 fi
 
-# There should be no plus signs in /etc/hosts.equiv.
-if egrep '\+|^$' /etc/hosts.equiv > /dev/null ; then
-	printf "\nEmpty line or + in /etc/hosts.equiv file.\n"
-fi
+# Files that should not have + signs or empty lines.
+list="/etc/hosts.equiv /etc/hosts.lpd"
+for f in $list ; do
+	if egrep '\+|^$' $f > /dev/null ; then
+		printf "\nEmpty line or + in $f file.\n"
+	fi
+done
 
 # Check for special users with .rhosts files.  Only root and toor should
 # have a .rhosts files.  Also, .rhosts files should not have blank lines
