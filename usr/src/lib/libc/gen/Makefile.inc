@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.25 (Berkeley) %G%
+#	@(#)Makefile.inc	5.26 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -98,8 +98,10 @@ MLINKS+=tcsetattr.3 tcgetattr.3 tcsetattr.3 cfsetospeed.3 \
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
 MLINKS+=tzset.3 tzsetwall.3
 
+.if (${MACHINE} == "mips" || ${MACHINE} == "tahoe" || ${MACHINE} == "vax")
 errlst.o errlst.po:
 	${CC} -S ${CFLAGS} ${.IMPSRC}
 	ed - < ${.CURDIR}/${MACHINE}/:errfix errlst.s
 	${AS} -o ${.TARGET} errlst.s
 	rm -f errlst.s
+.endif
