@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.3	83/06/02	*/
+/*	kern_exit.c	4.4	83/06/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -79,7 +79,7 @@ exit(rv)
 		u.u_ofile[i] = NULL;
 		po = u.u_pofile[i];
 		u.u_pofile[i] = 0;
-		closef(f, po);
+		closef(f);
 	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);

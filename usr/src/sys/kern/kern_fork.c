@@ -1,4 +1,4 @@
-/*	kern_fork.c	4.2	83/06/02	*/
+/*	kern_fork.c	4.3	83/06/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -188,10 +188,6 @@ retry:
 		if (fp == NULL)
 			continue;
 		fp->f_count++;
-		if (u.u_pofile[n]&UF_SHLOCK)
-			((struct inode *)fp->f_data)->i_shlockc++;
-		if (u.u_pofile[n]&UF_EXLOCK)
-			((struct inode *)fp->f_data)->i_exlockc++;
 	}
 	u.u_cdir->i_count++;
 	if (u.u_rdir)
