@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saioctl.h	7.4 (Berkeley) %G%
+ *	@(#)saioctl.h	7.5 (Berkeley) %G%
  */
 
 /* ioctl's -- for disks just now */
