@@ -113,6 +113,18 @@ distribution) for more details.
   in the sockets emulation.  (Errno 22 is EINVAL "Invalid Argument"
   on all the systems I have available, including Solaris 2.x.)
 
+* Sending user deletion not done properly in :include: lists.
+
+  If you don't have the "m" (me too) option set, then a person
+  sending to a list that contains themselves should not get a copy
+  of the message.  However, if that list points to a :include: file
+  that has one address per line, this will break, and the sender
+  will always get a copy of their own message, just as though the
+  "m" option were set.
+
+  You can eliminate this by adding commas at the end of each line
+  of the :include: file.
+
 
 +-------------------------------------------+
 | THE FOLLOWING PROBLEMS ARE FIXED IN 8.6.5 |
@@ -156,4 +168,4 @@ distribution) for more details.
   (There was a bug that was fixed in 8.6.beta.13 that might be related,
   but I think this bug still exists.)
 
-(Version 8.14, last updated %G%)
+(Version 8.15, last updated %G%)
