@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -149,7 +149,7 @@ lookupparent(name)
 	char *tailindex;
 
 	tailindex = rindex(name, '/');
-	if (tailindex == 0)
+	if (tailindex == NULL)
 		return (NULL);
 	*tailindex = '\0';
 	ep = lookupname(name);
