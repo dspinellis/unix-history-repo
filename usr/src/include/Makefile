@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.30 (Berkeley) %G%
+#	@(#)Makefile	5.31 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -8,7 +8,7 @@
 all clean cleandir depend lint tags:
 
 SUBDIRS=arpa pascal protocols
-STD=	a.out.h ar.h assert.h bitstring.h cencode.h ctype.h curses.h ndbm.h \
+STD=	a.out.h ar.h assert.h bitstring.h vis.h ctype.h curses.h ndbm.h \
 	dirent.h disktab.h fcntl.h fstab.h fts.h glob.h grp.h kvm.h limits.h \
 	math.h memory.h mp.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h \
 	regexp.h resolv.h setjmp.h sgtty.h stab.h stdarg.h stdio.h string.h \
