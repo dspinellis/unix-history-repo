@@ -1,0 +1,832 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)lex.1	5.13 (Berkeley) 7/24/91
+.\"
+.Dd July 24, 1991
+.Dt LEX 1
+.Os
+.Sh NAME
+.Nm lex
+.Nd fast lexical analyzer generator
+.Sh SYNOPSIS
+.Nm lex
+.Oo
+.Op Fl bcdfinpstvFILT8
+.Fl C Ns Ns Op Cm efmF
+.Fl S Ns Ns Ar skeleton
+.Oc
+.Op Ar
+.Sh DESCRIPTION
+.Nm Lex
+is a tool for generating
+.Ar scanners :
+programs which recognized lexical patterns in text.
+.Nm Lex
+reads
+the given input files, or its standard input if no file names are given,
+for a description of a scanner to generate.  The description is in
+the form of pairs
+of regular expressions and C code, called
+.Em rules .
+.Nm Lex
+generates as output a C source file,
+.Pa lex.yy.c ,
+which defines a routine
+.Fn yylex .
+This file is compiled and linked with the
+.Fl lfl
+library to produce an executable.  When the executable is run,
+it analyzes its input for occurrences
+of the regular expressions.  Whenever it finds one, it executes
+the corresponding C code.
+.Pp
+For full documentation, see
+.Em Lexdoc .
+This manual entry is intended for use as a quick reference.
+.Sh OPTIONS
+.Nm Lex
+has the following options:
+.Bl -tag -width Ds
+.It Fl b
+Generate backtracking information to
+.Va lex.backtrack .
+This is a list of scanner states which require backtracking
+and the input characters on which they do so.  By adding rules one
+can remove backtracking states.  If all backtracking states
+are eliminated and
+.Fl f
+or
+.Fl F
+is used, the generated scanner will run faster.
+.It Fl c
+is a do-nothing, deprecated option included for
+.Tn POSIX
+compliance.
+.Pp
+.Ar NOTE :
+in previous releases of
+.Nm Lex
+.Op Fl c
+specified table-compression options.  This functionality is
+now given by the
+.Fl C
+flag.  To ease the the impact of this change, when
+.Nm lex
+encounters
+.Fl c,
+it currently issues a warning message and assumes that
+.Fl C
+was desired instead.  In the future this "promotion" of
+.Fl c
+to
+.Fl C
+will go away in the name of full
+.Tn POSIX
+compliance (unless
+the
+.Tn POSIX
+meaning is removed first).
+.It Fl d
+Makes the generated scanner run in
+.Ar debug
+mode.  Whenever a pattern is recognized and the global
+.Va yy_Lex_debug
+is non-zero (which is the default), the scanner will
+write to
+.Li stderr
+a line of the form:
+.Pp
+.Dl --accepting rule at line 53 ("the matched text")
+.Pp
+The line number refers to the location of the rule in the file
+defining the scanner (i.e., the file that was fed to lex).  Messages
+are also generated when the scanner backtracks, accepts the
+default rule, reaches the end of its input buffer (or encounters
+a
+.Tn NUL ;
+the two look the same as far as the scanner's concerned),
+or reaches an end-of-file.
+.It Fl f
+Specifies (take your pick)
+.Em full table
+or
+.Em fast scanner .
+No table compression is done.  The result is large but fast.
+This option is equivalent to
+.Fl Cf
+(see below).
+.It Fl i
+Instructs
+.Nm lex
+to generate a
+.Em case-insensitive
+scanner.  The case of letters given in the
+.Nm lex
+input patterns will
+be ignored, and tokens in the input will be matched regardless of case.  The
+matched text given in
+.Va yytext
+will have the preserved case (i.e., it will not be folded).
+.It Fl n
+Is another do-nothing, deprecated option included only for
+.Tn POSIX
+compliance.
+.It Fl p
+Generates a performance report to stderr.  The report
+consists of comments regarding features of the
+.Nm lex
+input file which will cause a loss of performance in the resulting scanner.
+.It Fl s
+Causes the
+.Ar default rule
+(that unmatched scanner input is echoed to
+.Ar stdout )
+to be suppressed.  If the scanner encounters input that does not
+match any of its rules, it aborts with an error.
+.It Fl t
+Instructs
+.Nm lex
+to write the scanner it generates to standard output instead
+of
+.Pa lex.yy.c .
+.It Fl v
+Specifies that
+.Nm lex
+should write to
+.Li stderr
+a summary of statistics regarding the scanner it generates.
+.It Fl F
+Specifies that the
+.Em fast
+scanner table representation should be used.  This representation is
+about as fast as the full table representation
+.Pq Fl f ,
+and for some sets of patterns will be considerably smaller (and for
+others, larger).  See
+.Em Lexdoc
+for details.
+.Pp
+This option is equivalent to
+.Fl CF
+(see below).
+.It Fl I
+Instructs
+.Nm lex
+to generate an
+.Em interactive
+scanner, that is, a scanner which stops immediately rather than
+looking ahead if it knows
+that the currently scanned text cannot be part of a longer rule's match.
+Again, see
+.Em Lexdoc
+for details.
+.Pp
+Note,
+.Fl I
+cannot be used in conjunction with
+.Em full
+or
+.Em fast tables ,
+i.e., the
+.Fl f , F , Cf ,
+or
+.Fl CF
+flags.
+.It Fl L
+Instructs
+.Nm lex
+not to generate
+.Li #line
+directives in
+.Pa lex.yy.c .
+The default is to generate such directives so error
+messages in the actions will be correctly
+located with respect to the original
+.Nm lex
+input file, and not to
+the fairly meaningless line numbers of
+.Pa lex.yy.c .
+.It Fl T
+Makes
+.Nm lex
+run in
+.Em trace
+mode.  It will generate a lot of messages to
+.Li stdout
+concerning
+the form of the input and the resultant non-deterministic and deterministic
+finite automata.  This option is mostly for use in maintaining
+.Nm lex .
+.It Fl 8
+Instructs
+.Nm lex
+to generate an 8-bit scanner.
+On some sites, this is the default.  On others, the default
+is 7-bit characters.  To see which is the case, check the verbose
+.Pq Fl v
+output for "equivalence classes created".  If the denominator of
+the number shown is 128, then by default
+.Nm lex
+is generating 7-bit characters.  If it is 256, then the default is
+8-bit characters.
+.It Fl C Ns Op Cm efmF
+Controls the degree of table compression. The default setting is
+.Fl Cem .
+.Pp
+.Bl -tag -width Ds
+.It Fl C
+A lone
+.Fl C
+specifies that the scanner tables should be compressed but neither
+equivalence classes nor meta-equivalence classes should be used.
+.It Fl \&Ce
+Directs
+.Nm lex
+to construct
+.Em equivalence classes ,
+i.e., sets of characters
+which have identical lexical properties.
+Equivalence classes usually give
+dramatic reductions in the final table/object file sizes (typically
+a factor of 2-5) and are pretty cheap performance-wise (one array
+look-up per character scanned).
+.It Fl \&Cf
+Specifies that the
+.Em full
+scanner tables should be generated -
+.Nm lex
+should not compress the
+tables by taking advantages of similar transition functions for
+different states.
+.It Fl \&CF
+Specifies that the alternate fast scanner representation (described in
+.Em Lexdoc )
+should be used.
+.It Fl \&Cm
+Directs
+.Nm lex
+to construct
+.Em meta-equivalence classes ,
+which are sets of equivalence classes (or characters, if equivalence
+classes are not being used) that are commonly used together.  Meta-equivalence
+classes are often a big win when using compressed tables, but they
+have a moderate performance impact (one or two "if" tests and one
+array look-up per character scanned).
+.It Fl Cem
+(Default)
+Generate both equivalence classes
+and meta-equivalence classes.  This setting provides the highest
+degree of table compression.
+.El
+.Pp
+Faster-executing scanners can be traded off at the
+cost of larger tables with
+the following generally being true:
+.Bd -ragged -offset center
+slowest & smallest
+      -Cem
+      -Cm
+      -Ce
+      -C
+      -C{f,F}e
+      -C{f,F}
+fastest & largest
+.Ed
+.Pp
+.Fl C
+options are not cumulative; whenever the flag is encountered, the
+previous -C settings are forgotten.
+.Pp
+The options
+.Fl \&Cf
+or
+.Fl \&CF
+and
+.Fl \&Cm
+do not make sense together - there is no opportunity for meta-equivalence
+classes if the table is not being compressed.  Otherwise the options
+may be freely mixed.
+.It Fl S Ns Ar skeleton_file
+Overrides the default skeleton file from which
+.Nm lex
+constructs its scanners.  Useful for
+.Nm lex
+maintenance or development.
+.El
+.Sh SUMMARY OF LEX REGULAR EXPRESSIONS
+The patterns in the input are written using an extended set of regular
+expressions.  These are:
+.Pp
+.Bl -tag -width 10n -compact
+.It Li x
+Match the character 'x'.
+.It Li \&.
+Any character except newline.
+.It Op Li xyz
+A "character class"; in this case, the pattern
+matches either an 'x', a 'y', or a 'z'.
+.It Op Li abj-oZ
+A "character class" with a range in it; matches
+an 'a', a 'b', any letter from 'j' through 'o',
+or a 'Z'.
+.It Op Li ^A-Z
+A "negated character class", i.e., any character
+but those in the class.  In this case, any
+character
+.Em except
+an uppercase letter.
+.It Op Li ^A-Z\en
+Any character
+.Em except
+an uppercase letter or
+a newline.
+.It Li r*
+Zero or more r's, where r is any regular expression.
+.It Li r+
+One or more r's.
+.It Li r?
+Zero or one r's (that is, "an optional r").
+.It Li r{2,5}
+Anywhere from two to five r's.
+.It Li r{2,}
+Two or more r's.
+.It Li r{4}
+Exactly 4 r's.
+.It Li {name}
+The expansion of the "name" definition
+(see above).
+.It Xo
+.Oo Li xyz Oc Ns Li "\e\&\*qfoo"
+.Xc
+The literal string:
+[xyz]\*qfoo.
+.It Li \&\eX
+If X is an 'a', 'b', 'f', 'n', 'r', 't', or 'v',
+then the
+.Tn ANSI-C
+interpretation of \ex.
+Otherwise, a literal 'X' (used to escape
+operators such as '*').
+.It Li \&\e123
+The character with octal value 123.
+.It Li \&\ex2a
+The character with hexadecimal value 2a.
+.It Li (r)
+Match an r; parentheses are used to override
+precedence (see below).
+.It Li rs
+The regular expression r followed by the
+regular expression s; called "concatenation".
+.It Li rs
+Either an r or an s.
+.It Li r/s
+An r but only if it is followed by an s.  The
+s is not part of the matched text.  This type
+of pattern is called as "trailing context".
+.It Li \&^r
+An r, but only at the beginning of a line.
+.It Li r$
+An r, but only at the end of a line.  Equivalent
+to "r/\en".
+.It Li <s>r
+An r, but only in start condition s (see
+below for discussion of start conditions).
+.It Li <s1,s2,s3>r
+Same, but in any of start conditions s1,
+s2, or s3.
+.It Li <<EOF>>
+An end-of-file.
+.It Li <s1,s2><<EOF>>
+An end-of-file when in start condition s1 or s2.
+.El
+The regular expressions listed above are grouped according to
+precedence, from highest precedence at the top to lowest at the bottom.
+Those grouped together have equal precedence.
+.Pp
+Some notes on patterns:
+.Pp
+Negated character classes
+.Ar match newlines
+unless "\en" (or an equivalent escape sequence) is one of the
+characters explicitly present in the negated character class
+(e.g., " [^A-Z\en] ").
+.Pp
+A rule can have at most one instance of trailing context (the '/' operator
+or the '$' operator).  The start condition, '^', and "<<EOF>>" patterns
+can only occur at the beginning of a pattern, and, as well as with '/' and '$',
+cannot be grouped inside parentheses.  The following are all illegal:
+.Pp
+.Bd -literal -offset indent
+foo/bar$
+foo(bar$)
+foo^bar
+<sc1>foo<sc2>bar
+.Ed
+.Sh SUMMARY OF SPECIAL ACTIONS
+In addition to arbitrary C code, the following can appear in actions:
+.Bl -tag -width Fl
+.It Ic ECHO
+Copies
+.Va yytext
+to the scanner's output.
+.It Ic BEGIN
+Followed by the name of a start condition places the scanner in the
+corresponding start condition.
+.It Ic REJECT
+Directs the scanner to proceed on to the "second best" rule which matched the
+input (or a prefix of the input).
+.Va yytext
+and
+.Va yyleng
+are set up appropriately.  Note that
+.Ic REJECT
+is a particularly expensive feature in terms scanner performance;
+if it is used in
+.Em any
+of the scanner's actions it will slow down
+.Em all
+of the scanner's matching.  Furthermore,
+.Ic REJECT
+cannot be used with the
+.Fl f
+or
+.Fl F
+options.
+.Pp
+Note also that unlike the other special actions,
+.Ic REJECT
+is a
+.Em branch ;
+code immediately following it in the action will
+.Em not
+be executed.
+.It Fn yymore
+tells the scanner that the next time it matches a rule, the corresponding
+token should be
+.Em appended
+onto the current value of
+.Va yytext
+rather than replacing it.
+.It Fn yyless \&n
+returns all but the first
+.Ar n
+characters of the current token back to the input stream, where they
+will be rescanned when the scanner looks for the next match.
+.Va yytext
+and
+.Va yyleng
+are adjusted appropriately (e.g.,
+.Va yyleng
+will now be equal to
+.Ar n ) .
+.It Fn unput c
+puts the character
+.Ar c
+back onto the input stream.  It will be the next character scanned.
+.It Fn input
+reads the next character from the input stream (this routine is called
+.Fn yyinput
+if the scanner is compiled using
+.Em C \&+\&+ ) .
+.It Fn yyterminate
+can be used in lieu of a return statement in an action.  It terminates
+the scanner and returns a 0 to the scanner's caller, indicating "all done".
+.Pp
+By default,
+.Fn yyterminate
+is also called when an end-of-file is encountered.  It is a macro and
+may be redefined.
+.It Ic YY_NEW_FILE
+is an action available only in <<EOF>> rules.  It means "Okay, I've
+set up a new input file, continue scanning".
+.It Fn yy_create_buffer file size
+takes a
+.Ic FILE
+pointer and an integer
+.Ar size .
+It returns a YY_BUFFER_STATE
+handle to a new input buffer large enough to accomodate
+.Ar size
+characters and associated with the given file.  When in doubt, use
+.Ar YY_BUF_SIZE
+for the size.
+.It Fn yy_switch_to_buffer new_buffer
+switches the scanner's processing to scan for tokens from
+the given buffer, which must be a YY_BUFFER_STATE.
+.It Fn yy_delete_buffer buffer
+deletes the given buffer.
+.El
+.Sh VALUES AVAILABLE TO THE USER
+.Bl -tag -width Fl
+.It Va char \&*yytext
+holds the text of the current token.  It may not be modified.
+.It Va int yyleng
+holds the length of the current token.  It may not be modified.
+.It Va FILE  \&*yyin
+is the file which by default
+.Nm lex
+reads from.  It may be redefined but doing so only makes sense before
+scanning begins.  Changing it in the middle of scanning will have
+unexpected results since
+.Nm lex
+buffers its input.  Once scanning terminates because an end-of-file
+has been seen,
+.Fn "void yyrestart" "FILE *new_file"
+may be called to point
+.Va yyin
+at the new input file.
+.It Va FILE  \&*yyout
+is the file to which
+.Ar ECHO
+actions are done.  It can be reassigned by the user.
+.It Va YY_CURRENT_BUFFER
+returns a
+YY_BUFFER_STATE
+handle to the current buffer.
+.El
+.Sh MACROS THE USER CAN REDEFINE
+.Bl -tag -width Fl
+.It Va YY_DECL
+controls how the scanning routine is declared.
+By default, it is "int yylex()", or, if prototypes are being
+used, "int yylex(void)".  This definition may be changed by redefining
+the "YY_DECL" macro.  Note that
+if you give arguments to the scanning routine using a
+K&R-style/non-prototyped function declaration, you must terminate
+the definition with a semi-colon (;).
+.It Va YY_INPUT
+The nature of how the scanner
+gets its input can be controlled by redefining the
+YY_INPUT
+macro.
+YY_INPUT's calling sequence is "YY_INPUT(buf,result,max_size)".  Its
+action is to place up to
+.Ar max _size
+characters in the character array
+.Ar buf
+and return in the integer variable
+.Ar result
+either the
+number of characters read or the constant YY_NULL (0 on Unix systems)
+to indicate EOF.  The default YY_INPUT reads from the
+global file-pointer "yyin".
+A sample redefinition of YY_INPUT (in the definitions
+section of the input file):
+.Bd -literal -offset indent
+%{
+#undef YY_INPUT
+#define YY_INPUT(buf,result,max_size) \e
+    result = ((buf[0] = getchar()) == EOF) ? YY_NULL : 1;
+%}
+.Ed
+.It Va YY_INPUT
+When the scanner receives an end-of-file indication from YY_INPUT,
+it then checks the
+.Fn yywrap
+function.  If
+.Fn yywrap
+returns false (zero), then it is assumed that the
+function has gone ahead and set up
+.Va yyin
+to point to another input file, and scanning continues.  If it returns
+true (non-zero), then the scanner terminates, returning 0 to its
+caller.
+.It Va yywrap
+The default
+.Fn yywrap
+always returns 1.  Presently, to redefine it you must first
+"#undef yywrap", as it is currently implemented as a macro.  It is
+likely that
+.Fn yywrap
+will soon be defined to be a function rather than a macro.
+.It Va YY_USER_ACTION
+can be redefined to provide an action
+which is always executed prior to the matched rule's action.
+.It Va YY_USER_INIT
+The macro
+.Va YY _USER_INIT
+may be redefined to provide an action which is always executed before
+the first scan.
+.It Va YY_BREAK
+In the generated scanner, the actions are all gathered in one large
+switch statement and separated using
+.Va YY _BREAK ,
+which may be redefined.  By default, it is simply a "break", to separate
+each rule's action from the following rule's.
+.El
+.Sh FILES
+.Bl -tag -width lex.backtrack -compact
+.It Pa lex.skel
+skeleton scanner.
+.It Pa lex.yy.c
+generated scanner
+(called
+.Pa lexyy.c
+on some systems).
+.It Pa lex.backtrack
+backtracking information for
+.Fl b
+.It Pa flag
+(called
+.Pa lex.bck
+on some systems).
+.El
+.Sh SEE ALSO
+.Xr lex 1 ,
+.Xr yacc 1 ,
+.Xr sed 1 ,
+.Xr awk 1 .
+.Rs
+.%T "lexdoc"
+.Re
+.Rs
+.%A M. E. Lesk
+.%A E. Schmidt
+.%T "LEX \- Lexical Analyzer Generator"
+.Re
+.Sh DIAGNOSTICS
+.Bl -tag -width Fl
+.It Li reject_used_but_not_detected undefined
+or
+.It Li yymore_used_but_not_detected undefined
+These errors can occur at compile time.
+They indicate that the
+scanner uses
+.Ic REJECT
+or
+.Fn yymore
+but that
+.Nm lex
+failed to notice the fact,
+meaning that
+.Nm lex
+scanned the first two sections looking for occurrences of these actions
+and failed to find any,
+but somehow you snuck some in  via a #include
+file,
+for example .
+Make an explicit reference to the action in your
+.Nm lex
+input file.
+Note that previously
+.Nm lex
+supported a
+.Li %used/%unused
+mechanism for dealing with this problem;
+this feature is still supported
+but now deprecated,
+and will go away soon unless the author hears from
+people who can argue compellingly that they need it.
+.It Li lex scanner jammed
+a scanner compiled with
+.Fl s
+has encountered an input string which wasn't matched by
+any of its rules.
+.It Li lex input buffer overflowed
+a scanner rule matched a string long enough to overflow the
+scanner's internal input buffer  16K bytes - controlled by
+.Va YY_BUF_MAX
+in
+.Pa lex.skel .
+.It Li scanner requires  \&\-8 flag
+Your scanner specification includes recognizing 8-bit characters and
+you did not specify the -8 flag  and your site has not installed lex
+with -8 as the default .
+.It Li too many  \&%t classes!
+You managed to put every single character into its own %t class.
+.Nm Lex
+requires that at least one of the classes share characters.
+.El
+.Sh HISTORY
+A
+.Nm lex
+appeared in
+.At v6 .
+The version this man page describes is
+derived from code contributed by Vern Paxson.
+.Sh AUTHOR
+Vern Paxson, with the help of many ideas and much inspiration from
+Van Jacobson.  Original version by Jef Poskanzer.
+.Pp
+See
+.%T "Lexdoc"
+for additional credits and the address to send comments to.
+.Sh BUGS
+.Pp
+Some trailing context
+patterns cannot be properly matched and generate
+warning messages ("Dangerous trailing context").  These are
+patterns where the ending of the
+first part of the rule matches the beginning of the second
+part, such as "zx*/xy*", where the 'x*' matches the 'x' at
+the beginning of the trailing context.  (Note that the
+.Tn POSIX
+draft
+states that the text matched by such patterns is undefined.)
+.Pp
+For some trailing context rules, parts which are actually fixed-length are
+not recognized as such, leading to the abovementioned performance loss.
+In particular, parts using '\&|' or {n} (such as "foo{3}") are always
+considered variable-length.
+.Pp
+Combining trailing context with the special '\&|' action can result in
+.Em fixed
+trailing context being turned into the more expensive
+.Em variable
+trailing context.  This happens in the following example:
+.Bd -literal -offset indent
+%%
+abc  \&|
+xyz/def
+.Ed
+.Pp
+Use of
+.Fn unput
+invalidates yytext and yyleng.
+.Pp
+Use of
+.Fn unput
+to push back more text than was matched can
+result in the pushed-back text matching a beginning-of-line ('^')
+rule even though it didn't come at the beginning of the line
+(though this is rare!).
+.Pp
+Pattern-matching of
+.Tn NUL Ns 's
+is substantially slower than matching other
+characters.
+.Pp
+.Nm Lex
+does not generate correct #line directives for code internal
+to the scanner; thus, bugs in
+.Pa lex.skel
+yield bogus line numbers.
+.Pp
+Due to both buffering of input and read-ahead, you cannot intermix
+calls to
+.Aq Pa stdio.h
+routines, such as, for example,
+.Fn getchar ,
+with
+.Nm lex
+rules and expect it to work.  Call
+.Fn input
+instead.
+.Pp
+The total table entries listed by the
+.Fl v
+flag excludes the number of table entries needed to determine
+what rule has been matched.  The number of entries is equal
+to the number of
+.Tn DFA
+states if the scanner does not use
+.Ic REJECT ,
+and somewhat greater than the number of states if it does.
+.Pp
+.Ic REJECT
+cannot be used with the
+.Fl f
+or
+.Fl F
+options.
+.Pp
+Some of the macros, such as
+.Fn yywrap ,
+may in the future become functions which live in the
+.Fl lfl
+library.  This will doubtless break a lot of code, but may be
+required for
+.Tn POSIX Ns \-compliance .
+.Pp
+The
+.Nm lex
+internal algorithms need documentation.

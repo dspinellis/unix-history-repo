@@ -1,4 +1,0 @@
-#	@(#)Makefile.hp300	6.1 (Berkeley) %G%
-
-CFLAGS+=	-Dm68851
-SRCS+=		m68k.c atof-ieee.c

@@ -1,1 +1,0 @@
-#define NDMF 1

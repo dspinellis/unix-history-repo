@@ -1,0 +1,1455 @@
+.\"
+.\" This code is derived from software copyrighted by the Free Software
+.\" Foundation.
+.\"
+.\" Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+.\"
+.\"	@(#)cc.1	6.5 (Berkeley) 5/9/91
+.\"
+.TH CC 1 "May 9, 1991" "Version 1.36"
+.de BP
+.sp
+.ti -.2i
+\(**
+..
+.SH NAME
+cc \- GNU project C Compiler
+.SH SYNOPSIS
+.B cc
+[ options ] files
+.SH DESCRIPTION
+.I Cc
+is a version of the GNU C compiler.
+It accepts a dialect of ANSI C with extensions;
+this dialect is different from the dialect used
+in 4.3 BSD and earlier distributions.
+The
+.B \-traditional
+flag causes the compiler to accept
+a dialect of extended Classic C,
+much like the C of these earlier distributions.
+If you are not already familiar with
+ANSI C and its new features,
+you will want to build your software with
+.BR \-traditional .
+.SH DIFFERENCES
+Most older C compiler flags are supported by
+.IR cc .
+Three that are not are:
+.BR \-go ,
+to generate symbol tables for the unsupported
+.I sdb
+debugger;
+.BR \-f ,
+for single precision floating point
+in expressions,
+which is now the default; and
+.BR \-t ,
+for alternate compiler passes.
+.PP
+The differences between ANSI C and Classic C dialects
+are too numerous to describe here in detail.
+The following quick summary is meant to make
+users aware of potential subtle problems when
+converting Classic C code to ANSI C.
+.PP
+The most obvious change is the pervasive use of
+.IR "function prototypes" .
+Under the ANSI C dialect, the number and type of arguments
+to C library functions are checked by the compiler
+when standard header files are included;
+calls that fail to match will yield errors.
+A subtle consequence of adding prototype declarations is that
+user code that inadvertently redefines a C library function
+may break; for example it is no longer possible to write an
+.I abort
+function that takes different parameters or returns a different value
+from the standard
+.IR abort ,
+when including standard header files.
+Another issue with prototypes is that functions
+that take different parameter types no longer have the same type;
+function pointers now differ by parameter types as well as return types.
+Variable argument lists are handled differently;
+the old
+.IR varargs (3)
+package is obsolete,
+replaced by
+.IR stdarg (3),
+which unfortunately is not completely compatible.
+A subtle change in type promotion can be confusing: small
+unsigned types are now widened into signed types
+rather than unsigned types.
+A similar problem can occur with the
+.B sizeof
+operator, which now yields an unsigned type rather than a signed type.
+One common problem is due to a change in scoping: external declarations
+are now scoped to the block they occur in,
+so a declaration for (say)
+.B errno
+inside one block will no longer
+declare it in all subsequent blocks.
+The syntax for braces in structure initializations is now a bit stricter,
+and it is sometimes necessary to add braces to please the compiler.
+Two very subtle and sometimes very annoying features
+apply to constant strings and to the
+.IR longjmp (3)
+function.
+Constant strings in the ANSI dialect are read-only;
+attempts to alter them cause protection violations.
+This ANSI feature permits the compiler to coalesce
+identical strings in the same source file,
+and saves space when multiple copies of a binary are running
+at the same time, since the read-only part of a binary
+is sharable.
+The most common difficulty with read-only strings
+lies with the use of the
+.B mktemp
+function, which in the past often altered a constant string argument.
+It is now necessary to copy a constant string
+(for example, with
+.IR strdup (3))
+before it may be altered.
+The
+.B longjmp
+function may now destroy any register
+.I or
+stack variable in the function that made
+the corresponding call to the
+.B setjmp
+function;
+to protect a local variable, the new ANSI
+.B volatile
+modifier must be used.
+This often leads to confusing situations
+upon `return' from
+.BR setjmp .
+The compiler has extended warning flags for
+dealing with read-only strings and
+.BR setjmp ,
+but these are not very effective.
+If your code has problems with any of these ANSI features,
+you will probably want to use
+.BR \-traditional .
+.PP
+Even with
+.BR \-traditional ,
+there are some differences between
+this dialect of Classic C and the dialect supported on older distributions.
+.PP
+There are at least two differences that are a consequence
+of the fact that
+.I cc
+uses an ANSI C style grammar for both
+traditional and ANSI modes.
+The old C dialect permitted a typedef
+to replace a simple type in the idiom ``unsigned
+.IR type '';
+this
+.I cc
+treats such forms as syntax errors.
+The old C dialect also permitted formal parameters
+to have the same names as typedef types;
+the current dialect does not.
+.PP
+Some questionable or illegal practices
+that were supported in the old C dialect are
+not supported by
+.BR \-traditional :
+non-comment text at the end of a ``#include''
+preprocessor control line is an error, not ignored;
+compound assignment operators must not contain white space,
+.I e.g.
+``*\0='' is not the same as ``*='';
+the last member declaration in a structure or union
+must be terminated by a semicolon;
+it is not possible to ``switch'' on function pointers;
+more than one occurrence of ``#else'' at the same level
+in a preprocessor ``#if'' clause is an error, not ignored.
+.PP
+Some truly ancient C practices are no longer supported.
+The idiom of declaring an anonymous structure and
+using its members to extract fields from other structures
+or even non-structures is illegal.
+Integers are not automatically converted to pointers
+when they are dereferenced.
+The
+.B \-traditional
+dialect does not retain the so-called ``old-fashioned'' assignment operators
+(with the ``='' preceding rather than following the operator)
+or initializations (with no ``='' between initializer and initializee).
+.SH WARNING
+This rest of man page is an extract of the documentation of the
+.I GNU C compiler
+and is limited to the meaning of the options.
+.BR "It is not kept up to date" .
+If you want to be certain of the information
+below, check it in the manual "Using and Porting GCC".  Refer to the Info file
+.B gcc.info
+or the DVI file
+.B gcc.dvi
+which are made from the Texinfo source file
+.BR gcc.texinfo .
+.PP
+The
+.I GNU C compiler
+uses a command syntax much like the Unix C compiler.
+The
+.I cc
+program accepts options and file names as operands.
+Multiple single-letter options may
+.I not
+be grouped:
+.B \-dr
+is very different from
+.BR "\-d \-r" .
+.P
+When you invoke GNU CC, it normally does preprocessing, compilation,
+assembly and linking.
+File names which end in
+.B .c
+are taken as C source to be preprocessed and compiled;
+file names ending in
+.B .i
+are taken as preprocessor output to be compiled;
+compiler output files plus any input files with names ending in
+.B .s
+are assembled;
+then the resulting object files, plus any other input files,
+are linked together to produce an executable.
+.P
+Command options allow you to stop this process at an intermediate stage.
+For example, the 
+.B \-c
+option says not to run the linker.
+Then the output consists of object files output by the assembler.
+.P
+Other command options are passed on to one stage of processing.
+Some options control the preprocessor and others the compiler itself.
+Yet other options control the assembler and linker;
+these are not documented here, but you rarely need to use any of them.
+.SH OPTIONS
+Here are the options to control the overall compilation process,
+including those that say whether to link, whether to assemble, and so on.
+.TP
+.BI \-o " file"
+Place output in file
+.IR file .
+This applies regardless to whatever sort of output is being produced,
+whether it be an executable file, an object file,
+an assembler file or preprocessed C code.
+.sp
+If 
+.B \-o
+is not specified, the default is to put an executable file in
+.BR a.out ,
+the object file
+.IB source .c
+in
+.IB source .o\fR,
+an assembler file in
+.IB source .s\fR,
+and preprocessed C on standard output.
+.TP
+.B \-c
+Compile or assemble the source files, but do not link.
+Produce object files with names made by replacing
+.B .c
+or
+.B .s
+with
+.B .o
+at the end of the input file names.
+Do nothing at all for object files specified as input.
+.TP
+.B \-S
+Compile into assembler code but do not assemble.
+The assembler output file name is made by replacing
+.B .c
+with
+.B .s
+at the end of the input file name.
+Do nothing at all for assembler source files or
+object files specified as input.
+.TP
+.B \-E
+Run only the C preprocessor.
+Preprocess all the C source files specified and output
+the results to standard output.
+.TP
+.B \-v
+Compiler driver program prints the commands it executes as it runs
+the preprocessor, compiler proper, assembler and linker.
+Some of these are directed to print their own version numbers.
+.TP
+.B \-pipe
+Use pipes rather than temporary files for communication between the
+various stages of compilation.
+This fails to work on some systems where the assembler is unable
+to read from a pipe; but the GNU assembler has no trouble.
+.TP
+.BI \-B prefix
+Compiler driver program tries
+.I prefix
+as a prefix for each program it tries to run.
+These programs are
+.IR cpp ,
+.IR cc1 ,
+.I as
+and
+.IR ld .
+.sp
+For each subprogram to be run, the compiler driver first tries the
+.B \-B
+prefix, if any.
+If that name is not found, or if
+.B \-B
+was not specified, the driver tries a standard prefix, which currently is
+.BR /usr/libexec/ .
+If this does not result in a file name that is found, the
+unmodified program name is searched for using the directories
+specified in your
+.B PATH
+environment variable.
+.sp
+You can get a similar result from the environment variable
+.BR GCC_EXEC_PREFIX ;
+if it is defined, its value is used as a prefix in the same way.
+If both the
+.B \-B
+option and the
+.B GCC_EXEC_PREFIX
+variable are present, the
+.B \-B
+option is used first and the environment variable value second.
+.TP
+.BI -b prefix
+The argument
+.I prefix
+is used as a second prefix for the compiler executables and libraries.
+This prefix is optional: the compiler tries each file first with it,
+then without it.
+This prefix follows the prefix specified with
+.B \-B
+or the default prefixes.
+.sp
+Thus,
+.B \-bvax- \-Bcc/
+in the presence of environment variable
+.B GCC_EXEC_PREFIX
+with definition
+.B /u/foo/
+causes GNU CC to try the following file names for the preprocessor executable:
+.sp
+	\fBcc/vax-cpp
+.br
+	cc/cpp
+.br
+	/u/foo/vax-cpp
+.br
+	/u/foo/cpp
+.br
+	/usr/libexec/vax-cpp
+.br
+	/usr/libexec/cpp\fR
+.P
+These options control the details of C compilation itself.
+.TP
+.B \-ansi
+Support all ANSI standard C programs.
+.sp
+This turns off certain features of GNU C that are incompatible with
+ANSI C, such as the
+.BR asm ,
+.B inline
+and
+.B typeof
+keywords, and predefined macros such as
+.B unix
+and
+.B vax
+that identify the type of system you are using.
+It also enables the undesirable and rarely used ANSI trigraph feature.
+.sp
+The alternate keywords
+.BR __asm__ ,
+.B __inline__
+and
+.B __typeof__
+continue to work despite
+.BR \-ansi .
+You would not want to use them in an ANSI C program, of course,
+but it useful to put them in header files that might be included
+in compilations done with
+.BR \-ansi .
+Alternate predefined macros such as
+.B __unix__
+and
+.B __vax__
+are also available, with or without
+.BR \-ansi .
+.sp
+The
+.B \-ansi
+option does not cause non-ANSI programs to be rejected gratuitously.
+For that,
+.B \-pedantic
+is required in addition to
+.BR \-ansi .
+.sp
+The macro 
+.B __STRICT_ANSI__
+is predefined when the
+.B \-ansi
+option is used.
+Some header files may notice this macro and refrain from declaring
+certain functions or defining certain macros that the ANSI standard
+doesn't call for; this is to avoid interfering with any programs
+that might use these names for other things.
+.TP
+.B \-traditional
+Attempt to support some aspects of traditional C compilers.
+Specifically:
+.BP
+All
+.B extern
+declarations take effect globally even if they are
+written inside of a function definition.
+This includes implicit declarations of functions.
+.BP
+The keywords
+.BR typeof ,
+.BR inline ,
+.BR signed ,
+.B const
+and
+.B volatile
+are not recognized.
+.BP
+Comparisons between pointers and integers are always allowed.
+.BP
+Integer types
+.B "unsigned short"
+and
+.B "unsigned char"
+promote to
+.BR "unsigned int" .
+.BP
+Out-of-range floating point literals are not an error.
+.BP
+All automatic variables not declared
+.B register
+are preserved by
+.IR longjmp (3C).
+Ordinarily, GNU C follows ANSI C: automatic variables not declared
+.B volatile
+may be clobbered.
+.BP
+In the preprocessor, comments convert to nothing at all,
+rather than to a space.
+This allows traditional token concatenation.
+.BP
+In the preprocessor, macro arguments are recognized within string
+constants in a macro definition (and their values are stringified, though
+without additional quote marks, when they appear in such a context).
+The preprocessor always considers a string constant to end at a newline.
+.BP
+The predefined macro
+.B __STDC__
+is not defined when you use
+.BR \-traditional ,
+but
+.B __GNUC__
+is (since the GNU extensions which
+.B __GNUC__
+indicates are not affected by
+.BR \-traditional ).
+If you need to write header files that work differently depending on whether
+.B \-traditional
+is in use, by testing both of these predefined macros you can distinguish
+four situations: GNU C, traditional GNU C, other ANSI C compilers, and
+other old C compilers.
+.TP
+.B \-O
+Optimize.
+Optimizing compilation takes somewhat more time,
+and a lot more memory for a large function.
+.sp
+Without
+.BR \-O ,
+the compiler's goal is to reduce the cost of compilation and
+to make debugging produce the expected results.
+Statements are independent: if you stop the program with a breakpoint
+between statements, you can then assign a new value to any variable or
+change the program counter to any other statement in the function and
+get exactly the results you would expect from the source code.
+.sp
+Without
+.BR \-O ,
+only variables declared
+.B register
+are allocated in registers.
+The resulting compiled code is a little worse than produced by PCC without
+.BR \-O .
+.sp
+With
+.BR \-O ,
+the compiler tries to reduce code size and execution time.
+.sp
+Some of the
+.B \-f
+options described below turn specific kinds of optimization on or off.
+.TP
+.B \-g
+Produce debugging information in the operating system's
+native format (for DBX or SDB).
+GDB also can work with this debugging information.
+.sp
+Unlike most other C compilers, GNU CC allows you to use
+.B \-g
+with
+.BR \-O .
+The shortcuts taken by optimized code may occasionally
+produce surprising results: some variables you declared may not exist
+at all; flow of control may briefly move where you did not expect it;
+some statements may not be executed because they compute constant
+results or their values were already at hand; some statements may
+execute in different places because they were moved out of loops.
+Nevertheless it proves possible to debug optimized output.
+This makes it reasonable to use the optimizer for programs
+that might have bugs.
+.TP
+.B \-w
+Inhibit all warning messages.
+.TP
+.B \-W
+Print extra warning messages for these events:
+.BP
+An automatic variable is used without first being initialized.
+.sp
+These warnings are possible only in optimizing compilation,
+because they require data flow information that is computed only
+when optimizing.
+If you don't specify
+.BR \-O ,
+you simply won't get these warnings.
+.sp
+These warnings occur only for variables that are candidates for
+register allocation.
+Therefore, they do not occur for a variable that is declared
+.BR volatile ,
+or whose address is taken, or whose size is other than 1, 2, 4 or 8 bytes.
+Also, they do not occur for structures, unions or arrays, even when
+they are in registers.
+.sp
+Note that there may be no warning about a variable that is used only
+to compute a value that itself is never used, because such
+computations may be deleted by data flow analysis before the warnings
+are printed.
+.sp
+These warnings are made optional because GNU CC is not smart
+enough to see all the reasons why the code might be correct
+despite appearing to have an error.
+Here is one example of how this can happen:
+.sp
+	{
+.br
+	\ \ int x;
+.br
+	\ \ switch (y)
+.br
+	\ \ \ \ {
+.br
+	\ \ \ \ case 1: x = 1;
+.br
+	\ \ \ \ \ \ break;
+.br
+	\ \ \ \ case 2: x = 4;
+.br
+	\ \ \ \ \ \ break;
+.br
+	\ \ \ \ case 3: x = 5;
+.br
+	\ \ \ \ }
+.br
+	\ \ foo (x);
+.br
+	}
+.sp
+If the value of 
+.I y
+is always 1, 2 or 3, then
+.I x
+is always initialized, but GNU CC doesn't know this.
+Here is another common case:
+.sp
+	{
+.br
+	\ \ int save_y;
+.br
+	\ \ if (change_y) save_y = y, y = new_y;
+.br
+	\ \ ...
+.br
+	\ \ if (change_y) y = save_y;
+.br
+	}
+.sp
+This has no bug because
+.I save_y
+is used only if it is set.
+.sp
+Some spurious warnings can be avoided if you declare as
+.B volatile
+all the functions you use that never return.
+.BP
+A nonvolatile automatic variable might be changed by a call to
+.IR longjmp (3C).
+These warnings as well are possible only in optimizing compilation.
+.sp
+The compiler sees only the calls to
+.IR setjmp (3C).
+It cannot know where
+.IR longjmp (3C)
+will be called; in fact, a signal handler could
+call it at any point in the code.
+As a result, you may get a warning even when there is
+in fact no problem because
+.IR longjmp (3C)
+cannot in fact be called at the place which would cause a problem.
+.BP
+A function can return either with or without a value.
+(Falling off the end of the function body is considered returning without
+a value.)
+For example, this function would evoke such a warning:
+.sp
+	foo (a)
+.br
+	{
+.br
+	\ \ if (a > 0)
+.br
+	\ \ \ \ return a;
+.br
+	}
+.sp
+Spurious warnings can occur because GNU CC does not realize that
+certain functions (including
+.IR abort (3C)
+and 
+.IR longjmp (3C))
+will never return.
+.BP
+An expression-statement contains no side effects.
+.sp
+In the future, other useful warnings may also be enabled by this option.
+.TP
+.B \-Wimplicit
+Warn whenever a function is implicitly declared.
+.TP
+.B \-Wreturn-type
+Warn whenever a function is defined with a return-type that defaults to
+.BR int .
+Also warn about any
+.B return
+statement with no return-value in a function whose return-type is not
+.BR void .
+.TP
+.B \-Wunused
+Warn whenever a local variable is unused aside from its declaration,
+and whenever a function is declared static but never defined.
+.TP
+.B \-Wswitch
+Warn whenever a
+.B switch
+statement has an index of enumeral type and lacks a
+.B case
+for one or more of the named codes of that enumeration.
+(The presence of a
+.B default
+label prevents this warning.)
+.B case
+labels outside the enumeration range also provoke
+warnings when this option is used.
+.TP
+.B \-Wcomment
+Warn whenever a comment-start sequence
+.B /\(**
+appears in a comment.
+.TP
+.B \-Wtrigraphs
+Warn if any trigraphs are encountered (assuming they are enabled).
+.TP
+.B \-Wall
+All of the above 
+.B \-W
+options combined.
+These are all the options which pertain to usage that we do not recommend and
+that we believe is always easy to avoid, even in conjunction with macros.
+.sp 
+The other
+.BR \-W ...
+options below are not implied by
+.B \-Wall
+because certain kinds of useful macros are almost impossible to write
+without causing those warnings.
+.TP
+.B \-Wshadow
+Warn whenever a local variable shadows another local variable.
+.TP
+.BI \-Wid-clash- len
+Warn whenever two distinct identifiers match in the first
+.I len
+characters.
+This may help you prepare a program that will compile with certain obsolete,
+brain-damaged compilers.
+.TP
+.B \-Wpointer-arith
+Warn about anything that depends on the size of a function type or of
+.BR void .
+GNU C assigns these types a size of 1, for convenience in calculations with
+.B void \(**
+pointers and pointers to functions.
+.TP
+.B \-Wcast-qual
+Warn whenever a pointer is cast so as to remove a type qualifier from
+the target type.
+For example, warn if a 
+.B const char \(**
+is cast to an ordinary
+.BR "char \(**" .
+.TP
+.B \-Wwrite-strings
+Give string constants the type
+.B const char[\fIlength\fB]
+so that copying the address of one into a
+.RB non- "const char \(**"
+pointer will get a warning.
+These warnings will help you find at compile time
+code that can try to write into a string constant,
+but only if you have been very careful about using
+.B const
+in declarations and prototypes.
+Otherwise, it will just be a nuisance; this is why we did not make
+.B \-Wall
+request these warnings.
+.TP
+.B \-p
+Generate extra code to write profile information suitable
+for the analysis program
+.IR prof (1).
+.TP
+.B \-pg
+Generate extra code to write profile information suitable for the
+analysis program
+.IR gprof (1).
+.TP
+.B \-a
+Generate extra code to write profile information for basic blocks,
+suitable for the analysis program
+.IR tcov (1).
+Eventually GNU
+.IR gprof (1)
+should be extended to process this data.
+.TP
+.BI \-l library
+Search a standard list of directories for a library named
+.IR library ,
+which is actually a file named
+.BR lib\fIlibrary\fB.a .
+The linker uses this file as if it had been specified precisely by name.
+.sp
+The directories searched include several standard system directories
+plus any that you specify with
+.BR \-L .
+.sp
+Normally the files found this way are library files--archive files
+whose members are object files.
+The linker handles an archive file by scanning through it for members
+which define symbols that have so far been referenced but not defined.
+But if the file that is found is an ordinary object file, it is linked
+in the usual fashion.
+The only difference between using an
+.B \-l
+option and specifying a file name is that
+.B \-l
+searches several directories.
+.TP
+.BI \-L dir
+Add directory
+.I dir
+to the list of directories to be searched for
+.BR \-l .
+.TP
+.B \-nostdlib
+Don't use the standard system libraries and startup files when linking.
+Only the files you specify (plus 
+.BR gnulib )
+will be passed to the linker.
+.TP
+.BI \-m machinespec
+Machine-dependent option specifying something about the type of target machine.
+These options are defined by the macro
+.B TARGET_SWITCHES
+in the machine description.
+The default for the options is also defined by that macro,
+which enables you to change the defaults.
+.sp
+These are the
+.B \-m
+options defined in the 68000 machine description:
+.sp
+.B \-m68020
+.br
+.B \-mc68020
+.in +.5i
+Generate output for a 68020 (rather than a 68000).
+This is the default if you use the unmodified sources.
+.in -.5i
+.sp
+.B \-m68000
+.br
+.B \-mc68000
+.in +.5i
+Generate output for a 68000 (rather than a 68020).
+.in -.5i
+.sp
+.B \-m68881
+.in +.5i
+Generate output containing 68881 instructions for floating point.
+This is the default if you use the unmodified sources.
+.in -.5i
+.sp
+.B \-mfpa
+.in +.5i
+Generate output containing Sun FPA instructions for floating point.
+.in -.5i
+.sp
+.B \-msoft-float
+.in +.5i
+Generate output containing library calls for floating point.
+.in -.5i
+.sp
+.B \-mshort
+.in +.5i
+Consider type
+.B int
+to be 16 bits wide, like
+.BR "short int" .
+.in -.5i
+.sp
+.B \-mnobitfield
+.in +.5i
+Do not use the bit-field instructions.
+.B \-m68000
+implies
+.BR \-mnobitfield .
+.in -.5i
+.sp
+.B \-mbitfield
+.in +.5i
+Do use the bit-field instructions.
+.B \-m68020
+implies
+.BR \-mbitfield .
+This is the default if you use the unmodified sources.
+.in -.5i
+.sp
+.B \-mrtd
+.in +.5i
+Use a different function-calling convention, in which functions
+that take a fixed number of arguments return with the
+.B rtd
+instruction, which pops their arguments while returning.
+This saves one instruction in the caller since there is no need to pop
+the arguments there.
+.sp
+This calling convention is incompatible with the one normally
+used on Unix, so you cannot use it if you need to call libraries
+compiled with the Unix compiler.
+.sp
+Also, you must provide function prototypes for all functions that
+take variable numbers of arguments (including 
+.BR printf (3S));
+otherwise incorrect code will be generated for calls to those functions.
+.sp
+In addition, seriously incorrect code will result if you call a
+function with too many arguments.
+(Normally, extra arguments are harmlessly ignored.)
+.sp
+The
+.B rtd
+instruction is supported by the 68010 and 68020 processors,
+but not by the 68000.
+.in -.5i
+.sp
+These
+.B \-m
+options are defined in the Vax machine description:
+.sp
+.B \-munix
+.in +.5i
+Do not output certain jump instructions 
+.RB ( aobleq
+and so on) that the Unix assembler for the Vax
+cannot handle across long ranges.
+.in -.5i
+.sp
+.B \-mgnu
+.in +.5i
+Do output those jump instructions, on the assumption that you
+will assemble with the GNU assembler.
+.in -.5i
+.sp
+.B \-mg
+.in +.5i
+Output code for g-format floating point numbers instead of d-format.
+.in -.5i
+.sp
+These
+.B \-m
+switches are supported on the Sparc:
+.sp
+.B \-mfpu
+.in +.5i
+Generate output containing floating point instructions.
+This is the default if you use the unmodified sources.
+.in -.5i
+.sp
+.B \-msoft-float
+.in +.5i
+Generate output containing library calls for floating point.
+.in -.5i
+.sp
+.B \-mno-epilogue
+.in +.5i
+Generate separate return instructions for
+.B return
+statements.
+This has both advantages and disadvantages; I don't recall what they are.
+.in -.5i
+.sp
+These
+.B \-m
+options are defined in the Convex machine description:
+.sp
+.B \-mc1
+.in +.5i
+Generate output for a C1.
+This is the default when the compiler is configured for a C1.
+.in -.5i
+.sp
+.B \-mc2
+.in +.5i
+Generate output for a C2.
+This is the default when the compiler is configured for a C2.
+.in -.5i
+.sp
+.B \-margcount
+.in +.5i
+Generate code which puts an argument count in the word preceding each
+argument list.
+Some nonportable Convex and Vax programs need this word.
+(Debuggers don't; this info is in the symbol table.)
+.in -.5i
+.sp
+.B \-mnoargcount
+.in +.5i
+Omit the argument count word.
+This is the default if you use the unmodified sources.
+.in -.5i
+.TP
+.BI \-f flag
+Specify machine-independent flags.
+Most flags have both positive and negative forms; the negative form of
+.B \-ffoo
+would be
+.BR \-fno-foo .
+In the table below, only one of the forms is listed--the one which
+is not the default.
+You can figure out the other form by either removing
+.B no-
+or adding it.
+.TP
+.B \-fpcc-struct-return
+Use the same convention for returning
+.B struct
+and
+.B union
+values that is used by the usual C compiler on your system.
+This convention is less efficient for small structures, and on many
+machines it fails to be reentrant; but it has the advantage of allowing
+intercallability between GCC-compiled code and PCC-compiled code.
+.TP
+.B \-ffloat-store
+Do not store floating-point variables in registers.
+This prevents undesirable excess precision on machines such as the
+68000 where the floating registers (of the 68881) keep more
+precision than a 
+.B double
+is supposed to have.
+.sp
+For most programs, the excess precision does only good, but a few
+programs rely on the precise definition of IEEE floating point.
+Use
+.B \-ffloat-store
+for such programs.
+.TP
+.B \-fno-asm
+Do not recognize
+.BR asm ,
+.B inline
+or
+.B typeof
+as a keyword.
+These words may then be used as identifiers.
+You can use
+.BR __asm__ ,
+.B __inline__
+and
+.B __typeof__
+instead.
+.TP
+.B \-fno-defer-pop
+Always pop the arguments to each function call as soon as that
+function returns.
+Normally the compiler (when optimizing) lets arguments accumulate
+on the stack for several function calls and pops them all at once.
+.TP
+.B \-fstrength-reduce
+Perform the optimizations of loop strength reduction and
+elimination of iteration variables.
+.TP
+.B \-fcombine-regs
+Allow the combine pass to combine an instruction that copies one
+register into another.
+This might or might not produce better code when used in addition to
+.BR \-O .
+I am interested in hearing about the difference this makes.
+.TP
+.B \-fforce-mem
+Force memory operands to be copied into registers before doing
+arithmetic on them.
+This may produce better code by making all memory references
+potential common subexpressions.
+When they are not common subexpressions, instruction combination should
+eliminate the separate register-load.
+I am interested in hearing about the difference this makes.
+.TP
+.B \-fforce-addr
+Force memory address constants to be copied into registers before
+doing arithmetic on them.
+This may produce better code just as
+.B \-fforce-mem
+may.
+I am interested in hearing about the difference this makes.
+.TP
+.B \-fomit-frame-pointer
+Don't keep the frame pointer in a register for functions that
+don't need one.
+This avoids the instructions to save, set up and restore frame pointers;
+it also makes an extra register available in many functions.
+.B "It also makes debugging impossible."
+.sp
+On some machines, such as the Vax, this flag has no effect, because
+the standard calling sequence automatically handles the frame pointer
+and nothing is saved by pretending it doesn't exist.
+The machine-description macro
+.B FRAME_POINTER_REQUIRED
+controls whether a target machine supports this flag.
+.TP
+.B \-finline-functions
+Integrate all simple functions into their callers.
+The compiler heuristically decides which functions are simple
+enough to be worth integrating in this way.
+.sp
+If all calls to a given function are integrated, and the function is declared
+.BR static ,
+then the function is normally not output as assembler code in its own right.
+.TP
+.B \-fcaller-saves
+Enable values to be allocated in registers that will be clobbered by
+function calls, by emitting extra instructions to save and restore the
+registers around such calls.
+Such allocation is done only when it seems to result in better code than
+would otherwise be produced.
+.sp
+This option is enabled by default on certain machines, usually those
+which have no call-preserved registers to use instead.
+.TP
+.B \-fkeep-inline-functions
+Even if all calls to a given function are integrated, and the function is
+declared
+.BR static ,
+nevertheless output a separate run-time callable version of the function.
+.TP
+.B \-fwritable-strings
+Store string constants in the writable data segment and don't uniquize them.
+This is for compatibility with old programs which assume they can write
+into string constants.
+Writing into string constants is a very bad idea;
+constants should be constant.
+.TP
+.B \-fcond-mismatch
+Allow conditional expressions with mismatched types in the second and
+third arguments.
+The value of such an expression is void.
+.TP
+.B \-fno-function-cse
+Do not put function addresses in registers; make each instruction that
+calls a constant function contain the function's address explicitly.
+.sp
+This option results in less efficient code, but some strange hacks that
+alter the assembler output may be confused by the optimizations performed
+when this option is not used.
+.TP
+.B \-fvolatile
+Consider all memory references through pointers to be volatile.
+.TP
+.B \-fshared-data
+Requests that the data and
+.RB non- const
+variables of this compilation be shared data rather than private data.
+The distinction makes sense only on certain operating systems, where
+shared data is shared between processes running the same program, while
+private data exists in one copy per process.
+.TP
+.B \-funsigned-char
+Let the type
+.B char
+be the unsigned, like
+.BR "unsigned char" .
+.sp
+Each kind of machine has a default for what
+.B char
+should be.
+It is either like
+.B "unsigned char"
+by default or like
+.B "signed char"
+by default.
+(Actually, at present, the default is always signed.)
+.sp
+The type
+.B char
+is always a distinct type from either
+.B "signed char"
+or
+.BR "unsigned char" ,
+even though its behavior is always just like one of those two.
+.sp
+Note that this is equivalent to
+.BR \-fno-signed-char ,
+which is the negative form of
+.BR \-fsigned-char .
+.TP
+.B \-fsigned-char
+Let the type
+.B char
+be signed, like
+.BR "signed char" .
+.sp
+Note that this is equivalent to
+.BR \-fno-unsigned-char ,
+which is the negative form of
+.BR \-funsigned-char .
+.TP
+.B \-fdelayed-branch
+If supported for the target machine, attempt to reorder instructions to
+exploit instruction slots available after delayed branch instructions.
+.TP
+.BI \-ffixed- reg
+Treat the register named
+.I reg
+as a fixed register; generated code should never refer to it
+(except perhaps as a stack pointer, frame pointer or in some other fixed role).
+.sp
+.I reg
+must be the name of a register.
+The register names accepted are machine-specific and are defined in the
+.B REGISTER_NAMES
+macro in the machine description macro file.
+.sp
+This flag does not have a negative form, because it specifies a
+three-way choice.
+.TP
+.BI \-fcall-used- reg
+Treat the register named
+.I reg
+as an allocatable register that is clobbered by function calls.
+It may be allocated for temporaries or variables that do not live
+across a call.
+Functions compiled this way will not save and restore the register REG.
+.sp
+Use of this flag for a register that has a fixed pervasive role
+in the machine's execution model, such as the stack pointer or
+frame pointer, will produce disastrous results.
+.sp
+This flag does not have a negative form, because it specifies a
+three-way choice.
+.TP
+.BI \-fcall-saved- reg
+Treat the register named
+.I reg
+as an allocatable register saved by functions.
+It may be allocated even for temporaries or variables that live across a call.
+Functions compiled this way will save and restore the register
+.I reg
+if they use it.
+.sp
+Use of this flag for a register that has a fixed pervasive role
+in the machine's execution model, such as the stack pointer or
+frame pointer, will produce disastrous results.
+.sp
+A different sort of disaster will result from the use of this
+flag for a register in which function values may be returned.
+.sp
+This flag does not have a negative form, because it specifies a
+three-way choice.
+.TP
+.BI \-d letters
+Says to make debugging dumps at times specified by
+.IR letters .
+Here are the possible letters:
+.sp
+.B r
+.in +.5i
+Dump after RTL generation.
+.in -.5i
+.B j
+.in +.5i
+Dump after first jump optimization.
+.in -.5i
+.B J
+.in +.5i
+Dump after last jump optimization.
+.in -.5i
+.B s
+.in +.5i
+Dump after CSE (including the jump optimization that sometimes follows CSE).
+.in -.5i
+.B L
+.in +.5i
+Dump after loop optimization.
+.in -.5i
+.B f
+.in +.5i
+Dump after flow analysis.
+.in -.5i
+.B c
+.in +.5i
+Dump after instruction combination.
+.in -.5i
+.B l
+.in +.5i
+Dump after local register allocation.
+.in -.5i
+.B g
+.in +.5i
+Dump after global register allocation.
+.in -.5i
+.B d
+.in +.5i
+Dump after delayed branch scheduling.
+.in -.5i
+.B m
+.in +.5i
+Print statistics on memory usage, at the end of the run.
+.in -.5i
+.TP
+.B \-pedantic
+Issue all the warnings demanded by strict ANSI standard C; reject
+all programs that use forbidden extensions.
+.sp
+Valid ANSI standard C programs should compile properly with or without
+this option (though a rare few will require
+.BR \-ansi ).
+However, without this option, certain GNU extensions and traditional C
+features are supported as well.
+With this option, they are rejected.
+There is no reason to use this option; it exists only to satisfy pedants.
+.sp
+.B \-pedantic
+does not cause warning messages for use of the alternate keywords whose
+names begin and end with
+.BR __ .
+.TP
+.B \-static
+On Suns running version 4, this prevents linking with the shared
+libraries.
+.RB ( \-g
+has the same effect.)
+.P
+These options control the C preprocessor, which is run on each C source
+file before actual compilation.  If you use the `-E' option, nothing
+is done except C preprocessing.  Some of these options make sense only
+together with `-E' because they request preprocessor output that is
+not suitable for actual compilation.
+.TP
+.B \-C
+Tell the preprocessor not to discard comments.
+Used with the
+.B \-E
+option.
+.TP
+.BI \-I dir
+Search directory
+.I dir
+for include files.
+.TP
+.B \-I-
+Any directories specified with
+.B \-I
+options before the
+.B \-I-
+option are searched only for the case of
+.B #include
+\fB"\fIfile\fB"\fR; they are not searched for
+.BR "#include <\fIfile\fB>" .
+.sp
+If additional directories are specified with
+.B \-I
+options after the
+.BR \-I- ,
+these directories are searched for all
+.B #include
+directives.
+(Ordinarily
+.I all
+.B \-I
+directories are used this way.)
+.sp
+In addition, the
+.B \-I-
+option inhibits the use of the current directory as the first
+search directory for
+.B #include
+\fB"\fIfile\fB"\fR.
+Therefore, the current directory is searched only if it is requested
+explicitly with
+.BR \-I. .
+Specifying both
+.B \-I-
+and
+.B -I.
+allows you to control precisely which directories are searched before
+the current one and which are searched after.
+.TP
+.B \-nostdinc
+Do not search the standard system directories for header files.
+Only the directories you have specified with
+.B \-I
+options (and the current directory, if appropriate) are searched.
+.sp
+Between
+.B \-nostdinc
+and
+.BR \-I- ,
+you can eliminate all directories from the search path
+except those you specify.
+.TP
+.B \-M
+Tell the preprocessor to output a rule suitable for
+.BI make (1)
+describing the dependencies of each source file.
+For each source file, the preprocessor outputs one
+.BR make -rule
+whose target is the object file name for that source file and whose
+dependencies are all the files
+.BR #include d
+in it.
+This rule may be a single line or may be continued with
+.B \\\\-newline
+if it is long.
+.sp
+.B \-M
+implies
+.BR \-E .
+.TP
+.B \-MM
+Like
+.B \-M
+but the output mentions only the user-header files included with
+.B #include
+\fB"\fIfile\fB"\fR.
+System header files included with
+.B "#include <\fIfile\fB>"
+are omitted.
+.sp
+.B \-MM
+implies
+.BR \-E .
+.TP
+.BI \-D macro
+Define macro
+.I macro
+with the empty string as its definition.
+.TP
+.BI \-D macro\fR=\fIdefn
+Define macro
+.I macro
+as
+.IR defn .
+.TP
+.BI \-U macro
+Undefine macro
+.IR macro .
+.TP
+.B \-trigraphs
+Support ANSI C trigraphs.
+You don't want to know about this brain-damage.
+The
+.B \-ansi
+option also has this effect.
+.SH FILES
+.ta \w'/usr/lib/libgnulib.a 'u
+file.c	C source file
+.br
+file.s	assembly language file
+.br
+file.o	object file
+.br
+a.out	link edited output
+.br
+/tmp/cc\(**	temporary files
+.br
+/usr/libexec/cpp	preprocessor
+.br
+/usr/libexec/cc1	compiler
+.br
+/usr/lib/libgnulib.a	library needed by GCC on some machines
+.br
+/usr/lib/crt0.o	start-up routine
+.br
+/usr/lib/libc.a	standard C library, see
+.IR intro (3)
+.br
+/usr/include	standard directory for 
+.B #include
+files
+.SH "SEE ALSO"
+as(1), ld(1), adb(1), dbx(1), gdb(1).
+.SH BUGS
+Bugs should be reported to
+.BR bug-gcc@prep.ai.mit.edu .
+Bugs tend actually to be fixed if they can be isolated, so it is in your
+interest to report them in such a way that they can be easily reproduced.
+.SH COPYING
+Copyright (c) 1988 Free Software Foundation, Inc.
+.P
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+.P
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+.P
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be included in
+translations approved by the Free Software Foundation instead of in
+the original English.
+.SH AUTHORS
+See the GNU CC Manual for the contributors to GNU CC.

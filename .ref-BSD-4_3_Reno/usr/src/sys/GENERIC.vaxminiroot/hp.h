@@ -1,1 +1,0 @@
-#define NHP 4

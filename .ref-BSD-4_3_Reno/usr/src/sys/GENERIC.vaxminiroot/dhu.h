@@ -1,1 +1,0 @@
-#define NDHU 1
