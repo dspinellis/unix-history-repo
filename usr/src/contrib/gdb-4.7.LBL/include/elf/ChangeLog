@@ -1,0 +1,27 @@
+Sat Aug  1 13:46:53 1992  Fred Fish  (fnf@cygnus.com)
+
+	* dwarf.h:  Replace with current version from gcc distribution.
+
+Fri Jun 19 19:05:09 1992  John Gilmore  (gnu at cygnus.com)
+
+	* internal.h:  Add real struct tags to all the Type_Defs, so they
+	can be used in prototypes where the Type_Defs are not known.
+
+Fri Apr  3 20:58:58 1992  Mark Eichin  (eichin at cygnus.com)
+
+	* common.h: added ELF_R_{SYM,TYPE,INFO} for handling relocation
+	info
+	added EM_MIPS, and corrected value of EM_860 based on System V ABI
+	manual. 
+
+	* external.h: added Elf_External_{Rel,Rela}.
+
+	* internal.h: added Elf_Internal_{Rel,Rela}.
+	added rawdata to Elf_Internal_Shdr.
+
+Sat Nov 30 20:43:59 1991  Steve Chamberlain  (sac at rtl.cygnus.com)
+
+	* common.h, dwarf.h, external.h, internal.h, ChangeLog; moved from
+	../elf-<foo>
+
+
