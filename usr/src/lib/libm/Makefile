@@ -1,30 +1,83 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-# This high quality math library is intended to run on either a VAX in
-# D_floating format or a machine that conforms to the IEEE standard 754
-# for double precision floating-point arithmetic.
-#
-# WARNING: On machines other than the ones mentioned above, run the original
-# Version 7 math library, if nothing better is available.
-#
-# HARDWARE indicates the type of floating point hardware you are using;
-# we use MACHINE because we don't have anything better.
-# Current legal values are:
-#
-# vax		- for the VAX D_floating format, the default.
-# tahoe		- for the TAHOE double format.
-# national	- for those IEEE machines whose floating point implementation
+# ieee		- for most IEEE machines, we hope.
+# mc68881	- the, ahem, mc68881.
+# national	- for those ieee machines whose floating point implementation
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
-# ieee		- for other IEEE machines, we hope.
+# tahoe		- for the tahoe double format.
+# vax		- for the vax D_floating format
 
 LIB=	m
-HARDWARE=${MACHINE}
-CFLAGS+=-D${HARDWARE} -I${.CURDIR}/common_source
-.PATH:	${.CURDIR}/common_source
+CFLAGS+=-I${.CURDIR}/common_source
 
-SRCS=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
+.if (${MACHINE} == "ieee")
+
+HARDWARE=${MACHINE}
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/ieee
+# common_source
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
 	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+# common
+SRCS+=	atan2.c sincos.c tan.c
+# ieee
+SRCS+=	cabs.c cbrt.c support.c
+
+.elif (${MACHINE} == "hp300")
+
+HARDWARE=mc68881
+.PATH:	${.CURDIR}/mc68881 ${.CURDIR}/common_source ${.CURDIR}/ieee
+# common_source
+SRCS+=	acosh.c asinh.c erf.c exp__E.c fmod.c lgamma.c j0.c j1.c log__L.c \
+	pow.c
+# mc68881
+SRCS+=	asincos.s atan.s atan2.c atanh.s cosh.s exp.s expm1.s floor.s \
+	log.s log10.s log1p.s sincos.s sinh.s sqrt.s support.s tan.s tanh.s
+# ieee
+SRCS+=	cabs.c cbrt.c
+
+.elif (${MACHINE} == "national")
+
+HARDWARE=${MACHINE}
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/national \
+	${.CURDIR}/ieee
+# common_source
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+# common
+SRCS+=	atan2.c sincos.c tan.c
+# national
+SRCS+=	sqrt.s support.s
+# ieee
+SRCS+=	cabs.c cbrt.c
+
+.elif (${MACHINE} == "tahoe")
+
+HARDWARE=${MACHINE}
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/tahoe \
+# common_source
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+# common
+SRCS+=	atan2.c sincos.c tan.c
+# tahoe
+SRCS+=	cabs.s cbrt.s sqrt.s support.s infnan.s
+
+.elif (${MACHINE} == "vax")
+
+HARDWARE=${MACHINE}
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/vax
+# common_source
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c
+	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+# vax
+SRCS+=	atan2.s cabs.s cbrt.s sqrt.s sincos.s tan.s argred.s support.s \
+	infnan.s
+
+.endif
 
 MAN3+=	asinh.0 erf.0 exp.0 floor.0 hypot.0 ieee.0 infnan.0 j0.0 \
 	lgamma.0 math.0 sin.0 sinh.0 sqrt.0
@@ -41,30 +94,6 @@ MLINKS+=lgamma.3 gamma.3
 MLINKS+=sin.3 tan.3 sin.3 acos.3 sin.3 asin.3 sin.3 atan.3 sin.3 atan2.3 \
 	sin.3 cos.3
 MLINKS+=sinh.3 cosh.3
-
-.if $(HARDWARE) == "ieee"
-.PATH:	${.CURDIR}/common ${.CURDIR}/ieee
-SRCS+=	atan2.c sincos.c tan.c				# common
-SRCS+=	cabs.c cbrt.c support.c				# ieee
-.endif
-
-.if $(HARDWARE) == "national"
-.PATH:	${.CURDIR}/common ${.CURDIR}/national ${.CURDIR}/ieee
-SRCS+=	atan2.c sincos.c tan.c				# common
-SRCS+=	cabs.c cbrt.c sqrt.s support.s			# national
-.endif
-
-.if $(HARDWARE) == "tahoe"
-.PATH:	${.CURDIR}/common ${.CURDIR}/tahoe
-SRCS+=	atan2.c sincos.c tan.c				# common
-SRCS+=	cabs.s cbrt.s sqrt.s support.s infnan.s		# tahoe
-.endif
-
-.if $(HARDWARE) == "vax"
-.PATH:	${.CURDIR}/vax
-SRCS+=	atan2.s cabs.s cbrt.s sqrt.s sincos.s tan.s \
-	argred.s support.s infnan.s			# vax
-.endif
 
 # can't use the standard mkdep, because there are some .s files that
 # are using '#' as a comment indicator and cpp thinks it's an undefined
@@ -85,4 +114,3 @@ depend: ${SRCS}
 	    ${AS} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
-
