@@ -1,4 +1,4 @@
-#	Makefile	5.12	87/06/18
+#	Makefile	5.13	87/08/23
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -150,7 +150,7 @@ install: ${ALL}
 	for i in uucico uuclean; do \
 		install -s -m 6111 -o ${OWNER} -g ${GROUP} $$i ${LIBDIR} ;\
 	done
-	for i in uucp uux uulog uuname uusnap uupoll uuq uusend; do \
+	for i in uucp uux uulog uuname uusnap uupoll uuq; do \
 		install -s -m 6111 -o ${OWNER} -g ${GROUP} $$i ${BIN} ;\
 	done
 	rm -f ${BIN}/ruusend
@@ -160,6 +160,7 @@ install: ${ALL}
 	install -s -m 500 -o uucp uucpd ${ETC}
 	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
 	@echo if you are not running /etc/inetd
+	install -s -o bin -g bin -m 755 uusend ${BIN}
 	install -s -o bin -g bin -m 755 uuencode ${BIN}
 	install -s -o bin -g bin -m 755 uudecode ${BIN}
 
