@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.6	(Berkeley)	%G%
+#	@(#)Makefile	4.7	(Berkeley)	%G%
 #
 # Flag BSD4_2 means 4.2 or later.
 CFLAGS=	-O -DBSD4_2
@@ -36,6 +36,7 @@ install: FRC
 	install -s -o bin -g bin -m 755 learn ${LLIB}/learn
 	install -s -o bin -g bin -m 755 lrntee ${LLIB}/lrntee
 	install -s -o bin -g bin -m 755 lcount ${LLIB}/lcount
+	chmod 755 ${LLIB}/../*/Init
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
