@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.51	83/02/10	*/
+/*	tcp_output.c	4.52	83/03/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -141,8 +141,8 @@ send:
 	 * be transmitted, and initialize the header from
 	 * the template for sends on this connection.
 	 */
-	MGET(m, M_DONTWAIT, MT_DATA);
-	if (m == INADDR_ANY)
+	MGET(m, M_DONTWAIT, MT_HEADER);
+	if (m == NULL)
 		return (ENOBUFS);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
