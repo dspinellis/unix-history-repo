@@ -1,0 +1,134 @@
+.TH RA 4 10/8/81
+.UC 4
+.SH NAME
+ra \- UDA50/RA80 Unibus disk controller and drives
+.SH SYNOPSIS
+controller uda0 at uba? csr 0177550 vector udintr
+.br
+disk ra0 at uda0 drive 0
+.SH DESCRIPTION
+The UDA50 is an intelligent disk controller for the UNIBUS.
+It supports the RA80 124MB disk drive.
+.PP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0;
+minor devices 8 through 15 refer to drive 1, etc.
+The standard device names begin with ``ra'' followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u
+RA80 124M drive partitions:
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	237298
+	ra?d	0	0
+	ra?e	0	0
+	ra?f	0	0
+	ra?g	49324	82080
+	ra?h	131404	105994
+.DT
+.fi
+.PP
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+The ra?a partition is normally used for the root file system,
+the ra?b partition as a paging area,
+and the ra?c partition for pack-pack copying (it maps the entire disk).
+Both ra?g and ra?h are used to map the
+remaining cylinders.
+.PP
+The block files access the disk via the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files
+conventionally begin with an extra `r.'
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH FILES
+/dev/ra[0-7][a-h]	block files
+.br
+/dev/rra[0-7][a-h]	raw files
+.SH SEE ALSO
+hk(4), hp(4), up(4)
+.SH DIAGNOSTICS
+\fBra%d%c: hard error sn%d udasa %o, state %d\fR.
+.br
+\fBra%d%c: hard error sn%d status %o\fR.
+An unrecoverable
+error occured during transfer of the specified sector of the specified
+disk partition.  The contents of the udasa register are printed
+in octal and symbolically with bits decoded.  The internal state is also
+printed.  In the second form, the MSCP status is printed.
+The error was either unrecoverable, or a large number of retry attempts
+(including offset positioning and drive recalibration) could not
+recover the error.
+.PP
+\fBra%d%c: hard error sn%d OFFLINE\fR.  The drive was spun down or off
+line when it was accessed.  The i/o operation is not recoverable.
+.PP
+\fBuda%d: random interrupt ignored\fR.  The UDA received an interrupt
+before it was initialized.
+.PP
+\fBuda%d: fatal error (%o)\fR.  A fatal error was noticed in the UDA
+interrupt routine.  The contents of udasa are printed.  The controller
+will be reinitialized.
+.PP
+\fBuda%d: [soft|hard] error, controller error, event 0%o\fR.
+.br
+\fBuda%d: [soft|hard] error, host memory access error, event 0%o, addr 0%o\fR.
+.br
+\fBuda%d: [soft|hard] error, disk transfer error, unit %d, grp %d, cyl %d,
+sec %d, trk %d, lbn %d, retry %d, level %d\fR.
+.br
+\fBuda%d: [soft|hard] error, SDI error, unit %d, event 0%o, cyl %d\fR.
+.br
+\fBuda%d: [soft|hard] error, small disk error, unit %d, event 0%o, cyl %d\fR.
+.br
+\fBuda%d: [soft|hard] error, unknown error, unit %d, format 0%o, event 0%o\fR.
+.br
+See the driver and the UDA and MSCP manuals.
+.SH BUGS
+In raw I/O
+.I read
+and
+.IR write (2)
+truncate file offsets to 512-byte block boundaries,
+and
+.I write
+scribbles on the tail of incomplete blocks.
+Thus,
+in programs that are likely to access raw devices,
+.I read, write
+and
+.IR lseek (2)
+should always deal in 512-byte multiples.
+.PP
+A program to analyze the logged error information (even in its
+present reduced form) is needed.  Error messages should be more
+consistent.
+.PP
+The partition tables for the file systems should be read off of each
+pack, as they are never quite what any single installation would prefer,
+and this would make packs more portable.
+.PP
+Dumps to the swap area on system crashes are not implemented.
+.PP
+Booting via block zero is not (and will not be) supported.  The ``boot''
+program must be loaded from the console storage device.
+.PP
+Although the device supports unit numbers up to 255, the driver only
+supports unit numbers up to 7.
