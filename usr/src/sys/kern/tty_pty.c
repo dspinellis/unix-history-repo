@@ -1,5 +1,5 @@
 #
-/*	tty_pty.c	1.3	%G%	*/
+/*	tty_pty.c	4.1	%G%	*/
 
 /*
  * Pseudo-teletype Driver
