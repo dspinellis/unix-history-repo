@@ -8,10 +8,11 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)vangogh.cs.mc	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)vangogh.cs.mc	8.2 (Berkeley) %G%')
 DOMAIN(cs.exposed)dnl
 OSTYPE(bsd4.4)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
 define(`MCI_CACHE_SIZE', 5)
-Cw okeeffe
+Cw okeeffe.CS.Berkeley.EDU
+Cw python.CS.Berkeley.EDU
