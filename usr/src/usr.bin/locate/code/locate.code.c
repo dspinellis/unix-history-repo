@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -125,11 +125,11 @@ main(argc, argv)
 		count = cp - path;
 		diffcount = count - oldcount + OFFSET;
 		oldcount = count;
-		if (diffcount < 0 || diffcount > 2 * OFFSET)
+		if (diffcount < 0 || diffcount > 2 * OFFSET) {
 			if (putchar(SWITCH) == EOF ||
 			    putw(diffcount, stdout) == EOF)
 				OERR;
-		else
+		} else
 			if (putchar(diffcount) == EOF)
 				OERR;
 
