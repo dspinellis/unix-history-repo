@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	6.1 (Berkeley) %G%
+.\"	@(#)a.t	6.2 (Berkeley) %G%
 .\"
 .ds RH Summary of facilities
 .bp
@@ -201,13 +201,13 @@ getsockopt	get socket option
 setsockopt	set socket option
 .TE
 .in -5
-.h 2.5 "Terminals, block and character devices
+.h 2.4 "Terminals, block and character devices
 .in +5
 .TS
 lw(1.6i) aw(3i).
 .TE
 .in -5
-.h 2.4 "Processes and kernel hooks
+.h 2.5 "Processes and kernel hooks
 .in +5
 .TS
 lw(1.6i) aw(3i).

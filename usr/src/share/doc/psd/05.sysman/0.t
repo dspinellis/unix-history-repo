@@ -2,16 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) %G%
+.\"	@(#)0.t	6.2 (Berkeley) %G%
 .\"
 .EH 'PS1:6-%''4.3BSD Architecture Manual'
 .OH '4.3BSD Architecture Manual''PS1:6-%'
 .if n .ND
 .TL
 Berkeley Software Architecture Manual
+.br
 4.3BSD Edition
 .AU
-William Joy, Samuel Leffler, M. Kirk McKusick, Michael Karels
+William Joy, Robert Fabry,
+.AU
+Samuel Leffler, M. Kirk McKusick,
+.AU
+Michael Karels
 .AI
 Computer Systems Research Group
 Computer Science Division
