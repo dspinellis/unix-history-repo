@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -705,7 +705,7 @@ pprint(pp, flag)
                             && (reason != SIGPIPE
                                 || (pp->p_flags & PPOU) == 0))) {
 			(void) fprintf(cshout, format, 
-				       mesg[pp->p_reason].pname);
+				       sys_signame[pp->p_reason]);
 			hadnl = 0;
 		    }
 		    break;
@@ -925,21 +925,16 @@ dokill(v, t)
     Char **v;
     struct command *t;
 {
-    register int signum, len = 0;
+    register int signum = SIGTERM;
     register char *name;
 
     v++;
     if (v[0] && v[0][0] == '-') {
 	if (v[0][1] == 'l') {
-	    for (signum = 1; signum <= NSIG; signum++) {
-		if ((name = mesg[signum].iname) != NULL) {
-		    len += strlen(name) + 1;
-		    if (len >= 80 - 1) {
-			(void) fputc('\n', cshout);
-			len = strlen(name) + 1;
-		    }
-		    (void) fprintf(cshout, "%s ", name);
-		}
+	    for (signum = 1; signum < NSIG; signum++) {
+		(void) fprintf(cshout, "%s ", sys_signame[signum]);
+		if (signum == NSIG / 2)
+		    (void) fputc('\n', cshout);
 	    }
 	    (void) fputc('\n', cshout);
 	    return;
@@ -950,18 +945,21 @@ dokill(v, t)
 		stderror(ERR_NAME | ERR_BADSIG);
 	}
 	else {
-	    for (signum = 1; signum <= NSIG; signum++)
-		if (mesg[signum].iname &&
-		    eq(&v[0][1], str2short(mesg[signum].iname)))
-		    goto gotsig;
-	    setname(short2str(&v[0][1]));
-	    stderror(ERR_NAME | ERR_UNKSIG);
+	    name = short2str(&v[0][1]);
+	    if (!strncasecmp(name, "sig", 3))
+		name += 3;
+
+	    for (signum = 1; signum < NSIG; signum++) 
+		if (!strcasecmp(sys_signame[signum], name))
+		    break;
+
+	    if (signum == NSIG) {
+		setname(short2str(&v[0][1]));
+		stderror(ERR_NAME | ERR_UNKSIG);
+	    }
 	}
-gotsig:
 	v++;
     }
-    else
-	signum = SIGTERM;
     pkill(v, signum);
 }
 
