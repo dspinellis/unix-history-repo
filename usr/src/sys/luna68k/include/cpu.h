@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
- * from: hp300/include/cpu.h	7.13 (Berkeley) 12/27/92
+ * from: hp300/include/cpu.h	7.14 (Berkeley) 5/20/93
  *
- *	@(#)cpu.h	7.4 (Berkeley) %G%
+ *	@(#)cpu.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -92,6 +92,17 @@ extern unsigned char ssir;
 #define siroff(x)	ssir &= ~(x)
 #define setsoftnet()	ssir |= SIR_NET
 #define setsoftclock()	ssir |= SIR_CLOCK
+
+/*
+ * CTL_MACHDEP definitions.
+ */
+#define	CPU_CONSDEV		1	/* dev_t: console terminal device */
+#define	CPU_MAXID		2	/* number of valid machdep ids */
+
+#define CTL_MACHDEP_NAMES { \
+	{ 0, 0 }, \
+	{ "console_device", CTLTYPE_STRUCT }, \
+}
 
 #ifdef KERNEL
 extern	int mmutype, machineid;
