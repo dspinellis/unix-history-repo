@@ -1,4 +1,4 @@
-/*	defs.h	4.5	82/05/31	*/
+/*	defs.h	4.6	82/06/05	*/
 
 /*
  * Internal data structure definitions for
@@ -69,9 +69,10 @@ struct afswitch {
 	int	(*af_hash)();		/* returns keys based on address */
 	int	(*af_netmatch)();	/* verifies net # matching */
 	int	(*af_output)();		/* interprets address for sending */
-	int	(*af_portmatch)();	/* interprets address on receipt */
+	int	(*af_portmatch)();	/* packet from some other router? */
+	int	(*af_portcheck)();	/* packet from priviledged peer? */
 	int	(*af_checkhost)();	/* tells if address for host or net */
-	int	(*af_canon)();		/* purges extraneous part of address */
+	int	(*af_canon)();		/* canonicalize address for compares */
 };
 
 /*
