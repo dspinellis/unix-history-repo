@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)check.c 1.3 %G%";
+static char sccsid[] = "@(#)check.c 1.4 %G%";
 
 /*
  * Check a tree for semantic correctness.
@@ -119,8 +119,6 @@ Node p;
 	    prtree(stderr, exp);
 	    enderrmsg();
 	}
-	chkblock(place);
-    } else if (cond != nil) {
 	chkblock(place);
     } else if (place->op == O_SYM) {
 	chkblock(place);
