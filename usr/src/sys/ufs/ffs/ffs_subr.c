@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.22 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -205,51 +205,3 @@ ffs_setblock(fs, cp, h)
 		panic("ffs_setblock");
 	}
 }
-
-#if (!defined(vax) && !defined(tahoe) && !defined(hp300) && !defined(luna68k)) \
-	|| defined(VAX630) || defined(VAX650)
-/*
- * C definitions of special instructions.
- * Normally expanded with inline.
- */
-int
-scanc(size, cp, table, mask)
-	u_int size;
-	register u_char *cp, table[];
-	register u_char mask;
-{
-	register u_char *end = &cp[size];
-
-	while (cp < end && (table[*cp] & mask) == 0)
-		cp++;
-	return (end - cp);
-}
-#endif
-
-#if !defined(vax) && !defined(tahoe) && !defined(hp300) && !defined(luna68k)
-int
-skpc(mask, size, cp)
-	register u_char mask;
-	u_int size;
-	register u_char *cp;
-{
-	register u_char *end = &cp[size];
-
-	while (cp < end && *cp == mask)
-		cp++;
-	return (end - cp);
-}
-
-int
-locc(mask, size, cp)
-	register u_char mask;
-	u_int size;
-	register u_char *cp;
-{
-	register u_char *end = &cp[size];
-
-	while (cp < end && *cp != mask)
-		cp++;
-	return (end - cp);
-}
-#endif
