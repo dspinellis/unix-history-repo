@@ -1,4 +1,4 @@
-/*	clock.h	4.5	81/02/23	*/
+/*	clock.h	4.6	82/09/04	*/
 
 /*
  * VAX clock registers
@@ -29,11 +29,9 @@
 	mtpr(NICR, -16667);	/* 16.667 milli-seconds */\
 	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);\
 }
-#define	clkreld()	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_INT+ICCS_ERR)
-
 #define	clkwrap()	(((unsigned)mfpr(TODR) - TODRZERO)/100 > SECYR+SECDAY)
 
 /*
- * Software clock is software interrupt level 8
+ * Software clock is software interrupt level 8,
+ * implemented as mtpr(SIRR, 0x8) in asm.sed.
  */
-#define	setsoftclock()	mtpr(SIRR, 0x8)
