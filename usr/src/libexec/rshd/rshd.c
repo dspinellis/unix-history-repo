@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.11 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)rshd.c	5.12 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * remote shell server:
@@ -88,7 +99,8 @@ doit(f, fromp)
 	struct hostent *hp;
 	char *hostname;
 	short port;
-	int pv[2], pid, ready, readfrom, cc;
+	int pv[2], pid, cc;
+	long ready, readfrom;
 	char buf[BUFSIZ], sig;
 	int one = 1;
 
@@ -194,7 +206,7 @@ doit(f, fromp)
 		if (pid) {
 			(void) close(0); (void) close(1); (void) close(2);
 			(void) close(f); (void) close(pv[1]);
-			readfrom = (1<<s) | (1<<pv[0]);
+			readfrom = (1L<<s) | (1L<<pv[0]);
 			ioctl(pv[0], FIONBIO, (char *)&one);
 			/* should set s nbio! */
 			do {
@@ -202,18 +214,18 @@ doit(f, fromp)
 				if (select(16, &ready, (fd_set *)0,
 				    (fd_set *)0, (struct timeval *)0) < 0)
 					break;
-				if (ready & (1<<s)) {
+				if (ready & (1L<<s)) {
 					if (read(s, &sig, 1) <= 0)
-						readfrom &= ~(1<<s);
+						readfrom &= ~(1L<<s);
 					else
 						killpg(pid, sig);
 				}
-				if (ready & (1<<pv[0])) {
+				if (ready & (1L<<pv[0])) {
 					errno = 0;
 					cc = read(pv[0], buf, sizeof (buf));
 					if (cc <= 0) {
 						shutdown(s, 1+1);
-						readfrom &= ~(1<<pv[0]);
+						readfrom &= ~(1L<<pv[0]);
 					} else
 						(void) write(s, buf, cc);
 				}
