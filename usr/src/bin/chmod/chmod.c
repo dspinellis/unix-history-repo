@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chmod.c	4.2 %G%";
+static char *sccsid = "@(#)chmod.c	4.3 %G%";
 
 /*
  * chmod options mode files
@@ -25,25 +25,32 @@ static char *sccsid = "@(#)chmod.c	4.2 %G%";
 char	*modestring, *ms;
 int	um;
 int	status;
-int	rflag = 0, debug = 0;
+int	rflag, debug, Xflag;
 
 main(argc,argv)
 char **argv;
 {
 	register i;
-	register char *p;
+	register char *p, *flags;
 	struct	stat st;
 
 	if (argc < 3) {
 		fprintf(stderr
-			,"Usage: chmod [-R] [ugoa][+-=][rwxstugo] file ...\n");
+			,"Usage: chmod [-RX] [ugoa][+-=][rwxstugo] file ...\n");
 		exit(-1);
 	}
+
 	argv++, --argc;
-	if (strcmp(argv[0], "-R") == 0) {
-		rflag++;
-		argv++, --argc;
+	if (*argv[0] == '-') {
+		for (flags = argv[0]; *flags; ++flags)
+			switch (*flags) {
+			  case '-':			break;
+			  case 'R':	rflag++;	break;
+			  case 'X': 	Xflag++;	break;
+			}
+		argv++, argc--;
 	}
+
 	modestring = argv[0];
 
 	um = umask(0);
@@ -144,6 +151,8 @@ unsigned nm;
 		exit(255);
 	}
 ret:
+	if (Xflag && ((savem & S_IFDIR) || (savem & S_IEXEC)))
+		nm = nm | ((nm & 0444) >> 2);
 	return(nm);
 }
 
