@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm.h	8.1 (Berkeley) %G%
+ *	@(#)vm.h	8.2 (Berkeley) %G%
  */
 
 #ifndef VM_H
@@ -32,28 +32,6 @@ typedef struct pager_struct *vm_pager_t;
 
 #include <sys/vmmeter.h>
 #include <sys/queue.h>
-
-/*
- * Compatibility with old MACH queue.h
- */
-typedef struct queue_entry	*queue_t;
-typedef	struct queue_entry	queue_head_t;
-typedef	struct queue_entry	queue_chain_t;
-typedef	struct queue_entry	*queue_entry_t;
-
-#define	queue_first(head)	((head)->qe_next)
-#define	queue_next(elm)		((elm)->qe_next)
-#define	queue_empty(head)	((head)->qe_next == 0)
-#define	queue_end(head, elm)	((elm) == 0)
-
-#define queue_enter(head, elt, type, field) \
-	queue_enter_tail(head, elt, type, field)
-
-#define queue_remove_first(head, elt, type, field) { \
-	elt = queue_first(head); \
-	queue_remove(head, elt, type, field) \
-}
-
 #include <vm/vm_param.h>
 #include <vm/lock.h>
 #include <vm/vm_prot.h>
