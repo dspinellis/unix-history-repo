@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.c	4.25 (Berkeley) 5/1/85";
 #endif
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 
@@ -44,7 +44,7 @@ char	dead[] = "dead.letter";
 char	forwmsg[] = " forwarded\n";
 FILE	*tmpf;
 FILE	*malf;
-char	*my_name;
+char	my_name[60];
 char	*getlogin();
 int	error;
 int	changed;
@@ -64,23 +64,25 @@ main(argc, argv)
 char **argv;
 {
 	register i;
+	char *name;
 	struct passwd *pwent;
 
-	my_name = getlogin();
-	if (my_name == NULL || *my_name == '\0') {
+	name = getlogin();
+	if (name == NULL || *name == '\0') {
 		pwent = getpwuid(getuid());
 		if (pwent==NULL)
-			my_name = "???";
+			name = "???";
 		else
-			my_name = pwent->pw_name;
+			name = pwent->pw_name;
 	}
 	else {
 		pwent = getpwnam(my_name);
 		if ( getuid() != pwent->pw_uid) {
 			pwent = getpwuid(getuid());
-			my_name = pwent->pw_name;
+			name = pwent->pw_name;
 		}
 	}
+	strncpy(my_name, name, sizeof(my_name)-1);
 	if (setjmp(sjbuf))
 		done();
 	for (i=SIGHUP; i<=SIGTERM; i++)
@@ -368,7 +370,7 @@ copylet(n, f, type)
 {
 	int ch;
 	long k;
-	char hostname[32];
+	char hostname[MAXHOSTNAMELEN];
 
 	fseek(tmpf, let[n].adr, L_SET);
 	k = let[n+1].adr - let[n].adr;
@@ -418,16 +420,16 @@ register char *lp;
 bulkmail(argc, argv)
 char **argv;
 {
-	char truename[100];
+	char *truename;
 	int first;
 	register char *cp;
-	int gaver = 0;
 	char *newargv[1000];
 	register char **ap;
 	register char **vp;
 	int dflag;
 
 	dflag = 0;
+	delflg = 0;
 	if (argc < 1) {
 		fprintf(stderr, "puke\n");
 		return;
@@ -448,7 +450,7 @@ char **argv;
 		exit(EX_UNAVAILABLE);
 	}
 
-	truename[0] = 0;
+	truename = 0;
 	line[0] = '\0';
 
 	/*
@@ -494,8 +496,8 @@ char **argv;
 	}
 	if (argc <= 1)
 		usage();
-	if (gaver == 0)
-		strcpy(truename, my_name);
+	if (truename == 0)
+		truename = my_name;
 	time(&iop);
 	fprintf(tmpf, "%s%s %s", from, truename, ctime(&iop));
 	iop = ftell(tmpf);
@@ -676,10 +678,15 @@ sendmail(n, name, fromaddr)
 
 delex(i)
 {
-	setsig(i, delex);
+	if (i != SIGINT) {
+		setsig(i, SIG_DFL);
+		sigsetmask(sigblock(0) &~ sigmask(i));
+	}
 	putc('\n', stderr);
 	if (delflg)
 		longjmp(sjbuf, 1);
+	if (error == 0)
+		error = i;
 	done();
 }
 
