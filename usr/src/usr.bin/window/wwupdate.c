@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -48,9 +48,17 @@ wwupdate1(top, bot)
 		    (tt.tt_clreos != 0 || tt.tt_clear != 0)) {
 			int st = tt.tt_clreos != 0 ? scan_top : 0;
 
-			for (n = 1; t1 < t2;)
+			/*
+			 * t1 is one past the first touched row,
+			 * t2 is on the last touched row.
+			 */
+			for (t1--, n = 1; t1 < t2;)
 				if (*t1++)
 					n++;
+			/*
+			 * If we can't clreos then we try for clearing
+			 * the whole screen.
+			 */
 			if (check_clreos = n * 10 > (wwnrow - st) * 9) {
 				scan_top = st;
 				scan_bot = wwnrow;
@@ -108,10 +116,18 @@ wwupdate1(top, bot)
 		register simple_gain = 0;
 		char didit = 0;
 
+		/*
+		 * gain is the advantage of clearing all the lines.
+		 * best_gain is the advantage of clearing to eos
+		 * at best_row and u->best_col.
+		 * simple_gain is the advantage of using only clreol.
+		 * We use g > best_gain because u->best_col can be
+		 * undefined when u->best_gain is 0 so we can't use it.
+		 */
 		for (j = scan_bot - 1, u = wwupd + j; j >= top; j--, u--) {
 			register g = gain + u->best_gain;
 
-			if (g >= best_gain) {
+			if (g > best_gain) {
 				best_gain = g;
 				best_row = j;
 			}
