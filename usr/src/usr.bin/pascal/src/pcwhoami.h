@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pcwhoami.h 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)pcwhoami.h 1.4 %G%"; */
 
 /*
  *	am i generating an obj file (OBJ),
@@ -22,9 +22,26 @@
  *	hardware characteristics:
  *	address size (16 or 32 bits) and byte ordering (normal or dec11 family).
  */
-#undef	ADDR16
-#define	ADDR32
-#undef	DEC11
+#ifdef vax
+#   undef	ADDR16
+#   define	ADDR32
+#   define	DEC11
+#endif vax
+#ifdef pdp11
+#   define	ADDR16
+#   undef	ADDR32
+#   define	DEC11
+#endif vax
+#ifdef mc68000
+#   undef	ADDR16
+#   define	ADDR32
+#   undef	DEC11
+#endif mc68000
+#ifdef z8000
+#   define	ADDR16
+#   undef	ADDR32
+#   undef	DEC11
+#endif z8000
 
 /*
  *	am i pi or pxp?
