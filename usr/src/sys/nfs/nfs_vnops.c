@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -273,7 +273,7 @@ nfs_close(vp, fflags, cred)
 	register struct nfsnode *np = VTONFS(vp);
 	int error = 0;
 
-	if (vp->v_type == VREG && vp->v_blockh && ((np->n_flag & NMODIFIED) ||
+	if (vp->v_type == VREG && ((np->n_flag & NMODIFIED) ||
 	   ((np->n_flag & NBUFFERED) && np->n_sillyrename))) {
 		nfs_lock(vp);
 		np->n_flag &= ~(NMODIFIED|NBUFFERED);
@@ -352,8 +352,7 @@ nfs_setattr(vp, vap, cred)
 		np = VTONFS(vp);
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
-			if (vp->v_blockh)
-				vinvalbuf(vp, TRUE);
+			vinvalbuf(vp, TRUE);
 		}
 	}
 	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec);
@@ -736,8 +735,7 @@ nfs_remove(ndp)
 	if (vp->v_type == VREG) {
 		if (np->n_flag & (NMODIFIED|NBUFFERED)) {
 			np->n_flag &= ~(NMODIFIED|NBUFFERED);
-			if (vp->v_blockh)
-				vinvalbuf(vp, TRUE);
+			vinvalbuf(vp, TRUE);
 		}
 		if (np->n_flag & NPAGEDON) {
 			np->n_flag &= ~NPAGEDON;
