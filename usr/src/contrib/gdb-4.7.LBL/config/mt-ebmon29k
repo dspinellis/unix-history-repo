@@ -1,0 +1,11 @@
+
+# don't build gnulib
+INSTALL_GNULIB = 
+INSTALL_HEADERS = 
+
+# Turn off focred include mangling
+INSTALL_FIXED_INCLUDES= nothing
+INSTALL_USR_LOCAL = nothing
+
+ALL= all.cross
+INSTALL_TARGET= install.cross
