@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,12 +39,13 @@ static char sccsid[] = "@(#)fsdb.c	5.4 (Berkeley) %G%";
  *	-w		open for write
  */
 
-#include <stdio.h>
-#include <setjmp.h>
 #include <sys/param.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include <sys/file.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <setjmp.h>
+#include <paths.h>
 
 #ifndef NFS
 #include <sys/fs.h>
@@ -1495,7 +1496,7 @@ ignore_eol:
 	}
 	if (c == '!') {
 		if ((pid = fork()) == 0) {
-			execl("/bin/sh", "sh", "-t", 0);
+			execl(_PATH_BSHELL, "sh", "-t", 0);
 			error++;
 			return;
 		}
