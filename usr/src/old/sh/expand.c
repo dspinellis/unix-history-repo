@@ -1,4 +1,6 @@
-/*	expand.c	4.4	83/07/01	*/
+#ifndef lint
+static char sccsid[] = "@(#)expand.c	4.5 %G%";
+#endif
 
 #
 /*

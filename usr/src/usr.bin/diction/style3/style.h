@@ -1,6 +1,4 @@
-/*
- *	@(#)style.h	4.2	(Berkeley)	82/11/06
- */
+/*	style.h	4.3	83/08/11	*/
 extern int part;
 extern int style;
 extern int topic;

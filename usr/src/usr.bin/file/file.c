@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.7 (Berkeley) 4.7";
+static	char sccsid[] = "@(#)file.c	4.8 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file

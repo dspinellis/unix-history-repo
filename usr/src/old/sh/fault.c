@@ -1,4 +1,6 @@
-/*	fault.c	4.2	83/06/10	*/
+#ifndef lint
+static char sccsid[] = "@(#)fault.c	4.3 %G%";
+#endif
 
 #
 /*

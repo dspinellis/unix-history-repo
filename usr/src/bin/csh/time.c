@@ -1,4 +1,6 @@
-/*	time.c	4.3	83/02/03	*/
+#ifndef lint
+static char sccsid[] = "@(#)time.c	4.4 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 

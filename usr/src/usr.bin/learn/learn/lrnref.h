@@ -1,3 +1,5 @@
+/*	lrnref.h	4.3	83/08/11	*/
+
 #define	READY	0
 #define	PRINT	1
 #define	COPYIN	2
