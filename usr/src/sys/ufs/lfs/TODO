@@ -1,24 +1,18 @@
-#	@(#)TODO	5.8 (Berkeley) %G%
+#	@(#)TODO	5.9 (Berkeley) %G%
 
 NOTE: Changed the lookup on a page of inodes to search from the back
 in case the same inode gets written twice on the same page.
 
-I don't think we still need the next segment pointer in the LFS summary
-block. (TK)
-
 Make sure that if you are writing a file, but not all the blocks
 make it into a single segment, that you do not write the inode in
 that segment.
-
-I added a hack to vinvalbuf to check for lfs -- I believe that
-vinvalbuf should be a vnode op.
 
 Keith:
 	Why not delete the lfs_bmapv call, just mark everything dirty
 		that isn't deleted/truncated?  Get some numbers about
 		what percentage of the stuff that the cleaner thinks
 		might be live is live.  If it's high, get rid of lfs_bmapv.
-*	Currently, inodes are being flushed to disk synchronously upon
+DONE	Currently, inodes are being flushed to disk synchronously upon
 		creation -- see ufs_makeinode.  However, only the inode
 		is flushed, the directory "name" is written using VOP_BWRITE,
 		so it's not synchronous.  Possible solutions: 1: get some
@@ -27,14 +21,14 @@ Keith:
 		3: add Mendel's information into the stream so we log
 		creation/deletion of inodes.  4: do some form of partial
 		segment when changing the inode (creation/deletion/rename).
-	Fix i_block increment for indirect blocks.
+DONE	Fix i_block increment for indirect blocks.
 	If the file system is tar'd, extracted on top of another LFS, the
 		IFILE ain't worth diddly.  Is the cleaner writing the IFILE?
 		If not, let's make it read-only.
-	Delete unnecessary source from utils in main-line source tree.
-	Make sure that we're counting meta blocks in the inode i_block count.
+DONE	Delete unnecessary source from utils in main-line source tree.
+DONE	Make sure that we're counting meta blocks in the inode i_block count.
 	Overlap the version and nextfree fields in the IFILE
-	Vinvalbuf (Kirk):
+DONE	Vinvalbuf (Kirk):
 		Why writing blocks that are no longer useful?
 		Are the semantics of close such that blocks have to be flushed?
 		How specify in the buf chain the blocks that don't need
@@ -46,23 +40,26 @@ Margo:
 		logical disk addresses.
 	Fix the use of the ifile version field to use the generation
 		number instead.
-*	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
-	Document in the README file where the checkpoint information is
+DONE	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
+DONE	Document in the README file where the checkpoint information is
 		on disk.
 	Variable block sizes (Margo/Keith).
 	Switch the byte accounting to sector accounting.
-	Check lfs.h and make sure that the #defines/structures are all
+DONE	Check lfs.h and make sure that the #defines/structures are all
 		actually needed.
-*	Add a check in lfs_segment.c so that if the segment is empty,
-		we don't write it.  (Margo, do you remember what this
-		meant?  TK)
+DONE	Add a check in lfs_segment.c so that if the segment is empty,
+		we don't write it.
 	Need to keep vnode v_numoutput up to date for pending writes?
+DONE	USENIX paper (Carl/Margo).
 
-Carl:
+
+Evelyn:
 	lfsck:	If delete a file that's being executed, the version number
 		isn't updated, and lfsck has to figure this out; case is			the same as if have an inode that no directory references,
 		so the file should be reattached into lost+found.
-	USENIX paper (Carl/Margo).
+	Recovery/fsck.
+
+Carl:
 	Investigate: clustering of reads (if blocks in the segment are ordered,
 		should read them all) and writes (McVoy paper).
 	Investigate: should the access time be part of the IFILE:
@@ -70,7 +67,6 @@ Carl:
 		con: cacheing inodes should obviate this advantage
 		     the IFILE is already humongous
 	Cleaner.
-	Recovery/fsck.
 	Port to OSF/1 (Carl/Keith).
 	Currently there's no notion of write error checking.
 		+ Failed data/inode writes should be rescheduled (kernel level
@@ -80,11 +76,9 @@ Carl:
 
 FUTURE FANTASIES: ============
 
-+ unrm
-	- versioning
++ unrm, versioning
 + transactions
-+ extended cleaner policies
-	- hot/cold data, data placement
++ extended cleaner policies (hot/cold data, data placement)
 
 ==============================
 Problem with the concept of multiple buffer headers referencing the segment:
@@ -99,16 +93,6 @@ Negatives:
 	Have to do segment write then segment summary write, since the latter
 	is what verifies that the segment is okay.  (Is there another way
 	to do this?)
-==============================
-
-We don't plan on doing the DIROP log until we try to do roll-forward.
-This is part of what happens if random blocks get trashed and we try to
-recover, i.e. the same information that DIROP tries to provided is
-required for general recovery.  I believe that we're going to need an
-fsck-like tool that resolves the disk (possibly a combination of
-resolution, checkpoints and checksums).  The problem is that the current
-implementation does not handle the destruction of, for example, the root
-inode.
 ==============================
 
 The algorithm for selecting the disk addresses of the super-blocks
