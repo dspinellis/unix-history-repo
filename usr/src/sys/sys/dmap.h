@@ -1,4 +1,4 @@
-/*	dmap.h	4.3	81/04/23	*/
+/*	dmap.h	4.4	82/05/04	*/
 
 /*
  * Definitions for the mapping of vitual swap
@@ -7,7 +7,9 @@
 
 #define	NDMAP 		16	/* size of the swap area map */
 #define	DMMIN 		32	/* the initial block size in clicks */
+#ifndef DMMAX
 #define	DMMAX		1024	/* max block size alloc on drum = .5M byte */
+#endif
 #define	DMTEXT		1024	/* size of blocks of pure text = .5M byte */
 
 struct	dmap
