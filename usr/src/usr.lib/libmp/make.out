@@ -1,0 +1,9 @@
+cc -O -c pow.c
+cc -O -c gcd.c
+cc -O -c msqrt.c
+cc -O -c mdiv.c
+cc -O -c mout.c
+cc -O -c mult.c
+cc -O -c madd.c
+cc -O -c util.c
+ar cr libmp.a pow.o gcd.o msqrt.o mdiv.o mout.o mult.o madd.o util.o
