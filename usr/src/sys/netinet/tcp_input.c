@@ -1,4 +1,4 @@
-/* tcp_input.c 1.8 81/10/30 */
+/* tcp_input.c 1.9 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,12 +17,13 @@ extern int nosum;
 tcp_input(mp)
 	register struct mbuf *mp;
 {
+	register struct th *n;		/* known to be r10 */
+	register int j;			/* known to be r9 */
 	register struct tcb *tp;
-	register struct th *n;
 	int nstate;
 	struct mbuf *m;
 	struct ucb *up;
-	int hlen, tlen, j;
+	int hlen, tlen;
 	u_short lport, fport;
 #ifdef TCPDEBUG
 	struct tcp_debug tdb;
@@ -49,7 +50,18 @@ COUNT(TCP_INPUT);
 	 * Checksum extended header and data
 	 */
 	j = n->t_sum; n->t_sum = 0;
-	if (j != cksum(mp, sizeof (struct ip) + tlen)) {
+#ifdef vax
+	if (tlen == 20) {
+		asm("addl3 $8,r10,r0; movl (r0)+,r1; addl2 (r0)+,r1");
+		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
+		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
+		asm("adwc $0,r1; ashl $-16,r1,r0; addw2 r0,r1");
+		asm("adwc $0,r1");		/* ### */
+		asm("mcoml r1,r1; movzwl r1,r1; subl2 r1,r9");
+	} else
+#endif
+		j -= cksum(mp, sizeof (struct ip) + tlen);
+	if (j != 0) {
 		netstat.t_badsum++;
 		if (nosum == 0) {
 			m_freem(mp);
