@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.4 (Berkeley) %G%
+.\"	@(#)6.t	8.1 (Berkeley) %G%
 .\"
 .\".ds RH "Adding New Devices
 .ne 2i

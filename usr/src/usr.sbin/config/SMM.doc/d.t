@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)d.t	6.3 (Berkeley) %G%
+.\"	@(#)d.t	8.1 (Berkeley) %G%
 .\"
 .\".ds RH "Data Structure Sizing Rules
 .bp
