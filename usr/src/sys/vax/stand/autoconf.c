@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.8 (Berkeley) %G%
+ *	@(#)autoconf.c	7.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -243,6 +243,14 @@ configure()
 	case VAX_630:
 		mtpr(IUR, 0);
 		*((char *)QIOPAGE630 + QIPCR) = Q_LMEAE;
+
+#if !defined(SMALL)
+		/*
+		 * configure the console
+		 */
+		for(i = 0; vcons_init[i] && !(*vcons_init[i])(); i++)
+			;
+#endif
 		break;
 #endif
 	}
@@ -250,12 +258,4 @@ configure()
 	/* give unibus devices a chance to recover... */
 	if (nuba > 0)
 		DELAY(2000000);
-
-#if defined(VAX630) && !defined(SMALL)
-	/*
-	 * configure the console
-	 */
-	for(i = 0; vcons_init[i] && !(*vcons_init[i])(); i++)
-		;
-#endif
 }
