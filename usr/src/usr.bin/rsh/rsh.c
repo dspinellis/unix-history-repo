@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -88,7 +88,11 @@ main(argc, argv)
 	}
 
 #ifdef KERBEROS
+#ifdef CRYPT
 #define	OPTIONS	"8KLdek:l:nwx"
+#else
+#define	OPTIONS	"8KLdek:l:nw"
+#endif
 #else
 #define	OPTIONS	"8KLdel:nw"
 #endif
@@ -119,7 +123,7 @@ main(argc, argv)
 		case 'n':
 			nflag = 1;
 			break;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		case 'x':
 			encrypt = 1;
 			des_set_key(cred.session, schedule);
@@ -154,7 +158,7 @@ main(argc, argv)
 	if (!user)
 		user = pw->pw_name;
 
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 	/* -x turns off -n */
 	if (encrypt)
 		nflag = 0;
@@ -188,10 +192,12 @@ try_connect:
 		if (dest_realm == NULL)
 			dest_realm = krb_realmofhost(host);
 
+#ifdef CRYPT
 		if (encrypt)
 			rem = krcmd_mutual(&host, sp->s_port, user, args,
 			    &rfd2, dest_realm, &cred, schedule);
 		else
+#endif
 			rem = krcmd(&host, sp->s_port, user, args, &rfd2,
 			    dest_realm);
 		if (rem < 0) {
@@ -256,7 +262,7 @@ try_connect:
 		}
 	}
 
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 	if (!encrypt)
 #endif
 	{
@@ -300,7 +306,7 @@ rewrite:	rembits = 1 << rem;
 		}
 		if ((rembits & (1 << rem)) == 0)
 			goto rewrite;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		if (encrypt)
 			wc = des_write(rem, bp, cc);
 		else
@@ -335,7 +341,7 @@ done:
 		}
 		if (ready & (1 << rfd2)) {
 			errno = 0;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt)
 				cc = des_read(rfd2, buf, sizeof buf);
 			else
@@ -349,7 +355,7 @@ done:
 		}
 		if (ready & (1 << rem)) {
 			errno = 0;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt)
 				cc = des_read(rem, buf, sizeof buf);
 			else
@@ -368,7 +374,7 @@ void
 sendsig(signo)
 	char signo;
 {
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 	if (encrypt)
 		(void)des_write(rfd2, &signo, 1);
 	else
@@ -420,11 +426,15 @@ copyargs(argv)
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: rsh [-ndx]%s[-l login] host [command]\n",
+	    "usage: rsh [-nd%s]%s[-l login] host [command]\n",
 #ifdef KERBEROS
-	    " [-k realm] ");
+#ifdef CRYPT
+	    "x", " [-k realm] ");
 #else
-	    " ");
+	    "", " [-k realm] ");
+#endif
+#else
+	    "", " ");
 #endif
 	exit(1);
 }

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -129,9 +129,11 @@ main(argc, argv)
 		case 'v':
 			vacuous = 1;
 			break;
+#ifdef CRYPT
 		case 'x':
 			encrypt = 1;
 			break;
+#endif
 #endif
 		case '?':
 		default:
@@ -277,9 +279,10 @@ doit(f, fromp)
 		confirmed = 1;		/* we sent the null! */
 	}
 #ifdef	KERBEROS
+#ifdef	CRYPT
 	if (encrypt)
 		(void) des_write(f, SECURE_MESSAGE, sizeof(SECURE_MESSAGE));
-
+#endif
 	if (use_kerberos == 0)
 #endif
 	   if (!authenticated && !hostok)
@@ -316,7 +319,7 @@ doit(f, fromp)
 		fatal(STDERR_FILENO, _PATH_LOGIN, 1);
 		/*NOTREACHED*/
 	}
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 	/*
 	 * If encrypted, don't turn on NBIO or the des read/write
 	 * routines will croak.
@@ -418,7 +421,7 @@ protocol(f, p)
 			}
 		}
 		if (FD_ISSET(f, &ibits)) {
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt)
 				fcc = des_read(f, fibuf, sizeof(fibuf));
 			else
@@ -458,7 +461,7 @@ protocol(f, p)
 				break;
 			else if (pibuf[0] == 0) {
 				pbp++, pcc--;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 				if (!encrypt)
 #endif
 					FD_SET(f, &obits);	/* try write */
@@ -471,7 +474,7 @@ protocol(f, p)
 			}
 		}
 		if ((FD_ISSET(f, &obits)) && pcc > 0) {
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt)
 				cc = des_write(f, pbp, pcc);
 			if (cc > 0) {
@@ -628,6 +631,7 @@ do_krb_login(host, dest, encrypt)
 	instance[0] = '*';
 	instance[1] = '\0';
 
+#ifdef	CRYPT
 	if (encrypt) {
 		rc = sizeof(faddr);
 		if (getsockname(0, &faddr, &rc))
@@ -640,13 +644,13 @@ do_krb_login(host, dest, encrypt)
 			kdata, "", schedule, version);
 		 des_set_key(kdata->session, schedule);
 
-	} else {
+	} else
+#endif
 		rc = krb_recvauth(
 			authopts, 0,
 			ticket, "rcmd",
 			instance, dest, (struct sockaddr_in *) 0,
 			kdata, "", (bit_64 *) 0, version);
-	}
 
 	if (rc != KSUCCESS)
 		return(rc);

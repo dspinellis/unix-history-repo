@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -104,9 +104,11 @@ main(argc, argv)
 			vacuous = 1;
 			break;
 
+#ifdef CRYPT
 		case 'x':
 			encrypt = 1;
 			break;
+#endif
 #endif
 		case '?':
 		default:
@@ -122,10 +124,12 @@ main(argc, argv)
 		syslog(LOG_ERR, "only one of -k and -v allowed");
 		exit(2);
 	}
+#ifdef CRYPT
 	if (encrypt && !use_kerberos) {
 		syslog(LOG_ERR, "-k is required for -x");
 		exit(2);
 	}
+#endif
 #endif
 
 	fromlen = sizeof (from);
@@ -342,6 +346,7 @@ doit(fromp)
 		authopts = 0L;
 		strcpy(instance, "*");
 		version[VERSION_SIZE - 1] = '\0';
+#ifdef CRYPT
 		if (encrypt) {
 			struct sockaddr_in local_addr;
 			rc = sizeof(local_addr);
@@ -356,12 +361,12 @@ doit(fromp)
 				&local_addr, kdata, "", schedule,
 				version);
 			des_set_key(kdata->session, schedule);
-		} else {
+		} else
+#endif
 			rc = krb_recvauth(authopts, 0, ticket, "rcmd",
 				instance, &fromaddr,
 				(struct sockaddr_in *) 0,
 				kdata, "", (bit_64 *) 0, version);
-		}
 		if (rc != KSUCCESS) {
 			error("Kerberos authentication failure: %s\n",
 				  krb_err_txt[rc]);
@@ -425,7 +430,7 @@ fail:
 			error("Can't make pipe.\n");
 			exit(1);
 		}
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		if (encrypt) {
 			if (pipe(pv1) < 0) {
 				error("Can't make 2nd pipe.\n");
@@ -443,7 +448,7 @@ fail:
 			exit(1);
 		}
 		if (pid) {
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt) {
 				static char msg[] = SECURE_MESSAGE;
 				(void) close(pv1[1]);
@@ -464,7 +469,7 @@ fail:
 				nfd = pv[0];
 			else
 				nfd = s;
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			if (encrypt) {
 				FD_ZERO(&writeto);
 				FD_SET(pv2[0], &writeto);
@@ -480,7 +485,7 @@ fail:
 			nfd++;
 			do {
 				ready = readfrom;
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 				if (encrypt) {
 					wready = writeto;
 					if (select(nfd, &ready,
@@ -494,7 +499,7 @@ fail:
 						break;
 				if (FD_ISSET(s, &ready)) {
 					int	ret;
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 					if (encrypt)
 						ret = des_read(s, &sig, 1);
 					else
@@ -512,7 +517,7 @@ fail:
 						shutdown(s, 1+1);
 						FD_CLR(pv[0], &readfrom);
 					} else {
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 						if (encrypt)
 							(void)
 							  des_write(s, buf, cc);
@@ -522,8 +527,7 @@ fail:
 							  write(s, buf, cc);
 					}
 				}
-#ifdef	KERBEROS
-
+#if defined(KERBEROS) && defined(CRYPT)
 				if (encrypt && FD_ISSET(pv1[0], &ready)) {
 					errno = 0;
 					cc = read(pv1[0], buf, sizeof(buf));
@@ -546,7 +550,7 @@ fail:
 #endif
 
 			} while (FD_ISSET(s, &readfrom) ||
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 			    (encrypt && FD_ISSET(pv1[0], &readfrom)) ||
 #endif
 			    FD_ISSET(pv[0], &readfrom));
@@ -554,7 +558,7 @@ fail:
 		}
 		setpgrp(0, getpid());
 		(void) close(s); (void) close(pv[0]);
-#ifdef	KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		if (encrypt) {
 			close(pv1[0]); close(pv2[0]);
 			dup2(pv1[1], 1);
