@@ -1,0 +1,50 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+File.o : File.cc \
+  File.h \
+  Fmodes.h 
+Filebuf.o : Filebuf.cc \
+  Filebuf.h \
+  File.h \
+  Fmodes.h \
+  streambuf.h 
+PlotFile.o : PlotFile.cc \
+  PlotFile.h \
+  File.h \
+  Fmodes.h
+SFile.o : SFile.cc \
+  SFile.h \
+  File.h \
+  Fmodes.h
+filebuf.o : filebuf.cc \
+  filebuf.h \
+  streambuf.h \
+  Fmodes.h
+form.o : form.cc 
+istream.o : istream.cc \
+  stream.h \
+  ostream.h \
+  File.h \
+  Fmodes.h \
+  streambuf.h \
+  filebuf.h \
+  Filebuf.h \
+  istream.h 
+itoa.o : itoa.cc 
+ostream.o : ostream.cc \
+  stream.h \
+  ostream.h \
+  File.h \
+  Fmodes.h \
+  streambuf.h \
+  filebuf.h \
+  Filebuf.h \
+  istream.h 
+streambuf.o : streambuf.cc \
+  streambuf.h \
+  Fmodes.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
