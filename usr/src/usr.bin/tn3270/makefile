@@ -85,8 +85,13 @@ MSMAIN = ascii/mset.c
 
 # The places where the various components live...
 SUBDIR =	ascii ctlr sys general api
-SUBLIB =	ascii/ascii.lib ctlr/ctlr.lib \
-			sys/sys.lib general/general.lib api/api.lib
+
+# The libraries we use.  The order here is important.
+# ctlr.lib and sys.lib should come first, then api.lib
+# then the rest.
+SUBLIB =	ctlr/ctlr.lib sys/sys.lib \
+		api/api.lib \
+		ascii/ascii.lib general/general.lib
 
 
 ALLC = ${TNMAIN} ${MSMAIN}
@@ -96,28 +101,16 @@ ALLO	= telnet.o mset.o
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-all:	${SUBDIR} tn3270.a tn3270 mset
-
-tn3270.a: ${SUBLIB}
-	-mkdir tmp
-	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}.lib); done
-	ls tmp/*.o | sort -t/ +1 > t1
-	ar cr tn3270.a `lorder \`cat t1\` | tsort`
-	rm -f t1 tmp/*
-	ranlib tn3270.a
-#	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}.lib_p); done
-#	ls tmp/*.o | sort -t/ +1 > t1
-#	ar cr tn3270_p.a `lorder \`cat t1\` | tsort`
-#	rm -rf t1 tmp
+all:	${SUBDIR} tn3270 mset
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} "CFLAGS=${CFLAGS}"
 
 FRC:
 
-tn3270:	telnet.o tn3270.a
-	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a apilib/apilib.a \
-					$(LIBCURSES) $(LIBTERM)
+tn3270:	telnet.o ${SUBLIB}
+	${CC} ${CFLAGS} -o tn3270 telnet.o \
+		${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
 
 mset:	mset.o ascii/map3270.o ascii/astosc.o
 	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o ascii/astosc.o
@@ -145,7 +138,7 @@ everywhere:
 	for i in ${SUBDIR} tools; do (echo "[$$i]"; cd $$i; make ${MFLAGS} action "ACTION=${ACTION}"); done
 
 clean:
-	rm -f $(ALLO) mset tn3270 errs makefile.bak tn3270.a
+	rm -f $(ALLO) mset tn3270 errs makefile.bak
 	for i in ${SUBDIR} tools; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f t1 tmp/*.o
 	-rmdir tmp
