@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.4 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -56,6 +56,7 @@ struct kern_target {
 	/* name		data		tag		ro/rw */
 	{ ".",		0,		KTT_NULL,	VREAD,		VDIR },
 	{ "..",		0,		KTT_NULL,	VREAD,		VDIR },
+	{ "boottime",	&boottime.tv_sec, KTT_INT,	VREAD,		VREG },
 	{ "copyright",	copyright,	KTT_STRING,	VREAD,		VREG },
 	{ "hostname",	0,		KTT_HOSTNAME,	VREAD|VWRITE,	VREG },
 	{ "hz",		&hz,		KTT_INT,	VREAD,		VREG },
