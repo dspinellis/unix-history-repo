@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.23 (Berkeley) %G%
+ *	@(#)malloc.h	7.24 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -233,7 +233,7 @@ extern struct kmemstats kmemstats[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;
 extern struct kmembuckets bucket[];
-extern qaddr_t malloc();
-extern void free();
+extern void *malloc __P((unsigned long size, int type, int flags));
+extern void free __P((void *addr, int type));
 #endif /* KERNEL */
 #endif /* !_MALLOC_H_ */
