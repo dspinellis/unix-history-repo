@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)maketape	4.9	%G%
+#	@(#)maketape	4.10	%G%
 #
 miniroot=hp0g
 #
@@ -26,8 +26,17 @@ echo "Add full dump of real file system"
 echo "Add tar image of system sources"
 cd /nbsd/a/sys; tar cf /dev/rmt12 .
 echo "Add tar image of /usr"
-cd /nbsd/usr; tar c adm bin dict doc games \
+cd /nbsd/usr; tar cf /dev/rmt12 adm bin dict doc games \
 	hosts include lib local man mdec msgs new \
 	preserve pub spool tmp ucb
+echo "Add ingres and varian fonts"
+cd /nbsd/usr; tar cFFf /dev/rmt12 ingres -C /usr/lib vfont
+echo "Done, rewinding first tape"
 mt rew
-echo "Done, rewind"
+echo "Mount second tape and hit return when ready"; read x
+echo "Add user source code"
+cd /nbsd/usr/src; tar cFFf /dev/rmt12 .
+echo "Add user contributed software"
+cd /usr/src/new; tar cFFf /dev/rmt12 .
+echo "Done, rewinding second tape"
+mt rew
