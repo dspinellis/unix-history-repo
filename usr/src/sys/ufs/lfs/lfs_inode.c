@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.49 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,7 +76,7 @@ lfs_vget(mntp, ino, vpp)
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	fs = ump->um_lfs;
+	ip->i_lfs = fs = ump->um_lfs;
 	if (error = bread(ump->um_devvp, lfs_itod(fs, ino),
 	    (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
@@ -109,8 +109,6 @@ lfs_vget(mntp, ino, vpp)
 	/*
 	 * Finish inode initialization now that aliasing has been resolved.
 	 */
-	ip = VTOI(vp);
-	ip->i_lfs = ump->um_lfs;
 	ip->i_devvp = ump->um_devvp;
 	VREF(ip->i_devvp);
 	*vpp = vp;
@@ -135,8 +133,10 @@ lfs_update(vp, ta, tm, waitfor)
 		return (0);
 	if (ip->i_flag&IACC)
 		ip->i_atime = ta->tv_sec;
-	if (ip->i_flag&IUPD)
+	if (ip->i_flag&IUPD) {
 		ip->i_mtime = tm->tv_sec;
+		INCRQUAD((ip)->i_modrev);
+	}
 	if (ip->i_flag&ICHG)
 		ip->i_ctime = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
