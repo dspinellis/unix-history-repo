@@ -25,9 +25,13 @@ LIBCURSES	= -lcurses
 LIBTERM		= -ltermlib
 
 # The source files...
-ALLH =	globals.h
+ALLH =	bsubs.ext general.h globals.h
 
 ALLC =	globals.c
+
+ALLPRINT =	${ALLH} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 #
 #	In a vax environment, we use vaxbsubs.s, which gives us a fair amount
@@ -54,8 +58,12 @@ general.lib:	${ALLO}
 clean:
 	rm -f $(ALLO) errs makefile.bak general.lib
 
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+
 print:
-	${PRINT} ${ALLH} ${ALLC}
+	${PRINT} ${ALLPRINT}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
