@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/swapgeneric.c	7.8 (Berkeley) 10/11/92
  *
- *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -110,15 +110,16 @@ gotit:
 found:
 	gc->gc_root = makedev(major(gc->gc_root), (unit * 8) + part );
 	rootdev = gc->gc_root;
+/*
 	printf("using root device: %s%d%c\n", gc->gc_name, unit, 'a' + part);
-
+ */
 doswap:
 	swdevt[0].sw_dev = argdev = dumpdev =
 	    makedev(major(rootdev), (minor(rootdev) & ~0x7) + 1);
-
+/*
 	printf("using swap device: %s%d%c\n",
 	       gc->gc_name, unit, 'a' + (minor(swdevt[0].sw_dev) & 0x7));
-
+ */
 	/* swap size and dumplo set during autoconfigure */
 	if (swaponroot)
 		rootdev = dumpdev;
