@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -352,20 +352,17 @@ rebuildaliases(map, automatic)
 	if (!bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
 		return;
 
-#ifdef LOG
-	if (LogLevel > 7)
-	{
-		syslog(LOG_NOTICE, "alias database %s %srebuilt by %s",
-			map->map_file, automatic ? "auto" : "", username());
-	}
-#endif /* LOG */
-
 	/* try to lock the source file */
 	if ((af = fopen(map->map_file, "r+")) == NULL)
 	{
+		int saveerr = errno;
+
 		if (tTd(27, 1))
 			printf("Can't open %s: %s\n",
-				map->map_file, errstring(errno));
+				map->map_file, errstring(saveerr));
+		if (!automatic)
+			message("newaliases: cannot open %s: %s",
+				map->map_file, errstring(saveerr));
 		errno = 0;
 		return;
 	}
@@ -391,6 +388,14 @@ rebuildaliases(map, automatic)
 
 	if (map->map_class->map_open(map, O_RDWR))
 	{
+#ifdef LOG
+		if (LogLevel > 7)
+		{
+			syslog(LOG_NOTICE, "alias database %s %srebuilt by %s",
+				map->map_file, automatic ? "auto" : "",
+				username());
+		}
+#endif /* LOG */
 		map->map_mflags |= MF_OPEN|MF_WRITABLE;
 		readaliases(map, af, automatic);
 	}
