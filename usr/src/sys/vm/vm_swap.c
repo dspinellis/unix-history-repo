@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.15	82/11/13	*/
+/*	vm_swap.c	4.16	83/02/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,7 +29,7 @@ swstrategy(bp)
 	 * enough for us to do a mkfs and restor of the real
 	 * root (sure beats rewriting standalone restor).
 	 */
-#define	MINIROOTSIZE	2048
+#define	MINIROOTSIZE	4096
 	if (rootdev == dumpdev)
 		bp->b_blkno += MINIROOTSIZE;
 #endif
