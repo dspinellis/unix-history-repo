@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ec.4	6.3 (Berkeley) %G%
+.\"	@(#)ec.4	6.4 (Berkeley) %G%
 .\"
 .TH EC 4 ""
 .UC 5
@@ -24,13 +24,21 @@ The address of this memory is given in the \fIflags\fP field
 in the configuration file.
 The first interface normally has its memory at Unibus address 0.
 .PP
-The host's Internet address is specified at boot time with an SIOCSIFADDR
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
 ioctl.  The
 .I ec
 interface employs the address resolution protocol described in
 .IR arp (4P)
 to dynamically map between Internet and Ethernet addresses on the local
 network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
 .PP
 The interface software implements an exponential backoff algorithm
 when notified of a collision on the cable.  This algorithm utilizes
@@ -55,11 +63,6 @@ where a slot is 51 microseconds.
 Use the value calculated in step 3 to delay before retransmitting
 the packet.
 The delay is done in a software busy loop.
-.PP
-The interface normally tries to use a ``trailer'' encapsulation
-to minimize copying data on input and output.  This may be
-disabled, on a per-interface basis, by setting the IFF_NOTRAILERS
-flag with an SIOCSIFFLAGS ioctl.
 .SH DIAGNOSTICS
 .BR "ec%d: send error" .
 After 16 retransmissions using the
@@ -78,8 +81,6 @@ family; the packet was dropped.
 .SH SEE ALSO
 intro(4N), inet(4F), arp(4P)
 .SH BUGS
-The PUP protocol family should be added.
-.PP
 The hardware is not capable of talking to itself.  The software
 implements local sending and broadcast by sending such packets to the
 loop interface.  This is a kludge.
