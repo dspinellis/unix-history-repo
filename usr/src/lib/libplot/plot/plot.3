@@ -1,9 +1,9 @@
-.\"	@(#)plot.3	4.1 (Berkeley) %G%
+.\"	@(#)plot.3	5.1 (Berkeley) %G%
 .\"
-.TH PLOT 3X 
+.TH PLOT 3X  "19 January 1983"
 .AT 3
 .SH NAME
-plot: openpl et al. \- graphics interface
+plot: openpl, erase, label, line, circle, arc, move, cont, point, linemod, space, closepl \- graphics interface
 .SH SYNOPSIS
 .nf
 .B openpl()
@@ -35,17 +35,12 @@ plot: openpl et al. \- graphics interface
 .PP
 .ft R
 .SH DESCRIPTION
-These subroutines
-generate
-graphic output in a relatively
-device-independent manner.
-See
+These subroutines generate graphic output in a relatively
+device-independent manner.  See
 .IR  plot (5)
-for a description
-of their effect.
+for a description of their effect.
 .I Openpl
-must be used before any of the others to open the
-device for writing.
+must be used before any of the others to open the device for writing.
 .I Closepl
 flushes the output.
 .PP
@@ -55,16 +50,13 @@ and
 .I linemod
 are null-terminated, and do not contain newlines.
 .PP
-Various flavors of these functions exist for different
-output devices. 
+Various flavors of these functions exist for different output devices. 
 They are obtained by the following
 .IR ld (1)
 options:
 .TP 8n
 .B \-lplot
-device-independent
-graphics stream on standard
-output for 
+device-independent graphics stream on standard output for 
 .IR plot (1)
 filters
 .br
@@ -88,4 +80,4 @@ DASI 450 terminal
 .B \-l4014
 Tektronix 4014 terminal
 .SH "SEE ALSO"
-plot(5), plot(1), graph(1)
+plot(5), plot(1G), graph(1G)
