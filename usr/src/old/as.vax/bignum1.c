@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)bignum1.c 4.3 %G%";
+static char sccsid[] = "@(#)bignum1.c 4.4 %G%";
 #endif not lint
 
 #include <errno.h>
@@ -374,10 +374,6 @@ bignumwrite(number, toconv)
 	int	toconv;		/* one of TYP[QO FDGH] */
 {
 	reg	u_int	*bp;
-#ifdef VMS
-		int	nints;
-	reg	int	i;
-#endif VMS
 
 	if (passno != 2)
 		return;
@@ -395,25 +391,6 @@ bignumwrite(number, toconv)
 		number = floatconvert(number, toconv);
 		break;
 	}
-#ifdef UNIX
 	bwrite((char *)bp, ty_nbyte[toconv], txtfil);
-#endif UNIX
-#ifdef VMS
-	/*
-	 *	rrh did not check this code when the new floating point
-	 *	numbers were put into the assembler, as he didn't
-	 *	have access to a vms system.
-	 */
-	nints = ty_nbyte[toconv] / 4;
-	for (i = 0; i < nints; i++){
-		puchar(vms_obj_ptr,-4);
-		pulong(vms_obj_ptr, bp[i]);
-	}
-	if((vms_obj_ptr-sobuf) > 400) {
-		write(objfil,sobuf,vms_obj_ptr-sobuf);
-		vms_obj_ptr = sobuf + 1;
-	}
-	return;
-#endif VMS
 }
 #endif STANDALONE

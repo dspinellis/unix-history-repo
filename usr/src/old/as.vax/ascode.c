@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)ascode.c 4.10 %G%";
+static char sccsid[] = "@(#)ascode.c 4.11 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -326,12 +326,6 @@ PASS2:
 		 *	use the first byte to describe the argument
 		 */
 		Outb(ap->a_areg1);
-#ifdef VMS
-		if ((vms_obj_ptr-sobuf) > 400) {
-			write(objfil,sobuf,vms_obj_ptr-sobuf);
-			vms_obj_ptr=sobuf+1;
-		}
-#endif VMS
 		if (reloc_how != TYPNONE) 
 			outrel(xp, reloc_how);
 	}	/*end of the for to pick up all arguments*/
