@@ -1,5 +1,4 @@
-/*	up.c	4.61	82/11/26	*/
-.f
+/*	up.c	4.62	82/12/05	*/
 
 #include "up.h"
 #if NSC > 0
@@ -16,6 +15,7 @@
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dk.h"
+#include "../h/dkbad.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -112,6 +112,7 @@ struct	uba_driver scdriver =
     { upprobe, upslave, upattach, updgo, upstd, "up", updinfo, "sc", upminfo };
 struct	buf	uputab[NUP];
 char upinit[NUP];
+char upinit[NUP];
 
 struct	upst {
 	short	nsect;
@@ -134,6 +135,10 @@ u_char	up_offset[16] = {
 };
 
 struct	buf	rupbuf[NUP];
+#ifndef NOBADSECT
+struct 	buf	bupbuf[NUP];
+struct	dkbad	upbad[NUP];
+#endif
 #ifndef NOBADSECT
 struct 	buf	bupbuf[NUP];
 struct	dkbad	upbad[NUP];
@@ -205,6 +210,17 @@ upattach(ui)
 	upaddr->upcs2 = UPCS2_CLR;
 }
  
+upopen(dev)
+	dev_t dev;
+{
+	register int unit = minor(dev) >> 3;
+	register struct uba_device *ui;
+
+	if (unit >= NUP || (ui = updinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	return (0);
+}
+
 upstrategy(bp)
 	register struct buf *bp;
 {
@@ -309,10 +325,23 @@ upustart(ui)
 #endif
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		upinit[ui->ui_unit] = 1;
+		upinit[ui->ui_unit] = 1;
 		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_IE|UP_PRESET|UP_GO;
 		upaddr->upof = UPOF_FMT22;
 		didie = 1;
+#ifndef NOBADSECT
+		st = &upst[ui->ui_type];
+		bbp->b_flags = B_READ|B_BUSY;
+		bbp->b_dev = bp->b_dev;
+		bbp->b_bcount = 512;
+		bbp->b_un.b_addr = (caddr_t)&upbad[ui->ui_unit];
+		bbp->b_blkno = st->ncyl * st->nspc - st->nsect;
+		bbp->b_cylin = st->ncyl - 1;
+		dp->b_actf = bbp;
+		bbp->av_forw = bp;
+		bp = bbp;
+#endif
 #ifndef NOBADSECT
 		st = &upst[ui->ui_type];
 		bbp->b_flags = B_READ|B_BUSY;
@@ -538,6 +567,12 @@ upintr(sc21)
 			return;
 	}
 #endif
+#ifndef NOBADSECT
+	if (bp->b_flags&B_BAD) {
+		if (upecc(ui, CONT))
+			return;
+	}
+#endif
 	/*
 	 * Check for and process errors on
 	 * either the drive or the controller.
@@ -562,6 +597,7 @@ upintr(sc21)
 			 * 12 with offset positioning) give up.
 			 */
 	hard:
+	hard:
 			harderr(bp, "up");
 			printf("cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
 			        upaddr->updc, ((upaddr->upda)>>8)&077,
@@ -570,6 +606,13 @@ upintr(sc21)
 				upaddr->uper1, UPER1_BITS,
 				upaddr->uper2, UPER2_BITS);
 			bp->b_flags |= B_ERROR;
+		} else if (upaddr->uper2 & UPER2_BSE) {
+#ifndef NOBADSECT
+			if (upecc(ui, BSE))
+				return;
+			else
+#endif
+				goto hard;
 		} else if (upaddr->uper2 & UPER2_BSE) {
 #ifndef NOBADSECT
 			if (upecc(ui, BSE))
@@ -728,6 +771,7 @@ upwrite(dev, uio)
 upecc(ui, flag)
 	register struct uba_device *ui;
 	int flag;
+	int flag;
 {
 	register struct updevice *up = (struct updevice *)ui->ui_addr;
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
@@ -875,7 +919,6 @@ upecc(ui, flag)
 	cmd = (ubaddr >> 8) & 0x300;
 	cmd |= ((bp->b_flags&B_READ)?UP_RCOM:UP_WCOM)|UP_IE|UP_GO;
 	um->um_tab.b_errcnt = 0;
-	um->um_tab.b_active = 2;	/* continuing transfer ... */
 	up->upcs1 = cmd;
 #endif
 	return (1);
