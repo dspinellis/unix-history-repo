@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)res_comp.c	5.4 (Berkeley) %G%";
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
- * Expanded names are converted to upper case.
+ * Expanded names are converted to lower case.
  * 'msg' is a pointer to the begining of the message,
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.
@@ -50,8 +50,8 @@ dn_expand(msg, comp_dn, exp_dn, length)
 			if (dn+n >= eom)
 				return (-1);
 			while (--n >= 0)
-				if (islower(c = *cp++))
-					*dn++ = toupper(c);
+				if (isupper(c = *cp++))
+					*dn++ = tolower(c);
 				else {
 					if (c == '.') {
 						if (dn+n+1 >= eom)
@@ -242,8 +242,10 @@ getshort(msgp)
 	char *msgp;
 {
 	register u_char *p = (u_char *) msgp;
+	register u_short u;
 
-	return ((*p++ << 8) | *p);
+	u = *p++ << 8;
+	return (u | *p);
 }
 
 u_long
