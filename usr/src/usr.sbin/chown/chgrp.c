@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chgrp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)chgrp.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -120,7 +120,7 @@ chownr(dir)
 {
 	register DIR *dirp;
 	register struct direct *dp;
-	register struct stat st;
+	struct stat st;
 	char savedir[1024];
 	int ecode;
 
