@@ -519,11 +519,20 @@ static int
 int_tcheck(v)
 	char *v;
 {
-	char *p;
+	char *p = v;
 
-	for (p = v; *p != '\0'; p++)
-		if (!isdigit(*p) && !isspace(*p))
+	while (isspace(*p))
+		p++;
+	
+	if (*p == '-' || *p == '+')
+		p++;
+
+	while (*p) {
+		if (!isdigit(*p))
 			err("illegal operand \"%s\" -- expected integer.", v);
+		p++;
+	}
+
 	return (1);
 }
 
