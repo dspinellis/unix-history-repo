@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_var.h	7.6.1.3 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,10 @@
 #define SB_MAX	32767		/* XXX */
 #endif	SB_MAXCOUNT
 #endif	SB_MAX
+
+#ifndef IP_MAXPACKET
+#define	IP_MAXPACKET	65535		/* maximum packet size */
+#endif
 
 /*
  * Bill Nowicki pointed out that the page size (CLBYTES) has
