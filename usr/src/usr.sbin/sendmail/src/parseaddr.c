@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.4	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.5	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -66,6 +66,7 @@ parse(addr, a, copyf)
 	extern char *xalloc();
 	extern char *newstr();
 	char **pvp;
+	char ***hvp;
 	extern char *strcpy();
 
 	/*
@@ -239,11 +240,43 @@ parse(addr, a, copyf)
 			}
 		}
 
+		/*
+		**  Do host equivalence.
+		**	This allows us to map together messages that
+		**	would otherwise have several copies going
+		**	through the same net link.
+		*/
+
+		for (hvp = Mailer[a->q_mailer]->m_hmap; *hvp != NULL; hvp++)
+		{
+			register bool doremap;
+
+			doremap = FALSE;
+			for (pvp = *hvp; *pvp != NULL; pvp++)
+			{
+				p = *pvp;
+				if (*p == '\0')
+				{
+					/* null string: match everything */
+					doremap = TRUE;
+				}
+				else if (strcmp(p, a->q_host) == 0)
+					doremap = TRUE;
+			}
+
+			if (doremap)
+			{
+				a->q_host = pvp[-1];
+				a->q_user = a->q_paddr;
+			}
+		}
+
 		/* make copies if specified */
 		if (copyf >= 0)
 		{
 			a->q_host = newstr(a->q_host);
-			a->q_user = newstr(a->q_user);
+			if (a->q_user != a->q_paddr)
+				a->q_user = newstr(a->q_user);
 		}
 	}
 
