@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)write.c	4.5 %G%";
+static char *sccsid = "@(#)write.c	4.6 %G%";
 /*
  * write to another user
  */
@@ -149,7 +149,10 @@ cont:
 			ex(buf);
 			continue;
 		}
-		write(fileno(tf), buf, i);
+		if (write(fileno(tf), buf, i) != i) {
+			printf("\n\7Write failed (%s logged out?)\n", him);
+			exit(1);
+		}
 		if (buf[i-1] == '\n')
 			write(fileno(tf), "\r", 1);
 	}
