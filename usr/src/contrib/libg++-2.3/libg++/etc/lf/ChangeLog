@@ -1,0 +1,29 @@
+Tue Nov 17 22:10:32 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* screen.cc:  If hpux, don't declare termcap functions (i.e.
+	tgetent()) - conflicting definitions get pulled in by curses.h.
+
+Thu Nov  5 21:40:50 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* directory.[h,cc}:  Renmamed UNKNOWN enum -> UNKNOWN_FILE,
+	to avoid conflict with UNKNOWN in svr3 curses.h.
+
+Sun Nov  1 16:02:13 1992  Per Bothner  (bothner@cygnus.com)
+
+	* entry.h: Use "new" placement syntax (as in
+	'new (ARGS) TYPE'), unless _G_OLD_PLACEMENT.
+
+Thu Aug  6 12:45:46 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* directory.h (enum Directory_Handler::file_types),
+	directory.cc (Directory_Handler::class_name and
+	Directory_Handler constructor):  Added UNKNOWN file type.
+	* directory.cc (Directory_Handler constructor):  Make
+	more portable, including compatibility with Posix.
+
+Fri Jun 26 11:41:54 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* screen.h, screen.cc:  Change fputchar from static
+	method to normal function, since it is passed to tputs.
+	Remove duplicateted method definitions (that used to depend
+	on __OPTIMIZE__).  Add prototypes for termcap functions.
