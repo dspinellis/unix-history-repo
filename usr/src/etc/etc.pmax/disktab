@@ -1,0 +1,47 @@
+#
+#	@(#)disktab	5.1 (Berkeley) %G%
+#
+
+# Disk geometry and partition layout tables. 
+# Key:
+#	ty	type of disk
+#	ns	#sectors/track
+#	nt	#tracks/cylinder
+#	nc	#cylinders/disk
+#	p[a-h]	partition sizes in sectors
+#	b[a-h]	partition block sizes in bytes
+#	f[a-h]	partition fragment sizes in bytes
+#
+# All partition sizes contain space for bad sector tables unless
+# the device drivers fail to support this. Smaller disks may
+# not have all partitions and all disks have no defaults for
+# the `h' partition. The strategy here is that `a' always
+# has the same amount for all disks. The `b' partition is
+# four times `a' while `c' is always the entire disk. The
+# sum of `d', `e', and `f' is equal to `g' which is everything else.
+
+rz22|RZ22|DEC RZ22 Winchester:\
+	:ty=winchester:ns#33:nt#4:nc#776:\
+	:pa#32768:ba#8192:fa#1024:\
+	:pb#69664:bb#8192:fb#1024:\
+	:pc#102432:bc#8192:fc#1024:
+
+rz23|RZ23|DEC RZ23 Winchester:\
+	:ty=winchester:ns#33:nt#8:nc#776:\
+	:pa#32768:ba#8192:fa#1024:\
+	:pb#131072:bb#8192:fb#1024:\
+	:pc#204864:bc#8192:fc#1024:\
+	:pd#13674:bd#8192:fd#1024:\
+	:pe#13674:be#8192:fe#1024:\
+	:pf#13676:bf#8192:ff#1024:\
+	:pg#41024:bg#8192:fg#1024:
+
+rz55|RZ55|DEC RZ55 Winchester:\
+        :ty=winchester:ns#36:nt#15:nc#1224:\
+        pa#32768:ba#8192:fa#1024:\
+        pb#131072:bb#8192:fb#1024:\
+        pc#621180:bc#8192:fc#1024:\
+        pd#152446:bd#8192:fd#1024:\
+        pe#152446:be#8192:fe#1024:\
+        pf#152448:bf#8192:ff#1024:\
+        pg#457340:bg#8192:fg#1024:
