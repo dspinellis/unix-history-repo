@@ -42,7 +42,7 @@
  * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
  * 10 Feb 93	Jordan K. Hubbard	Added select code
  */
-static char rcsid[] = "$Header: /freefall/a/cvs/386BSD/src/sys/i386/isa/com.c,v 1.2 1993/06/30 23:33:41 nate Exp $";
+static char rcsid[] = "$Header: /freefall/a/cvs/386BSD/src/sys/i386/isa/com.c,v 1.3 1993/08/11 13:16:52 root Exp $";
 
 #include "com.h"
 #if NCOM > 0
@@ -62,6 +62,7 @@ static char rcsid[] = "$Header: /freefall/a/cvs/386BSD/src/sys/i386/isa/com.c,v 
 #include "kernel.h"
 #include "syslog.h"
 
+#include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/comreg.h"
 #include "i386/isa/ic/ns16550.h"
@@ -128,7 +129,7 @@ struct isa_device *dev;
 	outb(dev->id_iobase+com_iir, 0);
 	DELAY(100);
 	if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
-		return(1);
+		return(IO_COMSIZE);
 	return(0);
 }
 
