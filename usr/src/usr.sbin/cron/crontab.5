@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)crontab.5	5.2.1.1 (Berkeley) %G%
+.\"     @(#)crontab.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRONTAB 8
@@ -16,7 +16,7 @@
 .Sh DESCRIPTION
 The
 .Nm crontab
-file contain the schedules used by the
+file contains the schedules used by the
 .Xr cron 8
 daemon.
 Each line in the schedule gives a time of execution
@@ -47,7 +47,7 @@ The hour, a number from 0 to 23.
 .It
 The day in terms of the month, a number from 1 to 31.
 .It
-The day in terms of the year, a number from 1 to 12.
+The month in terms of the year, a number from 1 to 12.
 .It
 The day in terms of the week, a number from 1 to 7.
 Monday is considered day one, Sunday is day seven.
@@ -56,14 +56,14 @@ The name of a user: the command will be run with the
 user's uid and permissions.
 .It
 The command to execute.  This field may be terminated with a
-newline of the
+newline or the
 .Ql %
 character.
 .El
 .Pp
 An optional file
 .Nm crontab.local
-may be created and used for addtional scheduling.
+may be created and used for additional scheduling.
 .Sh EXAMPLES
 In the example below,
 the first field indicates the command should be executed at the hour,
@@ -75,10 +75,10 @@ root privileges.
 0,15,30,45 * * * *      root /usr/libexec/atrun
 .Ed
 .Pp
-In this next exmaple,
-the first field indicates this command should be exectuted on the half hour.
-The second field constrains the hour to 3 A.M. The third and second
-fields indicate any day of the month and any day of the year, but are
+In this next example,
+the first field indicates this command should be executed on the half hour.
+The second field constrains the hour to 3 A.M. The third and fourth
+fields indicate any day of the month and any month of the year, but are
 constrained by the fifth field to the sixth day of the week (Saturday).
 The command is to be executed with root privileges. The example shown here
 has been folded (spread across two lines) to make it readable.
