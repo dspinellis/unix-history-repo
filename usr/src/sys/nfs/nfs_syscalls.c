@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,6 +47,9 @@ extern struct buf nfs_bqueue;
 extern int nfs_asyncdaemons;
 extern struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
 struct file *getsock();
+
+#define	TRUE	1
+#define	FALSE	0
 
 /*
  * NFS server system calls
@@ -190,12 +193,15 @@ nfssvc()
 		case RC_DOIT:
 			if (error = (*(nfsrv_procs[procid]))(mrep, md, dpos,
 				cr, retxid, &mreq, &repstat)) {
+				nfsrv_updatecache(nam, retxid, procid,
+					FALSE, repstat, mreq);
 				m_freem(nam);
 				nfsstats.srv_errs++;
 				break;
 			}
 			nfsstats.srvrpccnt[procid]++;
-			nfsrv_updatecache(nam, retxid, procid, repstat, mreq);
+			nfsrv_updatecache(nam, retxid, procid, TRUE,
+				repstat, mreq);
 			mrep = (struct mbuf *)0;
 		case RC_REPLY:
 			m = mreq;
