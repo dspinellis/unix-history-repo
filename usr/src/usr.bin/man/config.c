@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)config.c	8.4 (Berkeley) %G%";
 #include "config.h"
 #include "pathnames.h"
 
-struct queue_entry head;
+struct _head head;
 
 /*
  * config --
@@ -38,7 +38,8 @@ void
 config(fname)
 	char *fname;
 {
-	ENTRY *ep, *qp;
+	TAG *tp;
+	ENTRY *ep;
 	FILE *cfp;
 	size_t len;
 	int lcnt;
@@ -48,7 +49,7 @@ config(fname)
 		fname = _PATH_MANCONF;
 	if ((cfp = fopen(fname, "r")) == NULL)
 		err(1, "%s", fname);
-	queue_init(&head);
+	TAILQ_INIT(&head);
 	for (lcnt = 1; (p = fgetline(cfp, &len)) != NULL; ++lcnt) {
 		if (!len)			/* Skip empty lines. */
 			continue;
@@ -69,11 +70,11 @@ config(fname)
 			continue;
 		*t = '\0';
 
-		for (qp = head.qe_next;		/* Find any matching tag. */
-		    qp != NULL && strcmp(p, qp->s); qp = qp->tags.qe_next);
+		for (tp = head.tqh_first;	/* Find any matching tag. */
+		    tp != NULL && strcmp(p, tp->s); tp = tp->q.tqe_next);
 
-		if (qp == NULL)			/* Create a new tag. */
-			qp = addlist(p);
+		if (tp == NULL)		/* Create a new tag. */
+			tp = addlist(p);
 
 		/*
 		 * Attach new records.  The keyword _build takes the rest of
@@ -87,12 +88,12 @@ config(fname)
 			if ((ep = malloc(sizeof(ENTRY))) == NULL ||
 			    (ep->s = strdup(t)) == NULL)
 				err(1, NULL);
-			queue_enter_tail(&qp->list, ep, ENTRY *, list);
+			TAILQ_INSERT_TAIL(&tp->list, ep, q);
 		} else for (++t; (p = strtok(t, " \t\n")) != NULL; t = NULL) {
 			if ((ep = malloc(sizeof(ENTRY))) == NULL ||
 			    (ep->s = strdup(p)) == NULL)
 				err(1, NULL);
-			queue_enter_tail(&qp->list, ep, ENTRY *, list);
+			TAILQ_INSERT_TAIL(&tp->list, ep, q);
 		}
 	}
 }
@@ -101,33 +102,33 @@ config(fname)
  * addlist --
  *	Add a tag to the list.
  */
-ENTRY *
+TAG *
 addlist(name)
 	char *name;
 {
-	ENTRY *ep;
+	TAG *tp;
 
-	if ((ep = malloc(sizeof(ENTRY))) == NULL ||
-	    (ep->s = strdup(name)) == NULL)
+	if ((tp = calloc(1, sizeof(TAG))) == NULL ||
+	    (tp->s = strdup(name)) == NULL)
 		err(1, NULL);
-	queue_init(&ep->list);
-	queue_enter_head(&head, ep, ENTRY *, tags);
-	return (head.qe_next);
+	TAILQ_INIT(&tp->list);
+	TAILQ_INSERT_TAIL(&head, tp, q);
+	return (tp);
 }
 
 /*
  * getlist --
- *	Return the linked list for a tag if it exists.
+ *	Return the linked list of entries for a tag if it exists.
  */
-ENTRY *
+TAG *
 getlist(name)
 	char *name;
 {
-	ENTRY *qp;
+	TAG *tp;
 
-	for (qp = head.qe_next; qp != NULL; qp = qp->tags.qe_next)
-		if (!strcmp(name, qp->s))
-			return (qp);
+	for (tp = head.tqh_first; tp != NULL; tp = tp->q.tqe_next)
+		if (!strcmp(name, tp->s))
+			return (tp);
 	return (NULL);
 }
 
@@ -135,12 +136,13 @@ void
 debug(l)
 	char *l;
 {
-	ENTRY *ep, *qp;
+	TAG *tp;
+	ENTRY *ep;
 
 	(void)printf("%s ===============\n", l);
-	for (qp = head.qe_next; qp != NULL; qp = qp->tags.qe_next) {
-		printf("%s\n", qp->s);
-		for (ep = qp->list.qe_next; ep != NULL; ep = ep->list.qe_next)
+	for (tp = head.tqh_first; tp != NULL; tp = tp->q.tqe_next) {
+		printf("%s\n", tp->s);
+		for (ep = tp->list.tqh_first; ep != NULL; ep = ep->q.tqe_next)
 			printf("\t%s\n", ep->s);
 	}
 }
