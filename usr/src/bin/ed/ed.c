@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -13,7 +13,6 @@ static char sccsid[] = "@(#)ed.c	4.11 (Berkeley) %G%";
 #include "pathnames.h"
 
 #define	NULL	0
-#define	FNSIZE	64
 #define	LBSIZE	512
 #define	ESIZE	128
 #define	GBSIZE	256
@@ -39,8 +38,8 @@ char	T[]	= "TMP";
 
 int	peekc;
 int	lastc;
-char	savedfile[FNSIZE];
-char	file[FNSIZE];
+char	savedfile[MAXPATHLEN];
+char	file[MAXPATHLEN];
 char	linebuf[LBSIZE];
 char	rhsbuf[LBSIZE/2];
 char	expbuf[ESIZE+4];
