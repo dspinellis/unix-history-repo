@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)popen.c	1.7 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
@@ -5,7 +9,6 @@
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.7 %G%";
 
 #ifdef VMUNIX
 #define	mask(s)	(1<<((s)-1))
