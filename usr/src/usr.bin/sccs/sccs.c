@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.48 %G%";
+static char SccsId[] = "@(#)sccs.c	1.49 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -172,27 +172,27 @@ struct sccsprog
 
 struct sccsprog SccsProg[] =
 {
-	"admin",	PROG,	REALUSER,	PROGPATH(admin),
-	"chghist",	PROG,	0,		PROGPATH(rmdel),
-	"comb",		PROG,	0,		PROGPATH(comb),
-	"delta",	PROG,	0,		PROGPATH(delta),
-	"get",		PROG,	0,		PROGPATH(get),
-	"help",		PROG,	NO_SDOT,	PROGPATH(help),
-	"prt",		PROG,	0,		PROGPATH(prt),
-	"rmdel",	PROG,	REALUSER,	PROGPATH(rmdel),
-	"what",		PROG,	NO_SDOT,	PROGPATH(what),
-	"sccsdiff",	SHELL,	REALUSER,	PROGPATH(sccsdiff),
-	"edit",		CMACRO,	NO_SDOT,	"get -e",
-	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskcl -t",
-	"deledit",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbskcl -e -t",
-	"fix",		FIX,	NO_SDOT,	NULL,
-	"clean",	CLEAN,	REALUSER,	(char *) CLEANC,
-	"info",		CLEAN,	REALUSER,	(char *) INFOC,
-	"check",	CLEAN,	REALUSER,	(char *) CHECKC,
-	"tell",		CLEAN,	REALUSER,	(char *) TELLC,
-	"unedit",	UNEDIT,	NO_SDOT,	NULL,
-	"diffs",	DIFFS,	NO_SDOT|REALUSER, NULL,
-	NULL,		-1,	0,		NULL
+	"admin",	PROG,	REALUSER,		PROGPATH(admin),
+	"chghist",	PROG,	0,			PROGPATH(rmdel),
+	"comb",		PROG,	0,			PROGPATH(comb),
+	"delta",	PROG,	0,			PROGPATH(delta),
+	"get",		PROG,	0,			PROGPATH(get),
+	"help",		PROG,	NO_SDOT,		PROGPATH(help),
+	"prt",		PROG,	0,			PROGPATH(prt),
+	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
+	"what",		PROG,	NO_SDOT,		PROGPATH(what),
+	"sccsdiff",	SHELL,	REALUSER,		PROGPATH(sccsdiff),
+	"edit",		CMACRO,	NO_SDOT,		"get -e",
+	"delget",	CMACRO,	NO_SDOT,		"delta:mysrp/get:ixbeskcl -t",
+	"deledit",	CMACRO,	NO_SDOT,		"delta:mysrp/get:ixbskcl -e -t",
+	"fix",		FIX,	NO_SDOT,		NULL,
+	"clean",	CLEAN,	REALUSER|NO_SDOT,	(char *) CLEANC,
+	"info",		CLEAN,	REALUSER|NO_SDOT,	(char *) INFOC,
+	"check",	CLEAN,	REALUSER|NO_SDOT,	(char *) CHECKC,
+	"tell",		CLEAN,	REALUSER|NO_SDOT,	(char *) TELLC,
+	"unedit",	UNEDIT,	NO_SDOT,		NULL,
+	"diffs",	DIFFS,	NO_SDOT|REALUSER,	NULL,
+	NULL,		-1,	0,			NULL
 };
 
 /* one line from a p-file */
@@ -798,6 +798,8 @@ clean(mode, argv)
 	extern struct pfile *getpfent();
 	register struct pfile *pf;
 	register char **ap;
+	extern char *username();
+	char *usernm = NULL;
 
 	/*
 	**  Process the argv
@@ -805,8 +807,25 @@ clean(mode, argv)
 
 	for (ap = argv; *ap != NULL; ap++)
 	{
-		if (strcmp(*ap, "-b") == 0)
-			nobranch = TRUE;
+		if (**ap == '-')
+		{
+			/* we have a flag */
+			switch ((*ap)[1])
+			{
+			  case 'b':
+				nobranch = TRUE;
+				break;
+
+			  case 'u':
+				if ((*ap)[2] != '\0')
+					usernm = &(*ap)[2];
+				else if (ap[1] != NULL && ap[1][0] != '-')
+					usernm = *++ap;
+				else
+					usernm = username();
+				break;
+			}
+		}
 	}
 
 	/*
@@ -862,6 +881,8 @@ clean(mode, argv)
 			{
 				if (nobranch && isbranch(pf->p_nsid))
 					continue;
+				if (usernm != NULL && strcmp(usernm, pf->p_user) != 0 && mode != CLEANC)
+					continue;
 				gotedit = TRUE;
 				gotpfent = TRUE;
 				if (mode == TELLC)
@@ -890,7 +911,15 @@ clean(mode, argv)
 	/* cleanup & report results */
 	fclose(dirfd);
 	if (!gotedit && mode == INFOC)
-		printf("Nothing being edited\n");
+	{
+		printf("Nothing being edited");
+		if (nobranch)
+			printf(" (on trunk)");
+		if (usernm == NULL)
+			printf("\n");
+		else
+			printf(" by %s\n", usernm);
+	}
 	if (mode == CHECKC)
 		exit(gotedit);
 	return (EX_OK);
@@ -958,15 +987,11 @@ unedit(fn)
 	bool delete = FALSE;
 	bool others = FALSE;
 	char *myname;
-	extern char *getlogin();
+	extern char *username();
 	struct pfile *pent;
 	extern struct pfile *getpfent();
 	char buf[120];
 	extern char *makefile();
-# ifdef UIDUSER
-	struct passwd *pw;
-	extern struct passwd *getpwuid();
-# endif UIDUSER
 
 	/* make "s." filename & find the trailing component */
 	pfn = makefile(fn);
@@ -1001,17 +1026,7 @@ unedit(fn)
 	}
 
 	/* figure out who I am */
-# ifdef UIDUSER
-	pw = getpwuid(getuid());
-	if (pw == NULL)
-	{
-		syserr("who are you? (uid=%d)", getuid());
-		exit(EX_OSERR);
-	}
-	myname = pw->pw_name;
-# else
-	myname = getlogin();
-# endif UIDUSER
+	myname = username();
 
 	/*
 	**  Copy p-file to temp file, doing deletions as needed.
@@ -1281,4 +1296,35 @@ syserr(f, p1, p2, p3)
 		perror(NULL);
 		exit(EX_OSERR);
 	}
+}
+/*
+**  USERNAME -- return name of the current user
+**
+**	Parameters:
+**		none
+**
+**	Returns:
+**		name of current user
+**
+**	Side Effects:
+**		none
+*/
+
+char *
+username()
+{
+# ifdef UIDUSER
+	extern struct passwd *getpwuid();
+	register struct passwd *pw;
+
+	pw = getpwuid(getuid());
+	if (pw == NULL)
+	{
+		syserr("who are you? (uid=%d)", getuid());
+		exit(EX_OSERR);
+	}
+	return (pw->pw_name);
+# else
+	return (getlogin());
+# endif UIDUSER
 }

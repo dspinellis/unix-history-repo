@@ -112,6 +112,13 @@ flag is given,
 branches (i.e.,
 \s-1SID\s0's with two or fewer components)
 are ignored.
+If the
+.B \-u
+flag is given
+(with an optional argument)
+then only files being edited by you
+(or the named user)
+are listed.
 .IP check
 Like ``info''
 except that nothing is printed if nothing is being edited,
@@ -129,7 +136,9 @@ of the files being edited
 on the standard output.
 Takes the
 .B \-b
-flag like 
+and
+.B \-u
+flags like 
 ``info'' and ``check''.
 .IP diffs
 Gives a ``diff'' listing between the current version of the
@@ -216,6 +225,14 @@ To make a delta of a large number of files
 in the current directory:
 .BX
 sccs delta *.c
+.EX
+To get a list of files being edited that are not on branches:
+.BX
+sccs info \-b
+.EX
+To delta everything being edited by you:
+.BX
+sccs delta \`sccs tell \-u\`
 .EX
 In a makefile, to get source files
 from an
