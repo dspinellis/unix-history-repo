@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -153,7 +153,7 @@ mailfor(name)
 {
 	register struct utmp *utp = &utmp[nutmp];
 	register char *cp;
-	off_t offset, atol();
+	off_t offset;
 
 	if (!(cp = index(name, '@')))
 		return;
@@ -217,7 +217,7 @@ jkfprintf(tp, name, offset)
 	if ((fi = fopen(name, "r")) == NULL)
 		return;
 	(void)fseek(fi, offset, L_SET);
-	/* 
+	/*
 	 * Print the first 7 lines or 560 characters of the new mail
 	 * (whichever comes first).  Skip header crap other than
 	 * From, Subject, To, and Date.
@@ -242,7 +242,7 @@ jkfprintf(tp, name, offset)
 		}
 		/* strip weird stuff so can't trojan horse stupid terminals */
 		for (cp = line; (ch = *cp) && ch != '\n'; ++cp, --charcnt) {
-			ch &= 0x7f;
+			ch = toascii(ch);
 			if (!isprint(ch) && !isspace(ch))
 				ch |= 0x40;
 			(void)fputc(ch, tp);
