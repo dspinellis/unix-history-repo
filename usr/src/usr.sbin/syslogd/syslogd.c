@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -243,6 +243,7 @@ main(argc, argv)
 			logerror("syslog/udp: unknown service");
 			die(0);
 		}
+		bzero((char *)&sin, sizeof(sin));
 		sin.sin_family = AF_INET;
 		sin.sin_port = LogPort = sp->s_port;
 		if (bind(finet, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
