@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.1 83/08/11";
+static	char *sccsid = "@(#)error.c	3.2 83/08/16";
 #endif
 
 #include "defs.h"
@@ -44,7 +44,7 @@ char *fmt;
 	if (lineno != 0)
 		(void) wwprintf(errwin, "line %d: ", lineno);
 	(void) wwprintf(errwin, fmt, a, b, c, d, e, f, g, h);
-	(void) wwprintf(errwin, "\r\n");
+	(void) wwprintf(errwin, "\n");
 }
 
 beginerror(fn)
