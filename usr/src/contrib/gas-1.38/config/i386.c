@@ -54,7 +54,7 @@ long omagic = OMAGIC;
 char FLT_CHARS[] = "fFdDxX";
 char EXP_CHARS[] = "eE";
 char line_comment_chars[] = "#";
-char comment_chars[] = "#/";
+char comment_chars[] = "#";
 
 /* tables for lexical analysis */
 static char opcode_chars[256];
