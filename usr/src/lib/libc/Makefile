@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.15 (Berkeley) %G%
+#	@(#)Makefile	4.16 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -47,6 +47,7 @@ ALL=	gen inet net stdio ${MACHINE} ${COMPAT}
 TAGSFILE=tags
 
 libc.a libc_p.a: ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}
+	rm -rf t1 tmp
 	-mkdir tmp
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib); done
 	cd tmp; ar x ../net/${HOSTLOOKUP}/hostlib
