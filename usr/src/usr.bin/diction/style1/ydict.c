@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ydict.c	4.2	(Berkeley)	82/11/06";
+static char ydict_sccsid[] = "@(#)ydict.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 struct dict ary_d[] = {

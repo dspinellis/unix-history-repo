@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)nhash.c	4.2	(Berkeley)	82/11/06";
+static char nhash_sccsid[] = "@(#)nhash.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 struct dict {
@@ -9,8 +9,10 @@ struct dict {
 extern struct dict ary_d[], cy_d[], ery_d[], fy_d[],gy_d[];
 extern struct dict ity_d[],ly_d[],ory_d[],ry_d[],ty_d[];
 extern struct dict dict[];
+extern struct dict abbrev_d[];
 char aahash();
 char lookup();
+char abbrev();
 char ary();
 char cy();
 char ery();
@@ -62,7 +64,7 @@ struct dict *data;
 			}
 		p1 = (p1+p2)%aatsize;
 	}
-	fprintf(stderr, "hash table full\n");
+	fprintf(stderr, "hash table full:size %d\n",aatsize);
 	exit();
 }
 getd(){
@@ -73,11 +75,19 @@ getd(){
 		ptr++;
 	}
 }
+getab(){
+	struct dict *ptr;
+	ptr = abbrev_d;
+	while(ptr->entry != 0){
+		abbrev(ptr->entry,0,ptr);
+		ptr++;
+	}
+}
 
-struct hnode aa1root[463];
-#define aa1tsize 463
-#define aa1p1 457
-#define aa1p2 461
+struct hnode aa1root[499];
+#define aa1tsize 499
+#define aa1p1 487
+#define aa1p2 491
 char 
 lookup(a0,a1,ptr)
 char *a0;
@@ -224,4 +234,15 @@ ygetd(){
 		}
 		ptr++;
 	}
+}
+struct hnode aa42root[71];
+#define aa42tsize 71
+#define aa42p1 61
+#define aa42p2 67
+char
+abbrev(a0,a1,ptr)
+	char *a0;
+	struct dict *ptr;
+{
+	return(aahash(a0,a1,aa42tsize,aa42p1,aa42p2,aa42root,ptr));
 }
