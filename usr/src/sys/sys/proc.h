@@ -1,4 +1,4 @@
-/*	proc.h	4.14	82/09/06	*/
+/*	proc.h	4.15	82/09/08	*/
 
 #include "mush.h"
 #include "mu_msg.h"
@@ -59,8 +59,7 @@ struct	proc {
 	mmsgbuf	p_mb;		/* pending message */
 	int	p_msgflgs;	/* message flags */
 	struct	itimerval p_realtimer;
-	int	p_XXX;		/* XXX */
-	struct	timeval p_seltimer;
+	int	p_SSS[3];
 };
 
 #define	PIDHSZ		63

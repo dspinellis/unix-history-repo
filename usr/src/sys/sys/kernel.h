@@ -1,4 +1,4 @@
-/*	kernel.h	4.2	82/09/06	*/
+/*	kernel.h	4.3	82/09/08	*/
 
 /*
  * Global variables for the kernel
@@ -16,3 +16,5 @@ struct	timeval time;
 struct	timezone tz;			/* XXX */
 int	hz;
 int	tick;
+int	lbolt;				/* awoken once a second */
+int	unsel(),unrto();
