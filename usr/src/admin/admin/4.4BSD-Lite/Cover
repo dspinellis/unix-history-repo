@@ -1,5 +1,5 @@
-.\"	@(#)Cover	1.3 (Berkeley) %G%
-.\" use -ms
+.\"	@(#)Cover	1.4 (Berkeley) %G%
+.\" use deqn -Plz Cover | psroff -ms -Plz
 .\"
 .EQ
 delim ##
