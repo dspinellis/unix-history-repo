@@ -16,7 +16,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.9 1994/06/08 23:42:06 phk Exp $
+$Id: options.texi,v 1.10 1994/06/16 05:30:28 jkh Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -863,6 +863,21 @@ represents the number of virtual consoles to be provided by the driver;
 a reasonable value is 8.  One of @samp{pc} or @samp{sc} is presently
 required unless @samp{COMCONSOLE} is enabled, in which case a serial
 port is made into the console.
+
+@item device psm0 at isa? port "IO_KBD" tty irq 12 vector psmintr
+@findex psm
+@cindex PS/2 mouse
+@cindex Mouse
+This driver provides support for the IBM-style PS/2 mouse now popular
+on many PCs.  This driver shares an address with the console driver
+and therefore requires that the option @samp{ALLOW_CONFLICT_IOADDR}
+also be set.  It is also important that the console driver
+(@samp{pc} or @samp{sc}) *preceed* this driver in your kernel configuration
+file in order to get priority.  All in all, this driver is a hack and
+should really be integrated into the console driver itself, evidence of
+which can be easily seen when trying to use the mouse and keyboard at the
+same time in X (try it).  Volunteers willing to clean this up and do it
+properly are most welcome!
 
 @c sb, anyone?
 
