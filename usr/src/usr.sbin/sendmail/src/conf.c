@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.101 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.102 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -156,6 +156,8 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 setdefaults(e)
 	register ENVELOPE *e;
 {
+	int i;
+
 	SpaceSub = ' ';				/* option B */
 	QueueLA = 8;				/* option x */
 	RefuseLA = 12;				/* option X */
@@ -176,10 +178,13 @@ setdefaults(e)
 	MciCacheTimeout = 300;			/* option K */
 	LogLevel = 9;				/* option L */
 	settimeouts(NULL);			/* option r */
-	TimeOuts.to_q_return = 5 DAYS;		/* option T */
-	TimeOuts.to_q_warning = 0;		/* option T */
 	PrivacyFlags = 0;			/* option p */
 	MimeMode = MM_CVTMIME|MM_PASS8BIT;	/* option 8 */
+	for (i = 0; i < MAXTOCLASS; i++)
+	{
+		TimeOuts.to_q_return[i] = 5 DAYS;	/* option T */
+		TimeOuts.to_q_warning[i] = 0;		/* option T */
+	}
 	setdefuser();
 	setupmaps();
 	setupmailers();
@@ -280,6 +285,7 @@ setupmaps()
 	MAPDEF("hash", ".db", MCF_ALIASOK|MCF_REBUILDABLE,
 		map_parseargs, hash_map_open, db_map_close,
 		db_map_lookup, db_map_store);
+
 	MAPDEF("btree", ".db", MCF_ALIASOK|MCF_REBUILDABLE,
 		map_parseargs, bt_map_open, db_map_close,
 		db_map_lookup, db_map_store);
@@ -293,22 +299,41 @@ setupmaps()
 
 #ifdef NIS
 	MAPDEF("nis", NULL, MCF_ALIASOK,
-		map_parseargs, nis_map_open, nis_map_close,
-		nis_map_lookup, nis_map_store);
+		map_parseargs, nis_map_open, null_map_close,
+		nis_map_lookup, null_map_store);
+#endif
+
+#ifdef NISPLUS
+	MAPDEF("nisplus", NULL, MCF_ALIASOK,
+		map_parseargs, nisplus_map_open, null_map_close,
+		nisplus_map_lookup, null_map_store);
+#endif
+
+#if NAMED_BIND
+# if 0
+	MAPDEF("dns", NULL, 0,
+		dns_map_init, null_map_open, null_map_close,
+		dns_map_lookup, null_map_store);
+# endif
+
+	/* old name for back compat */
+	MAPDEF("host", NULL, 0,
+		host_map_init, null_map_open, null_map_close,
+		host_map_lookup, null_map_store);
 #endif
 
 	MAPDEF("stab", NULL, MCF_ALIASOK|MCF_ALIASONLY,
-		map_parseargs, stab_map_open, stab_map_close,
+		map_parseargs, stab_map_open, null_map_close,
 		stab_map_lookup, stab_map_store);
 
 	MAPDEF("implicit", NULL, MCF_ALIASOK|MCF_ALIASONLY|MCF_REBUILDABLE,
 		map_parseargs, impl_map_open, impl_map_close,
 		impl_map_lookup, impl_map_store);
 
-	/* host DNS lookup */
-	MAPDEF("host", NULL, 0,
-		host_map_init, null_map_open, null_map_close,
-		host_map_lookup, null_map_store);
+	/* access to system passwd file */
+	MAPDEF("user", NULL, 0,
+		map_parseargs, user_map_open, null_map_close,
+		user_map_lookup, null_map_store);
 
 	/* dequote map */
 	MAPDEF("dequote", NULL, 0,
@@ -323,9 +348,40 @@ setupmaps()
 		udb_map_lookup, null_map_store);
 # endif
 #endif
+
+	/* sequenced maps */
+	MAPDEF("sequence", NULL, MCF_ALIASOK,
+		seq_map_parse, null_map_open, null_map_close,
+		seq_map_lookup, seq_map_store);
 }
 
 #undef MAPDEF
+/*
+**  INITHOSTMAPS -- initial host-dependent maps
+**
+**	This should act as an interface to any local service switch
+**	provided by the host operating system.
+**
+**	Parameters:
+**		none
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		Should define maps "host" and "passwd" as necessary
+**		for this OS.  If they are not defined, they will get
+**		a default value later.  It should check to make sure
+**		they are not defined first, since it's possible that
+**		the config file has provided an override.
+*/
+
+void
+inithostmaps()
+{
+#ifdef SOLARIS
+#endif
+}
 /*
 **  USERNAME -- return the user id of the logged in user.
 **
