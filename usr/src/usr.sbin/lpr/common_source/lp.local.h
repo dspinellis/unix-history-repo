@@ -1,4 +1,4 @@
-/*	lp.local.h	1.2	81/09/04	*/
+/*	lp.local.h	1.3	82/12/02	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -30,21 +30,6 @@
 #define DEFFF		"\f"
 #define	DEFDAEMON	"/usr/lib/lpd"
 #define	DEFDEVLP	"/dev/lp"
-#define	DEFUID		1
-
-/*
- * The system name is normally imported from <whoami.h>,
- *   change it here if you want someting special on the JOB line
- *   of the burst page.
- */
-
-#ifdef SYTEK
-#	define	SYSTEM_NAME	"Sytek VAX/UNIX"
-#else
-#include <whoami.h>
-
-#	define	SYSTEM_NAME	sysname
-#endif
 
 /*
  * Some utilities used by lpd

@@ -20,17 +20,17 @@ all: lpd lpr sq dq lpdrestart filters
 
 filters: necf lpf laf
 
-lpd:	lpd.o lpdchar.o printcap.o
-	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o
+lpd:	lpd.o lpdchar.o printcap.o getqueue.o
+	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getqueue.o
 
 lpr:	lpr.o printcap.o
 	${CC} -o lpr ${LDFLAGS} lpr.o printcap.o
 
-sq:	sq.o printcap.o
-	${CC} -o sq ${LDFLAGS} sq.o -ltermcap printcap.o
+sq:	sq.o printcap.o getqueue.o
+	${CC} -o sq ${LDFLAGS} sq.o -ltermcap printcap.o getqueue.o
 
-dq:	dq.o printcap.o
-	${CC} -o dq ${LDFLAGS} dq.o printcap.o
+dq:	dq.o printcap.o scandir.o
+	${CC} -o dq ${LDFLAGS} dq.o printcap.o scandir.o
 
 lpdrestart: lpdrestart.o
 	${CC} -o lpdrestart ${LDFLAGS} lpdrestart.o
@@ -45,23 +45,24 @@ necf:	necf.c
 	${CC} -o necf ${CFLAGS} ${LDFLAGS} necf.c
 
 lpr.o lpd.o sq.o dq.o lpdrestart.o: lp.local.h
+lpd.o sq.o getqueue.o: getqueue.h
 
 install: all
 	cp lpd ${LIBDIR}/lpd
-	cp sq ${BINDIR}/sq
-	cp dq ${BINDIR}/dq
+	cp sq ${BINDIR}/lpq
+	cp dq ${BINDIR}/lprm
 	cp lpr ${BINDIR}/lpr
 #	rm -f ${BINDIR}/opr ${BINDIR}/print
 #	ln ${BINDIR}/lpr ${BINDIR}/print
 #	ln ${BINDIR}/lpr ${BINDIR}/opr
-	chown ${ROOT} ${BINDIR}/lpr ${BINDIR}/sq
-	chown ${DAEMON} ${BINDIR}/dq ${LIBDIR}/lpd
-	chgrp ${SPGRP} ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/dq ${BINDIR}/sq
-	chmod 6711 ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/dq
-	chmod 2711 ${BINDIR}/sq
-	chmod 775 ${SPOOLDIR}
-	chgrp ${SPGRP} ${SPOOLDIR}
+	chown ${ROOT} ${BINDIR}/lpr
+	chown ${DAEMON} $(BINDIR)/lpq ${BINDIR}/lprm ${LIBDIR}/lpd
+	chgrp ${SPGRP} ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/lpq ${BINDIR}/lprm
+	chmod 6711 ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/lprm
+	chmod 2711 ${BINDIR}/lpq
 	chown ${DAEMON} ${SPOOLDIR}
+	chgrp ${SPGRP} ${SPOOLDIR}
+	chmod 775 ${SPOOLDIR}
 
 clean:
 	rm -f laf dq sq lpd lpr necf lpf *.o

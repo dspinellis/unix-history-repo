@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.3	81/05/19	*/
+/*	lpr.c	4.4	82/12/02	*/
 /*
  *      lpr -- off line print
  *              also known as print
@@ -73,7 +73,7 @@ char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
  * Multiple printer scheme using info from printer data base:
  *
  *	DN		who to invoke to print stuff
- *	SA		rectory used as spool queue
+ *	SA		directory used as spool queue
  *
  * daemon identifies what printer it should use (in the case of the
  *  same code being shared) by inspecting its argv[1].
@@ -103,7 +103,8 @@ int	hdr = 1;		/* 1 =>'s default header */
 int     user;			/* user id */
 int	spgroup;		/* daemon's group for creating spool files */
 char	*title;			/* pr'ing title */
-char	*class = SYSTEM_NAME;	/* class title on header page */
+char	classbuf[32];		/* class title on header page */
+char	*class = classbuf;
 char    *jobname;		/* job name on header page */
 char	*name;			/* program name */
 char	*printer;		/* printer name */
@@ -114,9 +115,10 @@ char	*malloc();
 char	*getenv();
 char	*rindex();
 
+/* ARGSUSED */
 main(argc, argv)
-int argc;
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	register char *arg;
 	int i, c, f, flag, out();
@@ -136,15 +138,16 @@ char *argv[];
 	 *	   access files and printer.  Users can't get to anything
 	 *	   w/o help of sq and dq programs.
 	 */
+	gethostname(classbuf, sizeof (classbuf));
 	user = getuid();
 	spgroup = getegid();
-	if(signal(SIGHUP, SIG_IGN) != SIG_IGN)
+	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		signal(SIGHUP, out);
-	if(signal(SIGINT, SIG_IGN) != SIG_IGN)
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, out);
-	if(signal(SIGQUIT, SIG_IGN) != SIG_IGN)
+	if (signal(SIGQUIT, SIG_IGN) != SIG_IGN)
 		signal(SIGQUIT, out);
-	if(signal(SIGTERM, SIG_IGN) != SIG_IGN)
+	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 		signal(SIGTERM, out);
 	flag = 0;
 	if ((printer = getenv("PRINTER")) == NULL)
@@ -245,30 +248,30 @@ char *argv[];
 	inchar = f-7;
 	tff = nfile(tfname);
 	if (jflag == 0) {
-		if(argc == 1)
+		if (argc == 1)
 			jobname = &dfname[f-10];
 		else
 			jobname = argv[1];
 	}
 	ident();
 
-	if(argc == 1)
+	if (argc == 1)
 		copy(0, " ");
-	else while(--argc) {
-		if(test(arg = *++argv) == -1)	/* file reasonable */
+	else while (--argc) {
+		if (test(arg = *++argv) == -1)	/* file reasonable */
 			continue;
 
 		if (flag == '+')		/* force copy flag */
 			goto cf;
 		if (stat(arg, &sbuf) < 0) {
-			printf("lpr:");
+			printf("%s:", name);
 			perror(arg);
 			continue;
 		}
-		if((sbuf.st_mode&04) == 0)
+		if ((sbuf.st_mode&04) == 0)
 			goto cf;
-		if(*arg == '/' && flag != '-') {
-			for(i=0;i<ncopies;i++) {
+		if (*arg == '/' && flag != '-') {
+			for (i=0;i<ncopies;i++) {
 				if (prflag) {
 					if (title)
 						card('H', title);
@@ -280,9 +283,9 @@ char *argv[];
 			nact++;
 			continue;
 		}
-		if(link(arg, lfname) < 0)
+		if (link(arg, lfname) < 0)
 			goto cf;
-		for(i=0;i<ncopies;i++) {
+		for (i=0;i<ncopies;i++) {
 			if (prflag) {
 				card('H', title ? title : arg);
 				card('R', lfname);
@@ -296,7 +299,7 @@ char *argv[];
 		goto df;
 
 	cf:
-		if((f = open(arg, 0)) < 0) {
+		if ((f = open(arg, 0)) < 0) {
 			printf("%s: cannot open %s\n", name, arg);
 			continue;
 		}
@@ -304,13 +307,13 @@ char *argv[];
 		close(f);
 
 	df:
-		if(flag == '-' && unlink(arg))
+		if (flag == '-' && unlink(arg))
 			printf("%s: cannot remove %s\n", name, arg);
 	}
 
-	if(nact) {
+	if (nact) {
 		tfname[inchar]--;
-		if(link(tfname, dfname) < 0) {
+		if (link(tfname, dfname) < 0) {
 			printf("%s: cannot rename %s\n", name, dfname);
 			tfname[inchar]++;
 			out();
@@ -322,7 +325,7 @@ char *argv[];
 			printf("job queued, but printer down\n");
 			exit(0);
 		}
-		for(f = 0; f < NOFILE; close(f++))
+		for (f = 0; f < NOFILE; close(f++))
 			;
 		open("/dev/tty", 0);
 		open("/dev/tty", 1);
@@ -334,13 +337,13 @@ char *argv[];
 }
 
 copy(f, n)
-int f;
-char n[];
+	int f;
+	char n[];
 {
 	int ff, i, nr, nc;
 	char buf[BUFSIZ];
 
-	for(i=0;i<ncopies;i++) {
+	for (i=0;i<ncopies;i++) {
 		if (prflag) {
 			card('H', title ? title : n);
 			card('R', cfname);
@@ -351,15 +354,15 @@ char n[];
 	card('U', cfname);
 	ff = nfile(cfname);
 	nr = nc = 0;
-	while((i = read(f, buf, BUFSIZ)) > 0) {
+	while ((i = read(f, buf, BUFSIZ)) > 0) {
 		if (write(ff, buf, i) != i) {
 			printf("%s: %s: temp file write error\n", name, n);
 			break;
 		}
 		nc += i;
-		if(nc >= BUFSIZ) {
+		if (nc >= BUFSIZ) {
 			nc -= BUFSIZ;
-			if(nr++ > MX) {
+			if (nr++ > MX) {
 				printf("%s: %s: copy file is too large\n", name, n);
 				break;
 			}
@@ -370,14 +373,14 @@ char n[];
 }
 
 card(c, p2)
-register char c, *p2;
+	register char c, *p2;
 {
 	char buf[BUFSIZ];
 	register char *p1 = buf;
 	int col = 0;
 
 	*p1++ = c;
-	while((c = *p2++) != '\0') {
+	while ((c = *p2++) != '\0') {
 		*p1++ = c;
 		col++;
 	}
@@ -411,11 +414,14 @@ ident()
 }
 
 nfile(n)
-char *n;
+	char *n;
 {
 	register f;
+	int oldumask = umask(022);		/* should block signals */
 
-	if((f = creat(n, FILMOD)) < 0) {
+	f = creat(n, FILMOD);
+	(void) umask(oldumask);
+	if (f < 0) {
 		printf("%s: cannot create %s\n", name, n);
 		out();
 	}
@@ -425,7 +431,7 @@ char *n;
 		out();
 	}
 	n[inchar]++;
-	return(f);
+	return (f);
 }
 
 out()
@@ -438,22 +444,22 @@ out()
 	signal(SIGTERM, SIG_IGN);
 	i = inchar;
 	if (tfname)
-		while(tfname[i] != 'A') {
+		while (tfname[i] != 'A') {
 			tfname[i]--;
 			unlink(tfname);
 		}
 	if (cfname)
-		while(cfname[i] != 'A') {
+		while (cfname[i] != 'A') {
 			cfname[i]--;
 			unlink(cfname);
 		}
 	if (lfname)
-		while(lfname[i] != 'A') {
+		while (lfname[i] != 'A') {
 			lfname[i]--;
 			unlink(lfname);
 		}
 	if (dfname)
-		while(dfname[i] != 'A') {
+		while (dfname[i] != 'A') {
 			dfname[i]--;
 			unlink(dfname);
 		}
@@ -461,7 +467,7 @@ out()
 }
 
 test(file)
-char *file;
+	char *file;
 {
 	struct exec buf;
 	struct stat mbuf;
@@ -469,20 +475,20 @@ char *file;
 
 	if (access(file, 4) < 0) {
 		printf("%s: cannot access %s\n", name, file);
-		return(-1);
+		return (-1);
 	}
-	if(stat(file, &mbuf) < 0) {
+	if (stat(file, &mbuf) < 0) {
 		printf("%s: cannot stat %s\n", name, file);
 		return (-1);
 	}
 	if ((mbuf.st_mode&S_IFMT) == S_IFDIR) {
 		printf("%s: %s is a directory\n", name, file);
-		return(-1);
+		return (-1);
 	}
 
-	if((fd = open(file, 0)) < 0) {
+	if ((fd = open(file, 0)) < 0) {
 		printf("%s: cannot open %s\n", name, file);
-		return(-1);
+		return (-1);
 	}
 	if (read(fd, &buf, sizeof(buf)) == sizeof(buf))
 		switch(buf.a_magic) {
@@ -501,11 +507,11 @@ char *file;
 		}
 
 	close(fd);
-	return(0);
+	return (0);
 error1:
 	printf(" and is unprintable\n");
 	close(fd);
-	return(-1);
+	return (-1);
 }
 
 /*
@@ -513,7 +519,7 @@ error1:
  */
 char *
 itoa(i)
-register int i;
+	register int i;
 {
 	static char b[10] = "########";
 	register char *p;
@@ -522,7 +528,7 @@ register int i;
 	do
 		*p-- = i%10 + '0';
 	while (i /= 10);
-	return(++p);
+	return (++p);
 }
 
 /*
@@ -530,7 +536,7 @@ register int i;
  *   return pointer to daemon structure
  */
 chkprinter(s)
-register char *s;
+	register char *s;
 {
 	static char buf[BUFSIZ/2];
 	char b[BUFSIZ];
@@ -541,7 +547,7 @@ register char *s;
 		fprintf(stderr, "%s: can't open printer description file\n", name);
 		exit(3);
 	} else if (stat == 0)
-		return(NULL);
+		return (NULL);
 	if ((DN = pgetstr("dn", &bp)) == NULL)
 		DN = DEFDAEMON;
 	if ((LP = pgetstr("lp", &bp)) == NULL)
@@ -550,7 +556,7 @@ register char *s;
 		SA = DEFSPOOL;
 	if ((MX = pgetnum("mx")) < 0)
 		MX = DEFMX;
-	return(1);
+	return (1);
 }
 
 /*
@@ -558,7 +564,7 @@ register char *s;
  */
 char *
 mktmp(id, pid, n)
-char *id;
+	char *id;
 {
 	register char *s;
 
@@ -567,5 +573,5 @@ char *id;
 		exit(1);
 	}
 	sprintf(s, "%s/%sA%05d", SA, id, pid);
-	return(s);
+	return (s);
 }
