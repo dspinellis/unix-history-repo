@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.18 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -62,6 +62,8 @@ subwin(orig, nl, nc, by, bx)
 	register WINDOW *orig;
 	register int by, bx, nl, nc;
 {
+	int i;
+	__LINE *lp;
 	register WINDOW *win;
 
 	/* Make sure window fits inside the original one. */
@@ -81,6 +83,10 @@ subwin(orig, nl, nc, by, bx)
 	win->nextp = orig->nextp;
 	orig->nextp = win;
 	win->orig = orig;
+
+	/* Initialize flags here so that refresh can also use __set_subwin. */
+	for (lp = win->lspace, i = 0; i < win->maxy; i++, lp++)
+		lp->flags = 0;
 	__set_subwin(orig, win);
 	return (win);
 }
@@ -103,7 +109,6 @@ __set_subwin(orig, win)
 		lp->line = &olp->line[win->begx];
 		lp->firstchp = &olp->firstch;
 		lp->lastchp = &olp->lastch;
-		lp->flags = 0;
 		lp->hash = __hash((char *) lp->line, win->maxx * __LDATASIZE);
 	}
 
