@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -43,7 +43,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 vfontedpr ${DESTDIR}/usr/libexec
-	install -c -o bin -g bin -m 755 vgrind.sh ${DESTDIR}/usr/pgrm/vgrind
+	install -c -o bin -g bin -m 755 vgrind.sh ${DESTDIR}/usr/bin/vgrind
 	install -c -o bin -g bin -m 755 vgrindefs.src \
 	    ${DESTDIR}/usr/share/misc/vgrindefs
 	install -c -o bin -g bin -m 755 tmac.vgrind \
