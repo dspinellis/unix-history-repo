@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -94,13 +94,12 @@ main(argc, argv)
 
 	if ((tz.tz_minuteswest || tz.tz_dsttime) &&
 	    settimeofday((struct timeval *)NULL, &tz)) {
-		perror("settimeofday");
-		retval = 1;
-		goto display;
+		perror("date: settimeofday");
+		exit(1);
 	}
 
 	if (gettimeofday(&tv, &tz)) {
-		perror("gettimeofday");
+		perror("date: gettimeofday");
 		exit(1);
 	}
 
@@ -109,22 +108,20 @@ main(argc, argv)
 
 	if (gtime(*argv)) {
 		usage();
-		retval = 1;
-		goto display;
+		exit(1);
 	}
 
 	if (!uflag) {		/* convert to GMT assuming local time */
-		tv.tv_sec += (long)tz.tz_minuteswest * SECS_PER_MIN;
+		tv.tv_sec += (long)tz.tz_minuteswest * SECSPERMIN;
 				/* now fix up local daylight time */
 		if (localtime((time_t *)&tv.tv_sec)->tm_isdst)
-			tv.tv_sec -= SECS_PER_HOUR;
+			tv.tv_sec -= SECSPERHOUR;
 	}
 	if (nflag || !netsettime(tv)) {
 		logwtmp("|", "date", "");
 		if (settimeofday(&tv, (struct timezone *)NULL)) {
-			perror("settimeofday");
-			retval = 1;
-			goto display;
+			perror("date: settimeofday");
+			exit(1);
 		}
 		logwtmp("{", "date", "");
 	}
@@ -136,7 +133,7 @@ main(argc, argv)
 
 display:
 	if (gettimeofday(&tv, (struct timezone *)NULL)) {
-		perror("gettimeofday");
+		perror("date: gettimeofday");
 		exit(1);
 	}
 	if (uflag) {
@@ -209,13 +206,13 @@ gtime(ap)
 	if (isleap(year) && month > 2)
 		++tv.tv_sec;
 	for (--year;year >= EPOCH_YEAR;--year)
-		tv.tv_sec += isleap(year) ? DAYS_PER_LYEAR : DAYS_PER_NYEAR;
+		tv.tv_sec += isleap(year) ? DAYSPERLYEAR : DAYSPERNYEAR;
 	while (--month)
 		tv.tv_sec += dmsize[month];
 	tv.tv_sec += day - 1;
-	tv.tv_sec = HOURS_PER_DAY * tv.tv_sec + hour;
-	tv.tv_sec = MINS_PER_HOUR * tv.tv_sec + mins;
-	tv.tv_sec = SECS_PER_MIN * tv.tv_sec + secs;
+	tv.tv_sec = HOURSPERDAY * tv.tv_sec + hour;
+	tv.tv_sec = MINSPERHOUR * tv.tv_sec + mins;
+	tv.tv_sec = SECSPERMIN * tv.tv_sec + secs;
 	return(0);
 }
 
@@ -283,7 +280,7 @@ netsettime(ntv)
 	msg.tsp_type = TSP_SETDATE;
 	msg.tsp_vers = TSPVERSION;
 	if (gethostname(hostname, sizeof (hostname))) {
-		perror("gethostname");
+		perror("date: gethostname");
 		goto bad;
 	}
 	(void) strncpy(msg.tsp_name, hostname, sizeof (hostname));
