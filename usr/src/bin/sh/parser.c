@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -114,31 +114,45 @@ parsecmd(interact) {
 STATIC union node *
 list(nlflag) {
 	union node *n1, *n2, *n3;
+	int tok;
 
 	checkkwd = 2;
 	if (nlflag == 0 && tokendlist[peektoken()])
 		return NULL;
-	n1 = andor();
+	n1 = NULL;
 	for (;;) {
-		switch (readtoken()) {
-		case TBACKGND:
-			if (n1->type == NCMD || n1->type == NPIPE) {
-				n1->ncmd.backgnd = 1;
-			} else if (n1->type == NREDIR) {
-				n1->type = NBACKGND;
+		n2 = andor();
+		tok = readtoken();
+		if (tok == TBACKGND) {
+			if (n2->type == NCMD || n2->type == NPIPE) {
+				n2->ncmd.backgnd = 1;
+			} else if (n2->type == NREDIR) {
+				n2->type = NBACKGND;
 			} else {
 				n3 = (union node *)stalloc(sizeof (struct nredir));
 				n3->type = NBACKGND;
-				n3->nredir.n = n1;
+				n3->nredir.n = n2;
 				n3->nredir.redirect = NULL;
-				n1 = n3;
+				n2 = n3;
 			}
-			goto tsemi;
-		case TNL:
-			tokpushback++;
+		}
+		if (n1 == NULL) {
+			n1 = n2;
+		}
+		else {
+			n3 = (union node *)stalloc(sizeof (struct nbinary));
+			n3->type = NSEMI;
+			n3->nbinary.ch1 = n1;
+			n3->nbinary.ch2 = n2;
+			n1 = n3;
+		}
+		switch (tok) {
+		case TBACKGND:
+		case TSEMI:
+			tok = readtoken();
 			/* fall through */
-tsemi:	    case TSEMI:
-			if (readtoken() == TNL) {
+		case TNL:
+			if (tok == TNL) {
 				parseheredoc();
 				if (nlflag)
 					return n1;
@@ -148,12 +162,6 @@ tsemi:	    case TSEMI:
 			checkkwd = 2;
 			if (tokendlist[peektoken()])
 				return n1;
-			n2 = andor();
-			n3 = (union node *)stalloc(sizeof (struct nbinary));
-			n3->type = NSEMI;
-			n3->nbinary.ch1 = n1;
-			n3->nbinary.ch2 = n2;
-			n1 = n3;
 			break;
 		case TEOF:
 			if (heredoclist)
