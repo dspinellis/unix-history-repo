@@ -1,9 +1,11 @@
-.\"	@(#)0.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/04
+.\"	@(#)0.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/05
 .rm CM
 .TL
 Directions of UNIX at Berkeley
 .AU
 Marshall Kirk McKusick
+.AU
+Michael J. Karels
 .AI
 Computer Systems Research Group
 Computer Science Division
@@ -11,7 +13,10 @@ Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, California  94720
 .AB
-This paper gives a brief overview of the contributions to UNIX
+This paper gives a brief overview of the contributions to UNIX\(dg
+.FS
+\(dgUNIX is a registered trademark of AT&T in the US and other countries.
+.FE
 made by the research community and describes the needs that
 prompted the distributions from Berkeley.
 The next Berkeley system will attempt to adapt to the
