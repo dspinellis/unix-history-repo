@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -199,7 +199,8 @@ __hash_open(file, flags, mode, info)
 	return (dbp);
 
 error1:
-	(void)close(hashp->fp);
+	if (hashp != NULL)
+		(void)close(hashp->fp);
 
 error0:
 	free(hashp);
