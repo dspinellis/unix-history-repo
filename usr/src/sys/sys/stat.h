@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.1 (Berkeley) %G%
+ *	@(#)stat.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -100,6 +100,10 @@ struct stat {
 #endif
 
 #ifndef _POSIX_SOURCE
+							/* 0777 */
+#define	ACCESSPERMS	(S_IRWXU|S_IRWXG|S_IRWXO)
+							/* 7777 */
+#define	ALLPERMS	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
 							/* 0666 */
 #define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
 
