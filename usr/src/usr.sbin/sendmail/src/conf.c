@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.39	%G%";
+static char SccsId[] = "@(#)conf.c	3.40	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -90,7 +90,11 @@ char	*AliasFile =	"/usr/lib/aliases";	/* alias file */
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
 char	*StatFile =	"/usr/lib/sendmail.st";	/* statistics summary */
 char	*HelpFile =	"/usr/lib/sendmail.hf";	/* help file */
+# ifdef QUEUE
 char	*QueueDir =	"/usr/spool/mqueue";	/* queue of saved mail */
+# else QUEUE
+char	*QueueDir =	"/tmp";			/* location of temp files */
+# endif QUEUE
 char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
 
 

@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.58	%G%";
+static char SccsId[] = "@(#)deliver.c	3.59	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -135,15 +135,22 @@ deliver(firstto, editfcn)
 	if (*mvp == NULL)
 	{
 		/* running SMTP */
+# ifdef SMTP
 		clever = TRUE;
 		*pvp = NULL;
 		i = smtpinit(m, pv, (ADDRESS *) NULL);
 		giveresponse(i, TRUE, m);
+# ifdef QUEUE
 		if (i == EX_TEMPFAIL)
 		{
 			QueueUp = TRUE;
 			tempfail = TRUE;
 		}
+# endif QUEUE
+# else SMTP
+		syserr("SMTP style mailer");
+		return (EX_SOFTWARE);
+# endif SMTP
 	}
 
 	/*
@@ -277,17 +284,26 @@ deliver(firstto, editfcn)
 
 		if (clever)
 		{
+# ifdef SMTP
 			i = smtprcpt(to);
-			if (i == EX_TEMPFAIL)
+			if (i != EX_OK)
 			{
-				QueueUp = TRUE;
-				to->q_flags |= QQUEUEUP;
+# ifdef QUEUE
+				if (i == EX_TEMPFAIL)
+				{
+					QueueUp = TRUE;
+					to->q_flags |= QQUEUEUP;
+				}
+				else
+# endif QUEUE
+				{
+					to->q_flags |= QBADADDR;
+					giveresponse(i, TRUE, m);
+				}
 			}
-			else if (i != EX_OK)
-			{
-				to->q_flags |= QBADADDR;
-				giveresponse(i, TRUE, m);
-			}
+# else SMTP
+			syserr("trying to be clever");
+# endif SMTP
 		}
 		else
 		{
@@ -304,8 +320,10 @@ deliver(firstto, editfcn)
 	/* see if any addresses still exist */
 	if (tobuf[0] == '\0')
 	{
+# ifdef SMTP
 		if (clever)
 			smtpquit(pv[0]);
+# endif SMTP
 		return (0);
 	}
 
@@ -337,12 +355,14 @@ deliver(firstto, editfcn)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &From;
+# ifdef SMTP
 	if (clever)
 	{
 		i = smtpfinish(m, editfcn);
 		smtpquit(pv[0]);
 	}
 	else
+# endif SMTP
 		i = sendoff(m, pv, editfcn, ctladdr);
 
 	/*
@@ -350,12 +370,14 @@ deliver(firstto, editfcn)
 	**  addressees.
 	*/
 
+# ifdef QUEUE
 	if (i == EX_TEMPFAIL)
 	{
 		QueueUp = TRUE;
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
 	}
+# endif QUEUE
 
 	errno = 0;
 	return (i);
@@ -567,6 +589,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		return (-1);
 	}
 
+# ifdef SMTP
 	/* if this mailer speaks smtp, create a return pipe */
 	if (clever && pipe(rpvect) < 0)
 	{
@@ -575,6 +598,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		(void) close(mpvect[1]);
 		return (-1);
 	}
+# endif SMTP
 
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
@@ -735,11 +759,13 @@ giveresponse(stat, force, m)
 		if (Verbose)
 			message(Arpa_Info, statmsg);
 	}
+# ifdef QUEUE
 	else if (stat == EX_TEMPFAIL)
 	{
 		if (Verbose)
 			message(Arpa_Info, "transmission deferred");
 	}
+# endif QUEUE
 	else
 	{
 		Errors++;
@@ -776,7 +802,9 @@ giveresponse(stat, force, m)
 # ifdef LOG
 	syslog(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
 # endif LOG
+# ifdef QUEUE
 	if (stat != EX_TEMPFAIL)
+# endif QUEUE
 		setstat(stat);
 }
 /*
@@ -825,13 +853,15 @@ putmessage(fp, m, xdot)
 
 	if (!bitset(M_NHDR, m->m_flags))
 	{
-		register char *p = rindex(m->m_mailer, '/');
+# ifdef UGLYUUCP
+		char *p = rindex(m->m_mailer, '/');
 
 		if (p != NULL && strcmp(p, "/uux") == 0 &&
 		    strcmp(m->m_name, "uucp") == 0)
 			(void) expand("From $f  $d remote from $h", buf,
 					&buf[sizeof buf - 1]);
 		else
+# endif UGLYUUCP
 			(void) expand("$l", buf, &buf[sizeof buf - 1]);
 		fprintf(fp, "%s\n", buf);
 	}

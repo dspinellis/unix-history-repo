@@ -3,7 +3,11 @@
 # include <sysexits.h>
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.5	%G%";
+# ifndef SMTP
+static char	SccsId[] =	"@(#)usersmtp.c	3.6	%G%	(no SMTP)";
+# else SMTP
+
+static char	SccsId[] =	"@(#)usersmtp.c	3.6	%G%";
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -237,3 +241,5 @@ smtpmessage(f, a, b, c)
 		fputs(buf, stdout);
 	fputs(buf, SmtpOut);
 }
+
+# endif SMTP
