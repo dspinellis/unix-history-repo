@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -49,7 +49,6 @@ char	term[256] = "network";
 extern	int errno;
 int	lostpeer();
 int	dosigwinch = 0;
-int	nosigwin = 0;
 struct	winsize winsize;
 int	sigwinch(), oob();
 
@@ -100,11 +99,6 @@ another:
 		argv++, argc--;
 		goto another;
 	}
-	if (argc > 0 && !strcmp(*argv, "-w")) {
-		nosigwin++;
-		argv++, argc--;
-		goto another;
-	}
 	if (host == 0)
 		goto usage;
 	if (argc > 0)
@@ -146,7 +140,7 @@ another:
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
-	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ] [ -w ]\n");
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ]\n");
 	exit(1);
 }
 
@@ -199,8 +193,6 @@ doit(oldmask)
 	signal(SIGURG, writeroob);
 	sigsetmask(oldmask);
 	signal(SIGCHLD, catchild);
-	if (!nosigwin)
-		signal(SIGWINCH, sigwinch);
 	writer();
 	prf("Closed connection.");
 	done();
@@ -222,8 +214,10 @@ done()
 writeroob()
 {
 
-	if (dosigwinch == 0)
+	if (dosigwinch == 0) {
 		sendwindow();
+		signal(SIGWINCH, sigwinch);
+	}
 	dosigwinch = 1;
 }
 
@@ -339,7 +333,7 @@ sigwinch()
 {
 	struct winsize ws;
 
-	if (dosigwinch && !nosigwin && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
+	if (dosigwinch && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
 	    bcmp(&ws, &winsize, sizeof (ws))) {
 		winsize = ws;
 		sendwindow();
