@@ -1,6 +1,6 @@
-static char vprmSCCSid[] = "@(#)vprm.c	1.2\t%G%";
+static char vprmSCCSid[] = "@(#)vprm.c	1.3\t%G%";
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <dir.h>
 #include <stat.h>
 #include <stdio.h>
@@ -30,11 +30,11 @@ main(argc, argv)
  */
 
 delete(devname, spooldir, argc, argv)
-char *devname, *spooldir, *argv[];
-int argc;
+	char *devname, *spooldir, *argv[];
+	int argc;
 {
-	FILE *dir;		/* The spool dir. */
-	struct dir dirent;	/* An entry read from the spool dir.*/
+	DIR *dir;		/* The spool dir. */
+	struct direct *dirp;	/* An entry read from the spool dir.*/
 	int deletion = 0;	/* Flag noting something has been deleted. */
 
 	/* Change to the spool directory. */
@@ -44,7 +44,7 @@ int argc;
 	}
 
 	/* Open it. */
-	if ((dir = fopen(".", "r")) == NULL) {
+	if ((dir = opendir(".")) == NULL) {
 		perror(spooldir);
 		return(1);
 	}
@@ -57,21 +57,18 @@ int argc;
 	 * and trying to match it with the argument.
 	 */
 	while (argc-- > 0) {
-		rewind(dir);
-		while (fread(&dirent, sizeof dirent, 1, dir) == 1) {
-			if (dirent.d_ino == 0)
-				continue;
-			if (dirent.d_name[0] == 'd' &&
-			    dirent.d_name[1] == 'f') {
-				if (delcheck(dirent.d_name, *argv)) {
-					printf(" removing %s", dirent.d_name+3);
-					deletion = 1;
-				}
+		rewinddir(dir);
+		while ((dirp = readdir(dir)) != NULL) {
+			if (dirp->d_name[0] == 'd' &&
+			    dirp->d_name[1] == 'f' &&
+			    delcheck(dirp->d_name, *argv)) {
+				printf(" removing %s", &(dirp->d_name[3]));
+				deletion = 1;
 			}
 		}
 		argv++;
 	}
-
+	closedir(dir);
 	if (!deletion)
 		printf(" nothing to remove\n");
 	else
@@ -92,7 +89,7 @@ int argc;
 
 int
 delcheck(dfname, arg)
-char *dfname, *arg;
+	char *dfname, *arg;
 {
 	FILE *df = NULL;	/* The command file. */
 	int delfile = 0;	/* A match was found, so do a deletion. */
@@ -152,8 +149,8 @@ char *dfname, *arg;
 
 
 getline(file, line)
-FILE *file;
-char *line;
+	FILE *file;
+	char *line;
 {
 	register int i, c;
 
@@ -176,7 +173,7 @@ char *line;
 
 char *
 basename(pathname)
-char *pathname;
+	char *pathname;
 {
 	register char *lastname;
 
