@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_usrreq.c	7.7.1.2 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -376,8 +376,8 @@ tcp_ctloutput(op, so, level, optname, mp)
 }
 #endif
 
-int	tcp_sendspace = 1024*4;
-int	tcp_recvspace = 1024*4;
+u_long	tcp_sendspace = 1024*4;
+u_long	tcp_recvspace = 1024*4;
 /*
  * Attach TCP protocol to socket, allocating
  * internet protocol control block, tcp control block,
@@ -390,9 +390,11 @@ tcp_attach(so)
 	struct inpcb *inp;
 	int error;
 
-	error = soreserve(so, tcp_sendspace, tcp_recvspace);
-	if (error)
-		return (error);
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		error = soreserve(so, tcp_sendspace, tcp_recvspace);
+		if (error)
+			return (error);
+	}
 	error = in_pcballoc(so, &tcb);
 	if (error)
 		return (error);

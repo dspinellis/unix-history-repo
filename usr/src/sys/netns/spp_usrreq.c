@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)spp_usrreq.c	7.6 (Berkeley) %G%
+ *      @(#)spp_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -91,7 +91,7 @@ spp_input(m, nsp, ifp)
 	}
 	if (so->so_options & SO_ACCEPTCONN) {
 		struct sppcb *ocb = cb;
-		struct socket *oso = so;
+
 		so = sonewconn(so);
 		if (so == 0) {
 			goto drop;
@@ -113,10 +113,6 @@ spp_input(m, nsp, ifp)
 		cb = nstosppcb(nsp);
 		cb->s_mtu = ocb->s_mtu;		/* preserve sockopts */
 		cb->s_flags = ocb->s_flags;	/* preserve sockopts */
-		if (so->so_snd.sb_hiwat != oso->so_snd.sb_hiwat) /*XXX*/
-			sbreserve(&so->so_snd, oso->so_snd.sb_hiwat);
-		if (so->so_rcv.sb_hiwat != oso->so_rcv.sb_hiwat) /*XXX*/
-			sbreserve(&so->so_rcv, oso->so_rcv.sb_hiwat);
 		cb->s_state = TCPS_LISTEN;
 	}
 
@@ -650,7 +646,10 @@ spp_output(cb, m0)
 	int len = 0, win, rcv_win;
 	short span, off;
 	u_short alo;
-	int error = 0, idle, sendalot;
+	int error = 0, sendalot;
+#ifdef notdef
+	int idle;
+#endif
 	struct mbuf *mprev;
 	extern int idpcksum;
 
@@ -768,7 +767,9 @@ spp_output(cb, m0)
 		sbappendrecord(sb, m);
 		cb->s_seq++;
 	}
+#ifdef notdef
 	idle = (cb->s_smax == (cb->s_rack - 1));
+#endif
 again:
 	sendalot = 0;
 	off = cb->s_snxt - cb->s_rack;
@@ -1212,9 +1213,11 @@ spp_usrreq(so, req, m, nam, rights)
 		error = ns_pcballoc(so, &nspcb);
 		if (error)
 			break;
-		error = soreserve(so, 3072, 3072);
-		if (error)
-			break;
+		if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+			error = soreserve(so, (u_long) 3072, (u_long) 3072);
+			if (error)
+				break;
+		}
 		nsp = sotonspcb(so);
 
 		mm = m_getclr(M_DONTWAIT, MT_PCB);
@@ -1227,7 +1230,7 @@ spp_usrreq(so, req, m, nam, rights)
 		cb = mtod(mm, struct sppcb *);
 		mm = m_getclr(M_DONTWAIT, MT_HEADER);
 		if (mm == NULL) {
-			m_free(dtom(m));
+			(void) m_free(dtom(m));
 			error = ENOBUFS;
 			break;
 		}

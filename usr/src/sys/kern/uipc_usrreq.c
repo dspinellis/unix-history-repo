@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -282,10 +282,10 @@ release:
  * be large enough for at least one max-size datagram plus address.
  */
 #define	PIPSIZ	4096
-int	unpst_sendspace = PIPSIZ;
-int	unpst_recvspace = PIPSIZ;
-int	unpdg_sendspace = 2*1024;	/* really max datagram size */
-int	unpdg_recvspace = 4*1024;
+u_long	unpst_sendspace = PIPSIZ;
+u_long	unpst_recvspace = PIPSIZ;
+u_long	unpdg_sendspace = 2*1024;	/* really max datagram size */
+u_long	unpdg_recvspace = 4*1024;
 
 int	unp_rights;			/* file descriptors in flight */
 
@@ -296,18 +296,20 @@ unp_attach(so)
 	register struct unpcb *unp;
 	int error;
 	
-	switch (so->so_type) {
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		switch (so->so_type) {
 
-	case SOCK_STREAM:
-		error = soreserve(so, unpst_sendspace, unpst_recvspace);
-		break;
+		case SOCK_STREAM:
+			error = soreserve(so, unpst_sendspace, unpst_recvspace);
+			break;
 
-	case SOCK_DGRAM:
-		error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
-		break;
+		case SOCK_DGRAM:
+			error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
+			break;
+		}
+		if (error)
+			return (error);
 	}
-	if (error)
-		return (error);
 	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == NULL)
 		return (ENOBUFS);
