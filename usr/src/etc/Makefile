@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 # -rw-r--r--
 BIN1=	aliases crontab daily ftpusers group hosts hosts.equiv hosts.lpd \
@@ -21,7 +21,14 @@ distribution:
 	install -c -o root -g wheel -m 644 ${ROOT1} ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 555 etc.${MACHINE}/MAKEDEV \
 	    ${DESTDIR}/dev
-# this is a bug -- someone, somewhere should be creating these!
+	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.cshrc \
+	    ${DESTDIR}/root/.cshrc
+	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.login \
+	    ${DESTDIR}/root/.login
+	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.profile \
+	    ${DESTDIR}/root/.profile
+	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
+	    ${DESTDIR}/etc/dumpdates
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/log/messages
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
@@ -30,12 +37,6 @@ distribution:
 	    ${DESTDIR}/var/log/lpd-errs
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/run/utmp
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.cshrc \
-	    ${DESTDIR}/root/.cshrc
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.login \
-	    ${DESTDIR}/root/.login
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.profile \
-	    ${DESTDIR}/root/.profile
 
 
 .include <bsd.prog.mk>
