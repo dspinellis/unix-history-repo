@@ -1,4 +1,4 @@
-/*	init_main.c	4.18	81/08/24	*/
+/*	init_main.c	4.19	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,10 @@
 #include "../h/text.h"
 #include "../h/vlimit.h"
 #include "../h/clist.h"
+#ifdef INET
+#include "../h/protocol.h"
+#include "../h/protosw.h"
+#endif
 
 /*
  * Initialization code.
@@ -76,17 +80,18 @@ main(firstaddr)
 	clkstart();
 
 	/*
-	 * Initialize devices and
-	 * set up 'known' i-nodes
+	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
-
+	mbinit();
+#ifdef INET
+	prinit();
+#endif
 	ihinit();
 	bhinit();
 	cinit();
 	binit();
 	bswinit();
 	iinit();
-	ptinit();
 	rootdir = iget(rootdev, (ino_t)ROOTINO);
 	rootdir->i_flag &= ~ILOCK;
 	u.u_cdir = iget(rootdev, (ino_t)ROOTINO);
