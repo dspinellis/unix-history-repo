@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.76 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.77 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -300,7 +300,7 @@ _OPTION(DontPruneRoutes, `confDONT_PRUNE_ROUTES')
 _OPTION(SuperSafe, `confSAFE_QUEUE')
 
 # status file
-_OPTION(StatusFile, `STATUS_FILE', /etc/sendmail.st)
+O StatusFile=ifdef(`STATUS_FILE', `STATUS_FILE', /etc/sendmail.st)
 
 # time zone handling:
 #  if undefined, use system default
