@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.21		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%);
+SCCSID(@(#)srvrsmtp.c	3.21		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -31,7 +31,6 @@ struct cmd
 # define CMDMAIL	1	/* mail -- designate sender */
 # define CMDRCPT	2	/* rcpt -- designate recipient */
 # define CMDDATA	3	/* data -- send message text */
-# define CMDHOPS	4	/* hops -- specify hop count */
 # define CMDRSET	5	/* rset -- reset state */
 # define CMDVRFY	6	/* vrfy -- verify address */
 # define CMDHELP	7	/* help -- give usage info */
@@ -57,7 +56,6 @@ static struct cmd	CmdTab[] =
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
-	"hops",		CMDHOPS,
 # ifdef DEBUG
 	"_showq",	CMDDBGSHOWQ,
 	"_debug",	CMDDBGDEBUG,
@@ -79,18 +77,35 @@ smtp()
 	int rcps;			/* number of recipients */
 	auto ADDRESS *vrfyqueue;
 	extern char Version[];
+	extern tick();
 
 	hasmail = FALSE;
 	rcps = 0;
 	(void) close(1);
 	(void) dup(fileno(OutChannel));
 	message("220", "%s Sendmail version %s at your service", HostName, Version);
+	(void) signal(SIGALRM, tick);
 	for (;;)
 	{
+		/* setup for the read */
 		CurEnv->e_to = NULL;
 		Errors = 0;
 		(void) fflush(stdout);
-		if (fgets(inp, sizeof inp, InChannel) == NULL)
+
+		/* arrange a timeout */
+		if (setjmp(TickFrame) != 0)
+		{
+			message("421", "%s timed out", HostName);
+			finis();
+		}
+		(void) alarm(ReadTimeout);
+
+		/* read the input line */
+		p = fgets(inp, sizeof inp, InChannel);
+
+		/* clear the timeout and handle errors */
+		(void) alarm(0);
+		if (p == NULL)
 		{
 			/* end of file, just die */
 			message("421", "%s Lost input channel", HostName);
@@ -270,14 +285,6 @@ smtp()
 				/* bad argument */
 				message("504", "Scheme unknown");
 			}
-			break;
-
-		  case CMDHOPS:		/* specify hop count */
-			HopCount = atoi(p);
-			if (++HopCount > MAXHOP)
-				message("501", "Hop count exceeded");
-			else
-				message("200", "Hop count ok");
 			break;
 
 # ifdef DEBUG
