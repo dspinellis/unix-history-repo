@@ -1,0 +1,2239 @@
+
+
+
+
+
+
+
+                                      Chapter 4
+
+               UNIX 4.2/4.3 BSD Network-Interface Driver Installation
+
+
+           4.1 The acp Network-Interface Driver
+
+           In the UNIX 4.2/4.3 BSD environment, the ACP 6100 is  supported
+           by  the  acp network-interface driver.  The acp driver provides
+           an interface between IP and the ACP 6100 board  for  connecting
+           to a network.  A UNIX 4.2/4.3 BSD process communicates with the
+           acp driver through the UNIX 4.2/4.3 BSD networking software.
+
+           The ACP 6100 board  is  a  UNIBUS  device  with  two  interrupt
+           vectors;  it  appears  as  a single device unit to UNIX 4.2/4.3
+           BSD.  The acp driver can support up to four ACP  6100  devices:
+           acp0,  acp1, acp2 and acp3.  If more than one ACP 6100 board is
+           installed, each must be named in the system configuration file,
+           and  the  UNIBUS  base address jumpers on each additional board
+           must be adjusted; see 2.2.1.
+
+           In the UNIX 4.2/4.3 BSD network environment, the  ACP  6100  is
+           supported  as  a  point-to-point  link  in  the TCP/IP network.
+           Thus, all network utilities such as network mail  (SMTP),  file
+           transfer  (FTP),  remote  login  (TELNET),  remote shell (RSH),
+           remote user information (FINGER), etc., can work between two or
+           more  hosts that each have an ACP 6100.  Further, if one of the
+           hosts is a gateway to a larger network, the other  host(s)  can
+           access  the  larger network using the gateway facilities in the
+           UNIX 4.2/4.3 BSD TCP/IP implementation.  The same features  are
+           available   under   the   IPTCP  product  from  The  Wollongong
+           Group (TWG).
+
+           The  following  sections  provide  host  software  installation
+           instructions  for  both UNIX 4.2/4.3 BSD and TWG's IPTCP/EUNICE
+           environments,  a  network  configuration   procedure   and   an
+           installation verification procedure.
+
+
+           4.2 Distribution Software Contents
+
+           The ACP 6100 UNIX software distribution kit is a  tape  created
+           with  the  "tar"  utility;  see TAR(1) in the UNIX Programmer's
+           Manual.  As specified by the customer, the tape density is  800
+           or  1600  bpi  (bits per inch).  The distribution tape contains
+
+
+
+                                         4-1
+
+
+
+
+
+
+
+
+
+
+
+           the following files:
+
+
+                           makefile
+                           acp.c          apconfig.c
+                           acpreg.h       acpvar.h
+                           acp.4          acp4.txt
+                           acpconfig.8c   acpconfig8c.txt
+                           conf.example   readme.txt
+
+
+           The driver source code is contained  in  acp.c,  acpreg.h,  and
+           acpvar.h.   The  acpconfig.c  file contains the source code for
+           the acpconfig program; makefile is its makefile.  The acpconfig
+           program  is  used to configure the ACP 6100, and is an integral
+           part of the installation verification  procedure.   A  template
+           configuration file for the system is in conf.example.  The UNIX
+           Programmer's Manual page (source) for the acp driver is  acp.4;
+           acpconfig.8c is manual text (source) for the acpconfig program.
+           Formatted outputs are  in  acp4.txt  and  acpconfig8c.txt;  see
+           appendix   C.    The   installation  instructions  outlined  in
+           following sections are in readme.txt.
+
+
+           4.3 Distribution Software Installation Under UNIX 4.2/4.3 BSD
+
+           The  following  installation  instructions  are  step  by  step
+           procedures  for installing the distribution software under UNIX
+           4.2/4.3 BSD.  The  procedures  are  divided  into  two  phases.
+           First,  the  driver  software  is  installed,  and  a sysgen is
+           performed to include the driver in your UNIX  kernel.   Second,
+           the  acpconfig  program  is  installed,  and  a binary image is
+           created using the accompanying makefile.
+
+
+           4.3.1 acp Driver Installation Under UNIX 4.2/4.3 BSD.  The  ACP
+           6100 is identified to the system at configuration time, and the
+           acp network-interface driver is then compiled into the  system.
+           When  the  resultant  system  is  booted, the autoconfiguration
+           facilities in the system probe for the device on the UNIBUS and
+           enable  the  software  support  for it.  If the device does not
+           respond at autoconfiguration time, it will  not  be  accessible
+           afterwards; the system must be rebooted to enable a device that
+           did not autoconfigure.  The UNIX Programmer's Manual  page  for
+           the   acp   driver   (appendix  C  and  file  acp4.txt  in  the
+           distribution kit) describes the  diagnostic  messages  provided
+           for acp.
+
+           The following instructions accord  with  Building  4.2/4.3  BSD
+           UNIX  Systems with Config provided with your UNIX distribution.
+           Refer to that document as you use the following instructions.
+
+
+
+                                         4-2
+
+
+
+
+
+
+
+
+
+
+
+           1.  Logon as root.  When adding files  to  the  system,  rename
+               existing files that have the same name.  Create a directory
+               and read the contents of the tape into the directory with a
+               tar command of the following format.
+
+               tar x
+
+               or
+
+               tar xvbf 20 /dev/rmt0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         4-3
+
+
+
+
+
+
+
+
+
+
+
+           2.  Add  the  ACC-supplied  files  to   your   system   source-
+               directories.    Rename   the  files  in  accord  with  UNIX
+               conventions when copying them into your /sys directories as
+               shown below.
+
+               cp acp.c /sys/vaxif/if_acp.c
+               cp acpreg.h /sys/vaxif/if_acpreg.h
+               cp acpvar.h /sys/vaxif/if_acpvar.h
+               cp conf.example /sys/conf/ACP
+
+           3.  Modify the system configuration file in the /sys/conf  file
+               (file  names  typically  are  uppercase,  e.g., GENERIC) to
+               indicate the  ACP  6100  device(s)  and  the  acp  network-
+               interface  driver.   The  configuration  file  defines your
+               system in terms of global configuration parameters,  system
+               image parameters, device specifications and pseudo devices.
+               Section 4 of Building 4.2/4.3 BSD UNIX Systems with  Config
+               describes  configuration  file  syntax;  refer  also to the
+               conf.example file.
+
+               Each acp device must have its own line  including  its  own
+               unit  number  [0-3], UNIBUS adapter number, and UNIBUS base
+               address  [0160000-0177740].   The  acp-device  unit  number
+               should be appropriate for the number of ACP 6100s operating
+               on the UNIBUS; i.e., the first ACP 6100 should be acp0, the
+               second,  acp1,  and  so on.  The address of each acp device
+               must correspond to the address set in the  UBA  jumpers  on
+               the  ACP  6100  board  (see  2.2.1).   Add  a line with the
+               following format for each ACP 6100 in the host system:
+
+              device acp0 at uba0 csr 0167000 vector acpinta acpintb
+
+                                          NOTE
+
+                     Octal addresses are denoted  by  a  leading  0,
+                     hexadecimal   values  by  a  leading  0x.   The
+                     software  uses  16-bit  addressing  while   the
+                     hardware  uses  18-bits.   Hence, octal address
+                     767000 set in the UBA jumpers is  indicated  to
+                     the software as 0167000.
+
+           4.  If you are using the INET  TCP/IP  code,  verify  that  the
+               following  lines  are  present  in the system configuration
+               file in /sys/conf.  The networking code might not  function
+               correctly without these lines:
+
+               options INET
+               pseudo-device inet
+
+           5.  If you are using 4.2 BSD UNIX add the following line to the
+               configuration file:
+
+
+
+                                         4-4
+
+
+
+
+
+
+
+
+
+
+
+               options FOURTWO
+
+           6.  Add the following entry to /sys/conf/files.vax:
+
+               vaxif/if_acp.c optional acp device-driver
+
+           7.  Build a new UNIX kernel by performing a sysgen as described
+               in   the  UNIX  4.2/4.3  BSD  documentation.   The  command
+               sequence below is one possible example; it might not  apply
+               to  your  system.   Be  sure to save a copy of the original
+               vmunix before you copy the newly created kernel to /vmunix.
+
+               cd /sys/conf
+               mkdir ../ACP
+               config  ACP
+               cd ../ACP
+               make depend
+               make
+               cd /
+               cp vmunix vmunix.sav
+               cp /sys/ACP/vmunix vmunix
+
+           8.  Perform a system shutdown and boot the  new  kernel.   Note
+               lines  of the following form on the console terminal during
+               the boot procedure to verify  that  the  acp  interface  is
+               successfully  probed  for  valid  UNIBUS  base  address and
+               interrupt vectors, attached to the system, and reset.  This
+               is  an  example  only;  your  display may contain different
+               names and values.
+
+               acp0 at uba0 csr 167000 vec 770, ipl 15
+
+               If you cannot verify this  step,  review  the  installation
+               procedure to make sure that you set the UNIBUS base address
+               correctly in the configuration file in /sys/conf and on the
+               ACP 6100 board.
+
+
+           4.3.2 acpconfig Installation Under UNIX 4.2/4.3 BSD.        The
+           following  steps  explain  how to install the acpconfig program
+           under UNIX 4.2/4.3 BSD.  The UNIX Programmer's Manual pages for
+           the acpconfig program describe the use of the acpconfig program
+           (see appendix C or acpconfig8c.txt in the distribution kit).
+
+           1.  Verify the that network-interface driver is installed.  The
+               include   file,  if_acpvar.h  must  be  in  the  /sys/vaxif
+               directory.
+
+
+
+
+
+
+
+                                         4-5
+
+
+
+
+
+
+
+
+
+
+
+           2.  Create a  directory,  for  example  /usr/src/acc,  for  the
+               acpconfig  program files.  Before copying the files, rename
+               existing files that have the same  name.   Copy  the  files
+               from   the   directory   containing   the  files  from  the
+               distribution tape using commands of the following form:
+
+               cp acpconfig.c /usr/src/acc/acpconfig.c
+               cp makefile /usr/src/acc/makefile
+
+           3.  If you  have  UNIX  4.2/4.3  BSD  sources,  then  edit  the
+               /sys/h/ioctl.h file to include the following socket ioctls.
+               Place the following lines with other socket ioctls,  making
+               sure that they are above the #endif statement at the end of
+               the ioctl.h file.
+
+                   /* ACC configuration socket ioctl */
+               #define SIOCACPCONFIG _IOWR(i, 70, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPPARAM  _IOWR(i, 71, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPSTATE  _IOWR(i, 72, struct ifreq)
+
+           4.  Invoke the makefile to compile the executable image of  the
+               acpconfig program:
+
+               make
+
+           5.  Copy  the  executable  image,  'acpconfig',  to  the   /etc
+               directory, or to the directory appropriate for your system.
+
+           6.  Verify that you can access the  program  by  the  following
+               command:
+
+               /etc/acpconfig
+
+               In response, you should get a display explaining the proper
+               use  of  acpconfig.  You are now ready to use the acpconfig
+               program to configure your network interface  (see  appendix
+               C).
+
+
+           4.4 Distribution Software Installation Under TWG EUNICE
+
+           The  following  installation  instructions  are  step  by  step
+           procedures  for  installing  the distribution software in TWG's
+           EUNICE  IPTCP  environment  when  you   have   a   TWG   source
+           distribution.   The  procedures  are  divided  into two phases.
+           First, the  driver  software  is  installed  and  a  sysgen  is
+           performed  to  include  the driver in your TWG kernel.  Second,
+           the acpconfig program  is  installed  and  a  binary  image  is
+           created using the accompanying makefile.
+
+
+
+                                         4-6
+
+
+
+
+
+
+
+
+
+
+
+           4.4.1 acp Driver Installation Under TWG EUNICE.  The  ACP  6100
+           is  identified  to  the  system  at configuration time, and the
+           network-interface  driver,  acp,  is  then  compiled  into  the
+           system.     When    the    resultant   system   is   run,   the
+           autoconfiguration facilities in the system probe for the device
+           on  the  UNIBUS and enable the software support for it.  If the
+           device does not respond at autoconfiguration time, it will  not
+           be  accessible  afterwards.   The  system  must  be rebooted to
+           enable  a  device  that  did  not  autoconfigure.    The   UNIX
+           Programmer's  Manual  pages  for  the  acp  driver describe the
+           diagnostic messages provided for acp (see  appendix  C  or  the
+           acp4.txt file in the distribution kit).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         4-7
+
+
+
+
+
+
+
+
+
+
+
+           The  following  instructions  accord  with  the  readfirst.doc,
+           todo.doc,  conf/directions.doc,  and  install.doc documentation
+           files which came with your TWG distribution.   Refer  to  those
+           documents as you use these instructions.
+
+           1.  Logon as root.  Before adding  new  files  to  the  system,
+               rename existing files that have the same name.
+
+           2.  Create a directory, and read the contents of the tape  into
+               the  directory.   One  way  to read the tape is to mount it
+               under VMS native  mode,  switch  to  EUNICE,  use  the  tar
+               utility  to  extract files from the tape, and return to VMS
+               native mode to dismount the tape.  You may use commands  of
+               the following form:
+
+               mount/foreign/block=10240 msa0:
+               <invoke EUNICE>
+               tar xbf 20 /dev/rmt0
+               logout
+               dismount msa0:
+
+           3.  Store the tape in a safe  place,  and  return  to  the  TWG
+               EUNICE environment.
+
+           4.  Add  the  ACC-supplied  files   to   your   system   source
+               directories.    Rename   the  files  in  accord  with  UNIX
+               conventions when copying them into your  /sys/twgtcp/kernel
+               directories as shown below.
+
+               cp acp.c /sys/twgtcp/kernel/vaxif/if_acp.c
+               cp acpreg.h /sys/twgtcp/kernel/vaxif/if_acpreg.h
+               cp acpvar.h /sys/twgtcp/kernel/vaxif/if_acpvar.h
+
+           5.  Modify     the     system     configuration     file     in
+               /sys/twgtcp/kernel/conf  to reflect the addition of the ACP
+               6100 device and the acp network-interface  driver  to  your
+               system.   The  configuration  file  defines  your system in
+               terms of  global  configuration  parameters,  system  image
+               parameters,  device  specifications,  and  pseudo  devices.
+               Refer to the conf.example file for appropriate format.
+
+               Each acp device must have its own line  including  its  own
+               unit  number  [0-3], UNIBUS adapter number, and UNIBUS base
+               address  [0160000-0177740].   The  acp-device  unit  number
+               should be appropriate for the number of ACP 6100s operating
+               on the UNIBUS; i.e., the first ACP 6100 should be acp0, the
+               second,  acp1,  and  so on.  The address of each acp device
+               must correspond to the address set in the  UBA  jumpers  on
+               the  ACP  6100  board  (see  2.2.1).   Add  a line with the
+               following format for each  ACP  6100  in  the  host  system
+               (should be a single line):
+
+
+
+                                         4-8
+
+
+
+
+
+
+
+
+
+
+
+               device acp0 at uba0 csr 0167000 flags 0 \
+                               vector acpinta acpintb
+
+                                          NOTE
+
+                     Octal addresses are denoted  by  a  leading  0,
+                     hexadecimal   values  by  a  leading  0x.   The
+                     software  uses  16-bit  addressing  while   the
+                     hardware  uses  18-bits.   Hence, octal address
+                     767000 set in the UBA jumpers is  indicated  to
+                     the software as 0167000.
+
+           6.  If you are using INET TCP/IP  code,  verify  the  following
+               lines  are  present  in  the  system  configuration file in
+               /sys/conf.  The networking code does not function correctly
+               without this line.
+
+               options INET
+               pseudo-device inet
+
+           7.  Add         the         following         entry          to
+               /sys/twgtcp/kernel/conf/files.vax:
+
+               vaxif/if_acp.c optional acp device-driver
+
+           8.  Build  a  new  TWG  kernel  following  the  directions  for
+               sysgening  a  system.   The  following commands sequence is
+               only an example; it may not apply to your system.
+
+               cd /sys/twgtcp/kernel/conf
+               mkdir ../ACP
+               config ACP
+               cd ../ACP
+               make depend
+               make
+               cp inet.exe inet.stb ../etc
+               cp ../conf/ACP /etc/config.net
+
+           9.  In the example above,  the  system  configuration  file  is
+               copied to /etc/config.net.  Edit the "device acp0" entry in
+               the config.net file to include a value in the flags  field.
+               The  flags  octal  value  is  used by the acp-driver probe-
+               routine to determine the interrupt vector for the ACP  6100
+               device.  The line in config.net for flags 400 (octal) is as
+               follows (should be a single line):
+
+               device acp0 at uba0 csr 0167000 flags 0400 \
+                               vector acpinta acpintb
+
+           10. Reboot the new kernel, and start the TWG network  software.
+               The  following  lines are an example only; use the commands
+
+
+
+                                         4-9
+
+
+
+
+
+
+
+
+
+
+
+               that apply to your system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        4-10
+
+
+
+
+
+
+
+
+
+
+
+               reboot system
+               @eun_root:[etc]reboot
+               set def dra1:[netdist.misc]
+               @startinet
+               @syslogin
+
+           11. When the TWG network software comes up, note a line of  the
+               following  form  on  the  console  terminal during the boot
+               procedure to verify that the acp interface is  successfully
+               recognized.   This  is  an  example  only; your display may
+               contain different names and values.
+
+               acp0 at uba0 csr 167000 vec 100, ipl 15
+
+                                          NOTE
+
+                     The   hexadecimal   value    following    "vec"
+                     corresponds   to   the  octal  value  specified
+                     following "flags"  above.   For  example,  "vec
+                     100"   corresponds   with  "flags  0400".   The
+                     display does not provide leading 0  (octal)  or
+                     0x (hex) indicators.
+
+               If you cannot verify this  step,  review  the  installation
+               procedure  to  make  sure that you have set the UNIBUS base
+               address   correctly   in   the   configuration   file    in
+               /sys/twgtcp/kernel/conf and on the ACP 6100 board.
+
+
+           4.4.2 acpconfig Installation Under TWG.   The  following  steps
+           explain how to install the acpconfig program under TWG.
+
+           1.  Verify the acp network-interface driver is installed.   The
+               include    file,    if_acpvar.h,    must    be    in    the
+               /sys/twgtcp/kernel/vaxif directory.
+
+           2.  Create a directory, for example /usr/acc, for the acpconfig
+               program files.
+
+               mkdir /usr/acc
+
+           3.  Before copying the files, rename existing files  that  have
+               the   same   name.   Copy  the  files  from  the  directory
+               containing the contents  of  the  distribution  tape  using
+               commands of the following form:
+
+               cp acpconfig.c /usr/acc/acpconfig.c
+               cp makefile /usr/acc/makefile
+
+           4.  Modify the following files before compiling  the  acpconfig
+               program.
+
+
+
+                                        4-11
+
+
+
+
+
+
+
+
+
+
+
+               /sys/twgtcp/kernel/h/ioctl.h
+               /sys/twgtcp/kernel/vms-code/uipc_socket.c
+
+           5.  Insert the following three  lines  immediately  before  the
+               #endif at the end of the file /sys/twgtcp/kernel/h/ioctl.h.
+               These lines add three definitions for socket ioctls.
+
+                   /* ACC configuration socket ioctl */
+               #define SIOCACPCONFIG _IORW(i, 70, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPPARAM  _IORW(i, 71, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPSTATE  _IORW(i, 72, struct ifreq)
+
+           6.  Modify the soioctl() routine in the  file  /sys/kernel/vms-
+               code/uipc_socket.c  by adding the following case statements
+               after #ifdef IFNET.
+
+               case SIOCACPCONFIG:
+               case SIOCACPPARAM:
+               case SIOCACPSTATE:
+
+           7.  Invoke the makefile to compile the executable image of  the
+               acpconfig program.
+
+               make systwg
+
+           8.  Copy the executable image, acpconfig, to the /etc directory
+               or the directory appropriate for your system.
+
+           9.  Verify you can access the program by entering the following
+               command.
+
+               /etc/acpconfig
+
+               In response, you should get a display explaining the proper
+               use  of  acpconfig.  You are now ready to use the acpconfig
+               program to configure your network interface  (see  appendix
+               C).
+
+
+           4.5 Network Configuration of the ACP 6100 System
+
+           The ACP 6100 point-to-point link  must  be  configured  in  the
+           network  database  as  a  network  with  two hosts.  Figure 4-1
+           depicts this configuration.  If the systems are to be connected
+           to the Department of Defense internet, authorization must first
+           be obtained from the network management authority.
+
+
+
+
+
+
+                                        4-12
+
+
+
+
+
+
+
+
+
+
+
+           1.  Select an unused network number, select a name for the  new
+               network,  and  add  the  new  network to /etc/hosts on both
+               systems.  The numbers  below  are  for  example  only;  use
+               numbers appropriate for your system.
+
+               1.0.0.1 acp-net
+
+           2.  Select host numbers for each of the  two  systems  and  add
+               them to the host database on each system.
+
+               1.0.0.1 acp-first-host
+               1.0.0.2 acp-second-host
+
+           3.  Each time the system is rebooted, the ACP 6100 link must be
+               brought  up.   The first host is brought up as a DTE (-u 1)
+               and the second host as DCE (-u 2).  For each ACP 6100 board
+               installed  in  the  system,  add  a  command  line  of  the
+               following form to /etc/rc on the first host:
+
+               /etc/acpconfig acp0 1.0.0.1 -b [baud] -u 1
+
+               The second host should have a line as follows in /etc/rc:
+
+               /etc/acpconfig acp0 1.0.0.1 -b [baud] -u 2
+
+
+
+                  VAX/UNIX host #1                  VAX/UNIX host #2
+                 +----------------+               +-----------------+
+                 |                |               |                 |
+                 |   host number: |               |   host number:  |
+                 | acp-first-host |               | acp-second-host |
+                 |                |               |                 |
+                 +----------------+               +-----------------+
+                    | ACP 6100 |                     | ACP 6100 |
+                    +----------+                     +----------+
+                        (DTE)                            (DCE)
+
+                 acpconfig acp0 -u 1              acpconfig acp0 -u 2
+
+
+             Figure 4-1.  Point-to-Point ACP 6100 Network Configuration
+
+
+
+
+
+
+
+
+
+
+
+
+                                        4-13
+
+
+
+
+
+
+
+
+
+
+
+           4.6 Driver Installation Verification
+
+           Installation verification should be performed on each  host  in
+           which  an  ACP  6100  is  installed.  One way to verify correct
+           installation of  the  ACP  6100  board  and  the  acp  network-
+           interface  driver  is  to  configure the system for internal or
+           external loopback and use the ftp network utility to transfer a
+           file; see UNIX Programmer's Manual entry ftp(1C).
+
+           The following instructions explain how  to  use  the  acpconfig
+           program  to configure the system for external loopback and then
+           use ftp to verify the installation.  If  the  results  are  not
+           successful,  the  procedure  should  be repeated using internal
+           loopback.
+
+           If internal loopback tests  are  successful  and  the  external
+           loopback  tests  were  not, the loopback connector might not be
+           correctly installed in the ACP  6100  distribution  panel.   If
+           internal  loopback  tests are unsuccessful, verify that the ACP
+           6100 board is jumpered for the correct UNIBUS base address  and
+           that it is properly seated in the UNIBUS backplane.
+
+           1.  Install the ACP 6100 board as  directed  in  2.3,  Hardware
+               Installation  Procedures,  and  insert a loopback connector
+               (see figure 3-3), into the distribution panel.
+
+           2.  Verify  the  acp  network-interface  driver  was  installed
+               according to the installation instructions above.
+
+           3.  Verify the acpconfig program was installed according to the
+               installation instructions above.
+
+           4.  Define an alias for acpconfig and  enter  commands  of  the
+               following form in accord with your system configuration.
+
+           5.  Invoke the acpconfig program to set  the  internet  address
+               and  set  the  configuration  for  external  loopback.  The
+               internet address 1.0.0.1 is used only for example; use  one
+               that applies to your system.
+
+               acpconfig acp0 1.0.0.1 -b 56k -u 3
+
+           6.  Use the "netstat -i -n" command to check the status of  the
+               acp  device  and display all network devices autoconfigured
+               on your system.  Absence of an asterisk next to acp0 in the
+               netstat  display  indicates  successful  completion  of the
+               acpconfig program.
+
+               netstat -i -n
+
+               Name Mtu  Network      Address     Ipkts Ierrs Opkts Oerrs Collis
+
+
+
+                                        4-14
+
+
+
+
+
+
+
+
+
+
+
+               acp0 4096 0.0.0        1.0.0.1     0     0     0     0     0
+               lo0  1536 loopback-n   localhost   0     0     0     0     0
+
+           7.  Invoke the ftp program to  transfer  a  file  to  the  null
+               device.    Connection   confirmation   and   identification
+               information are displayed after the ftp 1.0.0.1 command  is
+               entered.   Refer  to  the  UNIX Programmer's Manual section
+               FTP(1C) for further information.
+
+               ftp 1.0.0.1
+
+               Connected to 1.0.0.1
+               220 Curry/ACPTST Testing FTP Server (Version 4.81 Mon Sep 26
+                       08:36:28 PDT 1983) ready,
+
+           8.  Following successful connection, you are prompted to  login
+               to  the  remote host.  Enter your account name; the example
+               uses the  root  account.   You  are  then  prompted  for  a
+               password;  for  security  reasons  it  is not echoed to the
+               screen as it is entered.  Successful login to the  'remote'
+               host  is actually a login to the local host because the ACP
+               6100 board is configured for external loopback.
+
+               Name (1.0.0.1:root):  root
+               Password (1.0.0.1:root):
+
+               331 Password required for root.
+               230 User root logged in.
+
+           9.  Set the file transfer type to binary-image transfer.
+
+               ftp> bin
+
+               200 Type set to I.
+
+           10. The example below copies a large file named /vmunix to  the
+               null  device  /dev/null.   The  get  command  retrieves the
+               /vmunix file and stores it in /dev/null.
+
+               ftp> get /vmunix /dev/null
+
+               200 PORT command OK.
+               150 Opening data connection for /vmunix (1.0.0.1, 1025)
+                                                        (245760 bytes).
+               226 Transfer complete.
+               245760 bytes received in 7.45 seconds (32 Kbytes/s)
+
+           11. Exit the ftp utility.  The bye command terminates  the  FTP
+               session  with  the remote server and returns to the command
+               interpreter.
+
+
+
+
+                                        4-15
+
+
+
+
+
+
+
+
+
+
+
+               ftp> bye
+
+               221 Goodbye.
+
+           12. You could use the telnet utility as an additional test; see
+               TELNET(1C).
+
+           13. Remove the loopback cable connector.
+
+           14. Reset the configuration for normal  DTE  or  DCE  operation
+               with  no loopback, and then query the status of the network
+               devices.  Verify that no  asterisk  follows  acp0  when  it
+               appears in the netstat display.
+
+               acpconfig acp0 1.0.0.1 -b [baud] -u [1,2]
+               netstat -i -n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        4-16
+
+
+
+
+
+
+
+
+
+
+
+                                 MANUAL INTRODUCTION
+
+
+
+
+
+
+           Content.  This manual consists of the chapter shown below.
+
+
+            Chapter 4: UNIX 4.2/4.3 BSD Network-Interface Driver
+                       Installation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          i
+
+
+
+
+
+
+
+
+
+
+
+                                  TABLE OF CONTENTS
+
+
+           CHAPTERS                                                   Page
+           _______________________________________________________________
+
+           UNIX 4.2/4.3 BSD Network-Interface Driver Installation
+
+              4.1   The acp Network-Interface Driver ................  4-1
+              4.2   Distribution Software Contents ..................  4-1
+              4.3   Distribution Software Installation Under UNIX
+                    4.2/4.3 BSD .....................................  4-2
+              4.3.1   acp Driver Installation Under UNIX 4.2/4.3
+                      BSD ...........................................  4-2
+              4.3.2   acpconfig Installation Under UNIX 4.2/4.3
+                      BSD ...........................................  4-5
+              4.4   Distribution Software Installation Under TWG
+                    EUNICE ..........................................  4-6
+              4.4.1   acp Driver Installation Under TWG EUNICE ......  4-7
+              4.4.2   acpconfig Installation Under TWG .............. 4-11
+              4.5   Network Configuration of the ACP 6100 System
+                    ................................................. 4-12
+              4.6   Driver Installation Verification ................ 4-14
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         ii
+
+
+
+
+
+
+
+
+
+
+
+                                  TABLE OF CONTENTS
+
+
+           LIST OF FIGURES                                            Page
+           _______________________________________________________________
+
+              Figure 4-1    Point-to-Point ACP 6100 Network
+                            Configuration ........................... 4-13
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         iii
+
+
+
+
+
+
+
+
+
+
+
+                         ABBREVIATIONS USED IN THIS DOCUMENT
+
+
+           _______________________________________________________________
+
+              <cr>        Return key
+              A           Amperes
+              ac          alternating current
+              ACC         Advanced Computer Communications
+              bits/sec    bits per second
+              CCITT       International Consultative Committee for
+                          Telephone and Telegraph
+              CFB         Cipher Feedback
+              CIF         Control Interface
+              CPU         Central Processing Unit
+              CRI         Communication Register Interface
+              dc          direct current
+              DCE         Data Circuit-terminating Equipment
+              DEC         Digital Equipment Corporation
+              Digital     Digital Equipment Corporation
+              DIP         Dual Inline Package
+              DMA         Direct Memory Access
+              DMAC        Direct Memory Access Controller
+              DPN         Data Path Number
+              DRAM        Dynamic Random Access Memory
+              DTE         Data Terminal Equipment
+              EEPROM      Electrically Erasable Programmable Read Only
+                          Memory
+              EIA         Electronic Industries Association
+              EPROM       Erasable Programmable Read Only Memory
+              FEP         Front-End Processor
+              HDLC        High-level Data Link Control
+              hex         hexadecimal
+              I/O         Input/Output
+              ISO         International Standards Organization
+              kbits/sec   kilobits per second
+              Kbyte       Kilobyte
+              LED         Light-Emitting Diode
+              M           Mega
+              Mbits/sec   Megabits per second
+              Mbyte       Megabyte
+              MFP         Multi-Function Peripheral
+              MHz         Megahertz
+              MPCC        Multi-Protocol Communication Controller
+              NCP         Network Control Process
+              NPG         Non-Processor Grant
+              pF          picofarad
+              PROM        Programmable Read Only Memory
+              QIO         Queued I/O
+              RAM         Random Access Memory
+
+
+
+
+                                         iv
+
+
+
+
+
+
+
+
+
+
+
+                         ABBREVIATIONS USED IN THIS DOCUMENT
+
+
+           _______________________________________________________________
+
+              ROM         Read Only Memory
+              SPC         Small Peripheral Controller
+              TWG         The Wollongong Group
+              UCSR        UNIBUS Control and Status Register
+              V           Volts
+              Vdc         Volts, direct current
+              MF          microfarad
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          v
+
+
+
+
+
+
+
+
+
+
+
+                                      Chapter 5
+
+                   ULTRIX-32 Network-Interface Driver Installation
+
+
+           5.1 The acp Network-Interface Driver
+
+           In the ULTRIX-32 environment, the ACP 6100 is supported by  the
+           acp  network-interface  driver.   The  acp  driver  provides an
+           interface between IP and the ACP 6100 board for connecting to a
+           network.  An ULTRIX-32 process communicates with the acp driver
+           through the ULTRIX-32 networking software.
+
+           The ACP 6100 board  is  a  UNIBUS  device  with  two  interrupt
+           vectors;  it appears as a single device unit to ULTRIX-32.  The
+           acp driver can support up to four ACP 6100 devices: acp0, acp1,
+           acp2  and  acp3.  If more than one ACP 6100 board is installed,
+           each must be named in the system configuration  file,  and  the
+           UNIBUS  base  address  jumpers on each additional board must be
+           adjusted; see 2.2.1.
+
+           In the ULTRIX-32 network environment, the ACP 6100 is supported
+           as  a  point-to-point  link  in  the TCP/IP network.  Thus, all
+           network utilities such as network mail  (SMTP),  file  transfer
+           (FTP),  remote  login (TELNET), remote shell (RSH), remote user
+           information (FINGER), etc., can work between two or more  hosts
+           that  each have an ACP 6100.  Further, if one of the hosts is a
+           gateway to a larger network, the other host(s) can  access  the
+           larger  network  using  the gateway facilities in the ULTRIX-32
+           TCP/IP implementation.
+
+           The  following  sections  provide  host  software  installation
+           instructions for ULTRIX-32 Version 2.0, a network configuration
+           procedure and an installation verification procedure.
+
+
+           5.2 Distribution Software Contents
+
+           The ACP 6100 UNIX software distribution kit is a  tape  created
+           with   the   "tar"   utility;   see  TAR(1)  in  the  ULTRIX-32
+           Programmer's Manual.  As specified by the  customer,  the  tape
+           density  is  800 or 1600 bpi (bits per inch).  The distribution
+           tape contains the following files:
+
+
+                           makefile
+                           acp.c          apconfig.c
+                           acpreg.h       acpvar.h
+                           acp.4          acp4.txt
+                           acpconfig.8c   acpconfig8c.txt
+
+
+
+
+                                         5-1
+
+
+
+
+
+
+
+
+
+
+
+                           conf.example   readme.txt
+
+
+           The driver source code is contained  in  acp.c,  acpreg.h,  and
+           acpvar.h.   The  acpconfig.c  file contains the source code for
+           the acpconfig program; makefile is its makefile.  The acpconfig
+           program  is  used to configure the ACP 6100, and is an integral
+           part of the installation verification  procedure.   A  template
+           configuration  file  for  the  system  is in conf.example.  The
+           ULTRIX-32 Programmer's Manual page (source) for the acp  driver
+           is   acp.4;  acpconfig.8c  is  manual  text  (source)  for  the
+           acpconfig program.   Formatted  outputs  are  in  acp4.txt  and
+           acpconfig8c.txt; see appendix C.  The installation instructions
+           outlined in following sections are in readme.txt.
+
+
+           5.3 Distribution Software Installation Under ULTRIX-32
+
+           The  following  installation  instructions  are  step  by  step
+           procedures  for  installing  the  distribution  software  under
+           ULTRIX-32.  The procedures are divided into two phases.  First,
+           the  driver software is installed, and a sysgen is performed to
+           include  the  driver  in  your  ULTRIX  kernel.   Second,   the
+           acpconfig  program  is installed, and a binary image is created
+           using the accompanying makefile.
+
+
+           5.3.1 acp Driver Installation Under ULTRIX-32.  The ACP 6100 is
+           identified  to  the  system  at configuration time, and the acp
+           network-interface driver is  then  compiled  into  the  system.
+           When  the  resultant  system  is  booted, the autoconfiguration
+           facilities in the system probe for the device on the UNIBUS and
+           enable  the  software  support  for it.  If the device does not
+           respond at autoconfiguration time, it will  not  be  accessible
+           afterwards; the system must be rebooted to enable a device that
+           did not autoconfigure.  The UNIX Programmer's Manual  page  for
+           the   acp   driver   (appendix  C  and  file  acp4.txt  in  the
+           distribution kit) describes the  diagnostic  messages  provided
+           for acp.
+
+           The following instructions accord with Building  4.2  BSD  UNIX
+           Systems  with  Config provided with your ULTRIX distribution in
+           Volume III (System Manager)  of  the  Supplementary  documents.
+           Refer to that document as you use the following instructions.
+
+
+           1.  Logon as root.  When adding files  to  the  system,  rename
+               existing files that have the same name.  Create a directory
+               and read the contents of the tape into the directory with a
+               tar command of the following format.
+
+
+
+
+                                         5-2
+
+
+
+
+
+
+
+
+
+
+
+               tar x
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         5-3
+
+
+
+
+
+
+
+
+
+
+
+           2.  Add  the  ACC-supplied  files  to   your   system   source-
+               directories.    Rename   the  files  in  accord  with  UNIX
+               conventions when copying them into your /sys directories as
+               shown below.
+
+               cp acp.c /sys/vaxif/if_acp.c
+               cp acpreg.h /sys/vaxif/if_acpreg.h
+               cp acpvar.h /sys/vaxif/if_acpvar.h
+               cp conf.example /sys/conf/ACP
+
+           3.  Modify the system configuration file in the /sys/conf  file
+               (file  names  typically  are  uppercase,  e.g., GENERIC) to
+               indicate the  ACP  6100  device(s)  and  the  acp  network-
+               interface  driver.   The  configuration  file  defines your
+               system in terms of global configuration parameters,  system
+               image parameters, device specifications and pseudo devices.
+               Section 4 of Building 4.2  BSD  UNIX  Systems  with  Config
+               describes  configuration  file  syntax;  refer  also to the
+               conf.example file.
+
+               Each acp device must have its own line  including  its  own
+               unit  number  [0-3], UNIBUS adapter number, and UNIBUS base
+               address  [0160000-0177740].   The  acp-device  unit  number
+               should be appropriate for the number of ACP 6100s operating
+               on the UNIBUS; i.e., the first ACP 6100 should be acp0, the
+               second,  acp1,  and  so on.  The address of each acp device
+               must correspond to the address set in the  UBA  jumpers  on
+               the  ACP  6100  board  (see  2.2.1).   Add  a line with the
+               following format for each ACP 6100 in the host system:
+
+              device acp0 at uba0 csr 0167000 vector acpinta acpintb
+
+                                          NOTE
+
+                     Octal addresses are denoted  by  a  leading  0,
+                     hexadecimal   values  by  a  leading  0x.   The
+                     software  uses  16-bit  addressing  while   the
+                     hardware  uses  18-bits.   Hence, octal address
+                     767000 set in the UBA jumpers is  indicated  to
+                     the software as 0167000.
+
+           4.  If you are using the INET  TCP/IP  code,  verify  that  the
+               following  lines  are  present  in the system configuration
+               file in /sys/conf.  The networking code might not  function
+               correctly without these lines:
+
+               options INET
+               pseudo-device inet
+
+           5.  Add the following entry to /sys/conf/files.vax:
+
+
+
+
+                                         5-4
+
+
+
+
+
+
+
+
+
+
+
+               vaxif/if_acp.c optional acp device-driver Notbinary
+
+           6.  Build a  new  ULTRIX  kernel  by  performing  a  sysgen  as
+               described  in  the  ULTRIX-32  documentation.   The command
+               sequence below is one possible example; it might not  apply
+               to  your  system.   Be  sure to save a copy of the original
+               vmunix before you copy the newly created kernel to /vmunix.
+
+               cd /sys/conf
+               mkdir ../ACP
+               config  ACP
+               cd ../ACP
+               make depend
+               make
+               cd /
+               cp vmunix vmunix.sav
+               cp /sys/ACP/vmunix vmunix
+
+           7.  Perform a system shutdown and boot the  new  kernel.   Note
+               lines  of the following form on the console terminal during
+               the boot procedure to verify  that  the  acp  interface  is
+               successfully  probed  for  valid  UNIBUS  base  address and
+               interrupt vectors, attached to the system, and reset.  This
+               is  an  example  only;  your  display may contain different
+               names and values.
+
+               acp0 at uba0 csr 167000 vec 770, ipl 15
+
+               If you cannot verify this  step,  review  the  installation
+               procedure to make sure that you set the UNIBUS base address
+               correctly in the configuration file in /sys/conf and on the
+               ACP 6100 board.
+
+
+           5.3.2 acpconfig Installation Under ULTRIX-32.   The   following
+           steps  explain  how  to  install  the  acpconfig  program under
+           ULTRIX-32.  The ULTRIX-32 Programmer's  Manual  pages  for  the
+           acpconfig  program  describe  the  use of the acpconfig program
+           (see appendix C or acpconfig8c.txt in the distribution kit).
+
+           1.  Verify the that network-interface driver is installed.  The
+               include   file,  if_acpvar.h  must  be  in  the  /sys/vaxif
+               directory.
+
+           2.  Create a  directory,  for  example  /usr/src/acc,  for  the
+               acpconfig  program files.  Before copying the files, rename
+               existing files that have the same  name.   Copy  the  files
+               from   the   directory   containing   the  files  from  the
+               distribution tape using commands of the following form:
+
+               cp acpconfig.c /usr/src/acc/acpconfig.c
+
+
+
+                                         5-5
+
+
+
+
+
+
+
+
+
+
+
+               cp makefile /usr/src/acc/makefile
+
+           3.  If you have ULTRIX-32 sources, then edit the /sys/h/ioctl.h
+               file  to  include  the  following socket ioctls.  Place the
+               following lines with other socket ioctls, making sure  that
+               they  are  above  the  #endif  statement  at the end of the
+               ioctl.h file.
+
+                   /* ACC configuration socket ioctl */
+               #define SIOCACPCONFIG _IOWR(i, 70, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPPARAM  _IOWR(i, 71, struct ifreq)
+                   /* ACC reserved socket ioctl */
+               #define SIOCACPSTATE  _IOWR(i, 72, struct ifreq)
+
+           4.  Invoke the makefile to compile the executable image of  the
+               acpconfig program:
+
+               make
+
+           5.  Copy  the  executable  image,  'acpconfig',  to  the   /etc
+               directory, or to the directory appropriate for your system.
+
+           6.  Verify that you can access the  program  by  the  following
+               command:
+
+               /etc/acpconfig
+
+               In response, you should get a display explaining the proper
+               use  of  acpconfig.  You are now ready to use the acpconfig
+               program to configure your network interface  (see  appendix
+               C).
+
+
+           5.3.3 Network Configuration of the ACP 6100 System.   The   ACP
+           6100  point-to-point  link  must  be  configured in the network
+           database as a network with two hosts.  Figure 5-1 depicts  this
+           configuration.   If  the  systems  are  to  be connected to the
+           Department of Defense internet,  authorization  must  first  be
+           obtained from the network management authority.
+
+           1.  Select an unused network number, select a name for the  new
+               network,  and  add  the  new  network to /etc/hosts on both
+               systems.  The numbers  below  are  for  example  only;  use
+               numbers appropriate for your system.
+
+               1.0.0.1 acp-net
+
+
+
+
+
+
+
+                                         5-6
+
+
+
+
+
+
+
+
+
+
+
+           2.  Select host numbers for each of the  two  systems  and  add
+               them to the host database on each system.
+
+               1.0.0.1 acp-first-host
+               1.0.0.2 acp-second-host
+
+           3.  Each time the system is rebooted, the ACP 6100 link must be
+               brought  up.   The first host is brought up as a DTE (-u 1)
+               and the second host as DCE (-u 2).  For each ACP 6100 board
+               installed  in  the  system,  add  a  command  line  of  the
+               following form to /etc/rc on the first host:
+
+               /etc/acpconfig acp0 1.0.0.1 -b [baud] -u 1
+
+               The second host should have a line as follows in /etc/rc:
+
+               /etc/acpconfig acp0 1.0.0.1 -b [baud] -u 2
+
+
+
+
+
+
+
+
+
+
+                 VAX/ULTRIX host #1               VAX/ULTRIX host #2
+                 +----------------+               +-----------------+
+                 |                |               |                 |
+                 |   host number: |               |   host number:  |
+                 | acp-first-host |               | acp-second-host |
+                 |                |               |                 |
+                 +----------------+               +-----------------+
+                    | ACP 6100 |                     | ACP 6100 |
+                    +----------+                     +----------+
+                        (DTE)                            (DCE)
+
+                 acpconfig acp0 -u 1              acpconfig acp0 -u 2
+
+
+             Figure 5-1.  Point-to-Point ACP 6100 Network Configuration
+
+
+
+
+
+
+
+
+
+
+
+
+                                         5-7
+
+
+
+
+
+
+
+
+
+
+
+           5.3.4 Driver Installation Verification.            Installation
+           verification  should  be performed on each host in which an ACP
+           6100 is installed.  One way to verify correct  installation  of
+           the  ACP  6100 board and the acp network-interface driver is to
+           configure the system for internal or external loopback and  use
+           the  ftp  network  utility  to  transfer  a file; see ULTRIX-32
+           Programmer's Manual entry ftp(1C).
+
+           The following instructions explain how  to  use  the  acpconfig
+           program  to configure the system for external loopback and then
+           use ftp to verify the installation.  If  the  results  are  not
+           successful,  the  procedure  should  be repeated using internal
+           loopback.
+
+           If internal loopback tests  are  successful  and  the  external
+           loopback  tests  were  not, the loopback connector might not be
+           correctly installed in the ACP  6100  distribution  panel.   If
+           internal  loopback  tests are unsuccessful, verify that the ACP
+           6100 board is jumpered for the correct UNIBUS base address  and
+           that it is properly seated in the UNIBUS backplane.
+
+           1.  Install the ACP 6100 board as  directed  in  2.3,  Hardware
+               Installation  Procedures,  and  insert a loopback connector
+               (see figure 3-3), into the distribution panel.
+
+           2.  Verify  the  acp  network-interface  driver  was  installed
+               according to the installation instructions above.
+
+           3.  Verify the acpconfig program was installed according to the
+               installation instructions above.
+
+           4.  Define an alias for acpconfig and  enter  commands  of  the
+               following form in accord with your system configuration.
+
+           5.  Invoke the acpconfig program to set  the  internet  address
+               and  set  the  configuration  for  external  loopback.  The
+               internet address 1.0.0.1 is used only for example; use  one
+               that applies to your system.
+
+               acpconfig acp0 1.0.0.1 -b 56k -u 3
+
+           6.  Use the "netstat -i -n" command to check the status of  the
+               acp  device  and display all network devices autoconfigured
+               on your system.  Absence of an asterisk next to acp0 in the
+               netstat  display  indicates  successful  completion  of the
+               acpconfig program.
+
+               netstat -i -n
+
+               Name Mtu  Network      Address     Ipkts Ierrs Opkts Oerrs Collis
+               acp0 4096 0.0.0        1.0.0.1     0     0     0     0     0
+
+
+
+                                         5-8
+
+
+
+
+
+
+
+
+
+
+
+               lo0  1536 loopback-n   localhost   0     0     0     0     0
+
+           7.  Invoke the ftp program to  transfer  a  file  to  the  null
+               device.    Connection   confirmation   and   identification
+               information are displayed after the ftp 1.0.0.1 command  is
+               entered.    Refer  to  the  ULTRIX-32  Programmer's  Manual
+               section FTP(1C) for further information.
+
+               ftp 1.0.0.1
+
+               Connected to 1.0.0.1
+               220 Curry/ACPTST Testing FTP Server (Version 4.81 Mon Sep 26
+                       08:36:28 PDT 1983) ready,
+
+           8.  Following successful connection, you are prompted to  login
+               to  the  remote host.  Enter your account name; the example
+               uses the  root  account.   You  are  then  prompted  for  a
+               password;  for  security  reasons  it  is not echoed to the
+               screen as it is entered.  Successful login to the  'remote'
+               host  is actually a login to the local host because the ACP
+               6100 board is configured for external loopback.
+
+               Name (1.0.0.1:root):  root
+               Password (1.0.0.1:root):
+
+               331 Password required for root.
+               230 User root logged in.
+
+           9.  Set the file transfer type to binary-image transfer.
+
+               ftp> bin
+
+               200 Type set to I.
+
+           10. The example below copies a large file named /vmunix to  the
+               null  device  /dev/null.   The  get  command  retrieves the
+               /vmunix file and stores it in /dev/null.
+
+               ftp> get /vmunix /dev/null
+
+               200 PORT command OK.
+               150 Opening data connection for /vmunix (1.0.0.1, 1025)
+                                                        (245760 bytes).
+               226 Transfer complete.
+               245760 bytes received in 7.45 seconds (32 Kbytes/s)
+
+           11. Exit the ftp utility.  The bye command terminates  the  FTP
+               session  with  the remote server and returns to the command
+               interpreter.
+
+               ftp> bye
+
+
+
+                                         5-9
+
+
+
+
+
+
+
+
+
+
+
+               221 Goodbye.
+
+           12. You could use the telnet utility as an additional test; see
+               TELNET(1C).
+
+           13. Remove the loopback cable connector.
+
+           14. Reset the configuration for normal  DTE  or  DCE  operation
+               with  no loopback, and then query the status of the network
+               devices.  Verify that no  asterisk  follows  acp0  when  it
+               appears in the netstat display.
+
+               acpconfig acp0 1.0.0.1 -b [baud] -u [1,2]
+               netstat -i -n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                        5-10
+
+
+
+
+
+
+
+
+
+
+
+                                 MANUAL INTRODUCTION
+
+
+
+
+
+
+           Content.  This manual consists of the chapter shown below.
+
+
+            Chapter 5: ULTRIX-32 Network-Interface Driver
+                       Installation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          i
+
+
+
+
+
+
+
+
+
+
+
+                                  TABLE OF CONTENTS
+
+
+           CHAPTERS                                                   Page
+           _______________________________________________________________
+
+           ULTRIX-32 Network-Interface Driver Installation
+
+              5.1   The acp Network-Interface Driver ................  5-1
+              5.2   Distribution Software Contents ..................  5-1
+              5.3   Distribution Software Installation Under
+                    ULTRIX-32 .......................................  5-2
+              5.3.1   acp Driver Installation Under ULTRIX-32 .......  5-2
+              5.3.2   acpconfig Installation Under ULTRIX-32 ........  5-5
+              5.3.3   Network Configuration of the ACP 6100 System
+                      ...............................................  5-6
+              5.3.4   Driver Installation Verification ..............  5-8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         ii
+
+
+
+
+
+
+
+
+
+
+
+                                  TABLE OF CONTENTS
+
+
+           LIST OF FIGURES                                            Page
+           _______________________________________________________________
+
+              Figure 5-1    Point-to-Point ACP 6100 Network
+                            Configuration ...........................  5-7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                         iii
+
+
+
+
+

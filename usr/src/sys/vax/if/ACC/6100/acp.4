@@ -1,0 +1,147 @@
+.nh
+.TH ACP 4 "4 June 1986"
+.UC 4
+.SH NAME
+acp \- ACC ACP6100 NETWORK interface
+.SH SYNOPSIS
+.B "device-driver acp"
+.br
+.B "device acp0 at uba0 csr 0167000 vector flags 0 acpinta acpintb"
+.SH DESCRIPTION
+The 
+.I acp
+device provides a network interface to ACC's ACP 6100,
+a high-speed, 68000 microprocessor-based communications controller
+that provides HDLC.
+.SH DIAGNOSTICS
+.BR
+The diagnostic messages below refer to concepts that are
+explained further in the ACP 6100 User's Manual.
+The driver implements the Command Interface (CIF) and
+Access Path Allocation Protocol (APAP)
+for the exchange of messages between the host and ACP 6100 front end.
+The CIF functions such that Command Interface Messages (CIMs) are
+exchanged between the host and the front end in command/response pairs.
+The APAP requires that control and data paths be established (by
+exchanging CIMs between the host and front end) prior to use.
+Several of the messages below flag a violation of the CIF or APAP.
+.PP
+.BR "acp%d:  frame level up".
+.sp 0
+In response to the attempt to bring up the HDLC line
+with the acpconfig program, this message indicates success.
+.PP
+.BR "acp%d:  frame level down".
+.sp 0
+In response to the attempt to bring down the HDLC line
+with the acpconfig program, this message indicates success.
+.PP
+.BR "acp%d".
+.sp 0
+This message indicates reset of the interface.  After a UNIBUS reset,
+the interface's state is reset if it is on the specified UBA.
+.PP
+.BR "acp%d: failed getting UBA resources for lcn %d".
+.sp 0
+Insufficient UNIBUS resources existed to initialize the device.
+This is likely caused by a shortage of UNIBUS mapping registers.
+.PP
+.BR "acp%d:  attempt to allocate path failed".
+.sp 0
+The exchange of control messages and data is performed over
+control and data paths respectively.
+In an initialization stage, the paths are first allocated via 
+path allocation commands from the host to the front end.
+This message indicates that a path allocation command sent from the 
+host to the front end was unsuccessful.
+.PP
+.BR "acp%d:  bad allocate path response from front-end, invalid DPN = ".
+.sp 0
+The allocate path commands and responses contain the DPN in the Command
+ID (CID) field of the Command Interface Message (CIM) header.
+This message indicates that the front end sent a response to the host
+with a CID that contains an invalid DPN.
+The DPN is either 1 or 2, for the control or data path respectively.
+.PP
+.BR "acp%d:  attempt to deallocate path failed".
+.sp 0
+This message indicates that a path deallocation command sent from the 
+host to the front end was unsuccessful.
+.PP
+.BR "acp%d:  attempt to send system parameters message failed".
+.sp 0
+This message indicates that the host sent a Set HDLC System Parameters
+CIM to the front end, and the front 
+sent a CIM response indicating that the command parameters were
+not set successfully.
+.PP
+.BR "acp%d:  data path was not successfully allocated".
+.sp 0
+The control path was allocated successfully, but no response was
+received for the command to allocate the data path.
+.PP
+.BR "acp%d: can't handle af%d".
+.sp 0
+Associated with each protocol family is an address format.  This 
+message indicates that an address family other than AF_INET 
+(internetwork:  UDP, TCP, etc.) was used.
+.PP
+.BR "acp%d: UNEXPECTED TRANSFER REQUEST".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the type of event is a Transfer Request.
+Transfer Requests are not supported, and are thus unexpected.
+.PP
+.BR "acp%d: unknown channel, chan = %d".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the logical channel is invalid.
+.PP
+.BR "acp%d: I/O abort, chan = %d  func = %x".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the I/O completion status indicates an I/O abort.
+.PP
+.BR "acp%d: program error, chan = %d  func = %x".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the I/O completion status indicates a program error.
+.PP
+.BR "acp%d: overrun error, chan = %d  func = %x".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the I/O completion status indicates a data overrun.
+A matching pair of I/O requests specified a larger write request
+count than the read request count without specifying stream mode.
+.PP
+.BR "acp%d: NXM timeout or UB parity error, chan = %d  func = %x".
+.sp 0
+An I/O interrupt from the ACP has occured;
+the I/O completion status indicates a transfer count of 0.
+Either there is a program error (the byte count on the I/O
+request equals 0), or there is a driver error (driver granted
+a byte count of 0 in response to a transfer request).
+.PP
+.BR "acp%d: Unexpected System interrupt, status = %d".
+.sp 0
+.br
+.BR "acp%d:  DISABLED!".
+.sp 0
+A system interrupt from the ACP has occurred; the interrupt is
+unexpected, and the interface is disabled.
+.PP
+.BR "acp%d:  PWRUP Diagnostic failure = %d".
+.sp 0
+A system interrupt from the ACP has occurred; the powerup
+diagnostics have detected a failure.
+.PP
+.BR "acp%d:  couldn't get init buffer".
+.sp 0
+This indicates that an mbuf could not be allocated for sending
+the initialization message to the ACP6100.
+.PP
+.BR "acp%d:  supervisor error, code = %x".
+.sp 0
+A supervisor message is received; if the message is other
+than a LINE_STATUS link message, this error message is sent.
+.PP

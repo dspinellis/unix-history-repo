@@ -1,0 +1,198 @@
+
+
+
+ACP(4)              UNIX Programmer's Manual               ACP(4)
+
+
+
+NAME
+     acp - ACC ACP6100 NETWORK interface
+
+SYNOPSIS
+     device-driver acp
+     device acp0 at uba0 csr 0167000 vector flags 0 acpinta
+     acpintb
+
+DESCRIPTION
+     The _a_c_p device provides a network interface to ACC's ACP
+     6100, a high-speed, 68000 microprocessor-based communica-
+     tions controller that provides HDLC.
+
+DIAGNOSTICS
+      The diagnostic messages below refer to concepts that are
+     explained further in the ACP 6100 User's Manual.  The driver
+     implements the Command Interface (CIF) and Access Path Allo-
+     cation Protocol (APAP) for the exchange of messages between
+     the host and ACP 6100 front end.  The CIF functions such
+     that Command Interface Messages (CIMs) are exchanged between
+     the host and the front end in command/response pairs.  The
+     APAP requires that control and data paths be established (by
+     exchanging CIMs between the host and front end) prior to
+     use.  Several of the messages below flag a violation of the
+     CIF or APAP.
+
+     acp%d:  frame level up.
+     In response to the attempt to bring up the HDLC line with
+     the acpconfig program, this message indicates success.
+
+     acp%d:  frame level down.
+     In response to the attempt to bring down the HDLC line with
+     the acpconfig program, this message indicates success.
+
+     acp%d.
+     This message indicates reset of the interface.  After a
+     UNIBUS reset, the interface's state is reset if it is on the
+     specified UBA.
+
+     acp%d: failed getting UBA resources for lcn %d.
+     Insufficient UNIBUS resources existed to initialize the dev-
+     ice.  This is likely caused by a shortage of UNIBUS mapping
+     registers.
+
+     acp%d:  attempt to allocate path failed.
+     The exchange of control messages and data is performed over
+     control and data paths respectively.  In an initialization
+     stage, the paths are first allocated via path allocation
+     commands from the host to the front end.  This message indi-
+     cates that a path allocation command sent from the host to
+     the front end was unsuccessful.
+
+
+
+
+Printed 7/30/86            4 June 1986                          1
+
+
+
+
+
+
+ACP(4)              UNIX Programmer's Manual               ACP(4)
+
+
+
+     acp%d:  bad allocate path response from front-end, invalid
+     DPN = .
+     The allocate path commands and responses contain the DPN in
+     the Command ID (CID) field of the Command Interface Message
+     (CIM) header.  This message indicates that the front end
+     sent a response to the host with a CID that contains an
+     invalid DPN.  The DPN is either 1 or 2, for the control or
+     data path respectively.
+
+     acp%d:  attempt to deallocate path failed.
+     This message indicates that a path deallocation command sent
+     from the host to the front end was unsuccessful.
+
+     acp%d:  attempt to send system parameters message failed.
+     This message indicates that the host sent a Set HDLC System
+     Parameters CIM to the front end, and the front sent a CIM
+     response indicating that the command parameters were not set
+     successfully.
+
+     acp%d:  data path was not successfully allocated.
+     The control path was allocated successfully, but no response
+     was received for the command to allocate the data path.
+
+     acp%d: can't handle af%d.
+     Associated with each protocol family is an address format.
+     This message indicates that an address family other than
+     AF_INET (internetwork:  UDP, TCP, etc.) was used.
+
+     acp%d: UNEXPECTED TRANSFER REQUEST.
+     An I/O interrupt from the ACP has occured; the type of event
+     is a Transfer Request.  Transfer Requests are not supported,
+     and are thus unexpected.
+
+     acp%d: unknown channel, chan = %d.
+     An I/O interrupt from the ACP has occured; the logical chan-
+     nel is invalid.
+
+     acp%d: I/O abort, chan = %d  func = %x.
+     An I/O interrupt from the ACP has occured; the I/O comple-
+     tion status indicates an I/O abort.
+
+     acp%d: program error, chan = %d  func = %x.
+     An I/O interrupt from the ACP has occured; the I/O comple-
+     tion status indicates a program error.
+
+     acp%d: overrun error, chan = %d  func = %x.
+     An I/O interrupt from the ACP has occured; the I/O comple-
+     tion status indicates a data overrun.  A matching pair of
+     I/O requests specified a larger write request count than the
+     read request count without specifying stream mode.
+
+
+
+
+
+Printed 7/30/86            4 June 1986                          2
+
+
+
+
+
+
+ACP(4)              UNIX Programmer's Manual               ACP(4)
+
+
+
+     acp%d: NXM timeout or UB parity error, chan = %d  func = %x.
+     An I/O interrupt from the ACP has occured; the I/O comple-
+     tion status indicates a transfer count of 0.  Either there
+     is a program error (the byte count on the I/O request equals
+     0), or there is a driver error (driver granted a byte count
+     of 0 in response to a transfer request).
+
+     acp%d: Unexpected System interrupt, status = %d.
+     acp%d:  DISABLED!.
+     A system interrupt from the ACP has occurred; the interrupt
+     is unexpected, and the interface is disabled.
+
+     acp%d:  PWRUP Diagnostic failure = %d.
+     A system interrupt from the ACP has occurred; the powerup
+     diagnostics have detected a failure.
+
+     acp%d:  couldn't get init buffer.
+     This indicates that an mbuf could not be allocated for send-
+     ing the initialization message to the ACP6100.
+
+     acp%d:  supervisor error, code = %x.
+     A supervisor message is received; if the message is other
+     than a LINE_STATUS link message, this error message is sent.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/30/86            4 June 1986                          3
+
+
+
+
+
+
