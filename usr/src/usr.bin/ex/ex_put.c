@@ -1,4 +1,5 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1980 Regents of the University of California */
+static char *sccsid = "@(#)ex_put.c	4.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
