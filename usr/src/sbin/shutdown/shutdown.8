@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)shutdown.8	6.2 (Berkeley) %G%
+.\"	@(#)shutdown.8	6.3 (Berkeley) %G%
 .\"
 .TH SHUTDOWN 8 ""
 .UC 4
@@ -16,6 +16,10 @@ shutdown \- close down the system at a given time
 .B \-r
 ] [
 .B \-h
+] [
+.B \-f
+] [
+.B \-n
 ]
 time [ warning-message ... ]
 .SH DESCRIPTION
@@ -81,6 +85,19 @@ is to make people
 .I think
 the system is going down!)
 .PP
+With the
+.B \-f
+option,
+.I shutdown
+arranges, in the manner of
+.IR fastboot (8),
+that when the system is rebooted the file systems will not
+be checked.  The
+.B \-n
+option prevents the normal
+.IR sync (2)
+before stopping.
+.PP
 The time of the shutdown and the warning message
 are placed in /etc/nologin and should be used to
 inform the users about when the system will be back up
@@ -89,7 +106,7 @@ and why it is going down (or anything else).
 .DT
 /etc/nologin	tells login not to let anyone log in
 .SH "SEE ALSO"
-login(1), reboot(8)
+login(1), reboot(8), fastboot(8)
 .SH BUGS
 Only allows you to kill the system between now and 23:59 if
 you use the absolute time for shutdown.
