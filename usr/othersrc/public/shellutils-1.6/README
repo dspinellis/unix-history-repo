@@ -1,0 +1,16 @@
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/shellutils-1.6/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/shellutils-1.6/man/cat1/* .
+
+To recompile, cd to shellutils-1.6 and type 'make'.  Gcc should not
+report any errors or warnings.  The default destination for the
+execuatlbes is /usr/src/contrib/shellutils-1.6/{bin,man}, though this
+path is not compiled into the executables.
+
+The sources are available by anonymous ftp from prep.ai.mit.edu in the
+file /pub/gnu/shellutils-1.6.tar.Z.
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
