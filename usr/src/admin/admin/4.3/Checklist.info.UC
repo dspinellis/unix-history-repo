@@ -1,3 +1,4 @@
+.\" @(#)Checklist.info.UC	1.2 (CSRG - distribution) %G%
 .so HEADERS
 .NH
 .ND
@@ -9,31 +10,26 @@
 .sp 3
 .LP
 In order for University of California sites to receive 4.3BSD,
-the following steps should be taken:
+the following items are needed:      
 .sp
 .RS
 .IP 1. 5
-Contact Pam True (415) 642-6348 at UC Berkeley's Materiel
-Management Office for an application for an additional
-CPU authorization under the University's Software 
-Agreement with AT&T, a copy of which should be sent to us.
+A copy of your CPU authorization under the University's
+Software Agreement with AT&T.  This can be obtained by 
+contacting Pam True on (415) 642-6348 at UC Berkeley's Materiel
+Management Office. If you are upgrading your license from
+4.2BSD and do not have a new CPU, this is not necessary. 
 .sp
 .IP 2. 5
-Send a letter requesting  4.3BSD, stating that you have read
-and understood the License Agreement of The Regents of the 
-University of California and that your department                  
-will abide by it.  This letter should be signed
+A letter of authorization.
+This letter should be signed
 by the Department Head or duly designated representative. 
 .sp 
 .IP 3. 5
-Send an IOC or Recharge Form for $1000 ($600 for update).
+An IOC or Recharge Form for $1000.00 ($600.00 for update).
 .sp
 .IP 4. 5
-Send a completed Site Information Form and Equipment List.
-.sp
-.IP 5. 5
-Send a completed Order Form specifying tape density and documentation
-format required.
+A completed Site Information Form and Equipment List.
 .sp3
 .RS
 Send all documents to:
