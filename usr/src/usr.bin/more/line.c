@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)line.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)line.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -156,6 +156,7 @@ enter_boldface:
 			 * We have "X\bX" (including the current char).
 			 * Switch into boldface mode.
 			 */
+			column--;
 			if (column + bo_width + be_width + 1 >= sc_width)
 				/*
 				 * Not enough room left on the screen to 
@@ -185,6 +186,7 @@ enter_underline:
 			 * We have either "_\bX" or "X\b_" (including
 			 * the current char).  Switch into underline mode.
 			 */
+			column--;
 			if (column + ul_width + ue_width + 1 >= sc_width)
 				/*
 				 * Not enough room left on the screen to 
