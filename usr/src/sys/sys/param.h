@@ -1,13 +1,12 @@
-/*	param.h	4.25	82/10/31	*/
+/*	param.h	4.26	82/12/17	*/
 
 /*
  * Macine type dependent parameters.
  */
-#ifdef vax
-#include "../vax/param.h"
-#endif
-#ifdef sun
-#include "../sun/param.h"
+#ifdef KERNEL
+#include "../machine/param.h"
+#else
+#include <machine/param.h>
 #endif
 
 #define	NPTEPG		(NBPG/(sizeof (struct pte)))
@@ -165,8 +164,3 @@
  */
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
-
-/*
- * Provide about n microseconds of delay.
- */
-#define	DELAY(n)	{ register int N = (n); while (--N > 0); }

@@ -1,4 +1,4 @@
-/*	ts.c	4.36	82/11/26	*/
+/*	ts.c	4.37	82/12/17	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -8,6 +8,8 @@
  * TODO:
  *	write dump code
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -16,7 +18,6 @@
 #include "../h/user.h"
 #include "../h/file.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"

@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.19	82/12/09	*/
+/*	kern_descrip.c	5.20	82/12/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -102,10 +102,8 @@ dup2()
 	if (uap->i == uap->j)
 		return;
 	if (u.u_ofile[uap->j]) {
-#ifdef SUNMMAP
 		if (u.u_pofile[uap->j] & UF_MAPPED)
 			munmapfd(uap->j);
-#endif
 		closef(u.u_ofile[uap->j], 0, u.u_pofile[uap->j]);
 		if (u.u_error)
 			return;

@@ -1,14 +1,15 @@
-/*	if_il.c	4.16	82/12/16	*/
+/*	if_il.c	4.17	82/12/17	*/
 
 #include "il.h"
 
 /*
  * Interlan Ethernet Communications Controller interface
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

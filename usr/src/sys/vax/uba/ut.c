@@ -1,4 +1,4 @@
-/*	ut.c	4.24	82/12/05	*/
+/*	ut.c	4.25	82/12/17	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -10,6 +10,8 @@
  *	check out attention processing
  *	try reset code and dump code
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -18,7 +20,6 @@
 #include "../h/file.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"

@@ -1,4 +1,6 @@
-/*	tty.c	4.36	82/12/13	*/
+/*	tty.c	4.37	82/12/17	*/
+
+#include "../machine/reg.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +11,6 @@
 #include "../h/proc.h"
 #include "../h/inode.h"
 #include "../h/file.h"
-#include "../h/reg.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/dk.h"

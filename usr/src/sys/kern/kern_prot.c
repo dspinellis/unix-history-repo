@@ -1,14 +1,15 @@
-/*	kern_prot.c	5.12	82/11/22	*/
+/*	kern_prot.c	5.13	82/12/17	*/
 
 /*
  * System calls related to processes and protection
  */
 
+#include "../machine/reg.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
 #include "../h/timeb.h"

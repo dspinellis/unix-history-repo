@@ -1,10 +1,13 @@
-/*	kern_sig.c	5.12	82/11/13	*/
+/*	kern_sig.c	5.13	82/12/17	*/
+
+#include "../machine/reg.h"
+#include "../machine/pte.h"
+#include "../machine/psl.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
 #include "../h/timeb.h"
@@ -14,8 +17,6 @@
 #include "../h/mount.h"
 #include "../h/text.h"
 #include "../h/seg.h"
-#include "../h/pte.h"
-#include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/acct.h"
 #include "../h/uio.h"

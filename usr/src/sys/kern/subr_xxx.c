@@ -1,4 +1,6 @@
-/*	subr_xxx.c	4.20	82/10/31	*/
+/*	subr_xxx.c	4.21	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +12,6 @@
 #include "../h/proc.h"
 #include "../h/fs.h"
 #include "../h/vm.h"
-#include "../h/pte.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
 

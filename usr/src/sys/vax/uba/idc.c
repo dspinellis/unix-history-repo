@@ -1,4 +1,4 @@
-/*	idc.c	4.10	82/11/26	*/
+/*	idc.c	4.11	82/12/17	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -19,13 +19,14 @@ int	*trp = idctrb;
  *	ecc
  *	dump
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/vm.h"
 #include "../h/dk.h"

@@ -1,4 +1,6 @@
-/*	kern_synch.c	4.24	82/10/21	*/
+/*	kern_synch.c	4.25	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,15 +10,16 @@
 #include "../h/file.h"
 #include "../h/inode.h"
 #include "../h/vm.h"
-#include "../h/pte.h"
 #ifdef MUSH
 #include "../h/quota.h"
 #include "../h/share.h"
 #endif
 #include "../h/kernel.h"
 #include "../h/buf.h"
-#include "../vax/mtpr.h"	/* XXX */
 
+#ifdef vax
+#include "../vax/mtpr.h"	/* XXX */
+#endif
 /*
  * Force switch among equal priority processes every 100ms.
  */

@@ -1,4 +1,6 @@
-/*	vfs_vnops.c	4.30	82/11/13	*/
+/*	vfs_vnops.c	4.31	82/12/17	*/
+
+#include "../machine/reg.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,7 +10,6 @@
 #include "../h/file.h"
 #include "../h/conf.h"
 #include "../h/inode.h"
-#include "../h/reg.h"
 #include "../h/acct.h"
 #include "../h/mount.h"
 #include "../h/socket.h"

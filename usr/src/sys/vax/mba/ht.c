@@ -1,4 +1,4 @@
-/*	ht.c	4.34	82/10/20	*/
+/*	ht.c	4.35	82/12/17	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -11,6 +11,8 @@
  *	see how many rewind interrups we get if we kick when not at BOT
  *	fixup rle error on block tape code
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -19,7 +21,6 @@
 #include "../h/file.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"

@@ -1,10 +1,12 @@
-/*	mba.c	4.29	82/10/10	*/
+/*	mba.c	4.30	82/12/17	*/
 
 #include "mba.h"
 #if NMBA > 0
 /*
  * Massbus driver, arbitrates a massbus among attached devices.
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dk.h"
@@ -14,7 +16,6 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../vax/mtpr.h"
 #include "../h/vm.h"
 

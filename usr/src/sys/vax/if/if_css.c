@@ -1,4 +1,4 @@
-/*      if_css.c     4.5     82/10/24     */
+/*      if_css.c     4.6     82/12/17     */
 
 #include "css.h"
 
@@ -26,11 +26,11 @@
  * If you get it wrong, it will still autoconfig, but will just
  * sit there with RECIEVE IDLE indicated on the front panel.
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

@@ -1,4 +1,8 @@
-/*	kern_proc.c	4.52	82/12/16	*/
+/*	kern_proc.c	4.53	82/12/17	*/
+
+#include "../machine/reg.h"
+#include "../machine/pte.h"
+#include "../machine/psl.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,15 +12,12 @@
 #include "../h/kernel.h"
 #include "../h/proc.h"
 #include "../h/buf.h"
-#include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/seg.h"
 #include "../h/acct.h"
 #include <wait.h>
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/text.h"
-#include "../h/psl.h"
 #include "../h/file.h"
 #include "../h/quota.h"
 #include "../h/descrip.h"
@@ -141,6 +142,7 @@ execve()
 	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
 	 * THE ASCII LINE.
 	 */
+	u.u_exdata.ux_shell[0] = 0;	/* for zero length files */
 	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&u.u_exdata, sizeof (u.u_exdata),
 	    0, 1, &resid);
 	if (u.u_error)
@@ -504,9 +506,7 @@ setregs()
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] = 0;
 		}
-#ifdef SUNMMAP
 		u.u_pofile[i] &= ~UF_MAPPED;
-#endif
 	}
 
 	/*
@@ -674,7 +674,7 @@ panic("exit: m_getclr");
 	swtch();
 }
 
-#include <vtimes.h>
+#include "../h/vtimes.h"
 
 owait()
 {

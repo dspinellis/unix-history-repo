@@ -1,4 +1,4 @@
-#	Makefile.vax	4.3	%G%
+#	Makefile.vax	4.4	%G%
 #
 # Makefile for 4.1c bsd
 #
@@ -47,7 +47,8 @@ lint: /tmp
 	    | sed 's/^	//' | sort -u > ../conf/symbols.sort
 
 locore.o: assym.s ${AHEADS} ../vax/scb.s ../vax/locore.s ubglue.s \
-    ../vax/mtpr.h ../vax/trap.h ../h/psl.h ../h/pte.h ../vax/cpu.h mba.h
+    ../vax/mtpr.h ../vax/trap.h ../machine/psl.h ../machine/pte.h \
+    ../vax/cpu.h mba.h
 	cat assym.s ../vax/scb.s ../vax/locore.s ubglue.s > locore.c
 	cc -E -I. -DLOCORE ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o $${AHEADS} locore.i'
@@ -63,9 +64,9 @@ clock.o machdep.o autoconf.o conf.o cons.o flp.o mba.o uba.o vaxcpu.o : makefile
 # depend on network configuration
 af.o : makefile
 
-assym.s: ../h/param.h ../h/pte.h ../h/buf.h ../h/vmparam.h ../h/vmmeter.h \
-    ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h ../h/proc.h \
-    ../h/msgbuf.h
+assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
+    ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
+    ../h/proc.h ../h/msgbuf.h
 	cc ${IDENT} ../vax/genassym.c; ./a.out >assym.s; rm -f a.out
 
 ../h/param.h: /usr/include/signal.h
@@ -120,7 +121,7 @@ print:
 	@cd ../sys; pr -f asm.sed Locore.c scb.s locore.s
 	@pr -f ${CFILES}
 
-ioconf.o: ioconf.c ../h/param.h ../h/pte.h ../h/buf.h ../h/map.h \
+ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
     ../vaxmba/mbavar.h ../h/vm.h ../vaxuba/ubavar.h
 	${CC} -I. -c -S ${COPTS} ioconf.c
 	${C2} ioconf.s | sed -f ../vax/asm.sed | ${AS} -o ioconf.o

@@ -1,4 +1,4 @@
-/*	up.c	4.63	82/12/08	*/
+/*	up.c	4.64	82/12/17	*/
 
 #include "up.h"
 #if NSC > 0
@@ -11,6 +11,7 @@
  * TODO:
  *	Check that offset recovery code works
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +22,6 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"

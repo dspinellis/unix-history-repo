@@ -1,4 +1,4 @@
-/*	in.h	4.18	82/11/03	*/
+/*	in.h	4.19	82/12/17	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -80,13 +80,11 @@ struct in_addr {
 		u_long S_addr;
 	} S_un;
 #define	s_addr	S_un.S_addr	/* can be used for most tcp & ip code */
-#ifdef vax
 #define	s_host	S_un.S_un_b.s_b2	/* host on imp */
 #define	s_net	S_un.S_un_b.s_b1	/* network */
 #define	s_imp	S_un.S_un_w.s_w2	/* imp */
 #define	s_impno	S_un.S_un_b.s_b4	/* imp # */
 #define	s_lh	S_un.S_un_b.s_b3	/* logical host */
-#endif
 };
 
 /*

@@ -1,4 +1,4 @@
-/*	lp.c	4.30	82/10/17	*/
+/*	lp.c	4.31	82/12/17	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -8,6 +8,7 @@
  * This driver has been modified to work on printers where
  * leaving IENABLE set would cause continuous interrupts.
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -15,7 +16,6 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 
 #include "../vaxuba/ubavar.h"
 

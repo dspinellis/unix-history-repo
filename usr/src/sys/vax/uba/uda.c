@@ -1,4 +1,4 @@
-/*	uda.c	4.15	82/11/13	*/
+/*	uda.c	4.16	82/12/17	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -12,6 +12,7 @@
  *	write dump code
  *	test on 750
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,7 +20,6 @@
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/vm.h"
 #include "../h/dk.h"

@@ -1,15 +1,15 @@
-/*	if_ec.c	4.31	82/12/16	*/
+/*	if_ec.c	4.32	82/12/17	*/
 
 #include "ec.h"
 
 /*
  * 3Com Ethernet Controller interface
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

@@ -1,13 +1,14 @@
-/*	Locore.c	4.22	82/11/13	*/
+/*	Locore.c	4.23	82/12/17	*/
 
 #include "dz.h"
 #include "mba.h"
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/tty.h"
 #include "../h/proc.h"

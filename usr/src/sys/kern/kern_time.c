@@ -1,10 +1,11 @@
-/*	kern_time.c	5.11	82/11/02	*/
+/*	kern_time.c	5.12	82/12/17	*/
+
+#include "../machine/reg.h"
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
 #include "../h/user.h"
 #include "../h/kernel.h"
-#include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
 

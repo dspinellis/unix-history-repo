@@ -1,17 +1,18 @@
-/*	ad.c	4.6	82/10/17	*/
+/*	ad.c	4.7	82/12/17	*/
 
 #include "ad.h"
 #if NAD > 0
 /*
  * Data translation AD converter interface -- Bill Reeves
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"

@@ -1,7 +1,8 @@
-/*	vm_machdep.c	5.2	82/11/13	*/
+/*	vm_machdep.c	5.3	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
-#include "../h/pte.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -168,4 +169,30 @@ putmemc(addr, val)
 	*(char *)&vmmap[(int)addr & PGOFSET] = val;
 	mmap[0] = savemap;
 	mtpr(TBIS, vmmap);
+}
+
+/*
+ * Move pages from one kernel virtual address to another.
+ * Both addresses are assumed to reside in the Sysmap,
+ * and size must be a multiple of CLSIZE.
+ */
+pagemove(from, to, size)
+	register caddr_t from, to;
+	int size;
+{
+	register struct pte *fpte, *tpte;
+
+	if (size % CLBYTES)
+		panic("pagemove");
+	fpte = &Sysmap[btop(from - 0x80000000)];
+	tpte = &Sysmap[btop(to - 0x80000000)];
+	while (size > 0) {
+		*tpte++ = *fpte;
+		*(int *)fpte++ = 0;
+		mtpr(TBIS, from);
+		mtpr(TBIS, to);
+		from += NBPG;
+		to += NBPG;
+		size -= NBPG;
+	}
 }

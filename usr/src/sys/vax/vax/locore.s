@@ -1,14 +1,15 @@
-/*	locore.s	4.74	82/12/09	*/
+/*	locore.s	4.75	82/12/17	*/
+
+#include "../machine/psl.h"
+#include "../machine/pte.h"
 
 #include "../vax/mtpr.h"
 #include "../vax/trap.h"
-#include "../h/psl.h"
-#include "../h/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
-#include "../vaxuba/ubareg.h"
 #include "../vax/cons.h"
 #include "../vax/clock.h"
+#include "../vaxuba/ubareg.h"
 
 #include "dz.h"
 #include "mba.h"

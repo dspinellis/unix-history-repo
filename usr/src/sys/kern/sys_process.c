@@ -1,4 +1,8 @@
-/*	sys_process.c	5.7	82/10/31	*/
+/*	sys_process.c	5.8	82/12/17	*/
+
+#include "../machine/reg.h"
+#include "../machine/psl.h"
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +10,8 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/inode.h"
-#include "../h/reg.h"
 #include "../h/text.h"
 #include "../h/seg.h"
-#include "../h/pte.h"
-#include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/buf.h"
 #include "../h/acct.h"
@@ -176,6 +177,12 @@ procxmt()
 		if (p == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &=  ~PSL_USERCLR;
+#ifdef sun
+			if (ipc.ip_data & PSL_T)
+				traceon();
+			else
+				traceoff();
+#endif
 			goto ok;
 		}
 		goto error;
@@ -193,8 +200,12 @@ procxmt()
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
 		u.u_procp->p_cursig = ipc.ip_data;	/* see issig */
-		if (i == 9)
+		if (i == 9) 
+#ifdef sun
+			traceon();
+#else
 			u.u_ar0[PS] |= PSL_T;
+#endif
 		wakeup((caddr_t)&ipc);
 		return (1);
 

@@ -1,4 +1,6 @@
-/*	vfs_bio.c	4.39	82/11/13	*/
+/*	vfs_bio.c	4.40	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,7 +10,6 @@
 #include "../h/conf.h"
 #include "../h/proc.h"
 #include "../h/seg.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/trace.h"
 
@@ -269,7 +270,7 @@ getblk(dev, blkno, size)
 	register struct buf *bp, *dp;
 	int s;
 
-	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
+	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))	/* XXX */
 		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);
 	/*
 	 * Search the cache for the block.  If we hit, but
@@ -336,6 +337,7 @@ loop:
 
 /*
  * Allocate space associated with a buffer.
+ * If can't get space, buffer is released
  */
 brealloc(bp, size)
 	register struct buf *bp;
@@ -359,14 +361,11 @@ brealloc(bp, size)
 		}
 		if (bp->b_flags & B_LOCKED)
 			panic("brealloc");
-		allocbuf(bp, size);
-		return (1);
+		return (allocbuf(bp, size));
 	}
 	bp->b_flags &= ~B_DONE;
-	if (bp->b_dev == NODEV) {
-		allocbuf(bp, size);
-		return (1);
-	}
+	if (bp->b_dev == NODEV)
+		return (allocbuf(bp, size));
 
 	/*
 	 * Search cache for any buffers that overlap the one that we
@@ -403,12 +402,12 @@ loop:
 		ep->b_flags |= B_INVAL;
 		brelse(ep);
 	}
-	allocbuf(bp, size);
-	return (1);
+	return (allocbuf(bp, size));
 }
 
 /*
  * Expand or contract the actual memory allocated to a buffer.
+ * If no memory is available, release buffer and take error exit
  */
 allocbuf(tp, size)
 	register struct buf *tp;
@@ -416,13 +415,22 @@ allocbuf(tp, size)
 {
 	register struct buf *bp, *ep;
 	int sizealloc, take;
+#ifdef sun
+	register char *a;
+	int osize;
+#endif
 
+#ifndef sun
 	sizealloc = roundup(size, CLBYTES);
+#else
+	sizealloc = roundup(size, BUFALLOCSIZE);
+#endif
 	/*
 	 * Buffer size does not change
 	 */
 	if (sizealloc == tp->b_bufsize)
 		goto out;
+#ifndef sun
 	/*
 	 * Buffer size is shrinking.
 	 * Place excess space in a buffer header taken from the
@@ -469,8 +477,52 @@ allocbuf(tp, size)
 		}
 		brelse(bp);
 	}
+#else
+	/*
+	 * Buffer size is shrinking
+	 * Just put the tail end back in the map
+	 */
+	if (sizealloc < tp->b_bufsize) {
+		rmfree(buffermap, (long)(tp->b_bufsize - sizealloc),
+			(long)(tp->b_un.b_addr + sizealloc));
+		tp->b_bufsize = sizealloc;
+		goto out;
+	}
+	/*
+	 * Buffer is being expanded or created
+	 * If being expanded, attempt to get contiguous
+	 * section, otherwise get a new chunk and copy.
+	 * If no space, free up a buffer on the AGE list
+	 * and try again.
+	 */
+	do {
+		if ((osize = tp->b_bufsize)) {
+			a = (char *)rmget(buffermap, (long)(sizealloc-osize),
+				(long)(tp->b_un.b_addr + osize));
+			if (a == 0) {
+				a = (char *)rmalloc(buffermap, (long)sizealloc);
+				if (a != 0) {
+					bcopy(tp->b_un.b_addr, a, osize);
+					rmfree(buffermap, (long)osize,
+						(long)tp->b_un.b_addr);
+					tp->b_un.b_addr = a;
+				}
+			}
+		} else {
+			a = (char *)rmalloc(buffermap, (long)sizealloc);
+			if (a != 0)
+				tp->b_un.b_addr = a;
+		}
+	} while (a == 0 && bfreemem());
+	if (a == 0) {
+		brelse(tp);
+		return (0);
+	}
+	tp->b_bufsize = sizealloc;
+#endif
 out:
 	tp->b_bcount = size;
+	return (1);
 }
 
 /*
@@ -479,14 +531,54 @@ out:
 bfree(bp)
 	struct buf *bp;
 {
-	/*
-	 * This stub is provided to allow the system to reclaim
-	 * memory from the buffer pool. Currently we do not migrate
-	 * memory between the buffer memory pool and the user memory
-	 * pool.
-	 */
+#ifdef sun
+	if (bp->b_bufsize) {
+		rmfree(buffermap, (long)bp->b_bufsize, (long)bp->b_un.b_addr);
+		bp->b_bufsize = 0;
+	}
+#endif
 	bp->b_bcount = 0;
 }
+
+#ifdef sun
+/*
+ * Attempt to free up buffer space by flushing
+ * something in the free list.
+ * Don't wait for something, that could cause deadlocks
+ * We start with BQ_AGE because we know BQ_EMPTY take no memory.
+ */
+bfreemem()
+{
+	register struct buf *bp, *dp;
+	int s;
+
+loop:
+	s = spl6();
+	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
+		if (dp->av_forw != dp)
+			break;
+	splx(s);
+	if (dp == bfreelist) {		/* no free blocks */
+		return (0);
+	}
+	bp = dp->av_forw;
+	notavail(bp);
+	if (bp->b_flags & B_DELWRI) {
+		bp->b_flags |= B_ASYNC;
+		bwrite(bp);
+		goto loop;
+	}
+	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
+	bp->b_flags = B_BUSY | B_INVAL;
+	bfree(bp);
+	bremhash(bp);
+	binshash(bp, &bfreelist[BQ_EMPTY]);
+	bp->b_dev = (dev_t)NODEV;
+	bp->b_error = 0;
+	brelse(bp);
+	return (1);
+}
+#endif
 
 /*
  * Find a buffer which is available for use.
@@ -501,7 +593,11 @@ getnewbuf()
 
 loop:
 	s = spl6();
+#ifndef sun
 	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
+#else
+	for (dp = &bfreelist[BQ_EMPTY]; dp > bfreelist; dp--)
+#endif
 		if (dp->av_forw != dp)
 			break;
 	if (dp == bfreelist) {		/* no free blocks */
@@ -567,6 +663,11 @@ biodone(bp)
 		if (bswlist.b_flags & B_WANTED)
 			wakeup((caddr_t)&proc[2]);
 		splx(s);
+		return;
+	}
+	if (bp->b_flags & B_CALL) {
+		bp->b_flags &= ~B_CALL;
+		(*bp->b_iodone)(bp);
 		return;
 	}
 	if (bp->b_flags&B_ASYNC)

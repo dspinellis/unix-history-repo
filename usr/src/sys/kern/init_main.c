@@ -1,4 +1,6 @@
-/*	init_main.c	4.43	82/11/13	*/
+/*	init_main.c	4.44	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +15,6 @@
 #include "../h/seg.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/text.h"
@@ -22,6 +23,11 @@
 #include "../h/protosw.h"
 #endif
 #include "../h/quota.h"
+
+#ifdef sun
+#include "../sun/reg.h"
+#include "../sun/cpu.h"
+#endif
 
 extern	struct user u;		/* have to declare it somewhere! */
 /*
@@ -77,7 +83,7 @@ main(regs)
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
 #ifdef sun
-	u.u_ar0 = &regs.r0;
+	u.u_ar0 = &regs.r_r0;
 #endif
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
@@ -167,6 +173,7 @@ main(regs)
 #ifdef NOPAGING
 		for (;;)
 			sleep((caddr_t)&u, PSLEP);
+		/*NOTREACHED*/
 #else
 		pageout();
 		/*NOTREACHED*/
@@ -204,6 +211,7 @@ main(regs)
 	 *			pid == 3
 	 */
 	if (newproc(0)) {
+#ifdef vax
 		expand(clrnd((int)btoc(szmcode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)mcode, (caddr_t)0, (unsigned)szmcode);
@@ -212,6 +220,7 @@ main(regs)
 		 * code just copied out.
 		 */
 		return;
+#endif
 	}
 #endif
 	proc[0].p_szpt = 1;
@@ -244,17 +253,19 @@ binit()
 		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
 		dp->b_flags = B_HEAD;
 	}
-	dp = &bfreelist[BQ_AGE];
 	for (i = 0; i < nbuf; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
+#ifndef sun
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
 		bp->b_bufsize = 2 * CLBYTES;
-		bp->b_back = dp;
-		bp->b_forw = dp->b_forw;
-		dp->b_forw->b_back = bp;
-		dp->b_forw = bp;
+		binshash(bp, &bfreelist[BQ_AGE]);
+#else
+		bp->b_un.b_addr = (char *)0;
+		bp->b_bufsize = 0;
+		binshash(bp, &bfreelist[BQ_EMPTY]);
+#endif
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}

@@ -1,4 +1,4 @@
-/*	mt.c	4.14	82/10/20	*/
+/*	mt.c	4.15	82/12/17	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -12,6 +12,8 @@
  *	add odd byte count kludge from VMS driver
  *	write dump routine
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -20,7 +22,6 @@
 #include "../h/file.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"
