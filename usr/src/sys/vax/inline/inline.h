@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)inline.h	1.4 (Berkeley) %G%
+ *	@(#)inline.h	1.5 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
  *   MAXARGS is the maximum number of arguments in an assembly instruction
  */
 #define QUEUESIZE	16
-#define MAXLINELEN	128
+#define MAXLINELEN	1024
 #define MAXARGS		10
 
 /*
