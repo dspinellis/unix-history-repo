@@ -11,14 +11,13 @@ divert(-1)
 #  This the prototype for a "null client" -- that is, a client that
 #  does nothing except forward all mail to a mail hub.
 #
-#  To use this, you MUST define MAIL_HUB and include the "nullclient"
-#  mailer.  You MAY also define an OSTYPE to define the location of
-#  the queue directories and the like.  Other than these, it should
-#  never contain any other lines.
+#  To use this, you MUST use the nullclient feature with the name of
+#  the mail hub as its argument.  You MAY also define an OSTYPE to
+#  define the location of the queue directories and the like.
+#  Other than these, it should never contain any other lines.
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)clientproto.mc	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)clientproto.mc	8.2 (Berkeley) %G%')
 
-define(`MAIL_HUB', `mailhost.$m')
-MAILER(nullclient)
+FEATURE(nullclient, mailhost.$m)
