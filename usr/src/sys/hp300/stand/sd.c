@@ -11,13 +11,14 @@
  *
  * from: Utah $Hdr: sd.c 1.2 90/01/23$
  *
- *	@(#)sd.c	7.3 (Berkeley) %G%
+ *	@(#)sd.c	7.4 (Berkeley) %G%
  */
 
 /*
  * SCSI CCS disk driver
  */
 
+#include <sys/param.h>
 #include "saio.h"
 #include "samachdep.h"
 
@@ -107,7 +108,7 @@ sdstrategy(io, func)
 
 	ss->sc_retry = 0;
 retry:
-	if (func == READ)
+	if (func == F_READ)
 		stat = scsi_tt_read(unit, io->i_ma, io->i_cc, blk, nblk);
 	else
 		stat = scsi_tt_write(unit, io->i_ma, io->i_cc, blk, nblk);
