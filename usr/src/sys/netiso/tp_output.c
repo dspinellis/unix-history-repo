@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.10 (Berkeley) %G%
+ *	@(#)tp_output.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -414,7 +414,7 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	 * the tpcb is gone 
 	 */
 	if ((so->so_state & (SS_ISCONNECTED | SS_ISCONFIRMING)) ==  0) {
-		if ( so->so_tpcb == (caddr_t)0 ) {
+		if ( so->so_pcb == (caddr_t)0 ) {
 			error = ENOTCONN; goto done;
 		}
 		if ( (tpcb->tp_state == TP_REFWAIT || tpcb->tp_state == TP_CLOSING) &&

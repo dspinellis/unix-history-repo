@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_cons.c	7.8 (Berkeley) %G%
+ *	@(#)tp_cons.c	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -131,7 +131,7 @@ tpcons_ctlinput(cmd, siso, isop)
 	case PRC_CONS_SEND_DONE:
 		if( isop->isop_socket ) { /* tp 0 only */
 			register struct tp_pcb *tpcb = 
-				(struct tp_pcb *)isop->isop_socket->so_tpcb;
+				(struct tp_pcb *)isop->isop_socket->so_pcb;
 			struct 	tp_event 		E;
 			int 					error = 0;
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_inet.c	7.8 (Berkeley) %G%
+ *	@(#)tp_inet.c	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -612,7 +612,7 @@ void
 tpin_quench(inp)
 	struct inpcb *inp;
 {
-	tp_quench((struct tp_pcb *)inp->inp_socket->so_tpcb, PRC_QUENCH);
+	tp_quench((struct tp_pcb *)inp->inp_socket->so_pcb, PRC_QUENCH);
 }
 
 /*

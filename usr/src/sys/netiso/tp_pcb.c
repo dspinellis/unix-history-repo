@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.11 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -672,8 +672,8 @@ tp_attach(so, dom)
 		sotoinpcb(so)->inp_ppcb = (caddr_t) tpcb;
 		/* nothing to do for iso case */
 
-	tpcb->tp_npcb = (caddr_t) so->so_pcb;
-	so->so_tpcb = (caddr_t) tpcb;
+	tpcb->tp_npcb = so->so_pcb;
+	so->so_pcb = (caddr_t) tpcb;
 
 	return 0;
 
@@ -695,7 +695,6 @@ bad2:
 		printf("BAD2 in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
 	so->so_pcb = 0;
-	so->so_tpcb = 0;
 
 /*bad:*/
 	IFDEBUG(D_CONN)
@@ -786,14 +785,14 @@ tp_detach(tpcb)
 
 	IFDEBUG(D_CONN)
 		printf("calling (...nlproto->...)(0x%x, so 0x%x)\n", 
-			so->so_pcb, so);
+			tpcb->tp_npcb, so);
 		printf("so 0x%x so_head 0x%x,  qlen %d q0len %d qlimit %d\n", 
 		so,  so->so_head,
 		so->so_q0len, so->so_qlen, so->so_qlimit);
 	ENDDEBUG
 
 
-	(tpcb->tp_nlproto->nlp_pcbdetach)(so->so_pcb);
+	(tpcb->tp_nlproto->nlp_pcbdetach)(tpcb->tp_npcb);
 				/* does an sofree(so) */
 
 	IFDEBUG(D_CONN)
@@ -814,7 +813,7 @@ tp_detach(tpcb)
 		printf("Unsent Xdata on detach; would panic");
 		sbflush(&tpcb->tp_Xsnd);
 	}
-	so->so_tpcb = (caddr_t)0;
+	so->so_pcb = 0;
 
 	/* 
 	 * Get rid of the cluster mbuf allocated for performance measurements, if
