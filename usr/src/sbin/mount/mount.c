@@ -12,19 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "pathnames.h"
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <fstab.h>
-#include <errno.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
+#include <sys/errno.h>
+#include <sys/signal.h>
 #include <sys/mount.h>
 #ifdef NFS
 #include <sys/socket.h>
@@ -37,6 +33,11 @@ static char sccsid[] = "@(#)mount.c	5.40 (Berkeley) %G%";
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
 #endif
+#include <fstab.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "pathnames.h"
 
 #define DEFAULT_ROOTUID	-2
 
@@ -227,7 +228,6 @@ mountfs(spec, name, flags, type, options, mntopts)
 	char *spec, *name, *type, *options, *mntopts;
 	int flags;
 {
-	extern int errno;
 	union wait status;
 	pid_t pid;
 	int argc, i;
@@ -654,7 +654,6 @@ getnfsargs(spec, nfsargsp)
 	char *spec;
 	struct nfs_args *nfsargsp;
 {
-	extern int errno;
 	register CLIENT *clp;
 	struct hostent *hp;
 	static struct sockaddr_in saddr;
