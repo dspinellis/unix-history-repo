@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tee.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tee.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -71,15 +71,12 @@ main(argc, argv)
 	}
 	add(1, "stdout");
 	for (; *argv; ++argv)
-		if ((fd = open(*argv, append ? O_WRONLY|O_CREAT :
+		if ((fd = open(*argv, append ? O_WRONLY|O_CREAT|O_APPEND :
 		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0)
 			(void)fprintf(stderr, "tee: %s: %s.\n",
 			    *argv, strerror(errno));
-		else {
-			if (append)
-				(void)lseek(fd, 0L, L_XTND);
+		else
 			add(fd, *argv);
-		}
 	exitval = 0;
 	while ((n = read(0, buf, sizeof(buf))) > 0)
 		for (p = head; p; p = p->next)
