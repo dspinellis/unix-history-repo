@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.40 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.40.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -654,6 +654,7 @@ ilock(ip)
 	ip->i_spare1 = 0;
 	ip->i_spare0 = curproc->p_pid;
 	ip->i_flag |= ILOCKED;
+	curproc->p_spare[2]++;
 }
 
 /*
@@ -667,6 +668,7 @@ iunlock(ip)
 		vprint("iunlock: unlocked inode", ITOV(ip));
 	ip->i_spare0 = 0;
 	ip->i_flag &= ~ILOCKED;
+	curproc->p_spare[2]--;
 	if (ip->i_flag&IWANT) {
 		ip->i_flag &= ~IWANT;
 		wakeup((caddr_t)ip);
