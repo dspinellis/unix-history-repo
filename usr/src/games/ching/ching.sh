@@ -1,16 +1,21 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)ching.sh	4.2	(Berkeley)	83/05/19
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-cd /usr/games/lib/ching.d
-PATH=:$PATH
+#	@(#)ching.sh	4.3 (Berkeley) %G%
+#
+
+cd /usr/games/ching.d
 case $1 in
 	[6-9]*)	H=$1;shift;;
 esac
-if	test $H
-then	phx $H | nroff $* macros - | more -s
-else	cno > "/tmp/#$$" 
+if test $H; then
+	./phx $H | nroff $* macros - | ${PAGER-more}
+else
+	./cno > "/tmp/#$$"
 	echo "  "
-	phx < "/tmp/#$$" | nroff $* macros - | more -s
+	./phx < "/tmp/#$$" | nroff $* macros - | ${PAGER-more}
 	rm "/tmp/#$$"
 fi
