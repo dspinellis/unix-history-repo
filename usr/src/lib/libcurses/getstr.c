@@ -3,7 +3,7 @@
 /*
  *	This routine gets a string starting at (_cury,_curx)
  *
- * %G% (Berkeley) @(#)getstr.c	1.1
+ * %G% (Berkeley) @(#)getstr.c	1.2
  */
 wgetstr(win,str)
 reg WINDOW	*win; 
@@ -11,8 +11,10 @@ reg char	*str; {
 
 	while ((*str = wgetch(win)) != ERR && *str != '\n');
 		str++;
-	*str = '\0';
-	if (*str == ERR)
+	if (*str == ERR) {
 		return ERR;
+		*str = '\0';
+	}
+	*str = '\0';
 	return OK;
 }
