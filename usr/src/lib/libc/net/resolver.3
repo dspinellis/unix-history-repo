@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)resolver.3	1.6 (Berkeley) %G%
+.\"	@(#)resolver.3	1.7 (Berkeley) %G%
 .\"
 .TH RESOLVER 3 "15 November 1985"
 .UC 4
@@ -139,7 +139,7 @@ handle timeouts and retries. The length of the message is returned or
 \-1 if there were errors.
 .PP
 .I Dn_expand
-Expands the compressed domain name
+expands the compressed domain name
 .I comp_dn
 to a full domain name.  Expanded names are converted to upper case.
 .I Msg
@@ -151,7 +151,7 @@ for the result.
 The size of compressed name is returned or -1 if there was an error.
 .PP
 .I Dn_comp
-Compresses the domain name
+compresses the domain name
 .I exp_dn
 and stores it in
 .IR comp_dn .
@@ -178,4 +178,4 @@ is NULL, we don't update the list.
 /etc/resolv.conf see resolver(5)
 .SH "SEE ALSO"
 named(8), resolver(5), RFC882, RFC883, RFC973, RFC974,
-Name Server Operations Guide for BIND
+SMM:11 Name Server Operations Guide for BIND
