@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -86,9 +86,15 @@ another:
 		goto another;
 	}
 	/*
-	 * Ignore the -w, -e and -8 flags to allow aliases with rlogin
+	 * Ignore the -L, -w, -e and -8 flags to allow aliases with rlogin
 	 * to work
+	 *
+	 * There must be a better way to do this! -jmb
 	 */
+	if (argc > 0 && !strncmp(*argv, "-L", 2)) {
+		argv++, argc--;
+		goto another;
+	}
 	if (argc > 0 && !strncmp(*argv, "-w", 2)) {
 		argv++, argc--;
 		goto another;
