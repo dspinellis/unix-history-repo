@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.3 (Berkeley) 87/05/02";
+static char sccsid[] = "@(#)gethead.c	5.4 (Berkeley) 87/09/01";
 #endif not lint
 
 #include <bug.h>
@@ -21,10 +21,11 @@ HEADER	mailhead[] = {				/* mail headers */
 	{ NO, YES,  NULL, ENT("From:"), },
 	{ NO,  NO,  chk1, ENT("Index:"), },
 	{ NO, YES,  NULL, ENT("Message-Id:"), },
-	{ NO,  NO,  NULL, ENT("Reply-To:"), },
-	{ NO,  NO,  NULL, ENT("Return-Path:"), },
+	{ NO, YES,  NULL, ENT("Reply-To:"), },
+	{ NO, YES,  NULL, ENT("Return-Path:"), },
 	{ NO,  NO,  pbuf, ENT("Subject:"), },
-	{ NO,  NO,  NULL, ENT("To:"), },
+	{ NO, YES,  NULL, ENT("To:"), },
+	{ NO,  NO,  NULL, ENT("Apparently-To:"), },
 	{ ERR, }
 };
 

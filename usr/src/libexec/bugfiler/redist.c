@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redist.c	5.3 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)redist.c	5.4 (Berkeley) 87/09/01";
 #endif not lint
 
 #include <sys/file.h>
@@ -47,11 +47,12 @@ redist()
 	if (!(pf = popen(MAIL_CMD, "w")))
 		error("sendmail pipe failed.", CHN);
 
-	fprintf(pf, "Reply-To: %s\n", BUGS_HOME);
 	if (mailhead[SUBJ_TAG].found)
 		fprintf(pf, "%s", mailhead[SUBJ_TAG].line);
 	else
 		fputs("Subject: Untitled Bug Report\n", pf);
+	if (mailhead[TO_TAG].line == 0 && mailhead[APPAR_TO_TAG].line != 0)
+		fprintf(pf, "To%s", index(mailhead[APPAR_TO_TAG].line, ':'));
 	fputs("Resent-To: ", pf);
 
 	/*
