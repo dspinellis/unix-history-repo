@@ -3,8 +3,9 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 # include	<sys/dir.h>
+# include	"pathnames.h"
 
-static char Sccsid[] = "@(#)get.c	4.9	%G%";
+static char Sccsid[] = "@(#)get.c	4.10	%G%";
 
 int	Debug = 0;
 struct packet gpkt;
@@ -491,15 +492,18 @@ char line[];
 {
 	static char tline[BUFSIZ];
 	static char str[32];
-	register char *lp, *tp;
+	register char *lp, *tp, *p;
 	extern char *Type;
 	extern char *Sflags[];
 
 	tp = tline;
 	for(lp=line; *lp != 0; lp++) {
-		if(lp[0] == '%' && lp[1] != 0 && lp[2] == '%') {
+		if (lp[0] != '%' || !lp[1] || !lp[2]) {
+			*tp++ = *lp;
+			continue;
+		}
+		if (lp[2] == '%') {
 			switch(*++lp) {
-
 			case 'M':
 				tp = trans(tp,Mod);
 				break;
@@ -580,9 +584,18 @@ char line[];
 				continue;
 			}
 			lp++;
+			continue;
 		}
-		else
-			*tp++ = *lp;
+		if (!strncmp(lp, "%sccs.include.", 14)) {
+			for (p = lp + 14; *p && *p != '%'; ++p);
+			if (*p != '%')
+				*tp++ = '%';
+			else {
+				*p = '\0';
+				tp = readcopy(lp + 14, tp);
+				lp = p + 1;
+			}
+		}
 	}
 
 	*tp = 0;
@@ -599,6 +612,24 @@ register char *tp, *str;
 	return(tp-1);
 }
 
+readcopy(name, tp)
+	register char *name;
+	register char *tp;
+{
+	register FILE *fp;
+	register int ch;
+	char path[MAXPATHLEN];
+
+	(void)sprintf(path, "%s/%s", _PATH_SCCSINCLUDE, name);
+	if (!(fp = fopen(path, "r"))) {
+		(void)sprintf(Error,"can't read %s", path);
+		fatal(Error);
+	}
+	while ((ch = getc(fp)) != EOF)
+		*tp++ = ch;
+	(void)fclose(fp);
+	return(tp);
+}
 
 clean_up(n)
 {
