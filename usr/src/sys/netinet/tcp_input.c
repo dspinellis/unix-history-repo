@@ -1,4 +1,4 @@
-/* tcp_input.c 1.22 81/11/14 */
+/* tcp_input.c 1.23 81/11/15 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../net/imp.h"
 #include "../net/inet_host.h"
 #include "../net/ip.h"
+#include "../net/ip_var.h"
 #include "../net/tcp.h"
 #include "../net/tcp_fsm.h"
 #include "../net/tcp_var.h"
@@ -66,17 +67,17 @@ COUNT(TCP_INPUT);
 	 * Build extended tcp header
 	 */
 	n = mtod(mp, struct tcpiphdr *);
-	thflags = n->th_flags;
+	thflags = n->ti_flags;
 	tlen = ((struct ip *)n)->ip_len;
-	n->t_len = htons(tlen);
-	n->t_next = NULL;
-	n->t_prev = NULL;
-	n->t_x1 = 0;
-	lport = ntohs(n->t_dst);
-	fport = ntohs(n->t_src);
+	n->ti_len = htons(tlen);
+	n->ti_next = NULL;
+	n->ti_prev = NULL;
+	n->ti_x1 = 0;
+	lport = ntohs(n->ti_dst);
+	fport = ntohs(n->ti_src);
 
 	/* WONT BE POSSIBLE WHEN MBUFS ARE 256 BYTES */
-	if ((hlen = n->t_off << 2) > mp->m_len)
+	if ((hlen = n->ti_off << 2) > mp->m_len)
 		{ printf("tcp header overflow\n"); m_freem(mp); return; }
 
 	if (tcpcksum) {
@@ -84,7 +85,7 @@ COUNT(TCP_INPUT);
 		 * Checksum extended header and data
 		 */
 		CKSUM_TCPCHK(mp, n, r10, sizeof (struct ip) + tlen);
-		if (n->t_sum != 0) {
+		if (n->ti_sum != 0) {
 			netstat.t_badsum++;
 			m_freem(mp);
 			return;
@@ -94,20 +95,20 @@ COUNT(TCP_INPUT);
 	/*
 	 * Find tcb for message.
 	 */
-	inp = in_pcblookup(&tcb, &n->t_s, fport, &n_lhost, lport);
+	inp = inpcb_lookup(&tcb, &n->ti_src, fport, &n_lhost, lport);
 	if (inp == 0)
 		goto notwanted;
 
 	/*
 	 * Byte swap header
 	 */
-	n->t_len = tlen - hlen;
-	n->t_src = fport;
-	n->t_dst = lport;
-	n->t_seq = ntohl(n->t_seq);
-	n->t_ackno = ntohl(n->t_ackno);
-	n->t_win = ntohs(n->t_win);
-	n->t_urp = ntohs(n->t_urp);
+	n->ti_len = tlen - hlen;
+	n->ti_sport = fport;
+	n->ti_dport = lport;
+	n->ti_seq = ntohl(n->ti_seq);
+	n->ti_ackno = ntohl(n->ti_ackno);
+	n->ti_win = ntohs(n->ti_win);
+	n->ti_urp = ntohs(n->ti_urp);
 
 	/*
 	 * Check segment seq # and do rst processing
@@ -139,7 +140,7 @@ COUNT(TCP_INPUT);
 	default:
         	if ((thflags&TH_RST) == 0)
 			goto common;
-		if (n->t_seq < tp->rcv_nxt)		/* bad rst */
+		if (n->ti_seq < tp->rcv_nxt)		/* bad rst */
 			goto badseg;				/* 69 */
 		switch (tp->t_state) {
 
@@ -168,7 +169,7 @@ common:
 			tcp_sndrst(tp, n);			/* 74 */
 			goto badseg;
 		}
-		if (syn_ok(tp, n) && n->t_seq != tp->irs) {
+		if (syn_ok(tp, n) && n->ti_seq != tp->irs) {
 			tcp_sndnull(tp);			/* 74 */
 			goto badseg;
 		}
@@ -184,7 +185,7 @@ goodseg:
 	 */
 	so = inp->inp_socket;
 	if (so->so_rcv.sb_cc >= so->so_rcv.sb_hiwat &&
-	     n->t_len != 0 && mbstat.m_bufs < mbstat.m_lowat) {
+	     n->ti_len != 0 && mbstat.m_bufs < mbstat.m_lowat) {
 /*
 		mp->m_act = (struct mbuf *)0;
 		if ((m = tp->seg_unack) != NULL) {
@@ -219,11 +220,11 @@ goodseg:
 
 	case LISTEN:
 		if (!syn_ok(tp, n) ||
-		    ((inp->inp_lhost = in_hmake(&n->t_s)) == 0)) {
+		    ((inp->inp_lhost = in_hmake(&n->ti_src)) == 0)) {
 			nstate = EFAILEC;
 			goto done;
 		}
-		inp->inp_fport = n->t_src;
+		inp->inp_fport = n->ti_sport;
 		tp->t_template = tcp_template(tp);
 		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
@@ -256,7 +257,7 @@ goodseg:
 	case SYN_RCVD:
 	case L_SYN_RCVD:
 		if ((thflags&TH_ACK) == 0 ||
-		    (thflags&TH_ACK) && n->t_ackno <= tp->iss) {
+		    (thflags&TH_ACK) && n->ti_ackno <= tp->iss) {
 			nstate = EFAILEC;
 			goto done;
 		}
@@ -307,7 +308,7 @@ input:
 	case CLOSE_WAIT:
 		if (thflags&TH_FIN) {
 			if ((thflags&TH_ACK) &&
-			    n->t_ackno <= tp->seq_fin) {
+			    n->ti_ackno <= tp->seq_fin) {
 				tcp_ctldat(tp, n, 0);		/* 30 */
 				tp->t_finack = T_2ML;
 				tp->tc_flags &= ~TC_WAITED_2_ML;
@@ -357,7 +358,7 @@ input:
 
 	case RCV_WAIT:
 		if ((thflags&TH_FIN) && (thflags&TH_ACK) &&
-		    n->t_ackno <= tp->seq_fin) {
+		    n->ti_ackno <= tp->seq_fin) {
 			tcp_ctldat(tp, n, 0);
 			tp->t_finack = T_2ML;
 			tp->tc_flags &= ~TC_WAITED_2_ML;	/* 30 */
@@ -407,18 +408,19 @@ notwanted:
 	mp->m_next = NULL;
 	mp->m_len = sizeof(struct tcpiphdr);
 #define xchg(a,b) j=a; a=b; b=j
-	xchg(n->t_d.s_addr, n->t_s.s_addr); xchg(n->t_dst, n->t_src);
+	xchg(n->ti_dst.s_addr, n->ti_src.s_addr);
+	xchg(n->ti_dport, n->ti_sport);
 #undef xchg
 	if (thflags&TH_ACK)
-		n->t_seq = n->t_ackno;
+		n->ti_seq = n->ti_ackno;
 	else {
-		n->t_ackno = htonl(ntohl(n->t_seq) + tlen - hlen);
-		n->t_seq = 0;
+		n->ti_ackno = htonl(ntohl(n->ti_seq) + tlen - hlen);
+		n->ti_seq = 0;
 	}
-	n->th_flags = ((thflags & TH_ACK) ? 0 : TH_ACK) | TH_RST;
-	n->t_len = htons(TCPSIZE);
-	n->t_off = 5;
-	n->t_sum = inet_cksum(mp, sizeof(struct tcpiphdr));
+	n->ti_flags = ((thflags & TH_ACK) ? 0 : TH_ACK) | TH_RST;
+	n->ti_len = htons(TCPSIZE);
+	n->ti_off = 5;
+	n->ti_sum = inet_cksum(mp, sizeof(struct tcpiphdr));
 	((struct ip *)n)->ip_len = sizeof(struct tcpiphdr);
 	ip_output(mp);
 	netstat.t_badsegs++;
@@ -431,32 +433,32 @@ tcp_ctldat(tp, n0, dataok)
 {
 	register struct mbuf *m;
 	register struct tcpiphdr *n = n0;
-	register int thflags = n->th_flags;
+	register int thflags = n->ti_flags;
 	struct socket *so = tp->t_inpcb->inp_socket;
-	seq_t past = n->t_seq + n->t_len;
+	seq_t past = n->ti_seq + n->ti_len;
 	seq_t urgent;
 	int sent;
 COUNT(TCP_CTLDAT);
 
 	if (thflags & TH_URG)
-		urgent = n->t_seq + n->t_urp;
+		urgent = n->ti_seq + n->ti_urp;
 	tp->tc_flags &= ~(TC_ACK_DUE|TC_NEW_WINDOW);
 /* syn */
 	if ((tp->tc_flags&TC_SYN_RCVD) == 0 && (thflags&TH_SYN)) {
-		tp->irs = n->t_seq;
-		tp->rcv_nxt = n->t_seq + 1;
+		tp->irs = n->ti_seq;
+		tp->rcv_nxt = n->ti_seq + 1;
 		tp->snd_wl = tp->rcv_urp = tp->irs;
 		tp->tc_flags |= (TC_SYN_RCVD|TC_ACK_DUE);
 	}
 /* ack */
 	if ((thflags&TH_ACK) && (tp->tc_flags&TC_SYN_RCVD) &&
-	    n->t_ackno > tp->snd_una) {
+	    n->ti_ackno > tp->snd_una) {
 		register struct mbuf *mn;
 
 		/*
 		 * Reflect newly acknowledged data.
 		 */
-		tp->snd_una = n->t_ackno;
+		tp->snd_una = n->ti_ackno;
 		if (tp->snd_una > tp->snd_nxt)
 			tp->snd_nxt = tp->snd_una;
 
@@ -489,14 +491,14 @@ COUNT(TCP_CTLDAT);
 		sowwakeup(tp->t_inpcb->inp_socket);
 	}
 /* win */
-	if ((tp->tc_flags & TC_SYN_RCVD) && n->t_seq >= tp->snd_wl) {
-		tp->snd_wl = n->t_seq;
-		tp->snd_wnd = n->t_win;
+	if ((tp->tc_flags & TC_SYN_RCVD) && n->ti_seq >= tp->snd_wl) {
+		tp->snd_wl = n->ti_seq;
+		tp->snd_wnd = n->ti_win;
 		tp->tc_flags |= TC_NEW_WINDOW;
 		tp->t_persist = 0;
 	}
 /* text */
-	if (dataok && n->t_len) {
+	if (dataok && n->ti_len) {
 		register struct tcpiphdr *p, *q;
 		int overage;
 
@@ -512,12 +514,12 @@ COUNT(TCP_CTLDAT);
 		/*
 		 * Discard duplicate data already passed to user.
 		 */
-		if (SEQ_LT(n->t_seq, tp->rcv_nxt)) {
-			register int i = tp->rcv_nxt - n->t_seq;
-			if (i >= n->t_len)
+		if (SEQ_LT(n->ti_seq, tp->rcv_nxt)) {
+			register int i = tp->rcv_nxt - n->ti_seq;
+			if (i >= n->ti_len)
 				goto notext;
-			n->t_seq += i;
-			n->t_len -= i;
+			n->ti_seq += i;
+			n->ti_len -= i;
 			m_adj(dtom(n), i);
 		}
 
@@ -525,8 +527,8 @@ COUNT(TCP_CTLDAT);
 		 * Find a segment which begins after this one does.
 		 */
 		for (q = tp->seg_next; q != (struct tcpiphdr *)tp;
-		    q = q->t_next)
-			if (SEQ_GT(q->t_seq, n->t_seq))
+		    q = (struct tcpiphdr *)q->ti_next)
+			if (SEQ_GT(q->ti_seq, n->ti_seq))
 				break;
 
 		/*
@@ -534,18 +536,20 @@ COUNT(TCP_CTLDAT);
 		 * our data already.  If so, drop the data from the incoming
 		 * segment.  If it provides all of our data, drop us.
 		 */
-		if (q->t_prev != (struct tcpiphdr *)tp) {
+		if ((struct tcpiphdr *)q->ti_prev != (struct tcpiphdr *)tp) {
+			register int i;
+			q = (struct tcpiphdr *)(q->ti_prev);
 			/* conversion to int (in i) handles seq wraparound */
-			register int i =
-			    q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
+			i = q->ti_seq + q->ti_len - n->th_seq;
 			if (i > 0) {
-				if (i >= n->t_len)
+				if (i >= n->ti_len)
 					goto notext;
 						/* w/o setting TC_NET_KEEP */
 				m_adj(dtom(tp), i);
-				n->t_len -= i;
-				n->t_seq += i;
+				n->ti_len -= i;
+				n->ti_seq += i;
 			}
+			q = (struct tcpiphdr *)(q->ti_next);
 		}
 
 		/*
@@ -553,23 +557,23 @@ COUNT(TCP_CTLDAT);
 		 * if they are completely covered, dequeue them.
 		 */
 		while (q != (struct tcpiphdr *)tp &&
-		    SEQ_GT(n->t_seq + n->t_len, q->t_seq)) {
-			register int i = (n->t_seq + n->t_len) - q->t_seq;
-			if (i < q->t_len) {
-				q->t_len -= i;
+		    SEQ_GT(n->ti_seq + n->ti_len, q->ti_seq)) {
+			register int i = (n->ti_seq + n->ti_len) - q->ti_seq;
+			if (i < q->ti_len) {
+				q->ti_len -= i;
 				m_adj(dtom(q), i);
 				break;
 			}
-			q = q->t_next;
-			m_freem(dtom(q->t_prev));
-			remque(q->t_prev);
+			q = (struct tcpiphdr *)q->ti_next;
+			m_freem(dtom(q->ti_prev));
+			remque(q->ti_prev);
 		}
 
 		/*
 		 * Stick new segment in its place.
 		 */
-		insque(n, q->t_prev);
-		tp->seqcnt += n->t_len;
+		insque(n, q->ti_prev);
+		tp->seqcnt += n->ti_len;
 
 		/*
 		 * Calculate available space and discard segments for
@@ -580,25 +584,25 @@ COUNT(TCP_CTLDAT);
 		if (overage > 0) {
 			q = tp->seg_prev;
 			for (;;) {
-				register int i = MIN(q->t_len, overage);
+				register int i = MIN(q->ti_len, overage);
 				overage -= i;
-				q->t_len -= i;
+				q->ti_len -= i;
 				m_adj(q, -i);
-				if (q->t_len)
+				if (q->ti_len)
 					break;
 				if (q == n)
 					panic("tcp_text dropall");
-				q = q->t_prev;
-				remque(q->t_next);
+				q = (struct tcpiphdr *)q->ti_prev;
+				remque(q->ti_next);
 			}
 		}
 
 		/*
 		 * Advance rcv_next through newly completed sequence space.
 		 */
-		while (n->t_seq == tp->rcv_nxt) {
-			tp->rcv_nxt += n->t_len;
-			n = n->t_next;
+		while (n->ti_seq == tp->rcv_nxt) {
+			tp->rcv_nxt += n->ti_len;
+			n = (struct tcpiphdr *)n->ti_next;
 			if (n == (struct tcpiphdr *)tp)
 				break;
 		}
@@ -641,13 +645,13 @@ notext:
 	if ((tp->tc_flags&TC_SYN_ACKED) == 0)
 		return;
 	n = tp->seg_next;
-	while (n != (struct tcpiphdr *)tp && n->t_seq < tp->rcv_nxt) {
+	while (n != (struct tcpiphdr *)tp && n->ti_seq < tp->rcv_nxt) {
 		remque(n);
 		sbappend(so->so_rcv, dtom(n));
-		tp->seqcnt -= n->t_len;
+		tp->seqcnt -= n->ti_len;
 		if (tp->seqcnt < 0)
 			panic("tcp_input present");
-		n = n->t_next;
+		n = (struct tcpiphdr *)n->ti_next;
 	}
 	sorwakeup(so);
 }

@@ -1,9 +1,11 @@
-/*	udp.h	4.1	81/11/14	*/
+/*	udp.h	4.2	81/11/15	*/
 
-struct udpiphdr {
-	struct	ipovly u_ip;
-
-	struct	udpiphdr *u_x[2];	/* space holders */
-	u_char	u_x1;			/* unused */
-	u_char	u_pr;			/* protocol */
-
+/*
+ * Udp protocol header.
+ */
+struct udphdr {
+	u_short	uh_sport;		/* source port */
+	u_short	uh_dport;		/* destination port */
+	short	uh_ulen;		/* udp length */
+	u_short	uh_sum;			/* udp checksum */
+};

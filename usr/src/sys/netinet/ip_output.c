@@ -1,4 +1,4 @@
-/* ip_output.c 1.11 81/11/08 */
+/* ip_output.c 1.12 81/11/15 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,7 +10,7 @@
 #include "../net/imp.h"
 #include "../net/inet_host.h"
 #include "../net/ip.h"
-#include "../net/tcp.h"
+#include "../net/ip_var.h"
 
 ip_output(mp)
 	struct mbuf *mp;
@@ -32,6 +32,7 @@ COUNT(IP_OUTPUT);
 	p->ip_hl = hlen >> 2;
 	p->ip_off = 0 | (p->ip_off & IP_DF);
 	p->ip_ttl = MAXTTL;
+/*###35 [cc] ip_id undefined %%%*/
 	p->ip_id = ip_id++;
 
 	if (p->ip_len <= MTU)

@@ -1,4 +1,4 @@
-/*	protosw.h	4.3	81/11/14	*/
+/*	protosw.h	4.4	81/11/15	*/
 
 /*
  * Protocol switch table.
@@ -96,6 +96,6 @@ char *prurequests[] = {
 #endif
 
 #ifdef KERNEL
-struct	protosw protosw[];
+struct	protosw protosw[], *protoswLAST;
 extern	struct protosw *pffindproto(), *pffindtype();
 #endif

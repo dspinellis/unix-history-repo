@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.3	81/11/14	*/
+/*	uipc_socket.c	4.4	81/11/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -77,8 +77,6 @@ socket(aso, type, iap, options)
 	so->so_proto = prp;
 	(*prp->pr_usrreq)(so, PRU_ATTACH, 0, 0);
 	if (so->so_error) {
-/*###80 [cc] operands of = have incompatible types %%%*/
-/*###80 [cc] zerosocket undefined %%%*/
 		error = so->so_error;
 		m_free(dtom(so));
 		return (error);
@@ -310,7 +308,7 @@ restart:
 			len = MIN(m->m_len, sizeof (struct in_addr));
 			bcopy(mtod(m, caddr_t), (caddr_t)iap, len);
 		} else
-			*iap = zeroin_addr;
+			bzero((caddr_t)iap, sizeof (*iap));
 		m = so->so_rcv.sb_mb;
 		if (m == 0)
 			panic("receive 2");
@@ -390,5 +388,3 @@ skioctl(so, cmd, cmdp)
 
 	}
 }
-/*###417 [cc] operands of = have incompatible types %%%*/
-/*###417 [cc] zeroin_addr undefined %%%*/

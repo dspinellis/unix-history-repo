@@ -1,4 +1,4 @@
-/*	tcp_fsm.h	4.4	81/11/08	*/
+/*	tcp_fsm.h	4.5	81/11/15	*/
 
 /*
  * TCP FSM definitions.
@@ -37,24 +37,8 @@
 #define	RCV_WAIT	12		/* waiting for user to drain data */
 #define	CLOSED		13		/* closed */
 
-/*
- * Inputs to fsm.
- */
-#define	TCP_NINPUTS	10
-
-#define	IUOPENA 	0		/* active open by user */
-#define	INRECV		1		/* segment received from net */
-#define	IUOPENR		2		/* passive open by user */
-#define	IUCLOSE		3		/* close by user */
-#define	ISTIMER		4		/* tcp timer expired */
-#define	IURECV		5		/* user read data; adjust window */
-#define	IUSEND		6		/* user sending data */
-#define	IUABORT		7		/* user aborts connection */
-#define	INCLEAR		8		/* network clear */
-#define	INSEND		9		/* send by tcp to remote peer */
-
 #ifdef KPROF
-int	acounts[TCP_NSTATES][TCP_NINPUTS];
+int	tcp_acounts[TCP_NSTATES][PRU_NREQ];
 #endif
 
 #ifdef TCPSTATES
@@ -63,11 +47,6 @@ char *tcpstates[] = {
 	"L_SYN_RCVD",	"ESTAB",	"FIN_W1",	"FIN_W2",
 	"TIME_WAIT",	"CLOSE_WAIT",	"CLOSING",	"LAST_ACK",
 	"RCV_WAIT",	"CLOSED"
-};
-char *tcpinputs[] = {
-	"BAD",		"UOPENA",	"NRECV",	"UOPENR",
-	"UCLOSE",	"STIMER",	"URECV",	"USEND",
-	"UABORT",	"NCLEAR",	"NSEND",
 };
 char *tcptimers[] = { "INIT", "REXMT", "REXMTTL", "PERSIST", "FINACK" };
 #endif

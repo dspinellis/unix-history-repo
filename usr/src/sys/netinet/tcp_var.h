@@ -1,8 +1,33 @@
-/*	tcp_var.h	4.2	81/11/14	*/
+/*	tcp_var.h	4.3	81/11/15	*/
 
 /*
  * Kernel variables for tcp.
  */
+
+/*
+ * Tcp+ip header, after ip options removed.
+ */
+struct tcpiphdr {
+	struct 	ipovly ti_i;		/* overlaid ip structure */
+	struct	tcphdr ti_t;		/* tcp header */
+};
+#define	ti_next		ti_i.ih_next
+#define	ti_prev		ti_i.ih_prev
+#define	ti_x1		ti_i.ih_x1
+#define	ti_pr		ti_i.ih_pr
+#define	ti_len		ti_i.ih_len
+#define	ti_src		ti_i.ih_src
+#define	ti_dst		ti_i.ih_dst
+#define	ti_sport	ti_t.th_sport
+#define	ti_dport	ti_t.th_dport
+#define	ti_seq		ti_t.th_seq
+#define	ti_ackno	ti_t.th_ackno
+#define	ti_x2		ti_t.th_x2
+#define	ti_off		ti_t.th_off
+#define	ti_flags	ti_t.th_flags
+#define	ti_win		ti_t.th_win
+#define	ti_sum		ti_t.th_sum
+#define	ti_urp		ti_t.th_urp
 
 /*
  * Tcp control block.
@@ -83,14 +108,14 @@ struct tcpcb {
  * Tcp machine predicates
  */
 #define	ack_ok(x, y) \
-    (((y)->th_flags&TH_ACK)==0 || \
-      ((x)->iss < (y)->t_ackno && (y)->t_ackno <= (x)->snd_hi))
+    (((y)->ti_flags&TH_ACK)==0 || \
+      ((x)->iss < (y)->ti_ackno && (y)->ti_ackno <= (x)->snd_hi))
 
 #define	syn_ok(x, y) \
-    ((y)->th_flags&TH_SYN)
+    ((y)->ti_flags&TH_SYN)
 
 #define	ack_fin(x, y) \
-    ((x)->seq_fin > (x)->iss && (y)->t_ackno > (x)->seq_fin)
+    ((x)->seq_fin > (x)->iss && (y)->ti_ackno > (x)->seq_fin)
 
 #define	rcv_empty(x) \
     (((x)->tc_flags&TC_USR_ABORT) || \

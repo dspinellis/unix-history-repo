@@ -1,4 +1,4 @@
-/* tcp_output.c 4.11 81/11/14 */
+/* tcp_output.c 4.12 81/11/15 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
+#include "../net/ip_var.h"
 #include "../net/tcp.h"
 #include "../net/tcp_var.h"
 #include "../net/tcp_fsm.h"
@@ -68,11 +69,11 @@ tcp_sndrst(tp, n)
 COUNT(TCP_SNDRST);
 
         /* don't send a reset in response to a reset */
-	if (n->th_flags&TH_RST)
+	if (n->ti_flags&TH_RST)
 		return;
 	tp->tc_flags |= TC_SND_RST;
-	if (n->th_flags&TH_ACK)
-		tp->snd_nxt = n->t_ackno;
+	if (n->ti_flags&TH_ACK)
+		tp->snd_nxt = n->ti_ackno;
 	tp->tc_flags &= ~TC_SYN_RCVD;
 	tcp_sndnull(tp);
 	tp->tc_flags &= ~TC_SND_RST;
@@ -181,22 +182,22 @@ tcp_template(tp)
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
 	n = mtod(m, struct tcpiphdr *);
-	n->t_next = n->t_prev = 0;
-	n->t_x1 = 0;
-	n->t_pr = IPPROTO_TCP;
-	n->t_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
-	n->t_s.s_addr = n_lhost.s_addr;
-	n->t_d.s_addr = h->h_addr.s_addr;
-	n->t_src = htons(inp->inp_lport);
-	n->t_dst = htons(inp->inp_fport);
-	n->t_seq = 0;
-	n->t_ackno = 0;
-	n->t_x2 = 0;
-	n->t_off = 5;
-	n->th_flags = 0;
-	n->t_win = 0;
-	n->t_sum = 0;
-	n->t_urp = 0;
+	n->ti_next = n->ti_prev = 0;
+	n->ti_x1 = 0;
+	n->ti_pr = IPPROTO_TCP;
+	n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
+	n->ti_src.s_addr = n_lhost.s_addr;
+	n->ti_dst.s_addr = h->h_addr.s_addr;
+	n->ti_sport = htons(inp->inp_lport);
+	n->ti_dport = htons(inp->inp_fport);
+	n->ti_seq = 0;
+	n->ti_ackno = 0;
+	n->ti_x2 = 0;
+	n->ti_off = 5;
+	n->ti_flags = 0;
+	n->ti_win = 0;
+	n->ti_sum = 0;
+	n->ti_urp = 0;
 	return (n);
 }
 
@@ -236,28 +237,28 @@ COUNT(TCP_OUTPUT);
 	}
 	if (tp->tc_flags&TC_SYN_RCVD)
 		flags |= TH_ACK;
-	t->th_flags = flags;
+	t->ti_flags = flags;
 	if (flags & TH_URG)
-		t->t_urp = htons(tp->snd_urp);
-	t->t_win =
+		t->ti_urp = htons(tp->snd_urp);
+	t->ti_win =
 	    so->so_rcv.sb_hiwat -
 		(so->so_rcv.sb_cc + tp->seqcnt);
-	if (tp->rcv_nxt + t->t_win > tp->rcv_adv)
-		tp->rcv_adv = tp->rcv_nxt + t->t_win;
+	if (tp->rcv_nxt + t->ti_win > tp->rcv_adv)
+		tp->rcv_adv = tp->rcv_nxt + t->ti_win;
 	if (len)
-		t->t_len = htons(len + TCPSIZE);
-	t->t_win = htons(t->t_win);
+		t->ti_len = htons(len + TCPSIZE);
+	t->ti_win = htons(t->ti_win);
 #ifdef TCPDEBUG
 	if ((so->so_options & SO_DEBUG) || tcpconsdebug) {
-		t->t_seq = tp->snd_nxt;
-		t->t_ackno = tp->rcv_nxt;
+		t->ti_seq = tp->snd_nxt;
+		t->ti_ackno = tp->rcv_nxt;
 		tdb_setup(tp, t, INSEND, &tdb);
 		tdb_stuff(&tdb, -2);
 	}
 #endif
-	t->t_seq = htonl(tp->snd_nxt);
-	t->t_ackno = htonl(tp->rcv_nxt);
-	t->t_sum = 0;		/* gratuitous? */
+	t->ti_seq = htonl(tp->snd_nxt);
+	t->ti_ackno = htonl(tp->rcv_nxt);
+	t->ti_sum = 0;		/* gratuitous? */
 	CKSUM_TCPSET(m, t, r9, sizeof (struct tcpiphdr) + len);
 	ip = (struct ip *)t;
 	ip->ip_v = IPVERSION;

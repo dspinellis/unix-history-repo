@@ -1,14 +1,9 @@
-/* in_systm.h 4.1 81/11/08 */
+/* in_systm.h 4.2 81/11/15 */
 
 /*
  * Miscellaneous internetwork
  * definitions for kernel.
  */
-
-/* THESE SHOULD BE ELIMINATED */
-#define	NCON		20		/* SHOULD BE DYNAMIC, NO LIMIT */
-#define	NHOST		20		/* SHOULD BE SOME DYNAMIC LIMIT */
-/* END SHOULD BE ELIMINATED */
 
 /*
  * Network types.
