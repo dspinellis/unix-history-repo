@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.33	82/07/13	*/
+/*	kern_clock.c	4.34	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,6 +18,8 @@
 #include "../h/clock.h"
 #include "../h/cpu.h"
 #include "../h/protosw.h"
+#include "../h/socket.h"
+#include "../net/if.h"
 
 #include "bk.h"
 #include "dh.h"
@@ -62,6 +64,7 @@ extern	u_short *kcount;
  */
 int	protoslow;
 int	protofast;
+int	ifnetslow;
 
 /*ARGSUSED*/
 hardclock(pc, ps)
@@ -159,7 +162,7 @@ hardclock(pc, ps)
 	/*
 	 * Time moves on for protocols.
 	 */
-	--protoslow; --protofast;
+	--protoslow; --protofast; --ifnetslow;
 
 #if VAX780
 	/*
@@ -282,6 +285,10 @@ softclock(pc, ps)
 	if (protoslow <= 0) {
 		protoslow = hz / PR_SLOWHZ;
 		pfslowtimo();
+	}
+	if (ifnetslow <= 0) {
+		ifnetslow = hz / IFNET_SLOWHZ;
+		if_slowtimo();
 	}
 
 	/*
