@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.6 (Berkeley) %G%
+ *	@(#)saio.h	7.7 (Berkeley) %G%
  */
 
 #include "saioctl.h"
@@ -45,7 +45,9 @@ struct iob {
 #define	F_ALLOC		0x4	/* buffer allocated */
 #define	F_FILE		0x8	/* file instead of device */
 #define	F_NBSF		0x10	/* no bad sector forwarding */
+#define	F_ECCLM		0x20	/* limit # of bits in ecc correction */
 #define	F_SSI		0x40	/* set skip sector inhibit */
+#define	F_SEVRE		0x80	/* Severe burnin (no retries, no ECC) */
 
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
