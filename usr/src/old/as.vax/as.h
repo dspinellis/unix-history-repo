@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)as.h	5.2 (Berkeley) %G%
+ *	@(#)as.h	5.3 (Berkeley) %G%
  */
 
 #define	reg	register
@@ -18,7 +18,7 @@
 #define	NEXP		20	/* max number of expr. terms per instruction */
 #define	NARG		6	/* max number of args per instruction */
 #define	NHASH		1103	/* hash table is dynamically extended */
-#define	TNAMESIZE	32	/* maximum length of temporary file names */
+#define	TNAMESIZE	256	/* maximum length of temporary file names */
 #define	NLOC		4	/* number of location ctrs */
 /*
  *	Sizes for character buffers.
