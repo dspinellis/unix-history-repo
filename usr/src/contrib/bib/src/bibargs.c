@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.9	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.10	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -39,7 +39,7 @@ static char sccsid[] = "@(#)bibargs.c	2.9	%G%";
    int  ordcite      = true;    /* order multiple citations                  */
    char sortstr[80]  = "1";     /* sorting template                          */
    char trailstr[80] = "";      /* trailing characters to output             */
-   char pfile[120];             /* private file name                         */
+   char pfile[400];             /* private file name                         */
    int  personal = false;       /* personal file given ? (default no)        */
    char citetemplate[80] = "1"; /* citation template                         */
    struct wordinfo words[MAXDEFS];     /* defined words */
