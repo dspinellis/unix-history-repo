@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.8	8.2 (Berkeley) %G%
+.\"     @(#)chown.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 8
@@ -61,7 +61,7 @@ or
 .Fl L 
 option is set,
 .Nm chown
-on a symbolic link is a no-op.
+on a symbolic link always succeeds and has no effect.
 The
 .Fl H ,
 .Fl L
