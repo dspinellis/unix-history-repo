@@ -1,4 +1,4 @@
-/*	clock.c	1.1	85/07/22	*/
+/*	clock.c	1.2	86/01/05	*/
 
 #include "../h/param.h"
 #include "../h/time.h"

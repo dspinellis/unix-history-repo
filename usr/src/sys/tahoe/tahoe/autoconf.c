@@ -1,4 +1,4 @@
-/*	autoconf.c	1.1	85/07/21	*/
+/*	autoconf.c	1.2	86/01/05	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -9,19 +9,20 @@
  * and the drivers are initialized.
  *
  */
+#include "../tahoe/pte.h"
+#include "../tahoe/mem.h"
+#include "../tahoe/mtpr.h"
 
-#include "../machine/pte.h"
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/dk.h"
-#include "../h/vm.h"
-#include "../h/conf.h"
-#include "../h/dmap.h"
-#include "../machine/mem.h"
-#include "../machine/mtpr.h"
-#include "../vba/vbavar.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "buf.h"
+#include "dk.h"
+#include "vm.h"
+#include "conf.h"
+#include "dmap.h"
+
+#include "../tahoevba/vbavar.h"
 
 /*
  * The following several variables are related to
@@ -36,10 +37,10 @@ int	dkn;		/* number of iostat dk numbers assigned so far */
 configure()
 {
 	register int *ip;
-	extern char Sysbase[];
+	extern caddr_t Sysbase;
 
-	printf("vba%d at 0x%x\n", numvba, IOBASE);
-	vbafind((char *)vmem,(struct pte *)VMEMmap);
+	printf("vba%d at %x\n", numvba-1, IOBASE);
+	vbafind(numvba-1, (char *)vmem,(struct pte *)VMEMmap);
 	/*
 	 * Write protect the scb.  It is strange
 	 * that this code is here, but this is as soon
@@ -48,7 +49,7 @@ configure()
 	 * to which we will never return.
 	 */
 	ip = (int *)&Sysmap[2]; *ip &= ~PG_PROT; *ip |= PG_KR;
-	mtpr(Sysbase+0x800, TBIS);
+	mtpr(TBIS, Sysbase+2*NBPG);
 #if GENERIC
 	setconf();
 #endif
@@ -60,19 +61,17 @@ configure()
  * Make the controllers accessible at physical address phys
  * by mapping kernel ptes starting at pte.
  */
-
-ioaccess(pte,iobase,iosize)
+ioaccess(pte, iobase, n)
 	register struct pte *pte;
-	register caddr_t iobase;
-	register int	iosize;
+	caddr_t iobase;
+	register int n;
 {
-	register int i = iosize;	/* number of ptes to map */
 	register unsigned v = btop(iobase);
 	
 	do
 		*(int *)pte++ = PG_V|PG_KW|v++;
-	while (--i > 0);
-	mtpr(0, TBIA);
+	while (--n > 0);
+	mtpr(TBIA, 0);
 }
 
 
@@ -85,7 +84,8 @@ ioaccess(pte,iobase,iosize)
 
 int	iospace_mapped = 0;
 
-vbafind(vumem, memmap)
+vbafind(vban, vumem, memmap)
+	int vban;
 	char *vumem;
 	struct pte *memmap;
 {
@@ -100,10 +100,9 @@ vbafind(vumem, memmap)
 	 * Make the controllers accessible at physical address phys
 	 * by mapping kernel ptes starting at pte.
 	 */
-	ioaccess(memmap,IOBASE,IOSIZE);
+	ioaccess(memmap, IOBASE, (int)IOSIZE);
 	iospace_mapped = 1;
 #define	vbaddr(off)	(u_short *)((int)vumem + ((off) & 0x0fffff))
-
 
 	/*
 	 * Check each VERSAbus mass storage controller.
@@ -112,28 +111,28 @@ vbafind(vumem, memmap)
 	 * then go looking for slaves.
 	 */
 	for (um = vbminit; udp = um->um_driver; um++) {
-		if (um->um_vbanum != numvba && um->um_vbanum != '?')
+		if (um->um_vbanum != vban && um->um_vbanum != '?')
 			continue;
 		addr = (long)um->um_addr;
 		reg = vbaddr(addr);
 		i = (*udp->ud_probe)(reg);
 		if (i == 0)
 			continue;
-		printf("%s%d at csr 0x%x\n",
-		    udp->ud_mname, um->um_ctlr, addr);
+		printf("%s%d at vba%d csr %x\n",
+		    udp->ud_mname, um->um_ctlr, vban, addr);
 		um->um_alive = 1;
-		um->um_vbanum = numvba;
+		um->um_vbanum = vban;
 		um->um_addr = (caddr_t)reg;
 		udp->ud_minfo[um->um_ctlr] = um;
 		for (ui = vbdinit; ui->ui_driver; ui++) {
 			if (ui->ui_driver != udp || ui->ui_alive ||
 			    ui->ui_ctlr != um->um_ctlr && ui->ui_ctlr != '?' ||
-			    ui->ui_vbanum != numvba && ui->ui_vbanum != '?')
+			    ui->ui_vbanum != vban && ui->ui_vbanum != '?')
 				continue;
 			if ((*udp->ud_slave)(ui, reg)) {
 				ui->ui_alive = 1;
 				ui->ui_ctlr = um->um_ctlr;
-				ui->ui_vbanum = numvba;
+				ui->ui_vbanum = vban;
 				ui->ui_addr = (caddr_t)reg;
 				ui->ui_physaddr = (caddr_t)IOBASE + (addr&0x0fffff);
 				if (ui->ui_dk && dkn < DK_NDRIVE)
@@ -155,7 +154,7 @@ vbafind(vumem, memmap)
 	 * Now look for non-mass storage peripherals.
 	 */
 	for (ui = vbdinit; udp = ui->ui_driver; ui++) {
-		if (ui->ui_vbanum != numvba && ui->ui_vbanum != '?' ||
+		if (ui->ui_vbanum != vban && ui->ui_vbanum != '?' ||
 		    ui->ui_alive || ui->ui_slave != -1)
 			continue;
 		addr = (long)ui->ui_addr;
@@ -165,10 +164,10 @@ vbafind(vumem, memmap)
 		i = (*udp->ud_probe)(reg);
 		if (i == 0)
 			continue;
-		printf("%s%d at csr 0x%x\n",
-		    ui->ui_driver->ud_dname, ui->ui_unit, addr);
+		printf("%s%d at vba%d csr %x\n",
+		    ui->ui_driver->ud_dname, ui->ui_unit, vban, addr);
 		ui->ui_alive = 1;
-		ui->ui_vbanum = numvba;
+		ui->ui_vbanum = vban;
 		ui->ui_addr = (caddr_t)reg;
 		ui->ui_physaddr = (caddr_t)IOBASE + (addr&0x0fffff);
 		ui->ui_dk = -1;
@@ -179,10 +178,7 @@ vbafind(vumem, memmap)
 }
 
 
-#define	DMMIN	32
-#define	DMMAX	1024
-#define	DMTEXT	1024
-#define	MAXDUMP	(10*2048)
+#define	MAXDUMP	(8*1024)
 /*
  * Configure swap space and related parameters.
  */
@@ -202,12 +198,4 @@ swapconf()
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - MAXDUMP;
 	if (dumplo < 0)
 		dumplo = 0;
-	if (dmmin == 0)
-		dmmin = DMMIN;
-	if (dmmax == 0)
-		dmmax = DMMAX;
-	if (dmtext == 0)
-		dmtext = DMTEXT;
-	if (dmtext > dmmax)
-		dmtext = dmmax;
 }

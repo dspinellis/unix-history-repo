@@ -1,4 +1,4 @@
-/*	clock.h	4.5	81/02/23	*/
+/*	clock.h	1.2	86/01/05	*/
 
 #define	SECDAY		((unsigned)(24*60*60))		/* seconds per day */
 #define	SECYR		((unsigned)(365*SECDAY))	/* per common year */
@@ -9,4 +9,4 @@
 /*
  * Software clock is software interrupt level 8
  */
-#define	setsoftclock()	mtpr(0x8, SIRR)
+#define	setsoftclock()	mtpr(SIRR, 0x8)

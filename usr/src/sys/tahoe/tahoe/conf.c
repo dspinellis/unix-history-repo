@@ -1,12 +1,11 @@
-/*	conf.c	1.3	85/04/25	*/
-/*	conf.c	6.1	83/07/29	*/
+/*	conf.c	1.2	86/01/05	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "conf.h"
 
 int	nulldev();
 int	nodev();
@@ -81,7 +80,7 @@ struct bdevsw	bdevsw[] =
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
-struct tty cons[];
+extern	struct tty cons;
 
 #include "vx.h"
 #if NVX == 0
@@ -180,12 +179,14 @@ int	efsopen(),efsfgen(),efsread(),efswrite(),efsioctl(),efsreset();
 #define efsreset nodev
 #endif
 
+int	logopen(),logclose(),logread(),logioctl(),logselect();
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
-	cnioctl,	nulldev,	nulldev,	cons,
+	cnioctl,	nulldev,	nulldev,	&cons,
 	ttselect,	nodev,
 	vxopen,		vxclose,	vxread,		vxwrite,	/*1*/
 	vxioctl,	vxstop,		vxreset,	vx_tty,
@@ -229,9 +230,9 @@ struct cdevsw	cdevsw[] =
 	iiopen,		iiclose,	nulldev,	nulldev,	/*14*/
 	iiioctl,	nulldev,	nulldev,	0,
 	seltrue,	nodev,
-	nodev,		nodev,		nulldev,	nulldev,	/*15*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	logopen,	logclose,	logread,	nodev,		/*15*/
+	logioctl,	nodev,		nulldev,	0,
+	logselect,	nodev,
 	nodev,		nodev,		nulldev,	nulldev,	/*16*/
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,

@@ -1,9 +1,9 @@
+/*	pcb.h	1.2	86/01/05	*/
+
 /*
  * TAHOE process control block
  */
-
-struct pcb
-{
+struct pcb {
 	int	pcb_ksp; 	/* kernel stack pointer */
 	int	pcb_usp; 	/* user stack pointer */
 	int	pcb_r0; 
@@ -33,7 +33,7 @@ struct pcb
 	int	pcb_acl;	/* accumulator - low order longword */
 #define ACH	pcb_ach
 #define ACL	pcb_acl
-	int	pcb_hfs;	/* f.p. status register.	*/
+	int	pcb_hfs;	/* fp status register */
 /*
  * Software pcb (extension)
  */
@@ -46,21 +46,19 @@ struct pcb
 	int	pcb_szpt; 	/* number of pages of user page table */
 	int	pcb_cmap2;
 	int	*pcb_sswap;
-	short	pcb_ckey;	/* cache code key (proc index if NPROC<255) */
-	short	pcb_dkey;	/* cache data key */
-	int	pcb_sigc[4];
+	long	pcb_sigc[5];	/* sigcode actually 19 bytes */
 };
 
 extern long	*user_psl;
 
-#define	aston() \
-	{ \
-		u.u_pcb.pcb_psl |= PSL_SFE; \
-		if ((int)user_psl != 0) *user_psl |= PSL_SFE; \
-	}
+#define	aston() { \
+	u.u_pcb.pcb_psl |= PSL_SFE; \
+	if ((int)user_psl != 0) \
+		*user_psl |= PSL_SFE; \
+}
 
-#define	astoff() \
-	{ \
-		u.u_pcb.pcb_psl &= ~ PSL_SFE; \
-		if ((int)user_psl != 0) *user_psl &= ~PSL_SFE; \
-	}
+#define	astoff() { \
+	u.u_pcb.pcb_psl &= ~ PSL_SFE; \
+	if ((int)user_psl != 0) \
+		*user_psl &= ~PSL_SFE; \
+}

@@ -1,54 +1,56 @@
-/*	Locore.c	1.1	85/07/21	*/
+/*	Locore.c	1.2	86/01/05	*/
 
-#include "dz.h"
-#include "mba.h"
-#include "uba.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/trap.h"
+#include "../tahoe/psl.h"
+#include "../tahoe/pte.h"
+#include "../tahoe/cp.h"
+#include "../tahoe/mem.h"
+#include "../tahoemath/fp.h"
 
-#include "../machine/pte.h"
-
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/vm.h"
-#include "../h/tty.h"
-#include "../h/proc.h"
-#include "../h/buf.h"
-#include "../h/msgbuf.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
-
-#include "../vax/nexus.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/ubareg.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "vm.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "proc.h"
+#include "buf.h"
+#include "msgbuf.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "domain.h"
+#include "map.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
  */
 
 struct	scb scb;
-int	(*UNIvec[128])();
-#if NUBA > 1
-int	(*UNI1vec[128])();
-#endif
 struct	rpb rpb;
-int	intstack[3*128];
-
+int	dumpflag;
+int	intstack[3*NBPG];
 int	masterpaddr;		/* p_addr of current process on master cpu */
-
 struct	user u;
+int	icode[8];
+int	szicode = sizeof (icode);
+/*
+ * Variables declared for savecore, or
+ * implicitly, such as by config or the loader.
+ */
+char	version[] = "4.2 BSD UNIX ....";
+int	etext;
 
 doadump() { dumpsys(); }
 
-Xmba3int() { }
-Xmba2int() { }
-Xmba1int() { }
-Xmba0int() { }
-
 lowinit()
 {
+	caddr_t cp;
 	extern int dumpmag;
+	extern int rthashsize;
+	extern int arptab_size;
+	extern int dk_ndrive;
 	extern struct domain unixdomain;
 #ifdef PUP
 	extern struct domain pupdomain;
@@ -60,6 +62,12 @@ lowinit()
 #if NIMP > 0
 	extern struct domain impdomain;
 #endif
+#ifdef NS
+	extern struct domain nsdomain;
+#endif
+	extern int nport;
+	extern short *swsize;
+	extern int *swpf;
 
 	/* cpp messes these up for lint so put them here */
 	unixdomain.dom_next = domains;
@@ -76,7 +84,14 @@ lowinit()
 	impdomain.dom_next = domains;
 	domains = &impdomain;
 #endif
+#ifdef NS
+	nsdomain.dom_next = domains;
+	domains = &nsdomain;
+#endif
 	dumpmag = 0;			/* used only by savecore */
+	rthashsize = rthashsize;	/* used by netstat, etc. */
+	arptab_size = arptab_size;	/* used by arp command */
+	dk_ndrive = dk_ndrive;		/* used by vmstat, iostat, etc. */
 
 	/*
 	 * Pseudo-uses of globals.
@@ -87,63 +102,52 @@ lowinit()
 	scb = scb;
 	maxmem = physmem = freemem = 0;
 	u = u;
-	fixctlrmask();
 	main(0);
-	Xustray();
+	swsize = swsize;		/* XXX */
+	swpf = swpf;			/* XXX */
+	nport = nport;			/* XXX */
 
 	/*
 	 * Routines called from interrupt vectors.
 	 */
+	buserror((caddr_t)0);
 	panic("Machine check");
 	printf("Write timeout");
-	(*UNIvec[0])();
-#if NUBA > 1
-	(*UNI1vec[0])();
+	rawintr();
+#ifdef INET
+	ipintr();
 #endif
-	ubaerror(0, (struct uba_hd *)0, 0, 0, (struct uba_regs *)0);
+#ifdef NS
+	nsintr();
+#endif
 	cnrint(0);
 	cnxint(0);
-	consdin();
-	consdout();
-#if NDZ > 0
-	dzdma();
-#endif
-#if NMBA > 0
-	mbintr(0);
-#endif
 	hardclock((caddr_t)0, 0);
 	softclock((caddr_t)0, 0);
-	trap(0, 0, (unsigned)0, 0, 0);
-	syscall(0, 0, (unsigned)0, 0, 0);
-	ipintr();
-	rawintr();
+	fpemulate(0, 0, 0, 0, 0, 0, 0, 0, 0);
+	trap(0, 0, 0, 0, 0, 0, (unsigned)0, 0, 0);
+	syscall(0, 0, 0, 0, 0, 0, (unsigned)0, 0, 0);
 
 	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
 		return;		/* use value */
-	machinecheck((caddr_t)0);
-	memerr();
+	if (zmemall((int (*)())0, 0) == (caddr_t)0)
+		return;		/* use value */
 	boothowto = 0;
+/* the following are not currently used but will soon */
+	if (rmget((struct map *)0, 0, 0) == 0)
+		return;
+	cp = calloc(0); cfreemem(cp, 0);
+/* end not currently used */
+	dumpflag = 0; dumpflag = dumpflag;
+#if !defined(GPROF)
+	cp = (caddr_t)&etext;
+#endif
 }
 
-consdin() { }
-consdout() { }
-#if NDZ > 0
-dzdma() { dzxint((struct tty *)0); }
-#endif
-
-int	catcher[256];
-int	cold = 1;
-
-Xustray() { }
-
 struct	pte Sysmap[6*NPTEPG];
-char	Sysbase[6*NPTEPG*NBPG];
-int	umbabeg;
-struct	pte Nexmap[16][16];
-struct	nexus nexus[MAXNNEXUS];
-struct	pte UMEMmap[MAXNUBA][512];
-char	umem[MAXNUBA][512*NBPG];
-int	umbaend;
+caddr_t	Sysbase;
+struct	pte VMEMmap[1];
+int	vmembeg, vmemend;
 struct	pte Usrptmap[USRPTSIZE];
 struct	pte usrpt[USRPTSIZE*NPTEPG];
 struct	pte Forkmap[UPAGES];
@@ -158,37 +162,75 @@ struct	pte Pushmap[UPAGES];
 struct	user pushutl;
 struct	pte Vfmap[UPAGES];
 struct	user vfutl;
-struct	pte CMAP1;
-char	CADDR1[NBPG];
-struct	pte CMAP2;
-char	CADDR2[NBPG];
+#include "fsd.h"
+#if NVD > 0
+struct	pte VD0map[MAXBPTE+1];
+char	vd0utl[1];
+#endif
+#if NVD > 1
+struct	pte VD1map[MAXBPTE+1];
+char	vd1utl[1];
+#endif
+#if NVD > 2
+struct	pte VD2map[MAXBPTE+1];
+char	vd2utl[1];
+#endif
+#if NVD > 3
+struct	pte VD3map[MAXBPTE+1];
+char	vd3utl[1];
+#endif
+#include "cy.h"
+#if NCY > 0
+struct	pte CY0map[TBUFSIZ+1];
+char	cy0utl[1];
+#endif
+#if NCY > 1
+struct	pte CY1map[TBUFSIZ+1];
+char	cy1utl[1];
+#endif
+#include "ace.h"
+#if NACE > 0
+struct	pte ACE0map[1], ACE1map[1];
+char	ace0utl[1], ace1utl[1];
+#endif
+struct	pte CMAP1[1], CMAP2[1];
+caddr_t	CADDR1, CADDR2;
 struct	pte mmap[1];
-char	vmmap[NBPG];
+char	vmmap[1];
+struct	pte msgbufmap[3*NBPG];
+struct	msgbuf msgbuf;
+struct	pte camap[16];
+int	cabase, calimit;
 struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
-struct	pte msgbufmap[CLSIZE];
-struct	msgbuf msgbuf;
-struct	pte camap[32];
-int	cabase;
-#ifdef unneeded
-char	caspace[32*NBPG];
-#endif
-int	calimit;
 
 /*ARGSUSED*/
 badaddr(addr, len) caddr_t addr; int len; { return (0); }
-
+#if NCY > 0
 /*ARGSUSED*/
-copyin(udaddr, kaddr, n) caddr_t udaddr, kaddr; unsigned n; { return (0); }
-
+badcyaddr(addr) caddr_t addr; { return (0); }
+#endif
 /*ARGSUSED*/
-copyout(kaddr, udaddr, n) caddr_t kaddr, udaddr; unsigned n; { return (0); }
-
+ovbcopy(from, to, len) caddr_t from, to; unsigned len; { }
+copyinstr(udaddr, kaddr, maxlength, lencopied)
+    caddr_t udaddr, kaddr; u_int maxlength, *lencopied;
+{ *kaddr = *udaddr; *lencopied = maxlength; return (0); }
+copyoutstr(kaddr, udaddr, maxlength, lencopied)
+    caddr_t kaddr, udaddr; u_int maxlength, *lencopied;
+{ *kaddr = *udaddr; *lencopied = maxlength; return (0); }
+copystr(kfaddr, kdaddr, maxlength, lencopied)
+    caddr_t kfaddr, kdaddr; u_int maxlength, *lencopied;
+{ *kdaddr = *kfaddr; *lencopied = maxlength; return (0); }
 /*ARGSUSED*/
-setjmp(lp) label_t *lp; { return (0); }
+copyin(udaddr, kaddr, n) caddr_t udaddr, kaddr; u_int n; { return (0); }
+/*ARGSUSED*/
+copyout(kaddr, udaddr, n) caddr_t kaddr, udaddr; u_int n; { return (0); }
 
 /*ARGSUSED*/
 longjmp(lp) label_t *lp; { /*NOTREACHED*/ }
+
+/*ARGSUSED*/
+savectx(lp) label_t *lp; { return (0); }
 
 /*ARGSUSED*/
 setrq(p) struct proc *p; { }
@@ -203,32 +245,20 @@ resume(pcbpf) unsigned pcbpf; { }
 
 /*ARGSUSED*/
 fubyte(base) caddr_t base; { return (0); }
-
 /*ARGSUSED*/
 subyte(base, i) caddr_t base; { return (0); }
-
-/*ARGSUSED*/
-suibyte(base, i) caddr_t base; { return (0); }
-
 /*ARGSUSED*/
 fuword(base) caddr_t base; { return (0); }
-
-/*ARGSUSED*/
-fuiword(base) caddr_t base; { return (0); }
-
 /*ARGSUSED*/
 suword(base, i) caddr_t base; { return (0); }
 
 /*ARGSUSED*/
-suiword(base, i) caddr_t base; { return (0); }
+copyseg(udaddr, pf)
+    caddr_t udaddr; unsigned pf;
+{ CMAP1[0] = CMAP1[0]; CADDR1[0] = CADDR1[0]; }
 
 /*ARGSUSED*/
-copyseg(udaddr, pf) caddr_t udaddr; unsigned pf; {
-    CMAP1 = CMAP1; CADDR1[0] = CADDR1[0];
-}
-
-/*ARGSUSED*/
-clearseg(pf) unsigned pf; { CMAP2 = CMAP2; CADDR2[0] = CADDR2[0]; }
+clearseg(pf) unsigned pf; { CMAP2[0] = CMAP2[0]; CADDR2[0] = CADDR2[0]; }
 
 /*ARGSUSED*/
 useracc(udaddr, bcnt, rw) caddr_t udaddr; unsigned bcnt; { return (0); }
@@ -236,50 +266,62 @@ useracc(udaddr, bcnt, rw) caddr_t udaddr; unsigned bcnt; { return (0); }
 /*ARGSUSED*/
 kernacc(addr, bcnt, rw) caddr_t addr; unsigned bcnt; { return (0); }
 
-/*
- * Routines handled by asm.sed script.
- */
-
-/*VARARGS1*/
 /*ARGSUSED*/
-mtpr(reg, value) int reg, value; { }
-
-/*ARGSUSED*/
-mfpr(reg) int reg; { return (0); }
-
-
-spl0() { }
-spl4() { return (0); }
-spl5() { return (0); }
-spl6() { return (0); }
-spl7() { return (0); }
-
-/*ARGSUSED*/
-splx(s) int s; { }
-
-/*ARGSUSED*/
-bcopy(from, to, count) caddr_t from, to; unsigned count; { ; }
-
-/*ARGSUSED*/
-bzero(base, count) caddr_t base; unsigned count; { ; }
-
-/*ARGSUSED*/
-bcmp(s1, s2, count) caddr_t s1, s2; unsigned count; { return (0); }
+addupc(pc, prof, counts) int pc; struct uprof *prof; int counts; { }
 
 /*ARGSUSED*/
 scanc(size, cp, table, mask)
-unsigned size; caddr_t cp, table; int mask; { return (0); }
+    unsigned size; char *cp, table[]; int mask;
+{ return (0); }
 
 /*ARGSUSED*/
-ffs(i) { return (0); }
+skpc(mask, size, cp) int mask; char *cp; unsigned size; { return (0); }
 
-ntohs(s) u_short s; { return ((int)s); }
-
-htons(s) u_short s; { return ((int)s); }
+#ifdef notdef
+/*ARGSUSED*/
+locc(mask, size, cp) int mask; char *cp; unsigned size; { return (0); }
+#endif
 
 /*
- * Variables declared for savecore, or
- * implicitly, such as by config or the loader.
+ * Routines expanded by inline.
  */
-char	version[] = "4.2 BSD UNIX ....";
-char	etext;
+#ifdef notdef
+fuibyte(base) caddr_t base; { return (fubyte(base)); }
+#endif
+fuiword(base) caddr_t base; { return (fuword(base)); }
+suibyte(base, i) caddr_t base; { return (subyte(base, i)); }
+suiword(base, i) caddr_t base; { return (suword(base, i)); }
+
+/*ARGSUSED*/
+setjmp(lp) label_t *lp; { return (0); }
+
+/*ARGSUSED*/
+_insque(p, q) caddr_t p, q; { }
+/*ARGSUSED*/
+_remque(p) caddr_t p; { }
+
+/*ARGSUSED*/
+bcopy(from, to, len) caddr_t from, to; unsigned len; { }
+/*ARGSUSED*/
+bzero(base, count) caddr_t base; unsigned count; { }
+/*ARGSUSED*/
+blkclr(base, count) caddr_t base; unsigned count; { }
+
+/*ARGSUSED*/
+/*VARARGS1*/
+mtpr(reg, v) int reg; { }
+/*ARGSUSED*/
+mfpr(reg) int reg; { return (0); }
+
+/*ARGSUSED*/
+_movow(dst, v) u_short *dst, v; { }
+/*ARGSUSED*/
+_movob(dst, v) u_char *dst, v; { }
+
+/*ARGSUSED*/
+ffs(v) long v; { return (0); }
+
+imin(a, b) int a, b; { return (a < b ? a : b); }
+imax(a, b) int a, b; { return (a > b ? a : b); }
+unsigned min(a, b) u_int a, b; { return (a < b ? a : b); }
+unsigned max(a, b) u_int a, b; { return (a > b ? a : b); }

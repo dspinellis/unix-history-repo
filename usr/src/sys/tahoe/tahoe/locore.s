@@ -1,4 +1,4 @@
-/*	locore.s	1.7	85/05/15	*/
+/*	locore.s	1.2	86/01/05	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -6,17 +6,16 @@
 #include "../tahoe/pte.h"
 #include "../tahoe/cp.h"
 #include "../tahoe/mem.h"
-#include "../tahoe/fp.h"
+#include "../tahoe/SYS.h"
+#include "../tahoemath/fp.h"
 
-#include "../h/errno.h"
+#include "errno.h"
+#include "syscall.h"
+#include "cmap.h"
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	BERVEC,0x80	# offset into scb of the bus error vector 
 	.set	RESTVEC,0x8	# offset into scb of the restart vector 
-	.set	MAXPHYSMEM,8*1024*1024-1 # max physical memory 
-					# while we work on CMD/32M !
-					# look at vmsched.c to see why.
-	.set	MEMUNIT,64*1024 # minimum memory increment
 
 	.set	NISP,3		# number of interrupt stack pages
 	.set	SYSTEM,0xC0000000 # virtual address of system start
@@ -34,13 +33,13 @@
 	cmpl	_index,_limit; \
 	bgeq	_displ
 
-#define	MOVC3(_len,_srcaddr,_dstaddr) \
+#define	MOVC3(_srcaddr,_dstaddr,_len) \
 	movl	_srcaddr,r0; \
 	movl	_dstaddr,r1; \
 	movl	_len,r2; \
 	movblk
 
-/* Keep address of psl if coming from user mode */
+/* keep address of psl if coming from user mode */
 #define CHECK_SFE(_delta) \
 	bitl	$PSL_CURMOD,_delta(sp); \
 	jeql	1f; \
@@ -58,58 +57,107 @@
  * Takes a core-dump and then halts.
  */ 
 	.globl	_rsstk
-
-_rsstk: 	.space	1024-8
 	.globl	pwfl_stk	
-pwfl_stk:	.space  4
-dumpflag:	.space	4
+_rsstk:
+	.space	1024-8
+pwfl_stk:
+	.space	4
+dumpflag:
+	.space	4
 
 	.globl	_intstack
 _intstack:
 	.space	NISP*NBPG
 eintstack:
 
+/*
+ * Power failure storage block and
+ * macros for saving and restoring.
+ */
+#define	POWERFAIL(id,longs) \
+	.globl	pwfl_/**/id \
+pwfl_/**/id: .space longs*4
 	.data
-	.globl	pwfl_r0
-pwfl_r0:	.space	14*4		# Enough for r0 - r13
-	.globl	pwfl_sp
-pwfl_sp:	.long	0x12345678	# r14
-	.globl	pwfl_SCBB
-pwfl_SCBB:	.long	0x12345678
-	.globl	pwfl_SBR
-pwfl_SBR:	.long	0x12345678
-	.globl	pwfl_SLR
-pwfl_SLR:	.long	0x12345678
-	.globl	pwfl_P0BR
-pwfl_P0BR:	.long	0x12345678
-	.globl	pwfl_P0LR
-pwfl_P0LR:	.long	0x12345678
-	.globl	pwfl_P1BR
-pwfl_P1BR:	.long	0x12345678
-	.globl	pwfl_P1LR
-pwfl_P1LR:	.long	0x12345678
-	.globl	pwfl_P2BR
-pwfl_P2BR:	.long	0x12345678
-	.globl	pwfl_P2LR
-pwfl_P2LR:	.long	0x12345678
-	.globl	pwfl_IPL
-pwfl_IPL:	.long	0x12345678
-	.globl	pwfl_DCK
-pwfl_DCK:	.long	0x12345678
-	.globl	pwfl_CCK
-pwfl_CCK:	.long	0x12345678
-	.globl	pwfl_PCBB
-pwfl_PCBB:	.long	0x12345678
-	.globl	pwfl_ISP
-pwfl_ISP:	.long	0x12345678
-	.globl	pwfl_KSP
-pwfl_KSP:	.long	0x12345678
-	.globl	pwfl_USP
-pwfl_USP:	.long	0x12345678
-	.globl	pwfl_MME
-pwfl_MME:	.long	0x12345678
-	.globl	pwfl_PSL
-pwfl_PSL:	.long	0x12345678
+	POWERFAIL(r0,	14)		# r0-r13
+	POWERFAIL(sp,	1)		# r14
+	POWERFAIL(SCBB,	1)		# system control block base
+	POWERFAIL(SBR,	1)		# system pte base
+	POWERFAIL(SLR,	1)		# system pte length
+	POWERFAIL(P0BR,	1)		# p0 pte base
+	POWERFAIL(P0LR,	1)		# p0 pte length
+	POWERFAIL(P1BR,	1)		# p1 pte base
+	POWERFAIL(P1LR,	1)		# p1 pte length
+	POWERFAIL(P2BR,	1)		# p2 pte base
+	POWERFAIL(P2LR,	1)		# p2 pte length
+	POWERFAIL(IPL,	1)		# interrupt priority level
+	POWERFAIL(DCK,	1)		# data cache key
+	POWERFAIL(CCK,	1)		# code cache key
+	POWERFAIL(PCBB,	1)		# process control block base
+	POWERFAIL(ISP,	1)		# interrupt stack pointer
+	POWERFAIL(KSP,	1)		# kernel mode stack pointer
+	POWERFAIL(USP,	1)		# user mode stack pointer
+	POWERFAIL(MME,	1)		# memory management enable
+	POWERFAIL(PSL,	1)		# processor status longword
+
+/*
+ * Save current state in power fail storage block.
+ */
+#define	SAVEpwfl() \
+	movpsl	pwfl_PSL	# Keeps all flags, etc. \
+	storer	$0x3fff,pwfl_r0	# Saves r0-r13 \
+	moval	0(sp),pwfl_sp	# Saves sp (=r14) \
+	mfpr	$SBR,pwfl_SBR	# Save all re_loadable registers \
+	mfpr	$SLR,pwfl_SLR \
+	mfpr	$P0BR,pwfl_P0BR \
+	mfpr	$P0LR,pwfl_P0LR \
+	mfpr	$P1BR,pwfl_P1BR \
+	mfpr	$P1LR,pwfl_P1LR \
+	mfpr	$P2BR,pwfl_P2BR \
+	mfpr	$P2LR,pwfl_P2LR \
+	mfpr	$IPL,pwfl_IPL \
+	mfpr	$MME,pwfl_MME \
+	mfpr	$DCK,pwfl_DCK \
+	mfpr	$CCK,pwfl_CCK \
+	mfpr	$PCBB,pwfl_PCBB \
+	mfpr	$ISP,pwfl_ISP \
+	mfpr	$SCBB,pwfl_SCBB \
+	mfpr	$KSP,pwfl_KSP \
+	mfpr	$USP,pwfl_USP
+
+/*
+ * Restore state saved in power fail block and
+ * jmp to location specified after (possibly)
+ * enabling memory management.
+ */
+#define	RESTOREpwfl(loc) \
+	loadr	$0x3fff,pwfl_r0	# Restore r0-r13 \
+	movl	pwfl_sp,sp	# Restore sp (=r14) \
+	mtpr	pwfl_SCBB,$SCBB \
+	mtpr	pwfl_SBR,$SBR	# Restore all re_loadable registers \
+	mtpr	pwfl_SLR,$SLR \
+	mtpr	pwfl_P0BR,$P0BR \
+	mtpr	pwfl_P0LR,$P0LR \
+	mtpr	pwfl_P1BR,$P1BR \
+	mtpr	pwfl_P1LR,$P1LR \
+	mtpr	pwfl_P2BR,$P2BR \
+	mtpr	pwfl_P2LR,$P2LR \
+	mtpr	pwfl_IPL,$IPL \
+	mtpr	pwfl_DCK,$DCK \
+	mtpr	pwfl_CCK,$CCK \
+	mtpr	pwfl_PCBB,$PCBB \
+	mtpr	pwfl_ISP,$ISP \
+	mtpr	pwfl_KSP,$KSP \
+	mtpr	pwfl_USP,$USP \
+\
+	bicpsw	$0xff		# Restore PSW. \
+	bispsw	pwfl_PSL+2	# Set original bits back (just in case..) \
+# now go to mapped mode \
+# Have to change PC to system addresses \
+	mtpr	$1,$PACC	# Thoroughly clean up caches. \
+	mtpr	$1,$PADC \
+	mtpr	$1,$TBIA \
+	mtpr	pwfl_MME,$MME  	# Restore MME. Last thing to be done. \
+	jmp 	loc
 
 /*
  * Do a dump.
@@ -120,42 +168,13 @@ pwfl_PSL:	.long	0x12345678
 	.text
 	.globl	_Xdoadump
 	.globl	_doadump
-_Xdoadump:			# CP brings Tahoe here on power recovery
-	loadr	$0x3fff,pwfl_r0	# Restore r0 - r13
-	movl	pwfl_sp,sp	# Restore sp ( = r14 )
-	mtpr	pwfl_SCBB,$SCBB
-	mtpr	pwfl_SBR,$SBR	# Restore all re_loadable registers
-	mtpr	pwfl_SLR,$SLR
-	mtpr	pwfl_P0BR,$P0BR
-	mtpr	pwfl_P0LR,$P0LR
-	mtpr	pwfl_P1BR,$P1BR
-	mtpr	pwfl_P1LR,$P1LR
-	mtpr	pwfl_P2BR,$P2BR
-	mtpr	pwfl_P2LR,$P2LR
-	mtpr	pwfl_IPL,$IPL
-	mtpr	pwfl_DCK,$DCK
-	mtpr	pwfl_CCK,$CCK
-	mtpr	pwfl_PCBB,$PCBB
-	mtpr	pwfl_ISP,$ISP
-	mtpr	pwfl_KSP,$KSP
-	mtpr	pwfl_USP,$USP
-
-	bicpsw	$0xff		# Restore PSW.
-	bispsw	pwfl_PSL+2	# Set original bits back (just in case..)
-/* now go to mapped mode */
-/* Have to change PC to system addresses */
-	mtpr	$1,$PACC	# Thoroughly clean up caches.
-	mtpr	$1,$PADC
-	mtpr	$1,$TBIA
-	mtpr	pwfl_MME,$MME  	# Restore MME. Last thing to be done.
-	jmp 	*$0f
+_Xdoadump:					# CP comes here after power fail
+	RESTOREpwfl(*0f)			# restore state
 _doadump:
 	.word 0
-#define	_rsstkmap	_Sysmap+12			
-			# Tahoe storage, scb, rsstk, interrupt stack
-0:
-	mtpr	$HIGH,$IPL
-	andl2	$0!PG_PROT,_rsstkmap
+0:	mtpr	$HIGH,$IPL
+#define	_rsstkmap _Sysmap+12	# powerfail storage, scb, rsstk, int stack
+	andl2	$~PG_PROT,_rsstkmap
 	orl2	$PG_KW,_rsstkmap		# Make dump stack r/w
 	tstl	dumpflag			# dump only once!
 	bneq	1f
@@ -170,109 +189,131 @@ _doadump:
  * Interrupt vector routines
  */ 
 	.globl	_waittime
-
 #define	SCBVEC(name) \
 	.align 2; \
 	.globl _X/**/name; \
 _X/**/name
-#define	PANIC(msg)	clrl _waittime; pushab 1f; \
-			callf $8,_panic; 1: .asciz msg
-#define	PRINTF(n,msg)	pushab 1f; callf $(n+2)*4,_printf; MSG(msg)
-#define	MSG(msg)	.data; 1: .asciz msg; .text
+#define	PANIC(msg) \
+	clrl _waittime; pushab 1f; callf $8,_panic; 1: .asciz msg
+#define	PRINTF(n,msg) \
+	pushab 1f; callf $(n+2)*4,_printf; MSG(msg)
+#define	MSG(msg) .data; 1: .asciz msg; .text
+/*
+ * r0-r2 are saved across all faults and interrupts.
+ * Routines below and those hidden in ubglue.s (device
+ * interrupts) invoke the PUSHR/POPR macros to execute
+ * this.  Also, certain stack frame offset calculations
+ * (such as in hardclock) understand this, using the
+ * REGSPC definition (and FPSPC defined below).
+ * Finally, many routines, including those expanded
+ * inline depend on this!  Should probably save all
+ * live C compiler temp registers to eliminate potentially
+ * grievous problems caused by incorrect register save masks.
+ */
+#define	REGSPC	(3*4)
+#define	PUSHR	pushl r0; pushl r1; pushl r2;
+#define	POPR	movl (sp)+,r2; movl (sp)+,r1; movl (sp)+,r0;
 
-			# these registers are not restored by the C-compiler.
-#define	PUSHR		pushl r0; pushl r1;
-#define	POPR		movl (sp)+, r1; movl (sp)+, r0;
-			# mask for error code on stack.
+/*
+ * Floating point state is saved across faults and
+ * interrupts.  The state occupies 4 longwords on
+ * the stack:
+ *	precision indicator (single = 0/double = 1)
+ *	double representation of accumulator
+ *	save accumulator status flag (pcb_savacc)
+ */
+#define	FPSPC	(4*4)
 
-#define SAVE_FPSTAT(_delta)	bitl	$PSL_DBL,_delta(sp); \
-				beql	1f; \
-				pushl	$1; \
-				pushd; \
-				jmp	2f; \
-			1:	pushl	$0; \
-				pushl	$0; \
-				stf	-(sp); \
-			2:	tstl	_u+PCB_SAVACC; \
-				bneq	3f; \
-				moval	0(sp),_u+PCB_SAVACC; \
-				orl2	$2,8(sp);\
-			3:	pushl	$0;
+#define SAVE_FPSTAT(_delta) \
+	bitl	$PSL_DBL,_delta(sp); \
+	beql	1f; \
+	pushl	$1; \
+	pushd; \
+	jmp	2f; \
+1:	pushl	$0; \
+	pushl	$0; \
+	stf	-(sp); \
+2:	tstl	_u+PCB_SAVACC; \
+	bneq	3f; \
+	moval	0(sp),_u+PCB_SAVACC; \
+	orl2	$2,8(sp);\
+3:	pushl	$0;
 
-#define REST_FPSTAT		tstl	(sp)+; \
-				bitl	$2,8(sp);\
-				beql	1f;\
-				movl	$0,_u+PCB_SAVACC; \
-			1:	bitl	$1,8(sp); \
-				beql	2f; \
-				ldd	(sp); \
-				jmp	3f; \
-			2:	ldf	(sp); \
-			3:	moval	12(sp),sp;
+#define REST_FPSTAT \
+	tstl	(sp)+; \
+	bitl	$2,8(sp);\
+	beql	1f;\
+	movl	$0,_u+PCB_SAVACC; \
+1:	bitl	$1,8(sp); \
+	beql	2f; \
+	ldd	(sp); \
+	jmp	3f; \
+2:	ldf	(sp); \
+3:	moval	12(sp),sp;
 
-#define REST_ACC		tstl	_u+PCB_SAVACC; \
-				beql	2f; \
-				movl	_u+PCB_SAVACC,r1; \
-				andl3	$(EXPMASK|SIGNBIT),(r1),-(sp); \
-				cmpl	$0x80000000,(sp)+; \
-				bneq	3f; \
-				clrl	(r1); \
-			3:	bitl	$1,8(r1); \
-				beql	1f; \
-				ldd	(r1); \
-				jmp	2f; \
-			1:	ldf	(r1); \
-			2:	;
+#define REST_ACC \
+	tstl	_u+PCB_SAVACC; \
+	beql	2f; \
+	movl	_u+PCB_SAVACC,r1; \
+	andl3	$(EXPMASK|SIGNBIT),(r1),-(sp); \
+	cmpl	$0x80000000,(sp)+; \
+	bneq	3f; \
+	clrl	(r1); \
+3:	bitl	$1,8(r1); \
+	beql	1f; \
+	ldd	(r1); \
+	jmp	2f; \
+1:	ldf	(r1); \
+2:	;
 
-#define PUSHBPAR	pushab	6*4(sp) /* Push address of buserr paramters */
-#define BPAR1		28		/* Offset to first hardware parameter */
+	.data
+nofault: .space	4			# bus error non-local goto label
 
+	.text
 SCBVEC(buserr):
 	CHECK_SFE(12)
-	SAVE_FPSTAT(12);
-	PUSHR
-	andl3	BPAR1(sp),$ERRCD,r0
-	jeql	go_on
-	cmpl	r0,$APE
+	SAVE_FPSTAT(12)
+	pushl	r0			# must save
+	andl3	24(sp),$ERRCD,r0	# grab pushed MER value
+	cmpl	r0,$APE			# address parity error?
 	jneq	1f
-	halt		# Address parity error !!!
-1:	cmpl	r0,$VBE
-	jneq	go_on
-	halt		# Versabus error !!!
-go_on:
-	PUSHBPAR	# Pointer to parameters
+	halt	
+1:	cmpl	r0,$VBE			# versabus error?
+	jneq	2f
+	halt
+2:
+	movl	(sp)+,r0		# restore r0 and...
+	bitl	$PSL_CURMOD,4*4+3*4(sp)	# check if happened in user mode?
+	jeql	3f			# yes, then shift stack up for trap...
+	movl	12(sp),16(sp)		# sorry, no space for which-buss...
+	movl	8(sp),12(sp)
+	movl	4(sp),8(sp)
+	movl	0(sp),4(sp)
+	movl	$T_BUSERR,0(sp)		# push trap type code and...
+	jbr	alltraps		# ...merge with all other traps
+3:					# kernel mode, check to see if...
+	tstl	nofault			# ...doing peek/poke?
+	jeql	4f			# nofault set? if so, jump to it...
+	movl	nofault,4*4+2*4(sp)	# ...setup for non-local goto
+	clrl	nofault
+	jbr	5f
+4:
+	PUSHR
+	pushab	7*4(sp)			# address of bus error parameters
 	callf	$8,_buserror
 	POPR
-	REST_FPSTAT;
-	movab	8(sp),sp	# Remove hardware parameters
+5:
+	REST_FPSTAT
+	movab	8(sp),sp		# remove bus error parameters
 	rei
 
-SCBVEC(powfail):		# We should be on interrupt stack now.
-	movpsl	pwfl_PSL	# Keeps all flags, etc.
-	storer	$0x3fff,pwfl_r0	# Saves r0 - r13
-	moval	0(sp),pwfl_sp	# Saves sp ( = r14 )
-	mfpr	$SBR,pwfl_SBR	# Save all re_loadable registers
-	mfpr	$SLR,pwfl_SLR
-	mfpr	$P0BR,pwfl_P0BR
-	mfpr	$P0LR,pwfl_P0LR
-	mfpr	$P1BR,pwfl_P1BR
-	mfpr	$P1LR,pwfl_P1LR
-	mfpr	$P2BR,pwfl_P2BR
-	mfpr	$P2LR,pwfl_P2LR
-	mfpr	$IPL,pwfl_IPL
-	mfpr	$MME,pwfl_MME  
-	mfpr	$DCK,pwfl_DCK
-	mfpr	$CCK,pwfl_CCK
-	mfpr	$PCBB,pwfl_PCBB
-	mfpr	$ISP,pwfl_ISP
-	mfpr	$SCBB,pwfl_SCBB
-	mfpr	$KSP,pwfl_KSP
-	mfpr	$USP,pwfl_USP
+SCBVEC(powfail):			# We should be on interrupt stack now.
+	SAVEpwfl()			# save machine state
 	moval	_Xdoadump-SYSTEM,_scb+RESTVEC
 	halt
 
 SCBVEC(stray):
-	PUSHR; PRINTF(0, "******* Undefined interrupt *******\n"); POPR;
+	PUSHR; PRINTF(0, "stray interrupt\n"); POPR;
 	rei
 
 #include "../net/netisr.h"
@@ -281,21 +322,20 @@ SCBVEC(netintr):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4)
 	PUSHR
-
 	bbc	$NETISR_RAW,_netisr,1f
-	andl2	$(0!(1<<NETISR_RAW)),_netisr	
+	andl2	$~(1<<NETISR_RAW),_netisr	
 	callf	$4,_rawintr	
 1:
 #ifdef INET
 #include "../netinet/in_systm.h"
 	bbc	$NETISR_IP,_netisr,1f	
-	andl2	$(0!(1<<NETISR_IP)),_netisr
+	andl2	$~(1<<NETISR_IP),_netisr
 	callf	$4,_ipintr	
 1:
 #endif
 #ifdef NS
 	bbc	$NETISR_NS,_netisr,1f	
-	andl2	$(0!(1<<NETISR_NS)),_netisr
+	andl2	$~(1<<NETISR_NS),_netisr
 	callf	$4,_nsintr	
 1:
 #endif
@@ -319,9 +359,7 @@ SCBVEC(soft3):
 SCBVEC(soft2):
 SCBVEC(soft1):
 #endif
-	PUSHR
-	PRINTF(0, "******* Undefined software interrupt *******\n")
-	POPR;
+	PUSHR; PRINTF(0, "stray software interrupt\n"); POPR;
 	rei
 
 #ifdef SIMIO
@@ -329,51 +367,55 @@ SCBVEC(soft2):
 #endif
 SCBVEC(cnrint):
 	CHECK_SFE(4)
-	SAVE_FPSTAT(4);PUSHR; 
-	pushl $CPCONS; callf $8,_cnrint; POPR; incl _cnt+V_INTR;
-	REST_FPSTAT; rei
+	SAVE_FPSTAT(4); PUSHR; 
+	pushl $CPCONS; callf $8,_cnrint; incl _cnt+V_INTR
+	POPR; REST_FPSTAT;
+	rei
 #ifdef SIMIO
 SCBVEC(soft3):
 #endif
 SCBVEC(cnxint):
 	CHECK_SFE(4)
-	SAVE_FPSTAT(4);PUSHR; 
-	pushl $CPCONS; callf $8,_cnxint; POPR; REST_FPSTAT;
-	incl _cnt+V_INTR; rei
+	SAVE_FPSTAT(4); PUSHR; 
+	pushl $CPCONS; callf $8,_cnxint; incl _cnt+V_INTR
+	POPR; REST_FPSTAT;
+	rei
 SCBVEC(rmtrint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPREMOT; callf $8,_cnrint; POPR; REST_FPSTAT;
-	incl _cnt+V_INTR; rei
+	pushl $CPREMOT; callf $8,_cnrint; incl _cnt+V_INTR
+	POPR; REST_FPSTAT;
+	rei
 SCBVEC(rmtxint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPREMOT; callf $8,_cnxint; POPR; REST_FPSTAT;
-	incl _cnt+V_INTR; rei
+	pushl $CPREMOT; callf $8,_cnxint; incl _cnt+V_INTR
+	POPR; REST_FPSTAT;
+	rei
 #ifdef SIMIO
 SCBVEC(soft9):
 #endif
 
-#define PUSHPCPSL	pushl 5*4+2*4(sp); pushl 5*4+2*4(sp);
+#define PUSHPCPSL	pushl 4+FPSPC+REGSPC(sp); pushl 4+FPSPC+REGSPC(sp);
 
 SCBVEC(hardclock):
+	tstl	_clk_enable
+	bneq	1f
+	rei
+1:
 	CHECK_SFE(4)
-	SAVE_FPSTAT(4)
-	PUSHR
-	PUSHPCPSL				# push pc and psl
-	callf $12,_hardclock			# hardclock(pc,psl)
-	POPR;
-	REST_FPSTAT
+	SAVE_FPSTAT(4); PUSHR
+	PUSHPCPSL			# push pc and psl
+	callf	$12,_hardclock		# hardclock(pc,psl)
 	incl	_cnt+V_INTR		## temp so not to break vmstat -= HZ
+	POPR; REST_FPSTAT
 	rei
 SCBVEC(softclock):
 	CHECK_SFE(4)
-	SAVE_FPSTAT(4)
-	PUSHR
+	SAVE_FPSTAT(4); PUSHR;
 	PUSHPCPSL				# push pc and psl
-	callf $12,_softclock			# softclock(pc,psl)
-	POPR; 
-	REST_FPSTAT
+	callf	$12,_softclock			# softclock(pc,psl)
+	POPR; REST_FPSTAT
 	rei
 
 /*
@@ -385,15 +427,13 @@ SCBVEC(softclock):
  * Ast delivery (profiling and/or reschedule)
  */
 /*
- * When we want to reschedule we will force a memory fault by setting the m.s.b
- *  of P0LR. Then , on memory fault if m.s.b of P0LR is on we will clear it and
- *  TRAP(astflt).
- *
+ * When we want to reschedule we will force a
+ * memory fault by setting the ASTBIT of P0LR.
+ * Then, on memory fault if the ASTBIT of the
+ * p0lr is set we will clear it and TRAP(astflt).
  */
- 
-					# if this bit is on it is an ast.
-#define 	ASTBIT	0x00100000  	
-#define		P0MASK	0xc0000000
+#define ASTBIT	0x00100000  	
+#define	P0MASK	0xc0000000
 
 SCBVEC(kspnotval):
 	CHECK_SFE(4)
@@ -445,8 +485,7 @@ segflt:
 	SAVE_FPSTAT(8)
 	TRAP(SEGFLT)
 
-SCBVEC(fpm):			# Floating Point eMulation
-	.globl	_fpemulate
+SCBVEC(fpm):			# Floating Point Emulation
 	CHECK_SFE(16)
 	SAVE_FPSTAT(16)
 	callf	$4,_fpemulate
@@ -478,9 +517,10 @@ tableflt:
 
 alltraps:
 	mfpr	$USP,-(sp); 
-	callf $4,_trap; mtpr (sp)+,$USP
+	callf	$4,_trap;
+	mtpr	(sp)+,$USP
 	incl	_cnt+V_TRAP
-	REST_STACK			# pop type, code, an fp stuff
+	REST_STACK			# pop type, code, and fp stuff
 	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
 	rei
 
@@ -488,9 +528,11 @@ SCBVEC(syscall):
 	CHECK_SFE(8)
 	SAVE_FPSTAT(8)
 	pushl	$T_SYSCALL
-	mfpr	$USP,-(sp); callf $4,_syscall; mtpr (sp)+,$USP
+	mfpr	$USP,-(sp);
+	callf	$4,_syscall;
+	mtpr	(sp)+,$USP
 	incl	_cnt+V_SYSCALL
-	REST_STACK			# pop type, code, an fp stuff
+	REST_STACK			# pop type, code, and fp stuff
 	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
 	rei
 
@@ -523,7 +565,8 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(VD1map	,vd1utl		,(MAXBPTE+1)	)
 	SYSMAP(VD2map	,vd2utl		,(MAXBPTE+1)	)
 	SYSMAP(VD3map	,vd3utl		,(MAXBPTE+1)	)
-	SYSMAP(CYmap	,cyutl		,(TBUFSIZ+1)	)
+	SYSMAP(CY0map	,cy0utl		,(TBUFSIZ+1)	)
+	SYSMAP(CY1map	,cy1utl		,(TBUFSIZ+1)	)
 	SYSMAP(CMAP1	,CADDR1		,1		)
 	SYSMAP(CMAP2	,CADDR2		,1		)
 	SYSMAP(mmap	,vmmap		,1		)
@@ -540,148 +583,111 @@ eSysmap:
  * Initialization
  *
  * IPL 0x1f; MME 0; scbb, pcbb, sbr, slr, isp, ksp not set
- *
  */
-
 	.align	2
 	.globl	start
 start:
 	.word	0
-
 /* set system control block base and system page table params */
-
 	mtpr	$_scb-SYSTEM,$SCBB
 	mtpr	$_Sysmap-SYSTEM,$SBR
 	mtpr	$_Syssize,$SLR
-
 /* double map the kernel into the virtual user addresses of phys mem */
-/* (to be on the safe side.This is supposed to run in system sace. )  */
 	mtpr	$_Sysmap,$P0BR
 	mtpr	$_Syssize,$P0LR
-
-	mtpr	$_Sysmap,$P1BR		# Against Murphy
+	mtpr	$_Sysmap,$P1BR			# against Murphy
 	mtpr	$_Syssize,$P1LR
-
 /* set ISP */
-	movl	$_intstack-SYSTEM+NISP*NBPG,sp	# Still physical !
+	movl	$_intstack-SYSTEM+NISP*NBPG,sp	# still physical
 	mtpr	$_intstack+NISP*NBPG,$ISP
-
 /* count up memory */
-
 	clrl	r7
 1:	pushl	$1; pushl r7; callf $12,_badaddr; tstl r0; bneq 9f
-	addl2	$MEMUNIT,r7
-	cmpl	r7,$MAXPHYSMEM
-	bleq	1b
+	ACBL($MAXMEM*1024-1,$64*1024,r7,1b)
 9:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
 	movab	_end,r5
-	andl2	$0!SYSTEM,r6
-	andl2	$0!SYSTEM,r5
+	andl2	$~SYSTEM,r6
+	andl2	$~SYSTEM,r5
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
-1:	clrl	(r6); ACBL( r5,$4,r6,1b)
-
-/* trap() and syscall() save r0-r13 in the entry mask (per ../h/reg.h) */
-/* For floating point emulation, we do same for 'fpemulate' */
+1:	clrl	(r6); ACBL(r5,$4,r6,1b)
+/* trap(), syscall(), and fpemulate() save r0-r12 in the entry mask */
 	orw2	$0x01fff,_trap
 	orw2	$0x01fff,_syscall
 	orw2	$0x01fff,_fpemulate
-
+	orw2	$0x01ffc,_panic			# for debugging (no r0|r1)
 /* initialize system page table: scb and int stack writeable */
 	clrl	r2
 	movab	eintstack,r1 
-	andl2	$0!SYSTEM,r1
-	shrl 	$PGSHIFT,r1,r1		# r1-page number of eintstack.
-
-/* Start by making the processor storage read/only */
-
+	andl2	$~SYSTEM,r1
+	shrl 	$PGSHIFT,r1,r1			# r1-page number of eintstack
+/* make processor storage read/only */
 	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]; incl r2;
 	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]; incl r2;
-
-/* Other parts of the system are read/write for kernel */
-
-1:	orl3	$PG_V|PG_KW,r2,_Sysmap[r2]; # data:kernel write + phys=virtual
+/* other parts of the system are read/write for kernel */
+1:	orl3	$PG_V|PG_KW,r2,_Sysmap[r2];	# data:kernel write+phys=virtual
 	aoblss r1,r2,1b
-
 /* make rsstk read-only as red zone for interrupt stack */
-	andl2	$0!PG_PROT,_rsstkmap
-	orl2	$PG_V|PG_KR,_rsstkmap		# Make dump stack r/w
-
+	andl2	$~PG_PROT,_rsstkmap
+	orl2	$PG_V|PG_KR,_rsstkmap
 /* make kernel text space read-only */
-/*
- * HAVE TO CHECK ALL THE MAGIC CONSTANTS USED HERE : $xxxxxx */
-
 	movab	_etext+NBPG-1,r1
-	andl2	$0!SYSTEM,r1
+	andl2	$~SYSTEM,r1
 	shrl 	$PGSHIFT,r1,r1
 1:	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]
 	aoblss r1,r2,1b
-
 /* make kernel data, bss, read-write */
 	movab	_end+NBPG-1,r1
-	andl2	$0!SYSTEM,r1
+	andl2	$~SYSTEM,r1
 	shrl 	$PGSHIFT,r1,r1
 1:	orl3	$PG_V|PG_KW,r2,_Sysmap[r2]
 	aoblss r1,r2,1b
-
-/* now go to mapped mode */
-/* Have to change both PC and SP to system addresses */
+/* go to mapped mode, have to change both pc and sp to system addresses */
 	mtpr	$1,$TBIA
-	mtpr	$1,$PADC	/* needed by HW parity & ECC logic */
-	mtpr	$1,$PACC	/* just in case */
+	mtpr	$1,$PADC			# needed by HW parity&ECC logic
+	mtpr	$1,$PACC			# just in case
 	mtpr 	$1,$MME
 	movab	SYSTEM(sp),sp
-	.globl	go_virt
-go_virt:	
 	jmp 	*$0f
 0:
-
 /* disable any interrupts */
 	movl	$0,_intenable
 /* init mem sizes */
 	shrl	$PGSHIFT,r7,_maxmem
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
-
-/* setup context for proc[0] == Scheduler */
+/* setup context for proc[0] == scheduler */
 	movab	_end-SYSTEM+NBPG-1,r6
-	andl2	$0!(NBPG-1),r6		# make page boundary
-
+	andl2	$~(NBPG-1),r6			# make page boundary
 /* setup page table for proc[0] */
 	shrl	$PGSHIFT,r6,r3			# r3 = btoc(r6)
 	orl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
 	incl	r3				# r3 - next page
 	movab	_usrpt,r0			# r0 - first user page
 	mtpr	r0,$TBIS
-
 /* init p0br, p0lr */
-	mtpr	r0,$P0BR	# No P0 for proc[0]
+	mtpr	r0,$P0BR			# no p0 for proc[0]
 	mtpr	$0,$P0LR
-
-	mtpr	r0,$P1BR	# No P1 either
+	mtpr	r0,$P1BR			# no p1 either
 	mtpr	$0,$P1LR
-
-
 /* init p2br, p2lr */
 	movab	NBPG(r0),r0
 	movl	$PPAGES-UPAGES,r1
 	mtpr	r1,$P2LR
 	moval	-4*PPAGES(r0),r2
 	mtpr	r2,$P2BR
-
 /* setup mapping for UPAGES of _u */
-	clrl	r2; 
+	clrl	r2
 	movl 	$SYSTEM,r1
 	addl2 	$UPAGES,r3
 	jbr 2f
 1:	decl	r3
-	moval	-NBPG(r1),r1;	# r1 = virtual add of next (downward) _u page
+	moval	-NBPG(r1),r1	# r1 = virtual add of next (downward) _u page
 	subl2	$4,r0		# r0 = pte address
 	orl3	$PG_V|PG_URKW,r3,(r0)
 	mtpr	r1,$TBIS
 2:	aobleq	$UPAGES,r2,1b
-
 /* initialize (slightly) the pcb */
 	movab	UPAGES*NBPG(r1),PCB_KSP(r1)	# KSP starts at end of _u
 	movl	r1,PCB_USP(r1)			# USP starts just below _u
@@ -695,79 +701,70 @@ go_virt:
 	movl	r11,PCB_R11(r1)			# r11 obtained from CP on boot
 	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# kernel mode, ipl=0
-	movw	$0xff,PCB_CKEY(r1)	# give him a code key
-	movw	$0xff,PCB_DKEY(r1)	# give him a data key
 	shll	$PGSHIFT,r3,r3
-	mtpr	r3,$PCBB			# first pcbb (physical ! )
-
-/* Go to a 'normal' process mode (kernel) */
-
+	mtpr	r3,$PCBB			# first pcbb (physical)
+/* go to kernel mode */
 	ldpctx
-	rei		# Actually 'returns' to the next instruction:
-
+	rei					# Actually next instruction:
 /* put signal trampoline code in u. area */
-1:	movab	_u,r0
-	movl	sigcode+0,PCB_SIGC+0(r0)
-	movl	sigcode+4,PCB_SIGC+4(r0)
-	movl	sigcode+8,PCB_SIGC+8(r0)
-	movl	sigcode+12,PCB_SIGC+12(r0)
-
+1:	movab	sigcode,r0
+	movab	_u+PCB_SIGC,r1
+	movl	$19,r2
+	movblk
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
-
 /* calculate firstaddr, and call main() */
 	movab	_end-SYSTEM+NBPG-1,r0
 	shrl	$PGSHIFT,r0,-(sp)
-	addl2	$UPAGES+1,(sp)		# First physical unused page number
+	addl2	$UPAGES+1,(sp)			# first physical unused page
 	callf 	$8,_main
-
 /* proc[1] == /etc/init now running here in kernel mode; run icode */
-	pushl	$PSL_CURMOD		# User mode PSL
-	pushl $0			# PC = 0 (virtual now)
+	pushl	$PSL_CURMOD			# User mode PSL
+	pushl $0				# PC = 0 (virtual now)
 	rei
 
-/* signal trampoline code: it is known that this code takes up to 16    */
-/* bytes in pcb.h and in the code above 				*/
-/*  The following user stack layout was set up by machdep.c/sendsig 	*/
-/*	routine:							*/
-/*									*/
-/*	+---------------+						*/
-/*	|  Last PSL	|\						*/
-/*	+---------------+ > for rei					*/
-/*  :-->|  Last PC	|/						*/
-/*  |	+---------------+						*/
-/*  :___|__*   SP	|\						*/
-/*	+---------------+ |						*/
-/*	|  sigmask	| |						*/
-/*	+---------------+  > cleaned by kcall $139 (sigcleanup)		*/
-/*  :-->|  u.u_onstack	| |						*/
-/*  |	+---------------+ |						*/
-/*  :___|_* copy of SCP	|/						*/
-/*  |	+---------------+						*/
-/*  |	|  Process' r0	| 						*/
-/*  |	+---------------+						*/
-/*  |	|  Process' r1	|						*/
-/*  |	+---------------+						*/
-/*  |	| Handler addr. |\						*/
-/*  |	+---------------+ |						*/
-/*  :___|_*   SCP	| |						*/
-/*	+---------------+  > cleaned by ret from calls			*/
-/*	|  u.u_code	| |						*/
-/*	+---------------+ |						*/
-/*	|  signal number|/						*/
-/*	+---------------+						*/
-/*									*/
-/*   * Stack when entering sigcode; setup by sendsig();			*/
-/*									*/
+/*
+ * Mask for saving/restoring registers on entry to
+ * a user signal handler.  Space for the registers
+ * is reserved in sendsig, so beware if you want
+ * to change the mask.
+ */
+#define	SIGREGS	(R0|R1|R2|R3|R4|R5)
 	.align	2
-sigcode:			# When the process executes this code
-				#  (located in its u. structure), it
-				#  is in user mode !
-	calls	$4*4+4,*12(sp)	# 4 words popped from stack when this call returns
-	movl	(sp)+,r1
-	movl	(sp)+,r0
-	kcall	$139		# Signal cleanup
-	rei			# From user mode to user mode !
+	.globl	sigcode
+sigcode:
+	storer	$SIGREGS,16(sp)	# save volatile registers
+	calls	$4*3+4,*12(sp)	# params pushed by sendsig for handler
+	loadr	$SIGREGS,4(sp)	# restore volatile registers
+	movab	24(sp),fp	# use parameter list set up in sendsig
+	kcall	$SYS_sigreturn	# cleanup mask and onsigstack
+	halt			# sigreturn does not return!
+
+	.globl	_icode
+	.globl	_initflags
+	.globl	_szicode
+/*
+ * Icode is copied out to process 1 to exec /etc/init.
+ * If the exec fails, process 1 exits.
+ */
+	.align	2
+_icode:
+	pushab	b`argv-l0(pc)
+l0:	pushab	b`init-l1(pc)
+l1:	pushl	$2
+	movab	(sp),fp
+	kcall	$SYS_execv
+	kcall	$SYS_exit
+
+init:	.asciz	"/etc/init"
+	.align	2
+_initflags:
+	.long	0
+argv:	.long	init+5-_icode
+	.long	_initflags-_icode
+	.long	0
+_szicode:
+	.long	_szicode-_icode
 
 /*
  * Primitives
@@ -779,9 +776,7 @@ sigcode:			# When the process executes this code
  *	len is length of access (1=byte, 2=short, 4=long)
  *	r0 = 0 means good(exists); r0 =1 means does not exist.
  */
-	.globl	_badaddr
-_badaddr:
-	.word	0x1c	# Keep r4,r3,r2
+ENTRY(badaddr, R3|R4)
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
 	movl	_scb+BERVEC,r2
@@ -791,17 +786,17 @@ _badaddr:
 	bbc	$0,r4,1f; tstb	(r3)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
-1:	clrl	r0			# made it w/o machine checks
+1:	clrl	r0
 2:	movl	r2,_scb+BERVEC
 	mtpr	r1,$IPL
 	ret
 
 	.align	2
-9:			# Here we catch buss error (if it comes)
+9:				# catch buss error (if it comes)
 	andl3	4(sp),$ERRCD,r0
 	cmpl	r0,$APE
 	jneq	1f
-	halt			# Address parity error !!!
+	halt			# address parity error
 1:	cmpl	r0,$VBE
 	jneq	1f
 	halt			# Versabus error
@@ -811,69 +806,83 @@ _badaddr:
 	movab	2b,(sp)		# new program counter on stack.
 	rei
 
-
 /*
  * badcyaddr(addr)
  *	see if access tape master controller addr causes a bus error
  *	r0 = 0: no error; r0 = 1: timeout error.
  */
-	.globl	_badcyaddr
-_badcyaddr:
-	.word	0x0c	# Keep r3,r2
+ENTRY(badcyaddr, 0)
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
-	movl	_scb+BERVEC,r2
-	clrl	r3
-	movab	9f,_scb+BERVEC
+	clrl	r2
+	movab	2f,nofault
 	movob	$-1, *4(fp)
-1:	aobleq	$1000, r3, 1b
-	clrl	r0			# made it w/o machine checks
-2:	movl	r2,_scb+BERVEC
-	mtpr	r1,$IPL
+1:	aobleq	$1000, r2, 1b
+	clrl	nofault			# made it w/o bus error
+	clrl	r0
+	jbr	3f
+2:	movl	$1,r0
+3:	mtpr	r1,$IPL
 	ret
 
-	.align	2
-9:			# Here we catch buss error (if it comes)
-	andl3	4(sp),$ERRCD,r0
-	cmpl	r0,$APE
-	jneq	1f
-	halt			# Address parity error !!!
-1:	cmpl	r0,$VBE
-	jneq	1f
-	halt			# Versabus error
-1:
-	movl	$1,r0		# Anything else = timeout
-	movab	8(sp),sp	# discard buss error trash
-	movab	2b,(sp)		# new program counter on stack.
-	rei
-
-_bcopy:	.globl	_bcopy
-	.word	0x4		# save r2
-				# Called by ovbcopy(from,dst,len)
-	movl	4(fp),r0
-	movl	8(fp),r1
-	movl	12(fp),r2
-	movblk
+/*
+ * peek(addr)
+ *	fetch word and catch any bus error
+ */
+ENTRY(peek, 0)
+	mfpr	$IPL,r1
+	mtpr	$0x18,$IPL	# not reentrant
+	movl	4(fp),r2
+	movab	1f,nofault
+	movw	(r2),r0
+	clrl	nofault
+	andl2	$0xffff,r0
+	jbr	2f
+1:	movl	$-1,r0		# bus error
+2:	mtpr	r1,$IPL
 	ret
 
-_ovbcopy:	.globl	_ovbcopy
-	.word	0x001c
+/*
+ * poke(addr, val)
+ *	write word and catch any bus error
+ */
+ENTRY(poke, R3)
+	mfpr	$IPL,r1
+	mtpr	$0x18,$IPL	# not reentrant
+	movl	4(fp),r2
+	movl	8(fp),r3
+	clrl	r0
+	movab	1f,nofault
+	movw	r3,(r2)
+	clrl	nofault
+	jbr	2f
+1:	movl	$-1,r0		# bus error
+2:	mtpr	r1,$IPL
+	ret
+
+/*
+ * Copy a potentially overlapping block of memory.
+ *
+ * ovbcopy(src, dst, count)
+ *	caddr_t src, dst; unsigned count;
+ */
+ENTRY(ovbcopy, R3|R4)
 	movl	4(fp),r0
 	movl	8(fp),r1
 	movl	12(fp),r2
 	cmpl	r0,r1
-	bgtru	1f		# normal forward case
-	beql	2f		# equal, nothing to do
-	addl2	r2,r0		# may be overlapping
+	bgtru	1f			# normal forward case
+	beql	2f			# equal, nothing to do
+	addl2	r2,r0			# may be overlapping
 	cmpl	r0,r1
 	bgtru	3f
-	subl2	r2,r0		# normal forward case
+	subl2	r2,r0			# normal forward case
 1:
 	movblk
 2:
 	ret
 3:
-	addl2	r2,r1		# overlapping, must do backwards
+	addl2	r2,r1			# overlapping, must do backwards
 	subl3	r0,r1,r3
 	movl	r2,r4
 	jbr	5f
@@ -895,104 +904,230 @@ _ovbcopy:	.globl	_ovbcopy
 	ret
 
 /*
- * bzero (base, count)
- * zero out a block starting at 'base', size 'count'.
+ * Copy a null terminated string from the user address space into
+ * the kernel address space.
+ *
+ * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  */
-_bzero:	
-	.globl	_bzero
-	.word	0x4
-	movl	$1f,r0				# r0 = null source string
-	movl	4(fp),r1			# r1 = destination address
-	movl	8(fp),r2			# r2 = count
-	movs3
-	ret
+ENTRY(copyinstr, R3|R4|R5)
+	movl	12(fp),r5		# r5 = max length
+	jlss	8f
+	movl	4(fp),r0		# r0 = user address
+	movl	r0,r3			# r3 = copy of src for null byte test
+	andl3	$(NBPG*CLSIZE-1),r0,r2	# r2 = bytes on first page
+	subl3	r2,$(NBPG*CLSIZE),r2
+	movl	8(fp),r1		# r1 = kernel address
 1:
-	.byte 0
-
-
-_copyin:	.globl	_copyin		# the _Copyin subroutine in VAX
-					# became _copyin procedure for TAHOE
-	.word	0x0004
-	movl	12(fp),r0		# copy length
-	blss	ersb
-	movl	4(fp),r1		# copy user address
-	cmpl	$NBPG,r0		# probing one page or less ?
-	bgeq	cishort			# yes
-ciloop:
-	prober	$1,(r1),$NBPG		# bytes accessible ?
-	beql	ersb			# no
-	addl2	$NBPG,r1		# incr user address ptr
-	_ACBL	($NBPG+1,$-NBPG,r0,ciloop)	# reduce count and loop
-cishort:
-	prober	$1,(r1),r0		# bytes accessible ?
-	beql	ersb			# no
-	MOVC3	(12(fp),4(fp),8(fp))
+	cmpl	r5,r2			# r2 = min(bytes on page, length left);
+	jgeq	2f
+	movl	r5,r2
+2:
+	prober	$1,(r0),r2		# bytes accessible?
+	jeql	8f
+	subl2	r2,r5			# update bytes left count
+	addl2	r2,r3			# calculate src+count
+	movs3				# copy in next piece
+	subl3	r0,r3,r2		# null byte found?
+	jneq	3f
+	movl	$(NBPG*CLSIZE),r2	# check next page
+	tstl	r5			# run out of space?
+	jneq	1b
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9f
+3:
+	tstl	16(fp)			# return length?
+	beql	4f
+	subl3	r5,12(fp),r5		# actual len = maxlen - unused pages
+	subl2	r2,r5			#	- unused on this page
+	addl3	$1,r5,*16(fp)		#	+ the null byte
+4:
 	clrl	r0
 	ret
+8:
+	movl	$EFAULT,r0
+9:
+	tstl	16(fp)
+	beql	1f
+	subl3	r5,12(fp),*16(fp)
+1:
+	ret
 
-ersb:
+/*
+ * Copy a null terminated string from the kernel
+ * address space to the user address space.
+ *
+ * copyoutstr(fromaddr, toaddr, maxlength, &lencopied)
+ */
+ENTRY(copyoutstr, R3|R4|R5)
+	movl	12(fp),r5		# r5 = max length
+	jlss	8b
+	movl	4(fp),r0		# r0 = kernel address
+	movl	r0,r3			# r3 = copy of src for null byte test
+	movl	8(fp),r1		# r1 = user address
+	andl3	$(NBPG*CLSIZE-1),r1,r2	# r2 = bytes on first page
+	subl3	r2,$(NBPG*CLSIZE),r2
+1:
+	cmpl	r5,r2			# r2 = min(bytes on page, length left);
+	jgeq	2f
+	movl	r5,r2
+2:
+	probew	$1,(r1),r2		# bytes accessible?
+	jeql	8b
+	subl2	r2,r5			# update bytes left count
+	addl2	r2,r3			# calculate src+count
+#ifdef notdef
+	movs3				# copy out next piece
+#else
+	tstl	r2
+	beql	6f
+4:
+	movb	(r0),(r1)
+	beql	5f
+	incl	r0
+	incl	r1
+	decl	r2
+	bneq	4b
+	jbr	6f
+5:
+	incl	r1
+	decl	r2
+6:
+#endif
+	subl3	r0,r3,r2		# null byte found?
+	jneq	3b
+	movl	$(NBPG*CLSIZE),r2	# check next page
+	tstl	r5			# run out of space?
+	jneq	1b
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9b
+
+/*
+ * Copy a null terminated string from one point to another in
+ * the kernel address space.
+ *
+ * copystr(fromaddr, toaddr, maxlength, &lencopied)
+ */
+ENTRY(copystr, R3|R4|R5)
+	movl	12(fp),r5		# r5 = max length
+	jlss	8b
+	movl	4(fp),r0		# r0 = src address
+	movl	r0,r3			# r3 = copy of src for null byte test
+	movl	8(fp),r1		# r1 = dest address
+1:
+	movzwl	$65535,r2		# r2 = bytes in first chunk
+	cmpl	r5,r2			# r2 = min(bytes in chunk, length left);
+	jgeq	2f
+	movl	r5,r2
+2:
+	subl2	r2,r5			# update bytes left count
+	addl2	r2,r3			# calculate src+count
+	movs3				# copy next piece
+	subl3	r0,r3,r2		# null byte found?
+	jneq	3b
+	tstl	r5			# run out of space?
+	jneq	1b
+	movl	$ENOENT,r0		# set error code and return
+	jbr	9b
+
+/*
+ * Copy a block of data from the user address space into
+ * the kernel address space.
+ *
+ * copyin(fromaddr, toaddr, count)
+ */
+ENTRY(copyin, 0)
+	movl	12(fp),r0		# copy length
+	blss	9f
+	movl	4(fp),r1		# copy user address
+	cmpl	$(CLSIZE*NBPG),r0	# probing one page or less ?
+	bgeq	2f			# yes
+1:
+	prober	$1,(r1),$(CLSIZE*NBPG)	# bytes accessible ?
+	beql	9f			# no
+	addl2	$(CLSIZE*NBPG),r1	# incr user address ptr
+	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r0,1b)	# reduce count and loop
+2:
+	prober	$1,(r1),r0		# bytes accessible ?
+	beql	9f			# no
+	MOVC3(4(fp),8(fp),12(fp))
+	clrl	r0
+	ret
+9:
 	movl	$EFAULT,r0
 	ret
 
-_copyout:	.globl	_copyout	# the _Copyout subroutine in VAX
-					# became _copyout procedure for TAHOE
-	.word	0x04
+/*
+ * Copy a block of data from the kernel 
+ * address space to the user address space.
+ *
+ * copyout(fromaddr, toaddr, count)
+ */
+ENTRY(copyout, 0)
 	movl	12(fp),r0		# get count
-	blss	ersb
+	blss	9b
 	movl	8(fp),r1		# get user address
-	cmpl	$NBPG,r0		# can do in one probew?
-	bgeq	coshort			# yes
-coloop:
-	probew	$1,(r1),$NBPG		# bytes accessible?
-	beql	ersb			# no 
-	addl2	$NBPG,r1		# increment user address
-	_ACBL	($NBPG+1,$-NBPG,r0,coloop)	# reduce count and loop
-coshort:
+	cmpl	$(CLSIZE*NBPG),r0	# can do in one probew?
+	bgeq	2f			# yes
+1:
+	probew	$1,(r1),$(CLSIZE*NBPG)	# bytes accessible?
+	beql	9b			# no 
+	addl2	$(CLSIZE*NBPG),r1	# increment user address
+	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r0,1b)	# reduce count and loop
+2:
 	probew	$1,(r1),r0		# bytes accessible?
-	beql	ersb			# no
-	MOVC3	(12(fp),4(fp),8(fp))
+	beql	9b			# no
+	MOVC3(4(fp),8(fp),12(fp))
 	clrl	r0
 	ret
 
 /*
  * non-local goto's
  */
-	.globl	_setjmp			# the _Setjmp subroutine in VAX
-					# became _setjmp procedure for TAHOE
-_setjmp:
-	.word	0x0
-	movl	4(fp),r2
-	storer	$0x1ff8,(r2)
-	addl2	$40,r2
-	movl	(fp),(r2)
-	addl2	$4,r2
-	movab	8(fp),(r2)
-	addl2	$4,r2
-	movl	-8(fp),(r2)
+#ifdef notdef
+ENTRY(setjmp, 0)
+	movl	4(fp),r0
+	movl	(fp),(r0); addl2 $4,r0		# save fp
+	movl	-8(fp),(r0)			# save pc
 	clrl	r0
 	ret
+#endif
 
-	.globl	_longjmp		# the _Longjmp subroutine in VAX
-					# became _longjmp procedure for TAHOE
-_longjmp:
-	.word	0x0000
-	movl	4(fp),r2
-_Longjmp:			# called from swtch
-	loadr	$0x3ff8,(r2)
-	addl2	$44,r2
-	movl	(r2),r1
-	addl2	$4,r2
-	movab	(sp),r0
-	cmpl	r1,r0				# must be a pop
-	bgequ	lj2
-	pushab	lj1
+ENTRY(longjmp, 0)
+	movl	4(fp),r0
+	movl	(r0),newfp; addl2 $4,r0		# must save parameters in memory
+	movl	(r0),newpc			# as all regs may be clobbered.
+1:
+	cmpl	fp,newfp			# are we there yet?
+	bgequ	2f				# yes
+	moval	1b,-8(fp)			# redirect return pc to us!
+	ret					# pop next frame
+2:
+	beql	3f				# did we miss our frame?
+	pushab	4f				# yep ?!?
 	callf	$8,_panic
-lj2:
-	movl	r1,sp
-	jmp	*(r2)
+3:
+	movl	newpc,r0			# all done, just return
+	jmp	(r0)				# to setjmp `ret'
 
-lj1:	.asciz	"longjmp"
+	.data
+newpc:	.space	4
+newfp:	.space	4
+4:	.asciz	"longjmp"
 
+/*
+ * setjmp that saves all registers as the call frame may not
+ * be available to recover them in the usual manner by longjmp.
+ * Called before swapping out the u. area, restored by resume()
+ * below.
+ */
+ENTRY(savectx, 0)
+	movl	4(fp),r2
+	storer	$0x1ff8,(r2); addl2 $40,r2	# r3-r12
+	movl	(fp),(r2); addl2 $4,r2		# fp
+	movab	8(fp),(r2); addl2 $4,r2		# sp
+	movl	-8(fp),(r2)			# pc
+	clrl	r0
+	ret
 
 	.globl	_whichqs
 	.globl	_qs
@@ -1002,7 +1137,6 @@ lj1:	.asciz	"longjmp"
 	.comm	_noproc,4
 	.globl	_runrun
 	.comm	_runrun,4
-
 /*
  * The following primitives use the fancy TAHOE instructions.
  * _whichqs tells which of the 32 queues _qs
@@ -1018,9 +1152,7 @@ lj1:	.asciz	"longjmp"
  *
  * Call should be made at spl8(), and p->p_stat should be SRUN
  */
-	.globl	_setrq
-_setrq:
-	.word	0x4
+ENTRY(setrq, 0)
 	movl	4(fp),r0
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
@@ -1043,9 +1175,7 @@ set3:	.asciz	"setrq"
  *
  * Call should be made at spl8().
  */
-	.globl	_remrq
-_remrq:
-	.word	0x0
+ENTRY(remrq, 0)
 	movl	4(fp),r0
 	movzbl	P_PRI(r0),r1
 	shar	$2,r1,r1
@@ -1064,19 +1194,6 @@ rem2:
 
 rem3:	.asciz	"remrq"
 
-	.globl __insque
-__insque:
-	.word 0
-	insque	*4(fp), *8(fp)
-	ret
-
-
-	.globl __remque
-__remque:
-	.word 0
-	remque	*4(fp)
-	ret
-
 /*
  * Masterpaddr is the p->p_addr of the running process on the master
  * processor.  When a multiprocessor system, the slave processors will have
@@ -1084,17 +1201,14 @@ __remque:
  */
 	.globl	_masterpaddr
 	.data
-_masterpaddr:
-	.long	0
+_masterpaddr: .long	0
 
 	.text
 sw0:	.asciz	"swtch"
 /*
- * swtch(), using fancy TAHOE instructions
+ * swtch(), using fancy tahoe instructions
  */
-	.globl	_swtch
-_swtch:
-	.word	0x0
+ENTRY(swtch, 0)
 	movl	(fp),fp			# prepare for rei
 	movl	(sp),4(sp)		# saved pc
 	tstl	(sp)+
@@ -1129,39 +1243,29 @@ sw3:
 	movl	*P_ADDR(r2),r0
 	movl	r0,_masterpaddr
 	shal	$PGSHIFT,r0,r0		# r0 = pcbb(p)
-/*	mfpr	$PCBB,r1		# resume of current proc is easy
- *	cmpl	r0,r1
- */	beql	res0
+#ifdef notdef
+	mfpr	$PCBB,r1		# resume of current proc is easy
+	cmpl	r0,r1
+	beql	res0
+#endif
 	incl	_cnt+V_SWTCH
 	brb	swresume
-/* fall into... */
+	/* fall into... */
 
-/*
- * global cache key used if cant use proc index as key
- * (e.g. NPROC>=255)
- * otherwise used for temporary storage of key
- */
-	.data
-	.globl	_globkey
-_globkey:
-	.long	0
 	.globl	_prevpcb
-_prevpcb:
-	.long	0
+_prevpcb: .long	0
 	.text
 /*
  * resume(pf)
  */
-	.globl	_resume
-_resume:
-	.word	0x0
-	shal	$PGSHIFT,4(fp),r0	# r0 = pcbb(p)
+ENTRY(resume, 0)
+	shal	$PGSHIFT,4(fp),r0	# r0 = pcbb(pf)
 	movl	(fp),fp			# prepare for rei
 	movl	(sp)+,4(sp)		# saved pc
 	tstl	(sp)+
 	movpsl	4(sp)
 swresume:
-	mtpr	$0x18,$IPL			# no interrupts, please
+	mtpr	$0x18,$IPL		# no interrupts, please
 	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	REST_ACC			# restore original accumulator
 	svpctx
@@ -1170,38 +1274,46 @@ swresume:
 	movl	_u+PCB_CMAP2,_CMAP2	# yech
 	mtpr	$_CADDR2,$TBIS
 res0:
+	PUSHR;
+	movl	_u+U_PROCP,r2		# r2 = u.u_procp
+	tstl	P_CKEY(r2)		# does proc have code key?
+	bneq	1f
+	callf	$4,_getcodekey		# no, give him one
+	movl	r0,P_CKEY(r2)
+1:
+	movl	_u+U_PROCP,r2		# r2 = u.u_procp
+	tstl	P_DKEY(r2)		# does proc have data key?
+	bneq	1f
+	callf	$4,_getdatakey		# no, give him one
+	movl	r0,P_DKEY(r2)
+1:
+	mtpr	P_CKEY(r2),$CCK		# set code cache key
+	mtpr	P_DKEY(r2),$DCK		# set data cache key
+	POPR
 	tstl	_u+PCB_SSWAP
-	beql	res1
+	bneq	res1
+	rei
+res1:					# longjmp to saved context
 	movl	_u+PCB_SSWAP,r2
 	clrl	_u+PCB_SSWAP
-	movab	_Longjmp,(sp)
-	clrl	4(sp)			# PSL = kernel mode, IPL=0
-res1:
-#ifdef GLOBKEY
-	aoblss	$256,_globkey,res2	# define new cache key
-	mtpr	$0,$PACC		# out of keys, purge all
-	mtpr	$0,$PADC
-	movl	$1,_globkey
-res2:
-	mtpr	_globkey,$CCK
-#else
-res3:
-	movzwl	_u+PCB_CKEY,_globkey
-	mtpr	_globkey,$CCK
-res4:
-	movzwl	_u+PCB_DKEY,_globkey
-#endif
-	mtpr	_globkey,$DCK
+	loadr	$0x3ff8,(r2); addl2 $44,r2	# restore r3-r13 (r13=fp)
+	movl	(r2),r1; addl2 $4,r2	# fetch previous sp ...
+	movab	(sp),r0			# ... and current sp and
+	cmpl	r1,r0			# check for credibility,
+	bgequ	1f			# if further up stack ...
+	pushab 2f; callf $8,_panic	# ... panic
+	/*NOTREACHED*/
+1:					# sp ok, complete return
+	movl	r1,sp			# restore sp
+	movl	(r2),(sp)		# return address
+	movl	$PSL_PRVMOD,4(sp)	# kernel mode, ipl 0
 	rei
+2:	.asciz	"ldctx"
 
 /*
  * {fu,su},{byte,word}
  */
-	.globl	_fuiword
-	.globl	_fuword
-_fuiword:
-_fuword:
-	.word	0x0
+ENTRY(fuword, 0)
 	movl	4(fp), r1
 	prober	$1,(r1),$4		# check access
 	beql	fserr			# page unreadable
@@ -1230,21 +1342,13 @@ fserr:
 	mnegl	$1,r0
 	ret
 
-	.globl	_fuibyte
-	.globl	_fubyte
-_fuibyte:
-_fubyte:
-	.word	0x0
+ENTRY(fubyte, 0)
 	prober	$1,*4(fp),$1
 	beql	fserr
 	movzbl	*4(fp),r0
 	ret
 
-	.globl	_suiword
-	.globl	_suword
-_suiword:
-_suword:
-	.word	0x0
+ENTRY(suword, 0)
 	movl	4(fp), r0
 	probew	$1,(r0),$4		# check access
 	beql	fserr			# page unwritable
@@ -1267,11 +1371,7 @@ _suword:
 	clrl	r0
 	ret
 
-	.globl	_suibyte
-	.globl	_subyte
-_suibyte:
-_subyte:
-	.word	0x0
+ENTRY(subyte, 0)
 	probew	$1,*4(fp),$1
 	beql	fserr
 	movb	11(fp),*4(fp)
@@ -1282,22 +1382,18 @@ _subyte:
  * Copy 1 relocation unit (NBPG bytes)
  * from user virtual address to physical address
  */
-_copyseg: 	.globl	_copyseg
-	.word	0x4
+ENTRY(copyseg, 0)
 	orl3	$PG_V|PG_KW,8(fp),_CMAP2
 	mtpr	$_CADDR2,$TBIS	# invalidate entry for copy 
-	MOVC3	($NBPG,4(fp),$_CADDR2)
+	MOVC3(4(fp),$_CADDR2,$NBPG)
 	ret
 
 /*
- * clearseg(physical_page_number);
+ * Clear a page of memory.  The page frame is specified.
  *
- * zero out physical memory
- * specified in relocation units (NBPG bytes)
- * This routine was optimized for speed on Tahoe.
+ * clearseg(pf);
  */
-_clearseg: 	.globl	_clearseg
-	.word	0
+ENTRY(clearseg, 0)
 	orl3	$PG_V|PG_KW,4(fp),_CMAP1	# Maps to virtual addr CADDR1
 	mtpr	$_CADDR1,$TBIS
 	movl	$255,r0				# r0 = limit
@@ -1308,42 +1404,40 @@ _clearseg: 	.globl	_clearseg
 	ret
 
 /*
- * if ( useracc(address, count, mode) ) ....
- * Check address.
- * Given virtual address, byte count, and rw flag
- * returns 0 on no access.
- * Note : it is assumed that on all calls to this routine,
- *  mode=0 means write access, mode=1 means read access.
+ * Check user mode read/write access.
+ *
+ * useracc(addr, count, mode)
+ *	caddr_t addr; int count, mode;
+ * mode = 0	write access
+ * mode = 1	read access
  */
-_useracc:	.globl	_useracc
-	.word	0x4
+ENTRY(useracc, 0)
 	movl	$1,r2			# r2 = 'user mode' for probew/probew
 probes:
 	movl	4(fp),r0		# get va
 	movl	8(fp),r1		# count
 	tstl	12(fp)			# test for read access ?
 	bneq	userar			# yes
-	cmpl	$NBPG,r1			# can we do it in one probe ?
+	cmpl	$(CLSIZE*NBPG),r1	# can we do it in one probe ?
 	bgeq	uaw2			# yes
 uaw1:
-	probew	r2,(r0),$NBPG
+	probew	r2,(r0),$(CLSIZE*NBPG)
 	beql	uaerr			# no access
-	addl2	$NBPG,r0
-	_ACBL($NBPG+1,$-NBPG,r1,uaw1)
+	addl2	$(CLSIZE*NBPG),r0
+	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r1,uaw1)
 uaw2:
 	probew	r2,(r0),r1
 	beql	uaerr
 	movl	$1,r0
 	ret
-
 userar:
-	cmpl	$NBPG,r1
+	cmpl	$(CLSIZE*NBPG),r1
 	bgeq	uar2
 uar1:
-	prober	r2,(r0),$NBPG
+	prober	r2,(r0),$(CLSIZE*NBPG)
 	beql	uaerr
-	addl2	$NBPG,r0
-	_ACBL($NBPG+1,$-NBPG,r1,uar1)
+	addl2	$(CLSIZE*NBPG),r0
+	_ACBL($(CLSIZE*NBPG+1),$(-CLSIZE*NBPG),r1,uar1)
 uar2:
 	prober	r2,(r0),r1
 	beql	uaerr
@@ -1354,15 +1448,14 @@ uaerr:
 	ret
 
 /*
- * if ( kernacc(address, count, mode) ) ....
- * Check address.
- * Given virtual address, byte count, and rw flag
- * returns 0 on no access.
- * Same as useracc routine but checks for kernel access rights.
+ * Check kernel mode read/write access.
+ *
+ * kernacc(addr, count, mode)
+ *	caddr_t addr; int count, mode;
+ * mode = 0	write access
+ * mode = 1	read access
  */
-
-_kernacc:	.globl	_kernacc
-	.word	0x4
+ENTRY(kernacc, 0)
 	clrl	r2		# r2 = 0 means kernel mode probe.
 	jbr	probes		# Dijkstra would get gastric distress here.
 
@@ -1370,9 +1463,8 @@ _kernacc:	.globl	_kernacc
  * addupc - increment some histogram counter
  *	in the profiling buffer
  *
- * addupc(pc, prof, counts)
- * long	pc , counts;	Only least significant word of 'counts' is added.
- * struct	uprof *prof;
+ * addupc(pc, prof, delta)
+ *	long pc; short delta; struct uprof *prof;
  * 
  * struct uprof {		# profile arguments 
  * 	short	*r_base;	# buffer base 
@@ -1381,22 +1473,72 @@ _kernacc:	.globl	_kernacc
  * 	unsigned pr_scale;	# pc scaling 
  * }
  */
-	.globl	_addupc
-_addupc:
-	.word	4
-	movl	8(fp),r2	# r2 points to structure
-	subl3	8(r2),4(fp),r0	# r0 = PC - lowpc
-	jlss	9f		# PC < lowpc , out of range !
-	shrl	$1,r0,r0	# the unit is words
-	shrl	$1,12(r2),r1	# ditto for scale
+ENTRY(addupc, 0)
+	movl	8(fp),r2		# r2 points to structure
+	subl3	8(r2),4(fp),r0		# r0 = PC - lowpc
+	jlss	9f			# PC < lowpc , out of range !
+	shrl	$1,r0,r0		# the unit is words
+	shrl	$1,12(r2),r1		# ditto for scale
 	emul	r1,r0,$0,r0
 	shrq	$14,r0,r0
-	tstl	r0		# too big
+	tstl	r0			# too big
 	jneq	9f
-	cmpl	r1,4(r2)	# Check buffer overflow
+	cmpl	r1,4(r2)		# Check buffer overflow
 	jgequ	9f
 	probew	$1,*0(r2)[r1],$2	# counter accessible?
 	jeql	9f
-	shrl	$1,r1,r1	# make r1 word index
+	shrl	$1,r1,r1		# make r1 word index
 	addw2	14(fp),*0(r2)[r1]
 9:	ret
+
+/*
+ * scanc(size, cp, table, mask)
+ */
+ENTRY(scanc, R3|R4)
+	movl	8(fp),r0		# r0 = cp
+	addl3	4(fp),r0,r2		# end = &cp[size]
+	movl	12(fp),r1		# r1 = table
+	movb	19(fp),r4		# r4 = mask
+	decl	r0			# --cp
+	jbr	0f			# just like Fortran...
+1:					# do {
+	movzbl	(r0),r3	
+	bitb	r4,(r1)[r3]		#	if (table[*cp] & mask)
+	jneq	2f			#		break;
+0:	aoblss	r2,r0,1b		# } while (++cp < end);
+2:
+	subl3	r0,r2,r0; ret		# return (end - cp);
+
+/*
+ * skpc(mask, size, cp)
+ */
+ENTRY(skpc, 0)
+	movl	12(fp),r0		# r0 = cp
+	addl3	8(fp),r0,r1		# r1 = end = &cp[size];
+	movb	7(fp),r2		# r2 = mask
+	decl	r0			# --cp;
+	jbr	0f
+1:					# do
+	cmpb	(r0),r2			#	if (*cp != mask)
+	jneq	2f			#		break;
+0:	aoblss	r1,r0,1b		# while (++cp < end);
+2:
+	subl3	r0,r1,r0; ret		# return (end - cp);
+
+#ifdef notdef
+/*
+ * locc(mask, size, cp)
+ */
+ENTRY(locc, 0)
+	movl	12(fp),r0		# r0 = cp
+	addl3	8(fp),r0,r1		# r1 = end = &cp[size]
+	movb	7(fp),r2		# r2 = mask
+	decl	r0			# --cp;
+	jbr	0f
+1:					# do
+	cmpb	(r0),r2			#	if (*cp == mask)
+	jeql	2f			#		break;
+0:	aoblss	r1,r0,1b		# while (++cp < end);
+2:
+	subl3	r0,r1,r0; ret		# return (end - cp);
+#endif

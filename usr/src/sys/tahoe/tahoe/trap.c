@@ -1,50 +1,67 @@
-/*	trap.c	4.10	84/02/09	*/
+/*	trap.c	1.2	86/01/05	*/
 
-#include "../machine/psl.h"
-#include "../machine/reg.h"
-#include "../machine/pte.h"
+#include "../tahoe/psl.h"
+#include "../tahoe/reg.h"
+#include "../tahoe/pte.h"
+#include "../tahoe/mtpr.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/seg.h"
-#include "../machine/trap.h"
-#include "../h/acct.h"
-#include "../h/kernel.h"
-#include "../machine/mtpr.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "seg.h"
+#include "acct.h"
+#include "kernel.h"
+#define	SYSCALLTRACE
 #ifdef SYSCALLTRACE
 #include "../sys/syscalls.c"
 #endif
-#include "../machine/fp_in_krnl.h"
+
+#include "../tahoe/trap.h"
 
 #define	USER	040		/* user-mode flag added to type */
 
-struct	sysent	sysent[];
-int nsysent;
+struct	sysent sysent[];
+int	nsysent;
+
+char	*trap_type[] = {
+	"Reserved addressing mode",		/* T_RESADFLT */
+	"Privileged instruction",		/* T_PRIVINFLT */
+	"Reserved operand",			/* T_RESOPFLT */
+	"Breakpoint",				/* T_BPTFLT */
+	0,
+	"Kernel call",				/* T_SYSCALL */
+	"Arithmetic trap",			/* T_ARITHTRAP */
+	"System forced exception",		/* T_ASTFLT */
+	"Segmentation fault",			/* T_SEGFLT */
+	"Protection fault",			/* T_PROTFLT */
+	"Trace trap",				/* T_TRCTRAP */
+	0,
+	"Page fault",				/* T_PAGEFLT */
+	"Page table fault",			/* T_TABLEFLT */
+	"Alignment fault",			/* T_ALIGNFLT */
+	"Kernel stack not valid",		/* T_KSPNOTVAL */
+	"Bus error",				/* T_BUSERR */
+};
+#define	TRAP_TYPES	(sizeof (trap_type) / sizeof (trap_type[0]))
 
 /*
  * Called from the trap handler when a processor trap occurs.
  */
+/*ARGSUSED*/
 trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
-unsigned code;
+	unsigned type, code;
 {
-	/* Next 2 dummy variables MUST BE the first local */
-	/* variables; leaving place for registers 0 and 1 */
-	/* which are not preserved by the 'cct' */
-
-	int	dumm1;		/* register 1 */
-	int	dumm0;		/* register 0 */
-	register dumm3;		/* register 12 is the 1'st register variable */
-				/* in TAHOE  (register 11 in VAX) */
-
+	int r0, r1;		/* must reserve space */
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
 	register struct proc *p;
 	struct timeval syst;
-	char	*typename;
 
+#ifdef lint
+	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
+#endif
 	syst = u.u_ru.ru_stime;
 	if (USERMODE(locr0[PS])) {
 		type |= USER;
@@ -52,53 +69,28 @@ unsigned code;
 	}
 	switch (type) {
 
-	default: switch (type) {
-		case T_RESADFLT:
-			typename = "reserved addressing mode";break;
-		case T_PRIVINFLT:
-			typename = "illegal opcode";break;
-		case T_RESOPFLT:
-			typename = "reserved operand";break;
-		case T_BPTFLT:
-			typename = "breakpoint";break;
-		case T_SYSCALL:
-			typename = "kernel call";break;
-		case T_ARITHTRAP:
-			typename = "arithmetic exception";break;
-		case T_ASTFLT:
-			typename = "system forced exception";break;
-		case T_SEGFLT:
-			typename = "limit fault";break;
-		case T_PROTFLT:
-			typename = "illegal access type";break;
-		case T_TRCTRAP:
-			typename = "trace trap";break;
-		case T_PAGEFLT:
-			typename = "page fault";break;
-		case T_TABLEFLT:
-			typename = "page table fault";break;
-		case T_ALIGNFLT:
-			typename = "alignment fault";break;
-		case T_KSPNOTVAL:
-			typename = "kernel stack not valid";break;
-		}
-		printf("System trap (%s), code = %x, pc = %x\n", 
-				typename, code, pc);
-		panic("trap");
+	default:
+		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
+		type &= ~USER;
+		if (type < TRAP_TYPES && trap_type[type])
+			panic(trap_type[type]);
+		else
+			panic("trap");
+		/*NOTREACHED*/
 
-	case T_PROTFLT + USER:	/* protection fault */
+	case T_PROTFLT + USER:		/* protection fault */
 		i = SIGBUS;
 		break;
 
 	case T_PRIVINFLT + USER:	/* privileged instruction fault */
-	case T_RESADFLT + USER:	/* reserved addressing fault */
-	case T_RESOPFLT + USER:	/* resereved operand fault */
-	case T_ALIGNFLT + USER:	/* unaligned data fault */
+	case T_RESADFLT + USER:		/* reserved addressing fault */
+	case T_RESOPFLT + USER:		/* resereved operand fault */
+	case T_ALIGNFLT + USER:		/* unaligned data fault */
 		u.u_code = type &~ USER;
 		i = SIGILL;
 		break;
 
-	case T_ASTFLT + USER:	/* Allow process switch */
+	case T_ASTFLT + USER:		/* Allow process switch */
 	case T_ASTFLT:
 		astoff();
 		if ((u.u_procp->p_flag & SOWEUPC) && u.u_prof.pr_scale) {
@@ -122,25 +114,25 @@ unsigned code;
 		i = SIGSEGV;
 		break;
 
-	case T_TABLEFLT:		/* allow page table faults in kernel mode */
-	case T_TABLEFLT + USER:   /* page table fault */
+	case T_TABLEFLT:		/* allow page table faults in kernel */
+	case T_TABLEFLT + USER:		/* page table fault */
 		panic("ptable fault");
 
-	case T_PAGEFLT:		/* allow page faults in kernel mode */
-	case T_PAGEFLT + USER:	/* page fault */
+	case T_PAGEFLT:			/* allow page faults in kernel mode */
+	case T_PAGEFLT + USER:		/* page fault */
 		i = u.u_error;
-		if(fastreclaim(code) == 0)
-			pagein(code, 0);
+		pagein(code, 0);
 		u.u_error = i;
 		if (type == T_PAGEFLT)
 			return;
 		goto out;
 
-	case T_BPTFLT + USER:	/* bpt instruction fault */
-	case T_TRCTRAP + USER:	/* trace trap */
+	case T_BPTFLT + USER:		/* bpt instruction fault */
+	case T_TRCTRAP + USER:		/* trace trap */
 		locr0[PS] &= ~PSL_T;
 		i = SIGTRAP;
 		break;
+
 	case T_KSPNOTVAL:
 	case T_KSPNOTVAL + USER:
 		i = SIGKILL;	/* There is nothing to do but to kill the 
@@ -148,6 +140,10 @@ unsigned code;
 		printf("KSP NOT VALID.\n");
 		break;
 
+	case T_BUSERR + USER:
+		i = SIGBUS;
+		u.u_code = code;
+		break;
 	}
 	psignal(u.u_procp, i);
 out:
@@ -182,77 +178,72 @@ out:
 }
 
 #ifdef SYSCALLTRACE
-int syscalltrace = 0;
+int	syscalltrace = 0;
 #endif
 
 /*
- * Called from the trap handler when a system call occurs
+ * Called from locore when a system call occurs
  */
+/*ARGSUSED*/
 syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
-unsigned code;
+	unsigned code;
 {
-	/* Next 2 dummy variables MUST BE the first local */
-	/* variables; leaving place for registers 0 and 1 */
-	/* which are not preserved by the 'cct' */
-
-	int	dumm1;		/* register 1 */
-	int	dumm0;		/* register 0 */
-	register dumm3;		/* register 12 is the 1'st register variable */
-				/* in TAHOE  (register 11 in VAX) */
-
+	int r0, r1;			/* must reserve space */
 	register int *locr0 = ((int *)&psl)-PS;
-	register caddr_t params;		/* known to be r10 below */
-	register int i;				/* known to be r9 below */
+	register caddr_t params;
+	register int i;
 	register struct sysent *callp;
 	register struct proc *p;
-	struct	timeval syst;
+	struct timeval syst;
 	int opc;
 
+#ifdef lint
+	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
+#endif
 	syst = u.u_ru.ru_stime;
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
-	if (code == 139) {			/* XXX */
-		sigcleanup();			/* XXX */
-		goto done;			/* XXX */
+	if (code == 139) {			/* 4.2 COMPATIBILTY XXX */
+		osigcleanup();			/* 4.2 COMPATIBILTY XXX */
+		goto done;			/* 4.2 COMPATIBILTY XXX */
 	}
 	params = (caddr_t)locr0[FP] + NBPW;
 	u.u_error = 0;
-	/*------ DIRTY CODE !!!!!!!!!---------*/
-	/* try to reconstruct pc, assuming code is an immediate constant */
+/* BEGIN GROT */
+	/*
+	 * Try to reconstruct pc, assuming code
+	 * is an immediate constant
+	 */
 	opc = pc - 2;		/* short literal */
 	if (code > 0x3f) {
-		opc--;	/* byte immediate */
+		opc--;				/* byte immediate */
 		if (code > 0x7f) {
-			opc--;	/* word immediate */
+			opc--;			/* word immediate */
 			if (code > 0x7fff)
 				opc -= 2;	/* long immediate */
 		}
 	}
-	/*------------------------------------*/
+/* END GROT */
 	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	if (callp == sysent) {
 		i = fuword(params);
 		params += NBPW;
-	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
+		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
-	if (i = callp->sy_narg * sizeof (int)) {
-		asm("prober $1,(r10),r9");		/* GROT */
-		asm("bnequ ok");			/* GROT */
-		u.u_error = EFAULT;			/* GROT */
-		goto bad;				/* GROT */
-asm("ok:");						/* GROT */
-		bcopy(params,u.u_arg,i);
+	if ((i = callp->sy_narg * sizeof (int)) &&
+	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
+		locr0[R0] = u.u_error;
+		locr0[PS] |= PSL_C;	/* carry bit */
+		goto done;
 	}
-	u.u_ap = u.u_arg;
-	u.u_dirp = (caddr_t)u.u_arg[0];
 	u.u_r.r_val1 = 0;
-	u.u_r.r_val2 = locr0[R1]; /*------------ CHECK again */
+	u.u_r.r_val2 = locr0[R1];
 	if (setjmp(&u.u_qsave)) {
-		if (u.u_error == 0 && u.u_eosys == JUSTRETURN)
+		if (u.u_error == 0 && u.u_eosys != RESTARTSYS)
 			u.u_error = EINTR;
 	} else {
-		u.u_eosys = JUSTRETURN;
+		u.u_eosys = NORMALRETURN;
 #ifdef SYSCALLTRACE
 		if (syscalltrace) {
 			register int i;
@@ -272,20 +263,21 @@ asm("ok:");						/* GROT */
 			putchar('\n', 0);
 		}
 #endif
-
-		(*(callp->sy_call))();
+		(*callp->sy_call)();
 	}
-	if (u.u_eosys == RESTARTSYS)
+	if (u.u_eosys == NORMALRETURN) {
+		if (u.u_error) {
+			locr0[R0] = u.u_error;
+			locr0[PS] |= PSL_C;	/* carry bit */
+		} else {
+			locr0[PS] &= ~PSL_C;	/* clear carry bit */
+			locr0[R0] = u.u_r.r_val1;
+			locr0[R1] = u.u_r.r_val2;
+		}
+	} else if (u.u_eosys == RESTARTSYS)
 		pc = opc;
-	else if (u.u_error) {
-bad:
-		locr0[R0] = u.u_error;
-		locr0[PS] |= PSL_C;	/* carry bit */
-	} else {
-		locr0[PS] &= ~PSL_C;	/* clear carry bit */
-		locr0[R0] = u.u_r.r_val1;
-		locr0[R1] = u.u_r.r_val2;
-	}
+	/* else if (u.u_eosys == JUSTRETURN) */
+		/* nothing to do */
 done:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
@@ -324,11 +316,13 @@ done:
  */
 nosys()
 {
+
 	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
 		u.u_error = EINVAL;
 	psignal(u.u_procp, SIGSYS);
 }
 
+#ifdef notdef
 /*
  * Ignored system call
  */
@@ -336,140 +330,4 @@ nullsys()
 {
 
 }
-
-fpemulate(hfsreg,acc_most,acc_least,dbl,op_most,op_least,opcode,pc,psl)
-{
-/*
- * Emulate the F.P. 'opcode'. Update psl flags as necessary.
- * If all OK, set 'opcode' to 0, else to the F.P. exception #.
- * Not all parameter longwords are relevant - depends on opcode.
- *
- * The entry mask is set so ALL registers are saved - courtesy of
- *  locore.s. This enables F.P. opcodes to change 'user' registers
- *  before return.
- */
-
- /* WARNING!!!! THIS CODE MUST NOT PRODUCE ANY FLOATING POINT EXCEPTIONS. */
-
-	/* Next 2 dummy variables MUST BE the first local */
-	/* variables; leaving place for registers 0 and 1 */
-	/* which are not preserved by the 'cct' */
-
-	int	dumm1;		/* register 1 */
-	int	dumm0;		/* register 0 */
-	register dumm3;		/* register 12 is the 1'st register variable */
-				/* in TAHOE  (register 11 in VAX) */
-
-	register int *locr0 = ((int *)&psl)-PS; /* R11 */
-	int hfs = 0; 			/* returned data about exceptions */
-	float (*f_proc)();		/* fp procedure to be called.	*/
-	double (*d_proc)();		/* fp procedure to be called.	*/
-	int dest_type;			/* float or double.	*/
-	union{
-		float ff;			/* float result. 	*/
-		int fi;
-	}f_res;
-	union{
-		double	dd;			/* double result.	*/
-		int	di[2] ;
-	}d_res;
-	extern float 	Kcvtlf(), Kaddf(), Ksubf(), Kmulf(), Kdivf();
-	extern double 	Kcvtld(), Kaddd(), Ksubd(), Kmuld(), Kdivd();
-	extern float   	Ksinf(), Kcosf(), Katanf(), Klogf(), Ksqrtf(), Kexpf();
-	
-	
-
-	switch(opcode & 0x0FF){
-
-	case CVLF:	f_proc = Kcvtlf; dest_type = FLOAT; 
-			locr0[PS] &= ~PSL_DBL;break;	/* clear double bit */
-	case CVLD:	d_proc = Kcvtld; dest_type = DOUBLE; 
-			locr0[PS] |= PSL_DBL; break;	/* turn on double bit */
-	case ADDF:	f_proc = Kaddf; dest_type = FLOAT;
-			break;
-	case ADDD:	d_proc = Kaddd; dest_type = DOUBLE;
-			break;
-	case SUBF:	f_proc = Ksubf; dest_type = FLOAT;
-			break;
-	case SUBD:	d_proc = Ksubd; dest_type = DOUBLE;
-			break;
-	case MULF:	f_proc = Kmulf; dest_type = FLOAT;
-			break;
-	case MULD:	d_proc = Kmuld; dest_type = DOUBLE;
-			break;
-	case DIVF:	f_proc = Kdivf; dest_type = FLOAT;
-			break;
-	case DIVD:	d_proc = Kdivd; dest_type = DOUBLE;
-			break;
-	case SINF:	f_proc = Ksinf; dest_type = FLOAT;
-			break;
-	case COSF:	f_proc = Kcosf; dest_type = FLOAT;
-			break;
-	case ATANF:	f_proc = Katanf; dest_type = FLOAT;
-			break;
-	case LOGF:	f_proc = Klogf; dest_type = FLOAT;
-			break;
-	case SQRTF:	f_proc = Ksqrtf; dest_type = FLOAT;
-			break;
-	case EXPF:	f_proc = Kexpf; dest_type = FLOAT;
-			break;
-	}
-
-	switch(dest_type){
-
-	case FLOAT: 
-		f_res.ff = (*f_proc)(acc_most,acc_least,op_most,op_least,&hfs);
-
-		if (f_res.fi == 0 ) locr0[PS] |= PSL_Z;
-		if (f_res.fi < 0 ) locr0[PS] |= PSL_N;
-		break;
-	case DOUBLE:
-		d_res.dd = (*d_proc)(acc_most,acc_least,op_most,op_least,&hfs);
-		if ((d_res.di[0] == 0) && (d_res.di[1] == 0))
-						locr0[PS] |= PSL_Z;
-		if (d_res.di[0] < 0 ) locr0[PS] |= PSL_N;
-		break;
-	}
-
-	if (hfs & HFS_OVF){
-		locr0[PS] |= PSL_V;	/* turn on overflow bit */
-		/* if (locr0[PS] & PSL_IV)   {  /* overflow elabled?	*/
-			opcode = OVF_EXC;
-			u.u_error = (hfs & HFS_DOM) ? EDOM : ERANGE;
-			return;
-		/*}*/
-	}
-	else if (hfs & HFS_UNDF){
-		if (locr0[PS] & PSL_FU){  /* underflow elabled?	*/
-			opcode = UNDF_EXC;
-			u.u_error = (hfs & HFS_DOM) ? EDOM : ERANGE;
-			return;
-		} 
-	}
-	else if (hfs & HFS_DIVZ){
-		opcode = DIV0_EXC;
-		return;
-	}
-	else if (hfs & HFS_DOM)
-		u.u_error = EDOM;
-	else if (hfs & HFS_RANGE)
-		u.u_error = ERANGE;
-
-	switch(dest_type){
-	case FLOAT:
-		if ((hfs & HFS_OVF) || (hfs & HFS_UNDF)) {
-			f_res.ff = 0.0;
-			locr0[PS] |= PSL_Z;
-		}
-		mvtofacc(f_res.ff, &acc_most);
-		break;
-	case DOUBLE:
-		if ((hfs & HFS_OVF) || (hfs & HFS_UNDF)) {
-			d_res.dd = 0.0;
-			locr0[PS] |= PSL_Z;
-		}
-		mvtodacc(d_res.di[0], d_res.di[1], &acc_most);
-		break;
-	}
-	opcode=0;
-}
+#endif
