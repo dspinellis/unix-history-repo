@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -36,7 +36,6 @@ static char sccsid[] = "@(#)syslog.c	5.9 (Berkeley) %G%";
 #define	MAXLINE	1024			/* max message size */
 #define NULL	0			/* manifest */
 
-#define PRIMASK(p)	(1 << ((p) & LOG_PRIMASK))
 #define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)
 #define IMPORTANT 	LOG_ERR
 
@@ -65,7 +64,8 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri <= 0 || PRIFAC(pri) >= LOG_NFACILITIES || (PRIMASK(pri) & LogMask) == 0)
+	if (pri <= 0 || PRIFAC(pri) >= LOG_NFACILITIES ||
+	    (LOG_MASK(pri) & LogMask) == 0)
 		return;
 	if (LogFile < 0)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
