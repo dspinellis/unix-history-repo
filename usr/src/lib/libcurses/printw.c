@@ -6,12 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	8.2 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 
-#if __STDC__
+#ifdef __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
@@ -31,7 +31,7 @@ static int __winwrite __P((void *, const char *, int));
  *	Printf on the standard screen.
  */
 int
-#if __STDC__
+#ifdef __STDC__
 printw(const char *fmt, ...)
 #else
 printw(fmt, va_alist)
@@ -42,7 +42,7 @@ printw(fmt, va_alist)
 	va_list ap;
 	int ret;
 
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -57,7 +57,7 @@ printw(fmt, va_alist)
  *	Printf on the given window.
  */
 int
-#if __STDC__
+#ifdef __STDC__
 wprintw(WINDOW * win, const char *fmt, ...)
 #else
 wprintw(win, fmt, va_alist)
@@ -85,7 +85,7 @@ wprintw(win, fmt, va_alist)
  *	arguments, they cannot be macros.  Sigh....
  */
 int
-#if __STDC__
+#ifdef __STDC__
 mvprintw(register int y, register int x, const char *fmt, ...)
 #else
 mvprintw(y, x, fmt, va_alist)
@@ -97,7 +97,7 @@ mvprintw(y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -110,7 +110,7 @@ mvprintw(y, x, fmt, va_alist)
 }
 
 int
-#if __STDC__
+#ifdef __STDC__
 mvwprintw(register WINDOW * win, register int y, register int x,
     const char *fmt, ...)
 #else
@@ -124,7 +124,7 @@ mvwprintw(win, y, x, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);

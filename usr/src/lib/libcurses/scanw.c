@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	8.2 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)scanw.c	8.1 (Berkeley) %G%";
 
 #include <curses.h>
 
-#if __STDC__
+#ifdef __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)scanw.c	8.1 (Berkeley) %G%";
  *	Implement a scanf on the standard screen.
  */
 int
-#if __STDC__
+#ifdef __STDC__
 scanw(const char *fmt, ...)
 #else
 scanw(fmt, va_alist)
@@ -37,7 +37,7 @@ scanw(fmt, va_alist)
 	va_list ap;
 	int ret;
 
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -52,7 +52,7 @@ scanw(fmt, va_alist)
  *	Implements a scanf on the given window.
  */
 int
-#if __STDC__
+#ifdef __STDC__
 wscanw(WINDOW *win, const char *fmt, ...)
 #else
 wscanw(win, fmt, va_alist)
@@ -64,7 +64,7 @@ wscanw(win, fmt, va_alist)
 	va_list ap;
 	int ret;
 
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -80,7 +80,7 @@ wscanw(win, fmt, va_alist)
  *	arguments, they cannot be macros.  Another sigh....
  */
 int
-#if __STDC__
+#ifdef __STDC__
 mvscanw(register int y, register int x, const char *fmt,...)
 #else
 mvscanw(y, x, fmt, va_alist)
@@ -94,7 +94,7 @@ mvscanw(y, x, fmt, va_alist)
 
 	if (move(y, x) != OK)
 		return (ERR);
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -105,7 +105,7 @@ mvscanw(y, x, fmt, va_alist)
 }
 
 int
-#if __STDC__
+#ifdef __STDC__
 mvwscanw(register WINDOW * win, register int y, register int x,
     const char *fmt, ...)
 #else
@@ -121,7 +121,7 @@ mvwscanw(win, y, x, fmt, va_alist)
 
 	if (move(y, x) != OK)
 		return (ERR);
-#if __STDC__
+#ifdef __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
