@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,12 +29,15 @@ ckinode(dp, idesc)
 	long ret, n, ndb, offset;
 	struct dinode dino;
 	quad_t remsize, sizepb;
+	mode_t mode;
 
 	if (idesc->id_fix != IGNORE)
 		idesc->id_fix = DONTKNOW;
 	idesc->id_entryno = 0;
 	idesc->id_filesize = dp->di_size;
-	if ((dp->di_mode & IFMT) == IFBLK || (dp->di_mode & IFMT) == IFCHR)
+	mode = dp->di_mode & IFMT;
+	if (mode == IFBLK || mode == IFCHR || (mode == IFLNK &&
+	    dp->di_size < sblock.fs_maxsymlinklen))
 		return (KEEPON);
 	dino = *dp;
 	ndb = howmany(dino.di_size, sblock.fs_bsize);
