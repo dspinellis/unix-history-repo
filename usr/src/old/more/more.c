@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.9 (Berkeley) 83/02/14";
+static	char *sccsid = "@(#)more.c	4.10 (Berkeley) 83/02/17";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -415,7 +415,7 @@ register int num_lines;
 	    return;
 	if (hard && promptlen > 0)
 		erase (0);
-	if (noscroll && num_lines == dlines)
+	if (noscroll && num_lines >= dlines)
 	{ 
 	    if (clreol)
 		home();
