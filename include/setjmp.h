@@ -52,14 +52,11 @@
 #define _JBLEN	10
 #endif
 
+typedef int jmp_buf[_JBLEN];
+
 #ifndef _ANSI_SOURCE
-/*
- * WARNING: sigsetjmp() isn't supported yet, this is a placeholder.
- */
 typedef int sigjmp_buf[_JBLEN + 1];
 #endif /* not ANSI */
-
-typedef int jmp_buf[_JBLEN];
 
 #include <sys/cdefs.h>
 
@@ -68,9 +65,6 @@ int	setjmp __P((jmp_buf));
 void	longjmp __P((jmp_buf, int));
 
 #ifndef _ANSI_SOURCE
-/*
- * WARNING: sigsetjmp() isn't supported yet, this is a placeholder.
- */
 int	sigsetjmp __P((sigjmp_buf, int));
 void	siglongjmp __P((sigjmp_buf, int));
 #endif /* not ANSI */
