@@ -1,10 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.2 83/05/20";
+static	char *sccsid = "@(#)dr_1.c	1.3 83/05/20";
 #endif
 
 #include "externs.h"
 #include <sys/types.h>
-#include <sys/stat.h>
 
 #define couldwin(from, to)	(specs[scene[game].ship[from].shipnum].crew2 > specs[scene[game].ship[to].shipnum].crew2 * 1.5)
 
@@ -431,19 +430,20 @@ char **argv;
 {
 	register int n, k;
 	char file[25];
-	struct stat Stat;
 	int uid;
 
-	signal(1,1);
-	signal(2,1);
-/*	uid = geteuid(); */
-/*	MIGHTYCAPTAIN = uid == MASTER || uid == SERVANT1 || uid == SERVANT2 || uid == SERVANT3; */
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
 	srand(getpid());
 	/* ;;; add code here to check the game number. */
 	sprintf(file, "/tmp/.%s",argv[1]);
-	for (n = 0; stat(file,&Stat) < 0 && n < 20; n++)
+	for (n = 0; access(file, 0) < 0 && n < 20; n++)
 		sleep(5);
 	syncfile = fopen(file, "r+");
+	if (syncfile == NULL) {
+		perror(file);
+		exit(1);
+	}
 	sscanf(argv[1], "%d", &game);
 	for (n=0; n < scene[game].vessels; n++){
 		nation[scene[game].ship[n].nationality + 1] = n + 1;
@@ -464,7 +464,7 @@ char **argv;
 	if (!nation[3])
 		nation[3] = nation[2];
 	sync();
-	for(;;){
+	for(;;) {
 		windspeed = scene[game].windspeed;
 		winddir = scene[game].winddir;
 		turn = scene[game].turn;
