@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.4 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.5 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.4 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.5 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -609,16 +609,9 @@ smtp(e)
 			}
 			while (vrfyqueue != NULL)
 			{
-				register ADDRESS *a = vrfyqueue->q_next;
-
-				while (a != NULL && bitset(QDONTSEND|QBADADDR, a->q_flags))
-					a = a->q_next;
-
 				if (!bitset(QDONTSEND|QBADADDR, vrfyqueue->q_flags))
 					printvrfyaddr(vrfyqueue, a == NULL);
-				else if (a == NULL)
-					message("554 Self destructive alias loop");
-				vrfyqueue = a;
+				vrfyqueue = vrfyqueue->q_next;
 			}
 			if (InChild)
 				finis();

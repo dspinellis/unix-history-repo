@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -49,6 +49,7 @@ sendtolist(list, ctladdr, sendq, e)
 	bool firstone;		/* set on first address sent */
 	char delimiter;		/* the address delimiter */
 	int naddrs;
+	char *oldto = e->e_to;
 
 	if (tTd(25, 1))
 	{
@@ -109,7 +110,7 @@ sendtolist(list, ctladdr, sendq, e)
 		naddrs++;
 	}
 
-	e->e_to = NULL;
+	e->e_to = oldto;
 	return (naddrs);
 }
 /*
@@ -184,7 +185,7 @@ recipient(a, sendq, e)
 	    !bitset(EF_QUEUERUN, e->e_flags))
 	{
 		a->q_flags |= QBADADDR;
-		usrerr("550 Cannot mail directly to programs", m->m_name);
+		usrerr("550 Cannot mail directly to programs");
 	}
 
 	/*
@@ -211,7 +212,8 @@ recipient(a, sendq, e)
 					message("duplicate suppressed");
 				q->q_flags |= a->q_flags;
 			}
-			return (q);
+			a = q;
+			goto testselfdestruct;
 		}
 	}
 
@@ -228,7 +230,7 @@ recipient(a, sendq, e)
 		printf("at trylocaluser %s\n", a->q_user);
 
 	if (bitset(QDONTSEND|QBADADDR|QVERIFIED, a->q_flags))
-		return (a);
+		goto testselfdestruct;
 
 	if (m == InclMailer)
 	{
@@ -287,7 +289,7 @@ recipient(a, sendq, e)
 	{
 		if (!bitset(QDONTSEND, a->q_flags))
 			e->e_nrcpts++;
-		return (a);
+		goto testselfdestruct;
 	}
 
 	/* try aliasing */
@@ -313,14 +315,14 @@ recipient(a, sendq, e)
 			message("queued (user database error): %s",
 				errstring(errno));
 			e->e_nrcpts++;
-			return (a);
+			goto testselfdestruct;
 		}
 	}
 # endif
 
 	/* if it was an alias or a UDB expansion, just return now */
 	if (bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags))
-		return (a);
+		goto testselfdestruct;
 
 	/*
 	**  If we have a level two config file, then pass the name through
@@ -393,6 +395,19 @@ recipient(a, sendq, e)
 	}
 	if (!bitset(QDONTSEND, a->q_flags))
 		e->e_nrcpts++;
+
+  testselfdestruct:
+	if (a->q_alias == NULL && a != &e->e_from)
+	{
+		q = a->q_next;
+		while (q != NULL && bitset(QDONTSEND|QBADADDR, q->q_flags))
+			q = q->q_next;
+		if (bitset(QDONTSEND|QBADADDR, a->q_flags) && q == NULL)
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("554 aliasing/forwarding loop broken");
+		}
+	}
 	return (a);
 }
 /*
@@ -691,6 +706,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	(void) xfclose(fp, "include", fname);
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
+	e->e_to = oldto;
 	return 0;
 }
 
