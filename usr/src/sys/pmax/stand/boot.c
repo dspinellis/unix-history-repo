@@ -7,11 +7,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.8 (Berkeley) %G%
+ *	@(#)boot.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/exec.h>
+#include <pmax/stand/dec_prom.h>
 
 char	line[1024];
 
@@ -59,7 +60,10 @@ main(argc, argv)
 		ask = 1;
 	}
 	printf("Starting at 0x%x\n\n", entry);
-	((void (*)())entry)(argc, argv);
+	if (callv == &callvec)
+		((void (*)())entry)(argc, argv, 0, 0);
+	else
+		((void (*)())entry)(argc, argv, DEC_PROM_MAGIC, callv);
 }
 
 /*
