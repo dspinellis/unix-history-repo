@@ -1,5 +1,5 @@
 INSTALLATION GUIDE
-README	5.5	85/04/10
+README	5.6	85/06/24
 
 This version is based on the "rti uucp" that was on the 4.2BSD tape.
 It contains many additional  features and fixes from Usenet,
@@ -13,13 +13,14 @@ to something like:
 
 	# Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
 	# 	A=uux - -r $h!rmail ($u)
-	Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
-		A=uux - -r -z -a$f -gC $h!rmail ($u)
+	Muucp, P=/usr/bin/uux, F=sDFMmhuU, S=13, R=23, M=100000,
+		A=uux - -r -z -a$g -gC $h!rmail ($u)
 
-The -a$f provides a return address in case mail fails (So It
+The -a$g provides a return address in case mail fails (So It
 won't go to yourmachine!uucp anymore.) The -gC specifies a grade
 for mail. C is a good choice for mail. News should run at 'd'. This
-way, mail gets sent before news.
+way, mail gets sent before news. The 'm' flag specifies that this
+mail can send to multiple addresses, which uux can.
 
 The man pages now describe all the options for the various commands.
 Make sure you read them. A list of the functional differences is in "Changes".
@@ -27,9 +28,27 @@ Make sure you read them. A list of the functional differences is in "Changes".
 You should also look through the UUAIDS directory. There are some useful
 programs and hints therein.
 
+The maximum length of a site name has been changed from the old 7 to the
+14. This is the be compatible with the HoneyDanBer uucp (aka BNU 1) which
+is as close to a standard uucp as there is. Sites which have sitenames
+longer than 7 characters that only send you the first 7 characters are
+broken and should be fixed. However, there is a way of compensating for
+this until they fix their problem. For each site you talk to that has a
+name longer that 7 characters, put a line in /usr/lib/uucp/L.aliases of
+the form:
+	fullname name-truncated-to-7-characters.
+E.g:
+	tektronix tektron
+	lbl-csam lbl-csa
+	rochester rochest
+	ut-sally ut-sall
+(See UUAIDS/L.aliases for more details on aliasing uucp names.) If the site
+name is <= 7 characters, you don't have to do anything.
+
+
 Rick Adams
 rick@seismo.ARPA
-March 4, 1985
+June 19, 1985
 
 Tom Truscott, rti!trt,decvax!duke!trt (919)541-6488 Research Triangle Institute
 Bob Gray, gray@berkeley, duke!adiron!bob (315) 336-4989
