@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.40 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.41 (Berkeley) %G%
  */
 
 /*
@@ -717,84 +717,106 @@ nfs_getattrcache(vp, vap)
 /*
  * Set up nameidata for a namei() call and do it
  */
-nfs_namei(ndp, fhp, len, mdp, dposp)
+nfs_namei(ndp, fhp, len, mdp, dposp, p)
 	register struct nameidata *ndp;
 	fhandle_t *fhp;
 	int len;
 	struct mbuf **mdp;
 	caddr_t *dposp;
+	struct proc *p;
 {
 	register int i, rem;
 	register struct mbuf *md;
-	register char *cp;
+	register char *fromcp, *tocp;
 	struct vnode *dp;
 	int flag;
 	int error;
 
-	if ((ndp->ni_nameiop & HASBUF) == 0) {
-		flag = ndp->ni_nameiop & OPMASK;
-		/*
-		 * Copy the name from the mbuf list to the d_name field of ndp
-		 * and set the various ndp fields appropriately.
-		 */
-		cp = *dposp;
-		md = *mdp;
-		rem = mtod(md, caddr_t)+md->m_len-cp;
-		ndp->ni_hash = 0;
-		for (i = 0; i < len;) {
-			while (rem == 0) {
-				md = md->m_next;
-				if (md == NULL)
-					return (EBADRPC);
-				cp = mtod(md, caddr_t);
-				rem = md->m_len;
+	flag = ndp->ni_nameiop & OPMASK;
+	MALLOC(ndp->ni_pnbuf, char *, len + 1, M_NAMEI, M_WAITOK);
+	/*
+	 * Copy the name from the mbuf list to ndp->ni_pnbuf
+	 * and set the various ndp fields appropriately.
+	 */
+	fromcp = *dposp;
+	tocp = ndp->ni_pnbuf;
+	md = *mdp;
+	rem = mtod(md, caddr_t) + md->m_len - fromcp;
+	ndp->ni_hash = 0;
+	for (i = 0; i < len; i++) {
+		while (rem == 0) {
+			md = md->m_next;
+			if (md == NULL) {
+				error = EBADRPC;
+				goto out;
 			}
-			if (*cp == '\0' || *cp == '/')
-				return (EINVAL);
-			if (*cp & 0200)
-				if ((*cp&0377) == ('/'|0200) || flag != DELETE)
-					return (EINVAL);
-			ndp->ni_dent.d_name[i++] = *cp;
-			ndp->ni_hash += (unsigned char)*cp * i;
-			cp++;
-			rem--;
+			fromcp = mtod(md, caddr_t);
+			rem = md->m_len;
 		}
-		*mdp = md;
-		*dposp = cp;
-		len = nfsm_rndup(len)-len;
-		if (len > 0) {
-			if (rem < len) {
-				if (error = nfs_adv(mdp, dposp, len, rem))
-					return (error);
-			} else
-				*dposp += len;
+		if (*fromcp == '\0' || *fromcp == '/') {
+			error = EINVAL;
+			goto out;
 		}
-	} else
-		i = len;
-	ndp->ni_namelen = i;
-	ndp->ni_dent.d_namlen = i;
-	ndp->ni_dent.d_name[i] = '\0';
-	ndp->ni_segflg = UIO_SYSSPACE;
-	ndp->ni_pathlen = 1;
-	ndp->ni_pnbuf = ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
-	ndp->ni_next = &ndp->ni_dent.d_name[i];
-	ndp->ni_nameiop |= (NOCROSSMOUNT | REMOTE | HASBUF | STARTDIR);
+		if (*fromcp & 0200)
+			if ((*fromcp&0377) == ('/'|0200) || flag != DELETE) {
+				error = EINVAL;
+				goto out;
+			}
+		ndp->ni_hash += (unsigned char)*fromcp;
+		*tocp++ = *fromcp++;
+		rem--;
+	}
+	*tocp = '\0';
+	*mdp = md;
+	*dposp = fromcp;
+	len = nfsm_rndup(len)-len;
+	if (len > 0) {
+		if (rem >= len)
+			*dposp += len;
+		else if (error = nfs_adv(mdp, dposp, len, rem))
+			goto out;
+	}
+	ndp->ni_pathlen = tocp - ndp->ni_pnbuf;
+	ndp->ni_ptr = ndp->ni_pnbuf;
 	/*
 	 * Extract and set starting directory.
 	 */
 	if (error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cred))
-		return (error);
+		goto out;
 	if (dp->v_type != VDIR) {
 		vrele(dp);
-		return (ENOTDIR);
+		error = ENOTDIR;
+		goto out;
 	}
 	ndp->ni_startdir = dp;
+	ndp->ni_nameiop |= (NOCROSSMOUNT | REMOTE);
 	/*
-	 * And call namei() to do the real work
+	 * And call lookup() to do the real work
 	 */
-	error = namei(ndp, curproc);		/* XXX XXX XXX */
-	if (error || (ndp->ni_nameiop & SAVESTARTDIR) == 0)
-		vrele(dp);
+	if (error = lookup(ndp, p))
+		goto out;
+	/*
+	 * Check for encountering a symbolic link
+	 */
+	if (ndp->ni_more) {
+		if ((ndp->ni_nameiop & LOCKPARENT) && ndp->ni_pathlen == 1)
+			vput(ndp->ni_dvp);
+		else
+			vrele(ndp->ni_dvp);
+		vput(ndp->ni_vp);
+		ndp->ni_vp = NULL;
+		error = EINVAL;
+		goto out;
+	}
+	/*
+	 * Check for saved name request
+	 */
+	if (ndp->ni_nameiop & (SAVENAME | SAVESTART)) {
+		ndp->ni_nameiop |= HASBUF;
+		return (0);
+	}
+out:
+	FREE(ndp->ni_pnbuf, M_NAMEI);
 	return (error);
 }
 
