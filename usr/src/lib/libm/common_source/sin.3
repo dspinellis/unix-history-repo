@@ -70,7 +70,7 @@ if
 .I y
 not equal to 0.
 .SH SEE ALSO
-intro(3M)
+intro(3M), hypot(3M), sqrt(3M)
 .SH DIAGNOSTICS
 Arguments of magnitude greater than 1 cause
 .I asin
@@ -79,5 +79,143 @@ and
 to return the reserved operand on the VAX;
 .I errno
 is set to EDOM.
+.SH NOTES
+.I Atan2
+defines
+.I atan2(0,0)
+=
+.I 0
+on the VAX despite that previously
+.I atan2(0,0)
+may have generated an error message.
+The reasons for assigning a value to
+.I atan2(0,0)
+are these:
+.IP (1)
+Any program that already tests whether
+.I y
+=
+.I x
+=
+.I 0
+before computing
+.I atan2(y,x)
+will be indifferent to whether
+.I atan2(0,0)
+=
+.I 0
+or not.
+Any program that expects
+.I atan2(0,0)
+to be invalid is dubious because the consequence of that
+invalidity will vary from one computer system to another.
+.IP (2)
+The principal use for
+.I atan2
+is conversion between rectangular (\fIx, y\fR) and polar
+(\fIr\fR,
+.if n\
+\fItheta\fR)
+.if t\
+\fI\(*h\fR)
+coordinates that must satisfy
+.br
+.I x
+=
+.I r
+\(**
+.I cos
+.if n\
+.I theta
+.if t\
+\(*h
+and
+.I y
+=
+.I r
+\(**
+.I sin
+.if n\
+.I theta.
+.if t\
+\(*h.
+Then mapping (\fIx\fR = \fI0\fR, \fIy\fR = \fI0\fR) to
+(\fIr\fR = \fI0\fR,
+.if n\
+.I theta
+.if t\
+.I \(*h
+= \fI0\fR)
+without fuss saves a programmer from nuisance tests.
+In general, given
+.I x
+and
+.I y
+the conversion should be effected by computing
+.RS
+.I r
+=
+\fIhypot\fR(\fIx\fR,\fIy\fR)			... :=
+.if n\
+\fIsqrt\fR(\fIx**2\fR+\fIy**2\fR)
+.if t\
+\fIsqrt\fR(\fIx\u\s82\s10\d\fR+\fIy\u\s82\s10\d\fR)
+.br
+.if n\
+.I theta
+.if t\
+\(*h
+=
+.I atan2(y,x).
+.RE
+.IP (3)
+On a machine that conforms to IEEE
+.I 754,
+the foregoing conversion has to cope with signed
+.I zeroes
+and
+.I infinities.
+For that purpose the formula above is compatible
+with the following:
+.br
+if
+.I x
+\(>=
+.I 0
+then
+.if n\
+.I theta
+.if t\
+\(*h
+=
+.I 2\(**atan(y/(r\fR+\fIx))
+else
+.if n\
+I theta
+.if t\
+\(*h
+=
+.I 2\(**atan((r\-x)/y)
+.br
+except if
+.I r
+=
+.I 0
+then replace
+.I x
+by
+.I copysign(1,x)
+here, and if
+.I r
+is infinite take limits to get a multiple of
+.if n\
+.I pi/4
+.if t\
+\(*p/4
+for
+.if n\
+.I theta.
+.if t\
+\(*h.
 .SH AUTHOR
-Robert P. Corbett, W. Kahan, Stuart McDonald, Kwok-Choi Ng
+Robert P. Corbett, W. Kahan, Stuart McDonald, Kwok\-Choi Ng
