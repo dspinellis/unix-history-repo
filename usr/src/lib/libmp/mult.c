@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)mult.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)mult.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <mp.h>
 mult(a,b,c) struct mint *a,*b,*c;
