@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	2.4 %G%";
+static char *SccsId = "@(#)cmd1.c	2.5 %G%";
 
 /*
  * Print the current active headings.
@@ -398,27 +398,17 @@ mboxit(msgvec)
  */
 folders()
 {
-	char *maildir, *shell;
 	char dirname[BUFSIZ], cmd[BUFSIZ];
 	int pid, s, e;
 
-	if ((maildir = value("maildir")) == NOSTR) {
-		printf("No value set for \"maildir\"\n");
+	if (getfold(dirname) < 0) {
+		printf("No value set for \"folder\"\n");
 		return(-1);
 	}
-	if (*maildir != '/')
-		sprintf(dirname, "%s/%s", homedir, maildir);
-	else
-		strcpy(dirname, maildir);
-	sprintf(cmd, "ls %s", dirname);
-	shell = value("SHELL");
-	if (shell == 0)
-		shell = SHELL;
 	switch ((pid = fork())) {
 	case 0:
-		execl(shell, "sh", "-c", cmd, 0);
+		execlp("ls", "ls", dirname, 0);
 		clrbuf(stdout);
-		perror(shell);
 		exit(1);
 
 	case -1:
