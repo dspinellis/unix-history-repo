@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,16 +34,18 @@ static char sccsid[] = "@(#)vipw.c	5.6 (Berkeley) %G%";
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <strings.h>
+
+char *passwd, *temp;
 
 main()
 {
 	extern int errno;
 	register int n, fd_passwd, fd;
 	struct rlimit rlim;
-	struct stat s1, s2;
-	char *fend, *passwd, *temp, *tend;
+	struct stat s1;
+	char *fend, *tend;
 	char buf[8*1024], from[MAXPATHLEN], to[MAXPATHLEN];
-	char *strerror(), *strcpy();
 
 	(void)signal(SIGHUP, SIG_IGN);
 	(void)signal(SIGINT, SIG_IGN);
@@ -59,15 +61,16 @@ main()
 	temp = _PATH_PTMP;
 	if ((fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600)) < 0) {
 		if (errno == EEXIST)
-			fprintf(stderr, "vipw: password file busy.\n");
+			(void)fprintf(stderr, "vipw: password file busy.\n");
 		else
-			fprintf(stderr,
+			(void)fprintf(stderr,
 			    "vipw: %s: %s\n", temp, strerror(errno));
 		exit(1);
 	}
 	passwd = _PATH_MASTERPASSWD;
 	if ((fd_passwd = open(passwd, O_RDONLY, 0)) < 0) {
-		fprintf(stderr, "vipw: %s: %s\n", passwd, strerror(errno));
+		(void)fprintf(stderr, "vipw: %s: %s\n", passwd,
+		    strerror(errno));
 		exit(1);
 	}
 	while ((n = read(fd_passwd, buf, sizeof(buf))) > 0)
@@ -76,36 +79,27 @@ main()
 
 	if (n == -1 || close(fd_passwd) || fsync(fd) ||
 	    fstat(fd, &s1) || close(fd)) {
-syserr:		fprintf(stderr, "vipw: %s", strerror(errno));
-		goto bad;
+syserr:		(void)fprintf(stderr, "vipw: %s; ", strerror(errno));
+		stop(1);
 	}
 
-	if (edit(temp)) {
-		fprintf(stderr, "vipw: edit failed");
-		goto bad;
+	for (;;) {
+		if (edit()) {
+			(void)fprintf(stderr, "vipw: edit failed; ");
+			stop(1);
+		}
+		if (!check(&s1))
+			break;
+		if (prompt())
+			stop(0);
 	}
-
-	if (!freopen(temp, "r", stdin) || fstat(fileno(stdin), &s2) ||
-	    !s2.st_size) {
-		fprintf(stderr, "vipw: can't read temp file");
-		goto bad;
-	}
-
-	if (s1.st_mtime == s2.st_mtime) {
-		fprintf(stderr, "vipw: %s unchanged.\n", passwd);
-		(void)unlink(temp);
-		exit(0);
-	}
-
-	if (!check())
-		goto bad;
 
 	switch(fork()) {
 	case 0:
 		break;
 	case -1:
-		fprintf(stderr, "vipw: can't fork");
-		goto bad;
+		(void)fprintf(stderr, "vipw: can't fork; ");
+		stop(1);
 		/* NOTREACHED */
 	default:
 		exit(0);
@@ -113,10 +107,8 @@ syserr:		fprintf(stderr, "vipw: %s", strerror(errno));
 	}
 
 	if (makedb(temp)) {
-		fprintf(stderr, "vipw: mkpasswd failed");
-bad:		fprintf(stderr, "; %s unchanged.\n", passwd);
-		(void)unlink(temp);
-		exit(1);
+		(void)fprintf(stderr, "vipw: mkpasswd failed; ");
+		stop(1);
 	}
 
 	/*
@@ -145,18 +137,32 @@ bad:		fprintf(stderr, "; %s unchanged.\n", passwd);
 	exit(0);
 }
 
-check()
+check(s1)
+	struct stat *s1;
 {
 	register long id;
 	register int lcnt, root;
 	register char *p, *sh;
+	struct stat s2;
+	FILE *tfp;
 	long atol();
-	char buf[1024], *getusershell(), *strsep();
+	char buf[1024], *getusershell();
 
-	for (lcnt = 1; fgets(buf, sizeof(buf), stdin); ++lcnt) {
+	if (!(tfp = fopen(temp, "r")) || fstat(fileno(tfp), &s2) ||
+	    !s2.st_size) {
+		(void)fprintf(stderr, "vipw: can't read temp file; ");
+		stop(1);
+	}
+
+	if (s1->st_mtime == s2.st_mtime) {
+		(void)fprintf(stderr, "vipw: ");
+		stop(0);
+	}
+
+	for (lcnt = 1; fgets(buf, sizeof(buf), tfp); ++lcnt) {
 		/* skip lines that are too big */
 		if (!index(buf, '\n')) {
-			fprintf(stderr, "vipw: line too long");
+			(void)fprintf(stderr, "vipw: line too long");
 			goto bad;
 		}
 		if (!(p = strsep(buf, ":\n")))		/* login */
@@ -167,11 +173,11 @@ check()
 			goto general;
 		id = atol(p);
 		if (root && id) {
-			fprintf(stderr, "vipw: root uid should be 0");
+			(void)fprintf(stderr, "vipw: root uid should be 0");
 			goto bad;
 		}
 		if (id > USHRT_MAX) {
-			fprintf(stderr, "vipw: %s > max uid value (%d)",
+			(void)fprintf(stderr, "vipw: %s > max uid value (%d)",
 			    p, USHRT_MAX);
 			goto bad;
 		}
@@ -179,7 +185,7 @@ check()
 			goto general;
 		id = atol(p);
 		if (id > USHRT_MAX) {
-			fprintf(stderr, "vipw: %s > max gid value (%d)",
+			(void)fprintf(stderr, "vipw: %s > max gid value (%d)",
 			    p, USHRT_MAX);
 			goto bad;
 		}
@@ -191,21 +197,22 @@ check()
 		if (!(p = strsep((char *)NULL, ":\n")))	/* shell */
 			goto general;
 		if (root && *p)				/* empty == /bin/sh */
-			for (;;)
+			for (setusershell();;)
 				if (!(sh = getusershell())) {
-					fprintf(stderr,
-					    "vipw: warning, unknown root shell.");
+					(void)fprintf(stderr,
+					    "vipw: warning, unknown root shell.\n");
 					break;
 				}
 				else if (!strcmp(p, sh))
 					break;
 		if (strsep((char *)NULL, ":\n")) {	/* too many */
-general:		fprintf(stderr, "vipw: corrupted entry");
-bad:			fprintf(stderr, "; line #%d", lcnt);
-			return(0);
+general:		(void)fprintf(stderr, "vipw: corrupted entry");
+bad:			(void)fprintf(stderr, "; line #%d.\n", lcnt);
+			(void)fflush(stderr);
+			return(1);
 		}
 	}
-	return(1);
+	return(0);
 }
 
 makedb(file)
@@ -221,11 +228,11 @@ makedb(file)
 	return(w == -1 || status);
 }
 
-edit(file)
-	char *file;
+edit()
 {
+	extern int errno;
 	int status, pid, w;
-	char *p, *editor, *getenv(), *rindex();
+	char *p, *editor, *getenv(), *strerror();
 
 	if (editor = getenv("EDITOR")) {
 		if (p = rindex(editor, '/'))
@@ -236,9 +243,34 @@ edit(file)
 	else
 		p = editor = "vi";
 	if (!(pid = vfork())) {
-		execlp(editor, p, file, NULL);
+		execlp(editor, p, temp, NULL);
+		(void)fprintf(stderr, "vipw: %s: %s\n", editor,
+		    strerror(errno));
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1);
 	return(w == -1 || status);
+}
+
+prompt()
+{
+	register int c;
+
+	for (;;) {
+		(void)printf("re-edit the password file? [y]: ");
+		(void)fflush(stdout);
+		c = getchar();
+		if (c != EOF && c != (int)'\n')
+			while (getchar() != (int)'\n');
+		return(c == (int)'n');
+	}
+	/* NOTREACHED */
+}
+
+stop(val)
+	int val;
+{
+	(void)fprintf(stderr, "%s unchanged.\n", passwd);
+	(void)unlink(temp);
+	exit(val);
 }
