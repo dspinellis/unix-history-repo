@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)vax.c	1.10 (Berkeley) %G%";
+static	char sccsid[] = "@(#)vax.c	1.11 (Berkeley) %G%";
 
 /*
  * Target machine dependent stuff.
@@ -475,7 +475,11 @@ public printerror()
     Integer err;
 
     if (isfinished(process)) {
-	printf("\"%s\" exits with code %d\n", objname, exitcode(process));
+	err = exitcode(process);
+	printf("\"%s\" terminated", objname);
+	if (err)
+	    printf("abnormally (exit code %d)", err);
+	putchar('\n');
 	erecover();
     }
     if (runfirst) {
@@ -484,20 +488,9 @@ public printerror()
 	fprintf(stderr, " type 'help' for help\n");
     }
     err = errnum(process);
-    if (err == SIGINT) {
-	printf("\n\ninterrupt ");
-	printloc();
-    } else if (err == SIGTRAP) {
-	printf("\nerror ");
-	printloc();
-    } else {
-	if (err < 0 or err > sys_nsig) {
-	    printf("\nsignal %d ", err);
-	} else {
-	    printf("\n%s ", sys_siglist[err]);
-	}
-	printloc();
-    }
+    putchar('\n');
+    printsig(err);
+    printloc();
     putchar('\n');
     if (curline > 0) {
 	printlines(curline, curline);
@@ -505,6 +498,51 @@ public printerror()
 	printinst(pc, pc);
     }
     erecover();
+}
+
+private String illinames[] = {
+	"reserved addressing fault",
+	"priviliged instruction fault",
+	"reserved operand fault"
+};
+private String fpenames[] = {
+	nil,
+	"integer overflow trap",
+	"integer divide by zero trap",
+	"floating overflow trap",
+	"floating/decimal divide by zero trap",
+	"floating underflow trap",
+	"decimal overflow trap",
+	"subscript out of range trap",
+	"floating overflow fault",
+	"floating divide by zero fault",
+	"floating undeflow fault"
+};
+
+public printsig(signo)
+    Integer signo;
+{
+    Integer sigcode;
+
+    if (0 < signo && signo < sys_nsig)
+	printf("%s ", sys_siglist[signo]);
+    else
+	printf("signal %d ", signo);
+    sigcode = errcode(process);
+    switch (signo) {
+
+    case SIGFPE:
+	    if (sigcode > 0 &&
+		sigcode < sizeof fpenames / sizeof fpenames[0])
+		    printf("(%s) ",  fpenames[sigcode]);
+	    break;
+
+    case SIGILL:
+	    if (sigcode >= 0 &&
+		sigcode < sizeof illinames / sizeof illinames[0])
+		    printf("(%s) ", illinames[sigcode]);
+	    break;
+    }
 }
 
 /*
@@ -521,7 +559,10 @@ public endprogram()
     stepto(nextaddr(pc, true));
     printnews();
     exitcode = argn(1, nil);
-    printf("\nexecution completed, exit code is %d\n", exitcode);
+    printf("\nexecution completed");
+    if (exitcode)
+	printf(" (exit code %d)", exitcode);
+    putchar('\n');
     getsrcpos();
     erecover();
 }
