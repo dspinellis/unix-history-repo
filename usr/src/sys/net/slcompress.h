@@ -1,10 +1,26 @@
+/*	slcompress.h	7.3	90/01/20	*/
 /*
  * Definitions for tcp compression routines.
  *
- * Copyright (c) 1988, 1989 by Van Jacobson, Lawrence Berkeley Laboratory
+ * $Header: slcompress.h,v 1.10 89/12/31 08:53:02 van Exp $
+ *
+ * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
- * $Header: slcompress.h,v 1.6 89/06/05 08:29:13 van Exp $
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
+ *	- Initial distribution.
  */
 
 #define MAX_STATES 16		/* must be > 2 and < 256 */
@@ -87,11 +103,12 @@ struct cstate {
 	u_char cs_id;		/* connection # associated with this state */
 	u_char cs_filler;
 	union {
-		char hdr[MAX_HDR];
+		char csu_hdr[MAX_HDR];
 		struct ip csu_ip;	/* ip/tcp hdr from most recent packet */
-	} u;
+	} slcs_u;
 };
-#define cs_ip u.csu_ip
+#define cs_ip slcs_u.csu_ip
+#define cs_hdr slcs_u.csu_hdr
 
 /*
  * all the state data for one serial line (we need one of these
@@ -102,7 +119,7 @@ struct slcompress {
 	u_char last_recv;	/* last rcvd conn. id */
 	u_char last_xmit;	/* last sent conn. id */
 	u_short flags;
-#ifndef NO_SL_STATS
+#ifndef SL_NO_STATS
 	int sls_packets;	/* outbound packets */
 	int sls_compressed;	/* outbound compressed packets */
 	int sls_searches;	/* searches for connection state */
@@ -119,5 +136,6 @@ struct slcompress {
 #define SLF_TOSS 1		/* tossing rcvd frames because of input err */
 
 extern void sl_compress_init(/* struct slcompress * */);
-extern u_char sl_compress_tcp(/* struct mbuf *, struct ip *, struct slcompress * */);
+extern u_char sl_compress_tcp(/* struct mbuf *, struct ip *,
+				struct slcompress *, int compress_cid_flag */);
 extern int sl_uncompress_tcp(/* u_char **, int,  u_char, struct slcompress * */);

@@ -1,21 +1,28 @@
+/*	slcompress.c	7.5	90/01/20	*/
 /*
- *	@(#)slcompress.c	7.4 (Berkeley) %G%
- *
- *			THIS CODE IS NOT FOR DISTRIBUTION!
- *	KEEP YOUR GRUBBY HANDS OFF UNLESS AUTHORIZED BY VAN JACOBSON TO COPY!
- *			ASK SAM, MIKE, OR BILL ABOUT IT.
- *
  * Routines to compress and uncompess tcp packets (for transmission
  * over low speed serial lines.
  *
- * Copyright (c) 1988, 1989 by Van Jacobson, Lawrence Berkeley Laboratory
+ * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
+ *	- Initial distribution.
  */
-
-#include "sl.h"
-#if NSL > 0
 #ifndef lint
-static char rcsid[] = "$Header: slcompress.c,v 1.10 89/06/05 08:28:52 van Exp $";
+static char rcsid[] = "$Header: slcompress.c,v 1.19 89/12/31 08:52:59 van Exp $";
 #endif
 
 #include <sys/types.h>
@@ -28,7 +35,7 @@ static char rcsid[] = "$Header: slcompress.c,v 1.10 89/06/05 08:28:52 van Exp $"
 
 #include "slcompress.h"
 
-#ifndef NO_SL_STATS
+#ifndef SL_NO_STATS
 #define INCR(counter) ++comp->counter;
 #else
 #define INCR(counter)
@@ -36,6 +43,9 @@ static char rcsid[] = "$Header: slcompress.c,v 1.10 89/06/05 08:28:52 van Exp $"
 
 #define BCMP(p1, p2, n) bcmp((char *)(p1), (char *)(p2), (int)(n))
 #define BCOPY(p1, p2, n) bcopy((char *)(p1), (char *)(p2), (int)(n))
+#ifndef KERNEL
+#define ovbcopy bcopy
+#endif
 
 
 void
@@ -101,12 +111,22 @@ sl_compress_init(comp)
 	} \
 }
 
+#define DECODEU(f) { \
+	if (*cp == 0) {\
+		(f) = htons((cp[1] << 8) | cp[2]); \
+		cp += 3; \
+	} else { \
+		(f) = htons((u_long)*cp++); \
+	} \
+}
+
 
 u_char
-sl_compress_tcp(m, ip, comp)
+sl_compress_tcp(m, ip, comp, compress_cid)
 	struct mbuf *m;
 	register struct ip *ip;
 	struct slcompress *comp;
+	int compress_cid;
 {
 	register struct cstate *cs = comp->last_cs->cs_next;
 	register u_int hlen = ip->ip_hl;
@@ -118,21 +138,24 @@ sl_compress_tcp(m, ip, comp)
 	register u_char *cp = new_seq;
 
 	/*
-	 * Bail if this is an ip fragment or if we don't have
-	 * a complete ip & tcp header in the first mbuf.  Otherwise,
-	 * check flags to see if this is a packet we might compress 
-	 * and, if so, try to locate the connection state.
-	 * special case the most recently used connection since
-	 * it's most likely to be used again & we don't have to
-	 * do any reordering if it's used.
+	 * Bail if this is an IP fragment or if the TCP packet isn't
+	 * `compressible' (i.e., ACK isn't set or some other control bit is
+	 * set).  (We assume that the caller has already made sure the
+	 * packet is IP proto TCP).
 	 */
-	if ((ip->ip_off & 0x3fff) || m->m_len < 40)
+	if ((ip->ip_off & htons(0x3fff)) || m->m_len < 40)
 		return (TYPE_IP);
 
 	th = (struct tcphdr *)&((int *)ip)[hlen];
 	if ((th->th_flags & (TH_SYN|TH_FIN|TH_RST|TH_ACK)) != TH_ACK)
 		return (TYPE_IP);
-
+	/*
+	 * Packet is compressible -- we're going to send either a
+	 * COMPRESSED_TCP or UNCOMPRESSED_TCP packet.  Either way we need
+	 * to locate (or create) the connection state.  Special case the
+	 * most recently used connection since it's most likely to be used
+	 * again & we don't have to do any reordering if it's used.
+	 */
 	INCR(sls_packets)
 	if (ip->ip_src.s_addr != cs->cs_ip.ip_src.s_addr ||
 	    ip->ip_dst.s_addr != cs->cs_ip.ip_dst.s_addr ||
@@ -141,35 +164,35 @@ sl_compress_tcp(m, ip, comp)
 		 * Wasn't the first -- search for it.
 		 *
 		 * States are kept in a circularly linked list with
-		 * first_cs pointing to the head of the list.  The
+		 * last_cs pointing to the end of the list.  The
 		 * list is kept in lru order by moving a state to the
 		 * head of the list whenever it is referenced.  Since
 		 * the list is short and, empirically, the connection
 		 * we want is almost always near the front, we locate
 		 * states via linear search.  If we don't find a state
-		 * for the datagram, the oldest state is used.
+		 * for the datagram, the oldest state is (re-)used.
 		 */
 		register struct cstate *lcs;
+		register struct cstate *lastcs = comp->last_cs;
 
 		do {
 			lcs = cs; cs = cs->cs_next;
 			INCR(sls_searches)
-			if (*(int *)th == ((int *)&cs->cs_ip)[cs->cs_ip.ip_hl]
-			    && ip->ip_src.s_addr == cs->cs_ip.ip_src.s_addr
-			    && ip->ip_dst.s_addr == cs->cs_ip.ip_dst.s_addr)
+			if (ip->ip_src.s_addr == cs->cs_ip.ip_src.s_addr
+			    && ip->ip_dst.s_addr == cs->cs_ip.ip_dst.s_addr
+			    && *(int *)th == ((int *)&cs->cs_ip)[cs->cs_ip.ip_hl])
 				goto found;
-		} while (cs != comp->last_cs);
-		INCR(sls_misses)
+		} while (cs != lastcs);
 
 		/*
-		 * Didn't find it -- re-use oldest cstate.
-		 * Send an uncompressed packet that tells
-		 * the other side what connection number
-		 * we're using for this conversation.  Note
-		 * that since the state list is circular, the
-		 * oldest state points to the newest and we only
-		 * need to set last_cs to update the lru linkage.
+		 * Didn't find it -- re-use oldest cstate.  Send an
+		 * uncompressed packet that tells the other side what
+		 * connection number we're using for this conversation.
+		 * Note that since the state list is circular, the oldest
+		 * state points to the newest and we only need to set
+		 * last_cs to update the lru linkage.
 		 */
+		INCR(sls_misses)
 		comp->last_cs = lcs;
 		hlen += th->th_off;
 		hlen <<= 2;
@@ -179,17 +202,25 @@ sl_compress_tcp(m, ip, comp)
 		/*
 		 * Found it -- move to the front on the connection list.
 		 */
-		if (comp->last_cs == cs)
+		if (cs == lastcs)
 			comp->last_cs = lcs;
 		else {
 			lcs->cs_next = cs->cs_next;
-			cs->cs_next = comp->last_cs->cs_next;
-			comp->last_cs->cs_next = cs;
+			cs->cs_next = lastcs->cs_next;
+			lastcs->cs_next = cs;
 		}
 	}
 
 	/*
-	 * Make sure that only what we expect to change changed.
+	 * Make sure that only what we expect to change changed. The first
+	 * line of the `if' checks the IP protocol version, header length &
+	 * type of service.  The 2nd line checks the "Don't fragment" bit.
+	 * The 3rd line checks the time-to-live and protocol (the protocol
+	 * check is unnecessary but costless).  The 4th line checks the TCP
+	 * header length.  The 5th line checks IP options, if any.  The 6th
+	 * line checks TCP options, if any.  If any of these things are
+	 * different between the previous & current datagram, we send the
+	 * current datagram `uncompressed'.
 	 */
 	oth = (struct tcphdr *)&((int *)&cs->cs_ip)[hlen];
 	deltaS = hlen;
@@ -197,6 +228,7 @@ sl_compress_tcp(m, ip, comp)
 	hlen <<= 2;
 
 	if (((u_short *)ip)[0] != ((u_short *)&cs->cs_ip)[0] ||
+	    ((u_short *)ip)[3] != ((u_short *)&cs->cs_ip)[3] ||
 	    ((u_short *)ip)[4] != ((u_short *)&cs->cs_ip)[4] ||
 	    th->th_off != oth->th_off ||
 	    (deltaS > 5 &&
@@ -219,7 +251,7 @@ sl_compress_tcp(m, ip, comp)
 		/* argh! URG not set but urp changed -- a sensible
 		 * implementation should never do this but RFC793
 		 * doesn't prohibit the change so we have to deal
-		 * with it.  */
+		 * with it. */
 		 goto uncompressed;
 
 	if (deltaS = (u_short)(ntohs(th->th_win) - ntohs(oth->th_win))) {
@@ -244,17 +276,19 @@ sl_compress_tcp(m, ip, comp)
 	switch(changes) {
 
 	case 0:
-		if (ip->ip_len != cs->cs_ip.ip_len && ntohs(ip->ip_len) != hlen)
-			break;
 		/*
-		 * Nothing changed and this packet looks like a duplicate
-		 * of the last or contains no data -- this is probably a
-		 * retransmitted ack or window probe.  Send it
-		 * uncompressed in case the other side missed the
-		 * compressed version.
-		 *
-		 * (fall through)
+		 * Nothing changed. If this packet contains data and the
+		 * last one didn't, this is probably a data packet following
+		 * an ack (normal on an interactive connection) and we send
+		 * it compressed.  Otherwise it's probably a retransmit,
+		 * retransmitted ack or window probe.  Send it uncompressed
+		 * in case the other side missed the compressed version.
 		 */
+		if (ip->ip_len != cs->cs_ip.ip_len &&
+		    ntohs(cs->cs_ip.ip_len) == hlen)
+			break;
+
+		/* (fall through) */
 
 	case SPECIAL_I:
 	case SPECIAL_D:
@@ -307,21 +341,19 @@ sl_compress_tcp(m, ip, comp)
 	 */
 	deltaS = cp - new_seq;
 	cp = (u_char *)ip;
-	if (comp->last_xmit != cs->cs_id) {
+	if (compress_cid == 0 || comp->last_xmit != cs->cs_id) {
 		comp->last_xmit = cs->cs_id;
 		hlen -= deltaS + 4;
 		cp += hlen;
-		m->m_len -= hlen;
-		m->m_data += hlen;
 		*cp++ = changes | NEW_C;
 		*cp++ = cs->cs_id;
 	} else {
 		hlen -= deltaS + 3;
 		cp += hlen;
-		m->m_len -= hlen;
-		m->m_data += hlen;
 		*cp++ = changes;
 	}
+	m->m_len -= hlen;
+	m->m_data += hlen;
 	*cp++ = deltaA >> 8;
 	*cp++ = deltaA;
 	BCOPY(new_seq, cp, deltaS);
@@ -358,10 +390,8 @@ sl_uncompress_tcp(bufp, len, type, comp)
 
 	case TYPE_UNCOMPRESSED_TCP:
 		ip = (struct ip *) *bufp;
-		if (ip->ip_p >= MAX_STATES) {
-			INCR(sls_errorin)
-			return (0);
-		}
+		if (ip->ip_p >= MAX_STATES)
+			goto bad;
 		cs = &comp->rstate[comp->last_recv = ip->ip_p];
 		comp->flags &=~ SLF_TOSS;
 		ip->ip_p = IPPROTO_TCP;
@@ -374,11 +404,8 @@ sl_uncompress_tcp(bufp, len, type, comp)
 		INCR(sls_uncompressedin)
 		return (len);
 
-	case TYPE_ERROR:
-		comp->flags |= SLF_TOSS;
 	default:
-		INCR(sls_errorin)
-		return (0);
+		goto bad;
 
 	case TYPE_COMPRESSED_TCP:
 		break;
@@ -390,10 +417,9 @@ sl_uncompress_tcp(bufp, len, type, comp)
 	if (changes & NEW_C) {
 		/* Make sure the state index is in range, then grab the state.
 		 * If we have a good state index, clear the 'discard' flag. */
-		if (*cp >= MAX_STATES) {
-			INCR(sls_errorin)
-			return (0);
-		}
+		if (*cp >= MAX_STATES)
+			goto bad;
+
 		comp->flags &=~ SLF_TOSS;
 		comp->last_recv = *cp++;
 	} else {
@@ -432,7 +458,7 @@ sl_uncompress_tcp(bufp, len, type, comp)
 	default:
 		if (changes & NEW_U) {
 			th->th_flags |= TH_URG;
-			DECODES(th->th_urp)
+			DECODEU(th->th_urp)
 		} else
 			th->th_flags &=~ TH_URG;
 		if (changes & NEW_W)
@@ -454,19 +480,18 @@ sl_uncompress_tcp(bufp, len, type, comp)
 	 * data down so the ip & tcp headers will be aligned.  Then back up
 	 * cp by the tcp/ip header length to make room for the reconstructed
 	 * header (we assume the packet we were handed has enough space to
-	 * prepend 128 bytes of header).  Adjust the lenth to account for
+	 * prepend 128 bytes of header).  Adjust the length to account for
 	 * the new header & fill in the IP total length.
 	 */
 	len -= (cp - *bufp);
-	if (len < 0) {
+	if (len < 0)
 		/* we must have dropped some characters (crc should detect
 		 * this but the old slip framing won't) */
-		INCR(sls_errorin)
-		return (0);
-	}
+		goto bad;
+
 	if ((int)cp & 3) {
 		if (len > 0)
-			BCOPY(cp, (int)cp &~ 3, len);
+			(void) ovbcopy(cp, (caddr_t)((int)cp &~ 3), len);
 		cp = (u_char *)((int)cp &~ 3);
 	}
 	cp -= cs->cs_hlen;
@@ -485,5 +510,8 @@ sl_uncompress_tcp(bufp, len, type, comp)
 		((struct ip *)cp)->ip_sum = ~ changes;
 	}
 	return (len);
+bad:
+	comp->flags |= SLF_TOSS;
+	INCR(sls_errorin)
+	return (0);
 }
-#endif
