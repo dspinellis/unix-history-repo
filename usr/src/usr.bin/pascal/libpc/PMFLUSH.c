@@ -4,21 +4,22 @@ static char sccsid[] = "@(#)PMFLUSH.c 1.2 %G%";
 
 #include "h00vars.h"
 
-PMFLUSH(cntrs, rtns)
+PMFLUSH(cntrs, rtns, bufaddr)
 
-	long	cntrs;	/* total number of counters (stmt + routine) */
-	long	rtns;	/* number of func and proc counters */
+	long cntrs;	/* total number of counters (stmt + routine) */
+	long rtns;	/* number of func and proc counters */
+	long *bufaddr;	/* address of count buffers */
 {
 	register FILE	*filep;
 
-	_pcpcount[0] = 0426;
-	_pcpcount[1] = time();
-	_pcpcount[2] = cntrs;
-	_pcpcount[3] = rtns;
+	bufaddr[0] = 0426;
+	bufaddr[1] = time();
+	bufaddr[2] = cntrs;
+	bufaddr[3] = rtns;
 	filep = fopen(PXPFILE, "w");
 	if (filep == NULL)
 		goto ioerr;
-	fwrite(&_pcpcount[0], cntrs + 1, sizeof(long), filep);
+	fwrite(bufaddr, cntrs + 1, sizeof(long), filep);
 	if (ferror(filep))
 		goto ioerr;
 	fclose(filep);
