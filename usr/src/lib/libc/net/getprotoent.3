@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getprotoent.3	6.1 (Berkeley) %G%
+.\"	@(#)getprotoent.3	6.2 (Berkeley) %G%
 .\"
 .TH GETPROTOENT 3N ""
 .UC 5
@@ -47,7 +47,7 @@ fields of a line in the network protocol data base,
 struct	protoent {
 	char	*p_name;	/* official name of protocol */
 	char	**p_aliases;	/* alias list */
-	long	p_proto;	/* protocol number */
+	int	p_proto;	/* protocol number */
 };
 .ft R
 .ad
