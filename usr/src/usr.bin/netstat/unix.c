@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -104,7 +104,7 @@ unixdomainpr(so, soaddr)
 		klseek(kmem, (off_t)unp->unp_addr, L_SET);
 		if (read(kmem, (char *)m, sizeof (*m)) != sizeof (*m))
 			m = (struct mbuf *)0;
-		sa = mtod(m, struct sockaddr_un *);
+		sa = (struct sockaddr_un *)(m->m_dat);
 	} else
 		m = (struct mbuf *)0;
 	if (first) {
