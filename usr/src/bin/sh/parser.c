@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)parser.c	5.6 (Berkeley) %G%";
 #include "memalloc.h"
 #include "mystring.h"
 #include "alias.h"
-#include "histedit.h"
+#include "myhistedit.h"
 
 
 /*
