@@ -1,4 +1,4 @@
-/* @(#)errlst.c	4.1 (Berkeley) %G% */
+/* @(#)errlst.c	4.2 (Berkeley) %G% */
 char	*sys_errlist[] = {
 	"Error 0",
 	"Not owner",
@@ -35,5 +35,14 @@ char	*sys_errlist[] = {
 	"Broken pipe",
 	"Argument too large",
 	"Result too large",
+	/* bbnnet errors */
+	"User status available (not an error)",
+	"Open attempted when net not initialized",
+	"Too many net connections",
+	"No more net buffer space",
+	"Error from network",
+	"Error in raw link or protocol range",
+	"Unable to open connection",
+	"Unable to send on raw connection",
 };
 int	sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
