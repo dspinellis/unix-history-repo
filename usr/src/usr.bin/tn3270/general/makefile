@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.4 (Berkeley) %G%
+#	@(#)makefile	3.5 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -79,7 +79,7 @@ LIBCURSES	= -lcurses
 LIBTERM		= -ltermlib
 
 # The source files...
-ALLH =	bsubs.ext general.h globals.h
+ALLH =	general.h globals.h
 
 ALLC =	globals.c
 
