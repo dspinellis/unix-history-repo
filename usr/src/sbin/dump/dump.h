@@ -1,5 +1,5 @@
 /*
- * "@(#)dump.h	1.6 (Berkeley) %G%"
+ * "@(#)dump.h	1.7 (Berkeley) %G%"
  */
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -12,6 +12,7 @@
 #include <sys/fs.h>
 #include <sys/inode.h>
 #include <dumprestor.h>
+#include <dir.h>
 #include <utmp.h>
 #include <time.h>
 #include <signal.h>
@@ -108,6 +109,11 @@ int	nfstab;
  *	The contents of the file NINCREM is maintained both on
  *	a linked list, and then (eventually) arrayified.
  */
+struct	idates {
+	char	id_name[MAXNAMLEN+3];
+	char	id_incno;
+	time_t	id_ddate;
+};
 struct	itime{
 	struct	idates	it_value;
 	struct	itime	*it_next;
