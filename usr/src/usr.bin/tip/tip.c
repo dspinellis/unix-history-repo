@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -356,6 +356,8 @@ tipin()
 	}
 }
 
+extern esctable_t etable[];
+
 /*
  * Escape handler --
  *  called on recognition of ``escapec'' at the beginning of a line
@@ -365,7 +367,6 @@ escape()
 	register char gch;
 	register esctable_t *p;
 	char c = character(value(ESCAPE));
-	extern esctable_t etable[];
 
 	gch = (getchar()&0177);
 	for (p = etable; p->e_char; p++)
@@ -462,7 +463,6 @@ help(c)
 	char c;
 {
 	register esctable_t *p;
-	extern esctable_t etable[];
 
 	printf("%c\r\n", c);
 	for (p = etable; p->e_char; p++) {
