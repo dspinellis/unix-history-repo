@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.89 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.90 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -440,6 +440,9 @@ setsignal(sig, handler)
 
 	bzero(&n, sizeof n);
 	n.sa_handler = handler;
+# ifdef SA_RESTART
+	n.sa_flags = SA_RESTART;
+# endif
 	if (sigaction(sig, &n, &o) < 0)
 		return SIG_ERR;
 	return o.sa_handler;
