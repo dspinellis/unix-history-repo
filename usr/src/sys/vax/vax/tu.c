@@ -1,4 +1,4 @@
-/*	tu.c	82/05/26	4.5	*/
+/*	tu.c	4.6	82/05/27	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -14,10 +14,6 @@
  * are converted to MRSP (by replacing EPROMS in the TU58), the tests
  * based on MRSP can be removed.
  */
-#define	NTU	((cpu == VAX_750) ? 1 : 2)
-
-#define	MRSP	(cpu != VAX_750)
-
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -32,8 +28,12 @@
 int	tudebug;	/* printd */
 #endif	printd
 
+#define	NTU	((cpu == VAX_750) ? 1 : 2)
+#define DNUM    01      /* mask for drive number (should match NTU) */
+#define	MRSP	(cpu != VAX_750)
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
-
+#define WRV     02              /* bit in minor dev => write w. read verify */
+#define NTUQ    2               /* # of blocks which can be queued up */
 #define	TUIPL	((cpu == VAX_750) ? 0x17 : 0x14)
 
 /*
@@ -51,7 +51,7 @@ struct packet {
 	u_char	pk_flag;	/* indicates packet type (cmd, data, etc.) */
 	u_char	pk_mcount;	/* length of packet (bytes) */
 	u_char	pk_op;		/* operation to perform (read, write, etc.) */
-	char	pk_mod;		/* modifier for op or returned status */
+	u_char	pk_mod;		/* modifier for op or returned status */
 	u_char	pk_unit;	/* unit number */
 	u_char	pk_sw;		/* switches */
 	u_short	pk_seq;		/* sequence number, always zero */
@@ -78,6 +78,7 @@ struct tu {
 	int	serrs;		/* count of soft errors */
 	int	cerrs;		/* count of checksum errors */
 	int	herrs;		/* count of hard errors */
+	char    dopen[2];       /* drive is open */
 } tu;
 
 /*
@@ -117,15 +118,19 @@ struct tu {
 #define	TUOP_END	0100		/* end packet */
 
 /*
+ * Mod Flags
+ */
+#define TUMD_WRV        1               /* write with read verify */
+
+/*
  * Switches
  */
 #define	TUSW_MRSP	010		/* use Modified RSP */
 
 u_char	tunull[2] = { 0, 0 };	/* nulls to send for initialization */
 u_char	tuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
-
+static char pcnt[2];            /* pee/vee counters */
 int	tutimer = 0;
-
 struct buf tutab;		/* I/O queue header */
 
 /*
@@ -140,7 +145,7 @@ tuopen(dev, flag)
 #ifdef lint
 	turintr(); tuwintr();
 #endif
-	if (minor(dev) >= NTU) {
+	if ((minor(dev)&DNUM) >= NTU || tu.dopen[minor(dev)&DNUM]) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -148,14 +153,16 @@ tuopen(dev, flag)
 		tutimer++;
 		timeout(tuwatch, (caddr_t)0, hz);
 	}
+	tu.dopen[minor(dev)&DNUM]++;
 	s = splx(TUIPL);
 	if (tu.state != IDLE) {
 		tureset();
-		sleep((caddr_t)&tu, PZERO);
+		sleep((caddr_t)&tu, PZERO+1);
 		tutab.b_active = NULL;
 		if (tu.state != IDLE) {		/* couldn't initialize */
 			u.u_error = ENXIO;
 			tu.state = INIT1;
+			tu.dopen[minor(dev)&DNUM] = 0;
 			tu.rcnt = tu.wcnt = 0;
 			mtpr(CSTS, 0);
 			mtpr(CSRS, 0);
@@ -176,10 +183,12 @@ tuclose(dev)
 		tutimer = 0;
 	}
 	if (tu.serrs + tu.cerrs + tu.herrs != 0) {	/* any errors ? */
-		uprintf("tu%d: %d soft errors, %d chksum errors, %d hard errors\n",
+		uprintf(
+		   "tu%d: %d soft errors, %d chksum errors, %d hard errors\n",
 			minor(dev), tu.serrs, tu.cerrs, tu.herrs);
 		tu.serrs = tu.cerrs = tu.herrs = 0;
 	}
+	tu.dopen[minor(dev)&DNUM] = 0;
 }
 
 /*
@@ -216,6 +225,8 @@ tustrategy(bp)
 		iodone(bp);
 		return;
 	}
+	if ((bp->b_flags&B_READ) == 0)
+		tu_pee(&pcnt[minor(bp->b_dev)&DNUM]);
 	bp->av_forw = NULL;
 	s = splx(TUIPL);
 	if (tutab.b_actf == NULL)
@@ -244,7 +255,10 @@ tustart()
 	tutab.b_active++;
 	tutab.b_errcnt = 0;
 	tucmd.pk_op = bp->b_flags&B_READ ? TUOP_READ : TUOP_WRITE;
-	tucmd.pk_unit = minor(bp->b_dev);
+	tucmd.pk_mod = ((bp->b_flags&B_READ) == 0 && (minor(bp->b_dev)&WRV)) ?
+	    TUMD_WRV : 0;
+	tucmd.pk_unit = (minor(bp->b_dev)&DNUM);
+	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
 	tucmd.pk_count = tu.count = bp->b_bcount;
 	tucmd.pk_block = bp->b_blkno;
 	tucmd.pk_chksum =
@@ -311,6 +325,13 @@ turintr()
 		tuxintr();
 		break;
 
+	case SENDW:
+		if (c == TUF_CONT) {
+			tureset();
+			break;
+		} else
+			goto bad;
+
 	case GETH:		/* got header, get data */
 		if (tudata.pk_flag == TUF_DATA)		/* data message? */
 			tu.rbptr = (u_char *)tu.addr;	/* yes put in buffer */
@@ -352,16 +373,18 @@ turintr()
 				tustart();
 				return;
 			}
-			if (tudata.pk_mod < 0) {	/* hard error */
+			if (tudata.pk_mod > 1) {        /* hard error */
 				bp->b_flags |= B_ERROR;
 				tu.herrs++;
 				harderr(bp, "tu");
-				printf("  pk_mod %d\n", -tudata.pk_mod);
+				printf("  pk_mod %o\n", tudata.pk_mod&0377);
 			} else if (tudata.pk_mod > 0)	/* soft error */
 				tu.serrs++;
 			tutab.b_active = NULL;
 			tutab.b_actf = bp->av_forw;
 			bp->b_resid = tu.count;
+			if ((bp->b_flags&B_READ) == 0)
+				tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 			iodone(bp);
 			tustart();
 		} else {
@@ -376,6 +399,7 @@ turintr()
 	case INIT1:
 		break;
 
+	bad:
 	default:
 		if (c == TUF_INITF) {
 			printf("TU protocol error, state %d\n", tu.state);
@@ -385,6 +409,8 @@ turintr()
 			if (bp = tutab.b_actf) {
 				bp->b_flags |= B_ERROR;
 				tutab.b_actf = bp->av_forw;
+				if ((bp->b_flags&B_READ) == 0)
+					tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 				iodone(bp);
 			}
 			tu.state = INIT1;
@@ -490,23 +516,31 @@ top:
 
 /*
  * Compute checksum TU58 fashion
- *
- * *** WARNING ***
- * This procedure is not in C because
- * it has to be fast and it is hard to
- * do add-carry in C.  Sorry.
  */
-tuchk(word0, wp, n)
-	register int word0;	/* known to be r11 */
-	register caddr_t wp;	/* known to be r10 */
-	register int n;		/* known to be r9 */
+#ifdef notdef
+tuchk(word, cp, n)
+	register word;
+	register unsigned short *cp;
 {
-#ifdef lint
-	/* for some reason ARGSUSED doesn't work to quiet lint */
-	word0 = 0; n = word0; word0 = n;
-	wp = 0; wp = wp;
-#endif
+	register c = n >> 1;
+	register long temp;
 
+	do {
+		temp = *cp++;	/* temp, only because vax cc won't *r++ */
+		word += temp;
+	} while (--c > 0);
+	if (n & 1)
+		word += *(unsigned char *)cp;
+	while (word & 0xFFFF0000)
+		word = (word & 0xFFFF) + ((word >> 16) & 0xFFFF);
+	return (word);
+}
+#else
+tuchk(word0, wp, n)
+register int word0;	/* r11 */
+register char *wp;	/* r10 */
+register int n;		/* r9 */
+{
 	asm("loop:");
 	asm("	addw2	(r10)+,r11");	/* add a word to sum */
 	asm("	adwc	$0,r11");	/* add in carry, end-around */
@@ -517,10 +551,8 @@ tuchk(word0, wp, n)
 	asm("	adwc	$0,r11");	/* and the carry */
 	asm("ok:");
 	asm("	movl	r11,r0");	/* return sum */
-#ifdef lint
-	return (0);
-#endif
 }
+#endif
 
 tuwatch()
 {
@@ -547,6 +579,8 @@ tuwatch()
 			if (++tutab.b_errcnt > 1) {
 				if (bp = tutab.b_actf) {
 					bp->b_flags |= B_ERROR;
+					if ((bp->b_flags&B_READ) == 0)
+						tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 					iodone(bp);
 				}
 			} else
@@ -556,5 +590,29 @@ tuwatch()
 		splx(s);
 	}
 	timeout(tuwatch, (caddr_t)0, hz);
+}
+
+tu_pee(cp)
+char *cp;
+{
+	register int s;
+
+	s = splx(TUIPL);
+	if (++(*cp) > NTUQ) {
+		sleep(cp, PRIBIO);
+	}
+	splx(s);
+}
+
+tu_vee(cp)
+char *cp;
+{
+	register int s;
+
+	s = splx(TUIPL);
+	if (--(*cp) <= NTUQ) {
+		wakeup(cp);
+	}
+	splx(s);
 }
 #endif
