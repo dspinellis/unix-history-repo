@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.6 (Berkeley) %G%
+#	@(#)Files.cf	8.7 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -65,6 +65,7 @@ cf/mailer/smtp.m4
 cf/mailer/usenet.m4
 cf/mailer/uucp.m4
 cf/ostype/aix3.m4
+cf/ostype/amdahl-uts.m4
 cf/ostype/aux.m4
 cf/ostype/bsd4.3.m4
 cf/ostype/bsd4.4.m4
