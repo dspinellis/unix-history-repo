@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.30.1.1 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
