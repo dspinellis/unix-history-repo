@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.9 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.10 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -284,7 +284,7 @@ struct {
 	int	entloc;
 #endif PI
 };
-
+
 /*
  * NL FLAGS BITS
  *
@@ -297,14 +297,30 @@ struct {
  * which records whether a structure contains any files.
  * Such structures are not allowed to be dynamically allocated.
  */
+
+#define	BLOCKNO( flag )	( flag & 037 )
+#define NLFLAGS( flag ) ( flag &~ 037 )
+
 #define	NUSED	0100
 #define	NMOD	0040
 #define	NFORWD	0200
 #define	NFILES	0200
-
 #ifdef PC
 #define NEXTERN 0001	/* flag used to mark external funcs and procs */
 #endif
+
+    /*
+     *	magic values for forvar -> value[ NL_FORV ]
+     *	value[ NL_FORV ] stores in its low byte
+     *	the nl_flags byte of the loop variable.
+     *	the top byte is another bunch of flags
+     *	FORBOUND 	means it is a loop variable
+     *	LOOPVAR		means it is a loop variable but it is not yet allocated
+     *	TEMPBOUND	means it is a loop variable and it is in a temporary.
+     */
+#define	LOOPVAR		00400
+#define	TEMPBOUND	01000
+#define	FORBOUND	( LOOPVAR | TEMPBOUND )
 
 /*
  * Definition of the commonly used "value" fields.
