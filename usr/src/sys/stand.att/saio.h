@@ -1,4 +1,4 @@
-/*	saio.h	4.1	%G%	*/
+/*	saio.h	4.2	%G%	*/
 
 /*
  * header file for standalone package
@@ -53,12 +53,19 @@ daddr_t	blknos[NBUFS];
 #define NFILES	4
 struct	iob iob[NFILES];
 
+#if VAX==780
 #define	PHYSUBA0	0x20006000
 #define	PHYSUMEM	0x2013e000
+#else
+#define	PHYSUBA0	0xf30000
+#define	PHYSUMEM	0xfc0000+0760000
+#endif
 
 int	mbaact;
 
+#if VAX==780
 struct mba_info
 {
 	struct	mba_regs *mi_phys;	/* physical address of mba */
 };
+#endif
