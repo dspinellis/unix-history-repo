@@ -2,8 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.ms	5.2 (Berkeley) %G%
+.\"	@(#)f77.ms	5.3 (Berkeley) %G%
 .\"
+.EH 'PS1:2-%''A Portable Fortran 77 Compiler'
+.OH 'A Portable Fortran 77 Compiler''PS1:2-%'
 .hw name-list
 .de XX
 .ne 3
@@ -29,7 +31,7 @@
 delim $$
 .EN
 .ND ""
-.RP
+.\".RP
 .TL
 A Portable Fortran 77 Compiler
 .AU

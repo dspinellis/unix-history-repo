@@ -2,8 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77IO.ms	5.2 (Berkeley) %G%
+.\"	@(#)f77IO.ms	5.3 (Berkeley) %G%
 .\"
+.EH 'PS1:3-%''Introduction to the f77 I/O Library'
+.OH 'Introduction to the f77 I/O Library''PS1:3-%'
 .de Fo
 Fortran\\$1
 ..
@@ -29,7 +31,7 @@ Fortran\\$1
 .\" .po 0.0i
 .\" .rm PT
 .\" .rm BT
-.RP
+.\".RP
 .TL
 Introduction to the f77 I/O Library
 .AU
