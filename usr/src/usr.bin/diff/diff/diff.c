@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diff.c 4.2 %G%";
+static	char sccsid[] = "@(#)diff.c 4.3 %G%";
 
 #include "diff.h"
 /*
@@ -172,23 +172,20 @@ char *
 talloc(n)
 {
 	register char *p;
-	p = malloc((unsigned)n);
-	if(p!=NULL)
+
+	if ((p = malloc((unsigned)n)) != NULL)
 		return(p);
 	noroom();
 }
 
 char *
-ralloc(p,n)	/*compacting reallocation */
+ralloc(p,n)
 char *p;
 {
 	register char *q;
 	char *realloc();
-	free(p);
-	free(dummy);
-	dummy = malloc(1);
-	q = realloc(p, (unsigned)n);
-	if(q==NULL)
+
+	if ((q = realloc(p, (unsigned)n)) == NULL)
 		noroom();
 	return(q);
 }

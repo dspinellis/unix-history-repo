@@ -1,4 +1,4 @@
-/*	diff.h	4.4	83/07/01	*/
+/*	diff.h	4.5	85/06/03	*/
 
 /*
  * diff - common declarations
@@ -71,12 +71,6 @@ char	**diffargv;		/* option list to pass to recursive diffs */
 char	*file1, *file2, *efile1, *efile2;
 struct	stat stb1, stb2;
 struct	stat stb1, stb2;
-
-/*
- * This is allocated early, and used
- * to reset the free storage pointer to effect space compaction.
- */
-char	*dummy;
 
 char	*malloc(), *talloc(), *ralloc();
 char	*savestr(), *splice(), *splicen();
