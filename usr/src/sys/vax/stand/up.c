@@ -3,20 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.4 (Berkeley) %G%
+ *	@(#)up.c	7.5 (Berkeley) %G%
  */
 
 /*
- * UNIBUS peripheral standalone driver
- * with ECC correction and bad block forwarding.
- * Also supports header operation and write
- * check for data and/or header.
+ * UNIBUS peripheral standalone driver with ECC correction and bad
+ * block forwarding.  Also supports header operation and write check
+ * for data and/or header.
  */
 #include "param.h" 
 #include "inode.h"
 #include "fs.h"
 #include "dkbad.h"
-#include "vmmac.h"
+#include "disklabel.h"
 
 #include "../vax/pte.h"
 
@@ -32,16 +31,18 @@
 #define SECTSIZ		512	/* sector size in bytes */
 #define HDRSIZ		4	/* number of bytes in sector header */
 
-#define	MAXPART		8
+#define	MAXUNIT		8
 #define	MAXCTLR		1	/* all addresses must be specified */
 u_short	ubastd[MAXCTLR] = { 0776700 };
+struct	disklabel uplabel[MAXNUBA][MAXCTLR][MAXUNIT];
+char	lbuf[SECTSIZ];
 
 extern	struct st upst[];
 
 #ifndef SMALL
-struct  dkbad upbad[MAXNUBA][MAXCTLR][8];	/* bad sector table */
+struct  dkbad upbad[MAXNUBA][MAXCTLR][MAXUNIT];	/* bad sector table */
 #endif
-int 	sectsiz;			/* real sector size */
+int 	sectsiz;				/* real sector size */
 
 struct	up_softc {
 	char	gottype;
@@ -51,7 +52,7 @@ struct	up_softc {
 #	define	UPF_ECCDEBUG	02	/* debugging ecc correction */
 	int	retries;
 	int	ecclim;
-} up_softc[MAXNUBA][MAXCTLR][8];
+} up_softc[MAXNUBA][MAXCTLR][MAXUNIT];
 
 u_char	up_offset[16] = {
 	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
@@ -63,74 +64,97 @@ u_char	up_offset[16] = {
 upopen(io)
 	register struct iob *io;
 {
-	register unit = io->i_unit;
 	register struct updevice *upaddr;
 	register struct up_softc *sc;
 	register struct st *st;
+	register int unit;
+	struct disklabel *dlp, *lp;
 
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
-	if ((u_int)io->i_part >= MAXPART)
+	if ((u_int)io->i_part >= MAXUNIT)
 		return (EPART);
 	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	unit = io->i_unit;
 	upaddr->upcs2 = unit % 8;
 	while ((upaddr->upcs1 & UP_DVA) == 0);
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
+	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
 	if (sc->gottype == 0) {
 		register int i;
 		struct iob tio;
 
+#ifndef SMALL
 		sc->retries = RETRIES;
 		sc->ecclim = 11;
 		sc->debug = 0;
-		sc->type = upmaptype(unit, upaddr);
-		if (sc->type < 0) {
-			printf("unknown drive type\n");
-			return (ENXIO);
-		}
-		st = &upst[sc->type];
-		if (st->off[io->i_part] == -1)
-			return (EPART);
-#ifndef SMALL
-		/*
-		 * Read in the bad sector table.
-		 */
+#endif
+		/* Read in the pack label. */
+		lp->d_nsectors = 32;
+		lp->d_secpercyl = 19*32;
 		tio = *io;
-		tio.i_bn = st->nspc * st->ncyl - st->nsect;
-		tio.i_ma = (char *)&upbad[tio.i_adapt][tio.i_ctlr][tio.i_unit];
-		tio.i_cc = sizeof (struct dkbad);
+		tio.i_bn = LABELSECTOR;
+		tio.i_ma = lbuf;
+		tio.i_cc = SECTSIZ;
+		tio.i_flgs |= F_RDDATA;
+		if (upstrategy(&tio, READ) != SECTSIZ)
+			return (ERDLAB);
+		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
+#ifdef COMPAT_42
+		{
+			printf("up%d: unlabeled\n", unit);
+			if (!upmaptype(unit, upaddr, dlp)) {
+				printf("up: unknown drive type\n");
+				return (ENXIO);
+			}
+		}
+#else
+			return (EUNLAB);
+#endif
+		else
+			*lp = *dlp;
+
+#ifndef SMALL
+		/* Read in the bad sector table. */
+		tio.i_bn = lp->d_secpercyl * lp->d_ncylinders - lp->d_nsectors;
+		tio.i_ma = (char *)&upbad[io->i_adapt][io->i_ctlr][io->i_unit];
+		tio.i_cc = sizeof(struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
-			if (upstrategy(&tio, READ) == sizeof (struct dkbad))
+			if (upstrategy(&tio, READ) == sizeof(struct dkbad))
 				break;
 			tio.i_bn += 2;
 		}
 		if (i == 5) {
-			printf("Unable to read bad sector table\n");
+			printf("up: can't read bad sector table\n");
 			for (i = 0; i < MAXBADDESC; i++) {
 				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_cyl = -1;
 				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_trksec = -1;
 			}
-		}	
+		}
 #endif
 		sc->gottype = 1;
 	}
-	st = &upst[sc->type];
-	io->i_boff = st->off[io->i_part] * st->nspc;
+	if (io->i_part >= lp->d_npartitions ||
+	    lp->d_partitions[io->i_part].p_size == 0)
+			return (EPART);
+	io->i_boff = lp->d_partitions[io->i_part].p_offset;
 	io->i_flgs &= ~F_TYPEMASK;
 	return (0);
 }
 
 upstrategy(io, func)
 	register struct iob *io;
+	int func;
 {
 	int cn, tn, sn, o;
 	register unit = io->i_unit;
 	register daddr_t bn;
 	int recal, info, waitdry;
 	register struct updevice *upaddr;
+	register struct disklabel *lp;
 	struct up_softc *sc;
-	register struct st *st;
 	int error, rv = io->i_cc;
 #ifndef SMALL
 	int doprintf = 0;
@@ -138,7 +162,7 @@ upstrategy(io, func)
 
 	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
-	st = &upst[sc->type];
+	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
 	sectsiz = SECTSIZ;
 	if (io->i_flgs & (F_HDR|F_HCHECK))
 		sectsiz += HDRSIZ;
@@ -169,7 +193,7 @@ restart:
 #endif
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
-	if (upstart(io, bn) != 0) {
+	if (upstart(io, bn, lp) != 0) {
 		rv = -1;
 		goto done;
 	}
@@ -186,10 +210,10 @@ restart:
 		(io->i_cc + upaddr->upwc * sizeof (short)) / sectsiz;
 	if (upaddr->uper1 & (UPER1_DCK|UPER1_ECH))
 		bn--;
-	cn = bn/st->nspc;
-	sn = bn%st->nspc;
-	tn = sn/st->nsect;
-	sn = sn%st->nsect;
+	cn = bn / lp->d_secpercyl;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn = sn % lp->d_nsectors;
 #ifndef SMALL
 	if (sc->debug & (UPF_ECCDEBUG|UPF_BSEDEBUG)) {
 		printf("up error: sn%d (cyl,trk,sec)=(%d,%d,%d) ",
@@ -228,9 +252,8 @@ restart:
 		goto hard;
 	} 
 	/*
-	 * If the error is a header CRC,
-	 * check if a replacement sector exists in
-	 * the bad sector table.
+	 * If the error is a header CRC, check if a replacement sector
+	 * exists in the bad sector table.
 	 */
 	if ((upaddr->uper1&UPER1_HCRC) && (io->i_flgs&F_NBSF) == 0 &&
 	     upecc(io, BSE) == 0)
@@ -264,9 +287,8 @@ hard:
 		goto done;
 	}
 	/*
-	 * Clear drive error and, every eight attempts,
-	 * (starting with the fourth)
-	 * recalibrate to clear the slate.
+	 * Clear drive error and, every eight attempts, (starting with the
+	 * fourth) recalibrate to clear the slate.
 	 */
 	upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 	if ((io->i_errcnt&07) == 4 ) {
@@ -296,9 +318,6 @@ success:
 		goto restart;
 	}
 done:
-	/*
-	 * Release UNIBUS 
-	 */
 	ubafree(io, info);
 	/*
 	 * If we were offset positioning,
@@ -315,11 +334,9 @@ done:
 
 #ifndef SMALL
 /*
- * Correct an ECC error, and restart the
- * i/o to complete the transfer (if necessary). 
- * This is quite complicated because the transfer
- * may be going to an odd memory address base and/or
- * across a page boundary.
+ * Correct an ECC error, and restart the i/o to complete the transfer (if
+ * necessary).  This is quite complicated because the transfer may be going
+ * to an odd memory address base and/or across a page boundary.
  */
 upecc(io, flag)
 	register struct iob *io;
@@ -328,7 +345,7 @@ upecc(io, flag)
 	register i, unit;
 	register struct up_softc *sc;
 	register struct updevice *up;
-	register struct st *st;
+	register struct disklabel *lp;
 	caddr_t addr;
 	int bn, twc, npf, mask, cn, tn, sn;
 	daddr_t bbn;
@@ -340,6 +357,7 @@ upecc(io, flag)
 	 */
 	unit = io->i_unit;
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
+	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
 	up = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
@@ -349,11 +367,10 @@ upecc(io, flag)
 		printf("npf=%d mask=0x%x ec1=%d wc=%d\n",
 			npf, up->upec2, up->upec1, twc);
 	bn = io->i_bn + npf;
-	st = &upst[sc->type];
-	cn = bn/st->nspc;
-	sn = bn%st->nspc;
-	tn = sn/st->nsect;
-	sn = sn%st->nsect;
+	cn = bn / lp->d_secpercyl;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn = sn % lp->d_nsectors;
 
 	/*
 	 * ECC correction.
@@ -423,7 +440,8 @@ upecc(io, flag)
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		if ((bbn = isbad(&upbad[io->i_adapt][io->i_ctlr][unit], cn, tn, sn)) < 0)
 			return (1);
-		bbn = (st->ncyl * st->nspc) - st->nsect - 1 - bbn;
+		bbn = (lp->d_ncylinders * lp->d_secpercyl) -
+			lp->d_nsectors - 1 - bbn;
 		twc = up->upwc + sectsiz;
 		up->upwc = - (sectsiz / sizeof (short));
 		if (sc->debug & UPF_BSEDEBUG)
@@ -437,7 +455,7 @@ upecc(io, flag)
 	 	 */
 		while ((up->upcs1 & UP_RDY) == 0) 
 			;
-		if (upstart(io, bbn))
+		if (upstart(io, bbn, lp))
 			return (1);		/* error */
 		io->i_errcnt = 0;		/* success */
 		do {
@@ -454,22 +472,21 @@ upecc(io, flag)
 }
 #endif /* !SMALL */
 
-upstart(io, bn)
+upstart(io, bn, lp)
 	register struct iob *io;
 	daddr_t bn;
+	register struct disklabel *lp;
 {
 	register struct updevice *upaddr;
 	register struct up_softc *sc;
-	register struct st *st;
 	int sn, tn;
 
 	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	sc = &up_softc[io->i_adapt][io->i_ctlr][io->i_unit];
-	st = &upst[sc->type];
-	sn = bn%st->nspc;
-	tn = sn/st->nsect;
-	sn %= st->nsect;
-	upaddr->updc = bn/st->nspc;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn = sn % lp->d_nsectors;
+	upaddr->updc = bn / lp->d_secpercyl;
 	upaddr->upda = (tn << 8) + sn;
 	switch (io->i_flgs & F_TYPEMASK) {
 
@@ -516,34 +533,27 @@ upioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	int unit = io->i_unit;
 	register struct up_softc *sc;
-	struct st *st;
 
-	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
-	st = &upst[sc->type];
+	sc = &up_softc[io->i_adapt][io->i_ctlr][io->i_unit];
 	switch(cmd) {
-
 	case SAIODEBUG:
 		sc->debug = (int)arg;
 		break;
-
 	case SAIODEVDATA:
-		*(struct st *)arg = *st;
+		*(struct disklabel *)arg =
+		    uplabel[io->i_adapt][io->i_ctlr][io->i_unit];
 		break;
-
 	case SAIOGBADINFO:
-		*(struct dkbad *)arg = upbad[io->i_adapt][io->i_ctlr][unit];
+		*(struct dkbad *)arg =
+		    upbad[io->i_adapt][io->i_ctlr][io->i_unit];
 		break;
-
 	case SAIOECCLIM:
 		sc->ecclim = (int)arg;
 		break;
-
 	case SAIORETRIES:
 		sc->retries = (int)arg;
 		break;
-
 	default:
 		return (ECMD);
 	}
