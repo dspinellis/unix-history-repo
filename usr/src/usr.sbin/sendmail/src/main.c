@@ -1158,7 +1158,7 @@ main(argc, argv, envp)
 finis()
 {
 	if (tTd(2, 1))
-		printf("\n====finis: stat %d e_flags %o, e_id=%s\n",
+		printf("\n====finis: stat %d e_flags %x, e_id=%s\n",
 			ExitStat, CurEnv->e_flags,
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id);
 	if (tTd(2, 9))
