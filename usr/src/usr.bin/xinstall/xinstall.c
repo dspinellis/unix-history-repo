@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -26,8 +26,10 @@ static char sccsid[] = "@(#)xinstall.c	5.7 (Berkeley) %G%";
 #define	YES		1			/* yes/true */
 #define	NO		0			/* no/false */
 
-extern int	errno;
-extern char	*sys_errlist[];
+#define	PERROR(head, msg) { \
+	fputs(head, stderr); \
+	perror(msg); \
+}
 
 static struct passwd	*pp;
 static struct group	*gp;
@@ -128,7 +130,7 @@ install(from_name, to_name, isdir)
 		*rindex();
 
 	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
-		fprintf(stderr, "install: open: %s: %s\n", from_name, sys_errlist[errno]);
+		PERROR("install: open: ", from_name);
 		exit(1);
 	}
 
@@ -156,15 +158,15 @@ install(from_name, to_name, isdir)
 
 	/* open target, set owner, group, mode */
 	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
-		fprintf(stderr, "install: %s: %s\n", to_name, sys_errlist[errno]);
+		PERROR("install: ", to_name);
 		exit(1);
 	}
 	if (fchmod(to_fd, mode)) {
-		fprintf(stderr, "install: fchmod: %s: %s\n", to_name, sys_errlist[errno]);
+		PERROR("install: fchmod: ", to_name);
 		bad();
 	}
 	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1)) {
-		fprintf(stderr, "install: fchown: %s: %s\n", to_name, sys_errlist[errno]);
+		PERROR("install: fchown: ", to_name);
 		bad();
 	}
 
@@ -185,7 +187,7 @@ install(from_name, to_name, isdir)
 	else if (rename(from_name, to_name))
 		copy(from_fd, from_name, to_fd, to_name);
 	else if (chmod(to_name, mode)) {
-		fprintf(stderr, "install: chmod: %s: %s\n", to_name, sys_errlist[errno]);
+		PERROR("install: chmod: ", to_name);
 		bad();
 	}
 	(void)unlink(from_name);
@@ -220,14 +222,14 @@ strip(from_fd, from_name, to_fd, to_name)
 		if (head.a_magic == ZMAGIC)
 			size += getpagesize() - sizeof(EXEC);
 		if (write(to_fd, (char *)&head, sizeof(EXEC)) != sizeof(EXEC)) {
-			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
+			PERROR("install: write: ", to_name);
 			bad();
 		}
 		for (; size; size -= n)
 			if ((n = read(from_fd, buf, (int)MIN(size, sizeof(buf)))) <= 0)
 				break;
 			else if (write(to_fd, buf, n) != n) {
-				fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
+				PERROR("install: write: ", to_name);
 				bad();
 			}
 		if (size) {
@@ -235,7 +237,7 @@ strip(from_fd, from_name, to_fd, to_name)
 			bad();
 		}
 		if (n == -1) {
-			fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
+			PERROR("install: read: ", from_name);
 			bad();
 		}
 	}
@@ -259,11 +261,11 @@ copy(from_fd, from_name, to_fd, to_name)
 
 	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
 		if (write(to_fd, buf, n) != n) {
-			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
+			PERROR("install: write: ", to_name);
 			bad();
 		}
 	if (n == -1) {
-		fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
+		PERROR("install: read: ", from_name);
 		bad();
 	}
 }
@@ -301,6 +303,6 @@ bad()
 static
 usage()
 {
-	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] f1 f2;\n\tor f1 ... fn directory\n", stderr);
+	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] file1 file2;\n\tor file1 ... fileN directory\n", stderr);
 	exit(1);
 }
