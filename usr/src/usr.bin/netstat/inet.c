@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -255,8 +255,8 @@ ip_stats(off, name)
 
 	p(ips_total, "\t%u total packet%s received\n");
 	p(ips_badsum, "\t%u bad header checksum%s\n");
-	p(ips_tooshort, "\t%u with size smaller than minimum\n");
-	p(ips_toosmall, "\t%u with data size < data length\n");
+	p(ips_toosmall, "\t%u with size smaller than minimum\n");
+	p(ips_tooshort, "\t%u with data size < data length\n");
 	p(ips_badhlen, "\t%u with header length < data size\n");
 	p(ips_badlen, "\t%u with data length < header length\n");
 	p(ips_badoptions, "\t%u with bad options\n");
