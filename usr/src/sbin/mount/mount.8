@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	6.18 (Berkeley) %G%
+.\"     @(#)mount.8	6.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
@@ -67,15 +67,17 @@ passed to external program via the
 option
 as a decimal number.
 (See example below.)
-.It Fl f
-Causes everything to be done except for the actual system call; if it's
-not obvious, this ``fakes'' mounting the file system.
+.It Fl d
+Causes everything to be done except for the actual system call.
 This option is useful in conjunction with the
 .Fl v
 flag to
 determine what the
 .Nm mount
 command is trying to do.
+.It Fl f
+Forces the revocation of write access when trying to downgrade
+a filesystem mount status from read-write to read-only.
 .It Fl o
 Options are specified with a
 .Fl o
@@ -142,7 +144,12 @@ Any of the options discussed above (the
 .Fl o
 option)
 may be changed;
-also a file system can be changed from read-only to read-write.
+also a file system can be changed from read-only to read-write
+or vice versa.
+An attempt to change from read-write to read-only will fail if any
+files on the filesystem are currently open for writing unless the
+.Fl f
+flag is also specified.
 The set of options is determined by first extracting the options
 for the file system from the
 .Xr fstab
