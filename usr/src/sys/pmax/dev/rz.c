@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.3 (Berkeley) %G%
+ *	@(#)rz.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,6 @@
 #include "stat.h"
 #include "syslog.h"
 #include "ufs/ffs/fs.h"
-#include "ufs/ufs/ufs_extern.h"
 
 #include "device.h"
 #include "scsi.h"
@@ -40,6 +39,7 @@
 extern int splbio();
 extern void splx();
 extern int physio();
+extern char *readdisklabel();
 
 int	rzprobe();
 void	rzstrategy(), rzstart(), rzdone();
