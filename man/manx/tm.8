@@ -1,0 +1,48 @@
+.pa 1
+.he 'TM (VIII)'3/15/72'TM (VIII)'
+.ti 0
+NAME		tm  --  provide time information
+.sp
+.ti 0
+SYNOPSIS	tm__
+.sp
+.ti 0
+DESCRIPTION	tm__
+is used to provide timing information.
+Output like the following
+is given:
+.sp
+.in +5
+   tim 371:51:09     2:00.8
+   ovh  20:00:33       17.0
+   swp  13:43:20        4.6
+   dsk  27:14:35        4.5
+   idl 533:08:03     1:33.3
+   usr  24:53:50        1.2
+   der    0,  54     0,   0
+.sp
+.in -5
+The first column of numbers gives totals in the named categories
+since the last time the system was cold-booted;  the second
+column gives the changes since the last time tm__ was invoked.
+The top left number is badly truncated and should be ignored.
+ovh___ is time spent
+executing in the system;
+swp___ is time waiting for swap I/O;
+dsk___ is time spent waiting for
+file system disk I/O; idl___ is idle time; usr___ is user execution
+time; der___ is RF disk error count (left number) and RK disk error
+count (right number).
+
+.ti 0
+FILES		/dev/rf0 (for absolute times);
+/tmp/ttmp for differential timing history.
+.sp
+.ti 0
+SEE ALSO	time(I), file system(V)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--

@@ -1,0 +1,24 @@
+.pa 1
+.he 'SWTMP (VIII)'2/11/73'SWTMP (VIII)'
+.ti 0
+NAME		swtmp -- update accounting file
+.sp
+.ti 0
+SYNOPSIS	swtmp_____
+.sp
+.ti 0
+DESCRIPTION	This
+shell sequence concatenates /tmp/wtmp onto /usr/adm/wtmp
+and truncates /tmp/wtmp.
+It should be used before
+using acct(VIII)
+and every so often in any case if accounting
+is to be maintained.
+.sp
+.ti 0
+FILES		/tmp/wtmp,
+/usr/adm/wtmp
+.sp
+.ti 0
+SEE ALSO	acct(VIII),
+wtmp(V)
