@@ -7,8 +7,5 @@
 .nf
 .sp 3
 .ta 6i
-\l'.5i'  4.4BSD, VAX Hardware, 9 track tape, 6250 bpi  $1000
-\l'.5i'  4.4BSD, VAX Hardware, 9 track tape, 1600 bpi  $1150
-\l'.5i'  4.4BSD, TAHOE Hardware, 9 track tape, 6250 bpi $1000
-\l'.5i'  4.4BSD, TAHOE Hardware, 9 track tape, 1600 bpi $1150
-\l'.5i'  4.4BSD, TAHOE Hardware, 8mm Exabyte^A $1000E 1
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi  $2000
+\l'.5i'  4.4BSD, 8mm Exabyte  $2000
