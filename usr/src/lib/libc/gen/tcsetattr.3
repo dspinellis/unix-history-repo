@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcsetattr.3	8.2 (Berkeley) %G%
+.\"	@(#)tcsetattr.3	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt TCSETATTR 3
@@ -28,7 +28,7 @@
 .Fn cfgetospeed "struct termios *t"
 .Ft int
 .Fn cfsetospeed "struct termios *t" "speed_t speed"
-.Ft void
+.Ft int
 .Fn cfsetspeed "struct termios *t" "speed_t speed"
 .Ft void
 .Fn cfmakeraw "struct termios *t"
