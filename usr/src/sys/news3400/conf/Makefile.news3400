@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.10 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.11 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -28,7 +28,7 @@ S=	../..
 NEWS3400=	$S/news3400
 
 INCLUDES= -I. -I$S
-COPTS=	${INCLUDES} ${IDENT} -DKERNEL ${FAKEMAIN}
+COPTS=	${INCLUDES} ${IDENT} -Unews3800 -Unews3700 -Dmips -DKERNEL
 CFLAGS=	${COPTS}
 AHEADS=
 
