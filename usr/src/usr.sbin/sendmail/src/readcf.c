@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.40		%G%);
+SCCSID(@(#)readcf.c	3.41		%G%);
 
 /*
 **  READCF -- read control file.
@@ -714,9 +714,8 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'g':		/* default gid */
-		if (!safe)
-			goto syntax;
-		DefGid = ival;
+		if (safe)
+			DefGid = ival;
 		break;
 
 	  case 'H':		/* help file */
@@ -780,9 +779,8 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'u':		/* set default uid */
-		if (!safe)
-			goto syntax;
-		DefUid = ival;
+		if (safe)
+			DefUid = ival;
 		break;
 
 	  case 'v':		/* run in verbose mode */
@@ -793,9 +791,8 @@ setoption(opt, val, safe, sticky)
 
 # ifdef DEBUG
 	  case 'W':		/* set the wizards password */
-		if (!safe)
-			goto syntax;
-		WizWord = val;
+		if (safe)
+			WizWord = val;
 		break;
 # endif DEBUG
 
