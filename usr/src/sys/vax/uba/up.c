@@ -1,15 +1,18 @@
-/*	up.c	3.20	%G%	*/
+/*	up.c	3.21	%G%	*/
 
 /*
- * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
+ * UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
- * NB: This driver works reliably only on an SC-11B controller with
- *     rev. level at least J (in particular rev. level H will not work well).
- *     If you have an newer controller you should change olducode below to:
- *		int	olducode = 0;
- *     which saves time by stalling less in the system.
+ * This driver works marginally on an Emulex SC-11B controller with rev
+ * level J microcode, defining:
+ *	int	olducode = 1;
+ * to force CPU stalling delays.
  *
- * Controller switch settings:
+ * It has worked with no delays and no problems on a prototype
+ * SC-21 controller.  Emulex intends to upgrade all SC-11s on VAXes to SC-21s.
+ * You should get a SC-21 to replace any SC-11 on a VAX.
+ *
+ * SC-11B Controller switch settings:
  *	SW1-1	5/19 surfaces	(off, 19 surfaces on Ampex 9300)
  *	SW1-2	chksum enable	(off, checksum disabled)
  *	SW1-3	volume select	(off, 815 cylinders)
@@ -575,7 +578,7 @@ upintr()
 			nwaitcs2++;
 		} else
 			neasycs2++;
-		if (upaddr->upds & ERR) {
+		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {
 			/*
 			 * An error occurred, indeed.  Select this unit
 			 * to get at the drive status (a SEARCH may have
