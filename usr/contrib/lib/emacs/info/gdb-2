@@ -1,0 +1,1370 @@
+Info file gdb, produced by texinfo-format-buffer   -*-Text-*-
+from file gdb.texinfo
+
+This file documents the GNU debugger GDB.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "Distribution" and "GDB General Public License" are
+included exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "Distribution" and "GDB General Public
+License" may be included in a translation approved by the author instead
+of in the original English.
+
+
+
+File: gdb  Node: Stack, Prev: Stopping, Up: Top, Next: Source
+
+Examining the Stack
+*******************
+
+When your program has stopped, the first thing you need to know is where it
+stopped and how it got there.
+
+Each time your program performs a function call, the information about
+where in the program the call was made from is saved in a block of data
+called a "stack frame".  The frame also contains the arguments of the
+call and the local variables of the function that was called.  All the
+stack frames are allocated in a region of memory called the "call
+stack".
+
+When your program stops, the GDB commands for examining the stack allow you
+to see all of this information.
+
+One of the stack frames is "selected" by GDB and many GDB commands
+refer implicitly to the selected frame.  In particular, whenever you ask
+GDB for the value of a variable in the program, the value is found in the
+selected frame.  There are special GDB commands to select whichever frame
+you are interested in.
+
+When the program stops, GDB automatically selects the currently executing
+frame and describes it briefly as the `frame' command does
+(*Note Info: Frame Info.).
+
+* Menu:
+
+* Frames::          Explanation of stack frames and terminology.
+* Backtrace::       Summarizing many frames at once.
+* Selection::       How to select a stack frame.
+* Info: Frame Info, Commands to print information on stack frames.
+
+
+File: gdb  Node: Frames, Prev: Stack, Up: Stack, Next: Backtrace
+
+Stack Frames
+============
+
+The call stack is divided up into contiguous pieces called "frames";
+each frame is the data associated with one call to one function.  The frame
+contains the arguments given to the function, the function's local
+variables, and the address at which the function is executing.
+
+When your program is started, the stack has only one frame, that of the
+function `main'.  This is called the "initial" frame or the
+"outermost" frame.  Each time a function is called, a new frame is
+made.  Each time a function returns, the frame for that function invocation
+is eliminated.  If a function is recursive, there can be many frames for
+the same function.  The frame for the function in which execution is
+actually occurring is called the "innermost" frame.  This is the most
+recently created of all the stack frames that still exist.
+
+Inside your program, stack frames are identified by their addresses.  A
+stack frame consists of many bytes, each of which has its own address; each
+kind of computer has a convention for choosing one of those bytes whose
+address serves as the address of the frame.  Usually this address is kept
+in a register called the "frame pointer register" while execution is
+going on in that frame.
+
+GDB assigns numbers to all existing stack frames, starting with zero for
+the innermost frame, one for the frame that called it, and so on upward.
+These numbers do not really exist in your program; they are to give you a
+way of talking about stack frames in GDB commands.
+
+Many GDB commands refer implicitly to one stack frame.  GDB records a stack
+frame that is called the "selected" stack frame; you can select any
+frame using one set of GDB commands, and then other commands will operate
+on that frame.  When your program stops, GDB automatically selects the
+innermost frame.
+
+
+File: gdb  Node: Backtrace, Prev: Frames, Up: Stack, Next: Selection
+
+Backtraces
+==========
+
+A backtrace is a summary of how the program got where it is.  It shows one
+line per frame, for many frames, starting with the currently executing
+frame (frame zero), followed by its caller (frame one), and on up the
+stack.
+
+`backtrace'     
+`bt'     
+     Print a backtrace of the entire stack: one line per frame for all
+     frames in the stack.
+     
+     You can stop the backtrace at any time by typing the system interrupt
+     character, normally `Control-C'.
+     
+`backtrace N'     
+`bt N'     
+     Similar, but stop after N frames.
+
+Each line in a backtrace shows the frame number, the program counter, the
+function and its arguments, and the source file name and line number (if
+known).  The program counter is omitted if is the beginning of the code for
+the source line.  This is the same as the first of the two lines printed
+when you select a frame.
+
+
+File: gdb  Node: Selection, Prev: Backtrace, Up: Stack, Next: Frame Info
+
+Selecting a Frame
+=================
+
+Most commands for examining the stack and other data in the program work on
+whichever stack frame is selected at the moment.  Here are the commands for
+selecting a stack frame; all of them finish by printing a brief description
+of the stack frame just selected.
+
+`frame N'     
+     Select frame number N.  Recall that frame zero is the innermost
+     (currently executing) frame, frame one is the frame that called the
+     innermost one, and so on.  The highest-numbered frame is `main''s
+     frame.
+     
+`frame ADDR'     
+     Select the frame at address ADDR.  This is useful mainly if the
+     chaining of stack frames has been damaged by a bug, making it
+     impossible for GDB to assign numbers properly to all frames.  In
+     addition, this can be useful when the program has multiple stacks and
+     options between them.
+     
+`up N'     
+     Select the frame N frames up from the frame previously selected.
+     For positive numbers N, this advances toward the outermost
+     frame, to higher frame numbers, to frames that have existed longer.
+     N defaults to one.
+     
+`down N'     
+     Select the frame N frames down from the frame previously
+     selected.  For positive numbers N, this advances toward the
+     innermost frame, to lower frame numbers, to frames that were created
+     more recently.  N defaults to one.
+
+All of these commands end by printing some information on the frame that
+has been selected: the frame number, the function name, the arguments, the
+source file and line number of execution in that frame, and the text of
+that source line.  For example:
+
+     #3  main (argc=3, argv=??, env=??) at main.c, line 67
+     67        read_input_file (argv[i]);
+
+After such a printout, the `list' command with no arguments will print
+ten lines centered on the point of execution in the frame.  *Note List::.
+
+
+File: gdb  Node: Frame Info, Prev: Selection, Up: Stack
+
+Information on a Frame
+======================
+
+There are several other commands to print information about the selected
+stack frame.
+
+`frame'     
+     This command prints a brief description of the selected stack frame.
+     It can be abbreviated `f'.  With an argument, this command is
+     used to select a stack frame; with no argument, it does not change
+     which frame is selected, but still prints the same information.
+     
+`info frame'     
+     This command prints a verbose description of the selected stack frame,
+     including the address of the frame, the addresses of the next frame in
+     (called by this frame) and the next frame out (caller of this frame),
+     the address of the frame's arguments, the program counter saved in it
+     (the address of execution in the caller frame), and which registers
+     were saved in the frame.  The verbose description is useful when
+     something has gone wrong that has made the stack format fail to fit
+     the usual conventions.
+     
+`info frame ADDR'     
+     Print a verbose description of the frame at address ADDR,
+     without selecting that frame.  The selected frame remains unchanged by
+     this command.
+     
+`info args'     
+     Print the arguments of the selected frame, each on a separate line.
+     
+`info locals'     
+     Print the local variables of the selected frame, each on a separate
+     line.  These are all variables declared static or automatic within all
+     program blocks that execution in this frame is currently inside of.
+
+
+File: gdb  Node: Source, Prev: Stack, Up: Top, Next: Data
+
+Examining Source Files
+**********************
+
+GDB knows which source files your program was compiled from, and
+can print parts of their text.  When your program stops, GDB
+spontaneously prints the line it stopped in.  Likewise, when you
+select a stack frame (*Note Selection::), GDB prints the line
+which execution in that frame has stopped in.  You can also
+print parts of source files by explicit command.
+
+* Menu:
+
+* List::        Using the `list' command to print source files.
+* Search::      Commands for searching source files.
+* Source Path:: Specifying the directories to search for source files.
+
+
+File: gdb  Node: List, Prev: Source, Up: Source, Next: Search
+
+Printing Source Lines
+=====================
+
+To print lines from a source file, use the `list' command
+(abbreviated `l').  There are several ways to specify what part
+of the file you want to print.
+
+Here are the forms of `list' command most commonly used:
+
+`list LINENUM'     
+     Print ten lines centered around line number LINENUM in the
+     current source file.
+     
+`list FUNCTION'     
+     Print ten lines centered around the beginning of function
+     FUNCTION.
+     
+`list'     
+     Print ten more lines.  If the last lines printed were printed with a
+     `list' command, this prints ten lines following the last lines
+     printed; however, if the last line printed was a solitary line printed
+     as part of displaying a stack frame (*Note Stack::), this prints ten
+     lines centered around that line.
+     
+`list -'     
+     Print ten lines just before the lines last printed.
+
+Repeating a `list' command with RET discards the argument,
+so it is equivalent to typing just `list'.  This is more useful
+than listing the same lines again.  An exception is made for an
+argument of `-'; that argument is preserved in repetition so that
+each repetition moves up in the file.
+
+In general, the `list' command expects you to supply zero, one or two
+"linespecs".  Linespecs specify source lines; there are several ways
+of writing them but the effect is always to specify some source line.
+Here is a complete description of the possible arguments for `list':
+
+`list LINESPEC'     
+     Print ten lines centered around the line specified by LINESPEC.
+     
+`list FIRST,LAST'     
+     Print lines from FIRST to LAST.  Both arguments are
+     linespecs.
+     
+`list ,LAST'     
+     Print ten lines ending with LAST.
+     
+`list FIRST,'     
+     Print ten lines starting with FIRST.
+     
+`list +'     
+     Print ten lines just after the lines last printed.
+     
+`list -'     
+     Print ten lines just before the lines last printed.
+     
+`list'     
+     As described in the preceding table.
+
+Here are the ways of specifying a single source line---all the
+kinds of linespec.
+
+LINENUM     
+     Specifies line LINENUM of the current source file.
+     When a `list' command has two linespecs, this refers to
+     the same source file as the first linespec.
+     
++OFFSET     
+     Specifies the line OFFSET lines after the last line printed.
+     When used as the second linespec in a `list' command that has
+     two, this specifies the line OFFSET lines down from the
+     first linespec.
+     
+-OFFSET     
+     Specifies the line OFFSET lines before the last line printed.
+     
+FILENAME:LINENUM     
+     Specifies line LINENUM in the source file FILENAME.
+     
+FUNCTION     
+     Specifies the line of the open-brace that begins the body of the
+     function FUNCTION.
+     
+FILENAME:FUNCTION     
+     Specifies the line of the open-brace that begins the body of the
+     function FUNCTION in the file FILENAME.  The file name is
+     needed with a function name only for disambiguation of identically
+     named functions in different source files.
+     
+*ADDRESS     
+     Specifies the line containing the program address ADDRESS.
+     ADDRESS may be any expression.
+
+One other command is used to map source lines to program addresses.
+
+`info line LINENUM'     
+     Print the starting and ending addresses of the compiled code for
+     source line LINENUM.
+     
+     The default examine address for the `x' command is changed to the
+     starting address of the line, so that `x/i' is sufficient to
+     begin examining the machine code (*Note Memory::).  Also, this address
+     is saved as the value of the convenience variable `$_'
+     (*Note Convenience Vars::).
+
+
+File: gdb  Node: Search, Prev: List, Up: Source, Next: Source Path
+
+Searching Source Files
+======================
+
+There are two commands for searching through the current source file for a
+regular expression.
+
+The command `forward-search REGEXP' checks each line, starting
+with the one following the last line listed, for a match for REGEXP.
+It lists the line that is found.  You can abbreviate the command name
+as `fo'.
+
+The command `reverse-search REGEXP' checks each line, starting
+with the one before the last line listed and going backward, for a match
+for REGEXP.  It lists the line that is found.  You can abbreviate
+this command with as little as `rev'.
+
+
+File: gdb  Node: Source Path, Prev: Search, Up: Source
+
+Specifying Source Directories
+=============================
+
+Executable programs do not record the directories of the source files they
+were compiled from, just the names.  GDB remembers a list of directories to
+search for source files; this is called the "source path".  Each time
+GDB wants a source file, it tries all the directories in the list, in the
+order they are present in the list, until it finds a file with the desired
+name.
+
+When you start GDB, its source path contains just the current working
+directory.  To add other directories, use the `directory' command.
+Note that the search path for executable files and the working directory
+are not used for finding source files.
+
+`directory DIRNAME'     
+     Add directory DIRNAME to the end of the source path.
+     
+`directory'     
+     Reset the source path to just the current working directory of GDB.
+     This requires confirmation.
+     
+     `directory' with no argument can cause source files previously
+     found by GDB to be found in a different directory.  To make this work
+     correctly, this command also clears out the tables GDB maintains
+     about the source files it has already found.
+     
+`info directories'     
+     Print the source path: show which directories it contains.
+
+Because the `directory' command adds to the end of the source path,
+it does not affect any file that GDB has already found.  If the source
+path contains directories that you do not want, and these directories
+contain misleading files with names matching your source files, the
+way to correct the situation is as follows:
+
+  1. Choose the directory you want at the beginning of the source path.
+     Use the `cd' command to make that the current working directory.
+     
+  2. Use `directory' with no argument to reset the source path to just
+     that directory.
+     
+  3. Use `directory' with suitable arguments to add any other
+     directories you want in the source path.
+
+
+File: gdb  Node: Data, Prev: Source, Up: Top, Next: Symbols
+
+Examining Data
+**************
+
+The usual way of examining data in your program is with the `print'
+command (abbreviated `p').  It evaluates and prints the value of any
+valid expression of the language the program is written in (for now, C).
+You type
+
+     print EXP
+
+where EXP is any valid expression, and the value of EXP
+is printed in a format appropriate to its data type.
+
+A more low-level way of examining data is with the `x' command.
+It examines data in memory at a specified address and prints it in a
+specified format.
+
+* Menu:
+
+* Expressions::      Expressions that can be computed and printed.
+* Variables::        Using your program's variables in expressions.
+* Assignment::       Setting your program's variables.
+* Arrays::           Examining part of memory as an array.
+* Formats::          Specifying formats for printing values.
+* Memory::           Examining memory explicitly.
+* Auto Display::     Printing certain expressions whenever program stops.
+* Value History::    Referring to values previously printed.
+* Convenience Vars:: Giving names to values for future reference.
+* Registers::        Referring to and storing in machine registers.
+
+
+File: gdb  Node: Expressions, Prev: Data, Up: Data, Next: Variables
+
+Expressions
+===========
+
+Many different GDB commands accept an expression and compute its value.
+Any kind of constant, variable or operator defined by the programming
+language you are using is legal in an expression in GDB.  This includes
+conditional expressions, function calls, casts and string constants.
+
+Casts are supported in all languages, not just in C, because it is so
+useful to cast a number into a pointer so as to examine a structure
+at that address in memory.
+
+GDB supports three kinds of operator in addition to those of programming
+languages:
+
+`@'     
+     `@' is a binary operator for treating parts of memory as arrays.
+     *Note Arrays::, for more information.
+     
+`::'     
+     `::' allows you to specify a variable in terms of the file or
+     function it is defined in.  *Note Variables::.
+     
+`{TYPE} ADDR'     
+     Refers to an object of type TYPE stored at address ADDR in memory.
+     ADDR may be any expression whose value is an integer or pointer (but
+     parentheses are required around nonunary operators, just as in a
+     cast).  This construct is allowed regardless of what kind of data is
+     officially supposed to reside at ADDR.
+
+
+File: gdb  Node: Variables, Prev: Expressions, Up: Data, Next: Arrays
+
+Program Variables
+=================
+
+The most common kind of expression to use is the name of a variable
+in your program.
+
+Variables in expressions are understood in the selected stack frame
+(*Note Selection::); they must either be global (or static) or be visible
+according to the scope rules of the programming language from the point of
+execution in that frame.  This means that in the function
+
+     foo (a)
+          int a;
+     {
+       bar (a);
+       {
+         int b = test ();
+         bar (b);
+       }
+     }
+
+the variable `a' is usable whenever the program is executing
+within the function `foo', but the variable `b' is visible
+only while the program is executing inside the block in which `b'
+is declared.
+
+
+File: gdb  Node: Arrays, Prev: Variables, Up: Data, Next: Formats
+
+Artificial Arrays
+=================
+
+It is often useful to print out several successive objects of the
+same type in memory; a section of an array, or an array of
+dynamically determined size for which only a pointer exists in the
+program.
+
+This can be done by constructing an "artificial array" with the
+binary operator `@'.  The left operand of `@' should be
+the first element of the desired array, as an individual object.
+The right operand should be the length of the array.  The result is
+an array value whose elements are all of the type of the left argument.
+The first element is actually the left argument; the second element
+comes from bytes of memory immediately following those that hold the
+first element, and so on.  Here is an example.  If a program says
+
+     int *array = (int *) malloc (len * sizeof (int));
+
+you can print the contents of `array' with
+
+     p *array@len
+
+The left operand of `@' must reside in memory.  Array values made
+with `@' in this way behave just like other arrays in terms of
+subscripting, and are coerced to pointers when used in expressions.
+(It would probably appear in an expression via the value history,
+after you had printed it out.)
+
+
+File: gdb  Node: Formats, Prev: Arrays, Up: Data, Next: Memory
+
+Formats
+=======
+
+GDB normally prints all values according to their data types.  Sometimes
+this is not what you want.  For example, you might want to print a number
+in hex, or a pointer in decimal.  Or you might want to view data in memory
+at a certain address as a character string or an instruction.  These things
+can be done with "output formats".
+
+The simplest use of output formats is to say how to print a value
+already computed.  This is done by starting the arguments of the
+`print' command with a slash and a format letter.  The format
+letters supported are:
+
+`x'     
+     Regard the bits of the value as an integer, and print the integer in
+     hexadecimal.
+     
+`d'     
+     Print as integer in signed decimal.
+     
+`u'     
+     Print as integer in unsigned decimal.
+     
+`o'     
+     Print as integer in octal.
+     
+`a'     
+     Print as an address, both absolute in hex and then relative
+     to a symbol defined as an address below it.
+     
+`c'     
+     Regard as an integer and print it as a character constant.
+     
+`f'     
+     Regard the bits of the value as a floating point number and print
+     using typical floating point syntax.
+
+For example, to print the program counter in hex (*Note Registers::), type
+
+     p/x $pc
+
+Note that no space is required before the slash; this is because command
+names in GDB cannot contain a slash.
+
+To reprint the last value in the value history with a different format,
+you can use the `print' command with just a format and no
+expression.  For example, `p/x' reprints the last value in hex.
+
+
+File: gdb  Node: Memory, Prev: Formats, Up: Data, Next: Auto Display
+
+Examining Memory
+----------------
+
+The command `x' (for `examine') can be used to examine memory under
+explicit control of formats, without reference to the program's data types.
+
+`x' is followed by a slash and an output format specification,
+followed by an expression for an address.  The expression need not have
+a pointer value (though it may); it is used as an integer, as the
+address of a byte of memory.
+
+The output format in this case specifies both how big a unit of memory
+to examine and how to print the contents of that unit.  It is done
+with one or two of the following letters:
+
+These letters specify just the size of unit to examine:
+
+`b'     
+     Examine individual bytes.
+     
+`h'     
+     Examine halfwords (two bytes each).
+     
+`w'     
+     Examine words (four bytes each).
+     
+     Many assemblers and cpu designers still use `word' for a 16-bit quantity,
+     as a holdover from specific predecessor machines of the 1970's that really
+     did use two-byte words.  But more generally the term `word' has always
+     referred to the size of quantity that a machine normally operates on and
+     stores in its registers.  This is 32 bits for all the machines that GNU
+     runs on.
+     
+`g'     
+     Examine giant words (8 bytes).
+
+These letters specify just the way to print the contents:
+
+`x'     
+     Print as integers in unsigned hexadecimal.
+     
+`d'     
+     Print as integers in signed decimal.
+     
+`u'     
+     Print as integers in unsigned decimal.
+     
+`o'     
+     Print as integers in unsigned octal.
+     
+`a'     
+     Print as an address, both absolute in hex and then relative
+     to a symbol defined as an address below it.
+     
+`c'     
+     Print as character constants.
+     
+`f'     
+     Print as floating point.  This works only with sizes `w' and
+     `g'.
+     
+`s'     
+     Print a null-terminated string of characters.  The specified unit size
+     is ignored; instead, the unit is however many bytes it takes to reach
+     a null character (including the null character).
+     
+`i'     
+     Print a machine instruction in assembler syntax (or nearly).  The
+     specified unit size is ignored; the number of bytes in an instruction
+     varies depending on the type of machine, the opcode and the addressing
+     modes used.
+
+If either the manner of printing or the size of unit fails to be specified,
+the default is to use the same one that was used last.  If you don't want
+to use any letters after the slash, you can omit the slash as well.
+
+You can also omit the address to examine.  Then the address used is
+just after the last unit examined.  This is why string and instruction
+formats actually compute a unit-size based on the data: so that the
+next string or instruction examined will start in the right place.
+The `print' command sometimes sets the default address for
+the `x' command; when the value printed resides in memory, the
+default is set to examine the same location.  `info line' also
+sets the default for `x', to the address of the start of the
+machine code for the specified line and `info breakpoints' sets
+it to the address of the last breakpoint listed.
+
+When you use RET to repeat an `x' command, it does not repeat
+exactly the same: the address specified previously (if any) is ignored, so
+that the repeated command examines the successive locations in memory
+rather than the same ones.
+
+You can examine several consecutive units of memory with one command by
+writing a repeat-count after the slash (before the format letters, if any).
+The repeat count must be a decimal integer.  It has the same effect as
+repeating the `x' command that many times except that the output may
+be more compact with several units per line.
+
+     x/10i $pc
+
+Prints ten instructions starting with the one to be executed next in the
+selected frame.  After doing this, you could print another ten following
+instructions with
+
+     x/10
+
+in which the format and address are allowed to default.
+
+The addresses and contents printed by the `x' command are not put in
+the value history because there is often too much of them and they would
+get in the way.  Instead, GDB makes these values available for subsequent
+use in expressions as values of the convenience variables `$_' and
+`$__'.
+
+After an `x' command, the last address examined is available for use
+in expressions in the convenience variable `$_'.  The contents of that
+address, as examined, are available in the convenience variable `$__'.
+
+If the `x' command has a repeat count, the address and contents saved
+are from the last memory unit printed; this is not the same as the last
+address printed if several units were printed on the last line of output.
+
+
+File: gdb  Node: Auto Display, Prev: Memory, Up: Data, Next: Value History
+
+Automatic Display
+=================
+
+If you find that you want to print the value of an expression frequently
+(to see how it changes), you might want to add it to the "automatic
+display list" so that GDB will print its value each time the program stops.
+Each expression added to the list is given a number to identify it;
+to remove an expression from the list, you specify that number.
+The automatic display looks like this:
+
+     2: foo = 38
+     3: bar[5] = (struct hack *) 0x3804
+
+showing item numbers, expressions and their current values.
+
+`display EXP'     
+     Add the expression EXP to the list of expressions to display
+     each time the program stops.
+     
+`display/FMT EXP'     
+     For FMT specifying only a display format and not a size or
+     count, add the expression EXP to the auto-display list but
+     arranges to display it each time in the specified format FMT.
+     
+`display/FMT ADDR'     
+     For FMT `i' or `s', or including a unit-size or a
+     number of units, add the expression ADDR as a memory address to
+     be examined each time the program stops.  Examining means in effect
+     doing `x/FMT ADDR'.  *Note Memory::.
+     
+`undisplay N'     
+     Remove item number N from the list of expressions to display.
+     
+`display'     
+     Display the current values of the expressions on the list, just as is
+     done when the program stops.
+     
+`info display'     
+     Print the list of expressions to display automatically, each one
+     with its item number, but without showing the values.
+
+
+File: gdb  Node: Value History, Prev: Auto Display, Up: Data, Next: Convenience Vars
+
+Value History
+=============
+
+Every value printed by the `print' command is saved for the entire
+session in GDB's "value history" so that you can refer to it in
+other expressions.
+
+The values printed are given "history numbers" for you to refer to them
+by.  These are successive integers starting with 1.  `print' shows you
+the history number assigned to a value by printing `$N = '
+before the value; here N is the history number.
+
+To refer to any previous value, use `$' followed by the value's
+history number.  The output printed by `print' is designed to remind
+you of this.  Just `$' refers to the most recent value in the history,
+and `$$' refers to the value before that.
+
+For example, suppose you have just printed a pointer to a structure and
+want to see the contents of the structure.  It suffices to type
+
+     p *$
+
+If you have a chain of structures where the component `next' points
+to the next one, you can print the contents of the next one with
+
+     p *$.next
+
+It might be useful to repeat this command many times by typing RET.
+
+Note that the history records values, not expressions.  If the value of
+`x' is 4 and you type
+
+     print x
+     set x=5
+
+then the value recorded in the value history by the `print' command
+remains 4 even though `x''s value has changed.
+
+`info history'     
+     Print the last ten values in the value history, with their item
+     numbers.  This is like `p $$9' repeated ten times, except that
+     `info history' does not change the history.
+     
+`info history N'     
+     Print ten history values centered on history item number N.
+
+
+File: gdb  Node: Convenience Vars, Prev: Value History, Up: Data, Next: Registers
+
+Convenience Variables
+=====================
+
+GDB provides "convenience variables" that you can use within GDB to
+hold on to a value and refer to it later.  These variables exist entirely
+within GDB; they are not part of your program, and setting a convenience
+variable has no effect on further execution of your program.  That's why
+you can use them freely.
+
+Convenience variables have names starting with `$'.  Any name starting
+with `$' can be used for a convenience variable, unless it is one of
+the predefined set of register names (*Note Registers::).
+
+You can save a value in a convenience variable with an assignment
+expression, just as you would set a variable in your program.  Example:
+
+     set $foo = *object_ptr
+
+would save in `$foo' the value contained in the object pointed to by
+`object_ptr'.
+
+Using a convenience variable for the first time creates it; but its value
+is `void' until you assign a new value.  You can alter the value with
+another assignment at any time.
+
+Convenience variables have no fixed types.  You can assign a convenience
+variable any type of value, even if it already has a value of a different
+type.  The convenience variable as an expression has whatever type its
+current value has.
+
+`info convenience'     
+     Print a list of convenience variables used so far, and their values.
+     Abbreviated `i con'.
+
+One of the ways to use a convenience variable is as a counter to be
+incremented or a pointer to be advanced.  For example:
+
+     set $i = 0
+     print bar[$i++]->contents
+     ...repeat that command by typing RET.
+
+Some convenience variables are created automatically by GDB and given
+values likely to be useful.
+
+`$_'     
+     The variable `$_' is automatically set by the `x' command to
+     the last address examined (*Note Memory::).  Other commands which
+     provide a default address for `x' to examine also set `$_'
+     to that address; these commands include `info line' and `info
+     breakpoint'.
+     
+`$__'     
+     The variable `$__' is automatically set by the `x' command
+     to the value found in the last address examined.
+
+
+File: gdb  Node: Registers, Prev: Convenience Vars, Up: Data
+
+Registers
+=========
+
+Machine register contents can be referred to in expressions as variables
+with names starting with `$'.  The names of registers are different
+for each machine; use `info registers' to see the names used on your
+machine.  The names `$pc' and `$sp' are used on all machines for
+the program counter register and the stack pointer.  Often `$fp' is
+used for a register that contains a pointer to the current stack frame.
+
+GDB always considers the contents of an ordinary register as an integer
+when the register is examined in this way.  Programs can store floating
+point values in registers also, but there is currently no GDB command
+to examine a specified register in floating point.  (However, if the
+variable in your program which is stored in the register is a floating
+point variable, you can see the floating point value by examining
+the variable.)
+
+Some machines have special floating point registers.  GDB considers these
+registers' values as floating point when you examine them explicitly.
+
+Some registers have distinct "raw" and "virtual" data formats.  This
+means that the data format in which the register contents are saved by the
+operating system is not the same one that your program normally sees.  For
+example, the registers of the 68881 floating point coprocessor are always
+saved in "extended" format, but all C programs expect to work with
+"double" format.  In such cases, GDB normally works with the virtual
+format only (the format that makes sense for your program), but the
+`info registers' command prints the data in both formats.
+
+Register values are relative to the selected stack frame
+(*Note Selection::).  This means that you get the value that the register
+would contain if all stack frames farther in were exited and their saved
+registers restored.  In order to see the real contents of all registers,
+you must select the innermost frame (with `frame 0').
+
+Some registers are never saved (typically those numbered zero or one)
+because they are used for returning function values; for these registers,
+relativization makes no difference.
+
+`info registers'     
+     Print the names and relativized values of all registers.
+     
+`info registers REGNAME'     
+     Print the relativized value of register REGNAME.  REGNAME
+     may be any register name valid on the machine you are using, with
+     or without the initial `$'.
+
+
+Examples
+--------
+
+You could print the program counter in hex with
+
+     p/x $pc
+
+or print the instruction to be executed next with
+
+     x/i $pc
+
+or add four to the stack pointer with
+
+     set $sp += 4
+
+The last is a way of removing one word from the stack, on machines where
+stacks grow downward in memory (most machines, nowadays).  This assumes
+that the innermost stack frame is selected.  Setting `$sp' is
+not allowed when other stack frames are selected.
+
+
+File: gdb  Node: Symbols, Prev: Data, Up: Top, Next: Altering
+
+Examining the Symbol Table
+**************************
+
+The commands described in this section allow you to make inquiries for
+information about the symbols (names of variables, functions and types)
+defined in your program.  This information is found by GDB in the symbol
+table loaded by the `symbol-file' command; it is inherent in the text
+of your program and does not change as the program executes.
+
+`whatis EXP'     
+     Print the data type of expression EXP.  EXP is not
+     actually evaluated, and any side-effecting operations (such as
+     assignments or function calls) inside it do not take place.
+     
+`whatis'     
+     Print the data type of `$', the last value in the value history.
+     
+`info address SYMBOL'     
+     Describe where the data for SYMBOL is stored.  For register
+     variables, this says which register.  For other automatic variables,
+     this prints the stack-frame offset at which the variable is always
+     stored.  Note the contrast with `print &SYMBOL', which does
+     not work at all for register variables and for automatic variables
+     prints the exact address of the current instantiation of the variable.
+     
+`ptype TYPENAME'     
+     Print a description of data type TYPENAME.  TYPENAME may be the name
+     of a type, or for C code it may have the form `struct STRUCT-TAG',
+     `union UNION-TAG' or `enum ENUM-TAG'.
+     
+`info sources'     
+     Print the names of all source files in the program for which there
+     is debugging information.
+     
+`info functions'     
+     Print the names and data types of all defined functions.
+     
+`info functions REGEXP'     
+     Print the names and data types of all defined functions
+     whose names contain a match for regular expression REGEXP.
+     Thus, `info fun step' finds all functions whose names
+     include `step'; `info fun ^step' finds those whose names
+     start with `step'.
+     
+`info variables'     
+     Print the names and data types of all variables that are declared
+     outside of functions.
+     
+`info variables REGEXP'     
+     Print the names and data types of all variables, declared outside of
+     functions, whose names contain a match for regular expression
+     REGEXP.
+     
+`info types'     
+     Print all data types that are defined in the program.
+     
+`info types REGEXP'     
+     Print all data types that are defined in the program whose names
+     contain a match for regular expression REGEXP.
+     
+`printsyms FILENAME'     
+     Write a complete dump of the debugger's symbol data into the
+     file FILENAME.
+
+
+File: gdb  Node: Altering, Prev: Symbols, Up: Top, Next: Sequences
+
+Altering Execution
+******************
+
+There are several ways to alter the execution of your program with GDB
+commands.
+
+* Menu:
+
+* Assignment::    Altering variable values or memory contents.
+* Jumping::       Altering control flow.
+* Signaling::     Making signals happen in the program.
+* Returning::     Making a function return prematurely.
+
+
+File: gdb  Node: Assignment, Prev: Altering, Up: Altering, Next: Jumping
+
+Assignment to Variables
+=======================
+
+To alter the value of a variable, evaluate an assignment expression.
+For example,
+
+     print x=4
+
+would store the value 4 into the variable `x', and then print
+the value of the assignment expression (which is 4).
+
+If you are not interested in seeing the value of the assignment, use the
+`set' command instead of the `print' command.  `set' is
+really the same as `print' except that the expression's value is not
+printed and is not put in the value history (*Note Value History::).  The
+expression is evaluated only for side effects.
+
+GDB allows more implicit conversions in assignments than C does; you can
+freely store an integer value into a pointer variable or vice versa, and
+any structure can be converted to any other structure that is the same
+length or shorter.
+
+In C, all the other assignment operators such as `+=' and `++'
+are supported as well.
+
+To store into arbitrary places in memory, use the `{...}'
+construct to generate a value of specified type at a specified address
+(*Note Expressions::).  For example,
+
+     set {int}0x83040 = 4
+
+
+File: gdb  Node: Jumping, Prev: Assignment, Up: Altering, Next: Signaling
+
+Continuing at a Different Address
+=================================
+
+`jump LINENUM'     
+     Resume execution at line number LINENUM.  Execution may stop
+     immediately if there is a breakpoint there.
+     
+     The `jump' command does not change the current stack frame, or
+     the stack pointer, or the contents of any memory location or any
+     register other than the program counter.  If line LINENUM is in
+     a different function from the one currently executing, the results may
+     be wild if the two functions expect different patterns of arguments or
+     of local variables.  For his reason, the `jump' command requests
+     confirmation if the specified line is not in the function currently
+     executing.  However, even wild results are predictable based on
+     changing the program counter.
+     
+`jump *ADDRESS'     
+     Resume execution at the instruction at address ADDRESS.
+
+A similar effect can be obtained by storing a new value into the register
+`$pc', but not exactly the same.
+
+     set $pc = 0x485
+
+specifies the address at which execution will resume, but does not resume
+execution.  That does not happen until you use the `cont' command or a
+stepping command (*Note Stepping::).
+
+
+File: gdb  Node: Signaling, Prev: Jumping, Up: Altering, Next: Returning
+
+Giving the Program a Signal
+===========================
+
+`signal SIGNALNUM'     
+     Resume execution where the program stopped, but give it immediately
+     the signal number SIGNALNUM.
+     
+     Alternatively, if SIGNALNUM is zero, continue execution and give
+     no signal.  This may be useful when the program has received a signal
+     and the `cont' command would allow the program to see that
+     signal.
+
+
+File: gdb  Node: Returning, Prev: Signaling, Up: Altering
+
+Returning from a Function
+=========================
+
+You can make any function call return immediately, using the `return'
+command.
+
+First select the stack frame that you wish to return from
+(*Note Selection::).  Then type the `return' command.  If you wish to
+specify the value to be returned, give that as an argument.
+
+This pops the selected stack frame (and any other frames inside of it),
+leaving its caller as the innermost remaining frame.  That frame becomes
+selected.  The specified value is stored in the registers used for
+returning values of functions.
+
+The `return' command does not resume execution; it leaves the program
+stopped in the state that would exist if the function had just returned.
+Contrast this with the `finish' command (*Note Stepping::), which
+resumes execution until the selected stack frame returns naturally.
+
+
+File: gdb  Node: Sequences, Prev: Altering, Up: Top, Next: Emacs
+
+Canned Sequences of Commands
+****************************
+
+GDB provides two ways to store sequences of commands for execution as a
+unit: user-defined commands and command files.
+
+* Menu:
+
+* Define::         User-defined commands.
+* Command Files::  Command files.
+* Output::         Controlled output commands useful in
+                   user-defined commands and command files.
+
+
+File: gdb  Node: Define, Prev: Sequences, Up: Sequences, Next: Command Files
+
+User-Defined Commands
+=====================
+
+A "user-defined command" is a sequence of GDB commands to which you
+assign a new name as a command.  This is done with the `define'
+command.
+
+`define COMMANDNAME'     
+     Define a command named COMMANDNAME.  If there is already a command
+     by that name, you are asked to confirm that you want to redefine it.
+     
+     The definition of the command is made up of other GDB command lines,
+     which are given following the `define' command.  The end of these
+     commands is marked by a line containing `end'.
+     
+`document COMMANDNAME'     
+     Give documentation to the user-defined command COMMANDNAME.  The
+     command COMMANDNAME must already be defined.  This command reads
+     lines of documentation just as `define' reads the lines of the
+     command definition.  After the `document' command is finished,
+     `help' on command COMMANDNAME will print the documentation
+     you have specified.
+     
+     You may use the `document' command again to change the
+     documentation of a command.  Redefining the command with `define'
+     does not change the documentation.
+
+User-defined commands do not take arguments.  When they are executed, the
+commands of the definition are not printed.  An error in any command
+stops execution of the user-defined command.
+
+Commands that would ask for confirmation if used interactively proceed
+without asking when used inside a user-defined command.  Many GDB commands
+that normally print messages to say what they are doing omit the messages
+when used in user-defined command.
+
+
+File: gdb  Node: Command Files, Prev: Define, Up: Sequences, Next: Output
+
+Command Files
+=============
+
+A command file for GDB is a file of lines that are GDB commands.  Comments
+(lines starting with `#') may also be included.  An empty line in a
+command file does nothing; it does not mean to repeat the last command, as
+it would from the terminal.
+
+When GDB starts, it automatically executes its "init files", command
+files named `.gdbinit'.  GDB reads the init file (if any) in your home
+directory and then the init file (if any) in the current working
+directory.  (The init files are not executed if the `-nx' option
+is given.)  You can also request the execution of a command file with the
+`source' command:
+
+`source FILENAME'     
+     Execute the command file FILENAME.
+
+The lines in a command file are executed sequentially.  They are not
+printed as they are executed.  An error in any command terminates execution
+of the command file.
+
+Commands that would ask for confirmation if used interactively proceed
+without asking when used in a command file.  Many GDB commands that
+normally print messages to say what they are doing omit the messages
+when used in a command file.
+
+
+File: gdb  Node: Output, Prev: Command Files, Up: Sequences
+
+Commands for Controlled Output
+==============================
+
+During the execution of a command file or a user-defined command, the only
+output that appears is what is explicitly printed by the commands of the
+definition.  This section describes three commands useful for generating
+exactly the output you want.
+
+`echo TEXT'     
+     Print TEXT.  Nonprinting characters can be included in
+     TEXT using C escape sequences, such as `\n' to print a
+     newline.  No newline will be printed unless you specify one.
+     
+     A backslash at the end of TEXT is ignored.  It is useful for
+     outputting a string ending in spaces, since trailing spaces are
+     trimmed from all arguments.  A backslash at the beginning preserves
+     leading spaces in the same way, because `\ ' as an escape
+     sequence stands for a space.  Thus, to print ` and foo = ', do
+     
+          echo \ and foo = \
+     
+`output EXPRESSION'     
+     Print the value of EXPRESSION and nothing but that value: no
+     newlines, no `$NN = '.  The value is not entered in the
+     value history either.
+     
+`output/FMT EXPRESSION'     
+     Print the value of EXPRESSION in format FMT.
+     *Note Formats::, for more information.
+     
+`printf STRING, EXPRESSIONS...'     
+     Print the values of the EXPRESSIONS under the control of
+     STRING.  The EXPRESSIONS are separated by commas and may
+     be either numbers or pointers.  Their values are printed as specified
+     by STRING, exactly as if the program were to execute
+     
+          printf (STRING, EXPRESSIONS...);
+     
+     For example, you can print two values in hex like this:
+     
+          printf "foo, bar-foo = 0x%x, 0x%x\n", foo, bar-foo
+     
+     The only backslash-escape sequences that you can use in the string are
+     the simple ones that consist of backslash followed by a letter.
+
+
+File: gdb  Node: Emacs, Prev: Sequences, Up: Top, Next: Remote
+
+Using GDB under GNU Emacs
+*************************
+
+A special interface allows you to use GNU Emacs to view (and
+edit) the source files for the program you are debugging with
+GDB.
+
+To use this interface, use the command `M-x gdb' in Emacs.
+Give the executable file you want to debug as an argument.  This
+command starts a GDB process as a subprocess of Emacs, with input
+and output through a newly created Emacs buffer.
+
+Using this GDB process is just like using GDB normally except for two things:
+
+   * All "terminal" input and output goes through the Emacs buffer.  This
+     applies both to GDB commands and their output, and to the input and
+     output done by the program you are debugging.
+     
+     This is useful because it means that you can copy the text of previous
+     commands and input them again; you can even use parts of the output
+     in this way.
+     
+     All the facilities of Emacs's Shell mode are available for this purpose.
+     
+   * GDB displays source code through Emacs.  Each time GDB displays a
+     stack frame, Emacs automatically finds the source file for that frame
+     and puts an arrow (`=>') at the left margin of the current line.
+     
+     Explicit GDB `list' or search commands still produce output as
+     usual, but you probably will have no reason to use them.
+
+In the GDB I/O buffer, you can use these special Emacs commands:
+
+`M-s'     
+     Execute to another source line, like the GDB `step' command.
+     
+`M-n'     
+     Execute to next source line in this function, skipping all function
+     calls, like the GDB `next' command.
+     
+`M-i'     
+     Execute one instruction, like the GDB `stepi' command.
+     
+`M-u'     
+     Move up one stack frame (and display that frame's source file in
+     Emacs), like the GDB `up' command.
+     
+`M-d'     
+     Move down one stack frame (and display that frame's source file in
+     Emacs), like the GDB `down' command.  (This means that you cannot
+     delete words in the usual fashion in the GDB buffer; I am guessing you
+     won't often want to do that.)
+     
+`C-c C-f'     
+     Execute until exit from the selected stack frame, like the GDB
+     `finish' command.
+
+In any source file, the Emacs command `C-x SPC' (`gdb-break')
+tells GDB to set a breakpoint on the source line point is on.
+
+The source files displayed in Emacs are in ordinary Emacs buffers
+which are visiting the source files in the usual way.  You can edit
+the files with these buffers if you wish; but keep in mind that GDB
+communicates with Emacs in terms of line numbers.  If you add or
+delete lines from the text, the line numbers that GDB knows will cease
+to correspond properly to the code.
+
+
+File: gdb  Node: Remote, Prev: Emacs, Up: Top, Next: Commands
+
+Remote Kernel Debugging
+***********************
+
+GDB has a special facility for debugging a remote machine via a serial
+connection.  This can be used for kernel debugging.
+
+The program to be debugged on the remote machine needs to contain a
+debugging device driver which talks to GDB over the serial line using the
+protocol described below.  The same version of GDB that is used ordinarily
+can be used for this.
+
+* Menu:
+
+* Remote Commands::       Commands used to start and finish remote debugging.
+
+For details of the communication protocol, see the comments in the GDB
+source file `remote.c'.
+
+
+File: gdb  Node: Remote Commands, Prev: Remote, Up: Remote
+
+Commands for Remote Debugging
+=============================
+
+To start remote debugging, first run GDB and specify as an executable file
+the program that is running in the remote machine.  This tells GDB how
+to find the program's symbols and the contents of its pure text.  Then
+establish communication using the `attach' command with a device
+name rather than a pid as an argument.  For example:
+
+     attach /dev/ttyd
+
+if the serial line is connected to the device named `/dev/ttyd'.  This
+will stop the remote machine if it is not already stopped.
+
+Now you can use all the usual commands to examine and change data and to
+step and continue the remote program.
+
+To resume the remote program and stop debugging it, use the `detach'
+command.
+
+
