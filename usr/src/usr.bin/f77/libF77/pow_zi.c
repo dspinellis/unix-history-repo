@@ -3,51 +3,40 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_zi.c	5.1	%G%
+ *	@(#)pow_zi.c	5.2	%G%
  */
 
 #include "complex"
 
+#define	Z_MULEQ(A,B)	\
+	t = (A).dreal * (B).dreal - (A).dimag * (B).dimag,\
+	(A).dimag = (A).dreal * (B).dimag + (A).dimag * (B).dreal,\
+	(A).dreal = t	/* A *= B */
+
+void
 pow_zi(p, a, b) 	/* p = a**b  */
-dcomplex *p, *a;
-long int *b;
+	dcomplex *p, *a;
+	long int *b;
 {
-long int n;
-double t;
-dcomplex x;
+	register long n = *b;
+	double t;
+	dcomplex x;
 
-n = *b;
-p->dreal = 1;
-p->dimag = 0;
-
-if(n == 0)
-	return;
-if(n < 0)
-	{
-	n = -n;
-	z_div(&x, p, a);
+	x = *a;
+	p->dreal = (double)1, p->dimag = (double)0;
+	if (!n)
+		return;
+	if (n < 0) {
+		z_div(&x, p, a);
+		n = -n;
 	}
-else
-	{
-	x.dreal = a->dreal;
-	x.dimag = a->dimag;
+	while (!(n&1)) {
+		Z_MULEQ(x, x);
+		n >>= 1;
 	}
-
-for( ; ; )
-	{
-	if(n & 01)
-		{
-		t = p->dreal * x.dreal - p->dimag * x.dimag;
-		p->dimag = p->dreal * x.dimag + p->dimag * x.dreal;
-		p->dreal = t;
+	for (*p = x; --n > 0; Z_MULEQ(*p, x))
+		while (!(n&1)) {
+			Z_MULEQ(x, x);
+			n >>= 1;
 		}
-	if(n >>= 1)
-		{
-		t = x.dreal * x.dreal - x.dimag * x.dimag;
-		x.dimag = 2 * x.dreal * x.dimag;
-		x.dreal = t;
-		}
-	else
-		break;
-	}
 }
