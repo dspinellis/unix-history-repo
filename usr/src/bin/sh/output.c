@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -110,6 +110,8 @@ outstr(p, file)
 	{
 	while (*p)
 		outc(*p++, file);
+	if (file == out2)
+		flushout(file);
 }
 
 
