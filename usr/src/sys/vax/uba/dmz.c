@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.7 (Berkeley) %G%
+ *	@(#)dmz.c	6.8 (Berkeley) %G%
  */
 
 /*
@@ -580,7 +580,7 @@ dmzstart(tp)
 
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags & (RAW | LITOUT | PASS8))
+	if (tp->t_flags & (RAW | LITOUT))
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
