@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	8.3 (Berkeley) %G%
+ *	@(#)btree.h	8.4 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -268,7 +268,7 @@ typedef struct _btree {
 	indx_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
 					/* sorted order */
-	enum { NOT, BACK, FORWARD, } bt_order;
+	enum { NOT, BACK, FORWARD } bt_order;
 	EPGNO	bt_last;		/* last insert */
 
 					/* B: key comparison function */
