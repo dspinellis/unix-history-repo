@@ -3,7 +3,7 @@
 /*
  *	This routine adds the character to the current position
  *
- * %G% (Berkeley) @(#)addch.c	1.4
+ * @(#)addch.c	1.5 (Berkeley) %G%
  */
 waddch(win, c)
 reg WINDOW	*win;
@@ -36,9 +36,9 @@ char		c;
 # endif
 		if (win->_flags & _STANDOUT)
 			c |= _STANDOUT;
-		set_ch(win, y, x, c);
+		set_ch(win, y, x, c, NULL);
 		for (wp = win->_nextp; wp != win; wp = wp->_nextp)
-			set_ch(wp, y, x, c);
+			set_ch(wp, y, x, c, win);
 		win->_y[y][x++] = c;
 		if (x >= win->_maxx) {
 			x = 0;
@@ -79,14 +79,17 @@ newline:
  *	Set the first and last change flags for this window.
  */
 static
-set_ch(win, y, x, ch)
+set_ch(win, y, x, ch, orig)
 reg WINDOW	*win;
-int		y, x; {
+int		y, x;
+WINDOW		*orig; {
 
-	if (win->_orig != NULL) {
-		y += win->_begy - win->_orig->_begy;
-		x += win->_begx - win->_orig->_begx;
+	if (orig != NULL) {
+		y -= win->_begy - orig->_begy;
+		x -= win->_begx - orig->_begx;
 	}
+	if (y < 0 || y >= win->_maxy || x < 0 || x >= win->_maxx)
+		return;
 	if (win->_y[y][x] != ch) {
 		if (win->_firstch[y] == _NOCHANGE)
 			win->_firstch[y] = win->_lastch[y] = x;
