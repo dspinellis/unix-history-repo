@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.7 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -165,11 +165,6 @@ char **argv;
 	if (argc>1)
 		fnlist = argv[1];
 	nlist(fnlist, nl);
-	if (kflg) {
-		register struct nlist *nlp;
-		for (nlp=nl; nlp < &nl[sizeof (nl)/sizeof(nl[0])]; nlp++)
-			nlp->n_value = clear(nlp->n_value);
-	}
 	usrpt = (struct pte *)nl[USRPT].n_value;
 	Usrptma = (struct pte *)nl[USRPTMA].n_value;
 	if (nl[0].n_type == 0) {
@@ -247,6 +242,8 @@ getw(loc)
 {
 	int word;
 
+	if (kflg)
+		loc &= 0x7fffffff;
 	lseek(fc, loc, 0);
 	read(fc, &word, sizeof (word));
 	return (word);
