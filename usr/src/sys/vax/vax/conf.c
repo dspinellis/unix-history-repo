@@ -1,4 +1,4 @@
-/*	conf.c	4.34	81/05/22	*/
+/*	conf.c	4.35	81/06/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -231,7 +231,7 @@ int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
 #endif
 
 #include "en.h"
-#if	NEN > 0
+#if	NEN > 0 && !defined(CHAOS)
 int	enopen(),enclose(),enread(),enwrite(),enreset();
 #else
 #define	enopen	nodev
@@ -239,6 +239,17 @@ int	enopen(),enclose(),enread(),enwrite(),enreset();
 #define	enread	nodev
 #define	enwrite	nodev
 #define	enreset	nodev
+#endif
+
+#include "ca.h"
+#if NCA > 0
+int	caopen(), caclose(), cawrite(), caioctl(), careset();
+#else
+#define	caopen	nodev
+#define	caclose	nodev
+#define	cawrite	nodev
+#define	caioctl	nodev
+#define	careset	nulldev
 #endif
 
 struct cdevsw	cdevsw[] =
@@ -296,7 +307,9 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		accreset,	0,
 	enopen,		enclose,	enread,		enwrite,	/*23*/
 	nodev,		nodev,		enreset,	0,
-	nodev,		nodev,		nodev,		nodev,		/*24*/
+	caopen,		caclose,	nodev,		cawrite,	/*24*/
+	nodev,		nodev,		careset,	0,
+	nodev,		nodev,		nodev,		nodev,		/*25*/
 	nodev,		nodev,		nodev,		0,
 /* 25-29 reserved to local sites */
 	0,	
