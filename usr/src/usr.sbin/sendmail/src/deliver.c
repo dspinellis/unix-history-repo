@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1366,10 +1366,10 @@ tryhost:
 		**  Format and send message.
 		*/
 
-		putfromline(mci->mci_out, m, e);
-		(*e->e_puthdr)(mci->mci_out, m, e);
-		putline("\n", mci->mci_out, m);
-		(*e->e_putbody)(mci->mci_out, m, e, NULL);
+		putfromline(mci, e);
+		(*e->e_puthdr)(mci, e);
+		putline("\n", mci);
+		(*e->e_putbody)(mci, e, NULL);
 
 		/* get the exit status */
 		rcode = endmailer(mci, e, pv);
@@ -1955,8 +1955,8 @@ logdelivery(m, mci, stat, ctladdr, e)
 **	this kind of antique garbage????
 **
 **	Parameters:
-**		fp -- the file to output to.
-**		m -- the mailer describing this entry.
+**		mci -- the connection information.
+**		e -- the envelope.
 **
 **	Returns:
 **		none
@@ -1965,20 +1965,19 @@ logdelivery(m, mci, stat, ctladdr, e)
 **		outputs some text to fp.
 */
 
-putfromline(fp, m, e)
-	register FILE *fp;
-	register MAILER *m;
+putfromline(mci, e)
+	register MCI *mci;
 	ENVELOPE *e;
 {
 	char *template = "\201l\n";
 	char buf[MAXLINE];
 	extern char SentDate[];
 
-	if (bitnset(M_NHDR, m->m_flags))
+	if (bitnset(M_NHDR, mci->mci_mailer->m_flags))
 		return;
 
 # ifdef UGLYUUCP
-	if (bitnset(M_UGLYUUCP, m->m_flags))
+	if (bitnset(M_UGLYUUCP, mci->mci_mailer->m_flags))
 	{
 		char *bang;
 		char xbuf[MAXLINE];
@@ -1999,14 +1998,13 @@ putfromline(fp, m, e)
 	}
 # endif /* UGLYUUCP */
 	expand(template, buf, &buf[sizeof buf - 1], e);
-	putline(buf, fp, m);
+	putline(buf, mci);
 }
 /*
 **  PUTBODY -- put the body of a message.
 **
 **	Parameters:
-**		fp -- file to output onto.
-**		m -- a mailer descriptor to control output format.
+**		mci -- the connection information.
 **		e -- the envelope to put out.
 **		separator -- if non-NULL, a message separator that must
 **			not be permitted in the resulting message.
@@ -2018,9 +2016,8 @@ putfromline(fp, m, e)
 **		The message is written onto fp.
 */
 
-putbody(fp, m, e, separator)
-	FILE *fp;
-	MAILER *m;
+putbody(mci, e, separator)
+	register MCI *mci;
 	register ENVELOPE *e;
 	char *separator;
 {
@@ -2040,25 +2037,26 @@ putbody(fp, m, e, separator)
 				e->e_df, e->e_to, e->e_from.q_paddr);
 		}
 		else
-			putline("<<< No Message Collected >>>", fp, m);
+			putline("<<< No Message Collected >>>", mci);
 	}
 	if (e->e_dfp != NULL)
 	{
 		rewind(e->e_dfp);
-		while (!ferror(fp) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
+		while (!ferror(mci->mci_out) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			if (buf[0] == 'F' && bitnset(M_ESCFROM, m->m_flags) &&
+			if (buf[0] == 'F' &&
+			    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
 			    strncmp(buf, "From ", 5) == 0)
-				(void) putc('>', fp);
+				(void) putc('>', mci->mci_out);
 			if (buf[0] == '-' && buf[1] == '-' && separator != NULL)
 			{
 				/* possible separator */
 				int sl = strlen(separator);
 
 				if (strncmp(&buf[2], separator, sl) == 0)
-					(void) putc(' ', fp);
+					(void) putc(' ', mci->mci_out);
 			}
-			putline(buf, fp, m);
+			putline(buf, mci);
 		}
 
 		if (ferror(e->e_dfp))
@@ -2069,11 +2067,12 @@ putbody(fp, m, e, separator)
 	}
 
 	/* some mailers want extra blank line at end of message */
-	if (bitnset(M_BLANKEND, m->m_flags) && buf[0] != '\0' && buf[0] != '\n')
-		putline("", fp, m);
+	if (bitnset(M_BLANKEND, mci->mci_mailer->m_flags) &&
+	    buf[0] != '\0' && buf[0] != '\n')
+		putline("", mci);
 
-	(void) fflush(fp);
-	if (ferror(fp) && errno != EPIPE)
+	(void) fflush(mci->mci_out);
+	if (ferror(mci->mci_out) && errno != EPIPE)
 	{
 		syserr("putbody: write error");
 		ExitStat = EX_IOERR;
@@ -2138,6 +2137,7 @@ mailfile(filename, ctladdr, e)
 	{
 		/* child -- actually write to file */
 		struct stat stb;
+		MCI mcibuf;
 
 		(void) setsignal(SIGINT, SIG_DFL);
 		(void) setsignal(SIGHUP, SIG_DFL);
@@ -2200,11 +2200,17 @@ mailfile(filename, ctladdr, e)
 			exit(EX_CANTCREAT);
 		}
 
-		putfromline(f, FileMailer, e);
-		(*e->e_puthdr)(f, FileMailer, e);
-		putline("\n", f, FileMailer);
-		(*e->e_putbody)(f, FileMailer, e, NULL);
-		putline("\n", f, FileMailer);
+		bzero(&mcibuf, sizeof mcibuf);
+		mcibuf.mci_mailer = FileMailer;
+		mcibuf.mci_out = f;
+		if (bitnset(M_7BITS, FileMailer->m_flags))
+			mcibuf.mci_flags |= MCIF_7BIT;
+
+		putfromline(&mcibuf, e);
+		(*e->e_puthdr)(&mcibuf, e);
+		putline("\n", &mcibuf);
+		(*e->e_putbody)(&mcibuf, e, NULL);
+		putline("\n", &mcibuf);
 		if (ferror(f))
 		{
 			message("451 I/O error: %s", errstring(errno));

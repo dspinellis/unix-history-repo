@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -277,7 +277,10 @@ helo_options(line, m, mci, e)
 			mci->mci_maxsize = atol(p);
 	}
 	else if (strcasecmp(line, "8bitmime") == 0)
+	{
 		mci->mci_flags |= MCIF_8BITMIME;
+		mci->mci_flags &= ~MCIF_7BIT;
+	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
 }
@@ -518,9 +521,9 @@ smtpdata(m, mci, e)
 	ev = setevent(timeout, datatimeout, 0);
 
 	/* now output the actual message */
-	(*e->e_puthdr)(mci->mci_out, m, e);
-	putline("\n", mci->mci_out, m);
-	(*e->e_putbody)(mci->mci_out, m, e, NULL);
+	(*e->e_puthdr)(mci, e);
+	putline("\n", mci);
+	(*e->e_putbody)(mci, e, NULL);
 
 	clrevent(ev);
 

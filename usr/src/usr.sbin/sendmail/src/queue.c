@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.37 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.38 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.37 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.38 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -68,6 +68,7 @@ queueup(e, queueall, announce)
 	bool newid;
 	register char *p;
 	MAILER nullmailer;
+	MCI mcibuf;
 	char buf[MAXLINE], tf[MAXLINE];
 
 	/*
@@ -156,7 +157,10 @@ queueup(e, queueall, announce)
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
 			syserr("!queueup: cannot create data temp file %s, uid=%d",
 				e->e_df, geteuid());
-		(*e->e_putbody)(dfp, FileMailer, e, NULL);
+		bzero(&mcibuf, sizeof mcibuf);
+		mcibuf.mci_out = dfp;
+		mcibuf.mci_mailer = FileMailer;
+		(*e->e_putbody)(&mcibuf, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
 	}
@@ -252,6 +256,9 @@ queueup(e, queueall, announce)
 	nullmailer.m_re_rwset = nullmailer.m_rh_rwset =
 			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = -1;
 	nullmailer.m_eol = "\n";
+	bzero(&mcibuf, sizeof mcibuf);
+	mcibuf.mci_mailer = &nullmailer;
+	mcibuf.mci_out = tfp;
 
 	define('g', "\201f", e);
 	for (h = e->e_header; h != NULL; h = h->h_link)
@@ -304,8 +311,7 @@ queueup(e, queueall, announce)
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
 
-			commaize(h, h->h_value, tfp, oldstyle,
-				 &nullmailer, e);
+			commaize(h, h->h_value, oldstyle, &mcibuf, e);
 
 			TrafficLogFile = savetrace;
 		}

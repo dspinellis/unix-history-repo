@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -55,9 +55,10 @@ savemail(e)
 	register FILE *fp;
 	int state;
 	auto ADDRESS *q = NULL;
+	register char *p;
+	MCI mcibuf;
 	char buf[MAXLINE+1];
 	extern struct passwd *getpwnam();
-	register char *p;
 	extern char *ttypath();
 	typedef int (*fnptr)();
 	extern bool writable();
@@ -366,11 +367,17 @@ savemail(e)
 				break;
 			}
 
-			putfromline(fp, FileMailer, e);
-			(*e->e_puthdr)(fp, FileMailer, e);
-			putline("\n", fp, FileMailer);
-			(*e->e_putbody)(fp, FileMailer, e, NULL);
-			putline("\n", fp, FileMailer);
+			bzero(&mcibuf, sizeof mcibuf);
+			mcibuf.mci_out = fp;
+			mcibuf.mci_mailer = FileMailer;
+			if (bitnset(M_7BITS, FileMailer->m_flags))
+				mcibuf.mci_flags |= MCIF_7BIT;
+
+			putfromline(&mcibuf, e);
+			(*e->e_puthdr)(&mcibuf, e);
+			putline("\n", &mcibuf);
+			(*e->e_putbody)(&mcibuf, e, NULL);
+			putline("\n", &mcibuf);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
 			(void) xfclose(fp, "savemail", "/usr/tmp/dead.letter");
@@ -541,8 +548,7 @@ returntosender(msg, returnq, sendbody, e)
 **	original offending message.
 **
 **	Parameters:
-**		fp -- the output file.
-**		m -- the mailer to output to.
+**		mci -- the mailer connection information.
 **		e -- the envelope we are working in.
 **
 **	Returns:
@@ -552,9 +558,8 @@ returntosender(msg, returnq, sendbody, e)
 **		Outputs the body of an error message.
 */
 
-errbody(fp, m, e)
-	register FILE *fp;
-	register struct mailer *m;
+errbody(mci, e)
+	register MCI *mci;
 	register ENVELOPE *e;
 {
 	register FILE *xfile;
@@ -566,7 +571,7 @@ errbody(fp, m, e)
 	if (e->e_parent == NULL)
 	{
 		syserr("errbody: null parent");
-		putline("   ----- Original message lost -----\n", fp, m);
+		putline("   ----- Original message lost -----\n", mci);
 		return;
 	}
 
@@ -576,11 +581,11 @@ errbody(fp, m, e)
 
 	if (e->e_msgboundary != NULL)
 	{
-		putline("This is a MIME-encapsulated message", fp, m);
-		putline("", fp, m);
+		putline("This is a MIME-encapsulated message", mci);
+		putline("", mci);
 		(void) sprintf(buf, "--%s", e->e_msgboundary);
-		putline(buf, fp, m);
-		putline("", fp, m);
+		putline(buf, mci);
+		putline("", mci);
 	}
 
 	/*
@@ -594,21 +599,21 @@ errbody(fp, m, e)
 	    !bitset(EF_FATALERRS|EF_SENDRECEIPT, e->e_parent->e_flags))
 	{
 		putline("    **********************************************",
-			fp, m);
+			mci);
 		putline("    **      THIS IS A WARNING MESSAGE ONLY      **",
-			fp, m);
+			mci);
 		putline("    **  YOU DO NOT NEED TO RESEND YOUR MESSAGE  **",
-			fp, m);
+			mci);
 		putline("    **********************************************",
-			fp, m);
-		putline("", fp, m);
+			mci);
+		putline("", mci);
 	}
 	sprintf(buf, "The original message was received at %s",
 		arpadate(ctime(&e->e_parent->e_ctime)));
-	putline(buf, fp, m);
+	putline(buf, mci);
 	expand("from \201_", buf, &buf[sizeof buf - 1], e->e_parent);
-	putline(buf, fp, m);
-	putline("", fp, m);
+	putline(buf, mci);
+	putline("", mci);
 
 	/*
 	**  Output error message header (if specified and available).
@@ -624,17 +629,17 @@ errbody(fp, m, e)
 				while (fgets(buf, sizeof buf, xfile) != NULL)
 				{
 					expand(buf, buf, &buf[sizeof buf - 1], e);
-					putline(buf, fp, m);
+					putline(buf, mci);
 				}
 				(void) fclose(xfile);
-				putline("\n", fp, m);
+				putline("\n", mci);
 			}
 		}
 		else
 		{
 			expand(ErrMsgFile, buf, &buf[sizeof buf - 1], e);
-			putline(buf, fp, m);
-			putline("", fp, m);
+			putline(buf, mci);
+			putline("", mci);
 		}
 	}
 
@@ -650,7 +655,7 @@ errbody(fp, m, e)
 			if (printheader)
 			{
 				putline("   ----- The following addresses had delivery problems -----",
-					fp, m);
+					mci);
 				printheader = FALSE;
 			}
 			strcpy(buf, q->q_paddr);
@@ -658,18 +663,18 @@ errbody(fp, m, e)
 				strcat(buf, "  (unrecoverable error)");
 			else
 				strcat(buf, "  (transient failure)");
-			putline(buf, fp, m);
+			putline(buf, mci);
 			if (q->q_alias != NULL)
 			{
 				strcpy(buf, "    (expanded from: ");
 				strcat(buf, q->q_alias->q_paddr);
 				strcat(buf, ")");
-				putline(buf, fp, m);
+				putline(buf, mci);
 			}
 		}
 	}
 	if (!printheader)
-		putline("\n", fp, m);
+		putline("\n", mci);
 
 	/*
 	**  Output transcript of errors
@@ -680,15 +685,15 @@ errbody(fp, m, e)
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
-		putline("   ----- Transcript of session is unavailable -----\n", fp, m);
+		putline("   ----- Transcript of session is unavailable -----\n", mci);
 	}
 	else
 	{
-		putline("   ----- Transcript of session follows -----\n", fp, m);
+		putline("   ----- Transcript of session follows -----\n", mci);
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
-			putline(buf, fp, m);
+			putline(buf, mci);
 		(void) xfclose(xfile, "errbody xscript", p);
 	}
 	errno = 0;
@@ -699,42 +704,42 @@ errbody(fp, m, e)
 
 	if (NoReturn)
 		SendBody = FALSE;
-	putline("", fp, m);
+	putline("", mci);
 	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
-			putline("   ----- Original message follows -----\n", fp, m);
+			putline("   ----- Original message follows -----\n", mci);
 		else
-			putline("   ----- Message header follows -----\n", fp, m);
-		(void) fflush(fp);
+			putline("   ----- Message header follows -----\n", mci);
+		(void) fflush(mci->mci_out);
 
 		if (e->e_msgboundary != NULL)
 		{
-			putline("", fp, m);
+			putline("", mci);
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
-			putline(buf, fp, m);
-			putline("Content-Type: message/rfc822", fp, m);
-			putline("", fp, m);
+			putline(buf, mci);
+			putline("Content-Type: message/rfc822", mci);
+			putline("", mci);
 		}
-		putheader(fp, m, e->e_parent);
-		putline("", fp, m);
+		putheader(mci, e->e_parent);
+		putline("", mci);
 		if (SendBody)
-			putbody(fp, m, e->e_parent, e->e_msgboundary);
+			putbody(mci, e->e_parent, e->e_msgboundary);
 		else
-			putline("   ----- Message body suppressed -----", fp, m);
+			putline("   ----- Message body suppressed -----", mci);
 	}
 	else
 	{
-		putline("  ----- No message was collected -----\n", fp, m);
+		putline("  ----- No message was collected -----\n", mci);
 	}
 
 	if (e->e_msgboundary != NULL)
 	{
-		putline("", fp, m);
+		putline("", mci);
 		(void) sprintf(buf, "--%s--", e->e_msgboundary);
-		putline(buf, fp, m);
+		putline(buf, mci);
 	}
-	putline("", fp, m);
+	putline("", mci);
 
 	/*
 	**  Cleanup and exit

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -703,8 +703,7 @@ dfopen(filename, omode, cmode)
 **
 **	Parameters:
 **		l -- line to put.
-**		fp -- file to put it onto.
-**		m -- the mailer used to control output.
+**		mci -- the mailer connection information.
 **
 **	Returns:
 **		none
@@ -713,16 +712,15 @@ dfopen(filename, omode, cmode)
 **		output of l to fp.
 */
 
-putline(l, fp, m)
+putline(l, mci)
 	register char *l;
-	FILE *fp;
-	MAILER *m;
+	register MCI *mci;
 {
 	register char *p;
 	register char svchar;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
-	if (bitnset(M_7BITS, m->m_flags))
+	if (bitset(MCIF_7BIT, mci->mci_flags))
 	{
 		for (p = l; (svchar = *p) != '\0'; ++p)
 			if (bitset(0200, svchar))
@@ -740,21 +738,22 @@ putline(l, fp, m)
 			fprintf(TrafficLogFile, "%05d >>> ", getpid());
 
 		/* check for line overflow */
-		while (m->m_linelimit > 0 && (p - l) > m->m_linelimit)
+		while (mci->mci_mailer->m_linelimit > 0 &&
+		       (p - l) > mci->mci_mailer->m_linelimit)
 		{
-			register char *q = &l[m->m_linelimit - 1];
+			register char *q = &l[mci->mci_mailer->m_linelimit - 1];
 
 			svchar = *q;
 			*q = '\0';
-			if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+			if (l[0] == '.' && bitnset(M_XDOT, mci->mci_mailer->m_flags))
 			{
-				(void) putc('.', fp);
+				(void) putc('.', mci->mci_out);
 				if (TrafficLogFile != NULL)
 					(void) putc('.', TrafficLogFile);
 			}
-			fputs(l, fp);
-			(void) putc('!', fp);
-			fputs(m->m_eol, fp);
+			fputs(l, mci->mci_out);
+			(void) putc('!', mci->mci_out);
+			fputs(mci->mci_mailer->m_eol, mci->mci_out);
 			if (TrafficLogFile != NULL)
 				fprintf(TrafficLogFile, "%s!\n%05d >>> ",
 					l, getpid());
@@ -763,17 +762,17 @@ putline(l, fp, m)
 		}
 
 		/* output last part */
-		if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+		if (l[0] == '.' && bitnset(M_XDOT, mci->mci_mailer->m_flags))
 		{
-			(void) putc('.', fp);
+			(void) putc('.', mci->mci_out);
 			if (TrafficLogFile != NULL)
 				(void) putc('.', TrafficLogFile);
 		}
 		if (TrafficLogFile != NULL)
 			fprintf(TrafficLogFile, "%.*s\n", p - l, l);
 		for ( ; l < p; ++l)
-			(void) putc(*l, fp);
-		fputs(m->m_eol, fp);
+			(void) putc(*l, mci->mci_out);
+		fputs(mci->mci_mailer->m_eol, mci->mci_out);
 		if (*l == '\n')
 			++l;
 	} while (l[0] != '\0');

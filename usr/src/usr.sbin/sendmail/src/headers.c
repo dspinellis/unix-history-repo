@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -846,8 +846,7 @@ crackaddr(addr)
 **  PUTHEADER -- put the header part of a message from the in-core copy
 **
 **	Parameters:
-**		fp -- file to put it on.
-**		m -- mailer to use.
+**		mci -- the connection information.
 **		e -- envelope to use.
 **
 **	Returns:
@@ -864,9 +863,8 @@ crackaddr(addr)
 # define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
-putheader(fp, m, e)
-	register FILE *fp;
-	register MAILER *m;
+putheader(mci, e)
+	register MCI *mci;
 	register ENVELOPE *e;
 {
 	char buf[MAX(MAXLINE,BUFSIZ)];
@@ -874,7 +872,8 @@ putheader(fp, m, e)
 	char obuf[MAXLINE];
 
 	if (tTd(34, 1))
-		printf("--- putheader, mailer = %s ---\n", m->m_name);
+		printf("--- putheader, mailer = %s ---\n",
+			mci->mci_mailer->m_name);
 
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
@@ -888,7 +887,7 @@ putheader(fp, m, e)
 		}
 
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) &&
-		    !bitintersect(h->h_mflags, m->m_flags))
+		    !bitintersect(h->h_mflags, mci->mci_mailer->m_flags))
 		{
 			if (tTd(34, 11))
 				printf(" (skipped)\n");
@@ -927,7 +926,7 @@ putheader(fp, m, e)
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
-			commaize(h, p, fp, oldstyle, m, e);
+			commaize(h, p, oldstyle, mci, e);
 		}
 		else
 		{
@@ -940,12 +939,12 @@ putheader(fp, m, e)
 				*nlp = '\0';
 				(void) strcat(obuf, p);
 				*nlp = '\n';
-				putline(obuf, fp, m);
+				putline(obuf, mci);
 				p = ++nlp;
 				obuf[0] = '\0';
 			}
 			(void) strcat(obuf, p);
-			putline(obuf, fp, m);
+			putline(obuf, mci);
 		}
 	}
 }
@@ -955,10 +954,8 @@ putheader(fp, m, e)
 **	Parameters:
 **		h -- the header field to output.
 **		p -- the value to put in it.
-**		fp -- file to put it to.
 **		oldstyle -- TRUE if this is an old style header.
-**		m -- a pointer to the mailer descriptor.  If NULL,
-**			don't transform the name at all.
+**		mci -- the connection information.
 **		e -- the envelope containing the message.
 **
 **	Returns:
@@ -968,12 +965,12 @@ putheader(fp, m, e)
 **		outputs "p" to file "fp".
 */
 
-commaize(h, p, fp, oldstyle, m, e)
+void
+commaize(h, p, oldstyle, mci, e)
 	register HDR *h;
 	register char *p;
-	FILE *fp;
 	bool oldstyle;
-	register MAILER *m;
+	register MCI *mci;
 	register ENVELOPE *e;
 {
 	register char *obp;
@@ -1056,7 +1053,7 @@ commaize(h, p, fp, oldstyle, m, e)
 		if (bitset(H_FROM, h->h_flags))
 			flags |= RF_SENDERADDR;
 		stat = EX_OK;
-		name = remotename(name, m, flags, &stat, e);
+		name = remotename(name, mci->mci_mailer, flags, &stat, e);
 		if (*name == '\0')
 		{
 			*p = savechar;
@@ -1070,7 +1067,7 @@ commaize(h, p, fp, oldstyle, m, e)
 		if (opos > 78 && !firstone)
 		{
 			(void) strcpy(obp, ",\n");
-			putline(obuf, fp, m);
+			putline(obuf, mci);
 			obp = obuf;
 			(void) sprintf(obp, "        ");
 			opos = strlen(obp);
@@ -1089,7 +1086,7 @@ commaize(h, p, fp, oldstyle, m, e)
 		*p = savechar;
 	}
 	(void) strcpy(obp, "\n");
-	putline(obuf, fp, m);
+	putline(obuf, mci);
 }
 /*
 **  COPYHEADER -- copy header list

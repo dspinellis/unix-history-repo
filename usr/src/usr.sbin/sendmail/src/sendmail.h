@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.38 (Berkeley) %G%
+ *	@(#)sendmail.h	8.39 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.38		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.39		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -256,6 +256,50 @@ extern struct hdrinfo	HdrInfo[];
 # define H_RECEIPTTO	02000	/* this field has return receipt info */
 # define H_ERRORSTO	04000	/* this field has error address info */
 /*
+**  Information about currently open connections to mailers, or to
+**  hosts that we have looked up recently.
+*/
+
+# define MCI		struct mailer_con_info
+
+MCI
+{
+	short		mci_flags;	/* flag bits, see below */
+	short		mci_errno;	/* error number on last connection */
+	short		mci_herrno;	/* h_errno from last DNS lookup */
+	short		mci_exitstat;	/* exit status from last connection */
+	short		mci_state;	/* SMTP state */
+	long		mci_maxsize;	/* max size this server will accept */
+	FILE		*mci_in;	/* input side of connection */
+	FILE		*mci_out;	/* output side of connection */
+	int		mci_pid;	/* process id of subordinate proc */
+	char		*mci_phase;	/* SMTP phase string */
+	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
+	char		*mci_host;	/* host name */
+	time_t		mci_lastuse;	/* last usage time */
+};
+
+
+/* flag bits */
+#define MCIF_VALID	000001		/* this entry is valid */
+#define MCIF_TEMP	000002		/* don't cache this connection */
+#define MCIF_CACHED	000004		/* currently in open cache */
+#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
+#define MCIF_EXPN	000020		/* EXPN command supported */
+#define MCIF_SIZE	000040		/* SIZE option supported */
+#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
+#define MCIF_7BIT	000200		/* strip this message to 7 bits */
+#define MCIF_MULTSTAT	000400		/* MAIL11V3: handles MULT status */
+
+/* states */
+#define MCIS_CLOSED	0		/* no traffic on this connection */
+#define MCIS_OPENING	1		/* sending initial protocol */
+#define MCIS_OPEN	2		/* open, initial protocol sent */
+#define MCIS_ACTIVE	3		/* message being sent */
+#define MCIS_QUITING	4		/* running quit protocol */
+#define MCIS_SSD	5		/* service shutting down */
+#define MCIS_ERROR	6		/* I/O error on connection */
+/*
 **  Envelope structure.
 **	This structure defines the message itself.  There is usually
 **	only one of these -- for the message that we originally read
@@ -287,9 +331,9 @@ ENVELOPE
 	short		e_nsent;	/* number of sends since checkpoint */
 	short		e_sendmode;	/* message send mode */
 	short		e_errormode;	/* error return mode */
-	int		(*e_puthdr)__P((FILE *, MAILER *, ENVELOPE *));
+	int		(*e_puthdr)__P((MCI *, ENVELOPE *));
 					/* function to put header of message */
-	int		(*e_putbody)__P((FILE *, MAILER *, ENVELOPE *, char *));
+	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
 					/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
@@ -420,49 +464,6 @@ struct metamac
 	char	metaname;	/* external code (after $) */
 	u_char	metaval;	/* internal code (as above) */
 };
-/*
-**  Information about currently open connections to mailers, or to
-**  hosts that we have looked up recently.
-*/
-
-# define MCI	struct mailer_con_info
-
-MCI
-{
-	short		mci_flags;	/* flag bits, see below */
-	short		mci_errno;	/* error number on last connection */
-	short		mci_herrno;	/* h_errno from last DNS lookup */
-	short		mci_exitstat;	/* exit status from last connection */
-	short		mci_state;	/* SMTP state */
-	long		mci_maxsize;	/* max size this server will accept */
-	FILE		*mci_in;	/* input side of connection */
-	FILE		*mci_out;	/* output side of connection */
-	int		mci_pid;	/* process id of subordinate proc */
-	char		*mci_phase;	/* SMTP phase string */
-	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
-	char		*mci_host;	/* host name */
-	time_t		mci_lastuse;	/* last usage time */
-};
-
-
-/* flag bits */
-#define MCIF_VALID	000001		/* this entry is valid */
-#define MCIF_TEMP	000002		/* don't cache this connection */
-#define MCIF_CACHED	000004		/* currently in open cache */
-#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
-#define MCIF_EXPN	000020		/* EXPN command supported */
-#define MCIF_SIZE	000040		/* SIZE option supported */
-#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
-#define MCIF_MULTSTAT	000200		/* MAIL11V3: handles MULT status */
-
-/* states */
-#define MCIS_CLOSED	0		/* no traffic on this connection */
-#define MCIS_OPENING	1		/* sending initial protocol */
-#define MCIS_OPEN	2		/* open, initial protocol sent */
-#define MCIS_ACTIVE	3		/* message being sent */
-#define MCIS_QUITING	4		/* running quit protocol */
-#define MCIS_SSD	5		/* service shutting down */
-#define MCIS_ERROR	6		/* I/O error on connection */
 /*
 **  Name canonification short circuit.
 **
@@ -938,6 +939,7 @@ extern void		closexscript __P((ENVELOPE *));
 extern sigfunc_t	setsignal __P((int, sigfunc_t));
 extern char		*shortenstring __P((char *, int));
 extern bool		usershellok __P((char *));
+extern void		commaize __P((HDR *, char *, int, MCI *, ENVELOPE *));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
