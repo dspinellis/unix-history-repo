@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.9 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 	register char *cp, *dn;
 	register int n, c;
 	char *eom;
-	int len = -1;
+	int len = -1, checked = 0;
 
 	dn = exp_dn;
 	cp = comp_dn;
@@ -48,6 +48,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 			}
 			if (dn+n >= eom)
 				return (-1);
+			checked += n + 1;
 			while (--n >= 0) {
 				if ((c = *cp++) == '.') {
 					if (dn+n+1 >= eom)
@@ -66,6 +67,14 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 			cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
 			if (cp < msg || cp >= eomorig)	/* out of range */
 				return(-1);
+			checked += 2;
+			/*
+			 * Check for loops in the compressed name;
+			 * if we've looked at the whole message,
+			 * there must be a loop.
+			 */
+			if (checked >= eomorig - msg)
+				return (-1);
 			break;
 
 		default:
