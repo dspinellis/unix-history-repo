@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.165 (Berkeley) %G%
+ *	@(#)conf.h	8.166 (Berkeley) %G%
  */
 
 /*
@@ -256,6 +256,7 @@ extern int	syslog(int, char *, ...);
 #  ifndef __svr4__
 #   define __svr4__		/* use all System V Releae 4 defines below */
 #  endif
+#  define BSD_COMP	1	/* get BSD ioctl calls */
 #  include <sys/time.h>
 #  define GIDSET_T	gid_t
 #  ifndef _PATH_UNIX
