@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -332,7 +332,7 @@ getdol()
 
 	np = name, *np++ = '$';
 	c = sc = getC(DOEXCL);
-	if (any(c, "\t \n")) {
+	if (index("\t \n", c)) {
 		ungetD(c);
 		ungetC('$' | QUOTE);
 		return;
@@ -399,7 +399,7 @@ getdol()
 		if (c == 'g')
 			*np++ = c, c = getC(DOEXCL);
 		*np++ = c;
-		if (!any(c, "htrqxe"))
+		if (!index("htrqxe", c))
 			goto vsyn;
 	} else
 		ungetD(c);
@@ -476,7 +476,7 @@ getexcl(sc)
 		goto subst;
 	}
 	c = getC(0);
-	if (!any(c, ":^$*-%"))
+	if (!index(":^$*-%", c))
 		goto subst;
 	left = right = -1;
 	if (c == ':') {
@@ -567,7 +567,7 @@ getsub(en)
 
 	case 's':
 		delim = getC(0);
-		if (letter(delim) || digit(delim) || any(delim, " \t\n")) {
+		if (letter(delim) || digit(delim) || index(" \t\n", delim)) {
 			unreadc(delim);
 bads:
 			lhsb[0] = 0;
@@ -765,7 +765,7 @@ domod(cp, type)
 
 	case 'h':
 	case 't':
-		if (!any('/', cp))
+		if (!index(cp, '/'))
 			return (type == 't' ? savestr(cp) : 0);
 		wp = strend(cp);
 		while (*--wp != '/')
@@ -873,7 +873,7 @@ getsel(al, ar, dol)
 	if (first) {
 		c = getC(0);
 		unreadc(c);
-		if (any(c, "-$*"))
+		if (index("-$*", c))
 			return (1);
 	}
 	if (*al > *ar || *ar > dol) {
@@ -924,7 +924,7 @@ gethent(sc)
 		return(&paraml);
 
 	default:
-		if (any(c, "(=~")) {
+		if (index("(=~", c)) {
 			unreadc(c);
 			ungetC(HIST);
 			return (0);
@@ -932,7 +932,7 @@ gethent(sc)
 		if (digit(c))
 			goto number;
 		np = lhsb;
-		while (!any(c, ": \t\\\n}")) {
+		while (!index(": \t\\\n}", c)) {
 			if (np < &lhsb[sizeof lhsb - 2])
 				*np++ = c;
 			c = getC(0);
@@ -1239,7 +1239,7 @@ again:
 					goto again;
 				}
 				if (c > 0)
-					copy(fbuf[buf] + off, ttyline, c);
+					bcopy(ttyline, fbuf[buf] + off, c);
 				numleft = 0;
 			} else
 				c = read(SHIN, fbuf[buf] + off, roomleft);
