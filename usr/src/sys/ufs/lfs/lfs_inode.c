@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.50 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.51 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -146,8 +146,7 @@ lfs_update(vp, ta, tm, waitfor)
 	 * I'm not real sure what to do here; once we have fsync and partial
 	 * segments working in the LFS context, this must be fixed to be
 	 * correct.  The contents of the inode have to be pushed back to
-	 * stable storage; note that the ifile contains the access time of
-	 * the inode and must be updated as well.
+	 * stable storage.
 	 */
 	return (0);
 }
@@ -206,9 +205,16 @@ lfs_truncate(ovp, length, flags)
 		(void)vnode_pager_uncache(ovp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
-		lfs_bwrite(bp);
+		LFS_UBWRITE(bp);
 	}
-	/* XXX: BZERO INODE BLOCK POINTERS HERE, FOR CONSISTENCY. */
+	/*
+	 * XXX
+	 * Bzero inode block pointers here, for consistency with ffs.
+	 * Segment usage information has to be updated when the blocks
+	 * are free.
+	 * Block count in the inode has to be fixed when blocks are
+	 * free.
+	 */
 	(void)vinvalbuf(ovp, length > 0);
 	return (0);
 }
