@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.35 1994/01/30 02:12:26 rgrimes Exp $
+#	$Id: Makefile,v 1.36 1994/01/30 10:36:30 rgrimes Exp $
 #
 
 SUBDIR=
@@ -78,7 +78,7 @@ cleandist:
 	@echo " Cleaning up the source tree, and rebuilding the obj tree"
 	@echo "--------------------------------------------------------------"
 	@echo
-	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src,,'`; \
+	here=`pwd`; dest=/usr/obj`echo $$here | sed 's,^/usr/src,,'`; \
 	cd $$dest; rm -rf ${SUBDIR}
 	find . -name obj | xargs -n30 rm -rf
 .if defined(MAKE_LOCAL) & exists(local) & exists(local/Makefile)
