@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.41 1994/02/26 19:32:43 wollman Exp $
+#	$Id: Makefile,v 1.42 1994/03/02 12:32:44 phk Exp $
 #
 
 SUBDIR=
@@ -162,6 +162,23 @@ bootstrapld:	directories cleandist mk includes
 	cd ${.CURDIR}/lib/csu.i386;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/libc;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/usr.bin/ld/rtld;	make depend all install ${CLEANDIR} obj
+
+# You MUST run this the first time you get the new sources to boot strap
+# the *pwd.db databases onto you system.  This target should only
+# need to be run once on a system.
+
+bootstrappwd:
+	cd ${.CURDIR}/lib/libc; make all
+	cd ${.CURDIR}/usr.sbin/pwd_mkdb; make all install ${CLEANDIR}
+	cp /etc/master.passwd /etc/mp.t; pwd_mkdb /etc/mp.t
+	cp ${.CURDIR}/lib/libc/obj/libc* /usr/lib
+	cp ${.CURDIR}/lib/libc; make install ${CLEANDIR}
+	cd ${.CURDIR}/usr.bin/passwd; make all install ${CLEANDIR}
+	cd ${.CURDIR}/bin; make all install ${CLEANDIR}
+	cd ${.CURDIR}/sbin; make all install ${CLEANDIR}
+	@echo "--------------------------------------------------------------"
+	@echo " Do reboot now because all daemons needs restart"
+	@echo "--------------------------------------------------------------"
 
 libraries:
 	# setenv NOPROFILE if you do not want profiled libraries
