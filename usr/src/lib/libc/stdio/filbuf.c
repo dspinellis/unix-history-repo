@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.4 (Berkeley) %G% */
+/* @(#)filbuf.c	4.5 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -40,8 +40,12 @@ tryagain:
 		}
 		iop->_bufsiz = size;
 	}
-	if (iop == stdin && (stdout->_flag&_IOLBF))
-		fflush(stdout);
+	if (iop == stdin) {
+		if (stdout->_flag&_IOLBF)
+			fflush(stdout);
+		if (stderr->_flag&_IOLBF)
+			fflush(stderr);
+	}
 	iop->_cnt = read(fileno(iop), iop->_base,
 		iop->_flag & _IONBF ? 1 : iop->_bufsiz);
 	iop->_ptr = iop->_base;
