@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.9 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.10 (Berkeley) %G%
  */
 
 /*
@@ -590,6 +590,7 @@ vget(vp, lockflag)
 		    vp->v_freelist.tqe_prev == (struct vnode **)0xdeadb)
 			panic("vget: not on queue");
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
+	}
 		vp->v_freelist.tqe_next = (struct vnode *)0xdeadf;
 		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
 	}
