@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	6.9 (Berkeley) %G%
+.\"	@(#)5.t	6.10 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -187,7 +187,7 @@ the form ``128.32.\fIn\fP.\fIm\fP'';  for example, host
 For hosts with multiple interfaces, the network mask should
 be set for each interface,
 although in practice only the mask of the first interface on each network
-is actually used.
+is really used.
 .NH 2
 Internet broadcast addresses
 .PP
@@ -218,7 +218,7 @@ employs a routing table management daemon.
 Optimally, you should use the routing daemon
 .Xr gated
 available from Cornell university.
-We use it on our systems and it works quite well,
+We use it on our systems and it works well,
 especially for multi-homed hosts using Serial Line IP (SLIP).
 Unfortunately, we were not able to obtain permission to
 include it on \*(4B.
@@ -309,7 +309,7 @@ hosts with only a single non-loopback interface never attempt
 to forward packets or to respond with ICMP error messages to misdirected
 packets.
 This change reduces the problems that may occur when different hosts
-on a network disagree as to the network number or broadcast address.
+on a network disagree on the network number or broadcast address.
 Another change is that \*(4B machines that forward packets back through
 the same interface on which they arrived
 will send ICMP redirects to the source host if it is on the same network.
@@ -403,7 +403,7 @@ is used, but
 is not; they are enabled by setting the variables \fIroutedflags\fP and
 .Xr rwhod
 to strings other than ``NO.''
-The value of \fIroutedflags\fP is used to provide host-specific options to
+The value of \fIroutedflags\fP provides host-specific options to
 .Xr routed .
 For example,
 .DS
@@ -445,7 +445,7 @@ server expects (e.g. stream or dgram), the protocol to be
 used with the socket (as found in
 .Pn /etc/protocols ),
 whether to wait for each server to complete before starting up another,
-the user name as which the server should run, the server
+the user name by which the server should run, the server
 program's name, and at most five arguments to pass to the
 server program.
 Some trivial services are implemented internally in
