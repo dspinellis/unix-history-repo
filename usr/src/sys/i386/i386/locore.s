@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -10,7 +10,7 @@
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
  *	from NetBSD: Id: locore.s,v 1.12 1993/05/27 16:44:13 cgd Exp
  *
- *      @(#)locore.s	7.11 (Berkeley) %G%
+ *      @(#)locore.s	8.1 (Berkeley) %G%
  */
 
 

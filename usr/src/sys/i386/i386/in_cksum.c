@@ -1,11 +1,11 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * from tahoe:	in_cksum.c	1.2	86/01/05
- *	@(#)in_cksum.c	7.2 (Berkeley) %G%
+ *	@(#)in_cksum.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

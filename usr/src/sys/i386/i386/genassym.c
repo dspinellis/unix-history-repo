@@ -1,17 +1,17 @@
 /*-
- * Copyright (c) 1982, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.16 (Berkeley) %G%
+ *	@(#)genassym.c	8.1 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #define KERNEL

@@ -1,14 +1,14 @@
 /*-
  * Copyright (c) 1989, 1990 William F. Jolitz
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)segments.h	7.1 (Berkeley) %G%
+ *	@(#)segments.h	8.1 (Berkeley) %G%
  */
 
 /*
