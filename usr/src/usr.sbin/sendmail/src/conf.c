@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -379,6 +379,9 @@ struct	nlist Nl[] =
 #define	X_AVENRUN	0
 	{ 0 },
 };
+
+
+extern int la;
 
 getla()
 {
