@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.10 (Berkeley) %G%
+ *	@(#)machdep.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@
 #include <net/netisr.h>
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
+#include <vm/vm_extern.h>
 #include <vm/vm_kern.h>
 
 /* the following is used externally (sysctl_hw) */
@@ -678,7 +679,7 @@ void
 sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
-	unsigned code;
+	u_long code;
 {
 	register struct proc *p = curproc;
 	register struct sigframe *fp, *kfp;
@@ -713,7 +714,7 @@ sendsig(catcher, sig, mask, code)
 	} else
 		fp = (struct sigframe *)(frame->f_regs[SP] - fsize);
 	if ((unsigned)fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize)) 
-		(void)grow(p, (unsigned)fp);
+		(void)grow(p, (vm_offset_t)fp);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig(%d): sig %d ssp %x usp %x scp %x ft %d\n",
