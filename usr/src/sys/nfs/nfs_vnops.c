@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.83 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.84 (Berkeley) %G%
  */
 
 /*
@@ -114,7 +114,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_ioctl_desc, spec_ioctl },	/* ioctl */
 	{ &vop_select_desc, spec_select },	/* select */
 	{ &vop_mmap_desc, spec_mmap },		/* mmap */
-	{ &vop_fsync_desc, spec_fsync },	/* fsync */
+	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
 	{ &vop_seek_desc, spec_seek },		/* seek */
 	{ &vop_remove_desc, spec_remove },	/* remove */
 	{ &vop_link_desc, spec_link },		/* link */
@@ -163,7 +163,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_ioctl_desc, fifo_ioctl },	/* ioctl */
 	{ &vop_select_desc, fifo_select },	/* select */
 	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
-	{ &vop_fsync_desc, fifo_fsync },	/* fsync */
+	{ &vop_fsync_desc, nfs_fsync },		/* fsync */
 	{ &vop_seek_desc, fifo_seek },		/* seek */
 	{ &vop_remove_desc, fifo_remove },	/* remove */
 	{ &vop_link_desc, fifo_link },		/* link */
@@ -298,7 +298,13 @@ nfs_open(ap)
 /* ARGSUSED */
 int
 nfs_close(ap)
-	struct vop_close_args *ap;
+	struct vop_close_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct nfsnode *np = VTONFS(vp);
@@ -307,8 +313,8 @@ nfs_close(ap)
 	if (vp->v_type == VREG) {
 	    if ((VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) == 0 &&
 		(np->n_flag & NMODIFIED)) {
+		error = vinvalbuf(vp, TRUE, ap->a_cred, ap->a_p);
 		np->n_flag &= ~NMODIFIED;
-		vinvalbuf(vp, TRUE);
 		np->n_attrstamp = 0;
 	    }
 	    if (np->n_flag & NWRITEERR) {
@@ -362,7 +368,13 @@ nfs_getattr(ap)
  */
 int
 nfs_setattr(ap)
-	struct vop_setattr_args *ap;
+	struct vop_setattr_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	register struct nfsv2_sattr *sp;
 	register caddr_t cp;
@@ -399,11 +411,13 @@ nfs_setattr(ap)
 	if (vap->va_size != VNOVAL || vap->va_mtime.ts_sec != VNOVAL ||
 	    vap->va_atime.ts_sec != VNOVAL) {
 		if (np->n_flag & NMODIFIED) {
-			np->n_flag &= ~NMODIFIED;
 			if (vap->va_size == 0)
-				vinvalbuf(vp, FALSE);
+				error =
+				    vinvalbuf(vp, FALSE, ap->a_cred, ap->a_p);
 			else
-				vinvalbuf(vp, TRUE);
+				error =
+				    vinvalbuf(vp, TRUE, ap->a_cred, ap->a_p);
+			np->n_flag &= ~NMODIFIED;
 		}
 	}
 	nfsm_request(vp, NFSPROC_SETATTR, ap->a_p, ap->a_cred);
@@ -412,7 +426,7 @@ nfs_setattr(ap)
 	    NQNFS_CKCACHABLE(vp, NQL_WRITE)) {
 		nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
 		fxdr_hyper(tl, &frev);
-		if (QUADGT(frev, np->n_brev))
+		if (frev > np->n_brev)
 			np->n_brev = frev;
 	}
 	nfsm_reqdone;
@@ -426,7 +440,12 @@ nfs_setattr(ap)
  */
 int
 nfs_lookup(ap)
-	struct vop_lookup_args *ap;
+	struct vop_lookup_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+	} */ *ap;
 {
 	USES_VOP_GETATTR;
 	register struct componentname *cnp = ap->a_cnp;
@@ -474,12 +493,13 @@ nfs_lookup(ap)
 			if (vpid == vdp->v_id) {
 			   if (nmp->nm_flag & NFSMNT_NQNFS) {
 			        if (NQNFS_CKCACHABLE(dvp, NQL_READ)) {
-					if (QUADNE(np->n_lrev, np->n_brev) ||
+					if (np->n_lrev != np->n_brev ||
 					    (np->n_flag & NMODIFIED)) {
 						np->n_direofoffset = 0;
 						cache_purge(dvp);
+						error = vinvalbuf(dvp, FALSE,
+						    cnp->cn_cred, cnp->cn_proc);
 						np->n_flag &= ~NMODIFIED;
-						vinvalbuf(dvp, FALSE);
 						np->n_brev = np->n_lrev;
 					} else {
 						nfsstats.lookupcache_hits++;
@@ -783,7 +803,7 @@ nfs_writerpc(vp, uiop, cred)
 			 NQNFS_CKCACHABLE(vp, NQL_WRITE)) {
 			nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
 			fxdr_hyper(tl, &frev);
-			if (QUADGT(frev, np->n_brev))
+			if (frev > np->n_brev)
 				np->n_brev = frev;
 		}
 		m_freem(mrep);
@@ -903,7 +923,12 @@ nfs_create(ap)
  */
 int
 nfs_remove(ap)
-	struct vop_remove_args *ap;
+	struct vop_remove_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode * a_dvp;
+		struct vnode * a_vp;
+		struct componentname * a_cnp;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct vnode *dvp = ap->a_dvp;
@@ -932,7 +957,7 @@ nfs_remove(ap)
 		 * Throw away biocache buffers. Mainly to avoid
 		 * unnecessary delayed writes.
 		 */
-		vinvalbuf(vp, FALSE);
+		error = vinvalbuf(vp, FALSE, cnp->cn_cred, cnp->cn_proc);
 		/* Do the rpc */
 		nfsstats.rpccnt[NFSPROC_REMOVE]++;
 		nfsm_reqhead(dvp, NFSPROC_REMOVE,
@@ -962,9 +987,8 @@ nfs_remove(ap)
  * nfs file remove rpc called from nfs_inactive
  */
 int
-nfs_removeit(sp, procp)
+nfs_removeit(sp)
 	register struct sillyrename *sp;
-	struct proc *procp;
 {
 	register u_long *tl;
 	register caddr_t cp;
@@ -978,7 +1002,7 @@ nfs_removeit(sp, procp)
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(sp->s_namlen));
 	nfsm_fhtom(sp->s_dvp);
 	nfsm_strtom(sp->s_name, sp->s_namlen, NFS_MAXNAMLEN);
-	nfsm_request(sp->s_dvp, NFSPROC_REMOVE, procp, sp->s_cred);
+	nfsm_request(sp->s_dvp, NFSPROC_REMOVE, NULL, sp->s_cred);
 	nfsm_reqdone;
 	VTONFS(sp->s_dvp)->n_flag |= NMODIFIED;
 	return (error);
@@ -1291,7 +1315,6 @@ nfs_readdir(ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct nfsnode *np = VTONFS(vp);
 	register struct uio *uio = ap->a_uio;
-	register int *eofflagp = ap->a_eofflagp;
 	int tresid, error;
 	struct vattr vattr;
 
@@ -1304,13 +1327,11 @@ nfs_readdir(ap)
 	    (np->n_flag & NMODIFIED) == 0) {
 		if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) {
 			if (NQNFS_CKCACHABLE(vp, NQL_READ)) {
-				*eofflagp = 1;
 				nfsstats.direofcache_hits++;
 				return (0);
 			}
 		} else if (VOP_GETATTR(vp, &vattr, ap->a_cred, uio->uio_procp) == 0 &&
 			np->n_mtime == vattr.va_mtime.ts_sec) {
-			*eofflagp = 1;
 			nfsstats.direofcache_hits++;
 			return (0);
 		}
@@ -1322,11 +1343,8 @@ nfs_readdir(ap)
 	tresid = uio->uio_resid;
 	error = nfs_bioread(vp, uio, 0, ap->a_cred);
 
-	if (!error && uio->uio_resid == tresid) {
-		*eofflagp = 1;
+	if (!error && uio->uio_resid == tresid)
 		nfsstats.direofcache_misses++;
-	} else
-		*eofflagp = 0;
 	return (error);
 }
 
@@ -1987,15 +2005,48 @@ nfs_mmap(ap)
 /* ARGSUSED */
 int
 nfs_fsync(ap)
-	struct vop_fsync_args *ap;
+	struct vop_fsync_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode * a_vp;
+		struct ucred * a_cred;
+		int  a_waitfor;
+		struct proc * a_p;
+	} */ *ap;
 {
-	register struct nfsnode *np = VTONFS(ap->a_vp);
-	int error = 0;
+	register struct vnode *vp = ap->a_vp;
+	register struct nfsnode *np = VTONFS(vp);
+	register struct buf *bp;
+	struct buf *nbp;
+	int s, error = 0;
 
-	if (np->n_flag & NMODIFIED) {
-		np->n_flag &= ~NMODIFIED;
-		vflushbuf(ap->a_vp, ap->a_waitfor == MNT_WAIT ? B_SYNC : 0);
+loop:
+	s = splbio();
+	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
+		nbp = bp->b_blockf;
+		if ((bp->b_flags & B_BUSY))
+			continue;
+		if ((bp->b_flags & B_DELWRI) == 0)
+			panic("nfs_fsync: not dirty");
+		bremfree(bp);
+		bp->b_flags |= B_BUSY;
+		splx(s);
+		error = bawrite(bp);
+		goto loop;
 	}
+	if (ap->a_waitfor == MNT_WAIT) {
+		while (vp->v_numoutput) {
+			vp->v_flag |= VBWAIT;
+			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
+		}
+#ifdef DIAGNOSTIC
+		if (vp->v_dirtyblkhd) {
+			vprint("nfs_fsync: dirty", vp);
+			goto loop;
+		}
+#endif
+	}
+	splx(s);
+	np->n_flag &= ~NMODIFIED;
 	if (np->n_flag & NWRITEERR) {
 		error = np->n_error;
 		np->n_flag &= ~NWRITEERR;
