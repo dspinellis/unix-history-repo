@@ -1,4 +1,9 @@
-#	Makefile	1.1	85/01/02
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 CFLAGS=	-O
 OBJS=	arc.o box.o circle.o close.o dot.o erase.o label.o \
