@@ -1,4 +1,4 @@
-/*	ioctl.h	4.5	81/02/23	*/
+/*	ioctl.h	4.6	81/02/25	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -90,22 +90,4 @@ struct ltchars {
 #define	FIONCLEX	(('f'<<8)|2)
 /* another local */
 #define	FIONREAD	(('f'<<8)|127)	/* get # bytes to read */
-
-/* mag tape io control commands */
-#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op (see <mtio.h>) */
-#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status (see <mtio.h>*/
-
-/* mux io controls */
-#define	MXLSTN		(('x'<<8)|1)
-#define	MXNBLK		(('x'<<8)|2)
-
-#ifdef notdef
-/* varian ioctls, which are defined in sys/vcmd.h */
-#define	VGETSTATE	(('v'<<8)|0)
-#define	VSETSTATE	(('v'<<8)|1)
-#endif
-
-/* printer ioctls, see <lpio.h> */
-#define	LGETSTATE	(('v'<<8)|2)
-#define	LSETSTATE	(('v'<<8)|3)
 #endif

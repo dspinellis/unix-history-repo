@@ -1,4 +1,4 @@
-/*	mbareg.h	4.8	81/02/21	*/
+/*	mbareg.h	4.9	81/02/25	*/
 
 /*
  * VAX Massbus adapter registers
@@ -66,7 +66,12 @@ struct mba_regs
 #define	MBS_ISTIMO	0x00000002	/* interface sequence timeout */
 #define	MBS_RDTIMO	0x00000001	/* read data timeout */
 
+#define MBASR_BITS \
+"\20\40DTBUSY\37NRCONF\36CRD\30CBHUNG\24PGE\23NED\22MCPE\21ATTN\
+\17SPE\16DTCMP\15DTABT\14DLT\13WCKUP\12WCKLWR\11MXF\10MBEXC\7MDPE\
+\6MAPPE\5INVMAP\4ERRCONF\3RDS\2ISTIMO\1RDTIMO"
 #define MBAEBITS	(~(MBS_DTBUSY|MBS_CRD|MBS_ATTN|MBS_DTCMP))
+extern	char	mbasr_bits[];
 
 /*
  * Commands for mbd_cs1

@@ -1,4 +1,4 @@
-/*	mtio.h	4.3	81/02/19	*/
+/*	mtio.h	4.4	81/02/25	*/
 /*
  * Structures and definitions for mag tape io control commands
  */
@@ -33,3 +33,6 @@ struct	mtget	{
 
 /* unfortunately the bits in these registers are grossly device dependent */
 /* should be defined here but aren't */
+/* mag tape io control commands */
+#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op (see <mtio.h>) */
+#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status (see <mtio.h>*/
