@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cmp.1	6.8 (Berkeley) %G%
+.\"     @(#)cmp.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CMP 1
@@ -16,9 +16,9 @@
 .Nd compare two files
 .Sh SYNOPSIS
 .Nm cmp
-.Op Fl l Li \&| Fl s
+.Op Fl l | Fl s
 .Ar file1 file2
-.Op Ar skip1 Ar skip2
+.Op Ar skip1 Op Ar skip2
 .Sh DESCRIPTION
 The cmp utility compares two files of any type and writes the results
 to the standard output.
@@ -30,7 +30,7 @@ and line number at which the first difference occurred is reported.
 Bytes and lines are numbered beginning with one.
 .Pp
 The following options are available:
-.Bl -tag -width Ds
+.Bl -tag -width flag
 .It Fl l
 Print the byte number (decimal) and the differing
 byte values (octal) for each difference.
@@ -76,4 +76,6 @@ An error occurred.
 .Sh STANDARDS
 The
 .Nm cmp
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be
+.St -p1003.2
+compatible.
