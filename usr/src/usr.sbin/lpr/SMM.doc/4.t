@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	5.1 (Berkeley) %G%
+.\"	@(#)4.t	6.1 (Berkeley) %G%
 .\"
 .NH 1
 Setting up
@@ -119,7 +119,7 @@ is the Benson-Varian.
 .DT
 va|varian|Benson-Varian:\e
 	:lp=/dev/va0:sd=/usr/spool/vad:of=/usr/lib/vpf:\e
-	:tf=/usr/lib/rvcat:mx#2000:pl#58:tr=\ef:
+	:tf=/usr/lib/rvcat:mx#2000:pl#58:px=2112:py=1700:tr=\ef:
 .DE
 The
 .B tf
@@ -141,5 +141,34 @@ filter as shown below.
 va|varian|Benson-Varian:\e
 	:lp=/dev/va0:sd=/usr/spool/vad:of=/usr/lib/vpf:\e
 	:if=/usr/lib/vpf:tf=/usr/lib/rvcat:af=/usr/adm/vaacct:\e
-	:mx#2000:pl#58:tr=\ef:
+	:mx#2000:pl#58:px=2112:py=1700:tr=\ef:
+.DE
+.NH 2
+Access Control
+.PP
+Local access to printer queues is controled with the
+.B rg
+printcap entry.
+.DS
+	:rg=lprgroup:
+.DE
+Users must be in the group
+.I lprgroup
+in order to sumbit jobs to the specified printer.
+The default is to allow all users access.
+Note that once the files are in the local queue, they can be printed
+locally or forwarded to another host depending on the configuration.
+.PP
+Remote access is controled by listing the hosts in either the file
+/etc/hosts.equiv or /etc/hosts.lpd, one host per line. Note that
+.IR rsh (1)
+and
+.IR rlogin (1)
+use /etc/hosts to determine which hosts are equivalent for allowing logins
+without passwords. The file /etc/hosts.lpd is only used to control
+which hosts have line printer access.
+Remote access can be further restricted to only allow remote users with accounts
+on the local host to print jobs.
+.DS
+	:rs:
 .DE
