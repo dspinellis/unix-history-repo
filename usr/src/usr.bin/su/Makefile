@@ -14,19 +14,19 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	su.c
-OBJS=	su.o
+OBJS=
 MAN=	su.0
 
 all: su
 
-su: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+su: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c
 
 clean:
 	rm -f ${OBJS} core su
@@ -35,7 +35,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o root -g bin -m 4755 su ${DESTDIR}/bin/su
