@@ -5,8 +5,8 @@
 
 SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
 	getenv.c getopt.c heapsort.c labs.c ldiv.c malloc.c multibyte.c \
-	putenv.c qsort.c radixsort.c rand.c random.c setenv.c strtol.c \
-	strtoul.c system.c
+	putenv.c qsort.c radixsort.c rand.c random.c setenv.c strtod.c \
+	strtol.c strtoul.c system.c
 
 .if   (${MACHINE} == "hp300")
 SRCS+=	abs.s atof.c
