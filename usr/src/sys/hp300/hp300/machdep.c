@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.23 (Berkeley) %G%
+ *	@(#)machdep.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,6 +30,7 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "user.h"
+#include "exec.h"
 #ifdef SYSVSHM
 #include "shm.h"
 #endif
@@ -689,7 +690,7 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Signal trampoline code is at base of user stack.
 	 */
-	frame->f_pc = USRSTACK - (esigcode - sigcode);
+	frame->f_pc = (int)PS_STRINGS - (esigcode - sigcode);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig(%d): sig %d returns\n",
