@@ -6,17 +6,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sprint.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)sprint.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 #include <tzfile.h>
+#include <pwd.h>
+#include <utmp.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "finger.h"
 
-extern int entries;
+static int	  psort __P((const void *, const void *));
+static PERSON	**sort __P((void));
+static void	  stimeprint __P((WHERE *));
 
+void
 sflag_print()
 {
 	extern time_t now;
@@ -24,9 +32,7 @@ sflag_print()
 	register WHERE *w;
 	register int cnt;
 	register char *p;
-	PERSON **list, **sort();
-	time_t time();
-	char *ctime(), *prphone();
+	PERSON **list;
 
 	list = sort();
 	/*
@@ -86,13 +92,11 @@ office:			if (pn->office)
 	}
 }
 
-PERSON **
+static PERSON **
 sort()
 {
 	register PERSON *pn, **lp;
 	PERSON **list;
-	int psort();
-	char *malloc();
 
 	if (!(list = (PERSON **)malloc((u_int)(entries * sizeof(PERSON *))))) {
 		(void)fprintf(stderr, "finger: out of space.\n");
@@ -104,12 +108,14 @@ sort()
 	return(list);
 }
 
-psort(p, t)
-	PERSON **p, **t;
+
+psort(a, b)
+	const void *a, *b;
 {
-	return(strcmp((*p)->name, (*t)->name));
+	return(strcmp(((PERSON *)a)->name, ((PERSON *)b)->name));
 }
 
+static void
 stimeprint(w)
 	WHERE *w;
 {
