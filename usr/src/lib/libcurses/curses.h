@@ -1,4 +1,5 @@
-/* %G% (Berkeley) @(#)curses.h	1.2 */
+/* %G% (Berkeley) @(#)curses.h	1.3 */
+# ifndef WINDOW
 
 # include	<stdio.h>
  
@@ -23,8 +24,6 @@
 # define	_puts(s)	tputs(s, 0, _putchar);
 
 typedef	struct sgttyb	SGTTY;
-
-# ifndef WINDOW
 
 /*
  * Capabilities from termcap
@@ -77,8 +76,6 @@ int	__void__;
 # define	VOID(x)	(__void__ = (int) (x))
 # else
 # define	VOID(x)	(x)
-# endif
-
 # endif
 
 /*
@@ -138,3 +135,5 @@ int	__void__;
 
 WINDOW	*initscr(), *newwin(), *subwin();
 char	*longname();
+
+# endif
