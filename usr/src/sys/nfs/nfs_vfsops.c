@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -338,7 +338,7 @@ nfs_sync(mp, waitfor)
 	/*
 	 * Force stale buffer cache information to be flushed.
 	 */
-	mntflushbuf(mp);
+	mntflushbuf(mp, waitfor == MNT_WAIT ? B_SYNC : 0);
 	return (0);
 }
 
