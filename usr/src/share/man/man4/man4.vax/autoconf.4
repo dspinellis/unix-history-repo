@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)autoconf.4	4.1 (Berkeley) %G%
+.\"	@(#)autoconf.4	5.1 (Berkeley) %G%
 .\"
-.TH AUTOCONF 4 10/8/81
+.TH AUTOCONF 4 "27 July 1983"
 .UC 4
 .SH NAME
-autoconf \- diagnostics from autoconfiguration code
+autoconf \- diagnostics from the autoconfiguration code
 .SH DESCRIPTION
 When UNIX bootstraps it probes the innards of the machine it is running
 on and locates controllers, drives, and other devices, printing out
@@ -21,7 +21,7 @@ UNIBUS and MASSBUS adaptors.  Devices which are not supported which
 are found in NEXUS slots are noted also.
 .PP
 MASSBUS devices are located by a very deterministic procedure since
-MASSBUS space is completely probable very easily.  If devices exist which
+MASSBUS space is completely probe-able.  If devices exist which
 are not configured they will be silently ignored; if devices exist of
 unsupported type they will be noted.
 .PP
@@ -29,22 +29,18 @@ UNIBUS devices are located by probing to see if their control-status
 registers respond.  If not, they are silently ignored.  If the control
 status register responds but the device cannot be made to interrupt,
 a diagnostic warning will be printed on the console and the device
-will not be available to the system.  (A command
-.IR attach (8)
-is planned to cause the device to be attached irregardless of its
-failure to interrupt, after the system is bootstrapped, for irksome
-devices.  This is not in as of this writing, however.)
+will not be available to the system. 
 .PP
 A generic system may be built which picks its root device at boot time
 as the ``best'' available device (MASSBUS disks are better than
 SMD UNIBUS disks are better than RK07's; the device must be drive 0
 to be considered.)
 If such a system is booted with the RB_ASKNAME option of (see
-.IR reboot (2V)),
+.IR reboot (2)),
 then the name of the root device is read from the console terminal at boot
 time, and any available device may be used.
 .SH SEE ALSO
-config(8)
+intro(4), config(8)
 .SH DIAGNOSTICS
 \fBcpu type %d not configured\fR.  You tried to boot UNIX on a cpu
 type which it doesn't (or at least this compiled version of UNIX doesn't)
@@ -63,6 +59,9 @@ slot number).  UNIX will call it uba%d.
 \fBdr32 unsupported (at tr %d)\fR.  A DR32 interface was found in
 a NEXUS, for which UNIX does not have a driver.
 .PP
+\fBci unsupported (at tr %d)\fR.  A CI interface was found in
+a NEXUS, for which UNIX does not have a driver.
+.PP
 \fBmcr%d at tr%d\fR.  A memory controller was found in tr%d (the NEXUS
 slot number).  UNIX will call it mcr%d.
 .PP
@@ -74,16 +73,15 @@ in the sense that UNIX does not know how to poll it for ECC errors.
 .PP
 \fB%s%d at mba%d drive %d\fR.  A tape formatter or a disk was found
 on the MASSBUS; for disks %s%d will look like ``hp0'', for tape formatters
-like ``ht1'' or ``mt1''.  The drive number comes from the unit plug on the drive
+like ``ht1''.  The drive number comes from the unit plug on the drive
 or in the TM formatter (\fBnot\fR on the tape drive; see below).
 .PP
 \fB%s%d at %s%d slave %d\fR.  (For MASSBUS devices).
-Which would look like ``tu0 at ht0 slave 0'' or ``mu0 at mt0 slave 0'',
-where \fBtu0\fR or \fBmu0\fR is the name for the tape device
-and \fBht0\fR or \fBmt0\fR is the name
+Which would look like ``tu0 at ht0 slave 0'',
+where \fBtu0\fR is the name for the tape device and \fBht0\fR is the name
 for the formatter.  A tape slave was found on the tape formatter at the
 indicated drive number (on the front of the tape drive).
-UNIX will call the device, e.g., \fBtu0\fR or \fBmu0\fR.
+UNIX will call the device, e.g., \fBtu0\fR.
 .PP
 \fB%s%d at uba%d csr %o vec %o ipl %x\fR.  The device %s%d, e.g. dz0
 was found on uba%d at control-status register address %o and with
@@ -101,7 +99,3 @@ to be.
 Which would look like ``up0 at sc0 slave 0'',
 where \fBup0\fR is the name of a disk drive and \fBsc0\fR is the name
 of the controller.  Analogous to MASSBUS case.
-.SH BUGS
-Should write
-.IR attach (8)
-and system call it needs to work.
