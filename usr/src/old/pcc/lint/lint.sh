@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)lint.sh	1.4	(Berkeley)	%G%
+#	@(#)lint.sh	1.5	(Berkeley)	%G%
 #
 L=/usr/lib/lint/lint T=/usr/tmp/lint.$$ PATH=/bin:/usr/bin O="-C -Dlint"
 X= P=unix LL=/usr/lib/lint C=
@@ -16,7 +16,8 @@ do
 	-l*)	cat $LL/llib$A.ln >>$T ;;
 	-C?*)	P= C=`echo $A | sed -e s/-C/llib-l/` ; X="$X -L -C$C" ;;
 	-[IDOU]*)	O="$O $A" ;;
-	-X)	LL=/usr/scj/lint L=/usr/scj/lint/lpass ;;
+#	-X)	LL=/usr/scj/lint L=/usr/scj/lint/lpass ;;
+	-X)	LL=/usr/src/usr.bin/lint L=/usr/src/usr.bin/lint/lpass ;;
 	-*)	X="$X $A" ;;
 	*)	echo "$A:" ; (/lib/cpp $O $A | ${L}1 $X >>$T)2>&1
 	esac
