@@ -9,13 +9,11 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)headers.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)headers.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <errno.h>
 # include "sendmail.h"
-
-SCCSID(@(#)headers.c	5.1		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -113,8 +111,6 @@ chompheader(line, def)
 		p += 7;
 	if (!def && !QueueRun && strcmp(fname, p) == 0)
 	{
-		ADDRESS fromaddr;
-
 		if (strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
 	}
