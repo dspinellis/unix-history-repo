@@ -1,4 +1,4 @@
-/*	udiv.s	4.3	84/11/01	*/
+/*	udiv.s	4.4	85/01/16	*/
 
 /*
  * udiv - unsigned division for vax-11
@@ -38,4 +38,38 @@ ASENTRY(udiv, 0)
 2:	
 	movl	$1,r0		/* dividend >= divisor, return 1 */
 1:	
+	ret
+
+/*
+ * audiv - unsigned division for vax-11
+ *
+ * arguments: *dividend, divisor.
+ * result: quotient in r0 and *dividend.
+ * uses r0-r2
+ */
+
+#include "DEFS.h"
+
+ASENTRY(audiv, 0)
+	movl	*4(ap),r0	/* dividend */
+	movl	8(ap),r2	/* divisor */
+	jeql	1f		/* if divisor=0, force exception */
+	cmpl	r2,$1		/* if divisor <= 1 (signed), */
+	jleq	2f		/*  no division is necessary */
+1:
+	clrl	r1		/* zero-extend the dividend */
+	ediv	r2,r0,r0,r2	/* divide.  q->r0, r->r2 (discarded) */
+	movl	r0,*4(ap)	/* save result */
+	ret
+2:
+	jeql	1f		/* if divisor=1, return dividend */
+	cmpl	r0,r2		/* unsigned comparison between */
+	jgequ	2f		/*  dividend and divisor */
+	clrl	r0		/* dividend < divisor, return 0 */
+	clrl	*4(ap)		/* save result */
+	ret
+2:
+	movl	$1,r0		/* dividend >= divisor, return 1 */
+1:
+	movl	r0,*4(ap)	/* save result */
 	ret
