@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.10 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.10.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -672,6 +672,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	FILE *mfile;
 	FILE *rfile;
 	extern FILE *fdopen();
+	char buf[MAXNAME];
 
 # ifdef DEBUG
 	if (tTd(11, 1))
@@ -710,7 +711,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		extern STAB *stab();
 #endif HOSTINFO
 #ifdef DAEMON
-		register int i;
+		register int i, j;
 		register u_short port;
 
 		CurHostName = pvp[1];
@@ -720,33 +721,41 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
+		for (j = 0; j < nmx; j++)
+		{
+			CurHostName = mxhosts[j];
+			expand("\001j", buf, &buf[sizeof buf - 1], CurEnv);
+			if (sameword(CurHostName, buf))
+				break;
 #ifdef HOSTINFO
 		/* see if we have already determined that this host is fried */
-		st = stab(pvp[1], ST_HOST, ST_FIND);
-		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
-			i = makeconnection(pvp[1], port, pmfile, prfile);
-		else
-		{
-			i = st->s_host.ho_exitstat;
-			errno = st->s_host.ho_errno;
-		}
+			st = stab(mxhosts[j], ST_HOST, ST_FIND);
+			if (st == NULL || st->s_host.ho_exitstat == EX_OK)
+				i = makeconnection(mxhosts[j], port, pmfile, prfile);
+			else
+			{
+				i = st->s_host.ho_exitstat;
+				errno = st->s_host.ho_errno;
+			}
 #else HOSTINFO
-		i = makeconnection(pvp[1], port, pmfile, prfile);
+			i = makeconnection(mxhosts[j], port, pmfile, prfile);
 #endif HOSTINFO
-		if (i != EX_OK)
-		{
+			if (i != EX_OK)
+			{
 #ifdef HOSTINFO
-			/* enter status of this host */
-			if (st == NULL)
-				st = stab(pvp[1], ST_HOST, ST_ENTER);
-			st->s_host.ho_exitstat = i;
-			st->s_host.ho_errno = errno;
+				/* enter status of this host */
+				if (st == NULL)
+					st = stab(mxhosts[j], ST_HOST, ST_ENTER);
+				st->s_host.ho_exitstat = i;
+				st->s_host.ho_errno = errno;
 #endif HOSTINFO
-			ExitStat = i;
-			return (-1);
+				ExitStat = i;
+				continue;
+			}
+			else
+				return (0);
 		}
-		else
-			return (0);
+		return (-1);
 #else DAEMON
 		syserr("openmailer: no IPC");
 		return (-1);
@@ -1283,6 +1292,9 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
+	register char *p;
+	char user[MAXNAME];
+	char buf[MAXNAME];
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -1373,6 +1385,7 @@ sendall(e, mode)
 	**  Run through the list and send everything.
 	*/
 
+restart:
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (mode == SM_VERIFY)
@@ -1382,7 +1395,28 @@ sendall(e, mode)
 				message(Arpa_Info, "deliverable");
 		}
 		else
+		{
+			if (strcmp(q->q_mailer->m_mailer, "[IPC]") == 0 &&
+			    !bitset(QDONTSEND, q->q_flags))
+			{
+				if ((nmx = getmxrr(q->q_host, mxhosts, MAXMXHOSTS)) < 0)
+				{
+					mxhosts[0] = q->q_host;
+					nmx = 1;
+				}
+				/* we get this mail */
+				expand("\001j", buf, &buf[sizeof buf - 1], e);
+				if (sameword(mxhosts[0], buf))
+				{
+					strcpy(user, q->q_user);
+					if (p = index(user, '@'))
+						*p = '\0';
+					sendtolist(user, q, &e->e_sendqueue);
+					goto restart;
+				}
+			}
 			(void) deliver(e, q);
+		}
 	}
 	Verbose = oldverbose;
 
