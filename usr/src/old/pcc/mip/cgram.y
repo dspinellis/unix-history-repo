@@ -1,4 +1,4 @@
-/*	cgram.y	4.20	87/12/09	*/
+/*	cgram.y	4.21	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -315,8 +315,15 @@ init_dcl_list:	   init_declarator
 		;
 		/* always preceeded by attributes */
 xnfdeclarator:	   nfdeclarator
-			={  defid( $1 = tymerge($<nodep>0,$1), curclass);
-			    beginit($1->tn.rval);
+			={  int id;
+
+			    defid( $1 = tymerge($<nodep>0,$1), curclass);
+			    id = $1->tn.rval;
+			    beginit(id);
+			    if( stab[id].sclass == AUTO ||
+				stab[id].sclass == REGISTER ||
+				stab[id].sclass == STATIC )
+				stab[id].suse = -lineno;
 			    }
 		|  error
 		;
