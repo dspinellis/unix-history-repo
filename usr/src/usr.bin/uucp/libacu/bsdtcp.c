@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)bsdtcp.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsdtcp.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
-#ifdef BSDTCP
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -50,7 +49,7 @@ register char *flds[];
 		return CF_DIAL;
 	}
 	signal(SIGALRM, alarmtr);
-	alarm(30);
+	alarm(MAXMSGTIME*2);
 	hisctladdr.sin_family = hp->h_addrtype;
 #ifdef BSD2_9
 	s = socket(SOCK_STREAM, 0, &hisctladdr, 0);
@@ -94,4 +93,3 @@ register int fd;
 		DEBUG(4, "closed fd %d\n", fd);
 	}
 }
-#endif BSDTCP
