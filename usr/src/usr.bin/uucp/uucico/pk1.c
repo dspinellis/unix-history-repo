@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.6 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -18,9 +18,9 @@ int iomask[2];
 #endif VMS
 
 #define PKMAXSTMSG 40
-#define	PKTIME 5
+#define	PKTIME	25
 #define CONNODATA 10
-#define NTIMEOUT 30
+#define NTIMEOUT 10
 
 extern int errno;
 extern int Retries;
@@ -113,7 +113,7 @@ int pksizes[] = {
 	1, 32, 64, 128, 256, 512, 1024, 2048, 4096, 1
 };
 
-#define GETRIES 10
+#define GETRIES 5
 /*
  * Pseudo-dma byte collection.
  */
@@ -335,8 +335,11 @@ int count, flag;
 }
 
 
-/*
- *	get n characters from input
+/***
+ *	pkcget(fn, b, n)	get n characters from input
+ *	char *b;		- buffer for characters
+ *	int fn;			- file descriptor
+ *	int n;			- requested number of characters
  *
  *	return codes:
  *		n - number of characters returned
@@ -351,8 +354,8 @@ cgalarm()
 
 pkcget(fn, b, n)
 int fn;
-register char *b;
 register int n;
+register char *b;
 {
 	register int ret;
 	extern int linebaudrate;
