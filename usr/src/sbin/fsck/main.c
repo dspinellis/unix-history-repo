@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.13	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.14	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -136,10 +136,6 @@ int	sbsumbad;
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
 
-#define	setlncnt(x)	(lncntp[inum] = x)
-#define	getlncnt()	(lncntp[inum])
-#define	declncnt()	(--lncntp[inum])
-
 #define	setbmap(x)	setbit(blockmap, x)
 #define	getbmap(x)	isset(blockmap, x)
 #define	clrbmap(x)	clrbit(blockmap, x)
@@ -147,9 +143,6 @@ struct	dinode zino;
 #define	setfmap(x)	setbit(freemap, x)
 #define	getfmap(x)	isset(freemap, x)
 #define	clrfmap(x)	clrbit(freemap, x)
-
-#define	setstate(x)	(statemap[inum] = x)
-#define	getstate()	statemap[inum]
 
 #define	DATA	1
 #define	ADDR	0
@@ -447,7 +440,8 @@ pass1()
 					if (dp->di_ib[j] != 0)
 						goto unknown;
 				n_files++;
-				if (setlncnt(dp->di_nlink) <= 0) {
+				lncntp[inum] = dp->di_nlink;
+				if (dp->di_nlink <= 0) {
 					if (badlnp < &badlncnt[MAXLNCNT])
 						*badlnp++ = inum;
 					else {
@@ -456,7 +450,7 @@ pass1()
 							errexit("");
 					}
 				}
-				setstate(DIRCT ? DSTATE : FSTATE);
+				statemap[inum] = DIRCT ? DSTATE : FSTATE;
 				badblk = dupblk = 0; filsize = 0; maxblk = 0;
 				ckinode(dp, ADDR);
 				continue;
@@ -572,7 +566,7 @@ pass1b()
 			dp = ginode();
 			if (dp == NULL)
 				continue;
-			if (getstate() != USTATE &&
+			if (statemap[inum] != USTATE &&
 			    (ckinode(dp, ADDR) & STOP))
 				goto out1b;
 		}
@@ -610,7 +604,7 @@ pass2()
 	inum = ROOTINO;
 	thisname = pathp = pathname;
 	pfunc = pass2check;
-	switch (getstate()) {
+	switch (statemap[inum]) {
 
 	case USTATE:
 		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
@@ -623,7 +617,7 @@ pass2()
 		dp->di_mode |= IFDIR;
 		inodirty();
 		inosumbad++;
-		setstate(DSTATE);
+		statemap[inum] = DSTATE;
 		/* fall into ... */
 
 	case DSTATE:
@@ -635,7 +629,7 @@ pass2()
 		printf("\n");
 		if (reply("CONTINUE") == 0)
 			errexit("");
-		setstate(DSTATE);
+		statemap[inum] = DSTATE;
 		descend();
 	}
 }
@@ -661,7 +655,7 @@ pass2check(dirp)
 		n = direrr("I OUT OF RANGE");
 	else {
 again:
-		switch (getstate()) {
+		switch (statemap[inum]) {
 		case USTATE:
 			n = direrr("UNALLOCATED");
 			break;
@@ -671,15 +665,15 @@ again:
 				break;
 			if ((dp = ginode()) == NULL)
 				break;
-			setstate(DIRCT ? DSTATE : FSTATE);
+			statemap[inum] = DIRCT ? DSTATE : FSTATE;
 			goto again;
 
 		case FSTATE:
-			declncnt();
+			lncntp[inum]--;
 			break;
 
 		case DSTATE:
-			declncnt();
+			lncntp[inum]--;
 			descend();
 			break;
 		}
@@ -697,7 +691,7 @@ pass3()
 	register DINODE *dp;
 
 	for (inum = ROOTINO; inum <= lastino; inum++) {
-		if (getstate() == DSTATE) {
+		if (statemap[inum] == DSTATE) {
 			pfunc = findino;
 			srchname = "..";
 			savino = inum;
@@ -710,7 +704,7 @@ pass3()
 				ckinode(dp, DATA);
 				if ((inum = parentdir) == 0)
 					break;
-			} while (getstate() == DSTATE);
+			} while (statemap[inum] == DSTATE);
 			inum = orphan;
 			if (linkup() == 1) {
 				thisname = pathp = pathname;
@@ -730,10 +724,11 @@ pass4()
 
 	pfunc = pass4check;
 	for (inum = ROOTINO; inum <= lastino; inum++) {
-		switch (getstate()) {
+		switch (statemap[inum]) {
 
 		case FSTATE:
-			if (n = getlncnt())
+			n = lncntp[inum];
+			if (n)
 				adjust((short)n);
 			else {
 				for (blp = badlncnt;blp < badlnp; blp++)
@@ -1022,9 +1017,10 @@ blkerr(s, blk)
 	daddr_t blk;
 	char *s;
 {
+
 	pfatal("%ld %s I=%u", blk, s, inum);
 	printf("\n");
-	setstate(CLEAR);	/* mark for possible clearing */
+	statemap[inum] = CLEAR;
 }
 
 descend()
@@ -1033,7 +1029,7 @@ descend()
 	register char *savname;
 	off_t savsize;
 
-	setstate(FSTATE);
+	statemap[inum] = FSTATE;
 	if ((dp = ginode()) == NULL)
 		return;
 	savname = thisname;
@@ -1227,7 +1223,7 @@ clri(s, flg)
 		pfunc = pass4check;
 		ckinode(dp, ADDR);
 		zapino(dp);
-		setstate(USTATE);
+		statemap[inum] = USTATE;
 		inodirty();
 		inosumbad++;
 	}
@@ -1824,7 +1820,7 @@ linkup()
 		}
 	}
 	inum = lfdir;
-	if ((dp = ginode()) == NULL || !DIRCT || getstate() != FSTATE) {
+	if ((dp = ginode()) == NULL || !DIRCT || statemap[inum] != FSTATE) {
 		inum = orphan;
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
@@ -1842,7 +1838,7 @@ linkup()
 		printf("\n\n");
 		return (0);
 	}
-	declncnt();
+	lncntp[inum]--;
 	if (lostdir) {
 		pfunc = chgdd;
 		dp = ginode();
@@ -1852,7 +1848,7 @@ linkup()
 		if ((dp = ginode()) != NULL) {
 			dp->di_nlink++;
 			inodirty();
-			setlncnt(getlncnt()+1);
+			lncntp[inum]++;
 		}
 		inum = orphan;
 		pwarn("DIR I=%u CONNECTED. ", orphan);
