@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.31 (Berkeley) %G%
+.\"	@(#)op.me	8.32 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.31
+Version 8.32
 .sp
 For Sendmail Version 8.6
 .)l
@@ -971,6 +971,16 @@ and then the map named
 .q mail.aliases
 in
 .q my.nis.domain .
+Warning: if you build your own
+.sm NIS -based
+alias files,
+be sure to provide the
+.b \-l
+flag to
+.i makedbm (8)
+to map upper case letters in the keys to lower case;
+otherwise, aliases with upper case letters in their names
+won't match incoming addresses.
 .pp
 Additional flags can be added after the colon
 exactly like a
@@ -6802,7 +6812,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.31
+.\"Version 8.32
 .\".ce 0
 .bp 2
 .rs
