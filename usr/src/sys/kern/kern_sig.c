@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.1	83/07/29	*/
+/*	kern_sig.c	5.24	83/08/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -502,9 +502,9 @@ issig()
 
 	p = u.u_procp;
 	for (;;) {
-		sigbits = p->p_sig;
+		sigbits = p->p_sig &~ p->p_sigmask;
 		if ((p->p_flag&STRC) == 0)
-			sigbits &= ~(p->p_sigignore | p->p_sigmask);
+			sigbits &= ~p->p_sigignore;
 		if (p->p_flag&SVFORK)
 #define bit(a) (1<<(a-1))
 			sigbits &= ~(bit(SIGSTOP)|bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
@@ -525,13 +525,12 @@ issig()
 			} while (!procxmt() && p->p_flag&STRC);
 
 			/*
-			 * If the traced bit got turned off or signal
-			 * is being masked, then put the signal taken
-			 * above back into p_sig and go back up to the
-			 * top to rescan signals.  This ensures that
-			 * p_sig* and u_signal are consistent.
+			 * If the traced bit got turned off,
+			 * then put the signal taken above back into p_sig
+			 * and go back up to the top to rescan signals.
+			 * This ensures that p_sig* and u_signal are consistent.
 			 */
-			if ((p->p_flag&STRC) == 0 || (p->p_sigmask & sigmask)) {
+			if ((p->p_flag&STRC) == 0) {
 				p->p_sig |= sigmask;
 				continue;
 			}
@@ -544,6 +543,16 @@ issig()
 			sig = p->p_cursig;
 			if (sig == 0)
 				continue;
+
+			/*
+			 * If signal is being masked put it back
+			 * into p_sig and look for other signals.
+			 */
+			sigmask = 1 << (sig-1);
+			if (p->p_sigmask & sigmask) {
+				p->p_sig |= sigmask;
+				continue;
+			}
 		}
 		switch (u.u_signal[sig]) {
 
