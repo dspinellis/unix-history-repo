@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rm.1	4.1 (Berkeley) %G%
+.\"	@(#)rm.1	5.1 (Berkeley) %G%
 .\"
-.TH RM 1 4/1/81
+.TH RM 1 "1 April 1981"
 .UC 4
 .SH NAME
-rm, rmdir  \- remove (unlink) files
+rm, rmdir  \- remove (unlink) files or directories
 .SH SYNOPSIS
 .B rm
 [
@@ -25,43 +25,31 @@ dir ...
 .PP
 .SH DESCRIPTION
 .I Rm
-removes the entries for one or more
-files
-from a directory.
-If an entry was the last link to the file, the file
-is destroyed.
+removes the entries for one or more files from a directory.
+If an entry was the last link to the file, the file is destroyed.
 Removal of a file requires write permission in its directory,
 but neither read nor write permission on the file itself.
 .PP
-If a file has no write permission
-and the standard input is a terminal,
-its permissions are printed and a line is read from
-the standard input.
-If that line begins with `y' the file is deleted,
-otherwise the file remains.
-No questions are asked
-and no errors are reported
-when the
+If a file has no write permission and the standard input is a terminal,
+its permissions are printed and a line is read from the standard input.
+If that line begins with `y' the file is deleted, otherwise the file remains.
+No questions are asked and no errors are reported when the
 .B \-f
 (force) option is given.
 .PP
 If a designated file is a directory,
-an error comment is printed unless the optional
-argument
+an error comment is printed unless the optional argument
 .B \-r
-has been used.
-In that case,
+has been used.  In that case,
 .I rm
-recursively deletes the
-entire contents of the specified directory,
+recursively deletes the entire contents of the specified directory,
 and the directory itself.
 .PP
 If the
 .B \-i
 (interactive) option is in effect,
 .I rm
-asks whether to delete each file,
-and, under
+asks whether to delete each file, and, under
 .BR \-r ,
 whether to examine each directory.
 .PP
@@ -72,12 +60,6 @@ file names.  This allows the specification of file names starting with
 a minus.
 .PP
 .I Rmdir
-removes entries for the named directories,
-which must be empty.
+removes entries for the named directories, which must be empty.
 .SH "SEE ALSO"
-unlink(2)
-.SH DIAGNOSTICS
-Generally self-explanatory.
-It is forbidden to remove the file `..' merely to avoid the
-antisocial consequences of inadvertently doing something like
-`rm \-r .*'.
+rm(1), unlink(2), rmdir(2)
