@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,28 +37,30 @@ static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 printheader()
 {
 	register VAR *v;
+	register struct varent *vent;
 
-	for (v = vhead; v; v = v->next) {
+	for (vent = vhead; vent; vent = vent->next) {
+		v = vent->var;
 		if (v->flag & LJUST) {
-			if (v->next == NULL)	/* last one */
+			if (vent->next == NULL)	/* last one */
 				(void) printf("%s", v->header);
 			else
 				(void) printf("%-*s", v->width, v->header);
 		} else
 			(void) printf("%*s", v->width, v->header);
-		if (v->next != NULL)
+		if (vent->next != NULL)
 			(void) putchar(' ');
 	}
 	(void) putchar('\n');
 }
 
-command(k, v)
+command(k, v, next)
 	KINFO *k;
 	VAR *v;
 {
 	extern int termwidth, totwidth;
 
-	if (v->next == NULL) {
+	if (next == NULL) {
 		/* last field */
 		if (termwidth == UNLIMITED)
 			(void) printf("%s", k->ki_args);

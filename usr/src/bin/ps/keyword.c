@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -260,18 +260,27 @@ parsefmt(p)
 {
 	register VAR *v;
 	register char *cp;
+	register struct varent *vent;
 	static VAR *findvar();
 
 #define	FMTSEP	" \t,\n"
 	while (p) {
-		while ((cp = strsep(&p, FMTSEP)) != NULL && *cp == '\0');
+		while ((cp = strsep(&p, FMTSEP)) != NULL && *cp == '\0')
+			/* void */;
 		if (!(v = findvar(cp)))
 			continue;
+		if ((vent = (struct varent *)malloc(sizeof(struct varent))) == 
+		    NULL) {
+			(void)fprintf(stderr, "ps: no space\n");
+			exit(1);
+		}
+		vent->var = v;
+		vent->next = NULL;
 		if (vhead == NULL)
-			vhead = vtail = v;
+			vhead = vtail = vent;
 		else {
-			vtail->next = v;
-			vtail = v;
+			vtail->next = vent;
+			vtail = vent;
 		}
 	}
 	if (!vhead) {

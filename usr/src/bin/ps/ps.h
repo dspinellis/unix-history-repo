@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ps.h	5.1 (Berkeley) %G%
+ *	@(#)ps.h	5.2 (Berkeley) %G%
  */
 
 #define	UNLIMITED	0	/* unlimited terminal width */
@@ -49,7 +49,12 @@ typedef struct _var {
 	/*
 	 * glue to link selected fields together
 	 */
-	struct _var *next;
 } VAR;
 
-extern VAR var[], *vhead, *vtail;
+struct varent {
+	VAR *var;
+	struct varent *next;
+};
+
+extern VAR var[];
+extern struct varent *vhead, *vtail;
