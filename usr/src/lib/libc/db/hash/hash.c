@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -126,6 +126,9 @@ HASHINFO	*info;		/* Special directives for create */
     if ( !file || 
 	 (flags & O_TRUNC) || 
 	 (stat ( file, &statbuf ) && (errno == ENOENT)) ) {
+	 if ( errno == ENOENT ) {
+	    errno = 0;		/* Just in case someone looks at errno */
+	 }
 	 new_table = 1;
     }
 
@@ -183,6 +186,7 @@ HASHINFO	*info;		/* Special directives for create */
 		  (hashp->BSIZE << BYTE_SHIFT) - 1) >> 
 		  (hashp->BSHIFT + BYTE_SHIFT);
 
+	hashp->nmaps = bpages;
 	hashp->mapp[0] = (u_long *)malloc(bpages<<hashp->BSHIFT);
 	if ( !hashp->mapp[0] ) {
 	    RETURN_ERROR(errno, error2);
@@ -386,6 +390,7 @@ hdestroy()
 {
 	int	save_errno;
 	int	i;
+	u_long	**mapp;
 
 	save_errno = 0;
 
@@ -423,6 +428,19 @@ hdestroy()
 		if (flush_meta() && !save_errno) {
 		    save_errno = errno;
 		}
+
+		/* Free Initial Bigmaps */
+		if ( hashp->nmaps ) {
+		    (void)free(hashp->mapp[0]);	
+		}
+
+		/* Free extra bitmaps */
+		for ( mapp = &hashp->mapp[hashp->nmaps]; 
+		      hashp->exmaps--; 
+		      mapp++ ) {
+		      (void) free ( *mapp );
+		}
+
 		if ( hashp->fp != -1 ) {
 			(void)close (hashp->fp);
 		}
