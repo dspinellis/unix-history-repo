@@ -1,1 +1,0 @@
-#define NRL 0

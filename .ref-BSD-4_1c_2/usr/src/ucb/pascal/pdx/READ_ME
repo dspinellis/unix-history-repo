@@ -1,7 +1,0 @@
-This directory contains the source to pdx, a Pascal debugger that
-works with pi and px.  Pascal-dependent stuff is primarily in the
-"sym" directory, p-code dependent stuff in "machine", and
-object file format in "object".
-
-The make file ("Makefile") is the best source of up-to-date general
-comments about the pdx source.

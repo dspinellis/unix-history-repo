@@ -1,5 +1,0 @@
-add options etc for:
-real working set size instead of program size.
-make child cpu time option work.
-put in %cpu time, %memory
-can we possible make this at all workable o a pdp11?

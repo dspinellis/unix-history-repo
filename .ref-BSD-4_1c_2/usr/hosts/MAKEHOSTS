@@ -1,7 +1,0 @@
-#! /bin/sh -x
-cd ${DESTDIR}/usr/hosts
-rm -f [a-z]*
-for i in `grep ucb ${DESTDIR}/etc/hosts | grep -v -e '-' | awk '{print $3}'`;
-do
-	ln -s /usr/ucb/rsh $i
-done

@@ -1,4 +1,0 @@
-This directory contains the machine-dependent files for the
-pcc compiler, which is a PDP-11 C compiler based on the portable
-C compiler.  The machine-independent files are obtained
-from directory /usr/src/cmd/mip.

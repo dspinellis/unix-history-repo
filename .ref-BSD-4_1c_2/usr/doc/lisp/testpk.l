@@ -1,5 +1,0 @@
-(cfasl 'ch8auxp.o '_pfoo 'pfoo "-lpc")
-(putdisc (getd 'pfoo) 1)
-(array test flonum-block 2)
-(store (test 0) 2.22)
-(store (test 1) 3.333)

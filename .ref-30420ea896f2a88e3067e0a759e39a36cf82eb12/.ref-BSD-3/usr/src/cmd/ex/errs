@@ -1,9 +1,0 @@
-cc -E -DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL -DMACROS -DVFORK -DVMUNIX -O ex_cmds.c | /usr/ucb/xstr -c -
-cc -DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL -DMACROS -DVFORK -DVMUNIX -O -c x.c 
-mv x.o ex_cmds.o
-/usr/ucb/xstr
-cc -c -S xs.c
-ed - <:rofix xs.s
-as -o strings.o xs.s
-rm xs.s
-cc -i ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_data.o ex_get.o  ex_io.o ex_put.o ex_re.o ex_set.o ex_subr.o ex_temp.o ex_tty.o  ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voperate.o  ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o  printf.o strings.o -ltermlib

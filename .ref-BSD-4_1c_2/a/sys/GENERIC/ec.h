@@ -1,1 +1,0 @@
-#define NEC 1
