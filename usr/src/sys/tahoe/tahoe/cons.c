@@ -1,4 +1,4 @@
-/*	cons.c	1.8	87/03/04	*/
+/*	cons.c	1.9	87/04/16	*/
 
 /*
  * Tahoe console processor driver
@@ -132,8 +132,6 @@ cnread(dev, uio)
 {
 	struct tty *tp = cntty[minor(dev)];
 
-	if (constty && minor(dev) == CPCONS)
-		tp = constty;
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
@@ -142,8 +140,15 @@ cnwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	struct tty *tp = cntty[minor(dev)];
+	register struct tty *tp = cntty[minor(dev)];
 
+	if (tp == &cntty[CPCONS]) {
+		if (constty && (constty->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
+		    (TS_CARR_ON | TS_ISOPEN))
+			tp = constty;
+		else if (consops)
+			return ((*consops->d_write)(dev, uio));
+	}
 	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
