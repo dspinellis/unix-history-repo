@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -70,29 +70,39 @@ main(argc, argv)
 	int ch, mode, disp, openmode;
 	char *system, *kmemf, *malloc();
 
-	while ((ch = getopt(argc, argv, "bhpr")) != EOF)
+	kmemf = _PATH_KMEM;
+	system = _PATH_UNIX;
+	while ((ch = getopt(argc, argv, "M:N:bhpr")) != EOF)
 		switch((char)ch) {
+		case 'M':
+			kmemf = optarg;
+			kflag = 1;
+			break;
+		case 'N':
+			system = optarg;
+			break;
 		case 'b':
-			bflag++;
+			bflag = 1;
 			break;
 		case 'h':
-			hflag++;
+			hflag = 1;
 			break;
 		case 'p':
-			pflag++;
+			pflag = 1;
 			break;
 		case 'r':
-			rflag++;
+			rflag = 1;
 			break;
 		default:
 			(void)fprintf(stderr,
-			    "usage: kgmon [-bhrp] [system [core]]\n");
+			    "usage: kgmon [-bhrp] [-M core] [-N system]\n");
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
-	kmemf = _PATH_KMEM;
+#define BACKWARD_COMPATIBILITY
+#ifdef	BACKWARD_COMPATIBILITY
 	if (*argv) {
 		system = *argv;
 		if (*++argv) {
@@ -100,8 +110,7 @@ main(argc, argv)
 			++kflag;
 		}
 	}
-	else
-		system = _PATH_UNIX;
+#endif
 
 	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
 		(void)fprintf(stderr, "kgmon: %s: no namelist\n", system);
@@ -163,6 +172,7 @@ main(argc, argv)
 	turnonoff(disp);
 	(void)fprintf(stdout,
 	    "kernel profiling is %s.\n", disp ? "off" : "running");
+	exit(0);
 }
 
 dumpstate()
