@@ -1,4 +1,13 @@
-/*	setmat.c	4.1	83/03/09	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)setmat.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * setmat: set the value in m[r, c] to nval.
  */
