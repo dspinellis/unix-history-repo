@@ -1,4 +1,4 @@
-/*	buf.h	4.4	%G%	*/
+/*	buf.h	4.5	%G%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -44,7 +44,7 @@ struct buf
 	struct  proc  *b_proc;		/* process doing physical or swap I/O */
 };
 
-#define	BQUEUES		4		/* number of free buffer queues */
+#define	BQUEUES		3		/* number of free buffer queues */
 
 #ifdef	KERNEL
 extern	struct buf buf[];		/* The buffer pool itself */
