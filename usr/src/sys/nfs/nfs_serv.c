@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -207,7 +207,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_fsid;
+	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -572,7 +572,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 			nfsm_reply(0);
 	}
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_fsid;
+	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -900,7 +900,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_fsid;
+	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
