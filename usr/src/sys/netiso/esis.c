@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	7.18 (Berkeley) %G%
+ *	@(#)esis.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -42,11 +42,9 @@ SOFTWARE.
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
-#include "user.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "errno.h"
-#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/if_dl.h"
@@ -62,6 +60,7 @@ SOFTWARE.
 #include "clnp_stat.h"
 #include "esis.h"
 #include "argo_debug.h"
+#include "kernel.h"
 
 /*
  *	Global variables to esis implementation
@@ -73,6 +72,7 @@ SOFTWARE.
  *
  */
 struct rawcb	esis_pcb;
+int				esis_config(), snpac_age();
 int				esis_sendspace = 2048;
 int				esis_recvspace = 2048;
 short			esis_holding_time = ESIS_HT;
@@ -106,7 +106,6 @@ esis_init()
 {
 	extern struct clnl_protosw clnl_protox[256];
 	int	esis_input(), isis_input();
-	int	esis_config(), snpac_age();
 #ifdef	ISO_X25ESIS
 	int	x25esis_input();
 #endif	ISO_X25ESIS
@@ -145,7 +144,7 @@ struct mbuf		*control;	/* optional control */
 	struct rawcb *rp = sotorawcb(so);
 	int error = 0;
 
-	if (suser(u.u_cred, &u.u_acflag)) {
+	if ((so->so_state & SS_PRIV) == 0) {
 		error = EACCES;
 		goto release;
 	}

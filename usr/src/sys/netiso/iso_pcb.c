@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_pcb.c	7.9 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -44,10 +44,11 @@ SOFTWARE.
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "errno.h"
+
 #include "argo_debug.h"
 #include "iso.h"
 #include "clnp.h"
@@ -193,7 +194,7 @@ iso_pcbbind(isop, nam)
 	bcopy((caddr_t)siso, (caddr_t)isop->isop_laddr, siso->siso_len);
 	if (suf.s || siso->siso_tlen != 2) {
 		if((suf.s < ISO_PORT_RESERVED) && (siso->siso_tlen <= 2) &&
-		   (u.u_uid != 0))
+		   (isop->isop_socket->so_state && SS_PRIV) == 0)
 			return EACCES;
 		if ((isop->isop_socket->so_options & SO_REUSEADDR) == 0 &&
 			iso_pcblookup(head, 0, (caddr_t)0, isop->isop_laddr))
