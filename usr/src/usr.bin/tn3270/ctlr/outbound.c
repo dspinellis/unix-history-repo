@@ -536,6 +536,7 @@ int	control;				/* this buffer ended block? */
 		UnLocked = 1;
 		ResetOiaSystemLocked(&OperatorInformationArea);
 		SetOiaModified();
+		SetPsModified();
 		TerminalIn();
 	    }
 	    if (Wcc & WCC_ALARM) {

@@ -152,3 +152,4 @@ typedef struct {
 
 /* A macro to let the world know that someone has modified the OIA. */
 #define	SetOiaModified()	oia_modified = 1
+#define	SetPsModified()		ps_modified = 1
