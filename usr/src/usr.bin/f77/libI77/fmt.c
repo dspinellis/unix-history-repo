@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.5";
+char id_fmt[] = "@(#)fmt.c	1.6";
  *
  * fortran format parser
  */
@@ -99,10 +99,13 @@ ne_d(s,p) char *s,**p;
 	case 'b':
 		switch(lcase(*(s+1)))
 		{
-			case '\0': op_gen(BN,cblank,0,0,s); break;
-			case 'z': s++; op_gen(BZ,1,0,0,s); break;
-			case 'n': s++;
-			default:  op_gen(BN,0,0,0,s); break;
+			case 'n': s++; op_gen(BNZ,0,0,0,s); break;
+			case 'z': s++; op_gen(BNZ,1,0,0,s); break;
+#ifndef KOSHER
+			default: op_gen(B,0,0,0,s); break;  /*** NOT STANDARD FORTRAN ***/
+#else
+			default: fmtptr = s; return(FMTUNKN);
+#endif
 		}
 		break;
 	case 's':
