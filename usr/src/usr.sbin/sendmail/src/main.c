@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -74,7 +74,7 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif /* SMTP */
 #endif /* DAEMON */
 
-#define MAXCONFIGLEVEL	4	/* highest config version level known */
+#define MAXCONFIGLEVEL	5	/* highest config version level known */
 
 main(argc, argv, envp)
 	int argc;
@@ -82,7 +82,6 @@ main(argc, argv, envp)
 	char **envp;
 {
 	register char *p;
-	register char *q;
 	char **av;
 	extern int finis();
 	extern char Version[];
@@ -276,18 +275,21 @@ main(argc, argv, envp)
 		if (tTd(0, 4))
 			printf("canonical name: %s\n", jbuf);
 		p = newstr(jbuf);
-		define('w', p, CurEnv);
+		if (ConfigLevel < 5)
+			define('w', p, CurEnv);
 		define('j', p, CurEnv);
 		setclass('w', p);
 
-		q = strchr(jbuf, '.');
-		if (q != NULL)
+		p = strchr(jbuf, '.');
+		if (p != NULL)
 		{
-			*q++ = '\0';
-			define('m', q, CurEnv);
-			p = newstr(jbuf);
-			setclass('w', p);
+			*p++ = '\0';
+			if (*p != '\0')
+				define('m', newstr(p), CurEnv);
+			setclass('w', jbuf);
 		}
+		if (ConfigLevel >= 5)
+			define('w', newstr(jbuf), CurEnv);
 
 		if (uname(&utsname) >= 0)
 			p = utsname.nodename;
@@ -465,12 +467,13 @@ main(argc, argv, envp)
 				break;
 			}
 			q = strchr(p, ':');
-			if (q != NULL)
-				*q++ = '\0';
+			p = strchr(optarg, ':');
+			if (p != NULL)
+				*p++ = '\0';
 			if (*p != '\0')
 				define('r', newstr(p), CurEnv);
-			if (q != NULL && *q != '\0')
-				define('s', newstr(q), CurEnv);
+			if (p != NULL && *p != '\0')
+				define('s', newstr(p), CurEnv);
 			break;
 
 		  case 'q':	/* run queue files at intervals */
