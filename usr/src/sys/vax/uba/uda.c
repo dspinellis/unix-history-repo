@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.9 (Berkeley) %G%
+ *	@(#)uda.c	7.10 (Berkeley) %G%
  *
  */
 
@@ -1082,7 +1082,6 @@ if (ui->ui_flags & UNIT_REQUEUE) panic("udastart");
 	mp->mscp_opcode = (bp->b_flags & B_READ) ? M_OP_READ : M_OP_WRITE;
 	mp->mscp_unit = ui->ui_slave;
 	mp->mscp_seq.seq_lbn = bp->b_blkno + pp->p_offset;
-	pp = &udalabel[ui->ui_unit].d_partitions[udapart(bp->b_dev)];
 	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
 	mp->mscp_seq.seq_bytecount = bp->b_blkno + sz > pp->p_size ?
 		(pp->p_size - bp->b_blkno) >> DEV_BSHIFT : bp->b_bcount;
