@@ -1,9 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)io.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* te.c: error message control, input line count */
+/*
+ * error message control
+ * input
+ * line count
+ */
 
 #include "defs.h"
 #include "ext.h"
@@ -70,9 +74,6 @@ next:
 	 */
 	if(linstart && nbl % 2)
 		(void) gets1(s + 1);
-/*
-printf(".\\\" gets1 returns %s\n", p);
-*/
 	return(p);
 }
 

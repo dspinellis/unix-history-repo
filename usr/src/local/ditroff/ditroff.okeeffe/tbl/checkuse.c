@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)checkuse.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)checkuse.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* tb.c: check which entries exist, also storage allocation */
+/*
+ * check which entries exist, also storage allocation
+ */
 
 #include "defs.h"
 #include "ext.h"

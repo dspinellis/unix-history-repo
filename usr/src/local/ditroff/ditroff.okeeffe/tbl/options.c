@@ -1,9 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)options.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)options.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
- /* t3.c: interpret commands affecting whole table */
 
 /*
  * Threat the option part of the table
@@ -20,8 +17,8 @@ struct optstr {
 	"EXPAND",	&expflg,
 	"center",	&ctrflg,
 	"CENTER",	&ctrflg,
-	"centre",	&ctrflg,
-	"CENTRE",	&ctrflg,
+	"centre",	&ctrflg,	/* proper English added by jaap */
+	"CENTRE",	&ctrflg,	/* proper English added by jaap */
 	"box",		&boxflg,
 	"BOX",		&boxflg,
 	"allbox",	&allflg,

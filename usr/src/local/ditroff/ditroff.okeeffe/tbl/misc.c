@@ -1,11 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)misc.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
-/*
- * tr.c: number register allocation
- */
 
 #include "defs.h"
 #include "ext.h"

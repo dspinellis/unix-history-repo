@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)writecntl.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)writecntl.c	1.2 (CWI) 85/10/02";
 #endif lint
 
-
- /* t7.c: control to write table entries */
+/*
+ * control to write table entries
+ */
 
 #include "defs.h"
 #include "ext.h"

@@ -1,15 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)textblocks.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)textblocks.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
- /* tg.c: process included text blocks */
 
 #include "defs.h"
 #include "ext.h"
 
 /*
  * Get a section of text
+ *
+ * Note that this doen't work after MAXLIN lines (see over200.c)
+ *
  */
 
 /*
@@ -29,7 +29,7 @@ char *sp, *fn, *sz;
 	char *vs;
 	int oname;
 
-printf(".\\\" -- gettext\n");
+	dprint(".\\\" -- gettext\n");
 	if(texname == 0)
 		error("Too many text block diversions");
 	if(textflg == 0){
@@ -103,9 +103,6 @@ printf(".\\\" -- gettext\n");
 		*sp = 0;
 	oname = texname;
 	texname = texstr[++texct];
-/*
-printf(".\\\"gettext returns oname, oneme is: %c\n", oname);
-*/
 	return(oname);
 }
 

@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)rdata.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)rdata.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* t5.c: read data for table */
+/*
+ * read data for table
+ */
 
 #include "defs.h"
 #include "ext.h"
@@ -39,9 +41,6 @@ gettbl(){
 			instead[nlin] = cstore;
 			while(*cstore++)
 				;
-/*
-printf( ".\\\" gettbl continue (cstore[0] == '.', && !isdigit(ctore[1])\n");
-*/
 			continue;
 		} else
 			instead[nlin] = 0;
@@ -51,8 +50,8 @@ printf( ".\\\" gettbl continue (cstore[0] == '.', && !isdigit(ctore[1])\n");
 #ifdef FIX
 	This FIX didn't work, so commented out for the time being,
 	problem temporarily solved with signal catching...
-printf(".\\\" FIX nlin = %d\n", nlin);
-printf(".\\\" FIXgettbl: alocv %d\n", (ncol + 2) * sizeof(table[0][0]));
+dprint(".\\\" FIX nlin = %d\n", nlin);
+dprint(".\\\" FIXgettbl: alocv %d\n", (ncol + 2) * sizeof(table[0][0]));
 			/*
 			 * start of FIX?
 			 *
@@ -81,11 +80,8 @@ printf(".\\\"FIX table[%d][%d].rcol: <%s>\n", nlin, tmp, table[nlin][tmp].rcol);
 			nslin++;
 			instead[nlin] = (char *) 0;
 			fullbot[nlin] = 0;
-printf(".\\\" gettbl continue, due to nodata\n");
+dprint(".\\\" gettbl continue, due to nodata\n");
 		}
-/*
-printf(".\\\"gettbl: alocv %d\n", (ncol + 2) * sizeof(table[0][0]));
-*/
 		table[nlin] = (struct colstr *) alocv((ncol + 2) *
 							sizeof(*table[0]));
 		if(cstore[1] == 0) {
@@ -113,10 +109,6 @@ printf(".\\\"gettbl: alocv %d\n", (ncol + 2) * sizeof(table[0][0]));
 						gettext(cstore, nlin, icol,
 						font[stynum[nlin]][icol],
 						csize[stynum[nlin]][icol]);
-/*
-printf(".\\\" found T{, gettext returns table[%d][%d].col: <%s>\n",
-			nlin, icol, table[nlin][icol]);
-*/
 			} else {
 				for(; (ch = *cstore) != '\0' && ch != tab; cstore++)
 					;
@@ -133,10 +125,6 @@ printf(".\\\" found T{, gettext returns table[%d][%d].col: <%s>\n",
 					table[nlin][icol].col = "";
 					break;
 				}
-/*
-printf(".\\\" gettbl: table[%d][%d].col is <%s>\n", nlin, icol, table[nlin][icol].col);
-printf(".\\\" gettbl: table[%d][%d].rcol is <%s>\n", nlin, icol, table[nlin][icol].rcol);
-*/
 			}
 			while(ctype(nlin, icol + 1) == 's'){
 				/*
@@ -157,6 +145,32 @@ printf(".\\\" gettbl: table[%d][%d].rcol is <%s>\n", nlin, icol, table[nlin][ico
 			cstore = cspace = chspace();
 	}
 	last = cstore;
+	/*
+	 * the next example is weird & legal tbl input.
+	 * however, it generates a bus error.
+.TS
+linesize(24) tab(@);
+ct| c cf3
+^ | _ _
+^ | cf3 cf3
+^ | c s.
+0,0@0,1@0,2
+@1,1@1,2
+@2,1@2,2
+.TE
+	 * This works:
+.TS
+linesize(24) tab(@);
+ct| c cf3
+^ | cf3 cf3
+^ | c s.
+0,0@0,1@0,2
+@1,1@1,2
+@2,1@2,2
+.TE
+	 * So it is the vertical spanning of an empty column which
+	 * cuases problems
+	 */
 	savsign = signal(SIGBUS, interr);
 	permute();
 	signal(SIGBUS, savsign);
@@ -215,41 +229,15 @@ permute(){
 					error("Vertical spanning in first row not allowed");
 				start = table[is][jcol].col;
 				strig = table[is][jcol].rcol;
-/*
-printf(".\\\"Permute -- jcol: %d, irow: %d, is: %d\n", jcol, irow, is);
-printf(".\\\"start: <%s> strig: <%s>\n", start, strig);
-printf(".\\\"is: %d\n",is);
-
-printf(".\\\"table[(is =)%d][%d].col: <%s>\n", is, jcol, table[is][jcol].col);
-
-printf(".\\\"table[(is =)%d][%d].rcol: <%s>\n", is, jcol, table[is][jcol].rcol);
-*/
 				while(irow < nlin && vspand(irow, jcol, 0)){
-/*
-printf(".\\\"vspand && irow: %d < nlin: %d\n", irow, nlin);
-*/
 					irow++;
 				}
 				table[--irow][jcol].col = start;
-/*
-printf(".\\\"irow: %d\n", irow);
-*/
 				table[irow][jcol].rcol = strig;
 				while(is < irow){
-/*
-printf(".\\\"table[(is =)%d][%d].col: <%s>\n", is, jcol, table[is][jcol].col);
-printf(".\\\"table[(is =)%d][%d].rcol: <%s>\n", is, jcol, table[is][jcol].rcol);
-*/
 					table[is][jcol].col = SPAN;
 					table[is][jcol].rcol = (char*)0;
-/*
-printf(".\\\"table[(is =)%d][%d].col becomes: <%s>\n", is, jcol, table[is][jcol].col);
-printf(".\\\"table[(is =)%d][%d].rcol becomes: <%s>\n", is, jcol, table[is][jcol].rcol);
-*/
 					is = next(is);
-/*
-printf(".\\\"is: %d\n",is);
-*/
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-/*	@(#)ext.h	1.1 (CWI) 85/10/01	*/
+/*	@(#)ext.h	1.2 (CWI) 85/10/02	*/
 /*	t..c	4.2	83/10/13	*/
 
 /* t..c : external declarations */
@@ -47,5 +47,6 @@ extern char texstr[];
 extern int linstart;
 extern FILE *tabin;
 extern int pr1403;
+extern int dbg;
 extern char *reg();
 extern device;

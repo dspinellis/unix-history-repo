@@ -1,9 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)savrstor.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)savrstor.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
- /* tf.c: save and restore fill mode around table */
 
 #include "defs.h"
 #include "ext.h"
@@ -65,7 +62,7 @@ rstofill()
  */
 endoff()
 {
-	int i;
+	register int i;
 	/*
 	 * make some registers to be 0 ...
 	 */

@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)write1line.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)write1line.c	1.2 (CWI) 85/10/02";
 #endif lint
 
-
- /* t8.c: write out one line of output table */
+/*
+ * write out one line of output table
+ */
 
 #include "defs.h"
 #include "ext.h"
@@ -24,7 +25,7 @@ putline(i, nl){
 	int vct, chfont, uphalf;
 	char   *s, *size, *fn;
 
-printf(".\\\" -- putline( %d, %d)\n", i, nl);
+	dprint(".\\\" -- putline( %d, %d)\n", i, nl);
 
 	watchout = vspf = exvspen = 0;
 	if(i == 0)
@@ -348,7 +349,7 @@ funnies(stl, lin){
 	char *fn;
 	extern char *reg();
 
-printf(".\\\" -- funnies\n");
+	dprint(".\\\" -- funnies\n");
  	/*
 	 * remember current vertical position
 	 */

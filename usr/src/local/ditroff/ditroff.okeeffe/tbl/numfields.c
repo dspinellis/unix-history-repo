@@ -1,9 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)numfields.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)numfields.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
- /* tm.c: split numerical fields */
 
 #include "defs.h"
 #include "ext.h"

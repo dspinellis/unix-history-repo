@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)getstop.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)getstop.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* tu.c: draws horizontal lines */
+/*
+ * find the start points for the line drawing routines
+ */
 
 #include "defs.h"
 #include "ext.h"
