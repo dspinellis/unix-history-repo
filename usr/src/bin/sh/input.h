@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)input.h	5.1 (Berkeley) %G%
+ *	@(#)input.h	5.2 (Berkeley) %G%
  */
 
 /* PEOF (the end of file marker) is defined in syntax.h */
@@ -20,6 +20,7 @@
 extern int plinno;
 extern int parsenleft;		/* number of characters left in input buffer */
 extern char *parsenextc;	/* next character in input buffer */
+extern int init_editline;	/* 0 == not setup, 1 == OK, -1 == failed */
 
 
 #ifdef __STDC__
@@ -27,7 +28,7 @@ char *pfgets(char *, int);
 int pgetc(void);
 int preadbuffer(void);
 void pungetc(void);
-void ppushback(char *, int);
+void pushstring(char *, int, void *);
 void setinputfile(char *, int);
 void setinputfd(int, int);
 void setinputstring(char *, int);
@@ -39,12 +40,12 @@ char *pfgets();
 int pgetc();
 int preadbuffer();
 void pungetc();
-void ppushback();
 void setinputfile();
 void setinputfd();
 void setinputstring();
 void popfile();
 void popallfiles();
+void pushstring();
 void closescript();
 #endif
 
