@@ -1,4 +1,4 @@
-/*	conf.c	4.44	81/11/20	*/
+/*	conf.c	4.45	82/01/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -284,6 +284,18 @@ int	dnopen(), dnclose(), dnwrite(), dnselect();
 #define	dnselect	selecttrue
 #endif
 
+#include "un.h"
+#if NUN > 0
+int	unopen(), unclose(), unread(), unwrite(), unioctl(), unreset();
+#else
+#define	unopen		nodev
+#define unclose		nodev
+#define unread		nodev
+#define unwrite		nodev
+#define unioctl		nodev
+#define unreset		nulldev
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -369,9 +381,9 @@ struct cdevsw	cdevsw[] =
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
 	nodev,		nodev,		nodev,		0,
 	seltrue,
-	nodev,		nodev,		nodev,		nodev,		/*25*/
-	nodev,		nodev,		nodev,		0,
-	nodev,
+	unopen,		unclose,	unread,		unwrite,	/*25*/
+	unioctl,	nodev,		unreset,	0,
+	seltrue,
 /* 25-29 reserved to local sites */
 	0,	
 };
