@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
 **	stripped off (after important information is extracted).
 **
 **	Parameters:
-**		smtpmode -- if set, we are running SMTP: give an RFC819
+**		smtpmode -- if set, we are running SMTP: give an RFC821
 **			style message to say we are ready to collect
 **			input, and never ignore a single dot to mean
 **			end of message.

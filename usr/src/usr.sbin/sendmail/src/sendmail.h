@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.27 (Berkeley) %G%
+ *	@(#)sendmail.h	5.28 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.27		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.28		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -119,6 +119,7 @@ struct mailer
 	short	m_r_rwset;	/* rewriting set for recipient addresses */
 	char	*m_eol;		/* end of line string */
 	long	m_maxsize;	/* size limit on message to this mailer */
+	int	m_linelimit;	/* max # characters per line */
 };
 
 typedef struct mailer	MAILER;
@@ -142,6 +143,8 @@ typedef struct mailer	MAILER;
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
+# define M_7BITS	'7'	/* use 7-bit path */
+# define M_8BITS	'8'	/* use 8-bit path */
 
 EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
@@ -443,6 +446,7 @@ EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
+EXTERN bool	EightBit;	/* try to preserve 8-bit data */
 EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */

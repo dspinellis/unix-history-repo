@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -738,7 +738,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		return (0);
 	}
 
-	if (strcmp(m->m_mailer, "[IPC]") == 0)
+	if (strcmp(m->m_mailer, "[IPC]") == 0 ||
+	    strcmp(m->m_mailer, "[TCP]") == 0)
 	{
 #ifdef HOSTINFO
 		register STAB *st;
@@ -756,7 +757,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		else
 			port = 0;
 #ifdef HOSTINFO
-		/* see if we have already determined that this host is fried */
+			/* see if we already know that this host is fried */
 		st = stab(pvp[1], ST_HOST, ST_FIND);
 		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
 			i = makeconnection(pvp[1], port, pmfile, prfile);
