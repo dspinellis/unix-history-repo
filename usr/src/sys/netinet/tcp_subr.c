@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.13	82/01/17	*/
+/*	tcp_subr.c	4.14	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -99,7 +99,7 @@ COUNT(TCP_RESPOND);
 	if (tp)
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
 	if (flags == 0) {
-		m = m_get(0);
+		m = m_get(M_DONTWAIT);
 		if (m == 0)
 			return;
 		m->m_off = MMINOFF;

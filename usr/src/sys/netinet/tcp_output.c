@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.30	82/01/18	*/
+/*	tcp_output.c	4.31	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -157,7 +157,7 @@ send:
 #endif
 	{
 		m0 = m->m_next;
-		m->m_next = m_get(0);
+		m->m_next = m_get(M_DONTWAIT);
 		if (m->m_next == 0) {
 			(void) m_free(m);
 			m_freem(m0);

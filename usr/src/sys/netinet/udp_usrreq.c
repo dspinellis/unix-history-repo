@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.18	81/12/23	*/
+/*	udp_usrreq.c	4.19	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -128,7 +128,7 @@ COUNT(UDP_OUTPUT);
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
-	m = m_get(0);
+	m = m_get(M_DONTWAIT);
 	if (m == 0)
 		goto bad;
 

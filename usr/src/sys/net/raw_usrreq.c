@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.3	81/12/03	*/
+/*	raw_usrreq.c	4.4	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -20,7 +20,7 @@ raw_input(m, pf, af)
 	struct mbuf *mh;
 	int s;
 
-	mh = m_get(0);
+	mh = m_get(M_DONTWAIT);
 	if (mh == 0)
 		goto drop;
 	mh->m_next = m;
