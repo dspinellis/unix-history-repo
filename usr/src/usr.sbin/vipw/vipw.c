@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -118,7 +118,7 @@ main(argc, argv)
 			if (cp == 0)
 				break;
 			/* login directory */
-			if (strncmp(++cp, "/:"))
+			if (strncmp(++cp, "/:", 2))
 				break;
 			cp += 2;
 			if (*cp && strcmp(cp, "/bin/sh") &&
