@@ -1,4 +1,9 @@
-/* vsort.c	1.11	84/05/29
+#ifndef lint
+static char sccsid[] = "@(#)nvsort.c	1.2 (CWI) 86/11/26";
+#endif
+/* 
+ * from (Berkeley):
+ *    vsort.c	1.11	84/05/29
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -542,6 +547,7 @@ register FILE *fp;
 			op += strlen(op);
 			break;
 		case 'p':	/* new page */
+			startspan(vpos);
 			t_page(ngetnumber(fp));
 			vpos = 0;
 #ifndef BERK
@@ -836,13 +842,18 @@ int n;
 #ifndef VER80
     static int first = 1;		/* flag to catch the 1st time through */
 
-    				/* if we're near the edge, we'll go over on */
-    if (leftmarg + 2*(pageno ? leftmarg/pageno : 0) > WIDTH	/* this page, */
-	  || maxh > WIDTH - inch || first) {	/* or this is the first page */
+    	/* 
+	 * if we're near the edge,  or this is the first page
+	 * we'll go over on this page. 
+	 */
+    if (leftmarg + 2*(pageno ? leftmarg/pageno : 0) > WIDTH
+	  || maxh > WIDTH - inch || first) {
 	oflush();
 	printf("p%d\n", spanno++);		/* make it a REAL page-break */
 	first = pageno = leftmarg = maxh = 0;
-    } else {			    /* x = last page's width (in half-inches) */
+
+    } else {			    
+	/* x = last page's width (in half-inches) */
 	register int x = (maxh - leftmarg + (HALF - 1)) / HALF;
 
 	if (x > 11 && x <= 17)
@@ -853,9 +864,6 @@ int n;
     }
 #else
     oflush();
-/*
- *  printf("P");
- */
     printf("p%d\n", n);
     pageno = leftmarg = maxh = 0;
 #endif VER80
