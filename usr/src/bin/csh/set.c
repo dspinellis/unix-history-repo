@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)set.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)set.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -681,13 +681,13 @@ plist(p)
 			return;
 		len = blklen(p->vec);
 		printf(p->v_name);
-		putchar('\t');
+		cshputchar('\t');
 		if (len != 1)
-			putchar('(');
+			cshputchar('(');
 		blkpr(p->vec);
 		if (len != 1)
-			putchar(')');
-		putchar('\n');
+			cshputchar(')');
+		cshputchar('\n');
 		if (p->v_right) {
 			p = p->v_right;
 			continue;

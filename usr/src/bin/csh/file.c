@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.8 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -201,15 +201,15 @@ print_by_column(dir, items, count)
 				register int w;
 
 				printf("%s", items[i]);
-				putchar(dir ? filetype(dir, items[i]) : ' ');
+				cshputchar(dir ? filetype(dir, items[i]) : ' ');
 				if (c < columns - 1) {	/* last column? */
 					w = strlen(items[i]) + 1;
 					for (; w < maxwidth; w++)
-						putchar(' ');
+						cshputchar(' ');
 				}
 			}
 		}
-		putchar('\n');
+		cshputchar('\n');
 	}
 }
 
@@ -534,7 +534,7 @@ tenex(inputline, inputline_size)
 			break;
 		command = (last_char == ESC) ? RECOGNIZE : LIST;
 		if (command == LIST)
-			putchar('\n');
+			cshputchar('\n');
 		str_end = &inputline[num_read];
 		if (last_char == ESC)
 			--str_end;		/* wipeout trailing cmd char */
