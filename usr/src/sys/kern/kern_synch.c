@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.5 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -30,7 +30,69 @@ roundrobin()
 	timeout(roundrobin, (caddr_t)0, hz / 10);
 }
 
-/* fraction for digital decay to forget 90% of usage in 5*loadav sec */
+/*
+ * constants for digital decay and forget
+ *	90% of (p_cpu) usage in 5*loadav time
+ *	95% of (p_pctcpu) usage in 60 seconds (load insensitive)
+ *          Note that, as ps(1) mentions, this can let percentages
+ *          total over 100% (I've seen 137.9% for 3 processes).
+ *
+ * Note that hardclock updates p_cpu and p_cpticks independently.
+ *
+ * We wish to decay away 90% of p_cpu in (5 * loadavg) seconds.
+ * That is, the system wants to compute a value of decay such
+ * that the following for loop:
+ * 	for (i = 0; i < (5 * loadavg); i++)
+ * 		p_cpu *= decay;
+ * will compute
+ * 	p_cpu *= 0.1;
+ * for all values of loadavg:
+ *
+ * Mathematically this loop can be expressed by saying:
+ * 	decay ** (5 * loadavg) ~= .1
+ *
+ * The system computes decay as:
+ * 	decay = (2 * loadavg) / (2 * loadavg + 1)
+ *
+ * We wish to prove that the system's computation of decay
+ * will always fulfill the equation:
+ * 	decay ** (5 * loadavg) ~= .1
+ *
+ * If we compute b as:
+ * 	b = 2 * loadavg
+ * then
+ * 	decay = b / (b + 1)
+ *
+ * We now need to prove two things:
+ *	1) Given factor ** (5 * loadavg) ~= .1, prove factor == b/(b+1)
+ *	2) Given b/(b+1) ** power ~= .1, prove power == (5 * loadavg)
+ *	
+ * Facts:
+ *         For x close to zero, exp(x) =~ 1 + x, since
+ *              exp(x) = 0! + x**1/1! + x**2/2! + ... .
+ *              therefore exp(-1/b) =~ 1 - (1/b) = (b-1)/b.
+ *         For x close to zero, ln(1+x) =~ x, since
+ *              ln(1+x) = x - x**2/2 + x**3/3 - ...     -1 < x < 1
+ *              therefore ln(b/(b+1)) = ln(1 - 1/(b+1)) =~ -1/(b+1).
+ *         ln(.1) =~ -2.30
+ *
+ * Proof of (1):
+ *    Solve (factor)**(power) =~ .1 given power (5*loadav):
+ *	solving for factor,
+ *      ln(factor) =~ (-2.30/5*loadav), or
+ *      factor =~ exp(-1/((5/2.30)*loadav) =~ exp(-1/(2*loadav)) =
+ *          exp(-1/b) =~ (b-1)/b =~ b/(b+1).                    QED
+ *
+ * Proof of (2):
+ *    Solve (factor)**(power) =~ .1 given factor == (b/(b+1)):
+ *	solving for power,
+ *      power*ln(b/(b+1)) =~ -2.30, or
+ *      power =~ 2.3 * (b + 1) = 4.6*loadav + 2.3 =~ 5*loadav.  QED
+ *
+ * Actual power values for the implemented algorithm are as follows:
+ *      loadav: 1       2       3       4
+ *      power:  5.68    10.32   14.94   19.55
+ */
 #define	filter(loadav) ((2 * (loadav)) / (2 * (loadav) + 1))
 
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
