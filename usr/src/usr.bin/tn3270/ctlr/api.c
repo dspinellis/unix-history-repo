@@ -7,6 +7,8 @@
 #include "api.h"
 #include "../general/general.h"
 
+#include "../ascii/disp_asc.h"
+
 #include "../ctlr/screen.h"
 #include "../ctlr/oia.h"
 
@@ -22,6 +24,9 @@
 static void movetous(char *, int, int, int);
 static void movetothem(int, int, char *, int);
 #endif	/* defined(LINT_ARGS) */
+
+#define	access(foo,length)	(foo)
+#define	unaccess(foo,goo,length)
 
 static void
 movetous(parms, es, di, length)
@@ -47,6 +52,10 @@ int length;
 
 /* No Unix version yet... */
 
+#if	defined(unix)
+#define	access(f,l)	(f)
+
+#endif	/* defined(unix) */
 
 /*
  * Supervisor Services.
@@ -348,20 +357,127 @@ struct SREGS *sregs;
  * Copy Services.
  */
 
+copy_subroutine(target, source, parms, what_is_user)
+BufferDescriptor *target, *source;
+CopyStringParms *parms;
+int what_is_user;
+#define	USER_IS_TARGET	0
+#define	USER_IS_SOURCE	1
+{
+#define	TARGET_NO_EAB		1
+#define	SOURCE_NO_EAB		2
+#define	TARGET_PC		4
+#define	SOURCE_PC		8
+#define	NO_FIELD_ATTRIBUTES	16
+    int needtodo = 0;
+    int length;
+    int access_length;
+    char far *input;
+    char far *output;
+    char far *access_pointer;
+
+    if ((target->characteristics^source->characteristics)
+		    &CHARACTERISTIC_EAB) {
+	if (target->characteristics&CHARACTERISTIC_EAB) {
+	    needtodo |= TARGET_NO_EAB;	/* Need to bump for EAB in target */
+	} else {
+	    needtodo |= SOURCE_NO_EAB;	/* Need to bump for EAB in source */
+	}
+    }
+    if (target->session_type != source->session_type) {
+	if (target->session_type == TYPE_PC) {
+	    needtodo |= TARGET_PC;	/* scan codes to PC */
+	} else {
+	    needtodo |= SOURCE_PC;	/* PC to scan codes */
+	}
+    }
+    if ((parms->copy_mode&COPY_MODE_FIELD_ATTRIBUTES) == 0) {
+	needtodo |= NO_FIELD_ATTRIBUTES;
+    }
+    access_length = length = parms->source_end-source->begin;
+    if (what_is_user == USER_IS_TARGET) {
+	if (target->characteristics&CHARACTERISTIC_EAB) {
+	    access_length *= 2;
+	}
+	input = (char far *) &Host[source->begin];
+	access_pointer = target->buffer;
+	output = access(target->buffer, access_length);
+    } else {
+	if (source->characteristics&CHARACTERISTIC_EAB) {
+	    access_length *= 2;
+	}
+	access_pointer = source->buffer;
+	input = access(source->buffer, access_length);
+	output = (char far *) &Host[target->begin];
+    }
+    while (length--) {
+	if (needtodo&TARGET_PC) {
+	    *output++ = disp_asc[*input++];
+	} else if (needtodo&SOURCE_PC) {
+	    *output++ = asc_disp[*input++];
+	} else {
+	    *output++ = *input++;
+	}
+	if (needtodo&TARGET_NO_EAB) {
+	    *input++;
+	} else if (needtodo&SOURCE_NO_EAB) {
+	    *output++ = 0;		/* Should figure out good EAB? */
+	}
+    }
+    if (what_is_user == USER_IS_TARGET) {
+	unaccess(target->buffer, access_pointer, access_length);
+    } else {
+	unaccess(source->buffer, access_pointer, access_length);
+    }
+}
+
+
 static void
 copy_string(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
     CopyStringParms parms;
-    BufferDescriptor *target, *source;
+    BufferDescriptor *target = &parms.target, *source = &parms.source;
+    int length;
 
     movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
 
     if ((parms.rc != 0) || (parms.function_id !=0)) {
 	parms.rc = 0x0c;
+    } else if (target->session_id == 0) {	/* Target is buffer */
+	if (source->session_id != 23) {		/* A no-no */
+	    parms.rc = 0x2;
+	} else {
+	    if ((source->characteristics == target->characteristics) &&
+		    (source->session_type == target->session_type)) {
+		length = parms.source_end-source->begin;
+		if (source->characteristics&CHARACTERISTIC_EAB) {
+		    length *= 2;
+		}
+		movetothem( (int) FP_SEG(target->buffer),
+			(int) FP_OFF(target->buffer),
+			(char *)&Host[source->begin], length);
+	    } else {
+		copy_subroutine(target, source, &parms, USER_IS_TARGET);
+	    }
+	}
+    } else if (source->session_id != 0) {
+	    parms.rc = 0xd;
+    } else {
+	if ((source->characteristics == target->characteristics) &&
+		(source->session_type == target->session_type)) {
+	    length = parms.source_end-source->begin;
+	    if (source->characteristics&CHARACTERISTIC_EAB) {
+		length *= 2;
+	    }
+	    movetous((char *)&Host[target->begin],
+			(int) FP_SEG(source->buffer),
+			(int) FP_OFF(source->buffer), length);
+	} else {
+	    copy_subroutine(target, source, &parms, USER_IS_SOURCE);
+	}
     }
-    /* XXX do something! */
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 /*
