@@ -1,5 +1,5 @@
 #ifdef LIBC_SCCS
-	.asciz	"@(#)udiv.s	7.2 (Berkeley) %G%"
+	.asciz	"@(#)udiv.s	7.3 (Berkeley) %G%"
 #endif /*LIBC_SCCS*/
 
 /*
@@ -19,9 +19,13 @@
  * provided that the comparison is made as unsigned.
  */
 
-#include "DEFS.h"
-
-ASENTRY(udiv, 0)
+	.text
+	.align	2
+	.globl	udiv
+udiv:	.word	0x0000
+#ifdef	GPROF
+	jsb	mcount
+#endif	/*GPROF*/
 	movl	4(ap),r0	/* dividend */
 	movl	8(ap),r2	/* divisor */
 	jeql	1f		/* if divisor=0, force exception */
@@ -50,9 +54,12 @@ ASENTRY(udiv, 0)
  * uses r0-r2
  */
 
-#include "DEFS.h"
-
-ASENTRY(audiv, 0)
+	.align	2
+	.globl	audiv
+audiv:	.word	0x0000
+#ifdef GPROF
+	jsb	mcount
+#endif /*GPROF*/
 	movl	*4(ap),r0	/* dividend */
 	movl	8(ap),r2	/* divisor */
 	jeql	1f		/* if divisor=0, force exception */
