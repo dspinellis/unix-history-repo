@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,7 +44,6 @@ static char sccsid[] = "@(#)tftpd.c	8.1 (Berkeley) %G%";
 #include <unistd.h>
 
 #include "tftpsubs.h"
-#include "pathnames.h"
 
 #define	TIMEOUT		5
 
