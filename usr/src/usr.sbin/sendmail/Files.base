@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.6 (Berkeley) %G%
+#	@(#)Files.base	8.7 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -34,6 +34,7 @@ src/Makefile.Mach386
 src/Makefile.NCR3000
 src/Makefile.NeXT
 src/Makefile.NetBSD
+src/Makefile.NonStop-UX
 src/Makefile.OSF1
 src/Makefile.PTX
 src/Makefile.RISCos
