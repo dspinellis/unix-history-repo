@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)conv.c 1.2.1.1 %G%";
+static char sccsid[] = "@(#)conv.c 1.2.1.2 %G%";
 
 #include "whoami.h"
 #ifdef PI
@@ -209,15 +209,9 @@ rangechk(p, q)
 #	endif OBJ
 #	ifdef PC
 		/*
-		 * what i want to do is make this and some other stuff
-		 * arguments to a function call, which will do the rangecheck,
-		 * and return the value of the current expression, or abort
-		 * if the rangecheck fails.
-		 * probably i need one rangecheck routine to return each c-type
-		 * of value.
-		 * also, i haven't figured out what the `other stuff' is.
+		 *	pc uses precheck() and postcheck().
 		 */
-	    putprintf( "#	call rangecheck" , 0 );
+	    panic("rangechk()");
 #	endif PC
 }
 #endif
