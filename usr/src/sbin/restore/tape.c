@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -664,7 +664,7 @@ getmore:
 			fprintf(stderr, "trying to set up tape\n");
 			break;
 		case UNKNOWN:
-			fprintf(stderr, "trying to resyncronize\n");
+			fprintf(stderr, "trying to resynchronize\n");
 			break;
 		case USING:
 			fprintf(stderr, "restoring %s\n", curfile.name);
