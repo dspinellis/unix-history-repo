@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)diff.1	6.1 (Berkeley) %G%
+.\"	@(#)diff.1	6.2 (Berkeley) %G%
 .\"
 .TH DIFF 1 ""
 .UC 4
@@ -19,21 +19,21 @@ diff \- differential file and directory comparator
 ] [
 \fB\-cefh\fR
 ] [
-.B \-b
+.B \-biw
 ] dir1 dir2
 .br
 .B diff
 [
 \fB\-cefh
 ] [
-\fB\-b\fR
+\fB\-biw\fR
 ] file1 file2
 .br
 .B diff
 [
 .BI \-D string
 ] [
-.B \-b
+.B \-biw
 ]
 file1 file2
 .SH DESCRIPTION
@@ -140,12 +140,12 @@ then all the lines that are affected in the second file
 flagged by `>'.
 .PP
 Except for
-.B \-b,
+\fB\-b, -w, -i\fP or \fB-t\fP
 which may be given with any of the others,
 the following options are mutually exclusive:
 .TP 9
 .B \-e
-producing a script of
+produces a script of
 .I "a, c"
 and 
 .I d
@@ -199,10 +199,18 @@ their creation dates and then each change is separated
 by a line with a dozen *'s.
 The lines removed from
 .I file1
-are marked with `\(mi'; those added to
+are marked with `\(mi<'; those added to
 .I file2
-are marked `+'.  Lines which are changed from one
-file to the other are marked in both files with `!'.
+are marked `+>'.  Lines which are changed from one
+file to the other are marked in
+.I file1
+with `!<' and
+.I file2
+with `!>'.
+
+Changes which lie within <context> lines of each other are grouped
+together on output.  (This is a change from the previous ``diff -c''
+but the resulting output is usually much easier to interpret.)
 .TP 9
 .B \-h
 does a fast, half-hearted job.
@@ -225,15 +233,34 @@ while defining
 .I string
 will yield
 .I file2.
-.TP
+.TP 9
 .B \-b
 causes trailing blanks (spaces and tabs) to be ignored, and other
 strings of blanks to compare equal.
+.TP 9
+.B \-w
+is similar to
+.B \-b
+but causes whitespace (blanks and tabs) to be totally ignored.  E.g.,
+``if\ (\ a\ ==\ b\ )'' will compare equal to ``if(a==b)''.
+.TP 9
+.B \-i
+ignores the case of letters.  E.g., ``A'' will compare equal to ``a''.
+.TP 9
+.B \-t
+will expand tabs in output lines.  Normal or
+.B \-c
+output adds character(s) to the front of each line which may screw up
+the indentation of the original source lines and make the output listing
+difficult to interpret.  This option will preserve the original source's
+indentation.
 .SH FILES
 /tmp/d?????
 .br
 /usr/lib/diffh for 
 .B \-h
+.br
+/bin/diff for directory diffs
 .br
 /bin/pr
 .SH "SEE ALSO"
@@ -247,8 +274,8 @@ Editing scripts produced under the
 creating lines consisting of a single `\fB.\fR'.
 .PP
 When comparing directories with the
-.B \-b
-option specified,
+\fB\-b, -w\fP or \fB-i\fP
+options specified,
 .I diff
 first compares the files ala
 .I cmp,
@@ -257,4 +284,4 @@ and then decides to run the
 algorithm if they are not equal.
 This may cause a small amount of spurious output if the files
 then turn out to be identical because the only differences are
-insignificant blank string differences.
+insignificant blank string or case differences.
