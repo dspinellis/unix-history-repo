@@ -22,6 +22,7 @@
 #	@(#)MAKEDEV	5.2 (Berkeley) 6/22/90
 #
 # Device "make" file.  Valid arguments:
+#	all	makes all known devices, standard number of units (or close)
 #	std	standard devices
 #	local	configuration specific devices
 #
@@ -43,6 +44,7 @@
 # 
 # Terminal ports:
 #	com*	standard PC COM ports
+#	tty*	alias for PC COM ports, this is what the system really wants
 #
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
@@ -55,10 +57,12 @@
 #
 # Special purpose devices:
 #	bpf*	packet filter
+#	speaker	pc speaker
+#	dcf*	dcf clock
 #
 # PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
 # --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00097
+# CURRENT PATCH LEVEL:         2       00135
 # --------------------         -----   ----------------------
 #
 # 16 Feb 93	Julian Elischer		ADDED for SCSI system
@@ -67,6 +71,9 @@
 #					typo in rm of kmem (was kmdem)
 #					major number for /dev/fd/* and /dev/std*
 #					added lpt, lpa, bpf, vga, vgaco, kbdco
+# 08 Apr 93	Rodney W. Grimes	Cleanup chgrp, chown and chmod stuff
+#					Added duplicate name tty=com,
+#					added speaker, dcf
 #
 
 PATH=/sbin:/bin/:/usr/bin:/usr/sbin:
@@ -75,18 +82,22 @@ for i
 do
 case $i in
 
+all)
+	sh MAKEDEV std wt0 fd0 fd1 wd0 wd1 as0 as1 sd0 sd1 tty0 tty1 pty0 st0
+	sh MAKEDEV ch0 cd0 lpt0 lpt1 lpt2 lpa0 lpa1 lpa2 speaker
+	;;
 std)
 	rm -f console drum mem kmem null tty klog stdin stdout stderr
-	mknod console		c 0 0
-	mknod drum		c 4 0	; chmod 640 drum ; chgrp kmem drum
-	mknod kmem		c 2 1	; chmod 640 kmem ; chgrp kmem kmem
-	mknod mem		c 2 0	; chmod 640 mem ; chgrp kmem mem
-	mknod null		c 2 2	; chmod 666 null
-	mknod tty		c 1 0	; chmod 666 tty
-	mknod klog		c 7 0	; chmod 600 klog
-	mknod stdin		c 22 0	; chmod 666 stdin
-	mknod stdout		c 22 1	; chmod 666 stdout
-	mknod stderr		c 22 2	; chmod 666 stderr
+	mknod console	c 0 0;	chmod 600 console;	chown root.wheel console
+	mknod drum	c 4 0;	chmod 640 drum;		chown root.kmem drum
+	mknod kmem	c 2 1;	chmod 640 kmem;		chown root.kmem kmem
+	mknod mem	c 2 0;	chmod 640 mem;		chown root.kmem mem
+	mknod null	c 2 2;	chmod 666 null;		chown root.wheel null
+	mknod tty	c 1 0;	chmod 666 tty;		chown root.wheel tty
+	mknod klog	c 7 0;	chmod 600 klog;		chown root.wheel klog
+	mknod stdin	c 22 0; chmod 666 stdin;	chown root.wheel stdin
+	mknod stdout	c 22 1; chmod 666 stdout;	chown root.wheel stdout
+	mknod stderr	c 22 2; chmod 666 stderr;	chown root.wheel stderr
 	rm -f fd/*
 	mkdir fd > /dev/null 2>&1
 	(cd fd && eval `echo "" | awk ' BEGIN { \
@@ -98,19 +109,20 @@ std)
 	;;
 
 wt*)
-	umask 2
-	mknod wt0 b 3 0
-	mknod rwt0 c 10 0
-	umask 77
+	umask 2;
+	rm -f wt0 rwt0
+	mknod wt0 	b 3 0;	chown root.operator wt0
+	mknod rwt0	c 10 0;	chown root.operator rwt0
+	umask 77;
 	;;
 
-fd*|wd*|as*|sd*)
+as*|fd*|sd*|wd*)
 	umask 2 ; unit=`expr $i : '..\(.*\)'`
 	case $i in
-	fd*) name=fd; blk=2; chr=9;;
-	wd*) name=wd; blk=0; chr=3;;
 	as*) name=as; blk=4; chr=13;;
+	fd*) name=fd; blk=2; chr=9;;
 	sd*) name=sd; blk=4; chr=13;;
+	wd*) name=wd; blk=0; chr=3;;
 	esac
 	rm -f $name$unit? r$name$unit?
 	case $unit in
@@ -141,10 +153,12 @@ fd*|wd*|as*|sd*)
 	umask 77
 	;;
 
-com*)
-	unit=`expr $i : 'com\(.*\)'`
-	rm -f com0$unit
+com*|tty*)
+	unit=`expr $i : '...\(.*\)'`
+	rm -f com0$unit tty0$unit
 	mknod com0$unit c 8 $unit
+	mknod tty0$unit c 8 $unit
+	chown uucp.wheel com0$unit tty0$unit
 	;;
 
 pty*)
@@ -163,9 +177,9 @@ pty*)
 		umask 0
 		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
-				printf("mknod tty%s%x c 5 %d; \
-					mknod pty%s%x c 6 %d; ", \
-					n, i, b+i, n, i, b+i); }'`
+				printf("rm -f tty%s%x; mknod tty%s%x c 5 %d; \
+					rm -f pty%s%x; mknod pty%s%x c 6 %d; ", \
+					n, i, n, i, b+i, n, i, n, i, b+i); }'`
 		umask 77
 		if [ $class = 1 ]; then
 			mv ttyqf ttyv0; mv ptyqf ptyv0
@@ -252,6 +266,7 @@ lpt*)
 	unit=`expr $i : 'lpt\(.*\)'`
 	rm -f lpt$unit
 	mknod lpt$unit c 16 $unit
+	chown root.wheel lpt$unit
 	;;
 
 # Note: the stock pccons driver does not have a minor for the keyboard
@@ -265,18 +280,36 @@ vga|vgaco|kbdco)
 	esac
 	rm -f ${name}
 	mknod ${name} c ${chr} ${minor}
+	chown root.wheel $name
 	;;
 
 bpf*)
 	unit=`expr $i : 'bpf\(.*\)'`
 	rm -f bpf$unit
 	mknod bpf$unit c 23 $unit
+	chown root.wheel bpf$unit
+	;;
+
+dcf*)
+	unit=`expr $i : 'dcf\(.*\)'`
+	rm -f dcf$unit
+	mknod dcf$unit c 24 $unit
+	chown root.wheel dcf$unit
 	;;
 
 lpa*)
 	unit=`expr $i : 'lpa\(.*\)'`
-	rm -f lpa$unit
-	mknod lpa$unit c 25 $unit
+	chr=25
+	rm -f lpa$unit lpa${unit}p
+	mknod lpa${unit}	c $chr `expr $unit + 0`
+	mknod lpa${unit}p	c $chr `expr $unit + 32`
+	chown root.wheel lpa${unit} lpa${unit}p
+	;;
+
+speaker)
+	rm -f speaker
+	mknod speaker c 26 0
+	chown root.wheel speaker
 	;;
 
 local)
