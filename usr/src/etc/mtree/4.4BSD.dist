@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.1 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.2 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -255,7 +255,7 @@ lib
 
 
 # ./usr/crash
-crash
+crash		mode=775
 # ./usr/crash
 ..
 
