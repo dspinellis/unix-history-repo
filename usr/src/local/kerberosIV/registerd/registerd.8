@@ -1,0 +1,30 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)registerd.8	5.1 (Berkeley) %G%
+.\"
+.TH REGISTERD 8 ""
+.UC 7
+.SH NAME
+registerd \- Kerberos registration daemon
+.SH SYNOPSIS
+.B registerd
+.SH DESCRIPTION
+(filler for now)
+.SH FILES
+.br
+/.update.keyxx.xx.xx.xx        shared DES key with server
+/etc/kerberosIV/principal*     Kerberos database
+/etc/kerberosIV/register_keys  directory containing keys for trusted hosts
+.SH "SEE ALSO"
+registerd(8), kerberos(1)
+.SH DIAGNOSTICS
+\*(lqAlready exists,\*(rq
+if the user already exists in the Kerberos database.
+.br
+\*(lqPermission Denied,\*(rq
+if the host on which register is being run is untrusted.
+.SH AUTHOR
+Kevin Fall
