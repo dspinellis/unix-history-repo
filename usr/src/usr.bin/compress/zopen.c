@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)zopen.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)zopen.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*-
@@ -228,11 +228,11 @@ zwrite(cookie, wbp, num)
 		goto middle;
 	state = S_MIDDLE;
 
-	maxmaxcode = 1L << BITS;
+	maxmaxcode = 1L << maxbits;
 	if (fwrite(magic_header,
 	    sizeof(char), sizeof(magic_header), fp) != sizeof(magic_header))
 		return (-1);
-	tmp = (u_char)(BITS | block_compress);
+	tmp = (u_char)(maxbits | block_compress);
 	if (fwrite(&tmp, sizeof(char), sizeof(tmp), fp) != sizeof(tmp))
 		return (-1);
 
@@ -681,7 +681,7 @@ zopen(fname, mode, bits)
 		return (NULL);
 
 	maxbits = bits ? bits : BITS;	/* User settable max # bits/code. */
-	maxmaxcode = 1 << BITS;		/* Should NEVER generate this code. */
+	maxmaxcode = 1 << maxbits;	/* Should NEVER generate this code. */
 	hsize = HSIZE;			/* For dynamic table sizing. */
 	free_ent = 0;			/* First unused entry. */
 	block_compress = BLOCK_MASK;
