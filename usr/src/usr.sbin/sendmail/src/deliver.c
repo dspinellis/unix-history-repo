@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1966,7 +1966,7 @@ mailfile(filename, ctladdr, e)
 		f = dfopen(filename, O_WRONLY|O_CREAT|O_APPEND, FileMode);
 		if (f == NULL)
 		{
-			message("554 cannot open");
+			message("554 cannot open: %s", errstring(errno));
 			exit(EX_CANTCREAT);
 		}
 
@@ -1977,7 +1977,7 @@ mailfile(filename, ctladdr, e)
 		putline("\n", f, FileMailer);
 		if (ferror(f))
 		{
-			message("451 I/O error");
+			message("451 I/O error: %s", errstring(errno));
 			setstat(EX_IOERR);
 		}
 		(void) xfclose(f, "mailfile", filename);
@@ -1997,7 +1997,10 @@ mailfile(filename, ctladdr, e)
 		if (WIFEXITED(st))
 			return (WEXITSTATUS(st));
 		else
+		{
+			syserr("child died on signal %d", st);
 			return (EX_UNAVAILABLE);
+		}
 		/*NOTREACHED*/
 	}
 }
