@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1217,7 +1217,9 @@ struct optioninfo
 #define O_MQA		0x83
 	"MinQueueAge",		O_MQA,		TRUE,
 #define O_MHSA		0x84
+/*
 	"MaxHostStatAge",	O_MHSA,		TRUE,
+*/
 #define O_DEFCHARSET	0x85
 	"DefaultCharSet",	O_DEFCHARSET,	TRUE,
 #define O_SSFILE	0x86
@@ -1815,6 +1817,13 @@ setoption(opt, val, sticky)
 		break;
 
 	  default:
+		if (tTd(37, 1))
+		{
+			if (isascii(opt) && isprint(opt))
+				printf("Warning: option %c unknown\n", opt);
+			else
+				printf("Warning: option 0x%x unknown\n", opt);
+		}
 		break;
 	}
 	if (sticky)
