@@ -1,18 +1,17 @@
-#
 /*
+ * Adb: access data in file/process address space.
  *
- *	UNIX debugger
- *
+ * The routines in this file access referenced data using
+ * the maps to access files, ptrace to access subprocesses,
+ * or the system page tables when debugging the kernel,
+ * to translate virtual to physical addresses.
  */
-
-#define dprintf if (0) printf
+#define dprintf if (var[varchk('d')]) printf
 
 #include "defs.h"
-static	char sccsid[] = "@(#)access.c 4.2 %G%";
+static	char sccsid[] = "@(#)access.c 4.3 %G%";
 
-MSG		ODDADR;
-MSG		BADDAT;
-MSG		BADTXT;
+
 MAP		txtmap;
 MAP		datmap;
 INT		wtflag;
@@ -21,181 +20,198 @@ INT		errno;
 
 INT		pid;
 
-/* file handling and access routines */
+/*
+ * Primitives: put a value in a space, get a value from a space
+ * and get a word or byte not returning if an error occurred.
+ */
+put(addr, space, value) 
+    off_t addr; { (void) access(WT, addr, space, value); }
 
-put(adr,space,value)
-#ifndef EDDT
-L_INT	adr;
+u_int
+get(addr, space)
+    off_t addr; { return (access(RD, addr, space, 0)); };
+
+u_int
+chkget(addr, space)
+    off_t addr; { u_int w = get(addr, space); chkerr(); return(w); }
+
+u_int
+bchkget(addr, space) 
+    off_t addr; { return(chkget(addr, space) & LOBYTE); }
+
+/*
+ * Read/write according to mode at address addr in i/d space.
+ * Value is quantity to be written, if write.
+ *
+ * This routine decides whether to get the data from the subprocess
+ * address space with ptrace, or to get it from the files being
+ * debugged.  
+ *
+ * When the kernel is being debugged with the -k flag we interpret
+ * the system page tables for data space, mapping p0 and p1 addresses
+ * relative to the ``current'' process (as specified by its p_addr in
+ * <p) and mapping system space addresses through the system page tables.
+ */
+access(mode, addr, space, value)
+	int mode, space, value;
+	off_t addr;
 {
-	access(WT,adr,space,value);
-}
-#else
-	L_INT *adr; {*adr=value;}
-#endif
+	int rd = mode == RD;
+	int file, w;
 
-POS	get(adr, space)
-#ifndef EDDT
-L_INT		adr;
-{
-	return(access(RD,adr,space,0));
-}
-#else
-	L_INT *adr; {return(*adr);}
-#endif
+	dprintf("access(%X)\n", addr);
+	if (space == NSP)
+		return(0);
+	if (pid) {
+		int pmode = (space&DSP?(rd?RDUSER:WDUSER):(rd?RIUSER:WIUSER));
 
-POS	chkget(n, space)
-L_INT		n;
-{
-#ifndef vax
-	REG INT		w;
-#else
-	REG L_INT	w;
-#endif
-
-	w = get(n, space);
-	chkerr();
-	return(w);
-}
-
-POS bchkget(n, space) 
-L_INT	n;
-{
-	return(chkget(n, space) & LOBYTE);
-}
-
-#ifndef EDDT
-access(mode,adr,space,value)
-long	adr;
-{
-	INT	pmode,rd,file;
-	ADDR	w;
-	rd = mode==RD;
-
-	IF space == NSP THEN return(0); FI
-
-	IF pid		/* tracing on? */
-	THEN
-#ifndef vax
-		IF adr&01 ANDF !rd THEN error(ODDADR); FI
-#endif
-	     pmode = (space&DSP?(rd?RDUSER:WDUSER):(rd?RIUSER:WIUSER));
-	     w = ptrace(pmode, pid, adr, value);
-#ifndef vax
-	     IF adr&01
-	     THEN w1 = ptrace(pmode, pid, shorten(adr+1), value);
-		  w = (w>>8)&LOBYTE | (w1<<8);
-	     FI
-#endif
-	     IF errno
-	     THEN errflg = (space&DSP ? BADDAT : BADTXT);
-	     FI
-	     return(w);
-	FI
+		w = ptrace(pmode, pid, addr, value);
+		if (errno)
+			rwerr(space);
+		return (w);
+	}
 	w = 0;
-	IF mode==WT ANDF wtflag==0
-	THEN	error("not in write mode");
-	FI
-	IF !chkmap(&adr,space)
-	THEN return(0);
-	FI
-	file=(space&DSP?datmap.ufd:txtmap.ufd);
-	IF kernel && space == DSP THEN
-	    int oadr = adr;
-	    int v;
-	    adr &= ~0x80000000;
-	    IF oadr&0x80000000 THEN		/* system space */
-		v = btop(adr);
-		dprintf("system addr %X, v %X\n", adr, v);
-		IF v >= slr THEN errflg="bad system space addr"; return (0); FI
-		adr = vtoa(file, adr);
-		IF adr == -1 THEN
-		    errflg="sys page table page not valid"; return (0); FI
-	    ELIF adr&0x40000000 THEN		/* p1 space */
-		v = btop(adr&~0x40000000);
-		dprintf("p1 addr %X, v %X, p1br %X p1lr %X\n", adr, v,
-		    pcb.pcb_p1br, pcb.pcb_p1lr);
-		IF v < pcb.pcb_p1lr THEN
-		    errflg="bad p1 space addr"; return (0); FI
-		adr = vtoa(file, pcb.pcb_p1br+v);
-		IF adr == -1 THEN
-		    errflg="p1 page table page not valid"; return (0); FI
-		goto get;
-	    ELSE				/* p0 space */
-		dprintf("p0 addr %X, v %X, p0br %X p0lr %X\n", adr,
-		   v, pcb.pcb_p0br, pcb.pcb_p0lr);
-		IF v >= pcb.pcb_p0lr THEN
-		    errflg="bad p0 space addr"; return (0); FI
-		adr = vtoa(file, pcb.pcb_p0br+v);
-		IF adr == -1 THEN
-		    errflg="p0 page table page not valid"; return (0); FI
-get:
-		dprintf("addr for pt page %X\n", adr);
-		IF physrw(file, adr, &adr, 1) < 0 THEN
-		    errflg = "page tables botched"; return (0); FI
-		dprintf("user pte value %X\n", adr);
-		IF (adr & PG_V) == 0 &&
-		    ((adr & PG_FOD) || (adr & PG_PFNUM) == 0) THEN
-		    errflg = "user page not resident"; return (0);
-		FI
-		adr = ((adr & 0xfffff) << 9) | (oadr & 0x1ff);
-	    FI
-	FI
-	IF physrw(file, adr, &w, rd) < 0 THEN
-	    errflg=(space&DSP?BADDAT:BADTXT);
-	FI
-	return(w);
+	if (mode==WT && wtflag==0)
+		error("not in write mode");
+	if (!chkmap(&addr, space)) {
+		dprintf("chkmap failed\n");
+		return (0);
+	}
+	file = (space&DSP) ? datmap.ufd : txtmap.ufd;
+	if (kernel && space == DSP) {
+		dprintf("calling vtophys(%X)... ", addr);
+		addr = vtophys(addr);
+		if (addr < 0)
+			return (0);
+		dprintf("got %X\n", addr);
+	}
+	if (physrw(file, addr, &w, rd) < 0)
+		rwerr(space);
+	return (w);
 }
-#endif
 
-physrw(file, adr, aw, rd)
-int *aw;
+/*
+ * When looking at kernel data space through /dev/mem or
+ * with a core file, do virtual memory mapping.
+ */
+vtophys(addr)
+	off_t addr;
+{
+	int oldaddr = addr;
+	int v;
+	struct pte pte;
+
+	addr &= ~0xc0000000;
+	v = btop(addr);
+	dprintf("addr %X v %X\n", addr, v);
+	switch (oldaddr&0xc0000000) {
+
+	case 0xc0000000:
+	case 0x80000000:
+		/*
+		 * In system space get system pte.  If
+		 * valid or reclaimable then physical address
+		 * is combination of its page number and the page
+		 * offset of the original address.
+		 */
+		if (v >= slr)
+			goto oor;
+		addr = ((long)(sbr+v)) &~ 0x80000000;
+		goto simple;
+
+	case 0x40000000:
+		/*
+		 * In p1 space must not be in shadow region.
+		 */
+		if (v < pcb.pcb_p1lr)
+			goto oor;
+		addr = pcb.pcb_p1br+v;
+		break;
+
+	case 0x00000000:
+		/*
+		 * In p0 space must not be off end of region.
+		 */
+		if (v >= pcb.pcb_p0lr)
+			goto oor;
+		addr = pcb.pcb_p0br+v;
+		break;
+	oor:
+		dprintf("out of range\n");
+		errflg = "address out of segment";
+		return (-1);
+	}
+	/*
+	 * For p0/p1 address, user-level page table should
+	 * be in kernel vm.  Do second-level indirect by recursing.
+	 */
+	if ((addr & 0x80000000) == 0) {
+		errflg = "bad p0br or p1br in pcb";
+		dprintf("bad p0/p1br\n");
+		return (-1);
+	}
+	dprintf("calling vtophys recursively(%X)\n", addr);
+	addr = vtophys(addr);
+	dprintf("result %X\n", addr);
+simple:
+	/*
+	 * Addr is now address of the pte of the page we
+	 * are interested in; get the pte and paste up the
+	 * physical address.
+	 */
+	if (physrw(fcor, addr, (int *)&pte, 1) < 0) {
+		errflg = "page table botch";
+		return (-1);
+	}
+	/* SHOULD CHECK NOT I/O ADDRESS; NEED CPU TYPE! */
+	if (pte.pg_v == 0 && (pte.pg_fod || pte.pg_pfnum == 0)) {
+		errflg = "page not valid/reclaimable";
+		return (-1);
+	}
+	return (ptob(pte.pg_pfnum) + (oldaddr & PGOFSET));
+}
+
+rwerr(space)
+	int space;
 {
 
-	dprintf("physrw(%X) %s to %X\n", adr, rd ? "read" : "write", aw);
-	IF longseek(file,adr)==0 ORF
-	   (rd ? read(file,aw,sizeof(int)) : write(file,aw,sizeof(int))) < 1
-	THEN	 return (-1);
-	FI
+	if (space & DSP)
+		errflg = "data address not found";
+	else
+		errflg = "text address not found";
+}
+
+physrw(file, addr, aw, rd)
+	off_t addr;
+	int *aw, rd;
+{
+
+	dprintf("physrw(%X)... ", addr);
+	if (longseek(file,addr)==0 ||
+	    (rd ? read(file,aw,sizeof(int)) : write(file,aw,sizeof(int))) < 1)
+		return (-1);
+	dprintf("got %X\n", *aw);
 	return (0);
 }
 
-vtoa(file, va)
-unsigned long va;
-{
-	struct pte pte;
-
-	physrw(file, ((long)(sbr + btop(va&0x7fffffff)))&~0x80000000, &pte, 1);
-	dprintf("vtoa got pte %X\n", pte);
-	if (pte.pg_v || (pte.pg_fod == 0 && pte.pg_pfnum))
-		return (ptob(pte.pg_pfnum) + (va & PGOFSET));
-	errflg = "page not resident";
-	return (-1);
-}
-	
-chkmap(adr,space)
-	REG L_INT	*adr;
+chkmap(addr,space)
+	REG L_INT	*addr;
 	REG INT		space;
 {
 	REG MAPPTR amap;
 	amap=((space&DSP?&datmap:&txtmap));
-	IF space&STAR ORF !within(*adr,amap->b1,amap->e1)
-	THEN IF within(*adr,amap->b2,amap->e2)
-	     THEN *adr += (amap->f2)-(amap->b2);
-	     ELSE errflg=(space&DSP?BADDAT:BADTXT); return(0);
+	IF space&STAR ORF !within(*addr,amap->b1,amap->e1)
+	THEN IF within(*addr,amap->b2,amap->e2)
+	     THEN *addr += (amap->f2)-(amap->b2);
+	     ELSE rwerr(space); return(0);
 	     FI
-	ELSE *adr += (amap->f1)-(amap->b1);
+	ELSE *addr += (amap->f1)-(amap->b1);
 	FI
 	return(1);
 }
 
-within(adr,lbd,ubd)
-POS	adr, lbd, ubd;
-{
-	return(adr>=lbd && adr<ubd);
-}
+within(addr,lbd,ubd)
+    u_int addr, lbd, ubd; { return(addr>=lbd && addr<ubd); }
 
 longseek(f, a)
-L_INT a;
-{
-	return(lseek(f,a,0) != -1);
-}
+    off_t a; { return(lseek(f, a, 0) != -1); }

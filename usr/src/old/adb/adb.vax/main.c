@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c 4.1 %G%";
+static	char sccsid[] = "@(#)main.c 4.2 %G%";
 /*
  * adb - main command loop and error/interrupt handling
  */
@@ -38,6 +38,11 @@ another:
 	if (argc>1) {
 		if (eqstr("-w", argv[1])) {
 			wtflag = 2;		/* suitable for open() */
+			argc--, argv++;
+			goto another;
+		}
+		if (eqstr("-k", argv[1])) {
+			kernel = 1;
 			argc--, argv++;
 			goto another;
 		}

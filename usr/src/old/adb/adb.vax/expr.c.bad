@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)expr.c.bad 4.2 %G%";
+static	char sccsid[] = "@(#)expr.c.bad 4.3 %G%";
 
 MSG		BADSYM;
 MSG		BADVAR;
@@ -120,11 +120,12 @@ term(a)
 
 item(a)
 {	/* name [ . local ] | number | . | ^ | <var | <register | 'x | | */
-	INT		base, d, regptr;
+	INT		base, d;
 	CHAR		savc;
 	BOOL		hex;
 	L_INT		frame;
 	register struct nlist *symp;
+	int regptr;
 
 	hex=FALSE;
 
