@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.50 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.51 (Berkeley) %G%
  */
 
 /*
@@ -1496,20 +1496,21 @@ nfs_strategy(bp)
 	/*
 	 * Set b_proc. It seems a bit silly to do it here, but since bread()
 	 * doesn't set it, I will.
-	 * Set b_proc == NULL for asynchronous reads, since these may still
+	 * Set b_proc == NULL for asynchronous ops, since these may still
 	 * be hanging about after the process terminates.
 	 */
-	if ((bp->b_flags & (B_READ | B_ASYNC)) == (B_READ | B_ASYNC))
+	if (bp->b_flags & B_ASYNC)
 		bp->b_proc = (struct proc *)0;
 	else
 		bp->b_proc = u.u_procp;
 
 	/*
-	 * If an i/o daemon is waiting
+	 * If the op is asynchronous and an i/o daemon is waiting
 	 * queue the request, wake it up and wait for completion
-	 * otherwise just do it ourselves
+	 * otherwise just do it ourselves.
 	 */
-	for (i = 0; i < nfs_asyncdaemons; i++) {
+	if (bp->b_proc == (struct proc *)NULL)
+	    for (i = 0; i < nfs_asyncdaemons; i++) {
 		if (rp = nfs_iodwant[i]) {
 			/*
 			 * Ensure that the async_daemon is still waiting here
