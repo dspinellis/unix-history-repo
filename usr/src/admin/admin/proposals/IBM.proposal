@@ -1,4 +1,4 @@
-.\"	@(#)IBM.proposal	1.1	90/05/07
+.\"	@(#)IBM.proposal	1.2	90/05/11
 .if n \{\
 .ND
 .rm CH
@@ -6,38 +6,23 @@
 .nr LL 7i
 .ad l
 .\}
-.HE
+.so HEADERS
+.HE D
 .nr PS 11
 .nr VS 13
 .nr LL 6i
 .nr OI 0.5i
 .in 0.5i
 .ps 11p
-.ti 4i
-.nf
-May 7, 1990
 .LP
 .nf
-Dr. Joesph Corso
+Mr. Joesph Corso
 IBM Advanced Workstations Development
-?? Page Mill Rd.
-Palo Alto, CA
-.sp 1
-.LP
-.nf
-Dr. Marshall Kirk McKusick
-Computer Systems Research Group
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California, Berkeley
-Berkeley, CA 94720
-.sp .5
-+1-415-642-4948
-.sp .5
-email: mckusick@Berkeley.EDU
+1510 Page Mill Rd.
+Palo Alto, CA  94303
 .sp 2
 .LP
-Dear Dr. Corso,
+Dear Mr. Corso:
 .PP
 I am writing to you in my role as the head of operating
 system and networking research for the \s-1UNIX\s0 project in the Computer
@@ -59,7 +44,7 @@ a third of the budget needed by \s-1CSRG\s0
 for salaries and benefits, maintenance and network access fees,
 travel and other expenses.
 We have secured funding from Hewlett-Packard and the Open Software Foundation
-each for a third of our budget for next fiscal year.
+for a third of our budget each for the current fiscal year.
 Thus, we are interested in seeking funding from at least one
 other organization or computer company that uses our system.
 I hope that \s-1IBM\s0 would be interested in being such an organization.
@@ -125,11 +110,11 @@ We expect that the products of this work will become the interfaces and
 implementations of choice for other operating systems and networking
 researchers in the near future.
 .sp 2
-.in +1.5i
+.in +3i
 Sincerely,
 .sp .65i
 Dr. Marshall Kirk McKusick
-.in -1.5i
+.in -3i
 .sp 2
 .nf
 cc:	Mike Karels
