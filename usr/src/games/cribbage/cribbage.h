@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cribbage.h	5.4 (Berkeley) %G%
+ *	@(#)cribbage.h	5.5 (Berkeley) %G%
  */
 
 extern  CARD		deck[ CARDS ];		/* a deck */
@@ -33,3 +33,10 @@ extern	BOOLEAN		playing;		/* currently playing game */
 
 extern  char		expl[];			/* string for explanation */
 
+#if __STDC__
+void	msg(const char *fmt, ...);
+void	addmsg(const char *fmt, ...);
+#else
+void	msg();
+void	addmsg();
+#endif
