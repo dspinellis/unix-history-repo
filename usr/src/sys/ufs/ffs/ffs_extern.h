@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	7.11 (Berkeley) %G%
+ *	@(#)ffs_extern.h	7.12 (Berkeley) %G%
  */
 
 struct buf;
@@ -30,7 +30,7 @@ int	ffs_blkfree __P((struct inode *, daddr_t, long));
 daddr_t	ffs_blkpref __P((struct inode *, daddr_t, int, daddr_t *));
 int	ffs_bmap __P((struct vop_bmap_args *));
 void	ffs_clrblock __P((struct fs *, u_char *, daddr_t));
-int	ffs_fhtovp __P((struct mount *, struct fid *, int, struct vnode **));
+int	ffs_fhtovp __P((struct mount *, struct fid *, struct vnode **));
 void	ffs_fragacct __P((struct fs *, int, long [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
 int	ffs_inactive __P((struct vop_inactive_args *));
@@ -47,7 +47,7 @@ int	ffs_reclaim __P((struct vop_reclaim_args *));
 int	ffs_root __P((struct mount *, struct vnode **));
 void	ffs_setblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
-int	ffs_sync __P((struct mount *, int));
+int	ffs_sync __P((struct mount *, int, struct ucred *, struct proc *));
 int	ffs_truncate __P((struct vop_truncate_args *));
 int	ffs_unmount __P((struct mount *, int, struct proc *));
 int	ffs_update __P((struct vop_update_args *));
