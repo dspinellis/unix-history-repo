@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.11	(Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.12	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -339,6 +339,7 @@ register x;
  */
 
 jmp_buf Getjbuf;
+void
 cgalarm()
 {
 	longjmp(Getjbuf, 1);
