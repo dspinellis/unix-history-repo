@@ -5,4 +5,8 @@ SUBDIR=	bugfiler comsat fingerd ftpd getNAME getty mail.local \
 
 #KERBEROS=kpasswdd 
 
+.if	${MACHINE} == "hp300"
+SUBDIR+=rbootd
+.endif
+
 .include <bsd.subdir.mk>
