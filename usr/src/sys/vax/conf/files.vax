@@ -18,6 +18,7 @@ vaxif/if_css.c		optional css imp device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_ec.c		optional ec device-driver
 vaxif/if_en.c		optional en inet device-driver
+vaxif/if_hy.c		optional hy device-driver
 vaxif/if_il.c		optional il device-driver
 vaxif/if_uba.c		optional inet device-driver
 vaxif/if_un.c		optional un device-driver
