@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)termios.h	7.22 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: termios.h,v 1.3 1993/10/16 17:17:57 rgrimes Exp $
  */
 
 /*
@@ -135,9 +135,12 @@
 #define CLOCAL		0x00008000	/* ignore modem status lines */
 #ifndef _POSIX_SOURCE
 #define CCTS_OFLOW	0x00010000	/* CTS flow control of output */
-#define CRTSCTS		CCTS_OFLOW	/* ??? */
+#define CRTSCTS		(CCTS_OFLOW | CRTS_IFLOW)
 #define CRTS_IFLOW	0x00020000	/* RTS flow control of input */
-#define	MDMBUF		0x00100000	/* flow control output via Carrier */
+#define CCAR_OFLOW	0x00040000	/* Carrier flow control of output */
+#undef CCAR_OFLOW			/* it's MDMBUF in local flags */
+#define CDSR_OFLOW	0x00080000	/* DSR flow control of output */
+#define CDTR_IFLOW	0x00100000	/* DTR flow control of input */
 #endif
 
 
@@ -170,6 +173,7 @@
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #ifndef _POSIX_SOURCE
 #define FLUSHO		0x00800000	/* output being flushed (state) */
+#define	MDMBUF		0x00100000	/* flow control output via Carrier */
 #define	NOKERNINFO	0x02000000	/* no kernel output from VSTATUS */
 #define PENDIN		0x20000000	/* XXX retype pending input (state) */
 #endif  /*_POSIX_SOURCE */
@@ -221,9 +225,9 @@ struct termios {
 #ifndef _POSIX_SOURCE
 #define EXTA	19200
 #define EXTB	38400
-#endif  /*_POSIX_SOURCE */
 #define B57600	57600
 #define B115200	115200
+#endif  /*_POSIX_SOURCE */
 
 #ifndef KERNEL
 
