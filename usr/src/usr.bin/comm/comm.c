@@ -1,167 +1,157 @@
-static char *sccsid = "@(#)comm.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Case Larsen.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)comm.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/file.h>
 #include <stdio.h>
-#define LB 256
-int	one;
-int	two;
-int	three;
 
-char	*ldr[3];
+#define	MAXLINELEN	(2048 + 1)
 
-FILE *ib1;
-FILE *ib2;
-FILE *openfil();
+static char *tabs[] = { "", "\t", "\t\t" };
+
 main(argc,argv)
-char	*argv[];
+	int argc;
+	char **argv;
 {
-	int	l;
-	char	lb1[LB],lb2[LB];
+	extern int optind;
+	FILE *fp1, *fp2, *file();
+	register int comp, file1done, file2done, read1, read2;
+	register char *col1, *col2, *col3;
+	int ch, flag1, flag2, flag3;
+	char **p, line1[MAXLINELEN], line2[MAXLINELEN];
 
-	ldr[0] = "";
-	ldr[1] = "\t";
-	ldr[2] = "\t\t";
-	if(argc > 1)  {
-		if(*argv[1] == '-' && argv[1][1] != 0) {
-			l = 1;
-			while(*++argv[1]) {
-				switch(*argv[1]) {
-				case'1':
-					if(!one) {
-						one = 1;
-						ldr[1][0] =
-						ldr[2][l--] = '\0';
-					}
-					break;
-				case '2':
-					if(!two) {
-						two = 1;
-						ldr[2][l--] = '\0';
-					}
-					break;
-				case '3':
-					three = 1;
-					break;
-				default:
-				fprintf(stderr,"comm: illegal flag\n");
-				exit(1);
-				}
-			}
-			argv++;
-			argc--;
-		}
-	}
-
-	if(argc < 3) {
-		fprintf(stderr,"comm: arg count\n");
-		exit(1);
-	}
-
-	ib1 = openfil(argv[1]);
-	ib2 = openfil(argv[2]);
-
-
-	if(rd(ib1,lb1) < 0) {
-		if(rd(ib2,lb2) < 0)	exit(0);
-		copy(ib2,lb2,2);
-	}
-	if(rd(ib2,lb2) < 0)	copy(ib1,lb1,1);
-
-	while(1) {
-
-		switch(compare(lb1,lb2)) {
-
-			case 0:
-				wr(lb1,3);
-				if(rd(ib1,lb1) < 0) {
-					if(rd(ib2,lb2) < 0)	exit(0);
-					copy(ib2,lb2,2);
-				}
-				if(rd(ib2,lb2) < 0)	copy(ib1,lb1,1);
-				continue;
-
-			case 1:
-				wr(lb1,1);
-				if(rd(ib1,lb1) < 0)	copy(ib2,lb2,2);
-				continue;
-
-			case 2:
-				wr(lb2,2);
-				if(rd(ib2,lb2) < 0)	copy(ib1,lb1,1);
-				continue;
-		}
-	}
-}
-
-rd(file,buf)
-FILE *file;
-char *buf;
-{
-
-	register int i, c;
-	i = 0;
-	while((c = getc(file)) != EOF) {
-		*buf = c;
-		if(c == '\n' || i > LB-2) {
-			*buf = '\0';
-			return(0);
-		}
-		i++;
-		buf++;
-	}
-	return(-1);
-}
-
-wr(str,n)
-	char	*str;
-{
-
-	switch(n) {
-
-		case 1:
-			if(one)	return;
+	flag1 = flag2 = flag3 = 1;
+	while ((ch = getopt(argc, argv, "-123")) != EOF)
+		switch(ch) {
+		case '-':
+			--optind;
+			goto done;
+		case '1':
+			flag1 = 0;
 			break;
-
-		case 2:
-			if(two)	return;
+		case '2':
+			flag2 = 0;
 			break;
+		case '3':
+			flag3 = 0;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+done:	argc -= optind;
+	argv += optind;
 
-		case 3:
-			if(three)	return;
+	if (argc != 2)
+		usage();
+
+	fp1 = file(argv[0]);
+	fp2 = file(argv[1]);
+
+	/* for each column printed, add another tab offset */
+	p = tabs;
+	if (flag1)
+		col1 = *p++;
+	if (flag2)
+		col2 = *p++;
+	if (flag3)
+		col3 = *p++;
+
+	for (read1 = read2 = 1;;) {
+		/* read next line, check for EOF */
+		if (read1)
+			file1done = !fgets(line1, MAXLINELEN, fp1);
+		if (read2)
+			file2done = !fgets(line2, MAXLINELEN, fp2);
+
+		/* if one file done, display the rest of the other file */
+		if (file1done) {
+			if (!file2done && col2)
+				show(fp1, col2, line2);
+			break;
+		}
+		if (file2done) {
+			if (!file1done && col1)
+				show(fp2, col1, line1);
+			break;
+		}
+
+		/* lines are the same */
+		if (!(comp = strcmp(line1, line2))) {
+			read1 = read2 = 1;
+			if (col3)
+				(void)printf("%s%s", col3, line1);
+			continue;
+		}
+
+		/* lines are different */
+		if (comp < 0) {
+			read1 = 1;
+			read2 = 0;
+			if (col1)
+				(void)printf("%s%s", col1, line1);
+		} else {
+			read1 = 0;
+			read2 = 1;
+			if (col2)
+				(void)printf("%s%s", col2, line2);
+		}
 	}
-	printf("%s%s\n",ldr[n-1],str);
-}
-
-copy(ibuf,lbuf,n)
-FILE *ibuf;
-char *lbuf;
-{
-	do {
-		wr(lbuf,n);
-	} while(rd(ibuf,lbuf) >= 0);
-
 	exit(0);
 }
 
-compare(a,b)
-	char	*a,*b;
+show(fp, offset, buf)
+	FILE *fp;
+	char *offset, *buf;
 {
-	register char *ra,*rb;
-
-	ra = --a;
-	rb = --b;
-	while(*++ra == *++rb)
-		if(*ra == '\0')	return(0);
-	if(*ra < *rb)	return(1);
-	return(2);
+	do {
+		(void)printf("%s%s", offset, buf);
+	} while (fgets(buf, MAXLINELEN, fp));
 }
-FILE *openfil(s)
-char *s;
+
+FILE *
+file(name)
+	char *name;
 {
-	FILE *b;
-	if(s[0]=='-' && s[1]==0)
-		b = stdin;
-	else if((b=fopen(s,"r")) == NULL) {
-		perror(s);
+	FILE *fp;
+
+	if (!strcmp(name, "-"))
+		return(stdin);
+	if (!(fp = fopen(name, "r"))) {
+		(void)fprintf(stderr, "comm: can't read %s.\n", name);
 		exit(1);
 	}
-	return(b);
+	return(fp);
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: comm [-123] [ - ] file1 file2\n");
+	exit(1);
 }
