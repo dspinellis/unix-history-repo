@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7recover.c	7.11 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.12 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -746,15 +746,11 @@ blkio(b, buf, iofcn)
 
 syserror()
 {
-	extern int sys_nerr;
-	extern char *sys_errlist[];
+	char *strerror();
 
 	dirtcnt = 0;
 	write(2, " ", 1);
-	if (errno >= 0 && errno <= sys_nerr)
-		error(sys_errlist[errno]);
-	else
-		error("System error %d", errno);
+	error(strerror(errno));
 	exit(1);
 }
 

@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -89,6 +89,7 @@ static char sccsid[] = "@(#)job.c	5.11 (Berkeley) %G%";
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #include "job.h"
 #include "pathnames.h"
 
@@ -842,11 +843,8 @@ Job_Touch (gn, silent)
 		}
 		
 		(void)close (streamID);
-	    } else {
-		extern char *sys_errlist[];
-
-		printf("*** couldn't touch %s: %s", file, sys_errlist[errno]);
-	    }
+	    } else
+		printf("*** couldn't touch %s: %s", file, strerror(errno));
 	}
     }
 }
@@ -1257,7 +1255,6 @@ JobRestart(job)
 	     */
 	    Boolean error;
 	    extern int errno;
-	    extern char *sys_errlist[];
 	    union wait status;
 	    
 #ifdef RMT_WANTS_SIGNALS
@@ -1281,8 +1278,8 @@ JobRestart(job)
 		    printf("done\n");
 		}
 	    } else {
-		Error("couldn't resume %s: %s", job->node->name,
-		      sys_errlist[errno]);
+		Error("couldn't resume %s: %s",
+		    job->node->name, strerror(errno));
 		status.w_status = 0;
 		status.w_retcode = 1;
 		JobFinish(job, status);

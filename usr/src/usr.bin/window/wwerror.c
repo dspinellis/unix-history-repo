@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwerror.c	3.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwerror.c	3.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -24,14 +24,14 @@ static char sccsid[] = "@(#)wwerror.c	3.5 (Berkeley) %G%";
 char *
 wwerror()
 {
-	extern errno;
-	extern char *sys_errlist[];
+	extern int errno;
+	char *strerror();
 
 	switch (wwerrno) {
 	case WWE_NOERR:
 		return "No error";
 	case WWE_SYS:
-		return sys_errlist[errno];
+		return strerror(errno);
 	case WWE_NOMEM:
 		return "Out of memory";
 	case WWE_TOOMANY:

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_subr.c	7.12 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_subr.c	7.13 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -659,28 +659,11 @@ strcLIN(dp)
 
 syserror()
 {
-	register int e = errno;
-#ifndef	vms
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-#else
-	extern noshare int sys_nerr;
-	extern noshare char *sys_errlist[];
-#endif
+	char *strerror();
 
 	dirtcnt = 0;
 	ex_putchar(' ');
-	if (e >= 0 && e <= sys_nerr)
-		error(sys_errlist[e]);
-	else
-#ifdef vms
-		if (e == EVMSERR) {
-			error("VMS system error %d", vaxc$errno);
-			perror("vmserror");
-		}
-		else
-#endif
-		error("System error %d", e);
+	error(strerror(errno));
 }
 
 /*

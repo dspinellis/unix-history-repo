@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,14 +19,15 @@ static char sccsid[] = "@(#)ld.c	5.13 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <signal.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/signal.h>
 #include <ar.h>
 #include <a.out.h>
 #include <ranlib.h>
-#include <sys/stat.h>
-#include <sys/file.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 #include "pathnames.h"
 
 /*
@@ -1048,17 +1049,16 @@ struct	biobuf toutb;
 
 setupout()
 {
+	extern int errno;
 	int bss;
 	struct stat stbuf;
-	extern char *sys_errlist[];
-	extern int errno;
 
 	ofilemode = 0777 & ~umask(0);
 	biofd = creat(ofilename, 0666 & ofilemode);
 	if (biofd < 0) {
 		filname = ofilename;		/* kludge */
 		archdr.ar_name[0] = 0;		/* kludge */
-		error(1, sys_errlist[errno]);	/* kludge */
+		error(1, strerror(errno));	/* kludge */
 	}
 	fstat(biofd, &stbuf);		/* suppose file exists, wrong*/
 	if (stbuf.st_mode & 0111) {	/* mode, ld fails? */
