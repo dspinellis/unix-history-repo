@@ -1,7 +1,0 @@
-[ For the following, substitute the name of the directory this file resides
-  in for "foo".  E.G., if this file is mh5/READ-ME, s%foo%mh5%g ]
-
-    The Makefile assumes you have LaTeX on your system.  LaTeX is Leslie
-    Lamport's macro package for TeX.  If you can't find LaTeX on your
-    system, ask your local TeX maintainer where it's kept, since LaTeX
-    should have come with your UNIX TeX distribution.

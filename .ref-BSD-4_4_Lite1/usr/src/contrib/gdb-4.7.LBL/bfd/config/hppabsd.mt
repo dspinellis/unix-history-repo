@@ -1,1 +1,0 @@
-TDEFINES = -DDEFAULT_VECTOR=hppa_vec

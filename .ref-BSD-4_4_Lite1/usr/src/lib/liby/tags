@@ -1,2 +1,0 @@
-Mmain	main.c	/^main()$/
-yyerror	yyerror.c	/^yyerror(msg)$/
