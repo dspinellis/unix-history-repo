@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00112
- * --------------------         -----   ----------------------
- *
- * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*
@@ -72,7 +65,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.2 1993/08/31 15:44:45 rgrimes Exp $ */
+/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.3 1993/09/07 16:01:08 rgrimes Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"

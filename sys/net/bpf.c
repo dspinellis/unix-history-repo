@@ -35,19 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)bpf.c	7.5 (Berkeley) 7/15/91
- *
- * static char rcsid[] =
- * "$Header: bpf.c,v 1.49 92/05/25 14:43:09 mccanne Exp $";
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00112
- * --------------------         -----   ----------------------
- *
- * 14 Mar 93	David Greenman		Upgrade bpf to match tcpdump 2.2.1
- * 24 Mar 93	Rodney W. Grimes	Fixed selwakeup to use pid_t from proc,
- *					disabled definition of inline.
+ *	from: @(#)bpf.c	7.5 (Berkeley) 7/15/91
+ *	$Id$
  */
 
 #include "bpfilter.h"

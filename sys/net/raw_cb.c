@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)raw_cb.c	7.11 (Berkeley) 6/28/90
+ *	from: @(#)raw_cb.c	7.11 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #include "param.h"

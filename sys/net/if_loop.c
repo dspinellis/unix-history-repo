@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_loop.c	7.13 (Berkeley) 4/26/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00112
- * --------------------         -----   ----------------------
- *
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ *	from: @(#)if_loop.c	7.13 (Berkeley) 4/26/91
+ *	$Id$
  */
 
 /*

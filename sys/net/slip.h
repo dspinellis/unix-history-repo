@@ -1,9 +1,4 @@
 /*
- * Definitions that user level programs might need to know to interact
- * with serial line IP (slip) lines.
-
- * @(#) $Header: slip.h,v 1.4 92/02/02 17:26:02 leres Exp $ (LBL)
- *
  * Copyright (c) 1990 Regents of the University of California.
  * All rights reserved.
  *
@@ -18,6 +13,14 @@
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * 	from: unknown
+ *	$Id$
+ */
+
+/*
+ * Definitions that user level programs might need to know to interact
+ * with serial line IP (slip) lines.
  */
 
 /*

@@ -30,17 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_slvar.h	7.7 (Berkeley) 5/7/91
- *
- * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00112
- * --------------------         -----   ----------------------
- *
- * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ *	from: @(#)if_slvar.h	7.7 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 /*

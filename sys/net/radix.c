@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)radix.c	7.9 (Berkeley) 2/4/91
+ *	from: @(#)radix.c	7.9 (Berkeley) 2/4/91
+ *	$Id$
  */
 
 /*

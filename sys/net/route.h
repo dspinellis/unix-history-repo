@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)route.h	7.13 (Berkeley) 4/25/91
+ *	from: @(#)route.h	7.13 (Berkeley) 4/25/91
+ *	$Id$
  */
 
 /*
