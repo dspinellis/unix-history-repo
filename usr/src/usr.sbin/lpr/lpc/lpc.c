@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -107,7 +107,7 @@ cmdscanner(top)
 		}
 		if (fgets(cmdline, sizeof(cmdline), stdin) == 0)
 			quit();
-		if (cmdline[0] == 0)
+		if (cmdline[0] == 0 || cmdline[0] == '\n')
 			break;
 		makeargv();
 		c = getcmd(margv[0]);
