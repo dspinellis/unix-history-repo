@@ -1,4 +1,6 @@
-/*	pagesize.c	4.1	82/11/07	*/
+#ifndef lint
+static char sccsid[] = "@(#)pagesize.c	4.2 (Berkeley) %G%";
+#endif
 
 main()
 {

@@ -1,4 +1,6 @@
-/*	hostid.c	4.1	82/11/07	*/
+#ifndef lint
+static char sccsid[] = "@(#)hostid.c	4.2 (Berkeley) %G%";
+#endif
 
 main(argc, argv)
 	int argc;
