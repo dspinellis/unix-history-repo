@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.6 (Berkeley) 2/26/82";
+static	char *sccsid = "@(#)init.c	4.8 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
