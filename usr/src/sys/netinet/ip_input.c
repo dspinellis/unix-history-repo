@@ -1,4 +1,4 @@
-/*	ip_input.c	1.47	82/07/24	*/
+/*	ip_input.c	1.48	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -618,7 +618,7 @@ ip_forward(ip)
 	 * Save at most 64 bytes of the packet in case
 	 * we need to generate an ICMP message to the src.
 	 */
-	mcopy = m_copy(dtom(ip), 0, min(ip->ip_len, 64));
+	mcopy = m_copy(dtom(ip), 0, imin(ip->ip_len, 64));
 	ip_stripoptions(ip, mopt);
 
 	/* last 0 here means no directed broadcast */
