@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)engine.c	5.2 (Berkeley) %G%
+ *	@(#)engine.c	5.3 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@
 #define	expand	sexpand
 #define	step	sstep
 #define	print	sprint
+#define	at	sat
 #define	match	smat
 #endif
 #ifdef LNAMES
@@ -38,6 +39,7 @@
 #define	expand	lexpand
 #define	step	lstep
 #define	print	lprint
+#define	at	lat
 #define	match	lmat
 #endif
 
@@ -58,28 +60,22 @@ struct match {
 	states empty;		/* empty set of states */
 };
 
-#ifndef NDEBUG
-STATIC void print();
-extern char *regchar();
-#define	SP(t, s, c)	{ if (m->eflags&REG_TRACE) print(m->g, t, s, c, stdout); }
-#define	DO(t, p1, p2, s1, s2)	{ if (m->eflags&REG_TRACE) { \
-					printf("%s %s-", t, regchar(*(p1))); \
-					printf("%s ", regchar(*(p2))); \
-					printf("%ld-%ld\n", s1, s2); } }
+#include "engine.ih"
+
+#ifdef REDEBUG
+#define	SP(t, s, c)	print(m, t, s, c, stdout)
+#define	AT(t, p1, p2, s1, s2)	at(m, t, p1, p2, s1, s2)
+#define	NOTE(str)	{ if (m->eflags&REG_TRACE) printf("=%s\n", (str)); }
 #else
 #define	SP(t, s, c)	/* nothing */
-#define	DO(t, p1, p2, s1, s2)	/* nothing */
+#define	AT(t, p1, p2, s1, s2)	/* nothing */
+#define	NOTE(s)	/* nothing */
 #endif
-
-STATIC uchar *fast();
-STATIC uchar *slow();
-STATIC uchar *dissect();
-STATIC uchar *backref();
-STATIC states expand();
-STATIC states step();
 
 /*
  - matcher - the actual matching engine
+ == static int matcher(register struct re_guts *g, uchar *string, \
+ ==	size_t nmatch, regmatch_t pmatch[], int eflags);
  */
 static int			/* 0 success, REG_NOMATCH failure */
 matcher(g, string, nmatch, pmatch, eflags)
@@ -99,8 +95,9 @@ int eflags;
 	uchar *start;
 	uchar *stop;
 
+	/* simplify the situation where possible */
 	if (g->cflags&REG_NOSUB)
-		nmatch = 0;		/* simplify tests */
+		nmatch = 0;
 	if (eflags&REG_STARTEND) {
 		start = string + pmatch[0].rm_so;
 		stop = string + pmatch[0].rm_eo;
@@ -147,10 +144,11 @@ int eflags;
 		/* where? */
 		assert(m->coldp != NULL);
 		for (;;) {
+			NOTE("finding start");
 			endp = slow(m, m->coldp, stop, gf, gl);
 			if (endp != NULL)
 				break;
-			assert(*m->coldp != '\0');
+			assert(m->coldp < m->endp);
 			m->coldp++;
 		}
 		if (nmatch == 1 && !g->backrefs)
@@ -164,13 +162,12 @@ int eflags;
 			STATETEARDOWN(m);
 			return(REG_ESPACE);
 		}
-		for (i = 1; i <= m->g->nsub; i++) {
-			m->pmatch[i].rm_so = -1;
-			m->pmatch[i].rm_eo = -1;
-		}
-		if (!g->backrefs)
+		for (i = 1; i <= m->g->nsub; i++)
+			m->pmatch[i].rm_so = m->pmatch[i].rm_eo = -1;
+		if (!g->backrefs && !(m->eflags&REG_BACKR)) {
+			NOTE("dissecting");
 			dp = dissect(m, m->coldp, endp, gf, gl);
-		else {
+		} else {
 			if (g->nplus > 0 && m->lastpos == NULL)
 				m->lastpos = (uchar **)malloc((g->nplus+1) *
 							sizeof(uchar *));
@@ -179,6 +176,7 @@ int eflags;
 				STATETEARDOWN(m);
 				return(REG_ESPACE);
 			}
+			NOTE("backref dissect");
 			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0);
 		}
 		if (dp != NULL)
@@ -187,13 +185,21 @@ int eflags;
 		/* uh-oh... we couldn't find a subexpression-level match */
 		assert(g->backrefs);	/* must be back references doing it */
 		assert(g->nplus == 0 || m->lastpos != NULL);
-		while (dp == NULL && endp > m->coldp &&
-			(endp = slow(m, m->coldp, endp-1, gf, gl)) != NULL) {
+		for (;;) {
+			if (dp != NULL || endp <= m->coldp)
+				break;		/* defeat */
+			NOTE("backoff");
+			endp = slow(m, m->coldp, endp-1, gf, gl);
+			if (endp == NULL)
+				break;		/* defeat */
 			/* try it on a shorter possibility */
+#ifndef NDEBUG
 			for (i = 1; i <= m->g->nsub; i++) {
-				m->pmatch[i].rm_so = -1;
-				m->pmatch[i].rm_eo = -1;
+				assert(m->pmatch[i].rm_so == -1);
+				assert(m->pmatch[i].rm_eo == -1);
 			}
+#endif
+			NOTE("backoff dissect");
 			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0);
 		}
 		assert(dp == NULL || dp == endp);
@@ -201,6 +207,7 @@ int eflags;
 			break;
 
 		/* despite initial appearances, there is no match here */
+		NOTE("false alarm");
 		start = m->coldp + 1;	/* recycle starting later */
 		assert(start <= stop);
 	}
@@ -231,6 +238,8 @@ int eflags;
 
 /*
  - dissect - figure out what matched what, no back references
+ == static uchar *dissect(register struct match *m, uchar *start, \
+ ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* == stop (success) always */
 dissect(m, start, stop, startst, stopst)
@@ -253,9 +262,8 @@ sopno stopst;
 	register uchar *sep;	/* end of string matched by subsubRE */
 	register uchar *oldssp;	/* previous ssp */
 	register uchar *dp;
-	register size_t len;
 
-	DO("diss", start, stop, startst, stopst);
+	AT("diss", start, stop, startst, stopst);
 	sp = start;
 	for (ss = startst; ss < stopst; ss = es) {
 		/* identify end of subRE */
@@ -414,6 +422,8 @@ sopno stopst;
 
 /*
  - backref - figure out what matched what, figuring in back references
+ == static uchar *backref(register struct match *m, uchar *start, \
+ ==	uchar *stop, sopno startst, sopno stopst, sopno lev);
  */
 static uchar *			/* == stop (success) or NULL (failure) */
 backref(m, start, stop, startst, stopst, lev)
@@ -437,7 +447,7 @@ sopno lev;			/* PLUS nesting level */
 	register regoff_t offsave;
 	register cset *cs;
 
-	DO("back", start, stop, startst, stopst);
+	AT("back", start, stop, startst, stopst);
 	sp = start;
 
 	/* get as far as we can with easy stuff */
@@ -497,7 +507,7 @@ sopno lev;			/* PLUS nesting level */
 	ss--;			/* adjust for the for's final increment */
 
 	/* the hard stuff */
-	DO("hard", sp, stop, ss, stopst);
+	AT("hard", sp, stop, ss, stopst);
 	s = m->g->strip[ss];
 	switch (OP(s)) {
 	case OBACK_:		/* the vilest depths */
@@ -592,6 +602,8 @@ sopno lev;			/* PLUS nesting level */
 
 /*
  - fast - step through the string at top speed
+ == static uchar *fast(register struct match *m, uchar *start, \
+ ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* where tentative match ended, or NULL */
 fast(m, start, stop, startst, stopst)
@@ -605,7 +617,7 @@ sopno stopst;
 	register states fresh = m->fresh;
 	register states tmp = m->tmp;
 	register uchar *p = start;
-	register uchar c;
+	register uchar c = (start == m->beginp) ? '\0' : *(start-1);
 	register uchar lastc;	/* previous c */
 	register int atbol;
 	register int ateol;
@@ -616,7 +628,6 @@ sopno stopst;
 	st = expand(m->g, startst, stopst, st, 0, 0);
 	ASSIGN(fresh, st);
 	SP("start", st, *p);
-	c = '\0';
 	coldp = NULL;
 	for (;;) {
 		/* next character */
@@ -658,6 +669,8 @@ sopno stopst;
 
 /*
  - slow - step through the string more deliberately
+ == static uchar *slow(register struct match *m, uchar *start, \
+ ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* where it ended */
 slow(m, start, stop, startst, stopst)
@@ -677,7 +690,7 @@ sopno stopst;
 	register int ateol;
 	register uchar *matchp;	/* last p at which a match ended */
 
-	DO("slow", start, stop, startst, stopst);
+	AT("slow", start, stop, startst, stopst);
 	CLEAR(st);
 	SET1(st, startst);
 	SP("sstart", st, *p);
@@ -720,6 +733,8 @@ sopno stopst;
 
 /*
  - expand - return set of states reachable from an initial set
+ == static states expand(register struct re_guts *g, int start, \
+ ==	int stop, register states st, int atbol, int ateol);
  */
 static states
 expand(g, start, stop, st, atbol, ateol)
@@ -819,6 +834,8 @@ int ateol;			/* just before \n or \0? (for EOL) */
 
 /*
  - step - map set of states reachable before char to set reachable after
+ == static states step(register struct re_guts *g, int start, int stop, \
+ ==	register states bef, uchar ch, register states aft);
  */
 static states
 step(g, start, stop, bef, ch, aft)
@@ -918,24 +935,32 @@ register states aft;		/* states already known reachable after */
 	return(aft);
 }
 
-#ifndef NDEBUG
+#ifdef REDEBUG
 /*
  - print - print a set of states
+ == #ifdef REDEBUG
+ == static void print(struct match *m, char *caption, states st, \
+ ==	uchar ch, FILE *d);
+ == #endif
  */
 static void
-print(g, caption, st, ch, d)
-struct re_guts *g;
+print(m, caption, st, ch, d)
+struct match *m;
 char *caption;
 states st;
 uchar ch;
 FILE *d;
 {
+	register struct re_guts *g = m->g;
 	register int i;
 	register int first = 1;
 
+	if (!(m->eflags&REG_TRACE))
+		return;
+
 	fprintf(d, "%s", caption);
 	if (ch != '\0')
-		fprintf(d, " %s", regchar(ch));
+		fprintf(d, " %s", pchar(ch));
 	for (i = 0; i < g->nstates; i++)
 		if (ISSET(st, i)) {
 			fprintf(d, "%s%d", (first) ? "\t" : ", ", i);
@@ -943,6 +968,57 @@ FILE *d;
 		}
 	fprintf(d, "\n");
 }
+
+/* 
+ - at - print current situation
+ == #ifdef REDEBUG
+ == static void at(struct match *m, char *title, uchar *start, uchar *stop, \
+ ==						sopno startst, stopno stopst);
+ == #endif
+ */
+static void
+at(m, title, start, stop, startst, stopst)
+struct match *m;
+char *title;
+uchar *start;
+uchar *stop;
+sopno startst;
+sopno stopst;
+{
+	if (!(m->eflags&REG_TRACE))
+		return;
+
+	printf("%s %s-", title, pchar(*start));
+	printf("%s ", pchar(*stop));
+	printf("%ld-%ld\n", (long)startst, (long)stopst);
+}
+
+#ifndef PCHARDONE
+#define	PCHARDONE	/* never again */
+/*
+ - pchar - make a character printable
+ == #ifdef REDEBUG
+ == static char *pchar(int ch);
+ == #endif
+ *
+ * Is this identical to regchar() over in debug.c?  Well, yes.  But a
+ * duplicate here avoids having a debugging-capable regexec.o tied to
+ * a matching debug.o, and this is convenient.  It all disappears in
+ * the non-debug compilation anyway, so it doesn't matter much.
+ */
+static char *			/* -> representation */
+pchar(ch)
+int ch;
+{
+	static char pbuf[10];
+
+	if (isprint(ch) || ch == ' ')
+		sprintf(pbuf, "%c", ch);
+	else
+		sprintf(pbuf, "\\%o", ch);
+	return(pbuf);
+}
+#endif
 #endif
 
 #undef	matcher
@@ -953,4 +1029,5 @@ FILE *d;
 #undef	expand
 #undef	step
 #undef	print
+#undef	at
 #undef	match

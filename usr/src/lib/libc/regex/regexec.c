@@ -8,60 +8,34 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regexec.c	5.1 (Berkeley) %G%
+ *	@(#)regexec.c	5.2 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regexec.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regexec.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+/*
+ * the outer shell of regexec()
+ *
+ * This file includes engine.c *twice*, after muchos fiddling with the
+ * macros that code uses.  This lets the same code operate on two different
+ * representations for state sets.
+ */
 #include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <limits.h>
+#include <ctype.h>
 #include <regex.h>
 
 #include "utils.h"
 #include "regex2.h"
 
-/*
- - regexec - interface for matching
- */
-int				/* 0 success, REG_NOMATCH failure */
-regexec(preg, string, nmatch, pmatch, eflags)
-const regex_t *preg;
-const char *string;
-size_t nmatch;
-regmatch_t pmatch[];
-int eflags;
-{
-	register struct re_guts *g = preg->re_g;
-	STATIC int smatcher();
-	STATIC int lmatcher();
-#ifndef NDEBUG
-#	define	GOODFLAGS(f)	(f)
-#else
-#	define	GOODFLAGS(f)	((f)&(REG_NOTBOL|REG_NOTEOL|REG_STARTEND))
-#endif
-
-	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
-		return(REG_BADPAT);
-	assert(!(g->iflags&BAD));
-	if (g->iflags&BAD)		/* backstop for NDEBUG case */
-		return(REG_BADPAT);
-	eflags = GOODFLAGS(eflags);	/* xxx should we complain? */
-
-	if (g->nstates <= 32 && !(eflags&REG_LARGE))
-		return(smatcher(g, string, nmatch, pmatch, eflags));
-	else
-		return(lmatcher(g, string, nmatch, pmatch, eflags));
-}
-
 /* macros for manipulating states, small version */
 #define	states	long
+#define	states1	states		/* for later use in regexec() decision */
 #define	CLEAR(v)	((v) = 0)
 #define	SET0(v, n)	((v) &= ~(1 << (n)))
 #define	SET1(v, n)	((v) |= 1 << (n))
@@ -71,7 +45,7 @@ int eflags;
 #define	STATEVARS	int dummy	/* dummy version */
 #define	STATESETUP(m, n)	/* nothing */
 #define	STATETEARDOWN(m)	/* nothing */
-#define	SETUP(v)	/* nothing */
+#define	SETUP(v)	((v) = 0)
 #define	onestate	int
 #define	INIT(o, n)	((o) = 1 << (n))
 #define	INC(o)	((o) <<= 1)
@@ -134,3 +108,46 @@ int eflags;
 #define	LNAMES			/* flag */
 
 #include "engine.c"
+
+/*
+ - regexec - interface for matching
+ = extern int regexec(const regex_t *preg, const char *string, size_t nmatch, \
+ =					regmatch_t pmatch[], int eflags);
+ = #define	REG_NOTBOL	00001
+ = #define	REG_NOTEOL	00002
+ = #define	REG_STARTEND	00004
+ = #define	REG_TRACE	00400
+ = #define	REG_LARGE	01000
+ = #define	REG_BACKR	02000
+ *
+ * We put this here so we can exploit knowledge of the state representation
+ * when choosing which matcher to call.  Also, by this point the matchers
+ * have been prototyped.
+ */
+int				/* 0 success, REG_NOMATCH failure */
+regexec(preg, string, nmatch, pmatch, eflags)
+const regex_t *preg;
+const char *string;
+size_t nmatch;
+regmatch_t pmatch[];
+int eflags;
+{
+	register struct re_guts *g = preg->re_g;
+#ifdef REDEBUG
+#	define	GOODFLAGS(f)	(f)
+#else
+#	define	GOODFLAGS(f)	((f)&(REG_NOTBOL|REG_NOTEOL|REG_STARTEND))
+#endif
+
+	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
+		return(REG_BADPAT);
+	assert(!(g->iflags&BAD));
+	if (g->iflags&BAD)		/* backstop for no-debug case */
+		return(REG_BADPAT);
+	eflags = GOODFLAGS(eflags);	/* xxx should we complain? */
+
+	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
+		return(smatcher(g, (uchar *)string, nmatch, pmatch, eflags));
+	else
+		return(lmatcher(g, (uchar *)string, nmatch, pmatch, eflags));
+}
