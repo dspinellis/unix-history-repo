@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.13	81/12/12	*/
+/*	tcp_var.h	4.14	82/01/17	*/
 
 /*
  * Kernel variables for tcp.
@@ -55,6 +55,9 @@ struct tcpcb {
 	short	t_rtt;			/* round trip time */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	float	t_srtt;			/* smoothed round-trip time */
+/* out-of-band data; treat char before urgent pointer as out-of-band */
+	char	t_haveoob;		/* have some */
+	char	t_oobc;			/* the character */
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
