@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -382,17 +382,15 @@ getpathname(namebuf, curdir, ino)
 			break;
 		len = strlen(namebuf);
 		cp -= len;
-		if (cp < &namebuf[MAXNAMLEN])
-			break;
 		bcopy(namebuf, cp, (size_t)len);
 		*--cp = '/';
+		if (cp < &namebuf[MAXNAMLEN])
+			break;
 		ino = idesc.id_number;
 	}
 	busy = 0;
-	if (ino != ROOTINO) {
-		(void)strcpy(namebuf, "?");
-		return;
-	}
+	if (ino != ROOTINO)
+		*--cp = '?';
 	bcopy(cp, namebuf, (size_t)(&namebuf[MAXPATHLEN] - cp));
 }
 
