@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.24 (Berkeley) %G%
+.\"     @(#)find.1	6.25 (Berkeley) %G%
 .\"
 .Vx
 .Dd 
@@ -335,14 +335,14 @@ It evaluates to true if the expression is false.
 .Pp
 .Dp Cx Ar expression
 .Cx \&\ \&
-.Ic and
+.Ic -and
 .Cx \&\ \&
 .Ar expression
 .Cx
 .Dp Cx Ar expression expression
 .Cx
 The
-.Ic and
+.Ic -and
 operator is the logical AND operator.
 As it is implied by the juxtaposition of two expressions it does not
 have to be specified.
@@ -351,12 +351,12 @@ The second expression is not evaluated if the first expression is false.
 .Pp
 .Dp Cx Ar expression
 .Cx \&\ \&
-.Ic or
+.Ic -or
 .Cx \&\ \&
 .Ar expression
 .Cx
 The
-.Ic or
+.Ic -or
 operator is the logical OR operator.
 The expression evaluates to true if either the first or the second expression
 is true.
@@ -380,7 +380,7 @@ than the file ``ttt''.
 .Tp Li find  /  \e!  \e(  -newer  ttt  -user  wnj  \e)  -print
 Print out a list of all the files which are not both newer than ``ttt''
 and owned by ``wnj''.
-.Tp Li "find  /  \e(  -newer  ttt  or  -user wnj  \e)  -print"
+.Tp Li "find  /  \e(  -newer  ttt  -or  -user wnj  \e)  -print"
 Print out a list of all the files that are either owned by ``wnj'' or
 that are newer than ``ttt''.
 .Tp
@@ -424,7 +424,7 @@ As \-print always evaluates to true, the standard order of evaluation
 implies that \-depth would never be evaluated.
 This is not the case.
 .Pp
-The operator ``or'' was implemented as ``\-o'', and the operator ``and''
+The operator ``-or'' was implemented as ``\-o'', and the operator ``-and''
 was implemented as ``\-a''.
 .Pp
 Historic implementations of the
