@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.1 (Berkeley) %G%
+ *	@(#)param.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -102,6 +102,22 @@
 #define pmax_trunc_page(x)	((unsigned)(x) & ~(NBPG-1))
 #define pmax_btop(x)		((unsigned)(x) >> PGSHIFT)
 #define pmax_ptob(x)		((unsigned)(x) << PGSHIFT)
+
+#ifdef DS3100
+#define splnet()        Mach_spl1()
+#define splbio()        Mach_spl0()
+#define splimp()        Mach_spl1()
+#define spltty()        Mach_spl2()
+#define splclock()      Mach_spl3()
+#endif /* DS3100 */
+
+#ifdef DS5000
+#define splnet()        Mach_spl0()
+#define splbio()        Mach_spl0()
+#define splimp()        Mach_spl0()
+#define spltty()        Mach_spl0()
+#define splclock()      Mach_spl1()
+#endif /* DS5000 */
 
 #ifdef KERNEL
 #ifndef LOCORE
