@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.6 (Berkeley) %G%
+#	@(#)makefile	4.7 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -152,7 +152,7 @@ LIBTERM		= -ltermlib
 # The source files...
 ALLH =	telextrn.h
 
-MSMAIN = ascii/mset.c
+MSMAIN = ${.CURDIR}/ascii/mset.c
 
 ALLC =
 
@@ -169,12 +169,13 @@ SYS	= sys_curses
 
 # The places where the various components live...
 
-SUBDIR =	api ascii ctlr general ${SYS} telnet
+SUBDIR =	${.CURDIR}/api ${.CURDIR}/ascii ${.CURDIR}/ctlr \
+		${.CURDIR}/general ${.CURDIR}/${SYS} ${.CURDIR}/telnet
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
 
-EXTRADIR =	tools
+EXTRADIR =	${.CURDIR}/tools
 
 # The libraries we use.  The order here is important.
 # syslib.a and ctlrlib.a should come first, then the rest.
@@ -184,8 +185,8 @@ SUBLIB =	${SYS}/syslib.a ctlr/ctlrlib.a \
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-.c.obj:
-	${CC} ${CFLAGS} -c $<
+#.c.obj:
+#	${CC} ${CFLAGS} -c $<
 
 all:	FRC tn3270$X mset$X
 

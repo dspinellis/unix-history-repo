@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.1 (Berkeley) %G%
+#	@(#)makefile	4.2 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -87,8 +87,8 @@ MKMAKE		= mkmake$X
 ALLEXE	=	mkastods$X mkastosc$X mkdctype$X mkdstoas$X \
 			mkhits$X ${MKMAKE} prt3270$X
 
-.c.obj:
-	${CC} ${CFLAGS} -c $<
+#.c.obj:
+#	${CC} ${CFLAGS} -c $<
 
 tools:
 	@echo Need to specify WHICH tool ...
@@ -124,19 +124,19 @@ mkdctype$X:	mkdctype$O ../api/ebc_disp$O ectype$O
 	$(CC) $(CFLAGS) -o mkdctype mkdctype$O ../api/ebc_disp$O ectype$O
 
 ../api/astosc$O:
-	(cd ../api; make astosc$O)
+	(cd ${.CURDIR}/../api; make astosc$O)
 
 ../api/asc_ebc$O:
-	(cd ../api; make asc_ebc$O)
+	(cd ${.CURDIR}/../api; make asc_ebc$O)
 
 ../ctlr/kbd.out:
-	(cd ../ctlr; make kbd.out)
+	(cd ${.CURDIR}/../ctlr; make kbd.out)
 
 ../api/ebc_disp$O:
-	(cd ../api; make ebc_disp$O)
+	(cd ${.CURDIR}/../api; make ebc_disp$O)
 
 ../general/globals$O:
-	(cd ../general; make globals$O)
+	(cd ${.CURDIR}/../general; make globals$O)
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
