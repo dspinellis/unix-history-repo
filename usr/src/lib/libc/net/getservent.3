@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getservent.3	6.2 (Berkeley) %G%
+.\"	@(#)getservent.3	6.3 (Berkeley) %G%
 .\"
 .TH GETSERVENT 3N ""
 .UC 5
@@ -79,9 +79,8 @@ opens and rewinds the file.  If the
 .I stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getservent
-(either directly, or indirectly through one of
-the other \*(lqgetserv\*(rq calls).
+.I getservbyname
+or .IR getservbyport .
 .PP
 .I Endservent
 closes the file.

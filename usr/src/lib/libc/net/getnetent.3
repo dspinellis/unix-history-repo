@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getnetent.3	6.2 (Berkeley) %G%
+.\"	@(#)getnetent.3	6.3 (Berkeley) %G%
 .\"
 .TH GETNETENT 3N ""
 .UC 5
@@ -79,9 +79,9 @@ opens and rewinds the file.  If the
 .I stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getnetent
-(either directly, or indirectly through one of
-the other \*(lqgetnet\*(rq calls).
+.I getnetbyname
+or
+.IR getnetbyaddr .
 .PP
 .I Endnetent
 closes the file.
