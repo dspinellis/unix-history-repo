@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t5.c	4.2 %G%";
+static char sccsid[] = "@(#)t5.c	4.3 %G%";
 #endif
 
  /* t5.c: read data for table */
@@ -24,7 +24,7 @@ for (nlin=nslin=0; gets1(cstore); nlin++)
 		}
 	if (nlin>=MAXLIN)
 		{
-		leftover=cstore;
+		leftover=(int)cstore;
 		break;
 		}
 	fullbot[nlin]=0;
@@ -41,9 +41,10 @@ for (nlin=nslin=0; gets1(cstore); nlin++)
 			fullbot[nlin]= ch;
 		nlin++;
 		nslin++;
-		instead[nlin]=fullbot[nlin]=0;
+		instead[nlin]=(char *)0;
+		fullbot[nlin]=0;
 		}
-	table[nlin] = alocv((ncol+2)*sizeof(table[0][0]));
+	table[nlin] = (struct colstr *)alocv((ncol+2)*sizeof(table[0][0]));
 	if (cstore[1]==0)
 	switch(cstore[0])
 		{
@@ -59,7 +60,7 @@ for (nlin=nslin=0; gets1(cstore); nlin++)
 		ch=1;
 		if (match(cstore, "T{")) /* text follows */
 			table[nlin][icol].col =
-				gettext(cstore, nlin, icol,
+				(char *)gettext(cstore, nlin, icol,
 					font[stynum[nlin]][icol],
 					csize[stynum[nlin]][icol]);
 		else
@@ -70,7 +71,8 @@ for (nlin=nslin=0; gets1(cstore); nlin++)
 			switch(ctype(nlin,icol)) /* numerical or alpha, subcol */
 				{
 				case 'n':
-					table[nlin][icol].rcol = maknew(table[nlin][icol].col);
+					table[nlin][icol].rcol = 
+					    (char *)maknew(table[nlin][icol].col);
 					break;
 				case 'a':
 					table[nlin][icol].rcol = table[nlin][icol].col;

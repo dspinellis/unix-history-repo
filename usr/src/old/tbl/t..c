@@ -1,4 +1,4 @@
-/*	t..c	4.2	83/10/13	*/
+/*	t..c	4.3	85/09/14	*/
 
 /* t..c : external declarations */
 
@@ -41,6 +41,7 @@ extern int rightl;
 struct colstr {char *col, *rcol;};
 extern struct colstr *table[];
 extern char *cspace, *cstore;
+extern char *chspace();
 extern char *exstore, *exlim;
 extern int sep[];
 extern int used[], lused[], rused[];
