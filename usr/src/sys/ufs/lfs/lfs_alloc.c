@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.21 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.22 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -11,6 +11,7 @@ static char vers[] = "@(#)lfs_alloc.c 1.21 %G%";
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/inode.h"
+#include "../h/ndir.h"
 #include "../h/user.h"
 
 extern u_long		hashalloc();
@@ -950,7 +951,6 @@ update(flag)
 	register struct mount *mp;
 	register struct buf *bp;
 	struct fs *fs;
-	time_t tim;
 	int i, blks;
 
 	if (updlock)
@@ -971,7 +971,7 @@ update(flag)
 			panic("update: rofs mod");
 		bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
 		fs->fs_fmod = 0;
-		fs->fs_time = TIME;
+		fs->fs_time = time;
 		if (bp->b_un.b_fs != fs)
 			panic("update: bad b_fs");
 		bwrite(bp);
@@ -991,8 +991,7 @@ update(flag)
 			continue;
 		ip->i_flag |= ILOCK;
 		ip->i_count++;
-		tim = TIME;
-		iupdat(ip, &tim, &tim, 0);
+		iupdat(ip, &time, &time, 0);
 		iput(ip);
 	}
 	updlock = 0;
