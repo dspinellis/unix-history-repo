@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -136,7 +136,8 @@ store(from)
 		if (line[0] == '\n')
 			eline = 1;
 		else {
-			if (eline && line[0] == 'F' && !bcmp(line, "From ", 5))
+			if (eline && line[0] == 'F' &&
+			    !memcmp(line, "From ", 5))
 				(void)putc('>', fp);
 			eline = 0;
 		}
@@ -286,7 +287,7 @@ notifybiff(msg)
 			return;
 		}
 		addr.sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
+		memmove(&addr.sin_addr, hp->h_addr, hp->h_length);
 		addr.sin_port = sp->s_port;
 	}
 	if (f < 0 && (f = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
