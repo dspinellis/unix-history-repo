@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.4 (Berkeley) %G%
+ *	@(#)dhu.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@
 /*
  * DHU-11 driver
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "bk.h"
 #include "param.h"
