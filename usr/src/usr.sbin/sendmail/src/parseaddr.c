@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -84,13 +84,6 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	if (tTd(20, 1))
 		printf("\n--parseaddr(%s)\n", addr);
 
-	if (invalidaddr(addr))
-	{
-		if (tTd(20, 1))
-			printf("parseaddr-->bad address\n");
-		return NULL;
-	}
-
 	{
 		extern char *DelimChar;		/* parseaddr.c */
 		char savec;
@@ -116,6 +109,13 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 		if (tTd(20, 1))
 			printf("parseaddr-->NULL\n");
 		return (NULL);
+	}
+
+	if (invalidaddr(addr, delim == '\0' ? NULL : *delimptr))
+	{
+		if (tTd(20, 1))
+			printf("parseaddr-->bad address\n");
+		return NULL;
 	}
 
 	/*
@@ -204,18 +204,36 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 */
 
 bool
-invalidaddr(addr)
+invalidaddr(addr, delimptr)
 	register char *addr;
+	char *delimptr;
 {
-	for (; *addr != '\0'; addr++)
+	char savedelim;
+
+	if (delimptr != NULL)
+		savedelim = *delimptr;
+#if 0
+	/* for testing.... */
+	if (strcmp(addr, "INvalidADDR") == 0)
 	{
-		if ((*addr & 0340) != 0200)
-			continue;
-		setstat(EX_USAGE);
-		usrerr("553 Address contained invalid control characters");
+		usrerr("553 INvalid ADDRess");
+		if (delimptr != NULL)
+			*delimptr = savedelim;
 		return TRUE;
 	}
-	return FALSE;
+#endif
+	for (; *addr != '\0'; addr++)
+	{
+		if ((*addr & 0340) == 0200)
+			break;
+	}
+	if (delimptr != NULL)
+		*delimptr = savedelim;
+	if (*addr == '\0')
+		return FALSE;
+	setstat(EX_USAGE);
+	usrerr("553 Address contained invalid control characters");
+	return TRUE;
 }
 /*
 **  ALLOCADDR -- do local allocations of address on demand.
