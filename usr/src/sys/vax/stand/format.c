@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	7.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -490,10 +490,13 @@ getdevice()
 
 top:
 	do {
+		printf(
+		"Enter device name as \"type(adaptor,controller,drive,0)\"\n");
 		cp = prompt("Device to format? ");
 	} while ((fd = open(cp, 2)) < 0);
-	printf("Formatting drive %c%c%d on adaptor %d: ",
-		cp[0], cp[1], iob[fd - 3].i_unit % 8, iob[fd - 3].i_unit / 8);
+	printf("Formatting %c%c drive %d on controller %d, adaptor %d: ",
+		cp[0], cp[1], iob[fd - 3].i_unit,
+		iob[fd - 3].i_ctlr, iob[fd - 3].i_adapt);
 	cp = prompt("verify (yes/no)? ");
 	while (*cp != 'y' && *cp != 'n')
 		cp = prompt("Huh, yes or no? ");
