@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)column.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)column.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,10 +33,11 @@ static char sccsid[] = "@(#)column.c	5.3 (Berkeley) %G%";
 
 int termwidth = 80;		/* default terminal width */
 
-char **list;			/* array of pointers to records */
 int entries;			/* number of records */
 int eval;			/* exit value */
 int maxlength;			/* longest record */
+char **list;			/* array of pointers to records */
+char *separator = "\t ";	/* field separator for table option */
 
 main(argc, argv)
 	int argc;
@@ -56,10 +57,13 @@ main(argc, argv)
 		termwidth = win.ws_col;
 
 	xflag = 0;
-	while ((ch = getopt(argc, argv, "c:tx")) != EOF)
+	while ((ch = getopt(argc, argv, "c:s:tx")) != EOF)
 		switch(ch) {
 		case 'c':
 			termwidth = atoi(optarg);
+			break;
+		case 's':
+			separator = optarg;
 			break;
 		case 't':
 			tflag = 1;
@@ -187,7 +191,7 @@ maketbl()
 	cols = (char **)emalloc((maxcols = DEFCOLS) * sizeof(char *));
 	lens = (int *)emalloc(maxcols * sizeof(int));
 	for (cnt = 0, lp = list; cnt < entries; ++cnt, ++lp, ++t) {
-		for (coloff = 0, p = *lp; cols[coloff] = strtok(p, "\t ");
+		for (coloff = 0, p = *lp; cols[coloff] = strtok(p, separator);
 		    p = NULL)
 			if (++coloff == maxcols) {
 				if (!(cols = (char **)realloc((char *)cols,
