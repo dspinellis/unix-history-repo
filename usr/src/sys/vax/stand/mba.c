@@ -1,4 +1,4 @@
-/*	mba.c	4.7	83/01/16	*/
+/*	mba.c	4.8	83/01/27	*/
 
 #include "../machine/pte.h"
 
