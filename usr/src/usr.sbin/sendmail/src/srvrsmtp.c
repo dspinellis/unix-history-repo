@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.1 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.2 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.1 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.2 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -137,7 +137,7 @@ smtp(e)
 		(void) fflush(stdout);
 
 		/* read the input line */
-		p = sfgets(inp, sizeof inp, InChannel);
+		p = sfgets(inp, sizeof inp, InChannel, ReadTimeout);
 
 		/* handle errors */
 		if (p == NULL)
@@ -236,8 +236,7 @@ smtp(e)
 			define('s', sendinghost, e);
 			define('r', "SMTP", e);
 			initsys(e);
-			setproctitle("%s %s: %s", e->e_id,
-				CurHostName, inp);
+			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
@@ -255,8 +254,7 @@ smtp(e)
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
 			SmtpPhase = "RCPT";
-			setproctitle("%s %s: %s", e->e_id,
-				CurHostName, inp);
+			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 			if (setjmp(TopFrame) > 0)
 			{
 				e->e_flags &= ~EF_FATALERRS;
@@ -302,8 +300,7 @@ smtp(e)
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			setproctitle("%s %s: %s", e->e_id,
-				CurHostName, inp);
+			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 			collect(TRUE, e);
 			if (Errors != 0)
 				break;
