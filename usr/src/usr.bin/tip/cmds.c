@@ -1,4 +1,4 @@
-/*	cmds.c	4.7	81/11/29	*/
+/*	cmds.c	4.8	82/01/06	*/
 #include "tip.h"
 /*
  * tip
@@ -587,7 +587,7 @@ variable()
 	vlex(buf);
 	if (vtable[BEAUTIFY].v_access&CHANGED) {
 		vtable[BEAUTIFY].v_access &= ~CHANGED;
-		signal(pid, SIGSYS);
+		kill(pid, SIGSYS);
 	}
 	if (vtable[SCRIPT].v_access&CHANGED) {
 		vtable[SCRIPT].v_access &= ~CHANGED;
