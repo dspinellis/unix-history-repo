@@ -1,4 +1,4 @@
-/* graph.c	1.1	83/07/01
+/* graph.c	1.2	83/07/05
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -6,6 +6,7 @@
 
 
 #include <stdio.h>
+#include <ctype.h>
 #include <math.h>
 
 
@@ -19,7 +20,7 @@
 #define DOTDASHED 024
 #define LONGDASHED 074
 				/* constants... */
-#define  pi	3.141592653589793238462643
+#define  pi		3.14159265358979324
 #define  log2_10	3.3219280948873623
 				/* imports from dver.c */
 #define  hmot(n)	hpos += n;
@@ -34,8 +35,6 @@ extern point();
 
 int	linethickness = 3;	/* number of pixels wide to make lines */
 int	linmod = SOLID;		/* type of line (SOLID, DOTTED, DASHED...) */
-int	lastx;
-int	lasty;
 
 
 
@@ -57,10 +56,53 @@ register int d;
 }
 
 
-drawellip(h, v)
-register int h;
-register int v;
+/*******************************************************************************
+ *
+ * Routine:	drawellip (horizontal_diameter, vertical_diameter)
+ *
+ *	This routine draws regular ellipses given the major diagonals.
+ *	It does so by drawing many small lines, every one pixels.
+ *
+ *	The ellipse formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1
+ *	is used, converting to y = f(x) and duplicating the lines about
+ *	the vertical axis.
+ *
+ * Results:	The current position is at the rightmost point of the ellipse
+ *
+ ******************************************************************************/
+
+drawellip(hd, vd)
+register int hd;
+int vd;
 {
+    register int bx;		/* multiplicative x factor */
+    register int x;		/* x position drawing to */
+    register int yk;		/* the square-root term */
+    register int y;		/* y position drawing to */
+    double k1;			/* k? are constants depending on parameters */
+    int k2, oldy1, oldy2;	/* oldy? are last y points drawn to */
+
+
+    hd = 2 * ((hd + 1) / 2);	/* don't accept odd diagonals */
+
+    bx = 4 * (hpos + hd);
+    x = hpos;
+    k1 = vd / (2.0 * hd);
+    k2 = hd * hd - 4 * (hpos + hd/2) * (hpos + hd/2);
+    oldy1 = vpos;
+    oldy2 = vpos;
+
+    hmot (hd);		/* end position is the right-hand side of the ellipse */
+
+    do {
+	yk = k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))) + 0.5;
+
+	HGtline (x-1, oldy1, x, y = vpos + yk);    /* top half of ellipse */
+	oldy1 = y;
+	HGtline (x-1, oldy2, x, y = vpos - yk);	  /* bottom half of ellipse */
+	oldy2 = y;
+
+    } while (--hd);
 }
 
 drawarc (cdh, cdv, pdh, pdv)
@@ -71,11 +113,13 @@ register int pdv;
 {
     register double angle;
 				/* figure angle from the three points...*/
-    angle = atan2((double) -cdh, (double) -cdv)
-		- atan2 ((double) pdh, (double) pdv);
-    if (angle < 0.0) angle += 2 * pi;
+				/* and convert (and round) to degrees */
+    angle = (atan2((double) pdh, (double) pdv)
+		- atan2 ((double) -cdh, (double) -cdv)) * 180.0 / pi;
+				/* "normalize" and round */
+    angle += (angle < 0.0)  ?  360.5 : 0.5;
 
-    HGArc(hpos+cdh, vpos+cdv, hpos+cdh+pdh, vpos+cdv+pdv, angle*180.0/pi);
+    HGArc(hpos + cdh, vpos + cdv, hpos, vpos, (int) angle);
     hmot(cdh + pdh);
     vmot(cdv + pdv);
 }
@@ -86,16 +130,21 @@ char *buf;
 FILE *fp;
 {
     register int len = strlen(buf);
-    register int i = 1;
+    register int i = 2;
     register char *ptr = buf;
     float x[MAXPOINTS], y[MAXPOINTS];
 
     while (*ptr == ' ') ptr++;		/* skip any leading spaces */
+    x[1] = (float) hpos;	/* the curve starts at the */
+    y[1] = (float) vpos;	/* current position */
+
     while (*ptr != '\n') {		/* curve commands end with a "cr" */
-	hmot((int) (x[i] = (float) atoi(ptr)));		/* convert text */
-	while (isdigit(*++ptr));			/* to curve points */
-	while (*++ptr == ' ');
-	vmot((int) (y[i] = (float) atoi(ptr)));
+	hmot(atoi(ptr));		/* convert to curve points */
+	x[i] = (float) hpos;		/* and remember them */
+	while (isdigit(*++ptr));		/* skip number*/
+	while (*++ptr == ' ');		/* skip spaces 'tween numbers */
+	vmot(atoi(ptr));
+	y[i] = (float) vpos;
 	while (isdigit(*++ptr));
 	while (*ptr == ' ') ptr++;
 				/* if the amount we read wasn't the */
@@ -111,7 +160,7 @@ FILE *fp;
 	if (i < MAXPOINTS - 1) i++;	/* if too many points, forget some */
     }
 
-    HGCurve(x, y, i);		/* now, actually DO the curve */
+    HGCurve(x, y, --i);		/* now, actually DO the curve */
 }
 
 
@@ -183,8 +232,8 @@ register int px;
 register int py;
 register int angle;
 
-/* This routine plots an arc centered about 'center' counter clockwise for
- * the point 'cpoint' through 'angle' degrees.  If angle is 0, a full circle
+/* This routine plots an arc centered about (cx, cy) counter clockwise for
+ * the point (px, py) through 'angle' degrees.  If angle is 0, a full circle
  * is drawn.
  */
 
@@ -195,8 +244,6 @@ register int angle;
 
     xs = px - cx;
     ys = py - cy;
-    lastx = cx;
-    lasty = cy;
 
 /* calculate drawing parameters */
 
@@ -217,8 +264,6 @@ register int angle;
         ys -= epsilon * xs;
         ny = (int) (ys + cy + 0.5);
         RoundEnd(nx, ny, (int) (linethickness/2), FALSE);
-        lastx = nx;
-        lasty = ny;
     }   /* end for */
 }  /* end HGArc */
 
@@ -474,15 +519,15 @@ int numpoints;
 	int i, j, k, lx, ly, nx, ny;
 
 
-	lx = (int) x[0];
-	ly = (int) y[0];
+	lx = (int) x[1];
+	ly = (int) y[1];
 
 	     /* Solve for derivatives of the curve at each point 
               * separately for x and y (parametric).
 	      */
 	Paramaterize(x, y, h, numpoints);
 							/* closed curve */
-	if ((x[0] == x[numpoints]) && (y[0] == y[numpoints])) {
+	if ((x[1] == x[numpoints]) && (y[1] == y[numpoints])) {
 		PeriodicSpline(h, x, dx, d2x, d3x, numpoints);
 		PeriodicSpline(h, y, dy, d2y, d3y, numpoints);
 	} else {
