@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -108,7 +108,7 @@ redirect:
 				if ((p = memchr(ps, '\n', psl)) == NULL)
 					pd = 1;
 				else {
-					psl -= (p - ps) - 1;
+					psl -= (p - ps) + 1;
 					memmove(ps, p + 1, psl);
 				}
 				goto new;
