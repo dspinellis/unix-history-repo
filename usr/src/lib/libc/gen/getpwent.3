@@ -1,4 +1,8 @@
-.\"	@(#)getpwent.3	6.3 (Berkeley) %G%
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getpwent.3	6.4 (Berkeley) %G%
 .\"
 .TH GETPWENT 3  ""
 .AT 3
@@ -9,16 +13,16 @@ getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file
 .B #include <pwd.h>
 .PP
 .B struct passwd *getpwuid(uid)
-.B int uid;
+.B uid_t uid;
 .PP
 .B struct passwd *getpwnam(name)
 .B char *name;
 .PP
 .B struct passwd *getpwent()
 .PP
-.B setpwent()
+.B void setpwent()
 .PP
-.B endpwent()
+.B void endpwent()
 .PP
 .B setpwfile(name)
 .B char *name;
@@ -28,14 +32,24 @@ getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file
 .I getpwuid
 and
 .I getpwnam
-each return a pointer to an object with the
-following structure
-containing the broken-out
-fields of a line in the password file.
+each return a pointer to an object with the following structure,
+containing the broken-out fields of a line in the password file,
+as described in
+.IR < pwd.h > .
 .RS
 .PP
 .nf
-.so /usr/include/pwd.h
+struct passwd {
+	char	*pw_name;
+	char	*pw_passwd;
+	uid_t	pw_uid;
+	gid_t	pw_gid;
+	int	pw_quota;
+	char	*pw_comment;
+	char	*pw_gecos;
+	char	*pw_dir;
+	char	*pw_shell;
+};
 .ft R
 .ad
 .fi
@@ -48,41 +62,31 @@ and
 are unused; the others have meanings described in
 .IR passwd (5).
 .PP
-Searching of the password file is done using the \fIndbm\fP
-database access routines.
+.I Setpwfile
+changes the default password file to
+.IR name ,
+thus allowing usage of alternate password files.  If \fIndbm\fP databases
+are available for any password files, they are used, otherwise the file
+itself is linearly searched.
+.PP
 .I Setpwent
-opens the database;
-.I endpwent
-closes it.
+opens the database or file (closing any previously opened database or file)
+or rewinds it if it is already open.
+.PP
+.I Endpwent
+closes any open databases or files.
+.PP
 .I Getpwuid
 and
 .I getpwnam
-search the database (opening it if necessary) for a matching
+search the entire database or file (opening it if necessary) for a matching
 .I uid
 or
 .IR name .
-EOF is returned if there is no entry.
 .PP
 For programs wishing to read the entire database,
 .I getpwent
-reads the next
-line (opening the database if necessary).
-In addition to opening the database,
-.I setpwent
-can be used to make
-.I getpwent
-begin its search from the beginning of the database.
-.PP
-.I Setpwfile
-changes the default password file to
-.I name
-thus allowing alternate password files to be used.
-Note that it does
-.I not
-close the previous file.
-If this is desired,
-.I endpwent
-should be called prior to it.
+reads the next entry (opening the database or file if necessary).
 .SH FILES
 /etc/passwd
 .SH "SEE ALSO"
@@ -94,8 +98,12 @@ The routines
 and
 .IR getpwnam ,
 return a null pointer (0) on EOF or error.
+.I Setpwent
+returns 0 on failure, 1 on success.
+.I Endpwent
+and
+.I setpwfile
+have no return value.
 .SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.
+All information is contained in a static area so it must be
+copied if it is to be saved.
