@@ -7,7 +7,7 @@ MAN1=	sendbug.0
 MAN8=	bugfiler.0
 
 beforeinstall:
-	install -c -o bin -g ${BINGRP} -m ${BINMODE} \
+	install -c -o bin -g ${BINGRP} -m 555 \
 	    ${.CURDIR}/sendbug.sh ${DESTDIR}/usr/bin/sendbug
 	install -c -o bin -g ${BINGRP} -m 444 ${.CURDIR}/bugformat \
 	    ${DESTDIR}/usr/share/misc
