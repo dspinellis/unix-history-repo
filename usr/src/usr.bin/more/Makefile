@@ -14,42 +14,37 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
-DEFS=	-DHELPFILE=\"/usr/lib/less.help\" -DEDIT_PGM=\"/usr/ucb/vi\" -DRECOMP
-CFLAGS=	-O ${DEFS}
+CFLAGS=	-O -I/nbsd/usr/include -I.
 LIBC=	/lib/libc.a
 SRCS=	ch.c command.c decode.c help.c input.c line.c linenum.c main.c \
-	option.c os.c output.c position.c prim.c prompt.c screen.c \
+	option.c os.c output.c position.c prim.c screen.c \
 	signal.c tags.c ttyin.c
 OBJS=	ch.o command.o decode.o help.o input.o line.o linenum.o main.o \
-	option.o os.o output.o position.o prim.o prompt.o screen.o \
+	option.o os.o output.o position.o prim.o screen.o \
 	signal.o tags.o ttyin.o
-MAN=	less.0
+MAN=	more.0
 
-all: less
+all: more
 
-less: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap
-
-#funcs.h: ${SRCS}
-funcs.h:
-	awk -f mkfuncs.awk ${SRCS} > funcs.h
+more: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap /nbsd/lib/libc.a
 
 clean:
-	rm -f ${OBJS} core less lesskey
+	rm -f ${OBJS} core more
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
-depend: ${SRCS} funcs.h
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 less ${DESTDIR}/usr/ucb/less
-	install -o bin -g bin -m 444 less.0 ${DESTDIR}/usr/man/cat1/less.0
-	install -c -o bin -g bin -m 444 less.help ${DESTDIR}/usr/lib/less.help
+	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/ucb/more
+	install -o bin -g bin -m 444 more.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 more.help ${DESTDIR}/usr/lib
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}

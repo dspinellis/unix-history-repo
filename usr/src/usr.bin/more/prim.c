@@ -18,54 +18,41 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Primitives for displaying the file on the screen.
  */
 
-#include "less.h"
-#include "position.h"
+#include <sys/types.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <less.h>
 
-public int hit_eof;	/* Keeps track of how many times we hit end of file */
-public int screen_trashed;
+int back_scroll = -1;
+int hit_eof;		/* keeps track of how many times we hit end of file */
+int screen_trashed;
 
 static int squished;
 
-extern int quiet;
 extern int sigs;
-extern int how_search;
 extern int top_scroll;
-extern int back_scroll;
 extern int sc_width, sc_height;
-extern int quit_at_eof;
 extern int caseless;
 extern int linenums;
-extern int plusoption;
-extern char *line;
-extern char *first_cmd;
 extern int tagoption;
+extern char *line;
 
-/*
- * Sound the bell to indicate he is trying to move past end of file.
- */
-	static void
-eof_bell()
-{
-	if (quiet == NOT_QUIET)
-		bell();
-	else
-		vbell();
-}
+off_t position(), forw_line(), back_line(), forw_raw_line(), back_raw_line();
+off_t ch_length(), ch_tell();
 
 /*
  * Check to see if the end of file is currently "displayed".
  */
-	static void
 eof_check()
 {
-	POSITION pos;
+	off_t pos;
 
 	if (sigs)
 		return;
@@ -85,32 +72,28 @@ eof_check()
  * of the screen; this can happen when we display a short file
  * for the first time.
  */
-	static void
 squish_check()
 {
-	if (!squished)
-		return;
-	squished = 0;
-	repaint();
+	if (squished) {
+		squished = 0;
+		repaint();
+	}
 }
 
 /*
- * Display n lines, scrolling forward, 
- * starting at position pos in the input file.
- * "force" means display the n lines even if we hit end of file.
- * "only_last" means display only the last screenful if n > screen size.
+ * Display n lines, scrolling forward, starting at position pos in the
+ * input file.  "force" means display the n lines even if we hit end of
+ * file.  "only_last" means display only the last screenful if n > screen
+ * size.
  */
-	static void
 forw(n, pos, force, only_last)
 	register int n;
-	POSITION pos;
+	off_t pos;
 	int force;
 	int only_last;
 {
-	int eof = 0;
-	int nlines = 0;
-	int do_repaint;
 	static int first_time = 1;
+	int eof = 0, do_repaint;
 
 	squish_check();
 
@@ -120,56 +103,45 @@ forw(n, pos, force, only_last)
 	 */
 	do_repaint = (only_last && n > sc_height-1);
 
-	if (!do_repaint)
-	{
-		if (top_scroll && n >= sc_height - 1)
-		{
+	if (!do_repaint) {
+		if (top_scroll && n >= sc_height - 1) {
 			/*
 			 * Start a new screen.
 			 * {{ This is not really desirable if we happen
 			 *    to hit eof in the middle of this screen,
 			 *    but we don't yet know if that will happen. }}
 			 */
-			if (top_scroll == 2)
-				clear();
+			clear();
 			home();
 			force = 1;
-		} else
-		{
+		} else {
 			lower_left();
 			clear_eol();
 		}
 
-		if (pos != position(BOTTOM_PLUS_ONE))
-		{
-			/*
-			 * This is not contiguous with what is
-			 * currently displayed.  Clear the screen image 
-			 * (position table) and start a new screen.
-			 */
+		/*
+		 * This is not contiguous with what is currently displayed.
+		 * Clear the screen image (position table) and start a new
+		 * screen.
+		 */
+		if (pos != position(BOTTOM_PLUS_ONE)) {
 			pos_clear();
 			add_forw_pos(pos);
 			force = 1;
-			if (top_scroll)
-			{
-				if (top_scroll == 2)
-					clear();
+			if (top_scroll) {
+				clear();
 				home();
 			} else if (!first_time)
-			{
 				putstr("...skipping...\n");
-			}
 		}
 	}
 
-	while (--n >= 0)
-	{
+	while (--n >= 0) {
 		/*
 		 * Read the next line of input.
 		 */
 		pos = forw_line(pos);
-		if (pos == NULL_POSITION)
-		{
+		if (pos == NULL_POSITION) {
 			/*
 			 * End of file: stop here unless the top line 
 			 * is still empty, or "force" is true.
@@ -184,27 +156,20 @@ forw(n, pos, force, only_last)
 		 * Display the current line on the screen.
 		 */
 		add_forw_pos(pos);
-		nlines++;
 		if (do_repaint)
 			continue;
 		/*
-		 * If this is the first screen displayed and
-		 * we hit an early EOF (i.e. before the requested
-		 * number of lines), we "squish" the display down
-		 * at the bottom of the screen.
-		 * But don't do this if a + option or a -t option
-		 * was given.  These options can cause us to
-		 * start the display after the beginning of the file,
+		 * If this is the first screen displayed and we hit an early
+		 * EOF (i.e. before the requested number of lines), we
+		 * "squish" the display down at the bottom of the screen.
+		 * But don't do this if a -t option was given; it can cause
+		 * us to start the display after the beginning of the file,
 		 * and it is not appropriate to squish in that case.
 		 */
-		if (first_time && line == NULL && !top_scroll && 
-		    !tagoption && !plusoption)
-		{
+		if (first_time && line == NULL && !top_scroll && !tagoption) {
 			squished = 1;
 			continue;
 		}
-		if (top_scroll == 1)
-			clear_eol();
 		put_line();
 	}
 
@@ -212,9 +177,7 @@ forw(n, pos, force, only_last)
 		hit_eof++;
 	else
 		eof_check();
-	if (nlines == 0)
-		eof_bell();
-	else if (do_repaint)
+	if (do_repaint)
 		repaint();
 	first_time = 0;
 	(void) currline(BOTTOM);
@@ -223,14 +186,12 @@ forw(n, pos, force, only_last)
 /*
  * Display n lines, scrolling backward.
  */
-	static void
 back(n, pos, force, only_last)
 	register int n;
-	POSITION pos;
+	off_t pos;
 	int force;
 	int only_last;
 {
-	int nlines = 0;
 	int do_repaint;
 
 	squish_check();
@@ -256,7 +217,6 @@ back(n, pos, force, only_last)
 		 * Display the line on the screen.
 		 */
 		add_back_pos(pos);
-		nlines++;
 		if (!do_repaint)
 		{
 			home();
@@ -266,9 +226,7 @@ back(n, pos, force, only_last)
 	}
 
 	eof_check();
-	if (nlines == 0)
-		eof_bell();
-	else if (do_repaint)
+	if (do_repaint)
 		repaint();
 	(void) currline(BOTTOM);
 }
@@ -277,18 +235,16 @@ back(n, pos, force, only_last)
  * Display n more lines, forward.
  * Start just after the line currently displayed at the bottom of the screen.
  */
-	public void
 forward(n, only_last)
 	int n;
 	int only_last;
 {
-	POSITION pos;
+	off_t pos;
 
-	if (quit_at_eof && hit_eof)
-	{
+	if (hit_eof) {
 		/*
-		 * If the -e flag is set and we're trying to go
-		 * forward from end-of-file, go on to the next file.
+		 * If we're trying to go forward from end-of-file,
+		 * go on to the next file.
 		 */
 		next_file(1);
 		return;
@@ -297,7 +253,6 @@ forward(n, only_last)
 	pos = position(BOTTOM_PLUS_ONE);
 	if (pos == NULL_POSITION)
 	{
-		eof_bell();
 		hit_eof++;
 		return;
 	}
@@ -308,32 +263,27 @@ forward(n, only_last)
  * Display n more lines, backward.
  * Start just before the line currently displayed at the top of the screen.
  */
-	public void
 backward(n, only_last)
 	int n;
 	int only_last;
 {
-	POSITION pos;
+	off_t pos;
 
 	pos = position(TOP);
+	/*
+	 * This will almost never happen, because the top line is almost
+	 * never empty.
+	 */
 	if (pos == NULL_POSITION)
-	{
-		/* 
-		 * This will almost never happen,
-		 * because the top line is almost never empty. 
-		 */
-		eof_bell();
 		return;   
-	}
 	back(n, pos, 0, only_last);
 }
 
 /*
  * Repaint the screen, starting from a specified position.
  */
-	static void
-prepaint(pos)	
-	POSITION pos;
+prepaint(pos)
+	off_t pos;
 {
 	hit_eof = 0;
 	forw(sc_height-1, pos, 1, 0);
@@ -343,7 +293,6 @@ prepaint(pos)
 /*
  * Repaint the screen.
  */
-	public void
 repaint()
 {
 	/*
@@ -358,10 +307,9 @@ repaint()
  * It is more convenient to paint the screen backward,
  * from the end of the file toward the beginning.
  */
-	public void
 jump_forw()
 {
-	POSITION pos;
+	off_t pos;
 
 	if (ch_end_seek())
 	{
@@ -379,12 +327,10 @@ jump_forw()
 /*
  * Jump to line n in the file.
  */
-	public void
 jump_back(n)
 	register int n;
 {
-	register int c;
-	int nlines;
+	register int c, nlines;
 
 	/*
 	 * This is done the slow way, by starting at the beginning
@@ -394,8 +340,7 @@ jump_back(n)
 	 *    we could improve on this by starting at the
 	 *    nearest known line rather than at the beginning. }}
 	 */
-	if (ch_seek((POSITION)0))
-	{
+	if (ch_seek((off_t)0)) {
 		/* 
 		 * Probably a pipe with beginning of file no longer buffered. 
 		 * If he wants to go to line 1, we do the best we can, 
@@ -411,18 +356,14 @@ jump_back(n)
 	 * Start counting lines.
 	 */
 	for (nlines = 1;  nlines < n;  nlines++)
-	{
 		while ((c = ch_forw_get()) != '\n')
-			if (c == EOI)
-			{
+			if (c == EOI) {
 				char message[40];
 				(void)sprintf(message, "File has only %d lines",
-					nlines-1);
+				    nlines - 1);
 				error(message);
 				return;
 			}
-	}
-
 	jump_loc(ch_tell());
 }
 
@@ -431,11 +372,10 @@ jump_back(n)
  * This is a poor compensation for not being able to
  * quickly jump to a specific line number.
  */
-	public void
 jump_percent(percent)
 	int percent;
 {
-	POSITION pos, len;
+	off_t pos, len, ch_length();
 	register int c;
 
 	/*
@@ -466,15 +406,13 @@ jump_percent(percent)
 /*
  * Jump to a specified position in the file.
  */
-	public void
 jump_loc(pos)
-	POSITION pos;
+	off_t pos;
 {
 	register int nline;
-	POSITION tpos;
+	off_t tpos;
 
-	if ((nline = onscreen(pos)) >= 0)
-	{
+	if ((nline = onscreen(pos)) >= 0) {
 		/*
 		 * The line is currently displayed.  
 		 * Just scroll there.
@@ -487,27 +425,24 @@ jump_loc(pos)
 	 * Line is not on screen.
 	 * Seek to the desired location.
 	 */
-	if (ch_seek(pos))
-	{
+	if (ch_seek(pos)) {
 		error("Cannot seek to that position");
 		return;
 	}
 
 	/*
-	 * See if the desired line is BEFORE the currently
-	 * displayed screen.  If so, then move forward far
-	 * enough so the line we're on will be at the bottom
-	 * of the screen, in order to be able to call back()
-	 * to make the screen scroll backwards & put the line
-	 * at the top of the screen.
+	 * See if the desired line is BEFORE the currently displayed screen.
+	 * If so, then move forward far enough so the line we're on will be
+	 * at the bottom of the screen, in order to be able to call back()
+	 * to make the screen scroll backwards & put the line at the top of
+	 * the screen.
 	 * {{ This seems inefficient, but it's not so bad,
 	 *    since we can never move forward more than a
 	 *    screenful before we stop to redraw the screen. }}
 	 */
 	tpos = position(TOP);
-	if (tpos != NULL_POSITION && pos < tpos)
-	{
-		POSITION npos = pos;
+	if (tpos != NULL_POSITION && pos < tpos) {
+		off_t npos = pos;
 		/*
 		 * Note that we can't forw_line() past tpos here,
 		 * so there should be no EOI at this stage.
@@ -515,8 +450,7 @@ jump_loc(pos)
 		for (nline = 0;  npos < tpos && nline < sc_height - 1;  nline++)
 			npos = forw_line(npos);
 
-		if (npos < tpos)
-		{
+		if (npos < tpos) {
 			/*
 			 * More than a screenful back.
 			 */
@@ -535,8 +469,8 @@ jump_loc(pos)
 	/*
 	 * Remember where we were; clear and paint the screen.
 	 */
-  	lastmark();
-  	prepaint(pos);
+	lastmark();
+	prepaint(pos);
 }
 
 /*
@@ -545,12 +479,11 @@ jump_loc(pos)
  */
 #define	NMARKS		(27)		/* 26 for a-z plus one for quote */
 #define	LASTMARK	(NMARKS-1)	/* For quote */
-static POSITION marks[NMARKS];
+static off_t marks[NMARKS];
 
 /*
  * Initialize the mark table to show no marks are set.
  */
-	public void
 init_mark()
 {
 	int i;
@@ -577,7 +510,6 @@ badmark(c)
 /*
  * Set a mark.
  */
-	public void
 setmark(c)
 	int c;
 {
@@ -586,7 +518,6 @@ setmark(c)
 	marks[c-'a'] = position(TOP);
 }
 
-	public void
 lastmark()
 {
 	marks[LASTMARK] = position(TOP);
@@ -595,11 +526,10 @@ lastmark()
 /*
  * Go to a previously set mark.
  */
-	public void
 gomark(c)
 	int c;
 {
-	POSITION pos;
+	off_t pos;
 
 	if (c == '\'')
 		pos = marks[LASTMARK];
@@ -620,7 +550,6 @@ gomark(c)
  * back_scroll, because the default case depends on sc_height and
  * top_scroll, as well as back_scroll.
  */
-	public int
 get_back_scroll()
 {
 	if (back_scroll >= 0)
@@ -634,23 +563,22 @@ get_back_scroll()
  * Search for the n-th occurence of a specified pattern, 
  * either forward or backward.
  */
-	public void
 search(search_forward, pattern, n, wantmatch)
 	register int search_forward;
 	register char *pattern;
 	register int n;
 	int wantmatch;
 {
-	POSITION pos, linepos;
+	off_t pos, linepos;
 	register char *p;
 	register char *q;
 	int linenum;
 	int linematch;
-#if RECOMP
+#ifdef RECOMP
 	char *re_comp();
 	char *errmsg;
 #else
-#if REGCMP
+#ifdef REGCMP
 	char *regcmp();
 	static char *cpattern = NULL;
 #else
@@ -660,17 +588,15 @@ search(search_forward, pattern, n, wantmatch)
 #endif
 #endif
 
+	/*
+	 * For a caseless search, convert any uppercase in the pattern to
+	 * lowercase.
+	 */
 	if (caseless && pattern != NULL)
-	{
-		/*
-		 * For a caseless search, convert any uppercase
-		 * in the pattern to lowercase.
-		 */
-		for (p = pattern;  *p != '\0';  p++)
-			if (*p >= 'A' && *p <= 'Z')
-				*p += 'a' - 'A';
-	}
-#if RECOMP
+		for (p = pattern;  *p;  p++)
+			if (isupper(*p))
+				*p = tolower(*p);
+#ifdef RECOMP
 
 	/*
 	 * (re_comp handles a null pattern internally, 
@@ -679,10 +605,10 @@ search(search_forward, pattern, n, wantmatch)
 	if ((errmsg = re_comp(pattern)) != NULL)
 	{
 		error(errmsg);
-		return;
+		return(0);
 	}
 #else
-#if REGCMP
+#ifdef REGCMP
 	if (pattern == NULL || *pattern == '\0')
 	{
 		/*
@@ -692,7 +618,7 @@ search(search_forward, pattern, n, wantmatch)
 		if (cpattern == NULL)
 		{
 			error("No previous regular expression");
-			return;
+			return(0);
 		}
 	} else
 	{
@@ -703,7 +629,7 @@ search(search_forward, pattern, n, wantmatch)
 		if ((s = regcmp(pattern, 0)) == NULL)
 		{
 			error("Invalid pattern");
-			return;
+			return(0);
 		}
 		if (cpattern != NULL)
 			free(cpattern);
@@ -718,7 +644,7 @@ search(search_forward, pattern, n, wantmatch)
 		if (last_pattern == NULL)
 		{
 			error("No previous regular expression");
-			return;
+			return(0);
 		}
 		pattern = last_pattern;
 	} else
@@ -733,39 +659,20 @@ search(search_forward, pattern, n, wantmatch)
 	 * Figure out where to start the search.
 	 */
 
-	if (position(TOP) == NULL_POSITION)
-	{
+	if (position(TOP) == NULL_POSITION) {
 		/*
-		 * Nothing is currently displayed.
-		 * Start at the beginning of the file.
-		 * (This case is mainly for first_cmd searches,
-		 * for example, "+/xyz" on the command line.)
+		 * Nothing is currently displayed.  Start at the beginning
+		 * of the file.  (This case is mainly for searches from the
+		 * command line.
 		 */
-		pos = (POSITION)0;
-	} else if (!search_forward)
-	{
+		pos = (off_t)0;
+	} else if (!search_forward) {
 		/*
 		 * Backward search: start just before the top line
 		 * displayed on the screen.
 		 */
 		pos = position(TOP);
-	} else if (how_search == 0)
-	{
-		/*
-		 * Start at the second real line displayed on the screen.
-		 */
-		pos = position(TOP);
-		do
-			pos = forw_raw_line(pos);
-		while (pos < position(TOP+1));
-	} else if (how_search == 1)
-	{
-		/*
-		 * Start just after the bottom line displayed on the screen.
-		 */
-		pos = position(BOTTOM_PLUS_ONE);
-	} else
-	{
+	} else {
 		/*
 		 * Start at the second screen line displayed on the screen.
 		 */
@@ -778,7 +685,7 @@ search(search_forward, pattern, n, wantmatch)
 		 * Can't find anyplace to start searching from.
 		 */
 		error("Nothing to search");
-		return;
+		return(0);
 	}
 
 	linenum = find_linenum(pos);
@@ -793,7 +700,7 @@ search(search_forward, pattern, n, wantmatch)
 			/*
 			 * A signal aborts the search.
 			 */
-			return;
+			return(0);
 
 		if (search_forward)
 		{
@@ -823,7 +730,7 @@ search(search_forward, pattern, n, wantmatch)
 			 * We hit EOF/BOF without a match.
 			 */
 			error("Pattern not found");
-			return;
+			return(0);
 		}
 
 		/*
@@ -834,39 +741,36 @@ search(search_forward, pattern, n, wantmatch)
 		if (linenums)
 			add_lnum(linenum, pos);
 
+		/*
+		 * If this is a caseless search, convert uppercase in the
+		 * input line to lowercase.
+		 */
 		if (caseless)
-		{
-			/*
-			 * If this is a caseless search, convert 
-			 * uppercase in the input line to lowercase.
-			 * While we're at it, remove any backspaces
-			 * along with the preceeding char.
-			 * This allows us to match text which is 
-			 * underlined or overstruck.
-			 */
-			for (p = q = line;  *p != '\0';  p++, q++)
-			{
-				if (*p >= 'A' && *p <= 'Z')
-					/* Convert uppercase to lowercase. */
-					*q = *p + 'a' - 'A';
-				else if (q > line && *p == '\b')
-					/* Delete BS and preceeding char. */
-					q -= 2;
-				else
-					/* Otherwise, just copy. */
-					*q = *p;
-			}
-		}
+			for (p = q = line;  *p;  p++, q++)
+				*q = isupper(*p) ? tolower(*p) : *p;
+
+		/*
+		 * Remove any backspaces along with the preceeding char.
+		 * This allows us to match text which is underlined or
+		 * overstruck.
+		 */
+		for (p = q = line;  *p;  p++, q++)
+			if (q > line && *p == '\b')
+				/* Delete BS and preceeding char. */
+				q -= 2;
+			else
+				/* Otherwise, just copy. */
+				*q = *p;
 
 		/*
 		 * Test the next line to see if we have a match.
 		 * This is done in a variety of ways, depending
 		 * on what pattern matching functions are available.
 		 */
-#if REGCMP
+#ifdef REGCMP
 		linematch = (regex(cpattern, line) != NULL);
 #else
-#if RECOMP
+#ifdef RECOMP
 		linematch = (re_exec(line) == 1);
 #else
 		linematch = match(pattern, line);
@@ -884,17 +788,17 @@ search(search_forward, pattern, n, wantmatch)
 			 */
 			break;
 	}
-
 	jump_loc(linepos);
+	return(1);
 }
 
-#if (!REGCMP) && (!RECOMP)
+#if !defined(REGCMP) && !defined(RECOMP)
 /*
  * We have neither regcmp() nor re_comp().
  * We use this function to do simple pattern matching.
  * It supports no metacharacters like *, etc.
  */
-	static int
+static
 match(pattern, buf)
 	char *pattern, *buf;
 {

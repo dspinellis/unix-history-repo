@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,14 +33,15 @@ static char sccsid[] = "@(#)os.c	5.8 (Berkeley) %G%";
  * Unix features are present.
  */
 
-#include <stdio.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <signal.h>
 #include <setjmp.h>
-#include "less.h"
+#include <stdio.h>
+#include <less.h>
 
-char *getenv();
-
-public int reading;
+int reading;
 
 extern int screen_trashed;
 
@@ -50,13 +51,12 @@ static jmp_buf read_label;
  * Pass the specified command to a shell to be executed.
  * Like plain "system()", but handles resetting terminal modes, etc.
  */
-	public void
 lsystem(cmd)
 	char *cmd;
 {
 	int inp;
 	char cmdbuf[256];
-	char *shell;
+	char *shell, *getenv();
 
 	/*
 	 * Print the command which is to be executed,
@@ -90,9 +90,9 @@ lsystem(cmd)
 	 * even if less's standard input is coming from a pipe.
 	 */
 	inp = dup(0);
-	close(0);
-	if (open("/dev/tty", 0) < 0)
-		dup(inp);
+	(void)close(0);
+	if (open("/dev/tty", O_RDONLY, 0) < 0)
+		(void)dup(inp);
 
 	/*
 	 * Pass the command to the system to be executed.
@@ -113,14 +113,14 @@ lsystem(cmd)
 	if (*cmd == '\0')
 		cmd = "sh";
 
-	system(cmd);
+	(void)system(cmd);
 
 	/*
 	 * Restore standard input, reset signals, raw mode, etc.
 	 */
-	close(0);
-	dup(inp);
-	close(inp);
+	(void)close(0);
+	(void)dup(inp);
+	(void)close(inp);
 
 	init_signals(1);
 	raw_mode(1);
@@ -140,7 +140,6 @@ lsystem(cmd)
  * A call to intread() from a signal handler will interrupt
  * any pending iread().
  */
-	public int
 iread(fd, buf, len)
 	int fd;
 	char *buf;
@@ -163,19 +162,10 @@ iread(fd, buf, len)
 	return (n);
 }
 
-	public void
 intread()
 {
-	sigsetmask(0L);
+	(void)sigsetmask(0L);
 	longjmp(read_label, 1);
-}
-
-	public long
-get_time()
-{
-	time_t time();
-
-	return(time((long *)NULL));
 }
 
 /*
@@ -185,15 +175,15 @@ get_time()
  */
 FILE *popen();
 
-	public char *
+char *
 glob(filename)
 	char *filename;
 {
 	FILE *f;
 	char *p;
 	int ch;
-	char *cmd, *malloc();
-	static char buffer[FILENAME];
+	char *cmd, *malloc(), *getenv();
+	static char buffer[MAXPATHLEN];
 
 	if (filename[0] == '#')
 		return (filename);
@@ -234,76 +224,45 @@ glob(filename)
 		*p = ch;
 	}
 	*p = '\0';
-	pclose(f);
-	return (buffer);
+	(void)pclose(f);
+	return(buffer);
 }
 
-/*
- * Returns NULL if the file can be opened and
- * is an ordinary file, otherwise an error message
- * (if it cannot be opened or is a directory, etc.)
- */
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-	public char *
+char *
 bad_file(filename, message, len)
-	char *filename;
-	char *message;
-	unsigned int len;
+	char *filename, *message;
+	u_int len;
 {
+	extern int errno;
 	struct stat statbuf;
-	char *strcat();
+	char *strcat(), *strerror();
 
-	if (stat(filename, &statbuf) < 0)
-		return (errno_message(filename, message, len));
-
-	if ((statbuf.st_mode & S_IFMT) == S_IFDIR)
-	{
+	if (stat(filename, &statbuf) < 0) {
+		(void)sprintf(message, "%s: %s", filename, strerror(errno));
+		return(message);
+	}
+	if ((statbuf.st_mode & S_IFMT) == S_IFDIR) {
 		static char is_dir[] = " is a directory";
-		strtcpy(message, filename, len-sizeof(is_dir)-1);
+
+		strtcpy(message, filename, (int)(len-sizeof(is_dir)-1));
 		(void)strcat(message, is_dir);
-		return (message);
+		return(message);
 	}
-	if ((statbuf.st_mode & S_IFMT) != S_IFREG)
-	{
-		static char not_reg[] = " is not a regular file";
-		strtcpy(message, filename, len-sizeof(not_reg)-1);
-		(void)strcat(message, not_reg);
-		return (message);
-	}
-	return (NULL);
+	return((char *)NULL);
 }
 
 /*
- * errno_message: Return an error message based on the value of "errno".
- * okreadfail: Return true if the previous failure of a read
- *	(on the input tty) should be considered ok.
+ * Copy a string, truncating to the specified length if necessary.
+ * Unlike strncpy(), the resulting string is guaranteed to be null-terminated.
  */
-
-extern char *sys_errlist[];
-extern int sys_nerr;
-extern int errno;
-
-	public char *
-errno_message(filename, message, len)
-	char *filename;
-	char *message;
-	unsigned int len;
+static
+strtcpy(to, from, len)
+	char *to, *from;
+	int len;
 {
-	char *p;
-	char msg[16];
+	char *strncpy();
 
-	if (errno < sys_nerr)
-		p = sys_errlist[errno];
-	else
-	{
-		(void)sprintf(msg, "Error %d", errno);
-		p = msg;
-	}
-	strtcpy(message, filename, len-strlen(p)-3);
-	(void)strcat(message, ": ");
-	(void)strcat(message, p);
-	return (message);
+	(void)strncpy(to, from, (int)len);
+	to[len-1] = '\0';
 }
+

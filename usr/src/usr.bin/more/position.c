@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)position.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)position.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,13 +31,13 @@ static char sccsid[] = "@(#)position.c	5.2 (Berkeley) %G%";
  *    and just change a couple of pointers. }}
  */
 
-#include "less.h"
-#include "position.h"
+#include <sys/types.h>
+#include <less.h>
 
 #define	NPOS	100		/* {{ sc_height must be less than NPOS }} */
-static POSITION table[NPOS];	/* The position table */
+static off_t table[NPOS];	/* The position table */
 
-extern int sc_width, sc_height;
+extern int sc_height;
 
 /*
  * Return the starting file position of a line displayed on the screen.
@@ -48,7 +48,7 @@ extern int sc_width, sc_height;
  *	the bottom line on the screen
  *	the line after the bottom line on the screen
  */
-	public POSITION
+off_t
 position(where)
 	int where;
 {
@@ -69,9 +69,8 @@ position(where)
 /*
  * Add a new file position to the bottom of the position table.
  */
-	public void
 add_forw_pos(pos)
-	POSITION pos;
+	off_t pos;
 {
 	register int i;
 
@@ -86,9 +85,8 @@ add_forw_pos(pos)
 /*
  * Add a new file position to the top of the position table.
  */
-	public void
 add_back_pos(pos)
-	POSITION pos;
+	off_t pos;
 {
 	register int i;
 
@@ -103,7 +101,6 @@ add_back_pos(pos)
 /*
  * Initialize the position table, done whenever we clear the screen.
  */
-	public void
 pos_clear()
 {
 	register int i;
@@ -117,9 +114,8 @@ pos_clear()
  * Check the position table to see if the position falls within its range.
  * Return the position table entry if found, -1 if not.
  */
-	public int
 onscreen(pos)
-	POSITION pos;
+	off_t pos;
 {
 	register int i;
 

@@ -18,16 +18,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * High level routines dealing with the output to the screen.
  */
 
-#include "less.h"
+#include <stdio.h>
+#include <less.h>
 
-public int errmsgs;	/* Count of messages displayed by error() */
+int errmsgs;	/* Count of messages displayed by error() */
 
 extern int sigs;
 extern int sc_width, sc_height;
@@ -35,16 +36,13 @@ extern int ul_width, ue_width;
 extern int so_width, se_width;
 extern int bo_width, be_width;
 extern int tabstop;
-extern int twiddle;
 extern int screen_trashed;
 extern int any_display;
 extern char *line;
-extern char *first_cmd;
 
 /*
  * Display the line which is in the line buffer.
  */
-	public void
 put_line()
 {
 	register char *p;
@@ -62,7 +60,7 @@ put_line()
 	}
 
 	if (line == NULL)
-		line = (twiddle) ? "~" : "";
+		line = "";
 
 	column = 0;
 	for (p = line;  *p != '\0';  p++)
@@ -101,7 +99,7 @@ put_line()
 			{
 				/*
 				 * Control characters arrive here as the
-				 * normal character [carat_char(c)] with
+				 * normal character [CARAT_CHAR(c)] with
 				 * the 0200 bit set.  See pappend().
 				 */
 				putchr('^');
@@ -118,37 +116,12 @@ put_line()
 		putchr('\n');
 }
 
-/*
- * Is a given character a "control" character?
- * {{ ASCII DEPENDENT }}
- */
-	public int
-control_char(c)
-	int c;
-{
-	return (c < ' ' || c == '\177');
-}
-
-/*
- * Return the printable character used to identify a control character
- * (printed after a carat; e.g. '\3' => "^C").
- * {{ ASCII DEPENDENT }}
- */
-	public int
-carat_char(c)
-	int c;
-{
-	return ((c == '\177') ? '?' : (c | 0100));
-}
-
-
 static char obuf[1024];
 static char *ob = obuf;
 
 /*
  * Flush buffered output.
  */
-	public void
 flush()
 {
 	register int n;
@@ -164,7 +137,6 @@ flush()
 /*
  * Output a character.
  */
-	public void
 putchr(c)
 	int c;
 {
@@ -176,7 +148,6 @@ putchr(c)
 /*
  * Output a string.
  */
-	public void
 putstr(s)
 	register char *s;
 {
@@ -191,33 +162,26 @@ putstr(s)
 
 static char return_to_continue[] = "  (press RETURN)";
 
-	public void
 error(s)
 	char *s;
 {
-	register int c;
-	static char buf[2];
-
-	errmsgs++;
-	if (!any_display)
-	{
+	++errmsgs;
+	if (!any_display) {
 		/*
-		 * Nothing has been displayed yet.
-		 * Output this message on error output (file
-		 * descriptor 2) and don't wait for a keystroke
-		 * to continue.
+		 * Nothing has been displayed yet.  Output this message on
+		 * error output (file descriptor 2) and don't wait for a
+		 * keystroke to continue.
 		 *
-		 * This has the desirable effect of producing all
-		 * error messages on error output if standard output
-		 * is directed to a file.  It also does the same if
-		 * we never produce any real output; for example, if
-		 * the input file(s) cannot be opened.  If we do
-		 * eventually produce output, code in edit() makes
-		 * sure these messages can be seen before they are
-		 * overwritten or scrolled away.
+		 * This has the desirable effect of producing all error
+		 * messages on error output if standard output is directed
+		 * to a file.  It also does the same if we never produce
+		 * any real output; for example, if the input file(s) cannot
+		 * be opened.  If we do eventually produce output, code in
+		 * edit() makes sure these messages can be seen before they
+		 * are overwritten or scrolled away.
 		 */
-		write(2, s, strlen(s));
-		write(2, "\n", 1);
+		(void)write(2, s, strlen(s));
+		(void)write(2, "\n", 1);
 		return;
 	}
 
@@ -228,12 +192,7 @@ error(s)
 	putstr(return_to_continue);
 	so_exit();
 
-	c = getchr();
-	if (c != '\n' && c != '\r' && c != ' ' && c != READ_INTR)
-	{
-		buf[0] = c;
-		first_cmd = buf;
-	}
+	(void)getchr();
 	lower_left();
 
 	if (strlen(s) + sizeof(return_to_continue) + 
@@ -244,17 +203,14 @@ error(s)
 		 *    in which case we just hammered on the right margin. }}
 		 */
 		repaint();
-
 	flush();
 }
 
 static char intr_to_abort[] = "... (interrupt to abort)";
 
-	public void
 ierror(s)
 	char *s;
 {
-
 	lower_left();
 	clear_eol();
 	so_enter();
