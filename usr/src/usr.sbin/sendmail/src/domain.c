@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.37 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.38 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.37 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.38 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -262,15 +262,11 @@ loop:
 	}
 
 	/*
-	**  We do at least one level of search if
-	**	- there is no dot and RES_DEFNAME is set, or
-	**	- there is at least one dot, there is no trailing dot,
-	**	  and RES_DNSRCH is set.
+	**  We assume that RES_DEFNAMES and RES_DNSRCH are set -- if we
+	**  don't want this behaviour, don't use $[ ... $] at all!
 	*/
 
-	if (ret < 0 &&
-		((n == 0 && _res.options & RES_DEFNAMES) ||
-		 (n > 0 && *--cp != '.' && _res.options & RES_DNSRCH)))
+	if (ret < 0 && (n == 0 || (n > 0 && *--cp != '.')))
 	{
 		for (domain = _res.dnsrch; *domain; domain++)
 		{

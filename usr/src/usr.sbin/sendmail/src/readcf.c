@@ -7,12 +7,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <sys/stat.h>
 # include <unistd.h>
+#ifdef NAMED_BIND
+# include <arpa/nameser.h>
+# include <resolv.h>
+#endif
 
 /*
 **  READCF -- read control file.
@@ -768,11 +772,35 @@ printrules()
 
 static BITMAP	StickyOpt;		/* set if option is stuck */
 
+
+#ifdef NAMED_BIND
+
+struct resolverflags
+{
+	char	*rf_name;	/* name of the flag */
+	long	rf_bits;	/* bits to set/clear */
+} ResolverFlags[] =
+{
+	"debug",	RES_DEBUG,
+	"aaonly",	RES_AAONLY,
+	"usevc",	RES_USEVC,
+	"primary",	RES_PRIMARY,
+	"igntc",	RES_IGNTC,
+	"recurse",	RES_RECURSE,
+	"defnames",	RES_DEFNAMES,
+	"stayopen",	RES_STAYOPEN,
+	"dnsrch",	RES_DNSRCH,
+	NULL,		0
+};
+
+#endif
+
 setoption(opt, val, sticky)
 	char opt;
 	char *val;
 	bool sticky;
 {
+	register char *p;
 	extern bool atobool();
 	extern time_t convtime();
 	extern int QueueLA;
@@ -908,7 +936,44 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'I':		/* use internet domain name server */
-		UseNameServer = atobool(val);
+#ifdef NAMED_BIND
+		UseNameServer = TRUE;
+		for (p = val; *p != 0; )
+		{
+			bool clearmode;
+			char *q;
+			struct resolverflags *rfp;
+
+			while (*p == ' ')
+				p++;
+			if (*p == '\0')
+				break;
+			clearmode = FALSE;
+			if (*p == '-')
+				clearmode = TRUE;
+			else if (*p != '+')
+				p--;
+			p++;
+			q = p;
+			while (*p != '\0' && !isspace(*p))
+				p++;
+			if (*p != '\0')
+				*p++ = '\0';
+			for (rfp = ResolverFlags; rfp->rf_name != NULL; rfp++)
+			{
+				if (strcasecmp(q, rfp->rf_name) == 0)
+					break;
+			}
+			if (clearmode)
+				_res.options &= ~rfp->rf_bits;
+			else
+				_res.options |= rfp->rf_bits;
+		}
+		if (tTd(8, 2))
+			printf("_res.options = %x\n", _res.options);
+#else
+		usrerr("name server (I option) specified but BIND not compiled in");
+#endif
 		break;
 
 	  case 'i':		/* ignore dot lines in message */
