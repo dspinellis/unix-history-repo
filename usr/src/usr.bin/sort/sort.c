@@ -1,11 +1,11 @@
-static	char *sccsid = "@(#)sort.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.12 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define	L	1024
+#define	L	2048
 #define	N	7
 #define	C	20
 #ifndef pdp11
