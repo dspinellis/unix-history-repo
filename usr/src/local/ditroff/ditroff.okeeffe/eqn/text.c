@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)text.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)text.c	2.2 (CWI) 87/04/01";
 #endif lint
 #include "e.h"
-#include "e.def"
+#include "y.tab.h"
 #include <ctype.h>
 
 #define	CSSIZE	400
@@ -139,9 +139,9 @@ trans(c, p1)
 		}
 		break;
 	case '/':
-		if (rf == ITAL)
-			shim();
-		name4('s','l');
+		halfshim();
+		cadd('/');
+		halfshim();
 		break;
 	case '~': case ' ':
 		shim(); shim();

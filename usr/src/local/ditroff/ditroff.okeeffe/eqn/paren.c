@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)paren.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)paren.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
 
@@ -8,6 +8,7 @@ paren(leftc, p1, rightc)
 {
 	int n, m, j;
 	float h1, b1, v;
+	extern float Parenbase;
 
 	h1 = eht[p1];
 	b1 = ebase[p1];
@@ -24,7 +25,7 @@ paren(leftc, p1, rightc)
 		m = n-3;
 	}
 	eht[yyval] = EM((float) n, ps);
-	ebase[yyval] = eht[yyval]/2 - EM(0.4, ps);
+	ebase[yyval] = eht[yyval]/2 - EM(Parenbase, ps);
 	/* v = REL(-ebase[yyval] + (eht[yyval]-h1)/2 + b1, ps); */
 	v = 0;	/* in other words, don't shift it at all */
 	printf(".ds %d \\|", yyval);

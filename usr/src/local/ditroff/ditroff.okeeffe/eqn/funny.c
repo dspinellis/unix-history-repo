@@ -1,8 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)funny.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)funny.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
-# include "e.def"
+# include "y.tab.h"
+
+extern int Funnyps;
+extern float Funnyht, Funnybase;
+extern char *Sum, *Union, *Inter, *Prod;
 
 funny(n)
 	int n;
@@ -12,19 +16,19 @@ funny(n)
 	yyval = salloc();
 	switch(n) {
 	case SUM:
-		f = "\\(*S"; break;
+		f = Sum; break;
 	case UNION:
-		f = "\\(cu"; break;
+		f = Union; break;
 	case INTER:	/* intersection */
-		f = "\\(ca"; break;
+		f = Inter; break;
 	case PROD:
-		f = "\\(*P"; break;
+		f = Prod; break;
 	default:
 		error(FATAL, "funny type %d in funny", n);
 	}
-	printf(".ds %d \\v'.3m'\\s+5%s\\s-5\\v'-.3m'\n", yyval, f);
-	eht[yyval] = EM(1.0, ps+5) - EM(0.2, ps);
-	ebase[yyval] = EM(0.3, ps);
+	printf(".ds %d %s\n", yyval, f);
+	eht[yyval] = EM(1.0, ps+Funnyps) - EM(Funnyht, ps);
+	ebase[yyval] = EM(Funnybase, ps);
 	eps[yyval] = ps;
 	dprintf(".\tS%d <- %s; h=%g b=%g\n", 
 		yyval, f, eht[yyval], ebase[yyval]);

@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)move.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)move.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
-# include "e.def"
+# include "y.tab.h"
 
 move(dir, amt, p)
 	int dir, amt, p;

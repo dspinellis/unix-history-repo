@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)size.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)size.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
 # include <ctype.h>
@@ -18,8 +18,11 @@ setsize(p)	/* set size as found in p */
 		if (szstack[nszstack-1] != 0)
 			szstack[nszstack] = ps;
 	} else if (isdigit(*p)) {
+		if (szstack[nszstack-1] == 0)
+			printf(".nr %d \\n(.s\n", 99-nszstack);
+		else
+			printf(".nr %d %d\n", 99-nszstack, ps);
 		szstack[nszstack] = ps = atoi(p);
-		printf(".nr %d \\n(.s\n", 99-nszstack);
 	} else {
 		error(!FATAL, "illegal size %s ignored", p);
 	}
@@ -34,8 +37,7 @@ size(p1, p2)
 	dprintf(".\tS%d <- \\s%d %d \\s%d; b=%g, h=%g\n", 
 		yyval, ps, p2, p1, ebase[yyval], eht[yyval]);
 	if (szstack[nszstack] != 0) {
-		/* sizes ought to be generated from macro as \s(dd */
-		printf(".ds %d \\s%d\\*(%d\\s\\n(%d\n", yyval, ps, p2, 99-nszstack);
+		printf(".ds %d %s\\*(%d\\s\\n(%d\n", yyval, ABSPS(ps), p2, 99-nszstack);
 	} else
 		printf(".ds %d %s\\*(%d%s\n", yyval, DPS(p1,ps), p2, DPS(ps,p1));
 	nszstack--;
@@ -64,7 +66,7 @@ globsize()
 	}
 	yyval = eqnreg = 0;
 	ps = gsize;
-	if (gsize < 12)		/* sub and sup size change */
+	if (gsize < 12 && !dps_set)		/* sub and sup size change */
 		deltaps = gsize / 3;
 	else if (gsize < 20)
 		deltaps = gsize / 4;

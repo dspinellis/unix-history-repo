@@ -1,14 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)pile.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)pile.c	2.2 (CWI) 87/04/01";
 #endif lint
 #include "e.h"
-#include "e.def"
+#include "y.tab.h"
 
 pile(oct)
 	int oct;
 {
 	int i, nlist, nlist2, mid;
-	float bi, hi, h, b, gap;
+	float bi, hi, h, b, gap, sb;
+	extern float Pilegap, Pilebase;
 	int type, p1, p2;
 
 	yyval = salloc();
@@ -21,7 +22,7 @@ pile(oct)
 	else if (type == COL)
 		gap = 0;
 	else
-		gap = EM(0.4, ps);	/* 0.4 m between LCOL, etc. */
+		gap = EM(Pilegap, ps);	/* 0.4 m between LCOL, etc. */
 	nlist = p2 - p1;
 	nlist2 = (nlist+1)/2;
 	mid = p1 + nlist2 - 1;
@@ -33,7 +34,7 @@ pile(oct)
 	for (i = p2-1; i > mid; i--)
 		b += eht[lp[i]] + gap;
 	ebase[yyval] = (nlist%2) ? b + ebase[lp[mid]]
-			: b - EM(0.5, ps) - gap;
+			: b - EM(Pilebase, ps) - gap;
 	if (dbg) {
 		printf(".\tS%d <- %d pile of:", yyval, type);
 		for (i = p1; i < p2; i++)
@@ -49,28 +50,29 @@ pile(oct)
 	}
 	printf(".ds %d \\v'%gm'\\h'%du*\\n(%du'\\\n", yyval, REL(ebase[yyval],ps), 
 		type==RCOL ? 1 : 0, yyval);
+	sb = 0;		/* sum of box hts */
 	for (i = p2-1; i >= p1; i--) {
-		hi = eht[lp[i]]; 
-		bi = ebase[lp[i]];
-	switch (type) {
-	case LCOL:
-		printf("\\v'%gm'\\*(%d\\h'-\\n(%du'\\v'0-%gm'\\\n", 
-			REL(-bi,ps), lp[i], lp[i], REL(hi-bi+gap,ps));
-		continue;
-	case RCOL:
-		printf("\\v'%gm'\\h'-\\n(%du'\\*(%d\\v'0-%gm'\\\n", 
-			REL(-bi,ps), lp[i], lp[i], REL(hi-bi+gap,ps));
-		continue;
-	case CCOL:
-	case COL:
-		printf("\\v'%gm'\\h'\\n(%du-\\n(%du/2u'\\*(%d", 
-			REL(-bi,ps), yyval, lp[i], lp[i]);
-		printf("\\h'-\\n(%du-\\n(%du/2u'\\v'0-%gm'\\\n", 
-			yyval, lp[i], REL(hi-bi+gap,ps));
-		continue;
+		bi = sb + ebase[lp[i]];
+		switch (type) {
+		case LCOL:
+			printf("\\v'%gm'\\*(%d\\h'-\\n(%du'\\v'%gm'\\\n", 
+				REL(-bi,ps), lp[i], lp[i], REL(bi,ps));
+			break;
+		case RCOL:
+			printf("\\v'%gm'\\h'-\\n(%du'\\*(%d\\v'%gm'\\\n", 
+				REL(-bi,ps), lp[i], lp[i], REL(bi,ps));
+			break;
+		case CCOL:
+		case COL:
+			printf("\\v'%gm'\\h'\\n(%du-\\n(%du/2u'\\*(%d", 
+				REL(-bi,ps), yyval, lp[i], lp[i]);
+			printf("\\h'-\\n(%du-\\n(%du/2u'\\v'%gm'\\\n", 
+				yyval, lp[i], REL(bi,ps));
+			break;
 		}
+		sb += eht[lp[i]] + gap;
 	}
-	printf("\\v'%gm'\\h'%du*\\n(%du'\n", REL(eht[yyval]-ebase[yyval]+gap,ps), 
+	printf("\\v'%gm'\\h'%du*\\n(%du'\n", REL(-ebase[yyval],ps), 
 		type!=RCOL ? 1 : 0, yyval);
 	for (i = p1; i < p2; i++)
 		sfree(lp[i]);

@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.2 (CWI) 86/04/09";
+static char sccsid[] = "@(#)main.c	2.3 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
 #define	MAXLINE	3600	/* maximum input line */
 
 char	in[MAXLINE];	/* input buffer */
-int	eqnexit();
 int	noeqn;
 char	*cmdname;
 
@@ -13,16 +12,7 @@ main(argc,argv)
 	int argc;
 	char *argv[];
 {
-	eqnexit(eqn(argc, argv));
-}
-
-eqnexit(n) {
-#ifdef gcos
-	if (n)
-		fprintf(stderr, "run terminated due to eqn error\n");
-	exit(0);
-#endif
-	exit(n);
+	exit(eqn(argc, argv));
 }
 
 eqn(argc,argv)
@@ -30,7 +20,7 @@ eqn(argc,argv)
 	char *argv[];
 {
 	int i, type;
-	char *p, *getenv();
+	char *p, *getenv(), buf[20];
 
 	cmdname = argv[0];
 	if (p = getenv("TYPESETTER"))
@@ -46,23 +36,22 @@ eqn(argc,argv)
 				righteq = argv[1][3];
 			}
 			break;
-		case 's': gsize = atoi(&argv[1][2]); break;
-		case 'p': deltaps = atoi(&argv[1][2]); break;
-		case 'r': res = atoi(&argv[1][2]); break;
+		case 's': szstack[0] = gsize = atoi(&argv[1][2]); break;
+		case 'p': deltaps = atoi(&argv[1][2]); dps_set = 1; break;
 		case 'm': minsize = atoi(&argv[1][2]); break;
 		case 'f': strcpy(ftstack[0].name,&argv[1][2]); break;
 		case 'e': noeqn++; break;
-		case 'T':
-			typesetter = &argv[1][2];
-			break;
+		case 'T': typesetter = &argv[1][2]; break;
 		default:
-			dbg = 1;
+			fprintf(stderr, "%s: unknown option %s\n", cmdname, argv[1]);
+			break;
 		}
 		argc--;
 		argv++;
 	}
 	settype(typesetter);
-	lookup(deftbl, strsave(typesetter), strsave(typesetter));
+	sprintf(buf, "\"%s\"", typesetter);
+	lookup(deftbl, strsave(typesetter), strsave(buf));
 	init_tbl();	/* install other keywords in tables */
 	curfile = infile;
 	pushsrc(File, curfile);
@@ -85,25 +74,16 @@ eqn(argc,argv)
 }
 
 settype(s)	/* initialize data for particular typesetter */
-	char *s;
-{
+	char *s;	/* the minsize could profitably come from the */
+{			/* troff description file /usr/lib/font/dev.../DESC.out */
 	if (strcmp(s, "202") == 0)
-		{ res = 972; minsize = 5; ttype = DEV202; }
+		{ minsize = 5; ttype = DEV202; }
 	else if (strcmp(s, "aps") == 0)
-		{ res = 723; minsize = 5; ttype = DEVAPS; }
+		{ minsize = 5; ttype = DEVAPS; }
 	else if (strcmp(s, "cat") == 0)
-		{ res = 432; minsize = 6; ttype = DEVCAT; }
-	else if (strcmp(s, "har") == 0)
-		{ res = 1445; minsize = 4; ttype = DEVHAR; }
-	else if (strcmp(s, "ver") == 0)
-		{ res = 200; minsize = 6; ttype = DEVVER; }
-	else if (strcmp(s, "psc") == 0)
-		{	/* Postscript printer (Laserwriter) using transcript */
-			res = 576;	/* at least, troff thinks so */
-			minsize = 4;	/* troff believes 2, but that's so small */
-			ttype = DEVPSC; }
+		{ minsize = 6; ttype = DEVCAT; }
 	else
-		{ res = atoi(s); minsize = 6; ttype = DEVCAT; }
+		{ minsize = 6; ttype = DEVCAT; }
 }
 
 getdata()
@@ -135,7 +115,7 @@ getdata()
 				printf(".if %gm>\\n(.v .ne %gm\n", eqnht, eqnht);
 				printf(".rn %d 10\n", eqnreg);
 				if (!noeqn)
-					printf("\\*(10\n");
+					printf("\\&\\*(10\n");
 			}
 			printf(".EN");
 			while (putchar(input()) != '\n')
@@ -213,11 +193,12 @@ putout(p1)
 	int p1;
 {
 	float before, after;
+	extern float BeforeSub, AfterSub;
 
 	dprintf(".\tanswer <- S%d, h=%g,b=%g\n",p1, eht[p1], ebase[p1]);
 	eqnht = eht[p1];
-	before = eht[p1] - ebase[p1] - 1.2;	/* leave room for sub or superscript */
-	after = ebase[p1] - 0.2;
+	before = eht[p1] - ebase[p1] - BeforeSub;	/* leave room for sub or superscript */
+	after = ebase[p1] - AfterSub;
 	if (spaceval || before > 0.01 || after > 0.01) {
 		printf(".ds %d ", p1);	/* used to be \\x'0' here:  why? */
 		if (spaceval != NULL)
@@ -273,6 +254,29 @@ nrwid(n1, p, n2)
 	int n1, p, n2;
 {
 	printf(".nr %d 0\\w'%s\\*(%d'\n", n1, DPS(gsize,p), n2);	/* 0 defends against - width */
+}
+
+char *ABSPS(dn)	/* absolute size dn in printable form \sd or \s(dd (dd >= 40) */
+	int dn;
+{
+	static char buf[100], *lb = buf;
+	char *p;
+
+	if (lb > buf + sizeof(buf) - 10)
+		lb = buf;
+	p = lb;
+	*lb++ = '\\';
+	*lb++ = 's';
+	if (dn >= 10) {		/* \s(dd only works in new troff */
+		if (dn >= 40)
+			*lb++ = '(';
+		*lb++ = dn/10 + '0';
+		*lb++ = dn%10 + '0';
+	} else {
+		*lb++ = dn + '0';
+	}
+	*lb++ = '\0';	
+	return p;
 }
 
 char *DPS(f, t)	/* delta ps (t-f) in printable form \s+d or \s-d or \s+-(dd */

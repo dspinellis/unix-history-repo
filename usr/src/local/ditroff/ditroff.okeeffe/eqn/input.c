@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)input.c	2.2 (CWI) 87/04/01";
 #endif lint
 #include <stdio.h>
 #include <ctype.h>
@@ -209,7 +209,8 @@ input()
 	}
 	if (ep >= ebuf + sizeof ebuf)
 		ep = ebuf;
-	return *ep++ = c;
+	*ep++ = c;
+	return c;
 }
 
 
@@ -260,7 +261,7 @@ error(die, s, s1, s2, s3, s4)
 		if (dbg)
 			abort();
 		else
-			eqnexit(1);
+			exit(1);
 	}
 }
 
@@ -271,6 +272,8 @@ eprint()	/* try to print context around error */
 	char *p, *q;
 	int c;
 
+	if (ep == ebuf)
+		return;				/* no context */
 	p = ep - 1;
 	if (p > ebuf && *p == '\n')
 		p--;
