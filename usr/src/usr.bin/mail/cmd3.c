@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.6 %G%";
+static char *SccsId = "@(#)cmd3.c	1.7 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -482,12 +482,7 @@ file(argv)
 	char fname[BUFSIZ];
 
 	if (argv[0] == NOSTR) {
-		if (edit)
-			printf("Reading \"%s\"", editfile);
-		else
-			printf("Reading %s's mail",
-			    rindex(mailname, '/') + 1);
-		printf("; %d message(s)\n", msgCount);
+		newfileinfo();
 		return(0);
 	}
 
