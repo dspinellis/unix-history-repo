@@ -1,0 +1,169 @@
+This file is jobs.def, from which is created jobs.c.
+It implements the builtin "jobs" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES jobs.c
+
+$BUILTIN jobs
+$FUNCTION jobs_builtin
+$DEPENDS_ON JOB_CONTROL
+$SHORT_DOC jobs [-lnp] [jobspec ...] | jobs -x command [args]
+Lists the active jobs.  The -l option lists process id's in addition
+to the normal information; the -p option lists process id's only.
+If -n is given, only processes that have changed status since the last
+notification are printed.  JOBSPEC restricts output to that job.
+If -x is given, COMMAND is run after all job specifications that appear
+in ARGS have been replaced with the process ID of that job's process group
+leader.
+$END
+
+#include "../shell.h"
+
+#if defined (JOB_CONTROL)
+#include <sys/types.h>
+#include <signal.h>
+#include "../jobs.h"
+
+extern int job_control;
+static int execute_list_with_replacements ();
+
+/* The `jobs' command.  Prints outs a list of active jobs.  If the
+   argument `-l' is given, then the process id's are printed also.
+   If the argument `-p' is given, print the process group leader's
+   pid only.  If `-n' is given, only processes that have changed
+   status since the last notification are printed.  If -x is given,
+   replace all job specs with the pid of the appropriate process
+   group leader and execute the command. */
+int
+jobs_builtin (list)
+     WORD_LIST *list;
+{
+  int form = JLIST_STANDARD;
+
+  if (!job_control)
+    return (EXECUTION_SUCCESS);
+
+  while (list && (*list->word->word == '-'))
+    {
+      register char *arg = list->word->word;
+
+      if (strcmp (arg, "-l") == 0)
+	form = JLIST_LONG;
+      else if (strcmp (arg, "-p") == 0)
+	form = JLIST_PID_ONLY;
+      else if (strcmp (arg, "-n") == 0)
+	form = JLIST_CHANGED_ONLY;
+      else if (strcmp (arg, "-x") == 0)
+	{
+	  if (form != JLIST_STANDARD)
+	    {
+	      builtin_error ("Other options not allowed with `-x'");
+	      return (EXECUTION_FAILURE);
+	    }
+	  list = list->next;
+	  return (execute_list_with_replacements (list));
+	}
+      else if (strcmp (arg, "--") == 0)
+	{
+	  list = list->next;
+	  break;
+	}
+      else
+	{
+	  bad_option (list->word->word);
+	  return (EXECUTION_FAILURE);
+	}
+      list = list->next;
+    }
+
+  if (!list)
+    {
+      list_jobs (form);
+      return (EXECUTION_SUCCESS);
+    }
+
+  while (list)
+    {
+      int job;
+      sigset_t set, oset;
+
+      BLOCK_CHILD (set, oset);
+      job = get_job_spec (list);
+
+      if ((job == NO_JOB) || !jobs || !jobs[job])
+	builtin_error ("No such job %s", list->word->word);
+      else if (job != DUP_JOB)
+	list_one_job ((JOB *)NULL, form, 0, job);
+
+      UNBLOCK_CHILD (oset);
+      list = list->next;
+    }
+    return (EXECUTION_SUCCESS);
+}
+
+static int
+execute_list_with_replacements (list)
+     WORD_LIST *list;
+{
+  register WORD_LIST *l;
+  int job, result;
+
+  /* First do the replacement of job specifications with pids. */
+  for (l = list; l; l = l->next)
+    {
+      if (l->word->word[0] == '%')	/* we have a winner */
+	{
+	  extern char *itos ();
+
+	  job = get_job_spec (l);
+
+	  /* A bad job spec is not really a job spec! Pass it through. */
+	  if (job < 0 || job >= job_slots || !jobs[job])
+	    continue;
+
+	  free (l->word->word);
+	  l->word->word = itos (jobs[job]->pgrp);
+	}
+    }
+
+  /* Next make a new simple command and execute it. */
+  begin_unwind_frame ("jobs_builtin");
+  {
+    extern COMMAND *make_bare_simple_command ();
+    extern WORD_LIST *copy_word_list ();
+    extern void dispose_command ();
+    COMMAND *command = (COMMAND *)NULL;
+
+    add_unwind_protect (dispose_command, command);
+
+    command = make_bare_simple_command ();
+    command->value.Simple->words = copy_word_list (list);
+    command->value.Simple->redirects = (REDIRECT *)NULL;
+    command->flags |= CMD_INHIBIT_EXPANSION;
+    command->value.Simple->flags |= CMD_INHIBIT_EXPANSION;
+
+    result = execute_command (command);
+  }
+
+  run_unwind_frame ("jobs_builtin");
+  return (result);
+}
+#endif /* JOB_CONTROL */
+
