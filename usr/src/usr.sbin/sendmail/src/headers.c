@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.50		%G%);
+SCCSID(@(#)headers.c	3.51		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -276,6 +276,20 @@ eatheader(e)
 #endif DEBUG
 		if (bitset(H_TRACE, h->h_flags))
 			hopcnt++;
+#ifdef LOG
+		if (strcmp(h->h_field, "message-id") == 0 && LogLevel > 8)
+		{
+			char buf[MAXNAME];
+
+			p = h->h_value;
+			if (bitset(H_DEFAULT, h->h_flags))
+			{
+				expand(p, buf, &buf[sizeof buf], e);
+				p = buf;
+			}
+			syslog(LOG_INFO, "%s: message-id=%s", e->e_id, p);
+		}
+#endif LOG
 	}
 #ifdef DEBUG
 	if (tTd(32, 1))
@@ -333,6 +347,19 @@ eatheader(e)
 		define('d', newstr(arpatounix(p)), e);
 		.... so we will ignore the problem for the time being */
 	}
+
+	/*
+	**  Log collection information.
+	*/
+
+# ifdef LOG
+	if (LogLevel > 1)
+	{
+		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n",
+		       CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
+		       CurEnv->e_class);
+	}
+# endif LOG
 }
 /*
 **  PRIENCODE -- encode external priority names into internal values.

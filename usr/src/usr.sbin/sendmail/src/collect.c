@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.57		%G%);
+SCCSID(@(#)collect.c	3.58		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -220,18 +220,6 @@ maketemp(from)
 
 	if ((CurEnv->e_dfp = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
-
-	/*
-	**  Log collection information.
-	*/
-
-# ifdef LOG
-	if (LogLevel > 1)
-		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n",
-		       CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
-		       CurEnv->e_class);
-# endif LOG
-	return;
 }
 /*
 **  EATFROM -- chew up a UNIX style from line and process
