@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.13	(Berkeley)	84/02/07";
+static char sccsid[] = "@(#)main.c	3.14	(Berkeley)	85/01/14";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)main.c	3.13	(Berkeley)	84/02/07";
  */
 
 #include "restore.h"
+#include <dumprestor.h>
 #include <signal.h>
 
 int	cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
@@ -30,6 +31,7 @@ int	hflag = 1, mflag = 1;
 char	command = '\0';
 long	dumpnum = 1;
 long	volno = 0;
+long	ntrec = NTREC;
 char	*dumpmap;
 char	*clrimap;
 ino_t	maxino;
@@ -95,6 +97,21 @@ usage:
 				done(1);
 			}
 			inputdev = *argv++;
+			argc--;
+			break;
+		case 'b':
+			/*
+			 * change default tape blocksize
+			 */
+			if (argc < 1) {
+				fprintf(stderr, "missing block size\n");
+				done(1);
+			}
+			ntrec = atoi(*argv++);
+			if (ntrec <= 0) {
+				fprintf(stderr, "Block size must be a positive integer\n");
+				done(1);
+			}
 			argc--;
 			break;
 		case 's':

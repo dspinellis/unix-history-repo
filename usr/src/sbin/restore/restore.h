@@ -1,4 +1,4 @@
-/*	restore.h	3.8	83/08/11	*/
+/*	restore.h	3.9	85/01/14	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -22,6 +22,7 @@ extern char	*clrimap; 	/* map of inodes to be deleted */
 extern ino_t	maxino;		/* highest numbered inode in this file system */
 extern long	dumpnum;	/* location of the dump on this tape */
 extern long	volno;		/* current volume being read */
+extern long	ntrec;		/* number of TP_BSIZE records per tape block */
 extern time_t	dumptime;	/* time that this dump begins */
 extern time_t	dumpdate;	/* time that this dump was made */
 extern char	command;	/* opration being performed */

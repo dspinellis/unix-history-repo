@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.22	(Berkeley)	83/12/30";
+static char sccsid[] = "@(#)tape.c	3.23	(Berkeley)	85/01/14";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -16,8 +16,8 @@ static long	fssize = MAXBSIZE;
 static int	mt = -1;
 static int	pipein = 0;
 static char	*magtape;
-static int	bct = NTREC+1;
-static char	tbf[NTREC*TP_BSIZE];
+static int	bct;
+static char	*tbf;
 static union	u_spcl endoftapemark;
 static long	blksread;
 static long	tapesread;
@@ -39,6 +39,12 @@ setinput(source)
 	char *host;
 #endif RRESTORE
 
+	flsht();
+	tbf = (char *)malloc(ntrec * TP_BSIZE);
+	if (tbf == NULL) {
+		fprintf(stderr, "Cannot allocate space for tape buffer\n");
+		done(1);
+	}
 	terminal = stdin;
 #ifdef RRESTORE
 	host = source;
@@ -552,11 +558,11 @@ readtape(b)
 	long rd, newvol;
 	int cnt;
 
-	if (bct >= NTREC) {
-		for (i = 0; i < NTREC; i++)
+	if (bct >= ntrec) {
+		for (i = 0; i < ntrec; i++)
 			((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
 		bct = 0;
-		cnt = NTREC*TP_BSIZE;
+		cnt = ntrec*TP_BSIZE;
 		rd = 0;
 	getmore:
 #ifdef RRESTORE
@@ -564,10 +570,10 @@ readtape(b)
 #else
 		i = read(mt, &tbf[rd], cnt);
 #endif
-		if (i > 0 && i != NTREC*TP_BSIZE) {
+		if (i > 0 && i != ntrec*TP_BSIZE) {
 			if (!pipein)
 				panic("partial block read: %d should be %d\n",
-					i, NTREC*TP_BSIZE);
+					i, ntrec*TP_BSIZE);
 			rd += i;
 			cnt -= i;
 			if (cnt > 0)
@@ -593,7 +599,7 @@ readtape(b)
 			}
 			if (!yflag && !reply("continue"))
 				done(1);
-			i = NTREC*TP_BSIZE;
+			i = ntrec*TP_BSIZE;
 			bzero(tbf, i);
 #ifdef RRESTORE
 			if (rmtseek(i, 1) < 0)
@@ -626,7 +632,7 @@ readtape(b)
 flsht()
 {
 
-	bct = NTREC+1;
+	bct = ntrec+1;
 }
 
 closemt()
