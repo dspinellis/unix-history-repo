@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.43 1994/03/04 20:43:15 ache Exp $
+#	$Id: Makefile,v 1.44 1994/03/06 08:40:31 ache Exp $
 #
 
 SUBDIR=
@@ -81,6 +81,9 @@ world:	directories cleandist mk includes libraries tools mdec
 	cd ${.CURDIR}/share/man;		make makedb
 
 directories:
+	@echo "--------------------------------------------------------------"
+	@echo " Making directories"
+	@echo "--------------------------------------------------------------"
 	cd ${.CURDIR}/etc;			make distrib-dirs
 
 cleandist:
