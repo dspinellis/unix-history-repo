@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	6.1	83/07/29	*/
+/*	ffs_alloc.c	6.2	83/09/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -214,7 +214,7 @@ ialloc(pip, ipref, mode)
 		goto noinodes;
 	ip = iget(pip->i_dev, pip->i_fs, ino);
 	if (ip == NULL) {
-		ifree(ip, ino, 0);
+		ifree(pip, ino, 0);
 		return (NULL);
 	}
 	if (ip->i_mode) {
