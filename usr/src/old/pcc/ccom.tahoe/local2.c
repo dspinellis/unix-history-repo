@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.9 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -601,8 +601,10 @@ sconv(p, forcc)
 	 * as expected (they end up as plain mov's).
 	 */
 	if (l->in.op == REG && r->in.op == REG) {
-		if (ISUNSIGNED(r->in.type)) {		/* unsigned, mask */
-			if (r->tn.lval != l->tn.lval) {
+		if ((wfrom < wto && ISUNSIGNED(r->in.type)) ||
+		    (wto < wfrom && ISUNSIGNED(l->in.type))) {
+			/* unsigned, mask */
+			if (r->tn.rval != l->tn.rval) {
 				printf("\tandl3\t$%d,", (1<<(wto*SZCHAR))-1);
 				adrput(r);
 				putchar(',');
@@ -610,25 +612,13 @@ sconv(p, forcc)
 				printf("\tandl2\t$%d,", (1<<(wto*SZCHAR))-1);
 			adrput(l);
 		} else {				/* effect sign-extend */
-			int shift = (sizeof (int)-wto)*SZCHAR;
-			printf("\tshll\t$%d,", shift);
-			adrput(r); putchar(','); adrput(l);
-			printf("\n\tshar\t$%d,", shift);
-			adrput(l); putchar(','); adrput(l);
-			if (wfrom != sizeof (int)) {
-				/*
-				 * Must mask if result is shorter than
-				 * the width of a register (to account
-				 * for register treatment).
-				 */
-				printf("\n\tandl2\t$%d,",(1<<(wfrom*SZCHAR))-1);
-				adrput(l);
-			} else
-				forcc = 0;
+			printf("\tpushl\t"); adrput(r);
+			printf("\n\tcvt"); prtype(l);
+			printf("l\t%d(sp),", sizeof (int) - wto); adrput(l);
+			printf("\n\tmovab\t4(sp),sp");
 		}
 		/*
-		 * If condition codes are required and the last thing
-		 * we did was mask the result, then we must generate a
+		 * If condition codes are required then we must generate a
 		 * test of the appropriate type.
 		 */
 		if (forcc) {
