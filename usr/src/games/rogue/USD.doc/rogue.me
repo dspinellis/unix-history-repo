@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rogue.me	6.2 (Berkeley) %G%
+.\"	@(#)rogue.me	6.3 (Berkeley) %G%
 .\"
 .ds E \s-2<ESCAPE>\s0
 .ds R \s-2<RETURN>\s0
@@ -167,8 +167,8 @@ The number in parentheses
 is the maximum number your health points can reach.
 .ip Str \w'Level\ \ 'u
 Your current strength and maximum ever strength.
-This can be any integer less than or equal to 31,
-or greater than or equal to three.
+This can be any integer less than or equal to 99,
+or greater than or equal to 1.
 The higher the number,
 the stronger you are.
 The number in the parentheses
@@ -413,19 +413,8 @@ which you wish to remember something about,
 you can use the call command to give a name to that type of object.
 This is usually used when you figure out what a
 potion, scroll, ring, or staff is
-after you pick it up,
-or when you want to remember
-which of those swords in your pack you were wielding.
-.ip D
-Print out which things you've discovered something about.
-This command will ask you what type of thing you are interested in.
-If you type the character for a given type of object
-(\fIe.g.\fP
-.Cs !
-for potion)
-it will tell you which kinds of that type of object you've discovered
-(\fIi.e.\fP, figured out what they are).
-This command works for potions, scrolls, rings, and staves and wands.
+after you pick it up but before it is truly identified.  Each type of
+scroll and potion will become identified after its first use.
 .ip o
 Examine and set options.
 This command is further explained in the section on options.
@@ -436,10 +425,8 @@ have messed up the display.
 .ip ^P
 Print last message.
 Useful when a message disappears before you can read it.
-This only repeats the last message
-that was not a mistyped command
-so that you don't loose anything by accidentally typing
-the wrong character instead of ^P.
+Consecutive repetitions of this command will reveal the last
+five messages.
 .ip \*E
 Cancel a command, prefix, or count.
 .ip !
@@ -461,12 +448,6 @@ As in
 .ti +1i
 .nf
 % rogue \fIsave\*_file\fP
-.ip
-To restart from the default save file (see below),
-run
-.ti +1i
-.nf
-% rogue \-r
 .ip v
 Prints the program version number.
 .ip )
@@ -475,21 +456,13 @@ Print the weapon you are currently wielding
 Print the armor you are currently wearing
 .ip =
 Print the rings you are currently wearing
-.ip @
-Reprint the status line on the message line
 .sh 1 Rooms
 .pp
-Rooms in the dungeons are either lit or dark.
-If you walk into a lit room,
-the entire room will be drawn on the screen as soon as you enter.
-If you walk into a dark room,
-it will only be displayed as you explore it.
+Rooms in the dungeons are lit as you enter them.
 Upon leaving a room,
-all monsters inside the room
-are erased from the screen.
-In the darkness you can only see one space
+all monsters inside the room are erased from the screen.
+In the darkness of a corridor, you can only see one space
 in all directions around you.
-A corridor is always dark.
 .sh 1 Fighting
 .pp
 If you see a monster and you wish to fight it,
@@ -527,12 +500,11 @@ However,
 the labels will vary from game to game.
 .pp
 When you use one of these labeled objects,
-if its effect is obvious,
-rogue will remember what it is for you.
-If it's effect isn't extremely obvious
-you will be asked what you want to scribble on it
+if its effect may be obvious.  Potions or scrolls will
+become identified at this point, but not other items.
+You may want to call these other items something
 so you will recognize it later,
-or you can use the
+you can use the
 .Cs call
 command
 (see above).
@@ -715,7 +687,7 @@ in front of the name.
 Thus to set up an environment variable so that
 .b jump
 is on,
-.b terse
+.b passgo
 is off,
 and the
 .b name
@@ -723,14 +695,14 @@ is set to \*(lqBlue Meanie\*(rq,
 use the command
 .nf
 .ti +3n
-% setenv ROGUEOPTS "jump,noterse,name=Blue Meanie"\**
+% setenv ROGUEOPTS "jump,nopassgo,name=Blue Meanie"\**
 .fi
 .(f
 \**
 For those of you who use the Bourne shell sh (1), the commands would be
 .in +3
 .nf
-$ ROGUEOPTS="jump,noterse,name=Blue Meanie"
+$ ROGUEOPTS="jump,nopassgo,name=Blue Meanie"
 $ export ROGUEOPTS
 .fi
 .in +0
@@ -741,14 +713,7 @@ Here is a list of the options
 and an explanation of what each one is for.
 The default value for each is enclosed in square brackets.
 For character string options,
-input over fifty characters will be ignored.
-.ip "\fBterse\fP [\fI\^noterse\^\fP]"
-Useful for those who are tired of the sometimes lengthy messages of rogue.
-This is a useful option for playing on slow terminals,
-so this option defaults to
-.i terse
-if you
-are on a slow (1200 baud or under) terminal.
+input over forty characters will be ignored.
 .ip "\fBjump\fP [\fI\^nojump\^\fP]"
 If this option is set,
 running moves will not be displayed
@@ -756,17 +721,6 @@ until you reach the end of the move.
 This saves considerable cpu and display time.
 This option defaults to
 .i jump
-if you are using a slow terminal.
-.ip "\fBflush\fP [\fI\^noflush\^\fP]"
-All typeahead is thrown away after each round of battle.
-This is useful for those who type far ahead
-and then watch in dismay as a Bat kills them.
-.ip "\fBseefloor\fP [\fI\^seefloor\^\fP]"
-Display the floor around you on the screen
-as you move through dark rooms.
-Due to the amount of characters generated,
-this option defaults to
-.i noseefloor
 if you are using a slow terminal.
 .ip "\fBpassgo\fP [\fI\^nopassgo\^\fP]"
 Follow turnings in passageways.
@@ -779,39 +733,9 @@ If it can turn either or neither,
 it will stop.
 This algorithm can sometimes lead to slightly confusing occurrences
 which is why it defaults to \fInopassgo\fP.
-.ip "\fBtombstone\fP [\fI\^tombstone\^\fP]"
-Print out the tombstone at the end if you get killed.
+.ip "\fBskull\fP [\fI\^skull\^\fP]"
+Print out the skull at the end if you get killed.
 This is nice but slow, so you can turn it off if you like.
-.ip "\fBinven\fP [\fI\^overwrite\^\fP]"
-Inventory type.
-This can have one of three values:
-.i overwrite ,
-.i slow ,
-or
-.i clear .
-With
-.i overwrite
-the top lines of the map are overwritten
-with the list
-when inventory is requested
-or when
-\*(lqWhich item do you wish to \fB. . .\fP? \*(rq questions
-are answered with a
-.Cs * .
-However, if the list is longer than a screenful,
-the screen is cleared.
-With
-.i slow ,
-lists are displayed one item at a time on the top of the screen,
-and with
-.i clear ,
-the screen is cleared,
-the list is displayed,
-and then the dungeon level is re-displayed.
-Due to speed considerations,
-.i clear
-is the default for terminals without
-clear-to-end-of-line capabilities.
 .ip "\fBname\fP [account name]"
 This is the name of your character.
 It is used if you get on the top ten scorer's list.
@@ -827,20 +751,12 @@ The file name may start with the special character
 which expands to be your home directory.
 .sh 1 Scoring
 .pp
-Rogue usually maintains a list
+Rogue maintains a list
 of the top scoring people or scores on your machine.
-Depending on how it is set up,
-it can post either the top scores
-or the top players.
-In the latter case,
-each account on the machine
-can post only one non-winning score on this list.
 If you score higher than someone else on this list,
 or better your previous score on the list,
 you will be inserted in the proper place
 under your current name.
-How many scores are kept
-can also be set up by whoever installs it on your machine.
 .pp
 If you quit the game, you get out with all of your gold intact.
 If, however, you get killed in the Dungeons of Doom,
@@ -887,3 +803,6 @@ and also the teeming multitudes
 who graciously ignored work, school, and social life to play rogue
 and send us bugs, complaints, suggestions, and just plain flames.
 And also Mom.
+.pp
+The public domain version of rogue now distributed with Berkeley UNIX
+was written by Timothy Stoehr.
