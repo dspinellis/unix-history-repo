@@ -1,0 +1,5 @@
+cc -n driver.o vaxx.o -o f77
+text	data	bss	dec	hex
+11368	2068	16864	30300	765c
+touch compiler
+touch: compiler: cannot touch
