@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.9 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.10 %G%"; */
 
 #include <stdio.h>
 
@@ -42,13 +42,14 @@
 #define NAMSIZ		76
 #define MAXFILES	32
 #define PREDEF		2
-#ifdef VAX
+#ifdef ADDR32
 #define STDLVL		((struct iorec *)(0x7ffffff1))
 #define GLVL		((struct iorec *)(0x7ffffff0))
-#else
+#endif ADDR32
+#ifdef ADDR16
 #define STDLVL		((struct iorec *)(0xfff1))
 #define GLVL		((struct iorec *)(0xfff0))
-#endif VAX
+#endif ADDR16
 #define FILNIL		((struct iorec *)(0))
 #define INPUT		((struct iorec *)(&input))
 #define OUTPUT		((struct iorec *)(&output))
