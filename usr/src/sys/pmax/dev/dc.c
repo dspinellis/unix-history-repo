@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.4 (Berkeley) %G%
+ *	@(#)dc.c	7.5 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -71,7 +71,9 @@ extern int ttrstrt();
 
 struct	tty dc_tty[NDCLINE];
 int	dc_cnt = NDCLINE;
-int	dcDivertXInput;		/* true if diverting KBD input to X */
+void	(*dcDivertXInput)();	/* X windows keyboard input routine */
+void	(*dcMouseEvent)();	/* X windows mouse motion event routine */
+void	(*dcMouseButtons)();	/* X windows mouse buttons event routine */
 #ifdef DEBUG
 int	debugChar;
 #endif
@@ -665,43 +667,43 @@ dcrint(unit)
 			debugChar = cc;
 #endif
 			if (dcDivertXInput) {
-				pmKbdEvent(cc);
+				(*dcDivertXInput)(cc);
 				return;
 			}
 			if ((cc = dcMapChar(cc)) < 0)
 				return;
-		} else if (tp == &dc_tty[MOUSE_PORT]) {
-			register MouseReport *newRepPtr;
+		} else if (tp == &dc_tty[MOUSE_PORT] && dcMouseButtons) {
+			register MouseReport *mrp;
 			static MouseReport currentRep;
 
-			newRepPtr = &currentRep;
-			newRepPtr->byteCount++;
+			mrp = &currentRep;
+			mrp->byteCount++;
 			if (cc & MOUSE_START_FRAME) {
 				/*
 				 * The first mouse report byte (button state).
 				 */
-				newRepPtr->state = cc;
-				if (newRepPtr->byteCount > 1)
-					newRepPtr->byteCount = 1;
-			} else if (newRepPtr->byteCount == 2) {
+				mrp->state = cc;
+				if (mrp->byteCount > 1)
+					mrp->byteCount = 1;
+			} else if (mrp->byteCount == 2) {
 				/*
 				 * The second mouse report byte (delta x).
 				 */
-				newRepPtr->dx = cc;
-			} else if (newRepPtr->byteCount == 3) {
+				mrp->dx = cc;
+			} else if (mrp->byteCount == 3) {
 				/*
 				 * The final mouse report byte (delta y).
 				 */
-				newRepPtr->dy = cc;
-				newRepPtr->byteCount = 0;
-				if (newRepPtr->dx != 0 || newRepPtr->dy != 0) {
+				mrp->dy = cc;
+				mrp->byteCount = 0;
+				if (mrp->dx != 0 || mrp->dy != 0) {
 					/*
 					 * If the mouse moved,
 					 * post a motion event.
 					 */
-					pmMouseEvent(newRepPtr);
+					(*dcMouseEvent)(mrp);
 				}
-				pmMouseButtons(newRepPtr);
+				(*dcMouseButtons)(mrp);
 			}
 			return;
 		}
@@ -781,7 +783,7 @@ dcstart(tp)
 	if (tp == dc_tty) {
 		while (tp->t_outq.c_cc > 0) {
 			cc = getc(&tp->t_outq) & 0x7f;
-			pmPutc(cc);
+			cnputc(cc);
 		}
 		/*
 		 * After we flush the output queue we may need to wake
