@@ -1,10 +1,14 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
 #ifndef lint
-static	char sccsid[] = "@(#)modula-2.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/27 10:22:04 linton Exp */
+static	char sccsid[] = "@(#)modula-2.c	1.2 (Berkeley) %G%"; /* from 1.4 84/03/27 10:22:04 linton Exp */
 #endif
 
 /*
  * Modula-2 specific symbol routines.
  */
+
+static char rcsid[] = "$Header: modula-2.c,v 1.6 84/12/26 10:40:33 linton Exp $";
 
 #include "defs.h"
 #include "symbols.h"
@@ -22,6 +26,12 @@ static	char sccsid[] = "@(#)modula-2.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/27
 
 private Language mod2;
 private boolean initialized;
+
+
+#define ischar(t) ( \
+    (t) == t_char->type or \
+    ((t)->class == RANGE and istypename((t)->type, "char")) \
+)
 
 /*
  * Initialize Modula-2 information.
@@ -47,6 +57,52 @@ public modula2_init ()
  * various kinds of compatibility.
  */
 
+private boolean builtinmatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(
+	    t2 == t_int->type and t1->class == RANGE and
+	    (
+		istypename(t1->type, "integer") or
+		istypename(t1->type, "cardinal")
+	    )
+	) or (
+	    t2 == t_char->type and
+	    t1->class == RANGE and istypename(t1->type, "char")
+	) or (
+	    t2 == t_real->type and
+	    t1->class == RANGE and (
+		istypename(t1->type, "real") or
+		istypename(t1->type, "longreal")
+	    )
+	) or (
+	    t2 == t_boolean->type and
+	    t1->class == RANGE and istypename(t1->type, "boolean")
+	)
+    );
+    return b;
+}
+
+private boolean rangematch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+    register Symbol rt1, rt2;
+
+    if (t1->class == RANGE and t2->class == RANGE) {
+	b = (boolean) (
+	    t1->symvalue.rangev.lower == t2->symvalue.rangev.lower and
+	    t1->symvalue.rangev.upper == t2->symvalue.rangev.upper
+	);
+    } else {
+	b = false;
+    }
+    return b;
+}
+
 private boolean nilMatch (t1, t2)
 register Symbol t1, t2;
 {
@@ -65,11 +121,8 @@ register Symbol t1, t2;
     boolean b;
 
     b = (boolean) (
-	t1->type == t2->type and (
-	    (t1->class == t2->class) or
-	    (t1->class == SCAL and t2->class == CONST) or
-	    (t1->class == CONST and t2->class == SCAL)
-	)
+	(t1->class == SCAL and t2->class == CONST and t2->type == t1) or
+	(t1->class == CONST and t2->class == SCAL and t1->type == t2)
     );
     return b;
 }
@@ -81,12 +134,12 @@ register Symbol t1, t2;
 
     b = (boolean) (
 	(
-	    t1->class == ARRAY and t1->chain == t_open and
+	    t1->class == DYNARRAY and t1->symvalue.ndims == 1 and
 	    t2->class == ARRAY and
 	    compatible(rtype(t2->chain)->type, t_int) and
 	    compatible(t1->type, t2->type)
 	) or (
-	    t2->class == ARRAY and t2->chain == t_open and
+	    t2->class == DYNARRAY and t2->symvalue.ndims == 1 and
 	    t1->class == ARRAY and
 	    compatible(rtype(t1->chain)->type, t_int) and
 	    compatible(t1->type, t2->type)
@@ -126,7 +179,7 @@ register Symbol t1, t2;
 public boolean modula2_typematch (type1, type2)
 Symbol type1, type2;
 {
-    Boolean b;
+    boolean b;
     Symbol t1, t2, tmp;
 
     t1 = rtype(type1);
@@ -134,36 +187,17 @@ Symbol type1, type2;
     if (t1 == t2) {
 	b = true;
     } else {
-	if (t1 == t_char->type or t1 == t_int->type or t1 == t_real->type) {
+	if (t1 == t_char->type or t1 == t_int->type or
+	    t1 == t_real->type or t1 == t_boolean->type
+	) {
 	    tmp = t1;
 	    t1 = t2;
 	    t2 = tmp;
 	}
 	b = (Boolean) (
-	    (
-		t2 == t_int->type and
-		t1->class == RANGE and (
-		    istypename(t1->type, "integer") or
-		    istypename(t1->type, "cardinal")
-		)
-	    ) or (
-		t2 == t_char->type and
-		t1->class == RANGE and istypename(t1->type, "char")
-	    ) or (
-		t2 == t_real->type and
-		t1->class == RANGE and (
-		    istypename(t1->type, "real") or
-		    istypename(t1->type, "longreal")
-		)
-	    ) or (
-		nilMatch(t1, t2)
-	    ) or (
-		enumMatch(t1, t2)
-	    ) or (
-		openArrayMatch(t1, t2)
-	    ) or (
-		stringArrayMatch(t1, t2)
-	    )
+	    builtinmatch(t1, t2) or rangematch(t1, t2) or
+	    nilMatch(t1, t2) or enumMatch(t1, t2) or
+	    openArrayMatch(t1, t2) or stringArrayMatch(t1, t2)
 	);
     }
     return b;
@@ -194,10 +228,13 @@ Symbol s;
     switch (s->class) {
 	case CONST:
 	    if (s->type->class == SCAL) {
-		printf("(enumeration constant, ord %ld)",
-		    s->symvalue.iconval);
+		semicolon = false;
+		printf("enumeration constant with value ");
+		eval(s->symvalue.constval);
+		modula2_printval(s);
 	    } else {
 		printf("const %s = ", symname(s));
+		eval(s->symvalue.constval);
 		modula2_printval(s);
 	    }
 	    break;
@@ -227,6 +264,8 @@ Symbol s;
 
 	case RANGE:
 	case ARRAY:
+	case DYNARRAY:
+	case SUBARRAY:
 	case RECORD:
 	case VARNT:
 	case PTR:
@@ -255,7 +294,7 @@ Symbol s;
 	    break;
 
 	case FUNC:
-	    printf("function %s", symname(s));
+	    printf("procedure %s", symname(s));
 	    listparams(s);
 	    printf(" : ");
 	    printtype(s, s->type, 0);
@@ -266,7 +305,7 @@ Symbol s;
 	    break;
 
 	default:
-	    printf("%s : (class %s)", symname(s), classname(s));
+	    printf("[%s]", classname(s));
 	    break;
     }
     if (semicolon) {
@@ -288,7 +327,8 @@ Symbol s;
 Symbol t;
 int n;
 {
-    register Symbol tmp;
+    Symbol tmp;
+    int i;
 
     if (t->class == TYPEREF) {
 	resolveRef(t);
@@ -315,6 +355,22 @@ int n;
 		}
 	    }
 	    printf("] of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case DYNARRAY:
+	    printf("dynarray of ");
+	    for (i = 1; i < t->symvalue.ndims; i++) {
+		printf("array of ");
+	    }
+	    printtype(t, t->type, n);
+	    break;
+
+	case SUBARRAY:
+	    printf("subarray of ");
+	    for (i = 1; i < t->symvalue.ndims; i++) {
+		printf("array of ");
+	    }
 	    printtype(t, t->type, n);
 	    break;
 
@@ -360,8 +416,13 @@ int n;
 	case TYPEREF:
 	    break;
 
+	case FPROC:
+	case FFUNC:
+	    printf("procedure");
+	    break;
+
 	default:
-	    printf("(class %d)", t->class);
+	    printf("[%s]", classname(t));
 	    break;
     }
 }
@@ -402,7 +463,7 @@ Symbol t;
 
     r0 = t->symvalue.rangev.lower;
     r1 = t->symvalue.rangev.upper;
-    if (t == t_char or istypename(t, "char")) {
+    if (ischar(t)) {
 	if (r0 < 0x20 or r0 > 0x7e) {
 	    printf("%ld..", r0);
 	} else {
@@ -490,6 +551,30 @@ Symbol s;
 }
 
 /*
+ * Test if a pointer type should be treated as a null-terminated string.
+ * The type given is the type that is pointed to.
+ */
+
+private boolean isCstring (type)
+Symbol type;
+{
+    boolean b;
+    register Symbol a, t;
+
+    a = rtype(type);
+    if (a->class == ARRAY) {
+	t = rtype(a->chain);
+	b = (boolean) (
+	    t->class == RANGE and istypename(a->type, "char") and
+	    (t->symvalue.rangev.upper - t->symvalue.rangev.lower + 1) <= 0
+	);
+    } else {
+	b = false;
+    }
+    return b;
+}
+
+/*
  * Modula 2 interface to printval.
  */
 
@@ -513,8 +598,7 @@ integer n;
     Address a;
     integer len;
     double r;
-    integer scalar;
-    boolean found;
+    integer i;
 
     if (s->class == TYPEREF) {
 	resolveRef(s);
@@ -522,24 +606,48 @@ integer n;
     switch (s->class) {
 	case CONST:
 	case TYPE:
-	case VAR:
 	case REF:
+	case VAR:
 	case FVAR:
 	case TAG:
-	case FIELD:
 	    prval(s->type, n);
+	    break;
+
+	case FIELD:
+	    if (isbitfield(s)) {
+		i = 0;
+		popn(size(s), &i);
+		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
+		i &= ((1 << s->symvalue.field.length) - 1);
+		t = rtype(s->type);
+		if (t->class == SCAL) {
+		    printEnum(i, t);
+		} else {
+		    printRangeVal(i, t);
+		}
+	    } else {
+		prval(s->type, n);
+	    }
 	    break;
 
 	case ARRAY:
 	    t = rtype(s->type);
-	    if (t->class == RANGE and istypename(t->type, "char")) {
+	    if (ischar(t)) {
 		len = size(s);
 		sp -= len;
-		printf("'%.*s'", len, sp);
+		printf("\"%.*s\"", len, sp);
 		break;
 	    } else {
 		printarray(s);
 	    }
+	    break;
+
+	case DYNARRAY:
+	    printDynarray(s);
+	    break;
+
+	case SUBARRAY:
+	    printSubarray(s);
 	    break;
 
 	case RECORD:
@@ -547,15 +655,23 @@ integer n;
 	    break;
 
 	case VARNT:
-	    printf("can't print out variant records");
+	    printf("[variant]");
 	    break;
 
 	case RANGE:
 	    printrange(s, n);
 	    break;
 
+	/*
+	 * Unresolved opaque type.
+	 * Probably a pointer.
+	 */
+	case TYPEREF:
+	    a = pop(Address);
+	    printf("@%x", a);
+	    break;
+
 	case FILET:
-	case PTR:
 	    a = pop(Address);
 	    if (a == 0) {
 		printf("nil");
@@ -564,19 +680,21 @@ integer n;
 	    }
 	    break;
 
+	case PTR:
+	    a = pop(Address);
+	    if (a == 0) {
+		printf("nil");
+	    } else if (isCstring(s->type)) {
+		printString(a, true);
+	    } else {
+		printf("0x%x", a);
+	    }
+	    break;
+
 	case SCAL:
-	    popn(n, &scalar);
-	    found = false;
-	    for (t = s->chain; t != nil; t = t->chain) {
-		if (t->symvalue.iconval == scalar) {
-		    printf("%s", symname(t));
-		    found = true;
-		    break;
-		}
-	    }
-	    if (not found) {
-		printf("(scalar = %d)", scalar);
-	    }
+	    i = 0;
+	    popn(n, &i);
+	    printEnum(i, s);
 	    break;
 
 	case FPROC:
@@ -584,9 +702,9 @@ integer n;
 	    a = pop(long);
 	    t = whatblock(a);
 	    if (t == nil) {
-		printf("(proc 0x%x)", a);
+		printf("0x%x", a);
 	    } else {
-		printf("%s", symname(t));
+		printname(stdout, t);
 	    }
 	    break;
 
@@ -601,6 +719,96 @@ integer n;
 	    printf("[%s]", classname(s));
 	    break;
     }
+}
+
+/*
+ * Print out a dynamic array.
+ */
+
+private Address printDynSlice();
+
+private printDynarray (t)
+Symbol t;
+{
+    Address base;
+    integer n;
+    Stack *savesp, *newsp;
+    Symbol eltype;
+
+    savesp = sp;
+    sp -= (t->symvalue.ndims * sizeof(Word));
+    base = pop(Address);
+    newsp = sp;
+    sp = savesp;
+    eltype = rtype(t->type);
+    if (t->symvalue.ndims == 0) {
+	if (ischar(eltype)) {
+	    printString(base, true);
+	} else {
+	    printf("[dynarray @nocount]");
+	}
+    } else {
+	n = ((long *) sp)[-(t->symvalue.ndims)];
+	base = printDynSlice(base, n, t->symvalue.ndims, eltype, size(eltype));
+    }
+    sp = newsp;
+}
+
+/*
+ * Print out one dimension of a multi-dimension dynamic array.
+ *
+ * Return the address of the element that follows the printed elements.
+ */
+
+private Address printDynSlice (base, count, ndims, eltype, elsize)
+Address base;
+integer count, ndims;
+Symbol eltype;
+integer elsize;
+{
+    Address b;
+    integer i, n;
+    char *slice;
+    Stack *savesp;
+
+    b = base;
+    if (ndims > 1) {
+	n = ((long *) sp)[-ndims + 1];
+    }
+    if (ndims == 1 and ischar(eltype)) {
+	slice = newarr(char, count);
+	dread(slice, b, count);
+	printf("\"%.*s\"", count, slice);
+	dispose(slice);
+	b += count;
+    } else {
+	printf("(");
+	for (i = 0; i < count; i++) {
+	    if (i != 0) {
+		printf(", ");
+	    }
+	    if (ndims == 1) {
+		slice = newarr(char, elsize);
+		dread(slice, b, elsize);
+		savesp = sp;
+		sp = slice + elsize;
+		printval(eltype);
+		sp = savesp;
+		dispose(slice);
+		b += elsize;
+	    } else {
+		b = printDynSlice(b, n, ndims - 1, eltype, elsize);
+	    }
+	}
+	printf(")");
+    }
+    return b;
+}
+
+private printSubarray (t)
+Symbol t;
+{
+    printf("[subarray]");
 }
 
 /*
@@ -626,15 +834,7 @@ integer n;
     } else {
 	i = 0;
 	popn(n, &i);
-	if (s == t_boolean) {
-	    printf(((Boolean) i) == true ? "true" : "false");
-	} else if (s == t_char or istypename(s->type, "char")) {
-	    printf("'%c'", i);
-	} else if (s->symvalue.rangev.lower >= 0) {
-	    printf("%lu", i);
-	} else {
-	    printf("%ld", i);
-	}
+	printRangeVal(i, s);
     }
 }
 
@@ -735,6 +935,40 @@ Symbol t;
 }
 
 /*
+ * Construct a node for subscripting a dynamic or subarray.
+ * The list of indices is left for processing in evalaref,
+ * unlike normal subscripting in which the list is expanded
+ * across individual INDEX nodes.
+ */
+
+private Node dynref (a, t, slist)
+Node a;
+Symbol t;
+Node slist;
+{
+    Node p, r;
+    integer n;
+
+    p = slist;
+    n = 0;
+    while (p != nil) {
+	if (not compatible(p->value.arg[0]->nodetype, t_int)) {
+	    suberror("subscript \"", p->value.arg[0], "\" is the wrong type");
+	}
+	++n;
+	p = p->value.arg[1];
+    }
+    if (n > t->symvalue.ndims and (t->symvalue.ndims != 0 or n != 1)) {
+	suberror("too many subscripts for ", a, nil);
+    } else if (n < t->symvalue.ndims) {
+	suberror("not enough subscripts for ", a, nil);
+    }
+    r = build(O_INDEX, a, slist);
+    r->nodetype = rtype(t->type);
+    return r;
+}
+
+/*
  * Construct a node for subscripting.
  */
 
@@ -743,65 +977,155 @@ Node a, slist;
 {
     register Symbol t;
     register Node p;
-    Symbol etype, atype, eltype;
+    Symbol eltype;
     Node esub, r;
+    integer n;
 
-    r = a;
     t = rtype(a->nodetype);
-    eltype = t->type;
-    if (t->class != ARRAY) {
-	beginerrmsg();
-	prtree(stderr, a);
-	fprintf(stderr, " is not an array");
-	enderrmsg();
-    } else {
+    if (t->class == DYNARRAY or t->class == SUBARRAY) {
+	r = dynref(a, t, slist);
+    } else if (t->class == ARRAY) {
+	r = a;
+	eltype = rtype(t->type);
 	p = slist;
 	t = t->chain;
-	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
+	while (p != nil and t != nil) {
 	    esub = p->value.arg[0];
-	    etype = rtype(esub->nodetype);
-	    atype = rtype(t);
-	    if (not compatible(atype, etype)) {
-		beginerrmsg();
-		fprintf(stderr, "subscript ");
-		prtree(stderr, esub);
-		fprintf(stderr, " is the wrong type");
-		enderrmsg();
+	    if (not compatible(rtype(t), rtype(esub->nodetype))) {
+		suberror("subscript \"", esub, "\" is the wrong type");
 	    }
 	    r = build(O_INDEX, r, esub);
 	    r->nodetype = eltype;
+	    p = p->value.arg[1];
+	    t = t->chain;
 	}
-	if (p != nil or t != nil) {
-	    beginerrmsg();
-	    if (p != nil) {
-		fprintf(stderr, "too many subscripts for ");
-	    } else {
-		fprintf(stderr, "not enough subscripts for ");
-	    }
-	    prtree(stderr, a);
-	    enderrmsg();
+	if (p != nil) {
+	    suberror("too many subscripts for ", a, nil);
+	} else if (t != nil) {
+	    suberror("not enough subscripts for ", a, nil);
 	}
+    } else {
+	suberror("\"", a, "\" is not an array");
     }
     return r;
+}
+
+/*
+ * Subscript usage error reporting.
+ */
+
+private suberror (s1, e1, s2)
+String s1, s2;
+Node e1;
+{
+    beginerrmsg();
+    if (s1 != nil) {
+	fprintf(stderr, s1);
+    }
+    if (e1 != nil) {
+	prtree(stderr, e1);
+    }
+    if (s2 != nil) {
+	fprintf(stderr, s2);
+    }
+    enderrmsg();
+}
+
+/*
+ * Check that a subscript value is in the appropriate range.
+ */
+
+private subchk (value, lower, upper)
+long value, lower, upper;
+{
+    if (value < lower or value > upper) {
+	error("subscript value %d out of range [%d..%d]", value, lower, upper);
+    }
+}
+
+/*
+ * Compute the offset for subscripting a dynamic array.
+ */
+
+private getdynoff (ndims, sub)
+integer ndims;
+long *sub;
+{
+    long k, off, *count;
+
+    count = (long *) sp;
+    off = 0;
+    for (k = 0; k < ndims - 1; k++) {
+	subchk(sub[k], 0, count[k] - 1);
+	off += (sub[k] * count[k+1]);
+    }
+    subchk(sub[ndims - 1], 0, count[ndims - 1] - 1);
+    return off + sub[ndims - 1];
+}
+
+/*
+ * Compute the offset associated with a subarray.
+ */
+
+private getsuboff (ndims, sub)
+integer ndims;
+long *sub;
+{
+    long k, off;
+    struct subarrayinfo {
+	long count;
+	long mult;
+    } *info;
+
+    info = (struct subarrayinfo *) sp;
+    off = 0;
+    for (k = 0; k < ndims; k++) {
+	subchk(sub[k], 0, info[k].count - 1);
+	off += sub[k] * info[k].mult;
+    }
+    return off;
 }
 
 /*
  * Evaluate a subscript index.
  */
 
-public int modula2_evalaref (s, i)
+public modula2_evalaref (s, base, i)
 Symbol s;
+Address base;
 long i;
 {
-    long lb, ub;
+    Symbol t;
+    long lb, ub, off;
+    long *sub;
+    Address b;
 
-    chkOpenArray(s);
-    s = rtype(rtype(s)->chain);
-    findbounds(s, &lb, &ub);
-    if (i < lb or i > ub) {
-	error("subscript %d out of range [%d..%d]", i, lb, ub);
+    t = rtype(s);
+    if (t->class == ARRAY) {
+	findbounds(rtype(t->chain), &lb, &ub);
+	if (i < lb or i > ub) {
+	    error("subscript %d out of range [%d..%d]", i, lb, ub);
+	}
+	push(long, base + (i - lb) * size(t->type));
+    } else if (t->class == DYNARRAY and t->symvalue.ndims == 0) {
+	push(long, base + i * size(t->type));
+    } else if (t->class == DYNARRAY or t->class == SUBARRAY) {
+	push(long, i);
+	sub = (long *) (sp - (t->symvalue.ndims * sizeof(long)));
+	rpush(base, size(t));
+	sp -= (t->symvalue.ndims * sizeof(long));
+	b = pop(Address);
+	sp += sizeof(Address);
+	if (t->class == SUBARRAY) {
+	    off = getsuboff(t->symvalue.ndims, sub);
+	} else {
+	    off = getdynoff(t->symvalue.ndims, sub);
+	}
+	sp = (Stack *) sub;
+	push(long, b + off * size(t->type));
+    } else {
+	error("[internal error: expected array in evalaref]");
     }
-    return (i - lb);
 }
 
 /*
@@ -859,6 +1183,7 @@ Symbol typetable[];
 
     if (not initialized) {
 	initModTypes();
+	initialized = true;
     }
     for (i = 1; i <= NTYPES; i++) {
 	typetable[i] = inittype[i];
