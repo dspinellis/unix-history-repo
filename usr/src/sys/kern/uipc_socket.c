@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.23	82/01/13	*/
+/*	uipc_socket.c	4.24	82/01/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -516,7 +516,7 @@ COUNT(SOIOCTL);
 			sbflush(&so->so_rcv);
 		}
 		if (flags & FWRITE)
-			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, (struct mbuf *)0, 0);
+			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN, (struct mbuf *)0, 0);
 		return;
 	}
 
