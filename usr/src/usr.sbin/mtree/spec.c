@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -93,15 +93,15 @@ spec()
 
 		if (!strcmp(p, "..")) {
 			/* don't go up, if haven't gone down */
-			if (last != root) {
-				if (last->info.type != F_DIR ||
-				    last->flags&F_DONE)
-					last = last->parent;
-				last->flags |= F_DONE;
-				continue;
+			if (!root)
+				noparent();
+			if (last->info.type != F_DIR || last->flags&F_DONE) {
+				if (last == root)
+					noparent();
+				last = last->parent;
 			}
-			(void)fprintf(stderr, "mtree: no parent node.\n");
-			specerr();
+			last->flags |= F_DONE;
+			continue;
 		}
 
 		centry = (ENTRY *)emalloc(sizeof(ENTRY));
@@ -116,8 +116,7 @@ spec()
 		if (!root) {
 			last = root = centry;
 			root->parent = root;
-		} else if (last->info.type == F_DIR &&
-		    !(last->flags&F_DONE)) {
+		} else if (last->info.type == F_DIR && !(last->flags&F_DONE)) {
 			centry->parent = last;
 			last = last->child = centry;
 		} else {
@@ -125,4 +124,10 @@ spec()
 			last = last->next = centry;
 		}
 	}
+}
+
+noparent()
+{
+	(void)fprintf(stderr, "mtree: no parent node.\n");
+	specerr();
 }
