@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -65,16 +65,16 @@ static char sccsid[] = "@(#)finger.c	5.11 (Berkeley) %G%";
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <utmp.h>
 #include <sys/signal.h>
-#include <pwd.h>
-#include <stdio.h>
-#include <lastlog.h>
-#include <ctype.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <utmp.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 #define ASTERISK	'*'		/* ignore this in real name */
 #define COMMA		','		/* separator in pw_gecos field */
@@ -107,8 +107,6 @@ struct person {			/* one for each person fingered */
 	struct person *link;		/* link to next person */
 };
 
-char LASTLOG[] = "/usr/adm/lastlog";	/* last login info */
-char USERLOG[] = "/etc/utmp";		/* who is logged in */
 char PLAN[] = "/.plan";			/* what plan file is */
 char PROJ[] = "/.project";		/* what project file */
 	
@@ -124,7 +122,7 @@ int small = 0;				/* -s option default */
 int wide = 1;				/* -w option default */
 
 int unshort;
-int lf;					/* LASTLOG file descriptor */
+int lf;					/* _PATH_LASTLOG file descriptor */
 struct person *person1;			/* list of people */
 long tloc;				/* current time */
 
@@ -201,15 +199,13 @@ doall()
 	char name[NMAX + 1];
 
 	unshort = large;
-	if ((uf = open(USERLOG, 0)) < 0) {
-		fprintf(stderr, "finger: error opening %s\n", USERLOG);
+	if ((uf = open(_PATH_UTMP, 0)) < 0) {
+		fprintf(stderr, "finger: error opening %s\n", _PATH_UTMP);
 		exit(2);
 	}
 	if (unquick) {
-		extern _pw_stayopen;
 
 		setpwent();
-		_pw_stayopen = 1;
 		fwopen();
 	}
 	while (read(uf, (char *)&user, sizeof user) == sizeof user) {
@@ -284,9 +280,6 @@ donames(argv)
 	if (unquick) {
 		setpwent();
 		if (!match) {
-			extern _pw_stayopen;
-
-			_pw_stayopen = 1;
 			for (p = person1; p != 0; p = p->link)
 				if (pw = getpwnam(p->name))
 					p->pwd = pwdcopy(pw);
@@ -321,8 +314,8 @@ donames(argv)
 		endpwent();
 	}
 	/* Now get login information */
-	if ((uf = open(USERLOG, 0)) < 0) {
-		fprintf(stderr, "finger: error opening %s\n", USERLOG);
+	if ((uf = open(_PATH_UTMP, 0)) < 0) {
+		fprintf(stderr, "finger: error opening %s\n", _PATH_UTMP);
 		exit(2);
 	}
 	while (read(uf, (char *)&user, sizeof user) == sizeof user) {
@@ -789,15 +782,15 @@ decode(pers)
 }
 
 /*
- * find the last log in of a user by checking the LASTLOG file.
+ * find the last log in of a user by checking the _PATH_LASTLOG file.
  * the entry is indexed by the uid, so this can only be done if
  * the uid is known (which it isn't in quick mode)
  */
 
 fwopen()
 {
-	if ((lf = open(LASTLOG, 0)) < 0)
-		fprintf(stderr, "finger: %s open error\n", LASTLOG);
+	if ((lf = open(_PATH_LASTLOG, 0)) < 0)
+		fprintf(stderr, "finger: %s open error\n", _PATH_LASTLOG);
 }
 
 findwhen(pers)
@@ -817,7 +810,7 @@ findwhen(pers)
 		} else {
 			if (i != 0)
 				fprintf(stderr, "finger: %s read error\n",
-					LASTLOG);
+					_PATH_LASTLOG);
 			pers->tty[0] = 0;
 			pers->host[0] = 0;
 			pers->loginat = 0L;
@@ -837,13 +830,13 @@ fwclose()
 
 /*
  * find the idle time of a user by doing a stat on /dev/tty??,
- * where tty?? has been gotten from USERLOG, supposedly.
+ * where tty?? has been gotten from _PATH_UTMP, supposedly.
  */
 findidle(pers)
 	register struct person *pers;
 {
 	struct stat ttystatus;
-	static char buffer[20] = "/dev/";
+	static char buffer[20] = _PATH_DEV;
 	long t;
 #define TTYLEN 5
 
