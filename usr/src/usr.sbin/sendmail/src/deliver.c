@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.102		%G%);
+SCCSID(@(#)deliver.c	3.103		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -876,7 +876,7 @@ giveresponse(stat, force, m)
 		extern char *pintvl();
 
 		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", CurEnv->e_id,
-		       CurEnv->e_to, pintvl(CurTime - CurEnv->e_ctime, TRUE),
+		       CurEnv->e_to, pintvl(curtime() - CurEnv->e_ctime, TRUE),
 		       statmsg);
 	}
 # endif LOG

@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.24		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.25		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.24		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.25		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -113,7 +113,8 @@ getconnection()
 
 	for (;;)
 	{
-		int acptcnt;
+		int acptcnt;			/* for debugging */
+		time_t lasttick;		/* for debugging */
 
 		/* get a socket for the SMTP connection */
 		s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
@@ -130,16 +131,13 @@ getconnection()
 # endif DEBUG
 
 		/* wait for a connection */
-		(void) time(&CurTime);
+		lasttick = curtime();
 		acptcnt = 0;
 		do
 		{
-			long now;
-
 			errno = 0;
 			(void) accept(s, &otherend);
-			(void) time(&now);
-			if (now == CurTime)
+			if (lasttick == curtime())
 			{
 				if(++acptcnt > 2)
 				{
@@ -150,7 +148,7 @@ getconnection()
 			}
 			else
 			{
-				CurTime = now;
+				lasttick = curtime();
 				acptcnt = 0;
 			}
 		} while (errno == ETIMEDOUT || errno == EINTR);

@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.81		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.82		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -409,7 +409,6 @@ extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*StatFile;	/* location of statistics summary [conf.c] */
 extern char	*QueueDir;	/* location of queue directory [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
-EXTERN time_t	CurTime;	/* time of this message */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern int	ReadTimeout;	/* timeout on reads [conf.c] */
@@ -441,3 +440,4 @@ extern FILE	*dfopen();
 extern EVENT	*setevent();
 extern char	*sfgets();
 extern char	*queuename();
+extern time_t	curtime();

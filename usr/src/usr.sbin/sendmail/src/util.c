@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.27		%G%);
+SCCSID(@(#)util.c	3.28		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -754,4 +754,25 @@ pintvl(intvl, brief)
 	}
 
 	return (buf + 2);
+}
+/*
+**  CURTIME -- return current time.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		the current time.
+**
+**	Side Effects:
+**		none.
+*/
+
+time_t
+curtime()
+{
+	auto time_t t;
+
+	(void) time(&t);
+	return (t);
 }
