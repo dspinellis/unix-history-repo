@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)canfield.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)canfield.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -129,6 +129,7 @@ bool mtfdone, Cflag = FALSE;
 #define BETTINGBOX	2
 #define NOBOX		3
 int status = INSTRUCTIONBOX;
+int uid;
 
 /*
  * Basic betting costs
@@ -237,29 +238,29 @@ printtopbettingbox()
 {
 
 	    move(tboxrow, boxcol);
-	    printw("                            ");
-	    move(tboxrow + 1, boxcol);
 	    printw("*--------------------------*");
-	    move(tboxrow + 2, boxcol);
+	    move(tboxrow + 1, boxcol);
 	    printw("|Costs        Hand   Total |");
-	    move(tboxrow + 3, boxcol);
+	    move(tboxrow + 2, boxcol);
 	    printw("| Hands                    |");
-	    move(tboxrow + 4, boxcol);
+	    move(tboxrow + 3, boxcol);
 	    printw("| Inspections              |");
-	    move(tboxrow + 5, boxcol);
+	    move(tboxrow + 4, boxcol);
 	    printw("| Games                    |");
-	    move(tboxrow + 6, boxcol);
+	    move(tboxrow + 5, boxcol);
 	    printw("| Runs                     |");
-	    move(tboxrow + 7, boxcol);
+	    move(tboxrow + 6, boxcol);
 	    printw("| Information              |");
-	    move(tboxrow + 8, boxcol);
+	    move(tboxrow + 7, boxcol);
 	    printw("| Think time               |");
-	    move(tboxrow + 9, boxcol);
+	    move(tboxrow + 8, boxcol);
 	    printw("|Total Costs               |");
-	    move(tboxrow + 10, boxcol);
+	    move(tboxrow + 9, boxcol);
 	    printw("|Winnings                  |");
-	    move(tboxrow + 11, boxcol);
+	    move(tboxrow + 10, boxcol);
 	    printw("|Net Worth                 |");
+	    move(tboxrow + 11, boxcol);
+	    printw("|Return                    |");
 	    move(tboxrow + 12, boxcol);
 	    printw("|==========================|");
 }
@@ -1006,6 +1007,7 @@ showcards()
 updatebettinginfo()
 {
 	long thiscosts, totalcosts;
+	double thisreturn, totalreturn;
 	time_t now;
 	register long dollars;
 
@@ -1024,26 +1026,30 @@ updatebettinginfo()
 		total.runs + total.information + total.thinktime;
 	this.worth = this.wins - thiscosts;
 	total.worth = total.wins - totalcosts;
+	thisreturn = ((double)this.wins / (double)thiscosts - 1.0) * 100.0;
+	totalreturn = ((double)total.wins / (double)totalcosts - 1.0) * 100.0;
 	if (status != BETTINGBOX)
 		return;
-	move(tboxrow + 3, boxcol + 13);
+	move(tboxrow + 2, boxcol + 13);
 	printw("%4d%9d", this.hand, total.hand);
-	move(tboxrow + 4, boxcol + 13);
+	move(tboxrow + 3, boxcol + 13);
 	printw("%4d%9d", this.inspection, total.inspection);
-	move(tboxrow + 5, boxcol + 13);
+	move(tboxrow + 4, boxcol + 13);
 	printw("%4d%9d", this.game, total.game);
-	move(tboxrow + 6, boxcol + 13);
+	move(tboxrow + 5, boxcol + 13);
 	printw("%4d%9d", this.runs, total.runs);
-	move(tboxrow + 7, boxcol + 13);
+	move(tboxrow + 6, boxcol + 13);
 	printw("%4d%9d", this.information, total.information);
-	move(tboxrow + 8, boxcol + 13);
+	move(tboxrow + 7, boxcol + 13);
 	printw("%4d%9d", this.thinktime, total.thinktime);
-	move(tboxrow + 9, boxcol + 13);
+	move(tboxrow + 8, boxcol + 13);
 	printw("%4d%9d", thiscosts, totalcosts);
-	move(tboxrow + 10, boxcol + 13);
+	move(tboxrow + 9, boxcol + 13);
 	printw("%4d%9d", this.wins, total.wins);
-	move(tboxrow + 11, boxcol + 13);
+	move(tboxrow + 10, boxcol + 13);
 	printw("%4d%9d", this.worth, total.worth);
+	move(tboxrow + 11, boxcol + 13);
+	printw("%4.0f%%%8.1f%%", thisreturn, totalreturn);
 }
 
 /*
@@ -1267,8 +1273,13 @@ suspend()
 	char *sh;
 #endif
 
+	updatebettinginfo();
 	move(21, 0);
 	refresh();
+	if (dbfd != -1) {
+		lseek(dbfd, uid * sizeof(struct betinfo), 0);
+		write(dbfd, (char *)&total, sizeof(total));
+	}
 #ifdef SIGTSTP
 	kill(getpid(), SIGTSTP);
 #else
@@ -1297,6 +1308,24 @@ movecard()
 		if (cardsoff == 52) {
 			refresh();
 			srcpile = 'q';
+		} else if (!startedgame) {
+			move(msgrow, msgcol);
+			errmsg = TRUE;
+			switch (34 - taloncnt - cinhand) {
+			default:
+				errmsg = FALSE;
+				break;
+			case 1:
+				printw("One card used from talon  ");
+				break;
+			case 2:
+				printw("Two cards used from talon ");
+				break;
+			case 3:
+				printw(">3< cards used from talon ");
+				break;
+			}
+			getcmd(moverow, movecol, "Move:");
 		} else
 			getcmd(moverow, movecol, "Move:");
 		clearmsg();
@@ -1495,14 +1524,14 @@ instruct()
  */
 initall()
 {
-	int uid, i;
+	int i;
 
 	srandom(getpid());
 	time(&acctstart);
 	initdeck(deck);
 	uid = getuid();
 	if (uid < 0)
-		return;
+		uid = 0;
 	dbfd = open("/usr/games/lib/cfscores", 2);
 	if (dbfd < 0)
 		return;
@@ -1518,7 +1547,6 @@ initall()
 		dbfd = -1;
 		return;
 	}
-	lseek(dbfd, uid * sizeof(struct betinfo), 0);
 }
 
 /*
@@ -1585,6 +1613,7 @@ cleanup()
 	status = NOBOX;
 	updatebettinginfo();
 	if (dbfd != -1) {
+		lseek(dbfd, uid * sizeof(struct betinfo), 0);
 		write(dbfd, (char *)&total, sizeof(total));
 		close(dbfd);
 	}
