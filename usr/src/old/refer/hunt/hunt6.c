@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt6.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt6.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -79,10 +79,10 @@ char *qitem[], *rprog;
 		ar[na++] = "fgrep";
 		ar[na++] = "-r";
 		ar[na++] = "-n";
-		ar[na++] = need;
+		ar[na++] = (char *) need;
 		ar[na++] = "-i";
 		ar[na++] = output;
-		ar[na++] = len;
+		ar[na++] = (char *) len;
 		for(j=0; j<nitem; j++)
 			ar[na++] = qitem[j];
 # ifdef D1

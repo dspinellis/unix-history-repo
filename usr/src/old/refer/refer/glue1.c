@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)glue1.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)glue1.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -76,9 +76,9 @@ char *argv[];
 			argc--; 
 			argv++;
 			soutput = argv[1];
-			if (argv[2]<16000)
+			if ((int) argv[2]<16000)
 			{
-				soutlen = argv[2];
+				soutlen = (int) argv[2];
 				argc--; 
 				argv++;
 			}
@@ -87,9 +87,9 @@ char *argv[];
 			argc--; 
 			argv++;
 			tagout = argv[1];
-			if (argv[2]<16000)
+			if ((int)argv[2]<16000)
 			{
-				taglen = argv[2];
+				taglen = (int)argv[2];
 				argc--; 
 				argv++;
 			}
@@ -151,7 +151,7 @@ char *argv[];
 # endif
 			}
 			if (hpt==0)
-				hpt = zalloc(nhash, sizeof(*hpt));
+				hpt = (long *) zalloc(nhash, sizeof(*hpt));
 # if D1
 			fprintf(stderr, "hpt now %o\n",hpt);
 # endif
@@ -159,7 +159,7 @@ char *argv[];
 				err ("No space for hash list (%d)", nhash);
 			fread( hpt, sizeof(*hpt), nhash, fa);
 			if (hfreq==0)
-				hfreq=zalloc(nhash, sizeof(*hfreq));
+				hfreq=(int *)zalloc(nhash, sizeof(*hfreq));
 			if (hfreq==NULL)
 				err ("No space for hash frequencies (%d)", nhash);
 			frtbl = fread(hfreq, sizeof(*hfreq), nhash, fa);
@@ -169,9 +169,9 @@ char *argv[];
 # endif
 			if (master.a == NULL)
 				if (iflong)
-					master.b = zalloc(lmaster, sizeof(long));
+					master.b = (long *)zalloc(lmaster, sizeof(long));
 				else
-					master.a = zalloc(lmaster, sizeof(int));
+					master.a = (unsigned *)zalloc(lmaster, sizeof(int));
 			if (master.a == NULL)
 				err ("no space for answer list",0);
 		}

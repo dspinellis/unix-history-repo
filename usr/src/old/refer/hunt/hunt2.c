@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt2.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt2.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -35,11 +35,14 @@ union ptr {
 # endif
 	_assert (lmaster>0);
 	if (coord==0)
-		coord = zalloc(lmaster, sizeof(lmaster));
+		coord = (int *) zalloc(lmaster, sizeof(lmaster));
 	if (colevel>0)
 	{
-		prevdrop.a=zalloc(lmaster,iflong?sizeof(long): sizeof(int));
-		prevcoord = zalloc(lmaster, sizeof(lmaster));
+		if (iflong)
+			prevdrop.b = (long *) zalloc(lmaster, sizeof(long));
+		else
+			prevdrop.a = (unsigned *) zalloc(lmaster, sizeof(int));
+		prevcoord = (int *) zalloc(lmaster, sizeof(lmaster));
 	}
 	else
 	{
@@ -196,7 +199,7 @@ union ptr {
 # endif
 		if (colevel>0)
 			for ( ; j<nf; j++)
-				if ((iflong?prevcoord.b[j]:prevcoord.a[j])+colevel > nterm)
+				if (prevcoord[j]+colevel > nterm)
 				{
 					_assert(g<lmaster);
 					if (iflong)

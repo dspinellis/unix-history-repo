@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)glue5.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)glue5.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -38,10 +38,11 @@ static int flag = 0;
 fgrep(argc, argv)
 char **argv;
 {
-	instr = nsucc = need = inct = rflag = numwords = nfound = 0;
+	nsucc = need = inct = rflag = numwords = nfound = 0;
+	instr = 0;
 	flag = 0;
 	if (www==0)
-		www = zalloc(MAXSIZ, sizeof (*www));
+		www = (struct words *) zalloc(MAXSIZ, sizeof (*www));
 	if (www==NULL)
 		err("Can't get space for machines", 0);
 	for (q=www; q<www+MAXSIZ; q++) {
@@ -57,12 +58,12 @@ char **argv;
 				rflag++;
 				break;
 			case 'n': /* number of answers needed */
-				need = xargv[1];
+				need = (int) xargv[1];
 				xargv++; xargc--;
 				break;
 			case 'i':
 				instr = xargv[1];
-				inct = xargv[2]+2;
+				inct = (int) xargv[2]+2;
 # if D2
 fprintf(stderr,"inct %d xargv.2. %o %d\n",inct, xargv[2],xargv[2]);
 # endif
