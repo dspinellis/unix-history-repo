@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.43 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.44 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -501,7 +501,8 @@ R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
 undivert(3)dnl
 undivert(4)dnl
 
-# resolve remotely connected UUCP links (if any)
+ifdef(`_NO_UUCP_', `dnl',
+`# resolve remotely connected UUCP links (if any)
 ifdef(`_CLASS_V_',
 `R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: @ $V : $1 @ $2.UUCP $3',
 	`dnl')
@@ -510,7 +511,7 @@ ifdef(`_CLASS_W_',
 	`dnl')
 ifdef(`_CLASS_X_',
 `R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: @ $X : $1 @ $2.UUCP $3',
-	`dnl')
+	`dnl')')
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
