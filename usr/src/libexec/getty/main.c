@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -138,7 +138,7 @@ main(argc, argv)
 		chmod(ttyn, 0622);
 		while (open(ttyn, O_RDWR) != 0) {
 			if (repcnt % 10 == 0) {
-				syslog(LOG_FAIL, "%s: %m", ttyn);
+				syslog(LOG_ERR, "%s: %m", ttyn);
 				closelog();
 			}
 			repcnt++;

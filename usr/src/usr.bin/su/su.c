@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -45,6 +45,8 @@ main(argc,argv)
 	char *password;
 	char buf[1000];
 	FILE *fp;
+
+	openlog("su", LOG_ODELAY, LOG_AUTH);
 
 again:
 	if (argc > 1 && strcmp(argv[1], "-f") == 0) {
@@ -95,8 +97,7 @@ again:
 	if (strcmp(pwd->pw_passwd, crypt(password, pwd->pw_passwd)) != 0) {
 		fprintf(stderr, "Sorry\n");
 		if (pwd->pw_uid == 0) {
-			openlog("su", 0, 0);
-			syslog(LOG_SECURITY, "BAD SU %s on %s",
+			syslog(LOG_CRIT, "BAD SU %s on %s",
 					getlogin(), ttyname(2));
 		}
 		exit(2);
@@ -104,8 +105,7 @@ again:
 ok:
 	endpwent();
 	if (pwd->pw_uid == 0) {
-		openlog("su", 0, 0);
-		syslog(LOG_SECURITY, "%s on %s", getlogin(), ttyname(2));
+		syslog(LOG_NOTICE, "%s on %s", getlogin(), ttyname(2));
 		closelog();
 	}
 	if (setgid(pwd->pw_gid) < 0) {

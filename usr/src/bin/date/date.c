@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -66,6 +66,7 @@ main(argc, argv)
 	extern int errno;
 	int bytenetorder(), bytehostorder();
 
+	openlog("date", LOG_ODELAY, LOG_AUTH);
 	(void) gettimeofday(&tv, &tz);
 	now = tv;
 
@@ -88,7 +89,7 @@ main(argc, argv)
 	username = getlogin();
 	if (username == NULL)		/* single-user or no tty */
 		username = "root";
-	syslog(LOG_SECURITY, "date: set by %s", username);
+	syslog(LOG_NOTICE, "date: set by %s", username);
 
 	ap = argv[1];
 	wtmp[0].ut_time = tv.tv_sec;
