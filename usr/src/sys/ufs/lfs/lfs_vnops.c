@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.88 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.89 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -379,7 +379,8 @@ lfs_fsync(ap)
 	printf("lfs_fsync\n");
 #endif
 	tv = time;
-	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+	return (VOP_UPDATE(ap->a_vp, &tv, &tv,
+	    ap->a_waitfor == MNT_WAIT ? LFS_SYNC : 0));
 }
 
 /*
@@ -447,22 +448,16 @@ lfs_inactive(ap)
  * be ordered and flushed atomically, so that they may be recovered.
  */
 #define	SET_DIROP(fs) {							\
-	int __s;							\
-	__s = splbio();							\
 	if ((fs)->lfs_writer)						\
-		tsleep(&(fs)->lfs_dirops, PRIBIO + 1, "lfs dirop", 0);	\
+		tsleep(&(fs)->lfs_dirops, PRIBIO + 1, "lfs_dirop", 0);	\
 	++(fs)->lfs_dirops;						\
 	(fs)->lfs_doifile = 1;						\
-	splx(__s);							\
 }
 
 #define	SET_ENDOP(fs) {							\
-	int __s;							\
-	__s = splbio();							\
 	--(fs)->lfs_dirops;						\
 	if (!(fs)->lfs_dirops)						\
 		wakeup(&(fs)->lfs_writer);				\
-	splx(__s);							\
 }
 
 #define	MARK_VNODE(dvp)	(dvp)->v_flag |= VDIROP
