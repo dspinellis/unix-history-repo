@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -149,7 +149,6 @@ semicolon:	EATSPACE();
 		cmd->nonsel = cmd->inrange = 0;
 		/* First parse the addresses */
 		naddr = 0;
-		cmd->a1 = cmd->a2 = NULL;
 
 /* Valid characters to start an address */
 #define	addrchar(c)	(strchr("0123456789/\\$", (c)))
@@ -159,16 +158,18 @@ semicolon:	EATSPACE();
 			p = compile_addr(p, cmd->a1);
 			EATSPACE();				/* EXTENSION */
 			if (*p == ',') {
-				naddr++;
 				p++;
 				EATSPACE();			/* EXTENSION */
+				naddr++;
 				cmd->a2 = xmalloc(sizeof(struct s_addr));
 				p = compile_addr(p, cmd->a2);
-			}
-		}
+				EATSPACE();
+			} else
+				cmd->a2 = 0;
+		} else
+			cmd->a1 = cmd->a2 = 0;
 
 nonsel:		/* Now parse the command */
-		EATSPACE();
 		if (!*p)
 			err(COMPILE, "command expected");
 		cmd->code = *p;
@@ -182,8 +183,9 @@ nonsel:		/* Now parse the command */
 "command %c expects up to %d address(es), found %d", *p, fp->naddr, naddr);
 		switch (fp->args) {
 		case NONSEL:			/* ! */
-			cmd->nonsel = ! cmd->nonsel;
 			p++;
+			EATSPACE();
+			cmd->nonsel = ! cmd->nonsel;
 			goto nonsel;
 		case GROUP:			/* { */
 			p++;
@@ -195,6 +197,12 @@ nonsel:		/* Now parse the command */
 			*compile_stream("}", &cmd->u.c, p) = cmd2;
 			cmd->next = cmd2;
 			link = &cmd2->next;
+			/*
+			 * Short-circuit command processing, since end of
+			 * group is really just a noop.
+			 */
+			cmd2->nonsel = 1;
+			cmd2->a1 = cmd2->a2 = 0;
 			break;
 		case EMPTY:		/* d D g G h H l n N p P q x = \0 */
 			p++;
