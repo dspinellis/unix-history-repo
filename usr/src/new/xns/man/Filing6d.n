@@ -1,0 +1,159 @@
+.TH "FILING6D" 1 "3-Feb-87" "Xerox (WRC)"
+.\" $Header: Filing6d.n,v 1.2 87/04/01 13:54:28 ed Exp $
+.SH NAME
+Filing6d - XNS Filing version 6 service
+.SH DESCRIPTION
+.I Filing6d
+is a service for the XNS Courier Filing protocol version 6.
+This service implements a subset of the Filing Protocol which is similar
+to the XNS FilingSubset Protocol; however, extensions to this subset
+provide additional functionality more closely aligned with full Filing
+functionality.
+.PP
+The service is forked from the XNS courier daemon,
+.IR xnscourierd , 
+upon connection requests for version 6 of the Filing Protocol.
+.SH "PROCEDURE SUPPORT"
+The Filing Protocol defined procedures 
+.IR Logon , 
+.IR Logoff , 
+.IR Continue , 
+.IR Open , 
+.IR Close ,
+.IR Create ,
+.IR Delete ,
+.IR GetAttributes ,
+.IR ChangeAttributes ,
+.IR Copy ,
+.IR Move ,
+.IR Store ,
+.IR Retrieve ,
+.IR Replace ,
+.IR Serialize ,
+.I Deserialize
+and
+.I List
+are supported. The extent of support is
+consistent with the FilingSubset Protocol with extensions added to provide
+additional functionality and interoperability.
+.SH "ATTRIBUTE SUPPORT"
+Attribute support within the service is also consistent with the FilingSubset
+Protocol. All attributes defined as mandatory in the FilingSubset Protocol
+are supported (\fIcreatedOn\fR, 
+.IR dataSize , 
+.IR isDirectory , 
+.IR modifiedOn , 
+.IR pathname, 
+.IR type ).
+Additional attributes (\fIcreatedBy\fR, 
+.IR fileID , 
+.IR name ,
+.IR readOn , 
+.IR version)
+are supported
+and/or allowed to provide interoperability. 
+.PP
+Additional Viewpoint related attributes are uninterpreted by the 
+file service; however, they are retained and returned to the client when
+retrieved.
+.PP
+The \fIOpen\fR procedure allows files to be identified through the use of the
+.IR fileID ,
+.I name
+or 
+.I pathname
+attributes.
+.PP
+.I Filing6d
+maintains the file type attribute in a manner consisten with the storage of
+the file locally. Files are stored locallay as described in 
+\fIViewpointfiles(5N)\fR. Uninterpreted attributes are
+retained with the file content so that they may be returned when asked for.
+.PP
+Since the service does not maintain the file types explicitly within the Unix
+file system
+.I Filing6d
+will make an educated guess of the file type based on the contents and/or
+stored attributes of the file, when a client requests the type of a file.
+.SH "FILE TRANSFERS"
+.I Filing6d
+currently makes a distinction between  
+.I tText 
+and other file types for use during file transfer. Files of type
+.I tText
+undergo a translation of contents for compatibility with existing Filing
+implementations; Unix EOL characters
+(\\n) are translated to and from Xerox EOL characters (\\r), Xerox left
+arrow characters are translated to underscore, etc.
+All other files are treated as a binary stream with no translation incurred.
+.SH AUTHENTICATION
+The Filing Protocol allows clients to specify both primary and secondary
+credentials.
+.I Filing6d
+allows specific combinations of these credentials and accompanying verifier
+and performs the authentication based on the type supplied. Clients may
+specify 
+.IR simple ,
+.I strong
+or
+.I nullCredentials
+as the primary credentials. If
+.I simple 
+credentials are supplied, the credentials and verifier will be validated with
+a network Authentication service. 
+.I nullCredentials
+and 
+.I strong
+credentials will effectively be allowed with no network authentication.
+.PP
+Regardless of the type of primary credentials, clients are required to
+supply a set of 
+.I simple
+secondary credentials consisting of the types
+.I userName
+and
+.IR userPassword .
+These will contain the user's Unix user name and password and are used by
+.I Filing6d
+to validate the user on the host system. Failure to supply these will result
+in an Authentication error being returned to the client.
+.SH "SEE ALSO"
+Filing4d(1N), Filing5d(1N), FilingSubset1d(1N)
+.br
+Filing Protocol, \s8XNSS\s0 108507 (July 1985)
+.br
+Filing Protocol, \s8XNSS\s0 108605 (May 1986)
+.br
+FilingSubset Implementor's Guide, \s8XNSG\s0 098609 (September 1986)
+.SH NOTES
+A limited subset of the full Filing Protocol is actually implemented.
+Procedures dealing with controls, access lists or random access are not yet
+implemented.
+.PP
+.I ChangeAttributes
+only allows the \fIname\fR attribute to be modified.
+.PP
+Service related attributes (\fIaccessList\fR,
+.IR checksum ,
+.IR childrenUniquelyNamed ,
+.IR defaultAccessList ,
+.IR numberOfChildren ,
+.IR ordering ,
+.IR parentID ,
+.IR position ,
+.IR subtreeSize ,
+.IR subtreeSizeLimit )
+are not implemented within this service.
+.PP
+.I tAsciiText
+files are currently not implemented. Files of this type are currently 
+transferred as 
+.I tText 
+files with the translation specified above used to insure compatibility with
+existing Filing implementations.
+.SH BUGS
+Like all other server implementations in the Unix/XNS environment a single
+Filing session is not allowed to exist over multiple transport (SPP) 
+connections.
+.SH AUTHOR
+Ed Flint
