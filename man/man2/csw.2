@@ -1,0 +1,29 @@
+.pa 1
+.he 'CSW (II)'7/29/72'CSW (II)'
+.ti 0
+NAME		csw -- read console switches
+.sp
+.ti 0
+SYNOPSIS	sys csw	/ csw = 38. not in assembler
+.br
+(value of csw in r0)
+.br
+(value of buttons in r1)
+.sp
+.ti 0
+DESCRIPTION	The setting of
+the console switches is returned in r0.
+The setting of the
+external buttons is returned in r1.
+.a
+The return is synced to
+a 30 CPS clock for graphical applications.
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	none
+.sp
+.ti 0
+BUGS		Currently the buttons are unavailable.
