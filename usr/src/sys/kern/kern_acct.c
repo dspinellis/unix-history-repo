@@ -1,4 +1,4 @@
-/*	kern_acct.c	6.5	84/08/29	*/
+/*	kern_acct.c	6.6	84/12/12	*/
 
 #include "param.h"
 #include "systm.h"
@@ -137,9 +137,9 @@ compress(t, ut)
 {
 	register exp = 0, round = 0;
 
-	t <<= 6;
+	t = t * AHZ;  /* compiler will convert only this format to a shift */
 	if (ut)
-		t += ut / (1000000 / (1<<6));
+		t += ut / (1000000 / AHZ);
 	while (t >= 8192) {
 		exp++;
 		round = t&04;
