@@ -5,7 +5,7 @@
  */
  
 /*
- * Sccs Id = "@(#)pathnames.h	2.1 %G%";
+ * Sccs Id = "@(#)pathnames.h	2.2 %G%";
  */
 
 #define	LOCAL		'j'		/* Local machine id */
@@ -19,9 +19,15 @@
 #define	HELPFILE	"/usr/lib/Mail.help"
 					/* Name of casual help file */
 #define	THELPFILE	"/usr/lib/Mail.help.~"
+#define	POSTAGE		"/arch/kurt/postage"
+					/* Where to audit mail sending */
 					/* Name of casual tilde help */
 #define	UIDMASK		0177777		/* Significant uid bits */
 #define	MASTER		"/usr/lib/Mail.rc"
 #define	APPEND				/* New mail goes to end of mailbox */
 #define CANLOCK				/* Locking protocol actually works */
 #define	UTIME				/* System implements utime(2) */
+
+#ifndef VMUNIX
+#include "sigretro.h"			/* Retrofit signal defs */
+#endif VMUNIX
