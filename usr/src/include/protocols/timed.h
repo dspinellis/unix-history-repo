@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timed.h	1.3	(Berkeley)	%G%	*/
+/*	@(#)timed.h	1.4	(Berkeley)	%G%	*/
 
 /*
  * Time Synchronization Protocol
@@ -46,13 +46,15 @@ struct tsp {
 #define	TSP_MSITE		19	/* find out master's site */
 #define	TSP_MSITEREQ		20	/* remote master's site request */
 #define	TSP_TEST		21	/* for testing election algo */
+#define TSP_SETDATE		22	/* New from date command */
+#define TSP_SETDATEREQ		23	/* New remote for above */
 
-#define	TSPTYPENUMBER		22
+#define	TSPTYPENUMBER		24
 
 #ifdef TSPTYPES
 char *tsptype[TSPTYPENUMBER] =
   { "ANY", "ADJTIME", "ACK", "MASTERREQ", "MASTERACK", "SETTIME", "MASTERUP", 
   "SLAVEUP", "ELECTION", "ACCEPT", "REFUSE", "CONFLICT", "RESOLVE", "QUIT", 
-  "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", 
-  "MSITEREQ", "TEST" };
+  "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", "MSITEREQ",
+  "TEST", "SETDATE", "SETDATEREQ" };
 #endif
