@@ -3,24 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_bk.c	7.1 (Berkeley) %G%
+ *	@(#)tty_bk.c	7.2 (Berkeley) %G%
  */
 
 #include "bk.h"
 
 #if NBK > 0
 #include "param.h"
-#include "systm.h"
 #include "dir.h"
 #include "user.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "proc.h"
-#include "inode.h"
 #include "file.h"
-#include "conf.h"
 #include "buf.h"
-#include "uio.h"
 
 /*
  * Line discipline for Berkeley network.
