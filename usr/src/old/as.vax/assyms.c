@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.13 %G%";
+static char sccsid[] = "@(#)assyms.c 4.14 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -92,7 +92,11 @@ syminstall()
 	}
 }	/*end of syminstall*/
 
-
+#define ISLABEL(sp) \
+	(   (!savelabels) \
+	 && (sp->s_tag == LABELID) \
+	 && (STRPLACE(sp) & STR_CORE) \
+	 && (FETCHNAME(sp)[0] == 'L'))
 /*
  *	Assign final values to symbols,
  *	and overwrite the index field with its relative position in
@@ -129,15 +133,10 @@ freezesymtab()
 			hdr.a_bss += bs;
 		}
 	   assignindex:
-		if (    (FETCHNAME(sp)[0] != 'L')
-		     || (sp->s_tag != LABELID)
-		     || savelabels
-		     )			/*then, we will write it later on*/
-				sp->s_index = relpos++;
+		if (!ISLABEL(sp))
+			sp->s_index = relpos++;
 	}
 }
-
-
 
 /*
  *	For all of the stabs that had their final value undefined during pass 1
@@ -652,9 +651,7 @@ int symwrite(symfile)
 		int	symsdesired = NOUTSYMS;
 	reg	struct	symtab *sp, *ub;
 		char	*name;			/* temp to save the name */
-		int	nread;
-		char	rbuf[2048];
-		int	i;
+		int	totalstr;
 	/*
 	 *	We use sp->s_index to hold the length of the
 	 *	name; it isn't used for anything else
@@ -662,25 +659,29 @@ int symwrite(symfile)
 	register	struct	allocbox	*allocwalk;
 
 	symsout = 0;
-	DECLITERATE(allocwalk, sp, ub)
-	{
+	totalstr = sizeof(totalstr);
+	DECLITERATE(allocwalk, sp, ub) {
 		if (sp->s_tag >= IGNOREBOUND) 
 			continue;
-		if ((FETCHNAME(sp)[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
+		if (ISLABEL(sp))
 			continue;
 		symsout++;
-
 		name = sp->s_name;		/* save pointer */
 		/*
 		 *	the length of the symbol table string
-		 *	always includes the trailing null
+		 *	always includes the trailing null;
+		 *	blast the pointer to its a.out value.
 		 */
 		if (sp->s_name && (sp->s_index = STRLEN(sp))){
-			sp->s_nmx = STROFF(sp);	/* clobber */
+			sp->s_nmx = totalstr;
+			totalstr += sp->s_index;
 		} else {
 			sp->s_nmx = 0;
 		}
-		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
+		if (sp->s_ptype != 0)
+			sp->s_type = sp->s_ptype;
+		else
+			sp->s_type = (sp->s_type & (~XFORW));
 		if (readonlydata && (sp->s_type&~N_EXT) == N_DATA)
 			sp->s_type = N_TEXT | (sp->s_type & N_EXT);
 		bwrite((char *)&sp->s_nm, sizeof (struct nlist), symfile);
@@ -690,17 +691,36 @@ int symwrite(symfile)
 		yyerror("INTERNAL ERROR: Wrote %d symbols, wanted to write %d symbols\n",
 			symsout, symsdesired);
 	/*
-	 *	Copy the string temporary file to the symbol file,
-	 *	copying all the strings and symbols we ever saw,
-	 *	including labels, stabs strings, ascii strings, etc.
-	 *	This is slightly wasteful.
+	 *	Construct the string pool from the symbols that were written,
+	 *	possibly fetching from the string file if the string
+	 *	is not core resident.
 	 */
-	i = 0;
-	while((nread = read(strfile->_file, rbuf, sizeof(rbuf))) > 0){
-		if (i == 0){
-			((int *)rbuf)[0] = strfilepos;
+	bwrite(&totalstr, sizeof(totalstr), symfile);
+	symsout = 0;
+	DECLITERATE(allocwalk, sp, ub) {
+		if (sp->s_tag >= IGNOREBOUND) 
+			continue;
+		if (ISLABEL(sp))
+			continue;
+		symsout++;
+		if (STRLEN(sp) > 0){
+		 if (STRPLACE(sp) & STR_CORE){
+			bwrite(FETCHNAME(sp), STRLEN(sp), symfile);
+		 } else if (STRPLACE(sp) & STR_FILE){
+			char	rbuf[2048];
+			int	left, nread;
+			fseek(strfile, STROFF(sp), 0);
+			for (left = STRLEN(sp); left > 0; left -= nread){
+				nread = fread(rbuf, sizeof(char),
+					min(sizeof(rbuf), left), strfile);
+				if (nread == 0)
+					break;
+				bwrite(rbuf, nread, symfile);
+			}
+		 }
 		}
-		bwrite(rbuf, nread, symfile);
-		i++;
 	}
+	if (symsout != symsdesired)
+		yyerror("INTERNAL ERROR: Wrote %d strings, wanted %d\n",
+			symsout, symsdesired);
 }
