@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)teach.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)teach.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "back.h"
@@ -43,7 +43,6 @@ int	argc;
 char	**argv;
 
 {
-	register char	*s, *ts[];
 	register int	i;
 
 	signal (2,getout);
