@@ -1,0 +1,6 @@
+created /usr/lib/mailers on dali & monet
+created /usr/lib/sendmail{,.hf,.cf} on dali & monet
+put new sysexits.h in /usr/include on dali
+created network account on monet with pw=mailhack
+created /usr/lib/sendmail.st on dali
+created directory /usr/spool/mqueue on dali & monet
