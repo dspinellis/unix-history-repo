@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -766,21 +766,6 @@ sendtoargv(argv, e)
 
 	while ((p = *argv++) != NULL)
 	{
-		if (argv[0] != NULL && argv[1] != NULL && !strcasecmp(argv[0], "at"))
-		{
-			char nbuf[MAXNAME];
-
-			if (strlen(p) + strlen(argv[1]) + 2 > sizeof nbuf)
-				usrerr("554 address overflow");
-			else
-			{
-				(void) strcpy(nbuf, p);
-				(void) strcat(nbuf, "@");
-				(void) strcat(nbuf, argv[1]);
-				p = newstr(nbuf);
-				argv += 2;
-			}
-		}
 		sendto(p, 0, (ADDRESS *) NULL, 0);
 	}
 }
