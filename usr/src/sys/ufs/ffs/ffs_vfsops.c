@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.27 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -159,13 +159,13 @@ ffs_mount(mp, path, data, ndp, p)
 			 */
 			if (p->p_ucred->cr_uid != 0) {
 				devvp = ump->um_devvp;
-				VOP_LOCK(devvp);
+				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 				if (error = VOP_ACCESS(devvp, VREAD | VWRITE,
 				    p->p_ucred, p)) {
-					VOP_UNLOCK(devvp);
+					VOP_UNLOCK(devvp, 0, p);
 					return (error);
 				}
-				VOP_UNLOCK(devvp);
+				VOP_UNLOCK(devvp, 0, p);
 			}
 			fs->fs_ronly = 0;
 			fs->fs_clean = 0;
@@ -203,12 +203,12 @@ ffs_mount(mp, path, data, ndp, p)
 		accessmode = VREAD;
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
-		VOP_LOCK(devvp);
+		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 		if (error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
 			vput(devvp);
 			return (error);
 		}
-		VOP_UNLOCK(devvp);
+		VOP_UNLOCK(devvp, 0, p);
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0)
 		error = ffs_mountfs(devvp, mp, p);
@@ -322,21 +322,28 @@ ffs_reload(mountp, cred, p)
 		for (i = 0; i < fs->fs_ncg; i++)
 			*lp++ = fs->fs_contigsumsize;
 	}
+
 loop:
+	simple_lock(&mntvnode_slock);
 	for (vp = mountp->mnt_vnodelist.lh_first; vp != NULL; vp = nvp) {
+		if (vp->v_mount != mountp) {
+			simple_unlock(&mntvnode_slock);
+			goto loop;
+		}
 		nvp = vp->v_mntvnodes.le_next;
 		/*
 		 * Step 4: invalidate all inactive vnodes.
 		 */
-		if (vp->v_usecount == 0) {
-			vgone(vp);
-			continue;
-		}
+		if (vrecycle(vp, &mntvnode_slock, p))
+			goto loop;
 		/*
 		 * Step 5: invalidate all cached file data.
 		 */
-		if (vget(vp, 1))
+		simple_lock(&vp->v_interlock);
+		simple_unlock(&mntvnode_slock);
+		if (vget(vp, LK_EXCLUSIVE | LK_INTERLOCK, p)) {
 			goto loop;
+		}
 		if (vinvalbuf(vp, 0, cred, p, 0, 0))
 			panic("ffs_reload: dirty2");
 		/*
@@ -353,9 +360,9 @@ loop:
 		    ino_to_fsbo(fs, ip->i_number));
 		brelse(bp);
 		vput(vp);
-		if (vp->v_mount != mountp)
-			goto loop;
+		simple_lock(&mntvnode_slock);
 	}
+	simple_unlock(&mntvnode_slock);
 	return (0);
 }
 
@@ -646,10 +653,10 @@ ffs_sync(mp, waitfor, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	register struct vnode *vp;
-	register struct inode *ip;
-	register struct ufsmount *ump = VFSTOUFS(mp);
-	register struct fs *fs;
+	struct vnode *nvp, *vp;
+	struct inode *ip;
+	struct ufsmount *ump = VFSTOUFS(mp);
+	struct fs *fs;
 	int error, allerror = 0;
 
 	fs = ump->um_fs;
@@ -660,29 +667,41 @@ ffs_sync(mp, waitfor, cred, p)
 	/*
 	 * Write back each (modified) inode.
 	 */
+	simple_lock(&mntvnode_slock);
 loop:
 	for (vp = mp->mnt_vnodelist.lh_first;
 	     vp != NULL;
-	     vp = vp->v_mntvnodes.le_next) {
+	     vp = nvp) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
 		 */
 		if (vp->v_mount != mp)
 			goto loop;
-		if (VOP_ISLOCKED(vp))
-			continue;
+		simple_lock(&vp->v_interlock);
+		nvp = vp->v_mntvnodes.le_next;
 		ip = VTOI(vp);
 		if ((ip->i_flag &
 		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0 &&
-		    vp->v_dirtyblkhd.lh_first == NULL)
+		    vp->v_dirtyblkhd.lh_first == NULL) {
+			simple_unlock(&vp->v_interlock);
 			continue;
-		if (vget(vp, 1))
-			goto loop;
+		}
+		simple_unlock(&mntvnode_slock);
+		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
+		if (error) {
+			simple_lock(&mntvnode_slock);
+			if (error == ENOENT)
+				goto loop;
+			continue;
+		}
 		if (error = VOP_FSYNC(vp, cred, waitfor, p))
 			allerror = error;
-		vput(vp);
+		VOP_UNLOCK(vp, 0, p);
+		vrele(vp);
+		simple_lock(&mntvnode_slock);
 	}
+	simple_unlock(&mntvnode_slock);
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
@@ -715,8 +734,9 @@ ffs_vget(mp, ino, vpp)
 	ino_t ino;
 	struct vnode **vpp;
 {
-	register struct fs *fs;
-	register struct inode *ip;
+	struct proc *p = curproc;		/* XXX */
+	struct fs *fs;
+	struct inode *ip;
 	struct ufsmount *ump;
 	struct buf *bp;
 	struct vnode *vp;
@@ -736,6 +756,14 @@ ffs_vget(mp, ino, vpp)
 	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
 	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct inode));
+#ifdef DEBUG
+	/*
+	 * Set two second timeout, after which die assuming a hung lock.
+	 */
+	lockinit(&ip->i_lock, PINOD, "inode", 200, 0);
+#else
+	lockinit(&ip->i_lock, PINOD, "inode", 0, 0);
+#endif
 	vp->v_data = ip;
 	ip->i_vnode = vp;
 	ip->i_fs = fs = ump->um_fs;
