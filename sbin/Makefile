@@ -1,9 +1,9 @@
 #	@(#)Makefile	5.4.1.1 (Berkeley) 5/7/91
-#	$Id: Makefile,v 1.8 1993/12/16 22:57:31 rgrimes Exp $
+#	$Id: Makefile,v 1.9 1994/01/18 05:24:16 nate Exp $
 #
 
 SUBDIR=	XNSrouted adjkerntz badsect chkconfig clri comcontrol disklabel dmesg \
-	dump dumpfs fastboot fdisk fsck halt ifconfig mknod mount \
+	dump dumpfs fastboot fdisk fsck ft halt ifconfig mknod mount \
 	mount_isofs mount_pcfs mount_procfs mountd newfs nfsd nfsiod ping \
 	quotacheck reboot restore route routed savecore scsi shutdown \
 	slattach st swapon tunefs umount 
