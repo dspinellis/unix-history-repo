@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)ls.c	5.21 (Berkeley) %G%";
 #include <stdio.h>
 #include "ls.h"
 
-int lstat(), strlen(), prablelen();
+int lstat(), strlen();
 char *emalloc();
 
 int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg, Sflg;
@@ -80,7 +80,6 @@ main(argc, argv)
 	 */
 	if (isatty(1)) {
 		f_nonprint = 1;
-		lengthfcn = prablelen;
 		(void)ioctl(1, TIOCGETP, &sgbuf);
 		if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col)
 			termwidth = (p = getenv("COLUMNS")) ? atoi(p) : 80;
@@ -150,7 +149,6 @@ main(argc, argv)
 			break;
 		case 'q':
 			f_nonprint = 1;
-			lengthfcn = prablelen;
 			break;
 		case 'r':
 			f_reversesort = 1;
@@ -325,9 +323,13 @@ displaydir(stats, num)
 {
 	register char *p, *savedpath;
 	LS *lp;
+	u_long save;
 
-	if (num > 1 && !f_specialdir)
+	if (num > 1 && !f_specialdir) {
+		save = stats[0].lstat.st_flags;
 		qsort((char *)stats, num, sizeof(LS), sortfcn);
+		stats[0].lstat.st_flags = save;
+	}
 
 	printfcn(stats, num);
 
@@ -384,28 +386,34 @@ subdir(lp, newline, tag)
 	}
 }
 
-static
 tabdir(lp, s_stats, s_names)
 	LS *lp, **s_stats;
 	char **s_names;
 {
-	register int cnt, maxentry;
+	register DIR *dirp;
+	register int cnt, maxentry, maxlen;
 	register char *p, *names;
 	struct dirent *dp;
+	u_long blocks;
 	LS *stats;
-	DIR *dirp;
 
-	/* make this big so we don't realloc often */
+	/*
+	 * allocate space for array of LS structures and the file names
+	 * the name field will point to.  Make it big so we don't have
+	 * to realloc often.
+	 */
 #define	DEFNUM	256
 	maxentry = DEFNUM;
 	*s_stats = stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
 	*s_names = names = emalloc((u_int)lp->lstat.st_size);
 
 	if (!(dirp = opendir(f_specialdir ? lp->name : "."))) {
-		(void)fprintf(stderr, "ls: %s: %s\n",
-		    lp->name, strerror(errno));
+		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
+		    strerror(errno));
 		return(0);
 	}
+	blocks = 0;
+	maxlen = -1;
 	for (cnt = 0; dp = readdir(dirp);) {
 		/* this does -A and -a */
 		p = dp->d_name;
@@ -428,17 +436,43 @@ tabdir(lp, s_stats, s_names)
 				continue;
 			exit(1);
 		}
-		/*
-		 * get the inode from the directory, in case the -f flag
-		 * was set and we can't stat the actual file.
-		 */
-		stats[cnt].lstat.st_ino = dp->d_ino;
 		stats[cnt].name = names;
-		bcopy(dp->d_name, names, (int)dp->d_namlen);
+
+		/* strip out unprintables */
+		if (f_nonprint)
+			prcopy(dp->d_name, names, (int)dp->d_namlen);
+		else
+			bcopy(dp->d_name, names, (int)dp->d_namlen);
 		names += dp->d_namlen;
 		*names++ = '\0';
+
+		/*
+		 * get the inode from the directory, so the -f flag
+		 * works right.
+		 */
+		stats[cnt].lstat.st_ino = dp->d_ino;
+
+		/* save name length for -C format */
+		stats[cnt].len = dp->d_namlen;
+		/* calculate number of blocks if -l format */
+		if (f_longform)
+			blocks += stats[cnt].lstat.st_blocks;
+		/* save max length if -C format */
+		else if (!f_singlecol && maxlen < (int)dp->d_namlen)
+			maxlen = dp->d_namlen;
 		++cnt;
 	}
+	/*
+	 * overload -- we probably have to save either blocks or maxlen
+	 * with the lstat array, so we stuff it into an unused field in
+	 * the first stat structure.  If there's ever a type larger than
+	 * u_long, fix this.  This information must be saved if qsort
+	 * is called.
+	 */
+	if (f_longform)
+		stats[0].lstat.st_flags = blocks;
+	else if (!f_singlecol)
+		stats[0].lstat.st_flags = maxlen;
 	closedir(dirp);
 	return(cnt);
 }
