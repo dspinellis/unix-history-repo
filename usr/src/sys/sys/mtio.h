@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtio.h	7.5 (Berkeley) %G%
+ *	@(#)mtio.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -56,7 +56,15 @@ struct mtget {
 #define	MT_ISCPC	0x06		/* SUN */
 #define	MT_ISAR		0x07		/* SUN */
 #define	MT_ISTMSCP	0x08		/* DEC TMSCP protocol (TU81, TK50) */
-#define	MT_ISCY		0x09		/* CCI Cipher */
+#define MT_ISCY		0x09		/* CCI Cipher */
+#define MT_ISCT		0x0a		/* HP 1/4 tape */
+#define MT_ISFHP	0x0b		/* HP 7980 1/2 tape */
+#define MT_ISEXABYTE	0x0c		/* Exabyte */
+#define MT_ISEXA8200	0x0c		/* Exabyte EXB-8200 */
+#define MT_ISEXA8500	0x0d		/* Exabyte EXB-8500 */
+#define MT_ISVIPER1	0x0e		/* Archive Viper-150 */
+#define MT_ISPYTHON	0x0f		/* Archive Python (DAT) */
+#define MT_ISHPDAT	0x10		/* HP 35450A DAT drive */
 
 /* mag tape io control commands */
 #define	MTIOCTOP	_IOW('m', 1, struct mtop)	/* do a mag tape op */
@@ -66,4 +74,18 @@ struct mtget {
 
 #ifndef KERNEL
 #define	DEFTAPE	"/dev/rmt12"
+#endif
+
+#ifdef	KERNEL
+/*
+ * minor device number
+ */
+
+#define	T_UNIT		003		/* unit selection */
+#define	T_NOREWIND	004		/* no rewind on close */
+#define	T_DENSEL	030		/* density select */
+#define	T_800BPI	000		/* select  800 bpi */
+#define	T_1600BPI	010		/* select 1600 bpi */
+#define	T_6250BPI	020		/* select 6250 bpi */
+#define	T_BADBPI	030		/* undefined selection */
 #endif
