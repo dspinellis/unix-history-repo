@@ -1,4 +1,4 @@
-/*	uba.c	4.26	81/03/22	*/
+/*	uba.c	4.27	81/03/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,7 +62,7 @@ ubago(ui)
 	(*um->um_driver->ud_dgo)(um);
 	if (ui->ui_dk >= 0) {
 		dk_xfer[unit]++;
-		dk_wds[unit] += um->um_tab.b_actf->b_bcount>>6;
+		dk_wds[unit] += um->um_tab.b_actf->b_actf->b_bcount>>6;
 	}
 	return (1);
 rwait:
