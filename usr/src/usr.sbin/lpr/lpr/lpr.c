@@ -56,7 +56,7 @@
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	4.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	4.27 (Berkeley) %G%";
 #endif
 
 /*
@@ -101,7 +101,7 @@ char	*class = host;		/* class title on header page */
 char    *jobname;		/* job name on header page */
 char	*name;			/* program name */
 char	*printer;		/* printer name */
-char	buf[BUFSIZ];
+struct	stat statb;
 
 int	MX;			/* maximum number of blocks to copy */
 int	MC;			/* maximum number of copies allowed */
@@ -124,6 +124,7 @@ main(argc, argv)
 	struct passwd *pw;
 	extern char *itoa();
 	register char *arg, *cp;
+	char buf[BUFSIZ];
 	int i, f;
 	struct stat stb;
 
@@ -305,6 +306,8 @@ main(argc, argv)
 			continue;	/* file unreasonable */
 
 		if (sflag && (cp = linked(arg)) != NULL) {
+			(void) sprintf(buf, "%d %d", statb.st_dev, statb.st_ino);
+			card('S', buf);
 			if (format == 'p')
 				card('T', title ? title : arg);
 			for (i = 0; i < ncopies; i++)
@@ -370,6 +373,7 @@ copy(f, n)
 	char n[];
 {
 	register int fd, i, nr, nc;
+	char buf[BUFSIZ];
 
 	if (format == 'p')
 		card('T', title ? title : n);
@@ -443,6 +447,7 @@ linked(file)
 card(c, p2)
 	register char c, *p2;
 {
+	char buf[BUFSIZ];
 	register char *p1 = buf;
 	register int len = 2;
 
@@ -524,7 +529,6 @@ test(file)
 	char *file;
 {
 	struct exec execb;
-	struct stat statb;
 	register int fd;
 	register char *cp;
 
@@ -609,6 +613,7 @@ chkprinter(s)
 	char *s;
 {
 	int status;
+	char buf[BUFSIZ];
 	static char pbuf[BUFSIZ/2];
 	char *bp = pbuf;
 	extern char *pgetstr();
@@ -637,6 +642,7 @@ mktemps()
 {
 	register int c, len, fd, n;
 	register char *cp;
+	char buf[BUFSIZ];
 	char *mktemp();
 
 	(void) sprintf(buf, "%s/.seq", SD);

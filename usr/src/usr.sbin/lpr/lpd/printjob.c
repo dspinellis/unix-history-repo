@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.23 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,6 +14,17 @@ static char sccsid[] = "@(#)printjob.c	4.22 (Berkeley) %G%";
 #define DORETURN	0	/* absorb fork error */
 #define DOABORT		1	/* abort if dofork fails */
 
+/*
+ * Error tokens
+ */
+#define REPRINT		-2
+#define ERROR		-1
+#define	OK		0
+#define	FATALERR	1
+#define	NOACCT		2
+#define	FILTERERR	3
+#define	ACCESS		4
+
 char	title[80];		/* ``pr'' title */
 FILE	*cfp;			/* control file */
 int	pfd;			/* printer file descriptor */
@@ -25,6 +36,8 @@ int	child;			/* id of any filters */
 int	ofilter;		/* id of output filter, if any */
 int	tof;			/* true if at top of form */
 int	remote;			/* true if sending files to remote */
+dev_t	fdev;			/* device of file pointed to by symlink */
+ino_t	fino;			/* inode of file pointed to by symlink */
 
 char	fromhost[32];		/* user's host machine */
 char	logname[32];		/* user's login name */
@@ -141,9 +154,9 @@ again:
 				break;
 			}
 		}
-		if (i == 0)		/* file ok and printed */
+		if (i == OK)		/* file ok and printed */
 			count++;
-		else if (i > 0) {	/* try reprinting the job */
+		else if (i == REPRINT) { /* try reprinting the job */
 			syslog(LOG_INFO, "restarting %s", printer);
 			if (ofilter > 0) {
 				kill(ofilter, SIGCONT);	/* to be sure */
@@ -193,21 +206,20 @@ char ifonts[4][18] = {
 /*
  * The remaining part is the reading of the control file (cf)
  * and performing the various actions.
- * Returns 0 if everthing was OK, 1 if we should try to reprint the job and
- * -1 if a non-recoverable error occured.
  */
 printit(file)
 	char *file;
 {
 	register int i;
-	int bombed = 0;
+	char *cp;
+	int bombed = OK;
 
 	/*
-	 * open control file
+	 * open control file; ignore if no longer there.
 	 */
 	if ((cfp = fopen(file, "r")) == NULL) {
 		syslog(LOG_INFO, "%s: %s: %m", printer, file);
-		return(0);
+		return(OK);
 	}
 	/*
 	 * Reset troff fonts.
@@ -224,6 +236,7 @@ printit(file)
 	 *      rest of the line is the argument.
 	 *      valid commands are:
 	 *
+	 *		S -- "stat info" for symbolic link protection
 	 *		J -- "job name" on banner page
 	 *		C -- "class name" on banner page
 	 *              L -- "literal" user's name to print on banner
@@ -266,11 +279,24 @@ printit(file)
 			strncpy(logname, line+1, sizeof(logname)-1);
 			if (RS) {			/* restricted */
 				if (getpwnam(logname) == (struct passwd *)0) {
-					bombed = 2;
+					bombed = NOACCT;
 					sendmail(line+1, bombed);
 					goto pass2;
 				}
 			}
+			continue;
+
+		case 'S':
+			cp = line+1;
+			i = 0;
+			while (*cp >= '0' && *cp <= '9')
+				i = i * 10 + (*cp++ - '0');
+			fdev = i;
+			cp++;
+			i = 0;
+			while (*cp >= '0' && *cp <= '9')
+				i = i * 10 + (*cp++ - '0');
+			fino = i;
 			continue;
 
 		case 'J':
@@ -314,15 +340,16 @@ printit(file)
 
 		default:	/* some file to print */
 			switch (i = print(line[0], line+1)) {
-			case -1:
-				if (!bombed)
-					bombed = 1;
+			case ERROR:
+				if (bombed == OK)
+					bombed = FATALERR;
 				break;
-			case 1:
+			case REPRINT:
 				(void) fclose(cfp);
-				return(1);
-			case 2:
-				bombed = 3;
+				return(REPRINT);
+			case FILTERERR:
+			case ACCESS:
+				bombed = i;
 				sendmail(logname, bombed);
 			}
 			title[0] = '\0';
@@ -341,7 +368,7 @@ pass2:
 	while (getline(cfp))
 		switch (line[0]) {
 		case 'M':
-			if (bombed < 2)		/* already sent if >= 2 */
+			if (bombed < NOACCT)	/* already sent if >= NOACCT */
 				sendmail(line+1, bombed);
 			continue;
 
@@ -353,7 +380,7 @@ pass2:
 	 */
 	(void) fclose(cfp);
 	(void) unlink(file);
-	return(bombed ? -1 : 0);
+	return(bombed == OK ? OK : ERROR);
 }
 
 /*
@@ -376,9 +403,18 @@ print(format, file)
 	char *av[15], buf[BUFSIZ];
 	int pid, p[2], stopped = 0;
 	union wait status;
+	struct stat stb;
 
-	if ((fi = open(file, O_RDONLY)) < 0)
-		return(-1);
+	if (lstat(file, &stb) < 0 || (fi = open(file, O_RDONLY)) < 0)
+		return(ERROR);
+	/*
+	 * Check to see if data file is a symbolic link. If so, it should
+	 * still point to the same file or someone is trying to print
+	 * something he shouldn't.
+	 */
+	if ((stb.st_mode & S_IFMT) == S_IFLNK && fstat(fi, &stb) == 0 &&
+	    (stb.st_dev != fdev || stb.st_ino != fino))
+		return(ACCESS);
 	if (!SF && !tof) {		/* start on a fresh page */
 		(void) write(ofd, FF, strlen(FF));
 		tof = 1;
@@ -388,10 +424,10 @@ print(format, file)
 		while ((n = read(fi, buf, BUFSIZ)) > 0)
 			if (write(ofd, buf, n) != n) {
 				(void) close(fi);
-				return(1);
+				return(REPRINT);
 			}
 		(void) close(fi);
-		return(0);
+		return(OK);
 	}
 	switch (format) {
 	case 'p':	/* print file using 'pr' */
@@ -421,7 +457,7 @@ print(format, file)
 		if (prchild < 0) {
 			prchild = 0;
 			(void) close(p[0]);
-			return(-1);
+			return(ERROR);
 		}
 		fi = p[0];			/* use pipe for input */
 	case 'f':	/* print plain text file */
@@ -488,7 +524,7 @@ print(format, file)
 		(void) close(fi);
 		syslog(LOG_ERR, "%s: illegal format character '%c'",
 			printer, format);
-		return(-1);
+		return(ERROR);
 	}
 	if ((av[0] = rindex(prog, '/')) != NULL)
 		av[0]++;
@@ -509,7 +545,7 @@ print(format, file)
 			(void) close(fi);
 			syslog(LOG_WARNING, "%s: output filter died (%d)",
 				printer, status.w_retcode);
-			return(1);
+			return(REPRINT);
 		}
 		stopped++;
 	}
@@ -544,14 +580,20 @@ start:
 	if (!WIFEXITED(status)) {
 		syslog(LOG_WARNING, "%s: Daemon filter '%c' terminated (%d)",
 			printer, format, status.w_termsig);
-		return(-1);
-	} else if (status.w_retcode > 2) {
+		return(ERROR);
+	}
+	switch (status.w_retcode) {
+	case 0:
+		tof = 1;
+		return(OK);
+	case 1:
+		return(REPRINT);
+	default:
 		syslog(LOG_WARNING, "%s: Daemon filter '%c' exited (%d)",
 			printer, format, status.w_retcode);
-		return(-1);
-	} else if (status.w_retcode == 0)
-		tof = 1;
-	return(status.w_retcode);
+	case 2:
+		return(ERROR);
+	}
 }
 
 /*
@@ -562,14 +604,14 @@ start:
 sendit(file)
 	char *file;
 {
-	register int linelen, err = 0;
-	char last[132];
+	register int i, err = OK;
+	char *cp, last[BUFSIZ];
 
 	/*
 	 * open control file
 	 */
 	if ((cfp = fopen(file, "r")) == NULL)
-		return(0);
+		return(OK);
 	/*
 	 *      read the control file for work to do
 	 *
@@ -587,24 +629,43 @@ sendit(file)
 	 */
 	while (getline(cfp)) {
 	again:
+		if (line[0] == 'S') {
+			cp = line+1;
+			i = 0;
+			while (*cp >= '0' && *cp <= '9')
+				i = i * 10 + (*cp++ - '0');
+			fdev = i;
+			cp++;
+			i = 0;
+			while (*cp >= '0' && *cp <= '9')
+				i = i * 10 + (*cp++ - '0');
+			fino = i;
+			continue;
+		}
 		if (line[0] >= 'a' && line[0] <= 'z') {
 			strcpy(last, line);
-			while (linelen = getline(cfp))
+			while (i = getline(cfp))
 				if (strcmp(last, line))
 					break;
-			if ((err = sendfile('\3', last+1)) > 0) {
-				(void) fclose(cfp);
-				return(1);
-			} else if (err)
+			switch (sendfile('\3', last+1)) {
+			case OK:
+				if (i)
+					goto again;
 				break;
-			if (linelen)
-				goto again;
+			case REPRINT:
+				(void) fclose(cfp);
+				return(REPRINT);
+			case ACCESS:
+				sendmail(logname, ACCESS);
+			case ERROR:
+				err = ERROR;
+			}
 			break;
 		}
 	}
-	if (!err && sendfile('\2', file) > 0) {
+	if (err == OK && sendfile('\2', file) > 0) {
 		(void) fclose(cfp);
-		return(1);
+		return(REPRINT);
 	}
 	/*
 	 * pass 2
@@ -614,11 +675,11 @@ sendit(file)
 		if (line[0] == 'U')
 			(void) unlink(line+1);
 	/*
-	 * clean-up incase another control file exists
+	 * clean-up in case another control file exists
 	 */
 	(void) fclose(cfp);
 	(void) unlink(file);
-	return(0);
+	return(err);
 }
 
 /*
@@ -633,15 +694,23 @@ sendfile(type, file)
 	char buf[BUFSIZ];
 	int sizerr, resp;
 
-	if ((f = open(file, O_RDONLY)) < 0 || fstat(f, &stb) < 0)
-		return(-1);
+	if (lstat(file, &stb) < 0 || (f = open(file, O_RDONLY)) < 0)
+		return(ERROR);
+	/*
+	 * Check to see if data file is a symbolic link. If so, it should
+	 * still point to the same file or someone is trying to print something
+	 * he shouldn't.
+	 */
+	if ((stb.st_mode & S_IFMT) == S_IFLNK && fstat(f, &stb) == 0 &&
+	    (stb.st_dev != fdev || stb.st_ino != fino))
+		return(ACCESS);
 	(void) sprintf(buf, "%c%d %s\n", type, stb.st_size, file);
 	amt = strlen(buf);
 	for (i = 0;  ; i++) {
 		if (write(pfd, buf, amt) != amt ||
 		    (resp = response()) < 0 || resp == '\1') {
 			(void) close(f);
-			return(1);
+			return(REPRINT);
 		} else if (resp == '\0')
 			break;
 		if (i == 0)
@@ -662,21 +731,19 @@ sendfile(type, file)
 			sizerr = 1;
 		if (write(pfd, buf, amt) != amt) {
 			(void) close(f);
-			return(1);
+			return(REPRINT);
 		}
 	}
 	(void) close(f);
 	if (sizerr) {
 		syslog(LOG_INFO, "%s: %s: changed size", printer, file);
-		(void) write(pfd, "\1", 1);  /* tell recvjob to ignore this file */
-		i = -1;
-	} else if (write(pfd, "", 1) != 1)
-		i = 1;
-	else if (response())
-		i = 1;
-	else
-		i = 0;
-	return(i);
+		/* tell recvjob to ignore this file */
+		(void) write(pfd, "\1", 1);
+		return(ERROR);
+	}
+	if (write(pfd, "", 1) != 1 || response())
+		return(REPRINT);
+	return(OK);
 }
 
 /*
@@ -842,17 +909,17 @@ sendmail(user, bombed)
 		if (*jobname)
 			printf("(%s) ", jobname);
 		switch (bombed) {
-		case 0:
+		case OK:
 			printf("\ncompleted successfully\n");
 			break;
 		default:
-		case 1:
+		case FATALERR:
 			printf("\ncould not be printed\n");
 			break;
-		case 2:
+		case NOACCT:
 			printf("\ncould not be printed without an account on %s\n", host);
 			break;
-		case 3:
+		case FILTERERR:
 			if (stat(tmpfile, &stb) < 0 || stb.st_size == 0 ||
 			    (fp = fopen(tmpfile, "r")) == NULL) {
 				printf("\nwas printed but had some errors\n");
@@ -862,6 +929,9 @@ sendmail(user, bombed)
 			while ((i = getc(fp)) != EOF)
 				putchar(i);
 			(void) fclose(fp);
+			break;
+		case ACCESS:
+			printf("\nwas not printed because it was not linked to the original file\n");
 		}
 		fflush(stdout);
 		(void) close(1);
