@@ -1,4 +1,4 @@
-/*	llib-lc	1.25	85/10/30	*/
+/*	llib-lc	1.26	85/11/01	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -119,7 +119,7 @@ int	sigvec(c, f, m) struct sigvec *f, *m; { return 0; }
 int	sigblock(m) { return (m); }
 int	sigsetmask(m) { return (m); }
 	sigpause(m) { ; }
-int	sigstack(a, on) char *a; int on; { ; }
+int	sigstack(ss, oss) struct sigstack *ss, *oss; { return 0 ; }
 int	socket( a, t, p) {return 1;}
 int	socketpair( d, t, p, s ) int s[2]; { return 0; }
 int	stat(s, b) char *s; struct stat *b; { return(0); }
