@@ -1,4 +1,4 @@
-/*	if_imp.c	4.1	82/02/01	*/
+/*	if_imp.c	4.2	82/02/01	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -103,7 +103,8 @@ impinit(unit)
 }
 
 struct sockproto impproto = { PF_IMPLINK };
-struct sockaddr_in impaddr = { AF_IMPLINK };
+struct sockaddr_in impdst = { AF_IMPLINK };
+struct sockaddr_in impsrc = { AF_IMPLINK };
 
 /*
  * ARPAnet 1822 input routine.
@@ -285,10 +286,11 @@ COUNT(IMP_INPUT);
 
 	default:
 		impproto.sp_protocol = ip->il_link;
-		impaddr.sin_addr.s_net = ip->il_network;
-		impaddr.sin_addr.s_host = ip->il_host;
-		impaddr.sin_addr.s_imp = ip->il_imp;
-		raw_input(m, impproto, impaddr);
+		impdst.sin_addr = sc->imp_if.if_addr;
+		impsrc.sin_addr.s_net = ip->il_network;
+		impsrc.sin_addr.s_host = ip->il_host;
+		impsrc.sin_addr.s_imp = ip->il_imp;
+		raw_input(m, impproto, impdst, impsrc);
 		return;
 	}
 	IF_ENQUEUE(inq, m);

@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.2	82/01/24	*/
+/*	raw_ip.c	4.3	82/02/01	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,7 +16,8 @@
  * Raw interface to IP protocol.
  */
 
-static struct sockaddr_in ripaddr = { PF_INET };
+static struct sockaddr_in ripdst = { PF_INET };
+static struct sockaddr_in ripsrc = { PF_INET };
 static struct sockproto ripproto = { AF_INET };
 
 /*
@@ -33,8 +34,9 @@ rip_input(m)
 
 COUNT(RIP_INPUT);
 	ripproto.sp_protocol = ip->ip_p;
-	ripaddr.sin_addr = ip->ip_dst;
-	raw_input(m, ripproto, ripaddr);
+	ripdst.sin_addr = ip->ip_dst;
+	ripsrc.sin_addr = ip->ip_src;
+	raw_input(m, ripproto, ripdst, ripsrc);
 }
 
 /*ARGSUSED*/
@@ -58,8 +60,6 @@ rip_output(m0, so)
 	register struct rawcb *rp = sotorawcb(so);
 
 COUNT(RIP_OUTPUT);
-	if (so->so_options & SO_DEBUG)
-		printf("rip_output\n");
 	/*
 	 * Calculate data length and get an mbuf
 	 * for IP header.
@@ -86,7 +86,6 @@ COUNT(RIP_OUTPUT);
 	ip->ip_src =
 		((struct sockaddr_in *)&so->so_addr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-printf("ip=<p=%d,len=%d,dst=%x,src=%x>\n",ip->ip_p,ip->ip_len,ip->ip_dst,ip->ip_src);
 	return (ip_output(m, 0));
 }
 

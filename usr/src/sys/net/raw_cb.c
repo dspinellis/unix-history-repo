@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.1	82/02/01	*/
+/*	raw_cb.c	4.2	82/02/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,8 +33,6 @@ raw_attach(so, addr)
 	struct ifnet *ifp = ifnet;
 
 COUNT(RAW_ATTACH);
-	if (so->so_options & SO_DEBUG)
-		printf("raw_attach: addr=%d\n", addr->sa_family);
 	/*
 	 * Should we verify address not already in use?
 	 * Some say yes, others no.
@@ -88,8 +86,6 @@ raw_detach(rp)
 	struct socket *so = rp->rcb_socket;
 
 COUNT(RAW_DETACH);
-	if (rp->rcb_socket->so_options & SO_DEBUG)
-		printf("raw_detach: rp=%X\n", rp);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
@@ -103,8 +99,6 @@ raw_disconnect(rp)
 	struct rawcb *rp;
 {
 COUNT(RAW_DISCONNECT);
-	if (rp->rcb_socket->so_options & SO_DEBUG)
-		printf("raw_disconnect: rp=%X\n", rp);
 	rp->rcb_flags &= ~RAW_ADDR;
 	if (rp->rcb_socket->so_state & SS_USERGONE)
 		raw_detach(rp);
@@ -119,9 +113,6 @@ raw_connaddr(rp, addr)
 	struct sockaddr *addr;
 {
 COUNT(RAW_CONNADDR);
-	if (rp->rcb_socket->so_options & SO_DEBUG);
-		printf("raw_connaddr: rp=%x, addr=<%x,%x>\n",
-		 rp, addr->sa_family, ((struct sockaddr_in *)addr)->sin_addr);
 	bcopy(addr, &rp->rcb_addr, sizeof(struct sockaddr));
 	rp->rcb_flags |= RAW_ADDR;
 }

@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.5	82/01/24	*/
+/*	raw_usrreq.c	4.6	82/02/01	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -24,10 +24,10 @@ COUNT(RAW_INIT);
 /*
  * Raw protocol interface.
  */
-raw_input(m0, pf, af)
+raw_input(m0, pf, daf, saf)
 	struct mbuf *m0;
 	struct sockproto pf;
-	struct sockaddr af;
+	struct sockaddr daf, saf;
 {
 	register struct mbuf *m;
 	struct raw_header *rh;
@@ -45,7 +45,8 @@ raw_input(m0, pf, af)
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct raw_header);
 	rh = mtod(m, struct raw_header *);
-	rh->raw_address = af;
+	rh->raw_dst = daf;
+	rh->raw_src = saf;
 	rh->raw_protocol = pf;
 
 	/*
@@ -75,6 +76,7 @@ rawintr()
 	register struct protosw *pr;
 	register struct sockproto *sp;
 	register struct sockaddr *sa;
+	struct raw_header *rawp;
 	struct socket *last;
 
 COUNT(RAWINTR);
@@ -84,8 +86,9 @@ next:
 	splx(s);
 	if (m == 0)
 		return;
-	sp = &(mtod(m, struct raw_header *)->raw_protocol);
-	sa = &(mtod(m, struct raw_header *)->raw_address);
+	rawp = mtod(m, struct raw_header *);
+	sp = &rawp->raw_protocol;
+	sa = &rawp->raw_dst;
 
 	/*
 	 * Find the appropriate socket(s) in which to place this
@@ -97,18 +100,9 @@ next:
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
 		so = rp->rcb_socket;
 		pr = so->so_proto;
-
-		if (so->so_options & SO_DEBUG) {
-			printf("rawintr: sp=<%d,%d>, af=<%d,%x>\n",
-			 sp->sp_family, sp->sp_protocol, sa->sa_family,
-			 ((struct sockaddr_in *)sa)->sin_addr);
-			printf("pr=<%d,%d>\n", pr->pr_family, pr->pr_protocol);
-		}
 		if (pr->pr_family != sp->sp_family ||
 		    pr->pr_protocol != sp->sp_protocol)
 			continue;
-		printf("rawintr: so=<%d,%x>\n", so->so_addr.sa_family,
-			((struct sockaddr_in *)&so->so_addr)->sin_addr);
 		if (sa->sa_family != so->so_addr.sa_family)
 			continue;
 		/*
@@ -131,7 +125,14 @@ next:
 
 			if (n = m_copy(m->m_next, 0, M_COPYALL))
 				goto nospace;
-			sbappend(&last->so_rcv, n);
+			if (sbappendaddr(&last->so_rcv, &rawp->raw_src, n) == 0) {
+				/*
+				 * Should drop notification of lost packet
+				 * into this guy's queue, but...
+				 */
+				m_freem(n);
+				goto nospace;
+			}
 			sorwakeup(last);
 		}
 nospace:
@@ -139,8 +140,9 @@ nospace:
 	}
 	if (last == 0)
 		goto drop;
-	m = m_free(m);		/* drop generic header */
-	sbappend(&last->so_rcv, m->m_next);
+	if (sbappendaddr(&last->so_rcv, &rawp->raw_src, m->m_next) == 0)
+		goto drop;
+	(void) m_free(m);	/* generic header */
 	sorwakeup(last);
 	goto next;
 drop:
@@ -159,8 +161,6 @@ raw_usrreq(so, req, m, addr)
 	int error = 0;
 
 COUNT(RAW_USRREQ);
-	if (so->so_options & SO_DEBUG)
-		printf("raw_usrreq: req=%d\n");
 	if (rp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 
