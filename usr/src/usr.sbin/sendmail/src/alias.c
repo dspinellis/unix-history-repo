@@ -18,9 +18,9 @@
 
 #ifndef lint
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.18 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.19 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.18 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.19 (Berkeley) %G% (without DBM)";
 #endif
 #endif /* not lint */
 
@@ -166,7 +166,7 @@ aliaslookup(name)
 **		if ~DBM: reads the aliases into the symbol table.
 */
 
-# define DBMMODE	0666
+# define DBMMODE	0644
 
 initaliases(aliasfile, init)
 	char *aliasfile;
@@ -230,10 +230,8 @@ initaliases(aliasfile, init)
 	/*
 	**  See if the DBM version of the file is out of date with
 	**  the text version.  If so, go into 'init' mode automatically.
-	**	This only happens if our effective userid owns the DBM
-	**	version or if the mode of the database is 666 -- this
-	**	is an attempt to avoid protection problems.  Note the
-	**	unpalatable hack to see if the stat succeeded.
+	**	This only happens if our effective userid owns the DBM.
+	**	Note the unpalatable hack to see if the stat succeeded.
 	*/
 
 	modtime = stb.st_mtime;
@@ -243,8 +241,7 @@ initaliases(aliasfile, init)
 	if (!init && (stat(buf, &stb) < 0 || stb.st_mtime < modtime || atcnt < 0))
 	{
 		errno = 0;
-		if (AutoRebuild && stb.st_ino != 0 &&
-		    ((stb.st_mode & 0777) == 0666 || stb.st_uid == geteuid()))
+		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
 		{
 			init = TRUE;
 			automatic = TRUE;
