@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.16 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -54,8 +54,7 @@ expansions, e.g.,
 if `john' sends to `group',
 and `group' includes `john' in the expansion,
 then the letter will not be delivered to `john'.
-.Pp
-Flags are:
+.Ss Parameters
 .Bl -tag -width Fl
 .It Fl B Ns Ar type
 Set the body type to
@@ -203,7 +202,7 @@ receive copies even if listed in the message header.
 Go into verbose mode.
 Alias expansions will be announced, etc.
 .El
-.Pp
+.Ss Options
 There are also a number of processing options that may be set.
 Normally these will only be used by a system administrator.
 Options may be set either on the command line
