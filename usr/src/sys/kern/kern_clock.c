@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.41	82/10/17	*/
+/*	kern_clock.c	4.42	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,7 +58,6 @@ hardclock(pc, ps)
 	register struct callout *p1;
 	register struct proc *p;
 	register int s, cpstate;
-	extern double avenrun[];
 
 	/*
 	 * Update real-time timeout queue.

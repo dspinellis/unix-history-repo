@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.9	82/10/17	*/
+/*	kern_sig.c	5.10	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,10 +48,12 @@ sigstack()
 
 }
 
+#ifdef notdef
 kill()
 {
 
 }
+#endif
 
 killpg()
 {

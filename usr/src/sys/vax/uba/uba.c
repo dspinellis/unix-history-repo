@@ -1,4 +1,4 @@
-/*	uba.c	4.53	82/10/20	*/
+/*	uba.c	4.54	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -370,53 +370,7 @@ ubainit(uba)
 	}
 }
 
-#ifdef notdef
-#if VAX780
-/*
- * Check to make sure the UNIBUS adaptor is not hung,
- * with an interrupt in the register to be presented,
- * but not presenting it for an extended period (5 seconds).
- */
-unhang()
-{
-	register int uban;
-
-	for (uban = 0; uban < numuba; uban++) {
-		register struct uba_hd *uh = &uba_hd[uban];
-		register struct uba_regs *up = uh->uh_uba;
-
-		if (up->uba_sr == 0)
-			return;
-		up->uba_sr = UBASR_CRD|UBASR_LEB;
-		uh->uh_hangcnt++;
-		if (uh->uh_hangcnt > 5*hz) {
-			uh->uh_hangcnt = 0;
-			printf("uba%d: hung\n", uban);
-			ubareset(uban);
-		}
-	}
-}
-
-/*
- * This is a timeout routine which decrements the ``i forgot to
- * interrupt'' counts, on an 11/780.  This prevents slowly growing
- * counts from causing a UBA reset since we are interested only
- * in hang situations.
- */
-ubawatch()
-{
-	register struct uba_hd *uh;
-	register int uban;
-
-	if (panicstr)
-		return;
-	for (uban = 0; uban < numuba; uban++) {
-		uh = &uba_hd[uban];
-		if (uh->uh_hangcnt)
-			uh->uh_hangcnt--;
-	}
-}
-
+#ifdef VAX780
 int	ubawedgecnt = 10;
 int	ubacrazy = 500;
 /*
@@ -471,72 +425,6 @@ ubaerror(uban, uh, xx, uvec, uba)
 	return;
 }
 #endif
-#endif notdef
-
-#ifdef notdef
-/*
- * This routine allows remapping of previously
- * allocated UNIBUS bdp and map resources
- * onto different memory addresses.
- * It should only be used by routines which need
- * small fixed length mappings for long periods of time
- * (like the ARPANET ACC IMP interface).
- * It only maps kernel addresses.
- */
-ubaremap(uban, ubinfo, addr)
-	int uban;
-	register unsigned ubinfo;
-	caddr_t addr;
-{
-	register struct uba_hd *uh = &uba_hd[uban];
-	register struct pte *pte, *io;
-	register int temp, bdp;
-	int npf, o;
-
-	o = (int)addr & PGOFSET;
-	bdp = (ubinfo >> 28) & 0xf;
-	npf = (ubinfo >> 18) & 0x3ff;
-	io = &uh->uh_uba->uba_map[(ubinfo >> 9) & 0x1ff];
-	temp = (bdp << 21) | UBAMR_MRV;
-
-	/*
-	 * If using buffered data path initiate purge
-	 * of old data and set byte offset bit if next
-	 * transfer will be from odd address.
-	 */
-	if (bdp) {
-		switch (cpu) {
-#if VAX780
-		case VAX_780:
-			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
-			break;
-#endif
-#if VAX750
-		case VAX_750:
-			uh->uh_uba->uba_dpr[bdp] |=
-			    UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
-			break;
-#endif
-		}
-		if (o & 1)
-			temp |= UBAMR_BO;
-	}
-
-	/*
-	 * Set up the map registers, leaving an invalid reg
-	 * at the end to guard against wild unibus transfers.
-	 */
-	pte = &Sysmap[btop(((int)addr)&0x7fffffff)];
-	while (--npf != 0)
-		*(int *)io++ = pte++->pg_pfnum | temp;
-	*(int *)io = 0;
-
-	/*
-	 * Return effective UNIBUS address.
-	 */
-	return (ubinfo | o);
-}
-#endif
 
 /*
  * This routine is called by a driver for a device with on-board Unibus
@@ -550,7 +438,6 @@ ubaremap(uban, ubinfo, addr)
  *
  * Returns > 0 if successful, 0 if not.
  */
-
 ubamem(uban, addr, size, doalloc)
 	int uban, addr, size, doalloc;
 {

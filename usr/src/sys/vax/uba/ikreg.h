@@ -1,14 +1,14 @@
-/*	ikreg.h	4.2	82/08/01	*/
+/*	ikreg.h	4.3	82/10/21	*/
 
 struct ikdevice {
-	short int ik_wc;			/* Unibus word count reg */
-	unsigned short int ik_ubaddr;		/* Unibus address register */
-	unsigned short int ik_ustat;		/* Unibus status/command reg */
-	unsigned short int ik_data;		/* Data register */
-	unsigned short int ik_xaddr;		/* X address in frame buffer */
-	unsigned short int ik_yaddr;		/* Y address in frame buffer */
-	unsigned short int ik_istat;		/* Ikonas status/command reg */
-	unsigned short int ik_dummy;
+	short	ik_wc;			/* Unibus word count reg */
+	u_short	ik_ubaddr;		/* Unibus address register */
+	u_short	ik_ustat;		/* Unibus status/command reg */
+	u_short	ik_data;		/* Data register */
+	u_short	ik_xaddr;		/* X address in frame buffer */
+	u_short	ik_yaddr;		/* Y address in frame buffer */
+	u_short	ik_istat;		/* Ikonas status/command reg */
+	u_short	ik_dummy;
 };
 
 #define IK_GETADDR 	IKIOGETADDR

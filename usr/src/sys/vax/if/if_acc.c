@@ -1,4 +1,4 @@
-/*	if_acc.c	4.23	82/10/20	*/
+/*	if_acc.c	4.24	82/10/21	*/
 
 #include "acc.h"
 #ifdef NACC > 0

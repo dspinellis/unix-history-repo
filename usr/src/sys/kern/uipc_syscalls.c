@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.34	82/10/20	*/
+/*	uipc_syscalls.c	4.35	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,7 +44,7 @@ socket()
 	fp->f_socket = so;
 freeopt:
 	if (uap->opt)
-		m_free(dtom(aopt.so_optdata));
+		(void) m_free(dtom(aopt.so_optdata));
 	return;
 bad:
 	u.u_ofile[u.u_r.r_val1] = 0;
@@ -83,7 +83,7 @@ bind()
 	m_freem(nam);
 freeopt:
 	if (uap->opt)
-		m_free(dtom(aopt.so_optdata));
+		(void) m_free(dtom(aopt.so_optdata));
 }
 
 listen()
@@ -207,7 +207,7 @@ ret:
 	splx(s);
 bad:
 	if (uap->opt)
-		m_free(dtom(aopt.so_optdata));
+		(void) m_free(dtom(aopt.so_optdata));
 }
 
 connect()
@@ -258,7 +258,7 @@ connect()
 bad:
 	m_freem(nam);
 	if (uap->opt)
-		m_free(dtom(aopt.so_optdata));
+		(void) m_free(dtom(aopt.so_optdata));
 	return;
 }
 

@@ -1,4 +1,4 @@
-/*	dmf.c	4.12	82/10/20	*/
+/*	dmf.c	4.13	82/10/21	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -157,7 +157,9 @@ char	dmf_speeds[] =
 
 struct	tty dmf_tty[NDMF*8];
 char	dmfsoftCAR[NDMF];
-int	ndmf = NDMF*8;
+#ifndef lint
+int	ndmf = NDMF*8;			/* used by iostat */
+#endif
 int	dmfact;				/* mask of active dmf's */
 int	dmfstart(), ttrstrt();
 

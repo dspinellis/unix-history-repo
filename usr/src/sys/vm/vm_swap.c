@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.9	82/09/06	*/
+/*	vm_swap.c	4.10	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,7 +115,7 @@ swfree(index)
 	int index;
 {
 	register swblk_t vsbase;
-	register int blk;
+	register long blk;
 
 	swdevt[index].sw_freed = 1;
 	for (vsbase = index*DMMAX; vsbase < nswap; vsbase += nswdev*DMMAX) {

@@ -1,4 +1,4 @@
-/*	kernel.h	4.6	82/10/21	*/
+/*	kernel.h	4.7	82/10/21	*/
 
 /*
  * Global variables for the kernel
@@ -19,6 +19,8 @@ int	hz;
 int	tick;
 int	lbolt;				/* awoken once a second */
 int	realitexpire();
+
+double	avenrun[3];
 
 #ifdef GPROF
 extern	int profiling;

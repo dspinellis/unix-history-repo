@@ -1,4 +1,4 @@
-/*	dn.c	4.12	82/10/20	*/
+/*	dn.c	4.13	82/10/21	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -24,7 +24,7 @@ struct dndevice {
 };
 
 struct uba_device *dninfo[NDN];
-int dnprobe(), dnattach();
+int dnprobe(), dnattach(), dnintr();
 u_short dnstd[] = { 0175200 };
 struct uba_driver dndriver =
 	{ dnprobe, 0, dnattach, 0, dnstd, "dn", dninfo };
@@ -60,6 +60,7 @@ dnprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = 0; br = cvec; cvec = br;
+	dnintr(0);
 #endif
 	/*
 	 * If there's at least one dialer out there it better be

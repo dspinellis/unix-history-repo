@@ -1,4 +1,4 @@
-/*	ffs_subr.c	4.1	82/10/20	*/
+/*	ffs_subr.c	4.2	82/10/21	*/
 
 #ifdef KERNEL
 #include "../h/param.h"
@@ -99,7 +99,7 @@ isblock(fs, cp, h)
  */
 clrblock(fs, cp, h)
 	struct fs *fs;
-	unsigned char *cp;
+	u_char *cp;
 	daddr_t h;
 {
 

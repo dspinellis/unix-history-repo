@@ -1,13 +1,13 @@
-/*	ip_input.c	1.54	82/10/20	*/
+/*	ip_input.c	1.55	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include <time.h>
 #include "../h/kernel.h"
 #include <errno.h>
+#include <time.h>
 
 #include "../net/if.h"
 #include "../net/route.h"
@@ -566,7 +566,7 @@ ip_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	struct in_addr *sin;
+	struct in_addr *in;
 	int tcp_abort(), udp_abort();
 	extern struct inpcb tcb, udb;
 
@@ -575,16 +575,14 @@ ip_ctlinput(cmd, arg)
 	if (inetctlerrmap[cmd] == 0)
 		return;		/* XXX */
 	if (cmd == PRC_IFDOWN)
-		sin = &((struct sockaddr_in *)arg)->sin_addr;
+		in = &((struct sockaddr_in *)arg)->sin_addr;
 	else if (cmd == PRC_HOSTDEAD || cmd == PRC_HOSTUNREACH)
-		sin = (struct in_addr *)arg;
+		in = (struct in_addr *)arg;
 	else
-		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
 /* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
-	in_pcbnotify(&tcb, (struct in_addr *)&sin->sin_addr,
-	    (int)inetctlerrmap[cmd], tcp_abort);
-	in_pcbnotify(&udb, (struct in_addr *)&sin->sin_addr,
-	    (int)inetctlerrmap[cmd], udp_abort);
+	in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
+	in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
 }
 
 int	ipprintfs = 0;
