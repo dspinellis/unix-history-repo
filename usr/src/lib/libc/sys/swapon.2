@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)swapon.2	6.3 (Berkeley) %G%
+.\"	@(#)swapon.2	6.4 (Berkeley) %G%
 .\"
 .TH SWAPON 2 ""
 .UC 4
@@ -24,6 +24,10 @@ configuration time.  The size of the swap area on
 .I special 
 is calculated at the time the device is first made available
 for swapping.
+.SH "RETURN VALUE
+If an error has occurred, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
 .SH ERRORS
 .I Swapon
 succeeds unless:
