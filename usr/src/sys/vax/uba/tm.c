@@ -1,4 +1,4 @@
-/*	tm.c	4.40	81/07/09	*/
+/*	tm.c	4.41	81/08/30	*/
 
 #include "te.h"
 #include "ts.h"
@@ -428,7 +428,8 @@ loop:
 			sc->sc_timo = 5 * 60;
 		} else {
 			um->um_tab.b_active = SCOM;
-			sc->sc_timo = imin(imax(10*(int)bp->b_repcnt,60),5*60);
+			sc->sc_timo =
+			    imin(imax(10*(int)-bp->b_repcnt,60),5*60);
 		}
 		if (bp->b_command == TM_SFORW || bp->b_command == TM_SREV)
 			addr->tmbc = bp->b_repcnt;
