@@ -3,10 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stdio.h	5.6 (Berkeley) %G%
+ *	@(#)stdio.h	5.7 (Berkeley) %G%
  */
 
-# ifndef FILE
+#ifndef NULL
+#define	NULL	0
+#endif
+
+#ifndef FILE
 #define	BUFSIZ	1024
 extern	struct	_iobuf {
 	int	_cnt;
@@ -26,7 +30,6 @@ extern	struct	_iobuf {
 #define	_IOSTRG	0100
 #define	_IOLBF	0200
 #define	_IORW	0400
-#define	NULL	0
 #define	FILE	struct _iobuf
 #define	EOF	(-1)
 
