@@ -3,20 +3,19 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.6 (Berkeley) %G%
+.\"     @(#)doc	5.7 (Berkeley) %G%
 .\"
-.\" doc - attempt to parse troff request arguments
-.\"	  basic content macros
+.\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
 .if \n(.g \{\
 .cp 0
 .ftr C CR
 .\}
 .if t \{\
-.	so /usr/share/tmac/tmac.doc-ditroff
+.       so /usr/share/tmac/tmac.doc-ditroff
 .\}
 .if n \{\
-.	so /usr/share/tmac/tmac.doc-nroff
+.       so /usr/share/tmac/tmac.doc-nroff
 .\}
 .so /usr/share/tmac/tmac.doc-common
 .so /usr/share/tmac/tmac.doc-syms
@@ -1075,6 +1074,18 @@
 .ds qR \&)
 .eC \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 ..
+.\" NS So macro - Single Quote open
+.de So
+.if \\n(aC==0 .ds mN So
+.ds qL \&\\*(sL
+.eO \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+..
+.\" NS Sc macro - Single Quote close
+.de Sc
+.if \\n(aC==0 .ds mN Sc
+.ds qR \&\\*(sR
+.eC \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+..
 .\" NS Xo macro - Extend open (continue)
 .de Xo
 .if \\n(aC==0 .ds mN Xo
@@ -1092,7 +1103,7 @@
 .de eO
 .as b1 \\*(qL
 .nr oM \\n(oM+1
-.\" tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
+.\" .tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
 .if \\n(aC==0 \{\
 .       ie \\n(.$>0 \{\
 .               aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
@@ -1110,7 +1121,7 @@
 .	\}
 .\}
 .ie \\n(aC>0 \{\
-.	ie \\n(aC>\\n(aP \{\
+.	if \\n(aC>\\n(aP \{\
 .		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 .\\*(A\\n(aP
 .		el  \{\
@@ -1118,11 +1129,13 @@
 .			No
 .		\}
 .	\}
-.	el \\n(aC==\\n(aP \{\
+.\" .tm LINE IN QUESTION
+.	if \\n(aC==\\n(aP \{\
 .		if \\n(tP==1 \{\
-.\" tm SETTING Xt!!!
+.\" .tm SETTING Xt!!!
 .			nr Xt 1
 .		\}
+.		ds S0 \\*(iV
 .		aY
 .	\}
 .\}
@@ -1153,7 +1166,6 @@
 .		\}
 .	\}
 .\}
-.\" tm here is b1==\\*(b1
 .if \\n(aC>0 \{\
 .	ie \\n(aC==\\n(aP \{\
 .		ie \\n(oM==0 \{\
@@ -1197,7 +1209,7 @@
 .		nr aP \\n(aP+1
 .		as b1 \&\\*(A\\n(aP
 .	\}
-.	el .tm Warning: trailing prefix Pf)
+.	el .tm Warning: .Pf: trailing prefix (#\\n(.c)
 .\}
 .if \\n(aC>0 \{\
 .	ie (\\n(aC-\\n(aP)==0 .aZ
@@ -1375,6 +1387,7 @@
 .\}
 .if \\n(\\*(A\\n(aC==2 \{\
 .	nr xX \\n(aC-1
+.\" this kludge can probably go away, but need to double check first
 .	ie "\\*(A\\n(aC"Nb" .ds S\\n(xX \\*(hV
 .	el .rm S\\n(xX
 .\}
@@ -1866,7 +1879,7 @@
 .	tm .It \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
 .\}
 .\" .tm Here is L[\\n(lC]==\\*(L\\n(lC
-.ne 2v
+.ne 3v
 .ie \\n(.$>0 \{\
 .	ds mN It
 .	ds b1
@@ -2367,6 +2380,7 @@
 ..
 .\"
 .\" NS Vt macro - Variable type (for forcing old style variable declarations)
+.\" this is not done in the same manner as .Ot for fortrash - clean up later
 .de Vt
 .\" if a function declaration was the last thing given, want vertical space
 .if \\n(fD>0 \{\
@@ -2385,7 +2399,8 @@
 .nr cF \\n(.f
 .nr cZ \\n(.s
 \\*(fT\&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.br
+.ie \\n(oT==0 .br
+.el \&\ \&
 .ft \\n(cF
 .fs \\n(cZ
 ..
@@ -2419,7 +2434,10 @@
 ..
 .\"
 .\" NS Ot macro - Old Function type (fortran - no newline)
+.\" Ns oT register
+.nr oT 0
 .de Ot
+.nr oT 1
 .if \\n(nS>0 \{\
 .	if \\n(fZ>0 \{\
 .		Pp
@@ -2437,10 +2455,11 @@
 .	\}
 .	nr fY 1
 .\}
-.nr cF \\n(.f
-.ft \\n(fT
-\&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.ft \\n(cF
+.if \\n(.$==4 .as b1 \&\\*(fT\&\\$1 \\$2 \\$3 \\$4
+.if \\n(.$==3 .as b1 \&\\*(fT\&\\$1 \\$2 \\$3
+.if \\n(.$==2 .as b1 \&\\*(fT\&\\$1 \\$2
+.if \\n(.$==1 .as b1 \&\\*(fT\&\\$1
+.as b1 \&\ \fP
 ..
 .\"
 .\" NS Fa macro - Function arguments
@@ -2518,9 +2537,9 @@
 .			nr iS ((8)*\\n(fW)u
 .		\}
 .	\}
-.        in +\\n(iSu
-.        ti -\\n(iSu
-.        nr nS \\n(nS+1
+.	in +\\n(iSu
+.	ti -\\n(iSu
+.	nr nS \\n(nS+1
 .\" .        \}
 .\}
 .if \\n(aC>\\n(aP \{\
