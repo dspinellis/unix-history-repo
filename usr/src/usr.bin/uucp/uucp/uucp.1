@@ -1,4 +1,4 @@
-.\"	@(#)uucp.1	6.1 (Berkeley) %G%
+.\"	@(#)uucp.1	6.2 (Berkeley) %G%
 .\"
 .TH UUCP 1C ""
 .AT 3
@@ -64,13 +64,47 @@ The following options are interpreted by
 .TP 
 .B \-d
 Make all necessary directories for the file copy.
+(This is the default.)
+.TP
+.B \-f
+Don't make intermediate directories for the file copy.
 .TP 
 .B \-c
 Use the source file when copying out rather than
 copying the file to the spool directory.
+(This is the default.)
+.TP
+.B \-C
+Copy the source file to the spool directory and transmit
+the copy.
 .TP 
 .B \-m
 Send mail to the requester when the copy is complete.
+.TP
+.B \-a
+Avoid doing a getwd to find the current directory.
+(This is sometimes used for efficiency.)
+.TP
+.BI \-n user
+Notify
+.I user
+on remote system that a file was sent.
+.TP
+.B \-r
+Don't start the transfer, just queue the job.
+.TP
+.BI \-g grade
+Grade is a single letter/number; lower ASCII sequence characters
+will cause a job to be transmitted earlier during a particular conversation.
+.TP
+.BI \-s spool
+Use
+.I spool
+as the spool directory instead of the default.
+.TP
+.BI \-x debug
+Turn on the debugging at level
+.I debug.
 .PP
 .I Uulog
 maintains a summary log
@@ -81,7 +115,7 @@ and
 transactions in the file
 `/usr/spool/uucp/LOGFILE' by gathering
 information from partial log files named `/usr/spool/uucp/LOG.*.?'.
-It removes the partial log files.
+It removes the partial log files. [This feature is no longer necessary.]
 .PP
 The options cause 
 .I uulog 
