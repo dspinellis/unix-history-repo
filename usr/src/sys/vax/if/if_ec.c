@@ -1,4 +1,4 @@
-/*	if_ec.c	4.14	82/06/05	*/
+/*	if_ec.c	4.15	82/06/12	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -235,7 +235,7 @@ ecinit(unit)
 	es->es_if.if_flags |= IFF_UP;
 	ecxint(unit);
 	splx(s);
-	if_rtinit(&es->es_if, RTF_DIRECT|RTF_UP);
+	if_rtinit(&es->es_if, RTF_UP);
 }
 
 /*
@@ -660,7 +660,6 @@ COUNT(ECPUT);
 			*bp++ = *mcp++;
 			i++;
 		}
-		for (i=0; i<mp->m_len; i++)
 		while (i < mp->m_len) {
 			*(short *)bp = *(short *)mcp;
 			bp += 2;
@@ -784,6 +783,6 @@ COUNT(ECLHINIT);
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
 }
 #endif

@@ -1,4 +1,4 @@
-/*	if_il.c	4.4	82/05/27	*/
+/*	if_il.c	4.5	82/06/12	*/
 
 #include "il.h"
 #include "imp.h"
@@ -233,7 +233,7 @@ ilinit(unit)
 	is->is_if.if_flags |= IFF_UP;
 	ilcint(unit);
 	splx(s);
-	if_rtinit(&is->is_if, RTF_DIRECT|RTF_UP);
+	if_rtinit(&is->is_if, RTF_UP);
 }
 
 /*
@@ -585,6 +585,6 @@ COUNT(ILLHINIT);
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
 }
 #endif

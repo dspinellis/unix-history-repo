@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.28	82/04/25	*/
+/*	udp_usrreq.c	4.29	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -163,6 +163,7 @@ udp_output(inp, m0)
 {
 	register struct mbuf *m;
 	register struct udpiphdr *ui;
+	register struct socket *so;
 	register int len = 0;
 
 COUNT(UDP_OUTPUT);
@@ -194,7 +195,10 @@ COUNT(UDP_OUTPUT);
 	ui->ui_dst = inp->inp_faddr;
 	ui->ui_sport = inp->inp_lport;
 	ui->ui_dport = inp->inp_fport;
-	ui->ui_ulen = htons((u_short)len);
+	ui->ui_ulen = len;
+#if vax
+	ui->ui_ulen = htons(ui->ui_ulen);
+#endif
 
 	/*
 	 * Stuff checksum and output datagram.
@@ -203,8 +207,10 @@ COUNT(UDP_OUTPUT);
 	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, 0,
-	    inp->inp_socket->so_state & SS_PRIV));
+	so = inp->inp_socket;
+	return (ip_output(m, (struct mbuf *)0,
+	    (so->so_options & SO_DONTROUTE) ? &routetoif : (struct route *)0,
+	    so->so_state & SS_PRIV));
 }
 
 udp_usrreq(so, req, m, addr)

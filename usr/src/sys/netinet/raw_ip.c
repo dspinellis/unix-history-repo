@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.11	82/04/11	*/
+/*	raw_ip.c	4.12	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -11,6 +11,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/raw_cb.h"
+#include "../net/route.h"
 #include <errno.h>
 
 /*
@@ -51,7 +52,7 @@ rip_output(m0, so)
 	int len = 0, error;
 	struct rawcb *rp = sotorawcb(so);
 	struct ifnet *ifp;
-	struct sockaddr_in *src;
+	struct sockaddr_in *sin;
 
 COUNT(RIP_OUTPUT);
 	/*
@@ -75,25 +76,18 @@ COUNT(RIP_OUTPUT);
 	ip = mtod(m, struct ip *);
 	ip->ip_p = so->so_proto->pr_protocol;
 	ip->ip_len = sizeof(struct ip) + len;
-	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
-	/* local address may not be specified -- XXX */
-	ifp = if_ifonnetof(ip->ip_dst.s_net);
-	if (ifp == 0) {
-		error = ENETUNREACH;
-		goto bad;
-	}
-	if (rp->rcb_flags & RAW_LADDR)
-		src = (struct sockaddr_in *)&rp->rcb_laddr;
-	else {
-		if (ifp->if_addr.sa_family != AF_INET) {
+	if (rp->rcb_flags & RAW_LADDR) {
+		sin = (struct sockaddr_in *)&rp->rcb_laddr;
+		if (sin->sin_family != AF_INET) {
 			error = EAFNOSUPPORT;
 			goto bad;
 		}
-		src = (struct sockaddr_in *)&ifp->if_addr;
-	}
-	ip->ip_src = src->sin_addr;
+		ip->ip_src.s_addr = sin->sin_addr.s_addr;
+	} else
+		ip->ip_src.s_addr = 0;
+	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, 0, 1));
+	return (ip_output(m, (struct mbuf *)0, &routetoif, 1));
 bad:
 	m_freem(m);
 	return (error);

@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.21	82/06/08	*/
+/*	tcp_timer.c	4.22	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -161,6 +161,7 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 	 * Force a byte to be output, if possible.
 	 */
 	case TCPT_PERSIST:
+		tcp_setpersist(tp);
 		tp->t_force = 1;
 		(void) tcp_output(tp);
 		tp->t_force = 0;

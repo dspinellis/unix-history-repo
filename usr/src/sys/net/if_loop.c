@@ -1,4 +1,4 @@
-/*	if_loop.c	4.11	82/04/16	*/
+/*	if_loop.c	4.12	82/06/12	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -38,7 +38,7 @@ COUNT(LOATTACH);
 	ifp->if_flags = IFF_UP;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	if_rtinit(ifp, RTF_DIRECT|RTF_UP);
+	if_rtinit(ifp, RTF_UP);
 }
 
 looutput(ifp, m0, dst)
