@@ -1,4 +1,4 @@
-/*	boot.c	1.2	%G% */
+/*	boot.c	1.3	%G% */
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -32,6 +32,9 @@ main()
 	int io, retry;
 
 	printf("\nBoot\n");
+#ifdef JUSTASK
+	howto = RB_ASKNAME;
+#else
 	if ((howto&RB_ASKNAME)==0) {
 		if (devtype>=0 && devtype<sizeof(devname)/2
 		    && devname[devtype][0]) {
@@ -42,6 +45,7 @@ main()
 			howto = RB_SINGLE|RB_ASKNAME;
 		}
 	}
+#endif
 	retry = 0;
 	for (;;) {
 		if (howto & RB_ASKNAME) {
