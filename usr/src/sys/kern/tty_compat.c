@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1982, 1986, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_compat.c	7.17 (Berkeley) %G%
+ *	@(#)tty_compat.c	8.1 (Berkeley) %G%
  */
 
 /* 
