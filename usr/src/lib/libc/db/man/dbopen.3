@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.24 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.25 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -82,7 +82,7 @@ int (*get)(const DB *db, DBT *key, DBT *data, u_int flags);
 int (*put)(const DB *db, DBT *key, const DBT *data,
 .ti +5
 u_int flags);
-int (*sync)(const DB *db);
+int (*sync)(const DB *db, u_int flags);
 int (*seq)(const DB *db, DBT *key, DBT *data, u_int flags);
 .RE
 } DB;
@@ -284,6 +284,21 @@ A pointer to a routine to flush any cached information to disk.
 If the database is in memory only, the
 .I sync
 routine has no effect and will always succeed.
+.IP
+The flag value may be set to the following value:
+.RS
+.TP
+R_RECNOSYNC
+If the DB_RECNO access method is being used, this flag causes
+the sync routine to apply to the btree file which underlies the
+recno file, not the recno file itself.
+(See the
+.I bfname
+field of the
+.IR recno (3)
+manual page for more information.)
+.RE
+.IP
 .I Sync
 routines return -1 on error (setting
 .IR errno )
