@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.70		%G%);
+SCCSID(@(#)parseaddr.c	3.71		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -1098,6 +1098,7 @@ canonname(name, ruleset)
 	pvp = prescan(name, '\0');
 	rewrite(pvp, 3);
 	rewrite(pvp, ruleset);
+	rewrite(pvp, 4);
 	cataddr(pvp, nbuf, sizeof nbuf);
 	return (nbuf);
 }
