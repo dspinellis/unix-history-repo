@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)arp.8	8.1 (Berkeley) %G%
+.\"     @(#)arp.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ARP 8
@@ -22,7 +22,6 @@
 .Fl s Ar hostname ether_addr
 .Op Ar temp
 .Op Ar pub
-.Op Ar trail
 .Nm arp
 .Fl f Ar filename
 .Sh DESCRIPTION
@@ -70,9 +69,6 @@ server,
 responding to requests for 
 .Ar hostname
 even though the host address is not its own.
-The word
-.Ar trail
-indicates that trailer encapsulations may be sent to this host.
 .It Fl f
 Causes the file
 .Ar filename
@@ -85,7 +81,6 @@ in the file should be of the form
 .Ar hostname ether_addr
 .Op Ar temp
 .Op Ar pub
-.Op Ar trail
 .Ed
 .Pp
 with argument meanings as given above.
