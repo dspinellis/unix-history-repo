@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)help.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)help.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include  "less.h"
@@ -43,5 +43,4 @@ help()
 	 "-less -m '-PmHELP -- ?eEND -- Press g to see it again:Press RETURN for more., or q when done ' %s",
 	 HELPFILE);
 	lsystem(cmd);
-	error("End of help");
 }
