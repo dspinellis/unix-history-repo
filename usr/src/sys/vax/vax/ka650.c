@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ka650.c	7.4 (Berkeley) %G%
+ *	@(#)ka650.c	7.5 (Berkeley) %G%
  */
 
 #if VAX650
@@ -127,12 +127,12 @@ ka650_mchk(cmcf)
 	register u_int type = mcf->mc65_summary;
 	register u_int i;
 
-	printf("machine check %x: %s%s\n", type);
+	printf("machine check %x", type);
 	if (type >= 0x80 && type <= 0x83)
 		type -= (0x80 + 11);
-	if (type < NMC650)
-		printf("%s: ", mc650[type]);
-	printf("vap %x istate1 %x istate2 %x pc %x psl %x\n",
+	if (type < NMC650 && mc650[type])
+		printf(": %s", mc650[type]);
+	printf("\n\tvap %x istate1 %x istate2 %x pc %x psl %x\n",
 	    mcf->mc65_mrvaddr, mcf->mc65_istate1, mcf->mc65_istate2,
 	    mcf->mc65_pc, mcf->mc65_psl);
 	printf("dmaser=0x%b qbear=0x%x dmaear=0x%x\n",

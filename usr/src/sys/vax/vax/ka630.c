@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka630.c	7.5 (Berkeley) %G%
+ *	@(#)ka630.c	7.6 (Berkeley) %G%
  */
 
 #ifdef VAX630
@@ -142,9 +142,10 @@ ka630_mchk(cmcf)
 	register struct mc630frame *mcf = (struct mc630frame *)cmcf;
 	register u_int type = mcf->mc63_summary;
 
-	printf("machine check %x: %s\n", type,
-	    type < NMC630 ? mc630[type] : "???");
-	printf("\tvap %x istate %x pc %x psl %x\n",
+	printf("machine check %x", type);
+	if (type < NMC630 && mc630[type])
+		printf(": %s", mc630[type]);
+	printf("\n\tvap %x istate %x pc %x psl %x\n",
 	    mcf->mc63_mrvaddr, mcf->mc63_istate,
 	    mcf->mc63_pc, mcf->mc63_psl);
 	if (ka630addr->ka630_mser & KA630MSER_MERR) {
