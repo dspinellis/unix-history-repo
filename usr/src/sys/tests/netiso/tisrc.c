@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -225,8 +225,8 @@ int n;
 	bcopy(iov->iov_base, (char *)(s + 1), n);
 }
 
-checkback(s)
-int s;
+checkback(fd)
+int fd;
 {
 	int n, nn;
 	register struct savebuf *s = savebuf.s_next, *t;
@@ -237,7 +237,7 @@ int s;
 			msg.msg_flags = 0;
 			iov->iov_len = nn;
 			iov->iov_base = cp;
-			n = recvmsg(s, &msg, s->s_flags);
+			n = recvmsg(fd, &msg, 0);
 			cp += n;
 			nn -= n;
 		} while (dgramp == 0 && nn > 0 && !(msg.msg_flags & MSG_EOR));
