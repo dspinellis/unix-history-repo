@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -58,7 +58,6 @@ extern char *	getenv();
 
 extern time_t	time();
 
-#define FILENAME_MAX	MAXPATHLEN
 #define ACCESS_MODE	O_RDONLY
 #define OPEN_MODE	O_RDONLY
 
