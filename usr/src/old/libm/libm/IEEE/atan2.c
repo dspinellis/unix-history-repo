@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)atan2.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atan2.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 /* ATAN2(Y,X)
@@ -91,7 +91,7 @@ static char sccsid[] = "@(#)atan2.c	1.3 (Berkeley) %G%";
  */
 
 static double 
-#ifdef VAX 	/* VAX D format */
+#if defined(VAX) || defined(TAHOE) 	/* VAX D format */
 athfhi =  4.6364760900080611433E-1    , /*Hex  2^ -1   *  .ED63382B0DDA7B */
 athflo =  1.9338828231967579916E-19   , /*Hex  2^-62   *  .E450059CFE92C0 */
 PIo4   =  7.8539816339744830676E-1    , /*Hex  2^  0   *  .C90FDAA22168C2 */	
@@ -227,7 +227,7 @@ begin:
 
     /* compute atan(t) for t in [-.4375, .4375] */
 	z = t*t;
-#ifdef VAX
+#if defined(VAX) || defined(TAHOE)
 	z = t*(z*(a1+z*(a2+z*(a3+z*(a4+z*(a5+z*(a6+z*(a7+z*(a8+
 			z*(a9+z*(a10+z*(a11+z*a12))))))))))));
 #else	/* IEEE double */
