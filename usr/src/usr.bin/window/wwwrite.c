@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	1.1 83/07/17";
+static	char *sccsid = "@(#)wwwrite.c	1.2 83/07/18";
 #endif
 
 #include "ww.h"
@@ -95,23 +95,15 @@ register n;
 			}
 			break;
 		case 2:
-			w->ww_newrow = (c - ' ') % w->ww_nrow;
+			WWcursor(w->ww_win, (c - ' ') % w->ww_inrow,
+				w->ww_win->w_cursor.col);
 			w->ww_wstate++;
 			break;
 		case 3:
-			WWcursor(w->ww_win, w->ww_newrow,
-				(c - ' ') % w->ww_ncol);
+			WWcursor(w->ww_win, w->ww_win->w_cursor.row,
+				(c - ' ') % w->ww_incol);
 			w->ww_wstate = 0;
 			break;
 		}
 	}
-}
-
-wwflush()
-{
-	register Win *w = curwin->ww_win;
-
-	WRCurRow = WCurRow(w);
-	WRCurCol = WCurCol(w);
-	Wrefresh(1);
 }
