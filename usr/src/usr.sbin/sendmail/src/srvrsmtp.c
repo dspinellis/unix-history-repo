@@ -1,5 +1,7 @@
 # include "sendmail.h"
 
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.2	%G%";
+
 /*
 **  SMTP -- run the SMTP protocol.
 **
