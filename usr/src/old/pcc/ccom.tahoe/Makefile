@@ -1,7 +1,11 @@
 #
-#	Makefile	1.3	86/07/27
+#	%MIP%	1.4	86/07/31
 #
 # Makefile for tahoe pcc
+#
+RM=	/bin/rm -f
+GREP=	egrep
+MIP=	../mip
 #
 # These symbols are used to configure the compiler:
 #	ASSTRINGS	assembler handles string initializations
@@ -15,39 +19,32 @@
 #	FORT		get f77-style pass 2
 #
 CONFIG=	-DASSTRINGS -DSTABDOT -DLCOMM "-DFIXSTRUCT=outstruct"
-O=	-O
-CFLAGS = ${O} -I. -I${M} ${CONFIG}
+INCS=	-I. -I${MIP}
+CFLAGS=	-O
+LDFLAGS=
 
-COPTS=	-DONEPASS ${CFLAGS}
-SCOPTS=	-DONEPASS -DSPRECC ${CFLAGS}
-FOPTS=	-DFORT ${CFLAGS}
-LDFLAGS =
-
-RM=	/bin/rm -f
-
-M=	../mip
-SRCS=	code.c local.c local2.c order.c rel.c stab.c table.c \
-	$M/allo.c $M/common.c $M/fort.c $M/match.c $M/optim.c \
-	$M/pftn.c $M/reader.c $M/scan.c $M/trees.c $M/xdefs.c \
-	$M/cgram.y
-# objects common to single and double precision compilers
-OBJS=	rodata.o cgram.o xdefs.o scan.o pftn.o optim.o code.o reader.o \
-	match.o comm1.o stab.o local.o local2.o order.o
-# double precision objects
-COBJS=	trees.o allo.o table.o
+# files common to single and double precision compilers
+SRCS=	code.c local.c local2.c order.c rel.c stab.c \
+	${MIP}/common.c ${MIP}/match.c ${MIP}/optim.c ${MIP}/pftn.c \
+	${MIP}/reader.c ${MIP}/scan.c ${MIP}/xdefs.c ${MIP}/cgram.y
+OBJS=	code.o local.o local2.o order.o rel.o stab.o \
+	comm1.o match.o optim.o pftn.o reader.o scan.o xdefs.o cgram.o \
+	rodata.o
+# double precision files
+DOPTS=	-DONEPASS ${INCS} ${CONFIG}
+DFLAGS=	${CFLAGS} ${DOPTS}
+DSRCS=	${MIP}/allo.c ${MIP}/trees.c table.c
+DOBJS=	allo.o trees.o table.o
 # single precision stuff
-SFILES=	strees.c sallo.c stable.c
+SOPTS=	-DSPRECC -DONEPASS ${INCS} ${CONFIG}
+SFLAGS=	${CFLAGS} ${SOPTS}
+SSRCS=	strees.c sallo.c stable.c
 SOBJS=	strees.o sallo.o stable.o
 # fortran version
-FFILES=	freader.c fallo.c fmatch.c ftable.c forder.c flocal2.c fcomm2.c ftable.c
+FOPTS=	-DFORT ${INCS} ${CONFIG}
+FFLAGS=	${CFLAGS} ${FOPTS}
+FSRCS=	freader.c fallo.c fmatch.c ftable.c forder.c flocal2.c fcomm2.c ftable.c
 FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o ftable.o
-
-P1INCS=	$M/pass1.h macdefs.h $M/manifest.h pcclocal.h $M/config.h $M/ndu.h \
-	/usr/include/stdio.h
-P1ONEP=	${P1INCS} $M/onepass.h
-P2INCS=	$M/pass2.h macdefs.h mac2defs.h $M/manifest.h pcclocal.h $M/config.h \
-	$M/ndu.h /usr/include/stdio.h
-P2ONEP=	${P2INCS} $M/onepass.h
 
 TESTDIR=.
 
@@ -56,51 +53,50 @@ all:	ccom sccom f1
 #
 # 'ccom' is a one-pass C compiler.
 #
-ccom:	${OBJS} ${COBJS} rel.o
-	${CC} ${LDFLAGS} -o ${TESTDIR}/ccom ${OBJS} ${COBJS} rel.o
-trees.o: ${P1ONEP} $M/trees.c
-	${CC} -c ${COPTS} $M/trees.c
-optim.o: ${P1ONEP} $M/optim.c
-	${CC} -c ${COPTS} $M/optim.c
-pftn.o: ${P1ONEP} $M/pftn.c
-	${CC} -c ${COPTS} $M/pftn.c
-code.o: ${P1ONEP} code.c
-	${CC} -c ${COPTS} code.c
-local.o: ${P1ONEP} local.c
-	${CC} -c ${COPTS} local.c
-scan.o: ${P1ONEP} $M/scan.c
-	${CC} -c ${COPTS} $M/scan.c
-xdefs.o: ${P1ONEP} $M/xdefs.c
-	${CC} -c ${COPTS} $M/xdefs.c
-cgram.o: ${P1ONEP} cgram.c
-	${CC} -c ${COPTS} cgram.c
+ccom:	${OBJS} ${DOBJS} rel.o
+	${CC} ${LDFLAGS} -o ${TESTDIR}/ccom ${OBJS} ${DOBJS} rel.o
+trees.o: ${MIP}/trees.c
+	${CC} -c ${DFLAGS} ${MIP}/trees.c
+optim.o: ${MIP}/optim.c
+	${CC} -c ${DFLAGS} ${MIP}/optim.c
+pftn.o: ${MIP}/pftn.c
+	${CC} -c ${DFLAGS} ${MIP}/pftn.c
+code.o: code.c
+	${CC} -c ${DFLAGS} code.c
+local.o: local.c
+	${CC} -c ${DFLAGS} local.c
+scan.o: ${MIP}/scan.c
+	${CC} -c ${DFLAGS} ${MIP}/scan.c
+xdefs.o: ${MIP}/xdefs.c
+	${CC} -c ${DFLAGS} ${MIP}/xdefs.c
+cgram.o: cgram.c
+	${CC} -c ${DFLAGS} cgram.c
 rodata.o: rodata.c
-	${CC} -c ${COPTS} -R rodata.c
-rodata.c cgram.c: $M/cgram.y pcctokens
-	cat pcctokens $M/cgram.y > gram.in
+	${CC} -c ${DFLAGS} -R rodata.c
+rodata.c cgram.c: ${MIP}/cgram.y ./pcctokens
+	cat pcctokens ${MIP}/cgram.y > gram.in
 	${YACC} gram.in
 	${RM} rodata.c
 	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
-comm1.o: ${P1ONEP} $M/common.c
-	ln $M/common.c comm1.c
-	${CC} -c ${COPTS} -DPASS1COMMON comm1.c
+comm1.o: ${MIP}/common.c
+	ln ${MIP}/common.c comm1.c
+	${CC} -c ${DFLAGS} -DPASS1COMMON comm1.c
 	${RM} comm1.c
-stab.o: ${P1ONEP} stab.c \
-	/usr/include/stab.h /usr/include/a.out.h /usr/include/sys/types.h
-	${CC} -c ${COPTS} stab.c
-table.o: ${P2ONEP} table.c
-	${CC} -c ${COPTS} -R table.c
-reader.o: ${P2ONEP} $M/reader.c
-	${CC} -c ${COPTS} $M/reader.c
-local2.o: ${P2ONEP} local2.c
-	${CC} -c ${COPTS} local2.c
-order.o: ${P2ONEP} order.c
-	${CC} -c ${COPTS} order.c
-match.o: ${P2ONEP} $M/match.c
-	${CC} -c ${COPTS} $M/match.c
-allo.o: ${P2ONEP} $M/allo.c
-	${CC} -c ${COPTS} $M/allo.c
+stab.o: stab.c
+	${CC} -c ${DFLAGS} stab.c
+table.o: table.c
+	${CC} -c ${DFLAGS} -R table.c
+reader.o: ${MIP}/reader.c
+	${CC} -c ${DFLAGS} ${MIP}/reader.c
+local2.o: local2.c
+	${CC} -c ${DFLAGS} local2.c
+order.o: order.c
+	${CC} -c ${DFLAGS} order.c
+match.o: ${MIP}/match.c
+	${CC} -c ${DFLAGS} ${MIP}/match.c
+allo.o: ${MIP}/allo.c
+	${CC} -c ${DFLAGS} ${MIP}/allo.c
 
 #
 # 'sccom' is a C compiler that does single precision computations in
@@ -108,17 +104,17 @@ allo.o: ${P2ONEP} $M/allo.c
 #
 sccom:	${OBJS} ${SOBJS} rel.o
 	${CC} ${LDFLAGS} -o ${TESTDIR}/sccom ${OBJS} ${SOBJS} rel.o
-strees.o: ${P1ONEP} $M/trees.c
-	ln $M/trees.c strees.c
-	${CC} -c ${SCOPTS} strees.c
+strees.o: ${MIP}/trees.c
+	ln ${MIP}/trees.c strees.c
+	${CC} -c ${SFLAGS} strees.c
 	${RM} strees.c
-sallo.o: ${P2ONEP} $M/allo.c
-	ln $M/allo.c sallo.c
-	${CC} -c ${SCOPTS} sallo.c
+sallo.o: ${MIP}/allo.c
+	ln ${MIP}/allo.c sallo.c
+	${CC} -c ${SFLAGS} sallo.c
 	${RM} sallo.c
-stable.o: ${P2ONEP} table.c
+stable.o: table.c
 	ln table.c stable.c
-	${CC} -c ${SCOPTS} -R stable.c
+	${CC} -c ${SFLAGS} -R stable.c
 	${RM} stable.c
 
 #
@@ -126,35 +122,35 @@ stable.o: ${P2ONEP} table.c
 #
 f1:	fort.o ${FOBJS}
 	${CC} ${LDFLAGS} -o ${TESTDIR}/f1 fort.o ${FOBJS}
-fort.o: ${P2INCS} fort.h $M/fort.c
-	${CC} -c ${FOPTS} $M/fort.c
-freader.o: ${P2INCS} $M/reader.c
-	ln $M/reader.c freader.c
-	${CC} -c ${FOPTS} freader.c
+fort.o: fort.h ${MIP}/fort.c
+	${CC} -c ${FFLAGS} ${MIP}/fort.c
+freader.o: ${MIP}/reader.c
+	ln ${MIP}/reader.c freader.c
+	${CC} -c ${FFLAGS} freader.c
 	${RM} freader.c
-fallo.o: ${P2INCS} $M/allo.c
-	ln $M/allo.c fallo.c
-	${CC} -c ${FOPTS} fallo.c
+fallo.o: ${MIP}/allo.c
+	ln ${MIP}/allo.c fallo.c
+	${CC} -c ${FFLAGS} fallo.c
 	${RM} fallo.c
-fmatch.o: ${P2INCS} $M/match.c
-	ln $M/match.c fmatch.c
-	${CC} -c ${FOPTS} fmatch.c
+fmatch.o: ${MIP}/match.c
+	ln ${MIP}/match.c fmatch.c
+	${CC} -c ${FFLAGS} fmatch.c
 	${RM} fmatch.c
-ftable.o: ${P2INCS} table.c
+ftable.o: table.c
 	ln table.c ftable.c
-	${CC} -c -R ${FOPTS} ftable.c
+	${CC} -c -R ${FFLAGS} ftable.c
 	${RM} ftable.c
-forder.o: ${P2INCS} order.c
+forder.o: order.c
 	ln order.c forder.c
-	${CC} -c ${FOPTS} forder.c
+	${CC} -c ${FFLAGS} forder.c
 	${RM} forder.c
-flocal2.o: ${P2INCS} local2.c
+flocal2.o: local2.c
 	ln local2.c flocal2.c
-	${CC} -c ${FOPTS} flocal2.c
+	${CC} -c ${FFLAGS} flocal2.c
 	${RM} flocal2.c
-fcomm2.o: ${P2INCS} $M/common.c
-	ln $M/common.c fcomm2.c
-	${CC} -c ${FOPTS} -DPASS2COMMON fcomm2.c
+fcomm2.o: ${MIP}/common.c
+	ln ${MIP}/common.c fcomm2.c
+	${CC} -c ${FFLAGS} -DPASS2COMMON fcomm2.c
 	${RM} fcomm2.c
 
 install: all
@@ -162,35 +158,106 @@ install: all
 	install -s ${TESTDIR}/sccom ${DESTDIR}/lib/sccom
 	install -s ${TESTDIR}/f1 ${DESTDIR}/lib/f1
 
-GREP=	egrep
-
-pcclocal.h: localdefs.h /usr/include/pcc.h
+./pcclocal.h: localdefs.h /usr/include/pcc.h
 	${RM} pcclocal.h
-	cat /usr/include/pcc.h localdefs.h | ${GREP} '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
+	cat /usr/include/pcc.h localdefs.h | \
+	    ${GREP} '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
+	    sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
 
-pcctokens: localdefs.h /usr/include/pcc.h
+./pcctokens: localdefs.h /usr/include/pcc.h
 	${RM} pcctokens
-	cat /usr/include/pcc.h localdefs.h | ${GREP} '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
+	cat /usr/include/pcc.h localdefs.h | \
+	    ${GREP} '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
 
-DUMMIES=	${SFILES} ${FFILES}
-
-shrink:
-	${RM} *.o ccom sccom f1 ${DUMMIES}
 clean:
-	${RM} *.o ccom sccom f1 cgram.c rodata.c pcctokens pcclocal.h gram.in ${DUMMIES}
-sfix:
-	${RM} ${SFILES}
-sclean:
-	${RM} ${SOBJS} ${SFILES}
-ffix:
-	${RM} ${FFILES}
-fclean:
-	${RM} ${FOBJS} ${FFILES}
+	${RM} *.o ccom sccom f1 cgram.c rodata.c pcctokens pcclocal.h \
+	    gram.in ${SSRCS} ${FSRCS}
 
-lintall:
-	lint -hax -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
-		$M/trees.c $M/optim.c code.c local.c stab.c $M/reader.c \
-		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
+lint:
+	lint -hax ${INCS} -I${MIP} cgram.c \
+	    ${MIP}/xdefs.c ${MIP}/scan.c ${MIP}/pftn.c ${MIP}/trees.c \
+	    ${MIP}/optim.c ${MIP}/reader.c ${MIP}/match.c ${MIP}/allo.c \
+	    ${MIP}/comm1.c \
+	    code.c local.c stab.c local2.c order.c table.c
 
-tags:	${SRCS}
-	ctags ${SRCS}
+tags:	${SRCS} ${DSRCS}
+	ctags ${SRCS} ${DSRCS}
+
+# XXX this is less than complete
+depend: ${SRCS} ${DSRCS} ./pcclocal.h ./pcctokens
+	for i in ${SRCS} ${DSRCS}; do \
+	    cc -M ${DOPTS} $$i | \
+	    awk ' { if ($$1 != prev) \
+		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >> makedep; done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+
+# DO NOT DELETE THIS LINE
+
+code.o: code.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+code.o: /usr/include/stdio.h ../mip/config.h ../mip/onepass.h ../mip/ndu.h
+code.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
+code.o: /usr/include/stab.h
+code.o: code.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+code.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+code.o: ../mip/ndu.h /usr/include/sys/types.h /usr/include/a.out.h
+code.o: /usr/include/sys/exec.h /usr/include/stab.h
+local.o: local.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+local.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+local.o: ../mip/ndu.h
+local2.o: local2.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
+local2.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+local2.o: ../mip/ndu.h /usr/include/ctype.h
+order.o: order.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
+order.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+order.o: ../mip/ndu.h
+rel.o: rel.c
+stab.o: stab.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+stab.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+stab.o: ../mip/ndu.h /usr/include/sys/types.h /usr/include/a.out.h
+stab.o: /usr/include/sys/exec.h /usr/include/stab.h
+common.o: ../mip/common.c
+match.o: ../mip/match.c ../mip/pass2.h ./macdefs.h ./mac2defs.h
+match.o: ../mip/manifest.h /usr/include/stdio.h ./pcclocal.h ../mip/config.h
+match.o: ../mip/onepass.h ../mip/ndu.h
+optim.o: ../mip/optim.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+optim.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+optim.o: ../mip/ndu.h
+pftn.o: ../mip/pftn.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+pftn.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+pftn.o: ../mip/ndu.h
+reader.o: ../mip/reader.c ../mip/pass2.h ./macdefs.h ./mac2defs.h
+reader.o: ../mip/manifest.h /usr/include/stdio.h ./pcclocal.h ../mip/config.h
+reader.o: ../mip/onepass.h ../mip/ndu.h
+scan.o: ../mip/scan.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+scan.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+scan.o: ../mip/ndu.h /usr/include/a.out.h /usr/include/sys/exec.h
+scan.o: /usr/include/stab.h /usr/include/ctype.h /usr/include/signal.h
+xdefs.o: ../mip/xdefs.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+xdefs.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+xdefs.o: ../mip/ndu.h
+cgram.o: ../mip/cgram.y ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+cgram.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+cgram.o: ../mip/ndu.h
+allo.o: ../mip/allo.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
+allo.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+allo.o: ../mip/ndu.h
+trees.o: ../mip/trees.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
+trees.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+trees.o: ../mip/ndu.h /usr/include/setjmp.h
+table.o: table.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
+table.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
+table.o: ../mip/ndu.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above
