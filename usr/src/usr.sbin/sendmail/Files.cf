@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.1 (Berkeley) %G%
+#	@(#)Files.cf	8.2 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -11,6 +11,7 @@ cf/cf/cs-exposed.mc
 cf/cf/cs-hidden.mc
 cf/cf/hpux-cs-exposed.mc
 cf/cf/hpux-cs-hidden.mc
+cf/cf/huginn.mc
 cf/cf/knecht.mc
 cf/cf/mail.cs.mc
 cf/cf/mail.eecs.mc
