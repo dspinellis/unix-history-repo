@@ -7,11 +7,11 @@ LDADD=	-lutil
 BINOWN=	root
 BINMODE=4555
 
-.if exists(${LIBCRYPT})
+.if exists(${DESTDIR}/usr/lib/libcrypt.a)
 DPADD+= ${LIBCRYPT}
 LDADD+= -lcrypt
 .endif
-.if exists(${LIBKRB})
+.if exists(${DESTDIR}/usr/lib/libkrb.a)
 DPADD+= ${LIBKRB} ${LIBDES}
 LDADD+= -lkrb -ldes
 CFLAGS+= -DKERBEROS
