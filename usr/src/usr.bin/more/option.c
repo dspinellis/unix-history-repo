@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -54,7 +54,7 @@ option(argc, argv)
 			(*a)[0] = '-';
 
 	optind = 1;		/* called twice, re-init getopt. */
-	while ((ch = getopt(argc, argv, "0123456789/:ceinst:ux:")) != EOF)
+	while ((ch = getopt(argc, argv, "0123456789/:ceinst:ux:f")) != EOF)
 		switch((char)ch) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
@@ -100,6 +100,8 @@ option(argc, argv)
 			tabstop = atoi(optarg);
 			if (tabstop <= 0)
 				tabstop = 8;
+			break;
+		case 'f':	/* ignore -f, compatability with old more */
 			break;
 		case '?':
 		default:
