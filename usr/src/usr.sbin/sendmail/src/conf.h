@@ -5,12 +5,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.161 (Berkeley) %G%
+ *	@(#)conf.h	8.162 (Berkeley) %G%
  */
 
 /*
 **  CONF.H -- All user-configurable parameters for sendmail
 */
+
+struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 
 # include <sys/param.h>
 # include <sys/types.h>

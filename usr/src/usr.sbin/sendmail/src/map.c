@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2450,7 +2450,7 @@ prog_map_lookup(map, name, av, statp)
 	i = read(fd, buf, sizeof buf - 1);
 	if (i <= 0 && tTd(38, 2))
 		printf("prog_map_lookup(%s): read error %s\n",
-			map->map_mname, strerror(errno));
+			map->map_mname, errstring(errno));
 	if (i > 0)
 	{
 		char *rval;
