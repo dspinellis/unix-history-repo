@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.9 %G%";
+static	char sccsid[] = "@(#)call.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -171,6 +171,7 @@ call(p, argv, porf, psbn)
 			r = argv[1];
 			if (r != NIL && r[0] != T_VAR) {
 				error("Expression given (variable required) for var parameter %s of %s", p1->symbol, p->symbol);
+				chk = FALSE;
 				break;
 			}
 			q = lvalue( (int *) argv[1], MOD , LREQ );
@@ -180,6 +181,7 @@ call(p, argv, porf, psbn)
 			}
 			if (q != p1->type) {
 				error("Parameter type not identical to type of var parameter %s of %s", p1->symbol, p->symbol);
+				chk = FALSE;
 				break;
 			}
 			break;
@@ -226,6 +228,7 @@ call(p, argv, porf, psbn)
 			}
 			if (incompat(q, p1->type, argv[1])) {
 				cerror("Expression type clashed with type of value parameter %s of %s", p1->symbol, p->symbol);
+				chk = FALSE;
 				break;
 			}
 #			ifdef OBJ
