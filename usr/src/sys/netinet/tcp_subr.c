@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.8 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,12 +171,12 @@ tcp_newtcpcb(inp)
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
 	/*
-	 * Init srtt to 0, so we can tell that we have no rtt estimate.
-	 * Set rttvar so that srtt + 2 * rttvar gives reasonable initial
-	 * retransmit time.
+	 * Init srtt to TCPTV_SRTTBASE (0), so we can tell that we have no
+	 * rtt estimate.  Set rttvar so that srtt + 2 * rttvar gives
+	 * reasonable initial retransmit time.
 	 */
-	tp->t_srtt = 0;
-	tp->t_rttvar = TCPTV_SRTTBASE << 2;
+	tp->t_srtt = TCPTV_SRTTBASE;
+	tp->t_rttvar = TCPTV_SRTTDFLT << 2;
 	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
