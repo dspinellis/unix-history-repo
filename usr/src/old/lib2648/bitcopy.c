@@ -1,4 +1,13 @@
-/*	bitcopy.c	4.1	83/03/09	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)bitcopy.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Copy from msrc to mdest.
  * This is done as it is because it would be much slower to do it
