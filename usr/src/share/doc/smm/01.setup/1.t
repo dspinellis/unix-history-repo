@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.7 (Berkeley) %G%
+.\"	@(#)1.t	6.8 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -22,7 +22,7 @@ and it will only be necessary for you to do a full bootstrap
 procedure if you are installing the release on a new machine.
 The object file formats are completely different in the System V releases.
 Thus, the most straightforward procedure for upgrading a System V
-system is to perform a full bootstrap.
+system is to do a full bootstrap.
 .PP
 The full bootstrap procedure
 is outlined in section 2; the process starts with copying a filesystem
