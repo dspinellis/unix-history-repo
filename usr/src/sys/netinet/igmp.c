@@ -241,7 +241,6 @@ igmp_sendreport(inm)
 	register struct ip *ip;
 	register struct ip_moptions *imo;
 	struct ip_moptions simo;
-	extern struct socket *ip_mrouter;
 
 	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
@@ -272,8 +271,12 @@ igmp_sendreport(inm)
 	 * Request loopback of the report if we are acting as a multicast
 	 * router, so that the process-level routing demon can hear it.
 	 */
+#ifdef MROUTING
+    {
+	extern struct socket *ip_mrouter;
 	imo->imo_multicast_loop = (ip_mrouter != NULL);
-
+    }
+#endif
 	ip_output(m, NULL, NULL, 0, imo);
 
 	++igmpstat.igps_snd_reports;
