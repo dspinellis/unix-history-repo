@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.145 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.146 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -857,6 +857,7 @@ deliver(e, firstto)
 		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
 		{
 			e->e_flags |= EF_NO_BODY_RETN;
+			mci->mci_status = "5.2.3";
 			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
 			giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, xstart, e);
 			continue;
@@ -1049,6 +1050,7 @@ deliver(e, firstto)
 	{
 		usrerr("554 Cannot send 8-bit data to 7-bit destination");
 		rcode = EX_DATAERR;
+		e->e_status = "5.6.3";
 		goto give_up;
 	}
 
@@ -1690,48 +1692,57 @@ markfailure(e, q, mci, rcode)
 		break;
 	}
 
+	/* find most specific error code possible */
 	if (q->q_status == NULL && mci != NULL)
 		q->q_status = mci->mci_status;
-	switch (rcode)
+	if (q->q_status == NULL)
+		q->q_status = e->e_status;
+	if (q->q_status == NULL)
 	{
-	  case EX_USAGE:
-		stat = "5.5.4";
-		break;
+		switch (rcode)
+		{
+		  case EX_USAGE:
+			stat = "5.5.4";
+			break;
 
-	  case EX_DATAERR:
-		stat = "5.5.2";
-		break;
+		  case EX_DATAERR:
+			stat = "5.5.2";
+			break;
 
-	  case EX_NOUSER:
-	  case EX_NOHOST:
-		stat = "5.1.1";
-		break;
+		  case EX_NOUSER:
+			stat = "5.1.1";
+			break;
 
-	  case EX_NOINPUT:
-	  case EX_CANTCREAT:
-	  case EX_NOPERM:
-		stat = "5.3.0";
-		break;
+		  case EX_NOHOST:
+			stat = "5.1.2";
+			break;
 
-	  case EX_UNAVAILABLE:
-	  case EX_SOFTWARE:
-	  case EX_OSFILE:
-	  case EX_PROTOCOL:
-	  case EX_CONFIG:
-		stat = "5.5.0";
-		break;
+		  case EX_NOINPUT:
+		  case EX_CANTCREAT:
+		  case EX_NOPERM:
+			stat = "5.3.0";
+			break;
 
-	  case EX_OSERR:
-	  case EX_IOERR:
-		stat = "4.5.0";
-		break;
+		  case EX_UNAVAILABLE:
+		  case EX_SOFTWARE:
+		  case EX_OSFILE:
+		  case EX_PROTOCOL:
+		  case EX_CONFIG:
+			stat = "5.5.0";
+			break;
 
-	  case EX_TEMPFAIL:
-		stat = "4.2.0";
-		break;
+		  case EX_OSERR:
+		  case EX_IOERR:
+			stat = "4.5.0";
+			break;
+
+		  case EX_TEMPFAIL:
+			stat = "4.2.0";
+			break;
+		}
+		if (stat != NULL)
+			q->q_status = stat;
 	}
-	if (stat != NULL)
-		q->q_status = stat;
 
 	q->q_statdate = curtime();
 	if (CurHostName != NULL && CurHostName[0] != '\0')

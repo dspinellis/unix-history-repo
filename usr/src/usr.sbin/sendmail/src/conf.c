@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.152 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.153 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -858,8 +858,9 @@ ttypath()
 **	forwarding or registration of users.
 **
 **	If the hosts are found to be incompatible, an error
-**	message should be given using "usrerr" and 0 should
-**	be returned.
+**	message should be given using "usrerr" and an EX_ code
+**	should be returned.  You can also set to->q_status to
+**	a DSN-style status code.
 **
 **	EF_NO_BODY_RETN can be set in e->e_flags to suppress the
 **	body during the return-to-sender function; this should be done
@@ -900,6 +901,7 @@ checkcompat(to, e)
 	{
 		usrerr("553 No ARPA mail through this machine: see your system administration");
 		/* e->e_flags |= EF_NO_BODY_RETN; to supress body on return */
+		to->q_status = "5.7.1";
 		return (EX_UNAVAILABLE);
 	}
 # endif /* EXAMPLE_CODE */

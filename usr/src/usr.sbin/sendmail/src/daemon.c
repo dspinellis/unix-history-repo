@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.81 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.82 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.81 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.82 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -252,6 +252,7 @@ makeconnection(host, port, mci, usesecureport)
 		if (p == NULL)
 		{
 			usrerr("553 Invalid numeric domain spec \"%s\"", host);
+			mci->mci_status = "5.1.2";
 			return (EX_NOHOST);
 		}
 #ifdef NETINET
@@ -801,6 +802,7 @@ host_map_lookup(map, name, av, statp)
 		*statp = s->s_namecanon.nc_stat;
 		if (*statp == EX_TEMPFAIL)
 		{
+			CurEnv->e_status = "4.4.3";
 			usrerr("451 %s: Name server timeout",
 				shortenstring(name, 33));
 		}
@@ -850,6 +852,7 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
+					CurEnv->e_status = "4.4.3";
 					usrerr("451 %s: Name server timeout",
 						shortenstring(name, 33));
 				}
