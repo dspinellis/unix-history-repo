@@ -7,19 +7,25 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strtol.3	5.3 (Berkeley) %G%
+.\"     @(#)strtol.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRTOL 3
 .Os
 .Sh NAME
-.Nm strtol
-.Nd convert string value to a long integer
+.Nm strtol, strtoq
+.Nd convert string value to a long or quad_t integer
 .Sh SYNOPSIS
 .Fd #include <stdlib.h>
 .Fd #include <limits.h>
 .Ft long
 .Fn strtol "char *nptr" "char **endptr" "int base"
+
+.Fd #include <sys/types.h>
+.Fd #include <stdlib.h>
+.Fd #include <limits.h>
+.Ft quad_t
+.Fn strtoq "char *nptr" "char **endptr" "int base"
 .Sh DESCRIPTION
 The
 .Fn strtol
@@ -28,7 +34,16 @@ converts the string in
 .Fa nptr
 to a
 .Em long
-value according to the given
+value.
+The
+.Fn strtoq
+function
+converts the string in
+.Fa nptr
+to a
+.Em quad_t
+value.
+The conversion is done according to the given
 .Fa base ,
 which must be between 2 and 36 inclusive,
 or be the special value 0.
