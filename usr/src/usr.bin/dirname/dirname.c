@@ -12,18 +12,20 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirname.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirname.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <stdlib.h>
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	register char *p;
+	char *p;
 	int ch;
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
@@ -61,7 +63,8 @@ main(argc, argv)
 	 *     shall be removed.
 	 */
 	for (; *p; ++p);
-	while (*--p == '/');
+	while (*--p == '/')
+		continue;
 	*++p = '\0';
 
 	/*
@@ -106,8 +109,10 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: dirname path\n");
 	exit(1);
 }

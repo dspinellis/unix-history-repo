@@ -6,29 +6,31 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lisp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lisp.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include "ctags.h"
 
-extern char	*lbp;			/* pointer shared with fortran */
+#include "ctags.h"
 
 /*
  * lisp tag functions
  * just look for (def or (DEF
  */
+void
 l_entries()
 {
-	register int	special;
-	register char	*cp,
-			savedc;
+	int	special;
+	char	*cp;
+	char	savedc;
 	char	tok[MAXTOKEN];
 
 	for (;;) {
 		lineftell = ftell(inf);
-		if (!fgets(lbuf,sizeof(lbuf),inf))
+		if (!fgets(lbuf, sizeof(lbuf), inf))
 			return;
 		++lineno;
 		lbp = lbuf;
@@ -44,28 +46,34 @@ l_entries()
 			if (cicmp("wrapper") || cicmp("whopper"))
 				special = YES;
 		}
-		for (;!isspace(*lbp);++lbp);
-		for (;isspace(*lbp);++lbp);
-		for (cp = lbp;*cp && *cp != '\n';++cp);
+		for (; !isspace(*lbp); ++lbp)
+			continue;
+		for (; isspace(*lbp); ++lbp)
+			continue;
+		for (cp = lbp; *cp && *cp != '\n'; ++cp)
+			continue;
 		*cp = EOS;
 		if (special) {
-			if (!(cp = index(lbp,')')))
+			if (!(cp = strchr(lbp, ')')))
 				continue;
-			for (;cp >= lbp && *cp != ':';--cp);
+			for (; cp >= lbp && *cp != ':'; --cp)
+				continue;
 			if (cp < lbp)
 				continue;
 			lbp = cp;
-			for (;*cp && *cp != ')' && *cp != ' ';++cp);
+			for (; *cp && *cp != ')' && *cp != ' '; ++cp)
+				continue;
 		}
 		else
 			for (cp = lbp + 1;
-			    *cp && *cp != '(' && *cp != ' ';++cp);
+			    *cp && *cp != '(' && *cp != ' '; ++cp)
+				continue;
 		savedc = *cp;
 		*cp = EOS;
-		(void)strcpy(tok,lbp);
+		(void)strcpy(tok, lbp);
 		*cp = savedc;
 		getline();
-		pfnote(tok,lineno);
+		pfnote(tok, lineno);
 	}
 	/*NOTREACHED*/
 }

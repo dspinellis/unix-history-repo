@@ -6,39 +6,41 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)C.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)C.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "ctags.h"
 
-static int func_entry(), str_entry();
-static void hash_entry();
-static void skip_string();
+static int	func_entry __P((void));
+static void	hash_entry __P((void));
+static void	skip_string __P((int));
+static int	str_entry __P((int));
 
 /*
  * c_entries --
  *	read .c and .h files and call appropriate routines
  */
+void
 c_entries()
 {
-	extern int	tflag;		/* -t: create tags for typedefs */
-	register int	c,		/* current character */
-			level;		/* brace level */
-	register char	*sp;		/* buffer pointer */
-	int	token,			/* if reading a token */
-		t_def,			/* if reading a typedef */
-		t_level;		/* typedef's brace level */
+	int	c;			/* current character */
+	int	level;			/* brace level */
+	int	token;			/* if reading a token */
+	int	t_def;			/* if reading a typedef */
+	int	t_level;		/* typedef's brace level */
+	char	*sp;			/* buffer pointer */
 	char	tok[MAXTOKEN];		/* token buffer */
 
 	lineftell = ftell(inf);
 	sp = tok; token = t_def = NO; t_level = -1; level = 0; lineno = 1;
-	while (GETC(!=,EOF)) {
-
-	switch ((char)c) {
+	while (GETC(!=, EOF)) {
+		switch (c) {
 		/*
-		 * Here's where it DOESN'T handle:
+		 * Here's where it DOESN'T handle: {
 		 *	foo(a)
 		 *	{
 		 *	#ifdef notdef
@@ -66,7 +68,7 @@ c_entries()
 			 * the above 3 cases are similar in that they
 			 * are special characters that also end tokens.
 			 */
-endtok:			if (sp > tok) {
+	endtok:			if (sp > tok) {
 				*sp = EOS;
 				token = YES;
 				sp = tok;
@@ -90,11 +92,11 @@ endtok:			if (sp > tok) {
 		 *	"foo() XX comment XX { int bar; }"
 		 */
 		case '/':
-			if (GETC(==,'*')) {
+			if (GETC(==, '*')) {
 				skip_comment();
 				continue;
 			}
-			(void)ungetc(c,inf);
+			(void)ungetc(c, inf);
 			c = '/';
 			goto storec;
 
@@ -107,7 +109,7 @@ endtok:			if (sp > tok) {
 			goto storec;
 
 		/*
-	 	 * if we have a current token, parenthesis on
+		 * if we have a current token, parenthesis on
 		 * level zero indicates a function.
 		 */
 		case '(':
@@ -126,7 +128,7 @@ endtok:			if (sp > tok) {
 				curline = lineno;
 				if (func_entry()) {
 					++level;
-					pfnote(tok,curline);
+					pfnote(tok, curline);
 				}
 				break;
 			}
@@ -154,7 +156,7 @@ endtok:			if (sp > tok) {
 				getline();
 				if (sp != tok)
 					*sp = EOS;
-				pfnote(tok,lineno);
+				pfnote(tok, lineno);
 				break;
 			}
 			goto storec;
@@ -165,22 +167,23 @@ endtok:			if (sp > tok) {
 		 * reserved words.
 		 */
 		default:
-storec:			if (!intoken(c)) {
+	storec:		if (!intoken(c)) {
 				if (sp == tok)
 					break;
 				*sp = EOS;
 				if (tflag) {
 					/* no typedefs inside typedefs */
-					if (!t_def && !bcmp(tok,"typedef",8)) {
+					if (!t_def &&
+						   !memcmp(tok, "typedef",8)) {
 						t_def = YES;
 						t_level = level;
 						break;
 					}
 					/* catch "typedef struct" */
 					if ((!t_def || t_level < level)
-					    && (!bcmp(tok,"struct",7)
-					    || !bcmp(tok,"union",6)
-					    || !bcmp(tok,"enum",5))) {
+					    && (!memcmp(tok, "struct", 7)
+					    || !memcmp(tok, "union", 6)
+					    || !memcmp(tok, "enum", 5))) {
 						/*
 						 * get line immediately;
 						 * may change before '{'
@@ -189,6 +192,7 @@ storec:			if (!intoken(c)) {
 						if (str_entry(c))
 							++level;
 						break;
+						/* } */
 					}
 				}
 				sp = tok;
@@ -199,6 +203,7 @@ storec:			if (!intoken(c)) {
 			}
 			continue;
 		}
+
 		sp = tok;
 		token = NO;
 	}
@@ -211,16 +216,16 @@ storec:			if (!intoken(c)) {
 static int
 func_entry()
 {
-	register int	c;		/* current character */
-	int		level = 0;	/* for matching '()' */
+	int	c;			/* current character */
+	int	level = 0;		/* for matching '()' */
 
 	/*
 	 * Find the end of the assumed function declaration.
 	 * Note that ANSI C functions can have type definitions so keep
 	 * track of the parentheses nesting level.
 	 */
-	while (GETC(!=,EOF)) {
-		switch ((char)c) {
+	while (GETC(!=, EOF)) {
+		switch (c) {
 		case '\'':
 		case '"':
 			/* skip strings and character constants */
@@ -228,7 +233,7 @@ func_entry()
 			break;
 		case '/':
 			/* skip comments */
-			if (GETC(==,'*'))
+			if (GETC(==, '*'))
 				skip_comment();
 			break;
 		case '(':
@@ -243,7 +248,7 @@ func_entry()
 			SETLINE;
 		}
 	}
-	return(NO);
+	return (NO);
 fnd:
 	/*
 	 * we assume that the character after a function's right paren
@@ -251,21 +256,21 @@ fnd:
 	 * character if it's a declaration.  Comments don't count...
 	 */
 	for (;;) {
-		while (GETC(!=,EOF) && iswhite(c))
-			if (c == (int)'\n')
+		while (GETC(!=, EOF) && iswhite(c))
+			if (c == '\n')
 				SETLINE;
-		if (intoken(c) || c == (int)'{')
+		if (intoken(c) || c == '{')
 			break;
-		if (c == (int)'/' && GETC(==,'*'))
+		if (c == '/' && GETC(==, '*'))
 			skip_comment();
 		else {				/* don't ever "read" '/' */
-			(void)ungetc(c,inf);
-			return(NO);
+			(void)ungetc(c, inf);
+			return (NO);
 		}
 	}
-	if (c != (int)'{')
-		(void)skip_key((int)'{');
-	return(YES);
+	if (c != '{')
+		(void)skip_key('{');
+	return (YES);
 }
 
 /*
@@ -275,32 +280,31 @@ fnd:
 static void
 hash_entry()
 {
-	extern int	dflag;		/* -d: non-macro defines */
-	register int	c,		/* character read */
-			curline;	/* line started on */
-	register char	*sp;		/* buffer pointer */
+	int	c;			/* character read */
+	int	curline;		/* line started on */
+	char	*sp;			/* buffer pointer */
 	char	tok[MAXTOKEN];		/* storage buffer */
 
 	curline = lineno;
 	for (sp = tok;;) {		/* get next token */
-		if (GETC(==,EOF))
+		if (GETC(==, EOF))
 			return;
 		if (iswhite(c))
 			break;
 		*sp++ = c;
 	}
 	*sp = EOS;
-	if (bcmp(tok,"define",6))	/* only interested in #define's */
+	if (memcmp(tok, "define", 6))	/* only interested in #define's */
 		goto skip;
 	for (;;) {			/* this doesn't handle "#define \n" */
-		if (GETC(==,EOF))
+		if (GETC(==, EOF))
 			return;
 		if (!iswhite(c))
 			break;
 	}
 	for (sp = tok;;) {		/* get next token */
 		*sp++ = c;
-		if (GETC(==,EOF))
+		if (GETC(==, EOF))
 			return;
 		/*
 		 * this is where it DOESN'T handle
@@ -310,44 +314,44 @@ hash_entry()
 			break;
 	}
 	*sp = EOS;
-	if (dflag || c == (int)'(') {	/* only want macros */
+	if (dflag || c == '(') {	/* only want macros */
 		getline();
-		pfnote(tok,curline);
+		pfnote(tok, curline);
 	}
-skip:	if (c == (int)'\n') {		/* get rid of rest of define */
+skip:	if (c == '\n') {		/* get rid of rest of define */
 		SETLINE
 		if (*(sp - 1) != '\\')
 			return;
 	}
-	(void)skip_key((int)'\n');
+	(void)skip_key('\n');
 }
 
 /*
  * str_entry --
  *	handle a struct, union or enum entry
  */
-static
+static int
 str_entry(c)
-	register int	c;		/* current character */
+	int	c;			/* current character */
 {
-	register char	*sp;		/* buffer pointer */
 	int	curline;		/* line started on */
-	char	tok[BUFSIZ];		/* storage buffer */
+	char	*sp;			/* buffer pointer */
+	char	tok[LINE_MAX];		/* storage buffer */
 
 	curline = lineno;
 	while (iswhite(c))
-		if (GETC(==,EOF))
-			return(NO);
-	if (c == (int)'{')		/* it was "struct {" */
-		return(YES);
+		if (GETC(==, EOF))
+			return (NO);
+	if (c == '{')		/* it was "struct {" */
+		return (YES);
 	for (sp = tok;;) {		/* get next token */
 		*sp++ = c;
-		if (GETC(==,EOF))
-			return(NO);
+		if (GETC(==, EOF))
+			return (NO);
 		if (!intoken(c))
 			break;
 	}
-	switch ((char)c) {
+	switch (c) {
 		case '{':		/* it was "struct foo{" */
 			--sp;
 			break;
@@ -355,43 +359,45 @@ str_entry(c)
 			SETLINE;
 			/*FALLTHROUGH*/
 		default:		/* probably "struct foo " */
-			while (GETC(!=,EOF))
+			while (GETC(!=, EOF))
 				if (!iswhite(c))
 					break;
-			if (c != (int)'{') {
+			if (c != '{') {
 				(void)ungetc(c, inf);
-				return(NO);
+				return (NO);
 			}
 	}
 	*sp = EOS;
-	pfnote(tok,curline);
-	return(YES);
+	pfnote(tok, curline);
+	return (YES);
 }
 
 /*
  * skip_comment --
  *	skip over comment
  */
+void
 skip_comment()
 {
-	register int	c,		/* character read */
-			star;		/* '*' flag */
+	int	c;			/* character read */
+	int	star;			/* '*' flag */
 
-	for (star = 0;GETC(!=,EOF);)
-		switch((char)c) {
-			/* comments don't nest, nor can they be escaped. */
-			case '*':
-				star = YES;
-				break;
-			case '/':
-				if (star)
-					return;
-				break;
-			case '\n':
-				SETLINE;
-				/*FALLTHROUGH*/
-			default:
-				star = NO;
+	for (star = 0; GETC(!=, EOF);)
+		switch(c) {
+		/* comments don't nest, nor can they be escaped. */
+		case '*':
+			star = YES;
+			break;
+		case '/':
+			if (star)
+				return;
+			break;
+		case '\n':
+			SETLINE;
+			/*FALLTHROUGH*/
+		default:
+			star = NO;
+			break;
 		}
 }
 
@@ -401,13 +407,13 @@ skip_comment()
  */
 void
 skip_string(key)
-	register int	key;
+	int	key;
 {
-	register int	c,
-			skip;
+	int	c,
+		skip;
 
-	for (skip = NO; GETC(!=,EOF); )
-		switch ((char)c) {
+	for (skip = NO; GETC(!=, EOF); )
+		switch (c) {
 		case '\\':		/* a backslash escapes anything */
 			skip = !skip;	/* we toggle in case it's "\\" */
 			break;
@@ -427,14 +433,14 @@ skip_string(key)
  */
 int
 skip_key(key)
-	register int	key;
+	int	key;
 {
-	register int	c,
-			skip,
-			retval;
+	int	c,
+		skip,
+		retval;
 
-	for (skip = retval = NO;GETC(!=,EOF);)
-		switch((char)c) {
+	for (skip = retval = NO; GETC(!=, EOF);)
+		switch(c) {
 		case '\\':		/* a backslash escapes anything */
 			skip = !skip;	/* we toggle in case it's "\\" */
 			break;
@@ -449,11 +455,11 @@ skip_key(key)
 			break;
 		case '/':
 			/* skip comments */
-			if (GETC(==,'*')) {
+			if (GETC(==, '*')) {
 				skip_comment();
 				break;
 			}
-			(void)ungetc(c,inf);
+			(void)ungetc(c, inf);
 			c = '/';
 			goto norm;
 		case '\n':
@@ -462,8 +468,8 @@ skip_key(key)
 		default:
 		norm:
 			if (c == key && !skip)
-				return(retval);
+				return (retval);
 			skip = NO;
 		}
-	return(retval);
+	return (retval);
 }
