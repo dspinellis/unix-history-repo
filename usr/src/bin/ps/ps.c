@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -35,66 +35,91 @@ static char sccsid[] = "@(#)ps.c	5.18 (Berkeley) %G%";
 #include "pathnames.h"
 
 char *nl_names[] = {
-	"_proc",
-#define	X_PROC		0
-	"_Usrptmap",
-#define	X_USRPTMAP	1
-	"_usrpt",
-#define	X_USRPT		2
-	"_text",
-#define	X_TEXT		3
-	"_nswap",
-#define	X_NSWAP		4
-	"_maxslp",
-#define	X_MAXSLP	5
-	"_ccpu",
-#define	X_CCPU		6
-	"_ecmx",
-#define	X_ECMX		7
-	"_nproc",
-#define	X_NPROC		8
-	"_ntext",
-#define	X_NTEXT		9
-	"_dmmin",
-#define	X_DMMIN		10
-	"_dmmax",
-#define	X_DMMAX		11
-	"_Sysmap",
-#define	X_SYSMAP	12
-	"_Syssize",
-#define	X_SYSSIZE	13
-	"_inode",
-#define X_INODE		14
+
+/*
+ * The following are used for symbolic wchan's
+ */
+	"_vnode",
+#define X_VNODE		0
 	"_file",
-#define X_FILE		15
+#define X_FILE		1
 	"_cfree",
-#define X_CFREE		16
+#define X_CFREE		2
 	"_callout",
-#define X_CALLOUT	17
+#define X_CALLOUT	3
 	"_swapmap",
-#define X_SWAPMAP	18
+#define X_SWAPMAP	4
 	"_argmap",
-#define X_ARGMAP	19
+#define X_ARGMAP	5
 	"_kernelmap",
-#define X_KERNELMAP	20
+#define X_KERNELMAP	6
 	"_mbmap",
-#define X_MBMAP		21
+#define X_MBMAP		7
 	"_namecache",
-#define X_NCH		22
+#define X_NCH		8
 	"_quota",
-#define X_QUOTA		23
+#define X_QUOTA		9
 	"_dquot",
-#define X_DQUOT		24
+#define X_DQUOT		10
 	"_swbuf",
-#define X_SWBUF		25
+#define X_SWBUF		11
 	"_buf",
-#define X_BUF		26
+#define X_BUF		12
 	"_cmap",
-#define X_CMAP		27
+#define X_CMAP		13
 	"_buffers",
-#define X_BUFFERS	28
+#define X_BUFFERS	14
+
+/*
+ * These are used for interpreting raw memory (-k)
+ */
+	"_Sysmap",
+#define	X_SYSMAP	15
+	"_Syssize",
+#define	X_SYSSIZE	16
+
+/*
+ * These should be obtained from getdynamicsysinfo()
+ */
+	"_ecmx",
+#define	X_ECMX		17
+	"_ccpu",
+#define	X_CCPU		18
 	"_fscale",
-#define X_FSCALE	29
+#define X_FSCALE	19
+
+/*
+ * Here to end should be replaced by getproc info()
+ */
+
+/* This is used to find the prog args and user area */
+	"_Usrptmap",
+#define	X_USRPTMAP	20
+	"_usrpt",
+#define	X_USRPT		21
+
+/* This is used to extract the process table */
+	"_nproc",
+#define	X_NPROC		22
+	"_proc",
+#define	X_PROC		23
+
+/* These are used to extract the text table */
+	"_ntext",
+#define	X_NTEXT		24
+	"_text",
+#define	X_TEXT		25
+
+/*
+ * These are used by vstodb to interpret the swap area 
+ * while searching for the command
+ */
+	"_nswap",
+#define	X_NSWAP		26
+	"_dmmin",
+#define	X_DMMIN		27
+	"_dmmax",
+#define	X_DMMAX		28
 	""
 };
 
@@ -174,7 +199,7 @@ off_t	vtophys();
 double	pcpu(), pmem();
 int	wchancomp();
 int	pscomp();
-int	nswap, maxslp;
+int	nswap;
 struct	text *atext;
 fixpt_t	ccpu;
 int	ecmx;
@@ -621,11 +646,6 @@ getkvars(argc, argv)
 		cantread("nswap", kmemf);
 		exit(1);
 	}
-	klseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
-	if (read(kmem, (char *)&maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
-		cantread("maxslp", kmemf);
-		exit(1);
-	}
 	klseek(kmem, (long)nl[X_CCPU].n_value, 0);
 	if (read(kmem, (char *)&ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
 		cantread("ccpu", kmemf);
@@ -668,7 +688,7 @@ getvchans()
 		return;
 
 #define addv(i) 	addchan(&nl[i].n_un.n_name[1], getw(nl[i].n_value))
-	addv(X_INODE);
+	addv(X_VNODE);
 	addv(X_FILE);
 	addv(X_PROC);
 	addv(X_TEXT);
