@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.18 %G%";
+static	char sccsid[] = "@(#)c21.c 4.19 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -747,8 +747,9 @@ bitopt(p) register struct node *p; {
 	register char *cp1,*cp2; int b;
 	cp1=regs[RT1]; cp2=regs[RT2];
 	if (*cp1++!='$' || !okio(cp2) || p->forw->op!=CBR || p->forw->subop&-2 ||
-		0>(b=ispow2(getnum(cp1))) ||
-		p->subop!=BYTE && (source(cp2) || indexa(cp2))) return;
+		0>(b=ispow2(getnum(cp1)))) return;
+	if (p->subop!=BYTE && !(b==0 && p->subop==LONG) &&
+		(source(cp2) || indexa(cp2))) return;
 	if (b>=bitsize[p->subop]) {/* you dummy! */
 		if (source(cp2)) {/* side effect: auto increment or decrement */
 			p->pop=0;
@@ -763,7 +764,8 @@ bitopt(p) register struct node *p; {
 	if (cp1=p->forw->code) {/* destination is not an internal label */
 		cp2=regs[RT3]; while (*cp2++= *cp1++);
 	}
-	if (b==0 && (p->subop==LONG || !indexa(regs[RT2]))) {/* JLB optimization, ala BLISS */
+	if (b==0 && (p->subop==LONG || !(source(regs[RT2]) || indexa(regs[RT2])))) {
+		/* JLB optimization, ala BLISS */
 		cp2=regs[RT1]; cp1=regs[RT2]; while (*cp2++= *cp1++);
 		cp2=regs[RT2]; cp1=regs[RT3]; while (*cp2++= *cp1++);
 		*(regs[RT3])=0; p->forw->subop += JLBC-JBC;
