@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	8.3 (Berkeley) %G%
+ *	@(#)dc.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -382,6 +382,7 @@ dcparam(tp, t)
 	register int cflag = t->c_cflag;
 	int unit = minor(tp->t_dev);
 	int ospeed = ttspeedtab(t->c_ospeed, dcspeedtab);
+	int s;
 
 	/* check requested parameters */
         if (ospeed < 0 || (t->c_ispeed && t->c_ispeed != t->c_ospeed) ||
@@ -393,28 +394,22 @@ dcparam(tp, t)
         tp->t_ospeed = t->c_ospeed;
         tp->t_cflag = cflag;
 
-	dcaddr = (dcregs *)dcpdma[unit].p_addr;
-
 	/*
 	 * Handle console cases specially.
 	 */
 	if (cn_tab.cn_screen) {
 		if (unit == DCKBD_PORT) {
-			dcaddr->dc_lpr = LPR_RXENAB | LPR_8_BIT_CHAR |
+			lpr = LPR_RXENAB | LPR_8_BIT_CHAR |
 				LPR_B4800 | DCKBD_PORT;
-			MachEmptyWriteBuffer();
-			return (0);
+			goto out;
 		} else if (unit == DCMOUSE_PORT) {
-			dcaddr->dc_lpr = LPR_RXENAB | LPR_B4800 | LPR_OPAR |
+			lpr = LPR_RXENAB | LPR_B4800 | LPR_OPAR |
 				LPR_PARENB | LPR_8_BIT_CHAR | DCMOUSE_PORT;
-			MachEmptyWriteBuffer();
-			return (0);
+			goto out;
 		}
 	} else if (tp->t_dev == cn_tab.cn_dev) {
-		dcaddr->dc_lpr = LPR_RXENAB | LPR_8_BIT_CHAR |
-			LPR_B9600 | unit;
-		MachEmptyWriteBuffer();
-		return (0);
+		lpr = LPR_RXENAB | LPR_8_BIT_CHAR | LPR_B9600 | unit;
+		goto out;
 	}
 	if (ospeed == 0) {
 		(void) dcmctl(unit, 0, DMSET);	/* hang up line */
@@ -431,8 +426,12 @@ dcparam(tp, t)
 		lpr |= LPR_OPAR;
 	if (cflag & CSTOPB)
 		lpr |= LPR_2_STOP;
+out:
+	dcaddr = (dcregs *)dcpdma[unit].p_addr;
+	s = spltty();
 	dcaddr->dc_lpr = lpr;
 	MachEmptyWriteBuffer();
+	splx(s);
 	DELAY(10);
 	return (0);
 }
@@ -583,7 +582,8 @@ dcxint(tp)
 				return;
 			}
 		}
-		dcaddr->dc_tdr = dc_brk[unit >> 2] | *dp->p_mem++;
+		dcaddr->dc_tdr = dc_brk[unit >> 2] | *(u_char *)dp->p_mem;
+		dp->p_mem++;
 		MachEmptyWriteBuffer();
 		DELAY(10);
 		return;
