@@ -1,0 +1,2 @@
+Mmakemap	makemap.c	/^main(argc, argv)$/
+lockfile	makemap.c	/^lockfile(fd)$/
