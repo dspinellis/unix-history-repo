@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -982,7 +982,7 @@ xfclose(fp, a, b)
 {
 	if (tTd(53, 99))
 		printf("xfclose(%x) %s %s\n", fp, a, b);
-#ifdef XDEBUG
+#if XDEBUG
 	if (fileno(fp) == 1)
 		syserr("xfclose(%s %s): fd = 1", a, b);
 #endif
@@ -1042,7 +1042,7 @@ sfgets(buf, siz, fp, timeout, during)
 			usrerr("451 timeout waiting for input during %s",
 				during);
 			buf[0] = '\0';
-#ifdef XDEBUG
+#if XDEBUG
 			checkfd012(during);
 #endif
 			return (NULL);
@@ -1389,7 +1389,7 @@ void
 checkfd012(where)
 	char *where;
 {
-#ifdef XDEBUG
+#if XDEBUG
 	register int i;
 	struct stat stbuf;
 

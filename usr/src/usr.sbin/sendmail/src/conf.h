@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.187 (Berkeley) %G%
+ *	@(#)conf.h	8.188 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,3 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 
 /**********************************************************************
 **  Compilation options.
-**
-**	#define these if they are available; comment them out otherwise.
-**********************************************************************/
-

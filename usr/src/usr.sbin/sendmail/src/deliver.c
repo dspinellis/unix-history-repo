@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.157 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.158 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -488,7 +488,7 @@ sendenvelope(e, mode)
 	/* now run through the queue */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
-#ifdef XDEBUG
+#if XDEBUG
 		char wbuf[MAXNAME + 20];
 
 		(void) sprintf(wbuf, "sendall(%s)", q->q_paddr);
@@ -533,7 +533,7 @@ sendenvelope(e, mode)
 		e->e_ntries++;
 	}
 
-#ifdef XDEBUG
+#if XDEBUG
 	checkfd012("end of sendenvelope");
 #endif
 
@@ -1003,7 +1003,7 @@ deliver(firstto, editfcn)
 	SmtpPhase = NULL;
 	mci = NULL;
 
-#ifdef XDEBUG
+#if XDEBUG
 	{
 		char wbuf[MAXLINE];
 
@@ -1960,7 +1960,6 @@ putmessage(fp, m, xdot)
 
 	if (!bitset(M_NHDR, m->m_flags))
 	{
-# ifdef UGLYUUCP
 		if (bitset(M_UGLYUUCP, m->m_flags))
 		{
 			extern char *macvalue();

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.194 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.195 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -251,7 +251,7 @@ setupmaps()
 		hes_map_lookup, null_map_store);
 #endif
 
-#ifdef NETINFO
+#if NETINFO
 	MAPDEF("netinfo", NULL, MCF_ALIASOK,
 		map_parseargs, ni_map_open, null_map_close,
 		ni_map_lookup, null_map_store);

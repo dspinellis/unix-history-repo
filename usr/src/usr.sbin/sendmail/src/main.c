@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.128 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.129 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -615,7 +615,7 @@ main(argc, argv, envp)
 	**	Extract special fields for local use.
 	*/
 
-#ifdef XDEBUG
+#if XDEBUG
 	checkfd012("before readcf");
 #endif
 	vendor_pre_defaults(CurEnv);
@@ -825,7 +825,7 @@ main(argc, argv, envp)
 		exit(ExitStat);
 	}
 
-#ifdef XDEBUG
+#if XDEBUG
 	checkfd012("before main() initmaps");
 #endif
 
