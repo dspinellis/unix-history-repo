@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,24 +42,24 @@ char *emalloc();
 int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg, Sflg;
 
 /* flags */
-int f_listdot;			/* list files beginning with . */
-int f_listalldot;		/* list . and .. as well */
-int f_modtime;			/* use time of last change for time */
 int f_accesstime;		/* use time of last access */
-int f_statustime;		/* use time of last mode change */
-int f_singlecol;		/* use single column output */
-int f_listdir;			/* list actual directory, not contents */
-int f_specialdir;		/* force params to be directories */
-int f_type;			/* add type character for non-regular files */
+int f_firsttime = 1;		/* to control recursion */
 int f_group;			/* show group ownership of a file */
+int f_ignorelink;		/* indirect through symbolic link operands */
 int f_inode;			/* print inode */
+int f_listalldot;		/* list . and .. as well */
+int f_listdir;			/* list actual directory, not contents */
+int f_listdot;			/* list files beginning with . */
 int f_longform;			/* long listing format */
 int f_nonprint;			/* show unprintables as ? */
-int f_reversesort;		/* reverse whatever sort is used */
 int f_recursive;		/* ls subdirectories also */
+int f_reversesort;		/* reverse whatever sort is used */
+int f_singlecol;		/* use single column output */
 int f_size;			/* list size in short listing */
+int f_specialdir;		/* force params to be directories */
+int f_statustime;		/* use time of last mode change */
 int f_timesort;			/* sort by time vice name */
-int f_firsttime = 1;		/* to control recursion */
+int f_type;			/* add type character for non-regular files */
 
 main(argc, argv)
 	int argc;
@@ -70,44 +70,60 @@ main(argc, argv)
 	int namecmp(), revnamecmp(), acccmp(), revacccmp();
 	int modcmp(), revmodcmp(), statcmp(), revstatcmp();
 
-	 /* set up defaults for terminal/nonterminal stdout */
+	/*
+	 * terminal defaults to -C -q
+	 * non-terminal defaults to -1
+	 */
 	if (isatty(1)) {
 		f_nonprint = 1;
 		lengthfcn = prablelen;
 	} else
 		f_singlecol = 1;
 
-	/* root sees all files automatically */
+	/* root is -A automatically */
 	if (!getuid())
 		f_listdot = 1;
 
 	while ((ch = getopt(argc, argv, "1ACFLRacdfgilqrstu")) != EOF) {
 		switch (ch) {
+		/*
+		 * -1, -C and -l all override each other
+		 * so shell aliasing works right
+		 */
 		case '1':
 			f_singlecol = 1;
+			f_longform = 0;
 			break;
 		case 'C':
+			f_longform = f_singlecol = 0;
+			break;
+		case 'l':
+			f_longform = 1;
 			f_singlecol = 0;
+			break;
+		/* -c and -u override each other */
+		case 'c':
+			f_statustime = 1;
+			f_accesstime = 0;
+			break;
+		case 'u':
+			f_accesstime = 1;
+			f_statustime = 0;
 			break;
 		case 'F':
 			f_type = 1;
 			break;
 		case 'L':
-			statfcn = stat;
+			f_ignorelink = 1;
 			break;
 		case 'R':
 			f_recursive = 1;
-			statfcn = lstat;
 			break;
 		case 'a':
 			f_listalldot = 1;
 			/* FALLTHROUGH */
 		case 'A':
 			f_listdot = 1;
-			break;
-		case 'c':
-			f_statustime = 1;
-			f_modtime = f_accesstime = 0;
 			break;
 		case 'S':
 			Sflg++; /* fall into... */
@@ -123,13 +139,6 @@ main(argc, argv)
 		case 'i':
 			f_inode = 1;
 			break;
-		case 'l':
-			f_longform = 1;
-			f_singlecol = 0;
-			statfcn = lstat;
-			if (!f_accesstime && !f_statustime)
-				f_modtime = 1;
-			break;
 		case 'q':
 			f_nonprint = 1;
 			lengthfcn = prablelen;
@@ -139,16 +148,9 @@ main(argc, argv)
 			break;
 		case 's':
 			f_size = 1;
-			statfcn = lstat;
 			break;
 		case 't':
 			f_timesort = 1;
-			if (!f_accesstime && !f_statustime)
-				f_modtime = 1;
-			break;
-		case 'u':
-			f_modtime = f_statustime = 0;
-			f_accesstime = 1;
 			break;
 		default:
 		case '?':
@@ -179,19 +181,19 @@ main(argc, argv)
 			sortfcn = revnamecmp;
 		else if (f_accesstime)
 			sortfcn = revacccmp;
-		else if (f_modtime)
-			sortfcn = revmodcmp;
 		else if (f_statustime)
 			sortfcn = revstatcmp;
+		else /* use modification time */
+			sortfcn = revmodcmp;
 	} else {
 		if (!f_timesort)
 			sortfcn = namecmp;
 		else if (f_accesstime)
 			sortfcn = acccmp;
-		else if (f_modtime)
-			sortfcn = modcmp;
 		else if (f_statustime)
 			sortfcn = statcmp;
+		else /* use modification time */
+			sortfcn = modcmp;
 	}
 
 	if (argc)
@@ -207,7 +209,7 @@ curdir()
 	int num;
 	char *names;
 
-	if (statfcn(local.name = ".", &local.lstat)) {
+	if (lstat(local.name = ".", &local.lstat)) {
 		(void)fprintf(stderr, "ls: .: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -226,10 +228,11 @@ args(argc, argv)
 	register int cnt, dircnt, regcnt;
 	struct stat sb;
 	LS *stats;
-	int num;
+	int num, (*statfcn)(), stat(), lstat();
 	char *names;
 
 	dstats = rstats = NULL;
+	statfcn = f_ignorelink ? stat : lstat;
 	for (dircnt = regcnt = 0; *argv; ++argv) {
 		if (statfcn(*argv, &sb)) {
 			(void)fprintf(stderr, "ls: %s: %s\n",
@@ -378,7 +381,7 @@ buildstats(lp, s_stats, s_names)
 			    (u_int)maxentry * sizeof(LS))))
 				nomem();
 		}
-		if (needstat && statfcn(entry->d_name, &stats[cnt].lstat)) {
+		if (needstat && lstat(entry->d_name, &stats[cnt].lstat)) {
 			(void)fprintf(stderr, "ls: %s: %s\n",
 			    entry->d_name, strerror(errno));
 			if (errno == ENOENT)
