@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.13 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -36,6 +36,7 @@ char *argv[];
 			case 'i':
 				iflg++;
 				break;
+			case 'R':
 			case 'r':
 				rflg++;
 				break;
@@ -44,6 +45,12 @@ char *argv[];
 				exit(1);
 			}
 	}
+
+	if (argc < 2) {
+		fprintf(stderr, "usage: rm [-rif] file ...\n");
+		exit(1);
+	}
+
 	while(--argc > 0) {
 		if(!strcmp(*++argv, "..")) {
 			fprintf(stderr, "rm: cannot remove `..'\n");
@@ -61,7 +68,7 @@ char arg[];
 	struct stat buf;
 	struct direct *dp;
 	DIR *dirp;
-	char name[BUFSIZ];
+	char name[MAXPATHLEN + 1];
 	int d;
 
 	if(lstat(arg, &buf)) {
