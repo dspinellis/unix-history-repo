@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grfvar.h 1.10 92/01/21$
+ * from: Utah $Hdr: grfvar.h 1.11 93/08/13$
  *
- *	@(#)grfvar.h	8.1 (Berkeley) %G%
+ *	@(#)grfvar.h	8.2 (Berkeley) %G%
  */
 
 /* internal structure of lock page */
@@ -60,6 +60,8 @@ struct	grf_softc {
 #define GM_GRFOVON	3
 #define GM_GRFOVOFF	4
 #define GM_DESCRIBE	5
+#define GM_MAP		6
+#define GM_UNMAP	7
 
 /* minor device interpretation */
 #define GRFOVDEV	0x10	/* overlay planes */
