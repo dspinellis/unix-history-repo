@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -42,10 +42,10 @@ vax_ioconf()
 		exit(1);
 	}
 	fprintf(fp, "#include \"machine/pte.h\"\n");
-	fprintf(fp, "#include \"../h/param.h\"\n");
-	fprintf(fp, "#include \"../h/buf.h\"\n");
-	fprintf(fp, "#include \"../h/map.h\"\n");
-	fprintf(fp, "#include \"../h/vm.h\"\n");
+	fprintf(fp, "#include \"../sys/param.h\"\n");
+	fprintf(fp, "#include \"../sys/buf.h\"\n");
+	fprintf(fp, "#include \"../sys/map.h\"\n");
+	fprintf(fp, "#include \"../sys/vm.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#include \"../vaxmba/mbavar.h\"\n");
 	fprintf(fp, "#include \"../vaxuba/ubavar.h\"\n\n");
@@ -285,10 +285,10 @@ tahoe_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
-	fprintf(fp, "#include \"../h/param.h\"\n");
+	fprintf(fp, "#include \"../sys/param.h\"\n");
 	fprintf(fp, "#include \"machine/pte.h\"\n");
-	fprintf(fp, "#include \"../h/buf.h\"\n");
-	fprintf(fp, "#include \"../h/map.h\"\n");
+	fprintf(fp, "#include \"../sys/buf.h\"\n");
+	fprintf(fp, "#include \"../sys/map.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#include \"../tahoevba/vbavar.h\"\n");
 	fprintf(fp, "\n");
