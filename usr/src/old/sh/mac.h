@@ -1,4 +1,4 @@
-/*	mac.h	4.2	82/12/24	*/
+/*	mac.h	4.3	87/10/26	*/
 
 #
 /*
@@ -59,5 +59,3 @@
 #define RQ	'\''
 #define MINUS	'-'
 #define COLON	':'
-
-#define MAX(a,b)	((a)>(b)?(a):(b))
