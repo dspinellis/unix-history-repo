@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.34 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.35 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -375,7 +375,8 @@ R$* < @ $=w > $*		$: $1 < @ $j . > $3		no domain at all
 R$* < @ $=w . UUCP > $*		$: $1 < @ $j . > $3		.UUCP domain
 undivert(2)dnl
 
-ifdef(`UUCP_RELAY',
+ifdef(`_NO_UUCP_', `dnl',
+`ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
 R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP > $3',
 `# if really UUCP, handle it immediately
@@ -395,10 +396,11 @@ R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP > $3
 ifdef(`_OLD_SENDMAIL_',
 `R$* < @ $+ . $+ . UUCP > $*		$@ $1 < @ $2 . $3 . > $4',
 `R$* < @ $+ . . UUCP > $*		$@ $1 < @ $2 . > $3')')
-
-# pass to name server to make hostname canonical
+')
+ifdef(`_NO_CANONIFY_', `dnl',
+`# pass to name server to make hostname canonical
 R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
-
+')
 # handle possible alternate names
 R$* < @ $=w . $m . > $*		$: $1 < @ $j . > $3
 R$* < @ $=w . $m > $*		$: $1 < @ $j . > $3
