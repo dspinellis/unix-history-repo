@@ -1,4 +1,4 @@
-/*	vfs_bio.c	6.2	84/01/03	*/
+/*	vfs_bio.c	6.3	84/08/07	*/
 
 #include "../machine/pte.h"
 
@@ -289,7 +289,7 @@ loop:
 		}
 		splx(s);
 		notavail(bp);
-		if (brealloc(bp, size) == 0)
+		if (bp->b_bcount != size && brealloc(bp, size) == 0)
 			goto loop;
 		bp->b_flags |= B_CACHE;
 		return(bp);
