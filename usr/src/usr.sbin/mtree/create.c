@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -64,18 +64,6 @@ cwalk()
 			if (!strcmp(p->fts_name, "."))
 				continue;
 			break;
-		case FTS_DC:
-			(void)fprintf(stderr,
-			    "mtree: directory cycle: %s.\n", p->fts_path);
-			continue;
-		case FTS_DNR:
-			(void)fprintf(stderr,
-			    "mtree: %s: unable to read.\n", p->fts_path);
-			continue;
-		case FTS_DNX:
-			(void)fprintf(stderr,
-			    "mtree: %s: unable to search.\n", p->fts_path);
-			continue;
 		case FTS_DP:
 			if (p->fts_level <= 0)
 				continue;
@@ -83,13 +71,11 @@ cwalk()
 				(void)putchar('\t');
 			(void)printf("..\n");
 			continue;
+		case FTS_DNR:
 		case FTS_ERR:
+		case FTS_NS:
 			(void)fprintf(stderr, "mtree: %s: %s.\n",
 			    p->fts_path, strerror(errno));
-			continue;
-		case FTS_NS:
-			(void)fprintf(stderr,
-			    "mtree: can't stat: %s.\n", p->fts_path);
 			continue;
 		default:
 			if (dflag)

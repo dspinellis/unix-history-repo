@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,14 +52,6 @@ vwalk()
 				continue;
 			ftsdepth++; 
 			break;
-		case FTS_DC:
-			(void)fprintf(stderr,
-			    "mtree: directory cycle: %s.\n", RP(p));
-			continue;
-		case FTS_DNR:
-		case FTS_DNX:
-			(void)fprintf(stderr,
-			    "mtree: %s: unable to read or search.\n", RP(p));
 		case FTS_DP:
 			ftsdepth--; 
 			if (specdepth > ftsdepth) {
@@ -68,13 +60,11 @@ vwalk()
 				specdepth--;
 			}
 			continue;
+		case FTS_DNR:
 		case FTS_ERR:
+		case FTS_NS:
 			(void)fprintf(stderr, "mtree: %s: %s.\n",
 			    RP(p), strerror(errno));
-			continue;
-		case FTS_NS:
-			(void)fprintf(stderr,
-			    "mtree: can't stat: %s.\n", RP(p));
 			continue;
 		default:
 			if (dflag)
