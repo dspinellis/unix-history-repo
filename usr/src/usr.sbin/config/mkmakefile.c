@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)mkmakefile.c	5.21 (Berkeley) %G%";
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
+#include "pathnames.h"
 
 #define next_word(fp, wd) \
 	{ register char *word = get_word(fp); \
@@ -170,9 +171,7 @@ makefile()
 		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
 			register char *cp;
 
-			fprintf(ofp, 
-			    "GPROF.EX=/usr/src/lib/libc/%s/csu/gmon.ex\n",
-			    machinename);
+			fprintf(ofp, _PATH_GPROF, machinename);
 			cp = index(line, '\n');
 			if (cp)
 				*cp = 0;
