@@ -1,48 +1,8 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.3 (Berkeley) %G%
-#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	ac.c
-OBJS=
-MAN=	ac.0
+PROG=	ac
+MAN8=	ac.0
+DPADD=	${LIBCOMPAT}
+LDADD=	-lcompat
 
-all: ac
-
-ac: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -lcompat
-
-clean:
-	rm -f ${OBJS} core ac
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 ac ${DESTDIR}/usr/sbin
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>
