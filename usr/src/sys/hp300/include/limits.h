@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	8.1 (Berkeley) %G%
+ *	@(#)limits.h	8.2 (Berkeley) %G%
  */
 
 #define	CHAR_BIT	8		/* number of bits in a char */
