@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.30 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,18 +28,21 @@ long malloc_reentered;
 
 #ifdef DIAGNOSTIC
 /*
- * This structure serves two purposes.
- * The first is to provide a set of masks to catch unaligned frees.
- * The second is to provide known text to copy into free objects so
- * that modifications after frees can be detected.
+ * This structure provides a set of masks to catch unaligned frees.
  */
-#define WEIRD_ADDR 0xdeadbeef
-long addrmask[] = { WEIRD_ADDR,
+long addrmask[] = { 0,
 	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
 	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
 	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
 	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
 };
+
+/*
+ * The WEIRD_ADDR is used as known text to copy into free objects so
+ * that modifications after frees can be detected.
+ */
+#define WEIRD_ADDR	0xdeadbeef
+#define MAX_COPY	32
 
 /*
  * Normally the first word of the structure is used to hold the list
@@ -102,7 +105,7 @@ malloc(size, type, flags)
 	}
 #endif
 #ifdef DIAGNOSTIC
-	copysize = 1 << indx < sizeof addrmask ? 1 << indx : sizeof addrmask;
+	copysize = 1 << indx < MAX_COPY ? 1 << indx : MAX_COPY;
 #endif
 	if (kbp->kb_next == NULL) {
 		if (size > MAXALLOCSAVE)
@@ -205,7 +208,7 @@ free(addr, type)
 	int s;
 #ifdef DIAGNOSTIC
 	caddr_t cp;
-	long alloc, copysize;
+	long *end, *lp, alloc, copysize;
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -265,18 +268,12 @@ free(addr, type)
 	 * Check for multiple frees. Use a quick check to see if
 	 * it looks free before laboriously searching the freelist.
 	 */
-	copysize = size < sizeof addrmask ? size : sizeof addrmask;
 	if (freep->spare0 == WEIRD_ADDR) {
-		freep->type = ((struct freelist *)addrmask)->type;
-		freep->next = ((struct freelist *)addrmask)->next;
-		if (!bcmp(addrmask, addr, copysize)) {
-			for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
-				if (addr == cp) {
-					printf("multiply freed item 0x%x\n",
-					    addr);
-					panic("free: duplicated free");
-				}
-			}
+		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+			if (addr != cp)
+				continue;
+			printf("multiply freed item 0x%x\n", addr);
+			panic("free: duplicated free");
 		}
 	}
 	/*
@@ -285,7 +282,10 @@ free(addr, type)
 	 * so we can list likely culprit if modification is detected
 	 * when the object is reallocated.
 	 */
-	bcopy(addrmask, addr, copysize);
+	copysize = size < MAX_COPY ? size : MAX_COPY;
+	end = (long *)&((caddr_t)addr)[copysize];
+	for (lp = (long *)addr; lp < end; lp++)
+		*lp = WEIRD_ADDR;
 	freep->type = type;
 #endif /* DIAGNOSTIC */
 	if (size == 128) {
