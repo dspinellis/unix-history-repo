@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.16 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.17 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.16 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.17 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -71,8 +71,27 @@ getmxrr(host, mxhosts, localhost, rcode)
 	querybuf answer;
 	int ancount, qdcount, buflen;
 	bool seenlocal;
-	u_short pref, localpref, type, prefer[MAXMXHOSTS];
+	u_short pref, localpref, type;
+	char *fallbackMX = FallBackMX;
+	static bool firsttime = TRUE;
+	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
+
+	if (fallbackMX != NULL)
+	{
+		if (firsttime && res_query(FallBackMX, C_IN, T_A,
+					   (char *) &answer, sizeof answer) < 0)
+		{
+			/* this entry is bogus */
+			fallbackMX = FallBackMX = NULL;
+		}
+		else if (strcasecmp(fallbackMX, localhost) == 0)
+		{
+			/* don't use fallback for this pass */
+			fallbackMX = NULL;
+		}
+		firsttime = FALSE;
+	}
 
 	errno = 0;
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
@@ -216,7 +235,7 @@ punt:
 	}
 
 	/* if we have a default lowest preference, include that */
-	if (FallBackMX != NULL)
+	if (FallBackMX != NULL && !seenlocal)
 		mxhosts[nmx++] = FallBackMX;
 
 	return (nmx);
