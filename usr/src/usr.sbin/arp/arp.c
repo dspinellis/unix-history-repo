@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -174,9 +174,10 @@ set(argc, argv)
 			gettimeofday(&time, 0);
 			expire_time = time.tv_sec + 20 * 60;
 		}
-		else if (strncmp(argv[0], "pub", 3) == 0)
+		else if (strncmp(argv[0], "pub", 3) == 0) {
+			flags |= RTF_ANNOUNCE;
 			doing_proxy = SIN_PROXY;
-		else if (strncmp(argv[0], "trail", 5) == 0) {
+		} else if (strncmp(argv[0], "trail", 5) == 0) {
 			printf("%s: Sending trailers is no longer supported\n",
 				host);
 		}
