@@ -19,3 +19,5 @@ struct astosc {
 };
 
 int ascii_to_index();		/* Function to feed InitControl() */
+
+extern struct astosc astosc[256];
