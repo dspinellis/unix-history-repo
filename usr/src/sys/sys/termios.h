@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.10 (Berkeley) %G%
+ *	@(#)termios.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -54,8 +54,7 @@
 #define VSTOP		13	/* IXON, IXOFF */
 #ifndef _POSIX_SOURCE
 #define	VLNEXT		14	/* IEXTEN */
-#define	VFLUSHO		15	/* IEXTEN */
-#define	VFLUSH		VFLUSHO	/* for sun */
+#define	VDISCARD	15	/* IEXTEN */
 #endif
 #define VMIN		16	/* !ICANON */
 #define VTIME		17	/* !ICANON */
@@ -154,7 +153,7 @@
 #ifndef _POSIX_SOURCE
 #define ALTWERASE	0x00000200	/* use alternate WERASE algorithm */
 #endif  /*_POSIX_SOURCE */
-#define	IEXTEN		0x00000400	/* enable FLUSHO and LNEXT */
+#define	IEXTEN		0x00000400	/* enable DISCARD and LNEXT */
 #define EXTPROC         0x00000800      /* external processing */
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #ifndef _POSIX_SOURCE

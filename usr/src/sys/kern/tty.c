@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.29 (Berkeley) %G%
+ *	@(#)tty.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
