@@ -1,8 +1,23 @@
 This file lists known problems with this release of FreeBSD
 
-usr/bin/gdb:
+/usr/bin/gdb:
 	The gdb in the release will not work on shared objects nor will it
 	work with C++ executables.  Please use the gdb in the ports area for
 	debugging shared and/or C++ code.
 
-$Id$
+/sys/i386/isa/if_ep.c
+	The 3c509 driver will hang under heavy network loads and take your
+	machine off network.  (Though the machine will continue to run with
+	no network facilities)
+
+/sys/i386/isa/syscons.c
+	This file will not compile correctly with the compiler distributed
+	in FreeBSD before version 1.1.  To compile a FreeBSD 1.1 kernel 
+	with a compiler from before FreeBSD 1.1, you will need to add
+	the additional define to COPTS in your 
+	/sys/compile/{KERNEN_NAME}/Makefile.  Add -D__Free_BSD to
+	that line.  Once you upgrade your compile this will no longer
+	be necessary and that addition can be removed.
+	
+
+$Id: KNOWNBUGS,v 1.1 1994/02/09 01:50:39 rgrimes Exp $
