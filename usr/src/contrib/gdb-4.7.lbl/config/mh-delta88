@@ -1,0 +1,7 @@
+RANLIB = true
+# Sorry about this, but my machine runs out of memory .
+CFLAGS = 
+CC=gcc -O2
+
+
+
