@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -99,7 +99,8 @@ inet_output(s, flags, sin, size)
 		sin->sin_port = sp->s_port;
 	if (sin->sin_len == 0)
 		sin->sin_len = sizeof (*sin);
-	if (sendto(s, packet, size, flags, sin, sizeof (*sin)) < 0)
+	if (sendto(s, packet, size, flags,
+	    (struct sockaddr *)sin, sizeof (*sin)) < 0)
 		perror("sendto");
 }
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,6 +22,7 @@ int	faketime;
  * Management of the RTS_CHANGED bit assumes that we broadcast
  * each time called.
  */
+void
 timer()
 {
 	register struct rthash *rh;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,7 @@ toall(f, rtstate, skipif)
  * Output a preformed packet.
  */
 /*ARGSUSED*/
-sendmsg(dst, flags, ifp, rtstate)
+sndmsg(dst, flags, ifp, rtstate)
 	struct sockaddr *dst;
 	int flags;
 	struct interface *ifp;

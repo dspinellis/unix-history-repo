@@ -22,26 +22,31 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <netinet/in.h>
-#include <errno.h>
-#include <stdio.h>
-#include <netdb.h>
 #include <protocols/routed.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	WTIME	5		/* Time to wait for all responses */
 #define	STIME	500000		/* usec to wait for another response */
 
 int	s;
-int	timedout, timeout();
+int	timedout;
+void	timeout();
 char	packet[MAXPACKETSIZE];
-extern int errno;
 int	nflag;
 
 main(argc, argv)
@@ -94,7 +99,7 @@ usage:		printf("usage: query [-n] hosts...\n");
 	signal(SIGALRM, timeout);
 	alarm(WTIME);
 	while ((count > 0 && !timedout) ||
-	    select(20, &bits, 0, 0, &shorttime) > 0) {
+	    select(20, (fd_set *)&bits, NULL, NULL, &shorttime) > 0) {
 		cc = recvfrom(s, packet, sizeof (packet), 0,
 		  &from, &fromlen);
 		if (cc <= 0) {
@@ -144,7 +149,7 @@ query(host)
 	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
 	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
 	if (sendto(s, packet, sizeof (struct rip), 0,
-	  &router, sizeof(router)) < 0)
+	  (struct sockaddr *)&router, sizeof(router)) < 0)
 		perror(host);
 }
 
@@ -168,8 +173,8 @@ rip_input(from, size)
 	if (nflag)
 		printf("%s:\n", inet_ntoa(from->sin_addr));
 	else {
-		hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr),
-			AF_INET);
+		hp = gethostbyaddr((char *)&from->sin_addr,
+		    sizeof (struct in_addr), AF_INET);
 		name = hp == 0 ? "???" : hp->h_name;
 		printf("%s(%s):\n", name, inet_ntoa(from->sin_addr));
 	}
@@ -214,7 +219,7 @@ rip_input(from, size)
 					goto host;
 			} else {
 	host:
-				hp = gethostbyaddr(&sin->sin_addr,
+				hp = gethostbyaddr((char *)&sin->sin_addr,
 				    sizeof (struct in_addr), AF_INET);
 				if (hp)
 					name = hp->h_name;
@@ -242,6 +247,7 @@ rip_input(from, size)
 	}
 }
 
+void
 timeout()
 {
 	timedout = 1;
