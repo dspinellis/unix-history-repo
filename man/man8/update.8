@@ -1,0 +1,25 @@
+.th UPDATE VIII 11/1/73
+.sh NAME
+update \*- periodically update the super block
+.sh SYNOPSIS
+.bd update
+.sh DESCRIPTION
+.it Update
+is a program that executes
+the
+.it sync
+primitive every 30 seconds.
+This insures that the file system
+is fairly up to date in case of a crash.
+This command should not be executed directly,
+but should be executed out of the
+initialization shell command file.
+See sync(II) for details.
+.sh "SEE ALSO"
+sync(II), init(VII)
+.sh BUGS
+There is a system bug which, it is suspected,
+may be aggravated by this program.
+Until further notice,
+.it update
+should not be run.
