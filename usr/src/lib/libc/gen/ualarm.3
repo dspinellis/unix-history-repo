@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)@(#)ualarm.3	6.2 (Berkeley) %G%
+.\"	@(#)@(#)ualarm.3	6.3 (Berkeley) %G%
 .\"
 .TH UALARM 3  ""
 .UC 6
@@ -43,7 +43,7 @@ caught may be delayed an arbitrary amount.
 The longest specifiable delay time (on the vax) is 2147483647 microseconds.
 .PP
 The return value is the amount of time previously remaining in the alarm clock.
-.sh BUGS
+.SH BUGS
 This routine is expensive to use because it is implemented using 
 .IR setitimer (2)
 and does eight system calls each time it is invoked.
