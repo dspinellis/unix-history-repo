@@ -365,11 +365,12 @@ main(argc, argv)
 		exit(2);
 	}
 	if (!lstat(path, &sb)) {
+		obj_is_elsewhere = 1;
 		if (chdir(path)) {
-			(void)fprintf(stderr, "make: Warning: can't cd to %s: %s.\n",
+			(void)fprintf(stderr, "make: fatal: %s exists, but I can't chdir to it: %s.\n",
 			    path, strerror(errno));
-		} else
-			obj_is_elsewhere = 1;
+			exit(2);
+		}
 	}
 
 	create = Lst_Init(FALSE);
