@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kdb.c	7.8 (Berkeley) %G%
+ *	@(#)kdb.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -100,7 +100,7 @@ kraopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (krastrategy(&tio, READ) != SECTSIZ)
+		if (krastrategy(&tio, F_READ) != SECTSIZ)
 			return (ERDLAB);
 		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
@@ -164,7 +164,7 @@ krastrategy(io, func)
 	mp->mscp_seq.seq_lbn = io->i_bn;
 	mp->mscp_seq.seq_bytecount = io->i_cc;
 	mp->mscp_seq.seq_buffer = (long)io->i_ma | KDB_PHYS;
-	if (kdbcmd(func == READ ? M_OP_READ : M_OP_WRITE, io)) {
+	if (kdbcmd(func == F_READ ? M_OP_READ : M_OP_WRITE, io)) {
 		printf("kra: I/O error\n");
 		return (-1);
 	}

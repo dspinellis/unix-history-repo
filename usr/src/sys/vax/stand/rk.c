@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.9 (Berkeley) %G%
+ *	@(#)rk.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -57,7 +57,7 @@ rkopen(io)
 	tio.i_ma = lbuf;
 	tio.i_cc = SECTSIZ;
 	tio.i_flgs |= F_RDDATA;
-	if (rkstrategy(&tio, READ) != SECTSIZ)
+	if (rkstrategy(&tio, F_READ) != SECTSIZ)
 		return (ERDLAB);
 	*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC)
@@ -118,7 +118,7 @@ retry:
 	rkaddr->rkba = ubinfo;
 	rkaddr->rkwc = -(io->i_cc >> 1);
 	com = RK_CDT|((ubinfo>>8)&0x300)|RK_GO;
-	if (func == READ)
+	if (func == F_READ)
 		com |= RK_READ;
 	else
 		com |= RK_WRITE;

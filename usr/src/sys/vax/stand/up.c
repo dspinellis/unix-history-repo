@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.10 (Berkeley) %G%
+ *	@(#)up.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -99,7 +99,7 @@ upopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (upstrategy(&tio, READ) != SECTSIZ)
+		if (upstrategy(&tio, F_READ) != SECTSIZ)
 			error = ERDLAB;
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
 		if (error == 0 && (dlp->d_magic != DISKMAGIC ||
@@ -120,7 +120,7 @@ upopen(io)
 		tio.i_cc = sizeof(struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
-			if (upstrategy(&tio, READ) == sizeof(struct dkbad))
+			if (upstrategy(&tio, F_READ) == sizeof(struct dkbad))
 				break;
 			tio.i_bn += 2;
 		}
@@ -297,7 +297,7 @@ hard:
 		upaddr->upcs1 = UP_SEEK|UP_GO;
 		upwaitdry(upaddr);
 	}
-	if (io->i_errcnt >= 16 && (func & READ)) {
+	if (io->i_errcnt >= 16 && (func & F_READ)) {
 		upaddr->upof = up_offset[io->i_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_OFFSET|UP_GO;
 		upwaitdry(upaddr);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.11 (Berkeley) %G%
+ *	@(#)uda.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -110,7 +110,7 @@ raopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (rastrategy(&tio, READ) != SECTSIZ)
+		if (rastrategy(&tio, F_READ) != SECTSIZ)
 			return (ERDLAB);
 		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
@@ -177,7 +177,7 @@ rastrategy(io, func)
 	mp->mscp_seq.seq_lbn = io->i_bn;
 	mp->mscp_seq.seq_bytecount = io->i_cc;
 	mp->mscp_seq.seq_buffer = UBAI_ADDR(ubinfo) | (UBAI_BDP(ubinfo) << 24);
-	if (udcmd(func == READ ? M_OP_READ : M_OP_WRITE, io)) {
+	if (udcmd(func == F_READ ? M_OP_READ : M_OP_WRITE, io)) {
 		printf("ra: I/O error\n");
 		ubafree(io, ubinfo);
 		return (-1);

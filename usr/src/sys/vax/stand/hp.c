@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.12 (Berkeley) %G%
+ *	@(#)hp.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -128,7 +128,7 @@ hpopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (hpstrategy(&tio, READ) != SECTSIZ)
+		if (hpstrategy(&tio, F_READ) != SECTSIZ)
 			error = ERDLAB;
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
 		if (error == 0 && (dlp->d_magic != DISKMAGIC ||
@@ -150,7 +150,7 @@ hpopen(io)
 		tio.i_ma = (char *)&hpbad[io->i_adapt][unit];
 		tio.i_cc = sizeof(struct dkbad);
 		for (i = 0; i < 5; i++) {
-			if (hpstrategy(&tio, READ) == sizeof(struct dkbad))
+			if (hpstrategy(&tio, F_READ) == sizeof(struct dkbad))
 				break;
 			tio.i_bn += 2;
 		}

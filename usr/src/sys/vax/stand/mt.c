@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.6 (Berkeley) %G%
+ *	@(#)mt.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -83,7 +83,7 @@ retry:
 		mtaddr->mtas = mtaddr->mtas;
 	}
 
-	if (func == READ || func == WRITE) {
+	if (func == F_READ || func == F_WRITE) {
 		mtaddr->mtca = 1<<2;	/* 1 record */
 		mtaddr->mtbc = io->i_cc;
 		mbastart(io, io->i_ctlr, func);

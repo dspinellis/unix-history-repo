@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.7 (Berkeley) %G%
+ *	@(#)ut.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -72,10 +72,10 @@ retry:
 	info = ubasetup(io, 1);
 	addr->utwc = -((io->i_cc+1) >> 1);
 	addr->utfc = -io->i_cc;
-	if (func == READ) {
+	if (func == F_READ) {
 		addr->utba = info;
 		addr->utcs1 = UT_RCOM | ((info>>8) & 0x30) | UT_GO;
-	} else if (func == WRITE) {
+	} else if (func == F_WRITE) {
 		addr->utba = info;
 		addr->utcs1 = UT_WCOM | ((info>>8) & 0x30) | UT_GO;
 	} else if (func == UT_SREV) {
@@ -103,7 +103,7 @@ retry:
 		addr->utcs1 = UT_CLEAR | UT_GO;
 		utstrategy(io, UT_SREV);
 		utquiet(addr);
-		if (func == WRITE) {
+		if (func == F_WRITE) {
 			addr->utcs1 = UT_ERASE | UT_GO;
 			UTWAIT(addr);
 		}
@@ -112,7 +112,7 @@ retry:
 	if (errcnt)
 		printf("ut: recovered by retry\n");
 done:
-	if (func == READ) {
+	if (func == F_READ) {
 		resid = 0;
 		if (io->i_cc > MASKREG(addr->utfc))
 			resid = io->i_cc - MASKREG(addr->utfc);
