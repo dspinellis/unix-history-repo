@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -235,9 +235,10 @@ again:
  */
 writer()
 {
-	char obuf[600], c;
-	register char *op;
+	char c;
 	register n;
+	register bol = 1;               /* beginning of line */
+	register local = 0;
 
 	/*
 	 * Handle SIGWINCH's with in-band signaling of new
@@ -252,6 +253,7 @@ writer()
 	 * serious (telnet-style) protocol.
 	 */
 	if (setjmp(winsizechanged)) {
+		char obuf[4 + sizeof (struct winsize)];
 		struct winsize *wp = (struct winsize *)(obuf+4);
 
 		obuf[0] = 0377;			/* XXX */
@@ -264,11 +266,8 @@ writer()
 		wp->ws_ypixel = htons(winsize.ws_ypixel);
 		(void) write(rem, obuf, 4+sizeof (*wp));
 	}
-top:
-	op = obuf;
-	for (;;) {
-		int local;
 
+	for (;;) {
 		n = read(0, &c, 1);
 		if (n <= 0) {
 			if (n < 0 && errno == EINTR)
@@ -285,48 +284,56 @@ top:
 		 * character is doubled, this acts as a 
 		 * force and local echo is suppressed.
 		 */
-		if (op == obuf)
-			local = (c == cmdchar);
-		if (op == obuf + 1 && *obuf == cmdchar)
-			local = (c != cmdchar);
-		if (!local) {
-			if (write(rem, &c, 1) == 0) {
-				prf("line gone");
-				return;
+		if (bol) {
+			bol = 0;
+			if (c == cmdchar) {
+				bol = 0;
+				local = 1;
+				continue;
 			}
-			if (!eight)
-				c &= 0177;
-		} else {
-			if (c == '\r' || c == '\n') {
-				char cmdc = obuf[1];
-
-				if (cmdc == '.' || cmdc == deftc.t_eofc) {
-					write(0, CRLF, sizeof(CRLF));
-					return;
-				}
-				if (cmdc == defltc.t_suspc ||
-				    cmdc == defltc.t_dsuspc) {
-					stop(cmdc);
-					goto top;
-				}
-				*op++ = c;
-				write(rem, obuf, op - obuf);
-				goto top;
+		} else if (local) {
+			local = 0;
+			if (c == '.' || c == deftc.t_eofc) {
+				echo(c);
+				break;
 			}
-			write(1, &c, 1);
+			if (c == defltc.t_suspc || c == defltc.t_dsuspc) {
+				bol = 1;
+				echo(c);
+				stop(c);
+				continue;
+			}
+			if (c != cmdchar)
+				write(rem, &cmdchar, 1);
 		}
-		*op++ = c;
-		if (c == deferase) {
-			op -= 2; 
-			if (op < obuf)
-				goto top;
+		if (write(rem, &c, 1) == 0) {
+			prf("line gone");
+			break;
 		}
-		if (c == defkill || c == deftc.t_eofc ||
-		    c == '\r' || c == '\n')
-			goto top;
-		if (op >= &obuf[sizeof (obuf)])
-			op--;
+		bol = c == defkill || c == deftc.t_eofc ||
+		    c == '\r' || c == '\n';
 	}
+}
+
+echo(c)
+register char c;
+{
+	char buf[8];
+	register char *p = buf;
+
+	c &= 0177;
+	*p++ = cmdchar;
+	if (c < ' ') {
+		*p++ = '^';
+		*p++ = c + '@';
+	} else if (c == 0177) {
+		*p++ = '^';
+		*p++ = '?';
+	} else
+		*p++ = c;
+	*p++ = '\r';
+	*p++ = '\n';
+	write(1, buf, p - buf);
 }
 
 stop(cmdc)
@@ -334,7 +341,6 @@ stop(cmdc)
 {
 	struct winsize ws;
 
-	write(0, CRLF, sizeof(CRLF));
 	mode(0);
 	signal(SIGCHLD, SIG_IGN);
 	kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
@@ -392,6 +398,7 @@ reader()
 	register int cnt;
 
 	signal(SIGURG, oob);
+	signal(SIGTTOU, SIG_IGN);
 	{ int pid = -getpid();
 	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
 	for (;;) {
