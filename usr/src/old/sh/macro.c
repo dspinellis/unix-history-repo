@@ -1,4 +1,4 @@
-/*	macro.c	4.1	82/05/07	*/
+/*	macro.c	4.2	83/02/09	*/
 
 #
 /*
@@ -196,7 +196,7 @@ LOCAL	comsubst()
 	   close(pv[OTPIPE]);
 	END
 	tdystak(savptr); staktop=movstr(savptr,stakbot);
-	WHILE d=readc() DO pushstak(d|quote) OD
+	WHILE d=readc() DO locstak(); pushstak(d|quote) OD
 	await(0);
 	WHILE stakbot!=staktop
 	DO	IF (*--staktop&STRIP)!=NL

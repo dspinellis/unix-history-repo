@@ -1,4 +1,4 @@
-/*	xec.c	4.1	82/05/07	*/
+/*	xec.c	4.2	83/02/09	*/
 
 #
 /*
@@ -52,7 +52,7 @@ execute(argt, execflg, pf1, pf2)
 			com=scan(argn);
 			a1=com[1]; gchain=schain;
 
-			IF (internal=syslook(com[0],commands)) ORF argn==0
+			IF argn==0 ORF (internal=syslook(com[0],commands))
 			THEN	setlist(t->comset, 0);
 			FI
 
