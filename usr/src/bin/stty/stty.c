@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)stty.c	4.8 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.9 (Berkeley) %G%";
 /*
  * set teletype modes
  */
@@ -27,7 +27,9 @@ struct
 	"4800",	B4800,
 	"9600",	B9600,
 	"exta",	EXTA,
+	"19200", EXTA,
 	"extb",	EXTB,
+	"38400", EXTB,
 	0,
 };
 struct
@@ -521,7 +523,7 @@ char *s;
 }
 
 int	speed[] = {
-	0,50,75,110,134,150,200,300,600,1200,1800,2400,4800,9600,0,0
+	0,50,75,110,134,150,200,300,600,1200,1800,2400,4800,9600,19200,38400
 };
 
 prspeed(c, s)
