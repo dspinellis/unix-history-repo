@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -33,17 +33,12 @@
 #include "mount.h"
 #include "buf.h"
 #include "vm.h"
-#include "../ufs/dir.h"
 #include "malloc.h"
 #include "mbuf.h"
-#include "uio.h"
-#include "ucred.h"
-#include "namei.h"
 #include "errno.h"
 #include "file.h"
 #include "conf.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
 #include "map.h"
 #include "nfsv2.h"
 #include "nfs.h"
