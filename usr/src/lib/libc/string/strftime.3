@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strftime.3	5.4 (Berkeley) %G%
+.\"	@(#)strftime.3	5.5 (Berkeley) %G%
 .\"
 .TH STRFTIME 3 "%Q"
 .AT 3
@@ -24,6 +24,7 @@ strftime \- format date and time
 .ft B
 #include <sys/types.h>
 #include <time.h>
+#include <string.h>
 
 size_t
 strftime(char *s, size_t maxsize, const char *format,
@@ -165,3 +166,6 @@ is replaced by the time zone name.
 is replaced by ``%''.
 .SH "SEE ALSO"
 date(1), ctime(3), printf(1), printf(3)
+.SH STANDARDS
+.B Strftime
+conforms to ANSI X3.159-1989 (``ANSI C'').
