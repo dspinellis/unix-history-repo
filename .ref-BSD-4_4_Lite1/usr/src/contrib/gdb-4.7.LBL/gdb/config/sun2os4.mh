@@ -1,5 +1,0 @@
-# Host: Sun 2, running SunOS 4
-XDEPFILES= 
-XM_FILE= xm-sun2.h
-NAT_FILE= nm-sun2.h
-NATDEPFILES= infptrace.o inftarg.o fork-child.o corelow.o sun3-nat.o

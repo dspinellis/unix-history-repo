@@ -1,6 +1,0 @@
-HP/Apollo workstations, running Domain/OS 10.x, with cc 6.7
-STRCASE_MISSING	1 
-STRERROR_MISSING	1 
-STRFTIME_MISSING	1 
-NO_TOKEN_PASTING	1
-MAKE_Apollo

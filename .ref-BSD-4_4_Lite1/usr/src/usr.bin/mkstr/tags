@@ -1,9 +1,0 @@
-Mmkstr	mkstr.c	/^main(argc, argv)$/
-copystr	mkstr.c	/^copystr()$/
-fgetNUL	mkstr.c	/^fgetNUL(obuf, rmdr, file)$/
-hashit	mkstr.c	/^hashit(str, really, fakept)$/
-inithash	mkstr.c	/^inithash()$/
-match	mkstr.c	/^match(ocp)$/
-octdigit	mkstr.c	/^octdigit(c)$/
-process	mkstr.c	/^process()$/
-ungetchar	mkstr.c	/^#define	ungetchar(c)	ungetc(c, stdin)$/

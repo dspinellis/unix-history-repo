@@ -1,9 +1,0 @@
-COMPUTE	crc.c	/^#define	COMPUTE(var, ch)	(var) = (var) << 8 ^ crct/
-Mcksum	cksum.c	/^main(argc, argv)$/
-crc	crc.c	/^crc(fd, cval, clen)$/
-csum1	sum1.c	/^csum1(fd, cval, clen)$/
-csum2	sum2.c	/^csum2(fd, cval, clen)$/
-pcrc	print.c	/^pcrc(fn, val, len)$/
-psum1	print.c	/^psum1(fn, val, len)$/
-psum2	print.c	/^psum2(fn, val, len)$/
-usage	cksum.c	/^usage()$/
