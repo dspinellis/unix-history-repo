@@ -1,17 +1,13 @@
-/*	tp_output.c	1.2	82/05/15	*/
+/*	tp_output.c	1.3	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/clock.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/tp.h"
-#include "../net/tp_var.h"
-
+#include "../netdecnet/tp.h"
+#include "../netdecnet/tp_var.h"
 
 /*
  * Transport output routine.  Fill in the
