@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.23 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.24 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -707,4 +707,4 @@ struct iso_addr	*host, *gateway, *netmask;
 		rtredirect(S(dst), S(gte), (struct sockaddr *)0,
 							RTF_DONE | RTF_HOST, S(gte), 0);
 }
-#endif	ISO
+#endif	/* ISO */
