@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.1 (Berkeley) %G%
+.\"	@(#)4.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Address representation
+.\".ds RH "Address representation
 .NH
 \s+2Internal address representation\s0
 .PP
@@ -22,12 +22,18 @@ struct sockaddr {
 .DE
 All addresses belong to one or more \fIaddress families\fP
 which define their format and interpretation.
-The \fIsa_family\fP field indicates which address family the address
-belongs to, the \fIsa_data\fP field contains the actual data value.
+The \fIsa_family\fP field indicates the address family to which the address
+belongs, and the \fIsa_data\fP field contains the actual data value.
 The size of the data field, 14 bytes, was selected based on a study
-of current address formats*.
+of current address formats.*
+Specific address formats use private structure definitions
+that define the format of the data field.
+The system interface supports larger address structures,
+although address-family-independent support facilities, for example routing
+and raw socket interfaces, provide only 14 bytes for address storage.
+Protocols that do not use those facilities (e.g, the current Unix domain)
+may use larger data areas.
 .FS
-* Later versions of the system support variable length addresses.
+* Later versions of the system may support variable length addresses.
 .FE
-.ds RH "Memory management
-.bp
+'ne 2i

@@ -1,8 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) %G%
+.\"	@(#)0.t	6.2 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -48,8 +48,7 @@ Revised
 .\".tl '\\*(LH'\\*(CH'\\*(RH'
 .\".lt \\n(.lu
 .\"..
-.ds LH Networking Implementation
-.ds RH Contents
+.\".ds RH Contents
 .OH 'Networking Implementation Notes''SMM:15-%'
 .EH 'SMM:15-%''Networking Implementation Notes'
 .bp
@@ -82,7 +81,7 @@ Revised
 6.1.    Socket layer
 6.1.1.    Socket state
 6.1.2.    Socket data queues
-6.1.3.    Socket connection queueing
+6.1.3.    Socket connection queuing
 6.2.    Protocol layer(s)
 6.3.    Network-interface layer
 6.3.1.    UNIBUS interfaces
@@ -142,7 +141,7 @@ Revised
 .sp .5v
 .nf
 .B References
-.ds RH Introduction
+.\".ds RH Introduction
 .bp
 .de _d
 .if t .ta .6i 2.1i 2.6i
