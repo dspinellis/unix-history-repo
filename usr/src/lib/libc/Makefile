@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	82/12/15
+#	@(#)Makefile	4.4	{Berkeley}	82/12/17
 #
 #	The system has two monitoring schemes, utilizing either ``prof''
 #	or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -7,9 +7,10 @@
 #
 DESTDIR=
 INSTALL=install -m 644
-DFLMON=mon.o
+DFLMON=	mon.o
+ALL=	csu sys gen stdio net
 
-libc.a libc_p.a: csu sys gen stdio net
+libc.a libc_p.a: ${ALL}
 	cd csu; make
 	cd sys; make
 	cd gen; make
@@ -34,7 +35,7 @@ libc.a libc_p.a: csu sys gen stdio net
 	rm -rf t1 tmp
 
 clean:
-	for i in */.; do cd $$i; make clean; cd ..; done
+	for i in ${ALL}; do cd $$i; make clean; cd ..; done
 	rm -f t1 *.o
 
 errlst.o: gen/errlst.c
@@ -44,8 +45,8 @@ errlst.o: gen/errlst.c
 	rm errlst.s
 
 install: libc.a libc_p.a
-	$(INSTALL) libc.a $(DESTDIR)/lib/libc.a
-	ranlib $(DESTDIR)/lib/libc.a
-	$(INSTALL) libc_p.a $(DESTDIR)/usr/lib/libc_p.a
-	ranlib $(DESTDIR)/usr/lib/libc_p.a
+	${INSTALL} libc.a ${DESTDIR}/lib/libc.a
+	ranlib ${DESTDIR}/lib/libc.a
+	${INSTALL} libc_p.a ${DESTDIR}/usr/lib/libc_p.a
+	ranlib ${DESTDIR}/usr/lib/libc_p.a
 	cd csu; make DESTDIR=${DESTDIR} install
