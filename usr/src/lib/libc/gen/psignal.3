@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)psignal.3	6.2 (Berkeley) %G%
+.\"     @(#)psignal.3	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PSIGNAL 3
@@ -13,7 +13,7 @@
 .Nm sys_siglist
 .Nd system signal messages
 .Sh SYNOPSIS
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Ft void
 .Fn psignal "unsigned sig" "const char *s"
 .Vt extern char *sys_siglist[];
