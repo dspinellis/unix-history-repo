@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -190,12 +190,12 @@ makech(win, wy)
 	register WINDOW *win;
 	int wy;
 {
+	static __LDATA blank = {' ', 0};
 	register int nlsp, clsp;		/* Last space in lines. */
 	register int wx, lch, y;
 	register __LDATA *nsp, *csp, *cp, *cep;
 	u_int force;
 	char *ce;
-	__LDATA blank = {' ', 0};
 
 	/* Is the cursor still on the end of the last line? */
 	if (wy > 0 && win->lines[wy - 1]->flags & __ISPASTEOL) {
