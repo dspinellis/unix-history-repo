@@ -1,0 +1,267 @@
+.TH STTY 1L \" -*- nroff -*-
+.SH NAME
+stty \- change and print terminal line settings
+.SH SYNOPSIS
+.B stty
+[\-ag] [\-\-all] [\-\-save] [setting...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR stty .
+If given no arguments,
+.B stty
+prints the baud rate, line discipline number (on systems that support
+it), and line settings that have been changed from the values set by
+`stty sane'.  Mode reading and setting are performed on the tty line
+connected to the standard input.
+.PP
+.B stty
+accepts the following non-option arguments that change aspects of the
+terminal line operation.  A `[\-]' before a capability means that it
+can be turned off by preceding it with a `\-'.  Some arguments are not
+available on all systems, since they are non-POSIX extensions.
+.PP
+Control settings:
+
+.IP [\-]parenb
+Generate parity bit in output and expect parity bit in input.
+.IP [\-]parodd
+Set odd parity (even with `\-').
+.IP "cs5 cs6 cs7 cs8"
+Set character size to 5, 6, 7, or 8 bits.
+.IP "[\-]hupcl [\-]hup"
+Send a hangup signal when the last process closes the tty.
+.IP [\-]cstopb
+Use two stop bits per character (one with `\-').
+.IP [\-]cread
+Allow input to be received.
+.IP [\-]clocal
+Disable modem control signals.
+.IP [\-]crtscts
+Enable RTS/CTS handshaking.
+.PP
+Input settings:
+
+.IP [\-]ignbrk
+Ignore breaks.
+.IP [\-]brkint
+Breaks cause an interrupt signal.
+.IP [\-]ignpar
+Ignore parity errors.
+.IP [\-]parmrk
+Mark parity errors (with a 255-0-character sequence).
+.IP [\-]inpck
+Enable input parity checking.
+.IP [\-]istrip
+Clear high (8th) bit of input characters.
+.IP [\-]inlcr
+Translate newline to carriage return.
+.IP [\-]igncr
+Ignore carriage return.
+.IP [\-]icrnl
+Translate carriage return to newline.
+.IP [\-]ixon
+Enable XON/XOFF flow control.
+.IP "[\-]ixoff [\-]tandem"
+Enable sending of stop character when the system input buffer is
+almost full, and start character when it becomes almost empty again.
+.IP [\-]iuclc
+Translate uppercase characters to lowercase.
+.IP [\-]ixany
+Allow any character to restart output (only the start character with `\-').
+.IP [\-]imaxbel
+Enable beeping and not flushing input buffer if a character arrives
+when the input buffer is full.
+.PP
+Output settings:
+
+.IP [\-]opost
+Postprocess output.
+.IP [\-]olcuc
+Translate lowercase characters to uppercase.
+.IP [\-]ocrnl
+Translate carriage return to newline.
+.IP [\-]onlcr
+Translate newline to carriage return-newline.
+.IP [\-]onocr
+Do not print carriage returns in the first column.
+.IP [\-]onlret
+Newline performs a carriage return.
+.IP [\-]ofill
+Use fill (padding) characters instead of timing for delays.
+.IP [\-]ofdel
+Use delete characters for fill instead of null characters.
+.IP "nl1 nl0"
+Newline delay style.
+.IP "cr3 cr2 cr1 cr0"
+Carriage return delay style.
+.IP "tab3 tab2 tab1 tab0"
+Horizontal tab delay style.
+.IP "bs1 bs0"
+Backspace delay style.
+.IP "vt1 vt0"
+Vertical tab delay style.
+.IP "ff1 ff0"
+Form feed delay style.
+.PP
+Local settings:
+
+.IP [\-]isig
+Enable interrupt, quit, and suspend special characters.
+.IP [\-]icanon
+Enable erase, kill, werase, and rprnt special characters.
+.IP [\-]iexten
+Enable non-POSIX special characters.
+.IP [\-]echo
+Echo input characters.
+.IP "[\-]echoe, [\-]crterase"
+Echo erase characters as backspace-space-backspace.
+.IP [\-]echok
+Echo a newline after a kill character.
+.IP [\-]echonl
+Echo newline even if not echoing other characters.
+.IP [\-]noflsh
+Disable flushing after interrupt and quit special characters.
+.IP [\-]xcase
+Enable input and output of uppercase characters by preceding their
+lowercase equivalents with `\e', when icanon is set.
+.IP [\-]tostop
+Stop background jobs that try to write to the terminal.
+.IP "[\-]echoprt [\-]prterase"
+Echo erased characters backward, between `\e' and '/'.
+.IP "[\-]echoctl [\-]ctlecho"
+Echo control characters in hat notation (`^c') instead of literally.
+.IP "[\-]echoke [\-]crtkill"
+Echo the kill special character by erasing each character on the line
+as indicated by the echoprt and echoe settings, instead of by the
+echoctl and echok settings.
+.PP
+Combination settings:
+
+.IP "[\-]evenp [\-]parity"
+Same as parenb \-parodd cs7.  With `\-', same as \-parenb cs8.
+.IP [\-]oddp
+Same as parenb parodd cs7.  With `\-', same as \-parenb cs8.
+.IP [\-]nl
+Same as icrnl.  With `\-', same as \-icrnl \-inlcr \-igncr.
+.IP ek
+Reset the erase and kill special characters to their default values.
+.IP sane
+Same as cread \-ignbrk brkint \-inlcr \-igncr icrnl \-ixoff
+\-iuclc \-ixany imaxbel opost \-olcuc \-ocrnl onlcr \-onocr \-onlret
+\-ofill \-ofdel nl0 cr0 tab0 bs0 vt0 ff0 isig icanon iexten echo echoe echok
+\-echonl \-noflsh \-xcase \-tostop \-echoprt echoctl echoke, and also
+sets all special characters to their default values.
+.IP [\-]cooked
+Same as brkint ignpar istrip icrnl ixon opost isig icanon, plus sets
+the eof and eol characters to their default values if they are the
+same as the min and time characters.  With `\-', same as raw.
+.IP [\-]raw
+Same as \-ignbrk \-brkint \-ignpar \-parmrk \-inpck \-istrip \-inlcr
+\-igncr \-icrnl \-ixon \-ixoff \-iuclc \-ixany \-imaxbel
+\-opost \-isig \-icanon \-xcase min 1 time 0.
+With `\-', same as cooked.
+.IP [\-]cbreak
+Same as \-icanon.
+.IP [\-]pass8
+Same as \-parenb \-istrip cs8.  With `\-', same as parenb istrip cs7.
+.IP [\-]litout
+Same as \-parenb \-istrip \-opost cs8.  With `\-', same as parenb
+istrip opost cs7.
+.IP [\-]decctlq
+Same as \-ixany.
+.IP [\-]tabs
+Same as tab0.  With `\-', same as tab3.
+.IP "[\-]lcase [\-]LCASE"
+Same as xcase iuclc olcuc.
+.IP crt
+Same as echoe echoctl echoke.
+.IP dec
+Same as echoe echoctl echoke \-ixany, and also sets the interrupt
+special character to Ctrl-C, erase to Del, and kill to Ctrl-U.
+.PP
+Special characters:
+
+.PP
+The special characters' default values vary from system to system.
+They are set with the syntax `name value', where the names are listed
+below and the value can be given either literally, in hat notation
+(`^c'), or as an integer which may start with `0x' to indicate
+hexadecimal, `0' to indicate octal, or any other digit to indicate
+decimal.  Giving a value of `^\-' or `undef' disables that special
+character.
+
+.IP intr
+Send an interrupt signal.
+.IP quit
+Send a quit signal.
+.IP erase
+Erase the last character typed.
+.IP kill
+Erase the current line.
+.IP eof
+Send an end of file (terminate the input).
+.IP eol
+End the line.
+.IP eol2
+Alternate character to end the line.
+.IP swtch
+Switch to a different shell layer.
+.IP start
+Restart the output after stopping it.
+.IP stop
+Stop the output.
+.IP susp
+Send a terminal stop signal.
+.IP dsusp
+Send a terminal stop signal after flushing the input.
+.IP rprnt
+Redraw the current line.
+.IP werase
+Erase the last word typed.
+.IP lnext
+Enter the next character typed literally, even if it is a special
+character.
+.PP
+Special settings:
+
+.IP "min N"
+Set the minimum number of characters that will satisfy a read until
+the time value has expired, when \-icanon is set.
+.IP "time N"
+Set the number of tenths of a second before reads time out if the min
+number of characters have not been read, when \-icanon is set.
+.IP "ispeed N"
+Set the input speed to N.
+.IP "ospeed N"
+Set the output speed to N.
+.IP "rows N"
+Tell the kernel that the terminal has N rows.
+.IP "cols N columns N"
+Tell the kernel that the terminal has N columns.
+.IP "size"
+Print the number of rows and columns that the kernel thinks the
+terminal has.
+.IP "line N"
+Use line discipline N.
+.IP "speed"
+Print the terminal speed.
+.IP N
+Set the input and output speeds to N.  N can be one of: 0 50 75 110
+134 134.5 150 200 300 600 1200 1800 2400 4800 9600 19200 38400 exta
+extb.  exta is the same as 19200; extb is the same as 38400.  0 hangs
+up the line if \-clocal is set.
+.SS OPTIONS
+.TP
+.I \-a \-\-all
+Print all current settings in human-readable form.
+.TP
+.I \-g, \-\-save
+Print all current settings in a form that can be used as an argument
+to another
+.B stty
+command to restore the current settings.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
