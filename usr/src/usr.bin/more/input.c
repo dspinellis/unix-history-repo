@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,11 +31,14 @@ static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
  * delimited by newlines; not processed with respect to screen width.
  */
 
-#include "less.h"
+#include <sys/types.h>
+#include <less.h>
 
 extern int squeeze;
 extern int sigs;
 extern char *line;
+
+off_t ch_tell();
 
 /*
  * Get the next line.
@@ -44,11 +47,11 @@ extern char *line;
  * a line.  The new position is the position of the first character
  * of the NEXT line.  The line obtained is the line starting at curr_pos.
  */
-	public POSITION
+off_t
 forw_line(curr_pos)
-	POSITION curr_pos;
+	off_t curr_pos;
 {
-	POSITION new_pos;
+	off_t new_pos;
 	register int c;
 
 	if (curr_pos == NULL_POSITION || ch_seek(curr_pos))
@@ -114,14 +117,14 @@ forw_line(curr_pos)
  * a line.  The new position is the position of the first character
  * of the PREVIOUS line.  The line obtained is the one starting at new_pos.
  */
-	public POSITION
+off_t
 back_line(curr_pos)
-	POSITION curr_pos;
+	off_t curr_pos;
 {
-	POSITION new_pos, begin_new_pos;
+	off_t new_pos, begin_new_pos;
 	int c;
 
-	if (curr_pos == NULL_POSITION || curr_pos <= (POSITION)0 ||
+	if (curr_pos == NULL_POSITION || curr_pos <= (off_t)0 ||
 		ch_seek(curr_pos-1))
 		return (NULL_POSITION);
 

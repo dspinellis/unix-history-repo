@@ -16,71 +16,56 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)less.h	5.6 (Berkeley) %G%
+ *	@(#)less.h	5.7 (Berkeley) %G%
  */
 
-/*
- * Standard include file for "less".
- */
+#define	RECOMP
 
-/*
- * Language details.
- */
-#define	public		/* PUBLIC FUNCTION */
-
-/*
- * Special types and constants.
- */
-typedef long		POSITION;
-/*
- * {{ Warning: if POSITION is changed to other than "long",
- *    you may have to change some of the printfs which use "%ld"
- *    to print a variable of type POSITION. }}
- */
-
-#define	NULL_POSITION	((POSITION)(-1))
-
-/*
- * The type of signal handler functions.
- * Usually int, although it should be void.
- */
-typedef	int		HANDLER;
-
-
-#define	FILENAME	128	/* Max size of a filename */
+#define	NULL_POSITION	((off_t)(-1))
 
 #define	EOI		(0)
-
 #define	READ_INTR	(-2)
 
-/* How quiet should we be? */
-#define	NOT_QUIET	0	/* Ring bell at eof and for errors */
-#define	LITTLE_QUIET	1	/* Ring bell only for errors */
-#define	VERY_QUIET	2	/* Never ring bell */
-
-/* How should we prompt? */
-#define	PR_SHORT	0	/* Prompt with colon */
-#define	PR_MEDIUM	1	/* Prompt with message */
-#define	PR_LONG		2	/* Prompt with longer message */
-
-/* How should we handle backspaces? */
-#define	BS_SPECIAL	0	/* Do special things for underlining and bold */
-#define	BS_NORMAL	1	/* \b treated as normal char; actually output */
-#define	BS_CONTROL	2	/* \b treated as control char; prints as ^H */
-
 /* Special chars used to tell put_line() to do something special */
-#define	UL_CHAR		'\201'	/* Enter underline mode */
-#define	UE_CHAR		'\202'	/* Exit underline mode */
-#define	BO_CHAR		'\203'	/* Enter boldface mode */
-#define	BE_CHAR		'\204'	/* Exit boldface mode */
+#define	UL_CHAR		'\201'		/* Enter underline mode */
+#define	UE_CHAR		'\202'		/* Exit underline mode */
+#define	BO_CHAR		'\203'		/* Enter boldface mode */
+#define	BE_CHAR		'\204'		/* Exit boldface mode */
 
-#define	CONTROL(c)		((c)&037)
+#define	CONTROL_CHAR(c)		(iscntrl(c))
+#define	CARAT_CHAR(c)		((c == '\177') ? '?' : (c | 0100))
 
-#include <sys/param.h>
-#include <sys/file.h>
+#define	TOP		(0)
+#define	TOP_PLUS_ONE	(1)
+#define	BOTTOM		(-1)
+#define	BOTTOM_PLUS_ONE	(-2)
+#define	MIDDLE		(-3)
 
-/* Library function declarations */
-off_t lseek();
-char *calloc();
+#define	A_INVALID		-1
 
-#include "funcs.h"
+#define	A_AGAIN_SEARCH		1
+#define	A_B_LINE		2
+#define	A_B_SCREEN		3
+#define	A_B_SCROLL		4
+#define	A_B_SEARCH		5
+#define	A_DIGIT			6
+#define	A_EXAMINE		7
+#define	A_FREPAINT		8
+#define	A_F_LINE		9
+#define	A_F_SCREEN		10
+#define	A_F_SCROLL		11
+#define	A_F_SEARCH		12
+#define	A_GOEND			13
+#define	A_GOLINE		14
+#define	A_GOMARK		15
+#define	A_HELP			16
+#define	A_NEXT_FILE		17
+#define	A_PERCENT		18
+#define	A_PREFIX		19
+#define	A_PREV_FILE		20
+#define	A_QUIT			21
+#define	A_REPAINT		22
+#define	A_SETMARK		23
+#define	A_STAT			24
+#define	A_VISUAL		25
+#define	A_TAGFILE		26

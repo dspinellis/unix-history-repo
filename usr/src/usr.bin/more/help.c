@@ -18,27 +18,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)help.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)help.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include  "less.h"
+#include <sys/param.h>
+#include <less.h>
 
-/*
- * Display some help.
- * Just invoke another "less" to display the help file.
- *
- * {{ This makes this function very simple, and makes changing the
- *    help file very easy, but it may present difficulties on
- *    (non-Unix) systems which do not supply the "system()" function. }}
- */
-
-	public void
+#define	HELPFILE	"/usr/lib/more.help"
 help()
 {
-	char cmd[MAXPATHLEN+100];
+	char cmd[MAXPATHLEN + 20];
 
-	(void)sprintf(cmd,
-	 "-less -m '-PmHELP -- ?eEND -- Press g to see it again:Press RETURN for more., or q when done ' %s",
-	 HELPFILE);
+	(void)sprintf(cmd, "-more %s", HELPFILE);
 	lsystem(cmd);
 }

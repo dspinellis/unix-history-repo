@@ -25,38 +25,35 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Entry point, initialization, miscellaneous routines.
  */
 
-#include "less.h"
-#include "position.h"
+#include <sys/types.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <less.h>
 
-public int	ispipe;
-public char *	first_cmd;
-public char *	every_first_cmd;
-public int	new_file;
-public int	is_tty;
-public char 	*current_file;
-public char 	*previous_file;
-public POSITION	prev_pos;
-public int	any_display;
-public int	scroll;
-public int	ac;
-public char **	av;
-public int 	curr_ac;
-public int	quitting;
+int	ispipe;
+int	new_file;
+int	is_tty;
+char	*current_file, *previous_file, *current_name;
+off_t	prev_pos;
+int	any_display;
+int	scroll;
+int	ac;
+char	**av;
+int	curr_ac;
+int	quitting;
 
 extern int	file;
-extern int	quit_at_eof;
 extern int	cbufs;
 extern int	errmsgs;
 
-extern char *	tagfile;
-extern char *	tagpattern;
+extern char	*tagfile;
 extern int	tagoption;
 
 /*
@@ -64,62 +61,56 @@ extern int	tagoption;
  * Filename "-" means standard input.
  * No filename means the "current" file, from the command line.
  */
-	public void
 edit(filename)
 	register char *filename;
 {
+	extern int errno;
 	register int f;
 	register char *m;
-	POSITION initial_pos;
-	char message[100];
+	off_t initial_pos, position();
 	static int didpipe;
+	char message[100], *p;
+	char *rindex(), *strerror(), *save(), *bad_file();
 
 	initial_pos = NULL_POSITION;
-	if (filename == NULL || *filename == '\0')
-	{
-		if (curr_ac >= ac)
-		{
+	if (filename == NULL || *filename == '\0') {
+		if (curr_ac >= ac) {
 			error("No current file");
-			return;
+			return(0);
 		}
 		filename = save(av[curr_ac]);
-	} else if (strcmp(filename, "#") == 0)
-	{
-		if (*previous_file == '\0')
-		{
+	}
+	else if (strcmp(filename, "#") == 0) {
+		if (*previous_file == '\0') {
 			error("no previous file");
-			return;
+			return(0);
 		}
 		filename = save(previous_file);
 		initial_pos = prev_pos;
 	} else
 		filename = save(filename);
 
-	if (strcmp(filename, "-") == 0)
-	{
-		/* 
-		 * Use standard input.
-		 */
-		if (didpipe)
-		{
+	/* use standard input. */
+	if (!strcmp(filename, "-")) {
+		if (didpipe) {
 			error("Can view standard input only once");
-			return;
+			return(0);
 		}
 		f = 0;
-	} else if ((m = bad_file(filename, message, sizeof(message))) != NULL)
-	{
+	}
+	else if ((m = bad_file(filename, message, sizeof(message))) != NULL) {
 		error(m);
 		free(filename);
-		return;
-	} else if ((f = open(filename, 0)) < 0)
-	{
-		error(errno_message(filename, message, sizeof(message)));
+		return(0);
+	}
+	else if ((f = open(filename, O_RDONLY, 0)) < 0) {
+		(void)sprintf(message, "%s: %s", filename, strerror(errno));
+		error(message);
 		free(filename);
-		return;
+		return(0);
 	}
 
-	if (isatty(f))
-	{
+	if (isatty(f)) {
 		/*
 		 * Not really necessary to call this an error,
 		 * but if the control terminal (for commands)
@@ -128,9 +119,9 @@ edit(filename)
 		 */
 		error("Can't take input from a terminal");
 		if (f > 0)
-			close(f);
-		free(filename);
-		return;
+			(void)close(f);
+		(void)free(filename);
+		return(0);
 	}
 
 	/*
@@ -138,7 +129,7 @@ edit(filename)
 	 * Close the current input file and set up to use the new one.
 	 */
 	if (file > 0)
-		close(file);
+		(void)close(file);
 	new_file = 1;
 	if (previous_file != NULL)
 		free(previous_file);
@@ -146,21 +137,19 @@ edit(filename)
 	current_file = filename;
 	prev_pos = position(TOP);
 	ispipe = (f == 0);
-	if (ispipe)
+	if (ispipe) {
 		didpipe = 1;
+		current_name = "stdin";
+	} else
+		current_name = (p = rindex(filename, '/')) ? p + 1 : filename;
 	file = f;
 	ch_init(cbufs, 0);
 	init_mark();
 
-	if (every_first_cmd != NULL)
-		first_cmd = every_first_cmd;
-
-	if (is_tty)
-	{
+	if (is_tty) {
 		int no_display = !any_display;
 		any_display = 1;
-		if (no_display && errmsgs > 0)
-		{
+		if (no_display && errmsgs > 0) {
 			/*
 			 * We displayed some messages on error output
 			 * (file descriptor 2; see error() function).
@@ -177,42 +166,44 @@ edit(filename)
 			jump_loc(initial_pos);
 		clr_linenum();
 	}
+	return(1);
 }
 
 /*
  * Edit the next file in the command line list.
  */
-	public void
 next_file(n)
 	int n;
 {
-	if (curr_ac + n >= ac)
-	{
-		if (quit_at_eof)
+	extern int quit_at_eof;
+	off_t position();
+
+	if (curr_ac + n >= ac) {
+		if (quit_at_eof || position(TOP) == NULL_POSITION)
 			quit();
 		error("No (N-th) next file");
-	} else
-		edit(av[curr_ac += n]);
+	}
+	else
+		(void)edit(av[curr_ac += n]);
 }
 
 /*
  * Edit the previous file in the command line list.
  */
-	public void
 prev_file(n)
 	int n;
 {
 	if (curr_ac - n < 0)
 		error("No (N-th) previous file");
 	else
-		edit(av[curr_ac -= n]);
+		(void)edit(av[curr_ac -= n]);
 }
 
 /*
  * Copy a file directly to standard output.
  * Used if standard output is not a tty.
  */
-	static void
+static
 cat_file()
 {
 	register int c;
@@ -222,28 +213,26 @@ cat_file()
 	flush();
 }
 
-/*
- * Entry point.
- */
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-	char *getenv();
-
+	int envargc, argcnt;
+	char *envargv[2], *getenv();
 
 	/*
-	 * Process command line arguments and LESS environment arguments.
+	 * Process command line arguments and MORE environment arguments.
 	 * Command line arguments override environment arguments.
 	 */
-	init_prompt();
-	init_option();
-	scan_option(getenv("LESS"));
-	argv++;
-	while ( (--argc > 0) && 
-		(argv[0][0] == '-' || argv[0][0] == '+') && 
-		argv[0][1] != '\0')
-		scan_option(*argv++);
+	if (envargv[1] = getenv("MORE")) {
+		envargc = 2;
+		envargv[0] = "more";
+		envargv[2] = NULL;
+		(void)option(envargc, envargv);
+	}
+	argcnt = option(argc, argv);
+	argv += argcnt;
+	argc -= argcnt;
 
 	/*
 	 * Set up list of files to be examined.
@@ -256,21 +245,17 @@ main(argc, argv)
 	 * Set up terminal, etc.
 	 */
 	is_tty = isatty(1);
-	if (!is_tty)
-	{
+	if (!is_tty) {
 		/*
 		 * Output is not a tty.
 		 * Just copy the input file(s) to output.
 		 */
-		if (ac < 1)
-		{
-			edit("-");
+		if (ac < 1) {
+			(void)edit("-");
 			cat_file();
-		} else
-		{
-			do
-			{
-				edit((char *)NULL);
+		} else {
+			do {
+				(void)edit((char *)NULL);
 				if (file >= 0)
 					cat_file();
 			} while (++curr_ac < ac);
@@ -282,46 +267,27 @@ main(argc, argv)
 	get_term();
 	open_getchr();
 	init();
-	init_cmd();
-
 	init_signals(1);
 
-	/*
-	 * Select the first file to examine.
-	 */
-	if (tagoption)
-	{
+	/* select the first file to examine. */
+	if (tagoption) {
 		/*
-		 * A -t option was given.
-		 * Verify that no filenames were also given.
-		 * Edit the file selected by the "tags" search,
-		 * and search for the proper line in the file.
+		 * A -t option was given; edit the file selected by the
+		 * "tags" search, and search for the proper line in the file.
 		 */
-		if (ac > 0)
-		{
-			error("No filenames allowed with -t option");
+		if (!tagfile || !edit(tagfile) || tagsearch())
 			quit();
-		}
-		if (tagfile == NULL)
-			quit();
-		edit(tagfile);
-		if (file < 0)
-			quit();
-		if (tagsearch())
-			quit();
-	} else
-	if (ac < 1)
-		edit("-");	/* Standard input */
-	else 
-	{
+	}
+	else if (ac < 1)
+		(void)edit("-");	/* Standard input */
+	else {
 		/*
 		 * Try all the files named as command arguments.
 		 * We are simply looking for one which can be
 		 * opened without error.
 		 */
-		do
-		{
-			edit((char *)NULL);
+		do {
+			(void)edit((char *)NULL);
 		} while (file < 0 && ++curr_ac < ac);
 	}
 
@@ -332,24 +298,10 @@ main(argc, argv)
 }
 
 /*
- * Copy a string, truncating to the specified length if necessary.
- * Unlike strncpy(), the resulting string is guaranteed to be null-terminated.
- */
-	public void
-strtcpy(to, from, len)
-	char *to;
-	char *from;
-	unsigned int len;
-{
-	strncpy(to, from, len);
-	to[len-1] = '\0';
-}
-
-/*
  * Copy a string to a "safe" place
  * (that is, to a buffer allocated by malloc).
  */
-	public char *
+char *
 save(s)
 	char *s;
 {
@@ -367,7 +319,6 @@ save(s)
 /*
  * Exit the program.
  */
-	public void
 quit()
 {
 	/*

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)line.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)line.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,17 +28,19 @@ static char sccsid[] = "@(#)line.c	5.2 (Berkeley) %G%";
  * We keep track of the PRINTABLE length of the line as it is being built.
  */
 
-#include "less.h"
+#include <sys/types.h>
+#include <ctype.h>
+#include <less.h>
 
 static char linebuf[1024];	/* Buffer which holds the current output line */
 static char *curr;		/* Pointer into linebuf */
 static int column;		/* Printable length, accounting for
 				   backspaces, etc. */
 /*
- * A ridiculously complex state machine takes care of backspaces 
- * when in BS_SPECIAL mode.  The complexity arises from the attempt
- * to deal with all cases, especially involving long lines with underlining,
- * boldfacing or whatever.  There are still some cases which will break it.
+ * A ridiculously complex state machine takes care of backspaces.  The
+ * complexity arises from the attempt to deal with all cases, especially
+ * involving long lines with underlining, boldfacing or whatever.  There
+ * are still some cases which will break it.
  *
  * There are four states:
  *	LN_NORMAL is the normal state (not in underline mode).
@@ -70,7 +72,7 @@ static int ln_state;		/* Currently in normal/underline/bold/etc mode? */
 #define	LN_BO_X		5	/* In boldface, got char, need \b */
 #define	LN_BO_XB	6	/* In boldface, got char & \b, need same char */
 
-public char *line;		/* Pointer to the current line.
+char *line;			/* Pointer to the current line.
 				   Usually points to linebuf. */
 
 extern int bs_mode;
@@ -82,7 +84,6 @@ extern int sc_width, sc_height;
 /*
  * Rewind the line buffer.
  */
-	public void
 prewind()
 {
 	line = curr = linebuf;
@@ -95,22 +96,21 @@ prewind()
  * Expand tabs into spaces, handle underlining, boldfacing, etc.
  * Returns 0 if ok, 1 if couldn't fit in buffer.
  */
+#define	NEW_COLUMN(addon) \
+	if (column + addon + (ln_state ? ue_width : 0) > sc_width) \
+		return(1); \
+	else \
+		column += addon
 
-#define	NEW_COLUMN(newcol)	if ((newcol) + ((ln_state)?ue_width:0) > sc_width) \
-					return (1); else column = (newcol)
-
-	public int
 pappend(c)
 	int c;
 {
-	if (c == '\0')
-	{
+	if (c == '\0') {
 		/*
 		 * Terminate any special modes, if necessary.
 		 * Append a '\0' to the end of the line.
 		 */
-		switch (ln_state)
-		{
+		switch (ln_state) {
 		case LN_UL_X:
 			curr[0] = curr[-1];
 			curr[-1] = UE_CHAR;
@@ -132,7 +132,7 @@ pappend(c)
 		}
 		ln_state = LN_NORMAL;
 		*curr = '\0';
-		return (0);
+		return(0);
 	}
 
 	if (curr > linebuf + sizeof(linebuf) - 12)
@@ -143,19 +143,18 @@ pappend(c)
 		 *    will never happen, but may need to be made 
 		 *    bigger for wide screens or lots of backspaces. }}
 		 */
-		return (1);
+		return(1);
 
-	if (bs_mode == BS_SPECIAL)
-	{
+	if (!bs_mode) {
 		/*
 		 * Advance the state machine.
 		 */
-		switch (ln_state)
-		{
+		switch (ln_state) {
 		case LN_NORMAL:
-			if (curr <= linebuf + 1 || curr[-1] != '\b')
+			if (curr <= linebuf + 1
+			    || curr[-1] != (char)('H' | 0200))
 				break;
-
+			column -= 2;
 			if (c == curr[-2])
 				goto enter_boldface;
 			if (c == '_' || curr[-2] == '_')
@@ -175,9 +174,8 @@ enter_boldface:
 				 */
 				return (1);
 
-			if (bo_width > 0 && 
-			    curr > linebuf + 2 && curr[-3] == ' ')
-			{
+			if (bo_width > 0 && curr > linebuf + 2
+			    && curr[-3] == ' ') {
 				/*
 				 * Special case for magic cookie terminals:
 				 * if the previous char was a space, replace 
@@ -185,8 +183,7 @@ enter_boldface:
 				 */
 				curr[-3] = BO_CHAR;
 				column += bo_width-1;
-			} else
-			{
+			} else {
 				curr[-1] = curr[-2];
 				curr[-2] = BO_CHAR;
 				column += bo_width;
@@ -350,61 +347,44 @@ ln_bo_xb_case:
 			break;
 		}
 	}
-	
-	if (c == '\t') 
-	{
+
+	if (c == '\t') {
 		/*
 		 * Expand a tab into spaces.
 		 */
-		do
-		{
-			NEW_COLUMN(column+1);
+		do {
+			NEW_COLUMN(1);
 		} while ((column % tabstop) != 0);
 		*curr++ = '\t';
 		return (0);
 	}
 
-	if (c == '\b')
-	{
-		if (bs_mode == BS_CONTROL)
-		{
-			/*
-			 * Treat backspace as a control char: output "^H".
-			 */
-			NEW_COLUMN(column+2);
-			*curr++ = ('H' | 0200);
-		} else
-		{
-			/*
-			 * Output a real backspace.
-			 */
+	if (c == '\b') {
+		if (ln_state == LN_NORMAL)
+			NEW_COLUMN(2);
+		else
 			column--;
-			*curr++ = '\b';
-		}
-		return (0);
+		*curr++ = ('H' | 0200);
+		return(0);
 	} 
 
-	if (control_char(c))
-	{
+	if (CONTROL_CHAR(c)) {
 		/*
-		 * Put a "^X" into the buffer.
-		 * The 0200 bit is used to tell put_line() to prefix
-		 * the char with a ^.  We don't actually put the ^
-		 * in the buffer because we sometimes need to move
-		 * chars around, and such movement might separate 
-		 * the ^ from its following character.
-		 * {{ This should be redone so that we can use an
-		 *    8 bit (e.g. international) character set. }}
+		 * Put a "^X" into the buffer.  The 0200 bit is used to tell
+		 * put_line() to prefix the char with a ^.  We don't actually
+		 * put the ^ in the buffer because we sometimes need to move
+		 * chars around, and such movement might separate the ^ from
+		 * its following character.
 		 */
-		NEW_COLUMN(column+2);
-		*curr++ = (carat_char(c) | 0200);
-		return (0);
+		NEW_COLUMN(2);
+		*curr++ = (CARAT_CHAR(c) | 0200);
+		return(0);
 	}
 
 	/*
 	 * Ordinary character.  Just put it in the buffer.
 	 */
-	NEW_COLUMN(column+1);
+	NEW_COLUMN(1);
 	*curr++ = c;
 	return (0);
 }
@@ -414,13 +394,13 @@ ln_bo_xb_case:
  * lines which are not split for screen width.
  * {{ This is supposed to be more efficient than forw_line(). }}
  */
-	public POSITION
+off_t
 forw_raw_line(curr_pos)
-	POSITION curr_pos;
+	off_t curr_pos;
 {
 	register char *p;
 	register int c;
-	POSITION new_pos;
+	off_t new_pos, ch_tell();
 
 	if (curr_pos == NULL_POSITION || ch_seek(curr_pos) ||
 		(c = ch_forw_get()) == EOI)
@@ -458,15 +438,15 @@ forw_raw_line(curr_pos)
  * Analogous to back_line(), but deals with "raw lines".
  * {{ This is supposed to be more efficient than back_line(). }}
  */
-	public POSITION
+off_t
 back_raw_line(curr_pos)
-	POSITION curr_pos;
+	off_t curr_pos;
 {
 	register char *p;
 	register int c;
-	POSITION new_pos;
+	off_t new_pos, ch_tell();
 
-	if (curr_pos == NULL_POSITION || curr_pos <= (POSITION)0 ||
+	if (curr_pos == NULL_POSITION || curr_pos <= (off_t)0 ||
 		ch_seek(curr_pos-1))
 		return (NULL_POSITION);
 
@@ -492,7 +472,7 @@ back_raw_line(curr_pos)
 			 * This must be the first line in the file.
 			 * This must, of course, be the beginning of the line.
 			 */
-			new_pos = (POSITION)0;
+			new_pos = (off_t)0;
 			break;
 		}
 		if (p <= linebuf)

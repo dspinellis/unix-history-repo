@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,26 +27,28 @@ static char sccsid[] = "@(#)ch.c	5.5 (Berkeley) %G%";
  * both forward and backward from the current read pointer.
  */
 
-#include "less.h"
+#include <sys/types.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <less.h>
 
-public int file = -1;		/* File descriptor of the input file */
+int file = -1;		/* File descriptor of the input file */
 
 /*
  * Pool of buffers holding the most recently used blocks of the input file.
  */
-#define BUFSIZ	1024
+#define	BUFSIZ	1024
 struct buf {
 	struct buf *next, *prev;
 	long block;
 	int datasize;
 	char data[BUFSIZ];
 };
-public int nbufs;
+int nbufs;
 
 /*
- * The buffer pool is kept as a doubly-linked circular list,
- * in order from most- to least-recently used.
- * The circular list is anchored by buf_anchor.
+ * The buffer pool is kept as a doubly-linked circular list, in order from
+ * most- to least-recently used.  The circular list is anchored by buf_anchor.
  */
 #define	END_OF_CHAIN	((struct buf *)&buf_anchor)
 #define	buf_head	buf_anchor.next
@@ -56,11 +58,7 @@ static struct {
 	struct buf *next, *prev;
 } buf_anchor = { END_OF_CHAIN, END_OF_CHAIN };
 
-extern int clean_data;
-extern int ispipe;
-extern int autobuf;
-extern int cbufs;
-extern int sigs;
+extern int ispipe, cbufs, sigs;
 
 /*
  * Current position in file.
@@ -69,39 +67,33 @@ extern int sigs;
 static long ch_block;
 static int ch_offset;
 
-/* 
- * Length of file, needed if input is a pipe.
- */
-static POSITION ch_fsize;
+/* Length of file, needed if input is a pipe. */
+static off_t ch_fsize;
+
+/* Number of bytes read, if input is standard input (a pipe). */
+static off_t last_piped_pos;
 
 /*
- * Number of bytes read, if input is standard input (a pipe).
+ * Get the character pointed to by the read pointer.  ch_get() is a macro
+ * which is more efficient to call than fch_get (the function), in the usual
+ * case that the block desired is at the head of the chain.
  */
-static POSITION last_piped_pos;
+#define	ch_get() \
+	((buf_head->block == ch_block && \
+	    ch_offset < buf_head->datasize) ? \
+	    buf_head->data[ch_offset] : fch_get())
 
-/*
- * Get the character pointed to by the read pointer.
- * ch_get() is a macro which is more efficient to call
- * than fch_get (the function), in the usual case 
- * that the block desired is at the head of the chain.
- */
-#define	ch_get()   ((buf_head->block == ch_block && \
-		     ch_offset < buf_head->datasize) ? \
-			buf_head->data[ch_offset] : fch_get())
-	static int
+static
 fch_get()
 {
 	register struct buf *bp;
 	register int n;
 	register char *p;
-	POSITION pos;
+	off_t pos, lseek();
 
-	/*
-	 * Look for a buffer holding the desired block.
-	 */
+	/* look for a buffer holding the desired block. */
 	for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
-		if (bp->block == ch_block)
-		{
+		if (bp->block == ch_block) {
 			if (ch_offset >= bp->datasize)
 				/*
 				 * Need more data in this buffer.
@@ -122,33 +114,28 @@ fch_get()
 			 * find it already buffered.
 			 */
 			if (ispipe)
-				return (bp->data[ch_offset]);
+				return(bp->data[ch_offset]);
 			goto found;
 		}
 	/*
-	 * Block is not in a buffer.  
-	 * Take the least recently used buffer 
-	 * and read the desired block into it.
-	 * If the LRU buffer has data in it, 
-	 * and autobuf is true, and input is a pipe, 
-	 * then try to allocate a new buffer first.
+	 * Block is not in a buffer.  Take the least recently used buffer
+	 * and read the desired block into it.  If the LRU buffer has data
+	 * in it, and input is a pipe, then try to allocate a new buffer first.
 	 */
-	if (autobuf && ispipe && buf_tail->block != (long)(-1))
-		(void) ch_addbuf(1);
+	if (ispipe && buf_tail->block != (long)(-1))
+		(void)ch_addbuf(1);
 	bp = buf_tail;
 	bp->block = ch_block;
 	bp->datasize = 0;
 
-    read_more:
+read_more:
 	pos = (ch_block * BUFSIZ) + bp->datasize;
-	if (ispipe)
-	{
+	if (ispipe) {
 		/*
 		 * The data requested should be immediately after
 		 * the last data read from the pipe.
 		 */
-		if (pos != last_piped_pos)
-		{
+		if (pos != last_piped_pos) {
 			error("pipe error");
 			quit();
 		}
@@ -163,8 +150,7 @@ fch_get()
 	n = iread(file, &bp->data[bp->datasize], BUFSIZ - bp->datasize);
 	if (n == READ_INTR)
 		return (EOI);
-	if (n < 0)
-	{
+	if (n < 0) {
 		error("read error");
 		quit();
 	}
@@ -174,31 +160,23 @@ fch_get()
 	bp->datasize += n;
 
 	/*
-	 * Set an EOI marker in the buffered data itself.
-	 * Then ensure the data is "clean": there are no 
-	 * extra EOI chars in the data and that the "meta"
-	 * bit (the 0200 bit) is reset in each char.
+	 * Set an EOI marker in the buffered data itself.  Then ensure the
+	 * data is "clean": there are no extra EOI chars in the data and
+	 * that the "meta" bit (the 0200 bit) is reset in each char.
 	 */
-	if (n == 0)
-	{
+	if (n == 0) {
 		ch_fsize = pos;
 		bp->data[bp->datasize++] = EOI;
 	}
 
-	if (!clean_data)
-	{
-		p = &bp->data[bp->datasize];
-		while (--n >= 0)
-		{
-			*--p &= 0177;
-			if (*p == EOI)
-				*p = '@';
-		}
+	for (p = &bp->data[bp->datasize]; --n >= 0;) {
+		*--p &= 0177;
+		if (*p == EOI)
+			*p = 0200;
 	}
 
-    found:
-	if (buf_head != bp)
-	{
+found:
+	if (buf_head != bp) {
 		/*
 		 * Move the buffer to the head of the buffer chain.
 		 * This orders the buffer chain, most- to least-recently used.
@@ -219,63 +197,62 @@ fch_get()
 		 */
 		goto read_more;
 
-	return (bp->data[ch_offset]);
+	return(bp->data[ch_offset]);
 }
 
 /*
  * Determine if a specific block is currently in one of the buffers.
  */
-	static int
+static
 buffered(block)
 	long block;
 {
 	register struct buf *bp;
 
-	for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
+	for (bp = buf_head; bp != END_OF_CHAIN; bp = bp->next)
 		if (bp->block == block)
-			return (1);
-	return (0);
+			return(1);
+	return(0);
 }
 
 /*
  * Seek to a specified position in the file.
  * Return 0 if successful, non-zero if can't seek there.
  */
-	public int
 ch_seek(pos)
-	register POSITION pos;
+	register off_t pos;
 {
 	long new_block;
 
 	new_block = pos / BUFSIZ;
-	if (!ispipe || pos == last_piped_pos || buffered(new_block))
-	{
+	if (!ispipe || pos == last_piped_pos || buffered(new_block)) {
 		/*
 		 * Set read pointer.
 		 */
 		ch_block = new_block;
 		ch_offset = pos % BUFSIZ;
-		return (0);
+		return(0);
 	}
-	return (1);
+	return(1);
 }
 
 /*
  * Seek to the end of the file.
  */
-	public int
 ch_end_seek()
 {
+	off_t ch_length();
+
 	if (!ispipe)
-		return (ch_seek(ch_length()));
+		return(ch_seek(ch_length()));
 
 	/*
 	 * Do it the slow way: read till end of data.
 	 */
 	while (ch_forw_get() != EOI)
 		if (sigs)
-			return (1);
-	return (0);
+			return(1);
+	return(0);
 }
 
 /*
@@ -283,7 +260,6 @@ ch_end_seek()
  * We may not be able to seek there if input is a pipe and the
  * beginning of the pipe is no longer buffered.
  */
-	public int
 ch_beg_seek()
 {
 	register struct buf *bp, *firstbp;
@@ -291,8 +267,8 @@ ch_beg_seek()
 	/*
 	 * Try a plain ch_seek first.
 	 */
-	if (ch_seek((POSITION)0) == 0)
-		return (0);
+	if (ch_seek((off_t)0) == 0)
+		return(0);
 
 	/*
 	 * Can't get to position 0.
@@ -300,69 +276,66 @@ ch_beg_seek()
 	 */
 	firstbp = bp = buf_head;
 	if (bp == END_OF_CHAIN)
-		return (1);
+		return(1);
 	while ((bp = bp->next) != END_OF_CHAIN)
 		if (bp->block < firstbp->block)
 			firstbp = bp;
 	ch_block = firstbp->block;
 	ch_offset = 0;
-	return (0);
+	return(0);
 }
 
 /*
  * Return the length of the file, if known.
  */
-	public POSITION
+off_t
 ch_length()
 {
+	off_t lseek();
+
 	if (ispipe)
-		return (ch_fsize);
-	return ((POSITION)(lseek(file, (off_t)0, L_XTND)));
+		return(ch_fsize);
+	return((off_t)(lseek(file, (off_t)0, L_XTND)));
 }
 
 /*
  * Return the current position in the file.
  */
-	public POSITION
+off_t
 ch_tell()
 {
-	return (ch_block * BUFSIZ + ch_offset);
+	return(ch_block * BUFSIZ + ch_offset);
 }
 
 /*
  * Get the current char and post-increment the read pointer.
  */
-	public int
 ch_forw_get()
 {
 	register int c;
 
 	c = ch_get();
-	if (c != EOI && ++ch_offset >= BUFSIZ)
-	{
+	if (c != EOI && ++ch_offset >= BUFSIZ) {
 		ch_offset = 0;
-		ch_block ++;
+		++ch_block;
 	}
-	return (c);
+	return(c);
 }
 
 /*
  * Pre-decrement the read pointer and get the new current char.
  */
-	public int
 ch_back_get()
 {
-	if (--ch_offset < 0)
-	{
-		if (ch_block <= 0 || (ispipe && !buffered(ch_block-1)))
-		{
+	if (--ch_offset < 0) {
+		if (ch_block <= 0 || (ispipe && !buffered(ch_block-1))) {
 			ch_offset = 0;
-			return (EOI);
+			return(EOI);
 		}
 		ch_offset = BUFSIZ - 1;
 		ch_block--;
 	}
-	return (ch_get());
+	return(ch_get());
 }
 
 /*
@@ -371,7 +344,6 @@ ch_back_get()
  * keep==1 means keep the data in the current buffers;
  * otherwise discard the old data.
  */
-	public void
 ch_init(want_nbufs, keep)
 	int want_nbufs;
 	int keep;
@@ -380,15 +352,14 @@ ch_init(want_nbufs, keep)
 	char message[80];
 
 	cbufs = nbufs;
-	if (nbufs < want_nbufs && ch_addbuf(want_nbufs - nbufs))
-	{
+	if (nbufs < want_nbufs && ch_addbuf(want_nbufs - nbufs)) {
 		/*
 		 * Cannot allocate enough buffers.
 		 * If we don't have ANY, then quit.
 		 * Otherwise, just report the error and return.
 		 */
 		(void)sprintf(message, "cannot allocate %d buffers",
-			want_nbufs - nbufs);
+		    want_nbufs - nbufs);
 		error(message);
 		if (nbufs == 0)
 			quit();
@@ -404,29 +375,30 @@ ch_init(want_nbufs, keep)
 	 */
 	for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
 		bp->block = (long)(-1);
-	last_piped_pos = (POSITION)0;
+	last_piped_pos = (off_t)0;
 	ch_fsize = NULL_POSITION;
-	(void) ch_seek((POSITION)0);
+	(void)ch_seek((off_t)0);
 }
 
 /*
  * Allocate some new buffers.
  * The buffers are added to the tail of the buffer chain.
  */
-	static int
+static
 ch_addbuf(nnew)
 	int nnew;
 {
 	register struct buf *bp;
 	register struct buf *newbufs;
+	char *calloc();
 
 	/*
 	 * We don't have enough buffers.  
 	 * Allocate some new ones.
 	 */
-	newbufs = (struct buf *) calloc((u_int)nnew, sizeof(struct buf));
+	newbufs = (struct buf *)calloc((u_int)nnew, sizeof(struct buf));
 	if (newbufs == NULL)
-		return (1);
+		return(1);
 
 	/*
 	 * Initialize the new buffers and link them together.
@@ -434,8 +406,7 @@ ch_addbuf(nnew)
 	 */
 	nbufs += nnew;
 	cbufs = nbufs;
-	for (bp = &newbufs[0];  bp < &newbufs[nnew];  bp++)
-	{
+	for (bp = &newbufs[0];  bp < &newbufs[nnew];  bp++) {
 		bp->next = bp + 1;
 		bp->prev = bp - 1;
 		bp->block = (long)(-1);
@@ -444,5 +415,5 @@ ch_addbuf(nnew)
 	newbufs[0].prev = buf_tail;
 	buf_tail->next = &newbufs[0];
 	buf_tail = &newbufs[nnew-1];
-	return (0);
+	return(0);
 }
