@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	8.7 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -736,7 +736,7 @@ unp_gc()
 	for (i = nunref, fpp = extra_ref; --i >= 0; ++fpp)
 		sorflush((struct socket *)(*fpp)->f_data);
 	for (i = nunref, fpp = extra_ref; --i >= 0; ++fpp)
-		closef(*fpp);
+		closef(*fpp, (struct proc *)NULL);
 	free((caddr_t)extra_ref, M_FILE);
 	unp_gcing = 0;
 }
