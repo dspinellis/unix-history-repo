@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)network.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)network.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,8 +37,12 @@ char	netobuf[2*BUFSIZ], netibuf[BUFSIZ];
 
 init_network()
 {
-    ring_init(&netoring, netobuf, sizeof netobuf);
-    ring_init(&netiring, netibuf, sizeof netibuf);
+    if (ring_init(&netoring, netobuf, sizeof netobuf) != 1) {
+	exit(1);
+    }
+    if (ring_init(&netiring, netibuf, sizeof netibuf) != 1) {
+	exit(1);
+    }
     NetTrace = stdout;
 }
 
@@ -63,7 +67,7 @@ stilloob()
 
     if (value < 0) {
 	perror("select");
-	quit();
+	(void) quit();
     }
     if (FD_ISSET(net, &excepts)) {
 	return 1;

@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -289,9 +289,9 @@ register int f;
     if (MODE_LINE(f)) {
 	void doescape();
 
-	signal(SIGTSTP, doescape);
+	(void) signal(SIGTSTP, (int (*)())doescape);
     } else if (MODE_LINE(old)) {
-	signal(SIGTSTP, SIG_DFL);
+	(void) signal(SIGTSTP, SIG_DFL);
 	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
     }
 }
@@ -314,6 +314,7 @@ int
     ioctl(fd, FIONBIO, (char *)&onoff);
 }
 
+#if	defined(TN3270)
 void
 NetSigIO(fd, onoff)
 int
@@ -335,6 +336,7 @@ int fd;
 #endif	/* defined(NOT43) */
     ioctl(fd, SIOCSPGRP, (char *)&myPid);	/* set my pid */
 }
+#endif	/*defined(TN3270)*/
 
 /*
  * Various signal handling routines.
@@ -380,9 +382,9 @@ sys_telnet_init()
     int myPid;
 #endif	/* defined(TN3270) */
 
-    signal(SIGINT, intr);
-    signal(SIGQUIT, intr2);
-    signal(SIGPIPE, deadpeer);
+    (void) signal(SIGINT, (int (*)())intr);
+    (void) signal(SIGQUIT, (int (*)())intr2);
+    (void) signal(SIGPIPE, (int (*)())deadpeer);
 
     setconnmode();
 
@@ -396,7 +398,9 @@ sys_telnet_init()
 #endif	/* defined(TN3270) */
 
 #if	defined(SO_OOBINLINE)
-    SetSockOpt(net, SOL_SOCKET, SO_OOBINLINE, 1);
+    if (SetSockOpt(net, SOL_SOCKET, SO_OOBINLINE, 1) == -1) {
+	perror("SetSockOpt");
+    }
 #endif	/* defined(SO_OOBINLINE) */
 }
 

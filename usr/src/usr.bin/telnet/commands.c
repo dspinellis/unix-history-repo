@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -811,7 +811,7 @@ setescape(argc, argv)
 		arg = argv[1];
 	else {
 		printf("new escape character: ");
-		gets(buf);
+		(void) gets(buf);
 		arg = buf;
 	}
 	if (arg[0] != '\0')
@@ -819,7 +819,7 @@ setescape(argc, argv)
 	if (!In3270) {
 		printf("Escape character is '%s'.\n", control(escape));
 	}
-	fflush(stdout);
+	(void) fflush(stdout);
 	return 1;
 }
 
@@ -830,7 +830,7 @@ togcrmod()
     crmod = !crmod;
     printf("Deprecated usage - please use 'toggle crmod' in the future.\n");
     printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
-    fflush(stdout);
+    (void) fflush(stdout);
     return 1;
 }
 
@@ -839,7 +839,7 @@ suspend()
 {
 	setcommandmode();
 #if	defined(unix)
-	kill(0, SIGTSTP);
+	(void) kill(0, SIGTSTP);
 #endif	/* defined(unix) */
 	/* reget parameters in case they were changed */
 	TerminalSaveState();
@@ -854,9 +854,9 @@ int	argc;		/* Number of arguments */
 char	*argv[];	/* arguments */
 {
     if (connected) {
-	shutdown(net, 2);
+	(void) shutdown(net, 2);
 	printf("Connection closed.\n");
-	NetClose(net);
+	(void) NetClose(net);
 	connected = 0;
 	/* reset options */
 	tninit();
@@ -876,13 +876,13 @@ quit()
 {
 	(void) call(bye, "bye", "fromquit", 0);
 	Exit(0);
-	/*NOTREACHED*/
 	return 1;			/* just to keep lint happy */
 }
 
 /*
  * Print status about the connection.
  */
+/*ARGSUSED*/
 static
 status(argc, argv)
 int	argc;
@@ -902,7 +902,7 @@ char	*argv[];
     }
 #   if !defined(TN3270)
     printf("Escape character is '%s'.\n", control(escape));
-    fflush(stdout);
+    (void) fflush(stdout);
 #   else /* !defined(TN3270) */
     if ((!In3270) && ((argc < 2) || strcmp(argv[1], "notmuch"))) {
 	printf("Escape character is '%s'.\n", control(escape));
@@ -912,7 +912,7 @@ char	*argv[];
        printf("Transparent mode command is '%s'.\n", transcom);
     }
 #   endif /* defined(unix) */
-    fflush(stdout);
+    (void) fflush(stdout);
     if (In3270) {
 	return 0;
     }
@@ -931,6 +931,7 @@ tn(argc, argv)
     struct sockaddr_in sin;
     struct servent *sp = 0;
     static char	hnamebuf[32];
+    unsigned long inet_addr();
 
 
 #if defined(MSDOS)
@@ -944,7 +945,7 @@ tn(argc, argv)
     if (argc < 2) {
 	(void) strcpy(line, "Connect ");
 	printf("(to) ");
-	gets(&line[strlen(line)]);
+	(void) gets(&line[strlen(line)]);
 	makeargv();
 	argc = margc;
 	argv = margv;
@@ -992,6 +993,10 @@ tn(argc, argv)
 		return 0;
 	    }
 	} else {
+#if	!defined(htons)
+	    u_short htons();
+#endif	/* !defined(htons) */
+
 	    sin.sin_port = atoi(argv[2]);
 	    sin.sin_port = htons(sin.sin_port);
 	}
@@ -1000,7 +1005,7 @@ tn(argc, argv)
 	if (sp == 0) {
 	    sp = getservbyname("telnet", "tcp");
 	    if (sp == 0) {
-		fprintf(stderr, "telnet: tcp/telnet: unknown service\n",1);
+		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
 		return 0;
 	    }
 	    sin.sin_port = sp->s_port;
@@ -1022,6 +1027,7 @@ tn(argc, argv)
 #if	defined(h_addr)		/* In 4.3, this is a #define */
 	    if (host && host->h_addr_list[1]) {
 		int oerrno = errno;
+		extern char *inet_ntoa();
 
 		fprintf(stderr, "telnet: connect to address %s: ",
 						inet_ntoa(sin.sin_addr));
@@ -1041,10 +1047,10 @@ tn(argc, argv)
 	    }
 	connected++;
     } while (connected == 0);
-    call(status, "status", "notmuch", 0);
+    (void) call(status, "status", "notmuch", 0);
     if (setjmp(peerdied) == 0)
 	telnet();
-    NetClose(net);
+    (void) NetClose(net);
     ExitString("Connection closed by foreign host.\n",1);
     /*NOTREACHED*/
 }
