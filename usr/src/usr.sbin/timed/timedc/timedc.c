@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	2.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	2.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
@@ -94,7 +94,6 @@ cmdscanner(top)
 	int top;
 {
 	register struct cmd *c;
-	extern struct cmd cmdtab[];
 	extern int help();
 
 	if (!top)
@@ -134,6 +133,7 @@ getcmd(name)
 	register char *p, *q;
 	register struct cmd *c, *found;
 	register int nmatches, longest;
+	extern struct cmd cmdtab[];
 	extern int NCMDS;
 
 	longest = 0;
@@ -193,6 +193,7 @@ help(argc, argv)
 	char *argv[];
 {
 	register struct cmd *c;
+	extern struct cmd cmdtab[];
 
 	if (argc == 1) {
 		register int i, j, w;
