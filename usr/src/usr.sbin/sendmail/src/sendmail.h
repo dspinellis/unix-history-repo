@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.106 (Berkeley) %G%
+ *	@(#)sendmail.h	8.107 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.106		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.107		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -132,7 +132,7 @@ typedef struct address ADDRESS;
 # define QDONTSEND	0x00000001	/* don't send to this address */
 # define QBADADDR	0x00000002	/* this address is verified bad */
 # define QGOODUID	0x00000004	/* the q_uid q_gid fields are good */
-# define QPRIMARY	0x00000008	/* set from argv */
+# define QPRIMARY	0x00000008	/* set from RCPT or argv */
 # define QQUEUEUP	0x00000010	/* queue for later transmission */
 # define QSENT		0x00000020	/* has been successfully delivered */
 # define QNOTREMOTE	0x00000040	/* address not for remote forwarding */
@@ -145,7 +145,9 @@ typedef struct address ADDRESS;
 # define QPINGONFAILURE	0x00002000	/* give return on failure */
 # define QPINGONDELAY	0x00004000	/* give return on message delay */
 # define QHASNOTIFY	0x00008000	/* propogate notify parameter */
-# define QRELAYED	0x00020000	/* relayed to non-DSN aware mailer */
+# define QRELAYED	0x00010000	/* relayed to non-DSN aware mailer */
+# define QEXPLODED	0x00020000	/* undergone mailing list explosion */
+# define QTHISPASS	0x80000000	/* temp: address set this pass */
 
 # define NULLADDR	((ADDRESS *) NULL)
 # define QPSEUDO	000040	/* only on the list for verification */
@@ -566,6 +568,7 @@ MAP
 	char		*map_domain;	/* the (nominal) NIS domain */
 	char		*map_rebuild;	/* program to run to do auto-rebuild */
 	time_t		map_mtime;	/* last database modification time */
+	short		map_specificity;	/* specificity of alaases */
 	MAP		*map_stack[MAXMAPSTACK];   /* list for stacked maps */
 	short		map_return[MAXMAPACTIONS]; /* return bitmaps for stacked maps */
 };

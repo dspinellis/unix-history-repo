@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.92 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.93 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -888,15 +888,12 @@ main(argc, argv, envp)
 	if (tTd(0, 15))
 	{
 		/* print configuration table (or at least part of it) */
-		printrules();
+		if (tTd(0, 90))
+			printrules();
 		for (i = 0; i < MAXMAILERS; i++)
 		{
-			register struct mailer *m = Mailer[i];
-			int j;
-
-			if (m == NULL)
-				continue;
-			printmailer(m);
+			if (Mailer[i] != NULL)
+				printmailer(Mailer[i]);
 		}
 	}
 

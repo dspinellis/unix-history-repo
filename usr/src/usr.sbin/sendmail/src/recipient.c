@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -123,11 +123,6 @@ sendto(list, copyf, ctladdr, qflags)
 			a->q_flags |= ctladdr->q_flags & ~QPRIMARY;
 		a->q_flags |= qflags;
 
-		/* see if this should be marked as a primary address */
-		if (ctladdr == NULL ||
-		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
-			a->q_flags |= QPRIMARY;
-
 		sibl = recipient(a);
 		if (sibl != NULL)
 		{
@@ -222,6 +217,7 @@ recipient(a, sendq, aliaslevel, e)
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
 	int findusercount = 0;
+	bool initialdontsend = bitset(QDONTSEND, a->q_flags);
 	int i;
 	char *buf;
 	char buf0[MAXNAME + 1];		/* unquoted image of the user name */
@@ -230,9 +226,11 @@ recipient(a, sendq, aliaslevel, e)
 	e->e_to = a->q_paddr;
 	m = a->q_mailer;
 	errno = 0;
+	if (aliaslevel == 0)
+		a->q_flags |= QPRIMARY;
 	if (tTd(26, 1))
 	{
-		printf("\nrecipient: ");
+		printf("\nrecipient (%d): ", aliaslevel);
 		printaddr(a, FALSE);
 	}
 
@@ -461,7 +459,7 @@ recipient(a, sendq, aliaslevel, e)
 	    ConfigLevel >= 2 && RewriteRules[5] != NULL &&
 	    bitnset(M_TRYRULESET5, m->m_flags))
 	{
-		maplocaluser(a, sendq, aliaslevel, e);
+		maplocaluser(a, sendq, aliaslevel + 1, e);
 	}
 
 	/*
@@ -528,17 +526,27 @@ recipient(a, sendq, aliaslevel, e)
 		e->e_nrcpts++;
 
   testselfdestruct:
+	a->q_flags |= QTHISPASS;
 	if (tTd(26, 8))
 	{
 		printf("testselfdestruct: ");
-		printaddr(a, TRUE);
+		printaddr(a, FALSE);
+		if (tTd(26, 10))
+		{
+			printf("SENDQ:\n");
+			printaddr(*sendq, TRUE);
+			printf("----\n");
+		}
 	}
 	if (a->q_alias == NULL && a != &e->e_from &&
 	    bitset(QDONTSEND, a->q_flags))
 	{
-		q = *sendq;
-		while (q != NULL && bitset(QDONTSEND, q->q_flags))
-			q = q->q_next;
+		for (q = *sendq; q != NULL; q = q->q_next)
+		{
+			if (!bitset(QDONTSEND|QBADADDR, q->q_flags) &&
+			    bitset(QTHISPASS, q->q_flags))
+				break;
+		}
 		if (q == NULL)
 		{
 			a->q_flags |= QBADADDR;
@@ -547,8 +555,47 @@ recipient(a, sendq, aliaslevel, e)
 	}
 
   done:
+	a->q_flags |= QTHISPASS;
 	if (buf != buf0)
 		free(buf);
+
+	/*
+	**  If we are at the top level, check to see if this has
+	**  expanded to exactly one address.  If so, it can inherit
+	**  the primaryness of the address.
+	**
+	**  While we're at it, clear the QTHISPASS bits.
+	*/
+
+	if (aliaslevel == 0)
+	{
+		int nrcpts = 0;
+		ADDRESS *only;
+
+		for (q = *sendq; q != NULL; q = q->q_next)
+		{
+			if (bitset(QTHISPASS, q->q_flags) &&
+			    !bitset(QDONTSEND|QBADADDR, q->q_flags))
+			{
+				nrcpts++;
+				only = q;
+			}
+			q->q_flags &= ~QTHISPASS;
+		}
+		if (nrcpts == 1)
+			only->q_flags |= QPRIMARY;
+		else if (!initialdontsend)
+		{
+			/* arrange for return receipt */
+			e->e_flags |= EF_SENDRECEIPT;
+			a->q_flags |= QEXPLODED;
+			if (e->e_xfp != NULL)
+				fprintf(e->e_xfp,
+					"%s... expanded to multiple addresses\n",
+					a->q_paddr);
+		}
+	}
+
 	return (a);
 
 	return (a);

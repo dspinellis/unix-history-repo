@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.136 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.137 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1602,6 +1602,7 @@ tryhost:
 					to->q_paddr);
 			}
 			else if (bitset(QPINGONSUCCESS, to->q_flags) &&
+				 bitset(QPRIMARY, to->q_flags) &&
 				 !bitset(MCIF_DSN, mci->mci_flags))
 			{
 				to->q_flags |= QRELAYED;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -674,23 +674,27 @@ errbody(mci, e, separator)
 	printheader = TRUE;
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (bitset(QBADADDR|QREPORT|QRELAYED, q->q_flags))
+		if (bitset(QBADADDR|QREPORT|QRELAYED|QEXPLODED, q->q_flags))
 		{
+			strcpy(buf, q->q_paddr);
+			if (bitset(QBADADDR, q->q_flags))
+				strcat(buf, "  (unrecoverable error)");
+			else if (!bitset(QPRIMARY, q->q_flags))
+				continue;
+			else if (bitset(QRELAYED, q->q_flags))
+				strcat(buf, "  (relayed to non-DSN-aware mailer)");
+			else if (bitset(QSENT, q->q_flags))
+				strcat(buf, "  (successfully delivered)");
+			else if (bitset(QEXPLODED, q->q_flags))
+				strcat(buf, "  (expanded by mailing list)");
+			else
+				strcat(buf, "  (transient failure)");
 			if (printheader)
 			{
 				putline("   ----- The following addresses have delivery notifications -----",
 					mci);
 				printheader = FALSE;
 			}
-			strcpy(buf, q->q_paddr);
-			if (bitset(QBADADDR, q->q_flags))
-				strcat(buf, "  (unrecoverable error)");
-			else if (bitset(QRELAYED, q->q_flags))
-				strcat(buf, "  (relayed to non-DSN-aware mailer)");
-			else if (bitset(QSENT, q->q_flags))
-				strcat(buf, "  (successfully delivered)");
-			else
-				strcat(buf, "  (transient failure)");
 			putline(buf, mci);
 			if (q->q_alias != NULL)
 			{
@@ -783,9 +787,24 @@ errbody(mci, e, separator)
 		for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 		{
 			register ADDRESS *r;
+			char *action;
 
-			if (!bitset(QBADADDR|QREPORT|QRELAYED, q->q_flags))
+			if (bitset(QBADADDR, q->q_flags))
+				action = "failure";
+			else if (!bitset(QPRIMARY, q->q_flags))
 				continue;
+			else if (bitset(QRELAYED, q->q_flags))
+				action = "relayed";
+			else if (bitset(QEXPLODED, q->q_flags))
+				action = "delivered (to mailing list)";
+			else if (bitset(QSENT, q->q_flags) &&
+				 bitnset(M_LOCALMAILER, q->q_mailer->m_flags))
+				action = "delivered (final delivery)";
+			else if (bitset(QREPORT, q->q_flags))
+				action = "delayed";
+			else
+				continue;
+
 			putline("", mci);
 
 			/* Original-Recipient: -- passed from on high */
@@ -815,15 +834,26 @@ errbody(mci, e, separator)
 			}
 			putline(buf, mci);
 
+			/* X-Actual-Recipient: -- the real problem address */
+			if (r != q)
+			{
+				if (strchr(q->q_user, '@') == NULL)
+				{
+					(void) sprintf(buf, "X-Actual-Recipient: %s; %s@",
+						p, xtextify(q->q_user));
+					strcat(buf, xtextify(MyHostName));
+				}
+				else
+				{
+					(void) sprintf(buf, "X-Actual-Recipient: %s; %s",
+						p, xtextify(q->q_user));
+				}
+				putline(buf, mci);
+			}
+
 			/* Action: -- what happened? */
-			if (bitset(QBADADDR, q->q_flags))
-				putline("Action: failure", mci);
-			else if (bitset(QQUEUEUP, q->q_flags))
-				putline("Action: delayed", mci);
-			else if (bitset(QRELAYED, q->q_flags))
-				putline("Action: relayed", mci);
-			else
-				putline("Action: delivered", mci);
+			sprintf(buf, "Action: %s", action);
+			putline(buf, mci);
 
 			/* Status: -- what _really_ happened? */
 			strcpy(buf, "Status: ");
@@ -833,8 +863,6 @@ errbody(mci, e, separator)
 				strcat(buf, "5.0.0");
 			else if (bitset(QQUEUEUP, q->q_flags))
 				strcat(buf, "4.0.0");
-			else if (bitset(QRELAYED, q->q_flags))
-				strcat(buf, "6.0.1");
 			else
 				strcat(buf, "2.0.0");
 			putline(buf, mci);
@@ -846,7 +874,7 @@ errbody(mci, e, separator)
 			(void) sprintf(buf, "Remote-MTA: %s; ", p);
 			if (q->q_statmta != NULL)
 				p = q->q_statmta;
-			else if (q->q_host != NULL)
+			else if (q->q_host != NULL && q->q_host[0] != '\0')
 				p = q->q_host;
 			else
 				p = NULL;
@@ -866,7 +894,7 @@ errbody(mci, e, separator)
 				if (p == NULL)
 					p = "smtp";
 				(void) sprintf(buf, "Diagnostic-Code: %s; %s",
-					p, xtextify(q->q_rstatus));
+					p, q->q_rstatus);
 				putline(buf, mci);
 			}
 
@@ -1036,7 +1064,8 @@ xtextify(t)
 		register int c = (*p & 0xff);
 
 		/* ASCII dependence here -- this is the way the spec words it */
-		if (c < '!' || c > '~' || c == '+' || c == '\\' || c == '(')
+		if ((c < ' ' || c > '~' || c == '+' || c == '\\' || c == '(') &&
+		    c != '\t')
 			nbogus++;
 		l++;
 	}
