@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.14	82/10/03	*/
+/*	uipc_pipe.c	4.15	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -123,9 +123,9 @@ piusrreq(so, req, m, addr)
 		break;
 
 	case PRU_ABORT:
-		return (EOPNOTSUPP);
-
 	case PRU_CONTROL:
+	case PRU_SENDOOB:
+	case PRU_RCVOOB:
 		return (EOPNOTSUPP);
 
 	default:

@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.36	82/06/20	*/
+/*	uipc_mbuf.c	1.37	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -118,7 +118,6 @@ m_getclr(canwait)
 	m = m_get(canwait);
 	if (m == 0)
 		return (0);
-	m->m_off = MMINOFF;
 	bzero(mtod(m, caddr_t), MLEN);
 	return (m);
 }
@@ -206,11 +205,9 @@ m_copy(m, off, len)
 			p = mtod(m, struct mbuf *);
 			n->m_off = ((int)p - (int)n) + off;
 			mclrefcnt[mtocl(p)]++;
-		} else {
-			n->m_off = MMINOFF;
+		} else
 			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
 			    (unsigned)n->m_len);
-		}
 		if (len != M_COPYALL)
 			len -= n->m_len;
 		off = 0;
@@ -294,10 +291,9 @@ m_pullup(m0, len)
 	n = m0;
 	if (len > MLEN)
 		goto bad;
-	MGET(m, 0);
+	MGET(m, M_DONTWAIT);
 	if (m == 0)
 		goto bad;
-	m->m_off = MMINOFF;
 	m->m_len = 0;
 	do {
 		count = MIN(MLEN - m->m_len, len);
