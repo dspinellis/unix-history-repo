@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mman.h	7.3 (Berkeley) %G%
+ *	@(#)mman.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -45,3 +45,17 @@
 #define	MADV_SEQUENTIAL	2	/* expect sequential page references */
 #define	MADV_WILLNEED	3	/* will need these pages */
 #define	MADV_DONTNEED	4	/* dont need these pages */
+
+#ifndef KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+/* Some of these int's should probably be size_t's */
+int	mmap __P((caddr_t, int, int, int, int, off_t));
+int	mprotect __P((caddr_t, int, int));
+int	munmap __P((caddr_t, int));
+int	msync __P((caddr_t, int));
+__END_DECLS
+
+#endif /* !KERNEL */
