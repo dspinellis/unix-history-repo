@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.9 (Berkeley) %G%
+ *	@(#)dinode.h	7.10 (Berkeley) %G%
  */
 
 /*
- * This structure defines the on-disk format of an inode.
+ * A dinode contains all the meta-data associated with a UFS file.
+ * This structure defines the on-disk format of a dinode.
  */
 
 #define	NDADDR	12		/* direct addresses in inode */
@@ -42,18 +43,18 @@ struct dinode {
 #define	di_rdev		di_db[0]
 
 /* file modes */
-#define	IFMT		0170000		/* type of file */
+#define	IFMT		0170000		/* mask of file type */
 #define	IFIFO		0010000		/* named pipe (fifo) */
-#define	IFCHR		0020000		/* character special */
+#define	IFCHR		0020000		/* character special device */
 #define	IFDIR		0040000		/* directory */
-#define	IFBLK		0060000		/* block special */
-#define	IFREG		0100000		/* regular */
+#define	IFBLK		0060000		/* block special device */
+#define	IFREG		0100000		/* regular file */
 #define	IFLNK		0120000		/* symbolic link */
-#define	IFSOCK		0140000		/* socket */
+#define	IFSOCK		0140000		/* UNIX domain socket */
 
-#define	ISUID		04000		/* set user id on execution */
-#define	ISGID		02000		/* set group id on execution */
-#define	ISVTX		01000		/* save swapped text even after use */
-#define	IREAD		0400		/* read, write, execute permissions */
-#define	IWRITE		0200
-#define	IEXEC		0100
+#define	ISUID		04000		/* set user identifier when exec'ing */
+#define	ISGID		02000		/* set group identifier when exec'ing */
+#define	ISVTX		01000		/* save execution information on exit */
+#define	IREAD		0400		/* read permission */
+#define	IWRITE		0200		/* write permission */
+#define	IEXEC		0100		/* execute permission */
