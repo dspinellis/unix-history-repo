@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.18 %G%";
+static char sccsid[] = "@(#)put.c 1.19 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -434,8 +434,14 @@ listnames(ap)
 	    ap->value[ NL_ELABEL ] = lc;
 #	endif OBJ
 #	ifdef PC
-	    putprintf( "	.data" , 0 );
-	    putprintf( "	.align 1" , 0 );
+#	    ifdef vax
+		putprintf("	.data", 0);
+		putprintf("	.align 1", 0);
+#	    endif vax
+#	    ifdef mc68000
+		putprintf("	.data", 0);
+		putprintf("	.even", 0);
+#	    endif mc68000
 	    ap -> value[ NL_ELABEL ] = getlab();
 	    putlab( ap -> value[ NL_ELABEL ] );
 #	endif PC
