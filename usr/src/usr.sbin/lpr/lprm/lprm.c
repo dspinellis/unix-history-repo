@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprm.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprm.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,9 +39,8 @@ char	*person;		/* name of person doing lprm */
 
 static char	luser[16];	/* buffer for person */
 
-struct passwd *getpwuid();
-
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register char *arg;
@@ -97,9 +96,8 @@ main(argc, argv)
 	rmjob();
 }
 
-static
 usage()
 {
-	printf("usage: lprm [-] [-Pprinter] [[job #] [user] ...]\n");
+	fprintf(stderr, "usage: lprm [-] [-Pprinter] [[job #] [user] ...]\n");
 	exit(2);
 }

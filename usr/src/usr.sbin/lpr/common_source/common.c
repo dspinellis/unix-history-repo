@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -100,7 +100,7 @@ retry:
 	s = rresvport(&lport);
 	if (s < 0)
 		return(-1);
-	if (connect(s, (caddr_t)&sin, sizeof(sin)) < 0) {
+	if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 		err = errno;
 		(void) close(s);
 		errno = err;
@@ -159,8 +159,9 @@ getq(namelist)
 	register struct queue *q, **queue;
 	register int nitems;
 	struct stat stbuf;
-	int arraysz, compar();
 	DIR *dirp;
+	int arraysz;
+	static int compar();
 
 	if ((dirp = opendir(SD)) == NULL)
 		return(-1);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,7 +66,7 @@ printjob()
 	register int i, nitems;
 	long pidoff;
 	int count = 0;
-	extern int abortpr();
+	void abortpr();
 
 	init();					/* set up capabilities */
 	(void) write(1, "", 1);			/* ack that daemon is started */
@@ -559,7 +559,8 @@ print(format, file)
 	fo = pfd;
 	if (ofilter > 0) {		/* stop output filter */
 		write(ofd, "\031\1", 2);
-		while ((pid = wait3(&status, WUNTRACED, 0)) > 0 && pid != ofilter)
+		while ((pid =
+		    wait3((int *)&status, WUNTRACED, 0)) > 0 && pid != ofilter)
 			;
 		if (status.w_stopval != WSTOPPED) {
 			(void) close(fi);
@@ -586,7 +587,7 @@ start:
 	if (child < 0)
 		status.w_retcode = 100;
 	else
-		while ((pid = wait(&status)) > 0 && pid != child)
+		while ((pid = wait((int *)&status)) > 0 && pid != child)
 			;
 	child = 0;
 	prchild = 0;
@@ -1008,13 +1009,14 @@ dofork(action)
 /*
  * Kill child processes to abort current job.
  */
+void
 abortpr()
 {
 	(void) unlink(tempfile);
 	kill(0, SIGINT);
 	if (ofilter > 0)
 		kill(ofilter, SIGCONT);
-	while (wait(0) > 0)
+	while (wait(NULL) > 0)
 		;
 	exit(0);
 }

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpq.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpq.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -79,7 +79,6 @@ main(argc, argv)
 	exit(0);
 }
 
-static
 usage()
 {
 	puts("usage: lpq [-l] [-Pprinter] [user ...] [job ...]");
