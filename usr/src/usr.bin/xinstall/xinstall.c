@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -126,9 +126,9 @@ main(argc, argv)
 		 * off the append/immutable bits -- if we fail, go ahead,
 		 * it might work.
 		 */
-		if (to_sb.st_mode & (IMMUTABLE | APPEND))
+		if (to_sb.st_mode & (UF_IMMUTABLE | UF_APPEND))
 			(void)chflags(to_name,
-			    to_sb.st_flags & ~(APPEND | IMMUTABLE));
+			    to_sb.st_flags & ~(UF_APPEND | UF_IMMUTABLE));
 		(void)unlink(to_name);
 	}
 	install(*argv, to_name, fset, iflags);
@@ -171,8 +171,8 @@ install(from_name, to_name, fset, flags)
 	 * off the append/immutable bits -- if we fail, go ahead,
 	 * it might work.
 	 */
-	if (stat(to_name, &to_sb) == 0 && to_sb.st_flags & (APPEND | IMMUTABLE))
-		(void)chflags(to_name, to_sb.st_flags & ~(APPEND | IMMUTABLE));
+	if (stat(to_name, &to_sb) == 0 && to_sb.st_flags & (UF_APPEND | UF_IMMUTABLE))
+		(void)chflags(to_name, to_sb.st_flags & ~(UF_APPEND | UF_IMMUTABLE));
 	(void)unlink(to_name);
 
 	/* Create target. */
@@ -210,7 +210,7 @@ install(from_name, to_name, fset, flags)
 	 * flags, except for the dump flag.
 	 */
 	if (fchflags(to_fd,
-	    flags & SETFLAGS ? fset : from_sb.st_flags & ~NODUMP)) {
+	    flags & SETFLAGS ? fset : from_sb.st_flags & ~UF_NODUMP)) {
 		serrno = errno;
 		(void)unlink(to_name);
 		err("%s: chflags: %s", to_name, strerror(serrno));
