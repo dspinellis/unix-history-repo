@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -62,8 +62,9 @@ typedef struct {
 char *path_append(), *path_basename();
 void path_restore();
 
-int exit_val, symfollow;
+int exit_val;
 int interactive_flag, preserve_flag, recursive_flag;
+int (*statfcn)();			/* stat function to use */
 char *buf;				/* I/O; malloc for best alignment. */
 char from_buf[MAXPATHLEN + 1],		/* source path buffer */
      to_buf[MAXPATHLEN + 1];		/* target path buffer */
@@ -77,10 +78,10 @@ main(argc, argv)
 	extern int optind, errno;
 	struct stat to_stat;
 	register int c, r;
-	int force_flag;
+	int force_flag, symfollow, lstat(), stat();
 	char *old_to, *malloc();
 
-	force_flag = 0;
+	force_flag = symfollow = 0;
 	while ((c = getopt(argc, argv, "Rfhipr")) != EOF) {
 	switch ((char)c) {
 		case 'f':
@@ -124,6 +125,8 @@ main(argc, argv)
 	/* consume last argument first. */
 	if (!path_set(&to, argv[--argc]))
 		exit(exit_val);
+
+	statfcn = symfollow || !recursive_flag ? stat : lstat;
 
 	/*
 	 * Cp has two distinct cases:
@@ -183,8 +186,7 @@ copy()
 	struct stat from_stat, to_stat;
 	int dne, statval;
 
-	statval = symfollow || !recursive_flag ?
-	    stat(from.p_path, &from_stat) : lstat(from.p_path, &from_stat);
+	statval = statfcn(from.p_path, &from_stat);
 	if (statval == -1) {
 		error(from.p_path);
 		return;
@@ -357,7 +359,7 @@ copy_dir()
 		if (!old_from)
 			goto done;
 
-		if (stat(from.p_path, &from_stat) < 0) {
+		if (statfcn(from.p_path, &from_stat) < 0) {
 			error(dp->d_name);
 			path_restore(&from, old_from);
 			goto done;
