@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	7.4	%G%";
+static char *sccsid = "@(#)ex_subr.c	7.5	%G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -951,12 +951,14 @@ exit(i)
 onsusp()
 {
 	ttymode f;
+	int omask;
 
 	f = setty(normf);
 	vnfl();
 	putpad(TE);
 	flush();
 
+	(void) sigsetmask(0);
 	signal(SIGTSTP, SIG_DFL);
 	kill(0, SIGTSTP);
 
