@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -141,7 +141,7 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	char *filesys, *mntpt;
 	long auxdata;
 {
-	daddr_t n_ffree, n_bfree;
+	ufs_daddr_t n_ffree, n_bfree;
 	struct dups *dp;
 	struct zlncnt *zlnp;
 	int cylno;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,7 +117,7 @@ bufinit()
  */
 struct bufarea *
 getdatablk(blkno, size)
-	daddr_t blkno;
+	ufs_daddr_t blkno;
 	long size;
 {
 	register struct bufarea *bp;
@@ -147,10 +147,10 @@ foundit:
 void
 getblk(bp, blk, size)
 	register struct bufarea *bp;
-	daddr_t blk;
+	ufs_daddr_t blk;
 	long size;
 {
-	daddr_t dblk;
+	ufs_daddr_t dblk;
 
 	dblk = fsbtodb(&sblock, blk);
 	if (bp->b_bno != dblk) {
@@ -189,7 +189,7 @@ flush(fd, bp)
 
 rwerror(mesg, blk)
 	char *mesg;
-	daddr_t blk;
+	ufs_daddr_t blk;
 {
 
 	if (preen == 0)
@@ -237,7 +237,7 @@ ckfini()
 bread(fd, buf, blk, size)
 	int fd;
 	char *buf;
-	daddr_t blk;
+	ufs_daddr_t blk;
 	long size;
 {
 	char *cp;
@@ -275,7 +275,7 @@ bread(fd, buf, blk, size)
 bwrite(fd, buf, blk, size)
 	int fd;
 	char *buf;
-	daddr_t blk;
+	ufs_daddr_t blk;
 	long size;
 {
 	int i;
@@ -339,7 +339,7 @@ allocblk(frags)
  * Free a previously allocated block
  */
 freeblk(blkno, frags)
-	daddr_t blkno;
+	ufs_daddr_t blkno;
 	long frags;
 {
 	struct inodesc idesc;

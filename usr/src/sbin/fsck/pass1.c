@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -18,8 +18,8 @@ static char sccsid[] = "@(#)pass1.c	8.2 (Berkeley) %G%";
 #include <string.h>
 #include "fsck.h"
 
-static daddr_t badblk;
-static daddr_t dupblk;
+static ufs_daddr_t badblk;
+static ufs_daddr_t dupblk;
 int pass1check();
 struct dinode *getnextinode();
 
@@ -75,9 +75,9 @@ checkinode(inumber, idesc)
 	mode = dp->di_mode & IFMT;
 	if (mode == 0) {
 		if (bcmp((char *)dp->di_db, (char *)zino.di_db,
-			NDADDR * sizeof(daddr_t)) ||
+			NDADDR * sizeof(ufs_daddr_t)) ||
 		    bcmp((char *)dp->di_ib, (char *)zino.di_ib,
-			NIADDR * sizeof(daddr_t)) ||
+			NIADDR * sizeof(ufs_daddr_t)) ||
 		    dp->di_mode || dp->di_size) {
 			pfatal("PARTIALLY ALLOCATED INODE I=%lu", inumber);
 			if (reply("CLEAR") == 1) {
@@ -136,7 +136,7 @@ checkinode(inumber, idesc)
 		 * will detect any garbage after symlink string.
 		 */
 		if (dp->di_size < sblock.fs_maxsymlinklen) {
-			ndb = howmany(dp->di_size, sizeof(daddr_t));
+			ndb = howmany(dp->di_size, sizeof(ufs_daddr_t));
 			if (ndb > NDADDR) {
 				j = ndb - NDADDR;
 				for (ndb = 1; j > 1; j--)
@@ -238,7 +238,7 @@ pass1check(idesc)
 {
 	int res = KEEPON;
 	int anyout, nfrags;
-	daddr_t blkno = idesc->id_blkno;
+	ufs_daddr_t blkno = idesc->id_blkno;
 	register struct dups *dlp;
 	struct dups *new;
 

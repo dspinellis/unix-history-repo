@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -513,7 +513,7 @@ expanddir(dp, name)
 	register struct dinode *dp;
 	char *name;
 {
-	daddr_t lastbn, newblk;
+	ufs_daddr_t lastbn, newblk;
 	register struct bufarea *bp;
 	char *cp, firstblk[DIRBLKSIZ];
 
@@ -664,7 +664,7 @@ lftempname(bufp, ino)
  */
 struct bufarea *
 getdirblk(blkno, size)
-	daddr_t blkno;
+	ufs_daddr_t blkno;
 	long size;
 {
 

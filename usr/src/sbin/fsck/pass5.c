@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -19,11 +19,11 @@ static char sccsid[] = "@(#)pass5.c	8.6 (Berkeley) %G%";
 pass5()
 {
 	int c, blk, frags, basesize, sumsize, mapsize, savednrpos;
-	register struct fs *fs = &sblock;
-	register struct cg *cg = &cgrp;
-	daddr_t dbase, dmax;
-	register daddr_t d;
-	register long i, j;
+	struct fs *fs = &sblock;
+	struct cg *cg = &cgrp;
+	ufs_daddr_t dbase, dmax;
+	ufs_daddr_t d;
+	long i, j;
 	struct csum *cs;
 	struct csum cstotal;
 	struct inodesc idesc[3];

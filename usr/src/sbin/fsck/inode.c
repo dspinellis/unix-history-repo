@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,7 +25,7 @@ ckinode(dp, idesc)
 	struct dinode *dp;
 	register struct inodesc *idesc;
 {
-	register daddr_t *ap;
+	ufs_daddr_t *ap;
 	long ret, n, ndb, offset;
 	struct dinode dino;
 	quad_t remsize, sizepb;
@@ -78,9 +78,9 @@ iblock(idesc, ilevel, isize)
 	long ilevel;
 	quad_t isize;
 {
-	register daddr_t *ap;
-	register daddr_t *aplim;
-	register struct bufarea *bp;
+	ufs_daddr_t *ap;
+	ufs_daddr_t *aplim;
+	struct bufarea *bp;
 	int i, n, (*func)(), nif;
 	quad_t sizepb;
 	char buf[BUFSIZ];
@@ -139,7 +139,7 @@ iblock(idesc, ilevel, isize)
  * Return 0 if in range, 1 if out of range.
  */
 chkrange(blk, cnt)
-	daddr_t blk;
+	ufs_daddr_t blk;
 	int cnt;
 {
 	register int c;
@@ -178,7 +178,7 @@ struct dinode *
 ginode(inumber)
 	ino_t inumber;
 {
-	daddr_t iblk;
+	ufs_daddr_t iblk;
 
 	if (inumber < ROOTINO || inumber > maxino)
 		errexit("bad inode number %d to ginode\n", inumber);
@@ -206,7 +206,7 @@ getnextinode(inumber)
 	ino_t inumber;
 {
 	long size;
-	daddr_t dblk;
+	ufs_daddr_t dblk;
 	static struct dinode *dp;
 
 	if (inumber != nextino++ || inumber > maxino)
@@ -279,7 +279,7 @@ cacheino(dp, inumber)
 	if (blks > NDADDR)
 		blks = NDADDR + NIADDR;
 	inp = (struct inoinfo *)
-		malloc(sizeof(*inp) + (blks - 1) * sizeof(daddr_t));
+		malloc(sizeof(*inp) + (blks - 1) * sizeof(ufs_daddr_t));
 	if (inp == NULL)
 		return;
 	inpp = &inphead[inumber % numdirs];
@@ -292,7 +292,7 @@ cacheino(dp, inumber)
 	inp->i_dotdot = (ino_t)0;
 	inp->i_number = inumber;
 	inp->i_isize = dp->di_size;
-	inp->i_numblks = blks * sizeof(daddr_t);
+	inp->i_numblks = blks * sizeof(ufs_daddr_t);
 	bcopy((char *)&dp->di_db[0], (char *)&inp->i_blks[0],
 	    (size_t)inp->i_numblks);
 	if (inplast == listmax) {
@@ -416,14 +416,14 @@ pinode(ino)
 	if (preen)
 		printf("%s: ", cdevname);
 	printf("SIZE=%qu ", dp->di_size);
-	p = ctime(&dp->di_mtime.ts_sec);
+	p = ctime(&dp->di_mtime);
 	printf("MTIME=%12.12s %4.4s ", &p[4], &p[20]);
 }
 
 blkerror(ino, type, blk)
 	ino_t ino;
 	char *type;
-	daddr_t blk;
+	ufs_daddr_t blk;
 {
 
 	pfatal("%ld %s I=%lu", blk, type, ino);
@@ -486,7 +486,7 @@ allocino(request, type)
 		return (0);
 	}
 	dp->di_mode = type;
-	(void)time(&dp->di_atime.ts_sec);
+	(void)time(&dp->di_atime);
 	dp->di_mtime = dp->di_ctime = dp->di_atime;
 	dp->di_size = sblock.fs_fsize;
 	dp->di_blocks = btodb(sblock.fs_fsize);
