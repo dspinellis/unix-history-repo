@@ -280,14 +280,12 @@ BOOLEAN		mycrib;
 
 	prcrib(mycrib, TRUE);
 	prompt = (quiet ? "Discard --> " : "Discard a card --> ");
-	msg(prompt);
 	cdiscard(mycrib);			/* puts best discard at end */
 	crd = phand[infrom(phand, FULLHAND, prompt)];
 	remove(crd, phand, FULLHAND);
 	prhand(phand, FULLHAND, Playwin);
 	crib[0] = crd;
 /* next four lines same as last four except for cdiscard() */
-	msg(prompt);
 	crd = phand[infrom(phand, FULLHAND - 1, prompt)];
 	remove(crd, phand, FULLHAND - 1);
 	prhand(phand, FULLHAND, Playwin);
@@ -462,7 +460,6 @@ BOOLEAN		mycrib;
 		    }
 		    else
 			for (;;) {
-			    msg("Your play: ");
 			    prhand(ph, pnum, Playwin);
 			    crd = ph[infrom(ph, pnum, "Your play: ")];
 			    if (sum + VAL(crd.rank) <= 31)

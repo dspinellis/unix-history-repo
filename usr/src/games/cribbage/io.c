@@ -144,6 +144,7 @@ char		*prompt;
 	    exit(74);
 	}
 	for (;;) {
+	    msg(prompt);
 	    if (incard(&crd)) {			/* if card is full card */
 		if (!isone(crd, hand, n))
 		    msg("That's not in your hand");
@@ -178,7 +179,6 @@ char		*prompt;
 		}
 		else
 		    msg("Sorry, I missed that");
-	    msg(prompt);
 	}
 	/* NOTREACHED */
 }
