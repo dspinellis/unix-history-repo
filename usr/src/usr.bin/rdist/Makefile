@@ -1,4 +1,4 @@
-#	Makefile	4.5	83/10/28
+#	Makefile	4.6	83/11/30
 
 DESTDIR=
 SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c
@@ -14,7 +14,7 @@ ${OBJS}:  defs.h
 clean:
 	rm -f *.o gram.c errs
 
-install:
+install: rdist
 	install -s -m 4751 rdist ${DESTDIR}/usr/local/rdist
 
 lint:	docmd.c expand.c gram.c lookup.c main.c server.c
