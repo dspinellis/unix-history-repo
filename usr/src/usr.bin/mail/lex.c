@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.5 %G%";
+static char *SccsId = "@(#)lex.c	2.6 %G%";
 
 char	*prompt = "& ";
 
@@ -85,7 +85,6 @@ setfile(name, isedit)
 	setmsize(msgCount);
 	fclose(ibuf);
 	relsesigs();
-	shudann = 1;
 	sawcom = 0;
 	return(0);
 }
@@ -99,43 +98,21 @@ int	*msgvec;
 
 commands()
 {
-	int eofloop, shudprompt, firstsw, stop();
+	int eofloop, shudprompt, stop();
 	register int n;
 	char linebuf[LINESIZE];
 	int hangup(), contin();
 
 	sigset(SIGCONT, SIG_DFL);
-	if (rcvmode) {
+	if (rcvmode && !sourcing) {
 		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
 			sigset(SIGINT, stop);
 		if (sigset(SIGHUP, SIG_IGN) != SIG_IGN)
 			sigset(SIGHUP, hangup);
 	}
-	input = stdin;
-	shudprompt = 1;
-	if (!intty)
-		shudprompt = 0;
-	firstsw = 1;
+	shudprompt = intty && !sourcing;
 	for (;;) {
 		setexit();
-		if (firstsw > 0) {
-			firstsw = 0;
-			source1(mailrc);
-			if (!nosrc)
-				source1(MASTER);
-		}
-
-		/*
-		 * How's this for obscure:  after we
-		 * finish sourcing for the first time,
-		 * go off and print the headers!
-		 */
-
-		if (shudann && !sourcing) {
-			shudann = 0;
-			if (rcvmode)
-				announce(edit);
-		}
 
 		/*
 		 * Print the prompt, if needed.  Clear out
@@ -146,7 +123,7 @@ commands()
 			return;
 		eofloop = 0;
 top:
-		if (shudprompt && !sourcing) {
+		if (shudprompt) {
 			sigset(SIGCONT, contin);
 			printf(prompt);
 		}
@@ -163,6 +140,8 @@ top:
 			if (readline(input, &linebuf[n]) <= 0) {
 				if (n != 0)
 					break;
+				if (loading)
+					return;
 				if (sourcing) {
 					unstack();
 					goto more;
@@ -173,9 +152,8 @@ top:
 						goto top;
 					}
 				}
-				if (!edit)
-					return;
-				edstop();
+				if (edit)
+					edstop();
 				return;
 			}
 			if ((n = strlen(linebuf)) == 0)
@@ -248,7 +226,9 @@ execute(linebuf, contxt)
 		return(0);
 	com = lex(word);
 	if (com == NONE) {
-		printf("What?\n");
+		printf("Unknown command: \"%s\"\n", word);
+		if (loading)
+			return(1);
 		if (sourcing)
 			unstack();
 		return(0);
@@ -270,6 +250,8 @@ execute(linebuf, contxt)
 	 */
 
 	if (com->c_func == edstop && sourcing) {
+		if (loading)
+			return(1);
 		unstack();
 		return(0);
 	}
@@ -288,6 +270,8 @@ execute(linebuf, contxt)
 	if (!rcvmode && (com->c_argtype & M) == 0) {
 		printf("May not execute \"%s\" while sending\n",
 		    com->c_name);
+		if (loading)
+			return(1);
 		if (sourcing)
 			unstack();
 		return(0);
@@ -295,12 +279,16 @@ execute(linebuf, contxt)
 	if (sourcing && com->c_argtype & I) {
 		printf("May not execute \"%s\" while sourcing\n",
 		    com->c_name);
+		if (loading)
+			return(1);
 		unstack();
 		return(0);
 	}
 	if (readonly && com->c_argtype & W) {
 		printf("May not execute \"%s\" -- message file is read only\n",
 		   com->c_name);
+		if (loading)
+			return(1);
 		if (sourcing)
 			unstack();
 		return(0);
@@ -316,6 +304,10 @@ execute(linebuf, contxt)
 		 * A message list defaulting to nearest forward
 		 * legal message.
 		 */
+		if (msgvec == 0) {
+			printf("Illegal use of \"message list\"\n");
+			return(-1);
+		}
 		if ((c = getmsglist(cp, msgvec, com->c_msgflag)) < 0)
 			break;
 		if (c  == 0) {
@@ -335,6 +327,10 @@ execute(linebuf, contxt)
 		 * A message list with no defaults, but no error
 		 * if none exist.
 		 */
+		if (msgvec == 0) {
+			printf("Illegal use of \"message list\"\n");
+			return(-1);
+		}
 		if (getmsglist(cp, msgvec, com->c_msgflag) < 0)
 			break;
 		e = (*com->c_func)(msgvec);
@@ -386,6 +382,8 @@ execute(linebuf, contxt)
 	 * error.
 	 */
 
+	if (e && loading)
+		return(1);
 	if (e && sourcing)
 		unstack();
 	if (com->c_func == edstop)
@@ -601,4 +599,25 @@ pversion(e)
 {
 	printf("Version %s\n", version);
 	return(0);
+}
+
+/*
+ * Load a file of user definitions.
+ */
+load(name)
+	char *name;
+{
+	register FILE *in, *oldin;
+
+	if ((in = fopen(name, "r")) == NULL)
+		return;
+	oldin = input;
+	input = in;
+	loading = 1;
+	sourcing = 1;
+	commands();
+	loading = 0;
+	sourcing = 0;
+	input = oldin;
+	fclose(in);
 }
