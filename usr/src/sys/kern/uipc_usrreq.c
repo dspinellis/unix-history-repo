@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.15 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -318,7 +318,7 @@ unp_bind(unp, nam)
 	int error;
 
 	ndp->ni_dirp = soun->sun_path;
-	if (nam->m_len == MLEN)
+	if (unp->unp_inode != NULL || nam->m_len == MLEN)
 		return (EINVAL);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
