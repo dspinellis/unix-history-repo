@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.12 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,14 +94,13 @@ cd9660_mountroot()
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	mp->mnt_vnodecovered = NULLVP;
 	imp = VFSTOISOFS(mp);
-	bzero(imp->im_fsmnt, sizeof(imp->im_fsmnt));
-	imp->im_fsmnt[0] = '/';
-	bcopy((caddr_t)imp->im_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
+	(void) copystr("/", mp->mnt_stat.f_mntonname, MNAMELEN - 1,
+	    &size);
+	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
 	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) cd9660_statfs(mp, &mp->mnt_stat, p);
+	(void)cd9660_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	return (0);
 }
@@ -169,10 +168,8 @@ cd9660_mount(mp, path, data, ndp, p)
 		return error;
 	}
 	imp = VFSTOISOFS(mp);
-	(void) copyinstr(path, imp->im_fsmnt, sizeof(imp->im_fsmnt)-1, &size);
-	bzero(imp->im_fsmnt + size, sizeof(imp->im_fsmnt) - size);
-	bcopy((caddr_t)imp->im_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
+	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
+	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
 	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
@@ -461,10 +458,8 @@ cd9660_statfs(mp, sbp, p)
 	sbp->f_files =  0; /* total files */
 	sbp->f_ffree = 0; /* free file nodes */
 	if (sbp != &mp->mnt_stat) {
-		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
-			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
-		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
-			(caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
+		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
+		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
 	}
 	/* Use the first spare for flags: */
 	sbp->f_spare[0] = isomp->im_flags;
