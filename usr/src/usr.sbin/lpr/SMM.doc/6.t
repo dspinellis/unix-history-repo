@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.1 (Berkeley) %G%
+.\"	@(#)6.t	6.2 (Berkeley) %G%
 .\"
 .NH 1
 Line printer Administration
@@ -20,7 +20,7 @@ The command format and remaining commands are described in
 terminates an active spooling daemon on the local host immediately and
 then disables printing (preventing new daemons from being started by
 .IR lpr ).
-This is normally used to forciblly restart a hung line printer daemon
+This is normally used to forcibly restart a hung line printer daemon
 (i.e., \fIlpq\fP reports that there is a daemon present but nothing is
 happening).  It does not remove any jobs from the queue
 (use the \fIlprm\fP command instead).
@@ -55,7 +55,7 @@ reports that there is no daemon present.
 is used to halt a spooling daemon after the current job completes;
 this also disables printing.  This is a clean way to shutdown a
 printer in order to perform
-maintenence, etc.  Note that users can still enter jobs in a
+maintenance, etc.  Note that users can still enter jobs in a
 spool queue while a printer is
 .IR stopped .
 .LP
