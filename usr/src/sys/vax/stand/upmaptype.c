@@ -1,4 +1,4 @@
-/*	upmaptype.c	4.2	83/02/18	*/
+/*	upmaptype.c	4.3	83/02/21	*/
 
 /*
  * UNIBUS peripheral standalone
@@ -18,15 +18,13 @@
 #include "saio.h"
 #include "savax.h"
 
-short	up9300_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
-short	up9766_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
-short	fj_off[] = { 0, 50, 0, -1, -1, -1, -1, 155 };
-/* this is called upam instead of am because hp.c has a similar array */
+short	up9300_off[] = { 0, 27, 0, -1, -1, -1, 562, 82 };
+short	fj_off[] = { 0, 50, 0, -1, -1, -1, 155, -1 };
 short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 
 struct st upst[] = {
 	32,	19,	32*19,	815,	up9300_off,	/* 9300 */
-	32,	19,	32*19,	823,	up9766_off,	/* 9766 */
+	32,	19,	32*19,	823,	up9300_off,	/* 9766 */
 	32,	10,	32*10,	823,	fj_off,		/* Fuji 160 */
 	32,	16,	32*16,	1024,	upam_off,	/* Capricorn */
 	0,	0,	0,	0,	0,
