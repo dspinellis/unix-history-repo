@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)locate.c	5.3 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+
+#include <fnmatch.h>
 #include <unistd.h>
 #include <stdio.h>
 #include "locate.h"

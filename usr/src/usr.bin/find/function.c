@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -17,10 +17,12 @@ static char sccsid[] = "@(#)function.c	5.21 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
+
 #include <errno.h>
 #include <grp.h>
 #include <pwd.h>
 #include <fts.h>
+#include <fnmatch.h>
 #include <unistd.h>
 #include <tzfile.h>
 #include <stdio.h>
