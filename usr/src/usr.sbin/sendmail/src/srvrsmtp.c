@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.59 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.60 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.59 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.60 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -580,7 +580,6 @@ smtp(e)
 			while (vrfyqueue != NULL)
 			{
 				register ADDRESS *a = vrfyqueue->q_next;
-				char *code;
 
 				while (a != NULL && bitset(QDONTSEND|QBADADDR, a->q_flags))
 					a = a->q_next;

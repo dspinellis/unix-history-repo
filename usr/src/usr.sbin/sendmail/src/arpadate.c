@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -144,49 +144,4 @@ arpadate(ud)
 	*q = '\0';
 
 	return (b);
-}
-
-/*
-**  NEXTATOM -- Return pointer to next atom in header
-**		(skip whitespace and comments)
-**
-**	Parameters:
-**		s -- pointer to header string
-**
-**	Returns:
-**		pointer advanced to next non-comment header atom
-**
-**	Side Effects:
-**		none
-*/
-
-static char *
-nextatom(s)
-	char *s;
-{
-	char *p;
-
-	for (p = s;
-	     *p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '(');
-	     p++)
-	{
-		if (*p == '(')
-		{
-			int nested = 0;
-
-			/* ignore comments */
-			p++;
-			for (; *p; p++)
-			{
-				if (*p == '(')
-					nested++;
-				else if (*p == ')')
-					if (!nested)
-						break;
-					else
-						nested--;
-			}
-		}
-	}
-	return (p);
 }

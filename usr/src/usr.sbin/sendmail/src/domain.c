@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.21 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.22 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.21 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.22 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -337,7 +337,7 @@ getcanonname(host, hbsize)
 	register int n; 
 	HEADER *hp;
 	querybuf answer;
-	int first, ancount, qdcount;
+	int ancount, qdcount;
 	int ret;
 	char **domain;
 	int type;
