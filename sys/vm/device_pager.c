@@ -91,7 +91,6 @@ dev_pager_alloc(handle, size, prot)
 	register dev_pager_t devp;
 	register int npages, off;
 	extern int nullop(), enodev();
-	struct vnode *vp;
 
 
 #ifdef DEBUG
@@ -113,8 +112,7 @@ dev_pager_alloc(handle, size, prot)
 		 * Validation.  Make sure this device can be mapped
 		 * and that range to map is acceptible to device.
 		 */
-		vp = (struct vnode *)handle;
-		dev = vp->v_rdev;
+		dev = ((struct vnode *) handle)->v_rdev;
 		mapfunc = cdevsw[major(dev)].d_mmap;
 		if (!mapfunc || mapfunc == enodev || mapfunc == nullop)
 			return(NULL);
