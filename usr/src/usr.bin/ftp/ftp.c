@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -127,19 +127,15 @@ hookup(host, port)
 	(void) fflush(cout);
 	*msg = IAC;
 	*(msg+1) = DM;
-	if (send(s,msg,2,MSG_OOB) != 2) {
+	if (send(s,msg,2,MSG_OOB) != 2)
 		perror("sync");
-	}
 	oldverbose = verbose;
-	if (!debug) {
+	if (!debug)
 		verbose = -1;
-	}
-	if (command("NOOP") == COMPLETE) {
+	if (command("NOOP") == COMPLETE)
 		telflag = 1;
-	}
-	else {
+	else
 		telflag = 0;
-	}
 	verbose = oldverbose;
 	return (hostname);
 bad:
@@ -166,25 +162,21 @@ login(host)
 		if (myname == NULL) {
 			struct passwd *pp = getpwuid(getuid());
 
-			if (pp != NULL) {
+			if (pp != NULL)
 				myname = pp->pw_name;
-			}
 		}
 		printf("Name (%s:%s): ", host, myname);
 		(void) fgets(tmp, sizeof(tmp) - 1, stdin);
 		tmp[strlen(tmp) - 1] = '\0';
-		if (*tmp == '\0') {
+		if (*tmp == '\0')
 			user = myname;
-		}
-		else {
+		else
 			user = tmp;
-		}
 	}
 	n = command("USER %s", user);
 	if (n == CONTINUE) {
-		if (pass == NULL) {
+		if (pass == NULL)
 			pass = getpass("Password:");
-		}
 		n = command("PASS %s", pass);
 	}
 	if (n == CONTINUE) {
@@ -196,12 +188,10 @@ login(host)
 		fprintf(stderr, "Login failed.\n");
 		return (0);
 	}
-	if (!aflag && acct != NULL) {
+	if (!aflag && acct != NULL)
 		(void) command("ACCT %s", acct);
-	}
-	if (proxy) {
+	if (proxy)
 		return(1);
-	}
 	for (n = 0; n < macnum; ++n) {
 		if (!strcmp("init", macros[n].mac_name)) {
 			strcpy(line, "$init");
@@ -220,9 +210,8 @@ cmdabort()
 	printf("\n");
 	(void) fflush(stdout);
 	abrtflag++;
-	if (ptflag) {
+	if (ptflag)
 		longjmp(ptabort,1);
-	}
 }
 
 /*VARARGS 1*/
@@ -249,9 +238,8 @@ command(fmt, args)
 	(void) fflush(cout);
 	cpend = 1;
 	r = getreply(!strcmp(fmt, "QUIT"));
-	if (abrtflag && oldintr != SIG_IGN) {
+	if (abrtflag && oldintr != SIG_IGN)
 		(*oldintr)();
-	}
 	(void) signal(SIGINT, oldintr);
 	return(r);
 }
@@ -288,33 +276,28 @@ getreply(expecteof)
 			}
 			if (c != '\r' && (verbose > 0 ||
 			    (verbose > -1 && n == '5' && dig > 4))) {
-				if ( proxflag && 
-				   (dig == 1 || dig == 5 && verbose == 0)) {
+				if (proxflag &&
+				   (dig == 1 || dig == 5 && verbose == 0))
 					printf("%s:",hostname);
-				}
 				putchar(c);
 			}
 			if (dig < 4 && isdigit(c))
 				code = code * 10 + (c - '0');
-			if (!pflag && code == 227) {
+			if (!pflag && code == 227)
 				pflag = 1;
-			}
-			if (dig > 4 && pflag == 1 && isdigit(c)) {
+			if (dig > 4 && pflag == 1 && isdigit(c))
 				pflag = 2;
-			}
 			if (pflag == 2) {
-				if (c != '\r' && c != ')') {
+				if (c != '\r' && c != ')')
 					*pt++ = c;
-				}
 				else {
 					*pt = '\0';
 					pflag = 3;
 				}
 			}
 			if (dig == 4 && c == '-') {
-				if (continuation) {
+				if (continuation)
 					code = 0;
-				}
 				continuation++;
 			}
 			if (n == 0)
@@ -329,16 +312,13 @@ getreply(expecteof)
 				originalcode = code;
 			continue;
 		}
-		if (n != '1') {
+		if (n != '1')
 			cpend = 0;
-		}
 		(void) signal(SIGINT,oldintr);
-		if (code == 421 || originalcode == 421) {
+		if (code == 421 || originalcode == 421)
 			lostpeer();
-		}
-		if (abrtflag && oldintr != cmdabort && oldintr != SIG_IGN) {
+		if (abrtflag && oldintr != cmdabort && oldintr != SIG_IGN)
 			(*oldintr)();
-		}
 		return (n - '0');
 	}
 }
@@ -351,9 +331,8 @@ empty(mask, sec)
 
 	t.tv_sec = (long) sec;
 	t.tv_usec = 0;
-	if (select(20, &mask, 0, 0, &t) < 0) {
+	if (select(20, &mask, 0, 0, &t) < 0)
 		return(-1);
-	}
 	return (mask);
 }
 
@@ -396,12 +375,10 @@ sendrequest(cmd, local, remote)
 			(void) close(data);
 			data = -1;
 		}
-		if (oldintr) {
+		if (oldintr)
 			(void) signal(SIGINT,oldintr);
-		}
-		if (oldintp) {
+		if (oldintp)
 			(void) signal(SIGPIPE,oldintp);
-		}
 		code = -1;
 		return;
 	}
@@ -438,35 +415,30 @@ sendrequest(cmd, local, remote)
 	}
 	if (initconn()) {
 		(void) signal(SIGINT, oldintr);
-		if (oldintp) {
+		if (oldintp)
 			(void) signal(SIGPIPE, oldintp);
-		}
 		code = -1;
 		return;
 	}
-	if (setjmp(sendabort)) {
+	if (setjmp(sendabort))
 		goto abort;
-	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
-			if (oldintp) {
+			if (oldintp)
 				(void) signal(SIGPIPE, oldintp);
-			}
 			return;
 		}
 	} else
 		if (command("%s", cmd) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
-			if (oldintp) {
+			if (oldintp)
 				(void) signal(SIGPIPE, oldintp);
-			}
 			return;
 		}
 	dout = dataconn("w");
-	if (dout == NULL) {
+	if (dout == NULL)
 		goto abort;
-	}
 	gettimeofday(&start, (struct timezone *)0);
 	switch (type) {
 
@@ -536,9 +508,8 @@ sendrequest(cmd, local, remote)
 abort:
 	gettimeofday(&stop, (struct timezone *)0);
 	(void) signal(SIGINT, oldintr);
-	if (oldintp) {
+	if (oldintp)
 		(void) signal(SIGPIPE, oldintp);
-	}
 	if (!cpend) {
 		code = -1;
 		return;
@@ -547,9 +518,8 @@ abort:
 		(void) close(data);
 		data = -1;
 	}
-	if (dout) {
+	if (dout)
 		(void) fclose(dout);
-	}
 	(void) getreply(0);
 	code = -1;
 	if (closefunc != NULL && fin != NULL)
@@ -597,9 +567,8 @@ recvrequest(cmd, local, remote, mode)
 			(void) close(data);
 			data = -1;
 		}
-		if (oldintr) {
+		if (oldintr)
 			(void) signal(SIGINT, oldintr);
-		}
 		code = -1;
 		return;
 	}
@@ -650,15 +619,13 @@ recvrequest(cmd, local, remote, mode)
 		code = -1;
 		return;
 	}
-	if (setjmp(recvabort)) {
+	if (setjmp(recvabort))
 		goto abort;
-	}
 	if (strcmp(cmd, "RETR") && type != TYPE_A) {
 		oldtype = type;
 		oldverbose = verbose;
-		if (!debug) {
+		if (!debug)
 			verbose = 0;
-		}
 		setascii();
 		verbose = oldverbose;
 	}
@@ -666,9 +633,8 @@ recvrequest(cmd, local, remote, mode)
 		if (command("%s %s", cmd, remote) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
 			if (oldtype) {
-				if (!debug) {
+				if (!debug)
 					verbose = 0;
-				}
 				switch (oldtype) {
 					case TYPE_I:
 						setbinary();
@@ -688,9 +654,8 @@ recvrequest(cmd, local, remote, mode)
 		if (command("%s", cmd) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
 			if (oldtype) {
-				if (!debug) {
+				if (!debug)
 					verbose = 0;
-				}
 				switch (oldtype) {
 					case TYPE_I:
 						setbinary();
@@ -710,9 +675,8 @@ recvrequest(cmd, local, remote, mode)
 	din = dataconn("r");
 	if (din == NULL)
 		goto abort;
-	if (strcmp(local, "-") == 0) {
+	if (strcmp(local, "-") == 0)
 		fout = stdout;
-	}
 	else if (*local == '|') {
 		oldintp = signal(SIGPIPE, SIG_IGN);
 		fout = popen(local + 1, "w");
@@ -789,22 +753,19 @@ recvrequest(cmd, local, remote, mode)
 			perror (local);
 		break;
 	}
-	if (closefunc != NULL) {
+	if (closefunc != NULL)
 		(*closefunc)(fout);
-	}
 	signal(SIGINT, oldintr);
-	if (oldintp) {
+	if (oldintp)
 		(void) signal(SIGPIPE, oldintp);
-	}
 	gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
 	(void) getreply(0);
 	if (bytes > 0 && verbose)
 		ptransfer("received", bytes, &start, &stop, local, remote);
 	if (oldtype) {
-		if (!debug) {
+		if (!debug)
 			verbose = 0;
-		}
 		switch (oldtype) {
 			case TYPE_I:
 				setbinary();
@@ -825,14 +786,12 @@ abort:
 /* recommended IP,SYNC sequence                                      */
 
 	gettimeofday(&stop, (struct timezone *)0);
-	if (oldintp) {
+	if (oldintp)
 		(void) signal(SIGPIPE, oldintr);
-	}
 	(void) signal(SIGINT,SIG_IGN);
 	if (oldtype) {
-		if (!debug) {
+		if (!debug)
 			verbose = 0;
-		}
 		switch (oldtype) {
 			case TYPE_I:
 				setbinary();
@@ -858,9 +817,8 @@ abort:
 		(void) fflush(cout); 
 		*msg = IAC;
 		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2) {
+		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 			perror("abort");
-		}
 	}
 	fprintf(cout,"ABOR\r\n");
 	(void) fflush(cout);
@@ -870,9 +828,9 @@ abort:
 		code = -1;
 		lostpeer();
 	}
-	if (din && mask & (1 << fileno(din))) {
-		while ((c = read(fileno(din), buf, sizeof (buf))) > 0);
-	}
+	if (din && mask & (1 << fileno(din)))
+		while ((c = read(fileno(din), buf, sizeof (buf))) > 0)
+			;
 	if ((c = getreply(0)) == ERROR) { /* needed for nic style abort */
 		if (data >= 0) {
 			close(data);
@@ -886,12 +844,10 @@ abort:
 		(void) close(data);
 		data = -1;
 	}
-	if (closefunc != NULL && fout != NULL) {
+	if (closefunc != NULL && fout != NULL)
 		(*closefunc)(fout);
-	}
-	if (din) {
+	if (din)
 		(void) fclose(din);
-	}
 	if (bytes > 0 && verbose)
 		ptransfer("received", bytes, &start, &stop, local, remote);
 	(void) signal(SIGINT,oldintr);
@@ -919,9 +875,8 @@ noport:
 	data = socket(AF_INET, SOCK_STREAM, 0);
 	if (data < 0) {
 		perror("ftp: socket");
-		if (tmpno) {
+		if (tmpno)
 			sendport = 1;
-		}
 		return (1);
 	}
 	if (!sendport)
@@ -941,10 +896,8 @@ noport:
 		perror("ftp: getsockname");
 		goto bad;
 	}
-	if (listen(data, 1) < 0) {
+	if (listen(data, 1) < 0)
 		perror("ftp: listen");
-		
-	}
 	if (sendport) {
 		a = (char *)&data_addr.sin_addr;
 		p = (char *)&data_addr.sin_port;
@@ -960,15 +913,13 @@ noport:
 		}
 		return (result != COMPLETE);
 	}
-	if (tmpno) {
+	if (tmpno)
 		sendport = 1;
-	}
 	return (0);
 bad:
 	(void) close(data), data = -1;
-	if (tmpno) {
+	if (tmpno)
 		sendport = 1;
-	}
 	return (1);
 }
 
@@ -1002,12 +953,10 @@ ptransfer(direction, bytes, t0, t1, local, remote)
 	s = td.tv_sec + (td.tv_usec / 1000000.);
 #define	nz(x)	((x) == 0 ? 1 : (x))
 	bs = bytes / nz(s);
-	if (local && *local != '-') {
+	if (local && *local != '-')
 		printf("local: %s ", local);
-	}
-	if (remote) {
+	if (remote)
 		printf("remote: %s\n", remote);
-	}
 	printf("%ld bytes %s in %.2g seconds (%.2g Kbytes/s)\n",
 		bytes, direction, s, bs / 1024.);
 }
@@ -1069,17 +1018,15 @@ pswitch(flag)
 	abrtflag = 0;
 	oldintr = signal(SIGINT, psabort);
 	if (flag) {
-		if (proxy) {
+		if (proxy)
 			return;
-		}
 		ip = &tmpstruct;
 		op = &proxstruct;
 		proxy++;
 	}
 	else {
-		if (!proxy) {
+		if (!proxy)
 			return;
-		}
 		ip = &proxstruct;
 		op = &tmpstruct;
 		proxy = 0;
@@ -1101,9 +1048,8 @@ pswitch(flag)
 	telflag = op->tflag;
 	ip->tpe = type;
 	type = op->tpe;
-	if (!type) {
+	if (!type)
 		type = 1;
-	}
 	ip->cpnd = cpend;
 	cpend = op->cpnd;
 	ip->sunqe = sunique;
@@ -1132,7 +1078,7 @@ pswitch(flag)
 	if (abrtflag) {
 		abrtflag = 0;
 		(*oldintr)();
-		}
+	}
 }
 
 jmp_buf ptabort;
@@ -1156,12 +1102,10 @@ proxtrans(cmd, local, remote)
 	char *cmd2;
 	long mask;
 
-	if (strcmp(cmd, "RETR")) {
+	if (strcmp(cmd, "RETR"))
 		cmd2 = "RETR";
-	}
-	else {
+	else
 		cmd2 = runique ? "STOU" : "STOR";
-	}
 	if (command("PASV") != COMPLETE) {
 		printf("proxy server does not support third part transfers.\n");
 		return;
@@ -1211,9 +1155,8 @@ proxtrans(cmd, local, remote)
 		pswitch(1);
 		return;
 	}
-	if (setjmp(ptabort)) {
+	if (setjmp(ptabort))
 		goto abort;
-	}
 	oldintr = signal(SIGINT, abortpt);
 	if (command("%s %s", cmd, remote) != PRELIM) {
 		(void) signal(SIGINT, oldintr);
@@ -1239,9 +1182,8 @@ proxtrans(cmd, local, remote)
 	sleep(2);
 	pswitch(1);
 	secndflag++;
-	if (command("%s %s", cmd2, local) != PRELIM) {
+	if (command("%s %s", cmd2, local) != PRELIM)
 		goto abort;
-	}
 	ptflag++;
 	(void) getreply(0);
 	pswitch(0);
@@ -1270,12 +1212,10 @@ proxtrans(cmd, local, remote)
 abort:
 	(void) signal(SIGINT, SIG_IGN);
 	ptflag = 0;
-	if (strcmp(cmd, "RETR") && !proxy) {
+	if (strcmp(cmd, "RETR") && !proxy)
 		pswitch(1);
-	}
-	else if (!strcmp(cmd, "RETR") && proxy) {
+	else if (!strcmp(cmd, "RETR") && proxy)
 		pswitch(0);
-	}
 	if (!cpend && !secndflag) {  /* only here if cmd = "STOR" (proxy=1) */
 		if (command("%s %s", cmd2, local) != PRELIM) {
 			pswitch(0);
@@ -1302,9 +1242,8 @@ abort:
 				(void) fflush(cout); 
 				*msg = IAC;
 				*(msg+1) = DM;
-				if (send(fileno(cout),msg,2,MSG_OOB) != 2) {
+				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 					perror("abort");
-				}
 			}
 			if (cpend) {
 				fprintf(cout,"ABOR\r\n");
@@ -1312,9 +1251,8 @@ abort:
 				mask = 1 << fileno(cin);
 				if ((mask = empty(mask,10)) < 0) {
 					perror("abort");
-					if (ptabflg) {
+					if (ptabflg)
 						code = -1;
-					}
 					lostpeer();
 				}
 				(void) getreply(0);
@@ -1322,9 +1260,8 @@ abort:
 			}
 		}
 		pswitch(1);
-		if (ptabflg) {
+		if (ptabflg)
 			code = -1;
-		}
 		(void) signal(SIGINT, oldintr);
 		return;
 	}
@@ -1335,9 +1272,8 @@ abort:
 		(void) fflush(cout); 
 		*msg = IAC;
 		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2) {
+		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 			perror("abort");
-		}
 	}
 	if (cpend) {
 		fprintf(cout,"ABOR\r\n");
@@ -1345,9 +1281,8 @@ abort:
 		mask = 1 << fileno(cin);
 		if ((mask = empty(mask,10)) < 0) {
 			perror("abort");
-			if (ptabflg) {
+			if (ptabflg)
 				code = -1;
-			}
 			lostpeer();
 		}
 		(void) getreply(0);
@@ -1380,9 +1315,8 @@ abort:
 				(void) fflush(cout); 
 				*msg = IAC;
 				*(msg+1) = DM;
-				if (send(fileno(cout),msg,2,MSG_OOB) != 2) {
+				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 					perror("abort");
-				}
 			}
 			if (cpend) {
 				fprintf(cout,"ABOR\r\n");
@@ -1390,18 +1324,16 @@ abort:
 				mask = 1 << fileno(cin);
 				if ((mask = empty(mask,10)) < 0) {
 					perror("abort");
-					if (ptabflg) {
+					if (ptabflg)
 						code = -1;
-					}
 					lostpeer();
 				}
 				(void) getreply(0);
 				(void) getreply(0);
 			}
 			pswitch(1);
-			if (ptabflg) {
+			if (ptabflg)
 				code = -1;
-			}
 			(void) signal(SIGINT, oldintr);
 			return;
 		}
@@ -1413,9 +1345,8 @@ abort:
 		(void) fflush(cout); 
 		*msg = IAC;
 		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2) {
+		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 			perror("abort");
-		}
 	}
 	if (cpend) {
 		fprintf(cout,"ABOR\r\n");
@@ -1423,9 +1354,8 @@ abort:
 		mask = 1 << fileno(cin);
 		if ((mask = empty(mask,10)) < 0) {
 			perror("abort");
-			if (ptabflg) {
+			if (ptabflg)
 				code = -1;
-			}
 			lostpeer();
 		}
 		(void) getreply(0);
@@ -1436,17 +1366,15 @@ abort:
 		mask = 1 << fileno(cin);
 		if ((mask = empty(mask,10)) < 0) {
 			perror("abort");
-			if (ptabflg) {
+			if (ptabflg)
 				code = -1;
-			}
 			lostpeer();
 		}
 		(void) getreply(0);
 		(void) getreply(0);
 	}
-	if (proxy) {
+	if (proxy)
 		pswitch(0);
-	}
 	switch (oldtype) {
 		case 0:
 			break;
@@ -1464,9 +1392,8 @@ abort:
 			break;
 	}
 	pswitch(1);
-	if (ptabflg) {
+	if (ptabflg)
 		code = -1;
-	}
 	(void) signal(SIGINT, oldintr);
 }
 
@@ -1481,9 +1408,8 @@ reset()
 			code = -1;
 			lostpeer();
 		}
-		if (mask > 0) {
+		if (mask > 0)
 			(void) getreply(0);
-		}
 	}
 }
 
@@ -1496,13 +1422,11 @@ gunique(local)
 	int d, count=0;
 	char ext = '1';
 
-	if (cp) {
+	if (cp)
 		*cp = '\0';
-	}
 	d = access(cp ? local : ".", 2);
-	if (cp) {
+	if (cp)
 		*cp = '/';
-	}
 	if (d < 0) {
 		perror(local);
 		return((char *) 0);
@@ -1517,21 +1441,16 @@ gunique(local)
 		}
 		*cp++ = ext;
 		*cp = '\0';
-		if (ext == '9') {
+		if (ext == '9')
 			ext = '0';
-		}
-		else {
+		else
 			ext++;
-		}
-		if ((d = access(new, 0)) < 0) {
+		if ((d = access(new, 0)) < 0)
 			break;
-		}
-		if (ext != '0') {
+		if (ext != '0')
 			cp--;
-		}
-		else if (*(cp - 2) == '.') {
+		else if (*(cp - 2) == '.')
 			*(cp - 1) = '1';
-		}
 		else {
 			*(cp - 2) = *(cp - 2) + 1;
 			cp--;
