@@ -1,75 +1,62 @@
-#ifdef LIBC_SCCS
-	.asciz	"@(#)urem.s	5.2 (Berkeley) %G%"
-#endif LIBC_SCCS
-
-/*
- * urem - unsigned remainder for vax-11
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
- * arguments: dividend, divisor
- * result: remainder
- * uses r0-r2
- *
- * if 1 < divisor <= 2147483647, zero-extend the dividend
- * to 64 bits and let ediv do the work.  If the divisor is 1,
- * ediv will overflow if bit 31 of the dividend is on, so
- * just return 0.  If the divisor is 0, do the ediv also,
- * so it will generate the proper exception.  All other values
- * of the divisor have bit 31 on: in this case the remainder
- * must be the dividend if divisor > dividend, and the dividend
- * minus the divisor otherwise.  The comparison must be unsigned.
+ * %sccs.include.redist.c%
  */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	.asciz "@(#)urem.s	5.3 (Berkeley) %G%"
+#endif /* LIBC_SCCS and not lint */
+
 #include "DEFS.h"
 
-ASENTRY(urem, 0)
-	movl	4(ap),r0	/* dividend */
-	movl	8(ap),r2	/* divisor */
-	jeql	1f		/* if divisor=0, force exception */
-	cmpl	r2,$1		/* if divisor <= 1 (signed), */
-	jleq	2f		/*  no division is necessary */
-1:
-	clrl	r1		/* zero-extend the dividend */
-	ediv	r2,r0,r2,r0	/* divide.  q->r2 (discarded), r->r0 */
-	ret
-2:
-	jneq	1f		/* if divisor=1, return 0 */
-	clrl	r0		/*  (because doing the divide will overflow */
-	ret			/*  if the dividend has its high bit on) */
-1:
-	cmpl	r0,r2		/* if dividend < divisor (unsigned) */
-	jlssu	1f		/*  remainder is dividend */
-	subl2	r2,r0		/*  else remainder is dividend - divisor */
-1:
-	ret
-
 /*
- * aurem - unsigned remainder for vax-11
- *
- * arguments: *dividend, divisor
- * result: remainder in r0 and *dividend
- * uses r0-r2
+ * Unsigned modulus, PCC flavor.
+ * urem() takes an ordinary dividend/divisor pair;
+ * aurem() takes a pointer to a dividend and an ordinary divisor.
  */
-#include "DEFS.h"
 
-ASENTRY(aurem, 0)
-	movl	*4(ap),r0	/* dividend */
-	movl	8(ap),r2	/* divisor */
-	jeql	1f		/* if divisor=0, force exception */
-	cmpl	r2,$1		/* if divisor <= 1 (signed), */
-	jleq	2f		/*  no division is necessary */
-1:
-	clrl	r1		/* zero-extend the dividend */
-	ediv	r2,r0,r2,r0	/* divide.  q->r2 (discarded), r->r0 */
-	movl	r0,*4(ap)	/* save result */
+#define	DIVIDEND	4(ap)
+#define	DIVISOR		8(ap)
+
+ASENTRY(urem,0)
+	movl	DIVISOR,r2
+	jlss	Leasy		# big divisor: settle by comparison
+	movl	DIVIDEND,r0
+	jlss	Lhard		# big dividend: need extended division
+	divl3	r2,r0,r1	# small divisor and dividend: signed modulus
+	mull2	r2,r1
+	subl2	r1,r0
 	ret
-2:
-	jneq	1f		/* if divisor=1, return 0 */
-	clrl	r0		/*  (because doing the divide will overflow */
-	clrl	*4(ap)		/*  if the dividend has its high bit on) */
-	ret	
-1:
-	cmpl	r0,r2		/* if dividend < divisor (unsigned) */
-	jlssu	1f		/*  remainder is dividend */
-	subl2	r2,r0		/*  else remainder is dividend - divisor */
-1:
-	movl	r0,*4(ap)	/* save result */
+Lhard:
+	clrl	r1
+	ediv	r2,r0,r1,r0
+	ret
+Leasy:
+	subl3	r2,DIVIDEND,r0
+	jcc	Ldifference	# if divisor goes in once, return difference
+	movl	DIVIDEND,r0	# if divisor is bigger, return dividend
+Ldifference:
+	ret
+
+ASENTRY(aurem,0)
+	movl	DIVISOR,r2
+	jlss	Laeasy		# big divisor: settle by comparison
+	movl	DIVIDEND,r3
+	movl	(r3),r0
+	jlss	Lahard		# big dividend: need extended division
+	divl3	r2,r0,r1	# small divisor and dividend: signed modulus
+	mull2	r2,r1
+	subl3	r1,r0,(r3)
+	ret
+Lahard:
+	clrl	r1
+	ediv	r2,r0,r1,(r3)
+	ret
+Laeasy:
+	subl3	r2,(r3),r0
+	jcs	Ldividend	# if divisor is bigger, leave dividend alone
+	movl	r0,(r3)		# if divisor goes in once, store difference
+Ldividend:
 	ret

@@ -1,77 +1,62 @@
-#ifdef LIBC_SCCS
-	.asciz	"@(#)udiv.s	5.2 (Berkeley) %G%"
-#endif LIBC_SCCS
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	.asciz "@(#)udiv.s	5.3 (Berkeley) %G%"
+#endif /* LIBC_SCCS and not lint */
 
 /*
- * udiv - unsigned division for vax-11
- *
- * arguments: dividend, divisor.
- * result: quotient.
- * uses r0-r2
- *
- * If 1 < divisor <= 2147483647, zero-extend the dividend
- * to 64 bits and let ediv do the work.  If the divisor is 1,
- * ediv will overflow if bit 31 of the dividend is on, so
- * just return the dividend unchanged.  If the divisor is 0,
- * do the ediv also, so it will generate the proper exception.
- * All other values of the divisor have bit 31 on: in this case
- * the quotient must be 0 if divisor > dividend, and 1 otherwise,
- * provided that the comparison is made as unsigned.
+ * Unsigned division, PCC flavor.
+ * udiv() takes an ordinary dividend/divisor pair;
+ * audiv() takes a pointer to a dividend and an ordinary divisor.
  */
 
 #include "DEFS.h"
 
-ASENTRY(udiv, 0)
-	movl	4(ap),r0	/* dividend */
-	movl	8(ap),r2	/* divisor */
-	jeql	1f		/* if divisor=0, force exception */
-	cmpl	r2,$1		/* if divisor <= 1 (signed), */
-	jleq	2f		/*  no division is necessary */
-1:
-	clrl	r1		/* zero-extend the dividend */
-	ediv	r2,r0,r0,r2	/* divide.  q->r0, r->r2 (discarded) */
+#define	DIVIDEND	4(ap)
+#define	DIVISOR		8(ap)
+
+ASENTRY(udiv,0)
+	movl	DIVISOR,r2
+	jlss	Leasy		# big divisor: settle by comparison
+	movl	DIVIDEND,r0
+	jlss	Lhard		# big dividend: extended division
+	divl2	r2,r0		# small divisor and dividend: signed division
 	ret
-2:	
-	jeql	1f		/* if divisor=1, return dividend */
-	cmpl	r0,r2		/* unsigned comparison between */
-	jgequ	2f		/*  dividend and divisor */
-	clrl	r0		/* dividend < divisor, return 0 */
+Lhard:
+	clrl	r1
+	ediv	r2,r0,r0,r1
 	ret
-2:	
-	movl	$1,r0		/* dividend >= divisor, return 1 */
-1:	
+Leasy:
+	cmpl	DIVIDEND,r2
+	jgequ	Lone		# if dividend is as big or bigger, return 1
+	clrl	r0		# else return 0
+	ret
+Lone:
+	movl	$1,r0
 	ret
 
-/*
- * audiv - unsigned division for vax-11
- *
- * arguments: *dividend, divisor.
- * result: quotient in r0 and *dividend.
- * uses r0-r2
- */
-
-#include "DEFS.h"
-
-ASENTRY(audiv, 0)
-	movl	*4(ap),r0	/* dividend */
-	movl	8(ap),r2	/* divisor */
-	jeql	1f		/* if divisor=0, force exception */
-	cmpl	r2,$1		/* if divisor <= 1 (signed), */
-	jleq	2f		/*  no division is necessary */
-1:
-	clrl	r1		/* zero-extend the dividend */
-	ediv	r2,r0,r0,r2	/* divide.  q->r0, r->r2 (discarded) */
-	movl	r0,*4(ap)	/* save result */
+ASENTRY(audiv,0)
+	movl	DIVISOR,r2
+	jlss	Laeasy		# big divisor: settle by comparison
+	movl	DIVIDEND,r3
+	movl	(r3),r0
+	jlss	Lahard		# big dividend: extended division
+	divl3	r2,r0,(r3)	# small divisor and dividend: signed division
 	ret
-2:
-	jeql	1f		/* if divisor=1, return dividend */
-	cmpl	r0,r2		/* unsigned comparison between */
-	jgequ	2f		/*  dividend and divisor */
-	clrl	r0		/* dividend < divisor, return 0 */
-	clrl	*4(ap)		/* save result */
+Lahard:
+	clrl	r1
+	ediv	r2,r0,(r3),r1
 	ret
-2:
-	movl	$1,r0		/* dividend >= divisor, return 1 */
-1:
-	movl	r0,*4(ap)	/* save result */
+Laeasy:
+	cmpl	(r3),r2
+	jgequ	Laone		# if dividend is as big or bigger, store 1
+	clrl	(r3)		# else store 0
+	ret
+Laone:
+	movl	$1,(r3)
 	ret
