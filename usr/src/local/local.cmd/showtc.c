@@ -27,7 +27,7 @@ static char *sccsid="@(#)showtc.c	1.9	(Berkeley) %G%";
 #include <stdio.h>
 #include <sys/file.h>
 #include <ctype.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 
 #define NO		0
@@ -35,6 +35,10 @@ static char *sccsid="@(#)showtc.c	1.9	(Berkeley) %G%";
 #define CNULL		'\0'
 #define NOENTRIES	1024
 #define USAGE		"usage: %s [-Sxdngb] [-f termcapfile] [entry] ...\n"
+
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	1024
+#endif
 
 struct TcName {
 	char	name_buf[124];
@@ -207,6 +211,7 @@ int		bflag = NO;
 int		Uflag = NO;
 int		tc_loopc;		/* loop counter */
 char		*tcfile;		/* termcap database pathname */
+char		cwd[MAXPATHLEN];	/* current working directory */
 char		tcbuf[2048];		/* buffer for termcap description */
 char		*lastchar();
 int		name_cmp();
@@ -314,6 +319,23 @@ main(argc, argv, envp)
 	/*
 	 * insert the specified TERMCAP file into the environment
 	 */
+	if (*tcfile != '/') {
+		char	*getwd();
+
+		if (getwd(cwd) == NULL) {
+			fprintf(stderr, "showtc: %s\n", cwd);
+			exit(1);
+		} else if (strlen(cwd) + strlen(tcfile) + 2 > sizeof cwd) {
+			fprintf(stderr, "showtc: %s\n",
+				"Current working directory name too long");
+			exit(1);
+		} else {
+			if (cwd[strlen(cwd) - 1] != '/')
+				strcat(cwd, "/");
+			strcat(cwd, tcfile);
+			tcfile = cwd;
+		}
+	}
 	(void) sprintf(envbuf, "TERMCAP=%s", tcfile);
 	while (*envp)
 	{
@@ -731,7 +753,7 @@ getdesc(key)
 {
 	register int	i;
 
-	for (i = 0; i <= NOCAPS; i++)
+	for (i = 0; i < NOCAPS; i++)
 		if (strncmp(key, capList[i].cap, 2) == 0)
 			return (capList[i].desc);
 	return("");
@@ -742,7 +764,7 @@ unknowncap(key)
 {
 	register int	i;
 
-	for (i = 0; i <= NOCAPS; i++)
+	for (i = 0; i < NOCAPS; i++)
 		if (strncmp(key, capList[i].cap, 2) == 0)
 			return (0);
 	return(1);
