@@ -9,14 +9,12 @@
  *
  * from: $Hdr: fbbm_253.c,v 4.300 91/06/09 06:33:12 root Rel41 $ SONY;
  *
- *	@(#)fbbm_253.c	7.3 (Berkeley) %G%
+ *	@(#)fbbm_253.c	7.4 (Berkeley) %G%
  */
 
 /*
  * NWB-253 frame buffer driver
  */
-
-#include <machine/fix_machine_type.h>
 
 #include "nwb253.h"
 

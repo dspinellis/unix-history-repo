@@ -9,10 +9,8 @@
  *
  * from: $Hdr: ms.c,v 4.300 91/06/09 06:22:04 root Rel41 $ SONY
  *
- *	@(#)ms.c	7.3 (Berkeley) %G%
+ *	@(#)ms.c	7.4 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include "ms.h"
 #if NMS > 0
@@ -41,7 +39,7 @@
 
 #ifndef mips
 #define volatile
-#endif /* mips */
+#endif
 
 struct ms_stat	 ms_stat[NMS];
 
@@ -52,19 +50,13 @@ struct hb_driver   msdriver = {
 	msprobe, 0, msattach, 0, 0, "ms", msinfo, "mc", 0, 0
 };
 
-#ifndef news700
 extern int tty00_is_console;
-#endif
 
 #ifdef news3400
 #define	splms		spl4
-#else /* news3400 */
-#ifdef news700
-#define	splms		spl4
-#else /* news700 */
+#else
 #define	splms		spl5
-#endif /* news700 */
-#endif /* news3400 */
+#endif
 
 /*ARGSUSED*/
 msprobe(ii)
@@ -109,7 +101,7 @@ msq_read(unit)
 	int unit;
 {
 	register volatile struct ms_queue *q = ms_stat[unit].mss_queue;
-	register volatile struct ms_event *data;
+	register struct ms_event *data;
 
 	while (q->mq_head != q->mq_tail && q->mq_queue[q->mq_head].mse_inval)
 		q->mq_head = ++q->mq_head % MS_MAXREPORT;
@@ -127,7 +119,7 @@ msq_write(unit)
 	int unit;
 {
 	register volatile struct ms_queue *q = ms_stat[unit].mss_queue;
-	register volatile struct ms_event *data = q->mq_queue + q->mq_tail;
+	register struct ms_event *data = q->mq_queue + q->mq_tail;
 	register int new;
 
 	/* if queue is full, newest data is gone away */
@@ -196,13 +188,9 @@ msopen(dev, flag)
 			ms->mss_pgrp = curproc->p_pid;
 		curproc->p_pgrp->pg_id = ms->mss_pgrp;
 	}
-#ifdef news700
-	scc_open(SCC_MOUSE);
-#else
 	if (tty00_is_console)
 		kbm_open(SCC_KEYBOARD);
 	kbm_open(SCC_MOUSE);
-#endif
 
 	return (0);
 }
@@ -234,11 +222,9 @@ msclose(dev, flag)
 
 	free(ms->mss_queue, M_DEVBUF);
 	ms->mss_pgrp = 0;
-#ifndef news700
 	if (tty00_is_console)
 		kbm_close(SCC_KEYBOARD);
 	kbm_close(SCC_MOUSE);
-#endif /* news700 */
 
 	return (0);
 }

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scsi_1185.c,v 4.300 91/06/09 06:22:20 root Rel41 $ SONY
  *
- *	@(#)scsi_1185.c	7.3 (Berkeley) %G%
+ *	@(#)scsi_1185.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -30,8 +30,6 @@
  *				kanarazu wait wo ireru-beshi !
  *
  */
-
-#include <machine/fix_machine_type.h>
 
 #include <sys/types.h>
 #include <machine/pte.h>
@@ -75,7 +73,6 @@
 
 #define APAD_ALWAYS_ON
 
-#define	LOOP_BREAK
 # define	CHECK_LOOP_CNT	60
 # define	RSL_LOOP_CNT	60
 
@@ -163,11 +160,6 @@ static char ScsiSoftError[] = "SCSI soft error";
 
 static int pad_start;
 
-#ifdef news1200
-VOLATILE int pend_1185_ioptr;
-VOLATILE int val_1185_ioptr;
-#endif
-
 #if defined(mips) && defined(CPU_SINGLE)
 #define dma_reset(x) { \
 	int s = splscsi(); \
@@ -186,10 +178,8 @@ WAIT_STATR_BITCLR(bitmask)
 	do {
 		dummy = sc_statr;
 		DMAC_WAIT0;
-#ifdef LOOP_BREAK
 		if (iloop++ > CHECK_LOOP_CNT)
 			return (-1);
-#endif
 	} while (dummy & bitmask);
 	return (0);
 }
@@ -204,10 +194,8 @@ WAIT_STATR_BITSET(bitmask)
 	do {
 		dummy = sc_statr;
 		DMAC_WAIT0;
-#ifdef LOOP_BREAK
 		if (iloop++ > CHECK_LOOP_CNT)
 			return (-1);
-#endif
 	} while ((dummy & bitmask) == 0);
 	return (0);
 }
@@ -425,11 +413,6 @@ scintr()
 	register VOLATILE int chan;
 	register VOLATILE int dummy;
 	int s_int1, s_int2;
-
-#ifdef news1200
-	if ((intr_st & INTR_SCSIDMA) == 0)
-		return (0);
-#endif
 
 scintr_loop:
 
@@ -685,12 +668,6 @@ scsi_hardreset()
 	if (dmac_map_init == 0) {
 		dmac_map_init++;
 		for (i = 0; i < NDMACMAP; i++) {
-# ifdef news1200
-			dmac_tag = i;
-			DMAC_WAIT;
-			dmac_mapent = 0;
-			DMAC_WAIT;
-# endif
 # if defined(mips) && defined(CPU_SINGLE)
 			dmac_gsel = CH_SCSI;
 			dmac_ctag = (u_char)i;
@@ -720,12 +697,6 @@ scsi_chipreset()
 	int s_int1, s_int2;
 
 	s = splscsi();
-
-#ifdef news1200
-	DMAC_WAIT0;
-	dmac_ctl = DC_CTL_RST;			/* reset DMAC */
-	DMAC_WAIT0;
-#endif
 
 #if defined(mips) && defined(CPU_SINGLE)
 	dmac_gsel = CH_SCSI;
@@ -811,19 +782,12 @@ scsi_softreset()
 			if ((cs->sc->sc_istatus & INST_EP) == 0)
 				cs->sc->sc_istatus = (INST_EP|INST_HE);
 			cs->sc = NULL;
-#ifdef mc68030
-			dcia();
-#endif
 #ifdef mips
 			scdp = &sc_data[cs->chan_num];
 			MachFlushDCache(scdp->scd_scaddr, sizeof(struct scsi));
 
 			if (MACH_IS_USPACE(scdp->scd_vaddr)) {
-#ifdef never_happen /* KU:XXX */
-				clean_kudcache(scdp->scd_procp, scdp->scd_vaddr,						scdp->scd_count, FLUSH_DCACHE);
-#else
 				panic("scsi_softreset: user address is not supported");
-#endif
 			} else if (MACH_IS_CACHED(scdp->scd_vaddr)) {
 			    MachFlushDCache(scdp->scd_vaddr, scdp->scd_count);
 			} else if (MACH_IS_MAPPED(scdp->scd_vaddr)) {
@@ -909,12 +873,10 @@ sc_resel()
 		/*
 		 * Max 6 usec wait
 		 */
-# ifdef LOOP_BREAK
 		if (iloop++ > RSL_LOOP_CNT) {
 			sel_stat[chan] = SEL_RSL_WAIT;
 			return;
 		}
-# endif
 		GET_INTR(&int_stat1, &int_stat2);
 	}
 	int_stat2 &= ~R3_FNC;
@@ -946,17 +908,6 @@ sc_discon()
 #ifdef mips
 	extern struct sc_data sc_data[];
 	register struct sc_data *scdp;
-#endif
-#ifdef news1200
-	extern VOLATILE int pend_1185_ioptr;
-	extern VOLATILE int val_1185_ioptr;
-#endif
-
-#ifdef news1200
-	if (pend_1185_ioptr) {
-		sc_ioptr = (u_char)val_1185_ioptr;
-		pend_1185_ioptr = 0;
-	}
 #endif
 
 	/*
@@ -1011,20 +962,12 @@ sc_discon()
 		if (perr_flag[cs->chan_num] > 0)
 			cs->sc->sc_istatus |= INST_EP|INST_PRE;
 		cs->sc = NULL;
-#ifdef mc68030
-		dcia();
-#endif
 #ifdef mips
 		scdp = &sc_data[cs->chan_num];
 		MachFlushDCache(scdp->scd_scaddr, sizeof(struct scsi));
 
 		if (MACH_IS_USPACE(scdp->scd_vaddr)) {
-#ifdef never_happen /* KU:XXX */
-			clean_kudcache(scdp->scd_procp, scdp->scd_vaddr,
-					scdp->scd_count, FLUSH_DCACHE);
-#else
 			panic("sc_discon: user address is not supported");
-#endif
 		} else if (MACH_IS_CACHED(scdp->scd_vaddr)) {
 			MachFlushDCache(scdp->scd_vaddr, scdp->scd_count);
 		} else if (MACH_IS_MAPPED(scdp->scd_vaddr)) {
@@ -1248,9 +1191,6 @@ sc_min(cs)
 	register struct scsi *sc;
 	register struct scsi_stat *ss;
 	register VOLATILE int dummy;
-#ifdef DISP_EXTMES
-	u_char mes;
-#endif
 
 	sc = cs->sc;
 	ss = &scsi_stat;
@@ -1303,9 +1243,6 @@ sc_min(cs)
 	DMAC_WAIT0;
 
 	if (min_cnt[cs->chan_num] == 0) {
-#ifdef DISP_EXTMES
-		mes = sc->sc_message;
-#endif
 		sc->sc_message = sc->sc_identify;
 		if (dummy == MSG_EXTND) {
 			/* Extended Message */
@@ -1313,9 +1250,6 @@ sc_min(cs)
 			min_point[cs->chan_num] = sc->sc_param;
 			bzero((caddr_t)sc->sc_param, 8);
 			*min_point[cs->chan_num]++ = dummy;
-#ifdef DISP_EXTMES
-			printf("Extmes: 0x1 ");
-#endif
 		} else {
 			switch ((dummy & MSG_IDENT)? MSG_IDENT : dummy) {
 
@@ -1324,9 +1258,6 @@ sc_min(cs)
 				break;
 
 			case MSG_MREJ:
-#ifdef DISP_EXTMES
-				printf("MREJ:%x\n", mes);
-#endif
 #ifndef NOT_SUPPORT_SYNCTR
 				if (mout_flag[cs->chan_num] == MOUT_SYNC_TR)
 					sync_tr[cs->chan_num] = 0;
@@ -1372,17 +1303,11 @@ sc_min(cs)
 		}
 	} else {
 		*min_point[cs->chan_num]++ = dummy;
-#ifdef DISP_EXTMES
-		printf("0x%x ", dummy);
-#endif
 		if (min_cnt[cs->chan_num] == GET_MIN_COUNT)
 			min_cnt[cs->chan_num] = dummy;
 		else
 			min_cnt[cs->chan_num]--;
 		if (min_cnt[cs->chan_num] <= 0) {
-#ifdef DISP_EXTMES
-			printf("\n");
-#endif
 #ifdef ABORT_SYNCTR_MES_FROM_TARGET
 			if ((sc->sc_param[2] == 0x01)
 			    && (mout_flag[cs->chan_num] == MOUT_SYNC_TR)) {
@@ -1403,25 +1328,8 @@ sc_min(cs)
 					sync_tr[cs->chan_num] = 0;
 				else
 					sync_tr[cs->chan_num] = i | sc->sc_param[4];
-# ifdef DISP_EXTMES
-				printf("sc_syncr=0x%x\n", sync_tr[cs->chan_num]);
-# endif
 #endif /* !NOT_SUPPORT_SYNCTR */
 			} else {
-#ifdef DISP_EXTMES
-				register u_char *p;
-				register int cnt;
-				register int i;
-
-				p = sc->sc_param;
-				cnt = p[1];
-				
-				printf("Extmes: 0x%x 0x%x ", *p, cnt);
-				p += 2;
-				for (i = 0; i < cnt; i++)
-					printf("0x%x ", *p++);
-				printf(":ATN\n");
-#endif
 				sc->sc_message = MSG_MREJ;
 				SET_CMD(SCMD_AST_ATN);	/* assert ATN */
 			}
@@ -1470,9 +1378,6 @@ sc_mout(cs)
 			sc_datr = sc->sc_identify;
 			DMAC_WAIT0;
 			for (iloop = 1; iloop < cnt; iloop++) {
-#ifdef DISP_EXTMES
-				printf("0x%x ", *mp);
-#endif
 				sc_datr = *mp++;
 				DMAC_WAIT;
 			}
@@ -1511,9 +1416,6 @@ sc_mout(cs)
 				return;
 			}
 
-#ifdef DISP_EXTMES
-			printf("0x%x\n", *mp);
-#endif
 			SET_CMD(SCMD_TR_INFO);
 			sc_datr = *mp++;
 			DMAC_WAIT0;
@@ -1530,10 +1432,8 @@ sc_mout(cs)
 			do {
 				dummy = sc_cmonr;
 				DMAC_WAIT0;
-#ifdef LOOP_BREAK
 				if (iloop++ > CHECK_LOOP_CNT)
 					break;
-#endif
 			} while ((dummy & R4_MREQ) == 0);
 			SET_CMD(SCMD_TR_INFO);
 			sc_datr = sc->sc_identify;
@@ -1560,9 +1460,6 @@ sc_mout(cs)
 		SET_CMD(SCMD_TR_INFO);
 		sc_datr = sc->sc_message;
 		DMAC_WAIT0;
-#ifdef DISP_EXTMES
-		printf("sc_mout:0x%x ", sc->sc_message);
-#endif
 	}
 }
 
@@ -1596,10 +1493,8 @@ sc_sin(cs)
 	int_stat2 &= ~R3_FNC;
 	iloop = 0;
 	do {
-# ifdef LOOP_BREAK
 		if (iloop++ > CHECK_LOOP_CNT)
 			break;
-# endif
 		GET_INTR(&int_stat1, &int_stat2);	/* clear interrupt */
 	} while ((int_stat2 & R3_FNC) == 0);
 	int_stat2 &= ~R3_FNC;
@@ -1624,14 +1519,6 @@ sc_dio(cs)
 
 	sc = cs->sc;
 	ss = &scsi_stat;
-
-#ifdef news1200
-	DMAC_WAIT;
-	dmac_ctl = DC_CTL_RST; 			/* reset DMAC */
-	DMAC_WAIT;
-	dmac_ctl = OFF; 			/* clear dmac_ctl */
-	DMAC_WAIT;
-#endif
 
 	sc_intok2 = Rb_FNC|Rb_DCNT|Rb_SRST|Rb_PHC|Rb_SPE;
 	DMAC_WAIT0;
@@ -1672,18 +1559,6 @@ sc_dio(cs)
 	SET_CMD(SCMD_TR_INFO|R0_DMA|R0_TRBE);
 #endif
 
-#if defined(news1200)
-	SET_CMD(SCMD_TR_INFO|R0_DMA|R0_TRBE);
-#endif
-
-#ifdef news1200
-	DMAC_WAIT;
-	dmac_tcnt = cs->act_trcnt; 	
-	DMAC_WAIT;
-	dmac_ofs = cs->act_offset & PGOFSET;
-	DMAC_WAIT;
-#endif
-
 #if defined(mips) && defined(CPU_SINGLE)
 	dmac_gsel = CH_SCSI;
 	dmac_ctrcl = (u_char)(cs->act_trcnt & 0xff);
@@ -1702,12 +1577,6 @@ sc_dio(cs)
 		for (i = cs->act_tag; i < pages; i++) {
 			if ((pfn = sc->sc_map->mp_addr[i]) == 0)
 				panic("SCSI:sc_dma() zero entry");
-#ifdef news1200
-			dmac_tag = tag++;
-			DMAC_WAIT;
-			dmac_mapent = pfn;
-			DMAC_WAIT;
-#endif
 #if defined(mips) && defined(CPU_SINGLE)
 			dmac_gsel = CH_SCSI;
 			dmac_ctag = (u_char)tag++;
@@ -1728,12 +1597,6 @@ sc_dio(cs)
 		pfn = (u_int)vtophys(cs->act_point) >> PGSHIFT;
 		pages = (cs->act_trcnt >> PGSHIFT) + 2;
 		for (i = 0; i < pages; i++) {
-#ifdef news1200
-			dmac_tag = tag++;
-			DMAC_WAIT;
-			dmac_mapent = pfn + i;
-			DMAC_WAIT;
-#endif
 #if defined(mips) && defined(CPU_SINGLE)
 			dmac_gsel = CH_SCSI;
 			dmac_ctag = (u_char)tag++;
@@ -1741,10 +1604,6 @@ sc_dio(cs)
 #endif
 		}
 	}
-#ifdef news1200
-	dmac_tag = 0;
-	DMAC_WAIT;
-#endif
 
 #if defined(mips) && defined(CPU_SINGLE)
 	dmac_gsel = CH_SCSI;
@@ -1753,12 +1612,6 @@ sc_dio(cs)
 
 	if (phase == DAT_IN) {
 		ss->dma_stat = SC_DMAC_RD;
-#ifdef news1200
-		dmac_ctl = DC_CTL_MOD;		/* I/O->mem */
-		DMAC_WAIT;
-		dmac_ctl = (DC_CTL_MOD|DC_CTL_ENB);
-		DMAC_WAIT;
-#endif
 #if defined(mips) && defined(CPU_SINGLE)
 		/*
 		 * auto pad flag is always on
@@ -1772,12 +1625,6 @@ sc_dio(cs)
 	}
 	else if (phase == DAT_OUT) {
 		ss->dma_stat = SC_DMAC_WR;
-#ifdef news1200
-		dmac_ctl = 0;
-		DMAC_WAIT;
-		dmac_ctl = DC_CTL_ENB;
-		DMAC_WAIT;
-#endif
 #if defined(mips) && defined(CPU_SINGLE)
 		dmac_gsel = CH_SCSI;
 		dmac_cctl = DM_APAD;
@@ -1911,26 +1758,6 @@ adjust_transfer(cs)
 		pad_start = 0;
 		remain_cnt = 0;
 	} else {
-# ifdef news1200
-		if (ss->dma_stat == SC_DMAC_RD) {
-			/*
-			 * DMA DATA IN
-			 */
-			DMAC_WAIT;
-			remain_cnt = dmac_tcnt;
-			DMAC_WAIT;
-		} else {
-			/*
-			 * DMA DATA OUT
-			 */
-			remain_cnt = GET_CNT();
-			remain_cnt -= pad_cnt[cs->chan_num];
-			/*
-			 * adjust counter in the FIFO
-			 */
-			remain_cnt += sc_ffstr & R5_FIFOREM;
-		}
-# endif
 # if defined(mips) && defined(CPU_SINGLE)
 		remain_cnt = GET_CNT();
 		remain_cnt -= pad_cnt[cs->chan_num];

@@ -9,10 +9,8 @@
  *
  * from: $Hdr: fb_mfbs.c,v 4.300 91/06/27 20:42:43 root Rel41 $ SONY
  *
- *	@(#)fb_mfbs.c	7.2 (Berkeley) %G%
+ *	@(#)fb_mfbs.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include <sys/param.h>
 #include <news3400/iop/framebuf.h>

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fbdefs.h,v 4.300 91/06/09 06:33:54 root Rel41 $ SONY
  *
- *	@(#)fbdefs.h	7.3 (Berkeley) %G%
+ *	@(#)fbdefs.h	7.4 (Berkeley) %G%
  */
 
 #ifndef mips
@@ -17,28 +17,21 @@
 #endif
 
 #ifdef CPU_SINGLE
-#if defined(news1700)
-#undef splbitmap
-#endif
-#if defined(news700)
-#define splbitmap	spl4
-#endif /* news700 */
+
 #if defined(news3400) || defined(news3700)
 #define splbitmap	spl3
-#endif /* news3400 || news3700 */
+#endif
 #define	FB_LOCK		lock_bitmap()
 #define FB_UNLOCK	unlock_bitmap()
+
 #else /* CPU_SINGLE */
+
 #undef PRE_EMPT
 #define PRE_EMPT
-#ifdef IPC_MRX
 #define FB_LOCK
 #define FB_UNLOCK
 #include <news3400/fb/fbsem.h> /* semaphore name */
-#else /* IPC_MRX */
-#define FB_LOCK		wait(bitmap_use)
-#define FB_UNLOCK	signal(bitmap_use)
-#endif /* IPC_MRX */
+
 #endif /* CPU_SINGLE */
 
 #if defined(news3400) || defined(news3700)

@@ -9,10 +9,8 @@
  *
  * from: $Hdr: fb_start.c,v 4.300 91/06/27 20:42:40 root Rel41 $ SONY
  *
- *	@(#)fb_start.c	7.3 (Berkeley) %G%
+ *	@(#)fb_start.c	7.4 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>

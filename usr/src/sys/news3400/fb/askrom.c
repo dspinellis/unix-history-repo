@@ -9,10 +9,8 @@
  *
  * from: $Hdr: askrom.c,v 4.300 91/06/09 06:32:39 root Rel41 $ SONY
  *
- *	@(#)askrom.c	7.2 (Berkeley) %G%
+ *	@(#)askrom.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #include "nwb514.h"
 #include "nwb251.h"
