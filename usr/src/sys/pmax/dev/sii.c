@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	8.1 (Berkeley) %G%
+ *	@(#)sii.c	7.8 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
@@ -1470,8 +1470,9 @@ sii_GetByte(regs, phase)
 		SII_WAIT_COUNT, i);
 
 	if ((dstat & (SII_DNE | SII_TCZ | SII_IPE)) != (SII_DNE | SII_TCZ)) {
-		printf("sii_GetByte: ds %x cm %x i %d lotc %d\n",
-			dstat, regs->comm, i, regs->dmlotc); /* XXX */
+		printf("sii_GetByte: cs %x ds %x cm %x i %d lotc %d\n",
+			regs->cstat, dstat, regs->comm, i,
+			regs->dmlotc); /* XXX */
 		sii_DumpLog(); /* XXX */
 		return (-1);
 	}
@@ -1616,15 +1617,13 @@ sii_DumpLog()
 
 	printf("sii: cmd %x bn %d cnt %d\n", sii_debug_cmd, sii_debug_bn,
 		sii_debug_sz);
-	lp = sii_logp + 1;
-	if (lp > &sii_log[NLOG])
-		lp = sii_log;
-	while (lp != sii_logp) {
+	lp = sii_logp;
+	do {
 		printf("target %d cs %x ds %x cm %x msg %x\n",
 			lp->target, lp->cstat, lp->dstat, lp->comm, lp->msg);
 		if (++lp >= &sii_log[NLOG])
 			lp = sii_log;
-	}
+	} while (lp != sii_logp);
 }
 #endif
 #endif
