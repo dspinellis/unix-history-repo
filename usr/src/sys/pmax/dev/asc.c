@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.1 (Berkeley) %G%
+ *	@(#)asc.c	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -213,109 +213,136 @@ int	asc_end();			/* all come to an end */
 int	asc_get_status();		/* get status from target */
 int	asc_dma_in();			/* start reading data from target */
 int	asc_last_dma_in();		/* cleanup after all data is read */
+int	asc_resume_in();		/* resume data in after a message */
 int	asc_resume_dma_in();		/* resume DMA after a disconnect */
 int	asc_dma_out();			/* send data to target via dma */
 int	asc_last_dma_out();		/* cleanup after all data is written */
+int	asc_resume_out();		/* resume data out after a message */
 int	asc_resume_dma_out();		/* resume DMA after a disconnect */
 int	asc_sendsync();			/* negotiate sync xfer */
 int	asc_replysync();		/* negotiate sync xfer */
-int	asc_recvmsg();			/* process a message byte */
+int	asc_msg_in();			/* process a message byte */
+int	asc_disconnect();		/* process an expected disconnect */
 
 /* Define the index into asc_scripts for various state transitions */
 #define	SCRIPT_DATA_IN		0
-#define	SCRIPT_DATA_OUT		2
-#define	SCRIPT_SIMPLE		4
-#define	SCRIPT_GET_STATUS	5
-#define	SCRIPT_MSG_IN		7
-#define	SCRIPT_REPLY_SYNC	9
-#define	SCRIPT_RESUME_IN	10
-#define	SCRIPT_RESUME_OUT	11
+#define	SCRIPT_CONTINUE_IN	2
+#define	SCRIPT_DATA_OUT		3
+#define	SCRIPT_CONTINUE_OUT	5
+#define	SCRIPT_SIMPLE		6
+#define	SCRIPT_GET_STATUS	7
+#define	SCRIPT_MSG_IN		9
+#define	SCRIPT_REPLY_SYNC	11
 #define	SCRIPT_TRY_SYNC		12
-#define	SCRIPT_RESEL		15
-#define	SCRIPT_RESUME_DMA_IN	16
-#define	SCRIPT_RESUME_DMA_OUT	17
+#define	SCRIPT_DISCONNECT	15
+#define	SCRIPT_RESEL		16
+#define	SCRIPT_RESUME_IN	17
+#define	SCRIPT_RESUME_DMA_IN	18
+#define	SCRIPT_RESUME_OUT	19
+#define	SCRIPT_RESUME_DMA_OUT	20
+#define	SCRIPT_RESUME_NO_DATA	21
 
 /*
  * Scripts
  */
 script_t asc_scripts[] = {
-	/* data in */
+	/* start data in */
 	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_DATAI),	/*  0 */
 		asc_dma_in, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_IN + 1] },
+		&asc_scripts[SCRIPT_DATA_IN + 1]},
 	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_STATUS),			/*  1 */
 		asc_last_dma_in, ASC_CMD_I_COMPLETE,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		&asc_scripts[SCRIPT_GET_STATUS]},
 
-	/* data out */
-	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_DATAO),	/*  2 */
+	/* continue data in after a chuck is finished */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAI),			/*  2 */
+		asc_dma_in, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
+		&asc_scripts[SCRIPT_DATA_IN + 1]},
+
+	/* start data out */
+	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_DATAO),	/*  3 */
 		asc_dma_out, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_OUT + 1] },
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_STATUS),			/*  3 */
+		&asc_scripts[SCRIPT_DATA_OUT + 1]},
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_STATUS),			/*  4 */
 		asc_last_dma_out, ASC_CMD_I_COMPLETE,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		&asc_scripts[SCRIPT_GET_STATUS]},
+
+	/* continue data out after a chuck is finished */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAO),			/*  5 */
+		asc_dma_out, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
+		&asc_scripts[SCRIPT_DATA_OUT + 1]},
 
 	/* simple command with no data transfer */
-	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_STATUS),	/*  4 */
+	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_STATUS),	/*  6 */
 		script_nop, ASC_CMD_I_COMPLETE,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		&asc_scripts[SCRIPT_GET_STATUS]},
 
 	/* get status and finish command */
-	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  5 */
+	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  7 */
 		asc_get_status, ASC_CMD_MSG_ACPT,
-		&asc_scripts[SCRIPT_GET_STATUS + 1] },
-	{SCRIPT_MATCH(ASC_INT_DISC, 0),					/*  6 */
+		&asc_scripts[SCRIPT_GET_STATUS + 1]},
+	{SCRIPT_MATCH(ASC_INT_DISC, 0),					/*  8 */
 		asc_end, ASC_CMD_NOP,
-		&asc_scripts[SCRIPT_GET_STATUS + 1] },
+		&asc_scripts[SCRIPT_GET_STATUS + 1]},
 
 	/* message in */
-	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  7 */
-		asc_recvmsg, ASC_CMD_MSG_ACPT,
-		&asc_scripts[SCRIPT_MSG_IN + 1] },
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_MSG_IN),			/*  8 */
+	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  9 */
+		asc_msg_in, ASC_CMD_MSG_ACPT,
+		&asc_scripts[SCRIPT_MSG_IN + 1]},
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_MSG_IN),			/* 10 */
 		script_nop, ASC_CMD_XFER_INFO,
-		&asc_scripts[SCRIPT_MSG_IN] },
+		&asc_scripts[SCRIPT_MSG_IN]},
 
 	/* send synchonous negotiation reply */
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_MSG_OUT),			/*  9 */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_MSG_OUT),			/* 11 */
 		asc_replysync, ASC_CMD_XFER_INFO,
-		&asc_scripts[SCRIPT_REPLY_SYNC] },
-
-	/* resume data in after a message */
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAI),			/* 10 */
-		asc_dma_in, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_IN + 1] },
-
-	/* resume data out after a message */
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAO),			/* 11 */
-		asc_dma_out, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_OUT + 1] },
+		&asc_scripts[SCRIPT_REPLY_SYNC]},
 
 	/* try to negotiate synchonous transfer parameters */
 	{SCRIPT_MATCH(ASC_INT_FC | ASC_INT_BS, ASC_PHASE_MSG_OUT),	/* 12 */
 		asc_sendsync, ASC_CMD_XFER_INFO,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		&asc_scripts[SCRIPT_GET_STATUS]},
 	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/* 13 */
 		script_nop, ASC_CMD_XFER_INFO,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		&asc_scripts[SCRIPT_GET_STATUS]},
 	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/* 14 */
-		asc_recvmsg, ASC_CMD_MSG_ACPT,
-		&asc_scripts[SCRIPT_GET_STATUS] },
+		asc_msg_in, ASC_CMD_MSG_ACPT,
+		&asc_scripts[SCRIPT_GET_STATUS]},
+
+	/* handle a disconnect */
+	{SCRIPT_MATCH(ASC_INT_DISC, ASC_PHASE_DATAO),			/* 15 */
+		asc_disconnect, ASC_CMD_ENABLE_SEL,
+		&asc_scripts[SCRIPT_RESEL]},
 
 	/* reselect sequence: this is just a placeholder so match fails */
-	{SCRIPT_MATCH(0, ASC_PHASE_MSG_IN),				/* 15 */
+	{SCRIPT_MATCH(0, ASC_PHASE_MSG_IN),				/* 16 */
 		script_nop, ASC_CMD_MSG_ACPT,
-		&asc_scripts[SCRIPT_RESEL] },
+		&asc_scripts[SCRIPT_RESEL]},
 
-	/* resume data in after a disconnect */
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAI),			/* 16 */
+	/* resume data in after a message */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAI),			/* 17 */
+		asc_resume_in, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
+		&asc_scripts[SCRIPT_DATA_IN + 1]},
+
+	/* resume partial DMA data in after a message */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAI),			/* 18 */
 		asc_resume_dma_in, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_IN + 1] },
+		&asc_scripts[SCRIPT_DATA_IN + 1]},
 
-	/* resume data out after a disconnect */
-	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAO),			/* 17 */
+	/* resume data out after a message */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAO),			/* 19 */
+		asc_resume_out, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
+		&asc_scripts[SCRIPT_DATA_OUT + 1]},
+
+	/* resume partial DMA data out after a message */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_DATAO),			/* 20 */
 		asc_resume_dma_out, ASC_CMD_XFER_INFO | ASC_CMD_DMA,
-		&asc_scripts[SCRIPT_DATA_OUT + 1] },
+		&asc_scripts[SCRIPT_DATA_OUT + 1]},
+
+	/* resume after a message when there is no more data */
+	{SCRIPT_MATCH(ASC_INT_BS, ASC_PHASE_STATUS),			/* 21 */
+		script_nop, ASC_CMD_I_COMPLETE,
+		&asc_scripts[SCRIPT_GET_STATUS]},
 };
 
 /*
@@ -631,7 +658,7 @@ asc_startcmd(asc, target)
 	}
 
 	/* preload the FIFO with the message to be sent */
-	regs->asc_fifo = /* SCSI_IDENTIFY */ SCSI_DIS_REC_IDENTIFY;
+	regs->asc_fifo = SCSI_DIS_REC_IDENTIFY;
 
 	/* start the asc */
 	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr);
@@ -712,6 +739,7 @@ again:
 			goto done;
 
 		case ASC_PHASE_STATUS:
+			asc_DumpLog("asc_intr: status"); /* XXX */
 			/* probably an error in the SCSI command */
 			asc->script = &asc_scripts[SCRIPT_GET_STATUS];
 			regs->asc_cmd = ASC_CMD_I_COMPLETE;
@@ -750,11 +778,36 @@ again:
 				state->script = asc->script;
 		} else {
 			/* setup state to resume to */
-			if (state->flags & DMA_IN)
-				state->script = &asc_scripts[SCRIPT_RESUME_IN];
-			else if (state->flags & DMA_OUT)
-				state->script = &asc_scripts[SCRIPT_RESUME_OUT];
-			else
+			if (state->flags & DMA_IN) {
+				if (!(state->flags & FIRST_DMA)) {
+					len = state->dmalen;
+					bcopy(state->dmaBufAddr, state->buf,
+						len);
+					state->buf += len;
+					state->buflen -= len;
+				} else
+					state->flags &= ~FIRST_DMA;
+				if (state->buflen)
+					state->script =
+					    &asc_scripts[SCRIPT_RESUME_IN];
+				else
+					state->script =
+					    &asc_scripts[SCRIPT_RESUME_NO_DATA];
+			} else if (state->flags & DMA_OUT) {
+				/*
+				 * If this is the last chunk, the next expected
+				 * state is to get status.
+				 */
+				len = state->dmalen;
+				state->buf += len;
+				state->buflen -= len;
+				if (state->buflen)
+					state->script =
+					    &asc_scripts[SCRIPT_RESUME_OUT];
+				else
+					state->script =
+					    &asc_scripts[SCRIPT_RESUME_NO_DATA];
+			} else
 				state->script = asc->script;
 		}
 
@@ -793,17 +846,6 @@ again:
 	/* check for disconnect */
 	if (ir & ASC_INT_DISC) {
 		state = &asc->st[asc->target];
-		if (state->flags & DISCONN) {
-			if (state->script)
-				goto abort;
-			state->script = asc->script;
-			asc->target = -1;
-			asc->state = ASC_STATE_RESEL;
-			asc->script = &asc_scripts[SCRIPT_RESEL];
-			regs->asc_cmd = ASC_CMD_ENABLE_SEL;
-			goto done;
-		}
-
 		switch (ASC_SS(ss)) {
 		case 0: /* device did not respond */
 			state->error = ENXIO;
@@ -1008,16 +1050,22 @@ asc_dma_in(asc, status, ss, ir)
 	} else
 		state->flags &= ~FIRST_DMA;
 
-	/* setup to start reading next chunk */
+	/* setup to start reading the next chunk */
 	len = state->buflen;
 	if (len > state->dmaBufSize)
 		len = state->dmaBufSize;
 	state->dmalen = len;
 	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr);
 	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_dma_in: buflen %d, len %d\n", state->buflen, len);
+#endif
+
+	/* check for next chunk */
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
-		asc->script = &asc_scripts[SCRIPT_RESUME_IN];
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
 		return (0);
 	}
 	return (1);
@@ -1037,11 +1085,16 @@ asc_last_dma_in(asc, status, ss, ir)
 	ASC_TC_GET(regs, len);
 	fifo = regs->asc_flags & ASC_FLAGS_FIFO_CNT;
 #ifdef DEBUG
+#if 0
+	if (asc_debug > 2)
+#else
 	if (asc_debug > 2 || len || fifo) /* XXX */
+#endif
 		printf("asc_last_dma_in: buflen %d dmalen %d tc %d fifo %d\n",
 			state->buflen, state->dmalen, len, fifo);
 #endif
 	if (fifo) {
+		/* device must be trying to send more than we expect */
 		regs->asc_cmd = ASC_CMD_FLUSH;
 		MachEmptyWriteBuffer();
 	}
@@ -1049,6 +1102,38 @@ asc_last_dma_in(asc, status, ss, ir)
 	state->buflen -= len;
 	bcopy(state->dmaBufAddr, state->buf, len);
 
+	return (1);
+}
+
+/* ARGSUSED */
+static int
+asc_resume_in(asc, status, ss, ir)
+	register asc_softc_t asc;
+	register int status, ss, ir;
+{
+	register asc_regmap_t *regs = asc->regs;
+	register State *state = &asc->st[asc->target];
+	register int len;
+
+	/* setup to start reading the next chunk */
+	len = state->buflen;
+	if (len > state->dmaBufSize)
+		len = state->dmaBufSize;
+	state->dmalen = len;
+	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr);
+	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_resume_in: buflen %d, len %d\n", state->buflen,
+			len);
+#endif
+
+	/* check for next chunk */
+	if (len != state->buflen) {
+		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
+		return (0);
+	}
 	return (1);
 }
 
@@ -1072,9 +1157,16 @@ asc_resume_dma_in(asc, status, ss, ir)
 	}
 	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr + off);
 	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_resume_dma_in: buflen %d dmalen %d len %d off %d\n",
+			state->dmalen, state->buflen, len, off);
+#endif
+
+	/* check for next chunk */
 	if (state->dmalen != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
-		asc->script = &asc_scripts[SCRIPT_RESUME_IN];
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
 		return (0);
 	}
 	return (1);
@@ -1112,19 +1204,17 @@ asc_dma_out(asc, status, ss, ir)
 	} else
 		state->flags &= ~FIRST_DMA;
 
-#ifdef DEBUG
-	if (asc_debug > 2)
-		printf("asc_dma_out: dmalen %d fifo %d\n",
-			state->dmalen,
-			regs->asc_flags & ASC_FLAGS_FIFO_CNT);
-#endif
 	len = state->dmalen;
 	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_dma_out: buflen %d, len %d\n", state->buflen, len);
+#endif
 
 	/* check for next chunk */
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
-		asc->script = &asc_scripts[SCRIPT_RESUME_OUT];
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
 		return (0);
 	}
 	return (1);
@@ -1140,22 +1230,57 @@ asc_last_dma_out(asc, status, ss, ir)
 	register State *state = &asc->st[asc->target];
 	register int len, fifo;
 
-	len = state->dmalen;
 	ASC_TC_GET(regs, len);
 	fifo = regs->asc_flags & ASC_FLAGS_FIFO_CNT;
-
 #ifdef DEBUG
+#if 0
 	if (asc_debug > 2)
-		printf("asc_last_dma_out: dmalen %d tc %d fifo %d\n",
-			state->dmalen, len, fifo);
+#else
+	if (asc_debug > 2 || len || fifo) /* XXX */
 #endif
-
-	if (len || fifo)
 		printf("asc_last_dma_out: buflen %d dmalen %d tc %d fifo %d\n",
 			state->buflen, state->dmalen, len, fifo); /* XXX */
-	len += fifo;
+#endif
+	if (fifo) {
+		len += fifo;
+		regs->asc_cmd = ASC_CMD_FLUSH;
+		MachEmptyWriteBuffer();
+	}
 	len = state->dmalen - len;
 	state->buflen -= len;
+	return (1);
+}
+
+/* ARGSUSED */
+static int
+asc_resume_out(asc, status, ss, ir)
+	register asc_softc_t asc;
+	register int status, ss, ir;
+{
+	register asc_regmap_t *regs = asc->regs;
+	register State *state = &asc->st[asc->target];
+	register int len;
+
+	/* setup for this chunck */
+	len = state->buflen;
+	if (len > state->dmaBufSize)
+		len = state->dmaBufSize;
+	state->dmalen = len;
+	bcopy(state->buf, state->dmaBufAddr, len);
+	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr);
+	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_resume_out: buflen %d, len %d\n", state->buflen,
+			len);
+#endif
+
+	/* check for next chunk */
+	if (len != state->buflen) {
+		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
+		return (0);
+	}
 	return (1);
 }
 
@@ -1181,9 +1306,16 @@ asc_resume_dma_out(asc, status, ss, ir)
 	}
 	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr + off);
 	ASC_TC_PUT(regs, len);
+#ifdef DEBUG
+	if (asc_debug > 2)
+		printf("asc_resume_dma_out: buflen %d dmalen %d len %d off %d\n",
+			state->dmalen, state->buflen, len, off);
+#endif
+
+	/* check for next chunk */
 	if (state->dmalen != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
-		asc->script = &asc_scripts[SCRIPT_RESUME_OUT];
+		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
 		return (0);
 	}
 	return (1);
@@ -1254,7 +1386,7 @@ asc_replysync(asc, status, ss, ir)
 
 /* ARGSUSED */
 static int
-asc_recvmsg(asc, status, ss, ir)
+asc_msg_in(asc, status, ss, ir)
 	register asc_softc_t asc;
 	register int status, ss, ir;
 {
@@ -1290,7 +1422,7 @@ asc_recvmsg(asc, status, ss, ir)
 		/* process an extended message */
 #ifdef DEBUG
 		if (asc_debug > 2)
-			printf("asc_recvmsg: msg %x %x %x\n",
+			printf("asc_msg_in: msg %x %x %x\n",
 				state->msg_in[0],
 				state->msg_in[1],
 				state->msg_in[2]);
@@ -1351,7 +1483,7 @@ asc_recvmsg(asc, status, ss, ir)
 	/* process first byte of a message */
 #ifdef DEBUG
 	if (asc_debug > 2)
-		printf("asc_recvmsg: msg %x\n", msg);
+		printf("asc_msg_in: msg %x\n", msg);
 #endif
 	switch (msg) {
 #if 0
@@ -1400,7 +1532,9 @@ asc_recvmsg(asc, status, ss, ir)
 		if (state->flags & DISCONN)
 			goto abort;
 		state->flags |= DISCONN;
-		break;
+		regs->asc_cmd = ASC_CMD_MSG_ACPT;
+		asc->script = &asc_scripts[SCRIPT_DISCONNECT];
+		return (0);
 
 	default:
 		printf("asc%d: SCSI device %d: rejecting message 0x%x\n",
@@ -1418,13 +1552,26 @@ done:
 	if (!state->script) {
 	abort:
 #ifdef DEBUG
-		asc_DumpLog("asc_recvmsg");
+		asc_DumpLog("asc_msg_in");
 #endif
-		panic("asc_recvmsg");
+		panic("asc_msg_in");
 	}
 	asc->script = state->script;
 	state->script = (script_t *)0;
 	return (0);
+}
+
+/* ARGSUSED */
+static int
+asc_disconnect(asc, status, ss, ir)
+	register asc_softc_t asc;
+	register int status, ss, ir;
+{
+	register State *state = &asc->st[asc->target];
+
+	asc->target = -1;
+	asc->state = ASC_STATE_RESEL;
+	return (1);
 }
 
 #ifdef DEBUG
