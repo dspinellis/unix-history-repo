@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.22 (Berkeley) 84/12/07";
+static	char *sccsid = "@(#)server.c	4.23 (Berkeley) 85/02/14";
 #endif
 
 #include "defs.h"
@@ -779,7 +779,7 @@ recvf(cmd, type)
 		return;
 	}
 	if (wrerr) {
-		error("%s:%s: %s\n", host, cp, sys_errlist[olderrno]);
+		error("%s:%s: %s\n", host, new, sys_errlist[olderrno]);
 		(void) unlink(new);
 		return;
 	}
