@@ -3,7 +3,7 @@
 	     K N O W N   B U G S   I N   S E N D M A I L
 			(for 8.6.beta.12)
 
-			   8.2 (%G%)
+			   8.3 (%G%)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -17,3 +17,19 @@ in /ucb/sendmail/KNOWNBUGS.
   processing.  This is checked periodically, and sometimes this condition
   is found and this message is produced.  Sendmail repairs the problem,
   and the mail is still delivered, but I still don't know why it happens.
+  (There was a bug that was fixed in 8.6.beta.13 that might be related,
+  but I think this bug still exists.)
+
+* Null bytes are not handled properly.
+
+  Sendmail should handle full binary data.  As it stands, it handles
+  any value from 0x01-0xFF in the body and 0x01-0x80 and 0xA0-0xFF in
+  the header.  Notably missing is 0x00, which would require a major
+  restructuring of the code -- for example, almost no C library support
+  could be used to handle strings.
+
+* Route-addrs missing angle brackets.
+
+  There are cases where route-addrs do not get angle brackets around them,
+  such as in the "-r" flag on mailers or in the From_ line created when
+  mailing to files.
