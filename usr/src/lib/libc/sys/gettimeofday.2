@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettimeofday.2	6.3 (Berkeley) %G%
+.\"	@(#)gettimeofday.2	6.4 (Berkeley) %G%
 .\"
 .TH GETTIMEOFDAY 2 ""
 .UC 4
@@ -25,10 +25,7 @@ struct timezone *tzp;
 .fi
 .SH DESCRIPTION
 .I Gettimeofday
-returns the system's notion of the current Greenwich time,
-and if
-.I tzp
-is nonzero,
+returns the system's notion of the current Greenwich time and
 the current time zone.  Time returned is expressed relative
 in seconds and microseconds since midnight January 1, 1970.
 .PP
@@ -44,7 +41,7 @@ as:
 .RS
 .DT
 struct timeval {
-	long	tv_sec;		/* seconds since Jan. 1, 1970 */
+	u_long	tv_sec;		/* seconds since Jan. 1, 1970 */
 	long	tv_usec;		/* and microseconds */
 };
 .sp 1
@@ -63,11 +60,7 @@ and a flag that, if nonzero, indicates that
 Daylight Saving time applies locally during
 the appropriate part of the year.
 .PP
-Only the super-user may issue the
-.I settimeofday
-call.  If
-.I tzp
-is zero the current time zone is not changed.
+Only the super-user may set the time of day.
 .SH RETURN
 A 0 return value indicates that the call succeeded.
 A \-1 return value indicates an error occurred, and in this
@@ -81,11 +74,7 @@ An argument address referenced invalid memory.
 [EPERM]
 A user other than the super-user attempted to set the time.
 .SH "SEE ALSO"
-date(1), netdate(1), adjtime(2), ctime(3), timedaemon(8)
+date(1), ctime(3)
 .SH BUGS
 Time is never correct enough to believe the microsecond
-values, although the
-.I timedaemon
-mechanism allows
-local clusters of systems to synchronize their clocks
-to within a few milliseconds.
+values.
