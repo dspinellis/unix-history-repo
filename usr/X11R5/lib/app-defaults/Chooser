@@ -1,0 +1,44 @@
+*ShapeStyle:		Oval
+*cursor:		left_ptr
+*allowShellResize:	true
+*label.label:		XDMCP Host Menu
+*label.borderWidth:	0
+*label.skipAdjust:	true
+*paned*showGrip:	false
+!*viewport.horizDistance:	20
+!*viewport.height:	200
+*viewport.width:	400
+*viewport.height:	50
+*viewport.allowVert:	true
+*viewport.fromVert:	label
+*viewport.resizeable:	true
+*viewport.allowResize:	true
+
+*list.translations:	#override \
+	<BtnDown>:	Set() CheckWilling() \n\
+	<BtnUp>(2):	Accept()
+*list.defaultColumns:	1
+*list.forceFolumns:	true
+
+*box.skipAdjust:	true
+*cancel.fromHoriz:	viewport
+*cancel.fromVert:	label
+*cancel.vertDistance:	100
+*cancel.bottom:		ChainBottom
+*cancel.top:		ChainBottom
+*cancel.left:		ChainRight
+*cancel.right:		ChainRight
+
+*accept.fromHoriz:	viewport
+*accept.fromVert:	cancel
+*accept.bottom:		ChainBottom
+*accept.top:		ChainBottom
+*accept.left:		ChainRight
+*accept.right:		ChainRight
+
+*cancel.translations:	#override \
+	<BtnUp>:		Cancel() unset()
+*accept.translations:	#override \
+	<BtnUp>:		Accept() unset()
+*ping.translations:	#override \
+	<BtnUp>:		Ping() unset()
