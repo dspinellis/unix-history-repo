@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.5 %G%";
+static char sccsid[] = "@(#)object.c 1.6 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -210,8 +210,9 @@ private initsyms()
     }
     program = insert(identname(progname, true));
     program->class = PROG;
-    newfunc(program);
+    program->symvalue.funcv.beginaddr = 0;
     findbeginning(program);
+    newfunc(program);
     enterblock(program);
     curmodule = program;
     t_boolean = maketype("$boolean", 0L, 1L);
@@ -245,7 +246,6 @@ register struct nlist *np;
     register Symbol s;
     String mname, suffix;
     register Name n;
-    register Symbol *tt;
 
     s = nil;
     if (name == nil) {
@@ -296,6 +296,8 @@ register struct nlist *np;
 	    s = insert(identname(mname, true));
 	    s->language = curlang;
 	    s->class = MODULE;
+	    s->symvalue.funcv.beginaddr = 0;
+	    findbeginning(s);
 	    enterblock(s);
 	    curmodule = s;
 	    if (program->language == nil) {
@@ -303,9 +305,7 @@ register struct nlist *np;
 	    }
 	    warned = false;
 	    enterfile(ident(n), (Address) np->n_value);
-	    for (tt = &typetable[0]; tt < &typetable[NTYPES]; tt++) {
-		*tt = nil;
-	    }
+	    bzero(typetable, sizeof(typetable));
 	    break;
 
 	/*
@@ -463,6 +463,8 @@ String name;
 	s = insert(identname(&mname[i+1], true));
 	s->language = findlanguage(".s");
 	s->class = MODULE;
+	s->symvalue.funcv.beginaddr = 0;
+	findbeginning(s);
 	if (curblock->class != PROG) {
 	    exitblock();
 	    if (curblock->class != PROG) {
