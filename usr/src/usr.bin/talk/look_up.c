@@ -6,10 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)look_up.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)look_up.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <protocols/talkd.h>
+#include <errno.h>
 #include "talk_ctl.h"
+#include "talk.h"
 
 /*
  * See if the local daemon has an invitation for us.
@@ -39,7 +45,8 @@ check_local()
 		if (rp->addr.sa_family != AF_INET)
 			p_error("Response uses invalid network address");
 		errno = 0;
-		if (connect(sockt, &rp->addr, sizeof (rp->addr)) != -1)
+		if (connect(sockt,
+		    (struct sockaddr *)&rp->addr, sizeof (rp->addr)) != -1)
 			return (1);
 	} while (errno == EINTR);
 	if (errno == ECONNREFUSED) {

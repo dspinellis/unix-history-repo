@@ -6,11 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_addrs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_addrs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "talk_ctl.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <protocols/talkd.h>
 #include <netdb.h>
+#include <stdio.h>
+#include "talk_ctl.h"
 
 get_addrs(my_machine_name, his_machine_name)
 	char *my_machine_name, *his_machine_name;

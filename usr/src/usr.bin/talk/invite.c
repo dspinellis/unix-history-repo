@@ -6,13 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)invite.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)invite.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "talk_ctl.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <netinet/in.h>
+#include <protocols/talkd.h>
+#include <errno.h>
 #include <setjmp.h>
+#include "talk_ctl.h"
+#include "talk.h"
 
 /*
  * There wasn't an invitation waiting, so send a request containing
@@ -143,12 +149,14 @@ send_delete()
 	 */
 	msg.id_num = htonl(remote_id);
 	daemon_addr.sin_addr = his_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof (msg), 0, &daemon_addr,
+	if (sendto(ctl_sockt, &msg, sizeof (msg), 0,
+	    (struct sockaddr *)&daemon_addr,
 	    sizeof (daemon_addr)) != sizeof(msg))
 		perror("send_delete (remote)");
 	msg.id_num = htonl(local_id);
 	daemon_addr.sin_addr = my_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof (msg), 0, &daemon_addr,
+	if (sendto(ctl_sockt, &msg, sizeof (msg), 0,
+	    (struct sockaddr *)&daemon_addr,
 	    sizeof (daemon_addr)) != sizeof (msg))
 		perror("send_delete (local)");
 }

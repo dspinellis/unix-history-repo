@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctl.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -15,6 +15,11 @@ static char sccsid[] = "@(#)ctl.c	5.6 (Berkeley) %G%";
  * the progress
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <protocols/talkd.h>
+#include <netinet/in.h>
+#include "talk.h"
 #include "talk_ctl.h"
 
 struct	sockaddr_in daemon_addr = { sizeof(daemon_addr), AF_INET };
@@ -42,10 +47,10 @@ open_sockt()
 	sockt = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockt <= 0)
 		p_error("Bad socket");
-	if (bind(sockt, &my_addr, sizeof(my_addr)) != 0)
+	if (bind(sockt, (struct sockaddr *)&my_addr, sizeof(my_addr)) != 0)
 		p_error("Binding local socket");
 	length = sizeof(my_addr);
-	if (getsockname(sockt, &my_addr, &length) == -1)
+	if (getsockname(sockt, (struct sockaddr *)&my_addr, &length) == -1)
 		p_error("Bad address for socket");
 }
 
@@ -59,10 +64,12 @@ open_ctl()
 	ctl_sockt = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ctl_sockt <= 0)
 		p_error("Bad socket");
-	if (bind(ctl_sockt, &ctl_addr, sizeof(ctl_addr), 0) != 0)
+	if (bind(ctl_sockt,
+	    (struct sockaddr *)&ctl_addr, sizeof(ctl_addr)) != 0)
 		p_error("Couldn't bind to control socket");
 	length = sizeof(ctl_addr);
-	if (getsockname(ctl_sockt, &ctl_addr, &length) == -1)
+	if (getsockname(ctl_sockt,
+	    (struct sockaddr *)&ctl_addr, &length) == -1)
 		p_error("Bad address for ctl socket");
 }
 

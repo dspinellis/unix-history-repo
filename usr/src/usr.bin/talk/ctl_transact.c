@@ -6,11 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctl_transact.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl_transact.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "talk_ctl.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/time.h>
+#include <netinet/in.h>
+#include <protocols/talkd.h>
+#include <errno.h>
+#include "talk_ctl.h"
 
 #define CTL_WAIT 2	/* time to wait for a response, in seconds */
 
@@ -43,7 +48,8 @@ ctl_transact(target, msg, type, rp)
 		/* resend message until a response is obtained */
 		do {
 			cc = sendto(ctl_sockt, (char *)&msg, sizeof (msg), 0,
-				&daemon_addr, sizeof (daemon_addr));
+			    (struct sockaddr *)&daemon_addr,
+			    sizeof (daemon_addr));
 			if (cc != sizeof (msg)) {
 				if (errno == EINTR)
 					continue;
