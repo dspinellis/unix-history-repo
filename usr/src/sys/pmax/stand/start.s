@@ -1,14 +1,16 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Ralph Campbell.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.7 (Berkeley) %G%
- *
+ *	@(#)start.s	8.1 (Berkeley) %G%
+ */
+
+/*
  * start.s -
  *
  *     Contains code that is the first executed at boot time.
