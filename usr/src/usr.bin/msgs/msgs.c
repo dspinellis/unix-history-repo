@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	4.11 (Berkeley) %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)msgs.c	4.10 (Berkeley) %G%";
 #include <ctype.h>
 #include <pwd.h>
 #include <sgtty.h>
+#include <setjmp.h>
 #include "msgs.h"
 
 #define CMODE	0666		/* bounds file creation mode */
@@ -105,6 +106,7 @@ bool	locomode = NO;
 bool	pause = NO;
 bool	clean = NO;
 bool	lastcmd = NO;
+jmp_buf	tstpbuf;
 
 main(argc, argv)
 int argc; char *argv[];
@@ -415,9 +417,9 @@ int argc; char *argv[];
 		 * Print header
 		 */
 again:
-		tstpflag = NO;
 		if (totty)
 			signal(SIGTSTP, onsusp);
+		(void) setjmp(tstpbuf);
 		nlines = 2;
 		if (seenfrom) {
 			printf("Message %d:\nFrom %s %s", msg, from, date);
@@ -459,11 +461,6 @@ again:
 			inbuf[0] = 'y';
 		if (totty)
 			signal(SIGTSTP, SIG_DFL);
-		/*
-		 * Loop if we've been suspended
-		 */
-		if (tstpflag)
-			goto again;
 cmnd:
 		in = inbuf;
 		switch (*in) {
@@ -603,14 +600,12 @@ onintr()
  */
 onsusp()
 {
-	tstpflag = YES;
+
 	signal(SIGTSTP, SIG_DFL);
 	sigsetmask(0);
 	kill(0, SIGTSTP);
-
-	/* the pc stops here */
-
 	signal(SIGTSTP, onsusp);
+	longjmp(tstpbuf);
 }
 
 linecnt(f)
