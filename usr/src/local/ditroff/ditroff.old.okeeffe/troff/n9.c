@@ -93,8 +93,8 @@ int	c;
 setov()
 {
 	register j, k;
-	tchar i, *p, o[NOV];
-	int	delim, w[NOV];
+	tchar i, *p, o[NOV+1];
+	int	delim, w[NOV+1];
 
 	if (ismot(i = getch()))
 		return;
