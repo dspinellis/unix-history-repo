@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "indent_globs.h"
@@ -244,6 +244,8 @@ inhibit_newline:
     ps.ind_level = ps.i_l_follow;
     ps.paren_level = ps.p_l_follow;
     paren_target = -ps.paren_indents[ps.paren_level - 1];
+    paren_target = (ps.paren_level > 0 ? -ps.paren_indents[ps.paren_level - 1]
+		    : 0);
     not_first_line = 1;
     return;
 };
@@ -324,7 +326,7 @@ fill_buffer()
 		break;
     }
     buf_end = p;
-    if (p[-2] == '/' && p[-3] == '*') {
+    if (p - in_buffer > 3 && p[-2] == '/' && p[-3] == '*') {
 	if (in_buffer[3] == 'I' && strncmp(in_buffer, "/**INDENT**", 11) == 0)
 	    fill_buffer();	/* flush indent error message */
 	else {
