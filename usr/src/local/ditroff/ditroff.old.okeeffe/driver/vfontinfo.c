@@ -13,6 +13,10 @@ static char sccsid[] = "@(#)vfontinfo.c	4.3 (Berkeley) 7/16/83";
 #include <ctype.h>
 #include <vfont.h>
 
+#ifndef BITDIR
+#define BITDIR "/usr/lib/vfont"
+#endif
+
 struct header FontHeader;
 struct dispatch disptable[256];
 
@@ -69,7 +73,7 @@ char **argv;
 	if (argc >= 3)
 		charswanted = argv[2];
 
-	sprintf(IName,"/usr/lib/vfont/%s",argv[1]);
+	sprintf(IName, "%s/%s", BITDIR, argv[1]);
 	if ((FID = open(argv[1],0)) < 0)
 		if ((FID = open(IName,0)) < 0) { 
 			printf("Can't find %s\n",argv[1]);
