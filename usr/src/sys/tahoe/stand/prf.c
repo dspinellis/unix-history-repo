@@ -1,4 +1,4 @@
-/*	prf.c	1.2	86/11/04	*/
+/*	prf.c	1.3	88/03/02	*/
 /*	prf.c	4.3	81/05/05	*/
 
 #include "../machine/mtpr.h"
@@ -104,30 +104,6 @@ number:
 }
 
 /*
- * Printn prints a number n in base b.
- * We don't use recursion to avoid deep kernel stacks.
- */
-printn(n, b)
-	u_long n;
-{
-	char prbuf[11];
-	register char *cp;
-
-	if (b == 10 && (int)n < 0) {
-		putchar('-');
-		n = (unsigned)(-(int)n);
-	}
-	cp = prbuf;
-	do {
-		*cp++ = "0123456789abcdef"[n%b];
-		n /= b;
-	} while (n);
-	do
-		putchar(*--cp);
-	while (cp > prbuf);
-}
-
-/*
  * Print a character on console.
  */
 struct	cpdcb_o cpout;
@@ -179,43 +155,4 @@ getchar()
 	if (c != '\b' && c != '\177')
 		putchar(c);
 	return (c);
-}
-
-gets(buf)
-	char *buf;
-{
-	register char *lp;
-	register c;
-
-	lp = buf;
-	for (;;) {
-		c = getchar() & 0177;
-		switch(c) {
-		case '\n':
-		case '\r':
-			c = '\n';
-			*lp++ = '\0';
-			return;
-		case '\b':
-		case '\177':
-			if (lp > buf) {
-				lp--;
-				putchar('\b');
-				putchar(' ');
-				putchar('\b');
-			}
-			continue;
-		case '#':
-			if (--lp < buf)
-				lp = buf;
-			continue;
-		case '@':
-		case 'u'&037:
-			lp = buf;
-			putchar('\n');
-			continue;
-		default:
-			*lp++ = c;
-		}
-	}
 }
