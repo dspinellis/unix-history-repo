@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.2		%G%);
+SCCSID(@(#)main.c	4.3		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -337,6 +337,11 @@ main(argc, argv)
 	switch (OpMode)
 	{
 	  case MD_FREEZE:
+		/* this is critical to avoid forgeries of the frozen config */
+		setuid(getuid());
+		setgid(getgid());
+
+		/* freeze the configuration */
 		freeze(FreezeFile);
 		exit(EX_OK);
 
