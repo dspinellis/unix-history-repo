@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.6.1.1 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,8 @@
 #include <sys/buf.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
 #include <vm/vm.h>
 #include <sys/sysctl.h>
@@ -199,8 +201,6 @@ extern int (**dead_vnodeop_p)();
 extern void vclean();
 long numvnodes;
 extern struct vattr va_null;
-int newnodes = 0;
-int printcnt = 0;
 
 /*
  * Return the next vnode from the free list.
@@ -214,19 +214,13 @@ getnewvnode(tag, mp, vops, vpp)
 	register struct vnode *vp;
 	int s;
 
-newnodes++;
 	if ((vnode_free_list.tqh_first == NULL &&
 	     numvnodes < 2 * desiredvnodes) ||
 	    numvnodes < desiredvnodes) {
 		vp = (struct vnode *)malloc((u_long)sizeof *vp,
 		    M_VNODE, M_WAITOK);
 		bzero((char *)vp, sizeof *vp);
-		vp->v_freelist.tqe_next = (struct vnode *)0xdeadf;
-		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
-		vp->v_mntvnodes.le_next = (struct vnode *)0xdeadf;
-		vp->v_mntvnodes.le_prev = (struct vnode **)0xdeadb;
 		numvnodes++;
-		vp->v_spare[0] = numvnodes;
 	} else {
 		if ((vp = vnode_free_list.tqh_first) == NULL) {
 			tablefull("vnode");
@@ -235,11 +229,7 @@ newnodes++;
 		}
 		if (vp->v_usecount)
 			panic("free vnode isn't");
-		if (vp->v_freelist.tqe_next == (struct vnode *)0xdeadf ||
-		    vp->v_freelist.tqe_prev == (struct vnode **)0xdeadb)
-			panic("getnewvnode: not on queue");
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
-		vp->v_freelist.tqe_next = (struct vnode *)0xdeadf;
 		/* see comment on why 0xdeadb is set at end of vgone (below) */
 		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
 		vp->v_lease = NULL;
@@ -270,9 +260,9 @@ newnodes++;
 	*vpp = vp;
 	vp->v_usecount = 1;
 	vp->v_data = 0;
-	if (printcnt-- > 0) vprint("getnewvnode got", vp);
 	return (0);
 }
+
 /*
  * Move a vnode from one mount queue to another.
  */
@@ -284,22 +274,13 @@ insmntque(vp, mp)
 	/*
 	 * Delete from old mount point vnode list, if on one.
 	 */
-	if (vp->v_mount != NULL) {
-		if (vp->v_mntvnodes.le_next == (struct vnode *)0xdeadf ||
-		    vp->v_mntvnodes.le_prev == (struct vnode **)0xdeadb)
-			panic("insmntque: not on queue");
+	if (vp->v_mount != NULL)
 		LIST_REMOVE(vp, v_mntvnodes);
-		vp->v_mntvnodes.le_next = (struct vnode *)0xdeadf;
-		vp->v_mntvnodes.le_prev = (struct vnode **)0xdeadb;
-	}
 	/*
 	 * Insert into list of vnodes for the new mount point, if available.
 	 */
 	if ((vp->v_mount = mp) == NULL)
 		return;
-	if (vp->v_mntvnodes.le_next != (struct vnode *)0xdeadf ||
-	    vp->v_mntvnodes.le_prev != (struct vnode **)0xdeadb)
-		panic("insmntque: already on queue");
 	LIST_INSERT_HEAD(&mp->mnt_vnodelist, vp, v_mntvnodes);
 }
 
@@ -576,18 +557,11 @@ vget(vp, lockflag)
 		sleep((caddr_t)vp, PINOD);
 		return (1);
 	}
-	if (vp->v_usecount == 0) {
-		if (vp->v_freelist.tqe_next == (struct vnode *)0xdeadf ||
-		    vp->v_freelist.tqe_prev == (struct vnode **)0xdeadb)
-			panic("vget: not on queue");
+	if (vp->v_usecount == 0)
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
-		vp->v_freelist.tqe_next = (struct vnode *)0xdeadf;
-		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
-	}
 	vp->v_usecount++;
 	if (lockflag)
 		VOP_LOCK(vp);
-	if (printcnt-- > 0) vprint("vget got", vp);
 	return (0);
 }
 
@@ -600,11 +574,7 @@ void vref(vp)
 
 	if (vp->v_usecount <= 0)
 		panic("vref used where vget required");
-	if (vp->v_freelist.tqe_next != (struct vnode *)0xdeadf ||
-	    vp->v_freelist.tqe_prev != (struct vnode **)0xdeadb)
-		panic("vref: not free");
 	vp->v_usecount++;
-	if (printcnt-- > 0) vprint("vref get", vp);
 }
 
 /*
@@ -631,7 +601,6 @@ void vrele(vp)
 		panic("vrele: null vp");
 #endif
 	vp->v_usecount--;
-	if (printcnt-- > 0) vprint("vrele put", vp);
 	if (vp->v_usecount > 0)
 		return;
 #ifdef DIAGNOSTIC
@@ -643,9 +612,6 @@ void vrele(vp)
 	/*
 	 * insert at tail of LRU list
 	 */
-	if (vp->v_freelist.tqe_next != (struct vnode *)0xdeadf ||
-	    vp->v_freelist.tqe_prev != (struct vnode **)0xdeadb)
-		panic("vrele: not free");
 	TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_freelist);
 	VOP_INACTIVE(vp);
 }
@@ -680,8 +646,10 @@ void holdrele(vp)
  * system error). If MNT_FORCE is specified, detach any active vnodes
  * that are found.
  */
+#ifdef DIAGNOSTIC
 int busyprt = 0;	/* print out busy vnodes */
 struct ctldebug debug1 = { "busyprt", &busyprt };
+#endif
 
 vflush(mp, skipvp, flags)
 	struct mount *mp;
@@ -738,8 +706,10 @@ loop:
 			}
 			continue;
 		}
+#ifdef DIAGNOSTIC
 		if (busyprt)
 			vprint("vflush: busy vnode", vp);
+#endif
 		busy++;
 	}
 	if (busy)
@@ -889,12 +859,7 @@ void vgone(vp)
 	 * Delete from old mount point vnode list, if on one.
 	 */
 	if (vp->v_mount != NULL) {
-		if (vp->v_mntvnodes.le_next == (struct vnode *)0xdeadf ||
-		    vp->v_mntvnodes.le_prev == (struct vnode **)0xdeadb)
-			panic("vgone: not on queue");
 		LIST_REMOVE(vp, v_mntvnodes);
-		vp->v_mntvnodes.le_next = (struct vnode *)0xdeadf;
-		vp->v_mntvnodes.le_prev = (struct vnode **)0xdeadb;
 		vp->v_mount = NULL;
 	}
 	/*
@@ -948,8 +913,6 @@ void vgone(vp)
 	if (vp->v_usecount == 0 &&
 	    vp->v_freelist.tqe_prev != (struct vnode **)0xdeadb &&
 	    vnode_free_list.tqh_first != vp) {
-		if (vp->v_freelist.tqe_next == (struct vnode *)0xdeadf)
-			panic("vgone: use 0, not free");
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
 		TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_freelist);
 	}
@@ -1016,7 +979,6 @@ vprint(label, vp)
 
 	if (label != NULL)
 		printf("%s: ", label);
-	printf("num %d ", vp->v_spare[0]);
 	printf("type %s, usecount %d, writecount %d, refcount %d,",
 		typename[vp->v_type], vp->v_usecount, vp->v_writecount,
 		vp->v_holdcnt);
@@ -1126,4 +1088,190 @@ again:
 
 	*sizep = bp - where;
 	return (0);
+}
+
+/*
+ * Check to see if a filesystem is mounted on a block device.
+ */
+int
+vfs_mountedon(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq;
+
+	if (vp->v_specflags & SI_MOUNTEDON)
+		return (EBUSY);
+	if (vp->v_flag & VALIASED) {
+		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
+			if (vq->v_rdev != vp->v_rdev ||
+			    vq->v_type != vp->v_type)
+				continue;
+			if (vq->v_specflags & SI_MOUNTEDON)
+				return (EBUSY);
+		}
+	}
+	return (0);
+}
+
+/*
+ * Build hash lists of net addresses and hang them off the mount point.
+ * Called by ufs_mount() to set up the lists of export addresses.
+ */
+static int
+vfs_hang_addrlist(mp, nep, argp)
+	struct mount *mp;
+	struct netexport *nep;
+	struct export_args *argp;
+{
+	register struct netcred *np;
+	register struct radix_node_head *rnh;
+	register int i;
+	struct radix_node *rn;
+	struct sockaddr *saddr, *smask = 0;
+	struct domain *dom;
+	int error;
+
+	if (argp->ex_addrlen == 0) {
+		if (mp->mnt_flag & MNT_DEFEXPORTED)
+			return (EPERM);
+		np = &nep->ne_defexported;
+		np->netc_exflags = argp->ex_flags;
+		np->netc_anon = argp->ex_anon;
+		np->netc_anon.cr_ref = 1;
+		mp->mnt_flag |= MNT_DEFEXPORTED;
+		return (0);
+	}
+	i = sizeof(struct netcred) + argp->ex_addrlen + argp->ex_masklen;
+	np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
+	bzero((caddr_t)np, i);
+	saddr = (struct sockaddr *)(np + 1);
+	if (error = copyin(argp->ex_addr, (caddr_t)saddr, argp->ex_addrlen))
+		goto out;
+	if (saddr->sa_len > argp->ex_addrlen)
+		saddr->sa_len = argp->ex_addrlen;
+	if (argp->ex_masklen) {
+		smask = (struct sockaddr *)((caddr_t)saddr + argp->ex_addrlen);
+		error = copyin(argp->ex_addr, (caddr_t)smask, argp->ex_masklen);
+		if (error)
+			goto out;
+		if (smask->sa_len > argp->ex_masklen)
+			smask->sa_len = argp->ex_masklen;
+	}
+	i = saddr->sa_family;
+	if ((rnh = nep->ne_rtable[i]) == 0) {
+		/*
+		 * Seems silly to initialize every AF when most are not
+		 * used, do so on demand here
+		 */
+		for (dom = domains; dom; dom = dom->dom_next)
+			if (dom->dom_family == i && dom->dom_rtattach) {
+				dom->dom_rtattach((void **)&nep->ne_rtable[i],
+					dom->dom_rtoffset);
+				break;
+			}
+		if ((rnh = nep->ne_rtable[i]) == 0) {
+			error = ENOBUFS;
+			goto out;
+		}
+	}
+	rn = (*rnh->rnh_addaddr)((caddr_t)saddr, (caddr_t)smask, rnh,
+		np->netc_rnodes);
+	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
+		error = EPERM;
+		goto out;
+	}
+	np->netc_exflags = argp->ex_flags;
+	np->netc_anon = argp->ex_anon;
+	np->netc_anon.cr_ref = 1;
+	return (0);
+out:
+	free(np, M_NETADDR);
+	return (error);
+}
+
+/* ARGSUSED */
+static int
+vfs_free_netcred(rn, w)
+	struct radix_node *rn;
+	caddr_t w;
+{
+	register struct radix_node_head *rnh = (struct radix_node_head *)w;
+
+	(*rnh->rnh_deladdr)(rn->rn_key, rn->rn_mask, rnh);
+	free((caddr_t)rn, M_NETADDR);
+	return (0);
+}
+	
+/*
+ * Free the net address hash lists that are hanging off the mount points.
+ */
+static void
+vfs_free_addrlist(nep)
+	struct netexport *nep;
+{
+	register int i;
+	register struct radix_node_head *rnh;
+
+	for (i = 0; i <= AF_MAX; i++)
+		if (rnh = nep->ne_rtable[i]) {
+			(*rnh->rnh_walktree)(rnh, vfs_free_netcred,
+			    (caddr_t)rnh);
+			free((caddr_t)rnh, M_RTABLE);
+			nep->ne_rtable[i] = 0;
+		}
+}
+
+int
+vfs_export(mp, nep, argp)
+	struct mount *mp;
+	struct netexport *nep;
+	struct export_args *argp;
+{
+	int error;
+
+	if (argp->ex_flags & MNT_DELEXPORT) {
+		vfs_free_addrlist(nep);
+		mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
+	}
+	if (argp->ex_flags & MNT_EXPORTED) {
+		if (error = vfs_hang_addrlist(mp, nep, argp))
+			return (error);
+		mp->mnt_flag |= MNT_EXPORTED;
+	}
+	return (0);
+}
+
+struct netcred *
+vfs_export_lookup(mp, nep, nam)
+	register struct mount *mp;
+	struct netexport *nep;
+	struct mbuf *nam;
+{
+	register struct netcred *np;
+	register struct radix_node_head *rnh;
+	struct sockaddr *saddr;
+
+	np = NULL;
+	if (mp->mnt_flag & MNT_EXPORTED) {
+		/*
+		 * Lookup in the export list first.
+		 */
+		if (nam != NULL) {
+			saddr = mtod(nam, struct sockaddr *);
+			rnh = nep->ne_rtable[saddr->sa_family];
+			if (rnh != NULL) {
+				np = (struct netcred *)
+					(*rnh->rnh_matchaddr)((caddr_t)saddr,
+							      rnh);
+				if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
+					np = NULL;
+			}
+		}
+		/*
+		 * If no address match, use the default if it exists.
+		 */
+		if (np == NULL && mp->mnt_flag & MNT_DEFEXPORTED)
+			np = &nep->ne_defexported;
+	}
+	return (np);
 }
