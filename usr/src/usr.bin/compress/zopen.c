@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)zopen.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)zopen.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*-
@@ -278,7 +278,7 @@ probe:		if ((i -= disp) < 0)
 			ent = codetabof(i);
 			continue;
 		}
-		if ((long)htabof(i) > 0)
+		if ((long)htabof(i) >= 0)
 			goto probe;
 nomatch:	if (output(zs, (code_int) ent) == -1)
 			return (-1);
