@@ -15,11 +15,11 @@
 
 /* Link with libg.a when debugging, for dbx's sake.  */
 
-#define LIB_SPEC "%{g:-lg} %{!p:%{!pg:-lc}}%{p:-lc_p}%{pg:-lc_p} "
+#define LIB_SPEC "%{g:-lgnulib} %{!p:%{!pg:-lc}}%{p:-lc_p}%{pg:-lc_p}"
 
 /* Every structure or union's size must be a multiple of 2 bytes.  */
 
-#define STRUCTURE_SIZE_BOUNDARY 16
+#define STRUCTURE_SIZE_BOUNDARY 8
 
 /* This is BSD, so it wants DBX format.  */
 
@@ -38,3 +38,12 @@
    doesn't support it.  */
 
 #define DBX_NO_XREFS
+
+
+#define HAVE_ATEXIT
+
+/* Don't attempt to use mcrt0.o for 'cc -p'. */
+
+#define STARTFILE_SPEC  "%{pg:gcrt0.o%s}%{!pg:%{p:gcrt0.o%s}%{!p:crt0.o%s}}"
+
+#define SIZE_TYPE "unsigned int"
