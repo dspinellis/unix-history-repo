@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -98,8 +98,6 @@ again:
 					fatal("-d: missing %s", name);
 				argc--, argv++;
 				i = atoi(*argv);
-				if (i < 0)
-					fatal("%s: bad %s", *argv, name);
 				fprintf(stdout,
 					"%s changes from %dms to %dms\n",
 					name, sblock.fs_rotdelay, i);
