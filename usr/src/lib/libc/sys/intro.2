@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	8.2 (Berkeley) %G%
+.\"     @(#)intro.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -50,7 +50,7 @@ names as given in
 .Bl -hang -width Ds
 .It Er 0 Em "Error 0" .
 Not used.
-.It Er 1 EPERM Em "Operation not permitted .
+.It Er 1 EPERM Em "Operation not permitted" .
 An attempt was made to perform an operation limited to processes
 with appropriate privileges or to the owner of a file or other
 resources.
@@ -70,7 +70,7 @@ function. If the signal handler performs a normal return, the
 interrupted function call will seem to have returned the error condition.
 .It Er 5 EIO Em "Input/output error" .
 Some physical input or output error occurred.
-This error not be reported until a subsequent operation on the same file
+This error will not be reported until a subsequent operation on the same file
 descriptor and may be lost (over written) by any subsequent errors.
 .It Er 6 ENXIO Em "\&No such device or address" .
 Input or output on a special file referred to a device that did not
@@ -78,7 +78,7 @@ exist, or
 made a request beyond the limits of the device.
 This error may also occur when, for example,
 a tape drive is not online or no disk pack is
-is loaded on a drive.
+loaded on a drive.
 .It Er 7 E2BIG Em "Arg list too long" .
 The number of bytes used for the argument and environment
 list of the new process exceeded the current limit
@@ -164,7 +164,7 @@ special device for which the operation was inappropriate.
 .It Er 26 ETXTBSY Em "Text file busy" .
 The new process was a pure procedure (shared text) file
 which was open for writing by another process, or
-the pure procedure file was being executed an
+while the pure procedure file was being executed an
 .Xr open
 call requested write access.
 .It Er 27 EFBIG Em "File too large" .
@@ -177,9 +177,9 @@ A
 .Xr write
 to an ordinary file, the creation of a
 directory or symbolic link, or the creation of a directory
-entry failed because no more disk blocks are available
+entry failed because no more disk blocks were available
 on the file system, or the allocation of an inode for a newly
-created file failed because no more inodes are available
+created file failed because no more inodes were available
 on the file system.
 .It Er 29 ESPIPE Em "Illegal seek" .
 An
@@ -202,7 +202,7 @@ to read the data.
 A numerical input argument was outside the defined domain of the mathematical
 function.
 .It Er 34 ERANGE Em "Numerical result out of range" .
-A numerical result of the function was to large to fit in the
+A numerical result of the function was too large to fit in the
 available space (perhaps exceeded precision).
 .It Er 35 EAGAIN Em "Resource temporarily unavailable" .
 This is a temporary condition and later calls to the
@@ -292,7 +292,7 @@ request on a connected socket specified a destination
 when already connected.
 .It Er 57 ENOTCONN Em "Socket is not connected" .
 An request to send or receive data was disallowed because
-the socket is not connected and (when sending on a  datagram socket)
+the socket was not connected and (when sending on a datagram socket)
 no address was supplied.
 .It Er 58 ESHUTDOWN Em "Cannot send after socket shutdown" .
 A request to send data was disallowed because the socket

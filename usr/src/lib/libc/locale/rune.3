@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rune.3	8.1 (Berkeley) %G%
+.\"	@(#)rune.3	8.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt RUNE 3
@@ -44,7 +44,7 @@ as well as the properties of the runes as defined in
 \fB<ctype.h>\fP.
 The
 .Fa locale
-argument indicates the locale which to load.
+argument indicates which locale to load.
 If the locale is successfully loaded,
 .Dv 0
 is returned, otherwise an errno value is returned to indicate the
@@ -148,7 +148,7 @@ on an encoding error, or the rune decoded if all went well.
 .Pp
 The
 .Fn fungetrune
-function function pushes the multibyte encoding, as provided by
+function pushes the multibyte encoding, as provided by
 .Fn sputrune ,
 of
 .Fa rune

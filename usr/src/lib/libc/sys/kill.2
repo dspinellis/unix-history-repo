@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kill.2	8.1 (Berkeley) %G%
+.\"     @(#)kill.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KILL 2
@@ -54,7 +54,7 @@ process has permission;
 this is a variant of
 .Xr killpg 2 .
 .It \&If Fa pid No \&is -1 :
-If the user has super user privileges,
+If the user has super-user privileges,
 the signal is sent to all processes excluding
 system processes and the process sending the signal.
 If the user is not the super user, the signal is sent to all processes

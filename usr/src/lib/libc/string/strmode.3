@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strmode.3	8.1 (Berkeley) %G%
+.\"     @(#)strmode.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRMODE 3
@@ -57,7 +57,7 @@ third for the ``other'', or default, set of users.
 .Pp
 Permission checking is done as specifically as possible.
 If read permission is denied to the owner of a file in the first set
-of permssions, the owner of the file will not be able to read the file.
+of permissions, the owner of the file will not be able to read the file.
 This is true even if the owner is in the file's group and the group
 permissions allow reading or the ``other'' permissions allow reading.
 .Pp
@@ -71,28 +71,28 @@ The third character is the first of the following characters that apply:
 .Bl -tag -width xxxx
 .It S
 If the character is part of the owner permissions and the file is not
-executable or the directory is not searchable, by the owner, and the
+executable or the directory is not searchable by the owner, and the
 set-user-id bit is set.
 .It S
 If the character is part of the group permissions and the file is not
-executable or the directory is not searchable, by the group, and the
+executable or the directory is not searchable by the group, and the
 set-group-id bit is set.
 .It T
 If the character is part of the other permissions and the file is not
-executable or the directory is not searchable, by others, and the ``sticky''
+executable or the directory is not searchable by others, and the ``sticky''
 .Pq Dv S_ISVTX
 bit is set.
 .It s
 If the character is part of the owner permissions and the file is
-executable or the directory searchable, by the owner, and the set-user-id
+executable or the directory searchable by the owner, and the set-user-id
 bit is set.
 .It s
 If the character is part of the group permissions and the file is
-executable or the directory searchable, by the group, and the set-group-id
+executable or the directory searchable by the group, and the set-group-id
 bit is set.
 .It t
 If the character is part of the other permissions and the file is
-executable or the directory searchable, by others, and the ``sticky''
+executable or the directory searchable by others, and the ``sticky''
 .Pq Dv S_ISVTX
 bit is set.
 .It x

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mlock.2	8.1 (Berkeley) %G%
+.\"	@(#)mlock.2	8.2 (Berkeley) %G%
 .\"
 .Dd June 2, 1993
 .Dt MLOCK 2
@@ -46,7 +46,7 @@ The entire range must be allocated.
 After an
 .Nm mlock
 call, the indicated pages will cause neither a non-resident page
-or address-translation fault until they are unlocked.
+nor address-translation fault until they are unlocked.
 They may still cause protection-violation faults or TLB-miss faults on
 architectures with software-managed TLBs.
 The physical pages remain in memory until all locked mappings for the pages

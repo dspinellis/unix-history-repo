@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount_null.8	8.1 (Berkeley) %G%
+.\"     @(#)mount_null.8	8.2 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -74,9 +74,9 @@ pass.
 The bypass routine accepts arbitrary vnode operations for
 handling by the lower layer.  It begins by examing vnode
 operation arguments and replacing any null-nodes by their
-lower-layer equivlants.  It then invokes the operation
+lower-layer equivalants.  It then invokes the operation
 on the lower layer.  Finally, it replaces the null-nodes
-in the arguments and, if a vnode is return by the operation,
+in the arguments and, if a vnode is returned by the operation,
 stacks a null-node on top of the returned vnode.
 .Pp
 Although bypass handles most operations, 
@@ -156,7 +156,7 @@ by mapping an vnode arguments to the lower layer.
 .Pp
 The first approach is to call the aliasing layer's bypass routine.
 This method is most suitable when you wish to invoke the operation
-currently being hanldled on the lower layer.  It has the advantage
+currently being handled on the lower layer.  It has the advantage
 the the bypass routine already must do argument mapping.
 An example of this is 
 .Em null_getattrs

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dir.5	8.1 (Berkeley) %G%
+.\"     @(#)dir.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIR 5
@@ -16,13 +16,13 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/dir.h>
 .Sh DESCRIPTION
-Directories provide a convienent hierarchical method of grouping
+Directories provide a convenient hierarchical method of grouping
 files while obscuring the underlying details of the storage medium.
 A directory file is differentiated from a plain file
 by a flag in its
 .Xr inode 5
 entry.
-It consists of records (directory entries) each of which contain
+It consists of records (directory entries) each of which contains
 information about a file and a pointer to the file itself.
 Directory entries may contain other directories
 as well as plain files; such nested directories are refered to as

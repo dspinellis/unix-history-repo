@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getcap.3	8.1 (Berkeley) %G%
+.\"	@(#)getcap.3	8.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt GETCAP 3 
@@ -313,7 +313,7 @@ file in which the
 is declared and all subsequent files in the file array.
 .Pp
 When a database is searched for a capability record, the first matching
-record in the search is returned.  When an record is scanned for a
+record in the search is returned.  When a record is scanned for a
 capability, the first matching capability is returned; the capability
 .Ic :nameT@:
 will hide any following definition of a value of type
@@ -438,7 +438,7 @@ use `\e\|200' to represent a
 .Nm cgetfirst ,
 and
 .Nm cgetnext
-return a a value greater than or equal to 0 on success and a value less
+return a value greater than or equal to 0 on success and a value less
 than 0 on failure.
 .Nm Cgetcap
 returns a character pointer on success and a

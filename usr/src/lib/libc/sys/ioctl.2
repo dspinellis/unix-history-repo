@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ioctl.2	8.1 (Berkeley) %G%
+.\"     @(#)ioctl.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IOCTL 2
@@ -48,7 +48,7 @@ If an error has occurred, a value of -1 is returned and
 is set to indicate the error.
 .Sh ERRORS
 .Fn Ioctl
-will fail:
+will fail if:
 .Bl -tag -width [ENOTTY]
 .It Bq Er EBADF
 .Fa d

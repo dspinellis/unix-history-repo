@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)statfs.2	8.1 (Berkeley) %G%
+.\"	@(#)statfs.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STATFS 2
@@ -105,7 +105,7 @@ error occurred while reading from or writing to the file system.
 .El
 .Pp
 .Fn Fstatfs
-fails if one or both of the following are true:
+fails if one or more of the following are true:
 .Bl -tag -width ENAMETOOLONGA
 .It Bq Er EBADF
 .Fa Fd

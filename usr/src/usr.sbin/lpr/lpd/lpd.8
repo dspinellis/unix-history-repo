@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lpd.8	8.1 (Berkeley) %G%
+.\"     @(#)lpd.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LPD 8
@@ -125,7 +125,7 @@ output.
 DVI File.  The file contains
 .Tn Tex l
 output
-DVI format from Standford).
+DVI format from Standford.
 .It g
 Graph File.  The file contains data produced by
 .Xr plot 3 .
@@ -160,7 +160,7 @@ for the standard input (when
 is invoked in a pipeline).
 .El
 .Pp
-If a file can not be opened, a message will be logged via
+If a file cannot be opened, a message will be logged via
 .Xr syslog 3
 using the
 .Em LOG_LPR
@@ -174,7 +174,7 @@ skip the file to be printed.
 uses
 .Xr flock 2
 to provide exclusive access to the lock file and to prevent multiple
-deamons from becoming active simultaneously.  If the daemon should be killed
+daemons from becoming active simultaneously.  If the daemon should be killed
 or die unexpectedly, the lock file need not be removed.
 The lock file is kept in a readable
 .Tn ASCII

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)listen.2	8.1 (Berkeley) %G%
+.\"     @(#)listen.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LISTEN 2
@@ -45,7 +45,8 @@ the request may be ignored so that retries may succeed.
 .Sh RETURN VALUES
 A 0 return value indicates success; -1 indicates an error.
 .Sh ERRORS
-.Fn Listen will fail if:
+.Fn Listen 
+will fail if:
 .Bl -tag -width [EOPNOTSUPP]
 .It Bq Er EBADF
 The argument

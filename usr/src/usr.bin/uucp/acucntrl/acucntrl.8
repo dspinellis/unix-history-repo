@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)acucntrl.8	8.1 (Berkeley) %G%
+.\"	@(#)acucntrl.8	8.2 (Berkeley) %G%
 .\"
 .TH ACUCNTRL 8 ""
 .UC 6
@@ -15,7 +15,8 @@ keyword ttyline
 .SH DESCRIPTION
 .PP
 .I Acucntrl
-turns around terminal line, enabling it to be used for both dialin and dialout.
+turns around the terminal line,
+enabling it to be used for both dialin and dialout.
 On dialin a terminal line is assumed to have  modem control enabled and a getty
 process in existence waiting for logins.  On dialout modem control is disabled
 and there is no getty process.
@@ -81,7 +82,7 @@ make sure that DTR is on
 .PP
 Steps taken when enabling
 .RI ( i . e .
-setup for dialin)
+setup for dialing in)
 .IP 1)
 check input arguments
 .IP 2)
@@ -127,7 +128,7 @@ enough on a loaded system.  Because of this problem and the above problem with
 the dh driver there is deliberately no error message given when the TIOCMGET
 ioctl fails.
 .PP
-Previously there was similar synchronization problem with the init process.
+Previously there were similar synchronization problems with the init process.
 When dialins are disabled the capitalized name of the process cannot be posted
 into /etc/utmp until init has finished clearing /etc/utmp.  However one does
 not know how long that will take, and, on a loaded system,  it can take quite

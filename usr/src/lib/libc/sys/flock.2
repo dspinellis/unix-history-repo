@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)flock.2	8.1 (Berkeley) %G%
+.\"     @(#)flock.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FLOCK 2
@@ -27,11 +27,11 @@ lock on the file associated with the file descriptor
 .Fa fd .
 A lock is applied by specifying an
 .Fa operation
-parameter that is the inclusive or of
+parameter that is one of
 .Dv LOCK_SH
 or
 .Dv LOCK_EX
-and, possibly,
+with the optional addition of
 .Dv LOCK_NB .
 To unlock
 an existing lock

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ping.8	8.1 (Berkeley) %G%
+.\"     @(#)ping.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PING 8
@@ -39,7 +39,6 @@ followed by a
 and then an arbitrary number of ``pad'' bytes used to fill out the
 packet.
 The options are as follows:
-Other options are:
 .Bl -tag -width Ds
 .It Fl c Ar count
 Stop after sending (and receiving)
@@ -56,7 +55,7 @@ Outputs packets as fast as they come back or one hundred times per second,
 whichever is more.
 For every
 .Tn ECHO_REQUEST
-sent a period ``.'' is printed, while for ever
+sent a period ``.'' is printed, while for every
 .Tn ECHO_REPLY
 received a backspace is printed.
 This provides a rapid display of how many packets are being dropped.
