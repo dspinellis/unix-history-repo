@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -384,26 +384,24 @@ main(argc, argv)
 
 	/*
 	 * Initialize various variables.
-	 *	.PMAKE gets how we were executed.
 	 *	MAKE also gets this name, for compatibility
 	 *	.MAKEFLAGS gets set to the empty string just in case.
 	 *	MFLAGS also gets initialized empty, for compatibility.
 	 */
-	Var_Set(".PMAKE", argv[0], VAR_GLOBAL);
 	Var_Set("MAKE", argv[0], VAR_GLOBAL);
 	Var_Set(MAKEFLAGS, "", VAR_GLOBAL);
 	Var_Set("MFLAGS", "", VAR_GLOBAL);
 	Var_Set("MACHINE", MACHINE, VAR_GLOBAL);
 
 	/*
-	 * First snag any flags out of the PMAKE environment variable.
+	 * First snag any flags out of the MAKE environment variable.
 	 * (Note this is *not* MAKEFLAGS since /bin/make uses that and it's
 	 * in a different format).
 	 */
 #ifdef POSIX
 	Main_ParseArgLine(getenv("MAKEFLAGS"));
 #else
-	Main_ParseArgLine(getenv("PMAKE"));
+	Main_ParseArgLine(getenv("MAKE"));
 #endif
     
 	MainParseArgs(argc, argv);
@@ -455,11 +453,11 @@ main(argc, argv)
 
 	Var_Append("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
-	/* Install all the flags into the PMAKE envariable. */
+	/* Install all the flags into the MAKE envariable. */
 #ifdef POSIX
 	setenv("MAKEFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL));
 #else
-	setenv("PMAKE", Var_Value(MAKEFLAGS, VAR_GLOBAL));
+	setenv("MAKE", Var_Value(MAKEFLAGS, VAR_GLOBAL));
 #endif
 
 	/*
