@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)utmp.5	8.1 (Berkeley) %G%
+.\"     @(#)utmp.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTMP 5
@@ -156,9 +156,9 @@ is recorded in the field
 In the field
 .Fa ut_line ,
 the character
-.Ql \&{
-indicates the time prior to the change, and the character
 .Ql \\*(Ba
+indicates the time prior to the change, and the character
+.Ql \&{
 indicates the new time.
 .El
 .Sh FILES
