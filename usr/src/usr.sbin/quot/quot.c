@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)quot.c	4.3 (Berkeley) 82/10/24";
+#ifndef lint
+static char *sccsid = "@(#)quot.c	4.4 (Berkeley) 83/07/01";
+#endif
 
 /*
  * quot
@@ -82,8 +84,8 @@ char **argv;
 			else if (argv[0][1]=='h')
 				hflg++;
 		} else {
-			check(*argv);
-			report();
+			if (check(*argv) == 0)
+				report();
 		}
 	}
 	return(0);
@@ -99,7 +101,7 @@ char *file;
 	fi = open(file, 0);
 	if (fi < 0) {
 		printf("cannot open %s\n", file);
-		return;
+		return (-1);
 	}
 	printf("%s:\n", file);
 	sync();
@@ -215,6 +217,8 @@ register struct du *p1, *p2;
 		return(-1);
 	if (p1->blocks < p2->blocks)
 		return(1);
+	if (p1->name == 0 || p2->name == 0)
+		return(0);	/* doesn't matter */
 	return(strcmp(p1->name, p2->name));
 }
 
