@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.fo 'Version 3.23'DRAFT'Last Mod %G%'
+.fo 'Version 3.24'DRAFT'Last Mod %G%'
 .ls 2
 .+c
 .(l C
@@ -192,15 +192,6 @@ really
 used and
 are difficult to support,
 but must be supported.
-Even obeying the standard is insufficient.
-For example,
-Wharton changed our host name from
-.q BERKELEY
-to
-.q BERKEL- ,
-which confused error processing.
-Cases such as this
-must be handled gracefully.
 .np
 Existing software to do actual delivery
 should be used whenever possible.
@@ -510,6 +501,12 @@ of each mailer),
 and address rewriting rules
 (a limited production system to rewrite addresses
 which is used to parse and rewrite the addresses).
+.pp
+To improve performance when reading the configuration file,
+a memory image can be provided.
+This provides a
+.q compiled
+form of the configuration file.
 .sh 1 "USAGE AND IMPLEMENTATION"
 .sh 2 "Arguments"
 .pp
@@ -661,7 +658,7 @@ is a method of letting a project maintain a mailing list
 without interaction with the system administration,
 even if the alias file is protected.
 .pp
-It is not necessary to rebuild the alias database
+It is not necessary to rebuild the index on the alias database
 when a :include: list is changed.
 .sh 2 "Message Collection"
 .pp
@@ -727,55 +724,6 @@ The header of the message is stored
 in the control file,
 so that the associated data file in the queue
 is just the temporary file that was originally collected.
-.sh 2 "Examples of Interactions With Other Mailers"
-.pp
-Two examples of how network-specific work is passed to other programs
-are the incoming UUCP mailer
-(\c
-.i rmail )
-and the outgoing ARPANET mailer.
-.sh 3 "Incoming UUCP mail"
-.pp
-Mail coming in from the UUCP network
-is not guaranteed to have a normal header line,
-nor will an argument be passed telling who it is from\**.
-.(f
-\**As a result,
-it is impossible to verify UUCP sender addresses.
-.)f
-Fortuitously,
-UUCP mail calls the program
-.i rmail
-rather than
-.i mail
-or
-.i sendmail .
-The
-.i rmail
-program has been modified to do the special-purpose parsing
-necessary to decode UUCP headers
-and turn them into a normal UUCP address;
-this address is then passed to
-.i sendmail .
-.sh 3 "Outgoing ARPANET mail"
-.pp
-The ARPANET imposes many standards that
-.i sendmail
-does not care to enforce.
-For example,
-an arpanet sitename must be on
-.i every
-address,
-not just the
-.q "From:"
-address.
-Certain UNIX sites like to use
-.q %
-as an alternative to
-.q @ ,
-which must be translated.
-The outgoing ARPANET mailer makes these transformations
-before passing the message to the network.
 .sh 2 "Configuration"
 .pp
 Configuration is controlled primarily by a configuration file
@@ -934,6 +882,23 @@ or that the system administration make all changes).
 .i Sendmail
 supports message batching across networks
 when a message is being sent to multiple recipients.
+.np
+A mail queue is provided in
+.i sendmail.
+Mail that cannot be delivered immediately
+but can potentially be delivered later
+is stored in this queue for a later retry.
+The queue also provides a buffer against system crashes;
+after the message has been collected
+it may be reliably redelivered
+even if the system crashes during the initial delivery.
+.np
+.i Sendmail
+uses the networking support provided by 4.2BSD
+to provide a direct interface networks such as the ARPANET
+and/or Ethernet
+using SMTP (the Simple Mail Transfer Protocol)
+over a TCP/IP connection.
 .sh 2 "MMDF"
 .pp
 MMDF
@@ -959,10 +924,10 @@ and retransmission.
 MMDF supports two-stage timeout,
 which
 .i sendmail
-does not currently support.
+does not support.
 .pp
 The configuration for MMDF
-is completely compiled into the code\**.
+is compiled into the code\**.
 .(f
 \**Dynamic configuration tables are currently being considered
 for MMDF;
@@ -972,9 +937,9 @@ or dynamic tables.
 .pp
 Since MMDF does not consider backwards compatibility
 as a design goal,
-the address parsing is much less flexible.
+the address parsing is simpler but much less flexible.
 .pp
-It is slightly harder to integrate a new channel\**
+It is somewhat harder to integrate a new channel\**
 .(f
 \**The MMDF equivalent of a
 .i sendmail
@@ -985,6 +950,9 @@ In particular,
 MMDF must know the location and format
 of host tables for all channels,
 and the channel must speak a special protocol.
+This allows MMDF to do additional verification
+(such as verifying host names)
+at submission time.
 .pp
 MMDF strictly separates the submission and delivery phases.
 Although
@@ -1020,7 +988,10 @@ can return an immediate error response,
 and a single error processor can create an appropriate response.
 .pp
 MPM prefers passing the message as a structured object,
-with type-length-value tuples.
+with type-length-value tuples\**.
+.(f
+\**This is similar to the NBS standard.
+.)f
 Such a convention requires a much higher degree of cooperation
 between mailers than is required by
 .i sendmail .
@@ -1033,7 +1004,7 @@ does not.
 .pp
 .i Sendmail
 is designed to work in a nonhomogeneous environment.
-Every attempt is made to avoid imposing any constraints
+Every attempt is made to avoid imposing unnecessary constraints
 on the underlying mailers.
 This goal has driven much of the design.
 One of the major problems
@@ -1125,7 +1096,10 @@ these changes should be relatively trivial to integrate
 into the existing system.
 .pp
 In tightly coupled environments,
-it would be nice to have a name server integrated into the mail system.
+it would be nice to have a name server
+such as Grapvine
+[Birrell82]
+integrated into the mail system.
 This would allow a site such as
 .q Berkeley
 to appear as a single host,
@@ -1210,6 +1184,18 @@ have been working on.
 .ce
 REFERENCES
 .nr ii 1.5i
+.ip [Birrell82]
+Birrell, A. D.,
+Levin, R.,
+Needham, R. M.,
+and
+Schroeder, M. D.,
+.q "Grapevine: An Exercise in Distributed Computing."
+In
+.ul
+Comm. A.C.M. 25,
+4,
+April 82.
 .ip [Borden79]
 Borden, S.,
 Gaines, R. S.,

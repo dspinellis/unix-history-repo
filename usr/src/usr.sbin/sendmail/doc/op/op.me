@@ -1,10 +1,11 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.3'DRAFT'Last Mod %G%'
+.fo 'Version 3.4'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
-.in (\\$3u-1u)*3n
+.in \\$3u*3n
+.ti -3n
 \\$2.  \\$1
 .)x
 ..
@@ -25,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.3
+Version 3.4
 .)l
 .sp 3
 .pp
@@ -77,14 +78,14 @@ for you to install
 .i sendmail
 and keep it happy.
 Section three
+describes some parameters that may be safely tweaked.
+Section four
+has information regarding the command line arguments.
+Section five
 contains the nitty-gritty information about the configuration
 file.
 This section is for masochists
 and people who must write their own configuration file.
-Section four
-describes some parameters that may be safely tweaked.
-Section five
-has information regarding the command line arguments.
 The appendixes give a brief
 but detailed explanation of a number of features
 not described in the rest of the paper.
@@ -106,6 +107,10 @@ i.e., creating the necessary files, etc.
 The remainder of this section will describe the installation of sendmail
 assuming you can use one of the existing configurations
 and that the standard installation parameters are acceptable.
+All pathnames and examples
+are given from the root of the
+.i sendmail
+subtree.
 .sh 2 "Off-The-Shelf Configurations"
 .pp
 The configuration files
@@ -121,22 +126,22 @@ are
 .i m4
 include files,
 while files with names ending
-.q .cf.m4
+.q .mc
 are the master files.
 Files with names ending
 .q .cf
 are the
 .i m4
 processed versions of the corresponding
-.q .cf.m4
+.q .mc
 file.
 .pp
 Two off the shelf configuration files are supplied
 to handle the basic cases:
-.i arpa.cf.m4
+.i cf/arpa.mc
 for Arpanet sites
 and
-.i uucp.cf.m4
+.i cf/uucp.mc
 for UUCP sites.
 There are two parameters you will have to adjust
 in each of these files.
@@ -167,11 +172,12 @@ and
 The changed file should be renamed;
 in the above example,
 the file might be renamed
-.i ucsfcgl.cf.m4.
+.i ucsfcgl.mc.
 To create the actual configuration file,
 type the command:
 .(b
-m4 ucsfcgl.cf.m4 > ucsfcgl.cf
+cd cf
+m4 ucsfcgl.mc > ucsfcgl.cf
 .)b
 using whatever name is appropriate for your site.
 The file
@@ -185,9 +191,32 @@ cp ucsfcgl.cf /usr/lib/sendmail.cf
 .pp
 Along with building a configuration file,
 you will have to install the sendmail startup into your UNIX system.
-If youa re doing this installation
+If you are doing this installation
 in conjunction with a regular Berkeley UNIX install,
 these steps will already be complete.
+.sh 3 "lib/libsys.a"
+.pp
+The library in lib/libsys.a
+contains some routines that should in some sense
+be part of the system library.
+These are the system logging routines
+and the new directory access routines
+(if required).
+If you are not running the new 4.2bsd directory code
+and do not have the compatibility routines installed in your system library,
+you should execute the commands:
+.(b
+cd lib
+make ndir
+.)b
+This will compile and install the 4.2 compatibility routines
+in the library.
+You should then type:
+.(b
+cd lib      # if required
+make
+.)b
+This will recompile and fill the library.
 .sh 3 "/usr/lib/sendmail"
 .pp
 The binary for sendmail is located in /usr/lib.
@@ -199,6 +228,18 @@ cd src
 rm -f *.o
 make
 cp sendmail /usr/lib
+.)b
+.sh 3 "/usr/ucb/newaliases"
+.pp
+If you are running delivermail,
+it is critical that the
+.i newaliases
+command be replaced.
+This can just be a link to
+.i sendmail :
+.(b
+rm -f /usr/ucb/newaliases
+ln /usr/lib/sendmail /usr/ucb/newaliases
 .)b
 .sh 3 "/usr/lib/sendmail.cf"
 .pp
@@ -320,7 +361,11 @@ cp lib/sendmail.hf /usr/lib
 If you wish to collect statistics
 about your mail traffic,
 you should create the file
-.q /usr/lib/sendmail.st.
+.q /usr/lib/sendmail.st :
+.(b
+cp /dev/null /usr/lib/sendmail.st
+chmod 666 /usr/lib/sendmail.st
+.)b
 This file does not grow.
 It is printed with the program
 .q aux/mailstats.
@@ -504,16 +549,6 @@ There may only be one of these lines.
 .ip T
 The job creation time.
 This is used to compute when to time out the job.
-.ip C
-The message class.
-Unlike the priority,
-this is not dependent
-on the size of the message
-or the time in the queue.
-This is filled in directly
-from the
-.i Precedence:
-header field in the message.
 .ip P
 The current message priority.
 This is used to order the queue.
@@ -539,7 +574,6 @@ DdfA13557
 Seric
 T404261372
 P132
-C0
 Rmckusick@calder
 Rwnj
 H?D?date: 23-Oct-82 15:49:32-PDT (Sat)
@@ -612,10 +646,10 @@ and create a new daemon.
 To run the old mail queue,
 run the following command:
 .(b
-/usr/lib/sendmail \-Q/usr/spool/omqueue \-q
+/usr/lib/sendmail \-oQ/usr/spool/omqueue \-q
 .)b
 The
-.b \-Q
+.b \-oQ
 flag specifies an alternate queue directory
 and the
 .b \-q
@@ -771,6 +805,433 @@ unix-wizards
 due to the inclusion of
 .q nosuchuser
 on the list.
+.sh 2 "Per-User Forwarding (.forward Files)"
+.pp
+As an alternative to the alias database,
+any user may put a file with the name
+.q .forward
+in his or her home directory.
+If this file exists,
+.i sendmail
+redirects mail for that user
+to the list of addresses listed in the .forward file.
+For example, if the home directory for user
+.q mckusick
+has a .forward file with contents:
+.(b
+mckusick@ernie
+kirk@calder
+.)b
+then any mail arriving for
+.q mckusick
+will be redirected to the specified accounts.
+.sh 2 "Special Header Lines"
+.pp
+Several header lines have special interpretations
+defined by the configuration file.
+Others have interpretations built into
+.i sendmail
+that cannot be changed without changing the code.
+These builtins are described here.
+.sh 3 "Return-receipt-to"
+.pp
+If this header is sent,
+a message will be sent to any specified addresses
+when the final delivery is complete.
+This is determined by the
+.b l
+flag in the mailer descriptor.
+.sh 3 "Errors-to"
+.pp
+If errors occur anywhere during processing,
+this header will cause error messages to go to
+the listed addresses
+rather than to the sender.
+This is intended for mailing lists.
+.sh 3 "Apparently-To:
+.pp
+If a message comes in with no recipients listed in the message
+(in a To:, Cc:, or Bcc: line)
+then
+.i sendmail
+will add an
+.q "Apparently-To:"
+header line for any recipients it is aware of.
+This is not put in as a standard recipient line
+to warn any recipients that the list is not complete.
+.pp
+At least one recipient line is required under RFC 822.
+.sh 1 "ARGUMENTS"
+.pp
+The complete list of arguments to
+.i sendmail
+is described in detail in Appendix A.
+Some important arguments are described here.
+.sh 2 "Queue Interval"
+.pp
+The amount of time between forking a process
+to run through the queue
+is defined by the
+.b \-q
+flag.
+If you run in mode
+.b f
+or
+.b a
+this can be relatively large,
+since it will only be relevant
+when a host that was down comes back up.
+If you run in
+.b q
+mode
+it should be relatively short,
+since it defines the maximum amount of time that a message
+may sit in the queue.
+.sh 2 "Daemon Mode"
+.pp
+If you allow incoming mail over an IPC connection,
+you should have a daemon running.
+This should be set by your
+.i /etc/rc
+file using the
+.b \-bd
+flag.
+The
+.b \-bd
+flag and the
+.b \-q
+flag may be combined in one call:
+.(b
+/usr/lib/sendmail \-bd \-q10m
+.)b
+.sh 2 "Forcing the Queue"
+.pp
+In some cases you may find that the queue has gotten clogged for some reason.
+You can force a queue run
+using the
+.b \-q
+flag (with no value).
+It is frequently entertaining to use the
+.b \-v
+flag (verbose)
+when this is done to watch what happens:
+.(b
+/usr/lib/sendmail \-q \-v
+.)b
+.sh 2 "Debugging"
+.pp
+There are a fairly large number of debug flags
+built into
+.i sendmail .
+Each debug flag has a number and a level,
+where higher levels means to print out more information.
+The convention is that levels greater than nine are
+.q absurd,
+i.e.,
+they print out so much information that you wouldn't normally
+want to see them except for debugging that particular piece of code.
+Debug flags are set using the
+.b \-d
+option;
+the syntax is:
+.(b
+.ta \w'debug-option  'u
+debug-flag:	\fB\-d\fP debug-list
+debug-list:	debug-option [ , debug-option ]
+debug-option:	debug-range [ . debug-level ]
+debug-range:	integer | integer \- integer
+debug-level:	integer
+.)b
+where spaces are for reading ease only.
+For example,
+.(b
+\-d12	Set flag 12 to level 1
+\-d12.3	Set flag 12 to level 3
+\-d3-17	Set flags 3 through 17 to level 1
+\-d3-17.4	Set flags 3 through 17 to level 4
+.)b
+For a complete list of the available debug flags
+you will have to look at the code
+(they are too dynamic to keep this documentation up to date).
+.sh 2 "Trying a Different Configuration File"
+.pp
+An alternative configuration file
+can be specified using the
+.b \-C
+flag; for example,
+.(b
+/usr/lib/sendmail \-Ctest.cf
+.)b
+uses the configuration file
+.i test.cf
+instead of the default
+.i /usr/lib/sendmail.cf.
+If the
+.b \-C
+flag has no value
+it defaults to
+.i sendmail.cf
+in the current directory.
+.sh 2 "Changing the Values of Options"
+.pp
+Options can be overridden using the
+.b \-o
+flag.
+For example,
+.(b
+/usr/lib/sendmail \-oT2m
+.)b
+sets the
+.b T
+(timeout) option to two minutes
+for this run only.
+.sh 1 "TUNING"
+.pp
+There are a number of configuration parameters
+you may want to change,
+depending on the requirements of your site.
+Most of these are set
+using an option in the configuration file.
+For example,
+the line
+.q OT3d
+sets option
+.q T
+to the value
+.q 3d
+(three days).
+.sh 2 "Timeouts"
+.pp
+All time intervals are set
+using a scaled syntax.
+For example,
+.q 10m
+represents ten minutes, whereas
+.q 2h30m
+represents two and a half hours.
+The full set of scales is:
+.(b
+.ta 4n
+s	seconds
+m	minutes
+h	hours
+d	days
+w	weeks
+.)b
+.sh 3 "Queue interval"
+.pp
+The argument to the
+.b \-q
+flag
+specifies how often a subdaemon will run the queue.
+This is typically set to between five minutes
+and one half hour.
+.sh 3 "Read timeouts"
+.pp
+It is possible to time out when reading the standard input
+or when reading from a remote SMTP server.
+Technically,
+this is not acceptable within the published protocols.
+However,
+it might be appropriate to set it to something large
+in certain environments
+(such as an hour).
+This will reduce the chance of large numbers of idle daemons
+piling up on your system.
+This timeout is set using the
+.b r
+option in the configuration file.
+.sh 3 "Message timeouts"
+.pp
+After sitting in the queue for a few days,
+a message will time out.
+This is to insure that at least the sender is aware
+of the inability to send a message.
+The timeout is typically set to three days.
+This timeout is set using the
+.b T
+option in the configuration file.
+.pp
+The time of submission is set in the queue,
+rather than the amount of time left until timeout.
+As a result, you can flush messages that have been hanging
+for a short period
+by running the queue
+with a short message timeout.
+For example,
+.(b
+/usr/lib/sendmail -oT1d -q
+.)b
+will run the queue
+and flush anything that is one day old.
+.sh 2 "Delivery Mode"
+.pp
+There are a number of delivery modes that
+.i sendmail
+can operate in,
+set by the
+.q d
+configuration option.
+These modes
+specify how quickly mail will be delivered.
+Legal modes are:
+.(b
+.ta 4n
+i	deliver interactively (synchronously)
+b	deliver in background (asynchronously)
+q	queue only (don't deliver)
+.)b
+There are tradeoffs.
+Mode
+.q i
+passes the maximum amount of information to the sender,
+but is hardly ever necessary.
+Mode
+.q q
+puts the minimum load on your machine,
+but means that delivery may be delayed for up to the queue interval.
+Mode
+.q b
+is probably a good compromise.
+.sh 2 "Log Level"
+.pp
+The level of logging can be set for sendmail.
+The default using a standard configuration table is level 9.
+The levels are as follows:
+.ip 0
+No logging.
+.ip 1
+Major problems only.
+.ip 2
+Message collections and failed deliveries.
+.ip 3
+Successful deliveries.
+.ip 4
+Messages being defered
+(due to a host being down, etc.).
+.ip 5
+Normal message queueups.
+.ip 6
+Unusual but benign incidents,
+e.g.,
+trying to process a locked queue file.
+.ip 12
+Several messages that are basically only of interest
+when debugging.
+.ip 16
+Verbose information regarding the queue.
+.sh 2 "File Modes"
+.pp
+There are a number of files
+that may have a number of modes.
+The modes depend on what functionality you want
+and the level of security you require.
+.sh 3 "To suid or not to suid?"
+.pp
+.i Sendmail
+can safely be made
+setuid to root.
+At the point where it is about to
+.i exec (2)
+a mailer,
+it checks to see if the userid is zero;
+if so,
+it resets the userid and groupid to a default
+(set by the
+.b u
+and
+.b g
+options).
+(This can be overridden
+by setting the
+.b S
+flag to the mailer
+for mailers that are trusted
+and must be called as root.)
+However,
+this will cause mail processing
+to be accounted
+(using
+.i sa (8))
+to root
+rather than to the user sending the mail.
+.sh 3 "Temporary file modes"
+.pp
+The mode of all temporary files that
+.i sendmail
+creates is determined by the
+.q F
+option.
+Reasonable values for this option are
+0600
+and
+0644.
+If the more permissive mode is selected,
+it will not be necessary to run
+.i sendmail
+as root at all
+(even when running the queue).
+.sh 3 "Should my alias database be writable?"
+.pp
+At Berkeley
+we have the alias database
+(/usr/lib/aliases*)
+mode 666.
+There are some dangers inherent in this approach:
+any user can add him-/her-self
+to any list,
+or can
+.q steal
+any other user's mail.
+However,
+we have found users to be basically trustworthy,
+and the cost of having a read-only database
+greater than the expense of finding and eradicating
+the rare nasty person.
+.pp
+The database that
+.i sendmail
+actually used
+is represented by the two files
+.i aliases.dir
+and
+.i aliases.pag
+(both in /usr/lib).
+The mode on these files should match the mode
+on /usr/lib/aliases.
+If
+.i aliases
+is writable
+and the
+DBM
+files
+(\c
+.i aliases.dir
+and
+.i aliases.pag )
+are not,
+users will be unable to reflect their desired changes
+through to the actual database.
+However,
+if
+.i aliases
+is read-only
+and the DBM files are writable,
+a slightly sophisticated user
+can arrange to steal mail anyway.
+.pp
+If your DBM files are not writable by the world
+or you do not have auto-rebuild enabled
+(with the
+.q D
+option),
+then you must be careful to reconstruct the alias database
+each time you change the text version:
+.(b
+/usr/lib/sendmail \-bi
+.)b
+If this step is ignored or forgotten
+any intended changes will also be ignored or forgotten.
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -1418,7 +1879,7 @@ It causes evaluation of the ruleset to terminate immediately,
 and signals to sendmail that the address has completely resolved.
 The complete syntax is:
 .(b
-\fB$#\fP\fImailer\fP\fB$@\fI\fPhost\fP\fB$:\fP\fIuser\fP
+\fB$#\fP\fImailer\fP\fB$@\fP\fIhost\fP\fB$:\fP\fIuser\fP
 .)b
 This specifies the
 {mailer, host, user}
@@ -1556,30 +2017,6 @@ to translate internal to external form.
 .pp
 There are a number of flags that may be associated with each mailer.
 These are detailed in Appendix C.
-.sh 3 "Special header lines"
-.pp
-Several header lines have special interpretations
-defined by the configuration file.
-Others have interpretations built into
-.i sendmail
-that cannot be changed without changing the code.
-These builtins are described here.
-.sh 4 "return-receipt-to"
-.pp
-If this header is sent,
-a message will be sent to any specified addresses
-when the final delivery is complete.
-This is determined by the
-.b l
-flag in the mailer descriptor.
-.sh 4 "errors-to"
-.pp
-If errors occur anywhere during processing,
-this header will cause error messages to go to
-the listed addresses
-rather than to the sender.
-This is intended for mailing lists.
-.sh 4 "%%%"
 .sh 2 "Building a Configuration File From Scratch"
 .pp
 Building a configuration table from scratch is an extremely difficult job.
@@ -2077,7 +2514,7 @@ If the pathname for this mailer is
 .q [IPC],
 the argv should be
 .(b
-IPC $h \fIport\fP
+IPC $h [ \fIport\fP ]
 .)b
 where
 .i port
@@ -2129,351 +2566,6 @@ should be appended to any receiver name
 without a domain;
 sender addresses should be processed by ruleset eleven
 and recipient addresses by ruleset twenty-one.
-.sh 1 "TUNING"
-.pp
-There are a number of configuration parameters
-you may want to change,
-depending on the requirements of your site.
-.sh 2 "Timeouts"
-.pp
-All time intervals are set
-using a scaled syntax.
-For example,
-.q 10m
-represents ten minutes, whereas
-.q 2h30m
-represents two and a half hours.
-The full set of scales is:
-.(b
-.ta 4n
-s	seconds
-m	minutes
-h	hours
-d	days
-w	weeks
-.)b
-.sh 3 "Queue interval"
-.pp
-The argument to the
-.b \-q
-flag
-specifies how often a subdaemon will run the queue.
-This is typically set to between five minutes
-and one half hour.
-.sh 3 "Read timeouts"
-.pp
-It is possible to time out when reading the standard input
-or when reading from a remote SMTP server.
-Technically,
-this is not acceptable within the published protocols.
-However,
-it might be appropriate to set it to something large
-in certain environments
-(such as an hour).
-This will reduce the chance of large numbers of idle daemons
-piling up on your system.
-This timeout is set using the
-.b r
-option in the configuration file.
-.sh 3 "Message timeouts"
-.pp
-After sitting in the queue for a few days,
-a message will time out.
-This is to insure that at least the sender is aware
-of the inability to send a message.
-The timeout is typically set to three days.
-This timeout is set using the
-.b T
-option in the configuration file.
-.pp
-The time of submission is set in the queue,
-rather than the amount of time left until timeout.
-As a result, you can flush messages that have been hanging
-for a short period
-by running the queue
-with a short message timeout.
-For example,
-.(b
-/usr/lib/sendmail -oT1d -q
-.)b
-will run the queue
-and flush anything that is one day old.
-.sh 2 "Delivery Mode"
-.pp
-There are a number of delivery modes that
-.i sendmail
-can operate in,
-set by the
-.q d
-configuration option.
-These modes
-specify how quickly mail will be delivered.
-Legal modes are:
-.(b
-.ta 4n
-i	deliver interactively (synchronously)
-b	deliver in background (asynchronously)
-q	queue only (don't deliver)
-.)b
-There are tradeoffs.
-Mode
-.q i
-passes the maximum amount of information to the sender,
-but is hardly ever necessary.
-Mode
-.q q
-puts the minimum load on your machine,
-but means that delivery may be delayed for up to the queue interval.
-Mode
-.q b
-is probably a good compromise.
-.sh 2 "Log Level"
-.pp
-The level of logging can be set for sendmail.
-The default using a standard configuration table is level 9.
-The levels are as follows:
-.ip 0
-No logging.
-.ip 1
-Major problems only.
-.ip 2
-Message collections and failed deliveries.
-.ip 3
-Successful deliveries.
-.ip 4
-Messages being defered
-(due to a host being down, etc.).
-.ip 5
-Normal message queueups.
-.ip 6
-Unusual but benign incidents,
-e.g.,
-trying to process a locked queue file.
-.ip 12
-Several messages that are basically only of interest
-when debugging.
-.ip 16
-Verbose information regarding the queue.
-.sh 2 "File Modes"
-.pp
-There are a number of files
-that may have a number of modes.
-The modes depend on what functionality you want
-and the level of security you require.
-.sh 3 "To suid or not to suid?"
-.pp
-.i Sendmail
-can safely be made
-setuid to root.
-At the point where it is about to
-.i exec (2)
-a mailer,
-it checks to see if the userid is zero;
-if so,
-it resets the userid and groupid to a default
-(set by the
-.b u
-and
-.b g
-options).
-(This can be overridden
-by setting the
-.b S
-flag to the mailer
-for mailers that are trusted
-and must be called as root.)
-However,
-this will cause mail processing
-to be accounted
-(using
-.i sa (8))
-to root
-rather than to the user sending the mail.
-.sh 3 "Should my alias database be writable?"
-.pp
-At Berkeley
-we have the alias database
-(/usr/lib/aliases*)
-mode 666.
-There are some dangers inherent in this approach:
-any user can add him-/her-self
-to any list,
-or can
-.q steal
-any other user's mail.
-However,
-we have found users to be basically trustworthy,
-and the cost of having a read-only database
-greater than the expense of finding and eradicating
-the rare nasty person.
-.pp
-The database that
-.i sendmail
-actually used
-is represented by the two files
-.i aliases.dir
-and
-.i aliases.pag
-(both in /usr/lib).
-The mode on these files should match the mode
-on /usr/lib/aliases.
-If
-.i aliases
-is writable
-and the
-DBM
-files
-(\c
-.i aliases.dir
-and
-.i aliases.pag )
-are not,
-users will be unable to reflect their desired changes
-through to the actual database.
-However,
-if
-.i aliases
-is read-only
-and the DBM files are writable,
-a slightly sophisticated user
-can arrange to steal mail anyway.
-.pp
-If your DBM files are not writable by the world
-or you do not have auto-rebuild enabled
-(with the
-.q D
-option),
-then you must be careful to reconstruct the alias database
-each time you change the text version:
-.(b
-/usr/lib/sendmail \-bi
-.)b
-If this step is ignored or forgotten
-any intended changes will also be ignored or forgotten.
-.sh 1 "ARGUMENTS"
-.pp
-The complete list of arguments to
-.i sendmail
-is described in detail in Appendix A.
-Some important arguments are described here.
-.sh 2 "Queue Interval"
-.pp
-The amount of time between forking a process
-to run through the queue
-is defined by the
-.b \-q
-flag.
-If you run in mode
-.b f
-or
-.b a
-this can be relatively large,
-since it will only be relevant
-when a host that was down comes back up.
-If you run in
-.b q
-mode
-it should be relatively short,
-since it defines the maximum amount of time that a message
-may sit in the queue.
-.sh 2 "Daemon Mode"
-.pp
-If you allow incoming mail over an IPC connection,
-you should have a daemon running.
-This should be set by your
-.i /etc/rc
-file using the
-.b \-bd
-flag.
-The
-.b \-bd
-flag and the
-.b \-q
-flag may be combined in one call:
-.(b
-/usr/lib/sendmail \-bd \-q10m
-.)b
-.sh 2 "Forcing the Queue"
-.pp
-In some cases you may find that the queue has gotten clogged for some reason.
-You can force a queue run
-using the
-.b \-q
-flag (with no value).
-It is frequently entertaining to use the
-.b \-v
-flag (verbose)
-when this is done to watch what happens:
-.(b
-/usr/lib/sendmail \-q \-v
-.)b
-.sh 2 "Debugging"
-.pp
-There are a fairly large number of debug flags
-built into
-.i sendmail .
-Each debug flag has a number and a level,
-where higher levels means to print out more information.
-The convention is that levels greater than nine are
-.q absurd,
-i.e.,
-they print out so much information that you wouldn't normally
-want to see them except for debugging that particular piece of code.
-Debug flags are set using the
-.b \-d
-option;
-the syntax is:
-.(b
-.ta \w'debug-option  'u
-debug-flag:	\fB\-d\fP debug-list
-debug-list:	debug-option [ , debug-option ]
-debug-option:	debug-range [ . debug-level ]
-debug-range:	integer | integer \- integer
-debug-level:	integer
-.)b
-where spaces are for reading ease only.
-For example,
-.(b
-\-d12	Set flag 12 to level 1
-\-d12.3	Set flag 12 to level 3
-\-d3-17	Set flags 3 through 17 to level 1
-\-d3-17.4	Set flags 3 through 17 to level 4
-.)b
-For a complete list of the available debug flags
-you will have to look at the code
-(they are too dynamic to keep this documentation up to date).
-.sh 2 "Trying a Different Configuration File"
-.pp
-An alternative configuration file
-can be specified using the
-.b \-C
-flag; for example,
-.(b
-/usr/lib/sendmail \-Ctest.cf
-.)b
-uses the configuration file
-.i test.cf
-instead of the default
-.i /usr/lib/sendmail.cf.
-If the
-.b \-C
-flag has no value
-it defaults to
-.i sendmail.cf
-in the current directory.
-.sh 2 "Changing the Values of Options"
-.pp
-Options can be overridden using the
-.b \-o
-flag.
-For example,
-.(b
-/usr/lib/sendmail \-oT2m
-.)b
-sets the
-.b T
-(timeout) option to two minutes
-for this run only.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -2750,8 +2842,6 @@ Same as
 but sends a
 .b \-r
 flag.
-.ip q
-Don't print errors \*- the mailer will do it for us.
 .ip S
 Don't reset the userid
 before calling the mailer.
@@ -2802,6 +2892,10 @@ header line.
 This mailer wants a
 .q Full-Name:
 header line.
+.ip P
+This mailer wants a
+.q Return-Path:
+line.
 .ip u
 Upper case should be preserved in user names
 for this mailer.
@@ -2826,6 +2920,16 @@ This mailer wants to run the full SMTP protocol,
 including limiting line lengths,
 putting <CRLF> on the end of lines,
 etc.
+.ip I
+This mailer will be speaking SMTP
+to another
+.i sendmail
+\*-
+as such it can use special protocol features.
+This option is not required
+(i.e.,
+if this option is omitted the transmission will still operate successfully,
+although perhaps not as efficiently as possible).
 .ip C
 If mail is
 .i received
@@ -3023,15 +3127,6 @@ you will have to set this flag to include the
 .q "remote from sysname"
 info on the from line.
 Otherwise, UUCP gets confused about where the mail came from.
-.ip PARANOID
-There are places where
-.i sendmail
-may opt for a more secure,
-but probably less convenient environment.
-For example,
-if this flag is set
-it is not possible to specify a program as an address directly;
-this can only be done with an alias.
 .ip NOTUNIX
 If you are using a non-UNIX mail format,
 you can set this flag to turn off special processing
@@ -3344,6 +3439,7 @@ A transcript of the current session.
 .ls 1
 .tp
 .sp 2i
+.in 0
 .ce 100
 .sz 16
 SENDMAIL
@@ -3355,9 +3451,10 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.3
+Version 3.4
 .ce 0
 .bp 1
 .ce
 TABLE OF CONTENTS
+.sp 2
 .xp
