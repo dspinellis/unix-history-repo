@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.3";
+char id_fmt[] = "@(#)fmt.c	1.4";
  *
  * fortran format parser
  */
@@ -112,7 +112,9 @@ ne_d(s,p) char *s,**p;
 		op_gen(x,pp1,pp2,0,s);
 		break;
 	case '/': op_gen(SLASH,0,0,0,s); break;
-	case '-': sign=1; s++;	/*OUTRAGEOUS CODING TRICK*/
+
+	case '-': sign=1;	/* OUTRAGEOUS CODING */
+	case '+': s++;		/* OUTRAGEOUS CODING */
 	case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':
 		s=gt_num(s,&n);
