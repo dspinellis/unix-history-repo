@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.35 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -289,7 +289,7 @@ fts_read(sp)
 			return (p);
 		} 
 
-		/* Rebuild if only got the names and now traversing. */
+		/* Rebuild if only read the names and now traversing. */
 		if (sp->fts_child && sp->fts_options & FTS_NAMEONLY) {
 			sp->fts_options &= ~FTS_NAMEONLY;
 			fts_lfree(sp->fts_child);
@@ -297,15 +297,16 @@ fts_read(sp)
 		}
 
 		/*
-		 * Cd to the subdirectory, reading it if haven't already.  If
-		 * the read fails for any reason, or the directory is empty,
-		 * the fts_info field of the current node is set by fts_build.
+		 * Cd to the subdirectory.
+		 *
 		 * If have already read and now fail to chdir, whack the list
-		 * to make the names come out right, and set the parent state
+		 * to make the names come out right, and set the parent errno
 		 * so the application will eventually get an error condition.
-		 * If haven't read and fail to chdir, check to see if we're
-		 * at the root node -- if so, we have to get back or the root
-		 * node may be inaccessible.
+		 * Set the FTS_DONTCHDIR flag so that when we logically change
+		 * directories back to the parent we don't do a chdir.
+		 *
+		 * If haven't read do so.  If the read fails, fts_build sets
+		 * FTS_STOP or the fts_info field of the node.
 		 */
 		if (sp->fts_child) {
 			if (CHDIR(sp, p->fts_accpath)) {
@@ -318,16 +319,6 @@ fts_read(sp)
 		} else if ((sp->fts_child = fts_build(sp, BREAD)) == NULL) {
 			if (ISSET(FTS_STOP))
 				return (NULL);
-			if (p->fts_level == FTS_ROOTLEVEL &&
-			    !ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
-				saved_errno = errno;
-				(void)close(sp->fts_rfd);
-				errno = saved_errno;
-				SET(FTS_STOP);
-				return (NULL);
-			}
-			p->fts_flags |= FTS_DONTCHDIR;
-			p->fts_info = FTS_DP;
 			return (p);
 		}
 		p = sp->fts_child;
@@ -385,22 +376,22 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		return (sp->fts_cur = NULL);
 	}
 
+	/* Nul terminate the pathname. */
 	sp->fts_path[p->fts_pathlen] = '\0';
 
 	/*
-	 * Change to starting directory.  If at a root node or came through a
-	 * symlink, go back through the file descriptor.  Otherwise, just cd
-	 * up one directory.
+	 * Return to the parent directory.  If at a root node or came through
+	 * a symlink, go back through the file descriptor.  Otherwise, cd up
+	 * one directory.
 	 */
 	if (p->fts_level == FTS_ROOTLEVEL) {
-		if (FCHDIR(sp, sp->fts_rfd)) {
+		if (!ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
 			saved_errno = errno;
 			(void)close(sp->fts_rfd);
 			errno = saved_errno;
 			SET(FTS_STOP);
 			return (NULL);
 		}
-		(void)close(sp->fts_rfd);
 	} else if (p->fts_flags & FTS_SYMFOLLOW) {
 		if (FCHDIR(sp, p->fts_symfd)) {
 			saved_errno = errno;
@@ -712,8 +703,11 @@ mem1:				saved_errno = errno;
 	}
 
 	/* If didn't find anything, return NULL. */
-	if (!nitems)
+	if (!nitems) {
+		if (type == BREAD)
+			cur->fts_info = FTS_DP;
 		return (NULL);
+	}
 
 	/* Sort the entries. */
 	if (sp->fts_compar && nitems > 1)
