@@ -1,7 +1,22 @@
 #!/bin/sh -
 #
-#	@(#)security	5.14 (Berkeley) %G%
+#	@(#)security	5.15 (Berkeley) %G%
 #
+
+# Script to check basic system security.  Checks included are:
+#	Users with uid's of 0.
+#	Users without passwords.
+#	Accounts that have been turned off, but still have valid shells.
+#	Special users that have .rhosts files.
+#	Home directory and dot-file ownership and permissions.
+#	Mailbox ownership and permissions.
+#	File list from /etc/mtree/flist.secure.
+#	Dot appearing in root user's path.
+#	NFS file systems globally exported to the world.
+#	Changes in setuid and device files.
+#	Block and character disk device ownership and permissions.
+#	System binaries as described by files in /etc/mtree.
+
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
 umask 22
@@ -13,32 +28,35 @@ LIST=/tmp/_secure4.$$
 
 trap 'rm -f $ERR $TMP1 $TMP2 $LIST' 0
 
-# Check uids.
+# Check uids.  Only root and toor should have a uid of 0.
 echo ""
 echo "Checking for uids of 0:"
-awk -F: "\$3 == 0 \
+awk -F: "\$3 == 0 && \$1 != \"root\" && \$1 != \"toor\" \
 	{ print \"user \" \$1 \" has a uid of \" \$3 }" /etc/master.passwd
 
-# Check passwords.
+# Check for missing passwords.
 echo ""
 echo "Checking for uids without passwords:"
 awk -F: "\$2 == \"\" \
 	{ print \"user \" \$1 \" has no password\" }" /etc/master.passwd
 
+# If the account is turned off, the shell should be invalid.
 echo ""
 echo "Checking for turned-off accounts with valid shells:"
-awk -F: "length(\$2) != 13 && \$10 ~ /.*sh$/ \
+awk -F: "length(\$2) != 13 && (\$10 ~ /.*sh$/ || \$10 == \"\") \
 	{ print \"user \" \$1 \" account turned off with valid shell.\" }" \
 	/etc/master.passwd
 
-# Check special users with .rhosts files.
+# Check for special users with .rhosts files.  Only root and toor should
+# have a .rhosts files.
 echo ""
 echo "Checking for special users with .rhosts files."
-awk -F: "\$3 < 100 || \$1 == \"ftp\" || \$1 == \"uucp\" \
+awk -F: "\$1 != \"root\" && \$1 != \"toor\" && \
+	(\$3 < 100 || \$1 == \"ftp\" || \$1 == \"uucp\") \
 	{ print \$1 \" \" \$6 }" /etc/passwd | \
 	while read uid homedir; do
 		if [ -f ${homedir}/.rhosts ] ; then
-			rhost=`ls -lT ${homedir}/.rhosts`
+			rhost=`ls -ldgT ${homedir}/.rhosts`
 			echo "$uid: $rhost"
 		fi
 	done
@@ -46,16 +64,32 @@ awk -F: "\$3 < 100 || \$1 == \"ftp\" || \$1 == \"uucp\" \
 # Check home directories.
 echo ""
 echo "Checking user's home directories."
-echo "Checking .netrc, .rhosts."
+# Directories should not be owned by someone else or writeable.
+awk -F: "{ print \$1 \" \" \$6 }" /etc/passwd | \
+while read uid homedir; do
+	if [ -d ${homedir}/ ] ; then
+		file=`ls -ldgT ${homedir}`
+		echo "$uid $file"
+	fi
+done | awk \
+	    "\$1 != \$4 && \$4 != \"root\" \
+	{ print \"user \" \$1 \"'s home directory is owned by \" \$4 } \
+	     \$2 ~ /^-....w/ \
+	{ print \"user \" \$1 \"'s home directory is group writeable\" } \
+	     \$2 ~ /^-.......w/ \
+	{ print \"user \" \$1 \"'s home directory is other writeable\" }"
+
+echo ""
+echo "Checking .netrc, .rhosts files."
 # Files that should not be owned by someone else or readable.
 awk -F: "{ print \$1 \" \" \$6 }" /etc/passwd | \
 while read uid homedir; do
 	if [ -f ${homedir}/.netrc ] ; then
-		file=`ls -lT ${homedir}/.netrc`
+		file=`ls -ldgT ${homedir}/.netrc`
 		echo "$uid .netrc $file"
 	fi
 	if [ -f ${homedir}/.rhosts ] ; then
-		file=`ls -lT ${homedir}/.rhosts`
+		file=`ls -ldgT ${homedir}/.rhosts`
 		echo "$uid .rhosts $file"
 	fi
 done | awk \
@@ -72,23 +106,23 @@ done | awk \
 
 # Files that should not be owned by someone else or writeable.
 echo ""
-echo "Checking .cshrc, .klogin, .login, .profile."
+echo "Checking .cshrc, .klogin, .login, .profile files."
 awk -F: "{ print \$1 \" \" \$6 }" /etc/passwd | \
 while read uid homedir; do
 	if [ -f ${homedir}/.cshrc ] ; then
-		file=`ls -lT ${homedir}/.cshrc`
+		file=`ls -ldgT ${homedir}/.cshrc`
 		echo "$uid .cshrc $file"
 	fi
 	if [ -f ${homedir}/.klogin ] ; then
-		file=`ls -lT ${homedir}/.klogin`
+		file=`ls -ldgT ${homedir}/.klogin`
 		echo "$uid .klogin $file"
 	fi
 	if [ -f ${homedir}/.login ] ; then
-		file=`ls -lT ${homedir}/.login`
+		file=`ls -ldgT ${homedir}/.login`
 		echo "$uid .login $file"
 	fi
 	if [ -f ${homedir}/.profile ] ; then
-		file=`ls -lT ${homedir}/.profile`
+		file=`ls -ldgT ${homedir}/.profile`
 		echo "$uid .profile $file"
 	fi
 done | awk \
@@ -165,12 +199,29 @@ for i in ${rhome}/.profile ${rhome}/.klogin ; do
 	fi
 done
 
+# Check for globally exported file systems.
+echo ""
+echo "Checking for globally exported file systems."
+awk '{
+	readonly = 0;
+	for (i = 2; i <= NF; ++i) {
+		if ($i ~ /-ro/)
+			readonly = 1;
+		else if ($i !~ /^-/)
+			next;
+	}
+	if (readonly)
+		print "File system " $1 " globally exported, read-only."
+	else
+		print "File system " $1 " globally exported, read-write."
+}' < /etc/exports
+
 # Display setuid and device changes.
 echo ""
 echo "Checking setuid files and devices:"
-(find / ! -fstype local -a -prune -o \
+(find /dev ! -fstype local -a -prune -o \
     \( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) | \
-    sort | sed -e 's/^/ls -lgT /' | sh >$TMP1) 2>$ERR
+    sort | sed -e 's/^/ls -ldgT /' | sh >$TMP1) 2>$ERR
 
 # Display any errors that occurred during system file walk.
 if [ -s $ERR ] ; then
@@ -223,8 +274,36 @@ if [ -s $LIST ] ; then
 	fi
 fi
 
+# Check for readable/writeable block and character disk devices.
+echo ""
+echo "Checking disk device ownership and permissions."
+egrep '^b' $TMP1 > $LIST
+egrep '^c.*/rdk[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rfd[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rhd[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rhk[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rhp[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rjb[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rkra[0-9][0-9]*[a-h]$' $TMP1 >> $LIST
+egrep '^c.*/rra[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rrb[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rrd[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rrl[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rrx[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rrz[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rsd[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rup[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+egrep '^c.*/rwd[0-9][0-9]*[a-h]$'  $TMP1 >> $LIST
+
+awk "\$4 != \"operator\" \
+	{ print \"Device \" \$11 \" not owned by group operator.\" }" < $LIST
+awk "\$1 ~ /^c....w/ \
+	{ print \"Device \" \$11 \" is group writeable.\" } \
+\$1 ~ /^c.......w/ \
+	{ print \"Device \" \$11 \" is other writeable.\" }" < $LIST
+
+egrep '^[bcs]' $TMP1 > $LIST
 # Display any changes in the device file list.
-egrep '^[bc]' $TMP1 > $LIST
 if [ -s $LIST ] ; then
 	CUR=/var/log/device.current
 	BACK=/var/log/device.backup
