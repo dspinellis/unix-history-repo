@@ -13,20 +13,20 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rshd.8	6.5 (Berkeley) %G%
+.\"	@(#)rshd.8	6.6 (Berkeley) %G%
 .\"
 .TH RSHD 8 ""
 .UC 5
 .SH NAME
 rshd \- remote shell server
 .SH SYNOPSIS
-.B /etc/rshd
+.B rshd [-p]
 .SH DESCRIPTION
 .I Rshd
 is the server for the 
-.IR rcmd (3X)
+.IR rcmd (3)
 routine and, consequently, for the
-.IR rsh (1C)
+.IR rsh (1)
 program.  The server provides remote execution facilities
 with authentication based on privileged port numbers from trusted hosts.
 .PP
@@ -80,24 +80,14 @@ the command is limited by the upper bound on the size of
 the system's argument list.  
 .IP 8)
 .I Rshd
-then validates the user according to the following steps.
-The local (server-end) user name is looked up in the password file
-and a
-.I chdir
-is performed to the user's home directory.  If either
-the lookup or 
-.I chdir
-fail, the connection is terminated.
-If the user is not the super-user, (user id 0), the file 
-.I /etc/hosts.equiv
-is consulted for a list of hosts considered ``equivalent''.
-If the client's host name is present in this file, the
-authentication is considered successful.  If the lookup
-fails, or the user is the super-user, then the file
-.I .rhosts
-in the home directory of the remote user is checked for
-the machine name and identity of the user on the client's
-machine.  If this lookup fails, the connection is terminated.
+then validates the user using
+.IR ruserok (3),
+which uses the file ``/etc/hosts.equiv'' and the ``.rhosts''
+file found in the user's home directory.  The
+.I -p
+option prevents
+.IR ruserok (3)
+from doing any validation based on the user's ``.rhosts'' file.
 .IP 9)
 A null byte is returned on the initial socket
 and the command line is passed to the normal login
@@ -162,7 +152,7 @@ on the connection associated with the
 .BR stderr ,
 and is not preceded by a flag byte.
 .SH SEE ALSO
-rsh(1), rcmd(3)
+rsh(1), rcmd(3), ruserok(3)
 .SH BUGS
 The authentication procedure used here assumes the integrity
 of each client machine and the connecting medium.  This is
