@@ -1,4 +1,4 @@
-/*	defs.h	4.8	83/11/29	*/
+/*	defs.h	4.9	83/11/29	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -12,7 +12,12 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 
-#define	MAILCMD		"/usr/lib/sendmail -oi -t"
+/*
+ * The version number should be changed whenever the protocols change.
+ */
+#define VERSION	 2
+
+#define	MAILCMD	 "/usr/lib/sendmail -oi -t"
 
 	/* defines for yacc */
 #define EQUAL	1
