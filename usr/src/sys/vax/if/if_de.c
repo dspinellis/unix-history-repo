@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	7.1 (Berkeley) %G%
+ *	@(#)if_de.c	7.2 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -123,6 +123,22 @@ deprobe(reg)
 	i = 0; derint(i); deintr(i);
 #endif
 
+	/*
+	 * Make sure self-test is finished before we screw with the board.
+	 * Self-test on a DELUA can take 15 seconds (argh).
+	 */
+	for (i = 0;
+	     i < 160 &&
+	     (addr->pcsr0 & PCSR0_FATI) == 0 &&
+	     (addr->pcsr1 & PCSR1_STMASK) == STAT_RESET;
+	     ++i)
+		DELAY(100000);
+	if ((addr->pcsr0 & PCSR0_FATI) != 0 ||
+	    (addr->pcsr1 & PCSR1_STMASK) != STAT_READY)
+		return(0);
+
+	addr->pcsr0 = 0;
+	DELAY(100);
 	addr->pcsr0 = PCSR0_RSET;
 	while ((addr->pcsr0 & PCSR0_INTR) == 0)
 		;
@@ -146,6 +162,7 @@ deattach(ui)
 	register struct de_softc *ds = &de_softc[ui->ui_unit];
 	register struct ifnet *ifp = &ds->ds_if;
 	register struct dedevice *addr = (struct dedevice *)ui->ui_addr;
+	int csr1;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "de";
@@ -153,9 +170,24 @@ deattach(ui)
 	ifp->if_flags = IFF_BROADCAST;
 
 	/*
+	 * What kind of a board is this?
+	 * The error bits 4-6 in pcsr1 are a device id as long as
+	 * the high byte is zero.
+	 */
+	csr1 = addr->pcsr1;
+	if (csr1 & 0xff60)
+		printf("de%d: broken\n", ui->ui_unit);
+	else if (csr1 & 0x10)
+		printf("de%d: delua\n", ui->ui_unit);
+	else
+		printf("de%d: deuna\n", ui->ui_unit);
+
+	/*
 	 * Reset the board and temporarily map
 	 * the pcbb buffer onto the Unibus.
 	 */
+	addr->pcsr0 = 0;		/* reset INTE */
+	DELAY(100);
 	addr->pcsr0 = PCSR0_RSET;
 	(void)dewait(ui, "reset");
 
@@ -245,6 +277,8 @@ deinit(unit)
 	incaddr = ds->ds_ubaddr + PCBB_OFFSET;
 	addr->pcsr2 = incaddr & 0xffff;
 	addr->pcsr3 = (incaddr >> 16) & 0x3;
+	addr->pclow = 0;	/* reset INTE */
+	DELAY(100);
 	addr->pclow = CMD_GETPCBB;
 	(void)dewait(ui, "pcbb");
 
@@ -296,8 +330,8 @@ deinit(unit)
 	s = splimp();
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = ds->ds_nxmit = 0;
 	ds->ds_if.if_flags |= IFF_RUNNING;
-	destart(unit);				/* queue output packets */
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
+	destart(unit);				/* queue output packets */
 	ds->ds_flags |= DSF_RUNNING;		/* need before de_setaddr */
 	if (ds->ds_flags & DSF_SETADDR)
 		de_setaddr(ds->ds_addr, unit);
@@ -739,6 +773,9 @@ deioctl(ifp, cmd, data)
 	case SIOCSIFFLAGS:
 		if ((ifp->if_flags & IFF_UP) == 0 &&
 		    ds->ds_flags & DSF_RUNNING) {
+			((struct dedevice *)
+			   (deinfo[ifp->if_unit]->ui_addr))->pclow = 0;
+			DELAY(100);
 			((struct dedevice *)
 			   (deinfo[ifp->if_unit]->ui_addr))->pclow = PCSR0_RSET;
 			ds->ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
