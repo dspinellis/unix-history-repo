@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.3 (Berkeley) %G%
+.\"	@(#)more.1	5.4 (Berkeley) %G%
 .\"
 .TH LESS 1
 .SH NAME
@@ -432,17 +432,6 @@ every file being viewed, not just the first one.
 The + command described previously
 may also be used to set (or change) an initial command for every file.
 
-.SH "KEY BINDINGS"
-You may define your own less commands by using the program 
-.I lesskey
-(1)
-to create a file called ".less" in your home directory.
-This file specifies a set of command keys and an action
-associated with each key.
-See the
-.I lesskey
-manual page for more details.
-
 .SH "PROMPTS"
 The -P option allows you to tailor the prompt to your preference.
 The string given to the -P option replaces the specified prompt string.
@@ -575,9 +564,6 @@ And here is the default message produced by the = command:
 
 .SH AUTHOR
 This software is derived from software contributed by Mark Nudleman.
-
-.SH "SEE ALSO"
-lesskey(1)
 
 .SH WARNINGS
 The = command and prompts (unless changed by -P)
