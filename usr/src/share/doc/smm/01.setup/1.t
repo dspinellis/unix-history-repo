@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.10 (Berkeley) %G%
+.\"	@(#)1.t	6.11 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -55,7 +55,7 @@ The distribution comes in two formats:
 .PP
 If you have the facilities, we \fBstrongly\fP recommend copying the
 magnetic tape(s) in the distribution kit to guard against disaster.
-The tapes contain 20480-byte records.
+The tapes contain \*(Bb-byte records.
 There are interspersed tape marks;
 end-of-tape is signaled by a double end-of-file.
 The first file on the tape is architecture dependent.
