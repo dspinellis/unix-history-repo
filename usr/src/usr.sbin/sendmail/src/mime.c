@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -519,6 +519,8 @@ mime8to7x(mci, header, e, boundaries, flags)
 			*bp++ = Base64Code[c1];
 			*bp++ = Base64Code[c2 & 0x3f];
 		}
+		*bp = '\0';
+		putline(buf, mci);
 	}
 	else
 	{
@@ -556,9 +558,6 @@ mime8to7x(mci, header, e, boundaries, flags)
 					*bp++ = '=';
 					*bp++ = Base16Code[(c2 >> 4) & 0x0f];
 					*bp++ = Base16Code[c2 & 0x0f];
-					*bp = '\0';
-					putline(buf, mci);
-					bp = buf;
 				}
 				*bp = '\0';
 				putline(buf, mci);
@@ -614,11 +613,13 @@ mime8to7x(mci, header, e, boundaries, flags)
 			*bp++ = Base16Code[c2 & 0x0f];
 			linelen += 3;
 		}
-	}
-	if (linelen > 0)
-	{
-		*bp = '\0';
-		putline(buf, mci);
+
+		if (linelen > 0 || boundaries[0] != NULL)
+		{
+			*bp = '\0';
+			putline(buf, mci);
+		}
+
 	}
 	if (tTd(43, 3))
 		printf("\t\t\tmime8to7=>%s (basic)\n", MimeBoundaryNames[bt]);
