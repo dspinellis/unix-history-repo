@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,8 +70,7 @@ main(argc, argv)
 	char *inputdev = _PATH_DEFTAPE;
 	char *symtbl = "./restoresymtable";
 	char name[MAXPATHLEN];
-	int (*signal())();
-	extern int onintr();
+	void onintr();
 
 	if (signal(SIGINT, onintr) == SIG_IGN)
 		(void) signal(SIGINT, SIG_IGN);
