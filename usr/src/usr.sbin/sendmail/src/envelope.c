@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -778,11 +778,9 @@ setsender(from, e, delimptr, internal)
 # endif
 		finis();
 	}
-/*
 	(void) rewrite(pvp, 3, 0, e);
 	(void) rewrite(pvp, 1, 0, e);
 	(void) rewrite(pvp, 4, 0, e);
-*/
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
 	if (*bp == '@' && !bitnset(M_NOBRACKET, e->e_from.q_mailer->m_flags))
@@ -861,6 +859,7 @@ struct eflags	EnvelopeFlags[] =
 	"CRLF_NOT_EOL",	EF_CRLF_NOT_EOL,
 	"RET_PARAM",	EF_RET_PARAM,
 	"HAS_DF",	EF_HAS_DF,
+	"IS_MIME",	EF_IS_MIME,
 	NULL
 };
 
