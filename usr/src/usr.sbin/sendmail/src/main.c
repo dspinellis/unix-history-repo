@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.83		%G%);
+SCCSID(@(#)main.c	3.84		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -760,18 +760,34 @@ finis()
 	}
 # endif DEBUG
 
-	/* send back return receipts as requested */
+	/*
+	**  Send back return receipts as requested.
+	*/
+
 	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
 		(void) returntosender("Return receipt", &CurEnv->e_from, FALSE);
 
-	/* do error handling */
+	/*
+	**  Arrange to return errors or queue up as appropriate.
+	**	If we are running a queue file and exiting abnormally,
+	**		be sure we save the queue file.
+	**	This clause will arrange to return error messages.
+	*/
+
+	if (ControlFile != NULL)
+		CurEnv->e_queueup = TRUE;
 	checkerrors(CurEnv);
 
-	/* now clean up bookeeping information */
+	/*
+	**  Now clean up temp files and exit.
+	*/
+
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
 	if (!CurEnv->e_queueup)
 		(void) unlink(CurEnv->e_df);
+	if (ControlFile != NULL)
+		(void) unlink(ControlFile);
 	exit(ExitStat);
 }
 /*

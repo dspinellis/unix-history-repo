@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.20		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.21		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.20		%G%);
+SCCSID(@(#)queue.c	3.21		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -479,8 +479,10 @@ dowork(w)
 		/*
 		**  CHILD
 		**	Change the name of the control file to avoid
-		**	duplicate deliveries.   Then run the file as
-		**	though we had just read it.
+		**		duplicate deliveries.   Then run the file
+		**		as though we had just read it.
+		**	We save an idea of the temporary name so we
+		**		can recover on interrupt.
 		*/
 
 		FatalErrors = FALSE;
@@ -496,6 +498,7 @@ dowork(w)
 			/* it's ok to lie -- it will be run later */
 			exit(EX_OK);
 		}
+		ControlFile = newstr(buf);
 		(void) unlink(w->w_name);
 
 		/* create ourselves a transcript file */
@@ -519,6 +522,7 @@ dowork(w)
 			timeout(w);
 
 		/* get rid of the temporary file -- a new cf will be made */
+		ControlFile = NULL;
 		(void) unlink(buf);
 
 		/* finish up and exit */
