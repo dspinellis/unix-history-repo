@@ -1,4 +1,4 @@
-/*	cgram.y	4.11	87/12/09	*/
+/*	cgram.y	4.12	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -715,7 +715,8 @@ term:		   term INCOP
 			={  if( $2 == DOT ){
 				if( notlval( $1 ) &&
 				    !($1->in.op == UNARY MUL &&
-				      ($1->in.left->in.op == STCALL ||
+				      ($1->in.left->in.op == STASG ||
+				       $1->in.left->in.op == STCALL ||
 				       $1->in.left->in.op == UNARY STCALL)) )
 				    uerror("structure reference must be addressable");
 				$1 = buildtree( UNARY AND, $1, NIL );
