@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -196,6 +196,12 @@ find_execute(plan, paths)
 		case FTS_NS:
 			error(entry->fts_path, errno);
 			continue;
+		case FTS_SL:
+			if (entry->fts_level == FTS_ROOTLEVEL) {
+				(void)fts_set(tree, entry, FTS_FOLLOW);
+				continue;
+			}
+			break;
 		}
 
 #define	BADCH	" \t\n\\'\""
