@@ -2,11 +2,17 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.4 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.4 4/16/82";
 #endif not lint
 
 #include "asscanl.h"
 static	inttoktype	oval = NL;
+
+#ifdef BUFSIZ
+#undef BUFSIZ
+#endif
+
+#define BUFSIZ 4096
 
 #define	NINBUFFERS	2
 #define	INBUFLG		NINBUFFERS*BUFSIZ + 2

@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.9 %G%
+ *	@(#)as.h 4.9 2/14/82
  */
 #ifdef VMS
 # define	vax	1
@@ -50,7 +50,7 @@
 #	ifdef NCPS
 #		undef	NCPS
 #	endif
-#	define	NCPS	BUFSIZ	/* needed to allocate yytext */
+#	define	NCPS	4096	/* needed to allocate yytext */
 # endif
 # endif UNIX
 
