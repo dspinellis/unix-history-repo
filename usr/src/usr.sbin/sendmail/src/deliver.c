@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -60,7 +60,7 @@ deliver(e, firstto)
 	int rcode;			/* response code */
 	char *firstsig;			/* signature of firstto */
 	char *pv[MAXPV+1];
-	char tobuf[MAXLINE-50];		/* text line of to people */
+	char tobuf[TOBUFSIZE];		/* text line of to people */
 	char buf[MAXNAME];
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
@@ -130,8 +130,6 @@ deliver(e, firstto)
 	/* rewrite from address, using rewriting rules */
 	(void) strcpy(rpathbuf, remotename(e->e_from.q_paddr, m, TRUE, FALSE,
 					   TRUE, FALSE, e));
-
-	define('f', e->e_from.q_paddr, e);	/* raw return path */
 	define('g', rpathbuf, e);		/* translated return path */
 	define('h', host, e);			/* to host */
 	Errors = 0;
@@ -1623,7 +1621,7 @@ sendall(e, mode)
 			ee->e_sendqueue = copyqueue(e->e_sendqueue);
 			ee->e_errorqueue = copyqueue(e->e_errorqueue);
 			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
-			(void) parseaddr(owner, &ee->e_from, 1, '\0', NULL, ee);
+			setsender(owner, ee, NULL, TRUE);
 			if (tTd(13, 5))
 			{
 				printf("sendall(split): QDONTSEND ");
@@ -1672,7 +1670,7 @@ sendall(e, mode)
 
 	if (owner != NULL)
 	{
-		(void) parseaddr(owner, &e->e_from, 1, '\0', NULL, e);
+		setsender(owner, e, NULL, TRUE);
 		if (tTd(13, 5))
 		{
 			printf("sendall(owner): QDONTSEND ");

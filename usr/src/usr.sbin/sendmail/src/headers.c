@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -299,8 +299,8 @@ eatheader(e, queuejob)
 	**  Set up macros for possible expansion in headers.
 	*/
 
-	define('f', e->e_from.q_paddr, e);
-	define('g', e->e_from.q_paddr, e);
+	define('f', e->e_sender, e);
+	define('g', e->e_sender, e);
 
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
