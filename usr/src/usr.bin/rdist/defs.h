@@ -1,4 +1,4 @@
-/*	defs.h	4.10	84/02/09	*/
+/*	defs.h	4.11	84/02/24	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -101,7 +101,6 @@ extern char tmpfile[];		/* file name for logging changes */
 extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
-extern char *rhost;		/* host name of remote being updated */
 extern struct namelist *except;	/* list of files to exclude */
 extern char buf[];		/* general purpose buffer */
 extern int errno;		/* system error number */
