@@ -1,0 +1,34 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)madvise.2	6.1 (Berkeley) %G%
+.\"
+.TH MADVISE 2 ""
+.UC 7
+.SH NAME
+madvise \- give advise about use of memory
+.SH SYNOPSIS
+.nf
+madvise(addr, len, behav)
+.B caddr_t addr;
+.B int len, behav;
+.fi
+.SH DESCRIPTION
+.PP
+The \fImadvise\fP system call
+allows a process that has knowledge of its memory behavior
+to describe it to the system.
+The known behaviors are given in \fI<sys/mman.h>\fP:
+.DS
+.ta \w'#define\ \ 'u +\w'MADV_SEQUENTIAL\ \ 'u +\w'00\ \ \ \ 'u
+#define	MADV_NORMAL	0	/* no further special treatment */
+#define	MADV_RANDOM	1	/* expect random page references */
+#define	MADV_SEQUENTIAL	2	/* expect sequential references */
+#define	MADV_WILLNEED	3	/* will need these pages */
+#define	MADV_DONTNEED	4	/* don't need these pages */
+#define	MADV_SPACEAVAIL	5	/* insure that resources are reserved */
+.DE
+.SH "SEE ALSO"
+msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
