@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_extern.c	7.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_extern.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)ex_extern.c	7.3 (Berkeley) %G%";
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_extern.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_extern.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 /*

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcopy.c	7.2 (Berkeley) %G%";
+static char *sccsid = "@(#)bcopy.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)bcopy.c	7.2 (Berkeley) %G%";
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcopy.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 /* block copy from from to to, count bytes */
