@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)recv.2	5.1 (Berkeley) %G%
+.\"	@(#)recv.2	6.1 (Berkeley) %G%
 .\"
-.TH RECV 2 "7 July 1983"
+.TH RECV 2 ""
 .UC 5
 .SH NAME
 recv, recvfrom, recvmsg \- receive a message from a socket
@@ -92,8 +92,8 @@ one or more of the values,
 .nf
 .RS
 .DT
-#define	MSG_PEEK	0x1	/* peek at incoming message */
-#define	MSG_OOB	0x2	/* process out-of-band data */
+#define	MSG_OOB	0x1	/* process out-of-band data */
+#define	MSG_PEEK	0x2	/* peek at incoming message */
 .RE
 .fi
 .PP
@@ -111,7 +111,7 @@ This structure has the following form, as defined in
 struct msghdr {
 	caddr_t	msg_name;		/* optional address */
 	int	msg_namelen;		/* size of address */
-	struct	iov *msg_iov;		/* scatter/gather array */
+	struct	iovec *msg_iov;		/* scatter/gather array */
 	int	msg_iovlen;		/* # elements in msg_iov */
 	caddr_t	msg_accrights;		/* access rights sent/received */
 	int	msg_accrightslen;
