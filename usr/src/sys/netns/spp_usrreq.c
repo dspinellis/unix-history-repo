@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.11 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -144,15 +144,35 @@ spp_input(m, nsp, ifp)
 			goto drop;
 		}
 		(void) m_free(am);
-		cb->s_state = TCPS_SYN_RECEIVED;
 		spp_template(cb);
+		dropsocket = 0;		/* committed to socket */
 		cb->s_did = si->si_sid;
 		cb->s_rack = si->si_ack;
 		cb->s_ralo = si->si_alo;
-		cb->s_flags |= SF_AK;
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
-		dropsocket = 0;		/* committed to socket */
+#define THREEWAYSHAKE
+#ifdef THREEWAYSHAKE
+		cb->s_state = TCPS_SYN_RECEIVED;
+		cb->s_force = 1 + TCPT_REXMT;
+		cb->s_timer[TCPT_REXMT] = 2 * TCPTV_MIN;
 		}
+		break;
+	/*
+	 * This state means that we have heard a response
+	 * to our acceptance of their connection
+	 * It is probably logically unnecessary in this
+	 * implementation.
+	 */
+	 case TCPS_SYN_RECEIVED:
+		if (si->si_did!=cb->s_sid) {
+			spp_istat.wrncon++;
+			goto drop;
+		}
+#endif
+		nsp->nsp_fport =  si->si_sport;
+		cb->s_timer[TCPT_REXMT] = 0;
+		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
+		soisconnected(so);
+		cb->s_state = TCPS_ESTABLISHED;
 		break;
 
 	/*
@@ -175,23 +195,6 @@ spp_input(m, nsp, ifp)
 		cb->s_dport = nsp->nsp_fport =  si->si_sport;
 		cb->s_timer[TCPT_REXMT] = 0;
 		cb->s_flags |= SF_AK;
-		soisconnected(so);
-		cb->s_state = TCPS_ESTABLISHED;
-		break;
-	/*
-	 * This state means that we have heard a response
-	 * to our acceptance of their connection
-	 * It is probably logically unnecessary in this
-	 * implementation.
-	 */
-	 case TCPS_SYN_RECEIVED:
-		if (si->si_did!=cb->s_sid) {
-			spp_istat.wrncon++;
-			goto drop;
-		}
-		nsp->nsp_fport =  si->si_sport;
-		cb->s_timer[TCPT_REXMT] = 0;
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
 	}
@@ -594,11 +597,22 @@ spp_output(cb, m0)
 	 */
 	{
 		register struct sockbuf *sb2 = &so->so_rcv;
-		int credit = ((sb2->sb_mbmax - sb2->sb_mbcnt) / cb->s_mtu);
-		int alo = cb->s_ack + credit;
+		int credit = ((sb2->sb_mbmax - sb2->sb_mbcnt) /
+						((short)cb->s_mtu));
+		int alo = cb->s_ack + (credit > 0 ? credit : 0) - 1;
 
-		if (cb->s_alo < alo)
+		if (cb->s_alo < alo) {
+			/* If the amount we are raising the window
+			   is more than his remaining headroom, tell
+			   him about it.  In particular, if he is at
+			   his limit, any amount at all will do! */
+			u_short raise = alo - cb->s_alo;
+			u_short headroom = 1 + cb->s_alo - cb->s_ack;
+
+			if(SSEQ_LT(headroom, raise))
+				cb->s_flags |= SF_AK;
 			cb->s_alo = alo;
+		}
 	}
 
 	if (cb->s_oobflags & SF_SOOB) {
@@ -1027,13 +1041,19 @@ spp_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_RCVOOB:
+		if (so->so_oobmark == 0 &&
+		    (so->so_state & SS_RCVATMARK) == 0) {
+			error = EINVAL;
+			break;
+		}
 		if ( ! (cb->s_oobflags & SF_IOOB) ) {
 			error = EWOULDBLOCK;
 			break;
 		}
 		m->m_len = 1;
 		*mtod(m, caddr_t) = cb->s_iobc;
-		cb->s_oobflags &= ~ SF_IOOB;
+		if (((int)nam & MSG_PEEK) == 0)
+			cb->s_oobflags &= ~ SF_IOOB;
 		break;
 
 	case PRU_SENDOOB:
