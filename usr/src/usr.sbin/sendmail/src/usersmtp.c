@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.28 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.29 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.28 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.29 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -269,7 +269,7 @@ helo_options(line, firstline, m, mci, e)
 {
 	register char *p;
 
-	if (!firstline)
+	if (firstline)
 		return;
 
 	if (strlen(line) < 5)
@@ -483,14 +483,14 @@ smtprcpt(to, m, mci, e)
 		}
 		if (bitset(QPINGONSUCCESS, to->q_flags))
 		{
-			if (firstone)
+			if (!firstone)
 				strcat(optbuf, ",");
 			strcat(optbuf, "SUCCESS");
 			firstone = FALSE;
 		}
 		if (bitset(QPINGONDELAY, to->q_flags))
 		{
-			if (firstone)
+			if (!firstone)
 				strcat(optbuf, ",");
 			strcat(optbuf, "DELAY");
 			firstone = FALSE;
