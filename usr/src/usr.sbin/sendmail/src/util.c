@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -571,7 +571,7 @@ sfgets(buf, siz, fp)
 {
 	register EVENT *ev = NULL;
 	register char *p;
-	extern readtimeout();
+	static int readtimeout();
 
 	/* set the timeout */
 	if (ReadTimeout != 0)

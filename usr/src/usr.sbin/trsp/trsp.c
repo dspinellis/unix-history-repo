@@ -15,9 +15,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trsp.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)trsp.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -33,13 +34,13 @@ static char sccsid[] = "@(#)trsp.c	6.7 (Berkeley) %G%";
 #include <netinet/tcp_timer.h>
 
 #include <netns/ns.h>
-#include <netns/ns_pcb.h>
-#include <netns/idp.h>
-#include <netns/idp_var.h>
 #include <netns/sp.h>
+#include <netns/idp.h>
 #include <netns/spidp.h>
 #include <netns/spp_timer.h>
 #include <netns/spp_var.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp_var.h>
 #define SANAMES
 #include <netns/spp_debug.h>
 
@@ -284,19 +285,36 @@ spp_trace(act, ostate, asp, sp, si, req)
 				ns_printhost(&si->si_dna);
 			}
 			printf("\n\t");
-#define p1(f)  { printf("%s = %x, ", "f", f); }
-			p1(seq); p1(ack); p1(alo); p1(len);
+#define p1(name, f) { \
+	printf("%s = %x, ", name, f); \
+ }
+			p1("seq", seq);
+			p1("ack", ack);
+			p1("alo", alo);
+			p1("len", len);
 			flags = si->si_cc;
 			printf("flags=%x", flags);
+#define pf(name, f) { \
+	if (flags & f) { \
+		printf("%s%s", cp, name); \
+		cp = ","; \
+	} \
+}
 			if (flags) {
 				char *cp = "<";
-#define pf(f) { if (flags&f) { printf("%s%s", cp, "f"); cp = ","; } }
-				pf(SP_SP); pf(SP_SA); pf(SP_OB); pf(SP_EM);
+				pf("SP_SP", SP_SP);
+				pf("SP_SA", SP_SA);
+				pf("SP_OB", SP_OB);
+				pf("SP_EM", SP_EM);
 				printf(">");
 			}
 			printf(", ");
-#define p2(f)  { printf("%s = %x, ", "f", si->si_/**/f); }
-			p2(sid);p2(did);p2(dt);
+#define p2(name, f) { \
+	printf("%s = %x, ", name, f); \
+}
+			p2("sid", si->si_sid);
+			p2("did", si->si_did);
+			p2("dt", si->si_dt);
 			printf("\n\tsna=");
 			ns_printhost(&si->si_sna);
 			printf("\tdna=");
@@ -314,21 +332,39 @@ spp_trace(act, ostate, asp, sp, si, req)
 	printf("\n");
 	if (sp == 0)
 		return;
-#define p3(f)  { printf("%s = %x, ", "f", sp->s_/**/f); }
-	if(sflag) {
-		printf("\t"); p3(rack); p3(ralo); p3(smax); p3(snxt); p3(flags);
+#define p3(name, f)  { \
+	printf("%s = %x, ", name, f); \
+}
+	if (sflag) {
+		printf("\t");
+		p3("rack", sp->s_rack);
+		p3("ralo", sp->s_ralo);
+		p3("smax", sp->s_smax);
+		p3("snxt", sp->s_snxt);
+		p3("flags", sp->s_flags);
 #undef pf
-#define pf(f) { if (flags&SF_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
+#define pf(name, f) { \
+	if (flags & f) { \
+		printf("%s%s", cp, name); \
+		cp = ","; \
+	} \
+}
 		flags = sp->s_flags;
 		if (flags || sp->s_oobflags) {
 			char *cp = "<";
-			pf(ACKNOW); pf(DELACK); pf(HI); pf(HO);
-			pf(PI); pf(WIN); pf(RXT); pf(RVD);
+			pf("ACKNOW", SF_ACKNOW);
+			pf("DELACK", SF_DELACK);
+			pf("HI", SF_HI);
+			pf("HO", SF_HO);
+			pf("PI", SF_PI);
+			pf("WIN", SF_WIN);
+			pf("RXT", SF_RXT);
+			pf("RVD", SF_RVD);
 			flags = sp->s_oobflags;
-			pf(SOOB); pf(IOOB);
+			pf("SOOB", SF_SOOB);
+			pf("IOOB", SF_IOOB);
 			printf(">");
 		}
-
 	}
 	/* print out timers? */
 	if (tflag) {
@@ -336,7 +372,9 @@ spp_trace(act, ostate, asp, sp, si, req)
 		register int i;
 
 		printf("\n\tTIMERS: ");
-		p3(idle); p3(force); p3(rtseq);
+		p3("idle", sp->s_idle);
+		p3("force", sp->s_force);
+		p3("rtseq", sp->s_rtseq);
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (sp->s_timer[i] == 0)
 				continue;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -202,6 +202,8 @@ addrref(a, r)
 **		none.
 */
 
+extern ADDRESS *getctladdr();
+
 ADDRESS *
 ADDRESS *
 recipient(a, sendq)
@@ -214,7 +216,6 @@ recipient(a, sendq)
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
 	char buf[MAXNAME];		/* unquoted image of the user name */
-	extern ADDRESS *getctladdr();
 	extern bool safefile();
 
 	CurEnv->e_to = a->q_paddr;

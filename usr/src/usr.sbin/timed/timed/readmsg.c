@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -152,8 +152,9 @@ struct netinfo *netfrom;
 		    &rwait)) {
 			length = sizeof(struct sockaddr_in);
 			if (recvfrom(sock, (char *)&msgin, sizeof(struct tsp), 
-						0, &from, &length) < 0) {
-				syslog(LOG_ERR, "receiving datagram packet: %m");
+			    0, (struct sockaddr *)&from, &length) < 0) {
+				syslog(LOG_ERR,
+				    "receiving datagram packet: %m");
 				exit(1);
 			}
 
@@ -285,7 +286,7 @@ slaveack()
 		}
 		bytenetorder(&resp);     /* this is not really necessary here */
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+		    (struct sockaddr *)&from, length) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
@@ -320,7 +321,7 @@ ignoreack()
 		}
 		bytenetorder(&resp);     /* this is not really necessary here */
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+		    (struct sockaddr *)&from, length) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
@@ -360,7 +361,7 @@ masterack()
 			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+		    (struct sockaddr *)&from, length) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
@@ -374,7 +375,7 @@ masterack()
 			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+		    (struct sockaddr *)&from, length) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
@@ -387,7 +388,7 @@ masterack()
 			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+		    (struct sockaddr *)&from, length) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -212,7 +212,6 @@ username()
 	static char *myname = NULL;
 	extern char *getlogin();
 	register struct passwd *pw;
-	extern struct passwd *getpwuid();
 
 	/* cache the result */
 	if (myname == NULL)
@@ -537,17 +536,18 @@ setproctitle(fmt, a, b, c)
 # include <sys/wait.h>
 # endif VMUNIX
 
+void
 reapchild()
 {
 # ifdef WNOHANG
 	union wait status;
 
-	while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0)
+	while (wait3((int *)&status, WNOHANG, (struct rusage *) NULL) > 0)
 		continue;
 # else WNOHANG
 	auto int status;
 
-	while (wait(&status) > 0)
+	while (wait((int *)&status) > 0)
 		continue;
 # endif WNOHANG
 }

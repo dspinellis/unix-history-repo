@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -420,6 +420,8 @@ deliver(e, firstto)
 	else
 #endif /* SMTP */
 	{
+		static int sendoff();
+
 		message(Arpa_Info, "Connecting to %s (%s)...", host, m->m_name);
 		rcode = sendoff(e, m, pv, ctladdr);
 	}

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sliplogin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sliplogin.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -200,7 +200,7 @@ sigstr(s)
 	return(buf);
 }
 
-int
+void
 hup_handler(s)
 	int s;
 {
@@ -348,7 +348,7 @@ main(argc, argv)
 	 * babble into the slip tty line.
 	 */
 	(void) close(1);
-	if ((fd = open("/dev/null", O_WRONLY)) != 1) {
+	if ((fd = open(_PATH_DEVNULL, O_WRONLY)) != 1) {
 		if (fd < 0) {
 			syslog(LOG_ERR, "open /dev/null: %m");
 			exit(1);

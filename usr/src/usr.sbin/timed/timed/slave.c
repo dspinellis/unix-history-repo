@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -49,7 +49,8 @@ slave()
 		(void)strcpy(resp.tsp_name, hostname);
 		bytenetorder(&resp);
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0,
-		    &slavenet->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+		    (struct sockaddr *)&slavenet->dest_addr,
+		    sizeof(struct sockaddr_in)) < 0) {
 			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
@@ -135,7 +136,8 @@ loop:
 			(void)strcpy(to.tsp_name, hostname);
 			bytenetorder(&to);
 			if (sendto(sock, (char *)&to, sizeof(struct tsp), 0,
-			    &ntp->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+			    (struct sockaddr *)&ntp->dest_addr,
+			    sizeof(struct sockaddr_in)) < 0) {
 				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
@@ -221,8 +223,9 @@ loop:
 				bytenetorder(msg);
 				length = sizeof(struct sockaddr_in);
 				if (sendto(sock, (char *)msg, 
-						sizeof(struct tsp), 0,
-						&saveaddr, length) < 0) {
+				    sizeof(struct tsp), 0,
+				    (struct sockaddr *)&saveaddr,
+				    length) < 0) {
 					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
 				}
@@ -240,7 +243,7 @@ loop:
 			answerdelay();
 			length = sizeof(struct sockaddr_in);
 			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0, 
-						&from, length) < 0) {
+			    (struct sockaddr *)&from, length) < 0) {
 				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
@@ -274,7 +277,8 @@ loop:
 				bytenetorder(msg);
 				length = sizeof(struct sockaddr_in);
 				if (sendto(sock, (char *)msg,
-				    sizeof(struct tsp), 0, &saveaddr,
+				    sizeof(struct tsp), 0,
+				    (struct sockaddr *)&saveaddr,
 				    length) < 0) {
 					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
@@ -307,7 +311,8 @@ loop:
 				bytenetorder(msg);
 				length = sizeof(struct sockaddr_in);
 				if (sendto(sock, (char *)msg,
-				    sizeof(struct tsp), 0, &saveaddr,
+				    sizeof(struct tsp), 0,
+				    (struct sockaddr *)&saveaddr,
 				    length) < 0) {
 					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
@@ -419,9 +424,10 @@ loop:
 				msg->tsp_type = TSP_ACK;
 				length = sizeof(struct sockaddr_in);
 				bytenetorder(msg);
-				if (sendto(sock, (char *)msg, 
-						sizeof(struct tsp), 0,
-						&msaveaddr, length) < 0) {
+				if (sendto(sock, (char *)msg,
+				    sizeof(struct tsp), 0,
+				    (struct sockaddr *)&msaveaddr,
+				    length) < 0) {
 					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
 				}
@@ -490,7 +496,8 @@ loop:
 				    if (ntp->status == MASTER)
 					if (sendto(sock, (char *)msg, 
 					    sizeof(struct tsp), 0,
-					    &ntp->dest_addr, length) < 0) {
+					    (struct sockaddr *)&ntp->dest_addr,
+					    length) < 0) {
 						syslog(LOG_ERR, "sendto: %m");
 						exit(1);
 					}

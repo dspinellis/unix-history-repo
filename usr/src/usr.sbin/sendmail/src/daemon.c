@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.36 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.37 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.36 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.37 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -88,7 +88,7 @@ getrequests()
 	int t;
 	register struct servent *sp;
 	int on = 1;
-	extern reapchild();
+	extern void reapchild();
 
 	/*
 	**  Set up the address for the mailer.
@@ -131,7 +131,8 @@ getrequests()
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
-	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress) < 0)
+	if (bind(DaemonSocket,
+	    (struct sockaddr *)&SendmailAddress, sizeof SendmailAddress) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
@@ -298,7 +299,8 @@ again:
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #else NVMUNIX
 	SendmailAddress.sin_family = AF_INET;
-	if (connect(s, &SendmailAddress, sizeof SendmailAddress) < 0)
+	if (connect(s,
+	    (struct sockaddr *)&SendmailAddress, sizeof SendmailAddress) < 0)
 #endif NVMUNIX
 	{
 		sav_errno = errno;
