@@ -1,0 +1,48 @@
+From tinguely@plains.NoDak.edu Thu Feb 24 11:00:29 MST 1994
+Article: 9561 of comp.os.386bsd.questions
+Newsgroups: comp.os.386bsd.questions
+Path: usenet.coe.montana.edu!netnews.nwnet.net!ns1.nodak.edu!plains.NoDak.edu!tinguely
+From: tinguely@plains.NoDak.edu (Mark Tinguely)
+Subject: Re: psm driver - how to install?
+Sender: usenet@ns1.nodak.edu (Usenet login)
+Message-ID: <CLoqGJ.EK8@ns1.nodak.edu>
+Date: Wed, 23 Feb 1994 16:14:43 GMT
+References: <2kclki$su@pilhuhn.pilhuhn.sub.org> <2kdlh6$373@pdq.coe.montana.edu>
+Nntp-Posting-Host: plains.nodak.edu
+Organization: North Dakota State University
+Lines: 32
+
+In article <2kdlh6$373@pdq.coe.montana.edu> nate@bsd.coe.montana.edu (Nate Williams) writes:
+>In article <2kclki$su@pilhuhn.pilhuhn.sub.org>,
+>Patrick M.Hausen <pmh@pilhuhn.sub.org> wrote:
+>This is due to the way the PS/2 mouse works.  You need to comment out the
+>lines in i386/isa.c which don't allow multiple device drivers to exist on
+>the same port.  However, as this implies, you *may* have problems with certain
+>hardware and keyboard lockups due to this.  I have machines that work fine,
+>and others that lockup using that mouse driver.
+
+instead of totally commenting out the conflict check, I just "overlooked"
+the duplicate keyboard/mouse conflict.
+
+*** isa.c.orig	Wed Feb 23 10:09:58 1994
+--- isa.c	Wed Feb 23 10:08:51 1994
+***************
+*** 122,128 ****
+  		if (tmpdvp->id_alive != -1) {
+  			if ((dvp->id_iobase >= tmpdvp->id_iobase) &&
+  			    (dvp->id_iobase <=
+! 				  (tmpdvp->id_iobase + tmpdvp->id_alive - 1))) {
+  				conflict(dvp, tmpdvp, dvp->id_iobase,
+  					 "I/O address", "0x%x");
+  				status = 1;
+--- 122,129 ----
+  		if (tmpdvp->id_alive != -1) {
+  			if ((dvp->id_iobase >= tmpdvp->id_iobase) &&
+  			    (dvp->id_iobase <=
+! 				  (tmpdvp->id_iobase + tmpdvp->id_alive - 1))
+! /* for ps/2 mouse */			&& dvp->id_iobase != 0x60 ) {
+  				conflict(dvp, tmpdvp, dvp->id_iobase,
+  					 "I/O address", "0x%x");
+  				status = 1;
+
+

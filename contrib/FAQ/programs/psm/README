@@ -1,0 +1,58 @@
+This is a set of instructions and files necessary to get the PS/2 mouse
+working with FreeBSD. 
+
+First, some explanations are in order as to why it doesn't work now.
+
+The PS/2 mouse is an extension of the keyboard controller, so it uses
+the same 'port' as the keyboard.  Even though it uses a different
+interrupt it's possible to have both processes trying to read from the
+same port at the same time, which can cause keyboard and/or mouse
+lockups.  If everything works right nothing bad should happen, but there
+are possibilities for problems due to two different drivers reading from
+the same area in memory.
+
+The bottom line is that it's bad for two drivers to use the same
+interrupt, I/O address (port), memory address, or any part of the system
+that is used for another device driver.  Code was added to
+/sys/i386/isa/isa.c to not allow this to happen.
+
+The real solution to the problem is to integrate the PS/2 mouse driver
+into the keyboard controller so that it can differentiate between
+keyboard and mouse events, but until that happens here is the
+workaround.
+
+Note, this driver is *known* to cause some keyboard lockups with certain
+controllers and is not guaranteed to work all the time, but I will admit
+that I am using this driver on quite a number of machines I support with
+only rare problems which are easily fixed with a reboot.
+
+What is needed is to add the driver to your system and to patch isa.c to
+allow both device drivers to occupy the same I/O address.  Then you need
+to add the device driver line to you kernel configuration file and rebuild
+the kernel.  Finally, you need to make the appropriate /dev entries for
+the ps/2 mouse.
+
+1) Copy the file psm.c to /sys/i386/isa
+
+2) Copy the file mouse.h /sys/i386/include
+
+3) Patch the file /sys/i386/isa/isa.c with the file isa.patch
+
+4) Add this line to your kernel config file:
+
+device          psm0    at isa? port "IO_KBD" tty irq 12 vector psmintr
+
+5) Configure and remake your kernel (Do a make clean before starting to
+   make sure everything gets rebuilt)
+
+6) Make the new /dev entries as 'MAKEDEV psm00' in /dev.
+
+7) Boot the new kernel.  (Do all the necessary steps to make sure you
+   don't hose yourself here)
+
+8) At this point you'll probably want to point X at the new mouse, so
+   modify the mouse line in Xconfig to say something like:
+
+PS/2		"/dev/psm0"
+
+9) Start X and be happy.
