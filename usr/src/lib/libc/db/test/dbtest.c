@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,7 @@ enum S { COMMAND, COMPARE, GET, PUT, REMOVE, SEQ, SEQFLAG, KEY, DATA };
 
 void	 compare __P((DBT *, DBT *));
 DBTYPE	 dbtype __P((char *));
+void	 dump __P((DB *, int));
 void	 err __P((const char *, ...));
 void	 get __P((DB *, DBT *));
 void	 getdata __P((DB *, DBT *, DBT *));
@@ -159,13 +160,13 @@ main(argc, argv)
 			if (state != DATA)
 				err("line %lu: not expecting data", lineno);
 			data.data = rfile(p + 1, &data.size);
-			goto data;
+			goto ldata;
 		case 'd':			/* data */
 			if (state != DATA)
 				err("line %lu: not expecting data", lineno);
 			data.data = xmalloc(p + 1, len - 1);
 			data.size = len - 1;
-data:			switch(command) {
+ldata:			switch(command) {
 			case COMPARE:
 				compare(&keydata, &data);
 				break;
@@ -187,7 +188,7 @@ data:			switch(command) {
 				err("line %lu: 'K' not available for recno",
 				    lineno);
 			key.data = rfile(p + 1, &key.size);
-			goto key;
+			goto lkey;
 		case 'k':			/* key */
 			if (state != KEY)
 				err("line %lu: not expecting a key", lineno);
@@ -200,7 +201,7 @@ data:			switch(command) {
 				key.data = xmalloc(p + 1, len - 1);
 				key.size = len - 1;
 			}
-key:			switch(command) {
+lkey:			switch(command) {
 			case COMPARE:
 				getdata(dbp, &key, &keydata);
 				state = DATA;
@@ -230,6 +231,9 @@ key:			switch(command) {
 				err("line %lu: command doesn't take a key",
 				    lineno);
 			}
+			break;
+		case 'o':
+			dump(dbp, p[1] == 'r');
 			break;
 		default:
 			err("line %lu: %s: unknown command character",
@@ -352,6 +356,36 @@ seq(dbp, kp)
 		(void)write(ofd, NOSUCHKEY, sizeof(NOSUCHKEY) - 1);
 		break;
 	}
+}
+
+void
+dump(dbp, rev)
+	DB *dbp;
+	int rev;
+{
+	DBT key, data;
+	int flags, nflags;
+
+	if (rev) {
+		flags = R_LAST;
+		nflags = R_PREV;
+	} else {
+		flags = R_FIRST;
+		nflags = R_NEXT;
+	}
+	for (;; flags = nflags)
+		switch(dbp->seq(dbp, &key, &data, flags)) {
+		case 0:
+			(void)write(ofd, data.data, data.size);
+			break;
+		case 1:
+			goto done;
+		case -1:
+			err("line %lu: (dump) seq: %s",
+			    lineno, strerror(errno));
+			/* NOTREACHED */
+		}
+done:	return;
 }
 	
 u_int

@@ -1,4 +1,4 @@
-#	@(#)README	5.5 (Berkeley) %G%
+#	@(#)README	5.6 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
@@ -29,6 +29,8 @@ K [file]: key file
 	+ set the current key value to the contents of the file
 k [data]:
 	+ set the current key value to the contents of the line.
+o [r]: dump [reverse]
+	+ dump the database out, if 'r' is set, in reverse order.
 
 Options to dbtest are as follows:
 
