@@ -7,7 +7,8 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(@(#)CS.Berkeley.EDU.m4	2.8 (Berkeley) %G%)
+VERSIONID(@(#)CS.Berkeley.EDU.m4	2.9 (Berkeley) %G%)
 DOMAIN(Berkeley)dnl
 #FEATURE(no_wildcard_MX)dnl
 HACK(cssubdomain)dnl
+define(`USERDB_FILE', `/usr/sww/share/lib/users.cs.db')dnl
