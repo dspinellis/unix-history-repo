@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yylex.c 1.2 %G%";
+static char sccsid[] = "@(#)yylex.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -170,6 +170,7 @@ infpnumb:
 			return (YINT);
 		case '"':
 		case '`':
+		case '#':
 			if (!any(bufp + 1, c))
 				goto illch;
 			if (!dquote) {
@@ -178,7 +179,6 @@ infpnumb:
 				yerror("Character/string delimiter is '");
 			}
 		case '\'':
-		case '#':
 			delim = c;
 			do {
 				do {
@@ -279,16 +279,22 @@ nonterm:
 		case '+':
 		case '/':
 		case '-':
-		case '|':
-		case '&':
 		case ')':
 		case '[':
 		case ']':
 		case '<':
 		case '>':
-		case '~':
 		case '^':
 			return (c);
+		case '~':
+		case '|':
+		case '&':
+			if ( opt('s') ) {
+			    yyset();
+			    standard();
+			    yerror("%c is non-standard", c);
+			}
+			return c;
 		default:
 			switch (c) {
 				case YDOTDOT:
