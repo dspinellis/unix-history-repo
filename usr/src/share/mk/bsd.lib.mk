@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.28 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.29 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -56,7 +56,10 @@ _LIBS=lib${LIB}.a lib${LIB}_p.a
 _LIBS=lib${LIB}.a
 .endif
 
-all: ${_LIBS} ${MANALL}# llib-l${LIB}.ln
+all: ${_LIBS} # llib-l${LIB}.ln
+.if !defined(NOMAN)
+all: ${MANALL}
+.endif
 
 OBJS+=	${SRCS:R:S/$/.o/g}
 
@@ -128,7 +131,10 @@ realinstall: beforeinstall
 .endif
 
 install: afterinstall
-afterinstall: realinstall maninstall
+afterinstall: realinstall
+.if !defined(NOMAN)
+afterinstall: maninstall
+.endif
 .endif
 
 .if !target(lint)
