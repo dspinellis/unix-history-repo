@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hp.4	6.2 (Berkeley) %G%
+.\"	@(#)hp.4	6.3 (Berkeley) %G%
 .\"
 .TH HP 4 ""
 .UC 4
@@ -43,6 +43,7 @@ the disk geometry and, based on this information, decides what
 the drive type is.  The following disks are supported: RM03,
 RM05, RP06, RM80, RP05, RP07, ML11A, ML11B, CDC 9775, CDC 9730,
 AMPEX Capricorn (32 sectors/track), FUJITSU Eagle (48 sectors/track),
+Fujitsu 2361, 
 and AMPEX 9300.  The origin and size (in sectors) of the pseudo-disks
 on each drive are as follows:
 .PP
@@ -154,6 +155,17 @@ FUJITSU Eagle partitions
 	hp?g	375360	432768	391-841
 	hp?h	83520	291346	87-390
 .PP
+FUJITSU 2361 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-12
+	hp?b	16640	66880	13-65
+	hp?c	0	1077760	0-841
+	hp?d	376320	15884	294-306
+	hp?e	392960	307200	307-546
+	hp?f	700160	377408	547-841
+	hp?g	363520	701248	294-841
+	hp?h	84480	291346	66-293
+.PP
 AMPEX 9300 partitions
 	disk	start	length	cyl
 	hp?a	0	15884	0-26
@@ -205,7 +217,7 @@ recover the error.
 when a write was attempted.  The write operation is not recoverable.
 .PP
 \fBhp%d: not ready\fR.  The drive was spun down or off line when it was
-accessed.  The i/o operation is not recoverable.
+accessed.  The I/O operation is not recoverable.
 .PP
 \fBhp%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
 specified sector of the specified disk partition. 
@@ -226,6 +238,7 @@ The last message indicates the drive is of a unknown type.
 .BR "hp%d: 9762" .
 .BR "hp%d: capricorn" .
 .BR "hp%d: eagle" .
+.BR "hp%d: 2361" .
 .BR "hp%d: ntracks %d, nsectors %d: unknown device" .
 .fi
 .SH BUGS
