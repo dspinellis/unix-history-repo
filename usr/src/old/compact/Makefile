@@ -1,4 +1,4 @@
-#	Makefile	4.1	83/02/11
+#	Makefile	4.2	83/02/23
 
 CFLAGS=-O
 DESTDIR=
@@ -10,6 +10,8 @@ compact: compact.o tree.o
 
 uncompact: uncompact.o tree.o
 	cc uncompact.o tree.o -o uncompact
+
+compact.o uncompact.o tree.o: compact.h
 
 install:
 	install -s compact ${DESTDIR}/usr/ucb
