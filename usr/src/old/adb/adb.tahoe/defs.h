@@ -1,4 +1,4 @@
-/*	defs.h	1.2	86/07/25	*/
+/*	defs.h	1.3	86/11/20	*/
 
 /*
  * adb - vax string table version; common definitions
@@ -93,11 +93,13 @@
 #define shorten(a)	(((a) >> 16) & 0xffff)
 #define	itol(a,b)	(((a) << 16) | ((b) & 0xffff))
 #define	byte(a)		(((a) >> 24) & 0xff)
+#define	btol(a)		((a) << 24)
 #else
 #define leng(a)		itol(0,a)
 #define	shorten(a)	((a) & 0xffff)
 #define	itol(a,b)	(((a) & 0xffff) | ((b) << 16))
 #define	byte(a)		((a) & 0xff)
+#define	btol(a)		(a)
 #endif
 
 /* result type declarations */
