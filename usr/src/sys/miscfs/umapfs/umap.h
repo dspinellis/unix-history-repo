@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap.h	8.3 (Berkeley) %G%
+ *	@(#)umap.h	8.4 (Berkeley) %G%
  *
  * @(#)null_vnops.c       1.5 (Berkeley) 7/10/92
  */
@@ -41,8 +41,7 @@ struct umap_mount {
  * A cache of vnode references
  */
 struct umap_node {
-	struct umap_node	*umap_forw;	/* Hash chain */
-	struct umap_node	*umap_back;
+	LIST_ENTRY(umap_node) umap_hash;	/* Hash list */
 	struct vnode	*umap_lowervp;	/* Aliased vnode - VREFed once */
 	struct vnode	*umap_vnode;	/* Back pointer to vnode/umap_node */
 };

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)umap_vnops.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -325,7 +325,7 @@ umap_reclaim(ap)
 	
 	/* After this assignment, this node will not be re-used. */
 	xp->umap_lowervp = NULL;
-	remque(xp);
+	LIST_REMOVE(xp, umap_hash);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
 	vrele(lowervp);
