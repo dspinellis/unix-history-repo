@@ -1,4 +1,4 @@
-\"	@(#)present.me	1.1 %G%
+\"	@(#)present.me	1.2 %G%
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -73,7 +73,7 @@ When a child is a member of a cycle,
 the time shown is the appropriate fraction of the time
 for the whole cycle.
 Self-recursive routines have their calls broken
-down into calls from the outside and self recursive calls.
+down into calls from the outside and self-recursive calls.
 Only the outside calls affect the propagation of time.
 .pp
 The following example a typical fragment of a call graph.
@@ -149,7 +149,7 @@ requires a careful examination of the call graph profile,
 and a thorough knowledge of the abstractions underlying
 the program.
 .pp
-One of the easiest optimizations that can be made
+One of the easiest optimizations that can be performed
 is a small change
 to a control construct or data structure that improves the
 running time of the program.
@@ -187,7 +187,7 @@ it may be advantageous to cache its results,
 and eliminate the need to rerun
 it for identical inputs.
 .pp
-This tool is best used in an iterative approach;
+This tool is best used in an iterative approach:
 profiling the program,
 eliminating one bottleneck,
 then finding some other part of the program
@@ -207,7 +207,7 @@ As in the case of the symbol table abstraction that is placed
 in one routine,
 it is impossible to distinguish which members of the cycle are
 responsible for the execution time.
-Unfortunately there is no easy modifications to these programs that
+Unfortunately there are no easy modifications to these programs that
 make them amenable to analysis.
 .pp
 A completely different use of the profiler is to analyze the control
@@ -277,3 +277,9 @@ and allows programs to be measured in their actual
 environments.
 Finally, the profiler runs on a time-sharing system 
 using only the normal services provided by the operating system.
+.(q
+polle says:  make sure each of these points is clearly shown by the
+paper!  this is a nice clear paragraph and maybe should also appear
+(in a different form) earlier to motivate or describe what the paper
+will say.
+.)q
