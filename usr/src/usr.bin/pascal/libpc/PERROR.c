@@ -1,10 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PERROR.c 1.1 %G%";
+static char sccsid[] = "@(#)PERROR.c 1.2 %G%";
 
 #include	<stdio.h>
 #include	<signal.h>
-#include	"h00vars.h"
 
 /*
  * Routine PERROR is called from the runtime library when a runtime
@@ -18,8 +17,8 @@ PERROR(msg, fname)
 {
 	PFLUSH();
 	fputc('\n',stderr);
-	SETRACE();
 	fputs(msg, stderr);
 	perror(fname);
+	kill(getpid(), SIGTRAP);
 	return 0;
 }
