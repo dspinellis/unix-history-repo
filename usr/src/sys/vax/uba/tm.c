@@ -1,8 +1,8 @@
-/*	tm.c	4.46	82/02/03	*/
+/*	tm.c	4.47	82/03/28	*/
 
 #include "te.h"
 #include "ts.h"
-#if NTM > 0
+#if NTE > 0
 /*
  * TM11/TE10 tape driver
  *
