@@ -1,5 +1,5 @@
 #include "defs.h"
-static	char sccsid[] = "@(#)optab.c 4.1 %G%";
+static	char sccsid[] = "@(#)optab.c 4.2 %G%";
 /*
  * Argument access types
  */
@@ -29,7 +29,7 @@ struct optab {
 	char argtype[6];
 } optab[] = {
 #define OP(a,b,c,d,e,f,g,h,i) {a,b,c,d,e,f,g,h,i}
-#include "../as/instrs"
+#include "instrs"
 0};
 
 #define SYSTAB struct systab
