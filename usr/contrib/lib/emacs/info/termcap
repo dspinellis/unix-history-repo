@@ -1,0 +1,76 @@
+Info file ../info/termcap, produced by Makeinfo, -*- Text -*- from
+input file termcap.texinfo.
+
+This file documents the termcap library of the GNU system.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Indirect:
+termcap-1: 857
+termcap-2: 48833
+termcap-3: 92026
+
+Tag Table:
+(Indirect)
+Node: Top859
+Node: Introduction1500
+Node: Library3207
+Node: Preparation4217
+Node: Find5415
+Node: Interrogate8935
+Node: Initialize14232
+Node: Padding15853
+Node: Why Pad16507
+Node: Describe Padding18141
+Node: Output Padding19599
+Node: Parameters23187
+Node: Encode Parameters24832
+Node: Using Parameters30925
+Node: tparam31507
+Node: tgoto33556
+Node: Data Base36092
+Node: Format36960
+Node: Capability Format39032
+Node: Naming42052
+Node: Inheriting46629
+Node: Capabilities48835
+Node: Basic51659
+Node: Screen Size55499
+Node: Cursor Motion57226
+Node: Wrapping66897
+Node: Scrolling69732
+Node: Windows74736
+Node: Clearing75461
+Node: Insdel Line77215
+Node: Insdel Char82093
+Node: Standout92028
+Node: Underlining101040
+Node: Cursor Visibility103456
+Node: Bell104194
+Node: Keypad104737
+Node: Meta Key109449
+Node: Initialization110393
+Node: Pad Specs112760
+Node: Status Line114800
+Node: Half-Line116677
+Node: Printer117472
+Node: Summary119141
+Node: Var Index129346
+Node: Cap Index129717
+Node: Index132276
+
+End Tag Table
