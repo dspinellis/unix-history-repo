@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)libkern.h	7.4 (Berkeley) %G%
+ *	@(#)libkern.h	7.5 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -63,6 +63,7 @@ int	 bcmp __P((const void *, const void *, size_t));
 int	 ffs __P((int));
 int	 locc __P((int, char *, u_int));
 u_long	 random __P((void));
+char	*rindex __P((const char *, int));
 int	 scanc __P((u_int, u_char *, u_char *, int));
 int	 skpc __P((int, int, char *));
 char	*strcat __P((char *, const char *));
