@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.8 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.9 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -253,6 +253,7 @@ cyclelink()
     register nltype	*cyclenlp;
     int			cycle;
     nltype		*memberp;
+    arctype		*arcp;
 
 	/*
 	 *	Count the number of cycles, and initialze the cycle lists
@@ -311,9 +312,28 @@ cyclelink()
 		printf( " is the head of cycle %d\n" , cycle );
 	    }
 #	endif DEBUG
+	    /*
+	     *	link members to cycle header
+	     */
 	for ( memberp = nlp ; memberp ; memberp = memberp -> cnext ) { 
 	    memberp -> cycleno = cycle;
 	    memberp -> cyclehead = cyclenlp;
+	}
+	    /*
+	     *	count calls from outside the cycle
+	     *	and those among cycle members
+	     */
+	for ( memberp = nlp ; memberp ; memberp = memberp -> cnext ) {
+	    for ( arcp=memberp->parents ; arcp ; arcp=arcp->arc_parentlist ) {
+		if ( arcp -> arc_parentp == memberp ) {
+		    continue;
+		}
+		if ( arcp -> arc_parentp -> cycleno == cycle ) {
+		    cyclenlp -> selfcalls += arcp -> arc_count;
+		} else {
+		    cyclenlp -> ncall += arcp -> arc_count;
+		}
+	    }
 	}
     }
 }
@@ -337,17 +357,6 @@ cycletime()
 		continue;
 	    }
 	    cyclenlp -> time += childp -> time;
-	    for ( arcp=childp->parents ; arcp ; arcp=arcp->arc_parentlist ) {
-		parentp = arcp -> arc_parentp;
-		if ( parentp == childp ) {
-		    continue;
-		}
-		if ( parentp -> cyclehead == cyclenlp ) {
-		    cyclenlp -> selfcalls += arcp -> arc_count;
-		} else {
-		    cyclenlp -> ncall += arcp -> arc_count;
-		}
-	    }
 	}
 	cyclenlp -> propself = cyclenlp -> propfraction * cyclenlp -> time;
     }
@@ -474,7 +483,7 @@ inheritflags( childp )
 	    childp -> printflag |= parentp -> printflag;
 	    childp -> propfraction += parentp -> propfraction
 					* ( ( (double) arcp -> arc_count )
-					  / ( (double) childp -> ncall) );
+					  / ( (double) childp -> ncall ) );
 	}
     } else {
 	    /*
@@ -490,8 +499,9 @@ inheritflags( childp )
 		}
 		parentp = arcp -> arc_parentp;
 		headp -> printflag |= parentp -> printflag;
-		headp -> propfraction += parentp -> propfraction *
-					(arcp -> arc_count / headp -> ncall);
+		headp -> propfraction += parentp -> propfraction
+					* ( ( (double) arcp -> arc_count )
+					  / ( (double) headp -> ncall ) );
 	    }
 	}
 	for ( memp = headp ; memp ; memp = memp -> cnext ) {
