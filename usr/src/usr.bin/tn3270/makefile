@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.7 (Berkeley) %G%
+#	@(#)makefile	4.8 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -194,9 +194,9 @@ FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270$X:	telnet/telprog.o ${SUBLIB} api/apilib.a
+tn3270$X:	telnet/telprog.o ${SUBLIB} api/libapi.a
 	${CC} ${CFLAGS} -o tn3270 telnet/telprog.o \
-		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM) \
+		$L ${SUBLIB} api/libapi.a $(LIBCURSES) $(LIBTERM) \
 		-lcompat
 
 #PC_tn3270$X:
@@ -204,12 +204,12 @@ tn3270$X:	telnet/telprog.o ${SUBLIB} api/apilib.a
 #PC_	telnet
 #PC_	tn3270
 #PC_	nul
-#PC_	${SUBLIB} api/apilib.a+
+#PC_	${SUBLIB} api/libapi.a+
 #PC_	\lib\ublib\ubtcp
 #PC_	_PC_<
 
 mset$X:	mset$O ascii/map3270$O
-	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L api/apilib.a
+	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L api/libapi.a
 
 mset$O:	$(MSMAIN)
 	$(CC) $(CFLAGS) -c $(MSMAIN)

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.3 (Berkeley) %G%
+#	@(#)makefile	4.4 (Berkeley) %G%
 #
 DEBUG_FLAGS = -g
 
@@ -25,36 +25,27 @@ PRINT = lpr -p
 KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
-ALLC = apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c \
+SRCS = apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c \
 		disp_asc.c ebc_disp.c
 
 ALLH = apilib.h api_exch.h asc_ebc.h astosc.h disp_asc.h dctype.h ebc_disp.h
 
 
-ALLHC=	${ALLH} ${ALLC}
+ALLHC=	${ALLH} ${SRCS}
 ALLPRINT =	${ALLHC}
 
 ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
-ALLO = apilib.o api_bsd.o api_exch.o astosc.o asc_ebc.o dctype.o \
-		disp_asc.o ebc_disp.o
+CLEANFILES =	disp_out asc_disp.out astosc.out disp_asc.out \
+		astosc.OUT disp_asc.OUT \
+		test* test.o t1* t1.o t2* t2.o
 
-#.c.obj:
-#	${CC} ${CFLAGS} -c $<
-
-apilib.a: ${ALLO}
-	-rm $@
-	${AR} ${ARFLAGS} $@ ${ALLO}
-	${RANLIB} $@
+LIBDIR	= ${.CURDIR}/obj
+LINTLIBDIR	= ${.CURDIR}/obj
+LIB	= api
 
 .DEFAULT:
 	sccs get $<
-
-clean:
-	-rm ${ALLO} errs apilib.a makefile.bak \
-		disp_out asc_disp.out astosc.out disp_asc.out \
-		astosc.OUT disp_asc.OUT \
-		test* test.o t1* t1.o t2* t2.o
 
 sccsclean:
 	-sccs clean
@@ -75,8 +66,8 @@ t2:	apilib.a t2.o
 print:
 	${PRINT} ${ALLPRINT}
 
-clist:	${ALLC}
-	@for i in ${ALLC} ; \
+clist:	${SRCS}
+	@for i in ${SRCS} ; \
 		do (echo ${DIRPATH}$$i); done
 
 hclist:	${ALLHC}
@@ -106,29 +97,13 @@ disp_asc.OUT:	ebc_disp.o
 	../tools/mkdstoas > $@
 	ln $@ disp_asc.out
 
-depend:
-	grep '^#include' ${ALLC} | grep -v '<' | \
-	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/$.o/' | \
-	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		       else rec = rec " " $$2 } } \
-	      END { print rec } ' > makedep
-	echo '$$r makedep' >>eddep
-	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	-rm -f makefile.bak
-	cp makefile makefile.bak
-	ed - makefile < eddep
-	-rm eddep makedep
+# Some special dependencies...
+astosc.o:	astosc.OUT
+disp_asc.o:	disp_asc.OUT asc_disp.out
 
-# DO NOT DELETE THIS LINE
+.MAIN:	myall
+# Actually do some work
+.include <bsd.lib.mk>
 
-apilib.o: ../ctlr/api.h apilib.h
-api_bsd.o: ../ctlr/api.h api_exch.h
-api_exch.o: ../general/general.h api_exch.h
-asc_ebc.o: asc_ebc.h
-astosc.o: ../general/general.h ../ctlr/function.h astosc.h astosc.OUT
-dctype.o: dctype.h
-disp_asc.o: disp_asc.h asc_disp.out disp_asc.OUT
+myall:	lib${LIB}.a
+	ranlib lib${LIB}.a
