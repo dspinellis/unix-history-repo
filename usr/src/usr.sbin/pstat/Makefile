@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 PROG=	pstat
 CFLAGS+= -I/sys
@@ -6,7 +6,7 @@ SRCS=	pstat.c devname.c
 .PATH:	${.CURDIR}/../../bin/ps
 MAN8=	pstat.0
 DPADD= ${LIBUTIL}
-LDADD=	-lutil
+LDADD=	-lutil -lkvm
 BINGRP=	kmem
 BINMODE=2555
 
