@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)echo.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)echo.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 
 main(argc, argv)
@@ -8,7 +8,7 @@ char *argv[];
 	register int i, nflg;
 
 	nflg = 0;
-	if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'n') {
+	if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'n' && !argv[1][2]) {
 		nflg++;
 		argc--;
 		argv++;
