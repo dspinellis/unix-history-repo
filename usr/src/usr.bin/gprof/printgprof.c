@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.14 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.15 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -10,19 +10,8 @@ printprof()
     nltype		**sortednlp;
     int			index;
 
-    printf( "\ngranularity: each sample hit covers %d byte(s)" ,
-	    (long) scale * sizeof(UNIT) );
-    if ( totime > 0.0 ) {
-	printf( " for %.2f%% of %.2f seconds\n\n" ,
-		100.0/totime , totime / hz );
-    } else {
-	printf( " no time accumulated\n\n" );
-	    /*
-	     *	this doesn't hurt sinc eall the numerators will be zero.
-	     */
-	totime = 1.0;
-    }
     actime = 0.0;
+    printf( "\f\n" );
     flatprofheader();
 	/*
 	 *	Sort the symbol table in by time
@@ -40,6 +29,7 @@ printprof()
 	flatprofline( np );
     }
     actime = 0.0;
+    cfree( sortednlp );
 }
 
 timecmp( npp1 , npp2 )
@@ -70,8 +60,23 @@ flatprofheader()
     if ( bflag ) {
 	printblurb( FLAT_BLURB );
     }
-    printf( "%5.5s %7.7s %7.7s %7.7s %-8.8s\n" ,
-	    "%time" , "cumsecs" , "seconds" , "calls" , "name" );
+    printf( "\ngranularity: each sample hit covers %d byte(s)" ,
+	    (long) scale * sizeof(UNIT) );
+    if ( totime > 0.0 ) {
+	printf( " for %.2f%% of %.2f seconds\n\n" ,
+		100.0/totime , totime / hz );
+    } else {
+	printf( " no time accumulated\n\n" );
+	    /*
+	     *	this doesn't hurt sinc eall the numerators will be zero.
+	     */
+	totime = 1.0;
+    }
+    printf( "%5.5s %10.10s %8.8s %8.8s %8.8s %8.8s  %-8.8s\n" ,
+	    "%  " , "cumulative" , "self  " , "" , "self  " , "total " , "" );
+    printf( "%5.5s %10.10s %8.8s %8.8s %8.8s %8.8s  %-8.8s\n" ,
+	    "time" , "seconds " , "seconds" , "calls" ,
+	    "ms/call" , "ms/call" , "name" );
 }
 
 flatprofline( np )
@@ -82,14 +87,17 @@ flatprofline( np )
 	return;
     }
     actime += np -> time;
-    printf( "%5.1f %7.2f %7.2f" ,
+    printf( "%5.1f %10.2f %8.2f" ,
 	100 * np -> time / totime , actime / hz , np -> time / hz );
     if ( np -> ncall != 0 ) {
-	printf( " %7d" , np -> ncall );
+	printf( " %8d %8.2f %8.2f  " , np -> ncall ,
+	    1000 * np -> time / hz / np -> ncall ,
+	    1000 * ( np -> time + np -> childtime ) / hz / np -> ncall );
     } else {
-	printf( " %7.7s" , "" );
+	printf( " %8.8s %8.8s %8.8s  " , "" , "" , "" );
     }
-    printf( " %s\n" , np -> name );
+    printname( np );
+    printf( "\n" );
 }
 
 gprofheader()
@@ -145,35 +153,15 @@ gprofline( np )
     printf( "\n" );
 }
 
-printgprof()
-{
+printgprof(timesortnlp)
     nltype	**timesortnlp;
+{
     int		index;
     nltype	*parentp;
 
 	/*
-	 *	Now, sort by propself + propchild.
-	 *	sorting both the regular function names
-	 *	and cycle headers.
+	 *	Print out the structured profiling list
 	 */
-    timesortnlp = (nltype **) calloc( nname + ncycle , sizeof(nltype *) );
-    if ( timesortnlp == (nltype **) 0 ) {
-	fprintf( stderr , "%s: ran out of memory for sorting\n" , whoami );
-    }
-    for ( index = 0 ; index < nname ; index++ ) {
-	timesortnlp[index] = &nl[index];
-    }
-    for ( index = 1 ; index <= ncycle ; index++ ) {
-	timesortnlp[nname+index-1] = &cyclenl[index];
-    }
-    qsort( timesortnlp , nname + ncycle , sizeof(nltype *) , totalcmp );
-    for ( index = 0 ; index < nname + ncycle ; index++ ) {
-	timesortnlp[ index ] -> index = index + 1;
-    }
-	/*
-	 *	Now, print out the structured profiling list
-	 */
-    printf( "\f\n" );
     gprofheader();
     for ( index = 0 ; index < nname + ncycle ; index ++ ) {
 	parentp = timesortnlp[ index ];
@@ -202,6 +190,7 @@ printgprof()
 	printf( "-----------------------------------------------\n" );
 	printf( "\n" );
     }
+    cfree( timesortnlp );
 }
 
     /*
@@ -339,7 +328,7 @@ printname( selfp )
 #	endif DEBUG
     }
     if ( selfp -> cycleno != 0 ) {
-	printf( "\t<cycle %d>" , selfp -> cycleno );
+	printf( " <cycle %d>" , selfp -> cycleno );
     }
     if ( selfp -> index != 0 ) {
 	if ( selfp -> printflag ) {
@@ -638,4 +627,58 @@ printblurb( blurbname )
 	putchar( input );
     }
     fclose( blurbfile );
+}
+
+int
+namecmp( npp1 , npp2 )
+    nltype **npp1, **npp2;
+{
+    return( strcmp( (*npp1) -> name , (*npp2) -> name ) );
+}
+
+printindex()
+{
+    nltype		**namesortnlp;
+    register nltype	*nlp;
+    int			index, nnames, todo, i, j;
+    char		peterbuffer[ BUFSIZ ];
+
+	/*
+	 *	Now, sort regular function name alphbetically
+	 *	to create an index.
+	 */
+    namesortnlp = (nltype **) calloc( nname + ncycle , sizeof(nltype *) );
+    if ( namesortnlp == (nltype **) 0 ) {
+	fprintf( stderr , "%s: ran out of memory for sorting\n" , whoami );
+    }
+    for ( index = 0 , nnames = 0 ; index < nname ; index++ ) {
+	if ( zflag == 0 && nl[index].ncall == 0 && nl[index].time == 0 )
+		continue;
+	namesortnlp[nnames++] = &nl[index];
+    }
+    qsort( namesortnlp , nnames , sizeof(nltype *) , namecmp );
+    for ( index = 1 , todo = nnames ; index <= ncycle ; index++ ) {
+	namesortnlp[todo++] = &cyclenl[index];
+    }
+    printf( "\f\nIndex by function name\n\n" );
+    index = ( todo + 2 ) / 3;
+    for ( i = 0; i < index ; i++ ) {
+	for ( j = i; j < todo ; j += index ) {
+	    nlp = namesortnlp[ j ];
+	    if ( nlp -> printflag ) {
+		sprintf( peterbuffer , "[%d]" , nlp -> index );
+	    } else {
+		sprintf( peterbuffer , "(%d)" , nlp -> index );
+	    }
+	    if ( j < nnames ) {
+		printf( "%6.6s %-19.19s" , peterbuffer , nlp -> name );
+	    } else {
+		printf( "%6.6s " , peterbuffer );
+		sprintf( peterbuffer , "<cycle %d>" , nlp -> cycleno );
+		printf( "%-19.19s" , peterbuffer );
+	    }
+	}
+	printf( "\n" );
+    }
+    cfree( namesortnlp );
 }
