@@ -1,4 +1,4 @@
-/*	ufs_vfsops.c	6.2	84/01/03	*/
+/*	ufs_vfsops.c	6.3	84/02/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -241,12 +241,14 @@ getmdev(pdev)
 	ip = namei(uchar, LOOKUP, 1);
 	if (ip == NULL)
 		return (u.u_error);
-	if ((ip->i_mode&IFMT) != IFBLK)
+	if ((ip->i_mode&IFMT) != IFBLK) {
+		iput(ip);
 		return (ENOTBLK);
+	}
 	dev = (dev_t)ip->i_rdev;
+	iput(ip);
 	if (major(dev) >= nblkdev)
 		return (ENXIO);
-	iput(ip);
 	*pdev = dev;
 	return (0);
 }
