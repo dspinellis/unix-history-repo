@@ -1,4 +1,4 @@
-/*	autoconf.c	6.8	85/03/07	*/
+/*	autoconf.c	6.9	85/03/08	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -728,11 +728,6 @@ ubaaccess(pumem, pte)
 	mtpr(TBIA, 0);
 }
 
-#define	DMMIN	32
-#ifndef	DMMAX
-#define	DMMAX	1024
-#endif
-#define	DMTEXT	1024
 #define	MAXDUMP	(10*2048)
 /*
  * Configure swap space and related parameters.
@@ -755,12 +750,4 @@ swapconf()
 		dumplo = swdevt[0].sw_nblks - MAXDUMP;
 	if (dumplo < 0)
 		dumplo = 0;
-	if (dmmin == 0)
-		dmmin = DMMIN;
-	if (dmmax == 0)
-		dmmax = DMMAX;
-	if (dmtext == 0)
-		dmtext = DMTEXT;
-	if (dmtext > dmmax)
-		dmtext = dmmax;
 }
