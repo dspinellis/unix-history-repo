@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.8 (Berkeley) %G%
+ *	@(#)rtsock.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -79,6 +79,7 @@ route_usrreq(so, req, m, nam, control)
 		rp->rcb_faddr = &route_src;
 		route_cb.any_count++;
 		soisconnected(so);
+		so->so_options |= SO_USELOOPBACK;
 	}
 	return (error);
 }
@@ -233,12 +234,32 @@ flush:
 cleanup:
 	if (rt)
 		rtfree(rt);
+    {
+	register struct rawcb *rp = 0;
+	/*
+	 * Check to see if we don't want our own messages.
+	 */
+	if ((so->so_options & SO_USELOOPBACK) == 0) {
+		if (route_cb.any_count <= 1) {
+			if (rtm)
+				Free(rtm);
+			m_freem(m);
+			return (error);
+		}
+		/* There is another listener, so construct message */
+		rp = sotorawcb(so);
+	}
 	if (cp = (caddr_t)rtm) {
 		m_copyback(m, 0, len, cp);
 		Free(rtm);
 	}
+	if (rp)
+		rp->rcb_proto.sp_family = 0; /* Avoid us */
 	route_proto.sp_protocol = dst->sa_family;
 	raw_input(m, &route_proto, &route_src, &route_dst);
+	if (rp)
+		rp->rcb_proto.sp_family = PF_ROUTE;
+    }
 	return (error);
 }
 
@@ -393,10 +414,12 @@ rt_dumpentry(rn, w)
 	register struct sockaddr *sa;
 	int n, error;
 
-    for (; rn && !(rn->rn_flags & RNF_ROOT); rn = rn->rn_dupedkey) {
+    for (; rn; rn = rn->rn_dupedkey) {
 	int count = 0, size = sizeof(w->w_rtm);
 	register struct rtentry *rt = (struct rtentry *)rn;
 
+	if (rn->rn_flags & RNF_ROOT)
+		continue;
 	if (w->w_op == KINFO_RT_FLAGS && !(rt->rt_flags & w->w_arg))
 		continue;
 #define next(a, l) {size += (l); w->w_rtm.rtm_addrs |= (a); }
@@ -519,7 +542,6 @@ rt_walk(rn, f, w)
  * Definitions of protocols supported in the ROUTE domain.
  */
 
-int	route_output();
 int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
 extern	struct domain routedomain;		/* or at least forward */
 
