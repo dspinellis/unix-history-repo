@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.59		%G%);
+SCCSID(@(#)parseaddr.c	3.60		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -215,6 +215,7 @@ prescan(addr, delim)
 	char **avp;
 	bool bslashmode;
 	int cmntcnt;
+	int anglecnt;
 	char *tok;
 	int state;
 	int newstate;
@@ -224,6 +225,7 @@ prescan(addr, delim)
 	q = buf;
 	bslashmode = FALSE;
 	cmntcnt = 0;
+	anglecnt = 0;
 	avp = av;
 	state = OPR;
 	c = NOCHAR;
@@ -296,6 +298,18 @@ prescan(addr, delim)
 			}
 			else if (cmntcnt > 0)
 				c = NOCHAR;
+			else if (c == '<')
+				anglecnt++;
+			else if (c == '>')
+			{
+				if (anglecnt <= 0)
+				{
+					usrerr("Unbalanced '>'");
+					DelimChar = p;
+					return (NULL);
+				}
+				anglecnt--;
+			}
 			else if (c == ':' && !CurEnv->e_oldstyle)
 			{
 				/* consume characters until a semicolon */
@@ -312,7 +326,7 @@ prescan(addr, delim)
 				continue;
 
 			/* see if this is end of input */
-			if (c == delim)
+			if (c == delim && anglecnt <= 0)
 				break;
 
 			newstate = StateTab[state][toktype(c)];
@@ -347,11 +361,13 @@ prescan(addr, delim)
 			}
 			*avp++ = tok;
 		}
-	} while (c != '\0' && c != delim);
+	} while (c != '\0' && (c != delim || anglecnt > 0));
 	*avp = NULL;
 	DelimChar = --p;
 	if (cmntcnt > 0)
 		usrerr("Unbalanced '('");
+	else if (anglecnt > 0)
+		usrerr("Unbalanced '<'");
 	else if (state == QST)
 		usrerr("Unbalanced '\"'");
 	else if (av[0] != NULL)
@@ -455,6 +471,8 @@ rewrite(pvp, ruleset)
 		printf("rewrite: ruleset %d, original pvp:", ruleset);
 		printav(pvp);
 	}
+	if (pvp == NULL)
+		return;
 
 	/*
 	**  Run through the list of rewrite rules, applying
@@ -804,6 +822,11 @@ cataddr(pvp, buf, sz)
 	register int i;
 	register char *p;
 
+	if (pvp == NULL)
+	{
+		strcpy(buf, "");
+		return;
+	}
 	p = buf;
 	sz--;
 	while (*pvp != NULL && (i = strlen(*pvp)) < sz)
