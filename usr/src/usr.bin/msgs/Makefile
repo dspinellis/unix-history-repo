@@ -1,47 +1,47 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	msgs.c
-OBJS=	msgs.o
+OBJS=
+MAN=	msgs.0
 
 all: msgs
 
-msgs:	${OBJS} ${LIBC}
+msgs: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermlib
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core msgs
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 msgs ${DESTDIR}/usr/ucb/msgs
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-msgs.o: msgs.c /usr/include/stdio.h /usr/include/sys/param.h
-msgs.o: /usr/include/sys/types.h /usr/include/signal.h
-msgs.o: /usr/include/machine/machparam.h /usr/include/signal.h
-msgs.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/ctype.h
-msgs.o: /usr/include/pwd.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-msgs.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-msgs.o: /usr/include/setjmp.h
-msgs.o:msgs.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
