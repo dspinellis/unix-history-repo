@@ -1,4 +1,4 @@
-/*	gethostent.c	4.10	85/01/16	*/
+/*	gethostent.c	4.10	85/01/21	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -13,14 +13,19 @@
 #define	MAXALIASES	35
 #define	MAXADDRSIZE	14
 
-static char *HOSTDB = "/etc/hosts";
 static FILE *hostf = NULL;
 static char line[BUFSIZ+1];
 static char hostaddr[MAXADDRSIZE];
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
-int _host_stayopen;
-DBM *_host_db;		/* set by gethostbyname(), gethostbyaddr() */
+
+/*
+ * The following is shared with gethostnamadr.c
+ */
+char	*_host_file = "/etc/hosts";
+int	_host_stayopen;
+DBM	*_host_db;	/* set by gethostbyname(), gethostbyaddr() */
+
 static char *any();
 
 sethostent(f)
@@ -50,7 +55,7 @@ gethostent()
 	char *p;
 	register char *cp, **q;
 
-	if (hostf == NULL && (hostf = fopen(HOSTDB, "r" )) == NULL)
+	if (hostf == NULL && (hostf = fopen(_host_file, "r" )) == NULL)
 		return (NULL);
 again:
 	if ((p = fgets(line, BUFSIZ, hostf)) == NULL)
@@ -95,7 +100,7 @@ again:
 sethostfile(file)
 	char *file;
 {
-	HOSTDB = file;
+	_host_file = file;
 }
 
 static char *
