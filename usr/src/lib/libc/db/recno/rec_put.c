@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -136,7 +136,7 @@ __rec_iput(t, nrec, data, flags)
 	DBT tdata;
 	EPG *e;
 	PAGE *h;
-	index_t index, nxtindex;
+	indx_t index, nxtindex;
 	pgno_t pg;
 	size_t nbytes;
 	int dflags, status;
@@ -196,7 +196,7 @@ __rec_iput(t, nrec, data, flags)
 	 * the offset array, shift the pointers up.
 	 */
 	nbytes = NRLEAFDBT(data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+	if (h->upper - h->lower < nbytes + sizeof(indx_t)) {
 		status = __bt_split(t, h, NULL, data, dflags, nbytes, index);
 		if (status == RET_SUCCESS)
 			++t->bt_nrecs;
@@ -205,8 +205,8 @@ __rec_iput(t, nrec, data, flags)
 
 	if (index < (nxtindex = NEXTINDEX(h)))
 		bcopy(h->linp + index, h->linp + index + 1,
-		    (nxtindex - index) * sizeof(index_t));
-	h->lower += sizeof(index_t);
+		    (nxtindex - index) * sizeof(indx_t));
+	h->lower += sizeof(indx_t);
 
 	h->linp[index] = h->upper -= nbytes;
 	dest = (char *)h + h->upper;

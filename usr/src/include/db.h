@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.20 (Berkeley) %G%
+ *	@(#)db.h	5.21 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -20,7 +20,7 @@
 #define	MAX_PAGE_NUMBER	ULONG_MAX	/* >= # of pages in a file */
 typedef u_long	pgno_t;
 #define	MAX_PAGE_OFFSET	USHRT_MAX	/* >= # of bytes in a page */
-typedef u_short	index_t;
+typedef u_short	indx_t;
 #define	MAX_REC_NUMBER	ULONG_MAX	/* >= # of records in a tree */
 typedef u_long	recno_t;
 

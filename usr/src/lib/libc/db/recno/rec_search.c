@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -40,12 +40,12 @@ __rec_search(t, recno, op)
 	enum SRCHOP op;
 {
 	static EPG e;
-	register index_t index;
+	register indx_t index;
 	register PAGE *h;
 	EPGNO *parent;
 	RINTERNAL *r;
 	pgno_t pg;
-	index_t top;
+	indx_t top;
 	recno_t total;
 	int serrno;
 
