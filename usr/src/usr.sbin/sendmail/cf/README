@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.6 (Berkeley) %G%
+		@(#)README	6.7 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -506,7 +506,7 @@ confPRIVACY_FLAGS	public		Op	Privacy flags.
 confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
 confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
-confREAD_TIMEOUT	20m		Or	SMTP read timeout.
+confREAD_TIMEOUT	(undefined)	Or	SMTP read timeouts.
 confSAFE_QUEUE		True		Os	Commit all messages to disk
 						before forking.
 confMESSAGE_TIMEOUT	3d		OT	Timeout for messages before
