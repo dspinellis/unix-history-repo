@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.6	83/01/04	*/
+/*	uipc_usrreq.c	1.7	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -17,11 +17,10 @@
  */
 
 /*ARGSUSED*/
-uipc_usrreq(so, req, m, nam, opt)
+uipc_usrreq(so, req, m, nam)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam;
-	struct socketopt *opt;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
