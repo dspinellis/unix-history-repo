@@ -1,0 +1,208 @@
+.TH PTRACE 2 
+.SH NAME
+ptrace  \-  process trace
+.SH SYNOPSIS
+#include <signal.h>
+.PP
+.B ptrace(request, pid, addr, data)
+.br
+.B int *addr;
+.SH DESCRIPTION
+.I Ptrace
+provides a means by which a parent process
+may control the execution of a child process,
+and examine and change its core image.
+Its primary use is for the implementation of breakpoint debugging.
+There are four arguments whose interpretation
+depends on a
+.I request
+argument.
+Generally,
+.I pid
+is the process ID of the traced process,
+which must be a child (no more distant descendant)
+of the tracing process.
+A process being traced
+behaves normally until it encounters some signal whether internally generated
+like `illegal instruction' or externally generated like `interrupt.'
+See
+.IR signal (2)
+for the list.
+Then the traced process enters a stopped state
+and its parent is notified via
+.IR  wait (2).
+When the child is in the stopped state,
+its core image can be examined and modified
+using
+.IR ptrace .
+If desired, another
+.I ptrace
+request can then cause the child either to terminate
+or to continue, possibly ignoring the signal.
+.PP
+The value of the
+.I request
+argument determines the precise
+action of the call:
+.TP 4
+0
+This request is the only one used by the child process;
+it declares that the process is to be traced by its parent.
+All the other arguments are ignored.
+Peculiar results will ensue
+if the parent does not expect to trace the child.
+.TP 4
+1,2
+The
+word in the child process's address space
+at
+.I addr
+is returned.
+If I and D space are separated, request 1 indicates I space,
+2 D space.
+.I Addr
+must be even.
+The child must be stopped.
+The input
+.I data
+is ignored.
+.TP 4
+3
+The word
+of the system's per-process data area corresponding to
+.I addr
+is returned.
+.I Addr
+must be even and less than 512.
+This space contains the registers and other information about
+the process;
+its layout corresponds to the
+.I user
+structure in the system.
+.TP 4
+4,5
+The
+given
+.I data
+is written at the word in the process's address space corresponding to
+.I addr,
+which must be even.
+No useful value is returned.
+If I and D space are separated, request 4 indicates I space, 
+5 D space.
+Attempts to write in pure procedure
+fail if another process is executing the same file.
+.TP 4
+6
+The process's system data is written,
+as it is read with request 3.
+Only a few locations can be written in this way:
+the general registers,
+the floating point status and registers,
+and certain bits of the processor status word.
+.TP 4
+7
+The
+.I data
+argument is taken as a signal number
+and the child's execution continues
+at location
+.I addr
+as if it had incurred that signal.
+Normally the signal number will be
+either 0 to indicate that the signal that caused the stop
+should be ignored,
+or that value fetched out of the
+process's image indicating which signal caused
+the stop.
+If
+.I addr
+is (int *)1 then execution continues from where it stopped.
+.TP 4
+8
+The traced process terminates.
+.TP 4
+9
+Execution continues as in request 7;
+however, as soon as possible after execution of at least one instruction,
+execution stops again.
+The signal number from the stop is
+SIGTRAP.
+(On the PDP-11 and VAX-11 the T-bit is used and just one instruction
+is executed;
+on the Interdata the stop does not take place
+until a store instruction is executed.)
+This is part of the mechanism for implementing breakpoints.
+.PP
+As indicated,
+these calls
+(except for request 0)
+can be used only when the subject process has stopped.
+The
+.I wait
+call is used to determine
+when a process stops;
+in such a case the `termination' status
+returned by
+.I wait
+has the value 0177 to indicate stoppage rather
+than genuine termination.
+.PP
+To forestall possible fraud,
+.I ptrace
+inhibits the set-user-id facility
+on subsequent
+.IR  exec (2)
+calls.
+If a traced process calls
+.I exec,
+it will stop before executing the first instruction of the new image
+showing signal SIGTRAP.
+.PP
+On the Interdata 8/32,
+`word' means a 32-bit word and `even' means 0 mod 4.
+On a VAX-11, `word' also means a 32-bit integer, but the `even' restriction
+does not apply.
+.SH "SEE ALSO"
+wait(2), signal(2), adb(1)
+.SH DIAGNOSTICS
+The value \-1 is returned if
+.I request 
+is invalid,
+.I pid
+is not a traceable process,
+.I addr
+is out of bounds,
+or
+.I data
+specifies an illegal signal number.
+.SH BUGS
+On the Interdata 8/32,
+`as soon as possible' (request 7)
+means `as soon as a store instruction has been executed.'
+.PP
+The request 0 call should be able to specify
+signals which are to be treated normally and not cause a stop.
+In this way, for example,
+programs with simulated floating point (which
+use `illegal instruction' signals at a very high rate)
+could be efficiently debugged.
+.br
+The error indication, \-1, is a legitimate function value;
+.I errno,
+see
+.IR intro (2),
+can be used to disambiguate.
+.PP
+It should be possible to stop a process on occurrence of a system
+call;
+in this way a completely controlled environment could
+be provided.
+.SH ASSEMBLER
+(ptrace = 26.)
+.br
+(data in r0)
+.br
+.B sys ptrace; pid; addr; request
+.br
+(value in r0)
