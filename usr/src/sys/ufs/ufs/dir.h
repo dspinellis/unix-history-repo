@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dir.h	7.1 (Berkeley) %G%
+ *	@(#)dir.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -65,6 +65,9 @@ typedef struct _dirdesc {
 	long	dd_size;
 	char	dd_buf[DIRBLKSIZ];
 } DIR;
+
+#define dirfd(dirp)	((dirp)->dd_fd)
+
 #ifndef NULL
 #define NULL 0
 #endif
