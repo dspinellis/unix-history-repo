@@ -56,7 +56,7 @@
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	4.26 (Berkeley) %G%";
 #endif
 
 /*
@@ -395,7 +395,10 @@ copy(f, n)
 		}
 	}
 	(void) close(fd);
-	nact++;
+	if (nc==0 && nr==0) 
+		printf("%s: %s: empty input file\n", name, f ? n : "stdin");
+	else
+		nact++;
 }
 
 /*
@@ -537,6 +540,10 @@ test(file)
 		printf("%s: %s is a directory\n", name, file);
 		return(-1);
 	}
+	if (statb.st_size == 0) {
+		printf("%s: %s is an empty file\n", name, file);
+		return(-1);
+ 	}
 	if ((fd = open(file, O_RDONLY)) < 0) {
 		printf("%s: cannot open %s\n", name, file);
 		return(-1);
