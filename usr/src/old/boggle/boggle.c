@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)boggle.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
@@ -65,7 +65,7 @@ extern char *ctime(), *getlogin();
 extern long lseek();
 
 /* dictionary interface */
-char defname[] = "/usr/games/bogdict";
+char defname[] = "/usr/games/lib/bogdict";
 char *dictname = &defname[0];
 FILE *dict;
 
