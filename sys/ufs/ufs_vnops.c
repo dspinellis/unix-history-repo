@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.11 1994/01/14 16:26:06 davidg Exp $
+ *	$Id: ufs_vnops.c,v 1.12 1994/01/15 18:27:21 jkh Exp $
  */
 
 #include "param.h"
@@ -1680,15 +1680,7 @@ maknode(mode, ndp, ipp)
 	}
 	ip = tip;
 	ip->i_uid = ndp->ni_cred->cr_uid;
-#if 0
 	ip->i_gid = pdir->i_gid;
-#else
-	/* This behaviour should be POSIX conform. -Rodney Volz */
-	if (pdir->i_mode & S_ISGID)
-		ip->i_gid = pdir->i_gid;
-	else
-		ip->i_gid = ndp->ni_cred->cr_gid;
-#endif
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) ||
 	    (error = chkiq(ip, 1, ndp->ni_cred, 0))) {
