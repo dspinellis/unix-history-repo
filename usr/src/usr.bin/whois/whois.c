@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00143
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Unknown		New default 'whois' server address
+ *
  */
 
 #ifndef lint
@@ -47,7 +55,7 @@ static char sccsid[] = "@(#)whois.c	5.11 (Berkeley) 3/2/91";
 #include <netdb.h>
 #include <stdio.h>
 
-#define	NICHOST	"nic.ddn.mil"
+#define	NICHOST	"whois.internic.net"
 
 main(argc, argv)
 	int argc;
