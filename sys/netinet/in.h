@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in.h	7.11 (Berkeley) 4/20/91
- *	$Id: in.h,v 1.6 1994/05/18 00:04:14 jkh Exp $
+ *	$Id: in.h,v 1.7 1994/05/18 16:22:04 jkh Exp $
  */
 
 #ifndef _NETINET_IN_H_
@@ -41,9 +41,6 @@
  * Constants and structures defined by the internet system,
  * Per RFC 790, September 1981.
  */
-
-/* Enable this if you don't want to be IP_TOS compatible with BSDI/NetBSD */
-/* #define NO_VAT_COMPAT	1 */
 
 /*
  * Protocols
@@ -162,20 +159,6 @@ struct ip_opts {
  * First word of comment is data type; bool is stored in int.
  */
 #define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
-#ifndef NO_VAT_COMPAT
-#define	IP_MULTICAST_IF	2	/* set/get IP multicast interfcae */
-#define	IP_MULTICAST_TTL 3	/* set/get IP multicast timetolive */
-#define	IP_MULTICAST_LOOP 4	/* set/get IP m'cast loopback */
-#define	IP_ADD_MEMBERSHIP 5	/* add an IP group membership */
-#define	IP_DROP_MEMBERSHIP 6	/* drop an IP group membership */
-#define	IP_HDRINCL	7	/* int; header is included with data (raw) */
-#define	IP_TOS		8	/* int; IP type of service and precedence */
-#define	IP_TTL		9	/* int; IP time to live */
-#define	IP_RECVOPTS	10	/* bool; receive all IP options w/datagram */
-#define	IP_RECVRETOPTS	11	/* bool; receive IP options for response */
-#define	IP_RECVDSTADDR	12	/* bool; receive IP dst addr w/datagram */
-#define	IP_RETOPTS	13	/* ip_opts; set/get IP per-packet options */
-#else
 #define	IP_HDRINCL	2	/* int; header is included with data (raw) */
 #define	IP_TOS		3	/* int; IP type of service and precedence */
 #define	IP_TTL		4	/* int; IP time to live */
@@ -188,7 +171,6 @@ struct ip_opts {
 #define	IP_MULTICAST_LOOP 11	/* set/get IP m'cast loopback */
 #define	IP_ADD_MEMBERSHIP 12	/* add an IP group membership */
 #define	IP_DROP_MEMBERSHIP 13	/* drop an IP group membership */
-#endif
 
 #define	IP_DEFAULT_MULTICAST_TTL 1	/* normally limit m'casts to 1 hop */
 #define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sens if a member */

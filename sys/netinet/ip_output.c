@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_output.c	7.23 (Berkeley) 11/12/90
- *	$Id: ip_output.c,v 1.5 1993/12/19 00:52:45 wollman Exp $
+ *	$Id: ip_output.c,v 1.6 1994/05/17 22:31:11 jkh Exp $
  */
 
 #include "param.h"
@@ -514,7 +514,24 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_RECVRETOPTS:
 		case IP_RECVDSTADDR:
 			if (m->m_len != sizeof(int))
+#if	defined(MULTICAST) && defined(OLD_VAT_COMPAT)
+			{
+				optname += IP_RETOPTS-IP_OPTIONS;
+				switch(optname) {
+				case IP_MULTICAST_TTL:
+				case IP_MULTICAST_LOOP:
+					if (m->m_len == sizeof(char))
+						goto multicast_setopt;
+				case IP_ADD_MEMBERSHIP:
+				case IP_DROP_MEMBERSHIP:
+					if (m->m_len == sizeof(struct ip_mreq))
+						goto multicast_setopt;
+				}
 				error = EINVAL;
+			}
+#else
+				error = EINVAL;
+#endif
 			else {
 				optval = *mtod(m, int *);
 				switch (optname) {
@@ -548,6 +565,16 @@ ip_ctloutput(op, so, level, optname, mp)
 			break;
 #undef OPTSET
 #ifdef MULTICAST
+#ifdef OLD_VAT_COMPAT
+		case IP_HDRINCL:
+			if (m->m_len != sizeof(struct in_addr)) {
+				error = EINVAL;
+				break;
+			}
+			optname = IP_MULTICAST_IF;
+			/* FALLTHRU */
+multicast_setopt:
+#endif
 		case IP_MULTICAST_IF:
 		case IP_MULTICAST_TTL:
 		case IP_MULTICAST_LOOP:
