@@ -1,12 +1,8 @@
-static char *sccsid = "@(#)umount.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)umount.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 /*
- *	umount name
- *
- *	umount -a
- *		This tries to unmount all of the block special file names
- *		as given in /etc/fstab.
+ * umount
  */
 
 #define	NMOUNT	16
@@ -34,13 +30,16 @@ char **argv;
 	if (strcmp(argv[1], "-a") == 0){
 		FILE	*fs_file;
 		struct	fstab	fs;
-		if ( (fs_file = fopen(FSTAB, "r")) == NULL){
+		if ((fs_file = fopen(FSTAB, "r")) == NULL){
 			perror(FSTAB);
 			exit(1);
 		}
 		while (!feof(fs_file)){
 			fscanf(fs_file, FSTABFMT, FSTABARG(&fs));
 			if (strcmp(fs.fs_file, "/") == 0)
+				continue;
+			if (strcmp(fs.fs_type, "rw") &&
+			    strcmp(fs.fs_type, "ro"))
 				continue;
 			fprintf(stderr, "Unmounting special file %s\n",
 				fs.fs_spec);
