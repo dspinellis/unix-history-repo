@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.8 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -399,18 +399,25 @@ ASSIGN,	INAREG|FOREFF,
 		0,	RRIGHT,
 		"	andl2	N,AL\n",
 
-ASSIGN,	INAREG|FOREFF,
+ASSIGN,	FOREFF,
 	SFLD,	TANY,
 	SCON,	TANY,
-		0,	RRIGHT,
+		0,	RNOP,
 		"	andl2	N,AL\n	orl2	ZF,AL\n",
 
-ASSIGN,	INAREG|FOREFF,
+ASSIGN,	FOREFF,
 	SFLD,	TANY,
 	SAREG|AWD,	TWORD,
-		NAREG|NASL,	RRIGHT,
+		NAREG|NASL,	RNOP,
 		"	shll	$H,AR,A1\n	andl2	M,A1\n	andl2	N,AL\n\
 	orl2	A1,AL\n",
+
+ASSIGN,	INAREG,
+	SFLD,	TANY,
+	SAREG|AWD,	TWORD,
+		NAREG|NASL,	RESC1,
+		"	shll	$H,AR,A1\n	andl2	M,A1\n	andl2	N,AL\n\
+	orl2	A1,AL\n	shrl	$H,A1,A1\n",
 
 /* dummy UNARY MUL entry to get U* to possibly match OPLTYPE */
 UNARY MUL,	FOREFF,
