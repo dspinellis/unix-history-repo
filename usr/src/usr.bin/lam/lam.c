@@ -1,8 +1,19 @@
-/* Copyright (c) 1983 Regents of the University of California */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
 #ifndef lint
-static char sccsid[] = "@(#)lam.c	4.5	(Berkeley)	%G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)lam.c	4.6 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	lam - laminate files
@@ -10,6 +21,8 @@ static char sccsid[] = "@(#)lam.c	4.5	(Berkeley)	%G%";
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	MAXOFILES	20
 #define	BIGBUFSIZ	5 * BUFSIZ
@@ -25,18 +38,21 @@ struct	openfile {		/* open file structure */
 
 int	morefiles;		/* set by getargs(), changed by gatherline() */
 int	nofinalnl;		/* normally append \n to each output line */
-char	buf[BUFSIZ];
 char	line[BIGBUFSIZ];
 char	*linep;
 
-main(argc, argv)
-int	argc;
-char	**argv;
-{
-	register struct	openfile	*ip;
-	char	*gatherline();
+void	 error __P((char *, char *));
+char	*gatherline __P((struct openfile *));
+void	 getargs __P((char *[]));
+char	*pad __P((struct openfile *));
 
-	setbuf(stdout, buf);
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register struct	openfile *ip;
+
 	getargs(argv);
 	if (!morefiles)
 		error("lam - laminate files", "");
@@ -53,18 +69,19 @@ char	**argv;
 	}
 }
 
+void
 getargs(av)
-char	**av;
+	char *av[];
 {
-	register struct	openfile	*ip = input;
-	register char	*p;
-	register char	*c;
-	static	char	fmtbuf[BUFSIZ];
-	char	*fmtp = fmtbuf;
-	int	P, S, F, T;
+	register struct	openfile *ip = input;
+	register char *p;
+	register char *c;
+	static char fmtbuf[BUFSIZ];
+	char *fmtp = fmtbuf;
+	int P, S, F, T;
 
 	P = S = F = T = 0;		/* capitalized options */
-	while (p = *++av) {
+	while ((p = *++av) != NULL) {
 		if (*p != '-' || !p[1]) {
 			morefiles++;
 			if (*p == '-')
@@ -124,12 +141,12 @@ char	**av;
 		ip->sepstring = "";
 }
 
-char	*
+char *
 pad(ip)
-struct	openfile	*ip;
+	struct openfile *ip;
 {
-	register char	*p = ip->sepstring;
-	register char	*lp = linep;
+	register char *p = ip->sepstring;
+	register char *lp = linep;
 
 	while (*p)
 		*lp++ = *p++;
@@ -137,21 +154,21 @@ struct	openfile	*ip;
 		sprintf(lp, ip->format, "");
 		lp += strlen(lp);
 	}
-	return(lp);
+	return (lp);
 }
 
-char	*
+char *
 gatherline(ip)
-struct	openfile	*ip;
+	struct openfile *ip;
 {
-	char	s[BUFSIZ];
-	register int	c;
-	register char	*p;
-	register char	*lp = linep;
-	char	*end = s + BUFSIZ;
+	char s[BUFSIZ];
+	register int c;
+	register char *p;
+	register char *lp = linep;
+	char *end = s + BUFSIZ;
 
 	if (ip->eof)
-		return(pad(ip));
+		return (pad(ip));
 	for (p = s; (c = fgetc(ip->fp)) != EOF && p < end; p++)
 		if ((*p = c) == ip->eol)
 			break;
@@ -161,32 +178,30 @@ struct	openfile	*ip;
 		if (ip->fp == stdin)
 			fclose(stdin);
 		morefiles--;
-		return(pad(ip));
+		return (pad(ip));
 	}
 	p = ip->sepstring;
 	while (*p)
 		*lp++ = *p++;
 	sprintf(lp, ip->format, s);
 	lp += strlen(lp);
-	return(lp);
+	return (lp);
 }
 
+void
 error(msg, s)
-char	*msg;
-char	*s;
+	char *msg, *s;
 {
-	char	buf[BUFSIZ];
-
-	setbuf(stderr, buf);
 	fprintf(stderr, "lam: ");
 	fprintf(stderr, msg, s);
-	fprintf(stderr, "\nUsage:  lam [ -[fp] min.max ] [ -s sepstring ] [ -t c ] file ...\n");
+	fprintf(stderr,
+"\nUsage:  lam [ -[fp] min.max ] [ -s sepstring ] [ -t c ] file ...\n");
 	if (strncmp("lam - ", msg, 6) == 0)
 		fprintf(stderr, "Options:\n\t%s\t%s\t%s\t%s\t%s",
-			"-f min.max	field widths for file fragments\n",
-			"-p min.max	like -f, but pad missing fragments\n",
-			"-s sepstring	fragment separator\n",
-			"-t c		input line terminator is c, no \\n after output lines\n",
-			"Capitalized options affect more than one file.\n");
+		    "-f min.max	field widths for file fragments\n",
+		    "-p min.max	like -f, but pad missing fragments\n",
+		    "-s sepstring	fragment separator\n",
+"-t c		input line terminator is c, no \\n after output lines\n",
+		    "Capitalized options affect more than one file.\n");
 	exit(1);
 }
