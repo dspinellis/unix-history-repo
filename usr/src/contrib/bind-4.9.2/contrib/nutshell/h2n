@@ -1,0 +1,727 @@
+#!/usr/bin/perl
+
+#NAME
+#
+#    h2n - Translate host table to name server file format
+#    $Date: 93/02/04 17:43:05 $  $Revision: 1.16 $
+#
+#SYNOPSIS
+#
+#    h2n -d DOMAIN -n NET [options]
+
+# Various defaults
+$Host = `hostname`;
+chop($Host);
+$Host =~ s/\..*//;       		
+$doaliases = 1;
+$domx = 1;
+$dowks = 0;
+$dotxt = 0;
+$dontdodomains = 0;
+$Bootfile = "./named.boot";
+$Hostfile = "/etc/hosts";
+$Commentfile = "";
+$Commentfileread = 0;
+$User = "root";
+$Pwd = `pwd`;
+$RespHost = "";
+$RespUser = "";
+$DefSerial = 1;
+$DefRefresh = 10800;
+$DefRetry = 3600;
+$DefExpire = 604800;
+$DefTtl = 86400;
+$DefMxWeight = 10;
+$Defsubnetmask = "";
+$ForceSerial = -1;
+
+push(@bootmsgs, "primary\t0.0.127.IN-ADDR.ARPA db.127.0.0\n");
+
+&PARSEARGS(@ARGV);
+&FIXUP;
+
+open(HOSTS, $Hostfile) || die "can not open $Hostfile";
+
+LINE: while(<HOSTS>){
+    next if /^#/;        # skip comment lines
+    next if /^$/;  	 # skip empty lines
+    chop;                # remove the trailing newline
+    tr/A-Z/a-z/;	 # translate to lower case 
+
+    ($data,$comment) = split('#', $_, 2);
+    ($addr, $names) = split(' ', $data, 2);
+    if ($names =~ /^[ \t]*$/) {
+	print STDERR "Bad line in hosts file ignored '$_'\n";
+	next LINE;
+    }
+
+    # Match -e args
+    foreach $netpat (@elimpats){
+	next LINE if (/[.\s]$netpat/);
+    }
+
+    # Process -c args
+    foreach $netpat (@cpats){
+	if (/\.$netpat/) {
+	    ($canonical, $aliases) = split(' ', $names, 2);
+	    $canonical =~ s/\.$netpat//; 
+	    if($Cnames{$canonical} != 1){
+	        printf DOMAIN "%-20s IN  CNAME %s.%s.\n", 
+		       $canonical, $canonical, $cpatrel{$netpat};
+		$Cnames{$canonical} = 1;
+	    }
+	    next LINE;
+	}
+    }
+
+    # Check that the address is in the address list.
+    $match = 'none';
+    foreach $netpat (@Netpatterns){
+	$match = $netpat, last if ($addr =~ /^$netpat\./);
+    }
+    next if ($match eq 'none');
+
+    ($canonical, $aliases) = split(' ', $names, 2);  # separate out aliases
+    next if ($dontdodomains && $canonical =~ /\./);  # skip domain names
+    $canonical =~ s/$Domainpattern//;     # strip off domain if there is one
+    $Hosts{$canonical} .= $addr . " ";    # index addresses by canonical name
+    $Aliases{$addr} .= $aliases . " ";    # index aliases by address
+    $Comments{"$canonical-$addr"} = $comment;
+
+    # Print PTR records
+    $file = $Netfiles{$match};
+    printf $file "%-30s\tIN  PTR   %s.%s.\n", 
+	   &REVERSE($addr), $canonical, $Domain;
+}
+
+#
+# Go through the list of canonical names.
+# If there is more than 1 address associated with the
+# name, it is a multi-homed host.  For each address 
+# look up the aliases since the aliases are associated 
+# with the address, not the canonical name.
+#
+foreach $canonical (keys %Hosts){
+    @addrs = split(' ', $Hosts{$canonical});
+    $numaddrs = $#addrs + 1;
+    foreach $addr (@addrs) {
+	#
+	# Print address record for canonical name.
+	#
+	if($Cnames{$canonical} != 1){
+	    printf DOMAIN "%-20s IN  A     %s\n", $canonical, $addr;
+	} else {
+	    print STDERR "$canonical - can't create A record because CNAME exists for name.\n";
+	}
+	#
+	# Print cname or address records for each alias.
+	# If this is a multi-homed host, print an address
+	# record for each alias.  If this is a single address
+	# host, print a cname record.
+	#
+	if ($doaliases) {
+	    @aliases = split(' ', $Aliases{$addr});
+	    foreach $alias (@aliases){
+		#
+		# Skip over the alias if the alias and canonical
+		# name only differ in that one of them has the
+		# domain appended to it.
+		#
+    		next if ($dontdodomains && $alias =~ /\./); # skip domain names
+		$alias =~ s/$Domainpattern//;
+		if($alias eq $canonical){
+		    next;
+		}
+
+		if($numaddrs > 1){
+		    printf DOMAIN "%-20s IN  A     %s\n", $alias, $addr;
+		} else {
+		    #
+		    # Flag aliases that have already been used
+		    # in CNAME records or have A records.
+		    #
+		    if(($Cnames{$alias} != 1) && (!$Hosts{$alias})){
+			printf DOMAIN "%-20s IN  CNAME %s.%s.\n", 
+			       $alias, $canonical, $Domain;
+			$Cnames{$alias} = 1;
+		    } else {
+			print STDERR "$alias - CNAME or A exists already; alias ignored\n";
+		    }
+		}
+	    }
+	}
+    }
+    if ($domx) {
+	&MX($canonical, @addrs);
+    }
+    if ($dotxt) {
+	&TXT($canonical, @addrs);
+    }
+    if ($Commentfile ne "") {
+	&DO_COMMENTS($canonical, @addrs);
+    }
+}
+
+# Deal with spcl's
+if (-r "spcl.$Domainfile") {
+    print DOMAIN "\$INCLUDE spcl.$Domainfile\n";
+}
+foreach $n (@Networks) {
+    if (-r "spcl.$n") {
+	$file = "DB.$n";
+	print $file "\$INCLUDE spcl.$n\n";
+    }
+}
+
+# generate boot.* files
+&GEN_BOOT;
+
+exit;
+
+
+#
+# Generate resource record data for
+# strings from the commment field that
+# are found in the comment file (-C).
+#
+sub DO_COMMENTS {
+    local($canonical, @addrs) = @_;
+    local(*F, @c, $c, $a, $comments);
+    
+    if (!$Commentfileread) {
+	open(F, $Commentfile) || die "Unable to open file $Commentfile: $!";
+	$Commentfileread++;
+	while (<F>) {
+	    chop;
+	    ($key, $c) = split(':', $_, 2);
+	    $CommentRRs{$key} = $c;
+	}
+	close(F);
+    }
+    
+    foreach $a (@addrs) {
+	$key = "$canonical-$a";
+	$comments .= " $Comments{$key}";
+    }
+
+    @c = split(' ', $comments);
+    foreach $c (@c) {
+	if($CommentRRs{$c}){
+	    printf DOMAIN "%-20s %s\n", $canonical, $CommentRRs{$c};
+	}
+    }
+}
+
+
+#
+# Generate MX record data
+#
+sub MX {
+    local($canonical, @addrs) = @_;
+    local($first, $a, $key, $comments);
+
+    if($Cnames{$canonical}){
+	print STDERR "$canonical - can't create MX record because CNAME exists for name.\n";
+	return;
+    }
+    $first = 1;
+
+    foreach $a (@addrs) {
+	$key = "$canonical-$a";
+	$comments .= " $Comments{$key}";
+    }
+    
+    if ($comments !~ /\[no smtp\]/) {
+        # Add WKS if requested
+        if ($dowks) {
+	    foreach $a (@addrs) {
+	        printf DOMAIN "%-20s IN  WKS   %s TCP SMTP\n", $canonical, $a;
+	    }
+        }
+	printf DOMAIN "%-20s IN  MX    %s %s.%s.\n", $canonical, $DefMxWeight, 
+	       $canonical, $Domain; 
+	$first = 0;
+    }
+    if ($#Mx >= 0) {
+	foreach $a (@Mx) {
+	    if ($first) {
+		printf DOMAIN "%-20s IN  MX    %s\n", $canonical, $a; 
+		$first = 0;
+	    } else {
+		printf DOMAIN "%-20s IN  MX    %s\n", "", $a; 
+	    }
+	}
+    }
+
+}
+
+
+#
+# Generate TXT record data
+#
+sub TXT {
+    local($canonical, @addrs) = @_;
+    local($a, $key, $comments);
+
+    foreach $a (@addrs) {
+	$key = "$canonical-$a";
+	$comments .= " $Comments{$key}";
+    }
+    $comments =~ s/\[no smtp\]//g;
+    $comments =~ s/^\s*//;
+    $comments =~ s/\s*$//;
+    
+    if ($comments ne "") {
+	printf DOMAIN "%s IN  TXT   \"%s\"\n", $canonical, $comments;
+    }
+}
+
+
+#
+# Create the SOA record at the beginning of the file
+#
+sub MAKE_SOA {
+    local($fname, $file) = @_;
+    local($s);
+
+    if ( -s $fname) {
+	open($file, "$fname") || die "Unable to open $fname: $!";
+	$_ = <$file>;
+	chop;
+	if (/\($/) {
+	    if (! $soa_warned) {
+		print STDERR "Converting SOA format to new style.\n";
+		$soa_warned++;
+	    }
+	    if ($ForceSerial > 0) {
+		$Serial = $ForceSerial;
+	    } else {
+		($Serial, $junk) = split(' ', <$file>, 2);
+		$Serial++;
+	    }
+	    if (!defined($Refresh)) {
+		($Refresh, $junk) = split(' ', <$file>, 2);
+		($Retry, $junk) = split(' ', <$file>, 2);
+		($Expire, $junk) = split(' ', <$file>, 2);
+		($Ttl, $junk) = split(' ', <$file>, 2);
+	    }
+	} else {
+	    split(' ');
+	    if ($#_ == 11) {
+		if ($ForceSerial > 0) {
+		    $Serial = $ForceSerial;
+		} else {
+		    $Serial = ++@_[6];
+		}
+		if (!defined($Refresh)) {
+		    $Refresh = @_[7];
+		    $Retry = @_[8];
+		    $Expire = @_[9];
+		    $Ttl = @_[10];
+		}
+	    } else {
+		print STDERR "Improper format SOA in $fname.\n";
+		print STDERR "I give up ... sorry.\n";
+		exit(1);
+	    }
+	}
+	close($file);
+    } else {
+	if ($ForceSerial > 0) {
+	    $Serial = $ForceSerial;
+	} else {
+	    $Serial = $DefSerial;
+	}
+	if (!defined($Refresh)) {
+	    $Refresh = $DefRefresh;
+	    $Retry = $DefRetry;
+	    $Expire = $DefExpire;
+	    $Ttl = $DefTtl;
+	}
+	close($file);
+    }
+
+    open($file, "> $fname") || die "Unable to open $fname: $!";
+
+    print $file "\@ IN  SOA $RespHost $RespUser ";
+    print $file "( $Serial $Refresh $Retry $Expire $Ttl )\n";
+    foreach $s (@Servers) {
+	print $file "  IN  NS  $s\n";
+    }
+    print $file "\n";
+}
+
+
+#
+# Reverse the octets of an IP address and append
+# in-addr.arpa.
+#
+sub REVERSE {
+    join('.', reverse(split('\.', $_[0]))) . '.IN-ADDR.ARPA.';
+}
+
+
+#
+# Establish what we will be using for SOA records
+#
+sub FIXUP {
+    local($s);
+
+    if ($Host =~ /\./) {
+	$RespHost = "$Host.";
+    } else {
+	$RespHost = "$Host.$Domain.";
+    }
+    $RespHost =~ s/\.\././g;
+
+    if ($User =~ /@/) {				# -u user@...
+	if ($User =~ /\./) {
+	    $RespUser = "$User.";		# -u user@terminator.movie.edu
+	} else {
+	    $RespUser = "$User.$Domain."; 	# -u user@terminator
+	}
+	$RespUser =~ s/@/./;
+    } elsif ($User =~ /\./) {
+	$RespUser = "$User.";			# -u user.terminator.movie.edu
+    } else {
+	$RespUser = "$User.$RespHost";		# -u user
+    }
+    $RespUser =~ s/\.\././g;			# Strip any ".."'s to "."
+
+    # Clean up nameservers
+    if (!defined(@Servers)) {
+	push(@Servers, "$Host.$Domain.");
+    } else {
+	foreach $s (@Servers) {
+	    if ($s !~ /\./) {
+		$s .= ".$Domain";
+	    }
+	    if ($s !~ /\.$/) {
+		$s .= ".";
+	    }
+	}
+    }
+
+    # Clean up MX hosts
+    foreach $s (@Mx) {
+	$s =~ s/:/ /;
+	if ($s !~ /\./) {
+	    $s .= ".$Domain";
+	}
+	if ($s !~ /\.$/) {
+	    $s .= ".";
+	}
+    }
+
+    # Now open boot file and print saved data
+    open(BOOT, "> $Bootfile")  || die "can not open $Bootfile";
+    print BOOT "\ndirectory $Pwd\n";
+    foreach $line (@bootmsgs) {
+	print BOOT $line;
+    }
+    print BOOT "cache\t. db.cache\n";
+
+    # Go ahead and start creating files and making SOA's
+    foreach $i (@makesoa) {
+	($x1, $x2) = split(' ', $i);
+	&MAKE_SOA($x1, $x2);
+    }
+    printf DOMAIN "%-20s IN  A     127.0.0.1\n", "localhost";
+    
+    $file = "DB.127.0.0.1";
+    &MAKE_SOA("db.127.0.0", $file);
+    printf $file "%-30s\tIN  PTR   localhost.\n", &REVERSE("127.0.0.1");
+    close($file);
+}
+
+
+sub PARSEARGS {
+    local(@args) = @_;
+    local($i, $net, $subnetmask, $option, $tmp1);
+    local(*F, $file, @newargs, @targs);
+
+    $i = 0;
+    while ($i <= $#args){
+	$option = $args[$i];
+	if($option eq "-d"){
+	    $Domain = $args[++$i];
+	    $Domainpattern = "." . $Domain;
+	    $Domainpattern =~ s/\./\\./g;        # for stripping off domain
+
+	    # Add entry to the boot file.
+	    $Domainfile = $Domain;
+	    $Domainfile =~ s/\..*//;
+	    push(@makesoa, "db.$Domainfile DOMAIN");
+	    push(@bootmsgs, "primary\t$Domain db.$Domainfile\n");
+
+	} elsif ($option eq "-f"){
+	    $file = $args[++$i];
+	    open(F, $file) || die "Unable to open args file $file: $!";
+	    while (<F>) {
+		next if (/^#/);
+		next if (/^$/);
+		chop;
+		@targs = split(' ');
+		push(@newargs, @targs);
+	    }
+	    close(F);
+	    &PARSEARGS(@newargs);
+
+	} elsif ($option eq "-z"){
+	    $Bootsecsaveaddr = $args[++$i];
+	    if (!defined($Bootsecaddr)) {
+		$Bootsecaddr = $Bootsecsaveaddr;
+	    }
+
+	} elsif ($option eq "-Z"){
+	    $Bootsecaddr = $args[++$i];
+	    if (!defined($Bootsecsaveaddr)) {
+		$Bootsecsaveaddr = $Bootsecaddr;
+	    }
+
+	} elsif ($option eq "-b"){
+	    $Bootfile = $args[++$i];
+
+	} elsif ($option eq "-A"){
+	    $doaliases = 0;
+
+	} elsif ($option eq "-M"){
+	    $domx = 0;
+
+	} elsif ($option eq "-w"){
+	    $dowks = 1;
+
+	} elsif ($option eq "-D"){
+	    $dontdodomains = 1;
+
+	} elsif ($option eq "-t"){
+	    $dotxt = 1;
+
+	} elsif ($option eq "-u"){
+	    $User = $args[++$i];
+
+	} elsif ($option eq "-s"){
+	    while ($args[++$i] !~ /^-/ && $i <= $#args) {
+		push(@Servers, $args[$i]);
+	    }
+	    $i--;
+
+	} elsif ($option eq "-m"){
+	    if ($args[++$i] !~ /:/) {
+		print STDERR "Improper format for -m option ignored ($args[$i]).\n";
+	    }
+	    push(@Mx, $args[$i]);
+
+	} elsif ($option eq "-c"){
+	    $tmp1 = $args[++$i];
+	    if ($tmp1 !~ /\./) {
+		$tmp1 .= ".$Domain";
+	    }
+	    $tmp2 = $tmp1;
+	    $tmp2 =~ s/\./\\./g; 
+	    $cpatrel{$tmp2} = $tmp1;
+	    push(@cpats, $tmp2);
+
+	} elsif ($option eq "-e"){
+	    $tmp1 = $args[++$i];
+	    if ($tmp1 !~ /\./) {
+		$tmp1 .= ".$Domain";
+	    }
+	    $tmp1 =~ s/\./\\./g; 
+	    push(@elimpats, $tmp1);
+
+	} elsif ($option eq "-h"){
+	    $Host = $args[++$i];
+
+	} elsif ($option eq "-o"){
+	    if (   $args[++$i] !~ /^[:\d]*$/ 
+		|| split(':', $args[$i]) != 4) {
+		print STDERR "Improper format for -o ($args[$i]).\n";
+		print STDERR "I give up ... sorry.\n";
+		exit(1);
+	    }
+	    ($DefRefresh, $DefRetry, $DefExpire, $DefTtl) = split(':', $args[$i]);
+
+	} elsif ($option eq "-i"){
+	    $ForceSerial = $args[++$i];
+
+	} elsif ($option eq "-H"){
+	    $Hostfile = $args[++$i];
+	    if (! -r $Hostfile || -z $Hostfile) {
+		print STDERR "Invalid file specified for -H ($Hostfile).\n";
+		print STDERR "I give up ... sorry.\n";
+		exit(1);
+	    }
+
+	} elsif ($option eq "-C"){
+	    $Commentfile = $args[++$i];
+	    if (! -r $Commentfile || -z $Commentfile) {
+		print STDERR "Invalid file specified for -C ($Commentfile).\n";
+		print STDERR "I give up ... sorry.\n";
+		exit(1);
+	    }
+
+	} elsif ($option eq "-N"){
+	    $Defsubnetmask = $args[++$i];
+	    if (   $Defsubnetmask !~ /^[.\d]*$/ 
+		|| split('\.', $Defsubnetmask) != 4) {
+		print STDERR "Improper subnet mask ($Defsubnetmask).\n";
+		print STDERR "I give up ... sorry.\n";
+		exit(1);
+	    }
+	    if ($#Networks >= 0) {
+		print STDERR "Hmm, -N option should probably be specified before any -n options.\n";
+	    }
+
+	} elsif ($option eq "-n"){
+	    ($net, $subnetmask) = split(':',$args[++$i]);
+	    if ($subnetmask eq "") {
+		foreach $tmp1 (&SUBNETS($net, $Defsubnetmask)) {
+		    &BUILDNET($tmp1);
+		}
+	    } else {
+		if (   $subnetmask !~ /^[.\d]*$/ 
+		    || split('\.', $subnetmask) != 4) {
+		    print STDERR "Improper subnet mask ($subnetmask).\n";
+		    print STDERR "I give up ... sorry.\n";
+		    exit(1);
+		}
+		foreach $tmp1 (&SUBNETS($net, $subnetmask)) {
+		    &BUILDNET($tmp1);
+		}
+	    }
+
+	} elsif ($option eq "-1"){
+	    print STDERR "Option -1 is obsolete ... ignored.\n";
+
+	} elsif ($option eq "-F"){
+	    print STDERR "Option -F is now the default (and only) way ... ignored.\n";
+
+	} else {
+	    if($option =~ /^-.*/){
+		print STDERR "Unknown option: $option ... ignored.\n";
+	    }
+	}
+	$i++;
+    }
+    
+    if (!defined(@Networks) || $Domain eq "") {
+	print STDERR "Must specify at least -d and one -n.\n";
+	print STDERR "I give up ... sorry.\n";
+	exit(1);
+    }
+}
+
+
+sub BUILDNET {
+    local($net) = @_;
+
+    push(@Networks, $net);
+    #
+    # Create pattern to match against.  
+    # The dots must be changed to \. so they 
+    # aren't used as wildcards.
+    #
+    $netpat = $net;
+    $netpat =~ s/\./\\./g;
+    push(@Netpatterns, $netpat);
+
+    #
+    # Create db files for PTR records.
+    # Save the file names in an array for future use.
+    #
+    $netfile = "DB.$net";
+    $Netfiles{$netpat} = $netfile;
+    push(@makesoa, "db.$net $netfile");
+
+    # Add entry to the boot file.
+    $revaddr = &REVERSE($net);
+    chop($revaddr);   # remove trailing dot
+    push(@bootmsgs, "primary $revaddr db.$net\n");
+}
+
+
+#
+# Calculate all the subnets from a network number and mask.
+# This was originally written for awk, not perl.
+#
+sub SUBNETS {
+    local($network, $mask) = @_;
+    local(@ans, @net, @mask, $buf, $number, $i, $j, $howmany);
+
+    @net = split(/\./, $network);
+    @mask = split(/\./, $mask);
+    $number = '';
+    #
+    # Only expand bytes 1, 2, or 3
+    # for DNS purposes
+    #
+    for ($i = 0; $i < 3; $i++) {
+	if ($mask[$i] == 255) {
+	    $number = $number . $net[$i] . '.';
+	} elsif (($mask[$i] == 0) || $mask[$i] eq '') {
+	    push(@ans, $network);
+	    last;
+	} else {
+	    #
+	    # This should be done as a bit-wise or
+	    # but awk does not have an or symbol
+	    #
+	    $howmany = 255 - $mask[$i];
+	    for ($j = 0; $j <= $howmany; $j++) {
+		if ($net[$i] + $j <= 255) {
+		    $buf = sprintf("%s%d", $number, $net[$i] + $j);
+		    push(@ans, $buf);
+		}
+	    }
+	    last;
+	}
+    }
+
+    if ($#ans == -1) {
+	push(@ans, $network);
+    }
+    
+    @ans;
+}
+
+
+sub GEN_BOOT {
+    local(*F, $revaddr, $n);
+
+    if (! -e "boot.cacheonly") {
+	open(F, ">boot.cacheonly") || die "Unable to open boot.cacheonly: $!";
+	print F "directory\t$Pwd\n";
+	print F "primary\t\t0.0.127.IN-ADDR.ARPA    db.127.0.0\n";
+	print F "cache\t\t.                       db.cache\n";
+	close(F);
+    }
+    
+    if (defined($Bootsecaddr)) {
+	open(F, ">boot.sec") || die "Unable to open boot.sec: $!";
+	print  F "directory\t$Pwd\n";
+	print  F "primary\t\t0.0.127.IN-ADDR.ARPA    db.127.0.0\n";
+	printf F "secondary\t%-23s $Bootsecaddr\n", $Domain;
+	foreach $n (@Networks) {
+	    $revaddr = &REVERSE($n);
+	    chop($revaddr);
+	    printf F "secondary\t%-23s $Bootsecaddr\n", $revaddr;
+	}
+	print  F "cache\t\t.                       db.cache\n";
+	close(F);
+
+	open(F, ">boot.sec.save") || die "Unable to open boot.sec.save: $!";
+	print  F "directory\t$Pwd\n";
+	print  F "primary\t\t0.0.127.IN-ADDR.ARPA    db.127.0.0\n";
+	printf F "secondary\t%-23s $Bootsecsaveaddr db.%s\n", 
+	       $Domain, $Domainfile;
+	foreach $n (@Networks) {
+	    $revaddr = &REVERSE($n);
+	    chop($revaddr);
+	    printf F "secondary\t%-23s $Bootsecsaveaddr db.%s\n", 
+		   $revaddr, $n;
+	}
+	print  F "cache\t\t.                       db.cache\n";
+	close(F);
+    }
+}
