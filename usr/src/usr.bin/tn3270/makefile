@@ -155,14 +155,14 @@ FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270$X:	telnet$O ${SUBLIB}
+tn3270$X:	telnet$O ${SUBLIB} apilib/apiliblib.a
 	${CC} ${CFLAGS} -o tn3270 telnet$O \
 		$L ${SUBLIB} apilib/apiliblib.a $(LIBCURSES) $(LIBTERM)
 
 #PC_tn3270$X:
 #PC_	link <@<
 #PC_	telnet
-#PC_	telnet
+#PC_	tn3270
 #PC_	nul
 #PC_	${SUBLIB} apilib/apiliblib.a+
 #PC_	\lib\ublib\ubtcp
