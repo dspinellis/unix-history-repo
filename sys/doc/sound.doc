@@ -6,26 +6,33 @@ want compiled into your kernel.  Only use the options for which you
 do NOT have a card to support it, or if you do not want a particular
 functionality.
 
+      options         EXCLUDE_AUDIO           # NO digital audio support
+      options         EXCLUDE_SEQUENCER       # NO sequencer support
       options         "EXCLUDE_MPU401"        # NO MPU401 support
       options         EXCLUDE_GUS             # NO GUS support
+      options         EXCLUDE_GUS_IODETECT    # NO GUS io detection
+      options         EXCLUDE_SB              # NO SB support
+      options         EXCLUDE_SB_EMULATION    # NO PAS SB emulation support
       options         EXCLUDE_SBPRO           # NO SB Pro support
-      options         EXCLUDE_SB16            # NO SB 16 support
-      options	      EXCLUDE_YM3812	      # NO SB AdLib support
+      options         "EXCLUDE_SB16"          # NO SB 16 support
+      options         "EXCLUDE_YM3812"        # NO AdLib support
+      options         "EXCLUDE_OPL3"          # NO OPL3 chip support
       options         EXCLUDE_PAS             # NO Pro Audio Studio support
       options         EXCLUDE_PRO_MIDI        # NO PAS MIDI support
+      options         EXCLUDE_CHIP_MIDI       # NO MIDI chip support
       options	      EXCLUDE_MIDI	      # NO MIDI support whatsoever
 
 To enable sound card support, you need to uncomment and add one or more of 
 the following lines to your kernel configuration file according to the
 directions below:
 
-#device snd5 at isa? port 0x330 irq 6 drq 0 vector mpuintr
+#device snd5 at isa? port 0x330 irq 6 vector mpuintr
 #device snd4 at isa? port 0x220 irq 15 drq 6 vector gusintr
 #device snd3 at isa? port 0x388 irq 10 drq 6 vector pasintr
 #device snd2 at isa? port 0x220 irq 7 drq 1 vector sbintr
 #device snd6 at isa? port 0x220 irq 7 drq 5 vector sbintr
-#device snd7 at isa? port 0x300 irq 7 drq 0 vector sbintr
-#device snd1 at isa? port 0x388 irq 0 drq 0 vector sbintr
+#device snd7 at isa? port 0x300 irq 7 vector sbintr
+#device snd1 at isa? port 0x388
 
        Unit numbers are:
                  1 for Yamaha FM synth
