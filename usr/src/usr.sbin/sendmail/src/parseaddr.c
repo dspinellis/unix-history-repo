@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -135,7 +135,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	**  See if we resolved to a real mailer.
 	*/
 
-	if ((pvp[0][0] & 0377) != CANONNET)
+	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 	{
 		setstat(EX_USAGE);
 		syserr("554 cannot resolve name");
