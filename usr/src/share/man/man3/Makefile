@@ -9,11 +9,11 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 MDIR=	/usr/man/cat3
-SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
-	bstring.3 byteorder.3 crypt.3 ctime.3 ctype.3 curses.3 dbm.3 \
+SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 bstring.3 byteorder.3 \
+	compat-sys5.3 crypt.3 ctime.3 ctype.3 curses.3 dbm.3 \
 	directory.3 ecvt.3 end.3 erf.3 execl.3 exit.3 exp.3 fclose.3 \
 	ferror.3 floor.3 fopen.3 fread.3 frexp.3 fseek.3 getc.3 \
 	getdiskbyname.3 getenv.3 getfsent.3 getgrent.3 gethostbyname.3 \
@@ -29,8 +29,8 @@ SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
 	stdio.3 string.3 stty.3 swab.3 syslog.3 system.3 termcap.3 time.3 \
 	times.3 ttyname.3 ualarm.3 ungetc.3 usleep.3 utime.3 valloc.3 \
 	varargs.3 vlimit.3 vtimes.3
-OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 \
-	bstring.0 byteorder.0 crypt.0 ctime.0 ctype.0 curses.0 dbm.0 \
+OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 bstring.0 byteorder.0 \
+	compat-sys5.0 crypt.0 ctime.0 ctype.0 curses.0 dbm.0 \
 	directory.0 ecvt.0 end.0 erf.0 execl.0 exit.0 exp.0 fclose.0 \
 	ferror.0 floor.0 fopen.0 fread.0 frexp.0 fseek.0 getc.0 \
 	getdiskbyname.0 getenv.0 getfsent.0 getgrent.0 gethostbyname.0 \
@@ -46,43 +46,6 @@ OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 \
 	stdio.0 string.0 stty.0 swab.0 syslog.0 system.0 termcap.0 time.0 \
 	times.0 ttyname.0 ualarm.0 ungetc.0 usleep.0 utime.0 valloc.0 \
 	varargs.0 vlimit.0 vtimes.0
-LINKS=	edata.0 etext.0 j1.0 jn.0 y0.0 y1.0 yn.0 acos.0 ns_addr.0 ns_ntoa.0 \
-	asin.0 atan.0 atan2.0 atoi.0 atol.0 cos.0 dbm_clearerr.0 dbm_close.0 \
-	dbm_delete.0 dbm_error.0 dbm_fetch.0 dbm_firstkey.0 dbm_nextkey.0 \
-	dbm_open.0 dbm_store.0 dbminit.0 delete.0 erfc.0 expm1.0 fcvt.0 \
-	fetch.0 firstkey.0 gcvt.0 log.0 log10.0 log1p.0 nextkey.0 pow.0 \
-	rresvport.0 ruserok.0 store.0 tan.0 exec.0 addr.0 arc.0 asctime.0 \
-	cbrt.0 circle.0 comp.0 cont.0 copysign.0 cosh.0 drem.0 encrypt.0 \
-	erase.0 execle.0 execlp.0 exect.0 execv.0 execve.0 execvp.0 fgetc.0 \
-	fgets.0 finite.0 fputc.0 fputs.0 ftime.0 getchar.0 getw.0 gmtime.0 \
-	gtty.0 inet_addr.0 inet_lnaof.0 inet_makeaddr.0 inet_netof.0 \
-	inet_network.0 inet_ntoa.0 isalnum.0 isalpha.0 isascii.0 iscntrl.0 \
-	isdigit.0 islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 \
-	isxdigit.0 label.0 ldexp.0 line.0 linemod.0 localtime.0 logb.0 \
-	modf.0 move.0 network.0 ntoa.0 openpl.0 pclose.0 point.0 putchar.0 \
-	putw.0 re_comp.0 re_exec.0 scalb.0 setkey.0 space.0 srand.0 tanh.0 \
-	timezone.0 toascii.0 tolower.0 toupper.0 _longjmp.0 _setjmp.0 acosh.0 \
-	alloca.0 atanh.0 cabs.0 calloc.0 ceil.0 closelog.0 errlist.0 fabs.0 \
-	fdopen.0 free.0 freopen.0 fscanf.0 ftell.0 fwrite.0 index.0 \
-	initstate.0 longjmp.0 openlog.0 realloc.0 remque.0 rewind.0 \
-	rindex.0 setegid.0 seteuid.0 setgid.0 setlogmask.0 setrgid.0 \
-	setruid.0 setstate.0 srandom.0 sscanf.0 strcasecmp.0 strncasecmp.0 \
-	strcat.0 strcmp.0 strcpy.0 \
-	strlen.0 strncat.0 strncmp.0 strncpy.0 sys.0 sys_errlist.0 sys_nerr.0 \
-	mkstemp.0 rint.0 setenv.0 unsetenv.0 alphasort.0 bcmp.0 bcopy.0 \
-	bzero.0 clearerr.0 feof.0 fflush.0 ffs.0 fileno.0 fprintf.0 isatty.0 \
-	moncontrol.0 monstartup.0 setbuffer.0 setlinebuf.0 sprintf.0 \
-	sys_siglist.0 ttyslot.0 gamma.0 endfsent.0 endgrent.0 endpwent.0 \
-	getfsfile.0 getfsspec.0 getfstype.0 getgrgid.0 getgrnam.0 getpwnam.0 \
-	getpwuid.0 setfsent.0 setgrent.0 setgrfile.0 setpwent.0 setpwfile.0 \
-	tgetent.0 \
-	tgetflag.0 tgetnum.0 tgetstr.0 tgoto.0 tputs.0 closedir.0 endttyent.0 \
-	getttynam.0 opendir.0 readdir.0 rewinddir.0 seekdir.0 setttyent.0 \
-	telldir.0 endnetent.0 getnetbyaddr.0 getnetbyname.0 htonl.0 htons.0 \
-	ntohl.0 ntohs.0 setnetent.0 endservent.0 getservbyname.0 \
-	getservbyport.0 setservent.0 endprotoent.0 endusershell.0 \
-	g getprotobyname.0 getprotobynumber.0 setprotoent.0 setusershell.0 \
-	endhostent.0 gethostbyaddr.0 sethostent.0 sethostfile.0 gethostent.0
 
 .SUFFIXES: .3 .0
 
@@ -338,5 +301,16 @@ install: FRC
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/sethostent.0
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/sethostfile.0
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/gethostent.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memccpy.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memchr.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memcmp.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memcpy.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memset.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/strchr.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/strcspn.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/strrchr.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/strspn.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/strtok.0
+	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/tmpnam.0
 
 FRC:
