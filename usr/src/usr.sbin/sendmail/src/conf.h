@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.144 (Berkeley) %G%
+ *	@(#)conf.h	8.145 (Berkeley) %G%
  */
 
 /*
@@ -230,10 +230,6 @@ extern int	syslog(int, char *, ...);
 #  endif
 #  ifndef SYSLOG_BUFSIZE
 #   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
-#  endif
-#  if SOLARIS < 204
-#   define gethostbyname	solaris_gethostbyname	/* get good version */
-#   define gethostbyaddr	solaris_gethostbyaddr	/* get good version */
 #  endif
 
 # else
@@ -1258,6 +1254,10 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 
 #ifndef UID_T
 # define UID_T		uid_t
+#endif
+
+#ifndef SIZE_T
+# define SIZE_T		size_t
 #endif
 
 #ifndef ARGV_T

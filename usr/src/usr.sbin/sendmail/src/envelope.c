@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -185,7 +185,7 @@ dropenvelope(e)
 		    e->e_class >= 0 &&
 		    strcmp(e->e_from.q_paddr, "<>") != 0 &&
 		    strncasecmp(e->e_from.q_paddr, "owner-", 6) != 0 &&
-		    (strlen(e->e_from.q_paddr) <= 8 ||
+		    (strlen(e->e_from.q_paddr) <= (SIZE_T) 8 ||
 		     strcasecmp(&e->e_from.q_paddr[strlen(e->e_from.q_paddr) - 8], "-request") != 0))
 		{
 			(void) sprintf(buf,

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.75 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.76 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.75 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.76 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -723,7 +723,7 @@ orderq(doall)
 				syslog(LOG_ALERT, "orderq: bogus qf name %s",
 					d->d_name);
 # endif
-			if (strlen(d->d_name) > MAXNAME)
+			if (strlen(d->d_name) > (SIZE_T) MAXNAME)
 				d->d_name[MAXNAME] = '\0';
 			strcpy(lbuf, d->d_name);
 			lbuf[0] = 'Q';

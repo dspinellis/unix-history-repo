@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.113 (Berkeley) %G%
+ *	@(#)sendmail.h	8.114 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.113		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.114		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -222,6 +222,7 @@ typedef struct mailer	MAILER;
 # define M_SPECIFIC_UID	'S'	/* run as specific uid/gid */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
+# define M_CONTENT_LEN	'v'	/* add Content-Length: header (SVr4) */
 		/*	'V'	/* UIUC: !-relativize all addresses */
 # define M_HASPWENT	'w'	/* check for /etc/passwd entry */
 		/*	'x'	/* CF: include Full-Name: */
