@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	8.7 (Berkeley) %G%
+.\"	@(#)make.1	8.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -734,6 +734,12 @@ If a target is marked with this attribute and
 .Nm make
 can't figure out how to create it, it will ignore this fact and assume
 the file isn't needed or already exists.
+.It Ic .PHONY
+If this special target is present in a Makefile, all sources for the
+target will considered to be `phony' targets. I.e. they don't refer
+to real files, and they will always be considered out-of-date. This
+is useful in case one wants to create a target called `install', in
+a directory where a file `install' already exists.
 .It Ic .PRECIOUS
 When
 .Nm make
