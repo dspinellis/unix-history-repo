@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)iostat.8	6.4 (Berkeley) %G%
+.\"	@(#)iostat.8	6.5 (Berkeley) %G%
 .\"
 .TH IOSTAT 8 ""
 .UC 4
@@ -12,7 +12,9 @@ iostat \- report I/O statistics
 .SH SYNOPSIS
 .nf
 .ft B
-iostat [ \-c count ] [ \-i interval ] [ drives ]
+iostat [ \-c count ] [ \-M core ] [ \-N system ]
+.ti +5
+[ \-w wait ] [ drives ]
 .ft R
 .fi
 .SH DESCRIPTION
@@ -35,16 +37,24 @@ possible to determine average seek times for each device.
 The options are as follows:
 .TP
 \-c
-Display the information
+Repeat the display
 .I count
 times.
 The first dislpay is for all time since a reboot and each subsequent report
 is for the time period since the last display.
 .TP
-\-i
-Sleep
-.I interval
-seconds between each display of the information.
+\-M
+Extract values associated with the name list from the specified core
+instead of the default ``/dev/kmem''.
+.TP
+\-N
+Extract the name list from the specified system instead of the default
+``/vmunix''.
+.TP
+\-w
+Pause
+.I wait
+seconds between each display.
 .PP
 If more than 4 disk drives are configured in the system,
 .I iostat
@@ -57,8 +67,18 @@ To force
 to display specific drives, their names may be supplied on the command
 line.
 .SH FILES
-/dev/kmem
+.ta \w'/dev/kmem  'u
+/vmunix	default kernel namelist
 .br
-/vmunix
+/dev/kmem	default memory file
 .SH SEE ALSO
-systat(1), vmstat(1)
+.IR fstat (1),
+.IR netstat (1),
+.IR nfsstat (1),
+.IR ps (1),
+.IR systat (1),
+.IR vmstat (1),
+.IR pstat (8)
+.sp
+The sections starting with ``Interpreting system activity'' in
+.IR "Installing and Operating 4.3BSD" .
