@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -211,31 +211,27 @@ p_shell(p, pw, ep)
 	struct passwd *pw;
 	struct entry *ep;
 {
-	register char *sh, *t;
-	char *getusershell();
+	char *t, *ok_shell();
 
 	if (!*p) {
 		pw->pw_shell = _PATH_BSHELL;
 		return(0);
 	}
-	setusershell();
-	for (;;) {
-		if (!(sh = getusershell())) {
-			/* only admin can set "restricted" shells */
-			if (!uid)
-				break;
+	/* only admin can change from or to "restricted" shells */
+	if (uid && pw->pw_shell && !ok_shell(pw->pw_shell)) {
+		(void)fprintf(stderr,
+		    "chpass: %s: current shell non-standard.\n", pw->pw_shell);
+		return(1);
+	}
+	if (!(t = ok_shell(p))) {
+		if (uid) {
 			(void)fprintf(stderr,
 			    "chpass: %s: non-standard shell.\n", p);
 			return(1);
 		}
-		if (!strcmp(p, sh))
-			break;
-		/* allow just shell name */
-		if ((t = rindex(sh, '/')) && !strcmp(p, t)) {
-			p = t;
-			break;
-		}
 	}
+	else
+		p = t;
 	if (!(pw->pw_shell = strdup(p))) {
 		(void)fprintf(stderr, "chpass: can't save entry.\n");
 		return(1);

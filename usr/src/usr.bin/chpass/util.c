@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -110,40 +110,52 @@ print(fp, pw)
 	struct passwd *pw;
 {
 	register char *p;
-	char *getusershell(), *ttoa();
+	char *getusershell(), *ok_shell(), *ttoa();
 
-	fprintf(fp, "#Changing user database information for %s.\n",
+	(void)fprintf(fp, "#Changing user database information for %s.\n",
 	    pw->pw_name);
 	if (!uid) {
-		fprintf(fp, "Login: %s\n", pw->pw_name);
-		fprintf(fp, "Password: %s\n", pw->pw_passwd);
-		fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
-		fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
-		fprintf(fp, "Change [month day year]: %s\n", ttoa(pw->pw_change));
-		fprintf(fp, "Expire [month day year]: %s\n", ttoa(pw->pw_expire));
-		fprintf(fp, "Class: %s\n", pw->pw_class);
-		fprintf(fp, "Home directory: %s\n", pw->pw_dir);
-		fprintf(fp, "Shell: %s\n",
+		(void)fprintf(fp, "Login: %s\n", pw->pw_name);
+		(void)fprintf(fp, "Password: %s\n", pw->pw_passwd);
+		(void)fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
+		(void)fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
+		(void)fprintf(fp, "Change [month day year]: %s\n",
+		    ttoa(pw->pw_change));
+		(void)fprintf(fp, "Expire [month day year]: %s\n",
+		    ttoa(pw->pw_expire));
+		(void)fprintf(fp, "Class: %s\n", pw->pw_class);
+		(void)fprintf(fp, "Home directory: %s\n", pw->pw_dir);
+		(void)fprintf(fp, "Shell: %s\n",
 		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	}
-	else {
-		/* only admin can change "restricted" shells */
-		setusershell();
-		for (;;)
-			if (!(p = getusershell()))
-				break;
-			else if (!strcmp(pw->pw_shell, p)) {
-				fprintf(fp, "Shell: %s\n", *pw->pw_shell ?
-				    pw->pw_shell : _PATH_BSHELL);
-				break;
-			}
-	}
+	/* only admin can change "restricted" shells */
+	else if (ok_shell(pw->pw_shell))
+		(void)fprintf(fp, "Shell: %s\n",
+		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	p = strsep(pw->pw_gecos, ",");
-	fprintf(fp, "Full Name: %s\n", p ? p : "");
+	(void)fprintf(fp, "Full Name: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
-	fprintf(fp, "Location: %s\n", p ? p : "");
+	(void)fprintf(fp, "Location: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
-	fprintf(fp, "Office Phone: %s\n", p ? p : "");
+	(void)fprintf(fp, "Office Phone: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
-	fprintf(fp, "Home Phone: %s\n", p ? p : "");
+	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
+}
+
+char *
+ok_shell(name)
+	register char *name;
+{
+	register char *p, *sh;
+	char *getusershell();
+
+	setusershell();
+	while (sh = getusershell()) {
+		if (!strcmp(name, sh))
+			return(name);
+		/* allow just shell name, but use "real" path */
+		if ((p = rindex(sh, '/')) && !strcmp(name, p + 1))
+			return(sh);
+	}
+	return(NULL);
 }

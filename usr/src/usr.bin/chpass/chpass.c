@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -79,22 +79,26 @@ main(argc, argv)
 	struct rlimit rlim;
 	FILE *temp_fp;
 	int aflag, ch, fd;
-	char *fend, *passwd, *temp, *tend;
+	char *fend, *newsh, *passwd, *temp, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
 	char *getusershell();
 
 	uid = getuid();
 	aflag = 0;
-	while ((ch = getopt(argc, argv, "a:")) != EOF)
+	newsh = NULL;
+	while ((ch = getopt(argc, argv, "a:s:")) != EOF)
 		switch(ch) {
 		case 'a':
-			if (uid) {
-				(void)fprintf(stderr,
-				    "chpass: %s\n", strerror(EACCES));
-				exit(1);
-			}
+			if (uid)
+				baduser();
 			loadpw(optarg, pw = &lpw);
 			aflag = 1;
+			break;
+		case 's':
+			newsh = optarg;
+			/* protect p_field -- it thinks NULL is /bin/sh */
+			if (!*newsh)
+				usage();
 			break;
 		case '?':
 		default:
@@ -118,11 +122,8 @@ main(argc, argv)
 				    "chpass: unknown user %s.\n", *argv);
 				exit(1);
 			}
-			if (uid && uid != pw->pw_uid) {
-				(void)fprintf(stderr,
-				    "chpass: %s\n", strerror(EACCES));
-				exit(1);
-			}
+			if (uid && uid != pw->pw_uid)
+				baduser();
 			break;
 		default:
 			usage();
@@ -155,7 +156,11 @@ main(argc, argv)
 		goto bad;
 	}
 
-	if (!aflag && !info(pw))
+	if (newsh) {
+		if (p_shell(newsh, pw, (struct entry *)NULL))
+			goto bad;
+	}
+	else if (!aflag && !info(pw))
 		goto bad;
 
 	/* root should have a 0 uid and a reasonable shell */
@@ -468,8 +473,14 @@ prompt()
 	/* NOTREACHED */
 }
 
+baduser()
+{
+	(void)fprintf(stderr, "chpass: %s\n", strerror(EACCES));
+	exit(1);
+}
+
 usage()
 {
-	(void)fprintf(stderr, "usage: chpass [-a list] [user]\n");
+	(void)fprintf(stderr, "usage: chpass [-a list] [-s shell] [user]\n");
 	exit(1);
 }
