@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)wd.c	7.3 (Berkeley) 5/4/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00049
+ * --------------------         -----   ----------------------
+ *
+ * 06 Sep 92	Robert D. Thrush	Fix for HD not booting after install
  */
 
 /*  device driver for winchester disk  */
@@ -299,7 +306,7 @@ wdinit(io)
 	DELAY(1000);
 	outb(wdc+wd_ctlr,2);
 	DELAY(1000);
-	while(inb(wdc+wd_altsts) & WDCS_BUSY);
+	while(inb(wdc+wd_status) & WDCS_BUSY);		/* 06 Sep 92*/
 	outb(wdc+wd_ctlr,8);
 
 	/* set SDH, step rate, do restore to recalibrate drive */
