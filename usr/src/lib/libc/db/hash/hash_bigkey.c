@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_bigkey.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_bigkey.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -32,12 +32,13 @@ ROUTINES:
 	collect_data
 ******************************************************************************/
 /* Includes */
-#include <sys/param.h>
-#include <sys/file.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <errno.h>
 #include <db.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "hash.h"
 #include "page.h"
 

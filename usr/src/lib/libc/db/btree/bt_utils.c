@@ -9,11 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_utils.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_utils.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <db.h>
+#include <stdlib.h>
+#include <string.h>
 #include "btree.h"
 
 /*

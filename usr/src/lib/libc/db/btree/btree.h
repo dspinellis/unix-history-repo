@@ -9,7 +9,7 @@
  */
 
 /*
- *  @(#)btree.h	5.1 (Berkeley) %G%
+ *  @(#)btree.h	5.2 (Berkeley) %G%
  */
 
 typedef char	*BTREE;		/* should really be (void *) */ 
@@ -28,9 +28,6 @@ typedef char	*BTREE;		/* should really be (void *) */
 #ifndef NULL
 #define NULL	0
 #endif /* ndef NULL */
-
-/* libc */
-extern char *malloc();
 
 /* these are defined in lrucache.c */
 extern char	*lruinit();
