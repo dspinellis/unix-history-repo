@@ -1,7 +1,7 @@
 # include "sendmail.h"
 # include <signal.h>
 
-SCCSID(@(#)clock.c	4.1		%G%);
+SCCSID(@(#)clock.c	4.2		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -142,7 +142,9 @@ tick()
 	while ((ev = EventQueue) != NULL &&
 	       (ev->ev_time <= now || ev->ev_pid != getpid()))
 	{
-		int (*f)(), a;
+		int (*f)();
+		int arg;
+		int pid;
 
 		/* process the event on the top of the queue */
 		ev = EventQueue;
@@ -156,9 +158,10 @@ tick()
 		/* we must be careful in here because ev_func may not return */
 		(void) signal(SIGALRM, tick);
 		f = ev->ev_func;
-		a = ev->ev_arg;
+		arg = ev->ev_arg;
+		pid = ev->ev_pid;
 		free((char *) ev);
-		if (ev->ev_pid != getpid())
+		if (pid != getpid())
 			continue;
 		if (EventQueue != NULL)
 		{
@@ -167,7 +170,7 @@ tick()
 			else
 				(void) alarm(3);
 		}
-		(*f)(a);
+		(*f)(arg);
 		(void) alarm(0);
 		now = curtime();
 	}

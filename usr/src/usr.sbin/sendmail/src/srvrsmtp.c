@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.5		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.6		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.5		%G%);
+SCCSID(@(#)srvrsmtp.c	4.6		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -228,7 +228,7 @@ smtp()
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			a = parseaddr(p, (ADDRESS *) NULL, 1);
+			a = parseaddr(p, (ADDRESS *) NULL, 1, '\0');
 			if (a == NULL)
 				break;
 			a = recipient(a, &CurEnv->e_sendqueue);
