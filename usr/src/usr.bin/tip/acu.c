@@ -1,4 +1,4 @@
-/*	acu.c	4.3	81/11/16	*/
+/*	acu.c	4.4	81/11/20	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -135,7 +135,7 @@ acuabort(s)
 
 static acu_t *
 acutype(s)
-register char *s;
+	register char *s;
 {
 	register acu_t *p;
 	extern acu_t acutable[];

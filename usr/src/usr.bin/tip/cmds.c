@@ -1,4 +1,4 @@
-/*	cmds.c	4.5	81/07/11	*/
+/*	cmds.c	4.6	81/11/20	*/
 #include "tip.h"
 /*
  * tip

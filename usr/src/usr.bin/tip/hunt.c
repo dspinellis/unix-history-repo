@@ -1,4 +1,4 @@
-/*	hunt.c	4.3	81/10/02	*/
+/*	hunt.c	4.4	81/11/20	*/
 #include "tip.h"
 
 #define RD	04
@@ -14,7 +14,7 @@ dead()
 }
 
 hunt(name)
-char *name;
+	char *name;
 {
 	register char *cp;
 

@@ -1,4 +1,4 @@
-/*	biz31.c	4.2	81/09/17	*/
+/*	biz31.c	4.3	81/11/20	*/
 #include "tip.h"
 
 #if BIZ1031
@@ -15,7 +15,7 @@ static int timeout = 0;
  */
 static int
 biz_dialer(num, mod)
-char *num, *mod;
+	char *num, *mod;
 {
 	register int connected = 0;
 
@@ -64,13 +64,13 @@ char *num, *mod;
 }
 
 biz31w_dialer(num, acu)
-char *num, *acu;
+	char *num, *acu;
 {
 	return(biz_dialer(num, "w"));
 }
 
 biz31f_dialer(num, acu)
-char *num, *acu;
+	char *num, *acu;
 {
 	return(biz_dialer(num, "f"));
 }
@@ -90,7 +90,7 @@ biz31_abort()
 
 static int
 echo(s)
-register char *s;
+	register char *s;
 {
 	char c;
 
@@ -121,7 +121,7 @@ sigALRM()
 
 static int
 detect(s)
-register char *s;
+	register char *s;
 {
 	char c;
 
@@ -143,7 +143,7 @@ register char *s;
 
 static int
 flush(s)
-register char *s;
+	register char *s;
 {
 	char c;
 

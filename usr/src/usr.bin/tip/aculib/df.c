@@ -1,4 +1,4 @@
-/*	df.c	4.3	81/10/21	*/
+/*	df.c	4.4	81/11/20	*/
 /*
  * Dial the DF02-AC or DF03-AC
  */
@@ -12,7 +12,7 @@ static timeout();
 
 #if DF02
 df02_dialer(num, acu)
-char *num, *acu;
+	char *num, *acu;
 {
 	return(df_dialer(num, acu, 0));
 }
@@ -20,15 +20,15 @@ char *num, *acu;
 
 #if DF03
 df03_dialer(num, acu)
-char *num, *acu;
+	char *num, *acu;
 {
 	return(df_dialer(num, acu, 1));
 }
 #endif
 
 df_dialer(num, acu, df03)
-char *num, *acu;
-int df03;
+	char *num, *acu;
+	int df03;
 {
 	register int f = FD;
 	struct sgttyb buf;
