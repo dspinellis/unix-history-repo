@@ -1,21 +1,15 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-#ifndef lint
-static char sccsid[] = "@(#)termcap.src	5.1 (Berkeley) %G%";
-#endif not lint
-
 # ------------------------
 #
-#	Termcap source file 
+#	Termcap source file	@(#)termcap.src	5.2 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
 #
 # Please mail changes to (arpanet): termcap@berkeley
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
 # This file describes capabilities of various terminals, as needed by
 # software such as screen editors.  It does not attempt to describe
@@ -45,7 +39,7 @@ static char sccsid[] = "@(#)termcap.src	5.1 (Berkeley) %G%";
 #	na	No arrow keys - termcap ignores arrow keys which are
 #		actually there on the terminal, so the user can use
 #		the arrow keys locally.
-#  
+#
 # There are some cases where the same name is used for two different
 # terminals, e.g. "teleray" or "2621" or "vt100".  In these cases,
 # if a site has one of these, they should choose a local default and
@@ -65,9 +59,9 @@ static char sccsid[] = "@(#)termcap.src	5.1 (Berkeley) %G%";
 #  Special manufacturer codes:
 #	A: hardcopy daisy wheel terminals
 #	M: Misc. (with only a few terminals)
-#  	q: Homemade
-#  	s: special (dialup, etc.)
-#  
+#	q: Homemade
+#	s: special (dialup, etc.)
+#
 # Comments in this file begin with # - they cannot appear in the middle
 # of a termcap entry.  Individual entries are commented out by
 # placing a period between the colon and the capability name.
@@ -87,7 +81,7 @@ static char sccsid[] = "@(#)termcap.src	5.1 (Berkeley) %G%";
 # It has been tried in a minimal way -- the Agile did not blow up!
 # However, it has not been exhaustively tested.
 # Anyone who tries it and finds it wanting should get in touch with:
-# 	Ralph Keirstead (ralph@sri-unix);
+#	Ralph Keirstead (ralph@sri-unix);
 #	EK352; SRI International; 333 Ravenswood Avenue; Menlo Park, CA 94025
 Aa|agile|agiles|sri agiles:\
 	:bs:hc:os:pl:co#132:do=^J:kb=^H:up=\E\n:\
@@ -347,7 +341,7 @@ MI|soroc|Soroc 120:\
 MJ|tec400|tec scope:\
 	:do=^J:.cm=l%r%.%.:up=x:do=h:nd=g:le=w:ho=i:so={:se=|:sg#1:\
 	:cl=f:al=e:dl=u:ic=d:dc=t:ce=c:cd=s:
-# From ucbvax!geoff Mon Sep 21 21:15:45 1981 
+# From ucbvax!geoff Mon Sep 21 21:15:45 1981
 # This entry has been tested.
 MK|tec500|tec 500:\
 	:do=^J:am:le=^H:bs:cm=\E=%+ %+ :cl=20^Z:\
@@ -387,14 +381,14 @@ MS|aed|AED|aed512|AED512|aed 512:\
 	:so=\E\07200>8000140[80C00\001:se=\E[00C80\001:\
 	:is=\EG1MMM.`40K0001202080K8001????00^L\EC80L80{80^L\EK010100????K0601??0000c818100\EG1HHH.\07210000019A27FD006A280D002A200A52429FE8524861086118612861360N031B4C3F3F1800N041B0C1B4C38301800N001B3B313030301800N011B3B313030341800N021B3B313030381800N050800N061B3B313335301800\07211000015A58E8D5011A58F8D5111A5908D5211A5918D531160\07212000015AD5011858EAD5111858FAD52118590AD5311859160\0721300004B2071C5858E0A18658E0A0A858EA900858F268FA5278590A50A29018591A9F51865908590A90165918591A59038E58E8590A591E58F290185912071C5180A0A0A0901858EA900858F268F60\0721350000BA9472031DEA9502031DE60\E\E\E\EG1MMM.^A:
 # CIT 80  - vt 100 emulator, the termcap has been modified to remove
-#           the delay times and do an auto tab set rather than the indirect 
+#           the delay times and do an auto tab set rather than the indirect
 #           file used in vt100.
 MT|cit80|cit 80|Citoh 80:\
 	:co#80:li#24:am:cl=\E[;H\EJ:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
 	:ce=\EK:cd=\EJ:is=\E>:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:
 # AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
-#           the delay times and do an auto tab set rather than the indirect 
+#           the delay times and do an auto tab set rather than the indirect
 #           file used in vt100.
 #	    Uses 23 lines so can run citsys (like h19sys).
 MU|citc|Citoh fast vt100:\
@@ -402,14 +396,14 @@ MU|citc|Citoh fast vt100:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
+	:vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
 	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:
 MV|cita:\
 	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
+	:vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
 MW|cit101:li#24:vb@:tc=cita
 MX|cit101b:li#24:tc=cita
 Mh|cit500|cit-500|cit 500:\
@@ -592,7 +586,7 @@ m0|modgraph|mod|Modgraph terminal emulating vt100, 24x80:\
 #	blinking/nonblinking cursor*
 #	key click/no key click*
 #	bell/no bell at column 72*
-#	
+#
 #	key pad is cursor control*/key pad is numeric
 #	return and line feed/return for <cr> key *
 #	repeat after .5 sec*/no repeat
@@ -641,7 +635,7 @@ m0|modgraph|mod|Modgraph terminal emulating vt100, 24x80:\
 #
 #	XON character (17*)
 #	XOFF character (19*)
-#	
+#
 # C menu: 56   66   0    0    9600  0110 1100
 #	number of lines to print data on (printer) (56*)
 #
@@ -675,7 +669,7 @@ m0|modgraph|mod|Modgraph terminal emulating vt100, 24x80:\
 #	editing extent: 0=display,1=line*,2=field,3=area
 #
 #	unused
-#	
+#
 N0|aaa-29-np|aaa-29 with no padding (for psl):\
 	:al=\E[L:ce=\E[K:cl=\E[H\E[J:dc=\E[P:dl=\E[M:ic=\E[@:tc=aaa-29:
 NA|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
@@ -939,7 +933,6 @@ N1|aa|annarbor|4080|ann arbor 4080:\
 	:do=^J:pt:ct=^\^P^P:st=^]^P1:cm=^O%r%\066%.%>^S^L%+@:\
 	:co#80:li#40:le=^H:bs:cl=2^L:up=^N:nd=^_:ho=^K:am:\
 	:kb=^^:kd=^J:ku=^N:kl=^H:kr=^_:kh=^K:ma=^_ ^N^P:
-
 # # --------------------------------
 #
 # T: TELETYPE
@@ -975,7 +968,7 @@ TT|4424|tty4424|teletype 4424M:\
 	:is=\E[m\E[2;24r:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:
-# Teletype blit. 
+# Teletype blit.
 TD|dmd|5620|ttydmd|tty5620|5620	terminal 88 columns:\
 	:co#88:li#70:am:bs:pt:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:cl=\E[H\E[J:cd=\E[J:ce=\E[K:al=\E[L:dl=\E[M:\
@@ -1856,12 +1849,12 @@ v8|tvi925|925|televideo model 925:\
 	:ts=\Ef:fs=\Eg:
 # entry by Tim Curry 5/21/82 Univ. of Central Fla. duke!ucf-cs!tim
 v9|925a|tvi925a|TeleVideo Model 925:\
-        :al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
-        :dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/std:im=:kb=^H:kd=^V:\
-        :kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
-        :ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
-        :vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
-        :ve=\E.4:vs=\E.2:
+	:al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
+	:dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/std:im=:kb=^H:kd=^V:\
+	:kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
+	:ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
+	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+	:ve=\E.4:vs=\E.2:
 # The following tvi descriptions from B:pjphar and virus!mike
 # is for all 950's.  It sets the following attributes:
 # full duplex (\EDF)		write protect off (\E()
@@ -2087,7 +2080,7 @@ zd|abm85|Kimtron ABM 85:\
 	:so=\Ej:se=\Ek:sg#1:us=\El:ue=\Em:ug#1:\
 # Kimtron ABM 85H added by Dual Systems.
 # Some notes about the 85h entries:
-# 1) there are several firmware revs of 85H in the world. Use o85h for 
+# 1) there are several firmware revs of 85H in the world. Use o85h for
 #    firmware revs prior to SP51
 # 2) Make sure to use 85h entry if the terminal is in 85H mode and the
 #    85e entry if it is in 920 emulation mode. They are incompatible in
@@ -2116,13 +2109,13 @@ zg|o85h|oabm85h:Kimtron ABM 85H, old firmware rev.:\
 	:im=\EZ:sg@:ug@:vb=\200\200\200^G\200\200\200:\
 	:mh=\E):mr=\Ej:me=\E(\Ek:tc=abm85:
 zh|appleII|apple ii plus:vs=\024\103\066:ve=\024\103\062:\
-        :am:co#80:ce=\035:li#24:cl=\014:bs:nd=\034:up=\037:ho=\E\031:pt:\
-        :cd=\013:so=\017:se=\016:cm=\036%r%+ %+ :is=\024T1\016:do=^J:kd=^J:\
-        :vb=\024G1\024T1:kr=:
+	:am:co#80:ce=\035:li#24:cl=\014:bs:nd=\034:up=\037:ho=\E\031:pt:\
+	:cd=\013:so=\017:se=\016:cm=\036%r%+ %+ :is=\024T1\016:do=^J:kd=^J:\
+	:vb=\024G1\024T1:kr=:
 #  Gary Ford 21NOV83
 zi|apple-80|apple II with smarterm 80 col:\
-        :do=^J:co#80:li#24:le=^H:bs:am:cl=50^L:cm=5^^%r%+ %+ :bt=2^R:cd=50^K:\
-        :ce=3^]:nd=2^\:up=2^_:is=^TR^V^A:
+	:do=^J:co#80:li#24:le=^H:bs:am:cl=50^L:cm=5^^%r%+ %+ :bt=2^R:cd=50^K:\
+	:ce=3^]:nd=2^\:up=2^_:is=^TR^V^A:
 #
 zj|lisa|apple lisa xenix console display (white on black):\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%i%d;%dH:co#88:\
@@ -2132,13 +2125,13 @@ zj|lisa|apple lisa xenix console display (white on black):\
 	:is=\E[7m^L:GS=\E[11m:GE=\E[10m:GV=\140:GH=a:G1=c:\
 	:G2=f:G3=e:G4=d:GU=u:GD=s:GC=b:GL=v:GR=t:
 zk|ibm|ibmpc|IBM PC xenix console display:\
- 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
- 	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
- 	:nd=\E[C:ms:se=\E[0m:so=\E[7m:us=\E[4m:\
+	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
+	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
+	:nd=\E[C:ms:se=\E[0m:so=\E[7m:us=\E[4m:\
 	:ue=\E[m:up=\E[A:MR=\E[0m:\
- 	:kb=^h:kh=\E[Y:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
- 	:GS=\E[11m:GE=\E[10m:\
- 	:GC=b:GL=v:GR=t:RT=^J:\
+	:kb=^h:kh=\E[Y:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
+	:GS=\E[11m:GE=\E[10m:\
+	:GC=b:GL=v:GR=t:RT=^J:\
 	:GH=\E[196g:GV=\E[179g:\
 	:GU=\E[193g:GD=\E[194g:\
 	:G1=\E[191g:G2=\E[218g:G3=\E[192g:G4=\E[217g:\
@@ -2149,7 +2142,7 @@ zl|ibmc|ibmcpc|IBM PC xenix color console display:\
 	:tc=ibm:
 zm|kaypro|kaypro II:\
 	:am:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:\
-        :kr=:kl=^H:ku=:kd=^J:
+	:kr=:kl=^H:ku=:kd=^J:
 # From Suk Lee ..!{decvax,linus,allegra,ihnp4}!utcsrgv!spoo
 zn|trs100|Radio Shack Model 100:\
 	:am:bs:le=^H:li#8:co#40:ku=^^:kd=^_:kl=^]:kr=^\:up=\EA:\
@@ -2158,22 +2151,22 @@ zn|trs100|Radio Shack Model 100:\
 zt|mac|macintosh|Macintosh with MacTerminal:\
 	:al=20\E[L:dl=20\E[M:ip=7:dc=7\E[P:ic=9\E[@:xn:dN#30:tc=vt100:
 zs|zen50|z50:zephyr:\
-        :cm=\E=%+ %+ :cd=\EY:co#80:li#24:\
-        :am:al=\EE:ce=\ET:dc=\EW:dl=\ER:ic=\EQ:im=:ei=:\
-        :cl=\E+:bs:ma=^Hh^Ll^Jj^Kk:sg#1:se=\EGO:so=\EG4:\
-        :kl=^H:kr=^L:ku=^K:kd=^J:kh=\036:up=^K:\
-        :BS=^U:CL=^V:CR=^B:RK=^L:UK=^K:LK=^H:DK=^J:HM=\036:
+	:cm=\E=%+ %+ :cd=\EY:co#80:li#24:\
+	:am:al=\EE:ce=\ET:dc=\EW:dl=\ER:ic=\EQ:im=:ei=:\
+	:cl=\E+:bs:ma=^Hh^Ll^Jj^Kk:sg#1:se=\EGO:so=\EG4:\
+	:kl=^H:kr=^L:ku=^K:kd=^J:kh=\036:up=^K:\
+	:BS=^U:CL=^V:CR=^B:RK=^L:UK=^K:LK=^H:DK=^J:HM=\036:
 zu|go140|graphon go-140:\
-        :co#80:li#24:cl=10\E[;H\E[2J:bs:cm\E[%i%2;%2H:nd=\E[C:up=\E[A:\
-        :ce=\E[K:cd=10\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
-        :is=\E<\E=\E[?3l\E[?7l\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
-        :dl=\E[M:al=\E[L:dc=\E[P:im=\E[4h:ei=\E[4l:\
-        :ks=\E[?1h\E=:ke=\E[?1l\E>:\
-        :if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-        :kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=\EM:
+	:co#80:li#24:cl=10\E[;H\E[2J:bs:cm\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=10\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E<\E=\E[?3l\E[?7l\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
+	:dl=\E[M:al=\E[L:dc=\E[P:im=\E[4h:ei=\E[4l:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=\EM:
 zv|go140w|graphon go-140 in 132 column mode:\
-        :co#132:is=\E<\E=\E[?3h\E[?7h\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
-        :tc=go140:
+	:co#132:is=\E<\E=\E[?3h\E[?7h\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
+	:tc=go140:
 zw|sanyo55|sanyo|sanyo mbc-55x pc compatible:\
 	:co#80:li#25:am:cl=\E[H\E[J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:
