@@ -79,28 +79,40 @@
 **			aspects of this program cannot be abused.
 **			This flag also disables the -p flag.
 **		SCCSPATH -- the default for the -p flag.
+**		MYNAME -- the title this program should print when it
+**			gives error messages.
 **
 **	Compilation Instructions:
 **		cc -O -n -s sccs.c
+**		The flags listed above can be -D defined to simplify
+**			recompilation for variant versions.
 **
 **	Author:
 **		Eric Allman, UCB/INGRES
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.37 %G%";
+static char SccsId[] = "@(#)sccs.c	1.38 %G%";
 
 /*******************  Configuration Information  ********************/
+
+/* special defines for local berkeley systems */
+# include <whoami.h>
 
 # ifdef CSVAX
 # define UIDUSER
 # define PROGPATH(name)	"/usr/local/name"
 # endif CSVAX
 
-# define SCCSPATH	"SCCS"	/* pathname in which to find s-files */
-/* put #define SCCSDIR here */
+/* end of berkeley systems defines */
 
-char	MyName[] = "sccs";	/* name used in messages */
+# ifndef SCCSPATH
+# define SCCSPATH	"SCCS"	/* pathname in which to find s-files */
+# endif NOT SCCSPATH
+
+# ifndef MYNAME
+# define MYNAME		"sccs"	/* name used for printing errors */
+# endif NOT MYNAME
 
 # ifndef PROGPATH
 # define PROGPATH(name)	"/usr/sccs/name"	/* place to find binaries */
@@ -194,6 +206,7 @@ char	*SccsDir = SCCSDIR;	/* directory to begin search from */
 # else
 char	*SccsDir = "";
 # endif
+char	MyName[] = MYNAME;	/* name used in messages */
 int	OutFile = -1;		/* override output file for commands */
 bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
