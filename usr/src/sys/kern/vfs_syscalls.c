@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.15 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -264,7 +264,7 @@ dounmount(mp, flags, p)
 /*
  * Sync each mounted filesystem.
  */
-#ifdef DIAGNOSTIC
+#ifdef DEBUG
 int syncprt = 0;
 struct ctldebug debug0 = { "syncprt", &syncprt };
 #endif
