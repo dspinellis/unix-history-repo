@@ -7,13 +7,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.21 (Berkeley) %G%
+ *	@(#)stdio.h	5.22 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
 #define	_STDIO_H_
 
+#if !defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)
 #include <sys/types.h>
+#endif
+
 #include <sys/cdefs.h>
 
 #include <machine/ansi.h>
@@ -26,7 +29,18 @@ typedef	_BSD_SIZE_T_	size_t;
 #define	NULL	0
 #endif
 
-typedef off_t fpos_t;		/* Must match off_t <sys/types.h> */
+/*
+ * This is fairly grotesque, but pure ANSI code must not inspect the
+ * innards of an fpos_t anyway.  The library internally uses off_t,
+ * which we assume is exactly as big as eight chars.
+ */
+#if !defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)
+typedef off_t fpos_t;
+#else
+typedef struct __sfpos {
+	char	_pos[8];
+} fpos_t;
+#endif
 
 #define	_FSTDIO			/* Define for new stdio with functions. */
 
