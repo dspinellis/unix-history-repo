@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	1.1 (Berkeley) %G%";
+static	char sccsid[] = "@(#)format.c	1.2 (Berkeley) %G%";
 #endif
 /*
  *
@@ -103,6 +103,8 @@ STRING		ifp;
 		longpr=(c>='A')&&(c<='Z')||(c=='f')||(c=='4')||(c=='p');
 		IF itype==NSP ORF *fp=='a'
 		THEN wx=dot; w=dot;
+		     IF c=='b' ORF c=='B' ORF c=='c' ORF c=='C' ORF c=='1'
+		     THEN w=btol(wx); FI
 		ELSE wx=get(dot,itype);
 		     w=shorten(wx);
 		FI
@@ -139,13 +141,13 @@ STRING		ifp;
 
 		    case 'c': case 'C':
 			IF modifier=='C'
-			THEN printesc(byte(wx));
-			ELSE printc(byte(wx));
+			THEN printesc(byte(w));
+			ELSE printc(byte(w));
 			FI
 			dotinc=1; break;
 
 		    case 'b': case 'B':
-			printf("%-8o", byte(wx)); dotinc=1; break;
+			printf("%-8o", byte(w)); dotinc=1; break;
 
 			case '1':
 			printf("%-8R", byte(wx)); dotinc=1; break;
