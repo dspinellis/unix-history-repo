@@ -294,7 +294,7 @@ ptcread(dev, uio, flag)
 				if (error)
 					return (error);
 				if (pti->pt_send & TIOCPKT_IOCTL) {
-					cc = MIN(uio->uio_resid,
+					cc = min(uio->uio_resid,
 						sizeof(tp->t_termios));
 					uiomove(&tp->t_termios, cc, uio);
 				}
@@ -335,7 +335,7 @@ ptcread(dev, uio, flag)
 	if (pti->pt_flags & (PF_PKT|PF_UCNTL|PF_TIOC))
 		error = ureadc(0, uio);
 	while (uio->uio_resid > 0 && error == 0) {
-		cc = q_to_b(&tp->t_outq, buf, MIN(uio->uio_resid, BUFSIZ));
+		cc = q_to_b(&tp->t_outq, buf, min(uio->uio_resid, BUFSIZ));
 		if (cc <= 0)
 			break;
 		error = uiomove(buf, cc, uio);
