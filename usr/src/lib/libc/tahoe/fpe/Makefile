@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 FLAGS=	-I.. ${DEFS}
@@ -28,9 +28,9 @@ OBJS=	addd.o addf.o cmpd.o cmpf.o cvtdl.o cvtfl.o cvtld.o cvtlf.o cvtud.o \
 TAGSFILE=tags
 
 .s.o:
-	@/lib/cpp -E ${FLAGS} -DPROF $*.s | ${AS} -o $*.o
+	@${CPP} -E ${FLAGS} -DPROF $*.s | ${AS} -o $*.o
 	@ld -X -o profiled/$*.o -r $*.o
-	/lib/cpp -E ${FLAGS} $*.s | ${AS} -o $*.o
+	${CPP} -E ${FLAGS} $*.s | ${AS} -o $*.o
 	@ld -x -r $*.o
 	@mv a.out $*.o
 
