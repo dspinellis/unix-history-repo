@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.27	81/12/22	*/
+/*	tcp_output.c	4.28	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -129,7 +129,10 @@ send:
 	if (win > 0)
 		ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
-		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
+		ti->ti_urp = tp->snd_up - tp->snd_nxt;
+#if vax
+		ti->ti_urp = htons(ti->ti_urp);
+#endif
 		ti->ti_flags |= TH_URG;
 	} else
 		/*
@@ -201,10 +204,8 @@ send:
 	 */
 	((struct ip *)ti)->ip_len = len + sizeof (struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt) == 0) {
-printf("ip_output failed\n");
+	if (ip_output(m, tp->t_ipopt) == 0)
 		return (0);
-}
 
 	/*
 	 * Data sent (as far as we can tell).
