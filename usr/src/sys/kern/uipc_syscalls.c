@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.18	82/06/12	*/
+/*	uipc_syscalls.c	4.19	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,7 +62,7 @@ COUNT(SPIPE);
 	return;
 free4:
 	wf->f_count = 0;
-	u.u_ofile[u.u_r.r_val1] = 0;
+	u.u_ofile[u.u_r.r_val2] = 0;
 free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
