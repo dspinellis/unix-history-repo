@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	4.4 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)quota.c	4.5 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)quota.c	4.4 (Berkeley, from Melbourne) %G%";
 #include <fstab.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <errno.h>
 
 #include <sys/param.h>
 #include <sys/quota.h>
@@ -25,7 +26,12 @@ main(argc, argv)
 	char *argv[];
 {
 	register char *cp;
+	extern int errno;
 
+	if (quota(Q_SYNC, 0, 0, 0) < 0 && errno == EINVAL) {
+		fprintf(stderr, "There are no quotas on this system\n");
+		exit(0);
+	}
 	argc--,argv++;
 	while (argc > 0) {
 		if (argv[0][0] == '-')
@@ -90,7 +96,13 @@ showquotas(uid, name)
 {
 	register char c, *p;
 	register struct fstab *fs;
-	int myuid;
+	register char *msgi = (char *)0, *msgb = (char *)0;
+	register enab = 1;
+	dev_t	fsdev;
+	struct	stat statb;
+	struct	dqblk dqblk;
+	int myuid, fd;
+	char qfilename[MAXPATHLEN + 1], iwarn[8], dwarn[8];
 
 	myuid = getuid();
 	if (uid != myuid && myuid != 0) {
@@ -100,13 +112,6 @@ showquotas(uid, name)
 	done = 0;
 	setfsent();
 	while (fs = getfsent()) {
-		register char *msgi = (char *)0, *msgb = (char *)0;
-		register enab = 1;
-		dev_t	fsdev;
-		struct	stat statb;
-		struct	dqblk dqblk;
-		char qfilename[MAXPATHLEN + 1], iwarn[8], dwarn[8];
-
 		if (stat(fs->fs_spec, &statb) < 0)
 			continue;
 		fsdev = statb.st_rdev;
@@ -114,8 +119,7 @@ showquotas(uid, name)
 		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfilename, O_RDONLY);
-
+			fd = open(qfilename, O_RDONLY);
 			if (fd < 0)
 				continue;
 			lseek(fd, (long)(uid * sizeof (dqblk)), L_SET);
