@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982,1986,1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)if_css.c	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_css.c	7.3 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -33,8 +39,6 @@
  * If you get it wrong, it will still autoconfig, but will just
  * sit there with RECEIVE IDLE indicated on the front panel.
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -42,6 +46,8 @@
 #include "protosw.h"
 #include "socket.h"
 #include "vmmac.h"
+
+#include "../machine/pte.h"
 
 #include "../net/if.h"
 #include "../netimp/if_imp.h"
@@ -58,9 +64,8 @@ struct  uba_device *cssinfo[NCSS];
 u_short cssstd[] = { 0 };
 struct  uba_driver cssdriver =
         { cssprobe, 0, cssattach, 0, cssstd, "css", cssinfo };
-#define CSSUNIT(x)      minor(x)
 
-int     cssinit(), cssstart(), cssreset();
+int     cssinit(), cssoutput(), cssdown(), cssreset();
 
 /*
  * "Lower half" of IMP interface driver.
@@ -80,12 +85,11 @@ int     cssinit(), cssstart(), cssreset();
  * e.g. IP, interact with the IMP driver, rather than the CSS.
  */
 struct  css_softc {
-        struct  ifnet *css_if;          /* pointer to IMP's ifnet struct */
-        struct  impcb *css_ic;          /* data structure shared with IMP */
-        struct  ifuba css_ifuba;        /* UNIBUS resources */
-        struct  mbuf *css_iq;           /* input reassembly queue */
-        short   css_olen;               /* size of last message sent */
-        char    css_flush;              /* flush remainder of message */
+	struct	imp_softc *css_imp;	/* pointer to IMP's imp_softc struct */
+	struct	ifuba css_ifuba;	/* UNIBUS resources */
+	struct	mbuf *css_iq;		/* input reassembly queue */
+	short	css_olen;		/* size of last message sent */
+	char	css_flush;		/* flush remainder of message */
 } css_softc[NCSS];
 
 /*
@@ -102,7 +106,6 @@ cssprobe(reg)
         br = 0; cvec = br; br = cvec;
         cssrint(0); cssxint(0);
 #endif
-
 
         addr->css_icsr = CSS_CLR;
         addr->css_ocsr = CSS_CLR;
@@ -130,18 +133,13 @@ cssattach(ui)
 {
         register struct css_softc *sc = &css_softc[ui->ui_unit];
         register struct impcb *ip;
-        struct ifimpcb {
-                struct  ifnet ifimp_if;
-                struct  impcb ifimp_impcb;
-        } *ifimp;
 
-        if ((ifimp = (struct ifimpcb *)impattach(ui, cssreset)) == 0)
+        if ((sc->css_imp = impattach(ui, cssreset)) == 0)
                 return;
-        sc->css_if = &ifimp->ifimp_if;
-        ip = &ifimp->ifimp_impcb;
-        sc->css_ic = ip;
+	ip = &sc->css_imp->imp_cb;
         ip->ic_init = cssinit;
-        ip->ic_start = cssstart;
+        ip->ic_output = cssoutput;
+        ip->ic_down = cssdown;
 	sc->css_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEED16;
 #ifdef notdef
 	sc->css_ifuba.ifu_flags |= UBA_NEEDBDP;
@@ -156,16 +154,16 @@ cssreset(unit, uban)
         int unit, uban;
 {
         register struct uba_device *ui;
-        struct css_softc *sc;
+        register struct css_softc *sc;
 
         if (unit >= NCSS || (ui = cssinfo[unit]) == 0 || ui->ui_alive == 0 ||
             ui->ui_ubanum != uban)
                 return;
         printf(" css%d", unit);
         sc = &css_softc[unit];
-	sc->css_if->if_flags &= ~IFF_RUNNING;
+	sc->css_imp->imp_if.if_flags &= ~IFF_RUNNING;
         /* must go through IMP to allow it to set state */
-        (*sc->css_if->if_init)(unit);
+        (*sc->css_imp->imp_if.if_init)(sc->css_imp->imp_if.if_unit);
 }
 
 /*
@@ -194,13 +192,15 @@ cssinit(unit)
 	 * would assume we handle it on input and output.
 	 */
 	
-        if (if_ubainit(&sc->css_ifuba, ui->ui_ubanum, 0,(int)btoc(IMPMTU)) == 0) {
+        if ((sc->css_imp->imp_if.if_flags & IFF_RUNNING) == 0 &&
+	    if_ubainit(&sc->css_ifuba, ui->ui_ubanum, 0,
+	    (int)btoc(IMP_RCVBUF)) == 0) {
                 printf("css%d: can't initialize\n", unit);
 		ui->ui_alive = 0;
-		sc->css_if->if_flags &= ~(IFF_UP | IFF_RUNNING);
+		sc->css_imp->imp_if.if_flags &= ~(IFF_UP | IFF_RUNNING);
 		return(0);
         }
-	sc->css_if->if_flags |= IFF_RUNNING;
+	sc->css_imp->imp_if.if_flags |= IFF_RUNNING;
         addr = (struct cssdevice *)ui->ui_addr;
 
         /* reset the imp interface. */
@@ -237,13 +237,13 @@ cssinit(unit)
          * Put up a read.  We can't restart any outstanding writes
          * until we're back in synch with the IMP (i.e. we've flushed
          * the NOOPs it throws at us).
-	 * Note: IMPMTU includes the leader.
+	 * Note: IMP_RCVBUF includes the leader.
          */
 
         x = spl5();
         info = sc->css_ifuba.ifu_r.ifrw_info;
         addr->css_iba = (u_short)info;
-        addr->css_iwc = -(IMPMTU >> 1);
+        addr->css_iwc = -(IMP_RCVBUF >> 1);
         addr->css_icsr = 
                 IN_HRDY | CSS_IE | IN_WEN | ((info & 0x30000) >> 12) | CSS_GO;
         splx(x);
@@ -255,34 +255,40 @@ down:
 }
 
 /*
+ * Drop the host ready line to mark host down.
+ * UNTESTED.
+ */
+cssdown(unit)
+	int unit;
+{
+        register struct cssdevice *addr;
+	int x;
+
+	addr = (struct cssdevice *)(cssinfo[unit]->ui_addr);
+        /* reset the imp interface. */
+        x = spl5();
+        addr->css_icsr = CSS_CLR;
+        addr->css_ocsr = CSS_CLR;
+	DELAY(100);
+	addr->css_icsr = 0;
+	addr->css_ocsr = 0;
+        splx(x);
+	return (1);
+}
+
+/*
  * Start output on an interface.
  */
-cssstart(dev)
-        dev_t dev;
+cssoutput(unit, m)
+        int unit;
+        struct mbuf *m;
 {
-        int unit = CSSUNIT(dev), info;
+        int info;
         struct uba_device *ui = cssinfo[unit];
         register struct css_softc *sc = &css_softc[unit];
         register struct cssdevice *addr;
-        struct mbuf *m;
-        u_short cmd;
 
-        if (sc->css_ic->ic_oactive)
-                goto restart;
-        
-        /*
-         * Not already active, deqeue a request and
-         * map it onto the UNIBUS.  If no more
-         * requeusts, just return.
-         */
-        IF_DEQUEUE(&sc->css_if->if_snd, m);
-        if (m == 0) {
-                sc->css_ic->ic_oactive = 0;
-                return;
-        }
         sc->css_olen = if_wubaput(&sc->css_ifuba, m);
-
-restart:
         /*
          * Have request mapped to UNIBUS for transmission.
          * Purge any stale data from the BDP, and start the output.
@@ -293,9 +299,9 @@ restart:
         info = sc->css_ifuba.ifu_w.ifrw_info;
         addr->css_oba = (u_short)info;
         addr->css_owc = -((sc->css_olen + 1) >> 1);
-        cmd = CSS_IE | OUT_ENLB | ((info & 0x30000) >> 12) | CSS_GO;
-        addr->css_ocsr = cmd;
-        sc->css_ic->ic_oactive = 1;
+        addr->css_ocsr =
+	    (u_short)(CSS_IE | OUT_ENLB | ((info & 0x30000) >> 12) | CSS_GO);
+        sc->css_imp->imp_cb.ic_oactive = 1;
 }
 
 /*
@@ -308,15 +314,15 @@ cssxint(unit)
         register struct cssdevice *addr;
 
         addr = (struct cssdevice *)ui->ui_addr;
-        if (sc->css_ic->ic_oactive == 0) {
+        if (sc->css_imp->imp_cb.ic_oactive == 0) {
                 printf("css%d: stray output interrupt csr=%b\n",
 			unit, addr->css_ocsr, CSS_OUTBITS);
                 return;
         }
-        sc->css_if->if_opackets++;
-        sc->css_ic->ic_oactive = 0;
+        sc->css_imp->imp_if.if_opackets++;
+        sc->css_imp->imp_cb.ic_oactive = 0;
         if (addr->css_ocsr & CSS_ERR){
-                sc->css_if->if_oerrors++;
+                sc->css_imp->imp_if.if_oerrors++;
                 printf("css%d: output error, ocsr=%b icsr=%b\n", unit,
                         addr->css_ocsr, CSS_OUTBITS,
 			addr->css_icsr, CSS_INBITS);
@@ -325,8 +331,7 @@ cssxint(unit)
 		m_freem(sc->css_ifuba.ifu_xtofree);
 		sc->css_ifuba.ifu_xtofree = 0;
 	}
-	if (sc->css_if->if_snd.ifq_head)
-		cssstart(unit);
+	impstart(sc->css_imp);
 }
 
 /*
@@ -339,7 +344,7 @@ cssrint(unit)
         struct mbuf *m;
         int len, info;
 
-        sc->css_if->if_ipackets++;
+        sc->css_imp->imp_if.if_ipackets++;
 
         /*
          * Purge BDP; flush message if error indicated.
@@ -351,7 +356,7 @@ cssrint(unit)
         if (addr->css_icsr & CSS_ERR) {
                 printf("css%d: recv error, csr=%b\n", unit,
                     addr->css_icsr, CSS_INBITS);
-                sc->css_if->if_ierrors++;
+                sc->css_imp->imp_if.if_ierrors++;
                 sc->css_flush = 1;
         }
 
@@ -361,10 +366,10 @@ cssrint(unit)
                 goto setup;
         }
 
-        len = IMPMTU + (addr->css_iwc << 1);
-	if (len < 0 || len > IMPMTU) {
+        len = IMP_RCVBUF + (addr->css_iwc << 1);
+	if (len < 0 || len > IMP_RCVBUF) {
 		printf("css%d: bad length=%d\n", len);
-		sc->css_if->if_ierrors++;
+		sc->css_imp->imp_if.if_ierrors++;
 		goto setup;
 	}
 
@@ -372,7 +377,7 @@ cssrint(unit)
          * The offset parameter is always 0 since using
          * trailers on the ARPAnet is insane.
          */
-        m = if_rubaget(&sc->css_ifuba, len, 0, sc->css_if);
+        m = if_rubaget(&sc->css_ifuba, len, 0, &sc->css_imp->imp_if);
         if (m == 0)
                 goto setup;
         if ((addr->css_icsr & IN_EOM) == 0) {
@@ -395,7 +400,7 @@ setup:
          */
         info = sc->css_ifuba.ifu_r.ifrw_info;
         addr->css_iba = (u_short)info;
-        addr->css_iwc = - (IMPMTU >> 1);
+        addr->css_iwc = - (IMP_RCVBUF >> 1);
         addr->css_icsr =
                 IN_HRDY | CSS_IE | IN_WEN | ((info & 0x30000) >> 12) | CSS_GO;
 }

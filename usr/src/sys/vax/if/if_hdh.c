@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	7.2 (Berkeley) %G% */
+/*	@(#)if_hdh.c	7.3 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -42,6 +42,7 @@ Function:
     		networking code.
 
 Revision History:
+		Converted to 4.3, updated, UCB.
 		31-Aug-1984: V1.0 - First Implementation. A.B.
 		 6-Nov-1984: V1.1 - Supress extra "LINE DOWN" msgs. A.B.
 		13-Jan-1984: V1.2 - Add conditionals for TWG. A.B.
@@ -62,8 +63,6 @@ Revision History:
  *
  */
 
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -71,6 +70,8 @@ Revision History:
 #include "protosw.h"
 #include "socket.h"
 #include "vmmac.h"
+
+#include "../machine/pte.h"
 
 #include "../net/if.h"
 #include "../netimp/if_imp.h"
@@ -91,7 +92,7 @@ struct  uba_driver hdhdriver =
 
 #define	HDHUNIT(x)	minor(x)
 
-int	hdhinit(), hdhstart(), hdhreset();
+int	hdhinit(), hdhoutput(), hdhreset();
 
 /*
  * "Lower half" of IMP interface driver.
@@ -152,8 +153,7 @@ struct	hdh_sioq {		/* Start I/O queue head structure */
 };
 
 struct	hdh_softc {		/* HDH device dependent structure */
-	struct ifnet	*hdh_if;	/* pointer to IMP's ifnet struct */
-	struct impcb	*hdh_ic;	/* data structure shared with IMP */
+	struct imp_softc *hdh_imp;	/* pointer to IMP's imp_softc struct */
 	struct ifuba	hdh_ifuba[NHDHCH]; /* UNIBUS resources */
 	struct hdh_chan hdh_chan[2*NHDHCH]; /* HDX HDH channels */
 	struct hdh_sioq hdh_sioq;	/* start i/o queue */
@@ -211,18 +211,12 @@ hdhattach(ui)
 {
 	register struct hdh_softc *sc = &hdh_softc[ui->ui_unit];
 	register struct impcb *ip;
-	struct ifimpcb {
-		struct	ifnet ifimp_if;
-		struct	impcb ifimp_impcb;
-	} *ifimp;
 
-	if ((ifimp = (struct ifimpcb *)impattach(ui, hdhreset)) == 0)
+	if ((sc->hdh_imp = impattach(ui, hdhreset)) == 0)
 		return;;
-	sc->hdh_if = &ifimp->ifimp_if;
-	ip = &ifimp->ifimp_impcb;
-	sc->hdh_ic = ip;
+	ip = &sc->hdh_imp->imp_cb;
 	ip->ic_init = hdhinit;
-	ip->ic_start = hdhstart;
+	ip->ic_output = hdhoutput;
 	sc->hdh_ifuba[ui->ui_unit].ifu_flags = UBA_CANTWAIT;
 }
 
@@ -243,9 +237,9 @@ int unit, uban;
 	    || (ui->ui_ubanum != uban))
 		return;
 	printf(" hdh%d", unit);
-	sc->hdh_if->if_flags &= ~IFF_RUNNING;
+	sc->hdh_imp->imp_if.if_flags &= ~IFF_RUNNING;
 	sc->hdh_flags = 0;
-	(*sc->hdh_if->if_init)(unit);
+	(*sc->hdh_imp->imp_if.if_init)(sc->hdh_imp->imp_if.if_unit);
 }
 
 /*
@@ -297,9 +291,10 @@ int unit;
 	/*
 	 * Alloc uba resources
 	 */
-	for(i=0;i<NHDHCH;i++) {
+	if ((sc->hdh_imp->imp_if.if_flags & IFF_RUNNING) == 0)
+	    for(i=0;i<NHDHCH;i++) {
 		if (if_ubainit(&sc->hdh_ifuba[i], ui->ui_ubanum, 0,
-		    (int)btoc(IMPMTU + 2)) == 0) {
+		    (int)btoc(IMP_RCVBUF)) == 0) {
 			printf("hdh%d: cannot get chan %d uba resources\n",
 				unit, i);
 			ui->ui_alive = 0;
@@ -307,18 +302,18 @@ int unit;
 		}
 	}
 
-	sc->hdh_if->if_flags |= IFF_RUNNING;
+	sc->hdh_imp->imp_if.if_flags |= IFF_RUNNING;
 	sc->hdh_flags = HDH_STARTED;
 
 	/*
 	 * hang a supervisor read (for line status)
 	 */
-	hdh_iorq(unit, HDHSUPR, IMPMTU + 2, HDHRDB);
+	hdh_iorq(unit, HDHSUPR, IMP_RCVBUF, HDHRDB);
 
 	/*
 	 * hang a data read
 	 */
-	hdh_iorq(unit, HDHDATR, IMPMTU + 2, HDHRDB+HDHSTR);
+	hdh_iorq(unit, HDHDATR, IMP_RCVBUF, HDHRDB+HDHSTR);
 
 	/*
 	 * bring up line to IMP
@@ -332,12 +327,11 @@ int unit;
 /*
  * Start an output operation on an mbuf.
  */
-hdhstart(dev)
-dev_t dev;
+hdhoutput(unit, m)
+	int unit;
+	struct mbuf *m;
 {
-	int unit = HDHUNIT(dev);
 	register struct hdh_softc *sc = &hdh_softc[unit];
-	register struct mbuf *m;
         int len;
 
 	/*
@@ -345,24 +339,18 @@ dev_t dev;
 	 * start sending a new packet.
 	 */
 
-	if (sc->hdh_ic->ic_oactive) {
+	if (sc->hdh_imp->imp_cb.ic_oactive) {
 		printf("hdh%d: start on active unit\n", unit);
 		return;
 	}
 
 	if ((sc->hdh_flags & HDH_UP) == 0) {
-		sc->hdh_ic->ic_oactive = 0;	/* Link not up, can't xmit */
-		return;
-	}
-
-	IF_DEQUEUE(&sc->hdh_if->if_snd, m);
-	if (m == 0) {
-		sc->hdh_ic->ic_oactive = 0;
+		/* Link not up, can't xmit */
 		return;
 	}
 
 	len = if_wubaput(&sc->hdh_ifuba[DATA], m);	/* copy data to mapped mem */
-	sc->hdh_ic->ic_oactive = 1;
+	sc->hdh_imp->imp_cb.ic_oactive = 1;
 
 	hdh_iorq(unit, HDHDATW, len, HDHWRT+HDHEOS);
 }
@@ -521,9 +509,9 @@ int unit;
 		daterr:
 			printf("lcn=%d func=%x\n", lcn, hc->hc_func);
 			if (hc->hc_func & HDHRDB)
-				sc->hdh_if->if_ierrors++;
+				sc->hdh_imp->imp_if.if_ierrors++;
 			else
-				sc->hdh_if->if_oerrors++;
+				sc->hdh_imp->imp_if.if_oerrors++;
 		}
 
 		hc->hc_flags &= ~HCBUSY;
@@ -565,23 +553,23 @@ int unit, lcn, cc, rcnt;
 			/*
 			 * Queue good packet for input 
 			 */
-			sc->hdh_if->if_ipackets++;
+			sc->hdh_imp->imp_if.if_ipackets++;
 			m = if_rubaget(&sc->hdh_ifuba[lcn>>1], rcnt, 0,
-				sc->hdh_if);
+				&sc->hdh_imp->imp_if);
 			impinput(unit, m);
 		}
 
 		/* hang a new data read */
 
-		hdh_iorq(unit, lcn, IMPMTU + 2, HDHRDB+HDHSTR);
+		hdh_iorq(unit, lcn, IMP_RCVBUF, HDHRDB+HDHSTR);
 
 	} else {
 		/*
 		 * fire up next output
 		 */
-		sc->hdh_if->if_opackets++;
-		sc->hdh_ic->ic_oactive = 0;
-		hdhstart(unit);		
+		sc->hdh_imp->imp_if.if_opackets++;
+		sc->hdh_imp->imp_cb.ic_oactive = 0;
+		impstart(sc->hdh_imp->imp_if.if_unit);
 	}
 }
 
@@ -613,7 +601,7 @@ int unit, lcn, cc;
 			case HDHLNUP:
 				printf("hdh%d: LINE UP\n", unit);
 				sc->hdh_flags |= HDH_UP;
-				hdhstart(unit);
+				impstart(sc->hdh_imp->imp_if.if_unit);
 				break;
 	
 			case HDHLNDN:
@@ -649,7 +637,7 @@ int unit, lcn, cc;
 
 		/* hang a new supr read */
 
-		hdh_iorq(unit, HDHSUPR, IMPMTU + 2, HDHRDB+HDHSTR);
+		hdh_iorq(unit, HDHSUPR, IMP_RCVBUF, HDHRDB+HDHSTR);
 	} 
 }
 
