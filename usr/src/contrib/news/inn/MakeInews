@@ -1,0 +1,117 @@
+#! /bin/sh
+##  $Revision: 1.10 $
+##  Script to build an easy-to-ship single directory that contains
+##  everything needed to build inews on a machine.
+
+##  Optional first argument is the destination architecture, like "sun4"
+DIR=inews.${1-dist}
+if [ -d ${DIR} ] ; then
+    echo ${DIR} exists!
+    exit 1
+fi
+mkdir ${DIR}
+
+##  Copy the files.
+for I in \
+	config/subst.c config/subst.sh config/config.data \
+	doc/distrib.pats.5 doc/inews.1 doc/inn.conf.5 \
+	doc/moderators.5 \
+	frontends/inews.c \
+	include/clibrary.h include/configdata.h include/libinn.h \
+	include/macros.h include/mystring.h include/mymemory.h \
+	include/nntp.h include/paths.h \
+	lib/cleanfrom.c lib/clientactive.c lib/defdist.c lib/genid.c \
+	lib/getconfig.c lib/parsedate.y lib/getfqdn.c lib/getmodaddr.c \
+	lib/gettime.c lib/localopen.c lib/radix32.c lib/readin.c \
+	lib/remopen.c lib/sendarticle.c lib/sendpass.c lib/strerror.c \
+	lib/wildmat.c lib/xfopena.c lib/xmemerr.c lib/xmalloc.c lib/xrealloc.c \
+	site/distrib.pats site/inn.conf site/moderators site/passwd.nntp ; do \
+    cp $I ${DIR}
+done
+
+##  Write the Makefile.  We duplicate the RCS revision string of the
+##  script into the Makefile on purpose.
+cat <<\EOF >${DIR}/Makefile
+##  $Revision: 1.10 $
+SHELL	= /bin/sh
+MAKE	= make
+
+##  Configuration dependencies -- edit as appropriate
+DEFS	=
+CFLAGS	= $(DEFS) -g
+LDFLAGS	= -Bstatic
+LINTFLAGS=-b -h $(DEFS)
+
+##  Manual pages -- install as appropriate for your system
+DOC	= distrib.pats.5 inews.1 moderators.5 inn.conf.5
+
+##  Configuration files -- install in /usr/lib/news
+CONF	= distrib.pats inn.conf moderators passwd.nntp
+
+##  Program sources.
+HEADERS	= \
+	clibrary.h configdata.h libinn.h macros.h nntp.h paths.h
+SOURCES	= \
+	cleanfrom.c clientactive.c defdist.c genid.c getconfig.c getfqdn.c \
+	getmodaddr.c gettime.c localopen.c parsedate.c radix32.c readin.c \
+	remopen.c sendarticle.c sendpass.c strerror.c wildmat.c xfopena.c \
+	xmalloc.c xmemerr.c xrealloc.c
+
+OBJECTS	= \
+	cleanfrom.o clientactive.o defdist.o genid.o getconfig.o getfqdn.o \
+	getmodaddr.o gettime.o localopen.o parsedate.o radix32.o readin.o \
+	remopen.o sendarticle.o sendpass.o strerror.o wildmat.o xfopena.o \
+	xmalloc.o xmemerr.o xrealloc.o
+
+##  First target, just compile everything.
+all:		inews $(DOC) $(CONF)
+	date >all
+
+##  Edit these lines as appropriate for your system
+install:	all
+	cp inews /usr/lib/news/inews
+	cp $(CONF) /usr/lib/news
+	cp inews.1 /usr/man/man1
+	cp moderators.5 /usr/man/man5
+	cp inn.conf.5 /usr/man/man5
+
+##  Clean up, remove non-essentials.
+clobber clean:
+	rm -f inews core tags lint a.out *.o
+	rm -f parsedate.c
+
+lint:           inews
+	lint $(LINTFLAGS) inews.c $(SOURCES) >lint
+
+inews:		inews.o $(OBJECTS)
+	rm -f inews
+	$(CC) $(LDFLAGS) -o inews $(CFLAGS) inews.o $(OBJECTS)
+
+parsedate.c:              parsedate.y
+	@echo Expect 6 shift/reduce conflicts
+	$(YACC) parsedate.y
+	@mv y.tab.c parsedate.c
+
+subst:		subst.c subst.sh
+	make c || make sh || { rm -f subst ; echo Failed 1>&2 ; }
+
+config:		subst config.data $(DOC) $(HEADERS) Makefile
+	./subst -f config.data $(DOC) $(HEADERS) Makefile
+	date >config
+
+c:
+	@rm -f subst
+	$(CC) -o subst subst.c
+sh:
+	@rm -f subst
+	cp subst.sh subst
+	chmod +x subst
+
+##  Dependencies.  Default list, below, is probably good enough.
+depend:         Makefile $(SOURCES)
+	makedepend $(DEFS) $(SOURCES)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+$(OBJECTS):	$(HEADERS)
+inews.o:	$(HEADERS)
+EOF
