@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.19 82/06/20";
+static char sccsid[] = "@(#)routed.c	4.20 82/06/21";
 #endif
 
 /*
@@ -277,6 +277,7 @@ addrouteforif(ifp)
 	struct sockaddr_in net;
 	struct sockaddr *dst;
 	int state, metric;
+	struct rt_entry *rt;
 
 	if (ifp->int_flags & IFF_POINTOPOINT)
 		dst = &ifp->int_dstaddr;
@@ -286,9 +287,11 @@ addrouteforif(ifp)
 		net.sin_addr = if_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
-	if (rtlookup(dst) == 0)
-		rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		  ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
+	rt = rtlookup(dst);
+	rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
+	if (rt)
+		rtdelete(rt);
 }
 
 /*
