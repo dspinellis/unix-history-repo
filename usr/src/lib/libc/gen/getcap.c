@@ -57,8 +57,8 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 #define	MAX_RECURSION	32		/* maximum getent recursion */
 #define	SFRAG		100		/* cgetstr mallocs in SFRAG chunks */
 
-#define REFERENCE	(char)0
-#define RECORD		(char)1
+#define RECOK	(char)0
+#define TCERR	(char)1
 
 static size_t	 topreclen;	/* toprec length */
 static char	*toprec;	/* Additional record specified by cgetset() */
@@ -252,11 +252,9 @@ getent(cap, len, db_array, fd, name, depth, nfield)
 				retval = cdbget(capdbp, &record, name);
 				if (capdbp->close(capdbp) < 0)
 					return (-2);
-				if (retval < 0)
-					return (retval);
-				rp = record + strlen(record) + 1;
-				myfd = 0;
-				goto tc_exp;
+				*cap = malloc (strlen(record) + 1);
+				strcpy(*cap, record);
+				return (retval);
 			} else {
 				fd = open(*db_p, O_RDONLY, 0);
 				if (fd < 0) {
@@ -424,9 +422,16 @@ tc_exp:	{
 			newicap = icap;		/* Put into a register. */
 			newilen = ilen;
 			if (iret != 0) {
-				/* couldn't resolve tc */
+				/* an error */
+				if (iret < -1) {
+					if (myfd)
+						(void)close(fd);
+					free(record);
+					return (iret);
+				}
 				if (iret == 1)
 					tc_not_resolved = 1;
+				/* couldn't resolve tc */
 				if (iret == -1) {
 					*(s - 1) = ':';			
 					scan = s - 1;
@@ -434,13 +439,7 @@ tc_exp:	{
 					continue;
 					
 				}
-				/* an error */
-				if (myfd)
-					(void)close(fd);
-				free(record);
-				return (iret);
 			}
-
 			/* not interested in name field of tc'ed record */
 			s = newicap;
 			for (;;)
@@ -535,30 +534,36 @@ cdbget(capdbp, bp, name)
 	key.data = name;
 	key.size = strlen(name) + 1;
 
+
+	/* 
+	 * Get the reference.
+	 */
 	if ((st = capdbp->get(capdbp, &key, &data, 0)) < 0)
 		return(-2);
 	if (st == 1)
 		return(-1);
 
-	if (((char *)(data.data))[0] == RECORD) {
-		*bp = &((char *)(data.data))[1];
-		return(0);
-	}
 	if ((buf = malloc(data.size - 1)) == NULL)
 		return(-2);
 	
-	strcpy(buf, &((char *)(data.data))[1]);
+	strcpy(buf, (char *)(data.data));
 	
 	key.data = buf;
 	key.size = data.size - 1;
 
+	/*
+	 * Get the record.
+	 */
 	if (capdbp->get(capdbp, &key, &data, 0) < 0) {
 		free(buf);
 		return(-2);
 	}
 	free(buf);
 	*bp = &((char *)(data.data))[1];
-	return(0);
+	if (((char *)(data.data))[0] == TCERR)
+		return 1;
+	else
+		return 0;
 }
 
 
