@@ -22,14 +22,18 @@ int argc;
 char **argv;
 {
 	char **ptr;
+	float f;
 
-	argv++;
-	ptr = needs_f;
-	while( *ptr != 0 ) {
-		if( strcmp( *ptr++, *argv ) == 0 )
-		{
-			printf("-f");
-			exit(0);
+	if (sizeof (f + f) != sizeof f)
+	{
+		argv++;
+		ptr = needs_f;
+		while( *ptr != 0 ) {
+			if( strcmp( *ptr++, *argv ) == 0 )
+			{
+				printf("-f");
+				exit(0);
+			}
 		}
 	}
 	printf(" ");
