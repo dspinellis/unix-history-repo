@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)bad144.c	4.6 (Berkeley) 83/07/26";
+static	char *sccsid = "@(#)bad144.c	4.7 (Berkeley) 83/07/27";
 #endif
 
 /*
@@ -231,14 +231,12 @@ format(fd, dp, blk)
 	}
 	if (fp->f_routine)
 		(*fp->f_routine)(fp, dp, blk, buf);
-	printf("formatting blk %d...", blk);
 	if (lseek(fd, (long)blk * 512, L_SET) < 0)
 		Perror("lseek");
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
 	if (write(fd, buf, fp->f_bufsize) != fp->f_bufsize)
 		Perror("write");
-	printf("Done..\n");
 }
 
 Perror(op)
