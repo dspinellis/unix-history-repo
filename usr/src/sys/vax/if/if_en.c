@@ -1,4 +1,4 @@
-/*	if_en.c	4.53	82/04/07	*/
+/*	if_en.c	4.54	82/04/10	*/
 
 #include "en.h"
 #include "imp.h"
@@ -29,6 +29,7 @@
 #include "../net/ip_var.h"
 #include "../net/pup.h"
 #include "../net/route.h"
+#include <errno.h>
 
 #define	ENMTU	(1024+512)
 
@@ -453,7 +454,7 @@ enoutput(ifp, m0, dst)
 	struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	int type, dest, s;
+	int type, dest, s, error;
 	register struct mbuf *m = m0;
 	register struct en_header *en;
 	register int off;
@@ -464,8 +465,10 @@ COUNT(ENOUTPUT);
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		if (dest & 0x00ffff00)
+		if (dest & 0x00ffff00) {
+			error = EPERM;		/* ??? */
 			goto bad;
+		}
 		dest = (dest >> 24) & 0xff;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
@@ -492,8 +495,8 @@ COUNT(ENOUTPUT);
 	default:
 		printf("en%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
-		m_freem(m0);
-		return (0);
+		error = EAFNOSUPPORT;
+		goto bad;
 	}
 
 gottrailertype:
@@ -517,8 +520,8 @@ gottype:
 	    MMINOFF + sizeof (struct en_header) > m->m_off) {
 		m = m_get(M_DONTWAIT);
 		if (m == 0) {
-			m_freem(m0);
-			return (0);
+			error = ENOBUFS;
+			goto bad;
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
@@ -539,17 +542,20 @@ gottype:
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-		goto bad;
+		error = ENOBUFS;
+		goto qfull;
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
 		enstart(ifp->if_unit);
 	splx(s);
-	return (1);
-bad:
-	m_freem(m);
-	splx(s);
 	return (0);
+qfull:
+	m0 = m;
+	splx(s);
+bad:
+	m_freem(m0);
+	return (error);
 }
 
 #if NIMP == 0 && NEN > 0

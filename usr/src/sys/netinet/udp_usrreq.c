@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.24	82/03/29	*/
+/*	udp_usrreq.c	4.25	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -15,6 +15,7 @@
 #include "../net/ip_var.h"
 #include "../net/udp.h"
 #include "../net/udp_var.h"
+#include <errno.h>
 
 /*
  * UDP protocol implementation.
@@ -132,8 +133,10 @@ COUNT(UDP_OUTPUT);
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
 	m = m_get(M_DONTWAIT);
-	if (m == 0)
-		goto bad;
+	if (m == 0) {
+		m_freem(m0);
+		return (ENOBUFS);
+	}
 
 	/*
 	 * Fill in mbuf with extended UDP header
@@ -160,11 +163,8 @@ COUNT(UDP_OUTPUT);
 	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
-	(void) ip_output(m, (struct mbuf *)0, 0,
-	    inp->inp_socket->so_state & SS_PRIV);
-	return;
-bad:
-	m_freem(m);
+	return (ip_output(m, (struct mbuf *)0, 0,
+	    inp->inp_socket->so_state & SS_PRIV));
 }
 
 udp_usrreq(so, req, m, addr)
@@ -174,7 +174,7 @@ udp_usrreq(so, req, m, addr)
 	caddr_t addr;
 {
 	struct inpcb *inp = sotoinpcb(so);
-	int error;
+	int error = 0;
 
 COUNT(UDP_USRREQ);
 	if (inp == 0 && req != PRU_ATTACH)
@@ -184,9 +184,8 @@ COUNT(UDP_USRREQ);
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		error = in_pcbattach(so, &udb, 2048, 2048, (struct sockaddr_in *)addr);
-		if (error)
-			return (error);
+		error = in_pcbattach(so, &udb, 2048, 2048,
+				(struct sockaddr_in *)addr);
 		break;
 
 	case PRU_DETACH:
@@ -199,9 +198,8 @@ COUNT(UDP_USRREQ);
 		if (inp->inp_faddr.s_addr)
 			return (EISCONN);
 		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
-		if (error)
-			return (error);
-		soisconnected(so);
+		if (error == 0)
+			soisconnected(so);
 		break;
 
 	case PRU_ACCEPT:
@@ -227,12 +225,12 @@ COUNT(UDP_USRREQ);
 				return (EISCONN);
 			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
 			if (error)
-				return (error);
+				break;
 		} else {
 			if (inp->inp_faddr.s_addr == 0)
 				return (ENOTCONN);
 		}
-		udp_output(inp, m);
+		error = udp_output(inp, m);
 		if (addr) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
@@ -253,5 +251,5 @@ COUNT(UDP_USRREQ);
 	default:
 		panic("udp_usrreq");
 	}
-	return (0);
+	return (error);
 }
