@@ -78,6 +78,13 @@ static char sccsid[] = "@(#)bdes.c	5.5 (Berkeley) 6/27/91";
  * or the technical report for a complete reference).
  */
 
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef DES
 main()
 {
@@ -85,13 +92,6 @@ main()
 	_exit(1);
 }
 #else
-
-#include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*
  * BSD and System V systems offer special library calls that do
