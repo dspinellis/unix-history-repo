@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -826,16 +826,16 @@ struct sockaddr_in *dst, *gateway, *mask;
 	else
 		cmd = RTM_DELETE;
 	m_rtmsg.m_rtm.rtm_flags = flags;
-	m_rtmsg.m_rtm.rtm_version = 1;
+	m_rtmsg.m_rtm.rtm_version = RTM_VERSION;
 	m_rtmsg.m_rtm.rtm_seq = ++seq;
 	m_rtmsg.m_dst = *dst;
 	m_rtmsg.m_gateway = *gateway;
+	m_rtmsg.m_rtm.rtm_addrs = RTA_DST | RTA_GATEWAY;
 	if (mask) {
 		m_rtmsg.m_mask = *mask;
-		m_rtmsg.m_rtm.rtm_count = 3;
+		m_rtmsg.m_rtm.rtm_addrs = RTA_NETMASK;
 	} else {
 		len -= sizeof (*mask);
-		m_rtmsg.m_rtm.rtm_count = 2;
 	}
 	m_rtmsg.m_rtm.rtm_msglen = len;
 	m_rtmsg.m_rtm.rtm_type = cmd;
@@ -889,11 +889,11 @@ register struct rt_msghdr *rtm;
 {
 	char *cp;
 	register struct sockaddr *sa;
-	int i = rtm->rtm_count;
+	int i;
 
 	if (verbose == 0)
 		return;
-	if (rtm->rtm_version != 1) {
+	if (rtm->rtm_version != RTM_VERSION) {
 	    printf("routing message version %d not understood\n",
 							rtm->rtm_version);
 	} else {
@@ -902,15 +902,20 @@ register struct rt_msghdr *rtm;
 		    rtm->rtm_seq, rtm->rtm_errno); 
 	    bprintf(stdout, rtm->rtm_flags,
 		"\1UP\2GATEWAY\3HOST\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT");
-	    printf("\nlocks: "); bprintf(stdout, rtm->rtm_locks, metricnames);
+	    printf("\nlocks: "); bprintf(stdout, rtm->rtm_rmx.rmx_locks, metricnames);
 	    printf(" inits: "); bprintf(stdout, rtm->rtm_inits, metricnames);
 	    printf("\n%d sockaddrs: ", i);
+	    bprintf(stdout, rtm->rtm_addrs,
+		"\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR");
+	    putchar('\n');
 	    cp = ((char *)(rtm + 1));
-	    while (i-- > 0) {
-		    sa = (struct sockaddr *)cp;
-		    printf(" %s", routename(sa));
-		    cp = ROUNDUP(cp + sa->sa_len);
-	    }
+	    if (rtm->rtm_addrs)
+		for (i = 1; i; i <<= 1)
+		    if (i & rtm->rtm_addrs) {
+			    sa = (struct sockaddr *)cp;
+			    printf(" %s", routename(sa));
+			    cp = ROUNDUP(cp + sa->sa_len);
+		    }
 	    putchar('\n');
 	}
 	fflush(stdout);
