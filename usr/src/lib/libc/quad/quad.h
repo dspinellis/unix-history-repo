@@ -2,74 +2,91 @@
  * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
  *
- *	@(#)quad.h	5.4 (Berkeley) %G%
+ * %sccs.include.redist.c%
  */
 
-/* Copyright (C) 1989, 1992 Free Software Foundation, Inc.
+/*
+ * Quad arithmetic.
+ *
+ * This library makes the following assumptions:
+ *
+ *  - The type long long (aka quad) exists.
+ *
+ *  - A quad variable is exactly twice as long as `long'.
+ *
+ *  - The machine's arithmetic is two's complement.
+ *
+ * All other machine parameters are encapsulated here.  This library can
+ * provide 128-bit arithmetic on a machine with 128-bit quads and 64-bit
+ * longs, for instance, or 96-bit arithmetic on machines with 48-bit longs.
+ */
 
-This file is part of GNU CC.
-
-GNU CC is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
-any later version.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with GNU CC; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
-
-/* As a special exception, if you link this library with files
-   compiled with GCC to produce an executable, this does not cause
-   the resulting executable to be covered by the GNU General Public License.
-   This exception does not however invalidate any other reasons why
-   the executable file might be covered by the GNU General Public License.  */
-
-/* More subroutines needed by GCC output code on some machines.  */
-/* Compile this one with gcc.  */
-#include <sys/param.h>
-
-#define	BITS_PER_WORD	(NBBY * sizeof(long))
-
-/* We need this union to unpack/pack longlongs, since we don't have
-   any arithmetic yet.  Incoming long long parameters are stored
-   into the `ll' field, and the unpacked result is read from the struct
-   longlong.  */
-
-typedef union {
-	long long ll;
-	struct { long val[2]; } s;
-} long_long;
-#define high val[_QUAD_HIGHWORD]
-#define low val[_QUAD_LOWWORD]
-
-#define HIGH _QUAD_HIGHWORD
-#define LOW _QUAD_LOWWORD
-
-/* Internally, long long ints are strings of unsigned shorts in the
-   order determined by BYTE_ORDER.  */
-
-#define B 0x10000
-#define low16 (B - 1)
-
-#if BYTE_ORDER == BIG_ENDIAN
-#define big_end(n)	0 
-#define little_end(n)	((n) - 1)
-#define next_msd(i)	((i) - 1)
-#define next_lsd(i)	((i) + 1)
-#define is_not_msd(i,n)	((i) >= 0)
-#define is_not_lsd(i,n)	((i) < (n))
+#ifndef SPARC_XXX
+#include <machine/endian.h>		/* see #else case */
 #else
-#define big_end(n)	((n) - 1)
-#define little_end(n)	0 
-#define next_msd(i)	((i) + 1)
-#define next_lsd(i)	((i) - 1)
-#define is_not_msd(i,n)	((i) < (n))
-#define is_not_lsd(i,n)	((i) >= 0)
+/*
+ * These are for testing and for illustration: we expect <machine/endian.h>
+ * to define these.  Actually, these match most big-endian machines; for
+ * most little-endian machines, all you need do is exchange _QUAD_HIGHWORD
+ * and _QUAD_LOWWORD.
+ */
+#define _QUAD_HIGHWORD 0
+#define _QUAD_LOWWORD 1
 #endif
+
+typedef long long quad;
+typedef unsigned long long u_quad;
+typedef unsigned long u_long;
+
+#include <limits.h>
+/*
+ * We expect something like these from <limits.h>, which should be provided on
+ * any ANSI C system.
+#define	USHRT_MAX	0xffff
+#define	CHAR_BIT	8
+ */
+
+/*
+ * Depending on the desired operation, we view a `long long' (aka quad) in
+ * one or more of the following formats.
+ */
+union uu {
+	quad	q;		/* as a (signed) quad */
+	quad	uq;		/* as an unsigned quad */
+	long	sl[2];		/* as two signed longs */
+	u_long	ul[2];		/* as two unsigned longs */
+};
+
+/*
+ * Define high and low longwords.
+ */
+#define	H		_QUAD_HIGHWORD
+#define	L		_QUAD_LOWWORD
+
+/*
+ * Total number of bits in a quad and in the pieces that make it up.
+ * These are used for shifting, and also below for halfword extraction
+ * and assembly.
+ */
+#define	QUAD_BITS	(sizeof(quad) * CHAR_BIT)
+#define	LONG_BITS	(sizeof(long) * CHAR_BIT)
+#define	HALF_BITS	(sizeof(long) * CHAR_BIT / 2)
+
+/*
+ * Extract high and low shortwords from longword, and move low shortword of
+ * longword to upper half of long, i.e., produce the upper longword of
+ * ((quad)(x) << (number_of_bits_in_long/2)).  (`x' must actually be u_long.)
+ *
+ * These are used in the multiply code, to split a longword into upper
+ * and lower halves, and to reassemble a product as a quad, shifted left
+ * (sizeof(long)*CHAR_BIT/2).
+ */
+#define	HHALF(x)	((x) >> HALF_BITS)
+#define	LHALF(x)	((x) & ((1 << HALF_BITS) - 1))
+#define	LHUP(x)		((x) << HALF_BITS)
+
+extern u_quad __qdivrem(u_quad u, u_quad v, u_quad *rem);

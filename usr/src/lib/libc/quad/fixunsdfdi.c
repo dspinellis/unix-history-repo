@@ -2,65 +2,67 @@
  * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fixunsdfdi.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fixunsdfdi.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-/* Copyright (C) 1989, 1992 Free Software Foundation, Inc.
+#include "quad.h"
 
-This file is part of GNU CC.
+#ifndef UQUAD_MAX	/* should be in <limits.h> maybe? */
+#define	UQUAD_MAX ((u_quad)0 - 1)
+#endif
 
-GNU CC is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
-any later version.
+#define	ONE_FOURTH	(1 << (LONG_BITS - 2))
+#define	ONE_HALF	(ONE_FOURTH * 2.0)
+#define	ONE		(ONE_FOURTH * 4.0)
 
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with GNU CC; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
-
-/* As a special exception, if you link this library with files
-   compiled with GCC to produce an executable, this does not cause
-   the resulting executable to be covered by the GNU General Public License.
-   This exception does not however invalidate any other reasons why
-   the executable file might be covered by the GNU General Public License.  */
-
-#include "longlong.h"
-
-#define HIGH_WORD_COEFF (((long long) 1) << BITS_PER_WORD)
-
-long long
-__fixunsdfdi (a)
-     double a;
+/*
+ * Convert double to (unsigned) quad.
+ * Not sure what to do with negative numbers---for now, anything out
+ * of range becomes UQUAD_MAX.
+ */
+u_quad
+__fixunsdfdi(double x)
 {
-  double b;
-  unsigned long long v;
+	double toppart;
+	union uu t;
 
-  if (a < 0)
-    return 0;
-
-  /* Compute high word of result, as a flonum.  */
-  b = (a / HIGH_WORD_COEFF);
-  /* Convert that to fixed (but not to long long!),
-     and shift it into the high word.  */
-  v = (unsigned long int) b;
-  v <<= BITS_PER_WORD;
-  /* Remove high part from the double, leaving the low part as flonum.  */
-  a -= (double)v;
-  /* Convert that to fixed (but not to long long!) and add it in.
-     Sometimes A comes out negative.  This is significant, since
-     A has more bits than a long int does.  */
-  if (a < 0)
-    v -= (unsigned long int) (- a);
-  else
-    v += (unsigned long int) a;
-  return v;
+	if (x < 0)
+		return (UQUAD_MAX);	/* ??? should be 0?  ERANGE??? */
+	if (x >= UQUAD_MAX)
+		return (UQUAD_MAX);
+	/*
+	 * Get the upper part of the result.  Note that the divide
+	 * may round up; we want to avoid this if possible, so we
+	 * subtract `1/2' first.
+	 */
+	toppart = (x - ONE_HALF) / ONE;
+	/*
+	 * Now build a u_quad out of the top part.  The difference
+	 * between x and this is the bottom part (this may introduce
+	 * a few fuzzy bits, but what the heck).  With any luck this
+	 * difference will be nonnegative: x should wind up in the
+	 * range [0..ULONG_MAX].  For paranoia, we assume [LONG_MIN..
+	 * 2*ULONG_MAX] instead.
+	 */
+	t.ul[H] = (unsigned long)toppart;
+	t.ul[L] = 0;
+	x -= (double)t.uq;
+	if (x < 0) {
+		t.ul[H]--;
+		x += ULONG_MAX;
+	}
+	if (x > ULONG_MAX) {
+		t.ul[H]++;
+		x -= ULONG_MAX;
+	}
+	t.ul[L] = (u_long)x;
+	return (t.uq);
 }
