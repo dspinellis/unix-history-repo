@@ -1,4 +1,4 @@
-/* in_pcb.c 4.13 81/12/11 */
+/* in_pcb.c 4.14 81/12/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,17 +66,19 @@ COUNT(IN_PCBATTACH);
 	if (sin) {
 		if (sin->sin_family != AF_INET)
 			return (EAFNOSUPPORT);
+		if (ifnet && sin->sin_addr.s_addr == 0)
+			sin->sin_addr = ifnet->if_addr;
 		ifp = if_ifwithaddr(sin->sin_addr);
-		if (ifp == 0)
-			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
 		if (lport &&
 		    in_pcblookup(head, zeroin_addr, 0, sin->sin_addr, lport))
 			return (EADDRINUSE);
 	} else {
-		ifp = if_ifwithaddr(ifnet->if_addr);
+		ifp = ifnet;
 		lport = 0;
 	}
+	if (ifp == 0)
+		return (EADDRNOTAVAIL);
 	m = m_getclr(0);
 	if (m == 0)
 		return (ENOBUFS);
