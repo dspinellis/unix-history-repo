@@ -2,18 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	1.1 (Berkeley) %G%
+.\"	@(#)3.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Results of our observations
 .NH
 Results of our observations
 .PP
-When 4.2 was first installed on several large timesharing systems
+When 4.2BSD was first installed on several large timesharing systems
 the degradation in performance was significant.
-Informal measurements showed 4.2 providing 80% of the throughput
-of 4.1 (based on load averages observed under a normal timesharing load).
+Informal measurements showed 4.2BSD providing 80% of the throughput
+of 4.1BSD (based on load averages observed under a normal timesharing load).
 Many of the initial problems found were because of programs that were
-not part of 4.1.  Using the techniques described in the previous
+not part of 4.1BSD.  Using the techniques described in the previous
 section and standard process profiling several problems were identified.
 Later work concentrated on the operation of the kernel itself.
 In this section we discuss the problems uncovered;  in the next
@@ -35,7 +35,7 @@ megabytes of memory.
 Message
 traffic is usually between users on the same machine and ranges from
 person-to-person telephone messages to per-organization distribution
-lists.  After conversion to 4.2, it was
+lists.  After conversion to 4.2BSD, it was
 immediately noticed that mail to distribution lists of 20 or more people
 caused the system load to jump by anywhere from 3 to 6 points.
 The number of processes spawned by the \fIsendmail\fP program and
@@ -49,7 +49,7 @@ showed \fIsendmail\fP as the top cpu user on the system.
 .NH 3
 Network servers
 .PP
-The network services provided in 4.2 add new capabilities to the system,
+The network services provided in 4.2BSD add new capabilities to the system,
 but are not without cost.  The system uses one daemon process to accept
 requests for each network service provided.  The presence of many
 such daemons increases the numbers of active processes and files,
@@ -82,8 +82,8 @@ entry point was called, were remarkably similar.
 These profiles turned up several bottlenecks that are
 discussed in the next section.
 Several of these were new to 4.2BSD,
-but most were caused by an overloading of a mechanism
-that worked acceptably well in previous BSD systems.
+but most were caused by overloading of mechanisms
+which worked acceptably well in previous BSD systems.
 The general conclusion from our measurements was that
 the ratio of user to system time had increased from
 45% system / 55% user in 4.1BSD to 57% system / 43% user
@@ -96,7 +96,7 @@ between 4.1BSD and 4.2BSD a suite of benchmark
 programs was constructed and run on a VAX-11/750 with 4.5 megabytes
 of physical memory and two disks on a MASSBUS controller.
 Tests were run with the machine operating in single user mode
-under both 4.1 and 4.2.   Paging was localized to the drive
+under both 4.1BSD and 4.2BSD.   Paging was localized to the drive
 where the root file system was located.
 .PP
 The benchmark programs were modeled after the Kashtan benchmarks,
@@ -163,11 +163,11 @@ vexecs1kbig	sbrk(1024), fault pages, vfork-exec ``big job''-exit-wait 1,000 time
 vexecs100kbig	sbrk(102400), fault pages, vfork-exec ``big job''-exit-wait 1,000 times
 .TE
 .ce
-Table 1. Benchmark programs.
+Table 1. Kernel Benchmark programs.
 .DE
 .KE
 .PP
-The results of these tests are shown in Table 2.  If the 4.1 results
+The results of these tests are shown in Table 2.  If the 4.1BSD results
 are scaled to reflect their being run on a VAX-11/750, they
 correspond closely to those found in [Joy80].\**
 .FS
@@ -178,11 +178,14 @@ correspond closely to those found in [Joy80].\**
 .DS L
 .TS
 center box;
+c s s s s s s s s s
 c || c s s || c s s || c s s
 c || c s s || c s s || c s s
 c || c | c | c || c | c | c || c | c | c
 l || n | n | n || n | n | n || n | n | n.
-Test	Real	User	System
+Berkeley Software Distribution UNIX Systems
+_
+Test	Elapsed Time	User Time	System Time
 \^	_	_	_
 \^	4.1	4.2	4.3	4.1	4.2	4.3	4.1	4.2	4.3
 =
@@ -217,27 +220,27 @@ vexecs1kbig	125.0	200.0	101.0	4.7	3.5	1.3	98.9	149.3	88.6
 vexecs100kbig	126.0	200.0	101.0	4.2	3.4	1.3	99.5	151.0	89.0
 .TE
 .ce
-Table 2. Benchmark results (all times in seconds).
+Table 2. Kernel Benchmark results (all times in seconds).
 .DE
 .KE
 .PP
-In studying the times we find the basic system call
-and context switching overhead have not changed significantly
-between 4.1 and 4.2.  The \fIsignocsw\fP results are caused by
+In studying the measurements we found that the basic system call
+and context switch overhead did not change significantly
+between 4.1BSD and 4.2BSD.  The \fIsignocsw\fP results were caused by
 the changes to the \fIsignal\fP interface, resulting
 in an additional subroutine invocation for each call, not
 to mention additional complexity in the system's implementation.
 .PP
 The times for the use of pipes are significantly higher under
-4.2 because of their implementation on top of the interprocess
-communication facilities.  Under 4.1 pipes were implemented
+4.2BSD because of their implementation on top of the interprocess
+communication facilities.  Under 4.1BSD pipes were implemented
 without the complexity of the socket data structures and with
 simpler code.  Further, while not obviously a factor here,
-4.2 pipes have less system buffer space provided them than
-4.1 pipes.
+4.2BSD pipes have less system buffer space provided them than
+4.1BSD pipes.
 .PP
-The exec tests shown in Table 2 were performed with 34 bytes of
-environment information under 4.1 and 40 bytes under 4.2.
+The \fIexec\fP tests shown in Table 2 were performed with 34 bytes of
+environment information under 4.1BSD and 40 bytes under 4.2BSD.
 To figure the cost of passing data through the environment,
 the execs0null and execs1knull tests were rerun with
 1065 additional bytes of data.  The results are show in Table 3.
@@ -261,9 +264,9 @@ Table 3. Benchmark results with ``large'' environment (all times in seconds).
 .DE
 .KE
 These results show that passing argument data is significantly
-slower than under 4.1: 121 ms/byte versus 93 ms/byte.  Even using
+slower than under 4.1BSD: 121 ms/byte versus 93 ms/byte.  Even using
 this factor to adjust the basic overhead of an \fIexec\fP system
-call, this facility is more costly under 4.2 than under 4.1.
+call, this facility is more costly under 4.2BSD than under 4.1BSD.
 .NH 3
 Path name translation
 .PP
@@ -319,7 +322,7 @@ _
 total	24.2 ms/call	19.2%
 .TE
 .ce
-Table 4. Call times for \fInamei\fP.
+Table 4. Call times for \fInamei\fP in 4.2BSD.
 .DE
 .KE
 .NH 3
@@ -327,6 +330,9 @@ Clock processing
 .PP
 Nearly 25% of the time spent in the kernel is spent in the clock
 processing routines.
+(This is a clear indication that to avoid sampling bias when profiling the
+kernel with our tools
+we need to drive them from an independent clock.)
 These routines are responsible for implementing timeouts,
 scheduling the processor,
 maintaining kernel statistics,
@@ -377,7 +383,7 @@ is the basic overhead for clock processing.
 .NH 3
 Process table management
 .PP
-In 4.2 there are numerous places in the kernel where a linear search
+In 4.2BSD there are numerous places in the kernel where a linear search
 of the process table is performed: 
 .IP \(bu 3
 in \fIexit\fP to locate and wakeup a process's parent;
@@ -407,12 +413,12 @@ for calculating the size of the process table is:
 nproc = 20 + 8 * maxusers
 .sp
 that means a 48 user system will have a 404 slot process table.
-With the addition of network services in 4.2, as many as a dozen
+With the addition of network services in 4.2BSD, as many as a dozen
 server processes may be maintained simply to await incoming requests.
 These servers are normally created at boot time which causes them
 to be allocated slots near the beginning of the process table.  This
-means that process table searches under 4.2 are likely to take
-significantly longer than under 4.1.  System profiling shows
+means that process table searches under 4.2BSD are likely to take
+significantly longer than under 4.1BSD.  System profiling shows
 that as much as 20% of the time spent in the kernel on a loaded
 system (a VAX-11/780) can be spent in \fIschedcpu\fP and, on average,
 5-10% of the kernel time is spent in \fIschedcpu\fP.
@@ -426,8 +432,8 @@ The trace facilities described in section 2.3 were used
 to gather statistics on the performance of the buffer cache.
 We were interested in measuring the effectiveness of the
 cache and the read-ahead policies.
-With the file system block size in 4.2 four to
-eight times that of a 4.1 file system, we were concerned
+With the file system block size in 4.2BSD four to
+eight times that of a 4.1BSD file system, we were concerned
 that large amounts of read-ahead might be performed without
 being used.  Also, we were interested in seeing if the
 rules used to size the buffer cache at boot time were severely
@@ -500,19 +506,19 @@ These measurements showed that the buffer cache was working
 effectively.  Independent tests have also showed that the size
 of the buffer cache may be reduced significantly on memory-poor
 system without severe effects;
-we have not yet tested this guess [Shannon83].
+we have not yet tested this hypothesis [Shannon83].
 .NH 3
 Network subsystem
 .PP
 The overhead associated with the 
-network facilities found in 4.2 is often
+network facilities found in 4.2BSD is often
 difficult to gauge without profiling the system.
 This is because most input processing is performed
 in modules scheduled with software interrupts.
 As a result, the system time spent performing protocol
 processing is rarely attributed to the processes that
 really receive the data.  Since the protocols supported
-by 4.2 can involve significant overhead this was a serious
+by 4.2BSD can involve significant overhead this was a serious
 concern.  Results from a profiled kernel show an average
 of 5% of the system time is spent
 performing network input and timer processing in our environment
@@ -537,11 +543,20 @@ that was well-tuned for Ethernet, but was poorly chosen for
 the ARPANET, where it causes packet fragmentation.  (The maximum
 segment size was actually negotiated upwards to a value that
 resulted in excessive fragmentation.)
+.PP
+When benchmarked in Ethernet environments the main memory buffer management
+of the network subsystem presented some performance anomalies.
+The overhead of processing small ``mbufs'' severely affected throughput for a
+substantial range of message sizes.
+In spite of the fact that most system ustilities made use of the throughput
+optimal 1024 byte size, user processes faced large degradations for some
+arbitrary sizes. This was specially true for TCP/IP transmissions [Cabrera84,
+Cabrera85].
 .NH 3
 Virtual memory subsystem
 .PP
 We ran a set of tests intended to exercise the virtual
-memory system under both 4.1 and 4.2.
+memory system under both 4.1BSD and 4.2BSD.
 The tests are described in Table 6.
 The test programs dynamically allocated
 a 7.3 Megabyte array (using \fIsbrk\fP\|(2)) then referenced
@@ -577,20 +592,20 @@ Table 6. Paging benchmark programs.
 .PP
 The results in Table 7 show how the additional
 memory requirements
-of 4.2 can generate more work for the paging system.
-Under 4.1,
+of 4.2BSD can generate more work for the paging system.
+Under 4.1BSD,
 the system used 0.5 of the 4.5 megabytes of physical memory
 on the test machine;
-under 4.2 it used nearly 1 megabyte of physical memory.\**
+under 4.2BSD it used nearly 1 megabyte of physical memory.\**
 .FS
-\** The 4.1 system used for testing was really a 4.1a 
+\** The 4.1BSD system used for testing was really a 4.1a 
 system configured
 with networking facilities and code to support
 remote file access.  The
-4.2 system also included the remote file access code.
+4.2BSD system also included the remote file access code.
 Since both
 systems would be larger than similarly configured ``vanilla''
-4.1 or 4.2 system, we consider out conclusions to still be valid.
+4.1BSD or 4.2BSD system, we consider out conclusions to still be valid.
 .FE
 This resulted in more page faults and, hence, more system time.
 To establish a common ground on which to compare the paging

@@ -1,8 +1,8 @@
-.\" Copyright (c) 1985 Regents of the University of California.
+.{" Copyright (c) 1985 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	1.1 (Berkeley) %G%
+.\"	@(#)5.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Functional Extensions
 .NH
@@ -123,14 +123,9 @@ a significant understanding of its operation to do such
 simple tasks as increasing the maximum process size.
 This process has been significantly improved so that the most
 common configuration parameters, such as the virtual memory sizes,
-can be specified using a single option in the configuration file\u\s-23\s0\d.
+can be specified using a single option in the configuration file.
 Standard configurations support data and stack segments
 of 17, 33 and 64 megabytes.
-.FS
-\u\s-23\s0\d The rumor that former Berkeley gurus were making significant
-incomes by consulting on how to increase the maximum process size is
-completely untrue.
-.FE
 .NH 3
 Signals
 .PP
@@ -219,7 +214,7 @@ Inconsistencies or obsolescence in these files resulted in inaccessibility of
 hosts or services.
 In 4.3BSD these files may be replaced by a network name server that can
 insure a consistent view of the name space in a multimachine environment.
-This nameserver operates in accordance with Internet standards
+This name server operates in accordance with Internet standards
 for service on the ARPANET [Mockapetris83].
 .NH 3
 System Management
@@ -234,8 +229,8 @@ merge the functions of several
 files into a single place, and allow more flexibility in the
 startup of processes such as window managers.
 .PP
-A new utility keeps the time on a group of cooperating machines
-synchronized to within 30 milliseconds.
+The new utility \fItimed\fP keeps the time on a group of cooperating machines
+(within a single LAN) synchronized to within 30 milliseconds.
 It does its corrections using a new system call that changes
 the rate of time advance without stopping or reversing the system clock.
 It normally selects one machine to act as a master.
