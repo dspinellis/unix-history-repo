@@ -4,12 +4,14 @@
 #include <time.h>
 #include <signal.h>
 #include <sgtty.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
 #define	IMPLEADERS
-#include <net/if_imp.h>
+#include <netimp/if_imp.h>
 
 #define	min(a, b)	((a) < (b) ? (a) : (b))
 
@@ -102,7 +104,7 @@ main(argc, argv)
 			argv++, argc--;;
 			continue;
 		}
-		printf("usage: prlog [ -D ] [ -c ] [ -f ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
+		printf("usage: implog [ -D ] [ -c ] [ -f ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
 		exit(2);
 	}
 	if (argc > 0)
@@ -185,9 +187,7 @@ process(l, f)
 		return;
 	}
 	ip = (struct imp_leader *)buf;
-#if vax
-	ip->il_imp = ntohs(ip->il_imp);
-#endif
+	ip->il_imp = ntohs((u_short)ip->il_imp);
 	for (mp = mtypes; mp->m_type != -1; mp++)
 		if (mp->m_type == ip->il_mtype)
 			break;
@@ -206,12 +206,12 @@ process(l, f)
 impdata(ip, cc)
 	register struct imp_leader *ip;
 {
-	printf("<%d/%d, DATA, link=", ip->il_host, ntohs(ip->il_imp));
+	printf("<%d/%d, DATA, link=", ip->il_host, ntohs((u_short)ip->il_imp));
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
 		printf("%d,", ip->il_link);
-	printf(" len=%d bytes>\n", ntohs(ip->il_length) >> 3);
+	printf(" len=%d bytes>\n", ntohs((u_short)ip->il_length) >> 3);
 	if (showcontents) {
 		register u_char *cp = ((u_char *)ip) + sizeof(*ip);
 		register int i;
@@ -272,7 +272,8 @@ impdown(ip)
 impnoop(ip)
 	register struct imp_leader *ip;
 {
-	printf("noop: host %d, imp %d\n", ip->il_host, ntohs(ip->il_imp));
+	printf("noop: host %d, imp %d\n", ip->il_host,
+		ntohs((u_short)ip->il_imp));
 }
 
 imprfnm(ip)
@@ -288,7 +289,7 @@ imprfnm(ip)
 }
 
 char *hostdead[] = {
-	"???",
+	"#0",
 	"ready-line negated",
 	"tardy receiving messages",
 	"ncc doesn't know host",
@@ -301,8 +302,8 @@ char *hostdead[] = {
 	"host stopped at a breakpoint",
 	"host down due to hardware failure",
 	"host not scheduled to be up",
-	"???",
-	"???",
+	"#13",
+	"#14",
 	"host in the process of coming up"
 };
 
@@ -393,8 +394,8 @@ impretry(ip)
 }
 
 char *notify[] = {
-	"???",
-	"???",
+	"#0",
+	"#1",
 	"connection not available",
 	"reassembly space not available at destination",
 	"message number not available",
