@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.44 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.45 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -103,27 +103,28 @@ spec_open (ap)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	dev_t dev = (dev_t)ap->a_vp->v_rdev;
+	register struct vnode *vp = ap->a_vp;
+	dev_t dev = (dev_t)vp->v_rdev;
 	register int maj = major(dev);
 	int error;
 
-	if (ap->a_vp->v_mount && (ap->a_vp->v_mount->mnt_flag & MNT_NODEV))
+	if (vp->v_mount && (vp->v_mount->mnt_flag & MNT_NODEV))
 		return (ENXIO);
 
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 
 	case VCHR:
 		if ((u_int)maj >= nchrdev)
 			return (ENXIO);
-		VOP_UNLOCK(ap->a_vp);
+		VOP_UNLOCK(vp);
 		error = (*cdevsw[maj].d_open)(dev, ap->a_mode, S_IFCHR, ap->a_p);
-		VOP_LOCK(ap->a_vp);
+		VOP_LOCK(vp);
 		return (error);
 
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
-		if (error = ufs_mountedon(ap->a_vp))
+		if (error = ufs_mountedon(vp))
 			return (error);
 		return ((*bdevsw[maj].d_open)(dev, ap->a_mode, S_IFBLK, ap->a_p));
 	}
@@ -139,7 +140,9 @@ spec_read (ap)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	struct proc *p = ap->a_uio->uio_procp;
+	register struct vnode *vp = ap->a_vp;
+	register struct uio *uio = ap->a_uio;
+ 	struct proc *p = uio->uio_procp;
 	struct buf *bp;
 	daddr_t bn, nextbn;
 	long bsize, bscale;
@@ -148,28 +151,28 @@ spec_read (ap)
 	int error = 0;
 
 #ifdef DIAGNOSTIC
-	if (ap->a_uio->uio_rw != UIO_READ)
+	if (uio->uio_rw != UIO_READ)
 		panic("spec_read mode");
-	if (ap->a_uio->uio_segflg == UIO_USERSPACE && ap->a_uio->uio_procp != curproc)
+	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
 		panic("spec_read proc");
 #endif
-	if (ap->a_uio->uio_resid == 0)
+	if (uio->uio_resid == 0)
 		return (0);
 
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 
 	case VCHR:
-		VOP_UNLOCK(ap->a_vp);
-		error = (*cdevsw[major(ap->a_vp->v_rdev)].d_read)
-			(ap->a_vp->v_rdev, ap->a_uio, ap->a_ioflag);
-		VOP_LOCK(ap->a_vp);
+		VOP_UNLOCK(vp);
+		error = (*cdevsw[major(vp->v_rdev)].d_read)
+			(vp->v_rdev, uio, ap->a_ioflag);
+		VOP_LOCK(vp);
 		return (error);
 
 	case VBLK:
-		if (ap->a_uio->uio_offset < 0)
+		if (uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(ap->a_vp->v_rdev)].d_ioctl)(ap->a_vp->v_rdev, DIOCGPART,
+		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
 		    (caddr_t)&dpart, FREAD, p) == 0) {
 			if (dpart.part->p_fstype == FS_BSDFFS &&
 			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
@@ -178,26 +181,26 @@ spec_read (ap)
 		}
 		bscale = bsize / DEV_BSIZE;
 		do {
-			bn = (ap->a_uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
-			on = ap->a_uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), ap->a_uio->uio_resid);
-			if (ap->a_vp->v_lastr + bscale == bn) {
+			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
+			on = uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			if (vp->v_lastr + bscale == bn) {
 				nextbn = bn + bscale;
-				error = breadn(ap->a_vp, bn, (int)bsize, &nextbn,
+				error = breadn(vp, bn, (int)bsize, &nextbn,
 					(int *)&bsize, 1, NOCRED, &bp);
 			} else
-				error = bread(ap->a_vp, bn, (int)bsize, NOCRED, &bp);
-			ap->a_vp->v_lastr = bn;
+				error = bread(vp, bn, (int)bsize, NOCRED, &bp);
+			vp->v_lastr = bn;
 			n = MIN(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
 			}
-			error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
+			error = uiomove(bp->b_un.b_addr + on, n, uio);
 			if (n + on == bsize)
 				bp->b_flags |= B_AGE;
 			brelse(bp);
-		} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
+		} while (error == 0 && uio->uio_resid > 0 && n != 0);
 		return (error);
 
 	default:
@@ -215,7 +218,9 @@ spec_write (ap)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	struct proc *p = ap->a_uio->uio_procp;
+	register struct vnode *vp = ap->a_vp;
+	register struct uio *uio = ap->a_uio;
+	struct proc *p = uio->uio_procp;
 	struct buf *bp;
 	daddr_t bn;
 	int bsize, blkmask;
@@ -224,28 +229,28 @@ spec_write (ap)
 	int error = 0;
 
 #ifdef DIAGNOSTIC
-	if (ap->a_uio->uio_rw != UIO_WRITE)
+	if (uio->uio_rw != UIO_WRITE)
 		panic("spec_write mode");
-	if (ap->a_uio->uio_segflg == UIO_USERSPACE && ap->a_uio->uio_procp != curproc)
+	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
 		panic("spec_write proc");
 #endif
 
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 
 	case VCHR:
-		VOP_UNLOCK(ap->a_vp);
-		error = (*cdevsw[major(ap->a_vp->v_rdev)].d_write)
-			(ap->a_vp->v_rdev, ap->a_uio, ap->a_ioflag);
-		VOP_LOCK(ap->a_vp);
+		VOP_UNLOCK(vp);
+		error = (*cdevsw[major(vp->v_rdev)].d_write)
+			(vp->v_rdev, uio, ap->a_ioflag);
+		VOP_LOCK(vp);
 		return (error);
 
 	case VBLK:
-		if (ap->a_uio->uio_resid == 0)
+		if (uio->uio_resid == 0)
 			return (0);
-		if (ap->a_uio->uio_offset < 0)
+		if (uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(ap->a_vp->v_rdev)].d_ioctl)(ap->a_vp->v_rdev, DIOCGPART,
+		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
 		    (caddr_t)&dpart, FREAD, p) == 0) {
 			if (dpart.part->p_fstype == FS_BSDFFS &&
 			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
@@ -254,25 +259,25 @@ spec_write (ap)
 		}
 		blkmask = (bsize / DEV_BSIZE) - 1;
 		do {
-			bn = (ap->a_uio->uio_offset / DEV_BSIZE) &~ blkmask;
-			on = ap->a_uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), ap->a_uio->uio_resid);
+			bn = (uio->uio_offset / DEV_BSIZE) &~ blkmask;
+			on = uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), uio->uio_resid);
 			if (n == bsize)
-				bp = getblk(ap->a_vp, bn, bsize);
+				bp = getblk(vp, bn, bsize);
 			else
-				error = bread(ap->a_vp, bn, bsize, NOCRED, &bp);
+				error = bread(vp, bn, bsize, NOCRED, &bp);
 			n = MIN(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
 			}
-			error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
+			error = uiomove(bp->b_un.b_addr + on, n, uio);
 			if (n + on == bsize) {
 				bp->b_flags |= B_AGE;
 				bawrite(bp);
 			} else
 				bdwrite(bp);
-		} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
+		} while (error == 0 && uio->uio_resid > 0 && n != 0);
 		return (error);
 
 	default:
@@ -379,11 +384,12 @@ spec_unlock (ap)
 spec_close (ap)
 	struct vop_close_args *ap;
 {
-	dev_t dev = ap->a_vp->v_rdev;
+	register struct vnode *vp = ap->a_vp;
+	dev_t dev = vp->v_rdev;
 	int (*devclose) __P((dev_t, int, int, struct proc *));
 	int mode;
 
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 
 	case VCHR:
 		/*
@@ -391,7 +397,7 @@ spec_close (ap)
 		 * of forcably closing the device, otherwise we only
 		 * close on last reference.
 		 */
-		if (vcount(ap->a_vp) > 1 && (ap->a_vp->v_flag & VXLOCK) == 0)
+		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
 		devclose = cdevsw[major(dev)].d_close;
 		mode = S_IFCHR;
@@ -403,8 +409,8 @@ spec_close (ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		vflushbuf(ap->a_vp, 0);
-		if (vinvalbuf(ap->a_vp, 1))
+		vflushbuf(vp, 0);
+		if (vinvalbuf(vp, 1))
 			return (0);
 		/*
 		 * We do not want to really close the device if it
@@ -415,7 +421,7 @@ spec_close (ap)
 		 * sum of the reference counts on all the aliased
 		 * vnodes descends to one, we are on last close.
 		 */
-		if (vcount(ap->a_vp) > 1 && (ap->a_vp->v_flag & VXLOCK) == 0)
+		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
 		devclose = bdevsw[major(dev)].d_close;
 		mode = S_IFBLK;

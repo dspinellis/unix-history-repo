@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.32 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -122,28 +122,29 @@ int
 mfs_strategy (ap)
 	struct vop_strategy_args *ap;
 {
+	register struct buf *bp = ap->a_bp;
 	register struct mfsnode *mfsp;
 	struct vnode *vp;
 	struct proc *p = curproc;		/* XXX */
 
-	if (vfinddev(ap->a_bp->b_dev, VBLK, &vp) || vp->v_usecount == 0)
+	if (vfinddev(bp->b_dev, VBLK, &vp) || vp->v_usecount == 0)
 		panic("mfs_strategy: bad dev");
 	mfsp = VTOMFS(vp);
 	/* check for mini-root access */
 	if (mfsp->mfs_pid == 0) {
 		caddr_t base;
 
-		base = mfsp->mfs_baseoff + (ap->a_bp->b_blkno << DEV_BSHIFT);
-		if (ap->a_bp->b_flags & B_READ)
-			bcopy(base, ap->a_bp->b_un.b_addr, ap->a_bp->b_bcount);
+		base = mfsp->mfs_baseoff + (bp->b_blkno << DEV_BSHIFT);
+		if (bp->b_flags & B_READ)
+			bcopy(base, bp->b_un.b_addr, bp->b_bcount);
 		else
-			bcopy(ap->a_bp->b_un.b_addr, base, ap->a_bp->b_bcount);
-		biodone(ap->a_bp);
+			bcopy(bp->b_un.b_addr, base, bp->b_bcount);
+		biodone(bp);
 	} else if (mfsp->mfs_pid == p->p_pid) {
-		mfs_doio(ap->a_bp, mfsp->mfs_baseoff);
+		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
-		ap->a_bp->av_forw = mfsp->mfs_buflist;
-		mfsp->mfs_buflist = ap->a_bp;
+		bp->av_forw = mfsp->mfs_buflist;
+		mfsp->mfs_buflist = bp;
 		wakeup((caddr_t)vp);
 	}
 	return (0);
@@ -273,7 +274,8 @@ int
 mfs_close (ap)
 	struct vop_close_args *ap;
 {
-	register struct mfsnode *mfsp = VTOMFS(ap->a_vp);
+	register struct vnode *vp = ap->a_vp;
+	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 
 	/*
@@ -289,22 +291,22 @@ mfs_close (ap)
 	 * we must invalidate any in core blocks, so that
 	 * we can, free up its vnode.
 	 */
-	vflushbuf(ap->a_vp, 0);
-	if (vinvalbuf(ap->a_vp, 1))
+	vflushbuf(vp, 0);
+	if (vinvalbuf(vp, 1))
 		return (0);
 	/*
 	 * There should be no way to have any more uses of this
 	 * vnode, so if we find any other uses, it is a panic.
 	 */
-	if (ap->a_vp->v_usecount > 1)
-		printf("mfs_close: ref count %d > 1\n", ap->a_vp->v_usecount);
-	if (ap->a_vp->v_usecount > 1 || mfsp->mfs_buflist)
+	if (vp->v_usecount > 1)
+		printf("mfs_close: ref count %d > 1\n", vp->v_usecount);
+	if (vp->v_usecount > 1 || mfsp->mfs_buflist)
 		panic("mfs_close");
 	/*
 	 * Send a request to the filesystem server to exit.
 	 */
 	mfsp->mfs_buflist = (struct buf *)(-1);
-	wakeup((caddr_t)ap->a_vp);
+	wakeup((caddr_t)vp);
 	return (0);
 }
 

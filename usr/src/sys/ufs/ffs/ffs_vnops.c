@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.78 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.79 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -250,8 +250,9 @@ ffs_write (ap)
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
+	register struct vnode *vp = ap->a_vp;
 	struct proc *p = ap->a_uio->uio_procp;
-	register struct inode *ip = VTOI(ap->a_vp);
+	register struct inode *ip = VTOI(vp);
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn;
@@ -263,7 +264,7 @@ ffs_write (ap)
 	if (ap->a_uio->uio_rw != UIO_WRITE)
 		panic("ffs_write mode");
 #endif
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 	case VREG:
 		if (ap->a_ioflag & IO_APPEND)
 			ap->a_uio->uio_offset = ip->i_size;
@@ -287,7 +288,7 @@ ffs_write (ap)
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (ap->a_vp->v_type == VREG && p &&
+	if (vp->v_type == VREG && p &&
 	    ap->a_uio->uio_offset + ap->a_uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
@@ -312,10 +313,10 @@ ffs_write (ap)
 		bn = bp->b_blkno;
 		if (ap->a_uio->uio_offset + n > ip->i_size) {
 			ip->i_size = ap->a_uio->uio_offset + n;
-			vnode_pager_setsize(ap->a_vp, (u_long)ip->i_size);
+			vnode_pager_setsize(vp, (u_long)ip->i_size);
 		}
 		size = blksize(fs, ip, lbn);
-		(void) vnode_pager_uncache(ap->a_vp);
+		(void) vnode_pager_uncache(vp);
 		n = MIN(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
 		if (ap->a_ioflag & IO_SYNC)
@@ -330,12 +331,12 @@ ffs_write (ap)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
 	if (error && (ap->a_ioflag & IO_UNIT)) {
-		(void)VOP_TRUNCATE(ap->a_vp, osize, ap->a_ioflag & IO_SYNC, ap->a_cred);
+		(void)VOP_TRUNCATE(vp, osize, ap->a_ioflag & IO_SYNC, ap->a_cred);
 		ap->a_uio->uio_offset -= resid - ap->a_uio->uio_resid;
 		ap->a_uio->uio_resid = resid;
 	}
 	if (!error && (ap->a_ioflag & IO_SYNC))
-		error = VOP_UPDATE(ap->a_vp, &time, &time, 1);
+		error = VOP_UPDATE(vp, &time, &time, 1);
 	return (error);
 }
 
