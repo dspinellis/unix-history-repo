@@ -1,6 +1,6 @@
-.\"	@(#)putc.3	4.1 (Berkeley) %G%
+.\"	@(#)putc.3	5.1 (Berkeley) %G%
 .\"
-.TH PUTC 3S 
+.TH PUTC 3S  "19 January 1983"
 .AT 3
 .SH NAME
 putc, putchar, fputc, putw \- put character or word on a stream
@@ -36,19 +36,18 @@ to the named output
 .IR stream .
 It returns the character written.
 .PP
-.I Putchar(c)
+.IR Putchar ( c )
 is defined as 
-.I "putc(c, stdout)."
+.IR putc ( c ,
+.BR stdout ).
 .PP
 .I Fputc
 behaves like 
-.I putc,
+.IR putc ,
 but is a genuine function rather than a macro.
-It may be used to save on object text.
 .PP
 .I Putw
-appends word 
-(i.e.
+appends word (that is,
 .BR int )
 .I w
 to the output
@@ -56,41 +55,19 @@ to the output
 It returns the word written.
 .I Putw
 neither assumes nor causes special alignment in the file.
-.PP
-The standard stream
-.I stdout
-is normally buffered if and only if the
-output does not refer to a terminal;
-this default may be changed by
-.IR setbuf (3).
-The standard stream
-.I stderr
-is by default unbuffered unconditionally,
-but use of
-.I freopen
-(see
-.IR fopen (3))
-will cause it to become buffered;
-.IR setbuf ,
-again, will set the state to whatever is desired.
-When an output stream is unbuffered information appears on the
-destination file or terminal as soon as written;
-when it is buffered many characters are saved up and written as a block.
-.I Fflush
-(see 
-.IR fclose (3))
-may be used to force the block out early.
 .SH "SEE ALSO"
-fopen(3), fclose(3), getc(3),
-puts(3), printf(3),
-fread(3)
+fopen(3S),
+fclose(3S),
+getc(3S),
+puts(3S),
+printf(3S),
+fread(3S)
 .SH DIAGNOSTICS
 These functions return the constant
 .SM
 .B EOF
-upon error.
-Since this is a good integer,
-.IR  ferror (3)
+upon error.  Since this is a good integer,
+.IR  ferror (3S)
 should be used to detect 
 .I putw
 errors.
@@ -99,10 +76,10 @@ Because it is implemented as a macro,
 .I putc
 treats a
 .I stream
-argument with side effects improperly.
-In particular
-`putc(c, *f++);'
+argument with side effects improperly.  In particular
+.IP "putc(c, *f++);"
+.PP
 doesn't work sensibly.
 .PP
 Errors can occur long after the call to
-.I putc.
+.IR putc .
