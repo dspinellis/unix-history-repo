@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.3.1.1 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -12,6 +12,7 @@
 
 #include "param.h"
 #include "systm.h"
+#include "dir.h"
 #include "user.h"
 #include "assym.s"
 #include "proc.h"
@@ -60,7 +61,6 @@ trap(sp, type, code, pc, psl)
 {
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
-	unsigned ucode = code;
 	register struct proc *p;
 	struct timeval syst;
 
@@ -89,7 +89,7 @@ trap(sp, type, code, pc, psl)
 	case T_PRIVINFLT+USER:	/* privileged instruction fault */
 	case T_RESADFLT+USER:	/* reserved addressing fault */
 	case T_RESOPFLT+USER:	/* reserved operand fault */
-		ucode = type &~ USER;
+		u.u_code = type &~ USER;
 		i = SIGILL;
 		break;
 
@@ -102,6 +102,7 @@ trap(sp, type, code, pc, psl)
 		goto out;
 
 	case T_ARITHTRAP+USER:
+		u.u_code = code;
 		i = SIGFPE;
 		break;
 
@@ -140,10 +141,11 @@ trap(sp, type, code, pc, psl)
 
 	case T_COMPATFLT+USER:	/* compatibility mode fault */
 		u.u_acflag |= ACOMPAT;
+		u.u_code = code;
 		i = SIGILL;
 		break;
 	}
-	trapsignal(i, ucode);
+	psignal(u.u_procp, i);
 out:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
@@ -191,7 +193,7 @@ syscall(sp, type, code, pc, psl)
 	register caddr_t params;		/* known to be r10 below */
 	register int i;				/* known to be r9 below */
 	register struct sysent *callp;
-	register struct proc *p;
+	register struct proc *p = u.u_procp;
 	int opc;
 	struct timeval syst;
 
@@ -249,7 +251,7 @@ syscall(sp, type, code, pc, psl)
 			putchar('\n', 0);
 		}
 #endif
-		(*(callp->sy_call))(&u);
+		(*(callp->sy_call))();
 	}
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
@@ -293,4 +295,16 @@ done:
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
+}
+
+/*
+ * nonexistent system call-- signal process (may want to handle it)
+ * flag error if process won't see signal immediately
+ * Q: should we do that all the time ??
+ */
+nosys()
+{
+	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
+		u.u_error = EINVAL;
+	psignal(u.u_procp, SIGSYS);
 }
