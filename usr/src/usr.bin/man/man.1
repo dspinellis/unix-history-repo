@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)man.1	6.11 (Berkeley) %G%
+.\"     @(#)man.1	6.12 (Berkeley) %G%
 .\"
 .TH MAN 1 "%Q"
 .UC 4
@@ -11,7 +11,7 @@ man \- display the on-line manual pages
 .SH SYNOPSIS
 .nf
 .ft B
-man [ -acw ] [ -M path ] [ -m path ] [ section ] name ...
+man [ -achw ] [ -M path ] [ -m path ] [ section ] name ...
 .ft R
 .fi
 .SH DESCRIPTION
@@ -34,6 +34,9 @@ Copy the manual page to the standard output instead of using
 .IR more (1)
 to paginate it.
 This is done by default if the standard output is not a terminal device.
+.TP
+h
+Display only the ``SYNOPSIS'' lines of the requested manual pages.
 .TP
 M
 Override the list of standard directories which
