@@ -1,4 +1,4 @@
-/*	gprof.h	1.20	84/08/07	*/
+/*	gprof.h	1.21	84/08/09	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -42,8 +42,8 @@ char	*gmonname;
     /*
      *	blurbs on the flat and graph profiles.
      */
-#define	FLAT_BLURB	"/usr/lib/gprof.flat.blurb"
-#define	CALLG_BLURB	"/usr/lib/gprof.callg.blurb"
+#define	FLAT_BLURB	"/usr/lib/gprof.flat"
+#define	CALLG_BLURB	"/usr/lib/gprof.callg"
 
     /*
      *	a constructed arc,
