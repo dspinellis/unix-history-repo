@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.33 (Berkeley) %G%
+ *	@(#)machdep.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1098,6 +1098,12 @@ netintr()
 	if (netisr & (1 << NETISR_ISO)) {
 		netisr &= ~(1 << NETISR_ISO);
 		clnlintr();
+	}
+#endif
+#ifdef CCITT
+	if (netisr & (1 << NETISR_CCITT)) {
+		netisr &= ~(1 << NETISR_CCITT);
+		ccittintr();
 	}
 #endif
 }
