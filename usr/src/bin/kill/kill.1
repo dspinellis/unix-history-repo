@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kill.1	4.1 (Berkeley) %G%
+.\"	@(#)kill.1	5.1 (Berkeley) %G%
 .\"
-.TH KILL 1 
+.TH KILL 1 "18 January 1983"
 .UC 4
 .SH NAME
 kill \- terminate a process with extreme prejudice
@@ -24,7 +24,7 @@ If a signal name or number preceded by `\-' is given
 as first argument, that signal is sent instead of
 terminate
 (see
-.IR  signal (2)).
+.IR  sigvec (2)).
 The signal names are listed by
 `kill \-l', and are as given in
 .I /usr/include/signal.h,
@@ -43,17 +43,6 @@ The killed processes must belong
 to the current user unless
 he is the super-user.
 .PP
-To shut the system down and bring it up single user
-the super-user may send the initialization process a TERM (terminate)
-signal by `kill 1'; see
-.IR init (8).
-To force
-.I init
-to close and open terminals
-according to what is currently in
-/etc/ttys
-use `kill \-HUP 1' (sending a hangup, signal 1).
-.PP
 The process number of an asynchronous process
 started with `&' is reported by the shell.
 Process numbers can also be found by using
@@ -68,7 +57,7 @@ See
 .IR csh (1)
 for details.
 .SH "SEE ALSO"
-csh(1), ps(1), kill(2), signal(2)
+csh(1), ps(1), kill(2), sigvec(2)
 .SH BUGS
 An option to kill process groups ala
 .IR killpg (2)
