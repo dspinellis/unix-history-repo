@@ -15,12 +15,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ranlib.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ranlib.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <archive.h>
 
 CHDR chdr;
