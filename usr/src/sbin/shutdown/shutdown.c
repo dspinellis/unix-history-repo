@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -61,14 +61,19 @@ int	nlflag = 1;		/* nolog yet to be done */
 int	killflg = 1;
 int	reboot = 0;
 int	halt = 0;
+int     fast = 0;
+char    *nosync = NULL;
+char    nosyncflag[] = "-n";
 char	term[sizeof tpath + sizeof utmp.ut_line];
 char	tbuf[BUFSIZ];
 char	nolog1[] = "\n\nNO LOGINS: System going down at %5.5s\n\n";
 char	*nolog2[NLOG+1];
 #ifdef	DEBUG
 char	nologin[] = "nologin";
+char    fastboot[] = "fastboot";
 #else
 char	nologin[] = "/etc/nologin";
+char	fastboot[] = "/fastboot";
 #endif
 time_t	nowtime;
 jmp_buf	alarmbuf;
@@ -111,6 +116,12 @@ main(argc,argv)
 		case 'k':
 			killflg = 0;
 			continue;
+		case 'n':
+			nosync = nosyncflag;
+			continue;
+		case 'f':
+			fast = 1;
+			continue;
 		case 'r':
 			reboot = 1;
 			continue;
@@ -124,8 +135,12 @@ main(argc,argv)
 		argc--, argv++;
 	}
 	if (argc < 1) {
-		printf("Usage: %s [ -krh ] shutdowntime [ message ]\n",
-		    argv[0]);
+	        /* argv[0] is not available after the argument handling. */
+		printf("Usage: shutdown [ -krhfn ] shutdowntime [ message ]\n");
+		finish();
+	}
+	if (fast && (nosync == nosyncflag)) {
+	        printf ("shutdown: Incompatible switches 'fast' & 'nosync'\n");
 		finish();
 	}
 	if (geteuid()) {
@@ -230,18 +245,29 @@ main(argc,argv)
 				printf("but you'll have to do it yourself\n");
 				finish();
 			}
+			if (fast)
+				doitfast();
 #ifndef DEBUG
 			kill(-1, SIGTERM);	/* terminate everyone */
 			sleep(5);		/* & wait while they die */
 			if (reboot)
-				execle(REBOOT, "reboot", 0, 0);
+				execle(REBOOT, "reboot", nosync, 0, 0);
 			if (halt)
-				execle(HALT, "halt", 0, 0);
+				execle(HALT, "halt", nosync, 0, 0);
 			kill(1, SIGTERM);	/* sync */
 			kill(1, SIGTERM);	/* sync */
 			sleep(20);
 #else
 			printf("EXTERMINATE EXTERMINATE\n");
+			if (reboot)
+				printf("REBOOT");
+			if (halt)
+				printf(" HALT");
+			if (fast)
+				printf(" %s (without fsck's)\n", nosync);
+			else
+				printf(" %s\n", nosync);
+
 #endif
 			finish();
 		}
@@ -339,6 +365,16 @@ warn(term, sdt, now, type)
 		    delay, delay != 1 ? "s" : "");
 	} else
 		fprintf(term, "System going down IMMEDIATELY\r\n");
+}
+
+doitfast()
+{
+	FILE *fastd;
+
+	if ((fastd = fopen(fastboot, "w")) != NULL) {
+		putc('\n', fastd);
+		fclose(fastd);
+	}
 }
 
 nolog(sdt)
