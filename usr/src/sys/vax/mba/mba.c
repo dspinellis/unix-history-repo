@@ -1,4 +1,4 @@
-/*	mba.c	4.31	83/05/18	*/
+/*	mba.c	4.32	83/05/27	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -214,7 +214,6 @@ mbintr(mbanum)
 	register int drive;
 	int mbasr, as;
 	extern struct mba_device *mbaconfig();
-	static mbaddtape();
 	
 	/*
 	 * Read out the massbus status register
@@ -358,7 +357,6 @@ mbintr(mbanum)
 /*
  * For autoconfig'ng tape drives on the fly.
  */
-static
 mbaddtape(mi, drive)
 	struct mba_device *mi;
 	int drive;
