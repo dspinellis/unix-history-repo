@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arithmetic.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)arithmetic.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -116,13 +116,6 @@ main(argc, argv)
 		}
 	if (argc -= optind)
 		usage();
-
-	/* Check for a case that would cause trouble: arithmetic / 0. */
-	if (rangemax == 0 && index(keys, '/')) {
-		(void)fprintf(stderr,
-		    "arithmetic: you can't MAKE me divide by zero!\n");
-		exit(1);
-	}
 
 	/* Seed the random-number generator. */
 	srandom((int)time((time_t *)NULL));
@@ -361,6 +354,6 @@ opnum(op)
 /* Print usage message and quit. */
 usage()
 {
-	(void)fprintf(stderr, "usage: arithmetic [-o [+-x/]] [-r range]\n");
+	(void)fprintf(stderr, "usage: arithmetic [-o +-x/] [-r range]\n");
 	exit(1);
 }
