@@ -1,4 +1,4 @@
-/*	tty.c	6.5	83/09/25	*/
+/*	tty.c	6.6	83/09/28	*/
 
 #include "../machine/reg.h"
 
@@ -179,9 +179,15 @@ ttyblock(tp)
 		ttyflush(tp, FREAD|FWRITE);
 		tp->t_state &= ~TS_TBLOCK;
 	}
-	if (x >= TTYHOG/2 && putc(tp->t_stopc, &tp->t_outq) == 0) {
-		tp->t_state |= TS_TBLOCK;
-		ttstart(tp);
+	/*
+	 * Block further input iff:
+	 * Current input > threshold AND input is available to user program
+	 */
+	if (x >= TTYHOG/2 && (tp->t_delct>0 || (tp->t_flags&(RAW|CBREAK)))) {
+		if (putc(tp->t_stopc, &tp->t_outq)==0) {
+			tp->t_state |= TS_TBLOCK;
+			ttstart(tp);
+		}
 	}
 }
 
