@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -358,10 +358,16 @@ sendall(e, mode)
 			
 			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 				if (q->q_owner == owner)
+				{
 					q->q_flags |= QDONTSEND;
+					q->q_flags &= ~QQUEUEUP;
+				}
 			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
 				if (q->q_owner != owner)
+				{
 					q->q_flags |= QDONTSEND;
+					q->q_flags &= ~QQUEUEUP;
+				}
 
 			if (e->e_df != NULL && mode != SM_VERIFY)
 			{
