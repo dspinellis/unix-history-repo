@@ -1,8 +1,23 @@
 /*
- * Copyright (C) 1989 by Kenneth Almquist.  All rights reserved.
- * This file is part of ash, which is distributed under the terms specified
- * by the Ash General Public License.  See the file named LICENSE.
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kenneth Almquist.
+ *
+ * %sccs.include.redist.c%
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)error.c	1.2 (Berkeley) %G%";
+#endif /* not lint */
+
 
 #include <stdio.h>
 #include <errno.h>
