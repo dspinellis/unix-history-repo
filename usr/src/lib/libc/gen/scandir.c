@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)scandir.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)scandir.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)scandir.c	8.1 (Berkeley) %G%";
  */
 #undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((sizeof (struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+    ((sizeof (struct dirent) - sizeof (dp)->d_name) + (((dp)->d_namlen+1 + 3) &~ 3))
 
 int
 scandir(dirname, namelist, select, dcomp)
