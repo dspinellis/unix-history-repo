@@ -1,4 +1,4 @@
-\"	@(#)profiling.me	1.5 %G%
+\"	@(#)profiling.me	1.6 %G%
 .sh 1 "Types of Profiling"
 .pp
 There are several different uses for program profiles,
@@ -78,6 +78,6 @@ by data flow analysis techniques.
 The complete call graph for programs that change
 during execution, by modifying themselves or dynamically loading
 or overlaying code, may never be determinable.
-\fBGprof\fP uses both the static call graph and the dynamic call
-graph for a profiled program, but does not search for the complete
-call graph.
+Both the static call graph and the dynamic call graph are used
+by \fBgprof\fP, but it does not search for the complete call
+graph.
