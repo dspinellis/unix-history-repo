@@ -1,0 +1,595 @@
+.B lpd (8)		- line printer daemon .br .B lpdrestart \- restart downed daemons at reboot time
+.B lpq (1)		- spool queue examination program
+.B lpr (1)		- off line print
+.B lprm (1)		- remove jobs from the line printer spooling queue
+.B printcap (5)		- printer capability data base
+\*(dB (1)		- debugger
+a.out (5)		- assembler and link editor output
+aardvark (6)		- yet another exploration game
+abort (3)		- generate a fault
+abort (3F)		- terminate abruptly with memory image
+abs (3)			- integer absolute value
+ac (8)			- login accounting
+accept (2)		- accept a connection on a socket
+access (2)		- determine accessibility of file
+access (3F)		- determine accessability of a file
+acct (2)		- turn accounting on or off
+acct (5)		- execution accounting file
+adb (1)			- debugger
+adduser (8)		- procedure for adding new users
+adventure (6)		- an exploration game
+alarm (3F)		- execute a subroutine after a specified time
+aliases (5)		- aliases file for delivermail
+aliens (6)		- The alien invaders attack the earth
+analyze (8)		- Virtual UNIX postmortem crash analyzer
+apl (1)			- an apl interpreter
+apply (1)		- apply a command to a set of arguments
+apropos (1)		- locate commands by keyword lookup
+ar (1)			- archive and library maintainer
+ar (5)			- archive (library) file format
+arcv (8)		- convert archives to new format
+arff, flcopy (8)	- archiver and copier for floppy
+arithmetic (6)		- provide drill in number facts
+as (1)			- assembler
+ascii (7)		- map of ASCII character set
+assert (3X)		- program verification
+at (1)			- execute commands at a later time
+atof, atoi, atol (3)	- convert ASCII to numbers
+autoconf (4)		- diagnostics from autoconfiguartion code
+awk (1)			- pattern scanning and processing language
+backgammon (6)		- the game
+bad144 (8)		- read/write dec standard 144 bad sector information
+badsect (8)		- create files to contain bad sectors
+banner (6)		- print large banner on printer
+basename (1)		- strip filename affixes
+bc (1)			- arbitrary-precision arithmetic language
+bcd (6)			- convert to antique media
+bessel functions (3F)	- of two kinds for integer orders
+biff (1)		- be notified if mail arrives and who it is from
+bind (2)		- bind a name to a socket
+bis, bic, setbit, bit (3F)  - bit set, clear, test routines .sp 1 and, or, xor, not \- bitwise functions .sp 1 rshift, lshift \- bit shifting functions
+bk (4)			- line discipline for machine-machine communication
+boggle (6)		- play the game of boggle
+brk, sbrk, break (2)	- change data segment size
+cal (1)			- print calendar
+calendar (1)		- reminder service
+call (1C)		- ring a telephone
+cat (1)			- catenate and print
+catman (8)		- create the cat files for the manual
+cb (1)			- C program beautifier
+cc (1)			- C compiler
+cd (1)			- change working directory
+chase (6)		- Try to escape to killer robots
+chdir (2)		- change current working directory
+chdir (3F)		- change default directory
+checknr (1)		- check nroff/troff files
+chess (6)		- the game of chess
+chfn (1)		- change full name of user
+chgrp (1)		- change group
+ching, fortune (6)	- the book of changes and other cookies
+chmod (1)		- change mode
+chmod (2)		- change mode of file
+chown (2)		- change owner and group of a file
+chown (8)		- change owner
+chsh (1)		- change default login shell
+cifplot (1)		- CIF interpreter and plotter
+clear (1)		- clear terminal screen
+close (2)		- free a descriptor
+clri (8)		- clear i-node
+cmp (1)			- compare two files
+col (1)			- filter reverse line feeds
+colcrt (1)		- filter nroff output for CRT previewing
+colrm (1)		- remove columns from a file
+comm (1)		- select or reject lines common to two sorted files
+compact, uncompact, ccat (1)	- compress and uncompress files, and cat them
+config (8)		- Build system configuration files
+connect (2)		- initiate a connection on a socket
+cons (4)		- console interface
+core (5)		- format of memory image file
+cp (1)			- copy
+crash (8)		- what happens when the system crashes
+cribbage (6)		- the card game cribbage
+cron (8)		- clock daemon
+crypt (1)		- encode/decode
+crypt, setkey, encrypt (3)  - DES encryption
+csh (1)			- a shell (command interpreter) with C-like syntax
+ct (4)			- phototypesetter interface
+ctags (1)		- create a tags file
+ctime, localtime, gmtime, asctime, timezone (3) -  convert date and time to ASCII
+cu (1C)			- call UNIX
+curses (3)		- screen functions with ``optimal'' cursor motion
+date (1)		- print and set the date
+dbminit, fetch, store, delete, firstkey, nextkey (3X)	- data base subroutines
+dc (1)			- desk calculator
+dcheck (8)		- file system directory consistency check
+dd (1)			- convert and copy a file
+delivermail (8)		- deliver mail to arbitrary people
+deroff (1)		- remove nroff, troff, tbl and eqn constructs
+df (1)			- disk free
+dh/dm (4)		- DH-11/DM-11 communications multiplexer
+diction,explain (1)	- print wordy sentences; thesaurus for diction
+diction,explain (1)	- print wordy sentences; thesaurus for diction
+diff (1)		- differential file and directory comparator
+diff3 (1)		- 3-way differential file comparison
+dir (5)			- format of directories
+dmc (4I)		- DEC DMC-11 point-to-point communications device
+dmesg (8)		- collect system diagnostic messages to form error log
+doctor (6)		- interact with a psychoanalyst
+drum (4)		- paging device
+dsh (1X)		- distributed shell
+du (1)			- summarize disk usage
+dump (8)		- incremental file system dump
+dump, ddate (5)		- incremental dump format
+dumpdir (8)		- print the names of files on a dump tape
+dup, dup2 (2)		- duplicate a descriptor
+dz (4)			- DZ-11 communications multiplexer
+ec (4I)			- 3Com 10 Mb/s Ethernet interface
+echo (1)		- echo arguments
+ecvt, fcvt, gcvt (3)	- output conversion
+ed (1)			- text editor
+efl (1)			- Extended Fortran Language
+en (4I)			- Xerox 3 Mb/s Ethernet interface
+end, etext, edata (3)	- last locations in program
+environ (5)		- user environment
+eqn, neqn, checkeq (1)	- typeset mathematics
+eqnchar (7)		- special character definitions for eqn
+error (1)		- analyze and disperse compiler error messages
+etime, dtime (3F)	- return elapsed execution time
+ex, edit (1)		- text editor
+execv, execve (2)	- execute a file
+exit (2)		- terminate process
+exit (3F)		- terminate process with status
+exp, log, log10, pow, sqrt (3M) - exponential, logarithm, power, square root
+expand, unexpand (1)	- expand tabs to spaces, and vice versa
+expr (1)		- evaluate arguments as an expression
+eyacc (1)		- modified yacc allowing much improved error recovery
+f77 (1)			- Fortran 77 compiler
+fabs, floor, ceil (3M)	- absolute value, floor, ceiling functions
+fclose, fflush (3S)	- close or flush a stream
+fdate (3F)		- return date and time in an ASCII string
+feof, ferror, clearerr, fileno (3S) - stream status inquiries
+file (1)		- determine file type
+filsys, flblk, ino (5)	- format of file system volume
+find (1)		- find files
+finger (1)		- user information lookup program
+fish (6)		- play ``Go Fish''
+fl (4)			- floppy interface
+flmin, flmax, dflmin, dflmax, inmax (3F)    - return extreme values
+flock (2)		- apply or remove an advisory lock on an open file
+flush (3F)		- flush output to a logical unit
+fmt (1)			- simple text formatter
+fold (1)		- fold long lines for finite width output device
+fopen, freopen, fdopen (3S) - open a stream
+fork (2)		- create a new process
+fork (3F)		- create a copy of this process
+format (8)		- how to format disk packs
+fortune (6)		- print a random, hopefully interesting, adage
+fp (1)			-  Functional Programming language compiler/interpreter
+fread, fwrite (3S)	- buffered binary input/output
+frexp, ldexp, modf (3)	- split into mantissa and exponent
+from (1)		- who is my mail from?
+fsck (8)		- file system consistency check and interactive repair
+fseek, ftell (3F)	- reposition a file on a logical unit
+fseek, ftell, rewind (3S)   - reposition a stream
+fstab (5)		- static information about the filesystems
+fsync (2)		- synchronize a file's in-core state with that on disk
+ftp (1)			- file transfer program
+gamma (3M)		- log gamma function
+gcore (1)		- get core images of running processes
+getarg, iargc (3F)	- command arguments to Fortran
+getc, fgetc (3F)	- get a character from a logical unit
+getc, getchar, fgetc, getw (3S) - get character or word from stream
+getcwd (3F)		- get pathname of current working directory
+getdopt, setdopt (2)	- get/set options associated with a descriptor 
+getdprop (2)		- get properties of a descriptor 
+getdtablesize (2)	- get descriptor table size
+getenv (3)		- value for environment name
+getenv (3F)		- get value of environment variables
+getfsent, getfsspec, getfsfile, setfsent, endfsent (3)	- get file system descriptor file entry
+getgid, getegid (2)	- get group identity
+getgrent, getgrgid, getgrnam, setgrent, endgrent (3)	- get group file entry
+getgroups (2)		- get group access list
+gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent (3)	- get network host entry
+gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent (3N)	- get network host entry
+gethostid, sethostid (2)    - get/set unique identifier of current host
+gethostname, sethostname (2)	- get/set name of current host
+getitimer (2)		- get value of interval timer
+getlog (3F)		- get user's login name
+getlogin (3)		- get login name
+getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent (3) - get network entry
+getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent (3N)    - get network entry
+getpagesize (2)		- get system page size
+getpass (3)		- read a password
+getpgrp (2)		- get process group
+getpid (2)		- get process identification
+getpid (3F)		- get process id
+getpriority, setpriority (2)	- get/set program scheduling priority
+getprotoent, getprotobynumber, getprotobyname, setprotoent, endprotoent (3) - get protocol entry
+getprotoent, getprotobynumber, getprotobyname, setprotoent, endprotoent (3N)	- get protocol entry
+getpw (3)		- get name from uid
+getpwent, getpwuid, getpwnam, setpwent, endpwent (3)	- get password file entry
+getrlimit, setrlimit (2)    - control maximum system resource consumption
+getrusage (2)		- get information about resource utilization
+gets (1)		- get a string from standard input
+gets, fgets (3S)	- get a string from a stream
+getservent, getservbyport, getservbyname, setservent, endservent (3)	- get protocol entry
+getservent, getservbyport, getservbyname, setservent, endservent (3N)	- get protocol entry
+gettimeofday, settimeofday (2)	- get/set date and time
+getty  (8)		- set terminal mode
+getuid, geteuid (2)	- get user identity
+getuid, getgid (3F)	- get user or group ID of the caller
+getwd (3)		- get current working directory pathname
+gprof (1)		- display call graph profile data
+graph (1G)		- draw a graph
+greek (7)		- graphics for extended TTY-37 type-box
+grep, egrep, fgrep (1)	- search a file for a pattern
+group (5)		- group file
+groups (1)		- show group memberships
+halt (8)		- stop the processor
+hangman (6)		- Computer version of the game hangman
+head (1)		- give first few lines
+hier (7)		- file system hierarchy
+hk (4)			- RK6-11/RK06 and RK07 moving head disk
+hostname (1)		- set or print name of current host system
+hosts (5)		- host name data base
+hp (4)			- RP06, RM03, RM05, RM80, RP07 MASSBUS moving-head disk
+ht (4)			- TM-03/TE-16,TU-45,TU-77 MASSBUS magtape interface
+hypot, cabs (3M)	- Euclidean distance
+icheck (8)		- file system storage consistency check
+idate, itime (3F)	- return date or time in numerical form
+imp (4I)		- 1822 Network Interface
+imp (4P)		- IMP raw socket interface
+indent (I)		- indent and format a C program source
+index, rindex, lnblnk, len (3F) - tell about character objects
+inet (4F)		- Internet protocol family
+inet_addr, inet_network, inet_makeaddr, inet_lnaof, inet_netof (3)  - Internet address manipulation routines
+inet_addr, inet_network, inet_makeaddr, inet_lnaof, inet_netof (3N) - Internet address manipulation routines
+inigrp (3X)		- initialize group access
+init (8)		- process control initialization
+install (1)		- install binaries
+intro (1)		- introduction to commands
+intro (3)		- introduction to library functions
+intro (4)		- introduction to special files
+intro, errno (2)	- introduction to system calls and error numbers
+ioctl (2)		- control device
+iostat (1)		- report I/O statistics
+ip (4P)			- Internet Protocol
+isalpha, isupper, islower, isdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii (3)	- character classification
+j0, j1, jn, y0, y1, yn (3M) - bessel functions
+jobs (3J)		- summary of job control facilities
+join (1)		- relational database operator
+kgmon (8)		- generate a dump of the operating systems profile buffers
+kill (1)		- terminate a process with extreme prejudice
+kill (2)		- send signal to a process
+kill (3F)		- send a signal to a process
+killpg (2)		- send signal to a process group
+l3tol, ltol3 (3)	- convert between 3-byte integers and long integers
+last (1)		- indicate last logins of users and teletypes
+lastcomm (1)		- show last commands executed in reverse order
+ld (1)			- link editor
+learn (1)		- computer aided instruction about UNIX
+leave (1)		- remind you when you have to leave
+lex (1)			- generator of lexical analysis programs
+link (2)		- make a hard link to a file
+link (3F)		- make a link to an existing file
+lint (1)		- a C program verifier
+lisp (1)		- lisp interpreter
+listen (2)		- listen for connections on a socket
+liszt (1)		- compile a Franz Lisp program
+ln (1)			- make links
+loc (3F)		- return the address of an object
+lock (1)		- reserve a terminal
+login (1)		- sign on
+look (1)		- find lines in a sorted list
+loop (4I)		- software loopback interface
+lorder (1)		- find ordering relation for an object library
+lp (4)			- line printer
+ls (1)			- list contents of directory
+lseek (2)		- move read/write pointer
+lxref (1)		- lisp cross reference program
+m4 (1)			- macro processor
+madvise (2)		- give advice to the paging system
+mail (1)		- send and receive mail
+mail (1)		- send or receive mail among users
+make (1)		- maintain program groups
+makekey (8)		- generate encryption key
+malloc, free, realloc, calloc (3)   - main memory allocator
+man (1)			- find manual information by keywords; print out the manual
+man (7)			- macros to typeset manual
+map (2)			- map pages of memory
+me (7)			- macros for formatting papers
+mem, kmem (4)		- main memory
+mesg (1)		- permit or deny messages
+mille (6)		- play Mille Bournes
+mincore (2)		- find out about core resident pages
+mkdir (1)		- make a directory
+mkdir (2)		- make a directory file
+mkfs (8)		- construct a file system
+mklost+found (8)	- make a lost+found directory for fsck
+mknod (2)		- make a special file
+mknod (8)		- build special file
+mkproto (8)		- construct a pototype file system
+mkstr (1)		- create an error message file by massaging C source
+mktemp (3)		- make a unique file name
+monitor, monstartup (3) - prepare execution profile
+monop (6)		- Monopoly game
+more, page (1)		- file perusal filter for crt viewing
+mount, umount (8)	- mount and dismount file system
+mount, unmount (2)	- mount or remove file system
+mpxio (5)		- multiplexed i/o
+ms (7)			- macros for formatting manuscripts
+msgs (1)		- system messages and junk mail program
+mt (1)			- magnetic tape manipulating program
+mt (4)			- UNIX magtape interface
+mtab (5)		- mounted file system table
+mv (1)			- move or rename files
+ncheck	(8)		-  generate names from i-numbers
+net (1)			- execute a command on a remote machine
+net (4)			- introduction to networking facilities
+netcp (1)		- remote copy of files through the net
+netlog (1)		- print the last few lines of the network log file
+netlogin (1)		- provide login name and password for a remote machine
+netlpr (1)		- use a remote lineprinter through the net
+netmail (1)		- read mail on a remote machine over the network
+netq (1)		- print contents of network queue
+netrm (1)		- remove a command from the network queue
+netstat (1)		- network statistics program
+netstat (1)		- network statistics program
+nettroff (1)		- troff to the phototypesetter over the network
+networks (5)		- network name data base
+newaliases (1)		- rebuild the data base for the mail aliases file
+newcsh (1)		- description of new csh features (over oldcsh)
+nice, nohup (1)		- run a command at low priority (\fIsh\fR only)
+nlist (3)		- get entries from name list
+nm (1)			- print name list
+null (4)		- data sink
+num (1)			- number lines
+number (6)		- convert Arabic numerals to English
+od (1)			- octal dump
+old (8)			- directory of old programs
+open (2)		- open a file for reading or writing, or create a new file
+opendir, readdir, telldir, seekdir, rewinddir, closedir (3X)	- directory operations
+passwd (1)		- change login password
+passwd (5)		- password file
+pc (1)			- Pascal compiler
+pdx (1)			- pascal debugger
+perror, gerror, ierrno (3F) - get system error messages
+perror, sys_errlist, sys_nerr (3)   - system error messages
+phones (5)		- remote host phone number data base .ad
+pi (1)			- Pascal interpreter code translator
+pipe (2)		- create an interprocess communication channel
+pix (1)			- Pascal interpreter and executor
+plot (1G)		- graphics filters
+plot (5)		- graphics interface
+plot: openpl et al. (3X)    - graphics interface
+pmerge (1)		- pascal file merger
+popen, pclose (3S)	- initiate I/O to/from a process
+pr (1)			- print file
+print (1)		- pr to the line printer
+printenv (1)		- print out the environment
+printf, fprintf, sprintf (3S)	- formatted output conversion
+prmail (1)		- print out mail in the post office
+prof (1)		- display profile data
+protocols (5)		- protocol name data base
+ps (1)			- process status
+pstat (8)		- print system facts
+pti (1)			- phototypesetter interpreter
+ptrace (2)		- process trace
+ptx (1)			- permuted index
+pty (4)			- pseudo terminal driver
+pup (4F)		- Xerox PUP-I protocol family
+pup (4P)		- raw PUP socket interface
+putc, fputc (3F)	- write a character to a fortran logical unit
+putc, putchar, fputc, putw (3S) - put character or word on a stream
+puts, fputs (3S)	- put a string on a stream
+pwd (1)			- working directory name
+px (1)			- Pascal interpreter
+pxp (1)			- Pascal execution profiler
+pxref (1)		- Pascal cross-reference program
+qsort (3)		- quicker sort
+qsort (3F)		- quick sort
+quiz (6)		- test your knowledge
+quot (8)		- summarize file system ownership
+rain (6)		- animated raindrops display
+rand, drand, irand (3F) - return random values
+rand, srand (3)		- random number generator
+random, srandom (3)	- better random number generator .br initstate, setstate \- routines for changing generators
+ranlib (1)		- convert archives to random libraries
+ratfor (1)		- rational Fortran dialect
+rc (8)			- command script for auto-reboot and daemons
+rcp (1X)		- remote file copy
+rdump (1)		- file system dump across the network
+re_comp, re_exec (3)	- regular expression handler
+read, readv (2)		- read from file
+readlink (2)		- read value of a symbolic link
+reboot (2)		- reboot system or halt processor
+reboot (8)		- UNIX bootstrapping procedures
+recv, recvfrom, recvmsg (2) - receive a message from a socket
+refer, lookbib (1)	- find and insert literature references in documents
+remap (2)		- remap pages of memory
+remote (5)		- remote host description file .ad
+rename (2)		- change the name of a file
+renice (8)		- alter priority of running process by changing nice
+reset (1)		- reset the teletype bits to a sensible state
+restore (8)		- incremental file system restore
+rev (1)			- reverse lines of a file
+revoke (2)		- revoke access to an object associated with a descriptor
+rewind (1)		- rewind tape drive
+rexec (3X)		- return stream to a remote command
+rhost, raddr (3X)	- look up internet hosts by name or address
+rlogin (1X)		- remote login
+rm, rmdir  (1)		- remove (unlink) files
+rmdir (2)		- remove a directory file
+rogue (6)		- Exploring The Dungeons of Doom
+routed (8)		- network routing daemon
+rsh (1X)		- remote shell
+ruptime (1X)		- show host status of local machines
+rv (4)			- Racal/Vadic ACU interface
+rwho (1X)		- who's logged in on local machines
+sa, accton (8)		- system accounting
+savecore (8)		- save a core dump of the operating system
+scandir (3)		- scan a directory
+scanf, fscanf, sscanf (3S)  - formatted input conversion
+script (1)		- make typescript of terminal session
+sdb (1)			- symbolic debugger
+sed (1)			- stream editor
+see (1)			- see what a file has in it
+select (2)		- synchronous i/o multiplexing
+send, sendto, sendmsg (2)   - send a message from a socket
+sendmail (8)		- send mail over the internet
+services (5)		- service name data base
+setbuf (3S)		- assign buffering to a stream
+setgroups (2)		- set group access list
+setjmp, longjmp (3)	- non-local goto
+setpgrp (2)		- set process group
+setregid (2)		- set real and effective group ID
+setreuid (2)		- set real and effective user ID's
+sh, for, case, if, while, \fB:\fP, \fB.\fP, break, continue, cd, eval, exec, exit, export, login, newgrp, read, readonly, set, shift, times, trap, umask, wait (1) - command language
+shutdown (8)		- close down the system at a given time
+signal (2)		- catch or ignore signals
+signal (3F)		- change the action for a signal
+sigset, signal, sighold, sigignore, sigrelse, sigpause (3)  - manage signals
+sin, cos, tan, asin, acos, atan, atan2 (3M) - trigonometric functions
+sinh, cosh, tanh (3M)	- hyperbolic functions
+size (1)		- size of an object file
+sleep (1)		- suspend execution for an interval
+sleep (3)		- suspend execution for interval
+sleep (3F)		- sleep for awhile
+snake, snscore (6)	- display chase game
+socket (2)		- create an endpoint for communication
+socketpair (2)		- create a pair of connected sockets
+soelim (1)		- eliminate \&.so's from nroff input
+sort (1)		- sort or merge files
+spell, spellin, spellout (1)	- find spelling errors
+spline (1G)		- interpolate smooth curve
+split (1)		- split a file into pieces
+stab (5)		- symbol table types
+stat, fstat (3F)	- get file status
+stat, lstat, fstat (2)	- get file status
+stdio (3S)		- standard buffered input/output package
+sticky (8)		- executable files with persistent text
+stk, sstk (2)		- change stack segment size
+strcat, strncat, strcmp, strncmp, strcpy, strncpy, strlen, index, rindex (3)	- string operations
+strings (1)		- find the printable strings in a object, or other binary, file
+strip (1)		- remove symbols and relocation bits
+struct (1)		- structure Fortran programs
+stty (1)		- set terminal options
+style  (1)		-  analyze surface characteristics of a document
+su (1)			- substitute user id temporarily
+sum (1)			- sum and count blocks in a file
+swab (3)		- swap bytes
+swapon (8)		- specify additional device for paging and swapping
+swapon, swapoff (2)	- add/delete a swap device for interleaved paging/swapping
+symlink (2)		- make symbolic link to a file
+symorder (1)		- rearrange name list
+sync (2)		- update super-block
+sync (8)		- update the super block
+syscall (2)		- indirect system call
+sysline (1)		- display system status on status line of a terminal
+system (3)		- issue a shell command
+system (3F)		- execute a unix command
+tabs (1)		- set terminal tabs
+tail (1)		- deliver the last part of a file
+talk (l)		- talk to another user
+tar (1)			- tape archiver
+tbl (1)			- format tables for nroff or troff
+tc (1)			- photypesetter simulator
+tcp (4P)		- Internet Transmission Control Protocol
+tee (1)			- pipe fitting
+telnet (1)		- communicate using TELNET protocol .IX protocol .IX "\*itelnet\*r command" .IX "TELNET protocol"
+telnet (1)		- user interface to the TELNET protocol
+termcap (5)		- terminal capability data base
+terminals (7)		- conventional names
+test (1)		- condition command
+tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs (3)	- terminal independent operation routines
+time (1)		- time a command
+time, ctime, ltime, gmtime (3F) - return system time
+tip (1)			- connect to a remote system
+tk (1)			- paginator for the Tektronix 4014
+tm (4)			- TM-11/TE-10 magtape interface
+touch (1)		- update date last modified of a file
+tp (1)			- manipulate tape archive
+tp (5)			- DEC/mag tape formats
+tr (1)			- translate characters
+traper (3F)		- trap arithmetic errors
+trapov (3F)		- trap and repair floating point overflow
+trek (6)		- trekkie game
+trman (1)		- translate version 6 manual macros to version 7 macros
+troff, nroff (1)	- text formatting and typesetting
+trpt (8)		- transliterate protocol trace
+true, false (1)		- provide truth values
+truncate (2)		- truncate a file to a specified length
+ts (4)			- TS-11 magtape interface
+tset (1)		- set terminal modes
+tsort (1)		- topological sort
+tty (1)			- get terminal name
+tty (4)			- general terminal interface
+ttynam, isatty (3F)	- find name of a terminal port
+ttyname, isatty, ttyslot (3)	- find name of a terminal
+ttys (5)		- terminal initialization data
+ttytype (5)		- data base of terminal types by port
+types (5)		- primitive system data types
+udp (4P)		- Internet User Datagram Protocol
+ul (1)			- do underlining
+umask (2)		- set file creation mode mask
+un (4I)			- Ungermann-Bass interface
+ungetc (3S)		- push character back into input stream
+uniq (1)		- report repeated lines in a file
+units (1)		- conversion program
+unlink (2)		- remove directory entry
+unlink (3F)		- remove a directory entry
+unmap (2)		- unmap pages of memory
+up (4)			- unibus storage module controller/drives
+update (8)		- periodically update the super block
+uptime (1)		- show how long system has been up
+users (1)		- compact list of users who are on the system
+utimes (2)		- set file times
+utmp, wtmp (5)		- login records
+uuclean (1C)		- uucp spool directory clean-up
+uucp, uulog (1C)	- unix to unix copy
+uudiff (1C)		- directory comparison between machines
+uuencode (5)		- format of an encoded uuencode file
+uuencode,uudecode (1C)	- encode/decode a binary file for tranmission via mail
+uusend (1C)		- send a file to a remote host
+uux (1C)		- unix to unix command execution
+va (4)			- Benson-Varian interface
+valloc (3)		- aligned memory allocator
+varargs (3)		- variable argument list
+vfont (5)		- font formats for the Benson-Varian or Versatec
+vfontinfo (1)		- inspect and print out information about unix fonts
+vgrind (1)		- grind nice listings of programs
+vgrindefs (5)		- vgrind's language definition data base
+vi (1)			- screen oriented (visual) display editor based on ex
+vipw (8)		- edit the password file with vi
+vlp \(em Format Lisp programs to be printed with nroff, vtroff, or troff(1) 
+vmstat (1)		- report virtual memory statistics
+vp (4)			- Versatec interface
+vpac (8)		- print raster printer/ploter accounting information
+vpr, vprm, vpq, vprint (1)  - raster printer/plotter spooler
+vtroff (1)		- troff to a raster plotter
+w (1)			- who is on and what they are doing
+wait (1)		- await completion of process
+wait (2)		- wait for process to terminate
+wait (3F)		- wait for a process to terminate
+wait3 (2J)		- wait for process to terminate
+wall (1)		- write to all users
+wc (1)			- word count
+what (1)		- show what versions of object modules were used to construct a file
+whatis (1)		- describe what a command is
+whereis (1)		- locate source, binary, and or manual for program
+which (1)		- locate a program file including aliases and paths (\fIcsh\fR only)
+who (1)			- who is on the system
+whoami (1)		- print effective current user id
+worm (6)		- Play the growing worm game
+worms  (6)		-  animate worms on a display terminal
+wrap (2)		- wrap a descriptor with a protocol interpreter
+write (1)		- write to another user
+write, writev (2)	- write on a file
+wsh (1X)		- distributed shell
+wtmp (5)		- user login history
+wump (6)		- the game of hunt-the-wumpus
+xsend, xget, enroll (1) - secret mail
+xstr (1)		- extract strings from C programs to implement shared strings
+yacc (1)		- yet another compiler-compiler
+yes (1)			- be repetitively affirmative
+zork (6)		- the game of dungeon
