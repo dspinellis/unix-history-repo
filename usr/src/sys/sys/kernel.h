@@ -1,4 +1,4 @@
-/*	kernel.h	4.7	82/10/21	*/
+/*	kernel.h	4.8	83/05/30	*/
 
 /*
  * Global variables for the kernel
@@ -16,6 +16,7 @@ struct	timeval boottime;
 struct	timeval time;
 struct	timezone tz;			/* XXX */
 int	hz;
+int	phz;				/* alternate clock's frequency */
 int	tick;
 int	lbolt;				/* awoken once a second */
 int	realitexpire();
