@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -116,7 +116,7 @@ deliver(firstto, editfcn)
 			e->e_to = to->q_paddr;
 			message("queued");
 			if (LogLevel > 8)
-				logdelivery("queued", e);
+				logdelivery(m, NULL, "queued", e);
 		}
 		e->e_to = NULL;
 		return (0);
@@ -273,13 +273,13 @@ deliver(firstto, editfcn)
 		{
 			NoReturn = TRUE;
 			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
-			giveresponse(EX_UNAVAILABLE, m, e);
+			giveresponse(EX_UNAVAILABLE, m, NULL, e);
 			continue;
 		}
 		rcode = checkcompat(to, e);
 		if (rcode != EX_OK)
 		{
-			giveresponse(rcode, m, e);
+			giveresponse(rcode, m, NULL, e);
 			continue;
 		}
 
@@ -326,7 +326,7 @@ deliver(firstto, editfcn)
 		if (m == FileMailer)
 		{
 			rcode = mailfile(user, getctladdr(to), e);
-			giveresponse(rcode, m, e);
+			giveresponse(rcode, m, NULL, e);
 			if (rcode == EX_OK)
 				to->q_flags |= QSENT;
 			continue;
@@ -439,7 +439,7 @@ deliver(firstto, editfcn)
 	}
 	else
 					markfailure(e, to, i);
-					giveresponse(i, m, e);
+					giveresponse(i, m, mci, e);
 				}
 				else {
 				}
@@ -482,7 +482,7 @@ deliver(firstto, editfcn)
 
   give_up:
 	if (tobuf[0] != '\0')
-		giveresponse(rcode, m, e);
+		giveresponse(rcode, m, mci, e);
 	for (to = tochain; to != NULL; to = to->q_tchain)
 	{
 		if (rcode != EX_OK)
@@ -949,7 +949,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 **		stat -- the status code from the mailer (high byte
 **			only; core dumps must have been taken care of
 **			already).
-**		m -- the mailer descriptor for this mailer.
+**		m -- the mailer info for this mailer.
+**		mci -- the mailer connection info -- can be NULL if the
+**			response is given before the connection is made.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -959,9 +962,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 **		ExitStat may be set.
 */
 
-giveresponse(stat, m, e)
+giveresponse(stat, m, mci, e)
 	int stat;
 	register MAILER *m;
+	register MCI *mci;
 	ENVELOPE *e;
 {
 	register char *statmsg;
@@ -972,11 +976,6 @@ giveresponse(stat, m, e)
 	extern int h_errno;
 #endif
 	char buf[MAXLINE];
-
-#ifdef lint
-	if (m == NULL)
-		return;
-#endif lint
 
 	/*
 	**  Compute status message from code.
@@ -1053,7 +1052,7 @@ giveresponse(stat, m, e)
 	*/
 
 	if (LogLevel > ((stat == EX_TEMPFAIL) ? 8 : (stat == EX_OK) ? 7 : 6))
-		logdelivery(&statmsg[4], e);
+		logdelivery(m, mci, &statmsg[4], e);
 
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
@@ -1072,7 +1071,11 @@ giveresponse(stat, m, e)
 **  LOGDELIVERY -- log the delivery in the system log
 **
 **	Parameters:
-**		stat -- the message to print for the status
+**		m -- the mailer info.  Can be NULL for initial queue.
+**		mci -- the mailer connection info -- can be NULL if the
+**			log is occuring when no connection is active.
+**		stat -- the message to print for the status.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none
@@ -1081,17 +1084,25 @@ giveresponse(stat, m, e)
 **		none
 */
 
-logdelivery(stat, e)
+logdelivery(m, mci, stat, e)
+	MAILER *m;
+	register MCI *mci;
 	char *stat;
 	register ENVELOPE *e;
 {
 	char *delay;
+	char *curhost;
 	extern char *pintvl();
 
 # ifdef LOG
+	if (mci != NULL && mci->mci_host != NULL)
+		curhost = mci->mci_host;
+	else
+		curhost = CurHostName;
+
 	delay = pintvl(curtime() - e->e_ctime, TRUE);
-	if (strcmp(stat, "Sent") != 0 || CurHostName == NULL ||
-	    strcmp(CurHostName, "localhost") == 0)
+	if (strcmp(stat, "Sent") != 0 || m == NULL || curhost == NULL ||
+	    strcmp(curhost, "localhost") == 0)
 	{
 		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s",
 		       e->e_id, e->e_to, delay, stat);
@@ -1101,12 +1112,12 @@ logdelivery(stat, e)
 		char *p1, *p2;
 		extern char *macvalue();
 
-		if (CurHostName[0] == '/')
+		if (curhost[0] == '/')
 		{
 			p1 = macvalue('h', e);
 			if (p1 == NULL || p1[0] == '\0')
 				p1 = "local";
-			p2 = CurHostName;
+			p2 = curhost;
 		}
 # ifdef DAEMON
 		else
@@ -1114,12 +1125,12 @@ logdelivery(stat, e)
 			extern struct sockaddr_in CurHostAddr;
 			extern char *inet_ntoa();
 
-			p1 = CurHostName;
+			p1 = curhost;
 			p2 = inet_ntoa(CurHostAddr.sin_addr);
 		}
 # endif
-		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=Sent to %s (%s)",
-		       e->e_id, e->e_to, delay, p1, p2);
+		syslog(LOG_INFO, "%s: to=%s, delay=%s, mailer=%s, stat=Sent to %s (%s)",
+		       e->e_id, e->e_to, delay, m->m_name, p1, p2);
 	}
 # endif /* LOG */
 }
