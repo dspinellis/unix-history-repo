@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.9 2/14/82
+ *	@(#)as.h 4.11 %G%
  */
 #ifdef VMS
 # define	vax	1
