@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.161 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.162 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1268,7 +1268,7 @@ getla()
 	FILE *fp;
 
 	fp = fopen(_PATH_LOADAVG, "r");
-	if (fp == NULL) 
+	if (fp == NULL)
 	{
 		if (tTd(3, 1))
 			printf("getla: fopen(%s): %s\n",
