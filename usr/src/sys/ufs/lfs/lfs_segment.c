@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.7 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -132,10 +132,23 @@ lfs_writevnodes(fs, mp, sp, op)
 	struct inode *ip;
 	struct vnode *vp;
 
+/* BEGIN HACK */
+#define	VN_OFFSET	(((void *)&vp->v_mntvnodes.le_next) - (void *)vp)
+#define	BACK_VP(VP)	((struct vnode *)(((void *)VP->v_mntvnodes.le_prev) - VN_OFFSET))
+#define	BEG_OF_VLIST	((struct vnode *)(((void *)&mp->mnt_vnodelist.lh_first) - VN_OFFSET))
+
+/* Find last vnode. */
+loop:   for (vp = mp->mnt_vnodelist.lh_first;
+	     vp && vp->v_mntvnodes.le_next != NULL;
+	     vp = vp->v_mntvnodes.le_next);
+	for (; vp && vp != BEG_OF_VLIST; vp = BACK_VP(vp)) {
+/* END HACK */
+/*
 loop:
 	for (vp = mp->mnt_vnodelist.lh_first;
 	     vp != NULL;
 	     vp = vp->v_mntvnodes.le_next) {
+*/
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
@@ -202,7 +215,7 @@ lfs_segwrite(mp, flags)
 		clean = cip->clean;
 		brelse(bp);
 		if (clean <= 2) {
-			printf ("segs clean: %d\n", clean);
+			/* printf ("segs clean: %d\n", clean); */
 			wakeup(&lfs_allclean_wakeup);
 			if (error = tsleep(&fs->lfs_avail, PRIBIO + 1,
 			    "lfs writer", 0))
@@ -453,7 +466,7 @@ lfs_gatherblock(sp, bp, sptr)
 #endif
 	fs = sp->fs;
 	if (sp->sum_bytes_left < sizeof(ufs_daddr_t) ||
-	    sp->seg_bytes_left < fs->lfs_bsize) {
+	    sp->seg_bytes_left < bp->b_bcount) {
 		if (sptr)
 			splx(*sptr);
 		lfs_updatemeta(sp);
@@ -479,7 +492,7 @@ lfs_gatherblock(sp, bp, sptr)
 	sp->fip->fi_blocks[sp->fip->fi_nblocks++] = bp->b_lblkno;
 
 	sp->sum_bytes_left -= sizeof(ufs_daddr_t);
-	sp->seg_bytes_left -= fs->lfs_bsize;
+	sp->seg_bytes_left -= bp->b_bcount;
 	return(0);
 }
 
@@ -495,7 +508,19 @@ lfs_gather(fs, sp, vp, match)
 
 	sp->vp = vp;
 	s = splbio();
-loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {
+/* This is a hack to see if ordering the blocks in LFS makes a difference. */
+/* BEGIN HACK */
+#define	BUF_OFFSET	(((void *)&bp->b_vnbufs.le_next) - (void *)bp)
+#define	BACK_BUF(BP)	((struct buf *)(((void *)BP->b_vnbufs.le_prev) - BUF_OFFSET))
+#define	BEG_OF_LIST	((struct buf *)(((void *)&vp->v_dirtyblkhd.lh_first) - BUF_OFFSET))
+
+
+/*loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {*/
+/* Find last buffer. */
+loop:   for (bp = vp->v_dirtyblkhd.lh_first; bp && bp->b_vnbufs.le_next != NULL;
+	    bp = bp->b_vnbufs.le_next);
+	for (; bp && bp != BEG_OF_LIST; bp = BACK_BUF(bp)) {
+/* END HACK */
 		if (bp->b_flags & B_BUSY || !match(fs, bp) ||
 		    bp->b_flags & B_GATHERED)
 			continue;
@@ -529,10 +554,12 @@ lfs_updatemeta(sp)
 	struct indir a[NIADDR + 2], *ap;
 	struct inode *ip;
 	ufs_daddr_t daddr, lbn, off;
-	int db_per_fsb, error, i, nblocks, num;
+	int error, i, nblocks, num;
 
 	vp = sp->vp;
 	nblocks = &sp->fip->fi_blocks[sp->fip->fi_nblocks] - sp->start_lbp;
+	if (nblocks < 0)
+		panic("This is a bad thing\n");
 	if (vp == NULL || nblocks == 0) 
 		return;
 
@@ -541,15 +568,23 @@ lfs_updatemeta(sp)
 		lfs_shellsort(sp->start_bpp, sp->start_lbp, nblocks);
 
 	/*
+	 * Record the length of the last block in case it's a fragment.
+	 * If there are indirect blocks present, they sort last.  An
+	 * indirect block will be lfs_bsize and its presence indicates
+	 * that you cannot have fragments.
+	 */
+	sp->fip->fi_lastlength = sp->start_bpp[nblocks - 1]->b_bcount;
+
+	/*
 	 * Assign disk addresses, and update references to the logical
 	 * block and the segment usage information.
 	 */
 	fs = sp->fs;
-	db_per_fsb = fsbtodb(fs, 1);
 	for (i = nblocks; i--; ++sp->start_bpp) {
 		lbn = *sp->start_lbp++;
 		(*sp->start_bpp)->b_blkno = off = fs->lfs_offset;
-		fs->lfs_offset += db_per_fsb;
+		fs->lfs_offset +=
+		    fragstodb(fs, numfrags(fs, (*sp->start_bpp)->b_bcount));
 
 		if (error = ufs_bmaparray(vp, lbn, &daddr, a, &num, NULL))
 			panic("lfs_updatemeta: ufs_bmaparray %d", error);
@@ -571,9 +606,8 @@ lfs_updatemeta(sp)
 			 * to get counted for the inode.
 			 */
 			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE)) {
-printf ("Updatemeta allocating indirect block: shouldn't happen\n");
-				ip->i_blocks += btodb(fs->lfs_bsize);
-				fs->lfs_bfree -= btodb(fs->lfs_bsize);
+				ip->i_blocks += fsbtodb(fs, 1);
+				fs->lfs_bfree -= fragstodb(fs, fs->lfs_frag);
 			}
 			((ufs_daddr_t *)bp->b_data)[ap->in_off] = off;
 			VOP_BWRITE(bp);
@@ -584,14 +618,14 @@ printf ("Updatemeta allocating indirect block: shouldn't happen\n");
 		    !(daddr >= fs->lfs_lastpseg && daddr <= off)) {
 			LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
-			if (sup->su_nbytes < fs->lfs_bsize) {
+			if (sup->su_nbytes < (*sp->start_bpp)->b_bcount) {
 				/* XXX -- Change to a panic. */
 				printf("lfs: negative bytes (segment %d)\n",
 				    datosn(fs, daddr));
 				panic ("Negative Bytes");
 			}
 #endif
-			sup->su_nbytes -= fs->lfs_bsize;
+			sup->su_nbytes -= (*sp->start_bpp)->b_bcount;
 			error = VOP_BWRITE(bp);
 		}
 	}
@@ -658,11 +692,13 @@ lfs_initseg(fs)
 	ssp = sp->segsum;
 	ssp->ss_next = fs->lfs_nextseg;
 	ssp->ss_nfinfo = ssp->ss_ninos = 0;
+	ssp->ss_magic = SS_MAGIC;
 
 	/* Set pointer to first FINFO, initialize it. */
 	sp->fip = (struct finfo *)((caddr_t)sp->segsum + sizeof(SEGSUM));
 	sp->fip->fi_nblocks = 0;
 	sp->start_lbp = &sp->fip->fi_blocks[0];
+	sp->fip->fi_lastlength = 0;
 
 	sp->seg_bytes_left -= LFS_SUMMARY_SIZE;
 	sp->sum_bytes_left = LFS_SUMMARY_SIZE - sizeof(SEGSUM);
@@ -724,13 +760,13 @@ lfs_writeseg(fs, sp)
 	SEGUSE *sup;
 	SEGSUM *ssp;
 	dev_t i_dev;
-	size_t size;
 	u_long *datap, *dp;
-	int ch_per_blk, do_again, i, nblocks, num, s;
+	int do_again, i, nblocks, s;
 	int (*strategy)__P((struct vop_strategy_args *));
 	struct vop_strategy_args vop_strategy_a;
 	u_short ninos;
 	char *p;
+long *lp;
 
 	/*
 	 * If there are no buffers other than the segment summary to write
@@ -740,12 +776,16 @@ lfs_writeseg(fs, sp)
 	if ((nblocks = sp->cbpp - sp->bpp) == 1)
 		return (0);
 
-	ssp = (SEGSUM *)sp->segsum;
-
 	/* Update the segment usage information. */
 	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
+
+	/* Loop through all blocks, except the segment summary. */
+	for (bpp = sp->bpp; ++bpp < sp->cbpp; )
+		sup->su_nbytes += (*bpp)->b_bcount;
+
+	ssp = (SEGSUM *)sp->segsum;
+
 	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
-	sup->su_nbytes += nblocks - 1 - ninos << fs->lfs_bshift;
 	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
 	sup->su_nbytes += LFS_SUMMARY_SIZE;
 	sup->su_lastmod = time.tv_sec;
@@ -798,23 +838,21 @@ lfs_writeseg(fs, sp)
 	 * easily make the buffers contiguous in kernel memory and if that's
 	 * fast enough.
 	 */
-	ch_per_blk = MAXPHYS / fs->lfs_bsize;
 	for (bpp = sp->bpp, i = nblocks; i;) {
-		num = ch_per_blk;
-		if (num > i)
-			num = i;
-		i -= num;
-		size = num * fs->lfs_bsize;
-
 		cbp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp,
-		    (*bpp)->b_blkno, size);
+		    (*bpp)->b_blkno, MAXPHYS);
 		cbp->b_dev = i_dev;
 		cbp->b_flags |= B_ASYNC | B_BUSY;
+		cbp->b_bcount = 0;
 
 		s = splbio();
 		++fs->lfs_iocount;
-		for (p = cbp->b_data; num--;) {
-			bp = *bpp++;
+		for (p = cbp->b_data; i && cbp->b_bcount < MAXPHYS; i--) {
+			bp = *bpp;
+			if (bp->b_bcount > (MAXPHYS - cbp->b_bcount))
+				break;
+			bpp++;
+
 			/*
 			 * Fake buffers from the cleaner are marked as B_INVAL.
 			 * We need to copy the data from user space rather than
@@ -826,7 +864,9 @@ lfs_writeseg(fs, sp)
 					panic("lfs_writeseg: copyin failed");
 			} else
 				bcopy(bp->b_data, p, bp->b_bcount);
+
 			p += bp->b_bcount;
+			cbp->b_bcount += bp->b_bcount;
 			if (bp->b_flags & B_LOCKED)
 				--locked_queue_count;
 			bp->b_flags &= ~(B_ERROR | B_READ | B_DELWRI |
@@ -846,7 +886,6 @@ lfs_writeseg(fs, sp)
 		}
 		++cbp->b_vp->v_numoutput;
 		splx(s);
-		cbp->b_bcount = p - (char *)cbp->b_data;
 		/*
 		 * XXXX This is a gross and disgusting hack.  Since these
 		 * buffers are physically addressed, they hang off the

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.8 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,10 @@ if (sp->sum_bytes_left < (s)) {		\
 	(void) lfs_writeseg(fs, sp);	\
 }
 struct buf *lfs_fakebuf __P((struct vnode *, int, size_t, caddr_t));
+
+int debug_cleaner = 0;
+int clean_vnlocked = 0;
+int clean_inlocked = 0;
 
 /*
  * lfs_markv:
@@ -146,6 +150,7 @@ lfs_markv(p, uap, retval)
 #ifdef DIAGNOSTIC
 				printf("lfs_markv: VFS_VGET failed (%d)\n",
 				    blkp->bi_inode);
+				panic("lfs_markv VFS_VGET FAILED");
 #endif
 				lastino = LFS_UNUSED_INUM;
 				v_daddr = LFS_UNUSED_DADDR;
@@ -176,7 +181,7 @@ lfs_markv(p, uap, retval)
 			bp = getblk(vp, blkp->bi_lbn, bsize, 0, 0);
 			if (!(bp->b_flags & (B_DELWRI | B_DONE | B_CACHE)) &&
 			    (error = copyin(blkp->bi_bp, bp->b_data,
-			    bsize)))
+			    blkp->bi_size)))
 				goto err2;
 			if (error = VOP_BWRITE(bp))
 				goto err2;
@@ -241,6 +246,7 @@ lfs_bmapv(p, uap, retval)
 {
 	BLOCK_INFO *blkp;
 	struct mount *mntp;
+	struct ufsmount *ump;
 	struct vnode *vp;
 	fsid_t fsid;
 	void *start;
@@ -265,10 +271,18 @@ lfs_bmapv(p, uap, retval)
 	for (step = cnt; step--; ++blkp) {
 		if (blkp->bi_lbn == LFS_UNUSED_LBN)
 			continue;
-		/* Could be a deadlock ? */
-		if (VFS_VGET(mntp, blkp->bi_inode, &vp))
+		/*
+		 * A regular call to VFS_VGET could deadlock
+		 * here.  Instead, we try an unlocked access.
+		 */
+		ump = VFSTOUFS(mntp);
+		if ((vp =
+		    ufs_ihashlookup(ump->um_dev, blkp->bi_inode)) != NULL) {
+			if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr, NULL))
+				daddr = LFS_UNUSED_DADDR;
+		} else if (VFS_VGET(mntp, blkp->bi_inode, &vp))
 			daddr = LFS_UNUSED_DADDR;
-		else {
+		else  {
 			if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr, NULL))
 				daddr = LFS_UNUSED_DADDR;
 			vput(vp);
@@ -436,14 +450,12 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	if ((*vpp = ufs_ihashlookup(dev, ino)) != NULL) {
 		lfs_vref(*vpp);
 		if ((*vpp)->v_flag & VXLOCK)
-			printf ("Cleaned vnode VXLOCKED\n");
+			clean_vnlocked++;
 		ip = VTOI(*vpp);
 		if (ip->i_flag & IN_LOCKED)
-			printf("cleaned vnode locked\n");
-		if (!(ip->i_flag & IN_MODIFIED)) {
+			clean_inlocked++;
+		if (!(ip->i_flag & IN_MODIFIED))
 			++ump->um_lfs->lfs_uinodes;
-			ip->i_flag |= IN_MODIFIED;
-		}
 		ip->i_flag |= IN_MODIFIED;
 		return (0);
 	}
