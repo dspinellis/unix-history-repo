@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -111,7 +111,6 @@ main(argc, argv, envp)
 	STAB *st;
 	register int i;
 	int j;
-	bool readconfig = TRUE;
 	bool queuemode = FALSE;		/* process queue requests */
 	bool nothaw;
 	bool safecf = TRUE;
@@ -266,13 +265,6 @@ main(argc, argv, envp)
 	InChannel = stdin;
 	OutChannel = stdout;
 
-# ifdef FROZENCONFIG
-	if (!nothaw)
-		readconfig = !thaw(FreezeFile, argv0);
-# else
-	readconfig = TRUE;
-# endif
-
 	/*
 	**  Move the environment so setproctitle can use the space at
 	**  the top of memory.
@@ -317,14 +309,11 @@ main(argc, argv, envp)
 	errno = 0;
 	from = NULL;
 
-	if (readconfig)
-	{
-		/* initialize some macros, etc. */
-		initmacros(CurEnv);
+	/* initialize some macros, etc. */
+	initmacros(CurEnv);
 
-		/* version */
-		define('v', Version, CurEnv);
-	}
+	/* version */
+	define('v', Version, CurEnv);
 
 	/* hostname */
 	av = myhostname(jbuf, sizeof jbuf);
@@ -424,18 +413,13 @@ main(argc, argv, envp)
 			  case MD_TEST:
 			  case MD_INITALIAS:
 			  case MD_PRINT:
-#ifdef FROZENCONFIG
-			  case MD_FREEZE:
-#endif
 				OpMode = j;
 				break;
 
-#ifndef FROZENCONFIG
 			  case MD_FREEZE:
 				usrerr("Frozen configurations unsupported");
 				ExitStat = EX_USAGE;
 				break;
-#endif
 
 			  default:
 				usrerr("Invalid operation mode %c", j);
@@ -601,8 +585,7 @@ main(argc, argv, envp)
 	**	Extract special fields for local use.
 	*/
 
-	if (OpMode == MD_FREEZE || readconfig)
-		readcf(ConfFile, safecf, CurEnv);
+	readcf(ConfFile, safecf, CurEnv);
 
 	if (tTd(0, 1))
 	{
@@ -668,17 +651,6 @@ main(argc, argv, envp)
 
 	switch (OpMode)
 	{
-# ifdef FROZENCONFIG
-	  case MD_FREEZE:
-		/* this is critical to avoid forgeries of the frozen config */
-		(void) setgid(RealGid);
-		(void) setuid(RealUid);
-
-		/* freeze the configuration */
-		freeze(FreezeFile);
-		exit(EX_OK);
-# endif
-
 	  case MD_INITALIAS:
 		Verbose = TRUE;
 		break;
@@ -1213,189 +1185,6 @@ initmacros(e)
 	define('o', ".:@[]", e);
 	define('q', "<\201g>", e);
 }
-/*
-**  FREEZE -- freeze BSS & allocated memory
-**
-**	This will be used to efficiently load the configuration file.
-**
-**	Parameters:
-**		freezefile -- the name of the file to freeze to.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Writes BSS and malloc'ed memory to freezefile
-*/
-
-# ifdef FROZENCONFIG
-
-union frz
-{
-	char		frzpad[BUFSIZ];	/* insure we are on a BUFSIZ boundary */
-	struct
-	{
-		time_t	frzstamp;	/* timestamp on this freeze */
-		char	*frzbrk;	/* the current break */
-		char	*frzedata;	/* address of edata */
-		char	*frzend;	/* address of end */
-		char	frzver[252];	/* sendmail version */
-	} frzinfo;
-};
-
-#if defined(__hpux) || defined(__alpha)
-#define BRK_TYPE        int
-#define SBRK_TYPE       void *
-#else
-#define BRK_TYPE        char *
-#define SBRK_TYPE       char *
-#endif
-
-freeze(freezefile)
-	char *freezefile;
-{
-	int f;
-	union frz fhdr;
-	extern SBRK_TYPE sbrk();
-	extern char edata, end;
-	extern char Version[];
-
-	if (freezefile == NULL)
-		return;
-
-	/* try to open the freeze file */
-	f = creat(freezefile, FileMode);
-	if (f < 0)
-	{
-		syserr("Cannot freeze %s", freezefile);
-		errno = 0;
-		return;
-	}
-
-	/* build the freeze header */
-	fhdr.frzinfo.frzstamp = curtime();
-	fhdr.frzinfo.frzbrk = sbrk(0);
-	fhdr.frzinfo.frzedata = &edata;
-	fhdr.frzinfo.frzend = &end;
-	(void) strcpy(fhdr.frzinfo.frzver, Version);
-
-	/* write out the freeze header */
-	if (write(f, (char *) &fhdr, sizeof fhdr) != sizeof fhdr ||
-	    write(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
-					(int) (fhdr.frzinfo.frzbrk - &edata))
-	{
-		syserr("Cannot freeze %s", freezefile);
-	}
-
-	/* fine, clean up */
-	(void) close(f);
-}
-/*
-**  THAW -- read in the frozen configuration file.
-**
-**	Parameters:
-**		freezefile -- the name of the file to thaw from.
-**		binfile -- the name of the sendmail binary (ok to guess).
-**
-**	Returns:
-**		TRUE if it successfully read the freeze file.
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		reads freezefile in to BSS area.
-*/
-
-thaw(freezefile, binfile)
-	char *freezefile;
-	char *binfile;
-{
-	int f;
-	register char *p;
-	union frz fhdr;
-	char hbuf[60];
-	struct stat fst, sst;
-	extern char edata, end;
-	extern char Version[];
-	extern char **myhostname();
-	extern BRK_TYPE brk();
-
-	if (freezefile == NULL)
-		return (FALSE);
-
-	/* open the freeze file */
-	f = open(freezefile, 0);
-	if (f < 0)
-	{
-		errno = 0;
-		return (FALSE);
-	}
-
-	if (fstat(f, &fst) < 0 || stat(ConfFile, &sst) < 0 ||
-	    fst.st_mtime < sst.st_mtime)
-	{
-		syslog(LOG_WARNING, "Freeze file older than config file");
-		(void) close(f);
-		return (FALSE);
-	}
-
-	if (strchr(binfile, '/') != NULL && stat(binfile, &sst) == 0 &&
-	    fst.st_mtime < sst.st_mtime)
-	{
-		syslog(LOG_WARNING, "Freeze file older than binary file");
-		(void) close(f);
-		return (FALSE);
-	}
-
-	/* read in the header */
-	if (read(f, (char *) &fhdr, sizeof fhdr) < sizeof fhdr)
-	{
-		syslog(LOG_WARNING, "Cannot read frozen config file");
-		(void) close(f);
-		return (FALSE);
-	}
-	if (fhdr.frzinfo.frzedata != &edata ||
-	    fhdr.frzinfo.frzend != &end ||
-	    strcmp(fhdr.frzinfo.frzver, Version) != 0)
-	{
-		fprintf(stderr, "Wrong version of frozen config file\n");
-		syslog(LOG_WARNING, "Wrong version of frozen config file");
-		(void) close(f);
-		return (FALSE);
-	}
-
-	/* arrange to have enough space */
-	if (brk(fhdr.frzinfo.frzbrk) == (BRK_TYPE) -1)
-	{
-		syserr("Cannot break to %x", fhdr.frzinfo.frzbrk);
-		(void) close(f);
-		return (FALSE);
-	}
-
-	/* now read in the freeze file */
-	if (read(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
-					(int) (fhdr.frzinfo.frzbrk - &edata))
-	{
-		syserr("Cannot read frozen config file");
-		/* oops!  we have trashed memory..... */
-		(void) write(2, "Cannot read freeze file\n", 24);
-		_exit(EX_SOFTWARE);
-	}
-
-	(void) close(f);
-
-	/* verify that the host name was correct on the freeze */
-	(void) myhostname(hbuf, sizeof hbuf);
-	p = macvalue('j', CurEnv);
-	if (p == NULL)
-		p = "";
-	if (strcmp(hbuf, macvalue('j', CurEnv)) == 0)
-		return (TRUE);
-	syslog(LOG_WARNING, "Hostname changed since freeze (%s => %s)",
-		p, hbuf);
-	return (FALSE);
-}
-
-# endif /* FROZENCONFIG */
 /*
 **  DISCONNECT -- remove our connection with any foreground process
 **
