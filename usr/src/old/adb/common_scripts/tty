@@ -6,13 +6,13 @@
 ,0$<# format the appropiate tty.
 .>5
 <9-1="Unit: "D
-<5+((<9-1)*0t152)/"rawq: cc"16t"cf"16t"cl"nD2X
+<5+((<9-1)*0t160)/"rawq: cc"16t"cf"16t"cl"nD2X
 +/"canq: cc"16t"cf"16t"cl"nD2X
 +/"outq: cc"16t"cf"16t"cl"nD2X
 +/"oproc"16t"param"16t"rsel"16t"wsel"n2p2X
 +/"LINEP"16t"addr"16t"dev"8t"flags"nXpx2+X
-+/"state"16t"session"16t"pgid"8t"line"nXXd\1
-+/"col"8t"rocount"8t"rocol"8t"hiwat"8t"lowat"8tn3\1dd
-+/"ws_row"8t"ws_col"8t"ws_xpix"8t"ws_ypix"n4u2+
++/"state"16t"session"16t"pgrp"16t"line"nXXX\1+
++/"col"8t"rocount"8t"rocol"8t"hiwat"8t"lowat"8tn5d
++/"ws_row"8t"ws_col"8t"ws_xpix"8t"ws_ypix"n4u
 +$<<termios
-+/"cancc"16t"rawcc"16t"outcc"n3U
++/"cancc"16t"rawcc"16t"outcc"16t"gen"n3Ud
