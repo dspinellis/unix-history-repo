@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.17 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -320,9 +320,18 @@ ffs_reallocblks(ap)
 	start_lbn = buflist->bs_children[0]->b_lblkno;
 	end_lbn = start_lbn + len - 1;
 #ifdef DIAGNOSTIC
+	for (i = 0; i < len; i++)
+		if (!ffs_checkblk(ip,
+		   dbtofsb(fs, buflist->bs_children[i]->b_blkno), fs->fs_bsize))
+			panic("ffs_reallocblks: unallocated block 1");
 	for (i = 1; i < len; i++)
 		if (buflist->bs_children[i]->b_lblkno != start_lbn + i)
-			panic("ffs_reallocblks: non-cluster");
+			panic("ffs_reallocblks: non-logical cluster");
+	blkno = buflist->bs_children[0]->b_blkno;
+	ssize = fsbtodb(fs, fs->fs_frag);
+	for (i = 1; i < len - 1; i++)
+		if (buflist->bs_children[i]->b_blkno != blkno + (i * ssize))
+			panic("ffs_reallocblks: non-physical cluster %d", i);
 #endif
 	/*
 	 * If the latest allocation is in a new cylinder group, assume that
@@ -392,6 +401,9 @@ ffs_reallocblks(ap)
 		if (i == ssize)
 			bap = ebap;
 #ifdef DIAGNOSTIC
+		if (!ffs_checkblk(ip,
+		   dbtofsb(fs, buflist->bs_children[i]->b_blkno), fs->fs_bsize))
+			panic("ffs_reallocblks: unallocated block 2");
 		if (dbtofsb(fs, buflist->bs_children[i]->b_blkno) != *bap)
 			panic("ffs_reallocblks: alloc mismatch");
 #endif
@@ -442,6 +454,9 @@ ffs_reallocblks(ap)
 		    fs->fs_bsize);
 		buflist->bs_children[i]->b_blkno = fsbtodb(fs, blkno);
 #ifdef DEBUG
+		if (!ffs_checkblk(ip,
+		   dbtofsb(fs, buflist->bs_children[i]->b_blkno), fs->fs_bsize))
+			panic("ffs_reallocblks: unallocated block 3");
 		if (prtrealloc)
 			printf(" %d,", blkno);
 #endif
@@ -1088,6 +1103,8 @@ ffs_clusteralloc(ip, cg, bpref, len)
 		if (!ffs_isblock(fs, cg_blksfree(cgp), got - run + i))
 			panic("ffs_clusteralloc: map mismatch");
 	bno = cg * fs->fs_fpg + blkstofrags(fs, got - run + 1);
+	if (dtog(fs, bno) != cg)
+		panic("ffs_clusteralloc: allocated out of group");
 	len = blkstofrags(fs, len);
 	for (i = 0; i < len; i += fs->fs_frag)
 		if ((got = ffs_alloccgblk(fs, cgp, bno + i)) != bno + i)
@@ -1297,6 +1314,56 @@ ffs_blkfree(ip, bno, size)
 	fs->fs_fmod = 1;
 	bdwrite(bp);
 }
+
+#ifdef DIAGNOSTIC
+/*
+ * Verify allocation of a block or fragment. Returns true if block or
+ * fragment is allocated, false if it is free.
+ */
+ffs_checkblk(ip, bno, size)
+	struct inode *ip;
+	ufs_daddr_t bno;
+	long size;
+{
+	struct fs *fs;
+	struct cg *cgp;
+	struct buf *bp;
+	int i, error, frags, free;
+
+	fs = ip->i_fs;
+	if ((u_int)size > fs->fs_bsize || fragoff(fs, size) != 0) {
+		printf("bsize = %d, size = %d, fs = %s\n",
+		    fs->fs_bsize, size, fs->fs_fsmnt);
+		panic("checkblk: bad size");
+	}
+	if ((u_int)bno >= fs->fs_size)
+		panic("checkblk: bad block %d", bno);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, dtog(fs, bno))),
+		(int)fs->fs_cgsize, NOCRED, &bp);
+	if (error) {
+		brelse(bp);
+		return;
+	}
+	cgp = (struct cg *)bp->b_data;
+	if (!cg_chkmagic(cgp)) {
+		brelse(bp);
+		return;
+	}
+	bno = dtogd(fs, bno);
+	if (size == fs->fs_bsize) {
+		free = ffs_isblock(fs, cg_blksfree(cgp), fragstoblks(fs, bno));
+	} else {
+		frags = numfrags(fs, size);
+		for (free = 0, i = 0; i < frags; i++)
+			if (isset(cg_blksfree(cgp), bno + i))
+				free++;
+		if (free != 0 && free != frags)
+			panic("checkblk: partially free fragment");
+	}
+	brelse(bp);
+	return (!free);
+}
+#endif /* DIAGNOSTIC */
 
 /*
  * Free an inode.
