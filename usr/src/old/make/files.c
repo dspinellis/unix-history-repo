@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)files.c	4.21 (Berkeley) 90/03/26";
+static	char *sccsid = "@(#)files.c	4.21 (Berkeley) 91/02/01";
+#include <sys/types.h>
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
