@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)gets.c	5.3 (Berkeley) 1/20/91";
 
 #include <unistd.h>
 #include <stdio.h>
+#include <err.h>
 
 char *
 gets(buf)
@@ -48,11 +49,9 @@ gets(buf)
 	register int c;
 	register char *s;
 	static int warned;
-	static char w[] =
-	    "warning: this program uses gets(), which is unsafe.\r\n";
 
 	if (!warned) {
-		(void) write(STDERR_FILENO, w, sizeof(w) - 1);
+		warnx("this program uses gets(), which is unsafe.\r");
 		warned = 1;
 	}
 	for (s = buf; (c = getchar()) != '\n';)
