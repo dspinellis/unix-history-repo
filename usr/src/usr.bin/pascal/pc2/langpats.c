@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -532,6 +532,22 @@ struct pats language_ptab[] = {
 	addl2	$4,r2\n\
 	addl2	$4,r3\n\
 	aoblss	r4,r5,1b\n" },
+
+	{ 4, "_IN\n",
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	movl	(sp)+,r3\n\
+	movl	(sp)+,r4\n\
+	clrl	r0\n\
+	subl2	r2,r1\n\
+	cmpl	r1,r3\n\
+	jgtru	1f\n\
+	shrl	$3,r1,r2\n\
+	movzbl	(r4)[r2],r3\n\
+	andl2	$7,r1\n\
+	jbc	r1,r3,1f\n\
+	incl	r0\n\
+1:\n" },
 
 /*
  * Pascal runtime checks
