@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_4.c	1.3 83/10/10";
+static	char *sccsid = "@(#)pl_4.c	1.4 83/10/14";
 #endif
 
 #include "player.h"
@@ -28,19 +28,6 @@ changesail()
 		}
 	} else if (!rig)
 		Signal("Sails rent to pieces", (struct ship *)0);
-}
-
-signalflags()
-{
-	register struct ship *sp;
-
-	foreachship(sp) {
-		if (*sp->file->signal) {
-			(void) putchar('\7');
-			Signal("%s (%c%c): %s", sp, sp->file->signal);
-			*sp->file->signal = '\0';
-		}
-	}
 }
 
 acceptsignal()
@@ -101,7 +88,7 @@ prompt()
 {
 	(void) wmove(scroll_w, sline, 0);
 	(void) wclrtoeol(scroll_w);
-	(void) addch('~');
+	(void) waddch(scroll_w, '~');
 	(void) wmove(scroll_w, sline, 0);
 	(void) wrefresh(scroll_w);
 }
@@ -125,6 +112,7 @@ char *buf;
 	register char *p = buf;
 
 	for (;;) {
+		(void) wrefresh(scroll_w);
 		while ((c = wgetch(scroll_w)) == EOF)
 			;
 		switch (c) {
@@ -139,14 +127,11 @@ char *buf;
 			}
 			break;
 		default:
-			if (p < buf + n - 1) {
+			if (c >= ' ' && c < 0x7f && p < buf + n - 1) {
 				*p++ = c;
 				(void) waddch(scroll_w, c);
-				(void) wrefresh(scroll_w);
-			} else {
+			} else
 				(void) putchar(CTRL(g));
-				(void) fflush(stdout);
-			}
 		}
 	}
 }
