@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.38 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.39 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1017,6 +1017,7 @@ coredump(p)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
+	LEASE_CHECK(vp, p, cred, LEASE_WRITE);
 	VOP_SETATTR(vp, &vattr, cred, p);
 	p->p_acflag |= ACORE;
 	bcopy(p, &p->p_addr->u_kproc.kp_proc, sizeof(struct proc));
