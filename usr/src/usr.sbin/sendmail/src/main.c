@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -207,6 +207,10 @@ main(argc, argv, envp)
 			printf("Version %s\n", Version);
 		}
 	}
+
+	InChannel = stdin;
+	OutChannel = stdout;
+
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile);
 
@@ -228,12 +232,6 @@ main(argc, argv, envp)
 		LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
 # endif SETPROCTITLE
 
-	/*
-	**  Now do basic initialization
-	*/
-
-	InChannel = stdin;
-	OutChannel = stdout;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, intsig);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
