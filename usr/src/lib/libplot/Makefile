@@ -1,6 +1,6 @@
-#	Makefile	4.5	83/07/09
+#	Makefile	4.6	83/09/21
 #
-ALL=	libplot libt4014 libt300 libt300s libt450 libvt0
+ALL=	libplot lib4014 lib300 lib300s lib450 libvt0
 SUBDIRS=plot t4014 t300 t300s t450 vt0
 
 all:	${ALL}
@@ -8,16 +8,16 @@ all:	${ALL}
 libplot: FRC
 	cd plot; make ${MFLAGS}
 
-libt4014: FRC
+lib4014: FRC
 	cd t4014; make ${MFLAGS}
 
-libt300: FRC
+lib300: FRC
 	cd t300; make ${MFLAGS}
 
-libt300s: FRC
+lib300s: FRC
 	cd t300s; make ${MFLAGS}
 
-libt450: FRC
+lib450: FRC
 	cd t450; make ${MFLAGS}
 
 libvt0: FRC
