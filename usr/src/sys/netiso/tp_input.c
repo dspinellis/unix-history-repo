@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.13 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.14 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -376,7 +376,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 
 {
 	register struct tp_pcb 	*tpcb = (struct tp_pcb *)0;
-	register struct tpdu 	*hdr = mtod(m, struct tpdu *);
+	register struct tpdu 	*hdr;
 	struct socket 			*so;
 	struct tp_event 		e;
 	int 					error = 0;
@@ -397,6 +397,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	int						tpcons_output();
 
 again:
+	hdr = mtod(m, struct tpdu *);
 #ifdef TP_PERF_MEAS
 	GET_CUR_TIME( &e.e_time ); perf_meas = 0;
 #endif TP_PERF_MEAS
@@ -590,6 +591,7 @@ again:
 			case	TPP_throughput: 
 			case	TPP_addl_info: 
 			case	TPP_subseq:
+			default:
 				IFDEBUG(D_TPINPUT)
 					printf("param ignored CR_TPDU code= 0x%x\n",
 						 vbptr(P)->tpv_code);
@@ -609,12 +611,6 @@ again:
 					printf("CR before cksum\n");
 				ENDDEBUG
 				break;
-
-			default:
-				IncStat(ts_inv_pcode);
-				error = E_TP_INV_PCODE;
-				goto discard;
-
 			}
 
 		/* } */ END_WHILE_OPTIONS(P)
@@ -948,6 +944,7 @@ again:
 			caseof(	CC_TPDU_type, TPP_acktime ):
 					/* class 4 only, 2 octets */
 					vb_getval(P, u_short, acktime);
+					acktime = ntohs(acktime);
 					acktime = acktime/500; /* convert to slowtimo ticks */
 					if( (short)acktime <=0 )
 						acktime = 2;
