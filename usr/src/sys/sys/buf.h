@@ -1,4 +1,4 @@
-/*	buf.h	4.16	82/05/31	*/
+/*	buf.h	4.17	82/10/10	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -172,3 +172,9 @@ unsigned minphys();
 	blkclr(bp->b_un.b_addr, bp->b_bcount); \
 	bp->b_resid = 0; \
 }
+
+#ifdef KERNEL
+struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
+struct	buf	bswlist;	/* free list of swap headers */
+struct	buf	*bclnlist;	/* header for list of cleaned pages */
+#endif

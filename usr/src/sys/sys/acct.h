@@ -1,4 +1,4 @@
-/*	acct.h	4.4	82/07/12	*/
+/*	acct.h	4.5	82/10/10	*/
 
 /*
  * Accounting structures;
@@ -30,3 +30,8 @@ struct	acct
 
 #define	ACCTLO	30		/* acctg off when space < this */
 #define	ACCTHI	100		/* acctg resumes at this level */
+
+#ifdef KERNEL
+struct	acct	acctbuf;
+struct	inode	*acctp;
+#endif
