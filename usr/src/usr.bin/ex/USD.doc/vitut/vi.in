@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vi.in	8.2 (Berkeley) %G%
+.\"	@(#)vi.in	8.3 (Berkeley) %G%
 .\"
 .EH 'USD:11-%''An Introduction to Display Editing with Vi'
 .OH 'An Introduction to Display Editing with Vi''USD:11-%'
@@ -560,6 +560,7 @@ This will set the
 .I readonly
 option which will prevent you from
 accidently overwriting the file.
+.sp
 .NH 1
 Making simple changes
 .NH 2
@@ -638,6 +639,7 @@ you can't backspace around the end of a line.  If you need to back up
 to the previous line to make a correction, just hit \s-2ESC\s0 and move
 the cursor back to the previous line.  After making the correction you
 can return to where you were and use the insert or append command again.
+.sp .5
 .NH 2
 Making small corrections
 .PP
@@ -694,6 +696,7 @@ Find a word which you can change to another, and try this
 now.
 Notice that the end of the text to be changed was marked with the character
 `$' so that you can see this as you are typing in the new material.
+.sp .5
 .NH 2
 Operating on lines
 .PP
@@ -974,6 +977,7 @@ F\fIx\fR	f backward in line
 P	put text back, before cursor or above current line
 T\fIx\fR	t backward in line
 .TE
+.ne 1i
 .NH 1
 High level commands
 .NH 2
@@ -1141,6 +1145,18 @@ Options, set, and editor startup files
 .PP
 The editor has a set of options, some of which have been mentioned above.
 The most useful options are given in the following table.
+.PP
+The options are of three kinds:  numeric options, string options, and
+toggle options.  You can set numeric and string options by a statement
+of the form
+.DS
+\fBset\fR \fIopt\fR\fB=\fR\fIval\fR
+.DE
+and toggle options can be set or unset by statements of one of the forms
+.DS
+\fBset\fR \fIopt\fR
+\fBset\fR \fBno\fR\fIopt\fR
+.DE
 .KF
 .TS
 lb lb lb lb
@@ -1163,18 +1179,6 @@ slowopen	slow	Postpone display updates during inserts
 term	dumb	The kind of terminal you are using.
 .TE
 .KE
-.PP
-The options are of three kinds:  numeric options, string options, and
-toggle options.  You can set numeric and string options by a statement
-of the form
-.DS
-\fBset\fR \fIopt\fR\fB=\fR\fIval\fR
-.DE
-and toggle options can be set or unset by statements of one of the forms
-.DS
-\fBset\fR \fIopt\fR
-\fBset\fR \fBno\fR\fIopt\fR
-.DE
 These statements can be placed in your EXINIT in your environment,
 or given while you are running
 .I vi
@@ -1732,6 +1736,7 @@ If you make changes to the editor's copy of a file, but do not wish to
 write them back, then you must give an \fB!\fR after the command you
 would otherwise use; this forces the editor to discard any changes
 you have made.  Use this carefully.
+.ne 1i
 .PP
 The \fB:e\fR command can be given a \fB+\fR argument to start at the
 end of the file, or a \fB+\fR\fIn\fR argument to start at line \fIn\fR\^.
@@ -1793,6 +1798,7 @@ to the line which matches.
 You can have the editor ignore the case of words in the searches it does
 by giving the command \fB:se ic\fR\s-2CR\s0.
 The command \fB:se noic\fR\s-2CR\s0 turns this off.
+.ne 1i
 .PP
 Strings given to searches may actually be regular expressions.
 If you do not want or need this facility, you should
@@ -1830,6 +1836,7 @@ More about input mode
 .PP
 There are a number of characters which you can use to make corrections
 during input mode.  These are summarized in the following table.
+.sp .5
 .DS
 .TS
 lb l.
@@ -1847,6 +1854,7 @@ kill	your kill character, deletes the input on this line
 ^V	quotes the next non-printing character into the file
 .TE
 .DE
+.sp .5
 .PP
 The most usual way of making corrections to input is by typing \fB^H\fR
 to correct a single character, or by typing one or more \fB^W\fR's to
