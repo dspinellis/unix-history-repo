@@ -1,4 +1,4 @@
-/*	ps.c	4.10	83/08/13	*/
+/*	ps.c	6.1	83/08/13	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
