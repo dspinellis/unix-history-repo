@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tape.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.7 (Berkeley) %G%";
 #include "dump.h"
 
 char	(*tblock)[TP_BSIZE];	/* Pointer to malloc()ed buffer for tape */
@@ -72,6 +72,12 @@ flusht()
 
 	trecno = 0;
 	if (write(to, tblock[0], writesize) != writesize){
+		if (pipeout) {
+			msg("Tape write error on %s\n", tape);
+			msg("Cannot recover\n");
+			dumpabort();
+			/* NOTREACHED */
+		}
 		msg("Tape write error on tape %d\n", tapeno);
 		broadcast("TAPE ERROR!\n");
 		if (query("Do you want to restart?")){
@@ -96,7 +102,7 @@ flusht()
 	asize += writesize/density;
 	asize += 7;
 	blockswritten += ntrec;
-	if (asize > tsize) {
+	if (!pipeout && asize > tsize) {
 		close_rewind();
 		otape();
 	}
@@ -107,6 +113,9 @@ rewind()
 {
 	int	secs;
 	int f;
+
+	if (pipeout)
+		return;
 #ifdef DEBUG
 	msg("Waiting 10 seconds to rewind.\n");
 	sleep(10);
@@ -124,6 +133,9 @@ rewind()
 
 close_rewind()
 {
+
+	if (pipeout)
+		return;
 	close(to);
 	if (!nogripe){
 		rewind();
@@ -236,7 +248,10 @@ otape()
 			tapeno+1, parentpid, getpid());
 #endif
 		do{
-			to = creat(tape, 0666);
+			if (pipeout)
+				to = 1;
+			else
+				to = creat(tape, 0666);
 			if (to < 0) {
 				if (!query("Cannot open tape. Do you want to retry the open?"))
 					dumpabort();
