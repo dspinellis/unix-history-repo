@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)func.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -909,7 +909,7 @@ dolimit(v)
 	char hard = 0;
 
 	v++;
-	if (eq(*v, "-h")) {
+	if (*v && eq(*v, "-h")) {
 		hard = 1;
 		v++;
 	}
@@ -1034,7 +1034,7 @@ dounlimit(v)
 	char hard = 0;
 
 	v++;
-	if (eq(*v, "-h")) {
+	if (*v && eq(*v, "-h")) {
 		hard = 1;
 		v++;
 	}
