@@ -13,24 +13,22 @@
 #define	MAXSTOR (KERNBASE - ctob(UPAGES))
 
 #define	ENTRYMASK	1			/* check for entry masks */
-#define	ishiddenreg(p)	((p) <= &reglist[8])
+#define	ishiddenreg(p)	((p) <= &kdbreglist[8])
 
 #define BPT	03
 #define TBIT	020
 
-#define	clrsstep()	(pcb.pcb_psl &= ~TBIT)
-#define	setsstep()	(pcb.pcb_psl |= TBIT)
+#define	clrsstep()	(kdbpcb.pcb_psl &= ~TBIT)
+#define	setsstep()	(kdbpcb.pcb_psl |= TBIT)
 
 #define	SETBP(ins)	(BPT | ((ins) & ~0xff))
 
-#define	getprevpc(fp)	get((fp)+16, DSP)	/* pc of caller */
-#define	getprevframe(fp) (get((fp)+12, DSP)&~2)	/* fp of caller */
-#define	getnargs(fp)	(get((fp)+6, DSP)&0xffff)
-#define	nextarg(ap)	((ap) + 4)		/* next argument in list */
+#define	getprevpc(fp)	kdbget((fp)+16, DSP)	/* pc of caller */
+#define	getprevframe(fp) (kdbget((fp)+12, DSP)&~2)	/* fp of caller */
 #define	NOFRAME		0			/* fp at top of call stack */
 
 #define	issignalpc(pc)	(MAXSTOR < (pc) && (pc) < MAXSTOR+ctob(UPAGES))
-#define	getsignalpc(fp)	get((fp)+92, DSP)	/* pc of caller before signal */
+#define	getsignalpc(fp)	kdbget((fp)+92, DSP)	/* pc of caller before signal */
 
 /* long to ints and back (puns) */
 union {
