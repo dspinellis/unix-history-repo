@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -94,6 +94,10 @@ struct nlist nl[] = {
 	{ "_ndmf" },
 #define	SNPTY	24
 	{ "_npty" },
+#define	SDHU	25
+	{ "_dhu_tty" },
+#define	SNDHU	26
+	{ "_ndhu" },
 #define	SYSMAP	25
 	{ "_Sysmap" },
 	{ "" }
@@ -402,14 +406,14 @@ doproc()
 	}
 }
 
+static char mesg[] =
+" # RAW CAN OUT     MODE     ADDR DEL COL     STATE  PGRP DISC\n";
+static int ttyspace = 128;
+static struct tty *tty;
+
 dotty()
 {
-	struct tty *tty;
-	int ntty, ttyspace = 128;
-	register struct tty *tp;
-	extern char *malloc(), *realloc();
-	static char mesg[] =
-	" # RAW CAN OUT     MODE     ADDR DEL COL     STATE  PGRP DISC\n";
+	extern char *malloc();
 
 	if ((tty = (struct tty *)malloc(ttyspace * sizeof(*tty))) == 0) {
 		printf("pstat: out of memory\n");
@@ -422,81 +426,34 @@ dotty()
 	read(fc, tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
-	if (nl[SNDZ].n_type == 0)
-		goto dh;
-	if (kflg) {
-		nl[SNDZ].n_value = clear(nl[SNDZ].n_value);
-		nl[SDZ].n_value = clear(nl[SDZ].n_value);
-	}
-	lseek(fc, (long)nl[SNDZ].n_value, 0);
-	read(fc, &ntty, sizeof(ntty));
-	printf("%d dz lines\n", ntty);
-	if (ntty > ttyspace) {
-		ttyspace = ntty;
-		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
-			printf("pstat: out of memory\n");
-			return;
-		}
-	}
-	lseek(fc, (long)nl[SDZ].n_value, 0);
-	read(fc, tty, ntty * sizeof (struct tty));
-	printf(mesg);
-	for (tp = tty; tp < &tty[ntty]; tp++)
-		ttyprt(tp, tp - tty);
-dh:
-	if (nl[SNDH].n_type == 0)
-		goto dmf;
-	if (kflg) {
-		nl[SNDH].n_value = clear(nl[SNDH].n_value);
-		nl[SDH].n_value = clear(nl[SDH].n_value);
-	}
-	lseek(fc, (long)nl[SNDH].n_value, 0);
-	read(fc, &ntty, sizeof(ntty));
-	printf("%d dh lines\n", ntty);
-	if (ntty > ttyspace) {
-		ttyspace = ntty;
-		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
-			printf("pstat: out of memory\n");
-			return;
-		}
-	}
-	lseek(fc, (long)nl[SDH].n_value, 0);
-	read(fc, tty, ntty * sizeof(struct tty));
-	printf(mesg);
-	for (tp = tty; tp < &tty[ntty]; tp++)
-		ttyprt(tp, tp - tty);
-dmf:
-	if (nl[SNDMF].n_type == 0)
-		goto pty;
-	if (kflg) {
-		nl[SNDMF].n_value = clear(nl[SNDMF].n_value);
-		nl[SDMF].n_value = clear(nl[SDMF].n_value);
-	}
-	lseek(fc, (long)nl[SNDMF].n_value, 0);
-	read(fc, &ntty, sizeof(ntty));
-	printf("%d dmf lines\n", ntty);
-	if (ntty > ttyspace) {
-		ttyspace = ntty;
-		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
-			printf("pstat: out of memory\n");
-			return;
-		}
-	}
-	lseek(fc, (long)nl[SDMF].n_value, 0);
-	read(fc, tty, ntty * sizeof(struct tty));
-	printf(mesg);
-	for (tp = tty; tp < &tty[ntty]; tp++)
-		ttyprt(tp, tp - tty);
-pty:
-	if (nl[SPTY].n_type == 0)
+	if (nl[SNDZ].n_type != 0)
+		dottytype("dz", SDZ, SNDZ);
+	if (nl[SNDH].n_type != 0)
+		dottytype("dh", SDH, SNDH);
+	if (nl[SNDMF].n_type != 0)
+		dottytype("dmf", SDMF, SNDMF);
+	if (nl[SNDHU].n_type != 0)
+		dottytype("dhu", SDHU, SNDHU);
+	if (nl[SNPTY].n_type != 0)
+		dottytype("pty", SPTY, SNPTY);
+}
+
+dottytype(name, type, number)
+char *name;
+{
+	int ntty;
+	register struct tty *tp;
+	extern char *realloc();
+
+	if (tty == (struct tty *)0)
 		return;
 	if (kflg) {
-		nl[SPTY].n_value = clear(nl[SPTY].n_value);
-		nl[SNPTY].n_value = clear(nl[SNPTY].n_value);
+		nl[number].n_value = clear(nl[number].n_value);
+		nl[type].n_value = clear(nl[type].n_value);
 	}
-	lseek(fc, (long)nl[SNPTY].n_value, 0);
+	lseek(fc, (long)nl[number].n_value, 0);
 	read(fc, &ntty, sizeof(ntty));
-	printf("%d pty lines\n", ntty);
+	printf("%d %s lines\n", ntty, name);
 	if (ntty > ttyspace) {
 		ttyspace = ntty;
 		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
@@ -504,8 +461,8 @@ pty:
 			return;
 		}
 	}
-	lseek(fc, (long)nl[SPTY].n_value, 0);
-	read(fc, tty, ntty*sizeof(struct tty));
+	lseek(fc, (long)nl[type].n_value, 0);
+	read(fc, tty, ntty * sizeof(struct tty));
 	printf(mesg);
 	for (tp = tty; tp < &tty[ntty]; tp++)
 		ttyprt(tp, tp - tty);
