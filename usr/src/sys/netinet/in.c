@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.30 (Berkeley) %G%
+ *	@(#)in.c	7.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -128,42 +128,6 @@ in_sockmaskof(in, sockmask)
     }
 }
 
-/*
- * Return the host portion of an internet address.
- */
-u_long
-in_lnaof(in)
-	struct in_addr in;
-{
-	register u_long i = ntohl(in.s_addr);
-	register u_long net, host;
-	register struct in_ifaddr *ia;
-
-	if (IN_CLASSA(i)) {
-		net = i & IN_CLASSA_NET;
-		host = i & IN_CLASSA_HOST;
-	} else if (IN_CLASSB(i)) {
-		net = i & IN_CLASSB_NET;
-		host = i & IN_CLASSB_HOST;
-	} else if (IN_CLASSC(i)) {
-		net = i & IN_CLASSC_NET;
-		host = i & IN_CLASSC_HOST;
-	} else if (IN_CLASSD(i)) {
-		net = i & IN_CLASSD_NET;
-		host = i & IN_CLASSD_HOST;
-	} else
-		return (i);
-
-	/*
-	 * Check whether network is a subnet;
-	 * if so, use the modified interpretation of `host'.
-	 */
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (net == ia->ia_net)
-			return (host &~ ia->ia_subnetmask);
-	return (host);
-}
-
 #ifndef SUBNETSARELOCAL
 #define	SUBNETSARELOCAL	1
 #endif
@@ -203,7 +167,7 @@ in_canforward(in)
 	register u_long i = ntohl(in.s_addr);
 	register u_long net;
 
-	if (IN_EXPERIMENTAL(i))
+	if (IN_EXPERIMENTAL(i) || IN_MULTICAST(i))
 		return (0);
 	if (IN_CLASSA(i)) {
 		net = i & IN_CLASSA_NET;
@@ -211,6 +175,24 @@ in_canforward(in)
 			return (0);
 	}
 	return (1);
+}
+
+/*
+ * Trim a mask in a sockaddr
+ */
+void
+in_socktrim(ap)
+struct sockaddr_in *ap;
+{
+    register char *cplim = (char *) &ap->sin_addr;
+    register char *cp = (char *) (&ap->sin_addr + 1);
+
+    ap->sin_len = 0;
+    while (--cp > cplim)
+        if (*cp) {
+	    (ap)->sin_len = cp - (char *) (ap) + 1;
+	    break;
+	}
 }
 
 int	in_interfaces;		/* number of external internet interfaces */
@@ -507,25 +489,16 @@ in_ifinit(ifp, ia, sin, scrub)
 	ia->ia_subnetmask |= ia->ia_netmask;
 	ia->ia_subnet = i & ia->ia_subnetmask;
 	ia->ia_sockmask.sin_addr.s_addr = htonl(ia->ia_subnetmask);
-	{
-		register char *cp = (char *) (1 + &(ia->ia_sockmask.sin_addr));
-		register char *cpbase = (char *) &(ia->ia_sockmask.sin_addr);
-		while (--cp >= cpbase)
-			if (*cp) {
-				ia->ia_sockmask.sin_len =
-					1 + cp - (char *) &(ia->ia_sockmask);
-				break;
-			}
-	}
+	in_socktrim(&ia->ia_sockmask);
 	/*
 	 * Add route for the network.
 	 */
 	ia->ia_ifa.ifa_metric = ifp->if_metric;
 	if (ifp->if_flags & IFF_BROADCAST) {
-		ia->ia_broadaddr.sin_addr = 
-			in_makeaddr(ia->ia_subnet, INADDR_BROADCAST);
+		ia->ia_broadaddr.sin_addr.s_addr =
+			htonl(ia->ia_subnet | ~ia->ia_subnetmask);
 		ia->ia_netbroadcast.s_addr =
-		    htonl(ia->ia_net | (INADDR_BROADCAST &~ ia->ia_netmask));
+			htonl(ia->ia_net | ~ ia->ia_netmask);
 	} else if (ifp->if_flags & IFF_LOOPBACK) {
 		ia->ia_ifa.ifa_dstaddr = ia->ia_ifa.ifa_addr;
 		flags |= RTF_HOST;
@@ -549,49 +522,40 @@ in_ifinit(ifp, ia, sin, scrub)
 	return (error);
 }
 
-/*
- * Return address info for specified internet network.
- */
-struct in_ifaddr *
-in_iaonnetof(net)
-	u_long net;
-{
-	register struct in_ifaddr *ia;
-
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (ia->ia_subnet == net)
-			return (ia);
-	return ((struct in_ifaddr *)0);
-}
 
 /*
  * Return 1 if the address might be a local broadcast address.
  */
-in_broadcast(in)
+in_broadcast(in, ifp)
 	struct in_addr in;
+        struct ifnet *ifp;
 {
-	register struct in_ifaddr *ia;
+	register struct ifaddr *ifa;
 	u_long t;
 
+	if (in.s_addr == INADDR_BROADCAST ||
+	    in.s_addr == INADDR_ANY)
+		return 1;
+	if ((ifp->if_flags & IFF_BROADCAST) == 0)
+		return 0;
+	t = ntohl(in.s_addr);
 	/*
 	 * Look through the list of addresses for a match
 	 * with a broadcast address.
 	 */
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-	    if (ia->ia_ifp->if_flags & IFF_BROADCAST) {
-		if (ia->ia_broadaddr.sin_addr.s_addr == in.s_addr)
-		     return (1);
-		/*
-		 * Check for old-style (host 0) broadcast.
-		 */
-		if ((t = ntohl(in.s_addr)) == ia->ia_subnet || t == ia->ia_net)
-		    return (1);
-	}
-	if (in.s_addr == INADDR_BROADCAST || in.s_addr == INADDR_ANY)
-		return (1);
-	return (0);
+#define ia ((struct in_ifaddr *)ifa)
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+		if (ifa->ifa_addr->sa_family == AF_INET &&
+		    (in.s_addr == ia->ia_broadaddr.sin_addr.s_addr ||
+		     in.s_addr == ia->ia_netbroadcast.s_addr ||
+		     /*
+		      * Check for old-style (host 0) broadcast.
+		      */
+		     t == ia->ia_subnet || t == ia->ia_net))
+			    return 1;
+	return 0;
+#undef ia
 }
-
 /*
  * Add an address to the list of IP multicast addresses for a given interface.
  */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.31 (Berkeley) %G%
+ *	@(#)ip_output.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -104,17 +104,17 @@ ip_output(m0, opt, ro, flags, imo)
 	 * If routing to interface only,
 	 * short circuit routing lookup.
 	 */
+#define ifatoia(ifa)	((struct in_ifaddr *)(ifa))
+#define sintosa(sin)	((struct sockaddr *)(sin))
 	if (flags & IP_ROUTETOIF) {
-
-		ia = (struct in_ifaddr *)ifa_ifwithdstaddr((struct sockaddr *)dst);
-		if (ia == 0)
-			ia = in_iaonnetof(in_netof(ip->ip_dst));
-		if (ia == 0) {
+		if ((ia = ifatoia(ifa_ifwithdstaddr(sintosa(dst)))) == 0 &&
+		    (ia = ifatoia(ifa_ifwithnet(sintosa(dst)))) == 0) {
 			ipstat.ips_noroute++;
 			error = ENETUNREACH;
 			goto bad;
 		}
 		ifp = ia->ia_ifp;
+		ip->ip_ttl = 1;
 	} else {
 		if (ro->ro_rt == 0)
 			rtalloc(ro);
@@ -123,7 +123,7 @@ ip_output(m0, opt, ro, flags, imo)
 			error = EHOSTUNREACH;
 			goto bad;
 		}
-		ia = (struct in_ifaddr *)ro->ro_rt->rt_ifa;
+		ia = ifatoia(ro->ro_rt->rt_ifa);
 		ifp = ro->ro_rt->rt_ifp;
 		ro->ro_rt->rt_use++;
 		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
@@ -232,7 +232,7 @@ ip_output(m0, opt, ro, flags, imo)
 	 * and verify user is allowed to send
 	 * such a packet.
 	 */
-	if (in_broadcast(dst->sin_addr)) {
+	if (in_broadcast(dst->sin_addr, ifp)) {
 		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
 			error = EADDRNOTAVAIL;
 			goto bad;

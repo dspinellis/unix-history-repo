@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.28 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -120,7 +120,7 @@ udp_input(m, iphlen)
 	}
 
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr)) ||
-	    in_broadcast(ip->ip_dst)) {
+	    in_broadcast(ip->ip_dst, m->m_pkthdr.rcvif)) {
 		struct socket *last;
 		/*
 		 * Deliver a multicast or broadcast datagram to *all* sockets
