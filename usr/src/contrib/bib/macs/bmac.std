@@ -1,4 +1,4 @@
-.\"	@(#)bmac.std	2.4	%G%;
+.\"	@(#)bmac.std	2.5	%G%;
 .\" standard format troff commands
 .\" citation formatting strings
 .ds [[ [
@@ -29,6 +29,7 @@
 .ds c] , \&
 .ds n] "\& and \&
 .ds m] "\& and \&
+.ds e] \\fIet al.\\fP
 .ds p] .
 .\" reference formmating macros
 .de s[   \" start reference
