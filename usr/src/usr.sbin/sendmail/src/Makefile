@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.26 (Berkeley) %G%
+#	@(#)Makefile	5.27 (Berkeley) %G%
 
 PROG=	sendmail
 
@@ -31,8 +31,8 @@ BINGRP=	kmem
 BINMODE=6555
 
 beforeinstall:
-	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
-	    ${DESTDIR}/etc/sendmail.fc
+#	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
+#	    ${DESTDIR}/etc/sendmail.fc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
 	    ${DESTDIR}/var/log/sendmail.st
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/sendmail.hf \
