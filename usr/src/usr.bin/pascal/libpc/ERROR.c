@@ -2,8 +2,9 @@
 
 static char sccsid[] = "@(#)ERROR.c 1.2 %G%";
 
-#include	"stdio.h"
-#include	"signal.h"
+#include	<stdio.h>
+#include	<signal.h>
+#include	"h00vars.h"
 #include	"h01errs.h"
 
 /*
@@ -22,6 +23,10 @@ ERROR(errnum, errdata)
 	} errdata;
 {
 	PFLUSH();
+	if (_entry[errnum].entryaddr != 0) {
+		(*_entry[errnum].entryaddr)(errdata);
+		return;
+	}
 	fputc('\n',stderr);
 	SETRACE();
 	switch (errnum) {
