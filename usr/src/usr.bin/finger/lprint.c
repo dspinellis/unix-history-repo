@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -115,7 +115,7 @@ lprint(pn)
 	 *	when last logged in
 	 */
 	/* find out longest device name for this user for formatting */
-	for (w = pn->whead; w != NULL; w = w->next)
+	for (w = pn->whead, maxlen = -1; w != NULL; w = w->next)
 		if ((len = strlen(w->tty)) > maxlen)
 			maxlen = len;
 	/* find rest of entries for user */
@@ -169,11 +169,6 @@ lprint(pn)
 		}
 		putchar('\n');
 	}
-	/*
-	 * long format con't:
-	 *	mail status
-	 */
-	chkmail(pn);
 }
 
 demi_print(str, oddfield)
@@ -230,38 +225,4 @@ show_text(directory, file_name, header)
 			break;
 	(void)close(fd);
 	return(1);
-}
-
-chkmail(pn)
-	PERSON *pn;
-{
-	register char *date;
-	struct stat sb;
-
-	/*
-	 * build path of user's mail box and get stats; if missing
-	 * or empty, no mail.
-	 */
-	(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pn->name);
-	if (stat(tbuf, &sb) < 0 || !sb.st_size) {
-		(void)printf("No unread mail.\n");
-		return;
-	}
-
-	/*
-	 * if access time matches the modification time then we know
-	 * that new mail was received but we haven't a clue as to when
-	 * it was last read.
-	 */
-	date = ctime(&sb.st_ctime);
-	if (sb.st_atime == sb.st_ctime)
-		(void)printf("New mail received %16.16s.\n", date);
-	else if (sb.st_atime > sb.st_ctime) {
-		date = ctime(&sb.st_atime);
-		(void)printf("No new mail, last read %16.16s.\n", date);
-	} else {
-		(void)printf("Mail received %16.16s; ", date);
-		date = ctime(&sb.st_atime);
-		(void)printf("last read %16.16s.\n", date);
-	}
 }
