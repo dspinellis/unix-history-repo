@@ -1,0 +1,10 @@
+ed - arpa.cf << 'EOF'
+/S0/
+/now delete the local info/
+/R\$\*<\$\*\$=w>\$\*/
+d
+a
+R$*%$*<@LOCAL>		$1%$2<@>			handle user%foo@LOCAL
+.
+w
+'EOF'
