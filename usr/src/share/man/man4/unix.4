@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)unix.4	6.1 (Berkeley) %G%
+.\"	@(#)unix.4	6.2 (Berkeley) %G%
 .\"
 .TH UNIX 4 ""
 .UC 5
@@ -94,14 +94,28 @@ abstractions.
 sockets also support the communication of 
 .UX
 file descriptors through the use of the
-.I msg_accrights
+.I msg_control
 field in the
 .I msg
 argument to
 .IR sendmsg (2)
 and
 .IR recvmsg (2).
+.PP
 Any valid descriptor may be sent in a message.
+The file descriptor(s) to be passed are described using a 
+.BI struct cmsghdr
+that is defined in the include file
+.RI < sys/socket.h >.
+The type of the message is
+.SM SCM_RIGHTS,
+and the data portion of the messages is an array of integers
+representing the file descriptors to be passed.
+The number of descriptors being passed is defined
+by the length field of the message;
+the length field is the sum of the size of the header
+plus the size of the array of file descriptors.
+.PP
 The received descriptor is a 
 .I duplicate
 of the sender's descriptor, as if it were created with a call to
