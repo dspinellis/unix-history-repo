@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -40,7 +40,7 @@ install: ${MAN}
 	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/old
 	rm -f ${DESTDIR}/usr/old/page
 	ln ${DESTDIR}/usr/old/more ${DESTDIR}/usr/old/page
-	install -c -o bin -g bin -m 644 more.help ${DESTDIR}/usr/lib/omore.help
+	install -c -o bin -g bin -m 644 more.help ${DESTDIR}/usr/share/misc
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat.old
 	rm -f ${DESTDIR}/usr/man/cat.old/page.0
 	ln ${DESTDIR}/usr/man/cat.old/more.0 ${DESTDIR}/usr/man/cat.old/page.0

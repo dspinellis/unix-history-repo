@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -85,7 +85,7 @@ main()
 		(void) open("/", O_RDONLY, 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		tt = open("/dev/tty", O_RDWR, 0);
+		tt = open(_PATH_TTY, O_RDWR, 0);
 		if (tt > 0) {
 			ioctl(tt, TIOCNOTTY, 0);
 			(void)close(tt);

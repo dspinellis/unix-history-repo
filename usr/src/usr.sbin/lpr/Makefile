@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 # Ownerships {see note at the top of lpd.c}
 # ROOT		a user that can access any and all files
@@ -22,9 +22,7 @@
 # SPGRP		the group id of the spooling programs
 #
 CFLAGS=	-O
-LIBDIR=	/usr/lib
-BINDIR=	/usr/ucb
-SPLDIR=	/usr/spool/lpd
+SPLDIR=	/var/spool/lpd
 DAEMON=	daemon
 SPGRP=	daemon
 LIBC=	/lib/libc.a
@@ -98,14 +96,12 @@ depend: ${SRCS}
 	cd vfilters; make ${MFLAGS} depend
 
 install: ${MAN}
-	install -s -o root -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
-	install -s -o root -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
-	install -s -o root -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
-	install -s -o root -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
-	install -s -o bin -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
-	install -s -o bin -g bin -m 755 lptest ${DESTDIR}/${BINDIR}/lptest
-	install -s -o bin -g bin -m 755 pac ${DESTDIR}/etc/pac
-	/etc/chown ${DAEMON} ${DESTDIR}/${SPLDIR}
+	install -s -o root -g ${SPGRP} -m 6711 lpd ${DESTDIR}/usr/sbin
+	install -s -o root -g ${SPGRP} -m 6711 lpr lpq lprm \
+	  ${DESTDIR}/usr/bin
+	install -s -o bin -g ${SPGRP} -m 2711 lpc ${DESTDIR}/usr/sbin
+	install -s -o bin -g bin -m 755 lptest pac ${DESTDIR}/usr/sbin
+	chown ${DAEMON} ${DESTDIR}/${SPLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPLDIR}
 	chmod 775 ${DESTDIR}/${SPLDIR}
 	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1

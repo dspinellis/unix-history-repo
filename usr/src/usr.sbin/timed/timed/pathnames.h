@@ -14,8 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
+
+#include <paths.h>
 
 #define	_PATH_MASTERLOG	"/usr/adm/timed.masterlog"
 #define	_PATH_TIMEDLOG	"/usr/adm/timed.log"

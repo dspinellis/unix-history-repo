@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)kgmon.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <nlist.h>
 #include <ctype.h>
-#include "pathnames.h"
+#include <paths.h>
 
 #define	PROFILING_ON	0
 #define	PROFILING_OFF	3

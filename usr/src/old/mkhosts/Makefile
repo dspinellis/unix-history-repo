@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -42,7 +42,7 @@ depend: ${SRCS}
 install: ${MAN}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8;
 	-if [ -f mkhosts ]; then \
-	    install -s -o bin -g bin -m 755 mkhosts ${DESTDIR}/etc; fi
+	    install -s -o bin -g bin -m 755 mkhosts ${DESTDIR}/usr/sbin; fi
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}

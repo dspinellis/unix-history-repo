@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)at.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <pwd.h>
+#include "pathnames.h"
 
 #define HOUR		100		/* 1 hour (using military time) */
 #define HALFDAY		(12 * HOUR)	/* half a day (12 hours) */
@@ -43,12 +44,7 @@ static char sccsid[] = "@(#)at.c	5.8 (Berkeley) %G%";
 #define DAY		2		/* day requested is a weekday */
 #define MONTH		3		/* day requested is a month */
 
-#define BOURNE		"/bin/sh"	/* run commands with Bourne shell*/
-#define CSHELL		"/bin/csh"	/* run commands with C shell */
-
 #define NODATEFOUND	-1		/* no date was given on command line */
-
-#define ATDIR		"/usr/spool/at"		/* spooling area */
 
 #define LINSIZ		256		/* length of input buffer */
 
@@ -129,7 +125,7 @@ char **argv;
 	int cleanup();			/* do cleanup on an interrupt signal */
 	int dateindex = NODATEFOUND;	/* if a day is specified, what option
 					   is it? (mon day, week, dayofweek) */
-	char *shell = BOURNE;		/* what shell do we use to run job? */
+	char *shell = _PATH_BSHELL;	/* what shell do we use to run job? */
 	int shflag = 0;			/* override the current shell and run
 					   job using the Bourne Shell */
 	int cshflag = 0;		/* override the current shell and run 
@@ -154,11 +150,11 @@ char **argv;
 		while (**argv) switch (*(*argv)++) {
 
 			case 'c' :	cshflag++; 
-					shell = CSHELL;
+					shell = _PATH_CSHELL;
 					break;
 
 			case 's' :	shflag++;
-					shell = BOURNE;
+					shell = _PATH_BSHELL;
 					break;
 
 			case 'm' :	mailflag++;
@@ -483,8 +479,8 @@ char *atfile;
 	int i;				/* scratch variable */
 
 	for (i=0; ; i += 53) {
-		sprintf(atfile, "%s/%02d.%03d.%02d%02d.%02d", ATDIR, year,
-			dayofyear, hour, minute, (getpid() + i) % 100);
+		sprintf(atfile, "%s/%02d.%03d.%02d%02d.%02d", _PATH_ATDIR,
+			year, dayofyear, hour, minute, (getpid() + i) % 100);
 
 		/*
 		 * Make sure that the file name that we've created is unique.

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)lpd.c	5.6 (Berkeley) %G%";
  */
 
 #include "lp.h"
+#include "pathnames.h"
 
 int	lflag;				/* log requests flag */
 
@@ -94,10 +95,10 @@ main(argc, argv)
 		exit(0);
 	for (f = 0; f < 5; f++)
 		(void) close(f);
-	(void) open("/dev/null", O_RDONLY);
-	(void) open("/dev/null", O_WRONLY);
+	(void) open(_PATH_DEVNULL, O_RDONLY);
+	(void) open(_PATH_DEVNULL, O_WRONLY);
 	(void) dup(1);
-	f = open("/dev/tty", O_RDWR);
+	f = open(_PATH_TTY, O_RDWR);
 	if (f > 0) {
 		ioctl(f, TIOCNOTTY, 0);
 		(void) close(f);
@@ -106,15 +107,15 @@ main(argc, argv)
 
 	openlog("lpd", LOG_PID, LOG_LPR);
 	(void) umask(0);
-	lfd = open(MASTERLOCK, O_WRONLY|O_CREAT, 0644);
+	lfd = open(_PATH_MASTERLOCK, O_WRONLY|O_CREAT, 0644);
 	if (lfd < 0) {
-		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
+		syslog(LOG_ERR, "%s: %m", _PATH_MASTERLOCK);
 		exit(1);
 	}
 	if (flock(lfd, LOCK_EX|LOCK_NB) < 0) {
 		if (errno == EWOULDBLOCK)	/* active deamon present */
 			exit(0);
-		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
+		syslog(LOG_ERR, "%s: %m", _PATH_MASTERLOCK);
 		exit(1);
 	}
 	ftruncate(lfd, 0);
@@ -124,7 +125,7 @@ main(argc, argv)
 	sprintf(line, "%u\n", getpid());
 	f = strlen(line);
 	if (write(lfd, line, f) != f) {
-		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
+		syslog(LOG_ERR, "%s: %m", _PATH_MASTERLOCK);
 		exit(1);
 	}
 	signal(SIGCHLD, reapchild);
@@ -132,7 +133,7 @@ main(argc, argv)
 	 * Restart all the printers.
 	 */
 	startup();
-	(void) unlink(SOCKETNAME);
+	(void) unlink(_PATH_SOCKETNAME);
 	funix = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (funix < 0) {
 		syslog(LOG_ERR, "socket: %m");
@@ -145,7 +146,7 @@ main(argc, argv)
 	signal(SIGQUIT, mcleanup);
 	signal(SIGTERM, mcleanup);
 	sun.sun_family = AF_UNIX;
-	strcpy(sun.sun_path, SOCKETNAME);
+	strcpy(sun.sun_path, _PATH_SOCKETNAME);
 	if (bind(funix, &sun, strlen(sun.sun_path) + 2) < 0) {
 		syslog(LOG_ERR, "ubind: %m");
 		exit(1);
@@ -231,7 +232,7 @@ mcleanup()
 {
 	if (lflag)
 		syslog(LOG_INFO, "exiting");
-	unlink(SOCKETNAME);
+	unlink(_PATH_SOCKETNAME);
 	exit(0);
 }
 
@@ -423,7 +424,7 @@ chkhost(f)
 		}
 	}
 	*cp = '\0';
-	hostf = fopen("/etc/hosts.equiv", "r");
+	hostf = fopen(_PATH_HOSTSEQUIV, "r");
 again:
 	if (hostf) {
 		if (!_validuser(hostf, ahost, DUMMY, DUMMY, baselen)) {
@@ -434,7 +435,7 @@ again:
 	}
 	if (first == 1) {
 		first = 0;
-		hostf = fopen("/etc/hosts.lpd", "r");
+		hostf = fopen(_PATH_HOSTSLPD, "r");
 		goto again;
 	}
 	fatal("Your host does not have line printer access");

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 VPATH=	../dump:
 CFLAGS=	-O
@@ -47,8 +47,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 restore ${DESTDIR}/etc/restore
-	install -s -o root -g bin -m 4755 rrestore ${DESTDIR}/etc/rrestore
+	install -s -o bin -g bin -m 755 restore ${DESTDIR}/sbin
+	install -s -o root -g bin -m 4755 rrestore ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

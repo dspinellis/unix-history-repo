@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -113,8 +113,8 @@ char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 **  Location of system files/databases/etc.
 */
 
-char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
-char	*FreezeFile =	"/usr/lib/sendmail.fc";	/* frozen version of above */
+char	*ConfFile =	"/etc/sendmail.cf";	/* runtime configuration */
+char	*FreezeFile =	"/etc/sendmail.fc";	/* frozen version of above */
 
 
 

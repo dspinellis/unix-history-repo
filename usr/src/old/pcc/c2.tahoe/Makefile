@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.4	(Berkeley)	%G%
+#	@(#)Makefile	1.5	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -35,7 +35,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 c2 ${DESTDIR}/lib/c2
+	install -s -o bin -g bin -m 755 c2 ${DESTDIR}/usr/libexec/c2
 
 tags: ${SRCS}
 	ctags ${SRCS}

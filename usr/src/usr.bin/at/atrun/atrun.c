@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -36,16 +36,10 @@ static char sccsid[] = "@(#)atrun.c	5.6 (Berkeley) %G%";
 #endif
 # include <sys/stat.h>
 # include <pwd.h>
+# include "pathnames.h"
 
-# define ATDIR		"/usr/spool/at"		/* spooling area */
-# define TMPDIR		"/tmp"			/* area for temporary files */
-# define MAILER		"/bin/mail"		/* program to use for sending
-						   mail */
 # define NORMAL		0			/* job exited normally */
 # define ABNORMAL	1			/* job exited abnormally */
-# define PASTDIR	"/usr/spool/at/past"	/* area to run jobs from */
-# define LASTFILE	"/usr/spool/at/lasttimedone"	/* update time file */
-
 
 char nowtime[11];			/* time it is right now (yy.ddd.hhmm) */
 char errfile[25];			/* file where we redirect errors to */
@@ -64,7 +58,7 @@ char **argv;
 	/*
 	 * Move to the spooling area.
 	 */
-	chdir(ATDIR);
+	chdir(_PATH_ATDIR);
 
 	/*
 	 * Create a filename that represents the time it is now. This is used
@@ -76,7 +70,7 @@ char **argv;
 	 * Create a queue of the jobs that should be run.
 	 */
 	if ((numjobs = scandir(".",&jobqueue,should_be_run, 0)) < 0) {
-		perror(ATDIR);
+		perror(_PATH_ATDIR);
 		exit(1);
 	}
 
@@ -214,9 +208,9 @@ char *spoolfile;
 	 * Move the spoolfile to the directory where jobs are run from and
 	 * then move into that directory.
 	 */
-	sprintf(runfile,"%s/%s",PASTDIR,spoolfile);
+	sprintf(runfile,"%s/%s",_PATH_PAST,spoolfile);
 	rename(spoolfile, runfile);
-	chdir(PASTDIR);
+	chdir(_PATH_PAST);
 
 	/*
 	 * Create a temporary file where we will redirect errors to.
@@ -224,7 +218,7 @@ char *spoolfile;
 	 * check on the file.
 	 */
 	for (i = 0; i <= 1000; i += 2) {
-		sprintf(errfile,"%s/at.err%d",TMPDIR,(getpid() + i));
+		sprintf(errfile,"%s/at.err%d",_PATH_TMP,(getpid() + i));
 
 		if (access(errfile, F_OK))
 			break;
@@ -253,7 +247,7 @@ char *spoolfile;
 		 * rerun the next time "atrun" is executed and then exit.
 		 */
 		if (pid == -1) {
-			chdir(ATDIR);
+			chdir(_PATH_ATDIR);
 			rename(runfile, spoolfile);
 			exit(1);
 		}
@@ -335,8 +329,8 @@ char *spoolfile;
 	 *	stderr = /tmp/at.err{pid}
 	 *	
 	 */
-	open("/dev/null", 0);
-	open("/dev/null", 1);
+	open(_PATH_DEVNULL, 0);
+	open(_PATH_DEVNULL, 1);
 	open(errfile,O_CREAT|O_WRONLY,00644);
 
 	/*
@@ -345,18 +339,6 @@ char *spoolfile;
 	 * See if the shell is in /bin
 	 */
 	sprintf(whichshell,"/bin/%s",shell);
-	execl(whichshell,shell,runfile, 0);
-
-	/*
-	 * If not in /bin, look for the shell in /usr/bin.
-	 */
-	sprintf(whichshell,"/usr/bin/%s",shell);
-	execl(whichshell,shell,runfile, 0);
-
-	/*
-	 * If not in /bin, look for the shell in /usr/new.
-	 */
-	sprintf(whichshell,"/usr/new/%s",shell);
 	execl(whichshell,shell,runfile, 0);
 
 	/*
@@ -386,13 +368,13 @@ int exitstatus;
 	/*
 	 * Create the full name for the mail process.
 	 */
-	sprintf(mailtouser,"%s %s",MAILER, user);
+	sprintf(mailtouser,"%s %s", _PATH_MAIL, user);
 
 	/*
 	 * Open a stream to the mail process.
 	 */
 	if ((mailptr = popen(mailtouser,"w")) == NULL) {
-		perror(MAILER);
+		perror(_PATH_MAIL);
 		exit(1);
 	}
 
@@ -512,9 +494,9 @@ updatetime()
 	/*
 	 * Open the record file.
 	 */
-	if ((lastimefile = fopen(LASTFILE, "w")) == NULL) {
+	if ((lastimefile = fopen(_PATH_LASTFILE, "w")) == NULL) {
 		fprintf(stderr, "can't update lastfile: ");
-		perror(LASTFILE);
+		perror(_PATH_LASTFILE);
 		exit(1);
 	}
 

@@ -22,7 +22,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -44,9 +44,10 @@ static char sccsid[] = "@(#)bad144.c	5.15 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/fs.h>
 #include <sys/file.h>
+#include <sys/disklabel.h>
 
 #include <stdio.h>
-#include <sys/disklabel.h>
+#include <paths.h>
 
 #define RETRIES	10		/* number of retries on reading old sectors */
 #define	RAWPART	"c"		/* disk partition containing badsector tables */
@@ -123,7 +124,7 @@ usage:
 		exit(1);
 	}
 	if (argv[0][0] != '/')
-		(void)sprintf(name, "/dev/r%s%s", argv[0], RAWPART);
+		(void)sprintf(name, "%s/r%s%s", _PATH_DEV, argv[0], RAWPART);
 	else
 		strcpy(name, argv[0]);
 	f = open(name, argc == 1? O_RDONLY : O_RDWR);

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,10 +38,7 @@ static char sccsid[] = "@(#)atq.c	5.5 (Berkeley) %G%";
 # include <sys/time.h>
 # include <pwd.h>
 # include <ctype.h>
- 
-# define ATDIR		"/usr/spool/at"			/* spooling area */
-# define LASTFILE	"/usr/spool/at/lasttimedone"	/* update time record 
-							   file */
+# include "pathnames.h"
 
 /*
  * Months of the year
@@ -111,13 +108,13 @@ char **argv;
 	 * files in the queue structure. The queue comes back sorted by
 	 * execution time or creation time.
 	 */
-	if (chdir(ATDIR) == -1) {
-		perror(ATDIR);
+	if (chdir(_PATH_ATDIR) == -1) {
+		perror(_PATH_ATDIR);
 		exit(1);
 	}
 	if ((numentries = scandir(".",&queue,filewanted, (cflag) ? creation : 
 				alphasort)) < 0) {
-		perror(ATDIR);
+		perror(_PATH_ATDIR);
 		exit(1);
 	}
 
@@ -327,8 +324,8 @@ plastrun()
 	 * last update hour. The update time is measured in seconds since
 	 * 1/1/70.
 	 */
-	if ((last = fopen(LASTFILE,"r")) == NULL) {
-		perror(LASTFILE);
+	if ((last = fopen(_PATH_LASTFILE,"r")) == NULL) {
+		perror(_PATH_LASTFILE);
 		exit(1);
 	}
 	fscanf(last,"%lu",&lasttime);

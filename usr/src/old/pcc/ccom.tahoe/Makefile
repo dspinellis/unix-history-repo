@@ -1,5 +1,5 @@
 #
-#	Makefile	1.11	89/03/06
+#	Makefile	1.12	89/05/11
 #
 # Makefile for tahoe pcc
 #
@@ -121,8 +121,8 @@ fcomm2.o: ${MIP}/common.c
 	${RM} fcomm2.c
 
 install:
-	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
-	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/lib/f1
+	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/usr/libexec
+	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/usr/libexec
 
 pcclocal.h: ../localdefs.h /usr/include/pcc.h
 	${RM} pcclocal.h

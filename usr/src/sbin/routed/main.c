@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #include <sys/errno.h>
 #include <sys/signal.h>
 #include <sys/syslog.h>
+#include "pathnames.h"
 
 int	supplier = -1;		/* process should supply updates */
 int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
@@ -116,7 +117,7 @@ main(argc, argv)
 		(void) open("/", 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		t = open("/dev/tty", 2);
+		t = open(_PATH_TTY, 2);
 		if (t >= 0) {
 			ioctl(t, TIOCNOTTY, (char *)0);
 			(void) close(t);

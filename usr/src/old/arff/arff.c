@@ -11,15 +11,16 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)arff.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)arff.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <signal.h>
-#include <stdio.h>
+#include <sys/signal.h>
 #include <sys/file.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define dbprintf printf
 
@@ -110,7 +111,7 @@ struct rt_ent *rt_curend[RT_DIRSIZE];
 int	floppydes;
 int	dirdirty;
 char	*rt_last;
-char	*defdev = "/dev/floppy";
+char	*defdev = _PATH_FLOPPY;
 
 char *opt = "vfbcm";
 
@@ -374,7 +375,7 @@ rt_init()
 
 		if (stat(defdev, &sb) >= 0 && (sb.st_mode & S_IFMT) == S_IFREG)
 			goto ignore;
-		tty = open("/dev/tty", O_RDWR);
+		tty = open(_PATH_TTY, O_RDWR);
 #define SURE	"Are you sure you want to clobber the floppy? "
 		(void) write(tty, SURE, sizeof (SURE));
 		(void) read(tty, response, sizeof (response));

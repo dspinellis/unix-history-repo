@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)rwhod.c	5.12 (Berkeley) %G%";
 #include <syslog.h>
 #include <protocols/rwhod.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <paths.h>
 
 /*
  * Alarm interval. Don't forget to change the down time check in ruptime
@@ -117,7 +117,7 @@ main()
 	  (void) open("/", 0);
 	  (void) dup2(0, 1);
 	  (void) dup2(0, 2);
-	  s = open("/dev/tty", 2);
+	  s = open(_PATH_TTY, 2);
 	  if (s >= 0) {
 		ioctl(s, TIOCNOTTY, 0);
 		(void) close(s);
@@ -314,8 +314,8 @@ onalrm()
 	 * logged on, why worry about efficiency?---but is useful on
 	 * (e.g.) compute servers.
 	 */
-	if (utmpent && chdir("/dev")) {
-		syslog(LOG_ERR, "chdir(/dev): %m");
+	if (utmpent && chdir(_PATH_DEV)) {
+		syslog(LOG_ERR, "chdir(%s): %m", _PATH_DEV);
 		exit(1);
 	}
 	we = mywd.wd_we;

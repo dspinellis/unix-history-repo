@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printcap.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)printcap.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	BUFSIZ	1024
@@ -24,6 +24,8 @@ static char sccsid[] = "@(#)printcap.c	5.3 (Berkeley) %G%";
 
 #include <ctype.h>
 #include <stdio.h>
+#include "pathnames.h"
+
 /*
  * termcap - routines for dealing with the terminal capability data base
  *
@@ -50,8 +52,6 @@ static char sccsid[] = "@(#)printcap.c	5.3 (Berkeley) %G%";
 #define tdecode pdecode
 #define tnchktc	pnchktc
 #define	tnamatch pnamatch
-#undef E_TERMCAP
-#define E_TERMCAP "/etc/printcap"
 #define V6
 #endif
 
@@ -72,7 +72,7 @@ getprent(bp)
 {
 	register int c, skip = 0;
 
-	if (pfp == NULL && (pfp = fopen(E_TERMCAP, "r")) == NULL)
+	if (pfp == NULL && (pfp = fopen(_PATH_PRINTCAP, "r")) == NULL)
 		return(-1);
 	tbuf = bp;
 	for (;;) {
@@ -147,15 +147,15 @@ tgetent(bp, name)
 				strcpy(bp,cp);
 				return(tnchktc());
 			} else {
-				tf = open(E_TERMCAP, 0);
+				tf = open(_PATH_PRINTCAP, 0);
 			}
 		} else
 			tf = open(cp, 0);
 	}
 	if (tf==0)
-		tf = open(E_TERMCAP, 0);
+		tf = open(_PATH_PRINTCAP, 0);
 #else
-	tf = open(E_TERMCAP, 0);
+	tf = open(_PATH_PRINTCAP, 0);
 #endif
 	if (tf < 0)
 		return (-1);

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
 #include <netinet/in.h>
 
 #include <protocols/talkd.h>
+#include <paths.h>
 
 char	*strcpy();
 CTL_MSG *find_request();
@@ -173,7 +174,7 @@ find_user(name, tty)
 	}
 #define SCMPN(a, b)	strncmp(a, b, sizeof (a))
 	status = NOT_HERE;
-	(void) strcpy(ftty, "/dev/");
+	(void) strcpy(ftty, _PATH_DEV);
 	while (fread((char *) &ubuf, sizeof ubuf, 1, fd) == 1)
 		if (SCMPN(ubuf.ut_name, name) == 0) {
 			if (*tty == '\0') {

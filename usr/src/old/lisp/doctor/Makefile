@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 MAN=	doctor.0
 
@@ -28,7 +28,7 @@ install: ${MAN}
 	rm -f ${DESTDIR}/usr/games/doctor
 	ln -s ${DESTDIR}/usr/games/dm ${DESTDIR}/usr/games/doctor
 	chown games.bin ${DESTDIR}/usr/games/doctor
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/games/cat6
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
 clean:
 	rm -f doctor

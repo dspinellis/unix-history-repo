@@ -14,9 +14,9 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
+#include <paths.h>
+
 #define	_PATH_MSGBUF	"/usr/adm/msgbuf"
-#define	_PATH_KMEM	"/dev/kmem"
-#define	_PATH_VMUNIX	"/vmunix"

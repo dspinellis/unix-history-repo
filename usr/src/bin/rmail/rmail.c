@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	4.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,11 +33,12 @@ static char sccsid[] = "@(#)rmail.c	4.12 (Berkeley) %G%";
  *	It calls sendmail giving it a -f option built from these lines. 
  */
 
-#include <stdio.h>
 #include <sysexits.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <paths.h>
 # include "conf.h"
 
 typedef char bool;
@@ -48,8 +49,6 @@ extern char *index();
 extern char *rindex();
 
 char *Domain = "UUCP";		/* Default "Domain" */
-
-#define MAILER	"/usr/lib/sendmail"
 
 main(argc, argv)
 	int argc;
@@ -88,7 +87,7 @@ main(argc, argv)
 	}
 	from[0] = '\0';
 	fsys[0] = '\0';
-	(void) strcpy(ufrom, "/dev/null");
+	(void) strcpy(ufrom, _PATH_DEVNULL);
 
 	for (position = 0;; position = ftell(stdin)) {
 		(void) fgets(lbuf, sizeof lbuf, stdin);
@@ -146,7 +145,7 @@ main(argc, argv)
 	 * that case below. 
 	 */
 	i = 0;
-	args[i++] = MAILER;
+	args[i++] = _PATH_SENDMAIL;
 	args[i++] = "-oee";		/* no errors, just status */
 	args[i++] = "-odq";		/* queue it, don't try to deliver */
 	args[i++] = "-oi";		/* ignore '.' on a line by itself */
@@ -221,7 +220,7 @@ main(argc, argv)
 		close(pipefd[1]);
 		dup2(pipefd[0], 0);
 	}
-	execv(MAILER, args);
-	fprintf(stderr, "Exec of %s failed!\n", MAILER);
+	execv(_PATH_SENDMAIL, args);
+	fprintf(stderr, "Exec of %s failed!\n", _PATH_SENDMAIL);
 	exit(EX_OSERR);
 }

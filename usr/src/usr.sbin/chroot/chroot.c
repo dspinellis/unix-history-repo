@@ -22,11 +22,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chroot.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)chroot.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
-#include "pathnames.h"
+#include <paths.h>
 
 main(argc, argv)
 	int argc;

@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g operator -m 2750 disklabel ${DESTDIR}/etc
+	install -s -o bin -g operator -m 2750 disklabel ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 disklabel.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 disklabel.5.0 ${DESTDIR}/usr/man/cat5/disklabel.0
 

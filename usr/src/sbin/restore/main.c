@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,8 @@ static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 
 #include "restore.h"
 #include <protocols/dumprestore.h>
-#include <signal.h>
+#include <sys/signal.h>
+#include "pathnames.h"
 
 int	bflag = 0, cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
 int	hflag = 1, mflag = 1, Nflag = 0;
@@ -66,7 +67,7 @@ main(argc, argv)
 {
 	register char *cp;
 	ino_t ino;
-	char *inputdev = "/dev/rmt8";
+	char *inputdev = _PATH_DEFTAPE;
 	char *symtbl = "./restoresymtable";
 	char name[MAXPATHLEN];
 	int (*signal())();

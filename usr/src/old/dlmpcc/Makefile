@@ -14,12 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	dlmpcc.c
 MAN=	dlmpcc.0 mpcc.0 mpcctab.0
+FILES=	mpcc32 mpccdl mpcctab
 
 all: dlmpcc
 
@@ -36,8 +37,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} dlmpcc.c
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 dlmpcc ${DESTDIR}/etc/dlmpcc
-	install -c -o bin -g bin -m 444 firmware/* ${DESTDIR}/etc
+	install -s -o bin -g bin -m 755 dlmpcc ${DESTDIR}/usr/sbin
+	(cd firmware; install -c -o bin -g bin -m 444 ${FILES} ${DESTDIR}/usr/libdata)
 	install -c -o bin -g bin -m 444 dlmpcc.0 ${DESTDIR}/usr/man/cat8/tahoe
 	install -c -o bin -g bin -m 444 mpcc.0 ${DESTDIR}/usr/man/cat4/tahoe
 	install -c -o bin -g bin -m 444 mpcctab.0 ${DESTDIR}/usr/man/cat4/tahoe

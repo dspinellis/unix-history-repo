@@ -8,10 +8,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
+#include "pathnames.h"
 
 #define MAXRULES	6
 #define MAXDEPTH	15
@@ -298,7 +299,7 @@ gettoken()
 					execl(shell, base, 0);
 				}
 				else
-					execl("/bin/sh", "sh", 0);
+					execl(_PATH_BSHELL, "sh", 0);
 
 				exit(0);	/* oops */
 			}

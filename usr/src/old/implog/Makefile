@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -40,8 +40,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 implog ${DESTDIR}/etc/implog
-	install -s -o bin -g bin -m 755 implogd ${DESTDIR}/etc/implogd
+	install -s -o bin -g bin -m 755 implog ${DESTDIR}/usr/sbin
+	install -s -o bin -g bin -m 755 implogd ${DESTDIR}/usr/sbin
 	install -c -o bin -g bin -m 444 implog.0 implogd.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

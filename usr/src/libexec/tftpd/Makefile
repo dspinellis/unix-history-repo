@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
-VPATH=	../../ucb/tftp
+VPATH=	../../usr.bin/tftp
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	tftpd.c tftpsubs.c
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 tftpd ${DESTDIR}/etc/tftpd
+	install -s -o bin -g bin -m 755 tftpd ${DESTDIR}/usr/libexec
 	install -c -o bin -g bin -m 444 tftpd.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

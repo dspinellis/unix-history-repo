@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)clri.c 2.3 %G%";
+static char sccsid[] = "@(#)clri.c 2.4 %G%";
 
 /* static char *sccsid = "@(#)clri.c	4.1 (Berkeley) 10/1/80"; */
 
@@ -6,15 +6,9 @@ static char sccsid[] = "@(#)clri.c 2.3 %G%";
  * clri filsys inumber ...
  */
 
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#endif
 
 #define ISIZE	(sizeof(struct dinode))
 #define	NI	(MAXBSIZE/ISIZE)

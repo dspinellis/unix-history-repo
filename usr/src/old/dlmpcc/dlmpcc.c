@@ -25,27 +25,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dlmpcc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dlmpcc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * MPCC Download and Configuration Program.
  */
-#include <stdio.h>
-#include <ctype.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
-#include <errno.h>
-
 #include <sys/types.h>
 #include <tahoevba/mpreg.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
-
+#include <ctype.h>
 #include "scnhdr.h"
+#include "pathnames.h"
 
 #define MAXMPCC 16
 
-char	*MPCCTAB = "/etc/mpcctab";
+char	*MPCCTAB = _PATH_MPCCTAB;
 int	resetflg = 0;
 
 main(argc, argv)
@@ -442,11 +440,11 @@ download(mpccnum)
 	char hilo[2];
 	long realsize;
 
-	sprintf(dlname, "/dev/mpcc%d", mpccnum);
+	sprintf(dlname, "%s/mpcc%d", _PATH_DEV, mpccnum);
 	if (*cf.loadname == '3')
-		sprintf(fullname, "/etc/mpcc32");
+		sprintf(fullname, _PATH_MPCC32);
 	else
-		sprintf(fullname, "/etc/mpccdl");
+		sprintf(fullname, _PATH_MPCCDL);
 	if ((cf.loadname[0]) == '\0')
 		return (-1);
 	if ((dlfd = open(dlname, O_RDWR)) == MP_DLERROR) {

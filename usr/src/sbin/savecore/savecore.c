@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)savecore.c	5.15 (Berkeley) %G%";
 #include <sys/syslog.h>
 #include <stdio.h>
 #include <nlist.h>
-#include "pathnames.h"
+#include <paths.h>
 
 #define	DAY	(60L*60L*24L)
 #define	LEEWAY	(3*DAY)
@@ -184,7 +184,7 @@ find_dev(dev, type)
 	struct stat statb;
 	char *dp;
 
-	strcpy(devname, "/dev/");
+	strcpy(devname, _PATH_DEV);
 		if (stat(devname, &statb)) {
 			perror(devname);
 			continue;

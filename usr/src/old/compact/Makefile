@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.6	(Berkeley)	%G%
+#	@(#)Makefile	4.7	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=-O
@@ -11,11 +11,6 @@ SRCS=	compact.c tree.c uncompact.c
 OBJS=	compact.o tree.o uncompact.o
 MDIR=	/usr/man/cat.old
 LINKS=	
-
-.SUFFIXES: .1 .0
-
-.1.0:
-	/usr/man/manroff $*.1 > $*.0
 
 all: compact uncompact
 
@@ -37,27 +32,11 @@ install: compact.0
 clean:
 	rm -f compact uncompact ${OBJS}
 
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
 depend:
 	mkdep ${SRCS}
 
 tags:
 	ctags ${SRCS}
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-compact.o: compact.c /usr/include/strings.h compact.h /usr/include/sys/param.h
-compact.o: /usr/include/sys/types.h /usr/include/signal.h
-compact.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-compact.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/stdio.h
-tree.o: tree.c compact.h /usr/include/sys/param.h /usr/include/sys/types.h
-tree.o: /usr/include/signal.h /usr/include/machine/trap.h
-tree.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
-tree.o: /usr/include/sys/dir.h /usr/include/stdio.h
-uncompact.o: uncompact.c compact.h /usr/include/sys/param.h
-uncompact.o: /usr/include/sys/types.h /usr/include/signal.h
-uncompact.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-uncompact.o: /usr/include/sys/stat.h /usr/include/sys/dir.h
-uncompact.o: /usr/include/stdio.h /usr/include/strings.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)displayq.c	5.8 (Berkeley) %G%";
  */
 
 #include "lp.h"
+#include "pathnames.h"
 
 #define JOBCOL	40		/* column for job # in -l format */
 #define OWNCOL	7		/* start of Owner column in normal */
@@ -73,11 +74,11 @@ displayq(format)
 	else if (i == 0)
 		fatal("unknown printer");
 	if ((LP = pgetstr("lp", &bp)) == NULL)
-		LP = DEFDEVLP;
+		LP = _PATH_DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
 		RP = DEFLP;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	if ((ST = pgetstr("st", &bp)) == NULL)

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)tape.c	5.15 (Berkeley) %G%";
 #include <sys/file.h>
 #include <setjmp.h>
 #include <sys/stat.h>
+#include "pathnames.h"
 
 static long	fssize = MAXBSIZE;
 static int	mt = -1;
@@ -52,9 +53,11 @@ static int	Qcvt;		/* Swap quads (for sun) */
 setinput(source)
 	char *source;
 {
+	extern int errno;
 #ifdef RRESTORE
 	char *host, *tape;
 #endif RRESTORE
+	char *strerror();
 
 	flsht();
 	if (bflag)
@@ -81,12 +84,14 @@ nohost:
 		 * Since input is coming from a pipe we must establish
 		 * our own connection to the terminal.
 		 */
-		terminal = fopen("/dev/tty", "r");
+		terminal = fopen(_PATH_TTY, "r");
 		if (terminal == NULL) {
-			perror("Cannot open(\"/dev/tty\")");
-			terminal = fopen("/dev/null", "r");
+			(void)fprintf(stderr, "Cannot open %s: %s\n",
+			    _PATH_TTY, strerror(errno));
+			terminal = fopen(_PATH_DEVNULL, "r");
 			if (terminal == NULL) {
-				perror("Cannot open(\"/dev/null\")");
+			    (void)fprintf(stderr, "Cannot open %s: %s\n",
+				_PATH_DEVNULL, strerror(errno));
 				done(1);
 			}
 		}

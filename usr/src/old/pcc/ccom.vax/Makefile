@@ -1,5 +1,5 @@
 #
-#	Makefile	1.19	89/03/06
+#	Makefile	1.20	89/05/11
 #
 # Makefile for PCC
 #
@@ -157,9 +157,9 @@ fcomm2.o: $(P2INCS) $M/common.c
 	$(RM) fcomm2.c
 
 install: all
-	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/lib/ccom
-	install -s -o bin -g bin -m 755 ${TESTDIR}/sccom ${DESTDIR}/lib/sccom
-	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/lib/f1
+	install -s -o bin -g bin -m 755 ${TESTDIR}/ccom ${DESTDIR}/usr/libexec
+	install -s -o bin -g bin -m 755 ${TESTDIR}/sccom ${DESTDIR}/usr/libexec
+	install -s -o bin -g bin -m 755 ${TESTDIR}/f1 ${DESTDIR}/usr/libexec
 
 GREP=	egrep
 

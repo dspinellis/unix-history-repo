@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)printjob.c	5.6 (Berkeley) %G%";
  */
 
 #include "lp.h"
+#include "pathnames.h"
 
 #define DORETURN	0	/* absorb fork error */
 #define DOABORT		1	/* abort if dofork fails */
@@ -82,7 +83,7 @@ printjob()
 	(void) close(2);			/* set up log file */
 	if (open(LF, O_WRONLY|O_APPEND, 0664) < 0) {
 		syslog(LOG_ERR, "%s: %m", LF);
-		(void) open("/dev/null", O_WRONLY);
+		(void) open(_PATH_DEVNULL, O_WRONLY);
 	}
 	setgid(getegid());
 	pid = getpid();				/* for use with lprm */
@@ -218,11 +219,11 @@ again:
 
 char	fonts[4][50];	/* fonts for troff */
 
-char ifonts[4][18] = {
-	"/usr/lib/vfont/R",
-	"/usr/lib/vfont/I",
-	"/usr/lib/vfont/B",
-	"/usr/lib/vfont/S"
+char ifonts[4][40] = {
+	_PATH_VFONTR,
+	_PATH_VFONTI,
+	_PATH_VFONTB,
+	_PATH_VFONTS,
 };
 
 /*
@@ -459,7 +460,7 @@ print(format, file)
 	switch (format) {
 	case 'p':	/* print file using 'pr' */
 		if (IF == NULL) {	/* use output filter */
-			prog = PR;
+			prog = _PATH_PR;
 			av[0] = "pr";
 			av[1] = width;
 			av[2] = length;
@@ -475,8 +476,9 @@ print(format, file)
 			dup2(p[1], 1);		/* pipe is stdout */
 			for (n = 3; n < NOFILE; n++)
 				(void) close(n);
-			execl(PR, "pr", width, length, "-h", *title ? title : " ", 0);
-			syslog(LOG_ERR, "cannot execl %s", PR);
+			execl(_PATH_PR, "pr", width, length,
+			    "-h", *title ? title : " ", 0);
+			syslog(LOG_ERR, "cannot execl %s", _PATH_PR);
 			exit(2);
 		}
 		(void) close(p[1]);		/* close output side */
@@ -518,7 +520,7 @@ print(format, file)
 		} else {
 			for (n = 0; n < 4; n++) {
 				if (fonts[n][0] != '/')
-					(void) write(fo, "/usr/lib/vfont/", 15);
+					(void) write(fo, _PATH_VFONT, 15);
 				(void) write(fo, fonts[n], strlen(fonts[n]));
 				(void) write(fo, "\n", 1);
 			}
@@ -921,12 +923,12 @@ sendmail(user, bombed)
 		dup2(p[0], 0);
 		for (i = 3; i < NOFILE; i++)
 			(void) close(i);
-		if ((cp = rindex(MAIL, '/')) != NULL)
+		if ((cp = rindex(_PATH_SENDMAIL, '/')) != NULL)
 			cp++;
 		else
-			cp = MAIL;
+			cp = _PATH_SENDMAIL;
 		sprintf(buf, "%s@%s", user, fromhost);
-		execl(MAIL, cp, buf, 0);
+		execl(_PATH_SENDMAIL, cp, buf, 0);
 		exit(0);
 	} else if (s > 0) {				/* parent */
 		dup2(p[1], 1);
@@ -1028,7 +1030,7 @@ init()
 		exit(1);
 	}
 	if ((LP = pgetstr("lp", &bp)) == NULL)
-		LP = DEFDEVLP;
+		LP = _PATH_DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
 		RP = DEFLP;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
@@ -1036,9 +1038,9 @@ init()
 	if ((ST = pgetstr("st", &bp)) == NULL)
 		ST = DEFSTAT;
 	if ((LF = pgetstr("lf", &bp)) == NULL)
-		LF = DEFLOGF;
+		LF = _PATH_CONSOLE;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((DU = pgetnum("du")) < 0)
 		DU = DEFUID;
 	if ((FF = pgetstr("ff", &bp)) == NULL)

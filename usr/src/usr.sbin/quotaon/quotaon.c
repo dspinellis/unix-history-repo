@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotaon.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)quotaon.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <mtab.h>
+#include "pathnames.h"
 
 struct	mtab mtab[NMOUNT];
 
@@ -78,9 +79,9 @@ again:
 			whoami, whoami);
 		exit(1);
 	}
-	mf = open("/etc/mtab", O_RDONLY);
+	mf = open(_PATH_MTAB, O_RDONLY);
 	if (mf < 0) {
-		perror("/etc/mtab");
+		perror(_PATH_MTAB);
 		exit(1);
 	}
 	(void) read(mf, (char *)mtab, sizeof (mtab));
@@ -99,7 +100,7 @@ again:
 	endfsent();
 	for (i = 0; i < argc; i++)
 		if ((done & (1 << i)) == 0)
-			fprintf(stderr, "%s not found in /etc/fstab\n",
+			fprintf(stderr, "%s not found in fstab\n",
 				argv[i]);
 	exit(errs);
 }
@@ -173,7 +174,7 @@ replace:
 	mp = mtab + NMOUNT - 1;
 	while (mp > mtab && mp->m_path[0] == '\0')
 		--mp;
-	mf = creat("/etc/mtab", 0644);
+	mf = creat(_PATH_MTAB, 0644);
 	(void) write(mf, (char *)mtab, (mp - mtab + 1) * sizeof (struct mtab));
 	close(mf);
 }

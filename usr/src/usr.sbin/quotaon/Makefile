@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,9 +38,9 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 quotaon ${DESTDIR}/etc
-	rm -f ${DESTDIR}/etc/quotaoff
-	ln ${DESTDIR}/etc/quotaon ${DESTDIR}/etc/quotaoff
+	install -s -o bin -g bin -m 755 quotaon ${DESTDIR}/usr/sbin
+	rm -f ${DESTDIR}/usr/sbin/quotaoff
+	ln ${DESTDIR}/usr/sbin/quotaon ${DESTDIR}/usr/sbin/quotaoff
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

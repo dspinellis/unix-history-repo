@@ -22,20 +22,21 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)halt.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)halt.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Halt
  */
-#include <stdio.h>
-#include <sys/reboot.h>
 #include <sys/types.h>
+#include <sys/reboot.h>
 #include <sys/time.h>
 #include <sys/syslog.h>
+#include <sys/signal.h>
 #include <errno.h>
-#include <signal.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <paths.h>
 
 main(argc, argv)
 	int argc;
@@ -69,7 +70,7 @@ main(argc, argv)
 			exit(1);
 		}
 
-	if (ttyn && *(ttyn+strlen("/dev/tty")) == 'd') {
+	if (ttyn && ttyn[sizeof(_PATH_TTY) - 1] == 'd') {
 		fprintf(stderr, "halt: dangerous on a dialup; use ``halt -y'' if you are really sure\n");
 		exit(1);
 	}
