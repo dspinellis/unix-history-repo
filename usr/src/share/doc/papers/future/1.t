@@ -1,8 +1,8 @@
-.\"	@(#)1.t	1.2	(Copyright 1986 M. K. McKusick)	86/11/29
+.\"	@(#)1.t	1.3	(Copyright 1986 M. K. McKusick)	86/12/04
 .NH
 The Role of Research in Maintaining System Vitality
 .PP
-Since the AT&T divestiture, UNIX has become the focus of
+Since the divestiture of AT&T, UNIX has become the focus of
 a massive marketing effort.
 To succeed, this effort must convince
 potential customers that the product is supported,
@@ -11,10 +11,9 @@ and that these versions will be upwardly
 compatible with all past applications.
 .PP
 AT&T's size alone ensures that it will be around in years to come.
-The fact that the company has allocated a growing number of
-research, development,
+Because the company has allocated increasing research, development,
 and support resources to UNIX over the past 10 years
-provides an assurance of its commitment.
+it provides an assurance of its commitment.
 Its massive advertising campaign for System V, 
 its presence on the /usr/group UNIX standards committee,
 and the publication of the \fISystem V Interface Definition\fR
@@ -54,7 +53,7 @@ of the 7th Edition.
 Universities also were involved with the
 system almost from its inception.
 The University of California at
-Berkeley was one of the first participants,
+Berkeley was among the first participants,
 playing host to several researchers on sabbatical from the Labs.
 This cooperation typified the harmony
 that was characteristic of the early UNIX community.
@@ -73,7 +72,7 @@ in preparation for entry into the commercial marketplace.
 As the research community continued to modify the UNIX system,
 it found that it needed an organization that could produce releases.
 Berkeley quickly stepped into the role.
-Prior to the final public release of UNIX from the Labs, 
+Before the final public release of UNIX from the Labs, 
 Berkeley's work had been focused on the development of
 tools designed to be added to
 existing UNIX systems.
@@ -98,7 +97,7 @@ were just beginning to emerge from
 Xerox PARC and other research centers.
 Users in the academic and research community realized
 that there were no production-quality operating systems
-capable of making use of such hardware.
+capable of using such hardware.
 They also saw that networking unquestionably would be
 an indispensable facility in future systems research.
 Though it was not clear that UNIX
