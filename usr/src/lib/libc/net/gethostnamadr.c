@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.38 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -225,8 +225,30 @@ gethostbyname(name)
 			if (!*cp) {
 				if (*--cp == '.')
 					break;
-				h_errno = HOST_NOT_FOUND;
-				return ((struct hostent *) NULL);
+				/*
+				 * All-numeric, no dot at the end.
+				 * Fake up a hostent as if we'd actually
+				 * done a lookup.  What if someone types
+				 * 255.255.255.255?  The test below will
+				 * succeed spuriously... ???
+				 */
+				if ((host_addr.s_addr = inet_addr(name)) == -1) {
+					h_errno = HOST_NOT_FOUND;
+					return((struct hostent *) NULL);
+				}
+				host.h_name = name;
+				host.h_aliases = host_aliases;
+				host_aliases[0] = NULL;
+				host.h_addrtype = AF_INET;
+				host.h_length = sizeof(u_long);
+				h_addr_ptrs[0] = (char *)&host_addr;
+				h_addr_ptrs[1] = (char *)0;
+#if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
+				host.h_addr_list = h_addr_ptrs;
+#else
+				host.h_addr = h_addr_ptrs[0];
+#endif
+				return (&host);
 			}
 			if (!isdigit(*cp) && *cp != '.') 
 				break;
@@ -281,6 +303,9 @@ gethostbyaddr(addr, len, type)
 	h_addr_ptrs[0] = (char *)&host_addr;
 	h_addr_ptrs[1] = (char *)0;
 	host_addr = *(struct in_addr *)addr;
+#if BSD < 43 && !defined(h_addr)	/* new-style hostent structure */
+	hp->h_addr = h_addr_ptrs[0];
+#endif
 	return(hp);
 }
 
