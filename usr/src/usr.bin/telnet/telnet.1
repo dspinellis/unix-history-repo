@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)telnet.1	6.3 (Berkeley) %G%
+.\"	@(#)telnet.1	6.4 (Berkeley) %G%
 .\"
 .TH TELNET 1C ""
 .UC 5
@@ -45,7 +45,7 @@ without the password being echoed).
 .PP
 In either mode, if the
 .I localchars
-toggle (see below) is TRUE,
+toggle is TRUE (the default in line mode; see below),
 the user's
 .IR quit ,
 .IR intr ,
@@ -197,7 +197,7 @@ system.
 .br
 Sends the
 .B TELNET IP
-(Interrupt Process) sequence, which hopefully will cause the remote
+(Interrupt Process) sequence, which should cause the remote
 system to abort the currently running process.
 .TP
 .I ao
@@ -216,7 +216,7 @@ the user's terminal.
 Sends the
 .B TELNET AYT
 (Are You There)
-sequence, which the remote system may or may not choose to respond to.
+sequence, to which the remote system may or may not choose to respond.
 .TP
 .I ec
 .br
@@ -262,6 +262,9 @@ Set any one of a number of
 variables to a specific value.
 The special value \*(lqoff\*(rq turns off the function associated with
 the variable.
+The values of variables may be interrogated with the
+.B display
+command.
 The variables which may be specified are:
 .RS
 .TP
@@ -427,6 +430,9 @@ various flags that control how
 .I telnet
 responds to events.
 More than one argument may be specified.
+The state of these flags may be interrogated with the
+.B display
+command.
 Valid arguments are:
 .RS
 .TP
@@ -459,36 +465,6 @@ above).
 The initial value for this toggle is TRUE in \*(lqline by line\*(rq mode,
 and FALSE in \*(lqcharacter at a time\*(rq mode.
 .TP
-.I autosynch
-If
-.I autosynch
-and
-.I localsigs
-are both
-TRUE,
-then when either the
-.I intr
-or
-.I quit
-characters is typed (see
-.B set
-above for descriptions of the
-.I intr
-and
-.I quit
-characters), the resulting
-.B TELNET
-sequence sent is followed by the
-.B TELNET SYNCH
-sequence.
-This procedure
-.B should
-cause the remote system to begin throwing away all previously
-typed input until both of the
-.B TELNET
-sequences have been read and acted upon.
-The initial value of this toggle is FALSE.
-.TP
 .I autoflush
 .br
 If
@@ -519,6 +495,36 @@ sequences.
 The initial value for this toggle is TRUE if the terminal user had not
 done an "stty noflsh", otherwise FALSE (see
 .IR stty(1)).
+.TP
+.I autosynch
+If
+.I autosynch
+and
+.I localchars
+are both
+TRUE,
+then when either the
+.I intr
+or
+.I quit
+characters is typed (see
+.B set
+above for descriptions of the
+.I intr
+and
+.I quit
+characters), the resulting
+.B TELNET
+sequence sent is followed by the
+.B TELNET SYNCH
+sequence.
+This procedure
+.B should
+cause the remote system to begin throwing away all previously
+typed input until both of the
+.B TELNET
+sequences have been read and acted upon.
+The initial value of this toggle is FALSE.
 .TP
 .I crmod
 .br
