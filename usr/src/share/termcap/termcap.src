@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.66 (Berkeley) %G%
+#	@(#)termcap.src	5.67 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2979,6 +2979,15 @@ z7|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
 	:nl=^_:al=^D:am:bs:cd=^B:ce=^A:cl=^L:cm=\EY%+ %+ :co#80:\
 	:dl=^K:do=^_:ho=^F:li#24:nd=^]:ms:pt:se=^O:so=^N:up:=^^:\
 	:kb=^H:kd=^_:kl=^\:kr=^]:ku=^^:
+#From {pbrown,ctl}@ocf.berkeley.edu, 12 Mar 90
+zp|coco3|os9LII|Tandy CoCo3 24*80 OS9 Level II:\
+	:am:bs:cl=5*^L:li#24:co#80:ho=^A:\
+	:cd=^K:ce=^D:cm=2%r^B%+ %+ :\
+	:bl#7:do=^J:up=^I:nd=^F:so=\037\040:se=\037\041:\
+	:us=\037\042:ue=\037\043:al=\037\060:dl=\037\061:\
+	:ku=^L:kd=^J:kr=^I:kl=^H:ta:mb=\037\042:md=\E\072^A:\
+	:mr=\037\040:me=\037\041\E\072\000:\
+	:vi=\005\040:ve=\005\041
 z9|ps300|Picture System 300:us@:ue@:so@:se@:xt:pt@:tc=vt100:
 za|masscomp2:co#64:li#21:tc=masscomp:
 zb|masscomp1:co#104:li#36:tc=masscomp:
@@ -3081,7 +3090,7 @@ zk|ibmx|ibmpcx|IBM PC xenix console display:\
 	:HM=\E[Y:EN=\E[d:PU=\E[Z:PD=\E[e:
 zl|ibmc|ibmcpc|IBM PC xenix color console display:\
 	:tc=ibm:
-zl|ibmcx|ibmcpcx|IBM PC xenix color console display:\
+zo|ibmcx|ibmcpcx|IBM PC xenix color console display:\
 	:tc=ibmx:
 zm|kaypro|kaypro2|kaypro II:\
 	:am:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:\
