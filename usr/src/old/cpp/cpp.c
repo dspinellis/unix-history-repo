@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c 1.3 %G%";
+static char sccsid[] = "@(#)cpp.c 1.4 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -1151,6 +1151,12 @@ main(argc,argv)
 # endif
 # if mert
 	varloc=stsym ("mert");
+# endif
+# if mc68000
+	varloc=stsym("mc68000");
+# endif
+# if sun
+	varloc=stsym("sun");
 # endif
 	ulnloc=stsym ("__LINE__");
 	uflloc=stsym ("__FILE__");
