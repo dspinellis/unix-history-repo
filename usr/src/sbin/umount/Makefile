@@ -14,10 +14,10 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
-CFLAGS=	-O
+CFLAGS=	-O -DNFS
 LIBC=	/lib/libc.a
 SRCS=	umount.c
 OBJS=
@@ -26,7 +26,7 @@ MAN=
 all: umount
 
 umount: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+	${CC} -o $@ ${CFLAGS} $@.c -lrpc
 
 clean:
 	rm -f ${OBJS} core umount
