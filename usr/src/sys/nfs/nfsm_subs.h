@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.4 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -160,7 +160,6 @@ extern struct vnode *nfs_fhtovp();
 		} \
 		(v) = NFSTOV(np); \
 		nfsm_loadattr(v, (struct vattr *)0); \
-		(v)->v_type = np->n_vattr.va_type; \
 		}
 
 #define	nfsm_loadattr(v,a) \
@@ -242,16 +241,34 @@ extern struct vnode *nfs_fhtovp();
 		nfsmout: \
 		return(error)
 
+#ifndef lint
 #define	nfsm_reply(s) \
 		{ \
+		*repstat = error; \
 		if (error) \
 			nfs_rephead(0, xid, error, mrq, &mb, &bpos); \
 		else \
 			nfs_rephead((s), xid, error, mrq, &mb, &bpos); \
 		m_freem(mrep); \
+		mreq = *mrq; \
 		if (error) \
 			return(0); \
 		}
+#else	/* lint */
+#define	nfsm_reply(s) \
+		{ \
+		*repstat = error; \
+		if (error) \
+			nfs_rephead(0, xid, error, mrq, &mb, &bpos); \
+		else \
+			nfs_rephead((s), xid, error, mrq, &mb, &bpos); \
+		m_freem(mrep); \
+		mreq = *mrq; \
+		mrep = mreq; \
+		if (error) \
+			return(0); \
+		}
+#endif	/* lint */
 
 #define	nfsm_adv(s) \
 		t1 = mtod(md, caddr_t)+md->m_len-dpos; \
@@ -281,4 +298,22 @@ extern struct vnode *nfs_fhtovp();
 			be = bp+mp->m_len; \
 		} \
 		p = (u_long *)bp
+
+#define	nfsm_srvfillattr \
+	fp->fa_type = vtonfs_type(vap->va_type); \
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode); \
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink); \
+	fp->fa_uid = txdr_unsigned(vap->va_uid); \
+	fp->fa_gid = txdr_unsigned(vap->va_gid); \
+	fp->fa_size = txdr_unsigned(vap->va_size); \
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize); \
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev); \
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize); \
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid); \
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid); \
+	fp->fa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec); \
+	fp->fa_atime.tv_usec = txdr_unsigned(vap->va_flags); \
+	txdr_time(&vap->va_mtime, &fp->fa_mtime); \
+	fp->fa_ctime.tv_sec = txdr_unsigned(vap->va_ctime.tv_sec); \
+	fp->fa_ctime.tv_usec = txdr_unsigned(vap->va_gen)
 

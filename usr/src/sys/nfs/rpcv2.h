@@ -22,8 +22,7 @@
 
 /*
  * Definitions for Sun RPC Version 2, from
- * "Remote Procedure Call Protocol Specification" in the manual
- * "Networking on the Sun Workstation", Part #800-1324-03 Rev. B
+ * "RPC: Remote Procedure Call Protocol Specification" RFC1057
  */
 
 /* Version # */

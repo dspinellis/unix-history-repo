@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsproto.h	7.2 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -26,8 +26,7 @@
 
 /*
  * Constants as defined in the Sun NFS Version 2 spec.
- * "Network File System Protocol Specification" in the
- * Manual "Networking on the Sun Workstation", Part #800-1324-03, Rev B
+ * "NFS: Network File System Protocol Specification" RFC1094
  */
 
 #define NFS_PORT	2049
