@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.4 (Berkeley) %G%
+#	@(#)makefile	4.5 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -50,6 +50,29 @@
 #
 #	LNOFLSH		-	Detects the presence of the LNOFLSH bit
 #				in the tty structure.
+#
+#
+#
+#	TERMCAP		-	Define this if your system is termcap based,
+#				otherwise a terminfo based system is assumed.
+#
+#	SRCRT		-	Includes code to allow you to specify
+#				source routes.
+#				Format is:
+#					[!]@hop1@hop2...[@|:]dst
+#				Leading ! means strict source route.
+#
+#	NOSTRNCASECMP	-	Define this if you do not have strncasecmp() in
+#				your C libarary.
+#
+#	USE_TERMIO	-	Define this if you have System V termio
+#				structures.  What is here is how things
+#				are on Cray computers.
+#
+#	KLUDGELINEMODE	-	Define this to get the kludged up version
+#				of linemode that was in 4.3BSD.  This is a
+#				good thing to have around for talking to
+#				older systems.
 #
 #
 #	Here are some which are used throughout the system:
@@ -100,7 +123,7 @@ RANLIB	= ranlib
 PRINT	= print
 ACTION = @sccs tell
 
-DEFINES = ${LINT_ARGS}
+DEFINES= ${LINT_ARGS} -DTERMCAP -DSRCRT -DKLUDGELINEMODE
 
 INCLUDES = -I. -I..
 
