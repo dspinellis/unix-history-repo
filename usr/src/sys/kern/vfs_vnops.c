@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -253,7 +253,7 @@ vn_write(fp, uio, cred)
 		ioflag |= IO_APPEND;
 	if (fp->f_flag & FNONBLOCK)
 		ioflag |= IO_NDELAY;
-	if (fp->f_flag & O_FSYNC)
+	if ((fp->f_flag & O_FSYNC) || (vp->v_mount->mnt_flag & MNT_SYNCHRONOUS))
 		ioflag |= IO_SYNC;
 	VOP_LEASE(vp, uio->uio_procp, cred, LEASE_WRITE);
 	VOP_LOCK(vp);
