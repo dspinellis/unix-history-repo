@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -123,6 +123,16 @@ execute(t, wanttty, pipein, pipeout)
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
 			int omask;
 
+			/* 
+			 * Prepare for the vfork by saving everything
+			 * that the child corrupts before it exec's.
+			 * Note that in some signal implementations
+			 * which keep the signal info in user space
+			 * (e.g. Sun's) it will also be necessary to
+ 			 * save and restore the current sigvec's for
+			 * the signals the child touches before it
+			 * exec's.
+			 */
 			omask = sigblock(sigmask(SIGCHLD));
 			ochild = child; osetintr = setintr;
 			ohaderr = haderr; odidfds = didfds;
@@ -135,7 +145,7 @@ execute(t, wanttty, pipein, pipeout)
 				error("No more processes");
 			}
 			forked++;
-			if (pid) {
+			if (pid) {	/* parent */
 				child = ochild; setintr = osetintr;
 				haderr = ohaderr; didfds = odidfds;
 				SHIN = oSHIN;
@@ -147,7 +157,7 @@ execute(t, wanttty, pipein, pipeout)
 				/* this is from pfork() */
 				palloc(pid, t);
 				(void) sigsetmask(omask);
-			} else {
+			} else {	/* child */
 				/* this is from pfork() */
 				int pgrp;
 				bool ignint = 0;
@@ -187,9 +197,8 @@ execute(t, wanttty, pipein, pipeout)
 				if (t->t_dflg & FNOHUP)
 					(void) signal(SIGHUP, SIG_IGN);
 				if (t->t_dflg & FNICE)
-					(void) setpriority(PRIO_PROCESS, 0,
-			    		    getpriority(PRIO_PROCESS, 0)
-					    + t->t_nice);
+					(void) setpriority(PRIO_PROCESS,
+						0, t->t_nice);
 			}
 
 		    }
