@@ -5,8 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.2 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)cat.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Concatenate files.
@@ -19,7 +25,7 @@ static char sccsid[] = "@(#)cat.c	5.2 (Berkeley) %G%";
 /* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD or beyond */
 
 int	bflg, eflg, nflg, sflg, tflg, uflg, vflg;
-int	spaced, col, lno, inline, ibsize, obsize;
+int	spaced, col, lno, inaline, ibsize, obsize;
 
 main(argc, argv)
 char **argv;
@@ -135,22 +141,22 @@ top:
 	if (c == EOF)
 		return;
 	if (c == '\n') {
-		if (inline == 0) {
+		if (inaline == 0) {
 			if (sflg && spaced)
 				goto top;
 			spaced = 1;
 		}
-		if (nflg && bflg==0 && inline == 0)
+		if (nflg && bflg==0 && inaline == 0)
 			printf("%6d\t", lno++);
 		if (eflg)
 			putchar('$');
 		putchar('\n');
-		inline = 0;
+		inaline = 0;
 		goto top;
 	}
-	if (nflg && inline == 0)
+	if (nflg && inaline == 0)
 		printf("%6d\t", lno++);
-	inline = 1;
+	inaline = 1;
 	if (vflg) {
 		if (tflg==0 && c == '\t')
 			putchar(c);
