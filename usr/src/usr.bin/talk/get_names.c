@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_names.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_names.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "talk.h"
@@ -90,7 +90,9 @@ get_names(argc, argv)
 	 */
 	msg.vers = TALK_VERSION;
 	msg.addr.sa_family = htons(AF_INET);
+	msg.addr.sa_len = sizeof(msg.addr);
 	msg.ctl_addr.sa_family = htons(AF_INET);
+	msg.ctl_addr.sa_len = sizeof(msg.ctl_addr);
 	msg.id_num = htonl(0);
 	strncpy(msg.l_name, my_name, NAME_SIZE);
 	msg.l_name[NAME_SIZE - 1] = '\0';
