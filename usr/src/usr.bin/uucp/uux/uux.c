@@ -1,9 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.8	(Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.9	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+/*
+ * If you have it, include <sysexits.h> to use exit
+ * codes that will be understood by sendmail.
+ * Otherwise, define EX_NOHOST, EX_CANTCREAT, and EX_NOINPUT.
+ */
+#include <sysexits.h>
+/*#define EX_NOINPUT	66	/**/
+/*#define EX_NOHOST	68	/**/
+/*#define EX_CANTCREAT	73	/**/
 
 #define NOSYSPART 0
 #define HASSYSPART 1
