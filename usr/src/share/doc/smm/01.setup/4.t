@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.3 (Berkeley) %G%
+.\"	@(#)4.t	6.4 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
@@ -899,6 +899,12 @@ where \fIDD\fP is a hexadecimal number, the ``minor device'' number.
 The first digit is the multiplexor unit number, and the second digit
 is the line number.
 For VIOC's with fewer than 16 connectors, the missing unit numbers are unused.
+.PP
+Terminals connected using 16 port MPCC interfaces are conventionally named
+tty\fICD\fP where \fIC\fP is a single upper-case letter and \fID\fP is a
+single hexidecimal digit.  The upper-case letter is the multiplexor unit
+number (with \fIA\fP being mpcc 0) and the hexidecimal digit is the port
+number on that unit.
 .\}
 .PP
 To add a new terminal device, be sure the device is configured into the system
@@ -918,6 +924,15 @@ in the file of current users (\fI/etc/utmp\fP),
 and therefore it is best to make changes
 while running in single-user mode
 and to add all of the entries for a new device at once.
+.if \n(Th \{\
+.PP
+To add mpcc controllers, and additional step is required.  At boot time,
+the firmware for each mpcc controller must be downloaded.  The program
+\fI/etc/dlmpcc\fP must therefore be invoked from \fI/etc/rc.local\fP.
+The file \fI/etc/mpcctab\fP describes each mpcc controller and is used
+by \fI/etc/dlmpcc\fP to determine how many mpcc's are on the system.
+See \fImpcc\fP(4) and \fIdlmpcc\fP(8) for more information.
+.\}
 .PP
 The format of the /etc/ttys file is completely new in 4.3BSD.
 Each line in the file is broken into four tab separated
@@ -946,9 +961,9 @@ before modifying /etc/gettytab.
 .PP
 Dialup terminals should be wired so that carrier is asserted only when the
 phone line is dialed up.
-For non-dialup terminals from which modem control
-is not available, you must either wire back the signals so that
+For non-dialup terminals, from which modem control is not available,
 .if \n(Vx \{\
+you must either wire back the signals so that
 the carrier appears to always be present, or show in the system
 configuration that carrier is to be assumed to be present
 with \fIflags\fP for each terminal device.  See
@@ -961,6 +976,7 @@ and
 for details.
 .\}
 .if \n(Th \{\
+you must wire back the signals so that
 the carrier appears to always be present.  For further details, see
 .IR vx (4),
 .IR mpcc (4),
@@ -977,8 +993,8 @@ ttyp0 	none	network
 (Note, the fourth field is not needed here.)
 .PP
 When the system is running multi-user, all terminals that are listed
-in /etc/ttys as \fBon\fP have their line are enabled.
-If, during normal operations, it is desired
+in /etc/ttys as \fBon\fP have their line enabled.
+If, during normal operations, you wish
 to disable a terminal line, you can edit the file
 /etc/ttys
 to change the terminal's status to \fBoff\fP and
@@ -1004,11 +1020,6 @@ names to determine if a terminal is a dialup.
 Shell commands to do this should be put in the /dev/MAKEDEV.local
 script.
 .PP
-Also, lines in /etc/ttys are in one-to-one correspondence with entries
-in the file of current users (/etc/utmp), and therefore it is best to make
-changes while running in single-user mode, and to add all of the entries
-for a new device at once.
-.PP
 While it is possible to use truly arbitrary strings for terminal names,
 the accounting and noticeably the
 \fIps\fP\|(1)
@@ -1017,7 +1028,7 @@ command make good use of the convention that tty names
 are distinct in the last 2 characters. 
 Change this and you may be sorry later, as the heuristic
 \fIps\fP\|(1)
-uses based on these conventions will then break down and ps will
+uses based on these conventions will then break down and \fIps\fP will
 run MUCH slower.
 .NH 2
 Adding users
