@@ -1,0 +1,13 @@
+# Who said shells can't use recursion?  Here is a factorial function.
+# You call it with a number as an argument, and it returns the factorial
+# of that number.
+
+fact ()
+{
+    local num=$1;
+    if [ "$num" = 1 ] ; then
+        echo 1
+        return ;
+    fi;
+    echo $[ $num * $(fact $[ $num - 1 ])]
+}
