@@ -1,0 +1,322 @@
+From cbosg!harpo!npois!eiss!ladm Fri Mar 19 16:20:27 1982
+Subject: newsinfo.shell
+Newsgroups: net.sources
+
+echo cmd-sum
+cat >cmd-sum <<E!O!F!
+The following commands are part of netnews:
+
+checknews - to see if there is new news
+readnews  - to actually read the news
+postnews  - simple interface to submit a news article
+inews     - the real news submission command
+newsinfo  - tells up-to-date information about USENET
+
+Typical usage:
+checknews -y  (this is in /etc/profile)
+
+readnews  ( to read all news )
+readnews -n newsgroup  (selectively select a newsgroup to read)
+readnews -l    (list titles only)
+
+You probably want to specify options in your $HOME/.newsrc file.
+Several .newsrc files follow:
+
+options -h -n all !net.all !fa.all  (subscribe to LOCAL and btl newsgroups).
+		(The -h provides short headers)
+
+options -n all !fa.all !net.rec.all !net.jokes.all
+E!O!F!
+
+echo contacts
+cat >contacts <<E!O!F!
+Machine Contacts:
+direct:
+	insert your own info here
+
+indirect:
+
+other interesting but more remote machines:
+	mhtsa	:
+	eagle	: jal	(Jeff Langer)
+	research:
+	alice	:
+
+Major centers:
+ihnss, houxi, harpo, mhuxj, mhtsa  (BTL)
+ucbvax, decvax, duke
+E!O!F!
+
+echo current_info
+cat >current_info <<E!O!F!
+	USENET System Information
+	-------------------------
+
+Introduction.  USENET is an international network of UNIX sites,
+with hookups into the ARPA network, too.  It is basically a fancy
+electronic Bulletin Board system.  Numerous BTL machines are connected
+at HO, IH, MH, with a few elsewhere, too.
+In addition, there are major sites at universities:
+	UC Berkeley, Duke, U Waterloo, and so on ...
+and at industry nationwide:
+	DEC, Tektronics, Microsoft, Intel, etc.
+
+There are numerous bulletin board categories, set up in a hierarchy.
+The first "node" in a category name indicates the breadth of distribution,
+later nodes indicate content.  Read the newsgroup items for full lists.
+
+Newsgroup naming conventions:
+
+  NO prefix= LOCAL ONLY
+  btl.    = Bell Labs
+  net.    = USENET wide categories
+  fa.     = from ARPA-Net (no return feed, except via mail)
+  ____.all= everything in category "____".
+
+
+The netnews newsgroups of most interest are:  
+
+general		: local general information
+
+btl.all 	: BTL Everything.
+
+net.general	: general net-wide announcements 
+net.bugs.v7	: reports of bugs and/or solutions to UNIX V7
+net.news.b	: news about our version of netnews
+E!O!F!
+
+echo fa.groups
+cat >fa.groups <<E!O!F!
+FA groups are "From the Arpanet" and are mostly copies of mailing lists
+or "digests" distributed on that network. (A digest is a collection of mail
+put together by an editor and sent out every so often. It is much like a
+newsletter.)
+A special convention applies to submissions to FA newsgroups.
+You should not post directly to the newsgroup, since this will be
+seen by people on USENET but not by the people on the arpanet who get the list
+directly mailed to them. Instead, send mail to the name of the group on site
+For example, to post an article to fa.human-nets, you might mail to
+...!ucbvax!human-nets (where ... is the path from HERE to ucbvax).
+FA groups and their corresponding mailing lists can reach a very large
+user community, including USENET sites on UUCP, Berknet, BLN, and the
+ARPANET, as well as sites on the ARPANET which are not on USENET,
+who get the news via direct electronic mailing.
+
+Some digests are turned off locally; others are fed into "net" groups;
+still others are available in printed form only.  These conditions are
+noted below.
+
+ NEWSGROUP     | Description		last update 3/19/82
+==============================================================================
+fa.arms-d      | Discussion and info on strategic weapons.
+fa.arpa-bboard | Announcements that are posted to all arpanet bboards
+               | are also fed into this newsgroup.
+fa.digest-p    | People who deal with digests. Mostly the people who
+               | moderate them.
+fa.editor-p    | Interest group in computer editors, both text and program.
+fa.energy      | Topics relating to alternate energy production,
+               | conservation, etc.
+fa.human-nets  | A daily moderated digest with discussions of computer-aided
+               | human-to-human communications. Probably the most widely read
+               | ARPANET publication.   AVAILABLE PRINTED ONLY.
+fa.info-cpm    | CP/M and other operating systems for micro computers.
+fa.info-micro  | Microprocessor and microcomputer discussions.
+fa.info-terms  | Opinions/queries about what's a good/bad computer terminal.
+fa.info-vax    | VAX interest group. Seems to be mostly VMS issues, but some
+               | hardware discussions too.
+fa.poli-sci    | Political Science discussions digest.  TURNED OFF.
+fa.sf-lovers   | Science Fiction book/movie reviews, etc. PRINTED ONLY.
+fa.space       | Digest containing comments on the space program and outer
+               | space in general.  This is fed to net.space, ALSO PRINTED.
+fa.tcp-ip      | Digest relating to the TCP and IP network protocols.
+	       | TURNED OFF.
+fa.telecom     | Technical topics relating to telecommunications, especially
+               | the telephone system. A digest recently spun off from
+               | fa.human-nets.  PRINTED ONLY.
+fa.teletext    | Teletext discusses all aspects of ``esoteric'' data systems.
+               | This includes teletext, viewdata, closed-captioning, and
+               | digicasting.
+fa.unix-cpm    | CPM/UNIX discussions.
+fa.works       | Interest group on personal workstations (e.g. Apollo, Perq,
+               | Xerox Star, etc).
+==============================================================================
+E!O!F!
+
+echo help
+cat >help <<E!O!F!
+
+Command		Meaning
+
+y		Yes.  Prints current article and goes on to next.
+n		No.  Goes on to next article without printing current one.
+q		Quit.  Update .newsrc if -l or -x not used.
+c		Cancel article.
+r		Reply.  Reply to article's author via mail.
+f [title]	Submit a follow up article.
+N [newsgroup]	Go to next newsgroup or named newsgroup.
+s [file]	Save.  Article is appended to file (default, Articles).
+#		Report last article no. in newsgroup.
+e		Erase.  Forget that an article was read.
+h		Print verbose header.
+!		Shell escape.
+number		Go to number.
++[n]		Skip n articles.
+-		Go back to last article.
+x		Exit.  Don't update .newsrc.
+X system	Send article to system.
+
+c, f, r, e, h, and s can be followed by -'s to refer to the previous article
+
+E!O!F!
+
+echo infoinstall.sh
+cat >infoinstall.sh <<E!O!F!
+if test "$#" != 2
+then
+	echo "usage: $0 libdir bindir"
+	exit 1
+fi
+LIBDIR=$1
+BINDIR=$2
+
+: create directory for newsinfo command
+if test ! -d $LIBDIR/INFO
+then
+	mkdir $LIBDIR/INFO
+	chmod 775 $LIBDIR/INFO
+fi
+
+: load INFO directory
+cp cmd-sum contacts current_info help netmap *.groups $LIBDIR/INFO
+chmod 664 $LIBDIR/INFO/*
+
+: move the newsinfo command to bin
+sed "s;/usr/local/netnews;$LIBDIR;g" <newsinfo >$BINDIR/newsinfo
+chmod 755 $BINDIR/newsinfo
+E!O!F!
+
+echo local.groups
+cat >local.groups<<E!O!F!
+Local newsgroups are those that do not begin with "net.", "btl.", or
+"fa.".  They are not distributed to any other system.
+
+ NEWSGROUP	| Description		last update: 3/19/82
+==========================================================================
+general		| Local news of general interest.  E.g., to announce a
+		| newsgroup, or a party, or a new command, etc.
+followup	| follow-up articles to those originally posted in general
+==========================================================================
+E!O!F!
+
+echo net.groups
+cat >net.groups <<E!O!F!
+Net.all newsgroups are available to all people on the entire network
+who read netnews. This does not mean they go to every machine, since some
+machines restrict the volume of news that comes in. It is assumed that users
+of such restricted machines can read news on another machine on which they
+have a login. Newsgroups reach all of USENET (including USENET sites on the
+ARPANET) but do not reach any sites that are not on USENET. That is, USENET
+is defined as all sites that net.all reaches.
+
+  NEWSGROUP     | Description		last update: 3/19/82
+===========================================================================
+ net.general    | General information.
+ net.followup   | follow-up articles to those posted in net.general
+ net.applic     | Info - applicative language and related architecture. 
+ net.auto       | General Information for automobile owners.
+ net.auto.vw    | Subgroup net.auto - for owners of Volkswagon Rabbits.
+ net.aviation   | General information about aviation. 
+ net.bugs       | Genreral information about bug reports and fixes. 
+ net.bugs.2bsd  | Subgroup net.bugs - 2nd Berkley Software distribution
+ net.bugs.4bsd  | Subgroup net.bugs - 4th Berkley software distribution
+ net.bugs.v7    | Subgroup net.bugs - Version 7 or UNIX System III 
+ net.columbia   | General information on space shuttle and space programs
+ net.cooks      | Interest group - food, cooking, cookbooks, and recipes.
+ net.cse        | Computer Science Education
+ net.cycle      | General information about motorcycles.
+ net.dcom       | data communication - modems,multiplexers,port selectors etc.
+ net.eunice     | Info on sites using SRI Eunice - simulates UNIX on VMS
+ net.games      | Information and discussion on computer games.
+ net.games.rog  | (net.games.rogue) Subgroup net.games - rogue
+ net.games.frp  | Fantasy Role Playing games
+ net.games.triv | (net.games.trivia) Trivia contests and results.
+ net.ham-radio  | Topics of interest to amateur radio operators.
+ net.jokes      | The latest "good" joke you've heard?
+ net.lan        | Local area network interest group.
+ net.lsi        | Large Scale Integrated Circuit discussions.
+ net.math       | mathematical discussions (eg. what is lim x->0 log(x)-log(x))
+ net.micro      | micro-computers, see also fa.info-micro.
+ net.misc       | Discussions not permanent enough for a newsgroup.
+ net.movies     | Movie reviews by members of USENET.
+ net.music      | Computer generated music.
+ net.news       | Discussion of netnews itself, and its policies
+ net.news.b     | Subgroup net.news - specific to bnews.
+ net.news.direc | (net.news.directory) all or part of the USENET directory
+ net.news.group | for discussions about proposed new newsgroups.
+ net.news.map   | for discussions about maps of newsites.
+ net.news.newsi | (net.news.newsite) to announce a new site.
+ net.oa         | Office Automation/Word Processing interest group.
+ net.periphs    | Queries and discussions about particular peripherals.
+ net.rec        | Gereral info on recreational (participation) sports.
+ net.rec.boat   | boating (sail and motor???)
+ net.rec.bridge | contract bridge.
+ net.rec.scuba  | scuba diving.
+ net.rec.ski    | skiing.
+ net.rec.skydiv | (net.rec.skydive) sky diving
+ net.records    | Info and opinions about records (and tapes ?).
+ net.rumor      | For posting of rumors.
+ net.sf-lovers  | Science Fiction Lovers - undigested from fa.sf-lovers
+ net.sources    | For large volume material, source program distribution 
+ net.space      | Space programs and research - undigested from fa.space 
+ net.sport      | General info about spectator sports.
+ net.sport.base | (net.sport.baseball) Subgroup of net.sport - for baseball.
+ net.sport.foot | (net.sport.football) Subgroup of net.sport - for football.
+ net.sport.hock | (net.sport.hockey) Subgroup of net.sport - for hockey.  
+ net.taxes      | Tax advice and queries.
+ net.test       | Test messages are posted here.
+ net.travel     | Requests, suggestions, and opinions about traveling 
+ net.ucds       | Circuit drawing system.
+ net.unix-wiza  | (net.unix-wizards) Discussion of UNIX - gatewayed to ARPANET
+ net.wines      | Info and reccomendations about wines and alcoholic beverages
+-------------------------------------------------------------------------------
+E!O!F!
+
+echo netmap
+cat >netmap <<E!O!F!
+Wait for a new map!
+E!O!F!
+
+echo newsinfo
+cat >newsinfo <<E!O!F!
+trap 'continue' 2
+INFO=/usr/local/netnews/INFO
+cd $INFO
+while true
+do
+	if expr "$TERM" : hp >/dev/null
+	then
+		echo "\033U\033J\c" # next page and clear
+	fi
+	echo "\nChoose from the following:
+ i)	brief Introduction
+ g [list]) nearly complete list of news Groups. list=local, btl, net, or fa
+ c)	network Contacts (machines and people)
+ s)	command Summary
+ h)	the Help list from readnews
+ m) 	a graphic Map of the network
+ *)	anything else, exit.
+?\c"
+	read sel grp
+	case "$sel" in
+	i) cat current_info;;
+	g) cat ${grp:-*}.groups;;
+	c) cat contacts;;
+	s) cat cmd-sum;;
+	h) cat help;;
+	m) cat netmap;;
+	*) echo "These files can be found in $INFO." ; exit ;;
+	esac
+	echo "\n\nhit return." ; read sel
+done
+E!O!F!
+
