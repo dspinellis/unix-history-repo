@@ -1,4 +1,4 @@
-.\"	@(#)stdarg.3	6.1 (Berkeley) %G%
+.\"	@(#)stdarg.3	6.2 (Berkeley) %G%
 .\"
 .TH VARARGS 3  ""
 .AT 3
@@ -60,7 +60,23 @@ to the beginning of the list.
 will return the next argument in the list pointed to by
 .IR pvar .
 .I Type
-is the type the argument is expected to be.
+is the type to which the expected argument will be converted
+when passed as an argument.
+In standard C, arguments that are
+.B char
+or
+.B short
+should be accessed as
+.BR int ,
+.B "unsigned char
+or
+.B "unsigned short
+are converted to
+.BR "unsigned int" ,
+and
+.B float
+arguments are converted to
+.BR double .
 Different types can be mixed, but it is up
 to the routine to know what type of argument is
 expected, since it cannot be determined at runtime.
@@ -101,3 +117,11 @@ stack frame.  For example,
 passes a 0 to signal the end of the list.
 .I Printf
 can tell how many arguments are supposed to be there by the format.
+.PP
+The macros
+.I va_start
+and
+.I va_end
+may be arbitrarily complex,
+and thus may only be used where they could
+be placed within a single complex statement.
