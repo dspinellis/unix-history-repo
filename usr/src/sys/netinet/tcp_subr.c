@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.40	83/02/10	*/
+/*	tcp_subr.c	4.41	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -209,10 +209,15 @@ tcp_close(tp)
 	register struct tcpiphdr *t;
 	struct inpcb *inp = tp->t_inpcb;
 	struct socket *so = inp->inp_socket;
+	register struct mbuf *m;
 
 	t = tp->seg_next;
-	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
-		m_freem(dtom(t));
+	while (t != (struct tcpiphdr *)tp) {
+		t = (struct tcpiphdr *)t->ti_next;
+		m = dtom(t->ti_prev);
+		remque(t->ti_prev);
+		m_freem(m);
+	}
 	if (tp->t_template)
 		(void) m_free(dtom(tp->t_template));
 	if (tp->t_tcpopt)
