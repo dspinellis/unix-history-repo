@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)kvm_proc.c	5.23 (Berkeley) %G%";
 #include <sys/kinfo_proc.h>
 
 #include <limits.h>
-#include <ndbm.h>
+#include <db.h>
 #include <paths.h>
 
 #include "kvm_private.h"
@@ -393,11 +393,11 @@ _kvm_freeprocs(kd)
 	}
 }
 
-static void *
+void *
 _kvm_realloc(kd, p, n)
 	kvm_t *kd;
 	void *p;
-	int n;
+	size_t n;
 {
 	void *np = (void *)realloc(p, n);
 
@@ -446,7 +446,8 @@ kvm_argv(kd, p, addr, narg, maxcnt)
 			return (0);
 	} else if (narg + 1 > kd->argc) {
 		kd->argc = MAX(2 * kd->argc, narg + 1);
-		kd->argv = (char **)_kvm_realloc(kd, kd->argv);
+		kd->argv = (char **)_kvm_realloc(kd, kd->argv, kd->argc * 
+						sizeof(*kd->argv));
 		if (kd->argv == 0)
 			return (0);
 	}
