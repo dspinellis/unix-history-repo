@@ -41,7 +41,6 @@ SOFTWARE.
 #include "types.h"
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -49,7 +48,6 @@ SOFTWARE.
 #include "socketvar.h"
 #include "errno.h"
 #include "ioctl.h"
-#include "kernel.h"
 #include "syslog.h"
 
 #include "../net/if.h"
@@ -66,7 +64,9 @@ SOFTWARE.
 
 int 				iso_systype = SNPA_ES;	/* default to be an ES */
 extern short	esis_holding_time, esis_config_time, esis_esconfig_time;
-extern int esis_config();
+extern struct	timeval time;
+extern int esis_config(), hz;
+static void snpac_fixdstandmask();
 
 struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
 extern u_long iso_hashchar();
@@ -78,8 +78,8 @@ static struct sockaddr_iso
 	zmk = {1};
 #define zsi blank_siso
 #define zero_isoa	zsi.siso_addr
-#define zap_isoaddr(a, b) (bzero((caddr_t)&a.siso_addr, sizeof(*r)), \
-	   ((r = b) && bcopy((caddr_t)r, (caddr_t)&a.siso_addr, 1 + (r)->isoa_len)))
+#define zap_isoaddr(a, b) {Bzero(&a.siso_addr, sizeof(*r)); r = b; \
+	   Bcopy(r, &a.siso_addr, 1 + (r)->isoa_len);}
 #define S(x) ((struct sockaddr *)&(x))
 
 static struct sockaddr_dl blank_dl = {sizeof(blank_dl), AF_LINK};
@@ -201,7 +201,7 @@ struct sockaddr *sa;
 			break;
 		}
 		if (lc != 0)
-			log(LOG_DEBUG, "llc_rtrequest: losing old rt_llinfo\n");
+			return; /* happens on a route change */
 		R_Malloc(lc, struct llinfo_llc *, sizeof (*lc));
 		rt->rt_llinfo = (caddr_t)lc;
 		if (lc == 0) {
@@ -420,14 +420,15 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 	}
 	if ((lc = (struct llinfo_llc *)rt->rt_llinfo) == 0)
 		panic("snpac_rtrequest");
-	rt->rt_idle = ht;
+	rt->rt_rmx.rmx_expire = ht + time.tv_sec;
 	lc->lc_flags = SNPA_VALID | type;
 	if (type & SNPA_IS)
 		snpac_logdefis(rt);
 	return (new_entry);
 }
 
-static snpac_fixdstandmask(nsellength)
+static void
+snpac_fixdstandmask(nsellength)
 {
 	register char *cp = msk.siso_data, *cplim;
 
@@ -453,7 +454,8 @@ static snpac_fixdstandmask(nsellength)
  *
  * NOTES:			
  */
-snpac_ioctl (cmd, data)
+snpac_ioctl (so, cmd, data)
+struct socket *so;
 int		cmd;	/* ioctl to process */
 caddr_t	data;	/* data for the cmd */
 {
@@ -468,8 +470,8 @@ caddr_t	data;	/* data for the cmd */
 	ENDDEBUG
 
 	if (cmd == SIOCSSTYPE) {
-		if (suser(u.u_cred, &u.u_acflag))
-			return(EACCES);
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 		if ((rq->sr_type & (SNPA_ES|SNPA_IS)) == (SNPA_ES|SNPA_IS))
 			return(EINVAL);
 		if (rq->sr_type & SNPA_ES) {
@@ -556,17 +558,19 @@ register struct rtentry *sc;
  */
 snpac_age()
 {
-	register struct llinfo_llc	*lc;
+	register struct	llinfo_llc *lc, *nlc;
+	register struct	rtentry *rt;
 
 	timeout(snpac_age, (caddr_t)0, SNPAC_AGE * hz);
 
-	for (lc = llinfo_llc.lc_next; lc != & llinfo_llc; lc = lc->lc_next) {
+	for (lc = llinfo_llc.lc_next; lc != & llinfo_llc; lc = nlc) {
+		nlc = lc->lc_next;
 		if (((lc->lc_flags & SNPA_PERM) == 0) && (lc->lc_flags & SNPA_VALID)) {
-			lc->lc_rt->rt_idle -= SNPAC_AGE;
-			if (lc->lc_rt->rt_idle > 0)
-				continue;
-			else
+			rt = lc->lc_rt;
+			if (rt->rt_rmx.rmx_expire && rt->rt_rmx.rmx_expire < time.tv_sec)
 				snpac_free(lc);
+			else
+				continue;
 		}
 	}
 }
