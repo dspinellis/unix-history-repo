@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.34 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -39,7 +39,7 @@ static int   hash_get __P((const DB *, const DBT *, DBT *, u_int));
 static int   hash_put __P((const DB *, DBT *, const DBT *, u_int));
 static void *hash_realloc __P((SEGMENT **, int, int));
 static int   hash_seq __P((const DB *, DBT *, DBT *, u_int));
-static int   hash_sync __P((const DB *));
+static int   hash_sync __P((const DB *, u_int));
 static int   hdestroy __P((HTAB *));
 static HTAB *init_hash __P((HTAB *, HASHINFO *));
 static int   init_htab __P((HTAB *, int));
@@ -389,10 +389,16 @@ hdestroy(hashp)
  *	-1 ERROR
  */
 static int
-hash_sync(dbp)
+hash_sync(dbp, flags)
 	const DB *dbp;
+	u_int flags;
 {
 	HTAB *hashp;
+
+	if (flags != 0) {
+		errno = EINVAL;
+		return (ERROR);
+	}
 
 	if (!dbp)
 		return (ERROR);
