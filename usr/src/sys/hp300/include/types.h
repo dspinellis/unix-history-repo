@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.11 (Berkeley) %G%
+ *	@(#)types.h	7.12 (Berkeley) %G%
  */
 
 #ifndef	_MACHTYPES_H_
@@ -21,7 +21,11 @@ typedef struct label_t {			/* Consistent with HP-UX. */
 typedef	u_long	vm_offset_t;
 typedef	u_long	vm_size_t;
 
-typedef	char			   int8;	/* Basic integral types. */
+/*
+ * Basic integral types.  Omit the typedef if
+ * not possible for a machine/compiler combination.
+ */
+typedef	signed char		   int8;
 typedef	unsigned char		 u_int8;
 typedef	short			  int16;
 typedef	unsigned short		u_int16;
