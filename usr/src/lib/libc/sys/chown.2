@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.2	6.4 (Berkeley) %G%
+.\"	@(#)chown.2	6.5 (Berkeley) %G%
 .\"
 .TH CHOWN 2 ""
 .UC 4
@@ -27,26 +27,27 @@ has its
 and 
 .I group
 changed as specified.
-Only the super-user may
-execute this call,
+Only the super-user
+may change the owner of the file,
 because if users were able to give files away,
 they could defeat the file-space accounting procedures.
+The owner of the file may change the group
+to a group of which he is a member.
 .PP
 On some systems,
 .I chown
 clears the set-user-id and set-group-id bits
 on the file
 to prevent accidental creation of
-set-user-id and set-group-id programs
-owned by the super-user.
+set-user-id and set-group-id programs.
 .PP
 .I Fchown
 is particularly useful when used in conjunction
 with the file locking primitives (see
 .IR flock (2)).
 .PP
-Only one of the owner and group id's
-may be set by specifying the other as \-1.
+One of the owner or group id's
+may be left unchanged by specifying it as \-1.
 .SH "RETURN VALUE
 Zero is returned if the operation was successful;
 \-1 is returned if an error occurs, with a more specific
@@ -107,4 +108,4 @@ The named file resides on a read-only file system.
 [EIO]
 An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
-chmod(2), flock(2)
+chown(8), chgrp(1), chmod(2), flock(2)
