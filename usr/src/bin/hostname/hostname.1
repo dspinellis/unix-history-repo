@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)hostname.1	8.1 (Berkeley) %G%
+.\"	@(#)hostname.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HOSTNAME 1
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm hostname
 .Op Fl s
-.Op Ar nameofhost
+.Op Ar name-of-host
 .Sh DESCRIPTION
 .Nm Hostname
 prints the name of the current host.  The super-user can
@@ -31,7 +31,8 @@ Trims off any domain information from the printed
 name.
 .El
 .Sh SEE ALSO
-.Xr gethostname 2
+.Xr gethostname 2 ,
+.Xr sethostname 2
 .Sh HISTORY
 The
 .Nm hostname
