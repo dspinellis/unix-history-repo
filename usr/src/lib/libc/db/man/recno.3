@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)recno.3	5.6 (Berkeley) %G%
+.\"	@(#)recno.3	5.7 (Berkeley) %G%
 .\"
 .TH RECNO 3 ""
 .UC 7
@@ -71,11 +71,18 @@ A suggested maximum size, in bytes, of the memory cache.
 This value is
 .B only
 advisory, and the access method will allocate more memory rather than fail.
+If
+.I cachesize
+is  0 (no size is specified) a default cache is used.
 .TP
 psize
 The recno access method stores the in-memory copies of its records
 in a btree.
 This value is the size (in bytes) of the pages used for nodes in that tree.
+If
+.I psize
+is 0 (no page size is specified) a page size is chosen based on the
+underlying file system I/O block size.
 See
 .IR btree (3)
 for more information.
