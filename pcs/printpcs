@@ -1,0 +1,3 @@
+cd ../s6 ; pr pascals.c ; cd ../pcs
+pi -nl pascals.p
+rm -f obj
