@@ -1,0 +1,26 @@
+reading symbolic information ...
+int ownx;
+own.owny
+[1] stop in f
+[1] stopped in f at line 22
+   22       ownx = x;
+f(x = 3), line 22 in "own.c"
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 10 in "own.c"
+2 0 
+stopped in f at line 22
+   22       ownx = x;
+stopped in f at line 23
+   23   }
+2 3 
+[1] stopped in f at line 22
+   22       ownx = x;
+stopped in f at line 22
+   22       ownx = x;
+stopped in f at line 23
+   23   }
+f(x = 4), line 23 in "own.c"
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 11 in "own.c"
+2 4 
+
+execution completed
+
