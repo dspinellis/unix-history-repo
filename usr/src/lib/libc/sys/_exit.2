@@ -3,17 +3,17 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)_exit.2	6.7 (Berkeley) %G%
+.\"     @(#)_exit.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
-.Dt _EXIT 2
+.Dt EXIT 2
 .Os BSD 4
 .Sh NAME
 .Nm _exit
 .Nd terminate the calling process
 .Sh SYNOPSIS
 .Fd #include <unistd.h>
-.Ft void volatile
+.Ft void
 .Fn _exit "int status"
 .Sh DESCRIPTION
 The
@@ -29,13 +29,13 @@ a process in this state may not be killed, as it is already dying.
 If the parent process of the calling process has an outstanding
 .Xr wait
 call
-or is interested in the
+or catches the
 .Dv SIGCHLD
 signal,
 it is notified of the calling process's termination and
 the
 .Em status
-area is set as defined by
+is set as defined by
 .Xr wait 2 .
 .It
 The parent process-ID of all of the calling process's existing child
@@ -43,8 +43,26 @@ processes are set to 1; the initialization process
 (see the DEFINITIONS section of
 .Xr intro 2 )
 inherits each of these processes.
-Any stopped children are restarted with a hangup signal
-.Pq Dv SIGHUP .
+.It
+If the termination of the process causes any process group
+to become orphaned (usually because the parents of all members
+of the group have now exited; see
+.Dq orphaned process group
+in
+.Xr intro 2 ) ,
+and if any member of the orphaned group is stopped,
+the
+.Dv SIGHUP
+signal and the
+.Dv SIGCONT
+signal are sent to all members of the newly-orphaned process group.
+.It
+If the process is a controlling process (see
+.Xr intro 2 ) ,
+the
+.Dv SIGHUP
+signal is sent to the foreground process group of the controlling terminal,
+and all current access to the controlling terminal is revoked.
 .El
 .Pp
 Most C programs call the library routine
@@ -61,8 +79,8 @@ can never return.
 .Xr sigvec 2 ,
 .Xr wait 2 ,
 .Xr exit 3
-.Sh HISTORY
-An
-.Nm exit
-function call appeared in
-.At v6 .
+.Sh STANDARDS
+The
+.Nm _exit
+function is defined by
+.St -p1003.1-88 .
