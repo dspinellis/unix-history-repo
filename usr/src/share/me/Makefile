@@ -14,12 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	6.7 (Berkeley) %G%
+#	@(#)Makefile	6.8 (Berkeley) %G%
 #
-MELIB=	/usr/lib/me
-TMLIB=	/usr/lib/tmac
+MELIB=	/usr/share/me
+TMLIB=	/usr/share/tmac
 MESRCS=	acm.me chars.me deltext.me eqn.me float.me footnote.me \
-	index.me letterhead.me local.me null.me refer.me sh.me tbl.me thesis.me
+	index.me letterhead.me local.me null.me refer.me sh.me \
+	tbl.me thesis.me
 TMSRCS=	tmac.e
 
 all:
@@ -41,9 +42,4 @@ install: FRC
 	done
 	install -c -o bin -g bin -m 444 revisions ${DESTDIR}${MELIB}/revisions
 
-clean:
-cleandir:
-depend:
-lint:
-tags:
-FRC:
+clean cleandir depend lint tags FRC:
