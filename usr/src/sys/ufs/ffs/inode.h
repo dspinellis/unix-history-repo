@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.27 (Berkeley) %G%
+ *	@(#)inode.h	7.28 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -74,7 +74,8 @@ struct inode {
 #define	i_mtime		i_din.di_mtime
 #define	i_ctime		i_din.di_ctime
 #define i_blocks	i_din.di_blocks
-#define	i_rdev		i_din.di_db[0]
+#define	i_rdev		i_din.di_rdev
+#define	i_shortlink	i_din.di_shortlink
 #define i_flags		i_din.di_flags
 #define i_gen		i_din.di_gen
 #define	i_forw		i_chain[0]
