@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.18 (Berkeley) %G%
+ *	@(#)route.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
