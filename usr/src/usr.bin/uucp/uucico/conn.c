@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.6 (Berkeley) %G%";
 #endif
 
-#include "uucp.h"
 #include <signal.h>
+#include "uucp.h"
 #include <setjmp.h>
 #include <ctype.h>
 #include <errno.h>
@@ -94,7 +94,7 @@ char *system;
 				&& strcmp("LOCAL", Flds[F_LINE]) )
 					fn = CF_TIME;
 		}
-		sprintf(wkpre, "%c.%.7s", CMDPRE, Rmtname);
+		sprintf(wkpre, "%c.%.*s", CMDPRE, SYSNSIZE, Rmtname);
 		if (!onesys && MaxGrade != DefMaxGrade &&
 			!iswrk(file, "chk", Spool, wkpre)) 
 				fn = CF_TIME;
@@ -111,9 +111,12 @@ char *system;
 
 	DEBUG(4, "login %s\n", "called");
 	ret = login(nf, Flds, fn);
-	if (ret == FAIL) {
+	if (ret != SUCCESS) {
 		clsacu();
-		return CF_LOGIN;
+		if (ret == ABORT)
+			return CF_DIAL;
+		else
+			return CF_LOGIN;
 	}
 	/* rti!trt:  avoid passing file to children */
 	fioclex(fn);
@@ -165,7 +168,8 @@ clsacu()
 	 * Hopefully everyone honors the LCK protocol, of course
 	 */
 #ifndef	USG
-	ioctl(Dcf, TIOCNXCL, STBNULL);
+	if (!IsTcpIp && Dcf >= 0 && ioctl(Dcf, TIOCNXCL, STBNULL) < 0)
+		DEBUG(5, "clsacu ioctl %s\n", sys_errlist[errno]);
 #endif
 	if  (setjmp(Sjbuf))
 		logent(Rmtname, "CLOSE TIMEOUT");
@@ -281,7 +285,7 @@ FILE *fsys;
 	 */
 	while (cfgets(info, MAXC, fsys) != NULL) {
 		na = getargs(info, flds, MAXC/10);
-		if (strncmp(sysnam, flds[F_NAME], 7) != SAME)
+		if (strncmp(sysnam, flds[F_NAME], MAXBASENAME) != SAME)
 			continue;
 		if (ifdate(flds[F_TIME]) != FAIL)
 			/*  found a good entry  */
@@ -295,7 +299,7 @@ FILE *fsys;
 /*
  *	do login conversation
  *
- *	return codes:  0  |  FAIL
+ *	return codes:  SUCCESS  |  FAIL
  */
 
 login(nf, flds, fn)
@@ -303,7 +307,6 @@ register char *flds[];
 int nf, fn;
 {
 	register char *want, *altern;
-	extern char *index();
 	int k, ok;
 
 	ASSERT(nf > 4, "TOO FEW LOG FIELDS", CNULL, nf);
@@ -337,7 +340,7 @@ int nf, fn;
 			} else
 				if (ok == ABORT) {
 					logent("LOGIN ABORTED", _FAILED);
-					return FAIL;
+					return ABORT;
 				}
 		}
 		sleep(1);
@@ -421,14 +424,14 @@ int tty, spwant;
 #endif !USG
 	register struct sg_spds *ps;
 	int speed = -1;
-	int ret;
 
 	for (ps = spds; ps->sp_val; ps++)
 		if (ps->sp_val == spwant)
 			speed = ps->sp_name;
 	ASSERT(speed >= 0, "BAD SPEED", CNULL, speed);
 #ifdef	USG
-	ioctl(tty, TCGETA, &ttbuf);
+	if (ioctl(tty, TCGETA, &ttbuf) < 0)
+		return FAIL;
 	/* ttbuf.sg_flags = (ANYP|RAW);
 	ttbuf.sg_ispeed = ttbuf.sg_ospeed = speed; */
 	ttbuf.c_iflag = (ushort)0;
@@ -437,20 +440,24 @@ int tty, spwant;
 	ttbuf.c_lflag = (ushort)0;
 	ttbuf.c_cc[VMIN] = 6;
 	ttbuf.c_cc[VTIME] = 1;
-	ret = ioctl(tty, TCSETA, &ttbuf);
+	if (ioctl(tty, TCSETA, &ttbuf) < 0)
+		return FAIL;
 #else	!USG
-	ioctl(tty, TIOCGETP, &ttbuf);
+	if (ioctl(tty, TIOCGETP, &ttbuf) < 0)
+		return FAIL;
 	ttbuf.sg_flags = (ANYP|RAW);
 	ttbuf.sg_ispeed = ttbuf.sg_ospeed = speed;
-	ret = ioctl(tty, TIOCSETP, &ttbuf);
+	if (ioctl(tty, TIOCSETP, &ttbuf) < 0)
+		return FAIL;
 #endif
-	ASSERT(ret >= 0, "RETURN FROM STTY", CNULL, ret);
 #ifndef	USG
-	ioctl(tty, TIOCHPCL, STBNULL);
-	ioctl(tty, TIOCEXCL, STBNULL);
+	if (ioctl(tty, TIOCHPCL, STBNULL) < 0)
+		return FAIL;
+	if (ioctl(tty, TIOCEXCL, STBNULL) < 0)
+		return FAIL;
 #endif
 	linebaudrate = spwant;
-	return;
+	return SUCCESS;
 }
 
 #define MR 100
@@ -710,46 +717,43 @@ int type;
 
 /*
  *	send a break
- *
- *	return codes;  none
  */
-
 genbrk(fn, bnulls)
 register int fn, bnulls;
 {
-	register int ret;
 #ifdef	USG
-	ret = ioctl(fn, TCSBRK, STBNULL);
-	DEBUG(5, "break ioctl ret %d\n", ret);
+	if (ioctl(fn, TCSBRK, STBNULL) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
 #else	!USG
-#ifdef	TIOCSBRK
-	ret = ioctl(fn, TIOCSBRK, STBNULL);
-	DEBUG(5, "break ioctl ret %d\n", ret);
-#ifdef	TIOCCBRK
-	sleep(1);
-	ret = ioctl(fn, TIOCCBRK, STBNULL);
-	DEBUG(5, "break ioctl ret %d\n", ret);
-#endif TIOCCBRK
-	DEBUG(4, "ioctl %d second break\n", bnulls );
-#else !TIOCSBRK
 	struct sgttyb ttbuf;
 	register int sospeed;
+# ifdef	TIOCSBRK
+	if (ioctl(fn, TIOCSBRK, STBNULL) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
+# ifdef	TIOCCBRK
+	sleep(1);
+	if (ioctl(fn, TIOCCBRK, STBNULL) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
+# endif TIOCCBRK
+	DEBUG(4, "ioctl %d second break\n", bnulls );
+# else !TIOCSBRK
 
-	ret = ioctl(fn, TIOCGETP, &ttbuf);
+	if (ioctl(fn, TIOCGETP, &ttbuf) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
 	sospeed = ttbuf.sg_ospeed;
 	ttbuf.sg_ospeed = BSPEED;
-	ret = ioctl(fn, TIOCSETP, &ttbuf);
-	ret = write(fn, "\0\0\0\0\0\0\0\0\0\0\0\0", bnulls);
-	if (ret != bnulls) {
+	if (ioctl(fn, TIOCSETP, &ttbuf) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
+	if (write(fn, "\0\0\0\0\0\0\0\0\0\0\0\0", bnulls) != bnulls) {
 badbreak:
 		logent(sys_errlist[errno], "BAD WRITE genbrk");
 		alarm(0);
 		longjmp(Sjbuf, 3);
 	}
 	ttbuf.sg_ospeed = sospeed;
-	ret = ioctl(fn, TIOCSETP, &ttbuf);
-	ret = write(fn, "@", 1);
-	if (ret != 1)
+	if (ioctl(fn, TIOCSETP, &ttbuf) < 0)
+		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
+	if (write(fn, "@", 1) != 1)
 		goto badbreak;
 	DEBUG(4, "sent BREAK nulls - %d\n", bnulls);
 #endif !TIOCSBRK
@@ -776,16 +780,32 @@ register char *sh, *lg;
 }
 
 /*
- *	Allow multiple date specifications separated by '|'.
+ *	Allow multiple date specifications separated by ','.
  */
 ifdate(p)
 register char *p;
 {
+	register char *np, c;
 	register int ret, g;
+	int rtime, i;
+
+	/*  pick up retry time for failures  */
+	/*  global variable Retrytime is set here  */
+	if ((np = index(p, ';')) == NULL) {
+		Retrytime = RETRYTIME;
+	} else {
+		i = sscanf(np+1, "%d", &rtime);
+		if (i < 1 || rtime < 0)
+			rtime = 5;
+		Retrytime  = rtime * 60;
+	}
 
 	ret = FAIL;
 	MaxGrade = '\0';
 	do {
+		np = strpbrk(p, ",|");	/* prefer , but allow | for compat */
+		if (np)
+			*np = '\0';
 		g = ifadate(p);
 		DEBUG(11,"ifadate returns %o\n", g);
 		if (g != FAIL) {
@@ -793,8 +813,12 @@ register char *p;
 			if (g > MaxGrade)
 				MaxGrade = g;
 		}
-		p = index(p, '|');
-	} while (p++ && *p);
+		if (np)
+			*np = ',';
+		p = np + 1;
+	} while (np);
+	if (MaxGrade == '\0')
+		MaxGrade = DefMaxGrade;
 	return ret;
 }
 
@@ -817,24 +841,12 @@ char *string;
 	};
 	time_t clock;
 	register char *s = string;
-	int rtime;
 	int i, tl, th, tn, dayok=0;
 	struct tm *localtime();
 	struct tm *tp;
 	char *p, MGrade;
 
-	/*  pick up retry time for failures  */
-	/*  global variable Retrytime is set here  */
-	if ((p = index(s, ',')) == NULL) {
-		Retrytime = RETRYTIME;
-	} else {
-		i = sscanf(p+1, "%d", &rtime);
-		if (i < 1 || rtime < 0)
-			rtime = 5;
-		Retrytime  = rtime * 60;
-	}
-
-	if ((p = index(s, '@')) == NULL)
+	if ((p = index(s, '/')) == NULL)
 		MGrade = DefMaxGrade;
 	else
 		MGrade = p[1];
