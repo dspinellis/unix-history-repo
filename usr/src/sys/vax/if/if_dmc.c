@@ -1,4 +1,4 @@
-/*	if_dmc.c	6.4	84/12/20	*/
+/*	if_dmc.c	6.5	85/05/01	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -239,7 +239,7 @@ dmcattach(ui)
 
 /*
  * Reset of interface after UNIBUS reset.
- * If interface is on specified UBA, reset it's state.
+ * If interface is on specified UBA, reset its state.
  */
 dmcreset(unit, uban)
 	int unit, uban;
@@ -252,6 +252,7 @@ dmcreset(unit, uban)
 		return;
 	printf(" dmc%d", unit);
 	sc->sc_flag = 0;
+	sc->sc_if.if_flags &= ~IFF_RUNNING;
 	dmcinit(unit);
 }
 
@@ -269,22 +270,25 @@ dmcinit(unit)
 	register struct ifxmt *ifxp;
 	register struct dmcbufs *rp;
 	register struct dmc_command *qp;
+	struct ifaddr *ifa;
 	int base;
-	struct sockaddr_in *sin;
 	int s;
 
 	addr = (struct dmcdevice *)ui->ui_addr;
 
-	sin = (struct sockaddr_in *) &ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
-		return;
-	sin = (struct sockaddr_in *) &ifp->if_dstaddr;
-	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+	/*
+	 * Check to see that an address has been set
+	 * (both local and destination for an address family).
+	 */
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+		if (ifa->ifa_addr.sa_family && ifa->ifa_dstaddr.sa_family)
+			break;
+	if (ifa == (struct ifaddr *) 0)
 		return;
 
 	if ((addr->bsel1&DMC_RUN) == 0) {
 		printf("dmcinit: DMC not running\n");
-		ifp->if_flags &= ~(IFF_RUNNING|IFF_UP);
+		ifp->if_flags &= ~IFF_UP;
 		return;
 	}
 	/* map base table */
@@ -295,14 +299,14 @@ dmcinit(unit)
 	}
 	/* initialize UNIBUS resources */
 	sc->sc_iused = sc->sc_oused = 0;
-	if ((sc->sc_flag & DMC_ALLOC) == 0) {
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		if (dmc_ubainit(&sc->sc_ifuba, ui->ui_ubanum,
 		    sizeof(struct dmc_header), (int)btoc(DMCMTU)) == 0) {
-			printf("dmc%d: can't initialize\n", unit);
+			printf("dmc%d: can't allocate uba resources\n", unit);
 			ifp->if_flags &= ~IFF_UP;
 			return;
 		}
-		sc->sc_flag |= DMC_ALLOC;
+		ifp->if_flags |= IFF_RUNNING;
 	}
 
 	/* initialize buffer pool */
@@ -363,8 +367,6 @@ dmcinit(unit)
 		sc->sc_iused++;
 	}
 	splx(s);
-	ifp->if_flags |= IFF_UP|IFF_RUNNING;
-
 }
 
 /*
@@ -664,7 +666,6 @@ dmcxint(unit)
 			if (arg & DMC_FATAL) {
 				printd("dmc%d: fatal error, flags=%b\n",
 				    unit, arg, CNTLO_BITS);
-				ifp->if_flags &= ~(IFF_RUNNING|IFF_UP);
 				dmcrestart(unit);
 				break;
 			}
@@ -827,37 +828,24 @@ dmcioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr = (struct ifreq *)data;
-	struct sockaddr_in *sin;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if (sin->sin_family != AF_INET)
-			return (EINVAL);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		ifp->if_addr = *(struct sockaddr *)sin;
-		ifp->if_net = in_netof(sin->sin_addr);
 		ifp->if_flags |= IFF_UP;
-		/* set up routing table entry */
-		if ((ifp->if_flags & IFF_ROUTE) == 0) {
-			rtinit(&ifp->if_dstaddr, &ifp->if_addr, RTF_HOST|RTF_UP);
-			ifp->if_flags |= IFF_ROUTE;
-		}
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
+			dmcinit(ifp->if_unit); 
 		break;
 
 	case SIOCSIFDSTADDR:
-		ifp->if_dstaddr = ifr->ifr_dstaddr;
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
+			dmcinit(ifp->if_unit); 
 		break;
 		
 	default:
 		error = EINVAL;
 	}
-	if ((ifp->if_flags & IFF_RUNNING) == 0)
-		dmcinit(ifp->if_unit); 
 	splx(s);
 	return (error);
 }

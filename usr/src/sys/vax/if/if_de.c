@@ -1,4 +1,4 @@
-/*	if_de.c	6.7	84/08/29	*/
+/*	if_de.c	6.8	85/05/01	*/
 #include "de.h"
 #if NDE > 0
 
@@ -28,6 +28,7 @@
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
@@ -51,7 +52,6 @@ struct	uba_device *deinfo[NDE];
 u_short destd[] = { 0 };
 struct	uba_driver dedriver =
 	{ deprobe, 0, deattach, 0, destd, "de", deinfo };
-#define	DEUNIT(x)	minor(x)
 int	deinit(),deoutput(),deioctl(),dereset();
 struct	mbuf *deget();
 
@@ -152,12 +152,12 @@ deattach(ui)
 	register struct de_softc *ds = &de_softc[ui->ui_unit];
 	register struct ifnet *ifp = &ds->ds_if;
 	register struct dedevice *addr = (struct dedevice *)ui->ui_addr;
-	struct sockaddr_in *sin;
 	int csr0;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "de";
 	ifp->if_mtu = ETHERMTU;
+	ifp->if_flags = IFF_BROADCAST;
 
 	/*
 	 * Reset the board and temporarily map
@@ -198,10 +198,8 @@ deattach(ui)
 		    ds->ds_pcbb.pcbb2&0xff, (ds->ds_pcbb.pcbb2>>8)&0xff,
 		    ds->ds_pcbb.pcbb4&0xff, (ds->ds_pcbb.pcbb4>>8)&0xff,
 		    ds->ds_pcbb.pcbb6&0xff, (ds->ds_pcbb.pcbb6>>8)&0xff);
-	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)&ds->ds_addr,
+ 	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)ds->ds_addr,
 	    sizeof (ds->ds_addr));
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
 	ifp->if_init = deinit;
 	ifp->if_output = deoutput;
 	ifp->if_ioctl = deioctl;
@@ -227,6 +225,7 @@ dereset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" de%d", unit);
+	de_softc[unit].ds_if.if_flags &= ~IFF_RUNNING;
 	deinit(unit);
 }
 
@@ -243,18 +242,17 @@ deinit(unit)
 	register struct ifrw *ifrw;
 	register struct ifxmt *ifxp;
 	struct ifnet *ifp = &ds->ds_if;
-	struct sockaddr_in *sin;
 	int s;
 	struct de_ring *rp;
 	int incaddr;
 	int csr0;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+	/* not yet, if address still unknown */
+	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 
 	if (ifp->if_flags & IFF_RUNNING)
-		goto justarp;
+		return;
 	if (de_ubainit(&ds->ds_deuba, ui->ui_ubanum,
 	    sizeof (struct ether_header), (int)btoc(ETHERMTU)) == 0) { 
 		printf("de%d: can't initialize\n", unit);
@@ -336,15 +334,12 @@ deinit(unit)
 	/* start up the board (rah rah) */
 	s = splimp();
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = 0;
-	ds->ds_if.if_flags |= IFF_UP|IFF_RUNNING;
+	ds->ds_if.if_flags |= IFF_RUNNING;
 	destart(unit);				/* queue output packets */
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
 	addr->pclow = CMD_START | PCSR0_INTE;
 	ds->ds_flags |= DSF_RUNNING;
 	splx(s);
-justarp:
-	if_rtinit(&ds->ds_if, RTF_UP);
-	arpwhohas(&ds->ds_ac, &sin->sin_addr);
 }
 
 /*
@@ -538,16 +533,16 @@ deread(ds, ifrw, len)
 	register struct ifqueue *inq;
 
 	/*
-	 * Deal with trailer protocol: if type is PUP trailer
+	 * Deal with trailer protocol: if type is trailer type
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
 	eh = (struct ether_header *)ifrw->ifrw_addr;
 	eh->ether_type = ntohs((u_short)eh->ether_type);
 #define	dedataaddr(eh, off, type)	((type)(((caddr_t)((eh)+1)+(off))))
-	if (eh->ether_type >= ETHERPUP_TRAIL &&
-	    eh->ether_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
-		off = (eh->ether_type - ETHERPUP_TRAIL) * 512;
+	if (eh->ether_type >= ETHERTYPE_TRAIL &&
+	    eh->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (eh->ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			return;		/* sanity */
 		eh->ether_type = ntohs(*dedataaddr(eh, off, u_short *));
@@ -576,12 +571,12 @@ deread(ds, ifrw, len)
 	switch (eh->ether_type) {
 
 #ifdef INET
-	case ETHERPUP_IPTYPE:
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 
-	case ETHERPUP_ARPTYPE:
+	case ETHERTYPE_ARP:
 		arpinput(&ds->ds_ac, m);
 		return;
 #endif
@@ -613,7 +608,7 @@ deoutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	struct ether_addr edst;
+ 	u_char edst[6];
 	struct in_addr idst;
 	register struct de_softc *ds = &de_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -625,28 +620,28 @@ deoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&ds->ds_ac, m, &idst, &edst))
+ 		if (!arpresolve(&ds->ds_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERPUP_TRAIL + (off>>9);
+			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERPUP_IPTYPE);
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
 
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
-		edst = eh->ether_dhost;
+ 		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = eh->ether_type;
 		goto gottype;
 
@@ -690,7 +685,7 @@ gottype:
 	}
 	eh = mtod(m, struct ether_header *);
 	eh->ether_type = htons((u_short)type);
-	eh->ether_dhost = edst;
+ 	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
 	/* DEUNA fills in source address */
 
 	/*
@@ -986,16 +981,22 @@ deioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct ifaddr *ifa = (struct ifaddr *)data;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		desetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		ifp->if_flags |= IFF_UP;
 		deinit(ifp->if_unit);
+
+		switch (ifa->ifa_addr.sa_family) {
+		case AF_INET:
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+		}
 		break;
 
 	default:
@@ -1003,19 +1004,5 @@ deioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
-}
-
-desetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
 }
 #endif

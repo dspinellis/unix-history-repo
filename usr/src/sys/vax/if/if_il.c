@@ -1,4 +1,4 @@
-/*	if_il.c	6.5	84/08/29	*/
+/*	if_il.c	6.6	85/05/01	*/
 
 #include "il.h"
 
@@ -22,6 +22,7 @@
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
@@ -104,11 +105,11 @@ ilattach(ui)
 	register struct il_softc *is = &il_softc[ui->ui_unit];
 	register struct ifnet *ifp = &is->is_if;
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
-	struct sockaddr_in *sin;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "il";
 	ifp->if_mtu = ETHERMTU;
+	ifp->if_flags = IFF_BROADCAST;
 
 	/*
 	 * Reset the board and map the statistics
@@ -140,9 +141,8 @@ ilattach(ui)
 		is->is_stats.ils_addr[4]&0xff, is->is_stats.ils_addr[5]&0xff,
 		is->is_stats.ils_module, is->is_stats.ils_firmware);
 #endif
-	is->is_addr = is->is_stats.ils_addr;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
+ 	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
+ 	    sizeof (is->is_addr));
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
 	ifp->if_ioctl = ilioctl;
@@ -181,15 +181,14 @@ ilinit(unit)
 	register struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr;
 	register struct ifnet *ifp = &is->is_if;
-	register struct sockaddr_in *sin;
 	int s;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
+	/* not yet, if address still unknown */
+	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 
 	if (ifp->if_flags & IFF_RUNNING)
-		goto justarp;
+		return;
 	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
 	    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
 		printf("il%d: can't initialize\n", unit);
@@ -233,13 +232,10 @@ ilinit(unit)
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	is->is_flags = ILF_OACTIVE;
-	is->is_if.if_flags |= IFF_UP|IFF_RUNNING;
+	is->is_if.if_flags |= IFF_RUNNING;
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
-justarp:
-	if_rtinit(&is->is_if, RTF_UP);
-	arpwhohas(&is->is_ac, &sin->sin_addr);
 }
 
 /*
@@ -379,15 +375,15 @@ ilrint(unit)
 	}
 
 	/*
-	 * Deal with trailer protocol: if type is PUP trailer
+	 * Deal with trailer protocol: if type is trailer type
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
 	il->ilr_type = ntohs((u_short)il->ilr_type);
 #define	ildataaddr(il, off, type)	((type)(((caddr_t)((il)+1)+(off))))
-	if (il->ilr_type >= ETHERPUP_TRAIL &&
-	    il->ilr_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
-		off = (il->ilr_type - ETHERPUP_TRAIL) * 512;
+	if (il->ilr_type >= ETHERTYPE_TRAIL &&
+	    il->ilr_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (il->ilr_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			goto setup;		/* sanity */
 		il->ilr_type = ntohs(*ildataaddr(il, off, u_short *));
@@ -416,12 +412,12 @@ ilrint(unit)
 	switch (il->ilr_type) {
 
 #ifdef INET
-	case ETHERPUP_IPTYPE:
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 
-	case ETHERPUP_ARPTYPE:
+	case ETHERTYPE_ARP:
 		arpinput(&is->is_ac, m);
 		goto setup;
 #endif
@@ -468,7 +464,7 @@ iloutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	struct ether_addr edst;
+ 	u_char edst[6];
 	struct in_addr idst;
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -480,28 +476,28 @@ iloutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, &edst))
+ 		if (!arpresolve(&is->is_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERPUP_TRAIL + (off>>9);
+			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERPUP_IPTYPE);
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
 
 	case AF_UNSPEC:
 		il = (struct ether_header *)dst->sa_data;
-		edst = il->ether_dhost;
+ 		bcopy((caddr_t)il->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = il->ether_type;
 		goto gottype;
 
@@ -545,8 +541,9 @@ gottype:
 	}
 	il = mtod(m, struct ether_header *);
 	il->ether_type = htons((u_short)type);
-	il->ether_dhost = edst;
-	il->ether_shost = is->is_addr;
+ 	bcopy((caddr_t)edst, (caddr_t)il->ether_dhost, sizeof (edst));
+ 	bcopy((caddr_t)is->is_addr, (caddr_t)il->ether_shost,
+	    sizeof(il->ether_shost));
 
 	/*
 	 * Queue message on interface, and start output if interface
@@ -616,16 +613,22 @@ ilioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct ifaddr *ifa = (struct ifaddr *)data;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		ilsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		ifp->if_flags |= IFF_UP;
 		ilinit(ifp->if_unit);
+
+		switch (ifa->ifa_addr.sa_family) {
+		case AF_INET:
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+		}
 		break;
 
 	default:
@@ -633,18 +636,4 @@ ilioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
-}
-
-ilsetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
 }

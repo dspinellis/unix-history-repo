@@ -1,4 +1,4 @@
-/*	if_en.h	6.1	83/07/29	*/
+/*	if_en.h	6.2	85/05/01	*/
 
 /*
  * Structure of a Ethernet header.
@@ -20,3 +20,5 @@ struct	en_header {
  */
 #define	ENTYPE_TRAIL	0x1000		/* Trailer type */
 #define	ENTYPE_NTRAILER	16
+
+#define EN_BROADCAST	0		/* Hardware broadcast address */
