@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	route
 MAN8=	route.0
@@ -8,7 +8,8 @@ CLEANFILES+=keywords.h
 BINOWN=	root
 BINMODE=4555
 
-all route depend lint tags: keywords.h
+all: route
+route depend lint tags: keywords.h
 
 keywords.h: keywords
 	sed -e '/^#/d' -e '/^$$/d' ${.CURDIR}/keywords > _keywords.tmp
