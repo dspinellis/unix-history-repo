@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.4 (Berkeley) %G%
+ *	@(#)extern.h	8.1 (Berkeley) %G%
  */
 
 struct kinfo;
