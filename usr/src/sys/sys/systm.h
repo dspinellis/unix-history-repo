@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.25 (Berkeley) %G%
+ *	@(#)systm.h	7.26 (Berkeley) %G%
  */
 
 extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
 extern char copyright[];	/* system copyright */
+extern int securelevel;		/* system security level */
 
 extern int nblkdev;		/* number of entries in bdevsw */
 extern int nchrdev;		/* number of entries in cdevsw */
