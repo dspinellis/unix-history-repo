@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.h	8.2 (Berkeley) %G%
+ *	@(#)map.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -41,8 +41,8 @@ struct map {
 };
 
 struct mapent {
-	int	m_size;			/* size of this segment of the map */
-	int	m_addr;			/* start of segment */
+	long	m_size;			/* size of this segment of the map */
+	long	m_addr;			/* start of segment */
 };
 
 #ifdef KERNEL
