@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.11 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.12 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1192,7 +1192,7 @@ makety( p, t, d, s ) register NODE *p; TWORD t; {
 		if (t == DOUBLE) {
 			p->in.op = DCON;
 			if (ISUNSIGNED(p->in.type))
-				p->dpn.dval = /* (unsigned CONSZ) */ p->tn.lval;
+				p->dpn.dval = (unsigned CONSZ) p->tn.lval;
 			else
 				p->dpn.dval = p->tn.lval;
 			p->in.type = p->fn.csiz = t;
@@ -1201,7 +1201,7 @@ makety( p, t, d, s ) register NODE *p; TWORD t; {
 		if (t == FLOAT) {
 			p->in.op = FCON;
 			if( ISUNSIGNED(p->in.type) ){
-				p->fpn.fval = /* (unsigned CONSZ) */ p->tn.lval;
+				p->fpn.fval = (unsigned CONSZ) p->tn.lval;
 				}
 			else {
 				p->fpn.fval = p->tn.lval;
