@@ -14,12 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #include <paths.h>
 
 #define	_PATH_RDIST	"rdist"
-#define	_PATH_SENDMAIL	"/usr/libexec/sendmail"
 #undef _PATH_TMP
 #define	_PATH_TMP	"/tmp/rdistXXXXXX"
