@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -377,8 +377,8 @@ savemail(e, sendbody)
 				mcibuf.mci_flags |= MCIF_7BIT;
 
 			putfromline(&mcibuf, e);
-			(*e->e_puthdr)(&mcibuf, e->e_header, e, 0);
-			(*e->e_putbody)(&mcibuf, e, NULL, 0);
+			(*e->e_puthdr)(&mcibuf, e->e_header, e);
+			(*e->e_putbody)(&mcibuf, e, NULL);
 			putline("\n", &mcibuf);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
@@ -433,6 +433,7 @@ returntosender(msg, returnq, sendbody, e)
 	ENVELOPE errenvelope;
 	static int returndepth;
 	register ADDRESS *q;
+	char *p;
 
 	if (returnq == NULL)
 		return (-1);
@@ -568,7 +569,7 @@ returntosender(msg, returnq, sendbody, e)
 **		Outputs the body of an error message.
 */
 
-errbody(mci, e, separator, flags)
+errbody(mci, e, separator)
 	register MCI *mci;
 	register ENVELOPE *e;
 	char *separator;
@@ -577,8 +578,8 @@ errbody(mci, e, separator, flags)
 	char *p;
 	register ADDRESS *q;
 	bool printheader;
-	int pflags = flags;
 	char buf[MAXLINE];
+	extern char *xtextify();
 
 	if (bitset(MCIF_INHEADER, mci->mci_flags))
 	{
@@ -729,47 +730,37 @@ errbody(mci, e, separator, flags)
 		putline("", mci);
 		(void) sprintf(buf, "--%s", e->e_msgboundary);
 		putline(buf, mci);
-		putline("Content-Type: message/X-delivery-status-1", mci);
+		putline("Content-Type: message/X-delivery-status-2 (Draft of 20 January 1995)", mci);
 		putline("", mci);
 
 		/*
 		**  Output per-message information.
 		*/
 
-		/* OMTS from MAIL FROM: line */
-		if (e->e_parent->e_omts != NULL)
-		{
-			(void) sprintf(buf, "Original-MTS-Type: %s",
-				e->e_parent->e_omts);
-			putline(buf, mci);
-		}
-
 		/* original envelope id from MAIL FROM: line */
 		if (e->e_parent->e_envid != NULL)
 		{
 			(void) sprintf(buf, "Original-Envelope-Id: %s",
-				e->e_parent->e_envid);
+				xtextify(e->e_parent->e_envid));
 			putline(buf, mci);
 		}
 
-		/* Final-MTS-Type: is required -- our type */
-		if (e->e_parent->e_from.q_mailer->m_mtstype == NULL)
-			putline("Final-MTS-Type: Internet", mci);
-		else
-		{
-			(void) sprintf(buf, "Final-MTS-Type: %s",
-				e->e_parent->e_from.q_mailer->m_mtstype);
-			putline(buf, mci);
-		}
-
-		/* Final-MTA: seems silly -- this is in the From: line */
-		(void) sprintf(buf, "Final-MTA: %s", MyHostName);
+		/* Reporting-MTA: is us (required) */
+		p = e->e_parent->e_from.q_mailer->m_mtatype;
+		if (p == NULL)
+			p = "dns";
+		(void) sprintf(buf, "Reporting-MTA: %s; %s", p, MyHostName);
 		putline(buf, mci);
 
-		/* Received-From: shows where we got this message from */
+		/* Received-From-MTA: shows where we got this message from */
 		if (RealHostName != NULL)
 		{
-			(void) sprintf(buf, "Received-From: %s", RealHostName);
+			/* XXX use $s for type? */
+			p = e->e_parent->e_from.q_mailer->m_mtatype;
+			if (p == NULL)
+				p = "dns";
+			(void) sprintf(buf, "Received-From-MTA: %s; %s",
+				p, RealHostName);
 			putline(buf, mci);
 		}
 
@@ -790,22 +781,31 @@ errbody(mci, e, separator, flags)
 				continue;
 			putline("", mci);
 
-			/* Recipient: -- use name of alias */
-			r = q;
-			if (r->q_alias != NULL)
-				r = r->q_alias;
-			p = r->q_user;
-			if (strchr(p, '@') == NULL)
-				(void) sprintf(buf, "Recipient: %s@%s",
-					p, MyHostName);
+			/* Original-Recipient: -- passed from on high */
+			if (q->q_orcpt != NULL)
+			{
+				(void) sprintf(buf, "Original-Recipient: %s",
+					xtextify(q->q_orcpt));
+				putline(buf, mci);
+			}
+
+			/* Final-Recipient: -- the name from the RCPT command */
+			p = e->e_parent->e_from.q_mailer->m_addrtype;
+			if (p == NULL)
+				p = "rfc822";
+			for (r = q; r->q_alias != NULL; r = r->q_alias)
+				continue;
+			if (strchr(r->q_user, '@') == NULL)
+				(void) sprintf(buf, "Final-Recipient: %s; %s@%s",
+					p, xtextify(r->q_user), MyHostName);
 			else
-				(void) sprintf(buf, "Recipient: %s",
-					p);
+				(void) sprintf(buf, "Final-Recipient: %s; %s",
+					p, xtextify(r->q_user));
 			putline(buf, mci);
 
 			/* Action: -- what happened? */
 			if (bitset(QBADADDR, q->q_flags))
-				putline("Action: failed", mci);
+				putline("Action: failure", mci);
 			else if (bitset(QQUEUEUP, q->q_flags))
 				putline("Action: delayed", mci);
 			else if (bitset(QRELAYED, q->q_flags))
@@ -815,29 +815,54 @@ errbody(mci, e, separator, flags)
 
 			/* Status: -- what _really_ happened? */
 			strcpy(buf, "Status: ");
-			if (q->q_status == NULL)
-				q->q_status = q->q_fstatus;
 			if (q->q_status != NULL)
 				strcat(buf, q->q_status);
 			else if (bitset(QBADADDR, q->q_flags))
-				strcat(buf, "500");
+				strcat(buf, "5.0.0");
 			else if (bitset(QQUEUEUP, q->q_flags))
-				strcat(buf, "400");
+				strcat(buf, "4.0.0");
 			else if (bitset(QRELAYED, q->q_flags))
-				strcat(buf, "601");
+				strcat(buf, "6.0.1");
 			else
-				strcat(buf, "200");
+				strcat(buf, "2.0.0");
 			putline(buf, mci);
 
-			/* Date: -- fine granularity */
+			/* Remote-MTA: -- who was I talking to? */
+			p = q->q_mailer->m_mtatype;
+			if (p == NULL)
+				p = "dns";
+			(void) sprintf(buf, "Remote-MTA: %s; ", p);
+			if (q->q_statmta != NULL)
+				p = q->q_statmta;
+			else if (q->q_host != NULL)
+				p = q->q_host;
+			else
+				p = NULL;
+			if (p != NULL)
+			{
+				strcat(buf, p);
+				p = &buf[strlen(buf) - 1];
+				if (*p == '.')
+					*p = '\0';
+				putline(buf, mci);
+			}
+
+			/* Diagnostic-Code: -- actual result from other end */
+			if (q->q_rstatus != NULL)
+			{
+				p = q->q_mailer->m_diagtype;
+				if (p == NULL)
+					p = "smtp";
+				(void) sprintf(buf, "Diagnostic-Code: %s; %s",
+					p, q->q_rstatus);
+				putline(buf, mci);
+			}
+
+			/* Last-Attempt-Date: -- fine granularity */
 			if (q->q_statdate == (time_t) 0L)
 				q->q_statdate = curtime();
-			(void) sprintf(buf, "Date: %s",
+			(void) sprintf(buf, "Last-Attempt-Date: %s",
 				arpadate(ctime(&q->q_statdate)));
-			putline(buf, mci);
-
-			/* Final-Log-Id: -- why isn't this per-message? */
-			(void) sprintf(buf, "Final-Log-Id: %s", e->e_id);
 			putline(buf, mci);
 
 			/* Expiry-Date: -- for delayed messages only */
@@ -851,71 +876,6 @@ errbody(mci, e, separator, flags)
 					arpadate(ctime(&xdate)));
 				putline(buf, mci);
 			}
-
-			/* Original-Recipient: -- passed from on high */
-			if (q->q_orcpt != NULL)
-			{
-				(void) sprintf(buf, "Original-Recipient: %s",
-					q->q_orcpt);
-				putline(buf, mci);
-			}
-
-			/* Final-Recipient: -- the name from the RCPT command */
-			for (r = q; r->q_alias != NULL; r = r->q_alias)
-				continue;
-			if (strchr(r->q_user, '@') == NULL)
-				(void) sprintf(buf, "Final-Recipient: %s@%s",
-					r->q_user, MyHostName);
-			else
-				(void) sprintf(buf, "Final-Recipient: %s",
-					r->q_user);
-			putline(buf, mci);
-
-			/* Final-Status: -- same as Status?  XXX */
-			if (q->q_fstatus != NULL && q->q_fstatus != q->q_status)
-			{
-				(void) sprintf(buf, "Final-Status: %s",
-					q->q_fstatus);
-				putline(buf, mci);
-			}
-
-			/* Remote-MTS-Type: -- depends on mailer */
-			if (q->q_mailer->m_mtstype != NULL)
-			{
-				(void) sprintf(buf, "Remote-MTS-Type: %s",
-					q->q_mailer->m_mtstype);
-				putline(buf, mci);
-			}
-
-			/* Remote-MTA: -- who was I talking to? */
-			if (q->q_statmta != NULL)
-			{
-				(void) sprintf(buf, "Remote-MTA: %s",
-					q->q_statmta);
-				putline(buf, mci);
-			}
-			else if (q->q_host != NULL)
-			{
-				(void) sprintf(buf, "Remote-MTA: %s",
-					q->q_host);
-				putline(buf, mci);
-			}
-
-			/* Remote-Recipient: -- recipient passed to far end */
-			if (strcmp(q->q_user, r->q_paddr) != 0)
-			{
-				(void) sprintf(buf, "Remote-Recipient: %s",
-					q->q_user);
-				putline(buf, mci);
-			}
-
-			/* Remote-Status: -- return code from remote mailer */
-			if (q->q_rstatus != NULL)
-			{
-				(void) sprintf(buf, "Remote-Status: %s",
-					q->q_rstatus);
-				putline(buf, mci);
-			}
 		}
 	}
 #endif
@@ -926,8 +886,6 @@ errbody(mci, e, separator, flags)
 
 	if (bitset(EF_NORETURN, e->e_parent->e_flags))
 		SendBody = FALSE;
-	if (!SendBody && e->e_msgboundary != NULL)
-		pflags |= PF_DELETEMIMEHDRS;
 	putline("", mci);
 	if (e->e_parent->e_df != NULL)
 	{
@@ -943,19 +901,21 @@ errbody(mci, e, separator, flags)
 		{
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
 			putline(buf, mci);
-			putline("Content-Type: message/rfc822", mci);
+			(void) sprintf(buf, "Content-Type: message/rfc822%s",
+				mci, SendBody ? "" : "-headers");
+			putline(buf, mci);
 		}
 		putline("", mci);
-		putheader(mci, e->e_parent->e_header, e->e_parent, pflags);
+		putheader(mci, e->e_parent->e_header, e->e_parent);
 		if (SendBody)
-			putbody(mci, e->e_parent, e->e_msgboundary, pflags);
-		else
+			putbody(mci, e->e_parent, e->e_msgboundary);
+		else if (e->e_msgboundary == NULL)
 		{
 			putline("", mci);
 			putline("   ----- Message body suppressed -----", mci);
 		}
 	}
-	else
+	else if (e->e_msgboundary == NULL)
 	{
 		putline("  ----- No message was collected -----\n", mci);
 	}
@@ -974,6 +934,130 @@ errbody(mci, e, separator, flags)
 
 	if (errno != 0)
 		syserr("errbody: I/O error");
+}
+/*
+**  SMTPTODSN -- convert SMTP to DSN status code
+**
+**	Parameters:
+**		smtpstat -- the smtp status code (e.g., 550).
+**
+**	Returns:
+**		The DSN version of the status code.
+*/
+
+char *
+smtptodsn(smtpstat)
+	int smtpstat;
+{
+	switch (smtpstat)
+	{
+	  case 450:	/* Req mail action not taken: mailbox unavailable */
+		return "4.2.0";
+
+	  case 451:	/* Req action aborted: local error in processing */
+		return "4.3.0";
+
+	  case 452:	/* Req action not taken: insufficient sys storage */
+		return "4.3.1";
+
+	  case 500:	/* Syntax error, command unrecognized */
+		return "5.5.2";
+
+	  case 501:	/* Syntax error in parameters or arguments */
+		return "5.5.4";
+
+	  case 502:	/* Command not implemented */
+		return "5.5.1";
+
+	  case 503:	/* Bad sequence of commands */
+		return "5.5.1";
+
+	  case 504:	/* Command parameter not implemented */
+		return "5.5.4";
+
+	  case 550:	/* Req mail action not taken: mailbox unavailable */
+		return "5.2.0";
+
+	  case 551:	/* User not local; please try <...> */
+		return "5.1.6";
+
+	  case 552:	/* Req mail action aborted: exceeded storage alloc */
+		return "5.2.2";
+
+	  case 553:	/* Req action not taken: mailbox name not allowed */
+		return "5.1.3";
+
+	  case 554:	/* Transaction failed */
+		return "5.0.0";
+	}
+
+	if ((smtpstat / 100) == 2)
+		return "2.0.0";
+	if ((smtpstat / 100) == 4)
+		return "4.0.0";
+	return "5.0.0";
+}
+/*
+**  XTEXTIFY -- take regular text and turn it into DSN-style xtext
+**
+**	Parameters:
+**		t -- the text to convert.
+**
+**	Returns:
+**		The xtext-ified version of the same string.
+*/
+
+char *
+xtextify(t)
+	register char *t;
+{
+	register char *p;
+	int l;
+	int nbogus;
+	static char *bp = NULL;
+	static int bplen = 0;
+
+	/* figure out how long this xtext will have to be */
+	nbogus = l = 0;
+	for (p = t; *p != '\0'; p++)
+	{
+		register int c = (*p & 0xff);
+
+		/* ASCII dependence here -- this is the way the spec words it */
+		if (c < '!' || c > '~' || c == '+' || c == '\\' || c == '(')
+			nbogus++;
+		l++;
+	}
+	if (nbogus == 0)
+		return t;
+	l += nbogus * 2 + 1;
+
+	/* now allocate space if necessary for the new string */
+	if (l > bplen)
+	{
+		if (bp != NULL)
+			free(bp);
+		bp = xalloc(l);
+		bplen = l;
+	}
+
+	/* ok, copy the text with byte expansion */
+	for (p = bp; *t != '\0'; )
+	{
+		register int c = (*t++ & 0xff);
+
+		/* ASCII dependence here -- this is the way the spec words it */
+		if (c < '!' || c > '~' || c == '+' || c == '\\' || c == '(')
+		{
+			*p++ = '+';
+			*p++ = "0123456789abcdef"[c >> 4];
+			*p++ = "0123456789abcdef"[c & 0xf];
+		}
+		else
+			*p++ = c;
+	}
+	*p = '\0';
+	return bp;
 }
 /*
 **  PRUNEROUTE -- prune an RFC-822 source route

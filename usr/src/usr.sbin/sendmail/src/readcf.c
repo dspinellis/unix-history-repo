@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -836,8 +836,32 @@ makemailer(line)
 			m->m_defcharset = newstr(p);
 			break;
 
-		  case 'T':		/* MTS Type */
-			m->m_mtstype = newstr(p);
+		  case 'T':		/* MTA Type */
+			m->m_mtatype = newstr(p);
+			p = strchr(m->m_mtatype, '/');
+			if (p != NULL)
+			{
+				*p++ = '\0';
+				if (*p == '\0')
+					p = NULL;
+			}
+			if (p == NULL)
+				m->m_addrtype = m->m_mtatype;
+			else
+			{
+				m->m_addrtype = p;
+				p = strchr(p, '/');
+			}
+			if (p != NULL)
+			{
+				*p++ = '\0';
+				if (*p == '\0')
+					p = NULL;
+			}
+			if (p == NULL)
+				m->m_diagtype = m->m_mtatype;
+			else
+				m->m_diagtype = p;
 			break;
 
 		  case 'U':		/* user id */
@@ -923,10 +947,17 @@ makemailer(line)
 			setbitn(M_7BITS, m->m_flags);
 	}
 
-	if (ConfigLevel < 6 && m->m_mtstype == NULL &&
+	if (ConfigLevel < 6 &&
 	    (strcmp(m->m_mailer, "[IPC]") == 0 ||
 	     strcmp(m->m_mailer, "[TCP]") == 0))
-		m->m_mtstype = "Internet";
+	{
+		if (m->m_mtatype == NULL)
+			m->m_mtatype = "dns";
+		if (m->m_addrtype == NULL)
+			m->m_addrtype = "rfc822";
+		if (m->m_diagtype == NULL)
+			m->m_diagtype = "smtp";
+	}
 
 	/* enter the mailer into the symbol table */
 	s = stab(m->m_name, ST_MAILER, ST_ENTER);
@@ -1109,8 +1140,10 @@ printmailer(m)
 	xputs(m->m_eol);
 	if (m->m_defcharset != NULL)
 		printf(" C=%s", m->m_defcharset);
-	if (m->m_mtstype != NULL)
-		printf(" T=%s", m->m_mtstype);
+	printf(" T=%s/%s/%s",
+		m->m_mtatype == NULL ? "<undefined>" : m->m_mtatype,
+		m->m_addrtype == NULL ? "<undefined>" : m->m_addrtype,
+		m->m_diagtype == NULL ? "<undefined>" : m->m_diagtype);
 	if (m->m_argv != NULL)
 	{
 		char **a = m->m_argv;
