@@ -3,21 +3,20 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fmt.1	6.7 (Berkeley) %G%
+.\"     @(#)fmt.1	6.8 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt FMT 1
+.Os
 .Sh NAME
 .Nm fmt
 .Nd simple text formatter
 .Sh SYNOPSIS
 .Nm fmt
-.Ob
+.Oo
 .Ar goal
 .Op Ar maximum
-.Oe
+.Oc
 .Op name ...
 .Sh DESCRIPTION
 .Nm Fmt
@@ -51,12 +50,14 @@ evening the lines.
 .Xr nroff 1 ,
 .Xr mail 1
 .Sh HISTORY
-.Nm Fmt
-appeared in 3 BSD.
-.Sh AUTHOR
-Kurt Shoens
-.br
-Liz Allen (added goal length concept)
+The
+.Nm fmt
+command appeared in
+.Bx 3 .
+.\" .Sh AUTHOR
+.\" Kurt Shoens
+.\" .br
+.\" Liz Allen (added goal length concept)
 .Sh BUGS
 The program was designed to be simple and fast \- for more complex
 operations, the standard text processors are likely to be more appropriate.
