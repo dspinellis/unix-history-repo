@@ -1,4 +1,4 @@
-/*	hp.c	4.12	83/02/17	*/
+/*	hp.c	4.13	83/02/17	*/
 
 /*
  * RP??/RM?? disk driver
@@ -186,7 +186,7 @@ hpmaptype(hpaddr, type, unit)
 			return (12);	/* 48 sector Eagle */
 		if (ntracks == 43)
 			return (11);	/* 43 sector Eagle */
-		printf("RM02 with %d tracks?\n", ntracks);
+		printf("RM02 with %d sectors/track?\n", ntracks);
 		return (type);
 	}
 	/*
