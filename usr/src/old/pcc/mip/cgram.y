@@ -1,4 +1,4 @@
-/*	cgram.y	4.4	85/08/22	*/
+/*	cgram.y	4.6	87/04/22	*/
 
 /*
  * Grammar for the C compiler.
@@ -726,7 +726,12 @@ term:		   term INCOP
 				defid( q, EXTERN );
 				}
 			    $$=buildtree(NAME,NIL,NIL);
-			    stab[$1].suse = -lineno;
+			    {
+				extern int	nsizeof;
+
+				if (nsizeof == 0)
+					stab[$1].suse = -lineno;
+			    }
 			}
 		|  ICON
 			={  $$=bcon(0);
