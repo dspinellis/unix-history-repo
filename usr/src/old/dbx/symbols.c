@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symbols.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)symbols.c	5.5 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: symbols.c,v 1.3 87/03/26 23:17:35 donn Exp $";
+static char rcsid[] = "$Header: symbols.c,v 1.4 88/04/02 01:29:03 donn Exp $";
 
 /*
  * Symbol management.
@@ -1366,8 +1366,6 @@ Symbol t;
 /*
  * Convert a tree to a type via a conversion operator;
  * if this isn't possible generate an error.
- *
- * Note the tree is call by address, hence the #define below.
  */
 
 private convert(tp, typeto, op)
@@ -1382,15 +1380,13 @@ Operator op;
     s = rtype(tree->nodetype);
     t = rtype(typeto);
     if (compatible(t, t_real) and compatible(s, t_int)) {
+	/* we can convert int => floating but not the reverse */
 	tree = build(op, tree);
     } else if (not compatible(s, t)) {
 	beginerrmsg();
-	fprintf(stderr, "expected integer or real, found \"");
 	prtree(stderr, tree);
-	fprintf(stderr, "\"");
+	fprintf(stderr, ": illegal type in operation");
 	enderrmsg();
-    } else if (op != O_NOP and s != t) {
-	tree = build(op, tree);
     }
     *tp = tree;
 }
