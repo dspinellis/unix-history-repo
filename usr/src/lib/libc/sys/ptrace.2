@@ -2,18 +2,20 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ptrace.2	4.1 (Berkeley) %G%
+.\"	@(#)ptrace.2	5.1 (Berkeley) %G%
 .\"
-.TH PTRACE 2 
+.TH PTRACE 2 "2 July 1983"
 .UC 4
 .SH NAME
 ptrace \- process trace
 .SH SYNOPSIS
 .nf
-.B #include <signal.h>
+.ft B
+#include <signal.h>
 .PP
-.B ptrace(request, pid, addr, data)
-.B int *addr;
+.ft B
+ptrace(request, pid, addr, data)
+int request, pid, *addr, data;
 .fi
 .SH DESCRIPTION
 .I Ptrace
@@ -31,10 +33,12 @@ is the process ID of the traced process,
 which must be a child (no more distant descendant)
 of the tracing process.
 A process being traced
-behaves normally until it encounters some signal whether internally generated
-like `illegal instruction' or externally generated like `interrupt.'
+behaves normally until it encounters some signal
+whether internally generated
+like \*(lqillegal instruction\*(rq or externally
+generated like \*(lqinterrupt\*(rq.
 See
-.IR signal (2)
+.IR sigvec (2)
 for the list.
 Then the traced process enters a stopped state
 and its parent is notified via
@@ -66,7 +70,8 @@ word in the child process's address space
 at
 .I addr
 is returned.
-If I and D space are separated, request 1 indicates I space,
+If I and D space are separated (e.g. historically
+on a pdp-11), request 1 indicates I space,
 2 D space.
 .I Addr
 must be even.
@@ -136,10 +141,8 @@ however, as soon as possible after execution of at least one instruction,
 execution stops again.
 The signal number from the stop is
 SIGTRAP.
-(On the PDP-11 and VAX-11 the T-bit is used and just one instruction
-is executed;
-on the Interdata the stop does not take place
-until a store instruction is executed.)
+(On the VAX-11 the T-bit is used and just one instruction
+is executed.)
 This is part of the mechanism for implementing breakpoints.
 .PP
 As indicated,
@@ -150,7 +153,7 @@ The
 .I wait
 call is used to determine
 when a process stops;
-in such a case the `termination' status
+in such a case the \*(lqtermination\*(rq status
 returned by
 .I wait
 has the value 0177 to indicate stoppage rather
@@ -158,32 +161,40 @@ than genuine termination.
 .PP
 To forestall possible fraud,
 .I ptrace
-inhibits the set-user-id facility
+inhibits the set-user-id and set-group-id facilities
 on subsequent
-.IR  exec (2)
+.IR  execve (2)
 calls.
 If a traced process calls
-.I exec,
+.IR execve ,
 it will stop before executing the first instruction of the new image
 showing signal SIGTRAP.
 .PP
-On the Interdata 8/32,
-`word' means a 32-bit word and `even' means 0 mod 4.
-On a VAX-11, `word' also means a 32-bit integer, but the `even' restriction
-does not apply.
+On a VAX-11, \*(lqword\*(rq also means a 32-bit integer,
+but the \*(lqeven\*(rq
+restriction does not apply.
+.SH "RETURN VALUE
+A 0 value is returned if the call succeeds.  If the call fails
+then a \-1 is returned and the global variable \fIerrno\fP is
+set to indicate the error.
+.SH "ERRORS
+.TP 15
+[EINVAL]
+The request code is invalid.
+.TP 15
+[EINVAL]
+The specified process does not exist.
+.TP 15
+[EINVAL]
+The given signal number is invalid.
+.TP 15
+[EFAULT]
+The specified address is out of bounds.
+.TP 15
+[EPERM]
+The specified process cannot be traced.
 .SH "SEE ALSO"
-wait(2), signal(2), adb(1)
-.SH DIAGNOSTICS
-The value \-1 is returned if
-.I request 
-is invalid,
-.I pid
-is not a traceable process,
-.I addr
-is out of bounds,
-or
-.I data
-specifies an illegal signal number.
+wait(2), sigvec(2), adb(1)
 .SH BUGS
 .I Ptrace
 is unique and arcane; it should be replaced with a special file which
@@ -193,15 +204,11 @@ be implemented with
 calls on this file.  This would be simpler to understand and have much
 higher performance.
 .PP
-On the Interdata 8/32,
-`as soon as possible' (request 7)
-means `as soon as a store instruction has been executed.'
-.PP
 The request 0 call should be able to specify
 signals which are to be treated normally and not cause a stop.
 In this way, for example,
 programs with simulated floating point (which
-use `illegal instruction' signals at a very high rate)
+use \*(lqillegal instruction\*(rq signals at a very high rate)
 could be efficiently debugged.
 .PP
 The error indication, \-1, is a legitimate function value;
@@ -214,11 +221,3 @@ It should be possible to stop a process on occurrence of a system
 call;
 in this way a completely controlled environment could
 be provided.
-.SH ASSEMBLER
-(ptrace = 26.)
-.br
-(data in r0)
-.br
-.B sys ptrace; pid; addr; request
-.br
-(value in r0)
