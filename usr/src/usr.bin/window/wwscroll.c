@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwscroll.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwscroll.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -212,7 +212,7 @@ no_scroll:
 
 				p = &wwtouched[row1x];
 				for (i = row2x - row1x; --i >= 0;)
-					*p++ |= WWU_MAJOR|WWU_TOUCHED;
+					*p++ |= WWU_TOUCHED;
 			}
 			wwredrawwin1(w, row1, row1x, dir);
 			wwredrawwin1(w, row2x - 1, row2 - leaveit, dir);
@@ -241,7 +241,7 @@ no_scroll:
 
 				p = &wwtouched[row1x];
 				for (i = row2x - row1x; --i >= 0;)
-					*p++ |= WWU_MAJOR|WWU_TOUCHED;
+					*p++ |= WWU_TOUCHED;
 			}
 			wwredrawwin1(w, row1 + leaveit, row1x + 1, dir);
 			wwredrawwin1(w, row2x, row2, dir);
@@ -252,7 +252,7 @@ no_scroll:
 
 			p = &wwtouched[row1x];
 			for (i = row2x - row1x; --i >= 0;)
-				*p++ |= WWU_MAJOR|WWU_TOUCHED;
+				*p++ |= WWU_TOUCHED;
 		}
 out:
 		if (dir > 0)

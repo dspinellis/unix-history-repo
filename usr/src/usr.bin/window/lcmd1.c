@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd1.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd1.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -50,7 +50,7 @@ register struct value *a;
 	char *label;
 	char haspty, hasframe, mapnl, keepopen, smooth;
 	char *shf, **sh;
-	char *argv[sizeof shell / sizeof *shell];
+	char *argv[sizeof default_shell / sizeof *default_shell];
 	register char **pp;
 
 	if ((id = findid()) < 0)
@@ -63,7 +63,7 @@ register struct value *a;
 	a++;
 	ncol = a->v_type == V_ERR ? wwncol - col : a->v_num;
 	a++;
-	nline = a->v_type == V_ERR ? nbufline : a->v_num;
+	nline = a->v_type == V_ERR ? default_nline : a->v_num;
 	a++;
 	label = a->v_type == V_ERR ? 0 : a->v_str;
 	if ((haspty = vtobool(++a, 1, -1)) < 0)
@@ -74,7 +74,7 @@ register struct value *a;
 		return;
 	if ((keepopen = vtobool(++a, 0, -1)) < 0)
 		return;
-	if ((smooth = vtobool(++a, 1, -1)) < 0)
+	if ((smooth = vtobool(++a, default_smooth, -1)) < 0)
 		return;
 	if ((++a)->v_type != V_ERR) {
 		for (pp = argv; a->v_type != V_ERR &&
@@ -87,8 +87,8 @@ register struct value *a;
 		else
 			*sh = shf;
 	} else {
-		sh = shell;
-		shf = shellfile;
+		sh = default_shell;
+		shf = default_shellfile;
 	}
 	if ((w = openwin(id, row, col, nrow, ncol, nline, label, haspty,
 	    hasframe, shf, sh)) == 0)
@@ -100,18 +100,18 @@ register struct value *a;
 	v->v_num = id + 1;
 }
 
-struct lcmd_arg arg_nline[] = {
+struct lcmd_arg arg_def_nline[] = {
 	{ "nlines",	1,	ARG_NUM },
 	0
 };
 
-l_nline(v, a)
+l_def_nline(v, a)
 register struct value *v, *a;
 {
-	v->v_num = nbufline;
+	v->v_num = default_nline;
 	v->v_type = V_NUM;
 	if (a->v_type != V_ERR)
-		nbufline = a->v_num;
+		default_nline = a->v_num;
 }
 
 struct lcmd_arg arg_smooth[] = {
@@ -131,6 +131,19 @@ register struct value *v, *a;
 		return;
 	v->v_num = !w->ww_noupdate;
 	w->ww_noupdate = !vtobool(a, v->v_num, v->v_num);
+}
+
+struct lcmd_arg arg_def_smooth[] = {
+	{ "flag",	1,	ARG_ANY },
+	0
+};
+
+l_def_smooth(v, a)
+register struct value *v, *a;
+{
+	v->v_type = V_NUM;
+	v->v_num = default_smooth;
+	default_smooth = vtobool(a, v->v_num, v->v_num);
 }
 
 struct lcmd_arg arg_select[] = {

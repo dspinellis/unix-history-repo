@@ -1,4 +1,4 @@
-/*	@(#)defs.h	3.18 88/06/29		*/
+/*	@(#)defs.h	3.19 88/08/04		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	3.18 (Berkeley) %G%
+ *	@(#)defs.h	3.19 (Berkeley) %G%
  */
 
 #include "ww.h"
@@ -28,9 +28,10 @@ struct timezone timezone;
 struct ww *selwin;
 struct ww *cmdwin;
 
-char *shell[128];		/* the shell argv */
-char *shellfile;		/* the shell program */
-int nbufline;			/* default buffer size for new windows */
+char *default_shell[128];	/* default shell argv */
+char *default_shellfile;	/* default shell program */
+int default_nline;		/* default buffer size for new windows */
+int default_smooth;		/* default "smooth" parameter */
 char escapec;			/* the escape character */
 
 	/* flags */

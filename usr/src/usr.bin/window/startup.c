@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -53,8 +53,8 @@ dodefault()
 	if ((w = doopen(-1, r + 1, wwncol, 0, 0)) == 0)
 	if (doopen(-1, wwnrow - r, wwncol, r, 0) == 0)
 		return;
-	if ((w = openwin(0, 1, 0, r, wwncol, nbufline,
-				(char *) 0, 1, 1, shellfile, shell)) == 0)
+	if ((w = openwin(0, 1, 0, r, wwncol, default_nline,
+		(char *) 0, 1, 1, default_shellfile, default_shell)) == 0)
 		return;
 	wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -26,57 +26,149 @@ wwupdate1(top, bot)
 {
 	int i;
 	register j;
-	register union ww_char *ns, *os;
 	char *touched;
+	struct ww_update *upd;
 	char didit;
+	char check_clreos = 0;
+	int scan_top, scan_bot;
 
 	wwnupdate++;
-	for (i = top, touched = &wwtouched[i]; i < bot && !wwinterrupt();
-	     i++, touched++) {
+	{
+		register char *t1 = wwtouched + top, *t2 = wwtouched + bot;
+		register n;
+
+		while (!*t1++)
+			if (t1 == t2)
+				return;
+		while (!*--t2)
+			;
+		scan_top = top = t1 - wwtouched - 1;
+		scan_bot = bot = t2 - wwtouched + 1;
+		if (tt.tt_clreos != 0 || tt.tt_clear != 0) {
+			int st = tt.tt_clreos == 0 ? scan_top : 0;
+
+			for (n = 1; t1 < t2;)
+				if (*t1++)
+					n++;
+			if (check_clreos = n * 10 > (wwnrow - st) * 9) {
+				scan_top = st;
+				scan_bot = wwnrow;
+			}
+		}
+	}
+	if (tt.tt_clreol == 0 && !check_clreos)
+		goto simple;
+	for (i = scan_top, touched = &wwtouched[i], upd = &wwupd[i];
+	     i < scan_bot;
+	     i++, touched++, upd++) {
+		register gain = 0;
+		register best_gain = 0;
+		register best_col;
+		register union ww_char *ns, *os;
+
+		if (wwinterrupt())
+			return;
+		if (!check_clreos && !*touched)
+			continue;
+		wwnupdscan++;
+		j = wwncol;
+		ns = &wwns[i][j];
+		os = &wwos[i][j];
+		while (--j >= 0) {
+			/*
+			 * The cost of clearing is:
+			 *	ncol - nblank + X
+			 * The cost of straight update is, more or less:
+			 *	ncol - nsame
+			 * We clear if  nblank - nsame > X
+			 * X is the clreol overhead.
+			 * So we make gain = nblank - nsame.
+			 */
+			if ((--ns)->c_w == (--os)->c_w)
+				gain--;
+			else
+				best_gain--;
+			if (ns->c_w == ' ')
+				gain++;
+			if (gain >= best_gain) {
+				best_col = j;
+				best_gain = gain;
+			}
+		}
+		upd->best_gain = best_gain;
+		upd->best_col = best_col;
+		upd->gain = gain;
+	}
+	if (check_clreos) {
+		register struct ww_update *u;
+		register gain = 0;
+		register best_gain = 0;
+		int best_row;
+		register simple_gain = 0;
+		char didit = 0;
+
+		for (j = scan_bot - 1, u = wwupd + j; j >= top; j--, u--) {
+			register g = gain + u->best_gain;
+
+			if (g >= best_gain) {
+				best_gain = g;
+				best_row = j;
+			}
+			gain += u->gain;
+			if (tt.tt_clreol != 0 && u->best_gain > 4)
+				simple_gain += u->best_gain - 4;
+		}
+		if (tt.tt_clreos == 0) {
+			if (gain > simple_gain && gain > 4) {
+				(*tt.tt_clear)();
+				i = top = scan_top;
+				bot = scan_bot;
+				j = 0;
+				didit = 1;
+			}
+		} else
+			if (best_gain > simple_gain && best_gain > 4) {
+				i = best_row;
+				(*tt.tt_move)(i, j = wwupd[i].best_col);
+				(*tt.tt_clreos)();
+				bot = scan_bot;
+				didit = 1;
+			}
+		if (didit) {
+			wwnupdclreos++;
+			wwnupdclreosline += wwnrow - i;
+			u = wwupd + i;
+			while (i < scan_bot) {
+				register union ww_char *os = &wwos[i][j];
+
+				for (j = wwncol - j; --j >= 0;)
+					os++->c_w = ' ';
+				wwtouched[i++] = WWU_TOUCHED;
+				u++->best_gain = 0;
+				j = 0;
+			}
+		} else
+			wwnupdclreosmiss++;
+	}
+simple:
+	for (i = top, touched = &wwtouched[i], upd = &wwupd[i]; i < bot;
+	     i++, touched++, upd++) {
+		register union ww_char *os, *ns;
+		char didit;
+
 		if (!*touched)
 			continue;
-		if (*touched & WWU_MAJOR && tt.tt_clreol != 0) {
-			register gain = 0;
-			register best_gain = 0;
-			register best;
-
-			wwnmajline++;
-			j = wwncol;
-			ns = &wwns[i][j];
-			os = &wwos[i][j];
-			while (--j >= 0) {
-				/*
-				 * The cost of clearing is:
-				 *	ncol - nblank + X
-				 * The cost of straight update is:
-				 *	ncol - nsame
-				 * We clear if:  nblank - nsame > X
-				 * X is the clreol overhead.
-				 * So we make gain = nblank - nsame.
-				 */
-				if ((--ns)->c_w == (--os)->c_w)
-					gain--;
-				else
-					best_gain--;
-				if (ns->c_w == ' ')
-					gain++;
-				if (gain >= best_gain) {
-					best = j;
-					best_gain = gain;
-				}
-			}
-			if (best_gain > 4) {
-				(*tt.tt_move)(i, best);
-				(*tt.tt_clreol)();
-				for (j = wwncol - best, os = &wwos[i][best];
-				     --j >= 0;)
-					os++->c_w = ' ';
-			} else
-				wwnmajmiss++;
-		}
 		*touched = 0;
 		wwnupdline++;
 		didit = 0;
+		if (tt.tt_clreol != 0 && upd->best_gain > 4) {
+			wwnupdclreol++;
+			(*tt.tt_move)(i, j = upd->best_col);
+			(*tt.tt_clreol)();
+			for (os = &wwos[i][j], j = wwncol - j; --j >= 0;)
+				os++->c_w = ' ';
+			didit = 1;
+		}
 		ns = wwns[i];
 		os = wwos[i];
 		for (j = 0; j < wwncol;) {
@@ -146,7 +238,7 @@ wwupdate1(top, bot)
 				(*tt.tt_move)(i, c);
 				(*tt.tt_write)(buf, q - buf);
 			}
-			didit++;
+			didit = 1;
 		}
 		if (!didit)
 			wwnupdmiss++;

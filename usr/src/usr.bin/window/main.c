@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -39,7 +39,6 @@ char **argv;
 	char *cmd = 0;
 	char tflag = 0;
 
-	nbufline = NLINE;
 	escapec = ESCAPEC;	
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -83,14 +82,16 @@ char **argv;
 	}
 	if ((p = getenv("SHELL")) == 0)
 		p = SHELL;
-	if ((shellfile = str_cpy(p)) == 0)
+	if ((default_shellfile = str_cpy(p)) == 0)
 		nomem();
-	if (p = rindex(shellfile, '/'))
+	if (p = rindex(default_shellfile, '/'))
 		p++;
 	else
-		p = shellfile;
-	shell[0] = p;
-	shell[1] = 0;
+		p = default_shellfile;
+	default_shell[0] = p;
+	default_shell[1] = 0;
+	default_nline = NLINE;
+	default_smooth = 1;
 	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
 		fflush(stdout);
@@ -122,7 +123,8 @@ char **argv;
 	setvars();
 		if (dflag || doconfig() < 0)
 			dodefault();
-	}
+	if (selwin != 0)
+		setcmd(0);
 
 	mloop();
 

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -43,9 +43,10 @@ struct value *v, *a;
 	wwprintf(w, "wwwrite\tattempt\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnwwr, wwnwwra, wwnwwrc);
-	wwprintf(w, "wwupdat\tline\tmiss\tmajor\tmiss\n");
-	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
-		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
+	wwprintf(w, "wwupdat\tline\tmiss\tscan\tclreol\tclreos\tmiss\tline\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnupdate, wwnupdline, wwnupdmiss, wwnupdscan, wwnupdclreol,
+		wwnupdclreos, wwnupdclreosmiss, wwnupdclreosline);
 	wwprintf(w, "select\terror\tzero\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnselect, wwnselecte, wwnselectz);
@@ -207,43 +208,44 @@ register struct var *r;
 	return 0;
 }
 
-struct lcmd_arg arg_shell[] = {
+struct lcmd_arg arg_def_shell[] = {
 	{ "",	0,		ARG_ANY|ARG_LIST },
 	0
 };
 
-l_shell(v, a)
+l_def_shell(v, a)
 	struct value *v, *a;
 {
 	register char **pp;
 	register struct value *vp;
 
 	if (a->v_type == V_ERR) {
-		if ((v->v_str = str_cpy(shellfile)) != 0)
+		if ((v->v_str = str_cpy(default_shellfile)) != 0)
 			v->v_type = V_STR;
 		return;
 	}
-	if (v->v_str = shellfile) {
+	if (v->v_str = default_shellfile) {
 		v->v_type = V_STR;
-		for (pp = shell + 1; *pp; pp++) {
+		for (pp = default_shell + 1; *pp; pp++) {
 			str_free(*pp);
 			*pp = 0;
 		}
 	}
-	for (pp = shell, vp = a;
-	     vp->v_type != V_ERR && pp < &shell[sizeof shell/sizeof *shell-1];
+	for (pp = default_shell, vp = a;
+	     vp->v_type != V_ERR &&
+	     pp < &default_shell[sizeof default_shell/sizeof *default_shell-1];
 	     pp++, vp++)
 		if ((*pp = vp->v_type == V_STR ?
 		     str_cpy(vp->v_str) : str_itoa(vp->v_num)) == 0) {
-			/* just leave shell[] the way it is */
+			/* just leave default_shell[] the way it is */
 			p_memerror();
 			break;
 		}
-	if (shellfile = *shell)
-		if (*shell = rindex(shellfile, '/'))
-			(*shell)++;
+	if (default_shellfile = *default_shell)
+		if (*default_shell = rindex(default_shellfile, '/'))
+			(*default_shell)++;
 		else
-			*shell = shellfile;
+			*default_shell = default_shellfile;
 }
 
 struct lcmd_arg arg_alias[] = {

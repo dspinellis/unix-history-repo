@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwredrawwin.c	3.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwredrawwin.c	3.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -48,9 +48,7 @@ int row1, row2, offset;
 				nchanged++;
 				ns[col].c_w = x;
 			}
-		if (nchanged > 4)
-			wwtouched[row] |= WWU_MAJOR|WWU_TOUCHED;
-		else if (nchanged > 0)
+		if (nchanged > 0)
 			wwtouched[row] |= WWU_TOUCHED;
 	}
 }

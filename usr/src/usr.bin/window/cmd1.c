@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -60,7 +60,6 @@ dowindow()
 	xrow = row + 1;
 	for (;;) {
 		wwsetcursor(xrow, xcol);
-		wwflush();
 		while (wwpeekc() < 0)
 			wwiomux();
 		switch (getpos(&xrow, &xcol, row + 1, col + 1)) {
