@@ -1,0 +1,129 @@
+.\" $Revision: 1.8 $
+.TH ARCHIVE 8
+.SH NAME
+archive \- Usenet article archiver
+.SH SYNOPSIS
+.B archive
+[
+.BI \-a " archive"
+]
+[
+.B \-f
+]
+[
+.BI \-i " index"
+]
+[
+.B \-m
+]
+[
+.B \-r
+]
+[
+.I input
+]
+.SH DESCRIPTION
+.I Archive
+makes copies of files specified on its standard input.
+It is normally run either as a channel feed under
+.IR innd (8),
+or by a script before
+.IR expire (8)
+is run.
+.PP
+.I Archive
+reads the named
+.I input
+file, or standard input if no file is given.
+The input is taken as a set of lines.
+Blank lines and lines starting with a number sign (``#'') are ignored.
+All other lines should specify the name of a file to archive.
+If a filename is not an absolute pathname, it is taken to be relative to
+.\" =()<.IR @<_PATH_SPOOL>@ .>()=
+.IR /var/spool/news/spool .
+.PP
+Files are copied to a directory within the archive directory,
+.\" =()<.IR @<_PATH_ARCHIVEDIR>@ .>()=
+.IR /var/spool/news/news.archive .
+The default is to create a hierarchy that mimics the input files;
+intermediate directories will be created as needed.
+For example, the input file
+.I comp/sources/unix/2211
+(article 2211 in the newsgroup comp.sources.unix) will be copied to
+.\" =()<.IR @<_PATH_ARCHIVEDIR>@/comp/sources/unix/2211 .>()=
+.IR /var/spool/news/news.archive/comp/sources/unix/2211 .
+If the ``\-f'' flag is used, then all directory names will be
+flattened out, replacing the slashes with periods.
+In this case, the file would be copied to
+.\" =()<.IR @<_PATH_ARCHIVEDIR>@/comp.sources.unix/2211 .>()=
+.IR /var/spool/news/news.archive/comp.sources.unix/2211 .
+.PP
+If the ``\-i'' flag is used, then
+.I archive
+will append one line to the specified
+.I index
+file for each article that it copies.
+This line will contain the destination name and the Message-ID and
+Subject headers.
+.PP
+For example, a typical
+.IR newsfeeds (5)
+entry to archive most source newsgroups is as follows:
+.RS
+.nf
+.\" =()<.ds R$ @<_PATH_NEWSBIN>@>()=
+.ds R$ /usr/contrib/news
+source-archive\e
+	:!*,*sources*,!*wanted*,!*.d\e
+	:Tc,Wn\e
+	:\*(R$/archive \-f \-i \e
+	    /usr/spool/news/news.archive/INDEX
+.fi
+.RE
+.PP
+Files are copied by making a link.
+If that fails a new file is created.
+.\" =()<.ie '@<HAVE_SYMLINK>@'DO' \{\>()=
+.ie 'DO'DO' \{\
+If the ``\-m'' flag is used, then the file will be copied to the
+destination, and the input file will be replaced with a symbolic
+link pointing to the new file.\}
+.el \{\
+The ``\-m'' flag is ignored.\}
+.PP
+By default,
+.I archive
+sets its standard error to
+.\" =()<.IR @<_PATH_ERRLOG>@ .>()=
+.IR /var/spool/news/data/errlog .
+To suppress this redirection, use the ``\-r'' flag.
+.PP
+If the input is exhausted,
+.I archive
+will exit with a zero status.
+If an I/O error occures, it will try to spool its input, copying it to a file.
+If there was no input filename, the standard input will be copied to
+.\" =()<.I @<_PATH_BATCHDIR>@/archive>()=
+.I /var/spool/news/out.going/archive
+and the program will exit.
+If an input filename was given, a temporary file named
+.IR input .bch
+(if
+.I input
+is an absolute pathname)
+or
+.\" =()<.IR @<_PATH_BATCHDIR>@/ input.bch>()=
+.IR /var/spool/news/out.going/ input.bch
+(if the filename does not begin with a slash) is created.
+Once the input is copied,
+.I archive
+will try to rename this temporary file to be the name of the input file,
+and then exit.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: archive.8,v 1.8 1992/08/19 16:33:36 rsalz Exp $
+.SH "SEE ALSO"
+newsfeeds(5).
