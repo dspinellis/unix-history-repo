@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.3 90/09/17$
  *
- *	@(#)hpux_compat.c	7.13 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -20,25 +20,25 @@
 
 #ifdef HPUXCOMPAT
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/signalvar.h"
-#include "sys/kernel.h"
-#include "sys/filedesc.h"
-#include "sys/proc.h"
-#include "sys/buf.h"
-#include "sys/wait.h"
-#include "sys/file.h"
-#include "sys/namei.h"
-#include "sys/vnode.h"
-#include "sys/ioctl.h"
-#include "sys/ptrace.h"
-#include "sys/stat.h"
-#include "sys/syslog.h"
-#include "sys/malloc.h"
-#include "sys/mount.h"
-#include "sys/ipc.h"
-#include "sys/user.h"
+#include "param.h"
+#include "systm.h"
+#include "signalvar.h"
+#include "kernel.h"
+#include "filedesc.h"
+#include "proc.h"
+#include "buf.h"
+#include "wait.h"
+#include "file.h"
+#include "namei.h"
+#include "vnode.h"
+#include "ioctl.h"
+#include "ptrace.h"
+#include "stat.h"
+#include "syslog.h"
+#include "malloc.h"
+#include "mount.h"
+#include "ipc.h"
+#include "user.h"
 
 #include "machine/cpu.h"
 #include "machine/reg.h"
@@ -626,7 +626,7 @@ hpuxadvise(p, uap, retval)
 
 	switch (uap->arg) {
 	case 0:
-		u.u_pcb.pcb_flags |= PCB_HPUXMMAP;
+		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXMMAP;
 		break;
 	case 1:
 		ICIA();
@@ -1199,6 +1199,7 @@ hpuxgetaccess(p, uap, retval)
  * No apologies offered, if you don't like it, rewrite it!
  */
 
+extern char kstack[];
 #define UOFF(f)		((int)&((struct user *)0)->f)
 #define HPUOFF(f)	((int)&((struct hpuxuser *)0)->f)
 
@@ -1237,7 +1238,7 @@ hpuxtobsduoff(off)
 	 * for simplicity.
 	 */
 	if (off < (int *)ctob(UPAGES))
-		off = (int *)((u_int)off + (u_int)&u);
+		off = (int *)((u_int)off + (u_int)kstack);
 
 	/*
 	 * 68020 registers.
@@ -1262,7 +1263,7 @@ hpuxtobsduoff(off)
 		 */
 		else
 			raddr = (u_int) &ar0[(int)(off - ar0)];
-		return((int)(raddr - (u_int)&u));
+		return((int)(raddr - (u_int)kstack));
 	}
 
 	/* everything else */
@@ -1302,7 +1303,7 @@ hpuxdumpu(vp, cred)
 	 * only uses this information to verify that a particular
 	 * core file goes with a particular binary.
 	 */
-	bcopy((caddr_t)u.u_pcb.pcb_exec,
+	bcopy((caddr_t)p->p_addr->u_pcb.pcb_exec,
 	      (caddr_t)&faku->hpuxu_exdata, sizeof (struct hpux_exec));
 	/*
 	 * Adjust user's saved registers (on kernel stack) to reflect
@@ -1318,7 +1319,7 @@ hpuxdumpu(vp, cred)
 	/*
 	 * Copy 68881 registers from our PCB format to HPUX format
 	 */
-	bp = (struct bsdfp *) &u.u_pcb.pcb_fpregs;
+	bp = (struct bsdfp *) &p->p_addr->u_pcb.pcb_fpregs;
 	bcopy((caddr_t)bp->save, (caddr_t)faku->hpuxu_fp.hpfp_save,
 	      sizeof(bp->save));
 	bcopy((caddr_t)bp->ctrl, (caddr_t)faku->hpuxu_fp.hpfp_ctrl,
@@ -1336,15 +1337,14 @@ hpuxdumpu(vp, cred)
 	 */
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)faku, ctob(1), (off_t)0,
 			UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred,
-			(int *)0, (struct proc *)0);
+			(int *)NULL, p);
 	/*
 	 * Dump the remaining UPAGES-1 pages normally
 	 */
 	if (!error) 
-		error = vn_rdwr(UIO_WRITE, vp, ((caddr_t)&u)+ctob(1),
+		error = vn_rdwr(UIO_WRITE, vp, kstack + ctob(1),
 				ctob(UPAGES-1), (off_t)ctob(1), UIO_SYSSPACE,
-				IO_NODELOCKED|IO_UNIT, cred, (int *)0,
-				(struct proc *)0);
+				IO_NODELOCKED|IO_UNIT, cred, (int *)NULL, p);
 	free((caddr_t)faku, M_TEMP);
 	return(error);
 }
@@ -1576,7 +1576,7 @@ ohpuxpause(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
-	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	(void) tsleep(kstack, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
 	return (EINTR);
 }
