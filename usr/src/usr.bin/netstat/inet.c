@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -143,6 +143,8 @@ tcp_stats(off, name)
     printf(m, tcpstat.f, plural(tcpstat.f))
 #define	p2(f1, f2, m) if (tcpstat.f1 || tcpstat.f2 || sflag <= 1) \
     printf(m, tcpstat.f1, plural(tcpstat.f1), tcpstat.f2, plural(tcpstat.f2))
+#define	p3(f, m) if (tcpstat.f || sflag <= 1) \
+    printf(m, tcpstat.f, plurales(tcpstat.f))
 
 	p(tcps_sndtotal, "\t%d packet%s sent\n");
 	p2(tcps_sndpack,tcps_sndbyte,
@@ -190,8 +192,12 @@ tcp_stats(off, name)
 	p(tcps_keeptimeo, "\t%d keepalive timeout%s\n");
 	p(tcps_keepprobe, "\t\t%d keepalive probe%s sent\n");
 	p(tcps_keepdrops, "\t\t%d connection%s dropped by keepalive\n");
+	p(tcps_predack, "\t%d correct ACK header prediction%s\n");
+	p(tcps_predack, "\t%d correct data packet header prediction%s\n");
+	p3(tcps_pcbcachemiss, "\t%d cache miss%s\n");
 #undef p
 #undef p2
+#undef p3
 }
 
 /*
