@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gmon.h	7.5 (Berkeley) %G%
+ *	@(#)gmon.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _GMON_H_
@@ -100,8 +100,12 @@ struct rawarc {
  */
 struct gmonparam {
 	int		state;
+	u_short		*kcount;
+	u_long		kcountsize;
 	u_short		*froms;
+	u_long		fromssize;
 	struct tostruct	*tos;
+	u_long		tossize;
 	long		tolimit;
 	u_long		lowpc;
 	u_long		highpc;
@@ -117,4 +121,11 @@ extern struct gmonparam _gmonparam;
 #define	GMON_PROF_ERROR	2
 #define	GMON_PROF_OFF	3
 
+/*
+ * Sysctl definitions for extracting profiling information from the kernel.
+ */
+#define	GPROF_STATE	0	/* profiling enabling variable */
+#define	GPROF_COUNT	1	/* profile tick count buffer */
+#define	GPROF_FROMS	2	/* from location hash bucket */
+#define	GPROF_TOS	3	/* destination/count structure */
 #endif
