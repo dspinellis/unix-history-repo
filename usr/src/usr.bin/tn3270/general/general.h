@@ -27,4 +27,5 @@
 					*src++ = c; \
 				    } \
 				}
+#define	memcmp(s1,s2,n)		bcmp(s1,s2,n)
 #endif	/* defined(unix) */
