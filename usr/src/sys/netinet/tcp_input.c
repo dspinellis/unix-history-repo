@@ -1,4 +1,4 @@
-/* tcp_input.c 1.4 81/10/28 */
+/* tcp_input.c 1.5 81/10/28 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -555,7 +555,7 @@ COUNT(RCV_TEXT);
 	/*
 	 * Discard duplicate data already passed to user.
 	 */
-	if (n->t_seq < tp->rcv_nxt){
+	if (SEQ_LT(n->t_seq, tp->rcv_nxt)) {
 		i = tp->rcv_nxt - n->t_seq;
 		if (i >= n->t_len)
 			goto dropseg;
@@ -568,7 +568,7 @@ COUNT(RCV_TEXT);
 	 * Find a segment which begins after this one does.
 	 */
 	for (q = tp->t_rcv_next; q != (struct th *)tp; q = q->t_next)
-		if (q->t_seq > n->t_seq)
+		if (SEQ_GT(q->t_seq, n->t_seq))
 			break;
 
 	/*
@@ -577,6 +577,7 @@ COUNT(RCV_TEXT);
 	 * segment.  If it provides all of our data, drop us.
 	 */
 	if (q->t_prev != (struct th *)tp) {
+		/* conversion to int (in i) handles seq wraparound */
 		i = q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
 		if (i > 0) {
 			if (i >= n->t_len)
@@ -591,7 +592,7 @@ COUNT(RCV_TEXT);
 	 * While we overlap succeeding segments trim them or,
 	 * if they are completely covered, dequeue them.
 	 */
-	while (q != (struct th *)tp && n->t_seq + n->t_len > q->t_seq) {
+	while (q != (struct th *)tp && SEQ_GT(n->t_seq + n->t_len, q->t_seq)) {
 		i = (n->t_seq + n->t_len) - q->t_seq;
 		if (i < q->t_len) {
 			q->t_len -= i;
@@ -617,7 +618,8 @@ COUNT(RCV_TEXT);
 	 * which there is too much.
 	 */
 	q = tp->t_rcv_prev;
-	overage = (tp->t_socket->uc_rcc + tp->rcv_seqcnt) - tp->t_socket->uc_rhiwat;
+	overage = 
+	    (tp->t_socket->uc_rcc + tp->rcv_seqcnt) - tp->t_socket->uc_rhiwat;
 	if (overage > 0)
 		for (;;) {
 			i = MIN(q->t_len, overage);
@@ -629,17 +631,19 @@ COUNT(RCV_TEXT);
 			if (q->t_len)
 				break;
 			if (q == n)
-				printf("tcp_text dropall\n");
+				panic("tcp_text dropall");
 			q = q->t_prev;
 			remque(q->t_next);
 		}
 #endif
 
 	/*
-	 * Advance rcv_next through newly
-	 * completed sequence space and force ACK.
+	 * Advance rcv_next through
+	 * newly completed sequence space
+	 * and return forcing an ack.
 	 */
 	while (n->t_seq == tp->rcv_nxt) {
+		/* present data belongs here */
 		tp->rcv_nxt += n->t_len;
 		n = n->t_next;
 		if (n == (struct th *)tp)
@@ -649,7 +653,7 @@ COUNT(RCV_TEXT);
 	return;
 
 dropseg:
-	/* don't set TC_NET_KEEP */
+	/* don't set TC_NET_KEEP, so that mbuf's will get dropped */
 	return;
 }
 
