@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.27 (Berkeley) %G%
+ *	@(#)unistd.h	5.28 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -39,7 +39,7 @@ int	 execv __P((const char *, char * const *));
 int	 execve __P((const char *, char * const *, char * const *));
 int	 execvp __P((const char *, char * const *));
 pid_t	 fork __P((void));
-long	 fpathconf __P((int, int));		/* not yet */
+long	 fpathconf __P((int, int));
 char	*getcwd __P((char *, size_t));
 gid_t	 getegid __P((void));
 uid_t	 geteuid __P((void));
@@ -56,7 +56,7 @@ int	 link __P((const char *, const char *));
 #define	 lseek __lseek
 off_t	 lseek __P((int, off_t, int));
 #endif
-long	 pathconf __P((const char *, int));	/* not yet */
+long	 pathconf __P((const char *, int));
 int	 pause __P((void));
 int	 pipe __P((int *));
 ssize_t	 read __P((int, void *, size_t));
@@ -66,7 +66,7 @@ int	 setpgid __P((pid_t, pid_t));
 pid_t	 setsid __P((void));
 int	 setuid __P((uid_t));
 unsigned int	 sleep __P((unsigned int));
-long	 sysconf __P((int));			/* not yet */
+long	 sysconf __P((int));
 pid_t	 tcgetpgrp __P((int));
 int	 tcsetpgrp __P((int, pid_t));
 char	*ttyname __P((int));
