@@ -35,10 +35,10 @@ char	*pc0args[NARGS] =	{ "pc0", "-o", "XXX" };
 char	*pc1args[3] =		{ "pc1", 0, };
 char	*pc2args[2] =		{ "pc2", 0 };
 char	*c2args[4] =		{ "c2", 0, 0, 0 };
-int	pc3argx = 1;
+int	pc3argx = 2;
 #define	pc3args	pc0args
 #define	ldargs	pc0args
-/* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
+/* char	*pc3args[NARGS] =	{ "pc3", /usr/lib/pcexterns.o, 0 }; */
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 int	asargx;
 char	*asargs[6] =		{ "as", 0, };
@@ -258,8 +258,9 @@ main(argc, argv)
 	}
 	if (errs || cflag || Sflag)
 		done();
-/* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
+/* char	*pc3args[NARGS] =	{ "pc3", "/usr/lib/pcexterns.o", 0 }; */
 	pc3args[0] = "pc3";
+	pc3args[1] = "/usr/lib/pcexterns.o";
 	for (i = 0; i < argc; i++) {
 		argp = argv[i];
 		if (!strcmp(argp, "-o"))
