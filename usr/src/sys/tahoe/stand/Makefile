@@ -1,4 +1,4 @@
-#	Makefile	7.3	86/11/04
+#	Makefile	7.4	86/11/16
 #
 DESTDIR=
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
@@ -20,9 +20,10 @@ ALL=	boot boot1mb cat ls devcopy fastcopy
 all:	srt0.o libsa.a ${ALL} ${SUBDIR}
 
 install: all
+	-mkdir ${DESTDIR}/stand
 	install -c -m 644 libsa.a ${DESTDIR}/usr/lib/libsa.a
 	for i in ${ALL}; do \
-		install -m 644 $$i ${DESTDIR}/stand; \
+		install -m 644 $$i ${DESTDIR}/stand/$$i; \
 	done
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install) \
