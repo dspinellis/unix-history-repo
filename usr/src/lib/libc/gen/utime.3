@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)utime.3	6.6 (Berkeley) %G%
+.\"     @(#)utime.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTIME 3
@@ -39,6 +39,13 @@ argument is
 .Dv NULL )
 the caller must be the owner of the file, have permission to write
 the file, or be the super-user.
+.Sh ERRORS
+The
+.Fn utime
+function may fail and set
+.Va errno
+for any of the errors specified for the library function
+.Xr utimes 2 .
 .Sh SEE ALSO
 .Xr utimes 2 ,
 .Xr stat 2
@@ -47,3 +54,8 @@ A
 .Fn utime
 function appeared in 
 .At v7 .
+Sh STANDARDS
+The
+.Nm utime
+function conforms to
+.St -p1003.1 .
