@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.34		%G%);
+SCCSID(@(#)savemail.c	3.35		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -123,6 +123,8 @@ savemail()
 
 	if (MailBack)
 	{
+		if (CurEnv->e_errorqueue == NULL)
+			sendto(CurEnv->e_from.q_paddr, 1, NULL, &CurEnv->e_errorqueue);
 		if (returntosender("Unable to deliver mail", CurEnv->e_returnto, TRUE) == 0)
 			return;
 	}
