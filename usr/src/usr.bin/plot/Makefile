@@ -1,5 +1,5 @@
 #
-#	Makefile	4.1	83/03/10
+#	Makefile	4.2	83/03/24
 #
 all: tek t300 t300s t450 vplot
 
@@ -14,7 +14,7 @@ t450:	driver.o
 vplot:	vplot.c
 	cc -o vplot vplot.c
 
-install:
+install: all
 	install -s tek ${DESTDIR}/usr/bin
 	install -s t300 ${DESTDIR}/usr/bin
 	install -s t300s ${DESTDIR}/usr/bin
