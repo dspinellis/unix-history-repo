@@ -1,4 +1,5 @@
-/* @(#)nlist.c	4.4 (Berkeley) %G% */
+/* @(#)nlist.c	4.5 (Berkeley) %G% */
+
 #include <sys/types.h>
 #include <a.out.h>
 #include <stdio.h>
@@ -11,13 +12,15 @@ nlist(name, list)
 	struct nlist *list;
 {
 	register struct nlist *p, *q;
-	register n, m, i, nreq;
+	register char *s1, *s2;
+	register n, m;
+	int maxlen, nreq;
 	FILE *f;
+	FILE *sf;
 	off_t sa;		/* symbol address */
 	off_t ss;		/* start of strings */
 	struct exec buf;
 	struct nlist space[BUFSIZ/sizeof (struct nlist)];
-	int maxlen;
 
 	maxlen = 0;
 	for (q = list, nreq = 0; q->n_un.n_name && q->n_un.n_name[0]; q++, nreq++) {
@@ -25,9 +28,9 @@ nlist(name, list)
 		q->n_value = 0;
 		q->n_desc = 0;
 		q->n_other = 0;
-		i = strlen(q->n_un.n_name);
-		if (i > maxlen)
-			maxlen = i;
+		n = strlen(q->n_un.n_name);
+		if (n > maxlen)
+			maxlen = n;
 	}
 	f = fopen(name, "r");
 	if (f == NULL)
@@ -37,32 +40,38 @@ nlist(name, list)
 		fclose(f);
 		return (-1);
 	}
+	sf = fopen(name, "r");
+	if (sf == NULL) {
+		/* ??? */
+		fclose(f);
+		return(-1);
+	}
 	sa = N_SYMOFF(buf);
 	ss = sa + buf.a_syms;
 	n = buf.a_syms;
+	fseek(f, sa, 0);
 	while (n) {
 		m = sizeof (space);
 		if (n < m)
 			m = n;
-		fseek(f, sa, 0);
-		i = fread((char *)space, m, 1, f);
-		sa += m;
+		if (fread((char *)space, m, 1, f) != 1)
+			break;
 		n -= m;
 		for (q = space; (m -= sizeof(struct nlist)) >= 0; q++) {
 			char nambuf[BUFSIZ];
 
 			if (q->n_un.n_strx == 0 || q->n_type & N_STAB)
 				continue;
-			fseek(f, ss+q->n_un.n_strx, 0);
-			fread(nambuf, maxlen+1, 1, f);
+			fseek(sf, ss+q->n_un.n_strx, 0);
+			fread(nambuf, maxlen+1, 1, sf);
 			for (p = list; p->n_un.n_name && p->n_un.n_name[0]; p++) {
-				i = 0;
-				while (p->n_un.n_name[i]) {
-					if (p->n_un.n_name[i] != nambuf[i])
+				s1 = p->n_un.n_name;
+				s2 = nambuf;
+				while (*s1) {
+					if (*s1++ != *s2++)
 						goto cont;
-					i++;
 				}
-				if (nambuf[i])
+				if (*s2)
 					goto cont;
 				p->n_value = q->n_value;
 				p->n_type = q->n_type;
@@ -77,5 +86,6 @@ nlist(name, list)
 	}
 alldone:
 	fclose(f);
+	fclose(sf);
 	return (0);
 }
