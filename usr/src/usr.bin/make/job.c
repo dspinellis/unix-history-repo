@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -80,20 +80,19 @@ static char sccsid[] = "@(#)job.c	5.8 (Berkeley) %G%";
  *	Job_Wait  	    	Wait for all currently-running jobs to finish.
  */
 
-#include    <stdio.h>
-#include    <string.h>
-#include    <sys/types.h>
-#include    <sys/signal.h>
-#include    <sys/stat.h>
-#include    <fcntl.h>
-#include    <sys/file.h>
-#include    <sys/time.h>
-#include    <sys/wait.h>
-#include    <ctype.h>
-#include    <errno.h>
+#include "make.h"
+#include <sys/signal.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+#include "job.h"
+#include "pathnames.h"
+
 extern int  errno;
-#include    "make.h"
-#include    "job.h"
 
 /*
  * error handling variables 
@@ -2093,10 +2092,10 @@ Job_Init (maxproc, maxlocal)
 	 * default one... Both the absolute path and the last component
 	 * must be set. The last component is taken from the 'name' field
 	 * of the default shell description pointed-to by commandShell.
-	 * All default shells are located in DEFSHELLDIR.
+	 * All default shells are located in _PATH_DEFSHELLDIR.
 	 */
 	shellName = commandShell->name;
-	shellPath = Str_Concat (DEFSHELLDIR, shellName, STR_ADDSLASH);
+	shellPath = Str_Concat (_PATH_DEFSHELLDIR, shellName, STR_ADDSLASH);
     }
 
     if (commandShell->exit == (char *)NULL) {
