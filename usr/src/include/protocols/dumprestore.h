@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/* "@(#)dumprestore.h 2.1 %G%" */
+/* "@(#)dumprestore.h 2.2 %G%" */
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
@@ -26,7 +26,8 @@
 #define TS_ADDR 	4
 #define TS_END  	5
 #define TS_CLRI 	6
-#define MAGIC   	(int)60011
+#define OFS_MAGIC   	(int)60011
+#define NFS_MAGIC   	(int)60012
 #define CHECKSUM	(int)84446
 
 union u_spcl {
