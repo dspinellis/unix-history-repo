@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.9	82/06/20	*/
+/*	raw_cb.c	4.10	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,7 +11,7 @@
 #include "../net/if.h"
 #include "../net/raw_cb.h"
 #include "../net/pup.h"
-#include "../errno.h"
+#include <errno.h>
 
 /*
  * Routines to manage the raw protocol control blocks. 

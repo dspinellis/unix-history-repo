@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.3	82/03/29	*/
+/*	tcp_debug.c	4.4	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 #include "../net/tcpip.h"
 #define	TANAMES
 #include "../net/tcp_debug.h"
-#include "../errno.h"
+#include <errno.h>
 
 int	tcpconsdebug = 0;
 /*
