@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogin.1	6.5 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.6 (Berkeley) %G%
 .\"
 .TH RLOGIN 1C ""
 .UC 5
@@ -62,8 +62,9 @@ delays) the rlogin is transparent.  Flow control via ^S and ^Q and
 flushing of input and output on interrupts are handled properly.
 The optional argument
 .B \-8
-allows an eight-bit data path,
-otherwise parity bits are stripped.
+allows an eight-bit data path at all times;
+otherwise parity bits are stripped except when the remote side's
+stop and start characters are other than ^S/^Q.
 The argument
 .B \-L
 allows the rlogin session to be run in litout mode.
