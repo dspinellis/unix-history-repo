@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1985 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985, 1987 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -21,123 +21,162 @@ static char sccsid[] = "@(#)tcopy.c	5.3 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 
-#define SIZE	(64 * 1024)
+#define MAXREC	(64 * 1024)
+#define NOCOUNT	(-2)
+#undef DEFTAPE
+#define	DEFTAPE	"/dev/rmt0"
 
-char buff[SIZE];
-int filen=1;
-long count, lcount;
-int RUBOUT();
-long itol();
-int nfile;
-long size, tsize;
-int ln;
-char *inf, *outf;
-int copy;
+char	*buff;
+char	*inf = DEFTAPE;
+int	maxblk = MAXREC;
+int	filen;
+long	record, lastrec;
+int	intr();
+long	itol();
+char	*malloc();
+long	size, tsize;
+int	nfile;
+int	lastread;
+int	copy;
 
 main(argc, argv)
 char **argv;
 {
-	register n, nw, inp, outp;
+	register nread, nw, inp, outp;
 	struct mtop op;
+	int needeof = 0, guesslen = 1;
 
-	if (argc <=1 || argc > 3) {
-		fprintf(stderr, "Usage: tcopy src [dest]\n");
+	while (argc > 1 && *argv[1] == '-') {
+		switch (*++argv[1]) {
+		case 's':
+			if (argc < 3)
+				goto usage;
+			maxblk = atoi(argv[2]);
+			if (maxblk <= 0) {
+				fprintf(stderr, "illegal block size\n");
+				goto usage;
+			}
+			argc--;
+			argv++;
+			guesslen = 0;
+			break;
+		}
+		argc--;
+		argv++;
+	}
+	if (argc < 1 || argc > 3) {
+usage:
+		fprintf(stderr, "Usage: tcopy [-s maxblk] src [dest]\n");
 		exit(1);
 	}
-	inf = argv[1];
+	if (argc > 1)
+		inf = argv[1];
+	if ((inp = open(inf, O_RDONLY, 0)) < 0) {
+		perror(inf);
+		exit(1);
+	}
 	if (argc == 3) {
-		outf = argv[2];
 		copy = 1;
-	}
-	if ((inp=open(inf, O_RDONLY, 0666)) < 0) {
-		fprintf(stderr,"Can't open %s\n", inf);
-		exit(1);
-	}
-	if (copy) {
-		if ((outp=open(outf, O_WRONLY, 0666)) < 0) {
-			fprintf(stderr,"Can't open %s\n", outf);
+		if ((outp = open(argv[2], O_WRONLY, 0666)) < 0) {
+			perror(argv[2]);
 			exit(3);
 		}
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		(void) signal(SIGINT, RUBOUT);
-	ln = -2;
+		(void) signal(SIGINT, intr);
+	buff = malloc(maxblk);
+	if (buff == NULL) {
+		fprintf("tcopy: no memory\n");
+		exit(11);
+	}
+	lastread = NOCOUNT;
 	for (;;) {
-		count++;
-		n = read(inp, buff, SIZE);
-		if (n > 0) {
-		    nw = write(outp, buff, n);
-		    if (copy) {
-			    if (nw != n) {
-				fprintf(stderr, "write (%d) != read (%d)\n",
-					nw, n);
-				fprintf(stderr, "COPY Aborted\n");
-				exit(5);
-			    }
-		    }
-		    size += n;
-		    if (n != ln) {
-			if (ln > 0)
-			    if (count - lcount > 1)
-				printf("file %d: records %ld to %ld: size %d\n",
-					filen, lcount, count-1, ln);
-			    else
-				printf("file %d: record %ld: size %d\n",
-					filen, lcount, ln);
-			ln = n;
-			lcount = count;
-		    }
+		nread = read(inp, buff, maxblk);
+		if (nread == -1) {
+			if (guesslen && maxblk > MAXREC / 2) {
+				maxblk -= 1024;
+				continue;
+			}
+			fprintf(stderr, "read error, file %d, record %d: ",
+			    filen, record);
+			perror("");
+		} else if (nread != lastread) {
+			if (lastread != 0 && lastread != NOCOUNT) {
+				if (lastrec == 0 && nread == 0)
+					printf("%d records\n", record);
+				else if (record - lastrec > 1)
+					printf("records %ld to %ld\n",
+					    lastrec, record);
+				else
+					printf("record %ld\n", lastrec);
+			}
+			if (nread != 0)
+				printf("file %d: block size %d: ",
+				    filen, nread);
+			fflush(stdout);
+			lastrec = record;
 		}
-		else {
-			if (ln <= 0 && ln != -2) {
+		guesslen = 0;
+		if (nread > 0) {
+			if (copy) {
+				if (needeof) {
+				    op.mt_op = MTWEOF;
+				    op.mt_count = (daddr_t) 1;
+				    if (ioctl(outp, MTIOCTOP, (char *)&op) < 0) {
+					    perror("write tape mark");
+					    exit(6);
+				    }
+				    needeof = 0;
+				}
+				nw = write(outp, buff, nread);
+				if (nw != nread) {
+				    fprintf(stderr,
+					"write error, file %d, record %d: ",
+					filen, record);
+				    if (nw == -1)
+					perror("");
+				    else
+					fprintf(stderr,
+					    "write (%d) != read (%d)\n",
+					    nw, nread);
+				    fprintf(stderr, "copy aborted\n");
+				    exit(5);
+				}
+			}
+			size += nread;
+			record++;
+		} else {
+			if (lastread <= 0 && lastread != NOCOUNT) {
 				printf("eot\n");
 				break;
 			}
-			if (ln > 0)
-			    if (count - lcount > 1)
-				printf("file %d: records %ld to %ld: size %d\n",
-					filen, lcount, count-1, ln);
-			    else
-				printf("file %d: record %ld: size %d\n",
-					filen, lcount, ln);
 			printf("file %d: eof after %ld records: %ld bytes\n",
-				filen, count-1, size);
-			if (copy) {
-				op.mt_op = MTWEOF;
-				op.mt_count = (daddr_t)1;
-				if(ioctl(outp, MTIOCTOP, (char *)&op) < 0) {
-					perror("Write EOF");
-					exit(6);
-				}
-			}
+				filen, record, size);
+			needeof = 1;
 			filen++;
-			count = 0;
-			lcount = 0;
 			tsize += size;
+			record = 0;
+			lastrec = 0;
+			lastread = 0;
 			size = 0;
 			if (nfile && filen > nfile)
 				break;
-			ln = n;
 		}
+		lastread = nread;
 	}
 	if (copy)
 		(void) close(outp);
 	printf("total length: %ld bytes\n", tsize);
 }
 
-RUBOUT()
+intr()
 {
-	if (count > lcount)
-		--count;
-	if (count)
-		if (count > lcount)
-			printf("file %d: records %ld to %ld: size %d\n",
-				filen, lcount, count, ln);
+	if (record)
+		if (record - lastrec > 1)
+			printf("records %ld to %ld\n", lastrec, record);
 		else
-			printf("file %d: record %ld: size %d\n",
-				filen, lcount, ln);
-	printf("rubout at file %d: record %ld\n", filen, count);
+			printf("record %ld\n", lastrec);
+	printf("interrupt at file %d: record %ld\n", filen, record);
 	printf("total length: %ld bytes\n", tsize+size);
 	exit(1);
 }
-
