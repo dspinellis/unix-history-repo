@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,13 +87,16 @@ abortpr(dis)
 		if (stat(line, &stbuf) >= 0) {
 			if (chmod(line, (stbuf.st_mode & 0777) | 0100) < 0)
 				printf("\tcannot disable printing\n");
-			else
+			else {
+				upstat("printing disabled\n");
 				printf("\tprinting disabled\n");
+			}
 		} else if (errno == ENOENT) {
 			if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
 				printf("\tcannot create lock file\n");
 			else {
 				(void) close(fd);
+				upstat("printing disabled\n");
 				printf("\tprinting disabled\n");
 				printf("\tno daemon to abort\n");
 			}
@@ -120,6 +123,33 @@ abortpr(dis)
 		printf("\tWarning: daemon (pid %d) not killed\n", pid);
 	else
 		printf("\tdaemon (pid %d) killed\n", pid);
+}
+
+/*
+ * Write a message into the status file.
+ */
+upstat(msg)
+	char *msg;
+{
+	register int fd;
+	char statfile[BUFSIZ];
+
+	bp = pbuf;
+	if ((ST = pgetstr("st", &bp)) == NULL)
+		ST = DEFSTAT;
+	(void) sprintf(statfile, "%s/%s", SD, ST);
+	umask(0);
+	fd = open(statfile, O_WRONLY|O_CREAT, 0664);
+	if (fd < 0 || flock(fd, LOCK_EX) < 0) {
+		printf("\tcannot create status file\n");
+		return;
+	}
+	(void) ftruncate(fd, 0);
+	if (msg == (char *)NULL)
+		(void) write(fd, "\n", 1);
+	else
+		(void) write(fd, msg, strlen(msg));
+	(void) close(fd);
 }
 
 /*
@@ -763,13 +793,16 @@ stoppr()
 	if (stat(line, &stbuf) >= 0) {
 		if (chmod(line, (stbuf.st_mode & 0777) | 0100) < 0)
 			printf("\tcannot disable printing\n");
-		else
+		else {
+			upstat("printing disabled\n");
 			printf("\tprinting disabled\n");
+		}
 	} else if (errno == ENOENT) {
 		if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
 			printf("\tcannot create lock file\n");
 		else {
 			(void) close(fd);
+			upstat("printing disabled\n");
 			printf("\tprinting disabled\n");
 		}
 	} else
