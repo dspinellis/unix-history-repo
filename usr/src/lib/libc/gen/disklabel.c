@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <disktab.h>
@@ -39,6 +39,8 @@ getdiskbyname(name)
 	dp->d_rpm = dgetnum("rm");
 	if (dp->d_rpm < 0)
 		dp->d_rpm = 3600;
+	dp->d_badsectforw = dgetflag("sf");
+	dp->d_sectoffset = dgetflag("so");
 	strcpy(psize, "px");
 	strcpy(pbsize, "bx");
 	strcpy(pfsize, "fx");
