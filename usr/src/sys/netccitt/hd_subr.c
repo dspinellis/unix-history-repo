@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_subr.c	7.8 (Berkeley) %G%
+ *	@(#)hd_subr.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -17,6 +17,7 @@
 #include <sys/mbuf.h>
 #include <sys/domain.h>
 #include <sys/socket.h>
+#include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/errno.h>
 #include <sys/time.h>
@@ -27,6 +28,7 @@
 #include <netccitt/hdlc.h>
 #include <netccitt/hd_var.h>
 #include <netccitt/x25.h>
+#include <netccitt/pk_var.h>
 
 hd_init ()
 {
