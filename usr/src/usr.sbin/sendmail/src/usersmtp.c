@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -219,6 +219,7 @@ tryhelo:
 **
 **	Parameters:
 **		line -- the response line.
+**		firstline -- set if this is the first line of the reply.
 **		m -- the mailer.
 **		mci -- the mailer connection info.
 **		e -- the envelope.
@@ -228,23 +229,28 @@ tryhelo:
 */
 
 void
-esmtp_check(line, m, mci, e)
+esmtp_check(line, firstline, m, mci, e)
 	char *line;
+	bool firstline;
 	MAILER *m;
 	register MCI *mci;
 	ENVELOPE *e;
 {
-	if (strlen(line) < 5)
-		return;
-	line += 4;
-	if (strncmp(line, "ESMTP ", 6) == 0)
-		mci->mci_flags |= MCIF_ESMTP;
+	while ((line = strchr(++line, 'E')) != NULL)
+	{
+		if (strncmp(line, "ESMTP ", 6) == 0)
+		{
+			mci->mci_flags |= MCIF_ESMTP;
+			break;
+		}
+	}
 }
 /*
 **  HELO_OPTIONS -- process the options on a HELO line.
 **
 **	Parameters:
 **		line -- the response line.
+**		firstline -- set if this is the first line of the reply.
 **		m -- the mailer.
 **		mci -- the mailer connection info.
 **		e -- the envelope.
@@ -254,13 +260,17 @@ esmtp_check(line, m, mci, e)
 */
 
 void
-helo_options(line, m, mci, e)
+helo_options(line, firstline, m, mci, e)
 	char *line;
+	bool firstline;
 	MAILER *m;
 	register MCI *mci;
 	ENVELOPE *e;
 {
 	register char *p;
+
+	if (!firstline)
+		return;
 
 	if (strlen(line) < 5)
 		return;
@@ -878,8 +888,8 @@ reply(m, mci, e, timeout, pfunc)
 			nmessage("050 %s", bufp);
 
 		/* process the line */
-		if (pfunc != NULL && !firstline)
-			(*pfunc)(bufp, m, mci, e);
+		if (pfunc != NULL)
+			(*pfunc)(bufp, firstline, m, mci, e);
 
 		firstline = FALSE;
 
