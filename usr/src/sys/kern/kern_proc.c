@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.60	83/04/05	*/
+/*	kern_proc.c	4.61	83/04/06	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -70,7 +70,7 @@ sethostname()
 	}
 	hostnamelen = uap->len + 1;
 	u.u_error = copyin((caddr_t)uap->hostname, hostname, uap->len);
-	hostname[hostnamelen] = 0;
+	hostname[uap->len] = 0;
 }
 
 /*
