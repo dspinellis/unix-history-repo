@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.13 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1993,23 +1993,24 @@ unionread:
 
 	if ((uap->count == auio.uio_resid) &&
 	    (vp->v_op == union_vnodeop_p)) {
-		struct vnode *tvp = vp;
+		struct vnode *lvp;
 
-		vp = union_lowervp(vp);
-		if (vp != NULLVP) {
-			VOP_LOCK(vp);
-			error = VOP_OPEN(vp, FREAD);
-			VOP_UNLOCK(vp);
+		lvp = union_lowervp(vp);
+		if (lvp != NULLVP) {
+			VOP_LOCK(lvp);
+			error = VOP_OPEN(lvp, FREAD);
+			VOP_UNLOCK(lvp);
 
 			if (error) {
-				vrele(vp);
+				vrele(lvp);
 				return (error);
 			}
-			fp->f_data = (caddr_t) vp;
+			fp->f_data = (caddr_t) lvp;
 			fp->f_offset = 0;
-			error = vn_close(tvp, FREAD, fp->f_cred, p);
+			error = vn_close(vp, FREAD, fp->f_cred, p);
 			if (error)
 				return (error);
+			vp = lvp;
 			goto unionread;
 		}
 	}
