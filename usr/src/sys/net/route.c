@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.15 (Berkeley) %G%
+ *	@(#)route.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -165,14 +165,12 @@ rtredirect(dst, gateway, flags, src)
 			 * Changing from route to net => route to host.
 			 * Create new route, rather than smashing route to net.
 			 */
-			rtinit(dst, gateway, SIOCADDRT, flags);
+			rtinit(dst, gateway, SIOCADDRT, flags | RTF_DYNAMIC);
+			rtstat.rts_dynamic++;
 		} else {
 			/*
 			 * Smash the current notion of the gateway to
-			 * this destination.  This is probably not right,
-			 * as it's conceivable a flurry of redirects could
-			 * cause the gateway value to fluctuate wildly during
-			 * dynamic routing reconfiguration.
+			 * this destination.
 			 */
 			rt->rt_gateway = *gateway;
 		}
