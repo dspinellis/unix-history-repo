@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ newsyntax(argc, argvp)
 	char **argv, **cur;
 
 	cur = argv = *argvp;
-	while ((ch = getopt(argc, argv, "df:rsx")) != EOF)
+	while ((ch = getopt(argc, argv, "df:rsXx")) != EOF)
 		switch(ch) {
 		case 'd':
 			isdepth = 1;
@@ -41,6 +41,9 @@ newsyntax(argc, argvp)
 		case 's':
 			ftsoptions &= ~FTS_PHYSICAL;
 			ftsoptions |= FTS_LOGICAL;
+			break;
+		case 'X':
+			isxargs = 1;
 			break;
 		case 'x':
 			ftsoptions &= ~FTS_NOSTAT;
