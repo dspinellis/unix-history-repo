@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.29 (Berkeley) %G%
+ *	@(#)sys_process.c	7.30 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -44,14 +44,15 @@ struct {
 /*
  * Process debugging system call.
  */
+struct ptrace_args {
+	int	req;
+	int	pid;
+	int	*addr;
+	int	data;
+};
 ptrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	req;
-		int	pid;
-		int	*addr;
-		int	data;
-	} *uap;
+	register struct ptrace_args *uap;
 	int *retval;
 {
 	register struct proc *p;
