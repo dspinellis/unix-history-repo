@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	1.2	%G%
+ *	@(#)bib.h	2.1	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
