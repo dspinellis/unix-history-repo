@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m3	8.1 (Berkeley) %G%
+.\"	@(#)m3	8.2 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -351,10 +351,13 @@ Zero-width characters.
 The function \fB\ez\fIc\fR will output \fIc\fR without spacing over
 it, and can be used to produce left-aligned overstruck
 combinations.
-As examples,
-\fB\ez\e(ci\e(pl\fR will produce \fB\z\(ci\(pl\fR, and
-\fB\e(br\ez\e(rn\e(ul\e(br\fR will produce the smallest possible
-constructed box \fB\(br\z\(rn\(ul\(br\fR\|.
+For example,
+\fB\ez\e(ci\eh\'2.2p\'\|\ev\'-1p\'\|\e(pl\ev\'1p\'\fR
+will produce \fB\z\(ci\h'2.2p'\v'-1p'\(pl\v'1p'\fR\|.
+Note that tweeks to the horizontal and vertical motions are
+necessary to center the two symbols correctly.
+Unfortunately, these numbers will vary depending on the font, point size,
+and typesetter being used.
 .sc
 Large Brackets.
 The Special Mathematical Font contains a number of bracket construction pieces
@@ -367,9 +370,9 @@ the characters are vertically separated by 1|em and the total
 pile is centered 1\(sl2\|em above the current baseline
 (\(12 line in \*(NR).
 For example,
-\fB\eb\'\|\e(lc\e(lf\|\'E\e\|~\|\eb\'\|\e(rc\e(rf\|\'\|\ex\'\|\-0.5m\'\|\ex\'0.5m\'\|\fR
+\fB\ex\'\|\-0.5m\'\|\ex\'0.5m\'\|\eb\'\|\e(lc\e(lf\|\'E\e \e \e|\|\eb\'\|\e(rc\e(rf\|\'\|\fR
 produces
-\x'-.5m'\x'.5m'\fB\b'\(lc\(lf'E\|\b'\(rc\(rf'\fR.
+\x'-.5m'\x'.5m'\fB\b'\(lc\(lf'E\ \ \|\b'\(rc\(rf'\fR.
 .sc
 Line drawing.
 .tr &&
