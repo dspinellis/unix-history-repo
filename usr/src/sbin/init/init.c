@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -109,7 +109,6 @@ main(argc, argv)
 		syslog(LOG_ERR, "setsid failed (initial) %m");
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
-	signal(SIGSTOP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	(void) setjmp(sjbuf);
@@ -226,13 +225,21 @@ runcom(oldhowto)
 	int oldhowto;
 {
 	register pid;
-	int status;
+	int fd, status;
 
 	pid = fork();
 	if (pid == 0) {
-		(void) open(ctty, O_RDONLY);
-		dup2(0, 1);
-		dup2(0, 2);
+		signal(SIGTSTP, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
+		if ((fd = open(ctty, O_RDWR)) < 0)
+			syslog(LOG_ERR, "open %s: %m", ctty);
+		else {
+			dup2(fd, 0);
+			dup2(fd, 1);
+			dup2(fd, 2);
+			if (fd > 2)
+				close(fd);
+		}
 		if (setsid() < 0)
 			syslog(LOG_ERR, "setsid failed (runcom) %m");
 		if (ioctl(0, TIOCSCTTY, 0) < 0) 
