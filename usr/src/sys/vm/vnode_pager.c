@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.9 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.10 (Berkeley) %G%
  */
 
 /*

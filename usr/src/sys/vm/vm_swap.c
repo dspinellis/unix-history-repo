@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.21 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>

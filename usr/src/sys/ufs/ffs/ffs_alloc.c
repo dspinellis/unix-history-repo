@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.33 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
