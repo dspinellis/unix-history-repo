@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)valloc.3	4.1 (Berkeley) %G%
+.\"	@(#)valloc.3	5.1 (Berkeley) %G%
 .\"
-.TH VALLOC 3
+.TH VALLOC 3 "19 January 1983"
 .UC 3
 .SH NAME
 valloc \- aligned memory allocator
@@ -17,8 +17,7 @@ valloc \- aligned memory allocator
 .I Valloc
 allocates
 .I size
-bytes aligned on a boundary adequate for
-.IR vread (2)).
+bytes aligned on a page boundary.
 It is implemented by calling
 .IR malloc (3)
 with a slightly larger request, saving the true beginning of the block
