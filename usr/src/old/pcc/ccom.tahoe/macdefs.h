@@ -1,4 +1,4 @@
-/*	macdefs.h	1.6	88/04/24	*/
+/*	macdefs.h	1.7	88/05/31	*/
 
 #ifndef _MACDEFS_
 #define _MACDEFS_
@@ -77,7 +77,6 @@ typedef	long	OFFSZ;		/* size in which offsets are kept */
 #define aobeg()
 #define aocode(p)
 #define aoend()
-#define deflab(m)	if (!nerrors) printf("L%d:\n", m); else
 
 #define	PRTDCON			/* use machine-specific prtdcon routine */
 extern	prtdcon();
