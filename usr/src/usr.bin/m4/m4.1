@@ -16,22 +16,20 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)m4.1	6.2 (Berkeley) %G%
+.\"	@(#)m4.1	6.3 (Berkeley) %G%
 .\"
 .TH M4 1 "August 28, 1989"
 .DA 08 Jan 1986
 .SH NAME
-pd m4 \- macro processor
-.SH ORIGIN
-MetaSystems
+m4 \- macro processor
 .SH SYNOPSIS
 .BI m4 "[ options ]"
 .SH DESCRIPTION
-.I Pd M4
-is a un*x M4 look-alike macro processor
+.I M4
+is a macro processor
 intended as a front end for Ratfor, Pascal, and other languages that do not
 have a built-in macro processing capability.
-Pd M4 reads standard input, the processed text is written on the standard output.
+M4 reads standard input, the processed text is written on the standard output.
 .PP
 The options and their effects are as follows:
 .TP
@@ -84,7 +82,7 @@ After argument collection,
 the value of the macro is pushed back onto the input stream
 and rescanned.
 .PP
-.I Pd M4
+.I M4
 makes available the following built-in macros.
 They may be redefined, but once this is done the original meaning is lost.
 Their values are null unless otherwise stated.
@@ -128,11 +126,6 @@ exposing the previous one if any.
 if the first argument is defined, the value is the second argument, 
 otherwise the third.
 If there is no third argument, the value is null.
-A word indicating the current operating system is predefined.
-(e.g.
-.I unix
-or
-.IR vms )
 .MC shift "(arg, arg, arg, ...)"
 returns all but its first argument.
 The other arguments are quoted and pushed back with
@@ -278,19 +271,13 @@ for the named items, or for all if no arguments are given.
 .SH AUTHOR
 Ozan S. Yigit (oz)
 .SH BUGS
-Pd M4 is distributed at the source level, and does not require an expensive
-license agreement.
-.PP
 A sufficiently complex M4 macro set is about as readable
 as
 .BR APL .
 .PP
 All complex uses of M4 require the ability to program in deep recursion.
 Previous lisp experience is recommended.
-.PP
-Pd M4 is slower than V7 M4.
 .SH EXAMPLES
-.PP
 The following macro program illustrates the type of things that
 can be done with M4. 
 .PP
@@ -348,11 +335,10 @@ cannot be used with
 since 
 .B eval
 does not handle character constants.)
-
 .SH SEE ALSO
 cc(1),
-m4(1),
 cpp(1).
+m4(1),
 .I "The M4 Macro Processor\^"
 by B. W. Kernighan and D. M. Ritchie.
 
