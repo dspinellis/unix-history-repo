@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.7	83/03/28	*/
+/*	mkioconf.c	2.8	83/06/11	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -94,10 +94,10 @@ vax_ioconf()
 			if (np == 0 || np == TO_NEXUS ||
 			    !eq(np->d_name, "mba"))
 				continue;
-			fprintf(fp,
-			    "\t{ &%sdriver, %s,  %2d,    %s },\n",
-			    mp->d_name, qu(mp->d_unit), dp->d_unit,
-			    qu(dp->d_slave));
+			fprintf(fp, "\t{ &%sdriver, %s",
+			    mp->d_name, qu(mp->d_unit));
+			fprintf(fp, ",  %2d,    %s },\n",
+			    dp->d_unit, qu(dp->d_slave));
 		}
 		fprintf(fp, "\t0\n};\n\n");
 	}
