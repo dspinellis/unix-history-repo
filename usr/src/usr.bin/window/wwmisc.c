@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwmisc.c	3.9 %G%";
+static char sccsid[] = "@(#)wwmisc.c	3.10 %G%";
 #endif
 
 /*
@@ -33,5 +33,5 @@ register struct ww *w;
 
 wwbell()
 {
-	ttputc(ctrl(g));
+	ttputc(ctrl('g'));
 }
