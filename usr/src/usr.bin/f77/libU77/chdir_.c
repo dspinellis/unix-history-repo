@@ -1,5 +1,5 @@
 /*
-char id_chdir[] = "@(#)chdir_.c	1.1";
+char id_chdir[] = "@(#)chdir_.c	1.2";
  *
  * change default directory
  *
@@ -19,9 +19,9 @@ long dnamlen;
 {
 	char buf[128];
 
-	g_char(dname, dnamlen, buf);
-	if (buf[0] == '\0')
+	if (dnamlen >= sizeof buf)
 		return((long)(errno=F_ERARG));
+	g_char(dname, dnamlen, buf);
 	if (chdir(buf) != 0)
 		return((long)errno);
 	return(0L);
