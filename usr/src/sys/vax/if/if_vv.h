@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vv.h	7.2 (Berkeley) %G%
+ *	@(#)if_vv.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -60,6 +60,7 @@ struct vv_header {
 #define RING_XNS	14
 #define	RING_DIAGNOSTICS 15	/* protocol type for testing */
 #define	RING_ECHO	16
+#define RING_8022	23
 
 #ifdef NEW_BROADCAST
 #define	VV_BROADCAST	0xff	/* hardware-defined broadcast address */
