@@ -1,6 +1,4 @@
-/*	dinode.h	4.13	82/07/16	*/
-
-/*	inode.h	2.1	3/25/82	*/
+/*	dinode.h	4.14	82/08/10	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -15,9 +13,11 @@
 
 struct inode {
 	struct	inode *i_chain[2];	/* must be first */
-	char	i_flag;
+	u_short	i_flag;
 	u_short	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
+	u_short	i_rdlockc;	/* count of locked readers on inode */
+	u_short	i_wrlockc;	/* count of locked writers on inode */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
@@ -98,13 +98,16 @@ struct	inode *namei();
 #endif
 
 /* flags */
-#define	ILOCK	01		/* inode is locked */
-#define	IUPD	02		/* file has been modified */
-#define	IACC	04		/* inode access time to be updated */
-#define	IMOUNT	010		/* inode is mounted on */
-#define	IWANT	020		/* some process waiting on lock */
-#define	ITEXT	040		/* inode is pure text prototype */
-#define	ICHG	0100		/* inode has been changed */
+#define	ILOCK		0x1		/* inode is locked */
+#define	IUPD		0x2		/* file has been modified */
+#define	IACC		0x4		/* inode access time to be updated */
+#define	IMOUNT		0x8		/* inode is mounted on */
+#define	IWANT		0x10		/* some process waiting on lock */
+#define	ITEXT		0x20		/* inode is pure text prototype */
+#define	ICHG		0x40		/* inode has been changed */
+#define	IRDLOCK		0x80		/* file is read locked */
+#define	IWRLOCK		0x100		/* file is write locked */
+#define	ILWAIT		0x200		/* someone waiting on file lock */
 
 /* modes */
 #define	IFMT		0170000		/* type of file */
