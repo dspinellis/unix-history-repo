@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.10 92/06/18
  *
- *	@(#)machdep.c	7.6 (Berkeley) %G%
+ *	@(#)machdep.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -49,15 +49,17 @@ bcmp(s1, s2, len)
 int userom;
 #endif
 
+struct trapframe {
+	int dregs[8];
+	int aregs[8];
+	int whoknows;
+	short sr;
+	int pc;
+	short frame;
+};
+
 trap(fp)
-	struct frame {
-		int dregs[8];
-		int aregs[8];
-		int whoknows;
-		short sr;
-		int pc;
-		short frame;
-	} *fp;
+	struct trapframe *fp;
 {
 	static int intrap = 0;
 
