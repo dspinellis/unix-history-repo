@@ -289,6 +289,7 @@
 
 # define	YES		1
 # define	NO		0
+#undef CTRL
 # define	CTRL(x)		(x ^ 0100)
 # define	BACKSPACE	(CTRL('H'))
 # define	CHK(val, dft)	(val<=0 ? dft : val)
