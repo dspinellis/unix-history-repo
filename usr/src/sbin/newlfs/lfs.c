@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -598,10 +598,8 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	dip->di_blocks = nblocks << lfsp->lfs_fsbtodb;
 
 	dip->di_size = (nblocks << lfsp->lfs_bshift);
-	dip->di_atime.ts_sec = dip->di_mtime.ts_sec =
-	    dip->di_ctime.ts_sec = lfsp->lfs_tstamp;
-	dip->di_atime.ts_nsec = dip->di_mtime.ts_nsec =
-	    dip->di_ctime.ts_nsec = 0;
+	dip->di_atime = dip->di_mtime = dip->di_ctime = lfsp->lfs_tstamp;
+	dip->di_atimensec = dip->di_mtimensec = dip->di_ctimensec = 0;
 	dip->di_inumber = ino;
 
 #define	SEGERR \
