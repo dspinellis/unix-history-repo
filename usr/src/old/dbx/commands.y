@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.9 %G%";
+static char sccsid[] = "@(#)commands.y 1.10 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -71,6 +71,7 @@ private String curformat = "X";
 %type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    alias_command list_command line_number
+%type <y_node>	    search_command pattern
 %type <y_cmdlist>   actions
 %type <y_list>      sourcepath
 
@@ -307,7 +308,33 @@ command:
 	    sourcepath = $3;
 	}
 }
+|
+    search_command
+{
+	$$ = $1;
+}
 ;
+
+
+search_command:
+    '/' pattern
+{
+	$$ = build(O_SEARCH, build(O_LCON, 1), $2);
+}
+|
+    '?' pattern
+{
+	$$ = build(O_SEARCH, build(O_LCON, 0), $2);
+}
+;
+
+pattern:
+    STRING
+{
+	$$ = build(O_SCON, $1);
+}
+;
+
 runcommand:
     run { arginit(); } arglist
 |
