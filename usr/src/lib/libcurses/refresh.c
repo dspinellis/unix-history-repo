@@ -2,16 +2,20 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.1
+ * %G% (Berkeley) @(#)refresh.c	1.2
  */
 
 # include	"curses.ext"
 
-# ifndef DEBUG
-static short	ly, lx;
+# ifdef DEBUG
+# define	STATIC
 # else
-short		ly, lx;
+# define	STATIC	static
 # endif
+
+STATIC short	ly, lx;
+
+STATIC bool	curwin;
 
 WINDOW	*_win = NULL;
 
@@ -19,6 +23,7 @@ wrefresh(win)
 reg WINDOW	*win;
 {
 	reg short	wy;
+	reg int		retval;
 
 	/*
 	 * make sure were in visual state
@@ -28,12 +33,25 @@ reg WINDOW	*win;
 		_puts(TI);
 		_endwin = FALSE;
 	}
-	if (win->_clear || curscr->_clear) {
+
+	/*
+	 * initialize loop parameters
+	 */
+
+	ly = curscr->_cury;
+	lx = curscr->_curx;
+	wy = 0;
+	_win = win;
+	curwin = (win == curscr);
+
+	if (win->_clear || curscr->_clear || curwin) {
 		if ((win->_flags & _FULLWIN) || curscr->_clear) {
 			_puts(CL);
-			curscr->_curx = curscr->_cury = 0;
-			curscr->_clear = FALSE;
-			werase(curscr);
+			if (!curwin) {
+				curscr->_curx = curscr->_cury = 0;
+				curscr->_clear = FALSE;
+				werase(curscr);
+			}
 			touchwin(win);
 		}
 		win->_clear = FALSE;
@@ -41,15 +59,13 @@ reg WINDOW	*win;
 	if (!CA) {
 		if (win->_curx != 0)
 			putchar('\n');
-		werase(curscr);
+		if (!curwin)
+			werase(curscr);
 	}
 # ifdef DEBUG
+	fprintf(outf, "REFRESH(%0.2o): curwin = %d\n", win, curwin);
 	fprintf(outf, "REFRESH:\n\tfirstch\tlastch\n");
 # endif
-	ly = curscr->_cury;
-	lx = curscr->_curx;
-	wy = 0;
-	_win = win;
 	for (wy = 0; wy < win->_maxy; wy++) {
 # ifdef DEBUG
 		fprintf(outf, "%d\t%d\t%d\n", wy, win->_firstch[wy], win->_lastch[wy]);
@@ -77,17 +93,17 @@ reg WINDOW	*win;
 		curscr->_cury = win->_cury + win->_begy;
 		curscr->_curx = win->_curx + win->_begx;
 	}
+	retval = OK;
+ret:
 	_win = NULL;
 	fflush(stdout);
-	return OK;
+	return retval;
 }
 
 /*
  * make a change on the screen
  */
-# ifndef DEBUG
-static
-# endif
+STATIC
 makech(win, wy)
 reg WINDOW	*win;
 short		wy;
@@ -99,15 +115,21 @@ short		wy;
 	wx = win->_firstch[wy];
 	y = wy + win->_begy;
 	lch = win->_lastch[wy];
-	csp = &curscr->_y[wy + win->_begy][wx + win->_begx];
+	if (curwin)
+		csp = " ";
+	else
+		csp = &curscr->_y[wy + win->_begy][wx + win->_begx];
 	nsp = &win->_y[wy][wx];
-	if (CE) {
+	if (CE && !curwin) {
 		for (ce = &win->_y[wy][win->_maxx - 1]; *ce == ' '; ce--)
 			if (ce <= win->_y[wy])
 				break;
 		nlsp = ce - win->_y[wy];
 	}
-	ce = CE;
+	if (!curwin)
+		ce = CE;
+	else
+		ce = NULL;
 	while (wx <= lch) {
 		if (*nsp != *csp) {
 			mvcur(ly, lx, y, wx + win->_begx);
@@ -117,7 +139,7 @@ short		wy;
 			ly = y;
 			lx = wx + win->_begx;
 			while (*nsp != *csp && wx <= lch) {
-				if (ce && wx >= nlsp && *nsp == ' ') {
+				if (ce != NULL && wx >= nlsp && *nsp == ' ') {
 					/*
 					 * check for clear to end-of-line
 					 */
@@ -157,25 +179,31 @@ short		wy;
 				}
 				wx++;
 				if (wx >= win->_maxx && wy == win->_maxy)
-						if (win->_scroll) {
-						    if ((win->_flags&(_ENDLINE|_STANDOUT)) == (_ENDLINE|_STANDOUT))
-							if (!MS) {
-								_puts(SE);
-								win->_flags &= ~_STANDOUT;
-							}
-						    putchar((*csp = *nsp) & 0177);
-						    scroll(win);
-						    if (win->_flags&_FULLWIN)
-							scroll(curscr);
-						    ly = win->_begy+win->_cury;
-						    lx = win->_begx+win->_curx;
-						    return OK;
+					if (win->_scroll) {
+					    if ((win->_flags&(_ENDLINE|_STANDOUT)) == (_ENDLINE|_STANDOUT))
+						if (!MS) {
+							_puts(SE);
+							win->_flags &= ~_STANDOUT;
 						}
-						else if (win->_flags&_SCROLLWIN) {
-						    lx = --wx;
-						    return ERR;
-						}
-				putchar((*csp++ = *nsp) & 0177);
+					    if (!curwin)
+						putchar((*csp = *nsp) & 0177);
+					    else
+						putchar(*nsp & 0177);
+					    scroll(win);
+					    if (win->_flags&_FULLWIN && !curwin)
+						scroll(curscr);
+					    ly = win->_begy+win->_cury;
+					    lx = win->_begx+win->_curx;
+					    return OK;
+					}
+					else if (win->_flags&_SCROLLWIN) {
+					    lx = --wx;
+					    return ERR;
+					}
+				if (!curwin)
+					putchar((*csp++ = *nsp) & 0177);
+				else
+					putchar(*nsp & 0177);
 				if (UC && (*nsp & _STANDOUT)) {
 					putchar('\b');
 					_puts(UC);
@@ -191,7 +219,9 @@ short		wy;
 		}
 		else if (wx < lch)
 			while (*nsp == *csp) {
-				nsp++, csp++;
+				nsp++;
+				if (!curwin)
+					csp++;
 				++wx;
 			}
 		else
