@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.20	82/04/24	*/
+/*	uipc_proto.c	4.21	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -33,11 +33,13 @@ int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
 int	rip_input(),rip_output();
 
 /*
- * IMP protocol family: raw interface
+ * IMP protocol family: raw interface.
+ * Using the raw interface entry to get the timer routine
+ * in is a kludge.
  */
 #include "imp.h"
 #if NIMP > 0
-int	rimp_output();
+int	rimp_output(), hostslowtimo();
 #endif
 
 /*
@@ -109,7 +111,7 @@ struct protosw protosw[] = {
 { SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
   0,		rimp_output,	0,		0,
   raw_usrreq,
-  0,		0,		0,		0,
+  0,		0,		hostslowtimo,	0,
 }
 #endif
 #if NPUP > 0
