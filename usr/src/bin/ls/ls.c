@@ -15,19 +15,22 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.75 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+
 #include <dirent.h>
-#include <unistd.h>
+#include <err.h>
+#include <errno.h>
 #include <fts.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <stdio.h>
+#include <unistd.h>
+
 #include "ls.h"
 #include "extern.h"
 
@@ -251,7 +254,7 @@ traverse(argc, argv, options)
 
 	if ((ftsp =
 	    fts_open(argv, options, f_nosort ? NULL : mastercmp)) == NULL)
-		err(1, "%s", strerror(errno));
+		err(1, NULL);
 
 	display(NULL, fts_children(ftsp, 0));
 	if (f_listdir)
@@ -266,12 +269,11 @@ traverse(argc, argv, options)
 	while (p = fts_read(ftsp))
 		switch(p->fts_info) {
 		case FTS_DC:
-			err(0, "%s: directory causes a cycle", p->fts_name);
+			warnx("%s: directory causes a cycle", p->fts_name);
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
-			err(0, "%s: %s",
-			    p->fts_name, strerror(p->fts_errno));
+			warn("%s", p->fts_name);
 			break;
 		case FTS_D:
 			if (p->fts_level != FTS_ROOTLEVEL &&
@@ -338,8 +340,7 @@ display(p, list)
 	maxsize = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
-			err(0, "%s: %s",
-			    cur->fts_name, strerror(cur->fts_errno));
+			warn("%s", cur->fts_name);
 			cur->fts_number = NO_PRINT;
 			continue;
 		}
@@ -394,7 +395,7 @@ display(p, list)
 
 				if ((np = malloc(sizeof(NAMES) +
 				    ulen + glen + flen + 3)) == NULL)
-					err(1, "%s", strerror(errno));
+					err(1, NULL);
 
 				np->user = &np->data[0];
 				(void)strcpy(np->user, user);
