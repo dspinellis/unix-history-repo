@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.6 (Berkeley) %G%
+ *	@(#)dca.c	7.7 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -132,7 +132,7 @@ dcaopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	int error;
+	int error = 0;
  
 	unit = UNIT(dev);
 	if (unit >= NDCA || (dca_active & (1 << unit)) == 0)
