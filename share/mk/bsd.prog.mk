@@ -37,6 +37,10 @@ LIBTELNET?=	/usr/lib/libtelnet.a
 LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
 
+.if defined(NOSHARED)
+LDFLAGS+= -static
+.endif
+
 .if defined(SHAREDSTRINGS)
 CLEANFILES+=strings
 .c.o:
