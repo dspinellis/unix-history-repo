@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)makedefs.c 5.2 %G%";
+static char sccsid[] = "@(#)makedefs.c 5.3 %G%";
 
 static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
 
@@ -106,12 +106,18 @@ String s;
     i = rindex(buf, '/');
     if (i == nil) {
 	i = buf;
+    } else {
+	++i;
     }
-    for (j = i; *j != '.'; j++);
-    *j++ = '_';
-    *j++ = 'h';
-    *j = '\0';
-    return buf;
+    for (j = i; *j; j++) {
+	if (*j == '.') {
+	    *j = '_';
+	}
+    }
+    if (j > i && *--j == 'c') {
+	*j = 'h';
+    }
+    return i;
 }
 
 copy()
