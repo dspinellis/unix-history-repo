@@ -15,23 +15,24 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
+
 #include <db.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <time.h>
 #include <ttyent.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifdef __STDC__
 #include <stdarg.h>
@@ -92,7 +93,7 @@ state_t requested_transition = runcom;
 
 void setctty __P((char *));
 
-typedef struct session {
+typedef struct init_session {
 	int	se_index;		/* index of entry in ttys file */
 	pid_t	se_process;		/* controlling process */
 	time_t	se_started;		/* used to avoid thrashing */
@@ -103,8 +104,8 @@ typedef struct session {
 	char	**se_getty_argv;	/* pre-parsed argument array */
 	char	*se_window;		/* window system (started only once) */
 	char	**se_window_argv;	/* pre-parsed argument array */
-	struct	session *se_prev;
-	struct	session *se_next;
+	struct	init_session *se_prev;
+	struct	init_session *se_next;
 } session_t;
 
 void free_session __P((session_t *));
