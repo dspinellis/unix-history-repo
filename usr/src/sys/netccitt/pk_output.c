@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.9 (Berkeley) %G%
+ *	@(#)pk_output.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -86,6 +86,8 @@ register struct pklcd *lcp;
 
 		case DATA + DATA_TRANSFER: 
 			PS(xp) = lcp -> lcd_ssn;
+			lcp -> lcd_input_window =
+				(lcp -> lcd_rsn + 1) % MODULUS;
 			PR(xp) = lcp -> lcd_input_window;
 			lcp -> lcd_last_transmitted_pr = lcp -> lcd_input_window;
 			lcp -> lcd_ssn = (lcp -> lcd_ssn + 1) % MODULUS;
@@ -104,12 +106,9 @@ register struct pklcd *lcp;
 			break;
 
 		case RR + DATA_TRANSFER: 
-			lcp -> lcd_input_window = (lcp -> lcd_input_window + 1) % MODULUS;
-			PR(xp) = lcp -> lcd_input_window;
-			lcp -> lcd_last_transmitted_pr = lcp -> lcd_input_window;
-			break;
-
 		case RNR + DATA_TRANSFER: 
+			lcp -> lcd_input_window =
+				(lcp -> lcd_rsn + 1) % MODULUS;
 			PR(xp) = lcp -> lcd_input_window;
 			lcp -> lcd_last_transmitted_pr = lcp -> lcd_input_window;
 			break;
