@@ -6,13 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<curses.h>
 # include	<ctype.h>
 # include	<signal.h>
+# if __STDC__
 # include	<stdarg.h>
+# else
+# include	<varargs.h>
+# endif
 # include	"deck.h"
 # include	"cribbage.h"
 # include	"cribcur.h"
@@ -348,12 +352,21 @@ int		Mpos = 0;
 static int	Newpos = 0;
 
 /* VARARGS1 */
-msg(fmt)
+#if __STDC__
+msg(char *fmt, ...)
+#else
+msg(fmt, va_alist)
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 
+#if __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	(void)vsprintf(&Msgbuf[Newpos], fmt, ap);
 	va_end(ap);
 	endmsg();
@@ -364,12 +377,21 @@ msg(fmt)
  *	Add things to the current message
  */
 /* VARARGS1 */
-addmsg(fmt)
+#if __STDC__
+addmsg(char *fmt, ...)
+#else
+addmsg(fmt, va_alist)
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 
+#if __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	(void)vsprintf(&Msgbuf[Newpos], fmt, ap);
 	va_end(ap);
 }
