@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tip.h	5.1 (Berkeley) %G%
+ *	@(#)tip.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -213,6 +213,8 @@ int	AC;			/* open file descriptor to dialer (v831 only) */
 int	vflag;			/* print .tiprc initialization sequence */
 int	sfd;			/* for ~< operation */
 int	pid;			/* pid of tipout */
+uid_t	uid, euid;		/* real and effective user id's */
+gid_t	gid, egid;		/* real and effective group id's */
 int	stop;			/* stop transfer session flag */
 int	quit;			/* same; but on other end */
 int	intflag;		/* recognized interrupt */
