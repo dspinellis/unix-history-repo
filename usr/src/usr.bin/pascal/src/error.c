@@ -1,10 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
+#ifndef lint
 static char sccsid[] = "@(#)error.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #ifndef PI1
+#include "tree_ty.h"		/* must be included for yy.h */
 #include "yy.h"
 #endif
 
@@ -46,7 +49,7 @@ panic(s)
  * a line number.
  */
 
-/*VARARGS*/
+/*VARARGS1*/
 
 error(a1, a2, a3, a4, a5)
 	register char *a1;
@@ -58,8 +61,8 @@ error(a1, a2, a3, a4, a5)
 		errpfx = 'E';
 		return;
 	}
-	Enocascade = 0;
-	geterr(a1, errbuf);
+	Enocascade = FALSE;
+	geterr((int) a1, errbuf);
 	a1 = errbuf;
 	if (line < 0)
 		line = -line;
@@ -86,14 +89,15 @@ error(a1, a2, a3, a4, a5)
 #endif
 	errpfx = 'E';
 	if (Eholdnl)
-		Eholdnl = 0;
+		Eholdnl = FALSE;
 	else
 		pchr( '\n' );
 }
 
-/*VARAGRS*/
+/*VARARGS1*/
 
 cerror(a1, a2, a3, a4, a5)
+    char *a1;
 {
 
 	if (Enocascade)
@@ -107,6 +111,7 @@ cerror(a1, a2, a3, a4, a5)
 /*VARARGS*/
 
 derror(a1, a2, a3, a4, a5)
+    char *a1, *a2, *a3, *a4, *a5;
 {
 
 	if (!holdderr)
