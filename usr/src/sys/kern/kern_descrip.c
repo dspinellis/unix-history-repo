@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.17 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "socketvar.h"
 #include "stat.h"
 #include "ioctl.h"
+#include "fcntl.h"
 #include "malloc.h"
 #include "syslog.h"
 
@@ -136,7 +137,9 @@ fcntl(p, uap, retval)
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register char *pop;
-	int i, error;
+	struct vnode *vp;
+	int i, error, flags = F_POSIX;
+	struct flock fl;
 
 	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
 	    (fp = OFILE(fdp, uap->fdes)) == NULL)
@@ -182,6 +185,51 @@ fcntl(p, uap, retval)
 
 	case F_SETOWN:
 		return (fsetown(fp, uap->arg));
+
+	case F_SETLKW:
+		flags |= F_WAIT;
+		/* Fall into F_SETLK */
+
+	case F_SETLK:
+		if (fp->f_type != DTYPE_VNODE)
+			return (EBADF);
+		vp = (struct vnode *)fp->f_data;
+		/* Copy in the lock structure */
+		error = copyin((caddr_t)uap->arg, (caddr_t)&fl, sizeof (fl));
+		if (error)
+			return (error);
+		if (fl.l_whence == SEEK_CUR)
+			fl.l_start += fp->f_offset;
+		switch (fl.l_type) {
+
+		case F_RDLCK:
+			if ((fp->f_flag & FREAD) == 0)
+				return (EBADF);
+			return (VOP_ADVLOCK(vp, p, F_SETLK, &fl, flags));
+
+		case F_WRLCK:
+			if ((fp->f_flag & FWRITE) == 0)
+				return (EBADF);
+			return (VOP_ADVLOCK(vp, p, F_SETLK, &fl, flags));
+
+		case F_UNLCK:
+			return (VOP_ADVLOCK(vp, p, F_UNLCK, &fl, F_POSIX));
+
+		default:
+			return (EINVAL);
+		}
+
+	case F_GETLK:
+		if (fp->f_type != DTYPE_VNODE)
+			return (EBADF);
+		vp = (struct vnode *)fp->f_data;
+		/* Copy in the lock structure */
+		error = copyin((caddr_t)uap->arg, (caddr_t)&fl, sizeof (fl));
+		if (error)
+			return (error);
+		if (error = VOP_ADVLOCK(vp, p, F_GETLK, &fl, F_POSIX))
+			return (error);
+		return (copyout((caddr_t)&fl, (caddr_t)uap->arg, sizeof (fl)));
 
 	default:
 		return (EINVAL);
@@ -504,16 +552,35 @@ fdrele(fdp)
 closef(fp)
 	register struct file *fp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
+	struct vnode *vp;
+	struct flock lf;
 	int error;
 
 	if (fp == NULL)
 		return (0);
+	/*
+	 * POSIX record locking dictates that any close releases ALL
+	 * locks owned by this process.  This is handled by setting
+	 * a flag in the unlock to free ONLY locks obeying POSIX
+	 * semantics, and not to free BSD-style file locks.
+	 */
+	if (fp->f_type == DTYPE_VNODE) {
+		lf.l_whence = SEEK_SET;
+		lf.l_start = 0;
+		lf.l_len = 0;
+		lf.l_type = F_UNLCK;
+		vp = (struct vnode *)fp->f_data;
+		(void) VOP_ADVLOCK(vp, p, F_UNLCK, &lf, F_POSIX);
+	}
 	if (fp->f_count > 1) {
 		fp->f_count--;
 		return (0);
 	}
 	if (fp->f_count < 1)
 		panic("closef: count < 1");
+	if (fp->f_type == DTYPE_VNODE)
+		(void) VOP_ADVLOCK(vp, fp, F_UNLCK, &lf, F_FLOCK);
 	error = (*fp->f_ops->fo_close)(fp);
 	crfree(fp->f_cred);
 	fp->f_count = 0;
@@ -522,7 +589,11 @@ closef(fp)
 
 /*
  * Apply an advisory lock on a file descriptor.
+ *
+ * Just attempt to get a record lock of the requested type on
+ * the entire file (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
+
 /* ARGSUSED */
 flock(p, uap, retval)
 	struct proc *p;
@@ -534,25 +605,32 @@ flock(p, uap, retval)
 {
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
+	struct vnode *vp;
+	struct flock lf;
+	int error;
 
 	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
 	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EOPNOTSUPP);
+	vp = (struct vnode *)fp->f_data;
+	lf.l_whence = SEEK_SET;
+	lf.l_start = 0;
+	lf.l_len = 0;
 	if (uap->how & LOCK_UN) {
-		vn_unlock(fp, FSHLOCK|FEXLOCK);
-		return (0);
+		lf.l_type = F_UNLCK;
+		return (VOP_ADVLOCK(vp, fp, F_UNLCK, &lf, F_FLOCK));
 	}
-	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
-		return (0);				/* error? */
 	if (uap->how & LOCK_EX)
-		uap->how &= ~LOCK_SH;
-	/* avoid work... */
-	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
-	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
-		return (0);
-	return (vn_lock(fp, uap->how));
+		lf.l_type = F_WRLCK;
+	else if (uap->how & LOCK_SH)
+		lf.l_type = F_RDLCK;
+	else
+		return (EBADF);
+	if (uap->how & LOCK_NB)
+		return (VOP_ADVLOCK(vp, fp, F_SETLK, &lf, F_FLOCK));
+	return (VOP_ADVLOCK(vp, fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
 }
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.25 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -349,127 +349,15 @@ vn_close(fp)
 	struct vnode *vp = ((struct vnode *)fp->f_data);
 	int error;
 
-	if (fp->f_flag & (FSHLOCK|FEXLOCK))
-		vn_unlock(fp, FSHLOCK|FEXLOCK);
 	/*
 	 * Must delete vnode reference from this file entry
 	 * before VOP_CLOSE, so that only other references
 	 * will prevent close.
 	 */
 	fp->f_data = (caddr_t) 0;
-	error = VOP_CLOSE(vp, fp->f_flag, u.u_cred);
+	error = VOP_CLOSE(vp, fp->f_flag, fp->f_cred);
 	vrele(vp);
 	return (error);
-}
-
-/*
- * Place an advisory lock on a vnode.
- * !! THIS IMPLIES THAT ALL STATEFUL FILE SERVERS WILL USE file table entries
- */
-vn_lock(fp, cmd)
-	register struct file *fp;
-	int cmd;
-{
-	register int priority = PLOCK;
-	register struct vnode *vp = (struct vnode *)fp->f_data;
-	int error = 0;
-	static char lockstr[] = "flock";
-
-	if ((cmd & LOCK_EX) == 0)
-		priority += 4;
-	priority |= PCATCH;
-
-	/*
-	 * If there's a exclusive lock currently applied
-	 * to the file, then we've gotta wait for the
-	 * lock with everyone else.
-	 */
-again:
-	while (vp->v_flag & VEXLOCK) {
-		/*
-		 * If we're holding an exclusive
-		 * lock, then release it.
-		 */
-		if (fp->f_flag & FEXLOCK) {
-			vn_unlock(fp, FEXLOCK);
-			continue;
-		}
-		if (cmd & LOCK_NB)
-			return (EWOULDBLOCK);
-		vp->v_flag |= VLWAIT;
-		if (error = tsleep((caddr_t)&vp->v_exlockc, priority,
-		    lockstr, 0))
-			return (error);
-	}
-	if (error == 0 && (cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
-		/*
-		 * Must wait for any shared locks to finish
-		 * before we try to apply a exclusive lock.
-		 *
-		 * If we're holding a shared
-		 * lock, then release it.
-		 */
-		if (fp->f_flag & FSHLOCK) {
-			vn_unlock(fp, FSHLOCK);
-			goto again;
-		}
-		if (cmd & LOCK_NB)
-			return (EWOULDBLOCK);
-		vp->v_flag |= VLWAIT;
-		if (error = tsleep((caddr_t)&vp->v_shlockc, PLOCK | PCATCH,
-		    lockstr, 0))
-			return (error);
-	}
-	if (fp->f_flag & FEXLOCK)
-		panic("vn_lock");
-	if (cmd & LOCK_EX) {
-		cmd &= ~LOCK_SH;
-		vp->v_exlockc++;
-		vp->v_flag |= VEXLOCK;
-		fp->f_flag |= FEXLOCK;
-	}
-	if ((cmd & LOCK_SH) && (fp->f_flag & FSHLOCK) == 0) {
-		vp->v_shlockc++;
-		vp->v_flag |= VSHLOCK;
-		fp->f_flag |= FSHLOCK;
-	}
-	return (0);
-}
-
-/*
- * Unlock a file.
- */
-vn_unlock(fp, kind)
-	register struct file *fp;
-	int kind;
-{
-	register struct vnode *vp = (struct vnode *)fp->f_data;
-	int flags;
-
-	kind &= fp->f_flag;
-	if (vp == NULL || kind == 0)
-		return;
-	flags = vp->v_flag;
-	if (kind & FSHLOCK) {
-		if ((flags & VSHLOCK) == 0)
-			panic("vn_unlock: SHLOCK");
-		if (--vp->v_shlockc == 0) {
-			vp->v_flag &= ~VSHLOCK;
-			if (flags & VLWAIT)
-				wakeup((caddr_t)&vp->v_shlockc);
-		}
-		fp->f_flag &= ~FSHLOCK;
-	}
-	if (kind & FEXLOCK) {
-		if ((flags & VEXLOCK) == 0)
-			panic("vn_unlock: EXLOCK");
-		if (--vp->v_exlockc == 0) {
-			vp->v_flag &= ~(VEXLOCK|VLWAIT);
-			if (flags & VLWAIT)
-				wakeup((caddr_t)&vp->v_exlockc);
-		}
-		fp->f_flag &= ~FEXLOCK;
-	}
 }
 
 /*

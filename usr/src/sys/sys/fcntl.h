@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.7 (Berkeley) %G%
+ *	@(#)fcntl.h	5.8 (Berkeley) %G%
  */
 
 #ifndef F_DUPFD
@@ -30,6 +30,11 @@
 #define	F_RDLCK		1		/* shared or read lock */
 #define	F_UNLCK		2		/* unlock */
 #define	F_WRLCK		3		/* exclusive or write lock */
+#ifdef KERNEL
+#define	F_WAIT		0x010		/* Wait until lock is granted */
+#define	F_FLOCK		0x020	 	/* Use flock(2) semantics for lock */
+#define	F_POSIX		0x040	 	/* Use POSIX semantics for lock */
+#endif
 
 #ifndef _POSIX_SOURCE
 /* lock operations for flock(2) */
@@ -77,10 +82,20 @@
 /* mask for file access modes */
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
+/* file segment locking set data type - information passed to system by user */
+struct flock {
+	short	l_type;
+	short	l_whence;
+	size_t	l_start;
+	size_t	l_len;		/* len = 0 means until end of file */
+	short	l_sysid;
+	int	l_pid;		/* should be pid_t */
+};
+
 #ifndef KERNEL
 #if __STDC__ || c_plusplus
 #include <sys/types.h>
-extern int fcntl(int, int, int);
+extern int fcntl(int, int, ...);
 extern int creat(const char *, mode_t);
 extern int open(const char *, int, ...);
 #else

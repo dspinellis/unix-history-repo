@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.29 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,6 +43,7 @@ int	spec_lookup(),
 	spec_unlock(),
 	spec_close(),
 	spec_print(),
+	spec_advlock(),
 	spec_ebadf(),
 	spec_badop(),
 	spec_nullop();
@@ -80,6 +81,7 @@ struct vnodeops spec_vnodeops = {
 	spec_strategy,		/* strategy */
 	spec_print,		/* print */
 	spec_nullop,		/* islocked */
+	spec_advlock,		/* advlock */
 };
 
 /*
@@ -449,6 +451,20 @@ spec_print(vp)
 
 	printf("tag VT_NON, dev %d, %d\n", major(vp->v_rdev),
 		minor(vp->v_rdev));
+}
+
+/*
+ * Special device advisory byte-level locks.
+ */
+spec_advlock(vp, id, op, fl, flags)
+	struct vnode *vp;
+	caddr_t id;
+	int op;
+	struct flock *fl;
+	int flags;
+{
+
+	return (EOPNOTSUPP);
 }
 
 /*

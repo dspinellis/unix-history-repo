@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.20 (Berkeley) %G%
+ *	@(#)malloc.h	7.21 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -57,6 +57,7 @@
 #define	M_VMPAGER	36	/* XXX: VM pager struct */
 #define	M_VMPGDATA	37	/* XXX: VM pager private data */
 #define	M_FILE		38	/* Open file structure */
+#define	M_LOCKF		39	/* Byte-range locking structures */
 #define	M_TEMP		49	/* misc temporary data buffers */
 #define	M_LAST		50
 
@@ -100,7 +101,8 @@
 	"VM pager",	/* 36 M_VMPAGER */ \
 	"VM pgdata",	/* 37 M_VMPGDATA */ \
 	"open files",	/* 38 M_FILE */ \
-	0, 0, 0, 0, 0, \
+	"lockf",	/* 39 M_LOCKF */ \
+	0, 0, 0, 0, \
 	0, 0, 0, 0, 0, \
 	"temp",		/* 49 M_TEMP */ \
 }
