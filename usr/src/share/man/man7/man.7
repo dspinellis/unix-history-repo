@@ -1,6 +1,6 @@
-.\"	@(#)man.7	4.1 (Berkeley) %G%
+.\"	@(#)man.7	5.1 (Berkeley) %G%
 .\"
-.TH MAN 7 
+.TH MAN 7 "7 March 1983"
 .AT 3
 .SH NAME
 man \- macros to typeset manual
@@ -63,7 +63,7 @@ troff(1), man(1)
 .SH BUGS
 Relative indents don't nest.
 .SH REQUESTS
-.ta \w'.TH n c x 'u +\w'Cause 'u +\w'Argument\ 'u
+.ta \w'.TH n c x v m'u +\w'Cause 'u +\w'Argument\ 'u
 .di xx
 			\ka
 .br
@@ -162,12 +162,16 @@ Set prevailing indent to .5i for nested indents.
 is small.
 .ti0
 .li
-.TH \fIn c x\fR	yes	-	Begin page named
+.TH \fIn c x v m\fR	yes	-	Begin page named
 .I n
 of chapter
 .IR c;
 .I x
-is extra commentary, e.g. `local', for page foot.
+is extra commentary, e.g. `local', for page foot center;
+.I v
+alters page foot left, e.g. `4th Berkeley Distribution';
+.I m
+alters page head center, e.g. `Brand X Programmer's Manual'.
 Set prevailing indent and tabs to .5i.
 .ti0
 .li
