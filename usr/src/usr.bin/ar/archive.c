@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -189,7 +189,7 @@ put_arobj(cfp, sb)
 		 * a space, use extended format 1.
 		 */
 		lname = strlen(name);
-		if (options & AR_S) {
+		if (options & AR_TR) {
 			if (lname > OLDARMAXNAME) {
 				(void)fflush(stdout);
 				(void)fprintf(stderr,

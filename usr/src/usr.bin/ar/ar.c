@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ main(argc, argv)
 		argv[1] = p;
 	}
 
-	while ((c = getopt(argc, argv, "abcdilmopqrstuvx")) != EOF) {
+	while ((c = getopt(argc, argv, "abcdilmopqrTtuvx")) != EOF) {
 		switch(c) {
 		case 'a':
 			options |= AR_A;
@@ -105,8 +105,8 @@ main(argc, argv)
 			options |= AR_R;
 			fcall = replace;
 			break;
-		case 's':
-			options |= AR_S;
+		case 'T':
+			options |= AR_TR;
 			break;
 		case 't':
 			options |= AR_T;
@@ -151,26 +151,26 @@ main(argc, argv)
 		}
 		posname = rname(posarg);
 	}
-	/* -d only valid with -sv. */
-	if (options & AR_D && options & ~(AR_D|AR_S|AR_V))
+	/* -d only valid with -Tv. */
+	if (options & AR_D && options & ~(AR_D|AR_TR|AR_V))
 		badoptions("-d");
-	/* -m only valid with -abisv. */
-	if (options & AR_M && options & ~(AR_A|AR_B|AR_M|AR_S|AR_V))
+	/* -m only valid with -abiTv. */
+	if (options & AR_M && options & ~(AR_A|AR_B|AR_M|AR_TR|AR_V))
 		badoptions("-m");
-	/* -p only valid with -sv. */
-	if (options & AR_P && options & ~(AR_P|AR_S|AR_V))
+	/* -p only valid with -Tv. */
+	if (options & AR_P && options & ~(AR_P|AR_TR|AR_V))
 		badoptions("-p");
-	/* -q only valid with -csv. */
-	if (options & AR_Q && options & ~(AR_C|AR_Q|AR_S|AR_V))
+	/* -q only valid with -cTv. */
+	if (options & AR_Q && options & ~(AR_C|AR_Q|AR_TR|AR_V))
 		badoptions("-q");
-	/* -r only valid with -abcusv. */
-	if (options & AR_R && options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_S|AR_V))
+	/* -r only valid with -abcuTv. */
+	if (options & AR_R && options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_TR|AR_V))
 		badoptions("-r");
-	/* -t only valid with -sv. */
-	if (options & AR_T && options & ~(AR_T|AR_S|AR_V))
+	/* -t only valid with -Tv. */
+	if (options & AR_T && options & ~(AR_T|AR_TR|AR_V))
 		badoptions("-t");
-	/* -x only valid with -ousv. */
-	if (options & AR_X && options & ~(AR_O|AR_U|AR_S|AR_V|AR_X))
+	/* -x only valid with -ouTv. */
+	if (options & AR_X && options & ~(AR_O|AR_U|AR_TR|AR_V|AR_X))
 		badoptions("-x");
 
 	if (!(archive = *argv++)) {
@@ -199,14 +199,14 @@ badoptions(arg)
 static void
 usage()
 {
-	(void)fprintf(stderr, "usage:  ar -d [-sv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-sv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-abisv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -p [-sv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -q [-csv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-cusv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-abciusv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -t [-sv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -x [-ousv] archive [file ...]\n");
+	(void)fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n");
+	(void)fprintf(stderr, "\tar -m [-Tv] archive file ...\n");
+	(void)fprintf(stderr, "\tar -m [-abiTv] position archive file ...\n");
+	(void)fprintf(stderr, "\tar -p [-Tv] archive [file ...]\n");
+	(void)fprintf(stderr, "\tar -q [-cTv] archive file ...\n");
+	(void)fprintf(stderr, "\tar -r [-cuTv] archive file ...\n");
+	(void)fprintf(stderr, "\tar -r [-abciuTv] position archive file ...\n");
+	(void)fprintf(stderr, "\tar -t [-Tv] archive [file ...]\n");
+	(void)fprintf(stderr, "\tar -x [-ouTv] archive [file ...]\n");
 	exit(1);
 }	
