@@ -1,4 +1,4 @@
-/*	rk.c	4.3	81/03/22	*/
+/*	rk.c	4.4	81/07/25	*/
 
 /*
  * RK611/RK07
@@ -53,7 +53,7 @@ retry:
 	rkaddr->rkcyl = cn;
 	rkaddr->rkba = ubinfo;
 	rkaddr->rkwc = -(io->i_cc >> 1);
-	com = RK_CDT|((ubinfo>>16)&0x30)|RK_GO;
+	com = RK_CDT|((ubinfo>>8)&0x300)|RK_GO;
 	if (func == READ)
 		com |= RK_READ;
 	else
