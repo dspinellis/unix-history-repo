@@ -41,7 +41,7 @@
 .Sh SYNOPSIS
 .Fd #include <unistd.h>
 .Ft int
-.Fn execve "const char *path" "const * char *argv" "const * char *envp"
+.Fn execve "const char *path" "char *const *argv" "char *const *envp"
 .Sh DESCRIPTION
 .Fn Execve
 transforms the calling process into a new process.
@@ -135,7 +135,9 @@ of the new process image file.
 The real user ID, real group ID and
 supplementary group IDs of the new process image remain the same as the calling
 process image.
-In either case, the SUGID process flag bit is set, and remains set until
+In either case, the
+.Dv SUGID
+process flag bit is set, and remains set until
 cleared by another call to
 .Nm
 which does not execute a set-id executable.  This flag can be inspected
