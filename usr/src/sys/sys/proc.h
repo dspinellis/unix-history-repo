@@ -1,4 +1,4 @@
-/*	proc.h	4.10	82/01/30	*/
+/*	proc.h	4.11	82/07/16	*/
 
 /*
  * One structure allocated per active
@@ -49,6 +49,12 @@ struct	proc
 	short	p_ndx;		/* proc index for memall (because of vfork) */
 	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
 	struct	proc *p_pptr;	/* pointer to process structure of parent */
+	struct	proc *p_cptr;	/* pointer to youngest living child */
+	struct	proc *p_osptr;	/* pointer to older sibling processes */
+	struct	proc *p_ysptr;	/* pointer to younger siblings */
+	struct	quota *p_quota;	/* quotas for this process (MUSH) */
+	mmsgbuf	p_mb;		/* pending message */
+	int	p_msgflgs;	/* message flags */
 };
 
 #define	PIDHSZ		63
@@ -81,29 +87,30 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSTOP	6		/* process being traced */
 
 /* flag codes */
-#define	SLOAD	0x000001	/* in core */
-#define	SSYS	0x000002	/* swapper or pager process */
-#define	SLOCK	0x000004	/* process being swapped out */
-#define	SSWAP	0x000008	/* save area flag */
-#define	STRC	0x000010	/* process is being traced */
-#define	SWTED	0x000020	/* another tracing flag */
-#define	SULOCK	0x000040	/* user settable lock in core */
-#define	SPAGE	0x000080	/* process in page wait state */
-#define	SKEEP	0x000100	/* another flag to prevent swap out */
-#define	SDLYU	0x000200	/* delayed unlock of pages */
-#define	SWEXIT	0x000400	/* working on exiting */
-#define	SPHYSIO	0x000800	/* doing physical i/o (bio.c) */
-#define	SVFORK	0x001000	/* process resulted from vfork() */
-#define	SVFDONE	0x002000	/* another vfork flag */
-#define	SNOVM	0x004000	/* no vm, parent in a vfork() */
-#define	SPAGI	0x008000	/* init data space on demand, from inode */
-#define	SSEQL	0x010000	/* user warned of sequential vm behavior */
-#define	SUANOM	0x020000	/* user warned of random vm behavior */
-#define	STIMO	0x040000	/* timing out during sleep */
+#define	SLOAD	0x0000001	/* in core */
+#define	SSYS	0x0000002	/* swapper or pager process */
+#define	SLOCK	0x0000004	/* process being swapped out */
+#define	SSWAP	0x0000008	/* save area flag */
+#define	STRC	0x0000010	/* process is being traced */
+#define	SWTED	0x0000020	/* another tracing flag */
+#define	SULOCK	0x0000040	/* user settable lock in core */
+#define	SPAGE	0x0000080	/* process in page wait state */
+#define	SKEEP	0x0000100	/* another flag to prevent swap out */
+#define	SDLYU	0x0000200	/* delayed unlock of pages */
+#define	SWEXIT	0x0000400	/* working on exiting */
+#define	SPHYSIO	0x0000800	/* doing physical i/o (bio.c) */
+#define	SVFORK	0x0001000	/* process resulted from vfork() */
+#define	SVFDONE	0x0002000	/* another vfork flag */
+#define	SNOVM	0x0004000	/* no vm, parent in a vfork() */
+#define	SPAGI	0x0008000	/* init data space on demand, from inode */
+#define	SSEQL	0x0010000	/* user warned of sequential vm behavior */
+#define	SUANOM	0x0020000	/* user warned of random vm behavior */
+#define	STIMO	0x0040000	/* timing out during sleep */
 /* was SDETACH */
-#define	SNUSIG	0x100000	/* using new signal mechanism */
-#define	SOWEUPC	0x200000	/* owe process an addupc() call at next ast */
-#define	SSEL	0x400000	/* selecting; wakeup/waiting danger */
+#define	SNUSIG	0x0100000	/* using new signal mechanism */
+#define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
+#define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
+#define	SLOGIN	0x0800000	/* a login process (legit child of init) */
 
 /*
  * parallel proc structure
