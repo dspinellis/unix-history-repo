@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -268,7 +268,7 @@ sendrequest(cmd, local, remote)
 		}
 		if (c < 0)
 			perror(local);
-		if (errno)
+		else if (errno)
 			perror("netout");
 		break;
 
@@ -289,7 +289,7 @@ sendrequest(cmd, local, remote)
 		}
 		if (ferror(fin))
 			perror(local);
-		if (ferror(dout))
+		else if (ferror(dout))
 			perror("netout");
 		break;
 	}

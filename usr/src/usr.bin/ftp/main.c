@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -73,6 +73,7 @@ main(argc, argv)
 	strcpy(formname, "non-print"), form = FORM_N;
 	strcpy(modename, "stream"), mode = MODE_S;
 	strcpy(structname, "file"), stru = STRU_F;
+	strcpy(bytename, "8"), bytesize = 8;
 	if (fromatty)
 		verbose++;
 	if (argc > 0) {
