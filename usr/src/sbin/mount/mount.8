@@ -3,15 +3,14 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	8.2 (Berkeley) %G%
+.\"     @(#)mount.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
 .Os BSD 4
 .Sh NAME
-.Nm mount ,
-.Nm umount
-.Nd mount and dismount file systems
+.Nm mount
+.Nd mount file systems
 .Sh SYNOPSIS
 .Nm mount
 .Op Fl afrwu
@@ -24,14 +23,6 @@
 .Op Fl t Ar ufs | lfs | external_type
 .Op Fl o Ar options
 .Ar special node
-.Nm umount
-.Fl a
-.Op Fl f
-.Op Fl h Ar host
-.Op Fl t Ar ufs | lfs | external_type
-.Nm umount
-.Op Fl f
-.Ar special | node
 .Sh DESCRIPTION
 The
 .Nm mount
@@ -39,17 +30,14 @@ command
 calls the
 .Xr mount 2
 system call to prepare and graft a
-.Ar special
-device or the remote node
-(rhost:path)
-on to the file system tree at the point
-.Ar node.
+.Ar "special device"
+or the remote node (rhost:path) on to the file system tree at the point
+.Ar node .
 If either
 .Ar special
 or
 .Ar node
-are not provided, the appropriate
-information is taken from the
+are not provided, the appropriate information is taken from the
 .Xr fstab 5
 file.
 .Pp
@@ -58,9 +46,7 @@ If no arguments are given to
 .Nm mount,
 this list is printed.
 .Pp
-Options available for the
-.Nm mount
-command:
+The options are as follows:
 .Bl -tag -width indent
 .It Fl F
 The standard mount options are parsed and
@@ -122,8 +108,11 @@ The \fI-t\fP option can be used
 to indicate that the actions should only be taken on
 filesystems of the specified type.
 More than one type may be specified in a comma separated list.
-The list of filesystem types can be prefixed with ``no'' to
-specify the filesystem types on which no action should be taken.
+The list of filesystem types can be prefixed with
+.Dq no
+to specify the filesystem types for which action should
+.Em not
+be taken.
 For example, the
 .Nm mount
 command:
@@ -198,44 +187,6 @@ causes mount to attempt to execute:
 The options specific to NFS filesystems are described in the
 .Xr mount_nfs 8
 manual page.
-.Pp
-.Nm Umount
-removes the
-.Ar special
-device grafted at point
-.Ar node
-from file system tree.
-.Pp
-Options for the
-.Nm umount
-command:
-.Bl -tag -width indent
-.It Fl a
-All of the file systems described in
-.Xr fstab 5
-are unmounted.
-.It Fl f
-The file system is forcibly unmounted.
-Active special devices continue to work,
-but all other files return errors if further accesses are attempted.
-The root file system cannot be forcibly unmounted.
-.It Fl h Ar host
-Only filesystems mounted from the specified host will be
-unmounted.  This option is implies the
-.Fl a
-option and, unless otherwise specified with the
-.Fl t
-option, will only unmount NFS filesystems.
-.It Fl t Ar "ufs \\*(Ba lfs \\*(Ba external type"
-Is used to indicate the actions should only be taken on
-filesystems of the specified type.
-More than one type may be specified in a comma separated list.
-The list of filesystem types can be prefixed with ``no'' to
-specify the filesystem types on which no action should be taken.
-(See example above for the
-.Nm mount
-command.)
-.El
 .Sh FILES
 .Bl -tag -width /etc/fstab -compact
 .It Pa /etc/fstab
@@ -243,12 +194,22 @@ file system table
 .El
 .Sh SEE ALSO
 .Xr mount 2 ,
-.Xr unmount 2 ,
-.Xr fstab 5
+.Xr fstab 5 ,
+.Xr mount_cd9660 8 ,
+.Xr mount_fdesc 8 ,
+.Xr mount_kernfs 8 ,
+.Xr mount_lfs 8 ,
+.Xr mount_lofs 8 ,
+.Xr mount_mfs 8 ,
+.Xr mount_nfs 8 ,
+.Xr mount_null 8 ,
+.Xr mount_portal 8 ,
+.Xr mount_umap 8 ,
+.Xr umount 8
 .Sh BUGS
 It is possible for a corrupted file system to cause a crash.
 .Sh HISTORY
 A
-.Nm
+.Nm mount
 command appeared in
 .At v6 .
