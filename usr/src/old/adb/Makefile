@@ -9,22 +9,25 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-DESTDIR= 
+SUBDIR=	scripts scripts.${MACHINE} adb.${MACHINE}
 
 all: FRC
-	cd adb.${MACHINE}; make ${MFLAGS}
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS}); done
 
 depend: FRC
-	cd adb.${MACHINE}; make ${MFLAGS} depend
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
+SCRIPTDIR=	/usr/lib/adb
 install: FRC
-	cd adb.${MACHINE}; make DESTDIR=${DESTDIR} install
-	cd scripts; make DESTDIR=${DESTDIR} install
-	cd scripts.${MACHINE}; make DESTDIR=${DESTDIR} install
+	rm -rf ${SCRIPTDIR}
+	mkdir ${DESTDIR}/${SCRIPTDIR}
+	chown bin.bin ${DESTDIR}/${SCRIPTDIR}
+	chmod 755 ${DESTDIR}/${SCRIPTDIR}
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} install); done
 
 clean: FRC
-	cd adb.${MACHINE}; make ${MFLAGS} clean
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 FRC:
