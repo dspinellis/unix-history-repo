@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)strings.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -116,10 +116,10 @@ main(argc, argv)
 			if ((head_len = read(fileno(stdin), (char *)head, sizeof(EXEC))) == -1)
 				DO_EVERYTHING()
 			if (head_len == sizeof(EXEC) && !N_BADMAG(*head)) {
-				foff = N_TXTOFF(*head) + head->a_text;
+				foff = N_TXTOFF(*head);
 				if (fseek(stdin, foff, L_SET) == -1)
 					DO_EVERYTHING()
-				read_len = head->a_data;
+				read_len = head->a_text + head->a_data;
 				head_len = 0;
 			}
 			else
