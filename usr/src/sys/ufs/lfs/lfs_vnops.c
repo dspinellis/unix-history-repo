@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.35 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,9 +31,9 @@
 #include "mount.h"
 #include "vnode.h"
 #include "specdev.h"
+#include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
-#include "../ufs/quota.h"
 
 /*
  * Global vfs data structures for ufs
@@ -295,13 +295,58 @@ ufs_close(vp, fflag, cred)
 	return (0);
 }
 
+/*
+ * Check mode permission on inode pointer. Mode is READ, WRITE or EXEC.
+ * The mode is shifted to select the owner/group/other fields. The
+ * super user is granted all permissions.
+ */
 ufs_access(vp, mode, cred)
 	struct vnode *vp;
-	int mode;
+	register int mode;
 	struct ucred *cred;
 {
+	register struct inode *ip = VTOI(vp);
+	register gid_t *gp;
+	int i, error;
 
-	return (iaccess(VTOI(vp), mode, cred));
+#ifdef DIAGNOSTIC
+	if (!VOP_ISLOCKED(vp)) {
+		vprint("ufs_access: not locked", vp);
+		panic("ufs_access: not locked");
+	}
+#endif
+#ifdef QUOTA
+	if (mode & VWRITE) {
+		switch (vp->v_type) {
+		case VREG: case VDIR: case VLNK:
+			if (error = getinoquota(ip))
+				return (error);
+		}
+	}
+#endif /* QUOTA */
+	/*
+	 * If you're the super-user, you always get access.
+	 */
+	if (cred->cr_uid == 0)
+		return (0);
+	/*
+	 * Access check is based on only one of owner, group, public.
+	 * If not owner, then check group. If not a member of the
+	 * group, then check public access.
+	 */
+	if (cred->cr_uid != ip->i_uid) {
+		mode >>= 3;
+		gp = cred->cr_groups;
+		for (i = 0; i < cred->cr_ngroups; i++, gp++)
+			if (ip->i_gid == *gp)
+				goto found;
+		mode >>= 3;
+found:
+		;
+	}
+	if ((ip->i_mode & mode) != 0)
+		return (0);
+	return (EACCES);
 }
 
 /* ARGSUSED */
@@ -323,7 +368,12 @@ ufs_getattr(vp, vap, cred)
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
 	vap->va_rdev = (dev_t)ip->i_rdev;
+#ifdef tahoe
+	vap->va_size = ip->i_size;
+	vap->va_size_rsv = 0;
+#else
 	vap->va_qsize = ip->i_din.di_qsize;
+#endif
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_atime.tv_usec = 0;
 	vap->va_mtime.tv_sec = ip->i_mtime;
@@ -446,10 +496,13 @@ chown1(vp, uid, gid, cred)
 	struct ucred *cred;
 {
 	register struct inode *ip = VTOI(vp);
+	uid_t ouid;
+	gid_t ogid;
+	int error = 0;
 #ifdef QUOTA
-	register long change;
+	register int i;
+	long change;
 #endif
-	int error;
 
 	if (uid == (u_short)VNOVAL)
 		uid = ip->i_uid;
@@ -464,30 +517,74 @@ chown1(vp, uid, gid, cred)
 	    !groupmember((gid_t)gid, cred)) &&
 	    (error = suser(cred, &u.u_acflag)))
 		return (error);
+	ouid = ip->i_uid;
+	ogid = ip->i_gid;
 #ifdef QUOTA
-	if (ip->i_uid == uid)		/* this just speeds things a little */
-		change = 0;
-	else
-		change = ip->i_blocks;
-	(void) chkdq(ip, -change, 1);
-	(void) chkiq(ip->i_dev, ip, ip->i_uid, 1);
-	dqrele(ip->i_dquot);
+	if (error = getinoquota(ip))
+		return (error);
+	if (ouid == uid) {
+		dqrele(vp, ip->i_dquot[USRQUOTA]);
+		ip->i_dquot[USRQUOTA] = NODQUOT;
+	}
+	if (ogid == gid) {
+		dqrele(vp, ip->i_dquot[GRPQUOTA]);
+		ip->i_dquot[GRPQUOTA] = NODQUOT;
+	}
+	change = ip->i_blocks;
+	(void) chkdq(ip, -change, cred, CHOWN);
+	(void) chkiq(ip, -1, cred, CHOWN);
+	for (i = 0; i < MAXQUOTAS; i++) {
+		dqrele(vp, ip->i_dquot[i]);
+		ip->i_dquot[i] = NODQUOT;
+	}
 #endif
-	if (ip->i_uid != uid && cred->cr_uid != 0)
-		ip->i_mode &= ~ISUID;
-	if (ip->i_gid != gid && cred->cr_uid != 0)
-		ip->i_mode &= ~ISGID;
 	ip->i_uid = uid;
 	ip->i_gid = gid;
-	ip->i_flag |= ICHG;
 #ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-	(void) chkdq(ip, change, 1);
-	(void) chkiq(ip->i_dev, (struct inode *)NULL, (uid_t)uid, 1);
-	return (u.u_error);		/* should == 0 ALWAYS !! */
-#else
-	return (0);
+	if ((error = getinoquota(ip)) == 0) {
+		if (ouid == uid) {
+			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ip->i_dquot[USRQUOTA] = NODQUOT;
+		}
+		if (ogid == gid) {
+			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ip->i_dquot[GRPQUOTA] = NODQUOT;
+		}
+		if ((error = chkdq(ip, change, cred, CHOWN)) == 0) {
+			if ((error = chkiq(ip, 1, cred, CHOWN)) == 0)
+				return (0);
+			else
+				(void) chkdq(ip, -change, cred, CHOWN|FORCE);
+		}
+		for (i = 0; i < MAXQUOTAS; i++) {
+			dqrele(vp, ip->i_dquot[i]);
+			ip->i_dquot[i] = NODQUOT;
+		}
+	}
+	ip->i_uid = ouid;
+	ip->i_gid = ogid;
+	if (getinoquota(ip) == 0) {
+		if (ouid == uid) {
+			dqrele(vp, ip->i_dquot[USRQUOTA]);
+			ip->i_dquot[USRQUOTA] = NODQUOT;
+		}
+		if (ogid == gid) {
+			dqrele(vp, ip->i_dquot[GRPQUOTA]);
+			ip->i_dquot[GRPQUOTA] = NODQUOT;
+		}
+		(void) chkdq(ip, change, cred, FORCE);
+		(void) chkiq(ip, 1, cred, FORCE);
+	}
+	if (error)
+		return (error);
 #endif
+	if (ouid != uid || ogid != gid)
+		ip->i_flag |= ICHG;
+	if (ouid != uid && cred->cr_uid != 0)
+		ip->i_mode &= ~ISUID;
+	if (ogid != gid && cred->cr_uid != 0)
+		ip->i_mode &= ~ISGID;
+	return (0);
 }
 
 /*
@@ -855,7 +952,7 @@ ufs_rename(fndp, tndp)
 	if (oldparent != dp->i_number)
 		newparent = dp->i_number;
 	if (doingdirectory && newparent) {
-		if (error = iaccess(ip, IWRITE, tndp->ni_cred))
+		if (error = ufs_access(fndp->ni_vp, VWRITE, tndp->ni_cred))
 			goto bad;
 		tndp->ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
 		do {
@@ -1075,25 +1172,26 @@ ufs_mkdir(ndp, vap)
 	 * directory.  The entry is made later
 	 * after writing "." and ".." entries out.
 	 */
-	error = ialloc(dp, dirpref(dp->i_fs), dmode, &tip);
-	if (error) {
+	if (error = ialloc(dp, dirpref(dp->i_fs), dmode, ndp->ni_cred, &tip)) {
 		iput(dp);
 		return (error);
 	}
 	ip = tip;
+	ip->i_uid = ndp->ni_cred->cr_uid;
+	ip->i_gid = dp->i_gid;
 #ifdef QUOTA
-	if (ip->i_dquot != NODQUOT)
-		panic("mkdir: dquot");
+	if ((error = getinoquota(ip)) ||
+	    (error = chkiq(ip, 1, ndp->ni_cred, 0))) {
+		ifree(ip, ip->i_number, dmode);
+		iput(ip);
+		iput(dp);
+		return (error);
+	}
 #endif
 	ip->i_flag |= IACC|IUPD|ICHG;
 	ip->i_mode = dmode;
 	ITOV(ip)->v_type = VDIR;	/* Rest init'd in iget() */
 	ip->i_nlink = 2;
-	ip->i_uid = ndp->ni_cred->cr_uid;
-	ip->i_gid = dp->i_gid;
-#ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-#endif
 	error = iupdat(ip, &time, &time, 1);
 
 	/*
@@ -1554,49 +1652,57 @@ maknode(mode, ndp, ipp)
 	int error;
 
 	*ipp = 0;
+	if ((mode & IFMT) == 0)
+		mode |= IFREG;
 	if ((mode & IFMT) == IFDIR)
 		ipref = dirpref(pdir->i_fs);
 	else
 		ipref = pdir->i_number;
-	error = ialloc(pdir, ipref, mode, &tip);
-	if (error) {
+	if (error = ialloc(pdir, ipref, mode, ndp->ni_cred, &tip)) {
 		iput(pdir);
 		return (error);
 	}
 	ip = tip;
+	ip->i_uid = ndp->ni_cred->cr_uid;
+	ip->i_gid = pdir->i_gid;
 #ifdef QUOTA
-	if (ip->i_dquot != NODQUOT)
-		panic("maknode: dquot");
+	if ((error = getinoquota(ip)) ||
+	    (error = chkiq(ip, 1, ndp->ni_cred, 0))) {
+		ifree(ip, ip->i_number, mode);
+		iput(ip);
+		iput(pdir);
+		return (error);
+	}
 #endif
 	ip->i_flag |= IACC|IUPD|ICHG;
-	if ((mode & IFMT) == 0)
-		mode |= IFREG;
 	ip->i_mode = mode;
 	ITOV(ip)->v_type = IFTOVT(mode);	/* Rest init'd in iget() */
 	ip->i_nlink = 1;
-	ip->i_uid = ndp->ni_cred->cr_uid;
-	ip->i_gid = pdir->i_gid;
 	if ((ip->i_mode & ISGID) && !groupmember(ip->i_gid, ndp->ni_cred) &&
 	    suser(ndp->ni_cred, NULL))
 		ip->i_mode &= ~ISGID;
-#ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-#endif
 
 	/*
 	 * Make sure inode goes to disk before directory entry.
 	 */
-	if ((error = iupdat(ip, &time, &time, 1)) ||
-	    (error = direnter(ip, ndp))) {
-		/*
-		 * Write error occurred trying to update the inode
-		 * or the directory so must deallocate the inode.
-		 */
-		ip->i_nlink = 0;
-		ip->i_flag |= ICHG;
-		iput(ip);
-		return (error);
+	if (error = iupdat(ip, &time, &time, 1))
+		goto bad;
+	if (error = direnter(ip, ndp)) {
+		pdir = NULL;
+		goto bad;
 	}
 	*ipp = ip;
 	return (0);
+
+bad:
+	/*
+	 * Write error occurred trying to update the inode
+	 * or the directory so must deallocate the inode.
+	 */
+	if (pdir)
+		iput(pdir);
+	ip->i_nlink = 0;
+	ip->i_flag |= ICHG;
+	iput(ip);
+	return (error);
 }

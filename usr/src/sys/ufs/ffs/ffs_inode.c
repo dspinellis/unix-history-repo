@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.29 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,12 +26,10 @@
 #include "buf.h"
 #include "cmap.h"
 #include "vnode.h"
+#include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 #include "../ufs/ufsmount.h"
-#ifdef QUOTA
-#include "../ufs/quota.h"
-#endif
 #include "kernel.h"
 #include "malloc.h"
 
@@ -65,6 +63,9 @@ ufs_init()
 		ih->ih_head[0] = ih;
 		ih->ih_head[1] = ih;
 	}
+#ifdef QUOTA
+	dqinit();
+#endif /* QUOTA */
 }
 
 /*
@@ -91,8 +92,8 @@ iget(xp, ino, ipp)
 	struct vnode *nvp;
 	struct buf *bp;
 	struct dinode *dp;
-	union  ihead *ih;
-	int error;
+	union ihead *ih;
+	int i, error;
 
 	ih = &ihead[INOHASH(dev, ino)];
 loop:
@@ -123,7 +124,8 @@ loop:
 	ip->i_mode = 0;
 	ip->i_diroff = 0;
 #ifdef QUOTA
-	ip->i_dquot = NODQUOT;
+	for (i = 0; i < MAXQUOTAS; i++)
+		ip->i_dquot[i] = NODQUOT;
 #endif
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for
@@ -198,10 +200,6 @@ loop:
 	ip->i_fs = fs;
 	ip->i_devvp = VFSTOUFS(mntp)->um_devvp;
 	VREF(ip->i_devvp);
-#ifdef QUOTA
-	if (ip->i_mode != 0)
-		ip->i_dquot = inoquota(ip);
-#endif
 	/*
 	 * Set up a generation number for this inode if it does not
 	 * already have one. This should only happen on old filesystems.
@@ -252,17 +250,15 @@ ufs_inactive(vp)
 	}
 	ILOCK(ip);
 	if (ip->i_nlink <= 0 && (vp->v_mount->m_flag & M_RDONLY) == 0) {
+#ifdef QUOTA
+		if (!getinoquota(ip))
+			(void) chkiq(ip, -1, NOCRED, 0);
+#endif
 		error = itrunc(ip, (u_long)0, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
-		ip->i_rdev = 0;
 		ip->i_flag |= IUPD|ICHG;
 		ifree(ip, ip->i_number, mode);
-#ifdef QUOTA
-		(void) chkiq(ip->i_dev, ip, ip->i_uid, 0);
-		dqrele(ip->i_dquot);
-		ip->i_dquot = NODQUOT;
-#endif
 	}
 	IUPDAT(ip, &time, &time, 0);
 	IUNLOCK(ip);
@@ -271,8 +267,7 @@ ufs_inactive(vp)
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0 &&
-	    (vp->v_flag & VXLOCK) == 0)
+	if (vp->v_usecount == 0 && ip->i_mode == 0)
 		vgone(vp);
 	return (error);
 }
@@ -284,6 +279,7 @@ ufs_reclaim(vp)
 	register struct vnode *vp;
 {
 	register struct inode *ip = VTOI(vp);
+	int i;
 
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ufs_reclaim: pushing active", vp);
@@ -302,8 +298,12 @@ ufs_reclaim(vp)
 		ip->i_devvp = 0;
 	}
 #ifdef QUOTA
-	dqrele(ip->i_dquot);
-	ip->i_dquot = NODQUOT;
+	for (i = 0; i < MAXQUOTAS; i++) {
+		if (ip->i_dquot[i] != NODQUOT) {
+			dqrele(vp, ip->i_dquot[i]);
+			ip->i_dquot[i] = NODQUOT;
+		}
+	}
 #endif
 	ip->i_flag = 0;
 	return (0);
@@ -411,6 +411,10 @@ itrunc(oip, length, flags)
 		aflags = B_CLRBUF;
 		if (flags & IO_SYNC)
 			aflags |= B_SYNC;
+#ifdef QUOTA
+		if (error = getinoquota(oip))
+			return (error);
+#endif
 		if (error = balloc(oip, lbn, offset, &bp, aflags))
 			return (error);
 		oip->i_size = length;
@@ -527,7 +531,8 @@ done:
 		oip->i_blocks = 0;
 	oip->i_flag |= ICHG;
 #ifdef QUOTA
-	(void) chkdq(oip, -blocksreleased, 0);
+	if (!getinoquota(oip))
+		(void) chkdq(oip, -blocksreleased, NOCRED, 0);
 #endif
 	return (allerror);
 }
@@ -669,45 +674,4 @@ iunlock(ip)
 		ip->i_flag &= ~IWANT;
 		wakeup((caddr_t)ip);
 	}
-}
-
-/*
- * Check mode permission on inode pointer. Mode is READ, WRITE or EXEC.
- * The mode is shifted to select the owner/group/other fields. The
- * super user is granted all permissions.
- *
- * NB: Called from vnode op table. It seems this could all be done
- * using vattr's but...
- */
-iaccess(ip, mode, cred)
-	register struct inode *ip;
-	register int mode;
-	struct ucred *cred;
-{
-	register gid_t *gp;
-	int i;
-
-	/*
-	 * If you're the super-user, you always get access.
-	 */
-	if (cred->cr_uid == 0)
-		return (0);
-	/*
-	 * Access check is based on only one of owner, group, public.
-	 * If not owner, then check group. If not a member of the
-	 * group, then check public access.
-	 */
-	if (cred->cr_uid != ip->i_uid) {
-		mode >>= 3;
-		gp = cred->cr_groups;
-		for (i = 0; i < cred->cr_ngroups; i++, gp++)
-			if (ip->i_gid == *gp)
-				goto found;
-		mode >>= 3;
-found:
-		;
-	}
-	if ((ip->i_mode & mode) != 0)
-		return (0);
-	return (EACCES);
 }
