@@ -6,12 +6,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980,1986 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,6 +35,7 @@ main(argc, argv)
 	register i;
 	register ok = 0;
 	register qflag = 0;
+	int needlog = 1;
 	char *user, *getlogin();
 	struct passwd *pw, *getpwuid();
 
@@ -46,6 +47,8 @@ main(argc, argv)
 			qflag++;
 		else if (!strcmp(*argv, "-n"))
 			howto |= RB_NOSYNC;
+		else if (!strcmp(*argv, "-l"))
+			needlog = 0;
 		else {
 			fprintf(stderr,
 			    "usage: reboot [ -n ][ -q ]\n");
@@ -54,12 +57,14 @@ main(argc, argv)
 		argc--, argv++;
 	}
 
-	user = getlogin();
-	if (user == (char *)0 && (pw = getpwuid(getuid())))
-		user = pw->pw_name;
-	if (user == (char *)0)
-		user = "root";
-	syslog(LOG_CRIT, "halted by %s", user);
+	if (needlog) {
+		user = getlogin();
+		if (user == (char *)0 && (pw = getpwuid(getuid())))
+			user = pw->pw_name;
+		if (user == (char *)0)
+			user = "root";
+		syslog(LOG_CRIT, "rebooted by %s", user);
+	}
 
 	signal(SIGHUP, SIG_IGN);	/* for remote connections */
 	if (kill(1, SIGTSTP) == -1) {
@@ -67,6 +72,8 @@ main(argc, argv)
 		exit(1);
 	}
 	sleep(1);
+	(void) kill(-1, SIGTERM);	/* one chance to catch it */
+	sleep(5);
 
 	if (!qflag) for (i = 1; ; i++) {
 		if (kill(-1, SIGKILL) == -1) {
