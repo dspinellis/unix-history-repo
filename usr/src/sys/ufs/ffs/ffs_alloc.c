@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.13	82/10/16	*/
+/*	ffs_alloc.c	2.14	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -949,14 +949,11 @@ getfsx(dev)
  * modified nodes; and it goes through the mount table to initiate
  * the writing of the modified super blocks.
  */
-update(flag)
-	int flag;
+update()
 {
 	register struct inode *ip;
 	register struct mount *mp;
-	register struct buf *bp;
 	struct fs *fs;
-	int i, blks;
 
 	if (updlock)
 		return;
@@ -972,7 +969,7 @@ update(flag)
 		fs = mp->m_bufp->b_un.b_fs;
 		if (fs->fs_fmod == 0)
 			continue;
-		if (fs->fs_ronly != 0) {		/* ### */
+		if (fs->fs_ronly != 0) {		/* XXX */
 			printf("fs = %s\n", fs->fs_fsmnt);
 			panic("update: rofs mod");
 		}

@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.25	82/10/10	*/
+/*	ufs_inode.c	4.26	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -231,8 +231,6 @@ iput(ip)
 irele(ip)
 	register struct inode *ip;
 {
-	register int i, x;
-	register struct inode *jp;
 	int mode;
 
 	if (ip->i_count == 1) {
@@ -366,7 +364,6 @@ itrunc(ip, length)
 	 * Now return blocks to free list... if machine
 	 * crashes, they will be harmless MISSING blocks.
 	 */
-	dev = ip->i_dev;
 	fs = ip->i_fs;
 	/*
 	 * release double indirect block first
@@ -402,8 +399,10 @@ itrunc(ip, length)
 		if (bn == (daddr_t)0)
 			continue;
 		ip->i_db[i] = (daddr_t)0;
+#ifndef QUOTA
+		fre(ip, bn, (off_t)blksize(fs, ip, i));
+#else
 		fre(ip, bn, size = (off_t)blksize(fs, ip, i));
-#ifdef QUOTA
 		cnt += size / DEV_BSIZE;
 #endif
 	}

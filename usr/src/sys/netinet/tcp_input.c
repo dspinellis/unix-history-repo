@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.77	82/10/16	*/
+/*	tcp_input.c	1.78	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -73,7 +73,7 @@ tcp_input(m0)
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
 		ti->ti_len = (u_short)tlen;
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 		ti->ti_len = htons((u_short)ti->ti_len);
 #endif
 		if (ti->ti_sum = in_cksum(m, len)) {
@@ -121,7 +121,7 @@ tcp_input(m0)
 	m->m_off += off;
 	m->m_len -= off;
 
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 	/*
 	 * Convert TCP protocol specific fields to host format.
 	 */
@@ -201,31 +201,31 @@ tcp_input(m0)
 	 * segment in this state.
 	 */
 	case TCPS_LISTEN: {
-		struct mbuf *m = m_get(M_DONTWAIT);
+		struct mbuf *am = m_get(M_DONTWAIT);
 		register struct sockaddr_in *sin;
 
-		if (m == 0)
+		if (am == 0)
 			goto drop;
-		m->m_len = sizeof (struct sockaddr_in);
+		am->m_len = sizeof (struct sockaddr_in);
 		if (tiflags & TH_RST)
 			goto drop;
 		if (tiflags & TH_ACK)
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
-		sin = mtod(m, struct sockaddr_in *);
+		sin = mtod(am, struct sockaddr_in *);
 		sin->sin_family = AF_INET;
 		sin->sin_addr = ti->ti_src;
 		sin->sin_port = ti->ti_sport;
 		laddr = inp->inp_laddr;
 		if (inp->inp_laddr.s_addr == 0)
 			inp->inp_laddr = ti->ti_dst;
-		if (in_pcbconnect(inp, m)) {
+		if (in_pcbconnect(inp, am)) {
 			inp->inp_laddr = laddr;
-			m_free(m);
+			m_free(am);
 			goto drop;
 		}
-		m_free(m);
+		m_free(am);
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
@@ -576,7 +576,7 @@ step6:
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
-		if (tp->snd_wnd > 0)
+		if (tp->snd_wnd != 0)
 			tp->t_timer[TCPT_PERSIST] = 0;
 	}
 
@@ -757,7 +757,7 @@ tcp_dooptions(tp, om)
 			if (optlen != 4)
 				continue;
 			tp->t_maxseg = *(u_short *)(cp + 2);
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
 #endif
 			break;

@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.5	82/10/09	*/
+/*	tcp_debug.c	4.6	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,7 +69,7 @@ tcp_trace(act, ostate, tp, ti, req)
 		seq = ti->ti_seq;
 		ack = ti->ti_ack;
 		len = ti->ti_len;
-#if vax
+#if vax || pdp11 || ns16032
 		if (act == TA_OUTPUT) {
 			seq = ntohl(seq);
 			ack = ntohl(ack);

@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.11	82/10/10	*/
+/*	kern_descrip.c	5.12	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -178,7 +178,7 @@ select()
 	} *uap = (struct uap *)u.u_ap;
 	int ibits[3], obits[3];
 	struct timeval atv;
-	int s, tsel, ncoll, rem;
+	int s, ncoll;
 	label_t lqsave;
 
 	if (uap->nd >= NOFILE) {

@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.19	82/10/09	*/
+/*	ip_icmp.c	4.20	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,7 +61,7 @@ icmp_error(oip, type, code)
 	bcopy((caddr_t)oip, (caddr_t)&icp->icmp_ip, oiplen + 8);
 	nip = &icp->icmp_ip;
 	nip->ip_len += oiplen;
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 	nip->ip_len = htons((u_short)nip->ip_len);
 #endif
 
@@ -143,7 +143,7 @@ icmp_input(m)
 		 * Problem with previous datagram; advise
 		 * higher level routines.
 		 */
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 		icp->icmp_ip.ip_len = ntohs(icp->icmp_ip.ip_len);
 #endif
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))

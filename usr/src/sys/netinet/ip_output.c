@@ -1,4 +1,4 @@
-/*	ip_output.c	1.37	82/10/13	*/
+/*	ip_output.c	1.38	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -92,7 +92,7 @@ gotif:
 	 * If small enough for interface, can just send directly.
 	 */
 	if (ip->ip_len <= ifp->if_mtu) {
-#if vax
+#if vax || pdp11 || ns16032
 		ip->ip_len = htons((u_short)ip->ip_len);
 		ip->ip_off = htons((u_short)ip->ip_off);
 #endif
@@ -147,7 +147,7 @@ gotif:
 			mhip->ip_off |= IP_MF;
 		}
 		mhip->ip_len += sizeof (struct ip);
-#if vax
+#if vax || pdp11 || ns16032
 		mhip->ip_len = htons((u_short)mhip->ip_len);
 #endif
 		mh->m_next = m_copy(m, off, len);
@@ -156,7 +156,7 @@ gotif:
 			error = ENOBUFS;	/* ??? */
 			goto bad;
 		}
-#if vax
+#if vax || pdp11 || ns16032
 		mhip->ip_off = htons((u_short)mhip->ip_off);
 #endif
 		mhip->ip_sum = 0;

@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.14	82/09/12	*/
+/*	kern_resource.c	4.15	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -229,7 +229,7 @@ getrusage()
 ruadd(ru, ru2)
 	register struct rusage *ru, *ru2;
 {
-	register int *ip, *ip2;
+	register u_int *ip, *ip2;
 	register int i;
 
 	timevaladd(&ru->ru_utime, &ru2->ru_utime);

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.34	82/10/16	*/
+/*	udp_usrreq.c	4.35	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -91,7 +91,8 @@ udp_input(m0)
 	if (inp == 0) {
 		struct in_addr broadcastaddr;
 
-		broadcastaddr = if_makeaddr(ui->ui_dst.s_net, INADDR_ANY);
+		broadcastaddr =
+		    if_makeaddr(in_netof(ui->ui_dst.s_net), INADDR_ANY);
 		if (ui->ui_dst.s_addr == broadcastaddr.s_addr)
 			goto bad;
 		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
@@ -206,6 +207,7 @@ udp_output(inp, m0)
 	    so->so_state & SS_PRIV));
 }
 
+/*ARGSUSED*/
 udp_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.55	82/10/17	*/
+/*	uipc_socket.c	4.56	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,6 +25,7 @@
  * switching out to the protocol specific routines.
  */
 
+/*ARGSUSED*/
 socreate(dom, aso, type, proto, opt)
 	struct socket **aso;
 	int type, proto;
@@ -368,26 +369,27 @@ soreceive(so, aname, uio, flags)
 	struct uio *uio;
 	int flags;
 {
-	register struct iovec *iov;
 	register struct mbuf *m, *n;
 	u_int len;
 	int eor, s, error = 0, moff, tomark;
 
 	if (flags & SOF_OOB) {
-		struct mbuf *m = m_get(M_WAIT);
-
-		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
+		m = m_get(M_WAIT);
+		error = (*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct socketopt *)0);
+		if (error)
+			return;
 		len = uio->uio_resid;
 		do {
 			if (len > m->m_len)
 				len = m->m_len;
-			uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
+			error =
+			    uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
 			m = m_free(m);
-		} while (uio->uio_resid && u.u_error == 0 && m);
+		} while (uio->uio_resid && error == 0 && m);
 		if (m)
 			(void) m_freem(m);
-		return;
+		return (error);
 	}
 
 restart:
@@ -458,7 +460,8 @@ SBCHECK(&so->so_snd, "soreceive afteraddr");
 		if (moff+len > m->m_len - moff)
 			len = m->m_len - moff;
 		splx(s);
-		uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
+		error =
+		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
 		s = splnet();
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
@@ -493,7 +496,7 @@ SBCHECK(&so->so_snd, "soreceive afteraddr");
 				break;
 		}
 SBCHECK(&so->so_snd, "soreceive rcvloop");
-	} while (m && !eor);
+	} while (m && error == 0 && !eor);
 	if (flags & SOF_PREVIEW)
 		goto release;
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
@@ -546,25 +549,25 @@ soioctl(so, cmd, data)
 			so->so_state |= SS_NBIO;
 		else
 			so->so_state &= ~SS_NBIO;
-		return (0);
+		break;
 
 	case FIOASYNC:
 		if (*(int *)data)
 			so->so_state |= SS_ASYNC;
 		else
 			so->so_state &= ~SS_ASYNC;
-		return (0);
+		break;
 
 	case SIOCSKEEP:
 		if (*(int *)data)
 			so->so_options &= ~SO_KEEPALIVE;
 		else
 			so->so_options |= SO_KEEPALIVE;
-		return (0);
+		break;
 
 	case SIOCGKEEP:
 		*(int *)data = (so->so_options & SO_KEEPALIVE) != 0;
-		return (0);
+		break;
 
 	case SIOCSLINGER:
 		so->so_linger = *(int *)data;
@@ -572,19 +575,19 @@ soioctl(so, cmd, data)
 			so->so_options &= ~SO_DONTLINGER;
 		else
 			so->so_options |= SO_DONTLINGER;
-		return (0);
+		break;
 
 	case SIOCGLINGER:
 		*(int *)data = so->so_linger;
-		return (0);
+		break;
 
 	case SIOCSPGRP:
 		so->so_pgrp = *(int *)data;
-		return (0);
+		break;
 
 	case SIOCGPGRP:
 		*(int *)data = so->so_pgrp;
-		return (0);
+		break;
 
 	case SIOCDONE: {
 		int flags = *(int *)data;
@@ -600,17 +603,15 @@ soioctl(so, cmd, data)
 			return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
 			    (struct mbuf *)0, (struct mbuf *)0,
 			    (struct socketopt *)0));
-		return (0);
+		break;
 	}
 
 	case SIOCSENDOOB: {
 		char oob = *(char *)data;
 		struct mbuf *m = m_get(M_DONTWAIT);
 
-		if (m == 0) {
-			u.u_error = ENOBUFS;
-			return;
-		}
+		if (m == 0)
+			return (ENOBUFS);
 		m->m_len = 1;
 		*mtod(m, char *) = oob;
 		return ((*so->so_proto->pr_usrreq)(so, PRU_SENDOOB,
@@ -620,21 +621,19 @@ soioctl(so, cmd, data)
 	case SIOCRCVOOB: {
 		struct mbuf *m = m_get(M_WAIT);
 
-		if (m == 0) {
-			u.u_error = ENOBUFS;
-			return (0);
-		}
+		if (m == 0)
+			return (ENOBUFS);
 		*mtod(m, caddr_t) = 0;
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct socketopt *)0);
 		*(char *)data = *mtod(m, char *);
 		(void) m_free(m);
-		return (0);
+		break;
 	}
 
 	case SIOCATMARK:
 		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
-		return (0);
+		break;
 
 	/* routing table update calls */
 	case SIOCADDRT:
@@ -644,6 +643,8 @@ soioctl(so, cmd, data)
 		return (rtrequest(cmd, (struct rtentry *)data));
 
 	/* type/protocol specific ioctls */
+	default:
+		return (ENOTTY);
 	}
-	return (EOPNOTSUPP);
+	return (0);
 }

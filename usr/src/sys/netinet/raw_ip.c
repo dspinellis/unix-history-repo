@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.14	82/10/09	*/
+/*	raw_ip.c	4.15	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -50,7 +50,6 @@ rip_output(m0, so)
 	register struct ip *ip;
 	int len = 0, error;
 	struct rawcb *rp = sotorawcb(so);
-	struct ifnet *ifp;
 	struct sockaddr_in *sin;
 
 	/*

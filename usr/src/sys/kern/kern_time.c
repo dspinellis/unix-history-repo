@@ -1,4 +1,4 @@
-/*	kern_time.c	5.8	82/10/10	*/
+/*	kern_time.c	5.9	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -66,7 +66,6 @@ settimeofday()
 setthetime(tv)
 	struct timeval *tv;
 {
-	register int delta;
 	int s;
 
 	if (!suser())
@@ -355,7 +354,6 @@ oalarm()
 		int	deltat;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
-	struct timeval atv;
 	int s = spl7();
 
 	untimeout(realitexpire, p);

@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.30	82/10/09	*/
+/*	uipc_syscalls.c	4.31	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -319,7 +319,6 @@ send()
 	register struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
-	struct mbuf *nam;
 
 	fp = getf(uap->s);
 	if (fp == 0)

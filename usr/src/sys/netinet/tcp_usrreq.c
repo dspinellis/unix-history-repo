@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.65	82/10/09	*/
+/*	tcp_usrreq.c	1.66	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,6 +33,7 @@ struct	tcpcb *tcp_newtcpcb();
  * then m is the mbuf chain of send data.  If this is a timer expiration
  * (called from the software clock routine), then timertype tells which timer.
  */
+/*ARGSUSED*/
 tcp_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;
