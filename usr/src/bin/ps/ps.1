@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.1	4.1 (Berkeley) %G%
+.\"	@(#)ps.1	5.1 (Berkeley) %G%
 .\"
-.TH PS 1
+.TH PS 1 "13 April 1983"
 .UC 4
 .SH NAME
 ps \- process status
@@ -44,9 +44,9 @@ a process which has specified a soft limit on memory requirements
 and which is exceeding that limit shows >; such a process is (necessarily)
 not swapped.
 The third letter indicates whether a process is running with altered
-CPU scheduling priority (nice); if the processes priority is reduced,
-a N is shown, if the process priority has been artificially raised then
-a `<' is shown; process running without special treatment have just a
+CPU scheduling priority (nice); if the process priority is reduced,
+an N is shown, if the process priority has been artificially raised then
+a `<' is shown; processes running without special treatment have just a
 blank.
 The final letter indicates any special treatment of the process for virtual
 memory replacement; the letters correspond to options to the
@@ -110,6 +110,8 @@ for console,
 for ttyd0,
 .I t?
 for processes with no tty,
+.I t
+for processes at the current tty,
 etc).
 This option must be the last one given.
 .TP 5
@@ -137,18 +139,19 @@ in which case the output
 is restricted to that process.
 This option must also be last.
 .PP
-A second argument tells
+A second argument is taken 
+to be the file containing the system's
+namelist.  Otherwise, /vmunix is used.
+A third argument tells
 .I ps
 where to look for
 .I core
 if the
 .B k
 option is given, instead of /vmcore.
-A third argument is the name of a swap file to use instead of
+If a fourth argument is given, it
+is taken to be the name of a swap file to use instead of
 the default /dev/drum.
-If a fourth argument is given,
-it is taken to be the file containing the system's namelist.
-Otherwise, /vmunix is used.
 .PP
 Fields which are not common to all output formats:
 .PD 0
@@ -161,14 +164,14 @@ is computed varies (since processes may be very young) it is possible
 for the sum of all %CPU fields to exceed 100%.
 .IP NICE 10
 (or NI) process scheduling increment (see
-.IR nice (2))
+.IR setpriority (2))
 .IP SIZE 10
 virtual size of the process (in 1024 byte units)
 .IP RSS 10
 real memory (resident set) size of the process (in 1024 byte units)
 .IP LIM 10
 soft limit on memory used, specified via a call to
-.IR vlimit (2);
+.IR setrlimit (2);
 if no limit has been specified then shown as \fIxx\fR
 .IP TSIZ 10
 size of text (shared program) image
@@ -199,7 +202,8 @@ the initial part of the address trimmed off e.g. 80004000 prints
 as 4000.
 .sp
 .IP F 10
-flags associated with process as in /usr/include/sys/proc.h:
+flags associated with process as in
+.RI < sys/proc.h >:
 .br
 .PP
 .sp
@@ -220,12 +224,12 @@ flags associated with process as in /usr/include/sys/proc.h:
 	SVFORK	001000	process resulted from vfork()
 	SVFDONE	002000	another vfork flag
 	SNOVM	004000	no vm, parent in a vfork()
-	SPAGI	008000	init data space on demand, from inode
+	SPAGI	008000	init data space on demand from inode
 	SANOM	010000	system detected anomalous vm behavior
 	SUANOM	020000	user warned of anomalous vm behavior
 	STIMO	040000	timing out during sleep
 	SDETACH	080000	detached inherited by init
-	SNUSIG	100000	using new signal mechanism
+	SOUSIG	100000	using old signal mechanism
 .fi
 .PD
 .PP
