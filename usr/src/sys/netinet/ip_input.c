@@ -1,4 +1,4 @@
-/*	ip_input.c	1.39	82/04/04	*/
+/*	ip_input.c	1.40	82/04/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -142,6 +142,7 @@ next:
 		sin = (struct sockaddr_in *)&ifinet->if_addr;
 		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
+		sin = (struct sockaddr_in *)&ifinet->if_broadaddr;
 		if ((ifinet->if_flags & IFF_BROADCAST) &&
 		    sin->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
