@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	7.5 (Berkeley) %G%
+ *	@(#)sun_misc.c	8.1 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.16 93/04/07 02:46:27 torek Exp $
  */
