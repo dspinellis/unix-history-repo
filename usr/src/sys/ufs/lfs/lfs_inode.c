@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.65 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -163,14 +163,15 @@ int
 lfs_update (ap)
 	struct vop_update_args *ap;
 {
+	struct vnode *vp = ap->a_vp;
 	struct inode *ip;
 
 #ifdef VERBOSE
 	printf("lfs_update\n");
 #endif
-	if (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY)
+	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
-	ip = VTOI(ap->a_vp);
+	ip = VTOI(vp);
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
 	if (ip->i_flag&IACC)
@@ -184,7 +185,7 @@ lfs_update (ap)
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 
 	/* Push back the vnode and any dirty blocks it may have. */
-	return (ap->a_waitfor ? lfs_vflush(ap->a_vp) : 0);
+	return (ap->a_waitfor ? lfs_vflush(vp) : 0);
 }
 
 /* Update segment usage information when removing a block. */

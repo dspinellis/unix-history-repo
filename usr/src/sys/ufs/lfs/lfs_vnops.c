@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.82 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.83 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -187,6 +187,7 @@ struct vnodeopv_desc lfs_fifoop_opv_desc =
 lfs_read (ap)
 	struct vop_read_args *ap;
 {
+	register struct uio *uio = ap->a_uio;
 	register struct inode *ip = VTOI(ap->a_vp);
 	register struct lfs *fs;				/* LFS */
 	struct buf *bp;
@@ -199,24 +200,24 @@ lfs_read (ap)
 	printf("lfs_read: ino %d\n", ip->i_number);
 #endif
 #ifdef DIAGNOSTIC
-	if (ap->a_uio->uio_rw != UIO_READ)
+	if (uio->uio_rw != UIO_READ)
 		panic("ufs_read mode");
 	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
 		panic("ufs_read type");
 #endif
-	if (ap->a_uio->uio_resid == 0)
+	if (uio->uio_resid == 0)
 		return (0);
-	if (ap->a_uio->uio_offset < 0)
+	if (uio->uio_offset < 0)
 		return (EINVAL);
 	ip->i_flag |= IACC;
 
 	fs = ip->i_lfs;						/* LFS */
 	do {
-		lbn = lblkno(fs, ap->a_uio->uio_offset);
-		on = blkoff(fs, ap->a_uio->uio_offset);
-		n = MIN((unsigned)(fs->lfs_bsize - on), ap->a_uio->uio_resid);
-		diff = ip->i_size - ap->a_uio->uio_offset;
+		lbn = lblkno(fs, uio->uio_offset);
+		on = blkoff(fs, uio->uio_offset);
+		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
+		diff = ip->i_size - uio->uio_offset;
 		if (diff <= 0)
 			return (0);
 		if (diff < n)
@@ -235,11 +236,11 @@ lfs_read (ap)
 			brelse(bp);
 			return (error);
 		}
-		error = uiomove(bp->b_un.b_addr + on, (int)n, ap->a_uio);
-		if (n + on == fs->lfs_bsize || ap->a_uio->uio_offset == ip->i_size)
+		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+		if (n + on == fs->lfs_bsize || uio->uio_offset == ip->i_size)
 			bp->b_flags |= B_AGE;
 		brelse(bp);
-	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);
 }
 
@@ -251,8 +252,9 @@ lfs_write (ap)
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
+	register struct vnode *vp = ap->a_vp;
 	struct proc *p = ap->a_uio->uio_procp;
-	register struct inode *ip = VTOI(ap->a_vp);
+	register struct inode *ip = VTOI(vp);
 	register struct lfs *fs;
 	struct buf *bp;
 	daddr_t lbn;
@@ -267,7 +269,7 @@ lfs_write (ap)
 	if (ap->a_uio->uio_rw != UIO_WRITE)
 		panic("lfs_write mode");
 #endif
-	switch (ap->a_vp->v_type) {
+	switch (vp->v_type) {
 	case VREG:
 		if (ap->a_ioflag & IO_APPEND)
 			ap->a_uio->uio_offset = ip->i_size;
@@ -292,7 +294,7 @@ lfs_write (ap)
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (ap->a_vp->v_type == VREG && p &&
+	if (vp->v_type == VREG && p &&
 	    ap->a_uio->uio_offset + ap->a_uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
@@ -310,14 +312,14 @@ lfs_write (ap)
 		lbn = lblkno(fs, ap->a_uio->uio_offset);
 		on = blkoff(fs, ap->a_uio->uio_offset);
 		n = MIN((unsigned)(fs->lfs_bsize - on), ap->a_uio->uio_resid);
-		if (error = lfs_balloc(ap->a_vp, n, lbn, &bp))
+		if (error = lfs_balloc(vp, n, lbn, &bp))
 			break;
 		if (ap->a_uio->uio_offset + n > ip->i_size) {
 			ip->i_size = ap->a_uio->uio_offset + n;
-			vnode_pager_setsize(ap->a_vp, (u_long)ip->i_size);
+			vnode_pager_setsize(vp, (u_long)ip->i_size);
 		}
 		size = blksize(fs);
-		(void) vnode_pager_uncache(ap->a_vp);
+		(void) vnode_pager_uncache(vp);
 		n = MIN(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
 #ifdef NOTLFS							/* LFS */
@@ -337,12 +339,12 @@ lfs_write (ap)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
 	if (error && (ap->a_ioflag & IO_UNIT)) {
-		(void)VOP_TRUNCATE(ap->a_vp, osize, ap->a_ioflag & IO_SYNC, ap->a_cred);
+		(void)VOP_TRUNCATE(vp, osize, ap->a_ioflag & IO_SYNC, ap->a_cred);
 		ap->a_uio->uio_offset -= resid - ap->a_uio->uio_resid;
 		ap->a_uio->uio_resid = resid;
 	}
 	if (!error && (ap->a_ioflag & IO_SYNC))
-		error = VOP_UPDATE(ap->a_vp, &time, &time, 1);
+		error = VOP_UPDATE(vp, &time, &time, 1);
 	return (error);
 }
 
