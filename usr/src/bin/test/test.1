@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)test.1	6.6 (Berkeley) %G%
+.\"     @(#)test.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TEST 1
@@ -59,6 +59,10 @@ True if
 .Ar file
 exists and its set group ID flag
 is set.
+.It Fl h Ar file
+True if
+.Ar file
+exists and is a symbolic link.
 .It Fl n Ar string
 True if the length of
 .Ar string

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)operators.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)operators.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -25,6 +25,7 @@ char *const unary_op[] = {
       "-e",
       "-f",
       "-g",
+      "-h",
       "-k",
       "-n",
       "-p",
@@ -72,6 +73,7 @@ const char op_priority[] = {
       12,
       12,
       12,
+      12,
       1,
       1,
       2,
@@ -88,6 +90,7 @@ const char op_priority[] = {
 
 const char op_argflag[] = {
       0,
+      OP_FILE,
       OP_FILE,
       OP_FILE,
       OP_FILE,
