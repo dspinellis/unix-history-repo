@@ -1,4 +1,4 @@
-#	@(#)special	5.1 (Berkeley) %G%
+#	@(#)special	5.2 (Berkeley) %G%
 #
 # Hand-crafted mtree specification for the dangerous files.
 #
@@ -6,14 +6,20 @@
 .		type=dir mode=0755 uname=root gname=wheel
 
 dev		type=dir mode=0755 uname=root gname=wheel
+drum		type=char mode=640 uname=root gname=kmem
 fd		type=dir mode=0755 uname=root gname=wheel
 ..	#dev/fd
+kmem		type=char mode=640 uname=root gname=kmem
+mem		type=char mode=640 uname=root gname=kmem
 ..	#dev
 
 etc		type=dir mode=0755 uname=root gname=wheel
 aliases		type=file mode=0644 uname=root gname=wheel
 aliases.db	type=file mode=0644 uname=root gname=wheel
 crontab		type=file mode=0644 uname=root gname=wheel
+csh.cshrc	type=file mode=0644 uname=root gname=wheel
+csh.login	type=file mode=0644 uname=root gname=wheel
+csh.logout	type=file mode=0644 uname=root gname=wheel
 daily		type=file mode=0644 uname=root gname=wheel
 disklabels	type=dir mode=0755 uname=root gname=wheel
 ..	#disklabels
@@ -28,13 +34,15 @@ mail.rc		type=file mode=0644 uname=root gname=wheel
 master.passwd	type=file mode=600 uname=root gname=wheel
 monthly		type=file mode=0644 uname=root gname=wheel
 mtree		type=dir mode=0755 uname=root gname=wheel
-flist.secure	type=file mode=0600 uname=root gname=wheel
+special		type=file mode=0600 uname=root gname=wheel
 ..	#mtree
 named.boot	type=file mode=0644 uname=root gname=wheel
 netstart	type=file mode=0644 uname=root gname=wheel
 nfsstart	type=file mode=0644 uname=root gname=wheel
 passwd		type=file mode=644 uname=root gname=wheel
 printcap	type=file mode=0644 uname=root gname=wheel
+rc		type=file mode=0644 uname=root gname=wheel
+rc.local	type=file mode=0644 uname=root gname=wheel
 security	type=file mode=0644 uname=root gname=wheel
 sendmail.cf	type=file mode=0644 uname=root gname=wheel
 sendmail.fc	type=file mode=0644 uname=root gname=wheel
@@ -105,6 +113,7 @@ src		type=dir mode=0755 uname=root gname=wsrc
 
 var		type=dir mode=0755 uname=root gname=wheel
 account		type=dir mode=0755 uname=root gname=wheel
+acct		type=file mode=644 uname=root gname=wheel
 ..
 at		type=dir mode=0755 uname=root gname=daemon
 ..
@@ -120,6 +129,7 @@ device.current	type=file mode=0600 uname=root gname=wheel
 secure		type=file mode=0600 uname=root gname=wheel
 setuid.backup	type=file mode=0600 uname=root gname=wheel
 setuid.current	type=file mode=0600 uname=root gname=wheel
+wtmp		type=file mode=0600 uname=root gname=wheel
 ..
 mail		type=dir mode=0755 uname=root gname=wheel
 ..
@@ -127,6 +137,7 @@ preserve	type=dir mode=0755 uname=root gname=wheel
 ..
 run		type=dir mode=0755 uname=root gname=wheel
 kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
+utmp		type=file mode=0664 uname=root gname=utmp
 ..
 spool		type=dir mode=0755 uname=root gname=wheel
 ftp		type=dir mode=0755 uname=root gname=wheel
