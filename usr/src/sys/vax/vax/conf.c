@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.13 (Berkeley) %G%
+ *	@(#)conf.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -301,30 +301,27 @@ struct	tty dmf_tty[];
 #endif
 
 #if VAX8600
-int	crlopen(),crlclose(),crlread(),crlwrite();
+int	crlopen(),crlclose(),crlrw();
 #else
 #define	crlopen		nodev
 #define	crlclose	nodev
-#define	crlread		nodev
-#define	crlwrite	nodev
+#define	crlrw		nodev
 #endif
 
 #if VAX8200
-int	rx50open(),rx50close(),rx50read(),rx50write();
+int	rx50open(),rx50close(),rx50rw();
 #else
 #define	rx50open	nodev
 #define	rx50close	nodev
-#define	rx50read	nodev
-#define	rx50write	nodev
+#define	rx50rw		nodev
 #endif
 
 #if VAX780
-int	flopen(),flclose(),flread(),flwrite();
+int	flopen(),flclose(),flrw();
 #else
 #define	flopen	nodev
 #define	flclose	nodev
-#define	flread	nodev
-#define	flwrite	nodev
+#define	flrw	nodev
 #endif
 
 #include "dz.h"
@@ -354,7 +351,7 @@ int	lpopen(),lpclose(),lpwrite(),lpreset();
 
 int	syopen(),syread(),sywrite(),syioctl(),syselect();
 
-int 	mmread(),mmwrite();
+int 	mmrw();
 #define	mmselect	seltrue
 
 #include "va.h"
@@ -595,7 +592,7 @@ struct cdevsw	cdevsw[] =
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
 	syioctl,	nulldev,	nulldev,	NULL,
 	syselect,	nodev,		NULL,
-	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
+	nulldev,	nulldev,	mmrw,		mmrw,		/*3*/
 	nodev,		nulldev,	nulldev,	NULL,
 	mmselect,	nodev,		NULL,
 	hpopen,		hpclose,	rawread,	rawwrite,	/*4*/
@@ -610,7 +607,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	rawread,	rawwrite,	/*7*/
 	nodev,		nodev,		nulldev,	NULL,
 	nodev,		nodev,		swstrategy,
-	flopen,		flclose,	flread,		flwrite,	/*8*/
+	flopen,		flclose,	flrw,		flrw,		/*8*/
 	nodev,		nodev,		nulldev,	NULL,
 	seltrue,	nodev,		NULL,
 	udaopen,	udaclose,	rawread,	rawwrite,	/*9*/
@@ -692,7 +689,7 @@ struct cdevsw	cdevsw[] =
 	dhuopen,	dhuclose,	dhuread,	dhuwrite,	/*34*/
 	dhuioctl,	dhustop,	dhureset,	dhu_tty,
 	ttselect,	nodev,		NULL,
- 	crlopen,	crlclose,	crlread,	crlwrite,	/*35*/
+ 	crlopen,	crlclose,	crlrw,		crlrw,		/*35*/
  	nodev,		nodev,		nulldev,	NULL,
  	seltrue,	nodev,		NULL,
 	vsopen,		vsclose,	nodev,		nodev,		/*36*/
@@ -741,7 +738,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*50*/
 	nodev,		nulldev,	nulldev,	NULL,
 	nodev,		nodev,		NULL,
-	rx50open,	rx50close,	rx50read,	rx50write,	/*51*/
+	rx50open,	rx50close,	rx50rw,		rx50rw,		/*51*/
  	nodev,		nodev,		nulldev,	0,
  	seltrue,	nodev,		NULL,
 /* kdb50 ra */
