@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.51		%G%);
+SCCSID(@(#)readcf.c	3.52		%G%);
 
 /*
 **  READCF -- read control file.
@@ -463,6 +463,7 @@ munchstring(p)
 		if (backslash)
 		{
 			/* everything is roughly literal */
+			backslash = FALSE;
 			switch (*p)
 			{
 			  case 'r':		/* carriage return */
@@ -482,7 +483,6 @@ munchstring(p)
 				continue;
 			}
 			*q++ = *p;
-			backslash = FALSE;
 		}
 		else
 		{
