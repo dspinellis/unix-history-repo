@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -224,7 +224,7 @@ printlink(name)
 	(void)printf(" -> %s", path);
 }
 
-char *
+static char *
 flags_from_fid(flags)
 	long flags;
 {
