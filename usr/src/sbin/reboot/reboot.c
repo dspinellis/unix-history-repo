@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -23,8 +23,7 @@ static char sccsid[] = "@(#)reboot.c	5.1 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
-
-#define SHUTDOWNLOG "/usr/adm/shutdownlog"
+#include <syslog.h>
 
 main(argc, argv)
 	int argc;
@@ -36,6 +35,7 @@ main(argc, argv)
 	register ok = 0;
 	register qflag = 0;
 
+	openlog("reboot", 0, LOG_AUTH);
 	argc--, argv++;
 	howto = 0;
 	while (argc > 0) {
@@ -77,7 +77,7 @@ main(argc, argv)
 	}
 
 	if ((howto & RB_NOSYNC) == 0)
-		log_entry();
+		syslog(LOG_CRIT, "halted for reboot");
 	if (!qflag) {
 		if (!(howto & RB_NOSYNC)) {
 			markdown();
@@ -121,31 +121,4 @@ markdown()
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
-}
-
-char *days[] = {
-	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-};
-
-char *months[] = {
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-log_entry()
-{
-	FILE *fp;
-	struct tm *tm, *localtime();
-	time_t now;
-
-	time(&now);
-	tm = localtime(&now);
-	fp = fopen(SHUTDOWNLOG, "a");
-	if (fp == 0)
-		return;
-	fseek(fp, 0L, 2);
-	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Halted for reboot.\n", tm->tm_hour,
-		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
-		tm->tm_mday, tm->tm_year + 1900);
-	fclose(fp);
 }
