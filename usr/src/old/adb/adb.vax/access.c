@@ -1,3 +1,6 @@
+#ifndef lint
+static	char sccsid[] = "@(#)access.c	4.7 %G%";
+#endif
 /*
  * Adb: access data in file/process address space.
  *
@@ -8,7 +11,6 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#) 4.6 %G%";
 
 
 MAP		txtmap;

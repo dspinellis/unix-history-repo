@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static	char sccsid[] = "@(#)message.c	4.3 %G%";
+#endif
 /*
  *
  *	UNIX debugger
@@ -6,10 +8,9 @@
  */
 
 #include	"mac.h"
-static	char sccsid[] = "@(#)message.c 4.2 %G%";
 #include	"mode.h"
 
-MSG		VERSION =  "\nVERSION VM/VAX4.2	DATE %G%\n";
+MSG		VERSION =  "\nVERSION VM/VAX4.3	DATE %G%\n";
 
 MSG		BADMOD	=  "bad modifier";
 MSG		BADCOM	=  "bad command";
