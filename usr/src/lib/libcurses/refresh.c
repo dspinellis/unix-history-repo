@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -22,7 +22,7 @@ WINDOW *_win;
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
 static void	quickch __P((WINDOW *));	
-static void	scrolln __P((WINDOW *, int, int));
+static void	scrolln __P((WINDOW *, int, int, int, int, int));
 /*
  * wrefresh --
  *	Make the current screen look like "win" over the area coverd by
@@ -371,7 +371,7 @@ quickch(win)
 
 	register LINE *clp, *tmp1, *tmp2;
 	register int bsize, curs, curw, starts, startw, i, j;
-	int n, target, remember;
+	int n, target, remember, bot, top;
 	char buf[1024];
 	u_int blank_hash;
 
@@ -387,7 +387,8 @@ quickch(win)
 					if (win->lines[curw]->hash !=
 					    curscr->lines[curs]->hash ||
 				            bcmp(&win->lines[curw], 
-					    &win->lines[curs], win->maxx != 0))
+					    &curscr->lines[curs], 
+					    win->maxx != 0))
 						break;
 				if (curs == starts + bsize)
 					goto done;
@@ -397,11 +398,45 @@ quickch(win)
 	if (bsize < THRESH || starts == startw)	
 		return;
 
+	/* 
+	 * Find how many lines from the top of the screen are unchanged.
+	 */
+	if (starts != 0) {
+		for (top = 0; top < win->maxy; top++)
+			if (win->lines[top]->hash != curscr->lines[top]->hash 
+			    || bcmp(&win->lines[top], &curscr->lines[top], 
+				 win->maxx) != 0)
+				break;
+	} else
+		top = 0;
+	
+       /*
+	* Find how many lines from bottom of screen are unchanged. 
+	*/
+	if (curs != win->maxy) {
+		for (bot = win->maxy - 1; bot >= 0; bot--)
+			if (win->lines[bot]->hash != curscr->lines[bot]->hash 
+			    || bcmp(&win->lines[bot], &curscr->lines[bot], 
+				 win->maxx) != 0)
+				break;
+	} else
+		bot = win->maxy - 1;
+
 #ifdef DEBUG
-	__TRACE("quickch:bsize=%d,starts=%d,startw=%d,curw=%d,curs=%d\n", 
-		bsize, starts, startw, curw, curs);
+	__TRACE("quickch:bsize=%d,starts=%d,startw=%d,curw=%d,curs=%d,top=%d,bot=%d\n", 
+		bsize, starts, startw, curw, curs, top, bot);
 #endif
-	scrolln(win, starts, startw);
+
+	/* 
+	 * Make sure that there is no overlap between the bottom and top 
+	 * regions and the middle scrolled block.
+	 */
+	if (bot < curw)
+		bot = curw - 1;
+	if (top > startw)
+		top = startw;
+
+	scrolln(win, starts, startw, curs, top, bot);
 
 	n = startw - starts;
 
@@ -425,7 +460,8 @@ quickch(win)
 		__TRACE("quickch: n=%d startw=%d curw=%d i = %d target=%d ",
 			n, startw, curw, i, target);
 #endif
-		if (target >= startw && target < curw) {
+		if (target >= startw && target < curw || target < top || 
+		    target > bot) {
 #ifdef DEBUG
 			__TRACE("-- notdirty");
 #endif
@@ -471,9 +507,9 @@ quickch(win)
 }
 
 static void
-scrolln(win, starts, startw)
+scrolln(win, starts, startw, curs, top, bot)
 	WINDOW *win;
-	int starts, startw;
+	int starts, startw, curs, top, bot;
 {
 	int i, oy, ox, n;
 
@@ -482,22 +518,36 @@ scrolln(win, starts, startw)
 	n = starts - startw;
 
 	if (n > 0) {
-		mvcur(oy, ox, 0, 0);
+		mvcur(oy, ox, top, 0);
+		/* Scroll up the block */
 		if (DL)
 			tputs(tscroll(DL, n), 0, __cputchar);
 		else
 			for(i = 0; i < n; i++)
 				tputs(dl, 0, __cputchar);
-		mvcur(0, 0, oy, ox);
+		/* Push back down the bottom region */
+		if (bot < win->maxy - 1) {
+			mvcur(top, 0, bot - n + 1, 0);
+			if (AL)
+				tputs(tscroll(AL, n), 0, __cputchar);
+			else
+				for(i = 0; i < n; i++)
+					tputs(al, 0, __cputchar);
+			mvcur(bot - n + 1, 0, oy, ox);
+		} else
+			mvcur(top, 0, oy, ox);
 	} else {
-		/* Delete the bottom lines */
-		mvcur(oy, 0, win->maxy + n, 0);		/* n < 0 */
-		if (DL)
-			tputs(tscroll(DL, -n), 0, __cputchar);
-		else
-			for(i = n; i < 0; i++)
-				tputs(dl, 0, __cputchar);
-		mvcur(win->maxy + n, 0, starts,  0);
+		/* Preserve the bottom lines. (Pull them up) */
+		if (bot < win->maxy - 1) {
+			mvcur(oy, ox, curs, 0);
+			if (DL)
+				tputs(tscroll(DL, -n), 0, __cputchar);
+			else
+			       	for(i = n; i < 0; i++)
+					tputs(dl, 0, __cputchar);
+			mvcur(curs, 0, starts, 0);
+		} else
+			mvcur(oy, ox, starts,  0);
 
 		/* Scroll the block down */
 		if (AL)
