@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.10 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.11 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -176,6 +176,12 @@ exec:
 
 	if (buf[0] == '#' && buf[1] == '!' && shellscript(buf+2, &mbuf))
 		return;
+	if (buf[0] == '\037' && buf[1] == '\235') {
+		if (buf[2]&0x80)
+			printf("block ");
+		printf("compressed %d bit code data\n", buf[2]&0x1f);
+		return;
+	}
 	if(strncmp(buf, "!<arch>\n__.SYMDEF", 17) == 0 ) {
 		printf("archive random library\n");
 		return;
