@@ -10,4 +10,4 @@ VERSIONID(`@(#)version.m4	8.7.Beta (Berkeley) %G%')
 #
 divert(0)
 # Configuration version number
-DZ8.7.Beta.2
+DZ8.7.Beta.3`'ifdef(`confCF_VERSION', `/confCF_VERSION')
