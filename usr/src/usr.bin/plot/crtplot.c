@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crtplot.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)crtplot.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -190,8 +190,6 @@ int x0, y0, x1, y1;	/* already transformed to screen coords */
 	int length, i;
 	double deltaX, deltaY;
 	double x, y;
-	double floor();
-	int abs();
 
 length = abs(x1 - x0);
 if (abs(y1 -y0) > length)
