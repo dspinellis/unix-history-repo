@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.54 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.55 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.54 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.55 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -216,13 +216,18 @@ smtp(e)
 			if (p == NULL)
 				p = RealHostName;
 
-			/* send ext. message -- old systems must ignore */
-			message("250%c%s Hello %s, pleased to meet you",
-				c->cmdcode == CMDEHLO ? '-' : ' ',
-				MyHostName, p);
 			gothello = TRUE;
 			if (c->cmdcode != CMDEHLO)
+			{
+				/* print old message and be done with it */
+				message("250 %s Hello %s, pleased to meet you",
+					MyHostName, p);
 				break;
+			}
+			
+			/* print extended message and brag */
+			message("250-%s Hello %s, pleased to meet you",
+				MyHostName, p);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
 			if (MaxMessageSize > 0)
