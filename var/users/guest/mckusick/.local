@@ -1,0 +1,4 @@
+set path=(/usr/contrib/mh-6.8/bin $path)
+alias pack "folder +inbox -pack"
+alias cur 'clear; scan +inbox last:-`stty size | awk '"'"'{print $1-2}'"'"'`'
+alias from 'scan -file /usr/spool/mail/mckusick'
