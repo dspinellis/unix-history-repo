@@ -1,0 +1,39 @@
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c acu.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c acutab.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c biz22.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c biz31.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c cmds.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c cmdtab.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c cu.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c df.c
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c dn11.c
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c hunt.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c lock.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c log.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c remote.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c tip.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c tipout.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c value.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c vars.c
+./tip.h: 84: CTRL redefined
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c ventel.c
+./tip.h: 84: CTRL redefined
+cc -c -DBUFSIZ=1024 -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG remcap.c
+cc -O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG -c uucplock.c
+cc -o tip  acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o  lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o remcap.o uucplock.o
+rm -f cu
+ln tip cu
