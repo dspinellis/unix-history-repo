@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -697,7 +697,7 @@ setsender(from, e, delimptr, internal)
 	}
 	SuprErrs = FALSE;
 
-# ifdef USERDB
+# if USERDB
 	if (bitnset(M_CHECKUDB, e->e_from.q_mailer->m_flags))
 	{
 		register char *p;
