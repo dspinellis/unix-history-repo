@@ -1,0 +1,1 @@
+/usr/libexec/ld++ -o $1 /usr/lib/crt0.o -L..libg++/obj $1.o -lg++ -lc -lgnulib
