@@ -1,0 +1,25 @@
+Greetings,
+
+	To run sendmail with the name server you must:
+
+	1) rebuild sendmail with the -lresolv
+	2) rewrite the configuration files
+
+	The -lresolv selects the gethostby* calls that
+utilize the name server and resolver.  The module that
+uses the gethostby* calls is daemon.c.  An example
+Makefile is src/Makefile.ns.
+	The directory nscf contains example configuration
+files for interfacing with the name server.  A new right
+hand side syntax has been added - $[ and $].  Anything
+enclosed between the two is passed to maphostname in
+daemon.c to be resolved by the name server via the
+gethostbyname().  For example the ruleset:
+
+R$+<@$-.ARPA>	$@$1<@$[$2.ARPA$]>
+
+when passed user@host.ARPA will pass host.ARPA to the
+name server for qualification.  This might return
+host.berkeley.edu if this were host@ARPA's fully
+qualified name.  For additional information about the
+name server and resolver see the man pages.
