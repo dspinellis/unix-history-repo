@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	5.1 (Berkeley) %G%
+.\"	@(#)6.t	6.1 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
 ..
-.ds LH "Installing/Operating 4.2BSD
+.ds LH "Installing/Operating \*(4B
 .nr H1 6
 .nr H2 0
 .ds RH "System Operation
@@ -34,25 +34,31 @@ Such a reboot
 can be stopped (after it prints the date) with a ^C (interrupt).
 This will leave the system in single-user mode, with only the console
 terminal active.
+It is also possible to allow the filesystem checks to complete
+and then to return to single-user mode by signaling \fIfsck\fP
+with a QUIT signal (^\).
 .PP
 If booting from the console command level is needed, then the command
 .DS
 \fB>>>\fP B
 .DE
 will boot from the default device.
-On an 11/780 (11/730) the default device is determined by a ``DEPOSIT''
-command stored on the floppy (cassette) in the file ``DEFBOO.CMD'';
+On an 8650, 8600, 11/785, 11/780, or 11/730 the default device is
+determined by a ``DEPOSIT''
+command stored on the console boot device in the file ``DEFBOO.CMD''
+(``DEFBOO.COM'' on an 8650 or 8600);
 on an 11/750 the default device is determined by the setting of a switch
 on the front panel.
 .PP
-You can boot a system up single user on a 780 or 730 by doing
+You can boot a system up single user
+on an 8650, 8600, 785, 780, or 730 by doing
 .DS
 \fB>>>\fP B \fIXX\fP\|S
 .DE
 where \fIXX\fP is one of HP, HK, UP, RA, or RB for a 730.
 The corresponding command on an 11/750 is
 .DS
-\fB>>>\fP B/1
+\fB>>>\fP B/2
 .DE
 .PP
 For second vendor storage modules on the
@@ -74,8 +80,8 @@ They can be used after building a new test system to give the
 boot program the name of the test version of the system.
 .PP
 To bring the system up to a multi-user configuration from the single-user
-status after, e.g., a ``B HPS'' on an 11/780, ``B RBS'' on a 730,
-or a ``B/1'' on an
+status after, e.g., a ``B HPS'' on an 8650, 8600, 11/785 or 11/780, ``B RBS''
+on a 11/730, or a ``B/2'' on an
 11/750 all you have to do is hit ^D on the console.  The system
 will then execute /etc/rc,
 a multi-user restart script (and /etc/rc.local),
@@ -115,17 +121,26 @@ with the cause.
 .NH 2
 Device errors and diagnostics
 .PP
-When errors occur on peripherals or in the system, the system
-prints a warning diagnostic on the console.  These messages are collected
-regularly and written into a system error log file
-/usr/adm/messages.
+When serious errors occur on peripherals or in the system, the system
+prints a warning diagnostic on the console.
+These messages are collected
+by the system error logging process
+.IR syslogd (8)
+and written into a system error log file
+\fI/usr/adm/messages\fP.
+Less serious errors are sent directly to \fIsyslogd\fP,
+which may log them on the console.
+The error priorities that are logged and the locations to which they are logged
+are controlled by \fI/etc/syslog.conf\fP.  See
+.IR syslogd (8)
+for details.
 .PP
 Error messages printed by the devices in the system are described with the
 drivers for the devices in section 4 of the programmer's manual.
-If errors occur indicating hardware problems, you should contact
+If errors occur suggesting hardware problems, you should contact
 your hardware support group or field service.  It is a good idea to
 examine the error log file regularly
-(e.g. with ``tail \-r /usr/adm/messages'').
+(e.g. with ``tail \-r \fI/usr/adm/messages\fP'').
 .NH 2
 File system checks, backups and disaster recovery
 .PP
@@ -169,6 +184,7 @@ also.
 Thus a typical dump sequence would be:
 .br
 .ne 6
+.KS
 .TS
 center;
 c c c c c
@@ -193,8 +209,8 @@ W3	1	Dec 17, 1979	etc	71K
 D2	3	Dec 18, 1979	etc	13K
 FULL	0	Dec 22, 1979	etc	135K
 .TE
-We do weekly's often enough that daily's always fit on one tape and
-never get to the sequence of 9's in the daily level numbers.
+.KE
+We do weekly dumps often enough that daily dumps always fit on one tape.
 .PP
 Dumping of files by name is best done by
 \fItar\fP\|(1)
@@ -205,7 +221,7 @@ disks can be copied with
 \fIdd\fP\|(1)
 using the raw special files and an appropriate
 blocking factor; the number of sectors per track is usually
-a good value to use, consult /etc/disktab.
+a good value to use, consult \fI/etc/disktab\fP.
 .PP
 It is desirable that full dumps of the root file system be
 made regularly.
@@ -224,7 +240,7 @@ prefer a less facist approach, try using the programs
 combined with threatening
 messages of the day, and personal letters.
 .NH 2
-Moving filesystem data
+Moving file system data
 .PP
 If you have the equipment,
 the best way to move a file system
@@ -237,10 +253,12 @@ and restore the tape, using \fIrestore\fP\|(8).
 If for some reason you don't want to use magtape,
 dump accepts an argument telling where to put the dump;
 you might use another disk.
-The restore program uses an ``in-place'' algorithm which
+Filesystems may also be moved by piping the output of \fIdump\fP
+to \fIrestore\fP.
+The \fIrestore\fP program uses an ``in-place'' algorithm that
 allows file system dumps to be restored without concern for the
 original size of the file system.  Further, portions of a
-file system may be selectively restored in a manner similar
+file system may be selectively restored using a method similar
 to the tape archive program.
 .PP
 If you have to merge a file system into another, existing one,
@@ -251,6 +269,8 @@ the original and restore it onto the new file system.
 If you
 are playing with the root file system and only have one drive,
 the procedure is more complicated.
+If the only drive is a Winchester disk, this procedure may not be used
+without overwriting the existing root or another partition.
 What you do is the following:
 .IP 1.
 GET A SECOND PACK!!!!
@@ -268,28 +288,24 @@ using the newly created disk file system.
 .PP
 Note that if you change the disk partition tables or add new disk
 drivers they should also be added to the standalone system in
-/sys/stand and the default disk partition tables in /etc/disktab
+\fI/sys/stand\fP and the default disk partition tables in \fI/etc/disktab\fP
 should be modified.
 .NH 2
 Monitoring System Performance
 .PP
 The
-.I vmstat
+.I systat
 program provided with the system is designed to be an aid to monitoring
-systemwide activity.  Together with the
-\fIps\fP\|(1)
-command (as in ``ps av''), it can be used to investigate systemwide
-virtual memory activity.
-By running
-.I vmstat
+systemwide activity.  The default ``pigs'' mode shows a dynamic ``ps''.
+By running in the ``vmstat'' mode
 when the system is active you can judge the system activity in several
 dimensions: job distribution, virtual memory load, paging and swapping
-activity, disk and cpu utilization.
+activity, device interrupts, and disk and cpu utilization.
 Ideally, there should be few blocked (b) jobs,
 there should be little paging or swapping activity, there should
 be available bandwidth on the disk devices (most single arms peak
-out at 30-35 tps in practice), and the user cpu utilization (us) should
-be high (above 60%).
+out at 20-30 tps in practice), and the user cpu utilization (us) should
+be high (above 50%).
 .PP
 If the system is busy, then the count of active jobs may be large,
 and several of these jobs may often be blocked (b).  If the virtual
@@ -299,24 +315,23 @@ the virtual memory gets active; it is triggered by the amount of free
 memory dropping below a threshold and increases its pace as free memory
 goes to zero.
 .PP
-If you run
-.I vmstat
-when the system is busy (a ``vmstat 1'' gives all the
-numbers computed by the system), you can find
+If you run in the ``vmstat'' mode
+when the system is busy, you can find
 imbalances by noting abnormal job distributions.  If many
 processes are blocked (b), then the disk subsystem
-is overloaded or imbalanced.  If you have a several non-dma
+is overloaded or imbalanced.  If you have several non-dma
 devices or open teletype lines that are ``ringing'', or user programs
 that are doing high-speed non-buffered input/output, then the system
 time may go high (60-70% or higher).
 It is often possible to pin down the cause of high system time by
 looking to see if there is excessive context switching (cs), interrupt
-activity (in) or system call activity (sy).  Cumulatively on one of
-our large machines we average about 60 context switches and interrupts
-per second and about 90 system calls per second.
+activity (in) and per-device interrupt counts,
+or system call activity (sy).  Cumulatively on one of
+our large machines we average about 60-100 context switches and interrupts
+per second and about 70-120 system calls per second.
 .PP
 If the system is heavily loaded, or if you have little memory
-for your load (1M is little in most any case), then the system
+for your load (2M is little in most any case), then the system
 may be forced to swap.  This is likely to be accompanied by a noticeable
 reduction in system performance and pregnant pauses when interactive
 jobs such as editors swap out.
@@ -397,21 +412,22 @@ To regenerate all the system source you can do
 If you modify the C library, say to change a system call,
 and want to rebuild and install everything from scratch you
 have to be a little careful.
-You must insure the libraries are installed before the
+You must insure that the libraries are installed before the
 remainder of the source, otherwise the loaded images will not
 contain the new routine from the library.  The following
-steps are recommended.
+sequence will accomplish this.
 .DS
 \fB#\fP cd /usr/src
-\fB#\fP cd lib; make install
-\fB#\fP cd ..
-\fB#\fP make usr.lib
-\fB#\fP cd usr.lib; make install
-\fB#\fP cd ..
-\fB#\fP make bin etc usr.bin ucb games local
-\fB#\fP for i in bin etc usr.bin ucb games local; do (cd $i; make install); done
+\fB#\fP make clean
+\fB#\fP make build
+\fB#\fP make installsrc
 .DE
-This will take about 12 hours on a reasonably configured 11/750.
+The first \fImake\fP removes any existing binaries in the source trees
+to insure that everything is reloaded.
+The next \fImake\fP compiles and installs the libraries and compilers,
+then compiles the remainder of the sources.
+The final line installs all of the commands not installed in the first phase.
+This will take about 18 hours on a reasonably configured 11/750.
 .NH 2
 Making local modifications
 .PP
@@ -420,6 +436,8 @@ versions of commands in /usr/src/bin, /usr/src/usr.bin, and /usr/src/ucb
 in through the directory /usr/src/new
 and out of the original directory into /usr/src/old for
 a time before removing them.
+(/usr/new is also used by default for the programs that constitute
+the contributed software portion of the distribution.)
 Locally written commands that aren't distributed are kept in /usr/src/local
 and their binaries are kept in /usr/local.  This allows /usr/bin, /usr/ucb,
 and /bin to correspond to the distribution tape (and to the manuals that
@@ -427,52 +445,54 @@ people can buy).  People wishing to use /usr/local commands are made
 aware that they aren't in the base manual.  As manual updates incorporate
 these commands they are moved to /usr/ucb.
 .PP
-A directory /usr/junk to throw garbage into, as well as binary directories
-/usr/old and /usr/new are useful.  The man command supports manual
-directories such as /usr/man/manj for junk and /usr/man/manl for local
+A directory, /usr/junk, to throw garbage into, as well as binary directories,
+/usr/old and /usr/new, are useful.  The man command supports manual
+directories such as /usr/man/mano for old and /usr/man/manl for local
 to make this or something similar practical.
 .NH 2
 Accounting
 .PP
 UNIX optionally records two kinds of accounting information:
 connect time accounting and process resource accounting.  The connect
-time accounting information is stored in the file /usr/adm/wtmp, which
+time accounting information is stored in the file \fI/usr/adm/wtmp\fP, which
 is summarized by the program
 .IR ac (8).
-The process time accounting information is stored in the file /usr/adm/acct,
-and analyzed and summarized by the program
+The process time accounting information is stored in the file
+\fI/usr/adm/acct\fP after it is enabled by
+.IR accton (8),
+and is analyzed and summarized by the program
 .IR sa (8).
 .PP
-If you need to implement recharge for computing time, you can implement
+If you need to recharge for computing time, you can develop
 procedures based on the information provided by these commands.
 A convenient way to do this is to give commands to the clock daemon
-/etc/cron
+.I /etc/cron
 to be executed every day at a specified time.  This is done by adding
-lines to /usr/adm/crontab; see
+lines to \fI/usr/adm/crontab\fP; see
 .IR cron (8)
 for details.
 .NH 2
 Resource control
 .PP
-Resource control in the current version of UNIX is fairly
-elaborate compared to most UNIX systems.  The disc quota
+Resource control in the current version of UNIX is more
+elaborate than in most UNIX systems.  The disk quota
 facilities developed at the University of Melbourne have
 been incorporated in the system and allow control over the
-number of files and amount of disc space each user may use
+number of files and amount of disk space each user may use
 on each file system.  In addition, the resources consumed
 by any single process can be limited by the mechanisms of
 \fIsetrlimit\fP\|(2).  As distributed, the latter mechanism
 is voluntary, though sites may choose to modify the login
-mechanism to impose limits not covered with disc quotas.
+mechanism to impose limits not covered with disk quotas.
 .PP
-To utilize the disc quota facilities, the system must be
+To use the disk quota facilities, the system must be
 configured with ``options QUOTA''.  File systems may then
 be placed under the quota mechanism by creating a null file
 .I quotas
 at the root of the file system, running
 .IR quotacheck (8),
-and modifying /etc/fstab to indicate the file system is read-write
-with disc quotas (a ``rq'' type field).  The
+and modifying \fI/etc/fstab\fP to show that the file system is read-write
+with disk quotas (an ``rq'' type field).  The
 .IR quotaon (8)
 program may then be run to enable quotas.
 .PP
@@ -517,7 +537,7 @@ networks such as the Ethernet a
 loose cable tap or misplaced power cable can result in severely
 deteriorated service.  The \fInetstat\fP\|(1) program may be of
 aid in tracking down hardware malfunctions.  In particular, look
-at the \-i and \-s options in the manual page.
+at the \fB\-i\fP and \fB\-s\fP options in the manual page.
 .PP
 Should you believe a communication protocol problem exists,
 consult the protocol specifications and attempt to isolate the
@@ -525,12 +545,12 @@ problem in a packet trace.  The SO_DEBUG option may be supplied
 before establishing a connection on a socket, in which case the
 system will trace all traffic and internal actions (such as timers
 expiring) in a circular trace buffer.  This buffer may then
-be printed out with the \fItrpt\fP\|(8C) program.  Most all the
-servers distributed with the system accept a \-d option forcing
+be printed out with the \fItrpt\fP\|(8C) program.  Most of the
+servers distributed with the system accept a \fB\-d\fP option forcing
 all sockets to be created with debugging turned on.  Consult the
 appropriate manual pages for more information.
 .NH 2
-Files which need periodic attention
+Files that need periodic attention
 .PP
 We conclude the discussion of system operations by listing
 the files that require periodic attention or are system specific
@@ -550,13 +570,13 @@ lb a.
 /etc/motd	message of the day
 /etc/passwd	password file; each account has a line
 /etc/rc.local	local system restart script; runs reboot; starts daemons
+/etc/inetd.conf	local internet servers
 /etc/hosts	host name data base
 /etc/networks	network name data base
 /etc/services	network services data base
 /etc/hosts.equiv	hosts under same administrative control
-/etc/securetty	restricted list of ttys where root can log in
+/etc/syslog.conf	error log configuration for \fIsyslogd\fP\|(8)
 /etc/ttys	enables/disables ports
-/etc/ttytype	terminal types connected to ports
 /usr/lib/crontab	commands that are run periodically
 /usr/lib/aliases	mail forwarding and distribution groups
 /usr/adm/acct	raw process account data
