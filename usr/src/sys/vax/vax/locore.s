@@ -1,4 +1,4 @@
-/*	locore.s	4.19	81/02/15	*/
+/*	locore.s	4.20	81/02/15	*/
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -69,7 +69,6 @@ _doadump:
 #define	MSG(msg)	.data; 1: .asciz msg; .text
 #define	PUSHR		pushr $0x3f
 #define	POPR		popr $0x3f
-#define	REI		brw int_ret		/* will be rei when ast's... */
 
 SCBVEC(machcheck):
 	PANIC("Machine check");
@@ -98,7 +97,8 @@ SCBVEC(mba0int):
 	PUSHR; pushl $0
 1:	calls $1,_mbintr
 	POPR
-	REI
+	incl	_cnt+V_INTR
+	rei
 
 #if VAX780
 /* Special register return of IPL and interrupt vector during configuration */
@@ -142,28 +142,26 @@ ubaerror:
 	rei
 #endif
 SCBVEC(cnrint):
-	PUSHR; calls $0,_cnrint; POPR; REI
+	PUSHR; calls $0,_cnrint; POPR; incl _cnt+V_INTR; rei
 SCBVEC(cnxint):
-	PUSHR; calls $0,_cnxint; POPR; REI
-SCBVEC(clockint):
+	PUSHR; calls $0,_cnxint; POPR; incl _cnt+V_INTR; rei
+SCBVEC(hardclock):
 	PUSHR
-	pushl 4+6*4(sp); pushl 4+6*4(sp); calls $2,_clock	# clock(pc,psl)
-	POPR; REI
+	pushl 4+6*4(sp); pushl 4+6*4(sp);
+	calls $2,_hardclock			# hardclock(pc,psl)
+	POPR;
+	incl	_cnt+V_INTR		## temp so not to break vmstat -= HZ
+	rei
+SCBVEC(softclock):
+	PUSHR
+	pushl 4+6*4(sp); pushl 4+6*4(sp);
+	calls $2,_softclock			# softclock(pc,psl)
+	POPR; 
+	rei
 SCBVEC(consdin):
 	halt
 SCBVEC(consdout):
 	halt
-
-/* THIS SHOULD BE GOTTEN RID OF... WE SHOULD USE AST'S TO FORCE RESCHEDS */
-int_ret:
-	incl	_cnt+V_INTR
-	bitl	$PSL_CURMOD,4(sp)	# CRUD
-	beql	1f			# CRUD
-	tstb	_runrun			# CRUD
-	beql	1f			# CRUD
-	mtpr	$0x18,$IPL		# CRUD
-	mtpr	$3,$SIRR		# CRUD
-1:	rei
 
 /*
  * DZ pseudo dma routine:
@@ -222,28 +220,18 @@ SCBVEC(ustray):
 	PRINTF(2, "Stray unibus interrupt (%x) (IPL %x)\n")
 	POPR
 	tstl	(sp)+
-	REI
+	rei
 
 /*
  * Trap and fault vector routines
  */ 
 #define	TRAP(a)	pushl $a; brw alltraps
 
-/*					# CRUD
- * Reschedule trap (Software level 3)	# CRUD
- *					# CRUD
- * SHOULD DO THIS WITH AST'S.		# CRUD
+/*
+ * Ast delivery (profiling and/or reschedule)
  */
-SCBVEC(resched):			# CRUD
-	mtpr	$0,$IPL			# CRUD
-	pushl	$0			# CRUD
-	pushl	$RESCHED		# CRUD
-	bitl	$PSL_CURMOD,12(sp)	# CRUD
-	bneq	alltraps		# CRUD
-	addl2	$8,sp			# CRUD
-	mtpr	$HIGH,$IPL		# CRUD
-	rei				# CRUD
-
+SCBVEC(astflt):
+	pushl $0; TRAP(ASTFLT)
 SCBVEC(privinflt):
 	pushl $0; TRAP(PRIVINFLT)
 SCBVEC(xfcflt):
