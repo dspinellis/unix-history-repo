@@ -1,0 +1,25 @@
+.th TTYN III 1/15/73
+.sh NAME
+ttyn \*- return name of current typewriter
+.sh SYNOPSIS
+.ft B
+jsr	pc,ttyn
+.s3
+ttyn(file)
+.s3
+.ft R
+.sh DESCRIPTION
+.it Ttyn
+hunts up the last character of the name of the
+typewriter which is the standard input (from \fIas\fR)
+or is specified by the
+argument
+.it file
+descriptor (from C).
+If \fIn\fR is returned, the
+typewriter name is then ``/dev/tty\fIn\fR''.
+.s3
+.bd x
+is returned if the indicated file does not correspond to a
+typewriter.
+.sh BUGS
