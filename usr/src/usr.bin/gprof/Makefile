@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.16 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.17 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -8,8 +8,10 @@ RM=	/bin/rm -f
 INSTALL=cp
 
 GPROFHDRS =	gprof.h
-GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c printgprof.c calls.c printlist.c
-GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o printgprof.o calls.o printlist.o
+GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c calls.c hertz.c \
+		printgprof.c printlist.c
+GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o calls.o hertz.o \
+		printgprof.o printlist.o
 
 gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
@@ -39,6 +41,7 @@ gprof.o: gprof.c gprof.h gcrt0.h
 arcs.o: arcs.c gprof.h gcrt0.h
 lookup.o: lookup.c gprof.h gcrt0.h
 dfn.o: dfn.c gprof.h gcrt0.h
-printgprof.o: printgprof.c gprof.h gcrt0.h
 calls.o: calls.c gprof.h gcrt0.h
+hertz.o: gprof.h hertz.c
+printgprof.o: printgprof.c gprof.h gcrt0.h
 printlist.o: printlist.c gprof.h gcrt0.h
