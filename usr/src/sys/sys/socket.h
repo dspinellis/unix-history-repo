@@ -1,4 +1,4 @@
-/*	socket.h	4.25	83/01/22	*/
+/*	socket.h	4.26	83/05/18	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -40,8 +40,8 @@
  * to support the socket types.
  */
 struct sockproto {
-	short	sp_family;		/* protocol family */
-	short	sp_protocol;		/* protocol within family */
+	u_short	sp_family;		/* protocol family */
+	u_short	sp_protocol;		/* protocol within family */
 };
 
 #define	PF_UNSPEC	0		/* unspecified */
@@ -68,7 +68,7 @@ struct sockproto {
  * We give these as two different structures to allow initialization.
  */
 struct sockaddr {
-	short	sa_family;		/* address family */
+	u_short	sa_family;		/* address family */
 	char	sa_data[14];		/* up to 14 bytes of direct address */
 };
 

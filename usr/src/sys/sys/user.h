@@ -1,4 +1,4 @@
-/*	user.h	4.25	83/02/10	*/
+/*	user.h	4.25	83/05/18	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -127,6 +127,9 @@ struct	user {
 		unsigned pr_off;	/* pc offset */
 		unsigned pr_scale;	/* pc scaling */
 	} u_prof;
+#ifdef sun
+	int	u_lofault;		/* catch faults in locore.s */
+#endif
 	int	u_stack[1];
 };
 
