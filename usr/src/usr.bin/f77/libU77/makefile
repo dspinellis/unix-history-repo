@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.11	%G%
+#	@(#)makefile	1.12	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -24,6 +24,7 @@ SOURCES = \
 	ctime_.c \
 	dtime_.c \
 	etime_.c \
+	f77lid_.c \
 	fdate_.c \
 	fgetc_.c \
 	fork_.c \
@@ -71,6 +72,7 @@ OBJECTS = \
 	ctime_.o \
 	dtime_.o \
 	etime_.o \
+	f77lid_.o \
 	fdate_.o \
 	fgetc_.o \
 	fork_.o \
