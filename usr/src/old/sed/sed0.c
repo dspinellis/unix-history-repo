@@ -1,4 +1,4 @@
-/*	sed0.c	4.1	85/04/05	*/
+/*	sed0.c	4.2	85/06/19	*/
 
 #include <stdio.h>
 #include "sed.h"
@@ -441,7 +441,13 @@ jtcommon:
 					exit(2);
 				}
 				if(p == rep->re1) {
-					rep->re1 = op;
+					if(op)
+					    rep->re1 = op;
+					else {
+					    fprintf(stderr, 
+						"First RE may not be null\n");
+					    exit(2);
+					}
 				} else {
 					op = rep->re1;
 				}
