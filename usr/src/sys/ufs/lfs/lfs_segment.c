@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.33 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -81,6 +81,9 @@ lfs_vflush(vp)
 	int error, s;
 
 	fs = VFSTOUFS(vp->v_mount)->um_lfs;
+	if (fs->lfs_nactive > MAX_ACTIVE)
+		return(lfs_segwrite(vp->v_mount, 1));
+
 	lfs_seglock(fs);
 
 	/*
@@ -716,7 +719,7 @@ lfs_newseg(fs)
 	int curseg, error, isdirty, sn;
 
         LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
-        sup->su_flags |= SEGUSE_DIRTY;
+        sup->su_flags |= SEGUSE_DIRTY | SEGUSE_ACTIVE;
 	sup->su_nbytes = 0;
 	sup->su_nsums = 0;
 	sup->su_ninos = 0;
@@ -770,6 +773,19 @@ lfs_writeseg(fs, sp)
 	if ((nblocks = sp->cbpp - sp->bpp) == 1 && !(sp->seg_flags & SEGM_CKP))
 		return (0);
 
+	ssp = (SEGSUM *)sp->segsum;
+
+	/* Update the segment usage information. */
+	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
+	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
+	sup->su_nbytes += nblocks - 1 - ninos << fs->lfs_bshift;
+	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
+	sup->su_nbytes += LFS_SUMMARY_SIZE;
+	sup->su_lastmod = time.tv_sec;
+	sup->su_ninos += ninos;
+	++sup->su_nsums;
+	do_again = !(bp->b_flags & B_GATHERED);
+	(void)VOP_BWRITE(bp);
 	/*
 	 * Compute checksum across data and then across summary; the first
 	 * block (the summary block) is skipped.  Set the create time here
@@ -779,26 +795,22 @@ lfs_writeseg(fs, sp)
 	 * Fix this to do it inline, instead of malloc/copy.
 	 */
 	datap = dp = malloc(nblocks * sizeof(u_long), M_SEGMENT, M_WAITOK);
-	for (bpp = sp->bpp, i = nblocks - 1; i--;)
-		*dp++ = (*++bpp)->b_un.b_words[0];
-	ssp = (SEGSUM *)sp->segsum;
+	for (bpp = sp->bpp, i = nblocks - 1; i--;) {
+		if ((*++bpp)->b_flags & B_INVAL) {
+			if (copyin((*bpp)->b_saveaddr, dp++, sizeof(u_long)))
+				panic("lfs_writeseg: copyin failed");
+		} else
+			*dp++ = (*bpp)->b_un.b_words[0];
+	}
 	ssp->ss_create = time.tv_sec;
 	ssp->ss_datasum = cksum(datap, (nblocks - 1) * sizeof(u_long));
 	ssp->ss_sumsum =
 	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
 	free(datap, M_SEGMENT);
-	/* Update the segment usage information. */
-	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
-	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
-	sup->su_nbytes += nblocks - 1 - ninos << fs->lfs_bshift;
-	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
-	sup->su_nbytes += LFS_SUMMARY_SIZE;
-	sup->su_lastmod = time.tv_sec;
-	sup->su_flags |= SEGUSE_ACTIVE;
-	sup->su_ninos += ninos;
-	++sup->su_nsums;
-	do_again = !(bp->b_flags & B_GATHERED);
-	(void)VOP_BWRITE(bp);
+#ifdef DIAGNOSTIC
+	if (fs->lfs_bfree < fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE)
+		panic("lfs_writeseg: No diskspace for summary");
+#endif
 	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
