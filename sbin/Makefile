@@ -1,7 +1,8 @@
 #	@(#)Makefile	5.4.1.1 (Berkeley) 5/7/91
+#	$Id$
 #
 
-SUBDIR=	XNSrouted badsect chkconfig clri comcontrol disklabel dmesg \
+SUBDIR=	XNSrouted adjkerntz badsect chkconfig clri comcontrol disklabel dmesg \
 	dump dumpfs fastboot fdisk fsck halt ifconfig mknod mount \
 	mount_isofs mount_pcfs mount_procfs mountd newfs nfsd nfsiod ping \
 	quotacheck reboot restore route routed savecore scsi shutdown \
