@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ranlib.c 4.3 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.4 %G%";
 /*
  * ranlib - create table of contents for archive; string table version
  */
@@ -32,7 +32,9 @@ main(argc, argv)
 char **argv;
 {
 	char cmdbuf[BUFSIZ];
-	char magbuf[SARMAG+1];
+	/* magbuf must be an int array so it is aligned on an int-ish
+	   boundary, so that we may access its first word as an int! */
+	int magbuf[(SARMAG+sizeof(int))/sizeof(int)];
 
 	--argc;
 	while(argc--) {
@@ -42,9 +44,9 @@ char **argv;
 			continue;
 		}
 		off = SARMAG;
-		fread(magbuf, 1, SARMAG, fi);
-		if (strncmp(magbuf, ARMAG, SARMAG)) {
-			if (*(int *)magbuf == OARMAG)
+		fread((char *)magbuf, 1, SARMAG, fi);
+		if (strncmp((char *)magbuf, ARMAG, SARMAG)) {
+			if (magbuf[0] == OARMAG)
 				fprintf(stderr, "old format ");
 			else
 				fprintf(stderr, "not an ");
@@ -76,6 +78,11 @@ char **argv;
 			}
 			fseek(fi, o, 1);
 			fread((char *)&ssiz, 1, sizeof (ssiz), fi);
+			if (ssiz < sizeof ssiz){
+				/* sanity check */
+				fprintf(stderr, "ranlib: %s(%s): mangled string table\n", *argv, archdr.ar_name);
+				exit(1);
+			}
 			strtab = (char *)calloc(1, ssiz);
 			if (strtab == 0) {
 				fprintf(stderr, "ranlib: ran out of memory\n");
