@@ -1,10 +1,10 @@
-/* ip_input.c 1.10 81/10/31 */
+/* ip_input.c 1.11 81/11/01 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/clock.h"
 #include "../h/mbuf.h"
-#include "../inet/cksum.h"
+#include "../inet/inet_cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_systm.h"
 #include "../inet/imp.h"

@@ -1,10 +1,10 @@
-/* tcp_output.c 4.7 81/10/31 */
+/* tcp_output.c 4.8 81/11/01 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
-#include "../inet/cksum.h"
+#include "../inet/inet_cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_host.h"
 #include "../inet/inet_systm.h"
@@ -208,7 +208,7 @@ tcp_output(tp, flags, len, dat)
 #ifdef TCPDEBUG
 	struct tcp_debug tdb;
 #endif
-COUNT(SEND_TCP);
+COUNT(TCP_OUTPUT);
 
 	if ((t = tp->t_ucb->uc_template) == 0)
 		return (0);
@@ -288,7 +288,7 @@ tcp_sndcopy(tp, start, end)
 	register int len;
 	int adj;
 	struct mbuf *top, *p;
-COUNT(SND_COPY);
+COUNT(TCP_SNDCOPY);
 
 	if (start >= end)    
 		return(NULL);

@@ -1,10 +1,10 @@
-/* tcp_input.c 1.16 81/10/31 */
+/* tcp_input.c 1.17 81/11/01 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
-#include "../inet/cksum.h"
+#include "../inet/inet_cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_systm.h"
 #include "../inet/imp.h"
@@ -51,8 +51,8 @@ COUNT(TCP_INPUT);
 		/*
 		 * Checksum extended header and data
 		 */
-		CKSUM_TCPGET(mp, n, r10, sizeof (struct ip) + tlen);
-		if (n->t_cksum != 0) {
+		CKSUM_TCPCHK(mp, n, r10, sizeof (struct ip) + tlen);
+		if (n->t_sum != 0) {
 			netstat.t_badsum++;
 			m_freem(mp);
 			return;
@@ -391,7 +391,7 @@ notwanted:
 	n->th_flags ^= TH_ACK;
 	n->t_len = htons(TCPSIZE);
 	n->t_off = 5;
-	n->t_sum = cksum(mp, sizeof(struct th));
+	n->t_sum = inet_cksum(mp, sizeof(struct th));
 	((struct ip *)n)->ip_len = sizeof(struct th);
 	ip_output(mp);
 	netstat.t_badsegs++;
