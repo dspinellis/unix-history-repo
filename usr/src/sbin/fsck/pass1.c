@@ -5,12 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
 #include "fsck.h"
 
 static daddr_t badblk;

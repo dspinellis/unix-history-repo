@@ -5,15 +5,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
-#include <sys/dir.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#include <ufs/dir.h>
 #include "fsck.h"
 
 long	diskreads, totalreads;	/* Disk cache statistics */
