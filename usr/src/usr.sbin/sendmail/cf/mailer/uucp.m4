@@ -10,18 +10,27 @@ PUSHDIVERT(-1)
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
 ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
+ifdef(`UUCP_MAX_SIZE',, `define(`UUCP_MAX_SIZE', 100000)')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.4 (Berkeley) %G%')
 
-Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
+# old UUCP mailer
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
 
-Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
+# smart UUCP mailer (handles multiple addresses)
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
+
+ifdef(`_MAILER_smtp_',
+`# domain-ized UUCP mailer
+Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=11, R=21, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS')
+
 
 # sender rewriting
 S12

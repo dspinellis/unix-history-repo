@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.2 (Berkeley) %G%
+		@(#)README	8.3 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -145,6 +145,10 @@ LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
 LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
 			mail.
 LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
+LOCAL_SHELL_FLAGS	[eu] The flags used by the shell mailer.  The
+			flags lsDFM are always included.
+LOCAL_SHELL_ARGS	[sh -c $u] The arguments passed to deliver "prog"
+			mail.
 USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 			used to submit news.
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
@@ -154,6 +158,8 @@ SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.
 UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
+UUCP_MAX_SIZE		[100000] The maximum size message accepted for
+			transmission by the UUCP mailers.
 HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			hostmap key definition.  You can redefine this
 			to change the class, flags, and filename of
