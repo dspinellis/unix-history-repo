@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.19 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.20 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -191,6 +191,7 @@ R$* < @ $+ . > $*	$1 < @ $2 > $3
 # externalize local domain info
 R$* < $+ > $*		$1 $2 $3			defocus
 R@ $+ : @ $+ : $+	@ $1 , @ $2 : $3		<route-addr> canonical
+R@ $*			$@ @ $1				... and exit
 
 # UUCP must always be presented in old form
 R$+ @ $- . UUCP		$2!$1				u@h.UUCP => h!u
