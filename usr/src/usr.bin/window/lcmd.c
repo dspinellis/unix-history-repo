@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.5 83/08/22";
+static	char *sccsid = "@(#)lcmd.c	3.6 83/08/25";
 #endif
 
 #include "defs.h"
 
+int l_buffer();
 int l_window();
 int l_select();
 int l_escape();
@@ -23,12 +24,13 @@ struct lcmd {
 };
 static struct lcmd lcmd[] = {
 	"%",		1, 1, 0,  0, l_select,
+	"buffer",	1, 0, 1,  1, l_buffer,
 	"close",	1, 0, 0, -1, l_close,
 	"escape",	1, 0, 1,  1, l_escape,
 	"label",	1, 0, 2,  2, l_label,
 	"source",	1, 0, 1,  1, l_source,
 	"terse",	1, 0, 0,  1, l_terse,
-	"window",	1, 0, 4,  4, l_window,
+	"window",	1, 0, 4,  5, l_window,
 	"write",	2, 0, 2,  2, l_write,
 	0
 };

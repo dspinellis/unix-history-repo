@@ -1,4 +1,4 @@
-/*	@(#)defs.h	3.2 83/08/18		*/
+/*	@(#)defs.h	3.3 83/08/25		*/
 
 #include "ww.h"
 #include <signal.h>
@@ -24,10 +24,13 @@ int ibufc;
 struct ww *selwin;
 struct ww *cmdwin;
 
-char *shell;
-char *shellname;
+char *shell;			/* the shell program */
+char *shellname;		/* the shell program name (for argv[0]) */
 
+int nbufline;			/* number of lines in the buffer */
+
+	/* flags */
 char quit;
 char terse;
 char debug;
-char escapec;
+char escapec;			/* escape character */

@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.5 83/08/19";
+static	char *sccsid = "@(#)main.c	3.6 83/08/25";
 #endif
 
 #include "defs.h"
 
 char escapec = CTRL(p);
+int nbufline = 48;			/* compatible */
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
