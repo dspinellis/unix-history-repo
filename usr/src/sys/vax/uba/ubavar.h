@@ -1,8 +1,12 @@
-/*	ubavar.h	4.5	%G%	*/
+/*	ubavar.h	4.6	%G%	*/
 
 /*
  * unibus adapter
  */
+#if VAX750
+#define	UBA750	((struct uba_regs *)0xf30000)
+#define	UMEM750	((u_short *)0xfc0000)
+#endif
 
 #if VAX780
 /*
@@ -85,28 +89,30 @@ struct uba_regs
 #define	UBA_DPSHIFT	21		/* shift to data path designator */
 
 /*
- * each UNIBUS mass storage controller has uba_minfo structure.
+ * Each UNIBUS mass storage controller has uba_minfo structure,
+ * and a uba_dinfo structure (as below) for each attached drive.
  */
 struct	uba_minfo {
-	short	um_num;		/* controller index in driver */
+	struct	uba_driver *um_driver;
+	short	um_ctlr;	/* controller index in driver */
 	short	um_ubanum;	/* the uba it is on */
 	short	um_alive;	/* controller exists */
+	int	(**um_intr)();	/* interrupt handler(s) */
 	caddr_t	um_addr;	/* address of device in i/o space */
-	struct	buf um_tab;	/* queue for this controller */
 	struct	uba_info *um_forw;
+	struct	uba_hd *um_hd;
+	struct	buf um_tab;	/* queue for this controller */
 };
 /*
- * each UNIBUS device has a uba_dinfo structure.
- * controllers which are not for mass storage often have ONLY
- * a uba_dinfo structure, and no uba_minfo structure.
- * if a controller has many drives attached, then there will
- * be several uba_dinfo structures pointing at the same uba_minfo
+ * Each UNIBUS device has a uba_dinfo structure.
+ * If a controller has many drives attached, then there will
+ * be several uba_dinfo structures associated with a single uba_minfo
  * structure.
  */
 struct	uba_dinfo {
 	struct	uba_driver *ui_driver;
-	short	ui_name;
 	short	ui_unit;	/* unit number on the system */
+	short	ui_ctlr;	/* mass ctlr number; -1 if none */
 	short	ui_ubanum;	/* the uba it is on */
 	short	ui_slave;	/* slave on controller */
 	int	(**ui_intr)();	/* interrupt handler(s) */
@@ -129,7 +135,9 @@ struct	uba_dinfo {
 #endif
 
 /*
- * header per uba.		CAUTION: size & offsets known in uba.m
+ * This structure exists per-uba.
+ *
+ * N.B.: THE SIZE AND SHAPE OF THIS STRUCTURE IS KNOWN IN uba.m.
  */
 struct	uba_hd {
 	int	uh_active;		/* bit per device transferring */
@@ -143,8 +151,8 @@ struct	uba_hd {
 	int	uh_bdpfree;		/* free bdp's */
 	int	uh_hangcnt;		/* number of ticks hung */
 	int	uh_zvcnt;		/* number of 0 vectors */
-#define	UAMSIZ 50
-	struct	map uh_map[UAMSIZ];
+#define	UAMSIZ	50
+	struct	map *uh_map;
 } uba_hd[MAXNUBA];
 #ifdef KERNEL
 extern	struct	uba_minfo ubminit[];
@@ -152,7 +160,7 @@ extern	struct	uba_dinfo ubdinit[];
 int	numuba;
 #endif
 /*
- * each unibus driver defines entries for a set of routines
+ * Each UNIBUS driver defines entries for a set of routines
  * as well as an array of types which are acceptable to it.
  */
 struct uba_driver {
@@ -160,11 +168,11 @@ struct uba_driver {
 	int	(*ud_slave)();		/* see if a slave is there; init */
 	int	(*ud_dgo)();		/* routine to stuff driver regs */
 /* dgo is called back by the unibus (usu ubaalloc), when the bus is ready */
-	short	ud_maxslave;		/* max number of slaves */
 	short	ud_needexcl;		/* need exclusive use of uba (rk07) */
 	u_short	*ud_addr;		/* device csr addresses */
 	char	*ud_pname;
-	struct	uba_dinfo **ud_info;	/* backpointers to ubinit structs */
+	struct	uba_dinfo **ud_dinfo;	/* backpointers to ubdinit structs */
+	struct	uba_minfo **ud_minfo;	/* backpointers to ubminit structs */
 };
 
 /*
