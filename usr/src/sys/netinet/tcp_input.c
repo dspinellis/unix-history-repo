@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.6	84/10/19	*/
+/*	tcp_input.c	6.7	84/11/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -542,6 +542,7 @@ trimthenstep6:
 				 * but if we haven't gotten our FIN in 
 				 * 5 minutes, it's not forthcoming.
 				 */
+				tp->t_timer[TCPT_2MSL] = 5 * 60 * PR_SLOWHZ;
 			}
 			break;
 
@@ -980,7 +981,7 @@ register struct tcpcb *tp;
 			rtalloc(ro);
 		}
 		if ((ro->ro_rt == 0) || (ifp = ro->ro_rt->rt_ifp) == 0)
-			return (MIN(IP_MSS - sizeof(struct tcpiphdr), 512));
+			return (TCP_MSS);
 	}
 
 	mss = ifp->if_mtu - sizeof(struct tcpiphdr);
@@ -993,5 +994,5 @@ register struct tcpcb *tp;
 #endif
 	if (in_localaddr(tp->t_inpcb->inp_faddr))
 		return(mss);
-	return (MIN(mss, MIN(IP_MSS - sizeof(struct tcpiphdr), 512)));
+	return (MIN(mss, TCP_MSS));
 }

@@ -1,4 +1,4 @@
-/*	tcp.h	6.1	83/07/29	*/
+/*	tcp.h	6.2	84/11/01	*/
 
 typedef	u_long	tcp_seq;
 /*
@@ -29,3 +29,10 @@ struct tcphdr {
 #define	TCPOPT_EOL	0
 #define	TCPOPT_NOP	1
 #define	TCPOPT_MAXSEG	2
+
+/*
+ *  Default maximum segment size for TCP.
+ *  With an IP MSS of 576, this is 536,
+ *  but 512 is probably more convenient.
+ */
+#define	TCP_MSS	MIN(512, IP_MSS - sizeof (struct tcpiphdr))
