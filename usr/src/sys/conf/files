@@ -34,6 +34,7 @@ kern/tty_pty.c		optional pty
 kern/tty_subr.c		standard
 kern/tty_tb.c		optional tb
 kern/tty_tty.c		standard
+kern/vfs_bio.c		standard
 kern/vfs_cache.c	standard
 kern/vfs_conf.c		standard
 kern/vfs_lookup.c	standard
@@ -64,7 +65,6 @@ ufs/quota_subr.c	standard
 ufs/quota_sys.c		standard
 ufs/quota_ufs.c		standard
 ufs/ufs_alloc.c		standard
-ufs/ufs_bio.c		standard
 ufs/ufs_bmap.c		standard
 ufs/ufs_disksubr.c	standard
 ufs/ufs_inode.c		standard
