@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)namei.h	7.1 (Berkeley) %G%
+ *	@(#)namei.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -39,6 +39,7 @@ struct nameidata {
 #define	ni_segflg	ni_uio.uio_segflg
 #define	ni_resid	ni_uio.uio_resid
 
+#ifdef KERNEL
 /*
  * namei operations and modifiers
  */
@@ -49,6 +50,7 @@ struct nameidata {
 #define NOCACHE		0x20	/* name must not be left in cache */
 #define FOLLOW		0x40	/* follow symbolic links */
 #define	NOFOLLOW	0x0	/* don't follow symbolic links (pseudo) */
+#endif
 
 /*
  * This structure describes the elements in the cache of recent
