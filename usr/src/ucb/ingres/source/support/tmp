@@ -1,0 +1,246 @@
+get: relation    aa,tid: 0/255
+get: limtid: 16777215/255
+get: relation    aa,tid: 0/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 0/1
+get: limtid: 16777215/255
+get: relation    aa,tid: 0/2
+get: limtid: 16777215/255
+get: relation    aa,tid: 1/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 2/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 2/1
+get: limtid: 16777215/255
+get: relation    aa,tid: 2/2
+get: limtid: 16777215/255
+get: relation    aa,tid: 3/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 3/1
+get: limtid: 16777215/255
+get: relation    aa,tid: 7/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 7/1
+get: limtid: 16777215/255
+get: relation    aa,tid: 8/0
+get: limtid: 16777215/255
+get: relation    aa,tid: 8/1
+get: limtid: 16777215/255
+get: relation    aa,tid: 9/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/255
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 0/8
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 1/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/8
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/9
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/10
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/11
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/12
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/13
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/14
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/15
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/16
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/17
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/18
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/19
+get: limtid: 16777215/255
+get: attribute   aa,tid: 3/20
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/8
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/9
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/10
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/11
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/12
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/13
+get: limtid: 16777215/255
+get: attribute   aa,tid: 4/14
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 6/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/8
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/9
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/10
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/11
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/12
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/13
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/14
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/15
+get: limtid: 16777215/255
+get: attribute   aa,tid: 7/16
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/6
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/7
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/8
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/9
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/10
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/11
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/12
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/13
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/14
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/15
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/16
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/17
+get: limtid: 16777215/255
+get: attribute   aa,tid: 8/18
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/0
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/1
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/2
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/3
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/4
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/5
+get: limtid: 16777215/255
+get: attribute   aa,tid: 9/6
+get: limtid: 16777215/255
+modifying relation
+modifying attribute
+modifying indexes
+modifying tree
+modifying protect
+sysmod interrupted
