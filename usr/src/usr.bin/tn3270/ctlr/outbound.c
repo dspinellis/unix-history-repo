@@ -111,7 +111,7 @@ int	position;
 	ptr = (ScreenImage *)memNSchr((char *)Host+HighestScreen(), ATTR_MASK,
 			HighestScreen()-position, ATTR_MASK, -sizeof Host[0]);
 	if (ptr == 0) {
-	    return HighestScreen();
+	    return LowestScreen();
 	}
     }
     return ptr-Host;
