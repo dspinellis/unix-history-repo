@@ -15,6 +15,7 @@ INSTALL_PIC_ARCHIVE=
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
+.include "${.CURDIR}/quad/Makefile.inc"
 .include "${.CURDIR}/stdio/Makefile.inc"
 .include "${.CURDIR}/stdlib/Makefile.inc"
 .include "${.CURDIR}/string/Makefile.inc"

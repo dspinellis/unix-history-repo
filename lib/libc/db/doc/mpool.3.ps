@@ -197,19 +197,20 @@ grops begin/DEFS 1 dict def DEFS begin/u{.001 mul}bind def end/RES 72 def/PL
 %%BeginPageSetup
 BP
 %%EndPageSetup
-/F0 10/Times-Roman@0 SF 174.84(MPOOL\(3\) 1991 MPOOL\(3\))72 48 R/F1 9
-/Times-Bold@0 SF -.18(NA)72 84 S(ME).18 E F0(mpool \255 shared memory b)108 96
-Q(uf)-.2 E(fer pool)-.25 E F1(SYNOPSIS)72 112.8 Q/F2 10/Times-Bold@0 SF
-(#include <db)108 124.8 Q(.h>)-.4 E(#include <mpool.h>)108 136.8 Q(MPOOL *)108
-160.8 Q(mpool_open \(DBT *k)108 172.8 Q(ey)-.1 E 2.5(,i)-.55 G
-(nt fd, pgno_t pagesize, pgno_t maxcache\);)216.25 172.8 Q -.1(vo)108 196.8 S
-(id).1 E(mpool_\214lter \(MPOOL *mp, v)108 208.8 Q(oid \(*pgin\)\(v)-.1 E
-(oid *, pgno_t, v)-.1 E(oid *\),)-.1 E -.1(vo)158 220.8 S(id \(*pgout\)\(v).1 E
-(oid *, pgno_t, v)-.1 E(oid *\), v)-.1 E(oid *pgcookie\);)-.1 E -.1(vo)108
-244.8 S(id *).1 E(mpool_new \(MPOOL *mp, pgno_t *pgnoaddr\);)108 256.8 Q -.1
-(vo)108 280.8 S(id *).1 E(mpool_get \(MPOOL *mp, pgno_t pgno, u_int \215ags\);)
-108 292.8 Q(int)108 316.8 Q(mpool_put \(MPOOL *mp, v)108 328.8 Q(oid *pgaddr)
--.1 E 2.5(,u)-.92 G(_int \215ags\);)290.62 328.8 Q(int)108 352.8 Q
+/F0 10/Times-Roman@0 SF 129.01(MPOOL\(3\) BSD)72 48 R(Programmer')2.5 E 2.5(sM)
+-.55 G 129.01(anual MPOOL\(3\))340.17 48 R/F1 9/Times-Bold@0 SF -.18(NA)72 84 S
+(ME).18 E F0(mpool \255 shared memory b)108 96 Q(uf)-.2 E(fer pool)-.25 E F1
+(SYNOPSIS)72 112.8 Q/F2 10/Times-Bold@0 SF(#include <db)108 124.8 Q(.h>)-.4 E
+(#include <mpool.h>)108 136.8 Q(MPOOL *)108 160.8 Q(mpool_open \(DBT *k)108
+172.8 Q(ey)-.1 E 2.5(,i)-.55 G(nt fd, pgno_t pagesize, pgno_t maxcache\);)
+216.25 172.8 Q -.1(vo)108 196.8 S(id).1 E(mpool_\214lter \(MPOOL *mp, v)108
+208.8 Q(oid \(*pgin\)\(v)-.1 E(oid *, pgno_t, v)-.1 E(oid *\),)-.1 E -.1(vo)158
+220.8 S(id \(*pgout\)\(v).1 E(oid *, pgno_t, v)-.1 E(oid *\), v)-.1 E
+(oid *pgcookie\);)-.1 E -.1(vo)108 244.8 S(id *).1 E
+(mpool_new \(MPOOL *mp, pgno_t *pgnoaddr\);)108 256.8 Q -.1(vo)108 280.8 S
+(id *).1 E(mpool_get \(MPOOL *mp, pgno_t pgno, u_int \215ags\);)108 292.8 Q
+(int)108 316.8 Q(mpool_put \(MPOOL *mp, v)108 328.8 Q(oid *pgaddr)-.1 E 2.5(,u)
+-.92 G(_int \215ags\);)290.62 328.8 Q(int)108 352.8 Q
 (mpool_sync \(MPOOL *mp\);)108 364.8 Q(int)108 388.8 Q
 (mpool_close \(MPOOL *mp\);)108 400.8 Q F1(DESCRIPTION)72 417.6 Q/F3 10
 /Times-Italic@0 SF(Mpool)108 429.6 Q F0 1.013(is the library interf)3.513 F
@@ -261,58 +262,59 @@ E 1.167(es a MPOOL pointer and a page number as ar)-.1 F 3.666(guments. If)-.18
 F 1.166(the page e)3.666 F 1.166(xists, a)-.15 F .686
 (pointer to the page is returned.)108 693.6 R .687
 (Otherwise, NULL is returned and errno is set.)5.686 F .687
-(The \215ags parameter is not)5.687 F(currently used.)108 705.6 Q 1.463
-(The function)108 722.4 R F3(mpool_put)3.963 E F0 1.462
-(unpins the page referenced by)3.962 F F3(pgaddr)3.962 E F0(.).73 E F3(Pgaddr)
-6.462 E F0 1.462(must be an address pre)3.962 F(viously)-.25 E 197.615
-(12, September)72 768 R(1)535 768 Q EP
+(The \215ags parameter is not)5.687 F(4.4 Berk)72 732 Q(ele)-.1 E 2.5(yD)-.15 G
+(istrib)132.57 732 Q 104.595(ution June)-.2 F(4, 1993)2.5 E(1)535 732 Q EP
 %%Page: 2 2
 %%BeginPageSetup
 BP
 %%EndPageSetup
-/F0 10/Times-Roman@0 SF 174.84(MPOOL\(3\) 1991 MPOOL\(3\))72 48 R(returned by)
-108 84 Q/F1 10/Times-Italic@0 SF(mpool_g)2.5 E(et)-.1 E F0(or)2.5 E F1
-(mpool_ne)2.5 E(w)-.15 E F0 5(.T).31 G(he \215ag v)271.65 84 Q
-(alue is speci\214ed by)-.25 E F1(or)2.5 E F0('ing an).73 E 2.5(yo)-.15 G 2.5
-(ft)434.74 84 S(he follo)443.35 84 Q(wing v)-.25 E(alues:)-.25 E(MPOOL_DIR)108
-100.8 Q(TY)-.6 E
+/F0 10/Times-Roman@0 SF 129.01(MPOOL\(3\) BSD)72 48 R(Programmer')2.5 E 2.5(sM)
+-.55 G 129.01(anual MPOOL\(3\))340.17 48 R(currently used.)108 84 Q 1.463
+(The function)108 100.8 R/F1 10/Times-Italic@0 SF(mpool_put)3.963 E F0 1.462
+(unpins the page referenced by)3.962 F F1(pgaddr)3.962 E F0(.).73 E F1(Pgaddr)
+6.462 E F0 1.462(must be an address pre)3.962 F(viously)-.25 E(returned by)108
+112.8 Q F1(mpool_g)2.5 E(et)-.1 E F0(or)2.5 E F1(mpool_ne)2.5 E(w)-.15 E F0 5
+(.T).31 G(he \215ag v)271.65 112.8 Q(alue is speci\214ed by)-.25 E F1(or)2.5 E
+F0('ing an).73 E 2.5(yo)-.15 G 2.5(ft)434.74 112.8 S(he follo)443.35 112.8 Q
+(wing v)-.25 E(alues:)-.25 E(MPOOL_DIR)108 129.6 Q(TY)-.6 E
 (The page has been modi\214ed and needs to be written to the backing \214le.)
-144 112.8 Q F1(Mpool_put)108 129.6 Q F0
+144 141.6 Q F1(Mpool_put)108 158.4 Q F0
 (returns 0 on success and -1 if an error occurs.)2.5 E .247(The function)108
-146.4 R F1(mpool_sync)2.747 E F0 .247(writes all modi\214ed pages associated w\
-ith the MPOOL pointer to the backing \214le.)2.747 F F1(Mpool_sync)108 158.4 Q
-F0(returns 0 on success and -1 if an error occurs.)2.5 E(The)108 175.2 Q F1
+175.2 R F1(mpool_sync)2.747 E F0 .247(writes all modi\214ed pages associated w\
+ith the MPOOL pointer to the backing \214le.)2.747 F F1(Mpool_sync)108 187.2 Q
+F0(returns 0 on success and -1 if an error occurs.)2.5 E(The)108 204 Q F1
 (mpool_close)2.698 E F0 .198(function free')2.698 F 2.698(su)-.55 G 2.698(pa)
-245.432 175.2 S .498 -.15(ny a)257.57 175.2 T .198
+245.432 204 S .498 -.15(ny a)257.57 204 T .198
 (llocated memory associated with the memory pool cookie.).15 F(Modi-)5.197 E
-(\214ed pages are)108 187.2 Q/F2 10/Times-Bold@0 SF(not)2.5 E F0
+(\214ed pages are)108 216 Q/F2 10/Times-Bold@0 SF(not)2.5 E F0
 (written to the backing \214le.)2.5 E F1(Mpool_close)5 E F0
 (returns 0 on success and -1 if an error occurs.)2.5 E/F3 9/Times-Bold@0 SF
-(ERR)72 204 Q(ORS)-.27 E F0(The)108 216 Q F1(mpool_open)2.938 E F0 .438
+(ERR)72 232.8 Q(ORS)-.27 E F0(The)108 244.8 Q F1(mpool_open)2.938 E F0 .438
 (function may f)2.938 F .438(ail and set)-.1 F F1(errno)2.938 E F0 .438(for an)
-2.938 F 2.938(yo)-.15 G 2.938(ft)344.87 216 S .439
-(he errors speci\214ed for the library routine)353.918 216 R F1(mal-)2.939 E
-(loc)108 228 Q F0(\(3\).).31 E(The)108 244.8 Q F1(mpool_g)2.5 E(et)-.1 E F0
+2.938 F 2.938(yo)-.15 G 2.938(ft)344.87 244.8 S .439
+(he errors speci\214ed for the library routine)353.918 244.8 R F1(mal-)2.939 E
+(loc)108 256.8 Q F0(\(3\).).31 E(The)108 273.6 Q F1(mpool_g)2.5 E(et)-.1 E F0
 (function may f)2.5 E(ail and set)-.1 E F1(errno)2.5 E F0(for the follo)2.5 E
-(wing:)-.25 E([EINV)108 261.6 Q 29.98(AL] The)-1.35 F(requested record doesn')
-2.5 E 2.5(te)-.18 G(xist.)305.96 261.6 Q(The)108 278.4 Q F1(mpool_ne)4.073 E(w)
+(wing:)-.25 E([EINV)108 290.4 Q 29.98(AL] The)-1.35 F(requested record doesn')
+2.5 E 2.5(te)-.18 G(xist.)305.96 290.4 Q(The)108 307.2 Q F1(mpool_ne)4.073 E(w)
 -.15 E F0(and)4.073 E F1(mpool_g)4.073 E(et)-.1 E F0 1.573(functions may f)
 4.073 F 1.573(ail and set)-.1 F F1(errno)4.073 E F0 1.573(for an)4.073 F 4.073
-(yo)-.15 G 4.073(ft)421.336 278.4 S 1.573(he errors speci\214ed for the)431.519
-278.4 R(library routines)108 290.4 Q F1 -.37(re)2.5 G(ad).37 E F0(\(2\)).77 E
-F1 2.5(,w).54 G(rite)214.48 290.4 Q F0(\(2\)).18 E F1(,).54 E F0(and)2.5 E F1
-(malloc)2.5 E F0(\(3\).).31 E(The)108 307.2 Q F1(mpool_sync)4.287 E F0 1.787
+(yo)-.15 G 4.073(ft)421.336 307.2 S 1.573(he errors speci\214ed for the)431.519
+307.2 R(library routines)108 319.2 Q F1 -.37(re)2.5 G(ad).37 E F0(\(2\)).77 E
+F1 2.5(,w).54 G(rite)214.48 319.2 Q F0(\(2\)).18 E F1(,).54 E F0(and)2.5 E F1
+(malloc)2.5 E F0(\(3\).).31 E(The)108 336 Q F1(mpool_sync)4.287 E F0 1.787
 (function may f)4.287 F 1.787(ail and set)-.1 F F1(errno)4.288 E F0 1.788
-(for an)4.288 F 4.288(yo)-.15 G 4.288(ft)356.694 307.2 S 1.788
-(he errors speci\214ed for the library routine)367.092 307.2 R F1(write)108
-319.2 Q F0(\(2\).).18 E(The)108 336 Q F1(mpool_close)4.125 E F0 1.624
-(function may f)4.125 F 1.624(ail and set)-.1 F F1(errno)4.124 E F0 1.624
-(for an)4.124 F 4.124(yo)-.15 G 4.124(ft)357.842 336 S 1.624
-(he errors speci\214ed for the library routine)368.076 336 R F1(fr)108 348 Q
-(ee)-.37 E F0(\(3\).).18 E F3(SEE ALSO)72 364.8 Q F1(dbopen)108 376.8 Q F0
+(for an)4.288 F 4.288(yo)-.15 G 4.288(ft)356.694 336 S 1.788
+(he errors speci\214ed for the library routine)367.092 336 R F1(write)108 348 Q
+F0(\(2\).).18 E(The)108 364.8 Q F1(mpool_close)4.125 E F0 1.624(function may f)
+4.125 F 1.624(ail and set)-.1 F F1(errno)4.124 E F0 1.624(for an)4.124 F 4.124
+(yo)-.15 G 4.124(ft)357.842 364.8 S 1.624
+(he errors speci\214ed for the library routine)368.076 364.8 R F1(fr)108 376.8
+Q(ee)-.37 E F0(\(3\).).18 E F3(SEE ALSO)72 393.6 Q F1(dbopen)108 405.6 Q F0
 (\(3\),).24 E F1(btr)2.5 E(ee)-.37 E F0(\(3\),).18 E F1(hash)2.5 E F0(\(3\),)
-.28 E F1 -.37(re)2.5 G(cno).37 E F0(\(3\)).18 E 197.615(12, September)72 768 R
-(2)535 768 Q EP
+.28 E F1 -.37(re)2.5 G(cno).37 E F0(\(3\)).18 E(4.4 Berk)72 732 Q(ele)-.1 E 2.5
+(yD)-.15 G(istrib)132.57 732 Q 104.595(ution June)-.2 F(4, 1993)2.5 E(2)535 732
+Q EP
 %%Trailer
 end
 %%EOF
