@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.11 %G%";
+static char sccsid[] = "@(#)cpp.c	1.12 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -17,9 +17,7 @@ static char sccsid[] = "@(#)cpp.c	1.11 %G%";
 
 #define STATIC
 
-#define STDIN 0
-#define STDOUT 1
-#define STDERR 2
+#define FIRSTOPEN -2
 #define READ 0
 #define WRITE 1
 #define SALT '#'
@@ -149,7 +147,7 @@ STATIC	int	lineno[MAXINC];
 STATIC	char	*dirs[10];	/* -I and <> directories */
 char *strdex(), *copy(), *subst(), *trmdir();
 struct symtab *stsym();
-STATIC	int	fin	= STDIN;
+STATIC	int	fin	= FIRSTOPEN;
 STATIC	FILE	*fout	= stdout;
 STATIC	int	nd	= 1;
 STATIC	int	pflag;	/* don't put out lines "# 12 foo.c" */
@@ -1123,7 +1121,7 @@ main(argc,argv)
 					continue;
 				}
 			default:
-				if (fin==STDIN) {
+				if (fin==FIRSTOPEN) {
 					if (0>(fin=open(argv[i], READ))) {
 						pperror("No source file %s",argv[i]); exit(8);
 					}
