@@ -15,11 +15,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)buildmini	1.4 (Berkeley) %G%
+#	@(#)buildmini	1.5 (Berkeley) %G%
 #
 dist=/sys/tahoedist
 miniroot=dk4a
-minimnt=/mnt
+minimnt=/tmp/mini
 #
 date
 umount /dev/${miniroot}
