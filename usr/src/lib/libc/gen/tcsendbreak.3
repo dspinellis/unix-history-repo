@@ -3,10 +3,26 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcsendbreak.3	1.1 (Berkeley) %G%
+.\"	@(#)tcsendbreak.3	5.1 (Berkeley) %G%
 .\"
+.Dd Jun 11, 1991
+.Dt LINE 3
+.Os
+.Sh NAME
+.Nm tcsendbreak,
+.Nm tcdrain,
+.Nm tcflush,
+.Nm tcflow
 .LP
 .B "Synopsis"
+.Ft int
+.Fn tcdrain "int fd"
+.Ft int
+.Fn tcflow "int fd" "int action"
+.Ft int
+.Fn tcflush "int fd" "int which"
+.Ft int
+.Fn tcsendbreak "int fd" "int len"
 .nf
 #include <termios.h>
 
