@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.8 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -172,6 +172,8 @@ int	chgdd();
 int	pass1(), pass1b(), pass2(), pass4(), pass5();
 int	(*pfunc)();
 char	*rawname(), *rindex(), *unrawname();
+extern int inside[], around[];
+extern unsigned char fragtbl[];
 
 char	*devname;
 
