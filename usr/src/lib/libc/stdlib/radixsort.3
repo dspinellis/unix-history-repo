@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)radixsort.3	5.8 (Berkeley) %G%
+.\"     @(#)radixsort.3	5.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RADIXSORT 3
@@ -16,26 +16,22 @@
 .Fd #include <stdlib.h>
 .Ft int
 .Fn radixsort "u_char **base" "int nmemb" "u_char *table" "u_int endbyte"
+.Ft int
+.Fn sradixsort "u_char **base" "int nmemb" "u_char *table" "u_int endbyte"
 .Sh DESCRIPTION
 The
 .Fn radixsort
-function
-is a radix sort.
+and
+.Fn sradixsort
+functions
+are implementations of radix sort.
 .Pp
-The
-.Fn radixsort
-function sorts an array of
-.Fa nmemb
-pointers to byte strings, the initial member of which is referenced
-by
+These functions sort an array of pointers to byte strings, the initial
+member of which is referenced by
 .Fa base .
 The byte strings may contain any values; the end of each string
 is denoted by the user-specified value
 .Fa endbyte .
-The contents of the array are sorted in ascending order according
-to the
-.Tn ASCII
-order of the byte strings they reference.
 .Pp
 Applications may specify a sort order by providing the
 .Fa table
@@ -54,30 +50,34 @@ The
 .Fa table
 argument
 is useful for applications which wish to sort different characters
-equally; for example, providing a table with the same weights
+equally, for example, providing a table with the same weights
 for A-Z as for a-z will result in a case-insensitive sort.
 If
 .Fa table
-is NULL,
-ASCII weights are used and
+is NULL, the contents of the array are sorted in ascending order
+according to the
+.Tn ASCII
+order of the byte strings they reference and
 .Fa endbyte
 has a sorting weight of 0.
 .Pp
 The
-.Fn radixsort
-function
-is stable, that is, if two elements compare as equal, their order in
-the sorted array is unchanged.
+.Fn sradixsort
+function is stable, that is, if two elements compare as equal, their
+order in the sorted array is unchanged.
+The
+.Fn sradixsort
+function uses additional memory sufficient to hold
+.Fa nmemb
+pointers.
 .Pp
 The
 .Fn radixsort
-function
-is a variant of most-significant-byte radix sorting; in particular, see
-D.E. Knuth's Algorithm R and section 5.2.5, exercise 10.
-The
-.Fn radixsort
-function
-takes linear time relative to the number of bytes in the strings.
+function is not stable, but uses no additional memory.
+.Pp
+These functions are variants of most-significant-byte radix sorting; in
+particular, see D.E. Knuth's Algorithm R and section 5.2.5, exercise 10.
+They take linear time relative to the number of bytes in the strings.
 .Sh RETURN VALUES
 Upon successful completion 0 is returned.
 Otherwise, \-1 is returned and the global variable 
@@ -94,7 +94,7 @@ is not 0 or 255.
 .El
 .Pp
 Additionally, the
-.Fn radixsort
+.Fn sradixsort
 function
 may fail and set
 .Va errno
