@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.13 (Berkeley) %G%
+ *	@(#)locore.s	7.14 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -856,7 +856,15 @@ _/**/mname:	.globl	_/**/mname;		\
 
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
+#ifdef QBA
+#if (QBAPAGES+UBAIOPAGES) > (UBAPAGES+UBAIOPAGES)*NUBA 
+	SYSMAP(UMEMmap	,umem		,(QBAPAGES+UBAIOPAGES) )
+#else
 	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA )
+#endif
+#else /* QBA */
+	SYSMAP(UMEMmap	,umem		,(QBAPAGES+UBAIOPAGES)*NUBA )
+#endif /* QBA */
 #if VAX8600
 	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
 #endif
@@ -886,7 +894,7 @@ _/**/mname:	.globl	_/**/mname;		\
 #endif
 #ifdef QBA
 	/*
-	 * qvss and qdss can't coexist - one map will suffice
+	 * qvss and qdss don't coexist - one map will suffice
 	 * for either. qvss is 256K each and qdss is 64K each.
 	 */
 #include "qv.h"
