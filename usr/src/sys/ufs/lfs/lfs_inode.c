@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.14 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,55 +41,27 @@
 #define	INOHASH(dev,ino)	(((unsigned)((dev)+(ino)))%INOHSZ)
 #endif
 
-#define INSFREE(ip) {\
-	if (ifreeh) { \
-		*ifreet = (ip); \
-		(ip)->i_freeb = ifreet; \
-	} else { \
-		ifreeh = (ip); \
-		(ip)->i_freeb = &ifreeh; \
-	} \
-	(ip)->i_freef = NULL; \
-	ifreet = &(ip)->i_freef; \
-}
-
-union ihead {				/* inode LRU cache, Chris Maltby */
+union ihead {
 	union  ihead *ih_head[2];
 	struct inode *ih_chain[2];
 } ihead[INOHSZ];
 
-struct inode *ifreeh, **ifreet, *bdevlisth;
+struct inode *bdevlisth;
 
 /*
- * Initialize hash links for inodes
- * and build inode free list.
+ * Initialize hash links for inodes.
  */
 ihinit()
 {
 	register int i;
-	register struct inode *ip = inode;
-	register union  ihead *ih = ihead;
+	register union ihead *ih = ihead;
 
+	if (VN_MAXPRIVATE < sizeof(struct inode))
+		panic("ihinit: too small");
 	for (i = INOHSZ; --i >= 0; ih++) {
 		ih->ih_head[0] = ih;
 		ih->ih_head[1] = ih;
 	}
-	ifreeh = ip;
-	ifreet = &ip->i_freef;
-	ip->i_freeb = &ifreeh;
-	ip->i_forw = ip;
-	ip->i_back = ip;
-	ITOV(ip)->v_data = (qaddr_t)ip;
-	for (i = ninode; --i > 0; ) {
-		++ip;
-		ip->i_forw = ip;
-		ip->i_back = ip;
-		ITOV(ip)->v_data = (qaddr_t)ip;
-		*ifreet = ip;
-		ip->i_freeb = ifreet;
-		ifreet = &ip->i_freef;
-	}
-	ip->i_freef = NULL;
 }
 
 /*
@@ -120,36 +92,31 @@ iget(xp, ino, ipp)
 
 loop:
 	ih = &ihead[INOHASH(dev, ino)];
-	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
-		if (ino == ip->i_number && dev == ip->i_dev) {
-			/*
-			 * Following is essentially an inline expanded
-			 * copy of igrab(), expanded inline for speed,
-			 * and so that the test for a mounted on inode
-			 * can be deferred until after we are sure that
-			 * the inode isn't busy.
-			 */
-			if ((ip->i_flag&ILOCKED) != 0) {
-				ip->i_flag |= IWANT;
-				sleep((caddr_t)ip, PINOD);
-				goto loop;
-			}
-			vp = ITOV(ip);
-			if (vp->v_count == 0) {		/* ino on free list */
-				if (iq = ip->i_freef)
-					iq->i_freeb = ip->i_freeb;
-				else
-					ifreet = ip->i_freeb;
-				*ip->i_freeb = iq;
-				ip->i_freef = NULL;
-				ip->i_freeb = NULL;
-			}
-			ILOCK(ip);
-			VREF(vp);
-			*ipp = ip;
-			return(0);
+	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw) {
+		if (ino != ip->i_number || dev != ip->i_dev)
+			continue;
+		/*
+		 * Following is essentially an inline expanded
+		 * copy of igrab(), expanded inline for speed,
+		 * and so that the test for a mounted on inode
+		 * can be deferred until after we are sure that
+		 * the inode isn't busy.
+		 */
+		if ((ip->i_flag&ILOCKED) != 0) {
+			ip->i_flag |= IWANT;
+			sleep((caddr_t)ip, PINOD);
+			goto loop;
 		}
-	if (error = getnewino(dev, ino, &nip)) {
+		vp = ITOV(ip);
+		if (vp->v_count == 0)		/* ino on free list */
+			vget(vp);
+		else
+			VREF(vp);
+		ILOCK(ip);
+		*ipp = ip;
+		return(0);
+	}
+	if (error = getnewino(dev, ino, mntp, &nip)) {
 		*ipp = 0;
 		return (error);
 	}
@@ -160,19 +127,10 @@ loop:
 	if (error = bread(VFSTOUFS(mntp)->um_devvp, fsbtodb(fs, itod(fs, ino)),
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
-		 * The inode doesn't contain anything useful, so it would
-		 * be misleading to leave it on its hash chain. Iput() will
-		 * take care of putting it back on the free list. We also
-		 * lose its inumber, just in case.
+		 * Unlock and discard unneeded inode.
 		 */
-		remque(ip);
-		ip->i_forw = ip;
-		ip->i_back = ip;
-		ip->i_number = 0;
-		ITOV(ip)->v_type = VNON;
-		INSFREE(ip);
 		iunlock(ip);
-		ip->i_flag = 0;
+		vrele(ITOV(ip));
 		brelse(bp);
 		*ipp = 0;
 		return(error);
@@ -189,7 +147,7 @@ loop:
 	dp = bp->b_un.b_dino;
 	dp += itoo(fs, ino);
 	if ((dp->di_mode & IFMT) != IFBLK) {
-		ip->i_ic = dp->di_ic;
+		ip->i_din = *dp;
 		brelse(bp);
 	} else {
 again:
@@ -203,16 +161,9 @@ again:
 				goto again;
 			}
 			/*
-			 * Discard unneeded inode.
+			 * Unlock and discard unneeded inode.
 			 */
-			remque(ip);
-			ip->i_forw = ip;
-			ip->i_back = ip;
-			ip->i_number = 0;
-			ITOV(ip)->v_type = VNON;
-			INSFREE(ip);
-			iunlock(ip);
-			ip->i_flag = 0;
+			vput(ITOV(ip));
 			/*
 			 * Reinitialize aliased inode.
 			 * We must release the buffer that we just read
@@ -221,14 +172,16 @@ again:
 			 * disk block.
 			 */
 			ip = iq;
-			tdip.di_ic = dp->di_ic;
+			vp = ITOV(ip);
+			tdip = *dp;
 			brelse(bp);
 			error = iupdat(ip, &time, &time, 1);
-			ip->i_ic = tdip.di_ic;
+			ip->i_din = tdip;
 			remque(ip);
 			insque(ip, ih);
 			ip->i_dev = dev;
 			ip->i_number = ino;
+			insmntque(vp, mntp);
 			if (ip->i_devvp) {
 				vrele(ip->i_devvp);
 				ip->i_devvp = 0;
@@ -237,7 +190,7 @@ again:
 			break;
 		}
 		if (iq == 0) {
-			ip->i_ic = dp->di_ic;
+			ip->i_din = *dp;
 			brelse(bp);
 			ip->i_devlst = bdevlisth;
 			bdevlisth = ip;
@@ -253,7 +206,7 @@ again:
 	 * Initialize the associated vnode
 	 */
 	vp = ITOV(ip);
-	vinit(vp, mntp, IFTOVT(ip->i_mode), &ufs_vnodeops);
+	vp->v_type = IFTOVT(ip->i_mode);
 	if (vp->v_type == VCHR || vp->v_type == VBLK) {
 		vp->v_rdev = ip->i_rdev;
 		vp->v_op = &blk_vnodeops;
@@ -287,74 +240,41 @@ again:
  * for old data structures to be purged or for the contents of the disk
  * portion of this inode to be read.
  */
-getnewino(dev, ino, ipp)
+getnewino(dev, ino, mp, ipp)
 	dev_t dev;
 	ino_t ino;
+	struct mount *mp;
 	struct inode **ipp;
 {
 	union ihead *ih;
-	register struct inode *ip, *iq;
-	register struct vnode *vp;
+	register struct inode *ip;
+	struct vnode *vp;
+	int error;
 
+	if (error = getnewvnode(VT_UFS, mp, &ufs_vnodeops, &vp))
+		return (error);
+	ip = VTOI(vp);
+	ip->i_vnode = vp;
+	ip->i_flag = 0;
+	ip->i_devvp = 0;
+	ip->i_lastr = 0;
+	ip->i_mode = 0;
+#ifdef QUOTA
+	ip->i_dquot = NODQUOT;
+#endif
 	/*
-	 * Remove the next inode from the free list.
+	 * Put the inode on the chain for its new (ino, dev) pair.
 	 */
-	if ((ip = ifreeh) == NULL) {
-		tablefull("inode");
-		*ipp = 0;
-		return(ENFILE);
-	}
-	vp = ITOV(ip);
-	if (vp->v_count)
-		panic("free inode isn't");
-	if (iq = ip->i_freef)
-		iq->i_freeb = &ifreeh;
-	ifreeh = iq;
-	ip->i_freef = NULL;
-	ip->i_freeb = NULL;
-	/*
-	 * Now to take inode off the hash chain it was on
-	 * (initially, or after an iflush, it is on a "hash chain"
-	 * consisting entirely of itself, and pointed to by no-one)
-	 * and put it on the chain for its new (ino, dev) pair.
-	 */
-	remque(ip);
 	ip->i_dev = dev;
 	ip->i_number = ino;
 	if (dev != NODEV) {
 		ih = &ihead[INOHASH(dev, ino)];
 		insque(ip, ih);
+	} else {
+		ip->i_forw = ip;
+		ip->i_back = ip;
 	}
-	ip->i_flag = 0;
 	ILOCK(ip);
-	ip->i_lastr = 0;
-#endif SECSIZE
-	/*
-	 * Purge old data structures associated with the inode.
-	 */
-	cache_purge(vp);
-	if (ip->i_devvp) {
-		vrele(ip->i_devvp);
-		ip->i_devvp = 0;
-	}
-#ifdef QUOTA
-	dqrele(ip->i_dquot);
-	ip->i_dquot = NODQUOT;
-#endif
-	if (vp->v_type == VBLK) {
-		if (bdevlisth == ip) {
-			bdevlisth = ip->i_devlst;
-		} else {
-			for (iq = bdevlisth; iq; iq = iq->i_devlst) {
-				if (iq->i_devlst != ip)
-					continue;
-				iq->i_devlst = ip->i_devlst;
-				break;
-			}
-			if (iq == NULL)
-				panic("missing bdev");
-		}
-	}
 	*ipp = ip;
 	return (0);
 }
@@ -376,18 +296,10 @@ igrab(ip)
 		ip->i_flag |= IWANT;
 		sleep((caddr_t)ip, PINOD);
 	}
-	if (vp->v_count == 0) {		/* ino on free list */
-		register struct inode *iq;
-
-		if (iq = ip->i_freef)
-			iq->i_freeb = ip->i_freeb;
-		else
-			ifreet = ip->i_freeb;
-		*ip->i_freeb = iq;
-		ip->i_freef = NULL;
-		ip->i_freeb = NULL;
-	}
-	VREF(vp);
+	if (vp->v_count == 0)		/* ino on free list */
+		vget(vp);
+	else
+		VREF(vp);
 	ILOCK(ip);
 }
 
@@ -421,7 +333,7 @@ again:
 		*vpp = vp;
 		return (0);
 	}
-	if (error = getnewino(NODEV, (ino_t)0, &nip)) {
+	if (error = getnewino(NODEV, (ino_t)0, (struct mount *)0, &nip)) {
 		*vpp = 0;
 		return (error);
 	}
@@ -430,7 +342,8 @@ again:
 	ip->i_devlst = bdevlisth;
 	bdevlisth = ip;
 	vp = ITOV(ip);
-	vinit(vp, 0, VBLK, &blk_vnodeops);
+	vp->v_type = VBLK;
+	vp->v_op = &blk_vnodeops;
 	vp->v_rdev = dev;
 	IUNLOCK(ip);
 	*vpp = vp;
@@ -438,11 +351,7 @@ again:
 }
 
 /*
- * Decrement reference count of
- * an inode structure.
- * On the last reference,
- * write the inode out and if necessary,
- * truncate and deallocate the file.
+ * Unlock and decrement the reference count of an inode structure.
  */
 iput(ip)
 	register struct inode *ip;
@@ -454,12 +363,15 @@ iput(ip)
 	vrele(ITOV(ip));
 }
 
-
+/*
+ * Last reference to an inode, write the inode out and if necessary,
+ * truncate and deallocate the file.
+ */
 ufs_inactive(vp)
 	struct vnode *vp;
 {
 	register struct inode *ip = VTOI(vp);
-	int mode, error;
+	int mode, error = 0;
 
 	if (vp->v_count != 0)
 		panic("ufs_inactive: not inactive");
@@ -467,7 +379,7 @@ ufs_inactive(vp)
 	 * Get rid of inodes related to stale file handles.
 	 */
 	if (ip->i_mode == 0)
-		goto freeit;
+		return (ufs_reclaim(vp));
 	ILOCK(ip);
 	if (ip->i_nlink <= 0 && (vp->v_mount->m_flag & M_RDONLY) == 0) {
 		error = itrunc(ip, (u_long)0);
@@ -484,25 +396,68 @@ ufs_inactive(vp)
 	}
 	IUPDAT(ip, &time, &time, 0);
 	IUNLOCK(ip);
-freeit:
 	ip->i_flag = 0;
 	/*
-	 * Put the inode on the end of the free list.
-	 * Possibly in some cases it would be better to
-	 * put the inode at the head of the free list,
-	 * (eg: where i_mode == 0 || i_number == 0).
+	 * If we are done with the inode, reclaim it
+	 * so that it can be reused immediately.
 	 */
-	INSFREE(ip);
+	if (ip->i_mode == 0 && !error)
+		return (ufs_reclaim(vp));
 	return (error);
 }
 
 /*
- * Check accessed and update flags on
- * an inode structure.
- * If any is on, update the inode
- * with the current time.
- * If waitfor is given, then must insure
- * i/o order so wait for write to complete.
+ * Reclaim an inode so that it can be used for other purposes.
+ */
+ufs_reclaim(vp)
+	register struct vnode *vp;
+{
+	register struct inode *iq, *ip = VTOI(vp);
+
+	if (vp->v_count != 0)
+		panic("ufs_reclaim: active inode");
+	/*
+	 * Remove the inode from its hash chain.
+	 */
+	remque(ip);
+	ip->i_forw = ip;
+	ip->i_back = ip;
+	/*
+	 * Purge old data structures associated with the inode.
+	 */
+	cache_purge(vp);
+	if (ip->i_devvp) {
+		vrele(ip->i_devvp);
+		ip->i_devvp = 0;
+	}
+#ifdef QUOTA
+	dqrele(ip->i_dquot);
+	ip->i_dquot = NODQUOT;
+#endif
+	if (vp->v_type == VBLK) {
+		if (bdevlisth == ip) {
+			bdevlisth = ip->i_devlst;
+		} else {
+			for (iq = bdevlisth; iq; iq = iq->i_devlst) {
+				if (iq->i_devlst != ip)
+					continue;
+				iq->i_devlst = ip->i_devlst;
+				break;
+			}
+			if (iq == NULL)
+				panic("missing bdev");
+		}
+	}
+	vp->v_type = VNON;
+	ip->i_flag = 0;
+	return (0);
+}
+
+/*
+ * Check accessed and update flags on an inode structure.
+ * If any is on, update the inode with the current time.
+ * If waitfor is given, then must ensure I/O order,
+ * so wait for write to complete.
  */
 iupdat(ip, ta, tm, waitfor)
 	register struct inode *ip;
@@ -533,7 +488,7 @@ iupdat(ip, ta, tm, waitfor)
 		ip->i_ctime = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 	dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
-	dp->di_ic = ip->i_ic;
+	*dp = ip->i_din;
 	if (waitfor) {
 		return (bwrite(bp));
 	} else {
@@ -546,10 +501,8 @@ iupdat(ip, ta, tm, waitfor)
 #define	DOUBLE	1	/* index of double indirect block */
 #define	TRIPLE	2	/* index of triple indirect block */
 /*
- * Truncate the inode ip to at most
- * length size.  Free affected disk
- * blocks -- the blocks of the file
- * are removed in reverse order.
+ * Truncate the inode ip to at most length size.  Free affected disk
+ * blocks -- the blocks of the file are removed in reverse order.
  *
  * NB: triple indirect blocks are untested.
  */
@@ -830,52 +783,41 @@ indirtrunc(ip, bn, lastbn, level, countp)
 int busyprt = 0;	/* patch to print out busy inodes */
 
 #ifdef QUOTA
-iflush(dev, iq)
-	dev_t dev;
+iflush(mp, iq)
+	struct mount *mp;
 	struct inode *iq;
 #else
-iflush(dev)
-	dev_t dev;
+iflush(mp)
+	struct mount *mp;
 #endif
 {
+	register struct vnode *vp;
 	register struct inode *ip;
 	int busy = 0;
 
-	for (ip = inode; ip < inodeNINODE; ip++) {
+	for (vp = mp->m_mounth; vp; vp = vp->v_mountf) {
+		ip = VTOI(vp);
 #ifdef QUOTA
-		if (ip == iq || ip->i_dev != dev)
-			continue;
-#else
-		if (ip->i_dev != dev)
+		if (ip == iq)
 			continue;
 #endif
-		if (ITOV(ip)->v_count) {
+		if (vp->v_count) {
 			busy++;
 			if (!busyprt)
 				continue;
 			printf("%s %d on dev 0x%x count %d type %d\n",
 			    "iflush: busy inode ", ip->i_number, ip->i_dev,
-			    ITOV(ip)->v_count, ITOV(ip)->v_type);
+			    vp->v_count, vp->v_type);
 			continue;
 		}
-		remque(ip);
-		ip->i_forw = ip;
-		ip->i_back = ip;
 		/*
 		 * As v_count == 0, the inode was on the free list already,
-		 * just leave it there, it will fall off the bottom eventually.
+		 * so it will fall off the bottom eventually.
 		 * We could perhaps move it to the head of the free list,
 		 * but as umounts are done so infrequently, we would gain
 		 * very little, while making the code bigger.
 		 */
-#ifdef QUOTA
-		dqrele(ip->i_dquot);
-		ip->i_dquot = NODQUOT;
-#endif
-		if (ip->i_devvp) {
-			vrele(ip->i_devvp);
-			ip->i_devvp = 0;
-		}
+		ufs_reclaim(vp);
 	}
 	if (busy)
 		return (EBUSY);
@@ -927,12 +869,10 @@ iaccess(ip, mode, cred)
 	struct ucred *cred;
 {
 	register gid_t *gp;
-	register struct vnode *vp = ITOV(ip);
 	int i;
 
 	/*
-	 * If you're the super-user,
-	 * you always get access.
+	 * If you're the super-user, you always get access.
 	 */
 	if (cred->cr_uid == 0)
 		return (0);
