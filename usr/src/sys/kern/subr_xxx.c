@@ -4,16 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_xxx.c	7.13 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.14 (Berkeley) %G%
  */
 
 /*
  * Miscellaneous trivial functions, including many
  * that are often inline-expanded or done in assembler.
  */
-#include "param.h"
-#include "systm.h"
-#include "machine/cpu.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+
+#include <machine/cpu.h>
 
 /*
  * Unsupported device function (e.g. writing to read-only device).

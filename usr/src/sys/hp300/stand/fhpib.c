@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpib.c	7.2 (Berkeley) %G%
+ *	@(#)fhpib.c	7.3 (Berkeley) %G%
  */
 
 /*
  * 98625A/B HPIB driver
  */
 
-#include "sys/param.h"
-#include "../dev/fhpibreg.h"
-#include "hpibvar.h"
+#include <sys/param.h>
+#include <hp300/dev/fhpibreg.h>
+#include <hp300/stand/hpibvar.h>
 
 fhpibinit(unit)
 	register int unit;

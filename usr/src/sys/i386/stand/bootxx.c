@@ -7,14 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bootxx.c	7.2 (Berkeley) %G%
+ *	@(#)bootxx.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <sys/disklabel.h>
+
 #include <a.out.h>
-#include "saio.h"
-#include "reboot.h"
-#include "disklabel.h"
+#include <stand/saio.h>
 
 char *bootprog = "/boot";
 extern int opendev, bootdev, cyloffset;

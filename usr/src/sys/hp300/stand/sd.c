@@ -11,18 +11,18 @@
  *
  * from: Utah $Hdr: sd.c 1.2 90/01/23$
  *
- *	@(#)sd.c	7.6 (Berkeley) %G%
+ *	@(#)sd.c	7.7 (Berkeley) %G%
  */
 
 /*
  * SCSI CCS disk driver
  */
 
-#include "sys/param.h"
-#include "saio.h"
-#include "samachdep.h"
+#include <sys/param.h>
+#include <stand/saio.h>
+#include <hp300/stand/samachdep.h>
 
-#include "../dev/scsireg.h"
+#include <hp300/dev/scsireg.h>
 
 struct	sd_softc {
 	char	sc_retry;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.16 (Berkeley) %G%
+ *	@(#)dca.c	7.17 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -19,26 +19,26 @@
  *  The third bit of the Modem Control Register (MCR_IEN == 0x08) must be
  *  set to enable interrupts.
  */
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/proc.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include "hp/dev/device.h"
-#include "dcareg.h"
+#include <hp/dev/device.h>
+#include <hp/dev/dcareg.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 #ifdef hp300
-#include "../../hp300/hp300/isr.h"
+#include <hp300/hp300/isr.h>
 #endif
 #ifdef hp700
-#include "machine/asp.h"
+#include <machine/asp.h>
 #endif
 
 int	dcaprobe();
@@ -87,7 +87,7 @@ struct speedtab dcaspeedtab[] = {
 };
 
 #ifdef KGDB
-#include "machine/remote-sl.h"
+#include <machine/remote-sl.h>
 
 extern dev_t kgdb_dev;
 extern int kgdb_rate;
@@ -645,7 +645,7 @@ dcamctl(dev, bits, how)
 /*
  * Following are all routines needed for DCA to act as console
  */
-#include "hp/dev/cons.h"
+#include <hp/dev/cons.h>
 
 dcacnprobe(cp)
 	struct consdev *cp;

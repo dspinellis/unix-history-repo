@@ -11,32 +11,32 @@
  *
  * from: Utah $Hdr: hil.c 1.38 92/01/21$
  *
- *	@(#)hil.c	7.13 (Berkeley) %G%
+ *	@(#)hil.c	7.14 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/conf.h"
-#include "sys/proc.h"
-#include "sys/user.h"
-#include "sys/ioctl.h"
-#include "sys/file.h"
-#include "sys/tty.h"
-#include "sys/systm.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/tty.h>
+#include <sys/systm.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
 
-#include "hilreg.h"
-#include "hilioctl.h"
-#include "hilvar.h"
-#include "kbdmap.h"
+#include <hp/dev/hilreg.h>
+#include <hp/dev/hilioctl.h>
+#include <hp/dev/hilvar.h>
+#include <hp/dev/kbdmap.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
-#include "vm/vm_param.h"
-#include "vm/vm_map.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
-#include "vm/vm_pager.h"
+#include <vm/vm_param.h>
+#include <vm/vm_map.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
+#include <vm/vm_pager.h>
 
 #ifdef hp300
 #define NHIL	1	/* XXX */

@@ -4,14 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dmareg.h	7.4 (Berkeley) %G%
+ *	@(#)dmareg.h	7.5 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
-#include <hp/dev/iotypes.h>	/* XXX */
-#endif
+#include <hp/dev/iotypes.h>		/* XXX */
 
 /*
  * Hardware layout for the 98620[ABC]:

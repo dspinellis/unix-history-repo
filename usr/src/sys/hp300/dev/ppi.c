@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	7.5 (Berkeley) %G%
+ *	@(#)ppi.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -14,14 +14,14 @@
 #include "ppi.h"
 #if NPPI > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/errno.h"
-#include "sys/uio.h"
-#include "sys/malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+#include <sys/uio.h>
+#include <sys/malloc.h>
 
-#include "hp/dev/device.h"
-#include "ppiioctl.h"
+#include <hp/dev/device.h>
+#include <hp300/dev/ppiioctl.h>
 
 int	ppiattach(), ppistart(), ppitimo();
 struct	driver ppidriver = {

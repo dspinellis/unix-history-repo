@@ -4,20 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.24 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.25 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "kinfo.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "buf.h"
-#include "file.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/kinfo.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/buf.h>
+#include <sys/file.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
-#include "kinfo_proc.h"
+#include <sys/kinfo_proc.h>
 
 #define snderr(e) { error = (e); goto release;}
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode(), kinfo_file();

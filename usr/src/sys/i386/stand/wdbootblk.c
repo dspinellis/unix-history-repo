@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wdbootblk.c	7.1 (Berkeley) %G%
+ *	@(#)wdbootblk.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,8 +23,10 @@
  *
  *	No attempt is made to handle disk errors.
  */
-#include "i386/isa/isa.h"
-#include "i386/isa/wdreg.h"
+
+#include <i386/isa/isa.h>
+#include <i386/isa/wdreg.h>
+
 #define	NOP	jmp 1f ; nop ; 1:
 #define BIOSRELOC	0x7c00
 #define start		0x70400

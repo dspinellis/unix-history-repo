@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_machdep.c 1.1 92/01/21
  *
- *	@(#)grf_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)grf_machdep.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -22,12 +22,12 @@
 #include "grf.h"
 #if NGRF > 0
 
-#include "sys/param.h"
+#include <sys/param.h>
 
-#include "hp/dev/device.h"
-#include "hp/dev/grfioctl.h"
-#include "hp/dev/grfvar.h"
-#include "hp/dev/grfreg.h"
+#include <hp/dev/device.h>
+#include <hp/dev/grfioctl.h>
+#include <hp/dev/grfvar.h>
+#include <hp/dev/grfreg.h>
 
 int grfprobe();
 struct	driver grfdriver = { grfprobe, "grf" };

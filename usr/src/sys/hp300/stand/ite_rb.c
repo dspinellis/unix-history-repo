@@ -11,18 +11,18 @@
  *
  * from: Utah $Hdr: ite_rb.c 1.6 92/01/20$
  *
- *	@(#)ite_rb.c	7.3 (Berkeley) %G%
+ *	@(#)ite_rb.c	7.4 (Berkeley) %G%
  */
 
-#include "samachdep.h"
+#include <hp300/stand/samachdep.h>
 
 #ifdef ITECONSOLE
 
-#include "sys/param.h"
-#include "hp/dev/itevar.h"
-#include "hp/dev/itereg.h"
+#include <sys/param.h>
+#include <hp/dev/itevar.h>
+#include <hp/dev/itereg.h>
 
-#include "../dev/grf_rbreg.h"
+#include <hp300/dev/grf_rbreg.h>
 
 #define REGBASE		((struct rboxfb *)(ip->regbase))
 #define WINDOWMOVER	rbox_windowmove

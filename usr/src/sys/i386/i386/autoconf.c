@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -18,16 +18,16 @@
  * devices are determined (from possibilities mentioned in ioconf.c),
  * and the drivers are initialized.
  */
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/dmap.h>
+#include <sys/reboot.h>
 
-#include "machine/pte.h"
+#include <machine/pte.h>
 
 /*
  * The following several variables are related to

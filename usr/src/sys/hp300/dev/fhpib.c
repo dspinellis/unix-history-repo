@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpib.c	7.5 (Berkeley) %G%
+ *	@(#)fhpib.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -13,13 +13,15 @@
 #include "hpib.h"
 #if NHPIB > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "hp/dev/device.h"
-#include "fhpibreg.h"
-#include "hpibvar.h"
-#include "dmavar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+
+#include <hp/dev/device.h>
+
+#include <hp300/dev/fhpibreg.h>
+#include <hp300/dev/hpibvar.h>
+#include <hp300/dev/dmavar.h>
 
 /*
  * Inline version of fhpibwait to be used in places where

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.4 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -14,18 +14,18 @@
 static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03/31 19:22:46 donn Exp Locker: donn $";
 #endif
 
-#include "param.h"
-#include "systm.h"
-#include "../include/trap.h"
-#include "../include/cpu.h"
-#include "../include/psl.h"
-#include "../include/reg.h"
-#include "buf.h"
-#include "cons.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <machine/trap.h>
+#include <machine/cpu.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <sys/buf.h>
+#include <i386/i386/cons.h>
+#include <sys/errno.h>
 
-#include "kgdb_proto.h"
-#include "machine/remote-sl.h"
+#include <i386/i386/kgdb_proto.h>
+#include <machine/remote-sl.h>
 
 extern int kernacc();
 #if 0

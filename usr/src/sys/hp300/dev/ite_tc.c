@@ -11,29 +11,29 @@
  *
  * from: Utah $Hdr: ite_tc.c 1.26 92/01/21$
  *
- *	@(#)ite_tc.c	7.5 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.6 (Berkeley) %G%
  */
 
 #include "ite.h"
 #if NITE > 0
 
-#include "param.h"
-#include "conf.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/systm.h>
 
-#include "grf_tcreg.h"
-#include "hp/dev/grfreg.h"
-#include "hp/dev/itereg.h"
-#include "hp/dev/itevar.h"
+#include <hp300/dev/grf_tcreg.h>
+#include <hp/dev/grfreg.h>
+#include <hp/dev/itereg.h>
+#include <hp/dev/itevar.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 /* XXX */
-#include "hp/dev/grfioctl.h"
-#include "hp/dev/grfvar.h"
+#include <hp/dev/grfioctl.h>
+#include <hp/dev/grfvar.h>
 
 #define REGBASE	    	((struct tcboxfb *)(ip->regbase))
 #define WINDOWMOVER 	topcat_windowmove

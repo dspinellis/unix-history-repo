@@ -4,24 +4,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.37 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.38 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "filedesc.h"
-#include "kernel.h"
-#include "vnode.h"
-#include "proc.h"
-#include "file.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "stat.h"
-#include "ioctl.h"
-#include "fcntl.h"
-#include "malloc.h"
-#include "syslog.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/malloc.h>
+#include <sys/syslog.h>
+#include <sys/resourcevar.h>
 
 /*
  * Descriptor management.

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.2 (Berkeley) %G%
+ *	@(#)cfb.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -62,24 +62,25 @@
  *	it will need changes to work with X11R5.
  */
 
-#include "param.h"
-#include "time.h"
-#include "kernel.h"
-#include "ioctl.h"
-#include "file.h"
-#include "errno.h"
-#include "proc.h"
-#include "mman.h"
-#include "vm/vm.h"
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/errno.h>
+#include <sys/proc.h>
+#include <sys/mman.h>
 
-#include "machine/machConst.h"
-#include "machine/machMon.h"
-#include "machine/dc7085cons.h"
-#include "machine/pmioctl.h"
+#include <vm/vm.h>
 
-#include "device.h"
-#include "cfbreg.h"
-#include "font.c"
+#include <machine/machConst.h>
+#include <machine/machMon.h>
+#include <machine/dc7085cons.h>
+#include <machine/pmioctl.h>
+
+#include <mips/dev/device.h>
+#include <mips/dev/cfbreg.h>
+#include <mips/dev/font.c>
 
 #define MAX_ROW	56
 #define MAX_COL	80

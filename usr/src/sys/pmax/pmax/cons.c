@@ -11,19 +11,19 @@
  *
  * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	7.3 (Berkeley) %G%
+ *	@(#)cons.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "systm.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "file.h"
-#include "conf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
 
-#include "../include/machMon.h"
+#include <machine/machMon.h>
 
 /*
  * Console output may be redirected to another tty
@@ -40,8 +40,8 @@ cngetc()
 	int (*f)();
 #include "dc.h"
 #if NDC > 0
-#include "machine/dc7085cons.h"
-#include "../dev/pdma.h"
+#include <machine/dc7085cons.h>
+#include <pmax/dev/pdma.h>
 	extern struct pdma dcpdma[];
 
 	/* check to be sure device has been initialized */

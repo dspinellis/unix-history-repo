@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_compat.c	7.15 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.16 (Berkeley) %G%
  */
 
 /* 
@@ -12,16 +12,16 @@
  */
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "proc.h"
-#include "tty.h"
-#include "termios.h"
-#include "file.h"
-#include "conf.h"
-#include "kernel.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/termios.h>
+#include <sys/file.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
 int ttydebug = 0;
 

@@ -4,19 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket2.c	7.18 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.19 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "file.h"
-#include "buf.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
 /*
  * Primitive routines for operating on sockets and socket buffers

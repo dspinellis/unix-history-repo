@@ -5,22 +5,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	7.24 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.25 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "kernel.h"
-#include "buf.h"
-#include "signalvar.h"
-#include "resourcevar.h"
-#include "vmmeter.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/buf.h>
+#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/vmmeter.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 u_char	curpri;			/* usrpri of curproc */
 int	lbolt;			/* once a second sleep address */

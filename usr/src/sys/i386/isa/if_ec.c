@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ec.c	7.4 (Berkeley) %G%
+ *	@(#)if_ec.c	7.5 (Berkeley) %G%
  */
 
 
@@ -16,42 +16,42 @@
 /*
  * Intel 82586/3com Etherlink II controller.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "syslog.h"
-#include "ioctl.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
 
-#include "net/if.h"
-#include "net/netisr.h"
-#include "net/route.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
 
 #ifdef INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
-#include "netinet/if_ether.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef NS
-#include "netns/ns.h"
-#include "netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
 #ifdef ISO
 extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
 #endif
 
-#include "if_ecreg.h"
+#include <i386/isa/if_ecreg.h>
 
 #if NBPFILTER > 0
-#include "../net/bpf.h"
-#include "../net/bpfdesc.h"
+#include <net/bpf.h>
+#include <net/bpfdesc.h>
 #endif
 
 int	ecdebug = 1;		/* console error messages */
@@ -96,7 +96,7 @@ struct	ec_softc {
 	int	sc_rxlen;
 } ec_softc[NEC];
 
-#include "isa_device.h"
+#include <i386/isa/isa_device.h>
 
 struct	isa_driver ecdriver = {
 	ecprobe, ecattach, "ec",

@@ -4,23 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.22 (Berkeley) %G%
+ *	@(#)param.c	7.23 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/socket.h"
-#include "sys/proc.h"
-#include "sys/vnode.h"
-#include "sys/file.h"
-#include "sys/callout.h"
-#include "sys/clist.h"
-#include "sys/mbuf.h"
-#include "ufs/ufs/quota.h"
-#include "sys/kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/callout.h>
+#include <sys/clist.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+
+#include <ufs/ufs/quota.h>
+
 #ifdef SYSVSHM
-#include "machine/vmparam.h"
-#include "sys/shm.h"
+#include <machine/vmparam.h>
+#include <sys/shm.h>
 #endif
 
 /*

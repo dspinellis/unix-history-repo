@@ -7,17 +7,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.2 (Berkeley) %G%
+ *	@(#)scsi.c	7.3 (Berkeley) %G%
  */
 
 /*
  * SCSI utility routines for making SCSI device drivers easier.
  */
 
-#include "param.h"
+#include <sys/param.h>
 
-#include "device.h"
-#include "scsi.h"
+#include <mips/dev/device.h>
+#include <mips/dev/scsi.h>
 
 /*
  * The error codes for class 0-6 sense data are class specific.

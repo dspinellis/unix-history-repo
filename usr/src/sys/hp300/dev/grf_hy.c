@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: grf_hy.c 1.1 92/01/22$
  *
- *	@(#)grf_hy.c	7.1 (Berkeley) %G%
+ *	@(#)grf_hy.c	7.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -21,14 +21,14 @@
 /*
  * Graphics routines for HYPERION frame buffer
  */
-#include "sys/param.h"
-#include "sys/errno.h"
+#include <sys/param.h>
+#include <sys/errno.h>
 
-#include "hp/dev/grfioctl.h"
-#include "hp/dev/grfvar.h"
-#include "grf_hyreg.h"
+#include <hp/dev/grfioctl.h>
+#include <hp/dev/grfvar.h>
+#include <hp300/dev/grf_hyreg.h>
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 caddr_t badhyaddr = (caddr_t) -1;
 

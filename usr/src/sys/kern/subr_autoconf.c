@@ -8,14 +8,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)subr_autoconf.c	7.4 (Berkeley) %G%
  *
  * from: $Header: subr_autoconf.c,v 1.6 92/06/11 17:56:19 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/device.h"
-#include "sys/malloc.h"
+#include <sys/param.h>
+#include <sys/device.h>
+#include <sys/malloc.h>
 
 /*
  * Autoconfiguration subroutines.

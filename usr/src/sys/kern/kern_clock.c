@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.26 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.27 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "callout.h"
-#include "kernel.h"
-#include "proc.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/dkstat.h>
+#include <sys/callout.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 #ifdef GPROF
-#include "gmon.h"
+#include <sys/gmon.h>
 extern u_short *kcount;
 #endif
 

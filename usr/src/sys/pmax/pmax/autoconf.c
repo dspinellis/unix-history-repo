@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -22,17 +22,17 @@
  * and the drivers are initialized.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/dmap.h>
+#include <sys/reboot.h>
 
-#include "../include/cpu.h"
-#include "../dev/device.h"
+#include <machine/cpu.h>
+#include <pmax/dev/device.h>
 
 /*
  * The following several variables are related to

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.13 (Berkeley) %G%
+ *	@(#)pmap.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -50,19 +50,19 @@
  *	and to when physical maps must be made correct.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "malloc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/user.h>
 
-#include "pte.h"
+#include <hp300/hp300/pte.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 #ifdef DEBUG
 struct {

@@ -1,24 +1,22 @@
-/*
- * Copyright (c) 1980, 1986, 1990 The Regents of the University of California.
+/*-
+ * Copyright (c) 1986, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
- *
- *	@(#)installboot.c	7.3 (Berkeley) %G%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1986, 1990 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1986, 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)installboot.c	7.2 (Berkeley) 12/16/90";
+static char sccsid[] = "@(#)installboot.c	7.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sys/param.h"
-#include "ufs/ffs/fs.h"
+#include <sys/param.h>
+#include <ufs/ffs/fs.h>
 
 char block[1024];
 int maxbootsize = 16 * 7 * 512;		/* XXX */

@@ -4,22 +4,22 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.32 (Berkeley) %G%
+ *	@(#)sys_process.c	7.33 (Berkeley) %G%
  */
 
 #define IPCREG
-#include "param.h"
-#include "proc.h"
-#include "vnode.h"
-#include "buf.h"
-#include "ptrace.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/buf.h>
+#include <sys/ptrace.h>
 
-#include "machine/reg.h"
-#include "machine/psl.h"
-#include "vm/vm.h"
-#include "vm/vm_page.h"
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <vm/vm.h>
+#include <vm/vm_page.h>
 
-#include "user.h"
+#include <sys/user.h>
 
 /*
  * Priority for tracing

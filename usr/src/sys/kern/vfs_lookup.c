@@ -4,22 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.44 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.45 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "syslimits.h"
-#include "time.h"
-#include "namei.h"
-#include "vnode.h"
-#include "mount.h"
-#include "errno.h"
-#include "malloc.h"
-#include "filedesc.h"
-#include "proc.h"
+#include <sys/param.h>
+#include <sys/syslimits.h>
+#include <sys/time.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
+#include <sys/filedesc.h>
+#include <sys/proc.h>
 
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
 /*

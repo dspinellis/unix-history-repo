@@ -9,21 +9,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
 
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/user.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/file.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
 
-#include "cons.h"
+#include <i386/i386/cons.h>
 
 /* XXX - all this could be autoconfig()ed */
 int pccnprobe(), pccninit(), pccngetc(), pccnputc();

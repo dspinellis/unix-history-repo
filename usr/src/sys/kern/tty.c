@@ -5,29 +5,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.54 (Berkeley) %G%
+ *	@(#)tty.c	7.55 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "proc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
 #define TTYDEFCHARS
-#include "tty.h"
+#include <sys/tty.h>
 #undef TTYDEFCHARS
 #define TTYDEFCHARS
 #include "ttydefaults.h"
 #undef TTYDEFCHARS
 #include "termios.h"
-#include "file.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "uio.h"
-#include "kernel.h"
-#include "vnode.h"
-#include "syslog.h"
+#include <sys/file.h>
+#include <sys/conf.h>
+#include <sys/dkstat.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
+#include <sys/syslog.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 #include "syslog.h"
 
 static int proc_compare __P((struct proc *p1, struct proc *p2));

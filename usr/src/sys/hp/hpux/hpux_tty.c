@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.12 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -19,19 +19,19 @@
  */
 #ifdef HPUXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "filedesc.h"
-#include "ioctl.h"
-#include "proc.h"
-#include "tty.h"
-#include "file.h"
-#include "conf.h"
-#include "buf.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/filedesc.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
+#include <sys/buf.h>
+#include <sys/kernel.h>
 
-#include "hpux.h"
-#include "hpux_termio.h"
+#include <hp/hpux/hpux.h>
+#include <hp/hpux/hpux_termio.h>
 
 /*
  * Map BSD/POSIX style termios info to and from SYS5 style termio stuff.

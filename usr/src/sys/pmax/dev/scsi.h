@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.h	7.2 (Berkeley) %G%
+ *	@(#)scsi.h	7.3 (Berkeley) %G%
  *
  * scsi.h --
  *
@@ -484,7 +484,7 @@ typedef struct ScsiTapeModeSelectHdr {
  * Driver ioctl's for various scsi operations.
  */
 #ifndef _IOCTL_
-#include "ioctl.h"
+#include <sys/ioctl.h>
 #endif
 
 /*

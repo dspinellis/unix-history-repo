@@ -13,15 +13,15 @@
  *
  * from: hp300/hp300/pmap_bootstrap.c	7.1 (Berkeley) 6/5/92
  *
- *	@(#)pmap_bootstrap.c	7.1 (Berkeley) %G%
+ *	@(#)pmap_bootstrap.c	7.2 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "pte.h"
-#include "../include/vmparam.h"
-#include "../include/cpu.h"
+#include <sys/param.h>
+#include <luna68k/luna68k/pte.h>
+#include <machine/vmparam.h>
+#include <machine/cpu.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 /*
  * Allocate various and sundry SYSMAPs used in the days of old VM
@@ -46,7 +46,7 @@ extern int lunapagesperpage;
 #endif
 
 #if BSDVM_COMPAT
-#include "msgbuf.h"
+#include <sys/msgbuf.h>
 
 /*
  * All those kernel PT submaps that BSD is so fond of

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	7.19 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -22,17 +22,18 @@
 
 #ifdef SYSVSHM
 
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "proc.h"
-#include "shm.h"
-#include "malloc.h"
-#include "mman.h"
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_inherit.h"
-#include "vm/vm_pager.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/shm.h>
+#include <sys/malloc.h>
+#include <sys/mman.h>
+
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_inherit.h>
+#include <vm/vm_pager.h>
 
 int	shmat(), shmctl(), shmdt(), shmget();
 int	(*shmcalls[])() = { shmat, shmctl, shmdt, shmget };

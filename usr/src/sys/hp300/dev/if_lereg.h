@@ -4,14 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_lereg.h	7.4 (Berkeley) %G%
+ *	@(#)if_lereg.h	7.5 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
 #include <hp/dev/iotypes.h>	/* XXX */
-#endif
 
 #define	LEID		21
 

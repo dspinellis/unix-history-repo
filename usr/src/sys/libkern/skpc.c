@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)skpc.c	7.3 (Berkeley) %G%
+ *	@(#)skpc.c	7.4 (Berkeley) %G%
  */
 
-#include "libkern.h"
+#include <libkern/libkern.h>
 
 int
 skpc(mask0, size, cp0)

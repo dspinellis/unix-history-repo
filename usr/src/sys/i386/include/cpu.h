@@ -7,14 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	5.5 (Berkeley) %G%
+ *	@(#)cpu.h	5.6 (Berkeley) %G%
  */
 
 /*
  * Definitions unique to i386 cpu support.
  */
-#include "machine/frame.h"
-#include "machine/segments.h"
+#include <machine/frame.h>
+#include <machine/segments.h>
 
 /*
  * definitions of cpu-dependent requirements

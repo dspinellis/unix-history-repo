@@ -11,19 +11,19 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.15 (Berkeley) %G%
+ *	@(#)clock.c	7.16 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "kernel.h"
-#include "hp/dev/hilreg.h"
-#include "clockreg.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <hp/dev/hilreg.h>
+#include <hp300/hp300/clockreg.h>
 
-#include "../include/psl.h"
-#include "../include/cpu.h"
+#include <machine/psl.h>
+#include <machine/cpu.h>
 
 #ifdef GPROF
-#include "sys/gmon.h"
+#include <sys/gmon.h>
 #endif
 
 int    clkstd[1];

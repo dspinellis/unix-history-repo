@@ -11,17 +11,17 @@
  *
  * from: Utah $Hdr: rd.c 1.17 92/06/18$
  *
- *	@(#)rd.c	7.5 (Berkeley) %G%
+ *	@(#)rd.c	7.6 (Berkeley) %G%
  */
 
 /*
  * CS80/SS80 disk driver
  */
-#include "sys/param.h"
-#include "saio.h"
-#include "samachdep.h"
+#include <sys/param.h>
+#include <stand/saio.h>
+#include <hp300/stand/samachdep.h>
 
-#include "../dev/rdreg.h"
+#include <hp300/dev/rdreg.h>
 
 struct	rd_iocmd rd_ioc;
 struct	rd_rscmd rd_rsc;

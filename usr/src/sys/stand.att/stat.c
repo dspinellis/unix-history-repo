@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.c	7.1 (Berkeley) %G%
+ *	@(#)stat.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 #ifndef SMALL
 fstat(fd, sb)

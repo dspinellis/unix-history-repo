@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pm.c	7.5 (Berkeley) %G%
+ *	@(#)pm.c	7.6 (Berkeley) %G%
  *
  *  devGraphics.c --
  *
@@ -28,24 +28,25 @@
 #include "pm.h"
 #if NPM > 0
 
-#include "param.h"
-#include "time.h"
-#include "kernel.h"
-#include "ioctl.h"
-#include "file.h"
-#include "errno.h"
-#include "proc.h"
-#include "mman.h"
-#include "vm/vm.h"
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/errno.h>
+#include <sys/proc.h>
+#include <sys/mman.h>
 
-#include "machine/machConst.h"
-#include "machine/machMon.h"
-#include "machine/dc7085cons.h"
-#include "machine/pmioctl.h"
+#include <vm/vm.h>
 
-#include "device.h"
-#include "pmreg.h"
-#include "font.c"
+#include <machine/machConst.h>
+#include <machine/machMon.h>
+#include <machine/dc7085cons.h>
+#include <machine/pmioctl.h>
+
+#include <mips/dev/device.h>
+#include <mips/dev/pmreg.h>
+#include <mips/dev/font.c>
 
 #define MAX_ROW	56
 #define MAX_COL	80

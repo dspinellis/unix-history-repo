@@ -11,10 +11,10 @@
  *
  * from: Utah $Hdr: machdep.c 1.10 92/06/18
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  */
 
-#include "sys/param.h"
+#include <sys/param.h>
 
 /*
  * Copy bytes within kernel

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_we.c	7.4 (Berkeley) %G%
+ *	@(#)if_we.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
  */
  
 #include "we.h"
-#if	NWE > 0
+#if NWE > 0
 /*
  * Western Digital 8003 ethernet/starlan adapter
  *
@@ -27,31 +27,31 @@
  * The Western Digital card is one of many AT/MCA ethernet interfaces
  * based on the National DS8390 Network Interface chip set.
  */
-#include "param.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/syslog.h>
 
-#include "net/if.h"
-#include "net/netisr.h"
+#include <net/if.h>
+#include <net/netisr.h>
 
 #ifdef INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
-#include "netinet/if_ether.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef NS
-#include "netns/ns.h"
-#include "netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
-#include "i386/isa/if_wereg.h"
-#include "i386/isa/isa_device.h"
+#include <i386/isa/if_wereg.h>
+#include <i386/isa/isa_device.h>
  
 /*
  * This constant should really be 60 because the we adds 4 bytes of crc.

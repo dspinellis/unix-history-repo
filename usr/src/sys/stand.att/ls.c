@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ls.c	7.9 (Berkeley) %G%
+ *	@(#)ls.c	7.10 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "ufs/dir.h"
-#include "saio.h"
-#include "sys/ttychars.h"
+#include <sys/param.h>
+#include <sys/ttychars.h>
+
+#include <ufs/ufs/dir.h>
+#include <stand/saio.h>
 
 main()
 {

@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.21 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.22 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "kernel.h"
-#include "resourcevar.h"
-#include "malloc.h"
-#include "proc.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/resourcevar.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 /*
  * Resource controls and accounting.

@@ -11,23 +11,23 @@
  *
  * from: Utah $Hdr: ite_subr.c 1.4 92/01/21$
  *
- *	@(#)ite_subr.c	7.5 (Berkeley) %G%
+ *	@(#)ite_subr.c	7.6 (Berkeley) %G%
  */
 
 #include "ite.h"
 #if NITE > 0
 
-#include "param.h"
-#include "conf.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/systm.h>
 
-#include "itevar.h"
-#include "itereg.h"
+#include <hp/dev/itevar.h>
+#include <hp/dev/itereg.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 ite_fontinfo(ip)
 	struct ite_softc *ip;

@@ -7,19 +7,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "param.h"
-#include "buf.h"
-#include "map.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "user.h"
-#include "machine/reg.h"
-#include "machine/pmap.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/user.h>
+
+#include <machine/reg.h>
+#include <machine/pmap.h>
 
 main()
 {

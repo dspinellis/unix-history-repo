@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.6 (Berkeley) %G%
+ *	@(#)nhpib.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -13,14 +13,14 @@
 #include "hpib.h"
 #if NHPIB > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
 
-#include "hp/dev/device.h"
-#include "nhpibreg.h"
-#include "hpibvar.h"
-#include "dmavar.h"
+#include <hp/dev/device.h>
+#include <hp300/dev/nhpibreg.h>
+#include <hp300/dev/hpibvar.h>
+#include <hp300/dev/dmavar.h>
 
 nhpibtype(hc)
 	register struct hp_ctlr *hc;

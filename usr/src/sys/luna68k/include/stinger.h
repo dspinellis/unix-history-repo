@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stinger.h	7.1 (Berkeley) %G%
+ *	@(#)stinger.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -18,8 +18,8 @@
  * This file should be remade.
  */
 
-#include "rdvar.h"
-#include "memory.h"
+#include <machine/rdvar.h>
+#include <machine/memory.h>
 
 struct KernInter {
 	caddr_t	  maxaddr;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.4 (Berkeley) %G%
+ *	@(#)asc.c	7.5 (Berkeley) %G%
  */
 
 /* 
@@ -94,16 +94,16 @@
 #include "asc.h"
 #if NASC > 0
 
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "buf.h"
-#include "conf.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/dkstat.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/errno.h>
 
-#include "device.h"
-#include "scsi.h"
-#include "ascreg.h"
+#include <mips/dev/device.h>
+#include <mips/dev/scsi.h>
+#include <mips/dev/ascreg.h>
 
 #define ASC_OFFSET_53C94	0x0		/* from module base */
 #define ASC_OFFSET_DMAR		0x40000		/* DMA Address Register */

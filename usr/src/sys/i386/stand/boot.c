@@ -15,14 +15,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)boot.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)boot.c	7.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "param.h"
-#include "reboot.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
+
 #include <a.out.h>
 #include <setjmp.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 /*
  * Boot program... arguments from lower-level bootstrap determine

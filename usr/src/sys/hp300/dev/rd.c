@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.16 (Berkeley) %G%
+ *	@(#)rd.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -20,21 +20,21 @@
 #include "rd.h"
 #if NRD > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/errno.h"
-#include "sys/dkstat.h"
-#include "sys/disklabel.h"
-#include "sys/buf.h"
-#include "sys/uio.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+#include <sys/dkstat.h>
+#include <sys/disklabel.h>
+#include <sys/buf.h>
+#include <sys/uio.h>
 
-#include "hp/dev/device.h"
-#include "rdreg.h"
+#include <hp/dev/device.h>
+#include <hp300/dev/rdreg.h>
 
-#include "vm/vm_param.h"
-#include "vm/lock.h"
-#include "vm/vm_prot.h"
-#include "vm/pmap.h"
+#include <vm/vm_param.h>
+#include <vm/lock.h>
+#include <vm/vm_prot.h>
+#include <vm/pmap.h>
 
 int	rdinit(), rdstart(), rdgo(), rdintr();
 struct	driver rddriver = {

@@ -6,14 +6,10 @@
  *
  * from: hp300/dev/if_lereg.h	7.4 (Berkeley) 7/6/92
  *
- *	@(#)if_lereg.h	7.2 (Berkeley) %G%
+ *	@(#)if_lereg.h	7.3 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "iotypes.h"	/* XXX */
-#else
-#include <luna68k/dev/iotypes.h>	/* XXX */
-#endif
+#include <hp/dev/iotypes.h>	/* XXX */
 
 #define	LEID		21
 

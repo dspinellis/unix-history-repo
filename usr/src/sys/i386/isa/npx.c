@@ -5,23 +5,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)npx.c	7.4 (Berkeley) %G%
+ *	@(#)npx.c	7.5 (Berkeley) %G%
  */
 #include "npx.h"
 #if NNPX > 0
 
-#include "param.h"
-#include "systm.h"
-#include "conf.h"
-#include "file.h"
-#include "proc.h"
-#include "machine/cpu.h"
-#include "user.h"
-#include "machine/trap.h"
-#include "ioctl.h"
-#include "machine/specialreg.h"
-#include "i386/isa/isa_device.h"
-#include "icu.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+
+#include <machine/cpu.h>
+#include <machine/trap.h>
+#include <machine/specialreg.h>
+#include <i386/isa/isa_device.h>
+#include <i386/isa/icu.h>
 /*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.
  */

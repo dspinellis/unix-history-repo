@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	7.8 (Berkeley) %G%
+ *      @(#)st.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -49,20 +49,20 @@
 #include "st.h"
 #if NST > 0
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "file.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "mtio.h"
-#include "kernel.h"
-#include "tprintf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/mtio.h>
+#include <sys/kernel.h>
+#include <sys/tprintf.h>
 
-#include "hp/dev/device.h"
-#include "scsireg.h"
-#include "stvar.h"
+#include <hp/dev/device.h>
+#include <hp300/dev/scsireg.h>
+#include <hp300/dev/stvar.h>
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();

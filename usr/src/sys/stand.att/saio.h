@@ -4,14 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saio.h	7.18 (Berkeley) %G%
+ *	@(#)saio.h	7.19 (Berkeley) %G%
  */
 
 #include <sys/time.h>
+
 #include <ufs/ffs/fs.h>
 #include <ufs/ufs/dinode.h>
-#include "saioctl.h"
-#include "saerrno.h"
+
+#include <stand/saioctl.h>
+#include <stand/saerrno.h>
 
 #define	UNIX	"/vmunix"
 

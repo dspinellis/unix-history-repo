@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_conf.c	7.8 (Berkeley) %G%
+ *	@(#)tty_conf.c	7.9 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "proc.h"
-#include "tty.h"
-#include "conf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
 
 #define	ttynodisc ((int (*) __P((dev_t, struct tty *)))enodev)
 #define	ttyerrclose ((int (*) __P((struct tty *, int flags)))enodev)

@@ -11,16 +11,16 @@
  *
  * from: Utah $Hdr: autoconf.c 1.16 92/05/29$
  *
- *	@(#)autoconf.c	7.6 (Berkeley) %G%
+ *	@(#)autoconf.c	7.7 (Berkeley) %G%
  */
 
-#include "samachdep.h"
-#include "rominfo.h"
-#include "sys/param.h"
-#include "sys/reboot.h"
+#include <hp300/stand/samachdep.h>
+#include <hp300/stand/rominfo.h>
+#include <sys/param.h>
+#include <sys/reboot.h>
 
-#include "hp/dev/device.h"
-#include "hp/dev/grfreg.h"
+#include <hp/dev/device.h>
+#include <hp/dev/grfreg.h>
 
 /*
  * Mapping of ROM MSUS types to BSD major device numbers

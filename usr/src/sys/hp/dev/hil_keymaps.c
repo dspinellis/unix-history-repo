@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil_keymaps.c 1.1 90/07/09$
  *
- *	@(#)hil_keymaps.c	7.3 (Berkeley) %G%
+ *	@(#)hil_keymaps.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -34,8 +34,8 @@
  * space.  Having keymaps for all 18 or so HP supported layouts would be bad
  * news.
  */
-#include "sys/param.h"
-#include "kbdmap.h"
+#include <sys/param.h>
+#include <hp/dev/kbdmap.h>
 
 char	us_keymap[] = {
 	NULL,	'`',	'\\',	ESC,	NULL,	DEL,	NULL,	NULL,  

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wd.c	7.3 (Berkeley) %G%
+ *	@(#)wd.c	7.4 (Berkeley) %G%
  */
 
 /* TODO:peel out buffer at low ipl,
@@ -17,21 +17,22 @@
 #include "wd.h"
 #if	NWD > 0
 
-#include "param.h"
-#include "dkbad.h"
-#include "systm.h"
-#include "conf.h"
-#include "file.h"
-#include "stat.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#include "buf.h"
-#include "uio.h"
-#include "i386/isa/isa_device.h"
-#include "i386/isa/icu.h"
-#include "i386/isa/wdreg.h"
-#include "syslog.h"
-#include "vm/vm.h"
+#include <sys/param.h>
+#include <sys/dkbad.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/disklabel.h>
+#include <sys/buf.h>
+#include <sys/uio.h>
+#include <sys/syslog.h>
+
+#include <i386/isa/isa_device.h>
+#include <i386/isa/icu.h>
+#include <i386/isa/wdreg.h>
+#include <vm/vm.h>
 
 #define	RETRIES		5	/* number of retries before giving up */
 #define	MAXTRANSFER	32	/* max size of transfer in page clusters */

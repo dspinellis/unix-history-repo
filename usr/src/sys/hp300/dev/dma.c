@@ -4,25 +4,26 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dma.c	7.6 (Berkeley) %G%
+ *	@(#)dma.c	7.7 (Berkeley) %G%
  */
 
 /*
  * DMA driver
  */
 
-#include "param.h"
-#include "systm.h"
-#include "time.h"
-#include "kernel.h"
-#include "proc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
 
-#include "dmareg.h"
-#include "dmavar.h"
-#include "hp/dev/device.h"
+#include <hp300/dev/dmareg.h>
+#include <hp300/dev/dmavar.h>
 
-#include "../include/cpu.h"
-#include "../hp300/isr.h"
+#include <hp/dev/device.h>
+
+#include <machine/cpu.h>
+#include <hp300/hp300/isr.h>
 
 extern void isrlink();
 extern void _insque();

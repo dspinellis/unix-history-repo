@@ -4,11 +4,11 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)read.c	7.1 (Berkeley) %G%
+ *	@(#)read.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 read(fdesc, buf, count)
 	int fdesc, count;

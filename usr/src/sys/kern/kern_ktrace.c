@@ -4,19 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.20 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.21 (Berkeley) %G%
  */
 
 #ifdef KTRACE
 
-#include "param.h"
-#include "proc.h"
-#include "file.h"
-#include "namei.h"
-#include "vnode.h"
-#include "ktrace.h"
-#include "malloc.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/ktrace.h>
+#include <sys/malloc.h>
+#include <sys/syslog.h>
 
 struct ktr_header *
 ktrgetheader(type)

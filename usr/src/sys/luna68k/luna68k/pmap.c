@@ -13,7 +13,7 @@
  *
  * from: hp300/hp300/pmap.c	7.11 (Berkeley) 7/12/92
  *
- *	@(#)pmap.c	7.2 (Berkeley) %G%
+ *	@(#)pmap.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -50,19 +50,19 @@
  *	and to when physical maps must be made correct.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "malloc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/user.h>
 
-#include "pte.h"
+#include <luna68k/luna68k/pte.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 #ifdef DEBUG
 struct {

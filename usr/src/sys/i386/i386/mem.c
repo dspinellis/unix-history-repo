@@ -11,26 +11,26 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: mem.c 1.13 89/10/08$
- *	@(#)mem.c	7.6 (Berkeley) %G%
+ *	@(#)mem.c	7.7 (Berkeley) %G%
  */
 
 /*
  * Memory special file
  */
 
-#include "param.h"
-#include "conf.h"
-#include "buf.h"
-#include "systm.h"
-#include "uio.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/buf.h>
+#include <sys/systm.h>
+#include <sys/uio.h>
+#include <sys/malloc.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
-#include "vm/vm_param.h"
-#include "vm/lock.h"
-#include "vm/vm_prot.h"
-#include "vm/pmap.h"
+#include <vm/vm_param.h>
+#include <vm/lock.h>
+#include <vm/vm_prot.h>
+#include <vm/pmap.h>
 
 extern        char *vmmap;            /* poor name! */
 /*ARGSUSED*/

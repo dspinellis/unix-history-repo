@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.3 (Berkeley) %G%
+ *	@(#)sd.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -22,16 +22,16 @@
 #include "sd.h"
 #if NSD > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/dkstat.h"
-#include "sys/proc.h"
-#include "sys/disklabel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/proc.h>
+#include <sys/disklabel.h>
 
-#include "device.h"
-#include "scsireg.h"
-#include "scsivar.h"
+#include <luna68k/dev/device.h>
+#include <luna68k/dev/scsireg.h>
+#include <luna68k/dev/scsivar.h>
 
 int	sdinit(), sdstrategy(), sdstart(), sdintr();
 

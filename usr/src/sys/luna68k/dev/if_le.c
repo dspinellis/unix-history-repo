@@ -6,7 +6,7 @@
  *
  * from: hp300/dev/if_le.c	7.12 (Berkeley) 7/6/92
  *
- *	@(#)if_le.c	7.2 (Berkeley) %G%
+ *	@(#)if_le.c	7.3 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -22,44 +22,43 @@
  * with VAXen, SUNs, and others that handle and benefit from them.
  * This reasoning is dubious.
  */
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/systm.h"
-#include "sys/mbuf.h"
-#include "sys/buf.h"
-#include "sys/protosw.h"
-#include "sys/socket.h"
-#include "sys/syslog.h"
-#include "sys/ioctl.h"
-#include "sys/errno.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
 
-#include "net/if.h"
-#include "net/netisr.h"
-#include "net/route.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
 
 #ifdef INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
-#include "netinet/if_ether.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef NS
-#include "netns/ns.h"
-#include "netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
-#include "../include/cpu.h"
-#include "../include/mtpr.h"
-#include "device.h"
-#include "if_lereg.h"
+#include <machine/cpu.h>
+#include <machine/mtpr.h>
+#include <luna68k/dev/device.h>
+#include <luna68k/dev/if_lereg.h>
 
 #if NBPFILTER > 0
-#include "../net/bpf.h"
-#include "../net/bpfdesc.h"
+#include <net/bpf.h>
+#include <net/bpfdesc.h>
 #endif
-
 
 int	leattach();
 struct	driver ledriver = {

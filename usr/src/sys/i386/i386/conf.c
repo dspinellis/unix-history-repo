@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	5.10 (Berkeley) %G%
+ *	@(#)conf.c	5.11 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
 
 int	rawread		__P((dev_t, struct uio *, int));
 int	rawwrite	__P((dev_t, struct uio *, int));

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppiioctl.h	7.2 (Berkeley) %G%
+ *	@(#)ppiioctl.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _IOCTL_

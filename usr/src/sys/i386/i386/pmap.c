@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.11 (Berkeley) %G%
+ *	@(#)pmap.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -51,17 +51,19 @@
  *	and to when physical maps must be made correct.
  */
 
-#include "param.h"
-#include "proc.h"
-#include "malloc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/user.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
-/*#include "vm/vm_pageout.h"*/
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
-/*#include "machine/isa.h"*/
+#ifdef NOTDEF
+include <vm/vm_pageout.h>
+include <machine/isa.h>
+#endif
 
 /*
  * Allocate various and sundry SYSMAPs used in the days of old VM
@@ -158,7 +160,7 @@ boolean_t	pmap_testbit();
 void		pmap_clear_modify();
 
 #if BSDVM_COMPAT
-#include "msgbuf.h"
+#include <sys/msgbuf.h>
 
 /*
  * All those kernel PT submaps that BSD is so fond of

@@ -11,7 +11,7 @@
  *
  * from Utah: $Hdr: dcm.c 1.29 92/01/21$
  *
- *	@(#)dcm.c	7.19 (Berkeley) %G%
+ *	@(#)dcm.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -25,22 +25,23 @@
 /*
  *  98642/MUX
  */
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/proc.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
-#include "sys/time.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
+#include <sys/time.h>
 
-#include "hp/dev/device.h"
-#include "dcmreg.h"
-#include "machine/cpu.h"
-#include "../hp300/isr.h"
+#include <hp/dev/device.h>
+
+#include <hp300/dev/dcmreg.h>
+#include <machine/cpu.h>
+#include <hp300/hp300/isr.h>
 
 #ifndef DEFAULT_BAUD_RATE
 #define DEFAULT_BAUD_RATE 9600
@@ -122,7 +123,7 @@ extern	struct tty *constty;
 /*
  * Kernel GDB support
  */
-#include "machine/remote-sl.h"
+#include <machine/remote-sl.h>
 
 extern dev_t kgdb_dev;
 extern int kgdb_rate;
@@ -1107,7 +1108,7 @@ dcmsetischeme(brd, flags)
 /*
  * Following are all routines needed for DCM to act as console
  */
-#include "hp/dev/cons.h"
+#include <hp/dev/cons.h>
 
 dcmcnprobe(cp)
 	struct consdev *cp;

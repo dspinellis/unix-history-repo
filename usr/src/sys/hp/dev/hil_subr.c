@@ -7,16 +7,16 @@
  *
  * from: Utah $Hdr: hil_subr.c 1.1 91/11/19$
  *
- *	@(#)hil_subr.c	7.2 (Berkeley) %G%
+ *	@(#)hil_subr.c	7.3 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/clist.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/clist.h>
 
-#include "hilreg.h"
+#include <hp/dev/hilreg.h>
 
 /*
  * XXX this file only exists to separate out the AT&T tainted code.
