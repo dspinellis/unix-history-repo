@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.22 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.23 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "time.h"
-#include "vnode.h"
-#include "errno.h"
-#include "namei.h"
-#include "buf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/errno.h>
+#include <sys/namei.h>
+#include <sys/buf.h>
 
 /*
  * Prototypes for dead operations on vnodes.
