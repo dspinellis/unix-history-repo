@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	8.1 (Berkeley) %G%
+ *	@(#)if_ether.c	8.2 (Berkeley) %G%
  */
 
 /*
