@@ -1,0 +1,28 @@
+.pa 1
+.he 'TIME (II)'3/15/72'TIME (II)'
+.ti 0
+NAME		time  --  get time of year
+.sp
+.ti 0
+SYNOPSIS	sys time  / time = 13.
+.br
+(time r0-r1)
+.sp
+.ti 0
+DESCRIPTION	time____
+returns the time since 00:00:00, Jan. 1, 1972, measured
+in sixtieths of a second.
+The high order word is in the r0 register and the low order
+is in the r1.
+.sp
+.ti 0
+SEE ALSO	date(I), mdate(II)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		The time
+is stored in 32 bits.
+This guarantees a crisis every
+2.26 years.
