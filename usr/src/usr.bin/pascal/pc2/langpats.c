@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.4 %G%";
+static char sccsid[] = "@(#)langpats.c 1.5 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -256,8 +256,8 @@ struct pats {
 	sobgtr	r4,1b\n" },
 
 	{ "4,_IN\n",
-"	clrl	r0\n\
-	popr	$0x1e\n\
+"	popr	$0x1e\n\
+	clrl	r0\n\
 	subl2	r2,r1\n\
 	cmpl	r1,r3\n\
 	jgtru	1f\n\
