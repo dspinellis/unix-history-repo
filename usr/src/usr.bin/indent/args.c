@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -138,14 +138,14 @@ set_profile()
 {
     register FILE *f;
     char        fname[BUFSIZ];
-    static char pro[] = ".indent.pro";
+    static char prof[] = ".indent.pro";
 
-    sprintf(fname, "%s/%s", getenv("HOME"), pro);
+    sprintf(fname, "%s/%s", getenv("HOME"), prof);
     if ((f = fopen(fname, "r")) != NULL) {
 	scan_profile(f);
 	(void) fclose(f);
     }
-    if ((f = fopen(pro, "r")) != NULL) {
+    if ((f = fopen(prof, "r")) != NULL) {
 	scan_profile(f);
 	(void) fclose(f);
     }
@@ -154,20 +154,19 @@ set_profile()
 scan_profile(f)
     register FILE *f;
 {
+    register int i;
     register char *p;
     char        buf[BUFSIZ];
 
     while (1) {
-	p = buf;
-	while ((*p = getc(f)) != EOF && *p > ' ')
-	    p++;
+	for (p = buf; (i = getc(f)) != EOF && (*p = i) > ' '; ++p);
 	if (p != buf) {
 	    *p++ = 0;
 	    if (verbose)
 		printf("profile: %s\n", buf);
 	    set_option(buf);
 	}
-	else if (*p == EOF)
+	else if (i == EOF)
 	    return;
     }
 }
