@@ -1,4 +1,4 @@
-/* gdump.c	1.2	83/06/22 	by David Slattengren
+/* gdump.c	1.3	83/06/24 	by David Slattengren
  *
  *      This file contains a program for printing gprint raster files.
  *   Gprint puts out a generic file, and gdump changes the size to fit
@@ -21,6 +21,7 @@ int  outwidth	= Vbytperlin;		/* number of chars per line to output*/
 int  outlength	= Vylen;		/* number of lines to output */
 
 int  infile	= 0;		/* input file (default = stdin) */
+int  inwidth	= Vxlen/8;	/* input file raster line length */
 int  FileFound	= 0;		/* flag for filename on input */
 char *arg;			/* intermediary command line argument */
 char *file;			/* input file name */
@@ -34,13 +35,37 @@ cleanup()		/* Called if program stopped, or ... */
 }
 
 
+			/* read in one line of the raster file */
+readline()		/* returns 1 (true) if successful, 0 if not */
+{
+    register i = inwidth;
+    register j;
+
+    do {
+    	if ((j = read (infile, buf, inwidth)) < 1) {
+	    if (i == inwidth)
+		return (0);
+	    else {			/* fill in incomplete last line */
+		while (i != inwidth)
+		    buf [i++] = '\0';
+		return (1);
+	    }
+	}
+	i -= j;
+    } while (i);
+    return (1);
+}
+
+
 main (argc, argv)
 int argc;
 char *argv[];
 {
+    register int i;		/* multipurpose index */
+
+
     lpargs [7] = picture;	/* set file for lpr to read */
     lpargs [8] = 0;
-
     while (--argc > 0)		/* Parse the command line. */
     {
         arg = *++argv;
@@ -80,7 +105,7 @@ char *argv[];
 	}
     }
 					/* clear out line buffer */
-    for (FileFound = 0; FileFound < Wbytperlin; buf [FileFound++] = 0)
+    for (i = 0; i < Wbytperlin; buf [i++] = 0)
 	;
 
     mktemp (picture);			/* make up file name */
@@ -94,18 +119,31 @@ char *argv[];
 	cleanup ();
     }
 
-/****** transfer the raster file from input to output, fixing line
-	lengths, if necessary, and truncating to one page length *********/
+/*
+ * transfer the raster file from input to output,
+ * fixing line lengths, if necessary,
+ * and truncating to one page length
+ */
 
-    while ((read (infile, buf, Vbytperlin) == Vbytperlin) && outlength--) {
+    while (readline () && outlength--) {
 	if (write (temp, buf, outwidth) != outwidth) {
-	    fprintf (stderr, "gdump: error writing file %s\n", picture);
+	    sprintf (buf, "gdump - error writing %s\n", picture);
+	    perror (buf);
 	    cleanup();
 	}
     }						/* eat the rest of input */
-    while (read (infile, buf, Vbytperlin) > 0)	/* if there is any */
+    while (read (infile, buf, inwidth) > 0)	/* if there is any */
 	;
-    close (infile);
+    close (infile);				/* clear out line buffer */
+    for (i = 0; i < Wbytperlin; buf [i++] = 0)
+	;
+    while (outlength-- > 0) {			/* and fill out the picture */
+	if (write (temp, buf, outwidth) != outwidth) {
+	    sprintf (buf, "gdump - error writing %s\n", picture);
+	    perror (buf);
+	    cleanup();
+	}
+    }
 
     execv (LPR, lpargs);
     fprintf (stderr, "gdump: can't exec %s\n", LPR);
