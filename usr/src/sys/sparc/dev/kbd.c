@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	8.1 (Berkeley) %G%
+ *	@(#)kbd.c	8.2 (Berkeley) %G%
  *
- * from: $Header: kbd.c,v 1.16 92/11/26 01:28:44 torek Exp $ (LBL)
+ * from: $Header: kbd.c,v 1.18 93/10/31 05:44:01 torek Exp $ (LBL)
  */
 
 /*
@@ -214,7 +214,7 @@ kbd_ascii(struct tty *tp)
 
 /*
  * Attach the console keyboard serial (down-link) interface.
- * We pick up the initial keyboard clock state here as well.
+ * We pick up the initial keyboard click state here as well.
  */
 void
 kbd_serial(struct tty *tp, void (*iopen)(), void (*iclose)())
@@ -230,43 +230,27 @@ kbd_serial(struct tty *tp, void (*iopen)(), void (*iclose)())
 	cp = getpropstring(optionsnode, "keyboard-click?");
 	if (cp && strcmp(cp, "true") == 0)
 		k->k_state.kbd_click = 1;
-
-	if (k->k_cons) {
-		/*
-		 * We supply keys for /dev/console.  Before we can
-		 * do so, we have to ``open'' the line.  We also need
-		 * the type, got by sending a RESET down the line ...
-		 * but clists are not yet set up, so we use a timeout
-		 * to try constantly until we can get the ID.  (gag)
-		 */
-		(*iopen)(tp);		/* never to be closed */
-		kbd_getid(NULL);
-	}
 }
 
 /*
- * Initial keyboard reset, to obtain ID and thus a translation table.
- * We have to try again and again until the tty subsystem works.
+ * Called from main() during pseudo-device setup.  If this keyboard is
+ * the console, this is our chance to open the underlying serial port and
+ * send a RESET, so that we can find out what kind of keyboard it is.
  */
-static void
-kbd_getid(void *arg)
+void
+kbdattach(int nkbd)
 {
 	register struct kbd_softc *k;
 	register struct tty *tp;
-	register int retry;
-	extern int cold;		/* XXX */
 
-	k = &kbd_softc;
-	if (k->k_state.kbd_cur != NULL)
-		return;
-	tp = k->k_kbd;
-	if (cold || ttyoutput(KBD_CMD_RESET, tp) >= 0)
-		retry = 1;
-	else {
-		(*tp->t_oproc)(tp);
-		retry = 2 * hz;
+	if (kbd_softc.k_cons != NULL) {
+		k = &kbd_softc;
+		tp = k->k_kbd;
+		(*k->k_open)(tp);	/* never to be closed */
+		if (ttyoutput(KBD_CMD_RESET, tp) >= 0)
+			panic("kbdattach");
+		(*tp->t_oproc)(tp);	/* get it going */
 	}
-	timeout(kbd_getid, NULL, retry);
 }
 
 void
