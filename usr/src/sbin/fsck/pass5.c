@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,7 +34,7 @@ pass5()
 	statemap[WINO] = USTATE;
 	bzero((char *)newcg, (size_t)fs->fs_cgsize);
 	newcg->cg_niblk = fs->fs_ipg;
-	if (cvtlevel > 3) {
+	if (cvtlevel >= 3) {
 		if (fs->fs_maxcontig < 2 && fs->fs_contigsumsize > 0) {
 			if (preen)
 				pwarn("DELETING CLUSTERING MAPS\n");
