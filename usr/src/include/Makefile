@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.12 (Berkeley) 86/04/26
+#	@(#)Makefile	5.13 (Berkeley) 86/05/11
 #
 # Doing a make install builds /usr/include
 #
@@ -48,6 +48,8 @@ install: ${SHARED}
 			install -c -m 444 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
+	cmp -s Makefile.install ${DESTDIR}/usr/include/Makefile || \
+	    install -c -m 444 Makefile.install ${DESTDIR}/usr/include/Makefile
 	-for i in ${LINKS}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s sys/$$i ${DESTDIR}/usr/include/$$i; \
@@ -58,12 +60,22 @@ install: ${SHARED}
 	ln -s machine/frame.h ${DESTDIR}/usr/include/frame.h
 
 symlinks:
-	for i in ${SYSDIRS}; do \
+	-for i in ${SYSDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
-		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
+		then \
+			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+		else \
+			echo ${DESTDIR}/usr/include/$$i not removed; \
+		fi; \
 	done
 	rm -rf ${DESTDIR}/usr/include/sys
-	ln -s /sys/h ${DESTDIR}/usr/include/sys
+	-if [ ! -s ${DESTDIR}/usr/include/sys ]; \
+	then \
+		ln -s /sys/h ${DESTDIR}/usr/include/sys; \
+	else \
+		echo ${DESTDIR}/usr/include/sys not removed; \
+	fi
 
 copies:
 	-for i in ${SYSDIRS}; do \
