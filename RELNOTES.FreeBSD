@@ -256,8 +256,8 @@ The FreeBSD "core" group:
 		Scott Mace
 		Andrew Moore
 		Rich Murphey
+		Geoff Rehmet
 		Paul Richards
-		Christoph Robitschko
 		Andreas Schulz
 		Nate Williams
 		Garrett A. Wollman
@@ -296,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.28 1994/03/25 15:27:46 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.29 1994/05/01 22:50:55 jkh Exp $
