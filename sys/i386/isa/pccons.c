@@ -33,28 +33,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pccons.c	5.11 (Berkeley) 5/21/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         6       00162
- * --------------------         -----   ----------------------
- *
- * 15 Aug 92	Pace Willisson		Patches for X server
- * 21 Aug 92	Frank Maclachlan	Fixed back-scroll system crash
- * 28 Nov 92	Terry Lee		Fixed LED's in X mode
- * 09 Feb 93	Rich Murphey		Added 'BELL' mode in X
- * 14 Mar 93	Bruce Evans		Added keyboard timeout in pcprobe
- * 					Fixed color/mono test and mono
- *					kernel color.  Added check for
- *					minor. 
- * 14 Mar 93	Chris G. Demetriou	Moved pg() to i386/cons.c, code
- *					cleanup, removed ctl-alt-del.
- * 22 Apr 93	Holger Veit		Added cons_highlight/cons_normal
- *					to eliminate ESC sequence in 
- *					init_main.c
+ *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/i386/isa/pccons.c,v 1.4 1993/08/28 13:26:28 rgrimes Exp $";
 
 /*
  * code to work keyboard & display for PC-style console
@@ -1376,10 +1357,22 @@ update_led()
 {
 	int response;
 
-	if (kbd_cmd(KBC_STSIND) != 0)
+	if (kbd_cmd(KBC_STSIND) != 0) {
 		printf("Timeout for keyboard LED command\n");
-	else if (kbd_cmd(scroll | (num << 1) | (caps << 2)) != 0)
-		printf("Timeout for keyboard LED data\n");
+	} else {
+		/*
+		 * XXX This is quite questionable, but seems to fix
+		 * the problem reported.
+		 * some keyboard controllers need some time after they
+		 * get a command.  Without this the keyboard 'hangs'.
+		 * This seems to be the only place where two commands
+		 * are just one behind another. 
+		 */
+		DELAY (10000);
+
+		if (kbd_cmd(scroll | (num << 1) | (caps << 2)) != 0)
+			printf("Timeout for keyboard LED data\n");
+	}
 #if 0
 	else if ((response = kbd_response()) < 0)
 		printf("Timeout for keyboard LED ack\n");
