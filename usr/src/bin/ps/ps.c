@@ -10,6 +10,7 @@ static	char *sccsid = "@(#)ps.c	4.30 (Berkeley) %G%";
 #include <nlist.h>
 #include <pwd.h>
 #include <sys/param.h>
+#include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/dir.h>
 #include <sys/user.h>
@@ -149,6 +150,7 @@ int	npr;
 
 int	cmdstart;
 int	twidth;
+struct winsize win;
 char	*kmemf, *memf, *swapf, *nlistf;
 int	kmem, mem, swap = -1;
 int	rawcpu, sumcpu;
@@ -166,8 +168,12 @@ main(argc, argv)
 	register char *ap;
 	int uid;
 	off_t procp;
+	int width;
 
-	twidth = 80;
+	if (ioctl(0, TIOCGWINSZ, &win) == -1)
+		twidth = 80;
+	else
+		twidth = (win.ws_col == 0 ? 80 : win.ws_col);
 	argc--, argv++;
 	if (argc > 0) {
 		ap = argv[0];
@@ -228,7 +234,7 @@ main(argc, argv)
 			vflg++;
 			break;
 		case 'w':
-			if (twidth == 80)
+			if (twidth < 132)
 				twidth = 132;
 			else
 				twidth = BUFSIZ;
@@ -288,6 +294,9 @@ main(argc, argv)
 			save();
 		}
 	}
+	width = twidth - cmdstart - 2;
+	if (width < 0)
+		width = 0;
 	qsort((char *) savcom, npr, sizeof(savcom[0]), pscomp);
 	for (i=0; i<npr; i++) {
 		register struct savcom *sp = &savcom[i];
@@ -1207,6 +1216,7 @@ getname(uid)
 	static				init = 0;
 	struct passwd			*getpwent();
 	register struct nametable	*n;
+	extern int			_pw_stayopen;
 
 	/*
 	 * find uid in hashed table; add it if not found.
@@ -1222,6 +1232,7 @@ getname(uid)
 	switch (init) {
 		case 0:
 			setpwent();
+			_pw_stayopen = 1;
 			init = 1;
 			/* intentional fall-thru */
 		case 1:
