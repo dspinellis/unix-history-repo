@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)soelim.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)soelim.c	4.2 (Berkeley) %G%";
+
 #include <stdio.h>
 /*
  * soelim - a filter to process n/troff input eliminating .so's
@@ -16,6 +17,7 @@ static char *sccsid = "@(#)soelim.c	4.1 (Berkeley) %G%";
  * This program is more generally useful, it turns out, because
  * the program tbl doesn't understand ".so" directives.
  */
+#define	STDIN_NAME	"-"
 
 main(argc, argv)
 	int argc;
@@ -25,8 +27,8 @@ main(argc, argv)
 	argc--;
 	argv++;
 	if (argc == 0) {
-		fprintf(stderr, "Usage: %s file [ file ... ]\n", argv[-1]);
-		exit(1);
+		process(STDIN_NAME);
+		exit(0);
 	}
 	do {
 		process(argv[0]);
@@ -44,10 +46,14 @@ process(file)
 	char fname[BUFSIZ];
 	FILE *soee;
 
-	soee = fopen(file, "r");
-	if (soee == NULL) {
-		perror(file);
-		return;
+	if (!strcmp(file, STDIN_NAME)) {
+		soee = stdin;
+	} else {
+		soee = fopen(file, "r");
+		if (soee == NULL) {
+			perror(file);
+			return;
+		}
 	}
 	for (;;) {
 		c = getc(soee);
@@ -97,5 +103,7 @@ simple:
 			break;
 		putchar(c);
 	}
-	fclose(soee);
+	if (soee != stdin) {
+		fclose(soee);
+	}
 }
