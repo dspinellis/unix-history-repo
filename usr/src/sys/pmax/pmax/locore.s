@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.7 (Berkeley) %G%
+ *	@(#)locore.s	7.8 (Berkeley) %G%
  */
 
 /*
@@ -89,6 +89,13 @@ start:
 	.set	reorder
 
 /*
+ * GCC2 seems to want to call __main in main() for some reason.
+ */
+LEAF(__main)
+	j	ra
+END(__main)
+
+/*
  * This code is copied to user data space as the first program to run.
  * Basically, it just calls execve();
  */
@@ -138,12 +145,12 @@ onfault_table:
 	.word	0		# invalid index number
 #define BADERR		1
 	.word	baderr
-#define ADDUPCERR	2
-	.word	addupcerr
-#define COPYERR		3
+#define COPYERR		2
 	.word	copyerr
-#define FSWBERR		4
+#define FSWBERR		3
 	.word	fswberr
+#define FSWINTRBERR	4
+	.word	fswintrberr
 #ifdef KADB
 #define KADBERR		5
 	.word	kadberr
@@ -178,44 +185,6 @@ baderr:
 	li	v0, 1			# trap sends us here
 	j	ra
 END(badaddr)
-
-/*
- * update profiling information for the user
- * addupc(pc, pr, ticks)
- *	unsigned pc;
- *	struct uprof *pr;
- *	int ticks;
- */
-LEAF(addupc)
-	lw	v1, 8(a1)		# get pr->pr_off
-	subu	a0, a0, v1		# pc -= pr->pr_off
-	blt	a0, zero, 1f		# ignore if less than zero
-	lw	v0, 12(a1)		# get pr->pr_scale
-	multu	v0, a0			# compute index into count table
-	mflo	v0
-	srl	v0, v0, 16		# shift v1,v0 >> 16
-	mfhi	v1
-	sll	v1, v1, 16
-	or	v0, v0, v1
-	addu	v0, v0, 1		# round up and
-	and	v0, v0, ~1		#   align to short boundary
-	lw	v1, 4(a1)		# get pr->pr_size
-	bgeu	v0, v1, 1f		# ignore if index >= size
-	lw	v1, 0(a1)		# get pr->pr_base
-	addu	v0, v0, v1		# add index and base
-	li	v1, ADDUPCERR		# turn off profiling if fault
-	bltz	v0, addupcerr		# can this happen?
-	sw	v1, UADDR+U_PCB_ONFAULT
-	lh	v1, 0(v0)		# get old count
-	addu	v1, v1, a2		# add ticks
-	sh	v1, 0(v0)		# save new count
-	sw	zero, UADDR+U_PCB_ONFAULT
-1:
-	j	ra
-addupcerr:
-	sw	zero, 12(a1)		# pr->pr_scale = 0
-	j	ra
-END(addupc)
 
 /*
  * netorder = htonl(hostorder)
@@ -662,7 +631,7 @@ END(CopyFromBuffer)
 
 /*
  * Copy the kernel stack to the new process and save the current context so
- * the new process will return nonzero when it is resumed by swtch().
+ * the new process will return nonzero when it is resumed by cpu_swtch().
  *
  *	copykstack(up)
  *		struct user *up;
@@ -682,7 +651,7 @@ LEAF(copykstack)
 /*
  * Save registers and state so we can do a longjmp later.
  * Note: this only works if p != curproc since
- * swtch() will copy over pcb_context.
+ * cpu_swtch() will copy over pcb_context.
  *
  *	savectx(up)
  *		struct user *up;
@@ -787,7 +756,7 @@ END(remrq)
 /*
  * swtch_exit()
  *
- * At exit of a process, do a swtch for the last time.
+ * At exit of a process, do a cpu_swtch for the last time.
  * The mapping of the pcb at p->p_addr has already been deleted,
  * and the memory for the pcb+stack has been freed.
  * All interrupts should be blocked at this point.
@@ -811,13 +780,14 @@ LEAF(swtch_exit)
 	tlbwi					# Write the TLB entry.
 	.set	reorder
 	li	sp, KERNELSTACK - START_FRAME	# switch to standard stack
-	b	swtch
+	b	cpu_swtch
 END(swtch_exit)
 
 /*
- * When no processes are on the runq, swtch branches to idle
+ * When no processes are on the runq, cpu_swtch branches to idle
  * to wait for something to come ready.
- * Note: this is really a part of swtch() but defined here for kernel profiling.
+ * Note: this is really a part of cpu_swtch() but defined here for kernel
+ * profiling.
  */
 LEAF(idle)
 	.set	noreorder
@@ -835,10 +805,10 @@ LEAF(idle)
 END(idle)
 
 /*
- * swtch()
+ * cpu_swtch()
  * Find the highest priority process and resume it.
  */
-NON_LEAF(swtch, STAND_FRAME_SIZE, ra)
+NON_LEAF(cpu_swtch, STAND_FRAME_SIZE, ra)
 	.set	noreorder
 	sw	sp, UADDR+U_PCB_CONTEXT+32	# save old sp
 	subu	sp, sp, STAND_FRAME_SIZE
@@ -876,7 +846,7 @@ sw1:
 	lw	v0, P_LINK(a0)			# v0 = p->p_link
 	bne	t0, a0, 2f			# make sure something in queue
 	sw	v0, P_LINK(t0)			# qp->ph_link = p->p_link;
-	PANIC("swtch")				# nothing in queue
+	PANIC("cpu_swtch")			# nothing in queue
 2:
 	sw	t0, P_RLINK(v0)			# p->p_link->p_rlink = qp
 	bne	v0, t0, 3f			# queue still not empty
@@ -943,11 +913,13 @@ sw1:
 	j	ra
 	li	v0, 1				# possible return to 'savectx()'
 	.set	reorder
-END(swtch)
+END(cpu_swtch)
 
 /*
- * {fu,su},{ibyte,iword}, fetch or store a byte or word to user text space.
- * {fu,su},{byte,word}, fetch or store a byte or word to user data space.
+ * {fu,su},{ibyte,isword,iword}, fetch or store a byte, short or word to
+ * user text space.
+ * {fu,su},{byte,sword,word}, fetch or store a byte, short or word to
+ * user data space.
  */
 LEAF(fuword)
 ALEAF(fuiword)
@@ -958,6 +930,16 @@ ALEAF(fuiword)
 	sw	zero, UADDR+U_PCB_ONFAULT
 	j	ra
 END(fuword)
+
+LEAF(fusword)
+ALEAF(fuisword)
+	li	v0, FSWBERR
+	blt	a0, zero, fswberr	# make sure address is in user space
+	sw	v0, UADDR+U_PCB_ONFAULT
+	lhu	v0, 0(a0)		# fetch short
+	sw	zero, UADDR+U_PCB_ONFAULT
+	j	ra
+END(fusword)
 
 LEAF(fubyte)
 ALEAF(fuibyte)
@@ -996,6 +978,17 @@ END(suiword)
 /*
  * Will have to flush the instruction cache if byte merging is done in hardware.
  */
+LEAF(susword)
+ALEAF(suisword)
+	li	v0, FSWBERR
+	blt	a0, zero, fswberr	# make sure address is in user space
+	sw	v0, UADDR+U_PCB_ONFAULT
+	sh	a1, 0(a0)		# store short
+	sw	zero, UADDR+U_PCB_ONFAULT
+	move	v0, zero
+	j	ra
+END(susword)
+
 LEAF(subyte)
 ALEAF(suibyte)
 	li	v0, FSWBERR
@@ -1011,6 +1004,35 @@ LEAF(fswberr)
 	li	v0, -1
 	j	ra
 END(fswberr)
+
+/*
+ * fuswintr and suswintr are just like fusword and susword except that if
+ * the page is not in memory or would cause a trap, then we return an error.
+ * The important thing is to prevent sleep() and swtch().
+ */
+LEAF(fuswintr)
+	li	v0, FSWINTRBERR
+	blt	a0, zero, fswintrberr	# make sure address is in user space
+	sw	v0, UADDR+U_PCB_ONFAULT
+	lhu	v0, 0(a0)		# fetch short
+	sw	zero, UADDR+U_PCB_ONFAULT
+	j	ra
+END(fuswintr)
+
+LEAF(suswintr)
+	li	v0, FSWINTRBERR
+	blt	a0, zero, fswintrberr	# make sure address is in user space
+	sw	v0, UADDR+U_PCB_ONFAULT
+	sh	a1, 0(a0)		# store short
+	sw	zero, UADDR+U_PCB_ONFAULT
+	move	v0, zero
+	j	ra
+END(suswintr)
+
+LEAF(fswintrberr)
+	li	v0, -1
+	j	ra
+END(fswintrberr)
 
 /*
  * Insert 'p' after 'q'.
