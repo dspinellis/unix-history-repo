@@ -77,16 +77,22 @@ public int rloc[] ={
 private Address printop();
 
 private Optab *ioptab[256];	/* index by opcode to optab */
+private Optab *esctab[256];	/* for extended opcodes */
 
 /*
  * Initialize the opcode lookup table.
  */
 public optab_init()
 {
-	register Optab *p;
+    register Optab *p;
 
-	for (p = optab; p->iname; p++)
-		ioptab[p->val & 0xff] = p;
+    for (p = optab; p->iname; p++) {
+	if (p->format == O_ESCD) {
+	    esctab[p->val] = p;
+	} else if (p->format != O_ESCD && p->format != O_ESCE) {
+	    ioptab[p->val] = p;
+	}
+    }
 }
 
 /*
@@ -548,7 +554,21 @@ Address addr;
     printf("%08x  ", addr);
     iread(&ins, addr, sizeof(ins));
     addr += 1;
-    op = ioptab[ins];
+    if (ins == O_ESCF) {
+	iread(&ins, addr, sizeof(ins));
+	addr += 1;
+	op = ioptab[ins];
+    } else if (ins == O_ESCD) {
+	iread(&ins, addr, sizeof(ins));
+	addr += 1;
+	op = esctab[ins];
+    } else {
+	op = ioptab[ins];
+    }
+    if (op == nil) {
+	printf("[unrecognized opcode %#0x]\n", ins);
+	return addr;
+    }
     printf("%s", op->iname);
     for (argno = 0; argno < op->numargs; argno++) {
 	if (indexf == true) {
@@ -572,7 +592,8 @@ Address addr;
 	    case LITUPTO31:
 	    case LITUPTO47:
 	    case LITUPTO63:
-		if (typelen(argtype) == TYPF || typelen(argtype) ==TYPD)
+		if (typelen(argtype) == TYPF || typelen(argtype) == TYPD ||
+		    typelen(argtype) == TYPG || typelen(argtype) == TYPH)
 		    printf("$%s", fltimm[mode]);
 		else
 		    printf("$%x", mode);
@@ -620,17 +641,45 @@ Address addr;
 
 			case TYPF:
 			    iread(&argval, addr, sizeof(argval));
-			    printf("%06x", argval);
+			    if ((argval & 0xffff007f) == 0x8000) {
+				printf("[reserved operand]");
+			    } else {
+				printf("%g", *(float *)&argval);
+			    }
 			    addr += 4;
 			    break;
 
-			case TYPQ:
 			case TYPD:
+			    /* XXX this bags the low order bits */
 			    iread(&argval, addr, sizeof(argval));
-			    printf("%06x", argval);
-			    iread(&argval, addr+4, sizeof(argval));
-			    printf("%06x", argval);
+			    if ((argval & 0xffff007f) == 0x8000) {
+				printf("[reserved operand]");
+			    } else {
+				printf("%g", *(float *)&argval);
+			    }
 			    addr += 8;
+			    break;
+
+			case TYPG:
+			case TYPQ:
+			    iread(&argval, addr+4, sizeof(argval));
+			    printf("%08x", argval);
+			    iread(&argval, addr, sizeof(argval));
+			    printf("%08x", argval);
+			    addr += 8;
+			    break;
+
+			case TYPH:
+			case TYPO:
+			    iread(&argval, addr+12, sizeof(argval));
+			    printf("%08x", argval);
+			    iread(&argval, addr+8, sizeof(argval));
+			    printf("%08x", argval);
+			    iread(&argval, addr+4, sizeof(argval));
+			    printf("%08x", argval);
+			    iread(&argval, addr, sizeof(argval));
+			    printf("%08x", argval);
+			    addr += 16;
 			    break;
 		    }
 		}
@@ -763,7 +812,7 @@ Boolean isnext;
 {
     register Address addr;
     register Optab *op;
-    VaxOpcode ins;
+    VaxOpcode ins, ins2;
     unsigned char mode;
     int argtype, amode, argno, argval;
     String r;
@@ -839,6 +888,8 @@ Boolean isnext;
 	case O_BBCCI: case O_BLBS: case O_BLBC:
 	case O_ACBL: case O_AOBLSS: case O_AOBLEQ:
 	case O_SOBGEQ: case O_SOBGTR:
+	case O_ESCF: /* bugchecks */
+	branches:
 	    addrstatus = KNOWN;
 	    stepto(addr);
 	    pstep(process);
@@ -849,13 +900,34 @@ Boolean isnext;
 	    }
 	    break;
 
+	case O_ESCD:
+	    iread(&ins2, addr+1, sizeof(ins2));
+	    if (ins2 == O_ACBF || ins2 == O_ACBD)
+		/* actually ACBG and ACBH */
+		goto branches;
+	    /* fall through */
+
 	default:
 	    addrstatus = SEQUENTIAL;
 	    break;
     }
     if (addrstatus != KNOWN) {
 	addr += 1;
-	op = ioptab[ins];
+	if (ins == O_ESCD) {
+	    ins = ins2;
+	    addr += 1;
+	    op = esctab[ins];
+	    if (op == nil) {
+		printf("[bad extended opcode %#x in findnextaddr]\n", ins);
+		return addr;
+	    }
+	} else {
+	    op = ioptab[ins];
+	    if (op == nil) {
+		printf("[bad opcode %#x in findnextaddr]\n", ins);
+		return addr;
+	    }
+	}
 	for (argno = 0; argno < op->numargs; argno++) {
 	    if (indexf == true) {
 		indexf = false;
@@ -912,8 +984,15 @@ Boolean isnext;
 
 			    case TYPQ:
 			    case TYPD:
+			    case TYPG:
 				iread(&argval, addr+4, sizeof(argval));
 				addr += 8;
+				break;
+
+			    case TYPO:
+			    case TYPH:
+				iread(&argval, addr+12, sizeof(argval));
+				addr += 16;
 				break;
 			}
 		    }
