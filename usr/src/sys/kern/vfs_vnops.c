@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.16 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,8 +30,6 @@
 #include "socketvar.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/fs.h"
-#include "../ufs/quota.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "tsleep.h"
