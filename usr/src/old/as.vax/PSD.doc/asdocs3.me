@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs3.me 1.3 %G%
+.\"	@(#)asdocs3.me 1.4 %G%
 .\"
 .EQ
 delim $$
@@ -253,7 +253,36 @@ _
 .in +2n
 .)b
 and assembled in successive locations.
-The expressions must be absolute.
+The
+.i expression s
+must be absolute.
+.pp
+Each
+.i expression
+may optionally be of the form:
+.(b
+.TS
+center;
+$expression sub 1$ : $expression sub 2$
+.TE
+.)b
+In this case,
+the value of $expression sub 2$ is truncated
+to $expression sub 1$ bits,
+and assembled in the next $expression sub 1$ bit field
+which fits in the natural data size being assembled.
+Bits which are skipped because a field does not fit are filled with zeros.
+Thus,
+.q "\fB.byte\fP 123"
+is equivlent to
+.q "\fB.byte\fP 8:123" ,
+and
+.q "\fB.byte\fP 3:1,2:1,5:1"
+assembles two bytes, containing the values 9 and 1.
+.pp
+.b NB:
+Bit field initialization with the colon operator is likely
+to disappear in future releases of the assembler.
 .in -2n
 .TS
 lb l.
