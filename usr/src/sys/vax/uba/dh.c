@@ -1,4 +1,4 @@
-/*	dh.c	6.3	84/03/15	*/
+/*	dh.c	6.4	84/08/15	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -676,8 +676,7 @@ dmopen(dev)
 	dm = unit >> 4;
 	tp = &dh11[unit];
 	unit &= 0xf;
-	if (dm >= NDH || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0 ||
-	    (dhsoftCAR[dm]&(1<<unit))) {
+	if (dm >= NDH || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0) {
 		tp->t_state |= TS_CARR_ON;
 		return;
 	}
@@ -688,7 +687,7 @@ dmopen(dev)
 		;
 	addr->dmcsr = unit;
 	addr->dmlstat = DML_ON;
-	if (addr->dmlstat&DML_CAR)
+	if ((addr->dmlstat&DML_CAR) || (dhsoftCAR[dm]&(1<<unit)))
 		tp->t_state |= TS_CARR_ON;
 	addr->dmcsr = DM_IE|DM_SE;
 	while ((tp->t_state&TS_CARR_ON)==0)
@@ -742,6 +741,7 @@ dmintr(dm)
 	register struct uba_device *ui;
 	register struct tty *tp;
 	register struct dmdevice *addr;
+	int unit;
 
 	ui = dminfo[dm];
 	if (ui == 0)
@@ -749,7 +749,8 @@ dmintr(dm)
 	addr = (struct dmdevice *)ui->ui_addr;
 	if (addr->dmcsr&DM_DONE) {
 		if (addr->dmcsr&DM_CF) {
-			tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
+			unit = addr->dmcsr & 0xf;
+			tp = &dh11[(dm << 4) + unit];
 			wakeup((caddr_t)&tp->t_rawq);
 			if ((tp->t_state&TS_WOPEN) == 0 &&
 			    (tp->t_flags & MDMBUF)) {
@@ -762,7 +763,8 @@ dmintr(dm)
 				}
 			} else if ((addr->dmlstat&DML_CAR)==0) {
 				if ((tp->t_state&TS_WOPEN)==0 &&
-				    (tp->t_flags & NOHANG) == 0) {
+				    (tp->t_flags & NOHANG) == 0 &&
+				    (dhsoftCAR[dm] & (1<<unit)) == 0) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmlstat = 0;
