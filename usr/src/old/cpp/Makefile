@@ -1,14 +1,15 @@
-#	Makefile	1.2	83/07/02
+#	Makefile	1.3	86/10/15
 #
 
-CFLAGS=-O -Dunix=1 -DFLEXNAMES
+YYFIX=	../pcc/pcc.`machine`/:yyfix
+CFLAGS=	-O -Dunix=1 -DFLEXNAMES
 
 cpp :	cpp.o cpy.o rodata.o
 	$(CC) $(CFLAGS) -o cpp rodata.o cpp.o cpy.o  
 
 cpy.c : cpy.y
 	yacc cpy.y
-	../pcc/:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	${YYFIX} yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cpy.c
 cpy.o :	cpy.c yylex.c
 rodata.o : cpy.c
