@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	5.9 (Berkeley) %G%
+ *	@(#)param.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -117,12 +117,7 @@
 #define i386_btop(x)		((unsigned)(x) >> PGSHIFT)
 #define i386_ptob(x)		((unsigned)(x) << PGSHIFT)
 
-#ifdef KERNEL
-#ifndef LOCORE
-int	cpuspeed;
-#endif
-#define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
-
-#else
+#ifndef KERNEL
+/* DELAY is in locore.s for the kernel */
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif
