@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.35 (Berkeley) %G%
+#	@(#)Makefile	4.36 (Berkeley) %G%
 
 # The C run-time startup code is machine dependent and found in csu.
 
@@ -34,6 +34,7 @@ DFLMON=		mon.o
 DEFS="-DLIBC_SCCS -DSYSLIBC_SCCS"
 
 CSU=	csu
+ROOTOBJDIR=/usr/${OBJDIR}
 SRCDIR=	compat-43 gen net stdio string sys sys5
 SUBDIR=	${CSU} ${SRCDIR}
 TAGSFILE=tags
@@ -50,6 +51,38 @@ all: library ${SUBDIR}
 	ar ma findiop.o libc_p.a exit.o; \
 	ar ma exit.o libc_p.a fakcu.o; \
 	rm -f t1
+
+library:
+	@echo 'must "make dirs" or "make links"'; exit 1
+
+dirs:
+	rm -rf library
+	mkdir library
+	rm -rf profiled
+	mkdir profiled
+	for i in ${SRCDIR} ${CSU}/${MACHINE}; \
+		do (cd $$i; make ${MFLAGS} clean; \
+		rm -rf profiled obj; \
+		mkdir profiled); done
+
+links:
+	-if [ ! -d ${ROOTOBJDIR}lib/libc/library ]; then \
+		mkdir -p ${ROOTOBJDIR}lib/libc/library; fi
+	rm -rf library
+	ln -s ${ROOTOBJDIR}lib/libc/library library
+	-if [ ! -d ${ROOTOBJDIR}lib/libc/profiled ]; then \
+		mkdir -p ${ROOTOBJDIR}lib/libc/profiled; fi
+	rm -rf profiled
+	ln -s ${ROOTOBJDIR}lib/libc/profiled profiled
+	for i in ${SRCDIR} ${CSU}/${MACHINE}; \
+		do (cd $$i; make ${MFLAGS} clean; \
+		rm -rf profiled obj; \
+		if [ ! -d ${ROOTOBJDIR}lib/libc/$$i ]; then \
+			mkdir -p ${ROOTOBJDIR}lib/libc/$$i; fi; \
+		ln -s ${ROOTOBJDIR}lib/libc/$$i obj; \
+		if [ ! -d ${ROOTOBJDIR}lib/libc/$$i/profiled ]; then \
+			mkdir -p ${ROOTOBJDIR}lib/libc/$$i/profiled; fi; \
+		ln -s ${ROOTOBJDIR}lib/libc/$$i/profiled profiled); done
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} DEFS=${DEFS}
