@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.10 84/04/08";
+static	char *sccsid = "@(#)startup.c	3.11 84/04/09";
 #endif
 
 #include "defs.h"
@@ -11,11 +11,13 @@ doconfig()
 {
 	char buf[100];
 	char *home;
+	static char runcom[] = ".windrc";
 
 	if ((home = getenv("HOME")) == 0)
-		home = "";
-	(void) sprintf(buf, "%s/.windrc", home);
-	return dosource(buf);
+		home = ".";
+	return dosource(sprintf(buf, "%.*s/.windrc",
+		(sizeof buf - sizeof runcom) / sizeof (char) - 1,
+		home, runcom));
 }
 
 /*
@@ -26,16 +28,17 @@ dodefault()
 	struct ww *w;
 	register r = wwnrow / 2 - 1;
 
-	if ((w = openwin(-1, 1, 0, r, wwncol, nbufline, (char *) 0)) == 0)
+	if ((w = openwin(-1, 1, 0, r, wwncol, nbufline,
+				(char *) 0, 1, 1, shellfile, shell)) == 0)
 		goto bad;
-	if (openwin(-1, r + 2, 0, wwnrow - r - 2, wwncol, nbufline, (char *) 0)
-	    == 0)
+	if (openwin(-1, r + 2, 0, wwnrow - r - 2, wwncol, nbufline,
+				(char *) 0, 1, 1, shellfile, shell) == 0)
 		goto bad;
 	wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
 	setselwin(w);
 	return;
 bad:
-	wwputs("Can't open default windows.  ", cmdwin);
+	error("Can't open default windows.");
 }
 
 setvars()
