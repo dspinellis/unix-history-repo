@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.126 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.127 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -330,7 +330,7 @@ main(argc, argv, envp)
 
 	for (i = 0; envp[i] != NULL; i++)
 		continue;
-	environ = (char **) xalloc(sizeof (char *) * i);
+	environ = (char **) xalloc(sizeof (char *) * (i + 1));
 	for (i = 0; envp[i] != NULL; i++)
 		environ[i] = newstr(envp[i]);
 	environ[i] = NULL;
