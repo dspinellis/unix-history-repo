@@ -33,10 +33,10 @@ typedef struct {
 			*bottom,	/* lowest address in buffer */
 			*top,		/* highest address+1 in buffer */
 			*mark;		/* marker (user defined) */
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     unsigned char	*clearto;	/* Data to this point is clear text */
     unsigned char	*encryyptedto;	/* Data is encrypted to here */
-#endif
+#endif	/* ENCRYPTION */
     int		size;		/* size in bytes of buffer */
     u_long	consumetime,	/* help us keep straight full, empty, etc. */
 		supplytime;
@@ -68,11 +68,11 @@ extern int
 	ring_full_count P((Ring *ring)),
 	ring_full_consecutive P((Ring *ring));
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 extern void
 	ring_encrypt P((Ring *ring, void (*func)())),
 	ring_clearto P((Ring *ring));
-#endif
+#endif	/* ENCRYPTION */
 
 extern void
     ring_clear_mark(),

@@ -146,9 +146,9 @@ init_telnet()
     ClearArray(options);
 
     connected = In3270 = ISend = localflow = donebinarytoggle = 0;
-#if	defined(ENCRYPTION) || defined(AUTHENTICATION)
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION) 
     auth_encrypt_connect(connected);
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION)  */
     restartany = -1;
 
     SYNCHing = 0;
@@ -338,9 +338,9 @@ willoption(option)
 #if	defined(AUTHENTICATION)
 	    case TELOPT_AUTHENTICATION:
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	    case TELOPT_ENCRYPT:
-#endif
+#endif /* ENCRYPTION */
 		new_state_ok = 1;
 		break;
 
@@ -370,10 +370,10 @@ willoption(option)
 	    }
 	}
 	set_my_state_do(option);
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (option == TELOPT_ENCRYPT)
 		encrypt_send_support();
-#endif
+#endif	/* ENCRYPTION */
 }
 
 	void
@@ -462,9 +462,9 @@ dooption(option)
 	    case TELOPT_TTYPE:		/* terminal type option */
 	    case TELOPT_SGA:		/* no big deal */
 	    case TELOPT_ENVIRON:	/* environment variable option */
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	    case TELOPT_ENCRYPT:	/* encryption variable option */
-#endif
+#endif	/* ENCRYPTION */
 		new_state_ok = 1;
 		break;
 #if	defined(AUTHENTICATION)
@@ -944,7 +944,7 @@ suboption()
 	}
 	break;
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	case TELOPT_ENCRYPT:
 		if (SB_EOF())
 			return;
@@ -1004,7 +1004,7 @@ suboption()
 			break;
 		}
 		break;
-#endif
+#endif	/* ENCRYPTION */
     default:
 	break;
     }
@@ -1669,10 +1669,10 @@ telrcv()
 	}
 
 	c = *sbp++ & 0xff, scc--; count++;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (decrypt_input)
 		c = (*decrypt_input)(c);
-#endif
+#endif	/* ENCRYPTION */
 
 	switch (telrcv_state) {
 
@@ -1697,10 +1697,10 @@ telrcv()
 		*Ifrontp++ = c;
 		while (scc > 0) {
 		    c = *sbp++ & 0377, scc--; count++;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 		    if (decrypt_input)
 			c = (*decrypt_input)(c);
-#endif
+#endif	/* ENCRYPTION */
 		    if (c == IAC) {
 			telrcv_state = TS_IAC;
 			break;
@@ -1719,10 +1719,10 @@ telrcv()
 	    if ((c == '\r') && my_want_state_is_dont(TELOPT_BINARY)) {
 		if (scc > 0) {
 		    c = *sbp&0xff;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 		    if (decrypt_input)
 			c = (*decrypt_input)(c);
-#endif
+#endif	/* ENCRYPTION */
 		    if (c == 0) {
 			sbp++, scc--; count++;
 			/* a "true" CR */
@@ -1732,10 +1732,10 @@ telrcv()
 			sbp++, scc--; count++;
 			TTYADD('\n');
 		    } else {
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 		        if (decrypt_input)
 			    (*decrypt_input)(-1);
-#endif
+#endif	/* ENCRYPTION */
 
 			TTYADD('\r');
 			if (crmod) {
@@ -2172,7 +2172,7 @@ telnet(user)
 {
     sys_telnet_init();
 
-#if defined(ENCRYPTION) || defined(AUTHENTICATION)
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION) 
     {
 	static char local_host[256] = { 0 };
 
@@ -2183,17 +2183,17 @@ telnet(user)
 	auth_encrypt_init(local_host, hostname, "TELNET", 0);
 	auth_encrypt_user(user);
     }
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION)  */
 #   if !defined(TN3270)
     if (telnetport) {
 #if	defined(AUTHENTICATION)
 	if (autologin)
 		send_will(TELOPT_AUTHENTICATION, 1);
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	send_do(TELOPT_ENCRYPT, 1);
 	send_will(TELOPT_ENCRYPT, 1);
-#endif
+#endif	/* ENCRYPTION */
 	send_do(TELOPT_SGA, 1);
 	send_will(TELOPT_TTYPE, 1);
 	send_will(TELOPT_NAWS, 1);
