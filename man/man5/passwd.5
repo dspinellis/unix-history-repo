@@ -1,0 +1,33 @@
+.pa 1
+.he 'PASSWD (V)'12/11/72'PASSWD (V)'
+.ti 0
+NAME		passwd  --  password file
+.sp
+.ti 0
+DESCRIPTION	passwd______
+contains for each user the
+following information:
+
+   name (login name, contains no upper case)
+   encrypted password
+   numerical user ID
+   GCOS job number and box number
+   initial working directory
+   program to use as Shell
+
+This is an ASCII file.  Each field within each user's entry
+is separated from the next by a colon.
+The job and box numbers are separated by a comma.
+Each user is separated from the next by a new-line.
+If the password field is null, no password is demanded;
+if the Shell field is null, the Shell itself
+is used.
+
+This file resides in directory /etc.
+Because of the encrypted
+passwords, it can and does have general read
+permission and can be used, for example,
+to map numerical user ID's to names.
+.sp
+.ti 0
+SEE ALSO	login(I), crypt(III), passwd(I)
