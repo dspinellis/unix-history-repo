@@ -4,31 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	5.18 (Berkeley) %G%
+ *	@(#)dirent.h	5.19 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_H_
 #define _DIRENT_H_
 
 /*
- * A directory entry has a struct dirent at the front of it, containing its
- * inode number, the length of the entry, and the length of the name
- * contained in the entry.  These are followed by the name padded to a 4
- * byte boundary with null bytes.  All names are guaranteed null terminated.
- * The maximum length of a name in a directory is MAXNAMLEN.
+ * The kernel defines the format of directory entries returned by 
+ * the getdirentries(2) system call.
  */
-
-struct dirent {
-	u_long	d_fileno;		/* file number of entry */
-	u_short	d_reclen;		/* length of this record */
-	u_short	d_namlen;		/* length of string in d_name */
-#ifdef _POSIX_SOURCE
-	char	d_name[255 + 1];	/* name must be no longer than this */
-#else
-#define	MAXNAMLEN	255
-	char	d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
-#endif
-};
+#include <sys/dirent.h>
 
 #ifdef _POSIX_SOURCE
 typedef void *	DIR;
