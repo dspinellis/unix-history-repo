@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.10	82/04/19	*/
+/*	subr_xxx.c	4.11	82/06/07	*/
 
 /* merged into kernel:	@(#)subr.c 2.2 4/8/82 */
 
@@ -41,6 +41,7 @@ bmap(ip, bn, rwflg, size)
 	}
 	fs = ip->i_fs;
 	rablock = 0;
+	rasize = 0;		/* conservative */
 
 	/*
 	 * If the next write will extend the file into a new block,
@@ -106,8 +107,10 @@ bmap(ip, bn, rwflg, size)
 			ip->i_flag |= IUPD|ICHG;
 		}
 gotit:
-		if (i < NDADDR - 1)
-			rablock = ip->i_db[i+1];
+		if (i < NDADDR - 1) {
+			rablock = fsbtodb(fs, ip->i_db[i+1]);
+			rasize = blksize(fs, ip, i+1);
+		}
 		return (nb);
 	}
 
@@ -192,8 +195,10 @@ gotit:
 	/*
 	 * calculate read-ahead.
 	 */
-	if (i < NINDIR(fs) - 1)
-		rablock = bap[i+1];
+	if (i < NINDIR(fs) - 1) {
+		rablock = fsbtodb(fs, bap[i+1]);
+		rasize = fs->fs_bsize;
+	}
 	return (nb);
 }
 
