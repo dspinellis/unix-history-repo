@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -91,7 +91,7 @@ struct hdrinfo	HdrInfo[] =
 
 		/* miscellaneous fields */
 	"comments",		H_FORCE,
-	"return-path",		H_ACHECK,
+	"return-path",		H_FORCE|H_ACHECK,
 
 	NULL,			0,
 };
@@ -573,6 +573,9 @@ rlsesigs()
 #    define LA_TYPE		LA_FLOAT
 #    define LA_AVENRUN		"avenrun"
 #  endif
+#  if defined(__NeXT__)
+#    define LA_TYPE		LA_ZERO
+#  endif
 
 /* now do the guesses based on general OS type */
 #  ifndef LA_TYPE
@@ -605,6 +608,10 @@ rlsesigs()
 #  if defined(mips) && !defined(ultrix)
      /* powerful RISC/os */
 #    define _PATH_UNIX		"/unix"
+#  endif
+#  if defined(Solaris2)
+     /* Solaris 2 */
+#    define _PATH_UNIX		"/kernel/unix"
 #  endif
 #  if defined(SYSTEM5)
 #    ifndef _PATH_UNIX
@@ -902,7 +909,7 @@ setproctitle(fmt, va_alist)
 void
 reapchild()
 {
-# ifdef WIFEXITED
+# if defined(WIFEXITED) && !defined(__NeXT__)
 	auto int status;
 	int count;
 	int pid;
@@ -921,7 +928,7 @@ reapchild()
 # ifdef WNOHANG
 	union wait status;
 
-	while (wait3((int *)&status, WNOHANG, (struct rusage *) NULL) > 0)
+	while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0)
 		continue;
 # else /* WNOHANG */
 	auto int status;
@@ -1093,10 +1100,13 @@ initgroups(name, basegid)
 
 #ifndef HASSETSID
 
-setsid()
+pid_t
+setsid __P ((void))
 {
 # ifdef SYSTEM5
-	setpgrp();
+	return setpgrp();
+# else
+	return 0;
 # endif
 }
 

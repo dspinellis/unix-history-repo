@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.1 (Berkeley) %G%
+ *	@(#)conf.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -53,6 +53,7 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define MATCHGECOS	1	/* match user names from gecos field */
+# define XDEBUG		1	/* enable extended debugging */
 
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
@@ -65,10 +66,16 @@
 **	change these.
 */
 
+#ifdef __STDC__
+# define HASSETVBUF	1	/* yes, we have setvbuf in libc */
+#endif
+
 /* HP-UX -- tested for 8.07 */
 # ifdef __hpux
 # define SYSTEM5	1
 # define UNSETENV	1	/* need unsetenv(3) support */
+# define seteuid	setuid
+# define HASSETVBUF		/* we have setvbuf in libc (but not __STDC__) */
 # endif
 
 /* IBM AIX 3.x -- actually tested for 3.2.3 */
@@ -76,6 +83,14 @@
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
 # define UNSETENV	1	/* need unsetenv(3) support */
+# define SYS5TZ		1	/* use System V style timezones */
+# endif
+
+/* Silicon Graphics IRIX */
+# ifdef IRIX
+# define FORK		fork	/* no vfork primitive available */
+# define UNSETENV	1	/* need unsetenv(3) support */
+# define setpgrp	BSDsetpgrp
 # endif
 
 /* general System V defines */
@@ -107,12 +122,16 @@
 # define HASSETSID	1	/* has setsid(2) call */
 #endif
 
-#ifdef NeXT
-# define	sleep	sleepX
+#ifdef __NeXT__
+# define sleep		sleepX
+# define UNSETENV	1	/* need unsetenv(3) support */
 #endif
 
 #ifdef BSD4_4
 # include <sys/cdefs.h>
+# ifndef _POSIX_SAVED_IDS
+#  define _POSIX_SAVED_IDS	/* safe because we actually use seteuid */
+# endif
 #endif
 
 /*

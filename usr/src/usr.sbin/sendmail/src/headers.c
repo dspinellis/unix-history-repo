@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -107,8 +107,14 @@ chompheader(line, def, e)
 		p += 7;
 	if (!def && !bitset(EF_QUEUERUN, e->e_flags) && strcasecmp(fname, p) == 0)
 	{
+		if (tTd(31, 2))
+		{
+			printf("comparing header from (%s) against default (%s or %s)\n",
+				fvalue, e->e_from.q_paddr, e->e_from.q_user);
+		}
 		if (e->e_from.q_paddr != NULL &&
-		    strcmp(fvalue, e->e_from.q_paddr) == 0)
+		    (strcmp(fvalue, e->e_from.q_paddr) == 0 ||
+		     strcmp(fvalue, e->e_from.q_user) == 0))
 			return (hi->hi_flags);
 	}
 

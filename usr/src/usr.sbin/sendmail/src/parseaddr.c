@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -142,7 +142,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 	{
 		setstat(EX_USAGE);
-		syserr("554 cannot resolve name");
+		syserr("554 cannot resolve name %s", addr);
 		return (NULL);
 	}
 

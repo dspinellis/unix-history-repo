@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -77,12 +77,18 @@ dropenvelope(e)
 	bool queueit = FALSE;
 	register ADDRESS *q;
 	char *id = e->e_id;
+	char buf[MAXLINE];
 
 	if (tTd(50, 1))
 	{
 		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
 		printf(", flags=%o\n", e->e_flags);
+		if (tTd(50, 10))
+		{
+			printf("sendq=");
+			printaddr(e->e_sendqueue, TRUE);
+		}
 	}
 
 	/* we must have an id to remove disk files */
@@ -95,6 +101,9 @@ dropenvelope(e)
 				  id, e->e_flags, getpid());
 #endif /* LOG */
 
+	/* post statistics */
+	poststats(StatFile);
+
 	/*
 	**  Extract state information from dregs of send list.
 	*/
@@ -103,6 +112,49 @@ dropenvelope(e)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
 			queueit = TRUE;
+	}
+
+	/*
+	**  See if the message timed out.
+	*/
+
+	if (!queueit)
+		/* nothing to do */ ;
+	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
+	{
+		if (!bitset(EF_TIMEOUT, e->e_flags))
+		{
+			(void) sprintf(buf, "Cannot send message for %s",
+				pintvl(TimeOuts.to_q_return, FALSE));
+			if (e->e_message != NULL)
+				free(e->e_message);
+			e->e_message = newstr(buf);
+			message(buf);
+		}
+		e->e_flags |= EF_TIMEOUT|EF_CLRQUEUE;
+		fprintf(e->e_xfp, "421 Message timed out\n");
+	}
+	else if (TimeOuts.to_q_warning > 0 &&
+	    curtime() > e->e_ctime + TimeOuts.to_q_warning)
+	{
+		if (!bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
+		    e->e_class >= 0 &&
+		    strcmp(e->e_from.q_paddr, "<>") != 0)
+		{
+			(void) sprintf(buf,
+				"warning: cannot send message for %s",
+				pintvl(TimeOuts.to_q_warning, FALSE));
+			if (e->e_message != NULL)
+				free(e->e_message);
+			e->e_message = newstr(buf);
+			message(buf);
+			e->e_flags |= EF_WARNING|EF_TIMEOUT;
+		}
+		fprintf(e->e_xfp,
+			"Warning: message still undelivered after %s\n",
+			pintvl(TimeOuts.to_q_warning, FALSE));
+		fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
+			pintvl(TimeOuts.to_q_return, FALSE));
 	}
 
 	/*
@@ -132,6 +184,8 @@ dropenvelope(e)
 	if ((!queueit && !bitset(EF_KEEPQUEUE, e->e_flags)) ||
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
+		if (tTd(50, 2))
+			printf("Dropping envelope\n");
 		if (e->e_df != NULL)
 			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
@@ -365,9 +419,13 @@ openxscript(e)
 	p = queuename(e, 'x');
 	fd = open(p, O_WRONLY|O_CREAT|O_APPEND, 0644);
 	if (fd < 0)
-		syserr("Can't create %s", p);
-	else
-		e->e_xfp = fdopen(fd, "w");
+	{
+		syserr("Can't create transcript file %s", p);
+		fd = open("/dev/null", O_WRONLY, 0644);
+		if (fd < 0)
+			syserr("!Can't open /dev/null");
+	}
+	e->e_xfp = fdopen(fd, "w");
 }
 /*
 **  CLOSEXSCRIPT -- close the transcript file.

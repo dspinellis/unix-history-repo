@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -180,7 +180,7 @@ message(msg, va_alist)
 	VA_START(msg);
 	fmtmsg(MsgBuf, CurEnv->e_to, "050", 0, msg, ap);
 	VA_END;
-	putmsg(MsgBuf, FALSE);
+	putoutmsg(MsgBuf, FALSE);
 }
 /*
 **  NMESSAGE -- print message (not necessarily an error)
@@ -216,10 +216,10 @@ nmessage(msg, va_alist)
 	VA_START(msg);
 	fmtmsg(MsgBuf, (char *) NULL, "050", 0, msg, ap);
 	VA_END;
-	putmsg(MsgBuf, FALSE);
+	putoutmsg(MsgBuf, FALSE);
 }
 /*
-**  PUTMSG -- output error message to transcript and channel
+**  PUTOUTMSG -- output error message to transcript and channel
 **
 **	Parameters:
 **		msg -- message to output (in SMTP format).
@@ -235,7 +235,7 @@ nmessage(msg, va_alist)
 **		Deletes SMTP reply code number as appropriate.
 */
 
-putmsg(msg, holdmsg)
+putoutmsg(msg, holdmsg)
 	char *msg;
 	bool holdmsg;
 {
@@ -252,6 +252,9 @@ putmsg(msg, holdmsg)
 		fprintf(OutChannel, "%s\r\n", msg);
 	else
 		fprintf(OutChannel, "%s\n", &msg[4]);
+	if (TrafficLogFile != NULL)
+		fprintf(TrafficLogFile, "%05d >>> %s\n", getpid(),
+			OpMode == MD_SMTP ? msg : &msg[4]);
 	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
 	if (!ferror(OutChannel))
@@ -266,13 +269,13 @@ putmsg(msg, holdmsg)
 #ifdef LOG
 	if (LogLevel > 0)
 		syslog(LOG_CRIT,
-			"%s: SYSERR: putmsg (%s): error on output channel sending \"%s\"",
+			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\"",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			CurHostName, msg);
 #endif
 }
 /*
-**  PUTERRMSG -- like putmsg, but does special processing for error messages
+**  PUTERRMSG -- like putoutmsg, but does special processing for error messages
 **
 **	Parameters:
 **		msg -- the message to output.
@@ -288,7 +291,7 @@ puterrmsg(msg)
 	char *msg;
 {
 	/* output the message as usual */
-	putmsg(msg, HoldErrs);
+	putoutmsg(msg, HoldErrs);
 
 	/* signal the error */
 	Errors++;

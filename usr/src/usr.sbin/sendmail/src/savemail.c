@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -487,6 +487,9 @@ returntosender(msg, returnq, sendbody, e)
 	define('f', "\201n", ee);
 	define('x', "Mail Delivery Subsystem", ee);
 	eatheader(ee, TRUE);
+
+	/* mark statistics */
+	markstats(ee, (ADDRESS *) NULL);
 
 	/* actually deliver the error message */
 	sendall(ee, SM_DEFAULT);

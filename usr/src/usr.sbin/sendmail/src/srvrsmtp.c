@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.1 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.2 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.1 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.2 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -238,12 +238,6 @@ smtp(e)
 					message("503 Polite people say HELO first");
 					break;
 				}
-				else
-				{
-					auth_warning(e,
-						"Host %s didn't use HELO protocol",
-						RealHostName);
-				}
 			}
 			if (gotmail)
 			{
@@ -260,6 +254,12 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
+			if (!gothello)
+			{
+				auth_warning(e,
+					"Host %s didn't use HELO protocol",
+					RealHostName);
+			}
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -280,10 +280,11 @@ mci_dump(mci)
 		printf("NULL\n");
 		return;
 	}
-	printf("flags=%o, errno=%d, exitstat=%d, state=%d, pid=%d, maxsize=%ld\n",
-		mci->mci_flags, mci->mci_errno, mci->mci_exitstat,
-		mci->mci_state, mci->mci_pid, mci->mci_maxsize);
-	printf("\tphase=%s, mailer=%s,\n",
+	printf("flags=%o, errno=%d, herrno=%d, exitstat=%d, state=%d, pid=%d,\n",
+		mci->mci_flags, mci->mci_errno, mci->mci_herrno,
+		mci->mci_exitstat, mci->mci_state, mci->mci_pid);
+	printf("\tmaxsize=%ld, phase=%s, mailer=%s,\n",
+		mci->mci_maxsize,
 		mci->mci_phase == NULL ? "NULL" : mci->mci_phase,
 		mci->mci_mailer == NULL ? "NULL" : mci->mci_mailer->m_name);
 	printf("\thost=%s, lastuse=%s\n",
