@@ -1,6 +1,6 @@
-.\"	@(#)ttys.5	4.1 (Berkeley) %G%
+.\"	@(#)ttys.5	5.1 (Berkeley) %G%
 .\"
-.TH TTYS 5 
+.TH TTYS 5  "18 July 1983"
 .AT 3
 .SH NAME
 ttys \- terminal initialization data
@@ -9,31 +9,31 @@ The
 .I ttys
 file is read by the
 .I init
-program and specifies
-which terminal special files are to have
-a process created for them which will allow people to
-log in.
-It contains one line per special file.
+program and specifies which terminal special files are to have
+a process created for them so that people can log in.
+There is one line in the 
+.I ttys
+file per special file.
 .PP
-The first character of a line is either `0' or `1';
-the former causes the line to be ignored,
-the latter causes it to be effective.
-The second character is used as an argument to
+The first character of a line in the 
+.I ttys
+file is either `0' or `1'.  If the first character on the line is a `0', the 
+.I init
+program ignores that line.  If the first character on the line is a `1', the
+.I init
+program creates a login process for that line.
+The second character on each line is used as an argument to
 .IR getty (8),
-which performs such tasks as baud-rate recognition,
-reading the login name,
+which performs such tasks as baud-rate recognition, reading the login name,
 and calling
 .I login.
-For normal lines,
-the character is `0';
+For normal lines, the character is `0';
 other characters can be used, for example, with hard-wired terminals
-where speed recognition is unnecessary
-or which have special characteristics.
+where speed recognition is unnecessary or which have special characteristics.
 .RI ( Getty
 will have to be fixed in such cases.)
-The remainder of the line is the terminal's entry
-in the device directory, /dev.
+The remainder of the line is the terminal's entry in the device directory, /dev.
 .SH FILES
 /etc/ttys
 .SH "SEE ALSO"
-init(8), getty(8), login(1)
+gettytab(5), init(8), getty(8), login(1)
