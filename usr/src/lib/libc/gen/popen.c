@@ -1,4 +1,4 @@
-/* @(#)popen.c	4.6 (Berkeley) %G% */
+/* @(#)popen.c	4.7 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <signal.h>
@@ -8,7 +8,10 @@
 #define	RDR	0
 #define	WTR	1
 
-static	int popen_pid[NOFILE];
+extern	char *malloc();
+
+static	int *popen_pid;
+static	int nfiles;
 
 FILE *
 popen(cmd,mode)
@@ -18,19 +21,28 @@ popen(cmd,mode)
 	int p[2];
 	int myside, hisside, pid;
 
+	if (nfiles <= 0)
+		nfiles = getdtablesize();
+	if (popen_pid == NULL) {
+		popen_pid = (int *)malloc(nfiles * sizeof *popen_pid);
+		if (popen_pid == NULL)
+			return (NULL);
+		for (pid = 0; pid < nfiles; pid++)
+			popen_pid[pid] = -1;
+	}
 	if (pipe(p) < 0)
 		return (NULL);
 	myside = tst(p[WTR], p[RDR]);
 	hisside = tst(p[RDR], p[WTR]);
-	if ((pid = fork()) == 0) {
+	if ((pid = vfork()) == 0) {
 		/* myside and hisside reverse roles in child */
 		close(myside);
 		if (hisside != tst(0, 1)) {
 			dup2(hisside, tst(0, 1));
 			close(hisside);
 		}
-		execl("/bin/sh", "sh", "-c", cmd, 0);
-		_exit(1);
+		execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
+		_exit(127);
 	}
 	if (pid == -1) {
 		close(myside);
@@ -48,9 +60,11 @@ pclose(ptr)
 	int child, pid, status, omask;
 
 	child = popen_pid[fileno(ptr)];
+	popen_pid[fileno(ptr)] = -1;
 	fclose(ptr);
-#define	mask(s)	(1 << ((s)-1))
-	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
+	if (child == -1)
+		return (-1);
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
 	while ((pid = wait(&status)) != child && pid != -1)
 		;
 	(void) sigsetmask(omask);
