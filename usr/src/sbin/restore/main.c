@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.10	(Berkeley)	83/05/15";
+static char sccsid[] = "@(#)main.c	3.11	(Berkeley)	83/06/19";
 #endif
 
 /*
@@ -343,6 +343,7 @@ loop:
 	 * Quit.
 	 */
 	case 'q':
+	case 'x':
 		return;
 	/*
 	 * Toggle verbose mode.
