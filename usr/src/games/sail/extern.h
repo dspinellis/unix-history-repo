@@ -1,12 +1,12 @@
 /*
- * sccsid = "@(#)extern.h	1.3 83/05/20";
+ * sccsid = "@(#)extern.h	1.4 83/05/20";
  */
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
 #include "machdep.h"
 
-#define NUMOFSCENES 31
+#define NUMOFSCENES 32
 
 #define die() (((rand() >> 6) % 6) + 1)
 #define fouled(a) Fouled(a, 342)
@@ -34,20 +34,20 @@ struct logs {
     int uid, fshipnum, fgamenum, netpoints;
 };
 
-extern struct BP {
+struct BP {
 	int turnsent, toship, mensent;
 };
 
-extern struct snag {
+struct snag {
 	int turnfoul, toship;
 };
 
 typedef struct {
 	int row, col, dir;
 } postype;
-extern postype pos[20];
+postype pos[20];
 
-extern struct File {
+struct File {
 	char captain[20];
 	int points;
 	int loadL, loadR, readyL, readyR;
@@ -73,40 +73,43 @@ struct scenario {
 	char *name;
 	ships ship[10];
 };
-extern struct scenario scene[NUMOFSCENES];
+struct scenario scene[NUMOFSCENES];
 
 struct shipspecs {
 	int bs, fs, ta, guns, class, hull, qual, crew1,
 		crew2, crew3, gunL, gunR, carL, carR,
 		rig1, rig2, rig3, rig4, pts;
 };
-extern struct shipspecs specs[];
+struct shipspecs specs[];
 
-extern struct windeffects {
+struct windeffects {
 	int A, B, C, D;
-} WET[7][6];
-extern struct Tables {
+};
+struct windeffects WET[7][6];
+
+struct Tables {
 	int H, G, C, R;
-} RigTable[11][6];
-extern struct Tables HullTable[11][6];
+};
+struct Tables RigTable[11][6];
+struct Tables HullTable[11][6];
 
-extern int AMMO[9][4];
+int AMMO[9][4];
 
-extern int HDT[9][10];
+int HDT[9][10];
 
-extern int HDTrake[9][10];
+int HDTrake[9][10];
 
-extern int QUAL[9][5];
+int QUAL[9][5];
 
-extern int MT[9][3];
+int MT[9][3];
 
-extern int loaded, fired, changed, repaired, buffercount, xlast, ylast;
-extern long lastsync;
-extern int winddir, windspeed, turn, viewrow, viewcol;
-extern int player, nation[5], scroll, game;
-extern int MIGHTYCAPTAIN;
-extern char Outbuf[BUFSIZE], movebuf[10], loadwith[20];
-extern FILE *syncfile;
+int loaded, fired, changed, repaired, buffercount, xlast, ylast;
+long lastsync;
+int winddir, windspeed, turn, viewrow, viewcol;
+int player, nation[5], scroll, game;
+int MIGHTYCAPTAIN;
+char Outbuf[BUFSIZE], movebuf[10], loadwith[20];
+FILE *syncfile;
 
 char colours();
 char gunsbear();
