@@ -8,14 +8,6 @@
 **  specifies the terms and conditions for redistribution.
 */
 
-#ifndef lint
-# ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.10 (Berkeley) %G%	(with DBM)";
-# else DBM
-static char	SccsId[] = "@(#)alias.c	5.10 (Berkeley) %G%	(without DBM)";
-# endif DBM
-#endif not lint
-
 # include <pwd.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -25,6 +17,14 @@ static char	SccsId[] = "@(#)alias.c	5.10 (Berkeley) %G%	(without DBM)";
 # ifdef FLOCK
 # include <sys/file.h>
 # endif FLOCK
+
+#ifndef lint
+# ifdef DBM
+static char	SccsId[] = "@(#)alias.c	5.11 (Berkeley) %G%	(with DBM)";
+# else DBM
+static char	SccsId[] = "@(#)alias.c	5.11 (Berkeley) %G%	(without DBM)";
+# endif DBM
+#endif not lint
 
 
 /*
