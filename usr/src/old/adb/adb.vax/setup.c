@@ -1,9 +1,13 @@
-static	char sccsid[] = "@(#)setup.c	4.7 84/07/25";
+static	char sccsid[] = "@(#)setup.c	4.8 (Berkeley) 84/08/05";
 /*
  * adb - routines to read a.out+core at startup
  */
 #include "defs.h"
+#include <frame.h>
+#include <ctype.h>
 #include <sys/stat.h>
+#include <sys/file.h>
+#include <vax/rpb.h>
 
 off_t	datbas;			/* offset of the base of the data segment */
 off_t	stksiz;			/* stack size in the core image */
@@ -51,7 +55,7 @@ setsym()
 	esymtab = &symtab[filhdr.a_syms / sizeof (struct nlist)];
 	if (symtab == NULL)
 		goto nospac;
-	lseek(fsym, loc, 0);
+	lseek(fsym, loc, L_SET);
 	if (filhdr.a_syms == 0)
 		goto nosymt;
 	/* SHOULD SQUISH OUT STABS HERE!!! */
@@ -108,9 +112,10 @@ setcor()
 		slr = cursym->n_value;
 		printf("sbr %X slr %X\n", sbr, slr);
 		lookup("_masterpaddr");
-		physrw(fcor, cursym->n_value&0x7fffffff, &masterpcbb, 1);
+		physrw(fcor, cursym->n_value&~0x80000000, &masterpcbb, 1);
 		masterpcbb = (masterpcbb&PG_PFNUM)*512;
 		getpcb();
+		findstackframe();
 		return;
 	}
 	if (read(fcor, (char *)&u, ctob(UPAGES))!=ctob(UPAGES) ||
@@ -147,11 +152,154 @@ setcor()
 getpcb()
 {
 
-	lseek(fcor, masterpcbb&~0x80000000, 0);
+	lseek(fcor, masterpcbb&~0x80000000, L_SET);
 	read(fcor, &pcb, sizeof (struct pcb));
 	pcb.pcb_p0lr &= ~AST_CLR;
 	printf("p0br %X p0lr %X p1br %X p1lr %X\n",
 	    pcb.pcb_p0br, pcb.pcb_p0lr, pcb.pcb_p1br, pcb.pcb_p1lr);
+}
+
+caddr_t	rpb, scb;
+caddr_t	intstack, eintstack;
+caddr_t	ustack, eustack;
+struct	frame *getframe();
+struct	frame *checkintstack();
+
+/*
+ * Find the current stack frame when debugging the kernel.
+ * If we're looking at a crash dump and this was not a ``clean''
+ * crash, then we must search the interrupt stack carefully
+ * looking for a valid frame.
+ */
+findstackframe()
+{
+	char *panicstr, buf[256];
+	register struct frame *fp;
+	caddr_t addr;
+	register char *cp;
+	int mask;
+
+	if (lookup("_panicstr") == 0)
+		return;
+	lseek(fcor, cursym->n_value&~0x80000000, L_SET);
+	read(fcor, &panicstr, sizeof (panicstr));
+	if (panicstr == 0)
+		return;
+	lseek(fcor, ((off_t)panicstr)&~0x80000000, L_SET);
+	read(fcor, buf, sizeof (buf));
+	for (cp = buf; cp < &buf[sizeof (buf)] && *cp; cp++)
+		if (!isascii(*cp) || !isprint(*cp))
+			*cp = '?';
+	if (*cp)
+		*cp = '\0';
+	printf("panic: %s\n", buf);
+	/*
+	 * After a panic, look at the top of the rpb stack to
+	 * find a stack frame.  If this was a clean crash,
+	 * i.e. one which left the interrupt and kernel stacks
+	 * in a reasonable state, then we should find a pointer
+	 * to the proper stack frame here (at location scb-4).
+	 * If we don't find a reasonable frame here, then we
+	 * must search down through the interrupt stack.
+	 */
+	intstack = lookup("_intstack")->n_value;
+#define	NISP	3			/* from locore.s */
+	eintstack = intstack + NISP*NBPG;
+	rpb = lookup("_rpb")->n_value;
+	scb = lookup("_scb")->n_value;
+	lookup("_u");
+	ustack = cursym->n_value + (int)&((struct user *)0)->u_stack[0];
+	eustack = cursym->n_value + ctob(UPAGES);
+	physrw(fcor, ((int)scb - sizeof (caddr_t))&~0x80000000, &addr, 1);
+	fp = getframe(fcor, addr);
+	if (fp == 0)
+		fp = checkintstack();
+	/* search kernel stack? */
+	if (fp == 0) {
+		printf("can't locate stack frame\n");
+		return;
+	}
+	/* probably shouldn't clobber pcb, but for now this is easy */
+	pcb.pcb_fp = addr;
+	pcb.pcb_pc = fp->fr_savpc;
+	pcb.pcb_ap = addr + sizeof (struct frame) + fp->fr_spa;
+	for (mask = fp->fr_mask; mask; mask >>= 1)
+		if (mask & 01)
+			pcb.pcb_ap += sizeof (caddr_t);
+}
+
+/*
+ * Search interrupt stack for a valid frame.
+ */
+struct frame *
+checkintstack(fcor)
+{
+	char stack[NISP*NBPG];
+	off_t off = vtophys(intstack);
+	struct frame *fp;
+	register caddr_t addr;
+
+	if (off == -1 || lseek(fcor, off, L_SET) != off ||
+	    read(fcor, stack, sizeof (stack)) != sizeof (stack))
+		return ((struct frame *)0);
+	addr = eintstack;
+	do {
+		addr -= sizeof (caddr_t);
+		fp = (struct frame *)&stack[addr - intstack];
+	} while (addr >= intstack + sizeof (struct frame) &&
+	    !checkframe(fp));
+	return (addr < intstack+sizeof (struct frame) ? (struct frame *)0 : fp);
+}
+
+/*
+ * Get a stack frame and verify it looks like
+ * something which might be on a kernel stack.
+ */
+struct frame *
+getframe(fcor, fp)
+	int fcor;
+	caddr_t fp;
+{
+	static struct frame frame;
+	off_t off;
+
+	if (!kstackaddr(fp) || (off = vtophys(fp)) == -1)
+		return ((struct frame *)0);
+	if (lseek(fcor, off, L_SET) != off ||
+	    read(fcor, &frame, sizeof (frame)) != sizeof (frame))
+		return ((struct frame *)0);
+	if (!checkframe(&frame))
+		return ((struct frame *)0);
+	return (&frame);
+}
+
+/*
+ * Check a call frame to see if it's ok as
+ * a kernel stack frame.
+ */
+checkframe(fp)
+	register struct frame *fp;
+{
+
+	if (fp->fr_handler != 0 || fp->fr_s == 0)
+		return (0);
+	if (!kstackaddr(fp->fr_savap) || !kstackaddr(fp->fr_savfp))
+		return (0);
+	return (within(fp->fr_savpc, txtmap.b1, txtmap.e1));
+}
+
+/*
+ * Check if an address is in one of the kernel's stacks:
+ * interrupt stack, rpb stack (during restart sequence),
+ * or u. stack.
+ */
+kstackaddr(addr)
+	caddr_t addr;
+{
+
+	return (within(addr, intstack, eintstack) ||
+	    within(addr, rpb + sizeof (struct rpb), scb) ||
+	    within(addr, ustack, eustack));
 }
 
 create(f)
