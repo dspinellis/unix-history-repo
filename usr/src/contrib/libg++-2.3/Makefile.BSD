@@ -1,4 +1,4 @@
-CC= /usr/src/devel/ELAN/gcc-2.3.3/xgcc -B/usr/src/devel/ELAN/gcc-2.3.3/
+CC= cc
 DIRS= libiberty libg++ libg++/src libg++/iostream
 BUILD_DIR= ${.CURDIR}
 TARGET_LIB= libg++.a	
@@ -14,7 +14,7 @@ IOSTREAM_OBS= streambuf.o stdstrbufs.o iostream.o stdstreams.o strstream.o \
   editbuf.o filebuf.o sgetline.o igetline.o igetsb.o procbuf.o \
   sbufvform.o sbufvscan.o stdiostream.o floatconv.o outfloat.o iomanip.o
 
-$(TARGET_LIB): $(IOLIB) $(SRCLIB) $(LIBIBERTY)
+all $(TARGET_LIB): $(IOLIB) $(SRCLIB) $(LIBIBERTY)
 	cd ${.CURDIR}/libg++/src; ar qc ${BUILD_DIR}/${TARGET_LIB} *.o
 	cd ${.CURDIR}/libg++/iostream; ar qc ${BUILD_DIR}/${TARGET_LIB} \
 	$(IOSTREAM_OBS)
