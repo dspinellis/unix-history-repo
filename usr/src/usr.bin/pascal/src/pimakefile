@@ -1,8 +1,8 @@
-SCCSID = "@(#)pimakefile 1.3 %G%"
+SCCSID = "@(#)pimakefile 1.4 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
-RM = -rm
+RM = -rm -f
 GET = sccs get
 
 CFLAGS = -O -w
@@ -58,20 +58,20 @@ ${SRCS} ${HDRS} ${OTHERS}:
 	${GET} ${REL} $@
 
 .c.o:
-	rm -f ${TMPDIR}/$*.c
+	${RM} ${TMPDIR}/$*.c
 	${MKSTR} - ${ERRORSTRINGS} ${TMPDIR}/ $*.c
 	cd ${TMPDIR} ; ${CC} ${CFLAGS} -I.. -c $*.c ; mv $*.o  ../$*.o
-	rm -f ${TMPDIR}/$*.c
+	${RM} ${TMPDIR}/$*.c
 
 y.tab.h: pas.y gram
-	${EYACC} pas.y > y.tab.out
+	${EYACC} pas.y > /dev/null
 	ex - y.tab.c <gram
 	@echo that makes y.tab.h and y.tab.c
 
 opcode.h: OPnames.h opc.c
 	cc opc.c -o opc
 	opc >opcode.h
-	${RM} opc opc.c
+	${RM} opc
 
 pTree.h:
 	echo "/* this is not pTree.h */" > pTree.h
@@ -85,7 +85,7 @@ clean:
 	${RM} ${ERRORSTRINGS}
 	${RM} version Version.c
 	${RM} a.out core *.list *.bak
-	${RM} opc pic tags
+	${RM} opc.c opc pic tags
 	sccs clean
 
 print:	sources
