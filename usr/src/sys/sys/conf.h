@@ -1,4 +1,4 @@
-/*	conf.h	3.2	%H%	*/
+/*	conf.h	3.3	%H%	*/
 
 /*
  * Declaration of block device
@@ -49,5 +49,5 @@ extern struct linesw
 } linesw[];
 
 #ifdef BERKNET
-#define	BNETLDIS	1		/* line discip for berk net */
+#define	NETLDISC	1		/* line discip for berk net */
 #endif
