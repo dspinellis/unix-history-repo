@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.121 (Berkeley) %G%
+ *	@(#)conf.h	8.122 (Berkeley) %G%
  */
 
 /*
@@ -592,6 +592,7 @@ extern void		*malloc();
 **
 **  Thanks to, in reverse order of contact:
 **
+**	Andrew Pam <avatar@aus.xanadu.com>
 **	John Kennedy <warlock@csuchico.edu>
 **	Florian La Roche <rzsfl@rz.uni-sb.de>
 **	Karl London <karl@borg.demon.co.uk>
@@ -609,6 +610,7 @@ extern void		*malloc();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define GIDSET_T	gid_t	/* from <linux/types.h> */
+# define HASGETUSERSHELL 0	/* getusershell(3) broken in Slackware 2.0 */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_PROCSTR
 # endif
