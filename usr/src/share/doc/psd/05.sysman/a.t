@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	5.1 (Berkeley) %G%
+.\"	@(#)a.t	6.1 (Berkeley) %G%
 .\"
-.\" a.t 5.1 86/05/08
 .ds RH Summary of facilities
 .bp
 .SH
@@ -52,7 +51,7 @@ lw(1.6i) aw(3i).
 sbrk	change data section size
 sstk\(dg	change stack section size
 .FS
-\(dg Not supported in 4.2BSD.
+\(dg Not supported in 4.3BSD.
 .FE
 getpagesize	get memory page size
 mmap\(dg	map pages of memory
@@ -61,6 +60,8 @@ munmap\(dg	unmap memory
 mprotect\(dg	change protection of pages
 madvise\(dg	give memory management advice
 mincore\(dg	determine core residency of pages
+msleep\(dg	sleep on a lock
+mwakeup\(dg	wakeup process sleeping on a lock
 .TE
 .in -5
 .h 1.3 "Signals
@@ -101,7 +102,7 @@ select	multiplex input/output
 fcntl	control descriptor options
 wrap\(dg	wrap descriptor with protocol
 .FS
-\(dg Not supported in 4.2BSD.
+\(dg Not supported in 4.3BSD.
 .FE
 .TE
 .in -5
