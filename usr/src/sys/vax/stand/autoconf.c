@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.2 (Berkeley) %G%
+ *	@(#)autoconf.c	6.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -60,6 +60,7 @@ configure()
 	cpu = cpusid.cpuany.cp_type;
 	switch (cpu) {
 
+	case VAX_8600:
 	case VAX_780:
 		mbaddr = mbaddr780;
 		ubaddr = ubaddr780;
@@ -93,7 +94,7 @@ configure()
 	for (i = 0; i < nuba; i++)
 		if (!badloc(ubaddr[i]))
 			ubaddr[i]->uba_cr = UBACR_ADINIT;
-	if (cpu != VAX_780)
+	if ((cpu != VAX_780) && (cpu != VAX_8600))
 		mtpr(IUR, 0);
 	/* give unibus devices a chance to recover... */
 	if (nuba > 0)

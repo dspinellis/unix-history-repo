@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.2 (Berkeley) %G%
+ *	@(#)conf.c	6.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -82,10 +82,10 @@ nullioctl(io, cmd, arg)
 }
 
 int	nullsys(), nullioctl();
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 int	hpstrategy(), hpopen(), hpioctl();
 #endif
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 int	upstrategy(), upopen(), upioctl();
 #endif
 int	rkstrategy(), rkopen(), rkioctl();
@@ -97,7 +97,7 @@ int	rlstrategy(), rlopen(), rlioctl();
 #ifndef BOOT
 int	tmstrategy(), tmopen(), tmclose();
 int	tsstrategy(), tsopen(), tsclose();
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 int	htstrategy(), htopen(), htclose();
 int	mtstrategy(), mtopen(), mtclose();
 #endif
@@ -105,10 +105,10 @@ int	utstrategy(), utopen(), utclose();
 #endif
 
 struct devsw devsw[] = {
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 	{ "hp",	hpstrategy,	hpopen,		nullsys,	hpioctl },
 #endif
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 	{ "up",	upstrategy,	upopen,		nullsys,	upioctl },
 #endif
 	{ "hk",	rkstrategy,	rkopen,		nullsys,	rkioctl },
@@ -119,7 +119,7 @@ struct devsw devsw[] = {
 	{ "rl",	rlstrategy,	rlopen,		nullsys,	rlioctl },
 #ifndef BOOT
 	{ "ts",	tsstrategy,	tsopen,		tsclose,	nullioctl },
-#if defined(VAX780) || defined(VAX750)
+#if defined(VAX780) || defined(VAX750) || defined(VAX8600)
 	{ "ht",	htstrategy,	htopen,		htclose,	nullioctl },
 	{ "mt",	mtstrategy,	mtopen,		mtclose,	nullioctl },
 #endif
