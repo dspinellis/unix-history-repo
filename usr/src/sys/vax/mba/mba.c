@@ -3,16 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	6.4 (Berkeley) %G%
+ *	@(#)mba.c	6.5 (Berkeley) %G%
  */
 
 #include "mba.h"
 #if NMBA > 0
 /*
  * Massbus driver, arbitrates a massbus among attached devices.
- *
- * OPTION:
- *	MTRDREV - Enable mag tape read backwards error recovery
  */
 #include "../machine/pte.h"
 
@@ -30,6 +27,9 @@
 
 #include "mbareg.h"
 #include "mbavar.h"
+
+/* mbunit should be the same as hpunit, etc.! */
+#define mbunit(dev)	(minor(dev) >> 3)
 
 char	mbsr_bits[] = MBSR_BITS;
 /*
@@ -60,7 +60,7 @@ loop:
 	 */
 	if ((mi->mi_drv->mbd_dt & MBDT_TYPE) == 0) {
 		printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
-		    dkunit(bp));
+		    mbunit(bp->b_dev));
 		mi->mi_alive = 0;
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_active = 0;
@@ -168,10 +168,10 @@ loop:
 		if ((com & MBDT_TYPE) == 0) {
 			mi->mi_alive = 0;
 			printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
-			    dkunit(bp));
+			    mbunit(bp->b_dev));
 		} else
 			printf("%s%d: not ready\n", mi->mi_driver->md_dname,
-			    dkunit(bp));
+			    mbunit(bp->b_dev));
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_active = 0;
@@ -199,7 +199,6 @@ loop:
 	 */
 	mbp = mi->mi_mba;
 	mbp->mba_sr = -1;	/* conservative */
-#ifdef MTRDREV
 	if (bp->b_bcount >= 0) {
 		mbp->mba_var = mbasetup(mi);
 		mbp->mba_bcr = -bp->b_bcount;
@@ -207,22 +206,14 @@ loop:
 		mbp->mba_var = mbasetup(mi) - bp->b_bcount - 1;
 		mbp->mba_bcr = bp->b_bcount;
 	}
-#else
-	mbp->mba_var = mbasetup(mi);
-	mbp->mba_bcr = -bp->b_bcount;
-#endif
 	mi->mi_drv->mbd_cs1 = com;
 	if (mi->mi_dk >= 0) {
 		dk_busy |= 1 << mi->mi_dk;
 		dk_xfer[mi->mi_dk]++;
-#ifdef MTRDREV
 		if (bp->b_bcount >= 0)
 			dk_wds[mi->mi_dk] += bp->b_bcount >> 6;
 		else
 			dk_wds[mi->mi_dk] += -(bp->b_bcount) >> 6;
-#else
-		dk_wds[mi->mi_dk] += bp->b_bcount >> 6;
-#endif
 	}
 }
 
@@ -422,14 +413,10 @@ mbasetup(mi)
 
 	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
-#ifdef MTRDREV
 	if (bp->b_bcount >= 0)
 		npf = btoc(bp->b_bcount + o);
 	else
 		npf = btoc(-(bp->b_bcount) + o);
-#else
-	npf = btoc(bp->b_bcount + o);
-#endif
 	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
 	if ((bp->b_flags & B_PHYS) == 0)
 		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];
