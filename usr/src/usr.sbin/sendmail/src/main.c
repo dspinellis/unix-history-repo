@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.4		%G%);
+SCCSID(@(#)main.c	4.5		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -389,11 +389,13 @@ main(argc, argv, envp)
 	}
 
 	/*
-	**  If printing the queue, go off and do that.
+	**  Do operation-mode-dependent initialization.
 	*/
 
-	if (OpMode == MD_PRINT)
+	switch (OpMode)
 	{
+	  case MD_PRINT:
+		/* print the queue */
 #ifdef QUEUE
 		dropenvelope(CurEnv);
 		printqueue();
@@ -402,15 +404,21 @@ main(argc, argv, envp)
 		usrerr("No queue to print");
 		finis();
 #endif QUEUE
-	}
 
-	/*
-	**  Initialize aliases.
-	*/
-
-	initaliases(AliasFile, OpMode == MD_INITALIAS);
-	if (OpMode == MD_INITALIAS)
+	  case MD_INITALIAS:
+		/* initialize alias database */
+		initaliases(AliasFile, TRUE);
 		exit(EX_OK);
+
+	  case MD_DAEMON:
+		/* don't open alias database -- done in srvrsmtp */
+		break;
+
+	  default:
+		/* open the alias database */
+		initaliases(AliasFile, FALSE);
+		break;
+	}
 
 # ifdef DEBUG
 	if (tTd(0, 15))
