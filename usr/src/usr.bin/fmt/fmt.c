@@ -11,7 +11,7 @@
  * Author: Kurt Shoens (UCB) 12/7/78
  */
 
-static char *SccsId = "@(#)fmt.c	1.1 %G%";
+static char *SccsId = "@(#)fmt.c	1.2 %G%";
 
 #define	LENGTH	72		/* Max line length in output */
 #define	NOSTR	((char *) 0)	/* Null string pointer for lint */
@@ -220,7 +220,7 @@ split(line)
 
 		if (*cp == '\0') {
 			*cp2++ = ' ';
-			if (any(cp[-1], ".:!"))
+			if (any(cp[-1], ".:!?"))
 				*cp2++ = ' ';
 		}
 		while (*cp == ' ')
