@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	8.5 (Berkeley) %G%
+ *	@(#)vm_map.c	8.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -1287,7 +1287,7 @@ vm_map_pageable(map, start, end, new_pageable)
 		}
 		else {
 		    vm_map_set_recursive(&map->lock);
-		    lockmgr(&map->lock, LK_DOWNGRADE, curproc);
+		    lockmgr(&map->lock, LK_DOWNGRADE, (void *)0, LOCKPID);
 		}
 
 		rv = 0;
@@ -2392,7 +2392,8 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 			 *	share map to the new object.
 			 */
 
-			if (lockmgr(&share_map->lock, LK_EXCLUPGRADE, curproc)){
+			if (lockmgr(&share_map->lock, LK_EXCLUPGRADE,
+				    (void *)0, LOCKPID)) {
 				if (share_map != map)
 					vm_map_unlock_read(map);
 				goto RetryLookup;
@@ -2405,7 +2406,8 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 				
 			entry->needs_copy = FALSE;
 			
-			lockmgr(&share_map->lock, LK_DOWNGRADE, curproc);
+			lockmgr(&share_map->lock, LK_DOWNGRADE,
+				(void *)0, LOCKPID);
 		}
 		else {
 			/*
@@ -2422,7 +2424,8 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	 */
 	if (entry->object.vm_object == NULL) {
 
-		if (lockmgr(&share_map->lock, LK_EXCLUPGRADE, curproc)) {
+		if (lockmgr(&share_map->lock, LK_EXCLUPGRADE,
+				(void *)0, LOCKPID)) {
 			if (share_map != map)
 				vm_map_unlock_read(map);
 			goto RetryLookup;
@@ -2431,7 +2434,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 		entry->object.vm_object = vm_object_allocate(
 					(vm_size_t)(entry->end - entry->start));
 		entry->offset = 0;
-		lockmgr(&share_map->lock, LK_DOWNGRADE, curproc);
+		lockmgr(&share_map->lock, LK_DOWNGRADE, (void *)0, LOCKPID);
 	}
 
 	/*
