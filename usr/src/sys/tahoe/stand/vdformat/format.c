@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -172,6 +172,8 @@ long	count;
 		printf(" while formatting sectors.\n");
 		_longjmp(abort_environ, 1);
 	}
+	if (dcb.operrsta & DCBS_HARD)
+		vd_error("format");
 	if(kill_processes == true)
 		_longjmp(quit_environ, 1);
 }

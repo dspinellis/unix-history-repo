@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)io.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -241,7 +241,9 @@ top:
 		addr->vdsecsize = lab->d_secsize/sizeof(short);
 */
 	}
+/*
 printf("devsel %x, ncyl %d, ntrk %d, nsec %d, slip %d, cylskew %d, trackskew %d, secsize %d\n", dcb.devselect, dcb.trail.rstrail.ncyl, dcb.trail.rstrail.nsurfaces, dcb.trail.rstrail.nsectors, dcb.trail.rstrail.slip_sec, lab->d_cylskew, lab->d_trackskew, lab->d_secsize);
+*/
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
 	VDGO(addr, (u_long)&mdcb, C_INFO->type);
@@ -296,8 +298,8 @@ bad:
 /*
 ** 	data_ok checks an error status word for bit patterns
 **  associated with error conditions from the VDDC controller.  If a hardware
-**  error is present then the problem is reported on the console and the program
-**  is halted.  If a data error is present the a zero is returned.
+**  error is present then the problem is reported on the console.
+**  If a data error is present the a zero is returned.
 **  If everything is OK then a 1 is returned.
 */
 
@@ -306,34 +308,26 @@ data_ok()
 	register int	status = dcb.operrsta;
 
 	if(status & HARD_ERROR){
-		if(status & DCBS_NRDY)
-			printf("\nDrive is not ready!");
-		else if(status & DCBS_IVA)
-			printf("\nInvalid disk address issued!");
-		else if(status & DCBS_NEM)
-			printf("\nNon-existent memory error!");
-		else if(status & DCBS_DPE)
-			printf("\nMain memory parity error!");
-		else if(status & DCBS_OAB) 
-			printf("\nCPU aborted operation!");
-		else if(status & DCBS_WPT)
-			printf("\nDrive is write protected!");
-		else if(status & DCBS_SKI)
-			printf("\nDisk seek error!");
-		else if(status & DCBS_CHE)
-			printf("\nController hardware error!");
-		else
-			printf("\nNot on cylinder error!");
-		printf("   Status = 0x%lx", status);
-		if(C_INFO->type == VDTYPE_SMDE)
-			printf("  Error code =  0x%x", dcb.err_code & 0xff);
-		printf("\n");
-		printf("cylinder = %d, track = %d,", dcb.err_cyl, dcb.err_trk);
-		printf(" sector = %d, op = 0x%x\n", dcb.err_sec, dcb.opcode);
+		vd_error("data transfer");
+		printf("  op = 0x%x\n", dcb.opcode);
 		reset_controller();
 		dcb.operrsta &= HEADER_ERROR;
 	}
 	return (int)(!(status & (DATA_ERROR | HEADER_ERROR)));
+}
+
+vd_error(s)
+	char *s;
+{
+	register int	status = dcb.operrsta;
+
+	print("error at sector %d (cyl %d trk %d sect %d),\n",
+	    to_sector(cur.daddr), dcb.err_cyl & 0xfff, dcb.err_trk,
+	    dcb.err_sec);
+	print("  status=%b", dcb.operrsta, VDERRBITS);
+	if (C_INFO->type == VDTYPE_SMDE)
+		printf(", ecode=0x%x", dcb.err_code);
+	printf("\n");
 }
 
 
