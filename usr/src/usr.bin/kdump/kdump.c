@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)kdump.c	5.1 (Berkeley) %G%";
 #include <sys/uio.h>
 #include <sys/ktrace.h>
 #include <sys/ioctl.h>
+#include <sys/ptrace.h>
 #define KERNEL
 #include <sys/errno.h>
 #undef KERNEL
@@ -196,6 +197,12 @@ dumpheader(kth)
 #undef KTRACE
 int nsyscalls = sizeof (syscallnames) / sizeof (syscallnames[0]);
 
+static char *ptrace_ops[] = {
+	"PT_TRACE_ME",	"PT_READ_I",	"PT_READ_D",	"PT_READ_U",
+	"PT_WRITE_I",	"PT_WRITE_D",	"PT_WRITE_U",	"PT_CONTINUE",
+	"PT_KILL",	"PT_STEP",
+};
+
 ktrsyscall(ktr)
 	register struct ktr_syscall *ktr;
 {
@@ -210,25 +217,35 @@ ktrsyscall(ktr)
 	ip = (int *)((char *)ktr + sizeof(struct ktr_syscall));
 	if (narg) {
 		char c = '(';
-		if (fancy && ktr->ktr_code == SYS_ioctl) {
-			char *cp;
-			if (decimal)
-				(void)printf("(%d", *ip);
-			else
-				(void)printf("(%#x", *ip);
-			ip++;
-			narg--;
-			if ((cp = ioctlname(*ip)) != NULL)
-				(void)printf(",%s", cp);
-			else {
+		if (fancy) {
+			if (ktr->ktr_code == SYS_ioctl) {
+				char *cp;
 				if (decimal)
-					(void)printf(",%d", *ip);
+					(void)printf("(%d", *ip);
 				else
-					(void)printf(",%#x ", *ip);
+					(void)printf("(%#x", *ip);
+				ip++;
+				narg--;
+				if ((cp = ioctlname(*ip)) != NULL)
+					(void)printf(",%s", cp);
+				else {
+					if (decimal)
+						(void)printf(",%d", *ip);
+					else
+						(void)printf(",%#x ", *ip);
+				}
+				c = ',';
+				ip++;
+				narg--;
+			} else if (ktr->ktr_code == SYS_ptrace) {
+				if (*ip <= PT_STEP && *ip >= 0)
+					(void)printf("(%s", ptrace_ops[*ip]);
+				else
+					(void)printf("(%d", *ip);
+				c = ',';
+				ip++;
+				narg--;
 			}
-			c = ',';
-			ip++;
-			narg--;
 		}
 		while (narg) {
 			if (decimal)
