@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.24 (Berkeley) %G%
+#	@(#)Makefile	5.25 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -90,6 +90,7 @@ distribution:
 	# There are certain symbolic links we have to have, and
 	# no other place to have install them.
 	(cd / && rm -f sys && ln -s /usr/src/sys sys)
+	(cd /usr/bin && rm -f X11 && ln -s /usr/X11R4/bin X11)
 	(cd /usr/lib && rm -f X && ln -s /usr/hpux/lib/X X)
 	(cd /usr/lib && rm -f X11 && ln -s /usr/X11R4/lib X11)
 	(cd /usr/lib && rm -f grmd && ln -s /usr/hpux/lib/grmd grmd)
