@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.13 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -96,6 +96,10 @@ clocal(p) register NODE *p; {
 				p->in.op = p->in.left->in.op = FREE;
 				return(p->in.left->in.left);
 				}
+#ifndef SPRECC
+			if(m == DOUBLE && ml == FLOAT)
+				goto clobber;
+#endif
 			/* see makety() for constant conversions */
 			break;
 			}
