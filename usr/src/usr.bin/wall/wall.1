@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wall.1	6.1 (Berkeley) %G%
+.\"	@(#)wall.1	6.2 (Berkeley) %G%
 .\"
 .TH WALL 1 ""
 .UC 4
@@ -10,22 +10,20 @@
 wall \- write to all users
 .SH SYNOPSIS
 .B wall
+[file]
 .SH DESCRIPTION
 .I Wall
-reads its standard input until an end-of-file.
-It then sends this message,
-preceded by
-`Broadcast Message ...',
+reads
+.I file
+or, by default, the standard input, until an end-of-file.
+It then sends this message, preceded by ``Broadcast Message ...'',
 to all logged in users.
 .PP
-The sender should be super-user to override
-any protections the users may have invoked.
+The sender should be super-user to override any protections the
+users may have invoked.
 .SH FILES
 /dev/tty?
 .br
 /etc/utmp
 .SH "SEE ALSO"
-mesg(1), write(1)
-.SH DIAGNOSTICS
-`Cannot send to ...' when the open on
-a user's tty file fails.
+mesg(1), write(1), shutdown(8)
