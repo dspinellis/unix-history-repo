@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -30,6 +30,7 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "quota.h"
+#include "malloc.h"
 
 #include "frame.h"
 #include "clock.h"
@@ -132,6 +133,8 @@ startup(firstaddr)
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
 	valloc(namecache, struct namecache, nchsize);
+	valloc(kmemmap, struct map, ekmempt - kmempt);
+	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
@@ -257,6 +260,7 @@ startup(firstaddr)
 	    "usrpt", nproc);
 	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
+	kmeminit();	/* now safe to do malloc/free */
 
 	/*
 	 * Set up CPU-specific registers, cache, etc.
