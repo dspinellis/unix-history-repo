@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.16 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.17 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -6,6 +6,14 @@
 #include <a.out.h>
 #include <pagsiz.h>
 #include "gcrt0.h"
+
+#if vax
+#   include "vax.h"
+#endif
+#if sun
+#    include "sun.h"
+#endif
+
 
     /*
      *	who am i, for error messages.
@@ -18,11 +26,6 @@ char	*whoami;
 typedef int	bool;
 #define	FALSE	0
 #define	TRUE	1
-
-    /*
-     *	opcode of the `calls' instruction
-     */
-#define	CALLS	0xfb
 
     /*
      *	ticks per second
@@ -69,6 +72,7 @@ typedef struct arcstruct	arctype;
 struct nl {
     char		*name;		/* the name */
     unsigned long	value;		/* the pc entry point */
+    unsigned long	svalue;		/* entry point aligned to histograms */
     double		time;		/* ticks in this routine */
     double		childtime;	/* cumulative ticks in children */
     long		ncall;		/* how many times called */
@@ -169,24 +173,6 @@ struct stringlist	*elist;
 struct stringlist	*Elist;
 struct stringlist	*flist;
 struct stringlist	*Flist;
-
-    /*
-     *	register for pc relative addressing
-     */
-#define	PC	0xf
-
-enum opermodes {
-    literal, indexed, reg, regdef, autodec, autoinc, autoincdef, 
-    bytedisp, bytedispdef, worddisp, worddispdef, longdisp, longdispdef,
-    immediate, absolute, byterel, bytereldef, wordrel, wordreldef,
-    longrel, longreldef
-};
-typedef enum opermodes	operandenum;
-
-struct modebyte {
-    unsigned int	regfield:4;
-    unsigned int	modefield:4;
-};
 
     /*
      *	function declarations
