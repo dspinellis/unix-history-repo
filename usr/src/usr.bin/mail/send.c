@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.10 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -237,7 +237,6 @@ mail1(hp)
 	struct name *to, *np;
 	struct stat sbuf;
 	FILE *mtf, *postage;
-	int remote = rflag != NOSTR || rmail;
 	char **t;
 
 	/*
@@ -280,9 +279,8 @@ mail1(hp)
 
 	to = outof(to, mtf, hp);
 	rewind(mtf);
-	if (senderr && !remote) {
+	if (senderr) {
 topdog:
-
 		if (fsize(mtf) != 0) {
 			(void) remove(deadletter);
 			(void) exwrite(deadletter, mtf, 1);
@@ -297,10 +295,9 @@ topdog:
 	if (!gotcha)
 		goto out;
 	to = elide(to);
-	mechk(to);
 	if (count(to) > 1)
 		hp->h_seq++;
-	if (hp->h_seq > 0 && !remote) {
+	if (hp->h_seq > 0) {
 		fixhead(hp, to);
 		if (fsize(mtf) == 0)
 		    if (hp->h_subject == NOSTR)
@@ -344,11 +341,9 @@ topdog:
 	}
 	if (pid == 0) {
 #ifdef SIGTSTP
-		if (remote == 0) {
-			(void) signal(SIGTSTP, SIG_IGN);
-			(void) signal(SIGTTIN, SIG_IGN);
-			(void) signal(SIGTTOU, SIG_IGN);
-		}
+		(void) signal(SIGTSTP, SIG_IGN);
+		(void) signal(SIGTTIN, SIG_IGN);
+		(void) signal(SIGTTOU, SIG_IGN);
 #endif
 		(void) signal(SIGHUP, SIG_IGN);
 		(void) signal(SIGINT, SIG_IGN);
@@ -371,7 +366,7 @@ topdog:
 	}
 
 out:
-	if (remote || (value("verbose") != NOSTR)) {
+	if (value("verbose") != NOSTR) {
 		while ((p = wait(&s)) != pid && p != -1)
 			;
 		if (s.w_status != 0)
@@ -539,7 +534,6 @@ savemail(name, fi)
 	char buf[BUFSIZ];
 	register i;
 	time_t now, time();
-	char *n;
 	char *ctime();
 
 	if ((fo = fopen(name, "a")) == NULL) {
@@ -547,9 +541,7 @@ savemail(name, fi)
 		return (-1);
 	}
 	(void) time(&now);
-	if ((n = rflag) == NOSTR)
-		n = myname;
-	fprintf(fo, "From %s %s", n, ctime(&now));
+	fprintf(fo, "From %s %s", myname, ctime(&now));
 	rewind(fi);
 	while ((i = fread(buf, 1, sizeof buf, fi)) > 0)
 		(void) fwrite(buf, 1, i, fo);

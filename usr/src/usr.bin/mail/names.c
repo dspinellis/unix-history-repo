@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)names.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -517,7 +517,6 @@ unpack(np)
 {
 	register char **ap, **top;
 	register struct name *n;
-	char hbuf[10];
 	int t, extra, metoo, verbose;
 
 	n = np;
@@ -528,12 +527,10 @@ unpack(np)
 	 * Compute the number of extra arguments we will need.
 	 * We need at least two extra -- one for "mail" and one for
 	 * the terminating 0 pointer.  Additional spots may be needed
-	 * to pass along -r and -f to the host mailer.
+	 * to pass along -f to the host mailer.
 	 */
 
 	extra = 2;
-	if (rflag != NOSTR)
-		extra += 2;
 	extra++;
 	metoo = value("metoo") != NOSTR;
 	if (metoo)
@@ -541,24 +538,14 @@ unpack(np)
 	verbose = value("verbose") != NOSTR;
 	if (verbose)
 		extra++;
-	if (hflag)
-		extra += 2;
 	top = (char **) salloc((t + extra) * sizeof *top);
 	ap = top;
 	*ap++ = "send-mail";
-	if (rflag != NOSTR) {
-		*ap++ = "-r";
-		*ap++ = rflag;
-	}
 	*ap++ = "-i";
 	if (metoo)
 		*ap++ = "-m";
 	if (verbose)
 		*ap++ = "-v";
-	if (hflag) {
-		*ap++ = "-h";
-		*ap++ = savestr(sprintf(hbuf, "%d", hflag));
-	}
 	while (n != NIL) {
 		if (n->n_type & GDEL) {
 			n = n->n_flink;
@@ -569,24 +556,6 @@ unpack(np)
 	}
 	*ap = NOSTR;
 	return(top);
-}
-
-/*
- * See if the user named himself as a destination
- * for outgoing mail.  If so, set the global flag
- * selfsent so that we avoid removing his mailbox.
- */
-
-mechk(names)
-	struct name *names;
-{
-	register struct name *np;
-
-	for (np = names; np != NIL; np = np->n_flink)
-		if ((np->n_type & GDEL) == 0 && equal(np->n_name, myname)) {
-			selfsent++;
-			return;
-		}
 }
 
 /*
