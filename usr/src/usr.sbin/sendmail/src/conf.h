@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.54 (Berkeley) %G%
+ *	@(#)conf.h	8.55 (Berkeley) %G%
  */
 
 /*
@@ -84,6 +84,21 @@
 */
 
 # define HASLSTAT	1	/* has lstat(2) call */
+
+/*
+**  General "standard C" defines.
+**
+**	These may be undone later, to cope with systems that claim to
+**	be Standard C but aren't.  Gcc is the biggest offender -- it
+**	doesn't realize that the library is part of the language.
+**
+**	Life would be much easier if we could get rid of this sort
+**	of bozo problems.
+*/
+
+#ifdef __STDC__
+# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+#endif
 
 /**********************************************************************
 **  Operating system configuration.
@@ -202,7 +217,6 @@
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # undef IDENTPROTO		/* TCP/IP implementation is broken */
 # undef SETPROCTITLE
 
@@ -336,6 +350,7 @@ typedef int		pid_t;
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# undef HASSETVBUF		/* don't actually have setvbuf(3) */
 # undef WEXITSTATUS
 # undef WIFEXITED
 # ifndef _PATH_SENDMAILCF
@@ -528,6 +543,43 @@ typedef int		pid_t;
 #endif
 
 
+/*
+**  Sequent DYNIX 3.2.0
+**
+**	From Jim Davis <jdavis@cs.arizona.edu>.
+*/
+
+#ifdef sequent
+# define BSD		1
+# define HASUNSETENV	1
+# define BSD4_3		1	/* to get signal() in conf.c */
+# define WAITUNION	1
+# define LA_TYPE	LA_FLOAT
+# ifdef	_POSIX_VERSION
+#  undef _POSIX_VERSION		/* set in <unistd.h> */
+# endif
+# undef HASSETVBUF		/* don't actually have setvbuf(3) */
+# define setpgid	setpgrp
+
+/* Have to redefine WIFEXITED to take an int, to work with waitfor() */
+# undef	WIFEXITED
+# define WIFEXITED(s)	(((union wait*)&(s))->w_stopval != WSTOPPED && \
+			 ((union wait*)&(s))->w_termsig == 0)
+# define WEXITSTATUS(s)	(((union wait*)&(s))->w_retcode)
+typedef int		pid_t;
+# define isgraph(c)	(isprint(c) && (c != ' '))
+
+# ifndef _PATH_UNIX
+#  define _PATH_UNIX	"/dynix"
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+
+#endif
+
+
+
 
 /**********************************************************************
 **  End of Per-Operating System defines
@@ -551,6 +603,7 @@ typedef int		pid_t;
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
+# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_INT
 # endif
@@ -558,11 +611,6 @@ typedef int		pid_t;
 # define bzero(d, l)		(memset((d), '\0', (l)))
 # define bcmp(s, d, l)		(memcmp((s), (d), (l)))
 # endif
-
-/* general "standard C" defines */
-#if (defined(__STDC__) && !defined(MACH386)) || defined(SYSTEM5)
-# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
-#endif
 
 /* general POSIX defines */
 #ifdef _POSIX_VERSION
