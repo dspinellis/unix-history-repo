@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)df.c	4.10 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)df.c	4.11 %G%";
+#endif
 
 #include <stdio.h>
 #include <fstab.h>
