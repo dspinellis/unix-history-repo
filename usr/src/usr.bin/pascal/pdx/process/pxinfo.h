@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pxinfo.h	5.2 (Berkeley) %G%
+ *	@(#)pxinfo.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -15,10 +15,10 @@
  *	address of the display pointer
  *	address of the beginning of the object code
  *
- *	the address of a variable containing the address of the first local
- *		variable in the interpreter procedure
- *		(this is used to find the frame where the pc is)
- *	the address of the main interpreter loop
+ *	the address of the program counter used in the interpreter procedure
+ *		(px actually keeps the pc in a register if it can, but stores
+ *		 it in this location each time around the interpreter loop.)
+ *	the address of the main interpreter loop (past the store of pc)
  */
 
 #ifdef tahoe
@@ -29,7 +29,7 @@ typedef struct {
 	ADDRESS *disp;
 	ADDRESS *dp;
 	ADDRESS objstart;
-	ADDRESS pcaddrp;
+	ADDRESS pcaddr;
 	ADDRESS loopaddr;
 } TRAPARGS;
 #else
@@ -38,7 +38,7 @@ typedef struct {
 	ADDRESS *disp;
 	ADDRESS *dp;
 	ADDRESS objstart;
-	ADDRESS pcaddrp;
+	ADDRESS pcaddr;
 	ADDRESS loopaddr;
 } TRAPARGS;
 #endif
@@ -46,9 +46,8 @@ typedef struct {
 ADDRESS *DISPLAY;
 ADDRESS *DP;
 ADDRESS ENDOFF;
-ADDRESS PCADDRP;
+ADDRESS PCADDR;
 ADDRESS LOOPADDR;
-ADDRESS *pcframe;
 #ifdef tahoe
 ADDRESS RETLOC;
 ADDRESS INTFP;

@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
-SCCSID = "@(#)Makefile 5.5 %G%"
+SCCSID = "@(#)Makefile 5.6 %G%"
 
 DESTDIR =
 BINDIR = /usr/ucb
@@ -13,9 +13,9 @@ LIBDIR = /usr/lib
 SRCDIR = ../src
 LIBPCDIR = ../../../usr.lib/libpc
 CC = cc
-CFLAGS = -O -I${SRCDIR} -I${LIBPCDIR}
-OPT = /lib/c2
-AS = as
+CFLAGS = -O ${INCLUDES}
+INCLUDES = -I${SRCDIR} -I${LIBPCDIR}
+LINTFLAGS = -hbxc
 RM = rm -f
 
 PSHDR =	opc.c pic.c
@@ -26,24 +26,22 @@ PXSRC =	int.c interp.c utilities.c
 
 PXOBJ =	int.o interp.o utilities.o
 
-PXUTL =	${MACHINE}.sed clean.sed version.c
+PXUTL =	version.c
 
 .c.o:
 	${CC} ${CFLAGS} -c $*.c
 
 px: Version.c ${PXOBJ}
 	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} -lpc -lm
+
+lint: Version.c ${PXSRC}
+	lint ${LINTFLAGS} ${INCLUDES} Version.c ${PXSRC} -lpc -lm
+
 Version.c: version.c
 	${CC} ${CFLAGS} -o version version.c
 	./version >Version.c
 	${RM}  version
-interp.o interp.s: interp.c ${MACHINE}.sed
-	${CC} -S -I${SRCDIR} -I${LIBPCDIR} interp.c
-	sed -f ${MACHINE}.sed <interp.s >tmp
-	${OPT} tmp interp.s
-	/usr/lib/pc2 <interp.s >tmp
-	mv tmp interp.s
-	as -o interp.o interp.s
+
 h02opcs.h: ${SRCDIR}/OPnames.h opc.c
 	${CC} ${CFLAGS} opc.c -o opc
 	./opc >h02opcs.h
@@ -60,11 +58,8 @@ clean:
 	${RM} *.o *.s px version opc* pic*
 	${RM} h02opcs.h errs lpr core tmp
 
-prt: interp.s
-	sed -f clean.sed <interp.s
-
 grind: sources
-	${BINDIR}/ctags -v *.h *.c *.s | sort -f >index
+	${BINDIR}/ctags -v *.h *.c | sort -f >index
 	${BINDIR}/vgrind -t -x index >lpr
 	${CC} ${CFLAGS} -o pic pic.c
 	${BINDIR}/vgrind -t -n READ_ME Makefile lst >>lpr
@@ -98,6 +93,7 @@ depend:	sources
 Version.o: Version.c
 int.o: int.c
 interp.o: interp.c
+opc.o: opc.c
 utilities.o: utilities.c
 version.o: version.c
 int.o: whoami.h
@@ -110,6 +106,7 @@ interp.o: ../src/objfmt.h
 interp.o: h02opcs.h
 interp.o: machdep.h
 interp.o: ../../../usr.lib/libpc/libpc.h
+opc.o: ../src/OPnames.h
 utilities.o: whoami.h
 utilities.o: vars.h
 utilities.o: ../src/objfmt.h

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vars.h	5.2 (Berkeley) %G%
+ *	@(#)vars.h	5.3 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -92,11 +92,6 @@ extern liberr();
 struct sze8 {
 	char element[8];
 };
-extern short pop2();
-extern long pop4();
-extern double pop8();
-extern struct sze8 popsze8();
-extern char *pushsp();
 
 /*
  * emulated pc types
@@ -109,6 +104,7 @@ union progcntr {
 	long *lp;
 	double *dbp;
 	struct hdr *hdrp;
+	struct sze8 *s8p;
 };
 
 /*

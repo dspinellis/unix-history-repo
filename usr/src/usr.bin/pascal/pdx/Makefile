@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.19 (Berkeley) %G%
+#	@(#)Makefile	1.20 (Berkeley) %G%
 #
 # make file for pdx
 #
@@ -145,13 +145,15 @@ OBJS =\
 	${PROCOBJ}\
 	${MACHOBJ}
 
+all: a.out
+
 a.out: ${OBJS} ${LIB}
 	@echo "linking"
-	@cc ${LDFLAGS} ${OBJS} ${LIB}
+	@$(CC) ${LDFLAGS} ${OBJS} ${LIB}
 
 profile: ${OBJS}
 	@echo "linking with -p"
-	@cc ${LDFLAGS} -p ${OBJS} ${LIB}
+	@$(CC) ${LDFLAGS} -p ${OBJS} ${LIB}
 
 lint:
 	@cd ${COMMAND}; yacc -d grammar.yacc; lex token.lex
@@ -160,14 +162,14 @@ lint:
 
 cerror.o:
 	@echo "assembling `machine`/$*.s"
-	@cc -c `machine`/$*.s
+	@$(CC) -c `machine`/$*.s
 
 ${COMMAND}y.tab.o: ${COMMAND}grammar.yacc
-	cd ${COMMAND}; yacc -d grammar.yacc; cc -c ${CFLAGS} y.tab.c
+	cd ${COMMAND}; yacc -d grammar.yacc; $(CC) -c ${CFLAGS} y.tab.c
 	${RM} ${COMMAND}y.tab.c
 
 ${COMMAND}lex.yy.o: ${COMMAND}token.lex ${COMMAND}y.tab.h
-	cd ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
+	cd ${COMMAND}; lex token.lex; $(CC) -c ${CFLAGS} lex.yy.c
 	${RM} ${COMMAND}lex.yy.c
 
 ${BPOBJ}:	${BREAKPOINT}bp.rep

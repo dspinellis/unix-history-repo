@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)interp.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <math.h>
@@ -98,11 +98,15 @@ struct iorec	*_actfile[MAXFILES] = {
 };
 
 /*
- * stuff for pdx
+ * stuff for pdx to watch what the interpreter is doing.
+ * The .globl is #ifndef DBX since it breaks DBX to have a global
+ * asm label in the middle of a function (see _loopaddr: below).
  */
 
-union progcntr *pcaddrp;
+union progcntr pdx_pc;
+#ifndef DBX
 asm(".globl _loopaddr");
+#endif DBX
 
 /*
  * Px profile array
@@ -119,11 +123,11 @@ char opc[10];
 long opcptr = 9;
 #endif PXDEBUG
 
+void
 interpreter(base)
 	char *base;
 {
-	union progcntr pc;		/* interpreted program cntr */
-	register char *vpc;		/* register used for "pc" */
+	/* register */ union progcntr pc;	/* interpreted program cntr */
 	struct iorec *curfile;		/* active file */
 	register struct blockmark *stp;	/* active stack frame ptr */
 	/*
@@ -132,6 +136,8 @@ interpreter(base)
 	register char *tcp;
 	register short *tsp;
 	register long tl, tl1, tl2, tl3;
+	char *tcp2;
+	long tl4;
 	double td, td1;
 	struct sze8 t8;
 	register short *tsp1;
@@ -140,19 +146,21 @@ interpreter(base)
 	bool tb;
 	struct blockmark *tstp;
 	register struct formalrtn *tfp;
-	union progcntr tpc;
 	struct iorec **ip;
 	int mypid;
+	int ti, ti2;
+	short ts;
+	FILE *tf;
+	/* register */ union progcntr stack;	/* Interpreted stack */
 
-	pcaddrp = &pc;
 	mypid = getpid();
 
 	/*
 	 * Setup sets up any hardware specific parameters before
-	 * starting the interpreter. Typically this is inline replaced
-	 * by interp.sed to utilize specific machine instructions.
+	 * starting the interpreter. Typically this is macro- or inline-
+	 * replaced by "machdep.h" or interp.sed.
 	 */
-	 setup();
+	setup();
 	/*
 	 * necessary only on systems which do not initialize
 	 * memory to zero
@@ -172,7 +180,6 @@ interpreter(base)
 	_dp = &_display.frame[0];
 	pc.cp = base;
 
-	asm("_loopaddr:");
 	for(;;) {
 #		ifdef PXDEBUG
 		if (++opcptr == 10)
@@ -182,6 +189,24 @@ interpreter(base)
 #		ifdef PROFILE
 		_profcnts[*pc.ucp]++;
 #		endif PROFILE
+
+		/*
+		 * Save away the program counter to a fixed location for pdx.
+		 */
+		pdx_pc = pc;
+
+		/*
+		 * Having the label below makes dbx not work
+		 * to debug this interpreter,
+		 * since it thinks a new function called loopaddr()
+		 * has started here, and it won't display the local
+		 * variables of interpreter().  You have to compile
+		 * -DDBX to avoid this problem...
+		 */
+#		ifndef DBX
+	;asm("_loopaddr:");
+#		endif DBX
+
 		switch (*pc.ucp++) {
 		case O_BPT:			/* breakpoint trap */
 			PFLUSH();
@@ -836,15 +861,18 @@ interpreter(base)
 			continue;
 		case O_NEG2:
 			pc.cp++;
-			push4((long)(-pop2()));
+			ts = -pop2();
+			push4((long)ts);
 			continue;
 		case O_NEG4:
 			pc.cp++;
-			push4(-pop4());
+			tl = -pop4();
+			push4(tl);
 			continue;
 		case O_NEG8:
 			pc.cp++;
-			push8(-pop8());
+			td = -pop8();
+			push8(td);
 			continue;
 		case O_DIV2:
 			pc.cp++;
@@ -920,7 +948,8 @@ interpreter(base)
 			continue;
 		case O_STOI:
 			pc.cp++;
-			push4((long)(pop2()));
+			ts = pop2();
+			push4((long)ts);
 			continue;
 		case O_STOD:
 			pc.cp++;
@@ -934,7 +963,8 @@ interpreter(base)
 			continue;
 		case O_ITOS:
 			pc.cp++;
-			push2((short)(pop4()));
+			tl = pop4();
+			push2((short)tl);
 			continue;
 		case O_DVD2:
 			pc.cp++;
@@ -1066,27 +1096,33 @@ interpreter(base)
 			continue;
 		case O_IND1:
 			pc.cp++;
-			push2((short)(*popaddr()));
+			ts = *popaddr();
+			push2(ts);
 			continue;
 		case O_IND14:
 			pc.cp++;
-			push4((long)(*popaddr()));
+			ti = *popaddr();
+			push4((long)ti);
 			continue;
 		case O_IND2:
 			pc.cp++;
-			push2(*(short *)(popaddr()));
+			ts = *(short *)(popaddr());
+			push2(ts);
 			continue;
 		case O_IND24:
 			pc.cp++;
-			push4((long)(*(short *)(popaddr())));
+			ts = *(short *)(popaddr());
+			push4((long)ts);
 			continue;
 		case O_IND4:
 			pc.cp++;
-			push4(*(long *)(popaddr()));
+			tl = *(long *)(popaddr());
+			push4(tl);
 			continue;
 		case O_IND8:
 			pc.cp++;
-			pushsze8(*(struct sze8 *)(popaddr()));
+			t8 = *(struct sze8 *)(popaddr());
+			pushsze8(t8);
 			continue;
 		case O_IND:
 			tl = *pc.cp++;
@@ -1208,13 +1244,14 @@ interpreter(base)
 			continue;
 		case O_STLIM:
 			pc.cp++;
-			STLIM();
-			popsp((long)(sizeof(long)));
+			tl = pop4();
+			STLIM(tl);
 			continue;
 		case O_LLIMIT:
 			pc.cp++;
-			LLIMIT();
-			popsp((long)(sizeof(char *)+sizeof(long)));
+			tcp = popaddr();
+			tl = pop4();
+			LLIMIT(tcp, tl);
 			continue;
 		case O_BUFF:
 			BUFF((long)(*pc.cp++));
@@ -1320,10 +1357,15 @@ interpreter(base)
 			tl = *pc.cp++;		/* tl has number of args */
 			if (tl == 0)
 				tl = *pc.usp++;
-			tl1 = tl * sizeof(long);
+			tl1 = tl * sizeof(long);	/* Size of all args */
 			tcp = pushsp((long)(0)) + tl1; /* tcp pts to result */
-			CTTOT(tcp);
-			popsp(tl*sizeof(long));
+			tl1 = pop4();		/* Pop the 4 fixed args */
+			tl2 = pop4();
+			tl3 = pop4();
+			tl4 = pop4();
+			tcp2 = pushsp((long)0);	/* tcp2 -> data values */
+			CTTOTA(tcp, tl1, tl2, tl3, tl4, tcp2);
+			popsp(tl*sizeof(long) - 4*sizeof(long)); /* Pop data */
 			continue;
 		case O_CARD:
 			tl = *pc.cp++;		/* tl has comparison length */
@@ -1440,50 +1482,47 @@ interpreter(base)
 			continue;
 		case O_EOF:
 			pc.cp++;
-			push2((short)(TEOF(popaddr())));
+			tcp = popaddr();
+			push2((short)(TEOF(tcp)));
 			continue;
 		case O_EOLN:
 			pc.cp++;
-			push2((short)(TEOLN(popaddr())));
+			tcp = popaddr();
+			push2((short)(TEOLN(tcp)));
 			continue;
 		case O_WRITEC:
+			pc.cp++;
+			ti = popint();
+			tf = popfile();
 			if (_runtst) {
-				WRITEC(curfile);
-				popsp((long)(*pc.cp++));
+				WRITEC(curfile, ti, tf);
 				continue;
 			}
-			tl = *pc.cp++;
-			switch (tl - sizeof(FILE *)) {
-			case 2:
-				tl1 = pop2();
-				break;
-			case 4:
-				tl1 = pop4();
-				break;
-			default:
-				ERROR("Panic: bad size to O_WRITEC");
-				/* NOT REACHED */
-			}
-			tcp = popaddr();
-			fputc(tl1, tcp);
+			fputc(ti, tf);
 			continue;
 		case O_WRITES:
+			pc.cp++;		/* Skip arg size */
+			tf = popfile();
+			ti = popint();
+			ti2 = popint();
+			tcp2 = popaddr();
 			if (_runtst) {
-				WRITES(curfile);
-				popsp((long)(*pc.cp++));
+				WRITES(curfile, tf, ti, ti2, tcp2);
 				continue;
 			}
-			fwrite();
-			popsp((long)(*pc.cp++));
+			fwrite(tf, ti, ti2, tcp2);
 			continue;
 		case O_WRITEF:
+			tf = popfile();
+			tcp = popaddr();
+			tcp2 = pushsp((long)0);	/* Addr of printf's args */
 			if (_runtst) {
-				WRITEF(curfile);
-				popsp((long)(*pc.cp++));
-				continue;
+				VWRITEF(curfile, tf, tcp, tcp2);
+			} else {
+				vfprintf(tf, tcp, tcp2);
 			}
-			fprintf();
-			popsp((long)(*pc.cp++));
+			popsp((long)
+			    (*pc.cp++) - (sizeof (FILE *)) - sizeof (char *));
 			continue;
 		case O_WRITLN:
 			pc.cp++;
@@ -1554,22 +1593,32 @@ interpreter(base)
 			continue;
 		case O_FNIL:
 			pc.cp++;
-			pushaddr(FNIL(popaddr()));
+			tcp = popaddr();
+			pushaddr(FNIL(tcp));
 			continue;
 		case O_DEFNAME:
 			pc.cp++;
-			DEFNAME();
-			popsp((long)(2*sizeof(char *)+2*sizeof(long)));
+			tcp2 = popaddr();
+			tcp = popaddr();
+			tl = pop4();
+			tl2 = pop4();
+			DEFNAME((struct iorec *)tcp2, tcp, tl, tl2);
 			continue;
 		case O_RESET:
 			pc.cp++;
-			RESET();
-			popsp((long)(2*sizeof(char *)+2*sizeof(long)));
+			tcp2 = popaddr();
+			tcp = popaddr();
+			tl = pop4();
+			tl2 = pop4();
+			RESET((struct iorec *)tcp2, tcp, tl, tl2);
 			continue;
 		case O_REWRITE:
 			pc.cp++;
-			REWRITE();
-			popsp((long)(2*sizeof(char *)+2*sizeof(long)));
+			tcp2 = popaddr();
+			tcp = popaddr();
+			tl = pop4();
+			tl2 = pop4();
+			REWRITE((struct iorec *)tcp2, tcp, tl, tl2);
 			continue;
 		case O_FILE:
 			pc.cp++;
@@ -1577,23 +1626,36 @@ interpreter(base)
 			continue;
 		case O_REMOVE:
 			pc.cp++;
-			REMOVE();
-			popsp((long)(sizeof(char *)+sizeof(long)));
+			tcp = popaddr();
+			tl = pop4();
+			REMOVE(tcp, tl);
 			continue;
 		case O_FLUSH:
 			pc.cp++;
-			FLUSH();
-			popsp((long)(sizeof(char *)));
+			tcp = popaddr();
+			FLUSH((struct iorec *)tcp);
 			continue;
 		case O_PACK:
 			pc.cp++;
-			PACK();
-			popsp((long)(5*sizeof(long)+2*sizeof(char*)));
+			tl = pop4();
+			tcp = popaddr();
+			tcp2 = popaddr();
+			tl1 = pop4();
+			tl2 = pop4();
+			tl3 = pop4();
+			tl4 = pop4();
+			PACK(tl, tcp, tcp2, tl1, tl2, tl3, tl4);
 			continue;
 		case O_UNPACK:
 			pc.cp++;
-			UNPACK();
-			popsp((long)(5*sizeof(long)+2*sizeof(char*)));
+			tl = pop4();
+			tcp = popaddr();
+			tcp2 = popaddr();
+			tl1 = pop4();
+			tl2 = pop4();
+			tl3 = pop4();
+			tl4 = pop4();
+			UNPACK(tl, tcp, tcp2, tl1, tl2, tl3, tl4);
 			continue;
 		case O_ARGC:
 			pc.cp++;
@@ -1660,60 +1722,67 @@ interpreter(base)
 			continue;
 		case O_ATAN:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(ATAN(pop8()));
+				push8(ATAN(td));
 				continue;
 			}
-			push8(atan(pop8()));
+			push8(atan(td));
 			continue;
 		case O_COS:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(COS(pop8()));
+				push8(COS(td));
 				continue;
 			}
-			push8(cos(pop8()));
+			push8(cos(td));
 			continue;
 		case O_EXP:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(EXP(pop8()));
+				push8(EXP(td));
 				continue;
 			}
-			push8(exp(pop8()));
+			push8(exp(td));
 			continue;
 		case O_LN:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(LN(pop8()));
+				push8(LN(td));
 				continue;
 			}
-			push8(log(pop8()));
+			push8(log(td));
 			continue;
 		case O_SIN:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(SIN(pop8()));
+				push8(SIN(td));
 				continue;
 			}
-			push8(sin(pop8()));
+			push8(sin(td));
 			continue;
 		case O_SQRT:
 			pc.cp++;
+			td = pop8();
 			if (_runtst) {
-				push8(SQRT(pop8()));
+				push8(SQRT(td));
 				continue;
 			}
-			push8(sqrt(pop8()));
+			push8(sqrt(td));
 			continue;
 		case O_CHR2:
 		case O_CHR4:
 			pc.cp++;
+			tl = pop4();
 			if (_runtst) {
-				push2((short)(CHR(pop4())));
+				push2((short)(CHR(tl)));
 				continue;
 			}
-			push2((short)(pop4()));
+			push2((short)tl);
 			continue;
 		case O_ODD2:
 		case O_ODD4:
@@ -1797,15 +1866,18 @@ interpreter(base)
 			continue;
 		case O_SEED:
 			pc.cp++;
-			push4(SEED(pop4()));
+			tl = pop4();
+			push4(SEED(tl));
 			continue;
 		case O_RANDOM:
 			pc.cp++;
-			push8(RANDOM(pop8()));
+			td = pop8();		/* Argument is ignored */
+			push8(RANDOM());
 			continue;
 		case O_EXPO:
 			pc.cp++;
-			push4(EXPO(pop8()));
+			td = pop8();
+			push4(EXPO(td));
 			continue;
 		case O_SQR2:
 		case O_SQR4:
@@ -1820,11 +1892,13 @@ interpreter(base)
 			continue;
 		case O_ROUND:
 			pc.cp++;
-			push4(ROUND(pop8()));
+			td = pop8();
+			push4(ROUND(td));
 			continue;
 		case O_TRUNC:
 			pc.cp++;
-			push4(TRUNC(pop8()));
+			td = pop8();
+			push4(TRUNC(td));
 			continue;
 		default:
 			ERROR("Panic: bad op code\n");
