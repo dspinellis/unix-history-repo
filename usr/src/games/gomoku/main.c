@@ -15,15 +15,16 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <curses.h>
+#include <err.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
-#include <curses.h>
-#include <err.h>
+#include <unistd.h>
 
 #include "gomoku.h"
 

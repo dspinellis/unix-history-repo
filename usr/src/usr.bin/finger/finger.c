@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,16 +29,19 @@ static char sccsid[] = "@(#)finger.c	8.4 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <fcntl.h>
-#include <time.h>
-#include <pwd.h>
-#include <utmp.h>
+
+#include <db.h>
+#include <err.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <db.h>
-#include <err.h>
+#include <time.h>
+#include <unistd.h>
+#include <utmp.h>
+
 #include "finger.h"
 
 DB *db;

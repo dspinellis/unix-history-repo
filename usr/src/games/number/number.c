@@ -12,16 +12,17 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)number.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)number.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <err.h>
+#include <unistd.h>
 
 #define	MAXNUM		65		/* Biggest number we handle. */
 
