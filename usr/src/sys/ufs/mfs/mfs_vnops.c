@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,7 @@
 #include "errno.h"
 #include "map.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
+#include "../ufs/mfsnode.h"
 #include "../ufs/mfsiom.h"
 #include "../machine/vmparam.h"
 #include "../machine/pte.h"
@@ -44,7 +44,7 @@ int	mfs_open(),
 	mfs_strategy(),
 	mfs_ioctl(),
 	mfs_close(),
-	ufs_inactive(),
+	mfs_inactive(),
 	mfs_badop(),
 	mfs_nullop();
 
@@ -73,7 +73,8 @@ struct vnodeops mfs_vnodeops = {
 	mfs_badop,
 	mfs_badop,
 	mfs_badop,
-	ufs_inactive,
+	mfs_inactive,
+	mfs_nullop,
 	mfs_badop,
 	mfs_badop,
 	mfs_badop,
@@ -93,14 +94,11 @@ mfs_open(vp, mode, cred)
 	int mode;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_type != VBLK) {
 		panic("mfs_ioctl not VBLK");
 		/* NOTREACHED */
 	}
-	ip->i_uid = u.u_procp->p_pid;
-	ip->i_spare[0] = 0;
 	return (0);
 }
 
@@ -125,14 +123,13 @@ mfs_ioctl(vp, com, data, fflag, cred)
 mfs_strategy(bp)
 	register struct buf *bp;
 {
-	register struct inode *ip = VTOI(bp->b_vp);
-	int error;
+	register struct mfsnode *mfsp = VTOMFS(bp->b_vp);
 
-	if (ip->i_uid == u.u_procp->p_pid) {
-		mfs_doio(bp, (caddr_t)ip->i_diroff);
+	if (mfsp->mfs_pid == u.u_procp->p_pid) {
+		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
-		bp->av_forw = (struct buf *)ip->i_spare[0];
-		ip->i_spare[0] = (long)bp;
+		bp->av_forw = mfsp->mfs_buflist;
+		mfsp->mfs_buflist = bp;
 		wakeup((caddr_t)bp->b_vp);
 	}
 	return (0);
@@ -222,7 +219,7 @@ mfs_close(vp, flag, cred)
 	int flag;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
+	register struct mfsnode *mfsp = VTOMFS(vp);
 
 	/*
 	 * On last close of a memory filesystem
@@ -247,10 +244,24 @@ mfs_close(vp, flag, cred)
 	/*
 	 * Send a request to the filesystem server to exit.
 	 */
-	while (ip->i_spare[0])
+	while (mfsp->mfs_buflist)
 		sleep(&lbolt);
-	ip->i_spare[0] = -1;
+	mfsp->mfs_buflist = (struct buf *)(-1);
 	wakeup((caddr_t)vp);
+	return (0);
+}
+
+/*
+ * Memory filesystem inactive routine
+ */
+/* ARGSUSED */
+mfs_inactive(vp)
+	struct vnode *vp;
+{
+
+	if (VTOMFS(vp)->mfs_buflist != (struct buf *)(-1))
+		panic("mfs_inactive: not inactive");
+	vp->v_type = VNON;
 	return (0);
 }
 
@@ -260,8 +271,8 @@ mfs_close(vp, flag, cred)
 mfs_badop()
 {
 
-	printf("mfs_badop called\n");
-	return (ENXIO);
+	panic("mfs_badop called\n");
+	/* NOTREACHED */
 }
 
 /*
