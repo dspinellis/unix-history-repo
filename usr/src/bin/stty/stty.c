@@ -11,569 +11,675 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
  * set teletype modes
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/syslog.h>
+#define KERNEL
+#include <sys/tty.h>
+#undef KERNEL
+#include <sys/termios.h>
+#include <sys/file.h>
+#include <errno.h>
+#include <ctype.h>
 #include <stdio.h>
-#include "pathnames.h"
 
-struct
-{
-	char	*string;
-	int	speed;
-} speeds[] = {
-	"0",	B0,
-	"50",	B50,
-	"75",	B75,
-	"110",	B110,
-	"134",	B134,
-	"134.5",B134,
-	"150",	B150,
-	"200",	B200,
-	"300",	B300,
-	"600",	B600,
-	"1200",	B1200,
-	"1800",	B1800,
-	"2400",	B2400,
-	"4800",	B4800,
-	"9600",	B9600,
-	"exta",	EXTA,
-	"19200", EXTA,
-	"extb",	EXTB,
-	"38400", EXTB,
-	0,
-};
-struct
-{
-	char	*string;
-	int	set;
-	int	reset;
-	int	lset;
-	int	lreset;
-} modes[] = {
-	"even",		EVENP, 0, 0, 0,
-	"-even",	0, EVENP, 0, 0,
-	"odd",		ODDP, 0, 0, 0,
-	"-odd",		0, ODDP, 0, 0,
-	"raw",		RAW, 0, 0, 0,
-	"-raw",		0, RAW, 0, 0,
-	"cooked",	0, RAW, 0, 0,
-	"-nl",		CRMOD, 0, 0, 0,
-	"nl",		0, CRMOD, 0, 0,
-	"echo",		ECHO, 0, 0, 0,
-	"-echo",	0, ECHO, 0, 0,
-	"LCASE",	LCASE, 0, 0, 0,
-	"lcase",	LCASE, 0, 0, 0,
-	"-LCASE",	0, LCASE, 0, 0,
-	"-lcase",	0, LCASE, 0, 0,
-	"-tabs",	XTABS, 0, 0, 0,
-	"tabs",		0, XTABS, 0, 0,
-	"tandem",	TANDEM, 0, 0, 0,
-	"-tandem",	0, TANDEM, 0, 0,
-	"cbreak",	CBREAK, 0, 0, 0,
-	"-cbreak",	0, CBREAK, 0, 0,
-	"cr0",		CR0, CR3, 0, 0,
-	"cr1",		CR1, CR3, 0, 0,
-	"cr2",		CR2, CR3, 0, 0,
-	"cr3",		CR3, CR3, 0, 0,
-	"tab0",		TAB0, XTABS, 0, 0,
-	"tab1",		TAB1, XTABS, 0, 0,
-	"tab2",		TAB2, XTABS, 0, 0,
-	"nl0",		NL0, NL3, 0, 0,
-	"nl1",		NL1, NL3, 0, 0,
-	"nl2",		NL2, NL3, 0, 0,
-	"nl3",		NL3, NL3, 0, 0,
-	"ff0",		FF0, FF1, 0, 0,
-	"ff1",		FF1, FF1, 0, 0,
-	"bs0",		BS0, BS1, 0, 0,
-	"bs1",		BS1, BS1, 0, 0,
-	"33",		CR1, ALLDELAY, 0, 0,
-	"tty33",	CR1, ALLDELAY, 0, 0,
-	"37",		FF1+CR2+TAB1+NL1, ALLDELAY, 0, 0,
-	"tty37",	FF1+CR2+TAB1+NL1, ALLDELAY, 0, 0,
-	"05",		NL2, ALLDELAY, 0, 0,
-	"vt05",		NL2, ALLDELAY, 0, 0,
-	"tn",		CR1, ALLDELAY, 0, 0,
-	"tn300",	CR1, ALLDELAY, 0, 0,
-	"ti",		CR2, ALLDELAY, 0, 0,
-	"ti700",	CR2, ALLDELAY, 0, 0,
-	"tek",		FF1, ALLDELAY, 0, 0,
-	"crtbs",	0, 0, LCRTBS, LPRTERA,
-	"-crtbs",	0, 0, 0, LCRTBS,
-	"prterase",	0, 0, LPRTERA, LCRTBS+LCRTKIL+LCRTERA,
-	"-prterase",	0, 0, 0, LPRTERA,
-	"crterase",	0, 0, LCRTERA, LPRTERA,
-	"-crterase",	0, 0, 0, LCRTERA,
-	"crtkill",	0, 0, LCRTKIL, LPRTERA,
-	"-crtkill",	0, 0, 0, LCRTKIL,
-	"tilde",	0, 0, LTILDE, 0,
-	"-tilde",	0, 0, 0, LTILDE,
-	"mdmbuf",	0, 0, LMDMBUF, 0,
-	"-mdmbuf",	0, 0, 0, LMDMBUF,
-	"litout",	0, 0, LLITOUT, 0,
-	"-litout",	0, 0, 0, LLITOUT,
-	"pass8",	0, 0, LPASS8, 0,
-	"-pass8",	0, 0, 0, LPASS8,
-	"tostop",	0, 0, LTOSTOP, 0,
-	"-tostop",	0, 0, 0, LTOSTOP,
-	"flusho",	0, 0, LFLUSHO, 0,
-	"-flusho",	0, 0, 0, LFLUSHO,
-	"nohang",	0, 0, LNOHANG, 0,
-	"-nohang",	0, 0, 0, LNOHANG,
-#ifdef notdef
-	"etxack",	0, 0, LETXACK, 0,
-	"-etxack",	0, 0, 0, LETXACK,
+#ifndef STATIC
+#define STATIC
 #endif
-	"ctlecho",	0, 0, LCTLECH, 0,
-	"-ctlecho",	0, 0, 0, LCTLECH,
-	"pendin",	0, 0, LPENDIN, 0,
-	"-pendin",	0, 0, 0, LPENDIN,
-	"decctlq",	0, 0, LDECCTQ, 0,
-	"-decctlq",	0, 0, 0, LDECCTQ,
-	"noflsh",	0, 0, LNOFLSH, 0,
-	"-noflsh",	0, 0, 0, LNOFLSH,
-	0,
+
+#define eq(s1, s2)	(strcmp(s1, s2) == 0)
+#define WRAPCOL 65
+#define COMPAT_43
+
+STATIC struct modes {
+	char *name;
+	long set;
+	long unset;
 };
 
-struct tchars tc;
-struct ltchars ltc;
-struct sgttyb mode;
-struct winsize win;
-int	lmode;
-int	oldisc, ldisc;
-
-struct	special {
-	char	*name;
-	char	*cp;
-	char	def;
-} special[] = {
-	"erase",	&mode.sg_erase,		CERASE,
-	"kill",		&mode.sg_kill,		CKILL,
-	"intr",		&tc.t_intrc,		CINTR,
-	"quit",		&tc.t_quitc,		CQUIT,
-	"start",	&tc.t_startc,		CSTART,
-	"stop",		&tc.t_stopc,		CSTOP,
-	"eof",		&tc.t_eofc,		CEOF,
-	"brk",		&tc.t_brkc,		CBRK,
-	"susp",		&ltc.t_suspc,		CSUSP,
-	"dsusp",	&ltc.t_dsuspc,		CDSUSP,
-	"rprnt",	&ltc.t_rprntc,		CRPRNT,
-	"flush",	&ltc.t_flushc,		CFLUSH,
-	"werase",	&ltc.t_werasc,		CWERASE,
-	"lnext",	&ltc.t_lnextc,		CLNEXT,
+STATIC struct modes imodes[] = {
+	"ignbrk",	IGNBRK, 0,
+	"-ignbrk",	0, IGNBRK,
+	"brkint",	BRKINT, 0,
+	"-brkint",	0, BRKINT,
+	"ignpar",	IGNPAR, 0,
+	"-ignpar",	0, IGNPAR,
+	"parmrk",	PARMRK, 0,
+	"-parmrk",	0, PARMRK,
+	"inpck",	INPCK, 0,
+	"-inpck",	0, INPCK,
+	"istrip",	ISTRIP, 0,
+	"-istrip",	0, ISTRIP,
+	"inlcr",	INLCR, 0,
+	"-inlcr",	0, INLCR,
+	"igncr",	IGNCR, 0,
+	"-igncr",	0, IGNCR,
+	"icrnl",	ICRNL, 0,
+	"-icrnl",	0, ICRNL,
+	"ixon",		IXON, 0,
+	"-ixon",	0, IXON,
+	"flow",		IXON, 0,
+	"-flow",	0, IXON,
+	"ixoff",	IXOFF, 0,
+	"-ixoff",	0, IXOFF,
+	"tandem",	IXOFF, 0,
+	"-tandem",	0, IXOFF,
+	"ixany",	IXANY, 0,
+	"-ixany",	0, IXANY,
+	"decctlq",	0, IXANY,
+	"-decctlq",	IXANY, 0,
+	"imaxbel",	IMAXBEL, 0,
+	"-imaxbel",	0, IMAXBEL,
 	0
 };
-char	*arg;
 
-int	argc;
-char	**argv;
-main(iargc, iargv)
-char	**iargv;
-{
-	int i;
-	register struct special *sp;
-	char obuf[BUFSIZ];
-
-	setbuf(stderr, obuf);
-	argc = iargc;
-	argv = iargv;
-	ioctl(1, TIOCGETP, &mode);
-	ioctl(1, TIOCGETD, &ldisc);
-	oldisc = ldisc;
-	ioctl(1, TIOCGETC, &tc);
-	ioctl(1, TIOCLGET, &lmode);
-	ioctl(1, TIOCGLTC, &ltc);
-	ioctl(1, TIOCGWINSZ, &win);
-	if(argc == 1) {
-		prmodes(0);
-		exit(0);
-	}
-	if (argc == 2 && !strcmp(argv[1], "all")) {
-		prmodes(1);
-		exit(0);
-	}
-	if (argc == 2 && !strcmp(argv[1], "everything")) {
-		prmodes(2);
-		exit(0);
-	}
-/*
-	if (argc == 2 && !strcmp(argv[1], "all")) {
-		prmodes(2);
-		exit(0);
-	}
-*/
-	while(--argc > 0) {
-		arg = *++argv;
-		if (eq("ek")){
-			mode.sg_erase = '#';
-			mode.sg_kill = '@';
-			continue;
-		}
-		if (eq("new")){
-			ldisc = NTTYDISC;
-			if (ioctl(1, TIOCSETD, &ldisc)<0)
-				perror("ioctl");
-			continue;
-		}
-		if (eq("newcrt")){
-			ldisc = NTTYDISC;
-			lmode &= ~LPRTERA;
-			lmode |= LCRTBS|LCTLECH;
-			if (mode.sg_ospeed >= B1200)
-				lmode |= LCRTERA|LCRTKIL;
-			if (ioctl(1, TIOCSETD, &ldisc)<0)
-				perror("ioctl");
-			continue;
-		}
-		if (eq("crt")){
-			lmode &= ~LPRTERA;
-			lmode |= LCRTBS|LCTLECH;
-			if (mode.sg_ospeed >= B1200)
-				lmode |= LCRTERA|LCRTKIL;
-			continue;
-		}
-		if (eq("old")){
-			ldisc = 0;
-			if (ioctl(1, TIOCSETD, &ldisc)<0)
-				perror("ioctl");
-			continue;
-		}
-		if (eq("dec")){
-			mode.sg_erase = 0177;
-			mode.sg_kill = CKILL;
-			tc.t_intrc = CINTR;
-			ldisc = NTTYDISC;
-			lmode &= ~LPRTERA;
-			lmode |= LCRTBS|LCTLECH|LDECCTQ;
-			if (mode.sg_ospeed >= B1200)
-				lmode |= LCRTERA|LCRTKIL;
-			if (ioctl(1, TIOCSETD, &ldisc)<0)
-				perror("ioctl");
-			continue;
-		}
-		for (sp = special; sp->name; sp++)
-			if (eq(sp->name)) {
-				if (--argc == 0)
-					goto done;
-				if (**++argv == 'u')
-					*sp->cp = 0377;
-				else if (**argv == '^')
-					*sp->cp = ((*argv)[1] == '?') ?
-					    0177 : (*argv)[1] & 037;
-				else
-					*sp->cp = **argv;
-				goto cont;
-			}
-		if (eq("gspeed")) {
-			mode.sg_ispeed = B300;
-			mode.sg_ospeed = B9600;
-			continue;
-		}
-		if (eq("hup")) {
-			ioctl(1, TIOCHPCL, NULL);
-			continue;
-		}
-		if (eq("rows")) {
-			if (--argc == 0)
-				goto done;
-			win.ws_row = atoi(*++argv);
-		}
-		if (eq("cols") || eq("columns")) {
-			if (--argc == 0)
-				goto done;
-			win.ws_col = atoi(*++argv);
-		}
-		if (eq("size")) {
-			ioctl(open(_PATH_DEVTTY, 0), TIOCGWINSZ, &win);
-			printf("%d %d\n", win.ws_row, win.ws_col);
-			exit(0);
-		}
-		for(i=0; speeds[i].string; i++)
-			if(eq(speeds[i].string)) {
-				mode.sg_ispeed = mode.sg_ospeed = speeds[i].speed;
-				goto cont;
-			}
-		if (eq("speed")) {
-			ioctl(open(_PATH_DEVTTY, 0), TIOCGETP, &mode);
-			for(i=0; speeds[i].string; i++)
-				if (mode.sg_ospeed == speeds[i].speed) {
-					printf("%s\n", speeds[i].string);
-					exit(0);
-				}
-			printf("unknown\n");
-			exit(1);
-		}
-		for(i=0; modes[i].string; i++)
-			if(eq(modes[i].string)) {
-				mode.sg_flags &= ~modes[i].reset;
-				mode.sg_flags |= modes[i].set;
-				lmode &= ~modes[i].lreset;
-				lmode |= modes[i].lset;
-			}
-		if(arg)
-			fprintf(stderr,"unknown mode: %s\n", arg);
-cont:
-		;
-	}
-done:
-	ioctl(1, TIOCSETN, &mode);
-	ioctl(1, TIOCSETC, &tc);
-	ioctl(1, TIOCSLTC, &ltc);
-	ioctl(1, TIOCLSET, &lmode);
-	ioctl(1, TIOCSWINSZ, &win);
-}
-
-eq(string)
-char *string;
-{
-	int i;
-
-	if(!arg)
-		return(0);
-	i = 0;
-loop:
-	if(arg[i] != string[i])
-		return(0);
-	if(arg[i++] != '\0')
-		goto loop;
-	arg = 0;
-	return(1);
-}
-
-prmodes(all)
-{
-	register m;
-	int any;
-
-	if(ldisc==NETLDISC)
-		fprintf(stderr, "net discipline, ");
-	else if(ldisc==NTTYDISC)
-		fprintf(stderr, "new tty, ");
-	else if(all==2)
-		fprintf(stderr, "old tty, ");
-	if(mode.sg_ispeed != mode.sg_ospeed) {
-		prspeed("input speed ", mode.sg_ispeed);
-		prspeed("output speed ", mode.sg_ospeed);
-	} else
-		prspeed("speed ", mode.sg_ispeed);
-	if (all)
-		fprintf(stderr, ", %d rows, %d columns", win.ws_row, win.ws_col);
-	fprintf(stderr, all==2 ? "\n" : "; ");
-	m = mode.sg_flags;
-	if(all==2 || (m&(EVENP|ODDP))!=(EVENP|ODDP)) {
-		if(m & EVENP)	fprintf(stderr,"even ");
-		if(m & ODDP)	fprintf(stderr,"odd ");
-	}
-	if(all==2 || m&RAW)
-		fprintf(stderr,"-raw "+((m&RAW)!=0));
-	if(all==2 || (m&CRMOD)==0)
-		fprintf(stderr,"-nl "+((m&CRMOD)==0));
-	if(all==2 || (m&ECHO)==0)
-		fprintf(stderr,"-echo "+((m&ECHO)!=0));
-	if(all==2 || (m&LCASE))
-		fprintf(stderr,"-lcase "+((m&LCASE)!=0));
-	if(all==2 || (m&TANDEM))
-		fprintf(stderr,"-tandem "+((m&TANDEM)!=0));
-	fprintf(stderr,"-tabs "+((m&XTABS)!=XTABS));
-	if(all==2 || (m&CBREAK))
-		fprintf(stderr,"-cbreak "+((m&CBREAK)!=0));
-	if(all==2 || (m&NLDELAY))
-		delay((m&NLDELAY)/NL1,	"nl");
-	if ((m&TBDELAY)!=XTABS)
-		delay((m&TBDELAY)/TAB1,	"tab");
-	if(all==2 || (m&CRDELAY))
-		delay((m&CRDELAY)/CR1,	"cr");
-	if(all==2 || (m&VTDELAY))
-		delay((m&VTDELAY)/FF1,	"ff");
-	if(all==2 || (m&BSDELAY))
-		delay((m&BSDELAY)/BS1,	"bs");
-	if (all)
-		fprintf(stderr,"\n");
-#define	lpit(what,str) \
-	if (all==2||(lmode&what)) { \
-		fprintf(stderr,str+((lmode&what)!=0)); any++; \
-	}
-	if (ldisc == NTTYDISC) {
-		int newcrt = (lmode&(LCTLECH|LCRTBS)) == (LCTLECH|LCRTBS) &&
-		    (lmode&(LCRTERA|LCRTKIL)) ==
-		      ((mode.sg_ospeed > B300) ? LCRTERA|LCRTKIL : 0);
-		int nothing = 1;
-		if (newcrt) {
-			if (all==2)
-				fprintf(stderr, "crt: (crtbs crterase crtkill ctlecho) ");
-			else
-				fprintf(stderr, "crt ");
-			any++;
-		} else {
-			lpit(LCRTBS, "-crtbs ");
-			lpit(LCRTERA, "-crterase ");
-			lpit(LCRTKIL, "-crtkill ");
-			lpit(LCTLECH, "-ctlecho ");
-			lpit(LPRTERA, "-prterase ");
-		}
-		lpit(LTOSTOP, "-tostop ");
-		if (all==2) {
-			fprintf(stderr, "\n");
-			any = 0;
-			nothing = 0;
-		}
-		lpit(LTILDE, "-tilde ");
-		lpit(LFLUSHO, "-flusho ");
-		lpit(LMDMBUF, "-mdmbuf ");
-		lpit(LLITOUT, "-litout ");
-		lpit(LPASS8, "-pass8 ");
-		lpit(LNOHANG, "-nohang ");
-		if (any) {
-			fprintf(stderr,"\n");
-			any = 0;
-			nothing = 0;
-		}
-#ifdef notdef
-		lpit(LETXACK, "-etxack ");
-#endif
-		lpit(LPENDIN, "-pendin ");
-		lpit(LDECCTQ, "-decctlq ");
-		lpit(LNOFLSH, "-noflsh ");
-		if (any || nothing)
-			fprintf(stderr,"\n");
-	} else if (!all)
-		fprintf(stderr,"\n");
-	if (all) {
-		switch (ldisc) {
-
-		case 0:
-			fprintf(stderr,"\
-erase  kill   intr   quit   stop   eof\
-\n");
-			pcol(mode.sg_erase, -1);
-			pcol(mode.sg_kill, -1);
-			pcol(tc.t_intrc, -1);
-			pcol(tc.t_quitc, -1);
-			pcol(tc.t_stopc, tc.t_startc);
-			pcol(tc.t_eofc, tc.t_brkc);
-			fprintf(stderr,"\n");
-			break;
-
-		case NTTYDISC:
-			fprintf(stderr,"\
-erase  kill   werase rprnt  flush  lnext  susp   intr   quit   stop   eof\
-\n"); 
-			pcol(mode.sg_erase, -1);
-			pcol(mode.sg_kill, -1);
-			pcol(ltc.t_werasc, -1);
-			pcol(ltc.t_rprntc, -1);
-			pcol(ltc.t_flushc, -1);
-			pcol(ltc.t_lnextc, -1);
-			pcol(ltc.t_suspc, ltc.t_dsuspc);
-			pcol(tc.t_intrc, -1);
-			pcol(tc.t_quitc, -1);
-			pcol(tc.t_stopc, tc.t_startc);
-			pcol(tc.t_eofc, tc.t_brkc);
-			fprintf(stderr,"\n");
-			break;
-		}
-	} else if (ldisc != NETLDISC) {
-		register struct special *sp;
-		int first = 1;
-
-		for (sp = special; sp->name; sp++) {
-			if ((*sp->cp&0377) != (sp->def&0377)) {
-				pit(*sp->cp, sp->name, first ? "" : ", ");
-				first = 0;
-			};
-			if (sp->cp == &tc.t_brkc && ldisc == 0)
-				break;
-		}
-		if (!first)
-			fprintf(stderr, "\n");
-	}
-}
-
-pcol(ch1, ch2)
-	int ch1, ch2;
-{
-	int nout = 0;
-
-	ch1 &= 0377;
-	ch2 &= 0377;
-	if (ch1 == ch2)
-		ch2 = 0377;
-	for (; ch1 != 0377 || ch2 != 0377; ch1 = ch2, ch2 = 0377) {
-		if (ch1 == 0377)
-			continue;
-		if (ch1 & 0200) {
-			fprintf(stderr, "M-");
-			nout += 2;
-			ch1 &= ~ 0200;
-		}
-		if (ch1 == 0177) {
-			fprintf(stderr, "^");
-			nout++;
-			ch1 = '?';
-		} else if (ch1 < ' ') {
-			fprintf(stderr, "^");
-			nout++;
-			ch1 += '@';
-		}
-		fprintf(stderr, "%c", ch1);
-		nout++;
-		if (ch2 != 0377) {
-			fprintf(stderr, "/");
-			nout++;
-		}
-	}
-	while (nout < 7) {
-		fprintf(stderr, " ");
-		nout++;
-	}
-}
-
-pit(what, itsname, sep)
-	unsigned what;
-	char *itsname, *sep;
-{
-
-	what &= 0377;
-	fprintf(stderr, "%s%s", sep, itsname);
-	if (what == 0377) {
-		fprintf(stderr, " <undef>");
-		return;
-	}
-	fprintf(stderr, " = ");
-	if (what & 0200) {
-		fprintf(stderr, "M-");
-		what &= ~ 0200;
-	}
-	if (what == 0177) {
-		fprintf(stderr, "^");
-		what = '?';
-	} else if (what < ' ') {
-		fprintf(stderr, "^");
-		what += '@';
-	}
-	fprintf(stderr, "%c", what);
-}
-
-delay(m, s)
-char *s;
-{
-
-	if(m)
-		fprintf(stderr,"%s%d ", s, m);
-}
-
-int	speed[] = {
-	0,50,75,110,134,150,200,300,600,1200,1800,2400,4800,9600,19200,38400
+STATIC struct modes omodes[] = {
+	"opost",	OPOST, 0,
+	"-opost",	0, OPOST,
+	"-litout",	OPOST, 0,
+	"litout",	0, OPOST,
+	"onlcr",	ONLCR, 0,
+	"-onlcr",	0, ONLCR,
+	"tabs",		0, OXTABS,	/* "preserve" tabs */
+	"-tabs",	OXTABS, 0,
+	"xtabs",	OXTABS, 0,
+	"-xtabs",	0, OXTABS,
+	"oxtabs",	OXTABS, 0,
+	"-oxtabs",	0, OXTABS,
+	0
 };
 
-prspeed(c, s)
-char *c;
-{
+STATIC struct modes cmodes[] = {
+	"cs5",		CS5, CSIZE,
+	"cs6",		CS6, CSIZE,
+	"cs7",		CS7, CSIZE,
+	"cs8",		CS8, CSIZE,
+	"cstopb",	CSTOPB, 0,
+	"-cstopb",	0, CSTOPB,
+	"cread",	CREAD, 0,
+	"-cread",	0, CREAD,
+	"parenb",	PARENB, 0,
+	"-parenb",	0, PARENB,
+	"parodd",	PARODD, 0,
+	"-parodd",	0, PARODD,
+	"parity",	PARENB | CS7, PARODD | CSIZE,
+	"evenp",	PARENB | CS7, PARODD | CSIZE,
+	"oddp",		PARENB | CS7 | PARODD, CSIZE,
+	"-parity",	CS8, PARODD | PARENB | CSIZE,
+	"-evenp",	CS8, PARODD | PARENB | CSIZE,
+	"-oddp",	CS8, PARODD | PARENB | CSIZE,
+	"hupcl",	HUPCL, 0,
+	"-hupcl",	0, HUPCL,
+	"hup",		HUPCL, 0,
+	"-hup",		0, HUPCL,
+	"clocal",	CLOCAL, 0,
+	"-clocal",	0, CLOCAL,
+	"crtscts",	CRTSCTS, 0,
+	"-crtscts",	0, CRTSCTS,
+	0
+};
 
-	fprintf(stderr,"%s%d baud",  c, speed[s]);
+STATIC struct modes lmodes[] = {
+	"echo",		ECHO, 0,
+	"-echo",	0, ECHO,
+	"echoe",	ECHOE, 0,
+	"-echoe",	0, ECHOE,
+	"crterase",	ECHOE, 0,
+	"-crterase",	0, ECHOE,
+	"crtbs",	ECHOE, 0,   /* crtbs not supported, close enough */
+	"-crtbs",	0, ECHOE,
+	"echok",	ECHOK, 0,
+	"-echok",	0, ECHOK,
+	"echoke",	ECHOKE, 0,
+	"-echoke",	0, ECHOKE,
+	"crtkill",	ECHOKE, 0,
+	"-crtkill",	0, ECHOKE,
+	"altwerase",	ALTWERASE, 0,
+	"-altwerase",	0, ALTWERASE,
+	"iexten",	IEXTEN, 0,
+	"-iexten",	0, IEXTEN,
+	"echonl",	ECHONL, 0,
+	"-echonl",	0, ECHONL,
+	"echoctl",	ECHOCTL, 0,
+	"-echoctl",	0, ECHOCTL,
+	"ctlecho",	ECHOCTL, 0,
+	"-ctlecho",	0, ECHOCTL,
+	"echoprt",	ECHOPRT, 0,
+	"-echoprt",	0, ECHOPRT,
+	"prterase",	ECHOPRT, 0,
+	"-prterase",	0, ECHOPRT,
+	"isig",		ISIG, 0,
+	"-isig",	0, ISIG,
+	"icanon",	ICANON, 0,
+	"-icanon",	0, ICANON,
+	"noflsh",	NOFLSH, 0,
+	"-noflsh",	0, NOFLSH,
+	"tostop",	TOSTOP, 0,
+	"-tostop",	0, TOSTOP,
+	"mdmbuf",	MDMBUF, 0,
+	"-mdmbuf",	0, MDMBUF,
+	"nohang",	NOHANG, 0,
+	"-nohang",	0, NOHANG,
+	"flusho",	FLUSHO, 0,
+	"-flusho",	0, FLUSHO,
+	"pendin",	PENDIN, 0,
+	"-pendin",	0, PENDIN,
+	"crt",		ECHOE|ECHOKE|ECHOCTL, ECHOK|ECHOPRT,
+	"-crt",		ECHOK, ECHOE|ECHOKE|ECHOCTL,
+	"newcrt",	ECHOE|ECHOKE|ECHOCTL, ECHOK|ECHOPRT,
+	"-newcrt",	ECHOK, ECHOE|ECHOKE|ECHOCTL, 
+	0
+};
+
+/*
+ * Special control characters.
+ *
+ * Each entry has a list of names.  The first is the primary name
+ * and is used when printing the control character in the "name = val;"
+ * form.  The second is an abbreviation which is guaranteed to be less
+ * than or equal to four characters in length and is primarily used
+ * when printing the values in columunar form (guarantees all will
+ * fit within 80 cols).  The rest are optional aliases.
+ * All names are recognized on the command line.
+ */
+#define MAXNAMES 5
+STATIC struct {
+	char	*names[MAXNAMES+1];
+	int	sub;
+	u_char	def;
+} cchars[] = {
+	{ "erase", "era" },		VERASE,	CERASE,
+	{ "werase", "wera" },		VWERASE, CWERASE,
+	{ "kill", "kill" },		VKILL,	CKILL,
+	{ "intr", "int" },		VINTR,	CINTR,
+	{ "quit", "quit" },		VQUIT,	CQUIT,
+	{ "susp", "susp" },		VSUSP,	CSUSP,
+	{ "dsusp", "dsus" },		VDSUSP,	CDSUSP,
+	{ "eof", "eof" },		VEOF,	CEOF,
+	{ "eol", "eol", "brk" },	VEOL,	CEOL,
+	{ "eol2", "eol2" },		VEOL2,	CEOL,
+	{ "stop", "stop", "xoff" },	VSTOP,	CSTOP,
+	{ "start", "star", "xon" },	VSTART,	CSTART,
+	{ "lnext", "lnxt" },		VLNEXT,	CLNEXT,
+	{ "flusho", "fls", "flush" },	VFLUSHO, CFLUSHO,
+	{ "reprint", "rpnt", "rprnt" },	VREPRINT, CREPRINT,
+	0
+};
+	
+STATIC struct winsize win;
+STATIC int ldisc;
+STATIC int dodisc;
+STATIC int debug = 0;
+STATIC int trace, dotrace;
+
+#define OUT	stdout		/* informational output stream */
+#define ERR	stderr		/* error message stream */
+#define CTL	0		/* default control descriptor */
+STATIC int ctl = CTL;
+
+extern errno;
+extern char *sys_errlist[];
+
+#define NORMAL	0	/* only print modes differing from defaults */
+#define ALL	1	/* print all modes - POSIX standard format */
+#define ALL_BSD	2	/* print all modes - using BSD shorthand for cc's */
+#define GFMT	3	/* print modes in a form that can be re-input to stty */
+
+STATIC
+main(argc, argv) 
+	char *argv[];
+{
+	struct termios t;
+	int i, fmt = NORMAL;
+	extern char *optarg;
+	extern int optind;
+	int ch;
+
+	argc--, argv++;
+	if (argc > 0 && eq(argv[0], "-a")) {
+		fmt = ALL;
+		argc--, argv++;
+	}
+	if (argc > 0 && eq(argv[0], "-f")) {
+		argc--, argv++;
+		if ((ctl = open(argv[0], O_RDONLY | O_NONBLOCK)) < 0)
+			syserrexit(*argv);
+		argc--, argv++;
+	}
+#ifdef notyet
+	while ((ch = getopt(argc, argv, "f:ga")) != EOF)
+		switch((char)ch) {
+		case 'f':
+			if ((ctl = open(*optarg, O_RDONLY | O_NONBLOCK)) < 0)
+				syserrexit(*argv);
+			break;
+		case 'a':
+			fmt = ALL;
+			break;
+		case 'g':
+			fmt = GFMT;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: %s", *argv);
+			exit(1);
+		}
+	argc -= optind;
+	argv += optind;
+#endif
+
+	if (ioctl(ctl, TIOCGETD, &ldisc) < 0)
+		syserrexit("TIOCGETD");
+	if (tcgetattr(ctl, &t) < 0)
+		syserrexit("tcgetattr");
+	if (ioctl(ctl, TIOCGWINSZ, &win) < 0)
+		warning("TIOCGWINSZ: %s", sys_errlist[errno]);
+
+#ifdef COMPAT_43
+	checkredirect();	/* conversion aid */
+#endif
+
+	if (argc == 0 || fmt) {
+		prmode(&t, ldisc, fmt);
+		exit(0);
+	} else if (argc == 1 && strlen(argv[0]) > 2 && *(argv[0]+2) == ':') {
+		gfmtset(argv[0]);
+		goto setit;
+	}
+	
+	while (*argv) {
+		if (eq("everything", *argv)) {
+			prmode(&t, ldisc, ALL_BSD);
+			exit(0);
+		}
+		if (eq("all", *argv)) {
+			prmode(&t, ldisc, ALL);
+			exit(0);
+		}
+		if (eq("old", *argv)) {
+			goto next;
+		}
+		if (eq("new", *argv)) {
+			goto next;
+		}
+		if (eq("nl", *argv)) {
+			t.c_iflag &= ~ICRNL;
+			t.c_oflag &= ~ONLCR;
+			goto next;
+		}
+		if (eq("-nl", *argv)) {
+			t.c_iflag |= ICRNL;
+			t.c_oflag |= ONLCR;
+			goto next;
+		}
+		if (eq("dec", *argv)){
+			t.c_cc[VERASE] = (u_char)0177;
+			t.c_cc[VKILL] = CTRL('u');
+			t.c_cc[VINTR] = CTRL('c');
+			t.c_lflag &= ~ECHOPRT;
+			t.c_lflag |= ECHOE|ECHOKE|ECHOCTL;
+			t.c_iflag &= ~IXANY;
+			goto next;
+		}
+		if (eq("rows", *argv)) {
+			if (*(argv+1) == 0)
+				goto setit;
+			win.ws_row = atoi(*++argv);
+			goto next;
+		}
+		if (eq("ispeed", *argv)) {
+			int code;
+			if (*(argv+1) == 0)
+				errexit("missing ispeed");
+			cfsetispeed(&t, atoi(*++argv));
+			goto next;
+		}
+		if (eq("ospeed", *argv)) {
+			int code;
+			if (*(argv+1) == 0)
+				errexit("missing ospeed");
+			cfsetospeed(&t, atoi(*++argv));
+			goto next;
+		}
+		if (eq("cols", *argv) || eq("columns", *argv)) {
+			if (*(argv+1) == 0)
+				goto setit;
+			win.ws_col = atoi(*++argv);
+			goto next;
+		}
+		if (eq("size", *argv)) {
+			put("%d %d\n", win.ws_row, win.ws_col);
+			exit(0);
+		}
+		if (eq("speed", *argv)) {
+			put("%d\n", cfgetospeed(&t));
+			exit(0);
+		}
+		for (i=0; imodes[i].name; i++)
+			if (eq(imodes[i].name, *argv)) {
+				t.c_iflag &= ~imodes[i].unset;
+				t.c_iflag |= imodes[i].set;
+				goto next;
+			}
+		for (i=0; omodes[i].name; i++)
+			if (eq(omodes[i].name, *argv)) {
+				t.c_oflag &= ~omodes[i].unset;
+				t.c_oflag |= omodes[i].set;
+				goto next;
+			}
+		for (i=0; cmodes[i].name; i++)
+			if (eq(cmodes[i].name, *argv)) {
+				t.c_cflag &= ~cmodes[i].unset;
+				t.c_cflag |= cmodes[i].set;
+				goto next;
+			}
+		for (i=0; lmodes[i].name; i++)
+			if (eq(lmodes[i].name, *argv)) {
+				t.c_lflag &= ~lmodes[i].unset;
+				t.c_lflag |= lmodes[i].set;
+				goto next;
+			}
+		for (i=0; *cchars[i].names; i++) {
+			char **cp = cchars[i].names;
+			while (*cp) {
+				if (eq(*cp, *argv)) {
+					if (*++argv == 0)
+						goto setit;
+					if (eq(*argv, "undef") || 
+					    eq(*argv, "disable"))
+						t.c_cc[cchars[i].sub] = 
+						   _POSIX_VDISABLE;
+					else if (**argv == '^')
+						t.c_cc[cchars[i].sub] = 
+						    ((*argv)[1] == '?') ? 0177 :
+						    ((*argv)[1] == '-') ?
+						     _POSIX_VDISABLE :
+						     (*argv)[1] & 037;
+					else
+						t.c_cc[cchars[i].sub] = **argv;
+					goto next;
+				}
+				cp++;
+			}
+		}
+		if (isdigit(**argv)) {
+			cfsetospeed(&t, atoi(*argv));
+			cfsetispeed(&t, atoi(*argv));
+			goto next;
+		}
+		/* didn't match anything */
+		errexit("unknown option: %s", *argv);
+		exit(1);
+next:
+		argv++;
+	}
+setit:
+	if (tcsetattr(ctl, 0, &t) < 0)
+		syserrexit("tcsetattr");
+	if (ioctl(ctl, TIOCSWINSZ, &win) < 0)
+		warning("can't set window size");
+
+	exit(0);
+}
+
+gfmtset() {
+}
+
+prmode(tp, ldisc, fmt)
+	struct termios *tp;
+{
+	long	i = tp->c_iflag,
+		o = tp->c_oflag,
+		c = tp->c_cflag,
+		l = tp->c_lflag;
+	u_char	*cc = tp->c_cc;
+	int	ispeed = cfgetispeed(tp),
+		ospeed = cfgetospeed(tp);
+	char	unknown[32],
+		*ld;
+	char *ccval();
+	
+
+	/*
+	 * line discipline
+	 */
+	if (ldisc != TTYDISC) {
+		switch(ldisc) {
+		case TABLDISC:	
+			ld = "tablet"; 
+			break;
+		case SLIPDISC:	
+			ld = "slip(ed)"; 
+			break;
+		default:	
+			sprintf(unknown, "#%d", ldisc);
+			ld = unknown;
+		}
+		put("%s disc; ", ld);
+	}
+	/*
+	 * line speed
+	 */
+	if (ispeed != ospeed)
+		put("ispeed %d baud; ospeed %d baud;",
+		     ispeed, ospeed);
+	else
+		put("speed %d baud;", ispeed);
+	if (fmt) 
+		put(" %d rows; %d columns;", win.ws_row, win.ws_col);
+	put("\n");
+
+#define lput(n, f, d) if (fmt || on(f) != d) mdput(n+on(f))
+	/*
+	 * "local" flags
+	 */
+#define on(f)	((l&f) != 0)
+	if (debug) mdput("LFLAG: ");
+	lput("-icanon ",ICANON, 1);
+	lput("-isig ", ISIG, 1);
+	lput("-iexten ", IEXTEN, 1);
+	lput("-echo ",ECHO, 1);
+	lput("-echoe ",ECHOE, 0);
+	lput("-echok ",ECHOK, 0);
+	lput("-echoke ",ECHOKE, 0);
+	lput("-echonl ",ECHONL, 0);
+	lput("-echoctl ",ECHOCTL, 0);
+	lput("-echoprt ",ECHOPRT, 0);
+	lput("-altwerase ",ALTWERASE, 0);
+	lput("-noflsh ",NOFLSH, 0);
+	lput("-tostop ",TOSTOP, 0);
+	lput("-mdmbuf ",MDMBUF, 0);
+	lput("-nohang ",NOHANG, 0);
+	lput("-flusho ",FLUSHO, 0);
+	lput("-pendin ",PENDIN, 0);
+	/*
+	 * input flags
+	 */
+#undef on
+#define on(f)	((i&f) != 0)
+	mdput(0);
+	if (debug) mdput("IFLAG: ");
+	lput("-istrip ", ISTRIP, 0);
+	lput("-icrnl ", ICRNL, 1);
+	lput("-inlcr ", INLCR, 0);
+	lput("-igncr ", IGNCR, 0);
+	lput("-ixon ", IXON, 1);
+	lput("-ixoff ", IXOFF, 0);
+	lput("-ixany ", IXANY, 1);
+	lput("-imaxbel ", IMAXBEL, 1);
+	lput("-ignbrk ", IGNBRK, 0);
+	lput("-brkint ", BRKINT, 1);
+	lput("-inpck ", INPCK, 0);
+	lput("-ignpar ", IGNPAR, 0);
+	lput("-parmrk ", PARMRK, 0);
+#undef on
+	/*
+	 * output flags
+	 */
+#define on(f)	((o&f) != 0)
+	mdput(0);
+	if (debug) mdput("OFLAG: ");
+	lput("-opost ", OPOST, 1);
+	lput("-onlcr ", ONLCR, 1);
+	lput("-oxtabs ", OXTABS, 1);
+#undef on
+	/*
+	 * control flags (hardware state)
+	 */
+#define on(f)	((c&f) != 0)
+	mdput(0);
+	if (debug) mdput("CFLAG: ");
+	lput("-cread ", CREAD, 1);
+	switch(c&CSIZE) {
+	case CS5: mdput("cs5 "); break;
+	case CS6: mdput("cs6 "); break;
+	case CS7: mdput("cs7 "); break;
+	case CS8: mdput("cs8 "); break;
+	}
+	mdput("-parenb "+on(PARENB));
+	lput("-parodd ", PARODD, 0);
+	lput("-hupcl ", HUPCL, 1);
+	lput("-clocal ", CLOCAL, 0);
+	lput("-cstopb ", CSTOPB, 0);
+	lput("-crtscts ", CRTSCTS, 0);
+	mdput(0);
+#undef on
+	/*
+	 * special control characters
+	 */
+	if (debug) mdput("CCHARS: ");
+	if (fmt != 2) {
+		for (i=0; *cchars[i].names; i++) {
+			char temp[64];
+
+			if (fmt || cc[cchars[i].sub] != cchars[i].def) {
+				sprintf(temp, "%s = %s; ", *cchars[i].names,
+					ccval(cc[cchars[i].sub]), fmt);
+				mdput(temp);
+			}
+		}
+		mdput(0);
+	} else {
+		for (i=0; *cchars[i].names; i++)
+			put("%*s", strlen(*(cchars[i].names+1)) + (i>0?1:0),
+				*(cchars[i].names+1));
+		printf("\n");
+		for (i=0; *cchars[i].names; i++)
+			put("%*s", strlen(*(cchars[i].names+1)) + (i>0?1:0),
+				ccval(cc[cchars[i].sub], fmt));
+		printf("\n");
+	}
+}
+
+#ifdef COMPAT_43
+/*
+ * gross, but since we're changing the control descriptor
+ * from 1 to 0, most users will be probably be doing
+ * "stty > /dev/sometty" by accident. If 1 and 2 are both ttys, 
+ * but not the same, assume that 1 was incorrectly redirected.
+ */
+checkredirect() {
+	struct stat st1, st2;
+
+	if (isatty(1) && isatty(2) && fstat(1, &st1) != -1 && 
+	    fstat(2, &st2) != -1 && (st1.st_rdev != st2.st_rdev))
+warning("stdout appears redirected, but stdin is the control descriptor");
+}
+#endif
+
+STATIC char *
+ccval(c, fmt)
+	unsigned char c;
+{
+	static char buf[128];
+	char *bp;
+
+	*buf = 0, bp = buf;
+	if (c == _POSIX_VDISABLE)
+		if (fmt == 2)
+			return("<u>");
+		else
+			return("<undef>");
+	if (c & 0200) {
+		strcat(buf, "M-");
+		*bp++ = 'M';
+		*bp++ = '-';
+		c &= 0177;
+	}
+	if (c == 0177) {
+		*bp++ = '^';
+		*bp++ = '?';
+	}
+	else if (c < 040) {
+		*bp++ = '^';
+		*bp++ = c + '@';
+	}
+	else
+		*bp++ = c;
+	*bp = 0;
+	return(buf);
+}
+
+STATIC
+mdput(s)
+	char *s;
+{
+	static int col = 0;
+
+	if (s == (char *)0) {
+		if (col) {
+			put("\n");
+			col = 0;
+		}
+		return;
+	}
+	if ((col += strlen(s)) > WRAPCOL) {
+		put("\n");
+		col = strlen(s);
+	}
+	put(s);
+}
+
+STATIC
+put(f, a)
+	char *f;
+{
+	_doprnt(f, &a, OUT);
+}
+
+STATIC
+warning(s, a)
+	char *s;
+{
+	fprintf(ERR, "stty: warning: ");
+	_doprnt(s, &a, ERR);
+	fprintf(ERR, "\n");
+}
+
+STATIC
+errexit(s, a)
+	char *s;
+{
+	fprintf(ERR, "stty: ");
+	_doprnt(s, &a, ERR);
+	fprintf(ERR, "\n");
+	exit(1);
+}
+
+STATIC
+syserrexit(s, a)
+	char *s;
+{
+	fprintf(ERR, "stty: ");
+	_doprnt(s, &a, ERR);
+	fprintf(ERR, ": %s\n", sys_errlist[errno]);
+	exit(1);
 }
