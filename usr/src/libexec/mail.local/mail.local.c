@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.36 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -13,8 +13,7 @@ static char sccsid[] = "@(#)mail.local.c	4.35 (Berkeley) %G%";
 #include <signal.h>
 #include <setjmp.h>
 #include <sysexits.h>
-
-#define SENDMAIL	"/usr/lib/sendmail"
+#include "pathnames.h"
 
 	/* copylet flags */
 #define REMOTE		1		/* remote mail, add rmtmsg */
@@ -37,8 +36,8 @@ char	lfil[50];
 long	iop, time();
 char	*getenv();
 char	*index();
-char	lettmp[] = "/tmp/maXXXXX";
-char	maildir[] = "/usr/spool/mail/";
+char	lettmp[] = _PATH_TMP;
+char	maildir[] = _PATH_MAILDIR;
 char	mailfile[] = "/usr/spool/mail/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	dead[] = "dead.letter";
 char	forwmsg[] = " forwarded\n";
@@ -432,8 +431,8 @@ char **argv;
 			*ap-- = "-s";
 		*ap = "-sendmail";
 		setuid(getuid());
-		execv(SENDMAIL, ap);
-		perror(SENDMAIL);
+		execv(_PATH_SENDMAIL, ap);
+		perror(_PATH_SENDMAIL);
 		exit(EX_UNAVAILABLE);
 	}
 
