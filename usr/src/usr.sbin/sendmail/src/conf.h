@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.177 (Berkeley) %G%
+ *	@(#)conf.h	8.178 (Berkeley) %G%
  */
 
 /*
@@ -254,7 +254,6 @@ extern void	hard_syslog(int, char *, ...);
 #  ifndef __svr4__
 #   define __svr4__		/* use all System V Releae 4 defines below */
 #  endif
-#  define BSD_COMP	1	/* get BSD ioctl calls */
 #  include <sys/time.h>
 #  define GIDSET_T	gid_t
 #  ifndef _PATH_UNIX
@@ -1302,6 +1301,7 @@ extern int	errno;
 # define SYSTEM5	1
 # define USESETEUID	1	/* has useable seteuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+#  define BSD_COMP	1	/* get BSD ioctl calls */
 # ifndef HASSETRLIMIT
 #  define HASSETRLIMIT	1	/* has setrlimit(2) call */
 # endif
