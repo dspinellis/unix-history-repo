@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * OMRON Corporation.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	8.1 (Berkeley) %G%
  */
 
 #define	T_BUSERR	0
