@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.8 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,7 +102,7 @@ exit(rv)
 		if (f) {
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] = 0;
-			closef(f);
+			(void) closef(f);
 		}
 	}
 	if (SESS_LEADER(p)) {
