@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)xec.c	4.4 %G%";
+static char sccsid[] = "@(#)xec.c	4.5 %G%";
 #endif
 
 #
@@ -362,11 +362,16 @@ execute(argt, execflg, pf1, pf2)
 		case TWH:
 		case TUN:
 			BEGIN
-			   INT		i=0;
+			   INT		i=0, saveflg;
 
+			   saveflg = flags&errflg;
 			   loopcnt++;
-			   WHILE execbrk==0 ANDF (execute(t->whtre,0)==0)==(type==TWH)
-			   DO i=execute(t->dotre,0);
+			   WHILE execbrk==0
+			   DO flags &= ~errflg;
+			      i=execute(t->whtre,0);
+			      flags |= saveflg;
+			      IF (i==0)!=(type==TWH) THEN break FI
+			      i=execute(t->dotre,0);
 			      IF execbrk<0 THEN execbrk=0 FI
 			   OD
 			   IF breakcnt THEN breakcnt-- FI
@@ -375,10 +380,18 @@ execute(argt, execflg, pf1, pf2)
 			break;
 
 		case TIF:
-			IF execute(t->iftre,0)==0
-			THEN	execute(t->thtre,execflg);
-			ELSE	execute(t->eltre,execflg);
-			FI
+			BEGIN
+			   INT		i, saveflg;
+
+			   saveflg = flags&errflg;
+			   flags &= ~errflg;
+			   i=execute(t->iftre,0);
+			   flags |= saveflg;
+			   IF i==0
+			   THEN	execute(t->thtre,execflg);
+			   ELSE	execute(t->eltre,execflg);
+			   FI
+			END
 			break;
 
 		case TSW:
