@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)flcopy.c	4.2 (Berkeley) %G%";
+static char *sccsid ="@(#)flcopy.c	4.3 (Berkeley) %G%";
 int floppydes;
 char *flopname = "/dev/floppy";
 long dsize = 77 * 26 * 128;
@@ -13,7 +13,7 @@ register char **argv;
 	register startad = -26 * 128;
 	register int n, file; register char *cp;
 
-	for(cp = *++argv; --argc > 0; cp ++) {
+	while((cp = *++argv), --argc > 0) {
 	    if(*cp++!='-') continue;
 	    while(*cp) switch(*cp++) {
 	    case 'h':
@@ -24,10 +24,15 @@ register char **argv;
 		    exit(1);
 		continue;
 	    case 't':
-		dsize = atoi(*++argv) * 26 * 128;
-		argc--;
-		if (dsize <= 0)
+		if(*cp >= '0' && *cp <= '9')
+		    dsize = atoi(cp);
+		else if(argc > 1) {
+		    dsize = atoi(*++argv);
+		    argc--;
+		} else dsize = 77;
+		if (dsize <= 0 || dsize > 77)
 		    printf("Bad number of tracks\n"), exit(2);
+		dsize *= 26 * 128;
 		continue;
 	    case 'r':
 		rflag++;
