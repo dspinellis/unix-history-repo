@@ -1,8 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCSTART.c 1.5 %G%";
+static char sccsid[] = "@(#)PCSTART.c 1.6 %G%";
 
+#include <signal.h>
 #include "h00vars.h"
+#include "libpc.h"
 
 /*
  * program variables
@@ -75,7 +77,8 @@ struct iorechd	_err = {
 	1			/* fsize   */
 };
 
-PCSTART()
+PCSTART(mode)
+	int mode;
 {
 	/*
 	 * necessary only on systems which do not initialize
@@ -84,5 +87,12 @@ PCSTART()
 
 	struct iorec	**ip;
 
+	/*
+	 * if running with runtime tests enabled, give more
+	 * coherent error messages for FPEs
+	 */
+	if (mode) {
+		signal(SIGFPE, EXCEPT);
+	}
 	for (ip = &_actfile[3]; ip < &_actfile[MAXFILES]; *ip++ = FILNIL);
 }
