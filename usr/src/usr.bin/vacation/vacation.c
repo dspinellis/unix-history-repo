@@ -1,10 +1,11 @@
 # include <pwd.h>
 # include <stdio.h>
 # include <sysexits.h>
+# include <ctype.h>
 # include "useful.h"
 # include "userdbm.h"
 
-static char	SccsId[] =	"@(#)vacation.c	3.2	%G%";
+static char	SccsId[] =	"@(#)vacation.c	3.3	%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -32,6 +33,10 @@ static char	SccsId[] =	"@(#)vacation.c	3.2	%G%";
 # define MAXLINE	256	/* max size of a line */
 # define MAXNAME	128	/* max size of one name */
 
+# define ONEWEEK	(60L*60L*24L*7L)
+
+long	Timeout = ONEWEEK;	/* timeout between notices per user */
+
 struct dbrec
 {
 	long	sentdate;
@@ -49,6 +54,7 @@ main(argc, argv)
 	extern char *newstr();
 	extern char *getfrom();
 	extern bool knows();
+	extern long convtime();
 
 	/* process arguments */
 	while (--argc > 0 && (p = *++argv) != NULL && *p == '-')
@@ -68,6 +74,10 @@ main(argc, argv)
 			if (close(creat(buf, 0644)) < 0)
 				syserr("Cannot create %s", buf);
 			exit(EX_OK);
+
+		  case 't':	/* set timeout */
+			Timeout = convtime(++p);
+			break;
 
 		  default:
 			usrerr("Unknown flag -%s", p);
@@ -164,8 +174,6 @@ getfrom()
 **		none.
 */
 
-# define ONEWEEK	(60L*60L*24L*7L)
-
 bool
 knows(user)
 	char *user;
@@ -177,7 +185,7 @@ knows(user)
 	k.dptr = user;
 	k.dsize = strlen(user) + 1;
 	d = fetch(k);
-	if (d.dptr == NULL || ((struct dbrec *) d.dptr)->sentdate + ONEWEEK < now)
+	if (d.dptr == NULL || ((struct dbrec *) d.dptr)->sentdate + Timeout < now)
 		return (FALSE);
 	return (TRUE);
 }
@@ -284,4 +292,48 @@ syserr(f, p)
 	_doprnt(f, &p, stderr);
 	fprintf(stderr, "\n");
 	exit(EX_USAGE);
+}
+/*
+**  CONVTIME -- convert time
+**
+**	Parameters:
+**		p -- pointer to ascii time.
+**
+**	Returns:
+**		time in seconds.
+**
+**	Side Effects:
+**		none.
+*/
+
+long
+convtime(p)
+	char *p;
+{
+	register long t;
+
+	t = 0;
+	while (isdigit(*p))
+		t = t * 10 + (*p++ - '0');
+	switch (*p)
+	{
+	  case 'w':		/* weeks */
+		t *= 7;
+
+	  case 'd':		/* days */
+	  case '\0':
+	  default:
+		t *= 24;
+
+	  case 'h':		/* hours */
+		t *= 60;
+
+	  case 'm':		/* minutes */
+		t *= 60;
+
+	  case 's':		/* seconds */
+		break;
+	}
+
+	return (t);
 }
