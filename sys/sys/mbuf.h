@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id: mbuf.h,v 1.5 1993/11/25 01:37:58 wollman Exp $
+ *	$Id: mbuf.h,v 1.6 1993/12/19 00:55:19 wollman Exp $
  */
 
 #ifndef _SYS_MBUF_H_
@@ -158,8 +158,21 @@ struct mbuf {
  * allocates an mbuf and initializes it to contain a packet header
  * and internal data.
  */
+
+
+struct mbuf *mbuffree;
+int mbuffreecnt;
 #define	MGET(m, how, type) { \
-	MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
+	disable_intr(); \
+	if( mbuffree == 0) { \
+		enable_intr(); \
+		MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
+	} else { \
+		--mbuffreecnt; \
+		(m) = mbuffree; \
+		mbuffree = (m)->m_next; \
+		enable_intr(); \
+	} \
 	if (m) { \
 		(m)->m_type = (type); \
 		mbstat.m_mtypes[type]++; \
@@ -172,7 +185,16 @@ struct mbuf {
 }
 
 #define	MGETHDR(m, how, type) { \
-	MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
+	disable_intr(); \
+	if( mbuffree == 0) { \
+		enable_intr(); \
+		MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
+	} else { \
+		--mbuffreecnt; \
+		(m) = mbuffree; \
+		mbuffree = (m)->m_next; \
+		enable_intr(); \
+	} \
 	if (m) { \
 		(m)->m_type = (type); \
 		mbstat.m_mtypes[type]++; \
@@ -257,7 +279,15 @@ union mcluster {
 		MCLFREE((m)->m_ext.ext_buf); \
 	  } \
 	  (nn) = (m)->m_next; \
-	  FREE((m), mbtypes[(m)->m_type]); \
+	  if( mbuffreecnt < 256) { \
+	  	  ++mbuffreecnt; \
+		  disable_intr(); \
+		  (m)->m_next = mbuffree; \
+		  mbuffree = (m); \
+		  enable_intr(); \
+	  } else { \
+	  	  FREE((m), mbtypes[(m)->m_type]); \
+	  } \
 	}
 #endif
 
