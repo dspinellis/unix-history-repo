@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.13 (Berkeley) %G%
+ *	@(#)def.h	5.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -260,8 +260,7 @@ FILE	*Fdopen();
 FILE	*Popen();
 FILE	*collect();
 FILE	*infix();
-FILE	*mesedit();
-FILE	*mespipe();
+FILE	*run_editor();
 FILE	*setinput();
 char	**unpack();
 char	*calloc();
@@ -275,9 +274,11 @@ char	*name1();
 char	*nameof();
 char	*nextword();
 char	*getenv();
+char	*fgets();
 char	*findmail();
 char	*ishfield();
 char	*malloc();
+char	*mktemp();
 char	*readtty();
 char	*reedit();
 char	*salloc();
@@ -288,6 +289,7 @@ char	*value();
 char	*vcopy();
 char	*yankword();
 off_t	fsize();
+uid_t	getuid();
 struct	cmd	*lex();
 struct	grouphead	*findgroup();
 struct	name	*nalloc();
