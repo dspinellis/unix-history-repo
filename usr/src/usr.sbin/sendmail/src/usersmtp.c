@@ -16,12 +16,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.6 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)usersmtp.c	5.7 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)usersmtp.c	5.7 (Berkeley) %G%";
 # endif not lint
 
 
@@ -213,7 +213,6 @@ smtpinit(m, pvp)
 	/* signal a temporary failure */
   tempfail:
 	smtpquit(m);
-	CurEnv->e_flags &= ~EF_FATALERRS;
 	return (EX_TEMPFAIL);
 
 	/* signal service unavailable */

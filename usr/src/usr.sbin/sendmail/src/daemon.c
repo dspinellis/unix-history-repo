@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.17 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.18 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.17 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.17 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.18 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -225,10 +225,7 @@ makeconnection(host, port, outfile, infile)
 		if (hp == NULL)
 		{
 			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
-			{
-				CurEnv->e_flags &= ~EF_FATALERRS;
 				return (EX_TEMPFAIL);
-			}
 
 			/*
 			**  XXX Should look for mail forwarder record here
@@ -317,7 +314,6 @@ makeconnection(host, port, outfile, infile)
 		  case EHOSTUNREACH:
 		  case ENETUNREACH:
 			/* there are others, I'm sure..... */
-			CurEnv->e_flags &= ~EF_FATALERRS;
 			return (EX_TEMPFAIL);
 
 		  case EPERM:
