@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -61,9 +61,6 @@ lfs_markv(p, uap, retval)
 	u_long bsize;
 	int cnt, error;
 
-#ifdef VERBOSE
-	printf("lfs_markv\n");
-#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -191,9 +188,6 @@ lfs_bmapv(p, uap, retval)
 	daddr_t daddr;
 	int cnt, error, step;
 
-#ifdef VERBOSE
-	printf("lfs_bmapv\n");
-#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -246,9 +240,6 @@ lfs_segclean(p, uap, retval)
 	struct lfs *fs;
 	int error;
 
-#ifdef VERBOSE
-	printf("lfs_segclean\n");
-#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -300,9 +291,6 @@ lfs_segwait(p, uap, retval)
 	u_long timeout;
 	int error, s;
 
-#ifdef VERBOSE
-	printf("lfs_segwait\n");
-#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 

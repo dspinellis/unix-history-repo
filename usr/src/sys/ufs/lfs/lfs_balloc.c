@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.34 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -40,9 +40,6 @@ lfs_bmap(ap)
 		daddr_t *a_bnp;
 	} */ *ap;
 {
-#ifdef VERBOSE
-	printf("lfs_bmap\n");
-#endif
 	/*
 	 * Check for underlying vnode requests and ensure that logical
 	 * to physical mapping is requested.
@@ -91,9 +88,6 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 	struct vop_strategy_args vop_strategy_a;
 
 	ip = VTOI(vp);
-#ifdef VERBOSE
-	printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
-#endif
 #ifdef DIAGNOSTIC
 	if (ap != NULL && nump == NULL || ap == NULL && nump != NULL)
 		panic("lfs_bmaparray: invalid arguments");
@@ -106,7 +100,6 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 		return (error);
 
 	num = *nump;
-
 	if (num == 0) {
 		*bnp = ip->i_db[bn];
 		if (*bnp == 0)
@@ -192,9 +185,6 @@ lfs_getlbns(vp, bn, ap, nump)
 	long metalbn, realbn;
 	int j, numlevels, off, sh;
 
-#ifdef VERBOSE
-	printf("lfs_getlbns: bn %d, inode %d\n", bn, VTOI(vp)->i_number);
-#endif
 	if (nump)
 		*nump = 0;
 	numlevels = 0;
