@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -248,6 +248,11 @@ deliver(firstto, editfcn)
 		user = to->q_user;
 		e->e_to = to->q_paddr;
 		to->q_flags |= QDONTSEND;
+		if (tTd(10, 5))
+		{
+			printf("deliver: QDONTSEND ");
+			printaddr(to, FALSE);
+		}
 
 		/*
 		**  Check to see that these people are allowed to
@@ -1380,6 +1385,11 @@ sendall(e, mode)
 		extern ADDRESS *recipient();
 
 		e->e_from.q_flags |= QDONTSEND;
+		if (tTd(13, 5))
+		{
+			printf("sendall: QDONTSEND ");
+			printaddr(&e->e_from, FALSE);
+		}
 		(void) recipient(&e->e_from, &e->e_sendqueue, e);
 	}
 
@@ -1432,8 +1442,23 @@ sendall(e, mode)
 			e->e_id = e->e_df = NULL;
 # ifndef LOCKF
 			if (e->e_lockfp != NULL)
+			{
 				(void) fclose(e->e_lockfp);
+				e->e_lockfp = NULL;
+			}
 # endif
+
+			/* close any random open files in the envelope */
+			if (e->e_dfp != NULL)
+			{
+				(void) fclose(e->e_dfp);
+				e->e_dfp = NULL;
+			}
+			if (e->e_xfp != NULL)
+			{
+				(void) fclose(e->e_xfp);
+				e->e_xfp = NULL;
+			}
 			return;
 		}
 
