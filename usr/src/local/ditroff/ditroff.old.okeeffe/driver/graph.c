@@ -115,19 +115,18 @@ int vd;
 		/* the circumference (while ys is non-negative)	*/
 		/* and mirror to get the other three quadrants.	*/
 
-    thick = linethickness / 2;
-    if (thick) {		/* more than one pixel thick */
-	RoundEnd(basex, ((int)(ys + 0.5)) + basey, thick, 0);
-	RoundEnd(basex, basey - ((int)(ys + 0.5)), thick, 0);
+    if (linethickness > 1) {		/* more than one pixel thick */
+	RoundEnd(basex, ((int)(ys + 0.5)) + basey, linethickness, 0);
+	RoundEnd(basex, basey - ((int)(ys + 0.5)), linethickness, 0);
 	while (ys >= 0) {
 	    xs += xepsilon * ys;	/* generate circumference */
 	    ys -= yepsilon * xs;
 	    x = (int)(xs + 0.5);
 	    y = (int)(ys + 0.5);
-	    RoundEnd(x + basex, y + basey, thick, 0);
-	    RoundEnd(x + basex, basey - y, thick, 0);
-	    RoundEnd(basex - x, y + basey, thick, 0);
-	    RoundEnd(basex - x, basey - y, thick, 0);
+	    RoundEnd(x + basex, y + basey, linethickness, 0);
+	    RoundEnd(x + basex, basey - y, linethickness, 0);
+	    RoundEnd(basex - x, y + basey, linethickness, 0);
+	    RoundEnd(basex - x, basey - y, linethickness, 0);
 	}
     } else {		/* do the perimeter only (no fill) */
 	point(basex, ((int)(ys + 0.5)) + basey);
@@ -413,7 +412,6 @@ int py;
 int angle;
 {
     double xs, ys, resolution, epsilon, fullcircle;
-    int thick = linethickness / 2;
     register int nx;
     register int ny;
     register int extent;
@@ -440,73 +438,70 @@ int angle;
         nx = cx + (int) (xs + 0.5);
         ys -= epsilon * xs;
         ny = cy + (int) (ys + 0.5);
-        RoundEnd(nx, ny, thick, FALSE);
+        RoundEnd(nx, ny, linethickness, FALSE);
     }   /* end for */
 }  /* end HGArc */
 
 
 /*----------------------------------------------------------------------------
- * Routine:	RoundEnd (x, y, radius, filled_flag)
+ * Routine:	RoundEnd (x, y, diameter, filled_flag)
  *
- * Results:	Plots a filled (if requested) circle of the specified radius
+ * Results:	Plots a filled (if requested) circle of the specified diameter
  *		centered about (x, y).
  *----------------------------------------------------------------------------*/
 
-RoundEnd(x, y, radius, filled)
+RoundEnd(x, y, diameter, filled)
 register int x;
 register int y;
-int radius;
+int diameter;
 int filled;
 {
     double xs, ys;	/* floating point distance form center of circle */
     double epsilon;	/* "resolution" of the step around circle */
-    register int cx;	/* center of circle */
-    register int cy;
+    register int cy;	/* to index up from center of circle */
     register int nx;	/* integer distance from center */
     register int ny;
+    register int arc;	/* counts how far around the circle to go */
 
 
-    if (radius < 1) {	/* too small to notice */
+    if (diameter < 2) {	/* too small to notice */
         point(x, y);
         return;
     }
 
     xs = 0;
-    ys = radius;
-    epsilon = 1.0 / radius;
+    ys = (double) (diameter - 1) / 2.0;
+    epsilon = 1.0 / ys;
+    arc = (pi / 2.0) * ys;
+    if (arc < 4) {		/* if too small, make it bigger */
+	arc += arc;		/*   to try and fill in more.   */
+	epsilon /= 2.0;
+    }
 
         /* Calculate the trajectory of the circle for 1/4 the circumference
          * and mirror appropriately to get the other three quadrants.
          */
 
-    nx = x;			/* must start out the x and y for first */
-    ny = y + radius;		/*   painting going on in while loop */
+    nx = 0;			/* must start out the x and y for first */
+    ny = (int) (ys + 0.5);	/*   painting in while loop */
 
-    while (ny >= y)
-    {
+    while (arc-- >= 0) {
         if (filled) {		/* fill from center */
-            cx = x;
-            cy = y;
+            cy = 0;
         } else {		/* fill from perimeter only (no fill) */
-            cx = nx;
             cy = ny;
         }
-        while (cx <= nx) {
-            while (cy <= ny) {
-                point(cx, cy);
-                point(cx, 2*y-cy);
-                point(2*x-cx, cy);
-                point(2*x-cx, 2*y-cy);
-		cy++;
-            }  /* end for k */
-	    cx++;
-        }  /* end for j */;
+	while (cy <= ny) {
+	    point(nx + x, cy + y);
+	    point(nx + x, y - cy);
+	    point(x - nx, cy + y);
+	    point(x - nx, y - cy);
+	    cy++;
+	}  /* end while cy */
 				 /* generate circumference */
-        xs += epsilon * ys;
-        nx = x + (int) (xs + 0.5);
-        ys -= epsilon * xs;
-        ny = y + (int) (ys + 0.5);
-    }  /* end for i */;
+        nx = (int) ((xs += epsilon * ys) + 0.5);
+        ny = (int) ((ys -= epsilon * xs) + 0.5);
+    }  /* end while arc */;
 }  /* end RoundEnd */;
 
 
@@ -749,7 +744,7 @@ int y1;
 	register int xe;
 	register int ys;
 	register int ye;
-        double morelen, theta, wx, wy, xx, xy;
+        double theta, wx, wy, xx, xy;
         int addln, j, xdir, ydir, dx, dy;
 
 
@@ -765,9 +760,8 @@ int y1;
             ydir = -1;
         }
 
-        morelen = linethickness / 2;
-	addln = (int) morelen;
-        RoundEnd (x0, y0, (int) morelen, TRUE);    /* add rounded end */
+	addln = linethickness / 2;
+        RoundEnd (x0, y0, linethickness, TRUE);    /* add rounded end */
 
         for (j=(-addln); j<=addln; ++j) {
 	    if (dy == 0) {
@@ -792,5 +786,5 @@ int y1;
 	    line(xs, ys, xe, ye);
         }  /* end for */
 
-        RoundEnd(x1, y1, (int) morelen, TRUE);    /* add rounded end */
+        RoundEnd(x1, y1, linethickness, TRUE);    /* add rounded end */
 }  /* end HGtline */
