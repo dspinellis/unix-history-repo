@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)implog.8	6.1 (Berkeley) %G%
+.\"	@(#)implog.8	6.2 (Berkeley) %G%
 .\"
 .TH IMPLOG 8C ""
 .UC 5
@@ -16,6 +16,8 @@ implog \- IMP log interpreter
 .B \-f
 ] [
 .B \-c
+] [
+.B \-r
 ] [
 .B \-l
 [
@@ -53,6 +55,10 @@ check for new logged messages every 5 seconds.
 .B \-c
 In addition to printing any data messages logged, show the
 contents of the data in hexadecimal bytes.
+.TP
+.B \-r
+Print the raw imp leader, showing all fields,
+in addition to the formatted interpretation according to type.
 .TP
 \fB\-l\fP [ \fIlink\fP# ]
 Show only those messages received on the specified ``link''.  If
