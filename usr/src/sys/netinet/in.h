@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	6.10 (Berkeley) %G%
+ *	@(#)in.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ struct sockaddr_in {
  */
 #define	IP_OPTIONS	1		/* set/get IP per-packet options */
 
-#if !defined(vax) && !defined(ntohl)
+#if !defined(vax) && !defined(ntohl) && !defined(lint)
 /*
  * Macros for number representation conversion.
  */
@@ -98,6 +98,11 @@ struct sockaddr_in {
 #define	ntohs(x)	(x)
 #define	htonl(x)	(x)
 #define	htons(x)	(x)
+#endif
+
+#if !defined(ntohl) && (defined(vax) || defined(lint))
+u_short	ntohs(), htons();
+u_long	ntohl(), htonl();
 #endif
 
 #ifdef KERNEL
