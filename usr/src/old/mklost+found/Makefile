@@ -14,11 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 MAN=	mklost+found.0
 
-all mklost+found clean cleandir depend lint tags:
+all mklost+found clean depend lint tags:
+
+cleandir:
+	rm -f ${MAN}
 
 install: ${MAN}
 	install -c -o bin -g bin -m 755 mklost+found.sh ${DESTDIR}/etc/mklost+found
