@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.3 90/09/17$
+ * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)hpux_compat.c	7.14 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -257,6 +257,11 @@ hpuxopen(p, uap, retval)
 	return (open(p, uap, retval));
 }
 
+/* XXX */
+#define	UF_FNDELAY_ON	0x20
+#define	UF_FIONBIO_ON	0x40
+/* XXX */
+
 hpuxfcntl(p, uap, retval)
 	struct proc *p;
 	register struct args {
@@ -267,9 +272,23 @@ hpuxfcntl(p, uap, retval)
 	int *retval;
 {
 	int mode, error;
+	char *fp;
 
+	if (uap->cmd == F_GETFL || uap->cmd == F_SETFL) {
+		if ((unsigned)uap->fdes >= p->p_fd->fd_nfiles ||
+		    p->p_fd->fd_ofiles[uap->fdes] == NULL)
+			return (EBADF);
+		fp = &p->p_fd->fd_ofileflags[uap->fdes];
+	}
 	switch (uap->cmd) {
 	case F_SETFL:
+		if (uap->arg & FNDELAY)
+			*fp |= UF_FNDELAY_ON;
+		else {
+			*fp &= ~UF_FNDELAY_ON;
+			if (*fp & UF_FIONBIO_ON)
+				uap->arg |= FNDELAY;
+		}
 		uap->arg &= ~(HPUXFSYNCIO|HPUXFREMOTE|FUSECACHE);
 		break;
 	case F_GETFL:
@@ -281,9 +300,11 @@ hpuxfcntl(p, uap, retval)
 		return (EINVAL);
 	}
 	error = fcntl(p, uap, retval);
-	if (error == 0 && uap->arg == F_GETFL) {
+	if (error == 0 && uap->cmd == F_GETFL) {
 		mode = *retval;
 		*retval &= ~(FCREAT|FTRUNC|FEXCL|FUSECACHE);
+		if ((mode & FNDELAY) && (*fp & UF_FNDELAY_ON) == 0)
+			*retval &= ~FNDELAY;
 		if (mode & FCREAT)
 			*retval |= HPUXFCREAT;
 		if (mode & FTRUNC)
@@ -296,10 +317,10 @@ hpuxfcntl(p, uap, retval)
 
 /*
  * Read and write should return a 0 count when an operation
- * on a VNODE would block, not an error.  Sockets appear to
- * return EWOULDBLOCK (at least in 6.2).  This is probably
- * not entirely correct, since the behavior is only defined
- * for pipes and tty type devices.
+ * on a VNODE would block, not an error.
+ *
+ * In 6.2 and 6.5 sockets appear to return EWOULDBLOCK.
+ * In 7.0 the behavior for sockets depends on whether FNDELAY is in effect.
  */
 hpuxread(p, uap, retval)
 	struct proc *p;
@@ -312,7 +333,8 @@ hpuxread(p, uap, retval)
 
 	error = read(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE) {
+	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
+	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
 		error = 0;
 		*retval = 0;
 	}
@@ -330,7 +352,8 @@ hpuxwrite(p, uap, retval)
 
 	error = write(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE) {
+	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
+	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
 		error = 0;
 		*retval = 0;
 	}
@@ -348,7 +371,8 @@ hpuxreadv(p, uap, retval)
 
 	error = readv(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE) {
+	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
+	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
 		error = 0;
 		*retval = 0;
 	}
@@ -366,7 +390,8 @@ hpuxwritev(p, uap, retval)
 
 	error = writev(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE) {
+	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
+	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
 		error = 0;
 		*retval = 0;
 	}
@@ -445,8 +470,9 @@ hpuxutssys(p, uap, retval)
 			break;
 		}
 		/* copy hostname (sans domain) to nodename */
-		for (i = 0; i < 9 && hostname[i] != '.'; i++)
+		for (i = 0; i < 8 && hostname[i] != '.'; i++)
 			protoutsname.nodename[i] = hostname[i];
+		protoutsname.nodename[i] = '\0';
 		error = copyout((caddr_t)&protoutsname, (caddr_t)uap->uts,
 				sizeof(struct hpuxutsname));
 		break;
@@ -861,7 +887,7 @@ hpuxtobsdioctl(com)
 /*
  * HPUX ioctl system call.  The differences here are:
  *	IOC_IN also means IOC_VOID if the size portion is zero.
- *	no FIOCLEX/FIONCLEX/FIONBIO/FIOASYNC/FIOGETOWN/FIOSETOWN
+ *	no FIOCLEX/FIONCLEX/FIOASYNC/FIOGETOWN/FIOSETOWN
  *	the sgttyb struct is 2 bytes longer
  */
 hpuxioctl(p, uap, retval)
@@ -926,6 +952,29 @@ hpuxioctl(p, uap, retval)
 		*(caddr_t *)data = uap->cmarg;
 
 	switch (com) {
+
+	case HPUXFIOSNBIO:
+	{
+		char *ofp = &fdp->fd_ofileflags[uap->fdes];
+		int tmp;
+
+		if (*(int *)data)
+			*ofp |= UF_FIONBIO_ON;
+		else
+			*ofp &= ~UF_FIONBIO_ON;
+		/*
+		 * Only set/clear if FNDELAY not in effect
+		 */
+		if ((*ofp & UF_FNDELAY_ON) == 0) {
+			if (tmp = (fp->f_flag & FNDELAY))
+				fp->f_flag |= FNDELAY;
+			else
+				fp->f_flag &= ~FNDELAY;
+			error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO,
+						       (caddr_t)&tmp, p);
+		}
+		break;
+	}
 
 	case HPUXTIOCCONS:
 		*(int *)data = 1;
