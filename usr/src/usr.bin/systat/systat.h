@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systat.h	5.3 (Berkeley) %G%
+ *	@(#)systat.h	5.4 (Berkeley) %G%
  */
 
 #include <netdb.h>
@@ -77,7 +77,7 @@ char	**dr_name;
 int	dk_ndrive;
 int	*dk_select;
 float	*dk_mspw;
-char    c, *namp, hostname[32];
+char    c, *namp, hostname[MAXHOSTNAMELEN];
 
 int	nports;
 int	nhosts;
