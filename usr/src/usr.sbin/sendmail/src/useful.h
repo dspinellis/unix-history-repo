@@ -1,10 +1,15 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.2	%G%
+**	@(#)useful.h	3.3	%G%
 */
 
-# define bool	char
+# ifndef makedev
+# include <sys/types.h>
+# endif
+
+/* support for bool type */
+typedef char	bool;
 # define TRUE	1
 # define FALSE	0
 
@@ -12,8 +17,7 @@
 # define NULL	0
 # endif NULL
 
-# define setbit(bit, word)	(word |= bit)
-# define clrbit(bit, word)	(word &= ~bit)
+/* bit hacking */
 # define bitset(bit, word)	((word) & (bit))
 
 /* define the types of some common functions */
