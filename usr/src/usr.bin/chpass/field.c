@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)field.c	8.1 (Berkeley) %G%";
 #include <grp.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 #include <ctype.h>
 #include "chpass.h"
 #include "pathnames.h"
@@ -71,7 +72,8 @@ p_uid(p, pw, ep)
 	struct passwd *pw;
 	ENTRY *ep;
 {
-	int id;
+	uid_t id;
+	char *np;
 
 	if (!*p) {
 		(void)fprintf(stderr, "chpass: empty uid field.\n");
@@ -81,10 +83,10 @@ p_uid(p, pw, ep)
 		(void)fprintf(stderr, "chpass: illegal uid.\n");
 		return(1);
 	}
-	id = atoi(p);
-	if ((u_int)id > USHRT_MAX) {
-		(void)fprintf(stderr, "chpass: %d > max uid value (%d).\n",
-		    id, USHRT_MAX);
+	errno = 0;
+	id = strtoul(p, &np, 10);
+	if (*np || (id == ULONG_MAX && errno == ERANGE)) {
+		(void)fprintf(stderr, "chpass: illegal uid.\n");
 		return(1);
 	}
 	pw->pw_uid = id;
@@ -98,7 +100,8 @@ p_gid(p, pw, ep)
 	ENTRY *ep;
 {
 	struct group *gr;
-	int id;
+	gid_t id;
+	char *np;
 
 	if (!*p) {
 		(void)fprintf(stderr, "chpass: empty gid field.\n");
@@ -113,10 +116,10 @@ p_gid(p, pw, ep)
 		pw->pw_gid = gr->gr_gid;
 		return(0);
 	}
-	id = atoi(p);
-	if ((u_int)id > USHRT_MAX) {
-		(void)fprintf(stderr, "chpass: %d > max gid value (%d).\n",
-		    id, USHRT_MAX);
+	errno = 0;
+	id = strtoul(p, &np, 10);
+	if (*np || (id == ULONG_MAX && errno == ERANGE)) {
+		(void)fprintf(stderr, "chpass: illegal gid.\n");
 		return(1);
 	}
 	pw->pw_gid = id;
