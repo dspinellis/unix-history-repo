@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.13 %G%
+SCCSID = @(#)Makefile 1.14 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -19,7 +19,7 @@ install: all pxref.p
 	cd ${INSTALLIB}; chmod 555 pc2 pc3
 	cp pmerge ${INSTALL}/pmerge
 	-pc -w pxref.p -o ${INSTALL}/pxref
-	cd ${INSTALL} ; chmod 555 pmerge pxref
+	cd ${INSTALL} ; chmod 555 pmerge pxref pc pix
 
 pix: pix.c config.o
 	${CC} ${CFLAGS} -o pix pix.c config.o
