@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.6 83/07/28";
+static	char *sccsid = "@(#)cmd5.c	1.7 83/07/29";
 #endif
 
 #include "defs.h"
@@ -10,6 +10,7 @@ struct ww *idtowin();
 int lineno;				/* current line number in source file */
 static char *argv[100];			/* one line broken up into words */
 static int argc;
+static char insource;
 
 int s_window();
 int s_select();
@@ -17,6 +18,7 @@ int s_escape();
 int s_label();
 int s_terse();
 int s_refresh();
+int s_source();
 
 struct scmd {
 	char *s_name;			/* name of command */
@@ -32,6 +34,7 @@ static struct scmd scmd[] = {
 	"label",	1, 2, 2, s_label,
 	"terse",	1, 0, 1, s_terse,
 	"refresh",	1, 1, 2, s_refresh,
+	"source",	1, 1, 1, s_source,
 	0
 };
 
@@ -42,11 +45,13 @@ char *filename;
 	char buf[BUFSIZ];
 
 	if ((f = fopen(filename, "r")) == 0)
-		return;
+		return -1;
+	insource++;
 	beginerror(filename);
 	for (lineno = 1; fgets(buf, sizeof buf, f) != 0; lineno++)
 		dolongcmd(buf);
 	enderror();
+	insource = 0;
 	return 0;
 }
 
@@ -217,6 +222,16 @@ s_refresh()
 		w->ww_refresh = 0;
 	else
 		w->ww_refresh = 1;
+}
+
+s_source()
+{
+	if (insource) {
+		error("Recursive source.");
+		return;
+	}
+	if (dosource(argv[1]) < 0)
+		error("Can't open %s.", argv[1]);
 }
 
 struct ww *
