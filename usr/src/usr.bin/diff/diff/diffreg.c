@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.10 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.11 %G%";
 
 #include "diff.h"
 /*
@@ -448,7 +448,7 @@ check()
 	register int i, j;
 	int jackpot;
 	long ctold, ctnew;
-	char c,d;
+	register int c,d;
 
 	if ((input[0] = fopen(file1,"r")) == NULL) {
 		perror(file1);
@@ -590,8 +590,7 @@ int *b;
 
 skipline(f)
 {
-	register i;
-	char c;
+	register i, c;
 
 	for(i=1;(c=getc(input[f]))!='\n';i++)
 		if (c < 0)
@@ -668,7 +667,7 @@ struct	context_vec	*context_vec_start,
 */
 change(a,b,c,d)
 {
-	char ch;
+	int ch;
 	int lowa,upb,lowc,upd;
 	struct stat stbuf;
 
@@ -824,6 +823,7 @@ char *s;
 	}
 }
 
+#define POW2			/* define only if HALFLONG is 2**n */
 #define HALFLONG 16
 #define low(x)	(x&((1L<<HALFLONG)-1))
 #define high(x)	(x>>HALFLONG)
@@ -848,13 +848,23 @@ register FILE *f;
 			for(shift=0;(t=getc(f))!='\n';shift+=7) {
 				if(t==-1)
 					return(0);
-				sum += (long)chrtran[t] << (shift%=HALFLONG);
+				sum += (long)chrtran[t] << (shift
+#ifdef POW2
+				    &= HALFLONG - 1);
+#else
+				    %= HALFLONG);
+#endif
 			}
 		else
 			for(shift=0;(t=getc(f))!='\n';shift+=7) {
 				if(t==-1)
 					return(0);
-				sum += (long)t << (shift%=HALFLONG);
+				sum += (long)t << (shift
+#ifdef POW2
+				    &= HALFLONG - 1);
+#else
+				    %= HALFLONG);
+#endif
 			}
 	} else {
 		for(shift=0;;) {
@@ -870,7 +880,12 @@ register FILE *f;
 					shift += 7;
 					space = 0;
 				}
-				sum += (long)chrtran[t] << (shift%=HALFLONG);
+				sum += (long)chrtran[t] << (shift
+#ifdef POW2
+				    &= HALFLONG - 1);
+#else
+				    %= HALFLONG);
+#endif
 				shift += 7;
 				continue;
 			case '\n':
