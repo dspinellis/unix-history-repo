@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -135,13 +135,13 @@ dumpfs(name)
 	    afs.fs_sbsize, afs.fs_cgsize, afs.fs_cgoffset, afs.fs_cgmask);
 	printf("csaddr\t%d\tcssize\t%d\tshift\t%d\tmask\t0x%08x\n",
 	    afs.fs_csaddr, afs.fs_cssize, afs.fs_csshift, afs.fs_csmask);
-	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\n",
-	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly);
+	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\tclean\t%d\n",
+	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly, afs.fs_clean);
 	if (afs.fs_cpc != 0)
 		printf("blocks available in each of %d rotational positions",
 		     afs.fs_nrpos);
 	else
-		printf("insufficient space to maintain rotational tables\n");
+		printf("(no rotational position table)\n");
 	for (c = 0; c < afs.fs_cpc; c++) {
 		printf("\ncylinder number %d:", c);
 		for (i = 0; i < afs.fs_nrpos; i++) {
