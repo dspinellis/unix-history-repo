@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.9	(Berkeley)	83/04/11";
+static char sccsid[] = "@(#)utilities.c	3.10	(Berkeley)	83/04/16";
 #endif
 
 #include "restore.h"
@@ -77,8 +77,9 @@ renameit(from, to)
 	char *from, *to;
 {
 	if (rename(from, to) < 0) {
-		perror("renameit");
-		panic("Cannot rename %s to %s\n", from, to);
+		fprintf(stderr, "Warning: cannot rename %s to %s\n", from, to);
+		perror("rename");
+		return;
 	}
 	vprintf(stdout, "rename %s to %s\n", from, to);
 }
@@ -115,13 +116,15 @@ removenode(ep)
 		badentry(ep, "removenode: not a node");
 	if (ep->e_entries != NIL)
 		badentry(ep, "removenode: non-empty directory");
-	cp = myname(ep);
-	if (rmdir(cp) < 0) {
-		perror("removenode");
-		panic("Cannot remove node %s\n", cp);
-	}
 	ep->e_flags |= REMOVED;
 	ep->e_flags &= ~TMPNAME;
+	cp = myname(ep);
+	if (rmdir(cp) < 0) {
+		fprintf(stderr, "Warning: ");
+		fflush(stderr);
+		perror(cp);
+		return;
+	}
 	vprintf(stdout, "Remove node %s\n", cp);
 }
 
@@ -135,13 +138,15 @@ removeleaf(ep)
 
 	if (ep->e_type != LEAF)
 		badentry(ep, "removeleaf: not a leaf");
-	cp = myname(ep);
-	if (unlink(cp) < 0) {
-		perror("removeleaf");
-		panic("Cannot remove leaf %s\n", cp);
-	}
 	ep->e_flags |= REMOVED;
 	ep->e_flags &= ~TMPNAME;
+	cp = myname(ep);
+	if (unlink(cp) < 0) {
+		fprintf(stderr, "Warning: ");
+		fflush(stderr);
+		perror(cp);
+		return;
+	}
 	vprintf(stdout, "Remove leaf %s\n", cp);
 }
 
@@ -155,15 +160,19 @@ linkit(existing, new, type)
 
 	if (type == SYMLINK) {
 		if (symlink(existing, new) < 0) {
-			perror("linkit");
-			panic("Cannot create symbolic link %s->%s\n",
+			fprintf(stderr,
+				"Warning: cannot create symbolic link %s->%s\n",
 				new, existing);
+			perror("symlink");
+			return;
 		}
 	} else if (type == HARDLINK) {
 		if (link(existing, new) < 0) {
-			perror("linkit");
-			panic("Cannot create hard link %s->%s\n",
+			fprintf(stderr,
+				"Warning: cannot create hard link %s->%s\n",
 				new, existing);
+			perror("link");
+			return;
 		}
 	} else {
 		panic("linkit: unknown type %d\n", type);
