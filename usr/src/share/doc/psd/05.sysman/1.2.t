@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.5 (Berkeley) %G%
+.\"	@(#)1.2.t	6.6 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -118,6 +118,8 @@ will be flushed;
 if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
 succeeding locations will be examined.
 Any required invalidation of memory caches will also take place at this time.
+Filesystem operations on a file which is mapped for shared modifications
+are unpredictable except after an \fImsync\fP.
 .PP
 A mapping can be removed by the call
 .DS
@@ -148,7 +150,7 @@ madvise(addr, len, behav);
 caddr_t addr; int len, behav;
 .DE
 \fIBehav\fP describes expected behavior, as given
-in <mman.h>:
+in \fI<sys/mman.h>\fP:
 .DS
 ._d
 #define	MADV_NORMAL	0	/* no further special treatment */
@@ -169,37 +171,10 @@ that the page is in-core.
 .NH 3
 Synchronization primitives
 .PP
-.if \n(sw=0 .ig sw
-Two routines provide services analogous to the kernel
-\fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
-shared memory.
-A process may relinquish the processor by calling \fImsleep\fP:
-.DS
-msleep(sem)
-semaphore *sem;
-.DE
-\fISem\fP must lie within a MAP_SHARED region with at least modes
-PROT_READ and PROT_WRITE.
-The MAP_HASSEMAPHORE flag must have been specified when the region was created.
-The process will remain in a sleeping state
-until some other process issues an \fImwakeup\fP for the same semaphore
-within the region using the call:
-.DS
-mwakeup(sem)
-semaphore *sem;
-.DE
-An \fImwakeup\fP may awaken all sleepers on the semaphore,
-or may awaken only the next sleeper on a queue.
-.PP
-To avoid system calls for the usual case of an uncontested lock,
-routines are provided to acquire and release locks.
-.sw
-.if \n(sw .ig sw
 Primitives are provided for synchronization using semaphores in shared memory.
 Semaphores must lie within a MAP_SHARED region with at least modes
 PROT_READ and PROT_WRITE.
 The MAP_HASSEMAPHORE flag must have been specified when the region was created.
-.sw
 To acquire a lock a process calls:
 .DS
 value = mset(sem, wait)
@@ -225,3 +200,22 @@ If the ``want'' flag is zero in the previous value,
 \fImclear\fP returns immediately.
 If the ``want'' flag is non-zero in the previous value,
 \fImclear\fP arranges for waiting processes to retry before returning.
+.PP
+Two routines provide services analogous to the kernel
+\fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
+shared memory.
+A process may relinquish the processor by calling \fImsleep\fP:
+.DS
+msleep(sem)
+semaphore *sem;
+.DE
+The process will remain in a sleeping state
+until some other process issues an \fImwakeup\fP for the same semaphore
+within the region using the call:
+.DS
+mwakeup(sem)
+semaphore *sem;
+.DE
+An \fImwakeup\fP may awaken all sleepers on the semaphore,
+or may awaken only the next sleeper on a queue.
+.PP
