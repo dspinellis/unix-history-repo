@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.9	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.10	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -795,10 +795,11 @@ fsave( s ) char *s; {
 	static union rec fsname;
 	s = strip( s );
 #ifndef FLEXNAMES
-	if( strncmp( s, fsname.f.fn, LFNM ) ){
+	if( strncmp( s, fsname.f.fn, LFNM ) )
 #else
-	if (fsname.f.fn == NULL || strcmp(s, fsname.f.fn)) {
+	if (fsname.f.fn == NULL || strcmp(s, fsname.f.fn))
 #endif
+		{
 		/* new one */
 #ifndef FLEXNAMES
 		strncpy( fsname.f.fn, s, LFNM );
