@@ -1,0 +1,6 @@
+Enter a number between 2 and 41.
+Numbers 2, 10..12, 17, and 37 print "false" all others "true".
+i =23
+The set opcodes work : [] mul plus minus in and rel or rel
+
+25 statements executed in 0.00 seconds cpu time.
