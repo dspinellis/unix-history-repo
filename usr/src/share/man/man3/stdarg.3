@@ -1,24 +1,35 @@
-.\"	@(#)stdarg.3	4.1 (Berkeley) %G%
+.\"	@(#)stdarg.3	5.1 (Berkeley) %G%
 .\"
-.TH VARARGS 3 
+.TH VARARGS 3  "19 January 1983"
 .AT 3
 .SH NAME
 varargs \- variable argument list
 .SH SYNOPSIS
-.nf
-#include <varargs.h>
-\fIfunction\fR(\fBva_alist\fR)
-\fBva_dcl
-va_list \fIpvar\fR;
-\fBva_start\fR(\fIpvar\fR);
-f = \fBva_arg\fR(\fIpvar\fR, \fItype\fR);
-\fBva_end\fR(\fIpvar\fR);
-.fi
+.B "#include <varargs.h>"
+.PP
+.I function\c
+.RB ( va_alist )
+.br
+.B va_dcl
+.br
+.B va_list
+.IR pvar ;
+.br
+.B va_start\c
+.RI ( pvar );
+.br
+f =
+.B va_arg\c
+.RI ( pvar ,
+.IR type );
+.br
+.B va_end\c
+.RI ( pvar );
 .SH DESCRIPTION
-This set of macros allows portable procedures that accept variable
-argument lists to be written.
-Routines which have variable argument lists (such as
-.IR printf(3))
+This set of macros provides a means of writing portable procedures that
+accept variable argument lists.
+Routines having variable argument lists (such as
+.IR printf (3))
 that do not use varargs are inherently nonportable, since different
 machines use different argument passing conventions.
 .PP
@@ -26,26 +37,27 @@ machines use different argument passing conventions.
 is used in a function header to declare a variable argument list.
 .PP
 .B va_dcl
-is a declaration for \fBva_alist\fP.
+is a declaration for
+.BR va_alist .
 Note that there is no semicolon after
 .B va_dcl.
 .PP
 .B va_list
 is a type which can be used for the variable
-.I pvar,
+.IR pvar ,
 which is used to traverse the list.
 One such variable must always be declared.
 .PP
-.B va_start
+.B va_start\c
 .RI (pvar)
 is called to initialize
 .I pvar
 to the beginning of the list.
 .PP
-.B va_arg
-.RI ( pvar , type )
-will return the next argument in the list
-pointed to by
+.B va_arg\c
+.RI ( pvar ,
+.IR type )
+will return the next argument in the list pointed to by
 .IR pvar .
 .I Type
 is the type the argument is expected to be.
@@ -53,13 +65,13 @@ Different types can be mixed, but it is up
 to the routine to know what type of argument is
 expected, since it cannot be determined at runtime.
 .PP
-.B va_end
+.B va_end\c
 .RI ( pvar )
 is used to finish up.
 .PP
-Multiple traversals, each bracketted by
+Multiple traversals, each bracketed by
 .B va_start
-\&..
+\&...
 .B va_end,
 are possible.
 .SH EXAMPLE
@@ -88,4 +100,4 @@ stack frame.  For example,
 .I execl
 passes a 0 to signal the end of the list.
 .I Printf
-can tell how many arguments are there by the format.
+can tell how many arguments are supposed to be there by the format.
