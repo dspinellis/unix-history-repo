@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.3 (Berkeley) %G%
+#	@(#)Makefile.inc	5.4 (Berkeley) %G%
 
 # string sources
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
@@ -17,7 +17,7 @@ SRCS+=	bcmp.c bcopy.c bzero.s ffs.c index.c memchr.c memcmp.c memset.c \
 	strncat.c strncmp.c strncpy.c strpbrk.c strsep.c \
 	strspn.c strstr.c
 .elif (${MACHINE} == "tahoe")
-SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.c memcmp.s memset.s \
+SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.c memcmp.s memset.c \
 	rindex.c strcat.s strcmp.s strcpy.s strcspn.c strlen.s \
 	strncat.s strncmp.s strncpy.s strpbrk.c strsep.c \
 	strspn.c strstr.c
