@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
-#include <sys/ioctl.h>
+#include <sgtty.h>
 
 #include <utmp.h>
 #include <signal.h>
@@ -54,7 +54,6 @@ static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
 
 #ifdef	KERBEROS
 #include <krb.h>
-#include <sgtty.h>
 #include <netdb.h>
 char		realm[REALM_SZ];
 int		kerror = KSUCCESS, notickets = 1;
@@ -105,7 +104,7 @@ main(argc, argv)
 	struct group *gr;
 	register int ch;
 	register char *p;
-	int ask, fflag, hflag, pflag, cnt;
+	int ask, fflag, hflag, pflag, cnt, uid;
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
@@ -133,15 +132,18 @@ main(argc, argv)
 	else
 		domain = index(localhost, '.');
 
+	openlog("login", LOG_ODELAY, LOG_AUTH);
+
 	fflag = hflag = pflag = 0;
 	passwd_req = 1;
+	uid = getuid();
 	while ((ch = getopt(argc, argv, "fh:p")) != EOF)
 		switch (ch) {
 		case 'f':
 			fflag = 1;
 			break;
 		case 'h':
-			if (getuid()) {
+			if (uid) {
 				(void)fprintf(stderr,
 				    "login: -h for super-user only.\n");
 				exit(1);
@@ -157,7 +159,8 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			syslog(LOG_ERR, "invalid flag");
+			if (!uid)
+				syslog(LOG_ERR, "invalid flag %c", ch);
 			(void)fprintf(stderr,
 			    "usage: login [-fp] [username]\n");
 			exit(1);
@@ -194,8 +197,6 @@ main(argc, argv)
 	else
 		tty = ttyn;
 
-	openlog("login", LOG_ODELAY, LOG_AUTH);
-
 	for (cnt = 0;; ask = 1) {
 		ioctlval = TTYDISC;
 		(void)ioctl(0, TIOCSETD, &ioctlval);
@@ -205,9 +206,8 @@ main(argc, argv)
 			getloginname();
 		}
 		/*
-		 * Note if trying multiple user names;
-		 * log failures for previous user name,
-		 * but don't bother logging one failure
+		 * Note if trying multiple user names; log failures for
+		 * previous user name, but don't bother logging one failure
 		 * for nonexistent name (mistyped username).
 		 */
 		if (failures && strcmp(tbuf, username)) {
@@ -230,8 +230,6 @@ main(argc, argv)
 		 * root, disallow if the uid's differ.
 		 */
 		if (fflag && pwd) {
-			int uid = getuid();
-
 			passwd_req =
 #ifndef	KERBEROS
 			     pwd->pw_uid == 0 ||
@@ -245,6 +243,25 @@ main(argc, argv)
 		 */
 		if (!passwd_req || (pwd && !*pwd->pw_passwd))
 			break;
+
+		/*
+		 * If trying to log in as root, but with insecure terminal,
+		 * refuse the login attempt.
+		 */
+		if (pwd->pw_uid == 0 && !rootterm(tty)) {
+			(void)fprintf(stderr,
+			    "%s login refused on this terminal.\n",
+			    pwd->pw_name);
+			if (hostname)
+				syslog(LOG_NOTICE,
+				    "LOGIN %s REFUSED FROM %s ON TTY %s",
+				    pwd->pw_name, hostname, tty);
+			else
+				syslog(LOG_NOTICE,
+				    "LOGIN %s REFUSED ON TTY %s",
+				     pwd->pw_name, tty);
+			continue;
+		}
 
 		setpriority(PRIO_PROCESS, 0, -4);
 		pp = getpass("Password:");
@@ -264,11 +281,9 @@ main(argc, argv)
 
 			/*
 			 * get TGT for local realm
-			 *	convention: store tickets in file
-			 *	associated with tty name, which should
-			 *	be available
+			 * convention: store tickets in file associated
+			 * with tty name, which should be available
 			 */
-
 			(void)sprintf(tkfile, "%s_%s", TKT_ROOT, tty);
 			kerror = INTK_ERR;
 			if (setenv("KRBTKFILE", tkfile, 1) < 0)
@@ -282,9 +297,6 @@ main(argc, argv)
 					INITIAL_TICKET, realm,
 					DEFAULT_TKT_LIFE,
 					pp);
-
-				if (chown(tkfile, pwd->pw_uid, pwd->pw_gid) < 0)
-					syslog(LOG_ERR, "chown tkfile: %m");
 			}
 			/*
 			 * If we got a TGT, get a local "rcmd" ticket and
@@ -298,6 +310,8 @@ main(argc, argv)
 			 *	   from krb_rd_req()
 			 */
 			if (kerror == INTK_OK) {
+				if (chown(tkfile, pwd->pw_uid, pwd->pw_gid) < 0)
+					syslog(LOG_ERR, "chown tkfile: %m");
 				(void) strncpy(savehost,
 					krb_get_phost(localhost),
 					sizeof(savehost));
@@ -362,7 +376,8 @@ main(argc, argv)
 
 			} else {
 				(void) unlink(tkfile);
-				if (kerror != INTK_BADPW)
+				if ((kerror != INTK_BADPW) &&
+				    kerror != KDC_PR_UNKNOWN)
 					syslog(LOG_ERR,
 						"Kerberos intkt error: %s",
 						krb_err_txt[kerror]);
@@ -392,20 +407,6 @@ main(argc, argv)
 
 	/* paranoia... */
 	endpwent();
-
-	/*
-	 * If valid so far and root is logging in, see if root logins on
-	 * this terminal are permitted.
-	 */
-	if (pwd->pw_uid == 0 && !rootterm(tty)) {
-		if (hostname)
-			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED FROM %s",
-			    hostname);
-		else
-			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED ON %s", tty);
-		(void)printf("Login incorrect\n");
-		sleepexit(1);
-	}
 
 	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0 && errno != EINVAL) {
 		switch(errno) {
