@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.6 (Berkeley) %G%
+ *	@(#)make.h	5.7 (Berkeley) %G%
  */
 
 /*-
@@ -322,8 +322,6 @@ extern int    	debug;
  * Since there are so many, all functions that return non-integer values are
  * extracted by means of a sed script or two and stuck in the file "nonints.h"
  */
-#include	"nonints.h"
-
-extern char *malloc();
+#include "nonints.h"
 
 #endif _MAKE_H_
