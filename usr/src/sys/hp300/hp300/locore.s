@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.20 (Berkeley) %G%
+ *	@(#)locore.s	7.21 (Berkeley) %G%
  */
 
 /*
@@ -636,6 +636,29 @@ Lstackok:
 	movb	a0@(CLKMSB1),d1		| clear timer1 interrupt
 	addql	#1,_intrcnt+28		| count hardclock interrupts
 	movl	a1,sp@-
+#ifdef USELEDS
+	.globl	_ledaddr, _inledcontrol, _ledcontrol, _hz
+	tstl	_ledaddr		| using LEDs?
+	jeq	Lnoled0			| no, skip this code
+	movl	heartbeat,d0		| get tick count
+	addql	#1,d0			|  increment
+	movl	_hz,d1
+	lsrl	#1,d1			| throb twice a second
+	cmpl	d0,d1			| are we there yet?
+	jne	Lnoled1			| no, nothing to do
+	tstl	_inledcontrol		| already updating LEDs?
+	jne	Lnoled2			| yes, skip it
+	movl	#LED_PULSE,sp@-
+	movl	#LED_DISK+LED_LANRCV+LED_LANXMT,sp@-
+	clrl	sp@-
+	jbsr	_ledcontrol		| toggle pulse, turn all others off
+	lea	sp@(12),sp
+Lnoled2:
+	movql	#0,d0
+Lnoled1:
+	movl	d0,heartbeat
+Lnoled0:
+#endif
 	jbsr	_hardclock		| hardclock(&frame)
 	addql	#4,sp
 2:
@@ -2641,6 +2664,10 @@ _CLKbase:
 	.long	0		| KVA of base of clock registers
 _MMUbase:
 	.long	0		| KVA of base of HP MMU registers
+#ifdef USELEDS
+heartbeat:
+	.long	0		| clock ticks since last pulse of heartbeat
+#endif
 #ifdef DEBUG
 	.globl	fulltflush, fullcflush
 fulltflush:
