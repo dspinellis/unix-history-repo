@@ -1,4 +1,4 @@
-#	@(#)Makefile.i386	7.4 (Berkeley) %G%
+#	@(#)Makefile.i386	7.5 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -66,11 +66,10 @@ NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
 #	${SYSTEM_LD_TAIL}
 SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
-SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ} libkern.a
 SYSTEM_LD_HEAD=	@echo loading $@; rm -f $@
 SYSTEM_LD=	@strip=-x; [ X${DEBUG} = X-g ] && strip=-X; \
-		${LD} $$strip -n -T FE000000 -o $@ ${SYSTEM_OBJ} vers.o \
-			../../quad/libquad.a
+		${LD} $$strip -n -T FE000000 -o $@ ${SYSTEM_OBJ} vers.o libkern.a
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
 SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
@@ -79,6 +78,13 @@ SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
 		echo strip -d $@; strip -d $@; }
 
 %LOAD
+
+libkern.a:
+	-@if [ X${PROF} = X ]; \
+	then ln -s $S/libkern/obj/libkern.a libkern.a; \
+	else ln -s $S/libkern/obj/libkern_p.a libkern.a; \
+	fi; \
+	echo ln -s $S/libkern/obj/libkern.a libkern.a
 
 newvers:
 	sh $S/conf/newvers.sh
