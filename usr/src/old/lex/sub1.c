@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)sub1.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub1.c	4.4 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
@@ -497,7 +497,7 @@ munput(t,p)	/* implementation dependent */
 	register int i,j;
 	if(t == 'c'){
 		*pushptr++ = peek;		/* watch out for this */
-		peek = p;
+		peek = (int)p;
 		}
 	else if(t == 's'){
 		*pushptr++ = peek;
