@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)scandir.3	6.5 (Berkeley) %G%
+.\"	@(#)scandir.3	6.6 (Berkeley) %G%
 .\"
 .TH SCANDIR 3  ""
 .UC 5
@@ -11,17 +11,19 @@
 scandir, alphasort \- scan a directory
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
-.B #include <sys/dir.h>
-.PP
-.B scandir(dirname, namelist, select, compar)
-.B char *dirname;
-.B struct direct ***namelist;
-.B int (*select)();
-.B int (*compar)();
-.PP
-.B alphasort(d1, d2)
-.B struct direct **d1, **d2;
+.ft B
+#include <sys/types.h>
+#include <dirent.h>
+
+scandir(dirname, namelist, select, compar)
+char *dirname;
+struct direct ***namelist;
+int (*select)();
+int (*compar)();
+
+alphasort(d1, d2)
+void *d1, *d2;
+.ft R
 .fi
 .SH DESCRIPTION
 .I Scandir
@@ -51,22 +53,19 @@ The
 .I compar
 parameter is a pointer to a user supplied subroutine which is passed to
 .IR qsort (3)
-to sort the completed array. If this pointer is null, the array is not sorted.
+to sort the completed array.
+If this pointer is null, the array is not sorted.
+.PP
 .I Alphasort
 is a routine which can be used for the
 .I compar
 parameter to sort the array alphabetically.
 .PP
 The memory allocated for the array can be deallocated with
-.I free
-(see
-.IR malloc (3))
-by freeing each pointer in the array and the array itself.
+.IR free (3),
+by freeing each pointer in the array and then the array itself.
 .SH "SEE ALSO"
-directory(3),
-malloc(3),
-qsort(3),
-dir(5)
+directory(3), malloc(3), qsort(3), dir(5)
 .SH DIAGNOSTICS
 Returns \-1 if the directory cannot be opened for reading or if
 .IR malloc (3)
