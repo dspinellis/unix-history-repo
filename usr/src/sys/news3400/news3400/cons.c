@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.c	7.1 (Berkeley) %G%
+ *	@(#)cons.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,6 +18,8 @@
 #include "tty.h"
 #include "file.h"
 #include "conf.h"
+
+#include "bm.h"
 
 dev_t consdev = (dev_t)NULL;	/* initialized by consinit() */
 struct tty *constty = 0;
@@ -115,11 +117,16 @@ cnputc(c)
 	if (consdev == NULL)
 		return 0;
 
+#if NBM > 0
 	if (consdev == makedev(1, 0))
 		putc = scccons_putc;
 	else
 		putc = bmcons_putc;
+#else
+	putc = scccons_putc;
+#endif
 
+	/* KU: should be much more efficient */
 	s = splhigh();
 	putc(c);
 	if (c == '\n')
@@ -136,6 +143,7 @@ scccons_putc(c)
 	scc_error_write(SCC_CONSOLE, cnbuf, 1);
 }
 
+#if NBM > 0
 bmcons_putc(c)
 	int c;
 {
@@ -144,3 +152,4 @@ bmcons_putc(c)
 	cnbuf[0] = (char)c;
 	vt100_write(0, cnbuf, 1);
 }
+#endif
