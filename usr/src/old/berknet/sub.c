@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)sub.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)sub.c	4.5	(Berkeley)	%G%";
 
 /*
 	sub.c
@@ -90,43 +90,41 @@ promptlogin(mchto)
 	char buf[BUFSIZ], mch;
 	FILE *wf;
 	int c;
-	if(status.mpasswd[0] == 0 || status.login[0] == 0 || status.force){
+	if(status.login[0]==0 || status.force){
+		buf[0] = 0;
 		wf = fopen("/dev/tty","r");
 		if(wf != NULL){
-			if(status.login[0]==0 || status.force){
-				fprintf(stderr,"Name (%s:%s): ",longname(mchto),
-					status.localname);
-				if(fgets(buf, BUFSIZ, wf) != buf){
-					perror("fgets");
-					exit(EX_OSERR);
-					}
-				c = strlen(buf);
-				buf[c > 0 ? c-1 : 0] = 0;
-				if(c > 10){
-					err("Login name too long.\n");
-					exit(EX_USAGE);
-					}
-				if(FMemberSCh(buf,' ')){
-					err("Login names don't have blanks in them.\n");
-					exit(EX_USAGE);
-					}
-				if(buf[0] == 0)strcpy(buf,status.localname);
-				mch = MchSFromAddr(status.login,buf);
-				if(mch != local && mch != mchto){
-					err(
-				"Must specify login name on %s machine\n",
-						longname(mchto));
-					exit(EX_USAGE);
+			fprintf(stderr,"Name (%s:%s): ",longname(mchto),
+				status.localname);
+			if(fgets(buf, BUFSIZ, wf) != buf){
+				perror("fgets");
+				exit(EX_OSERR);
 				}
-			}
-			if(strcmp(status.login,"network") != 0
-				&& (status.mpasswd[0]== 0 || status.force)){
-				sprintf(buf,"Password (%s:%s):",
-					longname(mchto), status.login);
-				strcpy(status.mpasswd,getpass(buf));
+			c = strlen(buf);
+			buf[c > 0 ? c-1 : 0] = 0;
+			if(c > 10){
+				err("Login name too long.\n");
+				exit(EX_USAGE);
+				}
+			if(FMemberSCh(buf,' ')){
+				err("Login names don't have blanks in them.\n");
+				exit(EX_USAGE);
 				}
 			fclose(wf);
 			}
+		if(buf[0] == 0)strcpy(buf,status.localname);
+		mch = MchSFromAddr(status.login,buf);
+		if(mch != local && mch != mchto){
+			err("Must specify login name on %s machine\n",
+				longname(mchto));
+			exit(EX_USAGE);
+			}
+		}
+	if(strcmp(status.login,"network") != 0
+		&& (status.mpasswd[0]== 0 || status.force)){
+		sprintf(buf,"Password (%s:%s):",
+			longname(mchto), status.login);
+		strcpy(status.mpasswd,getpass(buf));
 		}
 	if(status.login[0] == 0) strcpy(status.login,status.localname);
 	if(status.mpasswd[0] == 0)strcpy(status.mpasswd,"\"\"");
