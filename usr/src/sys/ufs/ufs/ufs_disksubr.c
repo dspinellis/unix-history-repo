@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_disksubr.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,54 +29,58 @@
  * allocated.
  */
 
-#define	b_cylin	b_resid
+/*
+ * For portability with historic industry practice, the
+ * cylinder number has to be maintained in the `b_resid'
+ * field.
+ */
+#define	b_cylinder	b_resid
 
 void
 disksort(dp, bp)
 	register struct buf *dp, *bp;
 {
-	register struct buf *ap;
+	register struct buf *bq;
 
-	/*
-	 * If nothing on the activity queue, then
-	 * we become the only thing.
-	 */
-	ap = dp->b_actf;
-	if(ap == NULL) {
-		dp->b_actf = bp;
+	/* If the queue is empty, then it's easy. */
+	if (dp->b_actf == NULL) {
 		bp->b_actf = NULL;
+		dp->b_actf = bp;
 		return;
 	}
+
 	/*
-	 * If we lie after the first (currently active)
-	 * request, then we must locate the second request list
-	 * and add ourselves to it.
+	 * If we lie after the first (currently active) request, then we
+	 * must locate the second request list and add ourselves to it.
 	 */
-	if (bp->b_cylin < ap->b_cylin) {
-		while (ap->b_actf) {
+	bq = dp->b_actf;
+	if (bp->b_cylinder < bq->b_cylinder) {
+		while (bq->b_actf) {
 			/*
-			 * Check for an ``inversion'' in the
-			 * normally ascending cylinder numbers,
-			 * indicating the start of the second request list.
+			 * Check for an ``inversion'' in the normally ascending
+			 * cylinder numbers, indicating the start of the second
+			 * request list.
 			 */
-			if (ap->b_actf->b_cylin < ap->b_cylin) {
+			if (bq->b_actf->b_cylinder < bq->b_cylinder) {
 				/*
-				 * Search the second request list
-				 * for the first request at a larger
-				 * cylinder number.  We go before that;
-				 * if there is no such request, we go at end.
+				 * Search the second request list for the first
+				 * request at a larger cylinder number.  We go
+				 * before that; if there is no such request, we
+				 * go at end.
 				 */
 				do {
-					if (bp->b_cylin < ap->b_actf->b_cylin)
+					if (bp->b_cylinder <
+					    bq->b_actf->b_cylinder)
 						goto insert;
-					if (bp->b_cylin == ap->b_actf->b_cylin &&
-					    bp->b_blkno < ap->b_actf->b_blkno)
+					if (bp->b_cylinder ==
+					    bq->b_actf->b_cylinder &&
+					    bp->b_blkno < bq->b_actf->b_blkno)
 						goto insert;
-					ap = ap->b_actf;
-				} while (ap->b_actf);
+					bq = bq->b_actf;
+				} while (bq->b_actf);
 				goto insert;		/* after last */
 			}
-			ap = ap->b_actf;
+			bq = bq->b_actf;
 		}
 		/*
 		 * No inversions... we will go after the last, and
@@ -88,28 +92,26 @@ disksort(dp, bp)
 	 * Request is at/after the current request...
 	 * sort in the first request list.
 	 */
-	while (ap->b_actf) {
+	while (bq->b_actf) {
 		/*
-		 * We want to go after the current request
-		 * if there is an inversion after it (i.e. it is
-		 * the end of the first request list), or if
-		 * the next request is a larger cylinder than our request.
+		 * We want to go after the current request if there is an
+		 * inversion after it (i.e. it is the end of the first
+		 * request list), or if the next request is a larger cylinder
+		 * than our request.
 		 */
-		if (ap->b_actf->b_cylin < ap->b_cylin ||
-		    bp->b_cylin < ap->b_actf->b_cylin ||
-		    (bp->b_cylin == ap->b_actf->b_cylin &&
-		    bp->b_blkno < ap->b_actf->b_blkno))
+		if (bq->b_actf->b_cylinder < bq->b_cylinder ||
+		    bp->b_cylinder < bq->b_actf->b_cylinder ||
+		    (bp->b_cylinder == bq->b_actf->b_cylinder &&
+		    bp->b_blkno < bq->b_actf->b_blkno))
 			goto insert;
-		ap = ap->b_actf;
+		bq = bq->b_actf;
 	}
 	/*
-	 * Neither a second list nor a larger
-	 * request... we go at the end of the first list,
-	 * which is the same as the end of the whole schebang.
+	 * Neither a second list nor a larger request... we go at the end of
+	 * the first list, which is the same as the end of the whole schebang.
 	 */
-insert:
-	bp->b_actf = ap->b_actf;
-	ap->b_actf = bp;
+insert:	bp->b_actf = bq->b_actf;
+	bq->b_actf = bp;
 }
 
 /*
@@ -141,11 +143,11 @@ readdisklabel(dev, strat, lp)
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
 	bp->b_flags = B_BUSY | B_READ;
-	bp->b_cylin = LABELSECTOR / lp->d_secpercyl;
+	bp->b_cylinder = LABELSECTOR / lp->d_secpercyl;
 	(*strat)(bp);
-	if (biowait(bp)) {
+	if (biowait(bp))
 		msg = "I/O error";
-	} else for (dlp = (struct disklabel *)bp->b_un.b_addr;
+	else for (dlp = (struct disklabel *)bp->b_un.b_addr;
 	    dlp <= (struct disklabel *)(bp->b_un.b_addr+DEV_BSIZE-sizeof(*dlp));
 	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
 		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {

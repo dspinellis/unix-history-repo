@@ -4,20 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	8.1 (Berkeley) %G%
+ *	@(#)tty.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
-#include <sys/select.h>			/* for struct selinfo */
+#include <sys/select.h>		/* For struct selinfo. */
 
 /*
  * Clists are character lists, which is a variable length linked list
- * of cblocks, wiht a count of the number of characters in the list.
+ * of cblocks, with a count of the number of characters in the list.
  */
 struct clist {
-	int	c_cc;		/* count of characters in queue */
-	char	*c_cf;		/* first character/cblock */
-	char	*c_cl;		/* last chararacter/cblock */
+	int	c_cc;		/* Number of characters in the clist. */
+	char	*c_cf;		/* Pointer to the first cblock. */
+	char	*c_cl;		/* Pointer to the last cblock. */
 };
 
 /*
@@ -28,30 +28,30 @@ struct clist {
  * (low, high, timeout).
  */
 struct tty {
-	struct	clist t_rawq;		/* queues */
-	struct	clist t_canq;
-	struct	clist t_outq;
-	void	(*t_oproc)();		/* device */
+	struct	clist t_rawq;		/* Device raw input queue. */
+	struct	clist t_canq;		/* Device canonical queue. */
+	struct	clist t_outq;		/* Device output queue. */
+	void	(*t_oproc)();		/* Device. */
 #ifdef sun4c
-	void	(*t_stop)();		/* device */
+	void	(*t_stop)();		/* Device. */
 #endif
-	int	(*t_param)();		/* device */
-	struct	selinfo t_rsel;		/* tty read/oob select */
-	struct	selinfo t_wsel;		/* tty write select */
+	int	(*t_param)();		/* Device. */
+	struct	selinfo t_rsel;		/* Tty read/oob select. */
+	struct	selinfo t_wsel;		/* Tty write select. */
 	caddr_t	T_LINEP; 		/* XXX */
-	caddr_t	t_addr;			/* ??? */
-	dev_t	t_dev;			/* device */
+	caddr_t	t_addr;			/* XXX */
+	dev_t	t_dev;			/* Device. */
 	int	t_flags;		/* (compat) some of both */
-	int	t_state;		/* some of both */
+	int	t_state;		/* Device and driver internal state. */
 	struct	session *t_session;	/* tty */
-	struct	pgrp *t_pgrp;		/* foreground process group */
-	char	t_line;			/* glue */
-	short	t_col;			/* tty */
-	short	t_rocount, t_rocol;	/* tty */
-	short	t_hiwat;		/* hi water mark */
-	short	t_lowat;		/* low water mark */
-	struct	winsize t_winsize;	/* window size */
-	struct	termios t_termios;	/* termios state */
+	struct	pgrp *t_pgrp;		/* Foreground process group. */
+	char	t_line;			/* Glue. */
+	short	t_col;			/* Tty. */
+	short	t_rocount, t_rocol;	/* Tty. */
+	short	t_hiwat;		/* High water mark. */
+	short	t_lowat;		/* Low water mark. */
+	struct	winsize t_winsize;	/* Window size. */
+	struct	termios t_termios;	/* Termios state. */
 #define	t_iflag		t_termios.c_iflag
 #define	t_oflag		t_termios.c_oflag
 #define	t_cflag		t_termios.c_cflag
@@ -59,52 +59,51 @@ struct tty {
 #define	t_min		t_termios.c_min
 #define	t_time		t_termios.c_time
 #define	t_cc		t_termios.c_cc
-#define t_ispeed	t_termios.c_ispeed
-#define t_ospeed	t_termios.c_ospeed
-	long	t_cancc;		/* stats */
+#define	t_ispeed	t_termios.c_ispeed
+#define	t_ospeed	t_termios.c_ospeed
+	long	t_cancc;		/* Statistics. */
 	long	t_rawcc;
 	long	t_outcc;
-	short	t_gen;			/* generation number */
+	short	t_gen;			/* Generation number. */
 };
 
-#define	TTIPRI	25			/* sleep priority for tty reads */
-#define	TTOPRI	26			/* sleep priority for tty writes */
+#define	TTIPRI	25			/* Sleep priority for tty reads. */
+#define	TTOPRI	26			/* Sleep priority for tty writes. */
 
 #define	TTMASK	15
 #define	OBUFSIZ	100
 #define	TTYHOG	1024
 
 #ifdef KERNEL
-#define TTMAXHIWAT	roundup(2048, CBSIZE)
-#define TTMINHIWAT	roundup(100, CBSIZE)
-#define TTMAXLOWAT	256
-#define TTMINLOWAT	32
-extern	struct ttychars ttydefaults;
+#define	TTMAXHIWAT	roundup(2048, CBSIZE)
+#define	TTMINHIWAT	roundup(100, CBSIZE)
+#define	TTMAXLOWAT	256
+#define	TTMINLOWAT	32
 #endif /* KERNEL */
 
-/* internal state bits */
-#define	TS_TIMEOUT	0x000001	/* delay timeout in progress */
-#define	TS_WOPEN	0x000002	/* waiting for open to complete */
-#define	TS_ISOPEN	0x000004	/* device is open */
-#define	TS_FLUSH	0x000008	/* outq has been flushed during DMA */
-#define	TS_CARR_ON	0x000010	/* software copy of carrier-present */
-#define	TS_BUSY		0x000020	/* output in progress */
-#define	TS_ASLEEP	0x000040	/* wakeup when output done */
-#define	TS_XCLUDE	0x000080	/* exclusive-use flag against open */
-#define	TS_TTSTOP	0x000100	/* output stopped by ctl-s */
-/* was	TS_HUPCLS	0x000200 	 * hang up upon last close */
-#define	TS_TBLOCK	0x000400	/* tandem queue blocked */
-#define	TS_ASYNC	0x004000	/* tty in async i/o mode */
-/* state for intra-line fancy editing work */
-#define	TS_BKSL		0x010000	/* state for lowercase \ work */
-#define	TS_ERASE	0x040000	/* within a \.../ for PRTRUB */
-#define	TS_LNCH		0x080000	/* next character is literal */
-#define	TS_TYPEN	0x100000	/* retyping suspended input (PENDIN) */
-#define	TS_CNTTB	0x200000	/* counting tab width, ignore FLUSHO */
+/* Internal state bits. */
+#define	TS_TIMEOUT	0x000001	/* Delay timeout in progress. */
+#define	TS_WOPEN	0x000002	/* Waiting for open to complete. */
+#define	TS_ISOPEN	0x000004	/* Indicates the device is open. */
+#define	TS_FLUSH	0x000008	/* Outq has been flushed during DMA. */
+#define	TS_CARR_ON	0x000010	/* Software image of carrier-present. */
+#define	TS_BUSY		0x000020	/* Indicates output is in progress. */
+#define	TS_ASLEEP	0x000040	/* Wakeup when output done. */
+#define	TS_XCLUDE	0x000080	/* Exclusive-use flag against open. */
+#define	TS_TTSTOP	0x000100	/* Output stopped by ctl-s. */
+/* was	TS_HUPCLS	0x000200 	 * Hang up upon last close. */
+#define	TS_TBLOCK	0x000400	/* Tandem queue blocked. */
+#define	TS_ASYNC	0x004000	/* Tty in async i/o mode. */
+/* State for intra-line fancy editing work. */
+#define	TS_BKSL		0x010000	/* State for lowercase \ work. */
+#define	TS_ERASE	0x040000	/* Within a \.../ for PRTRUB. */
+#define	TS_LNCH		0x080000	/* Next character is literal. */
+#define	TS_TYPEN	0x100000	/* Retyping suspended input (PENDIN). */
+#define	TS_CNTTB	0x200000	/* Counting tab width, ignore FLUSHO. */
 
 #define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
 
-/* define partab character types */
+/* Character type information. */
 #define	ORDINARY	0
 #define	CONTROL		1
 #define	BACKSPACE	2
@@ -114,37 +113,74 @@ extern	struct ttychars ttydefaults;
 #define	RETURN		6
 
 struct speedtab {
-        int sp_speed;
-        int sp_code;
+        int sp_speed;			/* Speed. */
+        int sp_code;			/* Code. */
 };
-/*
- * Flags on character passed to ttyinput
- */
-#define TTY_CHARMASK    0x000000ff      /* Character mask */
-#define TTY_QUOTE       0x00000100      /* Character quoted */
-#define TTY_ERRORMASK   0xff000000      /* Error mask */
-#define TTY_FE          0x01000000      /* Framing error or BREAK condition */
-#define TTY_PE          0x02000000      /* Parity error */
 
-/*
- * Is tp controlling terminal for p
- */
-#define isctty(p, tp)	((p)->p_session == (tp)->t_session && \
-			 (p)->p_flag&SCTTY)
-/*
- * Is p in background of tp
- */
-#define isbackground(p, tp)	(isctty((p), (tp)) && \
-				(p)->p_pgrp != (tp)->t_pgrp)
-/*
- * Modem control commands (driver).
- */
+/* Flags on a character passed to ttyinput. */
+#define	TTY_CHARMASK    0x000000ff      /* Character mask */
+#define	TTY_QUOTE       0x00000100      /* Character quoted */
+#define	TTY_ERRORMASK   0xff000000      /* Error mask */
+#define	TTY_FE          0x01000000      /* Framing error or BREAK condition */
+#define	TTY_PE          0x02000000      /* Parity error */
+
+/* Is tp controlling terminal for p? */
+#define	isctty(p, tp) \
+	((p)->p_session == (tp)->t_session && (p)->p_flag&SCTTY)
+
+/* Is p in background of tp? */
+#define	isbackground(p, tp) \
+	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
+
+/* Modem control commands (driver). */
 #define	DMSET		0
 #define	DMBIS		1
 #define	DMBIC		2
 #define	DMGET		3
 
 #ifdef KERNEL
-/* symbolic sleep message strings */
+extern	struct ttychars ttydefaults;
+
+/* Symbolic sleep message strings. */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+
+int	 b_to_q __P((char *cp, int cc, struct clist *q));
+void	 catq __P((struct clist *from, struct clist *to));
+void	 clist_init __P((void));
+int	 getc __P((struct clist *q));
+void	 ndflush __P((struct clist *q, int cc));
+int	 ndqb __P((struct clist *q, int flag));
+char	*nextc __P((struct clist *q, char *cp, int *c));
+int	 putc __P((int c, struct clist *q));
+int	 q_to_b __P((struct clist *q, char *cp, int cc));
+int	 unputc __P((struct clist *q));
+
+int	 nullmodem __P((struct tty *tp, int flag));
+int	 tputchar __P((int c, struct tty *tp));
+int	 ttioctl __P((struct tty *tp, int com, void *data, int flag));
+int	 ttread __P((struct tty *tp, struct uio *uio, int flag));
+void	 ttrstrt __P((void *tp));
+int	 ttselect __P((dev_t device, int rw, struct proc *p));
+void	 ttsetwater __P((struct tty *tp));
+int	 ttspeedtab __P((int speed, struct speedtab *table));
+int	 ttstart __P((struct tty *tp));
+void	 ttwakeup __P((struct tty *tp));
+int	 ttwrite __P((struct tty *tp, struct uio *uio, int flag));
+void	 ttychars __P((struct tty *tp));
+int	 ttycheckoutq __P((struct tty *tp, int wait));
+int	 ttyclose __P((struct tty *tp));
+void	 ttyflush __P((struct tty *tp, int rw));
+void	 ttyinfo __P((struct tty *tp));
+int	 ttyinput __P((int c, struct tty *tp));
+int	 ttylclose __P((struct tty *tp, int flag));
+int	 ttymodem __P((struct tty *tp, int flag));
+int	 ttyopen __P((dev_t device, struct tty *tp));
+int	 ttyoutput __P((int c, struct tty *tp));
+void	 ttypend __P((struct tty *tp));
+void	 ttyretype __P((struct tty *tp));
+void	 ttyrub __P((int c, struct tty *tp));
+int	 ttysleep __P((struct tty *tp,
+	    void *chan, int pri, char *wmesg, int timeout));
+int	 ttywait __P((struct tty *tp));
+int	 ttywflush __P((struct tty *tp));
 #endif

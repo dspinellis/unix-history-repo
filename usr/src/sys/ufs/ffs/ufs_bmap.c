@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,10 +94,10 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 
 	if (runp) {
 		/*
-		 * XXX If MAXBSIZE is the largest transfer the disks can
-		 * handle, we probably want maxrun to be 1 block less so
-		 * that we don't create a block larger than the device
-		 * can handle.
+		 * XXX
+		 * If MAXBSIZE is the largest transfer the disks can handle,
+		 * we probably want maxrun to be 1 block less so that we
+		 * don't create a block larger than the device can handle.
 		 */
 		*runp = 0;
 		maxrun = MAXBSIZE / mp->mnt_stat.f_iosize - 1;
@@ -200,7 +200,7 @@ ufs_getlbns(vp, bn, ap, nump)
 {
 	long metalbn, realbn;
 	struct ufsmount *ump;
-	int j, numlevels, off, sh;
+	int blockcnt, i, numlevels, off;
 
 	ump = VFSTOUFS(vp->v_mount);
 	if (nump)
@@ -216,26 +216,23 @@ ufs_getlbns(vp, bn, ap, nump)
 
 	/* 
 	 * Determine the number of levels of indirection.  After this loop
-	 * is done, sh indicates the number of data blocks possible at the
-	 * given level of indirection, and NIADDR - j is the number of levels
-	 * of indirection needed to locate the requested block.
+	 * is done, blockcnt indicates the number of data blocks possible
+	 * at the given level of indirection, and NIADDR - i is the number
+	 * of levels of indirection needed to locate the requested block.
 	 */
-	bn -= NDADDR;
-	sh = 1;
-	for (j = NIADDR; j > 0; j--) {
-		sh *= MNINDIR(ump);
-		if (bn < sh)
+	for (blockcnt = 1, i = NIADDR, bn -= NDADDR;; i--, bn -= blockcnt) {
+		if (i == 0)
+			return (EFBIG);
+		blockcnt *= MNINDIR(ump);
+		if (bn < blockcnt)
 			break;
-		bn -= sh;
 	}
-	if (j == 0)
-		return (EFBIG);
 
 	/* Calculate the address of the first meta-block. */
 	if (realbn >= 0)
-		metalbn = -(realbn - bn + NIADDR - j);
+		metalbn = -(realbn - bn + NIADDR - i);
 	else
-		metalbn = -(-realbn - bn + NIADDR - j);
+		metalbn = -(-realbn - bn + NIADDR - i);
 
 	/* 
 	 * At each iteration, off is the offset into the bap array which is
@@ -243,18 +240,17 @@ ufs_getlbns(vp, bn, ap, nump)
 	 * The logical block number and the offset in that block are stored
 	 * into the argument array.
 	 */
-	++numlevels;
 	ap->in_lbn = metalbn;
-	ap->in_off = off = NIADDR - j;
+	ap->in_off = off = NIADDR - i;
 	ap->in_exists = 0;
 	ap++;
-	for (; j <= NIADDR; j++) {
+	for (++numlevels; i <= NIADDR; i++) {
 		/* If searching for a meta-data block, quit when found. */
 		if (metalbn == realbn)
 			break;
 
-		sh /= MNINDIR(ump);
-		off = (bn / sh) % MNINDIR(ump);
+		blockcnt /= MNINDIR(ump);
+		off = (bn / blockcnt) % MNINDIR(ump);
 
 		++numlevels;
 		ap->in_lbn = metalbn;
@@ -262,7 +258,7 @@ ufs_getlbns(vp, bn, ap, nump)
 		ap->in_exists = 0;
 		++ap;
 
-		metalbn -= -1 + off * sh;
+		metalbn -= -1 + off * blockcnt;
 	}
 	if (nump)
 		*nump = numlevels;
