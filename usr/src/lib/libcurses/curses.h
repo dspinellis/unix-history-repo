@@ -1,24 +1,24 @@
-/* %G% (Berkeley) @(#)curses.h	1.1 */
+/* %G% (Berkeley) @(#)curses.h	1.2 */
 
 # include	<stdio.h>
  
 # include	<sgtty.h>
 
-# define	bool	char		/* boolean variable		*/
-# define	reg	register	/* register varaible abbr.	*/
+# define	bool	char
+# define	reg	register
 
 # define	TRUE	(1)
 # define	FALSE	(0)
-# define	ERR	(0)		/* default return on error	*/
-# define	OK	(1)		/* default return on good run	*/
+# define	ERR	(0)
+# define	OK	(1)
 
-# define	_SUBWIN		01	/* window is a subindow		*/
-# define	_ENDLINE	02	/* lines go to end of screen	*/
-# define	_FULLWIN	04	/* window is entire screen	*/
-# define	_SCROLLWIN	010	/* window could cause scroll	*/
-# define	_FLUSH		020	/* flush after refresh		*/
-# define	_STANDOUT	0200	/* standout mode in effect	*/
-# define	_NOCHANGE	-1	/* no change on this line	*/
+# define	_SUBWIN		01
+# define	_ENDLINE	02
+# define	_FULLWIN	04
+# define	_SCROLLWIN	010
+# define	_FLUSH		020
+# define	_STANDOUT	0200
+# define	_NOCHANGE	-1
 
 # define	_puts(s)	tputs(s, 0, _putchar);
 
@@ -26,115 +26,54 @@ typedef	struct sgttyb	SGTTY;
 
 # ifndef WINDOW
 
-/* Copyright (c) 1979 Regents of the University of California */
 /*
  * Capabilities from termcap
  */
 
-char	*AL;			/* P* Add new blank line		*/
-bool	AM;			/*    Automatic margins			*/
-char	*BC;			/*    Back cursor			*/
-bool	BS;			/*    Backspace works			*/
-char	*BT;			/* P  Back tab				*/
-bool	CA;			/*    Cursor addressible		*/
-char	*CD;			/* P* Clear to end of display		*/
-char	*CE;			/* P  Clear to end of line		*/
-char	*CL;			/* P* Clear screen			*/
-char	*CM;			/* P  Cursor motion			*/
-bool	DA;			/*    Display may be retained above	*/
-bool	DB;			/*    Display may be retained below	*/
-char	*DC;			/* P* Delete character			*/
-char	*DL;			/* P* Delete line sequence		*/
-char	*DM;			/*    Delete mode (enter)		*/
-char	*DO;			/*    Down line sequence		*/
-char	*ED;			/*    End delete mode			*/
-bool	EO;			/*    Can erase overstrikes with ' '	*/
-char	*EI;			/*    End insert mode			*/
-bool	GT;			/*    Gtty indicates tabs		*/
-char	*HO;			/*    Home cursor			*/
-bool	HZ;			/*    Hazeltine ~ braindamage		*/
-char	*IC;			/* P  Insert character			*/
-bool	IN;			/*    Insert-null blessing		*/
-char	*IM;			/*    Insrt mode (as ':im=:' if 'ic')	*/
-char	*IP;			/* P* pad after char ins'd using IM+IE	*/
-char	*LL;			/*    Quick to last line, column 0	*/
-char	*MA;			/*    Ctrl character map for cmd mode	*/
-bool	MI;			/*    can Move in Insert mode		*/
-bool	MS;			/*    can Move in Standout mode		*/
-bool	NC;			/*    No Cr: \r sends \r\n then eats \n	*/
-char	*ND;			/*    Non-destructive space		*/
-bool	OS;			/*    Overstrike works			*/
-char	PC;			/*    Pad character			*/
-char	*SE;			/*    Standout end (may leave space)	*/
-char	*SF;			/* P  Scroll forwards			*/
-char	*SO;			/*    Stand out begin (may leave space)	*/
-char	*SR;			/* P  Scroll backwards			*/
-char	*TA;			/* P  Tab (not ^I or with padding)	*/
-char	*TE;			/*    End sequence after TI		*/
-char	*TI;			/*    Terminal Initialize		*/
-char	*UC;			/*    Underline a single Character	*/
-char	*UE;			/*    Underline End sequence		*/
-bool	UL;			/*    Underlining works even though !os	*/
-char	*UP;			/*    Upline				*/
-char	*US;			/*    Underline Start sequence		*/
-char	*VB;			/*    Visible bell			*/
-char	*VE;			/*    Visual end sequence		*/
-char	*VS;			/*    Visual start sequence		*/
-bool	XN;			/*    A newline gets eaten after wrap	*/
-	/* X? is reserved for severely nauseous glitches		*/
-	/* If there are enough of these we may need bit masks!		*/
+bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL, XN;
+char    *AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO, *ED,
+	*EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF, *SO, *SR,
+	*TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
 
 /*
  * From the tty modes...
  */
-bool	NONL;			/* Term can't hack linefeeds doing a CR	*/
-bool	UPPERCASE;		/* Ick!					*/
 
-bool	normtty;		/* set if must normal mode from normf	*/
-bool	_pfast;			/* Have stty -nl'ed to go faster	*/
+bool	NONL, UPPERCASE;
+
+bool	normtty, _pfast;
+
+struct _win_st {
+	short	_cury, _curx;
+	short	_maxy, _maxx;
+	short	_begy, _begx;
+	short	_flags;
+	bool	_clear;
+	bool	_leave;
+	bool	_scroll;
+	char	**_y;
+	short	*_firstch;
+	short	*_lastch;
+};
 
 # define	WINDOW	struct _win_st
 
-struct _win_st {		/* window description structure		*/
-	short	_cury, _curx;		/* current y,x positions	*/
-	short	_maxy, _maxx;		/* maximum y,x positions	*/
-	short	_begy, _begx;		/* start y,x positions		*/
-	short	_flags;			/* various window flags		*/
-	bool	_clear;			/* need to clear		*/
-	bool	_leave;			/* leave curx,y at last update	*/
-	bool	_scroll;		/* scrolls allowed		*/
-	char	**_y;			/* actual window		*/
-	short	*_firstch;		/* first change on line		*/
-	short	*_lastch;		/* last change on line		*/
-};
+extern bool	My_term, _echoit, _rawmode, _endwin;
 
-extern bool	My_term,	/* set if user species terminal		*/
-		_echoit,	/* set if echoing characters		*/
-		_rawmode,	/* set if terminal in raw mode		*/
-		_endwin;	/* endwin has been called		*/
+extern char	*Def_term, ttytype[];
 
-extern char	*Def_term,	/* default terminal type		*/
-		ttytype[];	/* long name of current terminal	*/
+extern int	LINES, COLS, _tty_ch, _res_flg;
 
-extern int	LINES, COLS,	/* number of lines and columns		*/
-		_tty_ch,	/* channel with tty on it		*/
-		_res_flg;	/* sgtty flags stored for reset		*/
+SGTTY		_tty;
 
-# ifdef DEBUG
-FILE		*outf;		/* error outfile			*/
-# endif
-
-SGTTY		_tty;		/* tty structure			*/
-
-WINDOW		*stdscr,	/* standard screen			*/
-		*curscr;	/* current screen			*/
+WINDOW		*stdscr, *curscr;
 
 /*
  *	Define VOID to stop lint from generating "null effect"
  * comments.
  */
 # ifdef lint
-int	__void__;		/* place to assign to			*/
+int	__void__;
 # define	VOID(x)	(__void__ = (int) (x))
 # else
 # define	VOID(x)	(x)
@@ -198,3 +137,4 @@ int	__void__;		/* place to assign to			*/
 #define	resetty() (_tty.sg_flags = _res_flg, stty(_tty_ch, &_tty))
 
 WINDOW	*initscr(), *newwin(), *subwin();
+char	*longname();
