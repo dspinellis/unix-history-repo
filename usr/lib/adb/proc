@@ -1,0 +1,9 @@
+./"link"16t"rlink"16t"addr"n3Xn
++/"upri"8t"pri"8t"cpu"8t"stat"8t"time"8t"nice"8t"slp"8t"cursig"n8b
++/"sig"16t"siga0"16t"siga1"16t"flag"n4X
++/"uid"8t"pgrp"8t"pid"8t"ppid"8t"poip"8t"szpt"8t"tsize"n6xX
++/"dsize"16t"ssize"16t"rssize"16t"maxrss"n4X
++/"swrss"16t"swaddr"16t"wchan"16t"textp"n4X
++/"clktim"16t"p0br"16t"xlink"16t"ticks"n3Xx2+
++/"%cpu"16t" "16t"ndx"8t"idhash"8t"pptr"nf16t2xX
++,<9-1$<
