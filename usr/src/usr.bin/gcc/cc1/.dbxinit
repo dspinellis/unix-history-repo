@@ -1,0 +1,10 @@
+alias l list
+alias p print
+alias c cont
+alias s step
+alias n next
+alias bt where
+alias r run
+alias f file
+alias si stepi
+alias q quit
