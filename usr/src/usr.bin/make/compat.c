@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -27,12 +27,14 @@ static char sccsid[] = "@(#)compat.c	5.10 (Berkeley) %G%";
  *	    	  	    thems as need creatin'
  */
 
-#include    <stdio.h>
 #include    <sys/types.h>
-#include    <sys/signal.h>
 #include    <sys/wait.h>
-#include    <sys/errno.h>
+
 #include    <ctype.h>
+#include    <errno.h>
+#include    <signal.h>
+#include    <stdio.h>
+
 #include    "make.h"
 #include    "hash.h"
 #include    "dir.h"
