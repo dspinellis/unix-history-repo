@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmfreg.h	6.3 (Berkeley) %G%
+ *	@(#)dmfreg.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -36,8 +36,7 @@ struct dmfdevice {
 #define	dmftbuf	dmfun.dmfirc[0]	/* transmit buffer */
 #define	dmftsc	dmfun.dmfirc[0]	/* transmit silo count */
 #define	dmfrms	dmfun.dmfirc[1]	/* receive modem status */
-#define	dmflcr	dmfun.dmfirc[0]	/* line control register */
-#define	dmftms	dmfun.dmfirc[1]	/* transmit modem status */
+#define	dmflctms dmfun.dmfirw	/* line control, transmit modem status */
 #define	dmftba	dmfun.dmfirw	/* transmit buffer address */
 #define	dmftcc	dmfun.dmfirw	/* transmit character count */
 
@@ -95,7 +94,7 @@ struct dmfdevice {
 #define	DMF_ON	(DMF_DTR|DMF_RTS)
 #define	DMF_OFF	0
 
-/* bits in dmflcr */
+/* bits in dmflctms */
 #define	DMF_MIE		0040		/* modem interrupt enable */
 #define	DMF_FLUSH	0020		/* flush transmit silo */
 #define	DMF_RBRK	0010		/* real break bit */
@@ -116,9 +115,6 @@ struct dmfdevice {
 #define	DML_RTS		0000004		/* request to send */
 #define	DML_DTR		0000002		/* data terminal ready */
 #define	DML_LE		0000001		/* line enable */
-
-#define SETLCR(pt, exp) \
-	pt->dmfun.dmfirw = (((pt)->dmftms)<<8) | ((exp)&0xff)
 
 /* dmf line printer csr def */
 #define DMFL_PEN	(1<<0)		/* print enable */

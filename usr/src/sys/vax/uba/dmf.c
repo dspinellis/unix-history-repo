@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.10 (Berkeley) %G%
+ *	@(#)dmf.c	6.11 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -66,7 +66,7 @@ u_short	dmfstd[] = { 0 };
 struct	uba_driver dmfdriver =
 	{ dmfprobe, 0, dmfattach, 0, dmfstd, "dmf", dmfinfo };
 
-int	dmf_timeout = 50;		/* silo timeout, in ms */
+int	dmf_timeout = 10;		/* silo timeout, in ms */
 int	dmf_mindma = 4;			/* don't dma below this point */
 
 /*
@@ -74,6 +74,14 @@ int	dmf_mindma = 4;			/* don't dma below this point */
  */
 char	dmf_speeds[] =
 	{ 0, 0, 1, 2, 3, 4, 0, 5, 6, 7, 010, 012, 014, 016, 017, 0 };
+
+#ifndef	PORTSELECTOR
+#define	ISPEED	B9600
+#define	IFLAGS	(EVENP|ODDP|ECHO)
+#else
+#define	ISPEED	B4800
+#define	IFLAGS	(EVENP|ODDP)
+#endif
 
 struct	tty dmf_tty[NDMF*8];
 char	dmfsoftCAR[NDMF];
@@ -109,7 +117,7 @@ int	dmfstart(), ttrstrt();
  * into an i/o space address for the DMA routine.
  */
 int	dmf_ubinfo[NUBA];		/* info about allocated unibus map */
-static int cbase[NUBA];			/* base address in unibus map */
+int	cbase[NUBA];			/* base address in unibus map */
 #define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char *)cfree))
 char	dmf_dma[NDMF*8];
 
@@ -128,6 +136,7 @@ dmfprobe(reg, ctlr)
 	static char *dmfdevs[]=
 		{"parallel","printer","synch","asynch"};
 	unsigned int dmfoptions;
+	static int (*intrv[3])() = { (int (*)())0, (int (*)())0, (int (*)())0 };
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -142,39 +151,43 @@ dmfprobe(reg, ctlr)
 	 */
 	br = 0x15;
 	cvec = (uba_hd[numuba].uh_lastiv - 4*8);
-	dmfaddr->dmfccsr0 = (cvec >> 2) ;
+	dmfaddr->dmfccsr0 = (cvec >> 2);
 	dmfoptions = dmfaddr->dmfccsr0 & DMFC_CONFMASK;
 
 	/* catch a couple of special cases:  Able vmz/32n and vmz/lp	*/
 	if (dmfoptions == DMFC_ASYNC) {
-		/* Async portion only  -  vmz/32n */
-		/* device dmf0 csr 0160400	vector dmfrint dmfxint  */
-		cvec = (uba_hd[numuba].uh_lastiv -= 8);	/* only 8 bytes req'd */
-		dmfaddr->dmfccsr0 = (cvec - 2*8) >> 2;	/* program 020 less   */
-		printf("dmf%d: Able vmz32/n\n", ctlr->ui_unit);
+		/* Async portion only */
+
+		cvec = (uba_hd[numuba].uh_lastiv -= 8);
+		dmfaddr->dmfccsr0 = (cvec - 2*8) >> 2;
+		intrv[0] = ctlr->ui_intr[4];
+		intrv[1] = ctlr->ui_intr[5];
+		ctlr->ui_intr = intrv;
 	}
 	else if (dmfoptions == DMFC_LP) {
-		/* LP portion only - vmz/lp */
-		/* device dmf0 csr 0160400	vector dmflint */
+		/* LP portion only */
 
-		cvec = (uba_hd[numuba].uh_lastiv -= 8);	/* only 8 bytes req'd */
-		dmfaddr->dmfccsr0 = (cvec - 3*8) >> 2;	/* program 030 less   */
-		printf("dmf%d: Able vmz/lp\n", ctlr->ui_unit);
+		cvec = (uba_hd[numuba].uh_lastiv -= 8);
+		ctlr->ui_intr = &ctlr->ui_intr[6];
+	}
+	else if (dmfoptions == (DMFC_LP|DMFC_ASYNC)) {
+		/* LP ans Async portions only */
+
+		cvec = (uba_hd[numuba].uh_lastiv -= 2*8);
+		ctlr->ui_intr = &ctlr->ui_intr[4];
 	}
 	else {
-		/* anything else we program like a dec dmf32	*/
-		/* device dmf0 vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint */
+		/* All other configurations get everything */
 
 		cvec = (uba_hd[numuba].uh_lastiv -= 4*8);
-		dmfaddr->dmfccsr0 = (cvec >> 2) ;
-		a = (dmfaddr->dmfccsr0>>12) & 0xf;
-		printf("dmf%d:", ctlr->ui_unit);
-		for(i=0;a != 0;++i,a >>= 1) {
-			if(a&1)
-				printf(" %s",dmfdevs[i]);
-		}
-		printf(".\n");
 	}
+	a = (dmfoptions >> 12) & 0xf;
+	printf("dmf%d:", ctlr->ui_unit);
+	for(i=0;a != 0;++i,a >>= 1) {
+		if(a&1)
+			printf(" %s",dmfdevs[i]);
+	}
+	printf(".\n");
 
 	if (dmfoptions & DMFC_LP)
 		dmfaddr->dmfl[0] = DMFL_RESET;
@@ -230,7 +243,7 @@ dmfopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spltty();
-	if (dmf_ubinfo[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == 0) {
 		dmf_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			nclist*sizeof(struct cblock), 0);
@@ -247,11 +260,9 @@ dmfopen(dev, flag)
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
-		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = B300;
-			tp->t_ospeed = B300;
-			tp->t_flags = ODDP|EVENP|ECHO;
-		}
+		tp->t_ispeed = ISPEED;
+		tp->t_ospeed = ISPEED;
+		tp->t_flags = IFLAGS;
 		dmfparam(unit);
 	}
 	/*
@@ -327,7 +338,7 @@ dmfrint(dmf)
 	register struct tty *tp0;
 	register dev;
 	int unit;
-	int overrun = 0, s;
+	int overrun = 0;
 
 	{
 		register struct uba_device *ui;
@@ -349,42 +360,22 @@ dmfrint(dmf)
 		tp = tp0 + unit;
 		dev = unit + dmf * 8;
 		if (c & DMF_DSC) {
-			s = spltty();
 			addr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
-			if (addr->dmfrms & DMF_CAR) {
-				if ((tp->t_state & TS_CARR_ON) == 0) {
-					wakeup((caddr_t)&tp->t_rawq);
-					tp->t_state |= TS_CARR_ON;
-				} else if ((tp->t_flags & MDMBUF) &&
-				    (tp->t_state & TS_TTSTOP)) {
-					tp->t_state &= ~TS_TTSTOP;
-					ttstart(tp);
-				}
-			} else if ((tp->t_state & TS_WOPEN) == 0 &&
-			    tp->t_flags & MDMBUF) {
-			    	if ((tp->t_state & TS_TTSTOP) == 0) {
-					tp->t_state |= TS_TTSTOP;
-					dmfstop(tp, 0);
-				}
-			} else if ((tp->t_state & TS_CARR_ON) &&
-			    (tp->t_flags & NOHANG) == 0 &&
-			    (dmfsoftCAR[dmf] & (1<<unit)) == 0) {
-				if (tp->t_state&TS_ISOPEN) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-					addr->dmfcsr = DMF_IE | DMFIR_LCR |
-						unit;
-					addr->dmftms = 0;
-					ttyflush(tp, FREAD|FWRITE);
-				}
-				tp->t_state &= ~TS_CARR_ON;
+			if (addr->dmfrms & DMF_CAR)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+			else if ((dmfsoftCAR[dmf] & (1<<unit)) == 0 &&
+			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
+				addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
+				addr->dmflctms = DMFLCR_ENA;
 			}
-			splx(s);
 			continue;
 		}
 		if ((tp->t_state&TS_ISOPEN)==0) {
-			wakeup((caddr_t)tp);
-			continue;
+			wakeup((caddr_t)&tp->t_rawq);
+#ifdef PORTSELECTOR
+			if ((tp->t_state&TS_WOPEN) == 0)
+#endif
+				continue;
 		}
 		if (c & (DMF_PE|DMF_DO|DMF_FE)) {
 			if (c & DMF_PE)
@@ -528,6 +519,7 @@ dmfparam(unit)
 	if ((tp->t_ispeed)==0) {
 		tp->t_state |= TS_HUPCLS;
 		(void) dmfmctl(unit, DMF_OFF, DMSET);
+		splx(s);
 		return;
 	}
 	lpar = (dmf_speeds[tp->t_ospeed]<<12) | (dmf_speeds[tp->t_ispeed]<<8);
@@ -626,7 +618,7 @@ dmfstart(tp)
 	addr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
 	if (addr->dmftsc) {
 		addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
-		SETLCR(addr, addr->dmflcr|DMF_TE);
+		addr->dmflctms = addr->dmflctms | DMF_TE;
 		tp->t_state |= TS_BUSY;
 		goto out;
 	}
@@ -672,7 +664,7 @@ dmfstart(tp)
 
 		dmf_dma[minor(tp->t_dev)] = 1;
 		addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
-		SETLCR(addr, addr->dmflcr|DMF_TE);
+		addr->dmflctms = addr->dmflctms | DMF_TE;
 		car = UBACVT(tp->t_outq.c_cf, dmfinfo[dmf]->ui_ubanum);
 		addr->dmfcsr = DMF_IE | DMFIR_TBA | unit;
 		addr->dmftba = car;
@@ -685,7 +677,7 @@ dmfstart(tp)
 		dmf_dma[minor(tp->t_dev)] = 0;
 		nch = MIN(nch, DMF_SILOCNT);
 		addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
-		SETLCR(addr, addr->dmflcr|DMF_TE);
+		addr->dmflctms = addr->dmflctms | DMF_TE;
 		addr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
 		for (i = 0; i < nch; i++)
 			addr->dmftbuf = *cp++;
@@ -721,7 +713,7 @@ dmfstop(tp, flag)
 			 * characters.
 			 */
 			addr->dmfcsr = DMFIR_LCR | unit | DMF_IE;
-			SETLCR(addr, addr->dmflcr | DMF_TE | DMF_FLUSH);
+			addr->dmflctms = addr->dmflctms | DMF_TE | DMF_FLUSH;
 			/* this will interrupt so let dmfxint handle the rest */
 			tp->t_state |= TS_FLUSH|TS_BUSY;
 		}
@@ -733,7 +725,7 @@ dmfstop(tp, flag)
 			 * left off by reenabling in dmfstart.
 			 */
 			addr->dmfcsr = DMFIR_LCR | unit | DMF_IE;
-			SETLCR(addr, addr->dmflcr &~ DMF_TE);
+			addr->dmflctms = addr->dmflctms &~ DMF_TE;
 			/* no interrupt here */
 			tp->t_state &= ~TS_BUSY;
 		}
@@ -759,8 +751,8 @@ dmfmctl(dev, bits, how)
 	dmfaddr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
 	mbits = dmfaddr->dmfrms << 8;
 	dmfaddr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
-	mbits |= dmfaddr->dmftms;
-	lcr = dmfaddr->dmflcr;
+	lcr = dmfaddr->dmflcmts;
+	mbits |= (lcr & 0xff00) >> 8;
 	switch (how) {
 	case DMSET:
 		mbits = (mbits &0xff00) | bits;
@@ -782,8 +774,7 @@ dmfmctl(dev, bits, how)
 		lcr |= DMF_RBRK;
 	else
 		lcr &= ~DMF_RBRK;
-	lcr = ((mbits & 037) << 8) | (lcr & 0xff);
-	dmfaddr->dmfun.dmfirw = lcr;
+	dmfaddr->dmflctms = ((mbits & 037) << 8) | (lcr & 0xff);
 	(void) splx(s);
 	return(mbits);
 }
@@ -802,16 +793,16 @@ dmfreset(uban)
 	register struct dmfdevice *addr;
 	int i;
 
-	if (dmf_ubinfo[uban] == 0)
-		return;
-	dmf_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-	    nclist*sizeof (struct cblock), 0);
-	cbase[uban] = dmf_ubinfo[uban]&0x3ffff;
 	for (dmf = 0; dmf < NDMF; dmf++) {
 		ui = dmfinfo[dmf];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dmf%d", dmf);
+		if (cbase[uban] == 0) {
+			dmf_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
+			    nclist*sizeof (struct cblock), 0);
+			cbase[uban] = dmf_ubinfo[uban]&0x3ffff;
+		}
 		addr = (struct dmfdevice *)ui->ui_addr;
 		addr->dmfcsr = DMF_IE;
 		addr->dmfrsp = dmf_timeout;
