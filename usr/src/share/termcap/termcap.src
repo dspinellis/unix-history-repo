@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.32 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.33 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1382,7 +1382,7 @@ a7|regent60na|regent 60 w/no arrow keys:\
 #   -    cl=\EG\Ek clears screen and visual attributes without affecting
 #               the status line
 a9|vp90|viewpoint90|adds viewpoint 90:\
-	:bs:bw:cd=\Ek:ce=\EK:cl=\EG\Ek:cm=\EY%+ %+ :co#80:cr=^M:\
+	:bs:bw:cd=\Ek:ce=\EK:cl=\EG\Ek:cm=\EY%+ %+ :co#80:\
 	:dc=\EE:dl=\El:dm=:do=^J:ed=:ei=:im=:ic=\EF \EF^U:ho=\EY  :\
 	:nd=^F:up=^Z:\
 	:kb=^H:kd=^J:kh=^A:kl=^U:kr=^F:ku=^Z:li#24:ll=^A:\
