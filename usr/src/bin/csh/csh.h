@@ -1,8 +1,8 @@
-/* csh.h 4.9 83/06/11 */
+/* csh.h 4.10 83/07/01 */
 
 #include "sh.local.h"
-#include <time.h>
-#include <resource.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 /*
  * C shell

@@ -1,9 +1,9 @@
-static	char *sccsid = "@(#)proc.c	4.11 (Berkeley) 83/07/01";
+static	char *sccsid = "@(#)proc.c	4.12 (Berkeley) 83/07/01";
 
 #include "sh.h"
 #include "sh.dir.h"
 #include "sh.proc.h"
-#include <wait.h>
+#include <sys/wait.h>
 #include <sys/ioctl.h>
 
 /*
