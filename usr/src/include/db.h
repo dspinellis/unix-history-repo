@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	8.2 (Berkeley) %G%
+ *	@(#)db.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -75,12 +75,12 @@ typedef struct __db {
 	DBTYPE type;			/* Underlying db type. */
 	int (*close)	__P((struct __db *));
 	int (*del)	__P((const struct __db *, const DBT *, u_int));
-	int (*fd)	__P((const struct __db *));
 	int (*get)	__P((const struct __db *, const DBT *, DBT *, u_int));
 	int (*put)	__P((const struct __db *, DBT *, const DBT *, u_int));
 	int (*seq)	__P((const struct __db *, DBT *, DBT *, u_int));
 	int (*sync)	__P((const struct __db *, u_int));
-	void *internal;			/* access method private */
+	void *internal;			/* Access method private. */
+	int (*fd)	__P((const struct __db *));
 } DB;
 
 #define	BTREEMAGIC	0x053162
