@@ -16,7 +16,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	8.6 (Berkeley) %G%
+ *	@(#)sysv_shm.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -85,7 +85,7 @@ shminit()
 struct shmsys_args {
 	u_int which;
 };
-shmsys(p, uap, retval)
+compat_43_shmsys(p, uap, retval)
 	struct proc *p;
 	struct shmsys_args *uap;
 	int *retval;
