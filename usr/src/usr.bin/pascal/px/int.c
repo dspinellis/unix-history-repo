@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)int.c 1.7 %G%";
+static char sccsid[] = "@(#)int.c 1.8 %G%";
 
 /*
  * px - interpreter for Berkeley Pascal
@@ -70,6 +70,14 @@ main(ac,av)
 		name = file;
 	}
 
+	/*
+	 * kludge to check for old style objs.
+	 */
+	if (_mode == PX && !strcmp(file, "-")) {
+		fprintf(stderr, "%s is obsolete and must be recompiled\n",
+		    _argv[0]);
+		exit(1);
+	}
 	/*
 	 * Process program header information
 	 */
