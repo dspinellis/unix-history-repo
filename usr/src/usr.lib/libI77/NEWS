@@ -1,0 +1,62 @@
+	Update info on the f77 I/O lib.
+
+01 Feb, 1980
+   All instances of:
+	if(!init) f_init();
+   have been removed. f_init() is called from main.c on startup in the new
+   libF77.a .
+
+01 Feb, 1980
+   Backspace now allows non-seek files to reset the EOF flag.
+
+20 Mar, 1980
+   The way SIGINT is handled in libF77/main.c has been changed.
+   If the signal is not SIG_DFL, it is left alone as otherwise the
+   program will be killed if run in the background and the user types DEL.
+   The signal trap that used to be in the I/O lib has been removed.
+
+20 Mar, 1980
+   The ANSI fortran standard requires that I/O routines return to the caller
+   on any error condition if iostat= is specified even if no err= or end=
+   trap is specified. The implication of this is that the program must
+   be prepared to deal with ALL I/O errors if iostat= is specified.
+   If only one trap is specified, end= for example, the program must test the
+   iostat variable for positive/non-zero after the I/O call since return
+   will occur on any error. This seems awkward and I've chosen to make this
+   feature optional. I am interested in other views on this.
+   
+   In the current version of the compiler (using the modified io.c),
+   iostat= is used only to return status information from
+   I/O calls but does not itself cause return on any I/O error. Only
+   the traps, err= and end=, will cause a return/branch, and only for
+   the specified trap(s).
+   
+   This feature has been made a compile time option in the current version
+   of (modified) io.c It implements the standard correctly if compiled
+   with -DKOSHER or -DIOSRETURN. Otherwise it executes as currently
+   implemented.
+
+18 Apr, 1980
+   As originally implemented the '$' specification caused a NULL to be
+   output (inplace of the \n) Actually NULL's should never appear in the
+   formatted output streams. Therefore in "sfe.c" in x_putc() and pr_put()
+   add      if (c)      before the instances of      putc(c,cf)
+
+12 May, 1980
+   Spaces (ASCII 040) do not have significance in FORMAT statements except
+   within strings. In order to accomodate old programs that may have
+   arbitrary occurances of spaces, all spaces are now ignored. Thus the
+   format ( 1 0 X , 1 2 F 1 0 . 4 / ) is accepted.
+
+12 May, 1980
+   A bug in handling partially filled "unformatted direct" records has been
+   fixed by ensuring that all records are complete when written. The bug was
+   that the last record of such a file would cause EOF if a read was attempted
+   for a full record. Existing files of this form should be "fixed" by
+   reading and rewriting the last record using the new version of libI77.a
+
+12 May, 1980
+   BACKSPACE will now open a default file (fort.N) if the specified logical
+   unit is not open. REWIND and other I/O already did this. CLOSE and
+   ENDFILE do not open a default file.
+
