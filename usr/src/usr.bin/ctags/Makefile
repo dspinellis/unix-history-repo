@@ -1,61 +1,48 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=-O -I.
 LIBC=	/lib/libc.a
 SRCS=	C.c ctags.c fortran.c lisp.c print.c tree.c yacc.c
 OBJS=	C.o ctags.o fortran.o lisp.o print.o tree.o yacc.o
+MAN=	ctags.0
 
 all: ctags
 
 ctags: ${OBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${OBJS}
 
-install: FRC
-	install -s -o bin -g bin -m 755 ctags ${DESTDIR}/usr/ucb/ctags
-
-clean: FRC
+clean:
 	rm -f ${OBJS} core ctags
 
-lint: FRC
-	lint ${CFLAGS} ${SRCS}
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-tags: FRC
-	ctags ${SRCS}
-
-depend: FRC
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-FRC:
+install: ${MAN}
+	install -s -o bin -g bin -m 755 ctags ${DESTDIR}/usr/ucb
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+lint: ${SRCS}
+	lint ${CFLAGS} ${SRCS}
 
-C.o: C.c /usr/include/stdio.h
-C.o:ctags.h
-C.o: /usr/include/stdio.h /usr/include/ctype.h
-ctags.o: ctags.c
-ctags.o:ctags.h
-ctags.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/strings.h
-fortran.o: fortran.c
-fortran.o:ctags.h
-fortran.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/strings.h
-lisp.o: lisp.c
-lisp.o:ctags.h
-lisp.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/strings.h
-print.o: print.c /usr/include/sys/types.h /usr/include/sys/file.h
-print.o:ctags.h
-print.o: /usr/include/stdio.h /usr/include/ctype.h
-tree.o: tree.c
-tree.o:ctags.h
-tree.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/strings.h
-yacc.o: yacc.c
-yacc.o:ctags.h
-yacc.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/strings.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+tags: ${SRCS}
+	ctags ${SRCS}
