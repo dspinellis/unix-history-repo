@@ -1,0 +1,6 @@
+\*bThis is a line of text.\fR
+This is a line of text.
+\*bThe next line contains only an end-of-file (an invisible control-d!)\fR
+The next line contains only an end-of-file (an invisible control-d!)
+
+284 statements executed in 0.01 seconds cpu time.
