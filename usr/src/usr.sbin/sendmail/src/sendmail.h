@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.28	%G%
+**	@(#)sendmail.h	3.29	%G%
 */
 
 
@@ -101,13 +101,12 @@ typedef struct mailer	MAILER;
 # define M_QUIET	000004	/* don't print error on bad status */
 # define M_RESTR	000010	/* must be daemon to execute */
 # define M_NHDR		000020	/* don't insert From line */
-# define M_NOHOST	000040	/* ignore host in comparisons */
+# define M_LOCAL	000040	/* delivery is to this host */
 # define M_STRIPQ	000100	/* strip quote characters from user/host */
 # define M_MUSER	000200	/* mailer can handle multiple users at once */
 # define M_NEEDFROM	000400	/* need arpa-style From: line */
 # define M_NEEDDATE	001000	/* need arpa-style Date: line */
 # define M_MSGID	002000	/* need Message-Id: field */
-# define M_FINAL	004000	/* mailing will effect final delivery */
 # define M_USR_UPPER	010000	/* preserve user case distinction */
 # define M_HST_UPPER	020000	/* preserve host case distinction */
 # define M_FULLNAME	040000	/* want Full-Name field */
@@ -117,8 +116,8 @@ typedef struct mailer	MAILER;
 extern MAILER *Mailer[];
 
 /* special mailer numbers */
-# define M_LOCAL	0	/* local mailer */
-# define M_PROG		1	/* program mailer */
+# define MN_LOCAL	0	/* local mailer */
+# define MN_PROG	1	/* program mailer */
 /* mailers from 2 on are arbitrary */
 
 
