@@ -78,6 +78,8 @@ struct	sigcontext {
 	int	sc_onstack;		/* sigstack state to restore */
 	int	sc_mask;		/* signal mask to restore */
 	int	sc_sp;			/* sp to restore */
+	int	sc_fp;			/* fp to retore */
+	int	sc_ap;			/* ap to retore */
 	int	sc_pc;			/* pc to retore */
 	int	sc_ps;			/* psl to restore */
 };
