@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -811,24 +811,12 @@ main(argc, argv, envp)
 
 		if (!tTd(0, 1))
 		{
-			FILE *pidf;
-
 			/* put us in background */
 			i = fork();
 			if (i < 0)
 				syserr("daemon: cannot fork");
 			if (i != 0)
 				exit(0);
-
-			if (OpMode == MD_DAEMON)
-			{
-				pidf = fopen(PidFile, "w");
-				if (pidf != NULL)
-				{
-					fprintf(pidf, "%d\n", getpid());
-					fclose(pidf);
-				}
-			}
 
 			/* disconnect from our controlling tty */
 			disconnect(TRUE);
