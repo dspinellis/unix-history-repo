@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.19 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,7 @@
  * ufs vfs operations.
  */
 int ufs_mount();
+int ufs_start();
 int ufs_unmount();
 int ufs_root();
 int ufs_statfs();
@@ -51,6 +52,7 @@ int ufs_vptofh();
 
 struct vfsops ufs_vfsops = {
 	ufs_mount,
+	ufs_start,
 	ufs_unmount,
 	ufs_root,
 	ufs_statfs,
@@ -287,6 +289,17 @@ out:
 	return (error);
 }
 
+/*
+ * Make a filesystem operational.
+ * Nothing to do at the moment.
+ */
+ufs_start(mp, flags)
+	struct mount *mp;
+	int flags;
+{
+
+	return (0);
+}
 
 /*
  * unmount system call
