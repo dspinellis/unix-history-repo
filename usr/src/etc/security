@@ -1,13 +1,19 @@
 #!/bin/sh -
 #
-#	@(#)security	5.9 (Berkeley) %G%
+#	@(#)security	5.10 (Berkeley) %G%
 #
-PATH=/sbin:/bin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
 host=`hostname`
 echo "Subject: $host security check output"
 
 umask 22
+
+DONE=/tmp/_secure1.$$
+LIST=/tmp/_secure2.$$
+TMP=/tmp/_secure3.$$
+
+trap 'rm -f $DONE $LIST $TMP' 0
 
 echo ""
 echo "Checking for uids of 0:"
@@ -16,12 +22,6 @@ awk -F: "\$3==\"0\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
 echo ""
 echo "Checking for uids without passwords:"
 awk -F: "\$2==\"\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
-
-DONE=/tmp/_secure1.$$
-LIST=/tmp/_secure2.$$
-TMP=/tmp/_secure3.$$
-
-trap 'rm -f $DONE $LIST $TMP' 0
 
 echo ""
 echo "Checking setuid files and devices:"
@@ -76,3 +76,25 @@ if [ -s $LIST ] ; then
 	fi
 fi
 
+# Check the system binaries.
+# Create the mtree tree specifications using:
+#
+#	mtree -cx -pDIR -kcksum,gid,mode,nlink,size,link,time,uid > DIR.secure
+#	chown bin.bin DIR.SECURE
+#	chmod 444 DIR.SECURE
+#
+# Note, this is not complete protection against Trojan horsed binaries, as
+# the hacker can modify the tree specification to match the replaced binary.
+# For details on really protecting yourself against modified binaries, see
+# the mtree(8) manual page.
+
+if cd /etc/mtree; then
+	echo ""
+	echo "Checking system binaries:"
+	for file in *.secure; do
+		tree=`sed -n -e '3s/.* //p' -e 3q $file`
+		echo ""
+		echo "Checking $tree:"
+		mtree -f $file -p $tree
+	done
+fi
