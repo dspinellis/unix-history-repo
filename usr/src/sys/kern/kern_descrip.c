@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.18 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -168,12 +168,12 @@ fcntl(p, uap, retval)
 		return (0);
 
 	case F_GETFL:
-		*retval = fp->f_flag + FOPEN;
+		*retval = OFLAGS(fp->f_flag);
 		return (0);
 
 	case F_SETFL:
-		fp->f_flag &= FCNTLCANT;
-		fp->f_flag |= (uap->arg-FOPEN) &~ FCNTLCANT;
+		fp->f_flag &= ~FCNTLFLAGS;
+		fp->f_flag |= FFLAGS(uap->arg) & FCNTLFLAGS;
 		if (error = fset(fp, FNDELAY, fp->f_flag & FNDELAY))
 			return (error);
 		if (error = fset(fp, FASYNC, fp->f_flag & FASYNC))
