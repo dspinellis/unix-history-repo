@@ -5,8 +5,9 @@
 /* Also readmail() and doshell(), and generally the things that
    contact the outside world. */
 
+#include	<sys/types.h>
+#include	<sys/signal.h>
 #include	<stdio.h>
-#include	<signal.h>
 #include "hack.h"
 extern int CO, LI;	/* usually COLNO and ROWNO+2 */
 extern char *CD;
