@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.101 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.102 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,7 +94,7 @@ mount(p, uap, retval)
 		vput(vp);
 		return (EBUSY);
 	}
-	if (error = vinvalbuf(vp, V_SAVE, p->p_ucred, p))
+	if (error = vinvalbuf(vp, V_SAVE, p->p_ucred, p, 0, 0))
 		return (error);
 	if (vp->v_type != VDIR) {
 		vput(vp);
