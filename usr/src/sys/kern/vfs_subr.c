@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.16 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.17 (Berkeley) %G%
  */
 
 /*
@@ -957,9 +957,10 @@ vgone(vp)
 		vp->v_mount = NULL;
 	}
 	/*
-	 * If special device, remove it from special device alias list.
+	 * If special device, remove it from special device alias list
+	 * if it is on one.
 	 */
-	if (vp->v_type == VBLK || vp->v_type == VCHR) {
+	if ((vp->v_type == VBLK || vp->v_type == VCHR) && vp->v_specinfo != 0) {
 		if (*vp->v_hashchain == vp) {
 			*vp->v_hashchain = vp->v_specnext;
 		} else {
