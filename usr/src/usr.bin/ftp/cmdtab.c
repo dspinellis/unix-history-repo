@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.8 (Berkeley) %G%";
 #endif
 
 #include "ftp_var.h"
@@ -109,4 +109,4 @@ struct cmd cmdtab[] = {
 	{ 0 },
 };
 
-int	NCMDS = sizeof (cmdtab) / sizeof (cmdtab[0]);
+int	NCMDS = (sizeof (cmdtab) / sizeof (cmdtab[0])) - 1;

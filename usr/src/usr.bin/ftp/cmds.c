@@ -1,12 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
  * FTP User Program -- Command Routines.
  */
 #include <sys/param.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 
 #include <arpa/ftp.h>
@@ -200,6 +199,9 @@ setstruct(argc, argv)
 	printf("We only support %s structure, sorry.\n", structname);
 }
 
+/*
+ * Send a single file.
+ */
 put(argc, argv)
 	int argc;
 	char *argv[];
@@ -926,7 +928,8 @@ rmthelp(argc, argv)
 quit()
 {
 
-	disconnect();
+	if (connected)
+		disconnect();
 	exit(0);
 }
 
