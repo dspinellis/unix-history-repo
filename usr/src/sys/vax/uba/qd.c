@@ -3,14 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 	@(#)qd.c	1.5  Berkeley  %G%
+ * 	@(#)qd.c	1.6  Berkeley  %G%
  *
- * derived from: "@(#)qd.c	1.40	ULTRIX	10/2/86";
+ * derived from: "@(#)qd.c	ULTRIX";
  */
-
 /************************************************************************
 *									*
-*			Copyright (c) 1985, 1986 by			*
+*			Copyright (c) 1985-1988 by			*
 *		Digital Equipment Corporation, Maynard, MA		*
 *			All rights reserved.				*
 *									*
@@ -29,229 +28,385 @@
 *   of its software on equipment which is not supplied by Digital.	*
 *									*
 *************************************************************************/
+
 /*
- * qd.c - QDSS display driver
+ * qd.c
+ *
+ * Modification history
+ *
+ * QDSS workstation driver
+ *
+ *
+ *  1-Dec-87 - Tim Burke
+ *
+ *	Added support for both System V termio(7) and POSIX termios(7).  These
+ *	changes also include support for 8-bit canonical processing.  Changes
+ *	involve:
+ *
+ *	- Default settings on first open depend on mode of open.  For termio
+ *	  opens the defaults are "RAW" style, while non-termio opens default
+ *	  to the traditional "cooked" style.
+ *	- The driver now represents its terminal attributes and special 
+ *	  characters in the POSIX termios data structure.  This contrasts the
+ *	  original approach of storing attributes and special chars in the
+ *	  t_flags, ltchars and tchars.
+ *	- Addition of LPASS8 to local mode word for 8-bit canonical support.
+ *
+ * 28-Sep-87 - Ali Rafieymehr
+ *    Fixed a bug in qddint() routine. The bug was discovered on CVAX.
+ *    Incorrect logic was used when taking an entry from the request queue.
+ *
+ * 12-Oct-87 - Tim Burke
+ *	Modified driver to provide 8-bit support to the console port.  To do 
+ *	this characters are defined in the remainder of the first 15 rows of
+ *	off screen memory as well as in next 15 rows.
+ *
+ *  2-Aug-87 - Fred Canter
+ *    Use TANDEM mode on qconsole for flow control of writes to
+ *    /dev/console.
+ *
+ * 12-Jun-87 - Tim Burke
+ *
+ *	Added full TERMIO functionality to terminal subsystem.
+ *	Changed open routine to setup propper default settings if the line
+ *	is not being used as a graphics device.  Added defines of defaults.
+ *
+ *
+ * 14-May-87 - Fred Canter
+ *	Changed default state of kernel_loop to on.
+ *
+ * 21-Apr-87 - Brian Stevens
+ *	Xos support
+ *
+ * 16-Apr-87 - Fred Canter (for Brian Stevens)
+ *	Multi-head GPX changes.
+ *
+ * 19-Mar-87 - Fred Canter (for Brian Stevens)
+ *	Added X in the kernel support.
+ *
+ * 16-Dec-86 - Brian Stevens
+ *
+ *	added support so "select" could be called on tty type device
+ *      fixed rlogin bug
+ *
+ * 30-Oct-86 - Brian Stevens
+ *
+ *	Removed the mprintf for "unexpected interrupts"
+ *
+ * 26-Aug-86 - rsp (Ricky Palmer)
+ *
+ *	Cleaned up devioctl code to (1) zero out devget structure
+ *	upon entry and (2) use strlen instead of fixed storage
+ *	for bcopy's.
+ *
+ * 21-Jul-86 - Ram Rao
+ *	allowed cursor rectangle to hang (partially) off the
+ *	top and left of screen
+ *
+ * 11-Jul-86 - ricky palmer
+ *
+ *	Added adpt and nexus fields to DEVIOCGET code.
+ *
+ * 02-July-86 - Brian Stevens
+ *
+ *	added support for console writing to second QDSS display
+ *
+ * 20-May-86 - ricky palmer
+ *
+ *	Added new DEVIOCGET ioctl request code. V2.0
+ *
+ * 16-Apr-86 -- darrell
+ *	 badaddr is now called via the macro BADADDR
+ *
+ * 14-Apr-86 -- afd
+ *	 Changed UMEMmap to QVmap and umem to qvmem.
+ *
+ *	 v_console() is now refered to as v_consputc, and there is a
+ *	 corresponding v_consgetc() (defined in /sys/vax/conf.c).
+ *
+ *	 Added "qdgetc()" routine for console read.  Needed to read
+ *	 user's answer to the "root device?" prompt with a generic kernel.
+ *
+ * 19-Mar-86 -- pmk
+ *	 Change DELAY to 20000, because microdelay now in real microsec.
+ *
+ * 18-mar-86  -- jaw	 br/cvec changed to NOT use registers.
+ *
+ * 11 mar 86  darrell	replaced percpu with cpusw, and removed all but
+ *			 one global reference
+ * 19 feb 86  bstevens	no report of motion event on puck/stylus button action
+ * 18 feb 86  bstevens	put in cursor box support for tablets
+ * 18-Mar-86 -- jaw  add routines to cpu switch for nexus/unibus addreses
+ *		      also got rid of some globals like nexnum.
+ *		      ka8800 cleanup.
+ * 06 dec 85  longo  added LK-201 error reporting for graphics device ops
+ * 03 dec 85  longo  made qddint() clear active bit on error
+ * 02 dec 85  longo  fixed up some crocks in the error messages
+ * 25 nov 85  longo  added error handling to DMA ISR and single user locking
+ * 19 nov 85  longo  eliminated "set_defaults()" by breaking out sub-calls.
+ *		     Changed init_shared to do real init of scroll struct
+ * 12 nov 85  longo  fixed bug in open that broke alternate console re-direct
+ * 11 nov 85  longo  changed "_vs_eventqueue" references to "qdinput"
+ * 08 nov 85  longo  improved select service for read/write select wakeup.
+ *		     Also set ISR's to ipl4 to allow the interval timer in.
+ * 04 nov 85  longo  fixed bugs in mouse button reporting and dma request stuff
+ * 30 oct 85  longo  DMA to/from user space is in place
+ * 14 oct 85  longo  added kernel msg redirect and QD_RDCURSOR ioctl
+ * 03 oct 85  longo  added support for multiple QDSS's
+ * 02 oct 85  longo  added color map loading services in qdioctl() & qdaint()
+ * 30 sep 85  longo  added DMA interrupt services
+ * 18 sep 85  longo  added scroll services to "qdaint()" adder intrpt service
+ *		     and put in supporting ioctl's
+ * 04 sep 85  longo  initial implementation of DMA is working
+ * 17 aug 85  longo  added support for the QDSS to be system console
+ * 05 aug 85  longo  now using qfont (QVSS & QDSS) as linked object
+ * 12 jun 85  longo  added mouse event loading to "qdiint()"
+ * 31 may 85  longo  put live interrupts into the probe() routine
+ * 30 may 85  longo  event queue shared memory implementation is now alive
+ * 29 may 85  longo  LK-201 input is now interrupt driven
+ * 25 apr 85  longo  MAPDEVICE works
+ * 14 mar 85  longo  created
+ *
+ *	 todo:	 fix rlogin bug in console stuff
+ *		 cat -u console redirection
+ *		 check error return from strategy routine
+ *		 verify TOY time stuff (what format?)
+ *		 look at system based macro implementation of VTOP
+ *
  */
 
-#include "qd.h"
+#include "qd.h" 	/* # of QDSS's the system is configured for */
+
 #if NQD > 0
-
-#include "../machine/pte.h"
-#include "../machine/mtpr.h"
+#include "types.h"
+#include "../machine/pte.h"	/* page table values */
+#include "../machine/mtpr.h"	/* VAX register access stuff */
 #include "../machine/cpu.h"
-#include "param.h"
-#include "conf.h"
-#include "dir.h"
-#include "user.h"
-#include "qdioctl.h"
+#include "param.h" 	/* general system params & macros */
+#include "conf.h"		/* "linesw" tty driver dispatch */
+#include "dir.h"		/* for directory handling */
+#include "user.h"		/* user structure (what else?) */
+#include "qdioctl.h"	/* ioctl call values */
 #include "tty.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "clist.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "ubareg.h"
-#include "ubavar.h"
+#include "map.h"		/* resource allocation map struct */
+#include "buf.h"		/* buf structs */
+#include "vm.h"		/* includes 'vm' header files */
+#include "bk.h"		/* BKINPUT macro for line stuff */
+#include "clist.h" 	/* char list handling structs */
+#include "file.h"		/* file I/O definitions */
+#include "uio.h"		/* write/read call structs */
+#include "kernel.h"	/* clock handling structs */
+#ifdef notdef	/* notneeded */
+#include "cpuconf.h"
+#include "devio.h"
+#endif
+#include "exec.h"
+#include "proc.h"
+
+#include "ubareg.h"	/* uba & 'qba' register structs */
+#include "ubavar.h"	/* uba structs & uba map externs */
 #include "syslog.h"
-#include "qduser.h"	/* definitions shared with client */
-#include "qdreg.h"
 
-/*
-* QDSS driver status flags for tracking operational state 
-*/
+#include "qduser.h"	/* definitions shared with my client */
+#include "qdreg.h"	/* QDSS device register structures */
+/*-----------------------------------------------------------
+* QDSS driver status flags for tracking operational state */
 
-struct qdflags {
+	struct qdflags {
 
-    u_int inuse;	    /* which minor dev's are in use now */
-    u_int config;	    /* I/O page register content */
-    u_int mapped;	    /* user mapping status word */
-    u_int kernel_loop;	    /* if kernel console is redirected (DEFUNCT) */
-    u_int user_dma;	    /* DMA from user space in progress */
-    u_short pntr_id;	    /* type code of pointing device */
-    u_short duart_imask;    /* shadowing for duart intrpt mask reg */
-    u_short adder_ie;	    /* shadowing for adder intrpt enbl reg */
-    u_short curs_acc;	    /* cursor acceleration factor */
-    u_short curs_thr;	    /* cursor acceleration threshold level */
-    u_short tab_res;	    /* tablet resolution factor */
-    u_short selmask;	    /* mask for active qd select entries */
-};
+	    u_int inuse;	    /* which minor dev's are in use now */
+	    u_int config;	    /* I/O page register content */
+	    u_int mapped;	    /* user mapping status word */
+	    u_int kernel_loop;	    /* if kernel console is redirected */
+	    u_int user_dma;	    /* DMA from user space in progress */
+	    u_short pntr_id;	    /* type code of pointing device */
+	    u_short duart_imask;    /* shadowing for duart intrpt mask reg */
+	    u_short adder_ie;	    /* shadowing for adder intrpt enbl reg */
+	    u_short curs_acc;	    /* cursor acceleration factor */
+	    u_short curs_thr;	    /* cursor acceleration threshold level */
+	    u_short tab_res;	    /* tablet resolution factor */
+	    u_short selmask;	    /* mask for active qd select entries */
+	};
 
-/* #define POSIXTTY (4.4BSD) */
+	/* bit definitions for "inuse" entry  */
 
-/* bit definitions for "inuse" entry  */
 #define CONS_DEV	0x01
 #define ALTCONS_DEV	0x02
 #define GRAPHIC_DEV	0x04
 
-/* bit definitions for 'mapped' member of flag structure */
+	/* bit definitions for 'mapped' member of flag structure */
+
 #define MAPDEV		0x01		/* hardware is mapped */
 #define MAPDMA		0x02		/* DMA buffer mapped */
 #define MAPEQ		0x04		/* event queue buffer mapped */
 #define MAPSCR		0x08		/* scroll param area mapped */
 #define MAPCOLOR	0x10		/* color map writing buffer mapped */
 
-/* bit definitions for 'selmask' member of qdflag structure */
+	/* bit definitions for 'selmask' member of qdflag structure */
 
 #define SEL_READ	0x01		/* read select is active */
 #define SEL_WRITE	0x02		/* write select is active */
 
-/*
-* constants used in shared memory operations 
-*/
+/*----------------------------------------------
+* constants used in shared memory operations */
 
 #define EVENT_BUFSIZE  1024	/* # of bytes per device's event buffer */
+
 #define MAXEVENTS  ( (EVENT_BUFSIZE - sizeof(struct qdinput))	 \
 		     / sizeof(struct _vs_event) )
+
 #define DMA_BUFSIZ	(1024 * 10)
+
 #define COLOR_BUFSIZ  ((sizeof(struct color_buf) + 512) & ~0x01FF)
 
-/*
+/*******************************************************************/
+
+extern char qvmem[][128*NBPG];
+extern struct pte QVmap[][128];
+
+
+/*--------------------------------------------------------------------------
 * reference to an array of "uba_device" structures built by the auto
 * configuration program.  The uba_device structure decribes the device
 * sufficiently for the driver to talk to it.  The auto configuration code
 * fills in the uba_device structures (located in ioconf.c) from user
-* maintained info.  
-*/
+* maintained info.  */
 
-struct uba_device *qdinfo[NQD];  /* array of pntrs to each QDSS's */
-				 /* uba structures  */
-struct tty qd_tty[NQD*4];	/* teletype structures for each.. */
-				/* ..possible minor device */
+	struct uba_device *qdinfo[NQD];  /* array of pntrs to each QDSS's */
+					 /* uba structures  */
+	struct tty qd_tty[NQD*4];	/* teletype structures for each.. */
+					/* ..possible minor device */
 
-struct qd_softc qd_softc[NQD];
+	struct qd_softc qd_softc[NQD];
 
-/*
- * static storage used by multiple functions in this code  
- */
-int Qbus_unmap[NQD];		/* Qbus mapper release code */
-struct qdflags qdflags[NQD];	/* QDSS device status flags */
-struct qdmap qdmap[NQD];	/* QDSS register map structure */
-caddr_t qdbase[NQD];		/* base address of each QDSS unit */
-struct buf qdbuf[NQD];		/* buf structs used by strategy */
-char one_only[NQD];		/* lock for single process access */
+/*----------------------------------------------------------
+* static storage used by multiple functions in this code  */
 
-/*
-* The array "event_shared[]" is made up of a number of event queue buffers
+	int Qbus_unmap[NQD];		/* Qbus mapper release code */
+	struct qdflags qdflags[NQD];	/* QDSS device status flags */
+	struct qdmap qdmap[NQD];	/* QDSS register map structure */
+	caddr_t qdbase[NQD];		/* base address of each QDSS unit */
+	struct buf qdbuf[NQD];		/* buf structs used by strategy */
+	char one_only[NQD];		/* lock for single process access */
+
+/*------------------------------------------------------------------------
+* the array "event_shared[]" is made up of a number of event queue buffers
 * equal to the number of QDSS's configured into the running kernel (NQD).
 * Each event queue buffer begins with an event queue header (struct qdinput)
 * followed by a group of event queue entries (struct _vs_event).  The array
 * "*eq_header[]" is an array of pointers to the start of each event queue
-* buffer in "event_shared[]".  
-*/
+* buffer in "event_shared[]".  */
 
 #define EQSIZE ((EVENT_BUFSIZE * NQD) + 512)
 
-char event_shared[EQSIZE];	    /* reserve space for event bufs */
-struct qdinput *eq_header[NQD];     /* event queue header pntrs */
+	char event_shared[EQSIZE];	    /* reserve space for event bufs */
+	struct qdinput *eq_header[NQD];     /* event queue header pntrs */
 
-/*
+/*--------------------------------------------------------------------------
 * This allocation method reserves enough memory pages for NQD shared DMA I/O
 * buffers.  Each buffer must consume an integral number of memory pages to
 * guarantee that a following buffer will begin on a page boundary.  Also,
 * enough space is allocated so that the FIRST I/O buffer can start at the
 * 1st page boundary after "&DMA_shared".  Page boundaries are used so that
-* memory protections can be turned on/off for individual buffers. 
-*/
+* memory protections can be turned on/off for individual buffers. */
 
 #define IOBUFSIZE  ((DMA_BUFSIZ * NQD) + 512)
 
-char DMA_shared[IOBUFSIZE];	    /* reserve I/O buffer space */
-struct DMAreq_header *DMAheader[NQD];  /* DMA buffer header pntrs */
+	char DMA_shared[IOBUFSIZE];	    /* reserve I/O buffer space */
+	struct DMAreq_header *DMAheader[NQD];  /* DMA buffer header pntrs */
 
-/*
+/*-------------------------------------------------------------------------
 * The driver assists a client in scroll operations by loading dragon
 * registers from an interrupt service routine.	The loading is done using
 * parameters found in memory shrade between the driver and it's client.
 * The scroll parameter structures are ALL loacted in the same memory page
-* for reasons of memory economy.  
-*/
+* for reasons of memory economy.  */
 
-char scroll_shared[2 * 512];	/* reserve space for scroll structs */
-struct scroll *scroll[NQD];	/* pointers to scroll structures */
+	char scroll_shared[2 * 512];	/* reserve space for scroll structs */
+	struct scroll *scroll[NQD];	/* pointers to scroll structures */
 
-/*
+/*-----------------------------------------------------------------------
 * the driver is programmable to provide the user with color map write
 * services at VSYNC interrupt time.  At interrupt time the driver loads
-* the color map with any user-requested load data found in shared memory 
-*/
+* the color map with any user-requested load data found in shared memory */
 
 #define COLOR_SHARED  ((COLOR_BUFSIZ * NQD) + 512)
 
-char color_shared[COLOR_SHARED];      /* color bufs */
-struct color_buf *color_buf[NQD];     /* pointers to color bufs */
+	char color_shared[COLOR_SHARED];      /* reserve space: color bufs */
+	struct color_buf *color_buf[NQD];     /* pointers to color bufs */
 
-/*
-* mouse input event structures 
-*/
+/*--------------------------------
+* mouse input event structures */
 
-struct mouse_report last_rep[NQD];
-struct mouse_report current_rep[NQD];
+	struct mouse_report last_rep[NQD];
+	struct mouse_report current_rep[NQD];
 
-/*
-* input event "select" use 
-*/
+/*----------------------------
+* input event "select" use */
 
-struct proc *rsel[NQD]; 	/* process waiting for select */
+	struct proc *rsel[NQD]; 	/* process waiting for select */
 
-/*
-* console cursor structure 
-*/
+/*----------------------------
+* console cursor structure */
 
-struct _vs_cursor cursor[NQD];
+	struct _vs_cursor cursor[NQD];
 
+/*----------------------------
+* count of successfully probed qd's */
 
-
-int nNQD = NQD;
-
-int DMAbuf_size = DMA_BUFSIZ;
+	int qdcount = 0;
 
 
-/*
- * macro to get system time.  Used to time stamp event queue entries 
- */
+/************************************************************************/
+
+	int nNQD = NQD;
+
+	int DMAbuf_size = DMA_BUFSIZ;
+
+
+#define QDSSMAJOR	41		/* QDSS major device number */
+#ifdef notdef	/* on ultrix */
+extern	int	ws_display_type;
+extern	int	ws_display_units;
+#endif
+/* don't need these  */
+int	ws_display_type;
+int	ws_display_units;
+
+int     QDlast_DMAtype;                 /* type of the last DMA operation */
+
+/*---------------------------------------------------------------------
+* macro to get system time.  Used to time stamp event queue entries */
 
 #define TOY ((time.tv_sec * 100) + (time.tv_usec / 10000))
 
-/*
+/*--------------------------------------------------------------------------
 * the "ioconf.c" program, built and used by auto config, externally refers
-* to definitions below.  
-*/
+* to definitions below.  */
 
-int qdprobe();
-int qdattach();
-int qddint();			/* DMA gate array intrpt service */
-int qdaint();			/* Dragon ADDER intrpt service */
-int qdiint();
+	int qdprobe();
+	int qdattach();
+	int qddint();			/* DMA gate array intrpt service */
+	int qdaint();			/* Dragon ADDER intrpt service */
+	int qdiint();
 
-u_short qdstd[] = { 0 };
+	u_short qdstd[] = { 0 };
 
-struct uba_driver qddriver = {	/* externally referenced: ioconf.c */
+	struct uba_driver qddriver = {	/* externally referenced: ioconf.c */
 
-    qdprobe,			/* device probe entry */
-    0,				/* no slave device */
-    qdattach,			/* device attach entry */
-    0,				/* no "fill csr/ba to start" */
-    qdstd,			/* device addresses */
-    "qd",			/* device name string */
-    qdinfo			/* ptr to QDSS's uba_device struct */
-};
+	    qdprobe,			/* device probe entry */
+	    0,				/* no slave device */
+	    qdattach,			/* device attach entry */
+	    0,				/* no "fill csr/ba to start" */
+	    qdstd,			/* device addresses */
+	    "qd",			/* device name string */
+	    qdinfo			/* ptr to QDSS's uba_device struct */
+	};
 
-extern	char qvmem[][128*NBPG];
-extern	struct pte QVmap[][128];
-
-/*
- * v_putc is used to redirect the console cnputc to the virtual console
- * vputc.  consops is used to direct the console device to the qvss console.
- */
-extern (*v_putc)();
-extern struct cdevsw *consops;
-
-/*
+/*-------------------
 * general defines */
 
-#define QDPRIOR (PZERO-1)
+#define QDPRIOR (PZERO-1)		/* must be negative */
 
 #define FALSE	0
 #define TRUE	~FALSE
@@ -259,15 +414,14 @@ extern struct cdevsw *consops;
 #define BAD	-1
 #define GOOD	0
 
-/*
- * Macro to create a system virtual page number from system virtual adrs.
- */
+/*-----------------------------------------------------------------------
+* macro to create a system virtual page number from system virtual adrs */
 
-#define VTOP(x)  (((int)x & ~0xC0000000) >> PGSHIFT)
+#define VTOP(x)  (((int)x & ~0xC0000000) >> PGSHIFT) /* convert qvmem adrs */
+						     /* to system page # */
 
-/*
- * QDSS register address offsets from start of QDSS address space 
- */
+/*------------------------------------------------------------------
+* QDSS register address offsets from start of QDSS address space */
 
 #define QDSIZE	 (52 * 1024)	/* size of entire QDSS foot print */
 
@@ -289,28 +443,24 @@ extern struct cdevsw *consops;
 #define BLUE	(CLRSTART+0x200)
 #define GREEN	(CLRSTART+0x400)
 
-/*
- * Values used in mapping QDSS hardware into the Q memory space.
- */
+/*---------------------------------------------------------------
+* values used in mapping QDSS hardware into the Q memory space */
 
 #define CHUNK	  (64 * 1024)
-#define QMEMSIZE  (1024 * 1024 * 4)
+#define QMEMSIZE  (1024 * 1024 * 4)	/* 4 meg */
 
-/*
+/*----------------------------------------------------------------------
 * QDSS minor device numbers.  The *real* minor device numbers are in
 * the bottom two bits of the major/minor device spec.  Bits 2 and up are
-* used to specify the QDSS device number (ie: which one?)
-*/
+* used to specify the QDSS device number (ie: which one?) */
 
-#define QDSSMAJOR	41		/* QDSS major device number */
 
 #define CONS		0
 #define ALTCONS 	1
 #define GRAPHIC 	2
 
-/*
- * console cursor bitmap (block cursor type) 
- */
+/*----------------------------------------------
+* console cursor bitmap (block cursor type)  */
 
 	short cons_cursor[32] = {      /* white block cursor */
 
@@ -321,11 +471,13 @@ extern struct cdevsw *consops;
 
 	};
 
-/*
- * constants used in font operations 
- */
+/*-------------------------------------
+* constants used in font operations */
 
-#define CHARS		95			/* # of chars in the font */
+
+/* Originaly this was CHARS 95 */
+#define CHARS		190 			/* # of chars in the font */
+
 #define CHAR_HEIGHT	15			/* char height in pixels */
 #define CHAR_WIDTH	8			/* char width in pixels*/
 #define FONT_WIDTH	(CHAR_WIDTH * CHARS)	/* font width in pixels */
@@ -334,43 +486,85 @@ extern struct cdevsw *consops;
 
 #define FONT_X		0			/* font's off screen adrs */
 #define FONT_Y		(2048 - CHAR_HEIGHT)
-/*
-#define FONT_Y		200
-*/
 
-extern char q_font[];		/* reference font object code */
+					/* Offset to second row characters */
+#define FONT_OFFSET	((MAX_SCREEN_X/CHAR_WIDTH)*CHAR_HEIGHT)
 
-extern	char q_key[];		/* reference key xlation tables */
-extern	char q_shift_key[];
-extern	char *q_special[];
+	extern char q_font[];		/* reference font object code */
 
-/*
- * definitions for cursor acceleration reporting
- */
+	extern	u_short q_key[];		/* reference key xlation tables */
+	extern	u_short q_shift_key[];
+	extern	char *q_special[];
+
+/*--------------------------------------------------
+* definitions for cursor acceleration reporting  */
 
 #define ACC_OFF 	0x01		/* acceleration is inactive */
 
-int qdputc();		/* used to direct kernel console output *
-int qdstart();		/* used to direct /dev/console output *
+/*--------------------------------------------------------------------------
+* v_consputc is the switch that is used to redirect the console cnputc() to
+* the virtual console qdputc().
+* v_consgetc is the switch that is used to redirect the console getchar() to
+* the virtual console qdgetc().
+*/
 
-/*
- * LK-201 state storage for input console keyboard conversion to ASCII 
- */
+#ifdef notdef
+	extern (*v_consputc)();
+	int qdputc();		/* used to direct kernel console output */
+	extern (*v_consgetc)();
+	int qdgetc();		/* used to read kernel console input */
 
-struct q_keyboard {
-    int shift;			/* state variables	*/
-    int cntrl;
-    int lock;
-    int lastcode;		/* last keycode typed	*/
-    unsigned kup[8];		/* bits for each keycode*/
-    unsigned dkeys[8];		/* down/up mode keys	*/
-    char last;			/* last character	*/
-} q_keyboard;
+	int qdstart();		/* used to direct /dev/console output */
+#endif
+	extern (*v_putc)();
+	extern struct cdevsw *consops;
+	int qdputc();
+	int qdstart();
 
+/*------------------------------------------------------------------------
+* LK-201 state storage for input console keyboard conversion to ASCII */
+
+	struct q_keyboard {
+
+	    int shift;			/* state variables	*/
+	    int cntrl;
+	    int lock;
+	    int lastcode;		/* last keycode typed	*/
+	    unsigned kup[8];		/* bits for each keycode*/
+	    unsigned dkeys[8];		/* down/up mode keys	*/
+	    char last;			/* last character	*/
+
+	 } q_keyboard;
+
+/*--------------------------------------------------
+* ULTRIX settings for first open.		  */
+ 
+#define IFLAGS	(EVENP|ECHO|XTABS|CRMOD)
+
+/*------------------------------------------------------------------------
+* termio flags will be set to these default values in non-termio mode to
+* provide a backward compatible ULTRIX environment. */
+
+#ifdef POSIXTTY
+#define IFLAG (BRKINT|ISTRIP|IXON|IXANY|ICRNL|IEXTEN|IMAXBEL)
+#define OFLAG (OPOST|OXTABS|ONLCR)
+#define LFLAG (ISIG|ICANON|ECHO)
+#define CFLAG (PARENB|CREAD|CS7|CLOCAL)
+#endif
+
+/*****************************************************************
+******************************************************************
+******************************************************************
+*
+*	DRIVER FUNCTIONS START HERE:
+*
+******************************************************************
+******************************************************************
+*****************************************************************/
 
 /*********************************************************************
 *
-*	qdcons_init - init QDSS as console (BEFORE probe routine)
+*	qdcons_init()... init QDSS as console (before probe routine)
 *
 *********************************************************************/
 
@@ -378,38 +572,65 @@ qdcons_init()
 {
 	register u_int unit;
 
-	struct percpu *pcpu;		/* pointer to percpu structure */
-	register struct qbus *qb;
 	int *ptep;			/* page table entry pointer */
 	caddr_t phys_adr;		/* physical QDSS base adrs */
-	u_int mapix;			/* index into QMEMmap[] array */
+	u_int mapix;			/* index into QVmap[] array */
 
+	struct percpu *pcpu;		/* pointer to cpusw structure  */
+	register struct qbus *qb;
 	u_short *qdaddr;		/* address of QDSS IO page CSR */
 	u_short *devptr;		/* vitual device space */
-	extern	cnputc();		/* standard serial console putc */
+	extern cnputc();
 
 #define QDSSCSR 0x1F00
 
-	/*
-	 * if console already configured, dont do again.
-	 */
 	if (v_putc != cnputc)
 		return;
 
 	unit = 0;
 
-	/*
-	 * find the cpusw entry that matches this machine. 
-	 */
+/*----------------------------------------------------
+* find the cpusw entry that matches this machine. */
 
 	for (pcpu = percpu; pcpu && pcpu->pc_cputype != cpu; pcpu++)
 		;
 	if (pcpu == NULL)
 		return;
 
+#ifdef notdef	/* the ultrix way */
+/*------------------------------------------------------
+* Map the Q-bus memory space into the system memory. */
 
+	ubaaccess(((*cpup->v_umaddr)(0)), QVmap[0],
+			cpup->pc_umsize, PG_V | PG_KW);
+
+	ubaaccess(((*cpup->v_udevaddr)(0)), QVmap[0]+btop(cpup->pc_umsize),
+			DEVSPACESIZE ,PG_V|PG_KW);
+
+/*---------------------------------------------------------------------
+* map the QDSS into the Qbus memory (which is now in system space)  */
+
+	devptr = (u_short *)((char *)qvmem[0]+cpup->pc_umsize);
+	qdaddr = (u_short *)((u_int)devptr + ubdevreg(QDSSCSR));
+
+	if (BADADDR(qdaddr, sizeof(short)))
+		return(0);
+
+	/*---------------------------------------------------
+	* tell QDSS which Q memory address base to decode */
+
+	mapix = (int) VTOP(QMEMSIZE - CHUNK);
+	ptep = (int *) QVmap[0] + mapix;
+	phys_adr = (caddr_t) (((int)*ptep & 0x001FFFFF) << PGSHIFT);
+	*qdaddr = (u_short) ((int)phys_adr >> 16);
+
+	qdflags[unit].config = *(u_short *)qdaddr;
+
+#endif /*notdef*/
+
+	/* the BSD way */
 	/*
-	 * Map device registers - the last 8K of umem.
+	 * Map device registers - the last 8K of qvmem.
 	 */
 	qb = (struct qbus *)pcpu->pc_io->io_details;
 	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize,
@@ -418,9 +639,12 @@ qdcons_init()
 	devptr = (u_short *)((char *)umem[0]+(qb->qb_memsize * NBPG));
 	qdaddr = (u_short *)((u_int)devptr + ubdevreg(QDSSCSR));
 	if (badaddr(qdaddr, sizeof(short)))  {
-		log(LOG_ERR, "Can't find qdss (badaddr)\n"); /* debug */
+		printf("Can't find qdss (badaddr)\n"); /* debug */
 		return(0);
 	}
+
+
+
 	/*
 	 * Map q-bus memory used by qdss. (separate map)
 	 */
@@ -438,11 +662,14 @@ qdcons_init()
 	*qdaddr = (u_short)((int)mapix >> 16);
 	qdflags[unit].config = *(u_short *)qdaddr;
 
-	/*
-	 * load qdmap struct with the virtual addresses of the QDSS elements 
-	 */
+/*----------------------------------------------------------------------
+* load qdmap struct with the virtual addresses of the QDSS elements */
 
-	qdbase[unit] = (caddr_t) qvmem[0];
+#ifdef notdef	/*ultrix way */
+	qdbase[unit] = (caddr_t) (qvmem[0] + QMEMSIZE - CHUNK);
+#endif
+
+	qdbase[unit] = (caddr_t) (qvmem[0]);
 
 	qdmap[unit].template = qdbase[unit] + TMPSTART;
 	qdmap[unit].adder = qdbase[unit] + ADDER;
@@ -455,14 +682,11 @@ qdcons_init()
 
 	qdflags[unit].duart_imask = 0;	/* init shadow variables */
 
-	/*
-	 * init the QDSS 
-	 */
+/*------------------
+* init the QDSS  */
 
-	/***
 	printf("qdbase[0] = %x, qdmap[0].memcsr = %x\n",
-		(char *)qdbase[0], qdmap[0].memcsr);
-	***/
+			(char *)qdbase[0], qdmap[0].memcsr);
 
 	*(short *)qdmap[unit].memcsr |= SYNC_ON; /* once only: turn on sync */
 
@@ -475,9 +699,19 @@ qdcons_init()
 	ldcursor(unit, cons_cursor);	/* load default cursor map */
 	setup_input(unit);		/* init the DUART */
 
+/*----------------------------------------------------
+* smash the system's virtual console address table */
+
+#ifdef notdef	/* the ultrix way */
+	v_consputc = qdputc;
+	v_consgetc = qdgetc;
+	cdevsw[0] = cdevsw[QDSSMAJOR];
+#endif
+	/* the bsd way */
 	v_putc = qdputc;
 	consops = &cdevsw[QDSSMAJOR];
 
+ 	ws_display_type = QDSSMAJOR;	/* Idenify QDSS as graphics device */
 	return(1);
 
 } /* qdcons_init */
@@ -498,7 +732,7 @@ qdcons_init()
 *
 *  side effects: QDSS gets mapped into Qbus memory space at the first
 *		 vacant 64kb boundary counting back from the top of
-*		 Qbus memory space (qmem+4mb)
+*		 Qbus memory space (qvmem+4mb)
 *
 *  return: QDSS bus request level and vector address returned in
 *	   registers by UNIX convention.
@@ -508,7 +742,7 @@ qdcons_init()
 qdprobe(reg)
 caddr_t reg;
 {
-	register int br, cvec; 	/* value-result */
+	register int br, cvec;  /* value-result */
 
 	register int unit;
 
@@ -521,61 +755,63 @@ caddr_t reg;
 	caddr_t phys_adr;		/* physical QDSS base adrs */
 	u_int mapix;
 
-#ifdef lint
-	br = 0; cvec = br; br = cvec;
-#endif
-
-	/*
-	* calculate board unit number from I/O page register address  
-	*/
+/*---------------------------------------------------------------
+* calculate board unit number from I/O page register address  */
 
 	unit = (int) (((int)reg >> 1) & 0x0007);
 
-/*
+/*---------------------------------------------------------------------------
 * QDSS regs must be mapped to Qbus memory space at a 64kb physical boundary.
 * The Qbus memory space is mapped into the system memory space at config
-* time.  After config runs, "qmem[0]" (ubavar.h) holds the system virtual adrs
+* time.  After config runs, "qvmem[0]" (ubavar.h) holds the system virtual adrs
 * of the start of Qbus memory.	The Qbus memory page table is found via
-* an array of pte ptrs called "QMEMmap[]" (ubavar.h) which is also loaded at
+* an array of pte ptrs called "QVmap[]" (ubavar.h) which is also loaded at
 * config time.	These are the variables used below to find a vacant 64kb
 * boundary in Qbus memory, and load it's corresponding physical adrs into
-* the QDSS's I/O page CSR.  
-*/
+* the QDSS's I/O page CSR.  */
+
+	/*
+	 * Only if QD is the graphics device.
+	 */
+
+	if (ws_display_type && (ws_display_type != QDSSMAJOR))
+		return(0);
 
 	/* if this QDSS is NOT the console, then do init here.. */
 
-	/****** XXX - REMOVED (can't test) - STILL NEED TO DO FOR NQD > 1 ***/
-#ifdef notdef
+	if (unit != 0) {
+		printf("qd: can't support two qdss's (yet)\n");
+#ifdef notdef	/* notyet */
 	if (v_consputc != qdputc  ||  unit != 0) {
 
-	    /*
-	     * read QDSS config info
-	     */
+	    /*-------------------------
+	    * read QDSS config info */
+
 	    qdflags[unit].config = *(u_short *)reg;
 
-	    /*
-	     * find an empty 64kb adrs boundary 
-	     */
-	    qdbase[unit] = (caddr_t) (qmem[0] + QMEMSIZE - CHUNK);
+	    /*------------------------------------
+	    * find an empty 64kb adrs boundary */
 
-	    /*
-	     * find the cpusw entry that matches this machine. 
-	     */
+	    qdbase[unit] = (caddr_t) (qvmem[0] + QMEMSIZE - CHUNK);
+
+	    /*----------------------------------------------------
+	    * find the cpusw entry that matches this machine. */
+
 	    cpup = &cpusw[cpu];
 	    while ( !(BADADDR(qdbase[unit], sizeof(short))) )
 		qdbase[unit] -= CHUNK;
 
-	    /*
-	     * tell QDSS which Q memory address base to decode 
-	     */
-	    mapix = (int) (VTOP(qdbase[unit]) - VTOP(qmem[0]));
-	    ptep = (int *) QMEMmap[0] + mapix;
+	    /*---------------------------------------------------
+	    * tell QDSS which Q memory address base to decode */
+
+	    mapix = (int) (VTOP(qdbase[unit]) - VTOP(qvmem[0]));
+	    ptep = (int *) QVmap[0] + mapix;
 	    phys_adr = (caddr_t) (((int)*ptep & 0x001FFFFF) << PGSHIFT);
 	    *(u_short *)reg = (u_short) ((int)phys_adr >> 16);
 
-	    /*
-	     * load QDSS adrs map with system addresses of device regs
-	     */
+	    /*-----------------------------------------------------------
+	    * load QDSS adrs map with system addresses of device regs */
+
 	    qdmap[unit].template = qdbase[unit] + TMPSTART;
 	    qdmap[unit].adder = qdbase[unit] + ADDER;
 	    qdmap[unit].dga = qdbase[unit] + DGA;
@@ -599,15 +835,14 @@ caddr_t reg;
 	    /* once only: turn on sync */
 
 	    *(short *)qdmap[unit].memcsr |= SYNC_ON;
+#endif /*notdef*/
 	}
-#endif /* notdef */
 
-/*
- * the QDSS interrupts at HEX vectors xx0 (DMA) xx4 (ADDER) and xx8 (DUART).
- * Therefore, we take three vectors from the vector pool, and then continue
- * to take them until we get a xx0 HEX vector.  The pool provides vectors
- * in contiguous decending order.  
- */
+/*--------------------------------------------------------------------------
+* the QDSS interrupts at HEX vectors xx0 (DMA) xx4 (ADDER) and xx8 (DUART).
+* Therefore, we take three vectors from the vector pool, and then continue
+* to take them until we get a xx0 HEX vector.  The pool provides vectors
+* in contiguous decending order.  */
 
 	vector = (uba_hd[0].uh_lastiv -= 4*3);	/* take three vectors */
 
@@ -615,9 +850,8 @@ caddr_t reg;
 	    vector = (uba_hd[0].uh_lastiv -= 4);  /* ..take another vector */
 	}
 
-	/*
-	 * setup DGA to do a DMA interrupt (transfer count = 0)
-	 */
+	/*---------------------------------------------------------
+	* setup DGA to do a DMA interrupt (transfer count = 0)	*/
 
 	dga = (struct dga *) qdmap[unit].dga;
 
@@ -635,8 +869,17 @@ caddr_t reg;
 
 	dga->csr = HALT;		/* stop the wheels */
 
+/*----------
+* exits  */
+
 	if (cvec != vector)		/* if vector != base vector.. */
 	    return(0);			/* ..return = 'no device' */
+
+	/*
+	 * score this as an existing qdss
+	 */
+	qdcount++;
+ 	ws_display_units |= (1 << unit);
 
 	return(sizeof(short));	    /* return size of QDSS I/O page reg */
 
@@ -644,7 +887,7 @@ caddr_t reg;
 
 /*****************************************************************
 *
-*	qdattach - one-time initialization
+*	qdattach()... do the one-time initialization
 *
 ******************************************************************
 *
@@ -666,13 +909,12 @@ struct uba_device *ui;
 
 	unit = ui->ui_unit;		/* get QDSS number */
 
-	/*
-	 * init "qdflags[]" for this QDSS 
-	 */
+/*----------------------------------
+* init "qdflags[]" for this QDSS */
 
 	qdflags[unit].inuse = 0;	/* init inuse variable EARLY! */
 	qdflags[unit].mapped = 0;
-	qdflags[unit].kernel_loop = 0;
+	qdflags[unit].kernel_loop = -1;
 	qdflags[unit].user_dma = 0;
 	qdflags[unit].curs_acc = ACC_OFF;
 	qdflags[unit].curs_thr = 128;
@@ -680,24 +922,21 @@ struct uba_device *ui;
 	qdflags[unit].duart_imask = 0;	/* init shadow variables */
 	qdflags[unit].adder_ie = 0;
 
-	/*
-	* init structures used in kbd/mouse interrupt service.	This code must
-	* come after the "init_shared()" routine has run since that routine 
-	* inits the eq_header[unit] structure used here.   
-	*/
+/*----------------------------------------------------------------------
+* init structures used in kbd/mouse interrupt service.	This code must
+* come after the "init_shared()" routine has run since that routine inits
+* the eq_header[unit] structure used here.   */
 
-	/*
-	* init the "latest mouse report" structure 
-	*/
+	/*--------------------------------------------
+	* init the "latest mouse report" structure */
 
 	last_rep[unit].state = 0;
 	last_rep[unit].dx = 0;
 	last_rep[unit].dy = 0;
 	last_rep[unit].bytcnt = 0;
 
-	/*
-	* init the event queue (except mouse position)
-	*/
+	/*------------------------------------------------
+	* init the event queue (except mouse position) */
 
 	eq_header[unit]->header.events = (struct _vs_event *)
 					  ((int)eq_header[unit]
@@ -707,9 +946,8 @@ struct uba_device *ui;
 	eq_header[unit]->header.head = 0;
 	eq_header[unit]->header.tail = 0;
 
-	/*
-	* init single process access lock switch 
-	*/
+/*------------------------------------------
+* init single process access lock switch */
 
 	one_only[unit] = 0;
 
@@ -717,7 +955,7 @@ struct uba_device *ui;
 
 /***************************************************************
 *
-*	qdopen - open a minor device
+*	qdopen()... open a minor device
 *
 ****************************************************************
 *
@@ -736,7 +974,6 @@ int flag;
 	register struct uba_device *ui; /* ptr to uba structures */
 	register struct dga *dga;	/* ptr to gate array struct */
 	register struct tty *tp;
-	int qdstart();
 
 	struct adder *adder;
 	struct duart *duart;
@@ -748,20 +985,23 @@ int flag;
 	minor_dev = minor(dev); /* get QDSS minor device number */
 	unit = minor_dev >> 2;
 
-	/* check for illegal conditions	*/
+/*---------------------------------
+* check for illegal conditions	*/
 
 	ui = qdinfo[unit];		/* get ptr to QDSS device struct */
 
 	if (ui == 0  || ui->ui_alive == 0)
 	    return(ENXIO);		/* no such device or address */
 
-	/* init stuff */
+/*--------------
+* init stuff */
 
 	adder = (struct adder *) qdmap[unit].adder;
 	duart = (struct duart *) qdmap[unit].duart;
 	dga = (struct dga *) qdmap[unit].dga;
 
-	/* if this is the graphic device... */
+/*------------------------------------
+* if this is the graphic device... */
 
 	if ((minor_dev & 0x03) == 2) {
 
@@ -777,10 +1017,10 @@ int flag;
 	    qdflags[unit].duart_imask |= 0x22;
 	    duart->imask = qdflags[unit].duart_imask;
 
-	/*
-	 * if the open call is to the console or the alternate console... 
-	 */
-	} else { 
+/*------------------------------------------------------------------
+* if the open call is to the console or the alternate console... */
+
+	} else if ((minor_dev & 0x03) != 2) {
 
 	    qdflags[unit].inuse |= CONS_DEV;  /* mark console as open */
 	    dga->csr |= CURS_ENB;
@@ -795,26 +1035,85 @@ int flag;
 
 	    tp->t_addr = ui->ui_addr;
 	    tp->t_oproc = qdstart;
+#ifdef notdef	/* never */
+	/*---------------------------------------------------------------------
+	* Look at the compatibility mode to specify correct default parameters
+	* and to insure only standard specified functionality. */
+	if ((u.u_procp->p_progenv == A_SYSV) || 
+		(u.u_procp->p_progenv == A_POSIX)) {
+		flag |= O_TERMIO;
+		tp->t_line = TERMIODISC;
+	}
+#endif /*notdef*/
 
 	    if ((tp->t_state & TS_ISOPEN) == 0) {
 
 		ttychars(tp);
-		tp->t_state = TS_ISOPEN | TS_CARR_ON;
+		tp->t_flags = IFLAGS;
 		tp->t_ispeed = B9600;
 		tp->t_ospeed = B9600;
+		tp->t_state = TS_ISOPEN | TS_CARR_ON;
 
-		if( (minor_dev & 0x03) == 0 ) {	
-		    tp->t_flags = XTABS|EVENP|ECHO|CRMOD;
-#ifdef POSIXTTY
-		    tp->t_iflag = TTYDEF_IFLAG;
-		    tp->t_oflag = TTYDEF_OFLAG;
-		    tp->t_lflag = TTYDEF_LFLAG;
-		    tp->t_cflag = TTYDEF_CFLAG;
-#endif
+#ifdef notdef	/* never */
+		tp->t_cflag = tp->t_cflag_ext = B9600;
+		tp->t_iflag_ext = 0;
+		tp->t_oflag_ext = 0;
+		tp->t_lflag_ext = 0;
+
+		if( (minor_dev & 0x03) == 0 ) {
+			/*----------------------------------------------------
+			* Ultrix defaults to a "COOKED" mode on the first
+			* open, while termio defaults to a "RAW" style.
+			* Base this decision by a flag set in the termio
+			* emulation routine for open, or set by an explicit
+			* ioctl call. */
+			
+			if ( flag & O_TERMIO ) {
+				/*--------------------------------------
+				* Provide a termio style environment.
+				* "RAW" style by default. */
+				
+				tp->t_flags = RAW;   
+				tp->t_iflag = 0;
+				tp->t_oflag = 0;
+				tp->t_cflag |= CS8|CREAD|HUPCL; 
+				tp->t_lflag = 0;
+	
+				/*-------------------------------------
+				 * Change to System V line discipline.*/
+				 
+				tp->t_line = TERMIODISC;
+				/*-----------------------------------------
+				* The following three control chars have 
+				* different default values than ULTRIX.	*/
+				
+	 			tp->t_cc[VERASE] = '#';
+	 			tp->t_cc[VKILL] = '@';
+	 			tp->t_cc[VINTR] = 0177;
+ 				tp->t_cc[VMIN] = 6;
+ 				tp->t_cc[VTIME] = 1;
+			} else {
+				/*--------------------------------------
+				* Provide a backward compatible ULTRIX 
+				* environment.  "COOKED" style.	*/
+				
+				tp->t_flags = IFLAGS;
+				tp->t_iflag = IFLAG;
+				tp->t_oflag = OFLAG;
+				tp->t_lflag = LFLAG;
+				tp->t_cflag |= CFLAG;
+			}
 		}
 		else {
 		    tp->t_flags = RAW;
+		    tp->t_iflag = 0;
+		    tp->t_oflag = 0;
+		    tp->t_cflag |= CS8|CREAD|HUPCL; 
+		    tp->t_lflag = 0;
 		}
+                if( (minor_dev & 0x03) == 1 )
+                    tp->t_iflag |= IXOFF;	/* flow control for qconsole */
+#endif /*notdef*/
 	    }
 
 	    /*----------------------------------------
@@ -831,7 +1130,7 @@ int flag;
 
 /***************************************************************
 *
-*	qdclose - clean up on the way out
+*	qdclose()... clean up on the way out
 *
 ****************************************************************
 *
@@ -864,23 +1163,26 @@ int flag;
 	unit = minor_dev >> 2;		/* get QDSS number */
 	qd = &qdmap[unit];
 
-	/*
-	 * if this is the graphic device... 
-	 */
+/*------------------------------------
+* if this is the graphic device... */
 
 	if ((minor_dev & 0x03) == 2) {
-	    if (one_only[unit] != 1)	/* unlock driver */
+
+	    /*-----------------
+	    * unlock driver */
+
+	    if (one_only[unit] != 1)
 		return(EBUSY);
 	    else
 		one_only[unit] = 0;
 
-	    /*
-	    * re-protect device memory 
-	    */
+	    /*----------------------------
+	    * re-protect device memory */
 
 	    if (qdflags[unit].mapped & MAPDEV) {
 
-		/* TEMPLATE RAM */
+		/*----------------
+		* TEMPLATE RAM */
 
 		mapix = VTOP((int)qd->template) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
@@ -888,7 +1190,8 @@ int flag;
 		for (i = VTOP(TMPSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 
-		/* ADDER */
+		/*---------
+		* ADDER */
 
 		mapix = VTOP((int)qd->adder) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
@@ -896,7 +1199,8 @@ int flag;
 		for (i = VTOP(REGSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 
-		/* COLOR MAPS */
+		/*--------------
+		* COLOR MAPS */
 
 		mapix = VTOP((int)qd->red) - VTOP(qvmem[0]);
 		ptep = (int *)(QVmap[0] + mapix);
@@ -905,9 +1209,8 @@ int flag;
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
 	    }
 
-	    /* 
-	     * re-protect DMA buffer and free the map registers 
-	     */
+	    /*----------------------------------------------------
+	    * re-protect DMA buffer and free the map registers */
 
 	    if (qdflags[unit].mapped & MAPDMA) {
 
@@ -937,9 +1240,8 @@ int flag;
 		ubarelse(0, &Qbus_unmap[unit]);
 	    }
 
-	    /*
-	     * re-protect 1K (2 pages) event queue 
-	     */
+	    /*---------------------------------------
+	    * re-protect 1K (2 pages) event queue */
 
 	    if (qdflags[unit].mapped & MAPEQ) {
 
@@ -950,9 +1252,8 @@ int flag;
 		*ptep = (*ptep & ~PG_PROT) | PG_KW | PG_V;
 	    }
 
-	    /*
-	     * re-protect scroll param area and disable scroll intrpts  
-	     */
+	    /*------------------------------------------------------------
+	    * re-protect scroll param area and disable scroll intrpts  */
 
 	    if (qdflags[unit].mapped & MAPSCR) {
 
@@ -968,9 +1269,8 @@ int flag;
 		adder->interrupt_enable = qdflags[unit].adder_ie;
 	    }
 
-	    /*
-	     * re-protect color map write buffer area and kill intrpts 
-	     */
+	    /*-----------------------------------------------------------
+	    * re-protect color map write buffer area and kill intrpts */
 
 	    if (qdflags[unit].mapped & MAPCOLOR) {
 
@@ -987,19 +1287,17 @@ int flag;
 		adder->interrupt_enable = qdflags[unit].adder_ie;
 	    }
 
-	    /*
-	     * flag that everthing is unmapped 
-	     */
+	    /*-----------------------------------
+	    * flag that everthing is unmapped */
 
-	    mtpr(TBIA, 0);		/* invalidate translation buf */
-	    qdflags[unit].mapped = 0;	/* flag everything unmapped */
+	    mtpr(TBIA, 0);		/* smash CPU's translation buf */
+	    qdflags[unit].mapped = 0;	/* flag everything now unmapped */
 	    qdflags[unit].inuse &= ~GRAPHIC_DEV;
 	    qdflags[unit].curs_acc = ACC_OFF;
 	    qdflags[unit].curs_thr = 128;
 
-	    /*
-	     * restore the console 
-	     */
+	    /*---------------------
+	    * restore the console */
 
 		dga = (struct dga *) qdmap[unit].dga;
 		adder = (struct adder *) qdmap[unit].adder;
@@ -1027,36 +1325,55 @@ int flag;
 		cursor[unit].x = 0;
 		cursor[unit].y = 0;
 
-	    /* 
-	     * shut off the mouse rcv intrpt and turn on kbd intrpts 
-	     */
+	    /* shut off the mouse rcv intrpt and turn on kbd intrpts */
+
 	    duart = (struct duart *) qdmap[unit].duart;
 	    qdflags[unit].duart_imask &= ~(0x20);
 	    qdflags[unit].duart_imask |= 0x02;
 	    duart->imask = qdflags[unit].duart_imask;
-	    /*
-	     * shut off interrupts if all is closed  
-	     */
+
+	    /*-----------------------------------------
+	    * shut off interrupts if all is closed  */
+
 	    if (!(qdflags[unit].inuse & (CONS_DEV | ALTCONS_DEV))) {
+
 		dga = (struct dga *) qdmap[unit].dga;
 		dga->csr &= ~(GLOBAL_IE | DMA_IE);
 	    }
 	}
-	else { /* if this is the console or the alternate console  */
+
+/*----------------------------------------------------
+* if this is the console or the alternate console  */
+
+	else {
+
 	    tp = &qd_tty[minor_dev];
 
 	    (*linesw[tp->t_line].l_close)(tp);
 	    ttyclose(tp);
+
 	    tp->t_state = 0;
+	    /* Remove termio flags that do not map */
+#ifdef notdef	/* never */
+	    tp->t_iflag &= ~TERMIO_ONLY_IFLAG;
+	    tp->t_oflag &= ~TERMIO_ONLY_OFLAG;
+	    tp->t_cflag &= ~TERMIO_ONLY_CFLAG;
+	    tp->t_lflag &= ~TERMIO_ONLY_LFLAG;
+#endif /*notdef*/
+
 	    qdflags[unit].inuse &= ~CONS_DEV;
-	    /*
-	     * if graphics device is closed, kill interrupts 
-	     */
+
+	    /*-------------------------------------------------
+	    * if graphics device is closed, kill interrupts */
+
 	    if (!(qdflags[unit].inuse & GRAPHIC_DEV)) {
 		dga = (struct dga *) qdmap[unit].dga;
 		dga->csr &= ~(GLOBAL_IE | DMA_IE);
 	    }
 	}
+
+/*--------
+* exit */
 
 	return(0);
 
@@ -1064,7 +1381,7 @@ int flag;
 
 /***************************************************************
 *
-*	qdioctl - provide QDSS control services
+*	qdioctl()... provide QDSS control services
 *
 ****************************************************************
 *
@@ -1097,41 +1414,55 @@ int flags;
 	register int mapix;		/* QVmap[] page table index */
 	register struct _vs_event *event;
 	register struct tty *tp;
+
 	struct qdmap *qd;		/* pointer to device map struct */
 	struct dga *dga;		/* Gate Array reg structure pntr */
 	struct duart *duart;		/* DUART reg structure pointer */
 	struct adder *adder;		/* ADDER reg structure pointer */
+
 	struct prgkbd *cmdbuf;
 	struct prg_cursor *curs;
 	struct _vs_cursor *pos;
+
 	u_int unit = minor(dev) >> 2;	/* number of caller's QDSS */
 	u_int minor_dev = minor(dev);
 	struct uba_device *ui = qdinfo[unit];
 	struct qd_softc *sc = &qd_softc[ui->ui_unit];
-	/* struct devget *devget; */
+#ifdef notdef
+	struct devget *devget;
+#endif
+
 	int error;
 	int s;
+
 	int i;				/* SIGNED index */
 	int sbr;			/* SBR variable (you silly boy) */
 	u_int ix;
+
 	short status;
 	short *shortp;			/* generic pointer to a short */
 	char *chrp;			/* generic character pointer */
+
 	short *temp;			/* a pointer to template RAM */
 
-	/* service graphic device ioctl commands */
+/*-----------------------------------------
+* service graphic device ioctl commands */
+
 	switch (cmd) {
-	    /*
-	     * extract the oldest event from the event queue 
-	     */
+
+	    /*-------------------------------------------------
+	    * extract the oldest event from the event queue */
+
 	    case QD_GETEVENT:
+
 		if (ISEMPTY(eq_header[unit])) {
 		    event = (struct _vs_event *) datap;
 		    event->vse_device = VSE_NULL;
 		    break;
 		}
+
 		event = (struct _vs_event *) GETBEGIN(eq_header[unit]);
-		s = spltty();
+		s = spl5();
 		GETEND(eq_header[unit]);
 		splx(s);
 		bcopy(event, datap, sizeof(struct _vs_event));
@@ -1164,8 +1495,10 @@ int flags;
 
 	    case QD_CLRSCRN:
 
+#ifdef notdef	/* has caused problems and is not necessary */
 		setup_dragon(unit);
 		clear_qd_screen(unit);
+#endif
 		break;
 
 	    /*------------------------------------
@@ -1196,7 +1529,7 @@ int flags;
 
 		dga = (struct dga *) qdmap[unit].dga;
 		pos = (struct _vs_cursor *) datap;
-		s = spltty();
+		s = spl5();
 		dga->x_cursor = TRANX(pos->x);
 		dga->y_cursor = TRANY(pos->y);
 		eq_header[unit]->curs_pos.x = pos->x;
@@ -1210,7 +1543,7 @@ int flags;
 	    case QD_PRGCURSOR:
 
 		curs = (struct prg_cursor *) datap;
-		s = spltty();
+		s = spl5();
 		qdflags[unit].curs_acc = curs->acc_factor;
 		qdflags[unit].curs_thr = curs->threshold;
 		splx(s);
@@ -1294,7 +1627,7 @@ int flags;
 				uballoc(0, DMAheader[unit], DMAbuf_size, 0);
 
 		if (DMAheader[unit]->QBAreg == 0)
-		    printf("qd%d: qdioctl: QBA setup error\n", unit);
+		    printf("\nqd%d: qdioctl: QBA setup error", unit);
 
 		Qbus_unmap[unit] = DMAheader[unit]->QBAreg;
 		DMAheader[unit]->QBAreg &= 0x3FFFF;
@@ -1327,6 +1660,7 @@ int flags;
 
 		qdflags[unit].adder_ie |= FRAME_SYNC;
 		adder->interrupt_enable = qdflags[unit].adder_ie;
+
 
 		/* return scroll area address */
 
@@ -1373,13 +1707,12 @@ int flags;
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V;
 
 		mtpr(TBIA, 0);			/* clr CPU translation buf */
-
-		adder = (struct adder *) qdmap[unit].adder;
-
+		
+		adder = (struct adder *) qdmap[unit].adder.
 		qdflags[unit].adder_ie |= VSYNC;
 		adder->interrupt_enable = qdflags[unit].adder_ie;
 
-		/* return scroll area address */
+		/* return color area address */
 
 		*(int *)datap = (int) color_buf[unit];
 		break;
@@ -1451,7 +1784,7 @@ int flags;
 		}
 
 		if (i == 0) {
-		    printf("qd%d: qdioctl: timeout on XMT_RDY [1]\n", unit);
+		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [1]", unit);
 		    break;
 		}
 
@@ -1469,7 +1802,7 @@ int flags;
 		}
 
 		if (i == 0) {
-		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [2]\n", unit);
+		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [2]", unit);
 		    break;
 		}
 
@@ -1487,7 +1820,7 @@ int flags;
 		}
 
 		if (i == 0) {
-		    printf("qd%d: qdioctl: timeout on XMT_RDY [3]\n", unit);
+		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [3]", unit);
 		    break;
 		}
 
@@ -1508,7 +1841,7 @@ int flags;
 		}
 
 		if (i == 0) {
-		    printf("qd%d: qdioctl: timeout on XMT_RDY [4]\n", unit);
+		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [4]", unit);
 		}
 
 		break;
@@ -1519,6 +1852,19 @@ int flags;
 	    case QD_RDCONFIG:
 
 		*(short *)datap = qdflags[unit].config;
+		break;
+
+	    /*--------------------------------------------------------------
+	    * re-route kernel console messages to the alternate console  */
+
+	    case QD_KERN_LOOP:
+
+		qdflags[unit].kernel_loop = -1;
+		break;
+
+	    case QD_KERN_UNLOOP:
+
+		qdflags[unit].kernel_loop = 0;
 		break;
 
 	    /*----------------------
@@ -1536,7 +1882,7 @@ int flags;
 		}
 
 		if (i == 0) {
-		    printf("qd%d: qdioctl: timeout on XMT_RDY [5]\n", unit);
+		    printf("\nqd%d: qdioctl: timeout on XMT_RDY [5]", unit);
 		}
 
 		break;
@@ -1548,17 +1894,34 @@ int flags;
 
 		qdflags[unit].tab_res = *(short *)datap;
 		break;
-
-	    /*
-	     * ultrix has a bizarre scheme for routing console output
-	     * to an alternate window (xcons).  these ioctls are
-	     * left in as no-ops so the X11R2 qdss server code doesn't
-	     * have to be modified. console redirection is accomplished
-	     * by a more sensible method using TIOCCONS in 4.3.tahoe BSD.
-	     */
-	    case QD_KERN_LOOP:
-	    case QD_KERN_UNLOOP:
-		break;
+#ifdef notdef	/* never */
+	    case DEVIOCGET:			    /* device status */
+		    devget = (struct devget *)datap;
+		    bzero(devget,sizeof(struct devget));
+		    devget->category = DEV_TERMINAL;
+		    devget->bus = DEV_QB;
+		    bcopy(DEV_VCB02,devget->interface,
+			  strlen(DEV_VCB02));
+		    bcopy(DEV_VR290,devget->device,
+			  strlen(DEV_VR290));		    /* terminal */
+		    devget->adpt_num = ui->ui_adpt;	    /* which adapter*/
+		    devget->nexus_num = ui->ui_nexus;	    /* which nexus  */
+		    devget->bus_num = ui->ui_ubanum;	    /* which QB     */
+		    devget->ctlr_num = unit;		    /* which interf.*/
+		    devget->slave_num = unit;		    /* which line   */
+		    bcopy(ui->ui_driver->ud_dname,
+			  devget->dev_name,
+			  strlen(ui->ui_driver->ud_dname)); /* Ultrix "qd"  */
+		    devget->unit_num = unit;		    /* qd line?     */
+		    devget->soft_count =
+			  sc->sc_softcnt;		    /* soft er. cnt.*/
+		    devget->hard_count =
+			  sc->sc_hardcnt;		    /* hard er cnt. */
+		    devget->stat = sc->sc_flags;	    /* status	    */
+		    devget->category_stat =
+			  sc->sc_category_flags;	    /* cat. stat.   */
+		    break;
+#endif /*notdef*/
 
 	    default:
 		/*-----------------------------
@@ -1600,33 +1963,73 @@ int rw;
 {
 	register int s;
 	register int unit;
+	register struct tty *tp;
+	u_int minor_dev = minor(dev);
 
-	s = spltty();
-	unit = minor(dev) >> 2;
+	s = spl5();
+	unit = minor_dev >> 2;
 
 	switch (rw) {
 
-	    case FREAD: 		/* event available? */
+	    case FREAD:
 
-		if(!(ISEMPTY(eq_header[unit]))) {
+		if ((minor_dev & 0x03) == 2)
+		{
+		    /*
+		     * this is a graphics device, so check for events
+		     */
+		    if(!(ISEMPTY(eq_header[unit])))
+		    {
+		        splx(s);
+		        return(1);
+		    }
+		    rsel[unit] = u.u_procp;
+		    qdflags[unit].selmask |= SEL_READ;
 		    splx(s);
-		    return(1);		/* return "1" if event exists */
+		    return(0);
 		}
-		rsel[unit] = u.u_procp;
-		qdflags[unit].selmask |= SEL_READ;
-		splx(s);
-		return(0);
-
-	    case FWRITE:		/* DMA done? */
-
-		if (DMA_ISEMPTY(DMAheader[unit])) {
+		else
+		{
+		    /*
+		     * this is a tty device
+		     */
+	    	    tp = &qd_tty[minor_dev];
+		    if (ttnread(tp))
+			return(1);
+		    tp->t_rsel = u.u_procp;
 		    splx(s);
-		    return(1);		/* return "1" if DMA is done */
+		    return(0);
 		}
-		rsel[unit] = u.u_procp;
-		qdflags[unit].selmask |= SEL_WRITE;
-		splx(s);
-		return(0);
+
+	    case FWRITE:
+
+		if ((minor(dev) & 0x03) == 2)
+		{
+		    /*
+		     * this is a graphics device, so check for dma buffers
+		     */
+		    if (DMA_ISEMPTY(DMAheader[unit]))
+		    {
+		        splx(s);
+		        return(1);
+		    }
+		    rsel[unit] = u.u_procp;
+		    qdflags[unit].selmask |= SEL_WRITE;
+		    splx(s);
+		    return(0);
+		}
+		else
+		{
+		    /*
+		     * this is a tty device
+		     */
+	    	    tp = &qd_tty[minor_dev];
+		    if (tp->t_outq.c_cc <= TTLOWAT(tp))
+			return(1);
+		    tp->t_wsel = u.u_procp;
+		    splx(s);
+		    return(0);
+		}
 	}
 
 } /* qdselect() */
@@ -1727,18 +2130,17 @@ register struct buf *bp;
 
 	unit = (minor(bp->b_dev) >> 2) & 0x07;
 
-	/*
-	* init pointers 
-	*/
+/*-----------------
+* init pointers */
 
 	if ((QBAreg = ubasetup(0, bp, 0)) == 0) {
-	    printf("qd%d: qd_strategy: QBA setup error\n", unit);
+	    printf("\nqd%d: qd_strategy: QBA setup error", unit);
 	    goto STRAT_ERR;
 	}
 
 	dga = (struct dga *) qdmap[unit].dga;
 
-	s = spltty();
+	s = spl5();
 
 	qdflags[unit].user_dma = -1;
 
@@ -1789,15 +2191,11 @@ STRAT_ERR:
 *	qdstart()... startup output to the console screen
 *
 ********************************************************************
-* NOTE - You must have tty.c fixed so it doesn't try to sleep
-*	waiting for a transmitter interrupt (which would never occur).
-*	Writes to the QDSS are synchronous and have (essentially)
-*	completed by the time the start routine returns.
 *
 *	calling convention:
 *
 *		qdstart(tp);
-*		struct tty *tp; 	# pointer to tty structure
+*		struct tty *tp; 	;pointer to tty structure
 *
 ********/
 
@@ -1805,32 +2203,73 @@ qdstart(tp)
 register struct tty *tp;
 {
 	register int which_unit, unit, c;
+	register struct tty *tp0;
 	int s;
 
-	unit = minor(tp->t_dev);
-	which_unit = (unit >> 2) & 0x3;
-	/* unit &= 0x03; */
+	int curs_on;
+	struct dga *dga;
 
-	/* If it's currently active, or delaying, no need to do anything. */
-	s = spltty();
+	unit = minor(tp->t_dev);
+
+	tp0 = &qd_tty[(unit & 0x0FC)+1];
+	which_unit = (unit >> 2) & 0x3;
+	unit &= 0x03;
+
+	s = spl5();
+
+/*------------------------------------------------------------------
+* If it's currently active, or delaying, no need to do anything. */
+
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 
-	/*
-	 * XXX - this loop is at spltty.  not good, but hardly worth
-	 * fixing since the glass tty is only used when the window
-	 * system isn't running.  if you debug window systems you
-	 * might want to rethink this.
-	 */
-	while (tp->t_outq.c_cc) {
+/*-------------------------------------------------------------------
+* Display chars until the queue is empty, if the alternate console device
+* is open direct chars there.  Drop input from anything but the console
+* device on the floor.	*/
+/* TANDEM is set on the second subchannel for flow control. */
+
+	while ( tp->t_outq.c_cc ) {
 		c = getc(&tp->t_outq);
-		blitc(which_unit, c & 0xFF);
+		if (unit == 0)
+		    blitc(which_unit, (char)(c & 0xFF));
+#ifdef notdef	/* never never never */
+	    if (unit == 0) {		/* console device */
+		if (tp0->t_state & TS_ISOPEN) {
+		    if (tp0->t_state & TS_TBLOCK)
+			goto out;
+		    c = getc(&tp->t_outq);
+		    (*linesw[tp0->t_line].l_rint)(c, tp0);
+		} else {
+		    c = getc(&tp->t_outq);
+		    blitc(which_unit, (char)(c & 0xFF));
+		}
+	    } else if (unit == 1) {	/* qconsole, do flow control */
+		    c = getc(&tp->t_outq);
+		    if ((tp0->t_state&TS_TBLOCK) == 0) {
+			tp = &qd_tty[0];
+			unit = minor(tp->t_dev);
+			unit &= 0x03;
+			continue;
+		    } else
+			goto out;
+	    } else
+		c = getc(&tp->t_outq);
+#endif
 	}
+
+/*--------------------------------------------------------
+* If there are sleepers, and output has drained below low
+* water mark, wake up the sleepers. */
+
+	if ( tp->t_outq.c_cc <= TTLOWAT(tp) ) {
+		if (tp->t_state & TS_ASLEEP){
+			tp->t_state &= ~TS_ASLEEP;
+			wakeup((caddr_t) &tp->t_outq);
+		}
+	}
+
 	tp->t_state &= ~TS_BUSY;
-	if (tp->t_state&TS_ASLEEP) {
-		tp->t_state &= ~TS_ASLEEP;
-		wakeup((caddr_t)&tp->t_outq);
-	}
 
 out:
 	splx(s);
@@ -1850,8 +2289,8 @@ int flag;
 {
 	register int s;
 
-#ifdef notdef	/* not needed - qdss is synchronous */
-	s = spltty();	/* block intrpts during state modification */
+	s = spl5();	/* block intrpts during state modification */
+
 	if (tp->t_state & TS_BUSY) {
 	    if ((tp->t_state & TS_TTSTOP) == 0) {
 		tp->t_state |= TS_FLUSH;
@@ -1859,7 +2298,6 @@ int flag;
 		tp->t_state &= ~TS_BUSY;
 	}
 	splx(s);
-#endif
 }
 
 /*******************************************************************
@@ -1877,65 +2315,32 @@ int flag;
 
 blitc(unit, chr)
 int unit;
-char chr;
+unsigned char chr;
 {
 	register struct adder *adder;
 	register struct dga *dga;
 	register int i;
-	static	 short inescape[NQD];
 
 	short x;
+	unsigned char savechar;
 
-	/* init stuff  */
+/*---------------
+* init stuff  */
 
 	adder = (struct adder *) qdmap[unit].adder;
 	dga = (struct dga *) qdmap[unit].dga;
 
-	chr &= 0x7F;
+/*---------------------------
+* non display character?  */
 
-	/*
-	 *  Support cursor addressing so vi will work.
-	 *  Decode for "\E=%.%." cursor motion description.
-	 *
-	 *  If we've seen an escape, grab up to three more
-	 *  characters, bailing out if necessary. 
-	 */
-	if (inescape[unit]) {	
-		switch (inescape[unit]++) {
-		case 1:
-			if (chr != '=') {
-				/* bogus escape sequence */
-				inescape[unit] = 0;
-				blitc(unit, chr);
-			}
-			return(0);
-		case 2:
-			/* position row */
-			cursor[unit].y = CHAR_HEIGHT * chr;
-			if (cursor[unit].y > 863 - CHAR_HEIGHT)
-				cursor[unit].y = 863 - CHAR_HEIGHT;
-			dga->y_cursor = TRANY(cursor[unit].y);
-			return(0);
-		case 3:
-			/* position column */
-			cursor[unit].x = CHAR_WIDTH * chr;
-			if (cursor[unit].x > 1024 - CHAR_WIDTH)
-				cursor[unit].x = 1023 - CHAR_WIDTH;
-			dga->x_cursor = TRANX(cursor[unit].x);
-			inescape[unit] = 0;
-			return(0);
-		default:
-			inescape[unit] = 0;
-			blitc(unit, chr);
-		}
-	}
-			
+	chr &= 0xFF;
 
 	switch (chr) {
 
 	    case '\r':			/* return char */
 		cursor[unit].x = 0;
-		dga->x_cursor = TRANX(cursor[unit].x);
+	        if (!(qdflags[unit].inuse & GRAPHIC_DEV))
+		    dga->x_cursor = TRANX(cursor[unit].x);
 		return(0);
 
 	    case '\t':			/* tab char */
@@ -1955,57 +2360,33 @@ char chr;
 			scroll_up(adder);
 		    }
 		}
-		dga->y_cursor = TRANY(cursor[unit].y);
+	        if (!(qdflags[unit].inuse & GRAPHIC_DEV))
+		    dga->y_cursor = TRANY(cursor[unit].y);
 		return(0);
 
 	    case '\b':			/* backspace char */
 		if (cursor[unit].x > 0) {
 		    cursor[unit].x -= CHAR_WIDTH;
-		    dga->x_cursor = TRANX(cursor[unit].x);
+		    blitc(unit, ' ');
+		    cursor[unit].x -= CHAR_WIDTH;
+	            if (!(qdflags[unit].inuse & GRAPHIC_DEV))
+		        dga->x_cursor = TRANX(cursor[unit].x);
 		}
-		return(0);
-
-	    case CTRL('k'):		/* cursor up */
-		if (cursor[unit].y > 0) {
-			cursor[unit].y -= CHAR_HEIGHT;
-			dga->y_cursor = TRANY(cursor[unit].y);
-		}
-		return(0);
-
-	    case CTRL('^'):		/* home cursor */
-		cursor[unit].x = 0;
-		dga->x_cursor = TRANX(cursor[unit].x);
-		cursor[unit].y = 0;
-		dga->y_cursor = TRANY(cursor[unit].y);
-		return(0);
-
-	    case CTRL('l'):		/* cursor right */
-		if (cursor[unit].x < 1023 - CHAR_WIDTH) {
-			cursor[unit].x += CHAR_WIDTH;
-			dga->x_cursor = TRANX(cursor[unit].x);
-		}
-		return(0);
-
-	    case CTRL('z'):		/* clear screen */
-		setup_dragon(unit);  	
-		clear_qd_screen(unit);
-		/* and home cursor - termcap seems to assume this */
-		cursor[unit].x = 0;
-		dga->x_cursor = TRANX(cursor[unit].x);
-		cursor[unit].y = 0;
-		dga->y_cursor = TRANY(cursor[unit].y);
-		return(0);
-
-	    case '\033':		/* start escape sequence */
-		inescape[unit] = 1;
 		return(0);
 
 	    default:
-		if (chr < ' ' || chr > '~')
+		/*----------------------------------------------------------
+		 * Weed out unprintable characters.  Printable characters fall
+		 * between space (0x20) and tilde (0x7E).  For 8-bit support
+		 * another range of printable characters are those between
+		 * 0xA1 and 0xFD. */
+
+		if ((chr < ' ') || (chr > 0xFD) || (chr < 0xA1 && chr > '~'))
 		    return(0);
 	}
 
-	/* setup VIPER operand control registers  */
+/*------------------------------------------
+* setup VIPER operand control registers  */
 
 	write_ID(adder, CS_UPDATE_MASK, 0x0001);  /* select plane #0 */
 	write_ID(adder, SRC1_OCR_B,
@@ -2023,7 +2404,13 @@ char chr;
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 1);
 	write_ID(adder, VIPER_Z_LOAD | BACKGROUND_COLOR_Z, 0);
 
-	/* load DESTINATION origin and vectors  */
+        adder->x_clip_min = 0;
+        adder->x_clip_max = 1024;
+        adder->y_clip_min = 0;
+        adder->y_clip_max = 864;
+
+/*----------------------------------------
+* load DESTINATION origin and vectors  */
 
 	adder->fast_dest_dy = 0;
 	adder->slow_dest_dx = 0;
@@ -2040,10 +2427,24 @@ char chr;
 	adder->destination_y = cursor[unit].y;
 	adder->slow_dest_dy = CHAR_HEIGHT;
 
-	/* load SOURCE origin and vectors  */
+/*-----------------------------------
+* load SOURCE origin and vectors  */
 
-	adder->source_1_x = FONT_X + ((chr - ' ') * CHAR_WIDTH);
-	adder->source_1_y = FONT_Y;
+	if (chr > '~') {
+		savechar = chr;
+		chr -= 34; /* These are to skip the (32) 8-bit control chars. 
+			      as well as DEL and 0xA0 which aren't printable */
+	}
+	if ((chr - ' ') > (CHARS - 1))  {
+		printf("Invalid character (x)%x in blitc\n",chr);
+		chr = ' ';
+	}
+	/* X position is modulo the number of characters per line */
+	adder->source_1_x = FONT_X + 
+		(((chr - ' ') % (MAX_SCREEN_X/CHAR_WIDTH)) * CHAR_WIDTH);
+	/* Point to either first or second row */
+	adder->source_1_y = 2048 - 15 * 
+		(((chr - ' ')/(MAX_SCREEN_X/CHAR_WIDTH)) + 1);
 
 	adder->source_1_dx = CHAR_WIDTH;
 	adder->source_1_dy = CHAR_HEIGHT;
@@ -2051,12 +2452,13 @@ char chr;
 	write_ID(adder, LU_FUNCTION_R1, FULL_SRC_RESOLUTION | LF_SOURCE);
 	adder->cmd = RASTEROP | OCRB | 0 | S1E | DTE;
 
-	/* update console cursor coordinates */
+/*-------------------------------------
+* update console cursor coordinates */
 
 	cursor[unit].x += CHAR_WIDTH;
-	dga->x_cursor = TRANX(cursor[unit].x);
+	if (!(qdflags[unit].inuse & GRAPHIC_DEV))
+	    dga->x_cursor = TRANX(cursor[unit].x);
 
-	/* auto-wrap margin */
 	if (cursor[unit].x > (1024 - CHAR_WIDTH)) {
 	    blitc(unit, '\r');
 	    blitc(unit, '\n');
@@ -2068,9 +2470,13 @@ qdreset(){}
 qd_init(){}
 
 /******************************************************************
+*******************************************************************
+*******************************************************************
 *
 *	INTERRUPT SERVICE ROUTINES START HERE:
 *
+*******************************************************************
+*******************************************************************
 ******************************************************************/
 
 /*****************************************************************
@@ -2092,17 +2498,15 @@ int qd;
 
 	spl4(); 			/* allow interval timer in */
 
-	/*
-	* init pointers 
-	*/
+/*-----------------
+* init pointers */
 
 	header = DMAheader[qd]; 	    /* register for optimization */
 	dga = (struct dga *) qdmap[qd].dga;
 	adder = (struct adder *) qdmap[qd].adder;
 
-	/*
-	* if this interrupt flagged as bogus for interrupt flushing purposes.. 
-	*/
+/*------------------------------------------------------------------------
+* if this interrupt flagged as bogus for interrupt flushing purposes.. */
 
 	if (DMA_ISIGNORE(header)) {
 	    DMA_CLRIGNORE(header);
@@ -2115,10 +2519,10 @@ int qd;
 	if (dga->csr & DMA_ERR) {
 
 	    if (dga->csr & PARITY_ERR)
-		printf("qd%d: qddint: DMA hardware parity fault.\n", qd);
+		printf("\nqd%d: qddint: DMA hardware parity fault.", qd);
 
 	    if (dga->csr & BUS_ERR)
-		printf("qd%d: qddint: DMA hardware bus error.\n", qd);
+		printf("\nqd%d: qddint: DMA hardware bus error.", qd);
 	}
 
 /*----------------------------------------
@@ -2173,11 +2577,11 @@ int qd;
 	}
 
 	header->DMAreq[header->oldest].DMAdone |= REQUEST_DONE;
+        QDlast_DMAtype = header->DMAreq[header->oldest].DMAtype;
 
-	if (DMA_ISEMPTY(header)) {
-	    printf("qd%d: qddint: unexpected interrupt\n", qd);
+	/* check for unexpected interrupt */
+	if (DMA_ISEMPTY(header))
 	    return;
-	}
 
 	DMA_GETEND(header);	/* update request queue indices */
 
@@ -2200,23 +2604,46 @@ int qd;
 * initiate next DMA xfer  */
 
 	request = DMA_GETBEGIN(header);
+	if (request->DMAtype != QDlast_DMAtype) {
+	    	dga->csr &= ~0x0600;	  /* halt DMA (reset fifo) */
+	    	adder->command = CANCEL;  /* cancel adder activity */
+	}
+
 
 	switch (request->DMAtype) {
 
 	    case DISPLIST:
-		dga->csr |= DL_ENB;
+		if (request->DMAtype != QDlast_DMAtype) {
+			dga->csr |= DL_ENB;
+			dga->csr &= ~(BTOP_ENB | BYTE_DMA);
+		}
 		break;
 
 	    case PTOB:
-		dga->csr |= PTOB_ENB;
+		if (request->DMAtype != QDlast_DMAtype) {
+			if (request->DMAdone & BYTE_PACK)
+				dga->csr |= (PTOB_ENB | BYTE_DMA);
+			else {
+				dga->csr |= PTOB_ENB;
+				dga->csr &= ~BYTE_DMA;
+			}
+		}
 		break;
 
 	    case BTOP:
-		dga->csr |= BTOP_ENB;
+		if (request->DMAtype != QDlast_DMAtype) {
+			if (request->DMAdone & BYTE_PACK) {
+				dga->csr &= ~DL_ENB;
+				dga->csr |= (BTOP_ENB | BYTE_DMA);
+			}
+			else {
+				dga->csr |= BTOP_ENB;
+				dga->csr &= ~(BYTE_DMA | DL_ENB);
+			}
+		}
 		break;
-
 	    default:
-		printf("qd%d: qddint: illegal DMAtype parameter.\n", qd);
+		printf("\nqd%d: qddint: illegal DMAtype parameter.", qd);
 		DMA_CLRACTIVE(header);	/* flag DMA done */
 		return;
 	}
@@ -2233,6 +2660,7 @@ int qd;
 	    dga->csr |= BYTE_DMA;
 
 	dga->csr |= DMA_IE;
+        QDlast_DMAtype = request->DMAtype;
 
 	cookie = ((int)request->bufp - (int)header) + (int)header->QBAreg;
 
@@ -2250,6 +2678,7 @@ int qd;
 *	qdaint()... ADDER interrupt service
 *
 *****************************************************************/
+int Nqdaint;
 
 qdaint(qd)
 register int qd;
@@ -2265,6 +2694,7 @@ register int qd;
 	register short *blue;
 
 	spl4(); 			/* allow interval timer in */
+	Nqdaint++;			/* debug */
 
 	adder = (struct adder *) qdmap[qd].adder;
 
@@ -2306,7 +2736,7 @@ register int qd;
 		    ; --i);
 
 		if (i == 0) {
-		    printf("qd%d: qdaint: timeout on ID_SCROLL_READY\n", qd);
+		    printf("\nqd%d: qdaint: timeout on ID_SCROLL_READY", qd);
 		    return;
 		}
 
@@ -2346,7 +2776,7 @@ register int qd;
 	struct uba_device *ui;
 	struct tty *tp;
 
-	char chr;
+	u_short chr;
 	int i,j;
 	int k,l;
 
@@ -2389,7 +2819,7 @@ register int qd;
 		    /* event queue full now? (overflow condition) */
 
 		    if (ISFULL(eqh) == TRUE) {
-			printf("qd%d: qdiint: event queue overflow\n", qd);
+			printf("\nqd%d: qdiint: event queue overflow", qd);
 			break;
 		    }
 
@@ -2400,8 +2830,7 @@ register int qd;
 
 		    if( key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
 			key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
-			printf("qd%d: qdiint: keyboard error, code = %x\n",
-				qd, key);
+			printf("\nqd%d: qdiint: keyboard error, code = %x",qd,key);
 			return(0);
 		    }
 
@@ -2437,7 +2866,7 @@ register int qd;
 		    /* event queue full now? (overflow condition) */
 
 		    if (ISFULL(eqh) == TRUE) {
-			printf("qd%d: qdiint: event queue overflow\n", qd);
+			printf("\nqd%d: qdiint: event queue overflow", qd);
 			break;
 		    }
 
@@ -2568,7 +2997,7 @@ GET_MBUTTON:
 				/* event queue full? (overflow condition) */
 
 				if (ISFULL(eqh) == TRUE) {
-				    printf("qd%d: qdiint: event queue overflow\n", qd);
+				    printf("\nqd%d: qdiint: event queue overflow", qd);
 				    break;
 				}
 
@@ -2623,7 +3052,7 @@ GET_MBUTTON:
 		    /* event queue full now? (overflow condition) */
 
 		    if (ISFULL(eqh) == TRUE) {
-			printf("qd%d: qdiint: event queue overflow\n", qd);
+			printf("\nqd%d: qdiint: event queue overflow", qd);
 			break;
 		    }
 
@@ -2745,8 +3174,7 @@ GET_TBUTTON:
 			    /* event queue full now? (overflow condition) */
 
 			    if (ISFULL(eqh) == TRUE) {
-				printf("qd%d: qdiint: event queue overflow\n",
-					qd);
+				printf("\nqd%d: qdiint: event queue overflow",qd);
 				break;
 			    }
 
@@ -2798,6 +3226,7 @@ GET_TBUTTON:
 	    /*---------------------
 	    * do select wakeup	*/
 
+
 	    if (rsel[qd] && do_wakeup && qdflags[qd].selmask & SEL_READ) {
 		selwakeup(rsel[qd], 0);
 		rsel[qd] = 0;
@@ -2806,8 +3235,8 @@ GET_TBUTTON:
 	    }
 	}
 
-	/*-----------------------------------------------------------------
-	* if the graphic device is not turned on, this is console input */
+/*-----------------------------------------------------------------
+* if the graphic device is not turned on, this is console input */
 
 	else {
 
@@ -2830,8 +3259,7 @@ GET_TBUTTON:
 
 		if( key == LK_POWER_ERROR || key == LK_KDOWN_ERROR ||
 		    key == LK_INPUT_ERROR || key == LK_OUTPUT_ERROR) {
-			printf("qd%d: qdiint: Keyboard error, code = %x\n",
-				qd, key);
+			printf("\nqd%d: qdiint: Keyboard error, code = %x",qd,key);
 			return(0);
 		}
 
@@ -2878,6 +3306,8 @@ GET_TBUTTON:
 				chr = q_key[key];
 				if (chr >= ' ' && chr <= '~')
 				    chr &= 0x1F;
+				else if (chr >= 0xA1 && chr <= 0xFE)
+				    chr &= 0x9F;
 			}
 			else if( q_keyboard.lock || q_keyboard.shift )
 			    chr = q_shift_key[key];
@@ -2891,23 +3321,41 @@ GET_TBUTTON:
 		/*-----------------------------------
 		* Check for special function keys */
 
-		if (chr & 0x80) {
+		if (chr & 0x100) {
 			char *string;
 			string = q_special[chr & 0x7F];
 			while(*string)
 			    (*linesw[tp->t_line].l_rint)(*string++, tp);
 		}
 		else {
+#ifdef notdef	/* notneeded */
+			if (tp->t_iflag & ISTRIP)	/* Strip to 7 bits. */
+				c &= 0177;	
+			else {			/* Take the full 8-bits */
+				/* If ISTRIP is not set a valid character of 377
+			 	* is read as 0377,0377 to avoid ambiguity with
+			 	* the PARMARK sequence.
+			 	*/ 
+				if ((c == 0377) && (tp->t_line == TERMIODISC))
+					(*linesw[tp->t_line].l_rint)(0377,tp);
+			
+			}
+#endif /*notdef*/
 			(*linesw[tp->t_line].l_rint)(chr, tp);
 		}
 	    }
 	}
+
+/*----------------------
+* cleanup and exit  */
 
 	return(0);
 
 } /* qdiint */
 
 /******************************************************************
+*******************************************************************
+*******************************************************************
 *
 *	THE SUBROUTINES START HERE:
 *
@@ -2997,12 +3445,27 @@ int unit;
 qdputc(chr)
 register char chr;
 {
+	register struct tty *tp0;
 
-	/* if system is now physical, forget it (ie: crash DUMP) */
+/*---------------------------------------------------------
+* if system is now physical, forget it (ie: crash DUMP) */
+
 	if ( (mfpr(MAPEN) & 1) == 0 )
 	    return;
 
-        blitc(0, chr & 0xff);
+/*--------------------------------------------------
+* direct kernel output char to the proper place  */
+
+#ifdef notdef	/* never */
+	tp0 = &qd_tty[1];
+
+	if (qdflags[0].kernel_loop != 0  &&  tp0->t_state & TS_ISOPEN) {
+	    (*linesw[tp0->t_line].l_rint)(chr, tp0);
+	} else {
+	    blitc(0, chr & 0xff);
+	}
+#endif /*notdef*/
+	blitc(0, chr & 0xff);
 	if ((chr & 0177) == '\n')
 		blitc(0, '\r');
 
@@ -3190,11 +3653,12 @@ u_int unit;
 	int j;
 	int k;
 	short packed;
+	int max_chars_line;
 
 	adder = (struct adder *) qdmap[unit].adder;
 
-	/*------------------------------------------
-	* setup VIPER operand control registers  */
+/*------------------------------------------
+* setup VIPER operand control registers  */
 
 	write_ID(adder, MASK_1, 0xFFFF);
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 255);
@@ -3209,36 +3673,94 @@ u_int unit;
 
 	adder->rasterop_mode = DST_WRITE_ENABLE | DST_INDEX_ENABLE | NORMAL;
 
-	/*--------------------------
-	* load destination data  */
+/*--------------------------
+* load destination data  */
 
 	wait_status(adder, RASTEROP_COMPLETE);
 
 	adder->destination_x = FONT_X;
 	adder->destination_y = FONT_Y;
-	adder->fast_dest_dx = FONT_WIDTH;
+	if (FONT_WIDTH > MAX_SCREEN_X)
+		adder->fast_dest_dx = MAX_SCREEN_X;
+	else
+		adder->fast_dest_dx = FONT_WIDTH;
 	adder->slow_dest_dy = CHAR_HEIGHT;
 
-	/*---------------------------------------
-	* setup for processor to bitmap xfer  */
+/*---------------------------------------
+* setup for processor to bitmap xfer  */
 
 	write_ID(adder, CS_UPDATE_MASK, 0x0001);
 	adder->cmd = PBT | OCRB | 2 | DTE | 2;
 
-	/*-----------------------------------------------
-	* iteratively do the processor to bitmap xfer */
+/*---------------------------------------
+* Figure out how many characters can be stored on one "line" of offscreen memory
+*/
+	    max_chars_line = MAX_SCREEN_X/(CHAR_WIDTH*2);
+	    if ((CHARS/2 + CHARS%2) < max_chars_line)
+		max_chars_line = CHARS/2 + CHARS%2;
+
+/*-----------------------------------------------
+* iteratively do the processor to bitmap xfer */
 
 	for (i = 0; i < ROWS; ++i) {
 
 	    /* PTOB a scan line */
 
-	    for (j = 0, k = i; j < 48; ++j) {
-
+	    for (j = 0, k = i; j < max_chars_line; ++j) {
 		/* PTOB one scan of a char cell */
 
 		packed = q_font[k];
 		k += ROWS;
 		packed |= ((short)q_font[k] << 8);
+		k += ROWS;
+
+		wait_status(adder, TX_READY);
+		adder->id_data = packed;
+	    }
+	}
+
+/*---------------------------------------
+* Copy the second row of characters.
+* Subtract the first row from the total number.  Divide this quantity by 2 
+* because 2 chars are stored in a short in the PTOB loop below.
+* Figure out how many characters can be stored on one "line" of offscreen memory
+*/
+	    max_chars_line = MAX_SCREEN_X/(CHAR_WIDTH*2);
+	    if ((CHARS/2 + CHARS%2) < max_chars_line)
+		return;
+	    max_chars_line = (CHARS/2 + CHARS%2) - max_chars_line; /* 95 - 64 */
+	    /* Paranoia check to see if 3rd row may be needed */
+	    if (max_chars_line > (MAX_SCREEN_X/(CHAR_WIDTH*2)))
+	    	max_chars_line = MAX_SCREEN_X/(CHAR_WIDTH*2);
+
+
+/*-----------------------------------------------*/
+
+	adder->destination_x = FONT_X;
+	adder->destination_y = FONT_Y - CHAR_HEIGHT;
+	adder->fast_dest_dx = max_chars_line * CHAR_WIDTH * 2;
+	adder->slow_dest_dy = CHAR_HEIGHT;
+
+/*---------------------------------------
+* setup for processor to bitmap xfer  */
+
+	write_ID(adder, CS_UPDATE_MASK, 0x0001);
+	adder->cmd = PBT | OCRB | 2 | DTE | 2;
+
+/*-----------------------------------------------
+* iteratively do the processor to bitmap xfer */
+
+	for (i = 0; i < ROWS; ++i) {
+
+	    /* PTOB a scan line */
+
+	    for (j = 0, k = i; j < max_chars_line; ++j) {
+
+		/* PTOB one scan of a char cell */
+
+		packed = q_font[k + FONT_OFFSET];
+		k += ROWS;
+		packed |= ((short)q_font[k + FONT_OFFSET] << 8);
 		k += ROWS;
 
 		wait_status(adder, TX_READY);
@@ -3310,8 +3832,8 @@ scroll_up(adder)
 register struct adder *adder;
 {
 
-	/*------------------------------------------
-	* setup VIPER operand control registers  */
+/*------------------------------------------
+* setup VIPER operand control registers  */
 
 	wait_status(adder, ADDRESS_COMPLETE);
 
@@ -3326,8 +3848,8 @@ register struct adder *adder;
 	write_ID(adder, DST_OCR_B,
 			EXT_NONE | INT_NONE | NO_ID | NO_BAR_SHIFT_DELAY);
 
-	/*----------------------------------------
-	* load DESTINATION origin and vectors  */
+/*----------------------------------------
+* load DESTINATION origin and vectors  */
 
 	adder->fast_dest_dy = 0;
 	adder->slow_dest_dx = 0;
@@ -3342,8 +3864,8 @@ register struct adder *adder;
 	adder->destination_y = 0;
 	adder->slow_dest_dy = 864 - CHAR_HEIGHT;
 
-	/*-----------------------------------
-	* load SOURCE origin and vectors  */
+/*-----------------------------------
+* load SOURCE origin and vectors  */
 
 	adder->source_1_x = 0;
 	adder->source_1_dx = 1024;
@@ -3354,8 +3876,8 @@ register struct adder *adder;
 	write_ID(adder, LU_FUNCTION_R1, FULL_SRC_RESOLUTION | LF_SOURCE);
 	adder->cmd = RASTEROP | OCRB | 0 | S1E | DTE;
 
-	/*--------------------------------------------
-	* do a rectangle clear of last screen line */
+/*--------------------------------------------
+* do a rectangle clear of last screen line */
 
 	write_ID(adder, MASK_1, 0xffff);
 	write_ID(adder, SOURCE, 0xffff);
@@ -3400,8 +3922,8 @@ register u_int unit;
 
 	dga = (struct dga *) qdmap[unit].dga;
 
-	/*--------------------------------------------------
-	* initialize the event queue pointers and header */
+/*--------------------------------------------------
+* initialize the event queue pointers and header */
 
 	eq_header[unit] = (struct qdinput *)
 			  ((((int)event_shared & ~(0x01FF)) + 512)
@@ -3418,8 +3940,8 @@ register u_int unit;
 	eq_header[unit]->curs_box.top = 0;
 	eq_header[unit]->curs_box.bottom = 0;
 
-	/*---------------------------------------------------------
-	* assign a pointer to the DMA I/O buffer for this QDSS. */
+/*---------------------------------------------------------
+* assign a pointer to the DMA I/O buffer for this QDSS. */
 
 	DMAheader[unit] = (struct DMAreq_header *)
 			  (((int)(&DMA_shared[0] + 512) & ~0x1FF)
@@ -3436,8 +3958,8 @@ register u_int unit;
 	DMAheader[unit]->oldest = 0;
 	DMAheader[unit]->newest = 0;
 
-	/*-----------------------------------------------------------
-	* assign a pointer to the scroll structure for this QDSS. */
+/*-----------------------------------------------------------
+* assign a pointer to the scroll structure for this QDSS. */
 
 	scroll[unit] = (struct scroll *)
 			 (((int)(&scroll_shared[0] + 512) & ~0x1FF)
@@ -3450,8 +3972,8 @@ register u_int unit;
 	scroll[unit]->x_index_pending = 0;
 	scroll[unit]->y_index_pending = 0;
 
-	/*----------------------------------------------------------------
-	* assign a pointer to the color map write buffer for this QDSS */
+/*----------------------------------------------------------------
+* assign a pointer to the color map write buffer for this QDSS */
 
 	color_buf[unit] = (struct color_buf *)
 			   (((int)(&color_shared[0] + 512) & ~0x1FF)
@@ -3496,8 +4018,8 @@ u_int unit;
 	short *green;
 	short *blue;
 
-	/*------------------
-	* init for setup */
+/*------------------
+* init for setup */
 
 	adder = (struct adder *) qdmap[unit].adder;
 	dga = (struct dga *) qdmap[unit].dga;
@@ -3507,8 +4029,8 @@ u_int unit;
 	*memcsr = SYNC_ON;		/* blank screen and turn off LED's */
 	adder->command = CANCEL;
 
-	/*----------------------
-	* set monitor timing */
+/*----------------------
+* set monitor timing */
 
 	adder->x_scan_count_0 = 0x2800;
 	adder->x_scan_count_1 = 0x1020;
@@ -3520,8 +4042,8 @@ u_int unit;
 	adder->sync_phase_adj = 0x0100;
 	adder->x_scan_conf = 0x00C8;
 
-	/*---------------------------------------------------------
-	* got a bug in secound pass ADDER! lets take care of it */
+/*---------------------------------------------------------
+* got a bug in secound pass ADDER! lets take care of it */
 
 	/* normally, just use the code in the following bug fix code, but to
 	* make repeated demos look pretty, load the registers as if there was
@@ -3560,8 +4082,8 @@ u_int unit;
 
 	*memcsr = SYNC_ON | UNBLANK;	/* turn off leds and turn on video */
 
-	/*----------------------------
-	* zero the index registers */
+/*----------------------------
+* zero the index registers */
 
 	adder->x_index_pending = 0;
 	adder->y_index_pending = 0;
@@ -3572,13 +4094,13 @@ u_int unit;
 
 	adder->pause = 0;
 
-	/*----------------------------------------
-	* set rasterop mode to normal pen down */
+/*----------------------------------------
+* set rasterop mode to normal pen down */
 
 	adder->rasterop_mode = DST_WRITE_ENABLE | DST_INDEX_ENABLE | NORMAL;
 
-	/*--------------------------------------------------
-	* set the rasterop registers to a default values */
+/*--------------------------------------------------
+* set the rasterop registers to a default values */
 
 	adder->source_1_dx = 1;
 	adder->source_1_dy = 1;
@@ -3593,21 +4115,21 @@ u_int unit;
 	adder->error_1 = 0;
 	adder->error_2 = 0;
 
-	/*------------------------
-	* scale factor = unity */
+/*------------------------
+* scale factor = unity */
 
 	adder->fast_scale = UNITY;
 	adder->slow_scale = UNITY;
 
-	/*-------------------------------
-	* set the source 2 parameters */
+/*-------------------------------
+* set the source 2 parameters */
 
 	adder->source_2_x = 0;
 	adder->source_2_y = 0;
 	adder->source_2_size = 0x0022;
 
-	/*-----------------------------------------------
-	* initialize plane addresses for eight vipers */
+/*-----------------------------------------------
+* initialize plane addresses for eight vipers */
 
 	write_ID(adder, CS_UPDATE_MASK, 0x0001);
 	write_ID(adder, PLANE_ADDRESS, 0x0000);
@@ -3648,15 +4170,15 @@ u_int unit;
 	write_ID(adder, SCROLL_CONSTANT, SCROLL_ENABLE|VIPER_LEFT|VIPER_UP);
 	write_ID(adder, SCROLL_FILL, 0x0000);
 
-	/*----------------------------------------------------
-	* set clipping and scrolling limits to full screen */
+/*----------------------------------------------------
+* set clipping and scrolling limits to full screen */
 
 	for ( i = 1000, adder->status = 0
 	    ; i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE)
 	    ; --i);
 
 	if (i == 0)
-	    printf("qd%d: setup_dragon: timeout on ADDRESS_COMPLETE\n", unit);
+	    printf("\nqd%d: setup_dragon: timeout on ADDRESS_COMPLETE",unit);
 
 	top = 0;
 	bottom = 2048;
@@ -3688,21 +4210,21 @@ u_int unit;
 	    ; --i);
 
 	if (i == 0)
-	    printf("qd%d: setup_dragon: timeout on ADDRESS_COMPLETE\n", unit);
+	    printf("\nqd%d: setup_dragon: timeout on ADDRESS_COMPLETE",unit);
 
 	write_ID(adder, LEFT_SCROLL_MASK, 0x0000);
 	write_ID(adder, RIGHT_SCROLL_MASK, 0x0000);
 
-	/*------------------------------------------------------------
-	* set source and the mask register to all ones (ie: white) */
+/*------------------------------------------------------------
+* set source and the mask register to all ones (ie: white) */
 
 	write_ID(adder, SOURCE, 0xFFFF);
 	write_ID(adder, MASK_1, 0xFFFF);
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 255);
 	write_ID(adder, VIPER_Z_LOAD | BACKGROUND_COLOR_Z, 0);
 
-	/*--------------------------------------------------------------
-	* initialize Operand Control Register banks for fill command */
+/*--------------------------------------------------------------
+* initialize Operand Control Register banks for fill command */
 
 	write_ID(adder, SRC1_OCR_A, EXT_NONE | INT_M1_M2  | NO_ID | WAIT);
 	write_ID(adder, SRC2_OCR_A, EXT_NONE | INT_SOURCE | NO_ID | NO_WAIT);
@@ -3712,8 +4234,8 @@ u_int unit;
 	write_ID(adder, SRC2_OCR_B, EXT_NONE | INT_M1_M2  | NO_ID | NO_WAIT);
 	write_ID(adder, DST_OCR_B, EXT_NONE | INT_NONE | NO_ID | NO_WAIT);
 
-	/*------------------------------------------------------------------
-	* init Logic Unit Function registers, (these are just common values,
+/*------------------------------------------------------------------
+* init Logic Unit Function registers, (these are just common values,
 * and may be changed as required).  */
 
 	write_ID(adder, LU_FUNCTION_R1, FULL_SRC_RESOLUTION | LF_SOURCE);
@@ -3721,15 +4243,15 @@ u_int unit;
 	write_ID(adder, LU_FUNCTION_R3, FULL_SRC_RESOLUTION | LF_D_OR_S);
 	write_ID(adder, LU_FUNCTION_R4, FULL_SRC_RESOLUTION | LF_D_XOR_S);
 
-	/*----------------------------------------
-	* load the color map for black & white */
+/*----------------------------------------
+* load the color map for black & white */
 
 	for ( i = 0, adder->status = 0
 	    ; i < 10000  &&  !((status = adder->status) & VSYNC)
 	    ; ++i);
 
 	if (i == 0)
-	    printf("qd%d: setup_dragon: timeout on VSYNC\n", unit);
+	    printf("\nqd%d: setup_dragon: timeout on VSYNC", unit);
 
 	red = (short *) qdmap[unit].red;
 	green = (short *) qdmap[unit].green;
@@ -3787,14 +4309,14 @@ u_int unit;
 	char id_byte;
 	short status;
 
-	/*---------------
-	* init stuff */
+/*---------------
+* init stuff */
 
 	duart = (struct duart *) qdmap[unit].duart;
 	duart->imask = 0;
 
-	/*---------------------------------------------
-	* setup the DUART for kbd & pointing device */
+/*---------------------------------------------
+* setup the DUART for kbd & pointing device */
 
 	duart->cmdA = RESET_M;	  /* reset mode reg ptr for kbd */
 	duart->modeA = 0x13;	  /* 8 bits, no parity, rcv IE, */
@@ -3825,8 +4347,8 @@ u_int unit;
 	duart->cmdA = EN_RCV | EN_XMT; /* enbl xmt & rcv for kbd */
 	duart->cmdB = EN_RCV | EN_XMT; /* enbl xmt & rcv for pointer device */
 
-	/*--------------------------------------------
-	* init keyboard defaults (DUART channel A) */
+/*--------------------------------------------
+* init keyboard defaults (DUART channel A) */
 
 	for (i = 500; i > 0; --i) {
 	    if ((status = duart->statusA) & XMT_RDY) {
@@ -3843,8 +4365,8 @@ u_int unit;
 
 	status = duart->dataA;		/* flush the ACK */
 
-	/*--------------------------------
-	* identify the pointing device */
+/*--------------------------------
+* identify the pointing device */
 
 	for (i = 500; i > 0; --i) {
 	    if ((status = duart->statusB) & XMT_RDY) {
@@ -3863,8 +4385,7 @@ u_int unit;
 	}
 
 	if (i == 0) {
-	    printf("qd[%d]: setup_input: timeout on 1st byte of self test\n",
-		   unit);
+	    printf("\nqd[%d]: setup_input: timeout on 1st byte of self test",unit);
 	    goto OUT;
 	}
 
@@ -3880,8 +4401,7 @@ u_int unit;
 	}
 
 	if (i == 0) {
-	    printf("qd[%d]: setup_input: timeout on 2nd byte of self test\n",
-		   unit);
+	    printf("\nqd[%d]: setup_input: timeout on 2nd byte of self test", unit);
 	    goto OUT;
 	}
 
@@ -3898,8 +4418,7 @@ u_int unit;
 	}
 
 	if (i == 0) {
-	    printf("qd[%d]: setup_input: timeout on 3rd byte of self test\n",
-		   unit);
+	    printf("\nqd[%d]: setup_input: timeout on 3rd byte of self test", unit);
 	    goto OUT;
 	}
 
@@ -3911,8 +4430,7 @@ u_int unit;
 	}
 
 	if (i == 0) {
-	    printf("qd[%d]: setup_input: timeout on 4th byte of self test\n",
-		   unit);
+	    printf("\nqd[%d]: setup_input: timeout on 4th byte of self test\n", unit);
 	    goto OUT;
 	}
 
@@ -3943,8 +4461,8 @@ u_int unit;
 	    }
 	}
 
-	/*--------
-	* exit */
+/*--------
+* exit */
 
 OUT:
 	duart->imask = qdflags[unit].duart_imask;
@@ -3982,8 +4500,7 @@ register int mask;
 	    ; --i);
 
 	if (i == 0) {
-	    printf("wait_status: timeout polling for 0x%x in adder->status\n",
-		   mask);
+	    printf("\nwait_status: timeout polling for 0x%x in adder->status", mask);
 	    return(BAD);
 	}
 
@@ -4018,16 +4535,16 @@ register short data;
 	int i;
 	short status;
 
-	for ( i = 100000, adder->status = 0;
-	      i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE); --i)
-		;
+	for ( i = 100000, adder->status = 0
+	    ; i > 0  &&  !((status = adder->status) & ADDRESS_COMPLETE)
+	    ; --i);
 
 	if (i == 0)
 	    goto ERR;
 
-	for ( i = 100000, adder->status = 0;
-	      i > 0  &&  !((status = adder->status) & TX_READY); --i)
-		;
+	for ( i = 100000, adder->status = 0
+	    ; i > 0  &&  !((status = adder->status) & TX_READY)
+	    ; --i);
 
 	if (i > 0) {
 	    adder->id_data = data;
@@ -4036,8 +4553,9 @@ register short data;
 	}
 
 ERR:
-	printf("write_ID: timeout trying to write to VIPER\n");
+	printf("\nwrite_ID: timeout trying to write to VIPER");
 	return(BAD);
 
 } /* write_ID */
+
 #endif
