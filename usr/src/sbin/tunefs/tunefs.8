@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tunefs.8	6.3 (Berkeley) %G%
+.\"	@(#)tunefs.8	6.4 (Berkeley) %G%
 .\"
 .TH TUNEFS 8 ""
 .UC 5
@@ -84,8 +84,9 @@ pp 181-197, August 1984.
 .SH BUGS
 This program should work on mounted and active file systems.
 Because the super-block is not kept in the buffer cache,
-the program will only take effect if it is run on dismounted file systems.
-To take effect on the root file system, the system must be rebooted
-after being tuned.
+the changes will only take effect if the program
+is run on dismounted file systems.
+To change the root file system, the system must be rebooted
+after the file system is tuned.
 .PP
 You can tune a file system, but you can't tune a fish.
