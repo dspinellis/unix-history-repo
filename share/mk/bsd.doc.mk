@@ -1,5 +1,5 @@
 #	from: @(#)bsd.doc.mk	5.3 (Berkeley) 1/2/91
-#	$Id$
+#	$Id: bsd.doc.mk,v 1.4 1993/10/10 18:50:58 rgrimes Exp $
 
 PRINTER?=	ps
 
@@ -13,6 +13,8 @@ REFER?=		refer
 ROFF?=		groff -T${PRINTER} ${MACROS} -o${PAGES}
 SOELIM?=	soelim
 TBL?=		tbl
+
+PAGES?=		1-
 
 # Compatibility mode flag for groff.  Use this when formatting documents with
 # Berkeley me macros.
