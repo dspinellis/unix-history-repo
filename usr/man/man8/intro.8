@@ -1,0 +1,97 @@
+.TH INTRO 8 "21 January 1983"
+.SH NAME
+intro \- introduction to system maintenance and operation commands
+.SH DESCRIPTION
+This section contains information related to system operation
+and maintenance.  In particular, commands used to create new file
+systems,
+.IR newfs ,
+.IR mkfs ,
+and verify the integrity of the file systems,
+.IR fsck ,
+.IR icheck ,
+.IR dcheck ,
+and
+.I ncheck
+are described
+here.  The section 
+.I format
+shold be consulted when formatting disk packs.  The section
+.I crash
+should be consulted in understanding how to interpret system
+crash dumps.
+.PP
+.ti +1.0i
+\fIMaintenance and System Operation Commands\fP
+.PP
+.ta 1.25i
+.nf
+MAKEDEV	make system special files
+ac	login accounting
+adduser	procedure for adding new users
+analyze	virtual memory postmortem crash analyzer
+arcv	convert an old archive to the new format
+arff	archiver for 11/780 console floppies and 11/730 console cassettes
+bad144	read/write dec standard 144 bad sector information
+badsect	program for dealing with bad sectors on disks
+catman	create the cat'able files for the manual
+chown	change owner
+clri	clear i-node
+comsat	mail notification server
+config	build system configuration files
+crash	what happens when the system crashes
+cron	clock daemon
+dcheck	file system directory consistency check
+diskpart	disk partition calculator
+dmesg	collect system diagnostic messages to form error log
+dump	incremental file system dump
+dumpfs	dump file system information
+fastboot	reboot a system without checking any file systems
+flcopy	copy 11/780 console floppies 
+format	standalone disk formatting program and procedures
+fsck	file system consistency check and interactive repair
+ftpd	DARPA file transfer protocol server
+gettable	obtain network database file from a remote host
+getty 	set terminal mode
+halt	stop the processor
+icheck	file system storage consistency check
+implogd	IMP logging server
+init	process control initialization
+kgmon	control system profiling
+lpd	line printer daemon
+makekey	generate encryption key
+mkfs	construct a file system
+mknod	build special file
+mkproto	construct a pototype file system
+mount, umount	mount and dismount file system
+ncheck 	 generate names from i-numbers
+newfs	build a new file system
+pstat	print system facts
+quot	summarize file system ownership
+rc	command script for auto-reboot and daemons
+reboot	UNIX bootstrapping procedures
+renice	alter priority of running process by changing nice
+restor	incremental file system restore
+rexecd	remote execution (with password authentication) server
+rlogind	remote login server
+rmt	remote magtape access protocol interpreter
+route	manually manipulate network routing tables 
+routed	network routing daemon
+rrestor	remote file system restore facility
+rshd	remote execution (without password authentication) server
+rwhod	system status server
+sa, accton	system accounting
+savecore	save a core dump of the operating system
+sendmail	send mail over the internet
+shutdown	close down the system at a given time
+sticky	executable files with persistent text
+swapon	specify additional device for paging and swapping
+sync	update the super block
+telnetd	TELNET protocol server
+tftpd	TFTP server
+trpt	TCP protocol trace analyzer
+tunefs	tune the parameters of an existing file system
+update	periodically update the super block
+vipw	edit the password file with vi
+vpac	print raster printer/ploter accounting information
+.fi
