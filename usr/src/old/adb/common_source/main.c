@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -140,6 +140,7 @@ getfile(which)
 {
 	char *fname;
 	int flags, fd;
+	char *strerror();
 
 	switch (which) {
 	case 1:
@@ -156,8 +157,8 @@ getfile(which)
 		return (-1);
 	if ((flags = wtflag) != 0 && xargc > which)
 		flags |= O_CREAT;
-	if ((fd = open(fname, flags, 0666)) < 0 && flags & O_CREAT)
-		adbprintf("cannot open `%s'\n", fname);
+	if ((fd = open(fname, flags, 0666)) < 0 && xargc > which)
+		adbprintf("cannot open `%s': %s\n", fname, strerror(errno));
 	return (fd);
 }
 
