@@ -1,0 +1,34 @@
+this API is not documented/supported by NeXT and may go away at any time,
+  so test again when you upgrade (works fine for me on NEXTSTEP_Dev_3.2)
+-------------------------------------------------------------------------
+See KBNS.32.2.029 from the successor of:
+ftp://ftp.cs.orst.edu/software/NeXT/documents/KBNS.32.1.rtf
+Otherwise (that successor not yet having been published), ask me for a copy
+of the item on RfSchtkt@maze.ruca.ua.ac.be. Bison's messages are not as
+disciplined as flex' ones, so it should get more discipline first.
+
+Specifically (in addition to what's described in the KBNS item):
+makeUser.o and make_support.o should be added to OBJECTS in Makefile.in
+In parse.y, line_pinpoint() (assumption all messages ultimately go there), add:
+	  make_support(
+	    // don't worry about declaring: cc's source doesn't either,
+	    // it seems
+	    syntaxerror?0:1,
+	    NULL,
+	    infilename,
+	    line,
+	    str,
+	    0,0,0
+	    );
+
+FMyIO: in cc, these files contain the word make_support:
+  ChangeLog-NeXT
+  Makefile.in
+  config/next.h: defines REPORT_EVENT in terms of make_support
+  make_support.c
+
+FMyIO: in cc, these files contain the word REPORT_EVENT:
+  cccp.c
+  config/next.h
+  gcc.c
+  toplev.c
