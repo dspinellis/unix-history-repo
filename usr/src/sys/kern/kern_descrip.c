@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.9	82/09/08	*/
+/*	kern_descrip.c	5.10	82/09/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -171,14 +171,35 @@ int	nselcoll;
 select()
 {
 	register struct uap  {
-		long	*ibits;
-		long	*obits;
+		int	nd;
+		long	*in;
+		long	*ou;
+		long	*ex;
 		struct	timeval *tv;
 	} *uap = (struct uap *)u.u_ap;
 	int ibits[3], obits[3];
 	struct timeval atv;
 	int s, tsel, ncoll, rem;
 	label_t lqsave;
+
+	if (uap->nd >= NOFILE) {
+		u.u_error = EINVAL;
+		return;
+	}
+
+#define	getbits(name, x) \
+	if (uap->name) { \
+		if (copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
+		    sizeof (ibits[x]))) { \
+			u.u_error = EFAULT; \
+			return; \
+		} \
+	} else \
+		ibits[x] = 0;
+	getbits(in, 0);
+	getbits(ou, 1);
+	getbits(ex, 2);
+#undef	getbits
 
 	if (uap->tv) {
 		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
@@ -191,10 +212,6 @@ select()
 		}
 		s = spl7(); timevaladd(&atv, &time); splx(s);
 	}
-	if (copyin((caddr_t)uap->ibits, (caddr_t)ibits, sizeof (ibits))) {
-		u.u_error = EFAULT;
-		return;
-	}
 retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
@@ -204,7 +221,7 @@ retry:
 	if (u.u_r.r_val1)
 		goto done;
 	s = spl6();
-	if (uap->tv && timercmp(&atv, &time, >=)) {
+	if (uap->tv && timercmp(&time, &atv, >=)) {
 		splx(s);
 		goto done;
 	}
@@ -232,10 +249,18 @@ retry:
 	splx(s);
 	goto retry;
 done:
-	if (copyout((caddr_t)obits, (caddr_t)uap->obits, sizeof (obits))) {
-		u.u_error = EFAULT;
-		return;
+#define	putbits(name, x) \
+	if (uap->name) { \
+		if (copyout((caddr_t)obits[x], (caddr_t)uap->name, \
+		    sizeof (obits[x]))) { \
+			u.u_error = EFAULT; \
+			return; \
+		} \
 	}
+	putbits(in, 0);
+	putbits(ou, 1);
+	putbits(ex, 2);
+#undef putbits
 }
 
 unselect(p)
