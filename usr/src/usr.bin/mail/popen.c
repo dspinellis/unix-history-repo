@@ -6,20 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
 #include <sys/wait.h>
+#include <fcntl.h>
 #include "extern.h"
 
 #define READ 0
 #define WRITE 1
-static int *pid;
 
 struct fp {
 	FILE *fp;
 	int pipe;
+	int pid;
 	struct fp *link;
 };
 static struct fp *fp_head;
@@ -41,8 +42,10 @@ Fopen(file, mode)
 {
 	FILE *fp;
 
-	if ((fp = fopen(file, mode)) != NULL)
-		register_file(fp, 0);
+	if ((fp = fopen(file, mode)) != NULL) {
+		register_file(fp, 0, 0);
+		(void) fcntl(fileno(fp), F_SETFD, 1);
+	}
 	return fp;
 }
 
@@ -53,8 +56,10 @@ Fdopen(fd, mode)
 {
 	FILE *fp;
 
-	if ((fp = fdopen(fd, mode)) != NULL)
-		register_file(fp, 0);
+	if ((fp = fdopen(fd, mode)) != NULL) {
+		register_file(fp, 0, 0);
+		(void) fcntl(fileno(fp), F_SETFD, 1);
+	}
 	return fp;
 }
 
@@ -66,13 +71,6 @@ Fclose(fp)
 	return fclose(fp);
 }
 
-/*
- * XXX
- * The old mail code used getdtablesize() to return the max number of
- * file descriptors.  That's a *real* big number now.  Fake it.
- */
-#define	MAX_FILE_DESCRIPTORS		64
-#define	MAX_FILE_DESCRIPTORS_TO_CLOSE	20
 FILE *
 Popen(cmd, mode)
 	char *cmd;
@@ -80,12 +78,13 @@ Popen(cmd, mode)
 {
 	int p[2];
 	int myside, hisside, fd0, fd1;
+	int pid;
 	FILE *fp;
 
-	if (pid == 0)
-		pid = malloc((u_int)sizeof (int) * MAX_FILE_DESCRIPTORS);
 	if (pipe(p) < 0)
 		return NULL;
+	(void) fcntl(p[READ], F_SETFD, 1);
+	(void) fcntl(p[WRITE], F_SETFD, 1);
 	if (*mode == 'r') {
 		myside = p[READ];
 		fd0 = -1;
@@ -95,15 +94,14 @@ Popen(cmd, mode)
 		hisside = fd0 = p[READ];
 		fd1 = -1;
 	}
-	if ((pid[myside] = start_command(cmd,
-	    0, fd0, fd1, NOSTR, NOSTR, NOSTR)) < 0) {
+	if ((pid = start_command(cmd, 0, fd0, fd1, NOSTR, NOSTR, NOSTR)) < 0) {
 		close(p[READ]);
 		close(p[WRITE]);
 		return NULL;
 	}
 	(void) close(hisside);
 	if ((fp = fdopen(myside, mode)) != NULL)
-		register_file(fp, 1);
+		register_file(fp, 1, pid);
 	return fp;
 }
 
@@ -114,11 +112,11 @@ Pclose(ptr)
 	int i;
 	int omask;
 
-	i = fileno(ptr);
+	i = file_pid(ptr);
 	unregister_file(ptr);
 	(void) fclose(ptr);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGHUP));
-	i = wait_child(pid[i]);
+	i = wait_child(i);
 	sigsetmask(omask);
 	return i;
 }
@@ -135,9 +133,9 @@ close_all_files()
 }
 
 void
-register_file(fp, pipe)
+register_file(fp, pipe, pid)
 	FILE *fp;
-	int pipe;
+	int pipe, pid;
 {
 	struct fp *fpp;
 
@@ -145,6 +143,7 @@ register_file(fp, pipe)
 		panic("Out of memory");
 	fpp->fp = fp;
 	fpp->pipe = pipe;
+	fpp->pid = pid;
 	fpp->link = fp_head;
 	fp_head = fpp;
 }
@@ -161,11 +160,19 @@ unregister_file(fp)
 			free((char *) p);
 			return;
 		}
-	/* XXX
-	 * Ignore this for now; there may still be uncaught
-	 * duplicate closes.
 	panic("Invalid file pointer");
-	*/
+}
+
+file_pid(fp)
+	FILE *fp;
+{
+	struct fp *p;
+
+	for (p = fp_head; p; p = p->link)
+		if (p->fp == fp)
+			return (p->pid);
+	panic("Invalid file pointer");
+	/*NOTREACHED*/
 }
 
 /*
@@ -224,12 +231,14 @@ prepare_child(mask, infd, outfd)
 {
 	int i;
 
+	/*
+	 * All file descriptors other than 0, 1, and 2 are supposed to be
+	 * close-on-exec.
+	 */
 	if (infd >= 0)
 		dup2(infd, 0);
 	if (outfd >= 0)
 		dup2(outfd, 1);
-	for (i = MAX_FILE_DESCRIPTORS_TO_CLOSE; --i > 2;)
-		close(i);
 	for (i = 1; i <= NSIG; i++)
 		if (mask & sigmask(i))
 			(void) signal(i, SIG_IGN);
