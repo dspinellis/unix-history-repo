@@ -1,0 +1,26 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)kg.4	5.1 (Berkeley) %G%
+.\"
+.TH KG 4 "27 July 1983"
+.UC 5
+.SH NAME
+kg \- KL-11/DL-11W line clock
+.SH SYNOPSIS
+.B "device kg0 at uba0 csr 0176500 vector kglock"
+.SH DESCRIPTION
+A kl-11 or dl-11w can be used as an alternate real
+time clock
+source.  When configured, certain system
+statistics and, optionally, system profiling work
+will be collected each time the clock interrupts.  For
+optimum accuracy in profiling, the dl-11w should be
+configured to interrupt at the highest possible priority
+level.  The 
+.I kg
+device driver automatically calibrates itself to the
+line clock frequency.
+.SH "SEE ALSO"
+kgmon(8), config(8)
