@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chpass.1	5.4 (Berkeley) %G%
+.\"	@(#)chpass.1	5.5 (Berkeley) %G%
 .\"
 .TH CHPASS 1 ""
 .UC 4
@@ -92,15 +92,13 @@ Both the
 .I change
 and
 .I expire
-fields should be entered in the form ``month dd yy'' where
+fields should be entered in the form ``month day year'' where
 .I month
 is the month name (the first three characters are sufficient),
-.I dd
+.I day
 is the day of the month, and
-.I yy
+.I year
 is the year.
-Also, either field may be ``none'' which will disable password
-aging or expiration.
 .PP
 The
 .I class
@@ -108,8 +106,6 @@ field is currently unused.  In the near future it will be a key to
 a
 .IR termcap (5)
 style database of user attributes.
-The string ``none'' is the default for not belonging to any
-class.
 .PP
 The user's home directory is the full UNIX path name where the user
 will be placed on login.
