@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	4.2 (Berkeley) %G%
+.\"	@(#)3.t	4.3 (Berkeley) %G%
 .\"
 .ds RH Fixing corrupted file systems
 .NH
@@ -341,6 +341,10 @@ If the directory inode numbers are
 incorrect,
 .I fsck
 will replace them with the correct values.
+If there are multiple hard links to a directory,
+the first one encountered is considered the real parent
+to which ``\fB..\fP'' should point;
+\fIfsck\P recommends deletion for the subsequently discovered names.
 .NH 2
 File system connectivity
 .PP

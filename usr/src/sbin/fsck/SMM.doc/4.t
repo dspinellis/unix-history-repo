@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	4.2 (Berkeley) %G%
+.\"	@(#)4.t	4.3 (Berkeley) %G%
 .\"
 .ds RH Appendix A \- Fsck Error Conditions
 .NH
@@ -281,8 +281,9 @@ terminate the program.
 .I Fsck 's
 request for writing a specified block number \fIB\fP
 in the file system failed.
-The disk is write-protected.
-See a guru.
+The disk is write-protected;
+check the write protect lock on the drive.
+If that is not the problem, see a guru.
 .LP
 Possible responses to the CONTINUE prompt are:
 .IP YES
@@ -394,7 +395,7 @@ greater than the number of the last block
 in the file system.
 This error condition may invoke the
 .B "EXCESSIVE BAD BLKS"
-error condition in Phase 1 if
+error condition in Phase 1 (see next paragraph) if
 inode \fII\fP has too many block numbers outside the file system range.
 This error condition will always invoke the
 .B "BAD/DUP"
@@ -528,8 +529,11 @@ from Phase 1 and Phase 1b.
 This section lists error conditions resulting from
 root inode mode and status,
 directory inode pointers in range,
-and directory entries pointing to bad inodes.
-All errors in this phase are fatal if the file system is being preen'ed.
+and directory entries pointing to bad inodes,
+and directory integrity checks.
+All errors in this phase are fatal if the file system is being preen'ed,
+except for directories not being a multiple of the blocks size
+and extraneous hard links.
 .sp
 .LP
 .B "ROOT INODE UNALLOCATED (ALLOCATE)"
@@ -638,52 +642,25 @@ the directory entry \fIF\fP is removed.
 ignore this error condition.
 .sp
 .LP
-.B "UNALLOCATED I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP DIR=\fIF\fP (REMOVE)"
+.B "UNALLOCATED I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP \fItype\fP=\fIF\fP (REMOVE)"
 .br
-A directory entry \fIF\fP has a directory inode \fII\fP
-without allocate mode bits.
+A directory or file entry \fIF\fP points to an unallocated inode \fII\fP.
+The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, modify time \fIT\fP,
+and name \fIF\fP are printed.
+.LP
+Possible responses to the REMOVE prompt are:
+.IP YES
+the directory entry \fIF\fP is removed.
+.IP NO
+ignore this error condition.
+.sp
+.LP
+.B "DUP/BAD I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP \fItype\fP=\fIF\fP (REMOVE)"
+.br
+Phase 1 or Phase 1b have found duplicate blocks or bad blocks
+associated with directory or file entry \fIF\fP, inode \fII\fP.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, modify time \fIT\fP,
 and directory name \fIF\fP are printed.
-.LP
-Possible responses to the REMOVE prompt are:
-.IP YES
-the directory entry \fIF\fP is removed.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "UNALLOCATED I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP FILE=\fIF\fP (REMOVE)"
-.br
-A directory entry \fIF\fP has an inode \fII\fP
-without allocate mode bits.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, modify time \fIT\fP, and file name \fIF\fP are printed.
-.LP
-Possible responses to the REMOVE prompt are:
-.IP YES
-the directory entry \fIF\fP is removed.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "DUP/BAD I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP DIR=\fIF\fP (REMOVE)"
-.br
-Phase 1 or Phase 1b have found duplicate blocks or bad blocks
-associated with directory entry \fIF\fP, directory inode \fII\fP.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, modify time \fIT\fP, and directory name \fIF\fP are printed.
-.LP
-Possible responses to the REMOVE prompt are:
-.IP YES
-the directory entry \fIF\fP is removed.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "DUP/BAD I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP FILE=\fIF\fP (REMOVE)"
-.br
-Phase 1 or Phase 1b have found duplicate blocks or bad blocks
-associated with directory entry \fIF\fP, inode \fII\fP.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
-modify time \fIT\fP, and file name \fIF\fP are printed.
 .LP
 Possible responses to the REMOVE prompt are:
 .IP YES
@@ -815,7 +792,8 @@ does not equal the parent of \fII\fP.
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
-change the inode number for `..' to be equal to the parent of \fII\fP.
+change the inode number for `..' to be equal to the parent of \fII\fP
+(``\fB..\fP'' in the root inode points to itself).
 .IP NO
 leave the inode number for `..' unchanged.
 .sp
@@ -826,7 +804,8 @@ A directory \fII\fP has been found whose second entry is unallocated.
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
-build an entry for `..' with inode number equal to the parent of \fII\fP.
+build an entry for `..' with inode number equal to the parent of \fII\fP
+(``\fB..\fP'' in the root inode points to itself).
 .IP NO
 leave the directory unchanged.
 .sp
@@ -1041,7 +1020,8 @@ directory.
 .B "DIRECTORY \fIF\fP LENGTH \fIS\fP NOT MULTIPLE OF \fIB\fP (ADJUST)
 .br
 A directory \fIF\fP has been found with size \fIS\fP that is not
-a multiple of the directory blocksize \fIB\fP.
+a multiple of the directory blocksize \fIB\fP
+(this can reoccur in Phase 3 if it is not adjusted in Phase 2).
 .LP
 Possible responses to the ADJUST prompt are:
 .IP YES
@@ -1197,9 +1177,9 @@ abort the attempt to linkup the lost inode.
 This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
-.B "LINK COUNT FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
+.B "LINK COUNT \fItype\fP I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
 .br
-The link count for inode \fII\fP that is a file,
+The link count for inode \fII\fP,
 is \fIX\fP but should be \fIY\fP.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time \fIT\fP
 are printed.
@@ -1219,54 +1199,9 @@ replace the link count of file inode \fII\fP with \fIY\fP.
 ignore this error condition.
 .sp
 .LP
-.B "LINK COUNT DIR I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
+.B "UNREF \fItype\fP I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
 .br
-The link count for inode \fII\fP that is a directory,
-is \fIX\fP but should be \fIY\fP.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time \fIT\fP
-of directory inode \fII\fP are printed.
-When preen'ing the link count is adjusted unless the number of references
-is increasing, a condition that should never occur unless precipitated
-by a hardware failure.
-When the number of references is increasing under preen mode,
-.I fsck
-exits with the message:
-.br
-.B "LINK COUNT INCREASING"
-.LP
-Possible responses to the ADJUST prompt are:
-.IP YES
-replace the link count of directory inode \fII\fP with \fIY\fP.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "LINK COUNT \fIF\fP I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
-.br
-The link count for \fIF\fP inode \fII\fP is \fIX\fP but should be \fIY\fP.
-The name \fIF\fP,
-owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time
-\fIT\fP
-are printed.
-When preen'ing the link count is adjusted unless the number of references
-is increasing, a condition that should never occur unless precipitated
-by a hardware failure.
-When the number of references is increasing under preen mode,
-.I fsck
-exits with the message:
-.br
-.B "LINK COUNT INCREASING"
-.LP
-Possible responses to the ADJUST prompt are:
-.IP YES
-replace the link count of inode \fII\fP with \fIY\fP.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "UNREF FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
-.br
-Inode \fII\fP that is a file, was not connected to a directory entry when the
+Inode \fII\fP, was not connected to a directory entry when the
 file system was traversed.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
 and modify time \fIT\fP of inode \fII\fP
@@ -1282,48 +1217,11 @@ de-allocate inode \fII\fP by zeroing its contents.
 ignore this error condition.
 .sp
 .LP
-.B "UNREF DIR I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
-.br
-Inode \fII\fP that is a directory,
-was not connected to a directory entry when the
-file system was traversed.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
-and modify time \fIT\fP of inode \fII\fP
-are printed.
-When preen'ing,
-this is a directory that was not connected
-because its size or link count was zero,
-hence it is cleared.
-.LP
-Possible responses to the CLEAR prompt are:
-.IP YES
-de-allocate inode \fII\fP by zeroing its contents.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "BAD/DUP FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
+.B "BAD/DUP \fItype\fP I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
 .br
 Phase 1 or Phase 1b have found duplicate blocks
 or bad blocks associated with
-file inode \fII\fP.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
-and modify time \fIT\fP of inode \fII\fP
-are printed.
-This error cannot arise when the file system is being preen'ed,
-as it would have caused a fatal error earlier.
-.LP
-Possible responses to the CLEAR prompt are:
-.IP YES
-de-allocate inode \fII\fP by zeroing its contents.
-.IP NO
-ignore this error condition.
-.sp
-.LP
-.B "BAD/DUP DIR I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
-.br
-Phase 1 or Phase 1b have found duplicate blocks or
-bad blocks associated with directory inode \fII\fP.
+inode \fII\fP.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
 and modify time \fIT\fP of inode \fII\fP
 are printed.
@@ -1428,8 +1326,8 @@ UNIX keeps.
 When preen'ing,
 .I fsck
 will exit with a code of 4.
-The auto-reboot script interprets an exit code of 4
-by issuing a reboot system call.
+The standard auto-reboot script distributed with 4.3BSD 
+interprets an exit code of 4 by issuing a reboot system call.
 .sp
 .LP
 .B "***** FILE SYSTEM WAS MODIFIED *****"
