@@ -9,14 +9,14 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.13 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 #
 DESTDIR=
-STAND=/stand
+STAND=	/stand
 INCPATH=-I. -I../stand -I../h
 VPATH=	../stand:../vax
 DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
-MACH=	-DVAX8600 -DVAX780 -DVAX750 -DVAX730 -DVAX630
+MACH=	-DVAX8600 -DVAX8200 -DVAX780 -DVAX750 -DVAX730 -DVAX630
 
 # Collections of C options:
 #	COPTS	device drivers/assembler, not optimized
@@ -32,14 +32,15 @@ SMOPTS=	${DEFS} -DSMALL -DVAX750 -DVAX630
 RELOC=	150000
 LIBSA=	libsa.a
 
-SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c drtest.c \
-	format.c format.c getfile.c gets.c hp.c hpmaptype.c ht.c idc.c \
-	machdep.c mba.c mt.c prf.c printn.c qdcons.c qvcons.c qfont.c rk.c \
-	rl.c sys.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c ut.c conf.c \
-	../vax/dkbad.c
+SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c format.c \
+	format.c getfile.c gets.c hp.c hpmaptype.c ht.c idc.c kdb.c \
+	machdep.c mba.c mt.c prf.c printn.c qdcons.c qvcons.c qfont.c \
+	rk.c rl.c sys.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c \
+	ut.c conf.c ../vax/dkbad.c
 DUMMIES=confxx.c
-DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o qdcons.o qvcons.o \
-	rk.o rl.o tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o ut.o
+DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o kdb.o mba.o mt.o qdcons.o \
+	qvcons.o rk.o rl.o tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o \
+	ut.o
 SMOBJ=	bootxx.o sm_sys.o sm_autoconf.o 
 
 # These drivers don't have ecc correction and bad sector forwarding;
@@ -47,8 +48,9 @@ SMOBJ=	bootxx.o sm_sys.o sm_autoconf.o
 # root has bad sectors you can try and squeeze the newer drivers in...
 ODRIVERS=sm_hp.o sm_up.o
 
-ALL=	boot tpboot cat copy tpcopy format tpformat drtest boothp boothk \
-	bootup bootra bootrl 730boot 730copy 730format 730drtest ls
+MDEC=	boothp boothk bootkra bootup bootra bootrl
+ALL=	boot tpboot cat copy tpcopy format tpformat drtest ls \
+	730boot 730copy 730format 730drtest ${MDEC}
 
 all: ${ALL}
 
@@ -57,7 +59,7 @@ ${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printn.o \
 	ar crv ${LIBSA} $?
 	ranlib ${LIBSA}
 
-${DRIVERS}: savax.h
+${DRIVERS}:
 	${CC} -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm -f $*.s
@@ -75,36 +77,40 @@ relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 
 # bootable from tape
 
-tpboot:	tpboot.o relsrt0.o ${LIBSA}
+tpboot: tpboot.o relsrt0.o ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o tpboot.o ${LIBSA} -lc
 	strip a.out; dd if=a.out of=tpboot ibs=32 skip=1; rm -f a.out
 
-tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
-tpboot.o: saio.h ../h/reboot.h ../h/vm.h 
-	cp boot.c tpboot.c; chmod +w tpboot.c
-	${CC} -c ${CFLAGS} -DJUSTASK tpboot.c
-	rm -f tpboot.c
+tpboot.o: boot.o
+	rm -f $*.c
+	ln -s boot.c $*.c
+	${CC} -c ${CFLAGS} -DJUSTASK $*.c
+	rm -f $*.c
 
 tpcopy: copy.o tpsrt0.o ${LIBSA}
 	ld -N tpsrt0.o copy.o ${LIBSA} -lc
 	strip a.out; dd if=a.out of=tpcopy ibs=32 skip=1; rm -f a.out
 
-tpformat: format.o tpsrt0.o confhpup.o ${LIBSA}
-	cp format.c tpformat.c; chmod +w tpformat.c
-	${CC} -c ${CFLAGS} -DJUSTEXIT tpformat.c
-	rm -f tpformat.c
+tpformat: tpformat.o tpsrt0.o confhpup.o ${LIBSA}
 	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBSA} -lc
 	strip a.out; dd if=a.out of=tpformat ibs=32 skip=1; rm -f a.out
 
+tpformat.o: format.o
+	rm -f $*.c
+	ln -s format.c $*.c
+	${CC} -c ${CFLAGS} -DJUSTEXIT $*.c
+	rm -f $*.c
+
 # bootable from floppy or real disks
 
-boot:	boot.o relsrt0.o bootconf.o ${LIBSA}
-	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o ${LIBSA} -lc
+boot: boot.o relsrt0.o bootconf.o ${LIBSA}
+	ld -N -T ${RELOC} -o $@ relsrt0.o boot.o bootconf.o ${LIBSA} -lc
 
 bootconf.o: conf.o
-	cp conf.c bootconf.c
-	${CC} -c ${CFLAGS} -DBOOT bootconf.c
-	rm -f bootconf.c
+	rm -f $*.c
+	ln -s conf.c $*.c
+	${CC} -c ${CFLAGS} -DBOOT $*.c
+	rm -f $*.c
 
 copy: copy.o srt0.o getfile.o ${LIBSA}
 	ld -N -o $@ srt0.o copy.o getfile.o ${LIBSA} -lc
@@ -116,40 +122,43 @@ ls: ls.o srt0.o getfile.o ${LIBSA}
 	ld -N -o $@ srt0.o ls.o getfile.o ${LIBSA} -lc
 
 format: format.o srt0.o confhpup.o ${LIBSA}
-	ld -N -o format srt0.o format.o confhpup.o ${LIBSA} -lc
+	ld -N -o $@ srt0.o format.o confhpup.o ${LIBSA} -lc
 
 drtest: drtest.o srt0.o confhpup.o ${LIBSA}
-	ld -N -o drtest srt0.o drtest.o confhpup.o ${LIBSA} -lc
+	ld -N -o $@ srt0.o drtest.o confhpup.o ${LIBSA} -lc
 
 # for 730s minimize size to avoid microcode botch
 # (won't load files larger than 12.5 Kbytes)
 
 730boot.o: boot.o
-	cp boot.c 730boot.c; chmod +w 730boot.c
-	${CC} -c ${730OPTS} 730boot.c
-	rm -f 730boot.c
+	rm -f $*.c
+	ln -s boot.c $*.c
+	${CC} -c ${730OPTS} $*.c
+	rm -f $*.c
 
 730boot: 730boot.o relsrt0.o 730bootconf.o ${LIBSA}
 	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o ${LIBSA} -lc
 
 730bootconf.o: conf.o
-	cp conf.c 730bootconf.c
-	${CC} -c ${730OPTS} -DBOOT 730bootconf.c
-	rm -f 730bootconf.c
+	rm -f $*.c
+	ln -s conf.c $*.c
+	${CC} -c ${730OPTS} -DBOOT $*.c
+	rm -f $*.c
 
 730copy: copy.o srt0.o 730conf.o ${LIBSA}
-	ld -N -o 730copy srt0.o copy.o 730conf.o ${LIBSA} -lc
+	ld -N -o $@ srt0.o copy.o 730conf.o ${LIBSA} -lc
 
 730drtest: drtest.o srt0.o confup.o ${LIBSA}
-	ld -N -o 730drtest srt0.o drtest.o confup.o ${LIBSA} -lc
+	ld -N -o $@ srt0.o drtest.o confup.o ${LIBSA} -lc
 
 730format: format.o srt0.o confup.o ${LIBSA}
-	ld -N -o 730format srt0.o format.o confup.o ${LIBSA} -lc
+	ld -N -o $@ srt0.o format.o confup.o ${LIBSA} -lc
 
 730conf.o: conf.o
-	cp conf.c 730conf.c
-	${CC} -c ${730OPTS} 730conf.c
-	rm -f 730conf.c
+	rm -f $*.c
+	ln -s conf.c $*.c
+	${CC} -c ${730OPTS} $*.c
+	rm -f $*.c
 
 # bootstrap from ether
 
@@ -160,66 +169,74 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 boothk: relsrt0.o confrk.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confrk.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	-rm -f $@
+	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
 boothp: relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	-rm -f $@
+	rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
+
+bootkra: relsrt0.o confkra.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confkra.o ${SMOBJ} ${LIBSA} -lc
+	size a.out
+	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
 bootup: relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	-rm -f $@
+	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
 bootra: relsrt0.o confra.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confra.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	-rm -f $@
+	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
 bootrl: relsrt0.o confrl.o ${SMOBJ} ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o confrl.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	-rm -f $@
+	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
 sm_hp.o: hp.o
 	rm -f sm_hp.c
-	-ln -s hp.c sm_hp.c
+	ln -s hp.c sm_hp.c
 	${CC} -S ${SMOPTS} sm_hp.c
 	/lib/c2 -i sm_hp.s | as -o sm_hp.o
 	rm -f sm_hp.s sm_hp.c
 
 sm_up.o: up.o
 	rm -f sm_up.c
-	-ln -s up.c sm_up.c
+	ln -s up.c sm_up.c
 	${CC} -S ${SMOPTS} sm_up.c
 	/lib/c2 -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
 sm_sys.o: sys.o
 	rm -f sm_sys.c
-	-ln -s sys.c sm_sys.c
+	ln -s sys.c sm_sys.c
 	${CC} -c -O ${SMOPTS} sm_sys.c
 	rm -f sm_sys.c
 
 sm_autoconf.o: autoconf.o
 	rm -f sm_autoconf.c
-	-ln -s autoconf.c sm_autoconf.c
+	ln -s autoconf.c sm_autoconf.c
 	${CC} -c -O ${SMOPTS} sm_autoconf.c
 	rm -f sm_autoconf.c
 
 confrk.o: confrk.c confxx.o
 confhp.o: confhp.c confxx.o
+confkra.o: confkra.c confxx.o
 confup.o: confup.c confxx.o
 confra.o: confra.c confxx.o
 confrl.o: confrl.c confxx.o
@@ -233,6 +250,9 @@ confrk.c: confxx.c dev.c
 confhp.c: confxx.c dev.c
 	sed -e 's/io->i_ino.i_dev/0/g'		< dev.c > confhp.c
 	sed -e 's/XX/hp/' -e 's/xx/hp/g'	< confxx.c >> confhp.c
+confkra.c: confxx.c dev.c
+	sed -e 's/io->i_ino.i_dev/0/g'		< dev.c > confkra.c
+	sed -e 's/XX/kra/' -e 's/xx/kra/g'	< confxx.c >> confkra.c
 confup.c: confxx.c dev.c
 	sed -e 's/io->i_ino.i_dev/0/g'		< dev.c > confup.c
 	sed -e 's/XX/up/' -e 's/xx/up/g'	< confxx.c >> confup.c
@@ -244,19 +264,17 @@ confrl.c: confxx.c dev.c
 	sed -e 's/XX/rl/' -e 's/xx/rl/g'	< confxx.c >> confrl.c
 
 clean: FRC
-	rm -f *.o *.exe *.i errs sm_*.c libsa.a
-	rm -f a.out boot cat tpboot tpcopy copy tpformat
-	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
-	rm -f format drtest core sboot bootconf.c
-	rm -f 730boot 730copy 730drtest 730format
+	rm -f *.o *.exe *.i sm_*.c libsa.a
+	rm -f boot[a-wyz][a-z].c conf[a-wyz][a-z].c
+	rm -f ${ALL} a.out core errs sboot bootconf.c
 
 depend: ${SRCS} FRC
 	mkdep ${INCPATH} -DSTANDALONE ${SRCS} ${DUMMIES}
 
 install: FRC
-	install -c -s -o bin -g bin -m 644 format copy drtest ${DESTDIR}${STAND}
+	install -c -s -o bin -g bin -m 644 format cat copy drtest ls ${DESTDIR}${STAND}
 	install -c -o bin -g bin -m 644 boot pcs750.bin ${DESTDIR}/
-	-mkdir ../vaxdist/tp
+	[ -d ../vaxdist/tp ] || mkdir ../vaxdist/tp
 	cp tpcopy ../vaxdist/tp/copy
 	cp tpboot ../vaxdist/tp/boot
 	cp tpformat ../vaxdist/tp/format
@@ -284,8 +302,8 @@ install: FRC
 		dd if=a.out of=../cassette/drtest.730 bs=32 skip=1; rm a.out
 	cp ../floppy/drtest ../cassette/drtest.750
 	cp ../floppy/drtest ../consolerl/drtest
+	install -c -o bin -g bin -m 444 ${MDEC} ${DESTDIR}/usr/mdec
 	rm -f ${DESTDIR}/usr/mdec/bootrd
-	install -c -o bin -g bin -m 444 bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 	ln ${DESTDIR}/usr/mdec/bootra ${DESTDIR}/usr/mdec/bootrd
 
 lint:
