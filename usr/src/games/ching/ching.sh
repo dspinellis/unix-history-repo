@@ -1,10 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1983, 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)ching.sh	4.4 (Berkeley) %G%
+# %sccs.include.proprietary.sh%
+#
+#	@(#)ching.sh	4.5 (Berkeley) %G%
 #
 
 cd /usr/games
