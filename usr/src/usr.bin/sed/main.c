@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -142,7 +142,7 @@ cu_fgets(buf, n)
 	static enum {ST_EOF, ST_FILE, ST_STRING} state = ST_EOF;
 	static FILE *f;		/* Current open file */
 	static char *s;		/* Current pointer inside string */
-	static char string_ident[60];
+	static char string_ident[30];
 	char *p;
 
 again:
@@ -160,8 +160,11 @@ again:
 			state = ST_FILE;
 			goto again;
 		case CU_STRING:
-			(void)sprintf(string_ident, "\"%.50s%s\"", script->s,
-			    strlen(script->s) > 50 ? "..." : "");
+			if ((snprintf(string_ident,
+			    sizeof(string_ident), "\"%s\"", script->s)) >=
+			    sizeof(string_ident) - 1)
+				(void)strcpy(string_ident +
+				    sizeof(string_ident) - 6, " ...\"");
 			fname = string_ident;
 			s = script->s;
 			state = ST_STRING;
