@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.93 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.94 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1364,6 +1364,8 @@ struct optioninfo
 	"MaxMessageSize",	O_MAXMSGSIZE,	FALSE,
 #define O_COLONOKINADDR	0x8b
 	"ColonOkInAddr",	O_COLONOKINADDR, TRUE,
+#define O_MAXQUEUERUN	0x8c
+	"MaxQueueRunSize",	O_MAXQUEUERUN,	TRUE,
 
 	NULL,			'\0',		FALSE,
 };
@@ -1992,6 +1994,10 @@ setoption(opt, val, sticky)
 
 	  case O_COLONOKINADDR:	/* old style handling of colon addresses */
 		ColonOkInAddr = atobool(p);
+		break;
+
+	  case O_MAXQUEUERUN:	/* max # of jobs in a single queue run */
+		MaxQueueRun = atol(p);
 		break;
 
 	  default:

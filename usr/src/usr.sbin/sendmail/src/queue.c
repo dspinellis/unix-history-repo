@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.82 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.83 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.82 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.83 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -915,7 +915,7 @@ grow_wlist()
 {
 	if (tTd(41, 1))
 		printf("grow_wlist: WorkListSize=%d\n", WorkListSize);
-	if (WorkListSize >= MAXQUEUESIZE)
+	if (MaxQueueRun > 0 && WorkListSize >= MaxQueueRun)
 	{
 # ifdef LOG
 		if (LogLevel > 0)
