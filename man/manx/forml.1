@@ -1,0 +1,40 @@
+.th FORML I 10/24/72
+.sh NAME
+forml _ form letter generator processor
+.sh SYNOPSIS
+.bd forml
+[ name ] ...
+.sh DESCRIPTION
+A streamlined program for typing form letters.
+The names pick out
+prestored form letters prepared according to the conventions
+of
+.it form
+and
+.it roff.
+The program prompts to get each blank
+filled in.
+When all the forms are completed, it prompts "Set paper."
+It waits for a newline before printing each letter.
+.s3
+If more than one name is given, the name of 
+each letter is announced
+before the prompts for it begin.
+If no names are given, the program asks "Which letter?" before
+each.
+Respond with the name and a newline, or newline only when done.
+.s3
+On a 2741 type terminal, the program assumes the
+letter is to be typed with a correspondence ball,
+and also prompts "Change ball."
+Replace the ball at the end.
+.s3
+.sh FILES
+form.m	(memory),
+.br
+forma, formb, ...	temporaries
+.sh "SEE ALSO"
+form(I), fed(I), roff(I)
+.sh DIAGNOSTICS
+"Try again"_can't get a process
+.sh BUGS
