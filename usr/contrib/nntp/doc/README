@@ -1,0 +1,9 @@
+
+[A README file for a doc directory?  Yow...]
+
+Manual pages are in the ".1" and ".8c" files.
+They should be nroff -man'ed, and/or installed wherever
+you keep manual pages (/usr/man/manx is usual).
+
+The RFC describing the protocol is in "rfc977".
+

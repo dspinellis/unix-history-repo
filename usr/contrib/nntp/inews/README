@@ -1,0 +1,33 @@
+
+     This is a "pseudo" inews which allows remote posting using
+the NNTP server.  Essentially it takes a bunch of arguments and ignores
+ones starting with "-", expecting to find at least one which is
+a file name.  If no files are specified, it uses standard input
+as the input file.
+
+     It then opens a connection to the NNTP server on the remote
+machine and blasts the article across.  It then closes the connection.
+If it doesn't find a From: or Path: line, it inserts them, in the
+default format
+
+	From: login@hostname.DOMAIN (Full_name)
+	Path: hostname!login
+
+where DOMAIN is a #define in ../common/conf.h, and should be changed
+to reflect your system.  A good choice is .UUCP if you are not a
+member of the Internet.  "Full_name" understands the & hack in
+password files.
+
+     The point here is that the thing looks like inews to any program
+which would care to post something (e.g., Pnews, postnews, what have
+you).  The difference is that the article will look like it was posted
+on the remote end, not on the local end.
+
+     Caveat: we determine the host to post to with the #define of
+SERVER_HOST in ../common/conf.h.  This needs to change to reflect your
+system.
+
+     Thanks to Steven Grady <grady@ingres.BERKELEY.EDU> for
+writing this, and for wasting a lot of his valuable time dealing
+with the can-o'-worms that is the real inews.
+

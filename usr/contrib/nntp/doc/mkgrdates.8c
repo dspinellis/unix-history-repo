@@ -1,0 +1,63 @@
+.TH MKGRDATES 8C "26 October 1985"
+.UC 4
+.SH NAME
+mkgrdates \- Make the newsgroup creation date file
+for the NNTP server
+.SH SYNOPSIS
+.B /usr/spool/news/lib/mkgrdates
+.SH DESCRIPTION
+.I Mkgrdates
+maintains the newsgroup creation date file for the
+Network News Transfer Protocol server (which uses
+the newsgroup creation date file for the NEWGROUPS
+command).  When executed,
+.I mkgrdates
+goes through the active file
+(usually
+.IR /usr/spool/news/lib/active )
+and creates a file
+(usually
+.IR /usr/spool/news/lib/groupdates )
+containing the creation dates and times of the
+newsgroups in the active file.  The
+.I groupdates
+file has one line for each newsgroup, in the form
+``date newsgroup'' where ``date'' is the newsgroup's
+creation time, in seconds since midnight, Jan. 1,
+1970, GMT,
+and ``newsgroup'' is the name of the newsgroup in question.
+.PP
+Since generating the
+.I groupdates
+file is expensive, when
+.I mkgrdates
+is run it creates a file (usuaully
+.IR /usr/spool/news/lib/mkgdstats )
+containing the length, in bytes, of the active file.
+The next time
+.I mkgrdates
+is invoked, it compares the contents of the
+.I mkgdstats
+file against the length of the active file, and
+exits if these lengths are the same.  If the
+lengths are not the same, it rebuilds the
+.I groupdates
+file, and sets the
+.I mkgdstats
+file to the appropriate value.
+This scheme avoids a fair amount of what would
+essentially be wasted computing.
+.PP
+.I Mkgrdates
+should be run once or twice a day by an entry in
+.I /usr/lib/crontab
+.SH BUGS
+It would be good to get rid of this and have the
+news server do it, but nobody seems to be able
+to come up with an easy, inexpensive way.
+I'm certainly open to suggestions.
+.SH AUTHOR
+Phil Lapsley
+.SH SEE ALSO
+cron(1),
+nntpd(8C)

@@ -1,0 +1,245 @@
+Brian,
+
+     Here are the differences I see between your and my server.
+I've included proposed changes, some to yours, some to mine.  If
+we could get agreed on a standard by this weekend, which may be
+ambitious, it would be really good.
+
+     BTW, is the stuff I'm ">" including the current version?
+
+						Phil
+
+
+> The whole idea is to keep the server as small and (computationally)
+> inexpensive as possible.  Reading news on our system is not a super
+> popular pastime, but a central machine could still get rather heavily
+> loaded if 5 people per system were to decide that it was time to catch
+> up on the latest happenings.
+
+Agreed.  This is, I feel, an implementation detail, although it
+should be reflected in the protcol -- i.e., the protocol should
+not be bulky or hard to implement.  I don't think we suffer from
+this problem.
+
+> No doubt I'll refine it further as I try to interface more client stuff
+> to it.  Right now it seems to have enough to start making a version of
+> 'readnews' work with it.
+
+This is a matter of philosophy: I feel it's very important to make the
+server as easy to interface with existing programs as possible, but
+still be general enough to provide for future service.
+
+General differences:  Let's try to make this as SMTP-like as
+possible.  One thing I noticed is that you put "."'s in front of
+your reply codes.  SMTP doesn't do this, and I can't think of
+why you do it.  Am I missing something? 
+
+As far as variable length messages go, there are two possibilities:
+The one I am using currently is the
+
+	xxx-Start of text, look out /* assumed to be one line */
+	xxx-blah blah
+	xxx-blah blah
+	xxx-blah blah
+	xxx-blah blah
+	xxx end of text (no dash)
+
+I don't really like this, since it means we strip off four characters per
+line, which slows things down that much.
+
+The second possibility is that we say
+
+	xxx-Start of text, look out	/* again, a one liner */
+	Text goes
+	here,
+	with a period on a
+	line by itself, just
+	like SMTP.
+	.
+	xxx End of text		/* Maybe we don't need this message */
+
+As usual, any line in the message which starts with a period we
+simply duplicate -- that it, we put an extra period in front,
+and then the client strips it off.  If there is only one period,
+it must be EOF.
+
+How say you to this?
+
+>      Commands consist of an UPPERCASE command word, some  of
+> which  are  followed  by parameters.  All input is in ASCII,
+> terminated in CR-LF.
+
+Very much agreed, especially the CF-LF stuff.  It's fairly
+trivial to accept lower case, I think you already have hacked
+your daemon to do this.  But the std should probably call for
+upper case.
+
+> BODY      No parameters.  Displays the body  (text)  of  the
+>           current article.
+
+Same here, except we differ on arguments.  All of my commands
+like BODY, HEADER, etc. require an article number as an argument.
+I think this is better because it's more what readnews/rn will
+want: They have an "open article" function, with a numeric
+argument.  I don't think we need the "next" function, since it
+hides the article numbers from the client, and the client, if
+it is an existing program, will want to worry about article numbers.
+
+> GET nnn   (nnn) is the numeric  id  of  an  article  in  the
+>           current  newsgroup.   It  must  be chosen from the
+>           range of articles provided when the newsgroup  was
+>           selected.
+
+This is my "ARTICLE" command.
+
+> GROUP ggg (ggg) is the name of the newsgroup to be selected.
+
+Same here.
+
+> HEAD      No parameters.  Displays the header lines  of  the
+>           current article.
+
+Same here, but with parameters.
+
+> LAST      No parameters.  Backs up to the  previous  article
+>           in  the  current newsgroup.  If already positioned
+>           at  the  beginning  of  the  newsgroup,  an  error
+>           results.
+
+No equivalent here.  Do we need this?  Again, rn/readnews will
+take care of this internally.
+
+> NEXT      No parameters.  Advances to the  next  article  in
+>           the current newsgroup.  If no more articles remain
+>           in the current group, an error results.
+
+Same comment as for LAST.
+
+> QUIT      No  parameters.   The  server  process  exits  and
+>           closes the connection to the client.
+
+Great minds think alike.
+
+Some commands I didn't see in yours:
+
+ACTIVE	- transmit the active file in normal format.  By normal,
+	  I mean normal, 4.2 UNIX active file format.
+
+POST	- User sends an article, followed by a period on a line
+	  by itself.  This is passed to inews, which deals with
+	  it.  After inews has dealt with it, daemon returns
+	  a reply code.
+
+NEWSINCE "date"  List the new articles, since "date", where
+	 date is a long integer containing the number of seconds
+	 since Jan 1, 1970.  Should this be GMT?
+
+BOUNDS	- Show high and low message number in current newsgroup.
+	  You provide this with your "GROUP" command, and I should
+	  too.
+
+>      Responses are of two kinds.   Command/status  responses
+> are distinguished by having a single period (.) as the first
+> character of the line.  Text lines have no period, or if the
+> text contained a period in the original, that period is dou-
+> bled.  The intention is that text messages will be displayed
+> directly  on  the  user's  terminal  (or  processed  through
+> 'more'), whereas command/status  responses  will  be  inter-
+> preted  by the client program before any possible display is
+> done.
+
+As I said above, I move we go to this sort of thing, but
+have a single period, so as to be like SMTP.  I love conformity.
+
+>      Response codes are returned in a command/status  return
+> line  (i.e.,  they  are  prefixed  with a period). These are
+> status reports or command  responses  from  the  daemon  and
+> indicate  the response to the last command received from the
+> client.
+
+You have your status messages much more thought out than I
+do, since I sort of assigned them randomly/sequentially.
+Also, has it been your experience that only 200/500 series gets used?
+
+> 1xx  Informative  messages  -  no  significance  except   to
+>      humans.   Probably  these  should  be  displayed to the
+>      user.
+> 
+> 2xx  Last command was ok and  is  being  performed.   Mostly
+>      just indicate that you asked the daemon to do something
+>      reasonable and it did it.
+> 
+> 3xx  Continue with the  command.   (used  on  commands  that
+>      expect  to  receive more data) You should then send the
+>      rest of the data.
+> 
+> 4xx  Couldn't do your  last  command.   Perhaps  you  simply
+>      specified a non-existing article or something.
+> 
+> 5xx  Couldn't do your last command.   Serious  error  -  the
+>      command  was invalid, or was missing parameters, or the
+>      daemon program faulted. This means that  something  was
+>      wrong  enough  with your command that current status is
+>      in  doubt.  Perhaps  one  or  more  pointers  has  been
+>      changed.  Don't  proceed  until you have re-established
+>      the  environment  (newgroup/article  selection).    (An
+>      exception  is  the  "500  bad  command" response - your
+>      entire command was flushed and ignored.)
+> 
+> The next digit in the code indicates the  function  response
+> category.
+> 
+> x0x  Client setup and miscellaneous messages
+> 
+> x1x  Newsgroup selection
+> 
+> x2x  Article selection
+> 
+> x3x  Article display
+> 
+> x4x  <reserved>
+> 
+> x5x  Posting
+> 
+> 
+> 
+> The following response codes are to be expected.
+
+Following SMTP, it should be possible to write a "dumb" client which
+doesn't look for a "211", but rather, a "2" in response to a
+"GROUP" command, and it knows what order the arguments are in.
+
+>         200 news server ready
+>         201 news server closing connection
+>         211 %d %d %d %s
+>                 (number of articles in group,
+>                 first article number in the group,
+>                 last article number in the group,
+>                 name of the group.
+>         215 active start
+>         216 active end
+>         221 %d %d %d %d %s article retrieved
+>                 (article number,
+>                 first article number in the group,
+>                 last article number in the group,
+>                 unique article id (usually the inode number)
+>         230 head start
+>         231 head end
+>         235 body start
+>         236 body end
+>         250 article posted ok
+>         354 send article to be posted. End with <CRLF>.<CRLF>
+>         411 no such news group
+>         412 empty newsgroup
+>         413 more than MAXART articles; others suppressed
+>         415 no active file
+>         421 No next article in this group
+>         422 No previous article in this group
+>         422 no such article number in this group
+>         431 no file
+>         432 no file
+>         500 bad command
+>         521 article file missing
+>         522 article file missing - unable to stat
+>         550 can't start inews for posting
+> 

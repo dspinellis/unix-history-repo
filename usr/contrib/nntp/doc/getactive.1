@@ -1,0 +1,31 @@
+.TH GETACTIVE 1 "1 September 1985"
+.UC 4
+.SH NAME
+getactive \- retrieve the active file from the remote news server
+.SH SYNOPSIS
+.B /usr/local/lib/rn/getactive filename
+.SH DESCRIPTION
+.I Getactive
+retrieves the newsgroup ``active file'' (which contains
+the list of all known newsgroups and their high/low message
+numbers) from the news server on a remote machine and
+places it in
+.I filename.
+.PP
+The normal use is in support of shell scripts (such as
+.I newsgroups
+or
+.IR newsetup )
+which have been taken from existing software, such
+as
+.I rn.
+When used, the file the active file is retrieved into is
+usually something like
+.IR /tmp/active.$$ ,
+and should be deleted before the shell script exits.
+.SH BUGS
+The pathname shown in the synopsis is system-specific
+and will depend on how you install
+.I rn.
+.SH AUTHOR
+Phil Lapsley

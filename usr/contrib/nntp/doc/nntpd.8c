@@ -1,0 +1,169 @@
+.TH NNTPD 8C "5 March 1986"
+.UC 4
+.SH NAME
+nntpd \- Network News Transfer Protocol server
+.SH SYNOPSIS
+.B /etc/nntpd
+.br
+.I (with /etc/inetd, see below)
+.SH DESCRIPTION
+.I Nntpd
+is a TCP based server which supports the proposed standard
+for the stream based transmission of network
+news articles.
+It can be used both by ``end user'' clients, and by
+``system'' clients which transport news between machines.
+.I Nntpd
+operates at the port indicated in the ``nntp'' service
+entry in
+.I /etc/services.
+The port number assigned by the Network Information Center
+for this service is 119.
+.PP
+.I Nntpd
+can operate either as a stand-alone server, or as a
+server under
+.IR inetd (1).
+For stand-alone use,
+.I nntpd
+must be compiled with the -DALONE option, and is
+invoked as mentioned in the synopsis above.
+Under
+.IR inetd (1),
+the appropriate entry must be made in
+.I /etc/inetd.conf,
+and the server must be compiled without the
+-ALONE flag.
+.PP
+The server handles clients on a one to one basis,
+forking to take care of clients as they request
+connections.  Each server changes its current
+directory to the news spool directory (usually
+.I /usr/spool/news)
+and then executes commands from its client.
+These commands are described in ARPA Internet
+RFC 977, ``Network News Transfer Protocol;
+A Proposed Standard for the Stream Based Transmission
+of News Articles.''
+.PP
+Since the server forks once for
+every client connection, sites may choose to limit
+the hosts which can query the server for news.
+Further, some sites may not wish to allow
+certain hosts to post news.
+Such limiting can be accomplished through an
+access file, usually
+.I /usr/spool/news/lib/nntp_access.
+This file consists of three fields in the following form:
+.sp
+.nf
+host/net	read/xfer/no	post/no
+.fi
+.sp
+where
+.f
+.I host
+is a valid host name as found in
+.I /etc/services,
+.I net
+is a valid network name as found in
+.I /etc/networks,
+.I ``read'',
+.I ``xfer'',
+.I ``post'',
+and
+.I ``no''
+are the corresponding string constants.
+Anything to the right of a `#' character
+is taken to be a comment and is ignored.
+.PP
+The presence of an entry in this file
+implies that specific host, or
+hosts on the named network, are
+allowed to read news, but not to post news.
+The absence of a entry corresponding
+to a client's host or network implies that the client
+is not allowed to read or post news.
+However, default permissions can be set by having the
+first entry in the file be a host/net name of
+``default''.
+If this is used, ``default'' must be the
+first entry.
+.PP
+The field to the right of the host/net entry
+specifies the read access of the host/net in
+question.
+If the entry is ``read,'' matching
+hosts can both read and transfer news.
+If the entry is ``xfer,'' however,
+matching hosts can only execute transfer
+commands (such as NEWNEWS, NEWGROUPS, IHAVE,
+and ARTICLE with message-id parameters).
+The string ``no'' denies read permission
+of any kind to a matching host.
+.PP
+The next field to the right defines
+whether a matching host has post
+permission: if the field is ``post''
+then the POST command is permitted; if
+the field is ``no,'' then matching clients
+are not allowed to post news.
+.PP
+.I Nntpd
+is selective and searches for a ``best match''
+when searching this file to check its client's
+permissions.  That is, a specific host name
+match is used over a
+client being a member of a specified net.
+.I Nntpd
+does not know about subnets.
+.SH EXAMPLE ACCESS FILE
+.PP
+.sp
+.nf
+#
+# Example access file
+#
+default		xfer	no
+ucb-ether	read	post
+shadow		no	no
+.fi
+.sp
+.PP
+The above file would set a default condition allowing
+transfer of news, but no reading or posting.
+Hosts on the network ``ucb-ether'' would be able to
+read and post news.
+Finally, the host ``shadow'' would not be allowed
+to read or post news.
+.SH
+NEWGROUPS
+.PP
+In order to efficiently implement the NEWGROUPS command, the
+server expects to find a file, typically
+.I /usr/spool/news/lib/groupdates,
+which has a list of active newsgroups and when they
+were created.
+.PP
+This file is created and updated a certain number of times a day
+by the program
+.IR mkgrdates (8C),
+which scans the active file and decides whether or not
+to update the ``groupdates'' file.  This program
+is not spawned by
+.I nntpd,
+and must be run by
+.IR cron (1).
+.SH AUTHOR
+Phil Lapsley (ARPA: phil@berkeley.edu; UUCP: ...!ucbvax!phil)
+.SH SEE ALSO
+cron(1),
+inetd(8C),
+mkgrdates(8C),
+mkhistdates(8C)
+.PP
+RFC 977, ``Network News Transfer Protocol:
+A Proposed Standard for the Stream Based Transmission
+of News Articles.''
+.SH BUGS
+Should understand subnetworks in the access file.
