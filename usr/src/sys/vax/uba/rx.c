@@ -1,4 +1,4 @@
-/*	rx.c	4.9	83/03/29	*/
+/*	rx.c	4.10	83/04/04	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -8,10 +8,6 @@
  */
 
 /*
- * TODO:
- *    - Make it possible to access blocks containing less than
- *	512 bytes properly.
- *
  * 	Note: If the drive subsystem is
  * 	powered off at boot time, the controller won't interrupt!
  */
@@ -44,7 +40,7 @@ struct	rx_ctlr {
 #define	RXS_FORMAT	5	/* format started */
 #define	RXS_RDSTAT	6	/* status read started */
 #define	RXS_RDERR	7	/* error read started */
-#define RXS_IDLE	8	/* device is idle */
+#define	RXS_IDLE	8	/* device is idle */
 	u_short	rxc_rxcs;	/* extended error status */
 	u_short	rxc_rxdb;
 	u_short	rxc_rxxt[4];
@@ -72,6 +68,9 @@ struct rx_softc {
 				/* doing multisector transfers */
 	long	sc_bcnt;	/* save total transfer count for */
 				/* multisector transfers */
+	int	sc_offset;	/* raw mode kludge: gives the offset into */
+				/* a block of DEV_BSIZE for the current */
+				/* request */
 } rx_softc[NRX];
 
 struct rxerr {
@@ -90,7 +89,8 @@ struct uba_driver fxdriver =
 
 int	rxwstart;
 #define	RXUNIT(dev)	(minor(dev)>>3)
-#define MASKREG(reg)	(reg&0xffff)
+#define	MASKREG(reg)	(reg&0xffff)
+#define NDPC	2				/* # drives per controller */
 
 /* constants related to floppy data capacity */
 #define	RXSECS	2002				/* # sectors on a floppy */
@@ -120,7 +120,7 @@ rxprobe (reg)
 	return (sizeof (*rxaddr));
 }
 
-rxslave(ui,reg)
+rxslave(ui, reg)
 	struct uba_device *ui;
 	caddr_t reg;
 {
@@ -160,8 +160,8 @@ rxopen(dev, flag)
 	sc->sc_csbits |= minor(dev) & RXF_DBLDEN ? RX_DDEN : RX_SDEN;
 	rxc->rxc_tocnt = 0;
 	if (rxwstart == 0) {
-		rxtimo(ctlr);				/* start watchdog */
 		rxwstart++;
+		rxtimo();				/* start watchdog */
 	}
 	return (0);
 }
@@ -172,36 +172,45 @@ rxclose(dev, flag)
 	int flag;
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
+	int i;
 
 	sc->sc_flags &= ~RXF_OPEN;
 	sc->sc_csbits = 0;
-	rxwstart = 0;
+	for (i=0; i<NFX*NDPC; i++) {
+		if (rx_softc[i].sc_flags&RXF_OPEN)
+			break;
+	}
+	if (i == NFX*NDPC)
+		rxwstart = 0;			/* Turn off watchdog if all */
+						/* devices are closed */
 }
 
 rxstrategy(bp)
 	register struct buf *bp;
 {
 	struct uba_device *ui;
-	register struct uba_ctlr *um;
 	register struct buf *dp;
 	struct rx_softc *sc;
 	int s, unit = RXUNIT(bp->b_dev);
 
+	if (unit >= NRX)
+		goto bad;
 	ui = rxdinfo[unit];
 	sc = &rx_softc[unit];
 	if (ui == 0 || ui->ui_alive == 0) 
 		goto bad;
-	um = ui->ui_mi;
 	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
 		goto bad;
 	s = spl5();
-	dp = &rxutab[ui->ui_unit];
-	disksort(dp, bp);
-	rxustart(ui);
+	dp = &rxutab[unit];
 	bp->b_resid = bp->b_bcount;
-	sc->sc_uaddr = bp->b_un.b_addr;
-	sc->sc_bcnt = bp->b_bcount;
-	rxstart(um);
+	disksort(dp, bp);
+	if (dp->b_active == 0) {
+		rxustart(ui);
+		bp = &ui->ui_mi->um_tab;
+		if (bp->b_actf && bp->b_active == 0)
+			rxstart(ui->ui_mi);
+	}
 	splx(s);
 	return;
 
@@ -212,27 +221,21 @@ bad:	bp->b_flags |= B_ERROR;
 
 /*
  * Unit start routine.
- * Put this unit on the ready queue for the controller,
- * unless it is already there.
+ * Put this unit on the ready queue for the controller
  */
 rxustart(ui)
 	register struct uba_device *ui;
 {
-	struct buf *dp;
-	struct uba_ctlr *um;
-
-	dp = &rxutab[ui->ui_unit];
-	um = ui->ui_mi;
-
-	if (!dp->b_active) {
-		dp->b_forw = NULL;
-		if (um->um_tab.b_actf == NULL)
-			um->um_tab.b_actf = dp;
-		else
-			um->um_tab.b_actl->b_forw = dp;
-		um->um_tab.b_actl = dp;
-		dp->b_active++;
-	}
+	struct buf *dp = &rxutab[ui->ui_unit];
+	struct uba_ctlr *um = ui->ui_mi;
+	
+	dp->b_forw = NULL;
+	if (um->um_tab.b_actf == NULL)
+		um->um_tab.b_actf = dp;
+	else
+		um->um_tab.b_actl->b_forw = dp;
+	um->um_tab.b_actl = dp;
+	dp->b_active++;
 }
 /*
  * Sector mapping routine.
@@ -265,7 +268,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_bcnt - bp->b_resid )) / NBPS;
+	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_offset - bp->b_resid ))/NBPS;
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -286,7 +289,13 @@ rxmap(bp, psector, ptrack)
 }
 
 /*
- * Controller start routine
+ * Controller start routine.
+ * Start a new transfer or continue a multisector
+ * transfer. If this is a new transfer (dp->b_active == 1)
+ * save the start address of the data buffer and the total
+ * byte count in the soft control structure. These are
+ * restored into the buffer structure when the transfer has
+ * been completed, before calling 'iodone'.
  */
 rxstart(um)
 	register struct uba_ctlr *um;
@@ -306,9 +315,15 @@ loop:
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
-	um->um_tab.b_active++;
 	unit = RXUNIT(bp->b_dev);
 	sc = &rx_softc[unit];
+	if (dp->b_active == 1) {
+		sc->sc_uaddr = bp->b_un.b_addr;
+		sc->sc_bcnt = bp->b_bcount;
+		sc->sc_offset += sc->sc_bcnt;
+		dp->b_active++;
+	}
+	um->um_tab.b_active++;
 	rxaddr = (struct rxdevice *)um->um_addr;
 	rxc = &rx_ctlr[um->um_ctlr];
 	bp->b_bcount = bp->b_resid;
@@ -317,7 +332,7 @@ loop:
 	rxc->rxc_tocnt = 0;
 	if (rxaddr->rxcs == 0x800) {
 		/*
-		 * Simulated check for 'volume valid', check
+		 * 'Volume valid'?, check
 		 * if the drive unit has been powered down
 		 */
 		rxaddr->rxcs = RX_INIT;
@@ -404,7 +419,7 @@ rxintr(ctlr)
 		bp->b_dev, rxc->rxc_state, rxaddr->rxcs);
 #endif
 	if ((rxaddr->rxcs & RX_ERR) &&
-	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
+	    (rxc->rxc_state != RXS_RDSTAT) && (rxc->rxc_state != RXS_RDERR))
 		goto error;
 	switch (rxc->rxc_state) {
 
@@ -430,9 +445,9 @@ rxintr(ctlr)
 			sc->sc_flags &= ~RXF_USEWDDS;
 		} else
 			rxaddr->rxcs = RX_WRITE | sc->sc_csbits;
+		rxmap(bp, &sector, &track);
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
-		rxmap(bp, &sector, &track);
 		rxaddr->rxdb = sector;
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
@@ -458,16 +473,15 @@ rxintr(ctlr)
 		goto done;
 
 	case RXS_RDERR:
-		rxmap(bp, &sector, &track);
-		printf("rx%d: hard error, lsn%d (trk %d psec %d) ",
-			unit, bp->b_blkno * (NBPS / DEV_BSIZE),
-			track, sector);
-		printf("cs=%b, db=%b, err=%x\n", MASKREG(er->rxcs), 
-			RXCS_BITS, MASKREG(er->rxdb), RXES_BITS, 
-			MASKREG(er->rxxt[0]));
-		printf("errstatus: 0x%x, 0x%x, 0x%x, 0x%x\n", er->rxxt[0],
-			er->rxxt[1], er->rxxt[2], er->rxxt[3]);
 		bp = bp->b_back;		/* kludge, see 'rderr:' */
+		rxmap(bp, &sector, &track);
+		printf("rx%d: hard error, trk %d psec %d ",
+			unit, track, sector);
+		printf("cs=%b, db=%b, err=", MASKREG(er->rxcs), 
+			RXCS_BITS, MASKREG(er->rxdb), RXES_BITS);
+		printf("0x%x, 0x%x, 0x%x, 0x%x\n", MASKREG(er->rxxt[0]),
+			MASKREG(er->rxxt[1]), MASKREG(er->rxxt[2]), 
+			MASKREG(er->rxxt[3]));
 		goto done;
 
 	default:
@@ -535,7 +549,9 @@ rderr:
 	 * Read the extended error status information.
 	 * Before doing this, save the current CS and DB register values,
 	 * because the read error status operation may modify them.
-	 * Insert buffer with request at the head of the queue.
+	 * Insert buffer with request at the head of the queue, and
+	 * save a pointer to the data buffer, so it can be restored
+	 * when the read error status operation is finished.
 	 */
 	bp->b_error = EIO;
 	bp->b_flags |= B_ERROR;
@@ -548,10 +564,10 @@ rderr:
 	bp->b_un.b_addr = (caddr_t)er->rxxt;
 	bp->b_bcount = sizeof (er->rxxt);
 	bp->b_flags &= ~(B_DIRTY|B_UAREA|B_PHYS|B_PAGET);
-	if (um->um_tab.b_actf->b_actf == NULL)
-		um->um_tab.b_actf->b_actl = bp;
-	bp->b_forw = um->um_tab.b_actf->b_actf;
-	um->um_tab.b_actf->b_actf = bp;
+	if (dp->b_actf == NULL)
+		dp->b_actl = bp;
+	bp->b_forw = dp->b_actf;
+	dp->b_actf = bp;
 	rxc->rxc_state = RXS_RDERR;
 	um->um_cmd = RX_RDERR;
 	(void) ubago(ui);
@@ -568,6 +584,7 @@ done:
 	bp->b_un.b_addr = sc->sc_uaddr;
 	bp->b_resid = 0;
 	bp->b_bcount = sc->sc_bcnt;
+	sc->sc_offset = 0;	/* move this statement to a more appropriate place! */
 	iodone(bp);
 	rxc->rxc_state = RXS_IDLE;
 	um->um_tab.b_actf = dp->b_forw;
@@ -575,43 +592,49 @@ done:
 	dp->b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
 	/*
-	 * If this controller has more work to do,
+	 * If this unit has more work to do,
 	 * start it up right away
 	 */
-	if (um->um_tab.b_actf)
-		rxstart(um);
+	if (dp->b_actf)
+		rxustart(ui);
+
+	rxstart(um);
 }
 
 /*ARGSUSED*/
-#ifdef notdef
-minrxphys(bp)
-	struct buf *bp;
-{
-	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
-
-	if (bp->b_bcount > NBPS)
-		bp->b_bcount = NBPS;
-}
-#endif
 
 /* 
- * Wake up every second and if an interrupt is pending
- * but nothing has happened increment a counter.
+ * Wake up every second, check if an interrupt is pending
+ * on one of the present controllers.
+ * if it is, but nothing has happened increment a counter.
  * If nothing happens for RX_MAXTIMEOUT seconds, 
- * call the interrupt routine (hoping that it will 
- * detect an error condition in the controller)
+ * call the interrupt routine with the 'dead' controller
+ * as an argument, thereby simulating an interrupt.
+ * If this occurs, the error bit will probably be set
+ * in the controller, and the interrupt routine will
+ * be able to recover ( or at least report) the error
+ * appropriately.
  */
-rxtimo(ctlr)
-	int ctlr;
+rxtimo()
 {
-	register struct rx_ctlr *rxc = &rx_ctlr[ctlr];
+	register struct rx_ctlr *rxc;
+	register struct uba_ctlr *um;
+	int i;
 
-	if (rxwstart > 0) 
-		timeout(rxtimo, (caddr_t)ctlr, hz);
-	if (++rxc->rxc_tocnt < RX_MAXTIMEOUT)
-		return;
-	printf("rx: timeout\n");
-	rxintr(ctlr);
+	if (rxwstart > 0) {
+		timeout(rxtimo, (caddr_t)0, hz);
+		for (i=0; i<NFX; i++) {
+			um = rxminfo[i];
+			if (um == 0 || um->um_alive ||	
+			    um->um_tab.b_active == 0)
+				continue;
+			rxc = &rx_ctlr[i];
+			if (++rxc->rxc_tocnt < RX_MAXTIMEOUT) {
+				printf("fx%d: timeout\n", i);
+				rxintr(i);
+			}
+		}
+	}
 }
 
 rxreset(uban)
@@ -636,22 +659,18 @@ rxreset(uban)
 	}
 }
 
-/*
- * make the world believe this is a 
- * 512b/s device
- */
-
 rxread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	int unit = RXUNIT(dev) ;
+	int unit = RXUNIT(dev);
 	struct rx_softc *sc = &rx_softc[unit];
 
 	if (uio->uio_offset + uio->uio_resid > RXSIZE)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
+	sc->sc_offset = uio->uio_offset % DEV_BSIZE;
 	return (physio(rxstrategy, &rrxbuf[unit], dev, B_READ, minphys, uio));
 }
 
@@ -666,6 +685,7 @@ rxwrite(dev, uio)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
+	sc->sc_offset = uio->uio_offset % DEV_BSIZE;
 	return(physio(rxstrategy, &rrxbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
