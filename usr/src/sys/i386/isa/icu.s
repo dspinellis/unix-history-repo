@@ -1,20 +1,16 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (C) 1989,90 W. Jolitz
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)icu.s	7.4 (Berkeley) %G%
+ *	@(#)icu.s	7.5 (Berkeley) %G%
  */
 
-/*
- * AT/386
- * Vector interrupt control section
- * Copyright (C) 1989,90 W. Jolitz
- */
 
 	.data
 	.globl	_imen

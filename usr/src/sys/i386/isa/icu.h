@@ -5,14 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)icu.h	5.8 (Berkeley) %G%
- */
-
-/*
- * AT/386 Interrupt Control constants
- * W. Jolitz 8/89
+ *	@(#)icu.h	5.9 (Berkeley) %G%
  */
 
 #ifndef	__ICU__
