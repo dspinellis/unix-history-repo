@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)crl.c	1.1 (Berkeley) %G%
+ *	@(#)crl.c	1.2 (Berkeley) %G%
  */
 /*
  * TO DO (tef  7/18/85):
@@ -84,8 +84,10 @@ crloperation(rw, uio)
 	error = 0;
 	while ((i = imin(CRLBYSEC, uio->uio_resid)) > 0) {
 		bp->b_blkno = uio->uio_offset>>9;
-		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0x1FF) != 0)
-			return (EIO);
+		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0x1FF) != 0) {
+			error = EIO;
+			break;
+		}
 		if (rw == UIO_WRITE) {
 			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
 			if (error)
