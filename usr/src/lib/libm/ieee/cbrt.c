@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 1.2 (ucb.elefunt) %G%";
+"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* kahan's cube root (53 bits IEEE double precision)
@@ -32,7 +32,7 @@ static char sccsid[] =
  * On a National machine, it has different ordering; therefore, this code 
  * must be compiled with flag -DNATIONAL. 
  */
-#ifndef VAX
+#if (!defined(VAX)&&!defined(TAHOE))
 
 static unsigned long B1 = 715094163, /* B1 = (682-0.03306235651)*2**20 */
 	             B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
