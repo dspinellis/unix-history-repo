@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.8 (Berkeley) %G%
+.\"	@(#)0.t	6.9 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -41,6 +41,16 @@
 .bd S B 3
 .EH 'SMM:1-%''Installing and Operating \*(4B UNIX'
 .OH 'Installing and Operating \*(4B UNIX''SMM:1-%'
+.de Sh
+.NH \\$1
+\\$2
+.nr PD .1v
+.XS \\n%
+.ta 0.6i
+\\*(SN	\\$2
+.XE
+.nr PD .3v
+..
 .TL
 Installing and Operating \*(4B UNIX
 .br
@@ -92,3 +102,4 @@ shutdown and startup, filesystem backup procedures,
 resource control, performance monitoring, and procedures for recompiling
 and reinstalling system software.
 .AE
+.bp +3
