@@ -16,72 +16,74 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)strchr.s	5.2 (Berkeley) %G%"
+	.asciz "@(#)strchr.s	5.3 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
-
-#ifdef notdef
-_sccsid:.asciz	"@(#)index.s	5.4 (Berkeley) 5/25/88"
-#endif
 
 /*
  * Find the first occurence of c in the string cp.
  * Return pointer to match or null pointer.
  *
  * char *
- * index(cp, c)
+ * strchr(cp, c)
  *	char *cp, c;
  */
 #include "DEFS.h"
 
+	.lcomm	tbl,256
+
 ENTRY(strchr, 0)
-	movq	4(ap),r1	# r1 = cp; r2 = c
-	tstl	r2		# check for special case c == '\0'
-	bneq	2f
+	movzwl	$65535,r4	/* handy constant */
+	movq	4(ap),r1	/* r1 = cp; r2 = c */
+	movzbl	r2,r2
+	beql	Lzero		/* special case for c == '\0' */
+
+/*
+ * Fancy scanc version.  Alas, it is not reentrant.
+ */
+	movab	tbl,r3		/* r3 = base of table */
+	bbss	$0,(r3),Lreent	/* ensure not reentering */
+	movab	(r3)[r2],r5	
+	incb	(r5)		/* mark both '\0' and c */
+0:
+	scanc	r4,(r1),(r3),$1	/* look for c or '\0' */
+	beql	0b		/* still looking */
+	movl	r1,r0		/* return whatever we found */
+	tstb	(r0)
+	bneq	1f		#	unless it was '\0':
+	clrl	r0		#	then return NULL
 1:
-	locc	$0,$65535,(r1)	# just find end of string
-	beql	1b		# still looking
-	movl	r1,r0		# found it
-	ret
-2:
-	moval	tbl,r3		# r3 = address of table
-	bbss	$0,(r3),5f	# insure not reentering
-	movab	(r3)[r2],r5	# table entry for c
-	incb	(r5)
-	movzwl	$65535,r4	# fast access
-3:
-	scanc	r4,(r1),(r3),$1	# look for c or '\0'
-	beql	3b		# still looking
-	movl	r1,r0		# return pointer to char
-	tstb	(r0)		#    if have found '\0'
-	bneq	4f
-	clrl	r0		# else return 0
-4:
-	clrb	(r5)		# clean up table
+	clrb	(r5)		/* clean up table */
 	clrb	(r3)
 	ret
 
-	.data
-tbl:	.space	256
-	.text
+/*
+ * Special case for \0.
+ */
+Lzero:
+	locc	r2,r4,(r1)	/* just find end of string */
+	beql	Lzero		/* still looking */
+	movl	r1,r0		/* found it */
+	ret
 
 /*
- * Reentrant, but slower version of index
+ * Slower reentrant version is two two-step searches.  The first
+ * phase runs until we know where the string ends; it locates the
+ * first occurrence of c within a 65535-byte block.  If we find
+ * the end of the string first, we switch to the second phase,
+ * were we look only up to the known end of string.
  */
-5:
+Lreent:
+0:	/* first phase */
 	movl	r1,r3
-6:
-	locc	$0,$65535,(r3)	# look for '\0'
-	bneq	7f
-	locc	r2,$65535,(r3)	# look for c
-	bneq	8f
-	movl	r1,r3		# reset pointer and ...
-	jbr	6b		# ... try again
-7:
-	subl3	r3,r1,r4	# length of short block
-	incl	r4		# +1 for '\0'
-	locc	r2,r4,(r3)	# look for c
-	bneq	8f
+	locc	$0,r4,(r3)	/* look for '\0' */
+	bneq	1f
+	locc	r2,r4,(r3)	/* look for c */
+	beql	0b		/* not found: reset pointer and loop */
+	movl	r1,r0		/* found: return it */
 	ret
-8:
-	movl	r1,r0		# return pointer to char
-	ret
+1:	/* second phase */
+	subl3	r3,r1,r0	/* length of short block */
+	locc	r2,r0,(r3)	/* look for c */
+	beql	2f		/* not found: return NULL */
+	movl	r1,r0
+2:	ret
