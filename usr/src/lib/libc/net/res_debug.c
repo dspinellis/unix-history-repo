@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -275,6 +275,14 @@ p_rr(cp, msg, file)
 		cp = p_cdname(cp, msg, file);
 		break;
 
+	case T_TXT:
+		if (n = *cp++) {
+			fprintf(file, "\tTEXT=%.*s\n", n, cp);
+			cp += n;
+		} else
+			fprintf(file, "\tTEXT=\"\"\n");
+		break;
+
 	case T_MINFO:
 		fprintf(file,"\trequests = ");
 		cp = p_cdname(cp, msg, file);
@@ -283,7 +291,6 @@ p_rr(cp, msg, file)
 		break;
 
 	case T_UINFO:
-	case T_TXT:
 		fprintf(file,"\t%s\n", cp);
 		cp += dlen;
 		break;
@@ -357,7 +364,7 @@ p_type(type)
 		return("A");
 	case T_NS:		/* authoritative server */
 		return("NS");
-	case T_CNAME:		/* connonical name */
+	case T_CNAME:		/* canonical name */
 		return("CNAME");
 	case T_SOA:		/* start of authority zone */
 		return("SOA");
@@ -416,8 +423,8 @@ p_class(class)
 	switch (class) {
 	case C_IN:		/* internet class */
 		return("IN");
-	case C_HS:		/* internet class */
-		return("HESIOD");
+	case C_HS:		/* hesiod class */
+		return("HS");
 	case C_ANY:		/* matches any class */
 		return("ANY");
 	default:
@@ -429,8 +436,8 @@ p_class(class)
 /*
  * Return a mnemonic for a time to live
  */
-char
-*p_time(value)
+char *
+p_time(value)
 	u_long value;
 {
 	int secs, mins, hours;
@@ -450,22 +457,21 @@ char
 		while (*++p);
 	}
 	if (hours) {
-		if (p != nbuf)
+		if (value)
 			*p++ = ' ';
 		(void)sprintf(p, "%d hour%s", PLURALIZE(hours));
 		while (*++p);
 	}
 	if (mins) {
-		if (p != nbuf)
+		if (value || hours)
 			*p++ = ' ';
 		(void)sprintf(p, "%d min%s", PLURALIZE(mins));
 		while (*++p);
 	}
-	if (secs) {
-		if (p != nbuf)
+	if (secs || ! (value || hours || mins)) {
+		if (value || hours || mins)
 			*p++ = ' ';
 		(void)sprintf(p, "%d sec%s", PLURALIZE(secs));
-		while (*++p);
 	}
 	return(nbuf);
 }
