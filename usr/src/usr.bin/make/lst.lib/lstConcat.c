@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lstConcat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lstConcat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -76,6 +76,8 @@ Lst_Concat (l1, l2, flags)
 	    list2->firstPtr->prevPtr = list1->lastPtr;
 	    if (list1->lastPtr != NilListNode) {
  		list1->lastPtr->nextPtr = list2->firstPtr;
+	    } else {
+		list1->firstPtr = list2->firstPtr;
 	    }
 	    list1->lastPtr = list2->lastPtr;
 	}
