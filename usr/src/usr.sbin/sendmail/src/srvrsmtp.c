@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.57 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.58 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.57 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.58 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -582,6 +582,10 @@ smtp(e)
 
 		  case CMDQUIT:		/* quit -- leave mail */
 			message("221 %s closing connection", MyHostName);
+
+			/* avoid future 050 messages */
+			Verbose = FALSE;
+
 			if (InChild)
 				ExitStat = EX_QUIT;
 			finis();
