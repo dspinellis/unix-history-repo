@@ -1,0 +1,198 @@
+
+
+
+QUOTA(2)	    UNIX Programmer's Manual		 QUOTA(2)
+
+
+
+NNAAMMEE
+     quota - manipulate disk quotas
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//qquuoottaa..hh>>
+
+     qquuoottaa((ccmmdd,, uuiidd,, aarrgg,, aaddddrr))
+     iinntt ccmmdd,, uuiidd,, aarrgg;;
+     cchhaarr **aaddddrr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The _q_u_o_t_a call manipulates disk quotas for file systems that
+     have had quotas enabled with _s_e_t_q_u_o_t_a(2).	The _c_m_d parameter
+     indicates a command to be applied to the user ID _u_i_d.  _A_r_g
+     is a command specific argument and _a_d_d_r is the address of an
+     optional, command specific, data structure that is copied in
+     or out of the system.  The interpretation of _a_r_g and _a_d_d_r is
+     given with each command below.
+
+     Q_SETDLIM
+	  Set disc quota limits and current usage for the user
+	  with ID _u_i_d.	_A_r_g is a major-minor device indicating a
+	  particular file system.  _A_d_d_r is a pointer to a struct
+	  dqblk structure (defined in <_s_y_s/_q_u_o_t_a._h>).  This call
+	  is restricted to the super-user.
+
+     Q_GETDLIM
+	  Get disc quota limits and current usage for the user
+	  with ID _u_i_d.	The remaining parameters are as for
+	  Q_SETDLIM.
+
+     Q_SETDUSE
+	  Set disc usage limits for the user with ID _u_i_d.  _A_r_g is
+	  a major-minor device indicating a particular file sys-
+	  tem.	_A_d_d_r is a pointer to a struct dqusage structure
+	  (defined in <_s_y_s/_q_u_o_t_a._h>).  This call is restricted to
+	  the super-user.
+
+     Q_SYNC
+	  Update the on-disc copy of quota usages.  _A_r_g is a
+	  major-minor device indicating the file system to be
+	  sync'ed.  If the _a_r_g parameter is specified as NODEV,
+	  all file systems that have disc quotas will be sync'ed.
+	  The _u_i_d and _a_d_d_r parameters are ignored.
+
+     Q_SETUID
+	  Change the calling process's quota limits to those of
+	  the user with ID _u_i_d.  The _a_r_g and _a_d_d_r parameters are
+	  ignored.  This call is restricted to the super-user.
+
+     Q_SETWARN
+	  Alter the disc usage warning limits for the user with
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+QUOTA(2)	    UNIX Programmer's Manual		 QUOTA(2)
+
+
+
+	  ID _u_i_d.  _A_r_g is a major-minor device indicating a par-
+	  ticular file system.	_A_d_d_r is a pointer to a struct
+	  dqwarn structure (defined in <_s_y_s/_q_u_o_t_a._h>).	This call
+	  is restricted to the super-user.
+
+     Q_DOWARN
+	  Warn the user with user ID _u_i_d about excessive disc
+	  usage.  This call causes the system to check its
+	  current disc usage information and print a message on
+	  the terminal of the caller for each file system on
+	  which the user is over quota.  If the user is under
+	  quota, his warning count is reset to MAX_*_WARN
+	  (defined in <_s_y_s/_q_u_o_t_a._h>).  If the _a_r_g parameter is
+	  specified as NODEV, all file systems that have disc
+	  quotas will be checked.  Otherwise, _a_r_g indicates a
+	  specific major-minor device to be checked.  This call
+	  is restricted to the super-user.
+
+RREETTUURRNN VVAALLUUEE
+     A successful call returns 0, otherwise the value -1 is
+     returned and the global variable _e_r_r_n_o indicates the reason
+     for the failure.
+
+EERRRROORRSS
+     A _q_u_o_t_a call will fail when one of the following occurs:
+
+     [EINVAL]	    The kernel has not been compiled with the
+		    QUOTA option.
+
+     [EINVAL]	    _C_m_d is invalid.
+
+     [ESRCH]	    No disc quota is found for the indicated
+		    user.
+
+     [EPERM]	    The call is priviledged and the caller was
+		    not the super-user.
+
+     [ENODEV]	    The _a_r_g parameter is being interpreted as a
+		    major-minor device and it indicates an
+		    unmounted file system.
+
+     [EFAULT]	    An invalid _a_d_d_r is supplied; the associated
+		    structure could not be copied in or out of
+		    the kernel.
+
+     [EUSERS]	    The quota table is full.
+
+SSEEEE AALLSSOO
+     setquota(2), quotaon(8), quotacheck(8)
+
+BBUUGGSS
+     There should be some way to integrate this call with the
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+
+
+
+
+QUOTA(2)	    UNIX Programmer's Manual		 QUOTA(2)
+
+
+
+     resource limit interface provided by _s_e_t_r_l_i_m_i_t(2) and
+     _g_e_t_r_l_i_m_i_t(2).
+
+     The Australian spelling of _d_i_s_k is used throughout the quota
+     facilities in honor of the implementors.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				3
+
+
+

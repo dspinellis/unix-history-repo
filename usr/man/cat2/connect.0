@@ -1,0 +1,132 @@
+
+
+
+CONNECT(2)	    UNIX Programmer's Manual	       CONNECT(2)
+
+
+
+NNAAMMEE
+     connect - initiate a connection on a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     ccoonnnneecctt((ss,, nnaammee,, nnaammeelleenn))
+     iinntt ss;;
+     ssttrruucctt ssoocckkaaddddrr **nnaammee;;
+     iinntt nnaammeelleenn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The parameter _s is a socket.  If it is of type SOCK_DGRAM,
+     then this call specifies the peer with which the socket is
+     to be associated; this address is that to which datagrams
+     are to be sent, and the only address from which datagrams
+     are to be received.  If the socket is of type SOCK_STREAM,
+     then this call attempts to make a connection to another
+     socket.  The other socket is specified by _n_a_m_e, which is an
+     address in the communications space of the socket.  Each
+     communications space interprets the _n_a_m_e parameter in its
+     own way.  Generally, stream sockets may successfully _c_o_n_n_e_c_t
+     only once; datagram sockets may use _c_o_n_n_e_c_t multiple times
+     to change their association.  Datagram sockets may dissolve
+     the association by connecting to an invalid address, such as
+     a null address.
+
+RREETTUURRNN VVAALLUUEE
+     If the connection or binding succeeds, then 0 is returned.
+     Otherwise a -1 is returned, and a more specific error code
+     is stored in _e_r_r_n_o.
+
+EERRRROORRSS
+     The call fails if:
+
+     [EBADF]		 _S is not a valid descriptor.
+
+     [ENOTSOCK]          _S is a descriptor for a file, not a
+			 socket.
+
+     [EADDRNOTAVAIL]	 The specified address is not available
+			 on this machine.
+
+     [EAFNOSUPPORT]	 Addresses in the specified address fam-
+			 ily cannot be used with this socket.
+
+     [EISCONN]		 The socket is already connected.
+
+     [ETIMEDOUT]	 Connection establishment timed out
+			 without establishing a connection.
+
+
+
+
+Printed 7/9/88		  May 22, 1986				1
+
+
+
+
+
+
+CONNECT(2)	    UNIX Programmer's Manual	       CONNECT(2)
+
+
+
+     [ECONNREFUSED]	 The attempt to connect was forcefully
+			 rejected.
+
+     [ENETUNREACH]	 The network isn't reachable from this
+			 host.
+
+     [EADDRINUSE]	 The address is already in use.
+
+     [EFAULT]		 The _n_a_m_e parameter specifies an area
+			 outside the process address space.
+
+     [EINPROGRESS]	 The socket is non-blocking and the con-
+			 nection cannot be completed immediately.
+			 It is possible to _s_e_l_e_c_t(2) for comple-
+			 tion by selecting the socket for writ-
+			 ing.
+
+     [EALREADY]          The socket is non-blocking and a previ-
+			 ous connection attempt has not yet been
+			 completed.
+
+     The following errors are specific to connecting names in the
+     UNIX domain.  These errors may not apply in future versions
+     of the UNIX IPC domain.
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named socket does not exist.
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [EACCES]	    Write access to the named socket is denied.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+SSEEEE AALLSSOO
+     accept(2), select(2), socket(2), getsockname(2)
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				2
+
+
+

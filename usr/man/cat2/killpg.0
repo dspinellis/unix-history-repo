@@ -1,0 +1,66 @@
+
+
+
+KILLPG(2)	    UNIX Programmer's Manual		KILLPG(2)
+
+
+
+NNAAMMEE
+     killpg - send signal to a process group
+
+SSYYNNOOPPSSIISS
+     kkiillllppgg((ppggrrpp,, ssiigg))
+     iinntt ppggrrpp,, ssiigg;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _K_i_l_l_p_g sends the signal _s_i_g to the process group _p_g_r_p.  See
+     _s_i_g_v_e_c(2) for a list of signals.
+
+     The sending process and members of the process group must
+     have the same effective user ID, or the sender must be the
+     super-user.  As a single special case the continue signal
+     SIGCONT may be sent to any process that is a descendant of
+     the current process.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a value of 0 is returned.  Oth-
+     erwise, a value of -1 is returned and the global variable
+     _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     _K_i_l_l_p_g will fail and no signal will be sent if any of the
+     following occur:
+
+     [EINVAL]	    _S_i_g is not a valid signal number.
+
+     [ESRCH]	    No process can be found in the process group
+		    specified by _p_g_r_p.
+
+     [ESRCH]	    The process group was given as 0 but the
+		    sending process does not have a process
+		    group.
+
+     [EPERM]	    The sending process is not the super-user and
+		    one or more of the target processes has an
+		    effective user ID different from that of the
+		    sending process.
+
+SSEEEE AALLSSOO
+     kill(2), getpgrp(2), sigvec(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1986				1
+
+
+

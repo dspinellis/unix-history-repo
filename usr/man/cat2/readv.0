@@ -1,0 +1,132 @@
+
+
+
+READ(2)             UNIX Programmer's Manual		  READ(2)
+
+
+
+NNAAMMEE
+     read, readv - read input
+
+SSYYNNOOPPSSIISS
+     cccc == rreeaadd((dd,, bbuuff,, nnbbyytteess))
+     iinntt cccc,, dd;;
+     cchhaarr **bbuuff;;
+     iinntt nnbbyytteess;;
+
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//uuiioo..hh>>
+
+     cccc == rreeaaddvv((dd,, iioovv,, iioovvccnntt))
+     iinntt cccc,, dd;;
+     ssttrruucctt iioovveecc **iioovv;;
+     iinntt iioovvccnntt;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_a_d attempts to read _n_b_y_t_e_s of data from the object refer-
+     enced by the descriptor _d into the buffer pointed to by _b_u_f.
+     _R_e_a_d_v performs the same action, but scatters the input data
+     into the _i_o_v_c_n_t buffers specified by the members of the _i_o_v
+     array: iov[0], iov[1], ..., iov[iovcnt-1].
+
+     For _r_e_a_d_v, the _i_o_v_e_c structure is defined as
+
+	  struct iovec {
+	       caddr_t	 iov_base;
+	       int  iov_len;
+	  };
+
+     Each _i_o_v_e_c entry specifies the base address and length of an
+     area in memory where data should be placed. _R_e_a_d_v will
+     always fill an area completely before proceeding to the
+     next.
+
+     On objects capable of seeking, the _r_e_a_d starts at a position
+     given by the pointer associated with _d (see _l_s_e_e_k(2)).  Upon
+     return from _r_e_a_d, the pointer is incremented by the number
+     of bytes actually read.
+
+     Objects that are not capable of seeking always read from the
+     current position.	The value of the pointer associated with
+     such an object is undefined.
+
+     Upon successful completion, _r_e_a_d and _r_e_a_d_v return the number
+     of bytes actually read and placed in the buffer.  The system
+     guarantees to read the number of bytes requested if the
+     descriptor references a normal file that has that many bytes
+     left before the end-of-file, but in no other case.
+
+
+
+
+
+Printed 7/9/88		  May 23, 1986				1
+
+
+
+
+
+
+READ(2)             UNIX Programmer's Manual		  READ(2)
+
+
+
+     If the returned value is 0, then end-of-file has been
+     reached.
+
+RREETTUURRNN VVAALLUUEE
+     If successful, the number of bytes actually read is
+     returned.	Otherwise, a -1 is returned and the global vari-
+     able _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     _R_e_a_d and _r_e_a_d_v will fail if one or more of the following are
+     true:
+
+     [EBADF]	    _D is not a valid file or socket descriptor
+		    open for reading.
+
+     [EFAULT]	    _B_u_f points outside the allocated address
+		    space.
+
+     [EIO]	    An I/O error occurred while reading from the
+		    file system.
+
+     [EINTR]	    A read from a slow device was interrupted
+		    before any data arrived by the delivery of a
+		    signal.
+
+     [EINVAL]	    The pointer associated with _d was negative.
+
+     [EWOULDBLOCK]  The file was marked for non-blocking I/O, and
+		    no data were ready to be read.
+
+     In addition, _r_e_a_d_v may return one of the following errors:
+
+     [EINVAL]	    _I_o_v_c_n_t was less than or equal to 0, or
+		    greater than 16.
+
+     [EINVAL]	    One of the _i_o_v__l_e_n values in the _i_o_v array
+		    was negative.
+
+     [EINVAL]	    The sum of the _i_o_v__l_e_n values in the _i_o_v
+		    array overflowed a 32-bit integer.
+
+     [EFAULT]	    Part of the _i_o_v points outside the process's
+		    allocated address space.
+
+SSEEEE AALLSSOO
+     dup(2), fcntl(2), open(2), pipe(2), select(2), socket(2),
+     socketpair(2)
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 23, 1986				2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+BRK(2)		    UNIX Programmer's Manual		   BRK(2)
+
+
+
+NNAAMMEE
+     brk, sbrk - change data segment size
+
+SSYYNNOOPPSSIISS
+     #include <sys/types.h>
+
+     cchhaarr **bbrrkk((aaddddrr))
+     cchhaarr **aaddddrr;;
+
+     cchhaarr **ssbbrrkk((iinnccrr))
+     iinntt iinnccrr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_r_k sets the system's idea of the lowest data segment loca-
+     tion not used by the program (called the break) to _a_d_d_r
+     (rounded up to the next multiple of the system's page size).
+     Locations greater than _a_d_d_r and below the stack pointer are
+     not in the address space and will thus cause a memory viola-
+     tion if accessed.
+
+     In the alternate function _s_b_r_k, _i_n_c_r more bytes are added to
+     the program's data space and a pointer to the start of the
+     new area is returned.
+
+     When a program begins execution via _e_x_e_c_v_e the break is set
+     at the highest location defined by the program and data
+     storage areas.  Ordinarily, therefore, only programs with
+     growing data areas need to use _s_b_r_k.
+
+     The current value of the program break is reliably returned
+     by ``sbrk(0)'' (see also _e_n_d(3)).	The _g_e_t_r_l_i_m_i_t(2) system
+     call may be used to determine the maximum permissible size
+     of the _d_a_t_a segment; it will not be possible to set the
+     break beyond the _r_l_i_m__m_a_x value returned from a call to
+     _g_e_t_r_l_i_m_i_t, e.g. "etext + rlp->rlim_max." (see _e_n_d(3) for the
+     definition of _e_t_e_x_t).
+
+RREETTUURRNN VVAALLUUEE
+     Zero is returned if the _b_r_k could be set; -1 if the program
+     requests more memory than the system limit.  _S_b_r_k returns -1
+     if the break could not be set.
+
+EERRRROORRSS
+     _S_b_r_k will fail and no additional memory will be allocated if
+     one of the following are true:
+
+     [ENOMEM]	    The limit, as set by _s_e_t_r_l_i_m_i_t(2), was
+		    exceeded.
+
+     [ENOMEM]	    The maximum possible size of a data segment
+		    (compiled into the system) was exceeded.
+
+
+
+
+Printed 7/9/88		  June 17, 1986                         1
+
+
+
+
+
+
+BRK(2)		    UNIX Programmer's Manual		   BRK(2)
+
+
+
+     [ENOMEM]	    Insufficient space existed in the swap area
+		    to support the expansion.
+
+SSEEEE AALLSSOO
+     execve(2), getrlimit(2), malloc(3), end(3)
+
+BBUUGGSS
+     Setting the break may fail due to a temporary lack of swap
+     space.  It is not possible to distinguish this from a
+     failure caused by exceeding the maximum size of the data
+     segment without consulting _g_e_t_r_l_i_m_i_t.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 17, 1986                         2
+
+
+

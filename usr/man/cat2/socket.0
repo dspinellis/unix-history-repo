@@ -1,0 +1,198 @@
+
+
+
+SOCKET(2)	    UNIX Programmer's Manual		SOCKET(2)
+
+
+
+NNAAMMEE
+     socket - create an endpoint for communication
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     ss == ssoocckkeett((ddoommaaiinn,, ttyyppee,, pprroottooccooll))
+     iinntt ss,, ddoommaaiinn,, ttyyppee,, pprroottooccooll;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_o_c_k_e_t creates an endpoint for communication and returns a
+     descriptor.
+
+     The _d_o_m_a_i_n parameter specifies a communications domain
+     within which communication will take place; this selects the
+     protocol family which should be used.  The protocol family
+     generally is the same as the address family for the
+     addresses supplied in later operations on the socket.  These
+     families are defined in the include file <_s_y_s/_s_o_c_k_e_t._h>.
+     The currently understood formats are
+
+	  PF_UNIX     (UNIX internal protocols),
+	  PF_INET     (ARPA Internet protocols),
+	  PF_NS       (Xerox Network Systems protocols), and
+	  PF_IMPLINK  (IMP "host at IMP" link layer).
+
+     The socket has the indicated _t_y_p_e, which specifies the
+     semantics of communication.  Currently defined types are:
+
+	  SOCK_STREAM
+	  SOCK_DGRAM
+	  SOCK_RAW
+	  SOCK_SEQPACKET
+	  SOCK_RDM
+
+     A SOCK_STREAM type provides sequenced, reliable, two-way
+     connection based byte streams.  An out-of-band data
+     transmission mechanism may be supported.  A SOCK_DGRAM
+     socket supports datagrams (connectionless, unreliable mes-
+     sages of a fixed (typically small) maximum length).  A
+     SOCK_SEQPACKET socket may provide a sequenced, reliable,
+     two-way connection-based data transmission path for
+     datagrams of fixed maximum length; a consumer may be
+     required to read an entire packet with each read system
+     call.  This facility is protocol specific, and presently
+     implemented only for PF_NS.  SOCK_RAW sockets provide access
+     to internal network protocols and interfaces.  The types
+     SOCK_RAW, which is available only to the super-user, and
+     SOCK_RDM, which is planned, but not yet implemented, are not
+     described here.
+
+
+
+
+Printed 7/9/88		  May 23, 1986				1
+
+
+
+
+
+
+SOCKET(2)	    UNIX Programmer's Manual		SOCKET(2)
+
+
+
+     The _p_r_o_t_o_c_o_l specifies a particular protocol to be used with
+     the socket.  Normally only a single protocol exists to sup-
+     port a particular socket type within a given protocol fam-
+     ily.  However, it is possible that many protocols may exist,
+     in which case a particular protocol must be specified in
+     this manner.  The protocol number to use is particular to
+     the "communication domain" in which communication is to take
+     place; see _p_r_o_t_o_c_o_l_s(3N).
+
+     Sockets of type SOCK_STREAM are full-duplex byte streams,
+     similar to pipes.	A stream socket must be in a _c_o_n_n_e_c_t_e_d
+     state before any data may be sent or received on it.  A con-
+     nection to another socket is created with a _c_o_n_n_e_c_t(2) call.
+     Once connected, data may be transferred using _r_e_a_d(2) and
+     _w_r_i_t_e(2) calls or some variant of the _s_e_n_d(2) and _r_e_c_v(2)
+     calls.  When a session has been completed a _c_l_o_s_e(2) may be
+     performed.  Out-of-band data may also be transmitted as
+     described in _s_e_n_d(2) and received as described in _r_e_c_v(2).
+
+     The communications protocols used to implement a SOCK_STREAM
+     insure that data is not lost or duplicated.  If a piece of
+     data for which the peer protocol has buffer space cannot be
+     successfully transmitted within a reasonable length of time,
+     then the connection is considered broken and calls will
+     indicate an error with -1 returns and with ETIMEDOUT as the
+     specific code in the global variable errno.  The protocols
+     optionally keep sockets "warm" by forcing transmissions
+     roughly every minute in the absence of other activity.  An
+     error is then indicated if no response can be elicited on an
+     otherwise idle connection for a extended period (e.g. 5
+     minutes).	A SIGPIPE signal is raised if a process sends on
+     a broken stream; this causes naive processes, which do not
+     handle the signal, to exit.
+
+     SOCK_SEQPACKET sockets employ the same system calls as
+     SOCK_STREAM sockets.  The only difference is that _r_e_a_d(2)
+     calls will return only the amount of data requested, and any
+     remaining in the arriving packet will be discarded.
+
+     SOCK_DGRAM and SOCK_RAW sockets allow sending of datagrams
+     to correspondents named in _s_e_n_d(2) calls.	Datagrams are
+     generally received with _r_e_c_v_f_r_o_m(2), which returns the next
+     datagram with its return address.
+
+     An _f_c_n_t_l(2) call can be used to specify a process group to
+     receive a SIGURG signal when the out-of-band data arrives.
+     It may also enable non-blocking I/O and asynchronous notifi-
+     cation of I/O events via SIGIO.
+
+     The operation of sockets is controlled by socket level
+     _o_p_t_i_o_n_s.  These options are defined in the file
+     <_s_y_s/_s_o_c_k_e_t._h>.  _S_e_t_s_o_c_k_o_p_t(2) and _g_e_t_s_o_c_k_o_p_t(2) are used to
+
+
+
+Printed 7/9/88		  May 23, 1986				2
+
+
+
+
+
+
+SOCKET(2)	    UNIX Programmer's Manual		SOCKET(2)
+
+
+
+     set and get options, respectively.
+
+RREETTUURRNN VVAALLUUEE
+     A -1 is returned if an error occurs, otherwise the return
+     value is a descriptor referencing the socket.
+
+EERRRROORRSS
+     The _s_o_c_k_e_t call fails if:
+
+     [EPROTONOSUPPORT]	 The protocol type or the specified pro-
+			 tocol is not supported within this
+			 domain.
+
+     [EMFILE]		 The per-process descriptor table is
+			 full.
+
+     [ENFILE]		 The system file table is full.
+
+     [EACCESS]		 Permission to create a socket of the
+			 specified type and/or protocol is
+			 denied.
+
+     [ENOBUFS]		 Insufficient buffer space is available.
+			 The socket cannot be created until suf-
+			 ficient resources are freed.
+
+SSEEEE AALLSSOO
+     accept(2), bind(2), connect(2), getsockname(2), get-
+     sockopt(2), ioctl(2), listen(2), read(2), recv(2),
+     select(2), send(2), shutdown(2), socketpair(2), write(2)
+     ``An Introductory 4.3BSD Interprocess Communication
+     Tutorial.'' (reprinted in UNIX Programmer's Supplementary
+     Documents Volume 1, PS1:7) ``An Advanced 4.3BSD Interprocess
+     Communication Tutorial.'' (reprinted in UNIX Programmer's
+     Supplementary Documents Volume 1, PS1:8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 23, 1986				3
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+SWAPON(2)	    UNIX Programmer's Manual		SWAPON(2)
+
+
+
+NNAAMMEE
+     swapon - add a swap device for interleaved paging/swapping
+
+SSYYNNOOPPSSIISS
+     sswwaappoonn((ssppeecciiaall))
+     cchhaarr **ssppeecciiaall;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_w_a_p_o_n makes the block device _s_p_e_c_i_a_l available to the sys-
+     tem for allocation for paging and swapping.  The names of
+     potentially available devices are known to the system and
+     defined at system configuration time.  The size of the swap
+     area on _s_p_e_c_i_a_l is calculated at the time the device is
+     first made available for swapping.
+
+RREETTUURRNN VVAALLUUEE
+     If an error has occurred, a value of -1 is returned and
+     _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     _S_w_a_p_o_n succeeds unless:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named device does not exist.
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+     [EPERM]	    The caller is not the super-user.
+
+     [ENOTBLK]	    _S_p_e_c_i_a_l is not a block device.
+
+     [EBUSY]	    The device specified by _s_p_e_c_i_a_l has already
+		    been made available for swapping
+
+     [EINVAL]	    The device configured by _s_p_e_c_i_a_l was not con-
+		    figured into the system as a swap device.
+
+     [ENXIO]	    The major device number of _s_p_e_c_i_a_l is out of
+		    range (this indicates no device driver exists
+
+
+
+Printed 7/9/88		  March 9, 1986                         1
+
+
+
+
+
+
+SWAPON(2)	    UNIX Programmer's Manual		SWAPON(2)
+
+
+
+		    for the associated hardware).
+
+     [EIO]	    An I/O error occurred while opening the swap
+		    device.
+
+     [EFAULT]	    _S_p_e_c_i_a_l points outside the process's allo-
+		    cated address space.
+
+SSEEEE AALLSSOO
+     swapon(8), config(8)
+
+BBUUGGSS
+     There is no way to stop swapping on a disk so that the pack
+     may be dismounted.
+
+     This call will be upgraded in future versions of the system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  March 9, 1986                         2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+SELECT(2)	    UNIX Programmer's Manual		SELECT(2)
+
+
+
+NNAAMMEE
+     select - synchronous I/O multiplexing
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ttiimmee..hh>>
+
+     nnffoouunndd == sseelleecctt((nnffddss,, rreeaaddffddss,, wwrriitteeffddss,, eexxcceeppttffddss,, ttiimmeeoouutt))
+     iinntt nnffoouunndd,, nnffddss;;
+     ffdd__sseett **rreeaaddffddss,, **wwrriitteeffddss,, **eexxcceeppttffddss;;
+     ssttrruucctt ttiimmeevvaall **ttiimmeeoouutt;;
+
+     FFDD__SSEETT((ffdd,, &&ffddsseett))
+     FFDD__CCLLRR((ffdd,, &&ffddsseett))
+     FFDD__IISSSSEETT((ffdd,, &&ffddsseett))
+     FFDD__ZZEERROO((&&ffddsseett))
+     iinntt ffdd;;
+     ffdd__sseett ffddsseett;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_e_l_e_c_t examines the I/O descriptor sets whose addresses are
+     passed in _r_e_a_d_f_d_s, _w_r_i_t_e_f_d_s, and _e_x_c_e_p_t_f_d_s to see if some of
+     their descriptors are ready for reading, are ready for writ-
+     ing, or have an exceptional condition pending, respectively.
+     The first _n_f_d_s descriptors are checked in each set; i.e. the
+     descriptors from 0 through _n_f_d_s-1 in the descriptor sets are
+     examined.	On return, _s_e_l_e_c_t replaces the given descriptor
+     sets with subsets consisting of those descriptors that are
+     ready for the requested operation.  The total number of
+     ready descriptors in all the sets is returned in _n_f_o_u_n_d.
+
+     The descriptor sets are stored as bit fields in arrays of
+     integers.	The following macros are provided for manipulat-
+     ing such descriptor sets: _F_D__Z_E_R_O(&_f_d_s_e_t) initializes a
+     descriptor set _f_d_s_e_t to the null set.  _F_D__S_E_T(_f_d, &_f_d_s_e_t)
+     includes a particular descriptor _f_d in _f_d_s_e_t.  _F_D__C_L_R(_f_d,
+     &_f_d_s_e_t) removes _f_d from _f_d_s_e_t.  _F_D__I_S_S_E_T(_f_d, &_f_d_s_e_t) is
+     nonzero if _f_d is a member of _f_d_s_e_t, zero otherwise.  The
+     behavior of these macros is undefined if a descriptor value
+     is less than zero or greater than or equal to _F_D__S_E_T_S_I_Z_E,
+     which is normally at least equal to the maximum number of
+     descriptors supported by the system.
+
+     If _t_i_m_e_o_u_t is a non-zero pointer, it specifies a maximum
+     interval to wait for the selection to complete.  If _t_i_m_e_o_u_t
+     is a zero pointer, the select blocks indefinitely.  To
+     affect a poll, the _t_i_m_e_o_u_t argument should be non-zero,
+     pointing to a zero-valued timeval structure.
+
+     Any of _r_e_a_d_f_d_s, _w_r_i_t_e_f_d_s, and _e_x_c_e_p_t_f_d_s may be given as zero
+     pointers if no descriptors are of interest.
+
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+
+
+
+
+SELECT(2)	    UNIX Programmer's Manual		SELECT(2)
+
+
+
+RREETTUURRNN VVAALLUUEE
+     _S_e_l_e_c_t returns the number of ready descriptors that are con-
+     tained in the descriptor sets, or -1 if an error occurred.
+     If the time limit expires then _s_e_l_e_c_t returns 0.  If _s_e_l_e_c_t
+     returns with an error, including one due to an interrupted
+     call, the descriptor sets will be unmodified.
+
+EERRRROORRSS
+     An error return from _s_e_l_e_c_t indicates:
+
+     [EBADF]	    One of the descriptor sets specified an
+		    invalid descriptor.
+
+     [EINTR]	    A signal was delivered before the time limit
+		    expired and before any of the selected events
+		    occurred.
+
+     [EINVAL]	    The specified time limit is invalid.  One of
+		    its components is negative or too large.
+
+SSEEEE AALLSSOO
+     accept(2), connect(2), read(2), write(2), recv(2), send(2),
+     getdtablesize(2)
+
+BBUUGGSS
+     Although the provision of _g_e_t_d_t_a_b_l_e_s_i_z_e(2) was intended to
+     allow user programs to be written independent of the kernel
+     limit on the number of open files, the dimension of a suffi-
+     ciently large bit field for select remains a problem.  The
+     default size FD_SETSIZE (currently 256) is somewhat larger
+     than the current kernel limit to the number of open files.
+     However, in order to accommodate programs which might poten-
+     tially use a larger number of open files with select, it is
+     possible to increase this size within a program by providing
+     a larger definition of FD_SETSIZE before the inclusion of
+     <sys/types.h>.
+
+     _S_e_l_e_c_t should probably return the time remaining from the
+     original timeout, if any, by modifying the time value in
+     place.  This may be implemented in future versions of the
+     system.  Thus, it is unwise to assume that the timeout value
+     will be unmodified by the _s_e_l_e_c_t call.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				2
+
+
+

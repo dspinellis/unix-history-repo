@@ -1,0 +1,198 @@
+
+
+
+CREAT(2)	    UNIX Programmer's Manual		 CREAT(2)
+
+
+
+NNAAMMEE
+     creat - create a new file
+
+SSYYNNOOPPSSIISS
+     ccrreeaatt((nnaammee,, mmooddee))
+     cchhaarr **nnaammee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss mmaaddee oobbssoolleettee bbyy ooppeenn((22))..
+
+     _C_r_e_a_t creates a new file or prepares to rewrite an existing
+     file called _n_a_m_e, given as the address of a null-terminated
+     string.  If the file did not exist, it is given mode _m_o_d_e,
+     as modified by the process's mode mask (see _u_m_a_s_k(2)).  Also
+     see _c_h_m_o_d(2) for the construction of the _m_o_d_e argument.
+
+     If the file did exist, its mode and owner remain unchanged
+     but it is truncated to 0 length.
+
+     The file is also opened for writing, and its file descriptor
+     is returned.
+
+NNOOTTEESS
+     The _m_o_d_e given is arbitrary; it need not allow writing.
+     This feature has been used in the past by programs to con-
+     struct a simple, exclusive locking mechanism.  It is
+     replaced by the O_EXCL open mode, or _f_l_o_c_k(2) facility.
+
+RREETTUURRNN VVAALLUUEE
+     The value -1 is returned if an error occurs.  Otherwise, the
+     call returns a non-negative descriptor that only permits
+     writing.
+
+EERRRROORRSS
+     _C_r_e_a_t will fail and the file will not be created or trun-
+     cated if one of the following occur:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named file does not exist.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+
+
+
+Printed 7/9/88		  May 22, 1986				1
+
+
+
+
+
+
+CREAT(2)	    UNIX Programmer's Manual		 CREAT(2)
+
+
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [EACCES]	    The file does not exist and the directory in
+		    which it is to be created is not writable.
+
+     [EACCES]	    The file exists, but it is unwritable.
+
+     [EISDIR]	    The file is a directory.
+
+     [EMFILE]	    There are already too many files open.
+
+     [ENFILE]	    The system file table is full.
+
+     [ENOSPC]	    The directory in which the entry for the new
+		    file is being placed cannot be extended
+		    because there is no space left on the file
+		    system containing the directory.
+
+     [ENOSPC]	    There are no free inodes on the file system
+		    on which the file is being created.
+
+     [EDQUOT]	    The directory in which the entry for the new
+		    file is being placed cannot be extended
+		    because the user's quota of disk blocks on
+		    the file system containing the directory has
+		    been exhausted.
+
+     [EDQUOT]	    The user's quota of inodes on the file system
+		    on which the file is being created has been
+		    exhausted.
+
+     [EROFS]	    The named file resides on a read-only file
+		    system.
+
+     [ENXIO]	    The file is a character special or block spe-
+		    cial file, and the associated device does not
+		    exist.
+
+     [ETXTBSY]	    The file is a pure procedure (shared text)
+		    file that is being executed.
+
+     [EIO]	    An I/O error occurred while making the direc-
+		    tory entry or allocating the inode.
+
+     [EFAULT]	    _N_a_m_e points outside the process's allocated
+		    address space.
+
+     [EOPNOTSUPP]   The file was a socket (not currently imple-
+		    mented).
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				2
+
+
+
+
+
+
+CREAT(2)	    UNIX Programmer's Manual		 CREAT(2)
+
+
+
+SSEEEE AALLSSOO
+     open(2), write(2), close(2), chmod(2), umask(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				3
+
+
+

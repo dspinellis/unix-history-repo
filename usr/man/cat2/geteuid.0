@@ -1,0 +1,66 @@
+
+
+
+GETUID(2)	    UNIX Programmer's Manual		GETUID(2)
+
+
+
+NNAAMMEE
+     getuid, geteuid - get user identity
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     uuiidd == ggeettuuiidd(())
+     uuiidd__tt uuiidd;;
+
+     eeuuiidd == ggeetteeuuiidd(())
+     uuiidd__tt eeuuiidd;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_u_i_d returns the real user ID of the current process,
+     _g_e_t_e_u_i_d the effective user ID.
+
+     The real user ID identifies the person who is logged in.
+     The effective user ID gives the process additional permis-
+     sions during execution of "set-user-ID" mode processes,
+     which use _g_e_t_u_i_d to determine the real-user-id of the pro-
+     cess that invoked them.
+
+SSEEEE AALLSSOO
+     getgid(2), setreuid(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 January 7, 1986			1
+
+
+

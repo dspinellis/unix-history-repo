@@ -1,0 +1,66 @@
+
+
+
+DUP(2)		    UNIX Programmer's Manual		   DUP(2)
+
+
+
+NNAAMMEE
+     dup, dup2 - duplicate a descriptor
+
+SSYYNNOOPPSSIISS
+     nneewwdd == dduupp((oolldddd))
+     iinntt nneewwdd,, oolldddd;;
+
+     dduupp22((oolldddd,, nneewwdd))
+     iinntt oolldddd,, nneewwdd;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_u_p duplicates an existing object descriptor.  The argument
+     _o_l_d_d is a small non-negative integer index in the per-
+     process descriptor table.	The value must be less than the
+     size of the table, which is returned by _g_e_t_d_t_a_b_l_e_s_i_z_e(2).
+     The new descriptor returned by the call, _n_e_w_d, is the lowest
+     numbered descriptor that is not currently in use by the pro-
+     cess.
+
+     The object referenced by the descriptor does not distinguish
+     between references using _o_l_d_d and _n_e_w_d in any way.  Thus if
+     _n_e_w_d and _o_l_d_d are duplicate references to an open file,
+     _r_e_a_d(2), _w_r_i_t_e(2) and _l_s_e_e_k(2) calls all move a single
+     pointer into the file, and append mode, non-blocking I/O and
+     asynchronous I/O options are shared between the references.
+     If a separate pointer into the file is desired, a different
+     object reference to the file must be obtained by issuing an
+     additional _o_p_e_n(2) call.  The close-on-exec flag on the new
+     file descriptor is unset.
+
+     In the second form of the call, the value of _n_e_w_d desired is
+     specified.  If this descriptor is already in use, the
+     descriptor is first deallocated as if a _c_l_o_s_e(2) call had
+     been done first.
+
+RREETTUURRNN VVAALLUUEE
+     The value -1 is returned if an error occurs in either call.
+     The external variable _e_r_r_n_o indicates the cause of the
+     error.
+
+EERRRROORRSS
+     _D_u_p and _d_u_p_2 fail if:
+
+     [EBADF]	    _O_l_d_d or _n_e_w_d is not a valid active descriptor
+
+     [EMFILE]	    Too many descriptors are active.
+
+SSEEEE AALLSSOO
+     accept(2), open(2), close(2), fcntl(2), pipe(2), socket(2),
+     socketpair(2), getdtablesize(2)
+
+
+
+
+
+Printed 7/9/88		  May 13, 1986				1
+
+
+

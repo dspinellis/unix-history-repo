@@ -1,0 +1,66 @@
+
+
+
+READLINK(2)	    UNIX Programmer's Manual	      READLINK(2)
+
+
+
+NNAAMMEE
+     readlink - read value of a symbolic link
+
+SSYYNNOOPPSSIISS
+     cccc == rreeaaddlliinnkk((ppaatthh,, bbuuff,, bbuuffssiizz))
+     iinntt cccc;;
+     cchhaarr **ppaatthh,, **bbuuff;;
+     iinntt bbuuffssiizz;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_a_d_l_i_n_k places the contents of the symbolic link _n_a_m_e in
+     the buffer _b_u_f, which has size _b_u_f_s_i_z.  The contents of the
+     link are not null terminated when returned.
+
+RREETTUURRNN VVAALLUUEE
+     The call returns the count of characters placed in the
+     buffer if it succeeds, or a -1 if an error occurs, placing
+     the error code in the global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     _R_e_a_d_l_i_n_k will fail and the file mode will be unchanged if:
+
+     [ENOTDIR]	    A component of the path prefix is not a
+		    directory.
+
+     [EINVAL]	    The pathname contains a character with the
+		    high-order bit set.
+
+     [ENAMETOOLONG] A component of a pathname exceeded 255 char-
+		    acters, or an entire path name exceeded 1023
+		    characters.
+
+     [ENOENT]	    The named file does not exist.
+
+     [EACCES]	    Search permission is denied for a component
+		    of the path prefix.
+
+     [ELOOP]	    Too many symbolic links were encountered in
+		    translating the pathname.
+
+     [EINVAL]	    The named file is not a symbolic link.
+
+     [EIO]	    An I/O error occurred while reading from the
+		    file system.
+
+     [EFAULT]	    _B_u_f extends outside the process's allocated
+		    address space.
+
+SSEEEE AALLSSOO
+     stat(2), lstat(2), symlink(2)
+
+
+
+
+
+Printed 7/9/88		 August 26, 1985			1
+
+
+
