@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.48 (Berkeley) %G%
+ *	@(#)vnode.h	7.49 (Berkeley) %G%
  */
 
 #ifndef KERNEL
