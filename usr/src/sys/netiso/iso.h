@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso.h,v 4.9 88/09/11 18:06:38 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso.h,v $ */
-/*	@(#)iso.h	7.3 (Berkeley) %G% */
+/*	@(#)iso.h	7.4 (Berkeley) %G% */
 
 #ifndef __ISO__
 #define __ISO__
@@ -55,6 +55,7 @@ SOFTWARE.
 #define	ISOPROTO_X25	32		/* cons */
 #define	ISOPROTO_INACT_NL	33	/* inactive network layer! */
 #define	ISOPROTO_ESIS	34		/* ES-IS protocol */
+#define	ISOPROTO_INTRAISIS	35		/* IS-IS protocol */
 
 #define	ISOPROTO_RAW	255		/* raw clnp */
 #define	ISOPROTO_MAX	256
@@ -85,6 +86,7 @@ SOFTWARE.
 #define ISO8473_CLNP	0x81
 #define	ISO9542_ESIS	0x82
 #define ISO9542X25_ESIS	0x8a
+#define ISO10589_ISIS		0x83
 
 
 #ifndef IN_CLASSA_NET
