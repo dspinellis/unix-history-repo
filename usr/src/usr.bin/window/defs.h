@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.10 84/03/29	
+ *	@(#)defs.h	3.11 84/04/05	
  */
 
 #include "ww.h"
@@ -35,6 +35,7 @@ char escapec;			/* the escape character */
 char quit;			/* quit command issued */
 char terse;			/* terse mode */
 char debug;			/* debug mode */
+char incmd;			/* in command mode */
 
 struct ww *getwin();
 struct ww *openwin();

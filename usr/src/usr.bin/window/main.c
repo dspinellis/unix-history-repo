@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.17 84/03/29";
+static	char *sccsid = "@(#)main.c	3.18 84/04/05";
 #endif
 
 #include "defs.h"
@@ -16,6 +16,8 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
+	char *cmd = 0;
+	char tflag = 0;
 
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -28,11 +30,19 @@ char **argv;
 			case 'f':
 				fflag++;
 				break;
+			case 'c':
+				if (cmd != 0) {
+					(void) fprintf(stderr,
+						"Only one -c allowed.\n");
+					(void) usage();
+				}
+				cmd = next(argv);
+				break;
 			case 'e':
 				setescape(next(argv));
 				break;
 			case 't':
-				terse++;
+				tflag++;
 				break;
 			case 'd':
 				dflag++;
@@ -98,21 +108,16 @@ char **argv;
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
 	setvars();
-	if (fflag)
-		wwcurwin = 0;
-	else {
-		if (!terse)
-			wwadd(cmdwin, &wwhead);
+
+	setterse(tflag);
+	setcmd(1);
+	if (cmd != 0)
+		dolongcmd(cmd);
+	if (!fflag) {
 		if (dflag || doconfig() < 0)
 			dodefault();
-		if (selwin != 0) {
-			wwcurwin = selwin;
-			wwcursor(selwin, 0);
-		}
-		if (!terse) {
-			wwdelete(cmdwin);
-			reframe();
-		}
+		if (selwin != 0)
+			setcmd(0);
 	}
 
 	mloop();

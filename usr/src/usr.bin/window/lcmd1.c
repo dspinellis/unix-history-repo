@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.16 84/03/29";
+static	char *sccsid = "@(#)lcmd1.c	3.17 84/04/05";
 #endif
 
 #include "defs.h"
@@ -177,12 +177,7 @@ register struct value *v, *a;
 {
 	v->v_type = V_NUM;
 	v->v_num = terse;
-	terse = vtobool(a, 1, terse);
-	if (!terse && v->v_num)
-		wwadd(cmdwin, &wwhead);
-	else if (!v->v_num && terse)
-		wwdelete(cmdwin);
-	reframe();
+	setterse(vtobool(a, 1, terse));
 }
 
 struct lcmd_arg arg_source[] = {

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.22 84/03/29";
+static	char *sccsid = "@(#)cmd.c	3.23 84/04/05";
 #endif
 
 #include "defs.h"
@@ -8,11 +8,8 @@ docmd()
 {
 	register char c;
 	register struct ww *w;
+	char out = 0;
 
-	if (!terse)
-		wwadd(cmdwin, &wwhead);
-	if (selwin != 0)
-		wwcursor(selwin, 1);
 	for (;;) {
 		while ((c = wwgetc()) >= 0) {
 			if (!terse)
@@ -47,7 +44,7 @@ docmd()
 				}
 				setselwin(w);
 				if (checkproc(selwin) >= 0)
-					 wwcurwin = selwin;
+					 out = 1;
 				break;
 			case '%':
 				if ((w = getwin()) != 0)
@@ -57,7 +54,7 @@ docmd()
 				if (lastselwin != 0) {
 					setselwin(lastselwin);
 					if (checkproc(selwin) >= 0)
-						wwcurwin = selwin;
+						out = 1;
 				} else
 					error("No previous window.");
 				break;
@@ -138,7 +135,7 @@ docmd()
 				break;
 			case CTRL([):
 				if (checkproc(selwin) >= 0)
-					wwcurwin = selwin;
+					out = 1;
 				break;
 			case CTRL(z):
 				wwsuspend();
@@ -169,7 +166,7 @@ docmd()
 					if (checkproc(selwin) >= 0) {
 						(void) write(selwin->ww_pty,
 							&escapec, 1);
-						wwcurwin = selwin;
+						out = 1;
 					}
 				} else {
 					if (!terse)
@@ -178,7 +175,7 @@ docmd()
 				}
 			}
 		}
-		if (wwcurwin != 0 || quit)
+		if (out || quit)
 			break;
 		if (terse)
 			wwsetcursor(0, 0);
@@ -189,13 +186,8 @@ docmd()
 		while (wwpeekc() < 0)
 			wwiomux();
 	}
-	if (!quit) {
-		if (!terse) {
-			wwdelete(cmdwin);
-			reframe();
-		}
-		wwcursor(selwin, 0);
-	}
+	if (!quit)
+		setcmd(0);
 }
 
 struct ww *
@@ -232,4 +224,49 @@ struct ww *w;
 		return -1;
 	}
 	return 0;
+}
+
+setcmd(new)
+char new;
+{
+	if (new && !incmd) {
+		if (!terse)
+			wwadd(cmdwin, &wwhead);
+		if (selwin != 0)
+			wwcursor(selwin, 1);
+		wwcurwin = 0;
+	} else if (!new && incmd) {
+		if (!terse) {
+			wwdelete(cmdwin);
+			reframe();
+		}
+		if (selwin != 0)
+			wwcursor(selwin, 0);
+		wwcurwin = selwin;
+	}
+	incmd = new;
+}
+
+setterse(new)
+char new;
+{
+	if (incmd)
+		if (new && !terse) {
+			wwdelete(cmdwin);
+			reframe();
+		} else if (!new && terse)
+			wwadd(cmdwin, &wwhead);
+	terse = new;
+}
+
+/*
+ * Set the current window.
+ */
+setselwin(w)
+struct ww *w;
+{
+	if (selwin == w)
+		return;
+	lastselwin = selwin;
+	front(selwin = w, 1);
 }

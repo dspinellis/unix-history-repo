@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.23 84/03/03";
+static	char *sccsid = "@(#)cmd2.c	3.24 84/04/05";
 #endif
 
 #include "defs.h"
@@ -216,8 +216,9 @@ c_list()
 
 c_quit()
 {
-	if (terse)
-		wwadd(cmdwin, &wwhead);
+	char oldterse = terse;
+
+	setterse(0);
 	wwputs("Really quit [yn]? ", cmdwin);
 	wwcurtowin(cmdwin);
 	while (wwpeekc() < 0)
@@ -227,6 +228,5 @@ c_quit()
 		quit++;
 	} else
 		wwputs("\r\n", cmdwin);
-	if (terse && !quit)
-		wwdelete(cmdwin);
+	setterse(!quit && oldterse);
 }
