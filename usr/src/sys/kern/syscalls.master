@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.26 (Berkeley) %G%
+	@(#)syscalls.master	7.27 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -245,10 +245,10 @@
 181	STD	1 setgid
 182	STD	1 setegid
 183	STD	1 seteuid
-184	UNIMPL	0 nosys
-185	UNIMPL	0 nosys
-186	UNIMPL	0 nosys
-187	UNIMPL	0 nosys
+184	STD	4 lfs_bmapv
+185	STD	6 lfs_markv
+186	STD	3 lfs_segclean
+187	STD	3 lfs_segwait
 188	UNIMPL	0 nosys
 189	UNIMPL	0 nosys
 190	UNIMPL	0 nosys
