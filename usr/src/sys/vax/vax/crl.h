@@ -1,27 +1,29 @@
 /* 
- * @(#)crl.h	1.1 (Berkeley) %G%
+ * @(#)crl.h	1.2 (Berkeley) %G%
  */
-/************************************************************************
- *									*
- *			Copyright (c) 1984 by				*
- *		Digital Equipment Corporation, Maynard, MA		*
- *			All rights reserved.				*
- *									*
- *   This software is furnished under a license and may be used and	*
- *   copied  only  in accordance with the terms of such license and	*
- *   with the  inclusion  of  the  above  copyright  notice.   This	*
- *   software  or  any  other copies thereof may not be provided or	*
- *   otherwise made available to any other person.  No title to and	*
- *   ownership of the software is hereby transferred.			*
- *									*
- *   The information in this software is subject to change  without	*
- *   notice  and should not be construed as a commitment by Digital	*
- *   Equipment Corporation.						*
- *									*
- *   Digital assumes no responsibility for the use  or  reliability	*
- *   of its software on equipment which is not supplied by Digital.	*
- *									*
- ************************************************************************/
+
+/****************************************************************
+ *                                                              *
+ *        Licensed from Digital Equipment Corporation           *
+ *                       Copyright (c)                          *
+ *               Digital Equipment Corporation                  *
+ *                   Maynard, Massachusetts                     *
+ *                         1985, 1986                           *
+ *                    All rights reserved.                      *
+ *                                                              *
+ *        The Information in this software is subject to change *
+ *   without notice and should not be construed as a commitment *
+ *   by  Digital  Equipment  Corporation.   Digital   makes  no *
+ *   representations about the suitability of this software for *
+ *   any purpose.  It is supplied "As Is" without expressed  or *
+ *   implied  warranty.                                         *
+ *                                                              *
+ *        If the Regents of the University of California or its *
+ *   licensees modify the software in a manner creating         *
+ *   diriviative copyright rights, appropriate copyright        *
+ *   legends may be placed on  the drivative work in addition   *
+ *   to that set forth above.                                   *
+ ****************************************************************/
 
 #if VAX8600
 /*

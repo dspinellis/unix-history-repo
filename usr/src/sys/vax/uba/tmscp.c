@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.6 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.7 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -7,23 +7,25 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 
 /************************************************************************
  *									*
- *			Copyright (c) 1985 by				*
- *		Digital Equipment Corporation, Maynard, MA		*
+ *        Licensed from Digital Equipment Corporation 			*
+ *                       Copyright (c) 					*
+ *               Digital Equipment Corporation				*
+ *                   Maynard, Massachusetts 				*
+ *                         1985, 1986 					*
+ *                    All rights reserved. 				*
  *									*
- *	Permission to use, copy, modify, and distribute this software	*
- *	and its documentation is hereby granted to licensees of the	*
- *	Regents of the University of California pursuant to their	*
- *	license agreement for the "Fourth Berkeley Software		*
- *	Distribution".							*
+ *        The Information in this software is subject to change 	*
+ *   without notice and should not be construed as a commitment 	*
+ *   by  Digital  Equipment  Corporation.   Digital   makes  no 	*
+ *   representations about the suitability of this software for 	*
+ *   any purpose.  It is supplied "As Is" without expressed  or 	*
+ *   implied  warranty. 						*
  *									*
- *	The information in this software is subject to change without	*
- *	notice and should not be construed as a commitment by Digital	*
- *	Equipment Corporation.  Digital makes no representations	*
- *	about suitability of this software for any purpose. It is	*
- *	supplied "as is" without express or implied warranty.		*
- *									*
- *	This software is not subject to any license of the American	*
- *	Telephone and Telegraph Company.				*
+ *        If the Regents of the University of California or its 	*
+ *   licensees modify the software in a manner creating  		*
+ *   diriviative copyright rights, appropriate copyright  		*
+ *   legends may be placed on  the drivative work in addition  		*
+ *   to that set forth above. 						*
  *									*
  ************************************************************************
  * 
