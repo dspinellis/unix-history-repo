@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	7.2 (Berkeley) %G%";
 #endif not lint
 
 
@@ -24,11 +24,11 @@ static char sccsid[] = "@(#)format.c	7.1 (Berkeley) %G%";
  *		(rearranging replacements ala bad144 -a)
  *	multi-pass format for disks with skip-sector capability
  */
-#include "../h/param.h"
-#include "../h/fs.h"
-#include "../h/inode.h"
-#include "../h/dkbad.h"
-#include "../h/vmmac.h"
+#include "param.h"
+#include "fs.h"
+#include "inode.h"
+#include "dkbad.h"
+#include "vmmac.h"
 
 #include "saio.h"
 #include "savax.h"
@@ -188,7 +188,7 @@ more:
 			for (resid = tracksize, cbp = bp, sn = sector;;) {
 				int cc;
 
-				lseek(fd, sn * SECTSIZ, 0);
+				lseek(fd, sn * SECTSIZ, L_SET);
 				ioctl(fd, SAIOHDR, (char *)0);
 				cc = write(fd, cbp, resid);
 				if (cc == resid)
@@ -213,7 +213,7 @@ more:
 			for (resid = rtracksize, rcbp = rbp, sn = sector;;) {
 				int cc, rsn;
 
-				lseek(fd, sn * SECTSIZ, 0);
+				lseek(fd, sn * SECTSIZ, L_SET);
 				cc = read(fd, rcbp, resid);
 				if (cc == resid)
 					break;
@@ -282,7 +282,7 @@ out:
 			st.ncyl * st.nspc - st.nsect);
 		/* place on disk */
 		for (i = 0; i < 10 && i < st.nsect; i += 2) {
-			lseek(fd, SECTSIZ * (st.ncyl * st.nspc - st.nsect + i), 0);
+			lseek(fd, SECTSIZ * (st.ncyl * st.nspc - st.nsect + i), L_SET);
 			write(fd, &dkbad, sizeof (dkbad));
 		}
 	} else if (errors[FE_TOTAL]) {
@@ -356,7 +356,7 @@ writebb(fd, nsects, dbad, st, sw)
 		bn = st->nspc * btp->bt_cyl +
 		     st->nsect * (btp->bt_trksec >> 8) +
 		     (btp->bt_trksec & 0xff);
-		lseek(fd, bn * SECTSIZ, 0);
+		lseek(fd, bn * SECTSIZ, L_SET);
 		ioctl(fd, SAIOHDR, (char *)0);
 		write(fd, &bb_buf, sizeof (bb_buf));
 		/*
@@ -367,7 +367,7 @@ writebb(fd, nsects, dbad, st, sw)
 			for (j = (btp->bt_trksec & 0xff) + 1, bn++;
 			    j < st->nsect; j++, bn++) {
 				bb_buf.header2 = j | (btp->bt_trksec & 0xff00);
-				lseek(fd, bn * SECTSIZ, 0);
+				lseek(fd, bn * SECTSIZ, L_SET);
 				ioctl(fd, SAIOHDR, (char *)0);
 				write(fd, &bb_buf, sizeof (bb_buf));
 			}
@@ -473,18 +473,12 @@ malloc(size)
 getdevice()
 {
 	register char *cp;
-	register struct devsw *dp;
 	int fd;
 
 top:
-	cp = prompt("Device to format? ");
-	if ((fd = open(cp, 2)) < 0) {
-		printf("Known devices are: ");
-		for (dp = devsw; dp->dv_name; dp++)
-			printf("%s ",dp->dv_name);
-		printf("\n");
-		goto top;
-	}
+	do {
+		cp = prompt("Device to format? ");
+	} while ((fd = open(cp, 2)) < 0);
 	printf("Formatting drive %c%c%d on adaptor %d: ",
 		cp[0], cp[1], iob[fd - 3].i_unit % 8, iob[fd - 3].i_unit / 8);
 	cp = prompt("verify (yes/no)? ");
