@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)df.c	4.17 %G%";
+static	char *sccsid = "@(#)df.c	4.18 %G%";
 #endif
 
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include <stdio.h>
 #include <fstab.h>
@@ -115,7 +116,10 @@ found:
 		perror(file);
 		return;
 	}
-	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	if (bread(SBLOCK, (char *)&sblock, SBSIZE) == 0) {
+		(void) close(fi);
+		return;
+	}
 	printf("%-12.12s", file);
 	totalblks = sblock.fs_dsize;
 	free = sblock.fs_cstotal.cs_nbfree * sblock.fs_frag +
@@ -149,10 +153,14 @@ bread(bno, buf, cnt)
 
 	(void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
 	if ((n=read(fi, buf, cnt)) != cnt) {
-		printf("\nread error bno = %ld\n", bno);
-		printf("count = %d; errno = %d\n", n, errno);
-		exit(0);
+		/* probably a dismounted disk if errno == EIO */
+		if (errno != EIO) {
+			printf("\nread error bno = %ld\n", bno);
+			printf("count = %d; errno = %d\n", n, errno);
+		}
+		return (0);
 	}
+	return (1);
 }
 
 /*
