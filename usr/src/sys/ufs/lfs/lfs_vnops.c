@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.90 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.91 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,6 +29,7 @@
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
+#include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
 
 #include <ufs/lfs/lfs.h>
@@ -44,7 +45,7 @@ struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_open_desc, ufs_open },			/* open */
 	{ &vop_close_desc, ufs_close },			/* close */
 	{ &vop_access_desc, ufs_access },		/* access */
-	{ &vop_getattr_desc, ufs_getattr },		/* getattr */
+	{ &vop_getattr_desc, lfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, ufs_setattr },		/* setattr */
 	{ &vop_read_desc, lfs_read },			/* read */
 	{ &vop_write_desc, lfs_write },			/* write */
@@ -91,7 +92,7 @@ struct vnodeopv_entry_desc lfs_specop_entries[] = {
 	{ &vop_open_desc, spec_open },			/* open */
 	{ &vop_close_desc, ufsspec_close },		/* close */
 	{ &vop_access_desc, ufs_access },		/* access */
-	{ &vop_getattr_desc, ufs_getattr },		/* getattr */
+	{ &vop_getattr_desc, lfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, ufs_setattr },		/* setattr */
 	{ &vop_read_desc, ufsspec_read },		/* read */
 	{ &vop_write_desc, ufsspec_write },		/* write */
@@ -139,7 +140,7 @@ struct vnodeopv_entry_desc lfs_fifoop_entries[] = {
 	{ &vop_open_desc, fifo_open },			/* open */
 	{ &vop_close_desc, ufsfifo_close },		/* close */
 	{ &vop_access_desc, ufs_access },		/* access */
-	{ &vop_getattr_desc, ufs_getattr },		/* getattr */
+	{ &vop_getattr_desc, lfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, ufs_setattr },		/* setattr */
 	{ &vop_read_desc, ufsfifo_read },		/* read */
 	{ &vop_write_desc, ufsfifo_write },		/* write */
@@ -228,6 +229,7 @@ lfs_read(ap)
 			n = diff;
 		size = blksize(fs);
 		rablock = lbn + 1;
+		lfs_check(vp, lbn);
 		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
 			error = breadn(ITOV(ip), lbn, size, &rablock,
@@ -313,15 +315,11 @@ lfs_write(ap)
 	if (uio->uio_offset < 0 ||
 	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
 		return (EFBIG);
-	flags = 0;
-#ifdef NOTLFS
-	if (ioflag & IO_SYNC)
-		flags = B_SYNC;
-#endif
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
+		lfs_check(vp, lbn);
 		if (error = lfs_balloc(vp, n, lbn, &bp))
 			break;
 		if (uio->uio_offset + n > ip->i_size) {
@@ -332,31 +330,26 @@ lfs_write(ap)
 		(void) vnode_pager_uncache(vp);
 		n = min(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
-#ifdef NOTLFS							/* LFS */
-		if (ioflag & IO_SYNC)
-			(void) bwrite(bp);
-		else if (n + on == fs->fs_bsize) {
-			bp->b_flags |= B_AGE;
-			bawrite(bp);
-		} else
-			bdwrite(bp);
-		ip->i_flag |= IUPD|ICHG;
-#else
-		/* XXX This doesn't handle IO_SYNC. */
-		LFS_UBWRITE(bp);
-#endif
+		if (!error)
+			error = VOP_BWRITE(bp);
 		if (ap->a_cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-	if (error && (ioflag & IO_UNIT)) {
-		(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC, ap->a_cred,
-		    uio->uio_procp);
-		uio->uio_offset -= resid - uio->uio_resid;
-		uio->uio_resid = resid;
+	if (error) {
+		if (ioflag & IO_UNIT) {
+			(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC,
+			    ap->a_cred, uio->uio_procp);
+			uio->uio_offset -= resid - uio->uio_resid;
+			uio->uio_resid = resid;
+		}
+		if (bp)
+			brelse(bp);
 	}
 	if (!error && (ioflag & IO_SYNC)) {
 		tv = time;
-		error = VOP_UPDATE(vp, &tv, &tv, 1);
+		if (!(error = VOP_UPDATE(vp, &tv, &tv, 1)))
+			error = VOP_FSYNC(vp, ap->a_cred, MNT_WAIT,
+			    uio->uio_procp);
 	}
 	return (error);
 }
@@ -426,7 +419,6 @@ lfs_inactive(ap)
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}
 	IUNLOCK(ip);
-	ip->i_flag = 0;
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
@@ -602,4 +594,45 @@ lfs_rename(ap)
 	ret = ufs_rename(ap);
 	SET_ENDOP(VTOI(ap->a_fdvp)->i_lfs);
 	return (ret);
+}
+/* XXX hack to avoid calling ITIMES in getattr */
+int
+lfs_getattr(ap)
+	struct vop_getattr_args /* {
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
+	register struct vattr *vap = ap->a_vap;
+	/*
+	 * Copy from inode table
+	 */
+	vap->va_fsid = ip->i_dev;
+	vap->va_fileid = ip->i_number;
+	vap->va_mode = ip->i_mode & ~IFMT;
+	vap->va_nlink = ip->i_nlink;
+	vap->va_uid = ip->i_uid;
+	vap->va_gid = ip->i_gid;
+	vap->va_rdev = (dev_t)ip->i_rdev;
+	vap->va_size = ip->i_din.di_size;
+	vap->va_atime = ip->i_atime;
+	vap->va_mtime = ip->i_mtime;
+	vap->va_ctime = ip->i_ctime;
+	vap->va_flags = ip->i_flags;
+	vap->va_gen = ip->i_gen;
+	/* this doesn't belong here */
+	if (vp->v_type == VBLK)
+		vap->va_blocksize = BLKDEV_IOSIZE;
+	else if (vp->v_type == VCHR)
+		vap->va_blocksize = MAXBSIZE;
+	else
+		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
+	vap->va_bytes = dbtob(ip->i_blocks);
+	vap->va_type = vp->v_type;
+	vap->va_filerev = ip->i_modrev;
+	return (0);
 }
