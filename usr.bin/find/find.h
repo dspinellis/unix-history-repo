@@ -67,6 +67,7 @@ typedef struct _plandata {
 		} ex;
 		char *_a_data[2];		/* array of char pointers */
 		char *_c_data;			/* char pointer */
+		int _m_flags;			/* mount flage for fstype */
 	} p_un;
 #define	a_data	p_un._a_data
 #define	c_data	p_un._c_data
@@ -81,6 +82,7 @@ typedef struct _plandata {
 #define	e_argv	p_un.ex._e_argv
 #define	e_orig	p_un.ex._e_orig
 #define	e_len	p_un.ex._e_len
+#define m_flags	p_un._m_flags
 } PLAN;
 
 #include "extern.h"

@@ -88,7 +88,6 @@ OPTION options[] = {
 	"-type",	N_TYPE,		c_type,		O_ARGV,
 	"-user",	N_USER,		c_user,		O_ARGV,
 	"-xdev",	N_XDEV,		c_xdev,		O_ZERO,
-	{ NULL },
 };
 
 /*
