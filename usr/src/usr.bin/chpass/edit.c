@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,27 +21,16 @@ static char sccsid[] = "@(#)edit.c	5.1 (Berkeley) %G%";
 
 extern char *tempname;
 
-edit(tfd, pw)
-	int tfd;
+void
+edit(pw)
 	struct passwd *pw;
 {
 	struct stat begin, end;
 
-	/*
-	 * Give the file to the real user; setuid permissions are discarded
-	 * in pw_edit().
-	 */
-	(void)fchown(tfd, getuid(), getgid());
-
-	display(tfd, pw);
-
 	for (;;) {
 		if (stat(tempname, &begin))
 			pw_error(tempname, 1, 1);
-		if (pw_edit(1)) {
-			(void)fprintf(stderr, "chpass: edit failed\n");
-			break;
-		}
+		pw_edit(1);
 		if (stat(tempname, &end))
 			pw_error(tempname, 1, 1);
 		if (begin.st_mtime == end.st_mtime) {
@@ -106,6 +95,7 @@ display(fd, pw)
 	p = strsep(&bp, ",");
 	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
 
+	(void)fchown(fd, getuid(), getgid());
 	(void)fclose(fp);
 }
 

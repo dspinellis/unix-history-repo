@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -104,34 +104,42 @@ main(argc, argv)
 	}
 
 	/*
-	 * The file descriptor usage is a little tricky through here.
+	 * The temporary file/file descriptor usage is a little tricky here.
 	 * 1:	We start off with two fd's, one for the master password
-	 *	file, and one for the temporary file.
-	 * 2:	Get an fp for the temporary file, copy the info to be
-	 *	edited into it, and close the fp (closing the underlying
-	 *	fd).
+	 *	file (used to lock everything), and one for a temporary file.
+	 * 2:	Display() gets an fp for the temporary file, and copies the
+	 *	user's information into it.  It then gives the temporary file
+	 *	to the user and closes the fp, closing the underlying fd.
 	 * 3:	The user edits the temporary file some number of times.
-	 * 4:	Get an fp for the temporary file, and verify the contents.
-	 *	We can't use the fp from step 2, because the user's editor
-	 *	may have created a new instance of the file.  Close the
-	 *	fp when done.
-	 * 5:	Get an fp for the temporary file, truncating it as we do
-	 *	so.  Get an fp for the master password file.  Copy the
-	 *	master password file into the temporary file, replacing the
-	 *	user record with a new one.  Close the temporary file fp
-	 *	when done -- can't close the password fp, or we'd lose the
-	 *	lock.
-	 * 6:	Call pw_mkdb() and exit.  The exit closes the master password
-	 *	fd from step 1, and the master password fp from step 5.
+	 * 4:	Verify() gets an fp for the temporary file, and verifies the
+	 *	contents.  It can't use an fp derived from the step #2 fd,
+	 *	because the user's editor may have created a new instance of
+	 *	the file.  Once the file is verified, its contents are stored
+	 *	in a password structure.  The verify routine closes the fp,
+	 *	closing the underlying fd.
+	 * 5:	Delete the temporary file.
+	 * 6:	Get a new temporary file/fd.  Pw_copy() gets an fp for it
+	 *	file and copies the master password file into it, replacing
+	 *	the user record with a new one.  We can't use the first
+	 *	temporary file for this because it was owned by the user.
+	 *	Pw_copy() closes its fp, flushing the data and closing the
+	 *	underlying file descriptor.  We can't close the master
+	 *	password fp, or we'd lose the lock.
+	 * 7:	Call pw_mkdb() (which renames the temporary file) and exit.
+	 *	The exit closes the master passwd fp/fd.
 	 */
 	pw_init();
 	pfd = pw_lock();
 	tfd = pw_tmp();
 
-	if (op == EDITENTRY) 
-		edit(tfd, pw);
-
-	pw_copy(pfd, pw);
+	if (op == EDITENTRY) {
+		display(tfd, pw);
+		edit(pw);
+		(void)unlink(tempname);
+		tfd = pw_tmp();
+	}
+		
+	pw_copy(pfd, tfd, pw);
 
 	if (!pw_mkdb())
 		pw_error((char *)NULL, 0, 1);

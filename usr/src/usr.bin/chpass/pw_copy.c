@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_copy.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_copy.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,8 +20,8 @@ static char sccsid[] = "@(#)pw_copy.c	5.1 (Berkeley) %G%";
 
 extern char *tempname;
 
-pw_copy(ffd, pw)
-	int ffd;
+pw_copy(ffd, tfd, pw)
+	int ffd, tfd;
 	struct passwd *pw;
 {
 	register FILE *from, *to;
@@ -31,7 +31,7 @@ pw_copy(ffd, pw)
 
 	if (!(from = fdopen(ffd, "r")))
 		pw_error(_PATH_MASTERPASSWD, 1, 1);
-	if (!(to = fopen(tempname, "w")))
+	if (!(to = fdopen(tfd, "w")))
 		pw_error(tempname, 1, 1);
 
 	for (done = 0; fgets(buf, sizeof(buf), from);) {
