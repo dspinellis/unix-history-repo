@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)df.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)df.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
@@ -139,11 +139,13 @@ char *file;
 			hardway++;
 		printf("\t%6ld", free=hardway);
 	}
-	printf("\t%5.0f%%", (double) used / (double)blocks * 100.0);
+	printf("\t%5.0f%%", 
+	    blocks == 0 ? 0.0 : (double) used / (double)blocks * 100.0);
 	if (iflag) {
 		int inodes = (sblock.s_isize - 2) * INOPB;
 		used = inodes - sblock.s_tinode;
-		printf("\t%5ld\t%5ld\t%5.0f%%", used, sblock.s_tinode, (double)used/(double)inodes*100.0);
+		printf("\t%5ld\t%5ld\t%5.0f%%", used, sblock.s_tinode, 
+		    inodes == 0 ? 0.0 : (double)used/(double)inodes*100.0);
 	}
 	printf("\n");
 	close(fi);

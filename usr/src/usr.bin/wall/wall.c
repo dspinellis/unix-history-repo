@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)wall.c	4.2 (Berkeley) 81/03/10";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -9,6 +9,8 @@ static char *sccsid = "@(#)wall.c	4.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <utmp.h>
 #include <time.h>
+#include <whoami.h>
+#include <signal.h>
 #define	USERS	128
 
 char	mesg[3000];
@@ -28,6 +30,7 @@ char *argv[];
 	register char c;
 	register struct utmp *p;
 	FILE *f;
+	FILE *mf;
 
 	if((f = fopen("/etc/utmp", "r")) == NULL) {
 		fprintf(stderr, "Cannot open /etc/utmp\n");
@@ -35,29 +38,34 @@ char *argv[];
 	}
 	clock = time( 0 );
 	localclock = localtime( &clock );
-	fread((char *)utmp, sizeof(struct utmp), USERS, f);
-	fclose(f);
-	f = stdin;
+	mf = stdin;
 	if(argc >= 2) {
 		/* take message from unix file instead of standard input */
-		if((f = fopen(argv[1], "r")) == NULL) {
+		if((mf = fopen(argv[1], "r")) == NULL) {
 			fprintf(stderr,"Cannot open %s\n", argv[1]);
 			exit(1);
 		}
 	}
-	while((i = getc(f)) != EOF) mesg[msize++] = i;
-	fclose(f);
-	sline = ttyslot(2); /* 'utmp' slot no. of sender */
-	if (sline) {
-		for (i=0;(c=utmp[sline].ut_name[i]) && i<sizeof(utmp[0].ut_name);i++)
-			who[i]=c;
-		who[i] = '\0'; /* sender initials */
+	while((i = getc(mf)) != EOF) {
+		if (msize >= sizeof mesg) {
+			fprintf(stderr, "Message too long\n");
+			exit(1);
 		}
+		mesg[msize++] = i;
+	}
+	fclose(mf);
+	sline = ttyslot(2); /* 'utmp' slot no. of sender */
+	fread((char *)utmp, sizeof(struct utmp), USERS, f);
+	fclose(f);
+	if (sline)
+		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
 	for(i=0; i<USERS; i++) {
 		p = &utmp[i];
 		if(p->ut_name[0] == 0)
 			continue;
+	/***		this might be nice, but utmp gets so out of date !!
 		sleep(1);
+	***/
 		sendmes(p->ut_line);
 	}
 	exit(0);
@@ -72,24 +80,40 @@ char *tty;
 	register int c, ch;
 	FILE *f;
 
+/***			you can't do this with lots of users & MAXUPROC
 	i = fork();
 	if(i == -1) {
 		fprintf(stderr, "Try again\n");
 		return;
 	}
+ ***/
+	while ((i = fork()) == -1)
+		if (wait((int *)0) == -1) {
+			fprintf(stderr, "Try again\n");
+			return;
+		}
 	if(i)
 		return;
 	strcpy(t, "/dev/");
 	strcat(t, tty);
+
+	signal(SIGALRM, SIG_DFL);	/* blow away if open hangs */
+	alarm(10);
 
 	if((f = fopen(t, "w")) == NULL) {
 		fprintf(stderr,"cannot open %s\n", t);
 		exit(1);
 	}
 	setbuf(f, buf);
-	fprintf(f, "\nBroadcast Message from %s (%s) at %d:%02d ...\r\n\n"
-	       ,who, utmp[sline].ut_line
-	       , localclock -> tm_hour , localclock -> tm_min );
+	fprintf(f,
+	    "\nBroadcast Message from %s!%s (%.*s) at %d:%02d ...\r\n\n"
+		, sysname
+		, who
+		, sizeof(utmp[sline].ut_line)
+		, utmp[sline].ut_line
+		, localclock -> tm_hour
+		, localclock -> tm_min
+	);
 	/* fwrite(mesg, msize, 1, f); */
 	for (cp = mesg, c = msize; c-- > 0; cp++) {
 		ch = *cp;

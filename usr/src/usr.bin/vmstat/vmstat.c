@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)vmstat.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)vmstat.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
@@ -149,8 +149,8 @@ reprint:
 	lines = 20;
 	/* s1 = z; */
 printf("\
- Procs     Memory            Page        Swap  %s %s %s %s  Faults          Cpu\n\
- R B W   AVM  FRE  RE AT PI PO FR  DE  SR I O  %-2d %-2d %-2d %-2d  IN  SY  CS US SY ID\n\
+ procs     memory            page        swap  %s %s %s %s  faults          cpu\n\
+ r b w   avm  fre  re at pi po fr  de  sr i o  %-2d %-2d %-2d %-2d  in  sy  cs us sy id\n\
 ", dr_name[0], dr_name[1], dr_name[2], dr_name[3], dr_unit[0], dr_unit[1], dr_unit[2], dr_unit[3]);
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
