@@ -13,7 +13,6 @@ register FILE *iop;
 	char c1;
 	int size;
 	struct stat stbuf;
-	extern char _sobuf[];
 
 	if (iop->_flag & _IORW) {
 		iop->_flag |= _IOWRT;
@@ -44,20 +43,17 @@ tryagain:
 				size = BUFSIZ;
 			else
 				size = stbuf.st_blksize;
-			if (iop==stdout) {
-				if (isatty(fileno(stdout)))
-					iop->_flag |= _IOLBF;
-				iop->_base = _sobuf;
-				iop->_ptr = _sobuf;
-				iop->_bufsiz = size;
-				goto tryagain;
-			}
 			if ((iop->_base=base=malloc(size)) == NULL) {
 				iop->_flag |= _IONBF;
 				goto tryagain;
 			}
 			iop->_flag |= _IOMYBUF;
 			iop->_bufsiz = size;
+			if (iop==stdout && isatty(fileno(stdout))) {
+				iop->_flag |= _IOLBF;
+				iop->_ptr = base;
+				goto tryagain;
+			}
 			rn = n = 0;
 		} else if ((rn = n = iop->_ptr - base) > 0) {
 			iop->_ptr = base;
