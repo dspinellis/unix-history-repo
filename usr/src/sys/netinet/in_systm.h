@@ -1,4 +1,4 @@
-/*	in_systm.h	4.12	82/06/20	*/
+/*	in_systm.h	4.13	82/06/24	*/
 
 /*
  * Miscellaneous internetwork
@@ -26,17 +26,8 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  * You can switch into the network by doing splnet() and return by splx().
  * The software interrupt level for the network is higher than the software
  * level for the clock (so you can enter the network in routines called
- * at timeout time).  Splimp is an ipl high enough to block all imps.
- * While manipulating the mbuf buffer pool you have to block imps.
+ * at timeout time).
  */
-
-/* splnet is defined in ../sys/asm.sed */
-#include "ec.h"
-#if NEC > 0
-#define	splimp		spl6
-#else
-#define	splimp		spl5
-#endif
 #define	setsoftnet()	mtpr(SIRR, 12)
 
 /*
