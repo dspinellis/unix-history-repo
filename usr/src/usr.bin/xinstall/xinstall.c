@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.9 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)xinstall.c	5.10 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -23,8 +29,8 @@ static char sccsid[] = "@(#)xinstall.c	5.9 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	YES		1			/* yes/true */
-#define	NO		0			/* no/false */
+#define	YES	1			/* yes/true */
+#define	NO	0			/* no/false */
 
 #define	PERROR(head, msg) { \
 	fputs(head, stderr); \
@@ -126,18 +132,11 @@ install(from_name, to_name, isdir)
 {
 	struct stat	from_sb;
 	int	devnull, from_fd, to_fd;
-	char	*C,
-		*rindex();
-
-	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
-		PERROR("install: open: ", from_name);
-		exit(1);
-	}
+	char	*C, *rindex();
 
 	/* if try to install "/dev/null" to a directory, fails */
-	devnull = isdir ? NO : !strcmp(from_name, "/dev/null");
-	if (!devnull) {
-		if (fstat(from_fd, &from_sb)) {
+	if (isdir || strcmp(from_name, "/dev/null")) {
+		if (stat(from_name, &from_sb)) {
 			fprintf(stderr, "install: can't find %s.\n", from_name);
 			exit(1);
 		}
@@ -145,54 +144,48 @@ install(from_name, to_name, isdir)
 			fprintf(stderr, "install: %s isn't a regular file.\n", from_name);
 			exit(1);
 		}
+		/* build the target path */
+		if (isdir) {
+			(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(from_name, '/')) ? ++C : from_name);
+			to_name = pathbuf;
+		}
+		devnull = NO;
 	}
-
-	/* build the path */
-	if (isdir) {
-		(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(from_name, '/')) ? ++C : from_name);
-		to_name = pathbuf;
-	}
+	else
+		devnull = YES;
 
 	/* unlink now... avoid ETXTBSY errors later */
 	(void)unlink(to_name);
 
-	/* open target, set owner, group, mode */
+	/* create target */
 	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
 		PERROR("install: ", to_name);
 		exit(1);
 	}
+	if (!devnull) {
+		if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
+			(void)unlink(to_name);
+			PERROR("install: open: ", from_name);
+			exit(1);
+		}
+		if (dostrip)
+			strip(from_fd, from_name, to_fd, to_name);
+		else
+			copy(from_fd, from_name, to_fd, to_name);
+		(void)close(from_fd);
+		if (!docopy)
+			(void)unlink(from_name);
+	}
+	/* set owner, group, mode for target */
 	if (fchmod(to_fd, mode)) {
 		PERROR("install: fchmod: ", to_name);
 		bad();
 	}
-	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1)) {
+	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1,
+	    group ? gp->gr_gid : -1)) {
 		PERROR("install: fchown: ", to_name);
 		bad();
 	}
-
-	if (devnull) {
-		(void)close(to_fd);
-		return;
-	}
-
-	if (dostrip) {
-		strip(from_fd, from_name, to_fd, to_name);
-		if (docopy)
-			goto done;
-	}
-	else if (docopy) {
-		copy(from_fd, from_name, to_fd, to_name);
-		goto done;
-	}
-	else if (rename(from_name, to_name))
-		copy(from_fd, from_name, to_fd, to_name);
-	else if (chmod(to_name, mode)) {
-		PERROR("install: chmod: ", to_name);
-		bad();
-	}
-	(void)unlink(from_name);
-
-done:	(void)close(from_fd);
 	(void)close(to_fd);
 }
 
@@ -226,6 +219,7 @@ strip(from_fd, from_name, to_fd, to_name)
 			bad();
 		}
 		for (; size; size -= n)
+			/* sizeof(buf) guaranteed to fit in an int */
 			if ((n = read(from_fd, buf, (int)MIN(size, sizeof(buf)))) <= 0)
 				break;
 			else if (write(to_fd, buf, n) != n) {
