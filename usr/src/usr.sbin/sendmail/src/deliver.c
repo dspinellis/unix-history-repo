@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -968,6 +968,9 @@ openmailer(m, pvp, ctladdr, clever, e)
 			  case ENOMEM:
 # ifdef EPROCLIM
 			  case EPROCLIM:
+# endif
+# ifdef ETIMEDOUT
+			  case ETIMEDOUT:
 # endif
 				_exit(EX_TEMPFAIL);
 			}
