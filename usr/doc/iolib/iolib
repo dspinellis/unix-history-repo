@@ -1,0 +1,1098 @@
+.ds s \\s8
+.ds S \\s0
+.ds * \v'.2m'*\v'-.2m'
+.tr ~.
+.ds . \s14~\s0
+.tr _\(ul
+.de sn
+.sp
+.ft I
+.ne 2
+..
+.de sN
+.sp .5
+.ft R
+..
+.TL
+The Portable C Library (on \s-2UNIX\s0) *
+.AU
+M. E. Lesk
+.AI
+.MH
+.SH
+1. INTRODUCTION
+.PP
+The C language [1] now exists on three operating systems.
+.FS
+* This document is an abbreviated form of
+``The Portable C Library'', by M. E. Lesk, describing only
+the UNIX section of the library.
+.FE
+A set of library routines common to
+\*sPDP\*S 11 \*sUNIX\*S, Honeywell 6000 \*sGCOS\*S,
+and \*sIBM\*S 370 \*sOS\*S
+has been provided to improve program portability.
+This memorandum describes the UNIX implementation of
+the portable routines.
+.PP
+The programs
+defined here were chosen to follow the standard routines
+available on \*sUNIX\*S, with alterations to improve transferability
+to other computer systems.  It is expected that future C implementations
+will try to support the basic library outlined in this document.
+It provides character stream input and output on multiple files;
+simple accessing of files by name; and some elementary
+formatting and translating routines.
+The remainder of this memorandum lists the portable and
+non-portable library routines and explains some of the programming
+aids available.
+.PP
+The I/O routines in the C library
+fall into several classes.
+Files are addressed through intermediate numbers called
+.I
+file-descriptors
+.R
+which are described in section 2.  Several default file-descriptors
+are provided by the system; other aspects of the system
+environment are explained in section 3.
+.PP
+Basic character-stream input and output involves the reading or writing of
+files considered as streams of characters.
+The C library
+includes facilities for this, discussed
+in section 4.
+Higher-level character stream operations permit translation of
+internal binary representations of numbers to and from
+character representations, and formatting or unpacking of character
+data.
+These operations are performed with the subprograms in section 5.
+Binary input and output routines permit data transmission
+without the cost of translation to or from readable \*sASCII\*S character representations.
+Such data transmission
+should only be directed to files or tapes, and not to
+printers or terminals.  As is usual with such routines, the
+only simple guarantee that can be made to the programmer seeking
+portability is that data written by a particular sequence of
+binary writes, if read by the exactly matching sequence of binary reads,
+will restore the previous contents of memory.
+Other reads or writes have system-dependent effects.
+See section 6 for a discussion of binary input and output.
+Section 7 describes some further routines in the portable library.
+These include a storage allocator and
+some other control and conversion functions.
+.SH
+2. FILE DESCRIPTORS
+.PP
+Except for the standard input and output files, all files must
+be explicitly opened before
+any I/O is performed on them.
+When files are opened for writing, they are created if not already present.
+They must be closed when finished, although the normal
+.I
+cexit
+.R
+routine will take care of that.
+When opened a disc file or device is associated with a file descriptor, an integer
+between 0 and 9.
+This file descriptor is used for further I/O to the file.
+.PP
+Initially you are given three file descriptors by the system: 0, 1, and 2.
+File 0 is the standard input; it is normally the teletype
+in time-sharing or input data cards in batch.
+File 1 is the standard output; it is normally the
+teletype in time-sharing or the line printer in batch.
+File 2 is the error file; it is an output file, normally the same
+as file 1, except that when file 1 is diverted via a command
+line '>' operator, file 2 remains attached to the
+original destination, usually the terminal.
+It is used for error message output.
+These popular \*sUNIX\*S conventions are considered part
+of the C library specification.
+By closing 0 or 1, the default input or output may be re-directed;
+this can also be done on the command line by
+.ft I
+>file
+.ft P
+for output or
+.ft I
+<file
+.ft P
+for input.
+.PP
+Associated with the portable library
+are two external integers,
+named
+.I
+cin
+.R
+and
+.I
+cout.
+.R
+These are respectively the numbers of the
+standard input unit and standard output unit.
+Initially 0 and 1 are used, but you may redefine
+them at any time.
+These cells are used by the routines
+.I
+getchar,
+putchar,
+gets,
+.R
+and
+.I
+puts
+.R
+to select their I-O unit number.
+.SH
+3. THE C ENVIRONMENT
+.PP
+The C language is almost exactly the same on all machines,
+except for essential machine differences such as word
+length and number of characters per word. 
+On \*sUNIX\*S
+\*sASCII\*S character code is used.
+Characters range from \(mi128 to +127 in numeric value,
+there is sign extension when characters are assigned to integers,
+and right shifts are arithmetic.
+The ``first'' character in a word is stored in the right half word.
+.PP
+More serious problems of compatibility are caused by the loaders
+on the different operating systems.
+.PP
+\*sUNIX\*S permits external names to be in
+upper and lower case,
+up to seven characters long.
+There may be multiple external definitions (uninitialized) of
+the same name.
+.PP
+The C alphabet for identifier names includes
+the upper and lower case letters, the digits, and the underline.
+It is not possible for C programs to communicate with
+\*sFORTRAN\*S programs.
+.SH
+4. BASIC CHARACTER STREAM ROUTINES
+.PP
+These routines transfer streams of characters in and out of
+C programs.  Interpretation of the characters is left to
+the user.
+Facilities for interpreting numerical strings are presented in section
+5; and routines to transfer binary data to and from files or devices
+are discussed in section 6.
+In the following routine descriptions, the optional
+argument
+.ft I
+fd
+.ft P
+represents a file-descriptor; if not present, it is taken
+to be 0 for input and 1 for output.  When your program
+starts, remember that these are associated with the ``standard''
+input and output files.
+.sn
+COPEN (filename, type)
+.sN
+\fICopen\fR initiates activity on a file; if necessary it will
+create the file too.
+Up to 10 files may be open at one time.
+When called as described here,
+.ft I
+copen
+.ft R
+returns a filedescriptor for a character stream file.
+Values less than zero returned by
+.I
+copen
+.R
+indicate an error trying to open the file.
+Other calls to
+.ft I
+copen
+.ft R
+are described in sections 6 and 7.
+.sp 3p
+Arguments :
+.sp 3p
+.ft I
+Filename:
+.ft P
+a string representing a file name, according to the
+local operating system conventions.
+All accept a string of letters and digits as a legal file name,
+although leading digits are not recommended on \*sGCOS\*S.
+.br
+.ft I
+Type:
+.ft R
+a character `r', `w', or `a' meaning read, write, or append.
+Note that the type is a single character, whereas the
+file name must be a string.
+.sn
+CGETC ( fd )
+.sN
+.ft I
+Cgetc
+.ft R
+returns the next character from the input unit associated with \fIfd\fR. 
+On end of file \fIcgetc\fR returns `\\0'.
+To signal end of file from the teletype,
+type the special symbol appropriate to \*sUNIX\*S:
+EOT (control-D)
+.sn
+CPUTC (ch , fd )
+.sN
+.ft I
+Cputc
+.ft R
+writes a character onto the given output unit.
+.ft I
+Cputc
+.ft R
+returns as its value the character written.
+.PP
+Output for disk files is buffered
+in 512 character units, irrespective
+of newlines;
+teletype output goes character by character
+.sn
+CCLOSE (fd)
+.sN
+Activity on file
+.ft I
+fd
+.ft R
+is terminated and
+any output buffers are emptied.
+You usually don't have to call
+.ft I
+cclose; cexit
+.ft R
+will
+do it for you on all open files.
+However, to write some data
+on a file and then read it back in, the correct sequence is:
+.DS
+fd = copen (``file'', `w');
+write on fd ...
+cclose (fd);
+fd = copen(``file'', `r');
+read from fd ...
+.DE
+.sn
+CFLUSH (fn)
+.sN
+To get buffer flushing, but retain the ability to write more
+on the file, you may call this routine.
+.PP
+Normally, output intended
+for the teletype is not buffered
+and this call is not needed.
+.sn
+CEXIT ([errcode])
+.sN
+.ft I
+Cexit
+.ft R
+closes all files and then terminates execution.
+If a non-zero argument is given, this is assumed to be
+an error indication or other returned value to be signalled
+to the operating system.
+.PP
+.I
+Cexit
+.R
+.B
+must
+.R
+be called explicitly; a return
+from the main program is not
+adequate.
+.sn
+CEOF (fd)
+.sN
+.ft I
+Ceof
+.ft R
+returns nonzero when end of file has been reached on input unit \fIfd.\fR
+.sn
+GETCHAR ()
+.sN
+.ft I
+Getchar
+.ft R
+is a special case of \fIcgetc;\fR it reads
+one character from the standard input unit.
+.ft I
+Getchar (\|)
+.ft R
+is defined as
+.ft I
+cgetc (cin);
+.ft R
+it should not have an argument.
+.sn
+PUTCHAR (ch)
+.sN
+.ft I
+Putchar (ch)
+.ft R
+is the same as
+.ft I
+cputc (ch, cout);
+.ft R
+it writes one character on the standard output.
+.sn
+GETS (s)
+.sN
+.ft I
+Gets
+.ft R
+reads everything up to the next newline into the
+string pointed to by \fIs.\fR  If the last character read
+from this input unit was newline, then \fIgets\fR reads
+the next line, which on \*sGCOS\*S and \*sIBM\*S corresponds exactly
+to a logical record.
+The terminating newline is replaced by `\\0'.
+The value of \fIgets\fR is \fIs,\fR or 0 if end of file.
+.sn
+PUTS (s)
+.sN
+Copies the string \fIs\fR onto the standard output unit. 
+The terminating `\\0' is replaced by a newline character.
+The value of
+.I
+puts
+.R
+is
+.I
+s.
+.R
+.sn
+UNGETC (ch , fd)
+.sN
+.ft I
+Ungetc
+.ft R
+pushes back its character argument to the unit
+.ft I
+fd,
+.ft R
+which must be open for input.
+After
+.ft I
+ungetc (`a', fd); ungetc (`b', fd);
+.ft R
+the next two characters
+to be read from \fIfd\fR will be `b' and then `a'.
+Up to 100 characters may be pushed back on each file.
+This subroutine permits a program to read past the end
+of its input, and then restore it for the next routine to read.
+It is impossible to change an external file with
+.ft I
+ungetc;
+.ft R
+its purpose is only for internal communications, most particularly
+.ft I
+scanf,
+.ft R
+which is described in section 5.
+Note that
+.ft I
+scanf
+.ft R
+actually requires only one character
+of ``unget'' capability; thus it is possible that
+future implementors may change the specification of the
+.ft I
+ungetc
+.ft R
+routine.
+.SH
+5. HIGH-LEVEL CHARACTER STREAM ROUTINES
+.PP
+These two routines,
+.ft I
+printf
+.ft R
+for output and
+.ft I
+scanf
+.ft R
+for input, permit simple translation to and from character
+representations of numerical quantities.
+They also allow generation or interpretation of formatted
+lines.
+.sn
+PRINTF (\|[fd, ] control-string, arg1, arg2, ...)
+.sp .5
+PRINTF (\|[\(mi1, output-string, ] control-string, arg1, arg2, ...)
+.sN
+.ft I
+Printf
+.ft R
+converts, formats, and prints its arguments under control of the
+control string.
+The control string contains two types of objects: plain characters,
+which are simply copied to the output stream, and conversion
+specifications, each of which causes conversion and printing of the
+next successive argument to \fIprintf\fR.
+.sp
+Each conversion specification is introduced by the character `%'.
+Following the `%', there may be:
+.in 5
+\(em an optional minus sign `\(mi' which specifies left adjustment of the
+converted argument in the indicated field;
+.sp 3p
+\(em an optional digit string specifying a minimum field width; if the converted
+argument has fewer characters than the field width it will be padded
+on the left (or right, if the left
+adjustment indicator has been given) to make up the field width;
+the padding character is blank normally and zero if the field
+width was specified with a leading zero
+(note that this does not imply an octal field width);
+.sp 3p
+\(em an optional period `.' which serves to separate the field width
+from the next digit string;
+.sp 3p
+\(em an optional digit string (the precision) which specifies the maximum
+number of characters to be printed from a string,
+or the number of digits to be printed to the right
+of the decimal point of a floating or double number.
+.sp 3p
+\(em an optional length modifier \(fml\(fm which indicates that the corresponding
+data item is a
+.I
+long
+.R
+rather than an
+.I
+int.
+.R
+.sp 3p
+\(em a character which indicates the type of conversion to be applied.
+.in 0
+.sp
+The conversion characters and their meanings are:
+.in 5
+.sp 5p
+.ti -0.2i
+\fBd\fR	The argument is converted to decimal notation.
+.sp 3p
+.ti -0.2i
+\fBo\fR	The argument is converted to octal notation.
+.sp 3p
+.ti -0.2i
+\fBx\fR	The argument is converted to hexadecimal notation.
+.sp 3p
+.ti -0.2i
+\fBu\fR	The argument is converted to unsigned decimal notation.
+This is only implemented (or useful) on \*sUNIX\*S.
+.sp 3p
+.ti -0.2i
+\fBc\fR	The argument is taken to be a single character.
+.sp 3p
+.ti -0.2i
+\fBs\fR	The argument is taken to be a string and characters from the
+string are printed until a null character is reached or until the
+number of characters indicated by the precision specification
+is exhausted.
+.sp 3p
+.ti -0.2i
+\fBe\fR	The argument is taken to be a float or double
+and converted to decimal notation of the form
+.ft I
+[\(mi]\|m.nnnnnnE\|[\(mi]\|xx
+.ft R
+where the length of the string of \fIn\fP's is specified by
+the precision.
+The default precision is 6 and the maximum is 22.
+.sp 3p
+.ti -0.2i
+\fBf\fR	The argument is taken to be a float or double and
+converted to decimal notation of the
+form
+.ft I
+[\(mi]mmm.nnnnn
+.ft R
+where the length of the string of
+\fIn\fR's is specified by
+the precision.  The default precision is 6 and the maximum
+is 22.
+Note that the precision does not determine
+the number of significant digits printed in \fBf\fR format.
+.in 0
+.sp 3p
+If no recognizable conversion character appears after the `%', that character
+is printed; thus `%' may be printed by use of the string ``%%''.
+.PP
+As an example of \fIprintf,\fR the following program fragment
+.DS
+.I
+int i, j; float x; char \**s;
+i = 35; j=2; x= 1.732; s = ``ritchie'';
+printf (``%d %f %s\\n'', i, x, s);
+printf (``%o, %4d or %\(mi4d%5.5s\\n'', i, j, j, s);
+.R
+.DE
+would print
+.DS
+.I
+.cs I 24
+35 1.732000 ritchie
+043,    2 or 2   ritch
+.cs I
+.R
+.DE
+.PP
+If \fIfd\fR is not specified, output is to unit
+.I
+cout.
+.R
+It is possible to direct output to a string instead of to a file.
+This is indicated by \(mi1 as the first argument.
+The second argument should be a pointer to the string.
+\fIPrintf\fR will put a terminating `\\0' onto the string.
+.sn
+SCANF (\|[fd, ] control-string, arg1, arg2, ....)
+.sp .5
+SCANF (\|[\(mi1, input-string, ] control-string, arg1, arg2, ....)
+.sN
+.ft I
+Scanf
+.ft R
+reads characters, interprets
+them according to a format, and stores the results in its arguments.
+It expects as arguments:
+.ti 5
+.ti -0.2i
+1.	An optional file-descriptor or input-string, indicating the source of the input
+characters; if omitted, file
+.I
+cin
+.R
+is used;
+.ti -0.2i
+2.	A control string, described below;
+.ti -0.2i
+3.	A set of arguments,
+.ft I
+each of which must be a pointer,
+.ft R
+indicating where the converted input should be stored.
+.in 0
+.sp 5p
+The
+control string
+usually contains
+conversion specifications, which are used to direct interpretation
+of input sequences.
+The control string may contain:
+.sp 5p
+.in 5
+.ti -0.2i
+1.	Blanks, tabs or newlines, which are ignored.
+.ti -0.2i
+2.	Ordinary characters (not %) which are expected to match
+the next non-space character of the input stream
+(where space characters are defined as blank, tab or newline).
+.ti -0.2i
+3.	Conversion specifications, consisting of the
+character %, an optional assignment suppressing character \**,
+an optional numerical maximum field width, and a conversion
+character.
+.in 0
+.sp 5p
+A conversion specification is used to direct the conversion of the
+next input field; the result
+is placed in the variable pointed to by the corresponding argument,
+unless assignment suppression was
+indicated by the \** character.
+An input field is defined as a string of non-space characters;
+it extends either to the next space character or until the field
+width, if specified, is exhausted.
+.PP
+The conversion character indicates the interpretation of the
+input field; the corresponding pointer argument must
+usually be of a restricted type.
+Pointers, rather than variable names, are required
+by the ``call-by-value'' semantics of the C language.
+The following conversion characters are legal:
+.in 5
+.ti -0.2i
+\fB%\fR	indicates that a single % character is expected
+in the input stream at this point;
+no assignment is done.
+.tr @ 
+.ti -0.2i
+\fBd\fR	indicates that a decimal integer is expected
+in the input stream;
+the corresponding argument should be an integer pointer.
+.ti -0.2i
+\fBo\fR	indicates that an octal integer is expected in the
+input stream; the corresponding argument should be a integer pointer.
+.ti -0.2i
+\fBx\fR	indicates that a hexadecimal integer is expected in the input stream;
+the corresponding argument should be an integer pointer.
+.ti -0.2i
+\fBs\fR	indicates that a character string is expected;
+the corresponding argument should be a character pointer
+pointing to an array of characters large enough to accept the
+string and a terminating `\\0', which will be added.
+The input field is terminated by a space character
+or a newline.
+.ti -0.2i
+\fBc\fR	indicates that a single character is expected; the
+corresponding argument should be a character pointer;
+the next input character is placed at the indicated spot.
+The normal skip over space characters is suppressed
+in this case;
+to read the next non-space character, try
+.ft I
+%1s.
+.ft R
+.ti -0.2i
+\fBe\fR or \fBf\fR indicates that a floating point number is expected in the input stream;
+the next field is converted accordingly and stored through the
+corresponding argument, which should be a pointer to a float.
+The input format for
+.I
+floats
+.R
+is
+a string of numbers
+possibly containing a decimal point, followed by an optional
+exponent field containing an E or e followed by a possibly signed integer.
+.ti -0.2i
+\fB[\fR	indicates a string not to be delimited by space characters.
+The left bracket is followed by a set of characters and a right
+bracket; the characters between the brackets define a set
+of characters making up the string.
+If the first character
+is not circumflex (\|^\|), the input field
+is all characters until the first character not in the set between
+the brackets; if the first character
+after the left bracket is ^, the input field is all characters
+until the first character which is in the remaining set of characters
+between the brackets.
+The corresponding argument must point to a character array.
+.in 0
+.PP
+The conversion characters
+.I
+d, o
+.R
+and
+.I
+x
+.R
+may be preceded by 
+.I
+l
+.R
+to indicate that a pointer to
+.I
+long
+.R
+rather than
+.I
+int
+.R
+is expected.
+Similarly, the conversion characters
+.I
+e
+.R
+or
+.I
+f
+.R
+may be preceded by
+.I
+l
+.R
+to indicate that a pointer to 
+.I
+double
+.R
+rather than 
+.I
+float
+.R
+is in the argument list.
+The character
+.I
+h
+.R
+will function similarly in the future to indicate
+.I
+short
+.R
+data items.
+.PP
+For example, the call
+.in 10
+.nf
+.ft I
+int i; float x; char name[50];
+scanf ( ``%d%f%s'', &i, &x, name);
+.ft R
+.in 0
+with the input line
+.in 10
+.ft I
+25   54.32E\(mi1  thompson
+.ft R
+.in 0
+.fi
+will assign to
+.ft I
+i
+.ft R
+the value
+25,
+.ft I
+x
+.ft R
+the value 5.432, and
+.ft I
+name
+.ft R
+will contain
+.ft I
+``thompson\\0''.
+.ft R
+Or,
+.ft I
+.nf
+.in 10
+int i; float x; char name[50];
+scanf (``%2d%f%\**d%[1234567890]'', &i, &x, name);
+.ft R
+.in 0
+with input
+.ft I
+.in 10
+56789 0123 56a72
+.ft R
+.in 0
+.fi
+will assign 56 to
+.ft I
+i,
+.ft R
+789.0 to
+.ft I
+x,
+.ft R
+skip ``0123'',
+and place the string ``56\\0'' in
+.ft I
+name.
+.ft R
+The next call to \fIcgetc\fR will return `a'.
+.PP
+.ft I
+Scanf
+.ft R
+returns as its value the number of successfully matched and assigned input
+items.
+This can be used to decide how many input items were found.
+On end of file, \(mi1 is returned; note that this is different
+from 0, which means that the next input character does not
+match what you called for in the control string.
+.ft I
+Scanf,
+.ft R
+if given a first argument of \(mi1, will scan a string in memory
+given as the second argument.  For example,
+if you want to read up to four numbers from an input line
+and find out how many there were, you could try
+.ft I
+.in 5
+.nf
+.ne 3
+int a[4], amax;
+char line[100];
+amax = scanf (\(mi1, gets(line), ``%d%d%d%d'', &a[0], &a[1], &a[2], &a[3]);
+.in 0
+.ft R
+.fi
+.SH
+6. BINARY STREAM ROUTINES
+.PP
+These routines write binary data, not translated to printable characters.
+They are normally efficient
+but do not produce files that can be printed or easily interpreted.
+No special information is added
+to the records and thus they can be handled by
+other programming systems
+.ft I
+if
+.ft R
+you make the departure from portability required
+to tell the other system how big a C item (integer, float,
+structure, etc.) really is in machine units.
+.sn
+COPEN (name, direction, ``i'')
+.sN
+When
+.ft I
+copen
+.ft R
+is called with a third argument as above, a binary stream
+filedescriptor is returned.
+Such a file descriptor is required for the remaining
+subroutines in this section, and may not be used with
+the routines in the preceding two sections.
+The first two arguments operate exactly as described in section
+3;
+further details are given in section 7.
+An ordinary file descriptor may be used for binary I-O,
+but binary and character I-O may not be mixed
+unless
+.I
+cflush
+.R
+is called at each switch to binary I-O.
+The third
+argument to
+.I
+copen
+.R
+is ignored.
+.sn
+CWRITE (\|ptr, sizeof(\**ptr), nitems, fd\|)
+.sN
+.ft I
+Cwrite
+.ft R
+writes
+.ft I
+nitems
+.ft R
+of data beginning at
+.ft I
+ptr
+.ft R
+on file
+.ft I
+fd.
+Cwrite
+.ft R
+writes blocks of binary information, not translated to
+printable form, on a file.  It is intended for machine-oriented
+bulk storage of intermediate data.  Any kind of data may
+be written with this command, but only the corresponding
+.ft I
+cread
+.ft R
+should be expected to make any sense of it on return.
+The first argument is a pointer to the beginning of a vector
+of any kind of data.  The second argument
+tells
+.ft I
+cwrite
+.ft R
+how big the items are.
+The third argument specifies the number
+of the items to be written; the fourth indicates where.
+.sn
+CREAD (\|ptr, sizeof(\**ptr), nitems, fd\|)
+.sN
+.ft I
+Cread
+.ft R
+reads up to
+.ft I
+nitems
+.ft R
+of data from file
+.ft I
+fd
+.ft R
+into a buffer beginning at
+.ft I
+ptr.
+Cread
+.ft R
+returns the number of items read.
+.br
+.ne 2i
+The returned
+number of items will be equal to the number requested by
+.I
+nitems
+.R
+except for reading certain devices (e.g. the teletype or magnetic tape)
+or reading the final bytes of a disk file.
+.LP
+Again, the second argument indicates the size
+of the data items being read.
+.sn
+CCLOSE (fd)
+.sN
+The same description applies as for
+character-stream files.
+.SH
+7. OTHER PORTABLE ROUTINES
+.LP
+.sn
+REW (fd)
+.sN
+Rewinds unit
+.I
+fd.
+.R
+Buffers are emptied properly and the file
+is left open.
+.sn
+SYSTEM (string)
+.sN
+The given
+.I
+string
+.R
+is executed as if it were typed at the terminal.
+.sn
+NARGS (\|)
+.sN
+A subroutine can call
+this function to try to find out how many arguments it was called with.
+Normally,
+.I
+nargs()
+.R
+returns the number of arguments
+plus 3 for every
+.I
+float
+.R
+or
+.I
+double
+.R
+argument
+and plus one for every
+.I
+long
+.R
+argument.
+If the new \*sUNIX\*S feature of separated instruction and data space
+areas is used,
+.I
+nargs()
+.R
+doesn't work at all.
+.sn
+CALLOC (n, sizeof(object))
+.sN
+.I
+Calloc
+.R
+returns a pointer to new storage, allocated in space
+obtained from the operating system.
+The space obtained is
+well enough aligned for any use, i.e.
+for a double-precision number.
+Enough space to store
+.I
+n
+.R
+objects of the size
+indicated by the second argument
+is provided.
+The
+.I
+sizeof
+.R
+is executed at compile time; it is not in the library.
+A returned value of \(mi1 indicates failure to obtain space.
+.sn
+CFREE (ptr, n, sizeof(*ptr))
+.sN
+.I
+Cfree
+.R
+returns to the operating system
+memory starting at
+.I
+ptr
+.R
+and extending for
+.I
+n
+.R
+units of the size given by the third argument.
+The space should have been obtained through \fIcalloc\fR.
+On \*sUNIX\*S you can
+only return the exact amount of space
+obtained by 
+.I
+calloc;
+.R
+the second and third arguments are ignored.
+.sn
+FTOA (floating-number, char-string, precision, format\|)
+.sN
+.ft I
+Ftoa
+.ft R
+(floating to \*sASCII\*S conversion)
+converts floating point numbers to character strings.
+The
+.ft I
+format
+.ft R
+argument should be either `f' or `e'; `e' is default.
+See the explanation of
+.ft I
+printf
+.ft R
+in section 5 for a description of the result.
+.sn
+ATOF (char-string)
+.sN
+Returns a floating value equal to the
+value of the \*sASCII\*S character string argument,
+interpreted as a decimal floating point number.
+.sn
+TMPNAM (str)
+.sN
+This routine places in the character array expected as its argument
+a string
+which is legal to use as a file name
+and which is guaranteed to be unique
+among all jobs executing on the computer at the same
+time.  It is thus appropriate for use as a temporary
+file name, although
+the user may wish to move it into an appropriate directory.
+The value of the function is the address
+of the string.
+.sn
+ABORT (code)
+.sN
+Causes your program to terminate abnormally, which typically
+results in a dump by the operating system.
+.sn
+INTSS ()
+.sN
+This routine tells you whether you are running in
+foreground or background.
+The definition of ``foreground'' is that
+the standard input is the terminal.
+.sn
+WDLENG (\|)
+.sN
+This returns 16 on \*sUNIX\*S.
+C users should be aware that the preprocessor
+normally provides a defined symbol suitable for distinguishing the local system;
+thus on
+.SM
+UNIX
+.NL
+the symbol
+.I
+unix
+.R
+is defined
+before starting to compile your program.
