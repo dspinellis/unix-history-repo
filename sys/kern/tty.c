@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.23 1994/03/21 18:28:28 ache Exp $
+ *	$Id: tty.c,v 1.24 1994/03/21 21:12:55 ache Exp $
  */
 
 #include "param.h"
@@ -796,7 +796,7 @@ ttylclose(tp, flag)
 }
 
 /*
- * Handle close() on a tty line: flush and set to initial state,
+ * Handle close() on a tty line: set to initial state,
  * bumping generation number so that pending read/write calls
  * can detect recycling of the tty.
  */
@@ -806,7 +806,6 @@ ttyclose(tp)
 {
 	if (constty == tp)
 		constty = NULL;
-	ttyflush(tp, FREAD|FWRITE);
 	tp->t_session = NULL;
 	tp->t_pgrp = NULL;
 	tp->t_state = 0;
