@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.5 (Berkeley) %G% */
+/*	@(#)esis.c	7.6 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -123,12 +123,12 @@ esis_init()
  * NOTES:			This is here only so esis gets initialized.
  */
 /*ARGSUSED*/
-esis_usrreq(so, req, m, nam, rights)
+esis_usrreq(so, req, m, nam, control)
 struct socket	*so;		/* socket: used only to get to this code */
 int				req;		/* request */
 struct mbuf		*m;			/* data for request */
 struct mbuf		*nam;		/* optional name */
-struct mbuf		*rights;	/* optional rights */
+struct mbuf		*control;	/* optional control */
 {
 	if (m != NULL)
 		m_freem(m);
@@ -344,7 +344,7 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 	siso.siso_nlen = 6 + 1;	/* should be taken from snpa_hdr */
 										/* +1 is for AFI */
 	bcopy(inbound_shp->snh_shost, siso.siso_data + 1, 6);
-	(ifp->if_output)(ifp, m0, &siso);
+	(ifp->if_output)(ifp, m0, &siso, 0);
 }
 
 /*
@@ -379,7 +379,7 @@ register struct mbuf	*m;	/* determine if there remains space */
 	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
 #define ESIS_NEXT_OPTION(b)	{ b += (2 + b[1]); \
 	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
-int ESHonly;
+int ESHonly = 1;
 /*
  
 /*
@@ -737,7 +737,7 @@ int				sn_len;
 	siso.siso_nlen = sn_len + 1;
 	siso.siso_len  = sn_len + 6;
 	bcopy(sn_addr, siso.siso_data + 1, (unsigned)sn_len);
-	(ifp->if_output)(ifp, m0, &siso);
+	(ifp->if_output)(ifp, m0, &siso, 0);
 }
 
 /*
