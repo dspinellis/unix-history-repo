@@ -1,4 +1,4 @@
-/*	pup.h	4.1	82/02/15	*/
+/*	pup.h	4.2	82/03/03	*/
 
 /*
  * PUP port addressing.
@@ -7,7 +7,7 @@ struct pupport {
 	u_char	pp_net;
 	u_char	pp_host;
 	u_long	pp_socket;
-}
+};
 
 /*
  * PUP header.
@@ -27,3 +27,13 @@ struct pup_header {
 };
 
 #define	PUP_TRACE	01		/* trace pup in network */
+
+/*
+ * A sockaddr, as seen through the eyes of PUP.
+ */
+struct sockaddr_pup {
+	short	spup_family;
+	short	spup_zero1;
+	struct	pupport spup_addr;
+	char	spup_zero2[4];
+};
