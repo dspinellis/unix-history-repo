@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.108 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.109 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -902,33 +902,6 @@ struct __lseek_args {
 	int	sbase;
 };
 
-#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-/*
- * Seek system call.
- */
-struct lseek_args {
-	int	fdes;
-	long	off;
-	int	sbase;
-};
-lseek(p, uap, retval)
-	struct proc *p;
-	register struct lseek_args *uap;
-	int *retval;
-{
-	struct __lseek_args nuap;
-	off_t qret;
-	int error;
-
-	nuap.fdes = uap->fdes;
-	nuap.off = uap->off;
-	nuap.sbase = uap->sbase;
-	error = __lseek(p, &nuap, &qret);
-	*(long *)retval = qret;
-	return (error);
-}
-#endif /* COMPAT_43 || COMPAT_SUNOS */
-
 /*
  * Seek system call.
  */
@@ -970,6 +943,33 @@ __lseek(p, uap, retval)
 	}
 	*(off_t *)retval = fp->f_offset;
 	return (0);
+}
+
+/*
+ * Old lseek system call.
+ *
+ * XXX should be COMPAT_43, but too much breaks.
+ */
+struct lseek_args {
+	int	fdes;
+	long	off;
+	int	sbase;
+};
+lseek(p, uap, retval)
+	struct proc *p;
+	register struct lseek_args *uap;
+	int *retval;
+{
+	struct __lseek_args nuap;
+	off_t qret;
+	int error;
+
+	nuap.fdes = uap->fdes;
+	nuap.off = uap->off;
+	nuap.sbase = uap->sbase;
+	error = __lseek(p, &nuap, &qret);
+	*(long *)retval = qret;
+	return (error);
 }
 
 /*
