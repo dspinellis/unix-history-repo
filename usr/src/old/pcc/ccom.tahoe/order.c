@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)order.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)order.c	1.4 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -90,7 +90,12 @@ sucomp( p ) register NODE *p; {
 			}
 		if( p->in.su == szty(p->in.type) &&
 		   (p->in.op!=REG || !istreg(p->tn.rval)) &&
-		   (p->in.type==INT || p->in.type==UNSIGNED || p->in.type==DOUBLE) )
+		   (p->in.type==INT ||
+		    p->in.type==UNSIGNED ||
+		    p->in.type==FLOAT ||
+		    p->in.type==DOUBLE ||
+		    ISPTR(p->in.type) ||
+		    ISARY(p->in.type) )
 			p->in.su = 0;
 		return;
 		}
@@ -174,9 +179,6 @@ sucomp( p ) register NODE *p; {
 	case MOD:
 		p->in.su = max(max(sul,sur+(sul!=0)),4+(sul!=0)+(sur!=0));
 		return;
-	case SCONV:
-		p->in.su = max(sul,szty(p->in.right->in.type)+sur)+2;
-		return;
 		}
 	/* binary op, computed by left, then right, then do op */
 	p->in.su = max(sul,szty(p->in.right->in.type)+sur);
@@ -227,7 +229,6 @@ rallo( p, down ) NODE *p; {
 
 	}
 
-/* VARARGS1 */
 offstar( p ) register NODE *p; {
 	if( p->in.op == PLUS ) {
 		if( p->in.left->in.su == fregs ) {
@@ -238,21 +239,21 @@ offstar( p ) register NODE *p; {
 			return;
 		}
 		if( p->in.left->in.op==LS && 
-		  (p->in.left->in.left->in.op!=REG || tlen(p->in.left->in.left)!=sizeof(int) ) ) {
+		  (p->in.left->in.left->in.op!=REG || tlen(p->in.left->in.left)!=SZINT/SZCHAR ) ) {
 			order( p->in.left->in.left, INTAREG|INAREG );
 			return;
 		}
 		if( p->in.right->in.op==LS &&
-		  (p->in.right->in.left->in.op!=REG || tlen(p->in.right->in.left)!=sizeof(int) ) ) {
+		  (p->in.right->in.left->in.op!=REG || tlen(p->in.right->in.left)!=SZINT/SZCHAR ) ) {
 			order( p->in.right->in.left, INTAREG|INAREG );
 			return;
 		}
 		if( p->in.type == (PTR|CHAR) || p->in.type == (PTR|UCHAR) ) {
-			if( p->in.left->in.op!=REG || tlen(p->in.left)!=sizeof(int) ) {
+			if( p->in.left->in.op!=REG || tlen(p->in.left)!=SZINT/SZCHAR ) {
 				order( p->in.left, INTAREG|INAREG );
 				return;
 			}
-			else if( p->in.right->in.op!=REG || tlen(p->in.right)!=sizeof(int) ) {
+			else if( p->in.right->in.op!=REG || tlen(p->in.right)!=SZINT/SZCHAR ) {
 				order(p->in.right, INTAREG|INAREG);
 				return;
 			}
@@ -274,17 +275,15 @@ offstar( p ) register NODE *p; {
 	order( p, INTAREG|INAREG );
 	}
 
-/* VARARGS1 */
 setincr( p ) register NODE *p; {
 	p = p->in.left;
 	if( p->in.op == UNARY MUL ){
-		offstar( p );
+		offstar( p->in.left );
 		return( 1 );
 		}
 	return( 0 );
 	}
 
-/* VARARGS1 */
 setbin( p ) register NODE *p; {
 	register int ro, rt;
 
@@ -331,7 +330,6 @@ setstr( p ) register NODE *p; { /* structure assignment */
 	return( 0 );
 	}
 
-/* VARARGS1 */
 setasg( p ) register NODE *p; {
 	/* setup for assignment operator */
 
@@ -359,7 +357,6 @@ setasg( p ) register NODE *p; {
 	return(0);
 	}
 
-/* VARARGS1 */
 setasop( p ) register NODE *p; {
 	/* setup for =ops */
 	register int rt, ro;
@@ -398,6 +395,7 @@ setasop( p ) register NODE *p; {
 
 		}
 	cerror( "illegal setasop" );
+	/*NOTREACHED*/
 	}
 
 int crslab = 99999;  /* Tahoe */
