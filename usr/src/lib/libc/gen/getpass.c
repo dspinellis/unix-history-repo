@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpass.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpass.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/termios.h>
@@ -43,7 +43,7 @@ getpass(prompt)
 	if (echo = (term.c_lflag & ECHO)) {
 		term.c_lflag &= ~ECHO;
 		term.c_cflag |= CIGNORE;
-		(void)tcsetattr(fileno(fp), TCSADFLUSH, &term);
+		(void)tcsetattr(fileno(fp), TCSAFLUSH, &term);
 	}
 	(void)fputs(prompt, outfp);
 	rewind(outfp);			/* implied flush */
@@ -55,7 +55,7 @@ getpass(prompt)
 	if (echo) {
 		term.c_lflag |= ECHO;
 		term.c_cflag |= CIGNORE;
-		tcsetattr(fileno(fp), TCSADFLUSH, &term);
+		tcsetattr(fileno(fp), TCSAFLUSH, &term);
 	}
 	(void)sigsetmask(omask);
 	if (fp != stdin)
