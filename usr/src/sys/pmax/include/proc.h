@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.1 (Berkeley) %G%
+ *	@(#)proc.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -16,6 +16,8 @@
 struct mdproc {
 	int	md_flags;		/* machine-dependent flags */
 	int	md_upte[UPAGES];	/* ptes for mapping u page */
+	int	md_ss_addr;		/* single step address for ptrace */
+	int	md_ss_instr;		/* single step instruction for ptrace */
 };
 
 /* md_flags */
