@@ -22,7 +22,7 @@ talkd: ${DOBJECT}
 	cc ${CFLAGS} -o talkd ${DOBJECT}
 
 talk:	${TOBJECT}
-	cc -o talk ${TOBJECT} -lcurses -ltermlib
+	cc -o talk ${TOBJECT} -lcurses -ltermlib -lcompat
 
 ${DOBJECT}: ctl.h
 ${TOBJECT}: talk.h ctl.h talk_ctl.h
