@@ -3,26 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	7.2 (Berkeley) %G%
+ *	@(#)dmz.c	7.3 (Berkeley) %G%
  */
 
 /*
  * DMZ-32 driver
- * HISTORY
- * 23-Apr-85  Joe Camaratta (jcc) at Siemens RTL
- *	Driver for DEC's DMZ32 24-line asynchronous multiplexor.
- *	Based on Chris Maloney's driver for DEC's DMF32
- *
- * 9-Aug-85	Mike Meyer (mwm) at ucb
- *	Mangled into shape for 4.3.
  */
 
 #include "dmz.h"
 #if NDMZ > 0
 
-
 #include "../machine/pte.h"
-
 
 #include "bk.h"
 #include "uba.h"
@@ -43,68 +34,16 @@
 #include "kernel.h"
 #include "syslog.h"
 
+#include "dmx.h"
 #include "ubareg.h"
 #include "ubavar.h"
+#include "dmxreg.h"
 #include "dmzreg.h"
 #include "dmreg.h"
 
-int dmzprobe(), dmzattach(), dmzrint(), dmzxint();
-struct uba_device *dmzinfo[NDMZ];
-u_short dmzstd[] = {0, 0};
-struct uba_driver dmzdriver = {
-	dmzprobe, 0, dmzattach, 0, dmzstd, "dmz", dmzinfo
-};
-
-#define	NDMZLINES	(NDMZ*24)
-
-int ttrstrt();
-struct tty dmz_tty[NDMZLINES];
-
-int dmzsoftCAR[NDMZ];
-
-struct {
-	char dmz_state;		/* dmz state */
-	int dmz_count;		/* dmz dma count */
-} dmz_softc[NDMZ*24];
-
-#define	ST_TXOFF	(0x01)	/* transmission turned off (^S) */
-#define	ST_DMA		(0x02)	/* dma inprogress */
-#define	ST_INBUSY	(0x04)	/* stop transmission in busy */
-
-char dmz_speeds[] = {
-	0, 0, 1, 2, 3, 4, 0, 5, 6, 7, 010, 012, 014, 016, 017, 0 
-};
-
-#ifndef	PORTSELECTOR
-#define	ISPEED	B9600
-#define	IFLAGS	(EVENP|ODDP|ECHO)
-#else
-#define	ISPEED	B4800
-#define	IFLAGS	(EVENP|ODDP)
-#endif
-
-#ifndef lint
-int ndmz = NDMZLINES;		/* Used by pstat/iostat */
-#endif
-
-short dmzact[NDMZ];		/* Mask of active octets on the dmz */
-int dmzstart();
-
-/*
- * SILO_TIMEOUT represents the number of milliseconds characters can sit
- * in the input silo without causing an interrupt.  If data overruns or
- * slow XON/XOFF occur, set it lower but AT LEAST equal to 1.
- */
-#define	SILO_TIMEOUT	(3)
-
-/*
- * DO_DMA_COUNT represents the threshold of the number of output
- * characters beyond which the driver uses DMA mode.
- */
-#define	DO_DMA_COUNT	(10)
-
-#define	TRUE		(1)
-#define	FALSE		(0)
+extern	int dmx_timeout;		/* silo timeout, in ms */
+extern	char dmx_speeds[];
+int	dmzstart();
 
 /*
  * The clist space is mapped by one terminal driver onto each UNIBUS.
@@ -115,10 +54,22 @@ int dmzstart();
  */
 int	dmz_uballoc[NUBA];	/* which dmz (if any) allocated unibus map */
 int	cbase[NUBA];		/* base address of clists in unibus map */
-#define	UBACVT(x, uban)	    (cbase[uban] + ((x) - (char *)cfree))
 
-/* These flags are for debugging purposes only */
-int dmz_dma_on = 1;
+/*
+ * Autoconfiguration and variables for DMZ32
+ */
+int dmzprobe(), dmzattach();
+struct uba_device *dmzinfo[NDMZ];
+u_short dmzstd[] = { 0 };
+struct uba_driver dmzdriver = {
+	dmzprobe, 0, dmzattach, 0, dmzstd, "dmz", dmzinfo
+};
+
+struct	tty dmz_tty[NDMZ*24];
+struct	dmx_softc dmz_softc[3 * NDMZ];
+#ifndef lint
+int	ndmz = NDMZ*24;			/* used by iostat */
+#endif
 
 dmzprobe(reg)
 	caddr_t reg;
@@ -153,177 +104,214 @@ dmzprobe(reg)
 }
 
 dmzattach(ui)
-	struct uba_device *ui;
+	register struct uba_device *ui;
 {
-	dmzsoftCAR[ui->ui_unit] = ui->ui_flags;
+	register struct dmx_softc *sc;
+	register int i;
+
+	sc = &dmz_softc[3 * ui->ui_unit];
+	for (i = 0; i < 3; i++, sc++) {
+		sc->dmx_type = 'z';
+		sc->dmx_unit = ui->ui_unit;
+		sc->dmx_unit0 = 8 * i;
+		sc->dmx_ubanum = ui->ui_ubanum;
+		sc->dmx_softCAR = (ui->ui_flags >> (8 * i)) & 0xff;
+		sc->dmx_tty = &dmz_tty[((ui->ui_unit * 3) + i) * 8];
+		sc->dmx_octet = (struct dmx_octet *)
+		    &((struct dmzdevice *)ui->ui_addr)->dmz_octet[i];
+	}
+
 	cbase[ui->ui_ubanum] = -1;
 	dmz_uballoc[ui->ui_unit] = -1;
 }
 
-/* ARGSUSED */
-dmzopen(device, flag)
-	dev_t device;
-	int flag;
+/*
+ * Open a DMF32 line, mapping the clist onto the uba if this
+ * is the first dmf on this uba.  Turn on this dmf if this is
+ * the first use of it.
+ */
+/*ARGSUSED*/
+dmzopen(dev, flag)
+	dev_t dev;
 {
 	register struct tty *tp;
-	register int unit, controller;
-	register struct dmzdevice *dmz_addr;
-	register struct uba_device *ui;
-	int priority;
-	int octet;
+	struct dmx_softc *sc;
+	int unit, dmz;
+	struct uba_device *ui;
+	int s;
 
-	unit = minor(device);
-	controller = DMZ(unit);
-	octet = OCTET(unit);
-
-	if (unit >= NDMZLINES ||
-	    (ui = dmzinfo[controller]) == 0 ||
-	    ui->ui_alive == 0)
+	unit = minor(dev);
+	dmz = DMZ(unit);
+	if (unit >= NDMZ*24 || (ui = dmzinfo[dmz])== 0 || ui->ui_alive == 0)
 		return (ENXIO);
 
 	tp = &dmz_tty[unit];
-
-	if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
-		return (EBUSY);
-
-	dmz_addr = (struct dmzdevice *)ui->ui_addr;
-	tp->t_addr = (caddr_t)dmz_addr;
+	sc = &dmz_softc[unit / 8];
+	tp->t_addr = (caddr_t)sc->dmx_octet;
 	tp->t_oproc = dmzstart;
+	tp->t_dev = dev;			/* needed before dmxopen */
 
 	/*
-	 * Set up Unibus map registers.  Block uba resets, which can
-	 * clear the state.
+	 * While setting up state for this uba,
+	 * block uba resets which can clear the state.
 	 */
-	priority = spl5();
+	s = spl6();
 	if (cbase[ui->ui_ubanum] == -1) {
-		dmz_uballoc[ui->ui_ubanum] = controller;
+		dmz_uballoc[ui->ui_ubanum] = dmz;
 		cbase[ui->ui_ubanum] = UBAI_ADDR(uballoc(ui->ui_ubanum,
 		    (caddr_t)cfree, nclist*sizeof(struct cblock), 0));
 	}
+	splx(s);
 
-	if ((dmzact[controller] & (1 << octet)) == 0) {
-		dmz_addr->octet[octet].octet_csr |= DMZ_IE;
-		dmzact[controller] |= 1 << octet;
-		dmz_addr->octet[octet].octet_receive.octet_sato = SILO_TIMEOUT;
-	}
-
-	splx(priority);
-
-	if ((tp->t_state & TS_ISOPEN) == 0) {
-		ttychars(tp);
-#ifndef PORTSELECTOR
-		if (tp->t_ispeed == 0) {
-#else
-			tp->t_state |= TS_HUPCLS;
-#endif PORTSELECTOR
-			tp->t_ispeed = ISPEED;
-			tp->t_ospeed = ISPEED;
-			tp->t_flags = IFLAGS;
-#ifndef PORTSELECTOR
-		}
-#endif PORTSELECTOR
-		dmz_softc[unit].dmz_state = 0;
-	}
-	dmzparam(unit);
-
-	/*
-	 * Wait for carrier, then process line discipline specific open.
-	 */
-	if ((dmzmctl(unit, DMZ_ON, DMSET) & DMZ_CAR) ||
-	    (dmzsoftCAR[controller] & (1 << (unit % 24))))
-		tp->t_state |= TS_CARR_ON;
-	priority = spl5();	
-	while ((tp->t_state & TS_CARR_ON) == 0) {
-		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t) &tp->t_rawq, TTIPRI);
-	}
-	splx(priority);
-
-	return ((*linesw[tp->t_line].l_open)(device, tp));
+	return (dmxopen(tp, sc));
 }
 
-dmzparam(unit)
-	register int unit;
-{
-	register struct tty *tp;
-	register struct dmzdevice *dmz_addr;
-	register int line_parameters;
-	register int octet;
-	int priority;
-
-	octet = OCTET(unit);
-
-	tp = &dmz_tty[unit];
-	dmz_addr = (struct dmzdevice *)tp->t_addr;
-
-	priority = spl5();
-	if ((tp->t_ispeed) == 0) {
-		tp->t_state |= TS_HUPCLS;
-		(void) dmzmctl(unit, DMZ_OFF, DMSET);
-		splx(priority);
-		return;
-	}
-
-	line_parameters = (dmz_speeds[tp->t_ospeed] << 12) | (dmz_speeds[tp->t_ispeed] << 8);
-
-	if ((tp->t_ispeed) == B134)
-		line_parameters |= DMZ_6BT | DMZ_PEN;
-	else if (tp->t_flags & (RAW | LITOUT | PASS8))
-		line_parameters |= DMZ_8BT;
-	else
-		line_parameters |= DMZ_7BT | DMZ_PEN;
-
-	if (tp->t_flags & EVENP)
-		line_parameters |= DMZ_EPR;
-	if ((tp->t_ospeed) == B110)
-		line_parameters |= DMZ_SCD;
-
-	line_parameters |= (unit & 07);
-
-	dmz_addr->octet[octet].octet_lprm = line_parameters;
-	splx(priority);
-}
-
-/* ARGSUSED */
-dmzclose(device, flag)
-	dev_t device;
+/*
+ * Close a DMZ32 line.
+ */
+/*ARGSUSED*/
+dmzclose(dev, flag)
+	dev_t dev;
 	int flag;
 {
-	register struct  tty *tp;
-	register int unit;
 
-	unit = minor(device);
-	tp = &dmz_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
-
-	/*
-	 * Clear break, hang-up and close the modem.
-	 */
-	(void) dmzmctl(unit, DMZ_BRK, DMBIC);
-	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
-		(void) dmzmctl(unit, DMZ_OFF, DMSET);
-	ttyclose(tp);
-	return;
+	dmxclose(&dmz_tty[minor(dev)]);
 }
 
+dmzread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	register struct tty *tp;
+
+	tp = &dmz_tty[minor(dev)];
+	return ((*linesw[tp->t_line].l_read)(tp, uio));
+}
+
+dmzwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	register struct tty *tp;
+
+	tp = &dmz_tty[minor(dev)];
+	return ((*linesw[tp->t_line].l_write)(tp, uio));
+}
+
+/*
+ * DMZ32 receiver interrupts.
+ */
+dmzrinta(dmz)
+	int dmz;
+{
+	struct uba_device *ui;
+
+	ui = dmzinfo[dmz];
+	if (ui == 0 || ui->ui_alive == 0)
+		return;
+	dmxrint(&dmz_softc[3 * dmz + 0]);
+}
+
+dmzrintb(dmz)
+	int dmz;
+{
+	struct uba_device *ui;
+
+	ui = dmzinfo[dmz];
+	if (ui == 0 || ui->ui_alive == 0)
+		return;
+	dmxrint(&dmz_softc[3 * dmz + 1]);
+}
+
+dmzrintc(dmz)
+	int dmz;
+{
+	struct uba_device *ui;
+
+	ui = dmzinfo[dmz];
+	if (ui == 0 || ui->ui_alive == 0)
+		return;
+	dmxrint(&dmz_softc[3 * dmz + 2]);
+}
+
+/*
+ * Ioctl for DMZ32.
+ */
+dmzioctl(dev, cmd, data, flag)
+	dev_t dev;
+	caddr_t data;
+{
+	int unit = minor(dev);
+ 
+	return (dmxioctl(&dmz_tty[unit], cmd, data, flag));
+}
+
+/*
+ * DMZ32 transmitter interrupts.
+ */
+dmzxinta(dmz)
+	int dmz;
+{
+
+	dmxxint(&dmz_softc[3 * dmz + 0]);
+}
+
+dmzxintb(dmz)
+	int dmz;
+{
+
+	dmxxint(&dmz_softc[3 * dmz + 1]);
+}
+
+dmzxintc(dmz)
+	int dmz;
+{
+
+	dmxxint(&dmz_softc[3 * dmz + 2]);
+}
+
+/*
+ * Start (restart) transmission on the given line.
+ */
+dmzstart(tp)
+	struct tty *tp;
+{
+
+	dmxstart(tp, &dmz_softc[minor(tp->t_dev) >> 3]);
+}
+
+/*
+ * Stop output on a line, e.g. for ^S/^Q or output flush.
+ */
+dmzstop(tp, flag)
+	struct tty *tp;
+{
+
+	dmxstop(tp, &dmz_softc[minor(tp->t_dev) >> 3], flag);
+}
+
+/*
+ * Reset state of driver if UBA reset was necessary.
+ * Reset the csr, lpr, and lcr registers on open lines, and
+ * restart transmitters.
+ */
 dmzreset(uban)
 	int uban;
 {
-	register int controller, unit;
+	register int dmz;
 	register struct tty *tp;
 	register struct uba_device *ui;
-	register struct dmzdevice *dmz_addr;
+	register struct dmzdevice *addr;
 	int i;
-	int octet;
 
-	for (controller = 0; controller < NDMZ; controller++) {
-		ui = dmzinfo[controller];
+	for (dmz = 0; dmz < NDMZ; dmz++) {
+		ui = dmzinfo[dmz];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
-		printf("dmz%d ", controller);
-		dmz_addr = (struct dmzdevice *) ui->ui_addr;
+		printf("dmz%d ", dmz);
+		addr = (struct dmzdevice *)ui->ui_addr;
 
-		if (dmz_uballoc[uban] == controller) {
+		if (dmz_uballoc[uban] == dmz) {
 			int info;
 
 			info = uballoc(uban, (caddr_t)cfree,
@@ -336,477 +324,25 @@ dmzreset(uban)
 			}
 		}
 
-		for (octet = 0; octet < 3; octet++)
-			if ((dmzact[controller] & (1 << octet)) != 0) {
-				dmz_addr->octet[octet].octet_csr |= DMZ_IE;
-				dmz_addr->octet[octet].octet_receive.octet_sato = SILO_TIMEOUT;
+		for (i = 0; i < 3; i++)
+			if (dmz_softc[3 * dmz + i].dmx_flags & DMX_ACTIVE) {
+				addr->dmz_octet[i].csr = DMF_IE;
+				addr->dmz_octet[i].rsp = dmx_timeout;
 			}
-
-		unit = controller * 24;
 
 		/*
 		 * If a unit is open or waiting for open to complete,
 		 * reset it.
 		 */
-		for (i = 0; i < 24; i++) {
-			dmz_softc[unit].dmz_state = 0;
-			tp = &dmz_tty[unit];
+		tp = &dmz_tty[dmz * 24];
+		for (i = 0; i < 24; i++, tp++) {
 			if (tp->t_state & (TS_ISOPEN | TS_WOPEN)) {
-				dmzparam(unit);
-				(void) dmzmctl(unit, DMZ_ON, DMSET);
+				dmxparam(tp);
+				(void) dmxmctl(tp, DMF_ON, DMSET);
 				tp->t_state &= ~TS_BUSY;
 				dmzstart(tp);
 			}
-			unit++;
 		}
 	}
-	return;
-}
-
-dmzread(device, uio)
-	dev_t device;
-	struct uio *uio;
-{
-	register struct tty *tp;
-	int xstatus;
-
-	tp = &dmz_tty[minor(device)];
-	xstatus = (*linesw[tp->t_line].l_read)(tp, uio);
-	return (xstatus);
-}
-
-dmzwrite(device, uio)
-	dev_t device;
-	struct uio *uio;
-{
-	register struct tty *tp;
-	int xstatus;
-
-	tp = &dmz_tty[minor(device)];
-	xstatus = (*linesw[tp->t_line].l_write)(tp, uio);
-	return (xstatus);
-}
-
-dmzrinta(controller)
-	int controller;
-{
-	dmzrint(controller, 0);
-}
-
-dmzrintb(controller)
-	int controller;
-{
-	dmzrint(controller, 1);
-}
-
-dmzrintc(controller)
-	int controller;
-{
-	dmzrint(controller, 2);
-}
-
-dmzrint(controller, octet)
-	int controller;
-	register int octet;
-{
-	register struct tty *tp;
-	register int character;
-	register struct dmzdevice *dmz_addr;
-	register struct tty *tp0;
-	register int unit;
-	register struct uba_device *ui;
-	int overrun;
-
-	overrun = 0;
-	ui = dmzinfo[controller];
-	if (ui == 0 || ui->ui_alive == 0)
-		return;
-	dmz_addr = (struct dmzdevice *) ui->ui_addr;
-	tp0 = &dmz_tty[controller * 24];
-
-	while ((character = dmz_addr->octet[octet].octet_receive.octet_rb) < 0) {
-		unit = (character >> 8) & 07;	/* unit is bits 8-10 of rb */
-		tp = tp0 + (octet * 8 + unit);
-
-		if (character & DMZ_DSC) {
-			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | unit;
-			if (dmz_addr->octet[octet].octet_rmstsc & DMZ_CAR)
-				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-			else if ((dmzsoftCAR[controller] &
-			    (1 << (octet * 8 + unit))) == 0 &&
-			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
-				(void)dmzmctl(tp - dmz_tty, DMZ_OFF, DMSET);
-			continue;
-		}
-
-		if ((tp->t_state&TS_ISOPEN)==0) {
-			wakeup((caddr_t)&tp->t_rawq);
-#ifdef PORTSELECTOR
-			if ((tp->t_state&TS_WOPEN) == 0)
-#endif
-				continue;
-		}
-
-		if (character & DMZ_PE) {
-			if ((tp->t_flags & (EVENP | ODDP)) == EVENP ||
-			    (tp->t_flags & (EVENP | ODDP)) == ODDP)
-				continue;
-		}
-
-		if ((character & DMZ_DO) && overrun == 0) {
-			log(LOG_WARNING, "dmz%d: silo overflow\n", controller);
-			overrun = 1;
-		}
-
-		if (character & DMZ_FE) {
-			if (tp->t_flags & RAW)
-				character = 0;
-			else
-				character = tp->t_intrc;
-		}
-
-		(*linesw[tp->t_line].l_rint)(character, tp);
-	}
-
-	return;
-}
-
-dmzxinta(controller)
-	int controller;
-{
-	dmzxint(controller, 0);
-}
-
-dmzxintb(controller)
-	int controller;
-{
-	dmzxint(controller, 1);
-}
-
-dmzxintc(controller)
-	int controller;
-{
-	dmzxint(controller, 2);
-}
-
-dmzxint(controller, octet)
-	int controller;
-	register int octet;
-{
-	register struct tty *tp;
-	register struct dmzdevice *dmz_addr;
-	register struct uba_device *ui;
-	register int unit, t;
-	int priority;
-
-	ui = dmzinfo[controller];
-	dmz_addr = (struct dmzdevice *)ui->ui_addr;
-
-	priority = spl5();
-
-	while ((t = dmz_addr->octet[octet].octet_csr) & DMZ_TRDY) {
-		unit = controller * 24 + (octet * 8 + ((t>>8) & 07));
-		tp = &dmz_tty[unit];
-		tp->t_state &= ~TS_BUSY;
-
-		if (t & DMZ_NXM)
-			printf("dmz%d: NXM line %d\n", controller, 
-				octet * 8 + (unit & 07));
-
-		if (tp->t_state & TS_FLUSH) {
-			tp->t_state &= ~TS_FLUSH;
-			dmz_addr->octet[octet].octet_csr = 
-				DMZ_IE | IR_LCTMR | (unit & 07);
-			dmz_addr->octet[octet].octet_lctmr = 
-				(dmz_addr->octet[octet].octet_lctmr | DMZ_TE);
-		} else
-			if (dmz_softc[unit].dmz_state & ST_DMA)
-				ndflush(&tp->t_outq, dmz_softc[unit].dmz_count);
-		dmz_softc[unit].dmz_state = 0;
-
-		if (tp->t_line)
-			(*linesw[tp->t_line].l_start)(tp);
-		else
-			dmzstart(tp);
-	}
-
-	splx(priority);
-	return;
-}
-
-dmzstart(tp)
-	register struct tty *tp;
-{
-	register struct dmzdevice *dmz_addr;
-	register int unit, nch, room;
-	int controller, octet;
-	int priority, car, use_dma;
-	register int i;
-	register char *cp;
-
-	unit = minor(tp->t_dev);
-	controller = DMZ(unit);
-	octet = OCTET(unit);
-	dmz_addr = (struct dmzdevice *)tp->t_addr;
-
-	priority = spl5();
-
-	if (tp->t_state & (TS_TIMEOUT | TS_BUSY | TS_TTSTOP))
-		goto out;
-
-	/*
-	 * If the transmitter has been disabled, reenable it.
-	 * If the transmitter was disabled before the xint (the
-	 * ST_INBUSY was still on), then reset the BUSY state and
-	 * we will wait for the interrupt.  If !TS_BUSY, we already
-	 * saw the interrupt so we can start another transmission.
-	 */
-	if (dmz_softc[unit].dmz_state & ST_TXOFF) {
-		dmz_addr->octet[octet].octet_csr = 
-			DMZ_IE | IR_LCTMR | (unit & 07);
-		dmz_addr->octet[octet].octet_lctmr = 
-			(dmz_addr->octet[octet].octet_lctmr | DMZ_TE);
-		dmz_softc[unit].dmz_state &= ~ST_TXOFF;
-		if (dmz_softc[unit].dmz_state & ST_INBUSY) {
-			dmz_softc[unit].dmz_state &= ~ST_INBUSY;
-			tp->t_state |= TS_BUSY;
-			goto out;
-		}
-	}
-
-	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
-		if (tp->t_state & TS_ASLEEP) {
-			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)&tp->t_outq);
-		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
-	}
-
-	if (tp->t_outq.c_cc == 0)
-		goto out;
-	if (tp->t_flags & (RAW | LITOUT))
-		nch = ndqb(&tp->t_outq, 0);
-	else {
-		nch = ndqb(&tp->t_outq, 0200);
-		if (nch == 0) {
-			nch = getc(&tp->t_outq);
-			timeout(ttrstrt, (caddr_t)tp, (nch & 0x7f)+6);
-			tp->t_state |= TS_TIMEOUT;
-			goto out;
-		}
-	}
-
-	/*
-	 * Should we use DMA or SILO mode?
-	 * If nch is greater than DO_DMA_COUNT then DMA.
-	 */
-	if (nch) {
-		dmz_addr->octet[octet].octet_csr = 
-			DMZ_IE | IR_LCTMR | (unit & 07);
-		dmz_addr->octet[octet].octet_lctmr = 
-			(dmz_addr->octet[octet].octet_lctmr | DMZ_TE);
-		tp->t_state |= TS_BUSY;
-
-		use_dma = FALSE;
-		room = DMZ_SIZ;
-
-		if (nch > DO_DMA_COUNT)
-			use_dma = TRUE;
-		
-		if (use_dma && dmz_dma_on) {
-			car = UBACVT(tp->t_outq.c_cf, 
-				dmzinfo[controller]->ui_ubanum);
-			dmz_softc[unit].dmz_count = nch;
-			dmz_softc[unit].dmz_state |= ST_DMA;
-			dmz_addr->octet[octet].octet_csr = 
-				DMZ_IE | IR_TBA | (unit & 07);
-			dmz_addr->octet[octet].octet_tba = car;
-			dmz_addr->octet[octet].octet_tcc = 
-				((car >> 2) & 0xc000) | nch;
-		} else {
-			dmz_softc[unit].dmz_state &= ~ST_DMA;
-			cp = tp->t_outq.c_cf;
-			nch = MIN(nch, room);
-			dmz_addr->octet[octet].octet_csr = 
-				DMZ_IE | IR_TBUF | (unit & 07);
-			for (i = 0; i < nch; i++)
-				dmz_addr->octet[octet].octet_tbf = *cp++ ;
-			ndflush(&tp->t_outq, nch);
-		}
-	}
-
-out:
-	splx(priority);
-	return;
-}
-
-/* ARGSUSED */
-dmzstop(tp, flag)
-	register struct tty *tp;
-{
-	register struct dmzdevice *dmz_addr;
-	register int unit, priority, octet;
-
-	priority = spl5();
-	dmz_addr = (struct dmzdevice *) tp->t_addr;
-	unit = minor(tp->t_dev);
-	octet = OCTET(unit);
-
-	dmz_addr->octet[octet].octet_csr = IR_LCTMR | (unit & 07) | DMZ_IE;
-	dmz_addr->octet[octet].octet_lctmr = 
-		(dmz_addr->octet[octet].octet_lctmr & ~DMZ_TE);
-	dmz_softc[unit].dmz_state |= ST_TXOFF;
-	if ((tp->t_state & TS_TTSTOP) == 0) {
-		tp->t_state |= (TS_FLUSH | TS_BUSY);
-		dmz_addr->octet[octet].octet_lctmr = 
-			(dmz_addr->octet[octet].octet_lctmr | DMZ_FLS);
-	} else if (tp->t_state & TS_BUSY) {
-		dmz_softc[unit].dmz_state |= ST_INBUSY;
-		tp->t_state &= ~TS_BUSY;
-	}
-
-	splx(priority);
-	return;
-}
-
-/* ARGSUSED */
-dmzioctl(device, command, data, flag)
-	dev_t device;
-	caddr_t data;
-{
-	register struct tty *tp;
-	register int unit;
-	int error;
-
-	unit = minor(device);
-	tp = &dmz_tty[unit];
-
-	error = (*linesw[tp->t_line].l_ioctl)(tp, command, data, flag);
-	if (error >= 0)
-		return (error);
-	error = ttioctl(tp, command, data, flag);
-	if (error >= 0) {
-		if (command == TIOCSETP || command == TIOCSETN ||
-		    command == TIOCLSET || command == TIOCLBIS ||
-		    command == TIOCLBIC)
-			dmzparam(unit);
-		return (error);
-	}
-
-	switch (command) {
-		case TIOCSBRK:
-			(void) dmzmctl(unit, DMZ_BRK, DMBIS);
-			break;
-		case TIOCCBRK:
-			(void) dmzmctl(unit, DMZ_BRK, DMBIC);
-			break;
-		case TIOCSDTR:
-			(void) dmzmctl(unit, DMZ_DTR | DMZ_RTS, DMBIS);
-			break;
-		case TIOCCDTR:
-			(void) dmzmctl(unit, DMZ_DTR | DMZ_RTS, DMBIC);
-			break;
-		case TIOCMSET:
-			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMSET);
-			break;
-		case TIOCMBIS:
-			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMBIS);
-			break;
-		case TIOCMBIC:
-			(void) dmzmctl(unit, dmtodmz(*(int *)data), DMBIC);
-			break;
-		case TIOCMGET:
-			*(int *)data = dmzmctl(unit, 0, DMGET);
-			break;
-		default:
-			return (ENOTTY);
-	}
-	return (0);
-}
-
-dmzmctl(unit, bits, how)
-	register int unit;
-	int bits, how;
-{
-	register struct dmzdevice *dmz_addr;
-	register int modem_status, line_control;
-	int priority;
-	int octet;
-
-	octet = OCTET(unit);
-	dmz_addr = (struct dmzdevice *) dmzinfo[DMZ(unit)]->ui_addr;
-
-	priority = spl5();
-	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | (unit & 07);
-	modem_status = dmz_addr->octet[octet].octet_rmstsc & 0xff00;
-
-	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_LCTMR | (unit & 07);
-	line_control = dmz_addr->octet[octet].octet_lctmr;
-
-
-	switch (how) {
-		case DMSET:
-			line_control = bits;
-			break;
-		case DMBIS:
-			line_control |= bits;
-			break;
-		case DMBIC:
-			line_control &= ~bits;
-			break;
-		case DMGET:
-			(void) splx(priority);
-			return (dmztodm(modem_status, line_control));
-	}
-
-	dmz_addr->octet[octet].octet_csr =
-		DMZ_IE | IR_LCTMR | (unit & 07);
-	dmz_addr->octet[octet].octet_lctmr = line_control;
-
-	splx(priority);
-	return (modem_status);
-}
-
-/*
- * Routine to convert modem status from dm to dmz lctmr format.
- */
-dmtodmz(bits)
-	register int bits;
-{
-	register int lcr = DMZ_LCE;
-
-	if (bits & DML_DTR)
-		lcr |= DMZ_DTR;
-	if (bits & DML_RTS)
-		lcr |= DMZ_RTS;
-	if (bits & DML_ST)
-		lcr |= DMF_ST;
-	if (bits & DML_USR)
-		lcr |= DMZ_USRW;
-	return (lcr);
-}
-
-/*
- * Routine to convert modem status from dmz receive modem status
- * and line control register to dm format.
- * If dmz user modem read bit set, set DML_USR.
- */
-dmztodm(rms, lcr)
-	register int rms, lcr;
-{
-
-	rms = ((rms & (DMZ_DSR|DMZ_RNG|DMZ_CAR|DMZ_CTS|DMF_SR)) >> 7) | 
-		((rms & DMZ_USRR) >> 1) | DML_LE;
-	if (lcr & DMZ_DTR)
-		rms |= DML_DTR;
-	if (lcr & DMF_ST)
-		rms |= DML_ST;
-	if (lcr & DMZ_RTS)
-		rms |= DML_RTS;
-	return (rms);
 }
 #endif
