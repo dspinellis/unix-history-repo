@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.1 (Berkeley) %G%
+ *	@(#)dz.c	7.2 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -561,6 +561,8 @@ dzmctl(dev, bits, how)
 		else
 			dzaddr->dzdtr &= ~b;
 	}
+	if (mbits & DZ_DTR && dzsoftCAR[unit >> 3] & b)
+		dz_tty[unit].t_state |= TS_CARR_ON;
 	(void) splx(s);
 	return(mbits);
 }
