@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)udp_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -242,8 +242,8 @@ udp_output(inp, m0)
 	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
 }
 
-int	udp_sendspace = 2048;		/* really max datagram size */
-int	udp_recvspace = 4 * (1024+sizeof(struct sockaddr_in)); /* 4 1K dgrams */
+u_long	udp_sendspace = 2048;		/* really max datagram size */
+u_long	udp_recvspace = 4 * (1024+sizeof(struct sockaddr_in)); /* 4 1K dgrams */
 
 /*ARGSUSED*/
 udp_usrreq(so, req, m, nam, rights)

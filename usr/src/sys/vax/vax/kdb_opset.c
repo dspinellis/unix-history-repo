@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb_opset.c	7.2 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.3 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -281,6 +281,7 @@ static savevar(val)
 	insoutvar[argno] = val;
 }
 
+/* ARGSUSED */
 printins(fmt, Idsp, ins)
 	char	fmt;
 	u_char	ins;

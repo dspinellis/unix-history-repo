@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.13 (Berkeley) %G%
+ *	@(#)machdep.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,16 +95,14 @@ startup(firstaddr)
 	/*
 	 * redirect console to qvss if it exists
 	 */
-	if (!qvcons_init())
-		printf("qvss not initialized\n");
+	qvcons_init();
 #endif 
 #include "qd.h"
 #if NQD > 0
 	/*
 	 * redirect console to qdss if it exists
 	 */
-	if (!qdcons_init())
-		printf("qdss not initialized\n");
+	qdcons_init();
 #endif
 #endif
 

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)idp_usrreq.c	7.2 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -386,7 +386,7 @@ idp_usrreq(so, req, m, nam, rights)
 		error = ns_pcballoc(so, &nspcb);
 		if (error)
 			break;
-		error = soreserve(so, 2048, 2048);
+		error = soreserve(so, (u_long) 2048, (u_long) 2048);
 		if (error)
 			break;
 		break;
@@ -537,7 +537,7 @@ idp_raw_usrreq(so, req, m, nam, rights)
 		error = ns_pcballoc(so, &nsrawpcb);
 		if (error)
 			break;
-		error = soreserve(so, 2048, 2048);
+		error = soreserve(so, (u_long) 2048, (u_long) 2048);
 		if (error)
 			break;
 		nsp = sotonspcb(so);

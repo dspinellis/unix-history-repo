@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)in.c	7.7 (Berkeley) %G%
+ *	@(#)in.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -314,7 +314,8 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCSIFADDR:
-		return (in_ifinit(ifp, ia, &ifr->ifr_addr));
+		return (in_ifinit(ifp, ia,
+		    (struct sockaddr_in *) &ifr->ifr_addr));
 
 	case SIOCSIFNETMASK:
 		ia->ia_subnetmask = ntohl(satosin(&ifr->ifr_addr)->sin_addr.s_addr);

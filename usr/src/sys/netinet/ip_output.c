@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_output.c	7.10 (Berkeley) %G%
+ *	@(#)ip_output.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -100,7 +100,7 @@ ip_output(m0, opt, ro, flags)
 	if (flags & IP_ROUTETOIF) {
 		struct in_ifaddr *ia;
 
-		ia = (struct in_ifaddr *)ifa_ifwithdstaddr(dst);
+		ia = (struct in_ifaddr *)ifa_ifwithdstaddr((struct sockaddr *)dst);
 		if (ia == 0)
 			ia = in_iaonnetof(in_netof(ip->ip_dst));
 		if (ia == 0) {
