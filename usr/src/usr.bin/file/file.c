@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.14 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.15 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -43,7 +43,6 @@ char **argv;
 	FILE *fl;
 	register char *p;
 	char ap[MAXPATHLEN + 1];
-	extern char _sobuf[];
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: %s file ...\n", argv[0]);

@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)necf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)necf.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -27,13 +27,11 @@ static char sccsid[] = "@(#)necf.c	5.2 (Berkeley) %G%";
 
 main()
 {
-	extern char _sobuf[BUFSIZ];
 	extern char *rindex();
 	char line[256];
 	register char c, *cp;
 	register lnumber;
 
-	setbuf(stdout, _sobuf);
 #ifdef SHEETFEEDER
 	printf("\033=\033\033\033O\f");
 #else
