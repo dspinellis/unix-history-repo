@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.7 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.8 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -23,10 +23,12 @@ main(argc, argv)
 #	    endif DEBUG
 	} else if ( **argv == 'a' ) {
 	    aflag++;
+	} else if ( **argv == 'b' ) {
+	    bflag++;
 	} else if ( **argv == 'c' ) {
 	    cflag++;
 	} else if ( **argv == 'z' ) {
-	    zflg++;
+	    zflag++;
 	}
 	argv++;
     }
