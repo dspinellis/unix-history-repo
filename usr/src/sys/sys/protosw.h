@@ -1,4 +1,4 @@
-/*	protosw.h	4.7	81/11/29	*/
+/*	protosw.h	4.8	81/12/12	*/
 
 /*
  * Protocol switch table.
@@ -42,6 +42,8 @@ struct protosw {
 };
 
 #define	PR_SLOWHZ	2		/* 2 slow timeouts per second */
+#define	PR_FASTHZ	10		/* 10 fast timeouts per second */
+
 /*
  * Values for pr_flags
  */
