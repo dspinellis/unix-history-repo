@@ -1,5 +1,5 @@
 /*
-char id_endfile[] = "@(#)endfile.c	1.3";
+char id_endfile[] = "@(#)endfile.c	1.4";
  *
  * endfile
  */
@@ -32,8 +32,8 @@ t_runc(b,flag) unit *b; ioflag flag;
 	int n,m;
 	long loc,len;
 	fflush(b->ufd);
-	if(b->uwrt && ! nowreading(b)) err(errflag, errno, endf);
 	if(b->url || !b->useek || !b->ufnm) return(OK); /*don't trunc dir files*/
+	if(b->uwrt && ! nowreading(b)) err(errflag, errno, endf);
 	loc=ftell(b->ufd);
 	fseek(b->ufd,0L,2);
 	len=ftell(b->ufd);
