@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.81 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.82 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -124,7 +124,7 @@ lfs_truncate(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	register INDIR *inp;
+	register struct indir *inp;
 	register int i;
 	register daddr_t *daddrp;
 	register struct vnode *vp = ap->a_vp;
@@ -134,7 +134,7 @@ lfs_truncate(ap)
 	struct ifile *ifp;
 	struct inode *ip;
 	struct lfs *fs;
-	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
+	struct indir a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
 	daddr_t daddr, lastblock, lbn, olastblock;
 	long off, a_released, blocksreleased, i_released;
@@ -204,7 +204,8 @@ lfs_truncate(ap)
 	lastseg = -1;
 
 	for (lbn = olastblock; lbn >= lastblock;) {
-		lfs_bmaparray(vp, lbn, &daddr, a, &depth);
+		/* XXX use run length from bmap array to make this faster */
+		ufs_bmaparray(vp, lbn, &daddr, a, &depth, NULL);
 		if (lbn == olastblock)
 			for (i = NIADDR + 2; i--;)
 				a_end[i] = a[i];
@@ -217,7 +218,7 @@ lfs_truncate(ap)
 			break;
 #ifdef DIAGNOSTIC
 		case 1:				/* An indirect block. */
-			panic("lfs_truncate: lfs_bmaparray returned depth 1");
+			panic("lfs_truncate: ufs_bmaparray returned depth 1");
 			/* NOTREACHED */
 #endif
 		default:			/* Chain of indirect blocks. */
@@ -288,7 +289,7 @@ lfs_truncate(ap)
 	 */
 	a_released = 0;
 	i_released = 0;
-	for (bp = vp->v_dirtyblkhd; bp; bp = bp->b_blockf)
+	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = bp->b_vnbufs.qe_next)
 		if (bp->b_flags & B_LOCKED) {
 			++a_released;
 			/*
@@ -322,7 +323,7 @@ lfs_truncate(ap)
 		    " blocks left on inode");
 #endif
 	fs->lfs_avail += fsbtodb(fs, a_released);
-	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
+	e1 = vinvalbuf(vp, (length > 0) ? V_SAVE : 0, ap->a_cred, ap->a_p); 
 	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
 	return (e1 ? e1 : e2 ? e2 : 0);
 }
