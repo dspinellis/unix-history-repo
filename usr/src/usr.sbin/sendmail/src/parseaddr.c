@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.46		%G%);
+SCCSID(@(#)parseaddr.c	3.47		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -187,7 +187,6 @@ prescan(addr, delim)
 	char **avp;
 	bool bslashmode;
 	int cmntcnt;
-	int brccnt;
 	register char c;
 	char *tok;
 	register char *q;
@@ -197,7 +196,7 @@ prescan(addr, delim)
 
 	q = buf;
 	bslashmode = FALSE;
-	cmntcnt = brccnt = 0;
+	cmntcnt = 0;
 	avp = av;
 	state = OPER;
 	for (p = addr; *p != '\0' && *p != delim; )
@@ -315,40 +314,6 @@ prescan(addr, delim)
 		else if (cmntcnt > 0)
 			continue;
 
-		/* we prefer <> specs */
-		if (c == '<')
-		{
-			if (brccnt < 0)
-			{
-				usrerr("multiple < spec");
-				return (NULL);
-			}
-			brccnt++;
-			if (brccnt == 1)
-			{
-				/* we prefer using machine readable name */
-				q = buf;
-				*q = '\0';
-				avp = av;
-				continue;
-			}
-		}
-		else if (c == '>')
-		{
-			if (brccnt <= 0)
-			{
-				usrerr("Unbalanced `>'");
-				return (NULL);
-			}
-			else
-				brccnt--;
-			if (brccnt <= 0)
-			{
-				brccnt = -1;
-				continue;
-			}
-		}
-
 		if (avp >= &av[MAXATOM])
 		{
 			syserr("prescan: too many tokens");
@@ -359,8 +324,6 @@ prescan(addr, delim)
 	*avp = NULL;
 	if (cmntcnt > 0)
 		usrerr("Unbalanced '('");
-	else if (brccnt > 0)
-		usrerr("Unbalanced '<'");
 	else if (state == QSTRING)
 		usrerr("Unbalanced '\"'");
 	else if (av[0] != NULL)
