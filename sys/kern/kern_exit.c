@@ -76,7 +76,7 @@ rexit(p, uap, retval)
 
 	exit(p, W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
-	return(0);	/* XXX added to stop gcc from issuing warning */
+	return(0);	/* XXX added to stop gcc1 from issuing warning */
 }
 
 /*
@@ -253,6 +253,7 @@ done:
 	 */
 	cpu_exit(p);
 	/* NOTREACHED */
+	return(0);	/* added to stop gcc2 from issuing warning */
 }
 
 #ifdef COMPAT_43
