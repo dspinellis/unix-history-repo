@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.9 (Berkeley) %G%
+#	@(#)vnode_if.src	8.10 (Berkeley) %G%
 #
 
 #
@@ -294,8 +294,8 @@ vop_readdir {
 	INOUT struct uio *uio;
 	IN struct ucred *cred;
 	INOUT int *eofflag;
-	OUT u_long *cookies;
-	IN int ncookies;
+	OUT int *ncookies;
+	INOUT u_long **cookies;
 };
 
 #
