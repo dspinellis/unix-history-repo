@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)htable.8	6.2 (Berkeley) %G%
+.\"	@(#)htable.8	6.3 (Berkeley) %G%
 .\"
 .TH HTABLE 8 ""
 .UC 5
@@ -31,9 +31,12 @@ and
 .IR gateways .
 The 
 .I hosts
-file is used by the 
+file may be used by the 
 .IR gethostbyname (3N)
-routines in mapping host names to addresses.
+routines in mapping host names to addresses
+if the nameserver,
+.IR named (8),
+is not used.
 The
 .I networks
 file is used by the
@@ -41,7 +44,7 @@ file is used by the
 routines in mapping network names to numbers.
 The
 .I gateways
-file is used by the routing daemon
+file may be used by the routing daemon
 in identifying ``passive'' Internet gateways;
 see
 .IR routed (8C)
@@ -63,11 +66,13 @@ Only one gateway to each network will be placed in the gateways file;
 a gateway listed in the localgateways file will override any in the
 input file.
 .PP
-A list of networks to which the host is directly connected is specified with the
+If the gateways file is to be used,
+a list of networks to which the host is directly connected
+is specified with the
 .B \-c
 flag.
 The networks, separated by commas,
-may be given by name or in internet-standard dot notation,
+may be given by name or in Internet-standard dot notation,
 e.g.
 .B \-c
 arpanet,128.32,local-ether-net.
@@ -93,4 +98,10 @@ is best used in conjunction with the
 program which retrieves the NIC database from a host.
 .SH "SEE ALSO"
 intro(3N),
-gettable(8C)
+gettable(8C),
+named(8)
+.SH BUGS
+If the name-domain system provided network name mapping well as host
+name mapping,
+.I htable
+would no longer be needed.
