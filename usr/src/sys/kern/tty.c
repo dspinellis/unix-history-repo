@@ -1,4 +1,4 @@
-/*	tty.c	4.2	%G%	*/
+/*	tty.c	4.3	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -198,10 +198,11 @@ register struct tty *tp;
  * Common code for tty ioctls.
  */
 /*ARGSUSED*/
-ttioctl(com, tp, addr, dev, flag)
+ttioctl(tp, com, addr, flag)
 register struct tty *tp;
 caddr_t addr;
 {
+	int dev;
 	unsigned t;
 	struct sgttyb iocb;
 	struct clist tq;
@@ -218,6 +219,7 @@ caddr_t addr;
 		return (1);
 	}
 
+	dev = tp->t_dev;
 	/*
 	 * If the ioctl involves modification,
 	 * insist on being able to write the device,
@@ -374,15 +376,6 @@ caddr_t addr;
 
 	case TIOCFLUSH:
 		flushtty(tp, FREAD|FWRITE);
-		break;
-
-	/*
-	 * Ioctl entries to line discipline
-	 */
-	case DIOCSETP:
-	case DIOCGETP:
-		if ((*linesw[tp->t_line].l_ioctl)(com, tp, addr))
-			u.u_error = ENOTTY;
 		break;
 
 	/*
