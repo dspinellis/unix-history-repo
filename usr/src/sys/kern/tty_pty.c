@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.19	82/03/13	*/
+/*	tty_pty.c	4.20	82/03/15	*/
 
 /*
  * Pseudo-teletype Driver
@@ -16,9 +16,9 @@
 #include "../h/buf.h"
 #include "../h/file.h"
 #include "../h/proc.h"
-#undef	NPTY
 
-#define NPTY 16
+#undef	NPTY
+#define	NPTY	32		/* crude XXX */
 
 #define BUFSIZ 100		/* Chunk size iomoved from user */
 
