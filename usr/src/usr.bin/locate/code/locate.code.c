@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	4.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,15 +40,15 @@ static char sccsid[] = "@(#)locate.code.c	4.8 (Berkeley) %G%";
  *		/usr/src/cmd/armadillo.c	14 armadillo.c
  *		/usr/tmp/zoo			 5 tmp/zoo
  *
- *  	The codes are:
+ *	The codes are:
  *
- *	0-28	likeliest differential counts + offset to make nonnegative 
+ *	0-28	likeliest differential counts + offset to make nonnegative
  *	30	switch code for out-of-range count to follow in next word
  *	128-255 bigram codes (128 most common, as determined by 'updatedb')
  *	32-127  single character (printable) ascii residue (ie, literal)
  *
  * SEE ALSO:	updatedb.csh, bigram.c, find.c
- * 
+ *
  * AUTHOR:	James A. Woods, Informatics General Corp.,
  *		NASA Ames Research Center, 10/82
  */
@@ -67,7 +67,7 @@ main ( argc, argv )
 	int argc; char *argv[];
 {
 	register char *cp, *oldpath = buf1, *path = buf2;
-  	int code, count, diffcount, oldcount = 0;
+	int code, count, diffcount, oldcount = 0;
 	FILE *fp;
 
 	if ((fp = fopen(argv[1], "r")) == NULL) {
@@ -79,7 +79,7 @@ main ( argc, argv )
 	fwrite ( bigrams, 1, BGBUFSIZE, stdout );
 	fclose( fp );
 
-     	while ( fgets ( path, sizeof(buf2), stdin ) != NULL ) {
+	while ( fgets ( path, sizeof(buf2), stdin ) != NULL ) {
 		/* truncate newline */
 		cp = path + strlen(path) - 1;
 		if (cp > path && *cp == '\n')
@@ -123,6 +123,11 @@ main ( argc, argv )
 			path = buf2, oldpath = buf1;
 		else
 			path = buf1, oldpath = buf2;
+
+		/* Non-zero status if there were errors */
+		if (fflush(stdout) != 0 || ferror(stdout))
+			exit(1);
+		exit(0);
 	}
 }
 
