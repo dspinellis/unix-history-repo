@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	7.5 (Berkeley) %G%
+ *	@(#)subr_log.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -142,7 +142,7 @@ logwakeup()
 		logsoftc.sc_selp = 0;
 	}
 	if (logsoftc.sc_state & LOG_ASYNC)
-		pgsignal(logsoftc.sc_pgrp, SIGIO); 
+		pgsignal(logsoftc.sc_pgrp, SIGIO, 0); 
 	if (logsoftc.sc_state & LOG_RDWAIT) {
 		wakeup((caddr_t)&msgbuf);
 		logsoftc.sc_state &= ~LOG_RDWAIT;
