@@ -1,4 +1,10 @@
-.TH SIN 3M  "6 August 1985"
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sin.3	6.5 (Berkeley) %G%
+.\"
+.TH SIN 3M  ""
 .UC 4
 .de Pi		\" PI stuff sign
 .if n \\
@@ -183,8 +189,9 @@ sin(x)**2+cos(x)**2\0=\01
 .if t \
 sin\u\s62\s10\d(x)+cos\u\s62\s10\d(x)\0=\01
 and sin(2x)\0=\02\|sin(x)cos(x) to within a few \*(ups no matter how big
-x may be.  Therefore scientific and engineering calculations
-are most unlikely to be affected by the difference between P and
-.Pi .
+x may be.  Therefore the difference between P and
+.Pi
+is most unlikely to affect scientific and engineering computations.
 .SH AUTHOR
-Robert P. Corbett, W. Kahan, Stuart I. McDonald, Kwok\-Choi\0Ng
+Robert P. Corbett, W. Kahan, Stuart\0I.\0McDonald, Peter\0Tang and,
+for the codes for IEEE 754, Dr. Kwok\-Choi\0Ng.

@@ -1,4 +1,10 @@
-.TH INTRO 3M "19 August 1985"
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)math.3	6.5 (Berkeley) %G%
+.\"
+.TH INTRO 3M ""
 .UC 4
 .ds up \fIulp\fR
 .ds nn \fINaN\fR
@@ -45,17 +51,18 @@ exp	exp.3m	exponential	1
 expm1	exp.3m	exp(x)\-1	1
 fabs	floor.3m	absolute value	0
 floor	floor.3m	integer no greater than	0
-gamma	gamma.3m	log gamma function
 hypot	hypot.3m	Euclidean distance	1
 infnan	infnan.3m	signals exceptions
 j0	j0.3m	bessel function	???
 j1	j0.3m	bessel function	???
 jn	j0.3m	bessel function	???
+lgamma	lgamma.3m	log gamma function; (formerly gamma.3m)
 log	exp.3m	natural logarithm	1
 logb	ieee.3m	exponent extraction	0
 log10	exp.3m	logarithm to base 10	3
 log1p	exp.3m	log(1+x)	1
 pow	exp.3m	exponential x**y	60\-500
+rint	floor.3m	round to nearest integer	0
 scalb	ieee.3m	exponent adjustment	0
 sin	sin.3m	trigonometric function	1
 sinh	sinh.3m	hyperbolic function	3
@@ -114,7 +121,17 @@ Properties of D_floating\-point:
 .RS
 Wordsize: 64 bits, 8 bytes.  Radix: Binary.
 .br
-Precision: 56 bits; equivalent to about 17 significant decimals.
+Precision: 56
+.if n \
+sig.
+.if t \
+significant
+bits, roughly like 17
+.if n \
+sig.
+.if t \
+significant
+decimals.
 .RS
 If x and x' are consecutive positive D_floating\-point
 numbers (they differ by 1 \*(up), then
@@ -230,13 +247,13 @@ produced by a host of manufacturers, among them ...
 .nf
 .ta 0.5i +\w'Intel i8070, i80287'u+6n
 	Intel i8087, i80287	National Semiconductor  32081
-	Motorola 68881	Weitek WTL-1032, ... , -1065
-	Zilog Z8070	Western Electric (AT&T) 32106.
+	Motorola 68881	Weitek WTL-1032, ... , -1165
+	Zilog Z8070	Western Electric (AT&T) WE32106.
 .ta
 .fi
 Other implementations range from software, done thoroughly
 in the Apple Macintosh, through VLSI in the Hewlett\-Packard
-9000 series, to the ELXSI 6400 running at 3 Megaflops.
+9000 series, to the ELXSI 6400 running ECL at 3 Megaflops.
 Several other companies have adopted the formats
 of IEEE 754 without, alas, adhering to the standard's way
 of handling rounding and exceptions like over/underflow.
@@ -248,13 +265,23 @@ nobody has volunteered to do that yet.
 .PP
 The codes in 4.3 BSD's \fIlibm\fR for machines that conform to
 IEEE 754 are intended primarily for the National Semi. 32081
-and Weitek 1065.  To use these codes with the Intel or Zilog
+and WTL 1164/65.  To use these codes with the Intel or Zilog
 chips, or with the Apple Macintosh or ELXSI 6400, is to
-forego the use of better codes available (for a price) from
+forego the use of better codes provided (perhaps freely) by
 those companies and designed by some of the authors of the
-codes above.  The Motorola 68881 has all the \fIelementary\fR
-functions above except \fIpow\fR implemented on chip already,
-and faster and more accurate.  The main virtue of 4.3 BSD's
+codes above.
+Except for \fIatan\fR, \fIcabs\fR, \fIcbrt\fR, \fIerf\fR,
+\fIerfc\fR, \fIhypot\fR, \fIj0\-jn\fR, \fIlgamma\fR, \fIpow\fR
+and \fIy0\-yn\fR,
+the Motorola 68881 has all the functions in \fIlibm\fR on chip,
+and faster and more accurate;
+it, Apple, the i8087, Z8070 and WE32106 all use 64
+.if n \
+sig.
+.if t \
+significant
+bits.
+The main virtue of 4.3 BSD's
 \fIlibm\fR codes is that they are intended for the public domain;
 they may be copied freely provided their provenance is always
 acknowledged, and provided users assist the authors in their
@@ -266,7 +293,17 @@ Properties of IEEE 754 Double\-Precision:
 .RS
 Wordsize: 64 bits, 8 bytes.  Radix: Binary.
 .br
-Precision: 53 bits; equivalent to about 16 significant decimals.
+Precision: 53
+.if n \
+sig.
+.if t \
+significant
+bits, roughly like 16
+.if n \
+sig.
+.if t \
+significant
+decimals.
 .RS
 If x and x' are consecutive positive Double\-Precision
 numbers (they differ by 1 \*(up), then
@@ -308,8 +345,8 @@ finite x = y then
 .If
 is signed.
 .RS
-it persists after addition of itself
-or of any finite number.  Its sign transforms
+it persists when added to itself
+or to any finite number.  Its sign transforms
 correctly through multiplication and division, and
 .If (finite)/\(+- \0=\0\(+-0
 (nonzero)/0 =
@@ -498,9 +535,9 @@ the data supplied to that function.
 Any exception signaled should be identified with that
 function rather than with one of its subroutines.
 .IP iii) \w'iii)'u+2n
-The internal behavior of an atomic function cannot be
-disrupted when a calling program changes from one
-to another of the five or so ways of handling
+The internal behavior of an atomic function should not
+be disrupted when a calling program changes from
+one to another of the five or so ways of handling
 exceptions listed above, although the definition
 of the function may be correlated intentionally
 with exception handling.
@@ -520,7 +557,7 @@ Over/Underflow
 .RS
 when a result, if properly computed, might have lain barely within range, and
 .RE
-Inexact in pow(x,y)
+Inexact in \fIcabs\fR, \fIcbrt\fR, \fIhypot\fR, \fIlog10\fR and \fIpow\fR
 .RS
 when it happens to be exact thanks to fortuitous cancellation of errors.
 .RE
@@ -552,7 +589,7 @@ greater range or precision would be needed to represent the exact result.
 When signals are appropriate, they are emitted by certain
 operations within the codes, so a subroutine\-trace may be
 needed to identify the function with its signal in case
-method 6) above is in use.  And the codes all take the
+method 5) above is in use.  And the codes all take the
 IEEE 754 defaults for granted; this means that a decision to
 trap all divisions by zero could disrupt a code that would
 otherwise get correct results despite division by zero.
@@ -568,5 +605,5 @@ Articles in the IEEE magazine COMPUTER vol. 14 no. 3 (Mar.
 Oct. 1979, may be helpful although they pertain to
 superseded drafts of the standard.
 .SH AUTHOR
-W. Kahan, with the help of Alex Z\-S. Liu, Stuart I. McDonald,
+W. Kahan, with the help of Z\-S. Alex Liu, Stuart I. McDonald,
 Dr. Kwok\-Choi Ng, Peter Tang.

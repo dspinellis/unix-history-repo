@@ -1,6 +1,13 @@
-.TH EXP 3M  "19 August 1985"
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)exp.3	6.7 (Berkeley) %G%
+.\"
+.TH EXP 3M  ""
 .UC 4
 .ds nn \fINaN\fR
+.ds up \fIulp\fR
 .SH NAME
 exp, expm1, log, log10, log1p, pow \- exponential, logarithm, power
 .SH SYNOPSIS
@@ -46,15 +53,18 @@ x\u\s8y\s10\d.
 intro(3M), infnan(3M)
 .SH ERROR (due to Roundoff etc.)
 exp(x), log(x), expm1(x) and log1p(x) are accurate to within 
-an \fIulp\fR, and log10(x) to within about 2 \fIulp\fRs;
-an \fIulp\fR is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace.
-The error in pow(x,y) is below about 2 \fIulp\fRs when its
+an \*(up, and log10(x) to within about 2 \*(ups;
+an \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace.
+The error in pow(x,y) is below about 2 \*(ups when its
 magnitude is moderate, but increases as pow(x,y) approaches
-the over/underflow thresholds until almost as many bits are
+the over/underflow thresholds until almost as many bits could be
 lost as are occupied by the floating\-point format's exponent
 field; that is 8 bits for VAX D and 11 bits for IEEE 754 Double.
+No such drastic loss has been exposed by testing; the worst
+errors observed have been below 20 \*(ups for VAX D,
+300 \*(ups for IEEE 754 Double.
 Moderate values of pow are accurate enough that pow(integer,integer)
-is exact until it is bigger than 2**56 on a VAX, 2**53 for IEEE.
+is exact until it is bigger than 2**56 on a VAX, 2**53 for IEEE 754.
 .SH DIAGNOSTICS
 Exp, expm1 and pow return the reserved operand on a VAX when the correct
 value would overflow, and they set \fIerrno\fR to ERANGE.

@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	4.8	%G%
+#	@(#)Makefile	4.9	%G%
 #
-SCCSID = "@(#)Makefile	4.8 %G%"
+SCCSID = "@(#)Makefile	4.9 %G%"
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -35,11 +35,11 @@ DESTDIR=
 # actually there are more under ${MACH}/ subdirectory.
 #
 SRCS =	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c \
-	exp.c exp__E.c expm1.c floor.c gamma.c j0.c j1.c jn.c \
+	exp.c exp__E.c expm1.c floor.c lgamma.c j0.c j1.c jn.c \
 	log.c log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 
 FILES =	acosh.o asincos.o asinh.o atan.o atanh.o cosh.o erf.o \
-	exp.o exp__E.o expm1.o floor.o gamma.o j0.o j1.o jn.o \
+	exp.o exp__E.o expm1.o floor.o lgamma.o j0.o j1.o jn.o \
 	log.o log10.o log1p.o log__L.o pow.o sinh.o tanh.o 
 
 TAGSFILE=tags

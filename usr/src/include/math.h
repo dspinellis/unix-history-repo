@@ -1,10 +1,10 @@
-/*	math.h	4.5	%G%	*/
+/*	math.h	4.6	%G%	*/
 
 extern double asinh(), acosh(), atanh();
 extern double erf(), erfc();
 extern double exp(), expm1(), log(), log10(), log1p(), pow();
-extern double fabs(), floor(), ceil();
-extern double gamma();
+extern double fabs(), floor(), ceil(), rint();
+extern double lgamma();
 extern double hypot(), cabs();
 extern double copysign(), drem(), logb(), scalb();
 extern int finite();
