@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)life.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)life.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 # include	<curses.h>
@@ -16,26 +16,24 @@ static char sccsid[] = "@(#)life.c	5.1 (Berkeley) %G%";
  * the Screen Updating section of the -lcurses cursor package.
  */
 
-struct lst_st {			/* linked list element */
+typedef struct lst_st {			/* linked list element */
 	int		y, x;		/* (y, x) position of piece */
 	struct lst_st	*next, *last;	/* doubly linked */
-};
-
-typedef struct lst_st	LIST;
+} LIST;
 
 LIST	*Head;			/* head of linked list */
 
+int	die();
+
 main(ac, av)
 int	ac;
-char	*av[]; {
-
-	int	die();
-
+char	*av[];
+{
 	evalargs(ac, av);		/* evaluate arguments */
 
 	initscr();			/* initialize screen package */
 	signal(SIGINT, die);		/* set to restore tty stats */
-	crmode();			/* set for char-by-char */
+	cbreak();			/* set for char-by-char */
 	noecho();			/*	input */
 	nonl();				/* for optimization */
 
@@ -51,11 +49,11 @@ char	*av[]; {
  * It resets the tty stats to their original values.  This
  * is the normal way of leaving the program.
  */
-die() {
-
-	signal(SIGINT, SIG_IGN);	/* ignore rubouts */
-	mvcur(0, COLS-1, LINES-1, 0);	/* go to bottom of screen */
-	endwin();			/* set terminal to initial state */
+die()
+{
+	signal(SIGINT, SIG_IGN);		/* ignore rubouts */
+	mvcur(0, COLS - 1, LINES - 1, 0);	/* go to bottom of screen */
+	endwin();				/* set terminal to good state */
 	exit(0);
 }
 
@@ -67,17 +65,18 @@ die() {
  * The input can also be from a file.  The list is built after the
  * board setup is ready.
  */
-getstart() {
-
+getstart()
+{
 	reg char	c;
 	reg int		x, y;
+	auto char	buf[100];
 
 	box(stdscr, '|', '_');		/* box in the screen */
 	move(1, 1);			/* move to upper left corner */
 
-	do {
+	for (;;) {
 		refresh();		/* print current position */
-		if ((c=getch()) == 'q')
+		if ((c = getch()) == 'q')
 			break;
 		switch (c) {
 		  case 'u':
