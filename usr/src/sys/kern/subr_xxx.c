@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.2	%G%	*/
+/*	subr_xxx.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -173,7 +173,6 @@ register c;
  * when u_count is exhausted.  u_base is in the user's
  * address space unless u_segflg is set.
  */
-/*
 cpass()
 {
 	register c, id;
@@ -192,7 +191,6 @@ cpass()
 	u.u_base++;
 	return(c&0377);
 }
-*/
 
 /*
  * Routine which sets a user error; placed in
