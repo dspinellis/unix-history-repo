@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.2 (Berkeley) 9/17/85";
 #endif not lint
 
 /*
@@ -1004,10 +1004,13 @@ init()
 {
 	int status;
 
-	if ((status = pgetent(line, printer)) < 0)
-		fatal("can't open printer description file");
-	else if (status == 0)
-		fatal("unknown printer");
+	if ((status = pgetent(line, printer)) < 0) {
+		syslog(LOG_ERR, "can't open printer description file");
+		exit(1);
+	} else if (status == 0) {
+		syslog(LOG_ERR, "unknown printer: %s", printer);
+		exit(1);
+	}
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
@@ -1037,6 +1040,39 @@ init()
 		PY = 0;
 	sprintf(&pxlength[2], "%d", PY);
 	RM = pgetstr("rm", &bp);
+	/*
+	 * Figure out whether the local machine is the same as the remote 
+	 * machine entry (if it exists).  If not, then ignore the local
+	 * queue information.
+	 */
+	 if (RM != (char *) NULL) {
+		char name[256];
+		struct hostent *hp;
+
+		/* get the standard network name of the local host */
+		gethostname(name, sizeof(name));
+		name[sizeof(name)-1] = '\0';
+		hp = gethostbyname(name);
+		if (hp == (struct hostent *) NULL) {
+		    syslog(LOG_ERR,
+			"unable to get network name for local machine %s",
+			name);
+		    goto localcheck_done;
+		} else strcpy(name, hp->h_name);
+
+		/* get the standard network name of RM */
+		hp = gethostbyname(RM);
+		if (hp == (struct hostent *) NULL) {
+		    syslog(LOG_ERR,
+			"unable to get hostname for remote machine %s", RM);
+		    goto localcheck_done;
+		}
+
+		/* if printer is not on local machine, ignore LP */
+		if (strcmp(name, hp->h_name) != 0) *LP = '\0';
+	}
+localcheck_done:
+
 	AF = pgetstr("af", &bp);
 	OF = pgetstr("of", &bp);
 	IF = pgetstr("if", &bp);
