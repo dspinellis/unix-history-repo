@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.6 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.7 (Berkeley) %G%)
 
 
 ##################
@@ -132,7 +132,10 @@ undivert(2)dnl
 R$* < @ $=w > $*		$: $1 < @ $w > $3		no domain at all
 R$* < @ $=w .UUCP> $*		$: $1 < @ $w > $3		.UUCP domain
 
-# if it's really UUCP, don't bother
+ifdef(`UUCP_RELAY',
+`# pass UUCP addresses straight through
+R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 .UUCP > $3',
+`# if really UUCP, handle it immediately
 R$* < @ $=U . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
 R$* < @ $=V . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
 R$* < @ $=W . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
@@ -141,7 +144,7 @@ R$* < @ $=Y . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
 
 # try UUCP traffic as a local address
 R$* < @ $- .UUCP > $*		$: $1 < @ $[ $2 $] .UUCP > $3
-R$* < @ $+ . $+ .UUCP > $*	$@ $1 < @ $2 . $3 > $4
+R$* < @ $+ . $+ .UUCP > $*	$@ $1 < @ $2 . $3 > $4')
 
 # pass to name server to make hostname canonical
 R$* < @ $+ > $*			$: $1 < @ $[ $2 $] > $3		then do anything
