@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)trinfo.c 1.1 %G%";
+static char sccsid[] = "@(#)trinfo.c 1.2 %G%";
 
 /*
  * Trace information management.
@@ -33,13 +33,13 @@ static char sccsid[] = "@(#)trinfo.c 1.1 %G%";
  */
 
 typedef struct trinfo {
-	TRTYPE trtype;
-	ADDRESS traddr;
-	SYM *trblock;
-	NODE *trvar;
-	NODE *trcond;
-	char *trvalue;
-	struct trinfo *trnext;
+    TRTYPE trtype;
+    ADDRESS traddr;
+    SYM *trblock;
+    NODE *trvar;
+    NODE *trcond;
+    char *trvalue;
+    struct trinfo *trnext;
 } TRINFO;
 
 LOCAL TRINFO *trhead;
@@ -53,17 +53,17 @@ TRTYPE trtype;
 NODE *node;
 NODE *cond;
 {
-	register TRINFO *tp;
+    register TRINFO *tp;
 
-	tp = alloc(1, TRINFO);
-	tp->trtype = trtype;
-	tp->traddr = (ADDRESS) -1;
-	tp->trblock = curfunc;
-	tp->trvar = node;
-	tp->trcond = cond;
-	tp->trvalue = NIL;
-	tp->trnext = trhead;
-	trhead = tp;
+    tp = alloc(1, TRINFO);
+    tp->trtype = trtype;
+    tp->traddr = (ADDRESS) -1;
+    tp->trblock = curfunc;
+    tp->trvar = node;
+    tp->trcond = cond;
+    tp->trvalue = NIL;
+    tp->trnext = trhead;
+    trhead = tp;
 }
 
 /*
@@ -75,28 +75,28 @@ TRTYPE trtype;
 NODE *node;
 NODE *cond;
 {
-	register TRINFO *tp, *last;
+    register TRINFO *tp, *last;
 
-	last = NIL;
-	for (tp = trhead; tp != NIL; tp = tp->trnext) {
-		if (tp->trtype == trtype &&
-		    tr_equal(tp->trvar, node) &&
-		    tr_equal(tp->trcond, cond)) {
-			break;
-		}
+    last = NIL;
+    for (tp = trhead; tp != NIL; tp = tp->trnext) {
+	if (tp->trtype == trtype &&
+	    tr_equal(tp->trvar, node) &&
+	    tr_equal(tp->trcond, cond)) {
+	    break;
 	}
-	if (tp == NIL) {
-		trerror("can't delete term %t", node);
-	}
-	if (last == NIL) {
-		trhead = tp->trnext;
-	} else {
-		last->trnext = tp->trnext;
-	}
-	if (tp->trvalue != NIL) {
-		free(tp->trvalue);
-	}
-	free(tp);
+    }
+    if (tp == NIL) {
+	trerror("can't delete term %t", node);
+    }
+    if (last == NIL) {
+	trhead = tp->trnext;
+    } else {
+	last->trnext = tp->trnext;
+    }
+    if (tp->trvalue != NIL) {
+	free(tp->trvalue);
+    }
+    free(tp);
 }
 
 /*
@@ -106,59 +106,63 @@ NODE *cond;
 
 prvarnews()
 {
-	register TRINFO *tp;
-	register NODE *p;
-	register int n;
-	SYM *s;
-	char buff[MAXTRSIZE];
-	static LINENO prevline;
+    register TRINFO *tp;
+    register NODE *p;
+    register int n;
+    SYM *s;
+    char buff[MAXTRSIZE];
+    static LINENO prevline;
 
-	for (tp = trhead; tp != NIL; tp = tp->trnext) {
-		if (tp->trcond != NIL && !cond(tp->trcond)) {
-			continue;
-		}
-		s = curfunc;
-		while (s != NIL && s != tp->trblock) {
-			s = container(s);
-		}
-		if (s == NIL) {
-			continue;
-		}
-		p = tp->trvar;
-		if (tp->traddr == (ADDRESS) -1) {
-			tp->traddr = lval(p->left);
-		}
-		n = size(p->nodetype);
-		dread(buff, tp->traddr, n);
-		if (tp->trvalue == NIL) {
-			tp->trvalue = alloc(n, char);
-			mov(buff, tp->trvalue, n);
-			mov(buff, sp, n);
-			sp += n;
-			if (tp->trtype == TRPRINT) {
-				printf("initially (at line %d):\t", curline);
-				prtree(p);
-				printf(" = ");
-				printval(p->nodetype);
-				putchar('\n');
-			}
-		} else if (cmp(tp->trvalue, buff, n) != 0) {
-			mov(buff, tp->trvalue, n);
-			mov(buff, sp, n);
-			sp += n;
-			printf("after line %d:\t", prevline);
-			prtree(p);
-			printf(" = ");
-			printval(p->nodetype);
-			putchar('\n');
-			if (tp->trtype == TRSTOP) {
-				isstopped = TRUE;
-				getsrcinfo();
-				printstatus();
-			}
-		}
+    for (tp = trhead; tp != NIL; tp = tp->trnext) {
+	if (tp->trcond != NIL && !cond(tp->trcond)) {
+	    continue;
 	}
-	prevline = curline;
+	s = curfunc;
+	while (s != NIL && s != tp->trblock) {
+	    s = container(s);
+	}
+	if (s == NIL) {
+	    continue;
+	}
+	p = tp->trvar;
+	if (tp->traddr == (ADDRESS) -1) {
+	    tp->traddr = lval(p->left);
+	}
+	n = size(p->nodetype);
+	dread(buff, tp->traddr, n);
+	if (tp->trvalue == NIL) {
+	    tp->trvalue = alloc(n, char);
+	    mov(buff, tp->trvalue, n);
+	    mov(buff, sp, n);
+	    sp += n;
+	    if (tp->trtype == TRPRINT) {
+		printf("initially (at ");
+		printwhere(curline, srcfilename(pc));
+		printf("):\t");
+		prtree(p);
+		printf(" = ");
+		printval(p->nodetype);
+		putchar('\n');
+	    }
+	} else if (cmp(tp->trvalue, buff, n) != 0) {
+	    mov(buff, tp->trvalue, n);
+	    mov(buff, sp, n);
+	    sp += n;
+	    printf("after ");
+	    printwhere(prevline, srcfilename(pc));
+	    printf(":\t");
+	    prtree(p);
+	    printf(" = ");
+	    printval(p->nodetype);
+	    putchar('\n');
+	    if (tp->trtype == TRSTOP) {
+		isstopped = TRUE;
+		curline = srcline(pc);
+		printstatus();
+	    }
+	}
+    }
+    prevline = curline;
 }
 
 /*
@@ -169,14 +173,14 @@ prvarnews()
 
 trfree()
 {
-	register TRINFO *tp, *next;
+    register TRINFO *tp, *next;
 
-	for (tp = trhead; tp != NIL; tp = next) {
-		next = tp->trnext;
-		if (tp->trvalue != NIL) {
-			free(tp->trvalue);
-		}
-		free(tp);
+    for (tp = trhead; tp != NIL; tp = next) {
+	next = tp->trnext;
+	if (tp->trvalue != NIL) {
+	    free(tp->trvalue);
 	}
-	trhead = NIL;
+	free(tp);
+    }
+    trhead = NIL;
 }
