@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	8.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -142,7 +142,7 @@ main(argc, argv, envp)
 	while ((ch = getopt(argc, argv, GETOPT)) != EOF)
 		switch (ch) {
 		case 'n':
-			nfsdcnt = atoi(argv[optind]);
+			nfsdcnt = atoi(optarg);
 			if (nfsdcnt < 1 || nfsdcnt > MAXNFSDCNT) {
 				warnx("nfsd count %d; reset to %d", DEFNFSDCNT);
 				nfsdcnt = DEFNFSDCNT;
@@ -184,7 +184,7 @@ main(argc, argv, envp)
 	if (argc > 1)
 		usage();
 	if (argc == 1) {
-		nfsdcnt = atoi(argv[optind]);
+		nfsdcnt = atoi(argv[0]);
 		if (nfsdcnt < 1 || nfsdcnt > MAXNFSDCNT) {
 			warnx("nfsd count %d; reset to %d", DEFNFSDCNT);
 			nfsdcnt = DEFNFSDCNT;
