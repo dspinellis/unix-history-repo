@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.22.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -313,8 +313,9 @@ main(argc, argv)
 		fatal("%s: %s", special, strerror(errno));
 	if (fstat(fsi, &st) < 0)
 		fatal("%s: %s", special, strerror(errno));
-	if ((st.st_mode & S_IFMT) != S_IFCHR)
-		printf("%s: not a character device\n", special);
+	if ((st.st_mode & S_IFMT) != S_IFCHR && !mfs)
+		printf("%s: %s: not a character-special device\n",
+		    progname, special);
 	cp = index(argv[0], '\0') - 1;
 	if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
 		fatal("%s: can't figure out file system partition", argv[0]);
