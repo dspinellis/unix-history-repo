@@ -1,0 +1,3 @@
+procedure Inter(e1,e2)
+   suspend |@(e1 | e2)
+end
