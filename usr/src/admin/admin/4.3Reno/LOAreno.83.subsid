@@ -1,4 +1,4 @@
-.\" @(#)LOAreno.83.subsid	1.3 (CSRG - distribution) %G%
+.\" @(#)LOAreno.83.subsid	1.4 (CSRG - distribution) %G%
 .\" .so/usr3/staff/sellgren/BSD/LETTERS/UCHEADERS
 .ll 6.8i
 .nr LL 6.8i
@@ -38,7 +38,8 @@ The University hereby agrees to provide a copy of 4.3 BSD-Reno to
 .sp
 The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee,
 on the type of media and for the fee indicated on Exhibit A, under the
-same terms and conditions set forth in the Agreement.
+same terms and conditions set forth in the revised Berkeley License
+Agreement (6/83).
 .nf
 .sp 
 (Parent name)
