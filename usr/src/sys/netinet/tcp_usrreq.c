@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -343,7 +343,8 @@ tcp_ctloutput(op, so, level, optname, mp)
 			error = EINVAL;
 			break;
 		}
-		(void)m_free(m);
+		if (m)
+			(void) m_free(m);
 		break;
 
 	case PRCO_GETOPT:
