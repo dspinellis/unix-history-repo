@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1980, 1986 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
