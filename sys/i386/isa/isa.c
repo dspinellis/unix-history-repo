@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)isa.c	7.2 (Berkeley) 5/13/91
- *	$Id: isa.c,v 1.16 1994/04/02 20:43:25 ache Exp $
+ *	$Id: isa.c,v 1.17 1994/04/21 14:20:07 sos Exp $
  */
 
 /*
@@ -124,9 +124,11 @@ haveseen(dvp, tmpdvp)
 			if ((dvp->id_iobase >= tmpdvp->id_iobase) &&
 			    (dvp->id_iobase <=
 				  (tmpdvp->id_iobase + tmpdvp->id_alive - 1))) {
+#ifndef ALLOW_CONFLICT_IOADDR
 				conflict(dvp, tmpdvp, dvp->id_iobase,
 					 "I/O address", "0x%x");
 				status = 1;
+#endif
 			}
 		}
 		/*
@@ -143,12 +145,14 @@ haveseen(dvp, tmpdvp)
 			if((KERNBASE + dvp->id_maddr >= tmpdvp->id_maddr) &&
 			   (KERNBASE + dvp->id_maddr <=
 			   (tmpdvp->id_maddr + tmpdvp->id_msize - 1))) {
+#ifndef ALLOW_CONFLICT_MEMADDR
 				conflict(dvp, tmpdvp, dvp->id_maddr, "maddr",
 					"0x%x");
 				status = 1;
+#endif
 			}
 		}
-#ifndef COM_MULTIPORT
+#ifndef ALLOW_CONFLICT_IRQ
 		/*
 		 * Check for IRQ conflicts.
 		 */
@@ -160,6 +164,7 @@ haveseen(dvp, tmpdvp)
 			}
 		}
 #endif
+#ifndef ALLOW_CONFLICT_DRQ
 		/*
 		 * Check for DRQ conflicts.
 		 */
@@ -170,6 +175,7 @@ haveseen(dvp, tmpdvp)
 				status = 1;
 			}
 		}
+#endif
 	}
 	return (status);
 }
