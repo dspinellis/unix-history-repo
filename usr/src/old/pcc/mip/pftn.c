@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.13 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.14 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1093,6 +1093,9 @@ doinit( p ) register NODE *p; {
 	inforce( pstk->in_off );
 
 	p = buildtree( ASSIGN, block( NAME, NIL,NIL, t, d, s ), p );
+#ifdef LINT
+	ecode(p);
+#endif
 	p->in.left->in.op = FREE;
 	p->in.left = p->in.right;
 	p->in.right = NIL;
