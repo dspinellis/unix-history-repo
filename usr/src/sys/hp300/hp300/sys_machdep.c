@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -73,3 +73,50 @@ vdoualarm(arg)
 	nvualarm--;
 }
 #endif
+
+#include "../include/cpu.h"
+
+/* XXX should be in an include file somewhere */
+#define CC_PURGE	1
+#define CC_FLUSH	2
+#define CC_IPURGE	4
+#define CC_EXTPURGE	0x80000000
+/* XXX end should be */
+
+/*ARGSUSED1*/
+cachectl(req, addr, len)
+	int req;
+	caddr_t	addr;
+	int len;
+{
+	int error = 0;
+
+	switch (req) {
+	case CC_EXTPURGE|CC_PURGE:
+	case CC_EXTPURGE|CC_FLUSH:
+#if defined(HP370)
+		if (ectype == EC_PHYS)
+			PCIA();
+		/* fall into... */
+#endif
+	case CC_PURGE:
+	case CC_FLUSH:
+		DCIU();
+		break;
+	case CC_EXTPURGE|CC_IPURGE:
+#if defined(HP370)
+		if (ectype == EC_PHYS)
+			PCIA();
+		else
+#endif
+		DCIU();
+		/* fall into... */
+	case CC_IPURGE:
+		ICIA();
+		break;
+	default:
+		error = EINVAL;
+		break;
+	}
+	return(error);
+}
