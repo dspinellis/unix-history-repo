@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.92	83/04/03	*/
+/*	tcp_input.c	1.93	83/05/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -761,8 +761,11 @@ tcp_dooptions(tp, om)
 			break;
 		if (opt == TCPOPT_NOP)
 			optlen = 1;
-		else
+		else {
 			optlen = cp[1];
+			if (optlen <= 0)
+				break;
+		}
 		switch (opt) {
 
 		default:
