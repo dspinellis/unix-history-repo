@@ -318,7 +318,7 @@ getloginname(up)
 	char c;
 
 	while (up->ut_name[0] == '\0') {
-		namep = utmp.ut_name;
+		namep = up->ut_name;
 		printf("login: ");
 		while ((c = getchar()) != '\n') {
 			if (c == ' ')
@@ -329,8 +329,10 @@ getloginname(up)
 				*namep++ = c;
 		}
 	}
+	strncpy(lusername, up->ut_name, NMAX);
+	lusername[NMAX] = 0;
 	setpwent();
-	if ((pwd = getpwnam(utmp.ut_name)) == NULL)
+	if ((pwd = getpwnam(lusername)) == NULL)
 		pwd = &nouser;
 	endpwent();
 }
