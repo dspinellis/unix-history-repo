@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	5.2 (Berkeley) %G%
+.\"	@(#)5.t	5.3 (Berkeley) %G%
 .\"
 .\".ds RH "Advanced Topics
 .bp
@@ -577,6 +577,8 @@ requirement as the system still checks at connect time to
 be sure any other sockets with the same local address and
 port do not have the same foreign address and port.
 If the association already exists, the error EADDRINUSE is returned.
+A related socket option, SO_REUSEPORT, which allows completely 
+duplicate bindings, is described in the IP multicasting section.
 .NH 2
 Socket Options
 .PP
@@ -1028,25 +1030,30 @@ datagrams are received on that socket.  Incoming multicast packets are
 accepted by the kernel IP layer if any socket has claimed a membership in the
 destination group of the datagram; however, delivery of a multicast datagram
 to a particular socket is based on the destination port (or protocol type, for
-raw sockets), just as with unicast datagrams.  To receive multicast datagrams
+raw sockets), just as with unicast datagrams.  
+To receive multicast datagrams
 sent to a particular port, it is necessary to bind to that local port,
 leaving the local address unspecified (i.e., INADDR_ANY).
+To receive multicast datagrams
+sent to a particular group and port, bind to the local port, with
+the local address set to the multicast group address.  
+Once bound to a multicast address, the socket cannot be used for sending data.
 .PP
-More than one process may bind to the same SOCK_DGRAM UDP port if the
+More than one process may bind to the same SOCK_DGRAM UDP port 
+or the same multicast group and port if the
 .I bind
 call is preceded by:
 .DS
 int on = 1;
-setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
 .DE
-In this case, every incoming multicast or broadcast UDP datagram destined to
-the shared port is delivered to all sockets bound to the port.  For backwards
-compatibility reasons, this does not apply to incoming
+All processes sharing the port must enable this option.
+Every incoming multicast or broadcast UDP datagram destined to
+the shared port is delivered to all sockets bound to the port.  
+For backwards compatibility reasons, this does not apply to incoming
 unicast datagrams.  Unicast
 datagrams are never delivered to more than one socket, regardless of
-how many sockets are bound to the datagram's destination port.  SOCK_RAW
-sockets do not require the SO_REUSEADDR option to share a single IP protocol
-type.
+how many sockets are bound to the datagram's destination port.
 .PP
 A final multicast-related extension is independent of IP:  two new ioctls,
 SIOCADDMULTI and SIOCDELMULTI, are available to add or delete link-level
