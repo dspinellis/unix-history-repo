@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.31 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.32 (Berkeley) %G%";
 #endif
 
 /*
@@ -119,7 +119,7 @@ int	aflg, cflg, eflg, gflg, kflg, lflg, sflg,
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
-char	*strncpy(), *index(), *ttyname(), mytty[16];
+char	*strncpy(), *index(), *ttyname(), mytty[MAXPATHLEN+1];
 long	lseek();
 off_t	vtophys();
 double	pcpu(), pmem();
@@ -213,11 +213,13 @@ main(argc, argv)
 		case 't':
 			if (*ap)
 				tptr = ap;
-			else if ((tptr = ttyname(2)) != 0) {
-				strcpy(mytty, tptr);
-				if ((tptr = index(mytty,'y')) != 0)
-					tptr++;
+			else if ((tptr = ttyname(0)) != 0) {
+				tptr = strcpy(mytty, tptr);
+				if (strncmp(tptr, "/dev/", 5) == 0)
+					tptr += 5;
 			}
+			if (strncmp(tptr, "tty", 3) == 0)
+				tptr += 3;
 			aflg++;
 			gflg++;
 			if (tptr && *tptr == '?')
@@ -307,16 +309,14 @@ main(argc, argv)
 			upr(sp);
 		else
 			spr(sp);
-		if (sp->ap->a_flag & SWEXIT)
-			printf(" <exiting>");
-		else if (sp->ap->a_stat == SZOMB)
+		if (sp->ap->a_stat == SZOMB)
 			printf(" <defunct>");
+		else if (sp->ap->a_flag & SWEXIT)
+			printf(" <exiting>");
 		else if (sp->ap->a_pid == 0)
 			printf(" swapper");
 		else if (sp->ap->a_pid == 2)
 			printf(" pagedaemon");
-		else if (sp->ap->a_pid == 3 && sp->ap->a_flag & SSYS)
-			printf(" ip input");
 		else
 			printf(" %.*s", twidth - cmdstart - 2, sp->ap->a_cmdp);
 		printf("\n");
@@ -353,6 +353,7 @@ writepsdb(unixname)
 	int nllen;
 	register FILE *fp;
 
+	setgid(getgid());
 	setuid(getuid());
 	if ((fp = fopen(psdb, "w")) == NULL) {
 		perror(psdb);
@@ -441,7 +442,7 @@ getkvars(argc, argv)
 		if (!kflg)
 			nl[X_SYSMAP].n_name = "";
 		nlist(nlistf, nl);
-		nttys =  0;
+		nttys = 0;
 		getdev();
 	}
 
@@ -971,7 +972,7 @@ retucomm:
 }
 
 char	*lhdr =
-"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN  STAT TT  TIME";
+"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS  WCHAN STAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
