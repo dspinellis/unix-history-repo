@@ -1,6 +1,10 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.9  1993/08/05  18:45:53  nate
+# Removed the ranlib statements from before the install (since it's done
+# after the install as well), and changed ranlib -> ${RANLIB}
+#
 # Revision 1.8  1993/08/03  20:57:34  nate
 # Fixed macros so that you can do a
 # make maninstall at all times and have it not blow up
@@ -56,6 +60,16 @@ BINMODE?=	555
 
 .c.po:
 	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
+
+.f.o:
+	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
+
+.f.po:
+	${FC} -p ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
