@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hangman.h	5.2 (Berkeley) %G%
+ *	@(#)hangman.h	5.3 (Berkeley) %G%
  */
 
 # include	<curses.h>
@@ -22,10 +22,10 @@
 # include	<sys/stat.h>
 # include	<ctype.h>
 # include	<signal.h>
+# include	"pathnames.h"
 
 # define	MINLEN	6
 # define	MAXERRS	7
-# define	DICT	"/usr/dict/words"
 
 # define	MESGY	12
 # define	MESGX	0
