@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpsubs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpsubs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Simple minded read-ahead/write-behind subroutines for tftp user and
@@ -231,7 +231,7 @@ int	f;		/* socket to flush */
 			j++;
 			fromlen = sizeof from;
 			(void) recvfrom(f, rbuf, sizeof (rbuf), 0,
-				(caddr_t)&from, &fromlen);
+				(struct sockaddr *)&from, &fromlen);
 		} else {
 			return(j);
 		}
