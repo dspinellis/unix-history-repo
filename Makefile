@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.18 1993/10/25 20:58:17 rgrimes Exp $
+#	$Id: Makefile,v 1.19 1993/10/25 21:09:32 rgrimes Exp $
 #
 
 SUBDIR=
@@ -100,7 +100,7 @@ includes:
 	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
 	cd ${.CURDIR}/gnu/libregex;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
-	cd ${.CURDIR}/lib/librpc/rpc;		make beforeinstall
+	cd ${.CURDIR}/lib/libc;			make beforeinstall
 
 libraries:
 	# setenv NOPROFILE if you do not want profiled libraries
