@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.5 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
 #include <sys/types.h>
@@ -519,7 +519,7 @@ char *name, *fname;
 	int rv = 0;
 	char *endofname;
 
-	if(stat(fname, &Statb)<0) {
+	if(lstat(fname, &Statb)<0) {
 		fprintf(stderr, "find: bad status < %s >\n", name);
 		return(0);
 	}
