@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)optim.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)optim.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -67,6 +67,7 @@ rename(str)
 	char buf[BUFSIZ], path[BUFSIZ];
 	register int c, host;
 
+	cp = str;
 	strcpy(path, "");
 	for (;;) {
 		if ((c = *cp++) == 0)
@@ -658,6 +659,7 @@ rpair(str, mach)
 {
 	register char *cp, *last;
 
+	cp = str;
 	last = NOSTR;
 	while (*cp) {
 		if (*cp == mach)
