@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -21,8 +21,7 @@ static char sccsid[] = "@(#)fts.c	5.17 (Berkeley) %G%";
 #include <unistd.h>
 
 static FTSENT *fts_alloc(), *fts_build(), *fts_sort();
-static void fts_lfree();
-static int fts_load();
+static void fts_load(), fts_lfree();
 static u_short fts_stat();
 static char *fts_path();
 
@@ -132,7 +131,7 @@ mem1:	free(sp);
 	return(NULL);
 }
 
-static
+static void
 fts_load(sp, p)
 	FTS *sp;
 	register FTSENT *p;
@@ -157,7 +156,6 @@ fts_load(sp, p)
 
 	p->fts_info = fts_stat(sp, p, 0);
 	sp->rdev = p->fts_statb.st_dev;
-	return(1);
 }
 
 fts_close(sp)
@@ -306,8 +304,7 @@ next:	tmp = p;
 
 		/* If reached the top, load the paths for the next root. */
 		if (p->fts_level == FTS_ROOTLEVEL) {
-			if (!fts_load(sp, p))
-				return(NULL);
+			fts_load(sp, p);
 			return(sp->fts_cur = p);
 		}
 
