@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.17 %G%";
+static char sccsid[] = "@(#)cpp.c	1.18 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -8,9 +8,11 @@ static char sccsid[] = "@(#)cpp.c	1.17 %G%";
 #define	NCPS	8
 #endif
 
-# include "sys/param.h"
-# include "stdio.h"
-# include "ctype.h"
+#include <sys/param.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
+
 /* C command
 /* written by John F. Reiser
 /* July/August 1978
@@ -1204,8 +1206,8 @@ main(argc,argv)
 		if (tf!=(char *)0)
 			infile = tf + 1;
 		mout=fout;
-		if (NULL==(fout=fopen("/dev/null", "w"))) {
-			pperror("Can't open /dev/null");
+		if (NULL==(fout=fopen(_PATH_DEVNULL, "w"))) {
+			fprintf(stderr, "cpp: can't open %s\n", _PATH_DEVNULL);
 			exit(8);
 		}
 	}
@@ -1213,7 +1215,7 @@ main(argc,argv)
 	exfail = 0;
 		/* after user -I files here are the standard include libraries */
 # if unix
-	dirs[nd++] = "/usr/include";
+	dirs[nd++] = _PATH_INCLUDES;
 # endif
 # if gcos
 	dirs[nd++] = "cc/include";

@@ -3,11 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.6	(Berkeley)	%G%
+#	@(#)Makefile	1.7	(Berkeley)	%G%
 #
 CFLAGS=	-O -Dunix=1 -DFLEXNAMES
 LIBC=	/lib/libc.a
-YYFIX=	../pcc/pcc.${MACHINE}/:yyfix
+YYFIX=	../../libexec/pcc/pcc.${MACHINE}/:yyfix
 SRCS=	cpp.c cpy.c rodata.c
 OBJS=	cpp.o cpy.o rodata.o
 
@@ -36,7 +36,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 cpp ${DESTDIR}/lib/cpp
+	install -s -o bin -g bin -m 755 cpp ${DESTDIR}/usr/bin
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
