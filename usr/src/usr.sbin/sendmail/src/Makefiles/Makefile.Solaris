@@ -5,9 +5,10 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on Solaris 2.1 and 2.2.
+#  This has been tested on Solaris 2.1 and 2.2.  If you are compiling
+#  for Solaris 2.3, use Makefile.SunOS.5.x.
 #
-#	@(#)Makefile.Solaris	8.5 (Berkeley) %G%
+#	@(#)Makefile.Solaris	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
