@@ -213,7 +213,9 @@ const char *exp;
 		FAIL("NULL argument");
 
 	/* First pass: determine size, legality. */
+#ifdef notdef
 	if (exp[0] == '.' && exp[1] == '*') exp += 2;  /* aid grep */
+#endif
 	regparse = (char *)exp;
 	regnpar = 1;
 	regsize = 0L;
