@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.9 83/01/18";
+static char sccsid[] = "@(#)rshd.c	4.10 83/01/22";
 #endif
 
 #include <sys/ioctl.h>
@@ -89,7 +89,7 @@ main(argc, argv)
 		perror("rshd: bind");
 		exit(1);
 	}
-	signal(SIGCHLD, reapchild);
+	sigset(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int g, len = sizeof (from);
