@@ -1,9 +1,10 @@
-/*	ffs_vnops.c	4.35	82/08/24	*/
+/*	ffs_vnops.c	4.36	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/file.h"
 #include "../h/stat.h"
 #include "../h/inode.h"
@@ -236,7 +237,7 @@ link()
 	}
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
-	iupdat(ip, &time, &time, 1);
+	iupdat(ip, &time.tv_sec, &time.tv_sec, 1);
 	iunlock(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
 	xp = namei(uchar, 1, 0);
@@ -357,7 +358,7 @@ out1:
 /*
  * Seek system call
  */
-seek()
+lseek()
 {
 	register struct file *fp;
 	register struct a {
@@ -483,7 +484,7 @@ stat1(ip, ub)
 {
 	struct stat ds;
 
-	IUPDAT(ip, &time, &time, 0);
+	IUPDAT(ip, &time.tv_sec, &time.tv_sec, 0);
 	/*
 	 * Copy from inode table
 	 */
@@ -868,7 +869,7 @@ maknode(mode)
 	/*
 	 * Make sure inode goes to disk before directory entry.
 	 */
-	iupdat(ip, &time, &time, 1);
+	iupdat(ip, &time.tv_sec, &time.tv_sec, 1);
 	direnter(ip);
 	if (u.u_error) {
 		/*
