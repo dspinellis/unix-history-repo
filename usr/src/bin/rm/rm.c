@@ -1,6 +1,5 @@
-static char *sccsid = "@(#)rm.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.6 (Berkeley) %G%";
 int	errcode;
-short	uid, euid;
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -20,8 +19,6 @@ char *argv[];
 		fflg++;
 	iflg = 0;
 	rflg = 0;
-	uid = getuid();
-	euid = geteuid();
 	while(argc>1 && argv[1][0]=='-') {
 		arg = *++argv;
 		argc--;
@@ -93,7 +90,7 @@ char arg[];
 			}
 			while((dp = readdir(dirp)) != NULL) {
 				if(dp->d_ino != 0 && !dotname(dp->d_name)) {
-					sprintf(name, "%s/%.14s", arg, dp->d_name);
+					sprintf(name, "%s/%s", arg, dp->d_name);
 					rm(name, fflg, rflg, iflg, level+1);
 				}
 			}
@@ -113,15 +110,9 @@ char arg[];
 	}
 	else if(!fflg) {
 		if (access(arg, 02)<0) {
-			if (uid == buf.st_uid || euid == buf.st_uid) {
-				printf("rm: override protection %o for %s? ",
-					buf.st_mode&0777, arg);
-				if(!yes())
-					return;
-			} else {
-				printf("rm: %s: not owner.\n", arg);
+			printf("rm: override protection %o for %s? ", buf.st_mode&0777, arg);
+			if(!yes())
 				return;
-			}
 		}
 	}
 	if(unlink(arg) && (fflg==0 || iflg)) {
