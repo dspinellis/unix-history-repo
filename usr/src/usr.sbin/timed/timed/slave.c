@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.6 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -128,7 +128,7 @@ loop:
 	msg = readmsg(TSP_ANY, (char *)ANYADDR, &wait, (struct netinfo *)NULL);
 	if (msg != NULL) {
 		switch (msg->tsp_type) {
-		case TSP_DATE:
+		case TSP_SETDATE:
 #ifdef TESTING
 		case TSP_TEST:
 #endif
@@ -232,10 +232,10 @@ loop:
 			(void)gettimeofday(&time, (struct timezone *)0);
 			electiontime = time.tv_sec + delay2;
 			break;
-		case TSP_DATE:
+		case TSP_SETDATE:
 			saveaddr = from;
 			msg->tsp_time.tv_usec = 0;
-			msg->tsp_type = TSP_DATEREQ;
+			msg->tsp_type = TSP_SETDATEREQ;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
 			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
@@ -259,7 +259,7 @@ loop:
 				senddateack = ON;
 			}
 			break;
-		case TSP_DATEREQ:
+		case TSP_SETDATEREQ:
 			saveaddr = from;
 			if (status != SUBMASTER || fromnet->status != MASTER)
 				break;
@@ -267,6 +267,16 @@ loop:
 				if (ntp->status == SLAVE)
 					break;
 			}
+			ind = findhost(msg->tsp_name);
+			if (ind < 0) {
+			    syslog(LOG_ERR,
+				"DATEREQ from uncontrolled machine");
+			    break;
+			}
+			syslog(LOG_NOTICE,
+			    "forwarding date change request for %s",
+			    msg->tsp_name);
+			strcpy(msg->tsp_name, hostname);
 			answer = acksend(msg, &ntp->dest_addr, (char *)ANYADDR,
 			    TSP_DATEACK, ntp);
 			if (answer != NULL) {
