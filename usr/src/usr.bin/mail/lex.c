@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.10 %G%";
+static char *SccsId = "@(#)lex.c	2.11 %G%";
 
 char	*prompt = "& ";
 
@@ -542,11 +542,11 @@ announce(pr)
 	int vec[2], mdot;
 	extern char *version;
 
+	if (pr && value("quiet") == NOSTR)
+		printf(greeting, version);
 	mdot = newfileinfo();
 	vec[0] = mdot;
 	vec[1] = 0;
-	if (pr && value("quiet") == NOSTR)
-		printf(greeting, version);
 	dot = &message[mdot - 1];
 	if (msgCount > 0 && !noheader) {
 		inithdr++;
