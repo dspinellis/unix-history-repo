@@ -1,4 +1,4 @@
-/*	if_en.c	4.81	83/06/26	*/
+/*	if_en.c	4.82	83/06/30	*/
 
 #include "en.h"
 
@@ -25,6 +25,7 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netpup/pup.h"
+#include "../netpup/ether.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -338,9 +339,11 @@ endocoll(unit)
 	enstart(unit);
 }
 
-struct	sockaddr_pup pupsrc = { AF_PUP };
-struct	sockaddr_pup pupdst = { AF_PUP };
-struct	sockproto pupproto = { PF_PUP };
+#ifdef notdef
+struct	sockproto enproto = { AF_ETHERLINK };
+struct	sockaddr_en endst = { AF_ETHERLINK };
+struct	sockaddr_en ensrc = { AF_ETHERLINK };
+#endif
 /*
  * Ethernet interface receiver interrupt.
  * If input error just drop packet.
@@ -430,21 +433,21 @@ enrint(unit)
 		break;
 #endif
 #ifdef PUP
-	case ENTYPE_PUP: {
-		struct pup_header *pup = mtod(m, struct pup_header *);
-
-		pupproto.sp_protocol = pup->pup_type;
-		bcopy((caddr_t)pup->pup_dnet, (caddr_t)pupdst.spup_net,
-		    sizeof (struct pupport));
-		bcopy((caddr_t)pup->pup_snet, (caddr_t)pupsrc.spup_net,
-		    sizeof (struct pupport));
-		raw_input(m, &pupproto, (struct sockaddr *)&pupsrc,
-		  (struct sockaddr *)&pupdst);
+	case ENTYPE_PUP:
+		rpup_input(m);
 		goto setup;
-	}
 #endif
 	default:
+#ifdef notdef
+		enproto.sp_protocol = en->en_type;
+		endst.sen_host = en->en_dhost;
+		endst.sen_net = ensrc.sen_net = es->es_if.if_net;
+		ensrc.sen_host = en->en_shost;
+		raw_input(m, &enproto,
+		    (struct sockaddr *)&ensrc, (struct sockaddr *)&endst);
+#else
 		m_freem(m);
+#endif
 		goto setup;
 	}
 
@@ -513,6 +516,11 @@ enoutput(ifp, m0, dst)
 		goto gottype;
 #endif
 
+#ifdef notdef
+	case AF_ETHERLINK:
+		goto gotheader;
+#endif
+
 	default:
 		printf("en%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
@@ -556,6 +564,7 @@ gottype:
 	en->en_dhost = dest;
 	en->en_type = htons((u_short)type);
 
+gotheader:
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
