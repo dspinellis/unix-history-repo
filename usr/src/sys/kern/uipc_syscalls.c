@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.11 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -209,10 +209,10 @@ connect()
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
 	so->so_error = 0;
-	so->so_state &= ~SS_ISCONNECTING;
 bad2:
 	splx(s);
 bad:
+	so->so_state &= ~SS_ISCONNECTING;
 	m_freem(nam);
 }
 
@@ -275,11 +275,9 @@ free3:
 	fp1->f_count = 0;
 	u.u_ofile[sv[0]] = 0;
 free2:
-	so2->so_state |= SS_NOFDREF;
-	sofree(so2);
+	soclose(so2);
 free:
-	so1->so_state |= SS_NOFDREF;
-	sofree(so1);
+	soclose(so1);
 }
 
 sendto()
@@ -709,11 +707,9 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
-	wso->so_state |= SS_NOFDREF;
-	sofree(wso);
+	soclose(wso);
 free:
-	rso->so_state |= SS_NOFDREF;
-	sofree(rso);
+	soclose(rso);
 }
 
 /*
