@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.2 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.3 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1422,6 +1422,16 @@ dt|vt100-w|dec vt100 132 cols (w/advanced video):\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:tc=vt100-am:
 dv|vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:vt@:tc=vt100-nam:
+# vt 102	(from lai@decwrl)
+vt102|vt-102|dec vt102:\
+	:do=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:\
+	:le=^H:bs:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
+	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
+	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
+	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:vt#3:\
+	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:vs=\E[?7l:ve=\E[?7h:
 dw|vt52|dec vt52:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
 	:nd=\EC:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
@@ -1460,18 +1470,23 @@ do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:rs=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:co#132:tc=vt200:
 vs|xterm|vs100|xterm terminal emulator (X window system):\
-	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:ho=\E[H:\
+	:do=^J:bl=^G:le=^H:ho=\E[H:\
 	:co#80:li#65:cl=\E[H\E[2J:bs:am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=2\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:me=2\E[m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sf=\n:sr=\EM:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sf=\n:sr=\EM:\
 	:al=\E[L:dl=\E[M:ic=\E[@:dc=\E[P:\
 	:MT:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:is=\E[r\E\E[m\E[2J\E[H\E[?7h\E[?1;3;4;5;6l:\
 	:rs\E[r\E<\E[m\E[2J\E[H\E[?7h\E[?1;3;4;5;6l:
 v2|xterms|vs100s|xterm terminal emulator (small)(X window system):\
 	:co#80:li#24:tc=xterm:
+# vs100 emulator using tsim	(from lai@decwrl)
+vt|vs100t|tsim|vs100-tsim:\
+	:bs:cm=\EM%+ %+ :ho=\EH:do=^J:up=^K:cl=\EE:ce=\EL:cs=\ES%+ %+ :\
+	:so=\Eh:se=\Er:us=\Eu:ue=\Ev:al=\EI:Al=\E+%+ :dl=\ED:Dl=\E-%+ :\
+	:ic=\Ei:dc=\Ed:is=\ER:rs=\ER:am:cd=\EQ:pt:nd=\En:li#24:co#80:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
