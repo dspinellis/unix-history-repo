@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -31,13 +31,13 @@ vax_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
-	fprintf(fp, "#include \"machine/pte.h\"\n");
-	fprintf(fp, "#include \"../sys/param.h\"\n");
-	fprintf(fp, "#include \"../sys/buf.h\"\n");
-	fprintf(fp, "#include \"../sys/map.h\"\n");
+	fprintf(fp, "#include \"vax/include/pte.h\"\n");
+	fprintf(fp, "#include \"sys/param.h\"\n");
+	fprintf(fp, "#include \"sys/buf.h\"\n");
+	fprintf(fp, "#include \"sys/map.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"../vaxmba/mbavar.h\"\n");
-	fprintf(fp, "#include \"../vaxuba/ubavar.h\"\n\n");
+	fprintf(fp, "#include \"vax/mba/mbavar.h\"\n");
+	fprintf(fp, "#include \"vax/uba/ubavar.h\"\n\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
 	/*
@@ -274,12 +274,12 @@ tahoe_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
-	fprintf(fp, "#include \"../sys/param.h\"\n");
-	fprintf(fp, "#include \"machine/pte.h\"\n");
-	fprintf(fp, "#include \"../sys/buf.h\"\n");
-	fprintf(fp, "#include \"../sys/map.h\"\n");
+	fprintf(fp, "#include \"sys/param.h\"\n");
+	fprintf(fp, "#include \"tahoe/include/pte.h\"\n");
+	fprintf(fp, "#include \"sys/buf.h\"\n");
+	fprintf(fp, "#include \"sys/map.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"../tahoevba/vbavar.h\"\n");
+	fprintf(fp, "#include \"tahoe/vba/vbavar.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
 	/*
@@ -449,12 +449,12 @@ hp300_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
-	fprintf(fp, "#include \"machine/pte.h\"\n");
-	fprintf(fp, "#include \"../sys/param.h\"\n");
-	fprintf(fp, "#include \"../sys/buf.h\"\n");
-	fprintf(fp, "#include \"../sys/map.h\"\n");
+	fprintf(fp, "#include \"hp300/include/pte.h\"\n");
+	fprintf(fp, "#include \"sys/param.h\"\n");
+	fprintf(fp, "#include \"sys/buf.h\"\n");
+	fprintf(fp, "#include \"sys/map.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"../hpdev/device.h\"\n\n");
+	fprintf(fp, "#include \"hp300/dev/device.h\"\n\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n");
 	fprintf(fp, "#define D (struct driver *)\n\n");
