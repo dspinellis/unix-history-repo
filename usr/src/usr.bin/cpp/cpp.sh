@@ -9,14 +9,14 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cpp.sh	6.5 (Berkeley) %G%
+#	@(#)cpp.sh	6.6 (Berkeley) %G%
 #
 # Transitional front end to CCCP to make it behave like (Reiser) CCP:
 #	specifies -traditional
 #	doesn't search gcc-include
 #
 PATH=/usr/bin:/bin
-CPP=/usr/libexec/cpp
+CPP=/usr/libexec/gcc2/cpp
 ALST="-traditional -D__GNUC__ -$ "
 NSI=no
 OPTS=""
