@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m4	8.1 (Berkeley) %G%
+.\"	@(#)m4	6.4 (Berkeley) %G%
 .\"
 .tr |
 .mh
@@ -109,7 +109,7 @@ as blank number fields).
 .ll
 .h1
 .bt
-\fB&nm\fI|\(+-N|M|S|I\fR	off	E	\
+\fB&nm\fI|\(+-N|M|S|I\fR		off	E	\
 Line number mode.
 If \fI\(+-N\fR is given,
 line numbering is turned on,
@@ -135,7 +135,7 @@ and \fB.nm\fR finally placed at the end.
 Line lengths were also changed (by \fB\ew\'0000\'u\fR) to keep the right side aligned.
 Another example is
 \&\fB.nm|+5|5|x|3\fR which turns on numbering with the line number of the next
-line to be 5 greater than the last numbered line,
+line to be five greater than the last numbered line,
 with \fIM=\fR\|5, with spacing \fIS\fR untouched, and with the indent \fII\fR set to 3.
 .br
 .ll
@@ -152,12 +152,12 @@ and
 \fIanything\fR represents what is conditionally accepted.
 .h1
 .bt
-\fB&if\fI|c|anything\fR	-	-	If condition \fIc\fR true, accept \fIanything\fR as input;
+\fB&if\fI|c|anything\fR		-	-	If condition \fIc\fR true, accept \fIanything\fR as input;
 in multi-line case use \fI\e{anything\|\e}\fR.
 .bt
-\fB&if|!\fIc|anything\fR	-	-	If condition \fIc\fR false, accept \fIanything\fR.
+\fB&if|!\fIc|anything\fR		-	-	If condition \fIc\fR false, accept \fIanything\fR.
 .bt
-\fB&if\fI|N|anything\fR	-	\fBu\fR	If expression \fIN\fR > 0, accept \fIanything\fR.
+\fB&if\fI|N|anything\fR		-	\fBu\fR	If expression \fIN\fR > 0, accept \fIanything\fR.
 .bt
 \fB&if|!\fIN|anything\fR	-	\fBu\fR	If expression \fIN\fR \(<= 0, accept \fIanything\fR.
 .bt
@@ -167,16 +167,16 @@ accept \fIanything\fR.
 \fB&if|!\fI\|\'string1\|\'string2\|\'|anything\fR	-	If \fIstring1\fR not identical to \fIstring2\fR,
 accept \fIanything\fR.
 .bt
-\fB&ie\fI|c|anything\fR	-	\fBu\fR	If portion of if-else; all above forms (like \fBif\fR).
+\fB&ie\fI|c|anything\fR		-	\fBu\fR	If portion of if-else; all above forms (like \fBif\fR).
 .bt
 \fB&el\fI|anything\fR		-	-	Else portion of if-else.
 .pg
 The built-in condition names are:
 .TS
 center box;
-c2|c2
-c2|c2
-c2|l2.
+c2|c
+c2|c
+c2|l.
 Condition
 Name	True If
 _
@@ -205,21 +205,21 @@ A subsequent and matching \fBel\fR (else) request then uses the reverse sense of
 .pg
 Some examples are:
 .x1
-.ftB
+.ft B
 .ne 1
 &if e .tl \'\|Even Page %\'\'\'
-.ftR
+.ft R
 .x2
 which outputs a title if the page number is even; and
 .x1
-.ftB
+.ft B
 .ne 3.1
 &ie \en%>1 \e{\e
 \&\'sp 0.5i
 &tl \'\|Page %\'\'\'
 \&\'sp ~\|1.2i|\e}
 &el .sp ~\|2.5i
-.ftR
+.ft R
 .x2
 which treats page 1 differently from other pages.
 .mh
@@ -253,7 +253,7 @@ On \s-1UNIX\s+1, the \fIstandard input\fR can be the user's keyboard,
 a \fIpipe\fR, or a \fIfile\fR.
 .h1
 .bt
-\fB&rd\fI|prompt\fR	-	\fIprompt=\fR\s-1BEL\s+1	\
+\fB&rd\fI|prompt\fR	-	\fIprompt=\fR\s-1BEL\s+1		\
 Read insertion from the standard input until two newlines in a row are found.
 If the standard input is the user's keyboard, \fIprompt\fR (or a \s-1BEL\s+1)
 is written onto the user's terminal.
@@ -340,7 +340,7 @@ Print \fIstring\fR on standard error and terminate immediately.  The
 default \fIstring\fR is "User Abort". Does not cause a break.  Only output
 preceding the last break is written.
 .bt
-.lg0
+.lg 0
 \fB&fl\fR	-	-	B	\c
 .lg
 Flush output buffer.
@@ -375,3 +375,7 @@ and an appropriate message is printed.
 Examples are the inability to create, read, or write files,
 and the exceeding of certain internal limits that
 make future output unlikely to be useful.
+.ps 10
+.vs 12
+.ft R
+.bp
