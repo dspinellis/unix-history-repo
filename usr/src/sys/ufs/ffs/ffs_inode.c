@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.69 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.70 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,23 +145,11 @@ ffs_truncate(ap)
 		oip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(ovp, &tv, &tv, 1));
 	}
-	if (oip->i_size <= length) {
+	if (oip->i_size == length) {
 		oip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(ovp, &tv, &tv, 0));
 	}
 	vnode_pager_setsize(ovp, (u_long)length);
-	/*
-	 * Calculate index into inode's block list of
-	 * last direct and indirect blocks (if any)
-	 * which we want to keep.  Lastblock is -1 when
-	 * the file is truncated to 0.
-	 */
-	fs = oip->i_fs;
-	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
-	lastiblock[SINGLE] = lastblock - NDADDR;
-	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
-	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
-	nblocks = btodb(fs->fs_bsize);
 	/*
 	 * Update the size of the file. If the file is not being
 	 * truncated to a block boundry, the contents of the
@@ -169,9 +157,10 @@ ffs_truncate(ap)
 	 * zero'ed in case it ever become accessable again because
 	 * of subsequent file growth.
 	 */
+	fs = oip->i_fs;
 	osize = oip->i_size;
 	offset = blkoff(fs, length);
-	if (offset == 0) {
+	if (offset == 0 && osize > length) {
 		oip->i_size = length;
 	} else {
 		lbn = lblkno(fs, length);
@@ -187,13 +176,30 @@ ffs_truncate(ap)
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
 		(void) vnode_pager_uncache(ovp);
-		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
-		allocbuf(bp, size);
+		if (osize > length) {
+			bzero(bp->b_un.b_addr + offset, (u_int)(size - offset));
+			allocbuf(bp, size);
+		}
 		if (ap->a_flags & IO_SYNC)
 			bwrite(bp);
 		else
 			bawrite(bp);
+		if (osize < length) {
+			oip->i_flag |= ICHG|IUPD;
+			return (VOP_UPDATE(ovp, &tv, &tv, 1));
+		}
 	}
+	/*
+	 * Calculate index into inode's block list of
+	 * last direct and indirect blocks (if any)
+	 * which we want to keep.  Lastblock is -1 when
+	 * the file is truncated to 0.
+	 */
+	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
+	lastiblock[SINGLE] = lastblock - NDADDR;
+	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
+	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
+	nblocks = btodb(fs->fs_bsize);
 	/*
 	 * Update file and block pointers on disk before we start freeing
 	 * blocks.  If we crash before free'ing blocks below, the blocks
