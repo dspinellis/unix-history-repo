@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)rec_put.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../btree/btree.h"
+#include "recno.h"
 
 /*
  * __REC_PUT -- Add a recno item to the tree.
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)rec_put.c	5.1 (Berkeley) %G%";
  *	dbp:	pointer to access method
  *	key:	key
  *	data:	data
- *	flag:	R_NOOVERWRITE
+ *	flag:	R_APPEND, R_IAFTER, R_IBEFORE, R_NOOVERWRITE
  *
  * Returns:
  *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is already in the
@@ -41,27 +41,48 @@ __rec_put(dbp, key, data, flags)
 	recno_t nrec;
 	int status;
 
-	if (flags &&
-	    flags != R_IAFTER && flags != R_IBEFORE && flags != R_NOOVERWRITE ||
-	    (nrec = *(recno_t *)key->data) == 0) {
-		errno = EINVAL;
+	t = dbp->internal;
+
+	switch (flags) {
+	case R_APPEND:
+		nrec = t->bt_nrecs + 1;
+		break;
+	case R_CURSOR:
+		if (ISSET(t, BTF_DELCRSR))
+			goto einval;
+		nrec = t->bt_rcursor;
+		break;
+	case 0:
+	case R_IAFTER:
+	case R_IBEFORE:
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
+		break;
+	case R_NOOVERWRITE:
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
+		if (nrec <= t->bt_nrecs)
+			return (RET_SPECIAL);
+		break;
+	default:
+einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 
 	/*
-	 * If skipping records, either get them from the original file or
-	 * create empty ones.
+	 * Make sure that records up to and including the put record are already
+ 	 * in the database.  If skipping records, create empty ones.
 	 */
-	t = dbp->internal;
-	if (nrec > t->bt_nrecs && t->bt_irec(t, nrec) == RET_ERROR)
-		return (RET_ERROR);
 	if (nrec > t->bt_nrecs) {
-		tdata.data = NULL;
-		tdata.size = 0;
-		while (nrec > t->bt_nrecs) {
-			status = __rec_iput(t, nrec, &tdata, 0);
-			if (status != RET_SUCCESS)
-				return (RET_ERROR);
+		if (t->bt_irec(t, nrec) == RET_ERROR)
+			return (RET_ERROR);
+		if (nrec > t->bt_nrecs + 1) {
+			tdata.data = NULL;
+			tdata.size = 0;
+			while (nrec > t->bt_nrecs)
+				if (__rec_iput(t, nrec, &tdata, 0)
+				    != RET_SUCCESS)
+					return (RET_ERROR);
 		}
 	}
 	--nrec;
@@ -77,11 +98,9 @@ __rec_put(dbp, key, data, flags)
  *	t:	tree
  *	nrec:	record number
  *	data:	data
- *	flag:	R_NOOVERWRITE
  *
  * Returns:
- *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is already in the
- *	tree and R_NOOVERWRITE specified.
+ *	RET_ERROR, RET_SUCCESS
  */
 int
 __rec_iput(t, nrec, data, flags)
@@ -92,12 +111,11 @@ __rec_iput(t, nrec, data, flags)
 {
 	DBT tdata;
 	EPG *e;
-	EPGNO *parent;
 	PAGE *h;
 	index_t index, nxtindex;
 	pgno_t pg;
 	size_t nbytes;
-	int dflags, exact;
+	int dflags, status;
 	char *dest, db[NOVFLSIZE];
 
 	/*
@@ -106,7 +124,7 @@ __rec_iput(t, nrec, data, flags)
 	 * XXX
 	 * If the insert fails later on, these pages aren't recovered.
 	 */
-	if (data->size >= t->bt_minkeypage) {
+	if (data->size > t->bt_ovflsize) {
 		if (__ovfl_put(t, data, &pg) == RET_ERROR)
 			return (RET_ERROR);
 		tdata.data = db;
@@ -119,46 +137,28 @@ __rec_iput(t, nrec, data, flags)
 		dflags = 0;
 
 	/* __rec_search pins the returned page. */
-	if ((e = __rec_search(t, nrec, &exact)) == NULL)
+	if ((e = __rec_search(t, nrec, SINSERT)) == NULL)
 		return (RET_ERROR);
 
 	h = e->page;
 	index = e->index;
 
 	/*
-	 * Add the specified key/data pair to the tree.  If an identical key
-	 * is already in the tree, and R_NOOVERWRITE is set, an error is
-	 * returned.  If R_NOOVERWRITE is not set, the key is either added (if
-	 * duplicates are permitted) or an error is returned.  The R_IAFTER
-	 * and R_IBEFORE flags insert the key after/before the specified key.
+	 * Add the specified key/data pair to the tree.  The R_IAFTER and
+	 * R_IBEFORE flags insert the key after/before the specified key.
 	 *
 	 * Pages are split as required.
 	 */
 	switch (flags) {
 	case R_IAFTER:
-		if (!exact) {
-			errno = EINVAL;
-			goto err;
-		}
 		++index;
 		break;
 	case R_IBEFORE:
-		if (!exact) {
-			errno = EINVAL;
-			goto err;
-		}
 		break;
-	case R_NOOVERWRITE:
-		if (!exact)
-			break;
-		BT_CLR(t);
-		mpool_put(t->bt_mp, h, 0);
-		return (RET_SPECIAL);
 	default:
-		if (!exact || NOTSET(t, BTF_NODUPS))
-			break;
-		if (__rec_dleaf(t, h, index) == RET_ERROR) {
-err:			BT_CLR(t);
+		if (nrec < t->bt_nrecs &&
+		    __rec_dleaf(t, h, index) == RET_ERROR) {
+			BT_CLR(t);
 			mpool_put(t->bt_mp, h, 0);
 			return (RET_ERROR);
 		}
@@ -171,8 +171,12 @@ err:			BT_CLR(t);
 	 * the offset array, shift the pointers up.
 	 */
 	nbytes = NRLEAFDBT(data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t))
-		return (__bt_split(t, h, NULL, data, dflags, nbytes, index));
+	if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+		status = __bt_split(t, h, NULL, data, dflags, nbytes, index);
+		if (status == RET_SUCCESS)
+			++t->bt_nrecs;
+		return (status);
+	}
 
 	if (index < (nxtindex = NEXTINDEX(h)))
 		bcopy(h->linp + index, h->linp + index + 1,
@@ -184,14 +188,6 @@ err:			BT_CLR(t);
 	WR_RLEAF(dest, data, dflags);
 
 	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-
-	/* Increment the count on all parent pages. */
-	while  ((parent = BT_POP(t)) != NULL) {
-		if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
-			return (RET_ERROR);
-		++GETRINTERNAL(h, parent->index)->nrecs;
-		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-	}
 	++t->bt_nrecs;
 	return (RET_SUCCESS);
 }
