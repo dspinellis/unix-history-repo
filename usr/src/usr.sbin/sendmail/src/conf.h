@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.24 (Berkeley) %G%
+ *	@(#)conf.h	8.25 (Berkeley) %G%
  */
 
 /*
@@ -84,6 +84,7 @@
 **  Per-Operating System defines
 */
 
+
 /*
 **  HP-UX -- tested for 8.07
 */
@@ -91,12 +92,14 @@
 # ifdef __hpux
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)	
 # define LA_TYPE	LA_FLOAT
 # define _PATH_UNIX	"/hp-ux"
 # undef IDENTPROTO
 # endif
+
 
 /*
 **  IBM AIX 3.x -- actually tested for 3.2.3
@@ -107,6 +110,7 @@
 # define FORK		fork	/* no vfork primitive available */
 # endif
 
+
 /*
 **  Silicon Graphics IRIX
 **
@@ -116,6 +120,7 @@
 # ifdef IRIX
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define FORK		fork	/* no vfork primitive available */
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
@@ -156,6 +161,7 @@
 # endif
 #endif
 
+
 /*
 **  Digital Ultrix 4.2A or 4.3
 **
@@ -175,17 +181,20 @@
 # undef IDENTPROTO
 #endif
 
+
 /*
 **  OSF/1 (tested on Alpha)
 */
 
 #ifdef __osf__
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 /* # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
 #endif
+
 
 /*
 **  NeXTstep
@@ -195,6 +204,7 @@
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define sleep		sleepX
 # define setpgid	setpgrp
 # ifndef LA_TYPE
@@ -209,18 +219,21 @@ typedef int		pid_t;
 # endif
 #endif
 
+
 /*
 **  4.4 BSD
 */
 
 #ifdef BSD4_4
 # define HASUNSETENV	1	/* has unsetenv(3) call */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
 #endif
+
 
 /*
 **  4.3 BSD -- this is for very old systems
@@ -242,6 +255,7 @@ typedef int		pid_t;
 # endif
 #endif
 
+
 /*
 **  SCO Unix
 */
@@ -254,6 +268,7 @@ typedef int		pid_t;
 # define MAXPATHLEN	PATHSIZE
 # define LA_TYPE	LA_ZERO
 #endif
+
 
 /*
 **  ConvexOS 11.0 and later
@@ -269,6 +284,7 @@ typedef int		pid_t;
 # undef IDENTPROTO
 #endif
 
+
 /*
 **  RISC/os 4.51
 **
@@ -282,6 +298,7 @@ typedef int		pid_t;
 # define LA_AVENRUN	"avenrun"
 # define _PATH_UNIX	"/unix"
 #endif
+
 
 /*
 **  Linux 0.99pl10 and above...

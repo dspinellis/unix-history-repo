@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1122,13 +1122,11 @@ tryhost:
 			{
 				if (ctladdr == NULL || ctladdr->q_uid == 0)
 				{
-					(void) setgid(DefGid);
 					(void) initgroups(DefUser, DefGid);
 					(void) setuid(DefUid);
 				}
 				else
 				{
-					(void) setgid(ctladdr->q_gid);
 					(void) initgroups(ctladdr->q_ruser?
 						ctladdr->q_ruser: ctladdr->q_user,
 						ctladdr->q_gid);
@@ -1938,12 +1936,10 @@ mailfile(filename, ctladdr, e)
 		{
 			if (ctladdr->q_uid == 0)
 			{
-				(void) setgid(DefGid);
 				(void) initgroups(DefUser, DefGid);
 			}
 			else
 			{
-				(void) setgid(ctladdr->q_gid);
 				(void) initgroups(ctladdr->q_ruser ?
 					ctladdr->q_ruser : ctladdr->q_user,
 					ctladdr->q_gid);
