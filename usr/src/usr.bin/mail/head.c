@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)head.c	2.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)head.c	2.4 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -222,7 +222,14 @@ nextword(wp, wbuf)
 	}
 	cp2 = wbuf;
 	while (!any(*cp, " \t") && *cp != '\0')
-		*cp2++ = *cp++;
+		if (*cp == '"') {
+ 			*cp2++ = *cp++;
+ 			while (*cp != '\0' && *cp != '"')
+ 				*cp2++ = *cp++;
+ 			if (*cp == '"')
+ 				*cp2++ = *cp++;
+ 		} else
+ 			*cp2++ = *cp++;
 	*cp2 = '\0';
 	while (any(*cp, " \t"))
 		cp++;
