@@ -14,7 +14,7 @@
  * If you don't run uucp you don't even need any rmail.
  */
 
-static char	SccsId[] =	"@(#)rmail.c	3.3.1.1	%G%";
+static char	SccsId[] =	"@(#)rmail.c	3.4	%G%";
 
 # include <stdio.h>
 # include <sysexits.h>
@@ -60,7 +60,7 @@ main(argc, argv)
 		(void) fgets(lbuf, sizeof lbuf, stdin);
 		if (strncmp(lbuf, "From ", 5) != 0 && strncmp(lbuf, ">From ", 6) != 0)
 			break;
-		sscanf(lbuf, "%s %s", junk, ufrom);
+		(void) sscanf(lbuf, "%s %s", junk, ufrom);
 		cp = lbuf;
 		for (;;)
 		{
@@ -74,7 +74,7 @@ main(argc, argv)
 			if (strncmp(cp, "remote from ", 12)==0)
 				break;
 		}
-		sscanf(cp, "remote from %s", sys);
+		(void) sscanf(cp, "remote from %s", sys);
 		strcat(from, sys);
 		strcat(from, "!");
 #ifdef DEBUG

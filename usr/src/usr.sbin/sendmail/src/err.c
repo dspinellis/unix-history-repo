@@ -3,9 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.12	%G%";
-
-extern bool	HasXscrpt;
+static char	SccsId[] = "@(#)err.c	3.13	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -59,7 +57,7 @@ syserr(fmt, a, b, c, d, e)
 			(void) sprintf(eb, ": error %d", errno);
 	}
 
-	if (ArpaMode != ARPA_NONE && !HasXscrpt)
+	if (ArpaMode != ARPA_NONE && Transcript == NULL)
 		fprintf(OutChannel, "%s\r\n", errbuf);
 	else
 		fprintf(OutChannel, "sendmail: %s\n", &errbuf[4]);
@@ -137,7 +135,7 @@ message(num, msg, a, b, c, d, e)
 	}
 
 	/* print arpa format header if needed */
-	if (ArpaMode != ARPA_NONE && !HasXscrpt)
+	if (ArpaMode != ARPA_NONE && Transcript == NULL)
 	{
 		register char del;
 
@@ -151,7 +149,7 @@ message(num, msg, a, b, c, d, e)
 	if (To != NULL && To[0] != '\0')
 		fprintf(OutChannel, "%s... ", To);
 	fprintf(OutChannel, msg, a, b, c, d, e);
-	if (ArpaMode != ARPA_NONE && !HasXscrpt)
+	if (ArpaMode != ARPA_NONE && Transcript == NULL)
 		fprintf(OutChannel, "\r");
 	fprintf(OutChannel, "\n");
 	(void) fflush(OutChannel);

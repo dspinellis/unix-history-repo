@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.31	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.32	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -647,7 +647,7 @@ rewrite(pvp, ruleset)
 						do
 						{
 							printf(" %x=\"", *pp);
-							fflush(stdout);
+							(void) fflush(stdout);
 							printf("%s\"", *pp);
 						} while (pp++ != m->last);
 						printf("\n");
@@ -725,7 +725,6 @@ buildaddr(tv, a)
 	register char **tv;
 	register ADDRESS *a;
 {
-	register int i;
 	static char buf[MAXNAME];
 	struct mailer **mp;
 	register struct mailer *m;

@@ -1,13 +1,12 @@
 # include <signal.h>
 # include <errno.h>
-# include <sys/types.h>
-# include <sys/stat.h>
 # include "sendmail.h"
+# include <sys/stat.h>
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.49	%G%";
+static char SccsId[] = "@(#)deliver.c	3.50	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -20,7 +19,7 @@ static char SccsId[] = "@(#)deliver.c	3.49	%G%";
 **	list.
 **
 **	Parameters:
-**		to -- head of the address list to deliver to.
+**		firstto -- head of the address list to deliver to.
 **		editfcn -- if non-NULL, we want to call this function
 **			to output the letter (instead of just out-
 **			putting it raw).
@@ -33,8 +32,8 @@ static char SccsId[] = "@(#)deliver.c	3.49	%G%";
 **		The standard input is passed off to someone.
 */
 
-deliver(to, editfcn)
-	ADDRESS *to;
+deliver(firstto, editfcn)
+	ADDRESS *firstto;
 	int (*editfcn)();
 {
 	char *host;			/* host being sent to */
@@ -53,6 +52,7 @@ deliver(to, editfcn)
 	extern ADDRESS *getctladdr();
 	char tfrombuf[MAXNAME];		/* translated from person */
 	extern char **prescan();
+	register ADDRESS *to = firstto;
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
@@ -281,6 +281,22 @@ deliver(to, editfcn)
 	if (ctladdr == NULL)
 		ctladdr = &From;
 	i = sendoff(m, pv, editfcn, ctladdr);
+
+	/*
+	**  If we got a temporary failure, arrange to queue the
+	**  addressees.
+	*/
+
+	if (i == EX_TEMPFAIL)
+	{
+		QueueUp = TRUE;
+		for (to = firstto; to != NULL; to = to->q_next)
+		{
+			if (bitset(QBADADDR, to->q_flags))
+				continue;
+			to->q_flags |= QQUEUEUP;
+		}
+	}
 
 	errno = 0;
 	return (i);
@@ -527,6 +543,11 @@ giveresponse(stat, force, m)
 		if (Verbose)
 			message(Arpa_Info, statmsg);
 	}
+	else if (stat == EX_TEMPFAIL)
+	{
+		if (Verbose)
+			message(Arpa_Info, "transmission deferred");
+	}
 	else
 	{
 		Errors++;
@@ -563,7 +584,8 @@ giveresponse(stat, force, m)
 # ifdef LOG
 	syslog(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
 # endif LOG
-	setstat(stat);
+	if (stat != EX_TEMPFAIL)
+		setstat(stat);
 }
 /*
 **  PUTMESSAGE -- output a message to the final mailer.
@@ -690,7 +712,7 @@ putmessage(fp, m)
 		}
 	}
 
-	fflush(fp);
+	(void) fflush(fp);
 	if (ferror(fp) && errno != EPIPE)
 	{
 		syserr("putmessage: write error");
@@ -829,7 +851,7 @@ mailfile(filename, ctladdr)
 		(void) fflush(stdout);
 
 		/* reset ISUID & ISGID bits */
-		(void) chmod(filename, stb.st_mode);
+		(void) chmod(filename, (int) stb.st_mode);
 		exit(EX_OK);
 		/*NOTREACHED*/
 	}

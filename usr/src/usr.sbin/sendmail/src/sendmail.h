@@ -6,11 +6,14 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.49	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.50	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
 
+# ifndef major
+# include <sys/types.h>
+# endif major
 # include <stdio.h>
 # include <ctype.h>
 # include "conf.h"
@@ -62,6 +65,7 @@ struct address
 	char		*q_home;	/* home dir (local mailer only) */
 	struct address	*q_next;	/* chain */
 	struct address	*q_alias;	/* address this results from */
+	time_t		q_timeout;	/* timeout for this address */
 };
 
 typedef struct address ADDRESS;
@@ -70,6 +74,7 @@ typedef struct address ADDRESS;
 # define QBADADDR	000002	/* this address is verified bad */
 # define QGOODUID	000004	/* the q_uid q_gid fields are good */
 # define QPRIMARY	000010	/* set from argv */
+# define QQUEUEUP	000020	/* queue for later transmission */
 
 
 
@@ -172,6 +177,38 @@ extern struct hdrinfo	HdrInfo[];
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
 # define H_ADDR		00200	/* this field contains addresses */
+
+
+
+/*
+**  Work queue.
+*/
+
+struct work
+{
+	char		*w_name;	/* name of control file */
+	short		w_pri;		/* priority of message, see below */
+	long		w_size;		/* length of data file */
+	struct work	*w_next;	/* next in queue */
+};
+
+typedef struct work	WORK;
+
+EXTERN WORK	*WorkQ;			/* queue of things to be done */
+
+
+/*
+**  Message priorities.
+*/
+
+# define PRI_NORMAL	20
+# define PRI_SECONDCL	10
+# define PRI_THIRDCL	7
+# define PRI_QUICK	24
+# define PRI_PRIORITY	40
+
+EXTERN int	MsgPriority;		/* priority of this message */
+
 
 
 /*
@@ -279,7 +316,9 @@ EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	Daemon;		/* running as a daemon */
 EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
-EXTERN bool	HasXscrpt;	/* set if we have a transcript */
+EXTERN bool	QueueUp;	/* queue this message for future xmission */
+EXTERN bool	QueueRun;	/* currently running something from the queue */
+extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN FILE	*TempFile;	/* mail temp file */
@@ -292,14 +331,20 @@ EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	ArpaMode;	/* ARPANET handling mode */
 EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
+EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*OrigFrom;	/* the From: line read from the message */
 EXTERN char	*To;		/* the target person */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
-extern char	InFileName[];	/* input file name */
-extern char	Transcript[];	/* the transcript file name */
+EXTERN char	*InFileName;	/* input file name */
+EXTERN char	*Transcript;	/* the transcript file name */
+extern char	*XcriptFile;	/* template for Transcript */
+extern char	*AliasFile;	/* location of alias file */
+extern char	*ConfFile;	/* location of configuration file */
+extern char	*StatFile;	/* location of statistics summary */
+extern char	*QueueDir;	/* location of queue directory */
 EXTERN ADDRESS	From;		/* the person it is from */
 EXTERN long	MsgSize;	/* size of the message in bytes */
-EXTERN long	CurTime;	/* time of this message */
+EXTERN time_t	CurTime;	/* time of this message */
 
 
 # include	<sysexits.h>

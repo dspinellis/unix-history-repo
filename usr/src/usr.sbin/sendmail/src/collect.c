@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.25	%G%";
+static char	SccsId[] = "@(#)collect.c	3.26	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -34,7 +34,6 @@ static char	SccsId[] = "@(#)collect.c	3.25	%G%";
 */
 
 long	MsgSize;		/* size of message in bytes */
-FILE	*TempFile;		/* the tempfile (after creation) */
 
 maketemp(from)
 	char *from;
@@ -45,19 +44,24 @@ maketemp(from)
 	char *xfrom;
 	extern char *hvalue();
 	extern char *mktemp();
+	static char tempfname[40];
+	extern char *QueueDir;
 	extern char *index();
 
 	/*
 	**  Create the temp file name and create the file.
 	*/
 
-	(void) mktemp(InFileName);
-	(void) close(creat(InFileName, 0600));
-	if ((tf = fopen(InFileName, "w")) == NULL)
+	strcpy(tempfname, QueueDir);
+	strcat(tempfname, "/dfaXXXXXX");
+	(void) mktemp(tempfname);
+	(void) close(creat(tempfname, 0600));
+	if ((tf = fopen(tempfname, "w")) == NULL)
 	{
-		syserr("Cannot create %s", InFileName);
+		syserr("Cannot create %s", tempfname);
 		return;
 	}
+	InFileName = tempfname;
 
 	/*
 	**  Tell ARPANET to go ahead.
@@ -94,7 +98,7 @@ maketemp(from)
 	**	and prepended with ">" in the body.
 	*/
 
-	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin))
+	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
 	{
 		register char c;
 		extern bool isheader();
@@ -196,6 +200,11 @@ maketemp(from)
 	**  Find out some information from the headers.
 	**	Examples are who is the from person & the date.
 	*/
+
+	/* message priority */
+	p = hvalue("priority");
+	if (p != NULL)
+		MsgPriority = priencode(p);
 
 	/* from person */
 	xfrom = hvalue("sender");
@@ -371,3 +380,45 @@ eatfrom(fm)
 }
 
 # endif NOTUNIX
+/*
+**  PRIENCODE -- encode external priority names into internal values.
+**
+**	Parameters:
+**		p -- priority in ascii.
+**
+**	Returns:
+**		priority as a numeric level.
+**
+**	Side Effects:
+**		none.
+*/
+
+struct prio
+{
+	char	*pri_name;	/* external name of priority */
+	int	pri_val;	/* internal value for same */
+};
+
+static struct prio	Prio[] =
+{
+	"normal",		PRI_NORMAL,
+	"quick",		PRI_QUICK,
+	"priority",		PRI_PRIORITY,
+	"first-class",		PRI_NORMAL,
+	"second-class",		PRI_SECONDCL,
+	"third-class",		PRI_THIRDCL,
+	NULL,			PRI_NORMAL,
+};
+
+priencode(p)
+	char *p;
+{
+	register struct prio *pl;
+
+	for (pl = Prio; pl->pri_name != NULL; pl++)
+	{
+		if (strcmp(p, pl->pri_name) == 0)
+			break;
+	}
+	return (pl->pri_val);
+}

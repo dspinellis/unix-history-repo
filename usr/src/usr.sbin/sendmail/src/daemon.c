@@ -1,12 +1,10 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)daemon.c	3.1	%G%";
+static char	SccsId[] =	"@(#)daemon.c	3.2	%G%";
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
 */
-
-static int	DaemonPipe;
 /*
 **  GETREQUESTS -- open mail IPC port and get requests.
 **
@@ -26,7 +24,9 @@ static int	DaemonPipe;
 getrequests()
 {
 	syserr("Daemon mode not yet implemented");
+	getrecipients();
 	exit(EX_USAGE);
+	/* initsys(); */
 }
 /*
 **  GETRECIPIENTS -- do a sendto to all recipients.

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.15	%G%";
+static char SccsId[] = "@(#)readcf.c	3.16	%G%";
 
 /*
 **  READCF -- read control file.
@@ -228,7 +228,7 @@ fileclass(class, filename, fmt)
 		s->s_class |= 1 << class;
 	}
 
-	fclose(f);
+	(void) fclose(f);
 }
 /*
 **  MAKEMAILER -- define a new mailer.
@@ -273,7 +273,8 @@ makemailer(line, safe)
 	register char *q;
 	char *mname;
 	char *mpath;
-	int mopts;
+	u_long mopts;
+	extern u_long mfencode();
 	char *mfrom;
 	register struct mailer *m;
 	char *margv[MAXPV + 1];
@@ -294,7 +295,7 @@ makemailer(line, safe)
 	SETWORD;
 	mpath = q;
 	SETWORD;
-	mopts = crackopts(q);
+	mopts = mfencode(q);
 	if (!safe)
 		mopts &= ~M_RESTR;
 	SETWORD;
@@ -380,7 +381,7 @@ printrules()
 
 # endif DEBUG
 /*
-**  CRACKOPTS -- crack mailer options
+**  MFENCODE -- crack mailer options
 **
 **	These options modify the functioning of the mailer
 **	from the configuration table.
@@ -420,11 +421,12 @@ struct optlist	OptList[] =
 	'\0',	0
 };
 
-crackopts(p)
+u_long
+mfencode(p)
 	register char *p;
 {
 	register struct optlist *o;
-	register int opts = 0;
+	register u_long opts = 0;
 
 	while (*p != '\0')
 	{
@@ -436,4 +438,35 @@ crackopts(p)
 		p++;
 	}
 	return (opts);
+}
+/*
+**  MFDECODE -- decode mailer flags into external form.
+**
+**	Parameters:
+**		flags -- value of flags to decode.
+**		f -- file to write them onto.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+mfdecode(flags, f)
+	u_long flags;
+	FILE *f;
+{
+	register struct optlist *o;
+
+	putc('?', f);
+	for (o = OptList; o->opt_name != '\0'; o++)
+	{
+		if ((o->opt_value & flags) == o->opt_value)
+		{
+			flags &= ~o->opt_value;
+			putc(o->opt_name, f);
+		}
+	}
+	putc('?', f);
 }

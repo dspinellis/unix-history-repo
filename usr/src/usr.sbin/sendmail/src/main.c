@@ -1,14 +1,13 @@
+# define  _DEFINE
 # include <signal.h>
 # include <pwd.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# define  _DEFINE
 # include "sendmail.h"
+# include <sys/stat.h>
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.46	%G%";
+static char	SccsId[] = "@(#)main.c	3.47	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -103,8 +102,6 @@ static char	SccsId[] = "@(#)main.c	3.46	%G%";
 
 
 
-char	InFileName[] = "/tmp/mailtXXXXXX";
-char	Transcript[] = "/tmp/mailxXXXXXX";
 int	NextMailer = 0;		/* "free" index into Mailer struct */
 static char	*FullName;	/* sender's full name */
 
@@ -118,30 +115,20 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
-	char *realname;
 	extern char *getlogin();
 	char *locname;
 	extern int finis();
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
-	extern char *arpadate();
-	extern char *AliasFile;		/* location of alias file */
-	extern char *ConfFile;		/* location of configuration file */
-	extern char *StatFile;		/* location of statistics summary */
 	register int i;
 	bool verifyonly = FALSE;	/* only verify names */
 	bool safecf = TRUE;		/* this conf file is sys default */
-	char pbuf[10];			/* holds pid */
-	char tbuf[10];			/* holds "current" time */
-	char cbuf[5];			/* holds hop count */
-	char dbuf[30];			/* holds ctime(tbuf) */
-	char ybuf[10];			/* holds tty id */
 	char ibuf[30];			/* holds HostName */
 	bool aliasinit = FALSE;
-	extern char *ttyname();
 	extern bool safefile();
 	STAB *st;
+	extern time_t convtime();
 	bool canrename;
 
 	argv[argc] = NULL;
@@ -170,47 +157,7 @@ main(argc, argv)
 # endif DEBUGFILE
 # endif
 	errno = 0;
-
-	/*
-	**  Initialize and define basic system macros.
-	**	Collect should be called first, so that the time
-	**	corresponds to the time that the messages starts
-	**	getting sent, rather than when it is first composed.
-	*/
-
 	from = NULL;
-
-	/* process id */
-	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf);
-
-	/* hop count */
-	(void) sprintf(cbuf, "%d", HopCount);
-	define('c', cbuf);
-
-	/* time as integer, unix time, arpa time */
-	(void) time(&CurTime);
-	(void) sprintf(tbuf, "%ld", &CurTime);
-	define('t', tbuf);
-	(void) strcpy(dbuf, ctime(&CurTime));
-	*index(dbuf, '\n') = '\0';
-	define('d', dbuf);
-	p =  newstr(arpadate(dbuf));
-	define('a', p);
-	define('b', p);
-
-	/* version */
-	define('v', Version);
-
-	/* tty name */
-	p = ttyname(2);
-	if (p != NULL)
-	{
-		if (rindex(p, '/') != NULL)
-			p = rindex(p, '/') + 1;
-		strcpy(ybuf, p);
-		define('y', ybuf);
-	}
 
 	/*
 	** Crack argv.
@@ -328,6 +275,17 @@ main(argc, argv)
 			else
 				AliasFile = &p[2];
 			break;
+
+		  case 'Q':	/* select queue dir */
+			if (p[2] == '\0')
+				AliasFile = "mqueue";
+			else
+				AliasFile = &p[2];
+			break;
+
+		  case 'T':	/* set timeout interval */
+			TimeOut = convtime(&p[2]);
+			break;
 		
 		  case 'n':	/* don't alias */
 			NoAlias++;
@@ -390,6 +348,12 @@ main(argc, argv)
 			ArpaMode = ARPA_SMTP;
 			break;
 
+		  case 'q':	/* run queue files at intervals */
+			QueueIntvl = atoi(&p[1]);
+			if (QueueIntvl == 0)
+				QueueIntvl = 60*60;
+			break;
+
 		  default:
 			/* at Eric Schmidt's suggestion, this will not be an error....
 			syserr("Unknown flag %s", p);
@@ -404,6 +368,7 @@ main(argc, argv)
 	*/
 
 	readcf(ConfFile, safecf);
+	initsys();
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
@@ -461,6 +426,16 @@ main(argc, argv)
 		smtp();
 
 	/*
+	**  If collecting stuff from the queue, go start doing that.
+	*/
+
+	if (QueueIntvl > 0)
+	{
+		runqueue();
+		finis();
+	}
+
+	/*
 	**  Set the sender
 	*/
 
@@ -505,6 +480,7 @@ main(argc, argv)
 	if (!verifyonly || GrabTo)
 		collect();
 	errno = 0;
+	initsys();
 
 	/* collect statistics */
 	Stat.stat_nf[From.q_mailer->m_mno]++;
@@ -667,9 +643,15 @@ finis()
 	if (ExitStat != EX_OK)
 		savemail();
 
-	if (HasXscrpt)
+	if (Transcript != NULL)
 		(void) unlink(Transcript);
-	(void) unlink(InFileName);
+	if (QueueUp)
+	{
+		if (!QueueRun)
+			queueup(InFileName);
+	}
+	else
+		(void) unlink(InFileName);
 	exit(ExitStat);
 }
 /*
@@ -693,11 +675,11 @@ openxscrpt()
 {
 	extern char *mktemp();
 
-	(void) mktemp(Transcript);
-	HasXscrpt++;
-	if (freopen(Transcript, "w", stdout) == NULL)
-		syserr("Can't create %s", Transcript);
-	(void) chmod(Transcript, 0600);
+	(void) mktemp(XcriptFile);
+	if (freopen(XcriptFile, "w", stdout) == NULL)
+		syserr("Can't create %s", XcriptFile);
+	(void) chmod(XcriptFile, 0600);
+	Transcript = XcriptFile;
 	setbuf(stdout, (char *) NULL);
 }
 /*
@@ -789,4 +771,68 @@ setsender(from)
 		define('x', FullName);
 
 	setfrom(from, realname);
+}
+/*
+**  INITSYS -- initialize instantiation of system
+**
+**	In Daemon mode, this is done in the child.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Initializes the system macros, some global variables,
+**		etc.  In particular, the current time in various
+**		forms is set.
+*/
+
+initsys()
+{
+	static char cbuf[5];			/* holds hop count */
+	static char dbuf[30];			/* holds ctime(tbuf) */
+	static char pbuf[10];			/* holds pid */
+	static char tbuf[10];			/* holds "current" time */
+	static char ybuf[10];			/* holds tty id */
+	register char *p;
+	extern char *ttyname();
+	extern char *arpadate();
+	extern long time();
+
+	/* convert timeout interval to absolute time */
+	(void) time(&CurTime);
+	TimeOut += CurTime;
+
+	/* process id */
+	(void) sprintf(pbuf, "%d", getpid());
+	define('p', pbuf);
+
+	/* hop count */
+	(void) sprintf(cbuf, "%d", HopCount);
+	define('c', cbuf);
+
+	/* time as integer, unix time, arpa time */
+	(void) sprintf(tbuf, "%ld", &CurTime);
+	define('t', tbuf);
+	(void) strcpy(dbuf, ctime(&CurTime));
+	*index(dbuf, '\n') = '\0';
+	define('d', dbuf);
+	p =  newstr(arpadate(dbuf));
+	define('a', p);
+	define('b', p);
+
+	/* version */
+	define('v', Version);
+
+	/* tty name */
+	p = ttyname(2);
+	if (p != NULL)
+	{
+		if (rindex(p, '/') != NULL)
+			p = rindex(p, '/') + 1;
+		strcpy(ybuf, p);
+		define('y', ybuf);
+	}
 }

@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.36	%G%";
+static char SccsId[] = "@(#)conf.c	3.37	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -103,6 +103,8 @@ char	*AliasFile =	"/usr/lib/aliases";	/* alias file */
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
 char	*StatFile =	"/usr/lib/mailstats";	/* statistics summary */
 char	*HelpFile =	"/usr/lib/sendmail.hf";	/* help file */
+char	*QueueDir =	"/usr/spool/mqueue";	/* queue of saved mail */
+char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
 
 
 /*
@@ -111,6 +113,7 @@ char	*HelpFile =	"/usr/lib/sendmail.hf";	/* help file */
 
 int	DefUid = 1;		/* the uid to execute mailers as */
 int	DefGid = 1;		/* ditto for gid */
+time_t	TimeOut = 3*24*60*60;	/* default timeout for queue files */
 
 
 
@@ -392,7 +395,9 @@ bool
 checkcompat(to)
 	register ADDRESS *to;
 {
+# ifdef ING70
 	register STAB *s;
+# endif ING70
 
 	if (to->q_mailer != LocalMailer && MsgSize > 100000)
 	{
