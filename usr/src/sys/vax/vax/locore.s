@@ -1,4 +1,4 @@
-/*	locore.s	4.47	81/05/12	*/
+/*	locore.s	4.48	81/05/13	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -53,6 +53,8 @@ _doadump:
 #define	_rpbmap	_Sysmap+8			# scb, UNIvec, rpb, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
+	tstl	_rpb_RP_FLAG			# dump only once!
+	bne	1f
 	incl	_rpb+RP_FLAG
 	mtpr	$0,$TBIA
 	movl	sp,erpb
@@ -64,6 +66,7 @@ _doadump:
 	mtpr	$HIGH,$IPL
 	pushr	$0x3fff
 	calls	$0,_dumpsys
+1:
 	halt
 
 /*
