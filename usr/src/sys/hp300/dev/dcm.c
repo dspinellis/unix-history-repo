@@ -11,7 +11,7 @@
  *
  * from Utah: $Hdr: dcm.c 1.29 92/01/21$
  *
- *	@(#)dcm.c	7.20 (Berkeley) %G%
+ *	@(#)dcm.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -130,7 +130,7 @@ extern int kgdb_rate;
 extern int kgdb_debug_init;
 #endif
 
-/* #define IOSTATS */
+/* #define DCMSTATS */
 
 #ifdef DEBUG
 int	dcmdebug = 0x0;
@@ -145,7 +145,7 @@ int	dcmdebug = 0x0;
 #define DDB_OPENCLOSE	0x100
 #endif
 
-#ifdef IOSTATS
+#ifdef DCMSTATS
 #define	DCMRBSIZE	94
 #define DCMXBSIZE	24
 
@@ -572,7 +572,7 @@ dcmreadbuf(unit, dcm, tp)
 	register int c, stat;
 	register unsigned head;
 	int nch = 0;
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	struct dcmstats *dsp = &dcmstats[BOARD(unit)];
 
 	dsp->rints++;
@@ -637,7 +637,7 @@ dcmreadbuf(unit, dcm, tp)
 		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 	dcmischeme[BOARD(unit)].dis_char += nch;
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	dsp->rchars += nch;
 	if (nch <= DCMRBSIZE)
 		dsp->rsilo[nch]++;
@@ -861,13 +861,13 @@ dcmstart(tp)
 	unsigned head;
 	char buf[16];
 	int s;
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	struct dcmstats *dsp = &dcmstats[BOARD(tp->t_dev)];
 	int tch = 0;
 #endif
 
 	s = spltty();
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	dsp->xints++;
 #endif
 #ifdef DEBUG
@@ -886,7 +886,7 @@ dcmstart(tp)
 		selwakeup(&tp->t_wsel);
 	}
 	if (tp->t_outq.c_cc == 0) {
-#ifdef IOSTATS
+#ifdef DCMSTATS
 		dsp->xempty++;
 #endif
 		goto out;
@@ -903,7 +903,7 @@ dcmstart(tp)
 	fifo = &dcm->dcm_tfifos[3-port][tail];
 again:
 	nch = q_to_b(&tp->t_outq, buf, (head - next) & TX_MASK);
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	tch += nch;
 #endif
 #ifdef DEBUG
@@ -936,7 +936,7 @@ again:
 	 * go back and load some more if we can.
 	 */
 	if (tp->t_outq.c_cc && head != (pp->t_head & TX_MASK)) {
-#ifdef IOSTATS
+#ifdef DCMSTATS
 		dsp->xrestarts++;
 #endif
 		head = pp->t_head & TX_MASK;
@@ -960,7 +960,7 @@ again:
 		       UNIT(tp->t_dev), head, tail, tp->t_outq.c_cc);
 #endif
 out:
-#ifdef IOSTATS
+#ifdef DCMSTATS
 	dsp->xchars += tch;
 	if (tch <= DCMXBSIZE)
 		dsp->xsilo[tch]++;
