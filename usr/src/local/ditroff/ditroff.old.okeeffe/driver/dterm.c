@@ -261,7 +261,7 @@ register FILE *fp;
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
-				drawline(n, m, ".");
+				drawline(n, m);
 				break;
 			case 'c':	/* circle */
 				sscanf(buf+1, "%d", &n);
@@ -275,9 +275,16 @@ register FILE *fp;
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
 				drawarc(n, m, n1, m1);
 				break;
+			case 'p':	/* polygon */
+				sscanf(buf+1, "%d", &n);
+				n = 1;
+				while(buf[n++] == ' ');
+				while(isdigit(buf[n])) n++;
+				drawwig(buf+n, 1);
+				break;
 			case 'g':	/* "gremlin" curve */
 			case '~':	/* wiggly line */
-				drawwig(buf+1);
+				drawwig(buf+1, 0);
 				break;
 			case 't':	/* thickness - not important */
 			case 's':	/* style - not important */
@@ -287,6 +294,7 @@ register FILE *fp;
 				break;
 			}
 			break;
+		case 'i':	/* stipple pattern request - ignored */
 		case 's':	/* point size - ignored */
 			fscanf(fp, "%d", &n);
 			break;
@@ -666,9 +674,8 @@ store(c)		/* put 'c' in the page at (hpos, vpos) */
 }
 
 
-drawline(dx, dy, s)	/* draw line from here to dx, dy using s */
+drawline(dx, dy)	/* draw line from here to dx, dy using s */
 int dx, dy;
-char *s;
 {
 	register int xd;
 	register int yd;
@@ -743,8 +750,9 @@ char *s;
 }
 
 
-drawwig(s)	/* draw wiggly line */
+drawwig(s, poly)	/* draw wiggly line or polygon, if "poly" set */
 char *s;
+int poly;
 {
 	int x[50], y[50], xp, yp, pxp, pyp;
 	float t1, t2, t3, w;
@@ -756,6 +764,11 @@ char *s;
 		x[N] = atoi(temp);
 		p = getstr(p, temp);
 		y[N++] = atoi(temp);
+	}
+	if (poly) {
+		for (i = 2; i < N; i++)
+			drawline(x[i], y[i]);
+		return;
 	}
 	x[0] = x[1] = hpos;
 	y[0] = y[1] = vpos;
@@ -1042,5 +1055,5 @@ conicarc(x, y, x0, y0, x1, y1, a, b)
 			}
 		}
 	}
-	drawline((int)xc-ox1,(int)yc-oy1,".");
+	drawline((int)xc-ox1,(int)yc-oy1);
 }
