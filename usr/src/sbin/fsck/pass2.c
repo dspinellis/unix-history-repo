@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -215,6 +215,15 @@ pass2check(idesc)
 		proto.d_type = 0;
 	proto.d_namlen = 1;
 	(void)strcpy(proto.d_name, ".");
+#	if BYTE_ORDER == LITTLE_ENDIAN
+		if (!newinofmt) {
+			u_char tmp;
+
+			tmp = proto.d_type;
+			proto.d_type = proto.d_namlen;
+			proto.d_namlen = tmp;
+		}
+#	endif
 	entrysize = DIRSIZ(0, &proto);
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") != 0) {
 		pfatal("CANNOT FIX, FIRST ENTRY IN DIRECTORY CONTAINS %s\n",
@@ -249,6 +258,15 @@ chk1:
 		proto.d_type = 0;
 	proto.d_namlen = 2;
 	(void)strcpy(proto.d_name, "..");
+#	if BYTE_ORDER == LITTLE_ENDIAN
+		if (!newinofmt) {
+			u_char tmp;
+
+			tmp = proto.d_type;
+			proto.d_type = proto.d_namlen;
+			proto.d_namlen = tmp;
+		}
+#	endif
 	entrysize = DIRSIZ(0, &proto);
 	if (idesc->id_entryno == 0) {
 		n = DIRSIZ(0, dirp);
