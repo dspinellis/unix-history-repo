@@ -1,4 +1,4 @@
-/*	locore.s	4.46	81/05/05	*/
+/*	locore.s	4.47	81/05/12	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -330,6 +330,9 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(msgbufmap,msgbuf		,CLSIZE		)
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
 	SYSMAP(ecamap	,calimit	,0		)
+#ifdef BBNNET
+	SYSMAP(Netmap	,netutl		,NNETPAGES*CLSIZE)
+#endif
 
 eSysmap:
 	.set	_Syssize,(eSysmap-_Sysmap)/4

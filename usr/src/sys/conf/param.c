@@ -1,7 +1,12 @@
-/*	param.c	4.3	81/04/28	*/
+/*	param.c	4.4	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#ifdef BBNNET
+#include "../bbnnet/net.h"
+#include "../bbnnet/imp.h"
+#include "../bbnnet/ucb.h"
+#endif BBNNET
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
@@ -33,6 +38,12 @@ int	nfile = 8 * (NPROC + 16 + MAXUSERS) / 10;
 int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
+#ifdef BBNNET
+int     nnetpages = NNETPAGES;
+int     nwork = NWORK;
+int     nnetcon = NCON;
+int     nhost = NHOST;
+#endif BBNNET
 
 /*
  * These are initialized at bootstrap time
@@ -50,9 +61,17 @@ struct	inode *inode, *inodeNINODE;
 struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
-
 struct	buf *buf, *swbuf;
 short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
+#ifdef BBNNET
+struct  pfree *freetab;
+struct  work *workfree, *workNWORK;
+struct  ucb *contab, *conNCON;
+struct  host *host, *hostNHOST;
+struct  net netcb;
+struct  net_stat netstat;
+struct  impstat imp_stat;
+#endif BBNNET

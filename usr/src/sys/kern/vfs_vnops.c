@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.9	81/04/28	*/
+/*	vfs_vnops.c	4.10	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,6 +59,12 @@ register struct file *fp;
 		return;
 	}
 	flag = fp->f_flag;
+#ifdef BBNNET
+	if (flag&FNET) {
+		netclose(fp);
+		return;
+	}
+#endif
 	if (flag & FPORT) {
 		ptclose(fp);
 		fp->f_count = 0;
