@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 # makefile for line printer spooling system
 #
@@ -76,6 +76,9 @@ install: all
 clean:
 	rm -f ${ALL} *.o
 	cd filters; make ${MFLAGS} clean
+
+tags:
+	ctags ${SRCS}
 
 print:
 	@pr makefile
