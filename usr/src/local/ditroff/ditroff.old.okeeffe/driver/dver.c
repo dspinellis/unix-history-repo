@@ -1,4 +1,4 @@
-/*	dver.c	1.13	84/03/16
+/*	dver.c	1.14	84/03/21
  *
  * VAX Versatec driver for the new troff
  *
@@ -81,7 +81,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.13	84/03/16";
+char	SccsId[]= "dver.c	1.14	84/03/21";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -1142,6 +1142,9 @@ int code;		/* character to print */
 	if (getfont()) return;
     dis = dispatch + code;
     if (dis->nbytes) {
+#ifdef DEBUGABLE
+	if (dbg) fprintf(stderr, "char %d at (%d,%d)", code, hpos, vpos);
+#endif
 	addr = bits + dis->addr;
 	llen = (dis->left + dis->right + 7) / 8;
 	nlines = dis->up + dis->down;
@@ -1152,8 +1155,15 @@ int code;		/* character to print */
 	offset = (hpos - dis->left) &07;
 	off8 = 8 - offset;
 	for (i = 0; i < nlines; i++) {
-	    if ((unsigned) (scanp + (count = llen)) > (unsigned) BUFBOTTOM)
+	    if (scanp + (count = llen) > BUFBOTTOM) {
+#ifdef DEBUGABLE
+		if (dbg) fprintf(stderr, " scrapped\n");
+#endif
 		return;
+	    }
+#ifdef DEBUGABLE
+	    if (dbg) fprintf(stderr, "-");
+#endif
 	    if (scanp >= BUFTOP) {
 		do {
 		    fontdata = *(unsigned *)addr;
@@ -1170,6 +1180,9 @@ int code;		/* character to print */
 	    scanp += scanp_inc+count;
 	    addr += count;
 	}
+#ifdef DEBUGABLE
+	if (dbg) fprintf(stderr, "\n");
+#endif
     }
 }
 
@@ -1185,6 +1198,7 @@ int usize;
 		tsize = usize > MAXWRIT ? MAXWRIT : usize;
 #ifdef DEBUGABLE
 		if (dbg)fprintf(stderr,"buf = %d size = %d\n",buf,tsize);
+	    if (!dbg)
 #endif
 		if ((tsize = write(OUTFILE, buf, tsize)) < 0) {
 			perror("dver: write failed");
