@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.3 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)disklabel.c	5.2 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/file.h>
+#include <sys/fs.h>
 #include <sys/ioctl.h>
 #define DKTYPENAMES
 #include <sys/disklabel.h>
@@ -21,11 +22,23 @@ static char sccsid[] = "@(#)disklabel.c	5.2 (Berkeley) %G%";
  * for the label on such machines.
  */
 
+#ifdef vax
+#define RAWPARTITION	'c'
+#else
+#define RAWPARTITION	'a'
+#endif
+
+#ifndef BBSIZE
 #define	BBSIZE	8192			/* size of boot area, with label */
+#endif
 
 #ifdef vax
 #define	BOOT				/* also have bootstrap in "boot area" */
 #define	BOOTDIR	"/usr/mdec"		/* source of boot binaries */
+#else
+#ifdef lint
+#define	BOOT
+#endif
 #endif
 
 char	*dkname;
@@ -48,6 +61,8 @@ int	op;			/* one of: */
 #define	EDIT	3
 #define	RESTORE	4
 
+int	rflag;
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -65,7 +80,9 @@ main(argc, argv)
 			if (argc != 4)
 				goto usage;
 			op = RESTORE;
-		} else
+		} else if (strcmp(argv[1], "-r") == 0)
+			rflag++;
+		else
 			goto usage;
 		argv++;
 		argc--;
@@ -94,7 +111,7 @@ usage:
 			op = WRITE;
 	dkname = argv[1];
 	if (dkname[0] != '/') {
-		sprintf(np, "/dev/r%sc", dkname);
+		sprintf(np, "/dev/r%s%c", dkname, RAWPARTITION);
 		specname = np;
 		np += strlen(specname) + 1;
 	} else
@@ -186,52 +203,42 @@ writelabel(f, boot, lp)
 	register struct disklabel *lp;
 {
 	register i;
-	daddr_t bbsize;
-#if vax
-	daddr_t alt;
-	int nsectors, secsize;
-#endif
 
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
-	bbsize = lp->d_bbsize;
-#if vax
-	/* copy before swabbing */
-	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT)
-		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
-	else
-		alt = 0;
-	nsectors = lp->d_nsectors;
-	secsize = lp->d_secsize;
-#endif
-	swablabel(lp);
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	lseek(f, (off_t)0, L_SET);
-	if (write(f, boot, bbsize) < bbsize)
-		Perror("write");
+	if (rflag) {
+		if (write(f, boot, lp->d_bbsize) < lp->d_bbsize)
+			Perror("write");
+		if (ioctl(f, DIOCSDINFO, lp) < 0)
+			Perror("ioctl DIOCSDINFO");
+	} else if (ioctl(f, DIOCWDINFO, lp) < 0)
+		Perror("ioctl DIOCWDINFO");
 #if vax
-	if (alt)
-	for (i = 1; i < 11 && i < nsectors; i += 2) {
-		lseek(f, (off_t)(alt + i) * secsize, L_SET);
-		if (write(f, boot, secsize) < secsize) {
-			int oerrno = errno;
-			fprintf(stderr, "alternate label %d ", i/2);
-			errno = oerrno;
-			perror("write");
+	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT) {
+		daddr_t alt;
+
+		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
+		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
+			lseek(f, (off_t)(alt + i) * lp->d_secsize, L_SET);
+			if (write(f, boot, lp->d_secsize) < lp->d_secsize) {
+				int oerrno = errno;
+				fprintf(stderr, "alternate label %d ", i/2);
+				errno = oerrno;
+				perror("write");
+			}
 		}
 	}
-#endif
-#ifdef notyet
-	if (ioctl(f, DIOCSDINFO, lp) < 0)
-		Perror("ioctl DIOCSDINFO");
 #endif
 }
 
 /*
  * Read disklabel from disk.
  * If boot is given, need bootstrap too.
- * If boot not needed, could use ioctl to get label.
+ * If boot not needed, use ioctl to get label
+ * unless -r flag is given.
  */
 struct disklabel *
 readlabel(f, boot)
@@ -239,27 +246,33 @@ readlabel(f, boot)
 	char *boot;
 {
 	register struct disklabel *lp;
-	u_long magic = htonl(DISKMAGIC);
+	register char *buf;
 
-	if (boot == NULL)
-		boot = bootarea;
-	if (read(f, boot, BBSIZE) < BBSIZE)
-		Perror(specname);
-	for (lp = (struct disklabel *)(boot + LABELOFFSET);
-	    lp <= (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel));
-	    lp = (struct disklabel *)((char *)lp + 128))
-		if (lp->d_magic == magic && lp->d_magic2 == magic)
-			break;
-	if (lp > (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel)) ||
-	    lp->d_magic != magic || lp->d_magic2 != magic ||
-	    dkcksum(lp) != 0) {
-		fprintf(stderr,
+	if (boot)
+		buf = boot;
+	else
+		buf = bootarea;
+	lp = (struct disklabel *)(buf + LABELOFFSET);
+	if (rflag == 0 && boot == 0) {
+		if (ioctl(f, DIOCGDINFO, lp) < 0)
+			Perror("ioctl DIOCGDINFO");
+	} else {
+		if (read(f, buf, BBSIZE) < BBSIZE)
+			Perror(specname);
+		for (lp = (struct disklabel *)buf;
+		    lp <= (struct disklabel *)(buf + BBSIZE - sizeof(*lp));
+		    lp = (struct disklabel *)((char *)lp + 16))
+			if (lp->d_magic == DISKMAGIC &&
+			    lp->d_magic2 == DISKMAGIC)
+				break;
+		if (lp > (struct disklabel *)(buf + BBSIZE - sizeof(*lp)) ||
+		    lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC ||
+		    dkcksum(lp) != 0) {
+			fprintf(stderr,
 	"Bad pack magic number (label is damaged, or pack is unlabeled)\n");
-		exit(1);
+			exit(1);
+		}
 	}
-	swablabel(lp);
 	return (lp);
 }
 
