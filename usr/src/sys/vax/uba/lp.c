@@ -1,4 +1,4 @@
-/*	lp.c	4.23	82/04/14	*/
+/*	lp.c	4.24	82/05/04	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -27,7 +27,11 @@
 #define	LPLWAT	650
 #define	LPHWAT	800
 
+#ifndef CAD
 #define MAXCOL	132
+#else
+#define	MAXCOL	512
+#endif
 #define CAP	1
 
 #define LPUNIT(dev) (minor(dev) >> 3)

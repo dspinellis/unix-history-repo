@@ -1,4 +1,4 @@
-/*	dz.c	4.35	82/03/13	*/
+/*	dz.c	4.36	82/05/04	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -147,6 +147,14 @@ struct	pdma dzpdma[NDZLINE];
 char	dz_speeds[] =
 	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,0,0 };
  
+#ifndef PORTSELECTOR
+#define	ISPEED	B300
+#define	IFLAGS	(EVENP|ODDP|ECHO)
+#else
+#define	ISPEED	B4800
+#define	IFLAGS	(EVENP|ODDP)
+#endif
+
 dzprobe(reg)
 	caddr_t reg;
 {
@@ -208,8 +216,8 @@ dzopen(dev, flag)
 	tp->t_state |= TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ospeed = tp->t_ispeed = B300;
-		tp->t_flags = ODDP|EVENP|ECHO;
+		tp->t_ospeed = tp->t_ispeed = ISPEED;
+		tp->t_flags = IFLAGS;
 		/* tp->t_state |= TS_HUPCLS; */
 		dzparam(unit);
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
@@ -314,6 +322,9 @@ dzrint(dz)
 			continue;
 		if ((tp->t_state & TS_ISOPEN) == 0) {
 			wakeup((caddr_t)&tp->t_rawq);
+#ifdef PORTSELECTOR
+			if ((tp->t_state&TS_WOPEN) == 0)
+#endif
 			continue;
 		}
 		if (c&DZ_FE)
