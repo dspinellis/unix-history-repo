@@ -1,4 +1,4 @@
-/*	efs.h	4.1	82/06/26	*/
+/*	efs.h	4.2	82/06/26	*/
 
 /*
  *	Extended File System
@@ -151,17 +151,19 @@ struct hosttable {
 } efs_hosttable[EFS_NHT];
 
 #ifdef KERNEL
-
 int efs_major;		/* major device of efs char special routines */
+#define	efsinode(ip) \
+	(((ip)->i_mode&IFMT) == IFCHR && \
+	major((ip)->i_rdev) == efs_major && minor((ip)->i_rdev) == 0)
 
-/* The patchboard connects file pointers on the local machine and sockets
-	on the remote machine */
-
+/*
+ * The patchboard connects file pointers on the local
+ * machine and sockets on the remote machine
+ */
 struct patchboard {
 	struct file *pb_fp;		/* file pointer associated with pb */
 	struct socket *pb_so;		/* socket associated with pb */
 	off_t pb_filesize;		/* size of remote file */
 	struct patchboard *pb_link;	/* link to next free pb */
 } efs_patchboard[EFS_NPB], *efs_freepb;
-
 #endif
