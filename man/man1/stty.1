@@ -1,0 +1,61 @@
+.th STTY I 6/12/72
+.sh NAME
+stty \*- set teletype options
+.sh SYNOPSIS
+.bd stty
+option ...
+.sh DESCRIPTION
+.it Stty
+will set certain I/O options on the current output teletype.
+The option strings are
+selected from the following set:
+.s3
+.lp +10 10
+\fBeven\fR	allow even parity
+.lp +10 10
+\fB\*-even\fR	disallow even parity
+.lp +10 10
+\fBodd\fR	allow odd parity
+.lp +10 10
+\fB\*-odd\fR	disallow odd parity
+.lp +10 10
+\fBraw\fR	raw mode input
+(no erase, kill, interrupt, quit, EOT; parity bit passed back)
+.lp +10 10
+\fB\*-raw\fR	negate raw mode
+.lp +10 10
+\fB\*-nl\fR	allow carriage return for new-line,
+and output CR-LF for carriage return or new-line
+.lp +10 10
+\fBnl\fR	accept only new-line to end lines
+.lp +10 10
+\fBecho\fR	echo back every character typed
+.lp +10 10
+\fB\*-echo\fR	do not echo characters
+.lp +10 10
+\fBlcase\fR	map upper case to lower case
+.lp +10 10
+\fB\*-lcase\fR	do not map case
+.lp +10 10
+\fB\*-tabs\fR	replace tabs by spaces in output
+.lp +10 10
+\fBtabs\fR	preserve tabs
+.lp +10 10
+\fBdelay\fR	calculate cr, tab, and form-feed delays
+.lp +10 10
+\fB\*-delay\fR	no cr/tab/ff delays
+.lp +10 10
+\fBtdelay\fR	calculate tab delays
+.lp +10 10
+\fB\*-tdelay\fR	no tab delays
+.s3
+.i0
+.sh "SEE ALSO"
+stty(II)
+.sh BUGS
+There should be `package'
+options such as
+.bd execuport,
+.bd 33,
+or
+.bd terminet.
