@@ -9,10 +9,10 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.5 (Berkeley) %G%
+#	@(#)Makefile	1.6 (Berkeley) %G%
 #
 DESTDIR=
-COPTS=	-DSTANDALONE -DTAHOE -I../../h -I../..
+COPTS=	-DSTANDALONE -I../../h -I../..
 CFLAGS=	-O ${COPTS}
 RELOC=	800
 LDTOPT= -T ${RELOC} -e _entry -x
@@ -32,10 +32,13 @@ vdformat: ${OBJS} ../srt0.o ../libsa.a
 	ld -o vdformat ${LDTOPT} ../srt0.o ${OBJS} ../libsa.a -lc
 
 clean:
-	rm -f ${OBJS} ${ALL} a.out core t.c errs tags
+	rm -f ${OBJS} ${ALL} a.out core t.c errs
 
 ../srt0.o: 
 	@(cd ..; make srt0.o)
+
+../libsa.a: 
+	@(cd ..; make libsa.a)
 
 install:
 	install -o bin -g bin -m 644 vdformat ${DESTDIR}/stand/vdformat
