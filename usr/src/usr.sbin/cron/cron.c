@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.13 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -59,6 +59,11 @@ main(argc, argv)
 	time_t lfiletime = 0;
 	char c;
 	extern char *optarg;
+
+	if (geteuid()) {
+		fprintf(stderr, "cron: NOT super-user\n");
+		exit(1);
+	}
 
 	openlog("cron", LOG_PID | LOG_CONS | LOG_NOWAIT, LOG_DAEMON);
 	switch (fork()) {
