@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,11 +29,6 @@
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
-
-/*
- * Flag to permit forcible unmounting.
- */
-int doforce = 1;
 
 /*
  * Make a filesystem operational.
