@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.48 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.49 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.48 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.49 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -345,12 +345,12 @@ smtp(e)
 					if (strcasecmp(vp, "8bitmime") == 0)
 					{
 						e->e_bodytype = "8BITMIME";
-						EightBit = TRUE;
+						SevenBit = FALSE;
 					}
 					else if (strcasecmp(vp, "7bit") == 0)
 					{
 						e->e_bodytype = "7BIT";
-						EightBit = FALSE;
+						SevenBit = TRUE;
 					}
 					else
 					{

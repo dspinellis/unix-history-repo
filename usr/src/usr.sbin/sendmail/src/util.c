@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -669,7 +669,7 @@ sfgets(buf, siz, fp, timeout)
 		buf[0] = '\0';
 		return (NULL);
 	}
-	if (!EightBit)
+	if (SevenBit)
 		for (p = buf; *p != '\0'; p++)
 			*p &= ~0200;
 	return (buf);

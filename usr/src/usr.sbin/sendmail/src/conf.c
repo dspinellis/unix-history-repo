@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -170,7 +170,7 @@ setdefaults(e)
 	MaxHopCount = 25;			/* option h */
 	e->e_sendmode = SM_FORK;		/* option d */
 	e->e_errormode = EM_PRINT;		/* option e */
-	EightBit = FALSE;			/* option 8 */
+	SevenBit = FALSE;			/* option 7 */
 	MaxMciCache = 1;			/* option k */
 	MciCacheTimeout = 300;			/* option K */
 	LogLevel = 9;				/* option L */
