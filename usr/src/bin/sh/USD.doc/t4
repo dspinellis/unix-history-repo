@@ -1,12 +1,12 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)t4	8.1 (Berkeley) %G%
+.\"	@(#)t4	6.3 (Berkeley) %G%
 .\"
 .bp
 .SH
 Appendix\ A\ -\ Grammar
 .LP
-.DS
+.LD
 \fIitem:		word
 		input-output
 		name = value
