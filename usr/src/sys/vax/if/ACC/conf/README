@@ -1,0 +1,23 @@
+
+Some of the files in this directory:
+
+ddn			-- example acpconfig startup scripts for ddn or pdn
+ddn_external		   mode IP links
+ddn_internal
+pdn
+pdn_external
+pdn_internal
+
+CONFIG			-- modifcations for your config file in /sys/conf
+files.vax		-- modifications to /sys/conf/files.vax
+
+MAKEDEV.acc		-- make X.29 and PI devices in /dev directory
+conf.c			-- changes to /sys/machine/conf.c for X.29 and PI
+pitest.c		-- test the programmer's interface
+
+These files are only needed with the ACP 7000 series product line:
+
+bi_data.diff		-- patches to Ultrix 3.0 /sys/data/bi_data.c
+bireg.diff		-- patches to Ultrix 3.0 /sys/vaxbi/bireg.h
+
+
