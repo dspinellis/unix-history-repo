@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.2 (Berkeley) %G%
+ *	@(#)db.h	5.3 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -116,14 +116,11 @@ typedef struct {
 #include <sys/cdefs.h>
 __BEGIN_DECLS
 DB	*btree_open
-	    __P((const char *file, int flags, int mode,
-	    const BTREEINFO *private));
+	    __P((const char *, int, int, const BTREEINFO *));
 DB	*hash_open
-	    __P((const char *file, int flags, int mode,
-	    const HASHINFO *private));
+	    __P((const char *, int, int, const HASHINFO *));
 DB	*recno_open
-	    __P((const char *file, int flags, int mode,
-	    const RECNOINFO *private));
+	    __P((const char *, int, int, const RECNOINFO *));
 __END_DECLS
 
 #endif /* !_DB_H_ */
