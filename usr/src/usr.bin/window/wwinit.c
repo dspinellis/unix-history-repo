@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.24 %G%";
+static char sccsid[] = "@(#)wwinit.c	3.25 %G%";
 #endif
 
 /*
@@ -24,8 +24,6 @@ wwinit()
 	int s;
 
 	wwdtablesize = getdtablesize();
-	if (wwdtablesize > 32)				/* XXX */
-		wwdtablesize = 32;
 	wwhead.ww_forw = &wwhead;
 	wwhead.ww_back = &wwhead;
 
