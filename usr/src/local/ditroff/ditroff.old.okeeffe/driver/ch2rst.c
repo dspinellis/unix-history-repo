@@ -1,4 +1,6 @@
-/* Font translation to Imagen-style fonts (RST format) from character format.
+/* ch2rst.c	1.2	84/02/16
+ *
+ * Font translation to Imagen-style fonts (RST format) from character format.
  *
  *	Use:	ch2rst  [ -i ]  charfile  > rstfile
  *
@@ -17,7 +19,8 @@
 #define PREAMBLE	44			/* size of preamble */
 #define STRINGS		2			/* length of strings at pre. */
 #define STARTGLYPH	PREAMBLE + STRINGS
-#define MAXLINE		200
+#define MAXLINE		250
+#define GLYPHSPACE	(MAXLINE * MAXLINE)
 #define wr1(x)		putchar(x)
 
 
@@ -37,7 +40,8 @@ FILE *	filep;
 char	ibuff[MAXLINE];
 char	ebuff[MAXLINE];
 char *	glyphs[DIRSIZ];
-char	charbits[20000];	/* place to store bits for a glyph */
+char	charbits[GLYPHSPACE];	/* place to store bits for a glyph */
+
 
 
 main(argc,argv)
@@ -113,9 +117,11 @@ char **argv;
 	    width = strlen(chp) - 1;
 	    minh = width;
 	    maxh = 0;
-	    minv = -1;
+	    refv = minv = -1;
 
 	    for (length = 0; *chp != '\n'; length++) {
+		if ((length + 1) * width > GLYPHSPACE)
+		    error ("out of glyph space");
 		for (j = 0; j < width; j++, chp++) {
 		    switch (*chp) {
 			case '.':
@@ -129,9 +135,9 @@ char **argv;
 				refh = j;
 				refv = length;
 			case '@':
-			case 'a':
+			case '*':
 				maxv = length;
-				if (minv == -1) minv = length;
+				if (minv < 0) minv = length;
 				if (j < minh) minh = j;
 				if (j > maxh) maxh = j;
 				break;
@@ -142,13 +148,19 @@ char **argv;
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
+
+	    if (refv < 0) error("no reference point in glyph %d.", code);
+	    if (minv < 0) {
+		minv = maxv = refv;
+		minh = maxh = refh;
+	    }
 	    g[i].g_height = maxv + 1 - minv;
 	    g[i].g_width = maxh + 1 - minh;
 	    g[i].g_up = refv - minv;
 	    g[i].g_left = refh - minh;
 	    g[i].g_bitp = g[i].g_height * ((g[i].g_width + 7) / 8);
 
-	    
+
 	    bitp = (glyphs[i] = malloc(g[i].g_bitp)) - 1;
 	    for (k = minv; k <= maxv; k++) {
 		chp = &charbits[0] + width * k + minh;
