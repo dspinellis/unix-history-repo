@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -218,8 +218,9 @@ getq(namelist)
 		 * realloc the maximum size.
 		 */
 		if (++nitems > arraysz) {
+			arraysz *= 2;
 			queue = (struct queue **)realloc((char *)queue,
-				(stbuf.st_size/12) * sizeof(struct queue *));
+				arraysz * sizeof(struct queue *));
 			if (queue == NULL)
 				goto errdone;
 		}
@@ -287,10 +288,10 @@ checkremote()
 		 * if the two hosts are not the same,
 		 * then the printer must be remote.
 		 */
-		if (strcmp(name, hp->h_name) != 0)
+		if (strcasecmp(name, hp->h_name) != 0)
 			sendtorem = 1;
 	}
-	return (char *)0;
+	return NULL;
 }
 
 #if __STDC__

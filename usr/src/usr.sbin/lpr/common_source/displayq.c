@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -124,8 +124,8 @@ displayq(format)
 		else {
 			/* get daemon pid */
 			cp = current;
-			while ((*cp = getc(fp)) != EOF && *cp != '\n')
-				cp++;
+			while ((i = getc(fp)) != EOF && i != '\n')
+				*cp++ = i;
 			*cp = '\0';
 			i = atoi(current);
 			if (i <= 0 || kill(i, 0) < 0)
@@ -133,8 +133,8 @@ displayq(format)
 			else {
 				/* read current file name */
 				cp = current;
-				while ((*cp = getc(fp)) != EOF && *cp != '\n')
-					cp++;
+				while ((i = getc(fp)) != EOF && i != '\n')
+					*cp++ = i;
 				*cp = '\0';
 				/*
 				 * Print the status file.
@@ -390,7 +390,7 @@ ldump(nfile, file, copies)
 	else
 		printf("%-32s", nfile);
 	if (*file && !stat(file, &lbuf))
-		printf(" %qd bytes", lbuf.st_size);
+		printf(" %ld bytes", (long)lbuf.st_size);
 	else
 		printf(" ??? bytes");
 	putchar('\n');
