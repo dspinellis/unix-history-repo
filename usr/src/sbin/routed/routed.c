@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.16 82/06/10";
+static char sccsid[] = "@(#)routed.c	4.17 82/06/17";
 #endif
 
 /*
@@ -286,12 +286,11 @@ gwkludge()
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
 		/* can't identify broadcast capability */
+		ifp->int_net = IN_NETOF(dst.sin_addr);
 		if ((*afswitch[dst.sin_family].af_checkhost)(&dst)) {
 			ifp->int_flags |= IFF_POINTOPOINT;
-			ifp->int_net = dst.sin_addr.s_net;	/* XXX */
 			ifp->int_dstaddr = *((struct sockaddr *)&dst);
-		} else
-			ifp->int_net = dst.sin_addr.s_addr;	/* XXX */
+		}
 		if (strcmp(buf, "passive") == 0)
 			ifp->int_flags |= IFF_PASSIVE;
 		ifp->int_addr = *((struct sockaddr *)&gate);
@@ -390,6 +389,7 @@ supply(dst, dontroute)
 	int (*output)() = afswitch[dst->sa_family].af_output;
 	int sto = dontroute ? snoroute : s;
 
+	msg->rip_cmd = RIPCMD_RESPONSE;
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
@@ -453,7 +453,7 @@ rip_input(from, size)
 			 */
 			if (n->rip_dst.sa_family == AF_UNSPEC &&
 			    n->rip_metric == HOPCNT_INFINITY && size == 0) {
-				supply(from, 0);	/* don't route */
+				supply(from, 0);
 				return;
 			}
 			rt = rtlookup(&n->rip_dst);
