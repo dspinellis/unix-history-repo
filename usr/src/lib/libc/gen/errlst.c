@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)errlst.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -82,7 +82,7 @@ const char *const sys_errlist[] = {
 	"Socket is not connected",		/* 57 - ENOTCONN */
 	"Can't send after socket shutdown",	/* 58 - ESHUTDOWN */
 	"Too many references: can't splice",	/* 59 - ETOOMANYREFS */
-	"Connection timed out",			/* 60 - ETIMEDOUT */
+	"Operation timed out",			/* 60 - ETIMEDOUT */
 	"Connection refused",			/* 61 - ECONNREFUSED */
 
 	"Too many levels of symbolic links",	/* 62 - ELOOP */
