@@ -1,6 +1,10 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 SUBDIR=	fortune
+
+.ifmake (clean) || ifmake (cleandir)
+SUBDIR+=datfiles
+.endif
 
 .ifmake !(install)
 SUBDIR+=strfile
