@@ -13,7 +13,7 @@
 #include "DEFS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)setjmp.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)setjmp.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -27,7 +27,7 @@
  * and a struct sigcontext, see <signal.h>
  */
 
-#define SETJMP_FRAME_SIZE	(STAND_FRAME_SIZE + 8)
+#define SETJMP_FRAME_SIZE	(STAND_FRAME_SIZE + 12)
 
 NON_LEAF(setjmp, SETJMP_FRAME_SIZE, ra)
 	subu	sp, sp, SETJMP_FRAME_SIZE	# allocate stack frame
