@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_io.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_io.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -368,6 +368,40 @@ ar_close()
 	    frmt->name, arvol-1, flcnt, rdcnt, wrcnt);
 	(void)fflush(outf);
 	flcnt = 0;
+}
+
+/*
+ * ar_drain()
+ *	drain any archive format independent padding from an archive read
+ *	from a socket or a pipe. This is to prevent the process on the
+ *	other side of the pipe from getting a SIGPIPE (pax will stop
+ *	reading an archive once a format dependent trailer is detected).
+ */
+#if __STDC__
+void
+ar_drain(void)
+#else
+void
+ar_drain()
+#endif
+{
+	register int res;
+	char drbuf[MAXBLK];
+
+	/*
+	 * we only drain from a pipe/socket. Other devices can be closed
+	 * without reading up to end of file. We sure hope that pipe is closed
+	 * on the other side so we will get an EOF.
+	 */
+	if ((artyp != ISPIPE) || (lstrval <= 0))
+		return;
+
+	/*
+	 * keep reading until pipe is drained
+	 */
+	while ((res = read(arfd, drbuf, sizeof(drbuf))) > 0)
+		;
+	lstrval = res;
 }
 
 /*
