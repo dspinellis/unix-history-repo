@@ -1,4 +1,4 @@
-#	Makefile	5.10	85/09/18
+#	Makefile	5.11	85/12/12
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -41,6 +41,7 @@ LINTFLAGS= -chbap
 LIBS= 
 LIBDIR=	${DESTDIR}/usr/lib/uucp
 BIN=	${DESTDIR}/usr/bin
+ETC=	${DESTDIR}/etc
 PUBDIR=	${DESTDIR}/usr/spool/uucppublic
 SPOOL=	${DESTDIR}/usr/spool/uucp
 XQTDIR=	${SPOOL}/XTMP
@@ -159,7 +160,7 @@ install: ${ALL}
 	ln ${BIN}/uusend ${BIN}/ruusend
 	install -s -m 6110 -o ${OWNER} -g ${GROUP} uuxqt ${LIBDIR}
 	install -s -m 6110 -o root -g ${GROUP} acucntrl ${LIBDIR}
-	install -s -m 500 -o uucp uucpd /etc/uucpd
+	install -s -m 500 -o uucp uucpd ${ETC}
 	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
 	@echo if you are not running /etc/inetd
 	install -s uuencode ${BIN}
