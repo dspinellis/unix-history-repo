@@ -11,6 +11,7 @@ vax/trap.c		standard
 vax/tu.c		standard
 vax/udiv.s		standard
 vax/urem.s		standard
+vax/vm_machdep.c	standard
 vaxif/if_acc.c		optional acc imp inet device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_ec.c		optional ec device-driver
