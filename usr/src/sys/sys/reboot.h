@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)reboot.h	7.6 (Berkeley) %G%
+ *	@(#)reboot.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,7 @@
 #define	RB_KDB		0x40	/* give control to kernel debugger */
 #define	RB_RDONLY	0x80	/* mount root fs read-only */
 #define	RB_DUMP		0x100	/* dump kernel memory before reboot */
+#define	RB_MINIROOT	0x200	/* mini-root present in memory at boot time */
 
 /*
  * Constants for converting boot-style device number to type,
