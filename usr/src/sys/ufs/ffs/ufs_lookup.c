@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.21	82/08/03	*/
+/*	ufs_lookup.c	4.22	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -397,11 +397,8 @@ found:
 			goto bad2;
 		}
 		bcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
-		u.u_segflg = 1;
-		u.u_base = nbp->b_un.b_addr;
-		u.u_count = dp->i_size;
-		u.u_offset = 0;
-		readi(dp);
+		u.u_error =
+		    readip1(dp, nbp->b_un.b_addr, dp->i_size, 0, 1, 0);
 		if (u.u_error)
 			goto bad2;
 		cp = nbp->b_un.b_addr;

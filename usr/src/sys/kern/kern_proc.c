@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.32	82/08/13	*/
+/*	kern_proc.c	4.33	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,6 +53,7 @@ exece()
 	char cfarg[SHSIZE];
 	struct uio uio;
 	struct iovec iovec;
+	int resid;
 
 	if ((ip = namei(uchar, 0, 1)) == NULL)
 		return;
@@ -91,17 +92,11 @@ exece()
 	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
 	 * THE ASCII LINE.
 	 */
-	uio.uio_iov = &iovec;
-	uio.uio_iovcnt = 1;
-	iovec.iov_base = (caddr_t)&u.u_exdata;
-	iovec.iov_len = sizeof (u.u_exdata);
-	uio.uio_offset = 0;
-	uio.uio_segflg = 1;
-	uio.uio_resid = iovec.iov_len;
-	u.u_error = readip(ip, &uio);
+	u.u_error = readip1(ip, (caddr_t)&u.u_exdata, sizeof (u.u_exdata),
+	    0, 1, &resid);
 	if (u.u_error)
 		goto bad;
-	u.u_count = uio.uio_resid;
+	u.u_count = resid;
 	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
 	    u.u_exdata.ux_shell[0] != '#') {
 		u.u_error = ENOEXEC;
@@ -358,15 +353,9 @@ register struct inode *ip;
 	u.u_smap = u.u_csmap;
 	vgetvm(ts, ds, ss);
 
-	if (pagi == 0) {
-		/*
-		 * Read in data segment.
-		 */
-		u.u_base = (char *)ctob(ts);
-		u.u_offset = sizeof(u.u_exdata)+u.u_exdata.ux_tsize;
-		u.u_count = u.u_exdata.ux_dsize;
-		readi(ip);
-	}
+	if (pagi == 0)
+		u.u_error = readip1(ip, (char*)ctob(ts), u.u_exdata.ux_dsize,
+		    sizeof(u.u_exdata)+u.u_exdata.ux_tsize, 0, 0);
 	xalloc(ip, pagi);
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
