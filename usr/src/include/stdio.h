@@ -1,4 +1,4 @@
-/*	stdio.h	1.7	84/11/08	*/
+/*	stdio.h	1.8	84/11/12	*/
 #define	BUFSIZ	1024
 #define	_NFILE	20
 # ifndef FILE
