@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.86 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.87 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -247,6 +247,9 @@ lfs_mountfs(devvp, mp, p)
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
+	ump->um_bptrtodb = 0;
+	ump->um_seqinc = 1 << fs->lfs_fsbtodb;
+	ump->um_nindir = fs->lfs_nindir;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
 	devvp->v_specflags |= SI_MOUNTEDON;
@@ -320,7 +323,7 @@ lfs_unmount(mp, mntflags, p)
 	fs->lfs_clean = 1;
 	if (error = VFS_SYNC(mp, 1, p->p_ucred, p))
 		return (error);
-	if (fs->lfs_ivnode->v_dirtyblkhd)
+	if (fs->lfs_ivnode->v_dirtyblkhd.le_next)
 		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
 	vrele(fs->lfs_ivnode);
 	vgone(fs->lfs_ivnode);
