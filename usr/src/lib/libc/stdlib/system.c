@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)system.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -29,19 +29,25 @@ system(command)
 {
 	union wait pstat;
 	pid_t pid, waitpid();
-	int omask;
+	int omask, (*i)(), (*q)();
 
+	omask = sigblock(sigmask(SIGCHLD));
 	switch(pid = vfork()) {
 	case -1:			/* error */
+		(void)sigsetmask(omask);
 		pstat.w_status = 0;
 		pstat.w_retcode = 127;
 		return(pstat.w_status);
 	case 0:				/* child */
+		(void)sigsetmask(omask);
 		execl("/bin/sh", "sh", "-c", command, (char *)NULL);
 		_exit(127);
 	}
-	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
+	i = signal(SIGINT, SIG_IGN);
+	q = signal(SIGQUIT, SIG_IGN);
 	pid = waitpid(pid, &pstat, 0);
 	(void)sigsetmask(omask);
+	(void)signal(SIGINT, i);
+	(void)signal(SIGQUIT, q);
 	return(pid == -1 ? -1 : pstat.w_status);
 }
