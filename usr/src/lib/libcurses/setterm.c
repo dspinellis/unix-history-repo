@@ -1,14 +1,15 @@
 /*
  * Terminal initialization routines.
  *
- * @(#)setterm.c	1.16 (Berkeley) %G%
+ * @(#)setterm.c	1.17 (Berkeley) %G%
  */
 
 # include	"curses.ext"
 
 static bool	*sflags[] = {
 			&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI,
-			&MS, &NC, &NS, &OS, &UL, &XB, &XN, &XT, &XX
+			&MS, &NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS,
+			&XX
 		};
 
 static char	*_PC,
@@ -144,7 +145,7 @@ zap()
 #endif
 	extern char	*tgetstr();
 
-	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxx";
+	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxsxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);
@@ -167,13 +168,17 @@ zap()
 #endif
 		namp += 2;
 	} while (*namp);
-	if (tgetnum("sg") > 0)
-		SO = NULL;
-	if (tgetnum("ug") > 0)
-		US = NULL;
-	if (!SO && US) {
-		SO = US;
-		SE = UE;
+	if (XS)
+		SO = SE = NULL;
+	else {
+		if (tgetnum("sg") > 0)
+			SO = NULL;
+		if (tgetnum("ug") > 0)
+			US = NULL;
+		if (!SO && US) {
+			SO = US;
+			SE = UE;
+		}
 	}
 }
 
