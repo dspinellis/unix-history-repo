@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.5	82/10/13	*/
+/*	tty_tb.c	4.6	82/10/17	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -45,17 +45,14 @@ tbopen(dev, tp)
 {
 	register struct tbposition *tbp;
 
-	if (u.u_error)
-		return;		/* paranoia */
 	if (tp->t_line == TABLDISC || tp->t_line == NTABLDISC) {
-		u.u_error = EBUSY;
-		return;	
-	}
+		return (EBUSY);
 	wflushtty(tp);
 	tp->t_cp = (char *) &tp->t_un.T_CTLQ;	/* overlay control queue */
 	tp->t_inbuf = 0;
 	tbp = (struct tbposition *) &tp->t_rocount;
 	tbp->xpos = tbp->ypos = tbp->status = tbp->scount = 0;
+	return (0);
 }
 
 /*
@@ -63,11 +60,10 @@ tbopen(dev, tp)
  * close routine.
  */
 tbclose(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
-	register s;
+	register int s = spl5();
 
-	s = spl5();
 	tp->t_cp = 0;
 	tp->t_inbuf = 0;
 	tp->t_rawq.c_cc = 0;		/* clear queues -- paranoid */
