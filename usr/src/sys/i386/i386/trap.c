@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.2 (Berkeley) %G%
+ *	@(#)trap.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -132,22 +132,22 @@ bit_sucker:
 		panic("trap");
 		/*NOTREACHED*/
 
-	case T_SEGNPFLT + T_USER:
-	case T_PROTFLT + T_USER:		/* protection fault */
+	case T_SEGNPFLT|T_USER:
+	case T_PROTFLT|T_USER:		/* protection fault */
 copyfault:
 		ucode = code + BUS_SEGM_FAULT ;
 		i = SIGBUS;
 		break;
 
-	case T_PRIVINFLT + T_USER:	/* privileged instruction fault */
-	case T_RESADFLT + T_USER:		/* reserved addressing fault */
-	case T_RESOPFLT + T_USER:		/* reserved operand fault */
-	case T_FPOPFLT + T_USER:		/* coprocessor operand fault */
+	case T_PRIVINFLT|T_USER:	/* privileged instruction fault */
+	case T_RESADFLT|T_USER:		/* reserved addressing fault */
+	case T_RESOPFLT|T_USER:		/* reserved operand fault */
+	case T_FPOPFLT|T_USER:		/* coprocessor operand fault */
 		ucode = type &~ T_USER;
 		i = SIGILL;
 		break;
 
-	case T_ASTFLT + T_USER:		/* Allow process switch */
+	case T_ASTFLT|T_USER:		/* Allow process switch */
 	case T_ASTFLT:
 		astoff();
 		if ((p->p_flag & SOWEUPC) && p->p_stats->p_prof.pr_scale) {
@@ -156,7 +156,7 @@ copyfault:
 		}
 		goto out;
 
-	case T_DNA + T_USER:
+	case T_DNA|T_USER:
 #ifdef	NPX
 		/* if a transparent fault (due to context switch "late") */
 		if (npxdna()) return;
@@ -165,22 +165,22 @@ copyfault:
 		i = SIGFPE;
 		break;
 
-	case T_BOUND + T_USER:
+	case T_BOUND|T_USER:
 		ucode = FPE_SUBRNG_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_OFLOW + T_USER:
+	case T_OFLOW|T_USER:
 		ucode = FPE_INTOVF_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_DIVIDE + T_USER:
+	case T_DIVIDE|T_USER:
 		ucode = FPE_INTDIV_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_ARITHTRAP + T_USER:
+	case T_ARITHTRAP|T_USER:
 		ucode = code;
 		i = SIGFPE;
 		break;
@@ -188,7 +188,7 @@ copyfault:
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 		if (code & PGEX_P) goto bit_sucker;
 		/* fall into */
-	case T_PAGEFLT + T_USER:		/* page fault */
+	case T_PAGEFLT|T_USER:		/* page fault */
 	    {
 		register vm_offset_t va;
 		register struct vmspace *vm = p->p_vmspace;
@@ -283,8 +283,8 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 			/* Q: how do we turn it on again? */
 		return;
 	
-	case T_BPTFLT + T_USER:		/* bpt instruction fault */
-	case T_TRCTRAP + T_USER:		/* trace trap */
+	case T_BPTFLT|T_USER:		/* bpt instruction fault */
+	case T_TRCTRAP|T_USER:		/* trace trap */
 		frame.tf_eflags &= ~PSL_T;
 		i = SIGTRAP;
 		break;
@@ -292,7 +292,7 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 #include "isa.h"
 #if	NISA > 0
 	case T_NMI:
-	case T_NMI + T_USER:
+	case T_NMI|T_USER:
 		/* machine/parity/power fail/"kitchen sink" faults */
 		if(isa_nmi(code) == 0) return;
 		else goto bit_sucker;
@@ -431,7 +431,7 @@ done:
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
 		/*
-		 * Since we are u.u_procp, clock will normally just change
+		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we setrq ourselves but before we
