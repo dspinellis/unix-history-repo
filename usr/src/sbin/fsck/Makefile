@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4	(Berkeley)	85/02/07
+#	@(#)Makefile	5.5	(Berkeley)	85/02/08
 #
 DESTDIR=
 CFLAGS=	-O
@@ -12,14 +12,14 @@ PROG=	fsck
 # Sources
 #
 SRCS=	dir.c inode.c main.c pass1.c pass1b.c pass2.c \
-	pass3.c pass4.c pass5.c pass6.c setup.c utilities.c \
+	pass3.c pass4.c pass5.c setup.c utilities.c \
 	/sys/sys/ufs_subr.c /sys/sys/ufs_tables.c
 
 # Objects
 #
 OBJS=	${LOCOBJS} ${SYSOBJS}
 LOCOBJS=dir.o inode.o main.o pass1.o pass1b.o pass2.o \
-	pass3.o pass4.o pass5.o pass6.o setup.o utilities.o
+	pass3.o pass4.o pass5.o setup.o utilities.o
 SYSOBJS=ufs_subr.o ufs_tables.o
 
 # Header files
@@ -98,9 +98,6 @@ pass4.o: /usr/include/sys/inode.h /usr/include/sys/fs.h ./fsck.h
 pass5.o: pass5.c /usr/include/sys/param.h /usr/include/machine/machparam.h
 pass5.o: /usr/include/sys/signal.h /usr/include/sys/types.h
 pass5.o: /usr/include/sys/inode.h /usr/include/sys/fs.h ./fsck.h
-pass6.o: pass6.c /usr/include/sys/param.h /usr/include/machine/machparam.h
-pass6.o: /usr/include/sys/signal.h /usr/include/sys/types.h
-pass6.o: /usr/include/sys/inode.h /usr/include/sys/fs.h ./fsck.h
 setup.o: setup.c /usr/include/sys/param.h /usr/include/machine/machparam.h
 setup.o: /usr/include/sys/signal.h /usr/include/sys/types.h
 setup.o: /usr/include/sys/inode.h /usr/include/sys/fs.h /usr/include/sys/stat.h

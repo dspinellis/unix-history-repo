@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)setup.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)setup.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -53,9 +53,7 @@ setup(dev)
 	}
 	if (preen == 0)
 		printf("\n");
-	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0; sbsumbad = 0;
 	dfile.mod = 0;
-	n_files = n_blks = n_ffree = n_bfree = 0;
 	muldup = enddup = &duplist[0];
 	badlnp = &badlncnt[0];
 	lfdir = 0;
@@ -117,7 +115,6 @@ setup(dev)
 sbok:
 	fmax = sblock.fs_size;
 	imax = sblock.fs_ncg * sblock.fs_ipg;
-	n_bad = cgsblock(&sblock, 0); /* boot block plus dedicated sblock */
 	/*
 	 * read in the summary info.
 	 */
@@ -137,11 +134,6 @@ sbok:
 	blockmap = calloc((unsigned)bmapsz, sizeof (char));
 	if (blockmap == NULL) {
 		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
-		goto badsb;
-	}
-	freemap = calloc((unsigned)bmapsz, sizeof (char));
-	if (freemap == NULL) {
-		printf("cannot alloc %d bytes for freemap\n", bmapsz);
 		goto badsb;
 	}
 	statemap = calloc((unsigned)(imax + 1), sizeof(char));

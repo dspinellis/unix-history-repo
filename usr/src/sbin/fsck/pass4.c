@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass4.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass4.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -23,6 +23,7 @@ pass4()
 		switch (statemap[inumber]) {
 
 		case FSTATE:
+		case DFOUND:
 			n = lncntp[inumber];
 			if (n)
 				adjust(&idesc, (short)n);
@@ -39,21 +40,12 @@ pass4()
 			clri(&idesc, "UNREF", 1);
 			break;
 
-		case CLEAR:
+		case DCLEAR:
+		case FCLEAR:
 			clri(&idesc, "BAD/DUP", 1);
 			break;
 		}
 	}
-	if (imax - ROOTINO - n_files != sblock.fs_cstotal.cs_nifree) {
-		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
-		if (preen)
-			printf(" (FIXED)\n");
-		if (preen || reply("FIX") == 1) {
-			sblock.fs_cstotal.cs_nifree = imax - ROOTINO - n_files;
-			sbdirty();
-		}
-	}
-	flush(&dfile, &fileblk);
 }
 
 pass4check(idesc)

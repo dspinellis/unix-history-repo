@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -170,7 +170,6 @@ clri(idesc, s, flg)
 		zapino(dp);
 		statemap[idesc->id_number] = USTATE;
 		inodirty();
-		inosumbad++;
 	}
 }
 
@@ -225,5 +224,22 @@ blkerr(ino, s, blk)
 
 	pfatal("%ld %s I=%u", blk, s, ino);
 	printf("\n");
-	statemap[ino] = CLEAR;
+	switch (statemap[ino]) {
+
+	case FSTATE:
+		statemap[ino] = FCLEAR;
+		return;
+
+	case DSTATE:
+		statemap[ino] = DCLEAR;
+		return;
+
+	case FCLEAR:
+	case DCLEAR:
+		return;
+
+	default:
+		errexit("BAD STATE %d TO BLKERR", statemap[ino]);
+		/* NOTREACHED */
+	}
 }
