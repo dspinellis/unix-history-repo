@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tahoe.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tahoe.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -923,7 +923,6 @@ public beginproc(p, argc)
 	} call;
 	long dest;
 
-error("Can't do a \"call\" right now...sorry");	/* XXX */
 	if (4*argc+4 > 256)
 		error("too many parameters (max %d)", 256/4 - 1);
 	pc = 2;
