@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -172,7 +172,7 @@ dump_ifile(fd, lfsp, do_ientries)
 	get(fd, addr << daddr_shift, dpage, psize);
 
 	for (dip = dpage + INOPB(lfsp) - 1; dip >= dpage; --dip)
-		if (dip->di_inum == LFS_IFILE_INUM)
+		if (dip->di_inumber == LFS_IFILE_INUM)
 			break;
 
 	if (dip < dpage)
@@ -333,7 +333,7 @@ dump_dinode(dip)
 		"atime ", ctime(&dip->di_atime.ts_sec),
 		"mtime ", ctime(&dip->di_mtime.ts_sec),
 		"ctime ", ctime(&dip->di_ctime.ts_sec));
-	(void)printf("inum  %d\n", dip->di_inum);
+	(void)printf("inum  %d\n", dip->di_inumber);
 	(void)printf("Direct Addresses\n");
 	for (i = 0; i < NDADDR; i++) {
 		(void)printf("\t0x%X", dip->di_db[i]);
@@ -389,7 +389,7 @@ dump_sum(fd, lfsp, sp, segnum, addr)
 		for (j = 0; i < sp->ss_ninos && j < INOPB(lfsp); j++, i++) {
 			if (j > 0) 
 				(void)printf(", ");
-			(void)printf("%d", inop[j].di_inum);
+			(void)printf("%d", inop[j].di_inumber);
 		}
 		(void)printf("}");
 		if (((i/INOPB(lfsp)) % 4) == 3)
