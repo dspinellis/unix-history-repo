@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -98,9 +98,13 @@ deletefile(name, ino, type)
 
 	if (TSTINO(ino, dumpmap) == 0)
 		return (descend);
-	ep = lookupino(ino);
-	if (ep != NULL)
+	ep = lookupname(name);
+	if (ep != NULL) {
 		ep->e_flags &= ~NEW;
+		ep->e_flags |= REMOVED;
+		if (ep->e_type != NODE)
+			freeentry(ep);
+	}
 	return (descend);
 }
 
