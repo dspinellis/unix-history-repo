@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.22 (Berkeley) %G%
+#	@(#)Makefile	7.23 (Berkeley) %G%
 #
 
 DESTDIR=
@@ -230,9 +230,9 @@ sm_up.o: up.o
 	${C2} -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
-sm_sys.o: sys.o
+sm_sys.o: ../stand/sys.c
 	rm -f sm_sys.c
-	ln -s sys.c sm_sys.c
+	ln -s ../stand/sys.c sm_sys.c
 	${CC} -c -O ${SMOPTS} sm_sys.c
 	rm -f sm_sys.c
 
@@ -252,23 +252,23 @@ confrl.o: confrl.c confxx.o
 confxx.o:
 	touch confxx.o
 
-confrk.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confrk.c
+confrk.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confrk.c
 	sed -e 's/XX/hk/' -e 's/xx/rk/g'	< confxx.c >> confrk.c
-confhp.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confhp.c
+confhp.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confhp.c
 	sed -e 's/XX/hp/' -e 's/xx/hp/g'	< confxx.c >> confhp.c
-confkra.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confkra.c
+confkra.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confkra.c
 	sed -e 's/XX/kra/' -e 's/xx/kra/g'	< confxx.c >> confkra.c
-confup.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confup.c
+confup.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confup.c
 	sed -e 's/XX/up/' -e 's/xx/up/g'	< confxx.c >> confup.c
-confra.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confra.c
+confra.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confra.c
 	sed -e 's/XX/ra/' -e 's/xx/ra/g'	< confxx.c >> confra.c
-confrl.c: confxx.c dev.c
-	sed -e 's/io->i_dev/0/g'		< dev.c > confrl.c
+confrl.c: confxx.c ../stand/dev.c
+	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confrl.c
 	sed -e 's/XX/rl/' -e 's/xx/rl/g'	< confxx.c >> confrl.c
 
 clean:
