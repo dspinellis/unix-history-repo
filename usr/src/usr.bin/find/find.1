@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)find.1	6.10 (Berkeley) %G%
+.\"	@(#)find.1	6.11 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -110,7 +110,12 @@ was executed.
 .B fstype type
 True if the file is contained in a file system of type
 .BR type.
-Currently supported types are ``mfs'', ``nfs'', ``pc'' and ``ufs''.
+Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'' and
+``ufs''.
+The type ``local'' is not a specific file system type, but matches
+any file system physically mounted on the system where the
+.I find
+is being executed.
 .TP
 .B group gname
 True if the file belongs to the group
