@@ -1,0 +1,28 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getpid.2	4.1 (Berkeley) %G%
+.\"
+.TH GETPID 2 
+.UC 4
+.SH NAME
+getpid \- get process identification
+.SH SYNOPSIS
+.B getpid()
+.SH DESCRIPTION
+.I Getpid
+returns
+the process ID of
+the current process.
+Most often it is used to generate
+uniquely-named
+temporary files.
+.SH "SEE ALSO"
+mktemp(3)
+.SH "ASSEMBLER (PDP-11)"
+(getpid = 20.)
+.br
+.B sys getpid
+.br
+(pid in r0)
