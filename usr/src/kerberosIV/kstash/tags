@@ -1,0 +1,2 @@
+Mkstash	kstash.c	/^main(argc, argv)$/
+clear_secrets	kstash.c	/^clear_secrets()$/
