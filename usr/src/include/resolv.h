@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resolv.h	5.12 (Berkeley) %G%
+ *	@(#)resolv.h	5.13 (Berkeley) %G%
  */
 
 /*
@@ -60,8 +60,9 @@ extern struct state _res;
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	dn_comp __P((const char *, char *, int, char **, char **));
-int	dn_expand __P((const char *, const char *, const char *, char *, int));
+int	dn_comp __P((const u_char *, u_char *, int, u_char **, u_char **));
+int	dn_expand __P((const u_char *, const u_char *, const u_char *,
+		u_char *, int));
 int	res_init __P((void));
 int	res_mkquery __P((int, const char *, int, int, const char *, int,
 		const struct rrec *, char *, int));
