@@ -1,4 +1,4 @@
-/*	conf.c	4.33	81/05/12	*/
+/*	conf.c	4.34	81/05/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -219,6 +219,28 @@ int	ptyioctl();
 #define ptyioctl nodev
 #endif
 
+#ifdef CHAOS
+int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
+#else
+#define	chopen	nodev
+#define	chclose	nodev
+#define	chread	nodev
+#define	chwrite	nodev
+#define	chioctl	nodev
+#define	chreset	nodev
+#endif
+
+#include "en.h"
+#if	NEN > 0
+int	enopen(),enclose(),enread(),enwrite(),enreset();
+#else
+#define	enopen	nodev
+#define	enclose	nodev
+#define	enread	nodev
+#define	enwrite	nodev
+#define	enreset	nodev
+#endif
+
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
@@ -264,16 +286,16 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,		nodev,		nodev,		/*19*/
-	nodev,		nodev,		nulldev,	0,
+	chopen,		chclose,	chread,		chwrite,	/*19*/
+	chioctl,	nodev,		chreset,	0,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	nodev,		nodev,		0,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nodev,		nodev,		0,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		accreset,	0,
-	nodev,		nodev,		nodev,		nodev,		/*23*/
-	nodev,		nodev,		nodev,		0,
+	enopen,		enclose,	enread,		enwrite,	/*23*/
+	nodev,		nodev,		enreset,	0,
 	nodev,		nodev,		nodev,		nodev,		/*24*/
 	nodev,		nodev,		nodev,		0,
 /* 25-29 reserved to local sites */
@@ -293,6 +315,10 @@ int	ntyopen(),ntyclose(),ntread();
 char	*ntwrite();
 int	ntyinput(),ntyrend();
  
+#ifdef CHAOS
+int	ch_lopen(), ch_lclose(), ch_linput(), ch_lstart();
+#endif
+
 struct	linesw linesw[] =
 {
 	ttyopen, nulldev, ttread, ttwrite, nullioctl,
@@ -306,19 +332,26 @@ struct	linesw linesw[] =
 #endif
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
 	ntyinput, ntyrend, nulldev, ttstart, nulldev,		/* 2 */
+#ifdef CHAOS
+	ch_lopen, ch_lclose, nulldev, (char *(*)())nulldev, nullioctl,
+	ch_linput, nulldev, nulldev, ch_lstart, nulldev, 	/* 3 */
+#else
+	nodev, nodev, nodev, (char *(*)())nodev, nodev,
+	nodev, nodev, nodev, nodev, nodev,
+#endif
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 3 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 4 */
 	0
 };
- 
-int	nldisp = 3;
- 
+
+int	nldisp = 4;
+
 struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
 struct	buf	*bclnlist;	/* header for list of cleaned pages */
 struct	acct	acctbuf;
 struct	inode	*acctp;
- 
+
 int	mem_no = 3; 	/* major device number of memory special file */
 
 /*
