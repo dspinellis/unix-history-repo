@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: clock.c 1.17 89/11/30$
+ * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.5 (Berkeley) %G%
+ *	@(#)clock.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,7 +19,6 @@
 #include "../dev/hilreg.h"
 #include "clockreg.h"
 
-#include "vm/vm.h"
 #include "../include/psl.h"
 #include "../include/cpu.h"
 
@@ -61,7 +60,7 @@ startrtclock()
 {
 	register struct clkreg *clk;
 
-	clkstd[0] = IOV(0x5F8000);
+	clkstd[0] = IIOV(0x5F8000);
 	clk = (struct clkreg *) clkstd[0];
 
 	clk->clk_cr2 = CLK_CR1;
@@ -117,12 +116,11 @@ clkread()
  * configured as only a token effort is made to avoid conflicting use.
  */
 #include "sys/proc.h"
+#include "sys/resourcevar.h"
 #include "sys/ioctl.h"
 #include "sys/malloc.h"
+#include "vm/vm.h"
 #include "clockioctl.h"
-#include "vm/vm_param.h"
-#include "vm/vm_pager.h"
-#include "vm/vm_prot.h"
 #include "sys/specdev.h"
 #include "sys/vnode.h"
 #include "sys/mman.h"
@@ -203,7 +201,7 @@ clockioctl(dev, cmd, data, flag, p)
 clockmap(dev, off, prot)
 	dev_t dev;
 {
-	return((off + (IOBASE+CLKBASE+CLKSR-1)) >> PGSHIFT);
+	return((off + (INTIOBASE+CLKBASE+CLKSR-1)) >> PGSHIFT);
 }
 
 clockmmap(dev, addrp, p)
@@ -289,12 +287,11 @@ char profon    = 0;		/* Is profiling clock on? */
 #define	PRF_USER	0x01
 #define	PRF_KERNEL	0x80
 
-
-#ifdef notcalled
 initprofclock()
 {
 #if NCLOCK > 0
 	struct proc *p = curproc;		/* XXX */
+
 	/*
 	 * If the high-res timer is running, force profiling off.
 	 * Unfortunately, this gets reflected back to the user not as
@@ -328,7 +325,6 @@ initprofclock()
 		profint = CLK_INTERVAL;
 	profscale = CLK_INTERVAL / profint;
 }
-#endif
 
 startprofclock()
 {
