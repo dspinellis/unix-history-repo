@@ -1,0 +1,2 @@
+#!/bin/csh
+uwm -display perky:X0 >& /dev/null &

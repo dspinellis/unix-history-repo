@@ -1,0 +1,61 @@
+(Message inbox:23)
+To: Steve Kille <S.Kille@uk.ac.ucl.cs>
+cc: Mike Roe <M.Roe@uk.ac.ucl.cs>, Jon Crowcroft <J.Crowcroft@uk.ac.ucl.cs>
+Subject: Re: Moron X Window protocol on ISODE TS 
+In-reply-to: Steve Kille's message of Tue, 17 Oct 89 08:15:08 +0100.
+             <340.624611708@UK.AC.UCL.CS> 
+Date: Tue, 17 Oct 89 12:41:13 +0100
+From: Mike Roe <M.Roe@uk.ac.ucl.cs>
+
+
+> Forget transport layer authentication.  If you want to add in authentication,
+> do it where it fits "proerly".    I think that the aim is a simple
+> and reaonabvly efficient mapping of X.  For this, cutting at the 
+> transport layer makes a lot of sense.  But don't try hacking in bells
+> and whistles.   
+
+Firstly, I agree "X over TS" is an orthogonal issue to authentication, and 
+should be tackled separately.
+
+However, I'm now going to fall for it and ask "What's wrong with transport
+level authentication?".
+
+Here, you have a stream of data between a sender and a receiver. (Ok, so the 
+stream consists of X protocol datagrams). All you want to do is convince the
+receiver that everything came from the sender --- there is no need for
+non-repudiation etc.
+
+Clearly, you want to insert a checksum into the stream every so often, at
+least once per (application) datagram. Note that this ought to be a
+simple hash (eg DES in CBC mode). Sending a full authenticator (Certification
+path + RSA encrypted token) each time is unacceptably wasteful.
+
+Claim: The end of a TSDU or SSDU is as good a place as any to put the checksum.
+
+I can see some of the arguments against it :
+
+1. (Pragmatic) As I said before, no agreed way to set up the key.
+
+2. (Religious) It's the layer 7 entity you want to authenticate, not the T-layer
+   The T-layer should not have to know about application layer information.
+
+3. The only time the Rx needs to look at the checksum is at the end of a 
+   datagram, so it should be sent only at the end of a datgram. 
+   From the standpoint of the 7 layer model, only application/presentation can
+   do this.
+   From the standpoint of the actual protocols, session can also do this,
+   as a P-DATA.REQUEST maps directly onto an S-DATA.REQUEST.
+
+Religious argument for it :
+
+  The application layer doesn't know about the concrete encoding --- so it
+  can't calculate a checksum.
+
+  While we're on this, the X.509 "SIGNED" and "ENCRYPTED" macros are somewhat
+  broken : They prevent you from negotiating a different transfer syntax!
+
+THESIS: Only the lower layers know which encoding to sign.
+ANTITHESIS: Only application layer knows which key to use.
+SYNTHESIS: Sometimes the seven layer model creates imaginary problems.
+
+Mike
