@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.40 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.41 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -1649,7 +1649,7 @@ c8|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
 	:ti=\EU\Ev  8^AD\Ep\r:te=\Ev  ^A0^AD\Ep\r\n:pt@:cm@:\
 	:co#132:tc=c108-8p
 cA|avt-w|avtw|HDS concept avt w/4 or 8 pages; 132 columns:\
-	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;119l\E[=103;107;118;207h\E)1\E[1Q\EW\E[7!y\E[0\0720\07232!r\E[w\E2\r\n:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;119l\E[=103;107;118;207h\E)1\E[1Q\EW\E[0!y\E[0\0720\07232!r\E[w\E2\r\n:\
 	:ch=\E[%i%3G:cm=\E[%i%2;%3H:co#132:tc=avt:
 cB|avt-8p-s|concept avt w/8 pages & 80 cols running sysline:\
 	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;207h\E)1\E[1Q\EW\E[0!y\E[0\0720\07232!r\E[2!w\E[192w\E[2*w\E[!w\E[1;191w\E2\r\n:\
