@@ -3,465 +3,263 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tset.1	6.7 (Berkeley) %G%
+.\"	@(#)tset.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TSET 1
 .Os BSD 4
 .Sh NAME
 .Nm tset
-.Nd terminal dependent initialization
+.Nd terminal initialization
 .Sh SYNOPSIS
 .Nm tset
-.Op Ar options
-.Oo
-.Fl m
-.Oo
-.Ar ident
-.Oc Ns Oo
-.Ar test baudrate
-.Oc Ns Cm \&: Ns Ar type
-.Oc ...
-.Op type
+.Op Fl IQs
+.Op Fl
+.Op Fl e Ar ch
+.Op Fl i Ar ch
+.Op Fl k Ar ch
+.Op Fl m Ar mapping
+.Op Ar terminal
+.br
 .Nm reset
-.Op Ar options
-.Oo
-.Fl m
-.Oo
-.Ar ident
-.Oc Ns Oo
-.Ar test baudrate
-.Oc Ns Cm \&: Ns Ar type
-.Oc ...
-.Op type
+.Op Fl IQs
+.Op Fl
+.Op Fl e Ar ch
+.Op Fl i Ar ch
+.Op Fl k Ar ch
+.Op Fl m Ar mapping
+.Op Ar terminal
 .Sh DESCRIPTION
 .Nm Tset
-sets up your terminal when you first log in to a
-.Tn UNIX
-system.
-It does terminal dependent processing such as setting
-erase and kill characters, setting or resetting delays,
-sending any sequences needed to properly initialized the terminal,
-and the like.
-It first determines the
-.Ar type
-of terminal involved,
-and then does necessary initializations and mode settings.
-The type of terminal attached to each
-.Tn UNIX
-port is specified in the
-.Xr ttys  5
-database.
-Type names for terminals may be found in the
-.Xr termcap  5
-database.
-If a port is not wired permanently to a specific terminal (not hardwired)
-it will be given an appropriate generic identifier such as
-.Em dialup  .
-.Pp
-In the case where no arguments are specified,
-.Nm tset
-simply reads the terminal type out of the environment variable
+initializes terminals.
+.Nm Tset
+first determines the type of terminal that you are using.
+This determination is done as follows, using the first terminal type found.
+.sp
+.Bl -bullet -compact -offset indent
+.It
+The
+.Ar terminal
+argument specified on the command line.
+.It
+The value of the
 .Ev TERM
-and re-initializes the terminal.
-The rest of this manual concerns
-itself with mode and environment initialization,
-typically done once at login, and options
-used at initialization time to determine the terminal type and set up
-terminal modes.
+environmental variable.
+.It
+The terminal type associated with the standard error output device in the
+.Pa /etc/ttys
+file.
+.It
+The default terminal type, ``unknown''.
+.El
 .Pp
+If the terminal type was not specified on the command-line, the
+.Fl m
+option mappings are then applied (see below for more information).
+Then, if the terminal type begins with a question mark (``?''), the user is
+prompted for confirmation of the terminal type.
+An empty response confirms the type, or, another type can be entered to
+specify a new type.
+Once the terminal type has been determined, the termcap entry for the terminal
+is retrieved.
+If no termcap entry is found for the type, the user is prompted for another
+terminal type.
+.Pp
+Once the termcap entry is retrieved, the window size, backspace, interrupt
+and line kill characters (among many other things) are set and the terminal
+and tab initialization strings are sent to the standard error output.
+Finally, if the erase, interrupt and line kill characters have changed,
+or are not set to their default values, their values are displayed to the
+standard error output.
+.Pp
+When invoked as
+.Nm reset ,
+.Nm tset
+sets cooked and echo modes, turns off cbreak and raw modes, turns on
+newline translation and resets any unset special characters to their
+default values before doing the terminal initialization described above.
+This is useful after a program dies leaving a terminal in a abnormal state.
+Note, you may have to type
+.Dq Li <LF>reset<LF>
+(the line-feed character is normally control-J) to get the terminal
+to work, as carriage-return may no longer work in the abnormal state.
+Also, the terminal will often not echo the command.
+.Pp
+The options are as follows:
 .Bl -tag -width flag
-.It Fl e Ns Ar c
-set the erase character to be the named character
-.Ar c
-on all terminals,
-the default being the backspace character on the terminal, usually ^H.
-The character
-.Ar c
-can either be typed directly, or entered using the hat
-notation used here.
-.It Fl k Ns Ar c
-is similar to
-.Fl e
-but for the line kill character rather than the erase character;
-.Ar c
-defaults to ^X (for purely historical reasons).
-The kill characters is left alone if
-.Fl k
-is not specified.
-The hat notation can also be used for this option.
-.It Fl i Ns Ar c
-is similar to
-.Fl e
-but for the interrupt character rather than the erase character;
-.Ar c
-defaults to ^C.
-The hat notation can also be used for this option.
 .It Fl
-The name of the terminal finally decided upon is output on the
-standard output.
-This is intended to be captured by the shell and placed in the
-environment variable
-.Ev TERM.
+The terminal type is displayed to the standard output, and the terminal is
+not initialized in any way.
+.It Fl e
+Set the erase character to
+.Ar ch .
+.It Fl I
+Do not send the terminal or tab initialization strings to the terminal.
+.It Fl i
+Set the interrupt character to
+.Ar ch .
+.It Fl k
+Set the line kill character to
+.Ar ch .
+.It Fl m
+Specify a mapping from a port type to a terminal.
+See below for more information.
 .It Fl s
-Print the sequence of
-.Xr csh 1
-commands to initialize the environment variables
+Print the sequence of shell commands to initialize the environment variables
 .Ev TERM
 and
 .Ev TERMCAP
-based on
-the name of the terminal finally decided upon.
-.It Fl m
-The
-.FL m
-Specify what terminal type to use on specific ports (i.e. map the
-terminal type to a port as found in
-.Xr ttys 5 . )
-See below.
-.It Fl n
-On systems with the
-.Bx 4
-driver,
-specifies that the new tty driver modes should be initialized for this terminal.
-For a
-.Tn CRT ,
-the
-.Dv CRTERASE
-and
-.Dv CRTKILL
-modes are set only if the baud rate is 1200 or greater.
-See
-.Xr tty 4
-for more detail.
-.It Fl I
-suppresses transmitting terminal initialization strings.
+to the standard output.
 .It Fl Q
-suppresses printing the
-.Dq Li "Erase set to"
-and
-.Dq Li "Kill set to"
-messages.
+Don't display any values for the erase, interrupt and line kill characters. 
 .El
 .Pp
-When used in a startup script
+The arguments for the
+.Fl e ,
+.Fl i
+and
+.Fl k
+options may either be entered as actual characters or by using the
+.Dq hat
+notation, i.e. control-h may be specified as
+.Dq Li ^H
+or
+.Dq Li ^h .
+.Sh SETTING THE ENVIRONMENT
+It is often desirable to set the terminal type and information about the
+terminal's capabilities in the shell's environment.
+This is done with the
+.Fl s
+option; when this option is specified, the commands to enter the information
+into the shell's environment are output to the standard output.
+If the
+.Ev SHELL
+environmental variable ends in ``csh'', the output commands are for the
+.Xr csh 1 ,
+otherwise, they are for
+.Xr sh 1 .
+Note, the output commands for the
+.Nm csh
+set and unset the shell variable
+.Dq noglob .
+The following line in the
+.Pa .login
+or
+.Pa .profile
+files will initialize the environment correctly:
+.Bd -literal -offset indent
+eval \`tset -s options ... \`
+.Ed
+.Sh TERMINAL TYPE MAPPING
+When the terminal is not hardwired into the system (or the current system
+information is incorrect) the terminal type derived from the
+.Pa /etc/ttys
+file or the
+.Ev TERM
+environmental variable is often something generic like
+.Dq network ,
+.Dq dialup ,
+or
+.Dq unknown .
+When
+.Nm tset
+is used in a startup script
 .Pf ( Pa .profile
 for
-.Xr sh  1
+.Xr sh 1
 users or
 .Pa .login
 for
 .Xr csh 1
-users) it is desirable to give information about the type of terminal
-you will usually use on ports which are not hardwired.
-These ports are identified in
-.Xr ttys 5
-as
-.Li dialup
-or
-.Li plugboard
-or
-.Li arpanet ,
-etc.
-To specify
-what terminal type you usually use on these ports, the
+users) it is often desirable to provide information about the type of
+terminal used on such ports.
+The purpose of the
 .Fl m
-(map) option flag is followed by the appropriate port type identifier,
-an optional baud rate specification,
-and the terminal type.
-(The effect is to ``map'' from some conditions to a terminal type,
-that is, to tell
+option is to
+.Dq map
+from some set of conditions to a terminal type, that is, to
+tell
 .Nm tset
-``If I'm on this kind of port, guess that I'm on that kind of terminal''.)
-If more than one mapping is specified, the first applicable mapping prevails.
-A missing port type identifier matches all identifiers.
-Any of the alternate generic names given in
-.Xr termcap 5
-may be used for the identifier.
+``If I'm on this port at a particular speed, guess that I'm on that
+kind of terminal''.
 .Pp
-A
-.Ar baudrate
-is specified as with
-.Xr stty  1 ,
-and is compared with the
-speed of the diagnostic output (which should be the control terminal).
-The baud rate
-.Ar test
-may be any combination of:
-.Cm \&> ,
-.Cm \&@ ,
-.Cm \&< ,
+The argument to the
+.Fl m
+option consists of an optional port type, an optional operator, an optional
+baud rate specification, an optional colon (``:'') character and a terminal
+type.
+The port type is a string (delimited by either the operator or the colon
+character).
+The operator may be any combination of:
+.Dq Li \&> ,
+.Dq Li \&< ,
+.Dq Li \&@ ,
 and
-.Cm \&! ;
-.Cm \&@
-means ``at''
+.Dq Li \&! ;
+.Dq Li \&>
+means greater than,
+.Dq Li \&<
+means less than,
+.Dq Li \&@
+means equal to
 and
-.Cm \&!
+.Dq Li \&!
 inverts the sense of the test.
-To avoid problems with metacharacters, it
-is best to place the entire argument to
+The baud rate is specified as a number and is compared with the speed
+of the standard error output (which should be the control terminal).
+The terminal type is a string.
+.Pp
+If the terminal type is not specified on the command line, the
 .Fl m
-within ``\''' characters; users of
-.Xr csh  1
-must also put a ``\e'' before any ``!'' used here.
-.Bd -filled -offset indent
-tset \-m \'dialup>300:adm3a\' -m dialup:dw2 -m \'plugboard:?adm3a\'
-.Ed
+mappings are applied to the terminal type.
+If the port type and baud rate match the mapping, the terminal type specified
+in the mapping replaces the current type.
+If more than one mapping is specified, the first applicable mapping is used.
 .Pp
-causes the terminal type to be set to an
-.Ar adm3a
-if the port in use is a dialup at a speed greater than 300 baud;
-to a
-.Ar dw2
-if the port is (otherwise) a dialup (i.e. at 300 baud or less).
-.Sy NOTE :
-the examples given here appear to take up more than
-one line, for text processing reasons.
-When you type in real
-.Nm tset
-commands, you must enter them entirely on one line.
-If the
-.Ar type
-finally determined by
-.Nm tset
-begins with a question mark,
-the user is asked if s/he really wants that type.
-A null response means to use that type;
-otherwise, another type can be entered which will be used instead.
-Thus, in the above case, the user will be queried on a plugboard port
-as to whether they are actually using an
-.Ar adm3a .
+For example, consider the following:
+.Dq Li dialup>9600:vt100 .
+The port type is
+.Dq Li dialup ,
+the operator is
+.Dq Li > ,
+the baud rate specification is
+.Dq Li 9600 ,
+and the terminal type is
+.Dq Li vt100 .
+The result of this mapping is to specify that if the terminal type is
+.Dq Li dialup ,
+and the baud rate is greater than 9600 baud, a terminal type of
+.Dq Li vt100
+will be used.
 .Pp
-If no mapping applies and a final
-.Ar type
-option, not preceded by a
-.Fl m  ,
-is given on the command line
-then that type is used;
-otherwise the type found in the
-.Xr ttys 5
-database will be taken to be the terminal type.
-This should always be the case for hardwired ports.
+If no port type is specified, the terminal type will match any port type,
+for example, 
+.Dq Li -m dialup:vt100 -m :?xterm
+will cause any dialup port, regardless of baud rate, to match the terminal
+type
+.Dq Li vt100 ,
+and any non-dialup port type to match the terminal type
+.Dq Li ?xterm .
+Note, because of the leading question mark, the user will be
+queried on a default port as to whether they are actually using an
+.Ar xterm
+terminal.
 .Pp
-It is usually desirable to return the terminal type, as finally determined by
-.Nm tset  ,
-and information about the terminal's capabilities
-to a shell's environment.
-This can be done using the
-.Fl
-option; using the Bourne shell,
-.Xr \&sh  1  :
-.Bd -literal -offset indent
-export TERM; TERM=\`tset options ... \`
-.Ed
-.Pp
-or using the C shell,
-.Xr csh  1  :
-.Bd -literal -offset indent
-setenv TERM \`tset \- options ...  \`
-.Ed
-.Pp
-With
-.Xr csh 1
-it is preferable to use the following command in one's
-.Pa .login
-file to
-initialize the
-.Ev TERM
-and
-.Ev TERMCAP
-environment variables at the same time.
-.Bd -literal -offset indent
-eval \`tset -s options ... \`
-.Ed
-.Pp
-It is also convenient to make an alias in your .cshrc:
-.Bd -literal -offset indent
-alias tset \'eval \`tset \-s \e!*\`\'
-.Ed
-.Pp
-This allows the command:
-.Pp
-.Dl tset 2621
-.Pp
-to be invoked at any time to set the terminal and environment.
-.Sy Note to Bourne Shell users:
-It is
-.Em not
-possible to get this aliasing effect with a shell script,
-because shell scripts cannot set the environment of their parent.
-(If a process could set its parent's environment,
-none of this nonsense would be necessary in the first place.)
-.Pp
-These commands cause
-.Nm tset
-to place the name of your terminal in the variable
-.Ev TERM
-in the environment; see
-.Xr environ  7  .
-.Pp
-Once the terminal type is known,
-.Nm tset
-engages in terminal driver mode setting.
-This normally involves sending an initialization sequence to the
-terminal, setting the single character erase (and optionally
-the line-kill (full line erase)) characters,
-and setting special character delays.
-Tab and newline expansion are turned off during transmission of
-the terminal initialization sequence.
-.Pp
-On terminals that can backspace but not overstrike
-(such as a
-.Tn CRT ) ,
-and when the erase character is the default erase character
-(`#' on standard systems),
-the erase character is changed to
-.Dv BACKSPACE
-(Control-H).
-.Pp
-If
-.Nm tset
-is invoked as
-.Nm reset  ,
-it will set cooked and echo modes, turn off cbreak and raw modes,
-turn on newline translation, and restore special characters
-to a sensible state before any terminal dependent processing is done.
-Any special character that is found to be
-.Tn NULL
-or ``\-1'' is reset to its default value.
-All arguments to
-.Nm tset
-may be used with reset.
-.Pp
-This is most useful after a program dies leaving a terminal in a funny
-state.
-You may have to type
-.Dq Li <LF>reset<LF>
-to get it to work
-since
-.Li <CR>
-may not work in this state.
-Often none of this will echo.
-.Sh EXAMPLES
-.Pp
-These examples all assume the Bourne shell and use the
-.Fl
-option.
-If you use
-.Xr csh  ,
-use one of the variations described above.
-Note that a typical use of
-.Nm tset
-in a
-.Pa .profile
-or
-.Pa .login
-will also use the
-.Fl e
-and
-.Fl k
-options, and often the
-.Fl n
-or
-.Fl Q
-options as well.
-These options have not been included here to keep the examples small.
-.Sy NOTE :
-some of the examples given here appear to take up more than
-one line, for text processing reasons.
-When you type in real
-.Nm tset
-commands, you must enter them entirely on one line.
-.Pp
-At the moment, you are on a
-.Li 2621 .
-This is suitable for typing by hand but
-not for a
-.Pa .profile, unless you are
-.Em always
-on a 2621.
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \- 2621\`
-.Ed
-.Pp
-You have an h19 at home which you dial up on, but your office terminal
-is hardwired and known in
-.Xr ttys 5 .
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \- \-m dialup:h19\`
-.Ed
-.Pp
-You have a switch which connects everything to everything, making
-it nearly impossible to key on what port you are coming in on.
-You use a vt100 in your office at 9600 baud, and dial up to switch
-ports at 1200 baud from home on a 2621.
-Sometimes you use someone elses terminal at work,
-so you want it to ask you to make sure what terminal
-type you have at high speeds, but at 1200 baud you are
-always on a 2621.
-Note the placement of the question mark, and the quotes
-to protect the greater than and question mark from
-interpretation by the shell.
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \- \-m 'switch>1200:?vt100'\e
-\-m 'switch<=1200:2621'
-.Ed
-.Pp
-All of the above entries will fall back on the terminal type
-specified in
-.Xr ttys 5
-if none of the conditions hold.
-The following entry is appropriate if
-you always dial up, always at the same baud rate,
-on many different kinds of terminals.
-Your most common terminal is an adm3a.
-It always asks you what kind of terminal you are on,
-defaulting to adm3a.
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \- ?adm3a\`
-.Ed
-.Pp
-If the file
-.Xr ttys 5
-is not properly installed and you want to
-key entirely on the baud rate, the following can be used:
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \- \-m '>1200:vt100' 2621\`
-.Ed
-.Pp
-Here is a fancy example to illustrate the power of
-.Nm tset
-and to hopelessly confuse anyone who has made it this far.
-You dial up at 1200 baud or less on a concept100,
-sometimes over switch ports and sometimes over regular dialups.
-You use various terminals at speeds higher than 1200 over switch ports,
-most often the terminal in your office, which is a vt100.
-However, sometimes you log in from the university you used to go to,
-over the
-.Tn ARPANET ;
-in this case you are on an
-.Tn ALTO
-emulating a dm2500.
-You also often log in on various hardwired ports, such as the console,
-all of which are properly entered in
-.Xr ttys 5 .
-You want your erase character set to control H,
-your kill character set to control U,
-and don't want
-.Nm tset
-to print the
-.Dq Li Erase set to Backspace ,
-.Dq Li Kill set to Control U
-message.
-.Bd -literal -offset indent
-export TERM; TERM=\`tset \-e \-k^U \-Q \-\e
-\-m 'switch<=1200:concept100' \-m 'switch:?vt100'\e
-\-m dialup:concept100 \-m arpanet:dm2500\`
-.Ed
+No whitespace characters are permitted in the
+.Fl m
+option argument.
+A missing port type matches all port types.
+To avoid problems with metacharacters, it is best to place the entire
+.Fl m
+option within single quote characters.
+.Nm Csh
+users normally must also place a backslash character (``\e'') before any
+exclamation marks (``!'').
 .Sh ENVIRONMENT
 The
 .Nm tset
 command utilizes the
+.Ev SHELL ,
 .Ev TERM
 and
 .Ev TERMCAP
@@ -469,7 +267,7 @@ environment variables.
 .Sh FILES
 .Bl -tag -width /usr/share/misc/termcap -compact
 .It Pa /etc/ttys
-port name to terminal type mapping database
+system port name to terminal type mapping database
 .It Pa /usr/share/misc/termcap
 terminal capability database
 .El
@@ -477,59 +275,65 @@ terminal capability database
 .Xr csh 1 ,
 .Xr sh 1 ,
 .Xr stty 1 ,
-.Xr ttys 5 ,
+.Xr tty 4 ,
 .Xr termcap 5 ,
+.Xr ttys 5 ,
 .Xr environ 7
 .Sh HISTORY
 The
 .Nm tset
 command appeared in
 .Bx 3.0 .
-.Sh BUGS
-.Pp
-The
+.Sh COMPATIBILITY
+The historic
+.Fl A ,
+.Fl a ,
+.Fl d ,
+.Fl E ,
+.Fl h ,
+.Fl p ,
+.Fl r ,
+.Fl S ,
+.Fl u
+and 
+.Fl v
+options have been deleted from the
 .Nm tset
-command is one of the first commands a user must master when getting
-started on a
-.Tn UNIX
-system.
-Unfortunately, it is one of the most complex,
-largely because of the extra effort the user must go through
-to get the environment of the login shell set.
-Something needs to be done to make all this simpler,
-either the
-.Xr login  1
-program should do this stuff,
-or a default shell alias should be made,
-or a way to set the environment of the parent should exist.
+utility.
+None of these flags were documented in 4.3BSD and all are of limited
+utility at best.
+Executing
+.Nm tset
+as
+.Nm reset
+no longer implies the
+.Fl Q
+option.
+The
+.Fl n
+option remains, but has no effect.
 .Pp
-This program can't intuit personal choices for erase, interrupt
-and line kill characters, so it leaves these set to the local system
-standards.
-.\" .ig
-.\" .Sh NOTES
-.\" For compatibility with earlier versions of
-.\" .Nm tset
-.\" a number of flags are accepted whose use is discouraged:
-.\" .Bl -tag -width Fl
-.\" .It Fl d Ns Ar type
-.\" equivalent to
-.\" .Fl m
-.\" .Ar dialup:type
-.\" .It Fl p Ns Ar type
-.\" equivalent to
-.\" .Fl m
-.\" .Ar plugboard:type
-.\" .It Fl a Ns Ar type
-.\" equivalent to
-.\" .Fl m
-.\" .Ar arpanet:type
-.\" .It Fl E Ns Ar c
-.\" Sets the erase character to
-.\" .Ar c
-.\" only if the terminal can backspace.
-.\" .It Fl
-.\" prints the terminal type on the standard output
-.\" .It Fl r
-.\" prints the terminal type on the diagnostic output.
-.\" .El
+It is still permissible to specify the
+.Fl e ,
+.Fl i
+and
+.Fl k
+options without arguments, although it is strongly recommended that such
+usage be fixed to conform to
+.Xr getopt 3 .
+Also, some historic implementations of
+.Nm tset
+had an interaction between the
+.Fl
+option and the 
+.Ar terminal
+argument.
+This is no longer true.
+.Pp
+Finally, the
+.Nm tset
+implementation has been completely redone as part of the addition to the
+system of a
+.St -p1003.1-88
+compliant terminal interface, and will no longer compile on systems with
+older terminal interfaces.
