@@ -5,6 +5,10 @@ char id_libF77[] = "@(#)main.c	2.16	%G%";
 #include <signal.h>
 #include "../libI77/fiodefs.h"
 
+extern int errno;
+char *getenv();
+int f77_dump_flag;
+
 int xargc;
 char **xargv;
 
@@ -32,6 +36,7 @@ for (signum=1; signum<=16; signum++)
 f_init();
 MAIN_();
 f_exit();
+return 0;
 }
 
 struct action {
@@ -94,10 +99,6 @@ if (s == SIGHUP || s == SIGINT || s == SIGQUIT)
 else
 	signal(s, SIG_DFL);	/* shouldn't happen again, but ... */
 
-#if	vax
-sigsetmask(0);			/* don't block */
-#endif
-
 if (act->mesg)
 	{
 	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
@@ -118,18 +119,32 @@ if (act->mesg)
 		}
 	putc('\n', units[STDERR].ufd);
 	}
-f_exit();
-_cleanup();
+f77_abort( s, act->core );
+}
 
-if(act->core)
-	{
-	/* now get a core */
-#if	vax
+f77_abort( err_val, act_core )
+{
+	char first_char, *env_var;
+	int core_dump;
+
+	env_var = getenv("f77_dump_flag");
+	first_char = (env_var == NULL) ? 0 : *env_var;
+
 	signal(SIGILL, SIG_DFL);
-#else	pdp11
-	signal(SIGIOT, SIG_DFL);
-#endif
-	abort();
-	}
-exit(s);
+	sigsetmask(0);			/* don't block */
+
+	core_dump = ((nargs() != 2) || act_core) &&
+	    ( (f77_dump_flag && (first_char != 'n')) || first_char == 'y');
+
+	if( !core_dump )
+		fprintf(units[STDERR].ufd,"*** Execution terminated\n");
+
+	f_exit();
+	_cleanup();
+	if( nargs() ) errno = err_val;
+	else errno = -2;   /* prior value will be meaningless,
+				so set it to undefined value */
+
+	if( core_dump ) abort();
+	else  exit( errno );
 }
