@@ -34,7 +34,7 @@ SOFTWARE.
 /*
  *	ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-static char sccsid[] = "@(#)iso.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.2 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)iso.c	5.1 (Berkeley) %G%";
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
 #include <netiso/clnp.h>
+#include <netiso/cltp_var.h>
 #include <netiso/esis.h>
 #include <netiso/clnp_stat.h>
 #include <netiso/argo_debug.h>
@@ -133,6 +134,27 @@ clnp_stats(off, name)
 	printf("\t%d clnp congestion experience bits received\n", 
 		clnp_stat.cns_congest_rcvd);
 }
+/*
+ * Dump CLTP statistics structure.
+ */
+cltp_stats(off, name)
+	off_t off;
+	char *name;
+{
+	struct cltpstat cltpstat;
+
+	if (off == 0)
+		return;
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&cltpstat, sizeof (cltpstat));
+	printf("%s:\n\t%u incomplete header%s\n", name,
+		cltpstat.cltps_hdrops, plural(cltpstat.cltps_hdrops));
+	printf("\t%u bad data length field%s\n",
+		cltpstat.cltps_badlen, plural(cltpstat.cltps_badlen));
+	printf("\t%u bad checksum%s\n",
+		cltpstat.cltps_badsum, plural(cltpstat.cltps_badsum));
+}
+
 struct	tp_pcb tpcb;
 struct	isopcb isopcb;
 struct	socket sockb;
@@ -161,6 +183,7 @@ iso_protopr(off, name)
 {
 	struct isopcb cb;
 	register struct isopcb *prev, *next;
+	int istp = (strcmp(name, "tp") == 0);
 
 	if (off == 0) {
 		printf("%s control block: symbol not in namelist\n", name);
@@ -180,15 +203,17 @@ iso_protopr(off, name)
 			break;
 		}
 		kget(isopcb.isop_socket, sockb);
-		kget(sockb.so_tpcb, tpcb);
-		if (tpcb.tp_state == ST_ERROR)
-			fprintf(stderr,"addr: 0x%x, prev 0x%x\n", next, prev);
-		if (!aflag &&
-			tpcb.tp_state == TP_LISTENING ||
-			tpcb.tp_state == TP_CLOSED ||
-			tpcb.tp_state == TP_REFWAIT) {
-			prev = next;
-			continue;
+		if (istp) {
+			kget(sockb.so_tpcb, tpcb);
+			if (tpcb.tp_state == ST_ERROR)
+				fprintf(stderr,"addr: 0x%x, prev 0x%x\n", next, prev);
+			if (!aflag &&
+				tpcb.tp_state == TP_LISTENING ||
+				tpcb.tp_state == TP_CLOSED ||
+				tpcb.tp_state == TP_REFWAIT) {
+				prev = next;
+				continue;
+			}
 		}
 		if (first) {
 			printf("Active ISO net connections");
@@ -205,25 +230,36 @@ iso_protopr(off, name)
 			first = 0;
 		}
 		if (Aflag)
-				printf("%8x ", sockb.so_tpcb);
+			printf("%8x ",
+				(istp ? (off_t)sockb.so_tpcb : (off_t)next));
 		printf("%-5.5s %6d %6d ", name, sockb.so_rcv.sb_cc,
 			sockb.so_snd.sb_cc);
-		if ((char *)isopcb.isop_laddr == ((char *)next) +
-			_offsetof(struct isopcb, isop_sladdr))
-			laddr.siso = isopcb.isop_sladdr;
-		else
-			kget(isopcb.isop_laddr, laddr);
-		if ((char *)isopcb.isop_faddr == ((char *)next) +
-			_offsetof(struct isopcb, isop_sfaddr))
-			faddr.siso = isopcb.isop_sfaddr;
-		else
-			kget(isopcb.isop_laddr, faddr);
-		isonetprint(&laddr, 1);
-		isonetprint(&faddr, 0);
-		if (tpcb.tp_state >= tp_NSTATES)
-			printf(" %d", tpcb.tp_state);
-		else
-			printf(" %-12.12s", tp_sstring[tpcb.tp_state]);
+		if (isopcb.isop_laddr == 0)
+			printf("*.*\t");
+		else {
+			if ((char *)isopcb.isop_laddr == ((char *)next) +
+				_offsetof(struct isopcb, isop_sladdr))
+				laddr.siso = isopcb.isop_sladdr;
+			else
+				kget(isopcb.isop_laddr, laddr);
+			isonetprint(&laddr, 1);
+		}
+		if (isopcb.isop_faddr == 0)
+			printf("*.*\t");
+		else {
+			if ((char *)isopcb.isop_faddr == ((char *)next) +
+				_offsetof(struct isopcb, isop_sfaddr))
+				faddr.siso = isopcb.isop_sfaddr;
+			else
+				kget(isopcb.isop_faddr, faddr);
+			isonetprint(&faddr, 0);
+		}
+		if (istp) {
+			if (tpcb.tp_state >= tp_NSTATES)
+				printf(" %d", tpcb.tp_state);
+			else
+				printf(" %-12.12s", tp_sstring[tpcb.tp_state]);
+		}
 		putchar('\n');
 		prev = next;
 	}
@@ -405,6 +441,7 @@ caddr_t off, name;
 		printf("TP not configured\n\n");
 		return;
 	}
+	printf("%s:\n", name);
 	kget(off, tp_stat);
 	tprintstat(&tp_stat, 8);
 }
@@ -689,7 +726,7 @@ int islocal;
 	putchar(' ');
 }
 static char hexlist[] = "0123456789abcdef", obuf[128];
-static
+
 hexprint(n, buf, delim)
 char *buf, *delim;
 {
@@ -697,6 +734,8 @@ char *buf, *delim;
 	register char *out = obuf;
 	register int i;
 
+	if (n == 0)
+		return;
 	while (in < top) {
 		i = *in++;
 		*out++ = '.';
