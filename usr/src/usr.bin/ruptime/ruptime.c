@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.12 (Berkeley) 83/05/25";
+static char sccsid[] = "@(#)ruptime.c	4.13 (Berkeley) 83/07/01";
 #endif
 
 #include <sys/param.h>
@@ -44,22 +44,22 @@ main(argc, argv)
 	time(&t);
 	argc--, argv++;
 again:
-	if (!strcmp(*argv, "-a")) {
+	if (argc && !strcmp(*argv, "-a")) {
 		aflg++;
 		argc--, argv++;
 		goto again;
 	}
-	if (!strcmp(*argv, "-l")) {
+	if (argc && !strcmp(*argv, "-l")) {
 		cmp = lcmp;
 		argc--, argv++;
 		goto again;
 	}
-	if (!strcmp(*argv, "-u")) {
+	if (argc && !strcmp(*argv, "-u")) {
 		cmp = ucmp;
 		argc--, argv++;
 		goto again;
 	}
-	if (!strcmp(*argv, "-t")) {
+	if (argc && !strcmp(*argv, "-t")) {
 		cmp = tcmp;
 		argc--, argv++;
 		goto again;
