@@ -7,15 +7,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.142 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.143 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include "pathnames.h"
 # include <sys/ioctl.h>
 # include <sys/param.h>
-# include <netdb.h>
-# include <pwd.h>
 
 /*
 **  CONF.C -- Sendmail Configuration Tables.
@@ -209,7 +207,7 @@ setdefuser()
 	static char defuserbuf[40];
 
 	DefUser = defuserbuf;
-	if ((defpwent = getpwuid(DefUid)) != NULL)
+	if ((defpwent = sm_getpwuid(DefUid)) != NULL)
 		strcpy(defuserbuf, defpwent->pw_name);
 	else
 		strcpy(defuserbuf, "nobody");
@@ -770,7 +768,7 @@ username()
 		myname = getlogin();
 		if (myname == NULL || myname[0] == '\0')
 		{
-			pw = getpwuid(RealUid);
+			pw = sm_getpwuid(RealUid);
 			if (pw != NULL)
 				myname = newstr(pw->pw_name);
 		}
@@ -779,10 +777,10 @@ username()
 			uid_t uid = RealUid;
 
 			myname = newstr(myname);
-			if ((pw = getpwnam(myname)) == NULL ||
+			if ((pw = sm_getpwnam(myname)) == NULL ||
 			      (uid != 0 && uid != pw->pw_uid))
 			{
-				pw = getpwuid(uid);
+				pw = sm_getpwuid(uid);
 				if (pw != NULL)
 					myname = newstr(pw->pw_name);
 			}
@@ -2735,22 +2733,23 @@ strtol(nptr, endptr, base)
 
 #endif
 /*
-**  SOLARIS_GETHOSTBY{NAME,ADDR} -- compatibility routines for gethostbyXXX
+**  SM_GETHOSTBY{NAME,ADDR} -- compatibility routines for gethostbyXXX
 **
-**	Solaris versions at least through 2.3 don't properly deliver a
-**	canonical h_name field.  This tries to work around it.
+**	Some operating systems have wierd problems with the gethostbyXXX
+**	routines.  For example, Solaris versions at least through 2.3
+**	don't properly deliver a canonical h_name field.  This tries to
+**	work around these problems.
 */
-
-#if defined(SOLARIS) && SOLARIS < 204
-
-extern int	h_errno;
 
 extern int	h_errno;
 
 struct hostent *
-solaris_gethostbyname(name)
+sm_gethostbyname(name)
 	const char *name;
 {
+#if defined(SOLARIS) && SOLARIS < 204
+	extern int h_errno;
+
 # if SOLARIS == 203
 	static struct hostent hp;
 	static char buf[1000];
@@ -2762,14 +2761,20 @@ solaris_gethostbyname(name)
 
 	return __switch_gethostbyname(name);
 # endif
+#else
+	return gethostbyname(name);
+#endif
 }
 
 struct hostent *
-solaris_gethostbyaddr(addr, len, type)
+sm_gethostbyaddr(addr, len, type)
 	const char *addr;
 	int len;
 	int type;
 {
+#if defined(SOLARIS) && SOLARIS < 204
+	extern int h_errno;
+
 # if SOLARIS == 203
 	static struct hostent hp;
 	static char buf[1000];
@@ -2781,9 +2786,31 @@ solaris_gethostbyaddr(addr, len, type)
 
 	return __switch_gethostbyaddr(addr, len, type);
 # endif
+#else
+	return gethostbyaddr(addr, len, type);
+#endif
+}
+/*
+**  SM_GETPW{NAM,UID} -- wrapper for getpwnam and getpwuid
+*/
+
+struct passwd *
+sm_getpwnam(user)
+	const char *user;
+{
+	extern struct passwd *getpwnam();
+
+	return getpwnam(user);
 }
 
-#endif
+struct passwd *
+sm_getpwuid(uid)
+	uid_t uid;
+{
+	extern struct passwd *getpwuid();
+
+	return getpwuid(uid);
+}
 /*
 **  NI_PROPVAL -- netinfo property value lookup routine
 **

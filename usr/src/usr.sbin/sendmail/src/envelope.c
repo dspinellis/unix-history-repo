@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
-#include <pwd.h>
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -609,7 +608,6 @@ setsender(from, e, delimptr, internal)
 	char *bp;
 	char buf[MAXNAME + 2];
 	char pvpbuf[PSBUFSIZE];
-	extern struct passwd *getpwnam();
 	extern char *FullName;
 
 	if (tTd(45, 1))
@@ -717,7 +715,7 @@ setsender(from, e, delimptr, internal)
 				FullName = NULL;
 		}
 
-		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
+		if ((pw = sm_getpwnam(e->e_from.q_user)) != NULL)
 		{
 			/*
 			**  Process passwd file entry.

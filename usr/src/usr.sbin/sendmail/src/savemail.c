@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
-# include <pwd.h>
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -61,7 +60,6 @@ savemail(e, sendbody)
 	register char *p;
 	MCI mcibuf;
 	char buf[MAXLINE+1];
-	extern struct passwd *getpwnam();
 	extern char *ttypath();
 	typedef int (*fnptr)();
 	extern bool writable();
@@ -309,7 +307,7 @@ savemail(e, sendbody)
 			{
 				if (e->e_from.q_home != NULL)
 					p = e->e_from.q_home;
-				else if ((pw = getpwnam(e->e_from.q_user)) != NULL)
+				else if ((pw = sm_getpwnam(e->e_from.q_user)) != NULL)
 					p = pw->pw_dir;
 			}
 			if (p == NULL)

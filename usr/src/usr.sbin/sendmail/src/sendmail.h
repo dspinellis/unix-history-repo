@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.109 (Berkeley) %G%
+ *	@(#)sendmail.h	8.110 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.109		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.110		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -1099,6 +1099,10 @@ extern void		finis __P(());
 extern void		clrevent __P((EVENT *));
 extern void		setsender __P((char *, ENVELOPE *, char **, bool));
 extern FILE		*safefopen __P((char *, int, int, int));
+extern struct hostent	*sm_gethostbyname __P((const char *));
+extern struct hostent	*sm_gethostbyaddr __P((const char *, int, int));
+extern struct passwd	*sm_getpwnam __P((const char *));
+extern struct passwd	*sm_getpwuid __P((uid_t));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

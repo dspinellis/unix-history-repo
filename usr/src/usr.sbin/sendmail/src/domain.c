@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.33 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.34 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.33 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.34 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)domain.c	8.33 (Berkeley) %G% (without name server)";
 
 #include <errno.h>
 #include <resolv.h>
-#include <netdb.h>
 
 typedef union
 {
@@ -263,7 +262,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	{
 punt:
 		if (seenlocal &&
-		    (!TryNullMXList || gethostbyname(host) == NULL))
+		    (!TryNullMXList || sm_gethostbyname(host) == NULL))
 		{
 			/*
 			**  If we have deleted all MX entries, this is
@@ -870,7 +869,7 @@ getcanonname(host, hbsize, trymx)
 	struct hostent *hp;
 	char *p;
 
-	hp = gethostbyname(host);
+	hp = sm_gethostbyname(host);
 	if (hp == NULL)
 		return (FALSE);
 	p = hp->h_name;

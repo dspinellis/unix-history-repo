@@ -10,14 +10,13 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.74 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.75 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.74 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.75 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
 # include <errno.h>
-# include <pwd.h>
 # include <dirent.h>
 
 # ifdef QUEUE
@@ -432,7 +431,7 @@ printctladdr(a, tfp)
 	lastuid = uid;
 	lastctladdr = a;
 
-	if (uid == 0 || (pw = getpwuid(uid)) == NULL)
+	if (uid == 0 || (pw = sm_getpwuid(uid)) == NULL)
 		uname = "";
 	else
 		uname = pw->pw_name;
@@ -1814,7 +1813,7 @@ setctluser(user)
 	p = strchr(user, ':');
 	if (p != NULL)
 		*p++ = '\0';
-	if (*user != '\0' && (pw = getpwnam(user)) != NULL)
+	if (*user != '\0' && (pw = sm_getpwnam(user)) != NULL)
 	{
 		if (strcmp(pw->pw_dir, "/") == 0)
 			a->q_home = "";

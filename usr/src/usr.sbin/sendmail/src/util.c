@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.59 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1450,7 +1450,6 @@ checkfd012(where)
 **		none.
 */
 
-#include <netdb.h>
 #include <arpa/inet.h>
 
 printopenfds(logit)
@@ -1519,7 +1518,7 @@ dumpfd(fd, printclosed, logit)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = gethostbyaddr((char *) &sin.sin_addr,
+			hp = sm_gethostbyaddr((char *) &sin.sin_addr,
 					   INADDRSZ, AF_INET);
 			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
 						   : hp->h_name, ntohs(sin.sin_port));
@@ -1532,7 +1531,7 @@ dumpfd(fd, printclosed, logit)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = gethostbyaddr((char *) &sin.sin_addr,
+			hp = sm_gethostbyaddr((char *) &sin.sin_addr,
 					   INADDRSZ, AF_INET);
 			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
 						   : hp->h_name, ntohs(sin.sin_port));
