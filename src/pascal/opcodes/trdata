@@ -1,0 +1,92 @@
+MINUS	dp	unary -
+MOD	dpp	mod
+DIV	dpp	div
+DIVD	dpp	/
+MULT	dpp	*
+ADD	dpp	+
+SUB	dpp	-
+EQ	dpp	=
+NE	dpp	<>
+LT	dpp	<
+GT	dpp	>
+LE	dpp	<=
+GE	dpp	>=
+NOT	dp	not
+AND	dpp	and
+OR	dpp	or
+ASGN	npp	:=
+PLUS	dp	unary +
+IN	dpp	in
+
+LISTPP	pp
+
+PDEC	n"pp
+FDEC	n"pp
+
+PVAL	pp
+PVAR	pp
+PFUNC	pp
+PPROC	p
+
+NIL	d
+STRNG	dp
+CSTRNG	p
+PLUSC	p
+MINUSC	p
+ID	p
+INT	dp
+FINT	dp
+CINT	p
+CFINT	p
+
+TYPTR	np
+TYPACK	np
+TYSCAL	np
+TYRANG	npp
+TYARY	npp
+TYFILE	np
+TYSET	np
+TYREC	np
+TYFIELD	pp
+TYVARPT	nppp
+TYVARNT	npp
+
+CSTAT	npp
+
+BLOCK	np
+BSTL	np
+LABEL	n"p
+PCALL	n"p
+FCALL	n"p
+CASE	npp
+WITH	npp
+WHILE	npp
+REPEAT	npp
+FORU	nppp
+FORD	nppp
+GOTO	n"
+IF	nppp
+ASRT	np
+
+CSET	dp
+RANG	pp
+
+VAR	n"p
+ARGL	p
+ARY	p
+FIELD	pp
+PTR	
+
+WEXP	ppp
+
+PROG	n"pp
+BINT	dp
+CBINT	p
+IFEL	nppp
+IFX	nppp
+TYID	np
+COPSTR	s
+BOTTLE	nnnnn
+RFIELD	npp
+FLDLST	npp
+LAST	x

@@ -1,0 +1,118 @@
+.de lt
+.ta 1.2i 2.4i 3.6i 4.8i 6.0i
+..
+.TH LISP UCB 2/27/79 UCB
+.SH  NAME
+lisp \- lisp interpreter
+.SH SYNOPSIS
+.B lisp
+.SH DESCRIPTION
+.PP
+.I Lisp
+is a provisional lisp interpreter.
+It only runs in eval mode. Built in functions are named
+in lower case, and case is distinguished.
+It is being transmuted from a subset of lisp
+as provided by the Harvard \s-2UNIX\s0 lisp in
+use at \s-2UCB\s0, to a subset of \s-2MIT\s0's \s-2MACLISP\s0.
+.PP
+The following functions are provided as machine code:
+.LP
+Lambda functions:
+.if n .ta 13n 26n 39n 52n 65n
+.if t .lt
+.sp
+.nf
+atom	dptr	load	putd	rplacd
+bcdp	drain	null	putprop	set
+car	eq	numberp	ratom	terpr
+cdr	equal	outfile	read
+close	eval	patom	readc
+concat	get	pntlen	retbrk
+cons	getd	portp	return
+cont	infile	print	rplaca
+.fi
+.LP
+Nlambda functions (possibly simulating ones which are normally lambdas):
+.if n .ta 13n 26n 39n 52n 65n
+.if t .lt
+.sp
+.nf
+add1	difference	onep	quotient	zerop
+and	exit	or	reset
+break	go	plus	setq
+cond	minus	product	sub1
+cond	mod	prog	sum
+def	not	quote	times
+.fi
+.PP
+The following functions are provided as lisp code (and at the moment
+must be read in by saying (load 'auxfns):
+.if n .ta 13n 26n 39n 52n 65n
+.if t .lt
+.sp
+.nf
+add	copy	length	numbp
+append	defevq	linelength	pp_etc
+apply*	defprop	member	reverse
+charcnt	defprop	memcar	terpri
+chrct	diff	memcdr
+conc	last	nconc
+.fi
+.PP
+All of the above functions are documented in the ``Harvard Lisp Manual.''
+.PP
+The following functions are provided as in \s-2MIT\s0's \s-2MACLISP\s0.
+.if n .ta 13n 26n 39n 52n 65n
+.if t .lt
+.sp
+.nf
+alphalessp	do	mapc	setsyntax
+apply	explodec	mapcar	throw
+ascii	exploden	prog2	tyi
+catch	funcall	progn	tyipeek
+defun	implode	progv	tyo
+.fi
+.PP
+``Hairy control structure'' is provided by the Nlambda
+(process\ \fIcommand\ inport\ outport\fR)
+where 
+.I command
+is an atom whose print name is some command that you would wish typed
+at the terminal, e.g. ``neqn\ |\ nroff\ \-ms'';
+where
+.I inport
+and 
+.I outport
+are atoms which will be bound to port descriptors for use in
+communication with the subprocess.
+.I Inport
+is a port to a pipe which will be read by the subprocess as
+its standard input. If 
+.I Inport
+is \fInil\fR (or not present), the subprocess inherits the standard
+input, and lisp waits for the subprocess to die.
+If
+.I Inport
+is the atom 
+.I t
+lisp continues without waiting.
+.SH AUTHORS
+Originally written by Jeff Levinsky, Mike Curry, and John Breedlove.
+Keith Sklower made it work and is maintaining the current version.
+The garbage collector was implemented by Bill Rowan.
+.SH SEE ALSO
+Harvard \s-2UNIX\s0 Lisp Manual
+.br
+Maclisp Manual
+.br
+`UCB Franz Lisp Manual, Version 1 (in preparation)'
+.SH "BUGS"
+The status bits for
+.I setsyntax
+are not the same as for \s-2MACLISP\s0.
+.PP
+Closing
+down a pipe doesn't always seem to work correctly.
+.PP
+Arrays are not implemented in version 1.
