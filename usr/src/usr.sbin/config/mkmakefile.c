@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.13	82/04/01
+ * mkmakefile.c	1.14	82/06/14
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -348,7 +348,7 @@ register FILE *f;
 
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "%s: touch makefile locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
+	fprintf(f, "%s: makefile locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
 		fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 		fl->f_needs, fl->f_needs);
