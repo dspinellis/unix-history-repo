@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machAsmDefs.h	7.5 (Berkeley) %G%
+ *	@(#)machAsmDefs.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -35,7 +35,7 @@
 /*
  * Define -pg profile entry code.
  */
-#ifdef PROF
+#if defined(GPROF) || defined(PROF)
 #define	MCOUNT	.set noreorder; \
 		.set noat; \
 		move $1,$31; \
@@ -45,7 +45,7 @@
 		.set at;
 #else
 #define	MCOUNT
-#endif PROF
+#endif
 
 /*
  * LEAF(x)
