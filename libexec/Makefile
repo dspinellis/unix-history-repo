@@ -12,7 +12,6 @@
 SUBDIR=	bugfiler comsat crond elvispreserve fingerd ftpd getNAME getty \
 	mail.local makekey rexecd rlogind rshd talkd telnetd tftpd uucpd
 
-# uucp has old style Makefiles, needs to be updated.
 # kpasswdd not ported, it is old kerberosIV
 
 .include <bsd.subdir.mk>
