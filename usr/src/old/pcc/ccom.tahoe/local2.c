@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.20 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -711,6 +711,7 @@ sconv(p, forcc)
 	register int srclen, dstlen;
 	int srctype, dsttype;
 	int val;
+	int neg = 0;
 
 	if (p->in.op == ASSIGN) {
 		src = p->in.right;
@@ -737,13 +738,7 @@ sconv(p, forcc)
 		srctype = src->in.type;
 	}
 
-	if (src->in.op == ICON &&
-#ifdef FLEXNAMES
-	    (src->tn.name == NULL || *src->tn.name == '\0')
-#else
-	    src->tn.name[0] == '\0'
-#endif
-	) {
+	if (src->in.op == ICON && src->tn.name[0] == '\0') {
 		if (src->tn.lval == 0) {
 			putstr("clr");
 			prtype(dst);
@@ -773,6 +768,10 @@ sconv(p, forcc)
 		}
 		srctype = dsttype;
 		srclen = dstlen;
+		if ((val = src->tn.lval) & 1 << dstlen * SZCHAR - 1) {
+			src->tn.lval = -(val | ~((1 << dstlen * SZCHAR) - 1));
+			++neg;		/* MNEGx may be shorter */
+		}
 	}
 
 	if (srclen < dstlen) {
@@ -858,23 +857,25 @@ sconv(p, forcc)
 		return;
 	}
 
-	genconv(ISUNSIGNED(dsttype),
+	genconv(neg ? -1 : ISUNSIGNED(dsttype),
 		srclen, dst->in.op == REG ? SZINT/SZCHAR : dstlen,
 		src, dst);
 }
 
-genconv(usrc, srclen, dstlen, src, dst)
-	int usrc;
+genconv(srcflag, srclen, dstlen, src, dst)
+	int srcflag;
 	register int srclen, dstlen;
 	NODE *src, *dst;
 {
 	if (srclen != dstlen) {
-		if (usrc && srclen < dstlen)
+		if (srcflag > 0 && srclen < dstlen)
 			putstr("movz");
 		else
 			putstr("cvt");
 		prlen(srclen);
-	} else
+	} else if (srcflag < 0)
+		putstr("mneg");
+	else
 		putstr("mov");
 	prlen(dstlen);
 	putchar('\t');
