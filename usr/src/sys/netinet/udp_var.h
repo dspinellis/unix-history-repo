@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_var.h	7.7 (Berkeley) %G%
+ *	@(#)udp_var.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -28,16 +28,16 @@ struct	udpiphdr {
 
 struct	udpstat {
 				/* input statistics: */
-	int	udps_ipackets;		/* total input packets */
-	int	udps_hdrops;		/* packet shorter than header */
-	int	udps_badsum;		/* checksum error */
-	int	udps_badlen;		/* data length larger than packet */
-	int	udps_noport;		/* no socket on port */
-	int	udps_noportbcast;	/* of above, arrived as broadcast */
-	int	udps_fullsock;		/* not delivered, input socket full */
-	int	udpps_pcbcachemiss;	/* input packets missing pcb cache */
+	u_long	udps_ipackets;		/* total input packets */
+	u_long	udps_hdrops;		/* packet shorter than header */
+	u_long	udps_badsum;		/* checksum error */
+	u_long	udps_badlen;		/* data length larger than packet */
+	u_long	udps_noport;		/* no socket on port */
+	u_long	udps_noportbcast;	/* of above, arrived as broadcast */
+	u_long	udps_fullsock;		/* not delivered, input socket full */
+	u_long	udpps_pcbcachemiss;	/* input packets missing pcb cache */
 				/* output statistics: */
-	int	udps_opackets;		/* total output packets */
+	u_long	udps_opackets;		/* total output packets */
 };
 
 #define	UDP_TTL		30	/* default time to live for UDP packets */

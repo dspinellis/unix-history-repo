@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.8 (Berkeley) %G%
+ *	@(#)in_proto.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,9 +24,7 @@
 int	ip_output(),ip_ctloutput();
 int	ip_init(),ip_slowtimo(),ip_drain();
 int	icmp_input();
-#ifdef MULTICAST
 int	igmp_init(),igmp_input(),igmp_fasttimo();
-#endif
 int	udp_input(),udp_ctlinput();
 int	udp_usrreq();
 int	udp_init();
@@ -55,7 +53,7 @@ int	tp_init(), tp_slowtimo(), tp_drain();
 
 #ifdef EON
 int	eoninput(), eonctlinput(), eonprotoinit();
-#endif EON
+#endif /* EON */
 
 extern	struct domain inetdomain;
 
@@ -85,6 +83,11 @@ struct protosw inetsw[] = {
   rip_usrreq,
   0,		0,		0,		0,
 },
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IGMP,	PR_ATOMIC|PR_ADDR,
+  igmp_input,	rip_output,	0,		rip_ctloutput,
+  rip_usrreq,
+  igmp_init,	igmp_fasttimo,	0,		0,
+},
 #ifdef TPIP
 { SOCK_SEQPACKET,&inetdomain,	IPPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD,
   tpip_input,	0,		tpip_ctlinput,	tp_ctloutput,
@@ -98,13 +101,6 @@ struct protosw inetsw[] = {
   eoninput,	0,		eonctlinput,		0,
   0,
   eonprotoinit,	0,		0,		0,
-},
-#endif
-#ifdef MULTICAST
-{ SOCK_RAW,	&inetdomain,	IPPROTO_IGMP,	PR_ATOMIC|PR_ADDR,
-  igmp_input,	rip_output,	0,		rip_ctloutput,
-  rip_usrreq,
-  igmp_init,	igmp_fasttimo,	0,		0,
 },
 #endif
 #ifdef NSIP

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.26 (Berkeley) %G%
+ *	@(#)ip_output.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -40,18 +40,12 @@ static	void ip_mloopback __P((struct ifnet *, struct mbuf *,
  * The mbuf opt, if present, will not be freed.
  */
 int
-ip_output(m0, opt, ro, flags
-#ifdef MULTICAST
-    , imo
-#endif
-    )
+ip_output(m0, opt, ro, flags, imo)
 	struct mbuf *m0;
 	struct mbuf *opt;
 	struct route *ro;
 	int flags;
-#ifdef MULTICAST
 	struct ip_moptions *imo;
-#endif
 {
 	register struct ip *ip, *mhip;
 	register struct ifnet *ifp;
@@ -79,9 +73,9 @@ ip_output(m0, opt, ro, flags
 		ip->ip_off &= IP_DF;
 		ip->ip_id = htons(ip_id++);
 		ip->ip_hl = hlen >> 2;
+		ipstat.ips_localout++;
 	} else {
 		hlen = ip->ip_hl << 2;
-		ipstat.ips_localout++;
 	}
 	/*
 	 * Route packet.
@@ -116,6 +110,7 @@ ip_output(m0, opt, ro, flags
 		if (ia == 0)
 			ia = in_iaonnetof(in_netof(ip->ip_dst));
 		if (ia == 0) {
+			ipstat.ips_noroute++;
 			error = ENETUNREACH;
 			goto bad;
 		}
@@ -124,6 +119,7 @@ ip_output(m0, opt, ro, flags
 		if (ro->ro_rt == 0)
 			rtalloc(ro);
 		if (ro->ro_rt == 0) {
+			ipstat.ips_noroute++;
 			error = EHOSTUNREACH;
 			goto bad;
 		}
@@ -133,7 +129,6 @@ ip_output(m0, opt, ro, flags
 		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 			dst = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
 	}
-#ifdef MULTICAST
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
 		struct in_multi *inm;
 		extern struct ifnet loif;
@@ -159,6 +154,7 @@ ip_output(m0, opt, ro, flags
 		 * Confirm that the outgoing interface supports multicast.
 		 */
 		if ((ifp->if_flags & IFF_MULTICAST) == 0) {
+			ipstat.ips_noroute++;
 			error = ENETUNREACH;
 			goto bad;
 		}
@@ -221,7 +217,6 @@ ip_output(m0, opt, ro, flags
 
 		goto sendit;
 	}
-#endif
 #ifndef notdef
 	/*
 	 * If source address not specified yet, use address
@@ -250,11 +245,10 @@ ip_output(m0, opt, ro, flags
 			goto bad;
 		}
 		m->m_flags |= M_BCAST;
-	}
+	} else
+		m->m_flags &= ~M_BCAST;
 
-#ifdef MULTICAST
 sendit:
-#endif
 	/*
 	 * If small enough for interface, can just send directly.
 	 */
@@ -267,13 +261,13 @@ sendit:
 				(struct sockaddr *)dst, ro->ro_rt);
 		goto done;
 	}
-	ipstat.ips_fragmented++;
 	/*
 	 * Too large for interface; fragment if possible.
 	 * Must be able to put at least 8 bytes per fragment.
 	 */
 	if (ip->ip_off & IP_DF) {
 		error = EMSGSIZE;
+		ipstat.ips_cantfrag++;
 		goto bad;
 	}
 	len = (ifp->if_mtu - hlen) &~ 7;
@@ -296,6 +290,7 @@ sendit:
 		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
+			ipstat.ips_odropped++;
 			goto sendorfree;
 		}
 		m->m_data += max_linkhdr;
@@ -317,6 +312,7 @@ sendit:
 		m->m_next = m_copy(m0, off, len);
 		if (m->m_next == 0) {
 			error = ENOBUFS;	/* ??? */
+			ipstat.ips_odropped++;
 			goto sendorfree;
 		}
 		m->m_pkthdr.len = mhlen + len;
@@ -349,6 +345,9 @@ sendorfree:
 		else
 			m_freem(m);
 	}
+
+	if (error == 0)
+		ipstat.ips_fragmented++;
     }
 done:
 	if (ro == &iproute && (flags & IP_ROUTETOIF) == 0 && ro->ro_rt)
@@ -423,9 +422,12 @@ ip_optcopy(ip, jp)
 		opt = cp[0];
 		if (opt == IPOPT_EOL)
 			break;
-		if (opt == IPOPT_NOP)
+		if (opt == IPOPT_NOP) {
+			/* Preserve for IP mcast tunnel's LSRR alignment. */
+			*dp++ = IPOPT_NOP;
 			optlen = 1;
-		else
+			continue;
+		} else
 			optlen = cp[IPOPT_OLEN];
 		/* bogus lengths should have been caught by ip_dooptions */
 		if (optlen > cnt)
@@ -509,7 +511,6 @@ ip_ctloutput(op, so, level, optname, mp)
 			break;
 #undef OPTSET
 
-#ifdef MULTICAST
 		case IP_MULTICAST_IF:
 		case IP_MULTICAST_TTL:
 		case IP_MULTICAST_LOOP:
@@ -517,7 +518,6 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_DROP_MEMBERSHIP:
 			error = ip_setmoptions(optname, &inp->inp_moptions, m);
 			break;
-#endif
 
 		freeit:
 		default:
@@ -575,7 +575,6 @@ ip_ctloutput(op, so, level, optname, mp)
 			*mtod(m, int *) = optval;
 			break;
 
-#ifdef MULTICAST
 		case IP_MULTICAST_IF:
 		case IP_MULTICAST_TTL:
 		case IP_MULTICAST_LOOP:
@@ -583,7 +582,6 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_DROP_MEMBERSHIP:
 			error = ip_getmoptions(optname, inp->inp_moptions, mp);
 			break;
-#endif
 
 		default:
 			error = EINVAL;
@@ -701,7 +699,6 @@ bad:
 	return (EINVAL);
 }
 
-#ifdef MULTICAST
 /*
  * Set the IP multicast options in response to user setsockopt().
  */
@@ -1035,4 +1032,3 @@ ip_mloopback(ifp, m, dst)
 		(void) looutput(ifp, copym, (struct sockaddr *)dst);
 	}
 }
-#endif

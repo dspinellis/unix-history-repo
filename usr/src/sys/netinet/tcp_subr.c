@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.24 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@
 int	tcp_ttl = TCP_TTL;
 int 	tcp_mssdflt = TCP_MSS;
 int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
+int	tcp_do_rfc1323 = 1;
 
 extern	struct inpcb *tcp_last_inpcb;
 
@@ -158,8 +159,12 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 	ti->ti_x2 = 0;
 	ti->ti_off = sizeof (struct tcphdr) >> 2;
 	ti->ti_flags = flags;
-	ti->ti_win = htons((u_short)win);
+	if (tp)
+		ti->ti_win = htons((u_short) (win >> tp->rcv_scale));
+	else
+		ti->ti_win = htons((u_short)win);
 	ti->ti_urp = 0;
+	ti->ti_sum = 0;
 	ti->ti_sum = in_cksum(m, tlen);
 	((struct ip *)ti)->ip_len = tlen;
 	((struct ip *)ti)->ip_ttl = tcp_ttl;
@@ -175,16 +180,16 @@ struct tcpcb *
 tcp_newtcpcb(inp)
 	struct inpcb *inp;
 {
-	struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
 	register struct tcpcb *tp;
 
-	if (m == NULL)
+	tp = malloc(sizeof(*tp), M_PCB, M_NOWAIT);
+	if (tp == NULL)
 		return ((struct tcpcb *)0);
-	tp = mtod(m, struct tcpcb *);
+	bzero((char *) tp, sizeof(struct tcpcb));
 	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
 	tp->t_maxseg = tcp_mssdflt;
 
-	tp->t_flags = 0;		/* sends options! */
+	tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
 	tp->t_inpcb = inp;
 	/*
 	 * Init srtt to TCPTV_SRTTBASE (0), so we can tell that we have no
@@ -197,8 +202,8 @@ tcp_newtcpcb(inp)
 	TCPT_RANGESET(tp->t_rxtcur, 
 	    ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
 	    TCPTV_MIN, TCPTV_REXMTMAX);
-	tp->snd_cwnd = TCP_MAXWIN;
-	tp->snd_ssthresh = TCP_MAXWIN;
+	tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
+	tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
 	inp->inp_ip.ip_ttl = tcp_ttl;
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
@@ -322,7 +327,7 @@ tcp_close(tp)
 	}
 	if (tp->t_template)
 		(void) m_free(dtom(tp->t_template));
-	(void) m_free(dtom(tp));
+	free(tp, M_PCB);
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
 	/* clobber input pcb cache if we're closing the cached connection */
@@ -351,15 +356,20 @@ tcp_notify(inp, error)
 	register struct socket *so = inp->inp_socket;
 
 	/*
+	 * Ignore some errors if we are hooked up.
 	 * If connection hasn't completed, has retransmitted several times,
 	 * and receives a second error, give up now.  This is better
 	 * than waiting a long time to establish a connection that
 	 * can never complete.
 	 */
-	if (tp->t_state < TCPS_ESTABLISHED && tp->t_rxtshift > 3 &&
+	if (tp->t_state == TCPS_ESTABLISHED &&
+	     (error == EHOSTUNREACH || error == ENETUNREACH ||
+	      error == EHOSTDOWN)) {
+		return;
+	} else if (tp->t_state < TCPS_ESTABLISHED && tp->t_rxtshift > 3 &&
 	    tp->t_softerror)
 		so->so_error = error;
-	else
+	else 
 		tp->t_softerror = error;
 	wakeup((caddr_t) &so->so_timeo);
 	sorwakeup(so);
@@ -378,7 +388,8 @@ tcp_ctlinput(cmd, sa, ip)
 
 	if (cmd == PRC_QUENCH)
 		notify = tcp_quench;
-	else if ((unsigned)cmd > PRC_NCMDS || inetctlerrmap[cmd] == 0)
+	else if (!PRC_IS_REDIRECT(cmd) &&
+		 ((unsigned)cmd > PRC_NCMDS || inetctlerrmap[cmd] == 0))
 		return;
 	if (ip) {
 		th = (struct tcphdr *)((caddr_t)ip + (ip->ip_hl << 2));
