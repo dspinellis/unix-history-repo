@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.15 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,7 +38,6 @@ kmstartup()
 	p->lowpc = ROUNDDOWN(KERNBASE, HISTFRACTION * sizeof(HISTCOUNTER));
 	p->highpc = ROUNDUP((u_long)etext, HISTFRACTION * sizeof(HISTCOUNTER));
 	p->textsize = p->highpc - p->lowpc;
-	p->profrate = profhz;
 	printf("Profiling kernel, textsize=%d [%x..%x]\n",
 	       p->textsize, p->lowpc, p->highpc);
 	ksize = p->textsize / HISTFRACTION;
