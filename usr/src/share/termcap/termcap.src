@@ -14,13 +14,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.64 (Berkeley) %G%
+#	@(#)termcap.src	5.65 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
 # Please e-mail changes to termcap@berkeley.edu or uunet!ucbvax!termcap.
+#
+# << EOH - after reordering, above header lines survive and this line dies >>
 #
 # DESCRIPTION:
 # This file describes capabilities of various terminals, as needed by
