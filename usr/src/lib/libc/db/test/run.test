@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.16 (Berkeley) %G%
+#	@(#)run.test	5.17 (Berkeley) %G%
 #
 
 # db regression tests
@@ -106,10 +106,10 @@ test2()
 # Insert the programs in /bin with their paths as their keys.
 test3()
 {
-	printf "Test 3: btree, hash: small key, big data pairs\n"
+	printf "Test 3: hash: small key, big data pairs\n"
 	rm -f $TMP1
 	(find /bin -type f -print | xargs cat) > $TMP1
-	for type in hash btree; do
+	for type in hash; do
 		rm -f $TMP2 $TMP3
 		for i in `find /bin -type f -print`; do
 			printf "p\nk%s\nD%s\ng\nk%s\n" $i $i $i
@@ -117,9 +117,27 @@ test3()
 		$PROG -o $TMP3 $type $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then :
 		else
-			printf "test3: type %s: failed\n" $type
+			printf "test3: %s: page size %d: failed\n" \
+			    $type $psize
 			exit 1
 		fi
+	done
+	printf "Test 3: btree: small key, big data pairs\n"
+	for psize in 512 16384 65536; do
+		printf "\tpage size %d\n" $psize
+		for type in btree; do
+			rm -f $TMP2 $TMP3
+			for i in `find /bin -type f -print`; do
+				printf "p\nk%s\nD%s\ng\nk%s\n" $i $i $i
+			done > $TMP2
+			$PROG -i psize=$psize -o $TMP3 $type $TMP2
+			if (cmp -s $TMP1 $TMP3) ; then :
+			else
+				printf "test3: %s: page size %d: failed\n" \
+				    $type $psize
+				exit 1
+			fi
+		done
 	done
 	printf "Test 3: recno: big data pairs\n"
 	rm -f $TMP2 $TMP3
@@ -128,12 +146,15 @@ test3()
 		++i;
 		printf("p\nk%d\nD%s\ng\nk%d\n", i, $0, i);
 	}' > $TMP2
-	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then :
-	else
-		printf "test3: type recno: failed\n"
-		exit 1
-	fi
+	for psize in 512 16384 65536; do
+		printf "\tpage size %d\n" $psize
+		$PROG -i psize=$psize -o $TMP3 recno $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then :
+		else
+			printf "test3: recno: page size %d: failed\n" $psize
+			exit 1
+		fi
+	done
 }
 
 # Do random recno entries.
