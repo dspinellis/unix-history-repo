@@ -4,9 +4,16 @@ if [ -d /sys/i386/i386/fpemul ]; then
 	exit
 fi
 
+if [ -d /sys/gpl/fpemul ]; then
+	echo emulator already install.
+	exit
+fi
+
+echo Install new emulator
 patch -d /sys/i386/include < npx_h.diff
 cat files.i386.add >> /sys/i386/conf/files.i386
 cp -r fpemul /sys/i386/i386
 echo ""
 echo Installation completed, please go remake a kernel and boot it to
 echo run the new emulator.
+
