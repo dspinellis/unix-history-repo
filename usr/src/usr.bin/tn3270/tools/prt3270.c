@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prt3270.c	3.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)prt3270.c	3.2 (Berkeley) %G%";
 #endif	/* not lint */
 
 #if defined(unix)
@@ -264,16 +264,16 @@ int	control;				/* this buffer ended block? */
 		putstr("read_modified command\n");
 		break;
 	    case CMD_SNA_READ_MODIFIED:
-		putstr("read_modified command\n");
+		putstr("sna_read_modified command\n");
 		break;
 	    case CMD_SNA_READ_MODIFIED_ALL:
-		putstr("read_modified command\n");
+		putstr("sna_read_modified_all command\n");
 		break;
 	    case CMD_READ_BUFFER:
-		putstr("read_modified command\n");
+		putstr("read_buffer command\n");
 		break;
 	    case CMD_SNA_READ_BUFFER:
-		putstr("read_modified command\n");
+		putstr("sna_read_buffer command\n");
 		break;
 	    default:
 		break;
@@ -559,7 +559,7 @@ int old,
 main()
 {
     int location;
-    int new;
+    char new;
     int c, c1;
 
     memset(Orders, 0, sizeof Orders);
