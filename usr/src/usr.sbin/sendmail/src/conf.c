@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.137 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.138 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2732,7 +2732,7 @@ strtol(nptr, endptr, base)
 **	canonical h_name field.  This tries to work around it.
 */
 
-#ifdef SOLARIS
+#if defined(SOLARIS) && SOLARIS < 204
 
 extern int	h_errno;
 
@@ -2740,7 +2740,7 @@ struct hostent *
 solaris_gethostbyname(name)
 	const char *name;
 {
-# ifdef SOLARIS_2_3
+# if SOLARIS == 203
 	static struct hostent hp;
 	static char buf[1000];
 	extern struct hostent *_switch_gethostbyname_r();
@@ -2759,7 +2759,7 @@ solaris_gethostbyaddr(addr, len, type)
 	int len;
 	int type;
 {
-# ifdef SOLARIS_2_3
+# if SOLARIS == 203
 	static struct hostent hp;
 	static char buf[1000];
 	extern struct hostent *_switch_gethostbyaddr_r();

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.136 (Berkeley) %G%
+ *	@(#)conf.h	8.137 (Berkeley) %G%
  */
 
 /*
@@ -202,7 +202,7 @@ extern int	syslog(int, char *, ...);
 # define LA_TYPE	LA_INT
 
 # ifdef SOLARIS_2_3
-#  define SOLARIS
+#  define SOLARIS		/* for back compat only -- use -DSOLARIS=203 */
 # endif
 
 # ifdef SOLARIS
@@ -211,8 +211,6 @@ extern int	syslog(int, char *, ...);
 #   define __svr4__		/* use all System V Releae 4 defines below */
 #  endif
 #  include <sys/time.h>
-#  define gethostbyname	solaris_gethostbyname	/* get working version */
-#  define gethostbyaddr	solaris_gethostbyaddr	/* get working version */
 #  define GIDSET_T	gid_t
 #  ifndef _PATH_UNIX
 #   define _PATH_UNIX	"/dev/ksyms"
@@ -225,6 +223,10 @@ extern int	syslog(int, char *, ...);
 #  endif
 #  ifndef SYSLOG_BUFSIZE
 #   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
+#  endif
+#  if SOLARIS < 204
+#   define gethostbyname	solaris_gethostbyname	/* get good version */
+#   define gethostbyaddr	solaris_gethostbyaddr	/* get good version */
 #  endif
 
 # else
