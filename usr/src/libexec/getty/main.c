@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,13 +20,17 @@ static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
  * Melbourne getty, June 83, kre.
  */
 
+#define USE_OLD_TTY
+#include <sys/param.h>
+#include <sys/signal.h>
+#include <sys/file.h>
 #include <sgtty.h>
-#include <signal.h>
 #include <ctype.h>
 #include <setjmp.h>
 #include <syslog.h>
-#include <sys/file.h>
+#include <ctype.h>
 #include "gettytab.h"
+#include "pathnames.h"
 
 extern	char **environ;
 
@@ -47,10 +51,9 @@ int	upper;
 int	lower;
 int	digit;
 
-char	hostname[32];
+char	hostname[MAXHOSTNAMELEN];
 char	name[16];
-char	dev[] = "/dev/";
-char	ctty[] = "/dev/console";
+char	dev[] = _PATH_DEV;
 char	ttyn[32];
 char	*portselector();
 char	*ttyname();
@@ -156,6 +159,8 @@ main(argc, argv)
 		dup(1);
 		dup(0);
 		signal(SIGHUP, SIG_DFL);
+		if (ioctl(0, TIOCSCTTY, 0) < 0)
+			 syslog(LOG_ERR, "TIOCSCTTY failed %m");
 	    }
 	}
 
@@ -221,7 +226,7 @@ main(argc, argv)
 			alarm(0);
 			signal(SIGALRM, SIG_DFL);
 			if (name[0] == '-') {
-				puts("login names may not start with '-'.");
+				puts("user names may not start with '-'.");
 				continue;
 			}
 			if (!(upper || lower || digit))
@@ -295,9 +300,9 @@ getname()
 			putf("\r\n");
 			break;
 		}
-		if (c >= 'a' && c <= 'z')
+		if (islower(c))
 			lower++;
-		else if (c >= 'A' && c <= 'Z')
+		else if (isupper(c))
 			upper++;
 		else if (c == ERASE || c == '#' || c == '\b') {
 			if (np > name) {
@@ -319,7 +324,7 @@ getname()
 			prompt();
 			np = name;
 			continue;
-		} else if (c >= '0' && c <= '9')
+		} else if (isdigit(c))
 			digit++;
 		if (IG && (c <= ' ' || c > 0176))
 			continue;
