@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1113,11 +1113,11 @@ cfline(line, f)
 		(void) strcpy(f->f_un.f_forw.f_hname, ++p);
 		hp = gethostbyname(p);
 		if (hp == NULL) {
-			char buf[100];
+			extern int h_errno, h_nerr;
+			extern char **h_errlist;
 
-			(void) sprintf(buf, "unknown host %s", p);
-			errno = 0;
-			logerror(buf);
+			logerror((u_int)h_errno < h_nerr ?
+			    h_errlist[h_errno] : "Unknown error");
 			break;
 		}
 		bzero((char *) &f->f_un.f_forw.f_addr,
