@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk.h	7.6 (Berkeley) %G%
+ *	@(#)pk.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -30,8 +30,10 @@
 
 #define X25_RR                            1   
 #define X25_RNR                           5   
+#define X25_REJECT			  9
 #define X25_RESET                        27 
 #define X25_RESET_CONFIRM                31   
+#define X25_DIAGNOSTIC			241
 
 #define X25_RESTART                     251     
 #define X25_RESTART_CONFIRM		255 
@@ -158,5 +160,7 @@ struct mbuf *pk_template ();
 #define RESET_CONF      10 * MAXSTATES
 #define RESTART         11 * MAXSTATES
 #define RESTART_CONF    12 * MAXSTATES
-#define INVALID_PACKET  13 * MAXSTATES
+#define REJECT          13 * MAXSTATES
+#define DIAGNOSTIC      14 * MAXSTATES
+#define INVALID_PACKET  15 * MAXSTATES
 #define DELETE_PACKET	INVALID_PACKET
