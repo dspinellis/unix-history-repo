@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -128,11 +128,10 @@ alias(a, sendq, aliaslevel, e)
 
 	/* announce delivery to this alias; NORECEIPT bit set later */
 	if (e->e_xfp != NULL)
-	{
 		fprintf(e->e_xfp, "Message delivered to mailing list %s\n",
 			a->q_paddr);
-		e->e_flags |= EF_SENDRECEIPT;
-	}
+	e->e_flags |= EF_SENDRECEIPT;
+	a->q_flags |= QREPORT;
 }
 /*
 **  ALIASLOOKUP -- look up a name in the alias file.
