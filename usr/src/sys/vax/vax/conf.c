@@ -1,4 +1,4 @@
-/*	conf.c	4.8	%G%	*/
+/*	conf.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,6 +126,17 @@ struct bdevsw	bdevsw[] =
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
+
+#ifdef CHAOS
+int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
+#else
+#define	chopen	nodev
+#define	chclose	nodev
+#define	chread	nodev
+#define	chwrite	nodev
+#define	chioctl	nodev
+#define	chreset	nodev
+#endif
 
 #include "ct.h"
 #if NCT > 0
@@ -312,9 +323,10 @@ struct cdevsw	cdevsw[] =
 	dkioctl,	dkstop,		dkreset,	dkchans,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nodev,		0,
-	nodev,		nodev,		nodev,		nodev,		/*19*/
-	nodev,		nodev,		nodev,		0,
-/* 20-24 reserved to local sites */
+	chopen,		chclose,	chread,		chwrite,	/*19*/
+	chioctl,	nulldev,	chreset,	0,
+#define CHAOSDEV 19
+/* 25-29 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*20*/
 	nodev,		nodev,		nodev,		0,
 	0,	
@@ -395,4 +407,7 @@ struct	mba_info mbainfo[] = {
 	MBA0,	PHYSMBA0,	MBA0map,
 	MBA1,	PHYSMBA1,	MBA1map
 };
+#endif
+#ifdef	CHAOS
+int cdevpath = 1 << CHAOSDEV;
 #endif
