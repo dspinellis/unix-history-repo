@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	3.3	%G%	*/
+/*	vfs_vnops.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -93,7 +93,8 @@ register struct file *fp;
 		goto call;
 
 	for(fp=file; fp < &file[NFILE]; fp++)
-		if (fp->f_count && fp->f_inode==ip)
+		if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
+		    (ip->i_mode&IFMT) == (mode&IFMT))
 			return;
 
 call:
