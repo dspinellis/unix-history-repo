@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printsym.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)printsym.c	5.5 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $";
+static char rcsid[] = "$Header: printsym.c,v 1.4 87/04/15 00:23:35 donn Exp $";
 
 /*
  * Printing of symbolic information.
@@ -47,8 +47,8 @@ static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $"
  */
 
 private String clname[] = {
-    "bad use", "constant", "type", "variable", "array", "@dynarray",
-    "@subarray", "fileptr", "record", "field",
+    "bad use", "constant", "type", "variable", "array", "array",
+    "dynarray", "subarray", "fileptr", "record", "field",
     "procedure", "function", "funcvar",
     "ref", "pointer", "file", "set", "range", "label", "withptr",
     "scalar", "string", "program", "improper", "variant",
@@ -253,6 +253,7 @@ Frame frame;
     t = rtype(p->type);
     switch (t->class) {
 	case ARRAY:
+	case OPENARRAY:
 	case DYNARRAY:
 	case SUBARRAY:
 	    t = rtype(t->type);
@@ -415,7 +416,7 @@ Symbol s;
 	printf(" (%s)", symname(s->chain));
     }
     printf("\nblock\t0x%x", s->block);
-    if (s->block->name != nil) {
+    if (s->block != nil and s->block->name != nil) {
 	printf(" (");
 	printname(stdout, s->block);
 	putchar(')');
@@ -428,10 +429,18 @@ Symbol s;
 
 	case VAR:
 	case REF:
-	    if (s->level >= 3) {
-		printf("address\t0x%x\n", s->symvalue.offset);
-	    } else {
-		printf("offset\t%d\n", s->symvalue.offset);
+	    switch (s->storage) {
+		case INREG:
+		    printf("reg\t%d\n", s->symvalue.offset);
+		    break;
+
+		case STK:
+		    printf("offset\t%d\n", s->symvalue.offset);
+		    break;
+
+		case EXT:
+		    printf("address\t0x%x\n", s->symvalue.offset);
+		    break;
 	    }
 	    printf("size\t%d\n", size(s));
 	    break;
@@ -625,7 +634,11 @@ double r;
     extern char *index();
     char buf[256];
 
-    sprintf(buf, "%g", r);
+#   ifdef IRIS
+	sprintf(buf, "%lg", r);
+#   else
+	sprintf(buf, "%g", r);
+#   endif
     if (buf[0] == '.') {
 	printf("0%s", buf);
     } else if (buf[0] == '-' and buf[1] == '.') {

@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: process.c,v 1.5 84/12/26 10:41:37 linton Exp $";
+static char rcsid[] = "$Header: process.c,v 1.4 88/01/10 00:49:31 donn Exp $";
 
 /*
  * Process management.
@@ -55,7 +55,7 @@ Process process;
  * code space into memory.
  */
 
-#define CSIZE 1003       /* size of instruction cache */
+#define CACHESIZE 1003
 
 typedef struct {
     Word addr;
@@ -76,7 +76,7 @@ struct Process {
     short sigcode;		/* extra signal information */
     int exitval;		/* return value from exit() */
     long sigset;		/* bit array of traced signals */
-    CacheWord word[CSIZE];	/* text segment cache */
+    CacheWord word[CACHESIZE];	/* text segment cache */
     Ttyinfo ttyinfo;		/* process' terminal characteristics */
     Address sigstatus;		/* process' handler for current signal */
 };
@@ -105,26 +105,36 @@ private String infile, outfile;
 
 public process_init()
 {
-    register Integer i;
-    Char buf[10];
+    register integer i;
+    char buf[10];
 
     process = &pbuf;
     process->status = (coredump) ? STOPPED : NOTSTARTED;
     setsigtrace();
-    for (i = 0; i < NREG; i++) {
-	sprintf(buf, "$r%d", i);
-	defregname(identname(buf, false), i);
-    }
-#ifdef vax
-    defregname(identname("$ap", true), ARGP);
-#endif
+#   if vax || tahoe
+	for (i = 0; i < NREG; i++) {
+	    sprintf(buf, "$r%d", i);
+	    defregname(identname(buf, false), i);
+	}
+#	ifdef vax
+	    defregname(identname("$ap", true), ARGP);
+#	endif
+#   else
+#       ifdef mc68000
+	    for (i = 0; i < 8; i++) {
+		sprintf(buf, "$d%d", i);
+		defregname(identname(buf, false), i);
+		sprintf(buf, "$a%d", i);
+		defregname(identname(buf, false), i + 8);
+	    }
+#       endif
+#   endif
     defregname(identname("$fp", true), FRP);
     defregname(identname("$sp", true), STKP);
     defregname(identname("$pc", true), PROGCTR);
     if (coredump) {
 	coredump_readin(process->mask, process->reg, process->signo);
 	pc = process->reg[PROGCTR];
-	getsrcpos();
     }
     arginit();
 }
@@ -186,7 +196,7 @@ String infile, outfile;
 	reinit(argv, infile, outfile);
     }
     if (process->status == STOPPED) {
-	pc = 0;
+	pc = CODESTART;
 	setcurfunc(program);
 	if (objsize != 0) {
 	    cond = build(O_EQ, build(O_SYM, pcsym), build(O_LCON, lastaddr()));
@@ -230,8 +240,10 @@ private setsigtrace()
     psigtrace(p, SIGHUP, false);
     psigtrace(p, SIGKILL, false);
     psigtrace(p, SIGALRM, false);
-    psigtrace(p, SIGTSTP, false);
-    psigtrace(p, SIGCONT, false);
+#   ifdef SIGTSTP
+	psigtrace(p, SIGTSTP, false);
+	psigtrace(p, SIGCONT, false);
+#   endif
     psigtrace(p, SIGCHLD, false);
     psigtrace(p, SIGWINCH, false);
 }
@@ -552,13 +564,18 @@ boolean catchbps;
  * This routine does not return.
  */
 
-public printstatus()
+public printstatus ()
 {
     int status;
 
     if (process->status == FINISHED) {
 	exit(0);
     } else {
+	if (runfirst) {
+	    fprintf(stderr, "\nEntering debugger ...\n");
+	    printheading();
+	    init();
+	}
 	setcurfunc(whatblock(pc));
 	getsrcpos();
 	if (process->signo == SIGINT) {
@@ -791,15 +808,8 @@ private write_err()
  * Ptrace interface.
  */
 
-/*
- * This magic macro enables us to look at the process' registers
- * in its user structure.
- */
-
-#define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
-
 #define WMASK           (~(sizeof(Word) - 1))
-#define cachehash(addr) ((unsigned) ((addr >> 2) % CSIZE))
+#define cachehash(addr) ((unsigned) ((addr >> 2) % CACHESIZE))
 
 #define FIRSTSIG        SIGINT
 #define LASTSIG         SIGQUIT
@@ -821,6 +831,14 @@ private write_err()
 #define CONT    7       /* continue stopped process */
 #define SSTEP   9       /* continue for approximately one instruction */
 #define PKILL   8       /* terminate the process */
+
+#ifdef IRIS
+#   define readreg(p, r)	ptrace(10, p->pid, r, 0)
+#   define writereg(p, r, v)	ptrace(11, p->pid, r, v)
+#else
+#   define readreg(p, r)	ptrace(UREAD, p->pid, regloc(r), 0);
+#   define writereg(p, r, v)	ptrace(UWRITE, p->pid, regloc(r), v);
+#endif
 
 /*
  * Start up a new process by forking and exec-ing the
@@ -847,7 +865,11 @@ String outfile;
     }
     fflush(stdout);
     psigtrace(p, SIGTRAP, true);
-    p->pid = vfork();
+#   ifdef IRIS
+	p->pid = fork();
+#   else
+	p->pid = vfork();
+#   endif
     if (p->pid == -1) {
 	panic("can't fork");
     }
@@ -961,6 +983,11 @@ integer signo;
 	pwait(p->pid, &status);
 	sigs_on();
 	getinfo(p, status);
+#	if mc68000 || m68000
+	    if (p->status == STOPPED and p->signo == SIGTRAP) {
+		p->reg[PROGCTR] += 2;
+	    }
+#	endif
 	if (p->status == STOPPED and traceexec and not istraced(p)) {
 	    printf("!! pstep ignored signal %d at 0x%x\n",
 		p->signo, p->reg[PROGCTR]);
@@ -1045,7 +1072,7 @@ private sigs_on()
  * Get process information from user area.
  */
 
-private getinfo(p, status)
+private getinfo (p, status)
 register Process p;
 register int status;
 {
@@ -1061,13 +1088,24 @@ register int status;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
-	p->sigcode = ptrace(UREAD, p->pid, &((struct user *) 0)->u_code, 0);
 	p->exitval = 0;
-	p->mask = ptrace(UREAD, p->pid, regloc(PS), 0);
+#       ifdef IRIS
+	    p->mask = readreg(p, RPS);
+#       else
+	    p->sigcode = ptrace(UREAD, p->pid, &((struct user *)0)->u_code, 0);
+	    p->mask = readreg(p, PS);
+#       endif
 	for (i = 0; i < NREG; i++) {
-	    p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
+	    p->reg[i] = readreg(p, rloc[i]);
 	    p->oreg[i] = p->reg[i];
 	}
+#       ifdef mc68000
+	    if (p->status == STOPPED and p->signo == SIGTRAP and
+		p->reg[PROGCTR] > CODESTART
+	    ) {
+		p->reg[PROGCTR] -= 2;
+	    }
+#       endif
 	savetty(stdout, &(p->ttyinfo));
 	addr = (Address) &(((struct user *) 0)->u_signal[p->signo]);
 	p->sigstatus = (Address) ptrace(UREAD, p->pid, addr, 0);
@@ -1078,7 +1116,7 @@ register int status;
  * Set process's user area information from given process structure.
  */
 
-private setinfo(p, signo)
+private setinfo (p, signo)
 register Process p;
 int signo;
 {
@@ -1094,7 +1132,7 @@ int signo;
     }
     for (i = 0; i < NREG; i++) {
 	if ((r = p->reg[i]) != p->oreg[i]) {
-	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
+	    writereg(p, rloc[i], r);
 	}
     }
     restoretty(stdout, &(p->ttyinfo));
@@ -1112,7 +1150,7 @@ Process p;
 
     r = p->sigstatus;
     if (r != 0 and r != 1) {
-	r += 2;
+	r += FUNCOFFSET;
     }
     return r;
 }
