@@ -1,22 +1,11 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sysline.1	6.4 (Berkeley) %G%
+.\"     @(#)sysline.1	6.5 (Berkeley) %G%
 .\"
-.TH <PROGNAME> <SECTION> ""
-.TH SYSLINE 1 ""
+.TH SYSLINE 1 "%Q"
 .UC 5
 .SH NAME
 sysline \- display system status on status line of a terminal
@@ -147,9 +136,9 @@ will not write on the screen.
 .SH FILES
 .ta 2.4i
 .nf
-/etc/utmp	names of people who are logged in
+/var/run/utmp	names of people who are logged in
 /dev/kmem	contains process table [VAX only]
-/usr/spool/rwho/whod.*	who/uptime information for remote hosts [VAX only]
+/var/spool/rwho/whod.*	who/uptime information for remote hosts [VAX only]
 ${HOME}/.who	information to print on bottom line
 ${HOME}/.syslinelock	when it exists, sysline will not print
 .fi
