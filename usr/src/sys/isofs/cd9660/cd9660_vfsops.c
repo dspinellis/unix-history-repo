@@ -35,7 +35,6 @@
 extern int enodev ();
 
 struct vfsops cd9660_vfsops = {
-	MOUNT_CD9660,
 	cd9660_mount,
 	cd9660_start,
 	cd9660_unmount,
@@ -289,7 +288,7 @@ static iso_mountfs(devvp, mp, p, argp)
 	
 	mp->mnt_data = (qaddr_t)isomp;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = makefstype(MOUNT_CD9660);
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_CD9660;
 	mp->mnt_maxsymlinklen = 0;
 	mp->mnt_flag |= MNT_LOCAL;
 	isomp->im_mountp = mp;
@@ -471,8 +470,6 @@ cd9660_statfs(mp, sbp, p)
 		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
 			(caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
 	}
-	strncpy(&sbp->f_fstypename[0], mp->mnt_op->vfs_name, MFSNAMELEN);
-	sbp->f_fstypename[MFSNAMELEN] = '\0';
 	/* Use the first spare for flags: */
 	sbp->f_spare[0] = isomp->im_flags;
 	return 0;
