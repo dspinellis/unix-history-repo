@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)_exit.2	6.3 (Berkeley) %G%
+.\"	@(#)_exit.2	6.4 (Berkeley) %G%
 .\"
 .TH EXIT 2 ""
 .UC 4
@@ -20,7 +20,7 @@ terminates a process with the following consequences:
 .in +5n
 .PP
 All of the descriptors open in the calling process are closed.
-This may entail delays, for example waiting for output to drain;
+This may entail delays, for example, waiting for output to drain;
 a process in this state may not be killed, as it is already dying.
 .PP
 If the parent process of the calling process is executing a

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)creat.2	6.5 (Berkeley) %G%
+.\"	@(#)creat.2	6.6 (Berkeley) %G%
 .\"
 .TH CREAT 2 ""
 .UC 4
@@ -14,7 +14,7 @@ creat \- create a new file
 .B char *name;
 .fi
 .SH DESCRIPTION
-.B "This interface is obsoleted by open(2).
+.B "This interface is made obsolete by open(2).
 .PP
 .I Creat
 creates a new file or prepares to rewrite an existing
@@ -44,7 +44,7 @@ The
 given is arbitrary; it need not allow
 writing.
 This feature has been used in the past by
-programs to construct a simple exclusive locking
+programs to construct a simple, exclusive locking
 mechanism.  It is replaced by the O_EXCL open
 mode, or 
 .IR flock (2)

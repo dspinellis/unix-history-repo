@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)connect.2	6.5 (Berkeley) %G%
+.\"	@(#)connect.2	6.6 (Berkeley) %G%
 .\"
 .TH CONNECT 2 ""
 .UC 5
@@ -85,7 +85,7 @@ The \fIname\fP parameter specifies an area outside
 the process address space.
 .TP 20
 [EINPROGRESS]
-The socket is non-blocking and the
+The socket is non-blocking 
 and the connection cannot
 be completed immediately.
 It is possible to
@@ -95,7 +95,7 @@ for completion by selecting the socket for writing.
 [EALREADY]
 The socket is non-blocking
 and a previous connection attempt
-has not yet completed.
+has not yet been completed.
 .PP
 The following errors are specific to connecting names in the UNIX domain.
 These errors may not apply in future versions of the UNIX IPC domain.
