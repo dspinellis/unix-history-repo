@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,7 +43,8 @@ main()
 	extern int errno;
 	register int n, fd_passwd, fd;
 	struct rlimit rlim;
-	struct stat s1;
+	struct stat s1, s2;
+	FILE *tfp;
 	char *fend, *tend;
 	char buf[8*1024], from[MAXPATHLEN], to[MAXPATHLEN];
 
@@ -77,18 +78,30 @@ main()
 		if (write(fd, buf, n) != n)
 			goto syserr;
 
-	if (n == -1 || close(fd_passwd) || fsync(fd) ||
-	    fstat(fd, &s1) || close(fd)) {
-syserr:		(void)fprintf(stderr, "vipw: %s; ", strerror(errno));
+	if (n == -1 || close(fd_passwd)) {
+syserr:		(void)fprintf(stderr, "vipw: %s: %s; ",
+		    passwd, strerror(errno));
+		stop(1);
+	}
+	if (fsync(fd) || !(tfp = fdopen(fd, "r"))) {
+		(void)fprintf(stderr, "vipw: %s: %s; ",
+		    temp, strerror(errno));
 		stop(1);
 	}
 
 	for (;;) {
+		(void)fstat(fd, &s1);
 		if (edit()) {
 			(void)fprintf(stderr, "vipw: edit failed; ");
 			stop(1);
 		}
-		if (!check(&s1))
+		(void)fstat(fd, &s2);
+		if (s1.st_mtime == s2.st_mtime) {
+			(void)fprintf(stderr, "vipw: no changes made; ");
+			stop(0);
+		}
+		rewind(tfp);
+		if (!check(tfp))
 			break;
 		if (prompt())
 			stop(0);
@@ -120,7 +133,7 @@ syserr:		(void)fprintf(stderr, "vipw: %s; ", strerror(errno));
 	 */
 	(void)setpriority(PRIO_PROCESS, 0, -20);
 	fend = strcpy(from, temp) + strlen(temp);
-	tend = strcpy(to, passwd) + strlen(passwd);
+	tend = strcpy(to, _PATH_PASSWD) + strlen(_PATH_PASSWD);
 	bcopy(".dir", fend, 5);
 	bcopy(".dir", tend, 5);
 	if ((fd = open(from, O_RDONLY, 0)) >= 0)
@@ -137,27 +150,14 @@ syserr:		(void)fprintf(stderr, "vipw: %s; ", strerror(errno));
 	exit(0);
 }
 
-check(s1)
-	struct stat *s1;
+check(tfp)
+	FILE *tfp;
 {
 	register long id;
 	register int lcnt, root;
 	register char *p, *sh;
-	struct stat s2;
-	FILE *tfp;
 	long atol();
 	char buf[1024], *getusershell();
-
-	if (!(tfp = fopen(temp, "r")) || fstat(fileno(tfp), &s2) ||
-	    !s2.st_size) {
-		(void)fprintf(stderr, "vipw: can't read temp file; ");
-		stop(1);
-	}
-
-	if (s1->st_mtime == s2.st_mtime) {
-		(void)fprintf(stderr, "vipw: ");
-		stop(0);
-	}
 
 	for (lcnt = 1; fgets(buf, sizeof(buf), tfp); ++lcnt) {
 		/* skip lines that are too big */
