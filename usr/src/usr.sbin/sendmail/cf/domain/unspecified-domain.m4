@@ -7,7 +7,8 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(`@(#)unspecified-domain.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)unspecified-domain.m4	8.2 (Berkeley) %G%')
 errprint(`*** ERROR: You are trying to use the Berkeley sample configuration')
-errprint(`	files outside of Berkeley.  The files must be customized')
-errprint(`	for your environment.')
+errprint(`	files outside of the Computer Science Division at Berkeley.')
+errprint(`	The configuration (.mc) files must be customized to reference')
+errprint(`	domain files appropriate for your environment.')
