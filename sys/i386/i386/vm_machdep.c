@@ -38,7 +38,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.20 1994/04/20 07:06:20 davidg Exp $
+ *	$Id: vm_machdep.c,v 1.21 1994/04/25 23:48:20 davidg Exp $
  */
 
 #include "npx.h"
@@ -458,8 +458,6 @@ vm_bounce_free(bp)
 	return;
 }
 
-#endif /* NOBOUNCE */
-
 /*
  * init the bounce buffer system
  */
@@ -471,7 +469,6 @@ vm_bounce_init()
 	io_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr, MAXBKVA * NBPG, FALSE);
 	kvasfreecnt = 0;
 
-#ifndef NOBOUNCE
 	if (bouncepages == 0)
 		return;
 	
@@ -487,9 +484,10 @@ vm_bounce_init()
 	bouncepa = pmap_kextract((vm_offset_t) bouncememory);
 	bouncepaend = bouncepa + bouncepages * NBPG;
 	bouncefree = bouncepages;
-#endif
 
 }
+
+#endif /* NOBOUNCE */
 
 
 static void
@@ -637,7 +635,11 @@ insert:
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
+#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
+#else
+			kvanew = NULL;
+#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
@@ -650,7 +652,9 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
+#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
+#endif
 					goto nocluster;
 				}
 
@@ -699,7 +703,9 @@ insert:
 				/*
 				 * free the old kva
 				 */
+3ifndef NOBOUNCE
 				vm_bounce_kva_free( orig1begin, ap->b_bufsize, 0);
+#endif
 				--clstats[ap->b_bcount/PAGE_SIZE];
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
@@ -741,7 +747,11 @@ insert:
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
+#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
+#else
+			kvanew = NULL;
+#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
@@ -756,7 +766,9 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
+#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
+#endif
 					goto nocluster;
 				}
 
@@ -794,7 +806,9 @@ insert:
 
 				cldiskvamerge( kvanew, orig1begin, orig1pages, orig2begin, orig2pages);
 				ap = ap->av_forw;
+#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig2begin, ap->b_bufsize, 0);
+#endif
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
 				bp->av_forw = ap->b_clusterf;
