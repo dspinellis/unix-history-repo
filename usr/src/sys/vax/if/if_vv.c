@@ -1,4 +1,4 @@
-/*	if_vv.c	6.4	84/01/03	*/
+/*	if_vv.c	6.5	84/06/07	*/
 
 #include "vv.h"
 
@@ -51,18 +51,19 @@
 #define	VVMTU	(1024+512)
 #define VVMRU	(1024+512+16)	/* space for trailer */
 
-int vv_tracehdr = 0,		/* 1 => trace headers (slowly!!) */
-    vv_logreaderrors = 1;	/* 1 => log all read errors */
+int	vv_tracehdr = 0;	/* 1 => trace headers (slowly!!) */
+int	vv_logreaderrors = 1;	/* 1 => log all read errors */
 
 #define vvtracehdr	if (vv_tracehdr) vvprt_hdr
 
-int	vvprobe(), vvattach(), vvrint(), vvxint(), vvwatchdog();
+int	vvprobe(), vvattach(), vvreset(), vvinit();
+int	vvidentify(), vvstart(), vvxint(), vvwatchdog();
+int	vvrint(), vvoutput(), vvioctl(), vvsetaddr();
 struct	uba_device *vvinfo[NVV];
 u_short vvstd[] = { 0 };
 struct	uba_driver vvdriver =
 	{ vvprobe, 0, vvattach, 0, vvstd, "vv", vvinfo };
 #define	VVUNIT(x)	minor(x)
-int	vvinit(),vvioctl(),vvoutput(),vvreset(),vvsetaddr();
 
 /*
  * Software status of each interface.
@@ -93,11 +94,12 @@ vvprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;
-	register struct vvreg *addr = (struct vvreg *)reg;
+	register struct vvreg *addr;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 #endif
+	addr = (struct vvreg *)reg;
 	/* reset interface, enable, and wait till dust settles */
 	addr->vvicsr = VV_RST;
 	addr->vvocsr = VV_RST;
@@ -170,8 +172,8 @@ vvinit(unit)
 	register struct vv_softc *vs;
 	register struct uba_device *ui;
 	register struct vvreg *addr;
-	struct sockaddr_in *sin;
-	int ubainfo, s;
+	register struct sockaddr_in *sin;
+	register int ubainfo, s;
 
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
@@ -236,9 +238,9 @@ vvidentify(unit)
 	register struct vv_softc *vs;
 	register struct uba_device *ui;
 	register struct vvreg *addr;
-	struct mbuf *m;
-	struct vv_header *v;
-	int ubainfo, attempts, waitcount;
+	register struct mbuf *m;
+	register struct vv_header *v;
+	register int ubainfo, attempts, waitcount;
 
 	/*
 	 * Build a multicast message to identify our address
@@ -336,13 +338,13 @@ retry:
 vvstart(dev)
 	dev_t dev;
 {
-        int unit = VVUNIT(dev);
-	struct uba_device *ui;
+	register struct uba_device *ui;
 	register struct vv_softc *vs;
 	register struct vvreg *addr;
-	struct mbuf *m;
-	int ubainfo, dest, s;
+	register struct mbuf *m;
+	register int unit, ubainfo, dest, s;
 
+	unit = VVUNIT(dev);
 	ui = vvinfo[unit];
 	vs = &vv_softc[unit];
 	if (vs->vs_oactive)
@@ -468,16 +470,16 @@ vvrint(unit)
 	int unit;
 {
 	register struct vv_softc *vs;
-	struct vvreg *addr;
+	register struct vvreg *addr;
 	register struct vv_header *vv;
 	register struct ifqueue *inq;
-	struct mbuf *m;
+	register struct mbuf *m;
 	int ubainfo, len, off, s;
 	short resid;
 
 	vs = &vv_softc[unit];
-	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 	vs->vs_if.if_ipackets++;
+	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 	/*
 	 * Purge BDP; drop if input error indicated.
 	 */
@@ -612,10 +614,38 @@ vvoutput(ifp, m0, dst)
 	struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	register struct mbuf *m = m0;
+	register struct mbuf *m;
 	register struct vv_header *vv;
 	register int off;
-	int type, dest, s, error;
+	register int unit;
+	register struct vvreg *addr;
+	register struct vv_softc *vs;
+	register int s;
+	int type, dest, error;
+
+	m = m0;
+	unit = ifp->if_unit;
+	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
+	vs = &vv_softc[unit];
+	/*
+	 * Check to see if the input side has wedged.
+	 *
+	 * We are lower than device ipl when we enter this routine,
+	 * so if the interface is ready with an input packet then
+	 * an input interrupt must have slipped through the cracks.
+	 *
+	 * Avoid the race with an input interrupt by watching to see
+	 * if any packets come in.
+	 */
+	s = vs->vs_if.if_ipackets;
+	if (addr->vvicsr & VV_RDY && s == vs->vs_if.if_ipackets) {
+		if (vs->vs_if.if_flags & IFF_DEBUG)
+			printf("vv%d: lost a receive interrupt, icsr = %b\n",
+			    unit, 0xffff&(addr->vvicsr), VV_IBITS);
+		s = splimp();
+		vvrint(unit);
+		splx(s);
+	}
 
 	switch (dst->sa_family) {
 
@@ -643,8 +673,7 @@ vvoutput(ifp, m0, dst)
 		goto gottype;
 #endif
 	default:
-		printf("vv%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
+		printf("vv%d: can't handle af%d\n", unit, dst->sa_family);
 		error = EAFNOSUPPORT;
 		goto bad;
 	}
@@ -700,8 +729,8 @@ gottype:
 		goto qfull;
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
-	if (vv_softc[ifp->if_unit].vs_oactive == 0)
-		vvstart(ifp->if_unit);
+	if (vs->vs_oactive == 0)
+		vvstart(unit);
 	splx(s);
 	return (0);
 qfull:
@@ -720,8 +749,9 @@ vvioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr;
-	int s, error;
+	register struct ifreq *ifr;
+	register int s;
+	int error;
 
 	ifr = (struct ifreq *)data;
 	error = 0;
@@ -729,19 +759,20 @@ vvioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		/* too difficult to change address while running */
-		if ((ifp->if_flags & IFF_RUNNING) == 0) {
-			vvsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		vvsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, RTF_UP);
+		else
 			vvinit(ifp->if_unit);
-		} else
-			error = EINVAL;
 		break;
 
 	default:
 		error = EINVAL;
 	}
 	splx(s);
-	return (error);
+	return(error);
 }
 
 /*
