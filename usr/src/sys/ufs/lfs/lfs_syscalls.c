@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.2 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -110,7 +110,7 @@ lfs_markv(p, uap, retval)
 	for (; cnt--; ++inop) {
 		LFS_IENTRY(ifp, fs, inop->ii_inode, bp);
 		daddr = ifp->if_daddr;
-		brelse(bp);
+		LFS_IRELEASE(fs, bp);
 		if (daddr != inop->ii_daddr)
 			continue;
 		/*
@@ -208,12 +208,12 @@ lfs_segclean(p, uap, retval)
 
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
 	sup->su_flags &= ~SEGUSE_DIRTY;
-	brelse(bp);
+	LFS_IWRITE(fs, bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	++cip->clean;
 	--cip->dirty;
-	brelse(bp);
+	LFS_IWRITE(fs, bp);
 
 	return (0);
 }
