@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -404,77 +404,7 @@ union_open(ap)
 		 */
 		tvp = un->un_lowervp;
 		if ((ap->a_mode & FWRITE) && (tvp->v_type == VREG)) {
-			struct vnode *vp;
-			int i;
-
-			/*
-			 * Open the named file in the upper layer.  Note that
-			 * the file may have come into existence *since* the
-			 * lookup was done, since the upper layer may really
-			 * be a loopback mount of some other filesystem...
-			 * so open the file with exclusive create and barf if
-			 * it already exists.
-			 * XXX - perhaps should re-lookup the node (once more
-			 * with feeling) and simply open that.  Who knows.
-			 */
-			error = union_vn_create(&vp, un, p);
-			if (error)
-				return (error);
-
-			/* at this point, uppervp is locked */
-			union_newupper(un, vp);
-			un->un_flags |= UN_ULOCK;
-
-			/*
-			 * Now, if the file is being opened with truncation,
-			 * then the (new) upper vnode is ready to fly,
-			 * otherwise the data from the lower vnode must be
-			 * copied to the upper layer first.  This only works
-			 * for regular files (check is made above).
-			 */
-			if ((mode & O_TRUNC) == 0) {
-				/*
-				 * XXX - should not ignore errors
-				 * from VOP_CLOSE
-				 */
-				VOP_LOCK(tvp);
-				error = VOP_OPEN(tvp, FREAD, cred, p);
-				if (error == 0) {
-					error = union_copyfile(p, cred,
-						       tvp, un->un_uppervp);
-					VOP_UNLOCK(tvp);
-					(void) VOP_CLOSE(tvp, FREAD);
-				} else {
-					VOP_UNLOCK(tvp);
-				}
-
-#ifdef UNION_DIAGNOSTIC
-				if (!error)
-					uprintf("union: copied up %s\n",
-								un->un_path);
-#endif
-			}
-
-			un->un_flags &= ~UN_ULOCK;
-			VOP_UNLOCK(un->un_uppervp);
-			union_vn_close(un->un_uppervp, FWRITE, cred, p);
-			VOP_LOCK(un->un_uppervp);
-			un->un_flags |= UN_ULOCK;
-
-			/*
-			 * Subsequent IOs will go to the top layer, so
-			 * call close on the lower vnode and open on the
-			 * upper vnode to ensure that the filesystem keeps
-			 * its references counts right.  This doesn't do
-			 * the right thing with (cred) and (FREAD) though.
-			 * Ignoring error returns is not righ, either.
-			 */
-			for (i = 0; i < un->un_openl; i++) {
-				(void) VOP_CLOSE(tvp, FREAD);
-				(void) VOP_OPEN(un->un_uppervp, FREAD, cred, p);
-			}
-			un->un_openl = 0;
-
+			error = union_copyup(un, (mode&O_TRUNC) == 0, cred, p);
 			if (error == 0)
 				error = VOP_OPEN(un->un_uppervp, mode, cred, p);
 			return (error);
@@ -919,30 +849,49 @@ union_link(ap)
 		struct componentname *a_cnp;
 	} */ *ap;
 {
-	int error;
-	struct union_node *dun = VTOUNION(ap->a_vp);
-	struct union_node *un = VTOUNION(ap->a_tdvp);
+	int error = 0;
+	struct union_node *un;
+	struct vnode *vp;
+	struct vnode *tdvp;
 
-	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
-		struct vnode *dvp = dun->un_uppervp;
-		struct vnode *vp = un->un_uppervp;
+	un = VTOUNION(ap->a_vp);
 
-		FIXUP(dun);
-		VREF(dvp);
-		dun->un_flags |= UN_KLOCK;
-		vput(ap->a_vp);
-
-		error = VOP_LINK(dvp, vp, ap->a_cnp);
+	if (ap->a_vp->v_op != ap->a_tdvp->v_op) {
+		tdvp = ap->a_tdvp;
 	} else {
-		/*
-		 * XXX: perhaps could copy to upper layer
-		 * and do the link there.
-		 */
-		vput(ap->a_vp);
-		error = EROFS;
+		struct union_node *tdun = VTOUNION(ap->a_tdvp);
+		if (tdun->un_uppervp == NULLVP) {
+			VOP_LOCK(ap->a_tdvp);
+			if (un->un_uppervp == tdun->un_dirvp) {
+				un->un_flags &= ~UN_ULOCK;
+				VOP_UNLOCK(un->un_uppervp);
+			}
+			error = union_copyup(tdun, 1, ap->a_cnp->cn_cred,
+						ap->a_cnp->cn_proc);
+			if (un->un_uppervp == tdun->un_dirvp) {
+				VOP_LOCK(un->un_uppervp);
+				un->un_flags |= UN_ULOCK;
+			}
+			VOP_UNLOCK(ap->a_tdvp);
+		}
+		tdvp = tdun->un_uppervp;
 	}
 
-	return (error);
+	vp = un->un_uppervp;
+	if (vp == NULLVP)
+		error = EROFS;
+
+	if (error) {
+		vput(ap->a_vp);
+		return (error);
+	}
+
+	FIXUP(un);
+	VREF(vp);
+	un->un_flags |= UN_KLOCK;
+	vput(ap->a_vp);
+
+	return (VOP_LINK(vp, tdvp, ap->a_cnp));
 }
 
 int
