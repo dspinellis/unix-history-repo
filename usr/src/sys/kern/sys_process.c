@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.25 (Berkeley) %G%
+ *	@(#)sys_process.c	7.26 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -253,8 +253,7 @@ profil(p, uap, retval)
 	upp->pr_size = uap->bufsize;
 	upp->pr_off = uap->pcoffset;
 	upp->pr_scale = uap->pcscale;
-#ifdef PROFTIMER
-	initprofclock();
-#endif
+	if (uap->pcscale)
+		startprofclock(p);
 	return (0);
 }
