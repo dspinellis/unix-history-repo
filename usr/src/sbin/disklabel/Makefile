@@ -1,10 +1,8 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	disklabel
 SRCS=	disklabel.c dkcksum.c
 MAN8=	disklabel.0
-BINGRP=operator
-BINMODE=2550
 CLEANFILES=disklabel.5.0
 
 all: ${PROG} disklabel.5.0 ${MAN8}
