@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.shortnames	2.1	%G%";
+#	"@(#)bibinc.shortnames	2.2	%G%";
 #
 # abbreviated journal names, and other names
 #
@@ -15,13 +15,16 @@ D COMPSUR Computing Surveys
 D I&C Inf. and Control
 D IEEETSE IEEE Trans. on Software Eng.
 D IEEETC IEEE Trans. on Computers
+D IJCIS Int. J. of Computer and Information Sciences
 D IPL Inf. Proc. Letters
 D JACM J. ACM
 D JCSS J. Computer and System Sciences
+D SIAMJC Siam J. on Computing
+D SIAMJNA Siam J. on Numerical Analysis
 D SIGACT S\&IGACT News
 D SIGPLAN SI\&GPLAN Notices
 D SIGSOFT Software Eng. Notes
-D SP&E Software\*(emPractice & Experience
+D SP&E Software\(emPractice & Experience
 D SPE SP&E
 D TODS ACM Trans. Database Systems
 D TOPLAS ACM Trans. Prog. Lang. and Systems
@@ -45,6 +48,7 @@ D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Prin.
 D ICSE Int. CONF on Software Eng.
 D IFIPS PROC IF\&IPS
+D HICSS Hawaii Inter. CONF on System Science
 #
 #  publishers
 #
@@ -73,7 +77,7 @@ D DIV Div.
 D UNIV Univ.
 D UA The UNIV of Arizona
 D TR Tech. Rep.
-D UATR TR
+D UATR UA TR
 D DCS DEPT of Computer Science
 D UADCS DCS, UA
 D DCSUA DCS, UA
