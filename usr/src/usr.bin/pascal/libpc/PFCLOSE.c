@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)PFCLOSE.c	1.2	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)PFCLOSE.c	1.3	(Berkeley)	%G%";
 
 /*
  * Close a Pascal file deallocating resources as appropriate.
@@ -10,8 +10,9 @@ static	char sccsid[] = "@(#)PFCLOSE.c	1.2	(Berkeley)	%G%";
 #include "libpc.h"
 
 struct iorec *
-PFCLOSE(filep)
+PFCLOSE(filep, lastuse)
 	register struct iorec *filep;
+	bool lastuse;
 {
 	if ((filep->funit & FDEF) == 0 && filep->fbuf != NULL) {
 		/*
@@ -29,7 +30,8 @@ PFCLOSE(filep)
 		/*
 		 * Temporary files are discarded.
 		 */
-		if ((filep->funit & TEMP) != 0 && unlink(filep->pfname)) {
+		if ((filep->funit & TEMP) != 0 && lastuse &&
+		    unlink(filep->pfname)) {
 			PERROR("Could not remove ", filep->pfname);
 			return;
 		}

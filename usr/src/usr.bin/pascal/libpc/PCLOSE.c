@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCLOSE.c 1.5 %G%";
+static char sccsid[] = "@(#)PCLOSE.c 1.6 %G%";
 
 /*
  * Close all files associated with the topmost stack frame.
@@ -17,7 +17,7 @@ PCLOSE(level)
 
 	next = _fchain.fchain;
 	while(next != FILNIL && next->flev <= level) {
-		next = PFCLOSE(next);
+		next = PFCLOSE(next, TRUE);
 	}
 	_fchain.fchain = next;
 }

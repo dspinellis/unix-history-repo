@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.9 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.10 %G%";
 
 #include "h00vars.h"
 #include "libpc.h"
@@ -36,7 +36,7 @@ GETNAME(filep, name, namlim, datasize)
 		/* 
 		 * Close and immediately reactivate the file.
 		 */
-		PFCLOSE(filep);
+		PFCLOSE(filep, name != NULL);
 		_actfile[filep->fblk] = filep;
 		filep->funit &= (TEMP | FTEXT);
 	} else {
