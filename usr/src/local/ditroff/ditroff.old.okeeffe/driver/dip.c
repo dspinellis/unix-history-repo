@@ -1,4 +1,4 @@
-/*	dip.c	1.5	(Berkeley)	83/12/18
+/*	dip.c	1.6	(Berkeley)	84/01/03
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -899,7 +899,7 @@ int s;
 	fs->glyph = (glyph_dir *)	/* allocate first */
 		((char *) malloc((p.p_last - p.p_first + 1) * sizeof(glyph_dir))
 		- (char *) (p.p_first * sizeof(glyph_dir)));
-	mingp = maxgp = gp = fs->glyph;
+	mingp = maxgp = gp = &(fs->glyph[p.p_first]);
 	for (i = p.p_first; i++ <= p.p_last; gp++) {
 	    gp->g_height = rd2(fd);
 	    gp->g_width = rd2(fd);
