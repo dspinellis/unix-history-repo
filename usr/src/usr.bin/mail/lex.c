@@ -8,7 +8,9 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.3 %G%";
+static char *SccsId = "@(#)lex.c	2.4 %G%";
+
+char	*prompt = "& ";
 
 /*
  * Set up editing on the given file name.
@@ -97,7 +99,7 @@ int	*msgvec;
 
 commands()
 {
-	int eofloop, prompt, firstsw, stop();
+	int eofloop, shudprompt, firstsw, stop();
 	register int n;
 	char linebuf[LINESIZE];
 	int hangup(), contin();
@@ -111,9 +113,9 @@ commands()
 			sigset(SIGHUP, hangup);
 	}
 	input = stdin;
-	prompt = 1;
+	shudprompt = 1;
 	if (!intty)
-		prompt = 0;
+		shudprompt = 0;
 	firstsw = 1;
 	for (;;) {
 		setexit();
@@ -145,9 +147,9 @@ commands()
 			return;
 		eofloop = 0;
 top:
-		if (prompt && !sourcing) {
+		if (shudprompt && !sourcing) {
 			sigrelse(SIGCONT);
-			printf("_\r");
+			printf(prompt);
 		}
 		flush();
 		sreset();
@@ -166,7 +168,7 @@ top:
 					unstack();
 					goto more;
 				}
-				if (value("ignoreeof") != NOSTR && prompt) {
+				if (value("ignoreeof") != NOSTR && shudprompt) {
 					if (++eofloop < 25) {
 						printf("Use \"quit\" to quit.\n");
 						goto top;
@@ -406,7 +408,7 @@ execute(linebuf, contxt)
 contin(s)
 {
 
-	printf("_\r");
+	printf(prompt);
 	fflush(stdout);
 }
 
