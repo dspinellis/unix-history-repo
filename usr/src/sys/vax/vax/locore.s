@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.4	%H%
+#	locore.s		3.5	%H%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -347,6 +347,8 @@ ubapass:
 	.data
 	.globl	_zvcnt
 _zvcnt:	.space	4
+	.globl	_dzdcnt
+_dzdcnt:.space	4
 	.text
 
 #
@@ -366,6 +368,7 @@ dzploop:
 	movzbl	1(r1),r2		# get line number
 	bitb	$0x80,r2		# TRDY on?
 	beql	dzprei			# no	
+	incl	_dzdcnt		## loop trips
 	bicb2	$0xf8,r2		# clear garbage bits
 	mull2	$20,r2
 	addl2	r2,r0			# point at line's pdma structure
