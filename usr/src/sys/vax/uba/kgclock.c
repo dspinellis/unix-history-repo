@@ -1,4 +1,4 @@
-/*	kgclock.c	6.1	83/07/29	*/
+/*	kgclock.c	6.2	84/08/20	*/
 
 #include "kg.h"
 #if NKG > 0
@@ -30,6 +30,8 @@ struct klregs {
 #define	KLSTRT	0300		/* intr enbl + done */
 struct	klregs *klbase;
 
+int	usekgclock = 1;		/* if zero, kgclock is disabled */
+
 kgprobe(reg)
 	caddr_t reg;
 {
@@ -54,7 +56,7 @@ kgattach(ui)
 startkgclock()
 {
 
-	if (klbase)
+	if (klbase && usekgclock && phz == 0)
 		klbase->tcsr = KLSTRT;	/* enable interrupts */
 }
 
@@ -67,6 +69,11 @@ kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)
 	static long otime;
 	static long calibrate;
 
+	if (usekgclock == 0) {
+		phz = 0;
+		otime = 0;
+		return;
+	}
 	klbase->tbuf = 0377;	/* reprime clock (scope sync too) */
 	if (phz == 0) {
 		if (otime == 0) {
