@@ -1,4 +1,4 @@
-/*	inode.h	6.1	83/07/29	*/
+/*	inode.h	6.2	84/02/15	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -125,6 +125,7 @@ ino_t	dirpref();
 #define	ISHLOCK		0x80		/* file has shared lock */
 #define	IEXLOCK		0x100		/* file has exclusive lock */
 #define	ILWAIT		0x200		/* someone waiting on file lock */
+#define	IMOD		0x400		/* inode has been modified */
 
 /* modes */
 #define	IFMT		0170000		/* type of file */
@@ -159,6 +160,20 @@ ino_t	dirpref();
 }
 
 #define	IUPDAT(ip, t1, t2, waitfor) { \
-	if (ip->i_flag&(IUPD|IACC|ICHG)) \
+	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) \
 		iupdat(ip, t1, t2, waitfor); \
 }
+
+#define	ITIMES(ip, t1, t2) { \
+	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
+		(ip)->i_flag |= IMOD; \
+		if ((ip)->i_flag&IACC) \
+			(ip)->i_atime = (t1)->tv_sec; \
+		if ((ip)->i_flag&IUPD) \
+			(ip)->i_mtime = (t2)->tv_sec; \
+		if ((ip)->i_flag&ICHG) \
+			(ip)->i_ctime = time.tv_sec; \
+		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
+	} \
+}
+
