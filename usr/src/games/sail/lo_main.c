@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lo_main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lo_main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)lo_main.c	5.3 (Berkeley) %G%";
  *
  * -l force a long listing (print out real usernames)
  */
+#include <sys/types.h>
 #include <pwd.h>
 #include "externs.h"
 
