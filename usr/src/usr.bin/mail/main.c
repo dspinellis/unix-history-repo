@@ -9,7 +9,9 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.4 %G%";
+static char *SccsId = "@(#)main.c	2.5 %G%";
+
+jmp_buf	hdrjmp;
 
 /*
  * Find out who the user is, copy his mail file (if exists) into
@@ -27,7 +29,7 @@ main(argc, argv)
 {
 	register char *ef;
 	register int i, argp;
-	int mustsend, uflag;
+	int mustsend, uflag, hdrstop(), (*prevint)();
 	FILE *ibuf, *ftat;
 	extern char _sobuf[];
 	struct sgttyb tbuf;
@@ -116,7 +118,7 @@ main(argc, argv)
 			 */
 			uflag++;
 			if (i >= argc - 1) {
-				fprintf(stderr, "You obviously dont know what you're doing\n");
+				fprintf(stderr, "Missing user name for -u\n");
 				exit(1);
 			}
 			strcpy(myname, argv[i+1]);
@@ -207,13 +209,6 @@ main(argc, argv)
 	 * Check for inconsistent arguments.
 	 */
 
-	if (rflag != NOSTR && strcmp(rflag, "daemon") == 0) {
-		ftat = fopen("/crp/kas/gotcha", "a");
-		if (ftat != NULL) {
-			fprintf(ftat, "user daemon, real uid %d\n", getuid());
-			fclose(ftat);
-		}
-	}
 	if (ef != NOSTR && argp != -1) {
 		fprintf(stderr, "Cannot give -f and people to send to.\n");
 		exit(1);
@@ -223,8 +218,12 @@ main(argc, argv)
 		exit(1);
 	}
 	tinit();
+	input = stdin;
+	rcvmode = argp == -1;
+	if (!nosrc)
+		load(MASTER);
+	load(mailrc);
 	if (argp != -1) {
-		commands();
 		mail(&argv[argp]);
 
 		/*
@@ -240,13 +239,30 @@ main(argc, argv)
 	 * the system mailbox, and open up the right stuff.
 	 */
 
-	rcvmode++;
 	if (ef != NOSTR) {
+		char *ename;
+
 		edit++;
+		ename = expand(ef);
+		if (ename != ef) {
+			ef = (char *) calloc(1, strlen(ename) + 1);
+			strcpy(ef, ename);
+		}
 		editfile = mailname = ef;
 	}
 	if (setfile(mailname, edit) < 0)
 		exit(1);
+	if (!edit && !noheader && value("noheader") == NOSTR) {
+		if (setjmp(hdrjmp) == 0) {
+			if ((prevint = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
+				sigset(SIGINT, hdrstop);
+			announce();
+			fflush(stdout);
+			sigset(SIGINT, prevint);
+		}
+	}
+	if (edit)
+		newfileinfo();
 	if (!edit && msgCount == 0) {
 		printf("No mail\n");
 		fflush(stdout);
@@ -260,4 +276,17 @@ main(argc, argv)
 		quit();
 	}
 	exit(0);
+}
+
+/*
+ * Interrupt printing of the headers.
+ */
+hdrstop()
+{
+
+	clrbuf(stdout);
+	printf("\nInterrupt\n");
+	fflush(stdout);
+	sigrelse(SIGINT);
+	longjmp(hdrjmp, 1);
 }
