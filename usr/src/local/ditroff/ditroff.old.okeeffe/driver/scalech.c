@@ -1,4 +1,4 @@
-/*	scalech.c	(Berkeley)	1.2	83/12/06
+/*	scalech.c	(Berkeley)	1.3	84/01/04
  *
  * Font scaling for character format fonts.
  *
@@ -15,22 +15,23 @@
 
 
 #define MAXLINE		200
+#define MAXHEIGHT	200
 #define SCALE		50
 
 
 int	width, length, vdest, hdest, code;
-int	refh, spot, start, Bduring, Wduring;
+int	refv, refh, spot, start, Bduring, Wduring;
+int	notfirsttime, build, voffset, hoffset;
 
 int	scale = SCALE;
 FILE *	filep;
-char	ibuff[MAXLINE], ebuff[MAXLINE];
+char	ibuff[MAXHEIGHT][MAXLINE], ebuff[MAXLINE];
 
-unsigned char Black[MAXLINE];	/* arrays to figure new scaled line based */
-unsigned char BtoW[MAXLINE];	/* on various conditions of the changes in */
-unsigned char WtoB[MAXLINE];	/* pixels within lines */
-unsigned char WBW[MAXLINE];
-unsigned char BWB[MAXLINE];
-unsigned char White[MAXLINE];
+unsigned char lastline[MAXLINE];	/* last printed line */
+unsigned char Black[2][MAXLINE];	/* arrays to figure new */
+unsigned char WtoB[2][MAXLINE];		/* scaled line based on */
+unsigned char BtoW[2][MAXLINE];		/* pixels within lines */
+unsigned char White[2][MAXLINE];
 
 
 main(argc,argv)
@@ -67,7 +68,7 @@ char **argv;
 	if (index(ibuff, '\n') == 0)
 	    error("input line too long");
 
-	if (ibuff[0] != ':') {
+	if (ibuff[0][0] != ':') {
 	    sscanf (ibuff, "%s %f", ebuff, &par);
 	    if (strcmp(ebuff, "mag") == 0)
 		printf("mag %d\n", (int) (par * scale / 100 + 0.1));
@@ -84,101 +85,198 @@ char **argv;
 
 	    if (fgets(ibuff, MAXLINE, filep) == NULL)
 		error("unexpected end of input");
-	    width = strlen(ibuff) - 1;
+	    width = strlen(&(ibuff[0][0])) - 1;
+						/* first read in whole glyph */
+	    refh = -1;				/* and put in ibuff */
+	    for (length = 0; *(chp = &(ibuff[length][0])) != '\n'; length++) {
+		for (j = 0; j < width; j++, chp++) {
+		    switch (*chp) {
+			case '@':
+			case '*':
+				*chp = 1;
+				break;
+			case '.':
+				*chp = 0;
+				break;
+			case 'x':
+				*chp = 0;
+				goto mark;
+			case 'X':
+				*chp = 1;
+		mark:		if (refh >= 0)
+				    error ("glyph %d - two reference points",
+									code);
+				refh = j + 1;
+				refv = length;
+				break;
+			default:
+				error("illegal character '%c' in map.", *chp);
+		    }
+		}
+		if (fgets(&(ibuff[length + 1][0]), MAXLINE, filep) == NULL)
+			error("unexpected end of input");
+	    }
+	    if (refh < 0) error("No position point in glyph %d", code);
 
-	    vdest = 1;
-	    refh = -1;
-	    for (length = 1; *(chp = ibuff) != '\n'; length++) {
-		hdest = 0;
+
+	    voffset = (refv * scale) / 100;
+	    hoffset = (refh * scale) / 100;
+	    vdest = 0;
+	    notfirsttime = 0;
+	    for (j = 0; j <= width; j++)
+		Black[build][j] = BtoW[build][j] =
+			WtoB[build][j] = White[build][j] = 0;
+
+	    for (i = 0; i < length; i++) {
+		chp = &(ibuff[i][0]);
+		hdest = 1;
 		start = 0;
 		Bduring = 0;
 		Wduring = 0;
+		White[build][0]++;
 		for (j = 0; j < width; j++, chp++) {
-		    if (hdest != (int) ((j * scale) / 100 + 0.1)) {
-			if (start && !Wduring) Black[hdest]++;
-			if (start && !spot) BtoW[hdest]++;
-			if ((!start) && spot) WtoB[hdest]++;
-			if ((!start) && Bduring && !spot) WBW[hdest]++;
-			if (start && Wduring && spot) BWB[hdest]++;
-			if ((!start) && !Bduring) White[hdest]++;
+		    code = ((j-refh) * scale) / 100 + (j<refh ? 1:2) + hoffset;
+		    if (hdest != code) {
+			if ((start && !Wduring) ||
+			    ((!start)&& Bduring &&!spot)) Black[build][hdest]++;
+			if (start && !spot) BtoW[build][hdest]++;
+			if ((!start) && spot) WtoB[build][hdest]++;
+			if (((!start) && !Bduring) ||
+			    (start && Wduring && spot)) White[build][hdest]++;
 
-			hdest = (j * scale) / 100 + 0.1;
+			hdest = code;
 			start = spot;
 			Bduring = 0;
 			Wduring = 0;
 		    }
-		    spot = 0;
-		    switch (*chp) {
-			case '.':
-				break;
-			case 'X':
-				spot = 1;
-			case 'x':
-				if (refh >= 0)
-				    error ("glyph %d - two reference points",
-									code);
-				refh = hdest;
-				break;
-			case '@':
-			case '*':
-				spot = 1;
-				break;
-			default:
-				error("illegal character '%c' in map.", *chp);
-		    } /* switch */
+
+		    spot = *chp;
 		    Bduring |= spot;
 		    Wduring |= !spot;
 		} /* for j */
 
-		if (start && !Wduring) Black[hdest]++;
-		if (start) BtoW[hdest]++;
-		if ((!start) && Bduring) WBW[hdest]++;
-		if ((!start) && !Bduring) White[hdest]++;
+		if ((start && !Wduring)
+		    || ((!start) && Bduring)) Black[build][hdest]++;
+		if (start) BtoW[build][hdest]++;
+		if ((!start) && !Bduring) White[build][hdest]++;
 
-		if (fgets(ibuff, MAXLINE, filep) == NULL)
-			error("unexpected end of input");
+		code = voffset - (((refv - (i+1))*scale)/100 - (i>=refv ? 1:0));
+		if (code != vdest || i == (length - 1)) {
+		    if (notfirsttime)
+			outline(vdest == (voffset + 1));
+		    else
+			notfirsttime = 1;
+		    vdest = code;
 
-		if (((int) ((length * scale) / 100 + 0.1)) == vdest
-							|| ibuff[0] == '\n') {
-		    i = (width * scale) / 100 + 0.1;
-		    for (j = 0; i-- > 0; j++) {
-			if (Black[j] || WBW[j]) spot = 1;
-			else if (BWB[j]) spot = 0;
-			else if (WtoB[j]) spot = 1;
-			else spot = 0;
-			if (spot)  {
-			    if (j != refh) putchar('@');
-			    else {
-				putchar('X');
-				refh = 2 * width;
-			    }
-			} else {
-			    if (j != refh) putchar('.');
-			    else {
-				putchar('x');
-				refh = 2 * width;
-			    }
-			}
-		    }
-		    putchar('\n');
+		    build = !build;
 		    for (j = 0; j <= width; j++)
-			Black[j] = BtoW[j] = WtoB[j] =
-				WBW[j] = BWB[j] = White[j] = 0;
-		    vdest = (length * scale) / 100 + 1.1;
+			Black[build][j] = BtoW[build][j] =
+				WtoB[build][j] = White[build][j] = 0;
 		}
-	    } /* for length */
-	    if (refh < 0) error("No position point in glyph %d", code);
+	    } /* for i */
+
+	    for (j = 0; j <= width; j++) White[build][j] = 1;
+	    outline(vdest == (voffset + 1));		/* output last line */
 	    putchar('\n');
 	} /* else */
     } /* while */
 }
 
+outline(i)
+register int i;
+{
+	register int set;
+	register int output = !build;
+	register int j;
+	int oldset = 0;
+
+	for (j = 1; j <= hdest; j++) {
+					/* decide whether to put out a '.' */
+					/* or '@' spot for pixel j */
+		set = ((!BtoW[output][j]) << 3) | ((!WtoB[output][j]) << 2) |
+			((!White[output][j]) << 1) | !Black[output][j];
+		switch (set) {
+		case 14:	/* all black */
+		case 11:	/* all white->black */
+		case 10:	/* black and white->black */
+		case  2:	/* everything but all white */
+		    set = 1;
+		    break;
+
+		case 13:	/* all white */
+		case  7:	/* all black->white */
+		case  5:	/* white and black->white */
+		    set = 0;
+		    break;
+
+		case  1:	/* everything but all black */
+		    if (oldset && (Black[output][j+1] || WtoB[output][j+1]))
+			set = 0;
+		    else
+			set = 1;
+		    break;
+
+		case 12:	/* black and white only */
+		case  8:	/* black and white and white->black */
+		case  4:	/* black and white and black->white */
+		    if (Black[build][j])
+			set = !lastline[j];
+		    else
+			set = 1;
+		    break;
+
+		case  6:	/* black and black->white */
+		    if (lastline[j] && !White[build][j])
+			set = 0;
+		    else
+			set = 1;
+		    break;
+
+		case  9:	/* white and white->black */
+		    if ((!lastline[j] && !Black[build][j] && !WtoB[build][j])
+				|| White[output][j+1] || BtoW[output][j+1])
+			set = 1;
+		    else
+			set = 0;
+		    break;
+
+		case 15:	/* none of them */
+		case  3:	/* black->white and white->black */
+		case  0:	/* everything */
+		    if (lastline[j-1] + lastline[j] + lastline[j+1] + oldset +
+			(Black[output][j+1] || WtoB[output][j+1]) + 
+			(Black[build][j-1] || WtoB[build][j-1]) + 
+			(Black[build][j] || WtoB[build][j]) + 
+			(Black[build][j+1] || WtoB[build][j+1]) > 5)
+			set = 0;
+		    else
+			set = 1;
+		    break;
+		}
+
+		if (set)  {
+		    if (!i || j != (hoffset + 1))
+			putchar('@');
+		    else
+			putchar('X');
+		} else {
+		    if (!i || j != (hoffset + 1))
+			putchar('.');
+		    else
+			putchar('x');
+		}
+		lastline[j-1] = oldset;
+		oldset = set;
+	}
+	lastline[j-1] = oldset;
+	putchar('\n');
+}
 
 /*VARARGS1*/
 error(string, a1, a2, a3, a4)
 char *string;
 { 
-	fprintf(stderr, "ch2rst: ");
+	fprintf(stderr, "scalech: ");
 	fprintf(stderr, string, a1, a2, a3, a4);
 	fprintf(stderr, "\n");
 	exit(8);
