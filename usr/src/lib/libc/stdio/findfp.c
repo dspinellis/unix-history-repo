@@ -9,9 +9,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)findfp.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)findfp.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/param.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
@@ -47,10 +48,10 @@ moreglue(n)
 	register FILE *p;
 	static FILE empty;
 
-	g = (struct glue *)malloc(sizeof(*g) + n * sizeof(FILE));
+	g = (struct glue *)malloc(sizeof(*g) + ALIGNBYTES + n * sizeof(FILE));
 	if (g == NULL)
 		return (NULL);
-	p = (FILE *)(g + 1);
+	p = (FILE *)ALIGN(g + 1);
 	g->next = NULL;
 	g->niobs = n;
 	g->iobs = p;
