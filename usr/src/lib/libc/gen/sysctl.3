@@ -1,0 +1,134 @@
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)sysctl.3	6.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt SYSCTL 2
+.Os
+.Sh NAME
+.Nm sysctl
+.Nd get or set kernel state
+.Sh SYNOPSIS
+.Fd #include <sys/sysctl.h>
+.Ft int
+.Fn sysctl "int *name" "u_int namelen" "void *old" "u_int *oldlenp" "void *new" "u_int newlen"
+.Sh DESCRIPTION
+The
+.Fn sysctl
+function retrieves kernel state and allows processes with
+appropriate privilege to set kernel state.
+The state to be set is described using a ``MIB'' style name,
+described in a
+.Fa namelen
+length array of integers pointed to by
+.Fa name .
+The top level names are defined with a CTL_ prefix in
+.Pa <sys/sysctl.h> .
+The next levels down are found in the files given in the ``FILES''
+section of this manual page.
+.Pp
+To retrieve a value,
+.Fa old
+is set to point to a buffer
+into which the requested value is to be placed.
+The length of the buffer is given in the location pointed to by
+.Fa oldlenp .
+The size of the returned value is put in the location pointed to by
+.Fa oldlenp .
+The size of the requested value can be determined by calling 
+.Fn sysctl
+with a NULL parameter for
+.Fa old ;
+the size of the value will be returned in the location pointed to by
+.Fa oldlenp .
+If the old value is not desired,
+.Fa old
+and
+.Fa oldlenp
+can be set to NULL.
+.Pp
+To set a new value,
+.Fa new
+is set to point to a buffer of length
+.Fa newlen
+from which the requested value is to be taken.
+If the setting of a new value is not desired,
+.Fa new
+should be set to NULL and
+.Fa newlen
+set to 0.
+.Pp
+For example, to retrieve the maximum number of processes allowed
+in the system, one would use the follow request:
+.sp
+.Bd -literal -offset indent -compact
+int name[2], len, maxproc;
+
+name[0] = CTL_KERN;
+name[1] = KERN_MAXPROC;
+len = sizeof maxproc;
+sysctl(name, 2, &maxproc, &len, NULL, 0);
+.Ed
+.Sh RETURN VALUES
+If the call to
+.Fn sysctl
+is successful, the length of the old value is returned.
+Otherwise \-1 is returned and
+.Va errno
+is set appropriately.
+.Sh ERRORS
+The following error may be reported:
+.Bl -tag -width Er
+.It Bq Er EFAULT
+The buffer
+.Fa name ,
+.Fa old ,
+.Fa new ,
+or length pointer
+.Fa oldlenp
+contains an invalid address.
+.It Bq Er EINVAL
+The
+.Fa name
+array is less than two or greater than CTL_MAXNAME.
+.It Bq Er EINVAL
+A non-null
+.Fa new
+is given and its specified length in
+.Fa newlen
+is too large or too small.
+.It Bq Er ENOMEM
+The length pointed to by
+.Fa oldlenp
+is too short to hold the requested value.
+.It Bq Er ENOTDIR
+The
+.Fa name
+array specifies an intermediate rather than terminal name.
+.It Bq Er EOPNOTSUPP
+The
+.Fa name
+array specifies a value that is unknown.
+.It Bq Er EPERM
+An attempt is made to set a read-only value.
+.It Bq Er EPERM
+A process without appropriate privilege attempts to set a value.
+.El
+.Sh FILES
+.Bl -tag -width <vm/vm_param.h> -compact
+.It Pa <sys/sysctl.h>
+definitions for top level identifiers and second level kernel
+and hardware identifiers
+.It Pa <sys/socket.h>
+definitions for second level network identifiers
+.It Pa <vm/vm_param.h>
+definitions for second level virtual memory identifiers
+.El
+.Sh SEE ALSO
+.Xr sysctl 8
+.Sh HISTORY
+.Fn sysctl
+first appeared in 4.4BSD.
