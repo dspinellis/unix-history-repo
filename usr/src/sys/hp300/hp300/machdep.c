@@ -11,12 +11,12 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "map.h"
 #include "vm.h"
@@ -45,8 +45,6 @@
 #include "psl.h"
 #include "isr.h"
 #include "../net/netisr.h"
-
-#define RETURN(value)   { u.u_error = (value); return (u.u_error); }
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -561,13 +559,13 @@ sendsig(catcher, sig, mask, code)
 		(void)grow((unsigned)fp);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
-		printf("sendsig: pid %d, sig %d ssp %x usp %x scp %x ft %d\n",
+		printf("sendsig(%d): sig %d ssp %x usp %x scp %x ft %d\n",
 		       p->p_pid, sig, &oonstack, fp, &fp->sf_sc, ft);
 #endif
 	if (useracc((caddr_t)fp, fsize, B_WRITE) == 0) {
 #ifdef DEBUG
 		if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
-			printf("sendsig: pid %d, useracc failed on sig %d\n",
+			printf("sendsig(%d): useracc failed on sig %d\n",
 			       p->p_pid, sig);
 #endif
 		/*
@@ -621,7 +619,7 @@ sendsig(catcher, sig, mask, code)
 		frame->f_stackadj = -1;
 #ifdef DEBUG
 		if (sigdebug & SDB_FOLLOW)
-			printf("sendsig: pid %d, copy out %d of frame %d\n",
+			printf("sendsig(%d): copy out %d of frame %d\n",
 			       p->p_pid,
 			       (ft == FMT9) ? FMT9SIZE :
 			       (ft == FMTA) ? FMTASIZE : FMTBSIZE, ft);
@@ -632,7 +630,7 @@ sendsig(catcher, sig, mask, code)
 	m68881_save(&kfp->sf_state.ss_fpstate);
 #ifdef DEBUG
 	if ((sigdebug & SDB_FPSTATE) && *(char *)&kfp->sf_state.ss_fpstate)
-		printf("sendsig: pid %d, copy out FP state (%x) to %x\n",
+		printf("sendsig(%d): copy out FP state (%x) to %x\n",
 		       p->p_pid, *(u_int *)&kfp->sf_state.ss_fpstate,
 		       &kfp->sf_state.ss_fpstate);
 #endif
@@ -681,8 +679,9 @@ sendsig(catcher, sig, mask, code)
 	frame->f_regs[SP] = (int)fp;
 #ifdef DEBUG
 	if (sigdebug & SDB_FOLLOW)
-		printf("sendsig: pid %d, scp %x, fp %x, sc_ap %x\n",
-		       p->p_pid, kfp->sf_scp, fp, kfp->sf_sc.sc_ap);
+		printf("sendsig(%d): sig %d scp %x fp %x sc_sp %x sc_ap %x\n",
+		       p->p_pid, sig, kfp->sf_scp, fp,
+		       kfp->sf_sc.sc_sp, kfp->sf_sc.sc_ap);
 #endif
 	/*
 	 * User PC is set to signal trampoline code.  The catch is that
@@ -692,7 +691,7 @@ sendsig(catcher, sig, mask, code)
 	frame->f_pc = (int)((struct user *)USRSTACK)->u_pcb.pcb_sigc;
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
-		printf("sendsig: pid %d, sig %d, returns\n",
+		printf("sendsig(%d): sig %d returns\n",
 		       p->p_pid, sig);
 #endif
 	free((caddr_t)kfp, M_TEMP);
@@ -804,14 +803,14 @@ sigreturn(p, uap, retval)
 	flags = fuword((caddr_t)rf);
 #ifdef DEBUG
 	if (sigdebug & SDB_FOLLOW)
-		printf("sigreturn: pid %d, sc_ap %x, flags %x\n",
+		printf("sigreturn(%d): sc_ap %x flags %x\n",
 		       p->p_pid, rf, flags);
 #endif
 	if (flags == 0 || copyin((caddr_t)rf, (caddr_t)&tstate, sizeof tstate))
 		RETURN (EJUSTRETURN);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
-		printf("sigreturn: pid %d, ssp %x usp %x scp %x ft %d\n",
+		printf("sigreturn(%d): ssp %x usp %x scp %x ft %d\n",
 		       p->p_pid, &flags, scp->sc_sp, uap->sigcntxp,
 		       (flags&SS_RTEFRAME) ? tstate.ss_frame.f_format : -1);
 #endif
@@ -847,8 +846,8 @@ sigreturn(p, uap, retval)
 		bcopy((caddr_t)&tstate.ss_frame.F_u, (caddr_t)&frame->F_u, sz);
 #ifdef DEBUG
 		if (sigdebug & SDB_FOLLOW)
-			printf("sigreturn: copy in %d of frame type %d\n",
-			       sz, tstate.ss_frame.f_format);
+			printf("sigreturn(%d): copy in %d of frame type %d\n",
+			       p->p_pid, sz, tstate.ss_frame.f_format);
 #endif
 	}
 #ifdef FPCOPROC
@@ -859,7 +858,7 @@ sigreturn(p, uap, retval)
 		m68881_restore(&tstate.ss_fpstate);
 #ifdef DEBUG
 	if ((sigdebug & SDB_FPSTATE) && *(char *)&tstate.ss_fpstate)
-		printf("sigreturn: pid %d, copied in FP state (%x) at %x\n",
+		printf("sigreturn(%d): copied in FP state (%x) at %x\n",
 		       p->p_pid, *(u_int *)&tstate.ss_fpstate,
 		       &tstate.ss_fpstate);
 #endif
@@ -867,7 +866,7 @@ sigreturn(p, uap, retval)
 #ifdef DEBUG
 	if ((sigdebug & SDB_FOLLOW) ||
 	    ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid))
-		printf("sigreturn: pid %d, returns\n", u.u_procp->p_pid);
+		printf("sigreturn(%d): returns\n", p->p_pid);
 #endif
 	RETURN (EJUSTRETURN);
 }
