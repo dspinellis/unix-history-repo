@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: eval.c,v 1.5 84/12/26 10:39:08 linton Exp $";
@@ -1278,7 +1278,7 @@ Node p;
  * Send a message to the current support person.
  */
 
-ifdef MAINTAINER
+#ifdef MAINTAINER
 static char maintainer[] = MAINTAINER;
 #else
 static char maintainer[] = "";
