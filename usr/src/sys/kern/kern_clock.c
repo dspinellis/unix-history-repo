@@ -1,4 +1,4 @@
-/*	%H%	3.17	kern_clock.c	*/
+/*	%H%	3.18	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,9 @@
 #include "../h/vm.h"
 #include "../h/buf.h"
 #include "../h/text.h"
-#include "../h/limit.h"
+#include "../h/vlimit.h"
+#include "../h/mtpr.h"
+#include "../h/clock.h"
 
 #define	SCHMAG	9/10
 
@@ -162,11 +164,21 @@ out:
 		runrun++;
 	}
 	if (lbolt >= HZ) {
+		extern int hangcnt;
+
 		if (BASEPRI(ps))
 			return;
 		lbolt -= HZ;
 		++time;
 		(void) spl1();
+		/*
+		 * machdep.c:unhang uses hangcnt to make sure uba
+		 * doesn't forget to interrupt (this has been observed).
+		 * This prevents an accumulation of < 5 second uba failures
+		 * from summing to a uba reset.
+		 */
+		if (hangcnt)
+			hangcnt--;
 		runrun++;
 		wakeup((caddr_t)&lbolt);
 		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
