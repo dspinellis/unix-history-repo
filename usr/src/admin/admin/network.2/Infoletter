@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.11 (Berkeley) %G%
+.\"     @(#)Infoletter	1.12 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -135,7 +135,7 @@ Therefore, you should not depend on applications ported to this release
 working unchanged on 4.4BSD.
 We appreciate your help in this debugging effort and look
 forward to hearing from you.
-Please send your comments to net2-bugs@vangogh.Berkeley.EDU.
+Please send your comments to net2-bugs@Berkeley.EDU.
 .PP
 The code in this distribution may be redistributed and used
 in released products.
