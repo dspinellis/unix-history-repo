@@ -1,28 +1,28 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m0	8.1 (Berkeley) %G%
+.\"	@(#)m0	6.3 (Berkeley) %G%
 .\"
 .br
 .rs
 .sp |1.0i
-.ce1000
-.ps12
-.ftB
+.ce 1000
+.ps 12
+.ft B
 \*(Nr\(sl\*(Tr User's Manual
 .sp .2i
-.ftI
-.ps10
+.ft I
+.ps 10
 Joseph F. Ossanna
 (updated for 4.3BSD by Mark Seiden)
-.ftR
+.ft R
 .sp
 Bell Laboratories
 Murray Hill, New Jersey 07974
-.ce0
-.sp2
+.ce 0
+.sp 2
 .ps \n(PS
 .fi
-.ftB
+.ft B
 Introduction
 .pg
 \*(NR and \*(TR are text processors under
@@ -55,7 +55,7 @@ the user to embed input expressly destined for either program.
 \*(NR can prepare output directly for a variety of terminal types and
 is capable of utilizing the full resolution of each terminal.
 .pg
-.ftB
+.ft B
 Usage
 .pg
 The general form of invoking \*(NR (or \*(TR) at \s-1UNIX\s+1 command level is
@@ -73,15 +73,15 @@ The options, which may appear in any order so long as they appear
 before the files, are:
 .sp
 .ta .2i 1.0i
-.ftI
+.ft I
 .bd I 3
 	Option	Effect
 .br
 .bd I
-.ftR
+.ft R
 .ta .3i 1.0i
 .in 1.0i
-.ll-.3i
+.ll -.3i
 .bt
 	\fB\-i\fP	Read standard input after the input files are exhausted.
 .bt
@@ -117,8 +117,8 @@ and will resume after the phototypesetter \s-1START\s+1 button is pressed.
 Only produce output to standard error (from \fBtm\fP requests or
 diagnostics).
 .sp
-.ne 3
-.ftI
+.ne 5
+.ft I
 .bd I 3
 		\*(NR Only
 .br
@@ -145,7 +145,7 @@ Device tabs setting are assumed to be (and input tabs are initially
 set to) every 8 character widths.
 .sp
 .ne 3
-.ftI
+.ft I
 .bd I 3
 		\*(TR Only
 .br
@@ -168,7 +168,7 @@ of the phototypesetter.
 	\fB\-w\fP	Wait until phototypesetter is available, if
 currently busy.
 .ll
-.in0
+.in 0
 .xx
 .pg
 Each option is invoked as a separate argument;
@@ -210,36 +210,38 @@ a Reference Manual keyed to the outline;
 and
 a set of Tutorial Examples.
 Another tutorial is [5].
-.sp.4
+.sp .4
 .ps -1
 .vs -1p
 .pg
-.ftB
+.ft B
 References
 .pg
 .ta .3i
 .in .3i
-.ti0
+.ti 0
 [1]	B. W. Kernighan, L. L. Cherry,
 .ul
 Typesetting Mathematics \(em User's Guide (Second Edition),
 Bell Laboratories.
-.sp.4
-.ti0
+.sp .4
+.ti 0
 [2]	M. E. Lesk,
 .ul
 Tbl \(em A Program to Format Tables,
 Bell Laboratories internal memorandum.
-.sp.4
-.ti0
+.sp .4
+.ti 0
 [3]	Internal on-line documentation (\fIman\fP pages) on \s-1UNIX\s+1.
-.sp.4
-.ti0
+.sp .4
+.ti 0
 [4]	B. W. Kernighan, \fIA TROFF Tutorial\fR,
 Bell Laboratories.
-.sp.4
-.ti0
+.sp .4
+.ti 0
 [5]	Your site may have similar programs for more modern displays.
-.in0
-.ps
-.vs
+.in 0
+.ps 10
+.vs 12
+.ft R
+.bp
