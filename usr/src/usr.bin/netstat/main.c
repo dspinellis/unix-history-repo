@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -350,6 +350,7 @@ use:
 			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, tp->pr_name);
 	}
     }
+    exit(0);
 }
 
 /*
