@@ -1,6 +1,7 @@
-# @(#)Makefile	4.1 %G%
+# @(#)Makefile	4.2 %G%
 OPTIONS=-DLOCALNET=46
 CFLAGS=	-O
+DESTDIR=
 ALL=	htable
 
 all:	htable
@@ -27,4 +28,4 @@ clean:
 	rm -f ${ALL} *.o *.s y.tab.h errs
 
 install:
-	install htable /etc
+	install htable ${DESTDIR}/etc
