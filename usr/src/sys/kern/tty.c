@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.27 (Berkeley) %G%
+ *	@(#)tty.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -283,7 +283,7 @@ ttioctl(tp, com, data, flag)
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
 		   (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0 &&
 		   (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
-			pgsignal(u.u_procp->p_pgrp, SIGTTOU);
+			pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
 			if (error = tsleep((caddr_t)&lbolt, TTOPRI | PCATCH,
 			    ttybg, 0))
 				return (error);
@@ -437,6 +437,13 @@ ttioctl(tp, com, data, flag)
 		}
 		tp->t_iflag = t->c_iflag;
 		tp->t_oflag = t->c_oflag;
+		/*
+		 * Make the EXTPROC bit read only.
+		 */
+		if (tp->t_lflag&EXTPROC)
+			t->c_lflag |= EXTPROC;
+		else
+			t->c_lflag &= ~EXTPROC;
 		tp->t_lflag = t->c_lflag;
 		bcopy(t->c_cc, tp->t_cc, sizeof(t->c_cc));
 		splx(s);
@@ -470,7 +477,7 @@ ttioctl(tp, com, data, flag)
 		if (bcmp((caddr_t)&tp->t_winsize, data,
 		    sizeof (struct winsize))) {
 			tp->t_winsize = *(struct winsize *)data;
-			pgsignal(tp->t_pgrp, SIGWINCH);
+			pgsignal(tp->t_pgrp, SIGWINCH, 1);
 		}
 		break;
 
@@ -821,6 +828,7 @@ ttyinput(c, tp)
 	 */
 	if ((tp->t_state&TS_TYPEN) == 0 && (iflag&ISTRIP))
 		c &= 0177;
+    if ((tp->t_lflag&EXTPROC) == 0) {
 	/*
 	 * Check for literal nexting very first
 	 */
@@ -877,7 +885,7 @@ ttyinput(c, tp)
 			if ((lflag&NOFLSH) == 0)
 				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
-			pgsignal(tp->t_pgrp, SIGTSTP);
+			pgsignal(tp->t_pgrp, SIGTSTP, 1);
 			goto endcase;
 		}
 	}
@@ -914,6 +922,7 @@ ttyinput(c, tp)
 		c = '\r';
 	else if (c == '\n' && iflag&INLCR)
 		c = '\r';
+    }
 	/*
 	 * Non canonical mode, don't process line editing
 	 * characters; check high water mark for wakeup.
@@ -935,6 +944,7 @@ ttyinput(c, tp)
 		}
 		goto endcase;
 	}
+    if ((tp->t_lflag&EXTPROC) == 0) {
 	/*
 	 * From here on down canonical mode character
 	 * processing takes place.
@@ -993,11 +1003,12 @@ ttyinput(c, tp)
 		goto endcase;
 	}
 	if (CCEQ(cc[VINFO], c)) {
-		pgsignal(tp->t_pgrp, SIGINFO);
+		pgsignal(tp->t_pgrp, SIGINFO, 1);
 		if ((lflag&NOKERNINFO) == 0)
 			ttyinfo(tp);
 		goto endcase;
 	}
+    }
 	/*
 	 * Check for input buffer overflow
 	 */
@@ -1087,6 +1098,11 @@ ttyoutput(c, tp)
 	c &= 0377;
 	/*
 	 * Turn tabs to spaces as required
+	 *
+	 * Special case if we have external processing, we don't
+	 * do the tab expansion because we'll probably get it
+	 * wrong.  If tab expansion needs to be done, let it
+	 * happen externally.
 	 */
 	if (c == '\t' && tp->t_oflag&OXTABS ) {
 		register int s;
@@ -1230,7 +1246,7 @@ loop:
 		   (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
 		    u.u_procp->p_flag&SVFORK || u.u_procp->p_pgrp->pg_jobc == 0)
 			return (EIO);
-		pgsignal(u.u_procp->p_pgrp, SIGTTIN);
+		pgsignal(u.u_procp->p_pgrp, SIGTTIN, 1);
 		if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, ttybg, 0))
 			return (error);
 		goto loop;
@@ -1278,7 +1294,7 @@ loop:
 		 * delayed suspend (^Y)
 		 */
 		if (CCEQ(cc[VDSUSP], c) && lflag&ISIG) {
-			pgsignal(tp->t_pgrp, SIGTSTP);
+			pgsignal(tp->t_pgrp, SIGTSTP, 1);
 			if (first) {
 				if (error = tsleep((caddr_t)&lbolt,
 				    TTIPRI | PCATCH, ttybg, 0))
@@ -1402,7 +1418,7 @@ loop:
 	    (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0 &&
 	    (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0 &&
 	     u.u_procp->p_pgrp->pg_jobc) {
-		pgsignal(u.u_procp->p_pgrp, SIGTTOU);
+		pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
 		if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, ttybg, 0))
 			goto out;
 		goto loop;
@@ -1711,7 +1727,7 @@ ttwakeup(tp)
 		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
-		pgsignal(tp->t_pgrp, SIGIO); 
+		pgsignal(tp->t_pgrp, SIGIO, 1); 
 	wakeup((caddr_t)&tp->t_rawq);
 }
 
