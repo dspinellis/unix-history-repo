@@ -1,0 +1,32 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strdup.3	5.1 (Berkeley) %G%
+.\"
+.TH STRDUP 3 ""
+.UC 7
+.SH NAME
+strdup \- save a copy of a string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strdup(const char *str);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Strdup
+allocates sufficient memory for a copy of the string
+.IR str ,
+does the copy, and returns a pointer to it.
+The pointer may subsequently be used as an argument to the function
+.IR free (3).
+.PP
+.I Strdup
+returns NULL if unable to allocate the necessary memory.
+.SH SEE ALSO
+malloc(3)
