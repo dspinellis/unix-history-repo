@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -622,6 +622,24 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 	vap->va_gen = 0;
 	vap->va_flags = 0;
 	np->n_attrstamp = time.tv_sec;
+	/*
+	 * If v_type == VNON it is a new node, so fill in the v_type,
+	 * n_mtime fields. For v_type == VCHR also set the vnode ops
+	 * and v_rdev fields.
+	 */
+	if (vp->v_type == VNON) {
+		vp->v_type = vap->va_type;
+		np->n_mtime = vap->va_mtime.tv_sec;
+		/*
+		 * Handling special files...
+		 * For VCHR, use the nfs_node, but with the nfsv2chr_vnodeops
+		 * that are a mix of nfs and blk vnode ops.
+		 */
+		if (vp->v_type == VCHR) {
+			vp->v_rdev = vap->va_rdev;
+			vp->v_op = &nfsv2chr_vnodeops;
+		}
+	}
 	*dposp = dpos;
 	*mdp = md;
 	if (vaper != NULL) {
@@ -647,7 +665,9 @@ nfs_getattrcache(vp, vap)
 	if ((time.tv_sec-np->n_attrstamp) < NFS_ATTRTIMEO) {
 		nfsstats.attrcache_hits++;
 		bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
-		if ((np->n_flag & NMODIFIED) && (np->n_size > vap->va_size))
+		if ((np->n_flag & NMODIFIED) == 0)
+			np->n_size = vap->va_size;
+		else if (np->n_size > vap->va_size)
 			vap->va_size = np->n_size;
 		return (0);
 	} else {

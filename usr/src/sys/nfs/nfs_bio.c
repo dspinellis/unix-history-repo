@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,15 +95,14 @@ nfs_read(vp, uio, offp, ioflag, cred)
 			goto out;
 		if (error = nfs_getattr(vp, &vattr, cred))
 			goto out;
-		np->n_size = vattr.va_size;
 		np->n_mtime = vattr.va_mtime.tv_sec;
 	} else {
 		if (error = nfs_getattr(vp, &vattr, cred))
 			goto out;
 		if (np->n_mtime != vattr.va_mtime.tv_sec) {
-			if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE))
+			if (error = nfs_blkflush(vp, (daddr_t)0,
+				np->n_size, TRUE))
 				goto out;
-			np->n_size = vattr.va_size;
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		}
 	}
@@ -119,7 +118,7 @@ nfs_read(vp, uio, offp, ioflag, cred)
 			n = diff;
 		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
 		rablock = (lbn+1)*(NFS_BIOSIZE/DEV_BSIZE);
-		if (np->n_lastr+1 == lbn)
+		if (np->n_lastr+1 == lbn && np->n_size > (rablock*DEV_BSIZE))
 			error = breada(vp, bn, NFS_BIOSIZE, rablock, NFS_BIOSIZE,
 				cred, &bp);
 		else
@@ -281,40 +280,51 @@ nfs_blkflush(vp, blkno, size, invalidate)
 {
 	register struct buf *ep;
 	struct buf *dp;
-	daddr_t curblkno, last;
+	daddr_t curblk, nextblk, ecurblk, lastblk;
 	int s, error, allerrors = 0;
-
-	last = blkno + btodb(size);
-	for (curblkno = blkno; curblkno <= last;
-	     curblkno += (NFS_BIOSIZE / DEV_BSIZE)) {
-		dp = BUFHASH(vp, curblkno);
+     
+	/*
+	 * Iterate through each possible hash chain.
+	 */
+	lastblk = blkno + btodb(size+DEV_BSIZE-1) - 1;
+	for (curblk = blkno; curblk <= lastblk; curblk = nextblk) {
+#if RND & (RND-1)
+	        nextblk = ((curblk / RND) + 1) * RND;
+#else
+	        nextblk = ((curblk & ~(RND-1)) + RND);
+#endif
+	        ecurblk = nextblk > lastblk ? lastblk : nextblk - 1;
+	        dp = BUFHASH(vp, curblk);
 loop:
-		for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-			if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
-				continue;
-			if (curblkno != ep->b_blkno)
-				continue;
-			s = splbio();
-			if (ep->b_flags & B_BUSY) {
-				ep->b_flags |= B_WANTED;
-				sleep((caddr_t)ep, PRIBIO+1);
-				splx(s);
-				goto loop;
-			}
-			splx(s);
-			notavail(ep);
-			if (ep->b_flags & B_DELWRI) {
-				ep->b_flags &= ~B_ASYNC;
-				if (error = bwrite(ep))
-					allerrors = error;
-				goto loop;
-			}
+	        for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
+	                if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
+	                        continue;
+	                /* look for overlap */
+	                if (ep->b_bcount == 0 || ep->b_blkno > ecurblk ||
+	                    ep->b_blkno + btodb(ep->b_bcount) <= curblk)
+	                        continue;
+	                s = splbio();
+	                if (ep->b_flags&B_BUSY) {
+	                        ep->b_flags |= B_WANTED;
+	                        sleep((caddr_t)ep, PRIBIO+1);
+	                        splx(s);
+	                        goto loop;
+	                }
+	                if (ep->b_flags & B_DELWRI) {
+	                        splx(s);
+	                        notavail(ep);
+	                        if (error = bwrite(ep))
+	                                allerrors = error;
+	                        goto loop;
+	                }
+	                splx(s);
 			if (invalidate) {
+				notavail(ep);
 				ep->b_flags |= B_INVAL;
 				brelvp(ep);
+				brelse(ep);
 			}
-			brelse(ep);
-		}
+	        }
 	}
 	return (allerrors);
 }
