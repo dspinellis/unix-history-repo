@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)last.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)last.c	4.2 (Berkeley) %G%";
 /*
  * last
  */
@@ -77,7 +77,7 @@ main(ac, av)
 				if (ttnames[i][0] == 0) {
 					strncpy(ttnames[i], bp->ut_line,
 					    sizeof(bp->ut_line));
-					otime = 0;
+					otime = logouts[i];
 					logouts[i] = bp->ut_time;
 					break;
 				}
@@ -109,9 +109,8 @@ main(ac, av)
 				}
 				fflush(stdout);
 			}
-			if (lineq(bp->ut_line, "~") ||
-			    lineq(bp->ut_line, "tty~"))
-				for (i = 0; *ttnames[i] && i < MAXTTYS; i++)
+			if (!strcmp(bp->ut_name, "reboot"))
+				for (i = 0; i < MAXTTYS; i++)
 					logouts[i] = -bp->ut_time;
 		}
 	}
