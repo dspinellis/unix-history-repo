@@ -1,8 +1,14 @@
-(setq SCCS-primFp.l "@(#)primFp.l	1.3	%G%")
 ;  FP interpreter/compiler
 ;  Copyright (c) 1982  Scott B. Baden
 ;  Berkeley, California
+;
+;  Copyright (c) 1982 Regents of the University of California.
+;  All rights reserved.  The Berkeley software License Agreement
+;  specifies the terms and conditions for redistribution.
+;
+(setq SCCS-primFp.l "@(#)primFp.l	5.1 (Berkeley) %G%")
 
+;  FP interpreter/compiler
 (include specials.l)
 (declare (special y_l z_l)
   (localf ok_pair ok_eqpair rpair$ lpair$ trnspz allNulls

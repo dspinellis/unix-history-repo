@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_temp.h	5.1.1.1 (Berkeley) %G%
+ *	@(#)ex_temp.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -70,23 +70,23 @@
  * spends (spent) roughly 30% of its time in the system read routine,
  * this can be a big help.
  */
-bool	hitin2;			/* Last read hit was ibuff2 not ibuff */
-bool	ichang2;		/* Have actually changed ibuff2 */
-bool	ichanged;		/* Have actually changed ibuff */
-short	iblock;			/* Temp file block number of ibuff (or -1) */
-short	iblock2;		/* Temp file block number of ibuff2 (or -1) */
-short	ninbuf;			/* Number useful chars left in input buffer */
-short	nleft;			/* Number usable chars left in output buffer */
-short	oblock;			/* Temp file block number of obuff (or -1) */
+var bool	hitin2;		/* Last read hit was ibuff2 not ibuff */
+var bool	ichang2;	/* Have actually changed ibuff2 */
+var bool	ichanged;	/* Have actually changed ibuff */
+var short	iblock;		/* Temp file block number of ibuff (or -1) */
+var short	iblock2;	/* Temp file block number of ibuff2 (or -1) */
+var short	ninbuf;		/* Number useful chars left in input buffer */
+var short	nleft;		/* Number usable chars left in output buffer */
+var short	oblock;		/* Temp file block number of obuff (or -1) */
 #ifndef VMUNIX
-short	tline;			/* Current temp file ptr */
+var short	tline;		/* Current temp file ptr */
 #else
-int	tline;
+var int	tline;
 #endif
 
-char	ibuff[BUFSIZ];
-char	ibuff2[BUFSIZ];
-char	obuff[BUFSIZ];
+var char	ibuff[BUFSIZ];
+var char	ibuff2[BUFSIZ];
+var char	obuff[BUFSIZ];
 
 /*
  * Structure of the descriptor block which resides
@@ -105,7 +105,7 @@ char	obuff[BUFSIZ];
 /* This definition also appears in expreserve.c... beware */
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
-	short	Uid;
+	int	Uid;
 #ifndef VMUNIX
 	short	Flines;			/* Number of lines in file */
 #else
@@ -113,7 +113,8 @@ struct 	header {
 #endif
 	char	Savedfile[FNSIZE];	/* The current file name */
 	short	Blocks[LBLKS];		/* Blocks where line pointers stashed */
-} H;
+}; 
+var struct 	header H;
 
 #define	uid		H.Uid
 #define	flines		H.Flines

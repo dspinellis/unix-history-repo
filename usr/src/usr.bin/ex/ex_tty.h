@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tty.h	5.1.1.1 (Berkeley) %G%
+ *	@(#)ex_tty.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -32,87 +32,97 @@
  * before the capability to say 12 milliseconds per affected whatever
  * (currently always line).  Capabilities where this makes sense say P*.
  */
-char	tspace[256];		/* Space for capability strings */
-char	*aoftspace;		/* Address of tspace for relocation */
+var	char	tspace[256];	/* Space for capability strings */
+var	char	*aoftspace;	/* Address of tspace for relocation */
 
-char	*AL;			/* P* Add new blank line */
-char	*BC;			/*    Back cursor */
-char	*BT;			/* P  Back tab */
-char	*CD;			/* P* Clear to end of display */
-char	*CE;			/* P  Clear to end of line */
-char	*CL;			/* P* Clear screen */
-char	*CM;			/* P  Cursor motion */
-char	*xCR;			/* P  Carriage return */
-char	*DC;			/* P* Delete character */
-char	*DL;			/* P* Delete line sequence */
-char	*DM;			/*    Delete mode (enter)  */
-char	*DO;			/*    Down line sequence */
-char	*ED;			/*    End delete mode */
-char	*EI;			/*    End insert mode */
-char	*F0,*F1,*F2,*F3,*F4,*F5,*F6,*F7,*F8,*F9;
+var	char	*AL;		/* P* Add new blank line */
+var	char	*AL_PARM;	/* P* Add n new blank lines */
+extern	char	*BC;		/*    Back cursor */
+var	char	*BT;		/* P  Back tab */
+var	char	*CD;		/* P* Clear to end of display */
+var	char	*CE;		/* P  Clear to end of line */
+var	char	*CL;		/* P* Clear screen */
+var	char	*CM;		/* PG Cursor motion */
+var	char	*CS;		/* PG Change scrolling region (vt100) */
+var	char	*xCR;		/* P  Carriage return */
+var	char	*DC;		/* P* Delete character */
+var	char	*DL;		/* P* Delete line sequence */
+var	char	*DL_PARM;	/* P* Delete n lines */
+var	char	*DM;		/*    Delete mode (enter)  */
+var	char	*DO;		/*    Down line sequence */
+var	char	*DOWN_PARM;	/*    Down n lines */
+var	char	*ED;		/*    End delete mode */
+var	char	*EI;		/*    End insert mode */
+var	char	*F0,*F1,*F2,*F3,*F4,*F5,*F6,*F7,*F8,*F9;
 				/*    Strings sent by various function keys */
-char	*HO;			/*    Home cursor */
-char	*IC;			/* P  Insert character */
-char	*IM;			/*    Insert mode (give as ':im=:' if 'ic' */
-char	*IP;			/* P* Insert pad after char ins'd using IM+IE */
-char	*KD;			/*    Keypad down arrow */
-char	*KE;			/*    Keypad don't xmit */
-char	*KH;			/*    Keypad home key */
-char	*KL;			/*    Keypad left arrow */
-char	*KR;			/*    Keypad right arrow */
-char	*KS;			/*    Keypad start xmitting */
-char	*KU;			/*    Keypad up arrow */
-char	*LL;			/*    Quick to last line, column 0 */
-char	*ND;			/*    Non-destructive space */
-char	*xNL;			/*    Line feed (new line) */
-char	PC;			/*    Pad character */
-char	*SE;			/*    Standout end (may leave space) */
-char	*SF;			/* P  Scroll forwards */
-char	*SO;			/*    Stand out begin (may leave space) */
-char	*SR;			/* P  Scroll backwards */
-char	*TA;			/* P  Tab (other than ^I or with padding) */
-char	*TE;			/*    Terminal end sequence */
-char	*TI;			/*    Terminal initial sequence */
-char	*UP;			/*    Upline */
-char	*VB;			/*    Visible bell */
-char	*VE;			/*    Visual end sequence */
-char	*VS;			/*    Visual start sequence */
-bool	AM;			/* Automatic margins */
-bool	BS;			/* Backspace works */
-bool	CA;			/* Cursor addressible */
-bool	DA;			/* Display may be retained above */
-bool	DB;			/* Display may be retained below */
-bool	EO;			/* Can erase overstrikes with ' ' */
-bool	GT;			/* Gtty indicates tabs */
-bool	HC;			/* Hard copy terminal */
-bool	HZ;			/* Hazeltine ~ braindamage */
-bool	IN;			/* Insert-null blessing */
-bool	MI;			/* can move in insert mode */
-bool	NC;			/* No Cr - \r snds \r\n then eats \n (dm2500) */
-bool	NS;			/* No scroll - linefeed at bottom won't scroll */
-bool	OS;			/* Overstrike works */
-bool	UL;			/* Underlining works even though !os */
-bool	XB;			/* Beehive (no escape key, simulate with f1) */
-bool	XN;			/* A newline gets eaten after wrap (concept) */
-bool	XT;			/* Tabs are destructive */
-bool	XX;			/* Tektronix 4025 insert line */
+var	char	*HO;		/*    Home cursor */
+var	char	*IC;		/* P  Insert character */
+var	char	*IM;		/*    Insert mode (give as ':im=:' if 'ic' */
+var	char	*IP;		/* P* Insert pad after char ins'd using IM+IE */
+var	char	*KD;		/*    Keypad down arrow */
+var	char	*KE;		/*    Keypad don't xmit */
+var	char	*KH;		/*    Keypad home key */
+var	char	*KL;		/*    Keypad left arrow */
+var	char	*KR;		/*    Keypad right arrow */
+var	char	*KS;		/*    Keypad start xmitting */
+var	char	*KU;		/*    Keypad up arrow */
+var	char	*LEFT_PARM;	/*    Left n chars */
+var	char	*LL;		/*    Quick to last line, column 0 */
+var	char	*ND;		/*    Non-destructive space */
+var	char	*RIGHT_PARM;	/*    Right n spaces */
+var	char	*xNL;		/*    Line feed (new line) */
+extern	char	PC;		/*    Pad character */
+var	char	*RC;		/*    Restore cursor from last SC */
+var	char	*SC;		/*    Save cursor */
+var	char	*SE;		/*    Standout end (may leave space) */
+var	char	*SF;		/* P  Scroll forwards */
+var	char	*SO;		/*    Stand out begin (may leave space) */
+var	char	*SR;		/* P  Scroll backwards */
+var	char	*TA;		/* P  Tab (other than ^I or with padding) */
+var	char	*TE;		/*    Terminal end sequence */
+var	char	*TI;		/*    Terminal initial sequence */
+extern	char	*UP;		/*    Upline */
+var	char	*UP_PARM;	/*    Up n lines */
+var	char	*VB;		/*    Visible bell */
+var	char	*VE;		/*    Visual end sequence */
+var	char	*VS;		/*    Visual start sequence */
+var	bool	AM;		/* Automatic margins */
+var	bool	BS;		/* Backspace works */
+var	bool	CA;		/* Cursor addressible */
+var	bool	DA;		/* Display may be retained above */
+var	bool	DB;		/* Display may be retained below */
+var	bool	EO;		/* Can erase overstrikes with ' ' */
+var	bool	GT;		/* Gtty indicates tabs */
+var	bool	HC;		/* Hard copy terminal */
+var	bool	HZ;		/* Hazeltine ~ braindamage */
+var	bool	IN;		/* Insert-null blessing */
+var	bool	MI;		/* can move in insert mode */
+var	bool	NC;		/* No Cr - \r snds \r\n then eats \n (dm2500) */
+var	bool	NS;		/* No scroll - linefeed at bottom won't scroll */
+var	bool	OS;		/* Overstrike works */
+var	bool	UL;		/* Underlining works even though !os */
+var	bool	XB;		/* Beehive (no escape key, simulate with f1) */
+var	bool	XN;		/* A newline gets eaten after wrap (concept) */
+var	bool	XT;		/* Tabs are destructive */
+var	bool	XX;		/* Tektronix 4025 insert line */
 	/* X? is reserved for severely nauseous glitches */
 	/* If there are enough of these we may need bit masks! */
 
 /*
  * From the tty modes...
  */
-bool	NONL;			/* Terminal can't hack linefeeds doing a CR */
-bool	UPPERCASE;		/* Ick! */
-short	LINES;			/* Number of lines on screen */
-short	COLUMNS;
-short	OCOLUMNS;		/* Save COLUMNS for a hack in open mode */
+var	bool	NONL;		/* Terminal can't hack linefeeds doing a CR */
+var	bool	UPPERCASE;	/* Ick! */
+extern	short	LINES;		/* Number of lines on screen */
+extern	short	COLUMNS;
+var	short	OCOLUMNS;	/* Save COLUMNS for a hack in open mode */
+var	struct winsize winsz;	/* Save window size for stopping comparisons */
 
-short	outcol;			/* Where the cursor is */
-short	outline;
+var	short	outcol;		/* Where the cursor is */
+var	short	outline;
 
-short	destcol;		/* Where the cursor should be */
-short	destline;
+var	short	destcol;	/* Where the cursor should be */
+var	short	destline;
 
 /*
  * There are several kinds of tty drivers to contend with.  These include:
@@ -131,30 +141,32 @@ short	destline;
  * to stty.  In USG V3 it's the whole tty structure.
  */
 #ifdef	USG3TTY			/* USG V3 */
-  struct	termio tty;	/* Use this one structure to change modes */
+  var	struct	termio tty;	/* Use this one structure to change modes */
   typedef	struct termio ttymode;	/* Mode to contain tty flags */
 
 #else				/* All others */
-  struct	sgttyb tty;	/* Always stty/gtty using this one structure */
+  var	struct	sgttyb tty;	/* Always stty/gtty using this one structure */
   typedef	int ttymode;	/* Mode to contain tty flags */
 # ifdef 	TIOCSETC	/* V7 */
-   struct	tchars ottyc, nttyc;	/* For V7 character masking */
+   var	struct	tchars ottyc, nttyc;	/* For V7 character masking */
 # endif
 # ifdef		TIOCLGET	/* Berkeley */
-   struct	ltchars olttyc, nlttyc;	/* More of tchars style stuff */
+   var	struct	ltchars olttyc, nlttyc;	/* More of tchars style stuff */
 # endif
 
 #endif
 
-ttymode	normf;			/* Restore tty flags to this (someday) */
-bool	normtty;		/* Have to restore normal mode from normf */
+var	ttymode	normf;		/* Restore tty flags to this (someday) */
+var	bool	normtty;	/* Have to restore normal mode from normf */
 
 ttymode ostart(), setty(), unixex();
 
-short	WBOT;
-short	WECHO;
-
-short	costCM;
+var	short	costCM;	/* # chars to output a typical CM, with padding etc. */
+var	short	costSR;	/* likewise for scroll reverse */
+var	short	costAL;	/* likewise for insert line */
+var	short	costDP;	/* likewise for DOWN_PARM */
+var	short	costLP;	/* likewise for LEFT_PARM */
+var	short	costRP;	/* likewise for RIGHT_PARM */
 
 #ifdef VMUNIX
 # define MAXNOMACS	128	/* max number of macros of each kind */
@@ -168,13 +180,13 @@ struct maps {
 	char *mapto;	/* .. maps to this string */
 	char *descr;	/* legible description of key */
 };
-struct maps arrows[MAXNOMACS];	/* macro defs - 1st 5 built in */
-struct maps immacs[MAXNOMACS];	/* for while in insert mode */
-struct maps abbrevs[MAXNOMACS];	/* for word abbreviations */
-int	ldisc;			/* line discipline for ucb tty driver */
-char	mapspace[MAXCHARMACS];
-char	*msnext;	/* next free location in mapspace */
-int	maphopcnt;	/* check for infinite mapping loops */
-bool	anyabbrs;	/* true if abbr or unabbr has been done */
-char	ttynbuf[20];	/* result of ttyname() */
-int	ttymesg;	/* original mode of users tty */
+var	struct maps arrows[MAXNOMACS];	/* macro defs - 1st 5 built in */
+var	struct maps immacs[MAXNOMACS];	/* for while in insert mode */
+var	struct maps abbrevs[MAXNOMACS];	/* for word abbreviations */
+var	int	ldisc;			/* line discipline for ucb tty driver */
+var	char	mapspace[MAXCHARMACS];
+var	char	*msnext;	/* next free location in mapspace */
+var	int	maphopcnt;	/* check for infinite mapping loops */
+var	bool	anyabbrs;	/* true if abbr or unabbr has been done */
+var	char	ttynbuf[20];	/* result of ttyname() */
+var	int	ttymesg;	/* original mode of users tty */

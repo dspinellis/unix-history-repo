@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tune.h	5.1.1.1 (Berkeley) %G%
+ *	@(#)ex_tune.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -16,11 +16,16 @@
  * Only exstrings is looked at "+4", i.e. if you give
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
-#include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.5recover)
-#define	EXPRESERVE	libpath(ex3.5preserve)
+#define libpath(file) "/usr/lib/file"
+#define loclibpath(file) "/usr/local/lib/file"
+#define binpath(file) "/usr/ucb/file"
+#define usrpath(file) "/usr/file"
+#define E_TERMCAP	"/etc/termcap"
+#define B_CSH		"/bin/csh"
+#define	EXRECOVER	libpath(ex3.7recover)
+#define	EXPRESERVE	libpath(ex3.7preserve)
 #ifndef VMUNIX
-#define	EXSTRINGS	libpath(ex3.5strings)
+#define	EXSTRINGS	libpath(ex3.7strings)
 #endif
 
 /*
@@ -44,13 +49,19 @@
 #define	ESIZE		512
 #define CRSIZE		1024
 #else
+#ifdef u370
+#define LBSIZE		4096
+#define ESIZE		512
+#define CRSIZE		4096
+#else
 #define	LBSIZE		512		/* Line length */
 #define	ESIZE		128		/* Size of compiled re */
 #define CRSIZE		512
 #endif
+#endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
-#define	TAGSIZE		32		/* Tag length */
+#define	TAGSIZE		128		/* Tag length */
 #define	ONMSZ		64		/* Option name size */
 #define	GBSIZE		256		/* Buffer size */
 #define	UXBSIZE		128		/* Unix command buffer size */
@@ -76,6 +87,7 @@
  * of the incore line information and could then
  * be reasonably large.
  */
+#undef NCARGS
 #ifndef VMUNIX
 #define	NARGS	100		/* Maximum number of names in "next" */
 #define	NCARGS	LBSIZE		/* Maximum arglist chars in "next" */
@@ -95,13 +107,13 @@
  * hardcopy mode when a line gets longer than 80 characters.
  */
 #ifndef VMUNIX
-#define	TUBELINES	40	/* Number of screen lines for visual */
+#define	TUBELINES	60	/* Number of screen lines for visual */
 #define	TUBECOLS	160	/* Number of screen columns for visual */
-#define	TUBESIZE	3400	/* Maximum screen size for visual */
+#define	TUBESIZE	5000	/* Maximum screen size for visual */
 #else
-#define	TUBELINES	66
+#define	TUBELINES	70
 #define	TUBECOLS	160
-#define	TUBESIZE	6600	/* 66 * 100 */
+#define	TUBESIZE	7000	/* 70 * 100 */
 #endif
 
 /*
@@ -115,5 +127,5 @@
  * Attention is the interrupt character (normally 0177 -- delete).
  * Quit is the quit signal (normally FS -- control-\) and quits open/visual.
  */
-#define	ATTN	(-2)
+#define	ATTN	(-2)	/* mjm: (char) ??  */
 #define	QUIT	('\\' & 037)

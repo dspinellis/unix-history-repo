@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_re.h	5.1.1.1 (Berkeley) %G%
+ *	@(#)ex_re.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -27,9 +27,9 @@ struct	regexp {
  * It would be possible to get rid of "re" by making it a stack parameter
  * to the appropriate routines.
  */
-struct	regexp re;		/* Last re */
-struct	regexp scanre;		/* Last scanning re */
-struct	regexp subre;		/* Last substitute re */
+var struct	regexp re;		/* Last re */
+var struct	regexp scanre;		/* Last scanning re */
+var struct	regexp subre;		/* Last substitute re */
 
 /*
  * Defining circfl and expbuf like this saves us from having to change
@@ -49,9 +49,9 @@ struct	regexp subre;		/* Last substitute re */
 /*
  * Definitions for substitute
  */
-char	*braslist[NBRA];	/* Starts of \(\)'ed text in lhs */
-char	*braelist[NBRA];	/* Ends... */
-char	rhsbuf[RHSSIZE];	/* Rhs of last substitute */
+var char	*braslist[NBRA];	/* Starts of \(\)'ed text in lhs */
+var char	*braelist[NBRA];	/* Ends... */
+var char	rhsbuf[RHSSIZE];	/* Rhs of last substitute */
 
 /*
  * Definitions of codes for the compiled re's.
