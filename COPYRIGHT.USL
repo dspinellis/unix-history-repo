@@ -13,7 +13,7 @@ sys/kern/init_main.c
 sys/kern/kern_clock.c
 sys/kern/kern_exec.c		[*]
 sys/kern/kern_exit.c
-sys/kern/kern_physio.c
+sys/kern/kern_physio.c		[**]
 sys/kern/kern_sig.c
 sys/kern/kern_synch.c
 sys/kern/subr_rmap.c		[*]
@@ -36,6 +36,10 @@ sys/ufs/ufs_inode.c
 sys/ufs/ufs_vnops.c
 usr.bin/cpio/cpio.c		[*]
 
-[*] These file are NOT contained in FreeBSD
+[*]  These file are NOT contained in FreeBSD
 
-$Id$
+[**] The version of this file in FreeBSD is belived to be clear of any USL
+     copyright and/or trade secret.
+    
+
+$Id: COPYRIGHT.USL,v 1.1 1994/05/03 09:13:01 rgrimes Exp $
