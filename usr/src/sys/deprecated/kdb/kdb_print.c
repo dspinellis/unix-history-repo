@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.20 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.21 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -162,20 +162,11 @@ kdbprinttrace(modif)
 #undef T
 		}
 
-	case 'v': {
-		register struct mount *mp;
-		register struct vnode *vp;
-
-		kdbprintf("Locked vnodes\n");
-		mp = rootfs;
-		do {
-			for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf)
-				if (VOP_ISLOCKED(vp))
-					vprint((char *)0, vp);
-			mp = mp->mnt_next;
-		} while (mp != rootfs);
+#ifdef DEBUG
+	case 'v':
+		printlockedvnodes();
 		break;
-	}
+#endif
 
 	default:
 		kdberror(kdbBADMOD);
