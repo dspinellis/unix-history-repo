@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	2.1.1.1	%G%";
+static char	SccsId[] = "@(#)collect.c	2.2	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -39,6 +39,7 @@ static char	SccsId[] = "@(#)collect.c	2.1.1.1	%G%";
 
 char	MsgId[MAXNAME];		/* message-id, determined or created */
 long	MsgSize;		/* size of message in bytes */
+bool	GotHdr;			/* if set, "From ..." line exists */
 
 char *
 maketemp()
@@ -123,13 +124,13 @@ maketemp()
 		/* Hide UNIX-like From lines */
 		if (strncmp(buf, "From ", 5) == 0)
 		{
-			if (firstline && !SaveFrom)
+			if (!firstline)
 			{
-				savedate(buf);
-				continue;
+				fputs(">", tf);
+				MsgSize++;
 			}
-			fputs(">", tf);
-			MsgSize++;
+			else
+				GotHdr++;
 		}
 
 		if (inheader && !isspace(buf[0]))
@@ -218,48 +219,4 @@ makemsgid()
 
 	time(&t);
 	sprintf(MsgId, "%ld.%d.%s@%s", t, getpid(), MyLocName, ArpaHost);
-}
-/*
-**  SAVEDATE -- find and save date field from a "From" line
-**
-**	This will be used by putheader when a From line is created.
-**
-**	Parameters:
-**		buf -- a "From" line.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Saves the "date" part (with newline) in SentDate.
-*/
-
-char	SentDate[30];
-
-savedate(buf)
-	char *buf;
-{
-	register char *p;
-
-	for (p = buf; p != '\0'; p++)
-	{
-		if (*p != ' ')
-			continue;
-		if (strncmp(p, " Sun ", 5) == 0 ||
-		    strncmp(p, " Mon ", 5) == 0 ||
-		    strncmp(p, " Tue ", 5) == 0 ||
-		    strncmp(p, " Wed ", 5) == 0 ||
-		    strncmp(p, " Thu ", 5) == 0 ||
-		    strncmp(p, " Fri ", 5) == 0 ||
-		    strncmp(p, " Sat ", 5) == 0)
-		{
-			if (p[4] != ' ' || p[8] != ' ' || p[11] != ' ' ||
-			    p[14] != ':' || p[17] != ':' || p[20] != ' ')
-				continue;
-			strncpy(SentDate, ++p, 25);
-			SentDate[24] = '\n';
-			SentDate[25] = '\0';
-			return;
-		}
-	}
 }

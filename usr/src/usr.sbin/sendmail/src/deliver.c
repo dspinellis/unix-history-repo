@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.1.1.1	%G%";
+static char SccsId[] = "@(#)deliver.c	2.2	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -70,6 +70,7 @@ deliver(to, editfcn)
 	FILE *mfile;
 	extern putheader();
 	extern pipesig();
+	extern bool GotHdr;
 
 	/*
 	**  Compute receiving mailer, host, and to addreses.
@@ -158,7 +159,7 @@ deliver(to, editfcn)
 	**  If the mailer wants a From line, insert a new editfcn.
 	*/
 
-	if (flagset(M_HDR, m->m_flags) && editfcn == NULL)
+	if (flagset(M_HDR, m->m_flags) && editfcn == NULL && !GotHdr)
 		editfcn = putheader;
 
 	/*
@@ -361,9 +362,7 @@ giveresponse(stat, force, m)
 **
 **	For mailers such as 'msgs' that want the header inserted
 **	into the mail, this edit filter inserts the From line and
-**	then passes the rest of the message through.  If we have
-**	managed to extract a date already, use that; otherwise,
-**	use the current date/time.
+**	then passes the rest of the message through.
 **
 **	Parameters:
 **		fp -- the file pointer for the output.
@@ -385,16 +384,9 @@ putheader(fp)
 	char buf[MAXLINE + 1];
 	long tim;
 	extern char *ctime();
-	extern char SentDate[];
 
-	fprintf(fp, "From %s ", From.q_paddr);
-	if (SentDate[0] == '\0')
-	{
-		time(&tim);
-		fprintf(fp, "%s", ctime(&tim));
-	}
-	else
-		fprintf(fp, "%s", SentDate);
+	time(&tim);
+	fprintf(fp, "From %s %s", From.q_paddr, ctime(&tim));
 	while (fgets(buf, sizeof buf, stdin) != NULL && !ferror(fp))
 		fputs(buf, fp);
 	if (ferror(fp))
