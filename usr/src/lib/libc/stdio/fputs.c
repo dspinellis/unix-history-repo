@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fputs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fputs.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -21,13 +21,13 @@ static char sccsid[] = "@(#)fputs.c	5.4 (Berkeley) %G%";
  * Write the given string to the given file.
  */
 fputs(s, fp)
-	char *s;
+	const char *s;
 	FILE *fp;
 {
 	struct __suio uio;
 	struct __siov iov;
 
-	iov.iov_base = s;
+	iov.iov_base = (void *)s;
 	iov.iov_len = uio.uio_resid = strlen(s);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;

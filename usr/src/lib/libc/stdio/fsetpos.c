@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fsetpos.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsetpos.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)fsetpos.c	5.1 (Berkeley) %G%";
  */
 fsetpos(iop, pos)
 	FILE *iop;
-	fpos_t *pos;
+	const fpos_t *pos;
 {
 	return (fseek(iop, (long)*pos, SEEK_SET));
 }

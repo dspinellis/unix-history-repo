@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fseek.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fseek.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ fseek(fp, offset, whence)
 	int whence;
 {
 #if __STDC__
-	register fpos_t (*seekfn)(char *, fpos_t, int);
+	register fpos_t (*seekfn)(void *, fpos_t, int);
 #else
 	register fpos_t (*seekfn)();
 #endif
@@ -85,6 +85,7 @@ fseek(fp, offset, whence)
 
 	case SEEK_SET:
 	case SEEK_END:
+		curoff = 0;		/* XXX just to keep gcc quiet */
 		havepos = 0;
 		break;
 
