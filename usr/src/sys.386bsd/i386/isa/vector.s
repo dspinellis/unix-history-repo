@@ -1,4 +1,15 @@
 /* vector.s */
+/*
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00167
+ * --------------------         -----   ----------------------
+ *
+ * 04 Jun 93	Bruce Evans		Fixed irq_num vs id_num for multiple
+ *					devices configed on the same irq with
+ *					respect to ipending.  
+ *
+ */
 
 #include "i386/isa/icu.h"
 #include "i386/isa/isa.h"
@@ -118,8 +129,8 @@
 	incl	_cnt+V_INTR ;	/* tally interrupts */ \
 	movl	_cpl,%eax ; \
 	testb	$IRQ_BIT(irq_num),%reg ; \
-	jne	1f ; \
-Vretry/**/id_num/**/stray: ; \
+	jne	2f ; \
+1: ; \
 	COUNT_EVENT(_intrcnt_actv, id_num) ; \
 	movl	_cpl,%eax ; \
 	pushl	%eax ; \
@@ -139,8 +150,11 @@ Vretry/**/id_num/**/stray: ; \
 	jmp	doreti ; \
 ; \
 	ALIGN_TEXT ; \
-1: ; \
+2: ; \
 	COUNT_EVENT(_intrcnt_pend, id_num) ; \
+	movl	$1b,%eax ;	/* register resume address */ \
+				/* XXX - someday do it at attach time */ \
+	movl	%eax,Vresume + (irq_num) * 4 ;	\
 	orb	$IRQ_BIT(irq_num),_ipending + IRQ_BYTE(irq_num) ; \
 	SHOW_IPENDING ; \
 	popl	%es ; \
@@ -224,6 +238,8 @@ IDTVEC(intr/**/irq_num) ; \
  * the stray interrupt handler installed.  But these handlers only reduce
  * the window of vulnerability - it is still open at the end of
  * isa_configure().
+ *
+ * XXX - many comments are stale.
  */
 
 	STRAYINTR(0,1,1, al)
@@ -255,6 +271,7 @@ IDTVEC(intrdefault)
  * work with vmstat.
  */
 	.data
+Vresume:	.space	16 * 4	/* where to resume intr handler after unpend */
 	.globl	_intrcnt
 _intrcnt:			/* used by vmstat to calc size of table */
 	.globl	_intrcnt_bad7
@@ -269,31 +286,27 @@ _intrcnt_actv:	.space	NR_REAL_INT_HANDLERS * 4	/* active interrupts */
 _intrcnt_pend:	.space	NR_REAL_INT_HANDLERS * 4	/* pending interrupts */
 	.globl	_intrcnt_spl
 _intrcnt_spl:	.space	32 * 4	/* XXX 32 should not be hard coded ? */
-
+	.globl	_intrcnt_show
+_intrcnt_show:	.space	8 * 4	/* XXX 16 should not be hard coded ? */
 	.globl	_eintrcnt
 _eintrcnt:			/* used by vmstat to calc size of table */
-
-	.globl	_intrcnt_show
-_intrcnt_show:	.space	16 * 4	/*
-				 * XXX 16 should not be hard coded,
-				 * and should it not be 5 ?
-				 */
 
 /*
  * Build the interrupt name table for vmstat
  */
 
 #undef BUILD_FAST_VECTOR
-#define	BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	.ascii	"name irq" ; \
-	.asciz	"irq_num"
+#define BUILD_FAST_VECTOR	BUILD_VECTOR
 
 #undef BUILD_VECTOR
 #define	BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
 		     icu_num, icu_enables, reg) \
 	.ascii	"name irq" ; \
 	.asciz	"irq_num"
+/*
+ * XXX - use the STRING and CONCAT macros from <sys/cdefs.h> to stringize
+ * and concatenate names above and elsewhere.
+ */
 
 	.text
 	.globl	_intrnames, _eintrnames
@@ -304,9 +317,7 @@ _intrnames:
 	BUILD_VECTORS
 
 #undef BUILD_FAST_VECTOR
-#define	BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	.ascii	"name pend"
+#define BUILD_FAST_VECTOR	BUILD_VECTOR
 
 #undef BUILD_VECTOR
 #define	BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
@@ -320,36 +331,46 @@ _intrnames:
  */
 	.asciz	"unpend_v"
 	.asciz	"doreti"
-	.asciz	"spl2"
-	.asciz	"spl3"
-	.asciz	"spl4"
+	.asciz	"p0!ni"
+	.asciz	"!p0!ni"
+	.asciz	"p0ni"
 	.asciz	"netisr_raw"
 	.asciz	"netisr_ip"
 	.asciz	"netisr_imp"
 	.asciz	"netisr_ns"
-	.asciz	"spl9"
-	.asciz	"spl10"
-	.asciz	"spl11"
+	.asciz	"softclock"
+	.asciz	"trap"
+	.asciz	"doreti_exit2"
 	.asciz	"splbio"
 	.asciz	"splclock"
 	.asciz	"splhigh"
 	.asciz	"splimp"
 	.asciz	"splnet"
-	.asciz	"softclock"
+	.asciz	"splsoftclock"
 	.asciz	"spltty"
 	.asciz	"spl0"
 	.asciz	"netisr_raw2"
 	.asciz	"netisr_ip2"
 	.asciz	"splx"
-	.asciz	"splx2"
+	.asciz	"splx!0"
 	.asciz	"unpend_V"
-	.asciz	"spl25"
+	.asciz	"spl25"		/* spl25-spl31 are spares */
 	.asciz	"spl26"
 	.asciz	"spl27"
 	.asciz	"spl28"
 	.asciz	"spl29"
 	.asciz	"spl30"
 	.asciz	"spl31"
+/*
+ * now the mask names
+ */
+	.asciz	"cli"
+	.asciz	"cpl"
+	.asciz	"imen"
+	.asciz	"ipending"
+	.asciz	"sti"
+	.asciz	"mask5"		/* mask5-mask7 are spares */
+	.asciz	"mask6"
+	.asciz	"mask7"
 	
 _eintrnames:
-

@@ -38,7 +38,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00158
+ * CURRENT PATCH LEVEL:         5       00167
  * --------------------         -----   ----------------------
  * 
  * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
@@ -51,6 +51,13 @@
  * 17 May 93	Rodney W. Grimes	Redid the interrupt counter stuff
  *					moved the counters to vectors.s so
  *					they are next to the name tables.
+ * 04 Jun 93	Bruce Evans		Fixed irq_num vs id_num for multiple
+ *					devices configed on the same irq with
+ *					respect to ipending.  Restructured
+ *					not to use BUILD_VECTORS.
+ *		Rodney W. Grimes	softsio1 only works if you have sio
+ *					serial driver, added #include sio.h
+ *					and #ifdef NSIO > 0 to protect it.
  */
 
 /*
@@ -64,6 +71,7 @@
  * soft priority masks as in the hard ones.
  */
 
+#include "sio.h"
 #define	HIGHMASK	0xffff
 #define	SOFTCLOCKMASK	0x8000
 
@@ -82,6 +90,9 @@ _biomask:	.long	0
 _netmask:	.long	0
 	.globl	_ipending
 _ipending:	.long	0
+vec:
+	.long	vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7
+	.long	vec8, vec9, vec10, vec11, vec12, vec13, vec14, vec15
 
 #define	GENSPL(name, mask, event) \
 	.globl	_spl/**/name ; \
@@ -106,74 +117,27 @@ _spl/**/name: ; \
 
 	.text
 
-#undef BUILD_FAST_VECTOR
-#define	BUILD_FAST_VECTOR	BUILD_VECTOR
-
-#undef BUILD_VECTOR
-#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	testb	$IRQ_BIT(irq_num),%reg ; \
-	jne	unpend_v/**/id_num
-
 	ALIGN_TEXT
 unpend_v:
 	COUNT_EVENT(_intrcnt_spl, 0)
-	BUILD_VECTORS
-
-/*
- * XXX - we have already tested that the ipending bit is set, but we didn't
- * disable interrupts, so if any interrupt occurs while we are test-and-
- * resetting, then the doreti routine for the new interrupt is guaranteed to
- * unpend the pending interrupt.  So use btrl to test the bit again.  We
- * avoided using btrl in the chain of tests since it is slow (8 cycles to
- * memory on 386's and 486's, while testing a register takes 2 cyles on 386's
- * and 1 on 486's, and and-immediate to memory takes 7 cycles on 386's and 3
- * on 486's).  We avoided bsf because it is slow and doesn't handle the
- * strange priority order.  A reordered bsf can be done faster using table
- * lookup but it is still slower than our dumb-looking linear search for the
- * first 8 or so (configured) interrupts.  Binary search of 1-16 items would
- * have too many slow branches taken.  Perhaps this code is not excecuted
- * enough to be worth so much attention!
- *
- * TODO: get rid of slow btrl's and btsl's, and slower bsf's elsewhere.
- *       Remove kludges for gas once not handling immediate-mode btrl's.
- */
-
-#undef BUILD_FAST_VECTOR
-#define BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-			  icu_num, icu_enables, reg) \
-	ALIGN_TEXT ; \
-unpend_v/**/id_num: ; \
-	btrl	$irq_num,_ipending ; \
-	jnc	unpend_v_confirmation_failed ; \
-	SHOW_IPENDING ; \
-	pushl	$unit ; \
-	call	_soft/**/name ; \
-	addl	$4,%esp ; \
-	jmp	unpend_v_confirmation_failed
-
-#undef BUILD_VECTOR
-#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	ALIGN_TEXT ; \
-unpend_v/**/id_num: ; \
-	btrl	$irq_num,_ipending ; \
-	jnc	unpend_v_confirmation_failed ; \
-	SHOW_IPENDING ; \
-	jmp	Vretry/**/id_num
-
-	BUILD_VECTORS
-
-/*
- * Unconfigured interrupt or no longer pending interrupt.
- *
- * XXX - unconfigured interrupts "can't happen", except possibly for
- * strayintr's 7 and 15 when they are not configured.  If they happen,
- * ipending will be checked forever.
- */
+	bsfl	%eax,%eax		# slow, but not worth optimizing
+	btrl	%eax,_ipending
+	jnc	unpend_v_next		# some intr cleared the in-memory bit
+	SHOW_IPENDING
+	movl	Vresume(,%eax,4),%eax
+	testl	%eax,%eax
+	je	noresume
+	jmp	%eax
 
 	ALIGN_TEXT
-unpend_v_confirmation_failed:
+/*
+ * XXX - must be some fastintr, need to register those too.
+ */
+noresume:
+#if NSIO > 0
+	call	_softsio1
+#endif
+unpend_v_next:
 	movl	_cpl,%eax
 	movl	%eax,%edx
 	notl	%eax
@@ -208,7 +172,7 @@ none_to_unpend:
 	testl	%eax,%eax		# check for softint s/traps
 	jne	2f			# there are some
 	jmp	test_resched		# XXX - schedule jumps better
-	COUNT_EVENT(_intrcnt_spl, 2)			# XXX
+	COUNT_EVENT(_intrcnt_spl, 2)	# XXX
 
 	ALIGN_TEXT			# XXX
 1:					# XXX
@@ -351,24 +315,35 @@ _splx:
 	movl	%edx,%eax		# return old priority
 	ret
 
-#undef BUILD_FAST_VECTOR
-#define BUILD_FAST_VECTOR	BUILD_VECTOR
-
-#undef BUILD_VECTOR
-#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	testb	$IRQ_BIT(irq_num),%reg ; \
-	jne	unpend_V/**/id_num
-
 	ALIGN_TEXT
 unpend_V_result_edx:
 	pushl	%edx
 unpend_V:
 	COUNT_EVENT(_intrcnt_spl, 24)
-	BUILD_VECTORS
+	bsfl	%eax,%eax
+	btrl	%eax,_ipending
+	jnc	unpend_V_next
+	SHOW_IPENDING
+	movl	Vresume(,%eax,4),%edx
+	testl	%edx,%edx
+	je	noresumeV
+/*
+ * We would prefer to call the intr handler directly here but that doesn't
+ * work for badly behaved handlers that want the interrupt frame.  Also,
+ * there's a problem determining the unit number.  We should change the
+ * interface so that the unit number is not determined at config time.
+ */
+	jmp	*vec(,%eax,4)
 
 	ALIGN_TEXT
-unpend_V_confirmation_failed:
+/*
+ * XXX - must be some fastintr, need to register those too.
+ */
+noresumeV:
+#if NSIO > 0
+	call	_softsio1
+#endif
+unpend_V_next:
 	movl	_cpl,%eax
 	notl	%eax
 	andl	_ipending,%eax
@@ -376,29 +351,26 @@ unpend_V_confirmation_failed:
 	popl	%eax
 	ret
 
-#undef BUILD_FAST_VECTOR
-#define BUILD_FAST_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-			  icu_num, icu_enables, reg) \
+#define BUILD_VEC(irq_num) \
 	ALIGN_TEXT ; \
-unpend_V/**/id_num: ; \
-	btrl	$irq_num,_ipending ; \
-	jnc	unpend_V_confirmation_failed ; \
-	SHOW_IPENDING ; \
-	pushl	$unit ; \
-	call	_soft/**/name ; \
-	addl	$4,%esp ; \
-	jmp	unpend_V_confirmation_failed
-
-#undef BUILD_VECTOR
-#define BUILD_VECTOR(name, unit, irq_num, id_num, mask, handler, \
-		     icu_num, icu_enables, reg) \
-	ALIGN_TEXT ; \
-unpend_V/**/id_num: ; \
-	btrl	$irq_num,_ipending ; \
-	jnc	unpend_V_confirmation_failed ; \
-	SHOW_IPENDING ; \
-	int	$ICU_OFFSET + irq_num ; \
+vec/**/irq_num: ; \
+	int	$ICU_OFFSET + (irq_num) ; \
 	popl	%eax ; \
 	ret
 
-	BUILD_VECTORS
+	BUILD_VEC(0)
+	BUILD_VEC(1)
+	BUILD_VEC(2)
+	BUILD_VEC(3)
+	BUILD_VEC(4)
+	BUILD_VEC(5)
+	BUILD_VEC(6)
+	BUILD_VEC(7)
+	BUILD_VEC(8)
+	BUILD_VEC(9)
+	BUILD_VEC(10)
+	BUILD_VEC(11)
+	BUILD_VEC(12)
+	BUILD_VEC(13)
+	BUILD_VEC(14)
+	BUILD_VEC(15)
