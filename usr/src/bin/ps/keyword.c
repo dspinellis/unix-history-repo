@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)keyword.c	5.15 (Berkeley) %G%";
 #include <sys/resource.h>
 #include <sys/proc.h>
 
+#include <err.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -271,7 +272,7 @@ parsefmt(p)
 		if (!(v = findvar(cp)))
 			continue;
 		if ((vent = malloc(sizeof(struct varent))) == NULL)
-			err("%s", strerror(errno));
+			err(1, NULL);
 		vent->var = v;
 		vent->next = NULL;
 		if (vhead == NULL)
@@ -282,7 +283,7 @@ parsefmt(p)
 		}
 	}
 	if (!vhead)
-		err("no valid keywords\n");
+		errx(1, "no valid keywords");
 }
 
 static VAR *
@@ -296,7 +297,7 @@ findvar(p)
 
 	key.name = p;
 
-	hp = index(p, '=');
+	hp = strchr(p, '=');
 	if (hp)
 		*hp++ = '\0';
 
@@ -305,15 +306,14 @@ findvar(p)
 
 	if (v && v->alias) {
 		if (hp) {
-			(void)fprintf(stderr,
-			    "ps: %s: illegal keyword specification\n", p);
+			warnx("%s: illegal keyword specification", p);
 			eval = 1;
 		}
 		parsefmt(v->alias);
 		return((VAR *)NULL);
 	}
 	if (!v) {
-		(void)fprintf(stderr, "ps: keyword %s not found\n", p);
+		warnx("%s: keyword not found", p);
 		eval = 1;
 	}
 	if (hp)
