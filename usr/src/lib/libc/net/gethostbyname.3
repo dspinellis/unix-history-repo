@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.8 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.9 (Berkeley) %G%
 .\"
 .TH GETHOSTBYNAME 3N ""
 .UC 5
 .SH NAME
-gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent \- get network host entry
+gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent, herror \- get network host entry
 .SH SYNOPSIS
 .B "#include <netdb.h>
 .PP
@@ -140,10 +140,12 @@ A retry at some later time may succeed.
 .IP NO_RECOVERY \w'HOST_NOT_FOUND'u+2n
 Some unexpected server failure was encountered.
 This is a non-recoverable error.
-.IP NO_ADDRESS \w'HOST_NOT_FOUND'u+2n
+.IP NO_DATA \w'HOST_NOT_FOUND'u+2n
 The requested name is valid but does not have an IP address; 
 this is not a temporary error.  
-This means another type of request to the name server using this domain name
+This means that the name is known to the name server but there is no address
+associated with this name.
+Another type of request to the name server using this domain name
 will result in an answer;
 for example, a mail-forwarder may be registered for this domain.
 .RE
