@@ -1,4 +1,4 @@
-/*	ht.c	4.29	82/10/10	*/
+/*	ht.c	4.30	82/10/17	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -112,10 +112,8 @@ htopen(dev, flag)
 
 	tuunit = TUUNIT(dev);
 	if (tuunit >= NTU || (sc = &tu_softc[tuunit])->sc_openf ||
-	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0)
+		return (ENXIO);
 	olddens = sc->sc_dens;
 	dens = sc->sc_dens =
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
@@ -124,25 +122,23 @@ htopen(dev, flag)
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0) {
 		uprintf("tu%d: not online\n", tuunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL)) {
 		uprintf("tu%d: no write ring\n", tuunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
 		uprintf("tu%d: can't change density in mid-tape\n", tuunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_flags = 0;
 	sc->sc_dens = dens;
+	return (0);
 }
 
 htclose(dev, flag)
@@ -496,25 +492,20 @@ htioctl(dev, cmd, data, flag)
 			break;
 
 		default:
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
-		if (callcount <= 0 || fcount <= 0) {
-			u.u_error = ENXIO;
-			return;
-		}
+		if (callcount <= 0 || fcount <= 0)
+			return (EINVAL);
 		while (--callcount >= 0) {
 			htcommand(dev, htops[mtop->mt_op], fcount);
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
-			    bp->b_resid) {
-				u.u_error = EIO;
-				break;
-			}
+			    bp->b_resid)
+				return (EIO);
 			if ((bp->b_flags&B_ERROR) || sc->sc_dsreg&HTDS_BOT)
 				break;
 		}
-		geterror(bp);
-		return;
+		geterror(bp);		/* XXX */
+		return (u.u_error);	/* XXX */
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -522,11 +513,12 @@ htioctl(dev, cmd, data, flag)
 		mtget->mt_erreg = sc->sc_erreg;
 		mtget->mt_resid = sc->sc_resid;
 		mtget->mt_type = MT_ISHT;
-		return;
+		break;
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
+	return (0);
 }
 
 #define	DBSIZE	20

@@ -1,4 +1,4 @@
-/*	mt.c	4.10	82/10/10	*/
+/*	mt.c	4.11	82/10/17	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -119,35 +119,31 @@ mtopen(dev, flag)
 
 	muunit = MUUNIT(dev);
 	if (muunit >= NMU || (sc = &mu_softc[muunit])->sc_openf ||
-	    (mi = mtinfo[MTUNIT(dev)]) == 0 || mi->mi_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (mi = mtinfo[MTUNIT(dev)]) == 0 || mi->mi_alive == 0)
+		return (ENXIO);
 	olddens = sc->sc_dens;
 	dens = sc->sc_dens = (minor(dev)&H_6250BPI) ? MT_GCR : 0;
 	mtcommand(dev, MT_SENSE, 1);
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & MTDS_ONL) == 0) {
 		uprintf("mu%d: not online\n", muunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&MTDS_FPT)) {
 		uprintf("mu%d: no write ring\n", muunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((sc->sc_dsreg & MTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
 		uprintf("mu%d: can't change density in mid-tape\n", muunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_flags = 0;
 	sc->sc_dens = dens;
+	return (0);
 }
 
 mtclose(dev, flag)
@@ -542,13 +538,10 @@ mtioctl(dev, cmd, data, flag)
 			break;
 
 		default:
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
-		if (callcount <= 0 || fcount <= 0) {
-			u.u_error = ENXIO;
-			return;
-		}
+		if (callcount <= 0 || fcount <= 0)
+			return (EINVAL);
 		op = mtops[mtop->mt_op];
 		if (op == MT_WTM)
 			op |= sc->sc_dens;
@@ -561,15 +554,13 @@ mtioctl(dev, cmd, data, flag)
 				fcount -= n;
 			} while (fcount);
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
-			    bp->b_resid) {
-				u.u_error = EIO;
-				break;
-			}
+			    bp->b_resid)
+				return (EIO);
 			if (bp->b_flags&B_ERROR)
 				break;
 		}
-		geterror(bp);
-		return;
+		geterror(bp);		/* XXX */
+		return (u.u_error);	/* XXX */
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -578,11 +569,12 @@ mtioctl(dev, cmd, data, flag)
 		mtcommand(dev, MT_SENSE, 1);	/* update drive status */
 		mtget->mt_dsreg = sc->sc_dsreg;
 		mtget->mt_type = MT_ISMT;
-		return;
+		break;
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
+	return (0);
 }
 
 #define	DBSIZE	20

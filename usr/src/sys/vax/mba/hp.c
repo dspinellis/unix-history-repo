@@ -1,4 +1,4 @@
-/*	hp.c	4.55	82/10/10	*/
+/*	hp.c	4.56	82/10/17	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -340,6 +340,17 @@ hpattach(mi, slave)
 	}
 }
 
+hpopen(dev)
+	dev_t dev;
+{
+	register int unit = minor(dev) >> 3;
+	register struct mba_device *mi;
+
+	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
+		return (ENXIO);
+	return (0);
+}
+
 hpstrategy(bp)
 	register struct buf *bp;
 {
@@ -658,10 +669,10 @@ hpioctl(dev, cmd, data, flag)
 
 	case DKIOCHDR:	/* do header read/write */
 		hphdr[minor(dev)>>3] = 1;
-		return;
+		return (0);
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
 }
 
