@@ -1,4 +1,4 @@
-static char *sccsid = "@(#) (Berkeley) 82/05/10";
+static char *sccsid = "@(#) (Berkeley) 82/06/27";
 /*
  * Print system stuff
  */
@@ -601,7 +601,7 @@ dofile()
 	}
 	printf("%d/%d open files\n", nf, nfile);
 	printf("   LOC   FLG  CNT   INO    OFFS|SOCK\n");
-	for (fp=xfile,loc=nl[SFIL].n_value; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
+	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
 		printf("%8x ", loc);
