@@ -1,4 +1,4 @@
-/*	ch2rst.c	1.5	85/01/31
+/*	ch2rst.c	1.6	85/02/15
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
