@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.21 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.22 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -19,52 +19,41 @@ int	errcode;	/* true if errors occured */
 char	*strcpy(), *malloc();
 
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	register char *arg;
+	extern int optind;
+	int ch;
 
 	fflg = !isatty(0);
-	iflg = 0;
-	rflg = 0;
-	while (argc > 1 && argv[1][0] == '-') {
-		arg = *++argv;
-		argc--;
-
-		/*
-		 *  all files following a null option are considered file names
-		 */
-		if (arg[1] == '\0')
+	while ((ch = getopt(argc, argv, "-Rfir")) != EOF)
+		switch((char)ch) {
+		case '-':
+			goto endarg;
+		case 'f':
+			fflg++;
 			break;
+		case 'i':
+			iflg++;
+			break;
+		case 'R':
+		case 'r':
+			rflg++;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+endarg:	argv += optind;
 
-		while (*++arg != '\0')
-			switch(*arg) {
-			case 'f':
-				fflg++;
-				break;
-
-			case 'i':
-				iflg++;
-				break;
-
-			case 'R':
-			case 'r':
-				rflg++;
-				break;
-
-			default:
-				fprintf(stderr, "usage: rm [-rif] file ...\n");
-				exit(1);
-			}
+	if (!*argv) {
+		if (fflg)
+			exit(0);
+		usage();
 	}
-
-	if (argc < 2 && !fflg) {
-		fprintf(stderr, "usage: rm [-rif] file ...\n");
-		exit(1);
-	}
-
-	while (--argc > 0)
-		(void) rm(*++argv, 0);
-
+	do {
+		(void)rm(*argv, 0);
+	} while (*++argv);
 	exit(errcode != 0);
 }
 
@@ -72,6 +61,7 @@ char	*path;		/* pointer to malloc'ed buffer for path */
 char	*pathp;		/* current pointer to end of path */
 int	pathsz;		/* size of path */
 
+#define	isdot(a)	(a[0] == '.' && (!a[1] || a[1] == '.' && !a[2]))
 /*
  * Return TRUE if sucessful. Recursive with -r (rflg)
  */
@@ -85,7 +75,7 @@ rm(arg, level)
 	char prevname[MAXNAMLEN + 1];	/* previous name for -r */
 	char *cp;
 
-	if (dotname(arg)) {
+	if (isdot(arg)) {
 		fprintf(stderr, "rm: cannot remove `.' or `..'\n");
 		return (0);
 	}
@@ -129,7 +119,7 @@ rm(arg, level)
 			append(arg);
 		prevname[0] = '\0';
 		while ((dp = readdir(dirp)) != NULL) {
-			if (dotname(dp->d_name)) {
+			if (isdot(dp->d_name)) {
 				strcpy(prevname, dp->d_name);
 				continue;
 			}
@@ -210,23 +200,6 @@ rm:	if (unlink(arg) < 0) {
 }
 
 /*
- * boolean: is it "." or ".." ?
- */
-dotname(s)
-	char *s;
-{
-	if (s[0] == '.')
-		if (s[1] == '.')
-			if (s[2] == '\0')
-				return (1);
-			else
-				return (0);
-		else if (s[1] == '\0')
-			return (1);
-	return (0);
-}
-
-/*
  * Get a yes/no answer from the user.
  */
 yes()
@@ -250,7 +223,7 @@ append(name)
 	n = strlen(name);
 	if (path == NULL) {
 		pathsz = MAXNAMLEN + MAXPATHLEN + 2;
-		if ((path = malloc(pathsz)) == NULL) {
+		if ((path = malloc((u_int)pathsz)) == NULL) {
 			fprintf(stderr, "rm: ran out of memory\n");
 			exit(1);
 		}
@@ -262,4 +235,10 @@ append(name)
 		*pathp++ = '/';
 	strcpy(pathp, name);
 	pathp += n;
+}
+
+usage()
+{
+	fputs("usage: rm [-rif] file ...\n", stderr);
+	exit(1);
 }
