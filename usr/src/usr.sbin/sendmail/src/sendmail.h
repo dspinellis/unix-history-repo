@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.31 (Berkeley) %G%
+ *	@(#)sendmail.h	6.32 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.31		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.32		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -595,6 +595,29 @@ struct prival
 	char	*pv_name;	/* name of privacy flag */
 	int	pv_flag;	/* numeric level */
 };
+
+/*
+**  Regular UNIX sockaddrs are too small to handle ISO addresses, so
+**  we are forced to declare a supertype here.
+*/
+
+struct bigsockaddr
+{
+	u_char	sa_len;			/* address length */
+	u_char	sa_family;		/* address family */
+	union
+	{
+		char	sa_data[256];	/* make sure there's plenty of space */
+		struct
+		{
+			u_short		sin_port;	/* INET port */
+			struct in_addr	sin_addr;	/* INET address */
+		} sa_inet;
+	} sa_u;
+};
+
+#define SOCKADDR	struct bigsockaddr
+
 /*
 **  Global variables.
 */
@@ -645,7 +668,7 @@ EXTERN char	*FileName;	/* name to print on error messages */
 EXTERN char	*SmtpPhase;	/* current phase in SMTP processing */
 EXTERN char	*MyHostName;	/* name of this host for SMTP messages */
 EXTERN char	*RealHostName;	/* name of host we are talking to */
-EXTERN struct	sockaddr_in RealHostAddr;/* address of host we are talking to */
+EXTERN SOCKADDR RealHostAddr;	/* address of host we are talking to */
 EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */

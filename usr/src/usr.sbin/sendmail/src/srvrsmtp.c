@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.27 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.28 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.27 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.28 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -214,7 +214,7 @@ smtp(e)
 			}
 			(void) strcpy(hostbuf, p);
 			(void) strcat(hostbuf, " (");
-			(void) strcat(hostbuf, inet_ntoa(RealHostAddr.sin_addr));
+			(void) strcat(hostbuf, anynet_ntoa(&RealHostAddr));
 			if (strcasecmp(p, RealHostName) != 0)
 			{
 				(void) strcat(hostbuf, "; ");
@@ -538,7 +538,7 @@ smtp(e)
 				syslog(LOG_NOTICE,
 				    "\"%s\" command from %s (%s)",
 				    c->cmdname, RealHostName,
-				    inet_ntoa(RealHostAddr.sin_addr));
+				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
 # endif /* SMTPDEBUG */

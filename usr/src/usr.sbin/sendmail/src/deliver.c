@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1189,8 +1189,8 @@ logdelivery(m, mci, stat, e)
 	if (mci != NULL && mci->mci_host != NULL)
 	{
 # ifdef DAEMON
-		extern struct sockaddr_in CurHostAddr;
-		extern char *inet_ntoa();
+		extern SOCKADDR CurHostAddr;
+		extern char *anynet_ntoa();
 # endif
 
 		(void) strcat(buf, ", relay=");
@@ -1198,7 +1198,7 @@ logdelivery(m, mci, stat, e)
 
 # ifdef DAEMON
 		(void) strcat(buf, " (");
-		(void) strcat(buf, inet_ntoa(CurHostAddr.sin_addr));
+		(void) strcat(buf, anynet_ntoa(&CurHostAddr));
 		(void) strcat(buf, ")");
 # endif
 	}
