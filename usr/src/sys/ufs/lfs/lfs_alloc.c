@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.35 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,6 +39,9 @@ lfs_valloc(pvp, notused, cred, vpp)
 	ino_t new_ino;
 	int error;
 
+#ifdef VERBOSE
+	printf("lfs_valloc\n");
+#endif
 	/* Get the head of the freelist. */
 	fs = VTOI(pvp)->i_lfs;
 	new_ino = fs->lfs_free;
@@ -101,7 +104,7 @@ lfs_vcreate(mp, ino, vpp)
 	UFSMOUNT *ump;
 	int error, i;
 
-#ifdef ALLOCPRINT
+#ifdef VERBOSE
 	printf("lfs_vcreate: ino %d\n", ino);
 #endif
 	/* Create the vnode. */
@@ -144,8 +147,8 @@ lfs_vfree(vp, notused1, notused2)
 	ino_t ino;
 
 	ip = VTOI(vp);
-#ifdef ALLOCPRINT
-	printf("lfs_ifree: free %d\n", ip->i_number);
+#ifdef VERBOSE
+	printf("lfs_vfree: free %d\n", ip->i_number);
 #endif
 	/* Get the inode number and file system. */
 	fs = ip->i_lfs;
