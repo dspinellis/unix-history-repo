@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -376,25 +376,25 @@ ufs_print(vp)
 
 	KGETRET(VTOI(vp), &inode, sizeof(struct inode), "vnode's inode");
 	flag = ip->i_flag;
-	if (flag & ILOCKED)
+	if (flag & IN_LOCKED)
 		*flags++ = 'L';
-	if (flag & IWANT)
+	if (flag & IN_WANTED)
 		*flags++ = 'W';
-	if (flag & IRENAME)
+	if (flag & IN_RENAME)
 		*flags++ = 'R';
-	if (flag & IUPD)
+	if (flag & IN_UPDATE)
 		*flags++ = 'U';
-	if (flag & IACC)
+	if (flag & IN_ACCESS)
 		*flags++ = 'A';
-	if (flag & ICHG)
+	if (flag & IN_CHANGE)
 		*flags++ = 'C';
-	if (flag & IMOD)
+	if (flag & IN_MODIFIED)
 		*flags++ = 'M';
-	if (flag & ISHLOCK)
+	if (flag & IN_SHLOCK)
 		*flags++ = 'S';
-	if (flag & IEXLOCK)
+	if (flag & IN_EXLOCK)
 		*flags++ = 'E';
-	if (flag & ILWAIT)
+	if (flag & IN_LWAIT)
 		*flags++ = 'Z';
 	if (flag == 0)
 		*flags++ = '-';
@@ -680,7 +680,7 @@ kinfo_vnodes(avnodes)
 	return ((struct e_vnode *)vbuf);
 }
 	
-char hdr[]="  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
+char hdr[]="  LINE RAW CAN OUT  HWT LWT     COL STATE  SESS  PGID DISC\n";
 int ttyspace = 128;
 
 void
@@ -796,8 +796,8 @@ ttyprt(tp, line)
 	else
 		(void)printf("%7s ", name);
 	(void)printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	(void)printf("%3d %4d %3d %8x %3d ", tp->t_outq.c_cc, 
-		tp->t_hiwat, tp->t_lowat, tp->t_addr, tp->t_col);
+	(void)printf("%3d %4d %3d %3d ", tp->t_outq.c_cc, 
+		tp->t_hiwat, tp->t_lowat, tp->t_column);
 	for (i = j = 0; ttystates[i].flag; i++)
 		if (tp->t_state&ttystates[i].flag)
 			state[j++] = ttystates[i].val;

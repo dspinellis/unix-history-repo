@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -913,7 +913,7 @@ iput(ip, ino)
 	daddr_t d;
 	int c;
 
-	c = itog(&sblock, ino);
+	c = ino_to_cg(&sblock, ino);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
 	if (acg.cg_magic != CG_MAGIC) {
@@ -930,9 +930,9 @@ iput(ip, ino)
 		printf("fsinit: inode value out of range (%d).\n", ino);
 		exit(32);
 	}
-	d = fsbtodb(&sblock, itod(&sblock, ino));
+	d = fsbtodb(&sblock, ino_to_fsba(&sblock, ino));
 	rdfs(d, sblock.fs_bsize, buf);
-	buf[itoo(&sblock, ino)] = *ip;
+	buf[ino_to_fsbo(&sblock, ino)] = *ip;
 	wtfs(d, sblock.fs_bsize, buf);
 }
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)keyword.c	8.2 (Berkeley) %G%";
 
 #include "ps.h"
 
-#ifdef SPPWAIT
+#ifdef P_PPWAIT
 #define NEWVM
 #endif
 
@@ -106,7 +106,7 @@ VAR var[] = {
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_swtime), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
 		ULONG, UIDFMT},
-	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
+	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_back), KPTR, "x"},
 	{"rss", "RSS", NULL, 0, p_rssize, 4},
 	{"rssize", "", "rsz"},
 	{"rsz", "RSZ", NULL, 0, rssize, 4},

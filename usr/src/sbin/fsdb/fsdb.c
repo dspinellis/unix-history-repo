@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -94,7 +94,8 @@ static char sccsid[] = "@(#)fsdb.c	8.1 (Berkeley) %G%";
 /*
  * Messy macros that would otherwise clutter up such glamorous code.
  */
-#define itob(i)		((itod(fs, (i)) << FRGSHIFT) + itoo(fs, (i)) * INODE)
+#define itob(i)		((ino_to_fsba(fs,				\
+			    (i)) << FRGSHIFT) + ino_to_fsbo(fs, (i)) * INODE)
 #define min(x, y)	((x) < (y) ? (x) : (y))
 #define	STRINGSIZE(d)	((long)d->d_reclen - \
 				((long)&d->d_name[0] - (long)&d->d_ino))

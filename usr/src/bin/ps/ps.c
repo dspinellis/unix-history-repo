@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)ps.c	8.1 (Berkeley) %G%";
 
 #include "ps.h"
 
-#ifdef SPPWAIT
+#ifdef P_PPWAIT
 #define NEWVM
 #endif
 
@@ -288,7 +288,7 @@ main(argc, argv)
 	 */
 	for (i = lineno = 0; i < nentries; i++) {
 		if (xflg == 0 && (KI_EPROC(&kinfo[i])->e_tdev == NODEV ||
-		    (KI_PROC(&kinfo[i])->p_flag & SCTTY ) == 0))
+		    (KI_PROC(&kinfo[i])->p_flag & P_CONTROLT ) == 0))
 			continue;
 		for (vent = vhead; vent; vent = vent->next) {
 			(vent->var->oproc)(&kinfo[i], vent);
