@@ -1,4 +1,4 @@
-/*	t6.c	1.5	(Berkeley)	83/11/28	*/
+/*	t6.c	1.6	(Berkeley)	84/01/19	*/
 #include "tdef.h"
 extern
 #include "d.h"
