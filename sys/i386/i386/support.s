@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: support.s,v 1.8 1994/06/01 03:12:39 davidg Exp $
+ *	$Id: support.s,v 1.9 1994/06/06 14:02:37 davidg Exp $
  */
 
 #include "assym.s"				/* system definitions */
@@ -875,6 +875,7 @@ ENTRY(copyoutstr)
 	pushl	%edx
 	pushl	%edi
 	call	_trapwrite
+	cld
 	popl	%edi
 	popl	%edx
 	orl	%eax,%eax
