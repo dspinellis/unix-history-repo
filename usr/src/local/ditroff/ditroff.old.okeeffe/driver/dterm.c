@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.12	(Berkeley)	%G%"
+/* @(#)dterm.c	1.13	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -21,6 +21,9 @@
  *
  *	  -m	print margins.  Default action is to cut printing area down
  *		to only the part of the page with information on it.
+ *
+ *	  -a	make the output readable - i.e. print like a "troff -a" with
+ *		no character overlap, and one space 'tween words
  *
  *	  -L	put a form feed (^L) at the end of each page
  *
@@ -55,7 +58,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.12	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.13	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
@@ -67,6 +70,7 @@ int	clearsc = 0;		/* Put out form feed at each page? */
 int	output	= 0;		/* Do we do output at all? */
 int	nolist	= 0;		/* Output page list if > 0 */
 int	margin	= 0;		/* Print blank margins? */
+int	ascii	= 0;		/* make the output "readable"? */
 int	olist[20];		/* pairs of page numbers */
 
 float	hscale	= 10.0;		/* characters and lines per inch for output */
@@ -119,6 +123,9 @@ char **argv;
 			break;
 		case 'm':		/* print margins */
 			margin = !margin;
+			break;
+		case 'a':		/* readable mode */
+			ascii = !ascii;
 			break;
 		case 'L':		/* form feed after each page */
 			clearsc = !clearsc;
@@ -238,7 +245,12 @@ register FILE *fp;
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 				/* two motion digits plus a character */
-			hmot((c-'0')*10 + getc(fp)-'0');
+			if (ascii) {
+			    hmot((int)hscale);
+			    getc(fp);
+			} else {
+			    hmot((c-'0')*10 + getc(fp)-'0');
+			}
 			put1(getc(fp));
 			break;
 
@@ -320,6 +332,9 @@ register FILE *fp;
 			break;
 
 		case 'w':	/* word space */
+			if (ascii) {
+			    hmot((int)hscale);
+			}
 			break;
 
 		case 'V':	/* absolute vertical motion */
@@ -587,7 +602,7 @@ char *s;
 		} else {
 			put1(c);
 		}
-		hmot(1);
+		hmot((int)hscale);
 	}
 }
 
@@ -612,8 +627,10 @@ char *s;
 			}
 	}
 	if (previ >= 0) {
-		for (p = spectab[previ+1]; *p; p++)
+		for (hmot((int)-hscale), p = spectab[previ+1]; *p; p++) {
+			hmot((int)hscale);
 			store(*p);
+		}
 	} else
 		prev[0] = '\0';
 }
