@@ -6,12 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setenv.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)setenv.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+char *__findenv __P((const char *, int *)); 
 
 /*
  * setenv --
@@ -25,25 +27,24 @@ setenv(name, value, rewrite)
 {
 	extern char **environ;
 	static int alloced;			/* if allocated space before */
-	register char *C;
+	register char *c;
 	int l_value, offset;
-	char *_findenv();
 
 	if (*value == '=')			/* no `=' in value */
 		++value;
 	l_value = strlen(value);
-	if ((C = _findenv(name, &offset))) {	/* find if already exists */
+	if ((c = __findenv(name, &offset))) {	/* find if already exists */
 		if (!rewrite)
 			return (0);
-		if (strlen(C) >= l_value) {	/* old larger; copy over */
-			while (*C++ = *value++);
+		if (strlen(c) >= l_value) {	/* old larger; copy over */
+			while (*c++ = *value++);
 			return (0);
 		}
 	} else {					/* create new slot */
-		register int	cnt;
-		register char	**P;
+		register int cnt;
+		register char **p;
 
-		for (P = environ, cnt = 0; *P; ++P, ++cnt);
+		for (p = environ, cnt = 0; *p; ++p, ++cnt);
 		if (alloced) {			/* just increase size */
 			environ = (char **)realloc((char *)environ,
 			    (size_t)(sizeof(char *) * (cnt + 2)));
@@ -52,24 +53,21 @@ setenv(name, value, rewrite)
 		}
 		else {				/* get new space */
 			alloced = 1;		/* copy old entries into it */
-			P = (char **)malloc((size_t)(sizeof(char *) *
-			    (cnt + 2)));
-			if (!P)
+			p = malloc((size_t)(sizeof(char *) * (cnt + 2)));
+			if (!p)
 				return (-1);
-			bcopy(environ, P, cnt * sizeof(char *));
-			environ = P;
+			bcopy(environ, p, cnt * sizeof(char *));
+			environ = p;
 		}
 		environ[cnt + 1] = NULL;
 		offset = cnt;
 	}
-	for (C = (char *)name; *C && *C != '='; ++C);	/* no `=' in name */
+	for (c = (char *)name; *c && *c != '='; ++c);	/* no `=' in name */
 	if (!(environ[offset] =			/* name + `=' + value */
-	    malloc((size_t)((int)(C - name) + l_value + 2))))
+	    malloc((size_t)((int)(c - name) + l_value + 2))))
 		return (-1);
-	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C)
-		;
-	for (*C++ = '='; *C++ = *value++; )
-		;
+	for (c = environ[offset]; (*c = *name++) && *c != '='; ++c);
+	for (*c++ = '='; *c++ = *value++;);
 	return (0);
 }
 
@@ -79,14 +77,14 @@ setenv(name, value, rewrite)
  */
 void
 unsetenv(name)
-	const char	*name;
+	const char *name;
 {
 	extern char **environ;
-	register char **P;
+	register char **p;
 	int offset;
 
-	while (_findenv(name, &offset))		/* if set multiple times */
-		for (P = &environ[offset];; ++P)
-			if (!(*P = *(P + 1)))
+	while (__findenv(name, &offset))	/* if set multiple times */
+		for (p = &environ[offset];; ++p)
+			if (!(*p = *(p + 1)))
 				break;
 }
