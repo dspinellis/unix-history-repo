@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.9 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.10 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.9 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.10 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -158,6 +158,9 @@ tryhelo:
 	**  Check to see if we actually ended up talking to ourself.
 	**  This means we didn't know about an alias or MX, or we managed
 	**  to connect to an echo server.
+	**
+	**	If this code remains at all, "CheckLoopBack" should be
+	**	a mailer flag.  This is a MAYBENEXTRELEASE feature.
 	*/
 
 	p = strchr(&SmtpReplyBuffer[4], ' ');
