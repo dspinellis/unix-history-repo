@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.101		%G%);
+SCCSID(@(#)main.c	3.102		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -519,8 +519,13 @@ main(argc, argv)
 	}
 # endif QUEUE
 
-	/* give this transaction an id */
+	/*
+	**  Give this envelope a reality.
+	**	I.e., an id and a creation time.
+	*/
+
 	(void) queuename(CurEnv, '\0');
+	CurEnv->e_ctime = curtime();
 	
 # ifdef SMTP
 	/*

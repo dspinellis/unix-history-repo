@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.6		%G%);
+SCCSID(@(#)clock.c	3.7		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -126,11 +126,11 @@ clrevent(ev)
 
 tick()
 {
-	auto time_t now;
+	register time_t now;
 	register EVENT *ev;
 
 	signal(SIGALRM, tick);
-	(void) time(&now);
+	now = curtime();
 
 # ifdef DEBUG
 	if (tTd(5, 1))
@@ -159,12 +159,14 @@ tick()
 			if (EventQueue->ev_time > now)
 				(void) alarm(EventQueue->ev_time - now);
 			else
-				(void) alarm(1);
+				(void) alarm(3);
 		}
 		(*f)(a);
 		(void) alarm(0);
-		(void) time(&now);
+		now = curtime();
 	}
+	if (EventQueue != NULL)
+		(void) alarm(EventQueue->ev_time - now);
 }
 /*
 **  SLEEP -- a version of sleep that works with this stuff
