@@ -1,4 +1,4 @@
-#	@(#)rc	5.22 (Berkeley) %G%
+#	@(#)rc	5.23 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -93,8 +93,10 @@ quotacheck -a
 				echo ' done.'
 quotaon -a
 
-# build kvm database
-kvm_mkdb
+# build ps databases
+kvm_mkdb /vmunix
+ls -l /dev | awk '/^[bc]/ { print substr($1, 1, 1), $4, $5, $9 }' > \
+	/var/run/devdatabase
 
 chmod 666 /dev/tty[pqrs]*
 
