@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)objfmt.h	5.1 (Berkeley) %G%
+ *	@(#)objfmt.h	5.2 (Berkeley) %G%
  */
 
 /*
