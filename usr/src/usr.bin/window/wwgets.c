@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwgets.c	3.3 84/01/16";
+static	char *sccsid = "@(#)wwgets.c	3.4 84/03/03";
 #endif
 
 #include "ww.h"
@@ -20,7 +20,7 @@ register struct ww *w;
 			if (p > buf)
 				rub(*--p, w);
 			else
-				wwbell();
+				wwputc(CTRL(g), w);
 		} else if (c == wwoldtty.ww_sgttyb.sg_kill) {
 			while (p > buf)
 				rub(*--p, w);
@@ -34,9 +34,9 @@ register struct ww *w;
 			break;
 		} else {
 			if (p >= buf + n - 1)
-				wwbell();
+				wwputc(CTRL(g), w);
 			else
-				(void) wwputs(unctrl(*p++ = c), w);
+				wwputs(unctrl(*p++ = c), w);
 		}
 	}
 	*p = 0;
@@ -49,5 +49,5 @@ struct ww *w;
 	register i;
 
 	for (i = strlen(unctrl(c)); --i >= 0;)
-		(void) wwputs("\b \b", w);
+		wwputs("\b \b", w);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.7 84/01/16";
+static	char *sccsid = "@(#)cmd6.c	3.8 84/03/03";
 #endif
 
 #include "defs.h"
@@ -14,12 +14,12 @@ c_debug()
 	register struct ww *w;
 
 	if (!terse)
-		(void) wwputs("[m(smap) n(ns) o(os) s(string) v(nvis) w(win)]? ", cmdwin);
+		wwputs("[m(smap) n(ns) o(os) s(string) v(nvis) w(win)]? ", cmdwin);
 	wwcurtowin(cmdwin);
 	while (wwpeekc() < 0)
 		wwiomux();
 	if (!terse)
-		(void) wwputs("\r\n", cmdwin);
+		wwputs("\r\n", cmdwin);
 	switch (wwgetc()) {
 	case 'm':
 		wwdumpsmap();
@@ -42,7 +42,7 @@ c_debug()
 			wwdumpwin(w);
 		break;
 	default:
-		wwbell();
+		wwputc(CTRL(g), cmdwin);
 	}
 }
 
@@ -59,7 +59,7 @@ debug_str()
 	for (s = str_head.s_forw; s != &str_head; s = s->s_forw) {
 		if (more(w, 0) == 2)
 			goto out;
-		(void) wwprintf(w, "(0x%x)\t\"%s\"\n", s->s_data, s->s_data);
+		wwprintf(w, "(0x%x)\t\"%s\"\n", s->s_data, s->s_data);
 	}
 	waitnl(w);
 out:

@@ -1,25 +1,30 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.14 84/01/16";
+static	char *sccsid = "@(#)wwinit.c	3.15 84/03/03";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+#include <sys/signal.h>
+#include <fcntl.h>
 
 static char *kp = wwkeys;
-extern char _sobuf[];
 
 wwinit()
 {
 	register i, j;
 	int kn;
 
-	setbuf(stdout, _sobuf);
 #ifndef O_4_1A
 	wwdtablesize = getdtablesize();
 #else
 #include <sys/param.h>
 	wwdtablesize = NOFILE;
 #endif
+
+	if (signal(SIGIO, wwrint) == BADSIG)
+		return -1;
+	(void) sighold(SIGIO);
+
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwwintty = wwoldtty;
@@ -32,6 +37,7 @@ wwinit()
 	wwnewtty.ww_sgttyb.sg_flags |= CBREAK;
 	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
 	wwnewtty.ww_lmode |= LLITOUT;
+	wwnewtty.ww_fflags |= FASYNC;
 	if (wwsettty(0, &wwnewtty) < 0)
 		goto bad;
 
@@ -61,8 +67,7 @@ wwinit()
 	if ((wwib = malloc((unsigned) 512)) == 0)
 		goto bad;
 	wwibe = wwib + 512;
-	wwibp = wwib;
-	wwibc = 0;
+	wwibq = wwibp = wwib;
 
 	if ((wwsmap = wwalloc(0, 0, wwnrow, wwncol, sizeof (char))) == 0)
 		goto bad;
@@ -116,6 +121,7 @@ wwinit()
 			addcap(cap);
 		}
 	}
+	(void) sigrelse(SIGIO);
 	return 0;
 bad:
 	/*
@@ -123,6 +129,8 @@ bad:
 	 * to exit when wwinit fails anyway.
 	 */
 	(void) wwsettty(0, &wwoldtty);
+	(void) signal(SIGIO, SIG_DFL);
+	(void) sigrelse(SIGIO);
 	return -1;
 }
 

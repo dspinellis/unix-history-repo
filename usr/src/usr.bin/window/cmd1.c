@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.20 84/01/16";
+static	char *sccsid = "@(#)cmd1.c	3.21 84/03/03";
 #endif
 
 #include "defs.h"
@@ -12,7 +12,7 @@ c_window()
 	if ((id = findid()) < 0)
 		return;
 	if (!terse)
-		(void) wwputs("Upper left corner: ", cmdwin);
+		wwputs("Upper left corner: ", cmdwin);
 	col = 0;
 	row = 1;
 	wwadd(boxwin, framewin->ww_back);
@@ -38,7 +38,7 @@ c_window()
 		break;
 	}
 	if (!terse)
-		(void) wwputs("\r\nLower right corner: ", cmdwin);
+		wwputs("\r\nLower right corner: ", cmdwin);
 	xcol = col;
 	xrow = row;
 	for (;;) {
@@ -66,7 +66,7 @@ c_window()
 	}
 	wwdelete(boxwin);
 	if (!terse)
-		(void) wwputs("\r\n", cmdwin);
+		wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
 	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline,
 		(char *) 0);
@@ -122,14 +122,14 @@ int maxrow, maxcol;
 			break;
 		case CTRL([):
 			if (!terse)
-				(void) wwputs("\r\nCancelled.  ", cmdwin);
+				wwputs("\r\nCancelled.  ", cmdwin);
 			return 3;
 		case '\r':
 			return 2;
 		default:
 			if (!terse)
-				(void) wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
-			wwbell();
+				wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
+			wwputc(CTRL(g), cmdwin);
 		}
 	}
 	return oldrow != *row || oldcol != *col;

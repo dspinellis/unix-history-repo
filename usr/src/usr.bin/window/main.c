@@ -1,11 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.14 83/12/06";
+static	char *sccsid = "@(#)main.c	3.15 84/03/03";
 #endif
 
 #include "defs.h"
+#include <sys/signal.h>
+#include <stdio.h>
 
-char escapec = CTRL(p);
 int nbufline = 48;			/* compatible */
+char escapec = CTRL(p);	
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -17,9 +19,6 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
-#ifndef O_4_1A
-	struct timezone timezone;
-#endif
 
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -60,10 +59,9 @@ char **argv;
 	else
 		shellname = shell;
 #ifndef O_4_1A
-	(void) gettimeofday(&starttime, &timezone);
+	(void) gettimeofday(&starttime, (struct timezone *)0);
 #endif
 	if (wwinit() < 0) {
-		(void) fflush(stdout);
 		(void) fprintf(stderr, "%s.\n", wwerror());
 		exit(1);
 	}
@@ -81,6 +79,7 @@ char **argv;
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
+	cmdwin->ww_nointr = 1;
 	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))
 	    == 0) {
 		(void) wwflush();
@@ -99,14 +98,14 @@ char **argv;
 	(void) signal(SIGCHLD, wwchild);
 	setvars();
 	if (fflag)
-		incmd = 1;
+		wwcurwin = 0;
 	else {
 		if (!terse)
 			wwadd(cmdwin, &wwhead);
 		if (dflag || doconfig() < 0)
 			dodefault();
 		if (selwin != 0) {
-			incmd = 0;
+			wwcurwin = selwin;
 			wwcursor(selwin, 0);
 		}
 		if (!terse) {

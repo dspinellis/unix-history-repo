@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.7 84/01/16";
+static	char *sccsid = "@(#)cmd4.c	3.8 84/03/03";
 #endif
 
 #include "defs.h"
@@ -32,9 +32,9 @@ c_show()
 				wwiomux();
 				continue;
 			default:
-				wwbell();
+				wwputc(CTRL(g), cmdwin);
 				if (!terse) {
-					(void) wwputs("\rType return to continue, escape to select.", cmdwin);
+					wwputs("\rType return to continue, escape to select.", cmdwin);
 					wwdelete(cmdwin);
 					wwadd(cmdwin, &wwhead);
 				}
@@ -50,7 +50,7 @@ out:
 		if (!terse) {
 			wwdelete(cmdwin);
 			wwadd(cmdwin, &wwhead);
-			(void) wwputs("\r\n", cmdwin);
+			wwputs("\r\n", cmdwin);
 		}
 	}
 }
@@ -61,9 +61,9 @@ c_colon()
 
 	if (terse)
 		wwadd(cmdwin, &wwhead);
-	(void) wwputc(':', cmdwin);
+	wwputc(':', cmdwin);
 	wwgets(buf, wwncol - 3, cmdwin);
-	(void) wwputs("\r\n", cmdwin);
+	wwputs("\r\n", cmdwin);
 	if (terse)
 		wwdelete(cmdwin);
 	else

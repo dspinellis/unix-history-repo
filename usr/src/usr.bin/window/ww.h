@@ -1,9 +1,9 @@
 /*
- *	@(#)ww.h	3.25 84/01/16	
+ *	@(#)ww.h	3.26 84/03/03	
  */
 
-#include <stdio.h>
 #include <sgtty.h>
+#include <setjmp.h>
 
 #define NWW	30		/* maximum number of windows */
 
@@ -32,6 +32,7 @@ struct ww {
 	char ww_mapnl :1;	/* map \n to \r\n */
 	char ww_hascursor :1;	/* has fake cursor */
 	char ww_hasframe :1;	/* frame it */
+	char ww_nointr : 1;	/* wwwrite() not interruptable */
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 
@@ -47,7 +48,7 @@ struct ww {
 	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
 
-		/* things for the window process */
+		/* things for the window process and io */
 	int ww_pty;		/* file descriptor of pty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
@@ -55,10 +56,10 @@ struct ww {
 	char *ww_obe;		/* end of ww_ob */
 	char *ww_obp;		/* current position in ww_ob */
 	int ww_obc;		/* character count */
-	char ww_stopped;	/* flow control */
+	char ww_stopped;	/* output stopped */
 
 		/* things for the user, they really don't belong here */
-	char ww_center :1;	/* center the label */
+	char ww_center;		/* center the label */
 	int ww_id;		/* the user window id */
 	char *ww_label;		/* the user supplied label */
 	struct ww_pos ww_altpos;/* alternate position */
@@ -71,6 +72,7 @@ struct ww_tty {
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
+	int ww_fflags;
 };
 
 union ww_char {
@@ -166,7 +168,8 @@ int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
 int wwerrno;			/* error number */
 
 	/* statistics */
-int wwnwrite, wwnwritec;
+int wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc;
+int wwnwwr, wwnwwra, wwnwwrc;
 int wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss;
 int wwnread, wwnreade, wwnreadz, wwnreadc;
 int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
@@ -175,19 +178,24 @@ int wwnselect, wwnselecte, wwnselectz;
 	/* quicky macros */
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor((w)->ww_cur.r, (w)->ww_cur.c)
-#define wwbell()	putchar(CTRL(g))
 #define wwunbox(w)	wwunframe(w)
 #define wwclreol(w,r,c)	wwclreol1((w), (r), (c), 0)
 #define wwredrawwin(w)	wwredrawwin1((w), (w)->ww_i.t, (w)->ww_i.b, 0)
+#define wwupdate()	wwupdate1(0, wwnrow);
 
 	/* things for handling input */
+int wwrint();		/* interrupt handler */
+struct ww *wwcurwin;	/* window to copy input into */
+char wwsetjmp;		/* want a longjmp() from wwrint() */
+jmp_buf wwjmpbuf;	/* jmpbuf for above */
 char *wwib;		/* input (keyboard) buffer */
 char *wwibe;		/* wwib + sizeof buffer */
-char *wwibp;		/* current position in buffer */
-int wwibc;		/* character count */
-#define wwgetc()	(wwibc ? wwibc--, *wwibp++&0x7f : -1)
-#define wwpeekc()	(wwibc ? *wwibp&0x7f : -1)
-#define wwungetc(c)	(wwibp > wwib ? wwibc++, *--wwibp = (c) : -1)
+char *wwibp;		/* current read position in buffer */
+char *wwibq;		/* current write position in buffer */
+#define wwgetc()	(wwibp < wwibq ? *wwibp++ & 0x7f : -1)
+#define wwpeekc()	(wwibp < wwibq ? *wwibp & 0x7f : -1)
+#define wwungetc(c)	(wwibp > wwib ? *--wwibp = (c) : -1)
+#define wwinterrupt()	(wwibp < wwibq)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"
@@ -217,6 +225,7 @@ char *tgetstr();
 char *rindex();
 char *strcpy();
 char *strcat();
+char *sprintf();
 
 #undef MIN
 #undef MAX
@@ -226,7 +235,7 @@ char *strcat();
 #undef CTRL
 #define CTRL(c)		('c'&0x1f)
 #define DEL		0x7f
-#define ISCTRL(c)	((c) < ' ' || (c) >= DEL)
+#define ISCTRL(c)	((c) < ' ' & (c) != '\t' || (c) >= DEL)
 
 #if defined(O_4_1A)||defined(O_4_1C)
 int (*sigset)();

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.22 84/01/16";
+static	char *sccsid = "@(#)cmd2.c	3.23 84/03/03";
 #endif
 
 #include "defs.h"
@@ -54,7 +54,7 @@ c_help()
 		error("Can't open help window: %s.", wwerror());
 		return;
 	}
-	(void) wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
+	wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
 		unctrl(escapec));
 	if (help_print(w, "Short commands", help_shortcmd) >= 0)
 		(void) help_print(w, "Long commands", help_longcmd);
@@ -66,15 +66,15 @@ register struct ww *w;
 char *name;
 register char **list;
 {
-	(void) wwprintf(w, "%s:\n\n", name);
+	wwprintf(w, "%s:\n\n", name);
 	while (*list)
 		switch (more(w, 0)) {
 		case 0:
-			(void) wwputs(*list++, w);
-			(void) wwputc('\n', w);
+			wwputs(*list++, w);
+			wwputc('\n', w);
 			break;
 		case 1:
-			(void) wwprintf(w, "%s: (continued)\n\n", name);
+			wwprintf(w, "%s: (continued)\n\n", name);
 			break;
 		case 2:
 			return -1;
@@ -90,14 +90,13 @@ c_time(flag)
 	register struct ww *w;
 	struct rusage rusage;
 	struct timeval timeval;
-	struct timezone timezone;
 
 	if ((w = openiwin(6, "Timing and Resource Usage")) == 0) {
 		error("Can't open time window: %s.", wwerror());
 		return;
 	}
 
-	(void) gettimeofday(&timeval, &timezone);
+	(void) gettimeofday(&timeval, (struct timezone *)0);
 	timeval.tv_sec -= starttime.tv_sec;
 	if ((timeval.tv_usec -= starttime.tv_usec) < 0) {
 		timeval.tv_sec--;
@@ -105,15 +104,15 @@ c_time(flag)
 	}
 	(void) getrusage(flag, &rusage);
 
-	(void) wwprintf(w, "time\t\tutime\t\tstime\t\tmaxrss\tixrss\tidrss\tisrss\n");
-	(void) wwprintf(w, "%-16s", strtime(&timeval));
-	(void) wwprintf(w, "%-16s", strtime(&rusage.ru_utime));
-	(void) wwprintf(w, "%-16s", strtime(&rusage.ru_stime));
-	(void) wwprintf(w, "%D\t%D\t%D\t%D\n",
+	wwprintf(w, "time\t\tutime\t\tstime\t\tmaxrss\tixrss\tidrss\tisrss\n");
+	wwprintf(w, "%-16s", strtime(&timeval));
+	wwprintf(w, "%-16s", strtime(&rusage.ru_utime));
+	wwprintf(w, "%-16s", strtime(&rusage.ru_stime));
+	wwprintf(w, "%D\t%D\t%D\t%D\n",
 		rusage.ru_maxrss, rusage.ru_ixrss,
 		rusage.ru_idrss, rusage.ru_isrss);
-	(void) wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\n");
-	(void) wwprintf(w, "%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\n",
+	wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\n");
+	wwprintf(w, "%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\n",
 		rusage.ru_minflt, rusage.ru_majflt, rusage.ru_nswap,
 		rusage.ru_inblock, rusage.ru_oublock,
 		rusage.ru_msgsnd, rusage.ru_msgrcv, rusage.ru_nsignals,
@@ -157,22 +156,29 @@ c_stat()
 {
 	register struct ww *w;
 
-	if ((w = openiwin(8, "IO Statistics")) == 0) {
+	if ((w = openiwin(14, "IO Statistics")) == 0) {
 		error("Can't open statistics window: %s.", wwerror());
 		return;
 	}
-	(void) wwprintf(w, "nwrite\tnwritec\tnupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnwrite, wwnwritec,
+	wwprintf(w, "ttflush\twrite\terror\tzero\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
+		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
+	wwprintf(w, "wwwrite\tattmpt\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\n",
+		wwnwwr, wwnwwra, wwnwwrc);
+	wwprintf(w, "wwupdat\tline\tmiss\tmajor\tmiss\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
-	(void) wwprintf(w, "nsel\tnselz\tnsele\tnread\tnreadz\tnreade\tnreadc\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnselect, wwnselectz, wwnselecte,
-		wwnread, wwnreadz, wwnreade, wwnreadc);
-	(void) wwprintf(w, "nwread\tnwreadz\tnwreade\tnwreadd\tnwreadc\tnwreadp\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnwread, wwnwreadz, wwnwreade,
-		wwnwreadd, wwnwreadc, wwnwreadp);
+	wwprintf(w, "select\terror\tzero\n");
+	wwprintf(w, "%d\t%d\t%d\n",
+		wwnselect, wwnselecte, wwnselectz);
+	wwprintf(w, "read\terror\tzero\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\n",
+		wwnread, wwnreade, wwnreadz, wwnreadc);
+	wwprintf(w, "ptyread\terror\tzero\tcontrol\tdata\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnwread, wwnwreade, wwnwreadz,
+		wwnwreadp, wwnwreadd, wwnwreadc);
 	waitnl(w);
 	closeiwin(w);
 }
@@ -197,7 +203,7 @@ c_list()
 	for (i = 0; i < NWINDOW; i++) {
 		if ((wp = window[i]) == 0)
 			continue;
-		(void) wwprintf(w, "%c %c %-13s %-.*s\n",
+		wwprintf(w, "%c %c %-13s %-.*s\n",
 			wp == selwin ? '*' : ' ',
 			i + '1',
 			wp->ww_state == WWS_HASPROC ? "" : "(No process)",
@@ -212,15 +218,15 @@ c_quit()
 {
 	if (terse)
 		wwadd(cmdwin, &wwhead);
-	(void) wwputs("Really quit [yn]? ", cmdwin);
+	wwputs("Really quit [yn]? ", cmdwin);
 	wwcurtowin(cmdwin);
 	while (wwpeekc() < 0)
 		wwiomux();
 	if (wwgetc() == 'y') {
-		(void) wwputs("Yes", cmdwin);
+		wwputs("Yes", cmdwin);
 		quit++;
 	} else
-		(void) wwputs("\r\n", cmdwin);
+		wwputs("\r\n", cmdwin);
 	if (terse && !quit)
 		wwdelete(cmdwin);
 }

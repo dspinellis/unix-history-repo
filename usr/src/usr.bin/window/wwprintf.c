@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwprintf.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwprintf.c	3.2 84/03/03";
 #endif
 
 #include "ww.h"
@@ -9,6 +9,7 @@ wwprintf(w, fmt, args)
 struct ww *w;
 char *fmt;
 {
+#include <stdio.h>
 	struct _iobuf _wwbuf;
 	static char buf[1024];
 
@@ -22,5 +23,5 @@ char *fmt;
 	_wwbuf._cnt = sizeof buf;
 	_wwbuf._file = -1;			/* safe */
 	_doprnt(fmt, &args, &_wwbuf);
-	return wwwrite(w, buf, _wwbuf._ptr - buf);
+	(void) wwwrite(w, buf, _wwbuf._ptr - buf);
 }

@@ -1,11 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.11 84/01/06";
+static	char *sccsid = "@(#)wwupdate.c	3.12 84/03/03";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
-wwupdate()
+wwupdate1(top, bot)
 {
 	int i;
 	register j;
@@ -14,7 +14,8 @@ wwupdate()
 	char didit;
 
 	wwnupdate++;
-	for (i = 0, touched = wwtouched; i < wwnrow; i++, touched++) {
+	for (i = top, touched = &wwtouched[i]; i < bot && !wwinterrupt();
+	     i++, touched++) {
 		if (!*touched)
 			continue;
 		if (*touched & WWU_MAJOR && tt.tt_clreol != 0) {

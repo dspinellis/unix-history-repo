@@ -1,49 +1,37 @@
 #ifndef lint
-static	char *sccsid = "@(#)mloop.c	3.2 84/01/16";
+static	char *sccsid = "@(#)mloop.c	3.3 84/03/03";
 #endif
 
 #include "defs.h"
 
 mloop()
 {
-	register n;
-	register char *p;
-	int imask;
-
 	while (!quit) {
-		if (!incmd && selwin->ww_state != WWS_HASPROC) {
-			incmd = 1;
-			error("Process died.");
-		}
-		if (incmd) {
+		if (wwcurwin == 0) {
 			docmd();
-			continue;
-		}
-		while (wwibc == 0) {
-			wwcurtowin(selwin);
+		} else if (wwcurwin->ww_state != WWS_HASPROC) {
+			wwcurwin = 0;
+			if (wwpeekc() == escapec)
+				(void) wwgetc();
+			error("Process died.");
+		} else {
+			register char *p;
+			register n;
+
 			wwiomux();
-		}
-		/*
-		 * Weird loop.  Copy the buffer to the pty
-		 * and stopping on the escape character
-		 * in a hopefully efficient way.
-		 * Probably a good thing to make wwibc == 1 a special
-		 * case.
-		 */
-		for (p = wwibp, n = wwibc;;) {
-			if (--n < 0) {
-				(void) write(selwin->ww_pty, wwibp, wwibc);
-				wwibc = 0;
-				break;
-			}
-			if (*p++ == escapec) {
-				if ((n = p - wwibp) > 1)
-					(void) write(selwin->ww_pty,
-						wwibp, n - 1);
-				wwibp = p;
-				wwibc -= n;
-				incmd = 1;
-				break;
+			if (wwibp < wwibq) {
+				for (p = wwibp; p < wwibq && *p != escapec;
+				     p++)
+					;
+				if ((n = p - wwibp) > 0) {
+					(void) write(wwcurwin->ww_pty,
+						wwibp, n);
+					wwibp = p;
+				}
+				if (wwpeekc() == escapec) {
+					wwcurwin = 0;
+					(void) wwgetc();
+				}
 			}
 		}
 	}

@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.17 84/01/16";
+static	char *sccsid = "@(#)wwwrite.c	3.18 84/03/03";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 wwwrite(w, p, n)
 register struct ww *w;
@@ -10,66 +11,75 @@ register char *p;
 int n;
 {
 	char hascursor;
-	int saven = n;
+	char *savep = p;
+	char *q = p + n;
 
-	wwnwrite++;
-	wwnwritec += n;
 	if (hascursor = w->ww_hascursor)
 		wwcursor(w, 0);
-	while (n > 0) {
+	while (p < q && !w->ww_stopped && (!wwinterrupt() || w->ww_nointr)) {
 		if (w->ww_wstate == 0 && !ISCTRL(*p)) {
 			register i;
 			register union ww_char *bp;
-			union ww_char *bq;
 			int col, col1;
 
 			if (w->ww_insert) {	/* this is very slow */
-				n--;
+				if (*p == '\t') {
+					p++;
+					w->ww_cur.c += 8 -
+						(w->ww_cur.c - w->ww_w.l & 7);
+					goto chklf;
+				}
 				wwinschar(w, w->ww_cur.r, w->ww_cur.c,
 					*p++ | w->ww_modes << WWC_MSHIFT);
 				goto right;
 			}
 
-			bp = bq = &w->ww_buf[w->ww_cur.r][w->ww_cur.c];
-			if ((i = w->ww_b.r - w->ww_cur.c) > n)
-				i = n;
-			while (--i >= 0 && !ISCTRL(*p))
-				bp++->c_w = *p++ | w->ww_modes << WWC_MSHIFT;
+			bp = &w->ww_buf[w->ww_cur.r][w->ww_cur.c];
+			i = w->ww_cur.c;
+			while (i < w->ww_w.r && p < q && !ISCTRL(*p))
+				if (*p == '\t') {
+					register tmp = 8 - (i - w->ww_w.l & 7);
+					p++;
+					i += tmp;
+					bp += tmp;
+				} else {
+					bp++->c_w = *p++
+						| w->ww_modes << WWC_MSHIFT;
+					i++;
+				}
 
-			i = bp - bq;
-			n -= i;
 			col = MAX(w->ww_cur.c, w->ww_i.l);
-			w->ww_cur.c += i;
-			col1 = MIN(w->ww_cur.c, w->ww_i.r);
-
+			col1 = MIN(i, w->ww_i.r);
+			w->ww_cur.c = i;
 			if (w->ww_cur.r >= w->ww_i.t && w->ww_cur.r < w->ww_i.b)
 			{
 				register union ww_char *ns = wwns[w->ww_cur.r];
 				register char *smap = &wwsmap[w->ww_cur.r][col];
 				register char *win = w->ww_win[w->ww_cur.r];
-				char touched = wwtouched[w->ww_cur.r];
+				int nchanged = 0;
 
 				bp = w->ww_buf[w->ww_cur.r];
 				for (i = col; i < col1; i++)
 					if (*smap++ == w->ww_index) {
-						touched |= WWU_TOUCHED;
+						nchanged++;
 						ns[i].c_w = bp[i].c_w
 							^ win[i] << WWC_MSHIFT;
 					}
-				wwtouched[w->ww_cur.r] = touched;
+				if (nchanged > 0) {
+					wwtouched[w->ww_cur.r] |= WWU_TOUCHED;
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
+				}
 			}
-			if (w->ww_cur.c >= w->ww_w.r) {
-				w->ww_cur.c = w->ww_w.l;
-				goto lf;
-			}
-			continue;
-		}
-		n--;
-		switch (w->ww_wstate) {
+			
+		chklf:
+			if (w->ww_cur.c >= w->ww_w.r)
+				goto crlf;
+		} else switch (w->ww_wstate) {
 		case 0:
 			switch (*p++) {
 			case '\n':
 				if (w->ww_mapnl)
+		crlf:
 					w->ww_cur.c = w->ww_w.l;
 		lf:
 				if (++w->ww_cur.r >= w->ww_w.b) {
@@ -84,14 +94,6 @@ int n;
 						wwdelline(w, w->ww_b.t);
 				}
 				break;
-			case '\t':
-				w->ww_cur.c +=
-					8 - (w->ww_cur.c - w->ww_w.l & 7);
-				if (w->ww_cur.c >= w->ww_w.r) {
-					w->ww_cur.c = w->ww_w.l;
-					goto lf;
-				}
-				break;
 			case '\b':
 				if (--w->ww_cur.c < w->ww_w.l) {
 					w->ww_cur.c = w->ww_w.r - 1;
@@ -102,7 +104,7 @@ int n;
 				w->ww_cur.c = w->ww_w.l;
 				break;
 			case CTRL(g):
-				wwbell();
+				ttputc(CTRL(g));
 				break;
 			case CTRL([):
 				w->ww_wstate = 1;
@@ -133,11 +135,8 @@ int n;
 				goto lf;
 			case 'C':
 		right:
-				if (++w->ww_cur.c >= w->ww_w.r) {
-					w->ww_cur.c = w->ww_w.l;
-					goto lf;
-				}
-				break;
+				w->ww_cur.c++;
+				goto chklf;
 			case 'E':
 				w->ww_buf -= w->ww_w.t - w->ww_b.t;
 				w->ww_b.t = w->ww_w.t;
@@ -205,5 +204,9 @@ int n;
 	}
 	if (hascursor)
 		wwcursor(w, 1);
-	return saven;
+	wwnwwr++;
+	wwnwwra += n;
+	n = p - savep;
+	wwnwwrc += n;
+	return n;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.20 84/01/16";
+static	char *sccsid = "@(#)cmd.c	3.21 84/03/03";
 #endif
 
 #include "defs.h"
@@ -16,7 +16,7 @@ docmd()
 	for (;;) {
 		while ((c = wwgetc()) >= 0) {
 			if (!terse)
-				(void) wwputs("\r\n", cmdwin);
+				wwputs("\r\n", cmdwin);
 			switch (c) {
 			default:
 				if (c == escapec)
@@ -47,7 +47,7 @@ docmd()
 				}
 				setselwin(w);
 				if (checkproc(selwin) >= 0)
-					incmd = 0;
+					 wwcurwin = selwin;
 				break;
 			case '%':
 				if ((w = getwin()) != 0)
@@ -57,7 +57,7 @@ docmd()
 				if (lastselwin != 0) {
 					setselwin(lastselwin);
 					if (checkproc(selwin) >= 0)
-						incmd = 0;
+						wwcurwin = selwin;
 				} else
 					error("No previous window.");
 				break;
@@ -138,7 +138,7 @@ docmd()
 				break;
 			case CTRL([):
 				if (checkproc(selwin) >= 0)
-					incmd = 0;
+					wwcurwin = selwin;
 				break;
 			case CTRL(z):
 				wwsuspend();
@@ -169,21 +169,21 @@ docmd()
 					if (checkproc(selwin) >= 0) {
 						(void) write(selwin->ww_pty,
 							&escapec, 1);
-						incmd = 0;
+						wwcurwin = selwin;
 					}
 				} else {
 					if (!terse)
-						wwbell();
+						wwputc(CTRL(g), cmdwin);
 					error("Type ? for help.");
 				}
 			}
 		}
-		if (!incmd || quit)
+		if (wwcurwin != 0 || quit)
 			break;
 		if (terse)
 			wwsetcursor(0, 0);
 		else {
-			(void) wwputs("Command: ", cmdwin);
+			wwputs("Command: ", cmdwin);
 			wwcurtowin(cmdwin);
 		}
 		while (wwpeekc() < 0)
@@ -205,7 +205,7 @@ getwin()
 	struct ww *w = 0;
 
 	if (!terse)
-		(void) wwputs("Which window? ", cmdwin);
+		wwputs("Which window? ", cmdwin);
 	wwcurtowin(cmdwin);
 	while ((c = wwgetc()) < 0)
 		wwiomux();
@@ -218,9 +218,9 @@ getwin()
 	else if (c >= '1' && c < NWINDOW + '1')
 		w = window[c - '1'];
 	if (w == 0)
-		wwbell();
+		wwputc(CTRL(g), cmdwin);
 	if (!terse)
-		(void) wwputs("\r\n", cmdwin);
+		wwputs("\r\n", cmdwin);
 	return w;
 }
 
