@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.9	81/04/24	*/
+/*	vm_meter.c	4.10	81/04/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,6 +28,7 @@ int	slowscan = 0;
 int	fastscan = 0;
 int	klin = KLIN;
 int	klseql = KLSEQL;
+int	klsdist = KLSDIST;
 int	kltxt = KLTXT;
 int	klout = KLOUT;
 int	multprog = -1;		/* so we don't count process 2 */
