@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.15	83/07/21	*/
+/*	uipc_usrreq.c	1.16	83/07/25	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -210,6 +210,9 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_SOCKADDR:
+		break;
+
+	case PRU_PEERADDR:
 		break;
 
 	case PRU_SLOWTIMO:

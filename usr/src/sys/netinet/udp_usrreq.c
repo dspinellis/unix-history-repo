@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.50	83/06/14	*/
+/*	udp_usrreq.c	4.51	83/07/25	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -318,6 +318,10 @@ udp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SOCKADDR:
 		in_setsockaddr(inp, nam);
+		break;
+
+	case PRU_PEERADDR:
+		in_setpeeraddr(inp, nam);
 		break;
 
 	case PRU_CONTROL:

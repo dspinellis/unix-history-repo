@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.80	83/06/20	*/
+/*	tcp_usrreq.c	1.81	83/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -270,6 +270,10 @@ tcp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SOCKADDR:
 		in_setsockaddr(inp, nam);
+		break;
+
+	case PRU_PEERADDR:
+		in_setpeeraddr(inp, nam);
 		break;
 
 	/*
