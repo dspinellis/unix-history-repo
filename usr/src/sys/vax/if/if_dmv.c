@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_dmv.c	7.7 (Berkeley) %G%
+ *	@(#)if_dmv.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -229,10 +229,10 @@ dmvprobe(reg, ui)
 	(void) spl6();
 	addr->bsel0 = DMV_RQI|DMV_IEI|DMV_IEO;
 	DELAY(1000000);
+	dmv_softc[ui->ui_unit].sc_ipl = br = qbgetpri();
 	addr->bsel1 = DMV_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMV_RUN) == 0; i--)
 		;
-	dmv_softc[ui->ui_unit].sc_ipl = br = qbgetpri();
 	return (sizeof(struct dmvdevice));
 }
 
