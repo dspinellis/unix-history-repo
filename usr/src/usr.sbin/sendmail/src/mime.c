@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -299,18 +299,18 @@ mime8to7(mci, header, e, boundary)
 				c2 = c1;
 				continue;
 			}
-			else if (c2 == '\n' && c1 == '.' &&
-				 bitnset(M_XDOT, mci->mci_mailer->m_flags))
-			{
-				fputc('.', mci->mci_out);
-				linelen++;
-			}
 			if (linelen > 72)
 			{
 				fputc('=', mci->mci_out);
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
 				linelen = 0;
 				c2 = '\n';
+			}
+			if (c2 == '\n' && c1 == '.' &&
+				 bitnset(M_XDOT, mci->mci_mailer->m_flags))
+			{
+				fputc('.', mci->mci_out);
+				linelen++;
 			}
 			if ((c1 < 0x20 && c1 != '\t') || c1 >= 0x7f || c1 == '=')
 			{
