@@ -1,4 +1,4 @@
-/*	scb.s	4.11	81/11/22	*/
+/*	scb.s	4.12	81/11/26	*/
 
 /*
  * System control block
@@ -27,10 +27,11 @@ _scb:	.globl	_scb
 /* 090 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0a0 */	IS(softclock);	STRAY;		STRAY;		STRAY;
 #ifdef INET
-/* 0b0 */	IS(netintr);	STRAY;		STRAY;		STRAY;
+/* 0b0 */	IS(ipintr);
 #else
-/* 0b0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0b0 */	STRAY;
 #endif
+/* 0b4 */			STRAY;		STRAY;		STRAY;
 /* 0c0 */	IS(hardclock);	STRAY;		STRAY;		STRAY;
 /* 0d0 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0e0 */	STRAY;		STRAY;		STRAY;		STRAY;
