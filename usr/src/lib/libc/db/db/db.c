@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)db.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)db.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -29,8 +29,8 @@ dbopen(fname, flags, mode, type, openinfo)
 
 #define	DB_FLAGS	(DB_LOCK | DB_SHMEM | DB_TXN)
 #define	USE_OPEN_FLAGS							\
-	(O_CREAT | O_EXCL | O_EXLOCK | O_RDONLY | O_RDWR |		\
-	    O_SHLOCK | O_TRUNC)
+	(O_CREAT | O_EXCL | O_EXLOCK | O_NONBLOCK | O_RDONLY |		\
+	 O_RDWR | O_SHLOCK | O_TRUNC)
 
 	if ((flags & ~(USE_OPEN_FLAGS | DB_FLAGS)) == 0)
 		switch (type) {
