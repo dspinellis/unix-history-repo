@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -161,8 +161,8 @@ usrerr(fmt, va_alist)
 */
 
 /*VARARGS2*/
-#ifdef __STDC__
 void
+#ifdef __STDC__
 message(char *msg, ...)
 #else
 message(msg, va_alist)
@@ -197,8 +197,8 @@ message(msg, va_alist)
 */
 
 /*VARARGS2*/
-#ifdef __STDC__
 void
+#ifdef __STDC__
 nmessage(char *msg, ...)
 #else
 nmessage(msg, va_alist)
