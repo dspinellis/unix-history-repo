@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.29 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.29 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -91,21 +91,21 @@ queueup(df)
 					break;
 #ifdef LOG
 				if (LogLevel > 0 && (i % 32) == 0)
-					syslog(LOG_ALERT, "queueup: cannot create %s: %s",
+					syslog(LOG_ALERT, "queueup: cannot create %s, uid=%d: %s",
+						tf, geteuid(), errstring(errno));
+#endif
+			}
+			else
+			{
+				if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
+					break;
+#ifdef LOG
+				else if (LogLevel > 0 && (i % 32) == 0)
+					syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
 						tf, errstring(errno));
 #endif
-				continue;
+				close(fd);
 			}
-
-			if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
-				break;
-#ifdef LOG
-			else if (LogLevel > 0 && (i % 32) == 0)
-				syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
-					tf, errstring(errno));
-#endif
-
-			close(fd);
 
 			if ((i % 32) == 31)
 			{
@@ -118,7 +118,8 @@ queueup(df)
 		if (fd < 0 || (tfp = fdopen(fd, "w")) == NULL)
 		{
 			printopenfds(TRUE);
-			syserr("!queueup: cannot create queue temp file %s", tf);
+			syserr("!queueup: cannot create queue temp file %s, uid=%d",
+				tf, geteuid());
 		}
 	}
 
