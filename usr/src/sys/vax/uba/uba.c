@@ -1,4 +1,4 @@
-/*	uba.c	4.25	81/03/21	*/
+/*	uba.c	4.26	81/03/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -333,15 +333,16 @@ ubainit(uba)
 #endif
 #if VAX750
 	case VAX_750:
-		mtpr(IUR, 1);
-		/* give devices time to recover from power fail */
-/* THIS IS PROBABLY UNNECESSARY */
-		DELAY(5000000);
-/* END PROBABLY UNNECESSARY */
-		break;
 #endif
 #if VAX730
 	case VAX_730:
+#endif
+#if defined(VAX750) || defined(VAX730)
+		mtpr(IUR, 0);
+		/* give devices time to recover from power fail */
+/* THIS IS PROBABLY UNNECESSARY */
+		DELAY(500000);
+/* END PROBABLY UNNECESSARY */
 		break;
 #endif
 	}
