@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@ pass5()
 	struct csum *cs;
 	time_t now;
 	struct csum cstotal;
-	struct inodesc idesc;
+	struct inodesc idesc[3];
 	char buf[MAXBSIZE];
 	register struct cg *newcg = (struct cg *)buf;
 	struct ocg *ocg = (struct ocg *)buf;
@@ -65,8 +65,9 @@ pass5()
 		errexit("UNKNOWN ROTATIONAL TABLE FORMAT %d\n",
 			fs->fs_postblformat);
 	}
-	bzero((char *)&idesc, sizeof(struct inodesc));
-	idesc.id_type = ADDR;
+	bzero((char *)&idesc[0], sizeof idesc);
+	for (i = 0; i < 3; i++)
+		idesc[i].id_type = ADDR;
 	bzero((char *)&cstotal, sizeof(struct csum));
 	(void)time(&now);
 	for (i = fs->fs_size; i < fragroundup(fs, fs->fs_size); i++)
@@ -167,7 +168,7 @@ pass5()
 		cstotal.cs_ndir += newcg->cg_cs.cs_ndir;
 		cs = &fs->fs_cs(fs, c);
 		if (bcmp((char *)&newcg->cg_cs, (char *)cs, sizeof *cs) != 0 &&
-		    dofix(&idesc, "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
+		    dofix(&idesc[0], "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
 			bcopy((char *)&newcg->cg_cs, (char *)cs, sizeof *cs);
 			sbdirty();
 		}
@@ -178,14 +179,14 @@ pass5()
 		}
 		if (bcmp(cg_inosused(newcg),
 			 cg_inosused(cg), mapsize) != 0 &&
-		    dofix(&idesc, "BLK(S) MISSING IN BIT MAPS")) {
+		    dofix(&idesc[1], "BLK(S) MISSING IN BIT MAPS")) {
 			bcopy(cg_inosused(newcg), cg_inosused(cg), mapsize);
 			cgdirty();
 		}
 		if ((bcmp((char *)newcg, (char *)cg, basesize) != 0 ||
 		     bcmp((char *)&cg_blktot(newcg)[0],
 			  (char *)&cg_blktot(cg)[0], sumsize) != 0) &&
-		    dofix(&idesc, "SUMMARY INFORMATION BAD")) {
+		    dofix(&idesc[2], "SUMMARY INFORMATION BAD")) {
 			bcopy((char *)newcg, (char *)cg, basesize);
 			bcopy((char *)&cg_blktot(newcg)[0],
 			      (char *)&cg_blktot(cg)[0], sumsize);
@@ -195,7 +196,7 @@ pass5()
 	if (fs->fs_postblformat == FS_42POSTBLFMT)
 		fs->fs_nrpos = savednrpos;
 	if (bcmp((char *)&cstotal, (char *)&fs->fs_cstotal, sizeof *cs) != 0
-	    && dofix(&idesc, "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
+	    && dofix(&idesc[0], "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
 		bcopy((char *)&cstotal, (char *)&fs->fs_cstotal, sizeof *cs);
 		fs->fs_ronly = 0;
 		fs->fs_fmod = 0;
