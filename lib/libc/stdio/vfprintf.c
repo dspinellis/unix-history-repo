@@ -239,7 +239,7 @@ vfprintf(fp, fmt0, ap)
 #if tahoe
  register /* technically illegal, since we do not know what type va_list is */
 #endif
-	va_list ap;
+	_VA_LIST_ ap;
 {
 	register char *fmt;	/* format string */
 	register int ch;	/* character from fmt */

@@ -101,7 +101,7 @@ static u_char *__sccl();
 __svfscanf(fp, fmt0, ap)
 	register FILE *fp;
 	char const *fmt0;
-	va_list ap;
+	_VA_LIST_ ap;
 {
 	register u_char *fmt = (u_char *)fmt0;
 	register int c;		/* character from format, or conversion */
