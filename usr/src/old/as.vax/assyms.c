@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.2 %G%";
+static	char sccsid[] = "@(#)assyms.c 4.2 8/15/80";
 #include <stdio.h>
 #include <ctype.h>
 #include "as.h"
@@ -544,7 +544,7 @@ outrel(pval,reftype,reltype,xsym)
 	if (reltype != XABS || reftype & PCREL) {
 		reloc = (reftype & PCREL)? r_can_1PC : r_can_0PC;
 		reloc.r_address = dotp->e_xvalue -
-			( (dotp < &usedot[NLOC]) ? 0 : datbase );
+		    ( (dotp < &usedot[NLOC] || readonlydata) ? 0 : datbase );
 		reloc.r_length = lgreflen[reftype];
 		switch(reltype){
 			case XXTRN | XUNDEF:
@@ -552,6 +552,8 @@ outrel(pval,reftype,reltype,xsym)
 				reloc.r_extern = 1;
 				break;
 			default:
+				if (readonlydata && (reltype&~XXTRN) == XDATA)
+					reltype = XTEXT | (reltype&XXTRN);
 				reloc.r_symbolnum = reltype;
 				break;
 		}
@@ -676,6 +678,8 @@ int symwrite(symfile)
 		}
 #endif
 		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
+		if (readonlydata && (sp->s_type&~N_EXT) == N_DATA)
+			sp->s_type = N_TEXT | (sp->s_type & N_EXT);
 		bwrite(&sp->s_nm, sizeof (struct nlist), symfile);
 #ifdef FLEXNAMES
 		sp->s_name = name;		/* restore pointer */
