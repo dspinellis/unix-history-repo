@@ -1,0 +1,86 @@
+.\" $Revision: 1.5 $
+.TH GREPHISTORY 1
+.SH NAME
+grephistory \- display file names from Usenet history file
+.SH SYNOPSIS
+.B grephistory
+[
+.BI \-f " filename"
+]
+[
+.B \-e
+]
+[
+.B \-n
+]
+[
+.B \-q
+]
+[
+.B \-l
+]
+[
+.B \-i
+]
+[
+.B \-s
+]
+[
+.I messageid
+]
+.SH DESCRIPTION
+.I Grephistory
+queries the
+.IR dbz (3)
+index into the
+.IR history (5)
+file for an article having a specified Message-ID.
+.PP
+If
+.I messageid
+cannot be found in the database, the program prints ``Not found'' and
+exits with a non-zero status.
+If
+.I messageid
+is in the database, the program prints the pathname and exits successfully.
+If no pathname exists, the program will print ``/dev/null'' and exit
+successfully.
+This can happen when an article has been cancelled, or if it has been
+expired but its history is still retained.
+This is default behaviour, which can be obtained by using the ``\-n'' flag.
+.PP
+If the ``\-q'' flag is used, then no message is displayed.
+The program will still exit with the appropriate exit status.
+If the ``\-e'' flag is used, then
+.I grephistory
+will only print the filename of an existing article.
+.PP
+If the ``\-l'' flag is used then the entire line from the history file will
+be displayed.
+.PP
+If the ``\-i'' flag is used, then
+.I grephistory
+will read a list of Message-ID's on standard input, one per line.
+Leading and trailing whitespace is ignored, as are any malformed lines.
+It will print on standard output those Message-ID's which are not
+found in the history database.
+This flag is used in processsing ``ihave'' control messages.
+.PP
+If the ``\-s'' flag is used, then
+.I grephistory
+will read a similar list from its standard input.
+It will print on standard output a list of filenames for each article
+that is still available.
+This flag is used in processsing ``sendme'' control messages.
+.PP
+To specify a different value for the history file and database, use
+the ``\-f'' flag.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: grephistory.1,v 1.5 1993/01/29 16:42:47 rsalz Exp $
+.SH "SEE ALSO"
+dbz(3),
+history(5).
