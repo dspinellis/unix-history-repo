@@ -1,6 +1,6 @@
 /*LINTLIBRARY*/
 #ifndef lint
-static	char *sccsid = "@(#)globals.c	1.6 83/10/10";
+static	char *sccsid = "@(#)globals.c	1.7 83/10/28";
 #endif
 
 #include "externs.h"
@@ -230,20 +230,19 @@ struct scenario scene[] = {
 		{ "Kaga",		specs+54, N_J,  4, 12, 4, 0 },
 		{ "Soryu",		specs+55, N_J,  2, 14, 4, 0 }
 	},
-	/*
-	4, 3, 4, 8, "Star Trek",
+	1, 3, 4, 8, "Star Trek",
 	{
-		{ "Enterprise",		specs+72, N_A, 20,  4, 2, 0 },
-		{ "Yorktown",		specs+72, N_A, 19,  2, 2, 0 },
-		{ "Reliant",		specs+73, N_A, 18,  3, 2, 0 },
-		{ "Galileo",		specs+74, N_A, 20,  6, 2, 0 },
-		{ "Kobayashi Maru",	specs+75, N_F, 31, 11, 5, 0 },
-		{ "Klingon two",	specs+75, N_F, 31, 11, 5, 0 },
-		{ "Klingon three",	specs+75, N_F, 31, 11, 5, 0 },
-		{ "Blue Orion",		specs+63, N_S, 31, 11, 5, 0 }
+		{ "Enterprise",		specs+76, N_D,-10, 60, 7, 0 },
+		{ "Yorktown",		specs+77, N_D,  0, 70, 7, 0 },
+		{ "Reliant",		specs+78, N_D, 10, 70, 7, 0 },
+		{ "Galileo",		specs+79, N_D, 20, 60, 7, 0 },
+		{ "Kobayashi Maru",	specs+80, N_K,  0,120, 7, 0 },
+		{ "Klingon II",		specs+81, N_K, 10,120, 7, 0 },
+		{ "Red Orion",		specs+82, N_O,  0,  0, 3, 0 },
+		{ "Blue Orion",		specs+83, N_O, 10,  0, 3, 0 }
 	}
-	*/
 };
+int nscene = sizeof scene / sizeof (struct scenario);
 
 struct shipspecs specs[] = {
 /*      bs fs ta guns   hull  crew1   crew3    gunR  carR   rig2  rig4 pts */
@@ -324,6 +323,16 @@ struct shipspecs specs[] = {
 /*73*/	3, 5, 1,  90, 3, 18, 4, 13, 15, 13, 20, 20, 6, 6,  5, 5, 5,  5, 28,
 /*74*/	4, 7, 3,   6, 6,  3, 4,  2,  2,  2, 20, 20, 6, 6,  2, 2, 3,  3,  5,
 /*75*/	3, 5, 1, 110, 2, 20, 4, 14, 15, 11, 26, 26, 8, 8,  7, 8, 9, -1, 34,
+/*76*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*77*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*78*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*79*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*80*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*81*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*82*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*83*/	4, 7, 3, 136, 1, 99, 5, 36, 36, 36, 30, 30,10,10,  9, 9, 9,  9, 50,
+/*      bs fs ta guns   hull  crew1   crew3    gunR  carR   rig2  rig4 pts */
+/*                 class   qual   crew2    gunL   carL   rig1  rig3        */
 };
 
 struct windeffects WET[7][6] = {
@@ -367,12 +376,12 @@ char AMMO[9][4] = {
 	{ -1, 1, 0, 1 },
 	{ -1, 1, 0, 1 },
 	{ -1, 1, 0, 1 },
-	{ -1, 1, 0, 2 },
-	{ -1, 2, 0, 2 },
+	{ -2, 1, 0, 2 },
 	{ -2, 2, 0, 2 },
 	{ -2, 2, 0, 2 },
-	{ -2, 2, 0, 3 },
-	{ -2, 2, 0, 3 }
+	{ -3, 2, 0, 2 },
+	{ -3, 2, 0, 3 },
+	{ -3, 2, 0, 3 }
 };
 	
 char HDT[9][10] = {
@@ -432,7 +441,8 @@ char rangeofshot[] = {
 };
 
 char *countryname[] = {
-	"American", "British", "Spanish", "French", "Japanese"
+	"American", "British", "Spanish", "French", "Japanese",
+	"Federation", "Klingon", "Orion"
 };
 
 char *classname[] = {
