@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,7 +43,7 @@ main(argc, argv)
 	u_char retry;
 	
 	argv0 = argv;
-	openlog("routed", LOG_PID, 0);
+	openlog("routed", LOG_PID | LOG_ODELAY, 0);
 	sp = getservbyname("router", "udp");
 	if (sp == NULL) {
 		fprintf(stderr, "routed: router/udp: unknown service\n");
@@ -88,7 +88,7 @@ main(argc, argv)
 			exit(0);
 		for (t = 0; t < 20; t++)
 			if (t != s)
-				(void) close(cc);
+				(void) close(t);
 		(void) open("/", 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
@@ -159,8 +159,7 @@ process(fd)
 	}
 	if (fromlen != sizeof (struct sockaddr_in))
 		return;
-#define	mask(s)	(1<<((s)-1))
-	omask = sigblock(mask(SIGALRM));
+	omask = sigblock(sigmask(SIGALRM));
 	rip_input(&from, cc);
 	sigsetmask(omask);
 }
@@ -172,7 +171,7 @@ getsocket(domain, type, sin)
 	int retry, s, on = 1;
 
 	retry = 1;
-	while ((s = socket(domain, type, 0, 0)) < 0 && retry) {
+	while ((s = socket(domain, type, 0)) < 0 && retry) {
 		perror("socket");
 		sleep(5 * retry);
 		retry <<= 1;
