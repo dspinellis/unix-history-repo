@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.2	82/02/12	*/
+/*	if_imphost.c	4.3	82/02/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -11,13 +11,13 @@
 #include "../h/mbuf.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
-#include "../net/host.h"
 #include "../net/if_imp.h"
+#include "../net/if_imphost.h"
 
 /*
  * Head of host table hash chains.
  */
-struct mbuf hosttable = { 0, MMINOFF };
+struct mbuf *hosts;
 
 /*
  * Given an internet address
@@ -32,12 +32,10 @@ hostlookup(addr)
 	register int hash = HOSTHASH(addr);
 
 COUNT(HOSTLOOKUP);
-printf("hostlookup(%x)\n", addr);
-	for (m = &hosttable; m; m = m->m_next) {
+	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0)
-			break;
-printf("hostlookup: addr=%x\n", hp->h_addr.s_addr);
+			continue;
 	        if (hp->h_addr.s_addr == addr.s_addr)    
 			return (hp);
 	}
@@ -53,19 +51,22 @@ struct host *
 hostenter(addr)                 
 	struct in_addr addr;
 {
-	register struct mbuf *m, *mprev;
-	register struct host *hp;
+	register struct mbuf *m, **mprev;
+	register struct host *hp, *hp0 = 0;
 	register int hash = HOSTHASH(addr);
 
 COUNT(HOSTENTER);
-printf("hostenter(%x)\n", addr);
-	for (m = &hosttable; m; mprev = m, m = m->m_next) {
+	mprev = &hosts;
+	while (m = *mprev) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-		if (hp->h_refcnt == 0)
-			break;
-printf("hostenter: addr=%x\n", addr);
+		if (hp->h_refcnt == 0) {
+			if (hp0 == 0)
+				hp0 = hp;
+			continue;
+		}
 	        if (hp->h_addr.s_addr == addr.s_addr)    
 			goto foundhost;
+		mprev = &m->m_next;
 	}
 
 	/*
@@ -73,16 +74,16 @@ printf("hostenter: addr=%x\n", addr);
 	 * If our search ran off the end of the
 	 * chain of mbuf's, allocate another.
 	 */
-printf("hostenter: new host\n");
-	if (m == 0) {
+	if (hp0 == 0) {
 		m = m_getclr(M_DONTWAIT);
 		if (m == 0)
 			return (0);
-		mprev->m_next = m;
-		m->m_act = mprev;
-		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
+		*mprev = m;
+		m->m_off = MMINOFF;
+		hp0 = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	}
-	mtod(m, struct hmbuf *)->hm_count++;
+	mtod(dtom(hp0), struct hmbuf *)->hm_count++;
+	hp = hp0;
 	hp->h_addr = addr;
 	hp->h_status = HOSTS_UP;
 
@@ -95,26 +96,15 @@ foundhost:
  * Free a reference to a host.  If this causes the
  * host structure to be released do so.
  */
-hostfree(addr)                               
-	struct in_addr addr;
+hostfree(hp)                               
+	register struct host *hp;
 {
 	register struct mbuf *m;
-	register struct host *hp;
-	register int hash = HOSTHASH(addr);
 
 COUNT(HOSTFREE);
-printf("hostfree(%x)\n", addr);
-	for (m = &hosttable; m; m = m->m_next) {
-		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-		if (hp->h_refcnt == 0)
-			return;
-	        if (hp->h_addr.s_addr == addr.s_addr) {
-			if (--hp->h_refcnt == 0)
-				hostrelease(mtod(m, struct hmbuf *), hp);
-			return;
-		}
-	}
-	panic("hostfree");
+	if (--hp->h_refcnt)
+		return;
+	hostrelease(hp);
 }
 
 /*
@@ -127,32 +117,34 @@ hostreset(net)
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
+	struct hmbuf *hm;
+	int x;
 
 COUNT(HOSTRESET);
-printf("hostreset(%x)\n", net);
-	for (m = &hosttable; m; m = m->m_next) {
-		hp = mtod(m, struct hmbuf *)->hm_hosts; 
+	x = splimp();
+	for (m = hosts; m; m = m->m_next) {
+		hm = mtod(m, struct hmbuf *);
+		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
-		while (hp < lp) {
+		while (hm->hm_count != 0 && hp < lp) {
 			if (hp->h_addr.s_net == net)
 				hostrelease(mtod(m, struct hmbuf *), hp);
 			hp++;
 		}
 	}
+	splx(x);
 }
 
 /*
  * Remove a host structure and release
  * any resources it's accumulated.
  */
-hostrelease(hm, hp)
-	struct hmbuf *hm;
+hostrelease(hp)
 	register struct host *hp;
 {
-	register struct mbuf *m;
+	register struct mbuf *m, **mprev, *mh = dtom(hp);
 
 COUNT(HOSTRELEASE);
-printf("hostrelease(%x,%x)\n", hm, hp);
 	/*
 	 * Discard any packets left on the waiting q
 	 */
@@ -162,15 +154,11 @@ printf("hostrelease(%x,%x)\n", hm, hp);
 		hp->h_q = 0;
 		m_freem(m);
 	}
-	/*
-	 * We could compact the database here, but is
-	 * it worth it?  For now we assume not and just
-	 * handle the simple case.
-	 */
-printf("hostrelease: count=%d\n", hm->hm_count);
-	if (--hm->hm_count || (m = dtom(hm)) == &hosttable)
+	if (--mtod(mh, struct hmbuf *)->hm_count)
 		return;
-	m->m_act->m_next = m->m_next;
-	m->m_next->m_act = m->m_act;
-	(void) m_free(m);
+	mprev = &hosts;
+	while ((m = *mprev) != mh)
+		mprev = &m->m_next;
+	*mprev = mh->m_next;
+	(void) m_free(mh);
 }

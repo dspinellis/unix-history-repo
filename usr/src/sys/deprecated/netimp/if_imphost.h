@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.2	82/02/12	*/
+/*	if_imphost.h	4.3	82/02/16	*/
 
 /*
  * Host structure used with IMP's.
@@ -28,7 +28,7 @@ struct host {
  * automatically at the time a structure is free'd.
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
-#define	HOSTHASH(a)	((a.s_addr) % HPMBUF)
+#define	HOSTHASH(a)	(((a).s_addr&~0x80000000) % HPMBUF)
 
 struct hmbuf {
 	int	hm_count;		/* # of struct's in use */
