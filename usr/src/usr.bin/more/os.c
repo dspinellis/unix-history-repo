@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -302,8 +302,6 @@ bad_file(filename, message, len)
  *	(on the input tty) should be considered ok.
  */
 
-#if PERROR
-
 extern char *sys_errlist[];
 extern int sys_nerr;
 extern int errno;
@@ -329,20 +327,3 @@ errno_message(filename, message, len)
 	strcat(message, p);
 	return (message);
 }
-
-#else
-
-	public char *
-errno_message(filename, message, len)
-	char *filename;
-	char *message;
-	unsigned int len;
-{
-	static char msg[] = ": cannot open";
-
-	strtcpy(message, filename, len-sizeof(msg)-1);
-	strcat(message, msg);
-	return (message);
-}
-
-#endif
