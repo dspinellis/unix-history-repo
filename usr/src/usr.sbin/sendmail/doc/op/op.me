@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.55 (Berkeley) %G%
+.\"	@(#)op.me	8.56 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.55
+Version 8.56
 .sp
 For Sendmail Version 8.7
 .)l
@@ -4572,6 +4572,21 @@ This option specifies how long host status information will be retained.
 For example, if a host is found to be down,
 connections to that host will not be retried for this interval.
 The units default to minutes.
+.ip MaxQueueRunSize=\fIN\fP
+[no short name]
+The maximum number of jobs that will be processed
+in a single queue run.
+If not set, there is no limit on the size.
+If you have very large queues or a very short queue run interval
+this could be unstable.
+However, since the first
+.i N
+jobs in queue directory order are run (rather than the
+.i N
+highest priority jobs)
+this should be set as high as possible to avoid
+.q losing
+jobs that happen to fall late in the queue directory.
 .ip MeToo
 [m]
 Send to me too,
@@ -5826,9 +5841,6 @@ line in sendmail.cf).
 .ip "MAXUSERENVIRON [40]"
 The maximum number of items in the user environment
 that will be passed to subordinate mailers.
-.ip "QUEUESIZE [1000]"
-The maximum number of entries that will be processed
-in a single queue run.
 .ip "MAXMXHOSTS [20]"
 The maximum number of MX records we will accept for any single host.
 .lp
@@ -7402,7 +7414,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.55
+.\"Version 8.56
 .\".ce 0
 .bp 2
 .rs
