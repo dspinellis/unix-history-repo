@@ -1,0 +1,75 @@
+Title:		The X Window System
+
+Authors:	Bob Scheifler
+		MIT / Laboratory for Computer Science
+		531 Tech Sq,
+		Cambridge, Mass. 02139
+
+		Jim Gettys
+		MIT / Project Athena
+		E40-342C
+		Cambridge, Mass. 02139
+
+Net addresses:	rws@bold.MIT.EDU	(rws@mit-bold.arpa)
+		jg@athena.MIT.EDU	(jg@mit-athena.arpa)
+		Xbugs@athena.MIT.EDU	(Xbugs@mit-athena.arpa)
+		Xrequest@athena.MIT.EDU (Xrequest@mit-athena.arpa)
+
+Other major contributors include Tony Della Fera, Mark Vandevoorde, Ron
+Newman (Project Athena), Paul Johnson, Paul Asente (Stanford U.), Doug
+Mink (SAO), Shane Hartman, Stuart Malone, (MIT-LCS), and Chris Kent
+(Purdue).  The Sun implementation is thanks to Dave Rosenthal of Sun
+Microsystems. Great thanks must be given to Digital's Unix Engineering Group
+for the QDSS implementation, and to Digital's Workstations group for the
+QVSS implementation.
+
+
+Description:
+
+X is a network transparent window system for bitmap displays that
+currently runs on 6 different types of displays.  These include the DEC
+VS100, VS1, VS2, VS2-GPX, the Lexidata 90, and most Sun Microsystems
+displays, (not yet finished).  The implementations for the IBM RT/PC
+displays (ACIS experimental display, APA8, APA16 did not quite make this
+release. Other manufacturers are in the works.  The implementations here
+are for the Digital Vs100, and Sun displays.  It should be possible
+to port X to many different display architectures.  No presumption is
+made in X that it can touch the bits on the screen directly, for
+example.
+
+The directory tree here includes all of the device independent X client
+programs and the device dependent server for the DEC Vs100 developed at
+MIT.  Contributions of other software are gratefully acknowledged.  This
+has been a community effort for quite a while now, and the continuation
+of this tradition would be helpful to all.  Most of the client code has
+now been ported to several other non-Vax architectures and should be
+reasonably easily portable across 4.2BSD based systems.
+
+X supports overlapping windows, fully recursive subwindows, and
+provides hooks for several different styles of user interface.
+Applications provided include a terminal emulator (~Vt102 and Tek 4010),
+bitmap editor, several window managers, access control program,
+clock, window dump and undump programs, hardcopy printing program for
+the LN03 printer, and several typesetting previewers.
+
+If you don't like our window manager(s), go write your own....  Don't
+bother us unless you CAN'T write it with the tools provided.
+
+See the document in "doc/installation" for installation directions.
+
+See the document in "doc/ddX.doc" for specification of the device dependent
+library.
+
+Inquiries about X should go to the "Xrequest" address above.
+Please send bug reports to the "Xbugs" address above.
+
+From here on out, the cat is out of the bag.  Have fun.  Read the
+README file in X/X before you do anything.
+
+We are most interested in talking to people actively porting this window
+system to other hardware.
+
+				Bob Scheifler
+				Jim Gettys
+
+Copyright 1984, 1985, 1986 Massachusetts Institute of Technology
