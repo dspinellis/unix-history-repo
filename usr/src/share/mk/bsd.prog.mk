@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.31 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.32 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -68,7 +68,11 @@ MKDEP=	-p
 MAN1=	${PROG}.0
 .endif
 .endif
+.if !defined(NOMAN)
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
+.else
+MANALL=
+.endif
 manpages: ${MANALL}
 
 _PROGSUBDIR: .USE
