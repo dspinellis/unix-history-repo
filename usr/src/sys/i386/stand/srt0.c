@@ -7,13 +7,14 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)srt0.c	7.1 (Berkeley) %G%
+ *	@(#)srt0.c	7.2 (Berkeley) %G%
  */
 
 /*
  * Startup code for standalone system
  * Non-relocating version -- for programs which are loaded by boot
  * Relocating version for boot
+ * Small relocating version for "micro" boot
  */
 
 	.globl	_end
@@ -21,117 +22,154 @@
 	.globl	_main
 	.globl	__rtt
 	.globl	_exit
-	.globl	_howto
 	.globl	_bootdev
-	.globl	_unit
+	.globl	_cyloffset
 
+#ifdef SMALL
+	/* where the disklabel goes if we have one */
+	.globl	_disklabel
+_disklabel:
+	.space 512
+#endif
 
 entry:	.globl	entry
-	cli				# no interrupts
-#ifdef REL
-	movl	$RELOC,%esp
-#else
-	movl	%esp,savearea
-	movl	%ebp,savearea+4
-	movl	$RELOC-0x2400,%esp
-#endif
-	movl	%esp,%ecx
-start:
-	movl	$_edata,%eax
-#ifndef foo
-#else
-	subl	%eax,%ecx
-1:
-	movl	$0,(%eax)
-	addl	$4,%eax
-	loopnz	1f
-#endif
-#ifdef REL
-	# movl	$entry-RELOC,%esi	# from beginning of ram
+	.globl	start
+
+#if	defined(REL) && !defined(SMALL)
+
+	/* relocate program and enter at symbol "start" */
+
+	#movl	$entry-RELOC,%esi	# from beginning of ram
 	movl	$0,%esi
-	movl	$entry,%edi		# to relocated area
+	#movl	$entry,%edi		# to relocated area
+	movl	$ RELOC,%edi		# to relocated area
 	# movl	$_edata-RELOC,%ecx	# this much
 	movl	$64*1024,%ecx
 	cld
 	rep
 	movsb
-	.globl	begin
-	# jmp	*$begin	-- does not work, why!?
-	pushl	$begin
+	# relocate program counter to relocation base
+	pushl	$start
 	ret
-begin:
-#endif
-	# movl	%esi,_howto
-	# movl	%edi,_bootdev
-	# movl	%ebx,_unit
-1:
-	# calls	$0,_configure
-	movl	$1,_openfirst
-	pushl	$0
-	popf
-	call	_main
-#ifdef REL
-	jmp	1b
-#else
-	jmp	1f
 #endif
 
+start:
+
+	/* setup stack pointer */
+
+#ifdef REL
+	leal	4(%esp),%eax	/* ignore old pc */
+	movl	$ RELOC-4*4,%esp
+	/* copy down boot parameters */
+	movl	%esp,%ebx
+	pushl	$3*4
+	pushl	%ebx
+	pushl	%eax
+	call	_bcopy
+	movl	%ebx,%esp
+#else
+	/* save old stack state */
+	movl	%esp,savearea
+	movl	%ebp,savearea+4
+	movl	$ RELOC-0x2400,%esp
+#endif
+
+	/* clear memory as needed */
+
+	movl	%esp,%esi
+#ifdef	REL
+
+	/*
+	 * Clear Bss and up to 64K heap
+	 */
+	movl	$64*1024,%ebx
+	movl	$_end,%eax	# should be movl $_end-_edata but ...
+	subl	$_edata,%eax
+	addl	%ebx,%eax
+	pushl	%eax
+	pushl	$_edata
+	call	_bzero
+
+	/*
+	 * Clear 64K of stack
+	 */
+	movl	%esi,%eax
+	subl	%ebx,%eax
+	subl	$5*4,%ebx
+	pushl	%ebx
+	pushl	%eax
+	call	_bzero
+#else
+	movl	$_edata,%edx
+	movl	%esp,%eax
+	subl	%edx,%eax
+	pushl	%edx
+	pushl	%esp
+	call	_bzero
+#endif
+	movl	%esi,%esp
+
+	pushl	$0
+	popf
+
+#ifndef	SMALL
+	call	_kbdreset	/* resets keyboard and gatea20 brain damage */
+#endif
+
+	call	_main
+	jmp	1f
+
 	.data
-_openfirst:	.long	0
 _bootdev:	.long	0
-_howto:		.long	0
-_unit:		.long	0
+_cyloffset:	.long	0
 savearea:	.long	0,0	# sp & bp to return to
 	.text
+#ifndef	SMALL
 	.globl _getchar
+#endif
 	.globl _wait
 
 __rtt:
+#ifndef	SMALL
 	call	_getchar
+#else
+_exit:
 	pushl	$1000000
 	call	_wait
 	popl	%eax
+#endif
 	movl	$-7,%eax
 	jmp	1f
+#ifndef	SMALL
 _exit:
 	call	_getchar
-	pushl	$1000000
-	call	_wait
-	popl	%eax
-	movl	4(sp),%eax
+#endif
+	movl	4(%esp),%eax
 1:
 #ifdef	REL
+#ifndef SMALL
+	call	_reset_cpu
+#endif
 	movw	$0x1234,%ax
 	movw	%ax,0x472	# warm boot
 	movl	$0,%esp		# segment violation
 	ret
-	# jump	PA_Monitor		# jump to startup code in ROM
 #else
 	movl	savearea,%esp
 	movl	savearea+4,%ebp
 	ret
 #endif
-	.globl _setregs
-_setregs:
-	movl	_howto,%esi
-	movl	_bootdev,%edi
-	movl	_unit,%ebx
-	ret
 
 	.globl	_inb
 _inb:	movl	4(%esp),%edx
 	subl	%eax,%eax	# clr eax
-	nop
 	inb	%dx,%al
-	nop
 	ret
 
 	.globl	_outb
 _outb:	movl	4(%esp),%edx
 	movl	8(%esp),%eax
-	nop
 	outb	%al,%dx
-	nop
 	ret
 
 	.globl ___udivsi3
