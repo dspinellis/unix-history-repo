@@ -1,4 +1,4 @@
-static char sccsid[] = "	fancy.c	4.1	82/05/11	";
+static char sccsid[] = "	fancy.c	4.2	82/11/22	";
 
 #include "back.h"
 
@@ -710,6 +710,6 @@ register char	*s;
 		lND = strlen (ND);
 	if (LI < 24 || CO < 72 || !(CL && UP && ND))
 		return (0);
-	linect = calloc (LI+1,2);
+	linect = calloc (LI+1,sizeof(int));
 	return (1);
 }
