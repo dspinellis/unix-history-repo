@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -388,7 +388,18 @@ rlsesigs()
 **		none.
 */
 
-#ifdef VMUNIX
+#ifndef sun
+
+getla()
+{
+	double avenrun[3];
+
+	if (getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0])) < 0)
+		return (0);
+	return ((int) (avenrun[0] + 0.5));
+}
+
+#else /* sun */
 
 #include <nlist.h>
 
@@ -402,11 +413,7 @@ struct	nlist Nl[] =
 getla()
 {
 	static int kmem = -1;
-# ifdef sun
 	long avenrun[3];
-# else
-	double avenrun[3];
-# endif
 	extern off_t lseek();
 
 	if (kmem < 0)
@@ -425,21 +432,10 @@ getla()
 		/* thank you Ian */
 		return (-1);
 	}
-# ifdef sun
 	return ((int) (avenrun[0] + FSCALE/2) >> FSHIFT);
-# else
-	return ((int) (avenrun[0] + 0.5));
-# endif
 }
 
-#else VMUNIX
-
-getla()
-{
-	return (0);
-}
-
-#endif VMUNIX
+#endif /* sun */
 /*
 **  SHOULDQUEUE -- should this message be queued or sent?
 **

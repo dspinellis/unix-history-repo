@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -216,12 +216,6 @@ c_game(s_game, s_load, s_users, s_priority)
 		priority = atoi(s_priority);
 }
 
-static struct nlist nl[] = {
-	{ "_avenrun" },
-#define	X_AVENRUN	0
-	{ "" },
-};
-
 /*
  * load --
  *	return 15 minute load average
@@ -230,19 +224,11 @@ static double
 load()
 {
 	double avenrun[3];
-	int kmem;
-	long lseek();
 
-	if (nlist("/vmunix", nl)) {
-		fputs("dm: nlist of /vmunix failed.\n", stderr);
+	if (getloadavg(avenrun, sizeof(avenrun)/sizeof(avenrun[0])) < 0) {
+		fputs("dm: getloadavg() failed.\n", stderr);
 		exit(1);
 	}
-	if ((kmem = open("/dev/kmem", O_RDONLY, 0)) < 0) {
-		perror("dm: /dev/kmem");
-		exit(1);
-	}
-	(void)lseek(kmem, (long)nl[X_AVENRUN].n_value, L_SET);
-	(void)read(kmem, (char *)avenrun, sizeof(avenrun));
 	return(avenrun[2]);
 }
 

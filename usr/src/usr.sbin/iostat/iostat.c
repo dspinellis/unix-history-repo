@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.16 (Berkeley) 89/05/11";
+static	char *sccsid = "@(#)iostat.c	4.17 (Berkeley) 89/05/29";
 #endif
 
 /*
@@ -32,8 +32,8 @@ struct nlist nl[] = {
 #define	X_DK_SEEK	6
 	{ "_cp_time" },
 #define	X_CP_TIME	7
-	{ "_dk_mspw" },
-#define	X_DK_MSPW	8
+	{ "_dk_wpms" },
+#define	X_DK_WPMS	8
 	{ "_hz" },
 #define	X_HZ		9
 	{ "_phz" },
@@ -55,7 +55,7 @@ struct nlist nl[] = {
 
 char	**dr_name;
 int	*dr_select;
-float	*dk_mspw;
+long	*dk_wpms;
 int	dk_ndrive;
 int	ndrives = 0;
 #ifdef vax
@@ -118,7 +118,7 @@ main(argc, argv)
 	}
 	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
 	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
-	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
+	dk_wpms = (long *)calloc(dk_ndrive, sizeof (long));
 #define	allocate(e, t) \
     s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
     s1./**/e = (t *)calloc(dk_ndrive, sizeof (t));
@@ -138,8 +138,8 @@ main(argc, argv)
 	read(mf, &phz, sizeof phz);
 	if (phz)
 		hz = phz;
-	lseek(mf, (long)nl[X_DK_MSPW].n_value, L_SET);
-	read(mf, dk_mspw, dk_ndrive*sizeof (dk_mspw));
+	lseek(mf, (long)nl[X_DK_WPMS].n_value, L_SET);
+	read(mf, dk_wpms, dk_ndrive*sizeof (dk_wpms));
 	/*
 	 * Choose drives to be displayed.  Priority
 	 * goes to (in order) drives supplied as arguments,
@@ -158,7 +158,7 @@ main(argc, argv)
 		argc--, argv++;
 	}
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
-		if (dr_select[i] || dk_mspw[i] == 0.0)
+		if (dr_select[i] || dk_wpms[i] == 0)
 			continue;
 		for (cp = defdrives; *cp; cp++)
 			if (strcmp(dr_name[i], *cp) == 0) {
@@ -248,14 +248,14 @@ stats(dn)
 	register i;
 	double atime, words, xtime, itime;
 
-	if (dk_mspw[dn] == 0.0) {
+	if (dk_wpms[dn] == 0) {
 		printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
 		return;
 	}
 	atime = s.dk_time[dn];
 	atime /= (float) hz;
 	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
-	xtime = dk_mspw[dn]*words;	/* transfer time */
+	xtime = words/dk_wpms[dn];	/* transfer time */
 	itime = atime - xtime;		/* time not transferring */
 	if (xtime < 0)
 		itime += xtime, xtime = 0;

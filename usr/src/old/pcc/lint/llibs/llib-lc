@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.44 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.45 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -242,6 +242,7 @@ struct group *	getgrnam( n ) char *n; { return (struct group *)NULL; }
 struct hostent *	gethostbyaddr(addr, len, type) char *addr; { return (struct hostent *) 0; }
 struct hostent *	gethostbyname(name) char *name; { return (struct hostent *) 0; }
 struct hostent *	gethostent() { return (struct hostent *) 0; }
+int	getloadavg( v, l ) double v[]; int l; { return 0; }
 char *	getlogin(){ return " "; }
 struct netent *	getnetbyaddr(net, type) { return (struct netent *) 0; }
 struct netent *	getnetbyname(name) char *name; { return (struct netent *) 0; }
