@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: autoconf.c 1.35 92/01/22$
+ * from: Utah $Hdr: autoconf.c 1.36 92/12/20$
  *
- *	@(#)autoconf.c	7.8 (Berkeley) %G%
+ *	@(#)autoconf.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,7 @@
  */
 int	cold;		    /* if 1, still working on cold-start */
 int	dkn;		    /* number of iostat dk numbers assigned so far */
-int	cpuspeed = MHZ_8;   /* relative cpu speed */
+int	cpuspeed = 0;	    /* relative cpu speed -- can be patched */	
 struct	isr isrqueue[NISR];
 struct	hp_hw sc_table[MAXCTLRS];
 
