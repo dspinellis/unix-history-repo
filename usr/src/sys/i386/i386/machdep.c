@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.2 (Berkeley) %G%
  */
 
 
@@ -57,9 +57,6 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 
-/*
- * Machine-dependent startup code
- */
 int boothowto = 0, Maxmem = 0;
 extern int bootdev;
 int forcemaxmem;
@@ -67,6 +64,10 @@ int biosmem;
 
 extern cyloffset;
 
+/*
+ * cpu_startup: allocate memory for variable-sized tables,
+ * initialize cpu, and do autoconfiguration.
+ */
 cpu_startup()
 {
 	register int unixsize;
@@ -603,7 +604,9 @@ initcpu()
 }
 
 /*
- * Clear registers on exec
+ * Set registers on exec.
+ * XXX Should clear registers except sp, pc,
+ * but would break init; should be fixed soon.
  */
 setregs(p, entry)
 	struct proc *p;
