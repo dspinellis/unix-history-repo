@@ -569,7 +569,7 @@ main (argc, argv)
 {
   int count;
   static int inhibit_gdbinit = 0;
-  static int quiet = 1;
+  static int quiet = 0;
   static int batch = 0;
 
   /* Pointers to various arguments from command line.  */
