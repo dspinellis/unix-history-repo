@@ -1,31 +1,24 @@
 #ifndef lint
-static char sccsid[] = "@(#)ndbm.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <stdio.h>
 #include <errno.h>
 #include <ndbm.h>
 
-#define NULL    (char *)0
 #define BYTESIZ 8
 
 static  datum firsthash();
-static  dbm_access();
-static  getbit();
-static  setbit();
 static  datum makdatum();
-static  cmpdatum();
 static  long hashinc();
 static  long dcalchash();
-static  delitem();
-static  additem();
-static  chkblk();
 extern  int errno;
 
 DBM *
-ndbmopen(file, flags, mode)
+dbm_open(file, flags, mode)
 	char *file;
 	int flags, mode;
 {
@@ -36,108 +29,124 @@ ndbmopen(file, flags, mode)
 		errno = ENOMEM;
 		return ((DBM *)0);
 	}
+	db->dbm_flags = (flags & 03) == O_RDONLY ? _DBM_RDONLY : 0;
 	if ((flags & 03) == O_WRONLY)
 		flags = (flags & ~03) | O_RDWR;
-	db->db_flags = 0;
-	strcpy(db->db_pagbuf, file);
-	strcat(db->db_pagbuf, ".pag");
-	db->db_pagf = open(db->db_pagbuf, flags, mode);
-	if (db->db_pagf < 0)
+	strcpy(db->dbm_pagbuf, file);
+	strcat(db->dbm_pagbuf, ".pag");
+	db->dbm_pagf = open(db->dbm_pagbuf, flags, mode);
+	if (db->dbm_pagf < 0)
 		goto bad;
-	strcpy(db->db_pagbuf, file);
-	strcat(db->db_pagbuf, ".dir");
-	db->db_dirf = open(db->db_pagbuf, flags, mode);
-	if (db->db_dirf < 0)
+	strcpy(db->dbm_pagbuf, file);
+	strcat(db->dbm_pagbuf, ".dir");
+	db->dbm_dirf = open(db->dbm_pagbuf, flags, mode);
+	if (db->dbm_dirf < 0)
 		goto bad1;
-	fstat(db->db_dirf, &statb);
-	db->db_maxbno = statb.st_size*BYTESIZ-1;
-	db->db_pagbno = db->db_dirbno = -1;
+	fstat(db->dbm_dirf, &statb);
+	db->dbm_maxbno = statb.st_size*BYTESIZ-1;
+	db->dbm_pagbno = db->dbm_dirbno = -1;
 	return (db);
 bad1:
-	(void) close(db->db_pagf);
+	(void) close(db->dbm_pagf);
 bad:
 	free((char *)db);
 	return ((DBM *)0);
 }
 
 void
-ndbmclose(db)
+dbm_close(db)
 	DBM *db;
 {
 
-	(void) close(db->db_dirf);
-	(void) close(db->db_pagf);
+	(void) close(db->dbm_dirf);
+	(void) close(db->dbm_pagf);
 	free((char *)db);
 }
 
 long
-dbmforder(db, key)
+dbm_forder(db, key)
 	register DBM *db;
 	datum key;
 {
 	long hash;
 
 	hash = dcalchash(key);
-	for (db->db_hmask=0;; db->db_hmask=(db->db_hmask<<1)+1) {
-		db->db_blkno = hash & db->db_hmask;
-		db->db_bitno = db->db_blkno + db->db_hmask;
+	for (db->dbm_hmask=0;; db->dbm_hmask=(db->dbm_hmask<<1)+1) {
+		db->dbm_blkno = hash & db->dbm_hmask;
+		db->dbm_bitno = db->dbm_blkno + db->dbm_hmask;
 		if (getbit(db) == 0)
 			break;
 	}
-	return (db->db_blkno);
+	return (db->dbm_blkno);
 }
 
 datum
-dbmfetch(db, key)
+dbm_fetch(db, key)
 	register DBM *db;
 	datum key;
 {
 	register i;
 	datum item;
 
+	if (dbm_error(db))
+		goto err;
 	dbm_access(db, dcalchash(key));
+	if (dbm_error(db))
+		goto err;
 	for (i=0;; i+=2) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			return (item);
 		if (cmpdatum(key, item) == 0) {
-			item = makdatum(db->db_pagbuf, i+1);
+			item = makdatum(db->dbm_pagbuf, i+1);
 			if (item.dptr == NULL)
-				printf("items not in pairs\n");
+				fprintf(stderr, "dbm: items not in pairs\n");
 			return (item);
 		}
 	}
+err:
+	item.dptr = NULL;
+	item.dsize = 0;
+	return (item);
 }
 
-dbmdelete(db, key)
+dbm_delete(db, key)
 	register DBM *db;
 	datum key;
 {
 	register i;
 	datum item;
 
-	if (dbrdonly(db)) {
+	if (dbm_error(db))
+		return (-1);
+	if (dbm_rdonly(db)) {
 		errno = EPERM;
 		return (-1);
 	}
 	dbm_access(db, dcalchash(key));
+	if (dbm_error(db))
+		return (-1);
 	for (i=0;; i+=2) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			return (-1);
 		if (cmpdatum(key, item) == 0) {
-			delitem(db->db_pagbuf, i);
-			delitem(db->db_pagbuf, i);
+			if (!delitem(db->dbm_pagbuf, i) ||
+			    !delitem(db->dbm_pagbuf, i))
+				db->dbm_flags |= _DBM_IOERR;
 			break;
 		}
 	}
-	(void) lseek(db->db_pagf, db->db_blkno*PBLKSIZ, L_SET);
-	(void) write(db->db_pagf, db->db_pagbuf, PBLKSIZ);
-	db->db_pagbno = db->db_blkno;
+	db->dbm_pagbno = db->dbm_blkno;
+	(void) lseek(db->dbm_pagf, db->dbm_blkno*PBLKSIZ, L_SET);
+	if (write(db->dbm_pagf, db->dbm_pagbuf, PBLKSIZ) != PBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
+		return (-1);
+	}
 	return (0);
 }
 
-dbmstore(db, key, dat, replace)
+dbm_store(db, key, dat, replace)
 	register DBM *db;
 	datum key, dat;
 	int replace;
@@ -146,71 +155,94 @@ dbmstore(db, key, dat, replace)
 	datum item;
 	char ovfbuf[PBLKSIZ];
 
-	if (dbrdonly(db)) {
+	if (dbm_error(db))
+		return (-1);
+	if (dbm_rdonly(db)) {
 		errno = EPERM;
 		return (-1);
 	}
 loop:
 	dbm_access(db, dcalchash(key));
+	if (dbm_error(db))
+		return (-1);
 	for (i=0;; i+=2) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			break;
 		if (cmpdatum(key, item) == 0) {
 			if (!replace)
 				return (1);
-			delitem(db->db_pagbuf, i);
-			delitem(db->db_pagbuf, i);
-			break;
+			if (!delitem(db->dbm_pagbuf, i) ||
+			    !delitem(db->dbm_pagbuf, i)) {
+				db->dbm_flags |= _DBM_IOERR;
+				return (-1);
+			}
 		}
 	}
-	i = additem(db->db_pagbuf, key);
-	if (i < 0)
+	if (!additem(db->dbm_pagbuf, key))
 		goto split;
-	if (additem(db->db_pagbuf, dat) < 0) {
-		delitem(db->db_pagbuf, i);
+	if (!additem(db->dbm_pagbuf, dat)) {
+		/* special case of delitem() expanded inline here */
+		((short *) db->dbm_pagbuf)[0]--;
 		goto split;
 	}
-	(void) lseek(db->db_pagf, db->db_blkno*PBLKSIZ, L_SET);
-	(void) write(db->db_pagf, db->db_pagbuf, PBLKSIZ);
-	db->db_pagbno = db->db_blkno;
+	db->dbm_pagbno = db->dbm_blkno;
+	(void) lseek(db->dbm_pagf, db->dbm_blkno*PBLKSIZ, L_SET);
+	if (write(db->dbm_pagf, db->dbm_pagbuf, PBLKSIZ) != PBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
+		return (-1);
+	}
 	return (0);
 
 split:
 	if (key.dsize+dat.dsize+2*sizeof(short) >= PBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
 		errno = ENOSPC;
 		return (-1);
 	}
 	bzero(ovfbuf, PBLKSIZ);
 	for (i=0;;) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			break;
-		if (dcalchash(item) & (db->db_hmask+1)) {
-			additem(ovfbuf, item);
-			delitem(db->db_pagbuf, i);
-			item = makdatum(db->db_pagbuf, i);
+		if (dcalchash(item) & (db->dbm_hmask+1)) {
+			if (!additem(ovfbuf, item) ||
+			    !delitem(db->dbm_pagbuf, i)) {
+				db->dbm_flags |= _DBM_IOERR;
+				return (-1);
+			}
+			item = makdatum(db->dbm_pagbuf, i);
 			if (item.dptr == NULL) {
-				printf("ndbm: split not paired\n");
+				fprintf(stderr, "ndbm: split not paired\n");
+				db->dbm_flags |= _DBM_IOERR;
 				break;
 			}
-			additem(ovfbuf, item);
-			delitem(db->db_pagbuf, i);
+			if (!additem(ovfbuf, item) ||
+			    !delitem(db->dbm_pagbuf, i)) {
+				db->dbm_flags |= _DBM_IOERR;
+				return (-1);
+			}
 			continue;
 		}
 		i += 2;
 	}
-	(void) lseek(db->db_pagf, db->db_blkno*PBLKSIZ, L_SET);
-	(void) write(db->db_pagf, db->db_pagbuf, PBLKSIZ);
-	db->db_pagbno = db->db_blkno;
-	(void) lseek(db->db_pagf, (db->db_blkno+db->db_hmask+1)*PBLKSIZ, L_SET);
-	(void) write(db->db_pagf, ovfbuf, PBLKSIZ);
+	db->dbm_pagbno = db->dbm_blkno;
+	(void) lseek(db->dbm_pagf, db->dbm_blkno*PBLKSIZ, L_SET);
+	if (write(db->dbm_pagf, db->dbm_pagbuf, PBLKSIZ) != PBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
+		return (-1);
+	}
+	(void) lseek(db->dbm_pagf, (db->dbm_blkno+db->dbm_hmask+1)*PBLKSIZ, L_SET);
+	if (write(db->dbm_pagf, ovfbuf, PBLKSIZ) != PBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
+		return (-1);
+	}
 	setbit(db);
 	goto loop;
 }
 
 datum
-dbmfirstkey(db)
+dbm_firstkey(db)
 	DBM *db;
 {
 
@@ -218,7 +250,7 @@ dbmfirstkey(db)
 }
 
 datum
-dbmnextkey(db, key)
+dbm_nextkey(db, key)
 	register DBM *db;
 	datum key;
 {
@@ -227,11 +259,14 @@ dbmnextkey(db, key)
 	long hash;
 	int f;
 
-	hash = dcalchash(key);
-	dbm_access(db, hash);
+	if (dbm_error(db))
+		goto err;
+	dbm_access(db, hash = dcalchash(key));
+	if (dbm_error(db))
+		goto err;
 	f = 1;
 	for (i=0;; i+=2) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			break;
 		if (cmpdatum(key, item) <= 0)
@@ -247,6 +282,10 @@ dbmnextkey(db, key)
 	if (hash == 0)
 		return (item);
 	return (firsthash(db, hash));
+err:
+	item.dptr = NULL;
+	item.dsize = 0;
+	return (item);
 }
 
 static datum
@@ -259,9 +298,13 @@ firsthash(db, hash)
 
 loop:
 	dbm_access(db, hash);
-	bitem = makdatum(db->db_pagbuf, 0);
+	if (dbm_error(db)) {
+		item.dptr = NULL;
+		return (item);
+	}
+	bitem = makdatum(db->dbm_pagbuf, 0);
 	for (i=2;; i+=2) {
-		item = makdatum(db->db_pagbuf, i);
+		item = makdatum(db->dbm_pagbuf, i);
 		if (item.dptr == NULL)
 			break;
 		if (cmpdatum(bitem, item) < 0)
@@ -281,18 +324,19 @@ dbm_access(db, hash)
 	long hash;
 {
 	
-	for (db->db_hmask=0;; db->db_hmask=(db->db_hmask<<1)+1) {
-		db->db_blkno = hash & db->db_hmask;
-		db->db_bitno = db->db_blkno + db->db_hmask;
+	for (db->dbm_hmask=0;; db->dbm_hmask=(db->dbm_hmask<<1)+1) {
+		db->dbm_blkno = hash & db->dbm_hmask;
+		db->dbm_bitno = db->dbm_blkno + db->dbm_hmask;
 		if (getbit(db) == 0)
 			break;
 	}
-	if (db->db_blkno != db->db_pagbno) {
-		bzero(db->db_pagbuf, PBLKSIZ);
-		(void) lseek(db->db_pagf, db->db_blkno*PBLKSIZ, L_SET);
-		(void) read(db->db_pagf, db->db_pagbuf, PBLKSIZ);
-		chkblk(db->db_pagbuf);
-		db->db_pagbno = db->db_blkno;
+	if (db->dbm_blkno != db->dbm_pagbno) {
+		db->dbm_pagbno = db->dbm_blkno;
+		(void) lseek(db->dbm_pagf, db->dbm_blkno*PBLKSIZ, L_SET);
+		if (read(db->dbm_pagf, db->dbm_pagbuf, PBLKSIZ) != PBLKSIZ)
+			bzero(db->dbm_pagbuf, PBLKSIZ);
+		else if (chkblk(db->dbm_pagbuf) < 0)
+			db->dbm_flags |= _DBM_IOERR;
 	}
 }
 
@@ -304,19 +348,19 @@ getbit(db)
 	register b, i, n;
 	
 
-	if (db->db_bitno > db->db_maxbno)
+	if (db->dbm_bitno > db->dbm_maxbno)
 		return (0);
-	n = db->db_bitno % BYTESIZ;
-	bn = db->db_bitno / BYTESIZ;
+	n = db->dbm_bitno % BYTESIZ;
+	bn = db->dbm_bitno / BYTESIZ;
 	i = bn % DBLKSIZ;
 	b = bn / DBLKSIZ;
-	if (b != db->db_dirbno) {
-		bzero(db->db_dirbuf, DBLKSIZ);
-		(void) lseek(db->db_dirf, (long)b*DBLKSIZ, L_SET);
-		(void) read(db->db_dirf, db->db_dirbuf, DBLKSIZ);
-		db->db_dirbno = b;
+	if (b != db->dbm_dirbno) {
+		db->dbm_dirbno = b;
+		(void) lseek(db->dbm_dirf, (long)b*DBLKSIZ, L_SET);
+		if (read(db->dbm_dirf, db->dbm_dirbuf, DBLKSIZ) != DBLKSIZ)
+			bzero(db->dbm_dirbuf, DBLKSIZ);
 	}
-	if (db->db_dirbuf[i] & (1<<n))
+	if (db->dbm_dirbuf[i] & (1<<n))
 		return (1);
 	return (0);
 }
@@ -328,22 +372,26 @@ setbit(db)
 	long bn;
 	register i, n, b;
 
-	if (dbrdonly(db)) {
+	if (dbm_rdonly(db)) {
 		errno = EPERM;
 		return (-1);
 	}
-	if (db->db_bitno > db->db_maxbno) {
-		db->db_maxbno = db->db_bitno;
+	if (db->dbm_bitno > db->dbm_maxbno) {
+		db->dbm_maxbno = db->dbm_bitno;
 		getbit(db);
 	}
-	n = db->db_bitno % BYTESIZ;
-	bn = db->db_bitno / BYTESIZ;
+	n = db->dbm_bitno % BYTESIZ;
+	bn = db->dbm_bitno / BYTESIZ;
 	i = bn % DBLKSIZ;
 	b = bn / DBLKSIZ;
-	db->db_dirbuf[i] |= 1<<n;
-	(void) lseek(db->db_dirf, (long)b*DBLKSIZ, L_SET);
-	(void) write(db->db_dirf, db->db_dirbuf, DBLKSIZ);
-	db->db_dirbno = b;
+	db->dbm_dirbuf[i] |= 1<<n;
+	db->dbm_dirbno = b;
+	(void) lseek(db->dbm_dirf, (long)b*DBLKSIZ, L_SET);
+	if (write(db->dbm_dirf, db->dbm_dirbuf, DBLKSIZ) != DBLKSIZ) {
+		db->dbm_flags |= _DBM_IOERR;
+		return (-1);
+	}
+	return (0);
 }
 
 static datum
@@ -355,18 +403,16 @@ makdatum(buf, n)
 	datum item;
 
 	sp = (short *)buf;
-	if (n < 0 || n >= sp[0])
-		goto null;
+	if (n < 0 || n >= sp[0]) {
+		item.dptr = NULL;
+		item.dsize = 0;
+		return (item);
+	}
 	t = PBLKSIZ;
 	if (n > 0)
-		t = sp[n+1-1];
+		t = sp[n];
 	item.dptr = buf+sp[n+1];
 	item.dsize = t - sp[n+1];
-	return (item);
-
-null:
-	item.dptr = NULL;
-	item.dsize = 0;
 	return (item);
 }
 
@@ -374,7 +420,7 @@ static
 cmpdatum(d1, d2)
 	datum d1, d2;
 {
-	register n;
+	register int n;
 	register char *p1, *p2;
 
 	n = d1.dsize;
@@ -428,14 +474,14 @@ hashinc(db, hash)
 {
 	long bit;
 
-	hash &= db->db_hmask;
-	bit = db->db_hmask+1;
+	hash &= db->dbm_hmask;
+	bit = db->dbm_hmask+1;
 	for (;;) {
 		bit >>= 1;
 		if (bit == 0)
 			return (0L);
-		if ((hash&bit) == 0)
-			return (hash|bit);
+		if ((hash & bit) == 0)
+			return (hash | bit);
 		hash &= ~bit;
 	}
 }
@@ -444,18 +490,19 @@ static long
 dcalchash(item)
 	datum item;
 {
-	register i, j, f;
-	long hashl;
-	int hashi;
+	register int s, c, j;
+	register char *cp;
+	register long hashl;
+	register int hashi;
 
 	hashl = 0;
 	hashi = 0;
-	for (i=0; i<item.dsize; i++) {
-		f = item.dptr[i];
+	for (cp = item.dptr, s=item.dsize; --s >= 0; ) {
+		c = *cp++;
 		for (j=0; j<BYTESIZ; j+=4) {
-			hashi += hitab[f&017];
+			hashi += hitab[c&017];
 			hashl += hltab[hashi&63];
-			f >>= 4;
+			c >>= 4;
 		}
 	}
 	return (hashl);
@@ -465,34 +512,28 @@ static
 delitem(buf, n)
 	char buf[PBLKSIZ];
 {
-	register short *sp;
-	register i1, i2, i3;
+	register short *sp, *sp1;
+	register i1, i2;
 
 	sp = (short *)buf;
-	if (n < 0 || n >= sp[0])
-		goto bad;
-	i1 = sp[n+1];
-	i2 = PBLKSIZ;
-	if (n > 0)
-		i2 = sp[n+1-1];
-	i3 = sp[sp[0]+1-1];
-	if (i2 > i1)
-	while (i1 > i3) {
-		i1--;
-		i2--;
-		buf[i2] = buf[i1];
-		buf[i1] = 0;
+	i2 = sp[0];
+	if (n < 0 || n >= i2)
+		return (0);
+	if (n == i2-1) {
+		sp[0]--;
+		return (1);
 	}
-	i2 -= i1;
-	for (i1=n+1; i1<sp[0]; i1++)
-		sp[i1+1-1] = sp[i1+1] + i2;
-	sp[0]--;
-	sp[sp[0]+1] = 0;
-	return;
-
-bad:
-	printf("ndbm: bad delitem\n");
-	abort();
+	i1 = PBLKSIZ;
+	if (n > 0)
+		i1 = sp[n];
+	i1 -= sp[n+1];
+	if (i1 > 0) {
+		i2 = sp[i2];
+		bcopy(&buf[i2], &buf[i2 + i1], sp[n+1] - i2);
+	}
+	for (sp1 = sp + sp[0]--, sp += n+1; sp < sp1; sp++)
+		sp[0] = sp[1] + i1;
+	return (1);
 }
 
 static
@@ -505,19 +546,16 @@ additem(buf, item)
 
 	sp = (short *)buf;
 	i1 = PBLKSIZ;
-	if (sp[0] > 0)
-		i1 = sp[sp[0]+1-1];
+	i2 = sp[0];
+	if (i2 > 0)
+		i1 = sp[i2];
 	i1 -= item.dsize;
-	i2 = (sp[0]+2) * sizeof(short);
+	i2 = (i2+2) * sizeof(short);
 	if (i1 <= i2)
-		return (-1);
-	sp[sp[0]+1] = i1;
-	for (i2=0; i2<item.dsize; i2++) {
-		buf[i1] = item.dptr[i2];
-		i1++;
-	}
-	sp[0]++;
-	return (sp[0]-1);
+		return (0);
+	sp[++sp[0]] = i1;
+	bcopy(item.dptr, &buf[i1], item.dsize);
+	return (1);
 }
 
 static
@@ -531,15 +569,10 @@ chkblk(buf)
 	t = PBLKSIZ;
 	for (i=0; i<sp[0]; i++) {
 		if (sp[i+1] > t)
-			goto bad;
+			return (-1);
 		t = sp[i+1];
 	}
 	if (t < (sp[0]+1)*sizeof(short))
-		goto bad;
-	return;
-
-bad:
-	printf("ndbm: bad block\n");
-	abort();
-	bzero(buf, PBLKSIZ);
+		return (-1);
+	return (0);
 }
