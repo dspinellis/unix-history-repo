@@ -1,4 +1,4 @@
-/*	if_en.c	4.69	82/10/10	*/
+/*	if_en.c	4.70	82/10/17	*/
 
 #include "en.h"
 
@@ -335,7 +335,7 @@ enrint(unit)
 	struct endevice *addr = (struct endevice *)eninfo[unit]->ui_addr;
 	register struct en_header *en;
     	struct mbuf *m;
-	int len, plen; short resid;
+	int len; short resid;
 	register struct ifqueue *inq;
 	int off;
 
