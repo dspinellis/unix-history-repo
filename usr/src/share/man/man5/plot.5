@@ -1,4 +1,4 @@
-.\"	@(#)plot.5	6.1 (Berkeley) %G%
+.\"	@(#)plot.5	6.2 (Berkeley) %G%
 .\"
 .TH PLOT 5  ""
 .AT 3
@@ -130,3 +130,6 @@ space(0, 0, 4096, 4096);
 .RE
 .SH "SEE ALSO"
 plot(1G), plot(3X), plot(3F), graph(1G)
+.SH BUGS
+A \fIlabel\fP instruction immediately followed by a \fIcont\fP
+instruction does the wrong thing on a 4014.
