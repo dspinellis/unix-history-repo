@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.5 83/08/22";
+static	char *sccsid = "@(#)wwscroll.c	3.6 83/08/22";
 #endif
 
 #include "ww.h"
@@ -139,7 +139,7 @@ int leaveit;
 					*cpp++ = *cqq++;
 				*cpp = tmp;
 			}
-			{
+			if (deleted) {
 				register char *p, *q;
 
 				p = &wwtouched[srow1 + w->ww_w.t];
@@ -147,6 +147,12 @@ int leaveit;
 				for (i = erow1 - srow1; --i >= 0;)
 					*p++ = *q++;
 				*p = 1;
+			} else {
+				register char *p;
+
+				p = &wwtouched[srow1 + w->ww_w.t];
+				for (i = erow1 - srow1 + 1; --i >= 0;)
+					*p++ = 1;
 			}
 			wwredrawwin1(w, srow, srow1 - 1, w->ww_scroll + dir);
 			wwredrawwin1(w, erow1, erow - leaveit,
@@ -163,7 +169,7 @@ int leaveit;
 					*--cpp = *--cqq;
 				*cqq = tmp;
 			}
-			{
+			if (deleted) {
 				register char *p, *q;
 
 				q = &wwtouched[erow1 + w->ww_w.t];
@@ -171,6 +177,12 @@ int leaveit;
 				for (i = erow1 - srow1; --i >= 0;)
 					*--p = *--q;
 				*q = 1;
+			} else {
+				register char *p;
+
+				p = &wwtouched[srow1 + w->ww_w.t];
+				for (i = erow1 - srow1 + 1; --i >= 0;)
+					*p++ = 1;
 			}
 			wwredrawwin1(w, srow + leaveit, srow1,
 				w->ww_scroll + dir);
