@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)hpux_compat.c	7.16 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -811,19 +811,15 @@ hpuxstat1(fname, hsb, follow)
 	struct hpuxstat *hsb;
 	int follow;
 {
-	register struct nameidata *ndp;
 	int error;
 	struct stat sb;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | follow;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = fname;
-	if (error = namei(ndp, curproc))
+	NDINIT(&nd, LOOKUP, follow | LOCKLEAF, UIO_USERSPACE, fname, curproc);
+	if (error = namei(&nd))
 		return (error);
-	error = vn_stat(ndp->ni_vp, &sb);
-	vput(ndp->ni_vp);
+	error = vn_stat(nd.ni_vp, &sb);
+	vput(nd.ni_vp);
 	if (error == 0)
 		error = bsdtohpuxstat(&sb, hsb);
 	return (error);
@@ -1146,11 +1142,11 @@ hpuxgetaccess(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	struct nameidata *ndp;
 	int lgroups[NGROUPS];
 	int error = 0;
 	register struct ucred *cred;
 	register struct vnode *vp;
+	struct nameidata nd;
 
 	/*
 	 * Build an appropriate credential structure
@@ -1214,10 +1210,9 @@ hpuxgetaccess(p, uap, retval)
 	 * Lookup file using caller's effective IDs.
 	 */
 	if (error == 0) {
-		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-		ndp->ni_segflg = UIO_USERSPACE;
-		ndp->ni_dirp = uap->path;
-		error = namei(ndp, p);
+		NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
+			uap->path, p);
+		error = namei(&nd);
 	}
 	if (error) {
 		crfree(cred);
@@ -1226,7 +1221,7 @@ hpuxgetaccess(p, uap, retval)
 	/*
 	 * Use the constructed credentials for access checks.
 	 */
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	*retval = 0;
 	if (VOP_ACCESS(vp, VREAD, cred, p) == 0)
 		*retval |= R_OK;
@@ -1586,34 +1581,30 @@ ohpuxutime(p, uap, retval)
 	int *retval;
 {
 	register struct vnode *vp;
-	register struct nameidata *ndp;
 	struct vattr vattr;
 	time_t tv[2];
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
 	if (uap->tptr) {
 		error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
 		if (error)
 			return (error);
 	} else
 		tv[0] = tv[1] = time.tv_sec;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
 	vattr_null(&vattr);
 	vattr.va_atime.tv_sec = tv[0];
 	vattr.va_atime.tv_usec = 0;
 	vattr.va_mtime.tv_sec = tv[1];
 	vattr.va_mtime.tv_usec = 0;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else
-		error = VOP_SETATTR(vp, &vattr, ndp->ni_cred, p);
+		error = VOP_SETATTR(vp, &vattr, nd.ni_cnd.cn_cred, p);
 	vput(vp);
 	return (error);
 }
@@ -1660,18 +1651,14 @@ ohpuxstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	error = ohpuxstat1(ndp->ni_vp, uap->sb);
-	vput(ndp->ni_vp);
+	error = ohpuxstat1(nd.ni_vp, uap->sb);
+	vput(nd.ni_vp);
 	return (error);
 }
 
