@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)wheredump.c 1.1 %G%";
+static char sccsid[] = "@(#)wheredump.c 1.2 %G%";
 
 /*
  * Print a list of currently active blocks starting with most recent.
@@ -16,25 +16,29 @@ static char sccsid[] = "@(#)wheredump.c 1.1 %G%";
 
 where()
 {
-	FRAME *frp;
-	ADDRESS prevpc;
-	LINENO line;
-	SYM *f;
+    FRAME *frp;
+    ADDRESS prevpc;
+    LINENO line;
+    SYM *f;
 
-	if (pc == 0) {
-		error("program is not active");
-	}
-	prevpc = pc;
-	for (frp = curframe(); frp != NIL; frp = nextframe(frp)) {
-		f = whatblock(entry(frp));
-		line = srcline(prevpc);
-		printf("%s", name(f));
-		printparams(f, frp);
-		printf(", line %d\n", line);
-		prevpc = frp->save_pc;
-	}
+    if (pc == 0) {
+	error("program is not active");
+    }
+    prevpc = pc;
+    for (frp = curframe(); frp != NIL; frp = nextframe(frp)) {
+	f = whatblock(entry(frp));
 	line = srcline(prevpc);
-	printf("%s, line %d\n", name(program), line);
+	printf("%s", name(f));
+	printparams(f, frp);
+	printf(", ");
+	printwhere(line, srcfilename(prevpc));
+	printf("\n");
+	prevpc = frp->save_pc;
+    }
+    line = srcline(prevpc);
+    printf("%s, ", name(program));
+    printwhere(line, srcfilename(prevpc));
+    printf("\n");
 }
 
 /*
@@ -44,26 +48,30 @@ where()
 
 dump()
 {
-	FRAME *frp;
-	ADDRESS prevpc;
-	LINENO line;
-	SYM *f;
+    FRAME *frp;
+    ADDRESS prevpc;
+    LINENO line;
+    SYM *f;
 
-	if (pc == 0) {
-		error("program is not active");
-	}
-	prevpc = pc;
-	for (frp = curframe(); frp != NIL; frp = nextframe(frp)) {
-		f = whatblock(entry(frp));
-		line = srcline(prevpc);
-		prevpc = frp->save_pc;
-		printf("%s", name(f));
-		printparams(f, frp);
-		printf(", line %d\n", line);
-		dumpvars(f, frp);
-		putchar('\n');
-	}
+    if (pc == 0) {
+	error("program is not active");
+    }
+    prevpc = pc;
+    for (frp = curframe(); frp != NIL; frp = nextframe(frp)) {
+	f = whatblock(entry(frp));
 	line = srcline(prevpc);
-	printf("%s, line %d\n", name(program), line);
-	dumpvars(program, NIL);
+	printf("%s", name(f));
+	printparams(f, frp);
+	printf(", ");
+	printwhere(line, srcfilename(prevpc));
+	printf("\n");
+	dumpvars(f, frp);
+	putchar('\n');
+	prevpc = frp->save_pc;
+    }
+    line = srcline(prevpc);
+    printf("%s, ", name(program));
+    printwhere(line, srcfilename(prevpc));
+    printf("\n");
+    dumpvars(program, NIL);
 }
