@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -418,8 +418,8 @@ spec_fsync(ap)
 	 */
 loop:
 	s = splbio();
-	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = nbp) {
-		nbp = bp->b_vnbufs.qe_next;
+	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = nbp) {
+		nbp = bp->b_vnbufs.le_next;
 		if ((bp->b_flags & B_BUSY))
 			continue;
 		if ((bp->b_flags & B_DELWRI) == 0)
@@ -436,7 +436,7 @@ loop:
 			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 		}
 #ifdef DIAGNOSTIC
-		if (vp->v_dirtyblkhd.le_next) {
+		if (vp->v_dirtyblkhd.lh_first) {
 			vprint("spec_fsync: dirty", vp);
 			goto loop;
 		}
