@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.2 (Berkeley) %G%
+ *	@(#)unistd.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -95,7 +95,7 @@ int	 chroot __P((const char *));
 char	*crypt __P((const char *, const char *));
 void	 encrypt __P((char *, int));
 void	 endusershell __P((void));
-int	 exect __P((const char *, const char * const *, const char * const *));
+int	 exect __P((const char *, char * const *, char * const *));
 int	 fchdir __P((int));
 int	 fchflags __P((int, long));
 int	 fchmod __P((int, mode_t));
