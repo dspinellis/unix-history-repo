@@ -14,14 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	4.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	calendar.c
 OBJS=
 MAN=	calendar.0
-CALS=	calendar.history calendar.holiday calendar.birthday calendar.usholiday
 
 all: calendar
 
@@ -40,7 +39,8 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 calendar ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 ${CALS} ${DESTDIR}/usr/share/calendar
+	install -c -o bin -g bin -m 444 calendars/calendar.* \
+		${DESTDIR}/usr/share/calendar
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
