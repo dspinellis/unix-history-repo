@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -65,13 +65,15 @@ main(argc, argv)
 
 	/*NOSTRICT*/
 	if (!(found = (int *)malloc((u_int)argc))) {
-		fprintf(stderr, "apropos: out of space.\n");
+		fprintf(stderr, "whatis: out of space.\n");
 		exit(1);
 	}
 	bzero((char *)found, argc * sizeof(int));
 
-	for (p = argv; *p; ++p)			/* convert to lower-case */
-		lowstr(*p, *p);
+	for (p = argv; *p; ++p)			/* trim full paths */
+		if (beg = rindex(*p, '/'))
+			*p = beg + 1;
+
 	for (beg = manpath; beg; beg = end) {	/* through path list */
 		end = index(beg, ':');
 		if (!end)
@@ -85,7 +87,7 @@ main(argc, argv)
 
 		/* for each file found */
 		for (foundman = 1; fgets(buf, sizeof(buf), stdin);) {
-			lowstr(buf, wbuf);
+			dashtrunc(buf, wbuf);
 			for (p = argv; *p; ++p)
 				if (match(wbuf, *p)) {
 					printf("%s", buf);
@@ -100,47 +102,50 @@ main(argc, argv)
 		}
 	}
 	if (!foundman) {
-		fprintf(stderr, "apropos: no %s file found in %s.\n",
+		fprintf(stderr, "whatis: no %s file found in %s.\n",
 		    WHATIS, manpath);
 		exit(1);
 	}
 	for (p = argv; *p; ++p)
 		if (!found[p - argv])
-			printf("%s: nothing appropriate\n", *p);
+			printf("%s: not found\n", *p);
 }
 
 /*
  * match --
- *	match anywhere the string appears
+ *	match a full word
  */
 match(bp, str)
 	register char *bp, *str;
 {
 	register int len;
-	register char test;
+	register char *start;
 
-	if (!*bp)
+	if (!*str || !*bp)
 		return(0);
-	/* backward compatible: everything matches empty string */
-	if (!*str)
-		return(1);
-	for (test = *str++, len = strlen(str); *bp;)
-		if (test == *bp++ && !strncmp(bp, str, len))
+	for (len = strlen(str);;) {
+		for (; *bp && !isdigit(*bp) && !isalpha(*bp); ++bp);
+		if (!*bp)
+			break;
+		for (start = bp++; *bp && (isdigit(*bp) || isalpha(*bp)); ++bp);
+		if (bp - start == len && !strncasecmp(start, str, len))
 			return(1);
+	}
 	return(0);
 }
 
 /*
- * lowstr --
- *	convert a string to lower case
+ * dashtrunc --
+ *	truncate a string at " - "
  */
-lowstr(from, to)
+dashtrunc(from, to)
 	register char *from, *to;
 {
-	register char ch;
+	register int ch;
 
-	while ((ch = *from++) && ch != '\n')
-		*to++ = isupper(ch) ? tolower(ch) : ch;
+	for (; (ch = *from) && ch != '\n' &&
+	    (ch != ' ' || from[1] != '-' || from[2] != ' '); ++from)
+		*to++ = ch;
 	*to = '\0';
 }
 
@@ -150,6 +155,6 @@ lowstr(from, to)
  */
 usage()
 {
-	fprintf(stderr, "usage: apropos [-M path] string ...\n");
+	fprintf(stderr, "usage: whatis [-M path] string ...\n");
 	exit(1);
 }
