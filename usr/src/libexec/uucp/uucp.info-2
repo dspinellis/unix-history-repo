@@ -1,0 +1,1142 @@
+Info file uucp.info, produced by Makeinfo, -*- Text -*- from input
+file uucp.texi.
+
+   This file documents Taylor UUCP, version 1.03.
+
+   Copyright (C) 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "Copying" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "Copying" may be included
+in a translation approved by the author instead of in the original
+English.
+
+
+File: uucp.info,  Node: Chat Scripts,  Next: config File,  Prev: Time Strings,  Up: Configuration Files
+
+Chat Scripts
+============
+
+   Chat scripts are used in several different places, such as dialing
+out on modems or logging in to remote systems.  Chat scripts are made
+up of pairs of strings.  The program waits until it sees the first
+string, known as the "expect" string, and then sends out the second
+string, the "send" string.
+
+   Each chat script is defined using a set of commands.  These commands
+always end in a string beginning with `chat', but may start with
+different strings.  For example, in the `sys' file there is one set of
+commands beginning with `chat' and another set beginning with
+`called-chat'.  The prefixes are only used to disambiguate different
+types of chat scripts, and this section ignores the prefixes when
+describing the commands.
+
+`chat STRINGS'
+     Specify a chat script.  The arguments to the `chat' command are
+     pairs of strings separated by whitespace.  The first string of
+     each pair is an expect string, the second is a send string.  The
+     program will wait for the expect string to appear; when it does,
+     the program will send the send string.  If the expect string does
+     not appear within a certain number of seconds (as set by the
+     `chat-timeout' command) the chat script fails and, typically, the
+     call is aborted.  If the final expect string is seen (and the
+     optional final send string has been sent), the chat script is
+     successful.
+
+     An expect string may contain additional subsend and subexpect
+     strings, separated by hyphens.  If the expect string is not seen,
+     the subsend string is sent and the chat script continues by
+     waiting for the subexpect string.  This means that a hyphen may
+     not appear in an expect string; use `\055' instead.
+
+     An expect string may simply be `""', meaning to skip the expect
+     phase.  Otherwise, the following escape characters may appear in
+     expect strings:
+
+    `\b'
+          a backspace character
+
+    `\n'
+          a newline or line feed character
+
+    `\N'
+          a null character (for BNU compatibility)
+
+    `\r'
+          a carriage return character
+
+    `\s'
+          a space character
+
+    `\t'
+          a tab character
+
+    `\\'
+          a backslash character
+
+    `\DDD'
+          character DDD, where DDD are up to three octal digits
+
+    `\xDDD'
+          character DDD, where DDD are hexadecimal digits.
+
+          As in C, there may be up to three octal digits following a
+     backslash, but the hexadecimal escape sequence continues as far
+     as possible.  To follow a hexadecimal escape sequence with a hex
+     digit, interpose a send string of `""'.
+
+     A send string may also simply be `""' to skip the send phase. 
+     Otherwise, all of the escape characters legal for expect strings
+     may be used, and the following escape characters are also
+     permitted:
+
+    `EOT'
+          send an end of transmission character (`^D')
+
+    `BREAK'
+          send a break character (may not work on all systems)
+
+    `\c'
+          suppress trailing carriage return at end of send string
+
+    `\d'
+          delay sending for 1 second
+
+    `\e'
+          disable echo checking
+
+    `\E'
+          enable echo checking (wait for echo before continuing)
+
+    `\K'
+          same as `BREAK' (for BNU compatibility)
+
+    `\p'
+          pause sending for a fraction of a second
+
+          Some specific types of chat scripts also define additional escape
+     sequences that may appear in the send string.  For example, the
+     login chat script defines `\L' and `\P' to send the login name and
+     password, respectively.
+
+     A carriage return will be sent at the end of each send string,
+     unless the `\c' escape sequence appears in the string.  Note that
+     some UUCP packages use `\b' for break, but here it means
+     backspace.
+
+     Echo checking means that after writing each character the program
+     will wait until the character is echoed.  Echo checking must be
+     turned on separately for each send string for which it is
+     desired; it will be turned on for characters following `\E' and
+     turned off for characters following `\e'.
+
+`chat-timeout NUMBER'
+     The number of seconds to wait for an expect string in the chat
+     script before timing out and sending the next subsend or failing
+     the chat script entirely.  The default value is 10 for a login
+     chat or 60 for any other type of chat.
+
+`chat-fail STRING'
+     If the STRING is seen at any time during a chat script, the chat
+     script is aborted.  The string may not contain any whitespace
+     characters; escape sequences must be used for them.  Multiple
+     `chat-fail' commands may appear in a single chat script.  The
+     default is to have none.
+
+     This permits a chat script to be quickly aborted if an error
+     string is seen.  For example, a script used to dial out on a
+     modem might use the command `chat-fail BUSY' to stop the chat
+     script immediately if the string `BUSY' was seen.
+
+`chat-seven-bit BOOLEAN'
+     If the argument is true, all incoming characters are stripped to
+     seven bits when being compared to the expect string.  Otherwise
+     all eight bits are used in the comparison.  The default is true
+     because some Unix systems generate parity bits during the login
+     prompt which must be ignored while running a chat script.  This
+     has no effect on any `chat-program', which must ignore parity by
+     itself if necessary.
+
+`chat-program STRINGS'
+     Specify a program to run before executing the chat script.  This
+     program could run its own version of a chat script, or it could
+     do whatever it wants.  If both `chat-program' and `chat' are
+     specified, the program is executed first followed by the chat
+     script.
+
+     The first argument to the `chat-program' command is the program
+     name to run.  The remaining arguments are passed to the program. 
+     The following escape sequences are recognized in the arguments:
+
+    `\Y'
+          port device name
+
+    `\S'
+          port speed
+
+    `\\'
+          backslash
+
+          Some specific uses of `chat-program' define additional escape
+     sequences.
+
+     Arguments other than escape sequences are passed exactly as they
+     appear in the configuration file, except that sequences of
+     whitespace are compressed to a single space character; this
+     exception may be removed in the future.
+
+     If the `chat-program' command is not used, no program is run.
+
+     On Unix, the standard input and standard output of the program
+     will be attached to the port in use.  Anything the program writes
+     to standard error will be written to the UUCP log file.  No other
+     file descriptors will be open.  If the program does not exit with
+     a status of 0, it will be assumed to have failed; this means that
+     the dialing programs used by some versions of BNU may not be used
+     directly, although of course a shell script could be used as an
+     interface.
+
+     The program will be run as the `uucp' user, and the environment
+     will be that of the process that started `uucico', so care must be
+     taken to maintain security.
+
+     No search path is used to find the program; a full path name must
+     be given.  If the program is an executable shell script, it will
+     be passed to `/bin/sh' even on systems which are unable to
+     execute shell scripts.  It is also easy to invoke `/bin/sh'
+     directly.
+
+   Here is a simple example of a chat script that might be used to
+reset a Hayes compatible modem.
+
+     chat "" ATZ OK-ATZ-OK
+
+   The first expect string is `""', so it is ignored.  The chat script
+then sends `ATZ'.  If the modem responds with `OK', the chat script
+finishes.  If 60 seconds (the default timeout) pass before seeing
+`OK', the chat script sends another `ATZ'.  If it then sees `OK', the
+chat script succeeds.  Otherwise, the chat script fails.
+
+   For a more complex chat script example, see *Note Logging In::.
+
+
+File: uucp.info,  Node: config File,  Next: sys File,  Prev: Chat Scripts,  Up: Configuration Files
+
+The Main Configuration File
+===========================
+
+   The main configuration file is named `config'.
+
+   Since all the values that may be specified in the main configuration
+file also have defaults, there need not be a main configuration file at
+all.
+
+* Menu:
+
+* Miscellaneous (config)::      Miscellaneous config file commands
+* Configuration File Names::    Using different configuration files
+* Log File Names::              Using different log files
+* Debugging Levels::            Debugging levels
+
+
+File: uucp.info,  Node: Miscellaneous (config),  Next: Configuration File Names,  Prev: config File,  Up: config File
+
+Miscellaneous config File Commands
+----------------------------------
+
+`nodename STRING'
+`hostname STRING'
+`uuname STRING'
+     These keywords are equivalent.  They specify the UUCP name of the
+     local host.  If there is no configuration file, an appropriate
+     function will be used to get the host name, if possible.
+
+`spool STRING'
+     Specify the spool directory.  The default is from `policy.h'. 
+     Command files, work files, temporary files, etc., are stored in
+     this directory and in subdirectories of it.
+
+`pubdir STRING'
+     Specify the public directory.  The default is from `policy.h'.  On
+     Unix, when a file is named using a leading `~/', it is taken from
+     or to the public directory.  Each system may use a separate public
+     directory by using the `pubdir' command in the system
+     configuration file; see *Note Miscellaneous (sys)::.
+
+`unknown STRING ...'
+     The STRING and subsequent arguments are treated as though they
+     appeared in the system file (*note sys file::.).  They are used
+     to apply to any unknown systems that may call in, probably to set
+     file transfer permissions and the like.  If the `unknown' command
+     is not used, unknown systems are not permitted to call in.
+
+`max-uuxqts NUMBER'
+     Specify the maximum number of `uuxqt' processes which may run at
+     the same time.  Having several `uuxqt' processes running at once
+     can significantly slow down a system, but since `uuxqt' is
+     automatically started by `uucico', it can happen quite easily. 
+     The default for `max-uuxqts' is 0, which means that there is no
+     limit.  If BNU configuration files are being read and the code
+     was compiled without `HAVE_TAYLOR_CONFIG', then if the file
+     `Maxuuxqts' in the configuration directory contains a readable
+     number it will be used as the value for `max-uuxqts'.
+
+`v2-files BOOLEAN'
+     If the code was compiled to be able to read V2 configuration
+     files, a false argument to this command will prevent them from
+     being read.  This can be useful while testing.  The default is
+     true.
+
+`bnu-files BOOLEAN'
+     If the code was compiled to be able to read BNU configuration
+     files, a false argument to this command will prevent them from
+     being read.  This can be useful while testing.  The default is
+     true.
+
+
+File: uucp.info,  Node: Configuration File Names,  Next: Log File Names,  Prev: Miscellaneous (config),  Up: config File
+
+Configuration File Names
+------------------------
+
+`sysfile STRINGS'
+     Specify the system file(s).  The default is the file `sys' in the
+     directory NEWCONFIGDIR.  These files hold information about other
+     systems with which this system communicates; see *Note sys file::. 
+     Multiple system files may be given on the line, and the `sysfile'
+     command may be repeated; each system file has its own set of
+     defaults.
+
+`portfile STRINGS'
+     Specify the port file(s).  The default is the file `port' in the
+     directory NEWCONFIGDIR.  These files describe ports which are used
+     to call other systems and accept calls from other systems; see
+     *Note port file::.  No port files need be named at all.  Multiple
+     port files may be given on the line, and the `portfile' command
+     may be repeated.
+
+`dialfile STRINGS'
+     Specify the dial file(s).  The default is the file `dial' in the
+     directory NEWCONFIGDIR.  These files describe dialing devices
+     (modems); *Note dial file::.  No dial files need be named at all. 
+     Multiple dial files may be given on the line, and the `dialfile'
+     command may be repeated.
+
+`dialcodefile STRINGS'
+     Specify the dialcode file(s).  The default is the file `dialcode'
+     in the directory NEWCONFIGDIR.  These files specify dialcodes that
+     may be used when sending phone numbers to a modem.  This permits
+     using the same set of phone numbers in different area-codes or
+     with different phone systems, by using dialcodes to specify the
+     calling sequence.  When a phone number goes through dialcode
+     translation, the leading alphabetic characters are stripped off. 
+     The dialcode files are read line by line, just like any other
+     configuration file, and when a line is found whose first word is
+     the same as the leading characters from the phone number, the
+     second word on the line (which would normally consist of numbers)
+     replaces the dialcode in the phone number.  No dialcode file need
+     be used.  Multiple dialcode files may be specified on the line,
+     and the `dialcodefile' command may be repeated; all the dialcode
+     files will be read in turn until a dialcode is located.
+
+`callfile STRINGS'
+     Specify the call out login name and password file(s).  The
+     default is the file `call' in the directory NEWCONFIGDIR.  If the
+     call out login name or password for a system are given as `*'
+     (*note Logging In::.), these files are read to get the real login
+     name or password.  Each line in the file(s) has three words: the
+     system name, the login name, and the password.  This file is only
+     used when placing calls to remote systems; the password file
+     described under `passwdfile' below is used for incoming calls. 
+     The intention of the call out file is to permit the system file
+     to be publically readable; the call out files must obviously be
+     kept secure.  These files need not be used.  Multiple call out
+     files may be specified on the line, and the `callfile' command
+     may be repeated; all the files will be read in turn until the
+     system is found.
+
+`passwdfile STRINGS'
+     Specify the password file(s) to use for login names when `uucico'
+     is doing its own login prompting, which it does when given the
+     `-e', `-l' or `-w' switch.  The default is the file `passwd' in
+     the directory NEWCONFIGDIR.  Each line in the file(s) has two
+     words: the login name and the password (e.g. `Ufoo foopas').  The
+     login name is accepted before the system name is known, so these
+     are independent of which system is calling in; a particular login
+     may be required for a system by using the `called-login' command
+     in the system file (*note Accepting a Call::.).  These password
+     files are optional, although one must exist if `uucico' is to
+     present its own login prompts.  Multiple password files may be
+     specified on the line, and the `passwdfile' command may be
+     repeated; all the files will be read in turn until the login name
+     is found.
+
+
+File: uucp.info,  Node: Log File Names,  Next: Debugging Levels,  Prev: Configuration File Names,  Up: config File
+
+Log File Names
+--------------
+
+`logfile STRING'
+     Name the log file.  The default is from `policy.h'.  Logging
+     information is written to this file.  If `HAVE_BNU_LOGGING' is
+     defined in `conf.h', then by default a separate log file is used
+     for each system.  Using this command to name a log file will
+     cause all the systems to use it.
+
+`statfile STRING'
+     Name the statistics file.  The default is from `policy.h'. 
+     Statistical information about file transfers is written to this
+     file.
+
+`debugfile STRING'
+     Name the file to which debugging information is written.  The
+     default is from `policy.h'.  This command is only effective if
+     the code has been compiled to include debugging (this is
+     controlled by the `DEBUG' variable in `policy.h').  After the
+     first debugging message has been written, messages written to the
+     log file are also written to the debugging file to make it easier
+     to keep the order of actions straight.  The debugging file is
+     different from the log file because information such as passwords
+     can appear in it, so it must be not be publically readable.
+
+
+File: uucp.info,  Node: Debugging Levels,  Prev: Log File Names,  Up: config File
+
+Debugging Levels
+----------------
+
+`debug STRING ...'
+     Set the debugging level.  This command is only effective if the
+     code has been compiled to include debugging.  The default is to
+     have no debugging.  The arguments are strings which name the
+     types of debugging to be turned on.  The following types of
+     debugging are defined:
+
+    `abnormal'
+          Output debugging messages for abnormal situations, such as
+          recoverable errors.
+
+    `chat'
+          Output debugging messages for chat scripts.
+
+    `handshake'
+          Output debugging messages for the initial handshake.
+
+    `uucp-proto'
+          Output debugging messages for the UUCP protocol itself.
+
+    `proto'
+          Output debugging messages for the individual protocols.
+
+    `port'
+          Output debugging messages for actions on the communication
+          port.
+
+    `config'
+          Output debugging messages while reading the configuration
+          files.
+
+    `spooldir'
+          Output debugging messages for actions in the spool directory.
+
+    `execute'
+          Output debugging messages whenever another program is
+          executed.
+
+    `incoming'
+          List all incoming data in the debugging file.
+
+    `outgoing'
+          List all outgoing data in the debugging file.
+
+    `all'
+          All of the above.
+
+          The debugging level may also be specified as a number.  A 1 will
+     set `chat' debugging, a 2 will set both `chat' and `handshake'
+     debugging, and so on down the possibilities.  Currently an 11
+     will turn on all possible debugging, since there are 11 types of
+     debugging messages listed above; more debugging types may be
+     added in the future.  The `debug' command may be used several
+     times in the configuration file; every debugging type named will
+     be turned on.  When running any of the programs, the `-x' switch
+     (actually, for `uulog' it's the `-X' switch) may be used to turn
+     on debugging.  The argument to the `-x' switch is one of the
+     strings listed above, or a number as described above, or a comma
+     separated list of strings (e.g.  `-x chat,handshake').  The `-x'
+     switch may also appear several times on the command line, in
+     which case all named debugging types will be turned on.  The `-x'
+     debugging is in addition to any debugging specified by the
+     `debug' command; there is no way to cancel debugging information.
+      The debugging level may also be set specifically for calls to or
+     from a specific system with the `debug' command in the system
+     file (*note Miscellaneous (sys)::.).
+
+     The debugging messages are somewhat idiosyncratic; it may be
+     necessary to refer to the source code for additional information
+     in some cases.
+
+
+File: uucp.info,  Node: sys File,  Next: port File,  Prev: config File,  Up: Configuration Files
+
+The System Configuration File
+=============================
+
+   By default there is a single system configuration, named `sys' in
+the directory NEWCONFIGDIR.  This may be overridden by the `sysfile'
+command in the main configuration file; see *Note Configuration File
+Names::.
+
+   These files describe all remote systems known to the UUCP package.
+
+* Menu:
+
+* Defaults and Alternates::     Using defaults and alternates
+* Naming the System::           Naming the system
+* Calling Out::                 Calling out
+* Accepting a Call::            Accepting a call
+* Protocol Selection::          Protocol selection
+* File Transfer Control::       File transfer control
+* Miscellaneous (sys)::         Miscellaneous sys file commands
+* Default sys File Values::     Default values
+
+
+File: uucp.info,  Node: Defaults and Alternates,  Next: Naming the System,  Prev: sys File,  Up: sys File
+
+Defaults and Alternates
+-----------------------
+
+   The first set of commands in the file, up to the first `system'
+command, specify defaults to be used for all systems in that file. 
+Each system file uses a different set of defaults.
+
+   Subsequently, each set of commands from `system' up to the next
+`system' command describe a particular system.  Default values may be
+overridden for specific systems.
+
+   Each system may then have a series of alternate choices to use when
+calling out or calling in.  The first set of commands for a particular
+system, up to the first `alternate' command, provide the first choice.
+ Subsequently, each set of commands from `alternate' up to the next
+`alternate' command describe an alternate choice for calling out or
+calling in.
+
+   When a system is called, the commands before the first `alternate'
+are used to select a phone number, port, and so forth; if the call
+fails for some reason, the commands between the first `alternate' and
+the second are used, and so forth.  Well, not quite.  Actually, each
+succeeding alternate will only be used if it is different in some
+relevant way (different phone number, different chat script, etc.).  If
+you want to force the same alternate to be used again (to retry a phone
+call more than once, for example), enter the phone number (or any other
+relevant field) again to make it appear different.
+
+   The alternates can also be used to give different permissions to an
+incoming call based on the login name.  This will only be done if the
+first set of commands, before the first `alternate' command, uses the
+`called-login' command.  The list of alternates will be searched, and
+the first alternate with a matching `called-login' command will be
+used.  If no alternates match, the call will be rejected.
+
+   The `alternate' command may also be used in the file-wide defaults
+(the set of commands before the first `system' command).  This might
+be used to specify a list of ports which are available for all systems
+(for an example of this, see *Note Gateway Example::) or to specify
+permissions based on the login name used by the remote system when it
+calls in.  The first alternate for each system will default to the
+first alternate for the file-wide defaults (as modified by the
+commands used before the first `alternate' command for this system),
+the second alternate for each system to the second alternate for the
+file-wide defaults (as modified the same way), and so forth.  If a
+system specifies more alternates than the file-wide defaults, the
+trailing ones will default to the last file-wide default alternate.  If
+a system specifies fewer alternates than the file-wide defaults, the
+trailing file-wide default alternates will be used unmodified.  The
+`default-alternates' command may be used to modify this behaviour.
+
+   This can all get rather confusing, although it's easier to use than
+to describe concisely; the `uuchk' program may be used to ensure that
+you are getting what you want.
+
+
+File: uucp.info,  Node: Naming the System,  Next: Calling Out,  Prev: Defaults and Alternates,  Up: sys File
+
+Naming the System
+-----------------
+
+`system STRING'
+     Specify the remote system name.  Subsequent commands up to the
+     next `system' command refer to this system.
+
+`alternate [STRING]'
+     Start an alternate set of commands (*note Defaults and
+     Alternates::.).  An optional argument may be used to name the
+     alternate.  This name will be put in the log file if the
+     alternate is used to call the system.  There is no way to name
+     the first alternate (the commands before the first `alternate'
+     command).
+
+`default-alternates BOOLEAN'
+     If the argument is false, any remaining default alternates (from
+     the defaults specified at the top of the current system file)
+     will not be used.  The default is true.
+
+`alias STRING'
+     Specify an alias for the current system.  The alias may be used
+     by local `uucp' and `uux' commands.  The default is to have no
+     aliases.
+
+`myname STRING'
+     Specifies a different system name to use when calling the remote
+     system.  Also, if `called-login' is used and is not `ANY', then,
+     when a system logs in with that login name, STRING is used as the
+     system name.  Because the local system name must be determined
+     before the remote system has identified itself, using `myname' and
+     `called-login' together for any system will set the local name for
+     that login; this means that each locally used system name must
+     have a unique login name associated with it.  This allows a
+     system to have different names for an external and an internal
+     network.  The default is to not use a special local name.
+
+
+File: uucp.info,  Node: Calling Out,  Next: Accepting a Call,  Prev: Naming the System,  Up: sys File
+
+Calling Out
+-----------
+
+   This section describes commands used when placing a call to another
+system.
+
+* Menu:
+
+* When to Call::                When to call
+* Placing the Call::            Placing the call
+* Logging In::                  Logging in
+
+
+File: uucp.info,  Node: When to Call,  Next: Placing the Call,  Prev: Calling Out,  Up: Calling Out
+
+When to Call
+............
+
+`time STRING [NUMBER]'
+     Specify when the system may be called.  The first argument is a
+     time string; see *Note Time Strings::.  The optional second
+     argument specifies a retry time in minutes.  If a call made
+     during a time that matches the time string fails, no more calls
+     are permitted until the retry time has passed.  By default an
+     exponentially increasing retry time is used: after each failure
+     the next retry period is longer.  A retry time specified in the
+     `time' command is always a fixed amount of time.
+
+     The `time' command may appear multiple times in a single
+     alternate, in which case if any time string matches the system
+     may be called.  The default time string is `Never'.
+
+`timegrade CHARACTER STRING [NUMBER]'
+     The CHARACTER specifies a grade.  It must be a single letter or
+     digit.  The STRING is a time string (*note Time Strings::.).  All
+     jobs of grade CHARACTER or higher (where `0' > `9' > `A' > `Z' >
+     `a' > `z') may be run at the specified time.  An ordinary `time'
+     command is equivalent to using `timegrade' with a grade of `z',
+     permitting all jobs.  If there are no jobs of a sufficiently high
+     grade according to the time string, the system will not be
+     called.  Giving the `-s' switch to `uucico' to force it to call a
+     system causes it to assume there is a job of grade `0' waiting to
+     be run.
+
+     The optional third argument specifies a retry time in minutes. 
+     See the `time' command, above, for more details.
+
+     Note that the `timegrade' command serves two purposes: 1) if there
+     is no job of sufficiently high grade the system will not be
+     called, and 2) if the system is called anyway (because the `-s'
+     switch was given to `uucico') only jobs of sufficiently high
+     grade will be transferred.  However, if the other system calls
+     in, the `timegrade' commands are ignored, and jobs of any grade
+     may be transferred (but see `call-timegrade' below).  Also, the
+     `timegrade' command will not prevent the other system from
+     transferring any job it chooses, regardless of who placed the
+     call.
+
+     The `timegrade' command may appear multiple times without using
+     `alternate'.  If this command does not appear, there are no
+     restrictions on what grade of work may be done at what time.
+
+`call-timegrade CHARACTER STRING'
+     The CHARACTER is a single character `A' to `Z', `a' to `z', or
+     `0' to `9' and specifies a grade.  The STRING is a time string as
+     described under the `time' command.  If a call is placed to the
+     other system during a time which matches the time string, the
+     remote system will be requested to only run jobs of grade
+     CHARACTER or higher.  Unfortunately, there is no way to guarantee
+     that the other system will obey the request (this UUCP package
+     will, but there are others which will not); moreover job grades
+     are historically somewhat arbitrary, so specifying a grade will
+     only be meaningful if the other system cooperates in assigning
+     grades.  This grade restriction only applies when the other
+     system is called, not when the other system calls in.
+
+     The `call-timegrade' command may appear multiple times without
+     using `alternate'.  If this command does not appear, or if none of
+     the time strings match, the remote system will be allowed to send
+     whatever grades of work it chooses.
+
+
+File: uucp.info,  Node: Placing the Call,  Next: Logging In,  Prev: When to Call,  Up: Calling Out
+
+Placing the Call
+................
+
+`baud NUMBER'
+`speed NUMBER'
+     Specify the speed (the term "baud" is technically incorrect, but
+     widely understood) at which to call the system.  This will try all
+     available ports with that baud rate until an unlocked port is
+     found.  The ports are defined in the port file.  If both `baud'
+     and `port' commands appear, both are used when selecting a port. 
+     To allow calls at more than one baud rate, the `alternate' command
+     must be used (*note Defaults and Alternates::.).  If this command
+     does not appear, there is no default; the baud rate may be
+     specified in the port file, but if it is not then the natural
+     baud rate of the port will be used (whatever that means on the
+     system).  Specifying an explicit baud rate of 0 will request the
+     natural baud rate of the port, overriding any default baud rate
+     from the defaults at the top of the file.
+
+`port STRING'
+     Name a particular port or type of port to use when calling the
+     system.  The information for this port is obtained from the port
+     file.  If this command does not appear, there is no default; a
+     port must somehow be specified in order to call out (it may be
+     specified implicitly using the `baud' command or explicitly using
+     the next version of `port').  There may be many ports with the
+     same name; each will be tried in turn until an unlocked one is
+     found which matches the desired baud rate.
+
+`port STRING ...'
+     If more than one string follows the `port' command, the subsequent
+     strings are treated as commands that might appear in the port file
+     (*note port file::.).  If a port is named (by using a single
+     string following `port') these commands are ignored; their
+     purpose is to permit defining the port completely in the system
+     file rather than always requiring entries in two different files.
+      In order to call out, a port must be specified using some
+     version of the `port' command, or by using the `baud' command to
+     select ports from the port file.
+
+`phone STRING'
+`address STRING'
+     Give a phone number to call (when using a modem port) or a remote
+     host to contact (when using a TCP port).  The commands `phone' and
+     `address' are equivalent, but are intended to be more mnemonic
+     depending on the type of port in use.
+
+     When used with a modem port, an `=' character in the phone number
+     means to wait for a secondary dial tone (although only some modems
+     support this); a `-' character means to pause while dialing for 1
+     second (again, only some modems support this).  If the system has
+     more than one phone number, each one must appear in a different
+     alternate.  The `phone' command must appear in order to call out
+     on a modem; there is no default.
+
+     When used with a TCP port, the string names the host to contact. 
+     It may be a domain name or a numeric Internet address.  If no
+     address is specified, the system name is used.
+
+     When used with a port that neither is a modem nor TCP, this
+     command is ignored.
+
+
+File: uucp.info,  Node: Logging In,  Prev: Placing the Call,  Up: Calling Out
+
+Logging In
+..........
+
+`chat STRINGS'
+`chat-timeout NUMBER'
+`chat-fail STRING'
+`chat-seven-bit BOOLEAN'
+`chat-program STRINGS'
+     These commands describe a chat script to use when logging on to a
+     remote system.  Chat scripts are explained in *Note Chat
+     Scripts::.
+
+     Two additional escape sequences may be used in send strings.
+
+    `\L'
+          Send the login name, as set by the `call-login' command.
+
+    `\P'
+          Send the passowrd, as set by the `call-password' command.
+
+          Three additional escape sequences may be used with the
+     `chat-program' command.  These are `\L' and `\P', which become
+     the login name and password, respectively, and `\Z', which
+     becomes the name of the system of being called.
+
+     The default chat script is:
+
+          chat "" \r\c ogin:-BREAK-ogin:-BREAK-ogin: \L word: \P
+
+          This will send a carriage return (the `\c' suppresses the
+     additional trailing carriage return that would otherwise be sent)
+     and waits for the string `ogin:' (which would be the last part of
+     the `login:' prompt supplied by a Unix system).  If it doesn't
+     see `ogin:', it sends a break and waits for `ogin:' again.  If it
+     still doesn't see `ogin:', it sends another break and waits for
+     `ogin:' again.  If it still doesn't see `ogin:', the chat script
+     aborts and hangs up the phone.  If it does see `ogin:' at some
+     point, it sends the login name (as specified by the `call-login'
+     command) followed by a carriage return (since all send strings
+     are followed by a carriage return unless `\c' is used) and waits
+     for the string `word:' (which would be the last part of the
+     `Password:' prompt supplied by a Unix system).  If it sees
+     `word:', it sends the password and a carriage return, completing
+     the chat script.  The program will then enter the handshake phase
+     of the UUCP protocol.
+
+     This chat script will work for most systems, so you will only be
+     required to use the `call-login' and `call-password' commands. 
+     In fact, in the file-wide defaults you could set defaults of
+     `call-login *' and `call-password *'; you would then just have to
+     make an entry for each system in the call-out login file.
+
+     Some systems seem to flush input after the `login:' prompt, so
+     they may need a version of this chat script with a `\d' before the
+     `\L'.  When using UUCP over TCP, some servers will not be handle
+     the initial carriage return sent by this chat script; in this
+     case you may have to specify the simple chat script `ogin: \L
+     word: \P'.
+
+`call-login STRING'
+     Specify the login name to send with `\L' in the chat script.  If
+     the string is `*' (e.g. `call-login *') the login name will be
+     fetched from the call out login name and password file (*note
+     Configuration File Names::.).  There is no default.
+
+`call-password STRING'
+     Specify the password to send with `\P' in the chat script.  If the
+     string is `*' (e.g. `call-password *') the password will be
+     fetched from the call-out login name and password file (*note
+     Configuration File Names::.).  There is no default.
+
+
+File: uucp.info,  Node: Accepting a Call,  Next: Protocol Selection,  Prev: Calling Out,  Up: sys File
+
+Accepting a Call
+----------------
+
+`called-login STRINGS'
+     The first STRING specifies the login name that the system must use
+     when calling in.  If it is `ANY' (e.g. `called-login ANY') any
+     login name may be used; this is useful to override a file-wide
+     default and to indicate that future alternates may have different
+     login names.  Case is significant.  The default value is `ANY'.
+
+     Different alternates (*note Defaults and Alternates::.) may use
+     different `called-login' commands, in which case the login name
+     will be used to select which alternate is in effect; this will
+     only work if the first alternate (before the first `alternate'
+     command) uses the `called-login' command.
+
+     Additional strings may be specified after the login name; they
+     are a list of which systems are permitted to use this login name.
+      If this feature is used, then normally the login name will only
+     be given in a single `called-login' command.  Only systems which
+     appear on the list, or which use an explicit `called-login'
+     command, will be permitted to use that login name.  If the same
+     login name is used more than once with a list of systems, all the
+     lists are concatenated together.  This feature permits you to
+     restrict a login name to a particular set of systems without
+     requiring you to use the `called-login' command for every single
+     system; you can achieve a similar effect by using a different
+     system file for each permitted login name with an appropriate
+     `called-login' command in the file-wide defaults.
+
+`callback BOOLEAN'
+     If BOOLEAN is true, then when the remote system calls `uucico'
+     will hang up the connection and prepare to call it back.  This is
+     false by default.
+
+`called-chat STRINGS'
+`called-chat-timeout NUMBER'
+`called-chat-fail STRING'
+`called-chat-seven-bit BOOLEAN'
+`called-chat-program STRINGS'
+     These commands may be used to define a chat script (*note Chat
+     Scripts::.) that is run whenever the local system is called by
+     the system being defined.  The chat script defined by the `chat'
+     command (*note Logging In::.), on the other hand, is used when
+     the remote system is called.  This called chat script might be
+     used to set special modem parameters that are appropriate to a
+     particular system.  It is run after protocol negotiation is
+     complete, but before the protocol has been started.  See *Note
+     Logging In:: for additional escape sequence which may be used
+     besides those defined for all chat scripts.  There is no default
+     called chat script.  If the called chat script fails, the
+     incoming call will be aborted.
+
+
+File: uucp.info,  Node: Protocol Selection,  Next: File Transfer Control,  Prev: Accepting a Call,  Up: sys File
+
+Protocol Selection
+------------------
+
+`protocol STRING'
+     Specifies which protocols to use for the other system, and in
+     which order to use them.  This would not normally be used.  For
+     example, `protocol tfg'.
+
+     The default depends on the characteristics of the port and the
+     dialer, as specified by the `seven-bit' and `reliable' commands. 
+     If neither the port nor the dialer use either of these commands,
+     the default is to assume an eight-bit reliable connection.  The
+     commands `seven-bit true' or `reliable false' might be used in
+     either the port or the dialer to change this.  Each protocol has
+     particular requirements that must be met before it will be
+     considered during negotiation with the remote side.
+
+     The `t' and `e' protocols are intended for use over TCP or some
+     other communication path with end to end reliability, as they do
+     no checking of the data at all.  They will only be considered on
+     a TCP port which is both reliable and eight bit.
+
+     The `g' protocol is robust, but requires an eight-bit connection.
+
+     The `f' protocol is intended for use with X.25 connections; it
+     checksums each file as a whole, so any error causes the entire
+     file to be retransmitted.  It requires a reliable connection, but
+     only uses seven-bit transmissions.  It is a streaming protocol,
+     so, while it can be used on a serial port, the port must be
+     completely reliable and flow controlled; many aren't.
+
+     The protocols will be considered in the order shown above.  This
+     means that if neither the `seven-bit' nor the `reliable' command
+     are used, the `t' protocol will be used over a TCP connection and
+     the `g' protocol will be used over any other type of connection
+     (subject, of course, to what is supported by the remote system;
+     it may be assumed that all systems support the `g' protocol).
+
+     Note that currently specifying both `seven-bit true' and
+     `reliable false' will not match any protocol.  If this occurs
+     through a combination of port and dialer specifications, you will
+     have to use the `protocol' command for the system or no protocol
+     will be selected at all (the only reasonable choice would be
+     `protocol f').
+
+     A protocol list may also be specified for a port (*note port
+     file::.), but if there is a list for the system the list for the
+     port is ignored.
+
+`protocol-parameter CHARACTER STRING ...'
+     CHARACTER is a single character specifying a protocol.  The
+     remaining strings are a command specific to that protocol which
+     will be executed if that protocol is used.  A typical command is
+     something like `window 7'.  The particular commands are protocol
+     specific.
+
+     The `g' protocol supports the following commands, all of which
+     take numeric arguments:
+
+    `window'
+          The window size to request the remote system to use.  This
+          must be between 1 and 7 inclusive.  The default is 7.
+
+    `packet-size'
+          The packet size to request the remote system to use.  This
+          must be a power of 2 between 32 and 4096 inclusive.  The
+          default is 64, which is the only packet size supported by
+          many older UUCP packages.  Some UUCP packages will even dump
+          core if a larger packet size is requested.
+
+    `startup-retries'
+          The number of times to retry the initialization sequence. 
+          The default is 8.
+
+    `init-retries'
+          The number of times to retry one phase of the initialization
+          sequence (there are three phases).  The default is 4.
+
+    `init-timeout'
+          The timeout in seconds for one phase of the initialization
+          sequence.  The default is 10.
+
+    `retries'
+          The number of times to retry sending either a data packet or
+          a request for the next packet.  The default is 6.
+
+    `timeout'
+          The timeout in seconds when waiting for either a data packet
+          or an acknowledgement.  The default is 10.
+
+    `garbage'
+          The number of unrecognized bytes to permit before dropping
+          the connection.  This must be larger than the packet size. 
+          The default is 10000.
+
+    `errors'
+          The number of errors (malformed packets, out of order
+          packets, bad checksums, or packets rejected by the remote
+          system) to permit before dropping the connection.  The
+          default is 100.
+
+    `remote-window'
+          If this is between 1 and 7 inclusive, the window size
+          requested by the remote system is ignored and this is used
+          instead.  This can be useful when dealing with some poor
+          UUCP packages.  The default is 0, which means that the
+          remote system's request is honored.
+
+    `remote-packet-size'
+          If this is between 32 and 4096 inclusive the packet size
+          requested by the remote system is ignored and this is used
+          instead.  There is probably no good reason to use this.  The
+          default is 0, which means that the remote system's request
+          is honored.
+
+          The `f' protocol is intended for use with error-correcting modems
+     only; it checksums each file as a whole, so any error causes the
+     entire file to be retransmitted.  It supports the following
+     commands, both of which take numeric arguments:
+
+    `timeout'
+          The timeout in seconds before giving up.  The default is 120.
+
+    `retries'
+          How many times to retry sending a file.  The default is 2.
+
+          The `t' and `e' protocols are intended for use over TCP or some
+     other communication path with end to end reliability, as they do
+     no checking of the data at all.  They both support a single
+     command, which takes a numeric argument:
+
+    `timeout'
+          The timeout in seconds before giving up.  The default is 120.
+
+          The protocol parameters are reset to their default values after
+     each call.
+
+
+File: uucp.info,  Node: File Transfer Control,  Next: Miscellaneous (sys),  Prev: Protocol Selection,  Up: sys File
+
+File Transfer Control
+---------------------
+
+`call-request BOOLEAN'
+     The BOOLEAN is checked when the local system places the call.  It
+     determines whether the remote system may request any file
+     transfers.  The default is yes.
+
+`called-request BOOLEAN'
+     The BOOLEAN is checked when the remote system calls in.  It
+     determines whether the remote system may request any file
+     transfers.  The default is yes.
+
+`request BOOLEAN'
+     Equivalent to specifying both `call-request BOOLEAN' and
+     `called-request BOOLEAN'.
+
+`call-transfer BOOLEAN'
+     The BOOLEAN is checked when the local system places the call.  It
+     determines whether the local system may do file transfers queued
+     up for the remote system.  The default is yes.
+
+`called-transfer BOOLEAN'
+     The BOOLEAN is checked when the remote system calls in.  It
+     determines whether the local system may do file transfers queued
+     up for the remote system.  The default is yes.
+
+`transfer BOOLEAN'
+     Equivalent to specifying both `call-transfer BOOLEAN'
+     `called-transfer BOOLEAN'.
+
+`call-local-size NUMBER STRING'
+     The STRING is a time string (*note Time Strings::.).  The NUMBER
+     is the size in bytes of the largest file that should be
+     transferred at a time matching the time string if the local system
+     placed the call and the request was made by the local system. 
+     This command may appear multiple times in a single alternate.  If
+     this command does not appear, or if none of the time strings
+     match, there are no size restrictions.
+
+     With all the size control commands, the size of a file from the
+     remote system (as opposed to a file from the local system) will
+     only be checked if the other system is running this package;
+     other UUCP packages will not understand a maximum size request,
+     nor will they inform this package of the size of remote files.
+
+`call-remote-size NUMBER STRING'
+     Specify the size in bytes of the largest file that should be
+     transferred at a given time by remote request when the local
+     system placed the call.  This command may appear multiple times
+     in a single alternate.  If this command does not appear, there
+     are no size restrictions.
+
+`called-local-size NUMBER STRING'
+     Specify the size in bytes of the largest file that should be
+     transferred at a given time by local request when the remote
+     system placed the call.  This command may appear multiple times
+     in a single alternate. If this command does not appear, there are
+     no size restrictions.
+
+`called-remote-size NUMBER STRING'
+     Specify the size in bytes of the largest file that should be
+     transferred at a given time by remote request when the remote
+     system placed the call.  This command may appear multiple times
+     in a single alternate. If this command does not appear, there are
+     no size restrictions.
+
+`local-send STRINGS'
+     Specifies that files in the directories named by the STRINGS may
+     be sent to the remote system when requested locally (using `uucp'
+     or `uux').  The directories in the list should be separated by
+     whitespace.  A `~' may be used for the public directory.  On a
+     Unix system, this is typically `/usr/spool/uucppublic'; the public
+     directory may be set with the `pubdir' command.  Here is an
+     example of `local-send':
+
+          local-send ~ /usr/spool/ftp/pub
+
+          Listing a directory allows all files within the directory and all
+     subdirectories to be sent.  Directories may be excluded by
+     preceding them with an exclamation point.  For example:
+
+          local-send /usr/ftp !/usr/ftp/private ~
+
+          means that all files in `/usr/ftp' or the public directory may be
+     sent, except those files in `/usr/ftp/private'.  The list of
+     directories is read from left to right, and the last directory to
+     apply takes effect; this means that directories should be listed
+     from top down.  The default is the root directory (i.e., any file
+     at all may be sent by local request).
+
+`remote-send STRINGS'
+     Specifies that files in the named directories may be sent to the
+     remote system when requested by the remote system.  The default
+     is `~'.
+
+`local-receive STRINGS'
+     Specifies that files may be received into the named directories
+     when requested by a local user.  The default is `~'.
+
+`remote-receive STRINGS'
+     Specifies that files may be received into the named directories
+     when requested by the remote system.  The default is `~'.  On
+     Unix, the remote system may only request that files be received
+     into directories that are writeable by the world, regardless of
+     how this is set.
+
+

@@ -1,0 +1,946 @@
+Info file uucp.info, produced by Makeinfo, -*- Text -*- from input
+file uucp.texi.
+
+   This file documents Taylor UUCP, version 1.03.
+
+   Copyright (C) 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "Copying" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "Copying" may be included
+in a translation approved by the author instead of in the original
+English.
+
+
+File: uucp.info,  Node: Final Handshake,  Prev: File Requests,  Up: UUCP Protocol
+
+Final Handshake
+---------------
+
+   After the protocol has been shut down, the final handshake is
+performed.  This handshake has no real purpose, and some UUCP packages
+simply drop the connection rather than do it (in fact, some will drop
+the connection immediately after both sides agree to hangup, without
+even closing down the protocol).  Taylor UUCP always sends the
+appropriate final handshake string (in `fdo_call' or `faccept_call')
+but ignores the handshake string from the other side unless it is in
+`handshake' debugging mode.
+
+caller: `\020OOOOOO\000'
+called: `\020OOOOOOO\000'
+   That is, the calling UUCP sends six letter O's and the called UUCP
+replies with seven letter O's.  Some UUCP packages always send six O's.
+
+
+File: uucp.info,  Node: g Protocol,  Next: f Protocol,  Prev: UUCP Protocol,  Up: Protocols
+
+The UUCP `g' Protocol
+=====================
+
+   The `g' protocol is a packet based flow controlled error correcting
+protocol that requires an eight bit clear connection.  It is the
+original UUCP protocol, and is supported by all UUCP implementations. 
+Many implementations of it are only able to support small window and
+packet sizes, specifically a window size of 3 and a packet size of 64
+bytes, but the protocol itself can support up to a window size of 7 and
+a packet size of 4096 bytes.  Complaints about the inefficiency of the
+`g' protocol generally refer to specific implementations, rather than
+the correctly implemented protocol.
+
+   The `g' protocol was originally designed for general packet drivers,
+and thus contains some features that are not used by UUCP, including
+an alternate data channel and the ability to renegotiate packet and
+window sizes during the communication session.
+
+   The `g' protocol is spoofed by many Telebit modems.  When spoofing
+is in effect, each Telebit modem uses the `g' protocol to communicate
+with the attached computer, but the data between the modems is sent
+using a Telebit proprietary error correcting protocol.  This allows
+for very high throughput over the Telebit connection, which, because
+it is half-duplex, would not normally be able to handle the `g'
+protocol very well at all.
+
+   This discussion of the `g' protocol explains how it works, but does
+not discuss useful error handling techniques.  Some discussion of this
+can be found in Jamie E. Hanrahan's paper (*note Documentation
+references::.).  A detailed examination of the source code would also
+be profitable.
+
+   The Taylor UUCP code to handle the `g' protocol is in the file
+`protg.c'.  There are a number of functions; the most important ones
+are `fgstart', `fgsend_control', `fgsenddata', and `fgprocess_data'.
+
+   All `g' protocol communication is done with packets.  Each packet
+begins with a six byte header.  Control packets consist only of the
+header.  Data packets contain additional data.
+
+   The header is as follows:
+
+`\020'
+     Every packet begins with a `^P'.
+
+K (1 <= K <= 9)
+     The K value is always 9 for a control packet.  For a data packet,
+     the K value indicates how must data follows the six byte header. 
+     The amount of data is 2 ** (K + 4), where ** indicates
+     exponentiation.  Thus a K value of 1 means 32 data bytes and a K
+     value of 8 means 4096 data bytes.  The K value for a data packet
+     must be between 1 and 8 inclusive.
+
+checksum low byte
+checksum high byte
+     The checksum value is described below.
+
+control byte
+     The control packet indicates the type of packet, and is described
+     below.
+
+xor byte
+     This byte is the xor of K, the checksum low byte, the checksum
+     high byte and the control byte (i.e. the second, third, fourth
+     and fifth header bytes).  It is used to ensure that the header
+     data is valid.
+
+   The control byte in the header is composed of three bit fields,
+referred to here as TT (two bits), XXX (three bits) and YYY (three
+bits).  The complete byte is TTXXXYYY, or (TT << 6) + (XXX << 3) + YYY.
+
+   The TT field takes on the following values:
+
+0
+     This is a control packet.  In this case the K byte in the header
+     must be 9.  The XXX field indicates the type of control packet;
+     the types are described below.
+
+1
+     This is an alternate data channel packet.  This is not used by
+     UUCP.
+
+2
+     This is a data packet, and the entire contents of the attached
+     data field (whose length is given by the K byte in the header) are
+     valid.  The XXX and YYY fields are described below.
+
+3
+     This is a short data packet.  Let the length of the data field
+     (as given by the K byte in the header) be `l'.  Let the first
+     byte in the data field be `b1'.  If `b1' is less than 128 (if the
+     most significant bit of `b1' is 0), then there are `l - b1' valid
+     bytes of data in the data field, beginning with the second byte. 
+     If `b1 >= 128', let `b2' be the second byte in the data field. 
+     Then there are `l - ((b1 & 0x7f) + (b2 << 7))' valid bytes of data
+     in the data field, beginning with the third byte.  In all cases
+     `l' bytes of data are sent (and all data bytes participate in the
+     checksum calculation) but some of the trailing bytes may be
+     dropped by the receiver.  The XXX and YYY fields are described
+     below.
+
+   In a data packet (short or not) the XXX field gives the sequence
+number of the packet.  Thus sequence numbers can range from 0 to 7,
+inclusive.  The YYY field gives the sequence number of the last
+correctly received packet.
+
+   Each communication direction uses a window which indicates how many
+unacknowledged packets may be transmitted before waiting for an
+acknowledgement.  The window may range from 1 to 7 packets, and may be
+different in each direction. For example, if the window is 3 and the
+last packet acknowledged was packet number 6, packet numbers 7, 0 and 1
+may be sent but the sender must wait for an acknowledgement before
+sending packet number 2.  This acknowledgement could come as the YYY
+field of a data packet or as the YYY field of a `RJ' or `RR' control
+packet (described below).
+
+   Each packet must be transmitted in order (the sender may not skip
+sequence numbers).  Each packet must be acknowledged, and each packet
+must be acknowledged in order.
+
+   In a control packet, the XXX field takes on the following values:
+
+1 `CLOSE'
+     The connection should be closed immediately.  This is typically
+     sent when one side has seen too many errors and wants to give up.
+      It is also sent when shutting down the protocol.  If an
+     unexpected `CLOSE' packet is received, a `CLOSE' packet should be
+     sent in reply and the `g' protocol should halt, causing UUCP to
+     enter the final handshake.
+
+2 `RJ' or `NAK'
+     The last packet was not received correctly.  The YYY field
+     contains the sequence number of the last correctly received
+     packet.
+
+3 `SRJ'
+     Selective reject.  The YYY field contains the sequence number of a
+     packet that was not received correctly, and should be
+     retransmitted.  This is not used by UUCP, and most
+     implementations will not recognize it.  Taylor UUCP will
+     recognize it but not generate it.
+
+4 `RR' or `ACK'
+     Packet acknowledgement.  The YYY field contains the sequence
+     number of the last correctly received packet.
+
+5 `INITC'
+     Third initialization packet.  The YYY field contains the maximum
+     window size to use.
+
+6 `INITB'
+     Second initialization packet.  The YYY field contains the packet
+     size to use.  It requests a size of 2 ** (YYY + 5).  Note that
+     this is not the same coding used for the K byte in the packet
+     header (it is 1 less).  Some UUCP implementations can handle any
+     packet size up to that specified; some can only handled exactly
+     the size specified.  Taylor UUCP will always accept any packet
+     size.
+
+7 `INITA'
+     First initialization packet.  The YYY field contains the maximum
+     window size to use.
+
+   To compute the checksum, call the control byte (the fifth byte in
+the header) `c'.
+
+   The checksum of a control packet is simply `0xaaaa - c'.
+
+   The checksum of a data packet is `0xaaaa - (CHECK ^ c)' (`^'
+denotes exclusive or, as in C), and `CHECK' is the result of the
+following routine run on the contents of the data field (every byte in
+the data field participates in the checksum, even for a short data
+packet).  Below is the routine used by Taylor UUCP; it is a slightly
+modified version of a routine which John Gilmore patched from G.L. 
+Chesson's original paper.  The `z' argument points to the data and the
+`c' argument indicates how much data there is.
+
+     int
+     igchecksum (z, c)
+          register const char *z;
+          register int c;
+     {
+       register unsigned int ichk1, ichk2;
+     
+       ichk1 = 0xffff;
+       ichk2 = 0;
+     
+       do
+         {
+           register unsigned int b;
+     
+           /* Rotate ichk1 left.  */
+           if ((ichk1 & 0x8000) == 0)
+             ichk1 <<= 1;
+           else
+             {
+               ichk1 <<= 1;
+               ++ichk1;
+             }
+     
+           /* Add the next character to ichk1.  */
+           b = *z++ & 0xff;
+           ichk1 += b;
+     
+           /* Add ichk1 xor the character position in the buffer
+              counting from the back to ichk2.  */
+           ichk2 += ichk1 ^ c;
+     
+           /* If the character was zero, or adding it to ichk1
+              caused an overflow, xor ichk2 to ichk1.  */
+           if (b == 0 || (ichk1 & 0xffff) < b)
+             ichk1 ^= ichk2;
+         }
+       while (--c > 0);
+     
+       return ichk1 & 0xffff;
+     }
+
+   When the `g' protocol is started, the calling UUCP sends an INITA
+control packet with the window size it wishes the called UUCP to use. 
+The called UUCP responds with an INITA packet with the window size it
+wishes the calling UUCP to use.  Pairs of INITB and INITC packets are
+then similarly exchanged.  When these exchanges are completed, the
+protocol is considered to have been started.  The window size is sent
+twice, with both the INITA and the INITC packets.
+
+   When a UUCP package transmits a command, it sends one or more data
+packets.  All the data packets will normally be complete, although some
+UUCP packages may send the last one as a short packet.  The command
+string is sent with a trailing null byte, to let the receiving package
+know when the command is finished.  Some UUCP packages require the last
+byte of the last packet sent to be null, even if the command ends
+earlier in the packet.  Some packages may require all the trailing
+bytes in the last packet to be null, but I have not confirmed this.
+
+   When a UUCP package sends a file, it will send a sequence of data
+packets.  The end of the file is signalled by a short data packet
+containing zero valid bytes (it will normally be preceeded by a short
+data packet containing the last few bytes in the file).
+
+   Note that the sequence numbers cover the entire communication
+session, including both command and file data.
+
+   When the protocol is shut down, each UUCP package sends a `CLOSE'
+control packet.
+
+
+File: uucp.info,  Node: f Protocol,  Next: t Protocol,  Prev: g Protocol,  Up: Protocols
+
+The UUCP `f' Protocol
+=====================
+
+   The `f' protocol is a seven bit protocol which checksums an entire
+file at a time.  It only uses the characters between \040 and \176
+(ASCII space and `~') inclusive as well as the carriage return
+character.  It can be very efficient for transferring text only data,
+but it is very inefficient at transferring eight bit data (such as
+compressed news).  It is not flow controlled, and the checksum is
+fairly insecure over large files, so using it over a serial connection
+requires handshaking (`XON'/`XOFF' can be used) and error correcting
+modems.  Some people think it should not be used even under those
+circumstances.
+
+   I believe the `f' protocol originated in BSD versions of UUCP.  It
+was originally intended for transmission over X.25 PAD links.
+
+   The Taylor UUCP code for the `f' protocol is in `protf.c'.
+
+   The `f' protocol has no startup or finish protocol.  However, both
+sides typically sleep for a couple of seconds before starting up,
+because they switch the terminal into `XON'/`XOFF' mode and want to
+allow the changes to settle before beginning transmission.
+
+   When a UUCP package transmits a command, it simply sends a string
+terminated by a carriage return.
+
+   When a UUCP package transmits a file, each byte b of the file is
+translated according to the following table:
+
+            0 <= b <=  037: 0172, b + 0100 (0100 to 0137)
+          040 <= b <= 0171:       b        ( 040 to 0171)
+         0172 <= b <= 0177: 0173, b - 0100 ( 072 to  077)
+         0200 <= b <= 0237: 0174, b - 0100 (0100 to 0137)
+         0240 <= b <= 0371: 0175, b - 0200 ( 040 to 0171)
+         0372 <= b <= 0377: 0176, b - 0300 ( 072 to  077)
+
+   That is, a byte between \040 and \171 inclusive is transmitted as
+is, and all other bytes are prefixed and modified as shown.
+
+   When all the file data is sent, a seven byte sequence is sent: two
+bytes of \176 followed by four ASCII bytes of the checksum as printed
+in base 16 followed by a carriage return.  For example, if the
+checksum was 0x1234, this would be sent: "\176\1761234\r".
+
+   The checksum is initialized to 0xffff.  For each byte that is sent
+it is modified as follows (where `b' is the byte before it has been
+transformed as described above):
+
+     /* Rotate the checksum left.  */
+     if ((ichk & 0x8000) == 0)
+       ichk <<= 1;
+     else
+       {
+         ichk <<= 1;
+         ++ichk;
+       }
+     
+     /* Add the next byte into the checksum.  */
+     ichk += b;
+
+   When the receiving UUCP sees the checksum, it compares it against
+its own calculated checksum and replies with a single character
+followed by a carriage return.
+
+`G'
+     The file was received correctly.
+
+`R'
+     The checksum did not match, and the file should be resent from the
+     beginning.
+
+`Q'
+     The checksum did not match, but too many retries have occurred
+     and the communication session should be abandoned.
+
+   The sending UUCP checks the returned character and acts accordingly.
+
+
+File: uucp.info,  Node: t Protocol,  Next: e Protocol,  Prev: f Protocol,  Up: Protocols
+
+The UUCP `t' Protocol
+=====================
+
+   The `t' protocol is intended for TCP links.  It does no error
+checking or flow control, and requires an eight bit clear channel.
+
+   I believe the `t' protocol originated in BSD versions of UUCP.
+
+   The Taylor UUCP code for the `t' protocol is in `prott.c'.
+
+   When a UUCP package transmits a command, it first gets the length
+of the command string, C.  It then sends ((C / 512) + 1) * 512 bytes
+(the smallest multiple of 512 which can hold C bytes plus a null byte)
+consisting of the command string itself followed by trailing null
+bytes.
+
+   When a UUCP package sends a file, it sends it in blocks.  Each block
+contains at most 1024 bytes of data.  Each block consists of four bytes
+containing the amount of data in binary (most significant byte first,
+the same format as used by the Unix function `htonl') followed by that
+amount of data.  The end of the file is signalled by a block
+containing zero bytes of data.
+
+
+File: uucp.info,  Node: e Protocol,  Next: x Protocol,  Prev: t Protocol,  Up: Protocols
+
+The UUCP `e' Protocol
+=====================
+
+   The `e' protocol is similar to the `t' protocol.  It does no flow
+control or error checking and is intended for use over TCP.
+
+   The `e' protocol originated in versions of BNU UUCP.
+
+   The Taylor UUCP code for the `e' protocol is in `prote.c'.
+
+   When a UUCP package transmits a command, it simply sends the
+command as an ASCII string terminated by a null byte.
+
+   When a UUCP package transmits a file, it sends the complete size of
+the file as an ASCII decimal number.  The ASCII string is padded out
+to 20 bytes with null bytes (i.e., if the file is 1000 bytes long, it
+sends `1000\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0').  It then sends the
+entire file.
+
+
+File: uucp.info,  Node: x Protocol,  Next: d Protocol,  Prev: e Protocol,  Up: Protocols
+
+The UUCP `x' Protocol
+=====================
+
+   I believe that the `x' protocol was intended for use over X.25
+virtual circuits.  It relies on a write of zero bytes being read as
+zero bytes without stopping communication.  I have heard that it does
+not work correctly.  If someone would care to fill this in more, I
+would be grateful.  Taylor UUCP does not implement the `x' protocol.
+
+
+File: uucp.info,  Node: d Protocol,  Next: Capital G Protocol,  Prev: x Protocol,  Up: Protocols
+
+The UUCP `d' Protocol
+=====================
+
+   This is apparently used for DataKit connections, and relies on a
+write of zero bytes being read as zero bytes, much as the `x' protocol
+does.  I don't really know anything else about it.  Taylor UUCP does
+not implement the `d' protocol.
+
+
+File: uucp.info,  Node: Capital G Protocol,  Next: Documentation References,  Prev: d Protocol,  Up: Protocols
+
+The UUCP `G' Protocol
+=====================
+
+   The `G' protocol is apparently simply the `g' protocol, except that
+it is known to support all possible window and packet sizes.  It was
+introduced by SVR4 UUCP; the SVR4 implementation of the `g' protocol
+is apparently fixed at a packet size of 64 and a window size of 7. 
+Taylor UUCP does not recognize the `G' protocol.  It does support all
+window and packet sizes for the `g' protocol.
+
+
+File: uucp.info,  Node: Documentation References,  Prev: Capital G Protocol,  Up: Protocols
+
+Documentation References
+========================
+
+   I took a lot of the information from Jamie E. Hanrahan's paper in
+the Fall 1990 DECUS Symposium, and from Managing UUCP and Usenet by Tim
+O'Reilly and Grace Todino (with contributions by several other people). 
+The latter includes most of the former, and is published by O'Reilly &
+Associates, Inc.
+
+   Some information is originally due to a Usenet article by Chuck
+Wegrzyn.  The information on the `g' protocol comes partially from a
+paper by G.L. Chesson of Bell Laboratories, partially from Jamie E.
+Hanrahan's paper, and partially from source code by John Gilmore.  The
+information on the `f' protocol comes from the source code by Piet
+Berteema.  The information on the `t' protocol comes from the source
+code by Rick Adams.  The information on the `e' protocol comes from a
+Usenet article by Matthias Urlichs.
+
+
+File: uucp.info,  Node: Hacking,  Next: Acknowledgements,  Prev: Protocols,  Up: Top
+
+Hacking Taylor UUCP
+*******************
+
+   This chapter provides the briefest of guides to the Taylor UUCP
+source code itself.
+
+* Menu:
+
+* System Dependence::           System Dependence
+* Naming Conventions::          Naming Conventions
+* Patches::                     Patches
+
+
+File: uucp.info,  Node: System Dependence,  Next: Naming Conventions,  Prev: Hacking,  Up: Hacking
+
+System Dependence
+=================
+
+   The code is carefully segregated into a system independent portion
+and a system dependent portion.  The system dependent code is in
+`sys?.*' and `tcp.c'.  Note that `sysh.*' is included as `sysdep.h'. 
+Currently the only system dependent files are for Unix, and the file
+name for all of them ends in `.unx'.  Hopefully the code will
+eventually be ported to other systems.
+
+   With the right configuration parameters, the system independent code
+calls only ANSI C functions.  Some of the less common ANSI C functions
+are also provided in `util.c'.  The replacement function `strtol' in
+`util.c' assumes that the characters `A' to `F' and `a' to `f' appear
+in strictly sequential order.  The function `igradecmp' in `config.c'
+assumes that the upper and lower case letters appear in order.  Both
+assumptions are true for ASCII and EBCDIC, but neither is guaranteed
+by ANSI C.  The replacement function `memmove' in `util.c' assumes
+that two arbitrary pointers may be safely compared.  Disregarding
+these caveats, I believe that the system independent portion of the
+code is strictly conforming.
+
+   That's not too exciting, since all the work is done in the system
+dependent code.  I think that this code can conform to POSIX 1003.1,
+given the right compilation parameters.  I'm a bit less certain about
+this, though.
+
+   The code is in use on a 16 bit segmented system with no function
+prototypes, so I'm certain that all casts to long and pointers are done
+when necessary.
+
+   The code uses alloca extensively.  It comes with a simple
+replacement, in `alloca.c' (otherwise I would lost ANSI C conformance,
+after all).  Using a real `alloca' function will be considerably more
+efficient.  It will also cause significant stack usage, which may be a
+problem on systems without virtual memory.
+
+
+File: uucp.info,  Node: Naming Conventions,  Next: Patches,  Prev: System Dependence,  Up: Hacking
+
+Naming Conventions
+==================
+
+   I use a modified Hungarian naming convention for my variables and
+functions.  As with all naming conventions, the code is rather opaque
+if you are not familiar with it, but becomes clear and easy to use with
+time.
+
+   The first character indicates the type of the variable (or function
+return value).  Sometimes additional characters are used.  I use the
+following type prefixes:
+
+`a'
+     array; the next character is the type of an element
+
+`b'
+     byte or character
+
+`c'
+     count of something
+
+`e'
+     stdio FILE *
+
+`f'
+     boolean
+
+`i'
+     generic integer
+
+`l'
+     double
+
+`o'
+     file descriptor (as returned by open, creat, etc.)
+
+`p'
+     generic pointer
+
+`q'
+     pointer to structure
+
+`s'
+     structure
+
+`u'
+     void (function return values only)
+
+`z'
+     character string
+
+   A generic pointer ('p') is sometimes a `void *', sometimes a
+function pointer in which case the prefix is pf, and sometimes a
+pointer to another type, in which case the next character is the type
+to which it points (pf is overloaded).
+
+   An array of strings (`char *[]') would be named `az' (array of
+string).  If this array were passed to a function, the function
+parameter would be named `paz' (pointer to array of string).
+
+   Note that the variable name prefixes do not necessarily indicate the
+type of the variable.  For example, a variable prefixed with i may be
+int, long or short.  Similarly, a variable prefixed with b may be a
+char or an int; for example, the return value of getchar would be
+caught in an int variable prefixed with b.
+
+   For a non-local variable (extern or file static), the first
+character after the type prefix is capitalized.
+
+   Most static variables and functions use another letter after the
+type prefix to indicate which module they come from.  This is to help
+distinguish different names in the debugger.  For example, all static
+functions in `protg.c', the `g' protocol source code, use a module
+prefix of `g'.  This isn't too useful, as a number of modules use a
+module prefix of `s'.
+
+
+File: uucp.info,  Node: Patches,  Prev: Naming Conventions,  Up: Hacking
+
+Patches
+=======
+
+   I am always grateful for any patches sent in.  Much of the
+flexibility and portability of the code is due to other people. 
+Please do not hesitate to send me any changes you have found necessary
+or useful.
+
+   I rarely apply the patches directly.  Instead I work my way through
+them and apply each one separately.  This ensures that the naming
+remains consistent and that I understand all the code.
+
+
+File: uucp.info,  Node: Acknowledgements,  Next: Index (concepts),  Prev: Hacking,  Up: Top
+
+Acknowledgements
+****************
+
+   This is a list of people who gave help or suggestions while I was
+working on the Taylor UUCP project.  Appearance on this list does not
+constitute endorsement of the program, particularly since some of the
+comments were criticisms.  I've probably left some people off, and I
+apologize for any oversight; it does not mean your contribution was
+unappreciated.
+
+   First of all, I would like to thank the people at Infinity
+Development Systems (formerly AIRS, which lives on in the domain name,
+at least for now) for permitting me to use their computers and `uunet'
+access.  I would also like to thank Richard Stallman
+`<rms@gnu.ai.mit.edu>' for founding the Free Software Foundation and
+John Gilmore `<gnu@cygnus.com>' for writing the initial version of
+gnuucp which was a direct inspiration for this somewhat larger
+project.  Chip Salzenberg `<chip@tct.com>' contributed many early
+patches.  Franc,ois Pinard `<pinard@iro.umontreal.ca>' tirelessly
+tested the code and suggested many improvements.  He also put together
+the initial version of this document.  Finally, Verbus M. Counts
+`<verbus@westmark.com>' and Centel Federal Systems, Inc. deserve
+special thanks, since they actually paid me money to port this code to
+System III.
+
+   In alphabetical order:
+
+     "Earle F. Ake - SAIC" `<ake@Dayton.SAIC.COM>'
+     `mra@searchtech.com' (Michael Almond)
+     `cambler@zeus.calpoly.edu' (Christopher J. Ambler)
+     Brian W. Antoine `<briana@tau-ceti.isc-br.com>'
+     `jantypas@soft21.s21.com' (John Antypas)
+     `nba@sysware.DK' (Niels Baggesen)
+     `uunet!hotmomma!sdb' (Scott Ballantyne)
+     `magus!dolphin!zack' (Zacharias Beckman)
+     `mike@mbsun.ann-arbor.mi.us' (Mike Bernson)
+     `bob@usixth.sublink.org' (Roberto Biancardi)
+     Marc Boucher `<marc@CAM.ORG>'
+     `dean@coplex.com' (Dean Brooks)
+     `dave@dlb.com' (Dave Buck)
+     `gordon@sneaky.lonestar.org' (Gordon Burditt)
+     `mib@gnu.ai.mit.edu' (Michael I Bushnell)
+     Brian Campbell `<brianc@quantum.on.ca>'
+     `verbus@westmark.westmark.com' (Verbus M. Counts)
+     `cbmvax!snark.thyrsus.com!cowan' (John Cowan)
+     `denny@dakota.alisa.com' (Bob Denny)
+     `dje@ersys.edmonton.ab.ca' (Doug Evans)
+     `fenner@jazz.psu.edu' (Bill Fenner)
+     "David J. Fiander" `<golem!david@news.lsuc.on.ca>'
+     Thomas Fischer `<batman@olorin.dark.sub.org>'
+     `erik@eab.retix.com' (Erik Forsberg)
+     Lele Gaifax `<piggy@idea.sublink.org>'
+     `Peter.Galbavy@micromuse.co.uk'
+     `hunter@phoenix.pub.uu.oz.au' (James Gardiner [hunter])
+     Terry Gardner `<cphpcom!tjg01>'
+     `jimmy@tokyo07.info.com' (Jim Gottlieb)
+     `ryan@cs.umb.edu' (Daniel R. Guilderson)
+     `greg@gagme.chi.il.us' (Gregory Gulik)
+     Michael Haberler `<mah@parrot.prv.univie.ac.at>'
+     `guy@auspex.auspex.com' (Guy Harris)
+     Petri Helenius `<pete@fidata.fi>'
+     Peter Honeyman `<honey@citi.umich.edu>'
+     `bei@dogface.austin.tx.us' (Bob Izenberg)
+     `harvee!esj' (Eric S Johansson)
+     `chris@cj_net.in-berlin.de' (Christof Junge)
+     `tron@Veritas.COM' (Ronald S. Karr)
+     `kent@sparky.IMD.Sterling.COM' (Kent Landfield)
+     `lebaron@inrs-telecom.uquebec.ca'  (Gregory LeBaron)
+     `karl@sugar.NeoSoft.Com' (Karl Lehenbauer)
+     `libove@libove.det.dec.com' (Jay Vassos-Libove)
+     `bruce%blilly@Broadcast.Sony.COM' (Bruce Lilly)
+     Ted Lindgreen `<tlindgreen@encore.nl>'
+     "Arne Ludwig" `<arne@rrzbu.hanse.de>'
+     Matthew Lyle `<matt@mips.mitek.com>'
+     `djm@eng.umd.edu' (David J. MacKenzie)
+     John R MacMillan `<chance!john@sq.sq.com>'
+     `mem@mv.MV.COM' (Mark E. Mallett)
+     `martelli@cadlab.sublink.org' (Alex Martelli)
+     Yanek Martinson `<yanek@mthvax.cs.miami.edu>'
+     `les@chinet.chi.il.us' (Leslie Mikesell)
+     `mmitchel@digi.lonestar.org' (Mitch Mitchell)
+     `rmohr@infoac.rmi.de' (Rupert Mohr)
+     `service@infohh.rmi.de' (Dirk Musstopf)
+     `lyndon@cs.athabascau.ca' (Lyndon Nerenberg)
+     `nolan@helios.unl.edu' (Michael Nolan)
+     david nugent `<david@csource.oz.au>'
+     `abekas!dragoman!mikep@decwrl.dec.com' (Mike Park)
+     "Mark Pizzolato 415-369-9366" `<mark@infocomm.com>'
+     `dplatt@ntg.com' (Dave Platt)
+     `eldorado@tharr.UUCP' (Mark Powell)
+     `pozar@kumr.lns.com' (Tim Pozar)
+     `putsch@uicc.com' (Jeff Putsch)
+     Jarmo Raiha `<jarmo@ksvltd.FI>'
+     `mcr@Sandelman.OCUnix.On.Ca' (Michael Richardson)
+     `ross@sun490.fdu.edu' (Jeff Ross)
+     Aleksey P. Rudnev `<alex@kiae.su>'
+     `wolfgang@wsrcc.com' (Wolfgang S. Rupprecht)
+     `tbr@tfic.bc.ca' (Tom Rushworth)
+     `rsalz@bbn.com' (Rich Salz)
+     `sojurn!mike@hobbes.cert.sei.cmu.edu' (Mike Sangrey)
+     `swiers@plains.NoDak.edu'
+     `s4mjs!mjs@nirvo.nirvonics.com' (M. J. Shannon Jr.)
+     `peter@ficc.ferranti.com' (Peter da Silva)
+     `frumious!pat' (Patrick Smith)
+     `roscom!monty@bu.edu' (Monty Solomon)
+     `chs@antic.apu.fi' (Hannu Strang)
+     `ralf@reswi.ruhr.de' (Ralf E. Stranzenbach)
+     Oleg Tabarovsky `<olg@olghome.pccentre.msk.su>'
+     John Theus `<john@theus.rain.com>'
+     `rmtodd@servalan.servalan.com' (Richard Todd)
+     Len Tower `<tower-prep@ai.mit.edu>'
+     `mju@mudos.ann-arbor.mi.us' (Marc Unangst)
+     `jv@mh.nl' (Johan Vromans)
+     `rna-nl!gerben@relay.nluug.nl' (Drs. Gerben C. Th. Wierda)
+     `frnkmth!twwells.com!bill' (T. William Wells)
+     `mauxci!eci386!woods@apple.com' (Greg A. Woods)
+     `jon@console.ais.org' (Jon Zeeff)
+     Eric Ziegast `<uunet!ziegast>'
+
+
+File: uucp.info,  Node: Index (concepts),  Next: Index (configuration file),  Prev: Acknowledgements,  Up: Top
+
+Concept Index
+*************
+
+* Menu:
+
+* /usr/spool/uucp:                      Miscellaneous (config).
+* /usr/spool/uucppublic:                Miscellaneous (config).
+* UUCP protocol:                        UUCP Protocol.
+* UUCP system name:                     Miscellaneous (config).
+* anonymous UUCP:                       config File Examples.
+* call configuration file:              Configuration File Names.
+* call in login name:                   Configuration File Names.
+* call in password:                     Configuration File Names.
+* call out file:                        Configuration File Names.
+* call out login name:                  Configuration File Names.
+* call out password:                    Configuration File Names.
+* changing spool directory:             config File Examples.
+* chat scripts:                         Chat Scripts.
+* config file:                          config File.
+* config file examples:                 config File Examples.
+* configuration file (call):            Configuration File Names.
+* configuration file (config):          config File.
+* configuration file (dial):            dial File.
+* configuration file (dialcode):        Configuration File Names.
+* configuration file (passwd):          Configuration File Names.
+* configuration file (port):            port File.
+* configuration file (sys):             sys File.
+* debugging file:                       Log File Names.
+* dial file:                            dial File.
+* dialcode configuration file:          Configuration File Names.
+* dialcode file:                        Configuration File Names.
+* dialer configuration file:            dial File.
+* e protocol:                           e Protocol.
+* f protocol:                           f Protocol.
+* g protocol:                           g Protocol.
+* gateway:                              Gateway Example.
+* grades:                               Grades.
+* handshake:                            UUCP Protocol.
+* leaf site:                            Leaf Example.
+* lock files:                           Lock Files.
+* log file:                             Log File Names.
+* main configuration file:              config File.
+* passwd configuration file:            Configuration File Names.
+* passwd file:                          Configuration File Names.
+* port configuration file:              port File.
+* port file:                            port File.
+* protocol (UUCP):                      UUCP Protocol.
+* protocol (e):                         e Protocol.
+* protocol (f):                         f Protocol.
+* protocol (g):                         g Protocol.
+* protocol (t):                         t Protocol.
+* public directory:                     Miscellaneous (config).
+* spool directory:                      Miscellaneous (config).
+* spool directory (changing):           config File Examples.
+* statistics file:                      Log File Names.
+* sys file:                             sys File.
+* sys file example (gateway):           Gateway Example.
+* sys file example (leaf):              Leaf Example.
+* system configuration file:            sys File.
+* system name:                          Miscellaneous (config).
+* t protocol:                           t Protocol.
+* time strings:                         Time Strings.
+* unknown systems:                      Miscellaneous (config).
+* uucppublic:                           Miscellaneous (config).
+
+
+File: uucp.info,  Node: Index (configuration file),  Prev: Index (concepts),  Up: Top
+
+Index to New Configuration File
+*******************************
+
+* Menu:
+
+* abort:                                dial File.
+* abort-chat:                           dial File.
+* abort-chat-fail:                      dial File.
+* abort-chat-program:                   dial File.
+* abort-chat-seven-bit:                 dial File.
+* abort-chat-timeout:                   dial File.
+* address:                              Placing the Call.
+* alias:                                Naming the System.
+* alternate:                            Naming the System.
+* baud in port file:                    port File.
+* baud in sys file:                     Placing the Call.
+* baud-range:                           port File.
+* bnu-files:                            Miscellaneous (config).
+* call-local-size:                      File Transfer Control.
+* call-login:                           Logging In.
+* call-password:                        Logging In.
+* call-remote-size:                     File Transfer Control.
+* call-request:                         File Transfer Control.
+* call-timegrade:                       When to Call.
+* call-transfer:                        File Transfer Control.
+* callback:                             Accepting a Call.
+* called-chat:                          Accepting a Call.
+* called-chat-fail:                     Accepting a Call.
+* called-chat-program:                  Accepting a Call.
+* called-chat-seven-bit:                Accepting a Call.
+* called-chat-timeout:                  Accepting a Call.
+* called-local-size:                    File Transfer Control.
+* called-login:                         Accepting a Call.
+* called-remote-size:                   File Transfer Control.
+* called-request:                       File Transfer Control.
+* called-transfer:                      File Transfer Control.
+* callfile:                             Configuration File Names.
+* carrier in dial file:                 dial File.
+* carrier in port file:                 port File.
+* carrier-wait:                         dial File.
+* chat:                                 Chat Scripts.
+* chat in dial file:                    dial File.
+* chat in sys file:                     Logging In.
+* chat-fail:                            Chat Scripts.
+* chat-fail in dial file:               dial File.
+* chat-fail in sys file:                Logging In.
+* chat-program in dial file:            dial File.
+* chat-program in sys file:             Logging In.
+* chat-program in sys file:             Chat Scripts.
+* chat-seven-bit:                       Chat Scripts.
+* chat-seven-bit in dial file:          dial File.
+* chat-seven-bit in sys file:           Logging In.
+* chat-timeout:                         Chat Scripts.
+* chat-timeout in dial file:            dial File.
+* chat-timeout in sys file:             Logging In.
+* command-path:                         Miscellaneous (sys).
+* commands:                             Miscellaneous (sys).
+* complete:                             dial File.
+* complete-chat:                        dial File.
+* complete-chat-fail:                   dial File.
+* complete-chat-program:                dial File.
+* complete-chat-seven-bit:              dial File.
+* complete-chat-timeout:                dial File.
+* debug in config file:                 Debugging Levels.
+* debug in sys file:                    Miscellaneous (sys).
+* debugfile:                            Log File Names.
+* default-alternates:                   Naming the System.
+* device:                               port File.
+* dial-device:                          port File.
+* dialcodefile:                         Configuration File Names.
+* dialer in dial file:                  dial File.
+* dialer in port file:                  port File.
+* dialer-sequence:                      port File.
+* dialfile:                             Configuration File Names.
+* dialtone:                             dial File.
+* dtr-toggle:                           dial File.
+* free-space:                           Miscellaneous (sys).
+* hostname:                             Miscellaneous (config).
+* local-receive:                        File Transfer Control.
+* local-send:                           File Transfer Control.
+* lockname:                             port File.
+* logfile:                              Log File Names.
+* max-remote-debug:                     Miscellaneous (sys).
+* max-uuxqts:                           Miscellaneous (config).
+* myname:                               Naming the System.
+* nodename:                             Miscellaneous (config).
+* passwdfile:                           Configuration File Names.
+* pause:                                dial File.
+* phone:                                Placing the Call.
+* port in port file:                    port File.
+* port in sys file:                     Placing the Call.
+* portfile:                             Configuration File Names.
+* protocol in port file:                port File.
+* protocol in sys file:                 Protocol Selection.
+* protocol-parameter in dial file:      dial File.
+* protocol-parameter in port file:      port File.
+* protocol-parameter in sys file:       Protocol Selection.
+* pubdir in config file:                Miscellaneous (config).
+* pubdir in sys file:                   Miscellaneous (sys).
+* reliable in dial file:                dial File.
+* reliable in port file:                port File.
+* remote-receive:                       File Transfer Control.
+* remote-send:                          File Transfer Control.
+* request:                              File Transfer Control.
+* sequence:                             Miscellaneous (sys).
+* service:                              port File.
+* seven-bit in dial file:               dial File.
+* seven-bit in port file:               port File.
+* speed in port file:                   port File.
+* speed in sys file:                    Placing the Call.
+* speed-range:                          port File.
+* spool:                                Miscellaneous (config).
+* statfile:                             Log File Names.
+* sysfile:                              Configuration File Names.
+* system:                               Naming the System.
+* time:                                 When to Call.
+* timegrade:                            When to Call.
+* timetable:                            Miscellaneous (sys).
+* transfer:                             File Transfer Control.
+* type:                                 port File.
+* unknown:                              Miscellaneous (config).
+* uuname:                               Miscellaneous (config).
+* v2-files:                             Miscellaneous (config).
+
+
