@@ -1,10 +1,13 @@
-/*	systm.h	4.11	81/02/19	*/
+/*	systm.h	4.12	81/02/27	*/
 
 /*
  * Random set of variables
  * used by more than one
  * routine.
  */
+int	hz;			/* frequency of the clock */
+int	timezone;		/* minutes west from greenwich */
+int	dstflag;		/* daylight savings time in effect? */
 char	canonb[CANBSIZ];	/* buffer for erase and kill (#@) */
 char	version[];		/* system version */
 int	lbolt;			/* time of day in 60th not in time */
