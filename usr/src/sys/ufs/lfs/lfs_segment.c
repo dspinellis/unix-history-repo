@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.24 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -208,11 +208,14 @@ lfs_segwrite(mp, do_ckp)
 	struct mount *mp;
 	int do_ckp;			/* Do a checkpoint. */
 {
+	struct buf *bp;
 	struct inode *ip;
 	struct lfs *fs;
 	struct segment *sp;
 	struct vnode *vp;
-	int error, s;
+	SEGUSE *segusep;
+	daddr_t ibno;
+	int error, i, s;
 
 #ifdef VERBOSE
 	printf("lfs_segwrite\n");
@@ -255,25 +258,39 @@ lfs_segwrite(mp, do_ckp)
 	lfs_writevnodes(fs, mp, sp, 1);
 
 	/*
-	 * If this is a checkpoint, we need to loop on both the ifile and
-	 * the writeseg to make sure that we don't end up with any dirty
-	 * buffers left when this is all over.
+	 * If we are doing a checkpoint, mark everything since the
+	 * last checkpoint as no longer ACTIVE.
 	 */
+	if (do_ckp)
+		for (ibno = fs->lfs_cleansz + fs->lfs_segtabsz;
+		     --ibno >= fs->lfs_cleansz; ) {
+			if (bread(fs->lfs_ivnode, ibno, fs->lfs_bsize,
+			    NOCRED, &bp))
+
+				panic("lfs: ifile read");
+			segusep = (SEGUSE *)bp->b_un.b_addr;
+			for (i = fs->lfs_sepb; i--; segusep++)
+				segusep->su_flags &= ~SEGUSE_ACTIVE;
+				
+			LFS_UBWRITE(bp);
+		}
+
 	if (do_ckp || fs->lfs_doifile) {
-redo:
 		vp = fs->lfs_ivnode;
 		while (vget(vp));
 		ip = VTOI(vp);
-		do {
-			if (vp->v_dirtyblkhd != NULL)
-				lfs_writefile(fs, sp, vp);
-		} while (lfs_writeinode(fs, sp, ip) && do_ckp);
+		if (vp->v_dirtyblkhd != NULL)
+			lfs_writefile(fs, sp, vp);
+		(void)lfs_writeinode(fs, sp, ip);
 		ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
 		vput(vp);
-		if (lfs_writeseg(fs, sp) && do_ckp) {
-			lfs_initseg(fs, sp);
-			goto redo;
-		}
+		/*
+		 * This should never happen because we just guaranteed
+		 * that all the segment usage table blocks are dirty, so
+		 * no new ones should get written.
+		 */
+		if (lfs_writeseg(fs, sp) && do_ckp)
+			panic("lfs_segwrite: created dirty blocks on ckp");
 	} else
 		(void) lfs_writeseg(fs, sp);
 
@@ -586,8 +603,10 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 			 * Bread may create a new indirect block which needs
 			 * to get counted for the inode.
 			 */
-			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE))
+			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE)) {
 				ip->i_blocks += btodb(fs->lfs_bsize);
+				fs->lfs_bfree -= btodb(fs->lfs_bsize);
+			}
 			bp->b_un.b_daddr[ap->in_off] = off;
 			VOP_BWRITE(bp);
 		}
@@ -691,19 +710,9 @@ lfs_newseg(fs)
 #ifdef VERBOSE
 	printf("lfs_newseg\n");
 #endif
-	/*
-	 * Turn off the active bit for the current segment, turn on the
-	 * active and dirty bits for the next segment, update the cleaner
-	 * info.  Set the current segment to the next segment, get a new
-	 * next segment.
-	 */
-	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_curseg), bp);
-	sup->su_flags &= ~SEGUSE_ACTIVE;
-	LFS_UBWRITE(bp);
-
-	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
-	sup->su_flags |= SEGUSE_ACTIVE | SEGUSE_DIRTY | SEGUSE_LIVELOG;
-	LFS_UBWRITE(bp);
+        LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
+        sup->su_flags |= SEGUSE_DIRTY;
+        LFS_UBWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	--cip->clean;
@@ -722,6 +731,7 @@ lfs_newseg(fs)
 		if (!isdirty)
 			break;
 	}
+
 	fs->lfs_nextseg = sntoda(fs, sn);
 }
 
@@ -739,6 +749,7 @@ lfs_writeseg(fs, sp)
 	int ch_per_blk, do_again, i, nblocks, num, s;
 	int (*strategy)__P((struct vop_strategy_args *));
 	struct vop_strategy_args vop_strategy_a;
+	u_short ninos;
 	char *p;
 
 #ifdef VERBOSE
@@ -768,11 +779,15 @@ lfs_writeseg(fs, sp)
 
 	/* Update the segment usage information. */
 	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
-	sup->su_nbytes += nblocks - 1 - 
-	    (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs) << fs->lfs_bshift;
+	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
+	sup->su_nbytes += nblocks - 1 - ninos << fs->lfs_bshift;
 	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
 	sup->su_lastmod = time.tv_sec;
+	sup->su_flags |= SEGUSE_ACTIVE;
+	sup->su_ninos += ninos;
+	++sup->su_nsums;
 	LFS_UBWRITE(bp);
+	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
 	do_again = !(bp->b_flags & B_GATHERED);
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
