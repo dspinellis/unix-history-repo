@@ -7,21 +7,21 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)delch.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- *	This routine performs an insert-char on the line, leaving
- * (_cury,_curx) unchanged.
- *
+ * wdelch --
+ *	Do an insert-char on the line, leaving (_cury, _curx) unchanged.
  */
+int
 wdelch(win)
-reg WINDOW	*win; {
+	register WINDOW *win;
+{
 
-	reg char	*temp1, *temp2;
-	reg char	*end;
-	reg int		lch;
+	register int lch;
+	register char *end, *temp1, *temp2;
 
 	end = &win->_y[win->_cury][win->_maxx - 1];
 	temp1 = &win->_y[win->_cury][win->_curx];
@@ -30,5 +30,5 @@ reg WINDOW	*win; {
 		*temp1++ = *temp2++;
 	*temp1 = ' ';
 	touchline(win, win->_cury, win->_curx, win->_maxx - 1);
-	return OK;
+	return (OK);
 }

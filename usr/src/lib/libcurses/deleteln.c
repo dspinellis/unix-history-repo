@@ -7,26 +7,24 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)deleteln.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- *	This routine deletes a line from the screen.  It leaves
- * (_cury,_curx) unchanged.
- *
+ * wdeleteln --
+ *	Delete a line from the screen.  It leaves (_cury, _curx) unchanged.
  */
+int
 wdeleteln(win)
-reg WINDOW	*win;
+	register WINDOW *win;
 {
-	reg char	*temp;
-	reg int		y;
-	reg char	*end;
-	reg int		x;
+	register int x, y;
+	register char *end, *temp;
 
-# ifdef DEBUG
-	fprintf(outf, "DELETELN(%0.2o)\n", win);
-# endif
+#ifdef DEBUG
+	__TRACE("deleteln: (%0.2o)\n", win);
+#endif
 	temp = win->_y[win->_cury];
 	for (y = win->_cury; y < win->_maxy - 1; y++) {
 		if (win->_orig == NULL)
@@ -39,10 +37,10 @@ reg WINDOW	*win;
 		win->_y[y] = temp;
 	else
 		temp = win->_y[y];
-	for (end = &temp[win->_maxx]; temp < end; )
+	for (end = &temp[win->_maxx]; temp < end;)
 		*temp++ = ' ';
 	touchline(win, win->_cury, 0, win->_maxx - 1);
 	if (win->_orig == NULL)
-		_id_subwins(win);
-	return OK;
+		__id_subwins(win);
+	return (OK);
 }
