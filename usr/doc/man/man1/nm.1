@@ -1,0 +1,51 @@
+.th NM I 8/20/73
+.sh NAME
+nm  \*-  print name list
+.sh SYNOPSIS
+.bd nm
+[
+.bd \-cnrupg
+]
+[ name ]
+.sh DESCRIPTION
+.it Nm
+prints the symbol table from the output file of an
+assembler or loader run.
+Each symbol name is preceded by its value (blanks if undefined)
+and one of the letters \fBU\fR (undefined) \fBA\fR (absolute) \fBT\fR
+(text segment symbol),
+\fBD\fR (data segment symbol), \fBB\fR
+(bss segment symbol),
+or \fBC\fR (common symbol).
+If the symbol is local (non-external)
+the type letter is in lower case.
+The output is sorted alphabetically.
+.s3
+If no file is given, the symbols in
+.bd a.out
+are listed.
+.s3
+Options are:
+.s3
+.lp +4 4
+\fB\-c\fR	list only C-style external symbols, that is
+those beginning with underscore `\*_'.
+.s3
+.lp +4 4
+\fB\-g\fR	print only global (external) symbols
+.s3
+.lp +4 4
+\fB\-n\fR	sort by value instead of by name
+.s3
+.lp +4 4
+\fB\-p\fR	don't sort; print in symbol-table order
+.s3
+.lp +4 4
+\fB\-r\fR	sort in reverse order
+.s3
+.lp +4 4
+\fB\-u\fR	print only undefined symbols.
+.i0
+.sh FILES
+a.out
+.sh BUGS
