@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.19 (Berkeley) 84/07/11";
+static	char *sccsid = "@(#)more.c	4.19 (Berkeley) 84/07/12";
 #endif
 
 /*
@@ -82,6 +82,9 @@ char		*EodClr;	/* clear rest of screen */
 char		*tgetstr();
 int		Mcol = 80;	/* number of columns */
 int		Wrap = 1;	/* set if automargins */
+int		soglitch;	/* terminal has standout mode glitch */
+int		ulglitch;	/* terminal has underline mode glitch */
+int		pstate = 0;	/* current UL state */
 long		fseek();
 char		*getenv();
 struct {
@@ -411,10 +414,14 @@ register int num_lines;
 	     *	cleareol();	/* must clear again in case we wrapped *
 	     */
 	    if (nchars < Mcol || !fold_opt)
-		putchar('\n');
+		prbuf("\n", 1);	/* will turn off UL if necessary */
 	    if (nchars == STOP)
 		break;
 	    num_lines--;
+	}
+	if (pstate) {
+		tputs(ULexit, 1, putch);
+		pstate = 0;
 	}
 	fflush(stdout);
 	if ((c = Getc(f)) == EOF)
@@ -624,8 +631,10 @@ char *filename;
 	kill_line ();
     if (!hard) {
 	promptlen = 8;
-	if (Senter && Sexit)
+	if (Senter && Sexit) {
 	    tputs (Senter, 1, putch);
+	    promptlen += (2 * soglitch);
+	}
 	if (clreol)
 	    cleareol ();
 	pr("--More--");
@@ -636,7 +645,7 @@ char *filename;
 	    promptlen += printf ("(%d%%)", (int)((file_pos * 100) / file_size));
 	}
 	if (dum_opt) {
-	    promptlen += pr("[Hit space to continue, Rubout to abort]");
+	    promptlen += pr("[Press space to continue, 'q' to quit.]");
 	}
 	if (Senter && Sexit)
 	    tputs (Sexit, 1, putch);
@@ -800,36 +809,37 @@ prbuf (s, n)
 register char *s;
 register int n;
 {
-    char c;				/* next ouput character */
+    register char c;			/* next output character */
     register int state;			/* next output char's UL state */
-    static int pstate = 0;		/* current terminal UL state (off) */
+#define wouldul(s,n)	((n) >= 2 && (((s)[0] == '_' && (s)[1] == '\b') || ((s)[1] == '\b' && (s)[2] == '_')))
 
     while (--n >= 0)
 	if (!ul_opt)
 	    putchar (*s++);
 	else {
-	    if (n >= 2 && s[0] == '_' && s[1] == '\b') {
-		n -= 2;
-	        s += 2;
-		c = *s++;
-		state = 1;
-	    } else if (n >= 2 && s[1] == '\b' && s[2] == '_') {
-		n -= 2;
-		c = *s++;
-		s += 2;
-		state = 1;
-	    } else {
-		c = *s++;
-		state = 0;
+	    if (*s == ' ' && pstate == 0 && ulglitch && wouldul(s+1, n-1)) {
+		s++;
+		continue;
 	    }
-	    if (state != pstate)
-		tputs(state ? ULenter : ULexit, 1, putch);
-	    pstate = state;
-	    putchar(c);
+	    if (state = wouldul(s, n)) {
+		c = (*s == '_')? s[2] : *s ;
+		n -= 2;
+		s += 3;
+	    } else
+		c = *s++;
+	    if (state != pstate) {
+		if (c == ' ' && state == 0 && ulglitch && wouldul(s, n-1))
+		    state = 1;
+		else
+		    tputs(state ? ULenter : ULexit, 1, putch);
+	    }
+	    if (c != ' ' || pstate == 0 || state != 0 || ulglitch == 0)
+	        putchar(c);
 	    if (state && *chUL) {
 		pr(chBS);
 		tputs(chUL, 1, putch);
 	    }
+	    pstate = state;
 	}
 }
 
@@ -1032,7 +1042,19 @@ register FILE *f;
 		break;
 	    }
 	default:
-	    write (2, &bell, 1);
+	    if (dum_opt) {
+   		kill_line ();
+		if (Senter && Sexit) {
+		    tputs (Senter, 1, putch);
+		    promptlen = pr ("[Press 'h' for instructions.]") + (2 * soglitch);
+		    tputs (Sexit, 1, putch);
+		}
+		else
+		    promptlen = pr ("[Press 'h' for instructions.]");
+		fflush (stdout);
+	    }
+	    else
+		write (2, &bell, 1);
 	    break;
 	}
 	if (done) break;
@@ -1242,25 +1264,33 @@ char *filename;
 char *cmd, *args;
 {
 	int id;
+	int n;
 
 	fflush (stdout);
 	reset_tty ();
-	while ((id = fork ()) < 0)
+	for (n = 10; (id = fork ()) < 0 && n > 0; n--)
 	    sleep (5);
 	if (id == 0) {
+	    if (!isatty(0)) {
+		close(0);
+		open("/dev/tty", 0);
+	    }
 	    execv (cmd, &args);
 	    write (2, "exec failed\n", 12);
 	    exit (1);
 	}
-	signal (SIGINT, SIG_IGN);
-	signal (SIGQUIT, SIG_IGN);
-	if (catch_susp)
-	    signal(SIGTSTP, SIG_DFL);
-	wait (0);
-	signal (SIGINT, end_it);
-	signal (SIGQUIT, onquit);
-	if (catch_susp)
-	    signal(SIGTSTP, onsusp);
+	if (id > 0) {
+	    signal (SIGINT, SIG_IGN);
+	    signal (SIGQUIT, SIG_IGN);
+	    if (catch_susp)
+		signal(SIGTSTP, SIG_DFL);
+	    while (wait(0) > 0);
+	    signal (SIGINT, end_it);
+	    signal (SIGQUIT, onquit);
+	    if (catch_susp)
+		signal(SIGTSTP, onsusp);
+	} else
+	    write(2, "can't fork\n", 11);
 	set_tty ();
 	pr ("------------------------\n");
 	prompt (filename);
@@ -1361,6 +1391,8 @@ retry:
 	    Clear = tgetstr("cl", &clearptr);
 	    Senter = tgetstr("so", &clearptr);
 	    Sexit = tgetstr("se", &clearptr);
+	    if ((soglitch = tgetnum("sg")) < 0)
+		soglitch = 0;
 
 	    /*
 	     *  Set up for underlining:  some terminals don't need it;
@@ -1374,12 +1406,17 @@ retry:
 		ul_opt = 0;
 	    if ((chUL = tgetstr("uc", &clearptr)) == NULL )
 		chUL = "";
-	    if ((ULenter = tgetstr("us", &clearptr)) == NULL &&
-		(!*chUL) && (ULenter = tgetstr("so", &clearptr)) == NULL)
-		ULenter = "";
-	    if ((ULexit = tgetstr("ue", &clearptr)) == NULL &&
-		(!*chUL) && (ULexit = tgetstr("se", &clearptr)) == NULL)
-		ULexit = "";
+	    if (((ULenter = tgetstr("us", &clearptr)) == NULL ||
+	         (ULexit = tgetstr("ue", &clearptr)) == NULL) && !*chUL) {
+	        if ((ULenter = Senter) == NULL || (ULexit = Sexit) == NULL) {
+			ULenter = "";
+			ULexit = "";
+		} else
+			ulglitch = soglitch;
+	    } else {
+		if ((ulglitch = tgetnum("ug")) < 0)
+		    ulglitch = 0;
+	    }
 
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
@@ -1591,6 +1628,11 @@ set_tty ()
 
 reset_tty ()
 {
+    if (pstate) {
+	tputs(ULexit, 1, putch);
+	fflush(stdout);
+	pstate = 0;
+    }
     otty.sg_flags |= ECHO;
     otty.sg_flags &= ~MBIT;
     stty(fileno(stderr), &savetty);
