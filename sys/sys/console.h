@@ -30,7 +30,7 @@
 #define KDSKBSTATE	_IO('K', 20)
 #define KDENABIO	_IO('K', 60)
 #define KDDISABIO	_IO('K', 61)
-#define KIOCSOUND	_IOW('k', 63, long)
+#define KIOCSOUND	_IO('k', 63)
 #define KDGKBTYPE	_IOR('K', 64, int)
 #define KDGETLED	_IOR('K', 65, int)
 #define KDSETLED	_IO('K', 66) 
@@ -104,6 +104,7 @@ typedef struct vt_mode vtmode_t;
 #define CLKED		1
 #define NLKED		2
 #define SLKED		4
+#define ALKED		8
 #define LED_CAP		1
 #define LED_NUM		2
 #define LED_SCR		4
@@ -113,8 +114,9 @@ typedef struct vt_mode vtmode_t;
 #define	FLAG_LOCK_C	1
 #define FLAG_LOCK_N	2
 
-#define NUM_KEYS	128
+#define NUM_KEYS	256
 #define NUM_STATES	8
+#define ALTGR_OFFSET	128
 
 struct keymap {
 	u_short	n_keys;
@@ -176,6 +178,8 @@ typedef struct {char fnt8x16[16*256];} fnt16_t;
 #define LCTR		0x09
 #define RCTR		0x7b
 #define RALT		0x7c
+#define ALK		0x7d
+#define ASH		0x7e
 
 #define F_SCR		11		/* switch to first screen 	*/
 #define L_SCR		26		/* switch to last screen 	*/
