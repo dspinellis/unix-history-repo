@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,8 +28,9 @@ static char sccsid[] = "@(#)input.c	5.19 (Berkeley) %G%";
 /*
  * Process a newly received packet.
  */
-rip_input(from, size)
+rip_input(from, rip, size)
 	struct sockaddr *from;
+	register struct rip *rip;
 	int size;
 {
 	register struct rt_entry *rt;
@@ -41,25 +42,25 @@ rip_input(from, size)
 	static struct sockaddr badfrom, badfrom2;
 
 	ifp = 0;
-	TRACE_INPUT(ifp, from, size);
+	TRACE_INPUT(ifp, from, (char *)rip, size);
 	if (from->sa_family >= af_max ||
 	    (afp = &afswitch[from->sa_family])->af_hash == (int (*)())0) {
 		syslog(LOG_INFO,
 	 "\"from\" address in unsupported address family (%d), cmd %d\n",
-		    from->sa_family, msg->rip_cmd);
+		    from->sa_family, rip->rip_cmd);
 		return;
 	}
-	if (msg->rip_vers == 0) {
+	if (rip->rip_vers == 0) {
 		syslog(LOG_ERR,
 		    "RIP version 0 packet received from %s! (cmd %d)",
-		    (*afswitch[from->sa_family].af_format)(from), msg->rip_cmd);
+		    (*afswitch[from->sa_family].af_format)(from), rip->rip_cmd);
 		return;
 	}
-	switch (msg->rip_cmd) {
+	switch (rip->rip_cmd) {
 
 	case RIPCMD_REQUEST:
-		n = msg->rip_nets;
-		count = size - ((char *)n - (char *)msg);
+		n = rip->rip_nets;
+		count = size - ((char *)n - (char *)rip);
 		if (count < sizeof (struct netinfo))
 			return;
 		for (; count > 0; n++) {
@@ -99,7 +100,8 @@ rip_input(from, size)
 #endif
 			n->rip_metric = htonl(n->rip_metric);
 		}
-		msg->rip_cmd = RIPCMD_RESPONSE;
+		rip->rip_cmd = RIPCMD_RESPONSE;
+		bcopy((char *)rip, packet, size);
 		(*afp->af_output)(s, 0, from, size);
 		return;
 
@@ -115,9 +117,9 @@ rip_input(from, size)
 			    (*afswitch[from->sa_family].af_format)(from));
 			return;
 		}
-		packet[size] = '\0';
-		if (msg->rip_cmd == RIPCMD_TRACEON)
-			traceon(msg->rip_tracefile);
+		((char *)rip)[size] = '\0';
+		if (rip->rip_cmd == RIPCMD_TRACEON)
+			traceon(rip->rip_tracefile);
 		else
 			traceoff();
 		return;
@@ -174,7 +176,7 @@ rip_input(from, size)
 			return;
 		}
 		size -= 4 * sizeof (char);
-		n = msg->rip_nets;
+		n = rip->rip_nets;
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
 			if (size < sizeof (struct netinfo))
 				break;
