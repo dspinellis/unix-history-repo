@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)init.8	8.2 (Berkeley) %G%
+.\"     @(#)init.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INIT 8
@@ -94,9 +94,9 @@ using
 If it is desired to run the system in level 0 mode while multiuser,
 the administrator must build a kernel with the variable
 .Nm securelevel
-in the kernel source file
-.Pa /sys/kern/kern_sysctl.c
-initialized to -1.
+defined in the file
+.Pa /sys/compile/MACHINE/param.c
+and initialize it to -1.
 .Pp
 In multi-user operation, 
 .Nm init
