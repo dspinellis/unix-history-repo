@@ -1,0 +1,44 @@
+	/* LINTLIBRARY */
+#include <stdio.h>
+	exit(s) {;}
+long	lseek(f, o, d) long o; { return(0); }
+char	*mktemp(p) char *p; { return(p);}
+int	(*signal(c, f))() int (*f)(); { return(f); }
+char	*strcat(a, b) char *a, *b; { ; }
+int	strcmp(a, b) char *a, *b; { return(1); }
+char	*strcpy(a, b) char *a, *b; { ; }
+int	strlen(s) char *s; { return(1); }
+long	tell(f) { return((long)0); }
+long	time(t) long *t; { return(0);}
+char	*calloc(n,s) unsigned n, s; { static char c[1]; return(c); }
+char	*malloc(n) unsigned n; {static char c; return(&c);}
+char	*realloc(p, n) char *p; unsigned n; { static char c; return(&c);}
+	free(p) char *p; {;}
+	fclose(f) FILE *f; {return(0);}
+	fflush(f) FILE *f; {return(0);}
+char	*fgets( s, l, f ) char *s; FILE *f; { return(s); }
+FILE	*fopen(s,m) char *s, *m; { return(stdin); }
+FILE	*freopen(s, m, f) char *s, *m; FILE *f; { return(stdin); }
+FILE	*fdopen(fd, m) char *m; { return(stdin);}
+	/* VARARGS */
+	fprintf( f, s ) FILE *f; char *s; {;}
+	fputs(s,f) char *s; FILE *f; {;}
+	fread( p, s, n, f ) char *p; FILE *f; {return(1);}
+	/* VARARGS */
+	fscanf( f, s ) FILE *f; char *s; {return(1);}
+int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
+	intss(){return(1); }
+	/* VARARGS */
+	printf( s ) char *s; {;}
+	rewind(f) FILE *f; {;}
+	/* VARARGS */
+	scanf( f ) char *f; {return(1); }
+	setbuf( f, b ) FILE *f; char *b; {;}
+	/* VARARGS */
+char	*sprintf( s, f ) char *s, *f; { return(s);}
+	/* VARARGS */
+	sscanf( s, f ) char *s, *f; { return(1); }
+	ungetc( c, f ) FILE *f; {  return(c); }
+	wdleng(){return(0); }
+struct	_iobuf _iob[_NFILE];
+char	_ctype_[129];
