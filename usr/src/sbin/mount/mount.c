@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -142,11 +142,44 @@ main(argc, argv, arge)
 			exit(1);
 		}
 		mnttype = mntbuf->f_type;
-		if (!strcmp(mntbuf->f_mntfromname, "root_device")) {
-			fs = getfsfile("/");
-			strcpy(mntbuf->f_mntfromname, fs->fs_spec);
+		if ((fs = getfsfile(mntbuf->f_mntonname)) == NULL) {
+			(void) fprintf(stderr,
+			    "mount: can't find fstab entry for %s.\n", *argv);
+			exit(1);
 		}
-		ret = mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
+		mntname = fs->fs_vfstype;
+
+		/*
+		 * Default type to fstab version if none specified on the
+		 * command line.
+		 */
+		if (type == NULL)
+			type = fs->fs_type;
+
+		/*
+		 * Default options to fstab version if none specified on the
+		 * command line.
+		 */
+		if (options == NULL)
+			options = fs->fs_mntops;
+		else {
+			register char *cp;
+
+			/*
+			 * Concat the two strings with the command line
+			 * options last so that they will override the
+			 * fstab options.
+			 */
+			i = strlen(fs->fs_mntops) + strlen(options) + 2;
+			if ((cp = malloc((size_t)i)) == NULL) {
+				(void) fprintf(stderr,
+				    "mount: -u malloc failed\n");
+				exit(1);
+			}
+			sprintf(cp, "%s,%s", fs->fs_mntops, options);
+			options = cp;
+		}
+		ret = mountfs(fs->fs_spec, mntbuf->f_mntonname,
 		    updateflg, type, options, (char *)NULL);
 	} else if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
