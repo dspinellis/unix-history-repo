@@ -1,4 +1,4 @@
-/*	main.c	1.15	(Berkeley) 84/03/15
+/*	main.c	1.16	(Berkeley) 84/04/17
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -84,7 +84,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.15	84/03/15";
+char	SccsId[] = "main.c	1.16	84/04/17";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -427,7 +427,7 @@ int baseline;
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
 		printf(
-".br\n\\0\n.sp -1\n.nr g1 %du\n.nr g2 %du\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n",
+".br\n.nr g1 %du\n.nr g2 %du\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n\\0\n.sp -1\n",
 			xright-xleft, ybottom-ytop, GScommand);
 
 		lastx = xleft;		/* note where we are, (upper left */
