@@ -68,7 +68,9 @@ struct in_addr ip_addr;
 	return ((i)&IN_CLASSC_HOST);
 }
 
+/*
 #ifdef unused
+*/
 in_netof(ip_addr)
 struct in_addr ip_addr;
 {
@@ -81,7 +83,9 @@ struct in_addr ip_addr;
     else
 	return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
+/*
 #endif
+*/
 
 /*
  * hash an internet address for routing lookups
@@ -527,7 +531,9 @@ struct ifnet *ifp;
     return((struct in_ifaddr *)ifa);
 }
 
+/*
 #ifdef unused
+*/
 /*
  * Return address info for specified internet network.
  */
@@ -542,5 +548,7 @@ u_long net;
 
     return ((struct in_ifaddr *) NULL);
 }
+/*
 #endif
+*/
 #endif
