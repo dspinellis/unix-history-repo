@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.11 (Berkeley) %G%
+ *	@(#)db.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -12,58 +12,72 @@
 
 #include <sys/cdefs.h>
 
-/* flags for DB.put() call */
+#define	RET_ERROR	-1		/* Return values. */
+#define	RET_SUCCESS	 0
+#define	RET_SPECIAL	 1
+
+#define	MAX_PAGE_NUMBER	ULONG_MAX	/* >= # of pages in a file */
+typedef unsigned long	pgno_t;
+#define	MAX_PAGE_OFFSET	USHRT_MAX	/* >= # of bytes in a page */
+typedef unsigned short	index_t;
+#define	MAX_REC_NUMBER	ULONG_MAX	/* >= # of records in a tree */
+typedef unsigned long	recno_t;
+
+/* Key/data structure -- a Data-Base Thang. */
+typedef struct {
+	void	*data;			/* data */
+	size_t	 size;			/* data length */
+} DBT;
+
+/* Flags for DB.put() call. */
 #define	R_IBEFORE	1		/* RECNO */
 #define	R_IAFTER	2		/* RECNO */
 #define	R_NOOVERWRITE	3		/* BTREE, HASH, RECNO */
 #define	R_PUT		4		/* BTREE, HASH, RECNO */
 
-/* flags for DB.seq() call */
+/* Flags for DB.seq() call. */
 #define	R_CURSOR	1		/* BTREE, RECNO */
 #define	R_FIRST		2		/* BTREE, HASH, RECNO */
 #define	R_LAST		3		/* BTREE, RECNO */
 #define	R_NEXT		4		/* BTREE, HASH, RECNO */
 #define	R_PREV		5		/* BTREE, RECNO */
 
-/* key/data structure -- a data-base thang */
-typedef struct {
-	void	*data;			/* data */
-	size_t	 size;			/* data length */
-} DBT;
+typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 
-/* access method description structure */
+/* Access method description structure. */
 typedef struct __db {
+	DBTYPE type;		/* type of underlying db */
 	void *internal;		/* access method private */
-#define	DB_BTREE	1
-#define	DB_HASH		2
-#define	DB_RECNO	3
-	int type;		/* type of underlying db */
-	int (*close) __P((const struct __db *));
-	int (*del) __P((const struct __db *, const DBT *, unsigned int));
-	int (*get) __P((const struct __db *, DBT *, DBT *, unsigned int));
-	int (*put) __P((const struct __db *, const DBT *, const DBT *,
-		unsigned int));
-	int (*seq) __P((const struct __db *, DBT *, DBT *, unsigned int));
-	int (*sync) __P((const struct __db *));
+	int (*close)	__P((struct __db *));
+	int (*del)	__P((const struct __db *, const DBT *, unsigned int));
+	int (*get)	__P((const struct __db *, DBT *, DBT *, unsigned int));
+	int (*put)	__P((const struct __db *, const DBT *, const DBT *,
+			     unsigned int));
+	int (*seq)	__P((const struct __db *, DBT *, DBT *, unsigned int));
+	int (*sync)	__P((const struct __db *));
 } DB;
 
 #define	BTREEMAGIC	0x053162
-#define	BTREEVERSION	2
+#define	BTREEVERSION	3
 
-/* structure used to pass parameters to the btree routines */
+/* Structure used to pass parameters to the btree routines. */
 typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
 	u_long flags;
 	int cachesize;		/* bytes to cache */
+	int maxkeypage;		/* maximum keys per page */
+	int minkeypage;		/* minimum keys per page */
 	int psize;		/* page size */
-	int (*compare)();	/* compare function */
+				/* comparison, prefix functions */
+	int (*compare)	__P((const DBT *, const DBT *));
+	int (*prefix)	__P((const DBT *, const DBT *));
 	int lorder;		/* byte order */
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561
 #define	HASHVERSION	1
 
-/* structure used to pass parameters to the hashing routines */
+/* Structure used to pass parameters to the hashing routines. */
 typedef struct {
 	int bsize;		/* bucket size */
 	int ffactor;		/* fill factor */
@@ -73,16 +87,19 @@ typedef struct {
 	int lorder;		/* byte order */
 } HASHINFO;
 
-/* structure used to pass parameters to the record routines */
+/* Structure used to pass parameters to the record routines. */
 typedef struct {
 #define	R_FIXEDLEN	0x01	/* fixed-length records */
+#define	R_NOKEY		0x02	/* key not required */
+#define	R_SNAPSHOT	0x04	/* snapshot the input */
 	u_long flags;
 	int cachesize;		/* bytes to cache */
+	int lorder;		/* byte order */
 	size_t reclen;		/* record length (fixed-length records) */
 	u_char bval;		/* delimiting byte (variable-length records */
 } RECNOINFO;
 
-/* key structure for the record routines */
+/* Key structure for the record routines. */
 typedef struct {
 	u_long number;
 	u_long offset;
@@ -108,7 +125,6 @@ typedef struct {
 	((char *)&(b))[3] = ((char *)&(a))[0]; \
 }
 
-
 /* Little endian <--> big endian short swap macros. */
 #define BSSWAP(a) { \
 	u_short _tmp = a; \
@@ -121,12 +137,13 @@ typedef struct {
 }
 
 __BEGIN_DECLS
-DB	*btree_open
-	    __P((const char *, int, int, const BTREEINFO *));
-DB	*hash_open
-	    __P((const char *, int, int, const HASHINFO *));
-DB	*recno_open
-	    __P((const char *, int, int, const RECNOINFO *));
-__END_DECLS
+DB *dbopen __P((const char *, int, int, DBTYPE, const void *));
 
+#ifdef __DBINTERFACE_PRIVATE
+DB	*__bt_open __P((const char *, int, int, const BTREEINFO *));
+DB	*__hash_open __P((const char *, int, int, const HASHINFO *));
+DB	*__rec_open __P((const char *, int, int, const RECNOINFO *));
+void	 __dbpanic __P((DB *dbp));
+#endif
+__END_DECLS
 #endif /* !_DB_H_ */
