@@ -1,4 +1,4 @@
-/*	up.c	6.3	85/03/12	*/
+/*	up.c	6.4	85/06/04	*/
 
 #include "up.h"
 #if NSC > 0
@@ -94,6 +94,15 @@ struct	size {
 	10080,	759,		/* F=cyl 759 thru 822 */
 	82080,	309,		/* G=cyl 309 thru 822 */
 	0,	0,
+}, upeagle_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 16 */
+	66880,	17,		/* B=cyl 17 thru 86 */
+	808320,	0,		/* C=cyl 0 thru 841 */
+	15884,	391,		/* D=cyl 391 thru 407 */
+	307200,	408,		/* E=cyl 408 thru 727 */
+	109296,	728,		/* F=cyl 728 thru 841 */
+	432816,	391,		/* G=cyl 391 thru 841 */
+	291346,	87,		/* H=cyl 87 thru 390 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -124,6 +133,7 @@ struct	upst {
 	{ 32,	10,	32*10,	823,	up160_sizes,	3, 4 },	/* fuji 160m */
 	{ 32,	16,	32*16,	1024,	upam_sizes,	7, 8 },	/* Capricorn */
 	{ 32,	5,	32*5,	823,	up980_sizes,	3, 4 }, /* DM980 */
+        { 48,	20,	48*20,	842,	upeagle_sizes, 15, 8 },	/* EAGLE */
 	{ 0,	0,	0,	0,	0,		0, 0 }
 };
 
@@ -245,6 +255,7 @@ upstrategy(bp)
 	register struct buf *dp;
 	int xunit = minor(bp->b_dev) & 07;
 	long bn, sz;
+	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
@@ -258,7 +269,7 @@ upstrategy(bp)
 	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
-	(void) spl5();
+	s = spl5();
 	dp = &uputab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
@@ -267,7 +278,7 @@ upstrategy(bp)
 		if (bp->b_actf && bp->b_active == 0)
 			(void) upstart(ui->ui_mi);
 	}
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:
