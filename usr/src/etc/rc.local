@@ -1,7 +1,7 @@
 #
 # site-specific startup actions, daemons
 #
-#	@(#)rc.local	8.1 (Berkeley) %G%
+#	@(#)rc.local	5.5 (Berkeley) %G%
 #
 
 T=/tmp/_motd
@@ -14,6 +14,11 @@ chmod 666 /etc/motd
 rm -f $T
 
 echo -n 'starting local daemons:'
+
+if [ -f /usr/contrib/lib/jove/recover ]; then
+	echo -n ' jove'
+	(/usr/contrib/lib/jove/recover -syscrash)
+fi
 
 # Kerberos runs ONLY on the Kerberos server machine
 #echo -n ' kerberos';	kerberos >> /var/log/kerberos.log &
