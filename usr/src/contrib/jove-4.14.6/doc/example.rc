@@ -1,0 +1,24 @@
+if /ua/jonathan/src/jove/lib/isttytype iq120
+	bind-to-key Prefix-1 \\
+	bind-to-key set-mark ^[ 
+	set allow-^S-and-^Q on
+endif
+if /ua/jonathan/src/jove/lib/modemp
+	set mode-line  -%n %m "%f" %((%t%s%C%s%l)%)
+else
+	set mode-line  -%n- %["%f" %m [%b] %]%s%((%t%s%C%s%l)%)%s(%M) %e
+endif
+auto-execute-command show-match .*\.[ch]$
+set comment-format /* %!   %c%! */
+set disable-biff on
+set match-regular-expressions on
+set use-i/d-char off
+bind-to-key backward-paragraph ^[[
+bind-to-key current-error ^X^C
+bind-to-key exit-jove ^X^Z
+bind-to-key find-tag-at-point ^[^T
+bind-to-key grow-window ^Xg
+bind-to-key kill-s-expression ^[^K
+bind-to-key list-processes ^X^L
+bind-to-key scroll-down ^C
+bind-to-key shrink-window ^Xs
