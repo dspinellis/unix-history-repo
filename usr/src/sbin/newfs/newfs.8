@@ -1,8 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983, 1987 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)newfs.8	6.4 (Berkeley) %G%
+.\"	@(#)newfs.8	6.5 (Berkeley) %G%
 .\"
 .TH NEWFS 8 ""
 .UC 5
@@ -34,7 +34,7 @@ has numerous options to allow the defaults to be selectively overridden.
 The
 .B \-N
 option causes the file system parameters to be printed out
-without actually creating the file system.
+without really creating the file system.
 .PP
 The following options define the general layout policies.
 .TP 10
@@ -46,7 +46,7 @@ The fragment size of the file system in bytes.
 .TP 10
 .B \-m free space %
 The percentage of space reserved from normal users; the minimum
-free space threshhold.  The default value used is 10%.
+free space threshold.  The default value used is 10%.
 .TP 10
 .B \-o optimization preference (``space'' or ``time'')
 The file system can either be instructed to try to minimize the time spent
@@ -76,6 +76,10 @@ Changing these defaults is useful only when using
 to build a file system whose raw image will eventually be used
 on a different type of disk than the one on which it is initially
 created (for example on a write-once disk).
+Note that changing any of these values from their
+defaults will make it impossible for 
+.I fsck
+to find the alternate superblocks if the standard super block is lost.
 .TP 10
 .B \-r revolutions/minute
 The speed of the disk in revolutions per minute.
