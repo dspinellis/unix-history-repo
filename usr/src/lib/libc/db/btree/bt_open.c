@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -64,8 +64,6 @@ typedef char	*BTREE;		/* should really be (void *) */
 #define TRUE	1
 #define FALSE	0
 #endif /* ndef TRUE */
-
-extern int errno;
 
 /* libc */
 extern char *malloc();
@@ -236,10 +234,6 @@ typedef struct BTMETA {
 
 #define INSERT		0		/* doing an insert operation */
 #define DELETE		1		/* doing a delete operation */
-
-/* magic number for identifying btree files */
-#define BTREEMAGIC	053162L		/* magic */
-#define BTREEVERSION	2		/* last changed 6 jan 1991 */
 
 /* get the next free index on a btree page */
 #define NEXTINDEX(p)	((((int)(p)->h_lower) - ((int)((((char *)(&(p)->h_linp[0]))) - ((char *) (p)))))/(sizeof(index_t)))
