@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.50 82/02/19 */
+/* tcp_usrreq.c 1.51 82/02/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -260,6 +260,8 @@ printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 	return (error);
 }
 
+int	tcp_sendspace = 1024*2;
+int	tcp_recvspace = 1024*3;
 /*
  * Attach TCP protocol to socket, allocating
  * internet protocol control block, tcp control block,
@@ -273,7 +275,8 @@ tcp_attach(so, sa)
 	struct inpcb *inp;
 	int error;
 
-	error = in_pcbattach(so, &tcb, 2048, 2048, (struct sockaddr_in *)sa);
+	error = in_pcbattach(so, &tcb,
+	    tcp_sendspace, tcp_recvspace, (struct sockaddr_in *)sa);
 	if (error)
 		return (error);
 	inp = (struct inpcb *)so->so_pcb;
