@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.1	82/02/02	*/
+/*	raw_pup.c	4.2	82/02/02	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -15,7 +15,8 @@
  * Raw PUP protocol interface.
  */
 
-static struct sockaddr_pup pupaddr = { AF_PUP };
+static struct sockaddr_pup pupsrc = { AF_PUP };
+static struct sockaddr_pup pupdst = { AF_PUP };
 static struct sockproto pupproto = { PF_PUP };
 
 /*
@@ -30,8 +31,9 @@ rawpup_input(m)
 
 COUNT(RAWPUP_INPUT);
 	pupproto.sp_protocol = pup->pup_type;
-	pupaddr.spup_addr = pup->pup_daddr;
-	raw_input(m, pupproto, pupaddr);
+	pupdst.spup_addr = pup->pup_daddr;
+	pupsrc.spup_addr = pup->pup_saddr;
+	raw_input(m, &pupproto, &pupdst, &pupsrc);
 }
 
 /*ARGSUSED*/
