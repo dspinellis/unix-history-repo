@@ -1,6 +1,6 @@
-.\"	@(#)touch.1	4.1 (Berkeley) %G%
+.\"	@(#)touch.1	5.1 (Berkeley) %G%
 .\"
-.TH TOUCH 1 
+.TH TOUCH 1  "18 January 1983"
 .AT 3
 .SH NAME
 touch \- update date last modified of a file
@@ -9,19 +9,29 @@ touch \- update date last modified of a file
 [
 .B \-c
 ]
+[
+.B \-f
+]
 file ...
 .SH DESCRIPTION
 .I Touch
 attempts to set the modified date of each
-.I file.
-This is done by reading a character from the file
+.IR file .
+If a
+.I file
+exists,
+this is done by reading a character from the file
 and writing it back.
-.PP
 If a
 .I file
 does not exist,
 an attempt will be made to create it unless the
 .B \-c
 option is specified.
+The
+.B \-f
+option will attempt to force the touch
+in spite of read and write permissions on a
+.IR file .
 .SH SEE\ ALSO
-utime(2)
+utimes(2)
