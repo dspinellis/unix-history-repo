@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.19 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -433,7 +433,7 @@ killpg1(cp, signo, pgid, all)
 {
 	register struct proc *p;
 	struct pgrp *pgrp;
-	int f = 0, error = ESRCH;
+	int f = 0;
 	
 	if (all)	
 		/* 
@@ -467,7 +467,7 @@ killpg1(cp, signo, pgid, all)
 				psignal(p, signo);
 		}
 	}
-	return (f ? 0 : error);
+	return (f ? 0 : ESRCH);
 }
 
 /*
@@ -1034,9 +1034,13 @@ core()
  * Nonexistent system call-- signal process (may want to handle it).
  * Flag error in case process won't see signal immediately (blocked or ignored).
  */
-nosys()
+/* ARGSUSED */
+nosys(p, args, retval)
+	struct proc *p;
+	void *args;
+	int *retval;
 {
 
-	psignal(u.u_procp, SIGSYS);
-	u.u_error = EINVAL;
+	psignal(p, SIGSYS);
+	RETURN (EINVAL);
 }
