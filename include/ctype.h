@@ -36,6 +36,8 @@
 #ifndef _CTYPE_H_
 #define _CTYPE_H_
 
+#include <sys/cdefs.h>
+
 #define	_U	0x01
 #define	_L	0x02
 #define	_N	0x04
@@ -46,6 +48,22 @@
 #define	_B	0x80
 
 extern char	_ctype_[];
+
+__BEGIN_DECLS
+int isdigit __P((int));
+int islower __P((int));
+int isspace __P((int));
+int ispunkt __P((int));
+int isupper __P((int));
+int isalpha __P((int));
+int isxdigit __P((int));
+int isalnum __P((int));
+int isprint __P((int));
+int isgraph __P((int));
+int iscntrl __P((int));
+int toupper __P((int));
+int tolower __P((int));
+__END_DECLS
 
 #define	isdigit(c)	((_ctype_ + 1)[c] & _N)
 #define	islower(c)	((_ctype_ + 1)[c] & _L)
@@ -59,8 +77,6 @@ extern char	_ctype_[];
 #define	isgraph(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N))
 #define	iscntrl(c)	((_ctype_ + 1)[c] & _C)
 #define	isascii(c)	((unsigned)(c) <= 0177)
-#define	toupper(c)	((c) - 'a' + 'A')
-#define	tolower(c)	((c) - 'A' + 'a')
 #define	toascii(c)	((c) & 0177)
 
 #endif /* !_CTYPE_H_ */
