@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.29 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -567,7 +567,7 @@ hpuxstat(p, uap, retval)
 	struct hpuxstat_args *uap;
 	int *retval;
 {
-	return (hpuxstat1(uap->fname, uap->hsb, FOLLOW));
+	return (hpuxstat1(uap->fname, uap->hsb, FOLLOW, p));
 }
 
 struct hpuxlstat_args {
@@ -579,7 +579,7 @@ hpuxlstat(p, uap, retval)
 	struct hpuxlstat_args *uap;
 	int *retval;
 {
-	return (hpuxstat1(uap->fname, uap->hsb, NOFOLLOW));
+	return (hpuxstat1(uap->fname, uap->hsb, NOFOLLOW, p));
 }
 
 struct hpuxfstat_args {
@@ -603,11 +603,11 @@ hpuxfstat(p, uap, retval)
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		error = vn_stat((struct vnode *)fp->f_data, &sb);
+		error = vn_stat((struct vnode *)fp->f_data, &sb, p);
 		break;
 
 	case DTYPE_SOCKET:
-		error = soo_stat((struct socket *)fp->f_data, &sb);
+		error = soo_stat((struct socket *)fp->f_data, &sb, p);
 		break;
 
 	default:
@@ -904,19 +904,20 @@ bsdtohpuxerrno(err)
 	return((int)bsdtohpuxerrnomap[err]);
 }
 
-hpuxstat1(fname, hsb, follow)
+hpuxstat1(fname, hsb, follow, p)
 	char *fname;
 	struct hpuxstat *hsb;
 	int follow;
+	struct proc *p;
 {
 	int error;
 	struct stat sb;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, follow | LOCKLEAF, UIO_USERSPACE, fname, curproc);
+	NDINIT(&nd, LOOKUP, follow | LOCKLEAF, UIO_USERSPACE, fname, p);
 	if (error = namei(&nd))
 		return (error);
-	error = vn_stat(nd.ni_vp, &sb);
+	error = vn_stat(nd.ni_vp, &sb, p);
 	vput(nd.ni_vp);
 	if (error == 0)
 		error = bsdtohpuxstat(&sb, hsb);
@@ -1853,7 +1854,7 @@ ohpuxfstat(p, uap, retval)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EINVAL);
-	return (ohpuxstat1((struct vnode *)fp->f_data, uap->sb));
+	return (ohpuxstat1((struct vnode *)fp->f_data, uap->sb, p));
 }
 
 /*
@@ -1874,21 +1875,22 @@ ohpuxstat(p, uap, retval)
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
-	error = ohpuxstat1(nd.ni_vp, uap->sb);
+	error = ohpuxstat1(nd.ni_vp, uap->sb, p);
 	vput(nd.ni_vp);
 	return (error);
 }
 
 int
-ohpuxstat1(vp, ub)
+ohpuxstat1(vp, ub, p)
 	register struct vnode *vp;
 	struct ohpuxstat *ub;
+	struct proc *p;
 {
 	struct ohpuxstat ds;
 	struct vattr vattr;
 	register int error;
 
-	error = VOP_GETATTR(vp, &vattr, curproc->p_ucred, curproc);
+	error = VOP_GETATTR(vp, &vattr, p->p_ucred, p);
 	if (error)
 		return(error);
 	/*
