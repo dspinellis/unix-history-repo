@@ -37,11 +37,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00134
+ * CURRENT PATCH LEVEL:         2       00166
  * --------------------         -----   ----------------------
  *
  * 08 Apr 93	Andrew Herbert		Fixes for kmem_alloc panics
  *		Rodney W. Grimes	Tuneable mbuf sizes
+ * 04 Jun 93	Rodney W. Grimes	Change default mbuf size to 2048 via
+ *					MCLSHIFT.
  */
 
 /*
@@ -95,7 +97,7 @@
 #endif	/* MSIZE */
 
 #ifndef	MCLSHIFT
-#define	MCLSHIFT	10		/* convert bytes to m_buf clusters */
+#define	MCLSHIFT	11		/* convert bytes to m_buf clusters */
 #endif	/* MCLSHIFT */
 #define	MCLBYTES	(1 << MCLSHIFT)	/* size of an m_buf cluster */
 #define	MCLOFSET	(MCLBYTES - 1)	/* offset within an m_buf cluster */
