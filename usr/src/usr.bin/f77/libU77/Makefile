@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2	(Berkeley)	%G%
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -66,7 +66,7 @@ mkvers: mkvers.c
 	${CC} mkvers.c -o $@
 
 clean: FRC
-	rm -f ${OBJS} profiled/*.o core ${LIBRARY} ${LIBRARY_P}
+	rm -f ${OBJS} mkvers profiled/*.o core ${LIBRARY} ${LIBRARY_P}
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
