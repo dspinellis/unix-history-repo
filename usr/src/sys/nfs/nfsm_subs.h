@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.10 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -130,16 +130,16 @@ extern struct mbuf *nfsm_reqh();
 		(v) = tvp; }
 
 #define	nfsm_strsiz(s,m) \
-		nfsm_disect(p,u_long *,NFSX_UNSIGNED); \
-		if (((s) = fxdr_unsigned(long,*p)) > (m)) { \
+		nfsm_disect(tl,u_long *,NFSX_UNSIGNED); \
+		if (((s) = fxdr_unsigned(long,*tl)) > (m)) { \
 			m_freem(mrep); \
 			error = EBADRPC; \
 			goto nfsmout; \
 		}
 
 #define	nfsm_srvstrsiz(s,m) \
-		nfsm_disect(p,u_long *,NFSX_UNSIGNED); \
-		if (((s) = fxdr_unsigned(long,*p)) > (m) || (s) <= 0) { \
+		nfsm_disect(tl,u_long *,NFSX_UNSIGNED); \
+		if (((s) = fxdr_unsigned(long,*tl)) > (m) || (s) <= 0) { \
 			error = EBADRPC; \
 			nfsm_reply(0); \
 		}
@@ -181,10 +181,10 @@ extern struct mbuf *nfsm_reqh();
 		} \
 		t2 = nfsm_rndup(s)+NFSX_UNSIGNED; \
 		if(t2<=(NFSMSIZ(mb)-mb->m_len)){ \
-			nfsm_build(p,u_long *,t2); \
-			*p++ = txdr_unsigned(s); \
-			*(p+((t2>>2)-2)) = 0; \
-			bcopy((caddr_t)(a), (caddr_t)p, (s)); \
+			nfsm_build(tl,u_long *,t2); \
+			*tl++ = txdr_unsigned(s); \
+			*(tl+((t2>>2)-2)) = 0; \
+			bcopy((caddr_t)(a), (caddr_t)tl, (s)); \
 		} else if (error = nfsm_strtmbuf(&mb, &bpos, (a), (s))) { \
 			m_freem(mreq); \
 			goto nfsmout; \
@@ -233,8 +233,8 @@ extern struct mbuf *nfsm_reqh();
 		}
 
 #define nfsm_srvmtofh(f) \
-		nfsm_disecton(p, u_long *, NFSX_FH); \
-		bcopy((caddr_t)p, (caddr_t)f, NFSX_FH)
+		nfsm_disecton(tl, u_long *, NFSX_FH); \
+		bcopy((caddr_t)tl, (caddr_t)f, NFSX_FH)
 
 #define	nfsm_clget \
 		if (bp >= be) { \
@@ -250,7 +250,7 @@ extern struct mbuf *nfsm_reqh();
 			bp = mtod(mp, caddr_t); \
 			be = bp+mp->m_len; \
 		} \
-		p = (u_long *)bp
+		tl = (u_long *)bp
 
 #define	nfsm_srvfillattr \
 	fp->fa_type = vtonfs_type(vap->va_type); \
