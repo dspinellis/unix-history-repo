@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)asexpr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)asexpr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -332,7 +332,7 @@ struct exp *yukkyexpr(val, np)
 		lastnam = (struct symtab *)np;
 		/* FALLTHROUGH */
 	case NAME:
-		exprisname++;
+		exprisname = (int) np;
 		locxp->e_xtype = ((struct symtab *)np)->s_type;
 		if (( ((struct symtab *)np)->s_type&XTYPE)==XUNDEF) { /*forward*/
 			locxp->e_xname = (struct symtab *)np;
