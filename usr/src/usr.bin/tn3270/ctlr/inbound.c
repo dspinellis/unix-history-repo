@@ -64,6 +64,10 @@ static int	HadAid = 0;		/* Had an AID haven't sent */
 
 static int	XFormattedScreen = 0;	/* For optimizations */
 
+#if	!defined(PURE3274)
+extern int TransparentClock, OutputClock;
+#endif	/* !defined(PURE3274) */
+
 #include "3270pc.out"
 
 /* the following are global variables */
@@ -458,8 +462,7 @@ DoReadBuffer()
 void
 SendToIBM()
 {
-    extern int TransparentClock, OutputClock;
-
+#if	!defined(PURE3274)
     if (TransparentClock == OutputClock) {
 	if (HadAid) {
 	    AddChar(AidByte);
@@ -474,7 +477,11 @@ SendToIBM()
     } else if (HadAid) {
 	DoReadModified(CMD_READ_MODIFIED);
     }
-    netflush();
+#else	/* !defined(PURE3274) */
+    if (HadAid) {
+	DoReadModified(CMD_READ_MODIFIED);
+    }
+#endif	/* !defined(PURE3274) */
 }
 
 /* This takes in one character from the keyboard and places it on the
@@ -528,8 +535,7 @@ int	count;				/* how much data there is */
     register int i;
     register int j;
     static int InsertMode = 0;	/* is the terminal in insert mode? */
-    enum type type;
-    extern int OutputClock, TransparentClock;
+    enum ctlrfcn ctlrfcn;
     static int shifted = 0, alted = 0;
 #   define HITNUM() ((shifted? 1:0) + ((alted?1:0)<<1))
 
@@ -537,7 +543,7 @@ int	count;				/* how much data there is */
 	ExitString("Unknown scancode encountered in DataFrom3270.\n", 1);
 	/*NOTREACHED*/
     }
-    type = hits[*buffer].hit[HITNUM()].type;
+    ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
     c = hits[*buffer].hit[HITNUM()].code;
 
     if (!UnLocked || HadAid) {
@@ -547,12 +553,13 @@ int	count;				/* how much data there is */
 		return(0);			/* nothing to do */
 	    }
 	}
+#if	defined(FCN_RESET) && defined(FCN_MASTER_RESET)
 	if (!HadAid && EmptyChar()) {
-	    if ((type == function) && ((c == FCN_RESET) ||
-			(c == FCN_MASTER_RESET))) {
+	    if ((ctlrfcn == FCN_RESET) || (ctlrfcn == FCN_MASTER_RESET)) {
 		UnLocked = 1;
 	    }
 	}
+#endif	/* defined(FCN_RESET) && defined(FCN_MASTER_RESET) */
 	if (!UnLocked) {
 	    return(0);
 	}
@@ -561,6 +568,7 @@ int	count;				/* how much data there is */
 
     origCount = count;
 
+#if	!defined(PURE3274)
     if (TransparentClock == OutputClock) {
 	while (count) {
 	    if (*buffer >= numberof(hits)) {
@@ -568,17 +576,17 @@ int	count;				/* how much data there is */
 			"Unknown scancode encountered in DataFrom3270.\n", 1);
 		/*NOTREACHED*/
 	    }
-	    type = hits[*buffer].hit[HITNUM()].type;
+	    ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
 	    c = hits[*buffer].hit[HITNUM()].code;
 	    buffer++;
 	    count--;
-	    if (type == aid) {
+	    if (ctlrfcn == FCN_AID) {
 		UnLocked = 0;
 		InsertMode = 0;
 		AidByte = (c);
 		HadAid = 1;
-	    } else if (type == function) {
-		switch (c) {
+	    } else {
+		switch (ctlrfcn) {
 		case FCN_ESCAPE:
 		    StopScreen(1);
 		    command(0);
@@ -596,21 +604,22 @@ int	count;				/* how much data there is */
 	    }
 	}
     }
+#endif	/* !defined(PURE3274) */
 
     while (count) {
 	if (*buffer >= numberof(hits)) {
 	    ExitString("Unknown scancode encountered in DataFrom3270.\n", 1);
 	    /*NOTREACHED*/
 	}
-	type = hits[*buffer].hit[HITNUM()].type;
+	ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
 	c = hits[*buffer].hit[HITNUM()].code;
 	buffer++;
 	count--;
 
-	if (type == character) {
+	if (ctlrfcn == FCN_CHARACTER) {
 			/* Add the character to the buffer */
 	    OneCharacter(c, InsertMode);
-	} else if (type == aid) {		/* got Aid */
+	} else if (ctlrfcn == FCN_AID) {		/* got Aid */
 	    if (c == AID_CLEAR) {
 		LocalClearScreen();	/* Side effect is to clear 3270 */
 	    }
@@ -620,11 +629,8 @@ int	count;				/* how much data there is */
 	    HadAid = 1;
 	    SendToIBM();
 	    return(origCount-count);
-	} else if (type != function) {
-	    ExitString("Illegal or undefined scancode!\n", 1);
-	    /*NOTREACHED*/
 	} else {
-	    switch (c) {
+	    switch (ctlrfcn) {
 
 	    case FCN_MAKE_SHIFT:
 		shifted++;
