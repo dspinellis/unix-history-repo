@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.3 (Berkeley) %G%
+ *	@(#)com.c	7.4 (Berkeley) %G%
  */
 
 #include "com.h"
@@ -85,10 +85,11 @@ extern int kgdb_debug_init;
 comprobe(dev)
 struct isa_device *dev;
 {
-	/*if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
+	/* force access to id reg */
+	outb(dev->id_iobase+com_cfcr, 0);
+	outb(dev->id_iobase+com_iir, 0);
+	if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
 		return(1);
-printf("base %x val %x ", dev->id_iobase,
-	inb(dev->id_iobase+com_iir));*/
 	return(1);
 
 }
@@ -118,7 +119,7 @@ struct isa_device *isdp;
 	outb(port+com_ier, 0);
 	outb(port+com_mcr, 0 | MCR_IENABLE);
 #ifdef KGDB
-	if (1/*kgdb_dev == makedev(commajor, unit)*/) {
+	if (kgdb_dev == makedev(commajor, unit)) {
 		if (comconsole == unit)
 			kgdb_dev = -1;	/* can't debug over console port */
 		else {
@@ -576,7 +577,6 @@ comcnprobe(cp)
 	struct consdev *cp;
 {
 	int unit;
-	extern int comopen();
 
 	/* locate the major number */
 	for (commajor = 0; commajor < nchrdev; commajor++)
