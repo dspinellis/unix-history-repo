@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -379,10 +379,8 @@ putf(cp, where)
 register char *cp;
 char *where;
 {
-	char *slash;
-#ifndef	NO_GETTYTAB
-	char datebuffer[60];
-#endif	/* NO_GETTYTAB */
+	time_t t;
+	char *fmt, *slash, db[100];
 	extern char *rindex();
 
 	putlocation = where;
@@ -406,12 +404,14 @@ char *where;
 			putstr(editedhost);
 			break;
 
-#ifndef	NO_GETTYTAB
 		case 'd':
-			get_date(datebuffer);
-			putstr(datebuffer);
+			(void)time(&t);
+						/* SCCS *likes* utility.c... */
+			fmt = "%l:% %P on %A, %d %B %Y";
+			fmt[4] = 'M';
+			(void)strftime(db, sizeof(db), fmt, &t);
+			putstr(db);
 			break;
-#endif	/* NO_GETTYTAB */
 
 		case '%':
 			putchr('%');
