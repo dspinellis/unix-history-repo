@@ -68,6 +68,11 @@ printjob()
 
 	init();					/* set up capabilities */
 	(void) write(1, "", 1);			/* ack that daemon is started */
+	(void) close(2);			/* set up log file */
+	if (open(LF, O_WRONLY|O_APPEND, 0664) < 0) {
+		syslog(LOG_ERR, "%s: %m", LF);
+		(void) open("/dev/null", O_WRONLY);
+	}
 	setgid(getegid());
 	pid = getpid();				/* for use with lprm */
 	setpgrp(0, pid);

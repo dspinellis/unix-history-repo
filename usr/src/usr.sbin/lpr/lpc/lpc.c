@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)lpc.c	5.1 (Berkeley) %G%";
 #include <signal.h>
 #include <ctype.h>
 #include <setjmp.h>
+#include <syslog.h>
 
 #include "lpc.h"
 
@@ -42,6 +43,7 @@ main(argc, argv)
 	extern char *name;
 
 	name = argv[0];
+	openlog("lpd", 0, LOG_LPR);
 
 	if (--argc > 0) {
 		c = getcmd(*++argv);
