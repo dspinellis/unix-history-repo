@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.58 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.59 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1431,6 +1431,10 @@ rename(p, uap, retval)
 			goto out;
 		} else if (fvp->v_type != VDIR && tvp->v_type == VDIR) {
 			error = EISDIR;
+			goto out;
+		}
+		if (fvp->v_mount != tvp->v_mount) {
+			error = EXDEV;
 			goto out;
 		}
 	}
