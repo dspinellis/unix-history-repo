@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.49	82/09/04	*/
+/*	uipc_socket.c	4.50	82/10/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,78 +20,89 @@
 #include "../h/uio.h"
 
 /*
- * Socket support routines.
- *
- * DEAL WITH INTERRUPT NOTIFICATION.
+ * Socket operation routines.
+ * These routines are called by the routines in
+ * sys_socket.c or from a system process, and
+ * implement the semantics of socket operations by
+ * switching out to the protocol specific routines.
  */
 
-/*
- * Create a socket.
- */
-socreate(aso, type, asp, asa, options)
+socreate(dom, aso, type, proto, opt)
 	struct socket **aso;
-	int type;
-	struct sockproto *asp;
-	struct sockaddr *asa;
-	int options;
+	int type, proto;
+	struct socketopt *opt;
 {
 	register struct protosw *prp;
 	register struct socket *so;
 	struct mbuf *m;
-	int pf, proto, error;
+	int pf, error;
 
-	/*
-	 * Use process standard protocol/protocol family if none
-	 * specified by address argument.
-	 */
-	if (asp == 0) {
-		pf = PF_INET;		/* should be u.u_protof */
-		proto = 0;
-	} else {
-		pf = asp->sp_family;
-		proto = asp->sp_protocol;
-	}
-
-	/*
-	 * If protocol specified, look for it, otherwise
-	 * for a protocol of the correct type in the right family.
-	 */
+	pf = dom ? PF_UNIX : PF_INET;		/* should be u.u_protof */
 	if (proto)
 		prp = pffindproto(pf, proto);
 	else
 		prp = pffindtype(pf, type);
 	if (prp == 0)
 		return (EPROTONOSUPPORT);
-
-	/*
-	 * Get a socket structure.
-	 */
+	if (prp->pr_type != type)
+		return (EPROTOTYPE);
 	m = m_getclr(M_WAIT);
 	if (m == 0)
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
-	so->so_options = options;
-	if (options & SO_ACCEPTCONN) {
-		so->so_q = so;
-		so->so_q0 = so;
-		so->so_qlimit = (so->so_options & SO_NEWFDONCONN) ? 5 : 1;
-	}
+	so->so_options = 0;
 	so->so_state = 0;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
-
-	/*
-	 * Attach protocol to socket, initializing
-	 * and reserving resources.
-	 */
 	so->so_proto = prp;
-	error = (*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
+	error = (*prp->pr_usrreq)(so, PRU_ATTACH,
+	    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
 		return (error);
 	}
 	*aso = so;
+	return (0);
+}
+
+sobind(so, nam, opt)
+	struct socket *so;
+	struct mbuf *nam;
+	struct socketopt *opt;
+{
+	int s = splnet();
+	int error;
+
+	error =
+	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
+		(struct mbuf *)0, nam, opt);
+	splx(s);
+	return (error);
+}
+
+solisten(so, backlog)
+	struct socket *so;
+	int backlog;
+{
+	int s = splnet();
+	int error;
+
+	error = (*so->so_proto->pr_usrreq)(so, PRU_LISTEN,
+	    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
+	if (error) {
+		splx(s);
+		return (error);
+	}
+	if (so->so_q == 0) {
+		so->so_q = so;
+		so->so_q0 = so;
+		so->so_options |= SO_ACCEPTCONN;
+	}
+	if (backlog < 0)
+		backlog = 0;
+	so->so_qlimit = backlog < 5 ? backlog : 5;
+	so->so_options |= SO_NEWFDONCONN;
 	return (0);
 }
 
@@ -157,7 +168,8 @@ soclose(so, exiting)
 	}
 drop:
 	if (so->so_pcb) {
-		u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
+		u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
+		    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
 		if (exiting == 0 && u.u_error) {
 			splx(s);
 			return;
@@ -179,29 +191,24 @@ sostat(so, sb)
 	return (0);					/* XXX */
 }
 
-/*
- * Accept connection on a socket.
- */
-soaccept(so, asa)
+soaccept(so, nam, opt)
 	struct socket *so;
-	struct sockaddr *asa;
+	struct mbuf *nam;
+	struct socketopt *opt;
 {
 	int s = splnet();
 	int error;
 
-	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, 0, (caddr_t)asa);
+	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT,
+	    (struct mbuf *)0, nam, opt);
 	splx(s);
 	return (error);
 }
 
-/*
- * Connect socket to a specified address.
- * If already connected or connecting, then avoid
- * the protocol entry, to keep its job simpler.
- */
-soconnect(so, asa)
+soconnect(so, nam, opt)
 	struct socket *so;
-	struct sockaddr *asa;
+	struct mbuf *nam;
+	struct socketopt *opt;
 {
 	int s = splnet();
 	int error;
@@ -210,21 +217,16 @@ soconnect(so, asa)
 		error = EISCONN;
 		goto bad;
 	}
-	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT, 0, (caddr_t)asa);
+	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
+	    (struct mbuf *)0, nam, opt);
 bad:
 	splx(s);
 	return (error);
 }
 
-/*
- * Disconnect from a socket.
- * Address parameter is from system call for later multicast
- * protocols.  Check to make sure that connected and no disconnect
- * in progress (for protocol's sake), and then invoke protocol.
- */
-sodisconnect(so, asa)
+sodisconnect(so, nam)
 	struct socket *so;
-	struct sockaddr *asa;
+	struct mbuf *nam;
 {
 	int s = splnet();
 	int error;
@@ -237,7 +239,8 @@ sodisconnect(so, asa)
 		error = EALREADY;
 		goto bad;
 	}
-	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, 0, asa);
+	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT,
+	    (struct mbuf *)0, nam, (struct socketopt *)0);
 bad:
 	splx(s);
 	return (error);
@@ -251,9 +254,9 @@ bad:
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
  */
-sosend(so, asa, uio)
+sosend(so, nam, uio)
 	register struct socket *so;
-	struct sockaddr *asa;
+	struct mbuf *nam;
 	struct uio *uio;
 {
 	struct mbuf *top = 0;
@@ -288,11 +291,12 @@ again:
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		if (so->so_proto->pr_flags & PR_CONNREQUIRED)
 			snderr(ENOTCONN);
-		if (asa == 0)
+		if (nam == 0)
 			snderr(EDESTADDRREQ);
 	}
 	if (top) {
-		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, asa);
+		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND,
+		    top, (caddr_t)nam, (struct socketopt *)0);
 		top = 0;
 		if (error) {
 			splx(s);
@@ -356,9 +360,9 @@ release:
 	return (error);
 }
 
-soreceive(so, asa, uio)
+soreceive(so, aname, uio)
 	register struct socket *so;
-	struct sockaddr *asa;
+	struct mbuf **aname;
 	struct uio *uio;
 {
 	register struct iovec *iov;
@@ -397,13 +401,14 @@ restart:
 	if (m == 0)
 		panic("receive");
 	if (so->so_proto->pr_flags & PR_ADDR) {
-		if (m->m_len != sizeof (struct sockaddr))
-			panic("soreceive addr");
-		if (asa)
-			bcopy(mtod(m, caddr_t), (caddr_t)asa, sizeof (*asa));
 		so->so_rcv.sb_cc -= m->m_len;
 		so->so_rcv.sb_mbcnt -= MSIZE;
-		m = m_free(m);
+		if (aname) {
+			*aname = m;
+			m = m->m_next;
+			(*aname)->m_next = 0;
+		} else
+			m = m_free(m);
 		if (m == 0)
 			panic("receive 2");
 		so->so_rcv.sb_mb = m;
@@ -450,7 +455,8 @@ restart:
 			m = n;
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
-		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
+		(*so->so_proto->pr_usrreq)(so, PRU_RCVD,
+		    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
@@ -538,7 +544,9 @@ soioctl(so, cmd, data)
 			splx(s);
 		}
 		if (flags & FWRITE)
-			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN, (struct mbuf *)0, 0);
+			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
+			    (struct mbuf *)0, (struct mbuf *)0,
+			    (struct socketopt *)0);
 		return;
 	}
 
@@ -554,7 +562,8 @@ soioctl(so, cmd, data)
 		m->m_off = MMINOFF;
 		m->m_len = sizeof (char);
 		*mtod(m, char *) = oob;
-		(*so->so_proto->pr_usrreq)(so, PRU_SENDOOB, m, 0);
+		(*so->so_proto->pr_usrreq)(so, PRU_SENDOOB,
+		    m, (struct mbuf *)0, (struct socketopt *)0);
 		return;
 	}
 
@@ -566,7 +575,8 @@ soioctl(so, cmd, data)
 			return;
 		}
 		m->m_off = MMINOFF; *mtod(m, caddr_t) = 0;
-		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB, m, 0);
+		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
+		    m, (struct mbuf *)0, (struct socketopt *)0);
 		*(char *)data = *mtod(m, char *);
 		(void) m_free(m);
 		return;

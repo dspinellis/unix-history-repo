@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.25	82/08/22	*/
+/*	uipc_socket2.c	4.26	82/10/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,7 +126,7 @@ sonewconn(head)
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
-	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, 0, 0)) {
+	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, 0, 0, 0)) {
 		(void) soqremque(so, 0);
 		m_free(m);
 		goto bad;
