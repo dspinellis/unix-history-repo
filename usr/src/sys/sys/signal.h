@@ -1,4 +1,4 @@
-/*	signal.h	6.5	85/03/11	*/
+/*	signal.h	6.6	85/05/22	*/
 
 #ifndef	NSIG
 #define NSIG	32
@@ -45,6 +45,8 @@
 #define	SIGVTALRM 26	/* virtual time alarm */
 #define	SIGPROF	27	/* profiling time alarm */
 #define SIGWINCH 28	/* window size changes */
+#define SIGUSR1 30	/* user defined signal 1 */
+#define SIGUSR2 31	/* user defined signal 2 */
 
 #ifndef KERNEL
 int	(*signal())();
