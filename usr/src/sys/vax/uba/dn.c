@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dn.c	7.2 (Berkeley) %G%
+ *	@(#)dn.c	7.3 (Berkeley) %G%
  */
 
 #include "dn.h"
@@ -135,7 +135,7 @@ dnwrite(dev, uio)
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(uio->uio_resid, OBUFSIZ);
 	cp = obuf;
-	error = uiomove(cp, cc, UIO_WRITE, uio);
+	error = uiomove(cp, cc, uio);
 	if (error)
 		return (error);
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {

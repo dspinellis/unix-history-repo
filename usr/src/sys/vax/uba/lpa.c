@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	7.1 (Berkeley) %G%
+ *	@(#)lpa.c	7.2 (Berkeley) %G%
  */
 
 #include "lpa.h"
@@ -303,7 +303,7 @@ lpamcode(lpaaddr, sc, uio)
 
 	mcaddr = 0;
 	while (uio->uio_resid) {
-		error = uiomove(&v, 2, UIO_WRITE, uio);
+		error = uiomove(&v, 2, uio);
 		if (error)
 			break;
 		lpaaddr->lcim = 0;		/* load microcode word */
@@ -352,7 +352,7 @@ lpadmdt(lpaaddr, sc, ubanum, uio)
 	*p++ = ADIO4;
 	*p++ = ADIO5;
 	n = MIN(uio->uio_resid, 256);	/* dedicated mode dispatch table */
-	error = uiomove((char *)p, n, UIO_WRITE, uio);
+	error = uiomove((char *)p, n, uio);
 	if (error)
 		return (error);
 	n >>= 1;
@@ -478,7 +478,7 @@ TRACER("SLEEP\n");
 		(void) spl0();
 	}
 TRACERN("READ %d\n", sc->sc_ubufn);
-	return (uiomove(&sc->sc_ubufn, 1, UIO_READ, uio));
+	return (uiomove(&sc->sc_ubufn, 1, uio));
 }
 
 lpacmd(bp, lpaaddr, sc, ubanum)
