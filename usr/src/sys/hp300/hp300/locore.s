@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  *
- *	@(#)locore.s	7.14 (Berkeley) %G%
+ *	@(#)locore.s	7.15 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -1547,7 +1547,7 @@ Lbadsw:
  * user's PTEs have been changed (formerly denoted by the SPTECHG p_flag
  * bit).  For now, we just always flush the full ATC.
  */
-ENTRY(swtch)
+ENTRY(Swtch)
 	movl	_curpcb,a0		| current pcb
 	movw	sr,a0@(PCB_PS)		| save sr before changing ipl
 #ifdef notyet
@@ -1555,6 +1555,7 @@ ENTRY(swtch)
 #endif
 	clrl	_curproc
 	addql	#1,_cnt+V_SWTCH
+
 Lsw1:
 	/*
 	 * Find the highest-priority queue that isn't empty,
@@ -1812,6 +1813,16 @@ ENTRY(fusword)
 	nop
 	jra	Lfsdone
 
+/* Just like fusword, but tells trap code not to page in. */
+ENTRY(fuswintr)
+	movl	sp@(4),a0
+	movl	_curpcb,a1
+	movl	#_fswintr,a1@(PCB_ONFAULT)
+	moveq	#0,d0
+	movsw	a0@,d0
+	nop
+	jra	Lfsdone
+
 ALTENTRY(fuibyte, _fubyte)
 ENTRY(fubyte)
 	movl	sp@(4),a0		| address to read
@@ -1827,6 +1838,13 @@ Lfserr:
 Lfsdone:
 	clrl	a1@(PCB_ONFAULT) 	| clear fault address
 	rts
+
+/* Just like Lfserr, but the address is different (& exported). */
+	.globl	_fswintr
+_fswintr:
+	moveq	#-1,d0
+	jra	Lfsdone
+
 
 /*
  * Write a longword in user instruction space.
@@ -1870,6 +1888,16 @@ ENTRY(susword)
 	movsw	d0,a0@			| do write to user space
 	nop
 	moveq	#0,d0			| indicate no fault
+	jra	Lfsdone
+
+ENTRY(suswintr)
+	movl	sp@(4),a0
+	movw	sp@(10),d0
+	movl	_curpcb,a1
+	movl	#_fswintr,a1@(PCB_ONFAULT)
+	movsw	d0,a0@
+	nop
+	moveq	#0,d0
 	jra	Lfsdone
 
 ALTENTRY(suibyte, _subyte)
