@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.32 (Berkeley) %G%
+ *	@(#)tty.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,9 +140,8 @@ ttywait(tp)
 	    tp->t_oproc) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
-		if ((error = tsleep((caddr_t)&tp->t_outq, TTOPRI | PCATCH,
-				    ttyout, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&tp->t_outq, 
+		    TTOPRI | PCATCH, ttyout, 0))
 			break;
 	}
 	splx(s);
@@ -278,7 +277,6 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIC:
 	case TIOCLSET:
 	case OTIOCSETD:
-	case OTIOCCONS:
 #endif
 		while (isbackground(u.u_procp, tp) && 
 		   u.u_procp->p_pgrp->pg_jobc &&
@@ -286,9 +284,8 @@ ttioctl(tp, com, data, flag)
 		   (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0 &&
 		   (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
 			pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
-			if ((error = tsleep((caddr_t)&lbolt, TTOPRI | PCATCH,
-					    ttybg, 0)) ||
-			    (error = ttclosed(tp)))
+			if (error = ttysleep(tp, (caddr_t)&lbolt, 
+			    TTOPRI | PCATCH, ttybg, 0)) 
 				return (error);
 		}
 		break;
@@ -517,6 +514,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCLGET:
 	case OTIOCGETD:
 	case OTIOCSETD:
+	case OTIOCCONS:
 		return(ttcompat(tp, com, data, flag));
 #endif
 
@@ -640,8 +638,6 @@ ttyopen(dev, tp)
 
 	tp->t_dev = dev;
 
-	if (ttclosed(tp))	/* XXX is this still needed? (drivers do it) */
-		return (ERESTART);
 	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
@@ -676,6 +672,7 @@ ttyclose(tp)
 	tp->t_session = NULL;
 	tp->t_pgrp = NULL;
 	tp->t_state = 0;
+	tp->t_gen++;
 	return (0);
 }
 
@@ -1007,6 +1004,9 @@ ttyinput(c, tp)
 		ttyretype(tp);
 		goto endcase;
 	}
+	/*
+	 * ^T - kernel info and generate SIGINFO
+	 */
 	if (CCEQ(cc[VSTATUS], c)) {
 		pgsignal(tp->t_pgrp, SIGINFO, 1);
 		if ((lflag&NOKERNINFO) == 0)
@@ -1252,9 +1252,8 @@ loop:
 		    u.u_procp->p_flag&SVFORK || u.u_procp->p_pgrp->pg_jobc == 0)
 			return (EIO);
 		pgsignal(u.u_procp->p_pgrp, SIGTTIN, 1);
-		if ((error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, 
-				    ttybg, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&lbolt, TTIPRI | PCATCH, 
+		    ttybg, 0)) 
 			return (error);
 		goto loop;
 	}
@@ -1283,10 +1282,10 @@ loop:
 			splx(s);
 			return (EWOULDBLOCK);
 		}
-		error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
 		    carrier ? ttyin : ttopen, 0);
 		splx(s);
-		if (error || (error = ttclosed(tp)))
+		if (error)
 			return (error);
 		goto loop;
 	}
@@ -1303,9 +1302,8 @@ loop:
 		if (CCEQ(cc[VDSUSP], c) && lflag&ISIG) {
 			pgsignal(tp->t_pgrp, SIGTSTP, 1);
 			if (first) {
-				if ((error = tsleep((caddr_t)&lbolt,
-					    TTIPRI | PCATCH, ttybg, 0)) ||
-				    (error = ttclosed(tp)))
+				if (error = ttysleep(tp, (caddr_t)&lbolt,
+				    TTIPRI | PCATCH, ttybg, 0))
 					break;
 				goto loop;
 			}
@@ -1410,10 +1408,10 @@ loop:
 			/*
 			 * sleep awaiting carrier
 			 */
-			error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-			    ttopen, 0);
+			error = ttysleep(tp, (caddr_t)&tp->t_rawq, 
+					TTIPRI | PCATCH,ttopen, 0);
 			splx(s);
-			if (error || (error = ttclosed(tp)))
+			if (error)
 				goto out;
 			goto loop;
 		}
@@ -1427,9 +1425,8 @@ loop:
 	    (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0 &&
 	     u.u_procp->p_pgrp->pg_jobc) {
 		pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
-		if ((error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, 
-				     ttybg, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&lbolt, TTIPRI | PCATCH, 
+		    ttybg, 0))
 			goto out;
 		goto loop;
 	}
@@ -1484,9 +1481,9 @@ loop:
 					if (ttyoutput(*cp, tp) >= 0) {
 					    /* no c-lists, wait a bit */
 					    ttstart(tp);
-					    if ((error = tsleep((caddr_t)&lbolt,
-						TTOPRI | PCATCH, ttybuf, 0)) ||
-						(error = ttclosed(tp)))
+					    if (error = ttysleep(tp, 
+						(caddr_t)&lbolt,
+						 TTOPRI | PCATCH, ttybuf, 0))
 						    break;
 					    goto loop;
 					}
@@ -1514,9 +1511,8 @@ loop:
 			if (i > 0) {
 				/* out of c-lists, wait a bit */
 				ttstart(tp);
-				if ((error = tsleep((caddr_t)&lbolt,
-					    TTOPRI | PCATCH, ttybuf, 0)) ||
-				    (error = ttclosed(tp)))
+				if (error = ttysleep(tp, (caddr_t)&lbolt,
+					    TTOPRI | PCATCH, ttybuf, 0))
 					break;
 				goto loop;
 			}
@@ -1555,9 +1551,9 @@ ovhiwat:
 		return (0);
 	}
 	tp->t_state |= TS_ASLEEP;
-	error = tsleep((caddr_t)&tp->t_outq, TTOPRI | PCATCH, ttyout, 0);
+	error = ttysleep(tp, (caddr_t)&tp->t_outq, TTOPRI | PCATCH, ttyout, 0);
 	splx(s);
-	if (error || (error = ttclosed(tp)))
+	if (error)
 		goto out;
 	goto loop;
 }
@@ -1963,4 +1959,21 @@ tputchar(c, tp)
 	}
 	splx(s);
 	return (-1);
+}
+
+ttysleep(tp, chan, pri, wmesg, timo)
+	struct tty *tp;
+	caddr_t chan;
+	int pri;
+	char *wmesg;
+	int timo;
+{
+	int error;
+	short gen = tp->t_gen;
+
+	if (error = tsleep(chan, pri, wmesg, timo))
+		return (error);
+	if (tp->t_gen != gen)
+		return (ERESTART);
+	return (0);
 }
