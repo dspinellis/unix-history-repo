@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	8.2.3.1 (Berkeley) %G%
+ *	@(#)radix.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -164,7 +164,7 @@ rn_lookup(v_arg, m_arg, head)
 	return x;
 }
 
-static
+static int
 rn_satsifies_leaf(trial, leaf, skip)
 	char *trial;
 	register struct radix_node *leaf;
@@ -569,7 +569,7 @@ rn_addroute(v_arg, n_arg, head, treenodes)
 	register struct radix_node *m, *us = treenodes;
 	struct radix_node *t, *tt, *x, *base, *top = head->rnh_treetop;
 	struct radix_node *s /*sibling*/, *p /*parent*/, **mp;
-	short b = 0, b_leaf;
+	short b = 0, b_leaf = 0;
 	int masklen, masklen_leaf, mlen, keyduplicated = 0;
 
 	/*
@@ -756,9 +756,7 @@ on1:
 			x = dupedkey; x->rn_p = t;
 			if (t->rn_l == tt) t->rn_l = x; else t->rn_r = x;
 		} else {
-			for (x = base; x && x->rn_dupedkey != tt;)
-				x = x->rn_dupedkey;
-			if (x) x->rn_dupedkey = tt->rn_dupedkey;
+			/* find node in front of tt on the chain */
 			else printf("rn_delete: couldn't find us\n");
 		}
 		x = tt + 1;
@@ -785,7 +783,7 @@ on1:
 	 */
 	if (t->rn_mklist) {
 		if (x->rn_b >= 0) {
-			for (mp = &x->rn_mklist; m = *mp;)
+			for (mp = &x->rn_mklist; (m = *mp);)
 				mp = &m->rn_mklist;
 			*mp = t->rn_mklist;
 		}
