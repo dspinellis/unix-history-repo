@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_acc.c	6.5 (Berkeley) %G%
+ *	@(#)if_acc.c	6.6 (Berkeley) %G%
  */
 
 #include "acc.h"
@@ -108,7 +108,7 @@ accattach(ui)
 	} *ifimp;
 
 	if ((ifimp = (struct ifimpcb *)impattach(ui, accreset)) == 0)
-		panic("accattach");
+		return;
 	sc->acc_if = &ifimp->ifimp_if;
 	ip = &ifimp->ifimp_impcb;
 	sc->acc_ic = ip;
@@ -170,6 +170,7 @@ accinit(unit)
 	     (int)btoc(IMPMTU)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
 		ui->ui_alive = 0;
+		sc->acc_if->if_flags &= ~(IFF_UP | IFF_RUNNING);
 		return (0);
 	}
 	sc->acc_if->if_flags |= IFF_RUNNING;
@@ -341,10 +342,10 @@ accrint(unit)
 	}
 
 	/*
-	 * The last parameter is always 0 since using
+	 * The offset parameter is always 0 since using
 	 * trailers on the ARPAnet is insane.
 	 */
-	m = if_rubaget(&sc->acc_ifuba, len, 0);
+	m = if_rubaget(&sc->acc_ifuba, len, 0, &sc->acc_if);
 	if (m == 0)
 		goto setup;
 	if ((addr->icsr & IN_EOM) == 0) {

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_css.c	6.4 (Berkeley) %G%
+ *	@(#)if_css.c	6.5 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -30,7 +30,7 @@
  * device css0 ....  cssxint cssrint
  *
  * If you get it wrong, it will still autoconfig, but will just
- * sit there with RECIEVE IDLE indicated on the front panel.
+ * sit there with RECEIVE IDLE indicated on the front panel.
  */
 #include "../machine/pte.h"
 
@@ -135,7 +135,7 @@ cssattach(ui)
         } *ifimp;
 
         if ((ifimp = (struct ifimpcb *)impattach(ui, cssreset)) == 0)
-                panic("cssattach");             /* XXX */
+                return;
         sc->css_if = &ifimp->ifimp_if;
         ip = &ifimp->ifimp_impcb;
         sc->css_ic = ip;
@@ -196,6 +196,7 @@ cssinit(unit)
         if (if_ubainit(&sc->css_ifuba, ui->ui_ubanum, 0,(int)btoc(IMPMTU)) == 0) {
                 printf("css%d: can't initialize\n", unit);
 		ui->ui_alive = 0;
+		sc->css_if->if_flags &= ~(IFF_UP | IFF_RUNNING);
 		return(0);
         }
 	sc->css_if->if_flags |= IFF_RUNNING;
@@ -367,10 +368,10 @@ cssrint(unit)
 	}
 
         /*
-         * The last parameter is always 0 since using
+         * The offset parameter is always 0 since using
          * trailers on the ARPAnet is insane.
          */
-        m = if_rubaget(&sc->css_ifuba, len, 0);
+        m = if_rubaget(&sc->css_ifuba, len, 0, &sc->css_if);
         if (m == 0)
                 goto setup;
         if ((addr->css_icsr & IN_EOM) == 0) {
