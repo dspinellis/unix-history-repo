@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	8.3 (Berkeley) %G%
+ *	@(#)buf.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _BUF_H_
@@ -15,9 +15,9 @@
  * The buffer header describes an I/O operation in the kernel.
  */
 struct buf {
-	struct 	queue_entry b_hash;	/* Hash chain. */
-	struct 	queue_entry b_vnbufs;	/* Buffer's associated vnode. */
-	struct 	queue_entry b_freelist;	/* Free list position if not active. */
+	LIST_ENTRY(buf) b_hash;		/* Hash chain. */
+	LIST_ENTRY(buf) b_vnbufs;	/* Buffer's associated vnode. */
+	TAILQ_ENTRY(buf) b_freelist;	/* Free list position if not active. */
 	struct	buf *b_actf, **b_actb;	/* Device driver queue when active. */
 	struct  proc *b_proc;		/* Associated proc; NULL if kernel. */
 	volatile long	b_flags;	/* B_* flags. */
