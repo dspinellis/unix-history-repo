@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,6 @@ void	setfile __P((char *, struct stat *));
 void	usage __P((int));
 
 int eval, force, verbose;
-char *progname;
 
 int
 main(argc, argv)
@@ -58,16 +57,12 @@ main(argc, argv)
 		p = argv[0];
 	else
 		++p;
-	if (!strcmp(p, "uncompress")) {
-		progname = "uncompress";
+	if (!strcmp(p, "uncompress"))
 		style = DECOMPRESS;
-	} else if (!strcmp(p, "compress")) {
-		progname = "compress";
+	else if (!strcmp(p, "compress")) 
 		style = COMPRESS;
-	} else {
-		progname = *argv;
+	else
 		errx(1, "unknown program name");
-	}
 
 	bits = cat = 0;
 	while ((ch = getopt(argc, argv, "b:cdfv")) != EOF)
