@@ -1,0 +1,2 @@
+Mlogname	logname.c	/^main(argc, argv)$/
+usage	logname.c	/^usage()$/

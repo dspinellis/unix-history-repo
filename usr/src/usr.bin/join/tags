@@ -1,0 +1,10 @@
+Mjoin	join.c	/^main(argc, argv)$/
+cmp	join.c	/^cmp(lp1, fieldno1, lp2, fieldno2)$/
+fieldarg	join.c	/^fieldarg(option)$/
+joinlines	join.c	/^joinlines(F1, F2)$/
+obsolete	join.c	/^obsolete(argv)$/
+outfield	join.c	/^outfield(lp, fieldno, out_empty)$/
+outoneline	join.c	/^outoneline(F, lp)$/
+outtwoline	join.c	/^outtwoline(F1, lp1, F2, lp2)$/
+slurp	join.c	/^slurp(F)$/
+usage	join.c	/^usage()$/

@@ -1,0 +1,7 @@
+Mnfsstat	nfsstat.c	/^main(argc, argv)$/
+catchalarm	nfsstat.c	/^catchalarm()$/
+intpr	nfsstat.c	/^intpr()$/
+printhdr	nfsstat.c	/^printhdr()$/
+readstats	nfsstat.c	/^readstats(stp)$/
+sidewaysintpr	nfsstat.c	/^sidewaysintpr(interval)$/
+usage	nfsstat.c	/^usage()$/
