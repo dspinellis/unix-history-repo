@@ -51,7 +51,7 @@ int		bavar;		/* used only in BeforeAfter macros */
 /* used to detect changes that invalidate cached text/blocks */
 long		changes;	/* incremented when file is changed */
 int		significant;	/* boolean: was a *REAL* change made? */
-int		exitcode = 1;	/* 0=overwritten, 1=not updated, else error */
+int		exitcode = 0;	/* status code */
 
 /* used to support the pfetch() macro */
 int		plen;		/* length of the line */
