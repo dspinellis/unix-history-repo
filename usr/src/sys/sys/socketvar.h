@@ -1,4 +1,4 @@
-/* socketvar.h 4.4 81/11/16 */
+/* socketvar.h 4.5 81/11/18 */
 
 /*
  * Kernel structure per socket.

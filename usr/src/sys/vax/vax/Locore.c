@@ -1,4 +1,4 @@
-/*	Locore.c	4.13	81/11/16	*/
+/*	Locore.c	4.14	81/11/18	*/
 
 #include "dz.h"
 
@@ -15,6 +15,7 @@
 #include "../h/ubareg.h"
 #include "../h/nexus.h"
 #include "../h/msgbuf.h"
+#include "../h/mbuf.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.

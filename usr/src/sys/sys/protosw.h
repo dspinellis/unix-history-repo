@@ -1,4 +1,4 @@
-/*	protosw.h	4.4	81/11/15	*/
+/*	protosw.h	4.5	81/11/18	*/
 
 /*
  * Protocol switch table.
@@ -70,8 +70,8 @@ struct protosw {
 #define	PRU_ATTACH		0	/* attach protocol to up */
 #define	PRU_DETACH		1	/* detach protocol from up */
 #define	PRU_CONNECT		2	/* establish connection to peer */
-#define	PRU_DISCONNECT		3	/* disconnect from peer */
-#define	PRU_FLUSH		4	/* flush data in queues */
+#define	PRU_ACCEPT		3	/* accept connection from peer */
+#define	PRU_DISCONNECT		4	/* disconnect from peer */
 #define	PRU_SHUTDOWN		5	/* won't send any more data */
 #define	PRU_RCVD		6	/* have taken data; more room now */
 #define	PRU_SEND		7	/* send this data */
@@ -88,10 +88,10 @@ struct protosw {
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
-	"ATTACH",	"DETACH",	"CONNECT",	"DISCONNECT",
-	"FLUSH",	"SHUTDOWN",	"RCVD",		"SEND",	
+	"ATTACH",	"DETACH",	"CONNECT",	"ACCEPT",
+	"DISCONNECT",	"SHUTDOWN",	"RCVD",		"SEND",	
 	"ABORT",	"CONTROL",	"FASTTIMO",	"SLOWTIMO",
-	"PROTORCV",	"PROTOSND",
+	"PROTORCV",	"PROTOSEND",
 };
 #endif
 

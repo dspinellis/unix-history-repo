@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.10	81/11/16	*/
+/*	uipc_mbuf.c	1.11	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -88,21 +88,77 @@ m_freem(m)
 	register struct mbuf *m;
 {
 	register struct mbuf *n;
-	register int s, i;
+	register int s;
 
 COUNT(M_FREEM);
 	if (m == NULL)
 		return;
-	i = 0;
 	s = splimp();
 	do {
-		if (m->m_off > MMAXOFF)
-			i += NMBPG;
-		i++;
 		MFREE(m, n);
 	} while (m = n);
 	splx(s);
-	return;
+}
+
+m_pullup(m, len)
+	struct mbuf *m;
+	int len;
+{
+
+	return (0);
+}
+
+struct mbuf *
+m_copy(m, off, len)
+	register struct mbuf *m;
+	int off;
+	register int len;
+{
+	register struct mbuf *n, **np;
+	struct mbuf *top, *p;
+COUNT(M_COPY);
+
+	if (len == 0)
+		return (0);
+	if (off < 0 || len < 0)
+		panic("m_copy");
+	while (off > 0) {
+		if (m == 0)
+			panic("m_copy");
+		if (off < m->m_len)
+			break;
+		off -= m->m_len;
+		m = m->m_next;
+	}
+	np = &top;
+	top = 0;
+	while (len > 0) {
+		MGET(n, 1);
+		*np = n;
+		if (n == 0)
+			goto nospace;
+		if (m == 0)
+			panic("m_copy");
+		n->m_len = MIN(len, m->m_len - off);
+		if (m->m_off > MMAXOFF) {
+			p = mtod(m, struct mbuf *);
+			n->m_off = ((int)p - (int)n) + off;
+			mprefcnt[mtopf(p)]++;
+		} else {
+			n->m_off = MMINOFF;
+			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
+			    (unsigned)n->m_len);
+		}
+		len -= n->m_len;
+		off = 0;
+		m = m->m_next;
+		np = &n->m_next;
+	}
+	return (top);
+nospace:
+	printf("m_copy: no space\n");
+	m_freem(top);
+	return (0);
 }
 
 mbinit()

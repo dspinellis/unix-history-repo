@@ -1,4 +1,4 @@
-/* ip.h 1.8 81/11/15 */
+/* ip.h 1.9 81/11/18 */
 
 /*
  * Definitions for internet protocol version 4.
@@ -25,7 +25,7 @@ struct ip {
 	u_char	ip_ttl;			/* time to live */
 	u_char	ip_p;			/* protocol */
 	u_short	ip_sum;			/* checksum */
-	struct	ip_addr ip_src,ip_dst;	/* source and dest address */
+	struct	in_addr ip_src,ip_dst;	/* source and dest address */
 };
 
 /*
@@ -62,7 +62,7 @@ struct	ip_timestamp {
 	union {
 		n_long	ipt_time[1];
 		struct	ipt_ta {
-			struct ip_addr ipt_addr;
+			struct in_addr ipt_addr;
 			n_long ipt_time;
 		} ipt_ta[1];
 	}

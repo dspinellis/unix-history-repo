@@ -1,4 +1,4 @@
-/* in_pcb.c 4.2 81/11/16 */
+/* in_pcb.c 4.3 81/11/18 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -20,6 +20,21 @@ in_pcballoc()
 	return (mtod(m, struct inpcb *));
 }
 
+in_pcbenter(head, new)
+	struct inpcb *head, *new;
+{
+	register struct inpcb *inp;
+
+	for (inp = head->inp_next; inp != head; inp = inp->inp_next)
+		if (inp->inp_fhost->h_addr.s_addr == new->inp_fhost.s_addr &&
+		    inp->inp_fport == new->inp_fport &&
+		    inp->inp_lhost->h_addr.s_addr = new->inp_fhost.s_addr &&
+		    inp->inp_lport == new->inp_lport)
+			return (EADDRINUSE);
+	insque(new, head);
+	return (0);
+}
+
 in_pcbfree(inp)
 	struct inpcb *inp;
 {
@@ -39,7 +54,7 @@ in_pcbfree(inp)
 struct inpcb *
 in_pcblookup(head, fhost, fport, lhost, lport)
 	struct inpcb *head;
-	struct ip_addr *fhost, *lhost;
+	struct in_addr *fhost, *lhost;
 	u_short fport, lport;
 {
 	register struct inpcb *inp;

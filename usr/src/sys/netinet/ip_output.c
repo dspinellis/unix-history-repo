@@ -1,10 +1,10 @@
-/* ip_output.c 1.13 81/11/16 */
+/*	ip_output.c	1.14	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/mtpr.h"
 #include "../h/socket.h"
-#include "../net/inet_cksum.h"
+#include "../h/socketvar.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
@@ -12,86 +12,120 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
-ip_output(mp)
-	struct mbuf *mp;
+ip_output(m)
+	struct mbuf *m;
 {
-	register i, rnd;
-	register struct mbuf *m, *n;
-	register struct ip *p;
-	struct mbuf *mm;
-	int hlen, adj, max, len, off;
+	register struct ip *ip = mtod(m, struct ip *);
+	int len, hlen = ip->ip_hl << 2, off;
 
 COUNT(IP_OUTPUT);
-	p = mtod(mp, struct ip *);
-	hlen = sizeof (struct ip);
+	/*
+	 * Fill in IP header.
+	 */
+	ip->ip_v = IPVERSION;
+	ip->ip_hl = hlen >> 2;
+	ip->ip_off &= IP_DF;
+	ip->ip_ttl = MAXTTL;
+	ip->ip_id = ip_id++;
 
 	/*
-	 * Fill in and byte swap ip header.
+	 * If small enough for interface, can just send directly.
 	 */
-	p->ip_v = IPVERSION;
-	p->ip_hl = hlen >> 2;
-	p->ip_off = 0 | (p->ip_off & IP_DF);
-	p->ip_ttl = MAXTTL;
-	p->ip_id = ip_id++;
+	if (ip->ip_len <= MTU) {
+		ip_send(ip);
+		return;
+	}
 
-	if (p->ip_len <= MTU) {
-		ip_send(p);
-		return;
+	/*
+	 * Too large for interface; fragment if possible.
+	 * Must be able to put at least 8 bytes per fragment.
+	 */
+	if (ip->ip_off & IP_DF)
+		goto bad;
+	len = (MTU-hlen) &~ 7;
+	if (len < 8)
+		goto bad;
+
+	/*
+	 * Discard IP header from logical mbuf for m_copy's sake.
+	 * Loop through length of segment, make a copy of each
+	 * part and output.
+	 */
+	m->m_len -= sizeof (struct ip);
+	m->m_off += sizeof (struct ip);
+	for (off = 0; off < ip->ip_len; off += len) {
+		struct mbuf *mh = m_get(0);
+		struct ip *mhip;
+
+		if (mh == 0)
+			goto bad;
+		mh->m_off = MMAXOFF - hlen;
+		mhip = mtod(mh, struct ip *);
+		*mhip = *ip;
+		if (ip->ip_hl > sizeof (struct ip) >> 2) {
+			int olen = ip_optcopy(ip, mhip, off);
+			mh->m_len = sizeof (struct ip) + olen;
+		} else
+			mh->m_len = sizeof (struct ip);
+		mhip->ip_off = off;
+		if (off + len >= ip->ip_len)
+			mhip->ip_len = ip->ip_len - off;
+		else {
+			mhip->ip_len = len;
+			mhip->ip_off |= IP_MF;
+		}
+		mh->m_next = m_copy(m, off, len);
+		if (mh->m_next == 0) {
+			m_free(mh);
+			goto bad;
+		}
+		ip_send(mh);
 	}
-	if (p->ip_off & IP_DF)
-		return;
-	max = MTU - hlen;
-	len = p->ip_len - hlen;
-	off = 0;
-	m = mp;
-	while (len > 0) {
-		p->ip_off |= off >> 3;
-		i = -hlen;
-		while (m != NULL) {
-			i += m->m_len;
-			if (i > max)
-				break;
-			n = m;
-			m = m->m_next;
+bad:
+	m_freem(m);
+}
+
+/*
+ * Copy options from ip to jp.
+ * If off is 0 all options are copies
+ * otherwise copy selectively.
+ */
+ip_optcopy(ip, jp, off)
+	struct ip *ip, *jp;
+	int off;
+{
+	register u_char *cp, *dp;
+	int opt, optlen, cnt;
+
+	cp = (u_char *)(ip + 1);
+	dp = (u_char *)(jp + 1);
+	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
+	for (; cnt > 0; cnt -= optlen, cp += optlen) {
+		opt = cp[0];
+		if (opt == IPOPT_EOL)
+			break;
+		if (opt == IPOPT_NOP)
+			optlen = 1;
+		else
+			optlen = cp[1];
+		if (optlen > cnt)			/* XXX */
+			optlen = cnt;			/* XXX */
+		if (off == 0 || IPOPT_COPIED(opt)) {
+			bcopy(cp, dp, optlen);
+			dp += optlen;
 		}
-		if (i < max || m == NULL) {
-			p->ip_off = p->ip_off &~ IP_MF;
-			p->ip_len = i + hlen;
-			ip_send(p);
-			return;
-		}
-		if ((mm = m_get(1)) == NULL)    /* no more bufs */
-			return;
-		p->ip_off |= IP_MF;
-		i -= m->m_len;
-		rnd = i & ~7;
-		adj = i - rnd;
-		p->ip_len = rnd + hlen;
-		n->m_next = NULL;
-		mm->m_next = m;
-		m = mm;
-		m->m_off = MMAXOFF - hlen - adj;
-		m->m_len = hlen + adj;
-		bcopy((caddr_t)p, mtod(m, caddr_t), (unsigned)hlen);
-		if (adj) {
-			n->m_len -= adj;
-			bcopy(mtod(n, caddr_t) + n->m_len,
-			    mtod(m, caddr_t) + hlen, (unsigned) adj);
-		}
-		ip_send(p);
-		p = (struct ip *)((int)m + m->m_off);
-		len -= rnd;
-		off += rnd;
 	}
-	return;
+	for (optlen = dp - (u_char *)(jp+1); optlen & 0x3; optlen++)
+		*dp++ = IPOPT_EOL;
+	return (optlen);
 }
 
 ip_send(ip)
-	register struct ip *ip;		/* known to be r11 */
+	register struct ip *ip;
 {
 	register struct mbuf *m;
 	register struct imp *l;
-	register int hlen = ip->ip_hl << 2;
+	int hlen = ip->ip_hl << 2;
 	int s;
 COUNT(IP_SEND);
 
@@ -104,7 +138,7 @@ COUNT(IP_SEND);
 	ip->ip_len = htons((u_short)ip->ip_len);
 	ip->ip_id = htons(ip->ip_id);
 	ip->ip_off = htons((u_short)ip->ip_off);
-	CKSUM_IPSET(m, ip, r11, hlen);
+	ip->ip_sum = inet_cksum(m, hlen);
 	m->m_off -= L1822;
 	m->m_len += L1822;
 	m->m_act = NULL;

@@ -1,4 +1,4 @@
-/* in_systm.h 4.3 81/11/16 */
+/* in_systm.h 4.4 81/11/18 */
 
 /*
  * Miscellaneous internetwork
@@ -25,9 +25,7 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  * The software interrupt level for the network is higher than the software
  * level for the clock (so you can enter the network in routines called
  * at timeout time).  Splimp is an ipl high enough to block all imps.
- * While manipulating the mbuf buffer pool you have to block imps since
- * allocation occurs at interrupt level.  (It would be easier to
- * use interlocked instructions, but we don't do this yet.)
+ * While manipulating the mbuf buffer pool you have to block imps.
  */
 #define	splimp		spl5
 #define	setsoftnet()	mtpr(SIRR, 12)
@@ -50,7 +48,7 @@ struct	net_stat {
 };
 
 #ifdef	KERNEL
-struct	net_stat netstat;		/* net statistics block */
+n_time	iptime();
 #endif
 
 #ifdef KPROF

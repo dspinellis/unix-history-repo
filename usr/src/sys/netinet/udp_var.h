@@ -1,5 +1,8 @@
-/*	udp_var.h	4.2	81/11/15	*/
+/*	udp_var.h	4.3	81/11/18	*/
 
+/*
+ * UDP kernel structures and variables.
+ */
 struct	udpiphdr {
 	struct 	ipovly ui_i;		/* overlaid ip structure */
 	struct	udphdr ui_u;		/* udp header */
@@ -16,6 +19,13 @@ struct	udpiphdr {
 #define	ui_ulen		ui_u.uh_ulen
 #define	ui_sum		ui_u.uh_sum
 
+struct	udpstat {
+	int	udps_hdrops;
+	int	udps_badsum;
+	int	udps_badlen;
+};
+
 #ifdef KERNEL
 struct	inpcb udb;
+struct	udpstat udpstat;
 #endif

@@ -1,4 +1,4 @@
-/* mbuf.h 4.4 81/11/14 */
+/* mbuf.h 4.5 81/11/18 */
 
 /*
  * Constants related to memory allocator.
@@ -77,5 +77,5 @@ int	nmbpages;
 struct	mbuf *mfree, *mpfree;
 int	nmpfree;
 char	mprefcnt[NMBPAGES];
-struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more();
+struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more(), *m_copy();
 #endif

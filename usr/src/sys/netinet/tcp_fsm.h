@@ -1,19 +1,12 @@
-/*	tcp_fsm.h	4.5	81/11/15	*/
+/*	tcp_fsm.h	4.6	81/11/18	*/
 
 /*
- * TCP FSM definitions.
- *
- * The TCP is conceptually a finite state machine with 13 states
- * and 9 inputs.  The states and inputs are defined here, as well
- * as an array which is used in network profiling to keep event
- * counters on the state transitions.  The actual state transitions
- * occur on input to the tcp machine (tcp_input.c) and when user
- * requests are made (tcp_states.c).
+ * TCP FSM state definitions.
  *
  * This TCP machine has two more states than suggested in RFC 793,
- * the extra states being L_SYN_RCVD and RCV_WAIT.
+ * the extra states being L_SYN_RCVD and RCV_WAIT
  *
- * EXPLAIN THE EXTRA STATES!!!
+ * EXPLAIN THE EXTRA STATES.
  */
 
 /*
@@ -31,9 +24,9 @@
 #define	FIN_W1		6		/* have closed and sent fin */
 #define	FIN_W2		7		/* have closed and rcvd ack of fin */
 #define	TIME_WAIT	8		/* in 2*msl quiet wait after close */
-#define	CLOSE_WAIT	9		/* rcvd fin, waiting for UCLOSE */
+#define	CLOSE_WAIT	9		/* rcvd fin, waiting for close */
 #define	CLOSING		10		/* closed xchd FIN; await FIN ACK */
-#define	LAST_ACK	11		/* had fin and UCLOSE; await FIN ACK */
+#define	LAST_ACK	11		/* had fin and close; await FIN ACK */
 #define	RCV_WAIT	12		/* waiting for user to drain data */
 #define	CLOSED		13		/* closed */
 

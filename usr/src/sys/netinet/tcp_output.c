@@ -1,11 +1,10 @@
-/* tcp_output.c 4.13 81/11/16 */
+/* tcp_output.c 4.14 81/11/18 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/inet_cksum.h"
 #include "../net/inet.h"
 #include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
@@ -121,7 +120,7 @@ COUNT(TCP_SEND);
 			forced = 1;
 		} else if (tp->snd_nxt >= tp->snd_lst && (tp->tc_flags&TC_SND_FIN) == 0)
 			return (0);
-		m = sbcopy(&so->so_snd,
+		m = m_copy(&so->so_snd,
 		      (int)(MAX(tp->iss+1,tp->snd_nxt) - tp->snd_off),
 		      (int)(tp->snd_lst - tp->snd_off));
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
@@ -260,7 +259,7 @@ COUNT(TCP_OUTPUT);
 	t->ti_seq = htonl(tp->snd_nxt);
 	t->ti_ackno = htonl(tp->rcv_nxt);
 	t->ti_sum = 0;		/* gratuitous? */
-	CKSUM_TCPSET(m, t, r9, sizeof (struct tcpiphdr) + len);
+	t->ti_sum = inet_cksum(m, sizeof (struct tcpiphdr) + len);
 	ip = (struct ip *)t;
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = 5;
@@ -269,8 +268,8 @@ COUNT(TCP_OUTPUT);
 	ip->ip_id = ip_id++;
 	ip->ip_off = 0;
 	ip->ip_ttl = MAXTTL;
-	i = ip_send(ip);
-	return (i);
+	ip_send(ip);
+	return (1);
 }
 
 tcp_fasttimo()

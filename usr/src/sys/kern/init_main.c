@@ -1,4 +1,4 @@
-/*	init_main.c	4.21	81/11/16	*/
+/*	init_main.c	4.22	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +21,6 @@
 #include "../h/vlimit.h"
 #include "../h/clist.h"
 #ifdef INET
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #endif
 

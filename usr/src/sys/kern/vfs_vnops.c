@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.16	81/11/16	*/
+/*	vfs_vnops.c	4.17	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

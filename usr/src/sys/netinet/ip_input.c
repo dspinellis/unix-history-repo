@@ -1,12 +1,11 @@
-/* ip_input.c 1.14 81/11/16 */
+/* ip_input.c 1.15 81/11/18 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/clock.h"
 #include "../h/mbuf.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
-#include "../net/inet_cksum.h"
+#include "../h/socket.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
@@ -53,7 +52,7 @@ struct	ip *ip_reass();
 ip_input(m0)
 	struct mbuf *m0;
 {
-	register struct ip *ip;		/* known to be r11 in CKSUM below */
+	register struct ip *ip;
 	register struct mbuf *m = m0;
 	register int i;
 	register struct ipq *fp;
@@ -69,10 +68,10 @@ COUNT(IP_INPUT);
 		m_freem(m);
 		return;
 	}
-	CKSUM_IPCHK(m, ip, r11, hlen);
+	ip->ip_sum = inet_cksum(m, hlen);
 	if (ip->ip_sum) {
 		printf("ip_sum %x\n", ip->ip_sum);
-		netstat.ip_badsum++;
+		ipstat.ips_badsum++;
 		if (ipcksum) {
 			m_freem(m);
 			return;
@@ -354,6 +353,7 @@ ip_drain()
 {
 
 }
+
 /*
  * Do option processing on a datagram,
  * possibly discarding it if bad options
@@ -364,7 +364,7 @@ ip_dooptions(ip)
 {
 	register u_char *cp;
 	int opt, optlen, cnt;
-	struct ip_addr *sp;
+	struct in_addr *sin;
 	register struct ip_timestamp *ipt;
 
 	cp = (u_char *)(ip + 1);
@@ -386,13 +386,13 @@ ip_dooptions(ip)
 		case IPOPT_SSRR:
 			if (cp[2] < 4 || cp[2] > optlen - (sizeof (long) - 1))
 				break;
-			sp = (struct ip_addr *)(cp + cp[2]);
-			if (n_lhost.s_addr == *(u_long *)sp) {
+			sin = (struct in_addr *)(cp + cp[2]);
+			if (n_lhost.s_addr == *(u_long *)sin) {
 				if (opt == IPOPT_SSRR) {
 					/* MAKE SURE *SP DIRECTLY ACCESSIBLE */
 				}
-				ip->ip_dst = *sp;
-				*sp = n_lhost;
+				ip->ip_dst = *sin;
+				*sin = n_lhost;
 				cp[2] += 4;
 			}
 			break;
@@ -406,7 +406,7 @@ ip_dooptions(ip)
 					goto bad;
 				break;
 			}
-			sp = (struct ip_addr *)(cp+cp[2]);
+			sin = (struct in_addr *)(cp+cp[2]);
 			switch (ipt->ipt_flg) {
 
 			case IPOPT_TS_TSONLY:
@@ -415,11 +415,11 @@ ip_dooptions(ip)
 			case IPOPT_TS_TSANDADDR:
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
-				*(struct ip_addr *)sp++ = n_lhost;
+				*(struct in_addr *)sin++ = n_lhost;
 				break;
 
 			case IPOPT_TS_PRESPEC:
-				if (*(u_long *)sp != n_lhost.s_addr)
+				if (*(u_long *)sin != n_lhost.s_addr)
 					break;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
@@ -429,7 +429,7 @@ ip_dooptions(ip)
 			default:
 				goto bad;
 			}
-			*(n_time *)sp = ip_time();
+			*(n_time *)sin = iptime();
 			ipt->ipt_ptr += 4;
 		}
 	}

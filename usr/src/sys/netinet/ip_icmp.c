@@ -1,6 +1,7 @@
-/* ip_icmp.c 4.4 81/11/16 */
+/* ip_icmp.c 4.5 81/11/18 */
 
 #include "../h/param.h"
+#include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/clock.h"
@@ -121,7 +122,7 @@ icmp_input(m)
 		if (icmplen < ICMP_TSLEN)
 			goto free;
 		icp->icmp_type = ICMP_TSTAMPREPLY;
-		icp->icmp_rtime = ip_time();
+		icp->icmp_rtime = iptime();
 		icp->icmp_ttime = icp->icmp_rtime;	/* bogus, do later! */
 		goto reflect;
 		
@@ -152,7 +153,7 @@ free:
 icmp_reflect(ip)
 	struct ip *ip;
 {
-	struct ip_addr t;
+	struct in_addr t;
 
 	t = ip->ip_src; ip->ip_dst = ip->ip_src; ip->ip_src = t;
 	/*
@@ -206,7 +207,7 @@ icmp_drain()
 }
 
 n_time
-ip_time()
+iptime()
 {
 	int s = spl6();
 	long t;

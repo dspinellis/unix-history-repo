@@ -1,4 +1,4 @@
-/*	ip_var.h	4.2	81/11/15	*/
+/*	ip_var.h	4.3	81/11/18	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -7,9 +7,9 @@ struct ipovly {
 	caddr_t	ih_next, ih_prev;	/* for protocol sequence q's */
 	u_char	ih_x1;			/* (unused) */
 	u_char	ih_pr;			/* protocol */
-	short	ih_len;		/* protocol length */
-	struct	ip_addr ih_src;		/* source internet address */
-	struct	ip_addr ih_dst;		/* destination internet address */
+	short	ih_len;			/* protocol length */
+	struct	in_addr ih_src;		/* source internet address */
+	struct	in_addr ih_dst;		/* destination internet address */
 };
 
 /*
@@ -25,7 +25,7 @@ struct ipq {
 	u_short	ipq_id;			/* sequence id for reassembly */
 	struct	ipasfrag *ipq_next,*ipq_prev;
 					/* to ip headers of fragments */
-	struct	ip_addr ipq_src,ipq_dst;
+	struct	in_addr ipq_src,ipq_dst;
 };
 
 /*
@@ -45,7 +45,12 @@ struct	ipasfrag {
 	struct	ipasfrag *ipf_prev;	/* previous fragment */
 };
 
+struct	ipstat {
+	int	ips_badsum;
+};
+
 #ifdef KERNEL
+struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
 struct	ipq	*ip_freef();
 u_short	ip_id;				/* ip packet ctr, for ids */
