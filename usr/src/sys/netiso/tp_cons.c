@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_cons.c,v $
- *	@(#)tp_cons.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_cons.c	7.6 (Berkeley) %G% *
  *
  * Here is where you find the iso- and cons-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -36,7 +36,6 @@ SOFTWARE.
  * through a switch table (struct nl_protosw *) tpcb->tp_nlproto 
  * (see tp_pcb.c). 
  * The routines here are:
- *		tpcons_mtu: figure out what size tpdu to use
  *		tpcons_input: pullup and call tp_input w/ correct arguments
  *		tpcons_output: package a pkt for cons given an isopcb & some data
  *		cons_chan_to_tpcb: find a tpcb based on the channel #
@@ -106,68 +105,11 @@ register struct mbuf *nam;
 		/* oh, dear, throw packet away */
 		pk_disconnect((struct pklcd *)isop->isop_chan);
 		isop->isop_chan = 0;
-		return error;
-	}
+	} else 
+		isop->isop_refcnt = 1;
+	return error;
 }
 
-
-/*
- * CALLED FROM:
- *  tp_input() on incoming CR, CC, and pr_usrreq() for PRU_CONNECT
- * FUNCTION, ARGUMENTS, SIDE EFFECTS and RETURN VALUE:
- *  version of the previous procedure for X.25
- */
-
-void
-tpcons_mtu(so, isop, size, negot)
-	struct socket *so;
-	struct isopcb *isop;
-	int *size;
-	u_char *negot;
-{
-	register struct ifnet *ifp;
-	register int i=0, isize;
-	int windowsize = so->so_rcv.sb_hiwat;
-
-	IFTRACE(D_CONN)
-		tptrace(TPPTmisc, "ENTER GET MTU: size negot ",*size, *negot, 0, 0);
-	ENDTRACE
-
-	isize = *size = 1 << *negot;
-#ifdef ancient_history
-	if ((ifp = iso_routeifp(&isop->isop_faddr)) == (struct ifnet *)0)
-		return;
-#endif
-
-	if (isize > windowsize) {
-		isize = windowsize;
-		i++;
-	}
-	if (isize > ifp->if_mtu) {
-		isize = ifp->if_mtu;
-		i++;
-	}
-	if (i) {
-		/* size was changed by this routine - have to transform it to
-		 * the log2 of size
-		 */
-		for (i = TP_MIN_TPDUSIZE; i < TP_MAX_TPDUSIZE; i++) {
-			if (isize <  (1 << (1 + i)))
-				break;
-		}
-		*negot = i;
-		*size = 1 << i;
-	}
-
-	IFDEBUG(D_CONN)
-		printf("GET MTU RETURNS: ifp %s size 0x%x negot 0x%x\n",
-		ifp->if_name,	*size, *negot);
-	ENDDEBUG
-	IFTRACE(D_CONN)
-		tptrace(TPPTmisc, "EXIT GET MTU: tpcb size negot ",
-		*size, *negot, 0, 0);
-	ENDTRACE
-}
 
 /*
  * CALLED FROM:
