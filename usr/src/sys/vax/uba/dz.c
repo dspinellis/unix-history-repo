@@ -1,4 +1,4 @@
-/*	dz.c	4.18	%G%	*/
+/*	dz.c	4.19	%G%	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -135,7 +135,7 @@ dzattach(ui)
 	dzsoftCAR[ui->ui_unit] = ui->ui_flags;
 	if (dz_timer == 0) {
 		dz_timer++;
-		timeout(dzscan, (caddr_t)0, HZ);
+		timeout(dzscan, (caddr_t)0, hz);
 	}
 	return (1);
 }
@@ -452,7 +452,7 @@ dzscan()
 			}
 		}
 	}
-	timeout(dzscan, (caddr_t)0, 2*HZ);
+	timeout(dzscan, (caddr_t)0, 2*hz);
 }
 
 dztimer()
