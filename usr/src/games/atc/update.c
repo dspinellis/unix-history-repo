@@ -1,3 +1,13 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Ed James.
+ *
+ * %sccs.include.redist.c%
+ */
+
 /*
  * Copyright (c) 1987 by Ed James, UC Berkeley.  All rights reserved.
  *
@@ -8,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
