@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.15	84/08/29	*/
+/*	ufs_lookup.c	6.16	85/01/10	*/
 
 #include "param.h"
 #include "systm.h"
@@ -384,7 +384,10 @@ dirloop2:
 		numdirpasses = 1;
 	} else {
 		if ((dp->i_flag & ICHG) || dp->i_ctime >= u.u_ncache.nc_time) {
-			u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
+			if (u.u_ncache.nc_prevoffset > dp->i_size)
+				u.u_ncache.nc_prevoffset = 0;
+			else
+				u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
 			u.u_ncache.nc_time = time.tv_sec;
 		}
 		ndp->ni_offset = u.u_ncache.nc_prevoffset;
