@@ -1,5 +1,17 @@
+#
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)makefile	3.3 (Berkeley) %G%
+#
 # Makefile for tn3270 and friends...
-# @(#)makefile	3.1  10/29/86
 #
 #	This is the makefile for tn3270.  Note that we use ../telnet.c
 # (compiled with special options; see below) to provide the telnet
