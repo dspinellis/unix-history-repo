@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
@@ -19,9 +19,8 @@ CFLAGS+=-I${.CURDIR}/common_source
 HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/ieee
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c log.c \
-	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+	exp__E.c expm1.c floor.c fmod.c gamma.c lgamma.c j0.c j1.c \
+	jn.c log.c log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # common
 SRCS+=	atan2.c sincos.c tan.c
 # ieee
