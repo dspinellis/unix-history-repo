@@ -1,4 +1,4 @@
-/*	main.c	1.12	(Berkeley) 83/11/02
+/*	main.c	1.13	(Berkeley) 83/11/30
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -82,7 +82,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.12	83/11/02";
+char	SccsId[] = "main.c	1.13	83/11/30";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -392,9 +392,10 @@ int baseline;
 					/* picture fit into a specific area, */
 					/* set the scale to do that. */
 		if ((temp = bottompoint - toppoint) < 0.1) temp = 0.1;
-		temp = (height != 0.0) ? height / temp  : BIG;
+		temp = (height != 0.0) ? height / (temp * SCREENtoINCH)  : BIG;
 		if ((troffscale = rightpoint - leftpoint) < 0.1) troffscale=0.1;
-		troffscale = (width != 0.0) ? width / troffscale  : BIG;
+		troffscale = (width != 0.0) ?
+				width / (troffscale * SCREENtoINCH)  : BIG;
 		if (temp == BIG && troffscale == BIG) {
 		    troffscale = xscale;
 		} else {
