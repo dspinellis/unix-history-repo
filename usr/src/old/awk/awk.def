@@ -3,11 +3,9 @@
  * All rights reserved.
  *
  * %sccs.include.proprietary.c%
+ *
+ *	@(#)awk.def	4.6 (Berkeley) %G%
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)awk.def	4.5 (Berkeley) %G%";
-#endif /* not lint */
 
 #include <stdlib.h>
 
