@@ -1,4 +1,4 @@
-/*	uncompact.c	4.2	83/05/04	*/
+/*	uncompact.c	4.3	83/06/03	*/
 /*
  *  Uncompact adaptive Huffman code input to output
  *
@@ -55,7 +55,7 @@ char *argv [ ];
 				if (i == argc - 1) break;
 				continue;
 			}
-			if (j >= (LNAME - 3) || (j - m) > 256) {
+			if (j >= (LNAME - 3) || (j - m) > MAXNAMLEN) {
 				fprintf (stderr, "File name too long -- %s\n", argv [i]);
 				if (i == argc - 1) break;
 				continue;
