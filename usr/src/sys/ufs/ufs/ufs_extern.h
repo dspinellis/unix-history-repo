@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.8 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.9 (Berkeley) %G%
  */
 
 struct buf;
@@ -18,10 +18,11 @@ struct mount;
 struct nameidata;
 struct proc;
 struct ucred;
+struct ufs_args;
 struct uio;
 struct vattr;
+struct vfsconf;
 struct vnode;
-struct ufs_args;
 
 __BEGIN_DECLS
 void	 diskerr
@@ -58,7 +59,7 @@ struct vnode *
 	 ufs_ihashlookup __P((dev_t, ino_t));
 void	 ufs_ihashrem __P((struct inode *));
 int	 ufs_inactive __P((struct vop_inactive_args *));
-int	 ufs_init __P((void));
+int	 ufs_init __P((struct vfsconf *));
 int	 ufs_ioctl __P((struct vop_ioctl_args *));
 int	 ufs_islocked __P((struct vop_islocked_args *));
 #ifdef NFS
