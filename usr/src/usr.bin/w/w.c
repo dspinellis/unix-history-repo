@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)w.c	4.13 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.14 (Berkeley) %G%";
 #endif
 /*
  * w - print system status (who and what)
@@ -34,6 +34,7 @@ struct pr {
 	time_t	w_time;			/* CPU time used by this process */
 	time_t	w_ctime;		/* CPU time used by children */
 	dev_t	w_tty;			/* tty device of process */
+	int	w_uid;			/* uid of process */
 	char	w_comm[15];		/* user.u_comm, null terminated */
 	char	w_args[ARGWIDTH+1];	/* args if interesting process */
 } *pr;
@@ -72,13 +73,14 @@ int	swap;			/* /dev/kmem, mem, and swap */
 int	nswap;
 int	dmmin, dmmax;
 dev_t	tty;
+int	uid;
 char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 struct	proc *aproc;
 
 #define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
-#define	TTYEQ		(tty == pr[i].w_tty)
+#define	TTYEQ		(tty == pr[i].w_tty && uid == pr[i].w_uid)
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
 char	*getargs();
@@ -306,6 +308,7 @@ gettty()
 	strcat(ttybuf, utmp.ut_line);
 	stat(ttybuf, &statbuf);
 	tty = statbuf.st_rdev;
+	uid = statbuf.st_uid;
 }
 
 /*
@@ -507,6 +510,7 @@ cont:
 		pr[np].w_ctime =
 		    up.u_cru.ru_utime.tv_sec + up.u_cru.ru_stime.tv_sec;
 		pr[np].w_tty = up.u_ttyd;
+		pr[np].w_uid = mproc.p_uid;
 		up.u_comm[14] = 0;	/* Bug: This bombs next field. */
 		strcpy(pr[np].w_comm, up.u_comm);
 		/*
