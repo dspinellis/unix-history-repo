@@ -1,4 +1,4 @@
-/*	mt.c	4.1	81/11/04	*/
+/*	mt.c	4.2	82/01/17	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -164,9 +164,10 @@ mtcommand(dev, com, count)
 	int com, count;
 {
 	register struct buf *bp;
+	register int s;
 
 	bp = &cmtbuf[MTUNIT(dev)];
-	(void) spl5();
+	s = spl5();
 	while (bp->b_flags&B_BUSY) {
 		if(bp->b_repcnt == 0 && (bp->b_flags&B_DONE))
 			break;
@@ -174,7 +175,7 @@ mtcommand(dev, com, count)
 		sleep((caddr_t)bp, PRIBIO);
 	}
 	bp->b_flags = B_BUSY|B_READ;
-	(void) spl0();
+	splx(s);
 	bp->b_dev = dev;
 	bp->b_command = com;
 	bp->b_repcnt = count;
@@ -193,10 +194,11 @@ mtstrategy(bp)
 {
 	register struct mba_device *mi = mtinfo[MTUNIT(bp->b_dev)];
 	register struct buf *dp;
+	register int s;
 
 	bp->av_forw = NULL;
 	dp = &mi->mi_tab;
-	(void) spl5();
+	s = spl5();
 	if (dp->b_actf == NULL)
 		dp->b_actf = bp;
 	else
@@ -204,7 +206,7 @@ mtstrategy(bp)
 	dp->b_actl = bp;
 	if (dp->b_active == 0)
 		mbustart(mi);
-	(void) spl0();
+	splx(s);
 }
 
 mtustart(mi)

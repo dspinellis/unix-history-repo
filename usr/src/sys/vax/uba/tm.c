@@ -1,4 +1,4 @@
-/*	tm.c	4.44	81/11/18	*/
+/*	tm.c	4.45	82/01/17	*/
 
 #include "te.h"
 #include "ts.h"
@@ -204,6 +204,7 @@ tmopen(dev, flag)
 	register struct uba_device *ui;
 	register struct te_softc *sc;
 	int olddens, dens;
+	int s;
 
 	teunit = TEUNIT(dev);
 	if (teunit>=NTE || (sc = &te_softc[teunit])->sc_openf ||
@@ -244,13 +245,13 @@ get:
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
-	(void) spl6();
+	s = spl6();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
 		sc->sc_tact = 1;
 		timeout(tmtimer, (caddr_t)dev, 5*hz);
 	}
-	(void) spl0();
+	splx(s);
 }
 
 /*
@@ -292,9 +293,10 @@ tmcommand(dev, com, count)
 	int com, count;
 {
 	register struct buf *bp;
+	register int s;
 
 	bp = &ctmbuf[TMUNIT(dev)];
-	(void) spl5();
+	s = spl5();
 	while (bp->b_flags&B_BUSY) {
 		/*
 		 * This special check is because B_BUSY never
@@ -306,7 +308,7 @@ tmcommand(dev, com, count)
 		sleep((caddr_t)bp, PRIBIO);
 	}
 	bp->b_flags = B_BUSY|B_READ;
-	(void) spl0();
+	splx(s);
 	bp->b_dev = dev;
 	bp->b_repcnt = -count;
 	bp->b_command = com;
@@ -333,13 +335,14 @@ tmstrategy(bp)
 	int teunit = TEUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
+	int s;
 
 	/*
 	 * Put transfer at end of unit queue
 	 */
 	dp = &teutab[teunit];
 	bp->av_forw = NULL;
-	(void) spl5();
+	s = spl5();
 	um = tedinfo[teunit]->ui_mi;
 	if (dp->b_actf == NULL) {
 		dp->b_actf = bp;
@@ -362,7 +365,7 @@ tmstrategy(bp)
 	 */
 	if (um->um_tab.b_active == 0)
 		tmstart(um);
-	(void) spl0();
+	splx(s);
 }
 
 /*

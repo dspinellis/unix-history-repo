@@ -1,4 +1,4 @@
-/*	ts.c	4.20	81/11/18	*/
+/*	ts.c	4.21	82/01/17	*/
 
 #include "ts.h"
 #include "te.h"
@@ -320,9 +320,10 @@ tscommand(dev, com, count)
 	int com, count;
 {
 	register struct buf *bp;
+	register int s;
 
 	bp = &ctsbuf[TSUNIT(dev)];
-	(void) spl5();
+	s = spl5();
 	while (bp->b_flags&B_BUSY) {
 		/*
 		 * This special check is because B_BUSY never
@@ -334,7 +335,7 @@ tscommand(dev, com, count)
 		sleep((caddr_t)bp, PRIBIO);
 	}
 	bp->b_flags = B_BUSY|B_READ;
-	(void) spl0();
+	splx(s);
 #ifdef TSDEBUG
 	printd("command %o dev %x count %d\n", com, dev, count);
 #endif
@@ -364,6 +365,7 @@ tsstrategy(bp)
 	int tsunit = TSUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
+	register int s;
 
 	/*
 	 * Put transfer at end of controller queue
@@ -371,7 +373,7 @@ tsstrategy(bp)
 	bp->av_forw = NULL;
 	um = tsdinfo[tsunit]->ui_mi;
 	dp = &tsbuf[tsunit];
-	(void) spl5();
+	s = spl5();
 	if (dp->b_actf == NULL)
 		dp->b_actf = bp;
 	else
@@ -384,7 +386,7 @@ tsstrategy(bp)
 	 */
 	if (um->um_tab.b_active == 0)
 		tsstart(um);
-	(void) spl0();
+	splx(s);
 }
 
 /*
