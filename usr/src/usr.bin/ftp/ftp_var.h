@@ -1,4 +1,4 @@
-/*	ftp_var.h	4.1	83/01/15	*/
+/*	ftp_var.h	4.2	83/02/21	*/
 
 /*
  * FTP global variables.
@@ -24,6 +24,8 @@ char	formname[32];		/* name of file transfer format */
 int	form;			/* file transfer format */
 char	modename[32];		/* name of file transfer mode */
 int	mode;			/* file transfer mode */
+char	bytename[32];		/* local byte size in ascii */
+int	bytesize;		/* local byte size in binary */
 
 char	*hostname;		/* name of host connected to */
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -81,7 +81,7 @@ hookup(host, port)
 	}
 	cin = fdopen(s, "r");
 	cout = fdopen(s, "w");
-	if (cin == NULL | cout == NULL) {
+	if (cin == NULL || cout == NULL) {
 		fprintf(stderr, "ftp: fdopen failed.\n");
 		if (cin)
 			fclose(cin);
@@ -134,6 +134,10 @@ command(fmt, args)
 		printf("\n");
 		(void) fflush(stdout);
 	}
+	if (cout == NULL) {
+		perror ("No control connection for command");
+		return (0);
+	}
 	_doprnt(fmt, &args, cout);
 	fprintf(cout, "\r\n");
 	(void) fflush(cout);
@@ -145,7 +149,7 @@ command(fmt, args)
 getreply(expecteof)
 	int expecteof;
 {
-	register char c, n;
+	register int c, n;
 	register int code, dig;
 	int originalcode = 0, continuation = 0;
 
@@ -176,7 +180,7 @@ getreply(expecteof)
 				originalcode = code;
 			continue;
 		}
-		if (empty(cin))
+		if (expecteof || empty(cin))
 			return (n - '0');
 	}
 }
@@ -208,10 +212,11 @@ sendrequest(cmd, local, remote)
 {
 	FILE *fin, *dout, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
-	register int bytes = 0;
-	register char c;
+	char buf[BUFSIZ];
+	register int bytes = 0, c;
 	struct stat st;
 	struct timeval start, stop;
+	extern int errno;
 
 	closefunc = NULL;
 	if (setjmp(sendabort))
@@ -251,20 +256,47 @@ sendrequest(cmd, local, remote)
 	if (dout == NULL)
 		goto bad;
 	gettimeofday(&start, (struct timezone *)0);
-	while ((c = getc(fin)) != EOF) {
-		if (type == TYPE_A && c == '\n')
-			putc('\r', dout);
-		putc(c, dout);
-		bytes++;
+	switch (type) {
+
+	case TYPE_I:
+	case TYPE_L:
+		errno = 0;
+		while ((c = read(fileno (fin), buf, sizeof (buf))) > 0) {
+			if (write(fileno (dout), buf, c) < 0)
+				break;
+			bytes += c;
+		}
+		if (c < 0)
+			perror(local);
+		if (errno)
+			perror("netout");
+		break;
+
+	case TYPE_A:
+		while ((c = getc(fin)) != EOF) {
+			if (c == '\n') {
+				if (ferror(dout))
+					break;
+				putc('\r', dout);
+				bytes++;
+			}
+			putc(c, dout);
+			bytes++;
+			if (c == '\r') {
+				putc('\0', dout);
+				bytes++;
+			}
+		}
+		if (ferror(fin))
+			perror(local);
+		if (ferror(dout))
+			perror("netout");
+		break;
 	}
 	gettimeofday(&stop, (struct timezone *)0);
 	if (closefunc != NULL)
 		(*closefunc)(fin);
 	(void) fclose(dout);
-	if (ferror(fin)) {
-		perror(local);
-		goto done;
-	}
 	(void) getreply(0);
 done:
 	signal(SIGINT, oldintr);
@@ -291,10 +323,11 @@ recvrequest(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
 	FILE *fout, *din, *popen();
-	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
-	register char c;
+	char buf[BUFSIZ];
+	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), c;
 	register int bytes = 0;
 	struct timeval start, stop;
+	extern int errno;
 
 	closefunc = NULL;
 	if (setjmp(recvabort))
@@ -338,16 +371,44 @@ recvrequest(cmd, local, remote)
 	if (din == NULL)
 		goto bad;
 	gettimeofday(&start, (struct timezone *)0);
-	while ((c = getc(din)) != EOF) {
-		if (c != '\r' || type != TYPE_A)
-			putc(c, fout);
-		bytes++;
-		if (ferror(fout)) {
-			perror(local);
-			while (c = getc(din) != EOF)
-				bytes++;
-			break;
+	switch (type) {
+
+	case TYPE_I:
+	case TYPE_L:
+		errno = 0;
+		while ((c = read(fileno(din), buf, sizeof (buf))) > 0) {
+			if (write(fileno(fout), buf, c) < 0)
+				break;
+			bytes += c;
 		}
+		if (c < 0)
+			perror("netin");
+		if (errno)
+			perror(local);
+		break;
+
+	case TYPE_A:
+		while ((c = getc(din)) != EOF) {
+			if (c == '\r') {
+				bytes++;
+				if ((c = getc(din)) != '\n') {
+					if (ferror (fout))
+						break;
+					putc ('\r', fout);
+				}
+				if (c == '\0') {
+					bytes++;
+					continue;
+				}
+			}
+			putc (c, fout);
+			bytes++;
+		}
+		if (ferror (din))
+			perror ("netin");
+		if (ferror (fout))
+			perror (local);
+		break;
 	}
 	gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
@@ -388,11 +449,9 @@ initconn()
 		perror("ftp: bind");
 		goto bad;
 	}
-#ifdef notdef
 	if (options & SO_DEBUG &&
 	    setsockopt(data, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 		perror("ftp: setsockopt (ignored)");
-#endif
 	if (socketaddr(data, &data_addr) < 0) {
 		perror("ftp: socketaddr");
 		goto bad;
