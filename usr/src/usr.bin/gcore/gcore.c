@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -212,8 +212,11 @@ datadump(efd, fd, p, addr, npage)
 				err(1, "seek executable: %s", strerror(errno));
 			cc = read(efd, buffer, sizeof(buffer));
 			if (cc != sizeof(buffer))
-				err(1, "read executable: %s",
-				    cc > 0 ? strerror(EIO) : strerror(errno));
+				if (cc < 0) 
+					err(1, "read executable: %s",
+					    strerror(errno));
+				else	/* Assume untouched bss page. */
+					bzero(buffer, sizeof(buffer));
 		}
 		cc = write(fd, buffer, NBPG);
 		if (cc != NBPG)
