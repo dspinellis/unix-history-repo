@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.4
+ * %G% (Berkeley) @(#)refresh.c	1.5
  */
 
 # include	"curses.ext"
@@ -208,6 +208,10 @@ short		wy;
 					_puts(UC);
 				}
 				nsp++;
+			}
+			if (!MS && (*nsp & _STANDOUT)  && (*csp & _STANDOUT)) {
+				_puts(SE);
+				win->_flags &= ~_STANDOUT;
 			}
 # ifdef DEBUG
 			fprintf(outf, "MAKECH: 2: wx = %d, lx = %d\n", wx, lx);
