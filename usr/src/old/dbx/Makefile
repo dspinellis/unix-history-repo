@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.16 (Berkeley) %G%
+#	@(#)Makefile	5.17 (Berkeley) %G%
 #
 
 # The file "defs.h" is included by all.
@@ -188,6 +188,9 @@ makedefs: makedefs.c library.o cerror.o
 mkdate: mkdate.c
 	${CC} -g ${CFLAGS} mkdate.c -o mkdate
 
+dbx.0:	dbx.1
+	nroff -man dbx.1 > dbx.0
+
 print:
 	@echo "don't print it, it's too long"
 
@@ -217,7 +220,7 @@ test:
 
 install: ${AOUT} dbx.0
 	install -s -o bin -g bin -m 755 ${AOUT} ${DESTDIR}${DEST}
-	install -c -o bin -g bin -m 444 dbx.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 dbx.0 ${DESTDIR}/usr/share/man/cat1
 
 #
 # Create a tar file called "tape" containing relevant files.
