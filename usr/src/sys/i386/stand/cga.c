@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)cga.c	7.1 (Berkeley) %G%
+ *	@(#)cga.c	7.2 (Berkeley) %G%
  */
 
 typedef unsigned short u_short;
