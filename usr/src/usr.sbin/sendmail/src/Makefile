@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -77,6 +77,9 @@ clean: FRC
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
 
 lint: FRC
 	lint -chapbx ${CCONFIG} ${SRCS}
