@@ -1,4 +1,4 @@
-/*	dmf.c	6.2	84/02/16	*/
+/*	dmf.c	6.3	84/08/30	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -19,23 +19,23 @@
 
 #include "bk.h"
 #include "uba.h"
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/bk.h"
-#include "../h/clist.h"
-#include "../h/file.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "map.h"
+#include "buf.h"
+#include "vm.h"
+#include "bkmac.h"
+#include "clist.h"
+#include "file.h"
+#include "uio.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/dmfreg.h"
+#include "ubareg.h"
+#include "ubavar.h"
+#include "dmfreg.h"
 
 /*
  * Definition of the driver for the auto-configuration program.
