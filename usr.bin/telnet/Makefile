@@ -8,6 +8,7 @@ CFLAGS+=-DTERMCAP -DUSE_TERMIO
 .ifdef KLUDGE
 .undef KLUDGE
 PROG=	otelnet
+NOMAN=
 CFLAGS+=-DKLUDGELINEMODE
 .endif
 CFLAGS+=-I${.CURDIR}/../../lib
