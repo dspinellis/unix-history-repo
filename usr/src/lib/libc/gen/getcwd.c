@@ -1,28 +1,30 @@
-/*	@(#)getcwd.c	4.1	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.2	(Berkeley)	%G%	*/
 
 /*
  * Getwd
  */
-#include	<sys/param.h>
-#include	<sys/stat.h>
-#include	<sys/dir.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/dir.h>
 
 #define	dot	"."
 #define	dotdot	".."
 
-static	char	*name;
+static	char *name;
 
-static	DIR	*file;
-static	int	off	= -1;
-static	struct	stat	d, dd;
-static	struct	direct	*dir;
+static	DIR *file;
+static	int off;
+static	struct stat d, dd;
+static	struct direct *dir;
 
 char *
 getwd(np)
-char *np;
+	char *np;
 {
-	int rdev, rino;
+	dev_t rdev;
+	ino_t rino;
 
+	off = -1;
 	*np++ = '/';
 	name = np;
 	stat("/", &d);
