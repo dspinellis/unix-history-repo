@@ -1,4 +1,8 @@
-.\"	@(#)find.1	6.2 (Berkeley) %G%
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)find.1	6.3 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -6,12 +10,13 @@
 find \- find files
 .SH SYNOPSIS
 .B find
-pathname-list  expression
+pathname-list expression
 .br 
 .B find
-name
+pattern
 .SH DESCRIPTION
-.I Find
+In the first form above,
+.I find
 recursively descends
 the directory hierarchy for
 each pathname in the
@@ -35,26 +40,33 @@ and
 means exactly
 .IR n .
 .PP
-The second simplified form will list all files on the system
-whose pathname contains
-.I name.
-This is similar to
-.sp
-.ti
-find / -mtime +0 -name "*<name>*" -print
-.sp
-but much faster.
-As with
-.B -name
-below, shell syntax may be used for
-.I name.
+The second form rapidly searches a database for all pathnames
+which match
+.IR pattern .
+Usually the database is recomputed
+weekly and contains the pathnames
+of all files which are publicly accessible.
+If escaped, normal shell
+\*(lqglobbing\*(rq characters (`*', `?', `[', and ']')
+may be used in
+.IR pattern ,
+but the matching differs in that no characters
+.RI ( e.g. " `/')"
+have to be matched explicitly.
+As a special case, a simple
+.I pattern
+containing no globbing characters
+is matched as though it were
+.IR *pattern* ;
+if any globbing character appears
+there are no implicit globbing characters.
 .TP 10n
 .BR \-name " filename"
 True if the
 .I filename
 argument matches the current file name.
 Normal
-Shell
+shell
 argument syntax may be used if escaped (watch out for
 `[', `?' and `*').
 .TP
@@ -179,6 +191,13 @@ True if
 the current file has been modified more recently than the argument
 .I file.
 .TP
+.BR \-cpio " file"
+Write the current file on the argument
+.I file
+in
+.I cpio
+format.
+.TP
 .B \-xdev
 Always true;
 causes find
@@ -215,24 +234,33 @@ Alternation of primaries
 operator).
 .SH EXAMPLES
 .PP
-To typeset all variants of manual pages for 'ls':
+To find all accessible files whose pathname contains `find':
+.IP
+find find
+.PP
+To typeset all variants of manual pages for `ls':
 .IP 
 vtroff -man `find '*man*/ls.?'`
 .PP
 To remove all files named
 `a.out' or `*.o' that have not been accessed for a week:
 .IP "" .2i
-find / \\( \-name a.out \-o \-name '*.o' \\) \-atime +7 \-exec rm {} \\;
+find / \e( \-name a.out \-o \-name '*.o' \e) \-atime +7 \-exec rm {} \e\;
 .SH FILES
+.nf
+.ta \w'/usr/lib/find/find.codes     'u
 /etc/passwd
-.br
 /etc/group
-.br
-/usr/lib/find/find.codes	coded filenames
+/usr/lib/find/find.codes	coded pathnames database
+.fi
 .SH "SEE ALSO"
 sh(1), test(1), fs(5)
 .br
 Relevant paper in February, 1983 issue of
 .I ;login:.
 .SH BUGS
-The syntax (except for the second form), is painful.
+The first form's syntax is painful, and
+the second form's exact semantics is confusing and
+can vary from site to site.
+.PP
+More than one `-newer' option does not work properly.
