@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.110 (Berkeley) %G%
+ *	@(#)conf.h	8.111 (Berkeley) %G%
  */
 
 /*
@@ -865,7 +865,7 @@ typedef int		pid_t;
 /*
 **  NCR 3000 Series (SysVr4)
 **
-**	From From: Kevin Darcy <kevin@tech.mis.cfc.com>.
+**	From Kevin Darcy <kevin@tech.mis.cfc.com>.
 */
 
 #ifdef NCR3000
@@ -873,8 +873,17 @@ typedef int		pid_t;
 # undef BSD
 # define LA_AVENRUN	"avenrun"
 #endif
- 
 
+
+/*
+**  Tandem NonStop-UX SVR4
+**
+**	From Rick McCarty <mccarty@mpd.tandem.com>.
+*/
+
+#ifdef NonStop_UX_BXX
+# define __svr4__
+#endif
 
 
 
@@ -1064,6 +1073,11 @@ typedef int		pid_t;
 
 #if NAMED_BIND
 # include <arpa/nameser.h>
+# ifdef __svr4__
+#  ifdef NOERROR
+#   undef NOERROR		/* avoid compiler conflict with stream.h */
+#  endif
+# endif
 #endif
 
 /*
@@ -1134,7 +1148,7 @@ struct utsname
 };
 #endif /* HASUNAME */
 
-#if !defined(MAXHOSTNAMELEN) && !defined(_SCO_unix_)
+#if !defined(MAXHOSTNAMELEN) && !defined(_SCO_unix_) && !defined(NonStop_UX_BXX)
 # define MAXHOSTNAMELEN	256
 #endif
 
