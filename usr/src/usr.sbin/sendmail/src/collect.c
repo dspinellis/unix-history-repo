@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -239,6 +239,7 @@ maketemp(from)
 readerr:
 	if (fflush(tf) != 0)
 		tferror(tf, e);
+	(void) fsync(fileno(tf));
 	(void) fclose(tf);
 
 	/* An EOF when running SMTP is an error */

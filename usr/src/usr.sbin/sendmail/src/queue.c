@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.60 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.60 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -277,6 +277,7 @@ notemp:
 	*/
 
 	fflush(tfp);
+	fsync(fileno(tfp));
 	if (ferror(tfp))
 	{
 		if (newid)
@@ -303,7 +304,6 @@ notemp:
 	if (LogLevel > 79)
 		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif /* LOG */
-	fflush(tfp);
 	return;
 }
 
