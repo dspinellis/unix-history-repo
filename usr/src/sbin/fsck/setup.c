@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -17,7 +17,9 @@ static char sccsid[] = "@(#)setup.c	5.30 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/file.h>
-#include <machine/endian.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include "fsck.h"
 
@@ -38,7 +40,6 @@ struct bufarea asblk;
     /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
     /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY))
 
-char	*malloc(), *calloc();
 char	*index();
 struct	disklabel *getdisklabel();
 
@@ -53,8 +54,7 @@ setup(dev)
 
 	havesb = 0;
 	if (stat(dev, &statb) < 0) {
-		perror(dev);
-		printf("Can't stat %s\n", dev);
+		printf("Can't stat %s: %s\n", dev, strerror(errno));
 		return (0);
 	}
 	if ((statb.st_mode & S_IFMT) != S_IFCHR) {
@@ -63,8 +63,7 @@ setup(dev)
 			return (0);
 	}
 	if ((fsreadfd = open(dev, O_RDONLY)) < 0) {
-		perror(dev);
-		printf("Can't open %s\n", dev);
+		printf("Can't open %s: %s\n", dev, strerror(errno));
 		return (0);
 	}
 	if (preen == 0)
@@ -209,7 +208,7 @@ setup(dev)
 	}
 	if (asblk.b_dirty) {
 		bcopy((char *)&sblock, (char *)&altsblock,
-			(int)sblock.fs_sbsize);
+			(size_t)sblock.fs_sbsize);
 		flush(fswritefd, &asblk);
 	}
 	/*
@@ -235,18 +234,20 @@ setup(dev)
 	bmapsize = roundup(howmany(maxfsblock, NBBY), sizeof(short));
 	blockmap = calloc((unsigned)bmapsize, sizeof (char));
 	if (blockmap == NULL) {
-		printf("cannot alloc %d bytes for blockmap\n", bmapsize);
+		printf("cannot alloc %u bytes for blockmap\n",
+		    (unsigned)bmapsize);
 		goto badsb;
 	}
 	statemap = calloc((unsigned)(maxino + 1), sizeof(char));
 	if (statemap == NULL) {
-		printf("cannot alloc %d bytes for statemap\n", maxino + 1);
+		printf("cannot alloc %u bytes for statemap\n",
+		    (unsigned)(maxino + 1));
 		goto badsb;
 	}
 	lncntp = (short *)calloc((unsigned)(maxino + 1), sizeof(short));
 	if (lncntp == NULL) {
-		printf("cannot alloc %d bytes for lncntp\n", 
-		    (maxino + 1) * sizeof(short));
+		printf("cannot alloc %u bytes for lncntp\n", 
+		    (unsigned)(maxino + 1) * sizeof(short));
 		goto badsb;
 	}
 	numdirs = sblock.fs_cstotal.cs_ndir;
@@ -257,8 +258,8 @@ setup(dev)
 	inphead = (struct inoinfo **)calloc((unsigned)numdirs,
 	    sizeof(struct inoinfo *));
 	if (inpsort == NULL || inphead == NULL) {
-		printf("cannot alloc %d bytes for inphead\n", 
-		    numdirs * sizeof(struct inoinfo *));
+		printf("cannot alloc %u bytes for inphead\n", 
+		    (unsigned)numdirs * sizeof(struct inoinfo *));
 		goto badsb;
 	}
 	bufinit();
@@ -432,8 +433,7 @@ getdisklabel(s, fd)
 	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
 		if (s == NULL)
 			return ((struct disklabel *)NULL);
-		pwarn("");
-		perror("ioctl (GDINFO)");
+		pwarn("ioctl (GCINFO): %s\n", strerror(errno));
 		errexit("%s: can't read disk label\n", s);
 	}
 	return (&lab);

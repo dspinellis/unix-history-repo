@@ -12,13 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <fstab.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -31,7 +32,7 @@ main(argc, argv)
 	int	argc;
 	char	*argv[];
 {
-	char ch;
+	int ch;
 	int ret, maxrun = 0;
 	extern int docheck(), checkfilesys();
 	extern char *optarg;
@@ -45,9 +46,7 @@ main(argc, argv)
 			break;
 
 		case 'b':
-			if (!isdigit(*optarg))
-				errexit("-b flag requires a number\n");
-			bflag = atoi(optarg);
+			bflag = argtoi('b', "number", optarg, 10);
 			printf("Alternate super block location: %d\n", bflag);
 			break;
 
@@ -60,15 +59,11 @@ main(argc, argv)
 			break;
 
 		case 'l':
-			if (!isdigit(*optarg))
-				errexit("-l flag requires a number\n");
-			maxrun = atoi(optarg);
+			maxrun = argtoi('l', "number", optarg, 10);
 			break;
 
 		case 'm':
-			if (!isdigit(*optarg))
-				errexit("-m flag requires a mode\n");
-			sscanf(optarg, "%o", &lfmode);
+			lfmode = argtoi('m', "mode", optarg, 8);
 			if (lfmode &~ 07777)
 				errexit("bad mode to -m: %o\n", lfmode);
 			printf("** lost+found creation mode %o\n", lfmode);
@@ -98,13 +93,27 @@ main(argc, argv)
 		(void)signal(SIGQUIT, catchquit);
 	if (argc) {
 		while (argc-- > 0)
-			checkfilesys(*argv++, (char *)0, 0);
+			(void)checkfilesys(*argv++, (char *)0, 0L);
 		exit(0);
 	}
 	ret = checkfstab(preen, maxrun, docheck, checkfilesys);
 	if (returntosingle)
 		exit(2);
 	exit(ret);
+}
+
+argtoi(flag, req, str, base)
+	int flag;
+	char *req, *str;
+	int base;
+{
+	char *cp;
+	int ret;
+
+	ret = (int)strtol(str, &cp, base);
+	if (cp == str || *cp)
+		errexit("-%c flag requires a %s\n", flag, req);
+	return (ret);
 }
 
 /*
@@ -197,30 +206,30 @@ checkfilesys(filesys, mntpt, auxdata)
 	 */
 	n_ffree = sblock.fs_cstotal.cs_nffree;
 	n_bfree = sblock.fs_cstotal.cs_nbfree;
-	pwarn("%d files, %d used, %d free ",
+	pwarn("%ld files, %ld used, %ld free ",
 	    n_files, n_blks, n_ffree + sblock.fs_frag * n_bfree);
-	printf("(%d frags, %d blocks, %.1f%% fragmentation)\n",
+	printf("(%ld frags, %ld blocks, %.1f%% fragmentation)\n",
 	    n_ffree, n_bfree, (float)(n_ffree * 100) / sblock.fs_dsize);
 	if (debug &&
 	    (n_files -= maxino - ROOTINO - sblock.fs_cstotal.cs_nifree))
-		printf("%d files missing\n", n_files);
+		printf("%ld files missing\n", n_files);
 	if (debug) {
 		n_blks += sblock.fs_ncg *
 			(cgdmin(&sblock, 0) - cgsblock(&sblock, 0));
 		n_blks += cgsblock(&sblock, 0) - cgbase(&sblock, 0);
 		n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
 		if (n_blks -= maxfsblock - (n_ffree + sblock.fs_frag * n_bfree))
-			printf("%d blocks missing\n", n_blks);
+			printf("%ld blocks missing\n", n_blks);
 		if (duplist != NULL) {
 			printf("The following duplicate blocks remain:");
 			for (dp = duplist; dp; dp = dp->next)
-				printf(" %d,", dp->dup);
+				printf(" %ld,", dp->dup);
 			printf("\n");
 		}
 		if (zlnhead != NULL) {
 			printf("The following zero link count inodes remain:");
 			for (zlnp = zlnhead; zlnp; zlnp = zlnp->next)
-				printf(" %d,", zlnp->zlncnt);
+				printf(" %lu,", zlnp->zlncnt);
 			printf("\n");
 		}
 	}

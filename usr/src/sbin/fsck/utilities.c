@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,12 +14,13 @@ static char sccsid[] = "@(#)utilities.c	5.27 (Berkeley) %G%";
 #include <ufs/fs.h>
 #include <ufs/dir.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include "fsck.h"
 
 long	diskreads, totalreads;	/* Disk cache statistics */
 long	lseek();
-char	*malloc();
 
 ftypeok(dp)
 	struct dinode *dp;
@@ -143,7 +144,7 @@ foundit:
 	return (bp);
 }
 
-struct bufarea *
+void
 getblk(bp, blk, size)
 	register struct bufarea *bp;
 	daddr_t blk;
@@ -152,14 +153,13 @@ getblk(bp, blk, size)
 	daddr_t dblk;
 
 	dblk = fsbtodb(&sblock, blk);
-	if (bp->b_bno == dblk)
-		return (bp);
-	flush(fswritefd, bp);
-	diskreads++;
-	bp->b_errs = bread(fsreadfd, bp->b_un.b_buf, dblk, size);
-	bp->b_bno = dblk;
-	bp->b_size = size;
-	return (bp);
+	if (bp->b_bno != dblk) {
+		flush(fswritefd, bp);
+		diskreads++;
+		bp->b_errs = bread(fsreadfd, bp->b_un.b_buf, dblk, size);
+		bp->b_bno = dblk;
+		bp->b_size = size;
+	}
 }
 
 flush(fd, bp)
@@ -224,8 +224,8 @@ ckfini()
 		errexit("Panic: lost %d buffers\n", bufhead.b_size - cnt);
 	pbp = pdirbp = (struct bufarea *)0;
 	if (debug)
-		printf("cache missed %d of %d (%d%%)\n", diskreads,
-		    totalreads, diskreads * 100 / totalreads);
+		printf("cache missed %ld of %ld (%d%%)\n", diskreads,
+		    totalreads, (int)(diskreads * 100 / totalreads));
 	(void)close(fsreadfd);
 	(void)close(fswritefd);
 }
@@ -247,17 +247,17 @@ bread(fd, buf, blk, size)
 	if (lseek(fd, blk * dev_bsize, 0) < 0)
 		rwerror("SEEK", blk);
 	errs = 0;
-	bzero(buf, (int)size);
+	bzero(buf, (size_t)size);
 	printf("THE FOLLOWING DISK SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
 		if (read(fd, cp, (int)secsize) < 0) {
-			lseek(fd, blk * dev_bsize + i + secsize, 0);
+			(void)lseek(fd, blk * dev_bsize + i + secsize, 0);
 			if (secsize != dev_bsize && dev_bsize != 1)
-				printf(" %d (%d),",
+				printf(" %ld (%ld),",
 				    (blk * dev_bsize + i) / secsize,
 				    blk + i / dev_bsize);
 			else
-				printf(" %d,", blk + i / dev_bsize);
+				printf(" %ld,", blk + i / dev_bsize);
 			errs++;
 		}
 	}
@@ -288,8 +288,8 @@ bwrite(fd, buf, blk, size)
 	printf("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
 		if (write(fd, cp, (int)dev_bsize) < 0) {
-			lseek(fd, blk * dev_bsize + i + dev_bsize, 0);
-			printf(" %d,", blk + i / dev_bsize);
+			(void)lseek(fd, blk * dev_bsize + i + dev_bsize, 0);
+			printf(" %ld,", blk + i / dev_bsize);
 		}
 	printf("\n");
 	return;
@@ -336,7 +336,7 @@ freeblk(blkno, frags)
 
 	idesc.id_blkno = blkno;
 	idesc.id_numfrags = frags;
-	pass4check(&idesc);
+	(void)pass4check(&idesc);
 }
 
 /*
@@ -352,7 +352,7 @@ getpathname(namebuf, curdir, ino)
 	extern int findname();
 
 	if (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND) {
-		strcpy(namebuf, "?");
+		(void)strcpy(namebuf, "?");
 		return;
 	}
 	bzero((char *)&idesc, sizeof(struct inodesc));
@@ -380,15 +380,15 @@ getpathname(namebuf, curdir, ino)
 		cp -= len;
 		if (cp < &namebuf[MAXNAMLEN])
 			break;
-		bcopy(namebuf, cp, len);
+		bcopy(namebuf, cp, (size_t)len);
 		*--cp = '/';
 		ino = idesc.id_number;
 	}
 	if (ino != ROOTINO) {
-		strcpy(namebuf, "?");
+		(void)strcpy(namebuf, "?");
 		return;
 	}
-	bcopy(cp, namebuf, &namebuf[MAXPATHLEN] - cp);
+	bcopy(cp, namebuf, (size_t)(&namebuf[MAXPATHLEN] - cp));
 }
 
 void
