@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)genassym.c	5.1 (Berkeley) %G%
+ *	@(#)genassym.c	5.2 (Berkeley) %G%
  */
 
 #include "../i386/pte.h"
@@ -64,6 +64,7 @@ main()
 	printf("#define\tMAXPHYS %d\n", MAXPHYS);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
+	printf("#define\tUSRIOSIZE %d\n", USRIOSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
 	printf("#define\tMCLBYTES %d\n", MCLBYTES);
@@ -103,6 +104,7 @@ main()
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
 	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
 	printf("#define\tPCB_SIGC %d\n", pcb->pcb_sigc);
+	printf("#define\tPCB_IML %d\n", &pcb->pcb_iml);
 
 	printf("#endif\n");
 	exit(0);
