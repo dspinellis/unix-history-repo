@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)xqt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)xqt.c	5.4	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -60,13 +60,11 @@ char *rmtname;
 	return;
 }
 
-
 /*
  *	start up uuxqt
  *
  *	return codes:  none
  */
-
 xuuxqt()
 {
 	if (fork() == 0) {
@@ -81,10 +79,9 @@ xuuxqt()
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 		signal(SIGKILL, SIG_IGN);
-		execl(UUXQT, "UUXQT",  (char *)0);
+		execl(UUXQT, "uuxqt",  (char *)0);
 		exit(100);
 	}
-	return;
 }
 
 xuucp(str)
@@ -108,5 +105,4 @@ char *str;
 		exit(100);
 	}
 	sleep(15);	/* Give uucp chance to finish */
-	return;
 }
