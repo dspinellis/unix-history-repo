@@ -1,4 +1,4 @@
-/*	pk.h	5.4	86/01/06	*/
+/*	@(#)pk.h	5.5	%G%	*/
 
 struct header {
 	char	sync;
@@ -10,9 +10,9 @@ struct header {
 
 #define	HDRSIZ		6	/* Packet header size */
 #define	PACKSIZE	64	/* Standard packet size */
-#define WINDOWS		3
+#define WINDOWS		7
 
-#define TAILSIZE	2	/* Number of trailing nulls after packet    */
+#define TAILSIZE	0	/* Number of trailing nulls after packet    */
 
 struct pack {
 	short	p_state;	/* line state */
@@ -22,14 +22,11 @@ struct pack {
 	struct	header p_ihbuf;	/* input header */
 	struct	header p_ohbuf; /* output header */
 	char	*p_rptr;
-	char	p_mode;
 	char	**p_ipool;
 	char	p_xcount;	/* # active output buffers */
 	char	p_rcount;
-	char	p_nout,p_tout;
 	char	p_lpsize;	/* log(psize/32) */
-	char	p_timer;
-	char	p_obusy;
+	char	p_obusy;	/* output busy? for reentrant pkoutput() */
 	char	p_srxmit;
 	char	p_rwindow;	/* window size */
 	char	p_swindow;
