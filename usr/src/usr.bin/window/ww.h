@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.61 (Berkeley) %G%
+ *	@(#)ww.h	3.62 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -264,8 +264,8 @@ char wwwintermcap[1024];	/* terminal-specific but window-independent
 
 	/* our functions */
 struct ww *wwopen();
-int wwchild();
-int wwsuspend();
+void wwchild();
+void wwsuspend();
 char **wwalloc();
 char *wwerror();
 
