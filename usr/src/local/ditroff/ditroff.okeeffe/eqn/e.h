@@ -31,6 +31,7 @@ extern int	ttype;		/* actual type of typesetter: */
 #define	DEVAPS	3
 #define DEVHAR	4
 #define DEVVER	5
+#define DEVPSC	6
 
 extern float	eht[];
 extern float	ebase[];
