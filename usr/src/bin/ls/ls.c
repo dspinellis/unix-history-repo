@@ -1,668 +1,795 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Written by Michael Fischbein, currently with Sun Microsystems, Inc.
+ * (sun!sunbow!msf)
+ * 16 June 1989 18:41
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)ls.c	5.11 (Berkeley) %G%";
-#endif not lint
-
-/*
- * ls
- *
- * 4.2bsd version for symbolic links, variable length
- * directory entries, block size in the inode, etc.
- */
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/dir.h>
 #include <stdio.h>
-#include <sgtty.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/param.h>
+#include <dirent.h>
+#include <sys/sysmacros.h>
+#include <grp.h>
+#include <pwd.h>
+#include <time.h>
+#include <ctype.h>
 
-#define	kbytes(size)	(((size) + 1023) / 1024)
+extern int getopt();
+extern char *optarg;
+extern int optind, opterr;
+extern int stat(), lstat();
 
-struct afile {
-	char	ftype;		/* file type, e.g. 'd', 'c', 'f' */
-	ino_t	fnum;		/* inode number of file */
-	short	fflags;		/* mode&~S_IFMT, perhaps ISARG */
-	short	fnl;		/* number of links */
-	uid_t	fuid;		/* owner id */
-	gid_t	fgid;		/* group id */
-	off_t	fsize;		/* file size */
-	long	fblks;		/* number of blocks used */
-	time_t	fmtime;		/* time (modify or access or create) */
-	char	*fname;		/* file name */
-	char	*flinkto;	/* symbolic link value */
-};
+int     namecmp();		/* name comparison for qsort */
+int     revnamecmp();
+int     acccmp();		/* access time comparison for qsort */
+int     revacccmp();
+int     modcmp();		/* modify time comparixon for qsort */
+int     revmodcmp();
+int     statcmp();		/* status time comparixon for qsort */
+int     revstatcmp();
+int     printfancy();
+int     prablelen();
+char   *emalloc();
 
-#define ISARG	0x8000		/* extra ``mode'' */
+typedef struct lsstruct {
+	char   *name;		/* pointer to filename */
+	struct stat lstat;
+}       lsstruct;
 
-struct subdirs {
-	char	*sd_name;
-	struct	subdirs *sd_next;
-} *subdirs;
 
-int	aflg, dflg, gflg, lflg, sflg, tflg, uflg, iflg, fflg, cflg, rflg = 1;
 int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg, Sflg;
 
-int	usetabs;
-
-time_t	now, sixmonthsago;
-
-char	*dotp = ".";
-
-struct	winsize win;
-int	twidth;
-
-struct	afile *gstat();
-int	fcmp();
-char	*cat(), *savestr();
-char	*fmtentry();
-char	*getname(), *getgroup();
-
-char	*ctime();
-char	*malloc(), *calloc(), *realloc();
-char	*strcpy(), *strcat();
-
+/*
+ * entry point for ls.
+ * Parse options and call appropriate subroutines
+ */
 main(argc, argv)
-	int argc;
-	char *argv[];
-{
-	extern int optind;
-	struct afile *fp0, *fplast;
-	register struct afile *fp;
-	struct sgttyb sgbuf;
-	int ch, i;
-	time_t time();
+int     argc;
+char   *argv[];
 
-	Aflg = !getuid();
-	(void) time(&now); sixmonthsago = now - 6L*30L*24L*60L*60L; now += 60;
-	twidth = 80;
+{
+	static char options[] = "aAcCdfFgilLqrRstu1";
+	int     inch;		/* input character */
+
+ /* set up defaults for terminal/nonterminal stdout */
+	firsttimethruflag = 1;
 	if (isatty(1)) {
-		qflg = Cflg = 1;
-		(void) gtty(1, &sgbuf);
-		if (ioctl(1, TIOCGWINSZ, &win) != -1)
-			twidth = (win.ws_col == 0 ? 80 : win.ws_col);
-		if ((sgbuf.sg_flags & XTABS) != XTABS)
-			usetabs = 1;
-	} else
-		usetabs = 1;
-	while ((ch = getopt(argc, argv, "1ACLFRacdfgilqrstu")) != EOF)
-		switch((char)ch) {
-		case '1':
-			Cflg = 0; break;
-		case 'A':
-			Aflg++; break;
-		case 'C':
-			Cflg = 1; break;
-		case 'L':
-			Lflg++; break;
-		case 'F':
-			Fflg++; break;
-		case 'R':
-			Rflg++; break;
+		singlecolflag = 0;
+		sortacrossflag = 0;
+		nonprintflag++;
+		lengthfcn = prablelen;
+	} else {
+		singlecolflag++;
+	}
+
+	if (getuid() == 0) {
+		listallflag++;
+	}
+	while ((inch = getopt(argc, argv, options)) != -1) {
+		switch (inch) {
 		case 'a':
-			aflg++; break;
+			listallflag++;
+			listalwaysflag++;
+			break;
+		case 'A':
+			listallflag++;
+			break;
 		case 'c':
-			cflg++; break;
+			statustimeflag++;
+			modtimeflag = 0;
+			accesstimeflag = 0;
+			break;
+		case 'C':
+			singlecolflag = 0;
+			sortacrossflag = 0;
+			break;
 		case 'S':
 			Sflg++; /* fall into... */
 		case 'd':
-			dflg++; break;
+			listdirflag++;
+			break;
 		case 'f':
-			fflg++; break;
+			longformflag = 0;
+			timesortflag = 0;
+			sizeflag = 0;
+			reversesortflag = 0;
+			listallflag++;
+			listalwaysflag++;
+			specialdirflag++;
+			break;
+		case 'F':
+			fancyflag++;
+			break;
 		case 'g':
-			gflg++; break;
+			groupflag++;
+			break;
 		case 'i':
-			iflg++; break;
+			inodeflag++;
+			break;
 		case 'l':
-			lflg++; break;
-		case 'q':
-			qflg = 1; break;
-		case 'r':
-			rflg = -1; break;
-		case 's':
-			sflg++; break;
-		case 't':
-			tflg++; break;
-		case 'u':
-			uflg++; break;
-		case '?':
-		default:
-			fputs("usage: ls [ -1ACLFRacdfgilqrstu ] [ file ]\n", stderr);
-			exit(1);
-	}
-	if (fflg) { 
-		aflg++; Sflg = 0; tflg = 0; /* -f: only turn off sort flags */
-	}
-	if (lflg)
-		Cflg = 0;
-	argc -= optind;
-	argv += optind;
-	if (argc == 0) {
-		argc++;
-		argv = &dotp;
-	}
-	fp = (struct afile *)calloc((u_int)argc, sizeof (struct afile));
-	if (fp == 0) {
-		fputs("ls: out of memory\n", stderr);
-		exit(1);
-	}
-	fp0 = fp;
-	setpassent(1);
-	setgroupent(1);
-	for (i = 0; i < argc; i++) {
-		if (gstat(fp, *argv, 1, (int *)0)) {
-			fp->fname = *argv;
-			fp->fflags |= ISARG;
-			fp++;
-		}
-		argv++;
-	}
-	fplast = fp;
-	qsort(fp0, fplast - fp0, sizeof (struct afile), fcmp);
-	if (dflg) {
-		formatf(fp0, fplast);
-		exit(0);
-	}
-	if (fflg)
-		fp = fp0;
-	else {
-		for (fp = fp0; fp < fplast && fp->ftype != 'd'; fp++)
-			continue;
-		formatf(fp0, fp);
-	}
-	if (fp < fplast) {
-		if (fp > fp0)
-			putchar('\n');
-		for (;;) {
-			formatd(fp->fname, argc > 1);
-			while (subdirs) {
-				struct subdirs *t;
-
-				t = subdirs; subdirs = t->sd_next;
-				putchar('\n');
-				formatd(t->sd_name, 1);
-				cfree(t->sd_name);
-				cfree((char *)t);
-			}
-			if (++fp == fplast)
-				break;
-			putchar('\n');
-		}
-	}
-	exit(0);
-}
-
-formatd(name, title)
-	char *name;
-	int title;
-{
-	register struct afile *fp;
-	register struct subdirs *dp;
-	struct afile *dfp0, *dfplast;
-	int nkb;
-
-	nkb = getdir(name, &dfp0, &dfplast);
-	if (dfp0 == 0)
-		return;
-	if (fflg == 0)
-		qsort(dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
-	if (title)
-		printf("%s:\n", name);
-	if (lflg || sflg)
-		printf("total %d\n", nkb);
-	formatf(dfp0, dfplast);
-	if (Rflg)
-		for (fp = dfplast - 1; fp >= dfp0; fp--) {
-			if (fp->ftype != 'd' ||
-			    !strcmp(fp->fname, ".") ||
-			    !strcmp(fp->fname, ".."))
-				continue;
-			dp = (struct subdirs *)malloc(sizeof (struct subdirs));
-			dp->sd_name = savestr(cat(name, fp->fname));
-			dp->sd_next = subdirs; subdirs = dp;
-		}
-	for (fp = dfp0; fp < dfplast; fp++) {
-		if ((fp->fflags&ISARG) == 0 && fp->fname)
-			cfree(fp->fname);
-		if (fp->flinkto)
-			cfree(fp->flinkto);
-	}
-	cfree((char *)dfp0);
-}
-
-getdir(dir, pfp0, pfplast)
-	char *dir;
-	struct afile **pfp0, **pfplast;
-{
-	register struct afile *fp;
-	DIR *dirp;
-	register struct direct *dp;
-	int nb, nent = 20;
-
-	dirp = opendir(dir);
-	if (dirp == NULL) {
-		*pfp0 = *pfplast = NULL;
-		printf("%s unreadable\n", dir);		/* not stderr! */
-		return (0);
-	}
-	fp = *pfp0 = (struct afile *)calloc(nent, sizeof (struct afile));
-	*pfplast = *pfp0 + nent;
-	nb = 0;
-	while (dp = readdir(dirp)) {
-		if (dp->d_ino == 0)
-			continue;
-		if (aflg == 0 && dp->d_name[0]=='.' &&
-		    (Aflg == 0 || dp->d_name[1]==0 ||
-		     dp->d_name[1]=='.' && dp->d_name[2]==0))
-			continue;
-		if (gstat(fp, cat(dir, dp->d_name), Fflg+Rflg, &nb) == 0)
-			continue;
-		fp->fnum = dp->d_ino;
-		fp->fname = savestr(dp->d_name);
-		fp++;
-		if (fp == *pfplast) {
-			*pfp0 = (struct afile *)realloc((char *)*pfp0,
-			    2 * nent * sizeof (struct afile));
-			if (*pfp0 == 0) {
-				fputs("ls: out of memory\n", stderr);
-				exit(1);
-			}
-			fp = *pfp0 + nent;
-			*pfplast = fp + nent;
-			nent *= 2;
-		}
-	}
-	closedir(dirp);
-	*pfplast = fp;
-	return (kbytes(dbtob(nb)));
-}
-
-int	stat(), lstat();
-
-struct afile *
-gstat(fp, file, statarg, pnb)
-	register struct afile *fp;
-	char *file;
-	int statarg, *pnb;
-{
-	int (*statf)() = Lflg ? stat : lstat;
-	char buf[BUFSIZ]; int cc;
-	static struct afile azerofile;
-
-	*fp = azerofile;
-	fp->fflags = 0;
-	fp->fnum = 0;
-	fp->ftype = '-';
-	if (statarg || sflg || lflg || tflg) {
-		struct stat stb, stb1;
-
-		if ((*statf)(file, &stb) < 0) {
-			if (statf == lstat || lstat(file, &stb) < 0) {
-				fprintf(stderr, "%s not found\n", file);
-				return (0);
-			}
-		}
-		fp->fblks = stb.st_blocks;
-		fp->fsize = stb.st_size;
-		switch (stb.st_mode & S_IFMT) {
-
-		case S_IFDIR:
-			fp->ftype = 'd'; break;
-		case S_IFBLK:
-			fp->ftype = 'b'; fp->fsize = stb.st_rdev; break;
-		case S_IFCHR:
-			fp->ftype = 'c'; fp->fsize = stb.st_rdev; break;
-		case S_IFSOCK:
-			fp->ftype = 's'; fp->fsize = 0; break;
-		case S_IFLNK:
-			fp->ftype = 'l';
-			if (lflg) {
-				cc = readlink(file, buf, BUFSIZ);
-				if (cc >= 0) {
-					buf[cc] = 0;
-					fp->flinkto = savestr(buf);
-				}
-				break;
-			}
-			if (stat(file, &stb1) < 0)
-				break;
-			if ((stb1.st_mode & S_IFMT) == S_IFDIR) {
-				stb = stb1;
-				fp->ftype = 'd';
-				fp->fsize = stb.st_size;
-				fp->fblks = stb.st_blocks;
+			longformflag++;
+			numberflag = 0;
+			singlecolflag = 0;
+			statfcn = lstat;
+			if (accesstimeflag == 0 && statustimeflag == 0) {
+				modtimeflag++;
 			}
 			break;
-		}
-		fp->fnum = stb.st_ino;
-		fp->fflags = stb.st_mode & ~S_IFMT;
-		fp->fnl = stb.st_nlink;
-		fp->fuid = stb.st_uid;
-		fp->fgid = stb.st_gid;
-		if (uflg)
-			fp->fmtime = stb.st_atime;
-		else if (cflg)
-			fp->fmtime = stb.st_ctime;
-		else
-			fp->fmtime = stb.st_mtime;
-		if (pnb)
-			*pnb += stb.st_blocks;
-	}
-	return (fp);
-}
-
-formatf(fp0, fplast)
-	struct afile *fp0, *fplast;
-{
-	register struct afile *fp;
-	register int i, j, w;
-	int width = 0, nentry = fplast - fp0;
-	int columns, lines;
-	char *cp;
-
-	if (fp0 == fplast)
-		return;
-	if (lflg || Cflg == 0)
-		columns = 1;
-	else {
-		for (fp = fp0; fp < fplast; fp++) {
-			int len = strlen(fmtentry(fp));
-
-			if (len > width)
-				width = len;
-		}
-		if (usetabs)
-			width = (width + 8) &~ 7;
-		else
-			width += 2;
-		columns = twidth / width;
-		if (columns == 0)
-			columns = 1;
-	}
-	lines = (nentry + columns - 1) / columns;
-	for (i = 0; i < lines; i++) {
-		for (j = 0; j < columns; j++) {
-			fp = fp0 + j * lines + i;
-			cp = fmtentry(fp);
-			fputs(cp, stdout);
-			if (fp + lines >= fplast) {
-				putchar('\n');
-				break;
+		case 'L':
+			statfcn = stat;
+			break;
+		case 'q':
+			nonprintflag++;
+			lengthfcn = prablelen;
+			break;
+		case 'r':
+			reversesortflag++;
+			break;
+		case 'R':
+			recursiveflag++;
+			statfcn = lstat;
+			break;
+		case 's':
+			sizeflag++;
+			statfcn = lstat;
+			break;
+		case 't':
+			timesortflag++;
+			if (accesstimeflag == 0 && statustimeflag == 0) {
+				modtimeflag++;
 			}
-			w = strlen(cp);
-			while (w < width)
-				if (usetabs) {
-					w = (w + 8) &~ 7;
-					putchar('\t');
+			break;
+		case 'u':
+			accesstimeflag++;
+			modtimeflag = 0;
+			statustimeflag = 0;
+			break;
+		case '1':
+			singlecolflag++;
+			break;
+		default:
+		case '?':
+			(void) fprintf(stderr, "Usage: %s [-%s] [file ...]\n", argv[0], options);
+			exit(1);
+		}
+	}			/* end of option loop */
+ /* do the work */
+	if (argc > optind) {
+		lsdir(argc - optind, &argv[optind]);
+	} else {
+		char   *defname = ".";
+
+		lsdir(1, &defname);
+	}
+}
+
+/*
+ * list the files in a directory
+ */
+
+
+extern int errno;
+
+int     lsdir(argc, argv)
+int     argc;			/* count of file names passed */
+char   *argv[];			/* array of file names */
+
+{
+	int     curname;
+	int     goodcount = 0;
+	lsstruct *stats;
+	int     i;
+	static char curpath[MAXPATHLEN + 1];
+	char   *midpt;
+
+ /* allocate memory to proceed. Lint complains, but emalloc is aligned */
+	stats = (lsstruct *) emalloc((unsigned) argc * (sizeof(struct lsstruct)));
+
+	for (curname = 0; curname < argc; ++curname) {
+		if (!firsttimethruflag) {
+
+		/*
+		 * check for .xxx files. Note can't get listalways without
+		 * listall being set
+		 */
+			if (argv[curname][0] == '.' && !listallflag) {
+				continue;
+			}
+		/* and now for listalways: . and .. */
+			if ((argv[curname][0] == '.' && argv[curname][1] == '\0') ||
+					(argv[curname][0] == '.' && argv[curname][1] == '.' &&
+					 argv[curname][2] == '\0')) {
+				if (!listalwaysflag)
+					continue;
+			}
+		}		/* end of not firsttimethru test */
+		if (firsttimethruflag || longformflag || recursiveflag || timesortflag || sizeflag || inodeflag || fancyflag) {
+			if (statfcn(argv[curname], &stats[goodcount].lstat) == -1) {
+				if (errno == ENOENT) {
+					(void) fprintf(stderr, "%s not found\n", argv[curname]);
+					continue;
 				} else {
-					w++;
-					putchar(' ');
+					perror(argv[curname]);
+					exit(1);
 				}
+			}	/* end of stat error check */
 		}
-	}
-}
+		stats[goodcount].name = argv[curname];
+		goodcount++;
+	}			/* end of per name loop */
 
-fcmp(f1, f2)
-	register struct afile *f1, *f2;
-{
-
-	if (dflg == 0 && fflg == 0) {
-		if ((f1->fflags&ISARG) && f1->ftype == 'd') {
-			if ((f2->fflags&ISARG) == 0 || f2->ftype != 'd')
-				return (1);
+ /* sort the names */
+	if (goodcount > 1 && !specialdirflag) {
+		if (reversesortflag) {
+			if (!timesortflag) {
+				qsort((char *) stats, goodcount, sizeof(struct lsstruct), revnamecmp);
+			} else {
+				if (accesstimeflag) {
+					qsort((char *) stats, goodcount, sizeof(struct lsstruct), revacccmp);
+				} else {
+					if (modtimeflag) {
+						qsort((char *) stats, goodcount, sizeof(struct lsstruct), revmodcmp);
+					} else {
+						if (statustimeflag) {
+							qsort((char *) stats, goodcount, sizeof(struct lsstruct), revstatcmp);
+						} else {
+						}
+					}
+				}
+			}
 		} else {
-			if ((f2->fflags&ISARG) && f2->ftype == 'd')
-				return (-1);
+			if (!timesortflag) {
+				qsort((char *) stats, goodcount, sizeof(struct lsstruct), namecmp);
+			} else {
+				if (accesstimeflag) {
+					qsort((char *) stats, goodcount, sizeof(struct lsstruct), acccmp);
+				} else {
+					if (modtimeflag) {
+						qsort((char *) stats, goodcount, sizeof(struct lsstruct), modcmp);
+					} else {
+						if (statustimeflag) {
+							qsort((char *) stats, goodcount, sizeof(struct lsstruct), statcmp);
+						} else {
+						}
+					}
+				}
+			}
+		}
+	}			/* end of sort conditionals */
+	prindir(stats, goodcount);
+
+	if ((firsttimethruflag && !listdirflag) || recursiveflag) {
+		for (i = 0; i < goodcount; ++i) {
+		/* recurse on directories */
+			if ((stats[i].lstat.st_mode & S_IFMT) == S_IFDIR) {
+			/* don't recurse on . or .. */
+				if ((stats[i].name[0] == '.' && stats[i].name[1] == '\0') ||
+						(stats[i].name[0] == '.' && stats[i].name[1] == '.' && stats[i].name[2] == '\0')) {
+					if (!firsttimethruflag) {
+						continue;
+					}
+				}
+				if (chdir(stats[i].name) == -1) {
+					perror(stats[i].name);
+					break;
+				}
+				if (goodcount > 1 || !firsttimethruflag || recursiveflag) {
+				/* add current name to path */
+					if ((midpt = strchr(curpath, (int) '\0')) != curpath) {
+						if (midpt[-1] != '/') {
+							*midpt++ = '/';
+						}
+					}
+					(void) strcpy(midpt, stats[i].name);
+
+					if (goodcount > 1 || !firsttimethruflag) {
+						(void) printf("\n%s:\n", curpath);
+					}
+				}
+				recursedir(&stats[i]);
+				if (goodcount > 1 || !firsttimethruflag) {
+					*midpt = '\0';
+				}
+				if (chdir("..") == -1) {
+					perror(stats[i].name);
+				}
+			}
+		}		/* end of for loop looking for directories */
+		firsttimethruflag = 0;
+	}
+	free((char *) stats);
+}
+
+/*
+ * set up the call to lsdir (lsdir(count, argv-type array))
+ * mutually recursive with lsdir
+ */
+
+
+recursedir(orig)
+lsstruct *orig;
+{
+	DIR    *dirp;
+	struct dirent *entry;
+	char   *argvblock;
+	char  **argv;
+	int     blocksub = 0;
+	int     vsub = 0;
+	int     oldfirsttimeflag;
+
+	if ((dirp = opendir(".")) == NULL) {
+	/* perror(orig->name); more info, less compatible */
+		(void) fprintf(stderr, "%s unreadable\n", orig->name);
+		return;
+	}
+ /* wildly overestimate dynamic amount of memory needed */
+ /* lint complains about casting off_t to unsigned int. */
+	argvblock = emalloc((unsigned) orig->lstat.st_size);
+ /* lint also complains about this alignment.  It's OK */
+	argv = (char **) emalloc((unsigned) orig->lstat.st_size);
+
+	while ((entry = readdir(dirp)) != NULL) {
+		argv[vsub++] = strncpy(&argvblock[blocksub], entry->d_name, (int) entry->d_namlen);
+		blocksub += entry->d_namlen;
+		argvblock[blocksub++] = '\0';
+	}
+	(void) closedir(dirp);
+
+	oldfirsttimeflag = firsttimethruflag;
+	firsttimethruflag = 0;
+
+	lsdir(vsub, argv);
+
+	firsttimethruflag = oldfirsttimeflag;
+
+	free(argvblock);
+	free((char *) argv);
+}
+
+/*
+ * print a statted (if necessary), sorted directory by listing option
+ */
+
+int     printaname();
+
+prindir(stats, endcount)
+lsstruct stats[];		/* the statted, sorted directory */
+int     endcount;
+
+{
+	int     i;		/* subscript to stats */
+	int     maxlen;		/* length of longest name string */
+	int     colwidth;	/* width of a printing column */
+	int     numcols;	/* number of columns */
+	int     collength;	/* lines in longest column */
+	int     base;		/* subscript for leftmost column */
+	int     offset;		/* delta from base to next column */
+	int     chcnt;		/* character count printed */
+	long    blocks;		/* sum of blocks in longform listing */
+
+	if (endcount <= 0) {	/* sanity check; also if only bad names given */
+		return;
+	}
+/* don't print out a single directory name as argument first time around */
+	if (!((firsttimethruflag && !listdirflag) && (endcount == 1) && ((stats[0].lstat.st_mode & S_IFMT) == S_IFDIR))) {
+		if (singlecolflag) {
+			for (i = 0; i < endcount; ++i) {
+				(void) printaname(&stats[i]);
+				(void) putchar('\n');
+			}
+		} else if (longformflag) {
+			for (i = 0, blocks = 0; i < endcount; ++i) {
+				blocks += stats[i].lstat.st_blocks;
+			}
+			(void) printf("total %ld\n", blocks / 2);
+			for (i = 0; i < endcount; ++i) {
+				if (inodeflag) {
+					(void) printf("%6d ", stats[i].lstat.st_ino);
+				}
+				if (sizeflag) {
+					(void) printf("%4d ", stats[i].lstat.st_blocks / 2);
+				}
+				printperms(stats[i].lstat.st_mode);
+				(void) printf("%3d ", stats[i].lstat.st_nlink);
+				printowner(stats[i].lstat.st_uid);
+				if (groupflag) {
+					printgrp(stats[i].lstat.st_gid);
+				}
+				if (((stats[i].lstat.st_mode & S_IFMT) == S_IFCHR) ||
+						((stats[i].lstat.st_mode & S_IFMT) == S_IFBLK)) {
+					(void) printf("%3d,%4d ", major(stats[i].lstat.st_rdev), minor(stats[i].lstat.st_rdev));
+				} else {
+					(void) printf("%8d ", stats[i].lstat.st_size);
+				}
+				if (accesstimeflag) {
+					printtime(stats[i].lstat.st_atime);
+				} else if (statustimeflag) {
+					printtime(stats[i].lstat.st_ctime);
+				} else {
+					printtime(stats[i].lstat.st_mtime);
+				}
+				(void) printf("%s", stats[i].name);
+				if (fancyflag) {
+					(void) printfancy(stats[i].lstat.st_mode);
+				}
+				if ((stats[i].lstat.st_mode & S_IFMT) == S_IFLNK) {
+					char    buf[MAXPATHLEN + 1];
+					int     j;
+
+					if ((j = readlink(stats[i].name, buf, MAXPATHLEN)) == -1) {
+						perror(stats[i].name);
+						(void) putchar('\n');
+						continue;
+					}
+					buf[j + 1] = '\0';
+					(void) printf(" -> %s", buf);
+				}
+				(void) putchar('\n');
+			}
+		} else {
+
+		/*
+		 * assume tabs every 8 columns WARNING: bad code (hard coded
+		 * constants) follows:
+		 */
+
+		/* figure out max width */
+			maxlen = 0;
+			for (i = 0; i < endcount; ++i) {
+				if (maxlen < lengthfcn(stats[i].name)) {
+					maxlen = lengthfcn(stats[i].name);
+				}
+			}	/* end of determining max width of name */
+
+		/* add fudge factors to max name length */
+			if (inodeflag) {
+				maxlen += 6;
+			}
+			if (sizeflag) {
+				maxlen += 5;
+			}
+			if (fancyflag) {
+				maxlen += 1;
+			}
+			colwidth = (maxlen + 9) & ~0x7;	/* one tab after maxlen */
+			numcols = (80 + colwidth - maxlen) / colwidth;
+			collength = (int) ((float) endcount / (float) numcols + 0.999);
+
+			for (base = 0; base < collength; base++) {
+				for (offset = 0, i = 0; i < numcols; ++i, offset += collength) {
+
+					if ((base + offset) >= endcount) {
+						break;
+					}
+					chcnt = printaname(&stats[base + offset]);
+
+					if ((base + offset + collength) < endcount) {
+						while (chcnt + 8 < colwidth) {
+							(void) putchar('\t');
+							chcnt += 8;
+						}
+						if (chcnt < colwidth) {
+							(void) putchar('\t');
+						}
+						chcnt = (chcnt + 8) & ~0x7;
+					}
+				}
+				if (base + offset < endcount) {
+					(void) printaname(&stats[base + offset]);
+				}
+				(void) printf("\n");
+			}	/* end of base and offset loop */
 		}
 	}
-	if (tflg) {
-		if (f2->fmtime == f1->fmtime)
-			return (0);
-		if (f2->fmtime > f1->fmtime)
-			return (rflg);
-		return (-rflg);
-	}
-	if (Sflg) {
-		if (f2->fsize == f1->fsize)
-			return (0);
-		if (f2->fsize > f1->fsize)
-			return (rflg);
-		return (-rflg);
-	}
-	return (rflg * strcmp(f1->fname, f2->fname));
 }
 
-char *
-cat(dir, file)
-	char *dir, *file;
+/*
+ * print [inode] [size] name
+ * return # of characters printed
+ * no trailing characters
+ */
+int     printaname(entry)
+lsstruct *entry;
 {
-	static char dfile[BUFSIZ];
-	register int dlen;
+	int     chcnt = 0;
 
-	if ((dlen = strlen(dir))+1+strlen(file)+1 > BUFSIZ) {
-		fputs("ls: filename too long\n", stderr);
+	if (inodeflag) {
+		chcnt += printf("%5d ", entry->lstat.st_ino);
+	}
+	if (sizeflag) {
+		chcnt += printf("%4d ", entry->lstat.st_blocks / 2);
+	}
+	chcnt += printf("%s", entry->name);
+
+	if (fancyflag) {
+		return (chcnt + printfancy(entry->lstat.st_mode));
+	}
+	return chcnt;
+}
+
+/*
+ * print group and user name
+ */
+
+
+
+printgrp(groupid)
+short   groupid;
+{
+	struct group *groupentry;
+
+	if ((groupentry = getgrgid((int) groupid)) == NULL) {
+	/* can't find group, print out number instead */
+		(void) printf("%-9d ", groupid);
+		return;
+	}
+	(void) printf("%-9s", groupentry->gr_name);
+	(void) getgrent();	/* to rewind group file */
+}
+
+
+printowner(uid)
+short   uid;
+{
+	struct passwd *pwentry;
+
+	if ((pwentry = getpwuid((int) uid)) == NULL) {
+	/* can't find owner, print out number instead */
+		(void) printf("%-9d ", uid);
+		return;
+	}
+	(void) printf("%-9s", pwentry->pw_name);
+	(void) getpwent();
+}
+
+#define SIXMONTHS 6l*30l*24l*3600l
+time_t  time();
+
+printtime(ftime)
+time_t  ftime;
+{
+	int     i;
+	char   *longstring;
+
+	longstring = ctime((long *) &ftime);
+
+	for (i = 4; i < 11; ++i) {
+		(void) putchar(longstring[i]);
+	}
+
+	if (ftime + SIXMONTHS > time((time_t *) NULL)) {
+		for (i = 11; i < 16; ++i) {
+			(void) putchar(longstring[i]);
+		}
+	} else {
+		(void) putchar(' ');
+		for (i = 20; i < 24; ++i) {
+			(void) putchar(longstring[i]);
+		}
+	}
+	(void) putchar(' ');
+}
+
+/*
+ * act like strlen, but also translate non-printing chars to '?'
+ */
+
+
+int     prablelen(cp)
+char   *cp;
+{
+	register int len = 0;
+
+	while (*cp != '\0') {
+		if (!isprint(*cp)) {
+			*cp = '?';
+		}
+		++len;
+		++cp;
+	}
+	return len;
+}
+
+/*
+ * do the permissions printing, passed the mode
+ */
+
+printperms(mode)
+u_short mode;
+{
+ /* print type */
+	switch (mode & S_IFMT) {
+	case S_IFDIR:		/* directory */
+		(void) putchar('d');
+		break;
+	case S_IFCHR:		/* character special */
+		(void) putchar('c');
+		break;
+	case S_IFBLK:		/* block special */
+		(void) putchar('b');
+		break;
+	case S_IFREG:		/* regular */
+		(void) putchar('-');
+		break;
+	case S_IFLNK:		/* symbolic link */
+		(void) putchar('l');
+		break;
+	case S_IFSOCK:		/* socket */
+		(void) putchar('s');
+		break;
+#ifdef S_IFIFO
+	case S_IFIFO:		/* fifo */
+		(void) putchar('p');
+		break;
+#endif
+	default:		/* unknown */
+		(void) putchar('?');
+		break;
+	}
+ /* usr */
+	if (mode & S_IRUSR) {
+		(void) putchar('r');
+	} else {
+		(void) putchar('-');
+	}
+	if (mode & S_IWUSR) {
+		(void) putchar('w');
+	} else {
+		(void) putchar('-');
+	}
+	switch (mode & (S_IXUSR | S_ISUID)) {
+	case 0:
+		(void) putchar('-');
+		break;
+	case S_IXUSR:
+		(void) putchar('x');
+		break;
+	case S_ISUID:
+		(void) putchar('S');
+		break;
+	case S_IXUSR | S_ISUID:
+		(void) putchar('s');
+		break;
+	}
+ /* group */
+	if (mode & S_IRGRP) {
+		(void) putchar('r');
+	} else {
+		(void) putchar('-');
+	}
+	if (mode & S_IWGRP) {
+		(void) putchar('w');
+	} else {
+		(void) putchar('-');
+	}
+	switch (mode & (S_IXGRP | S_ISGID)) {
+	case 0:
+		(void) putchar('-');
+		break;
+	case S_IXGRP:
+		(void) putchar('x');
+		break;
+	case S_ISGID:
+		(void) putchar('S');
+		break;
+	case S_IXGRP | S_ISGID:
+		(void) putchar('s');
+		break;
+	}
+ /* other */
+	if (mode & S_IROTH) {
+		(void) putchar('r');
+	} else {
+		(void) putchar('-');
+	}
+	if (mode & S_IWOTH) {
+		(void) putchar('w');
+	} else {
+		(void) putchar('-');
+	}
+	switch (mode & (S_IXOTH | S_ISVTX)) {
+	case 0:
+		(void) putchar('-');
+		break;
+	case S_IXOTH:
+		(void) putchar('x');
+		break;
+	case S_ISVTX:
+		(void) putchar('T');
+		break;
+	case S_IXOTH | S_ISVTX:
+		(void) putchar('t');
+		break;
+	}
+}
+
+int     printfancy(mode)
+u_short mode;
+{
+	if ((mode & S_IFMT) == S_IFDIR) {
+		(void) putchar('/');
+		return 1;
+	}
+	if ((mode & S_IFMT) == S_IFLNK && !longformflag) {
+		(void) putchar('@');
+		return 1;
+	}
+	if ((mode & S_IFMT) == S_IFSOCK) {
+		(void) putchar('=');
+		return 1;
+	}
+	if (mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+		(void) putchar('*');
+		return 1;
+	}
+	return 0;
+}
+
+/*
+ * error checks for dynamic memory;
+ * comparison routines for various calls to qsort(3)
+ */
+
+int     namecmp(a, b)
+lsstruct *a, *b;
+{
+	return strcmp(a->name, b->name);
+}
+
+int     revnamecmp(a, b)
+lsstruct *a, *b;
+{
+	return strcmp(b->name, a->name);
+}
+
+int     modcmp(a, b)
+lsstruct *a, *b;
+{
+	return (a->lstat.st_mtime < b->lstat.st_mtime);
+}
+
+int     revmodcmp(a, b)
+lsstruct *a, *b;
+{
+	return (b->lstat.st_mtime < a->lstat.st_mtime);
+}
+
+int     acccmp(a, b)
+lsstruct *a, *b;
+{
+	return (a->lstat.st_atime < b->lstat.st_atime);
+}
+
+int     revacccmp(a, b)
+lsstruct *a, *b;
+{
+	return (b->lstat.st_atime < a->lstat.st_atime);
+}
+
+int     statcmp(a, b)
+lsstruct *a, *b;
+{
+	return (a->lstat.st_ctime < b->lstat.st_ctime);
+}
+
+int     revstatcmp(a, b)
+lsstruct *a, *b;
+{
+	return (b->lstat.st_ctime < a->lstat.st_ctime);
+}
+
+char   *malloc();
+
+char   *emalloc(size)
+unsigned size;
+{
+	register char *retval;
+
+	if ((retval = malloc(size)) == NULL) {
+		perror("Can't find memory");
 		exit(1);
 	}
-	if (!dir[0] || dir[0] == '.' && !dir[1])
-		return(strcpy(dfile, file));
-	(void) strcpy(dfile, dir);
-	if (dir[dlen - 1] != '/' && *file != '/')
-		dfile[dlen++] = '/';
-	(void) strcpy(dfile + dlen, file);
-	return (dfile);
-}
-
-char *
-savestr(str)
-	char *str;
-{
-	char *cp = malloc(strlen(str) + 1);
-
-	if (cp == NULL) {
-		fputs("ls: out of memory\n", stderr);
-		exit(1);
-	}
-	return(strcpy(cp, str));
-}
-
-char	*fmtinum(), *fmtsize(), *fmtlstuff(), *fmtmode();
-
-char *
-fmtentry(fp)
-	register struct afile *fp;
-{
-	static char fmtres[BUFSIZ];
-	register char *cp, *dp;
-
-	(void) sprintf(fmtres, "%s%s%s",
-	    iflg ? fmtinum(fp) : "",
-	    sflg ? fmtsize(fp) : "",
-	    lflg ? fmtlstuff(fp) : "");
-	dp = &fmtres[strlen(fmtres)];
-	for (cp = fp->fname; *cp; cp++)
-		if (qflg && (*cp < ' ' || *cp >= 0177))
-			*dp++ = '?';
-		else
-			*dp++ = *cp;
-	if (Fflg) {
-		if (fp->ftype == 'd')
-			*dp++ = '/';
-		else if (fp->ftype == 'l')
-			*dp++ = '@';
-		else if (fp->ftype == 's')
-			*dp++ = '=';
-		else if (fp->fflags & 0111)
-			*dp++ = '*';
-	}
-	if (lflg && fp->flinkto) {
-		(void) strcpy(dp, " -> "); dp += 4;
-		for (cp = fp->flinkto; *cp; cp++)
-			if (qflg && (*cp < ' ' || *cp >= 0177))
-				*dp++ = '?';
-			else
-				*dp++ = *cp;
-	}
-	*dp++ = 0;
-	return (fmtres);
-}
-
-char *
-fmtinum(p)
-	register struct afile *p;
-{
-	static char inumbuf[8];
-
-	(void) sprintf(inumbuf, "%6ld ", p->fnum);
-	return (inumbuf);
-}
-
-char *
-fmtsize(p)
-	register struct afile *p;
-{
-	static char sizebuf[32];
-
-	(void) sprintf(sizebuf, "%4ld ", kbytes(dbtob(p->fblks)));
-	return (sizebuf);
-}
-
-char *
-fmtlstuff(p)
-	register struct afile *p;
-{
-	static char lstuffbuf[256];
-	char gname[32], uname[32], fsize[32], ftime[32];
-	register char *lp = lstuffbuf;
-
-	/* type mode uname gname fsize ftime */
-/* get uname */
-	{ char *cp = getname(p->fuid);
-	  if (cp)
-		(void) sprintf(uname, "%-9.9s", cp);
-	  else
-		(void) sprintf(uname, "%-9u", p->fuid);
-	}
-/* get gname */
-	if (gflg) {
-	  char *cp = getgroup(p->fgid);
-	  if (cp)
-		(void) sprintf(gname, "%-9.9s", cp);
-	  else
-		(void) sprintf(gname, "%-9u", p->fgid);
-	}
-/* get fsize */
-	if (p->ftype == 'b' || p->ftype == 'c')
-		(void) sprintf(fsize, "%3d,%4d",
-		    major(p->fsize), minor(p->fsize));
-	else if (p->ftype == 's')
-		(void) sprintf(fsize, "%8ld", 0L);
-	else
-		(void) sprintf(fsize, "%8ld", p->fsize);
-/* get ftime */
-	{ char *cp = ctime(&p->fmtime);
-	  if ((p->fmtime < sixmonthsago) || (p->fmtime > now))
-		(void) sprintf(ftime, " %-7.7s %-4.4s ", cp+4, cp+20);
-	  else
-		(void) sprintf(ftime, " %-12.12s ", cp+4);
-	}
-/* splat */
-	*lp++ = p->ftype;
-	lp = fmtmode(lp, p->fflags);
-	(void) sprintf(lp, "%3d %s%s%s%s",
-	    p->fnl, uname, gflg ? gname : "", fsize, ftime);
-	return (lstuffbuf);
-}
-
-int	m1[] = { 1, S_IREAD>>0, 'r', '-' };
-int	m2[] = { 1, S_IWRITE>>0, 'w', '-' };
-int	m3[] = { 3, S_ISUID|(S_IEXEC>>0), 's', S_ISUID, 'S', S_IEXEC>>0, 'x', '-' };
-int	m4[] = { 1, S_IREAD>>3, 'r', '-' };
-int	m5[] = { 1, S_IWRITE>>3, 'w', '-' };
-int	m6[] = { 3, S_ISGID|(S_IEXEC>>3), 's', S_ISGID, 'S', S_IEXEC>>3, 'x', '-' };
-int	m7[] = { 1, S_IREAD>>6, 'r', '-' };
-int	m8[] = { 1, S_IWRITE>>6, 'w', '-' };
-int	m9[] = { 3, S_ISVTX|(S_IEXEC>>6), 't', S_ISVTX, 'T', S_IEXEC>>6, 'x', '-' };
-
-int	*m[] = { m1, m2, m3, m4, m5, m6, m7, m8, m9};
-
-char *
-fmtmode(lp, flags)
-	char *lp;
-	register int flags;
-{
-	int **mp;
-
-	for (mp = &m[0]; mp < &m[sizeof(m)/sizeof(m[0])]; ) {
-		register int *pairp = *mp++;
-		register int n = *pairp++;
-
-		while (--n >= 0 && (flags&*pairp) != *pairp)
-			pairp += 2;
-		*lp++ = pairp[n>=0];
-	}
-	return (lp);
-}
-
-/* rest should be done with nameserver or database */
-
-#include <pwd.h>
-#include <grp.h>
-#include <utmp.h>
-
-struct	utmp utmp;
-#define	NMAX	(sizeof (utmp.ut_name))
-#define SCPYN(a, b)	strncpy(a, b, NMAX)
-
-#define NCACHE	64		/* power of 2 */
-#define CAMASK	NCACHE - 1
-
-char *
-getname(uid)
-	uid_t uid;
-{
-	static struct ncache {
-		uid_t	uid;
-		char	name[NMAX+1];
-	} c_uid[NCACHE];
-	register struct passwd *pw;
-	register struct ncache *cp;
-
-	cp = c_uid + (uid & CAMASK);
-	if (cp->uid == uid && *cp->name)
-		return(cp->name);
-	if (!(pw = getpwuid(uid)))
-		return((char *)0);
-	cp->uid = uid;
-	SCPYN(cp->name, pw->pw_name);
-	return(cp->name);
-}
-
-char *
-getgroup(gid)
-	gid_t gid;
-{
-	static struct ncache {
-		gid_t	gid;
-		char	name[NMAX+1];
-	} c_gid[NCACHE];
-	register struct group *gr;
-	register struct ncache *cp;
-
-	cp = c_gid + (gid & CAMASK);
-	if (cp->gid == gid && *cp->name)
-		return(cp->name);
-	if (!(gr = getgrgid(gid)))
-		return((char *)0);
-	cp->gid = gid;
-	SCPYN(cp->name, gr->gr_name);
-	return(cp->name);
+	return retval;
 }
