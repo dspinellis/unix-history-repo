@@ -1,4 +1,4 @@
-#	Makefile	4.14	82/07/15
+#	Makefile	4.15	82/08/01
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -71,61 +71,40 @@ copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 
 ### not yet, rosin, not yet ###
 
-print:
-	@pr makefile
-	@ls -l | pr 
-	@pr *.h *.c
+# getting booted from disc
 
-clean:
-	rm -f *.o *.exe *.i
-	rm -f a.out b.out boot cat tpboot tpcopy
-
-lint:
-	lint ${COPTS} -hxbn boot.c ${SRCS} | \
-	    grep -v 'possible pointer alignment' | \
-	    grep -v 'struct/union .* never defined'
-
-install: ${ALL}
-	cp tpcopy ${DESTDIR}/tp/copy
-	cp tpboot ${DESTDIR}/tp/boot
-	cp boot copy ../floppy
-	cp bootup boothk boothp ${DESTDIR}/usr/mdec
-
-# beware...
-
-boothk.o: xxboot.c
-	cc -c -S ${COPTS} -DBOOTRK xxboot.c
-	/lib/c2 -i xxboot.s | as -o boothk.o
-	rm -f xxboot.s
-
-boothk: relsrt0.o boothk.o confrk.o
+boothk: relsrt0.o boothk.o confrk.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=boothk ibs=32 skip=1; rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm b.out
 
-boothp.o: xxboot.c
-	cc -c -S ${COPTS} -DBOOTHP xxboot.c
-	/lib/c2 -i xxboot.s | as -o boothp.o
-	rm -f xxboot.s
+boothk.o: bootxx.c
+	cc -c -S ${COPTS} -DBOOTRK bootxx.c
+	/lib/c2 -i bootxx.s | as -o boothk.o
+	rm -f bootxx.s
 
-boothp: relsrt0.o boothp.o confhp.o
+boothp: relsrt0.o boothp.o confhp.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=boothp ibs=32 skip=1; rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm b.out
 
-bootup.o: xxboot.c
-	cc -c -S ${COPTS} -DBOOTUP xxboot.c
-	/lib/c2 -i xxboot.s | as -o bootup.o
-	/lib/c2 -i xxboot.s | as -o upboot.o
-	rm -f xxboot.s
+boothp.o: bootxx.c
+	cc -c -S ${COPTS} -DBOOTHP bootxx.c
+	/lib/c2 -i bootxx.s | as -o boothp.o
+	rm -f bootxx.s
 
-bootup: relsrt0.o bootup.o confup.o
+bootup: relsrt0.o bootup.o confup.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=bootup ibs=32 skip=1; rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm b.out
 
-boothp.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+bootup.o: bootxx.c
+	cc -c -S ${COPTS} -DBOOTUP bootxx.c
+	/lib/c2 -i bootxx.s | as -o bootup.o
+	rm -f bootxx.s
+
+boothp.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
 boothp.o: ../h/fs.h saio.h
-boothk.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+boothk.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
 boothk.o: ../h/fs.h saio.h
-bootup.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+bootup.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
 
 confrk.o: confrk.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
 	$(CC) -c $(CFLAGS) confrk.c
@@ -140,3 +119,29 @@ confhp.c: confxx.c
 	sed -e 's/XX/hp/' -e 's/xx/hp/g' <confxx.c >confhp.c
 confup.c: confxx.c
 	sed -e 's/XX/up/' -e 's/xx/up/g' <confxx.c >confup.c
+
+# utilities
+
+print:
+	@pr makefile
+	@ls -l | pr 
+	@pr *.h *.c
+
+clean:
+	rm -f *.o *.exe *.i errs
+	rm -f a.out b.out boot cat tpboot tpcopy
+	rm -f boot[a-z]? conf[a-wyz][a-z].c
+
+lint:
+	lint ${COPTS} -hxbn boot.c ${SRCS} | \
+	    grep -v 'possible pointer alignment' | \
+	    grep -v 'struct/union .* never defined'
+
+install: ${ALL}
+	cp tpcopy ${DESTDIR}/tp/copy
+	cp tpboot ${DESTDIR}/tp/boot
+	cp copy a.out; strip a.out; dd if=a.out of=../floppy/copy bs=32 skip=1
+	cp boot a.out; strip a.out; dd if=a.out of=../floppy/boot bs=32 skip=1
+	cp bootup boothk boothp ${DESTDIR}/usr/mdec
+
+# beware...
