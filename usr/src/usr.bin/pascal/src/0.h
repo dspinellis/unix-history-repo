@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)0.h	5.2 (Berkeley) %G%
+ *	@(#)0.h	5.3 (Berkeley) %G%
  */
 
 #define DEBUG
@@ -13,6 +13,7 @@
 #define hp21mx 0
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<sys/types.h>
 #undef roundup
 
@@ -700,7 +701,6 @@ char	*lc;
  * other than "integer" to be
  * assumed by the compiler.
  */
-double		atof();
 long		lwidth();
 long		leven();
 long		aryconst();
@@ -708,14 +708,12 @@ long		a8tol();
 long		roundup();
 struct nl 	*tmpalloc();
 struct nl 	*lookup();
-double		atof();
 int		*hash();
 char		*alloc();
 int		*pcalloc();
 char		*savestr();
 char 		*esavestr();
 char		*parnam();
-char		*malloc();
 char		*getlab();
 char		*getnext();
 char		*skipbl();
