@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-MIP=	${.CURDIR}/../../../libexec/pcc/mip
+MIP=	${.CURDIR}/../../mip
 
 PROG=	lintpass1
 CFLAGS+=-I${MIP} -I. -I${.CURDIR}
