@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -215,7 +215,7 @@ formatd(name, title)
 		printf("total %ld\n", nkb);
 	formatf(dfp0, dfplast);
 	if (Rflg)
-		for (fp = dfplast; fp >= dfp0; fp--) {
+		for (fp = dfplast - 1; fp >= dfp0; fp--) {
 			if (fp->ftype != 'd' ||
 			    !strcmp(fp->fname, ".") ||
 			    !strcmp(fp->fname, ".."))
