@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd.c	7.10 (Berkeley) %G%
+ *	@(#)hd.c	7.11 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -145,7 +145,7 @@ hdstrategy(io, cmd)
 	}
 	dlp = &dklabel[io->i_unit][io->i_ctlr][io->i_bus];
 	sector = io->i_bn * HDC_SPB;
-	mcb.command = (cmd == READ) ? HCMD_READ : HCMD_WRITE;
+	mcb.command = (cmd == F_READ) ? HCMD_READ : HCMD_WRITE;
 	mcb.drive = io->i_unit;
 	mcb.cyl = sector / dlp->d_secpercyl;
 	mcb.head = (sector / dlp->d_nsectors) % dlp->d_ntracks;

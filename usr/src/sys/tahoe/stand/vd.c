@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vd.c	7.17 (Berkeley) %G%
+ *	@(#)vd.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -75,7 +75,7 @@ vdopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = DEV_BSIZE;
 		tio.i_flgs |= F_RDDATA;
-		if (vdstrategy(&tio, READ) != DEV_BSIZE)
+		if (vdstrategy(&tio, F_READ) != DEV_BSIZE)
 			return (ERDLAB);
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
 		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
@@ -259,7 +259,7 @@ vdstrategy(io, cmd)
 	sn = sn % lp->d_nsectors;
 
 top:
-	dcb.opcode = (cmd == READ ? VDOP_RD : VDOP_WD);
+	dcb.opcode = (cmd == F_READ ? VDOP_RD : VDOP_WD);
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
@@ -282,7 +282,7 @@ top:
 		if (retries++ == 0 && vdreset_ctlr(ctlr, io->i_unit) == 0 &&
 		    vdreset_drive(io))
 			goto top;
-		vderror(io->i_unit, cmd == READ ? "read" : "write", &dcb);
+		vderror(io->i_unit, cmd == F_READ ? "read" : "write", &dcb);
 		io->i_error = EIO;
 		return (-1);
 	}
