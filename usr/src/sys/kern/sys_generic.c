@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.14	82/09/08	*/
+/*	sys_generic.c	5.15	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +9,6 @@
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/proc.h"
-#include "../h/inline.h"
 #include "../h/conf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
@@ -150,14 +149,14 @@ rwuio(uio, rw)
 		int sosend(), soreceive();
 		u.u_error = 
 		    (*(rw==UIO_READ?soreceive:sosend))
-		      (fp->f_socket, (struct sockaddr *)0, uio);
+		      (fp->f_socket, (struct sockaddr *)0, uio, 0);
 	} else {
 		ip = fp->f_inode;
 		uio->uio_offset = fp->f_offset;
 		if ((ip->i_mode&IFMT) == IFREG) {
-			ilock(ip);
+			ILOCK(ip);
 			u.u_error = rwip(ip, uio, rw);
-			iunlock(ip);
+			IUNLOCK(ip);
 		} else
 			u.u_error = rwip(ip, uio, rw);
 		fp->f_offset += count - uio->uio_resid;

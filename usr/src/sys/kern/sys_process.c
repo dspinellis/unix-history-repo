@@ -1,4 +1,4 @@
-/*	sys_process.c	5.3	82/09/04	*/
+/*	sys_process.c	5.4	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +9,6 @@
 #include "../h/reg.h"
 #include "../h/text.h"
 #include "../h/seg.h"
-#include "../h/mtpr.h"
 #include "../h/pte.h"
 #include "../h/psl.h"
 #include "../h/vm.h"
