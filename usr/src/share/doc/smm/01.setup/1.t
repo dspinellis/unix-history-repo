@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.11 (Berkeley) %G%
+.\"	@(#)1.t	6.12 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -12,8 +12,7 @@
 .ds CF \*(Dy
 .LP
 .bp
-.NH 1
-Introduction
+.Sh 1 "Introduction"
 .PP
 This document explains how to install the \*(4B Berkeley
 version of UNIX on your system.
@@ -44,8 +43,7 @@ It is desirable to recompile local sources after the conversion,
 as the new compiler (GCC) provides superior code optimization.
 Consult section 3.5 for a description of some of the differences
 between \*(Ps and \*(4B.
-.NH 2
-Distribution format
+.Sh 2 "Distribution format"
 .PP
 The distribution comes in two formats:
 .DS
@@ -68,8 +66,7 @@ References of the form \fIX\fP(Y) mean the entry named
 .FE
 See the tape label for a description of the contents
 and format of each individual tape.
-.NH 2
-UNIX device naming
+.Sh 2 "UNIX device naming"
 .PP
 Device names have a different syntax depending on whether you are talking
 to the standalone system or a running UNIX kernel.
@@ -117,8 +114,7 @@ to store a root filesystem, from which UNIX may be bootstrapped.
 The second partition is traditionally used as a paging area, and the
 rest of the disk is divided into spaces for additional ``mounted
 filesystems'' by use of one or more additional partitions.
-.NH 2
-UNIX devices: block and raw
+.Sh 2 "UNIX devices: block and raw"
 .PP
 UNIX makes a distinction between ``block'' and ``raw'' (character)
 devices.  Each disk has a block device interface where
