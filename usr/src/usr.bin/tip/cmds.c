@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -306,7 +306,7 @@ transmit(fd, eofchars, command)
 						}
 					}
 				} else
-					if (!boolean(value(RAWFTP)))
+					if (!boolean((int)value(RAWFTP)))
 						continue;
 			}
 			send(c);
@@ -315,7 +315,7 @@ transmit(fd, eofchars, command)
 			printf("\r%d", ++lcount);
 		if (boolean(value(ECHOCHECK))) {
 			timedout = 0;
-			alarm(value(ETIMEOUT));
+			alarm((int)value(ETIMEOUT));
 			do {	/* wait for prompt */
 				read(FD, (char *)&c, 1);
 				if (timedout || stop) {
@@ -402,7 +402,7 @@ send(c)
 	}
 tryagain:
 	timedout = 0;
-	alarm(value(ETIMEOUT));
+	alarm((int)value(ETIMEOUT));
 	read(FD, &cc, 1);
 	alarm(0);
 	if (timedout) {
