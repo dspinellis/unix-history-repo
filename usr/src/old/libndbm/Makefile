@@ -14,13 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	dbm.c
 OBJS=	dbm.o
 MAN=	dbm.0
+MDIR=	${DESTDIR}/usr/man/cat3
 
 all: libdbm.a libdbm_p.a
 
@@ -44,10 +45,16 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat3
 	install -o bin -g bin -m 644 libdbm.a ${DESTDIR}/usr/lib/libdbm.a
 	install -o bin -g bin -m 644 libdbm_p.a ${DESTDIR}/usr/lib/libdbm_p.a
 	install -c -o bin -g bin -m 444 dbm.h ${DESTDIR}/usr/include/dbm.h
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat3
+	rm -f ${MDIR}/dbminit.0; ln ${MDIR}/dbm.0 ${MDIR}/dbminit.0
+	rm -f ${MDIR}/delete.0; ln ${MDIR}/dbm.0 ${MDIR}/delete.0
+	rm -f ${MDIR}/fetch.0; ln ${MDIR}/dbm.0 ${MDIR}/fetch.0
+	rm -f ${MDIR}/firstkey.0; ln ${MDIR}/dbm.0 ${MDIR}/firstkey.0
+	rm -f ${MDIR}/nextkey.0; ln ${MDIR}/dbm.0 ${MDIR}/nextkey.0
+	rm -f ${MDIR}/store.0; ln ${MDIR}/dbm.0 ${MDIR}/store.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
