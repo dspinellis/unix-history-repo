@@ -1,0 +1,47 @@
+Mt	t.c	?^}$?
+SPOP	interp.c	?^# define SPOP(v)	(((struct stacksym *) v)--)$?
+SPUSH	interp.c	?^# define SPUSH(v)	(++((struct stacksym *) v))$?
+add_simp	findsimps.c	?^add_simp(const, rel, attno)$?
+aop_interp	interp.c	?^aop_interp(opval, tos)$?
+ascii	string.c	?^ascii(s)$?
+check	findsimps.c	?^check(sym)$?
+cmove	key.c	?^cmove(sym, dest)$?
+concatsym	string.c	?^concatsym(s1, s2)$?
+cpsym	findsimps.c	?^struct symbol $?
+dispose	scan.c	?^dispose(mode)$?
+equelatt	equelpr.c	?^equelatt(ss)$?
+equeleol	equelpr.c	?^equeleol(code)$?
+exactkey	key.c	?^exactkey(ap, key)$?
+f8tof4	typecheck.c	?^f8tof4(pp)$?
+findsimps	findsimps.c	?^findsimps()$?
+flptexcep	startovqp.c	?^flptexcep()$?
+ftoi2	typecheck.c	?^ftoi2(p)$?
+ftoi4	typecheck.c	?^ftoi4(p)$?
+getsymbol	interp1.c	?^getsymbol(ts, p)$?
+i2toi4	typecheck.c	?^i2toi4(pp)$?
+i4toi2	typecheck.c	?^i4toi2(pp)$?
+indexcheck	key.c	?^indexcheck()$?
+interpret	interp.c	?^interpret(list)$?
+itof	typecheck.c	?^itof(p)$?
+keycheck	key.c	?^keycheck(keys, keytuple, mode)$?
+lexcomp	string.c	?^lexcomp(s1, l1, s2, l2)$?
+lmatch	string.c	?^lmatch(pat, plen, str, slen)$?
+pmatch	string.c	?^pmatch(pat, plen, str, slength)$?
+prsimp	findsimps.c	?^prsimp(ss)$?
+prstack	prsym.c	?^prstack(s)$?
+prstr	prsym.c	?^prstr(p, l)$?
+prsym	prsym.c	?^prsym(s)$?
+pwritesym	equelpr.c	?^pwritesym(s)$?
+rangekey	key.c	?^rangekey(ap, l, h)$?
+rcvt	interp1.c	?^rcvt(tos, restype, reslen)$?
+relop	findsimps.c	?^relop(s, reverse)$?
+relop_interp	interp.c	?^relop_interp(opval, l1)$?
+scan	scan.c	?^scan()$?
+setallkey	key.c	?^setallkey(relkey, keytuple)$?
+size	string.c	?^size(s)$?
+startequel	equelpr.c	?^startequel()$?
+startovqp	startovqp.c	?^startovqp()$?
+strategy	strategy.c	?^strategy()$?
+tout	interp1.c	?^tout(s, offp, rlen)$?
+typecheck	typecheck.c	?^typecheck(pp1, pp2, opval)$?
+typecoerce	typecheck.c	?^typecoerce(tosx, ntype, nlen)$?
