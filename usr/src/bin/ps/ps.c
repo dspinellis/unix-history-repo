@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.9 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -17,6 +17,7 @@ static	char *sccsid = "@(#)ps.c	4.8 (Berkeley) %G%";
 #include <sys/text.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <sys/vlimit.h>
 
 struct nlist nl[] = {
 	{ "_proc" },
@@ -63,6 +64,7 @@ struct	asav {
 	char	a_tty[DIRSIZ+1];
 	dev_t	a_ttyd;
 	time_t	a_cpu;
+	size_t	a_maxrss;
 };
 
 char	*lhdr;
@@ -610,6 +612,7 @@ save()
 	}
 #undef e
 	ap->a_cpu /= hz;
+	ap->a_maxrss = mproc->p_maxrss;
 	if (lflg) {
 		register struct lsav *lp;
 
@@ -871,7 +874,7 @@ upr(sp)
 }
 
 char *vhdr =
-"  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  SRS TSIZ TRS %CPU %MEM";
+"  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  LIM TSIZ TRS %CPU %MEM";
 vpr(sp)
 	struct savcom *sp;
 {
@@ -882,9 +885,15 @@ vpr(sp)
 	ptty(ap->a_tty);
 	printf(" %4.4s", state(ap));
 	ptime(ap);
-	printf("%3d%3d%7d%5d%5d%5d%5d%4d%5.1f%5.1f",
-	   ap->a_slptime, ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
-	   ap->a_size/2, ap->a_rss/2, vp->v_swrss/2,
+	printf("%3d%3d%7d%5d%5d",
+	   ap->a_slptime > 99 ? 99 : ap-> a_slptime,
+	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
+	   ap->a_size/2, ap->a_rss/2);
+	if (ap->a_maxrss == (INFINITY/NBPG))
+		printf("   oo");
+	else
+		printf("%5d", ap->a_maxrss/2);
+	printf("%5d%4d%5.1f%5.1f",
 	   ap->a_tsiz/2, ap->a_txtrss/2, vp->v_pctcpu, pmem(ap));
 }
 
@@ -942,7 +951,7 @@ state(ap)
 	default:
 		stat = '?';
 	}
-	load = ap->a_flag & SLOAD ? ' ' : 'W';
+	load = ap->a_flag & SLOAD ? (ap->a_rss>ap->a_maxrss ? '>' : ' ') : 'W';
 	if (ap->a_nice < NZERO)
 		nice = '<';
 	else if (ap->a_nice > NZERO)
