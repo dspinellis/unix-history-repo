@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.98		%G%);
+SCCSID(@(#)main.c	3.99		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -141,6 +141,14 @@ main(argc, argv)
 	STAB *st;
 	extern time_t convtime();
 	extern putheader(), putbody();
+	static bool reenter = FALSE;
+
+	if (reenter)
+	{
+		syserr("main: reentered!");
+		abort();
+	}
+	reenter = TRUE;
 	extern ADDRESS *recipient();
 	bool canrename;
 
