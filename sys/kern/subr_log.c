@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)subr_log.c	7.11 (Berkeley) 3/17/91
+ *
+ * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
+ * --------------------		-----	----------------------
+ * CURRENT PATCH LEVEL:		1	XXXXX
+ * --------------------		-----	----------------------
+ *
+ * 16 Jun 93	Juha Nurmela		select uses pids, not pointers
  */
 
 /*
@@ -51,7 +58,7 @@
 
 struct logsoftc {
 	int	sc_state;		/* see above for possibilities */
-	struct	proc *sc_selp;		/* process waiting on select call */
+	pid_t	sc_sel;		/* pid of process waiting on select call 16 Jun 93 */
 	int	sc_pgid;		/* process/group for async I/O */
 } logsoftc;
 
@@ -91,7 +98,7 @@ logclose(dev, flag)
 {
 	log_open = 0;
 	logsoftc.sc_state = 0;
-	logsoftc.sc_selp = 0;
+	logsoftc.sc_sel = 0; /* 16 Jun 93 */
 }
 
 /*ARGSUSED*/
@@ -154,7 +161,7 @@ logselect(dev, rw, p)
 			splx(s);
 			return (1);
 		}
-		logsoftc.sc_selp = p;
+		logsoftc.sc_sel = p->p_pid; /* 16 Jun 93 */
 		break;
 	}
 	splx(s);
@@ -167,9 +174,9 @@ logwakeup()
 
 	if (!log_open)
 		return;
-	if (logsoftc.sc_selp) {
-		selwakeup(logsoftc.sc_selp, 0);
-		logsoftc.sc_selp = 0;
+	if (logsoftc.sc_sel) {			/* 16 Jun 93 */
+		selwakeup(logsoftc.sc_sel, 0);
+		logsoftc.sc_sel = 0;
 	}
 	if (logsoftc.sc_state & LOG_ASYNC) {
 		if (logsoftc.sc_pgid < 0)
