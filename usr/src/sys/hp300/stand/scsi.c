@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.3 (Berkeley) %G%
+ *	@(#)scsi.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -45,11 +45,11 @@ scsiinit()
 	static int first = 1;
 	
 	i = 0;
-	for (hw = sc_table; i < NSCSI && hw < &sc_table[MAX_CTLR]; hw++) {
-		if (hw->hw_type != SCSI)
+	for (hw = sc_table; i < NSCSI && hw < &sc_table[MAXCTLRS]; hw++) {
+		if (!HW_ISSCSI(hw))
 			continue;
 		hs = &scsi_softc[i];
-		hs->sc_addr = hw->hw_addr;
+		hs->sc_addr = hw->hw_kva;
 		scsireset(i);
 		if (howto & RB_ASKNAME)
 			printf("scsi%d at sc%d\n", i, hw->hw_sc);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)samachdep.h	7.1 (Berkeley) %G%
+ *	@(#)samachdep.h	7.2 (Berkeley) %G%
  */
 
 #define	NHPIB		4
@@ -14,7 +14,20 @@
 #define NCT		(NHPIB * 8)
 #define NSD		(NSCSI * 8)
 
-#define IOV(x)		(x)
+/* from cpu.h */
+#define IIOV(x)		(x)
+#define DIOBASE		(0x600000)
+#define	DIOCSIZE	(0x10000)
+#define DIOIIBASE	(0x01000000)
+#define DIOIICSIZE	(0x00400000)
+
+#define HP_320		0	/* 16Mhz 68020+HP MMU+16K external cache */
+#define HP_330		1	/* 16Mhz 68020+68851 MMU */
+#define HP_350		2	/* 25Mhz 68020+HP MMU+32K external cache */
+#define HP_360		3	/* 25Mhz 68030 */
+#define HP_370		4	/* 33Mhz 68030+64K external cache */
+#define HP_340		5	/* 16Mhz 68030 */
+#define HP_375		6	/* 50Mhz 68030+32K external cache */
 
 extern	int howto, devtype;
 

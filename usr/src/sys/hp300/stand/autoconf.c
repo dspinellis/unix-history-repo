@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: autoconf.c 1.9 89/10/07$
+ * from: Utah $Hdr: autoconf.c 1.13 91/01/21$
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -20,7 +20,7 @@
 #include "../dev/device.h"
 #include "../dev/grfvar.h"
 
-struct hp_hw sc_table[MAX_CTLR];
+struct hp_hw sc_table[MAXCTLRS];
 
 extern int internalhpib;
 
@@ -55,34 +55,43 @@ sctoaddr(sc)
 	if (sc == 7 && internalhpib)
 		return(internalhpib);
 	if (sc < 32)
-		return(0x600000+(0x10000*sc));
-	if (sc >= 132 && sc < 134)
-		return(0x1000000+((sc-132)*0x400000));
+		return(DIOBASE + sc * DIOCSIZE);
+	if (sc >= 132)
+		return(DIOIIBASE + (sc - 132) * DIOIICSIZE);
 	return(sc);
 }
 
 /*
- * Probe all DIO select codes (0 - 32), the internal display address,.
- * and DIO-II select codes 132 (hack) and 133 (hack).
+ * Probe all DIO select codes (0 - 32), the internal display address,
+ * and DIO-II select codes (132 - 256).
  *
  * Note that we only care about displays, SCSIs and HP-IBs.
  */
 find_devs()
 {
+	short sc, sctop;
 	u_char *id_reg;
-	register short sc;
-	register int addr;
+	register caddr_t addr;
 	register struct hp_hw *hw;
+	extern int machineid;
 
 	hw = sc_table;
-	for (sc = -1; sc < 32; sc++) {
-		addr = sctoaddr(sc);
+	sctop = machineid == HP_320 ? 32 : 256;
+	for (sc = -1; sc < sctop; sc++) {
+		if (sc >= 32 && sc < 132)
+			continue;
+		addr = (caddr_t) sctoaddr(sc);
 		if (badaddr(addr))
 			continue;
 
 		id_reg = (u_char *) addr;
-		hw->hw_addr = (char *) addr;
-		hw->hw_id = id_reg[1] & 0xff;
+		hw->hw_pa = addr;
+		if (sc >= 132)
+			hw->hw_size = (id_reg[0x101] + 1) * 0x100000;
+		else
+			hw->hw_size = DIOCSIZE;
+		hw->hw_kva = addr;
+		hw->hw_id = id_reg[1];
 		hw->hw_sc = sc;
 
 		/*
@@ -90,24 +99,24 @@ find_devs()
 		 * so we just go by the "internal HPIB" indicator in SYSFLAG.
 		 */
 		if (sc == 7 && internalhpib) {
-			hw->hw_type = HPIB;
+			hw->hw_type = C_HPIB;
 			hw++;
 			continue;
 		}
 
 		switch (hw->hw_id) {
 		case 5:		/* 98642A */
-		case 128+5:	/* 98642A remote */
-			hw->hw_type = COMMDCM;
+		case 5+128:	/* 98642A remote */
+			hw->hw_type = D_COMMDCM;
 			break;
 		case 8:		/* 98625B */
 		case 128:	/* 98624A */
-			hw->hw_type = HPIB;
+			hw->hw_type = C_HPIB;
 			break;
 		case 57:	/* Displays */
-			hw->hw_type = BITMAP;
-			hw->hw_id2 = id_reg[0x15];
-			switch (hw->hw_id2) {
+			hw->hw_type = D_BITMAP;
+			hw->hw_secid = id_reg[0x15];
+			switch (hw->hw_secid) {
 			case 4:	/* renaissance */
 			case 8: /* davinci */
 				sc++;		/* occupy 2 select codes */
@@ -115,46 +124,16 @@ find_devs()
 			}
 			break;
 		case 9:
-			hw->hw_type = KEYBOARD;
+			hw->hw_type = D_KEYBOARD;
 			break;
 		case 7:
-		case 39:
-		case 71:
-		case 103:
-			hw->hw_type = SCSI;
+		case 7+32:
+		case 7+64:
+		case 7+96:
+			hw->hw_type = C_SCSI;
 			break;
 		default:	/* who cares */
-			hw->hw_type = MISC;
-			break;
-		}
-		hw++;
-	}
-	/*
-	 * Look for displays in DIO-II space
-	 */
-	for (sc = 132; sc < 134; sc++) {
-		addr = sctoaddr(sc);
-		if (badaddr(addr))
-			continue;
-
-		id_reg = (u_char *) addr;
-		hw->hw_addr = (char *) addr;
-		hw->hw_id = id_reg[1] & 0xff;
-		hw->hw_sc = sc;
-
-		switch (hw->hw_id) {
-		case 57:	/* Displays */
-			hw->hw_type = BITMAP;
-			hw->hw_id2 = id_reg[0x15];
-			switch (hw->hw_id2) {
-			case 4:	/* renaissance */
-			case 8: /* davinci */
-				sc++;		/* occupy 2 select codes */
-				break;
-			}
-			break;
-		default:	/* who cares */
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
 		}
 		hw++;

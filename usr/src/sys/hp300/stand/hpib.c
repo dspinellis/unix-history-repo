@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.4 (Berkeley) %G%
+ *	@(#)hpib.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -18,7 +18,7 @@
 #include "saio.h"
 #include "samachdep.h"
 
-int	internalhpib = 0x478000;
+int	internalhpib = IIOV(0x478000);
 int	fhpibppoll(), nhpibppoll();
 
 struct	hpib_softc hpib_softc[NHPIB];
@@ -35,11 +35,11 @@ hpibinit()
 	static int first = 1;
 	
 	i = 0;
-	for (hw = sc_table; i < NHPIB && hw < &sc_table[MAX_CTLR]; hw++) {
-		if (hw->hw_type != HPIB)
+	for (hw = sc_table; i < NHPIB && hw < &sc_table[MAXCTLRS]; hw++) {
+		if (!HW_ISHPIB(hw))
 			continue;
 		hs = &hpib_softc[i];
-		hs->sc_addr = hw->hw_addr;
+		hs->sc_addr = hw->hw_kva;
 		if (nhpibinit(i) == 0)
 			if (fhpibinit(i) == 0)
 				continue;
