@@ -1,4 +1,4 @@
-/*	machdep.c	3.32	%G%	*/
+/*	machdep.c	3.33	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.32) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.33) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -103,7 +103,7 @@ clkinit(base)
 	int year = YRREF;
 
 	if (base < 5*SECYR) {
-		printf("WARNING: silly date in file system");
+		printf("WARNING: preposterous time in file system");
 		time = 6*SECYR + 212*SECDAY + SECDAY/2;
 		clkset();
 		goto check;
