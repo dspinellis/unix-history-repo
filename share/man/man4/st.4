@@ -169,7 +169,7 @@ all the present settings.
 Perform one of the following operations. These operations all have a 
 single argument, which is either a boolean, or a signed integer, depending
 on the operation.
-.Bl -tag -width MTSETLDNSTY
+.Bl -tag -width MTSELDNSTY
 .It Pa MTWEOF
 Write N end of file marks at the present head position.
 .It Pa MTFSF
@@ -197,15 +197,10 @@ Disable controller Buffering.
 Set the blocksize to use for the device. If the device is capable of
 variable blocksize operation, and the blocksize is set to 0, then the drive
 will be driven in variable mode.
-.It Pa MTSETHDNSTY
+.It Pa MTSETDNSTY
 Set the Density value (see 
 .Xr st 1
-) to use when running High density.
-.It Pa MTSETMDNSTY
-Set medium density.
-.It Pa MTSETLDNSTY
-Set low density.
-
+) to use when running in the mode openned (minor bits 2,3).
 .El
 .It Pa MTIOCIEOT
 ?Set END of TAPE processing... not yet supported.
