@@ -14,7 +14,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.5 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.6 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.5 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.5 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.6 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -127,7 +127,10 @@ getrequests()
 #ifdef DEBUG
 	/* turn on network debugging? */
 	if (tTd(15, 15))
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, 0, 0);
+	{
+		int on = 1;
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
+	}
 #endif DEBUG
 
 	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress) < 0)
@@ -391,7 +394,10 @@ makeconnection(host, port, outfile, infile)
 
 	/* turn on network debugging? */
 	if (tTd(16, 14))
-		(void) setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0);
+	{
+		int on = 1;
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
+	}
 # endif DEBUG
 	(void) fflush(CurEnv->e_xfp);			/* for debugging */
 	errno = 0;					/* for debugging */
