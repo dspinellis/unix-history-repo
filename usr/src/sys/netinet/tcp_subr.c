@@ -4,18 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.23 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.24 (Berkeley) %G%
  */
 
-#include <param.h>
-#include <proc.h>
-#include <systm.h>
-#include <malloc.h>
-#include <mbuf.h>
-#include <socket.h>
-#include <socketvar.h>
-#include <protosw.h>
-#include <errno.h>
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
 
 #include <net/route.h>
 #include <net/if.h>
