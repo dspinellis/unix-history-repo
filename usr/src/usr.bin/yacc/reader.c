@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reader.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)reader.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -30,7 +30,6 @@ static char sccsid[] = "@(#)reader.c	5.2 (Berkeley) %G%";
 /*  will be expanded to accomodate it.					*/
 
 #define LINESIZE 100
-
 
 char *cache;
 int cinc, cache_size;
@@ -642,11 +641,11 @@ get_literal()
 	    case '0': case '1': case '2': case '3':
 	    case '4': case '5': case '6': case '7':
 		n = c - '0';
-		c = *cptr++;
+		c = *cptr;
 		if (IS_OCTAL(c))
 		{
 		    n = (n << 3) + (c - '0');
-		    c = *cptr++;
+		    c = *++cptr;
 		    if (IS_OCTAL(c))
 		    {
 			n = (n << 3) + (c - '0');
@@ -664,9 +663,10 @@ get_literal()
 		    illegal_character(c_cptr);
 		for (;;)
 		{
-		    c = *cptr++;
+		    c = *cptr;
 		    i = hexval(c);
 		    if (i < 0 || i >= 16) break;
+		    ++cptr;
 		    n = (n << 4) + i;
 		    if (n > MAXCHAR) illegal_character(c_cptr);
 		}
@@ -722,9 +722,9 @@ get_literal()
 	    case '\t': cachec('t'); break;
 	    case '\v': cachec('v'); break;
 	    default:
-		cachec(c >> 6);
-		cachec((c >> 3) & 7);
-		cachec(c & 7);
+		cachec(((c >> 6) & 7) + '0');
+		cachec(((c >> 3) & 7) + '0');
+		cachec((c & 7) + '0');
 		break;
 	    }
 	}
