@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nameser.h	5.20 (Berkeley) %G%
+ *	@(#)nameser.h	5.21 (Berkeley) %G%
  */
 
 /*
@@ -81,6 +81,7 @@
 #define T_HINFO		13		/* host information */
 #define T_MINFO		14		/* mailbox information */
 #define T_MX		15		/* mail routing information */
+#define T_TXT		16		/* text strings */
 	/* non standard */
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
@@ -98,6 +99,7 @@
 
 #define C_IN		1		/* the arpa internet */
 #define C_CHAOS		3		/* for chaos net at MIT */
+#define C_HS		4		/* for Hesiod name server at MIT */
 	/* Query class values which do not appear in resource records */
 #define C_ANY		255		/* wildcard match */
 
