@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.64		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.65		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -114,22 +114,23 @@ struct mailer
 typedef struct mailer	MAILER;
 
 /* bits for m_flags */
-# define M_FOPT		000000001	/* mailer takes picky -f flag */
-# define M_ROPT		000000002	/* mailer takes picky -r flag */
-# define M_QUIET	000000004	/* don't print error on bad status */
-# define M_RESTR	000000010	/* must be daemon to execute */
-# define M_NHDR		000000020	/* don't insert From line */
-# define M_LOCAL	000000040	/* delivery is to this host */
-# define M_STRIPQ	000000100	/* strip quote chars from user/host */
-# define M_MUSER	000000200	/* can handle multiple users at once */
-# define M_NEEDFROM	000000400	/* need arpa-style From: line */
-# define M_NEEDDATE	000001000	/* need arpa-style Date: line */
-# define M_MSGID	000002000	/* need Message-Id: field */
-# define M_USR_UPPER	000010000	/* preserve user case distinction */
-# define M_HST_UPPER	000020000	/* preserve host case distinction */
-# define M_FULLNAME	000040000	/* want Full-Name field */
-# define M_UGLYUUCP	000100000	/* this wants an ugly UUCP from line */
-# define M_EXPENSIVE	000200000	/* it costs to use this mailer.... */
+# define M_FOPT		000000001L	/* mailer takes picky -f flag */
+# define M_ROPT		000000002L	/* mailer takes picky -r flag */
+# define M_QUIET	000000004L	/* don't print error on bad status */
+# define M_RESTR	000000010L	/* must be daemon to execute */
+# define M_NHDR		000000020L	/* don't insert From line */
+# define M_LOCAL	000000040L	/* delivery is to this host */
+# define M_STRIPQ	000000100L	/* strip quote chars from user/host */
+# define M_MUSER	000000200L	/* can handle multiple users at once */
+# define M_NEEDFROM	000000400L	/* need arpa-style From: line */
+# define M_NEEDDATE	000001000L	/* need arpa-style Date: line */
+# define M_MSGID	000002000L	/* need Message-Id: field */
+# define M_RELRCPT	000004000L	/* make recipient addresses relative */
+# define M_USR_UPPER	000010000L	/* preserve user case distinction */
+# define M_HST_UPPER	000020000L	/* preserve host case distinction */
+# define M_FULLNAME	000040000L	/* want Full-Name field */
+# define M_UGLYUUCP	000100000L	/* this wants an ugly UUCP from line */
+# define M_EXPENSIVE	000200000L	/* it costs to use this mailer.... */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
