@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.51		%G%);
+SCCSID(@(#)conf.c	3.52		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -50,7 +50,7 @@ SCCSID(@(#)conf.c	3.51		%G%);
 struct hdrinfo	HdrInfo[] =
 {
 	"date",			H_CHECK,		M_NEEDDATE,
-	"from",			H_ADDR|H_CHECK,		M_NEEDFROM,
+	"from",			H_ADDR|H_FROM|H_CHECK,	M_NEEDFROM,
 	"original-from",	0,			0,
 	"sender",		H_ADDR,			0,
 	"full-name",		H_ACHECK,		M_FULLNAME,
