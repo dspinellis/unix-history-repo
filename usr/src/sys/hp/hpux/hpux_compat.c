@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.42 92/01/20$
  *
- *	@(#)hpux_compat.c	7.23 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -1623,11 +1623,13 @@ ohpuxtimes(p, uap, retval)
 	} *uap;
 	time_t *retval;
 {
+	struct timeval ru, rs;
 	struct tms atms;
 	int error;
 
-	atms.tms_utime = hpuxscale(&p->p_utime);
-	atms.tms_stime = hpuxscale(&p->p_stime);
+	calcru(p, &ru, &rs, NULL);
+	atms.tms_utime = hpuxscale(&ru);
+	atms.tms_stime = hpuxscale(&rs);
 	atms.tms_cutime = hpuxscale(&p->p_stats->p_cru.ru_utime);
 	atms.tms_cstime = hpuxscale(&p->p_stats->p_cru.ru_stime);
 	error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
