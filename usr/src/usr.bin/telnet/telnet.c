@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.27 (Berkeley) %G%";
 #endif
 
 /*
@@ -54,7 +54,7 @@ extern	int errno;
 
 int	tn(), quit(), suspend(), bye(), help();
 int	setescape(), status(), toggle(), setoptions();
-int	setcrmod(), setdebug();
+int	setcrmod(), setdebug(), sendesc(), ayt(), intp();
 
 #define HELPINDENT (sizeof ("connect"))
 
@@ -74,6 +74,9 @@ char	statushelp[] =	"print status information";
 char	helphelp[] =	"print help information";
 char	optionshelp[] =	"toggle viewing of options processing";
 char	crmodhelp[] =	"toggle mapping of received carriage returns";
+char	sendeschelp[] =	"send escape character";
+char	aythelp[] =	"send Are You There";
+char	intphelp[] =	"send Interrupt Process";
 
 struct cmd cmdtab[] = {
 	{ "open",	openhelp,	tn },
@@ -85,6 +88,9 @@ struct cmd cmdtab[] = {
 	{ "options",	optionshelp,	setoptions },
 	{ "crmod",	crmodhelp,	setcrmod },
 	{ "debug",	debughelp,	setdebug },
+	{ "ayt",	aythelp,	ayt },
+	{ "interrupt",	intphelp,	intp },
+	{ "passthru",	sendeschelp,	sendesc },
 	{ "?",		helphelp,	help },
 	0
 };
@@ -180,7 +186,7 @@ tn(argc, argv)
 		}
 		sin.sin_port = htons(sin.sin_port);
 	}
-	net = socket(AF_INET, SOCK_STREAM, 0, 0);
+	net = socket(AF_INET, SOCK_STREAM, 0);
 	if (net < 0) {
 		perror("telnet: socket");
 		return;
@@ -191,7 +197,7 @@ tn(argc, argv)
 	signal(SIGINT, intr);
 	signal(SIGPIPE, deadpeer);
 	printf("Trying...\n");
-	if (connect(net, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+	if (connect(net, (caddr_t)&sin, sizeof (sin)) < 0) {
 		perror("telnet: connect");
 		signal(SIGINT, SIG_DFL);
 		return;
@@ -387,6 +393,8 @@ telnet(s)
 
 	(void) mode(2);
 	ioctl(s, FIONBIO, &on);
+	if (!hisopts[TELOPT_SGA])
+		willoption(TELOPT_SGA);
 	for (;;) {
 		int ibits = 0, obits = 0;
 
@@ -445,11 +453,26 @@ telnet(s)
 				tcc = 0;
 				break;
 			}
-			if (c == IAC)
-				*nfrontp++ = c;
-			*nfrontp++ = c;
-			if (c == '\r')
+			switch (c) {
+			case '\n':
+				if (!hisopts[TELOPT_ECHO])
+					*nfrontp++ = '\r';
 				*nfrontp++ = '\n';
+				break;
+			case '\r':
+				*nfrontp++ = '\r';
+				if (hisopts[TELOPT_ECHO])
+					*nfrontp++ = '\n';
+				else
+					*nfrontp++ = '\0';
+				break;
+			case IAC:
+				*nfrontp++ = IAC;
+				/* fall into ... */
+			default:
+				*nfrontp++ = c;
+				break;
+			}
 		}
 		if ((obits & (1 << s)) && (nfrontp - nbackp) > 0)
 			netflush(s);
@@ -741,6 +764,23 @@ setdebug()
 	if (net > 0 &&
 	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
 		perror("setsockopt (SO_DEBUG)");
+}
+
+sendesc()
+{
+	*nfrontp++ = escape;
+}
+
+ayt()
+{
+	*nfrontp++ = IAC;
+	*nfrontp++ = AYT;
+}
+
+intp()
+{
+	*nfrontp++ = IAC;
+	*nfrontp++ = IP;
 }
 
 /*
