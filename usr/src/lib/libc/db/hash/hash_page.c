@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -29,6 +29,7 @@ ROUTINES:
 
 #include <sys/param.h>
 #include <sys/file.h>
+#include <signal.h>
 #include <assert.h>
 #include <errno.h>
 #include <db.h>
@@ -764,13 +765,22 @@ BUFHEAD	*obufp;
 static int
 open_temp()
 {
-    char        *namestr = "_hashXXXXXX";
+    sigset_t	set, oset;
+    char	*namestr = "_hashXXXXXX";
 
-    if ((hashp->fp = mkstemp ( namestr )) == -1){
-	return (-1);
+    /* Block signals; make sure file goes away at process exit. */
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGQUIT);
+    sigaddset(&set, SIGTERM);
+    (void)sigprocmask(SIG_BLOCK, &set, &oset);
+    if ((hashp->fp = mkstemp ( namestr )) != -1) {
+	(void)unlink(namestr);
+	(void)fcntl(hashp->fp, F_SETFD, 1);
     }
-    unlink(namestr);    /* Make sure file goes away at process exit*/
-    return(0);
+    (void)sigprocmask(SIG_SETMASK, &oset, (sigset_t *)NULL);
+    return(hashp->fp != -1 ? 0 : -1);
 }
 
 /* 
