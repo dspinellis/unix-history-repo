@@ -3,33 +3,31 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.0.t	8.1 (Berkeley) %G%
+.\"	@(#)2.0.t	8.2 (Berkeley) %G%
 .\"
-.ds ss 1
-.sh "System facilities
-This section discusses the system facilities that
-are not considered part of the kernel.
-.PP
+.Sh 1 "System facilities
+.LP
 The system abstractions described are:
 .IP "Directory contexts
 .br
-A directory context is a position in the UNIX file system name
-space.  Operations on files and other named objects in a file system are
+A directory context is a position in the filesystem name
+space.  Operations on files and other named objects in a filesystem are
 always specified relative to such a context.
 .IP "Files
 .br
 Files are used to store uninterpreted sequence of bytes on which
 random access \fIreads\fP and \fIwrites\fP may occur.
-Pages from files may also be mapped into process address space.\(dg
-A directory may be read as a file.
-.FS
-\(dg Support for mapping files is not included in the 4.3 release.
-.FE
+Pages from files may also be mapped into process address space.
+A directory may be read as a file,
+though it is usually accessed using
+.Fn getdirentries
+(see section
+.Xr 2.2.3.1 ).
 .IP "Communications domains
 .br
 A communications domain represents
 an interprocess communications environment, such as the communications
-facilities of the UNIX system,
+facilities of the 4.4BSD system,
 communications in the INTERNET, or the resource sharing protocols
 and access rights of a resource sharing system on a local network.
 .IP "Sockets
@@ -54,4 +52,3 @@ disks and other peripherals.  They often support the generic
 .br
 Process descriptors provide facilities for control and debugging of
 other processes.
-.ds ss 2

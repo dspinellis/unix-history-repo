@@ -3,70 +3,149 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.7.t	8.1 (Berkeley) %G%
+.\"	@(#)1.7.t	8.2 (Berkeley) %G%
 .\"
-.sh "System operation support
-.PP
+.Sh 2 "System operation support
+.LP
 Unless noted otherwise,
 the calls in this section are permitted only to a privileged user.
-.NH 3
-Bootstrap operations
+.Sh 3 "Monitoring system operation
 .PP
-The call
+The
+.Fn sysctl
+function allows any process to retrieve system information
+and allows processes with appropriate privileges to set system configurations.
 .DS
-mount(blkdev, dir, ronly);
-char *blkdev, *dir; int ronly;
+.Fd sysctl 6 "get or set system information
+sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+int *name; u_int namelen; result void *oldp; result size_t *oldlenp;
+void *newp; size_t newlen;
 .DE
-extends the UNIX name space.  The \fImount\fP call specifies
-a block device \fIblkdev\fP containing a UNIX file system
-to be made available starting at \fIdir\fP.  If \fIronly\fP is
-set then the file system is read-only; writes to the file system
-will not be permitted and access times will not be updated
-when files are referenced.
-\fIDir\fP is normally a name in the root directory.
+The information available from
+.Fn sysctl
+consists of integers, strings, and tables.
+.Fn Sysctl
+returns a consistent snapshot of the data requested.
+Consistency is obtained by locking the destination
+buffer into memory so that the data may be copied out without blocking.
+Calls to
+.Fn sysctl
+are serialized to avoid deadlock.
 .PP
-The call
+The state is described using a ``Management Information Base'' (MIB)
+style name, listed in \fIname\fP,
+which is a \fInamelen\fP length array of integers.
+.PP
+The information is copied into the buffer specified by \fIoldp\fP.
+The size of the buffer is given by the location specified by \fIoldlenp\fP
+before the call,
+and that location gives the amount of data copied after a successful call.
+If the amount of data available is greater
+than the size of the buffer supplied,
+the call supplies as much data as fits in the buffer provided
+and returns with the error code ENOMEM.
+.PP
+To set a new value, \fInewp\fP
+is set to point to a buffer of length \fInewlen\fP
+from which the requested value is to be taken.
+If a new value is not to be set, \fInewp\fP
+should be set to NULL and \fInewlen\fP set to 0.
+.PP
+The top level names are defined with a CTL_ prefix in \fI<sys/sysctl.h>\fP,
+and are as follows.
+The next and subsequent levels down are found
+in the include files listed here:
 .DS
-swapon(blkdev, size);
-char *blkdev; int size;
+.TS
+l l l.
+Name	Next Level Names	Description
+CTL\_DEBUG	sys/sysctl.h	Debugging
+CTL\_FS	sys/sysctl.h	Filesystem
+CTL\_HW	sys/sysctl.h	Generic CPU, I/O
+CTL\_KERN	sys/sysctl.h	High kernel limits
+CTL\_MACHDEP	sys/sysctl.h	Machine dependent
+CTL\_NET	sys/socket.h	Networking
+CTL\_USER	sys/sysctl.h	User-level
+CTL\_VM	vm/vm_param.h	Virtual memory
+.TE
+.DE
+.Sh 3 "Bootstrap operations
+.LP
+The call:
+.DS
+.Fd mount 4 "mount a filesystem
+mount(type, dir, flags, data);
+int type; char *dir; int flags; caddr_t data;
+.DE
+extends the name space. The
+.Fn mount
+call grafts a filesystem object onto the system file tree
+at the point specified in \fIdir\fP.
+The argument data describes the filesystem object to be mounted.
+The argument type tells the kernel how to interpret data.
+The contents of the filesystem become available through the
+new mount point \fIdir\fP.
+Any files in \fIdir\fP at the time of a successful mount
+are swept under the carpet so to speak,
+and are unavailable until the filesystem is unmounted.
+The \fIflags\fP specifies generic properties,
+such as a request to mount the filesystem read-only.
+.LP
+Information about all the mounted filesystems can be obtained with the call:
+.DS
+.Fd getfsstat 3 "get list of all mounted filesystems
+getfsstat(buf, bufsize, flags)
+result struct statfs *buf; long bufsize, int flags;
+.DE
+.LP
+The call:
+.DS
+.Fd swapon 1 "add a swap device for interleaved paging/swapping
+swapon(blkdev);
+char *blkdev;
 .DE
 specifies a device to be made available for paging and swapping.
-.PP
-.NH 3
-Shutdown operations
-.PP
-The call
+.Sh 3 "Shutdown operations
+.LP
+The call:
 .DS
-unmount(dir);
-char *dir;
+.Fd unmount 2 "dismount a filesystem
+unmount(dir, flags);
+char *dir; int flags;
 .DE
-unmounts the file system mounted on \fIdir\fP.
-This call will succeed only if the file system is
-not currently being used.
-.PP
-The call
+unmounts the filesystem mounted on \fIdir\fP.
+This call will succeed only if the filesystem is
+not currently being used or if the MNT_FORCE flag is specified.
+.LP
+The call:
 .DS
+.Fd sync 0 "force completion of pending disk writes (flush cache)
 sync();
 .DE
 schedules input/output to clean all system buffer caches.
 (This call does not require privileged status.)
-.PP
-The call
+Files can be selectively flushed to disk using the
+.Fn fsync
+call (see section
+.Xr 2.2.6 ).
+.LP
+The call:
 .DS
+.Fd reboot 1 "reboot system or halt processor
 reboot(how)
 int how;
 .DE
 causes a machine halt or reboot.  The call may request a reboot
 by specifying \fIhow\fP as RB_AUTOBOOT, or that the machine be halted
 with RB_HALT.  These constants are defined in \fI<sys/reboot.h>\fP.
-.NH 3
-Accounting
+.Sh 3 "Accounting
 .PP
 The system optionally keeps an accounting record in a file
 for each process that exits on the system.
 The format of this record is beyond the scope of this document.
-The accounting may be enabled to a file \fIname\fP by doing
+The accounting may be enabled to a file \fIname\fP by doing:
 .DS
+.Fd acct 1 "enable or disable process accounting
 acct(path);
 char *path;
 .DE
