@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.17 %G%";
+static char sccsid[] = "@(#)rval.c 1.18 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -510,11 +510,6 @@ cstrng:
 			    codeoff();
 			    contype = rvalue( r[3] , NIL , RREQ );
 			    codeon();
-			    if ( contype == lookup( intset ) -> type ) {
-				codeoff();
-				contype = rvalue( r[2] , NIL , RREQ );
-				codeon();
-			    }
 		    }
 		    if ( contype == NIL ) {
 			return NIL;
@@ -564,12 +559,9 @@ cstrng:
 					, P2PTR )
 			    , setop[ r[0] - T_MULT ] );
 			if ( contype == NIL ) {
-			    contype = p1;
-			    if ( contype == lookup( intset ) -> type ) {
-				codeoff();
-				contype = rvalue( r[2] , NIL , LREQ );
-				codeon();
-			    }
+			    codeoff();
+			    contype = rvalue( r[2] , p1 , LREQ );
+			    codeon();
 			}
 			if ( contype == NIL ) {
 			    return NIL;
@@ -687,15 +679,6 @@ cstrng:
 				    return (NIL);
 			    if (width(p) > width(p1))
 				    contype = p;
-		    } else if ( isa( p1 , "t" ) ) {
-			if ( contype == lookup( intset ) -> type ) {
-			    codeoff();
-			    contype = rvalue( r[2] , NIL , RREQ );
-			    codeon();
-			    if ( contype == NIL ) {
-				return NIL;
-			    }
-			}
 		    }
 		    /*
 		     * Now we generate code for
@@ -734,15 +717,13 @@ cstrng:
 				contype = p;
 			    }
 			} else if ( c1 == TSET ) {
-			    if ( contype == lookup( intset ) -> type ) {
-				codeoff();
-				p = rvalue( r[ 2 ] , NIL , LREQ );
-				codeon();
-				if ( p == NIL ) {
-				    return NIL;
-				}
-				contype = p;
+			    codeoff();
+			    p = rvalue( r[ 2 ] , contype , LREQ );
+			    codeon();
+			    if ( p == NIL ) {
+				return NIL;
 			    }
+			    contype = p;
 			} 
 			    /*
 			     *	put out the width of the comparison.
