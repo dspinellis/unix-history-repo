@@ -1,7 +1,7 @@
 #
 # GENERIC DECstation (3100 or 5000/xxx)
 #
-#	@(#)GENERIC.pmax	7.3 (Berkeley) %G%
+#	@(#)GENERIC.pmax	8.1 (Berkeley) %G%
 #
 machine		pmax
 
