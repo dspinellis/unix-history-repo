@@ -1,4 +1,4 @@
-/*	pup_proto.c	6.1	83/07/29	*/
+/*	pup_proto.c	6.2	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -10,9 +10,10 @@
  */
 int	rpup_output();
 extern	int raw_usrreq();
+extern	struct domain pupdomain;		/* or at least forward */
 
 struct protosw pupsw[] = {
-{ SOCK_RAW,	PF_PUP,		0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&pupdomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		rpup_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
@@ -20,7 +21,8 @@ struct protosw pupsw[] = {
 };
 
 struct domain pupdomain =
-    { AF_PUP, "pup", pupsw, &pupsw[sizeof(pupsw)/sizeof(pupsw[0])] };
+    { AF_PUP, "pup", 0, 0, 0,
+      pupsw, &pupsw[sizeof(pupsw)/sizeof(pupsw[0])] };
 
 #ifdef notdef
 /*
@@ -30,7 +32,7 @@ int	raw_enoutput();
 extern	int raw_usrreq();
 
 struct protosw ensw[] = {
-{ SOCK_RAW,	PF_ETHERLINK,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&endomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		raw_enoutput,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
@@ -38,5 +40,6 @@ struct protosw ensw[] = {
 };
 
 struct domain endomain =
-    { AF_ETHERLINK "ether", ensw, &ensw[sizeof(ensw)/sizeof(ensw[0])] };
+    { AF_ETHERLINK "ether", 0, 0, 0,
+      ensw, &ensw[sizeof(ensw)/sizeof(ensw[0])] };
 #endif
