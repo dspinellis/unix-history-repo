@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)passwd.5	6.3 (Berkeley) %G%
+.\"	@(#)passwd.5	6.4 (Berkeley) %G%
 .\"
 .TH PASSWD 5  ""
 .AT 3
@@ -50,6 +50,12 @@ While it is possible to have multiple entries with identical login names
 and/or identical user id's, it is usually a mistake to do so.  Routines
 that manipulate these files will often return only one of the multiple
 entries, and that one by random selection.
+.PP
+The login name must never begin with a hyphen (``-''); also, it is strongly
+suggested that neither upper-case characters or dots (``.'') be part
+of the name, as this tends to confuse mailers.  No field may contain a
+colon (``:'') as this has been used historically to separate the fields
+in the user database.
 .PP
 The password field is the
 .I encrypted
