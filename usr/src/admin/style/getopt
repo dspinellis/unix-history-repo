@@ -1,12 +1,13 @@
 /*
  * Main/getopt(3) fragment.
  *
- *	@(#)getopt	5.3 (Berkeley) %G%
+ *	@(#)getopt	5.4 (Berkeley) %G%
  */
 
 #include <sys/types.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 
 void usage __P((void));
 
