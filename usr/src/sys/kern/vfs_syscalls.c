@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.49 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.50 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -579,10 +579,11 @@ open(p, uap, retval)
 	RETURN (0);
 }
 
+#ifdef COMPAT_43
 /*
  * Creat system call.
  */
-creat(p, uap, retval)
+ocreat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -601,6 +602,7 @@ creat(p, uap, retval)
 	openuap.mode = O_WRONLY | O_CREAT | O_TRUNC;
 	RETURN (open(p, &openuap, retval));
 }
+#endif /* COMPAT_43 */
 
 /*
  * Mknod system call
@@ -1636,7 +1638,7 @@ revoke(p, uap, retval)
 	}
 	if (error = VOP_GETATTR(vp, &vattr, ndp->ni_cred))
 		goto out;
-	if (ndp->ni_cred->cr_uid != vattr.va_uid ||
+	if (ndp->ni_cred->cr_uid != vattr.va_uid &&
 	    (error = suser(ndp->ni_cred, &u.u_acflag)))
 		goto out;
 	if (vp->v_usecount > 1 || (vp->v_flag & VALIASED))
