@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.13	%G%
+ *	locore.s		4.14	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -12,7 +12,7 @@
 	.set	CLSIZE,2
 	.set	BSIZE,NBPG*CLSIZE
 	.set	MAXNBUF,128
-	.set	UPAGES,8	# size of user area, in pages
+	.set	UPAGES,6	# size of user area, in pages
 
 /*
  * Produce a core image dump on mag tape
