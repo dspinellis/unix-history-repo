@@ -1,0 +1,29 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)swapon.2	4.1 (Berkeley) %G%
+.\"
+.TH VSWAPON 2V
+.UC 4
+.SH NAME
+vswapon \- add a swap device for interleaved paging/swapping
+.SH SYNOPSIS
+.nf
+.B vswapon(name)
+.B char *name;
+.fi
+.SH DESCRIPTION
+.I Vswapon
+makes the argument block device available to the system for
+allocation for paging and swapping.  The number of blocks to be
+made available, as well as the names of all potentially available
+devices are known to the system, and are present in the system
+configuration file (e.g. /usr/src/sys/conf/confhp.c).
+.SH "SEE ALSO"
+swapon(8)
+.SH BUGS
+There is no way to stop swapping on a disk so that the pack may be
+dismounted.
+.PP
+This call is peculiar to this version of UNIX.
