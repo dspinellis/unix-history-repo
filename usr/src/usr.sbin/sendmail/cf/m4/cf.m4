@@ -87,7 +87,7 @@ m4wrap(`include(`../m4/proto.m4')')
 # set up default values for options
 define(`confMAILER_NAME', ``MAILER-DAEMON'')
 define(`confFROM_LINE', `From $g  $d')
-define(`confOPERATORS', `.:%@!^/[]')
+define(`confOPERATORS', `.:%@!^/[]+')
 define(`confSMTP_LOGIN_MSG', `$j Sendmail $v/$Z ready at $b')
 define(`confRECEIVED_HEADER', `$?sfrom $s $.$?_($?s$|from $.$_) $.by $j ($v/$Z)$?r with $r$. id $i$?u for $u$.; $b')
 define(`confSEVEN_BIT_INPUT', `False')
@@ -129,4 +129,4 @@ define(`confSORT_QUEUE_BY_HOST', `False')
 define(`confBROKEN_SMTP_PEERS', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.10 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.11 (Berkeley) %G%')
