@@ -1,0 +1,199 @@
+$Revision: 1.2 $
+
+The following patch changes Configure and Makefile.SH in rn (version 4.4
+patchlevel 2) to build with the INN libraries.  Apply this patch to your rn
+sources, run Configure, and build.
+
+
+Index: Configure
+Prereq: 4.4.2.1
+diff -c Configure.orig Configure
+*** Configure.orig	Wed Dec 11 09:27:38 1991
+--- Configure	Wed Dec 11 18:32:59 1991
+***************
+*** 1959,1965 ****
+--- 1959,2015 ----
+  	isrrn=define
+  	spool=/tmp
+  	$echo "net.foobar 00001 00001 y" > .falseactive
++ 	$echo " "
++ 	case "$isinn" in
++ 	define) dflt="y" ;;
++ 	*) dflt="n" ;;
++ 	esac
++ 	isinn=''
++ 	$echo $n "Do you want to use the InterNetNews library? [$dflt] $c"
++ 	. myread
++ 	case "$ans" in
++ 	'') ans="$dflt";;
++ 	esac
++ 	case "$ans" in
++ 	y*)
++ 	serverfile='INN config file'
++ 	isinn='define'
++ 	ans='blurfl/dyick'
++ 	while $test ! -r "$ans"; do
++ 	    dflt='../inn/include'
++ 	    $echo $n "Enter the directory with myserver.h: [$dflt] $c"
++ 	    . myread
++ 	    case "$ans" in
++ 	    '') ans="$dflt";;
++ 	    esac
++ 	    ans=`filexp "$ans"`
++ 	    if $test ! -r $ans/myserver.h ; then
++ 		$echo "Can't find $ans/myserver.h!"
++ 		ans='blurfl/dyick'
++ 	    fi
++ 	done
++ 	cp $ans/myserver.h myserver.h
++ 	ans='blurfl/dyick'
++ 	while $test ! -r "$ans"; do
++ 	    dflt='../inn'
++ 	    $echo $n "Enter the directory with libinn.a: [$dflt] $c"
++ 	    . myread
++ 	    case "$ans" in
++ 	    '') ans="$dflt";;
++ 	    esac
++ 	    ans=`filexp "$ans"`
++ 	    if $test ! -r $ans/libinn.a ; then
++ 		$echo "Can't find $ans/libinn.a!"
++ 		ans='blurfl/dyick'
++ 	    fi
++ 	done
++ 	innlib=$ans/libinn.a
++ 	;;
+  
++ 	n*)
++ 	innlib=''
++ 	isinn=''
++ 
+  	case "$serverfile" in
+  	'')  dflt="no default" ;;
+  	*)   dflt="$serverfile";;
+***************
+*** 2018,2023 ****
+--- 2068,2075 ----
+  	done
+  	NNTPSRC="$ans"
+      esac
++     ;;
++     esac
+  
+  done
+  : hack for Unisys NET-5000 and Interactive V/386
+***************
+*** 2585,2590 ****
+--- 2637,2643 ----
+  termlib='$termlib'
+  jobslib='$jobslib'
+  socketlib='$socketlib'
++ innlib='$innlib'
+  getcwd='$getcwd'
+  getwd='$getwd'
+  dirtype='$dirtype'
+***************
+*** 2659,2664 ****
+--- 2712,2718 ----
+  norelay='$norelay'
+  rdchk='$rdchk'
+  isrrn='$isrrn'
++ isinn='$isinn'
+  serverfile='$serverfile'
+  NNTPSRC='$NNTPSRC'
+  CONFIG=true
+***************
+*** 2683,2688 ****
+--- 2737,2748 ----
+  for file in $*; do
+      . $file
+  done
++ if $test -f myserver.h ; then
++ : what a pain that server.h.SH is now part of the RN release.
++     rm -f server.h
++     cp myserver.h server.h
++     chmod +w server.h.SH
++ fi
+  
+  $echo " "
+  $echo 'Now you need to generate make dependencies by running "makedepend".'
+
+
+Index: Makefile.SH
+Prereq: 4.4.1.1
+
+diff -rc Makefile.SH.orig Makefile.SH
+*** Makefile.SH.orig	Wed Dec 11 09:29:00 1991
+--- Makefile.SH	Wed Dec 11 18:23:34 1991
+***************
+*** 42,52 ****
+  NDIRC = $ndirc
+  NDIRO = $ndiro
+  
+! libs = $ndirlib $termlib $jobslib $socketlib -lm
+  mlibs = $jobslib
+  !GROK!THIS!
+  $cat >>Makefile <<'!NO!SUBS!'
+  #NNTPnntp=getactive
+  public = rn newsetup newsgroups Pnews Rnmail
+  private = norm.saver mbox.saver makedir	filexp Pnews.header $(nntp)
+  manpages = rn.1 Pnews.1 Rnmail.1 newsetup.1 newsgroups.1
+--- 42,53 ----
+  NDIRC = $ndirc
+  NDIRO = $ndiro
+  
+! libs = $ndirlib $termlib $jobslib $socketlib $innlib -lm
+  mlibs = $jobslib
+  !GROK!THIS!
+  $cat >>Makefile <<'!NO!SUBS!'
+  #NNTPnntp=getactive
++ #INNnntp=getactive
+  public = rn newsetup newsgroups Pnews Rnmail
+  private = norm.saver mbox.saver makedir	filexp Pnews.header $(nntp)
+  manpages = rn.1 Pnews.1 Rnmail.1 newsetup.1 newsgroups.1
+***************
+*** 57,62 ****
+--- 58,64 ----
+  h2 = common.h final.h head.h help.h init.h intrp.h kfile.h last.h 
+  h3 = ng.h ngdata.h ngsrch.h ngstuff.h only.h rcln.h rcstuff.h
+  h4 = respond.h rn.h search.h sw.h term.h util.h uudecode.h
++ #INNh5 = server.h
+  
+  h = $(h1) $(h2) $(h3) $(h4)
+  
+***************
+*** 103,108 ****
+--- 105,112 ----
+  
+  #NNTPgetactive: getactive.o clientlib.o
+  #NNTP	$(CC) $(LDFLAGS) getactive.o clientlib.o -o getactive $(libs)
++ #INNgetactive: getactive.o
++ #INN	$(CC) $(LDFLAGS) getactive.o -o getactive $(libs)
+  
+  #NNTPclientlib.o:
+  #NNTP	$(CC) -c $(CFLAGS) $(NNTPINC) $(NNTPDIR)/common/clientlib.c
+***************
+*** 156,164 ****
+  $(obj):
+  	@ echo "You haven't done a "'"make depend" yet!'; exit 1
+  !NO!SUBS!
+! case "$isrrn" in
+! define)  sed < Makefile -e '/^#NNTP/s/^#NNTP//' > Makefile.new ;;
+! *) sed < Makefile -e '/^#NNTP/d' > Makefile.new ;;
+  esac
+  mv Makefile.new Makefile
+  $eunicefix Makefile
+--- 160,173 ----
+  $(obj):
+  	@ echo "You haven't done a "'"make depend" yet!'; exit 1
+  !NO!SUBS!
+! case "$isinn" in
+! define) sed <Makefile -e '/^#INN/s/^#INN//' -e '/^#NNTP/d' >Makefile.new ;;
+! *)
+!     case "$isrrn" in
+!     define)  sed < Makefile -e '/^#NNTP/s/^#NNTP//'-e '/^#INN/d'  > Makefile.new ;;
+!     *) sed < Makefile -e '/^#NNTP/d' -e '/^#INN/d' > Makefile.new ;;
+!     esac
+!     ;;
+  esac
+  mv Makefile.new Makefile
+  $eunicefix Makefile
