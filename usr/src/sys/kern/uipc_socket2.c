@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.30	82/10/22	*/
+/*	uipc_socket2.c	4.31	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -321,6 +321,22 @@ sbwakeup(sb)
  * The higher-level routines sosend and soreceive (in socket.c)
  * also add data to, and remove data from socket buffers repectively.
  */
+
+soreserve(so, sndcc, rcvcc)
+	struct socket *so;
+	int sndcc, rcvcc;
+{
+
+	if (sbreserve(&so->so_snd, sndcc) == 0)
+		goto bad;
+	if (sbreserve(&so->so_rcv, rcvcc) == 0)
+		goto bad2;
+	return (0);
+bad2:
+	sbrelease(&so->so_snd);
+bad:
+	return (ENOBUFS);
+}
 
 /*
  * Allot mbufs to a sockbuf.
