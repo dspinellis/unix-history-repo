@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.3.1.1 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -76,8 +76,12 @@ ptsopen(dev, flag)
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);		/* Set up default chars */
-		tp->t_ispeed = tp->t_ospeed = EXTB;
-		tp->t_flags = 0;	/* No features (nor raw mode) */
+		tp->t_iflag = TTYDEF_IFLAG;
+		tp->t_oflag = TTYDEF_OFLAG;
+		tp->t_lflag = TTYDEF_LFLAG;
+		tp->t_cflag = TTYDEF_CFLAG;
+		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
+		ttsetwater(tp);		/* would be done in xxparam() */
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
@@ -113,12 +117,14 @@ ptsread(dev, uio)
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+		while (tp == u.u_ttyp && 
+		       u.u_procp->p_pgrp->pg_id != tp->t_pgid){
 			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
+			    !u.u_procp->p_pgrp->pg_jobc ||
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
-			gsignal(u.u_procp->p_pgrp, SIGTTIN);
+			pgsignal(u.u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
@@ -391,8 +397,7 @@ ptcselect(dev, rw)
 			} else {
 			    if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG-2)
 				    return (1);
-			    if (tp->t_canq.c_cc == 0 &&
-			        (tp->t_flags & (RAW|CBREAK)) == 0)
+			    if (tp->t_canq.c_cc == 0 && (tp->t_iflag&ICANON))
 				    return (1);
 			}
 		}
@@ -471,8 +476,7 @@ again:
 		}
 		while (cc > 0) {
 			if ((tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2 &&
-			   (tp->t_canq.c_cc > 0 ||
-			      tp->t_flags & (RAW|CBREAK))) {
+			   (tp->t_canq.c_cc > 0 || !(tp->t_iflag&ICANON))) {
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
@@ -510,6 +514,7 @@ ptyioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register u_char *cc = tp->t_cc;
 	int stop, error;
 	extern ttyinput();
 
@@ -588,9 +593,15 @@ ptyioctl(dev, cmd, data, flag)
 			*(int *)data = tp->t_outq.c_cc;
 			return (0);
 
-		case TIOCSETP:
+		case TIOCSETP:		
 		case TIOCSETN:
 		case TIOCSETD:
+		case TIOCSETA:
+		case TIOCSETAW:
+		case TIOCSETAF:
+		case TIOCSETAS:
+		case TIOCSETAWS:
+		case TIOCSETAFS:
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
@@ -658,7 +669,9 @@ ptyioctl(dev, cmd, data, flag)
 	}
 
  doioctl:
-	error = ttioctl(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	if (error < 0)
+		 error = ttioctl(tp, cmd, data, flag);
 	/*
 	 * Since we use the tty queues internally,
 	 * pty's can't be switched to disciplines which overwrite
@@ -691,8 +704,8 @@ ptyioctl(dev, cmd, data, flag)
 		}
 		error = ENOTTY;
 	}
-	stop = (tp->t_flags & RAW) == 0 &&
-	    tp->t_stopc == CTRL('s') && tp->t_startc == CTRL('q');
+	stop = (tp->t_iflag & IXON) && CCEQ(cc[VSTOP], CTRL('s')) 
+		&& CCEQ(cc[VSTART], CTRL('q'));
 	if (pti->pt_flags & PF_NOSTOP) {
 		if (stop) {
 			pti->pt_send &= ~TIOCPKT_NOSTOP;

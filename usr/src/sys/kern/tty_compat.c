@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttcompat.c	7.11 (Berkeley) 4/8/88
+ *	@(#)tty_compat.c	1.2 (Berkeley) %G%
  */
 
 /* 
- * mapping routines for old line disciplines (yuck)
+ * mapping routines for old line discipline (yuck)
  */
 #ifdef COMPAT_43
 
@@ -28,24 +28,9 @@
 #include "kernel.h"
 #include "syslog.h"
 
-/* begin XXX */
-#undef t_erase
-#undef t_kill
-#undef t_intrc
-#undef t_quitc
-#undef t_startc
-#undef t_stopc
-#undef t_eofc
-#undef t_brkc
-#undef t_suspc
-#undef t_dsuspc
-#undef t_rprntc
-#undef t_flushc
-#undef t_werasc
-#undef t_lnextc
-/* end XXX */
+int ttydebug = 0;
 
-/* should fold these two tables into one */
+/* XXX - fold these two tables into one */
 static struct speedtab compatspeeds[] = {
 	38400,	15,
 	19200,	14,
@@ -89,10 +74,9 @@ ttcompat(tp, com, data, flag)
 			speed = ttspeedtab(tp->t_ispeed, compatspeeds);
 			sg->sg_ispeed = (speed == -1) ? 15 : speed;
 		}
-
 		sg->sg_erase = cc[VERASE];
 		sg->sg_kill = cc[VKILL];
-		sg->sg_flags = ttcompatgetflags(tp) & 0xffff;
+		sg->sg_flags = ttcompatgetflags(tp);
 		break;
 	}
 
@@ -103,7 +87,6 @@ ttcompat(tp, com, data, flag)
 		int speed;
 
 		term = tp->t_termios;
-
 		if ((speed = sg->sg_ispeed) > 15 || speed < 0)
 			term.c_ispeed = speed;
 		else
@@ -112,14 +95,11 @@ ttcompat(tp, com, data, flag)
 			term.c_ospeed = speed;
 		else
 			term.c_ospeed = compatspcodes[speed];
-		
 		term.c_cc[VERASE] = sg->sg_erase;
 		term.c_cc[VKILL] = sg->sg_kill;
 		if (sg->sg_erase == -1)
-			term.c_cc[VERASE2] = POSIX_V_DISABLE;
-
+			term.c_cc[VERASE2] = _POSIX_VDISABLE;
 		tp->t_flags = (tp->t_flags&0xffff0000) | sg->sg_flags;
-
 		ttcompatsetflags(tp, &term);
 		return (ttioctl(tp, com == TIOCSETP ? TIOCSETAF : TIOCSETA, 
 			&term, flag));
@@ -148,7 +128,7 @@ ttcompat(tp, com, data, flag)
 		cc[VEOF] = tc->t_eofc;
 		cc[VEOL] = tc->t_brkc;
 		if (tc->t_brkc == -1)
-			cc[VEOL2] = POSIX_V_DISABLE;
+			cc[VEOL2] = _POSIX_VDISABLE;
 		break;
 	}
 	case TIOCSLTC: {
@@ -182,28 +162,40 @@ ttcompat(tp, com, data, flag)
 
 		term = tp->t_termios;
 		if (com == TIOCLSET)
-			tp->t_flags = (tp->t_flags&0xffff) | *(short *)data<<16;
+			tp->t_flags = (tp->t_flags&0xffff) | *(int *)data<<16;
 		else {
 			tp->t_flags = 
 			 (ttcompatgetflags(tp)&0xffff0000)|(tp->t_flags&0xffff);
 			if (com == TIOCLBIS)
-				tp->t_flags |= *(short *)data<<16;
+				tp->t_flags |= *(int *)data<<16;
 			else
-				tp->t_flags &= ~(*(short *)data<<16);
+				tp->t_flags &= ~(*(int *)data<<16);
 		}
 		ttcompatsetlflags(tp, &term);
 		return (ttioctl(tp, TIOCSETA, &term, flag));
 	}
 	case TIOCLGET:
-		*(short *)data = ttcompatgetflags(tp)>>16;
+		*(int *)data = ttcompatgetflags(tp)>>16;
+		if (ttydebug)
+			printf("CLGET: returning %x\n", *(int *)data);
 		break;
+
+	case TIOCGETDCOMPAT:
+		*(int *)data = tp->t_line ? tp->t_line : 2;
+		break;
+
+	case TIOCSETDCOMPAT: {
+		int ldisczero = 0;
+
+		return(ttioctl(tp, TIOCSETD, 
+			*(int *)data == 2 ? (caddr_t)&ldisczero : data, flag));
+	}
+
 	default:
 		return (-1);
 	}
 	return(0);
 }
-
-
 
 ttcompatgetflags(tp)
 	register struct tty *tp;
@@ -242,11 +234,10 @@ ttcompatgetflags(tp)
 	}
 	if (oflag&OXTABS)
 		flags |= XTABS;
-
 	if (lflag&ECHOE)
-		flags |= CRTERA;
+		flags |= CRTERA|CRTBS;
 	if (lflag&ECHOKE)
-		flags |= CRTKIL;
+		flags |= CRTKIL|CRTBS;
 	if (lflag&ECHOPRT)
 		flags |= PRTERA;
 	if (lflag&ECHOCTL)
@@ -254,7 +245,8 @@ ttcompatgetflags(tp)
 	if ((iflag&IXANY) == 0)
 		flags |= DECCTQ;
 	flags |= lflag&(ECHO|MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
-
+if (ttydebug)
+	printf("getflags: %x\n", flags);
 	return (flags);
 }
 
@@ -326,7 +318,6 @@ ttcompatsetflags(tp, t)
 	t->c_cflag = cflag;
 }
 
-/* XXX - rethink this whole routine */
 ttcompatsetlflags(tp, t)
 	register struct tty *tp;
 	register struct termios *t;
@@ -336,10 +327,11 @@ ttcompatsetlflags(tp, t)
 	register long oflag = t->c_oflag;
 	register long lflag = t->c_lflag;
 	register long cflag = t->c_cflag;
+
 	if (flags&CRTERA)
 		lflag |= ECHOE;
 	else
-		lflag &= ECHOE;
+		lflag &= ~ECHOE;
 	if (flags&CRTKIL)
 		lflag |= ECHOKE;
 	else
@@ -356,10 +348,8 @@ ttcompatsetlflags(tp, t)
 		lflag |= IXANY;
 	else
 		lflag &= ~IXANY;
-
 	lflag &= ~(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
 	lflag |= flags&(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
-
 	if (flags&(LITOUT|PASS8)) {
 		iflag &= ~ISTRIP;
 		cflag &= ~(CSIZE|PARENB);

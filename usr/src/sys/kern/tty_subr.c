@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_subr.c	7.3 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,6 +14,14 @@
 #include "clist.h"
 
 char	cwaiting;
+
+#define setquote(cp) \
+	setbit(((char *)((int)(cp)&~CROUND)+sizeof(struct cblock *)), \
+		(int)(cp)&CROUND)
+#define isquote(cp) \
+	isset(((char *)((int)(cp)&~CROUND)+sizeof(struct cblock *)), \
+		(int)(cp)&CROUND)
+#define cbptr(x) ((struct cblock *)(x))
 
 /*
  * Character list get/put
@@ -30,10 +38,13 @@ getc(p)
 		p->c_cc = 0;
 		p->c_cf = p->c_cl = NULL;
 	} else {
-		c = *p->c_cf++ & 0377;
+		c = *p->c_cf & 0377;
+		if (isquote(p->c_cf))
+			c |= TTY_QUOTE;
+		p->c_cf++;
 		if (--p->c_cc<=0) {
-			bp = (struct cblock *)(p->c_cf-1);
-			bp = (struct cblock *)((int)bp & ~CROUND);
+			bp = cbptr(p->c_cf-1);
+			bp = cbptr((int)bp & ~CROUND);
 			p->c_cf = NULL;
 			p->c_cl = NULL;
 			bp->c_next = cfreelist;
@@ -44,7 +55,7 @@ getc(p)
 				cwaiting = 0;
 			}
 		} else if (((int)p->c_cf & CROUND) == 0){
-			bp = (struct cblock *)(p->c_cf);
+			bp = cbptr(p->c_cf);
 			bp--;
 			p->c_cf = bp->c_next->c_info;
 			bp->c_next = cfreelist;
@@ -94,8 +105,8 @@ q_to_b(q, cp, cc)
 		cc -= nc;
 		cp += nc;
 		if (q->c_cc <= 0) {
-			bp = (struct cblock *)(q->c_cf - 1);
-			bp = (struct cblock *)((int)bp & ~CROUND);
+			bp = cbptr(q->c_cf - 1);
+			bp = cbptr((int)bp & ~CROUND);
 			q->c_cf = q->c_cl = NULL;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
@@ -107,7 +118,7 @@ q_to_b(q, cp, cc)
 			break;
 		}
 		if (((int)q->c_cf & CROUND) == 0) {
-			bp = (struct cblock *)(q->c_cf);
+			bp = cbptr(q->c_cf);
 			bp--;
 			q->c_cf = bp->c_next->c_info;
 			bp->c_next = cfreelist;
@@ -178,7 +189,7 @@ ndflush(q, cc)
 	if (q->c_cc <= 0)
 		goto out;
 	while (cc>0 && q->c_cc) {
-		bp = (struct cblock *)((int)q->c_cf & ~CROUND);
+		bp = cbptr((int)q->c_cf & ~CROUND);
 		if ((int)bp == (((int)q->c_cl-1) & ~CROUND)) {
 			end = q->c_cl;
 		} else {
@@ -228,7 +239,7 @@ putc(c, p)
 	register s;
 
 	s = spltty();
-	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
+	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {	/* no cblocks yet */
 		if ((bp = cfreelist) == NULL) {
 			splx(s);
 			return (-1);
@@ -236,9 +247,10 @@ putc(c, p)
 		cfreelist = bp->c_next;
 		cfreecount -= CBSIZE;
 		bp->c_next = NULL;
+		bzero(bp->c_quote, CBQSIZE);
 		p->c_cf = cp = bp->c_info;
 	} else if (((int)cp & CROUND) == 0) {
-		bp = (struct cblock *)cp - 1;
+		bp = cbptr(cp) - 1;	/* pointer arith */
 		if ((bp->c_next = cfreelist) == NULL) {
 			splx(s);
 			return (-1);
@@ -249,6 +261,8 @@ putc(c, p)
 		bp->c_next = NULL;
 		cp = bp->c_info;
 	}
+	if (c&TTY_QUOTE)
+		setquote(cp);
 	*cp++ = c;
 	p->c_cc++;
 	p->c_cl = cp;
@@ -279,18 +293,20 @@ b_to_q(cp, cc, q)
 			goto out;
 		cfreelist = bp->c_next;
 		cfreecount -= CBSIZE;
+		bzero(bp->c_quote, CBQSIZE);
 		bp->c_next = NULL;
 		q->c_cf = cq = bp->c_info;
 	}
 
 	while (cc) {
 		if (((int)cq & CROUND) == 0) {
-			bp = (struct cblock *)cq - 1;
+			bp = cbptr(cq) - 1;
 			if ((bp->c_next = cfreelist) == NULL) 
 				goto out;
 			bp = bp->c_next;
 			cfreelist = bp->c_next;
 			cfreecount -= CBSIZE;
+			bzero(bp->c_quote, CBQSIZE);
 			bp->c_next = NULL;
 			cq = bp->c_info;
 		}
@@ -316,14 +332,19 @@ out:
  * pointer becomes invalid.  Note that interrupts are NOT masked.
  */
 char *
-nextc(p, cp)
+nextc(p, cp, c)
 	register struct clist *p;
 	register char *cp;
+	register int *c;
 {
 
 	if (p->c_cc && ++cp != p->c_cl) {
-		if (((int)cp & CROUND) == 0)
-			return (((struct cblock *)cp)[-1].c_next->c_info);
+		if (((int)cp & CROUND) == 0) {
+			cp = (cbptr(cp))[-1].c_next->c_info;
+		}
+		*c = *cp;
+		if (isquote(cp))
+			*c |= TTY_QUOTE;
 		return (cp);
 	}
 	return (0);
@@ -338,24 +359,28 @@ unputc(p)
 	register struct cblock *bp;
 	register int c, s;
 	struct cblock *obp;
+	register int first = 1;
 
 	s = spltty();
 	if (p->c_cc <= 0)
 		c = -1;
 	else {
 		c = *--p->c_cl;
+		if (isquote(p->c_cl))
+			c |= TTY_QUOTE;
 		if (--p->c_cc <= 0) {
-			bp = (struct cblock *)p->c_cl;
-			bp = (struct cblock *)((int)bp & ~CROUND);
+			bp = cbptr(p->c_cl);
+			bp = cbptr((int)bp & ~CROUND);
 			p->c_cl = p->c_cf = NULL;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
 			cfreecount += CBSIZE;
-		} else if (((int)p->c_cl & CROUND) == sizeof(bp->c_next)) {
+		} else if (p->c_cl == (cbptr((int)p->c_cl & ~CROUND))->c_info) {
 			p->c_cl = (char *)((int)p->c_cl & ~CROUND);
-			bp = (struct cblock *)p->c_cf;
-			bp = (struct cblock *)((int)bp & ~CROUND);
-			while (bp->c_next != (struct cblock *)p->c_cl)
+
+			bp = cbptr(p->c_cf);
+			bp = cbptr((int)bp & ~CROUND);
+			while (bp->c_next != cbptr(p->c_cl))
 				bp = bp->c_next;
 			obp = bp;
 			p->c_cl = (char *)(bp + 1);
@@ -377,7 +402,9 @@ unputc(p)
 catq(from, to)
 	struct clist *from, *to;
 {
+#ifdef notdef
 	char bbuf[CBSIZE*4];
+#endif
 	register s, c;
 
 	s = spltty();
@@ -390,10 +417,15 @@ catq(from, to)
 		return;
 	}
 	splx(s);
+#ifdef notdef
 	while (from->c_cc > 0) {
 		c = q_to_b(from, bbuf, sizeof bbuf);
 		(void) b_to_q(bbuf, c, to);
 	}
+#endif
+	/* XXX - FIX */
+	while ((c = getc(from)) >= 0)
+		putc(c, to);
 }
 
 #ifdef unneeded
@@ -419,7 +451,7 @@ getw(p)
 #endif
 	}
 	s = spltty();
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if BYTE_ORDER == LITTLE_ENDIAN 
 	c = (((u_char *)p->c_cf)[0] << 8) | ((u_char *)p->c_cf)[1];
 #else
 	c = (((u_char *)p->c_cf)[1] << 8) | ((u_char *)p->c_cf)[0];
@@ -427,8 +459,8 @@ getw(p)
 	p->c_cf += sizeof (word_t);
 	p->c_cc -= sizeof (word_t);
 	if (p->c_cc <= 0) {
-		bp = (struct cblock *)(p->c_cf-1);
-		bp = (struct cblock *)((int)bp & ~CROUND);
+		bp = cbptr(p->c_cf-1);
+		bp = cbptr((int)bp & ~CROUND);
 		p->c_cf = NULL;
 		p->c_cl = NULL;
 		bp->c_next = cfreelist;
@@ -439,7 +471,7 @@ getw(p)
 			cwaiting = 0;
 		}
 	} else if (((int)p->c_cf & CROUND) == 0) {
-		bp = (struct cblock *)(p->c_cf);
+		bp = cbptr(p->c_cf);
 		bp--;
 		p->c_cf = bp->c_next->c_info;
 		bp->c_next = cfreelist;
@@ -486,7 +518,7 @@ putw(c, p)
 			bp->c_next = NULL;
 			p->c_cf = cp = bp->c_info;
 		} else if (((int)cp & CROUND) == 0) {
-			bp = (struct cblock *)cp - 1;
+			bp = cbptr(cp) - 1;
 			if ((bp->c_next = cfreelist) == NULL) {
 				splx(s);
 				return (-1);
