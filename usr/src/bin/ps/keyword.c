@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -248,9 +248,9 @@ showkey()
 		if (termwidth && (i += len + 1) > termwidth) {
 			i = len;
 			sep = "\n";
-		}
+		} else
+			sep = " ";
 		(void) printf("%s%s", sep, p);
-		sep = " ";
 	}
 	(void) printf("\n");
 }
