@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.5 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.6 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -577,12 +577,6 @@ papers
 
 # ./usr/old/lib
 lib
-
-# ./usr/old/lib/me
-me
-# ./usr/old/lib/me
-..
-
 
 # ./usr/old/lib/ms
 ms
