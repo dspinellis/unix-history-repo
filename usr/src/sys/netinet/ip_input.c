@@ -1,9 +1,10 @@
-/* ip_input.c 1.9 81/10/29 */
+/* ip_input.c 1.10 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/clock.h"
 #include "../h/mbuf.h"
+#include "../inet/cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_systm.h"
 #include "../inet/imp.h"
@@ -27,10 +28,11 @@ struct	ip *ip_reass();
 ip_input(m0)
 	struct mbuf *m0;
 {
-	register int i;
-	register struct ip *ip, *q;
-	register struct ipq *fp;
+	register struct ip *ip;		/* known to be r11 in CKSUM below */
 	register struct mbuf *m = m0;
+	register int i;
+	register struct ipq *q;
+	register struct ipq *fp;
 	int hlen;
 
 COUNT(IP_INPUT);
@@ -43,19 +45,9 @@ COUNT(IP_INPUT);
 		m_freem(m);
 		return;
 	}
-	i = ip->ip_sum;
-	ip->ip_sum = 0;
-#ifdef vax
-	if (hlen == sizeof (struct ip)) {
-		asm("movl r10,r0; movl (r0)+,r1; addl2 (r0)+,r1");
-		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
-		asm("adwc $0,r1; ashl $-16,r1,r0; addw2 r0,r1");
-		asm("adwc $0,r1");		/* ### */
-		asm("mcoml r1,r1; movzwl r1,r1; subl2 r1,r11");
-	} else
-#endif
-		i -= cksum(m, hlen);
-	if (i) {
+	CKSUM_IPCHK(m, ip, r11, hlen);
+	if (ip->ip_sum) {
+		printf("ip_sum %x\n", ip->ip_sum);
 		netstat.ip_badsum++;
 		if (!nosum) {
 			m_freem(m);
