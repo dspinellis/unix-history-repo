@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.proprietary.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1991, 1993\n\
+"@(#) Copyright (c) 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,6 +56,8 @@ char *csh[] = {
 	"repeat", "setenv", "source", "path", "home", 0 };
 int	ifile;
 
+int (*statfcn) __P((const char *, struct stat *));
+
 main(argc, argv)
 char **argv;
 {
@@ -67,7 +69,14 @@ char **argv;
 		fprintf(stderr, "usage: %s file ...\n", argv[0]);
 		exit(3);
 	}
-		
+
+	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='h') {
+		statfcn = lstat;
+		--argc;
+		++argv;
+	} else
+		statfcn = stat;
+
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='f') {
 		if ((fl = fopen(argv[2], "r")) == NULL) {
 			perror(argv[2]);
@@ -108,7 +117,8 @@ char *file;
 	int ishpux800 = 0;
 #endif
 
-	if (lstat(file, &mbuf) < 0) {
+	if (statfcn(file, &mbuf) < 0 &&
+	    (statfcn == lstat || lstat(file, &mbuf))) {
 		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
