@@ -3,18 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_sl.c	7.10 (Berkeley) %G%
+ *	@(#)if_sl.c	7.6.1.2 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +41,7 @@
 #include "param.h"
 #include "mbuf.h"
 #include "buf.h"
-#include "dkstat.h"
+#include "dk.h"
 #include "socket.h"
 #include "ioctl.h"
 #include "file.h"
@@ -67,7 +62,7 @@
 
 /*
  * N.B.: SLMTU is now a hard limit on input packet size.
- * SLMTU must be <= MCLBYTES - sizeof(struct ifnet *).
+ * SLMTU must be <= CLBYTES - sizeof(struct ifnet *).
  */
 #define	SLMTU	1006
 #define	SLIP_HIWAT	1000	/* don't start a new packet if HIWAT on queue */
@@ -273,7 +268,7 @@ slstart(tp)
 		 * If system is getting low on clists
 		 * and we have something running already, stop here.
 		 */
-		if (cfreecount < CLISTRESERVE + SLMTU && tp->t_outq.c_cc)
+		if (cfreecount < CLISTRESERVE + SLMTU && tp->t_outq.c_cc == 0)
 			return;
 
 		/*
@@ -355,13 +350,13 @@ slstart(tp)
 slinit(sc)
 	register struct sl_softc *sc;
 {
-	register caddr_t p;
+	struct mbuf *p;
 
 	if (sc->sc_buf == (char *) 0) {
-		MCLALLOC(p, M_WAIT);
+		MCLALLOC(p, 1);
 		if (p) {
-			sc->sc_buf = p;
-			sc->sc_mp = p;
+			sc->sc_buf = (char *)p;
+			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 		} else {
 			printf("sl%d: can't allocate buffer\n", sc - sl_softc);
 			sc->sc_if.if_flags &= ~IFF_UP;
@@ -388,39 +383,48 @@ sl_btom(sc, len, ifp)
 	cp = sc->sc_buf + sizeof(struct ifnet *);
 	mp = &top;
 	while (len > 0) {
-		if (top == NULL)
-			MGETHDR(m, M_DONTWAIT, MT_DATA);
-		else
-			MGET(m, M_DONTWAIT, MT_DATA);
+		MGET(m, M_DONTWAIT, MT_DATA);
 		if ((*mp = m) == NULL) {
 			m_freem(top);
 			return (NULL);
 		}
-		if (top == NULL) {
-			m->m_pkthdr.rcvif = ifp;
-			m->m_pkthdr.len = len;
-			m->m_len = MPLEN;
-		} else
-			m->m_len = MLEN;
+		if (ifp)
+			m->m_off += sizeof(ifp);
 		/*
-		 * If we have at least MINCLSIZE bytes,
-		 * allocate a new page.  Swap the current
-		 * buffer page with the new one.
+		 * If we have at least NBPG bytes,
+		 * allocate a new page.  Swap the current buffer page
+		 * with the new one.  We depend on having a space
+		 * left at the beginning of the buffer
+		 * for the interface pointer.
 		 */
-		if (len >= MINCLSIZE) {
-			MCLGET(m, M_DONTWAIT);
-			if (m->m_flags & M_EXT) {
+		if (len >= NBPG) {
+			MCLGET(m);
+			if (m->m_len == CLBYTES) {
 				cp = mtod(m, char *);
-				m->m_data = sc->sc_buf;
+				m->m_off = (int)sc->sc_buf - (int)m;
 				sc->sc_buf = cp;
-				count = MIN(len, MCLBYTES);
+				if (ifp) {
+					m->m_off += sizeof(ifp);
+					count = MIN(len,
+					    CLBYTES - sizeof(struct ifnet *));
+				} else
+					count = MIN(len, CLBYTES);
 				goto nocopy;
 			}
 		}
-		count = MIN(len, m->m_len);
+		if (ifp)
+			count = MIN(len, MLEN - sizeof(ifp));
+		else
+			count = MIN(len, MLEN);
 		bcopy(cp, mtod(m, caddr_t), count);
 nocopy:
 		m->m_len = count;
+		if (ifp) {
+			m->m_off -= sizeof(ifp);
+			m->m_len += sizeof(ifp);
+			*mtod(m, struct ifnet **) = ifp;
+			ifp = NULL;
+		}
 		cp += count;
 		len -= count;
 		mp = &m->m_next;
