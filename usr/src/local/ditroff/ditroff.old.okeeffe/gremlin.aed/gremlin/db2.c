@@ -1,5 +1,4 @@
-
-/* db2.c-
+/* @(#)db2.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -57,7 +56,7 @@ float transform[3][2];
 	                    element->size, newtext, db) );
 }  /* end copy */
 
-
+
 DBXform(element, transform, db)
 ELT *element;
 float transform[3][2];
@@ -88,7 +87,7 @@ ELT *(*db);
 	}  /* end while */;
 }  /* end Xform */
 
-
+
 DBChangeBrush(element, brush, db)
 ELT *element, *(*db);
 int brush;
