@@ -8,8 +8,9 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.12 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.13 (Berkeley) %G%)
 
+MAILER(local)dnl
 
 ##################
 #   local info   #
@@ -56,6 +57,9 @@ include(UUCP_HOSTS_FILE)',
 # operators that cannot be in local usernames (i.e., network indicators)
 CO @ % !
 
+# a class with just dot (for identifying canonical names)
+C..
+
 ifdef(`USERDB_FILE',
 `# location of user database file (null means no lookup)
 CONCAT(`OU', USERDB_FILE)',
@@ -65,6 +69,10 @@ ifdef(`_NO_WILDCARD_MX_',
 `# we can guarantee no wildcard MX records matching our domain
 Ow',
 `dnl')
+
+ifdef(`NEWSENDMAIL',
+`# level 2 config file format
+O=2', `dnl')
 
 include(`../m4/version.m4')
 
@@ -133,25 +141,35 @@ S6
 undivert(2)dnl
 
 # handle special cases for local names
-R$* < @ $=w > $*		$: $1 < @ $j > $3		no domain at all
-R$* < @ $=w .UUCP> $*		$: $1 < @ $j > $3		.UUCP domain
+R$* < @ $=w > $*		$: $1 < @ $j . > $3		no domain at all
+R$* < @ $=w .UUCP> $*		$: $1 < @ $j . > $3		.UUCP domain
 
 ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
 R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 .UUCP > $3',
 `# if really UUCP, handle it immediately
-R$* < @ $=U . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
-R$* < @ $=V . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
-R$* < @ $=W . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
-R$* < @ $=X . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
-R$* < @ $=Y . UUCP > $*		$@ $1 < @ $2 .UUCP > $3
+ifdef(`_CLASS_U_',
+`R$* < @ $=U . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+ifdef(`_CLASS_V_',
+`R$* < @ $=V . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+ifdef(`_CLASS_W_',
+`R$* < @ $=W . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+ifdef(`_CLASS_X_',
+`R$* < @ $=X . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+ifdef(`_CLASS_Y_',
+`R$* < @ $=Y . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
 
 # try UUCP traffic as a local address
-R$* < @ $- .UUCP > $*		$: $1 < @ $[ $2 $] .UUCP > $3
-R$* < @ $+ . $+ .UUCP > $*	$@ $1 < @ $2 . $3 > $4')
+R$* < @ $+ .UUCP > $*			$: $1 < @ $[ $2 $] .UUCP > $3
+ifdef(`NEWSENDMAIL',
+`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3',
+`R$* < @ $+ . $+ .UUCP > $*		$@ $1 < @ $2 . $3 > $4')')
 
 # pass to name server to make hostname canonical
-R$* < @ $+ > $*			$: $1 < @ $[ $2 $] > $3		then do anything
+R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
+
+# if this is the local hostname, make sure we treat is as canonical
+R$* < @ $j > $*			$: $1 < @ $j . > $2
 
 
 ##################################################
@@ -162,17 +180,20 @@ S4
 R@			$@				handle <> error addr
 
 # resolve numeric addresses to name if possible
-R$*<@[$+]>$*		$:$1<@$[[$2]$]>$3		lookup numeric internet addr
+R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	lookup numeric internet addr
+
+# strip trailing dot off possibly canonical name
+R$* < @ $+ . > $*	$1 < @ $2 > $3
 
 # externalize local domain info
-R$*<$+>$*		$1$2$3				defocus
-R@$+:@$+:$+		@$1,@$2:$3			<route-addr> canonical
+R$* < $+ > $*		$1 $2 $3			defocus
+R@ $+ : @ $+ : $+	@ $1 , @ $2 : $3		<route-addr> canonical
 
 # UUCP must always be presented in old form
-R$+@$-.UUCP		$2!$1				u@h.UUCP => h!u
+R$+ @ $- . UUCP		$2!$1				u@h.UUCP => h!u
 
 # delete duplicate local names
-R$+%$=w@$=w		$1@$j				u%host@host => u@host
+R$+ % $=w @ $=w		$1 @ $j				u%host@host => u@host
 
 
 
@@ -193,17 +214,20 @@ R$*			$@ $>0 $1
 S0
 
 # handle numeric address spec
-R$*<@[$+]>$*		$:$1<@$[[$2]$]>$3		numeric internet addr
-R$*<@[$+]>$*		$#smtp$@[$2]$:$1@[$2]$3		numeric internet spec
+R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr
+R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec
 
 #R@			$#error$:Invalid address	handle <> form
 
-# now delete the local info -- note $=O to find characters that cause forwarding
-R<@$j>:$*		$@$>7$1				@here:... -> ...
-R$*$=O$*<@$j>		$@$>7$1$2$3			...@here -> ...
+ifdef(`NEWSENDMAIL',
+`# now delete the local info -- note $=O to find characters that cause forwarding
+R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
+R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-R$+<@$j>		$#local$:$1			local address
+R$+ < @ $j . >		$#local $: : $1			local address',
+`# delete local info
+R$* < @ $j . > $*	$@ $>7 $1 $2')
 
 undivert(3)dnl
 
@@ -231,24 +255,32 @@ R$*<@$*.UUCP>$*		$#smtp$@$Y$:$1<@$2.UUCP>		uucp mail',
 `ifdef(`_UUCP_LINKED_',
 `# forward other UUCP traffic straight to UUCP
 R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
-R$+ < @ $+ .UUCP>	$#uucp $@ $2 $: $1			user@host.UUCP',
+R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
 # deal with other remote names
 R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
-# see if we forward local names
-R$=L			$# local $: $1			special local names
-`R:include:$+		$# local $: :include: $1	included lists'
-R|$+			$# local $: |$1			pipes to programs
-R/$+			$# local $: /$1			and files
-R$+			$: $1 @ $R
-R$+ @			$: $1				no, we don't
-R$+ @ $+		$# smtp $@ $2 $: $1		yes, we do
+ifdef(`NEWSENDMAIL',
+`# handle locally delivered names
+ifdef(`LOCAL_RELAY',
+`R$=L			$# local $: : $1		special local names',
+	`dnl')
+R$+			$# local $: $1			regular local names
+', `ifdef(`LOCAL_RELAY',
+`# forward remaining names to local relay
+R$+			$# smtp $@ $R $: $1 @ $R',
+`# remaining names must be local
+R$+			$# local $: $1')')
 
-# remaining names must be local
-R$+			$#local$:$1			everything else
+ifdef(`LOCAL_RELAY', `ifdef(`NEWSENDMAIL',
+`#
+# special rewriting after aliases have been expanded
+#
 
+S5
+
+R$+			$# smtp $@ $R $: $1 < @ $R >	send to relay')')
 #
 ######################################################################
 ######################################################################
