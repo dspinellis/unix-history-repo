@@ -13,16 +13,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cache.c	7.5 (Berkeley) %G%
+ *	@(#)cache.c	7.6 (Berkeley) %G%
  *
- * from: $Header: cache.c,v 1.8 93/04/27 14:33:36 torek Exp $ (LBL)
+ * from: $Header: cache.c,v 1.9 93/05/05 09:16:17 torek Exp $ (LBL)
  */
 
 /*
  * Cache routines.
  *
  * TODO:
- *	- fill in hardware assist for context and segment flush
  *	- rework range flush
  */
 
@@ -63,19 +62,28 @@ cache_enable()
  * Flush the current context from the cache.
  *
  * This is done by writing to each cache line in the `flush context'
- * address space.
+ * address space (or, for hardware flush, once to each page in the
+ * hardware flush space, for all cache pages).
  */
 void
 cache_flush_context()
 {
-	register int i, ls;
 	register char *p;
+	register int i, ls;
 
 	cachestats.cs_ncxflush++;
-	ls = cacheinfo.c_linesize;
-	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
-	for (p = 0; --i >= 0; p += ls)
-		sta(p, ASI_FLUSHCTX, 0);
+	p = (char *)0;	/* addresses 0..cacheinfo.c_totalsize will do fine */
+	if (cacheinfo.c_hwflush) {
+		ls = NBPG;
+		i = cacheinfo.c_totalsize >> PGSHIFT;
+		for (; --i >= 0; p += ls)
+			sta(p, ASI_HWFLUSHCTX, 0);
+	} else {
+		ls = cacheinfo.c_linesize;
+		i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+		for (; --i >= 0; p += ls)
+			sta(p, ASI_FLUSHCTX, 0);
+	}
 }
 
 /*
@@ -84,6 +92,8 @@ cache_flush_context()
  * This is also done by writing to each cache line, except that
  * now the addresses must include the virtual segment number, and
  * we use the `flush segment' space.
+ *
+ * Again, for hardware, we just write each page (in hw-flush space).
  */
 void
 cache_flush_segment(vseg)
@@ -93,10 +103,18 @@ cache_flush_segment(vseg)
 	register char *p;
 
 	cachestats.cs_nsgflush++;
-	ls = cacheinfo.c_linesize;
-	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
-	for (p = (char *)VSTOVA(vseg); --i >= 0; p += ls)
-		sta(p, ASI_FLUSHSEG, 0);
+	p = (char *)VSTOVA(vseg);	/* seg..seg+sz rather than 0..sz */
+	if (cacheinfo.c_hwflush) {
+		ls = NBPG;
+		i = cacheinfo.c_totalsize >> PGSHIFT;
+		for (; --i >= 0; p += ls)
+			sta(p, ASI_HWFLUSHSEG, 0);
+	} else {
+		ls = cacheinfo.c_linesize;
+		i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+		for (; --i >= 0; p += ls)
+			sta(p, ASI_FLUSHSEG, 0);
+	}
 }
 
 /*
@@ -163,7 +181,6 @@ cache_flush(base, len)
 	cachestats.cs_ra[min(i, MAXCACHERANGE)]++;
 #endif
 
-	ls = cacheinfo.c_linesize;
 	if (i <= 15) {
 		/* cache_flush_page, for i pages */
 		p = (char *)((int)base & ~baseoff);
@@ -171,6 +188,7 @@ cache_flush(base, len)
 			for (; --i >= 0; p += NBPG)
 				sta(p, ASI_HWFLUSHPG, 0);
 		} else {
+			ls = cacheinfo.c_linesize;
 			i <<= PGSHIFT - cacheinfo.c_l2linesize;
 			for (; --i >= 0; p += ls)
 				sta(p, ASI_FLUSHPG, 0);
@@ -179,16 +197,8 @@ cache_flush(base, len)
 	}
 	baseoff = (u_int)base & SGOFSET;
 	i = (baseoff + len + SGOFSET) >> SGSHIFT;
-	if (i == 1) {
-		/* cache_flush_segment */
-		p = (char *)((int)base & ~baseoff);
-		i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
-		for (; --i >= 0; p += ls)
-			sta(p, ASI_FLUSHSEG, 0);
-		return;
-	}
-	/* cache_flush_context */
-	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
-	for (p = 0; --i >= 0; p += ls)
-		sta(p, ASI_FLUSHCTX, 0);
+	if (i == 1)
+		cache_flush_segment(VA_VSEG(base));
+	else
+		cache_flush_context();
 }
