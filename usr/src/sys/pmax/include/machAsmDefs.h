@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machAsmDefs.h	7.3 (Berkeley) %G%
+ *	@(#)machAsmDefs.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -39,8 +39,8 @@
 #define	MCOUNT	.set noreorder; \
 		.set noat; \
 		move $1,$31; \
-		jal _mount; \
-		subu sp,sp,8;
+		jal _mcount; \
+		subu sp,sp,8; \
 		.set reorder; \
 		.set at;
 #else
@@ -56,7 +56,7 @@
 	.globl x; \
 	.ent x, 0; \
 x: ; \
-	.frame sp, 0, ra \
+	.frame sp, 0, ra; \
 	MCOUNT
 
 /*
@@ -87,7 +87,7 @@ x:
 	.globl x; \
 	.ent x, 0; \
 x: ; \
-	.frame sp, fsize, retpc \
+	.frame sp, fsize, retpc; \
 	MCOUNT
 
 /*
