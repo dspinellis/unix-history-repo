@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.17 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -154,6 +154,12 @@ main(argc, argv)
 	     sblock.fs_cpc > 1 && (i & 1) == 0;
 	     sblock.fs_cpc >>= 1, i >>= 1)
 		/* void */;
+	if (sblock.fs_cpc > MAXCPG) {
+		printf("maximum block size with nsect %d and ntrak %d is %d\n",
+		    sblock.fs_nsect, sblock.fs_ntrak,
+		    sblock.fs_bsize / (sblock.fs_cpc / MAXCPG));
+		exit(1);
+	}
 	/* 
 	 * collect and verify the number of cylinders per group
 	 */
@@ -163,8 +169,9 @@ main(argc, argv)
 	} else {
 		sblock.fs_cpg = MAX(sblock.fs_cpc, DESCPG);
 		sblock.fs_fpg = (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
-		while (sblock.fs_fpg / sblock.fs_frag > MAXBPG(&sblock)) {
-			--sblock.fs_cpg;
+		while (sblock.fs_fpg / sblock.fs_frag > MAXBPG(&sblock) &&
+		    sblock.fs_cpg > sblock.fs_cpc) {
+			sblock.fs_cpg -= sblock.fs_cpc;
 			sblock.fs_fpg =
 			    (sblock.fs_cpg * sblock.fs_spc) / NSPF(&sblock);
 		}
