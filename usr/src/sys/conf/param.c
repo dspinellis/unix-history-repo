@@ -2,6 +2,8 @@
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)param.c	6.13 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -49,7 +51,6 @@ int	nchsize = NINODE * 11 / 10;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
-int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
 #ifdef QUOTA
 int	nquota = (MAXUSERS * 9) / 7 + 3;
@@ -74,8 +75,6 @@ struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
 struct	buf *buf, *swbuf;
-short	*swsize;
-int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
 struct	namecache *namecache;
