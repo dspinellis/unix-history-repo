@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-PROG=	what
+PROG=	whatabout
 CFLAGS+=-I${.CURDIR}/../refer
 SRCS=	what1.c what2.c what3.c what4.c mkey3.c shell.c
 DPADD=	${LIBCOMPAT}
