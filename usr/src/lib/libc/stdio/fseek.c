@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fseek.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fseek.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,16 +26,13 @@ static char sccsid[] = "@(#)fseek.c	8.1 (Berkeley) %G%";
  * Seek the given file to the given offset.
  * `Whence' must be one of the three SEEK_* macros.
  */
+int
 fseek(fp, offset, whence)
 	register FILE *fp;
 	long offset;
 	int whence;
 {
-#if __STDC__
-	register fpos_t (*seekfn)(void *, fpos_t, int);
-#else
-	register fpos_t (*seekfn)();
-#endif
+	register fpos_t (*seekfn) __P((void *, fpos_t, int));
 	fpos_t target, curoff;
 	size_t n;
 	struct stat st;
@@ -150,6 +147,7 @@ fseek(fp, offset, whence)
 	 * file offset for the first byte in the current input buffer.
 	 */
 	if (HASUB(fp)) {
+		curoff += fp->_r;	/* kill off ungetc */
 		n = fp->_up - fp->_bf._base;
 		curoff -= n;
 		n += fp->_ur;
