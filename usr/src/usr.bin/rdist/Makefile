@@ -1,4 +1,4 @@
-#	Makefile	4.8	85/02/28
+#	Makefile	4.9	85/06/01
 
 RDIST = /usr/ucb/rdist
 DESTDIR=
@@ -16,7 +16,7 @@ clean:
 	rm -f *.o gram.c errs
 
 install: rdist
-	install -m 4751 rdist ${DESTDIR}${RDIST}
+	install -s -m 4751 rdist ${DESTDIR}${RDIST}
 
 lint:	docmd.c expand.c gram.c lookup.c main.c server.c
 	${LINT} docmd.c expand.c gram.c lookup.c main.c server.c

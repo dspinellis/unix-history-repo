@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	83/07/21
+#	@(#)Makefile	4.3	(Berkeley)	85/06/01
 #
 DESTDIR=
 CFLAGS=	-O
@@ -25,10 +25,10 @@ code: code.c
 	cc ${CFLAGS} -o code code.c
 
 install: ${PROG} ${LIBS}
-	install ${PROG} ${DESTDIR}/usr/bin/${PROG}
+	install -s ${PROG} ${DESTDIR}/usr/bin/${PROG}
 	-mkdir ${DESTDIR}/usr/lib/find
-	install bigram ${DESTDIR}/usr/lib/find/bigram
-	install code ${DESTDIR}/usr/lib/find/code
+	install -s bigram ${DESTDIR}/usr/lib/find/bigram
+	install -s code ${DESTDIR}/usr/lib/find/code
 	install -c -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb
 
 clean:
