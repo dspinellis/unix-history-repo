@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.154 (Berkeley) %G%
+ *	@(#)conf.h	8.155 (Berkeley) %G%
  */
 
 /*
@@ -341,7 +341,9 @@ extern long	dgux_inet_addr();
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
-# define BROKEN_RES_SEARCH 1	/* res_search(unknown) returns h_errno=0 */
+# ifndef BROKEN_RES_SEARCH
+#  define BROKEN_RES_SEARCH 1	/* res_search(unknown) returns h_errno=0 */
+# endif
 # ifdef vax
 #  define LA_TYPE	LA_FLOAT
 # else
@@ -350,7 +352,7 @@ extern long	dgux_inet_addr();
 # endif
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef IDENTPROTO
-#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+#  define IDENTPROTO	0	/* pre-4.4 TCP/IP implementation is broken */
 # endif
 #endif
 
