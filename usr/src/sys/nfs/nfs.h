@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.14 (Berkeley) %G%
+ *	@(#)nfs.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -246,3 +246,5 @@ struct nfsd {
 #define	NFSD_NEEDAUTH	0x08
 #define	NFSD_AUTHFAIL	0x10
 #endif	/* KERNEL */
+#define	SLP_INIT	0x20
+#define	SLP_WANTINIT	0x40

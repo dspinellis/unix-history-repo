@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -2118,6 +2118,7 @@ nfsrv_wakenfsd(slp)
 			nd->nd_flag &= ~NFSD_WAITING;
 			if (nd->nd_slp)
 				panic("nfsd wakeup");
+			slp->ns_sref++;
 			nd->nd_slp = slp;
 			wakeup((caddr_t)nd);
 			return;
