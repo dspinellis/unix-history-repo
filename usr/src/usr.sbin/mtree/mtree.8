@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mtree.8	5.2 (Berkeley) %G%
+.\"	@(#)mtree.8	5.3 (Berkeley) %G%
 .\"
 .TH MTREE 8 ""
 .UC 7
@@ -132,15 +132,18 @@ Ignored for any nodes other than type
 .TP
 .B type
 The type of the node; may be set to one of the following:
-.TS
-l l.
+.IP
 \fBblock\fP	block special device
-\fBchar\fP	character special device
-\fBdir\fP	directory
-\fBfile\fP	regular file
-\fBlink\fP	symbolic link
+.IP
+\fBchar\fP		character special device
+.IP
+\fBdir\fP		directory
+.IP
+\fBfile\fP		regular file
+.IP
+\fBlink\fP		symbolic link
+.IP
 \fBsocket\fP	socket
-.TE
 .PP
 There are five types of lines in a specification.
 .PP
