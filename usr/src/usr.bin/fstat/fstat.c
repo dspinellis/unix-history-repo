@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,11 +21,10 @@ static char sccsid[] = "@(#)fstat.c	5.26 (Berkeley) %G%";
 #include <machine/pte.h>
 
 #include <sys/param.h>
-#include <sys/user.h>
+#include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/text.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -33,6 +32,9 @@ static char sccsid[] = "@(#)fstat.c	5.26 (Berkeley) %G%";
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
 #include <sys/vmmac.h>
+#include <sys/kinfo.h>
+#include <sys/namei.h>
+#include <sys/filedesc.h>
 #define	KERNEL
 #define NFS
 #include <sys/file.h>
@@ -94,8 +96,27 @@ int	vflg;	/* display errors in locating kernel data objects etc... */
 
 #define dprintf	if (vflg) fprintf
 
+struct file **ofiles;	/* buffer of pointers to file structures */
+int maxfiles;
+#define ALLOC_OFILES(d)	\
+	if ((d) > maxfiles) { \
+		free(ofiles); \
+		ofiles = (struct file **)malloc((d) * sizeof(struct file *)); \
+		if (ofiles == NULL) { \
+			fprintf(stderr, "fstat: out of memory\n"); \
+			exit(1); \
+		} \
+		maxfiles = (d); \
+	}
+
+/*
+ * a kvm_read that returns true if everything is read 
+ */
+#define KVM_READ(kaddr, paddr, len) (kvm_read((kaddr), (paddr), (len)) == (len))
+
 extern int errno;
 off_t lseek();
+
 
 main(argc, argv)
 	int argc;
@@ -156,6 +177,9 @@ main(argc, argv)
 		if (!checkfile)	/* file(s) specified, but none accessable */
 			exit(1);
 	}
+
+	ALLOC_OFILES(256);	/* reverse space for file pointers */
+
 	if (fsflg && !checkfile) {	
 		/* -f with no files means use wd */
 		if (getfname(".") == 0)
@@ -198,7 +222,7 @@ fputs("USER     CMD        PID   FD MOUNT      INUM MODE         SZ|DV", stdout)
 char	*Uname, *Comm;
 int	Pid;
 
-#define PREFIX(i) printf("%-8.8s %-8.8s %5d", Uname, Comm, Pid); \
+#define PREFIX(i) printf("%-8.8s %-8s %5d", Uname, Comm, Pid); \
 	switch(i) { \
 	case TEXT: \
 		fputs(" text", stdout); \
@@ -223,37 +247,44 @@ int	Pid;
 dofiles(p)
 	struct proc *p;
 {
-	int i;
+	int i, last;
 	struct file file;
-	struct user *up = kvm_getu(p);
-	struct vnode *xvptr;
+	struct filedesc filed;
+
 	extern char *user_from_uid();
+#ifdef notdef
+	struct vnode *xvptr;
+#endif
 
 	Uname = user_from_uid(p->p_uid, 0);
 	Pid = p->p_pid;
 	Comm = p->p_comm;
 
-	if (up == NULL) {
-		dprintf(stderr, "can't read u for pid %d\n", Pid);
+	if (p->p_fd == NULL)
+		return;
+	if (!KVM_READ(p->p_fd, &filed, sizeof (struct filedesc))) {
+		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
+			p->p_fd, Pid);
 		return;
 	}
 	/*
 	 * root directory vnode, if one
 	 */
-	if (up->u_rdir)
-		vtrans(up->u_rdir, RDIR);
+	if (filed.fd_rdir)
+		vtrans(filed.fd_rdir, RDIR);
+#ifdef notdef
 	/*
 	 * text vnode
 	 */
 	if (p->p_textp && 
-	    kvm_read(&(p->p_textp->x_vptr), &xvptr,
-	    sizeof (struct vnode *)) == sizeof (struct vnode *) &&
+	    KVM_READ(&(p->p_textp->x_vptr), &xvptr, sizeof (struct vnode *)) &&
 	    xvptr != NULL)
 		vtrans(xvptr, TEXT);
+#endif
 	/*
 	 * current working directory vnode
 	 */
-	vtrans(up->u_cdir, CDIR);
+	vtrans(filed.fd_cdir, CDIR);
 	/*
 	 * ktrace vnode, if one
 	 */
@@ -262,13 +293,29 @@ dofiles(p)
 	/*
 	 * open files
 	 */
-	for (i = 0; i <= up->u_lastfile; i++) {
-		if (up->u_ofile[i] == 0)
+#define FPSIZE	(sizeof (struct file *))
+	ALLOC_OFILES(last=filed.fd_lastfile);
+#ifdef newvm
+	if (!KVM_READ(filed.fd_ofiles, ofiles, filed.fd_lastfile * FPSIZE)) {
+		dprintf(stderr, "can't read file structures at %x for pid %d\n",
+			filed.fd_ofiles, Pid);
+		return;
+	}
+#else
+	bcopy(filed.fd_ofile, ofiles, NDFILE * FPSIZE);
+	if ((last > NDFILE) && !KVM_READ(filed.fd_moreofiles, &ofiles[NDFILE],
+	    (last - NDFILE) * FPSIZE)) {
+		dprintf(stderr, "can't read rest of files at %x for pid %d\n",
+			filed.fd_moreofiles, Pid);
+		return;
+	}
+#endif
+	for (i = 0; i <= filed.fd_lastfile; i++) {
+		if (ofiles[i] == NULL)
 			continue;
-		if (kvm_read(up->u_ofile[i], &file, sizeof (struct file)) !=
-		    sizeof (struct file)) {
-			dprintf(stderr, "can't read file %d for pid %d\n",
-				i, Pid);
+		if (!KVM_READ(ofiles[i], &file, sizeof (struct file))) {
+			dprintf(stderr, "can't read file %d at %x for pid %d\n",
+				i, ofiles[i], Pid);
 			continue;
 		}
 		if (file.f_type == DTYPE_VNODE)
@@ -294,8 +341,7 @@ vtrans(vp, i)
 	extern char *devname();
 	char mode[15];
 
-	if (kvm_read((off_t)vp, &vn, sizeof (struct vnode)) != 
-	    sizeof (struct vnode)) {
+	if (!KVM_READ((off_t)vp, &vn, sizeof (struct vnode))) {
 		dprintf(stderr, "can't read vnode at %x for pid %d\n",
 			vp, Pid);
 		return;
@@ -440,8 +486,7 @@ getmnton(m)
 	for (mt = mhead; mt != NULL; mt = mt->next)
 		if (m == mt->m)
 			return (mt->mntonname);
-	if (kvm_read((off_t)m, &mount, sizeof(struct mount)) != 
-	    sizeof(struct mount)) {
+	if (!KVM_READ((off_t)m, &mount, sizeof(struct mount))) {
 		fprintf(stderr, "can't read mount table at %x\n", m);
 		return (NULL);
 	}
@@ -479,41 +524,30 @@ socktrans(sock, i)
 	PREFIX(i);
 
 	/* fill in socket */
-	if (kvm_read((off_t)sock, (char *)&so, sizeof(struct socket))
-	    != sizeof(struct socket)) {
+	if (!KVM_READ(sock, &so, sizeof(struct socket))) {
 		dprintf(stderr, "can't read sock at %x\n", sock);
 		goto bad;
 	}
 
 	/* fill in protosw entry */
-	if (kvm_read((off_t)so.so_proto, (char *)&proto, sizeof(struct protosw))
-	    != sizeof(struct protosw)) {
+	if (!KVM_READ(so.so_proto, &proto, sizeof(struct protosw))) {
 		dprintf(stderr, "can't read protosw at %x", so.so_proto);
 		goto bad;
 	}
 
 	/* fill in domain */
-	if (kvm_read((off_t)proto.pr_domain, (char *)&dom, sizeof(struct domain))
-	    != sizeof(struct domain)) {
+	if (!KVM_READ(proto.pr_domain, &dom, sizeof(struct domain))) {
 		dprintf(stderr, "can't read domain at %x\n", proto.pr_domain);
 		goto bad;
 	}
 
-	/*
-	 * grab domain name
-	 * kludge "internet" --> "inet" for brevity
-	 */
-	if (dom.dom_family == AF_INET)
-		strcpy(dname, "inet");
-	else {
-		if ((len = kvm_read((off_t)dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
-			dprintf(stderr, "can't read domain name at %x\n",
-				dom.dom_name);
-			dname[0] = '\0';
-		}
-		else
-			dname[len] = '\0';
+	if ((len = kvm_read((off_t)dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
+		dprintf(stderr, "can't read domain name at %x\n",
+			dom.dom_name);
+		dname[0] = '\0';
 	}
+	else
+		dname[len] = '\0';
 
 	if ((u_short)so.so_type > STYPEMAX)
 		printf("* %s ?%d", dname, so.so_type);
