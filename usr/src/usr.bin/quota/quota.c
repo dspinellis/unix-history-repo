@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)quota.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,7 +40,7 @@ main(argc, argv)
 	register char *cp;
 	extern int errno;
 
-	if (quota(Q_SYNC, 0, 0, 0) < 0 && errno == EINVAL) {
+	if (quota(Q_SYNC, 0, 0, (caddr_t)0) < 0 && errno == EINVAL) {
 		fprintf(stderr, "There are no quotas on this system\n");
 		exit(0);
 	}
@@ -106,9 +106,8 @@ showquotas(uid, name)
 	int uid;
 	char *name;
 {
-	register char c, *p;
 	register struct fstab *fs;
-	register char *msgi = (char *)0, *msgb = (char *)0;
+	register char *msgi, *msgb;
 	register enab = 1;
 	dev_t	fsdev;
 	struct	stat statb;
@@ -122,20 +121,21 @@ showquotas(uid, name)
 		return;
 	}
 	done = 0;
-	setfsent();
+	(void) setfsent();
 	while (fs = getfsent()) {
 		if (stat(fs->fs_spec, &statb) < 0)
 			continue;
+		msgi = msgb = (char *) 0;
 		fsdev = statb.st_rdev;
 		(void) sprintf(qfilename, "%s/%s", fs->fs_file, qfname);
 		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
-		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
+		if (quota(Q_GETDLIM, uid, fsdev, (caddr_t)&dqblk) != 0) {
 			fd = open(qfilename, O_RDONLY);
 			if (fd < 0)
 				continue;
-			lseek(fd, (long)(uid * sizeof (dqblk)), L_SET);
-			switch (read(fd, &dqblk, sizeof dqblk)) {
+			(void) lseek(fd, (off_t)(uid * sizeof (dqblk)), L_SET);
+			switch (read(fd, (char *)&dqblk, sizeof dqblk)) {
 			case 0:			/* EOF */
 				/*
 				 * Convert implicit 0 quota (EOF)
@@ -150,10 +150,10 @@ showquotas(uid, name)
 			default:		/* ERROR */
 				fprintf(stderr, "quota: read error in ");
 				perror(qfilename);
-				close(fd);
+				(void) close(fd);
 				continue;
 			}
-			close(fd);
+			(void) close(fd);
 			if (!vflag && dqblk.dqb_isoftlimit == 0 &&
 			    dqblk.dqb_bsoftlimit == 0)
 				continue;
@@ -176,11 +176,11 @@ showquotas(uid, name)
 		    dqblk.dqb_curblocks >= dqblk.dqb_bsoftlimit)
 			msgb = "Over disc quota on %s";
 		if (dqblk.dqb_iwarn < MAX_IQ_WARN)
-			sprintf(iwarn, "%d", dqblk.dqb_iwarn);
+			(void) sprintf(iwarn, "%d", dqblk.dqb_iwarn);
 		else
 			iwarn[0] = '\0';
 		if (dqblk.dqb_bwarn < MAX_DQ_WARN)
-			sprintf(dwarn, "%d", dqblk.dqb_bwarn);
+			(void) sprintf(dwarn, "%d", dqblk.dqb_bwarn);
 		else
 			dwarn[0] = '\0';
 		if (qflag) {
@@ -209,10 +209,10 @@ showquotas(uid, name)
 			);
 		}
 	}
-	endfsent();
+	(void) endfsent();
 	if (!done && !qflag) {
 		if (morethanone)
-			putchar('\n');
+			(void) putchar('\n');
 		xprintf("Disc quotas for %s (uid %d):", name, uid);
 		xprintf("none.");
 	}
@@ -234,7 +234,7 @@ heading(uid, name)
 		xprintf((char *)0);
 		return;
 	}
-	putchar('\n');
+	(void) putchar('\n');
 	xprintf("Disc quotas for %s (uid %d):", name, uid);
 	xprintf((char *)0);
 	printf("%10s%8s %7s%8s%8s%8s %7s%8s%8s\n"
@@ -258,17 +258,17 @@ xprintf(fmt, arg1, arg2, arg3, arg4, arg5, arg6)
 	static int column;
 
 	if (fmt == 0 && column || column >= 40) {
-		putchar('\n');
+		(void) putchar('\n');
 		column = 0;
 	}
 	if (fmt == 0)
 		return;
-	sprintf(buf, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
+	(void) sprintf(buf, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
 	if (column != 0 && strlen(buf) < 39)
 		while (column++ < 40)
-			putchar(' ');
+			(void) putchar(' ');
 	else if (column) {
-		putchar('\n');
+		(void) putchar('\n');
 		column = 0;
 	}
 	printf("%s", buf);
