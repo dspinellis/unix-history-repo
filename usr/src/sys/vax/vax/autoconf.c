@@ -1,4 +1,4 @@
-/*	autoconf.c	4.16	81/02/27	*/
+/*	autoconf.c	4.17	81/02/27	*/
 
 /*
  * Configure the system for the current machine.
@@ -168,7 +168,7 @@ unsupp:
 			continue;
 		}
 	}
-	timeout(ubawatch, 0, HZ);
+	timeout(ubawatch, 0, hz);
 }
 #endif
 
