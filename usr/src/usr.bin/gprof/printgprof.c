@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.9 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.10 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -111,9 +111,9 @@ gprofline( np )
     sprintf( kirkbuffer , "[%d]" , np -> index );
     printf( "%-6.6s %5.1f %7.2f %11.2f" ,
 	    kirkbuffer ,
-	    100 * ( np -> time + np -> childtime ) / printtime ,
-	    np -> time / HZ ,
-	    np -> childtime / HZ );
+	    100 * ( np -> propself + np -> propchild ) / printtime ,
+	    np -> propself / HZ ,
+	    np -> propchild / HZ );
     if ( ( np -> ncall + np -> selfcalls ) != 0 ) {
 	printf( " %7d" , np -> ncall );
 	if ( np -> selfcalls != 0 ) {
@@ -135,7 +135,7 @@ printgprof()
     nltype	*parentp;
 
 	/*
-	 *	Now, sort by time + childtime.
+	 *	Now, sort by propself + propchild.
 	 *	sorting both the regular function names
 	 *	and cycle headers.
 	 */
@@ -163,8 +163,8 @@ printgprof()
 	if ( zflag == 0 &&
 	     parentp -> ncall == 0 &&
 	     parentp -> selfcalls == 0 &&
-	     parentp -> time == 0 &&
-	     parentp -> childtime == 0 ) {
+	     parentp -> propself == 0 &&
+	     parentp -> propchild == 0 ) {
 	    continue;
 	}
 	if ( ! parentp -> printflag ) {
@@ -188,7 +188,7 @@ printgprof()
 }
 
     /*
-     *	sort by decreasing total time (time+childtime)
+     *	sort by decreasing propagated time
      *	if times are equal, but one is a cycle header,
      *		say that's first (e.g. less, i.e. -1).
      *	if one's name doesn't have an underscore and the other does,
@@ -204,8 +204,8 @@ totalcmp( npp1 , npp2 )
     register nltype	*np2 = *npp2;
     double		diff;
 
-    diff =    ( np1 -> time + np1 -> childtime )
-	    - ( np2 -> time + np2 -> childtime );
+    diff =    ( np1 -> propself + np1 -> propchild )
+	    - ( np2 -> propself + np2 -> propchild );
     if ( diff < 0.0 )
 	    return 1;
     if ( diff > 0.0 )
@@ -221,6 +221,10 @@ totalcmp( npp1 , npp2 )
     if ( *(np1 -> name) != '_' && *(np2 -> name) == '_' )
 	return -1;
     if ( *(np1 -> name) == '_' && *(np2 -> name) != '_' )
+	return 1;
+    if ( np1 -> ncall > np2 -> ncall )
+	return -1;
+    if ( np1 -> ncall < np2 -> ncall ) 
 	return 1;
     return strcmp( np1 -> name , np2 -> name );
 }
@@ -311,6 +315,9 @@ printname( selfp )
 #	ifdef DEBUG
 	    if ( debug & DFNDEBUG ) {
 		printf( "{%d} " , selfp -> toporder );
+	    }
+	    if ( debug & PROPDEBUG ) {
+		printf( "%5.2f%% " , selfp -> propfraction );
 	    }
 #	endif DEBUG
     }
@@ -417,9 +424,9 @@ printcycle( cyclep )
     sprintf( kirkbuffer , "[%d]" , cyclep -> index );
     printf( "%-6.6s %5.1f %7.2f %11.2f %7d" ,
 	    kirkbuffer ,
-	    100 * ( cyclep -> time + cyclep -> childtime ) / printtime ,
-	    cyclep -> time / HZ ,
-	    cyclep -> childtime / HZ ,
+	    100 * ( cyclep -> propself + cyclep -> propchild ) / printtime ,
+	    cyclep -> propself / HZ ,
+	    cyclep -> propchild / HZ ,
 	    cyclep -> ncall );
     if ( cyclep -> selfcalls != 0 ) {
 	printf( "+%-7d" , cyclep -> selfcalls );
@@ -441,7 +448,7 @@ printmembers( cyclep )
     sortmembers( cyclep );
     for ( memberp = cyclep -> cnext ; memberp ; memberp = memberp -> cnext ) {
 	printf( "%6.6s %5.5s %7.2f %11.2f %7d" , 
-		"" , "" , memberp -> time / HZ , memberp -> childtime / HZ ,
+		"" , "" , memberp -> propself / HZ , memberp -> propchild / HZ ,
 		memberp -> ncall );
 	if ( memberp -> selfcalls != 0 ) {
 	    printf( "+%-7d" , memberp -> selfcalls );
@@ -484,7 +491,7 @@ sortmembers( cyclep )
 }
 
     /*
-     *	major sort is on time + childtime,
+     *	major sort is on propself + propchild,
      *	next is sort on ncalls + selfcalls.
      */
 int
@@ -492,8 +499,8 @@ membercmp( this , that )
     nltype	*this;
     nltype	*that;
 {
-    double	thistime = this -> time + this -> childtime;
-    double	thattime = that -> time + that -> childtime;
+    double	thistime = this -> propself + this -> propchild;
+    double	thattime = that -> propself + that -> propchild;
     long	thiscalls = this -> ncall + this -> selfcalls;
     long	thatcalls = that -> ncall + that -> selfcalls;
 
@@ -517,7 +524,7 @@ membercmp( this , that )
      *	- if one arc is within a cycle, it's less than.
      *	- if both arcs are within a cycle, compare arc counts.
      *	- if neither arc is within a cycle, compare with
-     *		time + childtime as major key
+     *		arc_time + arc_childtime as major key
      *		arc count as minor key
      */
 int
