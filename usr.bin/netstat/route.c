@@ -59,7 +59,7 @@ extern	int nflag, aflag, Aflag, af;
 int do_rtent;
 extern	char *routename(), *netname(), *plural();
 #ifdef NS
-exter	char *ns_print();
+extern	char *ns_print();
 #endif
 extern	char *malloc();
 #define kget(p, d) \

@@ -2,16 +2,16 @@
 
 PROG=	netstat
 SRCS=	inet.c if.c main.c mbuf.c route.c unix.c
-#
+
 #SRCS+=	host.c
 #CFLAGS+= -DIMP
-#
-#SRCS+=	ns.c
-#CFLAGS+= -DNS
-#
-#SRCS+=	iso.c
-#CFLAGS+= -DISO
-#
+
+SRCS+=	ns.c
+CFLAGS+= -DNS
+
+SRCS+=	iso.c
+CFLAGS+= -DISO
+
 BINGRP=	kmem
 BINMODE=2555
 LDADD=	-lutil
