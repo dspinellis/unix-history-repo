@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka650.c	7.1 (Berkeley) %G%
+ *	@(#)ka650.c	7.2 (Berkeley) %G%
  */
 
 #if VAX650
@@ -15,6 +15,7 @@
 #include "param.h"
 #include "time.h"
 #include "kernel.h"
+#include "systm.h"
 
 #include "cpu.h"
 #include "clock.h"
@@ -32,6 +33,11 @@ ka650_init()
 	ioaccess(KA650_IPCR, KA650IPCRmap, sizeof(ka650ipcr));
 	ioaccess(KA650_CACHE, KA650CACHEmap, KA650_CACHESIZE);
 	ka650encache();
+	if (ctob(physmem) > ka650merr.merr_qbmbr) {
+		printf("physmem(0x%x) > qbmbr(0x%x)\n",
+		    ctob(physmem), ka650merr.merr_qbmbr);
+		panic("qbus map unprotected");
+	}
 }
 
 ka650_clkstartrt()
@@ -115,11 +121,15 @@ ka650_mchk(cmcf)
 	printf("vap %x istate1 %x istate2 %x pc %x psl %x\n",
 	    mcf->mc65_mrvaddr, mcf->mc65_istate1, mcf->mc65_istate2,
 	    mcf->mc65_pc, mcf->mc65_psl);
+	printf("dmaser=0x%b qbear=0x%x dmaear=0x%x\n",
+	    ka650merr.merr_dser, DMASER_BITS, ka650merr.merr_qbear,
+	    ka650merr.merr_dear);
+	ka650merr.merr_dser = DSER_CLEAR;
 
 	i = mfpr(CAER);
 	mtpr(CAER, CAER_MCC | CAER_DAT | CAER_TAG);
 	if (i & CAER_MCC) {
-		printf("cache 1");
+		printf("cache 1 ");
 		if (i & CAER_DAT) {
 			printf("data");
 			i = cache1data;
@@ -130,8 +140,7 @@ ka650_mchk(cmcf)
 			i = cache1tag;
 			cache1tag = time.tv_sec;
 		}
-	} else
-	    if ((i & CAER_MCD) || (ka650merr.merr_errstat & MEM_CDAL)) {
+	} else if ((i & CAER_MCD) || (ka650merr.merr_errstat & MEM_CDAL)) {
 		printf("CDAL");
 		i = cdalerr;
 		cdalerr = time.tv_sec;
