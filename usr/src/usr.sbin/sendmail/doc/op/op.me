@@ -1,7 +1,18 @@
+.\" Copyright (c) 1983 Eric P. Allman
+.\" Berkeley, California
+.\"
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)op.me	5.6 (Berkeley) %G%
+.\"
 .\" eqn % | troff -me
 .\"if n .ls 2
-.he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 5.6''Last Mod %G%'
+.\".he 'Sendmail Installation and Operation Guide''%'
+.\".fo 'Version 5.6''Last Mod %G%'
+.eh 'SMM:07-%''Sendmail Installation and Operation Guide'
+.oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
 .de $0
 .(x
@@ -100,6 +111,8 @@ Sendmail \- An Internetwork Mail Router.
 This other paper should be read before this manual
 to gain a basic understanding
 of how the pieces fit together.
+.pn 4
+.bp
 .sh 1 "BASIC INSTALLATION"
 .pp
 There are two basic steps to installing sendmail.
@@ -125,9 +138,23 @@ subtree.
 .sh 2 "Off-The-Shelf Configurations"
 .pp
 The configuration files
-are all in the subdirectory
-.i cf
+are all in the subdirectories
+.i cf.named
+and
+.i cf.hosttable
 of the sendmail directory.
+The directory
+.i cf.named
+contains configuration files that have been tailored for the name server
+.i named \|(8).
+These are the configuration files currently being used at Berkeley.
+The configuration files in
+.i cf.hosttable
+are some typical ones and the old Berkeley versions from before the name server
+was being used.
+You should create a symbolic link from
+.i cf
+to the directory that you are going to use.
 The ones used at Berkeley are in
 .i m4 \|(1)
 format;
@@ -149,10 +176,10 @@ file.
 .pp
 Two off the shelf configuration files are supplied
 to handle the basic cases:
-.i cf/arpaproto.cf
-for Arpanet (TCP) sites
+.i cf.hosttable/arpaproto.cf
+for Arpanet (TCP) sites not running the name server
 and
-.i cf/uucpproto.cf
+.i cf.hosttable/uucpproto.cf
 for UUCP sites.
 These are
 .i not
@@ -173,12 +200,14 @@ is now ready for installation as
 A makefile exists in the root of the
 .i sendmail
 directory that will do all of these steps
-for a 4.2bsd system.
+for a 4.3BSD system.
 It may have to be slightly tailored
 for use on other systems.
 .pp
-Before using this makefile,
-you should already have created your configuration file
+Before using this makefile, you should create a symbolic link from
+.i cf
+to the directory containing your configuration files.
+You should also have created your configuration file
 and left it in the file
 .q cf/\fIsystem\fP.cf
 where
@@ -204,15 +233,16 @@ The basic installation procedure is to type:
 .(b
 make
 make install
+make installcf
 .)b
 in the root directory of the
 .i sendmail
 distribution.
 This will make all binaries
 and install them in the standard places.
-The second
+The second and third
 .i make
-command must be executed as the superuser (root).
+commands must be executed as the superuser (root).
 .sh 2 "Installation by Hand"
 .pp
 Along with building a configuration file,
@@ -231,13 +261,13 @@ be part of the system library.
 These are the system logging routines
 and the new directory access routines
 (if required).
-If you are not running the new 4.2bsd directory code
+If you are not running the 4.3BSD directory code
 and do not have the compatibility routines installed in your system library,
 you should execute the command:
 .(b
 (cd lib; make ndir)
 .)b
-This will compile and install the 4.2 compatibility routines
+This will compile and install the 4.3 compatibility routines
 in the library.
 You should then type:
 .(b
@@ -252,7 +282,7 @@ that is probably inadequate for your system.
 You should plan on recompiling and installing the entire system:
 .(b
 cd src
-rm \-f *.o
+make clean
 make
 cp sendmail /usr/lib
 chgrp kmem /usr/lib/sendmail
@@ -855,7 +885,7 @@ to receive the errors.
 This is typically useful
 for a mailing list
 where the submitter of the list
-has no control over the maintanence of the list itself;
+has no control over the maintenance of the list itself;
 in this case the list maintainer would be the owner of the list.
 For example:
 .(b
@@ -1301,7 +1331,7 @@ Message collections and failed deliveries.
 .ip 3
 Successful deliveries.
 .ip 4
-Messages being defered
+Messages being deferred
 (due to a host being down, etc.).
 .ip 5
 Normal message queueups.
@@ -2078,9 +2108,9 @@ A host name enclosed between
 .b $[
 and
 .b $]
-is looked up in the
-.i /etc/hosts
-file and replaced by the canonical name.
+is looked up using the
+.i gethostent \|(3)
+routines and replaced by the canonical name.
 For example,
 .q $[csam$]
 would become
@@ -2127,7 +2157,7 @@ but the
 .i user
 may be multi-part.
 .pp
-A RHS may also be preceeded by a
+A RHS may also be preceded by a
 .b $@
 or a
 .b $:
@@ -2147,7 +2177,7 @@ The
 .b $@
 and
 .b $:
-prefixes may preceed a
+prefixes may precede a
 .b $>
 spec;
 for example:
@@ -2393,7 +2423,8 @@ rather than determining the full path.
 .sh 4 "Large site, many hosts \*- minimum information"
 .pp
 Berkeley is an example of a large site,
-i.e., more than two or three hosts.
+i.e., more than two or three hosts
+and multiple mail connections.
 We have decided that the only reasonable philosophy
 in our environment
 is to designate one host as the guru for our site.
@@ -2407,9 +2438,9 @@ should be hints rather than solid information.
 For example,
 a typical site on our local ether network is
 .q monet.
-Monet has a list of known ethernet hosts;
-if it receives mail for any of them,
-it can do direct delivery.
+When monet receives mail for delivery,
+it checks whether the destination host is directly reachable;
+if so, mail is sent to that host.
 If it receives mail for any unknown host,
 it just passes it directly to
 .q ucbvax,
@@ -2417,46 +2448,46 @@ our master host.
 Ucbvax may determine that the host name is illegal
 and reject the message,
 or may be able to do delivery.
-However, it is important to note that when a new ethernet host is added,
+However, it is important to note that when a new mail connection is added,
 the only host that
 .i must
 have its tables updated
 is ucbvax;
 the others
 .i may
-be updated as convenient,
+be updated if convenient,
 but this is not critical.
 .pp
 This picture is slightly muddied
 due to network connections that are not actually located
 on ucbvax.
 For example,
-our TCP connection is currently on
+some UUCP connections are currently on
 .q ucbarpa.
 However,
 monet
 .i "does not"
 know about this;
 the information is hidden totally between ucbvax and ucbarpa.
-Mail going from monet to a TCP host
-is transfered via the ethernet
+Mail going from monet to a UUCP host
+is transferred via the ethernet
 from monet to ucbvax,
 then via the ethernet from ucbvax to ucbarpa,
-and then is submitted to the Arpanet.
+and then is submitted to UUCP.
 Although this involves some extra hops,
 we feel this is an acceptable tradeoff.
 .pp
 An interesting point is that it would be possible
 to update monet
-to send TCP mail directly to ucbarpa
+to send appropriate UUCP mail directly to ucbarpa
 if the load got too high;
-if monet failed to note a host as a TCP host
+if monet failed to note a host as connected to ucbarpa
 it would go via ucbvax as before,
 and if monet incorrectly sent a message to ucbarpa
 it would still be sent by ucbarpa
 to ucbvax as before.
 The only problem that can occur is loops,
-as if ucbarpa thought that ucbvax had the TCP connection
+as if ucbarpa thought that ucbvax had the UUCP connection
 and vice versa.
 For this reason,
 updates should
@@ -2474,7 +2505,7 @@ is essentially an impossible job.
 .sh 4 "Small site \*- complete information"
 .pp
 A small site
-(two or three hosts)
+(two or three hosts and few external connections)
 may find it more reasonable to have complete information
 at each host.
 This would require that each host
@@ -2532,7 +2563,7 @@ The elements of the path need not be physical hosts;
 the domain is logical rather than physical.
 For example,
 at Berkeley
-one legal host is
+one legal host might be
 .q a.CC.Berkeley.EDU ;
 reading from right to left,
 .q EDU
@@ -3153,7 +3184,7 @@ After this interval,
 messages that have not been successfully sent
 will be returned to the sender.
 .ip t\fIS,D\fP
-Set the local timezone name to
+Set the local time zone name to
 .i S
 for standard time and
 .i D
@@ -3804,7 +3835,7 @@ This would reject messages greater than 50000 bytes
 unless they were local.
 The
 .i NoReturn
-flag can be sent to supress the return of the actual body
+flag can be sent to suppress the return of the actual body
 of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
@@ -3883,30 +3914,31 @@ used during queue file rebuild.
 A file used when creating a unique id.
 .ip /usr/spool/mqueue/xf*
 A transcript of the current session.
-.ro
-.ls 1
-.tp
-.sp 2i
-.in 0
-.ce 100
-.sz 24
-.b SENDMAIL
-.sz 14
-.sp
-INSTALLATION AND OPERATION GUIDE
-.sp
-.sz 10
-Eric Allman
-Britton-Lee, Inc.
-.sp
-Version 5.6
-.ce 0
-.bp 1
+.\".ro
+.\".ls 1
+.\".tp
+.\".sp 2i
+.\".in 0
+.\".ce 100
+.\".sz 24
+.\".b SENDMAIL
+.\".sz 14
+.\".sp
+.\"INSTALLATION AND OPERATION GUIDE
+.\".sp
+.\".sz 10
+.\"Eric Allman
+.\"Britton-Lee, Inc.
+.\".sp
+.\"Version 5.6
+.\".ce 0
+.pn 2
+.bp
 .ce
 .sz 12
 TABLE OF CONTENTS
 .sz 10
-.sp 2
+.sp
 .\" remove some things to avoid "out of temp file space" problem
 .rm sh
 .rm (x
