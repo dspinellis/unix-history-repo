@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)disklabel.h	7.8 (Berkeley) %G%
+ *	@(#)disklabel.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,10 @@ struct disklabel {
 	 * as found in /usr/mdec.  These are returned when using
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
-	 union {
+#if defined(KERNEL) || defined(STANDALONE)
+	char	d_packname[16];			/* pack identifier */ 
+#else
+	union {
 		char	un_d_packname[16];	/* pack identifier */ 
 		struct {
 			char *un_d_boot0;	/* primary bootstrap name */
@@ -56,6 +59,7 @@ struct disklabel {
 #define d_packname	d_un.un_d_packname
 #define d_boot0		d_un.un_b.un_d_boot0
 #define d_boot1		d_un.un_b.un_d_boot1
+#endif	/* ! KERNEL or STANDALONE */
 			/* disk geometry: */
 	u_long	d_secsize;		/* # of bytes per sector */
 	u_long	d_nsectors;		/* # of data sectors per track */
@@ -254,6 +258,8 @@ struct partinfo {
 #define DIOCSSTEP	_IOW('d', 107, int)	/* set step rate */
 #define DIOCSRETRIES	_IOW('d', 108, int)	/* set # of retries */
 #define DIOCWLABEL	_IOW('d', 109, int)	/* write en/disable label */
+
+#define DIOCSBAD	_IOW('d', 110, struct dkbad)	/* set kernel dkbad */
 
 #endif LOCORE
 
