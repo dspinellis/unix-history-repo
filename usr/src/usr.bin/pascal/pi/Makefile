@@ -1,26 +1,12 @@
-#
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)pimakefile	5.2 (Berkeley) 9/7/85
-#
-SCCSID = "@(#)pimakefile 5.2 9/7/85"
+#	@(#)Makefile	1.5 (Berkeley) %G%
 
-INSTALLDIR=	${DESTDIR}/usr/bin
-INSTALLNAME=	${INSTALLDIR}/pi
-LIBDIR=	${DESTDIR}/usr/lib
-BINDIR=	../pi
-SRCDIR=	../src
-VPATH=	../src
-WHOAMI=	pi
-VERSION=	3.1
-DATE=	9/7/85
-EYACC=	../eyacc/eyacc
-CFLAGS=	-O
-ERRORSTRINGS=	${WHOAMI}${VERSION}strings
-OLDSTRINGS=	${WHOAMI}[0-9]*.[0-9]*strings
-HOWFILE=	how_${WHOAMI}
+PROG=	pi
+SRCDIR=	${.CURDIR}/../src
+CFLAGS=	-I. -I${.CURDIR} -I${SRCDIR}
+.PATH:	${SRCDIR}
+NOMAN=	noman
+
+EYACC=	/usr/libexec/pascal/eyacc
 
 SRCS=	ato.c call.c case.c clas.c const.c conv.c cset.c error.c fdec.c \
 	fend.c fhdr.c flvalue.c forop.c func.c gen.c hash.c lab.c lookup.c \
@@ -30,76 +16,51 @@ SRCS=	ato.c call.c case.c clas.c const.c conv.c cset.c error.c fdec.c \
 	yyoptions.c yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c \
 	yyseman.c yytree.c p2put.c stab.c pcproc.c pcfunc.c pccaseop.c \
 	pclval.c sconv.c
-OBJS=	ato.o call.o case.o clas.o const.o conv.o cset.o error.o fdec.o \
-	fend.o fhdr.o flvalue.o forop.o func.o gen.o hash.o lab.o lookup.o \
-	lval.o stklval.o main.o nl.o proc.o put.o rec.o rval.o stkrval.o \
-	savenl.o stat.o string.o subr.o tmps.o tree.o type.o var.o TRdata.o \
-	treen.o yycopy.o yycosts.o yyerror.o yyget.o yyid.o yylex.o yymain.o \
-	yyoptions.o yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o \
-	yyseman.o yytree.o p2put.o stab.o pcproc.o pcfunc.o pccaseop.o \
-	pclval.o sconv.o
+OBJS+=	config.c y.tab.o
+CLEANFILES+=opc y.tab.h y.tab.c y.tab.out ${WHOAMI}*strings config.c \
+	    opcode.h picture opc pic *.list ${ERRORSTRINGS} config.o
 
-all a.out: ${OBJS} y.tab.o config.c
-	${CC} ${CFLAGS} ${OBJS} y.tab.o config.c
+WHOAMI=	pi
+.include "${SRCDIR}/config.include"
 
-${OBJS}:
-	rm -f `basename $@ .o`.c
-	cd ${SRCDIR}; \
-	    mkstr - ${BINDIR}/${ERRORSTRINGS} ${BINDIR}/ `basename $@ .o`.c
-	${CC} ${CFLAGS} -I. -I${SRCDIR} -c `basename $@ .o`.c
-	rm -f `basename $@ .o`.c
-
-lint:
-	cd ${SRCDIR}; lint -I. -I${BINDIR} ${SRCS} ${BINDIR}/*.c
-
-y.tab.h y.tab.c: ${SRCDIR}/pas.y ${SRCDIR}/gram
-	rm -f y.tab.h y.tab.c
-	${EYACC} ${SRCDIR}/pas.y > /dev/null
-	ex - y.tab.c <${SRCDIR}/gram
-	@echo that makes y.tab.h and y.tab.c
+.c.o:
+	rm -f ${.IMPSRC:T}
+	ln -s ${.IMPSRC} .
+	mkstr - ${ERRORSTRINGS} x ${.IMPSRC:T}
+	${CC} ${CFLAGS} -c x${.IMPSRC:T} -o ${.TARGET}
+	rm -f x${.IMPSRC:T} ${.IMPSRC:T}
 
 y.tab.o: y.tab.c y.tab.h
 	rm -f x.y.tab.c
 	mkstr - ${ERRORSTRINGS} x. y.tab.c
-	${CC} ${CFLAGS} -I${SRCDIR} -I. -c x.y.tab.c
+	${CC} ${CFLAGS} -c x.y.tab.c
 	mv x.y.tab.o y.tab.o
 	rm -f x.y.tab.c
 
-picture: ${SRCDIR}/OPnames.h ${SRCDIR}/pic.c
-	rm -f picture
-	cc ${SRCDIR}/pic.c -o pic
-	pic >picture
-	rm -f pic
+y.tab.c: y.tab.h
 
-opcode.h: ${SRCDIR}/OPnames.h ${SRCDIR}/opc.c
-	rm -f opcode.h
-	cc ${SRCDIR}/opc.c -o opc
-	opc >opcode.h
-	rm -f opc
+y.tab.h: ${SRCDIR}/pas.y ${SRCDIR}/gram
+	@echo make y.tab.h and y.tab.c
+	rm -f y.tab.h y.tab.c
+	${EYACC} ${SRCDIR}/pas.y > /dev/null
+	ex - y.tab.c < ${SRCDIR}/gram
 
-${SRCDIR}/0.h:
-	touch -f ${SRCDIR}/0.h
+picture: pic ${SRCDIR}/OPnames.h
+	./pic > picture
 
-config.c: ${SRCDIR}/CONFIG.c
-	sed -e "s?VERSION?${VERSION}?g" \
-	    -e "s?DATE?${DATE}?g" \
-	    -e "s?INSTALLDIR?${INSTALLDIR}?g" \
-	    -e "s?LIBDIR?${LIBDIR}?g" \
-	    -e "s?ERRORSTRINGS?${ERRORSTRINGS}?g" \
-	    -e "s?HOWFILE?${HOWFILE}?g" \
-	    < ${SRCDIR}/CONFIG.c >config.c
+pic: pic.c
+	${CC} ${.ALLSRC} -o ${.TARGET}
 
-cleandir clean:
-	rm -f *.o *.c y.tab.h y.tab.c y.tab.out ${WHOAMI}*strings
-	rm -f config.c opcode.h picture a.out core *.list *.bak errs
-	rm -f opc pic tags
+opcode.h: opc ${SRCDIR}/OPnames.h ${SRCDIR}/opc.c
+	./opc > ${.TARGET}
 
-install: a.out
-	rm -f ${LIBDIR}/${OLDSTRINGS}
-	install -c -m 664 ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
-	install -s -m 775 a.out ${INSTALLNAME}
+opc: opc.c
+	${CC} ${.ALLSRC} -o ${.TARGET}
 
-# Make depend must make clean first, since otherwise VPATH screws up
-# which sources we 'make depend' from, if there are any .c's lying around.
-depend: clean ${SRCS} opcode.h y.tab.h
-	mkdep ${CFLAGS} -I. ${SRCS}
+beforeinstall:
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${ERRORSTRINGS} \
+	    ${DESTDIR}${LIBDATA}/${ERRORSTRINGS}
+
+.include <bsd.prog.mk>
+
+${OBJS} .depend: opcode.h y.tab.h
