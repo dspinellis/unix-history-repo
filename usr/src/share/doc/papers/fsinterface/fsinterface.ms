@@ -582,19 +582,12 @@ struct nameidata {
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
 
-		/* side effects: */
 /* BEGIN UFS SPECIFIC */
-	off_t	ni_endoff;		/* end of useful stuff in directory */
 	struct diroffcache {		/* last successful directory search */
 		struct	vnode *nc_prevdir;	/* terminal directory */
 		long	nc_id;			/* directory's unique id */
 		off_t	nc_prevoffset;		/* where last entry found */
 	} ni_nc;
-	struct ndirinfo {		/* saved info for new dir entry */
-		struct	iovec nd_iovec;		/* pointed to by ni_iov */
-		struct	uio nd_uio;		/* directory I/O parameters */
-		struct	direct nd_dent;		/* current directory entry */
-	} ni_nd;
 /* END UFS SPECIFIC */
 };
 .DE
@@ -756,8 +749,8 @@ struct vfs {
 	struct vfsops	*vfs_op;		/* operations on vfs */
 	struct vnode	*vfs_vnodecovered;	/* vnode we mounted on */
 	int	vfs_flag;		/* flags */
-\fB!\fP	int	vfs_bsize;		/* basic block size */
-\fB+\fP	int	vfs_tsize;		/* optimal transfer size */
+\fB!\fP	int	vfs_fsize;		/* fundamental block size */
+\fB+\fP	int	vfs_bsize;		/* optimal transfer size */
 \fB!\fP	uid_t	vfs_exroot;		/* exported fs uid 0 mapping */
 	short	vfs_exflags;		/* exported fs flags */
 	caddr_t	vfs_data;		/* private data */
@@ -795,9 +788,10 @@ struct vfsops {
 \fB!\fP	int	(*vfs_unmount)(		/* vfs, forcibly */ );
 \fB+\fP	int	(*vfs_mountroot)();
 	int	(*vfs_root)(		/* vfs, vpp */ );
-	int	(*vfs_statfs)(		/* vfs, sbp */ );
+\fB!\fP	int	(*vfs_statfs)(		/* vfs, vp, sbp */ );
 \fB!\fP	int	(*vfs_sync)(		/* vfs, waitfor */ );
-\fB+\fP	struct vnode *	(*vfs_fhtovp)(	/* vfs, fh */ );
+\fB+\fP	int	(*vfs_fhtovp)(		/* vfs, fhp, vpp */ );
+\fB+\fP	int	(*vfs_vptofh)(		/* vp, fhp */ );
 };
 .DE
 .LP
@@ -810,14 +804,16 @@ The \fIvfs_statfs\fP entry returns a structure of the form:
 struct statfs {
 \fB!\fP	short	f_type;			/* type of filesystem */
 \fB+\fP	short	f_flags;		/* copy of vfs (mount) flags */
-	long	f_bsize;		/* fundamental file system block size */
-\fB+\fP	long	f_tsize;		/* optimal transfer block size */
+\fB!\fP	long	f_fsize;		/* fundamental file system block size */
+\fB+\fP	long	f_bsize;		/* optimal transfer block size */
 	long	f_blocks;		/* total data blocks in file system */
 	long	f_bfree;		/* free blocks in fs */
 	long	f_bavail;		/* free blocks avail to non-superuser */
 	long	f_files;		/* total file nodes in file system */
 	long	f_ffree;		/* free file nodes in fs */
 	fsid_t	f_fsid;			/* file system id */
+\fB+\fP	char	*f_mntonname;		/* directory on which mounted */
+\fB+\fP	char	*f_mntfromname;		/* mounted filesystem */
 	long	f_spare[7];		/* spare for later */
 };
 
@@ -867,19 +863,20 @@ are:
 struct vnodeops {
 \fB!\fP	int	(*vn_lookup)(		/* ndp */ );
 \fB!\fP	int	(*vn_create)(		/* ndp, vap, fflags */ );
+\fB+\fP	int	(*vn_mknod)(		/* ndp, vap, fflags */ );
 \fB!\fP	int	(*vn_open)(		/* vp, fflags, cred */ );
 	int	(*vn_close)(		/* vp, fflags, cred */ );
-	int	(*vn_access)(		/* vp, mode, cred */ );
+	int	(*vn_access)(		/* vp, fflags, cred */ );
 	int	(*vn_getattr)(		/* vp, vap, cred */ );
 	int	(*vn_setattr)(		/* vp, vap, cred */ );
 
-\fB+\fP	int	(*vn_read)(		/* vp, uiop, ioflag, cred */ );
-\fB+\fP	int	(*vn_write)(		/* vp, uiop, ioflag, cred */ );
+\fB+\fP	int	(*vn_read)(		/* vp, uiop, offp, ioflag, cred */ );
+\fB+\fP	int	(*vn_write)(		/* vp, uiop, offp, ioflag, cred */ );
 \fB!\fP	int	(*vn_ioctl)(		/* vp, com, data, fflag, cred */ );
 	int	(*vn_select)(		/* vp, which, cred */ );
 \fB+\fP	int	(*vn_mmap)(		/* vp, ..., cred */ );
 	int	(*vn_fsync)(		/* vp, cred */ );
-\fB+\fP	off_t	(*vn_seek)(		/* vp, old off, new off, whence */ );
+\fB+\fP	int	(*vn_seek)(		/* vp, offp, off, whence */ );
 
 \fB!\fP	int	(*vn_remove)(		/* ndp */ );
 \fB!\fP	int	(*vn_link)(		/* vp, ndp */ );
@@ -887,12 +884,11 @@ struct vnodeops {
 \fB!\fP	int	(*vn_mkdir)(		/* ndp, vap */ );
 \fB!\fP	int	(*vn_rmdir)(		/* ndp */ );
 \fB!\fP	int	(*vn_symlink)(		/* ndp, vap, nm */ );
-	int	(*vn_readdir)(		/* vp, uiop, ioflag, cred */ );
+	int	(*vn_readdir)(		/* vp, uiop, offp, ioflag, cred */ );
 	int	(*vn_readlink)(		/* vp, uiop, ioflag, cred */ );
 
 \fB+\fP	int	(*vn_abortop)(		/* ndp */ );
 \fB!\fP	int	(*vn_inactive)(		/* vp */ );
-\fB+\fP	int	(*vn_vptofh)(		/* vp, fhp */ );
 };
 .DE
 .DS
@@ -917,8 +913,6 @@ File open flags, possibly including O_APPEND, O_CREAT, O_TRUNC and O_EXCL.
 A pointer to a \fIvnode\fP previously obtained with \fIvn_lookup\fP.
 .IP cred
 A pointer to a \fIucred\fP credentials structure.
-.IP mode
-File access modes; one or more of F_OK, X_OK, W_OK, and R_OK.
 .IP uiop
 A pointer to a \fIuio\fP structure.
 .IP ioflag
@@ -930,7 +924,9 @@ A pointer to a character buffer used to pass data to or from an \fIioctl\fP.
 .IP which
 One of FREAD, FWRITE or 0 (select for exceptional conditions).
 .IP off
-A file offset of type \fIoff_t\P.
+A file offset of type \fIoff_t\fP.
+.IP offp
+A pointer to file offset of type \fIoff_t\fP.
 .IP whence
 One of L_SET, L_INCR, or L_XTND.
 .IP fhp
@@ -1019,8 +1015,8 @@ struct vattr {
 	struct timeval	va_mtime;	/* time of last modification */
 	struct timeval	va_ctime;	/* time file changed */
 	dev_t	va_rdev;	/* device the file represents */
-	u_long	va_blocks;	/* bytes of disk space held by file */
-\fB+\fP	u_long	va_blocks1;	/* reserved if va_blocks not a quad */
+	u_long	va_bytes;	/* bytes of disk space held by file */
+\fB+\fP	u_long	va_bytes1;	/* reserved if va_bytes not a quad */
 };
 .DE
 .SH
