@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	8.2 (Berkeley) %G%
+ *	@(#)dc.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -247,7 +247,7 @@ dcopen(dev, flag, mode, p)
 		ttsetwater(tp);
 	} else if ((tp->t_state & TS_XCLUDE) && curproc->p_ucred->cr_uid != 0)
 		return (EBUSY);
-	(void) dcmctl(dev, DML_DTR, DMSET);
+	(void) dcmctl(dev, DML_DTR | DML_RTS, DMSET);
 	s = spltty();
 	while (!(flag & O_NONBLOCK) && !(tp->t_cflag & CLOCAL) &&
 	       !(tp->t_state & TS_CARR_ON)) {
@@ -292,6 +292,11 @@ dcread(dev, uio, flag)
 	register struct tty *tp;
 
 	tp = &dc_tty[minor(dev)];
+	if ((tp->t_cflag & CRTS_IFLOW) && (tp->t_state & TS_TBLOCK) &&
+	    tp->t_rawq.c_cc < TTYHOG/5) {
+		tp->t_state &= ~TS_TBLOCK;
+		(void) dcmctl(dev, DML_RTS, DMBIS);
+	}
 	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
@@ -339,11 +344,11 @@ dcioctl(dev, cmd, data, flag, p)
 		break;
 
 	case TIOCSDTR:
-		(void) dcmctl(dev, DML_DTR|DML_RTS, DMBIS);
+		(void) dcmctl(dev, DML_DTR | DML_RTS, DMBIS);
 		break;
 
 	case TIOCCDTR:
-		(void) dcmctl(dev, DML_DTR|DML_RTS, DMBIC);
+		(void) dcmctl(dev, DML_DTR | DML_RTS, DMBIC);
 		break;
 
 	case TIOCMSET:
@@ -535,6 +540,11 @@ dcrint(unit)
 			cc |= TTY_FE;
 		if (c & RBUF_PERR)
 			cc |= TTY_PE;
+		if ((tp->t_cflag & CRTS_IFLOW) && !(tp->t_state & TS_TBLOCK) &&
+		    tp->t_rawq.c_cc + tp->t_canq.c_cc >= TTYHOG) {
+			tp->t_state &= ~TS_TBLOCK;
+			(void) dcmctl(tp->t_dev, DML_RTS, DMBIC);
+		}
 		(*linesw[tp->t_line].l_rint)(cc, tp);
 	}
 	DELAY(10);
@@ -546,11 +556,34 @@ dcxint(tp)
 {
 	register struct pdma *dp;
 	register dcregs *dcaddr;
+	int unit;
 
-	dp = &dcpdma[minor(tp->t_dev)];
+	dp = &dcpdma[unit = minor(tp->t_dev)];
 	if (dp->p_mem < dp->p_end) {
 		dcaddr = (dcregs *)dp->p_addr;
-		dcaddr->dc_tdr = dc_brk[(tp - dc_tty) >> 2] | *dp->p_mem++;
+		/* check for hardware flow control of output */
+		if ((tp->t_cflag & CCTS_OFLOW) && pmax_boardtype != DS_PMAX) {
+			switch (unit) {
+			case DCCOMM_PORT:
+				if (dcaddr->dc_msr & MSR_CTS2)
+					break;
+				goto stop;
+
+			case DCPRINTER_PORT:
+				if (dcaddr->dc_msr & MSR_CTS3)
+					break;
+			stop:
+				tp->t_state &= ~TS_BUSY;
+				tp->t_state |= TS_TTSTOP;
+				ndflush(&tp->t_outq, dp->p_mem-tp->t_outq.c_cf);
+				dp->p_end = dp->p_mem = tp->t_outq.c_cf;
+				dcaddr->dc_tcr &= ~(1 << unit);
+				MachEmptyWriteBuffer();
+				DELAY(10);
+				return;
+			}
+		}
+		dcaddr->dc_tdr = dc_brk[unit >> 2] | *dp->p_mem++;
 		MachEmptyWriteBuffer();
 		DELAY(10);
 		return;
@@ -559,7 +592,7 @@ dcxint(tp)
 	if (tp->t_state & TS_FLUSH)
 		tp->t_state &= ~TS_FLUSH;
 	else {
-		ndflush(&tp->t_outq, dp->p_mem-tp->t_outq.c_cf);
+		ndflush(&tp->t_outq, dp->p_mem - tp->t_outq.c_cf);
 		dp->p_end = dp->p_mem = tp->t_outq.c_cf;
 	}
 	if (tp->t_line)
@@ -568,7 +601,7 @@ dcxint(tp)
 		dcstart(tp);
 	if (tp->t_outq.c_cc == 0 || !(tp->t_state & TS_BUSY)) {
 		dcaddr = (dcregs *)dp->p_addr;
-		dcaddr->dc_tcr &= ~(1 << (minor(tp->t_dev) & 03));
+		dcaddr->dc_tcr &= ~(1 << (unit & 03));
 		MachEmptyWriteBuffer();
 		DELAY(10);
 	}
@@ -581,9 +614,9 @@ dcstart(tp)
 	register struct pdma *dp;
 	register dcregs *dcaddr;
 	register int cc;
-	int s;
+	int unit, s;
 
-	dp = &dcpdma[minor(tp->t_dev)];
+	dp = &dcpdma[unit = minor(tp->t_dev)];
 	dcaddr = (dcregs *)dp->p_addr;
 	s = spltty();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
@@ -616,21 +649,11 @@ dcstart(tp)
 		}
 		goto out;
 	}
-	if (tp->t_flags & (RAW|LITOUT))
-		cc = ndqb(&tp->t_outq, 0);
-	else {
-		cc = ndqb(&tp->t_outq, 0200);
-		if (cc == 0) {
-			cc = getc(&tp->t_outq);
-			timeout(ttrstrt, (void *)tp, (cc & 0x7f) + 6);
-			tp->t_state |= TS_TIMEOUT;
-			goto out;
-		}
-	}
+	cc = ndqb(&tp->t_outq, 0);
 	tp->t_state |= TS_BUSY;
 	dp->p_end = dp->p_mem = tp->t_outq.c_cf;
 	dp->p_end += cc;
-	dcaddr->dc_tcr |= 1 << (minor(tp->t_dev) & 03);
+	dcaddr->dc_tcr |= 1 << (unit & 03);
 	MachEmptyWriteBuffer();
 out:
 	splx(s);
@@ -663,19 +686,22 @@ dcmctl(dev, bits, how)
 	register dcregs *dcaddr;
 	register int unit, mbits;
 	int b, s;
-	register int msr;
+	register int tcr, msr;
 
 	unit = minor(dev);
 	b = 1 << (unit & 03);
 	dcaddr = (dcregs *)dcpdma[unit].p_addr;
 	s = spltty();
-	/* only channel 2 has modem control (what about line 3?) */
-	mbits = DML_DTR | DML_DSR | DML_CAR;
+	/* only channel 2 has modem control on a DECstation 2100/3100 */
+	mbits = DML_DTR | DML_RTS | DML_DSR | DML_CAR;
 	switch (unit & 03) {
 	case 2:
 		mbits = 0;
-		if (dcaddr->dc_tcr & TCR_DTR2)
+		tcr = dcaddr->dc_tcr;
+		if (tcr & TCR_DTR2)
 			mbits |= DML_DTR;
+		if (pmax_boardtype != DS_PMAX && (tcr & TCR_RTS2))
+			mbits |= DML_RTS;
 		msr = dcaddr->dc_msr;
 		if (msr & MSR_CD2)
 			mbits |= DML_CAR;
@@ -690,8 +716,11 @@ dcmctl(dev, bits, how)
 	case 3:
 		if (pmax_boardtype != DS_PMAX) {
 			mbits = 0;
-			if (dcaddr->dc_tcr & TCR_DTR3)
+			tcr = dcaddr->dc_tcr;
+			if (tcr & TCR_DTR3)
 				mbits |= DML_DTR;
+			if (tcr & TCR_RTS3)
+				mbits |= DML_RTS;
 			msr = dcaddr->dc_msr;
 			if (msr & MSR_CD3)
 				mbits |= DML_CAR;
@@ -718,18 +747,32 @@ dcmctl(dev, bits, how)
 	}
 	switch (unit & 03) {
 	case 2:
+		tcr = dcaddr->dc_tcr;
 		if (mbits & DML_DTR)
-			dcaddr->dc_tcr |= TCR_DTR2;
+			tcr |= TCR_DTR2;
 		else
-			dcaddr->dc_tcr &= ~TCR_DTR2;
+			tcr &= ~TCR_DTR2;
+		if (pmax_boardtype != DS_PMAX) {
+			if (mbits & DML_RTS)
+				tcr |= TCR_RTS2;
+			else
+				tcr &= ~TCR_RTS2;
+		}
+		dcaddr->dc_tcr = tcr;
 		break;
 
 	case 3:
 		if (pmax_boardtype != DS_PMAX) {
+			tcr = dcaddr->dc_tcr;
 			if (mbits & DML_DTR)
-				dcaddr->dc_tcr |= TCR_DTR3;
+				tcr |= TCR_DTR3;
 			else
-				dcaddr->dc_tcr &= ~TCR_DTR3;
+				tcr &= ~TCR_DTR3;
+			if (mbits & DML_RTS)
+				tcr |= TCR_RTS3;
+			else
+				tcr &= ~TCR_RTS3;
+			dcaddr->dc_tcr = tcr;
 		}
 	}
 	if ((mbits & DML_DTR) && (dcsoftCAR[unit >> 2] & b))
@@ -748,25 +791,45 @@ dcscan(arg)
 {
 	register dcregs *dcaddr;
 	register struct tty *tp;
-	register int i, bit, car;
+	register int unit, limit, dtr, dsr;
 	int s;
 
+	/* only channel 2 has modem control on a DECstation 2100/3100 */
+	dtr = TCR_DTR2;
+	dsr = MSR_DSR2;
+	limit = (pmax_boardtype == DS_PMAX) ? 2 : 3;
 	s = spltty();
-	/* only channel 2 has modem control (what about line 3?) */
-	dcaddr = (dcregs *)dcpdma[i = 2].p_addr;
-	tp = &dc_tty[i];
-	bit = TCR_DTR2;
-	if (dcsoftCAR[i >> 2] & bit)
-		car = 1;
-	else
-		car = dcaddr->dc_msr & MSR_DSR2;
-	if (car) {
-		/* carrier present */
-		if (!(tp->t_state & TS_CARR_ON))
-			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-	} else if ((tp->t_state & TS_CARR_ON) &&
-	    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
-		dcaddr->dc_tcr &= ~bit;
+	for (unit = 2; unit <= limit; unit++, dtr >>= 2, dsr >>= 8) {
+		tp = &dc_tty[unit];
+		dcaddr = (dcregs *)dcpdma[unit].p_addr;
+		if (dcaddr->dc_msr & dsr) {
+			/* carrier present */
+			if (!(tp->t_state & TS_CARR_ON))
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+		} else if ((tp->t_state & TS_CARR_ON) &&
+		    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+			dcaddr->dc_tcr &= ~dtr;
+		/*
+		 * If we are using hardware flow control and output is stopped,
+		 * then resume transmit.
+		 */
+		if ((tp->t_cflag & CCTS_OFLOW) && (tp->t_state & TS_TTSTOP) &&
+		    pmax_boardtype != DS_PMAX) {
+			switch (unit) {
+			case DCCOMM_PORT:
+				if (dcaddr->dc_msr & MSR_CTS2)
+					break;
+				continue;
+
+			case DCPRINTER_PORT:
+				if (dcaddr->dc_msr & MSR_CTS3)
+					break;
+				continue;
+			}
+			tp->t_state &= ~TS_TTSTOP;
+			dcstart(tp);
+		}
+	}
 	splx(s);
 	timeout(dcscan, (void *)0, hz);
 }
