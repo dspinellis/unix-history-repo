@@ -1,0 +1,1569 @@
+.TH MAWK 1  "Jan 22 1992" "Version 1.1" "USER COMMANDS"
+.\" strings
+.ds ex \fIexpr\fR
+.SH NAME
+mawk \- pattern scanning and text processing language
+
+.SH SYNOPSIS
+.B mawk
+[\-\fBW
+.IR option ]
+[\-\fBF
+.IR value ]
+[\-\fBv
+.IR var=value ]
+[\-\|\-] 'program text' [file ...]
+.br
+.B mawk
+[\-\fBW
+.IR option ]
+[\-\fBF
+.IR value ]
+[\-\fBv
+.IR var=value ]
+[\-\fBf
+.IR program-file ]
+[\-\|\-] [file ...]
+
+.SH DESCRIPTION
+.B mawk
+is an interpreter for the AWK Programming Language.
+The AWK language
+is useful for manipulation of data files,
+text retrieval and processing,
+and for prototyping and experimenting with algorithms.
+.B mawk
+is a \fInew awk\fR meaning it implements the AWK language as
+defined in Aho, Kernighan and Weinberger,
+.I "The AWK Programming Language,"
+Addison-Wesley Publishing, 1988.  (Hereafter referred to as
+the AWK book.)
+.B mawk
+conforms to the Posix 1003.2
+(draft 11.2)
+definition of the AWK language
+which contains a few features not described in the AWK
+book,  and
+.B mawk
+provides a small number of extensions.
+
+An AWK program is a sequence of \fIpattern {action}\fR pairs and
+function definitions.
+Short programs are entered on the command line
+usually enclosed in ' ' to avoid shell
+interpretation.
+Longer programs can be read in from a
+file with the \-f option.
+Data  input is read from the list of files on
+the command line or from standard input when the list is empty.
+The input is broken into records as determined by the
+record separator variable, \fBRS\fR.  Initially,
+.B RS
+= "\\n" and records are synonymous with lines.
+Each record is compared against each
+.I pattern
+and if it matches, the program text for
+.I "{action}"
+is executed.
+
+.SH OPTIONS
+
+.TP \w'\-\fBv'+\w'\fIvar=value'u+2n
+\-\fBF \fIvalue
+sets the field separator, \fBFS\fR, to 
+.IR value .
+
+.IP "\-\fBf \fIfile"
+Program text is read from \fIfile\fR instead of from the
+command line.  Multiple \-f options are allowed.
+
+.IP "\-\fBv \fIvar=value"
+assigns 
+.I value
+to program variable 
+.IR var .
+
+.IP "\-\|\-"
+indicates the unambiguous end of options.
+.PP
+The above options will be available with any Posix compatible
+implementation of AWK, and implementation specific options are
+prefaced with \-W. 
+.B mawk 
+provides three:
+
+.TP \w'\-\fBv'+\w'\fIvar=value'u+2n
+\-\fBW \fRversion
+.B mawk
+writes its version and copyright
+to stdout and compiled limits to
+stderr and exits 0.
+.TP
+\-\fBW \fRdump
+writes an assembler like listing of the internal
+representation of the program to stderr.
+.TP
+\-\fBW \fRsprintf=\fInum
+adjusts the size of 
+.B mawk's
+internal sprintf buffer to 
+.I num
+bytes.  More than rare use of this option indicates
+.B mawk
+should be recompiled.
+.TP
+\-\fBW \fRposix_space
+forces
+.B mawk
+not to consider '\\n' to be space.
+
+.SH "THE AWK LANGUAGE"
+.SS "\fB1. Program structure"
+An AWK program is a sequence of 
+.I "pattern {action}" 
+pairs and user
+function definitions.
+.PP
+A pattern can be:
+.nf
+.RS
+\fBBEGIN
+END\fR
+expression
+expression , expression
+.sp
+.RE
+.fi
+One, but not both,
+of \fIpattern {action}\fR can be omitted.   If 
+.I {action}
+is omitted it is implicitly { print }.  If 
+.I pattern 
+is omitted, then it is implicitly matched.
+.B BEGIN
+and
+.B END
+patterns require an action.
+.PP
+Statements are terminated by newlines, semi-colons or both.
+Groups of statements such as
+actions or loop bodies are blocked via { ... } as in C.  The
+last statement in a block doesn't need a terminator.  Blank lines
+have no meaning; an empty statement is terminated with a
+semi-colon. Long statements
+can be continued with a backslash, \\\|.  A statement can be broken
+without a backslash after a comma, left brace, &&, ||, 
+.BR do , 
+.BR else  ,
+the right parenthesis of an 
+.BR if , 
+.B while 
+or
+.B for
+statement, and the
+right parenthesis of a function definition.
+A comment starts with # and extends to, but does not include
+the end of line.
+.PP
+The following statements control program flow inside blocks.
+.RS
+.PP
+.B if 
+( \*(ex )
+.I statement
+.PP
+.B if 
+( \*(ex )
+.I statement
+.B else 
+.I statement
+.PP
+.B while
+( \*(ex )
+.I statement
+.PP
+.B do
+.I statement
+.B while
+( \*(ex )
+.PP
+.B for
+(
+\fIopt_expr\fR ;
+\fIopt_expr\fR ;
+\fIopt_expr\fR 
+)
+.I statement
+.PP
+.B for
+( \fIvar \fBin \fIarray\fR )
+.I statement
+.PP
+.B continue
+.PP
+.B break
+.RE
+.\"
+.SS "\fB2. Data types, conversion and comparison"
+There are two basic data types, numeric and string.
+Numeric constants can be integer like \-2,
+decimal like 1.08, or in scientific notation like 
+\-1.1e4 or .28E\-3.  All numbers are represented internally and all
+computations are done in floating point arithmetic.
+So for example, the expression
+0.2e2 == 20
+is true and true is represented as 1.0.
+.PP
+String constants are enclosed in double quotes.
+.sp
+.ce
+"This is a string with a newline at the end.\\n"
+.sp
+Strings can be continued across a line by escaping (\\) the newline.
+The following escape sequences are recognized.
+.nf
+.sp
+	\\\\		\\
+	\\"		"
+	\\a		alert, ascii 7
+	\\b		backspace, ascii 8
+	\\t		tab, ascii 9
+	\\n		newline, ascii 10
+	\\v		vertical tab, ascii 11
+	\\f		formfeed, ascii 12
+	\\r		carriage return, ascii 13
+	\\ddd		1, 2 or 3 octal digits for ascii ddd
+	\\xhh		1 or 2 hex digits for ascii  hh
+.sp
+.fi
+If you escape any other character \\c, you get \\c, i.e., 
+.B mawk
+ignores the escape.
+.PP
+There are really three basic data types; the third is 
+.I "number and string"
+which has both a numeric value and a string value
+at the same time.
+User defined variables come into existence when first referenced
+and are initialized to 
+.IR null ,
+a number and string value which has numeric value 0 and string value
+"".
+Non-trivial number and string typed data come from input 
+and are typically stored in fields.  (See section 4).
+.PP
+The type of an expression is determined by its context and automatic
+type conversion occurs if needed.  For example, to evaluate the
+statements
+.nf
+.sp
+	y = x + 2  ;  z = x  "hello"
+.sp
+.fi
+The value stored in variable y will be typed numeric.
+If x is not numeric,
+the value taken from x is converted to numeric before it is added to
+2 and stored in y.  The value stored in variable z will be typed
+string, and the value of x will be converted to string if necessary
+and concatenated with "hello".  (Of course, the value and type
+stored in x is not changed by any conversions.)
+A string expression is converted to numeric using its longest
+numeric prefix as with 
+.IR atof (3).
+A numeric expression is converted to string by replacing
+.I expr
+with 
+.BR sprintf(CONVFMT ,
+.IR expr ),
+unless 
+.I expr
+can be represented on the host machine as an exact integer then
+it is converted to \fBsprintf\fR("%d", \*(ex).
+.B Sprintf()
+is an AWK built-in that duplicates the functionality of
+.IR sprintf (3),
+and
+.B CONVFMT
+is a built-in variable used for internal conversion
+from number to string and initialized to "%.6g".
+Explicit type conversions can be forced,
+\*(ex ""
+is string and
+.IR  expr +0
+is numeric.
+.PP
+To evaluate,
+\*(ex\d1\u \fBrel-op \*(ex\d2\u,
+if both operands are numeric or number and string then the comparison
+is numeric; if both operands are string the comparison is string.
+If exactly one operand is string and after trimming spaces and
+tabs from the front and back the remaining string is entirely
+numeric in form, then the string is converted to number and the
+comparison is numeric; otherwise, the numeric operand is converted
+to string and the comparison is string.
+The result of a comparison is numeric, 0 or 1.
+.PP
+In boolean contexts such as,
+\fBif\fR ( \*(ex ) \fIstatement\fR,
+a string expression evaluates true if and only if it is not the
+empty string ""; 
+numeric values if and only if not numerically zero.
+.\"
+.SS "\fB3. Regular expressions"
+In the AWK language, records, fields and strings are often
+tested for matching a 
+.IR "regular expression" .
+Regular expressions are enclosed in slashes, and
+.nf
+.sp
+	\*(ex ~ /\fIr\fR/
+.sp
+.fi
+is an AWK expression that evaluates to 1 if \*(ex "matches"
+.IR r ,
+which means a substring of \*(ex is in the set of strings
+defined by 
+.IR r .
+With no match the expression evaluates to 0; replacing
+~ with the "not match" operator, !~ , reverses the meaning.
+As  pattern-action pairs,
+.nf
+.sp
+	/\fIr\fR/ { \fIaction\fR }   and\
+   \fB$0\fR ~ /\fIr\fR/ { \fIaction\fR }
+.sp
+.fi
+are the same,
+and for each input record that matches
+.IR r ,
+.I action
+is executed.
+In fact, /\fIr\fR/ is an AWK expression that is
+equivalent to (\fB$0\fR ~ /\fIr\fR/) anywhere except when on the
+right side of a match operator or passed as an argument to
+a built-in function that expects a regular expression 
+argument.
+.PP
+AWK uses extended regular expressions as with
+.IR egrep (1).
+The regular expression metacharacters, i.e., those with special
+meaning in regular expressions are
+.nf
+.sp
+	\ ^ $ . [ ] | ( ) * + ?
+.sp
+.fi
+Regular expressions are built up from characters as follows:
+.RS 
+.TP \w'[^c\d1\uc\d2\uc\d3\u...]'u+1n
+\fIc\fR
+matches any non-metacharacter
+.IR c .
+.IP  "\e\fIc\fR"
+matches a character defined by the same escape sequences used
+in string constants or the literal
+character
+.I c 
+if
+\\\fIc\fR
+is not an escape sequence.
+.IP  \.
+matches any character (including newline).
+.TP
+^
+matches the front of a string.
+.TP
+$
+matches the back of a string.
+.TP
+[c\d1\uc\d2\uc\d3\u...]
+matches any character in the class
+c\d1\uc\d2\uc\d3\u... .  An interval of characters is denoted
+c\d1\u\-c\d2\u inside a class [...].
+.TP
+[^c\d1\uc\d2\uc\d3\u...]
+matches any character not in the class
+c\d1\uc\d2\uc\d3\u...
+.RE
+.sp
+Regular expressions are built up from other regular expressions
+as follows:
+.RS
+.TP
+\fIr\fR\d1\u\fIr\fR\d2\u
+matches 
+\fIr\fR\d1\u
+followed immediately by
+\fIr\fR\d2\u
+(concatenation).
+.TP
+\fIr\fR\d1\u | \fIr\fR\d2\u
+matches 
+\fIr\fR\d1\u or
+\fIr\fR\d2\u
+(alternation).
+.TP
+\fIr\fR*
+matches \fIr\fR repeated zero or more times.
+.TP
+\fIr\fR+
+matches \fIr\fR repeated one or more times.
+.TP
+\fIr\fR?
+matches \fIr\fR zero or once.
+.TP
+(\fIr\fR)
+matches \fIr\fR, providing grouping.
+.RE
+.sp
+The increasing precedence of operators is alternation, 
+concatenation and
+unary (*, + or ?).
+.PP
+For example,
+.nf
+.sp
+	/^[_a\-zA-Z][_a\-zA\-Z0\-9]*$/  and
+	/^[\-+]?([0\-9]+\\\|.?|\\\|.[0\-9])[0\-9]*([eE][\-+]?[0\-9]+)?$/
+.sp
+.fi
+are matched by AWK identifiers and AWK numeric constants
+respectively.  Note that . has to be escaped to be
+recognized as a decimal point, and that metacharacters are not
+special inside character classes.
+.PP
+Any expression can be used on the right hand side of the ~ or !~
+operators or
+passed to a built-in that expects
+a regular expression.
+If needed, it is converted to string, and then interpreted
+as a regular expression.  For example,
+.nf
+.sp
+	BEGIN { identifier = "[_a\-zA\-Z][_a\-zA\-Z0\-9]*" }
+
+	$0 ~ "^" identifier
+.sp
+.fi
+prints all lines that start with an AWK identifier.
+.PP
+.B mawk
+recognizes the empty regular expression, //\|, which matches the
+empty string and hence is matched by any string at the front,
+back and between every character.  For example,
+.nf
+.sp
+	echo  abc | mawk { gsub(//, "X") ; print }
+	XaXbXcX
+.sp
+.fi
+.\"
+.SS "\fB4. Records and fields"
+Records are read in one at a time, and stored in the
+.I field
+variable 
+.BR $0 .
+The record is split into
+.I fields
+which are stored in
+.BR $1 ,
+.BR $2 ", ...,"
+.BR $NF .
+The built-in variable
+.B NF
+is set to the number of fields,
+and 
+.B NR
+and
+.B FNR
+are incremented by 1.
+Fields above 
+.B $NF
+are set to "".
+.PP
+Assignment to
+.B $0
+causes the fields and 
+.B NF
+to be recomputed.
+Assignment to
+.B NF
+or to a field
+causes 
+.B $0
+to be reconstructed by
+concatenating the
+.B $i's
+separated by
+.BR OFS .
+Assignment to a field with index greater than
+.BR NF ,
+increases
+.B NF
+and causes
+.B $0
+to be reconstructed.
+.PP
+Data input stored in fields
+is string, unless the entire field has numeric
+form and then the type is number and string.
+For example,
+.sp
+.nf
+	echo 24 24E | 
+	mawk '{ print($1>100, $1>"100", $2>100, $2>"100") }'
+	0 0 1 1
+.fi
+.sp
+.B $0
+and
+.B $2
+are string and
+.B $1
+is number and string.  The first 
+and second comparisons are numeric and the last
+two are string.  In the second "100" is
+converted to 100, and in the third 100 is
+converted to "100".
+.\"
+.SS "\fB5. Expressions and operators"
+.PP
+The expression syntax is 
+similar to C.  Primary expressions are numeric constants,
+string constants, variables, fields, arrays and functions.  
+The identifier
+for a variable, array or function can be a sequence of
+letters, digits and underscores, that does
+not start with a digit.
+Variables are not declared; they exist when first referenced and
+are initialized to
+.IR null .
+.PP
+New
+expressions are composed with the following operators in
+order of increasing precedence.
+.PP
+.RS
+.nf
+.vs +2p  \"  open up a little
+\fIassignment\fR		=  +=  \-=  *=  /=  %=  ^=
+\fIconditional\fR		?  :
+\fIlogical or\fR		||
+\fIlogical and\fR		&&
+\fIarray membership\fR	\fBin
+\fImatching\fR		~   !~
+\fIrelational\fR		<  >   <=  >=  ==  !=
+\fIconcatenation\fR		(no explicit operator)
+\fIadd ops\fR			+  \-
+\fImul ops\fR			*  /  % 
+\fIunary\fR			+  \-
+\fIlogical not\fR		!
+\fIexponentiation\fR		^
+\fIinc and dec\fR		++ \-\|\- (both post and pre)
+\fIfield\fR			$
+.vs
+.RE
+.PP
+.fi
+Assignment, conditional and exponentiation associate right to
+left; the other operators associate left to right.  Any
+expression can be parenthesized.
+.\"
+.SS "\fB6. Arrays"
+.ds ae \fIarray\fR[\fIexpr\fR]
+Awk provides one-dimensional arrays.  Array elements are expressed
+as \*(ae.
+.I Expr
+is internally converted to string type, so, for example,
+A[1] and A["1"] are the same element and the actual
+index is "1".
+Arrays indexed by strings are called associative arrays.
+Initially an array is empty; elements exist when first accessed.
+An expression,
+\fIexpr\fB in\fI array\fR
+evaluates to 1 if 
+\*(ae
+exists, else to 0.
+.PP
+There is a form of the
+.B for
+statement that loops over each index of an array.
+.nf
+.sp
+	\fBfor\fR ( \fIvar\fB in \fIarray \fR) \fIstatement\fR
+.sp
+.fi
+sets
+.I var
+to each index of
+.I array
+and executes 
+.IR statement .
+The order that
+.I var
+transverses the indices of
+.I array
+is not defined.
+.PP
+The statement,
+.B delete
+\*(ae,
+causes
+\*(ae
+not to exist.
+.PP
+Multidimensional arrays are synthesized with concatenation using
+the built-in variable
+.BR SUBSEP .
+\fIarray\fR[\fIexpr\fR\d1\u,\|\fIexpr\fR\d2\u]
+is equivalent to
+\fIarray\fR[\fIexpr\fR\d1\u \fBSUBSEP \fIexpr\fR\d2\u].
+Testing for a multidimensional element uses a parenthesized index,
+such as
+.sp
+.nf
+	if ( (i, j) in A )  print A[i, j]
+.fi
+.sp
+.\"
+.SS "\fB7. Builtin-variables\fR"
+.PP
+The following variables are built-in and initialized before program
+execution.
+.RS
+.TP \w'FILENAME'u+2n
+.B ARGC
+number of command line arguments.
+.TP
+.B ARGV
+array of command line arguments, 0..ARGC-1.
+.TP
+.B CONVFMT
+format for internal conversion of numbers to string, 
+initially = "%.6g".
+.TP
+.B ENVIRON
+array indexed by environment variables.  An environment string,
+\fIvar=value\fR is stored as 
+\fBENVIRON\fR[\fIvar\fR] = 
+.IR value .
+.TP
+.B FILENAME
+name of the current input file.
+.TP
+.B FNR
+current record number in
+.BR FILENAME .
+.TP
+.B FS
+splits records into fields as a regular expression.
+.TP
+.B NF
+number of fields in the current record.
+.TP
+.B NR
+current record number in the total input stream.
+.TP
+.B OFMT
+format for printing numbers; initially = "%.6g".
+.TP
+.B OFS
+inserted between fields on output, initially = " ".
+.TP
+.B   ORS
+terminates each record on output, initially = "\\n".
+.TP
+.B    RLENGTH
+length set by the last call to the built-in function,
+.BR match() .
+.TP
+.B   RS
+input record separator, initially = "\\n".
+.TP
+.B  RSTART
+index set by the last call to
+.BR match() .
+.TP
+.B SUBSEP
+used to build multiple array subscripts, initially = "\\034".
+.RE
+.\"
+.SS "\fB8. Built-in functions"
+String functions
+.RS
+.TP
+gsub(\fIr,s,t\fR)  gsub(\fIr,s\fR)
+Global substitution, every match of regular expression
+.I r
+in variable 
+.I t
+is replaced by string
+.IR s .
+The number of replacements is returned.
+If 
+.I t
+is omitted,
+.B $0 
+is used.  An & in the replacement string
+.I s
+is replaced by the matched substring of
+.IR t .
+\\& puts a literal & in the replacement string.
+.TP
+index(\fIs,t\fR)
+If 
+.I t
+is a substring of
+.IR s ,
+then the position where 
+.I t
+starts is returned, else 0 is returned.
+The first character of
+.I s
+is in position 1.
+.TP
+length(\fIs\fR)  length()
+Returns the length of string
+.IR s ;
+without an argument, returns the length of 
+.BR $0 .
+.TP
+match(\fIs,r\fR)
+Returns the index of the first longest match of regular expression
+.I r
+in string
+.IR s .
+Returns 0 if no match.
+As a side effect,
+.B RSTART
+is set to the return value.
+.B RLENGTH
+is set to the length of the match or \-1 if no match.  If the
+empty string is matched, 
+.B RLENGTH
+is set to 0, and 1 is returned if the match is at the front, and
+length(\fIs\fR)+1 is returned if the match is at the back.
+.TP
+split(\fIs,A,r\fR)  split(\fIs,A\fR)
+String
+.I s
+is split into fields by regular expression
+.I  r
+and the fields are loaded into array
+.IR A .
+The number of fields
+is returned.  See section 11 below for more detail.
+If
+.I r
+is omitted, 
+.B FS
+is used.
+.TP
+sprintf(\fIformat,expr-list\fR)
+Returns a string constructed from
+.I expr-list
+according to
+.IR format .
+See the description of printf() below.
+.TP
+sub(\fIr,s,t\fR)  sub(\fIr,s\fR)
+Single substitution, same as gsub() except at most one substitution.
+.TP
+substr(\fIs,i,n\fR)  substr(\fIs,i\fR)
+Returns the substring of string
+.IR s ,
+starting at index 
+.IR i , 
+of length
+.IR n .
+If 
+.I n
+is omitted, the suffix of
+.IR s ,
+starting at
+.I i
+is returned.
+.TP
+tolower(\fIs\fR)
+Returns a copy of
+.I s
+with all upper case characters converted to lower case.
+.TP
+toupper(\fIs\fR)
+Returns a copy of
+.I s
+with all lower case characters converted to upper case.
+.RE
+.PP
+Arithmetic functions
+.RS
+.PP
+.nf
+atan2(\fIy,x\fR)	Arctan of \fIy\fR/\fIx\fR between -\(*p and \(*p.
+.PP  
+cos(\fIx\fR)		Cosine function, \fIx\fR in radians.
+.PP  
+exp(\fIx\fR)		Exponential function.
+.PP  
+int(\fIx\fR)		Returns \fIx\fR truncated towards zero.
+.PP 
+log(\fIx\fR)		Natural logarithm.
+.PP 
+rand()		Returns a random number between zero and one.
+.PP  
+sin(\fIx\fR)		Sine function, \fIx\fR in radians.
+.PP  
+sqrt(\fIx\fR)		Returns square root of \fIx\fR.
+.fi
+.TP
+srand(\fIexpr\fR)  srand()
+Seeds the random number generator, using the clock if
+.I expr
+is omitted, and returns the value of the previous seed.
+.B mawk
+seeds the random number generator from the clock at startup
+so there is no real need to call srand().  Srand(\fIexpr\fR)
+is useful for repeating pseudo random sequences.
+.RE
+.\"
+.SS "\fB9. Input and output"
+There are two output statements, 
+.B print
+and
+.BR printf .
+.RS
+.TP
+print
+writes
+.B "$0  ORS"
+to standard output.
+.TP
+print \*(ex\d1\u, \*(ex\d2\u, ..., \*(ex\dn\u
+writes
+\*(ex\d1\u \fBOFS \*(ex\d2\u \fBOFS\fR ... \*(ex\dn\u
+.B ORS
+to standard output.  Numeric expressions are converted to
+string with 
+.BR OFMT .
+.TP
+printf \fIformat, expr-list\fR
+duplicates the printf C library function writing to standard output.
+The complete ANSI C format specifications are recognized with
+conversions %c, %d, %e, %E, %f, %g, %G,
+%i, %o, %s, %u, %x, %X and %%,
+and conversion qualifiers h and l.
+.RE
+.PP
+The argument list to print or printf can optionally be enclosed in
+parentheses.
+Print formats numbers using
+.B OFMT
+or "%d" for exact integers.
+"%c" with a numeric argument prints the corresponding 8 bit 
+character, with a string argument it prints the first character of
+the string.
+The output of print and printf can be redirected to a file or
+command by appending > 
+.IR file ,
+>>
+.I file
+or
+|
+.I command
+to the end of the print statement.
+Redirection opens 
+.I file
+or
+.I command
+only once, subsequent redirections append to the already open stream.
+By convention, 
+.B mawk
+associates the filename "/dev/stderr" with stderr which allows
+print and printf to be redirected to stderr.
+.PP
+The input function
+.B getline
+has the following variations.
+.RS
+.TP
+getline
+reads into
+.BR $0 ,
+updates the fields,
+.BR NF ,
+.B  NR
+and 
+.BR FNR .
+.TP
+getline < \fIfile\fR
+reads into
+.B $0
+from \fIfile\fR, 
+updates the fields and
+.BR NF .
+.TP
+getline \fIvar
+reads the next record into
+.IR var ,
+updates
+.B NR
+and
+.BR FNR .
+.TP
+getline \fIvar\fR < \fIfile
+reads the next record of
+.I file
+into
+.IR var .
+.TP
+\fI command\fR | getline
+pipes a record from 
+.I command
+into
+.B $0
+and updates the fields and
+.BR NF .
+.TP
+\fI command\fR | getline \fIvar
+pipes a record from 
+.I command
+into
+.IR var .
+.RE
+.PP
+Getline returns 0 on end-of-file, \-1 on error, otherwise 1.
+.PP
+Commands on the end of pipes are executed by /bin/sh.
+.PP
+The function \fBclose\fR(\*(ex) closes the file or pipe
+associated with
+.IR expr .
+Close returns 0 if
+.I expr
+is an open file,
+the exit status if
+.I expr
+is a piped command, and -1 otherwise.
+Close() is used to reread a file or command, make sure the other
+end of an output pipe is finished or conserve file resources.
+.PP
+The function 
+\fBsystem\fR(\fIexpr\fR)
+uses 
+/bin/sh
+to execute
+.I expr
+and returns the exit status of the command
+.IR expr .
+Changes made to the
+.B ENVIRON
+array are not passed to commands executed with
+.B system
+or pipes.
+.SS \fB10. User defined functions
+The syntax for a user defined function is
+.nf
+.sp
+	\fBfunction\fR name( \fIargs\fR ) { \fIstatements\fR }
+.sp
+.fi
+The function body can contain a return statement
+.nf
+.sp
+	\fBreturn\fI opt_expr\fR
+.sp
+.fi
+A return statement is not required.  
+Function calls may be nested or recursive.
+Functions are passed expressions by value
+and arrays by reference.
+Extra arguments serve as local variables
+and are initialized to 
+.IR null .
+For example, csplit(\fIs,\|A\fR) puts each character of
+.I s
+into array
+.I A
+and returns the length of
+.IR s .
+.nf
+.sp
+	function csplit(s, A,	n, i)
+	{
+	  n = length(s)
+	  for( i = 1 ; i <= n ; i++ ) A[i] = substr(s, i, 1)
+	  return n
+	}
+.sp
+.fi
+Putting extra space between passed arguments and local 
+variables is conventional.
+Functions can be referenced before they are defined, but the
+function name and the '(' of the arguments must touch to
+avoid confusion with concatenation.
+.\"
+.SS "\fB11. Splitting strings, records and files"
+Awk programs use the same algorithm to 
+split strings into arrays with split(), and records into fields
+on 
+.BR FS .
+.B mawk
+uses essentially the same algorithm to split files into
+records on
+.BR RS .
+.PP
+Split(\fIexpr,\|A,\|sep\fR) works as follows:
+.RS
+.TP
+(1) 
+If
+.I sep
+is omitted, it is replaced by
+.BR FS .
+.I Sep 
+can be an expression or regular expression.  If it is an
+expression of non-string type, it is converted to string.
+.TP
+(2)
+If
+.I sep
+= " " (a single space),
+then <SPACE> is trimmed from the front and back of 
+.IR expr ,
+and
+.I sep
+becomes <SPACE>.
+.B mawk
+defines <SPACE> as the regular expression
+/[\ \\t\\n]+/.  
+Otherwise
+.I sep
+is treated as a regular expression, except that meta-characters
+are ignored for a string of length 1,
+e.g.,
+split(x, A, "*") and split(x, A, /\\*/) are the same.
+.TP
+(3)
+If \*(ex is not string, it is converted to string.
+If \*(ex is then the empty string "", split() returns 0
+and 
+.I A
+is unchanged.
+Otherwise,
+all non-overlapping, non-null and longest matches of
+.I sep
+in
+.IR expr ,
+separate
+.I expr
+into fields which are loaded into
+.IR A .
+The fields are placed in
+A[1], A[2], ..., A[n] and split() returns n, the number
+of fields which is the number 
+of matches plus one.
+Data placed in 
+.I A
+that looks numeric is typed number and string.
+.RE
+.PP
+Splitting records into fields works the same except the
+pieces are loaded into 
+.BR $1 ,
+\fB$2\fR,...,
+.BR $NF .
+If
+.B $0
+is empty,
+.B NF
+is set to 0 and all
+.B $i
+to "".
+.PP
+.B mawk
+splits files into records by the same algorithm, but with the 
+slight difference that 
+.B RS
+is really a terminator instead of a separator. 
+(\fBORS\fR is really a terminator too).
+.RS
+.PP
+E.g., if 
+.B FS
+= ":+" and
+.B $0
+= "a::b:" , then
+.B NF
+= 3 and
+.B $1
+= "a",
+.B $2
+= "b" and
+.B $3
+= "", but
+if "a::b:" is the contents of an input file and
+.B RS
+= ":+", then
+there are two records "a" and "b".
+.RE
+.PP
+.B RS
+= " " is not special.
+.\"
+.SS "\fB12. Multi-line records"
+Since 
+.B mawk
+interprets
+.B RS
+as a regular expression, multi-line
+records are easy.  Setting 
+.B RS
+= "\\n\\n+", makes one or more blank
+lines separate records.  If 
+.B FS
+= " " (the default), then single
+newlines, by the rules for <SPACE> above, become space and
+single newlines are field separators.
+.RS
+.PP
+For example, if a file is "a\ b\\nc\\n\\n",
+.B RS
+= "\\n\\n+" and
+.B FS
+= "\ ", then there is one record "a\ b\\nc" with three
+fields "a", "b" and "c".  Changing
+.B FS
+= "\\n", gives two
+fields "a b" and "c"; changing
+.B FS
+= "", gives one field
+identical to the record.
+.RE
+.PP
+If you want lines with spaces or tabs to be considered blank,
+set
+.B RS
+= "\\n([\ \\t]*\\n)+".
+For compatibility with other awks, setting
+.B RS
+= "" has the same
+effect as if blank lines are stripped from the
+front and back of files and then records are determined as if
+.B RS
+= "\\n\\n+".
+Posix requires that "\\n" always separates records when
+.B RS
+= "" regardless of the value of
+.BR FS .
+.B mawk 
+does not support this convention, because defining
+"\\n" as <SPACE> makes it unnecessary.
+.\"
+.PP
+Most of the time when you change
+.B RS
+for multi-line records, you
+will also want to change 
+.B ORS
+to "\\n\\n" so the record spacing is preserved on output.
+.\"
+.SS "\fB13. Program execution"
+This section describes the order of program execution.
+First 
+.B ARGC
+is set to the total number of command line arguments passed to
+the execution phase of the program.
+.B ARGV[0]
+is set the name of the AWK interpreter and
+\fBARGV[1]\fR ... 
+.B ARGV[ARGC-1]
+holds the remaining command line arguments exclusive of 
+options and program source.
+For example with
+.nf
+.sp
+	mawk  \-f  prog  v=1  A  t=hello  B
+.sp
+.fi
+.B ARGC
+= 5 with
+.B ARGV[0]
+= "mawk",
+.B ARGV[1]
+= "v=1",
+.B ARGV[2]
+= "A",
+.B ARGV[3]
+= "t=hello" and
+.B ARGV[4]
+= "B".
+
+Next, each 
+.B BEGIN
+block is executed in order.
+If the program consists
+entirely of 
+.B BEGIN
+blocks, then execution terminates, else
+an input stream is opened and execution continues.
+If 
+.B ARGC
+equals 1,
+the input stream is set to stdin,
+else  the command line arguments
+.BR ARGV[1]  " ... 
+.B ARGV[ARGC-1]
+are examined for a file argument.
+.PP
+The command line arguments divide into three sets: 
+file arguments, assignment arguments and empty strings "".
+An assignment has the form
+\fIvar\fR=\fIstring\fR.
+When an 
+.B ARGV[i]
+is examined as a possible file argument,
+if it is empty it is skipped;
+if it is an assignment argument, the assignment to
+.I var
+takes place and 
+.B i
+skips to the next argument;
+else
+.B ARGV[i] 
+is opened for input.
+If it fails to open, execution terminates with exit code 1.
+If no command line argument is a file argument, then input
+comes from stdin.
+Getline in a 
+.B BEGIN
+action opens input.  "\-" as a file argument denotes stdin.
+.PP
+Once an input stream is open, each input record is tested 
+against each 
+.IR pattern ,
+and if it matches, the associated 
+.I action
+is executed.
+An expression pattern matches if it is boolean true (see
+the end of section 2).
+A 
+.B BEGIN
+pattern matches before any input has been read, and
+an
+.B END
+pattern matches after all input has been read.
+A range pattern,
+\fIexpr\fR1,\|\fIexpr\fR2 ,
+matches every record between the match of 
+.IR expr 1
+and the match
+.IR expr 2
+inclusively.
+.PP
+When end of file occurs on the input stream, the remaining
+command line arguments are examined for a file argument, and
+if there is one it is opened, else the
+.B END
+.I pattern
+is considered matched
+and all 
+.B END
+.I actions
+are executed.
+.PP
+In the example, the assignment
+v=1
+takes place after the
+.B BEGIN
+.I actions
+are executed, and
+the data placed in
+v
+is typed number and string.
+Input is then read from file A.
+On end of file A,
+t
+is set to the string "hello",
+and B is opened for input.
+On end of file B, the 
+.B END
+.I actions
+are executed.
+.PP
+Program flow at the
+.I pattern
+.I {action}
+level can be changed with the 
+.nf
+.sp
+	\fBnext\fR   and
+	\fBexit  \fIopt_expr\fR
+.sp
+.fi
+statements.
+A
+.B next
+statement
+causes the next input record to be read and pattern testing
+to restart with the first 
+.I "pattern {action}"
+pair in the program.
+An
+.B  exit
+statement
+causes immediate execution of the 
+.B END
+actions or program termination if there are none or
+if the 
+.B exit
+occurs in an 
+.B END
+action.
+The 
+.I opt_expr
+sets the exit value of the program unless overridden by
+a later
+.B exit
+or subsequent error.
+
+.SH EXAMPLES
+.nf
+1. emulate cat.
+
+	{ print }
+
+2. emulate wc.
+
+	{ chars += length($0) + 1  # add one for the \\n
+	  words += NF
+	}
+
+	END{ print NR, words, chars }
+
+3. count the number of unique "real words".
+
+	BEGIN { FS = "[^A-Za-z]+" }
+
+	{ for(i = 1 ; i <= NF ; i++)  word[$i] = "" }
+
+	END { delete word[""]
+	      for ( i in word )  cnt++
+	      print cnt
+	}
+
+.fi
+4. sum the second field of 
+every record based on the first field.
+.nf
+
+	$1 ~ /credit\||\|gain/ { sum += $2 }
+	$1 ~ /debit\||\|loss/  { sum \-= $2 }
+
+	END { print sum }
+
+5. sort a file, comparing as string
+
+	{ line[NR] = $0 "" }  # make sure of comparison type
+			      # in case some lines look numeric
+
+	END {  isort(line, NR)
+	  for(i = 1 ; i <= NR ; i++) print line[i]
+	}
+
+	#insertion sort of A[1..n]
+	function isort( A, n,	i, j, hold)
+	{
+	  for( i = 2 ; i <= n ; i++)
+	  {
+	    hold = A[j = i]
+	    while ( A[j\-1] > hold )
+	    { j\-\|\- ; A[j+1] = A[j] }
+	    A[j] = hold
+	  }
+	  # sentinel A[0] = "" will be created if needed
+	}
+
+.fi
+
+.SH  "COMPATIBILITY ISSUES"
+The Posix 1003.2(draft 11.2) definition of the AWK language
+is AWK as described in the AWK book with a few extensions
+that appeared in SystemVR4 nawk. The extensions are:
+.sp
+.RS
+New functions: toupper() and tolower().
+
+New variables: ENVIRON[\|] and CONVFMT.
+
+ANSI C conversion specifications for printf() and sprintf().
+
+New command options:  \-v var=value, multiple -f options and
+implementation options as arguments to \-W.
+.RE
+.sp
+Posix AWK is oriented to operate on files a line at 
+a time.
+.B RS
+can be changed from "\\n" to another single character,
+but it
+is hard to find any use for this \(em there are no 
+examples in the AWK book.
+By convention, \fBRS\fR = "", makes one or more blank lines
+separate records, allowing multi-line records.  When
+\fBRS\fR = "", "\\n" is always a field separator 
+regardless of the value in
+.BR FS .
+.PP
+.BR mawk ,
+on the other hand,
+allows
+.B RS
+to be a regular expression.
+When "\\n" appears in records, it is treated as space, and
+.B FS
+always determines fields.
+.PP
+Removing the line at a time paradigm can make some programs
+simpler and can
+often improve performance.  For example,
+redoing example 3 from above,
+.nf
+.sp
+	BEGIN { RS = "[^A-Za-z]+" }
+
+	{ word[ $0 ] = "" }
+
+	END { delete  word[ "" ]
+	  for( i in word )  cnt++
+	  print cnt
+	}
+.sp
+.fi
+counts the number of unique words by making each word a record.
+On moderate size files,
+.B mawk
+executes twice as fast, because of the simplified inner loop.
+.PP
+The following program replaces each comment by a single space in
+a C program file,
+.nf
+.sp
+	BEGIN {
+	  RS = "/\|\\*([^*]\||\|\\*+[^/*])*\\*+/"
+		# comment is record separator
+	  ORS = " "
+	  getline  hold
+       }
+
+       { print hold ; hold = $0 }
+
+       END { printf "%s" , hold }
+.sp
+.fi
+Buffering one record is needed to avoid terminating the last
+record with a space.
+.PP
+With 
+.BR mawk ,
+the following are all equivalent,
+.nf
+.sp
+	x ~ /a\\+b/    x ~ "a\\+b"     x ~ "a\\\\+b"
+.sp
+.fi
+The strings get scanned twice, once as string and once as
+regular expression.  On the string scan,
+.B mawk
+ignores the escape on non-escape characters while the AWK
+book advocates 
+.I \ec
+be recognized as 
+.I c 
+which necessitates the double escaping of meta-characters in
+strings.  
+Posix explicitly declines to define the behavior which passively
+forces programs that must run under a variety of awks to use
+the more portable but less readable, double escape.
+.PP
+Posix AWK does not recognize "/dev/stderr" or \\x hex escape
+sequences in strings.  Unlike ANSI C,
+.B mawk
+limits the number of digits that follows \\x to two.
+.PP
+Finally, here is how 
+.B mawk
+handles exceptional cases not discussed in the
+AWK book or the Posix draft.  It is unsafe to assume 
+consistency across awks and safe to skip to
+the next section.
+.PP
+.RS
+substr(s, i, n) returns the characters of s in the intersection
+of the closed interval [1, length(s)] and the half-open interval
+[i, i+n).  When this intersection is empty, the empty string is
+returned; so substr("ABC", 1, 0) = "" and
+substr("ABC", \-4, 6) = "A".
+
+Every string, including the empty string, matches the empty string
+at the
+front so, s ~ // and s ~ "", are always 1 as is match(s, //) and
+match(s, "").  The last two set 
+.B RLENGTH 
+to 0.
+
+index(s, t) is always the same as match(s, t1) where t1 is the
+same as t with metacharacters escaped.  Hence consistency
+with match requires that
+index(s, "") always returns 1.
+Also the condition, index(s,t) != 0 if and only t is a substring
+of s, requires index("","") = 1.
+
+If getline encounters end of file, getline var, leaves var
+unchanged.  Similarly, on entry to the 
+.B END
+actions, 
+.BR $0 ,
+the fields and
+.B NF
+have their value unaltered from the last record.
+
+.SH SEE ALSO
+.I egrep
+(1)
+.PP
+Aho, Kernighan and Weinberger,
+.IR "The AWK Programming Language" ,
+Addison-Wesley Publishing, 1988, (the AWK book),
+defines the language, opening with a tutorial
+and advancing to many interesting programs that delve into
+issues of software design and analysis relevant to programming
+in any language.
+.PP
+.IR "The GAWK Manual" ,
+The Free Software Foundation, 1991, is a tutorial
+and language reference
+that does not attempt the depth of the AWK book
+and assumes the reader may be a novice programmer.  
+The section on AWK arrays is excellent.  It also
+discusses Posix requirements for AWK.
+
+
+.SH BUGS
+.B mawk
+cannot handle ascii NUL \\0 in the source or data files.  You
+can output NUL using printf with %c, and any other 8 bit
+character is acceptable input.
+
+.B mawk
+implements printf() and sprintf() using the C library functions,
+printf and sprintf, so full ANSI compatibility requires an ANSI
+C library.  In practice this means the h conversion qualifier may
+not be available.  Also 
+.B mawk
+inherits any bugs or limitations of the library functions.
+
+Implementors of the AWK language have shown a consistent lack
+of imagination when naming their programs.
+
+.SH AUTHOR
+Mike Brennan (brennan@boeing.com).

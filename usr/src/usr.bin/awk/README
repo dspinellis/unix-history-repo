@@ -1,0 +1,62 @@
+This is mawk 1.1
+
+Mawk is an interpreter for the AWK programming language.
+
+Mawk 1.0 implemented the language as defined in the 1988 AWK book.
+Version 1.1 adds new features:
+
+     -- Full posix1003.2 draft(11.2) compliance
+	
+	toupper(), tolower(), CONVFMT and ENVIRON[]
+
+	-v var=value command line assignments
+
+	Ansi C compatible printf() and sprintf()
+
+     -- Hard coded limits are either removed or much larger
+
+     -- MsDOS added, system() and pipes.  BINMODE variable to
+	control CRLF translation.
+
+
+Mawk is distributed without warranty under the terms of the
+GNU General Public License, version 2, June 1991.  The file
+COPYING contains the GNU General Public License, version 2.
+
+Mawk 1.1 has been test on:
+
+     sunos4.1.1  sun3 and sun4   (cc and gcc)
+     sunos4.0.3  sun3 and sun4   (cc and gcc)
+     ultrix4.2   decstation 5000 (mips) (cc and gcc)
+     ultrix4.1   microvax 3600   
+     ultrix3.1   vax
+     bsd43	 vax
+     SysVR3	 SCO3.2.2      (cc, rcc and gcc)
+     ESIX System 5.3.2 RevD using gcc 1.39
+     SysVR3      Stardent 3000
+     MsDOS	 TurboC++ 1.0 and BCC++, MSC5.1 and 6.0
+     MIPS M2000 	C 2.20 (4.52)
+     Atarist	 cross compile with gcc
+
+
+Mawk 1.0 compiled and tested on the following which should still
+work with at most minor tweaking.
+
+	XENIX SysV R2.3.1
+	Dynix on Sequent Symmetry
+	apolloSR10.3
+
+
+To install:
+  Unix or Unix-like OS  read  INSTALL
+  MsDOS  read msdos/NOTES
+  Mac read macintosh/NOTES 
+  atarist   read  atarist/README.ST
+
+mawk1.1 (this distribution)  and  mawk1_1.zip (msdos executables)
+can also be obtained by anonymous ftp from oxy.edu.
+
+Bug reports or other correspondence should be sent to
+
+Mike Brennan
+brennan@boeing.com
