@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cal.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -81,33 +81,47 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern char *optarg;
+	extern int optind;
 	struct tm *local_time;
 	time_t now, time();
-	int month, year;
+	int ch, month, year, yflag;
 
-	++argv;
+	yflag = 0;
+	while ((ch = getopt(argc, argv, "y")) != EOF)
+		switch(ch) {
+		case 'y':
+			yflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
 	switch(argc) {
-	case 3:
+	case 2:
 		if ((month = atoi(*argv++)) <= 0 || month > 12) {
 			(void)fprintf(stderr, "cal: illegal month value.\n");
 			exit(1);
 		}
 		/* FALLTHROUGH */
-	case 2:
+	case 1:
 		if ((year = atoi(*argv)) <= 0 || year > 9999) {
 			(void)fprintf(stderr, "cal: illegal year value.\n");
 			exit(1);
 		}
 		break;
-	case 1:
+	case 0:
 		(void)time(&now);
 		local_time = localtime(&now);
-		month = local_time->tm_mon + 1;
 		year = local_time->tm_year + 1900;
+		if (!yflag)
+			month = local_time->tm_mon + 1;
 		break;
 	default:
-		(void)fprintf(stderr, "usage: cal [[month] year]\n");
-		exit(1);
+		usage();
 	}
 	if (month)
 		print_monthly_calendar(month, year);
@@ -262,4 +276,10 @@ trim_trailing_spaces(s)
 	if (p > s)
 		++p;
 	*p = '\0';
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: cal [-y] [[month] year]\n");
+	exit(1);
 }
