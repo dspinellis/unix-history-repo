@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.3 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -502,7 +502,7 @@ sysctl_file(where, sizep)
 	}
 	if (error = copyout((caddr_t)&filehead, where, sizeof(filehead)))
 		return (error);
-	buflen += sizeof(filehead);
+	buflen -= sizeof(filehead);
 	where += sizeof(filehead);
 
 	/*
