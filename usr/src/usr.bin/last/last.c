@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,13 +108,17 @@ main(argc, argv)
 			fputs("usage: last [-#] [-f file] [-t tty] [-h hostname] [user ...]\n", stderr);
 			exit(1);
 		}
-	for (argv += optind; *argv; ++argv) {
+
+	if (argc) {
+		setlinebuf(stdout);
+		for (argv += optind; *argv; ++argv) {
 #define	COMPATIBILITY
 #ifdef	COMPATIBILITY
-		/* code to allow "last p5" to work */
-		addarg(TTY_TYPE, ttyconv(*argv));
+			/* code to allow "last p5" to work */
+			addarg(TTY_TYPE, ttyconv(*argv));
 #endif
-		addarg(USER_TYPE, *argv);
+			addarg(USER_TYPE, *argv);
+		}
 	}
 	wtmp();
 	exit(0);
