@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,8 @@ extern void logwtmp __P((const char *, const char *, const char *));
 /*
  * Sleep times; used to prevent thrashing.
  */
-#define	GETTY_SPACING		10	/* fork getty on a port every N secs */
+#define	GETTY_SPACING		 5	/* N secs minimum getty spacing */
+#define	GETTY_SLEEP		30	/* sleep N secs after spacing problem */
 #define	WINDOW_WAIT		 3	/* wait N secs after starting window */
 #define	STALL_TIMEOUT		30	/* wait N secs after warning */
 #define	DEATH_WATCH		10	/* wait N secs for procs to die */
@@ -258,6 +259,7 @@ handle(va_alist)
 		sa.sa_flags = sig == SIGCHLD ? SA_NOCLDSTOP : 0;
 		sigaction(sig, &sa, (struct sigaction *) 0);
 	}
+	va_end(ap);
 }
 
 /*
@@ -284,6 +286,7 @@ delset(va_alist)
 
 	while (sig = va_arg(ap, int))
 		sigdelset(maskp, sig);
+	va_end(ap);
 }
 
 /*
@@ -404,6 +407,7 @@ disaster(sig)
 int
 getsecuritylevel()
 {
+#ifdef KERN_SECURELVL
 	int name[2], curlevel;
 	size_t len;
 	extern int errno;
@@ -417,6 +421,9 @@ getsecuritylevel()
 		return (-1);
 	}
 	return (curlevel);
+#else
+	return (-1);
+#endif
 }
 
 /*
@@ -426,6 +433,7 @@ void
 setsecuritylevel(newlevel)
 	int newlevel;
 {
+#ifdef KERN_SECURELVL
 	int name[2], curlevel;
 	extern int errno;
 
@@ -443,6 +451,7 @@ setsecuritylevel(newlevel)
 #ifdef SECURE
 	warning("kernel security level changed from %d to %d",
 	    curlevel, newlevel);
+#endif
 #endif
 }
 
@@ -1040,8 +1049,7 @@ start_getty(sp)
 	    current_time - sp->se_started < GETTY_SPACING) {
 		warning("getty repeating too quickly on port %s, sleeping",
 		        sp->se_device);
-		sleep((unsigned) GETTY_SPACING + 1 -
-		      (current_time - sp->se_started));
+		sleep((unsigned) GETTY_SLEEP);
 	}
 
 	if (sp->se_window) {
@@ -1063,8 +1071,12 @@ start_getty(sp)
  * If an exiting login, start a new login running.
  */
 void
+#ifdef __STDC__
+collect_child(pid_t pid)
+#else
 collect_child(pid)
 	pid_t pid;
+#endif
 {
 	register session_t *sp, *sprev, *snext;
 
