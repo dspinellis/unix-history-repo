@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,7 +101,7 @@ chgprot(addr, tprot)
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
 		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mounttab[c->c_mdev].um_dev,
+			munhash(mounttab[c->c_mdev].um_devvp,
 			    (daddr_t)(u_long)c->c_blkno);
 	}
 	*(int *)pte &= ~PG_PROT;
