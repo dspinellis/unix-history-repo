@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)resolver.3	6.3 (Berkeley) %G%
+.\"	@(#)resolver.3	6.4 (Berkeley) %G%
 .\"
 .TH RESOLVER 3 ""
 .UC 4
@@ -187,13 +187,13 @@ supplied by the caller.
 The
 .I res_search
 routine makes a query and awaits a response like
-.I res_query ,
+.IR res_query ,
 but in addition, it implements the default and search rules
 controlled by the RES_DEFNAMES and RES_DNSRCH options.
 It returns the first successful reply.
 .PP
 The remaining routines are lower-level routines used by
-.I res_query.
+.IR res_query .
 The
 .I res_mkquery
 function
@@ -205,7 +205,7 @@ larger than
 The query type
 .I op
 is usually QUERY, but can be any of the query types defined in
-.IR nameser.h .
+.IR <arpa/nameser.h> .
 The domain name for the query is given by
 .IR dname .
 .I Newrr
