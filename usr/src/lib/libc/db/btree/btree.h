@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	8.4 (Berkeley) %G%
+ *	@(#)btree.h	8.5 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -29,7 +29,7 @@
  * There are five page layouts in the btree: btree internal pages (BINTERNAL),
  * btree leaf pages (BLEAF), recno internal pages (RINTERNAL), recno leaf pages
  * (RLEAF) and overflow pages.  All five page types have a page header (PAGE).
- * This implementation requires that longs within structures are NOT padded.
+ * This implementation requires that values within structures NOT be padded.
  * (ANSI C permits random padding.)  If your compiler pads randomly you'll have
  * to do some work to get this package to run.
  */
@@ -44,18 +44,17 @@ typedef struct _page {
 #define	P_RINTERNAL	0x08		/* recno internal page */
 #define	P_RLEAF		0x10		/* leaf page */
 #define P_TYPE		0x1f		/* type mask */
-
 #define	P_PRESERVE	0x20		/* never delete this chain of pages */
-	u_long	flags;
+	u_int32_t flags;
 
 	indx_t	lower;			/* lower bound of free space on page */
 	indx_t	upper;			/* upper bound of free space on page */
-	indx_t	linp[1];		/* long-aligned VARIABLE LENGTH DATA */
+	indx_t	linp[1];		/* indx_t-aligned VAR. LENGTH DATA */
 } PAGE;
 
 /* First and next index. */
 #define	BTDATAOFF	(sizeof(pgno_t) + sizeof(pgno_t) + sizeof(pgno_t) + \
-			    sizeof(u_long) + sizeof(indx_t) + sizeof(indx_t))
+			    sizeof(u_int32_t) + sizeof(indx_t) + sizeof(indx_t))
 #define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) / sizeof(indx_t))
 
 /*
@@ -70,10 +69,12 @@ typedef struct _page {
  * chain with size bytes of item.  Overflow pages are simply bytes without any
  * external structure.
  *
- * The size and page number fields in the items are long aligned so they can be
- * manipulated without copying.
+ * The page number and size fields in the items are pgno_t-aligned so they can
+ * be manipulated without copying.  (This presumes that 32 bit items can be
+ * manipulated on this system.)
  */
-#define	LALIGN(n)	(((n) + sizeof(u_long) - 1) & ~(sizeof(u_long) - 1))
+#define	LALIGN(n) \
+	(((n) + sizeof(pgno_t) - 1) & ~(sizeof(pgno_t) - 1))
 #define	NOVFLSIZE	(sizeof(pgno_t) + sizeof(size_t))
 
 /*
@@ -228,14 +229,14 @@ typedef struct _epg {
  * put or delete call modify the metadata.
  */
 typedef struct _btmeta {
-	u_long	m_magic;		/* magic number */
-	u_long	m_version;		/* version */
-	u_long	m_psize;		/* page size */
-	u_long	m_free;			/* page number of first free page */
-	u_long	m_nrecs;		/* R: number of records */
+	u_int32_t	m_magic;	/* magic number */
+	u_int32_t	m_version;	/* version */
+	u_int32_t	m_psize;	/* page size */
+	u_int32_t	m_free;		/* page number of first free page */
+	u_int32_t	m_nrecs;	/* R: number of records */
 #define	SAVEMETA	(B_NODUPS | R_RECNO)
-	u_long	m_flags;		/* bt_flags & SAVEMETA */
-	u_long	m_unused;		/* unused */
+	u_int32_t	m_flags;	/* bt_flags & SAVEMETA */
+	u_int32_t	m_unused;	/* unused */
 } BTMETA;
 
 /* The in-memory btree/recno data structure. */
@@ -264,7 +265,7 @@ typedef struct _btree {
 	int	bt_fd;			/* tree file descriptor */
 
 	pgno_t	bt_free;		/* next free page */
-	u_long	bt_psize;		/* page size */
+	u_int32_t bt_psize;		/* page size */
 	indx_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
 					/* sorted order */
@@ -274,7 +275,7 @@ typedef struct _btree {
 					/* B: key comparison function */
 	int	(*bt_cmp) __P((const DBT *, const DBT *));
 					/* B: prefix comparison function */
-	int	(*bt_pfx) __P((const DBT *, const DBT *));
+	size_t	(*bt_pfx) __P((const DBT *, const DBT *));
 					/* R: recno input function */
 	int	(*bt_irec) __P((struct _btree *, recno_t));
 
@@ -316,7 +317,7 @@ typedef struct _btree {
 #define	B_DB_SHMEM	0x20000		/* DB_SHMEM specified. */
 #define	B_DB_TXN	0x40000		/* DB_TXN specified. */
 
-	u_long		bt_flags;	/* btree state */
+	u_int32_t	bt_flags;	/* btree state */
 } BTREE;
 
 #define	SET(t, f)	((t)->bt_flags |= (f))

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_utils.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_utils.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -175,14 +175,20 @@ int
 __bt_defcmp(a, b)
 	const DBT *a, *b;
 {
+	register size_t len;
 	register u_char *p1, *p2;
-	register int diff, len;
 
+	/*
+	 * XXX
+	 * If a size_t doesn't fit in an int, this routine can lose.
+	 * What we need is a integral type which is guaranteed to be
+	 * larger than a size_t, and there is no such thing.
+	 */
 	len = MIN(a->size, b->size);
 	for (p1 = a->data, p2 = b->data; len--; ++p1, ++p2)
-		if (diff = *p1 - *p2)
-			return (diff);
-	return (a->size - b->size);
+		if (*p1 != *p2)
+			return ((int)*p1 - (int)*p2);
+	return ((int)a->size - (int)b->size);
 }
 
 /*
@@ -195,13 +201,12 @@ __bt_defcmp(a, b)
  * Returns:
  *	Number of bytes needed to distinguish b from a.
  */
-int
+size_t
 __bt_defpfx(a, b)
 	const DBT *a, *b;
 {
 	register u_char *p1, *p2;
-	register int len;
-	int cnt;
+	register size_t cnt, len;
 
 	cnt = 1;
 	len = MIN(a->size, b->size);

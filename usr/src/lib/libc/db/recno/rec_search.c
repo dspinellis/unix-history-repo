@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ __rec_search(t, recno, op)
 	pgno_t pg;
 	indx_t top;
 	recno_t total;
-	int serrno;
+	int sverrno;
 
 	BT_CLR(t);
 	for (pg = P_ROOT, total = 0;;) {
@@ -85,7 +85,7 @@ __rec_search(t, recno, op)
 
 	}
 	/* Try and recover the tree. */
-err:	serrno = errno;
+err:	sverrno = errno;
 	if (op != SEARCH)
 		while  ((parent = BT_POP(t)) != NULL) {
 			if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
@@ -96,6 +96,6 @@ err:	serrno = errno;
 				++GETRINTERNAL(h, parent->index)->nrecs;
                         mpool_put(t->bt_mp, h, MPOOL_DIRTY);
                 }
-	errno = serrno;
+	errno = sverrno;
 	return (NULL);
 }

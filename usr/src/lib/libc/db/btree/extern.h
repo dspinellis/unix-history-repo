@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.2 (Berkeley) %G%
+ *	@(#)extern.h	8.3 (Berkeley) %G%
  */
 
 int	 __bt_close __P((DB *));
 int	 __bt_cmp __P((BTREE *, const DBT *, EPG *));
 int	 __bt_crsrdel __P((BTREE *, EPGNO *));
 int	 __bt_defcmp __P((const DBT *, const DBT *));
-int	 __bt_defpfx __P((const DBT *, const DBT *));
+size_t	 __bt_defpfx __P((const DBT *, const DBT *));
 int	 __bt_delete __P((const DB *, const DBT *, u_int));
 int	 __bt_dleaf __P((BTREE *, PAGE *, int));
 int	 __bt_fd __P((const DB *));
@@ -27,7 +27,7 @@ int	 __bt_ret __P((BTREE *, EPG *, DBT *, DBT *));
 EPG	*__bt_search __P((BTREE *, const DBT *, int *));
 int	 __bt_seq __P((const DB *, DBT *, DBT *, u_int));
 int	 __bt_split __P((BTREE *, PAGE *,
-	    const DBT *, const DBT *, u_long, size_t, u_int));
+	    const DBT *, const DBT *, int, size_t, indx_t));
 int	 __bt_sync __P((const DB *, u_int));
 
 int	 __ovfl_delete __P((BTREE *, void *));

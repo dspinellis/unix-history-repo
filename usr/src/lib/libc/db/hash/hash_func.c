@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_func.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_func.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,16 +19,17 @@ static char sccsid[] = "@(#)hash_func.c	8.1 (Berkeley) %G%";
 #include "page.h"
 #include "extern.h"
 
-static int hash1 __P((u_char *, int));
-static int hash2 __P((u_char *, int));
-static int hash3 __P((u_char *, int));
-static int hash4 __P((u_char *, int));
+static u_int32_t hash1 __P((const void *, size_t));
+static u_int32_t hash2 __P((const void *, size_t));
+static u_int32_t hash3 __P((const void *, size_t));
+static u_int32_t hash4 __P((const void *, size_t));
 
 /* Global default hash function */
-int (*__default_hash) __P((u_char *, int)) = hash4;
+u_int32_t (*__default_hash) __P((const void *, size_t)) = hash4;
 
-/******************************* HASH FUNCTIONS **************************/
 /*
+ * HASH FUNCTIONS
+ *
  * Assume that we've already split the bucket to which this key hashes,
  * calculate that bucket, and check that in fact we did already split it.
  *
@@ -38,16 +39,16 @@ int (*__default_hash) __P((u_char *, int)) = hash4;
 #define PRIME1		37
 #define PRIME2		1048583
 
-static int
-hash1(key, len)
-	register u_char *key;
-	register int len;
+static u_int32_t
+hash1(keyarg, len)
+	const void *keyarg;
+	register size_t len;
 {
-	register int h;
+	register const u_char *key;
+	register u_int32_t h;
 
-	h = 0;
 	/* Convert string to integer */
-	while (len--)
+	for (key = keyarg, h = 0; len--;)
 		h = h * PRIME1 ^ (*key++ - ' ');
 	h %= PRIME2;
 	return (h);
@@ -58,14 +59,16 @@ hash1(key, len)
  */
 #define dcharhash(h, c)	((h) = 0x63c63cd9*(h) + 0x9c39c33d + (c))
 
-static int
-hash2(key, len)
-	register u_char *key;
-	int len;
+static u_int32_t
+hash2(keyarg, len)
+	const void *keyarg;
+	size_t len;
 {
-	register u_char *e, c;
-	register int h;
+	register const u_char *e, *key;
+	register u_int32_t h;
+	register u_char c;
 
+	key = keyarg;
 	e = key + len;
 	for (h = 0; key != e;) {
 		c = *key++;
@@ -85,81 +88,99 @@ hash2(key, len)
  *
  * OZ's original sdbm hash
  */
-static int
-hash3(key, len)
-	register u_char *key;
-	register int len;
+static u_int32_t
+hash3(keyarg, len)
+	const void *keyarg;
+	register size_t len;
 {
-	register int n, loop;
+	register const u_char *key;
+	register size_t loop;
+	register u_int32_t h;
 
-#define HASHC   n = *key++ + 65599 * n
+#define HASHC   h = *key++ + 65599 * h
 
-	n = 0;
+	h = 0;
+	key = keyarg;
 	if (len > 0) {
 		loop = (len + 8 - 1) >> 3;
 
 		switch (len & (8 - 1)) {
 		case 0:
-			do {	/* All fall throughs */
+			do {
 				HASHC;
+				/* FALLTHROUGH */
 		case 7:
 				HASHC;
+				/* FALLTHROUGH */
 		case 6:
 				HASHC;
+				/* FALLTHROUGH */
 		case 5:
 				HASHC;
+				/* FALLTHROUGH */
 		case 4:
 				HASHC;
+				/* FALLTHROUGH */
 		case 3:
 				HASHC;
+				/* FALLTHROUGH */
 		case 2:
 				HASHC;
+				/* FALLTHROUGH */
 		case 1:
 				HASHC;
 			} while (--loop);
 		}
-
 	}
-	return (n);
+	return (h);
 }
 
 /* Hash function from Chris Torek. */
-static int
-hash4(key, len)
-	register u_char *key;
-	register int len;
+static u_int32_t
+hash4(keyarg, len)
+	const void *keyarg;
+	register size_t len;
 {
-	register int h, loop;
+	register const u_char *key;
+	register size_t loop;
+	register u_int32_t h;
 
 #define HASH4a   h = (h << 5) - h + *key++;
 #define HASH4b   h = (h << 5) + h + *key++;
 #define HASH4 HASH4b
 
 	h = 0;
+	key = keyarg;
 	if (len > 0) {
 		loop = (len + 8 - 1) >> 3;
 
 		switch (len & (8 - 1)) {
 		case 0:
-			do {	/* All fall throughs */
+			do {
 				HASH4;
+				/* FALLTHROUGH */
 		case 7:
 				HASH4;
+				/* FALLTHROUGH */
 		case 6:
 				HASH4;
+				/* FALLTHROUGH */
 		case 5:
 				HASH4;
+				/* FALLTHROUGH */
 		case 4:
 				HASH4;
+				/* FALLTHROUGH */
 		case 3:
 				HASH4;
+				/* FALLTHROUGH */
 		case 2:
 				HASH4;
+				/* FALLTHROUGH */
 		case 1:
 				HASH4;
 			} while (--loop);
 		}
-
 	}
 	return (h);
 }

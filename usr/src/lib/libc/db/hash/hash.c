@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	8.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -910,26 +910,26 @@ swap_header_copy(srcp, destp)
 {
 	int i;
 
-	BLSWAP_COPY(srcp->magic, destp->magic);
-	BLSWAP_COPY(srcp->version, destp->version);
-	BLSWAP_COPY(srcp->lorder, destp->lorder);
-	BLSWAP_COPY(srcp->bsize, destp->bsize);
-	BLSWAP_COPY(srcp->bshift, destp->bshift);
-	BLSWAP_COPY(srcp->dsize, destp->dsize);
-	BLSWAP_COPY(srcp->ssize, destp->ssize);
-	BLSWAP_COPY(srcp->sshift, destp->sshift);
-	BLSWAP_COPY(srcp->ovfl_point, destp->ovfl_point);
-	BLSWAP_COPY(srcp->last_freed, destp->last_freed);
-	BLSWAP_COPY(srcp->max_bucket, destp->max_bucket);
-	BLSWAP_COPY(srcp->high_mask, destp->high_mask);
-	BLSWAP_COPY(srcp->low_mask, destp->low_mask);
-	BLSWAP_COPY(srcp->ffactor, destp->ffactor);
-	BLSWAP_COPY(srcp->nkeys, destp->nkeys);
-	BLSWAP_COPY(srcp->hdrpages, destp->hdrpages);
-	BLSWAP_COPY(srcp->h_charkey, destp->h_charkey);
+	P_32_COPY(srcp->magic, destp->magic);
+	P_32_COPY(srcp->version, destp->version);
+	P_32_COPY(srcp->lorder, destp->lorder);
+	P_32_COPY(srcp->bsize, destp->bsize);
+	P_32_COPY(srcp->bshift, destp->bshift);
+	P_32_COPY(srcp->dsize, destp->dsize);
+	P_32_COPY(srcp->ssize, destp->ssize);
+	P_32_COPY(srcp->sshift, destp->sshift);
+	P_32_COPY(srcp->ovfl_point, destp->ovfl_point);
+	P_32_COPY(srcp->last_freed, destp->last_freed);
+	P_32_COPY(srcp->max_bucket, destp->max_bucket);
+	P_32_COPY(srcp->high_mask, destp->high_mask);
+	P_32_COPY(srcp->low_mask, destp->low_mask);
+	P_32_COPY(srcp->ffactor, destp->ffactor);
+	P_32_COPY(srcp->nkeys, destp->nkeys);
+	P_32_COPY(srcp->hdrpages, destp->hdrpages);
+	P_32_COPY(srcp->h_charkey, destp->h_charkey);
 	for (i = 0; i < NCACHED; i++) {
-		BLSWAP_COPY(srcp->spares[i], destp->spares[i]);
-		BSSWAP_COPY(srcp->bitmaps[i], destp->bitmaps[i]);
+		P_32_COPY(srcp->spares[i], destp->spares[i]);
+		P_16_COPY(srcp->bitmaps[i], destp->bitmaps[i]);
 	}
 }
 
@@ -942,26 +942,26 @@ swap_header(hashp)
 
 	hdrp = &hashp->hdr;
 
-	BLSWAP(hdrp->magic);
-	BLSWAP(hdrp->version);
-	BLSWAP(hdrp->lorder);
-	BLSWAP(hdrp->bsize);
-	BLSWAP(hdrp->bshift);
-	BLSWAP(hdrp->dsize);
-	BLSWAP(hdrp->ssize);
-	BLSWAP(hdrp->sshift);
-	BLSWAP(hdrp->ovfl_point);
-	BLSWAP(hdrp->last_freed);
-	BLSWAP(hdrp->max_bucket);
-	BLSWAP(hdrp->high_mask);
-	BLSWAP(hdrp->low_mask);
-	BLSWAP(hdrp->ffactor);
-	BLSWAP(hdrp->nkeys);
-	BLSWAP(hdrp->hdrpages);
-	BLSWAP(hdrp->h_charkey);
+	M_32_SWAP(hdrp->magic);
+	M_32_SWAP(hdrp->version);
+	M_32_SWAP(hdrp->lorder);
+	M_32_SWAP(hdrp->bsize);
+	M_32_SWAP(hdrp->bshift);
+	M_32_SWAP(hdrp->dsize);
+	M_32_SWAP(hdrp->ssize);
+	M_32_SWAP(hdrp->sshift);
+	M_32_SWAP(hdrp->ovfl_point);
+	M_32_SWAP(hdrp->last_freed);
+	M_32_SWAP(hdrp->max_bucket);
+	M_32_SWAP(hdrp->high_mask);
+	M_32_SWAP(hdrp->low_mask);
+	M_32_SWAP(hdrp->ffactor);
+	M_32_SWAP(hdrp->nkeys);
+	M_32_SWAP(hdrp->hdrpages);
+	M_32_SWAP(hdrp->h_charkey);
 	for (i = 0; i < NCACHED; i++) {
-		BLSWAP(hdrp->spares[i]);
-		BSSWAP(hdrp->bitmaps[i]);
+		M_32_SWAP(hdrp->spares[i]);
+		M_16_SWAP(hdrp->bitmaps[i]);
 	}
 }
 #endif

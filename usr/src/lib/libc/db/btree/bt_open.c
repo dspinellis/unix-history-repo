@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -32,7 +32,6 @@ static char sccsid[] = "@(#)bt_open.c	8.3 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
 #include "btree.h"
 
@@ -62,13 +61,14 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 	int flags, mode, dflags;
 	const BTREEINFO *openinfo;
 {
+	struct stat sb;
 	BTMETA m;
 	BTREE *t;
 	BTREEINFO b;
 	DB *dbp;
 	pgno_t ncache;
-	struct stat sb;
-	int machine_lorder, nr;
+	ssize_t nr;
+	int machine_lorder;
 
 	t = NULL;
 
@@ -206,12 +206,12 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 			CLR(t, B_NEEDSWAP);
 		else {
 			SET(t, B_NEEDSWAP);
-			BLSWAP(m.m_magic);
-			BLSWAP(m.m_version);
-			BLSWAP(m.m_psize);
-			BLSWAP(m.m_free);
-			BLSWAP(m.m_nrecs);
-			BLSWAP(m.m_flags);
+			M_32_SWAP(m.m_magic);
+			M_32_SWAP(m.m_version);
+			M_32_SWAP(m.m_psize);
+			M_32_SWAP(m.m_free);
+			M_32_SWAP(m.m_nrecs);
+			M_32_SWAP(m.m_flags);
 		}
 		if (m.m_magic != BTREEMAGIC || m.m_version != BTREEVERSION)
 			goto eftype;
@@ -376,7 +376,7 @@ tmp()
 static int
 byteorder()
 {
-	u_long x;			/* XXX: 32-bit assumption. */
+	u_int32_t x;
 	u_char *p;
 
 	x = 0x01020304;
