@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.3 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.4 (Berkeley) %G%)
 
 
 ##################
@@ -41,12 +41,12 @@ CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 
 ifdef(`UUCP_NAME',
-# uucp hostnames
+`# uucp hostnames
 UUCP_NAME
 UUCP_ALIASES
 
 # local UUCP connections
-`include(UUCP_HOSTS_FILE)',
+include(UUCP_HOSTS_FILE)',
 `dnl')
 
 # operators that cannot be in local usernames (i.e., network indicators)
@@ -54,18 +54,20 @@ CO @ % !
 
 ifdef(`USERDB_FILE',
 `# location of user database file (null means no lookup)
-CONCAT(`OU', USERDB_FILE)', `dnl')
+CONCAT(`OU', USERDB_FILE)',
+`dnl')
 
 ifdef(`_NO_WILDCARD_MX_',
 `# we can guarantee no wildcard MX records matching our domain
-Ow', `dnl')
+Ow',
+`dnl')
 
 include(`../m4/version.m4')
 
-#ifdef(`INTERNET_RELAY',
-#`include(../sitedep/nicregistered.m4)')
+ifdef(`INTERNET_RELAY',
+`include(../sitedep/nicregistered.m4)',
+`dnl')
 include(`../m4/boilerplate.m4')
-
 #
 ######################################################################
 ######################################################################
@@ -79,7 +81,7 @@ include(`../m4/boilerplate.m4')
 ###########################################
 ###  Rulset 3 -- Name Canonicalization  ###
 ###########################################
-`S3
+S3
 
 # handle "from:<>" special case
 R$*<>$*			$@@				turn into magic token
@@ -121,18 +123,14 @@ R$*@$*			$@$>6$1<@$2>			Insert < > and finish
 ###  Ruleset 6 -- bottom half of ruleset 3  ###
 ###############################################
 
-#
 #  At this point, everything should be in a local_part@domain format.
-#  This ruleset is primarily responsible for 
 
 S6
-'
 undivert(2)dnl
 
 # handle special cases for local names
 R$*<@$=w>$*		$:$1<@$w>$3			no domain at all
 R$*<@$=w.UUCP>$*	$:$1<@$w>$3			.UUCP domain
-R$*<@$=U.UUCP>$*	$:$1<@$w>$3			UUCP-specific names
 
 # pass to name server to make hostname canonical
 R$* < @ $+ > $*		$: $1 < @ $[ $2 $] > $3		then do anything
@@ -161,7 +159,6 @@ R$+@$-.UUCP		$2!$1				u@h.UUCP => h!u
 
 # delete duplicate local names
 R$+%$=w@$=w		$1@$w				u%host@host => u@host
-#R$+%$=w@$=w.$D		$1@$w				u%host@host => u@host
 
 
 
@@ -196,6 +193,13 @@ R$+<@$w>		$#local$:$1			local address
 
 undivert(3)dnl
 
+undivert(4)dnl
+
+# resolve remotely connected UUCP links
+R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: $1<@$2.UUCP>$3
+R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: $1<@$2.UUCP>$3
+R$* < @ $=Y . UUCP > $*		$#smtp $@ $Y $: $1<@$2.UUCP>$3
+
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
 `R$*<@$+.BITNET>$*	$#smtp$@$B$:$1<@$2.BITNET>$3		user@host.BITNET',
@@ -204,13 +208,16 @@ ifdef(`CSNET_RELAY',
 `R$*<@$+.CSNET>$*	$#smtp$@$C$:$1<@$2.CSNET>$3		user@host.CSNET',
 	`dnl')
 
-# forward non-local UUCP traffic to our UUCP relay
-R$*<@$*.UUCP>$*		$#smtp$@$U$:$1<@$2.UUCP>		uucp mail
+ifdef(`UUCP_RELAY',
+`# forward non-local UUCP traffic to our UUCP relay
+R$*<@$*.UUCP>$*		$#smtp$@$U$:$1<@$2.UUCP>		uucp mail',
+`ifdef(`_UUCP_LINKED_',
+`# forward other UUCP traffic straight to UUCP
+R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
+R$+ < @ $+ .UUCP>	$#uucp $@ $2 $: $1			user@host.UUCP',
+	`dnl')')
 
-# hide behind our internet relay when talking to people in the .ARPA domain
-#R$*<@$*.ARPA>$*	$#smtp-nic$@$2.ARPA$:$1<@$2.ARPA>$3	user@host.ARPA
-
-# but speak domains to them if they speak domains too
+# deal with other remote names
 R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
 # see if we forward local names

@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.3 (Berkeley) %G%
+#	@(#)cf.m4	2.4 (Berkeley) %G%
 #
 
 
@@ -35,9 +35,13 @@ define(`HACK', `include(../hack/$1.m4)')
 define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
-define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(3)')
+define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')
+define(`SITECONFIG',
+`ifelse($2, -, `dnl', `CONCAT(D, $3, $2)')
+define(`SITE', CONCAT(C, $3, DOL(1)))dnl
+sinclude(../siteconfig/$1.m4)')
 
 m4wrap(`include(`../m4/proto.m4')')
 
