@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.5 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)iostat.c	1.6 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -49,14 +49,10 @@ static struct nlist nlst[] = {
         { "_dk_seek" },
 #define X_CP_TIME       5
         { "_cp_time" },
-#define X_DK_MSPW       6
-        { "_dk_mspw" },
-#define X_HZ            7
-        { "_hz" },
 #ifdef vax
-#define X_MBDINIT       8
+#define X_MBDINIT       6
         { "_mbdinit" },
-#define X_UBDINIT       9
+#define X_UBDINIT       7
         { "_ubdinit" },
 #endif
         { "" },
@@ -89,18 +85,12 @@ initiostat()
                 }
         }
         if (ndrives == 0) {
-                lseek(kmem, (long)nlst[X_DK_MSPW].n_value, L_SET);
-                read(kmem, dk_mspw, sizeof (dk_mspw));
                 for (i = 0; i < DK_NDRIVE; i++)
                         if (dk_mspw[i] != 0.0)
                                 sprintf(dr_name[i], "dk%d", i), ndrives++;
 #ifdef vax
                 read_names(nlst[X_MBDINIT].n_value, nlst[X_UBDINIT].n_value);
 #endif
-        }
-        if (hz == 0) {
-                lseek(kmem, (long)nlst[X_HZ].n_value, L_SET);
-                read(kmem, &hz, sizeof hz);
         }
         for (i = 0; i < DK_NDRIVE; i++)
                 dk_select[i] = 1;

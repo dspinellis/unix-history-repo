@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.7 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.8 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -12,6 +12,12 @@ static struct nlist nlst[] = {
         { "_ccpu" },
 #define X_AVENRUN       1
         { "_avenrun" },
+#define	X_DK_MSPW	2
+	{ "_dk_mspw" },
+#define	X_HZ		3
+	{ "_hz" },
+#define	X_PHZ		4
+	{ "_phz" },
         { "" }
 };
 
@@ -24,7 +30,7 @@ int     die();
 int     display();
 int     suspend();
 
-double	lave, ccpu;
+double	ccpu;
 int     dellave;
 
 static	WINDOW *wload;			/* one line window for load average */
@@ -100,11 +106,17 @@ main(argc, argv)
 	}
 
         gethostname(hostname, sizeof (hostname));
-        lseek(kmem, nlst[X_CCPU].n_value, 0);
+        lseek(kmem, nlst[X_CCPU].n_value, L_SET);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);
+	lseek(kmem, nlst[X_DK_MSPW].n_value, L_SET);
+	read(kmem, dk_mspw, sizeof (dk_mspw));
+	lseek(kmem, nlst[X_HZ].n_value, L_SET);
+	read(kmem, &hz, sizeof (hz));
+	lseek(kmem, nlst[X_PHZ].n_value, L_SET);
+	read(kmem, &phz, sizeof (phz));
 	(*curcmd->c_init)();
-	curcmd->c_flags = 1;
+	curcmd->c_flags |= CF_INIT;
         labels();
 
         known[0].k_uid = -1;
@@ -127,9 +139,11 @@ main(argc, argv)
 labels()
 {
 
-        mvaddstr(2, 20,
-                "/0   /1   /2   /3   /4   /5   /6   /7   /8   /9   /10");
-        mvaddstr(3, 5, "Load Average");
+	if (curcmd->c_flags & CF_LOADAV) {
+		mvaddstr(2, 20,
+		    "/0   /1   /2   /3   /4   /5   /6   /7   /8   /9   /10");
+		mvaddstr(3, 5, "Load Average");
+	}
         (*curcmd->c_label)();
 #ifdef notdef
         mvprintw(21, 25, "CPU usage on %s", hostname);
@@ -143,26 +157,29 @@ display()
 
         /* Get the load average over the last minute. */
         lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
-        read(kmem, &lave, sizeof (lave));
+	read(kmem, avenrun, sizeof (avenrun));
         (*curcmd->c_fetch)();
-        j = 5.0*lave + 0.5;
-        dellave -= lave;
-        if (dellave >= 0.0)
-                c = '<';
-        else {
-                c = '>';
-                dellave = -dellave;
-        }
-        if (dellave < 0.1)
-                c = '|';
-        dellave = lave;
-        wmove(wload, 0, 0); wclrtoeol(wload);
-        for (i = (j > 50) ? 50 : j; i > 0; i--)
-                waddch(wload, c);
-        if (j > 50)
-                wprintw(wload, " %4.1f", lave);
+	if (curcmd->c_flags & CF_LOADAV) {
+		j = 5.0*avenrun[0] + 0.5;
+		dellave -= avenrun[0];
+		if (dellave >= 0.0)
+			c = '<';
+		else {
+			c = '>';
+			dellave = -dellave;
+		}
+		if (dellave < 0.1)
+			c = '|';
+		dellave = avenrun[0];
+		wmove(wload, 0, 0); wclrtoeol(wload);
+		for (i = (j > 50) ? 50 : j; i > 0; i--)
+			waddch(wload, c);
+		if (j > 50)
+			wprintw(wload, " %4.1f", avenrun[0]);
+	}
         (*curcmd->c_refresh)();
-	wrefresh(wload);
+	if (curcmd->c_flags & CF_LOADAV)
+		wrefresh(wload);
         wrefresh(wnd);
         move(CMDLINE, col);
         refresh();

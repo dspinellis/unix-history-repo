@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.4 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmds.c	1.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -15,6 +15,7 @@ command(cmd)
 {
         register char *cp;
         register struct cmdtab *p;
+	int interval;
         char *arg;
 
         for (cp = cmd; *cp && !isspace(*cp); cp++)
@@ -37,16 +38,33 @@ command(cmd)
                 clrtoeol();
                 return;
         }
-        if (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0) {
-                int x;
+	if (strcmp(cmd, "help") == 0) {
+		int col, len;
 
-		x = *cp ? atoi(cp) : naptime;
-                if (x <= 0) {
-			error("%d: bad interval.", x);
+		move(CMDLINE, col = 0);
+		for (p = cmdtab; p->c_name; p++) {
+			len = strlen(p->c_name);
+			if (col + len > COLS)
+				break;
+			addstr(p->c_name); col += len;
+			if (col + 1 < COLS)
+				addch(' ');
+		}
+		clrtoeol();
+		return;
+	}
+	interval = atoi(cmd);
+        if (interval <= 0 &&
+	    (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0)) {
+		interval = *cp ? atoi(cp) : naptime;
+                if (interval <= 0) {
+			error("%d: bad interval.", interval);
                         return;
                 }
+	}
+	if (interval > 0) {
                 alarm(0);
-                naptime = x;
+                naptime = interval;
                 display();
                 status();
                 return;
@@ -63,9 +81,9 @@ command(cmd)
 		(*curcmd->c_close)(wnd);
 		wnd = (*p->c_open)();
                 curcmd = p;
-		if (p->c_flags == 0) {
+		if ((p->c_flags & CF_INIT) == 0) {
 			(*p->c_init)();
-			p->c_flags = 1;
+			p->c_flags |= CF_INIT;
 		}
 		labels();
                 display();

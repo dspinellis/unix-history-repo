@@ -1,4 +1,4 @@
-/*      systat.h     1.4     84/08/09     */
+/*      systat.h     1.5     85/04/28     */
 
 #include <sys/dk.h>
 #include <curses.h>
@@ -34,8 +34,11 @@ struct  cmdtab {
 	WINDOW	*(*c_open)();		/* open display */
 	int	(*c_close)();		/* close display */
 	int	(*c_cmd)();		/* display command interpreter */
-	char	c_flags;		/* been initialized (right now) */
+	char	c_flags;		/* see below */
 };
+
+#define	CF_INIT		0x1		/* been initialized */
+#define	CF_LOADAV	0x2		/* display w/ load average */
 
 struct	cmdtab *curcmd;
 struct	cmdtab cmdtab[];
@@ -48,11 +51,13 @@ long	ntext, textp;
 struct	text *xtext;
 
 double  lccpu;
+double	avenrun[3];
 
 char    *kmemf, *memf, *swapf;
 char	dr_name[DK_NDRIVE][10];
 int	ndrives;
 int	hz;
+int	phz;
 float	dk_mspw[DK_NDRIVE];
 char    c, *namp, hostname[32];
 
