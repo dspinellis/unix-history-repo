@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)bootxx.c	7.1 (Berkeley) %G%
+ *	@(#)bootxx.c	7.2 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -14,7 +14,8 @@
 #include "saio.h"
 #include "../h/reboot.h"
 
-char bootprog[20] = "xx(0,0)boot";
+char bootprog[] = "boot";
+extern	unsigned opendev;
 
 /*
  * Boot program... arguments passed in r10 and r11
@@ -28,24 +29,12 @@ main()
 	register char *cp;
 
 #ifdef lint
-	howto = 0; devtype = 0;
+	howto = 0; devtype = 0; devtype = devtype;
 #endif
-	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
-	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
-	partition = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	cp = bootprog + 3;
-	if (unit >= 10)
-		*cp++ = unit / 10 + '0';
-	*cp++ = unit % 10 + '0';
-	*cp++ = ',';
-	if (partition >= 10)
-		*cp++ = partition / 10 + '0';
-	*cp++ = partition % 10 + '0';
-	bcopy((caddr_t) ")boot", cp, 6);
 	printf("loading %s\n", bootprog);
 	io = open(bootprog, 0);
 	if (io >= 0)
-		copyunix(howto, devtype, io);
+		copyunix(howto, opendev, io);
 	_stop("boot failed\n");
 }
 
