@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.11 (Berkeley) %G%
+ *	@(#)inode.h	7.12 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -39,12 +39,11 @@ struct inode {
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	struct	fs *i_fs;	/* file sys associated with this inode */
-	struct	dquot *i_dquot;	/* quota structure controlling this file */
+	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot strauctures */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
 	long	i_spare0;
 	long	i_spare1;
-	long	i_spare2;
 	struct	dinode i_din;	/* the on-disk inode */
 };
 
