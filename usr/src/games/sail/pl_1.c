@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.2 83/11/01";
+static	char *sccsid = "@(#)pl_1.c	2.3 83/11/02";
 #endif
 
 #include "player.h"
@@ -7,6 +7,8 @@ static	char *sccsid = "@(#)pl_1.c	2.2 83/11/01";
 #include <sys/wait.h>
 
 int choke(), child();
+
+static char hasdriver;
 
 /*ARGSUSED*/
 main(argc, argv)
@@ -51,7 +53,6 @@ char randomize, nodriver, debug;
 	char captain[80];
 	char message[60];
 	int load;
-	int active;
 	register int n;
 	char *nameptr;
 	int nat[NNATION];
@@ -81,16 +82,6 @@ reprint:
 	cc = &scene[game];
 	ls = cc->ship + cc->vessels;
 
-	(void) signal(SIGHUP, choke);
-	(void) signal(SIGINT, choke);
-	(void) signal(SIGQUIT, choke);
-
-	active = sync_exists(game);
-	if (sync_open() < 0) {
-		perror("sail: syncfile");
-		exit(1);
-	}
-
 	for (n = 0; n < NNATION; n++)
 		nat[n] = 0;
 	foreachship(sp) {
@@ -107,7 +98,17 @@ reprint:
 	windspeed = cc->windspeed;
 	winddir = cc->winddir;
 
-	if (active) {
+	(void) signal(SIGHUP, choke);
+	(void) signal(SIGINT, choke);
+	(void) signal(SIGQUIT, choke);
+
+	hasdriver = sync_exists(game);
+	if (sync_open() < 0) {
+		perror("sail: syncfile");
+		exit(1);
+	}
+
+	if (hasdriver) {
 		(void) puts("Synchronizing with the other players...");
 		(void) fflush(stdout);
 		Sync();
@@ -162,10 +163,30 @@ reprint:
 	mf = ms->file;
 	mc = ms->specs;
 
-	(void) signal(SIGCHLD, child);
-
 	Write(W_BEGIN, ms, 0, 0, 0, 0, 0);
 	Sync();
+
+	(void) signal(SIGCHLD, child);
+	if (!hasdriver && !nodriver) {
+		char num[10];
+		(void) sprintf(num, "%d", game);
+		switch (fork()) {
+		case 0:
+			execl(DRIVER1, DRIVERNAME, num, 0);
+			execl(DRIVER2, DRIVERNAME, num, 0);
+			execl(DRIVER3, DRIVERNAME, num, 0);
+			perror(DRIVERNAME);
+			exit(1);
+			break;
+		case -1:
+			perror("fork");
+			leave(LEAVE_QUIT);
+			break;
+		default:
+			hasdriver++;
+		}
+	}
+
 	printf("Your ship is the %s, a %d gun %s (%s crew).\n",
 		ms->shipname, mc->guns, classname[mc->class],
 		qualname[mc->qual]);
@@ -211,27 +232,20 @@ reprint:
 			mf->readyL = R_LOADED|R_INITIAL;
 		}
 	}
-	if (!active && !nodriver) {
-		char num[10];
-		(void) sprintf(num, "%d", game);
-		if (!fork()) {
-			execl(DRIVER1, DRIVERNAME, num, 0);
-			execl(DRIVER2, DRIVERNAME, num, 0);
-			execl(DRIVER3, DRIVERNAME, num, 0);
-			perror(DRIVERNAME);
-			exit(1);
-		}
-	}
 
 	initscreen();
-
 	draw_board();
 	(void) sprintf(message, "Captain %s assuming command", captain);
 	Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
-
 	newturn();
 }
 
+/*
+ * If we get here before a ship is chosen, then ms == 0 and
+ * we don't want to update the score file, or do any Write's either.
+ * We can assume the sync file is already created and may need
+ * to be removed.
+ */
 leave(conditions)
 int conditions;
 {
@@ -248,7 +262,46 @@ int conditions;
 	(void) signal(SIGALRM, SIG_IGN);
 	(void) signal(SIGCHLD, SIG_IGN);
 
-	if (conditions != -1) {
+	if (done_curses) {
+		Signal("It looks like you've had it!",
+			(struct ship *)0);
+		switch (conditions) {
+		case LEAVE_QUIT:
+			break;
+		case LEAVE_CAPTURED:
+			Signal("Your ship was captured.",
+				(struct ship *)0);
+			break;
+		case LEAVE_HURRICAN:
+			Signal("Hurricane!  All ships destroyed.",
+				(struct ship *)0);
+			break;
+		case LEAVE_DRIVER:
+			/* don't clear 'hasdriver' here */
+			Signal("The driver died.", (struct ship *)0);
+			break;
+		default:
+			Signal("A funny thing happened (%d).",
+				(struct ship *)0, conditions);
+		}
+	} else {
+		switch (conditions) {
+		case LEAVE_QUIT:
+			break;
+		case LEAVE_DRIVER:
+			printf("The driver died.\n");
+			break;
+		case LEAVE_FORK:
+			hasdriver = 0;
+			printf("Can't fork.\n");
+			break;
+		default:
+			printf("A funny thing happened (%d).\n",
+				conditions);
+		}
+	}
+
+	if (ms != 0) {
 		if (fp = fopen(LOGFILE, "r+")) {
 			net = (float)mf->points / mc->pts;
 			persons = getw(fp);
@@ -281,46 +334,12 @@ int conditions;
 				}
 			(void) fclose(fp);
 		}
-		if (done_curses) {
-			Signal("It looks like you've had it!",
-				(struct ship *)0);
-			switch (conditions) {
-			case LEAVE_QUIT:
-				break;
-			case LEAVE_CAPTURED:
-				Signal("Your ship was captured.",
-					(struct ship *)0);
-				break;
-			case LEAVE_HURRICAN:
-				Signal("Hurricane!  All ships destroyed.",
-					(struct ship *)0);
-				break;
-			case LEAVE_DRIVER:
-				Signal("The driver died.", (struct ship *)0);
-				break;
-			default:
-				Signal("A funny thing happened (%d).",
-					(struct ship *)0, conditions);
-			}
-		} else {
-			switch (conditions) {
-			case LEAVE_QUIT:
-				break;
-			case LEAVE_DRIVER:
-				printf("The driver died.\n");
-				break;
-			default:
-				printf("A funny thing happened (%d).\n",
-					conditions);
-			}
-		}
-		(void) sprintf(message,"Captain %s relinquishing.",
+		makesignal(ms, "Captain %s relinquishing.", (struct ship *)0,
 			mf->captain);
-		Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
 		Write(W_END, ms, 0, 0, 0, 0, 0);
 		Sync();
-		sync_close(people == 0);
 	}
+	sync_close(!hasdriver);
 	cleanupscreen();
 	exit(0);
 }
