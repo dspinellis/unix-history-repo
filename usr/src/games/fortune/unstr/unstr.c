@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)unstr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)unstr.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)unstr.c	5.5 (Berkeley) %G%";
  *	Ken Arnold		Aug 13, 1978
  */
 
-# include	<sys/types.h>
+# include	<machine/endian.h>
 # include	<sys/param.h>
 # include	"strfile.h"
 # include	<stdio.h>
