@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -26,10 +26,10 @@ MAN=	install.0
 all: xinstall
 
 xinstall: ${LIBC}
-	${CC} -o install ${CFLAGS} install.c
+	${CC} -o xinstall ${CFLAGS} install.c
 
 clean:
-	rm -f ${OBJS} core install
+	rm -f ${OBJS} core xinstall
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 install ${DESTDIR}/usr/bin/install
+	install -s -o bin -g bin -m 755 xinstall ${DESTDIR}/usr/bin/install
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
