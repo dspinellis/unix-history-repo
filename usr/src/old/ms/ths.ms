@@ -1,4 +1,7 @@
-.\" @(#)ths.ms	1.3 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ths.ms	5.1 (Berkeley) %G%
+.\"
 .	\" TM - U.C. Berkeley thesis mode
 .ls 2
 .if v .nr PO 1.5i

@@ -1,4 +1,8 @@
-/*	names.h	4.3	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)names.h	4.4 (Berkeley) %G%
+ */
 
 #define ART	'A'
 #define PREP	'P'

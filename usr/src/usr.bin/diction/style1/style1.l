@@ -1,9 +1,13 @@
 %{
-/* break out words, output cap + word(inverted) */
+/*-
+ * %sccs.include.proprietary.c%
+ */
 
 #ifndef lint
-static char sccsid[] = "@(#)style1.l	4.2	(Berkeley)	82/11/06";
-#endif not lint
+static char sccsid[] = "@(#)style1.l	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
+/* break out words, output cap + word(inverted) */
 
 #include <stdio.h>
 #include <ctype.h>

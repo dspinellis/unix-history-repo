@@ -1,4 +1,11 @@
-/*	bc.library	4.3	87/09/14	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)bc.library	5.1 (Berkeley) %G%
+ */
 
 scale = 20
 define e(x){

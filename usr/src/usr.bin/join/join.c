@@ -1,4 +1,20 @@
-static char *sccsid = "@(#)join.c	4.2 (Berkeley) %G%";
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)join.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
 /*	join F1 F2 on stuff */
 
 #include	<stdio.h>

@@ -1,4 +1,13 @@
-/*	awk.g.y	4.2	87/09/16	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)awk.g.y	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 %token	FIRSTTOKEN	/*must be first*/
 %token	FINAL FATAL

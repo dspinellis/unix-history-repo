@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vget.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vget.c	6.15 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"

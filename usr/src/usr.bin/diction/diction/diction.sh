@@ -1,7 +1,10 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)diction.sh	4.7	(Berkeley)	89/08/31
+# %sccs.include.proprietary.sh%
 #
+#	@(#)diction.sh	4.8 (Berkeley) %G%
+#
+
 D=/usr/bin
 B=/usr/libexec
 echo $*

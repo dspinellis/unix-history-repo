@@ -1,4 +1,7 @@
-.\"	@(#)tmac.s	1.6 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.s	5.1 (Berkeley) %G%
+.\"
 .\" ancillary files reside in \*(//,
 .\" except local which are in \*(L/,
 .ds // /usr/share/ms/

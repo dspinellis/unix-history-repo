@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)makpipe.c	4.4	(Berkeley)	%G%";
-#endif not lint
+static char sccsid[] = "@(#)makpipe.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "stdio.h"
 #include "pathnames.h"

@@ -1,9 +1,15 @@
-#! /bin/sh -
+#!/bin/sh -
 #
+# Copyright (c) 1991 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)tck	5.2 (Berkeley) %G%
+#
+
 # Look for default (and termcap-only?) capabilities.
 # Defaults should be removed to save space.
-#
-#	@(#)tck	5.1	(Berkeley)	%G%
 
 showtc $* | \
 sed	-n				\

@@ -1,4 +1,13 @@
-static	char sccsid[] = "@(#)diffreg.c 4.22 %G%";
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)diffreg.c	4.23 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "diff.h"
 #include "pathnames.h"

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char abbrev_sccsid[] = "@(#)abbrev.c	4.2	(Berkeley)	82/11/06";
-#endif not lint
+static char sccsid[] = "@(#)abbrev.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 struct dict abbrev_d[] = {
 "St",'N',

@@ -1,8 +1,11 @@
-#ifndef lint
-static char ehash_sccsid[] = "@(#)ehash.c	4.3	(Berkeley)	91/02/02";
-#endif not lint
+/*-
+ * %sccs.include.proprietary.c%
+ */
 
-#
+#ifndef lint
+static char sccsid[] = "@(#)ehash.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
+
 struct hnode {
 	char *aakey;
 	struct dict *aadata;

@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)learn.c	4.6	(Berkeley)	%G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1986 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)learn.c	4.7 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/signal.h>
 #include <stdio.h>

@@ -13,7 +13,23 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)old.egrep.y	4.6 (Berkeley) %G%";
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)old.egrep.y	4.7 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

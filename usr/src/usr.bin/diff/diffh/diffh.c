@@ -1,4 +1,19 @@
-static	char sccsid[] = "@(#)diffh.c 4.4 %G%";
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)diffh.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 #include <ctype.h>

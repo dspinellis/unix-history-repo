@@ -1,11 +1,24 @@
-#ifndef lint
-static char sccsid[] = "@(#)dc.c	4.7	(Berkeley)	%G%";
-#endif not lint
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
 
-#include <paths.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)dc.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/signal.h>
 #include <stdio.h>
 #include "dc.h"
+#include <paths.h>
 
 main(argc,argv)
 int argc;

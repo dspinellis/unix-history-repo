@@ -1,4 +1,11 @@
-/*	diff.h	4.9	91/03/02	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)diff.h	4.10 (Berkeley) %G%
+ */
 
 /*
  * diff - common declarations
