@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)expand.h	5.2 (Berkeley) %G%
+ *	@(#)expand.h	5.3 (Berkeley) %G%
  */
 
 struct strlist {
@@ -28,6 +28,7 @@ struct arglist {
 #define EXP_TILDE	0x2	/* do normal tilde expansion */
 #define	EXP_VARTILDE	0x4	/* expand tildes in an assignment */
 #define	EXP_REDIR	0x8	/* file glob for a redirection (1 match only) */
+#define EXP_CASE	0x10	/* keeps quotes around for CASE pattern */
 
 
 #ifdef __STDC__
