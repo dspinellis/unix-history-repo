@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_dmc.h	7.1 (Berkeley) %G%
+ *	@(#)if_dmc.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -41,8 +41,9 @@ struct dmc_header {
  * protocol header (256) + trailer descriptor (4).
  * The software link encapsulation header (dmc_header)
  * is handled separately.
+	#define DMCMTU  1284
  */
-#define DMCMTU  1284
+#define DMCMTU  1500
 
 #define	RDYSCAN	16	/* loop delay for RDYI after RQI */
 
