@@ -54,7 +54,8 @@ static	char	sccsid[] = "@(#)termin.c	3.1  10/29/86";
 static unsigned char
 	ourBuffer[100],		/* where we store stuff */
 	*ourPHead = ourBuffer,	/* first character in buffer */
-	*ourPTail = ourBuffer;	/* where next character goes */
+	*ourPTail = ourBuffer,	/* where next character goes */
+	*TransPointer = 0;	/* For transparent mode data */
 
 static int InControl;
 static int WaitingForSynch;
@@ -131,6 +132,19 @@ FlushChar()
     ourPHead = ourBuffer;
 }
 
+void
+TransInput(onoff, mode)
+int	mode;			/* Which KIND of transparent input */
+int	onoff;			/* Going in, or coming out */
+{
+    if (onoff) {
+	/* Flush pending input */
+	FlushChar();
+	TransPointer = ourBuffer;
+    } else {
+    }
+}
+
 int
 TerminalIn()
 {
@@ -170,6 +184,26 @@ register int	count;			/* how many bytes in this buffer */
     int origCount;
     extern int bellwinup;
     static state *controlPointer;
+
+    if (TransPointer) {
+	int i;
+
+	if ((count+TransPointer) >= (ourBuffer+sizeof ourBuffer)) {
+	    i = ourBuffer+sizeof ourBuffer-TransPointer;
+	} else {
+	    i = count;
+	}
+	while (i--) {
+	    c = (*buffer)&0x7f;
+	    *TransPointer++ = c|0x80;
+	    if (c == '\r') {
+		SendTransparent(ourBuffer, TransPointer-ourBuffer);
+		TransPointer = 0;		/* Done */
+		break;
+	    }
+	}
+	return count;
+    }
 
     if (bellwinup) {
 	BellOff();

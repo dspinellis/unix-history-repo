@@ -486,13 +486,31 @@ DoReadBuffer()
 	HadAid = 0;			/* killed that buffer */
     }
 }
+
+/* Send some transparent data to the host */
+
+void
+SendTransparent(buffer, count)
+char *buffer;
+int count;
+{
+    char stuff[3];
+
+    stuff[0] = AID_NONE_PRINTER;
+    stuff[1] = BufferTo3270_0(count);
+    stuff[2] = BufferTo3270_1(count);
+    DataToNetwork(stuff, sizeof stuff, 0);
+    DataToNetwork(buffer, count, 1);
+}
+
+
 /* Try to send some data to host */
 
 void
 SendToIBM()
 {
 #if	!defined(PURE3274)
-    if (TransparentClock == OutputClock) {
+    if (TransparentClock >= OutputClock) {
 	if (HadAid) {
 	    AddChar(AidByte);
 	    HadAid = 0;
@@ -600,10 +618,14 @@ int
 	    return 0;
 	}
     }
+
     /* now, either empty, or haven't seen aid yet */
 
-
 #if	!defined(PURE3274)
+    /*
+     * If we are in transparent (output) mode, do something special
+     * with keystrokes.
+     */
     if (TransparentClock == OutputClock) {
 	if (ctlrfcn == FCN_AID) {
 	    UnLocked = 0;
