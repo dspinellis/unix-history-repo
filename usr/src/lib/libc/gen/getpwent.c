@@ -6,60 +6,73 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <stdio.h>
+#include <sys/param.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include <ndbm.h>
+#include <unistd.h>
+#include <syslog.h>
+#include <utmp.h>
+#include <limits.h>
 
-static DBM *_pw_db;
-static FILE *_pw_fp;
-static struct passwd _pw_passwd;
-static int _pw_getfirstkey, _pw_stayopen;
-static char _pw_flag, *_pw_file = _PATH_PASSWD, _pw_master;
-
-#define	MAXLINELENGTH	1024
-static char line[MAXLINELENGTH];
+static struct passwd _pw_passwd;	/* password structure */
+static DBM *_pw_db;			/* password database */
+static int _pw_keynum;			/* key counter */
+static int _pw_stayopen;		/* keep fd's open */
+static int _pw_euid;
+static __hashpw(), __initdb();
 
 struct passwd *
 getpwent()
 {
+	datum key;
+	int rval;
+	char bf[sizeof(_pw_keynum) + 1];
 
-	if (!_pw_fp && !start_pw(1))
+	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
-	if (!scanpw())
-		return((struct passwd *)NULL);
-	getpw();
-	return(&_pw_passwd);
+
+	++_pw_keynum;
+	bf[0] = _PW_KEYBYNUM;
+	bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
+	key.dptr = bf;
+	key.dsize = sizeof(_pw_keynum) + 1;
+	rval = __hashpw(key);
+
+	/* Can't leave secure database open. */
+	if (!_pw_euid) {
+		(void)dbm_close(_pw_db);
+		_pw_db = (DBM *)NULL;
+	}
+	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
 struct passwd *
-getpwnam(nam)
-	char *nam;
+getpwnam(name)
+	char *name;
 {
-	int rval;
+	datum key;
+	int len, rval;
+	char bf[UT_NAMESIZE + 1];
 
-	if (!start_pw(0))
+	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
 
-		key.dptr = nam;
-		key.dsize = strlen(nam);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (!strcmp(nam, _pw_passwd.pw_name)) {
-				rval = 1;
-				break;
-			}
-	if (!_pw_stayopen)
-		endpwent();
-	if (rval)
-		getpw();
+	bf[0] = _PW_KEYBYNAME;
+	len = strlen(name);
+	bcopy(name, bf + 1, MIN(len, UT_NAMESIZE));
+	key.dptr = bf;
+	key.dsize = len + 1;
+	rval = __hashpw(key);
+
+	/* Can't leave secure database open. */
+	if (!_pw_stayopen || !_pw_euid) {
+		(void)dbm_close(_pw_db);
+		_pw_db = (DBM *)NULL;
+	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -67,173 +80,85 @@ struct passwd *
 getpwuid(uid)
 	int uid;
 {
+	datum key;
 	int rval;
+	char bf[sizeof(uid) + 1];
 
-	if (!start_pw(0))
+	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
 
-		key.dptr = (char *)&uid;
-		key.dsize = sizeof(uid);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (_pw_passwd.pw_uid == uid) {
-				rval = 1;
-				break;
-			}
-	if (!_pw_stayopen)
-		endpwent();
-	if (rval)
-		getpw();
+	bf[0] = _PW_KEYBYUID;
+	bcopy(&uid, bf + 1, sizeof(uid));
+	key.dptr = bf;
+	key.dsize = sizeof(uid) + 1;
+	rval = __hashpw(key);
+
+	/* Can't leave secure database open. */
+	if (!_pw_stayopen || !_pw_euid) {
+		(void)dbm_close(_pw_db);
+		_pw_db = (DBM *)NULL;
+	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-}
-
-static
-start_pw(want_fp)
-	char want_fp;		/* open _pw_fp also */
-{
-	char *p;
-
-	if (_pw_db) {
-		_pw_getfirstkey = 1;
-		if (!want_fp)
-			return(1);
-	}
-	if (_pw_fp) {
-		rewind(_pw_fp);
-		return(1);
-	}
-	if (!_pw_db && (_pw_db = dbm_open(_pw_file, O_RDONLY, 0))) {
-		_pw_getfirstkey = 1;
-		if (!want_fp)
-			return(1);
-	}
-	/*
-	 * special case; if it's the official password file, look in
-	 * the master password file, otherwise, look in the file itself.
-	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
-	if (_pw_fp = fopen(p, "r")) {
-		_pw_master = 1;
-		return(1);
-	}
-	/*
-	 * If we really want to set up _pw_fp, then try again
-	 * with the old file.
-	 */
-	if (want_fp && p != _pw_file && (_pw_fp = fopen(_pw_file, "r"))) {
-		_pw_master = 0;
-		return(1);
-	}
-	return(0);
-}
-
-setpwent()
-{
-	return(setpassent(0));
 }
 
 setpassent(stayopen)
 	int stayopen;
 {
-	if (!start_pw(0))
-		return(0);
+	_pw_keynum = 0;
 	_pw_stayopen = stayopen;
+	return(1);
+}
+
+setpwent()
+{
+	_pw_keynum = 0;
+	_pw_stayopen = 0;
 	return(1);
 }
 
 void
 endpwent()
 {
+	_pw_keynum = 0;
 	if (_pw_db) {
-		dbm_close(_pw_db);
+		(void)dbm_close(_pw_db);
 		_pw_db = (DBM *)NULL;
 	}
-	if (_pw_fp) {
-		(void)fclose(_pw_fp);
-		_pw_fp = (FILE *)NULL;
-	}
-}
-
-void
-setpwfile(file)
-	char *file;
-{
-	_pw_file = file;
 }
 
 static
-scanpw()
+__initdb()
 {
-	register char *cp;
-	long atol();
-	char *bp;
-	char *fgets(), *strsep(), *index();
+	static int warned;
+	char *p;
 
-	for (;;) {
-		if (!(fgets(line, sizeof(line), _pw_fp)))
-			return(0);
-		bp = line;
-		/* skip lines that are too big */
-		if (!index(line, '\n')) {
-			int ch;
-
-			while ((ch = getc(_pw_fp)) != '\n' && ch != EOF)
-				;
-			continue;
-		}
-		_pw_passwd.pw_name = strsep(&bp, ":\n");
-		_pw_passwd.pw_passwd = strsep(&bp, ":\n");
-		if (!(cp = strsep(&bp, ":\n")))
-			continue;
-		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep(&bp, ":\n")))
-			continue;
-		_pw_passwd.pw_gid = atoi(cp);
-		if (_pw_master) {
-			_pw_passwd.pw_class = strsep(&bp, ":\n");
-			if (!(cp = strsep(&bp, ":\n")))
-				continue;
-			_pw_passwd.pw_change = atol(cp);
-			if (!(cp = strsep(&bp, ":\n")))
-				continue;
-			_pw_passwd.pw_expire = atol(cp);
-		}
-		_pw_passwd.pw_gecos = strsep(&bp, ":\n");
-		_pw_passwd.pw_dir = strsep(&bp, ":\n");
-		_pw_passwd.pw_shell = strsep(&bp, ":\n");
-		if (!_pw_passwd.pw_shell)
-			continue;
+	p = (_pw_euid = geteuid()) ? _PATH_MP_DB : _PATH_SMP_DB;
+	if (_pw_db = dbm_open(p, O_RDONLY, 0))
 		return(1);
+	if (!warned) {
+		openlog("getpwent", LOG_CONS|LOG_PERROR);
+		syslog(LOG_ALERT, "%s: %m", p);
+		closelog();
+		warned = 1;
 	}
-	/* NOTREACHED */
+	return(0);
 }
 
 static
-fetch_pw(key)
+__hashpw(key)
 	datum key;
 {
 	register char *p, *t;
+	static u_int max;
+	static char *line;
+	datum dp;
 
-	/*
-	 * the .dir file is LOCK_EX locked by programs that are
-	 * renaming the various password files.
-	 */
-	if (flock(dbm_dirfno(_pw_db), LOCK_SH))
+	dp = dbm_fetch(_pw_db, key);
+	if (!(p = dp.dptr))
 		return(0);
-	if (!key.dptr)
-		if (_pw_getfirstkey) {
-			_pw_getfirstkey = 0;
-			key = dbm_firstkey(_pw_db);
-		} else
-			key = dbm_nextkey(_pw_db);
-	if (key.dptr)
-		key = dbm_fetch(_pw_db, key);
-	(void)flock(dbm_dirfno(_pw_db), LOCK_UN);
-	if (!(p = key.dptr))
+	if (dp.dsize > max && !(line = (char *)realloc(line, max += 1024)))
 		return(0);
+
 	t = line;
 #define	EXPAND(e)	e = t; while (*t++ = *p++);
 	EXPAND(_pw_passwd.pw_name);
@@ -250,41 +175,5 @@ fetch_pw(key)
 	EXPAND(_pw_passwd.pw_shell);
 	bcopy(p, (char *)&_pw_passwd.pw_expire, sizeof(time_t));
 	p += sizeof(time_t);
-	_pw_flag = *p;
 	return(1);
-}
-
-#define	_MAX_PASSWD_SIZE	50
-static char pwbuf[_MAX_PASSWD_SIZE];
-
-static
-getpw()
-{
-	long pos, atol();
-	int fd, n;
-	char *p;
-	off_t lseek();
-
-	if (geteuid())
-		return;
-	/*
-	 * special case; if it's the official password file, look in
-	 * the master password file, otherwise, look in the file itself.
-	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
-	if ((fd = open(p, O_RDONLY, 0)) < 0)
-		return;
-	pos = atol(_pw_passwd.pw_passwd);
-	if (lseek(fd, pos, L_SET) != pos)
-		goto bad;
-	if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0)
-		goto bad;
-	pwbuf[n] = '\0';
-	for (p = pwbuf; *p; ++p)
-		if (*p == ':') {
-			*p = '\0';
-			_pw_passwd.pw_passwd = pwbuf;
-			break;
-		}
-bad:	(void)close(fd);
 }
