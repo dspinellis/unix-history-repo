@@ -1,4 +1,4 @@
-/*	init_main.c	3.7	%G%	*/
+/*	init_main.c	3.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,6 +38,7 @@
  */
 main(firstaddr)
 {
+	register int i;
 
 	cpusid = mfpr(SID);		/* get system identification */
 #ifdef FASTVAX
@@ -59,6 +60,8 @@ main(firstaddr)
 	proc[0].p_nice = NZERO;
 	u.u_procp = &proc[0];
 	u.u_cmask = CMASK;
+	for (i = 1; i < sizeof(u.u_limit)/sizeof(u.u_limit[0]); i++)
+		u.u_limit[i] = INFINITY;
 	clkstart();
 
 	/*
