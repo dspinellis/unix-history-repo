@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)flock.2	6.2 (Berkeley) %G%
+.\"	@(#)flock.2	6.3 (Berkeley) %G%
 .\"
 .TH FLOCK 2 ""
 .UC 5
@@ -61,7 +61,7 @@ lock being released and the new lock applied (possibly
 after other processes have gained and released the lock).
 .PP
 Requesting a lock on an object that is already locked
-normally causes the caller to blocked until the lock may be
+normally causes the caller to be blocked until the lock may be
 acquired.  If LOCK_NB is included in
 .IR operation ,
 then this will not happen; instead the call will fail and
