@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -674,7 +674,7 @@ errbody(mci, e, separator)
 		putline("", mci);
 		(void) sprintf(buf, "--%s", e->e_msgboundary);
 		putline(buf, mci);
-		putline("Content-Type: message/X-delivery-status-04a (Draft of April 4, 1995)", mci);
+		putline("Content-Type: message/X-delivery-status-05 (Draft of May 29, 1995)", mci);
 		putline("", mci);
 
 		/*
@@ -685,13 +685,12 @@ errbody(mci, e, separator)
 		if (e->e_parent->e_envid != NULL)
 		{
 			(void) sprintf(buf, "Original-Envelope-Id: %s",
-				xtextify(e->e_parent->e_envid));
+				xuntextify(e->e_parent->e_envid));
 			putline(buf, mci);
 		}
 
 		/* Reporting-MTA: is us (required) */
-		(void) sprintf(buf, "Reporting-MTA: dns; %s",
-			xtextify(MyHostName));
+		(void) sprintf(buf, "Reporting-MTA: dns; %s", MyHostName);
 		putline(buf, mci);
 
 		/* DSN-Gateway: not relevant since we are not translating */
@@ -704,7 +703,7 @@ errbody(mci, e, separator)
 			if (p == NULL)
 				p = "dns";
 			(void) sprintf(buf, "Received-From-MTA: %s; %s",
-				p, xtextify(RealHostName));
+				p, RealHostName);
 			putline(buf, mci);
 		}
 
@@ -748,7 +747,7 @@ errbody(mci, e, separator)
 			if (q->q_orcpt != NULL)
 			{
 				(void) sprintf(buf, "Original-Recipient: %s",
-					xtextify(q->q_orcpt));
+					q->q_orcpt);
 				putline(buf, mci);
 			}
 
@@ -761,13 +760,13 @@ errbody(mci, e, separator)
 			if (strchr(r->q_user, '@') == NULL)
 			{
 				(void) sprintf(buf, "Final-Recipient: %s; %s@",
-					p, xtextify(r->q_user));
-				strcat(buf, xtextify(MyHostName));
+					p, r->q_user);
+				strcat(buf, MyHostName);
 			}
 			else
 			{
 				(void) sprintf(buf, "Final-Recipient: %s; %s",
-					p, xtextify(r->q_user));
+					p, r->q_user);
 			}
 			putline(buf, mci);
 
@@ -777,13 +776,13 @@ errbody(mci, e, separator)
 				if (strchr(q->q_user, '@') == NULL)
 				{
 					(void) sprintf(buf, "X-Actual-Recipient: %s; %s@",
-						p, xtextify(q->q_user));
-					strcat(buf, xtextify(MyHostName));
+						p, q->q_user);
+					strcat(buf, MyHostName);
 				}
 				else
 				{
 					(void) sprintf(buf, "X-Actual-Recipient: %s; %s",
-						p, xtextify(q->q_user));
+						p, q->q_user);
 				}
 				putline(buf, mci);
 			}
@@ -831,7 +830,7 @@ errbody(mci, e, separator)
 				if (p == NULL)
 					p = "smtp";
 				(void) sprintf(buf, "Diagnostic-Code: %s; %s",
-					p, xtextify(q->q_rstatus));
+					p, q->q_rstatus);
 				putline(buf, mci);
 			}
 
