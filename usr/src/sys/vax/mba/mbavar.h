@@ -1,4 +1,4 @@
-/*	mbavar.h	4.5	%G%	*/
+/*	mbavar.h	4.6	%G%	*/
 
 /*
  * VAX Massbus adapter registers
@@ -124,9 +124,9 @@ struct	mba_info {
 	short	mi_mbanum;	/* the mba it is on */
 	short	mi_drive;	/* controller on mba */
 	short	mi_slave;	/* slave to controller (TM03/TU16) */
+	short	mi_dk;		/* driver number for iostat */
 	short	mi_alive;	/* device exists */
 	short	mi_type;	/* driver specific unit type */
-	short	mi_dk;		/* driver number for iostat */
 	struct	buf mi_tab;	/* head of queue for this device */
 	struct	mba_info *mi_forw;
 /* we could compute these every time, but hereby save time */
@@ -149,10 +149,6 @@ struct	mba_hd {
 	struct	mba_info *mh_actf;	/* head of queue to transfer */
 	struct	mba_info *mh_actl;	/* tail of queue to transfer */
 } mba_hd[4];
-#ifdef KERNEL
-extern	struct	mba_info mbinit[];	/* blanks for filling mba_info */
-int	nummba;
-#endif
 /*
  * Values for flags; normally MH_NOSEEK will be set when there is
  * only a single drive on an massbus.
@@ -199,3 +195,12 @@ struct mba_driver {
  * Clear attention status for specified drive.
  */
 #define	mbclrattn(mi)	((mi)->mi_mba->mba_drv[0].mbd_as = 1 << (mi)->mi_drive)
+
+/*
+ * Kernel definitions related to mba.
+ */
+#ifdef KERNEL
+extern	Xmba0int(), Xmba1int(), Xmba2int(), Xmba3int();
+extern	struct	mba_info mbinit[];	/* blanks for filling mba_info */
+int	nummba;
+#endif
