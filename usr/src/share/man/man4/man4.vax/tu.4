@@ -1,0 +1,33 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tu.4	4.1 (Berkeley) %G%
+.\"
+.TH TU 4 10/8/81
+.UC 4
+.SH NAME
+tu \- console TU58 interface
+.SH DESCRIPTION
+.PP
+This is a simple interface to the TU58
+cassette tape unit, which is part of the console
+subsytem for VAX-11/750's.
+Access is given to the entire
+tape consisting of 1024 blocks of 512 bytes.
+.PP
+The TU58 behaves like a disk but has only a block interface (no raw).
+The cassette is commonly accessed via the
+.IR arff (8)
+command, using the `m' flag.
+.SH FILES
+/dev/floppy
+.SH SEE ALSO
+arff(8)
+.SH DIAGNOSTICS
+Lots, mostly cryptic.  Read the driver.
+.SH BUGS
+The driver is very unreliable due to the nature of the TU58 interface.
+The TU58 should be used only when the system is in single-user mode,
+since it is often necessary to reboot the system to unhang the process
+accessing the TU58.
