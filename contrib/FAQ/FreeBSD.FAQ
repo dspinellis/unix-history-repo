@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.15 1994/04/20 21:23:30 wollman Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.16 1994/04/21 22:25:10 wollman Exp $
 
 
 Table of Contents
@@ -116,6 +116,7 @@ While there are no groups currently dedicated to FreeBSD, you may find
 the following groups useful.
 
 comp.os.386bsd.announce:     For announcements
+comp.os.386bsd.apps:         For applications
 comp.os.386bsd.questions:    For questions
 comp.os.386bsd.development:  For working on the internals
 comp.os.386bsd.bugs:         About bugs
