@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -401,12 +401,12 @@ deliver(e, firstto)
 			message(Arpa_Info, "Connecting to %s (%s)...",
 			    MxHosts[0], m->m_name);
 			if ((rcode = smtpinit(m, pv)) == EX_OK) {
+				register char *t = tobuf;
+				register int i;
+
 				/* send the recipient list */
 				tobuf[0] = '\0';
 				for (to = tochain; to; to = to->q_tchain) {
-					register int i;
-					register char *t = tobuf;
-
 					e->e_to = to->q_paddr;
 					if ((i = smtprcpt(to, m)) != EX_OK) {
 						markfailure(e, to, i);
