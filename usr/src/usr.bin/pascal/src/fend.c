@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.18 %G%";
+static char sccsid[] = "@(#)fend.c 1.19 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -546,7 +546,7 @@ fp_prologue(eecookiep)
 fp_entrycode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
-    int	ftnno = eecookiep -> nlp -> nl_value[ENTLOC];
+    int	ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
     int	proflabel = getlab();
     int	setjmp0 = getlab();
 
