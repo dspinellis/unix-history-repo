@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tbl	8.1 (Berkeley) %G%
+.\"	@(#)tbl	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:25-%''Tbl \(em A Program to Format Tables'
 .OH 'Tbl \(em A Program to Format Tables''USD:25-%'
@@ -1611,7 +1611,7 @@ Whippany	Whippany, N. J. 07981	201	386-3000
 Indian Hill	Naperville, Illinois 60540	312	690-2000
 .TE
 .br
-.ps 8
+.ps 9
 .vs 9p
 .ne 5i
 .IN
