@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -273,6 +273,15 @@ mci_get(host, m)
 			mci->mci_errno = 0;
 			mci->mci_exitstat = EX_OK;
 			mci->mci_state = MCIS_CLOSED;
+		}
+		else
+		{
+			/* get peer host address for logging reasons only */
+			/* (this should really be in the mci struct) */
+			int socksize = sizeof CurHostAddr;
+
+			(void) getpeername(fileno(mci->mci_in),
+				(struct sockaddr *) &CurHostAddr, &socksize);
 		}
 	}
 	if (mci->mci_state == MCIS_CLOSED)
