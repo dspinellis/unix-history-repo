@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,12 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "dir.h"
 #include "user.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -58,13 +59,12 @@ int	udp_ttl = UDP_TTL;
 
 struct	sockaddr_in udp_in = { AF_INET };
 
-udp_input(m0, ifp)
-	struct mbuf *m0;
-	struct ifnet *ifp;
+udp_input(m, iphlen)
+	register struct mbuf *m;
+	int iphlen;
 {
 	register struct udpiphdr *ui;
 	register struct inpcb *inp;
-	register struct mbuf *m;
 	int len;
 	struct ip ip;
 
@@ -72,11 +72,10 @@ udp_input(m0, ifp)
 	 * Get IP and UDP header together in first mbuf.
 	 * Note: IP leaves IP header in first mbuf.
 	 */
-	m = m0;
 	ui = mtod(m, struct udpiphdr *);
-	if (((struct ip *)ui)->ip_hl > (sizeof (struct ip) >> 2))
-		ip_stripoptions((struct ip *)ui, (struct mbuf *)0);
-	if (m->m_off > MMAXOFF || m->m_len < sizeof (struct udpiphdr)) {
+	if (iphlen > sizeof (struct ip))
+		ip_stripoptions(m, (struct mbuf *)0);
+	if (m->m_len < sizeof (struct udpiphdr)) {
 		if ((m = m_pullup(m, sizeof (struct udpiphdr))) == 0) {
 			udpstat.udps_hdrops++;
 			return;
@@ -100,7 +99,7 @@ udp_input(m0, ifp)
 	/*
 	 * Save a copy of the IP header in case we want restore it for ICMP.
 	 */
-	ip = *(struct ip*)ui;
+	ip = *(struct ip *)ui;
 
 	/*
 	 * Checksum extended UDP header and data.
@@ -124,11 +123,10 @@ udp_input(m0, ifp)
 		INPLOOKUP_WILDCARD);
 	if (inp == 0) {
 		/* don't send ICMP response for broadcast packet */
-		if (in_broadcast(ui->ui_dst))
+		if (m->m_flags & M_BCAST)
 			goto bad;
 		*(struct ip *)ui = ip;
-		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT,
-		    ifp);
+		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
 	}
 
@@ -139,7 +137,8 @@ udp_input(m0, ifp)
 	udp_in.sin_port = ui->ui_sport;
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
-	m->m_off += sizeof (struct udpiphdr);
+	m->m_pkthdr.len -= sizeof (struct udpiphdr);
+	m->m_data += sizeof (struct udpiphdr);
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in,
 	    m, (struct mbuf *)0) == 0)
 		goto bad;
@@ -198,33 +197,23 @@ udp_ctlinput(cmd, sa)
 	}
 }
 
-udp_output(inp, m0)
+udp_output(inp, m)
 	register struct inpcb *inp;
-	struct mbuf *m0;
-{
 	register struct mbuf *m;
+{
 	register struct udpiphdr *ui;
-	register int len = 0;
+	register int len = m->m_pkthdr.len;
 
 	/*
 	 * Calculate data length and get a mbuf
 	 * for UDP and IP headers.
 	 */
-	for (m = m0; m; m = m->m_next)
-		len += m->m_len;
-	MGET(m, M_DONTWAIT, MT_HEADER);
-	if (m == 0) {
-		m_freem(m0);
-		return (ENOBUFS);
-	}
+	M_PREPEND(m, sizeof(struct udpiphdr), M_WAIT);
 
 	/*
 	 * Fill in mbuf with extended UDP header
 	 * and addresses and length put into network format.
 	 */
-	m->m_off = MMAXOFF - sizeof (struct udpiphdr);
-	m->m_len = sizeof (struct udpiphdr);
-	m->m_next = m0;
 	ui = mtod(m, struct udpiphdr *);
 	ui->ui_next = ui->ui_prev = 0;
 	ui->ui_x1 = 0;
@@ -254,10 +243,10 @@ u_long	udp_sendspace = 2048;		/* really max datagram size */
 u_long	udp_recvspace = 4 * (1024+sizeof(struct sockaddr_in)); /* 4 1K dgrams */
 
 /*ARGSUSED*/
-udp_usrreq(so, req, m, nam, rights)
+udp_usrreq(so, req, m, nam, rights, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *rights, *control;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
