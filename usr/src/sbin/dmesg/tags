@@ -1,0 +1,4 @@
+Mdmesg	dmesg.c	/^main(argc, argv)$/
+err	dmesg.c	/^err(fmt, va_alist)$/
+usage	dmesg.c	/^usage()$/
+vputc	dmesg.c	/^vputc(ch)$/

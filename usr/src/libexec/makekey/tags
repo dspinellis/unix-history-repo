@@ -1,0 +1,3 @@
+Mmakekey	makekey.c	/^main()$/
+error	makekey.c	/^error()$/
+get	makekey.c	/^get(bp, len)$/

@@ -1,0 +1,15 @@
+Mmountd	mountd.c	/^main(argc, argv)$/
+add_mlist	mountd.c	/^void add_mlist(hostp, dirp)$/
+del_mlist	mountd.c	/^void del_mlist(hostp, dirp)$/
+do_opt	mountd.c	/^do_opt(cpopt, fep, ep, exflagsp, rootuidp)$/
+free_exp	mountd.c	/^free_exp(ep)$/
+get_exportlist	mountd.c	/^get_exportlist()$/
+get_mountlist	mountd.c	/^void get_mountlist()$/
+mntsrv	mountd.c	/^mntsrv(rqstp, transp)$/
+nextfield	mountd.c	/^nextfield(cp, endcp)$/
+send_umntall	mountd.c	/^send_umntall()$/
+umntall_each	mountd.c	/^umntall_each(resultsp, raddr)$/
+xdr_dir	mountd.c	/^xdr_dir(xdrsp, dirp)$/
+xdr_explist	mountd.c	/^xdr_explist(xdrsp, cp)$/
+xdr_fhs	mountd.c	/^xdr_fhs(xdrsp, nfh)$/
+xdr_mlist	mountd.c	/^xdr_mlist(xdrsp, cp)$/
