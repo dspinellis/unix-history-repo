@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.11 (Berkeley) %G%
+ *	@(#)trap.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -163,7 +163,6 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 		int rv;
 		vm_prot_t ftype;
 		extern vm_map_t kernel_map;
-		unsigned nss,v;
 
 		va = trunc_page((vm_offset_t)eva);
 		/*
@@ -183,50 +182,14 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 		else
 			ftype = VM_PROT_READ;
 
-#ifdef DEBUG
-		if (map == kernel_map && va == 0) {
-			printf("trap: bad kernel access at %x\n", va);
-			goto we_re_toast;
-		}
-#endif
-		/*
-		 * XXX: rude hack to make stack limits "work"
-		 */
-		nss = 0;
-		if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
-			nss = clrnd(btoc(USRSTACK-(unsigned)va));
-			if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-				rv = KERN_FAILURE;
-				goto nogo;
-			}
-		}
+		rv = user_page_fault(p, map, va, ftype, type);
 
-		/* check if page table is mapped, if not, fault it first */
-#define pde_v(v) (PTD[((v)>>PD_SHIFT)&1023].pd_v)
-		if (!pde_v(va)) {
-			v = trunc_page(vtopte(va));
-			rv = vm_fault(map, v, ftype, FALSE);
-			if (rv != KERN_SUCCESS) goto nogo;
-			/* check if page table fault, increment wiring */
-			vm_map_pageable(map, v, round_page(v+1), FALSE);
-		} else v=0;
-		rv = vm_fault(map, va, ftype, FALSE);
 		if (rv == KERN_SUCCESS) {
-			/*
-			 * XXX: continuation of rude stack hack
-			 */
-			if (nss > vm->vm_ssize)
-				vm->vm_ssize = nss;
-			va = trunc_page(vtopte(va));
-			/* for page table, increment wiring
-			   as long as not a page table fault as well */
-			if (!v && type != T_PAGEFLT)
-			  vm_map_pageable(map, va, round_page(va+1), FALSE);
 			if (type == T_PAGEFLT)
 				return;
 			goto out;
 		}
-nogo:
+
 		if (type == T_PAGEFLT) {
 			if (curpcb->pcb_onfault)
 				goto copyfault;
@@ -428,4 +391,124 @@ done:
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);
 #endif
+}
+
+int
+user_page_fault (p, map, addr, ftype, type)
+struct proc *p;
+vm_map_t map;
+caddr_t addr;
+vm_prot_t ftype;
+int type;
+{
+	struct vmspace *vm;
+	vm_offset_t va;
+	int rv;
+	extern vm_map_t kernel_map;
+	unsigned nss, v;
+
+	vm = p->p_vmspace;
+
+	va = trunc_page((vm_offset_t)addr);
+
+	/*
+	 * XXX: rude hack to make stack limits "work"
+	 */
+	nss = 0;
+	if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
+		nss = clrnd(btoc(USRSTACK - (unsigned)va));
+		if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur))
+			return (KERN_FAILURE);
+	}
+
+	/* check if page table is mapped, if not, fault it first */
+#define pde_v(v) (PTD[((v)>>PD_SHIFT)&1023].pd_v)
+	if (!pde_v(va)) {
+		v = trunc_page(vtopte(va));
+		if ((rv = vm_fault(map, v, ftype, FALSE)) != KERN_SUCCESS)
+			return (rv);
+		/* check if page table fault, increment wiring */
+		vm_map_pageable(map, v, round_page(v+1), FALSE);
+	} else
+		v = 0;
+
+	if ((rv = vm_fault(map, va, ftype, FALSE)) != KERN_SUCCESS)
+		return (rv);
+
+	/*
+	 * XXX: continuation of rude stack hack
+	 */
+	if (nss > vm->vm_ssize)
+		vm->vm_ssize = nss;
+	va = trunc_page(vtopte(va));
+	/*
+	 * for page table, increment wiring
+	 * as long as not a page table fault as well
+	 */
+	if (!v && type != T_PAGEFLT)
+		vm_map_pageable(map, va, round_page(va+1), FALSE);
+	return (KERN_SUCCESS);
+}
+
+int
+user_write_fault (addr)
+void *addr;
+{
+	if (user_page_fault (curproc, &curproc->p_vmspace->vm_map,
+			     addr, VM_PROT_READ | VM_PROT_WRITE,
+			     T_PAGEFLT) == KERN_SUCCESS)
+		return (0);
+	else
+		return (EFAULT);
+}
+
+int
+copyout (from, to, len)
+void *from;
+void *to;
+u_int len;
+{
+	u_int *pte, *pde;
+	int rest_of_page;
+	int thistime;
+	int err;
+
+	/* be very careful not to overflow doing this check */
+	if (to >= (void *)USRSTACK || (void *)USRSTACK - to < len)
+		return (EFAULT);
+
+	pte = (u_int *)vtopte (to);
+	pde = (u_int *)vtopte (pte);
+
+	rest_of_page = PAGE_SIZE - ((int)to & (PAGE_SIZE - 1));
+
+	while (1) {
+		thistime = len;
+		if (thistime > rest_of_page)
+			thistime = rest_of_page;
+
+		if ((*pde & PG_V) == 0
+		    || (*pte & (PG_V | PG_UW)) != (PG_V | PG_UW))
+			if (err = user_write_fault (to))
+				return (err);
+
+		bcopy (from, to, thistime);
+
+		len -= thistime;
+
+		/*
+		 * Break out as soon as possible in the common case
+		 * that the whole transfer is containted in one page.
+		 */
+		if (len == 0)
+			break;
+
+		from += thistime;
+		to += thistime;
+		pte++;
+		pde = (u_int *)vtopte (pte);
+		rest_of_page = PAGE_SIZE;
+	}
+
+	return (0);
 }
