@@ -1,0 +1,158 @@
+This directory contains the GNU DIFF and DIFF3 utilities, version 1.15.
+See file COPYING for copying conditions.  To compile and install on
+system V, you must edit the makefile according to comments therein.
+
+Report bugs to bug-gnu-utils@prep.ai.mit.edu
+
+Version 1.15 has the following new features; please see below for details.
+
+   -L (+file-label) option
+   -u (+unified) option
+   -a and -m options for diff3
+   Most output styles can represent incomplete input lines.
+   `Text' is defined by ISO 8859.
+   diff3 exit status 0 means success, 1 means overlaps, 2 means trouble.
+
+ 
+This version of diff provides all the features of BSD's diff.
+It has these additional features:
+
+   An input file may end in a non-newline character.  If so, its last
+   line is called an incomplete line and is distinguished on output
+   from a full line.  In the default, -c, and -u output styles, an
+   incomplete output line is followed by a diagnostic line that starts
+   with \.  With -n, an incomplete line is output without a trailing
+   newline.  Other output styles (-D, -e, -f) cannot represent an
+   incomplete line, so they pretend that there was a newline, and -e and -f
+   also print an error message.  For example, suppose F and G are one-byte
+   files that contain just ``f'' and ``g'', respectively.
+
+   Then ``diff F G'' outputs
+
+	1c1
+	< f
+	\ No newline at end of file
+	---
+	> g
+	\ No newline at end of file
+
+   (The exact diagnostic message may differ, e.g. for non-English locales.)
+   ``diff -n F G'' outputs the following without a trailing newline:
+
+	d1 1
+	a1 1
+	g
+
+   ``diff -e F G'' sends two diagnostics to stderr and the following to stdout:
+
+	1c
+	g
+	.
+
+   A file is considered to be text if its first characters are all in the
+   ISO 8859 character set; BSD's diff uses Ascii.
+
+   GNU DIFF has the following additional options:
+
+   -a	Always treat files as text and compare them line-by-line,
+	even if they do not appear to be text.
+
+   -B	ignore changes that just insert or delete blank lines.
+
+   -C #
+	request -c format and specify number of context lines.
+
+   -F regexp
+	in context format, for each unit of differences, show some of
+	the last preceding line that matches the specified regexp.
+
+   -H	use heuristics to speed handling of large files that
+	have numerous scattered small changes.  The algorithm becomes
+        asymptotically linear for such files!
+	
+   -I regexp
+	ignore changes that just insert or delete lines that
+	match the specified regexp.
+
+   -L label
+	Use the specified label in file header lines output by the -c option.
+	This option may be given zero, one, or two times,
+	to affect neither label, just the first file's label, or both labels.
+	A file's default label is its name, a tab, and its modification date.
+
+   -N	in directory comparison, if a file is found in only one directory,
+	treat it as present but empty in the other directory.
+
+   -p	equivalent to -c -F'^[_a-zA-Z]'.  This is useful for C code
+	because it shows which function each change is in.
+
+   -T	print a tab rather than a space before the text of a line
+	in normal or context format.  This causes the alignment
+	of tabs in the line to look normal.
+
+   -u[#]
+	produce unified style output with # context lines (default 3).
+	This style is like -c, but it is more compact because context
+	lines are printed only once.  Lines from just the first file
+	are marked '-'; lines from just the second file are marked '+'.
+
+This version of diff3 has all of BSD diff3's features, with the following
+additional features.
+
+   An input file may end in a non-newline character.  With the -m option,
+   an incomplete last line stays incomplete.  Other output styles treat
+   incomplete lines like diff.
+
+   The file name '-' denotes the standard input.  It can appear at most once.
+
+   diff3 has the following additional options:
+
+   -a	Always treat files as text and compare them line-by-line,
+	even if they do not appear to be text.
+
+   -i	Include 'w' and 'q' commands at the end of the output, to write out
+	the changed file, thus emulating system V behavior.  One of the edit
+	script options -e, -E, -x, -X, -3 must also be specified.
+
+   -m	Apply the edit script to the first file and send the result to
+	standard output.  Unlike piping diff3's output to ed(1), this works
+	even for binary files and incomplete lines.  -E is assumed if no edit
+	script option is specified.  This option is incompatible with -i.
+
+   -L label
+	Use the specified label for lines output by the -E and -X options,
+	one of which must also be specified.  This option may be given zero,
+	one, or two times; the first label marks <<<<<<< lines and the second
+	marks >>>>>>> lines.  The default labels are the names of the first and
+	third files on the command line.  Thus ``diff3 -L X -L Z -E A B C''
+	acts like ``diff3 -E A B C'', except that the output looks like it
+	came from files named X and Z rather than from files named A and C.
+
+    Exit status 0 means success, 1 means overlaps were found and -E or -X was
+    specified, and 2 means trouble.
+
+
+
+GNU DIFF was written by Mike Haertel, David Hayes, Richard Stallman
+and Len Tower.  The basic algorithm is described in: "An O(ND)
+Difference Algorithm and its Variations", Eugene Myers, Algorithmica
+Vol. 1 No. 2, 1986, p 251.
+
+Many bugs were fixed by Paul Eggert.  The unified diff idea and format
+are from Wayne Davison.
+
+Suggested projects for improving GNU DIFF:
+
+* Handle very large files by not keeping the entire text in core.
+
+One way to do this is to scan the files sequentally to compute hash
+codes of the lines and put the lines in equivalence classes based only
+on hash code.  Then compare the files normally.  This will produce
+some false matches.
+
+Then scan the two files sequentially again, checking each match to see
+whether it is real.  When a match is not real, mark both the
+"matching" lines as changed.  Then build an edit script as usual.
+
+The output routines would have to be changed to scan the files
+sequentially looking for the text to print.
