@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -45,7 +45,6 @@
 #include "mount.h"
 #include "mbuf.h"
 #include "errno.h"
-#include "strings.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "xdr_subs.h"
