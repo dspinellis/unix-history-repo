@@ -1,4 +1,4 @@
-.\"	@(#)m3	5.1 (Berkeley) %G%
+.\"	@(#)m3	6.1 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -71,13 +71,13 @@ specifies a right-adjusted string with the string \fIxxx\fR centered
 in the remaining space.
 .h1
 .bt
-\fB&ta\fI|Nt|...\fR	0.8;|0.5in	none	E,\fBm\fR	\
+\fB&ta\fI|Nt|...\fR	8n;|0.5in	none	E,\fBm\fR	\
 Set tab stops and types.
 \fIt=\fBR\fR, right adjusting;
 \fIt=\fBC\fR, centering;
 \fIt\fR absent, left adjusting.
 \*(TR tab stops are preset every 0.5in.;
-\*(NR every 0.8in.
+\*(NR every 8 character widths.
 The stop values are separated by spaces, and
 a value preceded by \fB+\fR
 is treated as an increment to the previous stop value.
@@ -164,7 +164,7 @@ A generalized overstriking function is described in \(sc12.1.
 \*(NR automatically underlines
 characters in the \fIunderline\fR font,
 specifiable with \fBuf\fR,
-normally that on font position 2 (normally Times Italic, see \(sc2.2).
+normally Times Italic on font position 2 (see \(sc2.2).
 In addition to \fBft\fR and \fB\ef\fIF\fR,
 the underline font may be selected by \fBul\fR and \fBcu\fR.
 Underlining is restricted to an output-device-dependent
@@ -338,7 +338,7 @@ Overstriking.
 Automatically centered overstriking of up to nine characters
 is provided by the \fIoverstrike\fR function
 \fB\eo\'\fIstring\fB\|\'\fR.
-The characters in \fIstring\fR overprinted with centers aligned; the total width
+The characters in \fIstring\fR are overprinted with centers aligned; the total width
 is that of the widest character.
 \fIstring\fR should \fInot\fR contain local vertical motion.
 As examples,
@@ -356,7 +356,7 @@ constructed box \fB\(br\z\(rn\(ul\(br\fR\|.
 .sc
 Large Brackets.
 The Special Mathematical Font contains a number of bracket construction pieces
-(\|\|\(lt\|\|\(lb\|\|\(rt\|\|\(rb\|\|\(lk\|\|\(rk\|\|\(bv\|\|\(lf\|\|\(rf\|\|\(lc\|\|\(rc\|\|)
+(\|\|\|\(lt\|\|\|\(lb\|\|\|\(rt\|\|\|\(rb\|\|\|\(lk\|\|\|\(rk\|\|\|\(bv\|\|\|\(lf\|\|\|\(rf\|\|\|\(lc\|\|\|\(rc\|\|)
 that can be combined into various bracket styles.
 The function \fB\eb\'\fIstring\fB\|\'\fR may be used to pile
 up vertically the characters in \fIstring\fR
@@ -419,7 +419,7 @@ or one to draw a box around a string
 such that
 .x1
 .ftB
-&ul "underlined words"
+&us "underlined words"
 .ftR
 .x2
 and
