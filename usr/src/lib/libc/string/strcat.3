@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strcat.3	5.1 (Berkeley) %G%
+.\"	@(#)strcat.3	5.2 (Berkeley) %G%
 .\"
 .TH STRCAT 3 ""
 .UC 4
@@ -19,6 +19,9 @@ strcat \- concatenate strings
 
 char *
 strcat(char *s, const char *append);
+
+char *
+strncat(char *s, const char *append, size_t count);
 .ft R
 .fi
 .SH DESCRIPTION
@@ -33,8 +36,15 @@ must have sufficient space to hold the result.
 .B Strcat
 returns the pointer
 .IR s .
+.PP
+.B Strncat
+appends at most
+.I count
+characters.
 .SH SEE ALSO
 strncat(3)
 .SH STANDARDS
 .B Strcat
-conforms to ANSI X3.159-1989 (``ANSI C'').
+and
+.B strncat
+conform to ANSI X3.159-1989 (``ANSI C'').
