@@ -1,3 +1,0 @@
-Mvdmp	vdmp.c	/^main(argc, argv)$/
-account	vdmp.c	/^account(who, from, acctfile)$/
-putplot	vdmp.c	/^putplot()$/

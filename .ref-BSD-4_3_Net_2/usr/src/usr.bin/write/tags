@@ -1,8 +1,0 @@
-Mwrite	write.c	/^main(argc, argv)$/
-PUTC	write.c	/^#define	PUTC(c)	if (putchar(c) == EOF) goto err;$/
-do_write	write.c	/^do_write(tty, mytty, myuid)$/
-done	write.c	/^done()$/
-search_utmp	write.c	/^search_utmp(user, tty, mytty, myuid)$/
-term_chk	write.c	/^term_chk(tty, msgsokP, atimeP, showerror)$/
-utmp_chk	write.c	/^utmp_chk(user, tty)$/
-wr_fputs	write.c	/^wr_fputs(s)$/

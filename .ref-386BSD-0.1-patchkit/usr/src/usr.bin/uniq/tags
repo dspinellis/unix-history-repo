@@ -1,5 +1,0 @@
-Muniq	uniq.c	/^main (argc,argv)$/
-file	uniq.c	/^file(name, mode)$/
-show	uniq.c	/^show(ofp, str)$/
-skip	uniq.c	/^skip(str)$/
-usage	uniq.c	/^usage()$/

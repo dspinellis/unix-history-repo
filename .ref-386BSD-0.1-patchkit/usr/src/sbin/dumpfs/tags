@@ -1,4 +1,0 @@
-Mdumpfs	dumpfs.c	/^main(argc, argv)$/
-dumpcg	dumpfs.c	/^dumpcg(name, c)$/
-dumpfs	dumpfs.c	/^dumpfs(name)$/
-pbits	dumpfs.c	/^pbits(cp, max)$/

@@ -1,6 +1,0 @@
-	
-# this bit can be locally configured
-	/^telephoneNumber/ {
-		phone = substr($0, n)
-	} 
-	

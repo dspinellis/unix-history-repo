@@ -1,2 +1,0 @@
-Mwhat	what.c	/^main(argc, argv)$/
-search	what.c	/^search()$/

@@ -1,3 +1,0 @@
-Mcaesar	caesar.c	/^main(argc, argv)$/
-ROTATE	caesar.c	/^#define	ROTATE(ch, perm) \\$/
-printit	caesar.c	/^printit(arg)$/
