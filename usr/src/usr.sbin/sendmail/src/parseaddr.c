@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.8		%G%);
+SCCSID(@(#)parseaddr.c	4.9		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -52,6 +52,7 @@ parseaddr(addr, a, copyf, delim)
 {
 	register char **pvp;
 	register struct mailer *m;
+	char pvpbuf[PSBUFSIZE];
 	extern char **prescan();
 	extern ADDRESS *buildaddr();
 
@@ -65,7 +66,7 @@ parseaddr(addr, a, copyf, delim)
 		printf("\n--parseaddr(%s)\n", addr);
 # endif DEBUG
 
-	pvp = prescan(addr, delim);
+	pvp = prescan(addr, delim, pvpbuf);
 	if (pvp == NULL)
 		return (NULL);
 
@@ -187,6 +188,8 @@ loweraddr(a)
 **		delim -- the delimiter for the address, normally
 **			'\0' or ','; \0 is accepted in any case.
 **			If '\t' then we are reading the .cf file.
+**		pvpbuf -- place to put the saved text -- note that
+**			the pointers are static.
 **
 **	Returns:
 **		A pointer to a vector of tokens.
@@ -226,9 +229,10 @@ static short StateTab[NSTATES][NSTATES] =
 char	*DelimChar;		/* set to point to the delimiter */
 
 char **
-prescan(addr, delim)
+prescan(addr, delim, pvpbuf)
 	char *addr;
 	char delim;
+	char pvpbuf[];
 {
 	register char *p;
 	register char *q;
@@ -240,14 +244,13 @@ prescan(addr, delim)
 	char *tok;
 	int state;
 	int newstate;
-	static char buf[MAXNAME+MAXATOM];
 	static char *av[MAXATOM+1];
 	extern int errno;
 
 	/* make sure error messages don't have garbage on them */
 	errno = 0;
 
-	q = buf;
+	q = pvpbuf;
 	bslashmode = FALSE;
 	cmntcnt = 0;
 	anglecnt = 0;
@@ -274,7 +277,7 @@ prescan(addr, delim)
 			if (c != NOCHAR)
 			{
 				/* see if there is room */
-				if (q >= &buf[sizeof buf - 5])
+				if (q >= &pvpbuf[PSBUFSIZE - 5])
 				{
 					usrerr("Address too long");
 					DelimChar = p;
@@ -678,48 +681,114 @@ rewrite(pvp, ruleset)
 				dolookup = TRUE;
 
 			/* see if there is substitution here */
-			if (*rp != MATCHREPL)
+			if (*rp == MATCHREPL)
 			{
-				if (avp >= &npvp[MAXATOM])
+				/* substitute from LHS */
+				m = &mlist[rp[1] - '1'];
+				if (m >= mlp)
 				{
 				  toolong:
-					syserr("rewrite: expansion too long");
+					syserr("rewrite: ruleset %d: replacement out of bounds", ruleset);
 					return;
 				}
-				*avp++ = rp;
-				continue;
-			}
-
-			/* substitute from LHS */
-			m = &mlist[rp[1] - '1'];
-			if (m >= mlp)
-			{
-				syserr("rewrite: ruleset %d: replacement out of bounds", ruleset);
-				return;
-			}
 # ifdef DEBUG
-			if (tTd(21, 15))
-			{
-				printf("$%c:", rp[1]);
+				if (tTd(21, 15))
+				{
+					printf("$%c:", rp[1]);
+					pp = m->first;
+					while (pp <= m->last)
+					{
+						printf(" %x=\"", *pp);
+						(void) fflush(stdout);
+						printf("%s\"", *pp++);
+					}
+					printf("\n");
+				}
+# endif DEBUG
 				pp = m->first;
 				while (pp <= m->last)
 				{
-					printf(" %x=\"", *pp);
-					(void) fflush(stdout);
-					printf("%s\"", *pp++);
+					if (avp >= &npvp[MAXATOM])
+					{
+						syserr("rewrite: expansion too long");
+						return;
+					}
+					*avp++ = *pp++;
 				}
-				printf("\n");
 			}
-# endif DEBUG
-			pp = m->first;
-			while (pp <= m->last)
+			else
 			{
+				/* vanilla replacement */
 				if (avp >= &npvp[MAXATOM])
 					goto toolong;
-				*avp++ = *pp++;
+				*avp++ = rp;
 			}
 		}
 		*avp++ = NULL;
+
+		/*
+		**  Check for any hostname lookups.
+		*/
+
+		for (rvp = npvp; *rvp != NULL; rvp++)
+		{
+			char **hbrvp;
+			char **xpvp;
+			int trsize;
+			int i;
+			char buf[MAXATOM + 1];
+			char *pvpb1[MAXATOM + 1];
+			static char pvpbuf[PSBUFSIZE];
+
+			if (**rvp != HOSTBEGIN)
+				continue;
+
+			/*
+			**  Got a hostname lookup.
+			**
+			**	This could be optimized fairly easily.
+			*/
+
+			hbrvp = rvp;
+
+			/* extract the match part */
+			while (*++rvp != NULL && **rvp != HOSTEND)
+				continue;
+			if (*rvp != NULL)
+				*rvp++ = NULL;
+
+			/* save the remainder of the input string */
+			trsize = (int) (avp - rvp + 1) * sizeof *rvp;
+			bcopy((char *) rvp, (char *) pvpb1, trsize);
+
+			/* look it up */
+			cataddr(++hbrvp, buf, sizeof buf);
+			maphostname(buf, sizeof buf);
+
+			/* scan the new host name */
+			xpvp = prescan(buf, '\0', pvpbuf);
+			if (xpvp == NULL)
+			{
+				syserr("rewrite: cannot prescan canonical hostname: %s", buf);
+				return (NULL);
+			}
+
+			/* append it to the token list */
+			rvp = --hbrvp;
+			while ((*rvp++ = *xpvp++) != NULL)
+				if (rvp >= &npvp[MAXATOM])
+					goto toolong;
+
+			/* restore the old trailing information */
+			for (xpvp = pvpb1, rvp--; (*rvp++ = *xpvp++) != NULL; )
+				if (rvp >= &npvp[MAXATOM])
+					goto toolong;
+		}
+
+		/*
+		**  Check for subroutine calls.
+		*/
+
 
 		/*
 		**  Do hostname lookup if requested.
@@ -1061,6 +1130,7 @@ remotename(name, m, senderaddress, canonical)
 	char *oldg = macvalue('g', CurEnv);
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
+	char pvpbuf[PSBUFSIZE];
 	extern char **prescan();
 	extern char *crackaddr();
 
@@ -1091,7 +1161,7 @@ remotename(name, m, senderaddress, canonical)
 	**	domain will be appended.
 	*/
 
-	pvp = prescan(name, '\0');
+	pvp = prescan(name, '\0', pvpbuf);
 	if (pvp == NULL)
 		return (name);
 	rewrite(pvp, 3);

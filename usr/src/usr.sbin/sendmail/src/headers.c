@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	4.4.1.1		%G%);
+SCCSID(@(#)headers.c	4.5		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -733,10 +733,11 @@ commaize(h, p, fp, oldstyle, m)
 		for (;;)
 		{
 			char *oldp;
+			char pvpbuf[PSBUFSIZE];
 			extern bool isatword();
 			extern char **prescan();
 
-			(void) prescan(p, oldstyle ? ' ' : ',');
+			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf);
 			p = DelimChar;
 
 			/* look to see if we have an at sign */

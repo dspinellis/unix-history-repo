@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.7		%G%);
+SCCSID(@(#)readcf.c	4.8		%G%);
 
 /*
 **  READCF -- read control file.
@@ -59,6 +59,7 @@ readcf(cfname, safe)
 	extern char **prescan();
 	extern char **copyplist();
 	char exbuf[MAXLINE];
+	char pvpbuf[PSBUFSIZE];
 	extern char *fgetfolded();
 	extern char *munchstring();
 
@@ -123,7 +124,7 @@ readcf(cfname, safe)
 			/* expand and save the LHS */
 			*p = '\0';
 			expand(&buf[1], exbuf, &exbuf[sizeof exbuf], CurEnv);
-			rwp->r_lhs = prescan(exbuf, '\t');
+			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf);
 			if (rwp->r_lhs != NULL)
 				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
 
@@ -135,7 +136,7 @@ readcf(cfname, safe)
 				p++;
 			*p = '\0';
 			expand(q, exbuf, &exbuf[sizeof exbuf], CurEnv);
-			rwp->r_rhs = prescan(exbuf, '\t');
+			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf);
 			if (rwp->r_rhs != NULL)
 				rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
 			break;

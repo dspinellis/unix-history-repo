@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.10		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.11		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	4.10		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.10		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.11		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -321,8 +321,44 @@ myhostname(hostbuf, size)
 	else
 		return (NULL);
 }
+/*
+**  MAPHOSTNAME -- turn a hostname into canonical form
+**
+**	Parameters:
+**		hbuf -- a buffer containing a hostname.
+**		hbsize -- the size of hbuf.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Looks up the host specified in hbuf.  If it is not
+**		the canonical name for that host, replace it with
+**		the canonical name.  If the name is unknown, or it
+**		is already the canonical name, leave it unchanged.
+*/
 
+maphostname(hbuf, hbsize)
+	char *hbuf;
+	int hbsize;
+{
+	register struct hostent *hp;
+	extern struct hostent *gethostbyname();
+
+	makelower(hbuf);
+	hp = gethostbyname(hbuf);
+	if (hp != NULL)
+	{
+		int i = strlen(hp->h_name);
+
+		if (i >= hbsize)
+			hp->h_name[--i] = '\0';
+		strcpy(hbuf, hp->h_name);
+	}
+}
+
 # else DAEMON
+/* code for systems without sophisticated networking */
 
 /*
 **  MYHOSTNAME -- stub version for case of no daemon code.
@@ -349,5 +385,30 @@ myhostname(hostbuf, size)
 	}
 	return (NULL);
 }
+/*
+**  MAPHOSTNAME -- turn a hostname into canonical form
+**
+**	Parameters:
+**		hbuf -- a buffer containing a hostname.
+**		hbsize -- the size of hbuf.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Looks up the host specified in hbuf.  If it is not
+**		the canonical name for that host, replace it with
+**		the canonical name.  If the name is unknown, or it
+**		is already the canonical name, leave it unchanged.
+*/
+
+/*ARGSUSED*/
+maphostname(hbuf, hbsize)
+	char *hbuf;
+	int hbsize;
+{
+	return;
+}
+
 
 #endif DAEMON
