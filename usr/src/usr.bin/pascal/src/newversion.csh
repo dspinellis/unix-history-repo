@@ -1,11 +1,11 @@
 #!/bin/csh -f
 #
-# Copyright (c) 1980 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1980, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newversion.csh	5.2 (Berkeley) %G%
+#	@(#)newversion.csh	8.1 (Berkeley) %G%
 #
 
 #	update the version number of your argument makefile, etc.
