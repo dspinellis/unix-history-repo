@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.18 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,9 +18,12 @@
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/ufs_extern.h>
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+
+struct buf *lfs_fakebuf __P((struct vnode *, int, size_t, caddr_t));
 
 /*
  * lfs_markv:
@@ -42,125 +45,140 @@ lfs_markv(p, uap, retval)
 		fsid_t fsid;		/* file system */
 		BLOCK_INFO *blkiov;	/* block array */
 		int blkcnt;		/* count of block array entries */
-		INODE_INFO *inoiov;	/* inode array */
-		int inocnt;		/* count of inode array entries */
 	} *uap;
 	int *retval;
 {
+	struct segment *sp;
 	BLOCK_INFO *blkp;
 	IFILE *ifp;
-	INODE_INFO *inop;
-	struct buf *bp;
+	struct buf *bp, **bpp;
 	struct inode *ip;
 	struct lfs *fs;
 	struct mount *mntp;
 	struct vnode *vp;
 	void *start;
 	ino_t lastino;
-	daddr_t daddr;
+	daddr_t b_daddr, v_daddr;
 	u_long bsize;
 	int cnt, error;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-
 	if ((mntp = getvfs(&uap->fsid)) == NULL)
 		return (EINVAL);
+	/* Initialize a segment. */
+	sp = malloc(sizeof(struct segment), M_SEGMENT, M_WAITOK);
+	sp->bpp = malloc(((LFS_SUMMARY_SIZE - sizeof(SEGSUM)) /
+	    sizeof(daddr_t) + 1) * sizeof(struct buf *), M_SEGMENT, M_WAITOK);
+	sp->seg_flags = SEGM_CKP;
 
 	cnt = uap->blkcnt;
 	start = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error = copyin(uap->blkiov, start, cnt * sizeof(BLOCK_INFO))) {
-		free(start, M_SEGMENT);
-		return (error);
-	}
+	if (error = copyin(uap->blkiov, start, cnt * sizeof(BLOCK_INFO)))
+		goto err1;
 
-	/*
-	 * Mark blocks/inodes dirty.  Note that errors are mostly ignored.  If
-	 * we can't get the info, the block is probably not all that useful,
-	 * and hopefully subsequent calls from the cleaner will fix everything.
-	 */
+	/* Mark blocks/inodes dirty.  */
 	fs = VFSTOUFS(mntp)->um_lfs;
 	bsize = fs->lfs_bsize;
-	for (lastino = LFS_UNUSED_INUM, blkp = start; cnt--; ++blkp) {
+	error = 0;
+
+	lfs_seglock(fs);
+	lfs_initseg(fs, sp);
+	sp->seg_flags |= SEGM_CLEAN;
+	for (v_daddr = LFS_UNUSED_DADDR, lastino = LFS_UNUSED_INUM,
+	    blkp = start; cnt--; ++blkp) {
 		/*
 		 * Get the IFILE entry (only once) and see if the file still
 		 * exists.
 		 */
 		if (lastino != blkp->bi_inode) {
+			if (lastino != LFS_UNUSED_INUM) {
+				lfs_updatemeta(sp, vp);
+				lfs_writeinode(fs, sp, ip);
+				vput(vp);
+			}
 			lastino = blkp->bi_inode;
 			LFS_IENTRY(ifp, fs, blkp->bi_inode, bp);
-			daddr = ifp->if_daddr;
+			v_daddr = ifp->if_daddr;
 			brelse(bp);
-			if (daddr == LFS_UNUSED_DADDR)
+			if (v_daddr == LFS_UNUSED_DADDR)
 				continue;
-		}
-
-		/*
-		 * Get the vnode/inode.  If the inode modification time is
-		 * earlier than the segment in which the block was found then
-		 * they have to be valid, skip other checks.
-		 */
-		if (VFS_VGET(mntp, blkp->bi_inode, &vp))
+			/* Get the vnode/inode. */
+			if (lfs_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
+			    blkp->bi_lbn == LFS_UNUSED_LBN ? NULL :
+			    blkp->bi_bp)) {
+#ifdef DIAGNOSTIC
+				printf("lfs_markv: VFS_VGET failed (%d)\n",
+				    blkp->bi_inode);
+#endif
+				v_daddr == LFS_UNUSED_DADDR;
+				continue;
+			}
+			ip = VTOI(vp);
+		} else if (v_daddr == LFS_UNUSED_DADDR)
 			continue;
-		ip = VTOI(vp);
 
+		/* If this BLOCK_INFO didn't contain a block, keep going. */
+		if (blkp->bi_lbn == LFS_UNUSED_LBN)
+			continue;
 		/*
 		 * If modify time later than segment create time, see if the
 		 * block has been replaced.
 		 */
 		if (ip->i_mtime.ts_sec > blkp->bi_segcreate &&
-		    (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr) ||
-		    daddr != blkp->bi_daddr)) {
-			vput(vp);
-			continue;
-		}
-
-		/* Get the block (from core or the cleaner) and write it. */
-		bp = getblk(vp, blkp->bi_lbn, bsize);
-		vput(vp);
-		if (!(bp->b_flags & B_CACHE) &&
-		    (error = copyin(blkp->bi_bp, bp->b_un.b_addr, bsize))) {
-			brelse(bp);
-			free(start, M_SEGMENT);
-			return (error);
-		}
-		VOP_BWRITE(bp);
-	}
-	free(start, M_SEGMENT);
-
-	cnt = uap->inocnt;
-	start = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
-	if (error = copyin(uap->inoiov, start, cnt * sizeof(INODE_INFO))) {
-		free(start, M_SEGMENT);
-		return (error);
-	}
-
-	for (inop = start; cnt--; ++inop) {
-		if (inop->ii_inode == LFS_IFILE_INUM)
-			daddr = fs->lfs_idaddr;
-		else {
-			LFS_IENTRY(ifp, fs, inop->ii_inode, bp);
-			daddr = ifp->if_daddr;
-			brelse(bp);
-		}
-
-		if (daddr != inop->ii_daddr)
+		    (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr) ||
+		    b_daddr != blkp->bi_daddr))
 			continue;
 		/*
-		 * XXX
-		 * This is grossly inefficient since the cleaner just handed
-		 * us a copy of the inode and we're going to have to seek
-		 * to get our own.  The fix requires creating a version of
-		 * lfs_vget that takes the copy and uses it instead of reading
-		 * from disk, if it's not already in the cache.
+		 * If we got to here, then we are keeping the block.  If it
+		 * is an indirect block, we want to actually put it in the
+		 * buffer cache so that it can be updated in the finish_meta
+		 * section.  If it's not, we need to allocate a fake buffer
+		 * so that writeseg can perform the copyin and write the buffer.
 		 */
-		if (!VFS_VGET(mntp, inop->ii_inode, &vp)) {
-			VTOI(vp)->i_flag |= IMOD;
-			vput(vp);
-		}	
+		if (blkp->bi_lbn >= 0)	/* Data Block */
+			bp = lfs_fakebuf(vp, blkp->bi_lbn, bsize,
+			    blkp->bi_bp);
+		else {
+			bp = getblk(vp, blkp->bi_lbn, bsize);
+			if (!(bp->b_flags & B_CACHE) &&
+			    (error = copyin(blkp->bi_bp, bp->b_un.b_addr,
+			    bsize)))
+				goto err2;
+			if (error = VOP_BWRITE(bp))
+				goto err2;
+		}
+		lfs_gatherblock(sp, bp, NULL);
 	}
+	lfs_updatemeta(sp, vp);
+	lfs_writeinode(fs, sp, ip);
+	vput(vp);
+	(void) lfs_writeseg(fs, sp);
+	lfs_segunlock(fs);
 	free(start, M_SEGMENT);
-	return (lfs_segwrite(mntp, 1));
+	free(sp->bpp, M_SEGMENT);
+	free(sp, M_SEGMENT);
+	return (error);
+/*
+ * XXX If we come in to error 2, we might have indirect blocks that were
+ * updated and now have bad block pointers.  I don't know what to do
+ * about this.
+ */
+
+err2:	vput(vp);
+	/* Free up fakebuffers */
+	for (bpp = --sp->cbpp; bpp >= sp->bpp; --bpp)
+		if ((*bpp)->b_flags & B_CALL) {
+			brelvp(*bpp);
+			free(*bpp, M_SEGMENT);
+		} else
+			brelse(*bpp);
+	lfs_segunlock(fs);
+err1:
+	free(sp->bpp, M_SEGMENT);
+	free(sp, M_SEGMENT);
+	free(start, M_SEGMENT);
+	return(error);
 }
 
 /*
@@ -190,7 +208,6 @@ lfs_bmapv(p, uap, retval)
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-
 	if ((mntp = getvfs(&uap->fsid)) == NULL)
 		return (EINVAL);
 
@@ -242,25 +259,26 @@ lfs_segclean(p, uap, retval)
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-
 	if ((mntp = getvfs(&uap->fsid)) == NULL)
 		return (EINVAL);
 
 	fs = VFSTOUFS(mntp)->um_lfs;
 
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
+	fs->lfs_avail += fsbtodb(fs, fs->lfs_ssize) - 1;
 	fs->lfs_bfree += (sup->su_nsums * LFS_SUMMARY_SIZE / DEV_BSIZE) +
 	    sup->su_ninos * btodb(fs->lfs_bsize);
 	sup->su_flags &= ~SEGUSE_DIRTY;
 	sup->su_nbytes -= sup->su_nsums * LFS_SUMMARY_SIZE;
 	sup->su_ninos = 0;
 	sup->su_nsums = 0;
-	LFS_UBWRITE(bp);
+	(void) VOP_BWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	++cip->clean;
 	--cip->dirty;
-	LFS_UBWRITE(bp);
+	(void) VOP_BWRITE(bp);
+	wakeup(&fs->lfs_avail);
 	return (0);
 }
 
@@ -291,9 +309,9 @@ lfs_segwait(p, uap, retval)
 	u_long timeout;
 	int error, s;
 
-	if (error = suser(p->p_ucred, &p->p_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag)) {
 		return (error);
-
+}
 #ifdef WHEN_QUADS_WORK
 	if (uap->fsid == (fsid_t)-1)
 		addr = &lfs_allclean_wakeup;
@@ -323,4 +341,113 @@ lfs_segwait(p, uap, retval)
 
 	error = tsleep(addr, PCATCH | PUSER, "segment", timeout);
 	return (error == ERESTART ? EINTR : 0);
+}
+
+/*
+ * VFS_VGET call specialized for the cleaner.  The cleaner already knows the
+ * daddr from the ifile, so don't look it up again.  If the cleaner is
+ * processing IINFO structures, it may have the ondisk inode already, so
+ * don't go retrieving it again.
+ */
+int
+lfs_fastvget(mp, ino, daddr, vpp, dinp)
+	struct mount *mp;
+	ino_t ino;
+	daddr_t daddr;
+	struct vnode **vpp;
+	struct dinode *dinp;
+{
+	register struct inode *ip;
+	struct vnode *vp;
+	struct ufsmount *ump;
+	struct buf *bp;
+	dev_t dev;
+	int error;
+
+	ump = VFSTOUFS(mp);
+	dev = ump->um_dev;
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
+		return (0);
+
+	/* Allocate new vnode/inode. */
+	if (error = lfs_vcreate(mp, ino, &vp)) {
+		*vpp = NULL;
+		return (error);
+	}
+
+	/*
+	 * Put it onto its hash chain and lock it so that other requests for
+	 * this inode will block if they arrive while we are sleeping waiting
+	 * for old data structures to be purged or for the contents of the
+	 * disk portion of this inode to be read.
+	 */
+	ip = VTOI(vp);
+	ufs_ihashins(ip);
+
+	/*
+	 * XXX
+	 * This may not need to be here, logically it should go down with
+	 * the i_devvp initialization.
+	 * Ask Kirk.
+	 */
+	ip->i_lfs = ump->um_lfs;
+
+	/* Read in the disk contents for the inode, copy into the inode. */
+	if (dinp)
+		if (error = copyin(dinp, &ip->i_din, sizeof(struct dinode)))
+			return (error);
+	else {
+		if (error = bread(ump->um_devvp, daddr,
+		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp)) {
+			/*
+			 * The inode does not contain anything useful, so it
+			 * would be misleading to leave it on its hash chain.
+			 * Iput() will return it to the free list.
+			 */
+			ufs_ihashrem(ip);
+
+			/* Unlock and discard unneeded inode. */
+			ufs_iput(ip);
+			brelse(bp);
+			*vpp = NULL;
+			return (error);
+		}
+		ip->i_din = *lfs_ifind(ump->um_lfs, ino, bp->b_un.b_dino);
+		brelse(bp);
+	}
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.  In all
+	 * cases re-init ip, the underlying vnode/inode may have changed.
+	 */
+	if (error = ufs_vinit(mp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
+		ufs_iput(ip);
+		*vpp = NULL;
+		return (error);
+	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->um_devvp;
+	ip->i_flag |= IMOD;
+	++ump->um_lfs->lfs_uinodes;
+	VREF(ip->i_devvp);
+	*vpp = vp;
+	return (0);
+}
+struct buf *
+lfs_fakebuf(vp, lbn, size, uaddr)
+	struct vnode *vp;
+	int lbn;
+	size_t size;
+	caddr_t uaddr;
+{
+	struct buf *bp;
+
+	bp = lfs_newbuf(vp, lbn, 0);
+	bp->b_saveaddr = uaddr;
+	bp->b_bufsize = size;
+	bp->b_bcount = size;
+	bp->b_flags |= B_INVAL;
+	return(bp);
 }
