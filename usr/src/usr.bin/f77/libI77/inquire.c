@@ -1,5 +1,5 @@
 /*
-char id_inquire[] = "@(#)inquire.c	1.2";
+char id_inquire[] = "@(#)inquire.c	1.3";
  *
  * inquire.c - f77 i/o inquire statement routine
  */
@@ -94,10 +94,10 @@ f_inqu(a) inlist *a;
 	}
 	if(a->inrecl && p) *a->inrecl=p->url;
 	if(a->innrec && p && p->url)
-		*a->innrec=(ftell(p->ufd)/p->url)+1;
+		*a->innrec=((ftell(p->ufd) + p->url - 1)/p->url) + 1;
 	if(a->inblank && p && p->ufmt)
 	{
-		b_char(p->ublnk? "zero" : "blank",a->inblank,a->inblanklen);
+		b_char(p->ublnk? "zero" : "null",a->inblank,a->inblanklen);
 	}
 	return(OK);
 }
