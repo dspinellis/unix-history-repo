@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.7 (Berkeley) %G%
+ *	@(#)rk.c	6.8 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -174,7 +174,7 @@ rkattach(ui)
 rkopen(dev)
 	dev_t dev;
 {
-	register int unit = idcunit(dev);
+	register int unit = rkunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NRK || (ui = rkdinfo[unit]) == 0 || ui->ui_alive == 0)
@@ -207,8 +207,10 @@ rkstrategy(bp)
 	st = &rkst[ui->ui_type];
 	if (bp->b_blkno < 0 ||
 	    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
-		if (bp->b_blkno == st->sizes[xunit].nblocks +1)
+		if (bp->b_blkno == st->sizes[xunit].nblocks) {
+		    bp->b_resid = bp->b_bcount;
 		    goto done;
+		}
 		bp->b_error = EINVAL;
 		goto bad;
 	}
@@ -533,7 +535,7 @@ rkread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = idcunit(dev);
+	register int unit = rkunit(dev);
 
 	if (unit >= NRK)
 		return (ENXIO);
@@ -544,7 +546,7 @@ rkwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = idcunit(dev);
+	register int unit = rkunit(dev);
 
 	if (unit >= NRK)
 		return (ENXIO);
@@ -735,7 +737,7 @@ rkdump(dev)
 	register short *rp;
 	struct rkst *st;
 
-	unit = idcunit(dev);
+	unit = rkunit(dev);
 	if (unit >= NRK)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
@@ -795,7 +797,7 @@ rkdump(dev)
 rksize(dev)
 	dev_t dev;
 {
-	int unit = idcunit(dev);
+	int unit = rkunit(dev);
 	struct uba_device *ui;
 	struct rkst *st;
 
