@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.33 (Berkeley) %G%
+#	@(#)Files.base	8.34 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -77,7 +77,7 @@ src/Makefiles/Makefile.BSD43
 src/Makefiles/Makefile.CLIX
 src/Makefiles/Makefile.ConvexOS
 src/Makefiles/Makefile.CSOS
-src/Makefiles/Makefile.DGUX
+src/Makefiles/Makefile.dgux
 src/Makefiles/Makefile.Dell
 src/Makefiles/Makefile.DomainOS
 src/Makefiles/Makefile.Dynix
