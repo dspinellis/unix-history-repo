@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.5 83/06/10";
+static char sccsid[] = "@(#)rcp.c	4.6 83/07/01";
 #endif
 
 /*
@@ -82,6 +82,8 @@ main(argc, argv)
 	targ = colon(argv[argc - 1]);
 	if (targ) {
 		*targ++ = 0;
+		if (*targ == 0)
+			targ = ".";
 		tuser = rindex(argv[argc - 1], '.');
 		if (tuser) {
 			*tuser++ = 0;
@@ -93,6 +95,8 @@ main(argc, argv)
 			src = colon(argv[i]);
 			if (src) {
 				*src++ = 0;
+				if (*src == 0)
+					*src = ".";
 				suser = rindex(argv[i], '.');
 				if (suser) {
 					*suser++ = 0;
@@ -134,6 +138,8 @@ main(argc, argv)
 				(void) susystem(buf);
 			} else {
 				*src++ = 0;
+				if (*src == 0)
+					src = ".";
 				suser = rindex(argv[i], '.');
 				if (suser) {
 					*suser++ = 0;
@@ -285,7 +291,7 @@ notreg:
 	}
 }
 
-#include <dir.h>
+#include <sys/dir.h>
 
 rsource(name, mode)
 	char *name;
@@ -407,7 +413,7 @@ sink(argc, argv)
 		*cp = 0;
 		if (cmdbuf[0] == '\01' || cmdbuf[0] == '\02') {
 			if (iamremote == 0)
-				(void) write(2, cmdbuf, strlen(cmdbuf));
+				(void) write(2, cmdbuf+1, strlen(cmdbuf+1));
 			if (cmdbuf[0] == '\02')
 				exit(1);
 			errs++;
