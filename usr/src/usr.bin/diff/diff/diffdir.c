@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.6 (Berkeley) 82/05/05";
+static	char *sccsid = "@(#)diffdir.c	4.7 (Berkeley) %G%";
 
 #include "diff.h"
 /*
@@ -88,11 +88,14 @@ diffdir(argv)
 		}
 	}
 	if (lflag) {
-		scanpr(dir1, ONLY, "Only in %.*s", file1, efile1);
-		scanpr(dir2, ONLY, "Only in %.*s", file2, efile2);
-		scanpr(dir1, SAME, "Common identical files", 0, 0);
-		scanpr(dir1, DIFFER, "Binary files which differ", 0, 0);
-		scanpr(dir1, DIRECT, "Common subdirectories", 0, 0);
+		scanpr(dir1, ONLY, "Only in %.*s", file1, efile1, 0, 0);
+		scanpr(dir2, ONLY, "Only in %.*s", file2, efile2, 0, 0);
+		scanpr(dir1, SAME, "Common identical files in %.*s and %.*s",
+		    file1, efile1, file2, efile2);
+		scanpr(dir1, DIFFER, "Binary files which differ in %.*s and %.*s",
+		    file1, efile1, file2, efile2);
+		scanpr(dir1, DIRECT, "Common subdirectories of %.*s and %.*s",
+		    file1, efile1, file2, efile2);
 	}
 	if (rflag) {
 		if (header && lflag)
@@ -125,10 +128,10 @@ setfile(fpp, epp, file)
 	*epp = cp;
 }
 
-scanpr(dp, test, title, file, efile)
+scanpr(dp, test, title, file1, efile1, file2, efile2)
 	register struct dir *dp;
 	int test;
-	char *title, *file, *efile;
+	char *title, *file1, *efile1, *file2, *efile2;
 {
 	int titled = 0;
 
@@ -136,13 +139,13 @@ scanpr(dp, test, title, file, efile)
 		if ((dp->d_flags & test) == 0)
 			continue;
 		if (titled == 0) {
-			if (header == 0) {
-				if (anychange)
-					printf("\f");
+			if (header == 0)
 				header = 1;
-			} else
+			else
 				printf("\n");
-			printf(title, efile - file - 1, file);
+			printf(title,
+			    efile1 - file1 - 1, file1,
+			    efile2 - file2 - 1, file2);
 			printf(":\n");
 			titled = 1;
 		}
