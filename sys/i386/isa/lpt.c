@@ -240,7 +240,7 @@ lptprobe(struct isa_device *dvp)
 
 	status = IO_LPTSIZE;
 	/* If port not specified, use bios list */
-	if(dvp->id_iobase == 0xffff) {	/* port? */
+	if(dvp->id_iobase < 0) {	/* port? */
 		if((next_bios_lpt < BIOS_MAX_LPT) &&
 				(*(BIOS_PORTS+next_bios_lpt) != 0) ) {
 			dvp->id_iobase = *(BIOS_PORTS+next_bios_lpt++);
