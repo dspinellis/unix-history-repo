@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 struct entry	*addentry __P((char *, ino_t, int));
@@ -21,7 +21,6 @@ void		 deleteino __P((ino_t));
 ino_t		 dirlookup __P((const char *));
 __dead void 	 done __P((int));
 void		 dumpsymtable __P((char *, long));
-void		 err __P((const char *, ...));
 void	 	 extractdirs __P((int));
 int		 extractfile __P((char *));
 void		 findunreflinks __P((void));
