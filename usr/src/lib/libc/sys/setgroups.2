@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1991, 1993
+.\" Copyright (c) 1983, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setgroups.2	8.1 (Berkeley) %G%
+.\"     @(#)setgroups.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETGROUPS 2
@@ -12,10 +12,10 @@
 .Nm setgroups
 .Nd set group access list
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
 .Fd #include <sys/param.h>
+.Fd #include <unistd.h>
 .Ft int
-.Fn setgroups "int ngroups" "const int *gidset"
+.Fn setgroups "int ngroups" "const gid_t *gidset"
 .Sh DESCRIPTION
 .Fn Setgroups
 sets the group access list of the current user process
@@ -50,12 +50,6 @@ address space.
 .Sh SEE ALSO
 .Xr getgroups 2 ,
 .Xr initgroups 3
-.Sh BUGS
-The
-.Fa gidset
-array should be of type
-.Em gid_t ,
-but remains integer for compatibility with earlier systems.
 .Sh HISTORY
 The
 .Nm
