@@ -1,15 +1,13 @@
-#	@(#)Makefile	5.19 (Berkeley) %G%
+#	@(#)Makefile	5.20 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
 #
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
-# DELETE -DRENO, glob.c AND glob.h AS SOON AS A NEW KERNEL IS RUNNING
-
 PROG=	csh
-CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS -DPOSIXJOBS \
-	-DSHORT_STRINGS -DTELL -DTERMIOS -DVFORK -I${.CURDIR} -I.
+CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS \
+	-DSHORT_STRINGS -DTERMIOS -DVFORK -I${.CURDIR} -I.
 SRCS=	sh.c sh.char.c sh.dir.c sh.dol.c sh.err.c sh.exec.c sh.exp.c \
 	sh.file.c sh.func.c sh.glob.c sh.hist.c sh.init.c sh.lex.c \
 	sh.misc.c sh.parse.c sh.print.c sh.proc.c sh.sem.c sh.set.c \
