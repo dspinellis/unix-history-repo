@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)exec.c	5.16 (Berkeley) %G%";
  * execute only the full path name.  If there is no search path then we
  * execute only full path names.
  */
+extern char **environ;
 
 /*
  * As we search for the command we note the first non-trivial error
@@ -244,7 +245,7 @@ texec(sf, st)
     f = short2str(sf);
     Vt = t;
     errno = 0;			/* don't use a previous error */
-    (void) execv(f, t);
+    (void) execve(f, t, environ);
     Vt = 0;
     blkfree((Char **) t);
     switch (errno) {
@@ -298,7 +299,7 @@ texec(sf, st)
 	f = short2str(sf);
 	xfree((ptr_t) st);
 	Vt = t;
-	(void) execv(f, t);
+	(void) execve(f, t, environ);
 	Vt = 0;
 	blkfree((Char **) t);
 	/* The sky is falling, the sky is falling! */
