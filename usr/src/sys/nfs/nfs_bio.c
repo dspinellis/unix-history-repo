@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,10 +37,9 @@
  * Vnode op for read using bio
  * Any similarity to readip() is purely coincidental
  */
-nfs_read(vp, uio, offp, ioflag, cred)
+nfs_read(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
@@ -51,29 +50,20 @@ nfs_read(vp, uio, offp, ioflag, cred)
 	int diff, error = 0;
 	long n, on;
 
-	if (!(ioflag & IO_NODELOCKED))
-		nfs_lock(vp);
 	/*
 	 * Avoid caching directories. Once everything is using getdirentries()
 	 * this will never happen anyhow.
 	 */
-	if (vp->v_type == VDIR) {
-		error = nfs_readrpc(vp, uio, offp, cred);
-		if (!(ioflag & IO_NODELOCKED))
-			nfs_unlock(vp);
-		return (error);
-	}
-	uio->uio_offset = *offp;
+	if (vp->v_type == VDIR)
+		return (nfs_readrpc(vp, uio, cred));
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
 	if (vp->v_type != VREG)
 		panic("nfs_read type");
 	if (uio->uio_resid == 0)
-		goto out;
-	if (uio->uio_offset < 0) {
-		error = EINVAL;
-		goto out;
-	}
+		return (0);
+	if (uio->uio_offset < 0)
+		return (EINVAL);
 	/*
 	 * If the file's modify time on the server has changed since the
 	 * last read rpc or you have written to the file,
@@ -89,17 +79,17 @@ nfs_read(vp, uio, offp, ioflag, cred)
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
 		if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE))
-			goto out;
+			return (error);
 		if (error = nfs_getattr(vp, &vattr, cred))
-			goto out;
+			return (error);
 		np->n_mtime = vattr.va_mtime.tv_sec;
 	} else {
 		if (error = nfs_getattr(vp, &vattr, cred))
-			goto out;
+			return (error);
 		if (np->n_mtime != vattr.va_mtime.tv_sec) {
 			if (error = nfs_blkflush(vp, (daddr_t)0,
 				np->n_size, TRUE))
-				goto out;
+				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		}
 	}
@@ -110,7 +100,7 @@ nfs_read(vp, uio, offp, ioflag, cred)
 		n = MIN((unsigned)(NFS_BIOSIZE - on), uio->uio_resid);
 		diff = np->n_size - uio->uio_offset;
 		if (diff <= 0)
-			goto out;
+			return (error);
 		if (diff < n)
 			n = diff;
 		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
@@ -128,7 +118,7 @@ nfs_read(vp, uio, offp, ioflag, cred)
 		}
 		if (error) {
 			brelse(bp);
-			goto out;
+			return (error);
 		}
 		if (n > 0)
 			error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
@@ -136,48 +126,38 @@ nfs_read(vp, uio, offp, ioflag, cred)
 			bp->b_flags |= B_AGE;
 		brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-out:
-	*offp = uio->uio_offset;
-	if (!(ioflag & IO_NODELOCKED))
-		nfs_unlock(vp);
 	return (error);
 }
 
 /*
  * Vnode op for write using bio
  */
-nfs_write(vp, uio, offp, ioflag, cred)
+nfs_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	register struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
 	daddr_t lbn, bn;
-	int i, n, on, cnt, count, error = 0;
+	int i, n, on, count, error = 0;
 
-	if ((ioflag & IO_NODELOCKED) == 0)
-		nfs_lock(vp);
 	/* Should we try and do this ?? */
 	if (vp->v_type == VREG && (ioflag & IO_APPEND))
-		*offp = np->n_size;
-	uio->uio_offset = *offp;
-	cnt = uio->uio_resid;
+		uio->uio_offset = np->n_size;
 #ifdef notdef
+	cnt = uio->uio_resid;
 	osize = np->n_size;
 #endif
 	if (uio->uio_rw != UIO_WRITE)
 		panic("nfs_write mode");
 	if (vp->v_type != VREG)
 		panic("nfs_write type");
-	if (uio->uio_offset < 0) {
-		error = EINVAL;
-		goto out;
-	}
+	if (uio->uio_offset < 0)
+		return (EINVAL);
 	if (uio->uio_resid == 0)
-		goto out;
+		return (0);
 	/*
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
@@ -186,8 +166,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 	    uio->uio_offset + uio->uio_resid >
 	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(u.u_procp, SIGXFSZ);
-		error = EFBIG;
-		goto out;
+		return (EFBIG);
 	}
 	np->n_flag |= (NMODIFIED|NBUFFERED);
 	do {
@@ -207,7 +186,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 		}
 		if (bp->b_dirtyend > 0) {
 			/*
-			 * Iff the new write will leave a contiguous
+			 * If the new write will leave a contiguous
 			 * dirty area, just update the b_dirtyoff and
 			 * b_dirtyend
 			 * otherwise force a write rpc of the old dirty
@@ -231,7 +210,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 						error = bp->b_error;
 					else
 						error = EIO;
-					goto out;
+					return (error);
 				}
 				bp->b_dirtyoff = on;
 				bp->b_dirtyend = on+n;
@@ -241,7 +220,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 			bp->b_dirtyend = on+n;
 		}
 		if (error = uiomove(bp->b_un.b_addr + on, n, uio))
-			goto out;
+			return (error);
 		if ((n+on) == NFS_BIOSIZE) {
 			bp->b_flags |= B_AGE;
 			bawrite(bp);
@@ -251,14 +230,12 @@ nfs_write(vp, uio, offp, ioflag, cred)
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 #ifdef notdef
 	/* Should we try and do this for nfs ?? */
-	if (error && (ioflag & IO_UNIT))
+	if (error && (ioflag & IO_UNIT)) {
 		np->n_size = osize;
-	else
+		uio->uio_offset -= cnt - uio->uio_resid;
+		uio->uio_resid = cnt;
+	}
 #endif
-		*offp += cnt - uio->uio_resid;
-out:
-	if ((ioflag & IO_NODELOCKED) == 0)
-		nfs_unlock(vp);
 	return (error);
 }
 
