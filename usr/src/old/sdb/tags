@@ -1,0 +1,168 @@
+BTYPE	cdefs.h	?^# define BTYPE(x)  (x&BTMASK)   /* basic type of x?
+DECREF	cdefs.h	?^# define DECREF(x) (((x>>TSHIFT)&~BTMASK&0x3fff)|(?
+DEUNSIGN	cdefs.h	?^# define DEUNSIGN(x) ((x)+(INT-UNSIGNED))$?
+ENUNSIGN	cdefs.h	?^# define ENUNSIGN(x) ((x)+(UNSIGNED-INT))$?
+INCREF	cdefs.h	?^# define INCREF(x) (((x&~BTMASK)<<TSHIFT)|PTR|(x&B?
+ISARY	cdefs.h	?^# define ISARY(x)   ((x&TMASK)==ARY)   /* is x an ?
+ISFTN	cdefs.h	?^# define ISFTN(x)  ((x&TMASK)==FTN)  /* is x a fun?
+ISPTR	cdefs.h	?^# define ISPTR(x) ((x&TMASK)==PTR)$?
+ISUNSIGNED	cdefs.h	?^# define ISUNSIGNED(x) ((x)<=ULONG&&(x)>=UCHAR)$?
+Mmain	main.c	?^main(argc, argv)$?
+PKFIELD	cdefs.h	?^# define PKFIELD(s,o) ((o<<6)|s)$?
+SYMTYPE	machine.h	?^#define SYMTYPE(symflg) (symflg&41 ? DSYM : NSYM)$?
+UNSIGNABLE	cdefs.h	?^# define UNSIGNABLE(x) ((x)<=LONG&&(x)>=CHAR)$?
+UPKFOFF	cdefs.h	?^# define UPKFOFF(v) (v>>6)$?
+UPKFSZ	cdefs.h	?^# define UPKFSZ(v)  (v&077)$?
+access	access.c	?^access(mode,adr,space,value)$?
+acommand	xeq.c	?^acommand(cmds)$?
+adrtoext	symt.c	?^adrtoext(addr) $?
+adrtofilep	symt.c	?^adrtofilep(addr) $?
+adrtolineno	symt.c	?^adrtolineno(addr) $?
+adrtolocal	symt.c	?^adrtolocal(addr, procp) $?
+adrtoparam	symt.c	?^adrtoparam(addr, procp) $?
+adrtoprocp	symt.c	?^adrtoprocp(addr) $?
+adrtoregvar	symt.c	?^adrtoregvar(regno, procp) $?
+adrtostoffset	symt.c	?^adrtostoffset(addr) $?
+advance	re.c	?^advance(lp, ep)$?
+argvalue	sub.c	?^argvalue(p)$?
+bchkget	access.c	?^POS bchkget(n, space) $?
+binit	old.c	?^binit(brs)$?
+blseek	display.c	?^#define	blseek(a,b,c)	stseek(b,c)$?
+bpwait	runpcs.c	?^bpwait()$?
+bread	display.c	?^#define	bread(a,b,c)	stread(b,c)$?
+chkerr	sub.c	?^chkerr()$?
+chkget	access.c	?^POS	chkget(n, space)$?
+chkmap	access.c	?^chkmap(adr,space)$?
+compar	symt.c	?^compar(a, b)$?
+compile	re.c	?^compile(astr)$?
+cpall	sub.c	?^cpall(p, q)$?
+cpname	sub.c	?^cpname(p, q)$?
+cpstr	sub.c	?^cpstr(p,q)$?
+create	setup.c	?^create(f)$?
+ctob	udef.c	?^char		u[ctob(UPAGES)]; /* struct user u */$?
+curproc	symt.c	?^curproc() {$?
+dabkpt	display.c	?^dabkpt() {$?
+decconv	sub.c	?^decconv(c)$?
+decdigit	sub.c	?^decdigit(c)$?
+decode	decode.c	?^decode(p)$?
+delbp	runpcs.c	?^delbp()$?
+dispf	prvar.c	?^dispf(addr, desc, class, type, size, subflag, spac?
+dispi	prvar.c	?^dispi(addr, desc, class, type, size, subflag, spac?
+dispvar	display.c	?^dispvar(proc, var, fmt)$?
+dispx	prvar.c	?^dispx(addr, desc, class, type, size, subflag, spac?
+docomm	symt.c	?^docomm(offset)$?
+docommand	docomm.c	?^docommand() {$?
+doexec	runpcs.c	?^doexec()$?
+dopcs	xeq.c	?^dopcs(c) $?
+dore	re.c	?^dore() {$?
+doscall	xeq.c	?^doscall() {$?
+dtol	sub.c	?^dtol(d)$?
+ecmp	re.c	?^ecmp(a, b, count)$?
+endpcs	runpcs.c	?^endpcs()$?
+eqany	sub.c	?^eqany(c, s)$?
+eqpat	sub.c	?^eqpat(pat, str)$?
+eqpatr	sub.c	?^eqpatr(pat, str, cnt)$?
+eqstr	sub.c	?^eqstr(s1, s2)$?
+errexit	re.c	?^errexit(s)$?
+error	sub.c	?^error(s)$?
+execbkpt	runpcs.c	?^execbkpt(bkptr,execsig)$?
+extaddr	symt.c	?^extaddr(name)$?
+extlookup	symt.c	?^extlookup(pat, filestart)$?
+extoutvar	prvar.c	?^extoutvar(var, fmt, metaflag, prvar)$?
+fault	main.c	?^fault(a)$?
+fback	fio.c	?^fback(n)$?
+ffind	fio.c	?^ffind(num)$?
+fforward	fio.c	?^fforward(n)$?
+fgetline	fio.c	?^fgetline()$?
+findfile	symt.c	?^findfile(s)$?
+findproc	symt.c	?^findproc(s)$?
+findvar	display.c	?^findvar(proc, var, fmt, prvar)$?
+finit	fio.c	?^finit(name)$?
+fnext	fio.c	?^fnext()$?
+formaddr	display.c	?^formaddr(class, addr)$?
+fpargs	docomm.c	?^fpargs() {$?
+fpe	main.c	?^fpe() {$?
+fprev	fio.c	?^fprev()$?
+fprint	fio.c	?^fprint()$?
+fprintn	fio.c	?^fprintn(n)$?
+get	access.c	?^POS	get(adr, space)$?
+getaddr	symt.c	?^getaddr(proc,integ) $?
+getargs	xeq.c	?^getargs() {$?
+getfile	setup.c	?^getfile(filnam,cnt)$?
+getindir	sub.c	?^getindir(class, addr, type) $?
+getsig	runpcs.c	?^getsig(sig)$?
+getval	access.c	?^getval(loc, d, space)$?
+globallookup	symt.c	?^globallookup(pat, filestart, stelt)$?
+hexconv	sub.c	?^hexconv(c)$?
+hexdigit	sub.c	?^hexdigit(c)$?
+idbkpt	display.c	?^idbkpt() {$?
+initfp	symt.c	?^initfp() {$?
+initframe	display.c	?^initframe() {$?
+itol	defs.h	?^#define itol(a,b)	(itolws.I[0]=(a), itolws.I[1]=(b?
+leng	defs.h	?^#define leng(a)		((long)((unsigned)(a)))$?
+lntoaddr	symt.c	?^lntoaddr(lineno, offset, file) $?
+longseek	sub.c	?^longseek(f, a)$?
+match	re.c	?^match(p1)$?
+monex	xeq.c	?^monex(loc, d)$?
+nametofile	symt.c	?^nametofile(s)$?
+nametooffset	symt.c	?^nametooffset(s)$?
+nextframe	display.c	?^nextframe() {$?
+nullsig	runpcs.c	?^nullsig()$?
+number	head.h	?^#define number(x)	(x >= '0' && x <= '9')$?
+octconv	sub.c	?^octconv(c)$?
+octdigit	sub.c	?^octdigit(c) $?
+outvar	prvar.c	?^outvar(proc, var, fmt, metaflag, addr, class, subf?
+prbkpt	display.c	?^prbkpt() {$?
+prdebug	prvar.c	?^prdebug() {$?
+prframe	display.c	?^prframe() {$?
+prfrx	display.c	?^prfrx(top) {$?
+prhex	sub.c	?^prhex(v) $?
+prhex12	sub.c	?^prhex12(v) $?
+printbkpt	display.c	?^printbkpt(s, procp, dot)$?
+printchar	prvar.c	?^printchar(c) {$?
+printit	prvar.c	?^printit(metaflag, prvar, addr, desc, class, type, ?
+printmap	prvar.c	?^printmap(s,amap)$?
+printpc	prvar.c	?^printpc()$?
+printregs	prvar.c	?^printregs()$?
+prisploc	prvar.c	?^prisploc() {$?
+prlnoff	sub.c	?^prlnoff(procp, v)$?
+put	access.c	?^put(adr,space,value)$?
+putreg	access.c	?^putreg(reg, d, value)$?
+putval	access.c	?^putval(loc, d, value)$?
+rdc	runpcs.c	?^rdc()$?
+readchar	runpcs.c	?^char $?
+readint	sub.c	?^readint(p)$?
+readl	setup.c	?^readl(f,p,n) int f,n; long * p;{$?
+readline	sub.c	?^readline(f)$?
+readregs	runpcs.c	?^readregs()$?
+regout	prvar.c	?^regout(name, prvar, fmt) $?
+rint	sub.c	?^rint(p, base, digit, conv)$?
+round	sub.c	?^round(a,b)$?
+runpcs	runpcs.c	?^runpcs(runmode,execsig)$?
+scanbkpt	runpcs.c	?^BKPTR	scanbkpt(adr)$?
+setbp	runpcs.c	?^setbp()$?
+setcor	setup.c	?^setcor()$?
+setcur	symt.c	?^setcur(verbose) {$?
+setdot	docomm.c	?^setdot() {$?
+setmap	symt.c	?^setmap(s)$?
+setsym	setup.c	?^setsym()$?
+setup	runpcs.c	?^setup()$?
+shorten	defs.h	?^#define shorten(a)	((int)(a))$?
+sigprint	display.c	?^sigprint()$?
+singstep	xeq.c	?^singstep(count, cmd)$?
+sizeof	message.c	?^int	nsig = sizeof (signals)/sizeof (signals[0]);$?
+slookinit	symt.c	?^slookinit() {$?
+slooknext	symt.c	?^slooknext(pat, poffset, stelt, comblk)$?
+slookup	symt.c	?^slookup(pat, poffset, stelt)$?
+stackreg	display.c	?^stackreg(reg) {$?
+stread	symt.c	?^stread(buff, nbytes)$?
+stseek	symt.c	?^stseek(off, rel)$?
+subpcs	pcs.c	?^subpcs(modif)$?
+tell	old.c	?^tell(fildes) {$?
+typetodesc	display.c	?^typetodesc(type, subflag)$?
+typetosize	display.c	?^typetosize(type, stsize)$?
+varaddr	display.c	?^varaddr(proc, var)$?
+varchar	head.h	?^#define varchar(x)	((x>='A' && x<='Z') || (x>='a' ?
+varclass	symt.c	?^varclass(class)$?
+version	version.c	?^version() {$?
+within	access.c	?^within(adr,lbd,ubd)$?
