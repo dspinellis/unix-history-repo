@@ -1,0 +1,25 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mprotect.2	6.1 (Berkeley) %G%
+.\"
+.TH MPROTECT 2 ""
+.UC 7
+.SH NAME
+mprotect \- control the protection of pages
+.SH SYNOPSIS
+.nf
+mprotect(addr, len, prot)
+.B caddr_t addr;
+.B int len, prot;
+.fi
+.SH DESCRIPTION
+.PP
+The \fImprotect\fP system call
+changes the specified pages to have protection \fIprot\fP\|.
+Not all implementations will guarantee protection on a page basis;
+the granularity of protection changes may be as large as an entire region.
+.SH "SEE ALSO"
+msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
