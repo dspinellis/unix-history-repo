@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.22 (Berkeley) %G%
+ *	@(#)route.c	7.23 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -82,7 +82,7 @@ rtalloc1(dst, report)
 			if ((err = rtrequest(RTM_RESOLVE, dst, SA(0),
 					      SA(0), 0, &newrt)) ||
 			    ((rt->rt_flags & RTF_XRESOLVE)
-			      && (msgtype = RTM_RESOLVE))) /* intended! */
+			      && (msgtype = RTM_RESOLVE))) /* assign intended */
 			    goto miss;
 		} else
 			rt->rt_refcnt++;
@@ -106,7 +106,8 @@ rtfree(rt)
 		rttrash--;
 		if (rt->rt_nodes->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtfree 2");
-		free((caddr_t)rt, M_RTABLE);
+		Free(rt_key(rt));
+		Free(rt);
 	}
 }
 
@@ -176,13 +177,10 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 			 * Smash the current notion of the gateway to
 			 * this destination.  Should check about netmask!!!
 			 */
-			if (gateway->sa_len <= rt->rt_gateway->sa_len) {
-				Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
-				rt->rt_flags |= RTF_MODIFIED;
-				flags |= RTF_MODIFIED;
-				stat = &rtstat.rts_newgateway;
-			} else
-				error = ENOSPC;
+			rt->rt_flags |= RTF_MODIFIED;
+			flags |= RTF_MODIFIED;
+			stat = &rtstat.rts_newgateway;
+			rt_setgate(rt, rt_key(rt), gateway);
 		}
 	} else
 		error = EHOSTUNREACH;
@@ -323,7 +321,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	struct sockaddr *dst, *gateway, *netmask;
 	struct rtentry **ret_nrt;
 {
-	int s = splnet(), len, error = 0;
+	int s = splnet(); int error = 0;
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	register struct radix_node_head *rnh;
@@ -342,10 +340,6 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		netmask = 0;
 	switch (req) {
 	case RTM_DELETE:
-		if (ret_nrt && (rt = *ret_nrt)) {
-			RTFREE(rt);
-			*ret_nrt = 0;
-		}
 		if ((rn = rn_delete((caddr_t)dst, (caddr_t)netmask, 
 					rnh->rnh_treetop)) == 0)
 			senderr(ESRCH);
@@ -353,6 +347,10 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			panic ("rtrequest delete");
 		rt = (struct rtentry *)rn;
 		rt->rt_flags &= ~RTF_UP;
+		if (rt->rt_gwroute) {
+			rt = rt->rt_gwroute; RTFREE(rt);
+			(rt = (struct rtentry *)rn)->rt_gwroute = 0;
+		}
 		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest)
 			ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
 		rttrash++;
@@ -374,13 +372,16 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		if ((ifa = ifa_ifwithroute(flags, dst, gateway)) == 0)
 			senderr(ENETUNREACH);
 	makeroute:
-		len = sizeof (*rt) + ROUNDUP(gateway->sa_len)
-		    + ROUNDUP(dst->sa_len);
-		R_Malloc(rt, struct rtentry *, len);
+		R_Malloc(rt, struct rtentry *, sizeof(*rt));
 		if (rt == 0)
 			senderr(ENOBUFS);
-		Bzero(rt, len);
-		ndst = (struct sockaddr *)(rt + 1);
+		Bzero(rt, sizeof(*rt));
+		rt->rt_flags = RTF_UP | flags;
+		if (rt_setgate(rt, dst, gateway)) {
+			Free(rt);
+			senderr(ENOBUFS);
+		}
+		ndst = rt_key(rt);
 		if (netmask) {
 			rt_maskedcopy(dst, ndst, netmask);
 		} else
@@ -388,15 +389,13 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rn = rn_addroute((caddr_t)ndst, (caddr_t)netmask,
 					rnh->rnh_treetop, rt->rt_nodes);
 		if (rn == 0) {
-			free((caddr_t)rt, M_RTABLE);
+			if (rt->rt_gwroute)
+				rtfree(rt->rt_gwroute);
+			Free(rt);
 			senderr(EEXIST);
 		}
 		rt->rt_ifa = ifa;
 		rt->rt_ifp = ifa->ifa_ifp;
-		rt->rt_flags = RTF_UP | flags;
-		rt->rt_gateway = (struct sockaddr *)
-					(rn->rn_key + ROUNDUP(dst->sa_len));
-		Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
 		if (req == RTM_RESOLVE)
 			rt->rt_rmx = (*ret_nrt)->rt_rmx; /* copy metrics */
 		if (ifa->ifa_rtrequest)
@@ -410,6 +409,39 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 bad:
 	splx(s);
 	return (error);
+}
+
+rt_setgate(rt0, dst, gate)
+struct rtentry *rt0;
+struct sockaddr *dst, *gate;
+{
+	caddr_t new, old;
+	int dlen = ROUNDUP(dst->sa_len), glen = ROUNDUP(gate->sa_len);
+	register struct rtentry *rt = rt0;
+
+	if (rt->rt_gateway == 0 || glen > ROUNDUP(rt->rt_gateway->sa_len)) {
+		old = (caddr_t)rt_key(rt);
+		R_Malloc(new, caddr_t, dlen + glen);
+		if (new == 0)
+			return 1;
+		rt->rt_nodes->rn_key = new;
+	} else {
+		new = rt->rt_nodes->rn_key;
+		old = 0;
+	}
+	Bcopy(gate, (rt->rt_gateway = (struct sockaddr *)(new + dlen)), glen);
+	if (old) {
+		Bcopy(dst, new, dlen);
+		Free(old);
+	}
+	if (rt->rt_gwroute) {
+		rt = rt->rt_gwroute; RTFREE(rt);
+		rt = rt0; rt->rt_gwroute = 0;
+	}
+	if (rt->rt_flags & RTF_GATEWAY) {
+		rt->rt_gwroute = rtalloc1(gate, 1);
+	}
+	return 0;
 }
 
 rt_maskedcopy(src, dst, netmask)
@@ -445,11 +477,9 @@ rtinit(ifa, cmd, flags)
 	int error;
 
 	dst = flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr;
-	if (ifa->ifa_flags & IFA_ROUTE) {
-		if ((rt = ifa->ifa_rt) && (rt->rt_flags & RTF_UP) == 0) {
-			RTFREE(rt);
-			ifa->ifa_rt = 0;
-		}
+	if (rt = ifa->ifa_rt) {
+		rtfree(rt);
+		ifa->ifa_rt = 0;
 	}
 	if (cmd == RTM_DELETE) {
 		if ((flags & RTF_HOST) == 0 && ifa->ifa_netmask) {
