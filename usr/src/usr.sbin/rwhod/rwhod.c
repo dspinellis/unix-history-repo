@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.22 (Berkeley) 84/05/11";
+static char sccsid[] = "@(#)rwhod.c	4.23 (Berkeley) 84/07/04";
 #endif
 
 #include <sys/types.h>
@@ -286,7 +286,19 @@ done:
 getkmem()
 {
 	struct nlist *nlp;
+	static ino_t vmunixino;
+	static time_t vmunixctime;
+	struct stat sb;
 
+	if (stat("/vmunix", &sb) < 0) {
+		if (vmunixctime)
+			return;
+	} else {
+		if (sb.st_ctime == vmunixctime && sb.st_ino == vmunixino)
+			return;
+		vmunixctime = sb.st_ctime;
+		vmunixino= sb.st_ino;
+	}
 	if (kmemf >= 0)
 		(void) close(kmemf);
 loop:
