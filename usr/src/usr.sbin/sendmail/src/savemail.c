@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.20.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -585,7 +585,8 @@ errbody(fp, m, e)
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 		if (bitset(QBADADDR, q->q_flags))
 			break;
-	if (q == NULL && !bitset(EF_FATALERRS, e->e_parent->e_flags))
+	if (q == NULL &&
+	    !bitset(EF_FATALERRS|EF_SENDRECEIPT, e->e_parent->e_flags))
 	{
 		putline("    **********************************************",
 			fp, m);
