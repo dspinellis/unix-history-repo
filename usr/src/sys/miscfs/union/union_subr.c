@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.5 (Berkeley) %G%
+ *	@(#)union_subr.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -85,30 +85,34 @@ union_updatevp(un, uppervp, lowervp)
 {
 	int ohash = UNION_HASH(un->un_uppervp, un->un_lowervp);
 	int nhash = UNION_HASH(uppervp, lowervp);
+	int docache = (lowervp != NULLVP || uppervp != NULLVP);
 
-	if (ohash != nhash) {
-		/*
-		 * Ensure locking is ordered from lower to higher
-		 * to avoid deadlocks.
-		 */
-		if (nhash < ohash) {
-			int t = ohash;
-			ohash = nhash;
-			nhash = t;
-		}
+	/*
+	 * Ensure locking is ordered from lower to higher
+	 * to avoid deadlocks.
+	 */
+	if (nhash < ohash) {
+		int t = ohash;
+		ohash = nhash;
+		nhash = t;
+	}
 
+	if (ohash != nhash)
 		while (union_list_lock(ohash))
 			continue;
 
-		while (union_list_lock(nhash))
-			continue;
+	while (union_list_lock(nhash))
+		continue;
 
-		LIST_REMOVE(un, un_cache);
-		union_list_unlock(ohash);
-	} else {	
-		while (union_list_lock(nhash))
-			continue;
+	if (ohash != nhash || !docache) {
+		if (un->un_flags & UN_CACHED) {
+			LIST_REMOVE(un, un_cache);
+			un->un_flags &= ~UN_CACHED;
+		}
 	}
+
+	if (ohash != nhash)
+		union_list_unlock(ohash);
 
 	if (un->un_lowervp != lowervp) {
 		if (un->un_lowervp) {
@@ -132,8 +136,10 @@ union_updatevp(un, uppervp, lowervp)
 		un->un_uppervp = uppervp;
 	}
 
-	if (ohash != nhash)
+	if (docache && (ohash != nhash)) {
 		LIST_INSERT_HEAD(&unhead[nhash], un, un_cache);
+		un->un_flags |= UN_CACHED;
+	}
 
 	union_list_unlock(nhash);
 }
@@ -417,6 +423,7 @@ loop:
 	}
 
 	LIST_INSERT_HEAD(&unhead[hash], un, un_cache);
+	un->un_flags |= UN_CACHED;
 
 	if (xlowervp)
 		vrele(xlowervp);
@@ -433,13 +440,16 @@ union_freevp(vp)
 {
 	struct union_node *un = VTOUNION(vp);
 
-	LIST_REMOVE(un, un_cache);
+	if (un->un_flags & UN_CACHED) {
+		LIST_REMOVE(un, un_cache);
+		un->un_flags &= ~UN_CACHED;
+	}
 
-	if (un->un_uppervp)
+	if (un->un_uppervp != NULLVP)
 		vrele(un->un_uppervp);
-	if (un->un_lowervp)
+	if (un->un_lowervp != NULLVP)
 		vrele(un->un_lowervp);
-	if (un->un_dirvp)
+	if (un->un_dirvp != NULLVP)
 		vrele(un->un_dirvp);
 	if (un->un_path)
 		free(un->un_path, M_TEMP);
