@@ -1,4 +1,4 @@
-/*	user.h	4.22	82/11/13	*/
+/*	user.h	4.23	82/12/09	*/
 
 #ifdef vax
 #include <vax/pcb.h>
@@ -68,9 +68,9 @@ struct	user {
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
-#define	EXCLOSE 	0x1		/* auto-close on exec */
-#define	SHLOCK		0x2		/* shared lock present */
-#define	EXLOCK		0x4		/* exclusive lock present */
+#define	UF_EXCLOSE 	0x1		/* auto-close on exec */
+#define	UF_SHLOCK	0x2		/* shared lock present */
+#define	UF_EXLOCK	0x4		/* exclusive lock present */
 #define	UF_MAPPED 	0x8
 	struct	inode *u_cdir;		/* current directory */
 	struct	inode *u_rdir;		/* root directory of current process */
@@ -121,6 +121,12 @@ struct	user {
 	struct	direct u_dent;		/* current directory entry */
 	struct	inode *u_pdir;		/* inode of parent directory of dirp */
 /* END TRASH */
+	struct uprof {			/* profile arguments */
+		short	*pr_base;	/* buffer base */
+		unsigned pr_size;	/* buffer size */
+		unsigned pr_off;	/* pc offset */
+		unsigned pr_scale;	/* pc scaling */
+	} u_prof;
 	int	u_stack[1];
 };
 
