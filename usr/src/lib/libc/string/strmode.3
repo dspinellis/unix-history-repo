@@ -1,0 +1,134 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strmode.3	5.1 (Berkeley) %G%
+.\"
+.TH STRMODE 3 ""
+.UC 7
+.SH NAME
+strmode \- convert inode status information into a symbolic string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+void
+strmode(mode_t mode, char *bp);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Strmode
+converts a file
+.I mode
+(the type and permission information associated with an inode, see
+.IR stat (2))
+into a symbolic string which is stored in the location referenced by
+.IR bp .
+This stored string is eleven characters in length plus a trailing NULL.
+.PP
+The first character is the inode type, and will be one of the following:
+.TP
+\-
+regular file
+.br
+.ns
+.TP
+b
+block special
+.br
+.ns
+.TP
+c
+character special
+.br
+.ns
+.TP
+d
+directory
+.br
+.ns
+.TP
+l
+symbolic link
+.br
+.ns
+.TP
+p
+fifo
+.br
+.ns
+.TP
+s
+socket
+.br
+.ns
+.TP
+?
+unknown inode type
+.PP
+The next nine characters encode three sets of permissions, in three
+characters each.
+The first three characters are the permissions for the owner of the
+file, the second three for the group the file belongs to, and the
+third for the ``other'', or default, set of users.
+.PP
+Permission checking is done as specifically as possible.
+If read permission is denied to the owner of a file in the first set
+of permssions, the owner of the file will not be able to read the file.
+This is true even if the owner is in the file's group and the group
+permissions allow reading or the ``other'' permissions allow reading.
+.PP
+If the first character of the three character set is an ``r'', the file is
+readable for that set of users; if a dash ``\-'', it is not readable.
+.PP
+If the second character of the three character set is a ``w'', the file is
+writable for that set of users; if a dash ``\-'', it is not writable.
+.PP
+The third character is the first of the following characters that apply:
+.TP
+S
+If the character is part of the owner permissions and the file is not
+executable or the directory is not searchable, by the owner, and the
+set-user-id bit is set.
+.TP
+S
+If the character is part of the group permissions and the file is not
+executable or the directory is not searchable, by the group, and the
+set-group-id bit is set.
+.TP
+T
+If the character is part of the other permissions and the file is not
+executable or the directory is not searchable, by others, and the ``sticky''
+(S_ISVTX) bit is set.
+.TP
+s
+If the character is part of the owner permissions and the file is
+executable or the directory searchable, by the owner, and the set-user-id
+bit is set.
+.TP
+s
+If the character is part of the group permissions and the file is
+executable or the directory searchable, by the group, and the set-group-id
+bit is set.
+.TP
+t
+If the character is part of the other permissions and the file is
+executable or the directory searchable, by others, and the ``sticky''
+(S_ISVTX) bit is set.
+.TP
+x
+The file is executable or the directory is searchable.
+.TP
+\-
+None of the above apply.
+.PP
+The last character is a plus sign ``+'' if any there are any alternate
+or additional access control methods associated with the inode, otherwise
+it will be a space.
+.SH RETURN VALUE
+.I Strmode
+always returns 0.
+.SH SEE ALSO
+chmod(1), find(1), stat(2), getmode(3), setmode(3)
