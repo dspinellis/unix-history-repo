@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.73 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.74 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -552,6 +552,7 @@ open(p, uap, retval)
 	struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
+	register struct vnode *vp;
 	int fmode, cmode;
 	struct file *nfp;
 	int type, indx, error;
@@ -581,6 +582,7 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
+	vp = ndp->ni_vp;
 	fp->f_flag = fmode & FMASK;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
 		lf.l_whence = SEEK_SET;
@@ -593,19 +595,19 @@ open(p, uap, retval)
 		type = F_FLOCK;
 		if ((fmode & FNONBLOCK) == 0)
 			type |= F_WAIT;
-		if (error =
-		    VOP_ADVLOCK(ndp->ni_vp, (caddr_t)fp, F_SETLK, &lf, type)) {
-			vput(ndp->ni_vp);
+		if (error = VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, type)) {
+			VOP_UNLOCK(vp);
+			(void) vn_close(vp, fp->f_flag, fp->f_cred, p);
 			ffree(fp);
 			fdp->fd_ofiles[indx] = NULL;
 			return (error);
 		}
 		fp->f_flag |= FHASLOCK;
 	}
-	VOP_UNLOCK(ndp->ni_vp);
+	VOP_UNLOCK(vp);
 	fp->f_type = DTYPE_VNODE;
 	fp->f_ops = &vnops;
-	fp->f_data = (caddr_t)ndp->ni_vp;
+	fp->f_data = (caddr_t)vp;
 	*retval = indx;
 	return (0);
 }
