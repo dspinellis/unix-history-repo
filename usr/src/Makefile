@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.12	(Berkeley)	%G%
+#	@(#)Makefile	4.13	(Berkeley)	%G%
 #
 # This makefile is designed to be run as:
 #	make build
@@ -42,7 +42,7 @@ SRC_MFLAGS = -k
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 LIBDIR= lib usr.lib
-SRCDIR=	bin usr.bin etc ucb new games local
+SRCDIR=	bin usr.bin etc ucb new games local old
 
 all:	${LIBDIR} ${SRCDIR}
 
