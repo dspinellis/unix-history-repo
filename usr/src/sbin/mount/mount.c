@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mount.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -15,10 +15,10 @@ struct mtab {
 	char	spec[NAMSIZ];
 } mtab[NMOUNT];
 
+int	ro;
 main(argc, argv)
 char **argv;
 {
-	register int ro;
 	register struct mtab *mp;
 	register char *np;
 	int mf;
@@ -37,7 +37,7 @@ char **argv;
 		if (strcmp(argv[1], "-a") == 0)
 			mountall++;
 		else {
-			fprintf(stderr,"arg count\n");
+			fprintf(stdout,"arg count\n");
 			exit(1);
 		}
 	}
@@ -46,31 +46,54 @@ char **argv;
 		ro = 0;
 		if(argc > 3)
 			ro++;
-		if (mountfs(argv[1], argv[2], ro))
+		if (mountfs(argv[1], argv[2], ro)){
+			perror("mount");
 			exit(1);
+		}
 	} else {
-		FILE	*fs_file;
-		struct	fstab	fs;
-		if ((fs_file = fopen(FSTAB, "r")) == NULL){
-			perror(FSTAB);
-			exit(1);
-		}
-		while (!feof(fs_file)){
-			int ro;
-			fscanf(fs_file, FSTABFMT, FSTABARG(&fs));
-			if (strcmp(fs.fs_file, "/") == 0)
+		struct	fstab	*fsp;
+		close(2); dup(1);
+		if (setfsent() == 0)
+			perror(FSTAB), exit(1);
+		while ( (fsp = getfsent()) != 0){
+			if (strcmp(fsp->fs_file, "/") == 0)
 				continue;
-			ro = !strcmp(fs.fs_type, "ro");
-			if (ro==0 && strcmp(fs.fs_type, "rw"))
+			ro = !strcmp(fsp->fs_type, FSTAB_RO);
+			if (ro==0 && strcmp(fsp->fs_type, FSTAB_RW))
 				continue;
-			fprintf(stderr, "Mounting %s on %s %s",
-				fs.fs_file, fs.fs_spec,
-				ro ? "(Read Only)\n" : "\n");
-			mountfs(fs.fs_spec, fs.fs_file, ro);
+			if (mountfs(fsp->fs_spec, fsp->fs_file, ro))
+				failed(fsp);
+			else
+				succeed(fsp);
 		}
-		fclose(fs_file);
+		endfsent();
 	}
 	exit(0);
+}
+failed(fsp)
+	register	struct	fstab *fsp;
+{
+	extern int errno;
+	extern char *sys_errlist[];
+	int err = errno;
+	printf("Attempt to mount ");
+	location(fsp);
+	printf("FAILED: %s\n", sys_errlist[err]);
+}
+succeed(fsp)
+	register	struct	fstab *fsp;
+{
+	printf("Mounted ");
+	location(fsp);
+	printf("\n");
+}
+location(fsp)
+	register	struct	fstab *fsp;
+{
+	extern	int	ro;
+	printf("%s on %s %s ",
+		fsp->fs_file, fsp->fs_spec,
+		ro ? "(Read Only)" : "");
 }
 
 mountfs(spec, name, ro)
@@ -82,7 +105,6 @@ mountfs(spec, name, ro)
 	int	mf;
 
 	if(mount(spec, name, ro) < 0) {
-		perror("mount");
 		return(1);
 	}
 	np = spec;
