@@ -2,13 +2,26 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	5.1 (Berkeley) %G%
+.\"	@(#)man.1	6.1 (Berkeley) %G%
 .\"
-.TH MAN 1 "18 January 1983"
+.TH MAN 1 ""
 .UC 4
 .SH NAME
 man \- find manual information by keywords; print out the manual
 .SH SYNOPSIS
+.br
+.B man
+[
+.B \-
+] [
+.B \-t
+] [
+.B \-M
+.I path
+] [
+section
+]
+title ...
 .br
 .B man
 .B \-k
@@ -17,16 +30,6 @@ keyword ...
 .B man
 .B \-f
 file ...
-.br
-.B man
-[
-.B \-
-] [
-.B \-t
-] [
-section
-]
-title ...
 .SH DESCRIPTION
 .I Man
 is a program which gives information from the programmers manual.
@@ -40,7 +43,7 @@ When given the option
 and a set of keywords,
 .I man
 prints out a one line synopsis of each manual sections whose
-listing in the table of contents contains that keyword.
+listing in the table of contents contains one of those keywords.
 .PP
 When given the option
 .B \-f
@@ -60,9 +63,12 @@ If a section specifier is given
 looks in the that section of the manual for the given
 .I titles.
 .I Section
-is an Arabic section number (3 for instance).  The number may followed by
-a single letter classifier (1g for instance)
-indicating a graphics program in section 1.  If
+is either
+an Arabic section number (3 for instance), or one of the words ``new,''
+``local,'' ``old,'' or ``public.''
+A section number may followed by
+a single letter classifier (for instance, 1g,
+indicating a graphics program in section 1).  If
 .I section
 is omitted,
 .I man
@@ -75,14 +81,11 @@ If the standard output is a teletype, or if the flag
 is given,
 .I man
 pipes its output through
-.IR cat (1)
+.IR more (1)
 with the option
 .B \-s
-to crush out useless blank lines,
-.IR ul (1)
-to create proper underlines for different terminals, and through
-.IR more (1)
-to stop after each page on the screen.
+to crush out useless blank lines
+and to stop after each page on the screen.
 Hit a space to continue,
 a control-D to scroll 11 more lines when the output stops.
 .PP
@@ -94,12 +97,31 @@ to arrange for the specified section to be
 .I troff'ed
 to a suitable raster output device; see
 .IR vtroff (1).
+.PP
+Normally
+.I man
+checks in a standard location for manual
+information (/usr/man).  This can be changed by supplying a search
+path (a la the shell) with the
+.B \-M
+flag.  The search path is a colon (`:') separated list
+of directories in which manual subdirectories may be found;
+e.g. ``/usr/local:/usr/man''.  If a search path is supplied
+with the 
+.B \-k
+or
+.B \-f
+options, it must be specified first.
 .SH FILES
-/usr/man/man?/*
-.br
-/usr/man/cat?/*
+.nf
+.ta \w'/usr/man/man?/*   'u
+/usr/man	standard manual area
+/usr/man/man?/*	directories containing source for manuals
+/usr/man/cat?/*	directories containing preformatted pages
+/usr/man/whatis	keyword database
+.fi
 .SH SEE\ ALSO
-more(1), ul(1), whereis(1), catman(8)
+apropos(1), more(1), whereis(1), catman(8)
 .SH BUGS
 The manual is supposed to be reproducible either on the phototypesetter
 or on a typewriter.
