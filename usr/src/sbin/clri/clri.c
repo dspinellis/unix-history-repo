@@ -1,102 +1,121 @@
-static char sccsid[] = "@(#)clri.c 2.6 %G%";
+/*
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Rich Salz.
+ *
+ * %sccs.include.redist.c%
+ */
 
-/* static char *sccsid = "@(#)clri.c	4.1 (Berkeley) 10/1/80"; */
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)clri.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
- * clri filsys inumber ...
+ * clri(8)
  */
 
 #include <sys/param.h>
-#include <ufs/dinode.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <ufs/quota.h>
+#include <ufs/inode.h>
 #include <ufs/fs.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#define ISIZE	(sizeof(struct dinode))
-#define	NI	(MAXBSIZE/ISIZE)
-struct	ino {
-	char	junk[ISIZE];
-};
-struct	ino	buf[NI];
-
-union {
-	char		dummy[SBSIZE];
-	struct fs	sblk;
-} sb_un;
-#define sblock sb_un.sblk
-
-int	status;
-long	dev_bsize = 1;
+char *fs;
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-	register i, f;
-	unsigned n;
-	int j, k;
-	long off;
+	register struct fs *sbp;
+	register struct dinode *ip;
+	register int fd;
+	struct dinode ibuf[MAXBSIZE / sizeof (struct dinode)];
+	long generation, offset, bsize;
+	int inonum;
+	char sblock[SBSIZE];
 
 	if (argc < 3) {
-		printf("usage: clri filsys inumber ...\n");
-		exit(4);
+		(void)fprintf(stderr, "usage: clri filesystem inode ...\n");
+		exit(1);
 	}
-	f = open(argv[1], 2);
-	if (f < 0) {
-		printf("cannot open %s\n", argv[1]);
-		exit(4);
+
+	fs = *++argv;
+
+	/* get the superblock. */
+	if ((fd = open(fs, O_RDWR, 0)) < 0)
+		error();
+	if (lseek(fd, SBLOCK * DEV_BSIZE, SEEK_SET) < 0)
+		error();
+	if (read(fd, sblock, sizeof(sblock)) != sizeof(sblock)) {
+		(void)fprintf(stderr,
+		    "clri: %s: can't read the superblock.\n", fs);
+		exit(1);
 	}
-	lseek(f, SBOFF, 0);
-	if (read(f, &sblock, SBSIZE) != SBSIZE) {
-		printf("cannot read %s\n", argv[1]);
-		exit(4);
+
+	sbp = (struct fs *)sblock;
+	if (sbp->fs_magic != FS_MAGIC) {
+		(void)fprintf(stderr,
+		    "clri: %s: superblock magic number 0x%x, not 0x%x.\n",
+		    fs, sbp->fs_magic, FS_MAGIC);
+		exit(1);
 	}
-	if (sblock.fs_magic != FS_MAGIC) {
-		printf("bad super block magic number\n");
-		exit(4);
-	}
-	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
-	for (i = 2; i < argc; i++) {
-		if (!isnumber(argv[i])) {
-			printf("%s: is not a number\n", argv[i]);
-			status = 1;
-			continue;
+	bsize = sbp->fs_bsize;
+
+	/* remaining arguments are inode numbers. */
+	while (*++argv) {
+		/* get the inode number. */
+		if ((inonum = atoi(*argv)) <= 0) {
+			(void)fprintf(stderr,
+			    "clri: %s is not a valid inode number.\n", *argv);
+			exit(1);
 		}
-		n = atoi(argv[i]);
-		if (n == 0) {
-			printf("%s: is zero\n", argv[i]);
-			status = 1;
-			continue;
-		}
-		off = fsbtodb(&sblock, itod(&sblock, n)) * dev_bsize;
-		lseek(f, off, 0);
-		if (read(f, (char *)buf, sblock.fs_bsize) != sblock.fs_bsize) {
-			printf("%s: read error\n", argv[i]);
-			status = 1;
-		}
+		(void)printf("clearing %d\n", inonum);
+
+		/* read in the appropriate block. */
+		offset = itod(sbp, inonum);	/* inode to fs block */
+		offset = fsbtodb(sbp, offset);	/* fs block to disk block */
+		offset *= DEV_BSIZE;		/* disk block to disk bytes */
+
+		/* seek and read the block */
+		if (lseek(fd, offset, SEEK_SET) < 0)
+			error();
+		if (read(fd, (char *)ibuf, bsize) != bsize)
+			error();
+
+		/* get the inode within the block. */
+		ip = &ibuf[itoo(sbp, inonum)];
+
+		/* clear the inode, and bump the generation count. */
+		generation = ip->di_gen + 1;
+		bzero((char *)ip, sizeof *ip);
+		ip->di_gen = generation;
+
+		/* backup and write the block */
+		if (lseek(fd, -bsize, SEEK_CUR) < 0)
+			error();
+		if (write(fd, (char *)ibuf, bsize) != bsize)
+			error();
+		(void)fsync(fd);
 	}
-	if (status)
-		exit(status);
-	for (i = 2; i < argc; i++) {
-		n = atoi(argv[i]);
-		printf("clearing %u\n", n);
-		off = fsbtodb(&sblock, itod(&sblock, n)) * dev_bsize;
-		lseek(f, off, 0);
-		read(f, (char *)buf, sblock.fs_bsize);
-		j = itoo(&sblock, n);
-		for (k = 0; k < ISIZE; k++)
-			buf[j].junk[k] = 0;
-		lseek(f, off, 0);
-		write(f, (char *)buf, sblock.fs_bsize);
-	}
-	exit(status);
+	(void)close(fd);
+	exit(0);
 }
 
-isnumber(s)
-	char *s;
+error()
 {
-	register c;
-
-	while(c = *s++)
-		if (c < '0' || c > '9')
-			return(0);
-	return(1);
+	(void)fprintf(stderr, "clri: %s: %s\n", fs, strerror(errno));
+	exit(1);
 }
