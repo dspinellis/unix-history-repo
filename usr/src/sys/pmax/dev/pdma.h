@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pdma.h	7.1 (Berkeley) %G%
+ *	@(#)pdma.h	7.2 (Berkeley) %G%
  */
 
 struct pdma {
@@ -15,5 +15,5 @@ struct pdma {
 	char	*p_mem;
 	char	*p_end;
 	int	p_arg;
-	int	(*p_fcn)();
+	void	(*p_fcn)();
 };
