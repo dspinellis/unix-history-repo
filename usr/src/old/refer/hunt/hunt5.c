@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt5.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt5.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -12,7 +12,7 @@ result(master, nf, fc)
 union ptr {
 	unsigned *a; 
 	long *b;
-} *master;
+} master;
 FILE *fc;
 {
 	int i, c;

@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	quiz.c	4.1	82/10/24	";
+static char sccsid[] = "	quiz.c	4.2	85/01/09	";
 
 #include <stdio.h>
 #include <signal.h>
@@ -291,6 +291,8 @@ readindex()
 talloc()
 {
 	int i;
+	char *malloc();
+
 	for(i=0;i<NF;i++)
 		tmp[i] = malloc(SL);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)inv5.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)inv5.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -24,12 +24,12 @@ FILE *ft, *fb, *fa;
 	fread(&iflong, sizeof(iflong), 1, fa);
 	if (iflong)
 	{
-		hpt_l =  calloc(sizeof(*hpt_l), n+1);
+		hpt_l = (long *) calloc(sizeof(*hpt_l), n+1);
 		n =fread(hpt_l, sizeof(*hpt_l), n, fa);
 	}
 	else
 	{
-		hpt_s =  calloc(sizeof(*hpt_s), n+1);
+		hpt_s =  (int *) calloc(sizeof(*hpt_s), n+1);
 		n =fread(hpt_s, sizeof(*hpt_s), n, fa);
 	}
 	if (n!= nhash)

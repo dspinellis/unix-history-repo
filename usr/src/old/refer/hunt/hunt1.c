@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt1.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt1.c	4.3 (Berkeley) %G%";
 #endif
 
 # include <stdio.h>
@@ -70,7 +70,7 @@ char *argv[];
 			argc--; 
 			argv++;
 			soutput = argv[1];
-			if (argv[2]<16000)
+			if ((int) argv[2]<16000)
 			{
 				soutlen = (int)argv[2];
 				argc--; 
@@ -146,14 +146,14 @@ char *argv[];
 	fread (&nhash, sizeof(nhash), 1, fa);
 	fread (&iflong, sizeof(iflong), 1, fa);
 	if(master==0)
-		master = calloc (lmaster, iflong? 4: 2);
-	hpt = calloc(nhash, sizeof(*hpt));
+		master = (unsigned *) calloc (lmaster, iflong? sizeof(long): sizeof(unsigned));
+	hpt = (long *) calloc(nhash, sizeof(*hpt));
 	kk=fread( hpt, sizeof(*hpt), nhash, fa);
 # if D1
 	fprintf(stderr,"read %d hashes, iflong %d, nhash %d\n", kk, iflong, nhash);
 # endif
 	_assert (kk==nhash);
-	hfreq = calloc(nhash, sizeof(*hfreq));
+	hfreq = (int *) calloc(nhash, sizeof(*hfreq));
 	_assert (hfreq != NULL);
 	frtbl = fread(hfreq, sizeof(*hfreq), nhash, fa);
 	hfrflg = (frtbl == nhash);

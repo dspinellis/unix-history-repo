@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)inv6.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)inv6.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -20,12 +20,12 @@ long *ptotct;
 	int k; 
 	long lp;
 	long *hpt;
-	int *hfreq = NULL;
+	int *hfreq;
 
-	hpt = calloc (nhash+1, sizeof(*hpt));
+	hpt = (long *) calloc (nhash+1, sizeof(*hpt));
 	_assert (hpt != NULL);
-	hfreq = calloc (nhash, sizeof(*hfreq));
-	_assert (hfreq !=NULL);
+	hfreq = (int *) calloc (nhash, sizeof(*hfreq));
+	_assert (hfreq != NULL);
 	hpt[0] = 0;
 	lp= 0;
 	while (fgets(line, 100, ft))
