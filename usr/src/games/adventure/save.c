@@ -1,3 +1,18 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * The game adventure was original written Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by
+ * Jim Gillogly.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)save.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 /* save (III)   J. Gillogly
  * save user core image for restarting
  * usage: save(<command file (argv[0] from main)>,<output file>)
@@ -5,8 +20,6 @@
  *   -  impure code (i.e. changes in instructions) is not handled
  *      (but people that do that get what they deserve)
  */
-
-static char sccsid[] = "	save.c	4.3	89/03/05	";
 
 #include <sys/file.h>
 #include <a.out.h>

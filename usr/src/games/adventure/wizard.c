@@ -1,7 +1,19 @@
-#
-/*      Re-coding of advent in C: privileged operations                 */
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * The game adventure was original written Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by
+ * Jim Gillogly.
+ *
+ * %sccs.include.redist.c%
+ */
 
-static char sccsid[] = "	wizard.c	4.1	82/05/11	";
+#ifndef lint
+static char sccsid[] = "@(#)wizard.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
+/*      Re-coding of advent in C: privileged operations                 */
 
 # include "hdr.h"
 

@@ -1,4 +1,16 @@
-#
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * The game adventure was original written Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by
+ * Jim Gillogly.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)hdr.h	5.1 (Berkeley) %G%
+ */
+
 /*   ADVENTURE -- Jim Gillogly, Jul 1977
  * This program is a re-write of ADVENT, written in FORTRAN mostly by
  * Don Woods of SAIL.  In most places it is as nearly identical to the
@@ -12,9 +24,6 @@
  * "glorkz" in the directory where the program is first run.
  */
 
-static char hdr_sccsid[] = "	hdr.h	4.1	82/05/11	";
-
-/*  hdr.h */
 /* hdr.h: included by c advent files */
 
 extern int setup;                       /* changed by savec & init      */
