@@ -1,4 +1,4 @@
-/*	if_imp.c	4.34	82/06/13	*/
+/*	if_imp.c	4.34	82/06/14	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -23,6 +23,7 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
+#define	IMPLEADERS
 #include "../net/if_imp.h"
 #include "../net/if_imphost.h"
 #include "../net/ip.h"
@@ -123,6 +124,7 @@ COUNT(IMPINIT);
 struct sockproto impproto = { PF_IMPLINK };
 struct sockaddr_in impdst = { AF_IMPLINK };
 struct sockaddr_in impsrc = { AF_IMPLINK };
+int	impprintfs = 0;
 
 /*
  * ARPAnet 1822 input routine.
@@ -155,6 +157,8 @@ COUNT(IMPINPUT);
 		    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
 			return;
 	ip = mtod(m, struct imp_leader *);
+	if (impprintfs)
+		printleader("impinput", ip);
 
 	/* check leader type */
 	if (ip->il_format != IMP_NFF) {
@@ -232,8 +236,11 @@ COUNT(IMPINPUT);
 		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
+#ifdef notdef
 		/* restart output in case something was q'd */
-		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
+		if (sc->imp_cb.ic_oactive == 0)
+			(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
+#endif
 		goto drop;
 
 	/*
@@ -583,4 +590,42 @@ COUNT(IMPNOOPS);
 	if (sc->imp_cb.ic_oactive == 0)
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 }
+
+#ifdef IMPLEADERS
+printleader(routine, ip)
+	char *routine;
+	register struct imp_leader *ip;
+{
+	printf("%s: ", routine);
+	printbyte((char *)ip, 12);
+	printf("<fmt=%x,net=%x,flags=%x,mtype=", ip->il_format, ip->il_network,
+		ip->il_flags);
+	if (ip->il_mtype <= IMPTYPE_READY)
+		printf("%s,", impleaders[ip->il_mtype]);
+	else
+		printf("%x,", ip->il_mtype);
+	printf("htype=%x,host=%x,imp=%x,link=", ip->il_htype, ip->il_host,
+		ntohs(ip->il_imp));
+	if (ip->il_link == IMPLINK_IP)
+		printf("ip,");
+	else
+		printf("%x,", ip->il_link);
+	printf("subtype=%x,len=%x>\n",ip->il_subtype,ntohs(ip->il_length)>>3);
+}
+
+printbyte(cp, n)
+	register char *cp;
+	int n;
+{
+	register i, j, c;
+
+	for (i=0; i<n; i++) {
+		c = *cp++;
+		for (j=0; j<2; j++)
+			putchar("0123456789abcdef"[(c>>((1-j)*4))&0xf]);
+		putchar(' ');
+	}
+	putchar('\n');
+}
+#endif
 #endif
