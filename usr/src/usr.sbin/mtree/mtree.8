@@ -1,0 +1,213 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)mtree.8	5.1 (Berkeley) %G%
+.\"
+.TH MTREE 8 ""
+.UC 7
+.SH NAME
+mtree \- map a directory hierarchy
+.SH SYNOPSIS
+.B mtree
+[
+.B \-cderux
+] [
+.B \-f
+spec ] [
+.B \-p
+path ]
+.SH DESCRIPTION
+.I Mtree
+maps a directory hierarchy, or tree, to a specification.
+The
+specification is read from the standard input by default, or from
+the file
+.I spec
+if the
+.I -f
+option is provided.
+.I Mtree
+then walks the tree specified by the
+.I -p
+option, or by default, the tree rooted in the current directory, and
+verifies that the tree matches the specification.
+Messages are written to standard output for any nodes which exist
+only in the specification or the tree and for any nodes whose
+characteristics do not match those of the specification.
+.PP
+The options are as follows:
+.TP
+-c
+Print to standard output a specification for the tree.
+.TP
+-d
+Ignore everything except directory type nodes.
+.TP
+-e
+Stops
+.I mtree
+from objecting to nodes that are in the tree but not in the
+specification.
+.TP
+-r
+Remove any nodes in the tree that are not described in the
+specification.
+.TP
+-u
+The
+.I -u
+option causes
+.I mtree
+to modify the owner, group, and permissions of existing nodes to
+match the specification.
+Missing directories are also created.
+.TP
+-x
+Don't traverse any mount points when creating a specification.
+.PP
+Specifications consist of ``keywords'', i.e. special strings that specify
+values relating to nodes.
+No keywords have default values, and if a keyword has no set value no
+checks on it are performed.
+The only keyword which
+.B must
+be set is ``type''.
+Currently supported keywords are as follows:
+.TP
+cksum
+The checksum of the file using the algorithm specified by
+the program
+.IR cksum (1).
+Ignored for any nodes other than type file.
+.TP
+dmode
+The directory type node's permissions as an octal value.
+This keyword may only be used globally, i.e. not as part of a node
+specification line.
+.TP
+fmode
+The file type node's permissions as an octal value.
+This keyword may only be used globally, i.e. not as part of a node
+specification line.
+.TP
+group
+The group of the node; may be either numeric or symbolic.
+.TP
+mode
+The current node's permissions as an octal value.
+This keyword may only be used locally, i.e. not for setting a value
+to be retained for future node specifications.
+.TP
+nlink
+The number of hard links the node is expected to have.
+Ignored for nodes of type directory.
+.TP
+owner
+The owner of the node; may be either numeric or symbolic.
+.TP
+size
+The size, in bytes, of the node.
+Ignored for any nodes other than type file.
+.TP
+slink
+The file a symbolic link is expected to reference.
+.TP
+type
+The type of the node; may be set to one of the following:
+.TS
+l l.
+block	block special device
+char	character special device
+dir	directory
+file	regular file
+link	symbolic link
+socket	socket
+.TE
+.PP
+There are five types of lines in a specification.
+.PP
+The first type sets the value of a keyword and consists of three fields:
+the string ``/set'', a keyword, an equals sign, and the keyword's value.
+Whitespace is required between the ``set'' and the keyword, but no
+whitespace is allowed in the rest of the line.
+Once a key word is set, the value remains unchanged until either
+reset or unset.
+.PP
+The second type of line unsets keywords and consists of two fields:
+the string ``/unset'' and a keyword, separated by whitespace.
+.PP
+The third type of line consists of two fields: the string ``/ignore'' and
+a name, separated by whitespace.
+This causes
+.I mtree
+to ignore the referenced file as well as all files below it in the tree.
+.PP
+The fourth type of line is a node specification and consists of the name
+of a file followed by zero or more whitespace separated fields.
+Each of these fields consists of a keyword, followed by an equals
+sign (=), followed by the keyword's value, without intervening whitespace.
+The values override, without changing, the current value of the
+corresponding keyword.
+.PP
+The node name may contain any of the standard file name matching characters.
+In this case, any file in the current directory with a name matching the
+pattern will have the specification applied to it.
+.PP
+All paths are relative.
+Any directory specification will cause the current directory path to
+descend one level.
+Any non-directory will be presumed to be below the current directory
+path.
+Which brings us to the last type of line in a specification: a line
+containing just the string ``..'' causes the current directory path to
+ascend one level.
+.PP
+Empty lines and lines beginning with a hash mark (``#'') are ignored.
+.PP
+.I Mtree
+exits 0 on success and >0 if an error occurred or the tree did not
+match the specification.
+.SH "SEE ALSO"
+find(1), stat(2), ftwalk(3), mkproto(8)
+.SH EXAMPLE
+.TS
+l l l l l l.
+# BSD root file system
+#
+set type=file
+set owner=bin
+set group=bin
+set dmode=755
+set fmode=555
+set links=1
+
+bin				type=directory
+	adb
+	cat
+\..
+set fmode=640
+dev
+	MAKEDEV
+	kmem			type=char group=kmem
+	null			type=char group=kmem
+	rdk*			type=char group=operator
+	dk*			type=block group=operator
+\..
+etc				type=directory
+	disklabels			type=directory
+		*		mode=444
+	\..
+\..
+.TE
