@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.124 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.125 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1032,7 +1032,7 @@ main(argc, argv, envp)
 	{
 		char dtype[200];
 
-		if (!tTd(52, 100))
+		if (!tTd(99, 100))
 		{
 			/* put us in background */
 			i = fork();

@@ -66,3 +66,4 @@
 80			content length
 81			sun remote mode
 91	mci.c		syslogging of MCI cache information
+99	main.c		avoid backgrounding (no printed output)
