@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1160,11 +1160,39 @@ logdelivery(stat, e)
 	char *stat;
 	register ENVELOPE *e;
 {
+	char *delay;
 	extern char *pintvl();
 
 # ifdef LOG
-	syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", e->e_id,
-	       e->e_to, pintvl(curtime() - e->e_ctime, TRUE), stat);
+	delay = pintvl(curtime() - e->e_ctime, TRUE);
+	if (strcmp(stat, "Sent") != 0 || CurHostName == NULL)
+	{
+		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s",
+		       e->e_id, e->e_to, delay, stat);
+	}
+	else
+	{
+		char *p;
+		extern char *macvalue();
+
+		if (CurHostName[0] == '/')
+		{
+			p = macvalue('h', e);
+			if (p == NULL || p[0] == '\0')
+				p = "local";
+		}
+# ifdef DAEMON
+		else
+		{
+			extern struct sockaddr_in CurHostAddr;
+			extern char *inet_ntoa();
+
+			p = inet_ntoa(CurHostAddr.sin_addr);
+		}
+# endif
+		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=Sent to %s (%s)",
+		       e->e_id, e->e_to, delay, p, CurHostName);
+	}
 # endif /* LOG */
 }
 /*
