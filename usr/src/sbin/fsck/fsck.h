@@ -4,8 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsck.h	8.2 (Berkeley) %G%
+ *	@(#)fsck.h	8.3 (Berkeley) %G%
  */
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
 #define	MAXBAD		10	/* limit on bad blks (per inode) */
@@ -158,7 +162,7 @@ char	*blockmap;		/* ptr to primary blk allocation map */
 ino_t	maxino;			/* number of inodes in file system */
 ino_t	lastino;		/* last inode in use */
 char	*statemap;		/* ptr to inode state table */
-char	*typemap;		/* ptr to inode type table */
+u_char	*typemap;		/* ptr to inode type table */
 short	*lncntp;		/* ptr to link count table */
 
 ino_t	lfdir;			/* lost & found directory inode number */
@@ -181,9 +185,69 @@ struct	dinode zino;
 #define	ALTERED	0x08
 #define	FOUND	0x10
 
-time_t time();
-struct dinode *ginode();
-struct inoinfo *getinoinfo();
-void getblk();
-ino_t allocino();
-int findino();
+#define	EEXIT	8		/* Standard error exit. */
+
+struct fstab;
+
+void		adjust __P((struct inodesc *, int lcnt));
+ufs_daddr_t	allocblk __P((long frags));
+ino_t		allocdir __P((ino_t parent, ino_t request, int mode));
+ino_t		allocino __P((ino_t request, int type));
+void		blkerror __P((ino_t ino, char *type, ufs_daddr_t blk));
+char	       *blockcheck __P((char *name));
+int		bread __P((int fd, char *buf, ufs_daddr_t blk, long size));
+void		bufinit __P((void));
+void		bwrite __P((int fd, char *buf, ufs_daddr_t blk, long size));
+void		cacheino __P((struct dinode *dp, ino_t inumber));
+void		catch __P((int));
+void		catchquit __P((int));
+int		changeino __P((ino_t dir, char *name, ino_t newnum));
+int		checkfstab __P((int preen, int maxrun,
+			int (*docheck)(struct fstab *),
+			int (*chkit)(char *, char *, long, int)));
+int		chkrange __P((ufs_daddr_t blk, int cnt));
+void		ckfini __P((void));
+int		ckinode __P((struct dinode *dp, struct inodesc *));
+void		clri __P((struct inodesc *, char *type, int flag));
+void		direrror __P((ino_t ino, char *errmesg));
+int		dirscan __P((struct inodesc *));
+int		dofix __P((struct inodesc *, char *msg));
+void		ffs_clrblock __P((struct fs *, u_char *, ufs_daddr_t));
+void		ffs_fragacct __P((struct fs *, int, int32_t [], int));
+int		ffs_isblock __P((struct fs *, u_char *, ufs_daddr_t));
+void		ffs_setblock __P((struct fs *, u_char *, ufs_daddr_t));
+void		fileerror __P((ino_t cwd, ino_t ino, char *errmesg));
+int		findino __P((struct inodesc *));
+int		findname __P((struct inodesc *));
+void		flush __P((int fd, struct bufarea *bp));
+void		freeblk __P((ufs_daddr_t blkno, long frags));
+void		freeino __P((ino_t ino));
+void		freeinodebuf __P((void));
+int		ftypeok __P((struct dinode *dp));
+void		getblk __P((struct bufarea *bp, ufs_daddr_t blk, long size));
+struct bufarea *getdatablk __P((ufs_daddr_t blkno, long size));
+struct inoinfo *getinoinfo __P((ino_t inumber));
+struct dinode  *getnextinode __P((ino_t inumber));
+void		getpathname __P((char *namebuf, ino_t curdir, ino_t ino));
+struct dinode  *ginode __P((ino_t inumber));
+void		inocleanup __P((void));
+void		inodirty __P((void));
+int		linkup __P((ino_t orphan, ino_t parentdir));
+int		makeentry __P((ino_t parent, ino_t ino, char *name));
+void		panic __P((const char *fmt, ...));
+void		pass1 __P((void));
+void		pass1b __P((void));
+int		pass1check __P((struct inodesc *));
+void		pass2 __P((void));
+void		pass3 __P((void));
+void		pass4 __P((void));
+int		pass4check __P((struct inodesc *));
+void		pass5 __P((void));
+void		pfatal __P((const char *fmt, ...));
+void		pinode __P((ino_t ino));
+void		propagate __P((void));
+void		pwarn __P((const char *fmt, ...));
+int		reply __P((char *question));
+void		resetinodebuf __P((void));
+int		setup __P((char *dev));
+void		voidquit __P((int));

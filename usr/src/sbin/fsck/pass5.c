@@ -6,16 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
+#include <err.h>
 #include <string.h>
+
 #include "fsck.h"
 
+void
 pass5()
 {
 	int c, blk, frags, basesize, sumsize, mapsize, savednrpos;
@@ -117,7 +122,8 @@ pass5()
 		break;
 
 	default:
-		errexit("UNKNOWN ROTATIONAL TABLE FORMAT %d\n",
+		sumsize = 0;	/* keep lint happy */
+		errx(EEXIT, "UNKNOWN ROTATIONAL TABLE FORMAT %d",
 			fs->fs_postblformat);
 	}
 	bzero((char *)&idesc[0], sizeof idesc);
@@ -190,7 +196,7 @@ pass5()
 			default:
 				if (j < ROOTINO)
 					break;
-				errexit("BAD STATE %d FOR INODE I=%d",
+				errx(EEXIT, "BAD STATE %d FOR INODE I=%d",
 				    statemap[j], j);
 			}
 		}

@@ -6,22 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
-#include <stdlib.h>
+
+#include <err.h>
 #include <string.h>
+
 #include "fsck.h"
 
 #define MINDIRSIZE	(sizeof (struct dirtemplate))
 
-int	pass2check(), blksort();
+static int blksort __P((const void *, const void *));
+static int pass2check __P((struct inodesc *));
 
+void
 pass2()
 {
 	register struct dinode *dp;
@@ -36,9 +41,9 @@ pass2()
 	case USTATE:
 		pfatal("ROOT INODE UNALLOCATED");
 		if (reply("ALLOCATE") == 0)
-			errexit("");
+			exit(EEXIT);
 		if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
-			errexit("CANNOT ALLOCATE ROOT INODE\n");
+			errx(EEXIT, "CANNOT ALLOCATE ROOT INODE");
 		break;
 
 	case DCLEAR:
@@ -46,11 +51,11 @@ pass2()
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
 			if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
-				errexit("CANNOT ALLOCATE ROOT INODE\n");
+				errx(EEXIT, "CANNOT ALLOCATE ROOT INODE");
 			break;
 		}
 		if (reply("CONTINUE") == 0)
-			errexit("");
+			exit(EEXIT);
 		break;
 
 	case FSTATE:
@@ -59,11 +64,11 @@ pass2()
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
 			if (allocdir(ROOTINO, ROOTINO, 0755) != ROOTINO)
-				errexit("CANNOT ALLOCATE ROOT INODE\n");
+				errx(EEXIT, "CANNOT ALLOCATE ROOT INODE");
 			break;
 		}
 		if (reply("FIX") == 0)
-			errexit("");
+			exit(EEXIT);
 		dp = ginode(ROOTINO);
 		dp->di_mode &= ~IFMT;
 		dp->di_mode |= IFDIR;
@@ -74,7 +79,7 @@ pass2()
 		break;
 
 	default:
-		errexit("BAD STATE %d FOR ROOT INODE", statemap[ROOTINO]);
+		errx(EEXIT, "BAD STATE %d FOR ROOT INODE", statemap[ROOTINO]);
 	}
 	statemap[ROOTINO] = DFOUND;
 	if (newinofmt) {
@@ -167,6 +172,7 @@ pass2()
 	propagate();
 }
 
+static int
 pass2check(idesc)
 	struct inodesc *idesc;
 {
@@ -413,7 +419,7 @@ again:
 			break;
 
 		default:
-			errexit("BAD STATE %d FOR INODE I=%d",
+			errx(EEXIT, "BAD STATE %d FOR INODE I=%d",
 			    statemap[dirp->d_ino], dirp->d_ino);
 		}
 	}
@@ -426,9 +432,11 @@ again:
 /*
  * Routine to sort disk blocks.
  */
-blksort(inpp1, inpp2)
-	struct inoinfo **inpp1, **inpp2;
+static int
+blksort(arg1, arg2)
+	const void *arg1, *arg2;
 {
 
-	return ((*inpp1)->i_blks[0] - (*inpp2)->i_blks[0]);
+	return ((*(struct inoinfo **)arg1)->i_blks[0] -
+		(*(struct inoinfo **)arg2)->i_blks[0]);
 }

@@ -6,19 +6,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1b.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1b.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
 #include <string.h>
+
 #include "fsck.h"
 
-int	pass1bcheck();
 static  struct dups *duphead;
+static int pass1bcheck __P((struct inodesc *));
 
+void
 pass1b()
 {
 	register int c, i;
@@ -46,6 +50,7 @@ pass1b()
 	}
 }
 
+static int
 pass1bcheck(idesc)
 	register struct inodesc *idesc;
 {

@@ -6,22 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 #include <ctype.h>
+#include <err.h>
+#include <string.h>
+
 #include "fsck.h"
 
 long	diskreads, totalreads;	/* Disk cache statistics */
 
+static void rwerror __P((char *mesg, ufs_daddr_t blk));
+
+int
 ftypeok(dp)
 	struct dinode *dp;
 {
@@ -43,6 +48,7 @@ ftypeok(dp)
 	}
 }
 
+int
 reply(question)
 	char *question;
 {
@@ -78,6 +84,7 @@ reply(question)
 /*
  * Malloc buffers and set up cache.
  */
+void
 bufinit()
 {
 	register struct bufarea *bp;
@@ -87,7 +94,7 @@ bufinit()
 	pbp = pdirbp = (struct bufarea *)0;
 	bufp = malloc((unsigned int)sblock.fs_bsize);
 	if (bufp == 0)
-		errexit("cannot allocate buffer pool\n");
+		errx(EEXIT, "cannot allocate buffer pool");
 	cgblk.b_un.b_buf = bufp;
 	initbarea(&cgblk);
 	bufhead.b_next = bufhead.b_prev = &bufhead;
@@ -100,7 +107,7 @@ bufinit()
 		if (bp == NULL || bufp == NULL) {
 			if (i >= MINBUFS)
 				break;
-			errexit("cannot allocate buffer pool\n");
+			errx(EEXIT, "cannot allocate buffer pool");
 		}
 		bp->b_un.b_buf = bufp;
 		bp->b_prev = &bufhead;
@@ -129,7 +136,7 @@ getdatablk(blkno, size)
 		if ((bp->b_flags & B_INUSE) == 0)
 			break;
 	if (bp == &bufhead)
-		errexit("deadlocked buffer pool\n");
+		errx(EEXIT, "deadlocked buffer pool");
 	getblk(bp, blkno, size);
 	/* fall through */
 foundit:
@@ -162,6 +169,7 @@ getblk(bp, blk, size)
 	}
 }
 
+void
 flush(fd, bp)
 	int fd;
 	register struct bufarea *bp;
@@ -187,6 +195,7 @@ flush(fd, bp)
 	}
 }
 
+static void
 rwerror(mesg, blk)
 	char *mesg;
 	ufs_daddr_t blk;
@@ -196,9 +205,10 @@ rwerror(mesg, blk)
 		printf("\n");
 	pfatal("CANNOT %s: BLK %ld", mesg, blk);
 	if (reply("CONTINUE") == 0)
-		errexit("Program terminated\n");
+		exit(EEXIT);
 }
 
+void
 ckfini()
 {
 	register struct bufarea *bp, *nbp;
@@ -225,7 +235,7 @@ ckfini()
 		free((char *)bp);
 	}
 	if (bufhead.b_size != cnt)
-		errexit("Panic: lost %d buffers\n", bufhead.b_size - cnt);
+		errx(EEXIT, "Panic: lost %d buffers", bufhead.b_size - cnt);
 	pbp = pdirbp = (struct bufarea *)0;
 	if (debug)
 		printf("cache missed %ld of %ld (%d%%)\n", diskreads,
@@ -234,6 +244,7 @@ ckfini()
 	(void)close(fswritefd);
 }
 
+int
 bread(fd, buf, blk, size)
 	int fd;
 	char *buf;
@@ -272,6 +283,7 @@ bread(fd, buf, blk, size)
 	return (errs);
 }
 
+void
 bwrite(fd, buf, blk, size)
 	int fd;
 	char *buf;
@@ -308,6 +320,7 @@ bwrite(fd, buf, blk, size)
 /*
  * allocate a data block with the specified number of fragments
  */
+ufs_daddr_t
 allocblk(frags)
 	long frags;
 {
@@ -338,6 +351,7 @@ allocblk(frags)
 /*
  * Free a previously allocated block
  */
+void
 freeblk(blkno, frags)
 	ufs_daddr_t blkno;
 	long frags;
@@ -352,6 +366,7 @@ freeblk(blkno, frags)
 /*
  * Find a pathname
  */
+void
 getpathname(namebuf, curdir, ino)
 	char *namebuf;
 	ino_t curdir, ino;
@@ -409,7 +424,8 @@ getpathname(namebuf, curdir, ino)
 }
 
 void
-catch()
+catch(sig)
+	int sig;
 {
 	if (!doinglevel2)
 		ckfini();
@@ -422,7 +438,8 @@ catch()
  * so that reboot sequence may be interrupted.
  */
 void
-catchquit()
+catchquit(sig)
+	int sig;
 {
 	extern returntosingle;
 
@@ -436,7 +453,8 @@ catchquit()
  * Used by child processes in preen.
  */
 void
-voidquit()
+voidquit(sig)
+	int sig;
 {
 
 	sleep(1);
@@ -447,6 +465,7 @@ voidquit()
 /*
  * determine whether an inode should be fixed.
  */
+int
 dofix(idesc, msg)
 	register struct inodesc *idesc;
 	char *msg;
@@ -479,62 +498,95 @@ dofix(idesc, msg)
 		return (0);
 
 	default:
-		errexit("UNKNOWN INODESC FIX MODE %d\n", idesc->id_fix);
+		errx(EEXIT, "UNKNOWN INODESC FIX MODE %d", idesc->id_fix);
 	}
 	/* NOTREACHED */
+	return (0);
 }
 
-/* VARARGS1 */
-errexit(s1, s2, s3, s4)
-	char *s1;
-{
-	printf(s1, s2, s3, s4);
-	exit(8);
-}
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
 /*
  * An unexpected inconsistency occured.
  * Die if preening, otherwise just print message and continue.
  */
-/* VARARGS1 */
-pfatal(s, a1, a2, a3)
-	char *s;
+void
+#if __STDC__
+pfatal(const char *fmt, ...)
+#else
+pfatal(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
 {
-
-	if (preen) {
-		printf("%s: ", cdevname);
-		printf(s, a1, a2, a3);
-		printf("\n");
-		printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n",
-			cdevname);
-		exit(8);
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	if (!preen) {
+		(void)vfprintf(stderr, fmt, ap);
+		va_end(ap);
+		return;
 	}
-	printf(s, a1, a2, a3);
+	(void)fprintf(stderr, "%s: ", cdevname);
+	(void)vfprintf(stderr, fmt, ap);
+	(void)fprintf(stderr,
+	    "\n%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n",
+	    cdevname);
+	exit(EEXIT);
 }
 
 /*
  * Pwarn just prints a message when not preening,
  * or a warning (preceded by filename) when preening.
  */
-/* VARARGS1 */
-pwarn(s, a1, a2, a3, a4, a5, a6)
-	char *s;
+void
+#if __STDC__
+pwarn(const char *fmt, ...)
+#else
+pwarn(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
 {
-
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	if (preen)
-		printf("%s: ", cdevname);
-	printf(s, a1, a2, a3, a4, a5, a6);
+		(void)fprintf(stderr, "%s: ", cdevname);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
 }
 
-#ifndef lint
 /*
  * Stub for routines from kernel.
  */
-panic(s)
-	char *s;
-{
-
-	pfatal("INTERNAL INCONSISTENCY:");
-	errexit(s);
-}
+void
+#if __STDC__
+panic(const char *fmt, ...)
+#else
+panic(fmt, va_alist)
+	char *fmt;
+	va_dcl
 #endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	pfatal("INTERNAL INCONSISTENCY:");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	exit(EEXIT);
+}
