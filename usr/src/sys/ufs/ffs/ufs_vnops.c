@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.112.1.1 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.113 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -134,6 +134,12 @@ ufs_open(ap)
 	} */ *ap;
 {
 
+	/*
+	 * Files marked append-only must be opened for appending.
+	 */
+	if ((VTOI(ap->a_vp)->i_flags & APPEND) &&
+	    (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
+		return (EPERM);
 	return (0);
 }
 
@@ -196,6 +202,8 @@ ufs_access(ap)
 		}
 	}
 #endif /* QUOTA */
+	if ((mode & VWRITE) && (ip->i_flags & IMMUTABLE))
+		return (EPERM);
 	/*
 	 * If you're the super-user, you always get access.
 	 */
@@ -292,6 +300,27 @@ ufs_setattr(ap)
 	    ((int)vap->va_bytes != VNOVAL) || (vap->va_gen != VNOVAL)) {
 		return (EINVAL);
 	}
+	if (vap->va_flags != VNOVAL) {
+		if (cred->cr_uid != ip->i_uid &&
+		    (error = suser(cred, &p->p_acflag)))
+			return (error);
+		if (cred->cr_uid == 0) {
+			if ((ip->i_flags & (SYS_IMMUTABLE | SYS_APPEND)) &&
+			    securelevel > 0)
+				return (EPERM);
+			ip->i_flags = vap->va_flags;
+		} else {
+			if (ip->i_flags & (SYS_IMMUTABLE | SYS_APPEND))
+				return (EPERM);
+			ip->i_flags &= 0xffff0000;
+			ip->i_flags |= (vap->va_flags & 0xffff);
+		}
+		ip->i_flag |= ICHG;
+		if (vap->va_flags & (IMMUTABLE | APPEND))
+			return (0);
+	}
+	if (ip->i_flags & (IMMUTABLE | APPEND))
+		return (EPERM);
 	/*
 	 * Go through the fields and update iff not VNOVAL.
 	 */
@@ -323,18 +352,6 @@ ufs_setattr(ap)
 	error = 0;
 	if (vap->va_mode != (mode_t)VNOVAL)
 		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
-	if (vap->va_flags != VNOVAL) {
-		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)))
-			return (error);
-		if (cred->cr_uid == 0) {
-			ip->i_flags = vap->va_flags;
-		} else {
-			ip->i_flags &= 0xffff0000;
-			ip->i_flags |= (vap->va_flags & 0xffff);
-		}
-		ip->i_flag |= ICHG;
-	}
 	return (error);
 }
 
@@ -567,12 +584,16 @@ ufs_remove(ap)
 	int error;
 
 	ip = VTOI(vp);
-	error = ufs_dirremove(dvp, ap->a_cnp);
-	if (!error) {
-		ip = VTOI(vp);
+	if ((ip->i_flags & (IMMUTABLE | APPEND)) ||
+	    (VTOI(dvp)->i_flags & APPEND)) {
+		error = EPERM;
+		goto out;
+	}
+	if ((error = ufs_dirremove(dvp, ap->a_cnp)) == 0) {
 		ip->i_nlink--;
 		ip->i_flag |= ICHG;
 	}
+out:
 	if (dvp == vp)
 		vrele(vp);
 	else
@@ -616,6 +637,11 @@ ufs_link(ap)
 	if ((nlink_t)ip->i_nlink >= LINK_MAX) {
 		VOP_ABORTOP(vp, cnp);
 		error = EMLINK;
+		goto out1;
+	}
+	if (ip->i_flags & (IMMUTABLE | APPEND)) {
+		VOP_ABORTOP(vp, cnp);
+		error = EPERM;
 		goto out1;
 	}
 	ip->i_nlink++;
@@ -870,6 +896,11 @@ abortit:
 	/*
 	 * Check if just deleting a link name.
 	 */
+	if (tvp && ((VTOI(tvp)->i_flags & (IMMUTABLE | APPEND)) ||
+	    (VTOI(tdvp)->i_flags & APPEND))) {
+		error = EPERM;
+		goto abortit;
+	}
 	if (fvp == tvp) {
 		if (fvp->v_type == VDIR) {
 			error = EINVAL;
@@ -892,6 +923,11 @@ abortit:
 		goto abortit;
 	dp = VTOI(fdvp);
 	ip = VTOI(fvp);
+	if ((ip->i_flags & (IMMUTABLE | APPEND)) || (dp->i_flags & APPEND)) {
+		VOP_UNLOCK(fvp);
+		error = EPERM;
+		goto abortit;
+	}
 	if ((ip->i_mode & IFMT) == IFDIR) {
 		/*
 		 * Avoid ".", "..", and aliases of "." for obvious reasons.
@@ -1214,22 +1250,18 @@ ufs_mkdir(ap)
 #endif
 	dp = VTOI(dvp);
 	if ((nlink_t)dp->i_nlink >= LINK_MAX) {
-		free(cnp->cn_pnbuf, M_NAMEI);
-		vput(dvp);
-		return (EMLINK);
+		error = EMLINK;
+		goto out;
 	}
-	dmode = vap->va_mode&0777;
+	dmode = vap->va_mode & 0777;
 	dmode |= IFDIR;
 	/*
 	 * Must simulate part of maknode here to acquire the inode, but
 	 * not have it entered in the parent directory. The entry is made
 	 * later after writing "." and ".." entries.
 	 */
-	if (error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp)) {
-		free(cnp->cn_pnbuf, M_NAMEI);
-		vput(dvp);
-		return (error);
-	}
+	if (error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
+		goto out;
 	ip = VTOI(tvp);
 	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = dp->i_gid;
@@ -1300,6 +1332,7 @@ bad:
 		vput(tvp);
 	} else
 		*ap->a_vpp = tvp;
+out:
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	vput(dvp);
 	return (error);
@@ -1343,6 +1376,10 @@ ufs_rmdir(ap)
 	if (ip->i_nlink != 2 ||
 	    !ufs_dirempty(ip, dp->i_number, cnp->cn_cred)) {
 		error = ENOTEMPTY;
+		goto out;
+	}
+	if ((dp->i_flags & APPEND) || (ip->i_flags & (IMMUTABLE | APPEND))) {
+		error = EPERM;
 		goto out;
 	}
 	/*
