@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.2 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -51,7 +51,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	long cylno, rpos, blk, i, inos, fssize;
+	long cylno, rpos, blk, i, j, inos, fssize, warn = 0;
 
 #ifndef STANDALONE
 	argc--, argv++;
@@ -156,11 +156,18 @@ main(argc, argv)
 		    sblock.fs_bsize / MAXFRAG);
 		exit(1);
 	}
-	sblock.fs_bblkno = BBLOCK;
-	sblock.fs_sblkno = SBLOCK;
-	sblock.fs_cblkno = (daddr_t)
+	sblock.fs_sblkno =
 	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
+	sblock.fs_cblkno = (daddr_t)(sblock.fs_sblkno +
+	    roundup(howmany(SBSIZE, sblock.fs_fsize), sblock.fs_frag));
 	sblock.fs_iblkno = sblock.fs_cblkno + sblock.fs_frag;
+	sblock.fs_cgoffset = roundup(
+	    howmany(sblock.fs_nsect, sblock.fs_fsize / DEV_BSIZE),
+	    sblock.fs_frag);
+	for (sblock.fs_cgmask = 0xffffffff, i = sblock.fs_ntrak; i > 1; i >>= 1)
+		sblock.fs_cgmask <<= 1;
+	if (!POWEROF2(sblock.fs_ntrak))
+		sblock.fs_cgmask <<= 1;
 	for (sblock.fs_cpc = NSPB(&sblock), i = sblock.fs_spc;
 	     sblock.fs_cpc > 1 && (i & 1) == 0;
 	     sblock.fs_cpc >>= 1, i >>= 1)
@@ -207,10 +214,8 @@ main(argc, argv)
 	sblock.fs_size = fssize = dbtofsb(&sblock, fssize);
 	sblock.fs_ncyl = fssize * NSPF(&sblock) / sblock.fs_spc;
 	if (fssize * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc) {
-		printf("Warning: %d sector(s) in last cylinder unallocated\n",
-		    sblock.fs_spc -
-		    (fssize * NSPF(&sblock) - sblock.fs_ncyl * sblock.fs_spc));
 		sblock.fs_ncyl++;
+		warn = 1;
 	}
 	if (sblock.fs_ncyl < 1) {
 		printf("file systems must have at least one cylinder\n");
@@ -308,20 +313,41 @@ next:
 	if (sblock.fs_ipg > MAXIPG)
 		sblock.fs_ipg = MAXIPG;
 	sblock.fs_dblkno = sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock);
-	if (cgdmin(&sblock, 0) >= sblock.fs_fpg) {
+	i = MIN(~sblock.fs_cgmask, sblock.fs_ncg - 1);
+	if (cgdmin(&sblock, i) - cgbase(&sblock, i) >= sblock.fs_fpg) {
 		printf("inode blocks/cyl group (%d) >= data blocks (%d)\n",
-		    cgdmin(&sblock, 0) / sblock.fs_frag,
+		    cgdmin(&sblock, i) - cgbase(&sblock, i) / sblock.fs_frag,
 		    sblock.fs_fpg / sblock.fs_frag);
-		printf("number of cylinder per cylinder group must be increased\n");
+		printf("number of cylinders per cylinder group must be increased\n");
 		exit(1);
+	}
+	j = sblock.fs_ncg - 1;
+	if ((i = fssize - j * sblock.fs_fpg) < sblock.fs_fpg &&
+	    cgdmin(&sblock, j) - cgbase(&sblock, j) > i) {
+		printf("Warning: inode blocks/cyl group (%d) >= data blocks (%d) in last\n",
+		    (cgdmin(&sblock, j) - cgbase(&sblock, j)) / sblock.fs_frag,
+		    i / sblock.fs_frag);
+		printf("    cylinder group. This implies %d sector(s) cannot be allocated.\n",
+		    i * NSPF(&sblock));
+		sblock.fs_ncg--;
+		sblock.fs_ncyl -= sblock.fs_ncyl % sblock.fs_cpg;
+		sblock.fs_size = fssize = sblock.fs_ncyl * sblock.fs_spc /
+		    NSPF(&sblock);
+		warn = 0;
+	}
+	if (warn) {
+		printf("Warning: %d sector(s) in last cylinder unallocated\n",
+		    sblock.fs_spc -
+		    (fssize * NSPF(&sblock) - (sblock.fs_ncyl - 1)
+		    * sblock.fs_spc));
 	}
 	/*
 	 * fill in remaining fields of the super block
 	 */
 	sblock.fs_csaddr = cgdmin(&sblock, 0);
-	sblock.fs_cssize = sblock.fs_ncg * sizeof(struct csum);
-	fscs = (struct csum *)
-	    calloc(1, blkroundup(&sblock, sblock.fs_cssize));
+	sblock.fs_cssize =
+	    fragroundup(&sblock, sblock.fs_ncg * sizeof(struct csum));
+	fscs = (struct csum *)calloc(1, sblock.fs_cssize);
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
 	sblock.fs_minfree = MINFREE;
@@ -347,14 +373,16 @@ next:
 	 * Now build the cylinders group blocks and
 	 * then print out indices of cylinder groups.
 	 */
-	for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
+	printf("super-block backups (for fsck -b#) at:");
+	for (cylno = 0; cylno < sblock.fs_ncg; cylno++) {
 		initcg(cylno);
-	if (sblock.fs_ncg == 1)
-		printf("Warning: no super-block backups with only one cylinder group\n");
-	else
-		printf("\tsuper-block backups (for fsck -b#) at %d+k*%d (%d .. %d)\n",
-		    SBLOCK, cgsblock(&sblock, 1) - SBLOCK, cgsblock(&sblock, 1),
-		    cgsblock(&sblock, sblock.fs_ncg - 1));
+		if (cylno % 10 == 0)
+			printf("\n");
+		printf(" %d,", fsbtodb(&sblock, cgsblock(&sblock, cylno)));
+	}
+	printf("\n%s\n%s\n",
+	    "WRITE THESE NUMBERS DOWN!!!",
+	    "fsck depends on them to recover this file system.");
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
@@ -364,12 +392,15 @@ next:
 	wtfs(SBLOCK, SBSIZE, (char *)&sblock);
 	for (i = 0; i < sblock.fs_cssize; i += sblock.fs_bsize)
 		wtfs(fsbtodb(&sblock, sblock.fs_csaddr + numfrags(&sblock, i)),
-			sblock.fs_bsize, ((char *)fscs) + i);
+			sblock.fs_cssize - i < sblock.fs_bsize ?
+			    sblock.fs_cssize - i : sblock.fs_bsize,
+			((char *)fscs) + i);
 	/* 
 	 * Write out the duplicate super blocks
 	 */
 	for (cylno = 1; cylno < sblock.fs_ncg; cylno++)
-		wtfs(cgsblock(&sblock, cylno), SBSIZE, (char *)&sblock);
+		wtfs(fsbtodb(&sblock, cgsblock(&sblock, cylno)),
+		    SBSIZE, (char *)&sblock);
 #ifndef STANDALONE
 	exit(0);
 #endif
@@ -381,7 +412,7 @@ next:
 initcg(cylno)
 	int cylno;
 {
-	daddr_t cbase, d, dmin, dmax;
+	daddr_t cbase, d, dlower, dupper, dmax;
 	long i, j, s;
 	register struct csum *cs;
 
@@ -394,8 +425,8 @@ initcg(cylno)
 	dmax = cbase + sblock.fs_fpg;
 	if (dmax > sblock.fs_size)
 		dmax = sblock.fs_size;
-	dmin = sblock.fs_dblkno;
-	d = cbase;
+	dlower = cgsblock(&sblock, cylno) - cbase;
+	dupper = cgdmin(&sblock, cylno) - cbase;
 	cs = fscs + cylno;
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
@@ -407,8 +438,8 @@ initcg(cylno)
 	acg.cg_cs.cs_nffree = 0;
 	acg.cg_cs.cs_nbfree = 0;
 	acg.cg_cs.cs_nifree = 0;
-	acg.cg_rotor = dmin;
-	acg.cg_frotor = dmin;
+	acg.cg_rotor = 0;
+	acg.cg_frotor = 0;
 	acg.cg_irotor = 0;
 	for (i = 0; i < sblock.fs_frag; i++) {
 		acg.cg_frsum[i] = 0;
@@ -439,27 +470,47 @@ initcg(cylno)
 			acg.cg_b[i][j] = 0;
 	}
 	if (cylno == 0) {
-		dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
-			sblock.fs_frag;
+		/*
+		 * reserve space for summary info and Boot block
+		 */
+		dupper += howmany(sblock.fs_cssize, sblock.fs_fsize);
+		for (d = 0; d < dlower; d += sblock.fs_frag)
+			clrblock(&sblock, acg.cg_free, d/sblock.fs_frag);
+	} else {
+		for (d = 0; d < dlower; d += sblock.fs_frag) {
+			setblock(&sblock, acg.cg_free, d/sblock.fs_frag);
+			acg.cg_cs.cs_nbfree++;
+			acg.cg_btot[cbtocylno(&sblock, d)]++;
+			acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]++;
+		}
+		sblock.fs_dsize += dlower;
 	}
-	for (d = 0; d < dmin; d += sblock.fs_frag)
+	sblock.fs_dsize += acg.cg_ndblk - dupper;
+	for (; d < dupper; d += sblock.fs_frag)
 		clrblock(&sblock, acg.cg_free, d/sblock.fs_frag);
-	while ((d+sblock.fs_frag) <= dmax - cbase) {
+	if (d > dupper) {
+		acg.cg_frsum[d - dupper]++;
+		for (i = d - 1; i >= dupper; i--) {
+			setbit(acg.cg_free, i);
+			acg.cg_cs.cs_nffree++;
+		}
+	}
+	while ((d + sblock.fs_frag) <= dmax - cbase) {
 		setblock(&sblock, acg.cg_free, d/sblock.fs_frag);
 		acg.cg_cs.cs_nbfree++;
 		acg.cg_btot[cbtocylno(&sblock, d)]++;
 		acg.cg_b[cbtocylno(&sblock, d)][cbtorpos(&sblock, d)]++;
 		d += sblock.fs_frag;
 	}
-	if (d < dmax - cbase)
+	if (d < dmax - cbase) {
 		acg.cg_frsum[dmax - cbase - d]++;
 		for (; d < dmax - cbase; d++) {
 			setbit(acg.cg_free, d);
 			acg.cg_cs.cs_nffree++;
 		}
+	}
 	for (; d < MAXBPG(&sblock); d++)
 		clrbit(acg.cg_free, d);
-	sblock.fs_dsize += acg.cg_ndblk - dmin;
 	sblock.fs_cstotal.cs_ndir += acg.cg_cs.cs_ndir;
 	sblock.fs_cstotal.cs_nffree += acg.cg_cs.cs_nffree;
 	sblock.fs_cstotal.cs_nbfree += acg.cg_cs.cs_nbfree;
@@ -558,6 +609,10 @@ alloc(size, mode)
 
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
+	if (acg.cg_magic != CG_MAGIC) {
+		printf("cg 0: bad magic number\n");
+		return (0);
+	}
 	if (acg.cg_cs.cs_nbfree == 0) {
 		printf("first cylinder group ran out of space\n");
 		return (0);
@@ -586,7 +641,7 @@ goth:
 		acg.cg_cs.cs_nffree += sblock.fs_frag - frag;
 		acg.cg_frsum[sblock.fs_frag - frag]++;
 		for (i = frag; i < sblock.fs_frag; i++)
-			setbit(acg.cg_free, d+i);
+			setbit(acg.cg_free, d + i);
 	}
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
@@ -606,6 +661,10 @@ iput(ip)
 	c = itog(&sblock, ip->i_number);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
+	if (acg.cg_magic != CG_MAGIC) {
+		printf("cg 0: bad magic number\n");
+		exit(1);
+	}
 	acg.cg_cs.cs_nifree--;
 	setbit(acg.cg_iused, ip->i_number);
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,

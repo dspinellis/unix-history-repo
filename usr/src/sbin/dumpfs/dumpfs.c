@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	2.2 (Berkeley) %G%";
 
 #ifndef SIMFS
 #include <sys/param.h>
@@ -29,7 +29,7 @@ union {
 main(argc, argv)
 	char **argv;
 {
-	int c, i, j, k;
+	int c, i, j, k, size;
 
 	close(0);
 	if (open(argv[1], 0) != 0)
@@ -38,9 +38,10 @@ main(argc, argv)
 	if (read(0, &afs, SBSIZE) != SBSIZE)
 		perror(argv[1]), exit(1);
 	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
-	printf("bblkno\t%d\tsblkno\t%d\n", afs.fs_bblkno, afs.fs_sblkno);
-	printf("cblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
-	    afs.fs_cblkno, afs.fs_iblkno, afs.fs_dblkno);
+	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
+	    afs.fs_sblkno, afs.fs_cblkno, afs.fs_iblkno, afs.fs_dblkno);
+	printf("cgoffset\t%d\tcgmask\t0x%08x\n",
+	    afs.fs_cgoffset, afs.fs_cgmask);
 	printf("ncg\t%d\tsize\t%d\tblocks\t%d\tcgsize\t%d\n",
 	    afs.fs_ncg, afs.fs_size, afs.fs_dsize, afs.fs_cgsize);
 	printf("bsize\t%d\tshift\t%d\tmask\t0x%08x\n",
@@ -80,11 +81,13 @@ main(argc, argv)
 		}
 	}
 	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");
-	for (i = 0; i < howmany(afs.fs_cssize, afs.fs_bsize); i++) {
-		afs.fs_csp[i] = (struct csum *)calloc(1, afs.fs_bsize);
-		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + (i * afs.fs_frag))) *
+	for (i = 0, j = 0; i < afs.fs_cssize; i += afs.fs_bsize, j++) {
+		size = afs.fs_cssize - i < afs.fs_bsize ?
+		    afs.fs_cssize - i : afs.fs_bsize;
+		afs.fs_csp[j] = (struct csum *)calloc(1, size);
+		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + j * afs.fs_frag)) *
 		    DEV_BSIZE, 0);
-		if (read(0, afs.fs_csp[i], afs.fs_bsize) != afs.fs_bsize)
+		if (read(0, afs.fs_csp[j], size) != size)
 			perror(argv[1]), exit(1);
 	}
 	for (i = 0; i < afs.fs_ncg; i++) {

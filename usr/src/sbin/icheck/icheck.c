@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	2.2 (Berkeley) %G%";
 
 /*
  * icheck
@@ -173,12 +173,16 @@ check(file)
 	}
 	ino = 0;
 	cginit = 1;
-	if(!dflg) {
-		for (i=0; i<(unsigned)n; i++)
+	if (!dflg) {
+		for (i = 0; i < (unsigned)n; i++)
 			bmap[i] = 0;
-		for (c=0; c < sblock.fs_ncg; c++) {
+		for (c = 0; c < sblock.fs_ncg; c++) {
 			cgd = cgtod(&sblock, c);
-			for (d = cgbase(&sblock, c); d < cgd; d += sblock.fs_frag)
+			if (c == 0)
+				d = cgbase(&sblock, c);
+			else
+				d = cgsblock(&sblock, c);
+			for (; d < cgd; d += sblock.fs_frag)
 				chk(d, "badcg", sblock.fs_bsize);
 			d = cgimin(&sblock, c);
 			while (cgd < d) {
@@ -189,10 +193,9 @@ check(file)
 			for (; cgd < d; cgd += sblock.fs_frag)
 				chk(cgd, "inode", sblock.fs_bsize);
 			if (c == 0) {
-				d += howmany(sblock.fs_cssize, sblock.fs_bsize)
-				    * sblock.fs_frag;
-				for (; cgd < d; cgd += sblock.fs_frag)
-					chk(cgd, "csum", sblock.fs_bsize);
+				d += howmany(sblock.fs_cssize, sblock.fs_fsize);
+				for (; cgd < d; cgd++)
+					chk(cgd, "csum", sblock.fs_fsize);
 			}
 		}
 	}
@@ -224,6 +227,8 @@ check(file)
 		cbase = cgbase(&sblock, c);
 		bread(fsbtodb(&sblock, cgtod(&sblock, c)), (char *)&cgrp,
 			sblock.fs_cgsize);
+		if (cgrp.cg_magic != CG_MAGIC)
+			printf("cg %d: bad magic number\n", c);
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
 			if (isblock(&sblock, cgrp.cg_free,
 			    b / sblock.fs_frag)) {
@@ -369,8 +374,7 @@ chk(bno, s, size)
 	int frags;
 
 	cg = dtog(&sblock, bno);
-	if (cginit==0 &&
-	    bno<cgdmin(&sblock, cg) || bno >= sblock.fs_frag * sblock.fs_size) {
+	if (cginit == 0 && bno >= sblock.fs_frag * sblock.fs_size) {
 		printf("%ld bad; inode=%u, class=%s\n", bno, ino, s);
 		return(1);
 	}
@@ -421,7 +425,7 @@ duped(bno, size)
 makecg()
 {
 	int c, blk;
-	daddr_t dbase, d, dmin, dmax;
+	daddr_t dbase, d, dlower, dupper, dmax;
 	long i, j, s;
 	register struct csum *cs;
 	register struct dinode *dp;
@@ -438,7 +442,8 @@ makecg()
 				clrbit(cgrp.cg_free, dmax - dbase);
 			dmax++;
 		}
-		dmin = sblock.fs_dblkno;
+		dlower = cgsblock(&sblock, c) - dbase;
+		dupper = cgdmin(&sblock, c) - dbase;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
@@ -450,8 +455,8 @@ makecg()
 		cgrp.cg_cs.cs_nffree = 0;
 		cgrp.cg_cs.cs_nbfree = 0;
 		cgrp.cg_cs.cs_nifree = 0;
-		cgrp.cg_rotor = dmin;
-		cgrp.cg_frotor = dmin;
+		cgrp.cg_rotor = 0;
+		cgrp.cg_frotor = 0;
 		cgrp.cg_irotor = 0;
 		for (i = 0; i < sblock.fs_frag; i++)
 			cgrp.cg_frsum[i] = 0;
@@ -484,16 +489,16 @@ makecg()
 				cgrp.cg_b[s][i] = 0;
 		}
 		if (c == 0) {
-			dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) *
-			    sblock.fs_frag;
+			dupper += howmany(sblock.fs_cssize, sblock.fs_fsize);
 		}
-		for (d = 0; d < dmin; d++)
+		for (d = dlower; d < dupper; d++)
 			clrbit(cgrp.cg_free, d);
-		for (; (d + sblock.fs_frag) <= dmax - dbase; d += sblock.fs_frag) {
+		for (d = 0; (d + sblock.fs_frag) <= dmax - dbase;
+		    d += sblock.fs_frag) {
 			j = 0;
 			for (i = 0; i < sblock.fs_frag; i++) {
-				if (!isset(bmap, dbase+d+i)) {
-					setbit(cgrp.cg_free, d+i);
+				if (!isset(bmap, dbase + d + i)) {
+					setbit(cgrp.cg_free, d + i);
 					j++;
 				} else
 					clrbit(cgrp.cg_free, d+i);
@@ -505,21 +510,19 @@ makecg()
 				    [cbtorpos(&sblock, d)]++;
 			} else if (j > 0) {
 				cgrp.cg_cs.cs_nffree += j;
-				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
-				       (0xff >> (NBBY - sblock.fs_frag)));
+				blk = blkmap(&sblock, cgrp.cg_free, d);
 				fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 			}
 		}
 		for (j = d; d < dmax - dbase; d++) {
-			if (!isset(bmap, dbase+d)) {
+			if (!isset(bmap, dbase + d)) {
 				setbit(cgrp.cg_free, d);
 				cgrp.cg_cs.cs_nffree++;
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
 		if (j != d) {
-			blk = ((cgrp.cg_free[j / NBBY] >> (j % NBBY)) &
-			       (0xff >> (NBBY - sblock.fs_frag)));
+			blk = blkmap(&sblock, cgrp.cg_free, j);
 			fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 		}
 		for (; d < MAXBPG(&sblock); d++)
@@ -532,10 +535,11 @@ makecg()
 		bwrite(fsbtodb(&sblock, cgtod(&sblock, c)), &cgrp,
 			sblock.fs_cgsize);
 	}
-	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
-		bwrite(fsbtodb(&sblock,
-		    sblock.fs_csaddr + (i * sblock.fs_frag)),
-		    (char *)sblock.fs_csp[i], sblock.fs_bsize);
+	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
+		bwrite(fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
+		    (char *)sblock.fs_csp[j],
+		    sblock.fs_cssize - i < sblock.fs_bsize ?
+		    sblock.fs_cssize - i : sblock.fs_bsize);
 	}
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
@@ -580,7 +584,7 @@ getsb(fs, file)
 	register struct fs *fs;
 	char *file;
 {
-	int i;
+	int i, j, size;
 
 	if (bread(SBLOCK, fs, SBSIZE)) {
 		printf("bad super block");
@@ -593,10 +597,12 @@ getsb(fs, file)
 		nerror |= 04;
 		return;
 	}
-	for (i = 0; i < howmany(fs->fs_cssize, fs->fs_bsize); i++) {
-		fs->fs_csp[i] = (struct csum *)calloc(1, fs->fs_bsize);
-		bread(fsbtodb(fs, fs->fs_csaddr + (i * fs->fs_frag)),
-		      (char *)fs->fs_csp[i], fs->fs_bsize);
+	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
+		size = sblock.fs_cssize - i < sblock.fs_bsize ?
+		    sblock.fs_cssize - i : sblock.fs_bsize;
+		sblock.fs_csp[j] = (struct csum *)calloc(1, size);
+		bread(fsbtodb(fs, fs->fs_csaddr + (j * fs->fs_frag)),
+		      (char *)fs->fs_csp[j], size);
 	}
 }
 
