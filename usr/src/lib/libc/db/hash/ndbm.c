@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)ndbm.c	5.9 (Berkeley) %G%";
 #include <sys/param.h>
 #define __DBINTERFACE_PRIVATE
 #include <ndbm.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include "hash.h"
@@ -165,4 +166,18 @@ dbm_clearerr(db)
 	hp = (HTAB *)db->internal;
 	hp->errno = 0;
 	return (0);
+}
+
+dbm_dirfno(db)
+	DBM *db;
+{
+	return(((HTAB *)db->internal)->fp);
+}
+
+dbm_pagfno(db)
+	DBM *db;
+{
+#define	PAGFNOERR	"ndbm: hash: dbm_pagfno not available\n"
+	(void)write(STDERR_FILENO, PAGFNOERR, sizeof(PAGFNOERR) - 1);
+	abort();
 }
