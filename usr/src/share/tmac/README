@@ -1,9 +1,10 @@
-Copyright (c) 1990 The Regents of the University of California.
-All rights reserved.
-
-%sccs.include.redist.man%
-
-    @(#)README	5.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)README	5.2 (Berkeley) %G%
+.\"
 
 -mdoc stuff
 	doc-* files are unstripped tmac.doc-* files
