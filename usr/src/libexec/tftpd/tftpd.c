@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	4.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)tftpd.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -26,78 +26,58 @@ static char sccsid[] = "@(#)tftpd.c	4.12 (Berkeley) %G%";
 
 extern	int errno;
 struct	sockaddr_in sin = { AF_INET };
-int	f;
+int	peer;
 int	rexmtval = TIMEOUT;
 int	maxtimeout = 5*TIMEOUT;
 char	buf[BUFSIZ];
-int	reapchild();
+struct	sockaddr_in from;
+int	fromlen;
 
-main(argc, argv)
-	char *argv[];
+main()
 {
-	struct sockaddr_in from;
 	register struct tftphdr *tp;
 	register int n;
-	struct servent *sp;
 
-	sp = getservbyname("tftp", "udp");
-	if (sp == 0) {
-		fprintf(stderr, "tftpd: udp/tftp: unknown service\n");
+	alarm(10);
+	fromlen = sizeof (from);
+	n = recvfrom(0, buf, sizeof (buf), 0,
+	    (caddr_t)&from, &fromlen);
+	if (n < 0) {
+		perror("tftpd: recvfrom");
 		exit(1);
 	}
-	sin.sin_port = sp->s_port;
-#ifndef DEBUG
+	from.sin_family = AF_INET;
+	alarm(0);
+#ifdef do_it_right_and_use_a_new_port
 	if (fork())
 		exit(0);
-	for (f = 0; f < 10; f++)
-		(void) close(f);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int t = open("/dev/tty", 2);
-	  if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
-		(void) close(t);
-	  }
+	close(0);
+	close(1);
+	peer = socket(AF_INET, SOCK_DGRAM, 0);
+	if (peer < 0) {
+		perror("tftpd: socket");
+		exit(1);
 	}
+	if (bind(peer, (caddr_t)&sin, sizeof (sin)) < 0) {
+		perror("tftpd: bind");
+		exit(1);
+	}
+#else
+	/*
+	 * The current 4.2 tftp client neglects to switch its destination
+	 * port after the first ACK.
+	 */
+	peer = 0;
 #endif
-	signal(SIGCHLD, reapchild);
-	for (;;) {
-		int fromlen;
-
-		f = socket(AF_INET, SOCK_DGRAM, 0);
-		if (f < 0) {
-			perror("tftpd: socket");
-			sleep(5);
-			continue;
-		}
-		if (setsockopt(f, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
-			perror("tftpd: setsockopt (SO_REUSEADDR)");
-		sleep(1);			/* let child do connect */
-		while (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
-			perror("tftpd: bind");
-			sleep(5);
-		}
-		do {
-			fromlen = sizeof (from);
-			n = recvfrom(f, buf, sizeof (buf), 0,
-			    (caddr_t)&from, &fromlen);
-		} while (n <= 0);
-		tp = (struct tftphdr *)buf;
-		tp->th_opcode = ntohs(tp->th_opcode);
-		if (tp->th_opcode == RRQ || tp->th_opcode == WRQ)
-			if (fork() == 0)
-				tftp(&from, tp, n);
-		(void) close(f);
+	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
+		perror("tftpd: connect");
+		exit(1);
 	}
-}
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
+	tp = (struct tftphdr *)buf;
+	tp->th_opcode = ntohs(tp->th_opcode);
+	if (tp->th_opcode == RRQ || tp->th_opcode == WRQ)
+		tftp(tp, n);
+	exit(1);
 }
 
 int	validate_access();
@@ -117,13 +97,10 @@ struct formats {
 	{ 0 }
 };
 
-int	fd;			/* file being transferred */
-
 /*
  * Handle initial connection protocol.
  */
-tftp(client, tp, size)
-	struct sockaddr_in *client;
+tftp(tp, size)
 	struct tftphdr *tp;
 	int size;
 {
@@ -132,10 +109,6 @@ tftp(client, tp, size)
 	register struct formats *pf;
 	char *filename, *mode;
 
-	if (connect(f, (caddr_t)client, sizeof (*client), 0) < 0) {
-		perror("connect");
-		exit(1);
-	}
 	filename = cp = tp->th_stuff;
 again:
 	while (cp < buf + size) {
@@ -162,7 +135,7 @@ again:
 		nak(EBADOP);
 		exit(1);
 	}
-	ecode = (*pf->f_validate)(filename, client, tp->th_opcode);
+	ecode = (*pf->f_validate)(filename, tp->th_opcode);
 	if (ecode) {
 		nak(ecode);
 		exit(1);
@@ -174,6 +147,8 @@ again:
 	exit(0);
 }
 
+int	fd;
+
 /*
  * Validate file access.  Since we
  * have no uid or gid, for now require
@@ -182,9 +157,8 @@ again:
  * Note also, full path name must be
  * given as we have no login directory.
  */
-validate_access(file, client, mode)
+validate_access(file, mode)
 	char *file;
-	struct sockaddr_in *client;
 	int mode;
 {
 	struct stat stbuf;
@@ -233,33 +207,31 @@ sendfile(pf)
 		size = read(fd, tp->th_data, SEGSIZE);
 		if (size < 0) {
 			nak(errno + 100);
-			goto abort;
+			return;
 		}
 		tp->th_opcode = htons((u_short)DATA);
 		tp->th_block = htons((u_short)block);
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
-		if (write(f, buf, size + 4) != size + 4) {
-			perror("tftpd: write");
-			goto abort;
+		if (send(peer, buf, size + 4, 0) != size + 4) {
+			perror("tftpd: send");
+			return;
 		}
 		do {
 			alarm(rexmtval);
-			n = read(f, buf, sizeof (buf));
+			n = recv(peer, buf, sizeof (buf), 0);
 			alarm(0);
 			if (n < 0) {
-				perror("tftpd: read");
-				goto abort;
+				perror("tftpd: recv");
+				return;
 			}
 			tp->th_opcode = ntohs((u_short)tp->th_opcode);
 			tp->th_block = ntohs((u_short)tp->th_block);
 			if (tp->th_opcode == ERROR)
-				goto abort;
+				return;
 		} while (tp->th_opcode != ACK || tp->th_block != block);
 		block++;
 	} while (size == SEGSIZE);
-abort:
-	(void) close(fd);
 }
 
 /*
@@ -279,16 +251,16 @@ recvfile(pf)
 		tp->th_block = htons((u_short)block);
 		block++;
 		(void) setjmp(timeoutbuf);
-		if (write(f, buf, 4) != 4) {
-			perror("tftpd: write");
+		if (send(peer, buf, 4, 0) != 4) {
+			perror("tftpd: send");
 			goto abort;
 		}
 		do {
 			alarm(rexmtval);
-			n = read(f, buf, sizeof (buf));
+			n = recv(peer, buf, sizeof (buf), 0);
 			alarm(0);
 			if (n < 0) {
-				perror("tftpd: read");
+				perror("tftpd: recv");
 				goto abort;
 			}
 			tp->th_opcode = ntohs((u_short)tp->th_opcode);
@@ -305,8 +277,7 @@ recvfile(pf)
 abort:
 	tp->th_opcode = htons((u_short)ACK);
 	tp->th_block = htons((u_short)(block));
-	(void) write(f, buf, 4);
-	(void) close(fd);
+	(void) send(peer, buf, 4, 0);
 }
 
 struct errmsg {
@@ -350,6 +321,7 @@ nak(error)
 	length = strlen(pe->e_msg);
 	tp->th_msg[length] = '\0';
 	length += 5;
-	if (write(f, buf, length) != length)
+	if (send(peer, buf, length, 0) != length)
 		perror("nak");
+	exit(1);
 }

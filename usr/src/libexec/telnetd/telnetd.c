@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.27 (Berkeley) 84/04/11";
+static	char sccsid[] = "@(#)telnetd.c	4.27 (Berkeley) %G%";
 #endif
 
 /*
@@ -41,100 +41,27 @@ int	pcc, ncc;
 
 int	pty, net;
 int	inter;
-int	reapchild();
 extern	char **environ;
 extern	int errno;
 char	line[] = "/dev/ptyp0";
 
-struct	sockaddr_in sin = { AF_INET };
-
 main(argc, argv)
 	char *argv[];
 {
-	int s, pid, options;
-	struct servent *sp;
+	struct sockaddr_in from;
+	int fromlen;
 
-	sp = getservbyname("telnet", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "telnetd: tcp/telnet: unknown service\n");
-		exit(1);
+	fromlen = sizeof (from);
+	if (getpeername(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
+		_exit(1);
 	}
-	sin.sin_port = sp->s_port;
-	argc--, argv++;
-	if (argc > 0 && !strcmp(*argv, "-d")) {
-		options |= SO_DEBUG;
-		argc--, argv++;
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("setsockopt (SO_KEEPALIVE)");
 	}
-	if (argc > 0) {
-		sin.sin_port = atoi(*argv);
-		if (sin.sin_port <= 0) {
-			fprintf(stderr, "telnetd: %s: bad port #\n", *argv);
-			exit(1);
-		}
-		sin.sin_port = htons((u_short)sin.sin_port);
-	}
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (s = 0; s < 10; s++)
-		(void) close(s);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int tt = open("/dev/tty", 2);
-	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, 0);
-		close(tt);
-	  }
-	}
-#endif
-again:
-	s = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if (s < 0) {
-		perror("telnetd: socket");;
-		sleep(5);
-		goto again;
-	}
-	if (options & SO_DEBUG)
-		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-			perror("telnetd: setsockopt (SO_DEBUG)");
-	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
-		perror("telnetd: setsockopt (SO_KEEPALIVE)");
-	while (bind(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
-		perror("telnetd: bind");
-		sleep(5);
-	}
-	signal(SIGCHLD, reapchild);
-	listen(s, 10);
-	for (;;) {
-		struct sockaddr_in from;
-		int s2, fromlen = sizeof (from);
-
-		s2 = accept(s, (caddr_t)&from, &fromlen);
-		if (s2 < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("telnetd: accept");
-			sleep(1);
-			continue;
-		}
-		if ((pid = fork()) < 0)
-			printf("Out of processes\n");
-		else if (pid == 0) {
-			signal(SIGCHLD, SIG_DFL);
-			doit(s2, &from);
-		}
-		close(s2);
-	}
-	/*NOTREACHED*/
-}
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
+	doit(0, &from);
 }
 
 char	*envinit[] = { "TERM=network", 0 };
