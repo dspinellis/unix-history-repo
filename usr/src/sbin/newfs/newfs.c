@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -475,6 +475,7 @@ rewritelabel(s, fd, lp)
 		daddr_t alt;
 		char specname[64];
 		char blk[1024];
+		char *cp;
 
 		/*
 		 * Make name for 'c' partition.
