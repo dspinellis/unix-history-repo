@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -505,9 +505,10 @@ dump_super(lfsp)
 		"fbmask   ", lfsp->lfs_fbmask,
 		"fbshift  ", lfsp->lfs_fbshift);
 
-	(void)printf("%s%d\t%s%X\n",
+	(void)printf("%s%d\t%s%X\t%qd\n",
 		"fsbtodb  ", lfsp->lfs_fsbtodb,
-		"cksum    ", lfsp->lfs_cksum);
+		"cksum    ", lfsp->lfs_cksum,
+		"maxfilesize  ", lfsp->lfs_maxfilesize);
 
 	(void)printf("Superblock disk addresses:");
 	for (i = 0; i < LFS_MAXNUMSB; i++)
