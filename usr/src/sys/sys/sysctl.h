@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.25 (Berkeley) %G%
+ *	@(#)sysctl.h	7.26 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
@@ -85,7 +85,7 @@ struct ctlname {
 #define	KERN_OSREV	 	 3	/* int: system revision */
 #define	KERN_VERSION	 	 4	/* string: compile time info */
 #define	KERN_MAXVNODES	 	 5	/* int: max vnodes */
-#define	KERN_MAXPROC	 	 6	/* int: max simultaneous processes */
+#define	KERN_MAXPROC	 	 6	/* int: max processes */
 #define	KERN_MAXFILES	 	 7	/* int: max open files */
 #define	KERN_ARGMAX	 	 8	/* int: max arguments to exec */
 #define	KERN_SECURELVL	 	 9	/* int: system security level */
@@ -110,7 +110,9 @@ struct ctlname {
 #define	KERN_NO_TRUNC		28	/* int: no path truncation */
 #define	KERN_VDISABLE		29	/* int: terminal character disable */
 #define	KERN_BOOTTIME		30	/* struct: time kernel was booted */
-#define	KERN_MAXID		31	/* number of valid kern ids */
+#define	KERN_MAXUPROC	 	31	/* int: max processes per uid */
+#define	KERN_MAXUFILES	 	32	/* int: max open files per uid */
+#define	KERN_MAXID		33	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -144,6 +146,8 @@ struct ctlname {
 	{ "no_trunc", CTLTYPE_INT }, \
 	{ "vdisable", CTLTYPE_INT }, \
 	{ "boottime", CTLTYPE_STRUCT }, \
+	{ "maxuproc", CTLTYPE_INT }, \
+	{ "maxufiles", CTLTYPE_INT }, \
 }
 
 /* 
@@ -245,7 +249,9 @@ struct kinfo_proc {
 #define	USER_POSIX2_LOCALEDEF	16	/* int: POSIX2_LOCALEDEF */
 #define	USER_POSIX2_SW_DEV	17	/* int: POSIX2_SW_DEV */
 #define	USER_POSIX2_UPE		18	/* int: POSIX2_UPE */
-#define	USER_MAXID		19	/* number of valid user ids */
+#define	USER_STREAM_MAX		19	/* int: POSIX2_STREAM_MAX */
+#define	USER_TZNAME_MAX		20	/* int: POSIX2_TZNAME_MAX */
+#define	USER_MAXID		21	/* number of valid user ids */
 
 #define	CTL_USER_NAMES { \
 	{ 0, 0 }, \
@@ -267,6 +273,8 @@ struct kinfo_proc {
 	{ "posix2_localedef", CTLTYPE_INT }, \
 	{ "posix2_sw_dev", CTLTYPE_INT }, \
 	{ "posix2_upe", CTLTYPE_INT }, \
+	{ "stream_max", CTLTYPE_INT }, \
+	{ "tzname_max", CTLTYPE_INT }, \
 }
 
 /*
