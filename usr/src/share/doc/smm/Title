@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	6.4 (Berkeley) %G%
+.\"	@(#)Title	6.5 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -16,14 +16,13 @@ UNIX System Manager's Manual
 .vs 16
 .sp |4i
 .ce 2
-4.3 Berkeley Software Distribution
-Virtual VAX\-11 Version
+4.4 Berkeley Software Distribution
 .sp |5.75i
 .ft R
 .pt 12
 .vs 16
 .ce
-April, 1986
+June, 1993
 .sp |8.2i
 .ce 5
 Computer Systems Research Group
@@ -38,16 +37,16 @@ Berkeley, California  94720
 .ps 10
 .vs 12p
 .sp |2.8i
-Copyright 1979, 1980, 1983, 1986 Regents of the University of California.
+Copyright 1979, 1980, 1983, 1986, 1993 Regents of the University of California.
 Permission to copy these documents or any portion thereof as necessary
 for licensed use of the software is granted to licensees of this
 software, provided this copyright notice and statement of permission
 are included.
 .sp 2
-Documents SMM:17, 18, and 21
+Documents SMM:15, 16, and 17
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
-Documents SMM:9 and 19 are modifications of earlier documents that
-are copyrighted 1979 by AT&T Bell Laboratories, Incorporated.
+Document SMM:14 is a modification of an earlier document that
+is copyrighted 1979 by AT&T Bell Laboratories, Incorporated.
 Holders of \x'-1p'UNIX\v'-4p'\s-3TM\s0\v'4p'/32V,
 System III, or System V software licenses are
 permitted to copy these documents, or any portion of them,
@@ -55,16 +54,10 @@ as necessary for licensed use of the software,
 provided this copyright notice and statement of permission
 are included.
 .sp 2
-Document SMM:10 is part of the user contributed software.
-.sp 2
-This manual reflects system enhancements made at Berkeley and sponsored
-in part by the Defense Advanced Research Projects Agency
-(DoD), Arpa Order No. 4871 monitored by the Naval Electronics Systems
-Command under contract No. N00039-84-C-0089.
+This manual reflects system enhancements made at Berkeley.
 The views and conclusions contained in these documents are those of the
 authors and should not be interpreted as representing official policies,
-either expressed or implied, of the Defense Research Projects Agency
-or of the US Government.
+either expressed or implied, of the Regents of the University of California.
 .br
 .ll 6.5i
 .lt 6.5i
@@ -94,8 +87,6 @@ or of the US Government.
 .wh -60p FO
 .bp 1
 .ds ET \s9\f2Table \|of \|Contents\fP\s0
-.ds Ed 4.3BSD
-.ds Dt April \|1986
 .ce
 \f3TABLE \|OF \|CONTENTS\fP
 .nr x .5i
@@ -115,9 +106,11 @@ or of the US Government.
 .ss 12
 .if t .sp .5v
 .cs 3 36
+.ds Ed Section \\$2
+.ds Dt \\$3
 .so \\$1
 ..
-.t /usr/man/man0/toc8 8 "System Maintenance"
+.t /usr/src/share/man/man0/toc8 8 "System Maintenance"
 .in -.5i
 .cs 3
 .if n .ta 8n 16n 24n 32n 40n 48n 56n 64n 72n 80n
