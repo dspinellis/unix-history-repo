@@ -1,14 +1,22 @@
 /*
- * @(#)if_dmv.c	7.3 (Berkeley) %G%
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_dmv.c	7.4 (Berkeley) %G%
+ *
  * DMV-11 Driver
  *
  * Qbus Sync DDCMP interface - DMV operated in full duplex, point to point mode
  *
- * Derived from 4.3 release if_dmv.c rev. 6.12 dated 4/23/86
- * (which wasn't the 4.3 release!)
- * 
- * Bob Kridle
- * mt Xinu
+ * Written by Bob Kridle of Mt Xinu
+ * starting from if_dmc.c version 6.12 dated 4/23/86
  */
 
 #include "dmv.h"
