@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -61,6 +61,12 @@ char	ctty[] = "/dev/console";
 #define	dprintf		if (Debug) printf
 
 #define UNAMESZ	8	/* length of a login name */
+
+/*
+ * Flags to logmsg().
+ */
+#define IGN_CONS	0x1
+#define SYNC_FILE	0x2
 
 /*
  * This structure represents the files that will have log
@@ -230,6 +236,14 @@ main(argc, argv)
 			logerror("select");
 			continue;
 		}
+		if (readfds & (1 << klog)) {
+			i = read(klog, line, sizeof(line) - 1);
+			if (i > 0) {
+				line[i] = '\0';
+				printsys(line);
+			} else if (i < 0 && errno != EINTR)
+				logerror("read");
+		}
 		if (readfds & (1 << funix)) {
 			len = sizeof fromunix;
 			i = recvfrom(funix, line, MAXLINE, 0, &fromunix, &len);
@@ -248,14 +262,6 @@ main(argc, argv)
 			} else if (i < 0 && errno != EINTR)
 				logerror("recvfrom");
 		} 
-		if (readfds & (1 << klog)) {
-			i = read(klog, line, sizeof(line) - 1);
-			if (i > 0) {
-				line[i] = '\0';
-				printsys(line);
-			} else if (i < 0 && errno != EINTR)
-				logerror("read");
-		}
 	}
 }
 
@@ -322,13 +328,13 @@ printsys(msg)
 	char line[MAXLINE + 1];
 	static char prevline[MAXLINE + 1];
 	static int count = 0;
-	int pri, ign;
+	int pri, flags;
 	long now;
 
 	time(&now);
 	for (p = msg; *p != '\0'; ) {
 		/* test for special codes */
-		ign = 0;
+		flags = SYNC_FILE;	/* fsync file after write */
 		pri = DefSysPri;
 		if (p[0] == '<' && p[2] == '>') {
 			switch (p[1]) {
@@ -348,8 +354,10 @@ printsys(msg)
 			p++;
 			if ((unsigned) pri > LOG_DEBUG)
 				pri = DefSysPri;
-		} else
-			ign = 1; /* kernel printf's come out on console */
+		} else {
+			/* kernel printf's come out on console */
+			flags |= IGN_CONS;
+		}
 
 		q = line;
 		sprintf(q, "vmunix: %.15s-- ", ctime(&now) + 4);
@@ -367,11 +375,11 @@ printsys(msg)
 			if (count > 1)
 				sprintf(prevline+26,
 				    "last message repeated %d times", count);
-			logmsg(pri, prevline, host, ign);
+			logmsg(pri, prevline, host, flags);
 		}
 		count = 0;
 		strcpy(prevline, line);
-		logmsg(pri, line, host, ign);
+		logmsg(pri, line, host, flags);
 	}
 }
 
@@ -380,10 +388,10 @@ printsys(msg)
  * the priority.
  */
 
-logmsg(pri, msg, from, igncons)
+logmsg(pri, msg, from, flags)
 	int	pri;
 	char	*msg, *from;
-	int	igncons;
+	int	flags;
 {
 	char line[MAXLINE + 1];
 	register struct filed *f;
@@ -404,7 +412,7 @@ logmsg(pri, msg, from, igncons)
 	for (f = Files; f < &Files[NLOGS]; f++) {
 		if (f->f_file < 0 || f->f_pmask < pri)
 			continue;
-		if (igncons && (f->f_flags & F_CONS))
+		if ((flags & IGN_CONS) && (f->f_flags & F_CONS))
 			continue;
 		if (pri < 0) {	/* mark message */
 			struct stat stb;
@@ -425,8 +433,13 @@ logmsg(pri, msg, from, igncons)
 			if (l > MAXLINE)
 				l = MAXLINE;
 			if (sendto(f->f_file, line, l, 0,
-			    &f->f_addr, sizeof f->f_addr) != l)
+			    &f->f_addr, sizeof f->f_addr) != l) {
+				int e = errno;
+				(void) close(f->f_file);
+				f->f_file = -1;
+				errno = e;
 				logerror("sendto");
+			}
 			continue;
 		}
 		if (f->f_flags & F_TTY) {
@@ -437,10 +450,13 @@ logmsg(pri, msg, from, igncons)
 			v->iov_len = 1;
 		}
 		if (writev(f->f_file, iov, 4) < 0) {
-			logerror(f->f_name);
+			int e = errno;
 			(void) close(f->f_file);
 			f->f_file = -1;
-		}
+			errno = e;
+			logerror(f->f_name);
+		} else if (flags & SYNC_FILE)
+			(void) fsync(f->f_file);
 	}
 
 	/*
