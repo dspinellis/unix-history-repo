@@ -1,8 +1,11 @@
 #define	CONSOLE		"/dev/console"
 #define	dprcons		if (debug) prcons
 /*
+ * vpd.c						updated %G%
  * Varian or Versatec printer daemon
  */
+char vpdSCCSid[] = "@(#)vpd.c	1.2\t%G%";
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <dir.h>
@@ -17,6 +20,8 @@ int	debug;
 extern	int errno;
 
 #define VRAST		"/usr/local/lib/vrast"
+#define VDMP		"/usr/lib/vdmp"
+#define VPLTDMP		"/usr/lib/vpltdmp"
 
 #ifdef VARIAN
 #define DEVICE		"/dev/va0"
@@ -37,6 +42,7 @@ int	prtmode[] =	{VPRINT, 0, 0};
 char	line[128];
 char    linep[127];
 char	banbuf[64];
+char	banner[512];
 char	printflag;
 int	linel;
 FILE	*dfb;
@@ -177,10 +183,20 @@ int okreque;
 		unlink(file);
 		return (0);
 	}
-	for (*banbuf = plot = 0; getline (); ) switch (line[0]) {
+	banner[0] = '\0';
+	for(*banbuf= plot= 0; getline();) switch(line[0]) {
 
 	case 'L':
 		strcpy(banbuf, line + 1);
+		continue;
+
+	case 'B':	/* banner */
+		if(banner[0] == '\0')
+		    strcat(banner, line + 1);
+		  else {
+		    strcat(banner,"\n");
+		    strcat(banner, line+1);
+		    }
 		continue;
 
 	case '1':
@@ -190,6 +206,8 @@ int okreque;
 		strcpy(fonts[line[0]-'1'], line + 1);
 		continue;
 
+	case 'C':	/* called by cifplot */
+	case 'V':	/* called by vplot */
 	case 'F':
 	case 'G':	/* Like f, but invoke vpf with -l flag. */
 	case 'T':
@@ -411,6 +429,20 @@ char c;
 			"-W",
 #endif
 			"-v", line+1, linep, 0);
+		break;
+	case 'C':
+		execl(VDMP,"vdmp","-n",banbuf,"-b",banner,
+#ifdef VERSATEC
+			"-W",
+#endif
+			line+1,0);
+		break;
+	case 'V':
+		execl(VPLTDMP,"vpltdmp","-n",banbuf,"-b",banner,
+#ifdef VERSATEC
+			"-W",
+#endif
+			line+1,0);
 		break;
 	}
 	exit(2);	/* execl failed or not one of above cases. */
