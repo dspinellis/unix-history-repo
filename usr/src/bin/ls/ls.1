@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.9 (Berkeley) %G%
+.\"	@(#)ls.1	6.10 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -11,8 +11,8 @@ ls \- list contents of directory
 .SH SYNOPSIS
 .B ls
 [
-.B \-acdgilqrstu1ACLFR
-] name ...
+.B \-1AaCcdFgikLlqRrstu
+] [ file ... ]
 .br
 .SH DESCRIPTION
 For each directory argument,
@@ -28,24 +28,15 @@ the arguments are first sorted appropriately,
 but file arguments are processed
 before directories and their contents.
 .PP
-There are a large number of options:
+The options are as follows:
 .TP
-.B \-l
-List in long format, giving mode, number of links, owner,
-size in bytes, and time of last modification
-for each file.
-(See below.)
-If the file is a special file the size field will instead contain
-the major and minor device numbers.
-If the file is a symbolic link the pathname of
-the linked-to file is printed preceded by ``\->''.
+.B \-1
+force one entry per line output format; this is the default when
+output is not to a terminal.
 .TP
-.B \-g
-Include the group ownership of the file in a long output.
-.TP
-.B \-t
-Sort by time modified (latest first) instead of
-by name.
+.B \-A
+List all entries except for ``.'' and ``..''.
+Always set for the super-user.
 .TP
 .B \-a
 List all entries; in the absence of this option, entries whose
@@ -55,36 +46,15 @@ are
 .I not
 listed.
 .TP
-.B \-A
-List all entries except for ``.'' and ``..''.  Always set for the
-super-user.
-.TP
-.B \-s
-Give size in kilobytes of each file.
-.TP
-.B \-d
-If argument is a directory, list only its name;
-often used with \fB\-l\fR to get the status of a directory.
-.TP
-.B \-L
-If argument is a symbolic link, list the file or directory the link references
-rather than the link itself.
-.TP
-.B \-r
-Reverse the order of sort to get reverse alphabetic
-or oldest first as appropriate.
-.TP
-.B \-u
-Use time of last access instead of last
-modification for sorting
-(with the \fB\-t\fP option)
-and/or printing (with the \fB\-l\fP option).
+.B \-C
+force multi-column output; this is the default when output is to a terminal.
 .TP
 .B \-c
 Use time when file status was last changed for sorting or printing.
 .TP
-.B \-i
-For each file, print the i-number in the first column of the report.
+.B \-d
+If argument is a directory, list only its name;
+often used with \fB\-l\fR to get the status of a directory.
 .TP
 .B \-F
 cause directories to be marked with a trailing `/',
@@ -92,19 +62,68 @@ sockets with a trailing `=',
 symbolic links with a trailing `@', and executable
 files with a trailing `*'.
 .TP
-.B \-R
-recursively list subdirectories encountered.
+.B \-g
+Include the group ownership of the file in a long output.
 .TP
-.B \-1
-force one entry per line output format; this is the default when
-output is not to a terminal.
+.B \-i
+For each file, print the i-number in the first column of the report.
 .TP
-.B \-C
-force multi-column output; this is the default when output is to a terminal.
+.B -k
+Modifies the
+.I -s
+option, causing the sizes to be reported in kilobytes.
+.TP
+.B \-L
+If argument is a symbolic link, list the file or directory the link references
+rather than the link itself.
+.TP
+.B \-l
+List in long format, giving mode, number of links, owner,
+size in bytes, and time of last modification for each file.
+(See below.)
+If the file is a special file the size field will instead contain
+the major and minor device numbers.
+If the file is a symbolic link the pathname of
+the linked-to file is printed preceded by ``\->''.
 .TP
 .B \-q
 force printing of non-graphic characters in file names as
 the character `?'; this is the default when output is to a terminal.
+.TP
+.B \-R
+recursively list subdirectories encountered.
+.TP
+.B \-r
+Reverse the order of sort to get reverse alphabetic
+or oldest first as appropriate.
+.TP
+.B \-s
+Display the sizes of files and directories in 512-byte blocks.
+.TP
+.B \-t
+Sort by time modified (latest first) instead of
+by name.
+.TP
+.B \-u
+Use time of last access instead of last
+modification for sorting
+(with the \fB\-t\fP option)
+and/or printing (with the \fB\-l\fP option).
+.PP
+The
+.IR -1 ,
+.IR -C ,
+and
+.I -l
+options all override each other; the last one specified determines
+the format used.
+.PP
+The
+.IR -c ,
+and
+.I -u
+options override each other; the last one specified determines
+the file time used.
 .PP
 The mode printed under the
 .B \-l
@@ -182,8 +201,9 @@ The last character of the mode (normally `x' or `\-') is
 if the 1000 bit of the mode is on.
 See
 .IR  chmod (1)
-for the meaning of this mode.  This is given as \fBT\fP (capitalized) if the
-corresponding execute permission is NOT set.
+for the meaning of this mode.  This is given as
+.B T
+(capitalized) if the corresponding execute permission is NOT set.
 .PP
 When the sizes of the files in a directory
 are listed, a total count of blocks,
@@ -195,10 +215,6 @@ including indirect blocks is printed.
 /etc/group to get group id's for
 `ls \-g'.
 .SH BUGS
-Newline and tab are considered printing characters in file names.
-.PP
-The output device is assumed to be 80 columns wide.
-.PP
 The option setting based on whether the output is a teletype is
 undesirable as ``ls\ \-s'' is much different than ``ls\ \-s\ |\ lpr''.
 On the other hand, not doing this setting would make old shell scripts
