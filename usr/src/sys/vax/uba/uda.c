@@ -50,6 +50,7 @@
 #define NCMDL2  3               /* log2 number of command packets */
 #define NRSP    (1<<NRSPL2)
 #define NCMD    (1<<NCMDL2)
+#define	UDABURST	4	/* default for DMA burst size */
 
 #include "../vaxuba/udareg.h"
 #include "../vax/mscp.h"
@@ -453,6 +454,8 @@ udinit(d)
 	 * Start the hardware initialization sequence.
 	 */
 
+	if (udaburst[d] == 0)
+		udaburst[d] = UDABURST;
  	udaddr->udaip = 0;              /* start initialization */
 
 	while((udaddr->udasa & UDA_STEP1) == 0){
