@@ -92,16 +92,24 @@ hay_dialer(num, acu)
 	fflush(stdout);
 	ioctl(FD, TIOCHPCL, 0);
 	ioctl(FD, TIOCFLUSH, 0);	/* get rid of garbage */
-	write(FD, "ATv0\r", 5);	/* tell modem to use short status codes */
+#ifdef ATX5
+	write(FD, "ATm0x5v0\r", 9);	/* mute speaker; short status codes */
+#else /* ATX5 */
+	write(FD, "ATx0v0\r", 7);	/* short status codes */
+#endif /* ATX5 */
 	gobble("\r");
 	gobble("\r");
-	write(FD, "ATTD", 4);	/* send dial command */
+#ifdef PULSE_DIAL
+	write(FD, "ATD", 3);	/* send dial command */
+#else	/* PULSE_DIAL */
+	write(FD, "ATDT", 4);	/* send dial command */
+#endif	/* PULSE_DIAL */
 	write(FD, num, strlen(num));
 	state = DIALING;
 	write(FD, "\r", 1);
 	connected = 0;
 	if (gobble("\r")) {
-		if ((dummy = gobble("01234")) != '1')
+		if ((dummy = gobble("012345678")) != '1')
 			error_rep(dummy);
 		else
 			connected = 1;
@@ -178,15 +186,18 @@ gobble(match)
 			return (0);
 		}
 		alarm(number(value(DIALTIMEOUT)));
-		read(FD, &c, 1);
-		alarm(0);
-		c &= 0177;
+		if (read(FD, &c, 1)) {
+			alarm(0);
+			c &= 0177;
 #ifdef DEBUG
-		printf("%c 0x%x ", c, c);
+			printf("%c 0x%x ", c, c);
 #endif
-		for (i = 0; i < strlen(match); i++)
-			if (c == match[i])
-				status = c;
+			for (i = 0; i < strlen(match); i++)
+				if (c == match[i])
+					status = c;
+		} else {
+			status = *match; /* a hack to make some things work */
+		}
 	} while (status == 0);
 	signal(SIGALRM, SIG_DFL);
 #ifdef DEBUG
@@ -225,6 +236,18 @@ error_rep(c)
 		printf("CONNECT 1200");
 		break;
 	
+	case '6':
+		printf("NO DIALTONE");
+		break;
+
+	case '7':
+		printf("BUSY");
+		break;
+
+	case '8':
+		printf("NO ANSWER");
+		break;
+
 	default:
 		printf("Unknown Modem error: %c (0x%x)", c, c);
 	}
@@ -296,7 +319,8 @@ hay_sync()
 			dumbuf[len] = '\0';
 			printf("hay_sync: (\"%s\") %d\n\r", dumbuf, retry);
 #endif
-		}
+		} else
+			return(1);
 		ioctl(FD, TIOCCDTR, 0);
 		ioctl(FD, TIOCSDTR, 0);
 	}

@@ -27,6 +27,8 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
+#	PULSE_DIAL		use pulse dialing instead of touch-tone
+#	ATX5			basic responses w/BUSY signal detection
 
 PROG=	tip
 CFLAGS+=-I${.CURDIR} -DV831 -DVENTEL -DHAYES -DCOURIER -DDEFBR=2400 \
