@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-PROG=	exrecover
-SRCS=	exrecover.c ex_extern.c
+PROG=	ex3.7recover
+SRCS=	ex3.7recover.c ex_extern.c
 CFLAGS+=-I${.CURDIR}/..
 .PATH:	${.CURDIR}/..
 BINOWN=	root
