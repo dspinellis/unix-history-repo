@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
- *	@(#)iso_pcb.c	7.7 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.8 (Berkeley) %G%
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
@@ -53,6 +53,12 @@ static char *rcsid = "$Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $";
 #include "iso_pcb.h"
 #include "iso_var.h"
 #include "protosw.h"
+
+#ifdef TPCONS
+#include "../netccitt/x25.h"
+#include "../netccitt/pk.h"
+#include "../netccitt/pk_var.h"
+#endif
 
 #define PCBNULL (struct isopcb *)0
 struct	iso_addr zeroiso_addr = {
@@ -86,7 +92,8 @@ iso_pcballoc(so, head)
 	isop->isop_head = head;
 	isop->isop_socket = so;
 	insque(isop, head);
-	so->so_pcb = (caddr_t)isop;
+	if (so)
+		so->so_pcb = (caddr_t)isop;
 	return 0;
 }
 	
@@ -418,7 +425,17 @@ iso_pcbdetach(isop)
 		printf("iso_pcbdetach(isop 0x%x socket 0x%x so 0x%x)\n", 
 			isop, isop->isop_socket, so);
 	ENDDEBUG
-	if (so ) { /* in the x.25 domain, we sometimes have no socket */
+#ifdef TPCONS
+	if (isop->isop_refcnt) {
+		register struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
+		if (--isop->isop_refcnt > 0)
+			return;
+		if (lcp && lcp->lcd_state == DATA_TRANSFER)
+			pk_disconnect(lcp);
+		isop->isop_chan = 0;
+	}
+#endif
+	if (so) { /* in the x.25 domain, we sometimes have no socket */
 		so->so_pcb = 0;
 		sofree(so); 
 	}
