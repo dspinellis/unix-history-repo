@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)makemap.c	8.7 (Berkeley) %G%";
 #include <sys/file.h>
 #include <ctype.h>
 #include <string.h>
+#include <sys/errno.h>
 #include "useful.h"
 #include "conf.h"
 
@@ -66,6 +67,7 @@ main(argc, argv)
 	int st;
 	int mode;
 	enum type type;
+	int fd;
 	union
 	{
 #ifdef NDBM
@@ -84,6 +86,7 @@ main(argc, argv)
 	char fbuf[MAXNAME];
 	extern char *optarg;
 	extern int optind;
+	extern bool lockfile();
 
 	progname = argv[0];
 
@@ -215,6 +218,9 @@ main(argc, argv)
 	*/
 
 	mode = O_RDWR;
+#ifdef O_EXLOCK
+	mode |= O_EXLOCK;
+#endif
 	if (!notrunc)
 		mode |= O_CREAT|O_TRUNC;
 	switch (type)
@@ -246,6 +252,27 @@ main(argc, argv)
 			progname, typename, mapname);
 		exit(EX_CANTCREAT);
 	}
+
+#ifndef O_EXLOCK
+	switch (type)
+	{
+# ifdef NDBM
+	  case T_DBM:
+		fd = dbm_dirfno(dbp.dbm);
+		if (fd >= 0)
+			lockfile(fd);
+		break;
+# endif
+# ifdef NEWDB
+	  case T_HASH:
+	  case T_BTREE:
+		fd = dbp.db->fd(dbp.db);
+		if (fd >= 0)
+			lockfile(fd);
+		break;
+# endif
+	}
+#endif
 
 	/*
 	**  Copy the data
@@ -372,4 +399,52 @@ main(argc, argv)
 	}
 
 	exit (exitstat);
+}
+/*
+**  LOCKFILE -- lock a file using flock or (shudder) fcntl locking
+**
+**	Parameters:
+**		fd -- the file descriptor of the file.
+**
+**	Returns:
+**		TRUE if the lock was acquired.
+**		FALSE otherwise.
+*/
+
+bool
+lockfile(fd)
+	int fd;
+{
+# if !HASFLOCK
+	int action;
+	struct flock lfd;
+	extern int errno;
+
+	bzero(&lfd, sizeof lfd);
+	lfd.l_type = F_WRLCK;
+	action = F_SETLKW;
+
+	if (fcntl(fd, action, &lfd) >= 0)
+		return TRUE;
+
+	/*
+	**  On SunOS, if you are testing using -oQ/tmp/mqueue or
+	**  -oA/tmp/aliases or anything like that, and /tmp is mounted
+	**  as type "tmp" (that is, served from swap space), the
+	**  previous fcntl will fail with "Invalid argument" errors.
+	**  Since this is fairly common during testing, we will assume
+	**  that this indicates that the lock is successfully grabbed.
+	*/
+
+	if (errno == EINVAL)
+		return TRUE;
+
+# else	/* HASFLOCK */
+
+	if (flock(fd, LOCK_EX) >= 0)
+		return TRUE;
+
+# endif
+
+	return FALSE;
 }
