@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.39 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.40 (Berkeley) %G%
  */
 
 /*
@@ -660,9 +660,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_size = fxdr_unsigned(u_long, fp->fa_size);
 	if ((np->n_flag & NMODIFIED) == 0 || vap->va_size > np->n_size) {
 		np->n_size = vap->va_size;
-#ifdef NVM
 		vnode_pager_setsize(vp, np->n_size);
-#endif
 	}
 	vap->va_size_rsv = 0;
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
@@ -706,9 +704,7 @@ nfs_getattrcache(vp, vap)
 		bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
 		if ((np->n_flag & NMODIFIED) == 0) {
 			np->n_size = vap->va_size;
-#ifdef NVM
 			vnode_pager_setsize(vp, np->n_size);
-#endif
 		} else if (np->n_size > vap->va_size)
 			vap->va_size = np->n_size;
 		return (0);
