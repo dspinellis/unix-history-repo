@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -141,6 +141,7 @@ checkfilesys(filesys)
 {
 	daddr_t n_ffree, n_bfree;
 	struct dups *dp;
+	struct zlncnt *zlnp;
 
 	devname = filesys;
 	if (setup(filesys) == 0) {
@@ -221,7 +222,15 @@ checkfilesys(filesys)
 				printf(" %d,", dp->dup);
 			printf("\n");
 		}
+		if (zlnhead != NULL) {
+			printf("The following zero link count inodes remain:");
+			for (zlnp = zlnhead; zlnp; zlnp = zlnp->next)
+				printf(" %d,", zlnp->zlncnt);
+			printf("\n");
+		}
 	}
+	zlnhead = (struct zlncnt *)0;
+	duplist = (struct dups *)0;
 	if (dfile.mod) {
 		(void)time(&sblock.fs_time);
 		sbdirty();
