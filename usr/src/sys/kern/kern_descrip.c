@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.14	82/10/20	*/
+/*	kern_descrip.c	5.15	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -181,9 +181,10 @@ select()
 	int s, ncoll;
 	label_t lqsave;
 
+	obits[0] = obits[1] = obits[2] = 0;
 	if (uap->nd >= NOFILE) {
 		u.u_error = EINVAL;
-		return;
+		goto done;
 	}
 
 #define	getbits(name, x) \
@@ -191,7 +192,7 @@ select()
 		if (copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
 		    sizeof (ibits[x]))) { \
 			u.u_error = EFAULT; \
-			return; \
+			goto done; \
 		} \
 	} else \
 		ibits[x] = 0;
@@ -203,11 +204,11 @@ select()
 	if (uap->tv) {
 		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
 			u.u_error = EFAULT;
-			return;
+			goto done;
 		}
 		if (itimerfix(&atv)) {
 			u.u_error = EINVAL;
-			return;
+			goto done;
 		}
 		s = spl7(); timevaladd(&atv, &time); splx(s);
 	}
@@ -215,9 +216,7 @@ retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
 	u.u_r.r_val1 = selscan(ibits, obits);
-	if (u.u_error)
-		return;
-	if (u.u_r.r_val1)
+	if (u.u_error || u.u_r.r_val1)
 		goto done;
 	s = spl6();
 	if (uap->tv && timercmp(&time, &atv, >=)) {
@@ -236,7 +235,7 @@ retry:
 			untimeout(unselect, (caddr_t)u.u_procp);
 			u.u_error = EINTR;
 			splx(s);
-			return;
+			goto done;
 		}
 		timeout(unselect, (caddr_t)u.u_procp, hzto(&atv));
 	}
@@ -251,10 +250,8 @@ done:
 #define	putbits(name, x) \
 	if (uap->name) { \
 		if (copyout((caddr_t)obits[x], (caddr_t)uap->name, \
-		    sizeof (obits[x]))) { \
+		    sizeof (obits[x]))) \
 			u.u_error = EFAULT; \
-			return; \
-		} \
 	}
 	putbits(in, 0);
 	putbits(ou, 1);
