@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.3 (Berkeley) %G%
+#	@(#)makefile	3.4 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -77,7 +77,7 @@ ALLC =	api.c function.c inbound.c oia.c options.c outbound.c
 ALLO =	api$O inbound$O oia$O options$O outbound$O
 
 ALLHC=	${ALLH} ${ALLC}
-ALLPRINT =	${ALLHC}
+ALLPRINT =	3180.kbd 3270pc.kbd unix.kbd ${ALLHC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
