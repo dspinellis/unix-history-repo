@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -287,6 +287,7 @@ _respond(msgvec)
 		}
 	}
 	head.h_bcc = NOSTR;
+	head.h_smopts = NOSTR;
 	mail1(&head);
 	return(0);
 }
@@ -692,9 +693,14 @@ echo(argv)
 
 	for (ap = argv; *ap != NOSTR; ap++) {
 		cp = *ap;
-		if ((cp = expand(cp)) != NOSTR)
-			printf("%s ", cp);
+		if ((cp = expand(cp)) != NOSTR) {
+			if (ap != argv)
+				putchar(' ');
+			printf("%s", cp);
+		}
 	}
+	putchar('\n');
+
 	return(0);
 }
 
@@ -751,6 +757,7 @@ _Respond(msgvec)
 		head.h_seq++;
 	head.h_cc = NOSTR;
 	head.h_bcc = NOSTR;
+	head.h_smopts = NOSTR;
 	mail1(&head);
 	return(0);
 }
