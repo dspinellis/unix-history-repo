@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.41 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.42 (Berkeley) %G%
  */
 
 /*
@@ -27,8 +27,8 @@
 #include "mbuf.h"
 #include "map.h"
 
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
+#include "ufs/ufs/quota.h"
+#include "ufs/ufs/inode.h"
 
 #include "rpcv2.h"
 #include "nfsv2.h"
