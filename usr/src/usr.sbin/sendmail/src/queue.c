@@ -4,7 +4,7 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.5	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.6	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -34,17 +34,13 @@ queueup(df)
 	register char *p;
 	register ADDRESS *q;
 
-	/* create control file name from data file name */
-	strcpy(cf, df);
-	p = rindex(cf, '/');
-	if (p == NULL || *++p != 'd')
-	{
-		syserr("queueup: bad df name %s", df);
-		return;
-	}
-	*p = 'c';
+	/*
+	**  Create control file.
+	*/
 
-	/* create control file */
+	strcpy(cf, QueueDir);
+	strcat(cf, "/cfXXXXXX");
+	(void) mktemp(cf);
 	f = fopen(cf, "w");
 	if (f == NULL)
 	{
@@ -71,14 +67,20 @@ queueup(df)
 	fprintf(f, "T%ld\n", TimeOut);
 
 	/* output message priority */
-	fprintf(f, "P%d\n", MsgPriority);
+	fprintf(f, "P%ld\n", MsgPriority);
 
 	/* output list of recipient addresses */
 	for (q = SendQueue; q != NULL; q = q->q_next)
 	{
-		if (!bitset(QQUEUEUP, q->q_flags))
-			continue;
-		fprintf(f, "R%s\n", q->q_paddr);
+# ifdef DEBUG
+		if (Debug > 0)
+		{
+			printf("queueing ");
+			printaddr(q, FALSE);
+		}
+# endif DEBUG
+		if (bitset(QQUEUEUP, q->q_flags))
+			fprintf(f, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */
@@ -313,30 +315,17 @@ orderq()
 			syserr("orderq: cannot open %s", cbuf);
 			continue;
 		}
+		wlist[wn].w_name = newstr(cbuf);
 
 		/* extract useful information */
-		wlist[wn].w_pri = PRI_NORMAL;
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
 			fixcrlf(lbuf, TRUE);
 
 			switch (lbuf[0])
 			{
-			  case 'D':		/* data file name */
-				if (stat(&lbuf[1], &st) < 0)
-				{
-					syserr("orderq: cannot stat %s", &lbuf[1]);
-					(void) fclose(cf);
-					(void) unlink(cbuf);
-					wn--;
-					continue;
-				}
-				wlist[wn].w_name = newstr(cbuf);
-				wlist[wn].w_size = st.st_size;
-				break;
-
 			  case 'P':		/* message priority */
-				wlist[wn].w_pri = atoi(&lbuf[1]);
+				(void) sscanf(&lbuf[1], "%ld", &wlist[wn].w_pri);
 				break;
 			}
 		}
@@ -360,7 +349,6 @@ orderq()
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
-		w->w_size = wlist[i].w_size;
 		w->w_pri = wlist[i].w_pri;
 		w->w_next = NULL;
 		*wp = w;
@@ -371,8 +359,7 @@ orderq()
 	if (Debug)
 	{
 		for (w = WorkQ; w != NULL; w = w->w_next)
-			printf("%32s: pri=%-2d sz=%ld\n", w->w_name, w->w_pri,
-			     w->w_size);
+			printf("%32s: pri=%ld\n", w->w_name, w->w_pri);
 	}
 # endif DEBUG
 }
@@ -395,18 +382,12 @@ orderq()
 # define PRIFACT	1800		/* bytes each priority point is worth */
 
 workcmpf(a, b)
-	WORK *a;
-	WORK *b;
+	register WORK *a;
+	register WORK *b;
 {
-	register long aval;
-	register long bval;
-
-	aval = a->w_size - PRIFACT * a->w_pri;
-	bval = b->w_size - PRIFACT * b->w_pri;
-
-	if (aval == bval)
+	if (a->w_pri == b->w_pri)
 		return (0);
-	else if (aval > bval)
+	else if (a->w_pri > b->w_pri)
 		return (1);
 	else
 		return (-1);
@@ -432,8 +413,7 @@ dowork(w)
 
 # ifdef DEBUG
 	if (Debug)
-		printf("dowork: %s size %ld pri %d\n", w->w_name,
-		    w->w_size, w->w_pri);
+		printf("dowork: %s pri %ld\n", w->w_name, w->w_pri);
 # endif DEBUG
 
 	/*
@@ -464,8 +444,7 @@ dowork(w)
 # endif DEBUG
 		if (QueueUp && CurTime > TimeOut)
 			timeout(w);
-		if (!QueueUp)
-			(void) unlink(w->w_name);
+		(void) unlink(w->w_name);
 		finis();
 	}
 
@@ -518,6 +497,9 @@ readqf(cf)
 	**  Read and process the file.
 	*/
 
+	if (Verbose)
+		message(Arpa_Info, "Running %s (from %s)", cf, From.q_paddr);
+
 	while (fgets(buf, sizeof buf, f) != NULL)
 	{
 		fixcrlf(buf, TRUE);
@@ -548,7 +530,10 @@ readqf(cf)
 			break;
 
 		  case 'P':		/* message priority */
-			MsgPriority = atoi(&buf[1]);
+			(void) sscanf(&buf[1], "%ld", &MsgPriority);
+
+			/* make sure that big things get sent eventually */
+			MsgPriority -= WKTIMEFACT;
 			break;
 
 		  default:

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.28	%G%";
+static char	SccsId[] = "@(#)collect.c	3.29	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -197,10 +197,14 @@ maketemp(from)
 	**	Examples are who is the from person & the date.
 	*/
 
-	/* message priority */
-	p = hvalue("priority");
-	if (p != NULL)
-		MsgPriority = priencode(p);
+	if (!QueueRun)
+	{
+		/* adjust total priority by message priority */
+		MsgPriority = MsgSize;
+		p = hvalue("priority");
+		if (p != NULL)
+			MsgPriority -= priencode(p) * WKPRIFACT;
+	}
 
 	/* from person */
 	xfrom = hvalue("sender");

@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.55	%G%";
+static char SccsId[] = "@(#)deliver.c	3.56	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -55,6 +55,7 @@ deliver(firstto, editfcn)
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	bool tempfail = FALSE;
+	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -166,6 +167,21 @@ deliver(firstto, editfcn)
 		    strcmp(to->q_host, host) != 0 || to->q_mailer != firstto->q_mailer)
 			continue;
 
+# ifdef DEBUG
+		if (Debug)
+		{
+			printf("\nsend to ");
+			printaddr(to, FALSE);
+		}
+# endif DEBUG
+
+		/* link together the chain of recipients */
+		if (!bitset(QDONTSEND, to->q_flags))
+		{
+			to->q_tchain = tochain;
+			tochain = to;
+		}
+
 		/* compute effective uid/gid when sending */
 		if (to->q_mailer == ProgMailer)
 			ctladdr = getctladdr(to);
@@ -174,11 +190,10 @@ deliver(firstto, editfcn)
 		To = to->q_paddr;
 		to->q_flags |= QDONTSEND;
 		if (tempfail)
+		{
 			to->q_flags |= QQUEUEUP;
-# ifdef DEBUG
-		if (Debug)
-			printf("   send to `%s'\n", user);
-# endif DEBUG
+			continue;
+		}
 
 		/*
 		**  Check to see that these people are allowed to
@@ -338,12 +353,8 @@ deliver(firstto, editfcn)
 	if (i == EX_TEMPFAIL)
 	{
 		QueueUp = TRUE;
-		for (to = firstto; to != NULL; to = to->q_next)
-		{
-			if (bitset(QBADADDR, to->q_flags))
-				continue;
+		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
-		}
 	}
 
 	errno = 0;
@@ -1075,6 +1086,13 @@ sendall(verifyonly)
 	register ADDRESS *q;
 	typedef int (*fnptr)();
 
+# ifdef DEBUG
+	if (Debug > 1)
+	{
+		printf("\nSendQueue:\n");
+		printaddr(SendQueue, TRUE);
+	}
+# endif DEBUG
 
 	for (q = SendQueue; q != NULL; q = q->q_next)
 	{

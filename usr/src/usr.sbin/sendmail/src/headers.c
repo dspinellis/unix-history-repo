@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.11	%G%";
+static char	SccsId[] = "@(#)headers.c	3.12	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -82,7 +82,7 @@ chompheader(line, def)
 	for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
 	{
 		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags) &&
-		    !bitset(H_FORCE, h->h_flags))
+		    !(bitset(H_FORCE, h->h_flags) && !QueueRun))
 			break;
 	}
 
