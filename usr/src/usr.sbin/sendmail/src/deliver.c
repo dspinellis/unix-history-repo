@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1170,6 +1170,7 @@ logdelivery(m, mci, stat, e)
 	char *mname;
 	char *relay;
 	char *hostdetail;
+	char buf[512];
 	extern char *pintvl();
 	extern char *macvalue();
 
@@ -1201,9 +1202,12 @@ logdelivery(m, mci, stat, e)
 	else
 		mname = "(unknown)";
 
-	syslog(LOG_INFO, "%s: to=%s, delay=%s, mailer=%s, relay=%s (%s), stat=%s",
-	       e->e_id, e->e_to, pintvl(curtime() - e->e_ctime, TRUE),
-	       mname, curhost, hostdetail, stat);
+	(void) sprintf(buf, "delay=%s, mailer=%s, relay=%s (%s)",
+	       pintvl(curtime() - e->e_ctime, TRUE),
+	       mname, curhost, hostdetail);
+		
+	syslog(LOG_INFO, "%s: to=%s, %s, stat=%s",
+	       e->e_id, e->e_to, buf, stat);
 # endif /* LOG */
 }
 /*
