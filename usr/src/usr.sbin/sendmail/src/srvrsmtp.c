@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -53,6 +53,7 @@ struct cmd
 # define CMDQUIT	8	/* quit -- close connection and die */
 # define CMDHELO	9	/* helo -- be polite */
 # define CMDHELP	10	/* help -- give usage info */
+# define CMDEHLO	11	/* ehlo -- extended helo (RFC 1425) */
 /* non-standard commands */
 # define CMDONEX	16	/* onex -- sending one transaction only */
 # define CMDVERB	17	/* verb -- go into verbose mode */
@@ -72,6 +73,7 @@ static struct cmd	CmdTab[] =
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
 	"helo",		CMDHELO,
+	"ehlo",		CMDEHLO,
 	"verb",		CMDVERB,
 	"onex",		CMDONEX,
 	/*
@@ -102,6 +104,7 @@ smtp(e)
 	bool gotmail;			/* mail command received */
 	bool gothello;			/* helo command received */
 	bool vrfy;			/* set if this is a vrfy command */
+	char *protocol;			/* sending protocol */
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
 	extern char Version[];
@@ -210,8 +213,13 @@ smtp(e)
 			}
 			else
 				sendinghost = newstr(p);
-			message("250 %s Hello %s, pleased to meet you",
+
+			/* send ext. message -- old systems must ignore */
+			message("250-%s Hello %s, pleased to meet you",
 				MyHostName, sendinghost);
+			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
+				message("250-EXPN");
+			message("250 HELP");
 			gothello = TRUE;
 			break;
 
@@ -248,7 +256,9 @@ smtp(e)
 				break;
 			if (sendinghost != NULL)
 				define('s', sendinghost, e);
-			define('r', "SMTP", e);
+			if (protocol == NULL)
+				protocol = "SMTP";
+			define('r', protocol, e);
 			initsys(e);
 			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 
@@ -285,7 +295,7 @@ smtp(e)
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			a = parseaddr(p, (ADDRESS *) NULL, 1, '\0', e);
+			a = parseaddr(p, (ADDRESS *) NULL, 1, ' ', e);
 			if (a == NULL)
 				break;
 			a->q_flags |= QPRIMARY;

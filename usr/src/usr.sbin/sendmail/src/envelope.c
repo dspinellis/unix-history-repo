@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -447,7 +447,7 @@ setsender(from, e)
 /*
 	SuprErrs = TRUE;
 */
-	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
+	if (from == NULL || parseaddr(from, &e->e_from, 1, ' ', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 			syslog(LOG_ERR, "Unparseable user %s wants to be %s",
