@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.4	84/02/15	*/
+/*	tty_pty.c	6.5	84/07/29	*/
 
 /*
  * Pseudo-teletype Driver
@@ -24,7 +24,7 @@
 #define	NPTY	32		/* crude XXX */
 #endif
 
-#define BUFSIZ 100		/* Chunk size iomoved from user */
+#define BUFSIZ 100		/* Chunk size iomoved to/from user */
 
 /*
  * pts == /dev/tty[pP]?
@@ -78,6 +78,7 @@ ptsclose(dev)
 	tp = &pt_tty[minor(dev)];
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
+	ptcwakeup(tp);
 }
 
 ptsread(dev, uio)
@@ -220,7 +221,8 @@ ptcread(dev, uio)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti;
-	int error = 0;
+	char buf[BUFSIZ];
+	int error = 0, cc;
 
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return (EIO);
@@ -236,15 +238,18 @@ ptcread(dev, uio)
 		error = ureadc(0, uio);
 	}
 	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
+		if ((tp->t_state&TS_CARR_ON) == 0)
+			return (EIO);
 		if (pti->pt_flags&PF_NBIO)
 			return (EWOULDBLOCK);
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
 	}
-	while (tp->t_outq.c_cc && uio->uio_resid > 0)
-		if (ureadc(getc(&tp->t_outq), uio) < 0) {
-			error = EFAULT;
+	while (uio->uio_resid > 0 && error == 0) {
+		cc = q_to_b(&tp->t_outq, buf, MIN(uio->uio_resid, BUFSIZ));
+		if (cc <= 0)
 			break;
-		}
+		error = uiomove(buf, cc, UIO_READ, uio);
+	}
 	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
@@ -337,6 +342,12 @@ ptcwrite(dev, uio)
 			break;
 		iov = uio->uio_iov;
 		if (iov->iov_len == 0) {
+			while (pti->pt_flags&PF_REMOTE && tp->t_rawq.c_cc != 0)
+				sleep((caddr_t)&tp->t_rawq.c_cf, TTIPRI);
+			if (pti->pt_flags&PF_REMOTE) {
+				(void) putc(0, &tp->t_rawq);
+				wakeup((caddr_t)&tp->t_rawq);
+			}
 			uio->uio_iovcnt--;	
 			uio->uio_iov++;
 			if (uio->uio_iovcnt < 0)
