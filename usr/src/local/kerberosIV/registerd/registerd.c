@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)registerd.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)registerd.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -80,7 +80,7 @@ char	**argv;
 
 	/* get encryption key */
 
-	(void) sprintf(keyfile, "%s%s%s"
+	(void) sprintf(keyfile, "%s%s%s",
 		SERVER_KEYDIR,
 		CLIENT_KEYFILE,
 		inet_ntoa(sin.sin_addr));
