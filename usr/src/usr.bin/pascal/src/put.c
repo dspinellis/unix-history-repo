@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.3 %G%";
+static	char sccsid[] = "@(#)put.c 1.4 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -135,7 +135,7 @@ put(a)
 		    }
 		default:
 			if (op >= O_REL2 && op <= O_REL84) {
-				if ((i = (subop >> 1) * 5 ) >= 30)
+				if ((i = (subop >> INDX) * 5 ) >= 30)
 					i -= 30;
 				else
 					i += 2;
