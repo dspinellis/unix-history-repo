@@ -1,14 +1,18 @@
-static	char *sccsid = "@(#)sort.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define	L	512
+#define	L	1024
 #define	N	7
 #define	C	20
+#ifdef	vax
+#define	MEM	(64*2048)
+#else
 #define	MEM	(16*2048)
+#endif
 #define NF	10
 
 FILE	*is, *os;
@@ -168,6 +172,8 @@ char	*setfil();
 char	*sbrk();
 char	*brk();
 
+#define	blank(c)	((c) == ' ' || (c) == '\t')
+
 main(argc, argv)
 char **argv;
 {
@@ -240,11 +246,13 @@ char **argv;
 	lspace = (int *)sbrk(0);
 	while((int)brk(ep) == -1)
 		ep -= 512;
+#ifndef	vax
 	brk(ep -= 512);	/* for recursion */
+#endif
 	a = ep - (char*)lspace;
 	nlines = (a-L);
 	nlines /= (5*(sizeof(char *)/sizeof(char)));
-	ntext = nlines*8;
+	ntext = nlines * 4 * (sizeof(char *)/sizeof(char));
 	tspace = (char *)(lspace + nlines);
 	a = -1;
 	for(dirs=dirtry; *dirs; dirs++) {
@@ -820,12 +828,14 @@ char **ppa;
 	return(n);
 }
 
+#ifndef	blank
 blank(c)
 {
 	if(c==' ' || c=='\t')
 		return(1);
 	return(0);
 }
+#endif
 
 #define qsexc(p,q) t= *p;*p= *q;*q=t
 #define qstexc(p,q,r) t= *p;*p= *r;*r= *q;*q=t
