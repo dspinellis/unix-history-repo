@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)scandir.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)scandir.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -23,14 +23,15 @@ static char sccsid[] = "@(#)scandir.c	8.2 (Berkeley) %G%";
 #include <string.h>
 
 /*
- * The DIRSIZ macro gives the minimum record length which will hold
- * the directory entry.  This requires the amount of space in struct dirent
- * without the d_name field, plus enough space for the name with a terminating
- * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
+ * The DIRSIZ macro is the minimum record length which will hold the directory
+ * entry.  This requires the amount of space in struct dirent without the
+ * d_name field, plus enough space for the name and a terminating nul byte
+ * (dp->d_namlen + 1), rounded up to a 4 byte boundary.
  */
 #undef DIRSIZ
-#define DIRSIZ(dp) \
-    ((sizeof (struct dirent) - sizeof (dp)->d_name) + (((dp)->d_namlen+1 + 3) &~ 3))
+#define DIRSIZ(dp)							\
+	((sizeof(struct dirent) - sizeof(dp)->d_name) +			\
+	    (((dp)->d_namlen + 1 + 3) &~ 3))
 
 int
 scandir(dirname, namelist, select, dcomp)
