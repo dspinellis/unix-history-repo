@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.19 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -247,7 +247,7 @@ tcp_close(tp)
 	/*
 	 * If we sent enough data to get some meaningful characteristics,
 	 * save them in the routing entry.  'Enough' is arbitrarily 
-	 * defined as 4K (default tcp_sendspace) * 16.  This would
+	 * defined as the sendpipesize (default 4K) * 16.  This would
 	 * give us 16 rtt samples assuming we only get one sample per
 	 * window (the usual case on a long haul net).  16 samples is
 	 * enough for the srtt filter to converge to within 5% of the correct
@@ -256,10 +256,9 @@ tcp_close(tp)
 	 * Don't update the default route's characteristics and don't
 	 * update anything that the user "locked".
 	 */
-	if (SEQ_LT(tp->iss+(4096*16), tp->snd_max) &&
+	if (SEQ_LT(tp->iss + so->so_snd.sb_hiwat * 16, tp->snd_max) &&
 	    (rt = inp->inp_route.ro_rt) &&
-	    ((struct sockaddr_in *) rt_key(rt))->sin_addr.s_addr !=
-	    INADDR_ANY) {
+	    ((struct sockaddr_in *)rt_key(rt))->sin_addr.s_addr != INADDR_ANY) {
 		register u_long i;
 
 		if ((rt->rt_rmx.rmx_locks & RTV_RTT) == 0) {
