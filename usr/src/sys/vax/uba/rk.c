@@ -1,4 +1,4 @@
-/*	rk.c	4.31	81/03/17	*/
+/*	rk.c	4.32	81/03/21	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -620,10 +620,7 @@ rkdump(dev)
 	if (ui->ui_alive == 0)
 		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
-#if VAX780
-	if (cpu == VAX_780)
-		ubainit(uba);
-#endif
+	ubainit(uba);
 	rkaddr = (struct rkdevice *)ui->ui_physaddr;
 	num = maxfree;
 	start = 0;
