@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.6	85/03/12	*/
+/*	kern_exit.c	6.7	85/04/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -16,6 +16,7 @@
 #include "file.h"
 #include "mbuf.h"
 #include "inode.h"
+#include "syslog.h"
 
 /*
  * Exit system call: pass back caller's arg
@@ -118,11 +119,12 @@ exit(rv)
 		panic("init died");
 done:
 	p->p_xstat = rv;
-if (m == 0)
-panic("exit: m_getclr");
-	p->p_ru = mtod(m, struct rusage *);
-	*p->p_ru = u.u_ru;
-	ruadd(p->p_ru, &u.u_cru);
+	if (m) {
+		p->p_ru = mtod(m, struct rusage *);
+		*p->p_ru = u.u_ru;
+		ruadd(p->p_ru, &u.u_cru);
+	} else
+		log(KERN_ALERT, "exit: pid %d: no mbuf", p->p_pid);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
 	for (q = p->p_cptr; q != NULL; q = nq) {
@@ -204,11 +206,13 @@ loop:
 			u.u_r.r_val1 = p->p_pid;
 			u.u_r.r_val2 = p->p_xstat;
 			p->p_xstat = 0;
-			if (ru)
+			if (ru && p->p_ru)
 				*ru = *p->p_ru;
-			ruadd(&u.u_cru, p->p_ru);
-			(void) m_free(dtom(p->p_ru));
-			p->p_ru = 0;
+			if (p->p_ru) {
+				ruadd(&u.u_cru, p->p_ru);
+				(void) m_free(dtom(p->p_ru));
+				p->p_ru = 0;
+			}
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
