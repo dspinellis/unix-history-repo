@@ -1,4 +1,4 @@
-/*	@(#)ww.h	1.10 83/07/30		*/
+/*	@(#)ww.h	2.1 83/07/30		*/
 
 #include <stdio.h>
 #include <sgtty.h>

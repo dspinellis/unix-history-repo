@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.8 83/07/29		*/
+/*	@(#)defs.h	2.1 83/07/30		*/
 
 #include "ww.h"
 #include <signal.h>
