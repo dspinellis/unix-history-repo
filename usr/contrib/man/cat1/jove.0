@@ -1,0 +1,396 @@
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+NNAAMMEE
+       jove - an interactive display-oriented text editor
+
+SSYYNNOOPPSSIISS
+       jove [-d directory] [-w] [-t tag] [+[n] file] [-p file] [files]
+       jove -r
+
+DDEESSCCRRIIPPTTIIOONN
+       JOVE  is  Jonathan's Own Version of Emacs.  It is based on
+       the original EMACS editor written at MIT by Richard Stall-
+       man.   Although JOVE is meant to be compatible with EMACS,
+       there are some major differences between the  two  editors
+       and you shouldn't rely on their behaving identically.
+
+       JOVE  works  on  any  reasonable  display terminal that is
+       described in the _t_e_r_m_c_a_p file  (see  TERMCAP(5)  for  more
+       details).   When  you  start  up  JOVE,  it  checks to see
+       whether you have your _T_E_R_M environment variable  set.   On
+       most  systems  that  will automatically be set up for you,
+       but if it's not JOVE will ask you what  kind  of  terminal
+       you  are  using.   To avoid having to type this every time
+       you run JOVE you can set your  _T_E_R_M  environment  variable
+       yourself.   How you do this depends on which shell you are
+       running.  If you are running the C Shell, as most  of  you
+       are, you type
+
+            % setenv TERM _t_y_p_e
+
+       and with the Bourne Shell, you type
+
+            $ TERM= _t_y_p_e ; export TERM
+
+       where  _t_y_p_e  is  the  name of the kind of terminal you are
+       using (e.g., vt100).  If neither of these works get  some-
+       body to help you.
+
+IINNVVOOKKIINNGG JJOOVVEE
+       If you run JOVE with no arguments you will be placed in an
+       empty buffer, called _M_a_i_n_.  Otherwise, any  arguments  you
+       supply  are  considered file names and each is "given" its
+       own  buffer.   Only  the  first  file  is  actually   read
+       in--reading other files is deferred until you actually try
+       to use the buffers they are  attached  to.   This  is  for
+       efficiency's  sake: most of the time, when you run JOVE on
+       a big list of files, you end up  editing  only  a  few  of
+       them.
+
+       The  names  of  all  of the files specified on the command
+       line are saved in a buffer, called _*_m_i_n_i_b_u_f_*_.   The  mini-
+       buffer  is a special JOVE buffer that is used when JOVE is
+       prompting for some input to many  commands  (for  example,
+       when  JOVE  is  prompting  for a file name).  When you are
+       being prompted for a file name, you can type  C-N  (that's
+       Control-N) and C-P to cycle through the list of files that
+
+
+
+February                        12                              1
+
+
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+       were specified on the command line.  The file name will be
+       inserted  where you are typing and then you can edit it as
+       if you typed it in yourself.
+
+       JOVE recognizes the following switches:
+
+       _-_d     The following argument is taken to be the  name  of
+              the  current  directory.   This is for systems that
+              don't have a version of C shell that  automatically
+              maintains  the  _C_W_D environment variable.  If _-_d is
+              not specified on a  system  without  a  modified  C
+              shell,  JOVE  will  have  to figure out the current
+              directory itself, and that can be VERY  slow.   You
+              can  simulate  the  modified C shell by putting the
+              following lines in your C shell initialization file
+              (.cshrc):
+
+                   alias cd        'cd \!*; setenv CWD $cwd'
+                   alias popd      'popd \!*; setenv CWD $cwd'
+                   alias pushd     'pushd \!*; setenv CWD $cwd'
+
+       _+_n     Reads  the  file, designated by the following argu-
+              ment, and positions point at the _n_'_t_h line  instead
+              of  the (default) 1'st line.  This can be specified
+              more than once but it doesn't make sense to use  it
+              twice on the same file; in that case the second one
+              wins. If no numeric argument is given after the  +,
+              the point is positioned at the end of the file.
+
+       _-_p     Parses the error messages in the file designated by
+              the following argument.   The  error  messages  are
+              assumed  to  be  in  a format similar to the C com-
+              piler, LINT, or GREP output.
+
+       _-_t     Runs the _f_i_n_d_-_t_a_g command on the string of  charac-
+              ters  immediately  following the -t if there is one
+              (as in -tTagname), or on the following argument (as
+              in -t Tagname) otherwise (see ctags(1)).
+
+       _-_w     Divides  the  window  in  two.   When this happens,
+              either the same file is displayed in both  windows,
+              or  the second file in the list is read in and dis-
+              played in its window.
+
+RREECCOOVVEERRIINNGG BBUUFFFFEERRSS AAFFTTEERR AA CCRRAASSHH
+       The _-_r option of jove runs the JOVE recover program.   Use
+       this  when  the  system  crashes,  or JOVE crashes, or you
+       accidently get logged out while in JOVE.  If there are any
+       buffers to be recovered, this will find them.
+
+       Recover  looks  for  JOVE buffers that are left around and
+       are owned by you.   (You  cannot  recover  other  peoples'
+       buffers,  obviously.)   If there were no buffers that were
+       modified at the time  of  the  crash  or  there  were  but
+
+
+
+February                        12                              2
+
+
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+       recover  can't get its hands on them, you will be informed
+       with the message, "There is nothing to  recover."   Other-
+       wise,  recover  prints the date and time of the version of
+       the buffers it has, and then waits for you type a command.
+
+       To  get a list of the buffers recover knows about, use the
+       _l_i_s_t command.  This will list  all  the  buffers  and  the
+       files  and the number of lines associated with them.  Next
+       to each buffer is a number.  When you want  to  recover  a
+       buffer,  use  the  _g_e_t  command.  The syntax is _g_e_t _b_u_f_f_e_r
+       _f_i_l_e_n_a_m_e where _b_u_f_f_e_r is either the buffer's name  or  the
+       number  at  the  beginning of the line.  If you don't type
+       the buffer name or the filename, recover will  prompt  you
+       for them.
+
+       If  there are a lot of buffers and you want to recover all
+       of them, use the _r_e_c_o_v_e_r command.  This will recover  each
+       buffer  to  the  name of the buffer with ".#" prepended to
+       the name (so that the original  isn't  over-written).   It
+       asks  for each file and if you want to restore that buffer
+       to that name you type "yes".  If you want to  recover  the
+       file  but  to a different name, just type the new name in.
+       If you type "no" recover will skip that file and go on  to
+       the next one.
+
+       If you want to look at a buffer before deciding to recover
+       it, use the _p_r_i_n_t command.  The syntax for this  is  _p_r_i_n_t
+       _b_u_f_f_e_r  where  _b_u_f_f_e_r again is either its name or the num-
+       ber.  You can type ^C if you want to  abort  printing  the
+       file  to  the  terminal,  and recover will respond with an
+       appropriate message.
+
+       When you're done and have all the buffers you  want,  type
+       the _q_u_i_t command to leave.  You will then be asked whether
+       it's okay to delete the  tmp  files.   Most  of  the  time
+       that's okay and you should type "yes".  When you say that,
+       JOVE removes all traces of those buffers and you won't  be
+       able  to  look  at  them  again.   (If  you recovered some
+       buffers they will still be around, so don't  worry.)   So,
+       if  you're not sure whether you've gotten all the buffers,
+       you should answer "no" so  that  you'll  be  able  to  run
+       recover  again  at  a  later time (presumably after you've
+       figured out which ones you want to save).
+
+       If you type ^C at any time other than when you're printing
+       a  file to the terminal, recover will exit without a word.
+       If you do this but wish you hadn't, just type "jove -r" to
+       the shell again, and you will be put back with no loss.
+
+GGEETTTTIINNGG HHEELLPP
+       Once  in JOVE, there are several commands available to get
+       help.  To execute any JOVE command, you type "<ESC> X com-
+       mand-name" followed by <Return>.  To get a list of all the
+       JOVE commands you type "<ESC> X"  followed  by  "?".   The
+
+
+
+February                        12                              3
+
+
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+       _d_e_s_c_r_i_b_e_-_b_i_n_d_i_n_g_s  command  can be used to get a list con-
+       taining each key, and its associated command (that is, the
+       command  that  gets  executed when you type that key).  If
+       you want to save the list of bindings,  you  can  set  the
+       jove  variable _s_e_n_d_-_t_y_p_e_o_u_t_-_t_o_-_b_u_f_f_e_r to ON (using the _s_e_t
+       command), and then execute the _d_e_s_c_r_i_b_e_-_b_i_n_d_i_n_g_s  command.
+       This  will create a buffer and put in it the bindings list
+       it normally would have printed on the  screen.   Then  you
+       can  save  that  buffer to a file and print it to use as a
+       quick reference card.  (See VARIABLES below.)
+
+       Once you know the name of a command, you can find out what
+       it  does  with the _d_e_s_c_r_i_b_e_-_c_o_m_m_a_n_d command, which you can
+       invoke quickly by typing "ESC  ?".   The  _a_p_r_o_p_o_s  command
+       will  give  you  a list of all the command with a specific
+       string in their names.  For example, if you want  to  know
+       the names of all the commands that are concerned with win-
+       dows, you can run "apropos" with the keyword _w_i_n_d_o_w_.
+
+       If you're not familar with the EMACS command set, it would
+       be  worth  your  while  to use run TEACHJOVE.  Do do that,
+       just type "teachjove" to your shell and you will be placed
+       in  JOVE  in  a  file which contains directions.  I highly
+       recommend this for beginners; you may save yourself a  lot
+       of time and headaches.
+
+KKEEYY BBIINNDDIINNGGSS aanndd VVAARRIIAABBLLEESS
+       You  can  alter  the key bindings in JOVE to fit your per-
+       sonal tastes.  That is, you can change  what  a  key  does
+       every time you strike it.  For example, by default the C-N
+       key is bound to the command _n_e_x_t_-_l_i_n_e and so when you type
+       it  you move down a line.  If you want to change a binding
+       or add a new one, you use the  _b_i_n_d_-_t_o_-_k_e_y  command.   The
+       syntax is "bind-to-key <command> key".
+
+       You can also change the way JOVE behaves in little ways by
+       changing the value of some variables with the _s_e_t command.
+       The  syntax  is  "set  <variable> value", where value is a
+       number or a string, or "on" or  "off",  depending  on  the
+       context.   For  example,  if  you want JOVE to make backup
+       files, you set the "make-backup-files" variable  to  "on".
+       To see the value of a variable, use the "print <variable>"
+       command.
+
+IINNIITTIIAALLIIZZAATTIIOONN
+       JOVE automatically reads commands from  an  initialization
+       file  in  your  HOME directory, called ".joverc".  In this
+       file you can place commands that you would  normally  type
+       in  JOVE.   If  you like to rearrange the key bindings and
+       set some variables every  time  you  get  into  JOVE,  you
+       should  put  them in your initialization file.  Here are a
+       few lines from mine:
+            set match-regular-expressions on
+            auto-execute-command auto-fill /tmp/Re\|.*drft
+
+
+
+February                        12                              4
+
+
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+            bind-to-key i-search-forward ^\
+            bind-to-key i-search-reverse ^R
+            bind-to-key find-tag-at-point ^[^T
+            bind-to-key scroll-down ^C
+            bind-to-key grow-window ^Xg
+            bind-to-key shrink-window ^Xs
+       (Note that the Control Characters can be either two  char-
+       acter  sequences  (e.g.  ^  and  C  together as ^C) or the
+       actual control character.  If you want  to  use  an  ^  by
+       itself  you  must  BackSlash  it  (e.g., bind-to-key grow-
+       window ^X\^ binds grow-window to "^X^").
+
+SSOOMMEE MMIINNOORR DDEETTAAIILLSS
+       You should type C-\ instead of C-S in many instances.  For
+       example,  the  way to search for a string is documented as
+       being "C-S" but in reality you should type "C-\".  This is
+       because C-S is the XOFF character (what gets sent when you
+       type the NO SCROLL key), and clearly that won't work.  The
+       XON  character  is  "C-Q" (what gets sent when you type NO
+       SCROLL again) which is documented  as  the  way  to  do  a
+       quoted-insert.  The alternate key for this is "C-^" (typed
+       as "C-`" on vt100's and its look-alikes).  If you want  to
+       enable  C-S  and  C-Q and you know what you are doing, you
+       can put the line:
+            set allow-^S-and-^Q on
+       in your initialization file.
+
+       If your terminal has a metakey, JOVE will use  it  if  you
+       turn  on the "meta-key" variable.  JOVE will automatically
+       turn on "meta-key" if  the  METAKEY  environment  variable
+       exists.   This  is useful for if you have different termi-
+       nals (e.g., one at home and one at work)  and  one  has  a
+       metakey and the other doesn't.
+
+FFIILLEESS
+       /usr/contrib/lib/jove/jove.rc - system wide initialization
+       file
+       ~/.joverc - personal initialization file
+       /var/tmp - where temporary files are stored
+       /usr/contrib/lib/jove/teach-jove - the  interactive  tuto-
+       rial
+       /usr/contrib/lib/jove/portsrv - for running shells in win-
+       dows (pdp11 only)
+
+SSEEEE AALLSSOO
+       ed(1) - for a description of regular expressions
+       teachjove(1) - for an interactive JOVE tutorial.
+
+DDIIAAGGNNOOSSTTIICCSS
+       JOVE diagnostics are meant to be self-explanatory, but you
+       are  advised  to seek help whenever you are confused.  You
+       can easily lose a lot of work if you  don't  know  EXACTLY
+       what you are doing.
+
+
+
+
+February                        12                              5
+
+
+
+
+
+JOVE(1)                        1986                       JOVE(1)
+
+
+BBUUGGSS
+       Lines can't be more than 1024 characters long.
+
+       Searches can't cross line boundaries.
+
+AAUUTTHHOORR
+       Jonathan Payne
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+February                        12                              6
+
+

@@ -1,0 +1,66 @@
+
+
+
+TEACHJOVE(1)                   1986                  TEACHJOVE(1)
+
+
+NNAAMMEE
+       TEACHJOVE - learn how to use the JOVE editor
+
+SSYYNNOOPPSSIISS
+       teachjove
+
+DDEESSCCRRIIPPTTIIOONN
+       TEACHJOVE  is a simple program that calls up the JOVE edi-
+       tor on a special file that is an interactive tutorial  for
+       the  JOVE  editor.   Once in JOVE all you do is follow the
+       instructions and by doing so  you  will  learn  all  about
+       JOVE!   NOTE: TEACHJOVE actually makes a copy of the tuto-
+       rial in your home directory; if you  ever  want  to  start
+       over  (if  you trash the file by accident) all you need to
+       do is remove the file  "~/teach-jove"  and  run  teachjove
+       again.
+
+FFIILLEESS
+       /usr/contrib/lib/jove/teach-jove -- THE special file.
+
+SSEEEE AALLSSOO
+       JOVE(1) - to learn about JOVE in general.
+
+AAUUTTHHOORR
+       Jonathan Payne
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+February                        12                              1
+
+
