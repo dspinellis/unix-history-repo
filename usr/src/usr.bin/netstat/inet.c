@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <strings.h>
@@ -138,20 +138,51 @@ tcp_stats(off, name)
 
 	if (off == 0)
 		return;
+	printf ("%s:\n", name);
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
-	printf("%s:\n\t%u incomplete header%s\n", name,
-		tcpstat.tcps_hdrops, plural(tcpstat.tcps_hdrops));
-	printf("\t%u bad checksum%s\n",
-		tcpstat.tcps_badsum, plural(tcpstat.tcps_badsum));
-	printf("\t%u bad header offset field%s\n",
-		tcpstat.tcps_badoff, plural(tcpstat.tcps_badoff));
-#ifdef notdef
-	printf("\t%u bad segment%s\n",
-		tcpstat.tcps_badsegs, plural(tcpstat.badsegs));
-	printf("\t%u unacknowledged packet%s\n",
-		tcpstat.tcps_unack, plural(tcpstat.tcps_unack));
-#endif
+
+#define p(f,m) printf("	m\n",tcpstat.tcps_/**/f,plural(tcpstat.tcps_/**/f))
+#define p2(f1,f2,m) printf("	m\n",tcpstat.tcps_/**/f1,plural(tcpstat.tcps_/**/f1),tcpstat.tcps_/**/f2,plural(tcpstat.tcps_/**/f2))
+
+	p(sndtotal,%d packet%s sent);
+	p2(sndpack,sndbyte,\t%d data packet%s (%d byte%s));
+	p2(sndrexmitpack,sndrexmitbyte,\t%d data packet%s (%d byte%s) retransmitted);
+	p2(sndacks,delack,\t%d ack-only packet%s (%d delayed));
+	p(sndurg,\t%d URG only packet%s);
+	p(sndprobe,\t%d window probe packet%s);
+	p(sndwinup,\t%d window update packet%s);
+	p(sndctrl,\t%d control packet%s);
+
+	p(rcvtotal,%d packet%s received);
+	p2(rcvackpack,rcvackbyte,\t%d ack%s (for %d byte%s));
+	p(rcvdupack,\t%d duplicate ack%s);
+	p(rcvacktoomuch,\t%d ack%s for unsent data);
+	p2(rcvpack,rcvbyte,\t%d packet%s (%d byte%s) received in-sequence);
+	p2(rcvduppack,rcvdupbyte,\t%d completely duplicate packet%s (%d byte%s));
+	p2(rcvpartduppack,rcvpartdupbyte,\t%d packet%s with some dup. data (%d byte%s duped));
+	p2(rcvoopack,rcvoobyte,\t%d out-of-order packet%s (%d byte%s));
+	p2(rcvpackafterwin,rcvbyteafterwin,\t%d packet%s (%d byte%s) of data after window);
+	p(rcvwinprobe,\t%d window probe%s);
+	p(rcvwinupd,\t%d window update packet%s);
+	p(rcvafterclose,\t%d packet%s received after close);
+	p(rcvbadsum,\t%d discarded for bad checksum%s);
+	p(rcvbadoff,\t%d discarded for bad header offset field%s);
+	p(rcvshort,\t%d discarded because packet too short);
+	p(connattempt,%d connection request%s);
+	p(accepts,%d connection accept%s);
+	p(connects,%d connection%s established (including accepts));
+	p2(closed,drops,%d connection%s closed (including %d drop%s));
+	p(conndrops,%d embryonic connection%s dropped);
+	p2(rttupdated,segstimed,%d segment%s updated rtt (of %d attempt%s));
+	p(rexmttimeo,%d retransmit timeout%s);
+	p(timeoutdrop,\t%d connection%s dropped by rexmit timeout);
+	p(persisttimeo,%d persist timeout%s);
+	p(keeptimeo,%d keepalive timeout%s);
+	p(keepprobe,\t%d keepalive probe%s sent);
+	p(keepdrops,\t%d connection%s dropped by keepalive);
+#undef p
+#undef p2
 }
 
 /*
