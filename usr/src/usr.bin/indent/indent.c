@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1985 Sun Microsystems, Inc.
- * Copyright (c) 1980 The Regents of the University of California.
  * Copyright (c) 1976 Board of Trustees of the University of Illinois.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
@@ -10,13 +10,13 @@
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1985 Sun Microsystems, Inc.\n\
- @(#) Copyright (c) 1980 The Regents of the University of California.\n\
- @(#) Copyright (c) 1976 Board of Trustees of the University of Illinois.\n\
- All rights reserved.\n";
+@(#) Copyright (c) 1976 Board of Trustees of the University of Illinois.\n\
+@(#) Copyright (c) 1980, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
