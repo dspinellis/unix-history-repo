@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)pwcache.3	5.1 (Berkeley) %G%
+.\"	@(#)pwcache.3	5.2 (Berkeley) %G%
 .\"
 .TH PWCACHE 3 ""
 .UC 7
@@ -22,11 +22,13 @@ pwcache \- cache password and group entries
 .SH SYNOPSIS
 .ft B
 .nf
-user_from_uid(uid)
+user_from_uid(uid, nouser)
 uid_t uid;
+int nouser;
 
-group_from_gid(gid)
+group_from_gid(gid, nogroup)
 gid_t gid;
+int nogroup;
 .fi
 .ft R
 .SH DESCRIPTION
@@ -42,6 +44,10 @@ function returns the user name associated with the argument uid.
 The user name is cached so that multiple calls with the same uid 
 do not require additional calls to
 .IR getpwuid (3).
+If there is no user associated with the uid, a pointer is returned
+to an ASCII representation of the uid, unless the argument
+.I nouser
+is non-zero, in which case a NULL pointer is returned.
 .PP
 The
 .I group_from_gid
@@ -49,5 +55,9 @@ function returns the group name associated with the argument gid.
 The group name is cached so that multiple calls with the same gid
 do not require additional calls to
 .IR getgrgid (3).
+If there is no group associated with the gid, a pointer is returned
+to an ASCII representation of the gid, unless the argument
+.I nogroup
+is non-zero, in which case a NULL pointer is returned.
 .SH SEE ALSO
 getgrgid(3), getpwuid(3)
