@@ -1,0 +1,13 @@
+./"rawq.cc"16t"rawq.cf"16t"rawq.cl"nDXX
++/"canq.cc"16t"canq.cf"16t"canq.cl"nDXX
++/"outq.cc"16t"outq.cf"16t"outq.cl"nDXX
++/"oproc"16t"rsel"16t"wsel"16tnpXX
++/"linep"16t"addr"nXX
++/"maj"8t"min"8t"flags"16t"state"16t"pgrp"nbb2+XXd
++/"delct"8t"line"8t"col"8t"ispeed"8t"ospeed"n5b
++/"rocount"8t"rocol"n2b
++/"erase"8t"kill"8t"intrc"8t"quitc"8t"startc"nC8tC8tC8tC8tC
++/"stopc"8t"eofc"8t"brkc"8t"suspc"8t"dsuspc"nC8tC8tC8tC8tC
++/"rprntc"8t"flushc"8t"werase"8t"lnextc"nC8tC8tC8tC1+
++/"ws_row"8t"ws_col"8t"ws_xpix"8t"ws_ypix"nuuuu
++,<9-1$<tty
