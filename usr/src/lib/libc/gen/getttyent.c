@@ -1,55 +1,125 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.4 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)getttyent.c	5.5 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
-#include <strings.h>
 #include <ttyent.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <strings.h>
 
-static char TTYFILE[] = "/etc/ttys";
 static char zapchar;
-static FILE *tf = NULL;
-#define LINE 256
-static char line[LINE];
-static struct ttyent tty;
+static FILE *tf;
 
-setttyent()
+struct ttyent *
+getttynam(tty)
+	char *tty;
 {
-	if (tf == NULL)
-		tf = fopen(TTYFILE, "r");
-	else
-		rewind(tf);
+	register struct ttyent *t;
+
+	setttyent();
+	while (t = getttyent())
+		if (!strcmp(tty, t->ty_name))
+			break;
+	return(t);
 }
 
-endttyent()
+struct ttyent *
+getttyent()
 {
-	if (tf != NULL) {
-		(void) fclose(tf);
-		tf = NULL;
+	static struct ttyent tty;
+	register int c;
+	register char *p;
+#define	MAXLINELENGTH	100
+	static char line[MAXLINELENGTH];
+	char *skip(), *value();
+
+	if (!tf && !setttyent())
+		return(NULL);
+	do {
+		if (!fgets(line, sizeof(line), tf))
+			return(NULL);
+		/* skip lines that are too big */
+		if (!index(line, '\n')) {
+			while ((c = getc(tf)) != '\n' && c != EOF)
+				;
+			continue;
+		}
+		for (p = line; isspace(*p); ++p)
+			;
+	} while (!*p || *p == '#');
+
+	zapchar = 0;
+	tty.ty_name = p;
+	p = skip(p);
+	if (!*(tty.ty_getty = p))
+		tty.ty_getty = tty.ty_type = NULL;
+	else {
+		p = skip(p);
+		if (!*(tty.ty_type = p))
+			tty.ty_type = NULL;
+		else
+			p = skip(p);
 	}
+	tty.ty_status = 0;
+	tty.ty_window = NULL;
+
+#define	scmp(e)	!strncmp(p, e, sizeof(e) - 1) && isspace(p[sizeof(e) - 1])
+#define	vcmp(e)	!strncmp(p, e, sizeof(e) - 1) && p[sizeof(e) - 1] == '='
+	for (; *p; p = skip(p)) {
+		if (scmp(_TTYS_OFF))
+			tty.ty_status &= ~TTY_ON;
+		else if (scmp(_TTYS_ON))
+			tty.ty_status |= TTY_ON;
+		else if (scmp(_TTYS_SECURE))
+			tty.ty_status |= TTY_SECURE;
+		else if (vcmp(_TTYS_WINDOW))
+			tty.ty_window = value(p);
+		else
+			break;
+	}
+
+	if (zapchar == '#' || *p == '#')
+		while ((c = *++p) == ' ' || c == '\t')
+			;
+	tty.ty_comment = p;
+	if (*p == 0)
+		tty.ty_comment = 0;
+	if (p = index(p, '\n'))
+		*p = '\0';
+	return(&tty);
 }
 
-#define QUOTED	1
+#define	QUOTED	1
 
 /*
- * Skip over the current field, removing quotes,
- * and return a pointer to the next field.
+ * Skip over the current field, removing quotes, and return a pointer to
+ * the next field.
  */
 static char *
 skip(p)
 	register char *p;
 {
-	register char *t = p;
-	register int c;
-	register int q = 0;
+	register char *t;
+	register int c, q;
 
-	for (; (c = *p) != '\0'; p++) {
+	for (q = 0, t = p; (c = *p) != '\0'; p++) {
 		if (c == '"') {
 			q ^= QUOTED;	/* obscure, but nice */
 			continue;
@@ -73,65 +143,34 @@ skip(p)
 		}
 	}
 	*--t = '\0';
-	return (p);
+	return(p);
 }
 
 static char *
 value(p)
 	register char *p;
 {
-	if ((p = index(p,'=')) == 0)
-		return(NULL);
-	p++;			/* get past the = sign */
-	return(p);
+	return((p = index(p, '=')) ? ++p : NULL);
 }
 
-struct ttyent *
-getttyent()
+setttyent()
 {
-	register char *p;
-	register int c;
+	if (tf) {
+		(void)rewind(tf);
+		return(1);
+	} else if (tf = fopen(_PATH_TTYS, "r"))
+		return(1);
+	return(0);
+}
 
-	if (tf == NULL) {
-		if ((tf = fopen(TTYFILE, "r")) == NULL)
-			return (NULL);
+endttyent()
+{
+	int rval;
+
+	if (tf) {
+		rval = !(fclose(tf) == EOF);
+		tf = NULL;
+		return(rval);
 	}
-	do {
-		p = fgets(line, LINE, tf);
-		if (p == NULL)
-			return (NULL);
-		while ((c = *p) == '\t' || c == ' ' || c == '\n')
-			p++;
-	} while (c == '\0' || c == '#');
-	zapchar = 0;
-	tty.ty_name = p;
-	p = skip(p);
-	tty.ty_getty = p;
-	p = skip(p);
-	tty.ty_type = p;
-	p = skip(p);
-	tty.ty_status = 0;
-	tty.ty_window = NULL;
-	for (; *p; p = skip(p)) {
-#define space(x) ((c = p[x]) == ' ' || c == '\t' || c == '\n')
-		if (strncmp(p, "on", 2) == 0 && space(2))
-			tty.ty_status |= TTY_ON;
-		else if (strncmp(p, "off", 3) == 0 && space(3))
-			tty.ty_status &= ~TTY_ON;
-		else if (strncmp(p, "secure", 6) == 0 && space(6))
-			tty.ty_status |= TTY_SECURE;
-		else if (strncmp(p, "window=", 7) == 0)
-			tty.ty_window = value(p);
-		else
-			break;
-	}
-	if (zapchar == '#' || *p == '#')
-		while ((c = *++p) == ' ' || c == '\t')
-			;
-	tty.ty_comment = p;
-	if (*p == 0)
-		tty.ty_comment = 0;
-	if (p = index(p, '\n'))
-		*p = '\0';
-	return(&tty);
+	return(1);
 }
