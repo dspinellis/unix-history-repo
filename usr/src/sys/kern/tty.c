@@ -1,4 +1,4 @@
-/*	tty.c	4.14	81/11/18	*/
+/*	tty.c	4.15	82/01/14	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -82,13 +82,13 @@ register struct tty *tp;
  * Wait for output to drain, then flush input waiting.
  */
 wflushtty(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
 
 	(void) spl5();
-	while (tp->t_outq.c_cc && tp->t_state&CARR_ON) {
+	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON) {
 		(*tp->t_oproc)(tp);
-		tp->t_state |= ASLEEP;
+		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
 	flushtty(tp, FREAD|FWRITE);
@@ -111,7 +111,7 @@ register struct tty *tp;
 	}
 	if (rw & FWRITE) {
 		wakeup((caddr_t)&tp->t_outq);
-		tp->t_state &= ~TTSTOP;
+		tp->t_state &= ~TS_TTSTOP;
 		(*cdevsw[major(tp->t_dev)].d_stop)(tp);
 		while (getc(&tp->t_outq) >= 0)
 			;
@@ -137,11 +137,11 @@ register struct tty *tp;
 	x = tp->t_rawq.c_cc + tp->t_canq.c_cc;
 	if (tp->t_rawq.c_cc > TTYHOG) {
 		flushtty(tp, FREAD|FWRITE);
-		tp->t_state &= ~TBLOCK;
+		tp->t_state &= ~TS_TBLOCK;
 	}
 	if (x >= TTYHOG/2) {
 		if (putc(tun.t_stopc, &tp->t_outq)==0) {
-			tp->t_state |= TBLOCK;
+			tp->t_state |= TS_TBLOCK;
 			tp->t_char++;
 			ttstart(tp);
 		}
@@ -162,7 +162,7 @@ register struct tty *tp;
 		printf("ttrstrt: arg was 0!\n");
 		return;
 	}
-	tp->t_state &= ~TIMEOUT;
+	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
 }
 
@@ -178,7 +178,7 @@ register struct tty *tp;
 	register s;
 
 	s = spl5();
-	if((tp->t_state&(TIMEOUT|TTSTOP|BUSY)) == 0)
+	if((tp->t_state&(TS_TIMEOUT|TS_TTSTOP|TS_BUSY)) == 0)
 		(*tp->t_oproc)(tp);
 	splx(s);
 }
@@ -203,7 +203,7 @@ caddr_t addr;
 	 * This is especially so that isatty() will
 	 * fail when carrier is gone.
 	 */
-	if ((tp->t_state&CARR_ON) == 0) {
+	if ((tp->t_state&TS_CARR_ON) == 0) {
 		u.u_error = EBADF;
 		return (1);
 	}
@@ -311,7 +311,7 @@ caddr_t addr;
 		tp->t_kill = iocb.sg_kill;
 		tp->t_flags = iocb.sg_flags;
 		if (tp->t_flags & RAW) {
-			tp->t_state &= ~TTSTOP;
+			tp->t_state &= ~TS_TTSTOP;
 			ttstart(tp);
 		}
 		(void) spl0();
@@ -334,7 +334,7 @@ caddr_t addr;
 	 * Hang up line on last close
 	 */
 	case TIOCHPCL:
-		tp->t_state |= HUPCLS;
+		tp->t_state |= TS_HUPCLS;
 		break;
 
 	case TIOCFLUSH: {
@@ -346,6 +346,19 @@ caddr_t addr;
 			return(1);
 		}
 		flushtty(tp, flags);
+		break;
+	}
+
+	case FIONBIO: {
+		int nbio;
+		if (copyin(addr, (caddr_t)&nbio, sizeof (nbio))) {
+			u.u_error = EFAULT;
+			return(1);
+		}
+		if (nbio)
+			tp->t_state |= TS_NBIO;
+		else
+			tp->t_state &= ~TS_NBIO;
 		break;
 	}
 
@@ -468,26 +481,39 @@ ttnread(tp)
 	return (nread);
 }
 
-ttselect(dev, flag)
+ttselect(dev, rw)
 	dev_t dev;
-	int flag;
+	int rw;
 {
 	register struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)];
 	int nread;
+	int s = spl5();
 
-	switch (flag) {
+	switch (rw) {
 
 	case FREAD:
 		nread = ttnread(tp);
 		if (nread > 0)
-			return (1);
+			goto win;
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
-			tp->t_state |= RCOLL;
+			tp->t_state |= TS_RCOLL;
 		else
 			tp->t_rsel = u.u_procp;
-		return (0);
+		break;
 
-	default:
-		return (1);
+	case FWRITE:
+		if (tp->t_outq.c_cc <= TTLOWAT(tp))
+			goto win;
+printf("wsel block\n");
+		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t)&selwait)
+			tp->t_state |= TS_WCOLL;
+		else
+			tp->t_wsel = u.u_procp;
+		break;
 	}
+	splx(s);
+	return (0);
+win:
+	splx(s);
+	return (1);
 }
