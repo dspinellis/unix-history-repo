@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.3 (Berkeley) %G%
+ *	@(#)param.h	7.4 (Berkeley) %G%
  *
- * from: $Header: param.h,v 1.11 92/06/24 08:52:05 torek Exp $ (LBL)
+ * from: $Header: param.h,v 1.14 93/04/07 01:34:00 torek Exp $ (LBL)
  */
 
 /*
@@ -79,7 +79,7 @@
  * Size of kernel malloc arena in CLBYTES-sized logical pages.
  */
 #ifndef	NKMEMCLUSTERS
-#define	NKMEMCLUSTERS	(3 * 1024 * 1024 / CLBYTES)
+#define	NKMEMCLUSTERS	(6 * 1024 * 1024 / CLBYTES)
 #endif
 
 /* pages ("clicks") (4096 bytes) to disk blocks */
@@ -108,6 +108,7 @@
 
 #ifdef KERNEL
 #ifndef LOCORE
+int cpuspeed;		/* XXX for sysctl(hw.cpuspeed) only; should remove */
 #define	DELAY(n)	delay(n)
 #endif
 #else
