@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rsh.1	6.9 (Berkeley) %G%
+.\"	@(#)rsh.1	6.10 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RSH 1
 .Os BSD 4.2
@@ -14,7 +12,7 @@
 .Nm rsh
 .Nd remote shell
 .Sh SYNOPSIS
-.Ar rsh
+.Nm rsh
 .Op Fl Kdn
 .Op Fl k Ar realm
 .Op Fl l Ar username
@@ -36,17 +34,20 @@ command;
 .Nm rsh
 normally terminates when the remote command does.
 The options are as follows:
-.Tp Fl K
+.Bl -tag -width flag
+.It Fl K
 The
 .Fl K
 option turns off all Kerberos authentication.
-.Tp Fl d
+.It Fl d
 The
 .Fl d
 option turns on socket debugging (using
 .Xr setsockopt  2  )
-on the TCP sockets used for communication with the remote host.
-.Tp Fl k
+on the
+.Tn TCP
+sockets used for communication with the remote host.
+.It Fl k
 The
 .Fl k
 option causes
@@ -55,7 +56,7 @@ to obtain tickets for the remote host in
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
-.Tp Fl l
+.It Fl l
 By default, the remote username is the same as the local username.
 The
 .Fl l
@@ -63,13 +64,12 @@ option allows the remote name to be specified.
 Kerberos authentication is used, and authorization is determined
 as in
 .Xr rlogin  1  .
-.Tp Fl n
+.It Fl n
 The
 .Fl n
 option redirects input from the special device
 .Pa /dev/null
-(see the BUGS section of this manual page).
-.Tp
+.El
 .Pp
 If no
 .Ar command
@@ -100,18 +100,19 @@ to
 .\" If this directory is included in your search path, you can use the
 .\" shorthand ``host command'' for the longer form ``rsh host command''.
 .Sh FILES
-.Dw /etc/hosts
-.Di L
-.Dp Pa /etc/hosts
-.Dp
+.Bl -tag -width /etc/hosts -compact
+.It Pa /etc/hosts
+.El
 .Sh SEE ALSO
 .Xr rlogin 1 ,
 .Xr kerberos 3 ,
 .Xr krb_sendauth 3 ,
 .Xr krb_realmofhost 3
 .Sh HISTORY
-.Nm Rsh
-appeared in 4.2 BSD
+The
+.Nm rsh
+command appeared in
+.Bx 4.2 .
 .Sh BUGS
 If you are using
 .Xr csh  1
