@@ -4,12 +4,13 @@
 #
 #	This kernel is NOT MEANT to be runnable!
 #
-#	$Id: LINT,v 1.75 1994/06/02 12:18:27 csgr Exp $
+#	$Id: LINT,v 1.76 1994/06/05 19:57:28 ats Exp $
 #
 
 machine		"i386"
 cpu		"I386_CPU"
 cpu		"I486_CPU"
+cpu		"I586_CPU"
 ident		LINT
 timezone	8 dst
 maxusers	10
