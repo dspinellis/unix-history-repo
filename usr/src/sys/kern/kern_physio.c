@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.19 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,18 +26,11 @@ static	struct buf *getswbuf();
 static	freeswbuf();
 
 /*
- * Raw I/O. The arguments are
- *	The strategy routine for the device
- *	A buffer, which will either be a special buffer header owned
- *	    exclusively by the device for this purpose, or NULL,
- *	    indicating that we should use a swap buffer
- *	The device number
- *	Read/write flag
- * Essentially all the work is computing physical addresses and
- * validating them.
+ * This routine does device I/O for a user process.
+ *
  * If the user has the proper access privilidges, the process is
  * marked 'delayed unlock' and the pages involved in the I/O are
- * faulted and locked. After the completion of the I/O, the above pages
+ * faulted and locked. After the completion of the I/O, the pages
  * are unlocked.
  */
 physio(strat, bp, dev, rw, mincnt, uio)
@@ -136,6 +129,12 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	return (error);
 }
 
+/*
+ * Calculate the maximum size of I/O request that can be requested
+ * in a single operation. This limit is necessary to prevent a single
+ * process from being able to lock more than a fixed amount of memory
+ * in the kernel.
+ */
 u_int
 minphys(bp)
 	struct buf *bp;
@@ -182,6 +181,9 @@ freeswbuf(bp)
 	splx(s);
 }
 
+/*
+ * Do a read on a device for a user process.
+ */
 rawread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
@@ -190,6 +192,9 @@ rawread(dev, uio)
 	    dev, B_READ, minphys, uio));
 }
 
+/*
+ * Do a write on a device for a user process.
+ */
 rawwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
