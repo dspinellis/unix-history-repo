@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	8.6 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.7 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -998,7 +998,7 @@ postsig(signum)
 	register struct proc *p = curproc;
 	register struct sigacts *ps = p->p_sigacts;
 	register sig_t action;
-	int mask, returnmask;
+	int code, mask, returnmask;
 
 #ifdef DIAGNOSTIC
 	if (signum == 0)
@@ -1046,7 +1046,13 @@ postsig(signum)
 		p->p_sigmask |= ps->ps_catchmask[signum] | mask;
 		(void) spl0();
 		p->p_stats->p_ru.ru_nsignals++;
-		sendsig(action, signum, returnmask, 0);
+		if (ps->ps_sig != signum) {
+			code = 0;
+		} else {
+			code = ps->ps_code;
+			ps->ps_code = 0;
+		}
+		sendsig(action, signum, returnmask, code);
 	}
 }
 
