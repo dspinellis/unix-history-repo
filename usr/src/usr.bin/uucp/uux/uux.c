@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.11	(Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.12	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
-#include <sys/errno.h>
+#include <sysexits.h>
 
 #define NOSYSPART 0
 #define HASSYSPART 1
@@ -17,7 +17,7 @@ register char *p; for (p = d; *p != '\0';)\
 	{*cmdp++ = *p++;\
 		if(cmdp>(sizeof(cmd)+&cmd[0])){\
 			fprintf(stderr,"argument list too long\n");\
-			cleanup(E2BIG);\
+			cleanup(EX_SOFTWARE);\
 		}\
 	}\
 	*cmdp++ = ' '; *cmdp = '\0';}
@@ -205,7 +205,7 @@ char **argv;
 		fprintf(stderr, "bad system name: %s\n", xsys);
 		fclose(fprx);
 		fclose(fpc);
-		cleanup(EHOSTUNREACH);
+		cleanup(EX_NOHOST);
 	}
 
 	strncpy(Rmtname, xsys, MAXBASENAME);
@@ -223,11 +223,11 @@ char **argv;
 			fwrite(buf, 1, ret, fpd);
 			if (ferror(stdin)) {
 				perror("stdin");
-				cleanup(EIO);
+				cleanup(EX_IOERR);
 			}
 			if (ferror(fpd)) {
 				perror(dfile);
-				cleanup(EIO);
+				cleanup(EX_IOERR);
 			}
 			size += ret;
 		}
@@ -285,7 +285,7 @@ char **argv;
 		if (redir == '>') {
 			if (rest[0] != '~')
 				if (ckexpf(rest))
-					cleanup(EACCES);
+					cleanup(EX_CANTCREAT);
 			fprintf(fprx, "%c %s %s\n", X_STDOUT, rest,
 			 syspart);
 			redir = '\0';
@@ -310,7 +310,7 @@ char **argv;
 		if (strcmp(xsys, local) == SAME
 		 && strcmp(xsys, syspart) == SAME) {
 			if (ckexpf(rest))
-				cleanup(EACCES);
+				cleanup(EX_CANTCREAT);
 			if (redir == '<')
 				fprintf(fprx, "%c %s\n", X_STDIN, rest);
 			else
@@ -322,12 +322,12 @@ char **argv;
 		if (strcmp(syspart, local) == SAME) {
 			/*  generate send file */
 			if (ckexpf(rest))
-				cleanup(EACCES);
+				cleanup(EX_CANTCREAT);
 			gename(DATAPRE, local, 'A', dfile);
 			DEBUG(4, "rest %s\n", rest);
 			if ((chkpth(User, "", rest) || anyread(rest)) != 0) {
 				fprintf(stderr, "permission denied %s\n", rest);
-				cleanup(EACCES);
+				cleanup(EX_NOINPUT);
 			}
 			link_failed = 0;
 			if (Linkit) {
@@ -339,7 +339,7 @@ char **argv;
 			if (Copy || link_failed) {
 				if (xcp(rest, dfile) != 0) {
 					fprintf(stderr, "can't copy %s to %s\n", rest, dfile);
-					cleanup(EIO);
+					cleanup(EX_NOINPUT);
 				}
 				GENSEND(fpc, rest, dfile, User, "", dfile);
 			}
@@ -371,13 +371,13 @@ char **argv;
 				cleanup(1);
 			}
 			if (ckexpf(rest))
-				cleanup(EPERM);
+				cleanup(EX_CANTCREAT);
 			GENRCV(fp, rest, dfile, User);
 			fclose(fp);
 			rflag++;
 			if (rest[0] != '~')
 				if (ckexpf(rest))
-					cleanup(EPERM);
+					cleanup(EX_CANTCREAT);
 			if (redir == '<') {
 				fprintf(fprx, "%c %s\n", X_RQDFILE, dfile);
 				fprintf(fprx, "%c %s\n", X_STDIN, dfile);
@@ -422,7 +422,7 @@ char **argv;
 		/* file on remote system */
 		if (rest[0] != '~')
 			if (ckexpf(rest))
-				cleanup(EACCES);
+				cleanup(EX_CANTCREAT);
 		if (redir == '<')
 			fprintf(fprx, "%c %s\n", X_STDIN, rest);
 		else
@@ -441,13 +441,13 @@ char **argv;
 		if (*ap == '!') {
 			fprintf(stderr, "uux handles only adjacent sites.\n");
 			fprintf(stderr, "Try uusend for multi-hop delivery.\n");
-			cleanup(EINVAL);
+			cleanup(EX_USAGE);
 		}
 
 	fprintf(fprx, "%c %s\n", X_CMD, cmd);
 	if (ferror(fprx)) {
 		logent(cmd, "COULD NOT QUEUE XQT");
-		cleanup(EIO);
+		cleanup(EX_IOERR);
 	} else
 		logent(cmd, "XQT QUE'D");
 	fclose(fprx);
@@ -475,7 +475,7 @@ char **argv;
 	}
 
 	if (ferror(fpc))
-		cleanup(EIO);
+		cleanup(EX_IOERR);
 	fclose(fpc);
 	if (cflag) {
 		gename(CMDPRE, xsys, Grade, cfile);
