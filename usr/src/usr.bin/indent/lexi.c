@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -140,7 +140,7 @@ lexi()
 		*e_token++ = *buf_ptr++;
 		*e_token++ = *buf_ptr++;
 		while (isxdigit(*buf_ptr)) {
-		    check_size(token);
+		    CHECK_SIZE_TOKEN;
 		    *e_token++ = *buf_ptr++;
 		}
 	    }
@@ -151,7 +151,7 @@ lexi()
 			    break;
 			else
 			    seendot++;
-		    check_size(token);
+		    CHECK_SIZE_TOKEN;
 		    *e_token++ = *buf_ptr++;
 		    if (!isdigit(*buf_ptr) && *buf_ptr != '.')
 			if ((*buf_ptr != 'E' && *buf_ptr != 'e') || seenexp)
@@ -159,7 +159,7 @@ lexi()
 			else {
 			    seenexp++;
 			    seendot++;
-			    check_size(token);
+			    CHECK_SIZE_TOKEN;
 			    *e_token++ = *buf_ptr++;
 			    if (*buf_ptr == '+' || *buf_ptr == '-')
 				*e_token++ = *buf_ptr++;
@@ -170,7 +170,7 @@ lexi()
 	}
 	else
 	    while (chartype[*buf_ptr] == alphanum) {	/* copy it over */
-		check_size(token);
+		CHECK_SIZE_TOKEN;
 		*e_token++ = *buf_ptr++;
 		if (buf_ptr >= buf_end)
 		    fill_buffer();
@@ -318,8 +318,8 @@ lexi()
 		    printf("%d: Unterminated literal\n", line_no);
 		    goto stop_lit;
 		}
-		check_size(token);	/* Only have to do this once in this loop,
-					 * since check_size guarantees that there
+		CHECK_SIZE_TOKEN;	/* Only have to do this once in this loop,
+					 * since CHECK_SIZE guarantees that there
 					 * are at least 5 entries left */
 		*e_token = *buf_ptr++;
 		if (buf_ptr >= buf_end)
