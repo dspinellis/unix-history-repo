@@ -130,6 +130,9 @@ histcmd(argc, argv)
 
 	if (hist == NULL)
 		error("history not active");
+	
+	if (argc == 1)
+		error("missing history argument");
 
 	optreset = 1; optind = 1; /* initialize getopt */
 	while (not_fcnumber(argv[optind]) &&
