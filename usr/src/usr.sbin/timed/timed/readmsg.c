@@ -5,28 +5,28 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 
-#define SLAVE 	0
-#define MASTER	1
+extern char *tsptype[];
 
 /*
  * LOOKAT checks if the message is of the requested type and comes from
  * the right machine, returning 1 in case of affirmative answer 
  */
 
-#define LOOKAT(msg) \
-	((((type == TSP_ANY) || (type == (msg).tsp_type)) && \
-	((machfrom == NULL) || (strcmp(machfrom, (msg).tsp_name) == 0))) \
+#define LOOKAT(msg, mtype, mfrom) \
+	(((((mtype) == TSP_ANY) || ((mtype) == (msg).tsp_type)) && \
+	(((mfrom) == NULL) || (strcmp((mfrom), (msg).tsp_name) == 0))) \
 	? 1 : 0)
 
-#define ISTOUTOFF \
-	((rtime.tv_sec > rtout.tv_sec || (rtime.tv_sec == rtout.tv_sec && \
-				rtime.tv_usec >= rtout.tv_usec)) \
+#define ISTOUTOFF(rtime, rtout) \
+	(((rtime).tv_sec > (rtout).tv_sec || \
+	    ((rtime).tv_sec == (rtout).tv_sec && \
+		(rtime).tv_usec >= (rtout).tv_usec)) \
 	? 1 : 0)
 
 struct timeval rtime, rwait, rtout;
@@ -58,7 +58,7 @@ struct timeval *intvl;
 {
 	int length;
 	int ready, found;
-	static struct tsp *ret;
+	struct tsp *ret = NULL;
 	extern int status;
 	static struct tsplist *head = &msgslist;
 	static struct tsplist *tail = &msgslist;
@@ -66,9 +66,9 @@ struct timeval *intvl;
 	char *malloc(), *strcpy();
 	int bytenetorder(), bytehostorder();
 
-	ret = NULL;
-
 	if (trace) {
+		fprintf(fd, "looking for %s from %s\n",
+			tsptype[type], machfrom);
 		ptr = head->p;
 		fprintf(fd, "msgqueue:\n");
 		while (ptr != NULL) {
@@ -87,7 +87,7 @@ struct timeval *intvl;
 	 */
 
 	while (ptr != NULL) {
-		if (LOOKAT(ptr->info)) {
+		if (LOOKAT(ptr->info, type, machfrom)) {
 			ret = (struct tsp *)malloc(sizeof(struct tsp)); 
 			*ret = ptr->info;
 			from = ptr->addr;
@@ -141,17 +141,23 @@ struct timeval *intvl;
 			length = sizeof(struct sockaddr_in);
 			if (recvfrom(sock, (char *)&msgin, sizeof(struct tsp), 
 						0, &from, &length) < 0) {
-				syslog(LOG_ERR, "timed: receiving datagram packet: %m");
+				syslog(LOG_ERR, "receiving datagram packet: %m");
 				exit(1);
 			}
 
 			bytehostorder(&msgin);
 
-/*
- * Should check here to see if message comes from local net.
- * Until done, master cannot run on gateway conneting
- * two subnets each with running timedaemons.
- */
+			if ((from.sin_addr.s_addr & netmask) != mynet) {
+				if (trace) {
+					fprintf(fd, "readmsg: wrong network: ");
+					print(&msgin);
+				}
+				(void)gettimeofday(&rtime,(struct timezone *)0);
+				if (ISTOUTOFF(rtime, rtout))
+					break;
+				else
+					continue;
+			}
 			/*
 			 * Throw away messages coming from this machine, unless
 			 * they are of some particular type.
@@ -171,7 +177,7 @@ struct timeval *intvl;
 					print(&msgin);
 				}
 				(void)gettimeofday(&rtime,(struct timezone *)0);
-				if (ISTOUTOFF)
+				if (ISTOUTOFF(rtime, rtout))
 					break;
 				else
 					continue;
@@ -188,7 +194,7 @@ struct timeval *intvl;
 			else 
 				slaveack();
 
-			if (LOOKAT(msgin)) {
+			if (LOOKAT(msgin, type, machfrom)) {
 				ret = &msgin;
 				break;
 			} else {
@@ -201,7 +207,7 @@ struct timeval *intvl;
 			}
 
 			(void)gettimeofday(&rtime, (struct timezone *)0);
-			if (ISTOUTOFF)
+			if (ISTOUTOFF(rtime, rtout))
 				break;
 		} else {
 			break;
@@ -240,10 +246,14 @@ slaveack()
 		resp.tsp_type = TSP_ACK;
 		resp.tsp_vers = TSPVERSION;
 		(void)strcpy(resp.tsp_name, hostname);
+		if (trace) {
+			fprintf(fd, "Slaveack: ");
+			print(&resp);
+		}
 		bytenetorder(&resp);     /* this is not really necessary here */
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
-			syslog(LOG_ERR, "timed: sendto: %m");
+			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
 		break;
@@ -267,7 +277,6 @@ masterack()
 	resp = msgin;
 	resp.tsp_vers = TSPVERSION;
 	(void)strcpy(resp.tsp_name, hostname);
-	bytenetorder(&resp); 	     /* this is not really necessary here */
 
 	switch(msgin.tsp_type) {
 
@@ -277,26 +286,41 @@ masterack()
 	case TSP_MSITE:
 	case TSP_MSITEREQ:
 		resp.tsp_type = TSP_ACK;
+		bytenetorder(&resp);
+		if (trace) {
+			fprintf(fd, "Masterack: ");
+			print(&resp);
+		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
-			syslog(LOG_ERR, "timed: sendto: %m");
+			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
 		break;
 	case TSP_RESOLVE:
 	case TSP_MASTERREQ:
 		resp.tsp_type = TSP_MASTERACK;
+		bytenetorder(&resp);
+		if (trace) {
+			fprintf(fd, "Masterack: ");
+			print(&resp);
+		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
-			syslog(LOG_ERR, "timed: sendto: %m");
+			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
 		break;
 	case TSP_DATEREQ:
 		resp.tsp_type = TSP_DATEACK;
+		bytenetorder(&resp);
+		if (trace) {
+			fprintf(fd, "Masterack: ");
+			print(&resp);
+		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
-			syslog(LOG_ERR, "timed: sendto: %m");
+			syslog(LOG_ERR, "sendto: %m");
 			exit(1);
 		}
 		break;
