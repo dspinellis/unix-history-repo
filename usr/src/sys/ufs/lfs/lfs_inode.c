@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.59 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.60 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -217,7 +217,7 @@ lfs_update(vp, ta, tm, waitfor)
 int
 lfs_truncate(vp, length, flags)
 	struct vnode *vp;
-	u_long length;
+	off_t length;
 	int flags;
 {
 	register INDIR *ap;
@@ -230,8 +230,7 @@ lfs_truncate(vp, length, flags)
 	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
 	daddr_t daddr, lastblock, lbn, olastblock;
-	off_t off;
-	long blocksreleased;
+	long off, blocksreleased;
 	int error, depth, lastseg, num, offset, seg, size;
 
 #ifdef VERBOSE
