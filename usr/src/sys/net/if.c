@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.c	7.5 (Berkeley) %G%
+ *	@(#)if.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -246,19 +246,32 @@ ifunit(name)
 	register char *cp;
 	register struct ifnet *ifp;
 	int unit;
+	unsigned len;
+	char *ep, c;
 
 	for (cp = name; cp < name + IFNAMSIZ && *cp; cp++)
 		if (*cp >= '0' && *cp <= '9')
 			break;
 	if (*cp == '\0' || cp == name + IFNAMSIZ)
 		return ((struct ifnet *)0);
-	unit = *cp - '0';
+	/*
+	 * Save first char of unit, and pointer to it,
+	 * so we can put a null there to avoid matching
+	 * initial substrings of interface names.
+	 */
+	len = cp - name + 1;
+	c = *cp;
+	ep = cp;
+	for (unit = 0; *cp >= '0' && *cp <= '9'; )
+		unit = unit * 10 + *cp++ - '0';
+	*ep = 0;
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (bcmp(ifp->if_name, name, (unsigned)(cp - name)))
+		if (bcmp(ifp->if_name, name, len))
 			continue;
 		if (unit == ifp->if_unit)
 			break;
 	}
+	*ep = c;
 	return (ifp);
 }
 
