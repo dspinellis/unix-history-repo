@@ -93,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.63 %G%";
+static char SccsId[] = "@(#)sccs.c	1.64 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -566,6 +566,7 @@ command(argv, forkflag, arg0)
 		p = argv[1];
 		while (*np != NULL)
 		{
+			printf("\n%s:\n", *np);
 			sprintf(buf, "-i%s", *np);
 			ap[0] = buf;
 			argv[0] = tail(*np);
