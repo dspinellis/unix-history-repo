@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.26 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -462,7 +462,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			ufs_ihashrem(ip);
 
 			/* Unlock and discard unneeded inode. */
-			ufs_iput(ip);
+			vput(vp);
 			brelse(bp);
 			*vpp = NULL;
 			return (error);
@@ -479,7 +479,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
 	if (error = ufs_vinit(mp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
-		ufs_iput(ip);
+		vput(vp);
 		*vpp = NULL;
 		return (error);
 	}
