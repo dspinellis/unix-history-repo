@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,6 +10,8 @@ static char sccsid[] = "@(#)ed.c	4.6 (Berkeley) %G%";
 #include <sgtty.h>
 #undef CEOF
 #include <setjmp.h>
+#include "pathnames.h"
+
 #define	NULL	0
 #define	FNSIZE	64
 #define	LBSIZE	512
@@ -751,7 +753,7 @@ callunix()
 	if ((pid = fork()) == 0) {
 		signal(SIGHUP, oldhup);
 		signal(SIGQUIT, oldquit);
-		execl("/bin/sh", "sh", "-t", 0);
+		execl(_PATH_BSHELL, "sh", "-t", 0);
 		exit(0100);
 	}
 	savint = signal(SIGINT, SIG_IGN);
