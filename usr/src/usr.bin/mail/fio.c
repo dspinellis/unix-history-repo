@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.2 %G%";
+static char *SccsId = "@(#)fio.c	1.3 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -35,8 +35,6 @@ setptr(ibuf)
 	l = 0;
 	maybe = 1;
 	flag = MUSED;
-	if (value("hold") != NOSTR)
-		flag = MPRESERVE|MUSED;
 	for (;;) {
 		if ((count = readline(ibuf, linebuf)) == 0) {
 			this.m_flag = flag;
