@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsiod.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsiod.c	8.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -59,7 +59,7 @@ main(argc, argv)
 	int ch, num_servers;
 
 #define	MAXNFSDCNT      20
-#define	DEFNFSDCNT       4
+#define	DEFNFSDCNT       1
 	num_servers = DEFNFSDCNT;
 	while ((ch = getopt(argc, argv, "n:")) != EOF)
 		switch (ch) {
