@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strsep.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strsep.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -44,7 +44,7 @@ strsep(s, delim)
 			if ((sc = *spanp++) == c) {
 				if (c == 0) {
 					last = NULL;
-					return(tok == s ? NULL : tok);
+					return(tok);
 				}
 				*s++ = '\0';
 				last = s;
