@@ -2,16 +2,20 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sa.8	5.1 (Berkeley) %G%
+.\"	@(#)sa.8	6.1 (Berkeley) %G%
 .\"
-.TH SA 8 4/20/83
+.TH SA 8 ""
 .UC 4
 sa, accton \- system accounting
 .SH SYNOPSIS
 .B /etc/sa
 [
 .B \-abcdDfijkKlnrstuv
-] [ file ]
+] [
+.B \-S
+savacctfile ] [
+.B \-U
+usracctfile ] [ file ]
 .PP
 .B /etc/accton 
 [ file ]
@@ -56,8 +60,9 @@ There are near a googol of options:
 .PP
 .TP
 a
-Place all command names containing unprintable characters
-and those used only once under the name `***other.'
+Print all command names, even those containing unprintable characters
+and those used only once.  By default, those are placed under the
+name `***other.'
 .TP
 b
 Sort output by sum of user and system time divided by number of calls.
@@ -120,6 +125,15 @@ types the name of each command used
 times or fewer.
 Await a reply from the terminal; if it begins with `y', add the command to
 the category `**junk**.' This is used to strip out garbage.
+.TP
+S
+The following filename is used as the command summary file instead of
+.I /usr/adm/savacct.
+.TP
+U
+The following filename is used instead of
+.I /usr/adm/usracct
+to accumulate the per-user statistics printed by the \-m option.
 .dt
 .SH FILES
 .ta 2i
