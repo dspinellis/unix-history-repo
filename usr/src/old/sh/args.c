@@ -1,4 +1,6 @@
-/*	args.c	4.1	82/05/07	*/
+#ifndef lint
+static char sccsid[] = "@(#)args.c	4.2 %G%";
+#endif
 
 #
 /*

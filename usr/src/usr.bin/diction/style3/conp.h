@@ -1,6 +1,5 @@
-/*
- *	@(#)conp.h	4.2	(Berkeley)	82/11/06
- */
+/*	conp.h	4.3	83/08/11	*/
+
 #define SLENG 250
 #define SCHAR 1500
 extern struct ss {char *sp,ic,cc; int leng;} sent[SLENG];

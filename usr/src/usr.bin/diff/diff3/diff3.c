@@ -1,4 +1,6 @@
-/*	diff3.c	4.1	83/02/10	*/
+#ifndef lint
+static char sccsid[] = "@(#)diff3.c	4.2 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #

@@ -1,4 +1,6 @@
-/*	word.c	4.2	83/06/10	*/
+#ifndef lint
+static char sccsid[] = "@(#)word.c	4.3 %G%";
+#endif
 
 #
 /*

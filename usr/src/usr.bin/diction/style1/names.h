@@ -1,6 +1,4 @@
-/*
- *	@(#)names.h	4.2	(Berkeley)	82/11/06
- */
+/*	names.h	4.3	83/08/11	*/
 
 #define ART	'A'
 #define PREP	'P'
