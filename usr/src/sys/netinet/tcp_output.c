@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.1	83/07/29	*/
+/*	tcp_output.c	6.2	83/11/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -249,16 +249,16 @@ noopt:
 		if (flags & (TH_SYN|TH_FIN))
 			tp->snd_nxt++;
 		tp->snd_nxt += len;
-		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
 			tp->snd_max = tp->snd_nxt;
-
-		/*
-		 * Time this transmission if not a retransmission and
-		 * not currently timing anything.
-		 */
-		if (SEQ_GT(tp->snd_nxt, tp->snd_max) && tp->t_rtt == 0) {
-			tp->t_rtt = 1;
-			tp->t_rtseq = tp->snd_nxt - len;
+			/*
+			 * Time this transmission if not a retransmission and
+			 * not currently timing anything.
+			 */
+			if (tp->t_rtt == 0) {
+				tp->t_rtt = 1;
+				tp->t_rtseq = tp->snd_nxt - len;
+			}
 		}
 
 		/*
