@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	4.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -38,7 +38,7 @@ getopt(nargc, nargv, ostr)
 {
 	static char *place = EMSG;		/* option letter processing */
 	register char *oli;			/* option letter list index */
-	char *index();
+	char *p, *index(), *rindex();
 
 	if (!*place) {				/* update scanning pointer */
 		if (optind >= nargc || *(place = nargv[optind]) != '-')
@@ -52,9 +52,14 @@ getopt(nargc, nargv, ostr)
 	    !(oli = index(ostr, optopt))) {
 		if (!*place)
 			++optind;
-		if (opterr)
+		if (opterr) {
+			if (!(p = rindex(*nargv, '/')))
+				p = *nargv;
+			else
+				++p;
 			(void)fprintf(stderr, "%s: illegal option -- %c\n",
-			    *nargv, optopt);
+			    p, optopt);
+		}
 		return(BADCH);
 	}
 	if (*++oli != ':') {			/* don't need argument */
@@ -67,10 +72,14 @@ getopt(nargc, nargv, ostr)
 			optarg = place;
 		else if (nargc <= ++optind) {	/* no arg */
 			place = EMSG;
+			if (!(p = rindex(*nargv, '/')))
+				p = *nargv;
+			else
+				++p;
 			if (opterr)
 				(void)fprintf(stderr,
 				    "%s: option requires an argument -- %c\n",
-				    *nargv, optopt);
+				    p, optopt);
 			return(BADCH);
 		}
 	 	else				/* white space */
