@@ -35,12 +35,10 @@
  */
 
 /*
- * NE2000/NE1000 Ethernet driver
+ * NE1000/NE2000 Ethernet driver
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
- *
- * Corrected for NE1000 by Andrew A. Chernov
  */
 
 #include "ne.h"
@@ -48,17 +46,16 @@
 
 #include "param.h"
 #include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "ioctl.h"
 #include "errno.h"
+#include "ioctl.h"
+#include "mbuf.h"
+#include "socket.h"
 #include "syslog.h"
 
 #include "net/if.h"
+#include "net/if_dl.h"
+#include "net/if_types.h"
 #include "net/netisr.h"
-#include "net/route.h"
 
 #ifdef INET
 #include "netinet/in.h"
@@ -73,9 +70,12 @@
 #include "netns/ns_if.h"
 #endif
 
+#include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
-#include "i386/isa/if_nereg.h"
 #include "i386/isa/icu.h"
+#include "i386/isa/if_nereg.h"
+
+#include "i386/include/pio.h"
 
 int	neprobe(), neattach(), neintr();
 int	nestart(),neinit(), ether_output(), neioctl();
@@ -89,6 +89,12 @@ struct	mbuf *neget();
 #define ETHER_MIN_LEN 64
 #define ETHER_MAX_LEN 1536
 
+/* Word Transfers, Burst Mode Select, Fifo at 8 bytes */
+#define DCR_CTRL2	(DSDC_WTS|DSDC_BMS|DSDC_FT1)
+/* No Word Transfers, Burst Mode Select, Fifo at 8 bytes */
+#define DCR_CTRL1	(DSDC_BMS|DSDC_FT1)
+
+
 /*
  * Ethernet software status per interface.
  *
@@ -100,96 +106,106 @@ struct	ne_softc {
 	struct	arpcom arpcom;		/* Ethernet common part */
 	int	ns_flags;
 #define	DSF_LOCK	1		/* block re-entering enstart */
-	int	ns_oactive ;
-	int	ns_mask ;
+	int	ns_mask;
 	int	ns_ba;			/* byte addr in buffer ram of inc pkt */
 	int	ns_cur;			/* current page being filled */
+	u_short ns_iobase;
+	u_short ns_board;		/* Board-Type: 0:NE1000, 1:NE2000 */
+	u_short ns_tbuf;
+	u_short ns_rbuf;
+	u_short ns_rbufend;
 	struct	prhdr	ns_ph;		/* hardware header of incoming packet*/
 	struct	ether_header ns_eh;	/* header of incoming packet */
 	u_char	ns_pb[2048 /*ETHERMTU+sizeof(long)*/];
-	short	ns_txstart;		/* transmitter buffer start */
-	u_short ns_rxend;               /* recevier buffer end */
-	short	ns_port;		/* i/o port base */
-	short	ns_mode;		/* word/byte mode */
-} ne_softc[NNE] ;
+} ne_softc[NNE];
 #define	ENBUFSIZE	(sizeof(struct ether_header) + ETHERMTU + 2 + ETHER_MIN_LEN)
 
-#define	PAT(n)	(0xa55a + 37*(n))
+u_char boarddata[16];
+void nefetch (struct ne_softc *ns, void *up, u_int ad, u_int len);
+void neput (struct ne_softc *ns, void *up, u_int ad, u_int len);
 
-u_short boarddata[16];
- 
+
 neprobe(dvp)
 	struct isa_device *dvp;
 {
-	int val, i, s, sum, bytemode = 1, pat;
-	register struct ne_softc *ns = &ne_softc[0];
-	register nec;
+	int val,i, test, unit;
+	u_short iobase;
+	register struct ne_softc *ns;
 
-#ifdef lint
-	neintr(0);
-#endif
-
-	nec = ns->ns_port = dvp->id_iobase;
-	s = splimp();
-
-	if (bytemode) {
-		/* Byte Transfers, Burst Mode Select, Fifo at 8 bytes */
-		ns->ns_mode = DSDC_BMS|DSDC_FT1;
-		ns->ns_txstart = TBUF8;
-		ns->ns_rxend = RBUFEND8;
-	} else {
-word:
-		/* Word Transfers, Burst Mode Select, Fifo at 8 bytes */
-		ns->ns_mode = DSDC_WTS|DSDC_BMS|DSDC_FT1;
-		ns->ns_txstart = TBUF16;
-		ns->ns_rxend = RBUFEND16;
-		bytemode = 0;
-	}
+	unit = dvp->id_unit;
+	if (unit >= NNE)
+		return (0);
+	ns = &ne_softc[unit];
+	if (ns->ns_iobase)
+		/* Unit already configured */
+		return (0);
+	iobase = ns->ns_iobase = dvp->id_iobase;
 
 	/* Reset the bastard */
-	val = inb(nec + ne_reset);
+	val = inb(iobase+ne_reset);
 	DELAY(200);
-	outb(nec + ne_reset, val);
+	outb(iobase+ne_reset,val);
 	DELAY(200);
 
-	outb(nec + ds_cmd, DSCM_STOP|DSCM_NODMA);
+	outb(iobase+ds_cmd, DSCM_STOP|DSCM_NODMA);
 	
-	i = 10000;
-	while ((inb(nec + ds0_isr) & DSIS_RESET) == 0 && i-- > 0);
-	if (i < 0) return (0);
+	if (inb (iobase + ds_cmd) != (DSCM_STOP | DSCM_NODMA))
+		return (0);
+	i = 1000000;
+	while ((inb(iobase+ds0_isr)&DSIS_RESET) == 0 && i-- > 0);
+	if (i <= 0) return (0);
 
-	outb(nec + ds0_isr, 0xff);
-	outb(nec + ds0_dcr, ns->ns_mode);
-	outb(nec + ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
-	DELAY(1000);
+	outb(iobase+ds0_isr, 0xff);
+
+	/* No Word Transfers, Burst Mode Select, Fifo at 8 bytes */
+	outb (iobase+ds0_dcr, DCR_CTRL1);
+
+	outb(iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
+	DELAY(10000);
 
 	/* Check cmd reg and fail if not right */
-	if ((i = inb(nec + ds_cmd)) != (DSCM_NODMA|DSCM_PG0|DSCM_STOP))
+	if ((i=inb(iobase+ds_cmd)) != (DSCM_NODMA|DSCM_PG0|DSCM_STOP))
 		return(0);
 
-	outb(nec + ds0_tcr, 0);
-	outb(nec + ds0_rcr, DSRC_MON);
-	outb(nec + ds0_pstart, (ns->ns_txstart+PKTSZ)/DS_PGSIZE);
-	outb(nec + ds0_pstop, ns->ns_rxend/DS_PGSIZE);
-	outb(nec + ds0_bnry, ns->ns_rxend/DS_PGSIZE);
-	outb(nec + ds0_imr, 0);
-	outb(nec + ds0_isr, 0);
-	outb(nec + ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
-	outb(nec + ds1_curr, (ns->ns_txstart+PKTSZ)/DS_PGSIZE);
-	outb(nec + ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
-
+	outb(iobase+ds0_tcr, 0);
+	outb(iobase+ds0_rcr, DSRC_MON);
+	outb(iobase+ds0_pstart, RBUF1/DS_PGSIZE);
+	outb(iobase+ds0_pstop, RBUFEND1/DS_PGSIZE);
+	outb(iobase+ds0_bnry, RBUFEND1/DS_PGSIZE);
+	outb(iobase+ds0_imr, 0);
+	outb(iobase+ds0_isr, 0);
+	outb(iobase+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
+	outb(iobase+ds1_curr, RBUF1/DS_PGSIZE);
+	outb(iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
+	test = 0xA55A55AA;
+	neput (ns, &test, TBUF1, sizeof (test));
+	nefetch (ns, &test, TBUF1, sizeof (test));
+	if (test == 0xA55A55AA) {
+		ns->ns_board = 0;	/* NE1000 */
+		ns->ns_tbuf = TBUF1;
+		ns->ns_rbuf = RBUF1;
+		ns->ns_rbufend = RBUFEND1;
+	}
+	else {
+		ns->ns_board = 1;	/* NE2000 */
+		ns->ns_tbuf = TBUF2;
+		ns->ns_rbuf = RBUF2;
+		ns->ns_rbufend = RBUFEND2;
+		outb(iobase+ds0_dcr, DCR_CTRL2);
+	}
 
 #ifdef NEDEBUG
+#define	PAT(n)	(0xa55a + 37*(n))
 #define	RCON	37
-	{	int i, rom;
+	{	int i, rom, pat;
 
 		rom=1;
 		printf("ne ram ");
 		
 		for (i = 0; i < 0xfff0; i+=4) {
 			pat = PAT(i);
-			neput(ns, &pat,i,4);
-			nefetch(ns, &pat,i,4);
+			neput (ns, &pat,i,4);
+			nefetch (ns, &pat,i,4);
 			if (pat == PAT(i)) {
 				if (rom) {
 					rom=0;
@@ -202,106 +218,90 @@ word:
 				}
 			}
 			pat=0;
-			neput(ns, &pat,i,4);
+			neput (ns, &pat,i,4);
 		}
 		printf("\n");
 	}
 #endif
 
-	/*
-	 * <groan> detect difference between units
-	 * solely by where the RAM is decoded.
-	 */
-	pat = PAT(0);
-	neput(ns, &pat, ns->ns_txstart, 4);
-	nefetch(ns, &pat, ns->ns_txstart, 4);
-	if (pat != PAT(0)) {
-		if (bytemode)
-			goto word;
-		else return (0);
-	}
-
-
 	/* Extract board address */
-	nefetch (ns, (caddr_t)boarddata, 0, sizeof(boarddata));
-
-	for(i=0; i < 6; i++)
-		ns->arpcom.ac_enaddr[i] = boarddata[i];
-	splx(s);
+	nefetch (ns, boarddata, 0, sizeof(boarddata));
+	if (ns->ns_board)
+		for (i = 0; i < 6; i++)
+			ns->arpcom.ac_enaddr[i] = boarddata[2 * i];
+	else
+		for (i = 0; i < 6; i++)
+			ns->arpcom.ac_enaddr[i] = boarddata[i];
 	return (1);
 }
 
 /*
  * Fetch from onboard ROM/RAM
  */
-nefetch (ns, up, ad, len) struct ne_softc *ns; caddr_t up; {
+void nefetch (struct ne_softc *ns, void *up, u_int ad, u_int len)
+{
 	u_char cmd;
-	register nec = ns->ns_port;
-	int counter = 100000;
+	const u_short iobase = ns->ns_iobase;
 
-	cmd = inb (nec + ds_cmd);
-	outb (nec + ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	if (len == 0)
+		return;
+	cmd = inb(iobase+ds_cmd);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 
 	/* Setup remote dma */
-	outb (nec + ds0_isr, DSIS_RDC);
-
-	if ((ns->ns_mode & DSDC_WTS) && len&1)
-		len++;		/* roundup to words */
-
-	outb (nec+ds0_rbcr0, len);
-	outb (nec+ds0_rbcr1, len>>8);
-	outb (nec+ds0_rsar0, ad);
-	outb (nec+ds0_rsar1, ad>>8);
+	outb (iobase+ds0_isr, DSIS_RDC);
+	outb (iobase+ds0_rbcr0, len);
+	outb (iobase+ds0_rbcr1, len>>8);
+	outb (iobase+ds0_rsar0, ad);
+	outb (iobase+ds0_rsar1, ad>>8);
 
 	/* Execute & extract from card */
-	outb (nec+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
-
-	if (ns->ns_mode & DSDC_WTS)
-		insw (nec+ne_data, up, len/2);
+	outb (iobase+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
+	if (ns->ns_board)
+		insw (iobase+ne_data, up, len/2);
 	else
-		insb (nec+ne_data, up, len);
+		insb (iobase+ne_data, up, len/1);
 
 	/* Wait till done, then shutdown feature */
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0 && counter-- > 0)
+	while ((inb (iobase+ds0_isr) & DSIS_RDC) == 0)
 		;
-	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds_cmd, cmd);
+	outb (iobase+ds0_isr, DSIS_RDC);
+	outb (iobase+ds_cmd, cmd);
 }
 
 /*
  * Put to onboard RAM
  */
-neput (ns, up, ad, len) struct ne_softc *ns; caddr_t up; {
+void neput (struct ne_softc *ns, void *up, u_int ad, u_int len)
+{
 	u_char cmd;
-	register nec = ns->ns_port;
-	int counter = 100000;
+	const u_short iobase = ns->ns_iobase;
 
-	cmd = inb(nec+ds_cmd);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	if (len == 0)
+		return;
+	cmd = inb(iobase+ds_cmd);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 
 	/* Setup for remote dma */
-	outb (nec+ds0_isr, DSIS_RDC);
-
-	if ((ns->ns_mode & DSDC_WTS) && len&1)
-		len++;		/* roundup to words */
-
-	outb (nec+ds0_rbcr0, len);
-	outb (nec+ds0_rbcr1, len>>8);
-	outb (nec+ds0_rsar0, ad);
-	outb (nec+ds0_rsar1, ad>>8);
+	outb (iobase+ds0_isr, DSIS_RDC);
+	if(len&1) len++;		/* roundup to words */
+	outb (iobase+ds0_rbcr0, len);
+	outb (iobase+ds0_rbcr1, len>>8);
+	outb (iobase+ds0_rsar0, ad);
+	outb (iobase+ds0_rsar1, ad>>8);
 
 	/* Execute & stuff to card */
-	outb (nec+ds_cmd, DSCM_RWRITE|DSCM_PG0|DSCM_START);
-	if (ns->ns_mode & DSDC_WTS)
-		outsw (nec+ne_data, up, len/2);
+	outb (iobase+ds_cmd, DSCM_RWRITE|DSCM_PG0|DSCM_START);
+	if (ns->ns_board)
+		outsw (iobase+ne_data, up, len/2);
 	else
-		outsb (nec+ne_data, up, len);
+		outsb (iobase+ne_data, up, len/1);
 	
 	/* Wait till done, then shutdown feature */
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0 && counter-- > 0)
+	while ((inb (iobase+ds0_isr) & DSIS_RDC) == 0)
 		;
-	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds_cmd, cmd);
+	outb (iobase+ds0_isr, DSIS_RDC);
+	outb (iobase+ds_cmd, cmd);
 }
 
 /*
@@ -330,12 +330,12 @@ neattach(dvp)
 	register struct ifnet *ifp = &ns->arpcom.ac_if;
 
 	ifp->if_unit = unit;
-	ifp->if_name = nedriver.name ;
+	ifp->if_name = nedriver.name;
 	ifp->if_mtu = ETHERMTU;
 	printf ("ne%d: address %s, type NE%s\n",
 		unit,
 		ether_sprintf(ns->arpcom.ac_enaddr),
-		(ns->ns_mode &DSDC_WTS) ? "2000" : "1000");
+		(ns->ns_board) ? "1000" : "2000");
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_NOTRAILERS;
 	ifp->if_init = neinit;
 	ifp->if_output = ether_output;
@@ -356,8 +356,8 @@ neinit(unit)
 	register struct ne_softc *ns = &ne_softc[unit];
 	struct ifnet *ifp = &ns->arpcom.ac_if;
 	int s;
-	int i; char *cp;
-	register nec = ns->ns_port;
+	register i; char *cp;
+	const u_short iobase = ns->ns_iobase;
 
  	if (ifp->if_addrlist == (struct ifaddr *)0) return;
 	if (ifp->if_flags & IFF_RUNNING) return;
@@ -365,39 +365,39 @@ neinit(unit)
 	s = splimp();
 
 	/* set physical address on ethernet */
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
-	for (i=0 ; i < 6 ; i++) outb(nec+ds1_par0+i,ns->arpcom.ac_enaddr[i]);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
+	for (i=0; i < 6; i++) outb(iobase+ds1_par0+i,ns->arpcom.ac_enaddr[i]);
 
 	/* clr logical address hash filter for now */
-	for (i=0 ; i < 8 ; i++) outb(nec+ds1_mar0+i,0xff);
+	for (i=0; i < 8; i++) outb(iobase+ds1_mar0+i,0xff);
 
 	/* init regs */
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
-	outb (nec+ds0_rbcr0, 0);
-	outb (nec+ds0_rbcr1, 0);
-	outb (nec+ds0_imr, 0);
-	outb (nec+ds0_isr, 0xff);
-
-	/* Word Transfer select, Burst Mode Select, Fifo at 8 bytes */
-	outb(nec+ds0_dcr, ns->ns_mode);
-
-	outb(nec+ds0_tcr, 0);
-	outb (nec+ds0_rcr, DSRC_MON);
-	outb (nec+ds0_tpsr, 0);
-	outb(nec+ds0_pstart, (ns->ns_txstart+PKTSZ)/DS_PGSIZE);
-	outb(nec+ds0_pstop, ns->ns_rxend/DS_PGSIZE);
-	outb(nec+ds0_bnry, (ns->ns_txstart+PKTSZ)/DS_PGSIZE);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
-	outb(nec+ds1_curr, (ns->ns_txstart+PKTSZ)/DS_PGSIZE);
-	ns->ns_cur = (ns->ns_txstart+PKTSZ)/DS_PGSIZE;
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
-	outb (nec+ds0_rcr, DSRC_AB);
-	outb(nec+ds0_dcr, ns->ns_mode);
-	outb (nec+ds0_imr, 0xff);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
+	outb (iobase+ds0_rbcr0, 0);
+	outb (iobase+ds0_rbcr1, 0);
+	outb (iobase+ds0_imr, 0);
+	outb (iobase+ds0_isr, 0xff);
+ 
+	outb(iobase+ds0_tcr, 0);
+	outb (iobase+ds0_rcr, DSRC_MON);
+	outb (iobase+ds0_tpsr, 0);
+	outb(iobase+ds0_pstart, ns->ns_rbuf/DS_PGSIZE);
+	outb(iobase+ds0_pstop, ns->ns_rbufend/DS_PGSIZE);
+	outb(iobase+ds0_bnry, ns->ns_rbuf/DS_PGSIZE);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
+	outb(iobase+ds1_curr, ns->ns_rbuf/DS_PGSIZE);
+	ns->ns_cur = ns->ns_rbuf/DS_PGSIZE;
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	outb (iobase+ds0_rcr, DSRC_AB);
+	if (ns->ns_board) {
+		outb(iobase + ds0_dcr, DCR_CTRL2);
+	} else {
+		outb(iobase+ds0_dcr, DCR_CTRL1);
+	}
+	outb (iobase+ds0_imr, 0xff);
 
 	ns->arpcom.ac_if.if_flags |= IFF_RUNNING;
-	ns->ns_flags &= ~DSF_LOCK;
-	ns->ns_oactive = 0; ns->ns_mask = ~0;
+	ns->ns_mask = ~0;
 	nestart(ifp);
 	splx(s);
 }
@@ -413,25 +413,23 @@ nestart(ifp)
 {
 	register struct ne_softc *ns = &ne_softc[ifp->if_unit];
 	struct mbuf *m0, *m;
-	int len, i, total,t;
-	register nec = ns->ns_port;
-	u_char cmd;
-	u_short word;
-	int counter;
-
-	if (ns->ns_flags & DSF_LOCK)
-		return;
-
-	if ((ns->arpcom.ac_if.if_flags & IFF_RUNNING) == 0)
-		return;
+	int buffer;
+	int len = 0, i, total,t;
+	const u_short iobase = ns->ns_iobase;
 
 	/*
 	 * The DS8390 has only one transmit buffer, if it is busy we
 	 * must wait until the transmit interrupt completes.
 	 */
-	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
+	outb(iobase+ds_cmd,DSCM_NODMA|DSCM_START);
 
-	if (inb(nec+ds_cmd) & DSCM_TRANS)
+	if (ns->ns_flags & DSF_LOCK)
+		return;
+
+	if (inb(iobase+ds_cmd) & DSCM_TRANS)
+		return;
+
+	if ((ns->arpcom.ac_if.if_flags & IFF_RUNNING) == 0)
 		return;
 
 	IF_DEQUEUE(&ns->arpcom.ac_if.if_snd, m);
@@ -439,70 +437,37 @@ nestart(ifp)
 	if (m == 0)
 		return;
 
-	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
-
 	/*
 	 * Copy the mbuf chain into the transmit buffer
 	 */
 
-	len = i = 0;
+	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
+	buffer = ns->ns_tbuf; len = i = 0;
 	t = 0;
 	for (m0 = m; m != 0; m = m->m_next)
 		t += m->m_len;
 		
-	/* next code derived from neput() */
-		
-	if ((ns->ns_mode & DSDC_WTS) && t&1)
-		t++;          /* roundup to words */
-		
-	cmd = inb(nec+ds_cmd);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
-
-	/* Setup for remote dma */
-	outb (nec+ds0_isr, DSIS_RDC);
-
-	outb (nec+ds0_rbcr0, t);
-	outb (nec+ds0_rbcr1, t>>8);
-	outb (nec+ds0_rsar0, ns->ns_txstart);
-	outb (nec+ds0_rsar1, ns->ns_txstart>>8);
-
-	/* Execute & stuff to card */
-	outb (nec+ds_cmd, DSCM_RWRITE|DSCM_PG0|DSCM_START);
-
-			m = m0;
+	m = m0;
 	total = t;
-	if (ns->ns_mode & DSDC_WTS) {        /* Word Mode */
-		while (m != 0) {
-			if (m->m_len > 1)
-				outsw(nec+ne_data, m->m_data, m->m_len / 2);
-			if (m->m_len & 1) {
-				word = (u_char) *(mtod(m, caddr_t) + m->m_len - 1);
-				if ((m = m->m_next) != 0) {
-					word |= *mtod(m, caddr_t) << 8;
-					m->m_len--;
-					m->m_data++;
-				}
-				outsw(nec+ne_data, (caddr_t)&word, 1);
-			} else
-				m = m->m_next;
+	for (m0 = m; m != 0; ) {
+		
+		if (m->m_len&1 && t > m->m_len) {
+			neput (ns, mtod(m, caddr_t), buffer, m->m_len - 1);
+			t -= m->m_len - 1;
+			buffer += m->m_len - 1;
+			m->m_data += m->m_len - 1;
+			m->m_len = 1;
+			m = m_pullup(m, 2);
+		} else {
+			if (m->m_len) {
+				neput (ns, mtod(m, caddr_t), buffer, m->m_len);
+				buffer += m->m_len;
+				t -= m->m_len;
+			}
+			MFREE(m, m0);
+			m = m0;
 		}
 	}
-	else {                                /* Byte Mode */
-		while (m != 0) {
-			if (m->m_len > 0)
-				outsb(nec+ne_data, mtod(m, caddr_t), m->m_len);
-			m = m->m_next;
-		}
-	}
-
-	m_freem(m0);
-
-	counter = 100000;
-	/* Wait till done, then shutdown feature */
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0 && counter-- > 0)
-		;
-	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds_cmd, cmd);
 
 	/*
 	 * Init transmit length registers, and set transmit start flag.
@@ -510,15 +475,17 @@ nestart(ifp)
 
 	len = total;
 	if (len < ETHER_MIN_LEN) len = ETHER_MIN_LEN;
-	outb(nec+ds0_tbcr0,len&0xff);
-	outb(nec+ds0_tbcr1,(len>>8)&0xff);
-	outb(nec+ds0_tpsr, ns->ns_txstart/DS_PGSIZE);
-	outb(nec+ds_cmd, DSCM_TRANS|DSCM_NODMA|DSCM_START);
+	outb(iobase+ds0_tbcr0,len&0xff);
+	outb(iobase+ds0_tbcr1,(len>>8)&0xff);
+	outb(iobase+ds0_tpsr, ns->ns_tbuf/DS_PGSIZE);
+	outb(iobase+ds_cmd, DSCM_TRANS|DSCM_NODMA|DSCM_START);
 }
 
 /* buffer successor/predecessor in ring? */
-#define succ(n) (((n)+1 >= ns->ns_rxend/DS_PGSIZE) ? (ns->ns_txstart+PKTSZ)/DS_PGSIZE : (n)+1)
-#define pred(n) (((n)-1 < (ns->ns_txstart+PKTSZ)/DS_PGSIZE) ? ns->ns_rxend/DS_PGSIZE-1 : (n)-1)
+#define succ1(n) (((n)+1 >= RBUFEND1/DS_PGSIZE) ? RBUF1/DS_PGSIZE : (n)+1)
+#define pred1(n) (((n)-1 < RBUF1/DS_PGSIZE) ? RBUFEND1/DS_PGSIZE-1 : (n)-1)
+#define succ2(n) (((n)+1 >= RBUFEND2/DS_PGSIZE) ? RBUF2/DS_PGSIZE : (n)+1)
+#define pred2(n) (((n)-1 < RBUF2/DS_PGSIZE) ? RBUFEND2/DS_PGSIZE-1 : (n)-1)
 
 /*
  * Controller interrupt.
@@ -527,22 +494,22 @@ neintr(unit)
 {
 	register struct ne_softc *ns = &ne_softc[unit];
 	u_char cmd,isr;
-	register nec = ns->ns_port;
+	const u_short iobase = ns->ns_iobase;
 
 	/* Save cmd, clear interrupt */
-	cmd = inb (nec+ds_cmd);
+	cmd = inb (iobase+ds_cmd);
 loop:
-	isr = inb (nec+ds0_isr);
-	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
-	outb(nec+ds0_isr, isr);
+	isr = inb (iobase+ds0_isr);
+	outb(iobase+ds_cmd,DSCM_NODMA|DSCM_START);
+	outb(iobase+ds0_isr, isr);
 
 	/* Receiver error */
 	if (isr & DSIS_RXE) {
 		/* need to read these registers to clear status */
-		(void) inb(nec+ ds0_rsr);
-		(void) inb(nec+ 0xD);
-		(void) inb(nec + 0xE);
-		(void) inb(nec + 0xF);
+		(void) inb(iobase+ ds0_rsr);
+		(void) inb(iobase+ 0xD);
+		(void) inb(iobase + 0xE);
+		(void) inb(iobase + 0xF);
 		ns->arpcom.ac_if.if_ierrors++;
 	}
 
@@ -550,14 +517,14 @@ loop:
 	if (isr & (DSIS_RX|DSIS_RXE|DSIS_ROVRN)) {
 		u_char pend,lastfree;
 
-		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
-		pend = inb(nec+ds1_curr);
-		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
-		lastfree = inb(nec+ds0_bnry);
+		outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
+		pend = inb(iobase+ds1_curr);
+		outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
+		lastfree = inb(iobase+ds0_bnry);
 
 		/* Have we wrapped? */
-		if (lastfree >= ns->ns_rxend/DS_PGSIZE)
-			lastfree = (ns->ns_txstart+PKTSZ)/DS_PGSIZE;
+		if (lastfree >= ns->ns_rbufend/DS_PGSIZE)
+			lastfree = ns->ns_rbuf/DS_PGSIZE;
 		if (pend < lastfree && ns->ns_cur < pend)
 			lastfree = ns->ns_cur;
 		else	if (ns->ns_cur > lastfree)
@@ -568,7 +535,7 @@ loop:
 			u_char nxt;
 
 			/* Extract header from microcephalic board */
-			nefetch(ns, &ns->ns_ph,lastfree*DS_PGSIZE,
+			nefetch (ns, &ns->ns_ph,lastfree*DS_PGSIZE,
 				sizeof(ns->ns_ph));
 			ns->ns_ba = lastfree*DS_PGSIZE+sizeof(ns->ns_ph);
 
@@ -578,7 +545,7 @@ loop:
 				ns->ns_ph.pr_status == 0x21)
 				nerecv (ns);
 #ifdef NEDEBUG
-			else  {
+			else {
 				printf("cur %x pnd %x lfr %x ",
 					ns->ns_cur, pend, lastfree);
 				printf("nxt %x len %x ", ns->ns_ph.pr_nxtpg,
@@ -587,29 +554,33 @@ loop:
 			}
 #endif
 
-			nxt = ns->ns_ph.pr_nxtpg ;
+			nxt = ns->ns_ph.pr_nxtpg;
 
 			/* Sanity check */
-			if ( nxt >= (ns->ns_txstart+PKTSZ)/DS_PGSIZE
-				&& nxt <= ns->ns_rxend/DS_PGSIZE && nxt <= pend)
+			if ( nxt >= ns->ns_rbuf/DS_PGSIZE && nxt <= ns->ns_rbufend/DS_PGSIZE
+				&& nxt <= pend)
 				ns->ns_cur = nxt;
 			else	ns->ns_cur = nxt = pend;
 
 			/* Set the boundaries */
 			lastfree = nxt;
-			outb(nec+ds0_bnry, pred(nxt));
-			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
-			pend = inb(nec+ds1_curr);
-			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
+			if (ns->ns_board) {
+				outb(iobase+ds0_bnry, pred2(nxt));
+			} else {
+				outb(iobase+ds0_bnry, pred1(nxt));
+			}
+			outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
+			pend = inb(iobase+ds1_curr);
+			outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
 		}
-		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
+		outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA);
 	}
 
 	/* Transmit error */
 	if (isr & DSIS_TXE) {
 		ns->ns_flags &= ~DSF_LOCK;
 		/* Need to read these registers to clear status */
-		ns->arpcom.ac_if.if_collisions += inb(nec+ds0_tbcr0);
+		ns->arpcom.ac_if.if_collisions += inb(iobase+ds0_tbcr0);
 		ns->arpcom.ac_if.if_oerrors++;
 	}
 
@@ -617,30 +588,31 @@ loop:
 	if (isr & DSIS_TX) {
 		ns->ns_flags &= ~DSF_LOCK;
 		++ns->arpcom.ac_if.if_opackets;
-		ns->arpcom.ac_if.if_collisions += inb(nec+ds0_tbcr0);
+		ns->arpcom.ac_if.if_collisions += inb(iobase+ds0_tbcr0);
 	}
 
 	/* Receiver ovverun? */
 	if (isr & DSIS_ROVRN) {
 		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr
 			/*, DSIS_BITS*/);
-		outb(nec+ds0_rbcr0, 0);
-		outb(nec+ds0_rbcr1, 0);
-		outb(nec+ds0_tcr, DSTC_LB0);
-		outb(nec+ds0_rcr, DSRC_MON);
-		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
-		outb(nec+ds0_rcr, DSRC_AB);
-		outb(nec+ds0_tcr, 0);
+		outb(iobase+ds0_rbcr0, 0);
+		outb(iobase+ds0_rbcr1, 0);
+		outb(iobase+ds0_tcr, DSTC_LB0);
+		outb(iobase+ds0_rcr, DSRC_MON);
+		outb(iobase+ds_cmd, DSCM_START|DSCM_NODMA);
+		outb(iobase+ds0_rcr, DSRC_AB);
+		outb(iobase+ds0_tcr, 0);
 	}
 
 	/* Any more to send? */
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	outb (iobase+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 	nestart(&ns->arpcom.ac_if);
-	outb (nec+ds_cmd, cmd);
-	outb (nec+ds0_imr, 0xff);
+	outb (iobase+ds_cmd, cmd);
+	outb (iobase+ds0_imr, 0xff);
+
 
 	/* Still more to do? */
-	isr = inb (nec+ds0_isr);
+	isr = inb (iobase+ds0_isr);
 	if(isr) goto loop;
 }
 
@@ -663,24 +635,26 @@ nerecv(ns)
 		return;
 
 	/* this need not be so torturous - one/two bcopys at most into mbufs */
-	nefetch(ns, ns->ns_pb, ns->ns_ba, min(len,DS_PGSIZE-sizeof(ns->ns_ph)));
+	nefetch (ns, ns->ns_pb, ns->ns_ba, min(len,DS_PGSIZE-sizeof(ns->ns_ph)));
 	if (len > DS_PGSIZE-sizeof(ns->ns_ph)) {
-		int l = len - (DS_PGSIZE-sizeof(ns->ns_ph)), b ;
+		int l = len - (DS_PGSIZE-sizeof(ns->ns_ph)), b, m;
 		u_char *p = ns->ns_pb + (DS_PGSIZE-sizeof(ns->ns_ph));
 
-		if (++ns->ns_cur >= ns->ns_rxend/DS_PGSIZE)
-			ns->ns_cur = (ns->ns_txstart+PKTSZ)/DS_PGSIZE;
-		b = ns->ns_cur*DS_PGSIZE;
-		
-		while (l >= DS_PGSIZE) {
-			nefetch(ns, p, b, DS_PGSIZE);
-			p += DS_PGSIZE; l -= DS_PGSIZE;
-			if (++ns->ns_cur >= ns->ns_rxend/DS_PGSIZE)
-				ns->ns_cur = (ns->ns_txstart+PKTSZ)/DS_PGSIZE;
+		for (;;) {
+			if (ns->ns_board == 1)
+				ns->ns_cur = succ2 (ns->ns_cur);
+			else
+				ns->ns_cur = succ1 (ns->ns_cur);
 			b = ns->ns_cur*DS_PGSIZE;
+			if (l >= DS_PGSIZE) {
+				nefetch (ns, p, b, DS_PGSIZE);
+				p += DS_PGSIZE; l -= DS_PGSIZE;
+				continue;
+			}
+			if (l > 0)
+				nefetch (ns, p, b, l);
+			break;
 		}
-		if (l > 0)
-			nefetch(ns, p, b, l);
 	}
 	/* don't forget checksum! */
 	len -= sizeof(struct ether_header) + sizeof(long);
@@ -698,7 +672,7 @@ neread(ns, buf, len)
 	int len;
 {
 	register struct ether_header *eh;
-    	struct mbuf *m;
+	struct mbuf *m;
 	int off, resid;
 	register struct ifqueue *inq;
 
@@ -845,7 +819,7 @@ neioctl(ifp, cmd, data)
 #endif
 #ifdef NS
 		case AF_NS:
-		    {
+			{
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 
 			if (ns_nullhost(*ina))
@@ -859,12 +833,12 @@ neioctl(ifp, cmd, data)
 				 */
 				ifp->if_flags &= ~IFF_RUNNING; 
 				bcopy((caddr_t)ina->x_host.c_host,
-				    (caddr_t)ns->arpcom.ac_enaddr,
+					(caddr_t)ns->arpcom.ac_enaddr,
 					sizeof(ns->arpcom.ac_enaddr));
 			}
 			neinit(ifp->if_unit); /* does ne_setaddr() */
 			break;
-		    }
+			}
 #endif
 		default:
 			neinit(ifp->if_unit);
@@ -873,13 +847,15 @@ neioctl(ifp, cmd, data)
 		break;
 
 	case SIOCSIFFLAGS:
-		if ((ifp->if_flags & IFF_UP) == 0 &&
-		    ifp->if_flags & IFF_RUNNING) {
+		if (((ifp->if_flags & IFF_UP) == 0) &&
+		    (ifp->if_flags & IFF_RUNNING)) {
+			outb(ns->ns_iobase+ds_cmd,DSCM_STOP|DSCM_NODMA);
 			ifp->if_flags &= ~IFF_RUNNING;
-			outb(ns->ns_port + ds_cmd, DSCM_STOP|DSCM_NODMA);
-		} else if (ifp->if_flags & IFF_UP &&
-		    (ifp->if_flags & IFF_RUNNING) == 0)
-			neinit(ifp->if_unit);
+		} else {
+			if ((ifp->if_flags & IFF_UP) &&
+			    ((ifp->if_flags & IFF_RUNNING) == 0))
+				neinit(ifp->if_unit);
+		}
 		break;
 
 #ifdef notdef

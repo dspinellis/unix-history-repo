@@ -34,22 +34,25 @@
  */
 
 /*
- * NE1000/2000 Ethernet Card registers
+ * NE2000 Ethernet Card registers
  */
 
-/* This card uses a DS8390 Ethernet controller in at the beginning of
+/* The NE1000/NE2000 uses a DS8390 Ethernet controller in at the beginning of
    its i/o space */
 #include "ic/ds8390.h"
 
 #define ne_data		0x10	/* Data Transfer port */
 #define ne_reset	0x1f	/* Card Reset port */
 
-#define	PKTSZ	3*512		/* Size of transmit buffer */
+#define        PKTSZ   0x600
+#define        TBUF(board)     (0x2000 * (board))      /* Starting location of Transmit Buffer */
+#define        RBUF(board)     (TBUF(board)+PKTSZ)     /* Starting location of Receive Buffer */
+#define        RBUFEND(board)  (0x4000 * (board))      /* Ending location of Tr ansmit Buffer */
 
-/* Span of memory on an NE2000 */
-#define	TBUF16	(16*1024)	/* Starting location of Transmit Buffer */
-#define	RBUFEND16	(32*1024)	/* Ending location of Receive Buffer */
+#define        TBUF1           TBUF(1)         /* Starting location of Transmit Buffer */
+#define        RBUF1           RBUF(1)         /* Starting location of Receive Buffer */
+#define        RBUFEND1        RBUFEND(1)      /* Ending location of Transmit Buffer */
+#define        TBUF2           TBUF(2)         /* Starting location of Transmit Buffer */
+#define        RBUF2           RBUF(2)         /* Starting location of Receive Buffer */
+#define        RBUFEND2        RBUFEND(2)      /* Ending location of Transmit Buffer */
 
-/* Span of memory on an NE1000 */
-#define	TBUF8	(8*1024)	/* Starting location of Transmit Buffer */
-#define	RBUFEND8	(16*1024)	/* Ending location of Receive Buffer */
