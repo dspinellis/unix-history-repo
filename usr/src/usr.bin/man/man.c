@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -106,10 +106,10 @@ main(argc, argv)
 
 		tmp = strtok(p_path, ":"); 
 		while (tmp) {
-			(void)sprintf(buf, "%s/", tmp);
+			(void)snprintf(buf, sizeof(buf), "%s/", tmp);
 			for (av = arorder; *av; ++av)
                 		cadd(buf, strlen(buf), *av);
-			tmp = strtok((char *)NULL, ":"); 
+			tmp = strtok(NULL, ":"); 
 		}
 		p_path = pathbuf;
 	} else if (!(p_path = getpath(section)) && !p_augment) {
