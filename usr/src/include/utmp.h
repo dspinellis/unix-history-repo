@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)utmp.h	5.8 (Berkeley) %G%
+ *	@(#)utmp.h	5.9 (Berkeley) %G%
  */
 
 #define	_PATH_UTMP	"/var/run/utmp"
@@ -32,8 +32,8 @@ struct lastlog {
 };
 
 struct utmp {
-	char	ut_line[UT_NAMESIZE];
-	char	ut_name[UT_LINESIZE];
+	char	ut_line[UT_LINESIZE];
+	char	ut_name[UT_NAMESIZE];
 	char	ut_host[UT_HOSTSIZE];
 	long	ut_time;
 };
