@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.9 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.10 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -294,8 +294,8 @@ bmove() {
 			}
 			pf->pop = 0;
 			redunm++; nsaddr++;
+			goto std;
 		}
-		goto std;
 ashadd:
 		/* at this point, RT2 and RT3 are guaranteed to be simple regs*/
 		if (shcnt == 1) {
@@ -304,6 +304,16 @@ ashadd:
 			**	shll	$1,A,A	>	addl2	A,A
 			**	shll	$1,A,B	>	addl3	A,A,B
 			*/
+			if ((pf = p->forw)->op == CBR ||
+			    (pf->op == MOV && (pf = pf->forw)->op == CBR))
+				/*
+				** shll and addl handle the N bit differently
+				** on overflow; avoid N bit CBRs
+				*/
+				switch (pf->subop) {
+				case JLE: case JGE: case JLT: case JGT:
+					goto std;
+				}
 			p->op = ADD;
 			strcpy(regs[RT1], regs[RT2]);
 			if(equstr(regs[RT2], regs[RT3])) {
