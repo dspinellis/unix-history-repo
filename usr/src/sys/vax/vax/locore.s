@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.16	%G%
+#	locore.s		3.17	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -11,7 +11,7 @@
 
 	.set	CLSIZE,2
 	.set	BSIZE,NBPG*CLSIZE
-	.set	NBUF,62
+	.set	MAXNBUF,128
 	.set	UPAGES,6	# size of user area, in pages
 
 # ====================================
@@ -222,13 +222,16 @@ _coresw:
 #
 # Catch random or unexpected interrupts
 #
+	.globl	_waittime
 	.align	2
 Xmachcheck:
+	clrl	_waittime
 	pushab	Emachk
 	calls	$1,_panic
 
 	.align	2
 Xkspnotval:
+	clrl	_waittime
 	pushab	Eksp
 	calls	$1,_panic
 
@@ -559,7 +562,7 @@ _mmap:
 
 	.globl	_bufmap
 _bufmap:
-	.space	4*NBUF*CLSIZE
+	.space	4*MAXNBUF*CLSIZE
 	.globl	_buffers
 	.set	_buffers,((_bufmap-_Sysmap)/4)*NBPG+0x80000000
 	.globl	eSysmap
