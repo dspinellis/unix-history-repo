@@ -1,0 +1,54 @@
+.TH "XNSCREDS" 1 "3-FEB-87" "Xerox (WRC)"
+.\" $Header: xnscreds.n,v 1.1 87/01/15 16:47:37 ed Exp $
+.SH NAME
+xnscreds - Prompt for and save user Clearinghouse name and verifier
+.SH SYNOPSIS
+.B xnscreds 
+[
+.B \-a
+] [
+.B \-v
+]
+.SH DESCRIPTION
+.I Xnscreds
+prompts for a user name and password which are interpreted as the user's
+Clearinghouse name and password for creating simple Authentication 
+credentials by the various XNS application programs.
+.I Xnscreds
+will output commands to 
+.I stdout
+which will set the environment variables XNSNAME and XNSPASSWD
+to the user name and ascii form of the computed simple verifier for the 
+supplied password.
+.PP
+The command \*(lqeval \`\fIxnscreds\fR\`\*(rq can be inserted into a user's
+.I .login
+file which will make the environment variables available
+to other programs during a login session.
+.PP
+The possible options are:
+.TP
+.B -a
+Causes \fIxnscreds\fR to validate the supplied credentials with a network
+Authentication service.
+.TP
+.B -v
+Causes appropriate informational messages to be displayed as work is done. 
+.SH NOTES
+.I Xnscreds
+will exit if not run from a terminal.
+.PP
+.I Xnscreds
+will determine the current shell type and output appropriate commands.
+.PP
+The value saved in XNSPASSWD
+is a textual representation of the verifier value created from the user
+supplied password not the actual clear text password.
+.SH "SEE ALSO"
+getXNSuser(3N), GetSimpleCredsAndVerifier(3N)
+.br
+Clearinghouse Protocol, \s8XSIS\s0 048404 (April 1984)
+.br
+Authentication Protocol, \s8XSIS\s0 098404 (April 1984)
+.SH AUTHORS
+Ed Flint
