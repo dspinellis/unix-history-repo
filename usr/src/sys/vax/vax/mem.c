@@ -1,4 +1,4 @@
-/*	mem.c	4.9	82/10/21	*/
+/*	mem.c	4.10	82/10/31	*/
 
 /*
  * Memory special file
@@ -42,6 +42,8 @@ mmrw(dev, uio, rw)
 	register u_int c, v;
 	register struct iovec *iov;
 	int error = 0;
+	extern int umbabeg, umbaend;
+
 
 	while (uio->uio_resid > 0 && error == 0) {
 		iov = uio->uio_iov;
