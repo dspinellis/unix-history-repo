@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/conf.c	8.2 (Berkeley) 11/14/93
  *
- *	@(#)conf.c	8.3 (Berkeley) %G%
+ *	@(#)conf.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -269,7 +269,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 11 */
 	cdev_tty_init(NSIO,sio),	/* 12: built-in single-port serial */
 	cdev_tty_init(NBMC,bmc),	/* 13: console terminal emulator */
-	cdev_kbd_init(2,kbd),		/* 14: kyeboard */
+	cdev_kbd_init(2,kbd),		/* 14: keyboard */
 	cdev_notdef(),			/* 15 */
 	cdev_notdef(),			/* 16 */
 	cdev_notdef(),			/* 17 */
@@ -311,6 +311,29 @@ iszerodev(dev)
 	dev_t dev;
 {
 	return (major(dev) == 2 && minor(dev) == 12);
+}
+
+/*
+ * Routine to determine if a device is a tty.
+ *
+ * A minimal stub routine can always return 0.
+ */
+istty(dev)
+	dev_t dev;
+{
+
+	switch (major(dev)) {
+	case 0:
+	case 1:
+	case 4:
+	case 5:
+	case 12:
+	case 13:
+	case 14:
+		return (1);
+	default:
+		return (0);
+	}
 }
 
 /*
