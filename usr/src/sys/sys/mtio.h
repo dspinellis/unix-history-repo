@@ -1,4 +1,4 @@
-/*	mtio.h	4.9	83/01/13	*/
+/*	mtio.h	4.10	83/01/17	*/
 
 /*
  * Structures and definitions for mag tape io control commands
@@ -19,8 +19,6 @@ struct	mtop	{
 #define MTREW	5	/* rewind */
 #define MTOFFL	6	/* rewind and put the drive offline */
 #define MTNOP	7	/* no operation, sets status only */
-#define	MTTENSE	8	/* streamer - ??? */
-#define	MTERASE	9	/* streamer - erase previous record? */
 
 /* structure for MTIOCGET - mag tape get status command */
 
