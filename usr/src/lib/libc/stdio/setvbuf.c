@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setvbuf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)setvbuf.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -102,21 +102,20 @@ nbf:
 
 	/*
 	 * Fix up the FILE fields, and set __cleanup for output flush on
-	 * exit (since we are buffered in some way).  Note that _w can
-	 * always be set to 0 safely here---it should be 0 in read mode
-	 * or the `indeterminate' state, and 0 for line buffered---so
-	 * using the new buffer size for fully-buffered streams in write
-	 * mode is merely a tiny optimization.
+	 * exit (since we are buffered in some way).  If in r/w mode, go
+	 * to the intermediate state, so that everyone has to call
+	 * __srefill or __swsetup on the first operation -- it is more
+	 * trouble than it is worth to set things up correctly here.
 	 */
-	if (mode == _IOLBF) {
+	if (mode == _IOLBF)
 		flags |= __SLBF;
-		fp->_lbfsize = -size;
-		fp->_w = 0;
-	} else
-		fp->_w = flags & __SWR ? size : 0;
+	if (flags & __SRW)
+		flags &= ~(__SRD | __SWR);
+	fp->_w = 0;
 	fp->_flags = flags;
 	fp->_bf._base = fp->_p = (unsigned char *)buf;
 	fp->_bf._size = size;
+	fp->_lbfsize = 0;
 	__cleanup = _cleanup;
 
 	return (ret);
