@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)chgrp.c	4.6 83/05/10";
+static	char *sccsid = "@(#)chgrp.c	4.7 83/11/23";
 #endif
 
 /*
@@ -70,7 +70,7 @@ main(argc, argv)
 	}
 ok:
 	for (c = 1; c < argc; c++) {
-		if (stat(argv[c], &stbuf)) {
+		if (lstat(argv[c], &stbuf)) {
 			perror(argv[c]);
 			continue;
 		}
