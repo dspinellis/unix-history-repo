@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.21 (Berkeley) %G%
+ *	@(#)iso.c	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -373,9 +373,9 @@ caddr_t			buf;		/* RESULT: network portion of address here */
 
 	bcopy((caddr_t)isoa, buf, len);
 	IFDEBUG(D_ROUTE)
-		printf("in_netof: isoa ");
+		printf("iso_netof: isoa ");
 		dump_buf(isoa, len);
-		printf("in_netof: net ");
+		printf("iso_netof: net ");
 		dump_buf(buf, len);
 	ENDDEBUG
 	return len;
