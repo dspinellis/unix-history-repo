@@ -1,45 +1,40 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	4.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)start.c	4.7	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "lrnref.h"
 #include <sys/types.h>
 #include <dirent.h>
+#include <unistd.h>
 
 start(lesson)
 char *lesson;
 {
-	struct dirent dbuf;
-	register struct dirent *ep = &dbuf;	/* directory entry pointer */
+	register struct dirent *ep;
 	int c, n;
 	char where [100];
 	DIR *dp;
 
-#define OPENDIR(s)	((dp = opendir(s)) != NULL)
-#define DIRLOOP(s)	for (s = readdir(dp); s != NULL; s = readdir(dp))
-#define EPSTRLEN	ep->d_namlen
-#define CLOSEDIR	closedir(dp)
-
-	if (!OPENDIR(".")) {		/* clean up play directory */
+	if ((dp = opendir(".")) == NULL) {	/* clean up play directory */
 		perror("Start:  play directory");
 		wrapup(1);
 	}
-	DIRLOOP(ep) {
+	while ((ep = readdir(dp)) != NULL) {
 		if (ep->d_ino == 0)
 			continue;
-		n = EPSTRLEN;
-		if (ep->d_name[n-2] == '.' && ep->d_name[n-1] == 'c')
+		n = ep->d_namlen;
+		if (n >= 2 && ep->d_name[n-2] == '.' && ep->d_name[n-1] == 'c')
 			continue;
 		c = ep->d_name[0];
 		if (c>='a' && c<= 'z')
 			unlink(ep->d_name);
 	}
-	CLOSEDIR;
+	(void) closedir(dp);
 	if (ask)
 		return;
 	sprintf(where, "%s/%s/L%s", direct, sname, lesson);
-	if (access(where, 04)==0)	/* there is a file */
+	if (access(where, R_OK)==0)	/* there is a file */
 		return;
 	perror(where);
 	fprintf(stderr, "Start:  no lesson %s\n",lesson);
