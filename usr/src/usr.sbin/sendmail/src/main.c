@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.49	%G%";
+static char	SccsId[] = "@(#)main.c	3.50	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -140,7 +140,6 @@ main(argc, argv)
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
-	setbuf(stdout, (char *) NULL);
 	OldUmask = umask(0);
 # ifdef LOG
 	openlog("sendmail", 0);
@@ -254,6 +253,7 @@ main(argc, argv)
 			Debug = atoi(&p[2]);
 			if (Debug <= 0)
 				Debug = 1;
+			setbuf(stdout, NULL);
 			printf("Version %s Debug %d\n", Version, Debug);
 			break;
 
@@ -693,7 +693,6 @@ openxscrpt()
 	}
 	(void) chmod(XcriptFile, 0600);
 	Transcript = XcriptFile;
-	setbuf(stdout, (char *) NULL);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
