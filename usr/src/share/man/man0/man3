@@ -81,6 +81,7 @@
 /usr/src/lib/libc/gen/gethostname.3
 /usr/src/lib/libc/gen/getloadavg.3
 /usr/src/lib/libc/gen/getmntinfo.3
+/usr/src/sbin/mount/getmntopts.3
 /usr/src/lib/libc/net/getnetent.3
 /usr/src/lib/libc/gen/getnetgrent.3
 /usr/src/lib/libc/stdlib/getopt.3
@@ -164,6 +165,7 @@
 /usr/src/lib/libc/stdio/putc.3
 /usr/src/lib/libc/gen/pwcache.3
 /usr/src/lib/libc/stdlib/qsort.3
+/usr/src/share/man/man3/queue.3
 /usr/src/lib/libc/stdlib/radixsort.3
 /usr/src/lib/libc/gen/raise.3
 /usr/src/lib/libc/stdlib/rand.3
@@ -171,6 +173,7 @@
 /usr/src/lib/libc/net/rcmd.3
 /usr/src/lib/libcompat/4.3/re_comp.3
 /usr/src/lib/libc/stdlib/realloc.3
+/usr/src/lib/libc/stdlib/realpath.3
 /usr/src/lib/libc/db/man/recno.3
 /usr/src/lib/libc/regex/regex.3
 /usr/src/lib/libcompat/regexp/regexp.3
@@ -243,6 +246,7 @@
 /usr/src/lib/libc/gen/ttyname.3
 /usr/src/lib/libc/gen/tzset.3
 /usr/src/lib/libc/gen/ualarm.3
+/usr/src/lib/libc/gen/uname.3
 /usr/src/lib/libc/stdio/ungetc.3
 /usr/src/lib/libc/gen/unvis.3
 /usr/src/lib/libc/gen/usleep.3
@@ -251,3 +255,4 @@
 /usr/src/lib/libc/gen/vis.3
 /usr/src/lib/libcompat/4.1/vlimit.3
 /usr/src/lib/libcompat/4.1/vtimes.3
+/usr/src/usr.bin/compress/zopen.3

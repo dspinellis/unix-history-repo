@@ -2,6 +2,7 @@
 /usr/src/share/man/man4/netintro.4
 /usr/src/share/man/man4/man4.hp300/autoconf.4
 /usr/src/share/man/man4/man4.sparc/bwtwo.4
+/usr/src/share/man/man4/man4.sparc/cgsix.4
 /usr/src/share/man/man4/man4.sparc/cgthree.4
 /usr/src/share/man/man4/clnp.4
 /usr/src/share/man/man4/cltp.4
@@ -28,6 +29,7 @@
 /usr/src/share/man/man4/man4.sparc/le.4
 /usr/src/share/man/man4/lo.4
 /usr/src/share/man/man4/man4.hp300/mem.4
+/usr/src/share/man/man4/man4.sparc/mem.4
 /usr/src/share/man/man4/ns.4
 /usr/src/share/man/man4/nsip.4
 /usr/src/share/man/man4/null.4
