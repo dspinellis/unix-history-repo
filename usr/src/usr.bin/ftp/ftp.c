@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -30,7 +30,6 @@ static char sccsid[] = "@(#)ftp.c	5.11 (Berkeley) %G%";
 struct	sockaddr_in hisctladdr;
 struct	sockaddr_in data_addr;
 int	data = -1;
-int     telflag = 0;
 int	abrtflag = 0;
 int	ptflag = 0;
 int	connected;
@@ -46,9 +45,8 @@ hookup(host, port)
 	int port;
 {
 	register struct hostent *hp = 0;
-	int s,len,oldverbose;
+	int s,len;
 	static char hostnamebuf[80];
-	char msg[2];
 
 	bzero((char *)&hisctladdr, sizeof (hisctladdr));
 	hisctladdr.sin_addr.s_addr = inet_addr(host);
@@ -121,7 +119,7 @@ hookup(host, port)
 	}
 	if (verbose)
 		printf("Connected to %s.\n", hostname);
-	if (getreply(0) != 2) { 	/* read startup message from server */
+	if (getreply(0) > 2) { 	/* read startup message from server */
 		if (cin)
 			(void) fclose(cin);
 		if (cout)
@@ -129,23 +127,17 @@ hookup(host, port)
 		code = -1;
 		goto bad;
 	}
+#ifdef SO_OOBINLINE
+	{
+	int on = 1;
 
-/* test to see if server command parser understands TELNET SYNC command */
+	if (setsockopt(s, SOL_SOCKET, SO_OOBINLINE, &on, sizeof(on))
+		< 0 && debug) {
+			perror("ftp: setsockopt");
+		}
+	}
+#endif SO_OOBINLINE
 
-	fprintf(cout,"%c%c",IAC,NOP);
-	(void) fflush(cout);
-	*msg = IAC;
-	*(msg+1) = DM;
-	if (send(s,msg,2,MSG_OOB) != 2)
-		perror("sync");
-	oldverbose = verbose;
-	if (!debug)
-		verbose = -1;
-	if (command("NOOP") == COMPLETE)
-		telflag = 1;
-	else
-		telflag = 0;
-	verbose = oldverbose;
 	return (hostname);
 bad:
 	(void) close(s);
@@ -268,6 +260,25 @@ getreply(expecteof)
 	for (;;) {
 		dig = n = code = 0;
 		while ((c = getc(cin)) != '\n') {
+			if (c == IAC) {     /* handle telnet commands */
+				switch (c = getc(cin)) {
+				case WILL:
+				case WONT:
+					c = getc(cin);
+					fprintf(cout, "%c%c%c",IAC,WONT,c);
+					(void) fflush(cout);
+					break;
+				case DO:
+				case DONT:
+					c = getc(cin);
+					fprintf(cout, "%c%c%c",IAC,DONT,c);
+					(void) fflush(cout);
+					break;
+				default:
+					break;
+				}
+				continue;
+			}
 			dig++;
 			if (c == EOF) {
 				if (expecteof) {
@@ -333,16 +344,14 @@ getreply(expecteof)
 }
 
 empty(mask, sec)
-	struct fd_set mask;
+	struct fd_set *mask;
 	int sec;
 {
 	struct timeval t;
 
 	t.tv_sec = (long) sec;
 	t.tv_usec = 0;
-	if (select(20, &mask, (struct fd_set *) 0, (struct fd_set *) 0, &t) < 0)
-		return(-1);
-	return (1);
+	return(select(32, mask, (struct fd_set *) 0, (struct fd_set *) 0, &t));
 }
 
 jmp_buf	sendabort;
@@ -554,8 +563,8 @@ recvrequest(cmd, local, remote, mode)
 {
 	FILE *fout, *din = 0, *mypopen();
 	int (*closefunc)(), mypclose(), fclose(), (*oldintr)(), (*oldintp)(); 
-	int abortrecv(), oldverbose, oldtype = 0, tcrflag;
-	char buf[BUFSIZ], *gunique();
+	int abortrecv(), oldverbose, oldtype = 0, tcrflag, nfnd;
+	char buf[BUFSIZ], *gunique(), msg;
 	long bytes = 0, hashbytes = sizeof (buf);
 	struct fd_set mask;
 	register int c, d;
@@ -792,8 +801,7 @@ recvrequest(cmd, local, remote, mode)
 	return;
 abort:
 
-/* if server command parser understands TELNET commands, abort using */
-/* recommended IP,SYNC sequence                                      */
+/* abort using RFC959 recommended IP,SYNC sequence  */
 
 	(void) gettimeofday(&stop, (struct timezone *)0);
 	if (oldintp)
@@ -820,25 +828,26 @@ abort:
 		(void) signal(SIGINT,oldintr);
 		return;
 	}
-	if (telflag) {
-		char msg[2];
 
-		fprintf(cout,"%c%c",IAC,IP);
-		(void) fflush(cout); 
-		*msg = IAC;
-		*(msg+1) = DM;
-		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
-			perror("abort");
+	fprintf(cout,"%c%c",IAC,IP);
+	(void) fflush(cout); 
+	msg = IAC;
+/* send IAC in urgent mode instead of DM because UNIX places oob mark */
+/* after urgent byte rather than before as now is protocol            */
+	if (send(fileno(cout),&msg,1,MSG_OOB) != 1) {
+		perror("abort");
 	}
-	fprintf(cout,"ABOR\r\n");
+	fprintf(cout,"%cABOR\r\n",DM);
 	(void) fflush(cout);
-	FD_ZERO((char *) &mask);
+	FD_ZERO(&mask);
 	FD_SET(fileno(cin), &mask);
 	if (din) { 
 		FD_SET(fileno(din), &mask);
 	}
-	if (empty(mask,10) < 0) {
-		perror("abort");
+	if ((nfnd = empty(&mask,10)) <= 0) {
+		if (nfnd < 0) {
+			perror("abort");
+		}
 		code = -1;
 		lostpeer();
 	}
@@ -846,7 +855,7 @@ abort:
 		while ((c = read(fileno(din), buf, sizeof (buf))) > 0)
 			;
 	}
-	if ((c = getreply(0)) == ERROR) { /* needed for nic style abort */
+	if ((c = getreply(0)) == ERROR && code == 552) { /* needed for nic style abort */
 		if (data >= 0) {
 			(void) close(data);
 			data = -1;
@@ -895,7 +904,7 @@ noport:
 		return (1);
 	}
 	if (!sendport)
-		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0) {
+		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof (on)) < 0) {
 			perror("ftp: setsockopt (resuse address)");
 			goto bad;
 		}
@@ -904,7 +913,7 @@ noport:
 		goto bad;
 	}
 	if (options & SO_DEBUG &&
-	    setsockopt(data, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
+	    setsockopt(data, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof (on)) < 0)
 		perror("ftp: setsockopt (ignored)");
 	len = sizeof (data_addr);
 	if (getsockname(data, (char *)&data_addr, &len) < 0) {
@@ -1015,7 +1024,6 @@ pswitch(flag)
 		struct sockaddr_in hctl;
 		FILE *in;
 		FILE *out;
-		int tflag;
 		int tpe;
 		int cpnd;
 		int sunqe;
@@ -1059,8 +1067,6 @@ pswitch(flag)
 	cin = op->in;
 	ip->out = cout;
 	cout = op->out;
-	ip->tflag = telflag;
-	telflag = op->tflag;
 	ip->tpe = type;
 	type = op->tpe;
 	if (!type)
@@ -1112,7 +1118,7 @@ abortpt()
 proxtrans(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
-	int (*oldintr)(), abortpt(), tmptype, oldtype = 0, secndflag = 0;
+	int (*oldintr)(), abortpt(), tmptype, oldtype = 0, secndflag = 0, nfnd;
 	extern jmp_buf ptabort;
 	char *cmd2;
 	struct fd_set mask;
@@ -1250,7 +1256,7 @@ abort:
 					settenex();
 					break;
 			}
-			if (cpend && telflag) {
+			if (cpend) {
 				char msg[2];
 
 				fprintf(cout,"%c%c",IAC,IP);
@@ -1259,14 +1265,14 @@ abort:
 				*(msg+1) = DM;
 				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 					perror("abort");
-			}
-			if (cpend) {
 				fprintf(cout,"ABOR\r\n");
 				(void) fflush(cout);
-				FD_ZERO((char *) &mask);
+				FD_ZERO(&mask);
 				FD_SET(fileno(cin), &mask);
-				if (empty(mask,10) < 0) {
-					perror("abort");
+				if ((nfnd = empty(&mask,10)) <= 0) {
+					if (nfnd < 0) {
+						perror("abort");
+					}
 					if (ptabflg)
 						code = -1;
 					lostpeer();
@@ -1281,7 +1287,7 @@ abort:
 		(void) signal(SIGINT, oldintr);
 		return;
 	}
-	if (cpend && telflag) {
+	if (cpend) {
 		char msg[2];
 
 		fprintf(cout,"%c%c",IAC,IP);
@@ -1290,14 +1296,14 @@ abort:
 		*(msg+1) = DM;
 		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 			perror("abort");
-	}
-	if (cpend) {
 		fprintf(cout,"ABOR\r\n");
 		(void) fflush(cout);
-		FD_ZERO((char *) &mask);
+		FD_ZERO(&mask);
 		FD_SET(fileno(cin), &mask);
-		if ((empty(mask,10)) < 0) {
-			perror("abort");
+		if ((nfnd = empty(&mask,10)) <= 0) {
+			if (nfnd < 0) {
+				perror("abort");
+			}
 			if (ptabflg)
 				code = -1;
 			lostpeer();
@@ -1325,7 +1331,7 @@ abort:
 					settenex();
 					break;
 			}
-			if (cpend && telflag) {
+			if (cpend) {
 				char msg[2];
 
 				fprintf(cout,"%c%c",IAC,IP);
@@ -1334,14 +1340,14 @@ abort:
 				*(msg+1) = DM;
 				if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 					perror("abort");
-			}
-			if (cpend) {
 				fprintf(cout,"ABOR\r\n");
 				(void) fflush(cout);
-				FD_ZERO((char *) &mask);
+				FD_ZERO(&mask);
 				FD_SET(fileno(cin), &mask);
-				if (empty(mask,10) < 0) {
-					perror("abort");
+				if ((nfnd = empty(&mask,10)) <= 0) {
+					if (nfnd < 0) {
+						perror("abort");
+					}
 					if (ptabflg)
 						code = -1;
 					lostpeer();
@@ -1356,7 +1362,7 @@ abort:
 			return;
 		}
 	}
-	if (cpend && telflag) {
+	if (cpend) {
 		char msg[2];
 
 		fprintf(cout,"%c%c",IAC,IP);
@@ -1365,14 +1371,14 @@ abort:
 		*(msg+1) = DM;
 		if (send(fileno(cout),msg,2,MSG_OOB) != 2)
 			perror("abort");
-	}
-	if (cpend) {
 		fprintf(cout,"ABOR\r\n");
 		(void) fflush(cout);
-		FD_ZERO((char *) &mask);
+		FD_ZERO(&mask);
 		FD_SET(fileno(cin), &mask);
-		if (empty(mask,10) < 0) {
-			perror("abort");
+		if ((nfnd = empty(&mask,10)) <= 0) {
+			if (nfnd < 0) {
+				perror("abort");
+			}
 			if (ptabflg)
 				code = -1;
 			lostpeer();
@@ -1382,10 +1388,12 @@ abort:
 	}
 	pswitch(!proxy);
 	if (cpend) {
-		FD_ZERO((char *) &mask);
+		FD_ZERO(&mask);
 		FD_SET(fileno(cin), &mask);
-		if (empty(mask,10) < 0) {
-			perror("abort");
+		if ((nfnd = empty(&mask,10)) <= 0) {
+			if (nfnd < 0) {
+				perror("abort");
+			}
 			if (ptabflg)
 				code = -1;
 			lostpeer();
@@ -1422,15 +1430,15 @@ reset()
 	struct fd_set mask;
 	int nfnd = 1;
 
-	FD_ZERO((char *) &mask);
+	FD_ZERO(&mask);
 	while (nfnd) {
 		FD_SET(fileno(cin), &mask);
-		if ((nfnd = empty(mask,0)) < 0) {
+		if ((nfnd = empty(&mask,0)) < 0) {
 			perror("reset");
 			code = -1;
 			lostpeer();
 		}
-		else {
+		else if (nfnd) {
 			(void) getreply(0);
 		}
 	}
