@@ -1,4 +1,4 @@
-/*	hp.c	4.35	81/04/02	*/
+/*	hp.c	4.36	81/04/29	*/
 int	hpdebug;
 
 #include "hp.h"
@@ -305,7 +305,7 @@ hpdtint(mi, mbsr)
 		return (MBD_RETRY);
 	}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
-	if (mi->mi_tab.b_errcnt > 16) {
+	if (mi->mi_tab.b_errcnt >= 16) {
 		/*
 		 * This is fast and occurs rarely; we don't
 		 * bother with interrupts.
