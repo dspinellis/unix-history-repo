@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	1.6 83/07/28";
+static	char *sccsid = "@(#)cmd3.c	1.7 83/07/28";
 #endif
 
 #include "defs.h"
@@ -93,6 +93,8 @@ setlabel(w, label)
 register struct ww *w;
 char *label;
 {
+	char *malloc();
+
 	if (w->ww_label != 0)
 		free(w->ww_label);
 	w->ww_label = malloc(strlen(label) + 1);
