@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.20 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -162,28 +162,29 @@ smmap(p, uap, retval)
 	vm_size_t size;
 	vm_prot_t prot;
 	caddr_t handle;
-	int error;
+	int flags, error;
 
+	flags = uap->flags;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mmap(%d): addr %x len %x pro %x flg %x fd %d pos %x\n",
 		       p->p_pid, uap->addr, uap->len, uap->prot,
-		       uap->flags, uap->fd, uap->pos);
+		       flags, uap->fd, uap->pos);
 #endif
 	/*
 	 * Address (if FIXED) must be page aligned.
 	 * Size is implicitly rounded to a page boundary.
 	 */
 	addr = (vm_offset_t) uap->addr;
-	if (((uap->flags & MAP_FIXED) && (addr & PAGE_MASK)) || uap->len < 0 ||
-	    ((uap->flags & MAP_ANON) && uap->fd != -1))
+	if (((flags & MAP_FIXED) && (addr & PAGE_MASK)) || uap->len < 0 ||
+	    ((flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
 	/*
 	 * Check for illegal addresses.  Watch out for address wrap...
 	 * Note that VM_*_ADDRESS are not constants due to casts (argh).
 	 */
-	if (uap->flags & MAP_FIXED) {
+	if (flags & MAP_FIXED) {
 		if (VM_MAXUSER_ADDRESS > 0 && addr + size >= VM_MAXUSER_ADDRESS)
 			return (EINVAL);
 		if (VM_MIN_ADDRESS > 0 && addr < VM_MIN_ADDRESS)
@@ -198,13 +199,13 @@ smmap(p, uap, retval)
 	 * There should really be a pmap call to determine a reasonable
 	 * location.
 	 */
-	if (addr == 0 && (uap->flags & MAP_FIXED) == 0)
+	if (addr == 0 && (flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	/*
 	 * If we are mapping a file we need to check various
 	 * file/vnode related things.
 	 */
-	if (uap->flags & MAP_ANON)
+	if (flags & MAP_ANON)
 		handle = NULL;
 	else {
 		/*
@@ -225,9 +226,11 @@ smmap(p, uap, retval)
 		 * if mapping is shared.
 		 */
 		if ((uap->prot & PROT_READ) && (fp->f_flag & FREAD) == 0 ||
-		    ((uap->flags & MAP_SHARED) &&
+		    ((flags & MAP_SHARED) &&
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
+		if ((flags & MAP_SHARED) && (fp->f_flag & FWRITE) == 0)
+			flags = (flags & ~MAP_SHARED) | MAP_PRIVATE;
 		handle = (caddr_t)vp;
 	}
 	/*
@@ -235,7 +238,7 @@ smmap(p, uap, retval)
 	 */
 	prot = uap->prot & VM_PROT_ALL;
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
-			uap->flags, handle, (vm_offset_t)uap->pos);
+			flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
 		*retval = (int) addr;
 	return(error);
