@@ -1,0 +1,158 @@
+.th TP I 10/15/73
+.sh NAME
+tp  \*-  manipulate DECtape and magtape
+.sh SYNOPSIS
+.bd tp
+[ key ] [ name ... ]
+.sh DESCRIPTION
+.it Tp
+saves and restores files
+on DECtape or magtape.
+Its actions are controlled by the
+.it key
+argument.
+The key is a string of characters containing
+at most one function letter and possibly
+one or more function modifiers.
+Other arguments to the command are file or directory
+names specifying which files are to be dumped, restored,
+or listed.
+In all cases, appearance of a directory name refers to
+the files and (recursively) subdirectories of that directory.
+.s3
+The function portion of
+the key is specified by one of the following letters:
+.s3
+.lp +8 4
+\fBr\fR	The named files
+are written
+on the tape.
+If files with the same names
+already exist, they are replaced.
+`Same' is determined by string comparison, so
+`./abc' can never be the same as `/usr/dmr/abc' even
+if `/usr/dmr' is the current directory.
+If no file argument is given, `\fB.\fR' is the default.
+.s3
+.lp +8 4
+\fBu\fR	updates the tape.
+.bd u
+is like
+.bd r,
+but a file is replaced only if its
+modification date is later than the date stored on the tape;
+that is to say, if it has changed since it was dumped.
+.bd u
+is the default command if none is given.
+.s3
+.lp +8 4
+\fBd\fR	deletes the named files from
+the tape.
+At least one name argument must be given.
+This function is not permitted on magtapes.
+.s3
+.lp +8 4
+\fBx\fR	extracts the named files from the tape to the file system.
+The owner and mode are restored.
+If no file argument is given, the entire contents of the
+tape are extracted.
+.s3
+.lp +8 4
+\fBt\fR	lists the names of the specified files.
+If no file argument is given,
+the entire contents of the tape is listed.
+.s3
+.i0
+The following characters may be used in addition to the letter
+which selects the function desired.
+.s3
+.lp +10 6
+\fBm\fR	Specifies magtape as opposed to DECtape.
+.s3
+.lp +10 6
+\fB0,...,7\fR	This
+modifier selects the drive on which the tape is mounted.
+For DECtape, `x' is default; for magtape
+`0' is the default.
+.s3
+.lp +10 6
+\fBv\fR	Normally
+.it tp
+does its work silently.
+The
+.bd v
+(verbose)
+option causes it to type the name of each file it treats
+preceded by the function letter.
+With the
+.bd t
+function,
+.bd v
+gives more information about the
+tape entries than just the name.
+.s3
+.lp +10 6
+\fBc\fR	means a fresh dump is being created; the tape directory
+is zeroed before beginning.
+Usable only with
+.bd r
+and
+.bd u.
+This option is assumed with magtape since
+it is impossible to selectively overwrite
+magtape.
+.s3
+.lp +10 6
+\fBf\fR	causes new entries on tape to be `fake' in that
+no data is present for these entries.
+Such fake entries cannot be extracted.
+Usable only with
+.bd r
+and
+.bd u.
+.s3
+.lp +10 6
+\fBi\fR	Errors reading and writing the
+tape are noted, but no action is taken.
+Normally, errors cause a return to the command level.
+.s3
+.lp +10 6
+\fBw\fR	causes
+.it tp
+to pause before treating each file, type
+the indicative letter and the file name (as with v)
+and await the user's response.
+Response
+.bd y
+means `yes', so the file is treated.
+Null response
+means `no', and the file does not take part
+in whatever is being done.
+Response
+.bd x
+means `exit';
+the
+.it tp
+command terminates immediately.
+In the
+.bd x
+function,
+files previously asked about
+have been extracted already.
+With
+.bd "r, u,"
+and
+.bd d
+no change has been made to the tape.
+.s3
+.i0
+.sh FILES
+/dev/tap?
+.br
+/dev/mt?
+.sh DIAGNOSTICS
+Several; the non-obvious one is
+`Phase error', which means the file changed after it was selected for
+dumping but before it was dumped.
+.sh BUGS
+A single file with several links to it is treated like several files.
