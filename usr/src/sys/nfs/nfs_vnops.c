@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.94 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.95 (Berkeley) %G%
  */
 
 /*
@@ -1939,6 +1939,7 @@ nfs_bmap(ap)
 		daddr_t  a_bn;
 		struct vnode **a_vpp;
 		daddr_t *a_bnp;
+		int *a_runp;
 	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
