@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,6 +35,7 @@ int	intprompt();
 int	timeout();
 int	cleanup();
 char	*sname();
+char	PNbuf[256];			/* This limits the size of a number */
 extern char *sprintf();
 
 main(argc, argv)
@@ -85,7 +86,20 @@ main(argc, argv)
 	for (p = system; *p; p++)
 		if (isalpha(*p))
 			goto notnumber;
-	PN = system;		/* system name is really a phone number */
+	/*
+	 * System name is really a phone number...
+	 * Copy the number then stomp on the original (in case the number
+	 *	is private, we don't want 'ps' or 'w' to find it).
+	 */
+	if (strlen(system) > sizeof PNbuf - 1) {
+		fprintf(stderr, "tip: phone number too long (max = %d bytes)\n",
+			sizeof PNbuf - 1);
+		exit(1);
+	}
+	strncpy( PNbuf, system, sizeof PNbuf - 1 );
+	for (p = system; *p; p++)
+		*p = '\0';
+	PN = PNbuf;
 	system = sprintf(sbuf, "tip%d", BR);
 
 notnumber:
