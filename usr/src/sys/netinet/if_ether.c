@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.13 (Berkeley) %G%
+ *	@(#)if_ether.c	6.14 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
 #include "kernel.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 #include "in.h"
@@ -31,8 +32,14 @@
 struct	arptab arptab[ARPTAB_SIZE];
 int	arptab_size = ARPTAB_SIZE;	/* for arp command */
 
+/*
+ * ARP trailer negotiation.  Trailer protocol is not IP specific,
+ * but ARP request/response use IP addresses.
+ */
+#define ETHERTYPE_IPTRAILERS ETHERTYPE_TRAIL
+
 #define	ARPTAB_HASH(a) \
-	((short)((((a) >> 16) ^ (a)) & 0x7fff) % ARPTAB_NB)
+	((u_long)(a) % ARPTAB_NB)
 
 #define	ARPTAB_LOOK(at,addr) { \
 	register n; \
@@ -41,9 +48,8 @@ int	arptab_size = ARPTAB_SIZE;	/* for arp command */
 		if (at->at_iaddr.s_addr == addr) \
 			break; \
 	if (n >= ARPTAB_BSIZ) \
-		at = 0; }
-
-int	arpt_age;		/* aging timer */
+		at = 0; \
+}
 
 /* timer values */
 #define	ARPT_AGE	(60*1)	/* aging timer, 1 min. */
@@ -61,19 +67,16 @@ arptimer()
 	register struct arptab *at;
 	register i;
 
-	timeout(arptimer, (caddr_t)0, hz);
-	if (++arpt_age > ARPT_AGE) {
-		arpt_age = 0;
-		at = &arptab[0];
-		for (i = 0; i < ARPTAB_SIZE; i++, at++) {
-			if (at->at_flags == 0 || (at->at_flags & ATF_PERM))
-				continue;
-			if (++at->at_timer < ((at->at_flags&ATF_COM) ?
-			    ARPT_KILLC : ARPT_KILLI))
-				continue;
-			/* timer has expired, clear entry */
-			arptfree(at);
-		}
+	timeout(arptimer, (caddr_t)0, ARPT_AGE * hz);
+	at = &arptab[0];
+	for (i = 0; i < ARPTAB_SIZE; i++, at++) {
+		if (at->at_flags == 0 || (at->at_flags & ATF_PERM))
+			continue;
+		if (++at->at_timer < ((at->at_flags&ATF_COM) ?
+		    ARPT_KILLC : ARPT_KILLI))
+			continue;
+		/* timer has expired, clear entry */
+		arptfree(at);
 	}
 }
 
@@ -115,26 +118,31 @@ arpwhohas(ac, addr)
 
 /*
  * Resolve an IP address into an ethernet address.  If success, 
- * desten is filled in and 1 is returned.  If there is no entry
- * in arptab, set one up and broadcast a request 
- * for the IP address;  return 0.  Hold onto this mbuf and 
- * resend it once the address is finally resolved.
+ * desten is filled in.  If there is no entry in arptab,
+ * set one up and broadcast a request for the IP address.
+ * Hold onto this mbuf and resend it once the address
+ * is finally resolved.  A return value of 1 indicates
+ * that desten has been filled in and the packet should be sent
+ * normally; a 0 return indicates that the packet has been
+ * taken over here, either now or for later transmission.
  *
  * We do some (conservative) locking here at splimp, since
  * arptab is also altered from input interrupt service (ecintr/ilintr
  * calls arpinput when ETHERTYPE_ARP packets come in).
  */
-arpresolve(ac, m, destip, desten)
+arpresolve(ac, m, destip, desten, usetrailers)
 	register struct arpcom *ac;
 	struct mbuf *m;
 	register struct in_addr *destip;
 	register u_char *desten;
+	int *usetrailers;
 {
 	register struct arptab *at;
 	register struct ifnet *ifp;
 	struct sockaddr_in sin;
 	int s, lna;
 
+	*usetrailers = 0;
 	if (in_broadcast(*destip)) {	/* broadcast address */
 		bcopy((caddr_t)etherbroadcastaddr, (caddr_t)desten,
 		    sizeof(etherbroadcastaddr));
@@ -149,8 +157,7 @@ arpresolve(ac, m, destip, desten)
 		sin.sin_addr = *destip;
 		(void) looutput(&loif, m, (struct sockaddr *)&sin);
 		/*
-		 * We really don't want to indicate failure,
-		 * but the packet has already been sent and freed.
+		 * The packet has already been sent and freed.
 		 */
 		return (0);
 	}
@@ -176,6 +183,8 @@ arpresolve(ac, m, destip, desten)
 	if (at->at_flags & ATF_COM) {	/* entry IS complete */
 		bcopy((caddr_t)at->at_enaddr, (caddr_t)desten,
 		    sizeof(at->at_enaddr));
+		if (at->at_flags & ATF_USETRAILERS)
+			*usetrailers = 1;
 		splx(s);
 		return (1);
 	}
@@ -195,47 +204,90 @@ arpresolve(ac, m, destip, desten)
 /*
  * Called from 10 Mb/s Ethernet interrupt handlers
  * when ether packet type ETHERTYPE_ARP
- * is received.  Algorithm is that given in RFC 826.
- * In addition, a sanity check is performed on the sender
- * protocol address, to catch impersonators.
+ * is received.  Common length and type checks are done here,
+ * then the protocol-specific routine is called.
  */
 arpinput(ac, m)
+	struct arpcom *ac;
+	struct mbuf *m;
+{
+	register struct arphdr *ar;
+
+	if (ac->ac_if.if_flags & IFF_NOARP)
+		goto out;
+	IF_ADJ(m);
+	if (m->m_len < sizeof(struct arphdr))
+		goto out;
+	ar = mtod(m, struct arphdr *);
+	if (ntohs(ar->ar_hrd) != ARPHRD_ETHER)
+		goto out;
+	if (m->m_len < sizeof(struct arphdr) + 2 * ar->ar_hln + 2 * ar->ar_pln)
+		goto out;
+
+	switch (ntohs(ar->ar_pro)) {
+
+	case ETHERTYPE_IP:
+	case ETHERTYPE_IPTRAILERS:
+		in_arpinput(ac, m);
+		return;
+
+	default:
+		break;
+	}
+out:
+	m_freem(m);
+}
+
+/*
+ * ARP for Internet protocols on 10 Mb/s Ethernet.
+ * Algorithm is that given in RFC 826.
+ * In addition, a sanity check is performed on the sender
+ * protocol address, to catch impersonators.
+ * We also handle negotiations for use of trailer protocol:
+ * ARP replies for protocol type ETHERTYPE_TRAIL are sent
+ * along with IP replies if we want trailers sent to us,
+ * and also send them in response to IP replies.
+ * This allows either end to announce the desire to receive
+ * trailer packets.
+ * We reply to requests for ETHERTYPE_TRAIL protocol as well,
+ * but don't normally send requests.
+ */
+in_arpinput(ac, m)
 	register struct arpcom *ac;
 	struct mbuf *m;
 {
 	register struct ether_arp *ea;
 	struct ether_header *eh;
 	register struct arptab *at;  /* same as "merge" flag */
+	struct mbuf *mcopy = 0;
 	struct sockaddr_in sin;
 	struct sockaddr sa;
-	struct in_addr isaddr,itaddr,myaddr;
+	struct in_addr isaddr, itaddr, myaddr;
+	int proto, op;
 
-	IF_ADJ(m);
-	at = 0;
-	if (m->m_len < sizeof *ea)
-		goto out;
-	if (ac->ac_if.if_flags & IFF_NOARP)
-		goto out;
 	myaddr = ac->ac_ipaddr;
 	ea = mtod(m, struct ether_arp *);
-	if (ntohs(ea->arp_pro) != ETHERTYPE_IP)
-		goto out;
+	proto = ntohs(ea->arp_pro);
+	op = ntohs(ea->arp_op);
 	isaddr.s_addr = ((struct in_addr *)ea->arp_spa)->s_addr;
 	itaddr.s_addr = ((struct in_addr *)ea->arp_tpa)->s_addr;
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
 	  sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */
+	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)etherbroadcastaddr,
+	    sizeof (ea->arp_sha))) {
+		log(LOG_ERR,
+		    "arp: ether address is broadcast for IP address %x!\n",
+		    ntohl(isaddr.s_addr));
+		goto out;
+	}
 	if (isaddr.s_addr == myaddr.s_addr) {
-		printf("duplicate IP address!! sent from ethernet address: ");
-		printf("%x %x %x %x %x %x\n", ea->arp_sha[0], ea->arp_sha[1],
-			ea->arp_sha[2], ea->arp_sha[3],
-			ea->arp_sha[4], ea->arp_sha[5]);
+		log(LOG_ERR, "%s: %s\n",
+			"duplicate IP address!! sent from ethernet address",
+			ether_sprintf(ea->arp_sha));
 		itaddr = myaddr;
-		if (ntohs(ea->arp_op) == ARPOP_REQUEST) {
-			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
-			    sizeof(ea->arp_sha));
+		if (op == ARPOP_REQUEST)
 			goto reply;
-		}
 		goto out;
 	}
 	ARPTAB_LOOK(at, isaddr.s_addr);
@@ -258,37 +310,72 @@ arpinput(ac, m)
 		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
 	}
-	if (ntohs(ea->arp_op) != ARPOP_REQUEST)
-		goto out;
-	ARPTAB_LOOK(at, itaddr.s_addr);
-	if (at == NULL) {
-		if (itaddr.s_addr != myaddr.s_addr)
-			goto out;	/* if I am not the target */
-		at = arptnew(&myaddr);
-		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)at->at_enaddr,
-		   sizeof(at->at_enaddr));
-		at->at_flags |= ATF_COM;
-	} 
-	if (itaddr.s_addr != myaddr.s_addr && (at->at_flags & ATF_PUBL) == 0)
-		goto out;
-		
 reply:
-	bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
-	    sizeof(ea->arp_sha));
-	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
-	    sizeof(ea->arp_spa));
-	if (at)		/* done above if at == 0 */
+	switch (proto) {
+
+	case ETHERTYPE_IPTRAILERS:
+		/* partner says trailers are OK */
+		if (at)
+			at->at_flags |= ATF_USETRAILERS;
+		/*
+		 * Reply to request iff we want trailers.
+		 */
+		if (op != ARPOP_REQUEST || ac->ac_if.if_flags & IFF_NOTRAILERS)
+			goto out;
+		break;
+
+	case ETHERTYPE_IP:
+		/*
+		 * Reply if this is an IP request, or if we want to send
+		 * a trailer response.
+		 */
+		if (op != ARPOP_REQUEST && ac->ac_if.if_flags & IFF_NOTRAILERS)
+			goto out;
+	}
+	if (itaddr.s_addr == myaddr.s_addr) {
+		/* I am the target */
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
+		    sizeof(ea->arp_sha));
+		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
+		    sizeof(ea->arp_sha));
+	} else {
+		ARPTAB_LOOK(at, itaddr.s_addr);
+		if (at == NULL || (at->at_flags & ATF_PUBL) == 0)
+			goto out;
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
+		    sizeof(ea->arp_sha));
 		bcopy((caddr_t)at->at_enaddr, (caddr_t)ea->arp_sha,
 		    sizeof(ea->arp_sha));
+	}
+
+	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
+	    sizeof(ea->arp_spa));
 	bcopy((caddr_t)&itaddr, (caddr_t)ea->arp_spa,
 	    sizeof(ea->arp_spa));
-	ea->arp_op = htons(ARPOP_REPLY);
+	ea->arp_op = htons(ARPOP_REPLY); 
+	/*
+	 * If incoming packet was an IP reply,
+	 * we are sending a reply for type IPTRAILERS.
+	 * If we are sending a reply for type IP
+	 * and we want to receive trailers,
+	 * send a trailer reply as well.
+	 */
+	if (op == ARPOP_REPLY)
+		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
+	else if (proto == ETHERTYPE_IP &&
+	    (ac->ac_if.if_flags & IFF_NOTRAILERS) == 0)
+		mcopy = m_copy(m, 0, M_COPYALL);
 	eh = (struct ether_header *)sa.sa_data;
 	bcopy((caddr_t)ea->arp_tha, (caddr_t)eh->ether_dhost,
 	    sizeof(eh->ether_dhost));
 	eh->ether_type = ETHERTYPE_ARP;
 	sa.sa_family = AF_UNSPEC;
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
+	if (mcopy) {
+		ea = mtod(mcopy, struct ether_arp *);
+		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
+		(*ac->ac_if.if_output)(&ac->ac_if, mcopy, &sa);
+	}
 	return;
 out:
 	m_freem(m);
@@ -415,4 +502,25 @@ arpioctl(cmd, data)
 	}
 	splx(s);
 	return (0);
+}
+
+/*
+ * Convert Ethernet address to printable (loggable) representation.
+ */
+char *
+ether_sprintf(ap)
+	register u_char *ap;
+{
+	register i;
+	static char etherbuf[18];
+	register char *cp = etherbuf;
+	static char digits[] = "0123456789abcdef";
+
+	for (i = 0; i < 6; i++) {
+		*cp++ = digits[*ap >> 4];
+		*cp++ = digits[*ap++ & 0xf];
+		*cp++ = ':';
+	}
+	*--cp = 0;
+	return (etherbuf);
 }
