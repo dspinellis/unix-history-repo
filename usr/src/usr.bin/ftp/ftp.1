@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftp.1	6.3 (Berkeley) %G%
+.\"	@(#)ftp.1	6.4 (Berkeley) %G%
 .\"
 .TH FTP 1C "April 29, 1985"
 .UC 5
@@ -95,6 +95,7 @@ to support binary image transfer.
 Terminate the FTP session with the remote server
 and exit
 .IR ftp .
+An end of file will also terminate the session and exit.
 .TP
 .B case
 Toggle remote computer file name case mapping during
@@ -472,7 +473,8 @@ Print the name of the current working directory on the remote
 machine.
 .TP
 .B quit
-A synonym for bye.
+A synonym for
+.BR bye .
 .TP
 .BI quote " arg1 arg2 ..."
 The arguments specified are sent, verbatim, to the remote FTP

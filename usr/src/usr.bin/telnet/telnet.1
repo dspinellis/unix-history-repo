@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)telnet.1	6.1 (Berkeley) %G%
+.\"	@(#)telnet.1	6.2 (Berkeley) %G%
 .\"
 .TH TELNET 1C ""
 .UC 5
@@ -50,6 +50,7 @@ Close a TELNET session and return to command mode.
 .B quit
 Close any open TELNET session and exit 
 .IR telnet .
+An end of file (in command mode) will also close a session and exit.
 .TP
 .B z
 Suspend
