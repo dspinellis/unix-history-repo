@@ -14,12 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)useful.h	4.4 (Berkeley) %G%
+ *	@(#)useful.h	4.5 (Berkeley) %G%
  */
 
-# ifndef makedev
 # include <sys/types.h>
-# endif
 
 /* support for bool type */
 typedef char	bool;
@@ -66,12 +64,4 @@ extern char	*index(), *rindex();
 extern int	errno;
 extern time_t	time();
 extern char	*ctime();
-# ifndef V6
 extern char	*getenv();
-# endif V6
-# ifndef VMUNIX
-typedef unsigned short	u_short;
-typedef long		u_long;
-typedef char		u_char;
-typedef int		void;
-# endif VMUNIX
