@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.12 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -83,6 +83,7 @@ tp_timerinit()
 	s = sizeof(*tp_ref) * tp_refinfo.tpr_size;
 	if ((tp_ref = (struct tp_ref *) malloc(s, M_PCB, M_NOWAIT)) == 0)
 		panic("tp_timerinit");
+	bzero((caddr_t)tp_ref, (unsigned) s);
 	tp_refinfo.tpr_base = tp_ref;
 	tp_rttdiv = hz / PR_SLOWHZ;
 	tp_rttadd = (2 * tp_rttdiv) - 1;
@@ -155,13 +156,11 @@ tp_euntimeout(tpcb, fun)
  *  Look for open references with active timers.
  *  If they exist, call the appropriate timer routines to update
  *  the timers and possibly generate events.
- *  (The E timers are done in other procedures; the C timers are
- *  updated here, and events for them are generated here.)
  */
 ProtoHook
 tp_slowtimo()
 {
-	register u_int 	*cp, *cpbase;
+	register u_int 	*cp;
 	register struct tp_ref		*rp;
 	struct tp_pcb		*tpcb;
 	struct tp_event		E;
@@ -173,10 +172,10 @@ tp_slowtimo()
 	for (rp = tp_ref + tp_refinfo.tpr_maxopen; rp > tp_ref; rp--) {
 		if ((tpcb = rp->tpr_pcb) == 0 || tpcb->tp_refstate < REF_OPEN) 
 			continue;
-		cpbase = tpcb->tp_timer;
 		t = TM_NTIMERS;
 		/* check the timers */
-		for (cp = cpbase + t; (--t, --cp) >= cpbase; ) {
+		for (t = 0; t < TM_NTIMERS; t++) {
+			cp = tpcb->tp_timer + t;
 			if (*cp && --(*cp) <= 0 ) {
 				*cp = 0;
 				E.ev_number = t;
@@ -184,7 +183,7 @@ tp_slowtimo()
 					printf("C expired! type 0x%x\n", t);
 				ENDDEBUG
 				IncStat(ts_Cexpired);
-				tp_driver( rp->tpr_pcb, &E);
+				tp_driver(tpcb, &E);
 				if (t == TM_reference && tpcb->tp_state == TP_CLOSED) {
 					if (tpcb->tp_notdetached) {
 						IFDEBUG(D_CONN)
@@ -220,9 +219,14 @@ register struct tp_pcb *tpcb;
 		 * bother shrinking the congestion windows, et. al.
 		 * The retransmission timer should have been reset in goodack()
 		 */
+		IFDEBUG(D_ACKRECV)
+			printf("tp_data_retrans: 0 window tpcb 0x%x una 0x%x\n",
+				tpcb, tpcb->tp_snduna);
+		ENDDEBUG
 		tpcb->tp_rxtshift = 0;
 		tpcb->tp_timer[TM_data_retrans] = 0;
 		tpcb->tp_timer[TM_sendack] = tpcb->tp_dt_ticks;
+		return;
 	}
 	rexmt = tpcb->tp_dt_ticks << min(tpcb->tp_rxtshift, TP_MAXRXTSHIFT);
 	win = min(tpcb->tp_fcredit, (tpcb->tp_cong_win / tpcb->tp_l_tpdusize / 2));
@@ -256,10 +260,9 @@ tp_fasttimo()
 			tp_ftimeolist = (struct tp_pcb *)&tp_ftimeolist;
 		} else {
 			if (t->tp_flags & TPF_DELACK) {
-				t->tp_flags &= ~TPF_DELACK;
 				IncStat(ts_Fdelack);
 				tp_driver(t, &E);
-				t->tp_timer[TM_sendack] = t->tp_keepalive_ticks;
+				t->tp_flags &= ~TPF_DELACK;
 			} else
 				IncStat(ts_Fpruned);
 			tp_ftimeolist = t->tp_fasttimeo;
