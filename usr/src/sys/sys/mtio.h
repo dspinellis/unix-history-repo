@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)mtio.h	7.3 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)mtio.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -11,26 +22,26 @@
  */
 
 /* structure for MTIOCTOP - mag tape op command */
-struct	mtop	{
+struct mtop {
 	short	mt_op;		/* operations defined below */
 	daddr_t	mt_count;	/* how many of them */
 };
 
 /* operations */
-#define MTWEOF	0	/* write an end-of-file record */
-#define MTFSF	1	/* forward space file */
-#define MTBSF	2	/* backward space file */
-#define MTFSR	3	/* forward space record */
-#define MTBSR	4	/* backward space record */
-#define MTREW	5	/* rewind */
-#define MTOFFL	6	/* rewind and put the drive offline */
-#define MTNOP	7	/* no operation, sets status only */
-#define MTCACHE	8	/* enable controller cache */
-#define MTNOCACHE 9	/* disable controller cache */
+#define MTWEOF		0	/* write an end-of-file record */
+#define MTFSF		1	/* forward space file */
+#define MTBSF		2	/* backward space file */
+#define MTFSR		3	/* forward space record */
+#define MTBSR		4	/* backward space record */
+#define MTREW		5	/* rewind */
+#define MTOFFL		6	/* rewind and put the drive offline */
+#define MTNOP		7	/* no operation, sets status only */
+#define MTCACHE		8	/* enable controller cache */
+#define MTNOCACHE	9	/* disable controller cache */
 
 /* structure for MTIOCGET - mag tape get status command */
 
-struct	mtget	{
+struct mtget {
 	short	mt_type;	/* type of magtape device */
 /* the following two registers are grossly device dependent */
 	short	mt_dsreg;	/* ``drive status'' register */
