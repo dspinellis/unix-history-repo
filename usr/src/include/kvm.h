@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm.h	1.1 (Berkeley) %G%
+ *	@(#)kvm.h	5.1 (Berkeley) %G%
  */
 
 #include <sys/kinfo.h>
+#include <sys/cdefs.h>
 
 /*
  * type byte prepending key
@@ -17,16 +18,10 @@
 
 #define	KVMDBDIR	"/var/run"
 
-#if __STDC__ || c_plusplus
-extern	struct proc *kvm_nextproc(void);
-extern	struct eproc *kvm_geteproc(const struct proc *);
-extern	struct user *kvm_getu(const struct proc *);
-extern	char *kvm_getargs(const struct proc *, const struct user *);
-extern	char *kvm_geterr(void);
-#else
-extern	struct proc *kvm_nextproc();
-extern	struct eproc *kvm_geteproc();
-extern	struct user *kvm_getu();
-extern	char *kvm_getargs();
-extern	char *kvm_geterr();
-#endif
+__BEGIN_DECLS
+struct proc *kvm_nextproc __P((void));
+struct eproc *kvm_geteproc __P((const struct proc *));
+struct user *kvm_getu __P((const struct proc *));
+char *kvm_getargs __P((const struct proc *, const struct user *));
+char *kvm_geterr __P((void));
+__END_DECLS
