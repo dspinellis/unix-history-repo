@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.6 (Berkeley) %G%
+**	@(#)sendmail.h	5.7 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.6		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.7		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -478,6 +478,11 @@ EXTERN char	ErrorMode;	/* error mode, see below */
 #define EM_WRITE	'w'		/* write back errors */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
+
+/* offset used to issure that the error messages for name server error
+ * codes are unique.
+ */
+#define	MAX_ERRNO	100
 /*
 **  Global variables.
 */
