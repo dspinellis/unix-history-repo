@@ -6,41 +6,38 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifdef sunos
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
 #include <sys/time.h>
-#else
-#include <sys/param.h>
-#include <sys/wait.h>
-#include <stdio.h>
-#endif
-#include <signal.h>
-#include <time.h>
+
+#include <errno.h>
 #include <fstab.h>
 #include <grp.h>
-#include <utmp.h>
-#include <tzfile.h>
-#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
 #ifdef __STDC__
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#else
+#endif
+#include <tzfile.h>
+#ifdef __STDC__
+#include <unistd.h>
+#endif
+#include <utmp.h>
+#ifndef __STDC__
 #include <varargs.h>
 #endif
+
 #include "dump.h"
 #include "pathnames.h"
 
-static void alarmcatch();
-static void sendmes();
+void	alarmcatch __P((/* int, int */));
+int	datesort __P((const void *, const void *));
+static	void sendmes __P((char *, char *));
 
 /*
  *	Query the operator; This previously-fascist piece of code
@@ -53,8 +50,8 @@ static void sendmes();
  *	Every 2 minutes we reprint the message, alerting others
  *	that dump needs attention.
  */
-int	timeout;
-char	*attnmessage;		/* attention message */
+static	int timeout;
+static	char *attnmessage;		/* attention message */
 
 int
 query(question)
@@ -104,7 +101,7 @@ char lastmsg[100];
  *	Alert the console operator, and enable the alarm clock to
  *	sleep for 2 minutes in case nobody comes to satisfy dump
  */
-static void
+void
 alarmcatch()
 {
 	if (notify == 0) {
@@ -163,7 +160,6 @@ set_operators()
 	}
 }
 
-struct tm *localtime();
 struct tm *localclock;
 
 /*
@@ -433,7 +429,6 @@ fstabsearch(key)
 {
 	register struct pfstab *pf;
 	register struct fstab *fs;
-	char *rawname();
 
 	for (pf = table; pf != NULL; pf = pf->pf_next) {
 		fs = pf->pf_fstab;
@@ -464,7 +459,7 @@ lastdump(arg)
 	register struct fstab *dt;
 	register struct dumpdates *dtwalk;
 	char *lastname, *date;
-	int dumpme, datesort();
+	int dumpme;
 	time_t tnow;
 
 	(void) time(&tnow);
@@ -501,7 +496,7 @@ lastdump(arg)
 
 int
 datesort(a1, a2)
-	void *a1, *a2;
+	const void *a1, *a2;
 {
 	struct dumpdates *d1 = *(struct dumpdates **)a1;
 	struct dumpdates *d2 = *(struct dumpdates **)a2;
@@ -512,4 +507,3 @@ datesort(a1, a2)
 		return (d2->dd_ddate - d1->dd_ddate);
 	return (diff);
 }
-

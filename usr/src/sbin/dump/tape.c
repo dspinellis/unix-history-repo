@@ -6,33 +6,38 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifdef sunos
 #include <sys/param.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/stat.h>
-#include <ufs/fs.h>
-#else
-#include <sys/param.h>
-#include <sys/wait.h>
-#include <ufs/ffs/fs.h>
-#endif
+#include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#ifdef sunos
+#include <sys/vnode.h>
+
+#include <ufs/fs.h>
+#include <ufs/inode.h>
+#else
+#include <ufs/ffs/fs.h>
 #include <ufs/ufs/dinode.h>
-#include <signal.h>
-#include <fcntl.h>
+#endif
+
 #include <protocols/dumprestore.h>
+
 #include <errno.h>
+#include <fcntl.h>
 #include <setjmp.h>
+#include <signal.h>
+#include <stdio.h>
 #ifdef __STDC__
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#else
+int	write(), read();
 #endif
-#include <sys/socket.h>
+
 #include "dump.h"
 #include "pathnames.h"
 
@@ -45,13 +50,13 @@ extern	int ntrec;		/* blocking factor on tape */
 extern	int cartridge;
 extern	char *host;
 char	*nexttape;
-#ifdef RDUMP
-int	rmtopen(), rmtwrite();
-void	rmtclose();
-#endif RDUMP
-void	rollforward();
-int	atomic();
-void	doslave(), enslave(), flushtape(), killall();
+
+static	int atomic __P((int (*)(), int, char *, int));
+static	void doslave __P((int, int));
+static	void enslave __P((void));
+static	void flushtape __P((void));
+static	void killall __P((void));
+static	void rollforward __P((void));
 
 /*
  * Concurrent dump mods (Caltech) - disk block reading and tape writing
@@ -202,14 +207,11 @@ sigpipe(signo)
 	quit("Broken pipe\n");
 }
 
-void
+static void
 flushtape()
 {
 	int i, blks, got;
 	long lastfirstrec;
-#ifndef __STDC__
-	int write(), read();
-#endif
 
 	int siz = (char *)nextblock - (char *)slp->req;
 
@@ -515,7 +517,6 @@ startnewtape(top)
 	char	*p;
 #ifdef sunos
 	void	(*interrupt_save)();
-	char	*index();
 #else
 	sig_t	interrupt_save;
 #endif
@@ -523,7 +524,7 @@ startnewtape(top)
 	interrupt_save = signal(SIGINT, SIG_IGN);
 	parentpid = getpid();
 
-    restore_check_point:
+restore_check_point:
 	(void)signal(SIGINT, interrupt_save);
 	/*
 	 *	All signals are inherited...
@@ -544,7 +545,7 @@ startnewtape(top)
 #ifdef TDEBUG
 		msg("Tape: %d; parent process: %d child process %d\n",
 			tapeno+1, parentpid, childpid);
-#endif TDEBUG
+#endif /* TDEBUG */
 		while ((waitpid = wait(&status)) != childpid)
 			msg("Parent %d waiting for child %d has another child %d return\n",
 				parentpid, childpid, waitpid);
@@ -569,7 +570,7 @@ startnewtape(top)
 					childpid, status);
 				break;
 		}
-#endif TDEBUG
+#endif /* TDEBUG */
 		switch(status) {
 			case X_FINOK:
 				Exit(X_FINOK);
@@ -587,7 +588,7 @@ startnewtape(top)
 		sleep(4);	/* allow time for parent's message to get out */
 		msg("Child on Tape %d has parent %d, my pid = %d\n",
 			tapeno+1, parentpid, getpid());
-#endif TDEBUG
+#endif /* TDEBUG */
 		/*
 		 * If we have a name like "/dev/rmt0,/dev/rmt1",
 		 * use the name before the comma first, and save
@@ -655,15 +656,15 @@ dumpabort(signo)
 	Exit(X_ABORT);
 }
 
-void
+__dead void
 Exit(status)
 	int status;
 {
 
 #ifdef TDEBUG
 	msg("pid = %d exits with status %d\n", getpid(), status);
-#endif TDEBUG
-	(void) exit(status);
+#endif /* TDEBUG */
+	exit(status);
 }
 
 /*
@@ -740,16 +741,13 @@ killall()
  * file, allowing the following process to lock it and proceed. We
  * get the lock back for the next cycle by swapping descriptors.
  */
-void
+static void
 doslave(cmd, slave_number)
 	register int cmd;
         int slave_number;
 {
 	register int nread;
 	int nextslave, size, wrote, eot_count;
-#ifndef __STDC__
-	int read();
-#endif
 #ifdef ROLLDEBUG
 	int dodump = 2;
 	FILE *out;
@@ -885,10 +883,11 @@ doslave(cmd, slave_number)
  * or a write may not write all we ask if we get a signal,
  * loop until the count is satisfied (or error).
  */
-int
+static int
 atomic(func, fd, buf, count)
-	int (*func)(), fd, count;
+	int (*func)(), fd;
 	char *buf;
+	int count;
 {
 	int got, need = count;
 
