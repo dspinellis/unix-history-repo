@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.29 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -144,7 +144,7 @@ setsid(p, uap, retval)
 	if (p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
 		return (EPERM);
 	} else {
-		enterpgrp(p, p->p_pid, 1);
+		(void)enterpgrp(p, p->p_pid, 1);
 		*retval = p->p_pid;
 		return (0);
 	}
@@ -193,8 +193,7 @@ setpgid(curp, uap, retval)
 		if ((pgrp = pgfind(uap->pgid)) == 0 ||
 	            pgrp->pg_session != curp->p_session)
 			return (EPERM);
-	enterpgrp(targp, uap->pgid, 0);
-	return (0);
+	return (enterpgrp(targp, uap->pgid, 0));
 }
 
 struct setuid_args {
