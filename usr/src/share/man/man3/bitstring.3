@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)bitstring.3	5.1 (Berkeley) %G%
+.\"	@(#)bitstring.3	5.2 (Berkeley) %G%
 .\"
 .TH BITSTRING 3  ""
 .UC 4
@@ -42,11 +42,11 @@ int bit;
 
 bit_ffc(name, nbits, value)
 bitstr_t name;
-int nbits, value;
+int nbits, *value;
 
 bit_ffs(name, nbits, value)
 bitstr_t name;
-int nbits, value;
+int nbits, *value;
 
 bit_nclear(name, start, stop)
 bitstr_t name;
@@ -117,37 +117,29 @@ of bit string
 is set, and non-zero otherwise.
 .PP
 .I Bit_ffs
-stores in
+stores in the location referenced by
 .I value
 the zero-based number of the first bit set in the array of
 .I nbits
 bits referenced by
 .IR name .
-If no bits are set,
+If no bits are set, the location referenced by
 .I value
 is set to -1.
 .PP
 .I Bit_ffc
-stores in
+stores in the location referenced by
 .I value
 the zero-based number of the first bit not set in the array of
 .I nbits
 bits referenced by
 .IR name .
-If all bits are set,
+If all bits are set, the location referenced by
 .I value
 is set to -1.
 .PP
-The macros
-.IR bit_nclear ,
-.IR bit_nset ,
-.I bit_ffc
-and
-.I bit_ffs
-are fairly complex.
-It should be noted that they evaluate some of their arguments multiple
-times.
-Their arguments should not have side effects.
+The arguments to these macros are evaluated only once and may safely
+have side effects.
 .SH EXAMPLE
 .nf
 .in +5
