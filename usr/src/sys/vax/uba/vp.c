@@ -1,4 +1,4 @@
-/*	vp.c	4.17	82/08/22	*/
+/*	vp.c	4.18	82/09/12	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -189,15 +189,15 @@ minvpph(bp)
 }
 
 /*ARGSUSED*/
-vpwrite(dev)
+vpwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
 	if (VPUNIT(dev) >= NVP)
-		u.u_error = ENXIO;
-	else
-		physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE,
-		    minvpph, uio);
+		return (ENXIO);
+	return (physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE,
+		    minvpph, uio));
 }
 
 vpwait(dev)

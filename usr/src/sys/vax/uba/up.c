@@ -1,4 +1,4 @@
-/*	up.c	4.58	82/08/22	*/
+/*	up.c	4.59	82/09/12	*/
 
 #include "up.h"
 #if NSC > 0
@@ -664,9 +664,8 @@ upread(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NUP)
-		u.u_error = ENXIO;
-	else
-		physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys, uio);
+		return (ENXIO);
+	return (physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys, uio));
 }
 
 upwrite(dev, uio)
@@ -676,9 +675,8 @@ upwrite(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NUP)
-		u.u_error = ENXIO;
-	else
-		physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys, uio);
+		return (ENXIO);
+	return (physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*

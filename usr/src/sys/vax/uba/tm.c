@@ -1,4 +1,4 @@
-/*	tm.c	4.53	82/08/22	*/
+/*	tm.c	4.54	82/09/12	*/
 
 #include "te.h"
 #include "ts.h"
@@ -746,22 +746,24 @@ tmread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = tmphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_READ, minphys, uio);
+	errno = tmphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
 tmwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = tmphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_WRITE, minphys, uio);
+	errno = tmphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_WRITE, minphys, uio));
 }
 
 /*
