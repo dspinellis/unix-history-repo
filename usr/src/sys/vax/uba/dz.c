@@ -1,4 +1,4 @@
-/*	dz.c	4.28	81/07/25	*/
+/*	dz.c	4.29	81/08/31	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -57,11 +57,7 @@ struct	uba_driver dzdriver =
 #define	DZ_RIE	0100		/* Receiver Interrupt Enable */
 #define	DZ_SAE	010000		/* Silo Alarm Enable */
 #define	DZ_TIE	040000		/* Transmit Interrupt Enable */
-#if NBK == 0
-#define	DZ_IEN	(DZ_MSE|DZ_RIE|DZ_TIE)
-#else
 #define	DZ_IEN	(DZ_MSE|DZ_RIE|DZ_TIE|DZ_SAE)
-#endif
 
 /* Flags for modem-control */
 #define	DZ_ON	1
