@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <disktab.h>
@@ -31,13 +31,13 @@ getdiskbyname(name)
 	cp += strlen(name) + 1;
 	dp->d_type = dgetstr("ty", &cp);
 	dp->d_secsize = dgetnum("se");
-	if (dp->d_secsize < 0)
+	if (dp->d_secsize <= 0)
 		dp->d_secsize = 512;
 	dp->d_ntracks = dgetnum("nt");
 	dp->d_nsectors = dgetnum("ns");
 	dp->d_ncylinders = dgetnum("nc");
 	dp->d_rpm = dgetnum("rm");
-	if (dp->d_rpm < 0)
+	if (dp->d_rpm <= 0)
 		dp->d_rpm = 3600;
 	dp->d_badsectforw = dgetflag("sf");
 	dp->d_sectoffset = dgetflag("so");
