@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1838,7 +1838,7 @@ remotename(name, m, senderaddress, header, canonical, e)
 	**	This will leave the name as a comment and a $g macro.
 	*/
 
-	if (canonical)
+	if (canonical || bitnset(M_NOCOMMENT, m->m_flags))
 		fancy = "\001g";
 	else
 		fancy = crackaddr(name);
