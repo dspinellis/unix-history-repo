@@ -1,4 +1,4 @@
-/*	if_imp.c	4.11	82/03/05	*/
+/*	if_imp.c	4.12	82/03/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -242,9 +242,7 @@ COUNT(IMPINPUT);
 			sc->imp_state = IMPS_INIT;
 			sc->imp_dropcnt = IMP_DROPCNT;
 		}
-		if (sc->imp_state != IMPS_INIT)
-			goto rawlinkin;
-		if (--sc->imp_dropcnt > 0)
+		if (sc->imp_state != IMPS_INIT || --sc->imp_dropcnt > 0)
 			goto rawlinkin;
 		sc->imp_state = IMPS_UP;
 		sin = &sc->imp_if.if_addr;
@@ -471,6 +469,7 @@ COUNT(IMPSND);
 	 * Do RFNM counting for data messages
 	 * (no more than 8 outstanding to any host)
 	 */ 
+	x = splimp();
 	if (ip->il_mtype == IMPTYPE_DATA) {
 		struct in_addr addr;
 
@@ -481,7 +480,6 @@ COUNT(IMPSND);
 #endif
                 addr.s_host = ip->il_host;
                 addr.s_imp = ip->il_imp;
-		x = splimp();
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
 
@@ -491,14 +489,12 @@ COUNT(IMPSND);
 		if (hp) {
 			if (hp->h_rfnm < 8) {
 				hp->h_rfnm++;
-				splx(x);
 				goto enque;
 			}
-			if (hp->h_qcnt >= 8)	/* high water mark */
-				goto drop;
-			HOST_ENQUE(hp, m);
-			splx(x);
-			goto start;
+			if (hp->h_qcnt < 8) {	/* high water mark */
+				HOST_ENQUE(hp, m);
+				goto start;
+			}
 		}
 drop:
 		m_freem(m);
@@ -506,11 +502,9 @@ drop:
 		return (0);
 	}
 enque:
-        x = splimp();
 	IF_ENQUEUE(&ifp->if_snd, m);
-	splx(x);
-
 start:
+	splx(x);
 	icp = &imp_softc[ifp->if_unit].imp_cb;
 	if (icp->ic_oactive == 0)
 		(*icp->ic_start)(ifp->if_unit);
