@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -261,11 +261,9 @@ hdrstop()
 setscreensize()
 {
 	struct sgttyb tbuf;
-#ifdef	TIOCGWINSZ
 	struct winsize ws;
 
 	if (ioctl(1, TIOCGWINSZ, (char *) &ws) < 0)
-#endif
 		ws.ws_col = ws.ws_row = 0;
 	if (gtty(1, &tbuf) < 0)
 		tbuf.sg_ospeed = B9600;
