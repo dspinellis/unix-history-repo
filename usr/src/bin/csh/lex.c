@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "sh.h"
@@ -111,7 +111,8 @@ prlex(sp0)
 		sp = sp->next;
 		if (sp == sp0)
 			break;
-		printf(" ");
+		if (sp->word[0] != '\n')
+			putchar(' ');
 	}
 }
 
