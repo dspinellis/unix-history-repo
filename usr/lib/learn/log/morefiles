@@ -1,0 +1,14 @@
+Mon Nov  3 19:52:04 1980 L0.1a   fail  0 cary
+Mon Nov  3 19:53:09 1980 L0.1b   pass  0 cary
+Mon Nov  3 19:54:00 1980 L0.1c   pass  1 cary
+Mon Nov  3 19:54:42 1980 L0.1d   pass  2 cary
+Mon Nov  3 19:55:11 1980 L0.1e   pass  3 cary
+Mon Nov  3 19:55:47 1980 L0.1f   fail  4 cary
+Mon Nov  3 19:56:03 1980 L0.1g   pass  0 cary
+Mon Nov  3 19:59:46 1980 L1.1a   pass  1 cary
+Mon Nov  3 20:00:40 1980 L1.1b   pass  2 cary
+Mon Nov  3 20:02:45 1980 L1.1c   pass  3 cary
+Mon Nov  3 20:03:42 1980 L1.1d   fail  4 cary
+Wed Sep 16 16:34:28 1981 L0.1a   pass  0 root
+Wed Sep 16 16:36:22 1981 L0.1b   fail  1 root
+Wed Sep 16 16:37:31 1981 L0.1b   pass  1 root
