@@ -1,11 +1,12 @@
 #ifndef lint
-static	char sccsid[] = "@(#)comsat.c	4.10 (Berkeley) %G%";
+static	char sccsid[] = "@(#)comsat.c	4.11 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 
@@ -27,11 +28,13 @@ int	debug = 0;
 struct	sockaddr_in sin = { AF_INET };
 extern	errno;
 
+char	hostname[32];
 struct	utmp utmp[100];
 int	nutmp;
 int	uf;
 unsigned utmpmtime;			/* last modification time for utmp */
 int	onalrm();
+int	reapchildren();
 long	lastmsgtime;
 
 #define	MAXIDLE	120
@@ -61,9 +64,11 @@ main(argc, argv)
 		exit(1);
 	}
 	lastmsgtime = time(0);
+	gethostname(hostname, sizeof (hostname));
 	onalrm();
 	signal(SIGALRM, onalrm);
 	signal(SIGTTOU, SIG_IGN);
+	signal(SIGCHLD, reapchildren);
 	for (;;) {
 		cc = recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		if (cc <= 0) {
@@ -78,6 +83,13 @@ main(argc, argv)
 		mailfor(msgbuf);
 		sigsetmask(0);
 	}
+}
+
+reapchildren()
+{
+
+	while (wait3((struct wait *)0, WNOHANG, (struct rusage *)0) > 0)
+		;
 }
 
 onalrm()
@@ -119,13 +131,7 @@ mailfor(name)
 	offset = atoi(cp+1);
 	while (--utp >= utmp)
 		if (!strncmp(utp->ut_name, name, sizeof(utmp[0].ut_name)))
-			if (fork() == 0) {
-				signal(SIGALRM, SIG_DFL);
-				alarm(30);
-				notify(utp, offset), exit(0);
-			} else
-				while (wait3(0, WNOHANG, 0) > 0)
-					continue;
+			notify(utp, offset);
 }
 
 char *cr;
@@ -135,8 +141,7 @@ notify(utp, offset)
 {
 	FILE *tp;
 	struct sgttyb gttybuf;
-	char tty[20], hostname[32];
-	char name[sizeof (utmp[0].ut_name) + 1];
+	char tty[20], name[sizeof (utmp[0].ut_name) + 1];
 	struct stat stb;
 
 	strcpy(tty, "/dev/");
@@ -146,20 +151,23 @@ notify(utp, offset)
 		dprintf("wrong mode\n");
 		return;
 	}
+	if (fork())
+		return;
+	signal(SIGALRM, SIG_DFL);
+	alarm(30);
 	if ((tp = fopen(tty,"w")) == 0) {
 		dprintf("fopen failed\n");
-		return;
+		exit(-1);
 	}
 	ioctl(fileno(tp), TIOCGETP, &gttybuf);
 	cr = (gttybuf.sg_flags & CRMOD) ? "" : "\r";
-	gethostname(hostname, sizeof (hostname));
 	strncpy(name, utp->ut_name, sizeof (utp->ut_name));
-	name[sizeof (name) - 1] = 0;
+	name[sizeof (name) - 1] = '\0';
 	fprintf(tp,"%s\n\007New mail for %s@%s\007 has arrived:%s\n",
 	    cr, name, hostname, cr);
 	fprintf(tp,"----%s\n", cr);
 	jkfprintf(tp, name, offset);
-	fclose(tp);
+	exit(0);
 }
 
 jkfprintf(tp, name, offset)
@@ -176,7 +184,7 @@ jkfprintf(tp, name, offset)
 		dprintf("Cant read the mail\n");
 		return;
 	}
-	fseek(fi, offset, 0);
+	fseek(fi, offset, L_SET);
 	/* 
 	 * Print the first 7 lines or 560 characters of the new mail
 	 * (whichever comes first).  Skip header crap other than
