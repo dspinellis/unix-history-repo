@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.12 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.13 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.12 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.13 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -130,7 +130,7 @@ queueup(e, queueall, announce)
 	}
 
 	if (tTd(40, 1))
-		printf("queueing %s\n", e->e_id);
+		printf("\n>>>>> queueing %s >>>>>\n", e->e_id);
 
 	/*
 	**  If there is no data file yet, create one.
@@ -332,6 +332,9 @@ queueup(e, queueall, announce)
 	if (LogLevel > 79)
 		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif /* LOG */
+
+	if (tTd(40, 1))
+		printf("<<<<< done queueing %s <<<<<\n\n", e->e_id);
 	return;
 }
 

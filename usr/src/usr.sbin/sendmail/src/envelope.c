@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -216,8 +216,8 @@ dropenvelope(e)
 	if ((!queueit && !bitset(EF_KEEPQUEUE, e->e_flags)) ||
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
-		if (tTd(50, 2))
-			printf("Dropping envelope\n");
+		if (tTd(50, 1))
+			printf("\n===== Dropping [dq]f%s =====\n\n", e->e_id);
 		if (e->e_df != NULL)
 			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
@@ -230,7 +230,7 @@ dropenvelope(e)
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
 	{
 #ifdef QUEUE
-		queueup(e, FALSE, FALSE);
+		queueup(e, bitset(EF_KEEPQUEUE, e->e_flags), FALSE);
 #else /* QUEUE */
 		syserr("554 dropenvelope: queueup");
 #endif /* QUEUE */
