@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -146,7 +146,7 @@ wwinit()
 	 * since tt_init() has already made its own copy of it and
 	 * wwterm now points to the copy.
 	 */
-	(void) setenv("TERM", "window", 1);
+	(void) setenv("TERM", WWT_TERM, 1);
 
 	(void) signal(SIGPIPE, SIG_IGN);
 	(void) sigsetmask(s);
