@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.13 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $

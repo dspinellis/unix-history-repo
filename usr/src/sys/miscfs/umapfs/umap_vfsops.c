@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.4 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
