@@ -1,5 +1,5 @@
 /*
- *	@(#)disklabel.h	7.4 (Berkeley) %G%
+ *	@(#)disklabel.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -204,13 +204,22 @@ struct format_op {
 };
 
 /*
+ * Structure used internally to retrieve
+ * information about a partition on a disk.
+ */
+struct partinfo {
+	struct disklabel *disklab;
+	struct partition *part;
+};
+
+/*
  * Disk-specific ioctls.
  */
 		/* get and set disklabel; last form used internally */
 #define DIOCGDINFO	_IOR(d, 101, struct disklabel)	/* get */
 #define DIOCSDINFO	_IOW(d, 102, struct disklabel)	/* set */
 #define DIOCWDINFO	_IOW(d, 103, struct disklabel)	/* set and write back */
-#define DIOCGDINFOP	_IOW(d, 104, struct disklabel *) /* get pointer */
+#define DIOCGPART	_IOW(d, 104, struct partinfo)	/* get partition */
 
 /* do format operation, read or write */
 #define DIOCRFORMAT	_IOWR(d, 105, struct format_op)
