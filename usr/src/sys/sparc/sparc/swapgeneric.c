@@ -1,7 +1,7 @@
 /*
  * dummy swapgeneric.c: not used in new config system.
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
