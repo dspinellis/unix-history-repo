@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)munmap.2	6.2 (Berkeley) %G%
+.\"	@(#)munmap.2	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MUNMAP 2
@@ -12,7 +12,7 @@
 .Nm munmap
 .Nd remove a mapping
 .Sh SYNOPSIS
-.Fn munmap "caddr_t addr" "int len"
+.Fn munmap "caddr_t addr" "size_t len"
 .Sh DESCRIPTION
 The
 .Fn munmap
