@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -163,7 +163,7 @@ main(argc, argv)
 arg1:			if (insingle || indouble)
 				 err("unterminated quote");
 
-arg2:			*p++ = '\0';
+arg2:			*p = '\0';
 			*xp++ = argp;
 
 			/*
@@ -180,7 +180,8 @@ arg2:			*p++ = '\0';
 					exit(0);
 				p = bbp;
 				xp = bxp;
-			}
+			} else
+				++p;
 			argp = p;
 			break;
 		case '\'':
@@ -199,7 +200,7 @@ arg2:			*p++ = '\0';
 				err("backslash at EOF");
 			/* FALLTHROUGH */
 		default:
-addch:			if (p != ebp) {
+addch:			if (p < ebp) {
 				*p++ = ch;
 				break;
 			}
