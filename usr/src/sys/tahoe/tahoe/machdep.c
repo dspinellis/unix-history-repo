@@ -1,4 +1,4 @@
-/*	machdep.c	1.3	86/01/12	*/
+/*	machdep.c	1.4	86/01/24	*/
 
 #include "../tahoe/reg.h"
 #include "../tahoe/pte.h"
@@ -412,6 +412,10 @@ boot(paniced, arghowto)
 		waittime = 0;
 		update();
 		printf("syncing disks... ");
+		/*
+		 * Release inodes held by texts before update.
+		 */
+		xumount(NODEV);
 		{ register struct buf *bp;
 		  int iter, nbusy, oldnbusy;
 
@@ -590,6 +594,20 @@ buserror(v)
 	    ((reg&MCBR)>>16)&0xffff, reg & 0xffc3);
 	if ((busef->memerreg&IVV) == 0)
 		panic("buserror");
+}
+
+microtime(tvp)
+	register struct timeval *tvp;
+{
+	int s = splhigh();
+
+	*tvp = time;
+	tvp->tv_usec += tick;
+	while (tvp->tv_usec > 1000000) {
+		tvp->tv_sec++;
+		tvp->tv_usec -= 1000000;
+	}
+	splx(s);
 }
 
 physstrat(bp, strat, prio)
