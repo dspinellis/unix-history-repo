@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.36 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.37 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -594,6 +594,7 @@ buildtree( o, l, r ) register NODE *l, *r; {
 int fpe_count = -1;
 jmp_buf gotfpe;
 
+void
 fpe() {
 	if (fpe_count < 0)
 		cerror("floating point exception");
