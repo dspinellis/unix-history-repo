@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hexdump.h	5.5 (Berkeley) %G%
+ *	@(#)hexdump.h	5.6 (Berkeley) %G%
  */
 
 typedef struct _pr {
@@ -66,7 +66,6 @@ u_char	*get __P((void));
 void	 newsyntax __P((int, char ***));
 int	 next __P((char **));
 void	 nomem __P((void));
-void	 odoffset __P((int, char ***));
 void	 oldsyntax __P((int, char ***));
 void	 rewrite __P((FS *));
 int	 size __P((FS *));
