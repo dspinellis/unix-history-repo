@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.28 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -429,11 +429,11 @@ nfs_unmount(mp, mntflags, p)
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
 	struct vnode *vp;
-	int flags = 0;
-	int error;
+	int error, flags = 0;
+	extern int doforce;
 
 	if (mntflags & MNT_FORCE) {
-		if (mp == rootfs)
+		if (!doforce || mp == rootfs)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
