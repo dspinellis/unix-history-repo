@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sh.1	5.4 (Berkeley) %G%
+.\"	@(#)sh.1	5.5 (Berkeley) %G%
 .\"
 .na
 .TH SH 1
@@ -486,7 +486,7 @@ modified by redirection.  For example:
 
 $ command1 2>&1 | command2
 
-.nf
+.fi
 sends both the standard output and standard error of command1
 to the standard input of command2.
 .LP
@@ -529,7 +529,7 @@ is similar, but executes the second command iff  the  exit
 status of the first command is nonzero.  ``&&'' and ``||''
 both have the same priority.
 .LP
-An if command looks like
+The syntax of the if command is
 .nf
 
     if list
@@ -540,7 +540,7 @@ An if command looks like
     fi
 
 .fi
-A while command looks like
+The syntax of the while command is
 .nf
 
     while list
@@ -551,8 +551,9 @@ A while command looks like
 The two lists are executed repeatedly while the exit  status of the first list is zero.  The until command is similar, but has the word until in place of while
 repeats until the exit status of the first list is  zero.
 .LP
-The for command looks like
+The syntax of the for command is
 .nf
+
     for variable in word...
     do   list
     done
@@ -562,7 +563,7 @@ The  words  are  expanded,  and  then the list is executed
 repeatedly with the variable set to each word in turn.  do
 and done may be replaced with ``{'' and ``}''.
 .LP
-The break and continue commands look like
+The syntax of the break and continue command is
 .nf
 
     break [ num ]
@@ -572,7 +573,7 @@ The break and continue commands look like
 Break  terminates  the  num  innermost for or while loops.
 Continue continues with the next iteration of  the  innermost loop.  These are implemented as builtin commands.
 .LP
-The case command looks like
+The syntax of the case command is
 .nf
 
     case word in
@@ -603,7 +604,7 @@ The first of these executes the commands in a subshell.
 .B Functions
 .sp
 .LP
-A function definition looks like
+The syntax of a function definition is
 .nf
 
     name ( ) command
@@ -617,7 +618,7 @@ enclosed between ``{'' and ``}''.
 .LP
 Variables  may  be  declared  to be local to a function by
 using a local command.  This should appear  as  the  first
-staement of a function, and looks like
+staement of a function, and the syntax is
 .nf
 
     local [ variable | - ] ...
@@ -640,7 +641,7 @@ changed  via  the  set  command  inside the function to be
 restored to  their  original  values  when  the  function
 returns.
 .LP
-The return command looks like
+The syntax of the return command is
 .nf
 
     return [ exitstatus ]
@@ -1272,5 +1273,5 @@ insert mode.
 With vi-mode enabled, sh can be switched between insert mode and command
 mode.  The editor is not described in full here, but will be in a later
 document.  It's similar to vi: typing <ESC> will throw you into
-command VI command mode.  Hitting <return> while in command cmode
+command VI command mode.  Hitting <return> while in command mode
 will pass the line to the shell.
