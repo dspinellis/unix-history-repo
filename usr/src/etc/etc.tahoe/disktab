@@ -1,4 +1,4 @@
-#	@(#)disktab	4.9 (Berkeley) %G%
+#	@(#)disktab	4.10 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
@@ -33,10 +33,10 @@
 #	d0	drive config flag, 0 for smd, 16 for esdi (autoconfigured)
 #	d1	number of bytes per track (for formatter only)
 
-eagle|egl|474 Mb Fujitsu Eagle:\
+eagle|egl|474 Mb Fujitsu 2351A Eagle:\
  	:ty=winchester:ns#44:nt#20:nc#842:rm#3961:se#512:\
 	:dt=SMD:\
-	:d0#0:d1#27720:\
+	:d0#0:d1#28160:\
  	:pa#52800:oa#0:ba#4096:fa#1024:\
  	:pb#66000:ob#52800:bb#4096:fb#1024:tb=swap:\
  	:pc#617760:oc#118800:bc#4096:fc#1024:\
