@@ -1,0 +1,4 @@
+Mmount_union	mount_union.c	/^main(argc, argv)$/
+getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
+subdir	mount_union.c	/^subdir(p, dir)$/
+usage	mount_union.c	/^usage()$/
