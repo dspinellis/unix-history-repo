@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.11 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -224,7 +224,7 @@ loop:
 	printf("%4d", pgtok(rate.v_pgpgin)/nintv);
 	printf("%4d%4d%4d%4d", pgtok(rate.v_pgpgout)/nintv,
 	    pgtok(rate.v_dfree)/nintv, pgtok(deficit), rate.v_scan/nintv);
-	etime /= 60.;
+	etime /= (float) hz;
 	for(i=0; i<4; i++)
 		stats(i);
 #ifdef sun
