@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -48,6 +48,7 @@ x_doprnt(fmt, argp, fp)
 	char argsize, printsign, *_cvt(), buf[MAXBUF];
 	int alternate, cnt, n, ladjust, width, prec, size;
 
+	digs = "0123456789abcdef";
 	for (cnt = 0; *fmt; ++fmt) {
 		if (*fmt != '%') {
 			PUTC(*fmt, fp);
@@ -63,9 +64,6 @@ flags:		switch (*++fmt) {
 		case '#':
 			alternate = 1;
 			goto flags;
-		case '%':			/* "%#%" prints as "%" */
-			PUTC('%', fp);
-			continue;
 		case '*':
 			/*
 			 * ``A negative field width argument is taken as a
@@ -119,14 +117,16 @@ flags:		switch (*++fmt) {
 		case 'l':
 			argsize |= LONGINT;
 			goto flags;
-		}
-
-		digs = "0123456789abcdef";
-
-		switch (*fmt) {
-		case 'c':
-			PUTC(va_arg(argp, int), fp);
+		case '%':			/* "%#%" prints as "%" */
+			PUTC('%', fp);
 			break;
+		case 'c': {
+			char ch;
+
+			ch = va_arg(argp, int);
+			PUTC(ch, fp);
+			break;
+		}
 		case 'd':
 		case 'i':
 			GETARG(reg_long);
@@ -145,12 +145,18 @@ flags:		switch (*++fmt) {
 		case 'e':
 			_double = va_arg(argp, double);
 			bp = _cvt(_double, prec, buf, EFORMAT, *fmt,
-			    printsign);
+			    printsign, alternate);
 			goto pbuf;
 		case 'f':
 			_double = va_arg(argp, double);
 			bp = _cvt(_double, prec, buf, FFORMAT, 'f',
-			    printsign);
+			    printsign, alternate);
+			goto pbuf;
+		case 'G':
+		case 'g':
+			_double = va_arg(argp, double);
+			bp = _cvt(_double, prec, buf, GFORMAT, *fmt - 2,
+			    printsign, alternate);
 pbuf:			size = bp - buf;
 			if (size < width && !ladjust)
 				do {
@@ -161,12 +167,6 @@ pbuf:			size = bp - buf;
 			for (; width > size; --width)
 				PUTC(padc, fp);
 			break;
-		case 'G':
-		case 'g':
-			_double = va_arg(argp, double);
-			bp = _cvt(_double, prec, buf, GFORMAT, *fmt - 2,
-			    printsign);
-			goto pbuf;
 		case 'n':
 			*(va_arg(argp, int *)) = cnt;
 			break;
@@ -240,6 +240,7 @@ num2:			while (++bp != &buf[MAXBUF])
 				PUTC(*bp, fp);
 			for (; width > size; --width)
 				PUTC(padc, fp);
+			digs = "0123456789abcdef";
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
 			return(ferror(fp) ? -1 : cnt);
@@ -251,9 +252,9 @@ num2:			while (++bp != &buf[MAXBUF])
 }
 
 char *
-_cvt(number, prec, bp, format, fmtch, printsign)
+_cvt(number, prec, bp, format, fmtch, printsign, alternate)
 	double number;
-	int prec, format;
+	int prec, format, alternate;
 	register char *bp;
 	char fmtch, printsign;
 {
@@ -283,11 +284,13 @@ _cvt(number, prec, bp, format, fmtch, printsign)
 			while(prec--)
 				*bp++ = *t ? *t++ : '0';
 		}
+		else if (alternate)
+			*bp++ = '.';
 		if (*t && *t > '4')
 			++bp[-1];
-		if (format == 2) {
+		if (format == GFORMAT && !alternate) {
 			for (; bp[-1] == '0'; --bp);
-			if (*bp == '.')
+			if (bp[-1] == '.')
 				--bp;
 		}
 		*bp++ = fmtch;
@@ -312,16 +315,18 @@ _cvt(number, prec, bp, format, fmtch, printsign)
 				else while (decpt++ < 0)
 					*bp++ = '0';
 			}
+			else if (alternate)
+				*bp++ = '.';
 		}
 		else {
 			for (n = 1; n <= decpt; n++)
 				*bp++ = *t++;
-			if (prec)
+			if (prec || alternate)
 				*bp++ = '.';
 		}
 		for (n = 1; n <= prec; n++)
 			*bp++ = *t ? *t++ : '0';
-		if (format == GFORMAT) {
+		if (format == GFORMAT && !alternate) {
 			for (; bp[-1] == '0'; --bp);
 			if (bp[-1] == '.')
 				--bp;
