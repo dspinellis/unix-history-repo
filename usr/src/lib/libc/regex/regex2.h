@@ -4,11 +4,11 @@
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Henry Spencer of the University of Toronto.
+ * Henry Spencer.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex2.h	8.3 (Berkeley) %G%
+ *	@(#)regex2.h	8.4 (Berkeley) %G%
  */
 
 /*
