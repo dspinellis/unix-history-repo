@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.54.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1249,6 +1249,7 @@ mailfile(filename, ctladdr)
 	register FILE *f;
 	register int pid;
 	ENVELOPE *e = CurEnv;
+	int mode;
 
 	/*
 	**  Fork so we can change permissions here.
@@ -1272,6 +1273,7 @@ mailfile(filename, ctladdr)
 
 		if (stat(filename, &stb) < 0)
 			stb.st_mode = 0666;
+		mode = stb.st_mode;
 
 		/* limit the errors to those actually caused in the child */
 		errno = 0;
@@ -1281,18 +1283,24 @@ mailfile(filename, ctladdr)
 			exit(EX_CANTCREAT);
 		if (ctladdr == NULL)
 			ctladdr = &e->e_from;
+		else
+		{
+			/* ignore setuid and setgid bits */
+			mode &= ~(S_ISGID|S_ISUID);
+		}
+
 		/* we have to open the dfile BEFORE setuid */
-		if (e->e_dfp == NULL &&  e->e_df != NULL)
+		if (e->e_dfp == NULL && e->e_df != NULL)
 		{
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
 			{
 				syserr("mailfile: Cannot open %s for %s from %s",
-				e->e_df, e->e_to, e->e_from);
+					e->e_df, e->e_to, e->e_from);
 			}
 		}
 
-		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
+		if (!bitset(S_ISGID, mode) || setgid(stb.st_gid) < 0)
 		{
 			if (ctladdr->q_uid == 0)
 			{
@@ -1302,12 +1310,12 @@ mailfile(filename, ctladdr)
 			else
 			{
 				(void) setgid(ctladdr->q_gid);
-				(void) initgroups(ctladdr->q_ruser?
-					ctladdr->q_ruser: ctladdr->q_user,
+				(void) initgroups(ctladdr->q_ruser ?
+					ctladdr->q_ruser : ctladdr->q_user,
 					ctladdr->q_gid);
 			}
 		}
-		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
+		if (!bitset(S_ISUID, mode) || setuid(stb.st_uid) < 0)
 		{
 			if (ctladdr->q_uid == 0)
 				(void) setuid(DefUid);
