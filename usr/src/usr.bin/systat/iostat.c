@@ -5,31 +5,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.8 (Berkeley) %G%";
 #endif not lint
 
-/*
- * iostat
- */
-#include "systat.h"
+#include <sys/param.h>
+#include <sys/dkstat.h>
 #include <sys/buf.h>
+
+#include <string.h>
+#include <stdlib.h>
+#include <nlist.h>
 #include <paths.h>
-
-WINDOW *
-openiostat()
-{
-	return (subwin(stdscr, LINES-1-5, 0, 5, 0));
-}
-
-closeiostat(w)
-	WINDOW *w;
-{
-	if (w == NULL)
-		return;
-	wclear(w);
-	wrefresh(w);
-	delwin(w);
-}
+#include "systat.h"
+#include "extern.h"
 
 static struct nlist nlst[] = {
 #define X_DK_BUSY	0
@@ -71,13 +59,38 @@ static  double etime;
 static  int numbers = 0;		/* default display bar graphs */
 static  int msps = 0;			/* default ms/seek shown */
 
-static int numlabels(), barlabels(), stats();
-static void stat1();
+static int barlabels __P((int));
+static void histogram __P((double, int, double));
+static int numlabels __P((int));
+static int stats __P((int, int, int));
+static void stat1 __P((int, int));
 
+
+WINDOW *
+openiostat()
+{
+	return (subwin(stdscr, LINES-1-5, 0, 5, 0));
+}
+
+void
+closeiostat(w)
+	WINDOW *w;
+{
+	if (w == NULL)
+		return;
+	wclear(w);
+	wrefresh(w);
+	delwin(w);
+}
+
+int
 initiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0) {
-		kvm_nlist(nlst);
+		if (kvm_nlist(kd, nlst)) {
+			nlisterr(nlst);
+			return(0);
+		}
 		if (nlst[X_DK_BUSY].n_type == 0) {
 			error("Disk init information isn't in namelist");
 			return(0);
@@ -98,6 +111,7 @@ initiostat()
 	return(1);
 }
 
+void
 fetchiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0)
@@ -112,6 +126,7 @@ fetchiostat()
 
 #define	INSET	10
 
+void
 labeliostat()
 {
 	int row;
@@ -194,6 +209,8 @@ barlabels(row)
 	return (row);
 }
 
+
+void
 showiostat()
 {
 	register int i, row, col;
@@ -214,7 +231,11 @@ showiostat()
 		etime = 1.0;
 	etime /= (float) hz;
 	row = 1;
-	for (i = 0; i < CPUSTATES; i++)
+
+	/*
+	 * Last CPU state not calculated yet.
+	 */ 
+	for (i = 0; i < CPUSTATES - 1; i++)
 		stat1(row++, i);
 	if (!numbers) {
 		row += 2;
@@ -297,6 +318,7 @@ stat1(row, o)
 	histogram(100.0 * s.cp_time[o] / time, 50, CPUSCALE);
 }
 
+static void
 histogram(val, colwidth, scale)
 	double val;
 	int colwidth;
@@ -320,6 +342,7 @@ histogram(val, colwidth, scale)
 	wclrtoeol(wnd);
 }
 
+int
 cmdiostat(cmd, args)
 	char *cmd, *args;
 {
