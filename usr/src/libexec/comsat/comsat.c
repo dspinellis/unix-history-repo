@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,17 +84,17 @@ main(argc, argv)
 	}
 	if ((uf = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
 		syslog(LOG_ERR, ".main: %s: %m", _PATH_UTMP);
-		(void) recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
+		(void) recv(0, msgbuf, sizeof(msgbuf) - 1, 0);
 		exit(1);
 	}
 	(void)time(&lastmsgtime);
-	(void)gethostname(hostname, sizeof (hostname));
+	(void)gethostname(hostname, sizeof(hostname));
 	onalrm();
 	(void)signal(SIGALRM, onalrm);
 	(void)signal(SIGTTOU, SIG_IGN);
 	(void)signal(SIGCHLD, reapchildren);
 	for (;;) {
-		cc = recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
+		cc = recv(0, msgbuf, sizeof(msgbuf) - 1, 0);
 		if (cc <= 0) {
 			if (errno != EINTR)
 				sleep(1);
@@ -172,11 +172,12 @@ notify(utp, offset)
 {
 	static char tty[20] = _PATH_DEV;
 	struct sgttyb gttybuf;
-	FILE *tp;
-	char name[sizeof (utmp[0].ut_name) + 1];
 	struct stat stb;
+	FILE *tp;
+	char name[sizeof(utmp[0].ut_name) + 1];
 
-	(void)strncpy(tty + 5, utp->ut_line, sizeof(utp->ut_line));
+	(void)strncpy(tty + sizeof(_PATH_DEV) - 1, utp->ut_line,
+	    sizeof(utp->ut_line));
 	if (stat(tty, &stb) || !(stb.st_mode & S_IEXEC)) {
 		dsyslog(LOG_DEBUG, "%s: wrong mode on %s", utp->ut_name, tty);
 		return;
@@ -193,8 +194,8 @@ notify(utp, offset)
 	(void)ioctl(fileno(tp), TIOCGETP, &gttybuf);
 	cr = (gttybuf.sg_flags&CRMOD) && !(gttybuf.sg_flags&RAW) ?
 	    "\n" : "\n\r";
-	(void)strncpy(name, utp->ut_name, sizeof (utp->ut_name));
-	name[sizeof (name) - 1] = '\0';
+	(void)strncpy(name, utp->ut_name, sizeof(utp->ut_name));
+	name[sizeof(name) - 1] = '\0';
 	(void)fprintf(tp, "%s\007New mail for %s@%.*s\007 has arrived:%s----%s",
 	    cr, name, sizeof(hostname), hostname, cr, cr);
 	jkfprintf(tp, name, offset);
@@ -224,7 +225,7 @@ jkfprintf(tp, name, offset)
 	linecnt = 7;
 	charcnt = 560;
 	inheader = 1;
-	while (fgets(line, sizeof (line), fi) != NULL) {
+	while (fgets(line, sizeof(line), fi) != NULL) {
 		if (inheader) {
 			if (line[0] == '\n') {
 				inheader = 0;
