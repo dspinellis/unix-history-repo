@@ -1,10 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	1.5 83/10/10";
+static	char *sccsid = "@(#)pl_2.c	1.6 83/10/14";
 #endif
 
 #include "player.h"
 
-#define turnfirst(buf)  (*buf == 'r' || *buf == 'l')
+#define turnfirst(x) (*x == 'r' || *x == 'l')
 
 lost()
 {
@@ -23,6 +23,7 @@ int ma, ta, af;
 {
 	int moved = 0;
 	int vma, dir;
+	char prompt[60];
 	char buf[60], last = '\0';
 	register char *p;
 
@@ -30,9 +31,8 @@ int ma, ta, af;
 		Signal("Already moved.", (struct ship *)0);
 		return;
 	}
-	Signal("move (%d,%c%d): ", (struct ship *)0, ma, af ? '\'' : ' ', ta);
-	sgetstr(buf, sizeof buf);
-	buf[sizeof movebuf - 1] = '\0';
+	sprintf(prompt, "move (%d,%c%d): ", ma, af ? '\'' : ' ', ta);
+	sgetstr(prompt, buf, sizeof buf);
 	dir = mf->dir;
 	vma = ma;
 	for (p = buf; *p; p++)
@@ -123,6 +123,7 @@ doboarding()
 	register int n;
 	int crew[3];
 	int men = 0;
+	char c;
 
 	crew[0] = mc->crew1;
 	crew[1] = mc->crew2;
@@ -150,34 +151,33 @@ doboarding()
 		if (ms->nationality == capship(sp)->nationality)
 			continue;
 		if (meleeing(ms, sp) && crew[2]) {
-			Signal("How many more to board the %s (%c%c)? ", sp);
-			parties(crew, sp, 0);
+			c = sgetch("How many more to board the %s (%c%c)? ",
+				sp, 1);
+			parties(crew, sp, 0, c);
 		} else if ((fouled2(ms, sp) || grappled2(ms, sp)) && crew[2]) {
-			Signal("Crew sections to board the %s (%c%c) (3 max) ?",
-				sp);
-			parties(crew, sp, 0);
+			c = sgetch("Crew sections to board the %s (%c%c) (3 max) ?", sp, 1);
+			parties(crew, sp, 0, c);
 		}
 	}
 	if (crew[2]) {
-		Signal("How many sections to repel boarders? ",
-			(struct ship *)0);
-		parties(crew, ms, 1);
+		c = sgetch("How many sections to repel boarders? ",
+			(struct ship *)0, 1);
+		parties(crew, ms, 1, c);
 	}
 }
 
-parties(crew, to, isdefense)
+parties(crew, to, isdefense, buf)
 register struct ship *to;
 int crew[3];
 char isdefense;
+char buf;
 {
 	register int k, j, men; 
 	struct BP *ptr;
-	int buf;
 	int temp[3];
 
 	for (k = 0; k < 3; k++)
 		temp[k] = crew[k];
-	buf = sgetch(1);
 	if (isdigit(buf)) {
 		ptr = isdefense ? to->file->DBP : to->file->OBP; 
 		for (j = 0; j < NBP && ptr[j].turnsent; j++)
@@ -237,7 +237,7 @@ int base, exp;
 
 repair()
 {
-	int buf;
+	char c;
 	char *repairs;
 	struct shipspecs *ptr;
 
@@ -246,9 +246,8 @@ repair()
 		return;
 	}
 	ptr = mc;
-	Signal("Repair (hull, guns, rigging)? ", (struct ship *)0);
-	buf = sgetch(1);
-	switch (buf) {
+	c = sgetch("Repair (hull, guns, rigging)? ", (struct ship *)0, 1);
+	switch (c) {
 		case 'h':
 			repairs = &mf->RH;
 			break;
@@ -265,13 +264,13 @@ repair()
 	repaired = 1;
 	if (++*repairs >= 3) {
 		*repairs = 0;
-		switch (buf) {
+		switch (c) {
 		case 'h':
 			if (ptr->hull < ptr->guns/4)
 				Write(W_HULL, ms, 0,
 					ptr->hull + 2, 0, 0, 0);
 			else
-				buf = 0;
+				c = 0;
 			break;
 		case 'g':
 			if (ptr->gunL < ptr->gunR) {
@@ -279,13 +278,13 @@ repair()
 					Write(W_GUNL, ms, 0,
 						ptr->gunL + 2, ptr->carL, 0, 0);
 				else
-					buf = 0;
+					c = 0;
 			} else
 				if (ptr->gunR + ptr->carR < ptr->guns/5)
 					Write(W_GUNR, ms, 0,
 						ptr->gunR + 2, ptr->carR, 0, 0);
 				else
-					buf = 0;
+					c = 0;
 			break;
 		case 'r':
 			if (!ptr->rig4)
@@ -298,10 +297,10 @@ repair()
 			else if (ptr->rig1 < 4)
 				Write(W_RIG1, ms, 0, 2, 0, 0, 0);
 			else
-				buf = 0;
+				c = 0;
 			break;
 		}
-		if (!buf)
+		if (!c)
 			Signal("Repairs completed.", (struct ship *)0);
 	}
 }
@@ -318,7 +317,7 @@ turned()
 
 loadplayer()
 {
-	int buf;
+	char c;
 	register loadL, loadR, ready, load;
 
 	if (!mc->crew3) {
@@ -328,19 +327,17 @@ loadplayer()
 	loadL = mf->loadL;
 	loadR = mf->loadR;
 	if (!loadL && !loadR) {
-		Signal("Load which broadside (left or right)? ",
-			(struct ship *)0);
-		buf = sgetch(1);
-		if (buf == 'r')
+		c = sgetch("Load which broadside (left or right)? ",
+			(struct ship *)0, 1);
+		if (c == 'r')
 			loadL = 1;
 		else
 			loadR = 1;
 	}
 	if (!loadL && loadR || loadL && !loadR) {
-		Signal("Reload with (round, double, chain, grape)? ",
-			(struct ship *)0);
-		buf = sgetch(1);
-		switch (buf) {
+		c = sgetch("Reload with (round, double, chain, grape)? ",
+			(struct ship *)0, 1);
+		switch (c) {
 		case 'r':
 			load = L_ROUND;
 			ready = 0;

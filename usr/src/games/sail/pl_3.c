@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	1.3 83/10/14";
+static	char *sccsid = "@(#)pl_3.c	1.4 83/10/14";
 #endif
 
 #include "player.h"
@@ -60,8 +60,8 @@ acceptcombat()
 		Signal("%s (%c%c) within range of %s broadside.",
 			closest, r ? "right" : "left");
 		if (load > L_CHAIN && target < 6) {
-			Signal("Aim for hull or rigging? ", (struct ship *)0);
-			switch (sgetch(1)) {
+			switch (sgetch("Aim for hull or rigging? ",
+				(struct ship *)0, 1)) {
 			case 'r':
 				shootat = RIGGING;
 				break;
@@ -74,8 +74,7 @@ acceptcombat()
 					(struct ship *)0);
 			}
 		} else {
-			Signal("Fire? ", (struct ship *)0);
-			if (sgetch(1) == 'n') {
+			if (sgetch("Fire? ", (struct ship *)0, 1) == 'n') {
 				shootat = -1;
 				Signal("Belay that! Hold your fire.",
 					(struct ship *)0);
@@ -155,13 +154,10 @@ acceptcombat()
 			}
 			table(shootat, load, hit, closest, ms, roll);
 		}
-		Scroll2();
-		(void) wprintw(scroll_w, "Damage inflicted on the %s:",
-			closest->shipname);
-		Scroll();
-		(void) wprintw(scroll_w,
-			"\t%d HULL, %d GUNS, %d CREW, %d RIGGING",
-			hhits, ghits, chits, rhits);
+		Signal("Damage inflicted on the %s:",
+			(struct ship *)0, closest->shipname);
+		Signal("\t%d HULL, %d GUNS, %d CREW, %d RIGGING",
+			(struct ship *)0, hhits, ghits, chits, rhits);
 		if (!r) {
 			mf->loadL = L_EMPTY;
 			mf->readyL = R_EMPTY;
@@ -189,10 +185,10 @@ grapungrap()
 		if (sp == ms)
 			continue;
 		r = range(ms, sp);
-		if (r < 0 || r > 1 && !grappled2(ms, sp))
+		if ((r < 0 || r > 1) && !grappled2(ms, sp))
 			continue;
-		Signal("Attempt to grapple or ungrapple %s (%c%c): ", sp);
-		switch (sgetch(1)) {
+		switch (sgetch("Attempt to grapple or ungrapple %s (%c%c): ",
+			sp, 1)) {
 		case 'g':
 			if (die() < 3
 			    || ms->nationality == capship(sp)->nationality) {
@@ -244,12 +240,11 @@ unfoulplayer()
 		if (s->turnfoul == 0)
 			continue;
 		to = s->toship;
-		Signal("Attempt to unfoul with the %s (%c%c)? ", to);
-		if (sgetch(1) == 'y') {
+		if (sgetch("Attempt to unfoul with the %s (%c%c)? ", to, 1)
+		    == 'y') {
 			if (die() < 3) {
 				cleanfoul(ms, to, n);
-				Signal("Attempt succeeds!",
-					(struct ship *)0);
+				Signal("Attempt succeeds!", (struct ship *)0);
 				makesignal(ms, "Unfouling %s (%c%c)", to);
 			} else
 				Signal("Attempt fails.", (struct ship *)0);
@@ -263,8 +258,7 @@ lookout()
 	char buf[3];
 	register char c;
 
-	Signal("What ship? ", (struct ship *)0);
-	sgetstr(buf, sizeof buf);
+	sgetstr("What ship? ", buf, sizeof buf);
 	foreachship(sp) {
 		c = *countryname[sp->nationality];
 		if ((c == *buf || tolower(c) == *buf || colours(sp) == *buf)
