@@ -1,19 +1,42 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)ctime.3	6.9 (Berkeley) %G%
+.\" This code is derived from software contributed to Berkeley by
+.\" Arthur Olson.
 .\"
-.TH CTIME 3  ""
-.UC 4
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ctime.3	6.10 (Berkeley) %G%
+.\"
+.TH CTIME 3 ""
 .SH NAME
-ctime, localtime, gmtime, asctime, timezone, tzset \-  convert date and time to ASCII
+asctime, ctime, difftime, gmtime, localtime, mktime, tzset, tzsetwall \- convert date and time to ASCII
 .SH SYNOPSIS
 .nf
+.B extern char *tzname[2];
+.PP
 .B void tzset()
+.PP
+.B void tzsetwall()
+.PP
+.B #include <sys/types.h>
 .PP
 .B char *ctime(clock)
 .B time_t *clock;
+.PP
+.B double difftime(time1, time0)
+.B time_t time1;
+.B time_t time0;
 .PP
 .B #include <time.h>
 .PP
@@ -21,112 +44,410 @@ ctime, localtime, gmtime, asctime, timezone, tzset \-  convert date and time to 
 .B struct tm *tm;
 .PP
 .B struct tm *localtime(clock)
-.B time_t *clock;
+.B long *clock;
 .PP
 .B struct tm *gmtime(clock)
-.B time_t *clock;
+.B long *clock;
 .PP
-.B char *timezone(zone, dst)
-.fi
+.B time_t mktime(tm)
+.B struct tm *tm;
 .fi
 .SH DESCRIPTION
-\fITzset\fP uses the value of the environment variable \fBTZ\fP to
-set up the time conversion information used by \fIlocaltime\fP.
+.I Tzset
+uses the value of the environment variable
+.B TZ
+to set time conversion information used by
+.IR localtime .
+If
+.B TZ
+does not appear in the environment,
+the best available approximation to local wall clock time, as specified
+by the
+.IR tzfile (5)-format
+file
+.B localtime
+in the system time conversion information directory, is used by
+.IR localtime .
+If
+.B TZ
+appears in the environment but its value is a null string,
+Coordinated Universal Time (UTC) is used (without leap second
+correction).  If
+.B TZ
+appears in the environment and its value is not a null string:
+.IP
+if the value begins with a colon, it is used as a pathname of a file
+from which to read the time conversion information;
+.IP
+if the value does not begin with a colon, it is first used as the
+pathname of a file from which to read the time conversion information,
+and, if that file cannot be read, is used directly as a specification of
+the time conversion information.
 .PP
-If \fBTZ\fP does not appear in the environment, the \fBTZDEFAULT\fP
-file (as defined in \fItzfile.h\fP) is used by \fIlocaltime\fP.  If
-this file fails for any reason, the GMT offset as provided by the
-kernel is used.  In this case, DST is ignored, resulting in the time
-being incorrect by some amount if DST is currently in effect.  If
-this fails for any reason, GMT is used.
+When
+.B TZ
+is used as a pathname, if it begins with a slash,
+it is used as an absolute pathname; otherwise,
+it is used as a pathname relative to a system time conversion information
+directory.
+The file must be in the format specified in
+.IR tzfile (5).
 .PP
-If \fBTZ\fP appears in the environment but its value is a null string,
-Greenwich Mean Time is used; if \fBTZ\fP appears and begins with a
-slash, it is used as the absolute pathname of the \fItzfile\fP(5)-format
-file from which to read the time conversion information; if \fBTZ\fP
-appears and begins with a character other than a slash, it's used as
-a pathname relative to the system time conversion information directory,
-defined as \fBTZDIR\fP in the include file \fItzfile.h\fP.  If this file
-fails for any reason, the GMT offset as provided by the kernel is
-used, as described above.  If this fails for any reason, GMT is used.
+When
+.B TZ
+is used directly as a specification of the time conversion information,
+it must have the following syntax (spaces inserted for clarity):
+.IP
+\fIstd\|offset\fR[\fIdst\fR[\fIoffset\fR][\fB,\fIrule\fR]]
 .PP
-Programs that always wish to use local wall clock time should explicitly
-remove the environmental variable \fBTZ\fP with \fIunsetenv\fP(3).
-.PP
-\fICtime\fP converts a long integer, pointed to by \fIclock\fP,
-such as returned by \fItime\fP(3), into ASCII and returns a pointer
-to a 26-character string in the following form.  All the fields
-have constant width.
-.PP
-    Sun Sep 16 01:03:52 1973\\n\\0
-.PP
-.I Localtime
-and
-.I gmtime
-return pointers to structures containing
-the broken-down time.
-.I Localtime
-corrects for the time zone and possible daylight savings time;
-.I gmtime
-converts directly to GMT, which is the time UNIX uses.
-.I Asctime
-converts a broken-down time to ASCII and returns a pointer
-to a 26-character string.
-.PP
-The structure declaration from the include file is:
-.PP
+Where:
 .RS
+.TP 15
+.IR std " and " dst
+Three or more bytes that are the designation for the standard
+.RI ( std )
+or summer
+.RI ( dst )
+time zone.  Only
+.I std
+is required; if
+.I dst
+is missing, then summer time does not apply in this locale.
+Upper- and lowercase letters are explicitly allowed.  Any characters
+except a leading colon
+.RB ( : ),
+digits, comma
+.RB ( , ),
+minus
+.RB ( \(mi ),
+plus
+.RB ( \(pl ),
+and ASCII NUL are allowed.
+.TP
+.I offset
+Indicates the value one must add to the local time to arrive at
+Coordinated Universal Time.  The
+.I offset
+has the form:
+.RS
+.IP
+\fIhh\fR[\fB:\fImm\fR[\fB:\fIss\fR]]
+.RE
+.IP
+The minutes
+.RI ( mm )
+and seconds
+.RI ( ss )
+are optional.  The hour
+.RI ( hh )
+is required and may be a single digit.  The
+.I offset
+following
+.I std
+is required.  If no
+.I offset
+follows
+.IR dst ,
+summer time is assumed to be one hour ahead of standard time.  One or
+more digits may be used; the value is always interpreted as a decimal
+number.  The hour must be between zero and 24, and the minutes (and
+seconds) \(em if present \(em between zero and 59.  If preceded by a
+.RB `` \(mi '',
+the time zone shall be east of the Prime Meridian; otherwise it shall be
+west (which may be indicated by an optional preceding
+.RB `` \(pl '').
+.TP
+.I rule
+Indicates when to change to and back from summer time.  The
+.I rule
+has the form:
+.RS
+.IP
+\fIdate\fB/\fItime\fB,\fIdate\fB/\fItime\fR
+.RE
+.IP
+where the first
+.I date
+describes when the change from standard to summer time occurs and the
+second
+.I date
+describes when the change back happens.  Each
+.I time
+field describes when, in current local time, the change to the other
+time is made.
+.IP
+The format of
+.I date
+is one of the following:
+.RS
+.TP 10
+.BI J n
+The Julian day
+.I n
+.RI "(1\ \(<=" "\ n\ " "\(<=\ 365).
+Leap days are not counted; that is, in all years \(em including leap
+years \(em February 28 is day 59 and March 1 is day 60.  It is
+impossible to explicitly refer to the occasional February 29.
+.TP
+.I n
+The zero-based Julian day
+.RI "(0\ \(<=" "\ n\ " "\(<=\ 365).
+Leap days are counted, and it is possible to refer to February 29.
+.TP
+.BI M m . n . d
+The
+.IR d' th
+day
+.RI "(0\ \(<=" "\ d\ " "\(<=\ 6)
+of week
+.I n
+of month
+.I m
+of the year
+.RI "(1\ \(<=" "\ n\ " "\(<=\ 5,
+.RI "1\ \(<=" "\ m\ " "\(<=\ 12,
+where week 5 means ``the last
+.I d
+day in month
+.IR m ''
+which may occur in either the fourth or the fifth week).  Week 1 is the
+first week in which the
+.IR d' th
+day occurs.  Day zero is Sunday.
+.RE
+.IP "" 15
+The
+.I time
+has the same format as
+.I offset
+except that no leading sign
+.RB (`` \(mi ''
+or
+.RB `` \(pl '')
+is allowed.  The default, if
+.I time
+is not given, is
+.BR 02:00:00 .
+.RE
+.LP
+If no
+.I rule
+is present in
+.BR TZ ,
+the rules specified
+by the
+.IR tzfile (5)-format
+file
+.B posixrules
+in the system time conversion information directory are used, with the
+standard and summer time offsets from UTC replaced by those specified by
+the
+.I offset
+values in
+.BR TZ .
+.PP
+For compatibility with System V Release 3.1, a semicolon
+.RB ( ; )
+may be used to separate the
+.I rule
+from the rest of the specification.
+.PP
+If the
+.B TZ
+environment variable does not specify a
+.IR tzfile (5)-format
+and cannot be interpreted as a direct specification,
+UTC is used with the standard time abbreviation set to
+the value of the
+.B TZ
+environment variable
+(or to the leading characters of its value if it is lengthy).
+.PP
+.I Tzsetwall
+sets things up so that
+.I localtime
+returns the best available approximation of local wall clock time.
+.PP
+.I Ctime\^
+converts a long integer, pointed to by
+.IR clock ,
+representing the time in seconds since
+00:00:00 UTC, January 1, 1970,
+and returns a pointer to a
+26-character string
+of the form
+.br
+.ce
+.eo
+Thu Nov 24 18:22:48 1986\n\0
+.ec
+.br
+All the fields have constant width.
+.PP
+.IR Localtime\^
+and
+.I gmtime\^
+return pointers to ``tm'' structures, described below.
+.I Localtime\^
+corrects for the time zone and any time zone adjustments
+(such as Daylight Saving Time in the U.S.A.).
+Before doing so,
+.I localtime\^
+calls
+.I tzset\^
+(if
+.I tzset\^
+has not been called in the current process).
+After filling in the ``tm'' structure,
+.I localtime
+sets the
+.BR tm_isdst 'th
+element of
+.B tzname
+to a pointer to an 
+ASCII string that's the time zone abbreviation to be used with
+.IR localtime 's
+return value.
+.PP
+.I Gmtime\^
+converts to Coordinated Universal Time.
+.PP
+.I Asctime\^
+converts a time value contained in a
+``tm'' structure to a 26-character string,
+as shown in the above example,
+and returns a pointer
+to the string.
+.PP
+.I Mktime\^
+converts the broken-down time,
+expressed as local time,
+in the structure pointed to by
+.I tm
+into a calendar time value with the same encoding as that of the values
+returned by the
+.I time
+function.
+The original values of the
+.B tm_wday
+and
+.B tm_yday
+components of the structure are ignored,
+and the original values of the other components are not restricted
+to their normal ranges.
+(A positive or zero value for
+.B tm_isdst
+causes
+.I mktime
+to presume initially that summer time (for example, Daylight Saving Time 
+in the U.S.A.)
+respectively,
+is or is not in effect for the specified time.
+A negative value for
+.B tm_isdst
+causes the
+.I mktime
+function to attempt to divine whether summer time is in effect
+for the specified time.)
+On successful completion, the values of the
+.B tm_wday
+and
+.B tm_yday
+components of the structure are set appropriately,
+and the other components are set to represent the specified calendar time,
+but with their values forced to their normal ranges; the final value of
+.B tm_mday
+is not set until
+.B tm_mon
+and
+.B tm_year
+are determined.
+.I Mktime\^
+returns the specified calendar time;
+If the calendar time cannot be represented,
+it returns
+.BR -1 .
+.PP
+.I Difftime\^
+returns the difference between two calendar times,
+.I time1
+-
+.IR time0,
+expressed in seconds.
+.PP
+Declarations of all the functions and externals, and the ``tm'' structure,
+are in the
+.B <time.h>\^
+header file.
+The structure (of type)
+.B struct tm
+includes the following fields:
+.RS
+.PP
 .nf
-.nr .0 .8i+\w'int tm_isdst'u
-.ta .5i \n(.0u \n(.0u+\w'/* 0-000'u+1n
-struct tm {
-	int tm_sec;	/* 0-59	seconds */
-	int tm_min;	/* 0-59	minutes */
-	int tm_hour;	/* 0-23	hour */
-	int tm_mday;	/* 1-31	day of month */
-	int tm_mon;	/* 0-11	month */
-	int tm_year;	/* 0-	year \- 1900 */
-	int tm_wday;	/* 0-6	day of week (Sunday = 0) */
-	int tm_yday;	/* 0-365	day of year */
-	int tm_isdst;	/* flag:	daylight savings time in effect */
-	char **tm_zone;	/* abbreviation of timezone name */
-	long tm_gmtoff;	/* offset from GMT in seconds */
-};
+.ta .5i +\w'long tm_gmtoff;\0\0'u
+	int tm_sec;	/\(** seconds (0 - 60) \(**/
+	int tm_min;	/\(** minutes (0 - 59) \(**/
+	int tm_hour;	/\(** hours (0 - 23) \(**/
+	int tm_mday;	/\(** day of month (1 - 31) \(**/
+	int tm_mon;	/\(** month of year (0 - 11) \(**/
+	int tm_year;	/\(** year \- 1900 \(**/
+	int tm_wday;	/\(** day of week (Sunday = 0) \(**/
+	int tm_yday;	/\(** day of year (0 - 365) \(**/
+	int tm_isdst;	/\(** is summer time in effect? \(**/
+	char \(**tm_zone;	/\(** abbreviation of timezone name \(**/
+	long tm_gmtoff;	/\(** offset from UTC in seconds \(**/
 .fi
 .RE
 .PP
-\fITm_isdst\fP is non-zero if a time zone adjustment such as Daylight
-Savings time is in effect.
+The
+.I tm_zone
+and
+.I tm_gmtoff
+fields exist, and are filled in, only if arrangements to do
+so were made when the library containing these functions was
+created.
+There is no guarantee that these fields will continue to exist
+in this form in future releases of this code.
 .PP
-\fITm_gmtoff\fP is the offset (in seconds) of the time represented
-from GMT, with positive values indicating East of Greenwich.
+.I Tm_isdst\^
+is non-zero if summer time is in effect.
 .PP
-\fITimezone\fP remains for compatibility reasons only; it's impossible to
-reliably map timezone's arguments (\fIzone\fP, a "minutes west of GMT" value
-and \fIdst\fP, a "daylight saving time in effect" flag) to a time zone
-abbreviation.
-.PP
-If the environmental string \fITZNAME\fP exists, \fItimezone\fP returns
-its value, unless it consists of two comma separated strings, in which
-case the second string is returned if \fIdst\fP is non-zero, else
-the first string.  If \fITZNAME\fP doesn't exist, \fIzone\fP is checked
-for equality with a built-in table of values, in which case \fItimezone\fP
-returns the time zone or daylight time zone abbreviation associated with
-that value.  If the requested \fIzone\fP does not appear in the table, the
-difference from GMT is returned; e.g. in Afghanistan,
-\fItimezone(-(60*4+30), 0)\fP is appropriate because it is 4:30 ahead of
-GMT, and the string \fBGMT+4:30\fP is returned.  Programs that in the
-past used the \fItimezone\fP function should return the zone name as
-set by \fIlocaltime\fP to assure correctness.
+.I Tm_gmtoff
+is the offset (in seconds) of the time represented
+from UTC, with positive values indicating east
+of the Prime Meridian.
 .SH FILES
-.ta \w'/etc/zoneinfo/localtime\0\0'u
+.ta \w'/etc/zoneinfo/posixrules\0\0'u
 /etc/zoneinfo	time zone information directory
 .br
 /etc/zoneinfo/localtime	local time zone file
+.br
+/etc/zoneinfo/posixrules	used in converting POSIX-style TZ's
+.br
+/etc/zoneinfo/GMT	for UTC leap seconds
+.sp
+If
+.I /etc/zoneinfo/GMT
+is absent,
+UTC leap seconds are loaded from
+.IR /etc/zoneinfo/posixrules .
 .SH SEE ALSO
-gettimeofday(2), getenv(3), time(3), tzfile(5), environ(7)
-.SH NOTE
-The return values point to static data whose content is overwritten by
-each call.  The \fBtm_zone\fP field of a returned \fBstruct tm\fP
-points to a static array of characters, which will also be overwritten
-at the next call (and by calls to \fItzset\fP).
+time(2), getenv(3), tzfile(5)
+.SH NOTES
+The return values point to static data
+whose content is overwritten by each call.
+The
+.B tm_zone
+field of a returned
+.B "struct tm"
+points to a static array of characters, which
+will also be overwritten at the next call
+(and by calls to
+.I tzset
+or
+.IR tzsetwall ).
+.PP
+Avoid using out-of-range values with
+.I mktime
+when setting up lunch with promptness sticklers in Riyadh.
