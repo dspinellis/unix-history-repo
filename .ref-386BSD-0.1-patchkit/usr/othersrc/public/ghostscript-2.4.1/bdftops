@@ -1,1 +1,0 @@
-gs -q -dNODISPLAY -- bdftops.ps $*

@@ -1,5 +1,0 @@
-Mshowmount	showmount.c	/^main(argc, argv)$/
-print_dump	showmount.c	/^print_dump(mp)$/
-usage	showmount.c	/^usage()$/
-xdr_exports	showmount.c	/^xdr_exports(xdrsp, exp)$/
-xdr_mntdump	showmount.c	/^xdr_mntdump(xdrsp, mlp)$/
