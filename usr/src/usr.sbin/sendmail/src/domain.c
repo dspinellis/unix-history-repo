@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.43 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.44 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.43 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.44 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -466,7 +466,7 @@ dns_getcanonname(host, hbsize, trymx, statp)
 
 	loopcnt = 0;
 cnameloop:
-	for (cp = host, n = 0; *cp; cp++)
+	for (cp = host, n = 0; *cp != '\0'; cp++)
 		if (*cp == '.')
 			n++;
 
@@ -501,6 +501,10 @@ cnameloop:
 		*cp = '\0';
 	}
 	*dp = NULL;
+
+	/* if we have a wildcard MX and no dots, try MX anyhow */
+	if (n == 0)
+		trymx = TRUE;
 
 	/*
 	**  Now run through the search list for the name in question.
@@ -549,13 +553,7 @@ cnameloop:
 				}
 			}
 
-			if (mxmatch != NULL)
-			{
-				/* we matched before -- use that one */
-				break;
-			}
-
-			/* otherwise, try the next name */
+			/* try the next name */
 			dp++;
 			qtype = T_ANY;
 			continue;
@@ -601,7 +599,7 @@ cnameloop:
 			{
 			  case T_MX:
 				gotmx = TRUE;
-				if (**dp != '\0')
+				if (**dp != '\0' || !HasWildcardMX)
 				{
 					/* got a match -- save that info */
 					if (trymx && mxmatch == NULL)
