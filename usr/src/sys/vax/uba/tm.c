@@ -1,4 +1,4 @@
-/*	tm.c	4.42	81/08/31	*/
+/*	tm.c	4.43	81/11/10	*/
 
 #include "te.h"
 #include "ts.h"
@@ -714,13 +714,14 @@ tmtimer(dev)
 	int dev;
 {
 	register struct te_softc *sc = &te_softc[TEUNIT(dev)];
+	register short x;
 
 	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
 		printf("te%d: lost interrupt\n", TEUNIT(dev));
 		sc->sc_timo = INF;
-		(void) spl5();
+		x = spl5();
 		tmintr(TMUNIT(dev));
-		(void) spl0();
+		(void) splx(x);
 	}
 	timeout(tmtimer, (caddr_t)dev, 5*hz);
 }
