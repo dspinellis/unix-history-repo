@@ -2,7 +2,8 @@
 +/"xxx"8t"index"8t"order"nbbb++
 +/"w.nr"16t"w.nc"nDDn
 +/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
-+/"nline"8t"scroll"8t"cur.r"16t"cur.c"nddDD
-+/"win"16t"buf"16t"cov"16t"nvis"npppp
++/"nline"16t"scroll"16t"cur.r"16t"cur.c"nDDDD
++/"win"16t"buf"16t"cov"16t"fmap"16tnpppp
++/"nvis"np
 +/"pty"16t"tty"16t"pid"16t"ttyname"nDDD11C
 +/t
