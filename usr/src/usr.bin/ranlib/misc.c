@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,15 +30,15 @@ tmp()
 	int fd;
 	char *envtmp, path[MAXPATHLEN];
 
-	if (envtmp = getenv("TMPDIR"))
-		(void)sprintf(path, "%s/%s", envtmp, _PATH_RANTMP);
+	if ((envtmp = getenv("TMPDIR")) != NULL)
+		(void)sprintf(path, "%s%s", envtmp, strrchr(_PATH_RANTMP, '/'));
 	else
 		bcopy(_PATH_RANTMP, path, sizeof(_PATH_RANTMP));
 	
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 	if ((fd = mkstemp(path)) == -1)
-		error(tname);
+		error(path);
         (void)unlink(path);
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 	return(fd);
