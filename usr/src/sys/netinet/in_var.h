@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_var.h	6.2 (Berkeley) %G%
+ *	@(#)in_var.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,7 @@ struct in_ifaddr {
 	u_long	ia_netmask;		/* mask of net part */
 	u_long	ia_subnet;		/* subnet number, including net */
 	u_long	ia_subnetmask;		/* mask of net + subnet */
+	struct	in_addr ia_netbroadcast; /* broadcast addr for (logical) net */
 	int	ia_flags;
 	struct	in_ifaddr *ia_next;	/* next in list of internet addresses */
 };

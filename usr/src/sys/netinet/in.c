@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.9 (Berkeley) %G%
+ *	@(#)in.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -169,6 +169,7 @@ in_control(so, cmd, data, ifp)
 {
 	register struct ifreq *ifr = (struct ifreq *)data;
 	register struct in_ifaddr *ia = 0;
+	u_long tmp;
 	struct ifaddr *ifa;
 	struct mbuf *m;
 	int error;
@@ -262,6 +263,12 @@ in_control(so, cmd, data, ifp)
 		if ((ifp->if_flags & IFF_BROADCAST) == 0)
 			return (EINVAL);
 		ia->ia_broadaddr = ifr->ifr_broadaddr;
+		tmp = ntohl(satosin(&ia->ia_broadaddr)->sin_addr.s_addr);
+		if ((tmp &~ ia->ia_subnetmask) == ~ia->ia_subnetmask)
+			tmp |= ~ia->ia_netmask;
+		else if ((tmp &~ ia->ia_subnetmask) == 0)
+			tmp &= ia->ia_netmask;
+		ia->ia_netbroadcast.s_addr = htonl(tmp);
 		break;
 
 	case SIOCSIFADDR:
@@ -323,6 +330,8 @@ in_ifinit(ifp, ia, sin)
 		ia->ia_broadaddr.sa_family = AF_INET;
 		((struct sockaddr_in *)(&ia->ia_broadaddr))->sin_addr =
 			in_makeaddr(ia->ia_subnet, INADDR_BROADCAST);
+		ia->ia_netbroadcast.s_addr =
+		    htonl(ia->ia_net | (INADDR_BROADCAST &~ ia->ia_netmask));
 	}
 
 	/*
