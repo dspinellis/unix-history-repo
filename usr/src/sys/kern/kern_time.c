@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_time.c	7.5.1.1 (Berkeley) %G%
+ *	@(#)kern_time.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,8 +23,6 @@
 #include "kernel.h"
 #include "proc.h"
 
-#include "machine/reg.h"
-#include "machine/cpu.h"
 
 /* 
  * Time of day and interval timer support.
@@ -78,7 +76,7 @@ settimeofday()
 		s = splhigh(); time = atv; splx(s);
 		resettodr();
 	}
-	if (uap->tzp == 0 || (u.u_error = suser(u.u_cred, &u.u_acflag)))
+	if (uap->tzp == 0)
 		return;
 	u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof (atz));
 	if (u.u_error == 0)
