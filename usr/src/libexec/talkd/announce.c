@@ -120,7 +120,12 @@ print_mesg(tty, tf, request, remote_machine)
 	*bptr = '\0';
 	iovec.iov_base = big_buf;
 	iovec.iov_len = bptr - big_buf;
-	if (ttymsg(&iovec, 1, tty, 30) != NULL)
+	/*
+	 * we choose a timeout of RING_WAIT-5 seconds so that we don't
+	 * stack up processes trying to write messages to a tty
+	 * that is permanently blocked.
+	 */
+	if (ttymsg(&iovec, 1, tty, RING_WAIT - 5) != NULL)
 		return (FAILED);
 
 	return (SUCCESS);
