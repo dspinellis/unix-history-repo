@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)trace.c	5.1 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include <netdb.h>
-#include "../protocol.h"
+#include <protocols/routed.h>
 
 struct	sockaddr_in myaddr = { AF_INET, IPPORT_RESERVED-1 };
 char	packet[MAXPACKETSIZE];
