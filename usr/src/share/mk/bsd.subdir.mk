@@ -1,4 +1,4 @@
-#	@(#)bsd.subdir.mk	5.8 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	5.9 (Berkeley) %G%
 
 .MAIN: all
 
@@ -17,7 +17,7 @@ _SUBDIRUSE: .USE
 			echo "===> $$entry"; \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
-		${MAKE} ${.TARGET:realinstall=install}) \
+		${MAKE} ${.TARGET:realinstall=install}); \
 	done
 
 ${SUBDIR}::

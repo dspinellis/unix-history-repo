@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.22 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.23 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -78,7 +78,7 @@ _PROGSUBDIR: .USE
 		else \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
-		${MAKE} ${.TARGET:S/realinstall/install/:S/.depend/depend/}) \
+		${MAKE} ${.TARGET:S/realinstall/install/:S/.depend/depend/}); \
 	done
 .endif
 
