@@ -1,9 +1,9 @@
-/* in_cksum.c 1.7 81/10/29 */
+/* inet_cksum.c 1.7 81/10/29 */
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
 
 /*
  * Network primitives; this file varies per-cpu,
@@ -16,7 +16,7 @@
  * code and should be rewritten for each CPU
  * to be as fast as possible.
  */
-cksum(m, len)
+inet_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
@@ -24,7 +24,7 @@ cksum(m, len)
 	register int sum = 0;		/* known to be r8 */
 	register u_short *w;		/* known to be r7 */
 	register int mlen = 0;
-COUNT(CKSUM);
+COUNT(INET_CKSUM);
 
 	for (;;) {
 		w = (u_short *)((int)m + m->m_off);
