@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.17	%G%
+**	@(#)sendmail.h	3.18	%G%
 */
 
 
@@ -198,7 +198,6 @@ extern STAB	*stab();
 
 extern bool	ArpaFmt;	/* if set, message is in arpanet fmt */
 extern bool	FromFlag;	/* if set, "From" person is explicit */
-extern bool	Debug;		/* if set, debugging info */
 extern bool	MailBack;	/* mail back response on error */
 extern bool	BerkNet;	/* called from BerkNet */
 extern bool	WriteBack;	/* write back response on error */
@@ -208,6 +207,7 @@ extern bool	MeToo;		/* send to the sender also */
 extern bool	IgnrDot;	/* don't let dot end messages */
 extern bool	SaveFrom;	/* save leading "From" lines */
 extern bool	Verbose;	/* set if blow-by-blow desired */
+extern int	Debug;		/* debugging level */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
