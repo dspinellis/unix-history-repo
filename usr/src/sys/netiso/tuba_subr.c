@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
+ * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.1 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,17 +45,16 @@
  */
 tuba_init()
 {
-
+#define TUBAHDRSIZE (3 /*LLC*/ + 9 /*CLNP Fixed*/ + 42 /*Addresses*/ \
+		     + 6 /*CLNP Segment*/ + 20 /*TCP*/)
 	extern struct isopcb tuba_isopcb;
 
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
-#define TUBAHDRSIZE (3 /*LLC*/ + 9 /*CLNP Fixed*/ + 42 /*Addresses*/ \
-		     + 6 /*CLNP Segment*/ + 20 /*TCP*/)
-
 	if (max_protohdr < TUBAHDRSIZE)
 		max_protohdr = TUBAHDRSIZE;
 	if (max_linkhdr + TUBAHDRSIZE > MHLEN)
 		panic("tuba_init");
+	tuba_timer_init();
 }
 
 tuba_output(tp, m)
