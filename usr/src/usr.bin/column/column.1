@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)column.1	5.1 (Berkeley) %G%
+.\"	@(#)column.1	5.2 (Berkeley) %G%
 .\"
 .UC 7
 .TH COLUMN 1 ""
@@ -21,7 +21,7 @@
 .SH NAME
 column \- columnate lists
 .SH SYNOPSIS
-\fBcolumn [ \fI-x\fB ] [\fI-c columns\fB ] [ \fIfile ...\fB ]
+\fBcolumn [ \fI-tx\fB ] [\fI-c columns\fB ] [ \fIfile ...\fB ]
 .ft R
 .SH DESCRIPTION
 The
@@ -35,12 +35,21 @@ Empty lines are ignored.
 .PP
 The options are as follows:
 .TP
-.I -c
+.I \-c
 Output is formatted for a display
 .I columns
 wide.
 .TP
-.I -x
+.I \-t
+Use the whitespace in each line to determine the number of columns
+it contains and create a table.
+Useful for pretty-printing displays, for example:
+.sp
+(printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en";
+.br
+ls -l | sed 1d) | column -t
+.TP
+.I \-x
 Fill columns before filling rows.
 .PP
 .I Column
@@ -51,4 +60,4 @@ exits 0 on success, >0 if an error occurred.
 The environmental variable COLUMNS is used to determine the size of
 the screen if no other information is available.
 .SH "SEE ALSO"
-ls(1), paste(1), sort(1)
+colrm(1), ls(1), paste(1), sort(1)
