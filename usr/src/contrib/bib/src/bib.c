@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.3	%G%";
+static char sccsid[] = "@(#)bib.c	2.4	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -33,13 +33,14 @@ static char sccsid[] = "@(#)bib.c	2.3	%G%";
 /* global variables */
    FILE *rfd;                   /* reference temporary file              */
    char reffile[] = TMPREFFILE ;/* temporary file (see bib.h)            */
-   long int refspos[MAXREFS];   /* reference seek positions              */
+   struct refinfo refinfo[MAXREFS];	/* reference information */
+   struct refinfo *refssearch();
+   struct refinfo *refshash[HASHSIZE];
    long int rend = 1;           /* last position in rfd (first char unused)*/
-   int numrefs = -1;            /* number of references generated so far */
+   int numrefs = 0;            /* number of references generated so far */
    FILE *tfd;                   /* output of pass 1 of file(s)           */
    char tmpfile[] = TMPTEXTFILE ; /* output of pass 1                    */
    char common[] = COMFILE ;    /* common word file                      */
-   char *citestr[MAXREFS];      /* citation strings                      */
    int  findex = false;         /* can we read the file INDEX ?          */
 
 /* global variables in bibargs */
@@ -47,33 +48,38 @@ static char sccsid[] = "@(#)bib.c	2.3	%G%";
    extern int hyphen, ordcite, biblineno;
    extern char sortstr[], pfile[], citetemplate[], bibfname[];
 
+#include <signal.h>
 
 main(argc, argv)
    int argc;
    char **argv;
 {  int rcomp();
+   int intr();
 
    /* the file INDEX in the current directory is the default index,
       if it is present */
 
+   signal(SIGINT, intr);
    rfd = fopen( INDXFILE , "r");
    if (rfd != NULL) {
       findex = true;
       fclose(rfd);
       }
 
+#ifndef INCORE
    /* open temporaries, reffile will contain references collected in
       pass 1, and tmpfile will contain text.
    */
    mktemp(reffile);
    rfd = fopen(reffile,"w+");
    if (rfd == NULL)
-      error("can't open temporary reference file");
+      error("can't open temporary reference file, %s", reffile);
    putc('x', rfd);      /* put garbage in first position (not used) */
+#endif not INCORE
    mktemp(tmpfile);
    tfd = fopen(tmpfile,"w");
    if (tfd == NULL)
-      error("can't open temporary output file");
+      error("can't open temporary output file, %s", tmpfile);
 
     /*
        pass1 - read files, looking for citations
@@ -90,8 +96,8 @@ main(argc, argv)
    */
 
    if (sort)
-      qsort(refspos, numrefs+1, sizeof(long), rcomp);
-   makecites(citestr);
+      qsort(refinfo, numrefs, sizeof(struct refinfo), rcomp);
+   makecites();
    disambiguate();
 
    /*
@@ -101,23 +107,30 @@ main(argc, argv)
    fclose(tfd);
    tfd = fopen(tmpfile,"r");
    if (tfd == NULL)
-      error("can't open temporary output file for reading");
-
+      error("can't open temporary output file %s for reading", tmpfile);
    /*
    pass 2 - reread files, replacing references
    */
-
    pass2(tfd, stdout);
-
-   /*
-   clean up
-   */
-
+   cleanup(0);
+}
+/* interrupt processing */
+intr()
+{
+   cleanup(1);
+}
+/* clean up and exit */
+cleanup(val)
+{
    fclose(tfd);
+#ifndef INCORE
    fclose(rfd);
-   unlink(tmpfile);
    unlink(reffile);
-   exit(0);
+#endif INCORE
+#ifndef DEBUG
+   unlink(tmpfile);
+#endif DEBUG
+   exit(val);
 }
 
 /* rdtext - read and process a text file, looking for [. commands */
@@ -168,7 +181,7 @@ main(argc, argv)
    rdcite(fd, ch)
    FILE *fd;
    char ch;
-{  long int n, getref();
+{  int n, getref();
    char huntstr[HUNTSIZE], c, info[HUNTSIZE];
 
    if (ch == '[')
@@ -179,35 +192,17 @@ main(argc, argv)
    while (getch(c, fd) != EOF)
       switch (c) {
          case ',':
-            n = getref(huntstr);
-            if (n > 0)
-               fprintf(tfd, "%c%ld%c%s%c", CITEMARK, n, CITEMARK, info, CITEEND);
-            else
-               fprintf(tfd, "%c0%c%s%s%c", CITEMARK, CITEMARK,
-                                           huntstr, info, CITEEND);
+	    citemark(info, huntstr, (char *)0);
             huntstr[0] = info[0] = 0;
             break;
-
          case '.':
             while (getch(c, fd) == '.') ;
             if (c == ']') {
-               n = getref(huntstr);
-               if (n > 0)
-                  fprintf(tfd, "%c%ld%c%s%c\\*(]]", CITEMARK, n,
-                                                  CITEMARK, info, CITEEND);
-               else
-                  fprintf(tfd, "%c0%c%s%s%c\\*(]]", CITEMARK, CITEMARK,
-                                              huntstr, info, CITEEND);
+	       citemark(info, huntstr, "\\*(]]");
                return;
                }
             else if (c == '}') {
-               n = getref(huntstr);
-               if (n > 0)
-                  fprintf(tfd, "%c%ld%c%s%c\\*(}]", CITEMARK, n,
-                                                    CITEMARK, info, CITEEND);
-               else
-                  fprintf(tfd, "%c0%c%s%s%c\\*(}]", CITEMARK, CITEMARK,
-                                              huntstr, info, CITEEND);
+	       citemark(info, huntstr, "\\*(}]");
                return;
                }
             else
@@ -217,8 +212,7 @@ main(argc, argv)
          case '{':
             while (getch(c, fd) != '}')
                if (c == EOF) {
-                  fprintf(stderr, "Error: ill formed reference\n");
-                  exit(1);
+                  error("ill formed reference");
                   }
                 else
                   addc(info, c);
@@ -234,6 +228,14 @@ main(argc, argv)
          }
    error("end of file reading citation");
 }
+citemark(info, huntstr, tail)
+	char *info, *huntstr, *tail;
+{
+	char c = CITEMARK;
+        long int  n;
+	n = getref(huntstr);
+	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, tail);
+}
 
 /* addc - add a character to hunt string */
    addc(huntstr, c)
@@ -242,18 +244,22 @@ main(argc, argv)
 
    i = strlen(huntstr);
    if (i > HUNTSIZE)
-      error("citation too long");
+      error("citation too long, max of %d", HUNTSIZE);
    huntstr[i] = c;
    huntstr[i+1] = 0;
 }
 
-/* getref - if an item was already referenced, return its pointer in
-                the reference file, otherwise create a new entry */
-   long int getref(huntstr)
+/* getref - if an item was already referenced, return its reference index
+                otherwise create a new entry */
+   int getref(huntstr)
    char huntstr[HUNTSIZE];
-{  char rf[REFSIZE], ref[REFSIZE], *r, *hunt();
-   int  i, match(), getwrd();
+{  char rf[REFSIZE], *r, *hunt();
+   reg	int  i;
+   int	match(), getwrd();
    char	*realhstr;
+   int hash;
+   struct refinfo *rp;
+   int	lg;
 
    realhstr = huntstr;
    if (strncmp(huntstr, "$C$", 3) == 0){
@@ -274,40 +280,49 @@ main(argc, argv)
    }
    r = hunt(realhstr);
    if (r != NULL) {
-      /* exapand defined string */
+      /* expand defined string */
       strcpy(rf, r);
       free(r);
       expand(rf);
-
       /* see if reference has already been cited */
-
-      if (foot == false)
-         for (i = 0; i <= numrefs; i++) {
-             rdref(refspos[i], ref);
-             if (strcmp(ref, rf) == 0)
-                return(refspos[i]);
-          }
-
+      if (foot == false && (rp = refssearch(rf))){
+		return(rp - refinfo);
+      }
       /* didn't match any existing reference, create new one */
-
-      numrefs++;
-      refspos[numrefs] = rend;
-#ifdef READWRITE
-      fixrfd( WRITE );                 /* fix access mode of rfd, if nec. */
-#else
-      fseek(rfd, rend, 0);             /* go to end of rfd */
-#endif
-      i = strlen(rf) + 1;
-      fwrite(rf, 1, i, rfd);
-      rend = rend + i;
-      return(refspos[numrefs]);
+      if (numrefs >= MAXREFS)
+	error("too many references, max of %d", MAXREFS);
+      hash = strhash(rf);
+      lg = strlen(rf) + 1;
+      refinfo[numrefs].ri_pos = rend;
+      refinfo[numrefs].ri_length = lg;
+      refinfo[numrefs].ri_hp = refshash[hash];
+      refinfo[numrefs].ri_n = numrefs;
+      refshash[hash] = &refinfo[numrefs];
+      wrref(&refinfo[numrefs], rf);
+      return(numrefs++);
       }
    else {
       bibwarning("no reference matching %s\n", realhstr);
-      return( (long) -1 );
+      return(-1);
       }
 }
-
+struct refinfo *refssearch(rf)
+   char *rf;
+{
+   char ref[REFSIZE];
+   reg	int i;
+   int	lg;
+   reg	struct refinfo *rp;
+   lg = strlen(rf) + 1;
+   for (rp = refshash[strhash(rf)]; rp; rp = rp->ri_hp){
+	     if (rp->ri_length == lg){
+		     rdref(rp, ref);
+		     if (strcmp(ref, rf) == 0)
+			return(rp);
+	     }
+   }
+   return(0);
+}
 /* hunt - hunt for reference from either personal or system index */
    char *hunt(huntstr)
    char huntstr[];
@@ -358,90 +373,114 @@ main(argc, argv)
             *p = ' ';
    return(r);
 }
+struct cite{
+	int	num;
+	char	*info;
+};
+citesort(p1, p2)
+	struct cite *p1, *p2;
+{
+	return(p1->num - p2->num);
+}
 
 /* putrefs - gather contiguous references together, sort them if called
    for, hyphenate if necessary, and dump them out */
 int putrefs(ifd, ofd, footrefs, fn)
 FILE *ifd, *ofd;
 int  fn, footrefs[];
-{  int  citenums[MAXATONCE];   /* reference numbers */
-   char *citeinfo[MAXATONCE];  /* reference information */
-   char infoword[HUNTSIZE];    /* information line */
-   int  rtop, n, i, j;         /* number of citations being dumped */
-   char c, *p, *walloc();
+{
+	struct cite cites[MAXATONCE];
+	char	infoword[HUNTSIZE];    /* information line */
+	reg	int i;
+	reg	char *p;
+	reg	int  ncites, n, j;         /* number of citations being dumped */
+	char	c, *walloc();
+	int neg;
+	/*
+	 * first gather contiguous references together,
+	 * and order them if required     
+	 */
 
-/* first gather contiguous references together, and order them if
-   required      */
+	ncites = 0;
+	neg = 1;
+	do {
+		n = 0;
+		do{
+			getch(c, ifd);
+			if (isdigit(c))
+				n = 10 * n + (c - '0');
+			else if (c == '-')
+				neg *= -1;
+			else if (c == CITEMARK)
+				break;
+			else
+				error("bad cite char 0%03o in pass two",c);
+		} while(1);
+		if (neg < 0) {     /* reference not found */
+			cites[ncites].num = -1;
+			cites[ncites].info = 0;
+			ncites++;
+		} else {
+			/*
+			 * Find reference n in the references
+			 */
+			int i;
+			for (i = 0; i < numrefs; i++){
+				if (refinfo[i].ri_n == n){
+					cites[ncites].num = i;
+					cites[ncites].info = 0;
+					ncites++;
+					break;
+				}
+			}
+			if (i == numrefs)
+				error("citation	%d not found in pass 2", n);
+		}
+		if (getch(c, ifd) != CITEEND) {
+			for (p = infoword; c != CITEEND ; ) {
+				*p++ = c;
+				getch(c, ifd);
+			}
+			*p = 0;
+			cites[ncites-1].info = walloc(infoword);
+		}
+		getch(c, ifd);
+	} while (c == CITEMARK);
+	ungetc(c, ifd);
+	if (ordcite)
+		qsort(cites, ncites, sizeof(struct cite), citesort);
 
-   rtop = -1;
-   do {
-      n = 0;
-      while (isdigit(getch(c, ifd)))
-         n = 10 * n + (c - '0');
-      if (c ^= CITEMARK)
-         error("inconsistant citation found in pass two");
-      if (n == 0) {     /* reference not found */
-         rtop++;
-         j = rtop;
-         citenums[j] = -1;
-         citeinfo[j] = 0;
-         }
-      else {
-         for (i = 0; i <= numrefs; i++)
-            if (refspos[i] == n) { /* its the ith item in reference list */
-               rtop++;
-               j = rtop;
-               if (ordcite)
-                  for ( ; j > 0 && citenums[j-1] > i; j--) {
-                     citenums[j] = citenums[j-1];
-                     citeinfo[j] = citeinfo[j-1];
-                     }
-               citenums[j] = i;
-               citeinfo[j] = 0;
-               break;
-               }
-         if (i > numrefs)
-            error("citation not found in pass two");
-         }
-      if (getch(c, ifd) != CITEEND) {
-         for (p = infoword; c != CITEEND ; ) {
-            *p++ = c;
-            getch(c, ifd);
-            }
-         *p = 0;
-         citeinfo[j] = walloc(infoword);
-         }
-      getch(c, ifd);
-      }  while (c == CITEMARK);
-   ungetc(c, ifd);
-
-   /* now dump out values */
-   for (i = 0; i <= rtop; i++) {
-      if (citenums[i] >= 0)
-         fputs(citestr[citenums[i]], ofd);
-      if (citeinfo[i]) {
-         fputs(citeinfo[i], ofd);
-         free(citeinfo[i]);
-         }
-      if (hyphen) {
-         for (j = 1; j + i <= rtop && citenums[i+j] == citenums[i] + j; j++);
-         if (j + i > rtop) j = rtop;
-         else j = j + i - 1;
-         }
-      else
-         j = i;
-      if (j > i + 1) {
-         fputs("\\*(]-", ofd);
-         i = j - 1;
-         }
-      else if (i != rtop)
-         fputs("\\*(],", ofd);
-      if (foot) {
-         fn++;
-         footrefs[fn] = citenums[i];
-         }
-      }
-   return(fn);
+	/* now dump out values */
+	for (i = 0; i < ncites; i++) {
+		if (cites[i].num >= 0)
+			fputs(refinfo[cites[i].num].ri_cite, ofd);
+		if (cites[i].info) {
+			fputs(cites[i].info, ofd);
+			free(cites[i].info);
+		}
+		if (hyphen) {
+			for (j = 1;
+			     j + i <= ncites && cites[i+j].num == cites[i].num + j;
+			     j++)/*VOID*/;
+			if (j + i > ncites)
+				j = ncites;
+			else
+				j = j + i - 1;
+		} else {
+			j = i;
+		}
+		if (j > i + 1) {
+			fputs("\\*(]-", ofd);
+			i = j - 1;
+		} else if (i != ncites - 1) {
+			fputs("\\*(],", ofd);
+		}
+		if (foot) {
+			fn++;
+			footrefs[fn] = cites[i].num;
+		}
+	}
+	return(fn);
 }
 
 /* pass2 - read pass 1 files entering citation */
@@ -467,8 +506,9 @@ int  fn, footrefs[];
                   while (echoc(c, ifd, ofd) != '\n')
                      ;
                   dumped = true;
-                  for (i = 0; i <= numrefs; i++)
+                  for (i = 0; i < numrefs; i++){
                      dumpref(i, ofd);
+		  }
                   getch(c, ifd);
                   }
          }

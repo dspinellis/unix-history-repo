@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.2	%G%
+ *	@(#)bib.h	2.3	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -21,11 +21,11 @@
         /* output of invert, input file for references */
 # define INDXFILE "INDEX"
         /* pass1 reference collection file */
-# define TMPREFFILE  "/usr/tmp/bibrXXXXXX"
+# define TMPREFFILE  "/tmp/bibrXXXXXX"
         /* pass2 text collection file */
-# define TMPTEXTFILE "/usr/tmp/bibpXXXXXX"
+# define TMPTEXTFILE "/tmp/bibpXXXXXX"
         /* temp file used in invert */
-# define INVTEMPFILE "/usr/tmp/invertXXXXXX"
+# define INVTEMPFILE "/tmp/invertXXXXXX"
         /* common words */
 # define COMFILE "/usr/lib/bmac/common"
         /* default system dictionary */
@@ -49,3 +49,24 @@ char *malloc();
 # define WRITE 0
 
 #endif
+   /*
+    *	Reference information
+    */
+   struct refinfo{
+	char	*ri_ref;	/* actual value */
+	char	*ri_cite;	/* citation string */
+	int	ri_length;	/* length of reference string, plus null */
+	long int ri_pos;	/* reference seek position */
+	int	ri_n;		/* number of citation in pass1 */
+	struct	refinfo	*ri_hp;	/* hash chain */
+   };
+   struct wordinfo{
+	char	*wi_word;	/* actual word */
+	char	*wi_def;	/* actual definition */
+	int	wi_length;	/* word length */
+	struct wordinfo *wi_hp;	/* hash chain */
+   };
+   int	strhash();
+#define HASHSIZE	509
+
+#define reg register
