@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) %G%
+.\"	@(#)0.t	6.2 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -19,19 +19,16 @@
 .nr GA 1\}
 ..
 .TL
-Building 4.2BSD
+Building Berkeley 
 .UX
-Systems with Config
-.br
-June, 1983
+Kernels with Config
 .AU
-Samuel J. Leffler
+Samuel J. Leffler and Michael J. Karels
 .AI
 Computer Systems Research Group
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, California  94720
-(415) 642-7780
 .de IR
 \fI\\$1\fP\\$2
 ..
@@ -53,5 +50,10 @@ contains a summary of the rules used by the system
 in calculating the size of system data structures,
 and also indicates some of the standard system size
 limitations (and how to change them).
+.sp
+.LP
+Revised 
 .AE
-.ND
+.LP
+.OH 'Building Kernels with Config''SMM:2-%'
+.EH 'SMM:2-%''Building Kernels with Config'
