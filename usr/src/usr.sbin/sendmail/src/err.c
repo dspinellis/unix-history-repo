@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.24		%G%);
+SCCSID(@(#)err.c	3.25		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -37,9 +37,8 @@ syserr(fmt, a, b, c, d, e)
 	char *saveto = CurEnv->e_to;
 
 	/* format and output the error message */
-	CurEnv->e_to = NULL;
-	message(Arpa_Syserr, fmt, a, b, c, d, e);
-	CurEnv->e_to = saveto;
+	fmtmsg(MsgBuf, NULL, Arpa_Syserr, fmt, a, b, c, d, e);
+	putmsg(MsgBuf);
 
 	/* mark the error as having occured */
 	Errors++;
@@ -86,7 +85,8 @@ usrerr(fmt, a, b, c, d, e)
 	Errors++;
 	FatalErrors = TRUE;
 
-	message(Arpa_Usrerr, fmt, a, b, c, d, e);
+	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
+	putmsg(MsgBuf);
 }
 /*
 **  MESSAGE -- print message (not necessarily an error)
@@ -111,18 +111,37 @@ message(num, msg, a, b, c, d, e)
 {
 	errno = 0;
 	fmtmsg(MsgBuf, CurEnv->e_to, num, msg, a, b, c, d, e);
+	putmsg(MsgBuf);
+}
+/*
+**  PUTMSG -- output error message to transcript and channel
+**
+**	Parameters:
+**		msg -- message to output (in SMTP format).
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Outputs msg to the transcript.
+**		If appropriate, outputs it to the channel.
+**		Deletes SMTP reply code number as appropriate.
+*/
 
+putmsg(msg)
+	char *msg;
+{
 	/* output to transcript */
-	fprintf(Xscript, "%s\n", Smtp ? MsgBuf : &MsgBuf[4]);
+	fprintf(Xscript, "%s\n", Smtp ? msg : &msg[4]);
 
 	/* output to channel if appropriate */
-	if (!HoldErrs && (Verbose || MsgBuf[0] != '0'))
+	if (!HoldErrs && (Verbose || msg[0] != '0'))
 	{
 		(void) fflush(stdout);
 		if (ArpaMode)
-			fprintf(OutChannel, "%s\r\n", MsgBuf);
+			fprintf(OutChannel, "%s\r\n", msg);
 		else
-			fprintf(OutChannel, "%s\n", &MsgBuf[4]);
+			fprintf(OutChannel, "%s\n", &msg[4]);
 		(void) fflush(OutChannel);
 	}
 }
