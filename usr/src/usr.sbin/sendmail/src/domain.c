@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1986 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.22 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.23 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.22 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.23 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -42,6 +42,8 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 /* don't use sizeof because sizeof(long) is different on 64-bit machines */
 #define SHORTSIZE	2	/* size of a short (really, must be 2) */
 #define LONGSIZE	4	/* size of a long (really, must be 4) */
+
+#define MAXCNAMEDEPTH	10	/* maximum depth of CNAME recursion */
 /*
 **  GETMXRR -- get MX resource records for a domain
 **
@@ -346,6 +348,7 @@ getcanonname(host, hbsize)
 	bool amatch;
 	bool gotmx;
 	int qtype;
+	int loopcnt;
 	char nbuf[MAX(PACKETSZ, MAXDNAME*2+2)];
 	char *searchlist[MAXDNSRCH+2];
 
@@ -365,6 +368,7 @@ getcanonname(host, hbsize)
 	**  list by tearing apart the host name.
 	*/
 
+	loopcnt = 0;
 cnameloop:
 	for (cp = host, n = 0; *cp; cp++)
 		if (*cp == '.')
@@ -499,6 +503,13 @@ cnameloop:
 				continue;
 
 			  case T_CNAME:
+				if (loopcnt++ > MAXCNAMEDEPTH)
+				{
+					syserr("DNS failure: CNAME loop for %s",
+						host);
+					continue;
+				}
+
 				/* value points at name */
 				if ((ret = dn_expand((u_char *)&answer,
 				    eom, ap, (u_char *)nbuf, sizeof(nbuf))) < 0)
