@@ -502,7 +502,33 @@ casefix(string)
     }
 }
 
-#define getsize(a) ((a[0]-'0')*1000)+((a[1]-'0')*100)+((a[2]-'0')*10)+(a[3]-'0')
+static
+getsize(a)
+	register char *a;
+{
+	register int	i;
+	int		answer;
+
+	answer = 0;
+	for (i = 0; i < 4; ++i) {
+		answer *= 10;
+		switch (a[i]) {
+			default:	return -1;
+			case '0':	break;
+			case '1':	answer += 1; break;
+			case '2':	answer += 2; break;
+			case '3':	answer += 3; break;
+			case '4':	answer += 4; break;
+			case '5':	answer += 5; break;
+			case '6':	answer += 6; break;
+			case '7':	answer += 7; break;
+			case '8':	answer += 8; break;
+			case '9':	answer += 9; break;
+		}
+	}
+	return(answer);
+}
+
 int
 readfile(tape,argc,argv)
 	int tape;
@@ -562,6 +588,11 @@ int writeblock;
 				ibuf = ibufstart;
 				while(strncmp("^^^^",ibuf,4)) {
 					size = getsize(ibuf);
+					if(size <= 0) {
+						(void)fflush(stdout);
+						(void)fprintf(stderr,"error: bad tape record(s) in file %s - file may be truncated/corrupted.\n", filename);
+						break;
+					}
 					if(extract) {
 						fwrite(ibuf+4,sizeof(char),size-4,file);
 						fwrite("\n",1,1,file);
