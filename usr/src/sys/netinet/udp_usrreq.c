@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.48	83/05/27	*/
+/*	udp_usrreq.c	4.49	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -319,8 +319,10 @@ udp_usrreq(so, req, m, nam, rights)
 	default:
 		printf("request %d\n", req);
 
-	case PRU_RCVD:
 	case PRU_CONTROL:
+		return (EOPNOTSUPP);
+
+	case PRU_RCVD:
 	case PRU_SENSE:
 	case PRU_RCVOOB:
 	case PRU_SENDOOB:
