@@ -1,3 +1,5 @@
+#	@(#)Makefile	5.17 (Berkeley) %G%
+
 PROG=	bugfiler
 CFLAGS+=-I${.CURDIR}
 SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
