@@ -1,16 +1,19 @@
-%	@(#)psdit.pro	1.1 %G%
+%	@(#)psdit.pro	1.2 %G%
 % lib/psdit.pro -- prolog for psdit (ditroff) files
 % Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
 % last edit: shore Sat Nov 23 20:28:03 1985
 % RCSID: $Header: psdit.pro,v 2.1 85/11/24 12:19:43 shore Rel $
 
+% Changed by Edward Wang (edward@ucbarpa.berkeley.edu) to handle graphics,
+% 17 Feb, 87.
+
 /$DITroff 140 dict def $DITroff begin
 /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def
-/xi {0 72 11 mul translate 72 resolution div dup neg scale 0 0 moveto
-  /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def F
-  /pagesave save def}def
+/xi{0 72 11 mul translate 72 resolution div dup neg scale 0 0 moveto
+ /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def F
+ /pagesave save def}def
 /PB{save /psv exch def currentpoint translate 
-  resolution 72 div dup neg scale 0 0 moveto}def
+ resolution 72 div dup neg scale 0 0 moveto}def
 /PE{psv restore}def
 /arctoobig 90 def /arctoosmall .05 def
 /m1 matrix def /m2 matrix def /m3 matrix def /oldmat matrix def
@@ -28,10 +31,10 @@
 /xS{/fontslant exch def F}def
 /s{/fontsize exch def /fontheight fontsize def F}def
 /f{/fontnum exch def F}def
-/F{fontheight 0 le {/fontheight fontsize def}if
-   fonts fontnum get fontsize point 0 0 fontheight point neg 0 0 m1 astore
-   fontslant 0 ne{1 0 fontslant tan 1 0 0 m2 astore m3 concatmatrix}if
-   makefont setfont .04 fontsize point mul 0 dround pop setlinewidth}def
+/F{fontheight 0 le{/fontheight fontsize def}if
+ fonts fontnum get fontsize point 0 0 fontheight point neg 0 0 m1 astore
+ fontslant 0 ne{1 0 fontslant tan 1 0 0 m2 astore m3 concatmatrix}if
+ makefont setfont .04 fontsize point mul 0 dround pop setlinewidth}def
 /X{exch currentpoint exch pop moveto show}def
 /N{3 1 roll moveto show}def
 /Y{exch currentpoint pop exch moveto show}def
@@ -47,15 +50,20 @@
 /cb{pop}def	% action on unknown char -- nothing for now
 /n{}def/w{}def
 /p{pop showpage pagesave restore /pagesave save def}def
-/abspoint{currentpoint exch pop add exch currentpoint pop add exch}def
-/distance{dup mul exch dup mul add sqrt}def
-/dstroke{currentpoint stroke moveto}def
-/Dl{2 copy gsave rlineto stroke grestore rmoveto}def
+/Dt{/Dlinewidth exch def}def 1 Dt
+/Ds{/Ddash exch def}def -1 Ds
+/Di{/Dstipple exch def}def 1 Di
+/Dsetlinewidth{2 Dlinewidth mul setlinewidth}def
+/Dsetdash{Ddash 4 eq{[8 12]}{Ddash 16 eq{[32 36]}
+ {Ddash 20 eq{[32 12 8 12]}{[]}ifelse}ifelse}ifelse 0 setdash}def
+/Dstroke{gsave Dsetlinewidth Dsetdash 1 setlinecap stroke grestore
+ currentpoint newpath moveto}def
+/Dl{rlineto Dstroke}def
 /arcellipse{/diamv exch def /diamh exch def oldmat currentmatrix pop
  currentpoint translate 1 diamv diamh div scale /rad diamh 2 div def
  currentpoint exch rad add exch rad -180 180 arc oldmat setmatrix}def
-/Dc{dup arcellipse dstroke}def
-/De{arcellipse dstroke}def
+/Dc{dup arcellipse Dstroke}def
+/De{arcellipse Dstroke}def
 /Da{/endv exch def /endh exch def /centerv exch def /centerh exch def
  /cradius centerv centerv mul centerh centerh mul add sqrt def
  /eradius endv endv mul endh endh mul add sqrt def
@@ -66,35 +74,173 @@
  {/midang startang sweep 2 div sub def /midrad cradius eradius add 2 div def
   /midh midang cos midrad mul def /midv midang sin midrad mul def
   midh neg midv neg endh endv centerh centerv midh midv Da
-  currentpoint moveto Da}
+  Da}
  {sweep arctoosmall ge
   {/controldelt 1 sweep 2 div cos sub 3 sweep 2 div sin mul div 4 mul def
-  centerv neg controldelt mul centerh controldelt mul
-  endv neg controldelt mul centerh add endh add
-  endh controldelt mul centerv add endv add
-  centerh endh add centerv endv add rcurveto dstroke}
- {centerh endh add centerv endv add rlineto dstroke}ifelse}ifelse}def
-
-/Barray 200 array def % 200 values in a wiggle
-/D~{mark}def
-/D~~{counttomark Barray exch 0 exch getinterval astore /Bcontrol exch def pop
- /Blen Bcontrol length def Blen 4 ge Blen 2 mod 0 eq and
- {Bcontrol 0 get Bcontrol 1 get abspoint /Ycont exch def /Xcont exch def
-  Bcontrol 0 2 copy get 2 mul put Bcontrol 1 2 copy get 2 mul put
-  Bcontrol Blen 2 sub 2 copy get 2 mul put
-  Bcontrol Blen 1 sub 2 copy get 2 mul put
-  /Ybi /Xbi currentpoint 3 1 roll def def 0 2 Blen 4 sub
-  {/i exch def
-   Bcontrol i get 3 div Bcontrol i 1 add get 3 div
-   Bcontrol i get 3 mul Bcontrol i 2 add get add 6 div
-   Bcontrol i 1 add get 3 mul Bcontrol i 3 add get add 6 div
-   /Xbi Xcont Bcontrol i 2 add get 2 div add def
-   /Ybi Ycont Bcontrol i 3 add get 2 div add def
-   /Xcont Xcont Bcontrol i 2 add get add def
-   /Ycont Ycont Bcontrol i 3 add get add def
-   Xbi currentpoint pop sub Ybi currentpoint exch pop sub rcurveto
-  }for dstroke}if}def
+   centerv neg controldelt mul centerh controldelt mul
+   endv neg controldelt mul centerh add endh add
+   endh controldelt mul centerv add endv add
+   centerh endh add centerv endv add rcurveto Dstroke}
+  {centerh endh add centerv endv add rlineto Dstroke}
+  ifelse}
+ ifelse}def
+/Dpatterns[
+[%cf[widthbits]
+[8<0000000000000010>]
+[8<0411040040114000>]
+[8<0204081020408001>]
+[8<0000103810000000>]
+[8<6699996666999966>]
+[8<0000800100001008>]
+[8<81c36666c3810000>]
+[8<0f0e0c0800000000>]
+[8<0000000000000010>]
+[8<0411040040114000>]
+[8<0204081020408001>]
+[8<0000001038100000>]
+[8<6699996666999966>]
+[8<0000800100001008>]
+[8<81c36666c3810000>]
+[8<0f0e0c0800000000>]
+[8<0042660000246600>]
+[8<0000990000990000>]
+[8<0804020180402010>]
+[8<2418814242811824>]
+[8<6699996666999966>]
+[8<8000000008000000>]
+[8<00001c3e363e1c00>]
+[8<0000000000000000>]
+[32<00000040000000c00000004000000040000000e0000000000000000000000000>]
+[32<00000000000060000000900000002000000040000000f0000000000000000000>]
+[32<000000000000000000e0000000100000006000000010000000e0000000000000>]
+[32<00000000000000002000000060000000a0000000f00000002000000000000000>]
+[32<0000000e0000000000000000000000000000000f000000080000000e00000001>]
+[32<0000090000000600000000000000000000000000000007000000080000000e00>]
+[32<00010000000200000004000000040000000000000000000000000000000f0000>]
+[32<0900000006000000090000000600000000000000000000000000000006000000>]]
+[%ug
+[8<0000020000000000>]
+[8<0000020000002000>]
+[8<0004020000002000>]
+[8<0004020000402000>]
+[8<0004060000402000>]
+[8<0004060000406000>]
+[8<0006060000406000>]
+[8<0006060000606000>]
+[8<00060e0000606000>]
+[8<00060e000060e000>]
+[8<00070e000060e000>]
+[8<00070e000070e000>]
+[8<00070e020070e000>]
+[8<00070e020070e020>]
+[8<04070e020070e020>]
+[8<04070e024070e020>]
+[8<04070e064070e020>]
+[8<04070e064070e060>]
+[8<06070e064070e060>]
+[8<06070e066070e060>]
+[8<06070f066070e060>]
+[8<06070f066070f060>]
+[8<060f0f066070f060>]
+[8<060f0f0660f0f060>]
+[8<060f0f0760f0f060>]
+[8<060f0f0760f0f070>]
+[8<0e0f0f0760f0f070>]
+[8<0e0f0f07e0f0f070>]
+[8<0e0f0f0fe0f0f070>]
+[8<0e0f0f0fe0f0f0f0>]
+[8<0f0f0f0fe0f0f0f0>]
+[8<0f0f0f0ff0f0f0f0>]
+[8<1f0f0f0ff0f0f0f0>]
+[8<1f0f0f0ff1f0f0f0>]
+[8<1f0f0f8ff1f0f0f0>]
+[8<1f0f0f8ff1f0f0f8>]
+[8<9f0f0f8ff1f0f0f8>]
+[8<9f0f0f8ff9f0f0f8>]
+[8<9f0f0f9ff9f0f0f8>]
+[8<9f0f0f9ff9f0f0f9>]
+[8<9f8f0f9ff9f0f0f9>]
+[8<9f8f0f9ff9f8f0f9>]
+[8<9f8f1f9ff9f8f0f9>]
+[8<9f8f1f9ff9f8f1f9>]
+[8<bf8f1f9ff9f8f1f9>]
+[8<bf8f1f9ffbf8f1f9>]
+[8<bf8f1fdffbf8f1f9>]
+[8<bf8f1fdffbf8f1fd>]
+[8<ff8f1fdffbf8f1fd>]
+[8<ff8f1fdffff8f1fd>]
+[8<ff8f1ffffff8f1fd>]
+[8<ff8f1ffffff8f1ff>]
+[8<ff9f1ffffff8f1ff>]
+[8<ff9f1ffffff9f1ff>]
+[8<ff9f9ffffff9f1ff>]
+[8<ff9f9ffffff9f9ff>]
+[8<ffbf9ffffff9f9ff>]
+[8<ffbf9ffffffbf9ff>]
+[8<ffbfdffffffbf9ff>]
+[8<ffbfdffffffbfdff>]
+[8<ffffdffffffbfdff>]
+[8<ffffdffffffffdff>]
+[8<fffffffffffffdff>]
+[8<ffffffffffffffff>]]
+[%mg
+[8<8000000000000000>]
+[8<0822080080228000>]
+[8<0204081020408001>]
+[8<40e0400000000000>]
+[8<66999966>]
+[8<8001000010080000>]
+[8<81c36666c3810000>]
+[8<f0e0c08000000000>]
+[16<07c00f801f003e007c00f800f001e003c007800f001f003e007c00f801f003e0>]
+[16<1f000f8007c003e001f000f8007c003e001f800fc007e003f001f8007c003e00>]
+[8<c3c300000000c3c3>]
+[16<0040008001000200040008001000200040008000000100020004000800100020>]
+[16<0040002000100008000400020001800040002000100008000400020001000080>]
+[16<1fc03fe07df0f8f8f07de03fc01f800fc01fe03ff07df8f87df03fe01fc00f80>]
+[8<80>]
+[8<8040201000000000>]
+[8<84cc000048cc0000>]
+[8<9900009900000000>]
+[8<08040201804020100800020180002010>]
+[8<2418814242811824>]
+[8<66999966>]
+[8<8000000008000000>]
+[8<70f8d8f870000000>]
+[8<0814224180402010>]
+[8<aa00440a11a04400>]
+[8<018245aa45820100>]
+[8<221c224180808041>]
+[8<88000000>]
+[8<0855800080550800>]
+[8<2844004482440044>]
+[8<0810204080412214>]
+[8<00>]]]def
+/Dfill{
+ transform /maxy exch def /maxx exch def
+ transform /miny exch def /minx exch def
+ minx maxx gt{/minx maxx /maxx minx def def}if
+ miny maxy gt{/miny maxy /maxy miny def def}if
+ Dpatterns Dstipple 1 sub get exch 1 sub get
+ aload pop /stip exch def /stipw exch def /stiph 128 def
+ /imatrix[stipw 0 0 stiph 0 0]def
+ /tmatrix[stipw 0 0 stiph 0 0]def
+ /minx minx cvi stiph idiv stiph mul def
+ /miny miny cvi stipw idiv stipw mul def
+ gsave eoclip 0 setgray
+ miny stiph maxy{
+  tmatrix exch 5 exch put
+  minx stipw maxx{
+   tmatrix exch 4 exch put tmatrix setmatrix
+   stipw stiph true imatrix {stip} imagemask
+  }for
+ }for
+ grestore
+}def
+/Dp{Dfill Dstroke}def
+/DP{Dfill currentpoint newpath moveto}def
 end
+
 /ditstart{$DITroff begin
  /nfonts 60 def			% NFONTS makedev/ditroff dependent!
  /fonts[nfonts{0}repeat]def
@@ -103,19 +249,21 @@ end
 }def
 
 % character outcalls
-/oc {/pswid exch def /cc exch def /name exch def
-   /ditwid pswid fontsize mul resolution mul 72000 div def
-   /ditsiz fontsize resolution mul 72 div def
-   ocprocs name known{ocprocs name get exec}{name cb}
-   ifelse}def
+/oc{
+ /pswid exch def /cc exch def /name exch def
+ /ditwid pswid fontsize mul resolution mul 72000 div def
+ /ditsiz fontsize resolution mul 72 div def
+ ocprocs name known{ocprocs name get exec}{name cb}ifelse
+}def
 /fractm [.65 0 0 .6 0 0] def
-/fraction
- {/fden exch def /fnum exch def gsave /cf currentfont def
-  cf fractm makefont setfont 0 .3 dm 2 copy neg rmoveto
-  fnum show rmoveto currentfont cf setfont(\244)show setfont fden show 
-  grestore ditwid 0 rmoveto} def
-/oce {grestore ditwid 0 rmoveto}def
-/dm {ditsiz mul}def
+/fraction{
+ /fden exch def /fnum exch def gsave /cf currentfont def
+ cf fractm makefont setfont 0 .3 dm 2 copy neg rmoveto
+ fnum show rmoveto currentfont cf setfont(\244)show setfont fden show 
+ grestore ditwid 0 rmoveto
+}def
+/oce{grestore ditwid 0 rmoveto}def
+/dm{ditsiz mul}def
 /ocprocs 50 dict def ocprocs begin
 (14){(1)(4)fraction}def
 (12){(1)(2)fraction}def
@@ -180,7 +328,6 @@ Encoding
  newpath 0 0 moveto gsave charproc grestore
  end}def
 /BuildChar load 0 DITfd put
-%/UniqueID 5 def
 /CharProcs 50 dict def
 CharProcs begin
 /space{}def
@@ -189,7 +336,7 @@ CharProcs begin
 /rn{0 840 moveto 500 0 rls}def
 /vr{0 800 moveto 0 -770 rls}def
 /bv{0 800 moveto 0 -1000 rls}def
-/br{0 750 moveto 0 -1000 rls}def
+/br{0 840 moveto 0 -1000 rls}def
 /ul{0 -140 moveto 500 0 rls}def
 /ob{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath stroke}def
 /bu{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath fill}def

@@ -1,4 +1,4 @@
-/*	@(#)pstext.c	1.1 %G%	*/
+/*	@(#)pstext.c	1.2 %G%	*/
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
 static char *RCSID="$Header: pstext.c,v 2.1 85/11/24 11:51:14 shore Rel $";
@@ -169,8 +169,10 @@ char **argv;
 	    }
 	}
 	if (++lineno >= length) {
-	    npages++;
+	    if (!donepage)
+		printf("%%%%Page: %d %d\nStartPage\n", npages, npages);
 	    printf("EndPage\n");
+	    npages++;
 	    donepage = 0;
 	    lineno = 0;
 	    blanklines = 0;

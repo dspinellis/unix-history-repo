@@ -1,4 +1,4 @@
-/*	@(#)psgrind.c	1.1 %G%	*/
+/*	@(#)psgrind.c	1.2 %G%	*/
 /*
  *  psgrind - quick hack to grind C source files directly into
  *  PostScript.
@@ -510,11 +510,11 @@ private CommentHeader() {
 
 /* list of C keywords to put in KwordFont */
 private char *KeyWordList[] = {
-    "int", "char", "float", "double", "struct", "union",
-    "long", "short", "unsigned", "auto", "extern", "register",
-    "typedef", "static", "goto", "return", "sizeof", "break",
-    "continue", "if", "else", "for", "do", "while", "switch",
-    "case", "default", "entry", NULL
+    "asm", "auto", "break", "case", "char", "continue", "default", "do",
+    "double", "else", "entry", "enum", "extern", "float", "for", "fortran",
+    "goto", "if", "int", "long", "register", "return", "short", "sizeof",
+    "static", "struct", "switch", "typedef", "union", "unsigned", "void",
+    "while", NULL
 };
 
 /* macros identifying C identifiers */
@@ -696,7 +696,8 @@ private CopyFile () {
 			ungetc(c, stdin);
 			tp = token;
 			IsKword = 0;
-			for (kwp = KeyWordList; *kwp != NULL; kwp++)
+			for (kwp = KeyWordList;
+			     *kwp != NULL && **kwp <= *tp; kwp++)
 				if (!strcmp(*kwp, tp)) {
 					IsKword = 1;
 					break;
