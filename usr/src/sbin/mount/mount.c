@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -95,7 +95,6 @@ main(argc, argv, arge)
 	extern char *optarg;
 	extern int optind;
 	register struct fstab *fs;
-	register int cnt;
 	int all, ch, rval, flags, ret, pid, i;
 	long mntsize;
 	struct statfs *mntbuf, *getmntpt();
@@ -193,7 +192,7 @@ main(argc, argv, arge)
 			strcpy(mntbuf->f_mntfromname, fs->fs_spec);
 		}
 		ret = mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
-		    updateflg, type, options, NULL);
+		    updateflg, type, options, (char *)NULL);
 	} else if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
 			fprintf(stderr,
@@ -213,7 +212,8 @@ main(argc, argv, arge)
 		usage();
 		ret = 1;
 	} else {
-		ret = mountfs(argv[0], argv[1], updateflg, type, options, NULL);
+		ret = mountfs(argv[0], argv[1], updateflg, type, options,
+		    (char *)NULL);
 	}
 	if ((pidfile = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
 		pid = 0;
@@ -230,8 +230,9 @@ mountfs(spec, name, flags, type, options, mntopts)
 	int flags;
 {
 	extern int errno;
-	register int cnt;
-	int argc, status, i;
+	union wait status;
+	pid_t pid;
+	int argc, i;
 	struct ufs_args args;
 	struct nfs_args nfsargs;
 	char *argp, *argv[50];
@@ -289,19 +290,19 @@ mountfs(spec, name, flags, type, options, mntopts)
 		argv[argc++] = NULL;
 		sprintf(execname, "%s/mount_%s", _PATH_EXECDIR, mntname);
 		if (verbose) {
-			printf("exec: %s", execname);
-			for (i = 1; i < argc; i++)
-				printf(" %s", argv[i]);
-			printf("\n");
+			(void)printf("exec: %s", execname);
+			for (i = 1; i < argc - 1; i++)
+				(void)printf(" %s", argv[i]);
+			(void)printf("\n");
 		}
 		if (fake)
 			break;
-		if (i = vfork()) {
-			if (i == -1) {
+		if (pid = vfork()) {
+			if (pid == -1) {
 				perror("mount: vfork starting file system");
 				return (1);
 			}
-			if (waitpid(i, &status, 0) != -1 &&
+			if (waitpid(pid, &status, 0) != -1 &&
 			    WIFEXITED(status) &&
 			    WEXITSTATUS(status) != 0)
 				return (WEXITSTATUS(status));
@@ -311,7 +312,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 		execve(execname, argv, envp);
 		fprintf(stderr, "mount: cannot exec %s for %s: ",
 			execname, name);
-		perror("");
+		perror((char *)NULL);
 		exit (1);
 		/* NOTREACHED */
 
@@ -346,40 +347,46 @@ out:
 		prmount(spec, name, flags);
 
 	if (opflags & ISBGRND)
-		exit();
-	else
-		return(0);
+		exit(1);
+	return(0);
 }
 
 static
 prmount(spec, name, flags)
 	char *spec, *name;
-	long flags;
+	register short flags;
 {
+	register int first;
 
 	if (opflags & ISBGRND)
 		return;
-	printf("%s on %s", spec, name);
+	(void)printf("%s on %s", spec, name);
+	if (!(flags & MNT_VISFLAGMASK)) {
+		(void)printf("\n");
+		return;
+	}
+	first = 0;
+#define	PR(msg)	(void)printf("%s%s", !first++ ? " (" : ", ", msg)
 	if (flags & MNT_RDONLY)
-		printf(" (read-only)");
+		PR("read-only");
 	if (flags & MNT_NOEXEC)
-		printf(" (noexec)");
+		PR("noexec");
 	if (flags & MNT_NOSUID)
-		printf(" (nosuid)");
+		PR("nosuid");
 	if (flags & MNT_NODEV)
-		printf(" (nodev)");
+		PR("nodev");
 	if (flags & MNT_SYNCHRONOUS)
-		printf(" (synchronous)");
+		PR("synchronous");
 	if (flags & MNT_QUOTA)
-		printf(" (with quotas)");
+		PR("with quotas");
 	if (flags & MNT_LOCAL)
-		printf(" (local)");
+		PR("local");
 	if (flags & MNT_EXPORTED)
 		if (flags & MNT_EXRDONLY)
-			printf(" (NFS exported read-only)");
+			PR("NFS exported read-only");
 		else
-			printf(" (NFS exported)");
-	printf("\n");
+			PR("NFS exported");
+	(void)printf(")\n");
 }
 
 getmnttype(fstype)
@@ -409,14 +416,14 @@ usage()
 
 getstdopts(options, flagp)
 	char *options;
-	long *flagp;
+	int *flagp;
 {
 	register char *opt;
 	int negative;
-	char *optbuf[BUFSIZ], *strtok();
+	char optbuf[BUFSIZ];
 
-	strcpy(optbuf, options);
-	for (opt = strtok(optbuf, ","); opt; opt = strtok(NULL, ",")) {
+	(void)strcpy(optbuf, options);
+	for (opt = strtok(optbuf, ","); opt; opt = strtok((char *)NULL, ",")) {
 		if (opt[0] == 'n' && opt[1] == 'o') {
 			negative++;
 			opt += 2;
@@ -462,11 +469,11 @@ getstdopts(options, flagp)
 	}
 }
 
+/* ARGSUSED */
 getufsopts(options, flagp)
 	char *options;
-	long *flagp;
+	int *flagp;
 {
-
 	return;
 }
 
@@ -476,9 +483,8 @@ getexecopts(options, argv)
 {
 	register int argc = 0;
 	register char *opt;
-	char *strtok();
 
-	for (opt = strtok(options, ","); opt; opt = strtok(NULL, ",")) {
+	for (opt = strtok(options, ","); opt; opt = strtok((char *)NULL, ",")) {
 		if (opt[0] != '-')
 			continue;
 		argv[argc++] = opt;
@@ -510,7 +516,7 @@ getmntpt(name)
 static int skipvfs;
 
 badvfstype(vfstype, vfslist)
-	long vfstype;
+	short vfstype;
 	char **vfslist;
 {
 
@@ -545,7 +551,6 @@ makevfslist(fslist)
 {
 	register char **av, *nextcp;
 	register int i;
-	char *malloc();
 
 	if (fslist == NULL)
 		return (NULL);
@@ -556,7 +561,7 @@ makevfslist(fslist)
 	for (i = 0, nextcp = fslist; *nextcp; nextcp++)
 		if (*nextcp == ',')
 			i++;
-	av = (char **)malloc((i+2) * sizeof(char *));
+	av = (char **)malloc((size_t)(i+2) * sizeof(char *));
 	if (av == NULL)
 		return (NULL);
 	nextcp = fslist;
@@ -709,7 +714,7 @@ getnfsargs(spec, nfsargsp)
 			exit(1);
 		fprintf(stderr, "Can't access %s: ", spec);
 		errno = nfhret.stat;
-		perror(NULL);
+		perror((char *)NULL);
 		return (0);
 	}
 	saddr.sin_port = htons(tport);
