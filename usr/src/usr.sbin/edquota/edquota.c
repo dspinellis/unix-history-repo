@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,8 +38,7 @@ static char sccsid[] = "@(#)edquota.c	5.7 (Berkeley) %G%";
 #include <pwd.h>
 #include <ctype.h>
 #include <stdio.h>
-
-#define	DEFEDITOR	"/usr/ucb/vi"
+#include "pathnames.h"
 
 struct	dquot dq[NMOUNT];
 struct	dquot odq[NMOUNT];
@@ -149,7 +148,7 @@ editit()
 		setgid(getgid());
 		setuid(getuid());
 		if ((ed = getenv("EDITOR")) == (char *)0)
-			ed = DEFEDITOR;
+			ed = _PATH_EDITOR;
 		execlp(ed, ed, tmpfil, 0);
 		perror(ed);
 		exit(1);
