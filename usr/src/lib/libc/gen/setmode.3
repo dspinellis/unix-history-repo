@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)setmode.3	5.1 (Berkeley) %G%
+.\"	@(#)setmode.3	5.2 (Berkeley) %G%
 .\"
 .TH SETMODE 3 ""
 .UC 7
@@ -22,26 +22,29 @@ getmode, setmode \- modify mode bits
 .SH SYNOPSIS
 .nf
 .ft B
-getmode(mode)
-mode_t mode;
+getmode(set, mode)
+mode_t *set, mode;
 
-setmode(mode_str)
+set = setmode(mode_str)
+mode_t *set;
 char *mode_str;
 .ft R
 .fi
 .SH DESCRIPTION
 .I Getmode
-returns the file permission bits
+returns a copy of the file permission bits
 .I mode
-as altered by the string specified to
-.IR setmode .
+as altered by the values pointed to by
+.IR set .
 While only the mode bits are altered, other parts of the file mode
 may be examined.
 .PP
 .I Setmode
 takes an absolute (octal) or symbolic value, as described in
 .IR chmod (1),
-as an argument.
+as an argument
+and returns a pointer to mode values to be supplied to
+.IR getmode .
 Because some of the symbolic values are relative to the file
 creation mask,
 .I setmode
@@ -60,17 +63,13 @@ is to modify future file modes correctly.
 .PP
 If the mode passed to
 .I setmode
-is valid,
+is invalid,
 .I setmode
-returns 0; otherwise it returns -1.
+returns NULL.
 .SH ERRORS
-Neither
-.I getmode
-or
-.I setmode
-set the external variable
-.IR errno .
-.SH ENVIRONMENT
+.I Setmode
+may fail and set errno for any of the errors specified for the library
+routine
+.IR malloc (3).
 .SH SEE ALSO
-chmod(1), stat(2), umask(2)
-.SH STANDARDS
+chmod(1), stat(2), umask(2), malloc(3)
