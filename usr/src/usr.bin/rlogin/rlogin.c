@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.13 83/06/10";
+static char sccsid[] = "@(#)rlogin.c	4.14 83/06/13";
 #endif
 
 /*
@@ -119,25 +119,28 @@ usage:
 int	child;
 int	catchild();
 
-int	defflags;
-int	tabflag;
-struct	ttychars deftc;
-struct	ttychars notc = {
-	-1,	-1,	-1,	-1,	-1,
-	-1,	-1,	-1,	-1,	-1,
-	-1,	-1,	-1,	-1
-};
+int	defflags, tabflag;
+char	deferase, defkill;
+struct	tchars deftc;
+struct	ltchars defltc;
+struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
+struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
 
 doit()
 {
 	int exit();
+	struct sgttyb sb;
 
-	ioctl(0, TIOCGET, (char *)&defflags);
+	ioctl(0, TIOCGETP, (char *)&sb);
+	defflags = sb.sg_flags;
 	tabflag = defflags & TBDELAY;
 	defflags &= ECHO | CRMOD;
-	ioctl(0, TIOCCGET, (char *)&deftc);
-	notc.tc_startc = deftc.tc_startc;
-	notc.tc_stopc = deftc.tc_stopc;
+	deferase = sb.sg_erase;
+	defkill = sb.sg_kill;
+	ioctl(0, TIOCGETC, (char *)&deftc);
+	notc.t_startc = deftc.t_startc;
+	notc.t_stopc = deftc.t_stopc;
+	ioctl(0, TIOCGLTC, (char *)&defltc);
 	signal(SIGINT, exit);
 	signal(SIGHUP, exit);
 	signal(SIGQUIT, exit);
@@ -237,16 +240,16 @@ top:
 			if (c == '\r' || c == '\n') {
 				char cmdc = b[1];
 
-				if (cmdc == '.' || cmdc == deftc.tc_eofc) {
+				if (cmdc == '.' || cmdc == deftc.t_eofc) {
 					write(0, CRLF, sizeof(CRLF));
 					return;
 				}
-				if (cmdc == deftc.tc_suspc ||
-				    cmdc == deftc.tc_dsuspc) {
+				if (cmdc == defltc.t_suspc ||
+				    cmdc == defltc.t_dsuspc) {
 					write(0, CRLF, sizeof(CRLF));
 					mode(0);
 					signal(SIGCHLD, SIG_IGN);
-					kill(cmdc == deftc.tc_suspc ?
+					kill(cmdc == defltc.t_suspc ?
 					  0 : getpid(), SIGTSTP);
 					signal(SIGCHLD, catchild);
 					mode(1);
@@ -259,12 +262,12 @@ top:
 			write(1, &c, 1);
 		}
 		*p++ = c;
-		if (c == deftc.tc_erase) {
+		if (c == deferase) {
 			p -= 2; 
 			if (p < b)
 				goto top;
 		}
-		if (c == deftc.tc_kill || c == deftc.tc_eofc ||
+		if (c == defkill || c == deftc.t_eofc ||
 		    c == '\r' || c == '\n')
 			goto top;
 		if (p >= &b[sizeof b])
@@ -289,14 +292,14 @@ oob()
 	}
 	recv(rem, &mark, 1, MSG_OOB);
 	if (mark & TIOCPKT_NOSTOP) {
-		notc.tc_stopc = -1;
-		notc.tc_startc = -1;
-		ioctl(0, TIOCCSET, (char *)&notc);
+		notc.t_stopc = -1;
+		notc.t_startc = -1;
+		ioctl(0, TIOCSETC, (char *)&notc);
 	}
 	if (mark & TIOCPKT_DOSTOP) {
-		notc.tc_stopc = deftc.tc_stopc;
-		notc.tc_startc = deftc.tc_startc;
-		ioctl(0, TIOCCSET, (char *)&notc);
+		notc.t_stopc = deftc.t_stopc;
+		notc.t_startc = deftc.t_startc;
+		ioctl(0, TIOCSETC, (char *)&notc);
 	}
 }
 
@@ -326,32 +329,39 @@ reader()
 
 mode(f)
 {
-	struct ttychars *tc;
-	int flags;
+	struct tchars *tc;
+	struct ltchars *ltc;
+	struct sgttyb sb;
 
-	ioctl(0, TIOCGET, (char *)&flags);
+	ioctl(0, TIOCGETP, (char *)&sb);
 	switch (f) {
 
 	case 0:
-		flags &= ~(CBREAK|RAW|TBDELAY);
-		flags |= defflags|tabflag;
+		sb.sg_flags &= ~(CBREAK|RAW|TBDELAY);
+		sb.sg_flags |= defflags|tabflag;
 		tc = &deftc;
+		ltc = &defltc;
+		sb.sg_kill = defkill;
+		sb.sg_erase = deferase;
 		break;
 
 	case 1:
-		flags |= (eight ? RAW : CBREAK);
-		flags &= ~defflags;
+		sb.sg_flags |= (eight ? RAW : CBREAK);
+		sb.sg_flags &= ~defflags;
 		/* preserve tab delays, but turn off XTABS */
-		if ((flags & TBDELAY) == XTABS)
-			flags &= ~TBDELAY;
+		if ((sb.sg_flags & TBDELAY) == XTABS)
+			sb.sg_flags &= ~TBDELAY;
 		tc = &notc;
+		ltc = &noltc;
+		sb.sg_kill = sb.sg_erase = -1;
 		break;
 
 	default:
 		return;
 	}
-	ioctl(0, TIOCSET, (char *)&flags);
-	ioctl(0, TIOCCSET, (char *)tc);
+	ioctl(0, TIOCSLTC, (char *)ltc);
+	ioctl(0, TIOCSETC, (char *)tc);
+	ioctl(0, TIOCSETN, (char *)&sb);
 }
 
 /*VARARGS*/
