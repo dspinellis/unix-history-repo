@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.10 81/10/23 */
+/* tcp_usrreq.c 1.11 81/10/24 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -118,7 +118,7 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case SSS_SND:				/* 40,41 */
-		nstate = sss_snd(tp, mp);
+		nstate = sss_send(tp, mp);
 		break;
 
 	case SSS_RCV:				/* 42 */
@@ -280,7 +280,7 @@ COUNT(T_CLOSE);
         	to_user(up, state);
 }
 
-sss_snd(tp, m0)
+sss_send(tp, m0)
 	register struct tcb *tp;
 	struct mbuf *m0;
 {
@@ -288,6 +288,7 @@ sss_snd(tp, m0)
 	register struct ucb *up = tp->t_ucb;
 	register off;
 	seq_t last;
+COUNT(SSS_SEND);
 
 	last = tp->snd_off;
 	for (m = n = m0; m != NULL; m = m->m_next) {
