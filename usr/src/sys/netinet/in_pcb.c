@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_pcb.c	7.11 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -326,12 +326,10 @@ in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
 			inp = inp->inp_next;
 			continue;
 		}
-		if (errno) 
-			inp->inp_socket->so_error = errno;
 		oinp = inp;
 		inp = inp->inp_next;
 		if (notify)
-			(*notify)(oinp);
+			(*notify)(oinp, errno);
 	}
 }
 
