@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.10";
+char id_err[] = "@(#)err.c	1.11";
  *
  * file i/o error and initialization routines
  */
@@ -96,6 +96,7 @@ fatal(n,s) char *s;
 	_cleanup();
 #if	vax
 	signal(SIGILL, SIG_DFL);
+	sigsetmask(0);
 #else	pdp11
 	signal(SIGIOT, SIG_DFL);
 #endif
