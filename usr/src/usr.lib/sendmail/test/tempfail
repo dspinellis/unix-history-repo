@@ -1,0 +1,3 @@
+#!/bin/csh
+echo this is a temporary failure
+exit 75
