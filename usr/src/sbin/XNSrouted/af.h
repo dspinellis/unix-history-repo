@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  *	@(#)af.h	5.1 (Berkeley) 6/4/85 (routed/af.h)
  *
- *	@(#)af.h	5.2 (Berkeley) %G%
+ *	@(#)af.h	8.1 (Berkeley) %G%
  */
 
 /*
