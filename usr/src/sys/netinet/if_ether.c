@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.11 (Berkeley) %G%
+ *	@(#)if_ether.c	6.12 (Berkeley) %G%
  */
 
 /*
@@ -132,7 +132,6 @@ arpresolve(ac, m, destip, desten)
 {
 	register struct arptab *at;
 	register struct ifnet *ifp;
-	register int i;
 	struct sockaddr_in sin;
 	int s, lna;
 
