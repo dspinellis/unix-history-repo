@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machdep.c	1.4	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)machdep.c	1.3	(Berkeley)	%G%";
  * for each new machine that this program is ported to.
  */
 
+#ifdef vax
 /*
  * Instruction stop table.
  * All instructions that implicitly modify any of the temporary
@@ -69,7 +70,6 @@ doreplaceon(cp)
 
 /*
  * Find the next argument to the function being expanded.
- * MACHINE DEPENDENT
  */
 nextarg(argc, argv)
 	int argc;
@@ -87,7 +87,6 @@ nextarg(argc, argv)
 
 /*
  * Determine whether the current line pushes an argument.
- * MACHINE DEPENDENT
  */
  ispusharg(argc, argv)
 	int argc;
@@ -106,7 +105,6 @@ nextarg(argc, argv)
 /*
  * Determine which (if any) registers are modified
  * Return register number that is modified, -1 if none are modified.
- * MACHINE DEPENDENT
  */
 modifies(argc, argv)
 	int argc;
@@ -126,7 +124,6 @@ modifies(argc, argv)
  * Rewrite the instruction in (argc, argv) to store its
  * contents into arg instead of onto the stack. The new
  * instruction is placed in the buffer that is provided.
- * MACHINE DEPENDENT
  */
 rewrite(instbuf, argc, argv, target)
 	char *instbuf;
@@ -175,3 +172,184 @@ rewrite(instbuf, argc, argv, target)
 		return;
 	}
 }
+
+/*
+ * Do any necessary post expansion cleanup.
+ */
+cleanup(numargs)
+	int numargs;
+{
+
+	return;
+}
+#endif vax
+
+#ifdef mc68000
+/*
+ * Instruction stop table.
+ * All instructions that implicitly modify any of the temporary
+ * registers, change control flow, or implicitly loop must be
+ * listed in this table. It is used to find the end of a basic
+ * block when scanning backwards through the instruction stream
+ * trying to merge the inline expansion.
+ */
+struct inststoptbl inststoptable[] = {
+	{ "" }
+};
+
+/*
+ * Check to see if a line is a candidate for replacement.
+ * Return pointer to name to be looked up in pattern table.
+ */
+char *
+doreplaceon(cp)
+	char *cp;
+{
+
+	if (bcmp(cp, "jbsr\t", 5) == 0)
+		return (cp + 5);
+	return (0);
+}
+
+/*
+ * Find the next argument to the function being expanded.
+ */
+nextarg(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register char *lastarg = argv[2];
+
+	if (argc == 3 &&
+	    bcmp(argv[0], "movl", 5) == 0 &&
+	    bcmp(argv[1], "sp@+", 5) == 0 &&
+	    (lastarg[1] == '0' || lastarg[1] == '1') &&
+	    lastarg[2] == '\0') {
+		if (lastarg[0] == 'd')
+			return (lastarg[1] - '0');
+		return (lastarg[1] - '0' + 8);
+	}
+	return (-1);
+}
+
+/*
+ * Determine whether the current line pushes an argument.
+ */
+ ispusharg(argc, argv)
+	int argc;
+	char *argv[];
+{
+
+	if (argc < 2)
+		return (0);
+	if (argc == 2 && bcmp(argv[0], "pea", 4) == 0)
+		return (1);
+	if (bcmp(argv[argc - 1], "sp@-", 5) == 0)
+		return (1);
+	return (0);
+}
+
+/*
+ * Determine which (if any) registers are modified
+ * Return register number that is modified, -1 if none are modified.
+ */
+modifies(argc, argv)
+	int argc;
+	char *argv[];
+{
+	/*
+	 * For the MC68000 all we care about are d0, d1, a0, and a1.
+	 */
+	register char *lastarg = argv[argc - 1];
+
+	if (lastarg[0] == 'd' && isdigit(lastarg[1]) && lastarg[2] == '\0')
+		return (lastarg[1] - '0');
+	if (lastarg[0] == 'a' && isdigit(lastarg[1]) && lastarg[2] == '\0')
+		return (lastarg[1] - '0' + 8);
+	return (-1);
+}
+
+/*
+ * Rewrite the instruction in (argc, argv) to store its
+ * contents into arg instead of onto the stack. The new
+ * instruction is placed in the buffer that is provided.
+ */
+rewrite(instbuf, argc, argv, target)
+	char *instbuf;
+	int argc;
+	char *argv[];
+	int target;
+{
+	int regno;
+	char regtype;
+
+	if (target < 8) {
+		regtype = 'd';
+		regno = target;
+	} else {
+		regtype = 'a';
+		regno = target - 8;
+	}
+	switch (argc) {
+	case 0:
+		instbuf[0] = '\0';
+		fprintf("blank line to rewrite?\n");
+		return;
+	case 1:
+		sprintf(instbuf, "\t%s\n", argv[0]);
+		fprintf(stderr, "rewrite?-> %s", instbuf);
+		return;
+	case 2:
+		if (bcmp(argv[0], "pea", 4) == 0) {
+			if (regtype == 'a') {
+				sprintf(instbuf, "\tlea\t%s,%c%d\n",
+					argv[1], regtype, regno);
+				return;
+			}
+			if (argv[1][0] == '_' || isdigit(argv[1][0])) {
+				sprintf(instbuf, "\tmovl\t#%s,%c%d\n",
+					argv[1], regtype, regno);
+				return;
+			}
+			sprintf(instbuf,
+				"\texg\ta0,d%d\n\tlea\t%s,a0\n\texg\ta0,d%d\n",
+				regno, argv[1], regno);
+			return;
+		}
+		sprintf(instbuf, "\t%s\t%c%d\n", argv[0], regtype, regno);
+		return;
+	case 3:
+		sprintf(instbuf, "\t%s\t%s,%c%d\n",
+			argv[0], argv[1], regtype, regno);
+		return;
+	default:
+		sprintf(instbuf, "\t%s\t%s", argv[0], argv[1]);
+		argc -= 2, argv += 2;
+		while (argc-- > 0) {
+			strcat(instbuf, ",");
+			strcat(instbuf, *argv++);
+		}
+		strcat(instbuf, "\n");
+		fprintf(stderr, "rewrite?-> %s", instbuf);
+		return;
+	}
+}
+
+/*
+ * Do any necessary post expansion cleanup.
+ */
+cleanup(numargs)
+	int numargs;
+{
+	
+	if (numargs == 0)
+		return;
+	/*
+	 * delete instruction to pop arguments.
+	 * TODO:
+	 *	CHECK FOR LABEL
+	 *	CHECK THAT INSTRUCTION IS A POP
+	 */
+	fgets(line[bufhead], MAXLINELEN, stdin);
+}
+#endif mc68000
