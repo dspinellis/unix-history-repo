@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.3	(Berkeley)	82/11/06
+#	@(#)Makefile	4.4	(Berkeley)	83/02/11
 #
 #	make file for STYLE and DICTION
 #
@@ -8,6 +8,7 @@
 #	DICT is the full pathname of the file dict.d, the
 #		dictionary file used by DICTION
 #
+DESTDIR=
 SRCS = \
 	abbrev.c conp.h dict.c dict.d \
 	diction.c diction.sh edict.c ehash.c \
@@ -45,7 +46,7 @@ style3: prtlex.o pscan.o outp.o
 prtlex.c: part.l
 	lex part.l
 	mv lex.yy.c prtlex.c
-prtlex.o: names.h prtlex.c
+prtlex.o: names.h prtlex.c conp.h style.h names.h
 	cc -c -O prtlex.c
 pscan.o: names.h conp.h pscan.c
 	cc -c -O pscan.c
