@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,6 +19,8 @@ static char sccsid[] = "@(#)startup.c	5.8 (Berkeley) %G%";
 struct	interface *ifnet;
 int	lookforinterfaces = 1;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
+int	foundloopback;			/* valid flag for loopaddr */
+struct	sockaddr loopaddr;		/* our address on loopback */
 
 /*
  * Find the network interfaces which have configured themselves.
@@ -58,9 +60,6 @@ ifinit()
                         continue;
                 }
 		ifs.int_flags = ifreq.ifr_flags | IFF_INTERFACE;
-		/* no one cares about software loopback interfaces */
-		if (ifs.int_flags & IFF_LOOPBACK)
-			continue;
 		if ((ifs.int_flags & IFF_UP) == 0 ||
 		    ifr->ifr_addr.sa_family == AF_UNSPEC) {
 			lookforinterfaces = 1;
@@ -72,6 +71,13 @@ ifinit()
 		/* argh, this'll have to change sometime */
 		if (ifs.int_addr.sa_family != AF_INET)
 			continue;
+		if (ifs.int_flags & IFF_LOOPBACK) {
+			foundloopback = 1;
+			loopaddr = ifs.int_addr;
+			for (ifp = ifnet; ifp; ifp = ifp->int_next)
+			    if (ifp->int_flags & IFF_POINTOPOINT)
+				add_ptopt_localrt(ifp);
+		}
                 if (ifs.int_flags & IFF_POINTOPOINT) {
                         if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
                                 syslog(LOG_ERR, "ioctl (get dstaddr)");
@@ -120,8 +126,9 @@ ifinit()
 		 * back to ourself.  This is used below to
 		 * decide if we should be a routing ``supplier''.
 		 */
-		if ((ifs.int_flags & IFF_POINTOPOINT) == 0 ||
-		    if_ifwithaddr(&ifs.int_dstaddr) == 0)
+		if ((ifs.int_flags & IFF_LOOPBACK) == 0 &&
+		    ((ifs.int_flags & IFF_POINTOPOINT) == 0 ||
+		    if_ifwithaddr(&ifs.int_dstaddr) == 0))
 			externalinterfaces++;
 		/*
 		 * If we have a point-to-point link, we want to act
@@ -134,7 +141,8 @@ ifinit()
 		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
 			fprintf(stderr, "routed: ifinit: out of memory\n");
-			goto bad;		/* ??? */
+			syslog(LOG_ERR, "routed: ifinit: out of memory\n");
+			return;
 		}
 		strcpy(ifp->int_name, ifr->ifr_name);
 		ifp->int_next = ifnet;
@@ -145,12 +153,6 @@ ifinit()
 	if (externalinterfaces > 1 && supplier < 0)
 		supplier = 1;
 	close(s);
-	return;
-bad:
-	sleep(60);
-	close(kmem), close(s);
-	execv("/etc/routed", argv0);
-	_exit(0177);
 }
 
 /*
@@ -160,12 +162,12 @@ bad:
  * INTERNET SPECIFIC.
  */
 addrouteforif(ifp)
-	struct interface *ifp;
+	register struct interface *ifp;
 {
 	struct sockaddr_in net;
 	struct sockaddr *dst;
 	int state, metric;
-	struct rt_entry *rt;
+	register struct rt_entry *rt;
 
 	if (ifp->int_flags & IFF_POINTOPOINT)
 		dst = &ifp->int_dstaddr;
@@ -187,19 +189,67 @@ addrouteforif(ifp)
 	 * This is meant for external viewers.
 	 */
 	if ((ifp->int_flags & (IFF_SUBNET|IFF_POINTOPOINT)) == IFF_SUBNET) {
+		struct in_addr subnet;
+
+		subnet = net.sin_addr;
 		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		rt = rtfind(dst);
 		if (rt == 0)
 			rtadd(dst, &ifp->int_addr, ifp->int_metric,
 			    ((ifp->int_flags & (IFF_INTERFACE|IFF_REMOTE)) |
-				RTS_PASSIVE | RTS_INTERNAL | RTS_SUBNET));
-		net.sin_addr = inet_makeaddr(ifp->int_subnet, INADDR_ANY);
+			    RTS_PASSIVE | RTS_INTERNAL | RTS_SUBNET));
+		else if ((rt->rt_state & (RTS_INTERNAL|RTS_SUBNET)) == 
+		    (RTS_INTERNAL|RTS_SUBNET) &&
+		    ifp->int_metric < rt->rt_metric)
+			rtchange(rt, &rt->rt_router, ifp->int_metric);
+		net.sin_addr = subnet;
 	}
 	if (ifp->int_transitions++ > 0)
 		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
-	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-	    ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE|IFF_SUBNET));
+	state = ifp->int_flags &
+	    (IFF_INTERFACE | IFF_PASSIVE | IFF_REMOTE | IFF_SUBNET);
+	if (ifp->int_flags & IFF_POINTOPOINT &&
+	    (ntohl(((struct sockaddr_in *)&ifp->int_dstaddr)->sin_addr.s_addr) &
+	    ifp->int_netmask) != ifp->int_net)
+		state &= ~RTS_SUBNET;
+	if (ifp->int_flags & IFF_LOOPBACK)
+		state |= RTS_EXTERNAL;
+	rtadd(dst, &ifp->int_addr, ifp->int_metric, state);
+	if (ifp->int_flags & IFF_POINTOPOINT && foundloopback)
+		add_ptopt_localrt(ifp);
+}
 
+/*
+ * Add route to local end of point-to-point using loopback.
+ * If a route to this network is being sent to neighbors on other nets,
+ * mark this route as subnet so we don't have to propagate it too.
+ */
+add_ptopt_localrt(ifp)
+	register struct interface *ifp;
+{
+	struct rt_entry *rt;
+	struct sockaddr *dst;
+	struct sockaddr_in net;
+	int state;
+
+	state = RTS_INTERFACE | RTS_PASSIVE;
+
+	/* look for route to logical network */
+	bzero((char *)&net, sizeof (net));
+	net.sin_family = AF_INET;
+	net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
+	dst = (struct sockaddr *)&net;
+	rt = rtfind(dst);
+	if (rt && rt->rt_state & RTS_INTERNAL)
+		state |= RTS_SUBNET;
+
+	dst = &ifp->int_addr;
+	if (rt = rtfind(dst)) {
+		if (rt && rt->rt_state & RTS_INTERFACE)
+			return;
+		rtdelete(rt);
+	}
+	rtadd(dst, &loopaddr, 0, state);
 }
 
 /*
@@ -214,6 +264,8 @@ addrouteforif(ifp)
  * not marked passive are treated as if they were directly
  * connected -- they're added into the interface list so we'll
  * send them routing updates.
+ *
+ * PASSIVE ENTRIES AREN'T NEEDED OR USED ON GATEWAYS RUNNING EGP.
  */
 gwkludge()
 {

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -60,15 +60,15 @@ sendmsg(dst, flags, ifp)
 supply(dst, flags, ifp)
 	struct sockaddr *dst;
 	int flags;
-	struct interface *ifp;
+	register struct interface *ifp;
 {
 	register struct rt_entry *rt;
-	struct netinfo *n = msg->rip_nets;
+	register struct netinfo *n = msg->rip_nets;
 	register struct rthash *rh;
 	struct rthash *base = hosthash;
 	int doinghost = 1, size;
 	int (*output)() = afswitch[dst->sa_family].af_output;
-	int (*sendsubnet)() = afswitch[dst->sa_family].af_sendsubnet;
+	int (*sendroute)() = afswitch[dst->sa_family].af_sendroute;
 	int npackets = 0;
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
@@ -77,8 +77,9 @@ again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 		/*
-		 * Don't resend the information
-		 * on the network from which it was received.
+		 * Don't resend the information on the network
+		 * from which it was received (unless sending
+		 * in response to a query).
 		 */
 		if (ifp && rt->rt_ifp == ifp &&
 		    (rt->rt_state & RTS_INTERFACE) == 0)
@@ -90,11 +91,9 @@ again:
 		 * to those who are interested.
 		 */
 		if (doinghost == 0 && rt->rt_state & RTS_SUBNET) {
-			if (ifp && (ifp->int_flags & IFF_SUBNET) == 0)
-				continue;
 			if (rt->rt_dst.sa_family != dst->sa_family)
 				continue;
-			if ((*sendsubnet)(rt, dst) == 0)
+			if ((*sendroute)(rt, dst) == 0)
 				continue;
 		}
 		size = (char *)n - packet;
@@ -106,8 +105,7 @@ again:
 		}
 		n->rip_dst = rt->rt_dst;
 		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
-		n->rip_metric = htonl(min(rt->rt_metric + rt->rt_ifmetric,
-		    HOPCNT_INFINITY));
+		n->rip_metric = htonl(min(rt->rt_metric + 1, HOPCNT_INFINITY));
 		n++;
 	}
 	if (doinghost) {

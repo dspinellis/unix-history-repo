@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -15,14 +15,14 @@ static char sccsid[] = "@(#)af.c	5.4 (Berkeley) %G%";
  */
 int	inet_hash(), inet_netmatch(), inet_output(),
 	inet_portmatch(), inet_portcheck(),
-	inet_checkhost(), inet_rtflags(), inet_sendsubnet(), inet_canon();
+	inet_checkhost(), inet_rtflags(), inet_sendroute(), inet_canon();
 char	*inet_format();
 
 #define NIL	{ 0 }
 #define	INET \
 	{ inet_hash,		inet_netmatch,		inet_output, \
 	  inet_portmatch,	inet_portcheck,		inet_checkhost, \
-	  inet_rtflags,		inet_sendsubnet,	inet_canon, \
+	  inet_rtflags,		inet_sendroute,		inet_canon, \
 	  inet_format \
 	}
 

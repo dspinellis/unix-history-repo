@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,9 +29,10 @@ static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 
 int	supplier = -1;		/* process should supply updates */
 int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
+int	debug = 0;
 
 struct	rip *msg = (struct rip *)packet;
-int	hup();
+int	hup(), rtdeleteall();
 
 main(argc, argv)
 	int argc;
@@ -73,6 +74,7 @@ main(argc, argv)
 			continue;
 		}
 		if (strcmp(*argv, "-d") == 0) {
+			debug++;
 			setlogmask(LOG_DEBUG);
 			argv++, argc--;
 			continue;
@@ -86,8 +88,7 @@ main(argc, argv)
 			"usage: routed [ -s ] [ -q ] [ -t ] [ -g ]\n");
 		exit(1);
 	}
-#ifndef DEBUG
-	if (!tracepackets) {
+	if (tracepackets == 0 && debug == 0) {
 		int t;
 
 		if (fork())
@@ -104,7 +105,6 @@ main(argc, argv)
 			(void) close(t);
 		}
 	}
-#endif
 	/*
 	 * Any extra argument is considered
 	 * a tracing log file.
@@ -135,6 +135,7 @@ main(argc, argv)
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
 	signal(SIGTERM, hup);
+	signal(SIGINT, rtdeleteall);
 	timer();
 
 	for (;;) {

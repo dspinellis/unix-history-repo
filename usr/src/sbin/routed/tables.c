@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -106,7 +106,7 @@ rtadd(dst, gate, metric, state)
 	struct afhash h;
 	register struct rt_entry *rt;
 	struct rthash *rh;
-	int af = dst->sa_family, flags, ifmetric;
+	int af = dst->sa_family, flags;
 	u_int hash;
 
 	if (af >= af_max)
@@ -139,23 +139,9 @@ rtadd(dst, gate, metric, state)
 	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
 	if (rt->rt_ifp == 0)
 		rt->rt_ifp = if_ifwithnet(&rt->rt_router);
-	if (rt->rt_ifp)
-		ifmetric = rt->rt_ifp->int_metric;
-	else
-		ifmetric = 0;
 	if ((state & RTS_INTERFACE) == 0)
 		rt->rt_flags |= RTF_GATEWAY;
-	/*
-	 * Set rt_ifmetric to the amount by which we
-	 * increment the route when sending it to others.
-	 */
-	if (state & RTS_INTERFACE) {
-		rt->rt_metric = 0;
-		rt->rt_ifmetric = metric + 1;
-	} else {
-		rt->rt_metric = metric;
-		rt->rt_ifmetric = ifmetric + 1;
-	}
+	rt->rt_metric = metric;
 	insque(rt, rh);
 	TRACE_ACTION(ADD, rt);
 	/*
@@ -165,8 +151,7 @@ rtadd(dst, gate, metric, state)
 	 */
 	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
 	    ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
-		if (errno != EEXIST &&
-		    dst->sa_family < af_max && gate->sa_family < af_max)
+		if (errno != EEXIST && gate->sa_family < af_max)
 			syslog(LOG_ERR,
 			"adding route to net/host %s through gateway %s: %m\n",
 			   (*afswitch[dst->sa_family].af_format)(dst),
@@ -185,42 +170,56 @@ rtchange(rt, gate, metric)
 	struct sockaddr *gate;
 	short metric;
 {
-	int doioctl = 0, metricchanged = 0, delete = 0;
+	int add = 0, delete = 0, metricchanged = 0;
 	struct rtentry oldroute;
 
-	if (!equal(&rt->rt_router, gate) && (rt->rt_state & RTS_INTERNAL) == 0)
-		doioctl++;
-	if (metric != rt->rt_metric) {
-		metricchanged++;
-		if (metric == HOPCNT_INFINITY)
+	if ((rt->rt_state & RTS_INTERNAL) == 0) {
+		/*
+		 * If changing to different router, we need to add
+		 * new route and delete old one if in the kernel.
+		 * If the router is the same, we need to delete
+		 * the route if has become unreachable, or re-add
+		 * it if it had been unreachable.
+		 */
+		if (!equal(&rt->rt_router, gate)) {
+			add++;
+			if (rt->rt_metric != HOPCNT_INFINITY)
+				delete++;
+		} else if (metric == HOPCNT_INFINITY)
 			delete++;
+		else if (rt->rt_metric == HOPCNT_INFINITY)
+			add++;
 	}
-	if (doioctl || metricchanged) {
+	if (metric != rt->rt_metric)
+		metricchanged++;
+	if (delete || metricchanged)
 		TRACE_ACTION(CHANGE FROM, rt);
-		if ((rt->rt_state & RTS_INTERFACE) &&
-		    metric > rt->rt_ifp->int_metric) {
-			rt->rt_state &= ~RTS_INTERFACE;
+	if ((rt->rt_state & RTS_INTERFACE) && delete) {
+		rt->rt_state &= ~RTS_INTERFACE;
+		if (add)
 			rt->rt_flags |= RTF_GATEWAY;
+		if (metric > rt->rt_metric && delete &&
+		    (rt->rt_state & RTS_INTERNAL) == 0)
 			syslog(LOG_ERR,
 				"changing route from interface %s (timed out)",
 				rt->rt_ifp->int_name);
-		}
-		if (doioctl || delete)
-			oldroute = rt->rt_rt;
-		if (doioctl) {
-			rt->rt_router = *gate;
-			rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
-			if (rt->rt_ifp == 0)
-				rt->rt_ifp = if_ifwithnet(&rt->rt_router);
-		}
-		rt->rt_metric = metric;
-		rt->rt_state |= RTS_CHANGED;
-		TRACE_ACTION(CHANGE TO, rt);
 	}
-	if (doioctl && install)
+	if (delete)
+		oldroute = rt->rt_rt;
+	if (add) {
+		rt->rt_router = *gate;
+		rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
+		if (rt->rt_ifp == 0)
+			rt->rt_ifp = if_ifwithnet(&rt->rt_router);
+	}
+	rt->rt_metric = metric;
+	rt->rt_state |= RTS_CHANGED;
+	if (add || metricchanged)
+		TRACE_ACTION(CHANGE TO, rt);
+	if (add && install)
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 			perror("SIOCADDRT");
-	if ((doioctl || delete) && install)
+	if (delete && install)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
 }
@@ -229,7 +228,7 @@ rtdelete(rt)
 	struct rt_entry *rt;
 {
 
-	if (rt->rt_state & RTS_INTERFACE)
+	if ((rt->rt_state & (RTS_INTERFACE|RTS_INTERNAL)) == RTS_INTERFACE)
 		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
 			rt->rt_ifp->int_name);
 	TRACE_ACTION(DELETE, rt);
@@ -238,6 +237,34 @@ rtdelete(rt)
 		perror("SIOCDELRT");
 	remque(rt);
 	free((char *)rt);
+}
+
+rtdeleteall(s)
+	int s;
+{
+	register struct rthash *rh;
+	register struct rt_entry *rt;
+	struct rthash *base = hosthash;
+	int doinghost = 1;
+
+again:
+	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
+		rt = rh->rt_forw;
+		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
+			if (rt->rt_state & RTS_INTERFACE)
+				continue;
+			TRACE_ACTION(DELETE, rt);
+			if ((rt->rt_state & (RTS_INTERNAL|RTS_EXTERNAL)) == 0 &&
+			    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
+				perror("SIOCDELRT");
+		}
+	}
+	if (doinghost) {
+		doinghost = 0;
+		base = nethash;
+		goto again;
+	}
+	hup(s);
 }
 
 /*
