@@ -1,4 +1,4 @@
-/*	route.c	6.2	83/10/20	*/
+/*	route.c	6.3	83/12/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,8 +33,8 @@ rtalloc(ro)
 	struct rtentry *rtmin;
 	struct mbuf **table;
 
-	if (ro->ro_rt && ro->ro_rt->rt_ifp)			/* XXX */
-		return;
+	if (ro->ro_rt && ro->ro_rt->rt_ifp && (ro->ro_rt->rt_flags & RTF_UP))
+		return;				 /* XXX */
 	if (af >= AF_MAX)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
@@ -109,8 +109,9 @@ rtfree(rt)
  * current round trip time estimates could be flushed),
  * but we have no back pointers at the moment.
  */
-rtredirect(dst, gateway)
+rtredirect(dst, gateway, flags)
 	struct sockaddr *dst, *gateway;
+	int flags;
 {
 	struct route ro;
 	register struct rtentry *rt;
@@ -145,17 +146,26 @@ rtredirect(dst, gateway)
 	 * for a route to an interface. 
 	 */
 	if (rt->rt_flags & RTF_GATEWAY) {
-		/*
-		 * Smash the current notion of the gateway to
-		 * this destination.  This is probably not right,
-		 * as it's conceivable a flurry of redirects could
-		 * cause the gateway value to fluctuate wildly during
-		 * dynamic routing reconfiguration.
-		 */
-		rt->rt_gateway = *gateway;
-		rtfree(rt);
-		rtstat.rts_newgateway++;
-		return;
+		if (((rt->rt_flags & RTF_HOST) == 0) && (flags & RTF_HOST)) {
+			/*
+			 * Changing from route to gateway => route to host.
+			 * Create new route, rather than smashing route to net.
+			 */
+			rtfree(rt);
+			rtinit(dst, gateway, flags);
+			rtstat.rts_newgateway++;
+		} else {
+			/*
+			 * Smash the current notion of the gateway to
+			 * this destination.  This is probably not right,
+			 * as it's conceivable a flurry of redirects could
+			 * cause the gateway value to fluctuate wildly during
+			 * dynamic routing reconfiguration.
+			 */
+			rt->rt_gateway = *gateway;
+			rtfree(rt);
+			rtstat.rts_newgateway++;
+		}
 	}
 }
 
