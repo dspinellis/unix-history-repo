@@ -1,6 +1,4 @@
-/*	lfs_inode.c	4.11	82/06/07	*/
-
-/* merged into kernel:	@(#)iget.c 2.2 4/8/82 */
+/*	lfs_inode.c	4.12	82/06/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -145,8 +143,6 @@ irele(ip)
 	register struct inode *jp;
 	int mode;
 
-	if (ip->i_flag & ILOCK)
-		panic("irele");
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCK;
 		if (ip->i_nlink <= 0) {
