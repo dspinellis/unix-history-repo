@@ -3,7 +3,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)timedc.8	1.1 (Berkeley) %G%
+.\"	@(#)timedc.8	1.2 (Berkeley) %G%
 .\"
 .TH TIMEDC 8 ""
 .UC 6
@@ -20,11 +20,11 @@ It may be used to:
 .IP \(bu
 measure the differences between machines' clocks,
 .IP \(bu
-find the location where the master timed is running,
+find the location where the master time server is running,
 .IP \(bu
-cause election timers on several machines to expire at the same time,
+enable or disable tracing of messages received by \fItimed\fP, and
 .IP \(bu
-enable or disable tracing of messages received by \fItimed\fP.
+perform various debugging actions.
 .PP
 Without any arguments,
 .I timedc
@@ -51,12 +51,7 @@ clockdiff host ...
 Compute the differences between the clock of the host machine
 and the clocks of the machines given as arguments.
 .TP
-testing host ...
-.br
-Cause timed election timers to expire in the specified
-hosts. It is used to test the election algorithm.
-.TP
-tracing { on | off }
+trace { on | off }
 .br
 Enable or disable the tracing of incoming messages to \fItimed\fP
 in the file /usr/adm/timed.log.
@@ -64,6 +59,11 @@ in the file /usr/adm/timed.log.
 quit
 .br
 Exit from timedc.
+.PP
+Other commands may be included for use in testing and debugging
+.IR timed ;
+the help command and
+the program source may be consulted for details.
 .SH FILES
 .nf
 .ta \w'/usr/adm/masterlog       'u
@@ -71,7 +71,8 @@ Exit from timedc.
 /usr/adm/timed.masterlog	log file for master timed
 .fi
 .SH "SEE ALSO"
-date(1), adjtime(2), timed(8), 
+date(1), adjtime(2), icmp(4P), timed(8), 
+.br
 \fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
 R. Gusella and S. Zatti
 .SH DIAGNOSTICS
