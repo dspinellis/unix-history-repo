@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.17 (Berkeley) %G%
+ *	@(#)curses.h	5.18 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -73,6 +73,7 @@ typedef struct {
 typedef struct {
 #define	__ISDIRTY	0x01		/* Line is dirty. */
 #define __ISPASTEOL	0x02		/* Cursor is past end of line */
+#define __FORCEPAINT	0x04		/* Force a repaint of the line */
 	u_int flags;
 	u_int hash;			/* Hash value for the line. */
 	size_t firstch, lastch;		/* First and last changed columns. */
@@ -254,12 +255,14 @@ char	*wstandout __P((WINDOW *));
 
 #ifdef _CURSES_PRIVATE
 /* Private function prototypes. */
+void	 __TRACE __P((const char *, ...));
 void	 __id_subwins __P((WINDOW *));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __swflags __P((WINDOW *));
-void	 __TRACE __P((const char *, ...));
-int	 waddbytes __P((WINDOW *, char *, int));
+int	 __touchline __P((WINDOW *, int, int, int, int));
+int	 __touchwin __P((WINDOW *));
 char	*tscroll __P((const char *, int));
+int	 waddbytes __P((WINDOW *, char *, int));
 
 /* Private #defines. */
 #define	min(a,b)	(a < b ? a : b)
