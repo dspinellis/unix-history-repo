@@ -1,4 +1,4 @@
-/*	@(#)floor.c	4.2	9/11/85; 1.5 (ucb.elefunt) %G% */
+/*	@(#)floor.c	4.2	9/11/85; 1.6 (ucb.elefunt) %G% */
 
 /*
  * floor and ceil-- greatest integer <= arg
@@ -31,7 +31,7 @@ double d;
 	return(-floor(-d));
 }
 
-#ifndef NATIONAL			/* rint() is in ./NATIONAL/support.s */
+#ifndef national			/* rint() is in ./NATIONAL/support.s */
 /*
  * algorithm for rint(x) in pseudo-pascal form ...
  *
@@ -53,30 +53,30 @@ double d;
  * Note: Inexact will be signaled if x is not an integer, as is
  *	customary for IEEE 754.  No other signal can be emitted.
  */
-#if (defined(VAX)||defined(TAHOE))
-#ifdef VAX
+#if defined(vax)||defined(tahoe)
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 static long Lx[] = {_0x(0000,5c00),_0x(0000,0000)};	/* 2**55 */
 #define L *(double *) Lx
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static double L = 4503599627370496.0E0;		/* 2**52 */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 double
 rint(x)
 double x;
 {
 	double s,t,one = 1.0,copysign();
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if (x != x)				/* NaN */
 		return (x);
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	if (copysign(x,one) >= L)		/* already an integer */
 	    return (x);
 	s = copysign(L,x);
 	t = x + s;				/* x+s rounded to integer */
 	return (t - s);
 }
-#endif	/* NATIONAL */
+#endif	/* not national */

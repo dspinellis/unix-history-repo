@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.5	(ucb.elefunt)	%G%
+#	@(#)Makefile	1.6	(ucb.elefunt)	%G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -15,11 +15,11 @@
 # MACHINE indicates the type of floating point hardware you are using; legal
 # values are:
 #
-# VAX		- for the VAX D_floating format, the default.
-# TAHOE		- for the TAHOE double format.
-# NATIONAL	- for those IEEE machines whose floating point implementation
+# vax		- for the VAX D_floating format, the default.
+# tahoe		- for the TAHOE double format.
+# national	- for those IEEE machines whose floating point implementation
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
-# IEEE		- for other IEEE machines, we hope.
+# ieee		- for other IEEE machines, we hope.
 #
 CFLAGS=	-O -D${MACHINE}
 LIBC=	/lib/libc.a
@@ -51,23 +51,23 @@ libm.a libm_p.a: ${OBJS} more.${MACHINE}
 	cd profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru libm.a ${OBJS}
 
-more.IEEE: FRC
-	cd COMMON; make "CFLAGS=${CFLAGS}"
-	cd IEEE; make "CFLAGS=${CFLAGS}"
+more.ieee: FRC
+	cd common; make "CFLAGS=${CFLAGS}"
+	cd ieee; make "CFLAGS=${CFLAGS}"
 
-more.NATIONAL: FRC
-	cd COMMON; make "CFLAGS=${CFLAGS}"
-	cd NATIONAL; make "CFLAGS=${CFLAGS}"
+more.national: FRC
+	cd common; make "CFLAGS=${CFLAGS}"
+	cd national; make "CFLAGS=${CFLAGS}"
 
-more.TAHOE: FRC
-	cd COMMON; make "CFLAGS=${CFLAGS}"
-	cd TAHOE; make "CFLAGS=${CFLAGS}"
+more.tahoe: FRC
+	cd common; make "CFLAGS=${CFLAGS}"
+	cd tahoe; make "CFLAGS=${CFLAGS}"
 
-more.VAX: FRC
-	cd VAX; make "CFLAGS=${CFLAGS}"
+more.vax: FRC
+	cd vax; make "CFLAGS=${CFLAGS}"
 
 clean: FRC
-	rm -f ${OBJS} core libm.a libm_p.a COMMON/*.o IEEE/*.o NATIONAL/*.o TAHOE/*.o VAX/*.o profiled/*.o
+	rm -f ${OBJS} core libm.a libm_p.a common/*.o ieee/*.o national/*.o tahoe/*.o vax/*.o profiled/*.o
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}

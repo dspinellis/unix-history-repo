@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.7 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* POW(X,Y)  
  * RETURN X**Y 
@@ -84,14 +84,14 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#if defined(vax)||defined(tahoe)	/* VAX D format */
 #include <errno.h>
 extern double infnan();
-#ifdef VAX
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -105,13 +105,13 @@ static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
 #define    ln2lo    (*(double*)ln2lox)
 #define   invln2    (*(double*)invln2x)
 #define    sqrt2    (*(double*)sqrt2x)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 invln2 =  1.4426950408889633870E0     , /*Hex  2^  0   *  1.71547652B82FE */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 static double zero=0.0, half=1.0/2.0, one=1.0, two=2.0, negone= -1.0;
 
@@ -123,13 +123,13 @@ double x,y;
 
 	if     (y==zero)      return(one);
 	else if(y==one
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 		||x!=x
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 		) return( x );      /* if x is NaN or y=1 */
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	else if(y!=y)         return( y );      /* if y is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	else if(!finite(y))                     /* if y is INF */
 	     if((t=copysign(x,one))==one) return(zero/zero);
 	     else if(t>one) return((y>zero)?y:zero);
@@ -151,11 +151,11 @@ double x,y;
 	else if(x==zero)	/* x is -0 */
 	    return((y>zero)?-x:one/(-x));
 	else {			/* return NaN */
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 	    return (infnan(EDOM));	/* NaN */
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 	    return(zero/zero);
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 }
 
@@ -165,27 +165,27 @@ double x,y;
 {
         double logb(),scalb(),copysign(),log__L(),exp__E();
         double c,s,t,z,tx,ty;
-#ifdef TAHOE
+#ifdef tahoe
 	double tahoe_tmp;
-#endif
+#endif	/* tahoe */
         float sx,sy;
 	long k=0;
         int n,m;
 
 	if(x==zero||!finite(x)) {           /* if x is +INF or +0 */
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 	     return((y>zero)?x:infnan(ERANGE));	/* if y<zero, return +INF */
-#else
+#else	/* defined(vax)||defined(tahoe) */
 	     return((y>zero)?x:one/x);
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 	if(x==1.0) return(x);	/* if x=1.0, return 1 since y is finite */
 
     /* reduce x to z in [sqrt(1/2)-1, sqrt(2)-1] */
         z=scalb(x,-(n=logb(x)));  
-#if (!defined(VAX)&&!defined(TAHOE))	/* IEEE double; subnormal number */
+#if !defined(vax)&&!defined(tahoe)	/* IEEE double; subnormal number */
         if(n <= -1022) {n += (m=logb(z)); z=scalb(z,-m);} 
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
         if(z >= sqrt2 ) {n += 1; z *= half;}  z -= one ;
 
     /* log(x) = nlog2+log(1+z) ~ nlog2 + t + tx */
@@ -210,11 +210,11 @@ double x,y;
 	   /* end of checking whether k==y */
 
                 sy=y; ty=y-sy;          /* y ~ sy + ty */
-#ifdef TAHOE
+#ifdef tahoe
 		s = (tahoe_tmp = sx)*sy-k*ln2hi;
-#else
+#else	/* tahoe */
 		s=(double)sx*sy-k*ln2hi;        /* (sy+ty)*(sx+tx)-kln2 */
-#endif
+#endif	/* tahoe */
 		z=(tx*ty-k*ln2lo);
 		tx=tx*sy; ty=sx*ty;
 		t=ty+z; t+=tx; t+=s;

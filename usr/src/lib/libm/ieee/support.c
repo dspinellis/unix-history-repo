@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.9 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.10 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* 
  * Some IEEE standard 754 recommended functions and remainder and sqrt for 
@@ -55,16 +55,16 @@ static char sccsid[] =
  */
 
 
-#if (defined(VAX)||defined(TAHOE))      /* VAX D format */
+#if defined(vax)||defined(tahoe)      /* VAX D format */
 #include <errno.h>
     static unsigned short msign=0x7fff , mexp =0x7f80 ;
     static short  prep1=57, gap=7, bias=129           ;   
     static double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
-#else           /*IEEE double format */
+#else	/* defined(vax)||defined(tahoe) */
     static unsigned short msign=0x7fff, mexp =0x7ff0  ;
     static short prep1=54, gap=4, bias=1023           ;
     static double novf=1.7E308, nunf=3.0E-308,zero=0.0;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 double scalb(x,N)
 double x; int N;
@@ -72,15 +72,15 @@ double x; int N;
         int k;
         double scalb();
 
-#ifdef NATIONAL
+#ifdef national
         unsigned short *px=(unsigned short *) &x + 3;
-#else /* VAX, SUN, ZILOG, TAHOE */
+#else	/* national */
         unsigned short *px=(unsigned short *) &x;
-#endif
+#endif	/* national */
 
         if( x == zero )  return(x); 
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         if( (k= *px & mexp ) != ~msign ) {
             if (N < -260)
 		return(nunf*nunf);
@@ -88,12 +88,12 @@ double x; int N;
 		extern double infnan(),copysign();
 		return(copysign(infnan(ERANGE),x));
 	    }
-#else   /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
         if( (k= *px & mexp ) != mexp ) {
             if( N<-2100) return(nunf*nunf); else if(N>2100) return(novf+novf);
             if( k == 0 ) {
                  x *= scalb(1.0,(int)prep1);  N -= prep1; return(scalb(x,N));}
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
             if((k = (k>>gap)+ N) > 0 )
                 if( k < (mexp>>gap) ) *px = (*px&~mexp) | (k<<gap);
@@ -112,17 +112,17 @@ double x; int N;
 double copysign(x,y)
 double x,y;
 {
-#ifdef NATIONAL
+#ifdef national
         unsigned short  *px=(unsigned short *) &x+3,
                         *py=(unsigned short *) &y+3;
-#else /* VAX, SUN, ZILOG,TAHOE */
+#else	/* national */
         unsigned short  *px=(unsigned short *) &x,
                         *py=(unsigned short *) &y;
-#endif
+#endif	/* national */
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         if ( (*px & mexp) == 0 ) return(x);
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
         *px = ( *px & msign ) | ( *py & ~msign );
         return(x);
@@ -132,15 +132,15 @@ double logb(x)
 double x; 
 {
 
-#ifdef NATIONAL
+#ifdef national
         short *px=(short *) &x+3, k;
-#else /* VAX, SUN, ZILOG, TAHOE */
+#else	/* national */
         short *px=(short *) &x, k;
-#endif
+#endif	/* national */
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         return (int)(((*px&mexp)>>gap)-bias);
-#else /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
         if( (k= *px & mexp ) != mexp )
             if ( k != 0 )
                 return ( (k>>gap) - bias );
@@ -152,21 +152,21 @@ double x;
             return(x);
         else
             {*px &= msign; return(x);}
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 }
 
 finite(x)
 double x;    
 {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         return(1);
-#else  /* IEEE */
-#ifdef NATIONAL
+#else	/* defined(vax)||defined(tahoe) */
+#ifdef national
         return( (*((short *) &x+3 ) & mexp ) != mexp );
-#else /* SUN, ZILOG */
+#else	/* national */
         return( (*((short *) &x ) & mexp ) != mexp );
-#endif
-#endif
+#endif	/* national */
+#endif	/* defined(vax)||defined(tahoe) */
 }
 
 double drem(x,p)
@@ -175,42 +175,42 @@ double x,p;
         short sign;
         double hp,dp,tmp,drem(),scalb();
         unsigned short  k; 
-#ifdef NATIONAL
+#ifdef national
         unsigned short
               *px=(unsigned short *) &x  +3, 
               *pp=(unsigned short *) &p  +3,
               *pd=(unsigned short *) &dp +3,
               *pt=(unsigned short *) &tmp+3;
-#else /* VAX, SUN, ZILOG, TAHOE */
+#else	/* national */
         unsigned short
               *px=(unsigned short *) &x  , 
               *pp=(unsigned short *) &p  ,
               *pd=(unsigned short *) &dp ,
               *pt=(unsigned short *) &tmp;
-#endif
+#endif	/* national */
 
         *pp &= msign ;
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         if( ( *px & mexp ) == ~msign )	/* is x a reserved operand? */
-#else /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
         if( ( *px & mexp ) == mexp )
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 		return  (x-p)-(x-p);	/* create nan if x is inf */
 	if (p == zero) {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 		extern double infnan();
 		return(infnan(EDOM));
-#else
+#else	/* defined(vax)||defined(tahoe) */
 		return zero/zero;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         if( ( *pp & mexp ) == ~msign )	/* is p a reserved operand? */
-#else /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
         if( ( *pp & mexp ) == mexp )
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 		{ if (p != p) return p; else return x;}
 
         else  if ( ((*pp & mexp)>>gap) <= 1 ) 
@@ -230,20 +230,20 @@ double x,p;
                         tmp = dp ;
                         *pt += k ;
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
                         if( x < tmp ) *pt -= 128 ;
-#else /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
                         if( x < tmp ) *pt -= 16 ;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
                         x -= tmp ;
                     }
                 if ( x > hp )
                     { x -= p ;  if ( x >= hp ) x -= p ; }
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 		if (x)
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 			*px ^= sign;
                 return( x);
 
@@ -256,23 +256,23 @@ double x;
         double logb(),scalb();
         double t,zero=0.0;
         int m,n,i,finite();
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
         int k=54;
-#else   /* IEEE */
+#else	/* defined(vax)||defined(tahoe) */
         int k=51;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
     /* sqrt(NaN) is NaN, sqrt(+-0) = +-0 */
         if(x!=x||x==zero) return(x);
 
     /* sqrt(negative) is invalid */
         if(x<zero) {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 		extern double infnan();
 		return (infnan(EDOM));	/* NaN */
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 
     /* sqrt(INF) is INF */
@@ -334,7 +334,7 @@ double drem(x,y)
 double x,y;
 {
 
-#ifdef NATIONAL		/* order of words in floating point number */
+#ifdef national		/* order of words in floating point number */
 	static n0=3,n1=2,n2=1,n3=0;
 #else /* VAX, SUN, ZILOG, TAHOE */
 	static n0=0,n1=1,n2=2,n3=3;
@@ -440,7 +440,7 @@ double x;
         unsigned long *py=(unsigned long *) &y   ,
                       *pt=(unsigned long *) &t   ,
                       *px=(unsigned long *) &x   ;
-#ifdef NATIONAL         /* ordering of word in a floating point number */
+#ifdef national         /* ordering of word in a floating point number */
         int n0=1, n1=0; 
 #else
         int n0=0, n1=1; 

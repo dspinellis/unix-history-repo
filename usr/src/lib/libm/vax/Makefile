@@ -1,5 +1,4 @@
-# @(#)Makefile	1.3 (ucb.elefunt) %G%
-# SCCSID = "@(#)Makefile	1.3 (ucb.elefunt) %G%"
+# @(#)Makefile	1.4 (ucb.elefunt) %G%
 MORE=atan2.o cabs.o cbrt.o sqrt.o sincos.o tan.o argred.o support.o infnan.o
 
 .s.o:

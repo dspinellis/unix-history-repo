@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.6 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.7 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* SIN(X), COS(X), TAN(X)
  * RETURN THE SINE, COSINE, AND TANGENT OF X RESPECTIVELY
@@ -112,12 +112,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))
-#ifdef VAX
+#if defined(vax)||defined(tahoe)
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /*thresh =  2.6117239648121182150E-1    , Hex  2^ -1   *  .85B8636B026EA0 */
 /*PIo4   =  7.8539816339744830676E-1    , Hex  2^  0   *  .C90FDAA22168C2 */
 /*PIo2   =  1.5707963267948966135E0     , Hex  2^  1   *  .C90FDAA22168C2 */
@@ -136,7 +136,7 @@ static long        PIx[] = { _0x(0fda,4149), _0x(68c2,a221)};
 #define       PI    (*(double*)PIx)
 static long       PI2x[] = { _0x(0fda,41c9), _0x(68c2,a221)};
 #define      PI2    (*(double*)PI2x)
-#else   /* IEEE double  */
+#else   /* defined(vax)||defined(tahoe) */
 static double
 thresh =  2.6117239648121182150E-1    , /*Hex  2^ -2   *  1.0B70C6D604DD4 */
 PIo4   =  7.8539816339744827900E-1    , /*Hex  2^ -1   *  1.921FB54442D18 */
@@ -144,11 +144,11 @@ PIo2   =  1.5707963267948965580E0     , /*Hex  2^  0   *  1.921FB54442D18 */
 PI3o4  =  2.3561944901923448370E0     , /*Hex  2^  1   *  1.2D97C7F3321D2 */
 PI     =  3.1415926535897931160E0     , /*Hex  2^  1   *  1.921FB54442D18 */
 PI2    =  6.2831853071795862320E0     ; /*Hex  2^  2   *  1.921FB54442D18 */
-#ifdef NATIONAL
+#ifdef national
 static long    fmaxx[] = { 0xffffffff, 0x7fefffff};
 #define   fmax    (*(double*)fmaxx)
-#endif	/* NATIONAL */
-#endif
+#endif	/* national */
+#endif	/* defined(vax)||defined(tahoe) */
 static double zero=0, one=1, negone= -1, half=1.0/2.0, 
 	      small=1E-10, /* 1+small**2==1; better values for small:
 					small = 1.5E-9 for VAX D
@@ -160,12 +160,10 @@ double tan(x)
 double x;
 {
         double copysign(),drem(),cos__C(),sin__S(),a,z,ss,cc,c;
-	int k;
-#if (!defined(VAX)&&!defined(TAHOE))
-        extern int finite();
+	int finite(),k;
+
         /* tan(NaN) and tan(INF) must be NaN */
-            if(!finite(x))  return(x-x);
-#endif
+        if(!finite(x))  return(x-x);
         x=drem(x,PI);        /* reduce x into [-PI/2, PI/2] */
         a=copysign(x,one);   /* ... = abs(x) */
 	if ( a >= PIo4 ) {k=1; x = copysign( PIo2 - a , x ); }
@@ -177,9 +175,9 @@ double x;
 	z  = z*half ;		/* Next get c = cos(x) accurately */
 	c  = (z >= thresh )? half-((z-half)-cc) : one-(z-cc);
 	if (k==0) return ( x + (x*(z-(cc-ss)))/c );  /* sin/cos */
-#ifdef NATIONAL
+#ifdef national
 	else if(x==0.0) return copysign(fmax,x);  /* no inf on 32k */
-#endif	/* NATIONAL */
+#endif	/* national */
 	else return( c/(x+x*ss) );	/*          ... cos/sin */
 
 
@@ -188,11 +186,10 @@ double sin(x)
 double x;
 {
         double copysign(),drem(),sin__S(),cos__C(),a,c,z;
-#if (!defined(VAX)&&!defined(TAHOE))
-        extern int finite();
+        int finite();
+
         /* sin(NaN) and sin(INF) must be NaN */
-            if(!finite(x))  return(x-x);
-#endif
+        if(!finite(x))  return(x-x);
 	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
         a=copysign(x,one);
 	if( a >= PIo4 ) {
@@ -218,11 +215,10 @@ double cos(x)
 double x;
 {
         double copysign(),drem(),sin__S(),cos__C(),a,c,z,s=1.0;
-#if (!defined(VAX)&&!defined(TAHOE))
-        extern int finite();
+        int finite();
+
         /* cos(NaN) and cos(INF) must be NaN */
-            if(!finite(x))  return(x-x);
-#endif
+        if(!finite(x))  return(x-x);
 	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
         a=copysign(x,one);
 	if ( a >= PIo4 ) {
@@ -286,7 +282,7 @@ double x;
  *
  */
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 /*S0     = -1.6666666666666646660E-1    , Hex  2^ -2   * -.AAAAAAAAAAAA71 */
 /*S1     =  8.3333333333297230413E-3    , Hex  2^ -6   *  .8888888888477F */
 /*S2     = -1.9841269838362403710E-4    , Hex  2^-12   * -.D00D00CF8A1057 */
@@ -321,11 +317,11 @@ S5     =  1.5868926979889205164E-10   ; /*Hex  2^-33   *  1.5CF61DF672B13 */
 static double sin__S(z)
 double z;
 {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 	return(z*(S0+z*(S1+z*(S2+z*(S3+z*(S4+z*(S5+z*S6)))))));
-#else 	/* IEEE double */
+#else 	/* defined(vax)||defined(tahoe) */
 	return(z*(S0+z*(S1+z*(S2+z*(S3+z*(S4+z*S5))))));
-#endif
+#endif 	/* defined(vax)||defined(tahoe) */
 }
 
 
@@ -372,7 +368,7 @@ double z;
  *
  */
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 /*C0     =  4.1666666666666504759E-2    , Hex  2^ -4   *  .AAAAAAAAAAA9F0 */
 /*C1     = -1.3888888888865302059E-3    , Hex  2^ -9   * -.B60B60B60A0CCA */
 /*C2     =  2.4801587285601038265E-5    , Hex  2^-15   *  .D00D00CDCD098F */
@@ -391,7 +387,7 @@ static long        C4x[] = { _0x(74c8,320f), _0x(3ff0,fa1e)};
 #define       C4    (*(double*)C4x)
 static long        C5x[] = { _0x(c32d,ae47), _0x(5a63,0a5c)};
 #define       C5    (*(double*)C5x)
-#else	/* IEEE double  */
+#else	/* defined(vax)||defined(tahoe) */
 static double
 C0     =  4.1666666666666504759E-2    , /*Hex  2^ -5   *  1.555555555553E */
 C1     = -1.3888888888865301516E-3    , /*Hex  2^-10   * -1.6C16C16C14199 */
@@ -399,7 +395,7 @@ C2     =  2.4801587269650015769E-5    , /*Hex  2^-16   *  1.A01A01971CAEB */
 C3     = -2.7557304623183959811E-7    , /*Hex  2^-22   * -1.27E4F1314AD1A */
 C4     =  2.0873958177697780076E-9    , /*Hex  2^-29   *  1.1EE3B60DDDC8C */
 C5     = -1.1250289076471311557E-11   ; /*Hex  2^-37   * -1.8BD5986B2A52E */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 static double cos__C(z)
 double z;

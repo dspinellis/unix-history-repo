@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)asincos.c	1.1 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)asincos.c	1.1 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* ASIN(X)
  * RETURNS ARC SINE OF X
@@ -72,9 +72,9 @@ double asin(x)
 double x;
 {
 	double s,t,copysign(),atan2(),sqrt(),one=1.0;
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	s=copysign(x,one);
 	if(s <= 0.5)
 	    return(atan2(x,sqrt(one-x*x)));
@@ -139,9 +139,9 @@ double acos(x)
 double x;
 {
 	double t,copysign(),atan2(),sqrt(),one=1.0;
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	if( x != -1.0)
 	    t=atan2(sqrt((one-x)/(one+x)),one);
 	else

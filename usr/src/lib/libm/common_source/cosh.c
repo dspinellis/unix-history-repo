@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* COSH(X)
  * RETURN THE HYPERBOLIC COSINE OF X
@@ -63,12 +63,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))
-#ifdef VAX
+#if defined(vax)||defined(tahoe)
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double  */
 /* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
 /* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
@@ -79,18 +79,18 @@ static long    lnovflx[] = { _0x(0f33,43b0), _0x(2bda,c7e2)};
 #define   mln2hi    (*(double*)mln2hix)
 #define   mln2lo    (*(double*)mln2lox)
 #define   lnovfl    (*(double*)lnovflx)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static double
 mln2hi =  7.0978271289338397310E2     , /*Hex  2^ 10   *  1.62E42FEFA39EF */
 mln2lo =  2.3747039373786107478E-14   , /*Hex  2^-45   *  1.ABC9E3B39803F */
 lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 static max = 126                      ;
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static max = 1023                     ;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 double cosh(x)
 double x;
@@ -98,9 +98,9 @@ double x;
 	static double half=1.0/2.0,one=1.0, small=1.0E-18; /* fl(1+small)==1 */
 	double scalb(),copysign(),exp(),exp__E(),t;
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	if((x=copysign(x,one)) <= 22)
 	    if(x<0.3465) 
 		if(x<small) return(one+x);

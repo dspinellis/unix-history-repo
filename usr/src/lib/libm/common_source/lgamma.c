@@ -1,7 +1,7 @@
 #ifndef lint
 static char sccsid[] =
-"@(#)lgamma.c	4.4 (Berkeley) 9/11/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)lgamma.c	4.4 (Berkeley) 9/11/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /*
 	C program for floating point log Gamma function
@@ -19,9 +19,9 @@ static char sccsid[] =
 */
 
 #include <math.h>
-#if defined(VAX)
+#if defined(vax)||defined(tahoe)
 #include <errno.h>
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 int	signgam = 0;
 static double goobie	= 0.9189385332046727417803297;	/* log(2*pi)/2 */
 static double pi	= 3.1415926535897932384626434;
@@ -105,12 +105,12 @@ double arg;
 	t = floor(arg);
 	if (arg - t  > 0.5e0)
 	    t += 1.e0;				/* t := integer nearest arg */
-#if defined(VAX)
+#if defined(vax)||defined(tahoe)
 	if (arg == t) {
 	    extern double infnan();
 	    return(infnan(ERANGE));		/* +INF */
 	}
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	signgam = (int) (t - 2*floor(t/2));	/* signgam =  1 if t was odd, */
 						/*            0 if t was even */
 	signgam = signgam - 1 + signgam;	/* signgam =  1 if t was odd, */

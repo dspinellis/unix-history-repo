@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)atanh.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)atanh.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* ATANH(X)
  * RETURN THE HYPERBOLIC ARC TANGENT OF X
@@ -42,9 +42,9 @@ static char sccsid[] =
  *	observed error was 1.87 ulps (units in the last place) at
  *	x= -3.8962076028810414000e-03.
  */
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 #include <errno.h>
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 double atanh(x)
 double x;
@@ -52,12 +52,12 @@ double x;
 	double copysign(),log1p(),z;
 	z = copysign(0.5,x);
 	x = copysign(x,1.0);
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 	if (x == 1.0) {
 	    extern double infnan();
 	    return(copysign(1.0,z)*infnan(ERANGE));	/* sign(x)*INF */
 	}
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	x = x/(1.0-x);
 	return( z*log1p(x+x) );
 }

@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)tanh.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)tanh.c	4.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* TANH(X)
  * RETURN THE HYPERBOLIC TANGENT OF X
@@ -60,9 +60,9 @@ double x;
 	double expm1(), t, copysign(), sign;
 	int finite();
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 
 	sign=copysign(one,x);
 	x=copysign(x,one);

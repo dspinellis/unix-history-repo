@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* log__L(Z)
  *		LOG(1+X) - 2S			       X
@@ -50,12 +50,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format (56 bits) */
-#ifdef VAX
+#if defined(vax)||defined(tahoe)	/* VAX D format (56 bits) */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* L1     =  6.6666666666666703212E-1    , Hex  2^  0   *  .AAAAAAAAAAAAC5 */
 /* L2     =  3.9999999999970461961E-1    , Hex  2^ -1   *  .CCCCCCCCCC2684 */
@@ -81,7 +81,7 @@ static long        L8x[] = { _0x(0000,3f00), _0x(0000,0000)};
 #define       L6    (*(double*)L6x)
 #define       L7    (*(double*)L7x)
 #define       L8    (*(double*)L8x)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double
 L1     =  6.6666666666667340202E-1    , /*Hex  2^ -1   *  1.5555555555592 */
 L2     =  3.9999999999416702146E-1    , /*Hex  2^ -2   *  1.999999997FF24 */
@@ -90,14 +90,14 @@ L4     =  2.2222198607186277597E-1    , /*Hex  2^ -3   *  1.C71C52150BEA6 */
 L5     =  1.8183562745289935658E-1    , /*Hex  2^ -3   *  1.74663CC94342F */
 L6     =  1.5314087275331442206E-1    , /*Hex  2^ -3   *  1.39A1EC014045B */
 L7     =  1.4795612545334174692E-1    ; /*Hex  2^ -3   *  1.2F039F0085122 */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 double log__L(z)
 double z;
 {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*(L7+z*L8))))))));
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*L7)))))));
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 }
