@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)select.h	7.2 (Berkeley) %G%
+ *	@(#)select.h	7.3 (Berkeley) %G%
  */
+
+#ifndef _SELECT_H_
+#define	_SELECT_H_
 
 /*
  * Used to maintain information about processes that wish to be
@@ -19,3 +22,5 @@ struct selinfo {
 
 void	selrecord __P((struct proc *selector, struct selinfo *));
 void	selwakeup __P((struct selinfo *));
+
+#endif /* !_SELECT_H_ */
