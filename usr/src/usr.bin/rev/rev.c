@@ -12,17 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rev.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rev.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 void usage __P((void));
-void warn __P((const char *, ...));
 
 int
 main(argc, argv)
@@ -50,53 +51,26 @@ main(argc, argv)
 	do {
 		if (*argv) {
 			if ((fp = fopen(*argv, "r")) == NULL) {
-				warn("%s: %s", *argv, strerror(errno));
+				warn("%s", *argv);
 				rval = 1;
 				++argv;
 				continue;
 			}
 			filename = *argv++;
 		}
-		while (p = fgetline(fp, &len)) {
+		while ((p = fgetline(fp, &len)) != NULL) {
 			t = p + len - 1;
 			for (t = p + len - 1; t >= p; --t)
 				putchar(*t);
 			putchar('\n');
 		}
 		if (ferror(fp)) {
-			warn("%s: %s", filename, strerror(errno));
+			warn("%s", filename);
 			rval = 1;
 		}
 		(void)fclose(fp);
 	} while(*argv);
 	exit(rval);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-warn(const char *fmt, ...)
-#else
-warn(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "rev: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
 }
 
 void
