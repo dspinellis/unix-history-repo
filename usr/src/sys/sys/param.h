@@ -1,4 +1,4 @@
-/*	param.h	4.6	81/02/19	*/
+/*	param.h	4.7	81/02/23	*/
 
 /*
  * tunable variables
@@ -76,9 +76,13 @@
  * note: UPAGES is well known in locore.s
  */
 
-#define	NBPW	sizeof(int)	/* number of bytes in an integer */
+#define	NBBY		8		/* number of bits in a byte */
+#define	NBPW		sizeof(int)	/* number of bytes in an integer */
+#define	NBPG		512
+#define	PGOFSET		(NBPG-1)	/* byte offset into page */
+#define	PGSHIFT		9		/* LOG2(NBPG) */
 
-#define	UPAGES	6		/* pages of u-area */
+#define	UPAGES	8		/* pages of u-area */
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
@@ -98,6 +102,7 @@
  * NB: CLSIZE is well known in locore.s.
  */
 #define	CLSIZE	2
+#define	CLOFSET		(CLSIZE*NBPG-1)	/* for clusters, like PGOFSET */
 
 /* give the base virtual address (first of CLSIZE) */
 #define	clbase(i)	((i) &~ (CLSIZE-1))
