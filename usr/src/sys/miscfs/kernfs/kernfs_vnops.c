@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -282,7 +282,7 @@ kernfs_open(ap)
 			ap->a_mode, VTOKERN(vp)->kf_kt->kt_name);
 #endif
 
-	if ((ap->a_mode & FWRITE) && VTOKERN(vp)->kf_kt->kt_rw != VWRITE)
+	if ((ap->a_mode & FWRITE) && !(VTOKERN(vp)->kf_kt->kt_rw & VWRITE))
 		return (EBADF);
 
 	return (0);
@@ -309,7 +309,7 @@ kernfs_access(ap)
 	}
 
 	if (cred->cr_uid == 0) {
-		if ((mode & VWRITE) && (kt->kt_rw != VWRITE))
+		if ((mode & VWRITE) && !(kt->kt_rw & VWRITE))
 			return (EROFS);
 		return (0);
 	}
