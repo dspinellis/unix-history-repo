@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.20 (Berkeley) %G%
+ *	@(#)if_ether.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -512,6 +512,7 @@ int arpdebug = 0;
 struct llinfo_arp *
 arplookup(addr, create, proxy)
 	u_long addr;
+	int create, proxy;
 {
 	register struct rtentry *rt;
 	static struct sockaddr_inarp sin = {sizeof(sin), AF_INET };

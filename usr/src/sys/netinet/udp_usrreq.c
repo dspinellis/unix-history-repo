@@ -228,6 +228,7 @@ udp_saveopt(p, size, type)
  */
 udp_notify(inp, errno)
 	register struct inpcb *inp;
+	int errno;
 {
 
 	inp->inp_socket->so_error = errno;
