@@ -1,4 +1,4 @@
-/*	dinode.h	4.22	83/02/10	*/
+/*	dinode.h	4.23	83/05/21	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -45,7 +45,8 @@ struct inode {
 		daddr_t	ic_db[NDADDR];	/* 40: disk block addresses */
 		daddr_t	ic_ib[NIADDR];	/* 88: indirect blocks */
 		long	ic_flags;	/* 100: status, currently unused */
-		long	ic_spare[6];	/* 104: reserved, currently unused */
+		long	ic_blocks;	/* 104: blocks actually held */
+		long	ic_spare[5];	/* 108: reserved, currently unused */
 	} i_ic;
 };
 
@@ -72,6 +73,7 @@ struct dinode {
 #define	i_atime		i_ic.ic_atime
 #define	i_mtime		i_ic.ic_mtime
 #define	i_ctime		i_ic.ic_ctime
+#define i_blocks	i_ic.ic_blocks
 #define	i_rdev		i_ic.ic_db[0]
 #define	i_lastr		i_un.if_lastr
 #define	i_socket	i_un.is_socket
@@ -97,6 +99,7 @@ struct dinode {
 #define	di_mtime	di_ic.ic_mtime
 #define	di_ctime	di_ic.ic_ctime
 #define	di_rdev		di_ic.ic_db[0]
+#define	di_blocks	di_ic.ic_blocks
 
 #ifdef KERNEL
 struct inode *inode;		/* the inode table itself */
