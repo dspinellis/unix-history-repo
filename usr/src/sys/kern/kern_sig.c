@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.11 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "wait.h"
+#include "ktrace.h"
 
 #include "machine/reg.h"
 #include "machine/pte.h"
@@ -321,9 +322,9 @@ sigsuspend()
 	u.u_oldmask = p->p_sigmask;
 	p->p_flag |= SOMASK;
 	p->p_sigmask = uap->mask &~ sigcantmask;
-	for (;;)
-		sleep((caddr_t)&u, PSLEP);
-	/*NOTREACHED*/
+	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	/* always return EINTR rather than ERESTART... */
+	RETURN (EINTR);
 }
 
 sigstack()
@@ -432,7 +433,7 @@ killpg1(signo, pgid, all)
 	return (f ? 0 : error);
 }
 
-/*
+/* XXX - to be removed, as soon as sockets are changed to operate on pgrps
  * Send the specified signal to
  * all processes with 'pgid' as
  * process group.
@@ -444,14 +445,17 @@ gsignal(pgid, sig)
 	if (pgid && (pgrp = pgfind(pgid)))
 		pgsignal(pgrp, sig);
 }
-
+/*
+ * Send sig to all all members of the process group
+ */
 pgsignal(pgrp, sig)
 	struct pgrp *pgrp;
 {
 	register struct proc *p;
 
-	for (p = pgrp->pg_mem; p; p = p->p_pgrpnxt)
-		psignal(p, sig);
+	if (pgrp)
+		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
+			psignal(p, sig);
 }
 
 /*
@@ -470,6 +474,11 @@ trapsignal(sig, code)
 	if ((p->p_flag & STRC) == 0 && (p->p_sigcatch & mask) != 0 &&
 	    (p->p_sigmask & mask) == 0) {
 		u.u_ru.ru_nsignals++;
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_PSIG))
+			ktrpsig(p->p_tracep, sig, u.u_signal[sig], 
+				p->p_sigmask, code);
+#endif
 		sendsig(u.u_signal[sig], sig, p->p_sigmask, code);
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
 	} else {
@@ -479,8 +488,15 @@ trapsignal(sig, code)
 }
 
 /*
- * Send the specified signal to
- * the specified process.
+ * Send the specified signal to the specified process.
+ * Most signals do not do anything directly to a process;
+ * they set a flag that asks the process to do something to itself.
+ * Exceptions:
+ *   o When a stop signal is sent to a sleeping process that takes the default
+ *     action, the process is stopped without awakening it.
+ *   o SIGCONT restarts stopped processes (or puts them back to sleep)
+ *     regardless of the signal action (eg, blocked or ignored).
+ * Other ignored signals are discarded immediately.
  */
 psignal(p, sig)
 	register struct proc *p;
@@ -492,9 +508,6 @@ psignal(p, sig)
 
 	if ((unsigned)sig >= NSIG || sig == 0)
 		panic("psignal sig");
-	if (p->p_pgrp->pg_jobc == 0 && 
-	     (sig == SIGTTIN || sig == SIGTTOU || sig == SIGTSTP))
-		return;
 	mask = sigmask(sig);
 
 	/*
@@ -516,8 +529,12 @@ psignal(p, sig)
 			action = SIG_HOLD;
 		else if (p->p_sigcatch & mask)
 			action = SIG_CATCH;
-		else
+		else {
+			if (p->p_pgrp->pg_jobc == 0 && (sig == SIGTTIN || 
+			    sig == SIGTTOU || sig == SIGTSTP))
+				return;
 			action = SIG_DFL;
+		}
 	}
 	switch (sig) {
 
@@ -555,12 +572,12 @@ psignal(p, sig)
 
 	case SSLEEP:
 		/*
-		 * If process is sleeping at negative priority
+		 * If process is sleeping uninterruptibly
 		 * we can't interrupt the sleep... the signal will
 		 * be noticed when the process returns through
 		 * trap() or syscall().
 		 */
-		if (p->p_pri <= PZERO)
+		if ((p->p_flag & SSINTR) == 0)
 			goto out;
 		/*
 		 * Process is sleeping and traced... make it runnable
@@ -644,12 +661,11 @@ psignal(p, sig)
 		default:
 			/*
 			 * If process is sleeping interruptibly, then
-			 * unstick it so that when it is continued
-			 * it can look at the signal.
-			 * But don't setrun the process as its not to
-			 * be unstopped by the signal alone.
+			 * simulate a wakeup so that when it is continued,
+			 * it will be made runnable and can look at the signal.
+			 * But don't setrun the process, leave it stopped.
 			 */
-			if (p->p_wchan && p->p_pri > PZERO)
+			if (p->p_wchan && p->p_flag & SSINTR)
 				unsleep(p);
 			goto out;
 		}
@@ -680,16 +696,13 @@ out:
 }
 
 /*
- * Returns true if the current
- * process has a signal to process.
- * The signal to process is put in p_cursig.
+ * If the current process has a signal to process (should be caught
+ * or cause termination, should interrupt current syscall),
+ * return the signal number.  Stop signals with default action
+ * are processed immediately, then cleared; they aren't returned.
  * This is asked at least once each time a process enters the
  * system (though this can usually be done without actually
  * calling issig by checking the pending signal masks.)
- * Most signals do not do anything
- * directly to a process; they set
- * a flag that asks the process to
- * do something to itself.
  */
 issig()
 {
@@ -701,19 +714,24 @@ issig()
 		mask = p->p_sig &~ p->p_sigmask;
 		if (p->p_flag&SVFORK)
 			mask &= ~stopsigmask;
-		if (mask == 0)
-			break;
+		if (mask == 0)	 	/* no signal to send */
+			return (0);
 		sig = ffs((long)mask);
 		mask = sigmask(sig);
-		p->p_sig &= ~mask;		/* take the signal! */
-		if (mask & p->p_sigignore && (p->p_flag&STRC) == 0)
-			continue;	/* only if STRC was on when posted */
-		p->p_cursig = sig;
+		/*
+		 * We should see pending but ignored signals
+		 * only if STRC was on when they were posted.
+		 */
+		if (mask & p->p_sigignore && (p->p_flag&STRC) == 0) {
+			p->p_sig &= ~mask;
+			continue;
+		}
 		if (p->p_flag&STRC && (p->p_flag&SVFORK) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
 			 */
+			p->p_cursig = sig;
 			psignal(p->p_pptr, SIGCHLD);
 			do {
 				stop(p);
@@ -722,34 +740,38 @@ issig()
 
 			/*
 			 * If the traced bit got turned off,
-			 * then put the signal taken above back into p_sig
-			 * and go back up to the top to rescan signals.
+			 * go back up to the top to rescan signals.
 			 * This ensures that p_sig* and u_signal are consistent.
 			 */
-			if ((p->p_flag&STRC) == 0) {
-				p->p_sig |= mask;
+			if ((p->p_flag&STRC) == 0)
 				continue;
-			}
 
 			/*
 			 * If parent wants us to take the signal,
 			 * then it will leave it in p->p_cursig;
 			 * otherwise we just look for signals again.
 			 */
+			p->p_sig &= ~mask;	/* clear the old signal */
 			sig = p->p_cursig;
 			if (sig == 0)
 				continue;
 
 			/*
-			 * If signal is being masked put it back
-			 * into p_sig and look for other signals.
+			 * Put the new signal into p_sig.
+			 * If signal is being masked,
+			 * look for other signals.
 			 */
 			mask = sigmask(sig);
-			if (p->p_sigmask & mask) {
-				p->p_sig |= mask;
+			p->p_sig |= mask;
+			if (p->p_sigmask & mask)
 				continue;
-			}
 		}
+
+		/*
+		 * Decide whether the signal should be returned.
+		 * Return the signal's number, or fall through
+		 * to clear it from the pending mask.
+		 */
 		switch ((int)u.u_signal[sig]) {
 
 		case SIG_DFL:
@@ -757,23 +779,29 @@ issig()
 			 * Don't take default actions on system processes.
 			 */
 			if (p->p_ppid == 0)
-				continue;
+				break;		/* == ignore */
+			/*
+			 * If there is a pending stop signal to process
+			 * with default action, stop here,
+			 * then clear the signal.
+			 */
 			if (mask & stopsigmask) {
 				if (p->p_flag&STRC)
-					continue;
+					break;	/* == ignore */
+				p->p_cursig = sig;
 				stop(p);
 				if ((p->p_pptr->p_flag & SNOCLDSTOP) == 0)
 					psignal(p->p_pptr, SIGCHLD);
 				swtch();
-				continue;
+				break;
 			} else if (mask & defaultignmask) {
 				/*
 				 * Except for SIGCONT, shouldn't get here.
 				 * Default action is to ignore; drop it.
 				 */
-				continue;		/* == ignore */
+				break;		/* == ignore */
 			} else
-				goto send;
+				return (sig);
 			/*NOTREACHED*/
 
 		case SIG_IGN:
@@ -784,34 +812,25 @@ issig()
 			 */
 			if (sig != SIGCONT && (p->p_flag&STRC) == 0)
 				printf("issig\n");
-			continue;
+			break;		/* == ignore */
 
 		default:
 			/*
 			 * This signal has an action, let
 			 * psig process it.
 			 */
-			goto send;
+			return (sig);
 		}
-		/*NOTREACHED*/
+		p->p_sig &= ~mask;		/* take the signal! */
 	}
-	/*
-	 * Didn't find a signal to send.
-	 */
-	p->p_cursig = 0;
-	return (0);
-
-send:
-	/*
-	 * Let psig process the signal.
-	 */
-	return (sig);
+	/* NOTREACHED */
 }
 
 /*
  * Put the argument process into the stopped
  * state and notify the parent via wakeup.
  * Signals are handled elsewhere.
+ * The process must not be on the run queue.
  */
 stop(p)
 	register struct proc *p;
@@ -823,27 +842,31 @@ stop(p)
 }
 
 /*
- * Perform the action specified by
- * the current signal.
+ * Perform the action specified by the current signal.
  * The usual sequence is:
- *	if (p->p_cursig || ISSIG(p))
- *		psig();
- * The signal bit has already been cleared by issig,
- * and the current signal number stored in p->p_cursig.
+ *	if (sig = CURSIG(p))
+ *		psig(sig);
  */
-psig()
+psig(sig)
+	register int sig;
 {
 	register struct proc *p = u.u_procp;
-	register int sig;
 	int mask, returnmask;
 	register sig_t action;
 
 	do {
-		sig = p->p_cursig;
-		mask = sigmask(sig);
+#ifdef DIAGNOSTIC
 		if (sig == 0)
 			panic("psig");
+#endif
+		mask = sigmask(sig);
+		p->p_sig &= ~mask;
 		action = u.u_signal[sig];
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_PSIG))
+			ktrpsig(p->p_tracep, sig, action, p->p_flag & SOMASK ?
+				u.u_oldmask : p->p_sigmask, 0);
+#endif
 		if (action != SIG_DFL) {
 #ifdef DIAGNOSTIC
 			if (action == SIG_IGN || (p->p_sigmask & mask))
@@ -869,7 +892,6 @@ psig()
 			(void) spl0();
 			u.u_ru.ru_nsignals++;
 			sendsig(action, sig, returnmask, 0);
-			p->p_cursig = 0;
 			continue;
 		}
 		u.u_acflag |= AXSIG;
@@ -890,7 +912,7 @@ psig()
 		}
 		exit(W_EXITCODE(0, sig));
 		/* NOTREACHED */
-	} while (ISSIG(p));
+	} while (sig = CURSIG(p));
 }
 
 /*
