@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	7.1 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -17,6 +17,9 @@
 #include "mbuf.h"
 #include "vm.h"
 #include "kernel.h"
+#include "syslog.h"
+#include "domain.h"
+#include "protosw.h"
 
 mbinit()
 {
@@ -36,6 +39,7 @@ bad:
 /*
  * Must be called at splimp.
  */
+/* ARGSUSED */
 caddr_t
 m_clalloc(ncl, how, canwait)
 	register int ncl;
@@ -44,12 +48,15 @@ m_clalloc(ncl, how, canwait)
 	int npg, mbx;
 	register struct mbuf *m;
 	register int i;
+	static int logged;
 
 	npg = ncl * CLSIZE;
 	mbx = rmalloc(mbmap, (long)npg);
 	if (mbx == 0) {
-		if (canwait == M_WAIT)
-			panic("out of mbufs: map full");
+		if (logged == 0) {
+			logged++;
+			log(LOG_ERR, "mbuf map full\n");
+		}
 		return (0);
 	}
 	m = cltom(mbx / CLSIZE);
@@ -81,6 +88,10 @@ m_clalloc(ncl, how, canwait)
 			m++;
 		}
 		break;
+
+	case MPG_SPACE:
+		mbstat.m_space++;
+		break;
 	}
 	return ((caddr_t)m);
 }
@@ -101,13 +112,24 @@ m_pgfree(addr, n)
 m_expand(canwait)
 	int canwait;
 {
+	register struct domain *dp;
+	register struct protosw *pr;
+	int tries;
 
-	if (m_clalloc(1, MPG_MBUFS, canwait) == 0)
-		goto steal;
-	return (1);
-steal:
-	/* should ask protocols to free code */
-	return (0);
+	for (tries = 0;; ) {
+		if (m_clalloc(1, MPG_MBUFS, canwait))
+			return (1);
+		if (canwait == 0 || tries++)
+			return (0);
+
+		/* ask protocols to free space */
+		for (dp = domains; dp; dp = dp->dom_next)
+			for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW;
+			    pr++)
+				if (pr->pr_drain)
+					(*pr->pr_drain)();
+		mbstat.m_drain++;
+	}
 }
 
 /* NEED SOME WAY TO RELEASE SPACE */
@@ -163,6 +185,7 @@ m_more(canwait, type)
 
 	while (m_expand(canwait) == 0) {
 		if (canwait == M_WAIT) {
+			mbstat.m_wait++;
 			m_want++;
 			sleep((caddr_t)&mfree, PZERO - 1);
 		} else {
