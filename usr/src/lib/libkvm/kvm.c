@@ -2,11 +2,15 @@
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software developed by the Computer Systems
+ * Engineering group at Lawrence Berkeley Laboratory under DARPA contract
+ * BG 91-66 and contributed to Berkeley.
+ *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
