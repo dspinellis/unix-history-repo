@@ -1,0 +1,101 @@
+%!PS-Adobe-2.1
+%%% HOW TO USE:  from Unix, "cat Cheq Example | lpr -Pprintername "
+%%Title: Cheq.cheqtxtx
+%%Creator: Glenn Reid and still.ps (V 1.0d release 10 edit 08)
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%DocumentProcSets: Adobe_distill 0.95
+%%EndComments
+%%BeginProcSet: Adobe_distill 0.95
+/PROLOGUE 30 40 add dict def
+ % 30 procedure entries + room for 40 cached font dictionaries
+ PROLOGUE begin
+ /clip { } def    % causes problems. remove if "clip" is needed
+ /bdef { bind def } bind def    /ldef { load def } bdef
+ /T { moveto show } bdef        /A { moveto ashow } bdef
+ /W { moveto widthshow } bdef   /AW { moveto awidthshow } bdef
+ /f /fill ldef                  /R { { rlineto } repeat } bdef
+ /r /rlineto ldef               /L { { lineto } repeat } bdef
+ /m /moveto ldef                /l { moveto lineto stroke } bdef
+ /x { 0 rlineto } bdef          /y { 0 exch rlineto } bdef
+ /c /curveto ldef               /cp /closepath ldef
+ /s /stroke ldef                /w /setlinewidth ldef
+ /g /setgray ldef               /j /setlinejoin ldef
+ /d /setdash ldef               /F /setfont ldef
+ /C /setcmykcolor where { /setcmykcolor get }{ %ifelse
+   { %def
+     1 sub 3 { 3 index add neg dup 0 lt { pop 0 } if 3 1 roll } repeat
+     setrgbcolor
+   } bind
+ } ifelse def
+ /MF { findfont exch makefont setfont } bdef
+ /DF { findfont exch scalefont setfont currentfont def } bdef
+ /BEGINPAGE { pop /pagesave save def } bdef
+ /ENDPAGE { pop pagesave restore showpage } def
+ /REMAP { %def
+   FontDirectory 2 index known { pop pop pop } { %ifelse
+     findfont dup length dict begin
+       { 1 index /FID ne {def}{pop pop} ifelse } forall
+       exch dup length 0 gt { /Encoding exch def }{ pop } ifelse
+     currentdict end definefont pop
+   } ifelse
+ } bdef
+ /RECODE { %def
+    3 -1 roll 1 index findfont /Encoding get 256 array copy exch
+    0 exch { %forall
+     dup type/nametype eq
+       { 3 {2 index} repeat put pop 1 add }{ exch pop }ifelse
+    } forall pop 3 1 roll REMAP
+ } bdef
+ end %PROLOGUE
+%%EndProcSet: Adobe_distill 0.95
+%%EndProlog
+%%BeginSetup
+PROLOGUE begin
+
+%%EndSetup
+%%Page: 1 1
+%%PageFonts: (atend)
+%%PageBoundingBox: (atend)
+
+
+%%%%%% Following line added by Aladdin Enterprises:
+%%%%%%   load the font explicitly so it doesn't have to be in Fontmap.
+(cheq.ps) run
+
+
+1 BEGINPAGE
+1 1 1 0 C
+/F1 12 /Times-Roman DF
+(Cheq \(gift of Adobe Systems\) "Chequed Board")
+72 756 T
+(p. 1)
+558 756 T
+/F2 30 /Cheq DF
+
+
+%%%%%% Following line added by Aladdin Enterprises:
+%%%%%%   scale up and relocate the image.
+-140 -800 translate 2 2 scale
+
+
+( ________) 72 714 T
+(/R\366B\316K\365N\345\\) 72 684 T
+(/\270P\270P\270P\270P\\) 72 654 T
+(/ x x x x\\) 72 624 T
+(/x xQ\360 x \\) 72 594 T
+(/ x x x x\\) 72 564 T
+(/x x \317kx \\) 72 534 T
+(/p\271p\271p\271p\271\\) 72 504 T
+(/\250n\272q\373b\265r\\) 72 474 T	%%%%%% 277??
+( --------) 72 444 T
+2 ENDPAGE
+%%PageTrailer
+%%PageFonts: Times-Roman Cheq 
+%%PageBoundingBox: 20 20 576 756 
+%%Trailer
+end %PROLOGUE
+%%Pages: 1 
+%%BoundingBox: 20 20 576 756 
+%%DocumentFonts: Times-Roman Cheq 
+%%EOF
