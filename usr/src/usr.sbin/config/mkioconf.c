@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -781,6 +781,160 @@ pmax_ioconf()
 			dp->d_dk, dp->d_flags);
 	}
 	fprintf(fp, "0\n};\n");
+	(void) fclose(fp);
+}
+#endif
+
+#if MACHINE_NEWS3400
+int have_iop = 0;
+int have_hb = 0;
+int have_vme = 0;
+
+news_ioconf()
+{
+	register struct device *dp, *mp;
+	register int slave;
+	FILE *fp;
+
+	fp = fopen(path("ioconf.c"), "w");
+	if (fp == 0) {
+		perror(path("ioconf.c"));
+		exit(1);
+	}
+	fprintf(fp, "#include \"param.h\"\n");
+	fprintf(fp, "#include \"buf.h\"\n");
+	fprintf(fp, "#include \"map.h\"\n");
+	fprintf(fp, "#include \"vm/vm.h\"\n");
+	fprintf(fp, "#include \"iop.h\"\n");
+	fprintf(fp, "#include \"hb.h\"\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "#if NIOP > 0\n");
+	fprintf(fp, "#include \"news3400/iop/iopvar.h\"\n");
+	fprintf(fp, "#endif\n");
+	fprintf(fp, "#if NHB > 0\n");
+	fprintf(fp, "#include \"news3400/hbdev/hbvar.h\"\n");
+	fprintf(fp, "#endif\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "#define C (caddr_t)\n\n");
+	fprintf(fp, "\n");
+
+/* BEGIN HB */
+	fprintf(fp, "#if NHB > 0\n");
+	/*
+	 * Now generate interrupt vectors for the HYPER-BUS
+	 */
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_pri >= 0) {
+			mp = dp->d_conn;
+			if (mp == 0 || mp == TO_NEXUS ||
+			    !eq(mp->d_name, "hb"))
+				continue;
+			fprintf(fp, "extern struct hb_driver %sdriver;\n",
+			    dp->d_name);
+			have_hb++;
+		}
+	}
+	/*
+	 * Now spew forth the hb_cinfo structure
+	 */
+	fprintf(fp, "\nstruct hb_ctlr hminit[] = {\n");
+	fprintf(fp, "/*\t driver,\tctlr,\talive,\taddr,\tintpri */\n");
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		mp = dp->d_conn;
+		if ((dp->d_type != MASTER && dp->d_type != CONTROLLER)
+		    || mp == TO_NEXUS || mp == 0 ||
+		    !eq(mp->d_name, "hb"))
+			continue;
+		if (dp->d_pri < 0) {
+			printf("must specify priority for %s%d\n",
+			    dp->d_name, dp->d_unit);
+			continue;
+		}
+		if (dp->d_drive != UNKNOWN || dp->d_slave != UNKNOWN) {
+			printf("drives need their own entries; ");
+			printf("dont specify drive or slave for %s%d\n",
+			    dp->d_name, dp->d_unit);
+			continue;
+		}
+		if (dp->d_flags) {
+			printf("controllers (e.g. %s%d) don't have flags, ");
+			printf("only devices do\n",
+			    dp->d_name, dp->d_unit);
+			continue;
+		}
+		fprintf(fp, "\t{ &%sdriver,\t%d,\t0,\tC 0x%x,\t%d },\n",
+		    dp->d_name, dp->d_unit, dp->d_addr, dp->d_pri);
+	}
+	fprintf(fp, "\t0\n};\n");
+	/*
+	 * Now we go for the hb_device stuff
+	 */
+	fprintf(fp, "\nstruct hb_device hdinit[] = {\n");
+	fprintf(fp,
+"\t/* driver,  unit, ctlr,  slave,   addr,    pri,    dk, flags*/\n");
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		mp = dp->d_conn;
+		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == 0 ||
+		    mp == TO_NEXUS || /* mp->d_type == MASTER || */
+		    eq(mp->d_name, "iop") || eq(mp->d_name, "vme"))
+			continue;
+		if (eq(mp->d_name, "hb")) {
+			if (dp->d_pri < 0) {
+				printf("must specify vector for device %s%d\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			if (dp->d_drive != UNKNOWN || dp->d_slave != UNKNOWN) {
+				printf("drives/slaves can be specified only ");
+				printf("for controllers, not for device %s%d\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			slave = QUES;
+		} else {
+			if (mp->d_conn == 0) {
+				printf("%s%d isn't connected to anything, ",
+				    mp->d_name, mp->d_unit);
+				printf("so %s%d is unattached\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			if (dp->d_drive == UNKNOWN) {
+				printf("must specify ``drive number'' for %s%d\n",
+				   dp->d_name, dp->d_unit);
+				continue;
+			}
+			/* NOTE THAT ON THE IOP ``drive'' IS STORED IN */
+			/* ``SLAVE'' AND WE DON'T WANT A SLAVE SPECIFIED */
+			if (dp->d_slave != UNKNOWN) {
+				printf("slave numbers should be given only ");
+				printf("for massbus tapes, not for %s%d\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			if (dp->d_pri >= 0) {
+				printf("interrupt priority should not be ");
+				printf("given for drive %s%d\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			if (dp->d_addr != 0) {
+				printf("csr addresses should be given only");
+				printf("on controllers, not on %s%d\n",
+				    dp->d_name, dp->d_unit);
+				continue;
+			}
+			slave = dp->d_drive;
+		}
+		fprintf(fp,
+"\t{ &%sdriver,  %2d,   %s,    %2d,   C 0x%x, %d,  %d,  0x%x },\n",
+		    eq(mp->d_name, "hb") ? dp->d_name : mp->d_name, dp->d_unit,
+		    eq(mp->d_name, "hb") ? " -1" : qu(mp->d_unit),
+		    slave, dp->d_addr, dp->d_pri, dp->d_dk, dp->d_flags);
+	}
+	fprintf(fp, "\t0\n};\n\n");
+	fprintf(fp, "#endif\n\n");
+/* END HB */
 	(void) fclose(fp);
 }
 #endif

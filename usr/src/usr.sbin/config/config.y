@@ -76,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.17 (Berkeley) %G%
+ *	@(#)config.y	5.18 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -137,6 +137,9 @@ Config_spec:
 		} else if (!strcmp($2, "luna68k")) {
 			machine = MACHINE_LUNA68K;
 			machinename = "luna68k";
+		} else if (!strcmp($2, "news3400")) {
+			machine = MACHINE_NEWS3400;
+			machinename = "news3400";
 		} else
 			yyerror("Unknown machine type");
 	      } |
@@ -772,6 +775,12 @@ check_nexus(dev, num)
 	case MACHINE_I386:
 		if (!eq(dev->d_name, "isa"))
 			yyerror("only isa's should be connected to the nexus");
+		break;
+
+	case MACHINE_NEWS3400:
+		if (!eq(dev->d_name, "iop") && !eq(dev->d_name, "hb") &&
+		    !eq(dev->d_name, "vme"))
+			yyerror("only iop's, hb's and vme's should be connected to the nexus");
 		break;
 	}
 }

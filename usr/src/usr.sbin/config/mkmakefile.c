@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -100,6 +100,7 @@ static	struct users {
 	{ 8, 2, 64 },			/* MACHINE_MIPS */
 	{ 8, 2, 64 },			/* MACHINE_PMAX */
 	{ 8, 2, 64 },			/* MACHINE_LUNA68K */
+	{ 8, 2, 64 },			/* MACHINE_NEWS3400 */
 };
 #define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
