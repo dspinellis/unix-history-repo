@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.6 (Berkeley) %G%
+ *	@(#)sendmail.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.6		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.7		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -247,6 +247,7 @@ struct envelope
 	short		e_class;	/* msg class (priority, junk, etc.) */
 	short		e_flags;	/* flags, see below */
 	short		e_hopcount;	/* number of times processed */
+	short		e_nsent;	/* number of sends since checkpoint */
 	int		(*e_puthdr)();	/* function to put header of message */
 	int		(*e_putbody)();	/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
