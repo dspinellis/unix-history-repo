@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.3 (Berkeley) %G%
+ *	@(#)vnode.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,7 @@ struct vnode {
 	u_short		v_exlockc;		/* count of exclusive locks */
 	struct mount	*v_mount;		/* ptr to vfs we are in */
 	struct vnodeops	*v_op;			/* vnode operations */
+	u_long		v_id;			/* capability identifier */
 	enum vtype	v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
