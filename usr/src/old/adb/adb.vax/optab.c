@@ -1,12 +1,12 @@
 #ifndef lint
-static	char optab_sccsid[] = "@(#)optab.c 4.3 %G%";
-#endif not lint
+static	char optab_sccsid[] = "@(#)optab.c 4.4 %G%";
+#endif /* not lint */
 #ifdef ADB
 #include "defs.h"
-#endif ADB
+#endif /* ADB */
 #ifdef SDB
 #include "defs.h"
-#endif SDB
+#endif /* SDB */
 
 #undef INSTTAB
 
@@ -129,4 +129,4 @@ REGLIST reglist [] = {
 		"r1", R1,
 		"r0", R0,
 };
-#endif SDB
+#endif /* SDB */
