@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.22 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/kernel.h>
+#include <sys/file.h>
 #include <sys/resourcevar.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
@@ -285,6 +286,13 @@ dosetrlimit(p, which, limp)
 			(void) vm_map_protect(&p->p_vmspace->vm_map,
 					      addr, addr+size, prot, FALSE);
 		}
+		break;
+
+	case RLIMIT_NOFILE:
+		if (limp->rlim_cur > maxfiles)
+			limp->rlim_cur = maxfiles;
+		if (limp->rlim_max > maxfiles)
+			limp->rlim_max = maxfiles;
 		break;
 	}
 	*alimp = *limp;
