@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.17 (Berkeley) %G%
+#	@(#)Makefile	7.18 (Berkeley) %G%
 #
 
 DESTDIR=
@@ -125,8 +125,8 @@ copy: copy.o srt0.o getfile.o ${LIBSA}
 cat: cat.o srt0.o getfile.o ${LIBSA}
 	ld -N -o $@ srt0.o cat.o getfile.o ${LIBSA} -lc
 
-ls: ls.o srt0.o getfile.o ${LIBSA}
-	ld -N -o $@ srt0.o ls.o getfile.o ${LIBSA} -lc
+ls: ls.o srt0.o ${LIBSA}
+	ld -N -o $@ srt0.o ls.o ${LIBSA} -lc
 
 format: format.o srt0.o confhpup.o ${LIBSA}
 	ld -N -o $@ srt0.o format.o confhpup.o ${LIBSA} -lc
