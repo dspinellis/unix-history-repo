@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.20 (Berkeley) %G%
+ *	@(#)stdlib.h	5.21 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -88,6 +88,18 @@ int	 setenv __P((const char *, const char *, int));
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+					/* getcap(3) functions */
+char	*cgetcap __P((char *, char *, int));
+int	 cgetclose __P((void));
+int	 cgetent __P((char **, char **, char *));
+int	 cgetfirst __P((char **, char **));
+int	 cgetmatch __P((char *, char *));
+int	 cgetnext __P((char **, char **));
+int	 cgetnum __P((char *, char *, long *));
+int	 cgetset __P((char *));
+int	 cgetstr __P((char *, char *, char **));
+int	 cgetustr __P((char *, char *, char **));
+
 extern char *optarg;			/* getopt(3) external variables */
 extern int opterr, optind, optopt;
 int	 getopt __P((int, char * const *, const char *));
