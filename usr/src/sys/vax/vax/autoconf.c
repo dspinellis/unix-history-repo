@@ -1,4 +1,4 @@
-/*	autoconf.c	6.2	83/08/01	*/
+/*	autoconf.c	6.3	83/08/11	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -20,6 +20,7 @@
  */
 
 #include "mba.h"
+#include "uba.h"
 
 #include "../machine/pte.h"
 
