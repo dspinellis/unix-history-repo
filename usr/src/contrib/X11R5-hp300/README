@@ -1,0 +1,75 @@
+This is the May 1993 release of the changes to the standard MIT X11R5
+distribution (patch level 21 or greater) made at Victoria University
+of Wellington to support hp300's running bsd.
+
+This distribution consists of:
+
+config/hpbsd.cf		The Imake configuration file
+server/ddx/hpbsd	The ddx component of an hpbsd Xserver for
+			topcat, catseye and hyperion displays.
+hpbsd.diffs		Patches to the MIT release.
+
+Note: previous releases had a patch to server/os/WaitFor.c.  This
+patch is no longer required and should be removed if already applied
+as it will interfere with correct input handling.
+
+This version has preliminary support for BSD 4.4.  If you are building
+for an older version you will need to change the version numbers in
+hpbsd.cf and you may need to change the location of cpp in
+imakemdep.h.
+
+The directory structure has been rearranged somewhat to ease
+integration of the HP R5 server code released recently.  Some more
+minor restructuring will occur when support for the ngle display
+family and the series 700 machines is completed.
+
+The PEX extension is not built by default with this server.  There
+should be no problem in building it if you require it.  Simply change
+the "#define BuildPexExt NO" in hpbsd.cf to "#define BuildPexExt YES".
+
+This distribution has been succesfully compiled and run on hp300
+systems running 4.4alpha.
+Compiled with gcc-2.3.3.  Tested with monochrome and colour topcat and
+catseye displays and the monochrome hyperion.
+Only mono topcat has been tried under 4.4alpha so far -- others should be fine.
+
+Some text drawing performance is not as fast as it could be on the
+topcats and catseyes (Have yet to include some font tweaks present in
+the R4 server).
+
+Please report any bugs, problems or ideas for enhancements to me
+
+Mark Davies                      <mark@comp.vuw.ac.nz>
+Department of Computer Science
+Victoria University of Wellington
+New Zealand.
+
+28 May 1993
+
+TO DO:
+
+xman doesn't know about machine specific subdirectories.
+
+if your libc doesn't have sigsetjmp and siglongjmp need the following
+patch to build xdm:
+
+*** /usr/src/X/R5/mit/clients/xdm/dm.h	Mon Sep 23 11:11:34 1991
+--- ./clients/xdm/dm.h	Fri Mar 26 13:44:06 1993
+***************
+*** 316,322 ****
+  #define SIGVAL void
+  #endif
+  
+! #ifdef X_NOT_POSIX
+  #ifdef SYSV
+  #define SIGNALS_RESET_WHEN_CAUGHT
+  #define UNRELIABLE_SIGNALS
+--- 316,322 ----
+  #define SIGVAL void
+  #endif
+  
+! #if defined(X_NOT_POSIX) || defined(hp9000)
+  #ifdef SYSV
+  #define SIGNALS_RESET_WHEN_CAUGHT
+  #define UNRELIABLE_SIGNALS
+
