@@ -3,19 +3,22 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)syscall.2	8.1 (Berkeley) %G%
+.\"     @(#)syscall.2	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYSCALL 2
 .Os BSD 4
 .Sh NAME
-.Nm syscall
+.Nm syscall ,
+.Nm _syscall
 .Nd indirect system call
 .Sh SYNOPSIS
 .Fd #include <sys/syscall.h>
 .Fd #include <unistd.h>
 .Ft int
 .Fn syscall "int number" "..."
+.Ft int
+.Fn _syscall "quad_t number" "..."
 .Sh DESCRIPTION
 .Fn Syscall
 performs the system call whose assembly language
@@ -24,18 +27,20 @@ interface has the specified
 with the specified arguments.
 Symbolic constants for system calls can be found in the header file
 .Ao Pa sys/syscall.h Ac .
-.Pp
+The
+.Nm _syscall
+form should be used when one or more of the parameters is a
+64-bit argument to ensure that argument alignment is correct.
+This system call is useful for testing new system calls that
+do not have entries in the C library.
 .Sh RETURN VALUES
-The r0 value of the system call is returned.
-When the C-bit is set,
-.Fn syscall
-returns -1 and sets the
-external variable 
-.Va errno
-(see
-.Xr intro 2 ) .
+The return values are defined by the system call being invoked.
+In general, a 0 return value indicates success.
+A -1 return value indicates an error,
+and an error code is stored in
+.Va errno .
 .Sh BUGS
-There is no way to simulate system calls
+There is no way to simulate system calls that have multiple return values
 such as
 .Xr pipe 2 .
 .Sh HISTORY
