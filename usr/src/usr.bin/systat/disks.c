@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -189,7 +189,7 @@ read_names()
 #endif
 
 #ifdef tahoe
-#include <tahoevba/vbavar.h>
+#include <tahoe/vba/vbavar.h>
 
 /*
  * Read the drive names out of kmem.
