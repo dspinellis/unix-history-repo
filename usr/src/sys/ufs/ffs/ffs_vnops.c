@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	6.6	84/05/24	*/
+/*	ffs_vnops.c	6.7	84/06/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -1000,6 +1000,7 @@ rename()
 			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
 		if (error == 0) {
 			dirbuf.dotdot_ino = dp->i_number;
+			dp->i_id = ++nextinodeid;
 			(void) rdwri(UIO_WRITE, ip, (caddr_t)&dirbuf,
 			  sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
 		}

@@ -1,4 +1,4 @@
-/*	ffs_inode.c	6.4	84/05/22	*/
+/*	ffs_inode.c	6.5	84/06/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -112,6 +112,13 @@ loop:
 	ih = &ihead[INOHASH(dev, ino)];
 	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
 		if (ino == ip->i_number && dev == ip->i_dev) {
+			/*
+			 * Following is essentially an inline expanded
+			 * copy of igrab(), expanded inline for speed,
+			 * and so that the test for a mounted on inode
+			 * can be deferred until after we are sure that
+			 * the inode isn't busy.
+			 */
 			if ((ip->i_flag&ILOCKED) != 0) {
 				ip->i_flag |= IWANT;
 				sleep((caddr_t)ip, PINOD);
@@ -166,6 +173,13 @@ loop:
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
+	ip->i_id = ++nextinodeid;	/* also used in rename */
+	/*
+	 * At an absurd rate of 100 calls/second,
+	 * this should occur once every 16 months.
+	 */
+	if (nextinodeid == 0)
+		panic("iget: wrap");
 	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
@@ -207,6 +221,36 @@ loop:
 		ip->i_dquot = inoquota(ip);
 #endif
 	return (ip);
+}
+
+/*
+ * Convert a pointer to an inode into a reference to an inode.
+ *
+ * This is basically the internal piece of iget (after the
+ * inode pointer is located) but without the test for mounted
+ * filesystems.  It is caller's responsibility to check that
+ * the inode pointer is valid.
+ */
+igrab(ip)
+	register struct inode *ip;
+{
+	while ((ip->i_flag&ILOCKED) != 0) {
+		ip->i_flag |= IWANT;
+		sleep((caddr_t)ip, PINOD);
+	}
+	if (ip->i_count == 0) {		/* ino on free list */
+		register struct inode *iq;
+
+		if (iq = ip->i_freef)
+			iq->i_freeb = ip->i_freeb;
+		else
+			ifreet = ip->i_freeb;
+		*ip->i_freeb = iq;
+		ip->i_freef = NULL;
+		ip->i_freeb = NULL;
+	}
+	ip->i_count++;
+	ip->i_flag |= ILOCKED;
 }
 
 /*
