@@ -25,8 +25,8 @@ struct font {		/* characteristics of a font */
 	char	specfont;	/* 1 == special font */
 	char	ligfont;	/* 1 == ligatures exist on this font */
 	char	spare1;		/* unused for now */
-	char	namefont[3];	/* name of this font (e.g., "R" */
-	char	intname[3];	/* internal name (=number) on device, in ascii */
+	char	namefont[10];	/* name of this font (e.g., "R" */
+	char	intname[10];	/* internal name (=number) on device, in ascii */
 };
 
 /* ligatures, ORed into ligfont */
