@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -718,17 +718,20 @@ bflow(p)
 	preg=regs+RT1; 
 	while (*(cp1= *preg++)) {
 		/* check for  r  */
-		if (lastrand!=cp1 && tempreg(cp1,r) && uses[r]==0) {
-			uses[r]=p;
-			cp2=regs[r]; *cp2++=p->subop;
-			if ((p->op==SHAL || p->op==SHAR ||
-			    p->op==SHL || p->op==SHR) &&
-			    cp1==regs[RT1])
-				cp2[-1] = BYTE;
-			if (p->op==CBR && (p->subop==JBC || p->subop==JBS))
-				cp2[-1] = LONG;
-			if (p->op==MOVA && cp1==regs[RT2])
-				cp2[-1]=LONG;
+		if (lastrand!=cp1 && tempreg(cp1,r)) {
+			int isunused;
+			if (isunused=(uses[r]==0)) {
+				uses[r]=p;
+				cp2=regs[r]; *cp2++=p->subop;
+				if ((p->op==SHAL || p->op==SHAR ||
+				    p->op==SHL || p->op==SHR) &&
+				    cp1==regs[RT1])
+					cp2[-1] = BYTE;
+				if (p->op==CBR && (p->subop==JBC || p->subop==JBS))
+					cp2[-1] = LONG;
+				if (p->op==MOVA && cp1==regs[RT2])
+					cp2[-1]=LONG;
+			}
 			/* ediv/emod's 2nd operand is quad */
 			if (((p->op==EDIV
 #ifdef EMOD
@@ -736,10 +739,15 @@ bflow(p)
 #endif EMOD
 			   ) && cp1==regs[RT2] || (dblflg&2)) &&
 			   ++r<NUSE && uses[r]==0) {
-				*cp2=0;
+				if (isunused)
+					*cp2=0;
 				uses[r]=p;
 				cp2=regs[r]; *cp2++=p->subop;
+				if (!isunused)
+					*cp2=0;
 			}
+			if (!isunused)
+				continue;
 			if (p->op==MOV || p->op==PUSH || p->op==CVT ||
 			    p->op==MOVZ || p->op==COM || p->op==NEG ||
 			    p->op==STF) {
