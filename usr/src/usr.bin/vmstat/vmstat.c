@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -657,7 +657,7 @@ domem()
 void
 zero()
 {
-	struct nlist znl[] = {
+	static struct nlist znl[] = {
 #undef	X_SUM
 #define X_SUM		0
 		{ "_sum" },
