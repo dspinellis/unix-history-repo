@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.1		%G%);
+SCCSID(@(#)main.c	4.2		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -599,7 +599,7 @@ main(argc, argv)
 
 	CurEnv->e_from.q_flags |= QDONTSEND;
 	CurEnv->e_to = NULL;
-	sendall(CurEnv, SendMode);
+	sendall(CurEnv, SM_DEFAULT);
 
 	/*
 	** All done.

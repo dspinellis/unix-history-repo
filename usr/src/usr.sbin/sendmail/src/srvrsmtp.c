@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.2		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.3		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.2		%G%);
+SCCSID(@(#)srvrsmtp.c	4.3		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -158,6 +158,13 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
+			if (sameword(p, HostName))
+			{
+				/* connected to an echo server */
+				message("553", "%s I refuse to talk to myself",
+					HostName);
+				break;
+			}
 			if (RealHostName != NULL && !sameword(p, RealHostName))
 			{
 				char buf[MAXNAME];
@@ -281,7 +288,7 @@ smtp()
 			CurEnv->e_xfp = freopen(queuename(CurEnv, 'x'), "w", CurEnv->e_xfp);
 
 			/* send to all recipients */
-			sendall(CurEnv, SendMode);
+			sendall(CurEnv, SM_DEFAULT);
 			CurEnv->e_to = NULL;
 
 			/* issue success if appropriate and reset */

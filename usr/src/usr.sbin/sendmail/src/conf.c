@@ -12,6 +12,7 @@
 **			the two systems.  If you are running a funny
 **			system, e.g., V6 with long tty names, this
 **			should be checked carefully.
+**		VMUNIX -- running on a Berkeley UNIX system.
 **
 **	Configuration Variables:
 **		HdrInfo -- a table describing well-known header fields.
@@ -32,7 +33,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.1		%G%);
+SCCSID(@(#)conf.c	4.2		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -101,7 +102,9 @@ char	*FreezeFile =	"/usr/lib/sendmail.fc";	/* frozen version of above */
 **  Some other configuration....
 */
 
-char	SpaceSub =	'.';
+char	SpaceSub =	'.';	/* character to replace <lwsp> in addrs */
+int	QueueLA =	12;	/* if load average > 12, just queue */
+int	RefuseLA =	25;	/* if load average > 25, refuse connections */
 
 # ifdef V6
 /*
@@ -449,3 +452,54 @@ holdsigs()
 rlsesigs()
 {
 }
+/*
+**  GETLA -- get the current load average
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		The current load average as an integer.
+**
+**	Side Effects:
+**		none.
+*/
+
+#ifdef VMUNIX
+
+#include <nlist.h>
+
+struct	nlist Nl[] =
+{
+	{ "_avenrun" },
+#define	X_AVENRUN	0
+	{ 0 },
+};
+
+getla()
+{
+	static int kmem = -1;
+	double avenrun[3];
+
+	if (kmem < 0)
+	{
+		kmem = open("/dev/kmem", 0);
+		if (kmem < 0)
+			return (-1);
+		nlist("/vmunix", Nl);
+		if (Nl[0].n_type == 0)
+			return (-1);
+	}
+	(void) lseek(kmem, (long) Nl[X_AVENRUN].n_value, 0);
+	(void) read(kmem, avenrun, sizeof(avenrun));
+	return ((int) (avenrun[0] + 0.5));
+}
+
+#else VMUNIX
+
+getla()
+{
+	return (0);
+}
+
+#endif VMUNIX

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.1		%G%);
+SCCSID(@(#)deliver.c	4.2		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1198,7 +1198,8 @@ mailfile(filename, ctladdr)
 **
 **	Parameters:
 **		e -- the envelope to send.
-**		mode -- the delivery mode to use.
+**		mode -- the delivery mode to use.  If SM_DEFAULT, use
+**			the current SendMode.
 **
 **	Returns:
 **		none.
@@ -1217,6 +1218,17 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
+
+	/* determine actual delivery mode */
+	if (mode == SM_DEFAULT)
+	{
+		extern int QueueLA;
+
+		if (getla() > QueueLA)
+			mode = SM_QUEUE;
+		else
+			mode = SendMode;
+	}
 
 #ifdef DEBUG
 	if (tTd(13, 1))
