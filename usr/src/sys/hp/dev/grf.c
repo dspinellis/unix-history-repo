@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.32 92/01/21$
  *
- *	@(#)grf.c	7.12 (Berkeley) %G%
+ *	@(#)grf.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -20,35 +20,35 @@
  * Hardware access is through the machine dependent grf switch routines.
  */
 
-#include "grf.h"
+#include <grf.h>
 #if NGRF > 0
 
-#include "param.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "file.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/malloc.h>
+#include <sys/vnode.h>
+#include <sys/mman.h>
 
-#include "grfioctl.h"
-#include "grfvar.h"
-#include "grfreg.h"
+#include <hp/dev/grfioctl.h>
+#include <hp/dev/grfvar.h>
+#include <hp/dev/grfreg.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 #ifdef HPUXCOMPAT
-#include "../hpux/hpux.h"
+#include <hp/hpux/hpux.h>
 #endif
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
-#include "vm/vm_pager.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
+#include <vm/vm_pager.h>
 
-#include "vnode.h"
-#include "specdev.h"
-#include "mman.h"
+#include <miscfs/specfs/specdev.h>
 
-#include "ite.h"
+#include <ite.h>
 #if NITE == 0
 #define	iteon(u,f)
 #define	iteoff(u,f)
