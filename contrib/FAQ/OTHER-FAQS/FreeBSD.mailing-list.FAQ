@@ -1,6 +1,6 @@
                      THE FREEBSD MAILING LIST FAQ 
 
-Last updated: $Date:$
+Last updated: $Date: 1994/05/07 11:39:27 $
 
 Though many of the FreeBSD development members read USENET, we cannot
 always guarantee that we'll get to your questions in a timely fashion
@@ -9,9 +9,7 @@ groups.  By addressing your questions to the appropriate mailing list
 you will reach both us and a concentrated FreeBSD audience, invariably
 assuring a better (or at least faster) response.
 
-The following is a current summary of the mailing lists in existence as
-of 31 Mar, 1994:
-
+The following is a summary of the mailing lists:  
 
 List                            Purpose
 -----------------------------------------------------------------------------
@@ -23,6 +21,8 @@ freebsd-tz                      Discussions of proper timezone handling
 freebsd-hackers                 Technical discussions and suggestions
 freebsd-questions               User questions
 freebsd-announce                Important events / milestones
+freebsd-current                 Discussions about the use of FreeBSD-current
+
 -----------------------------------------------------------------------------
 
 Of all the lists, freebsd-arch and freebsd-admin have closed memberships
