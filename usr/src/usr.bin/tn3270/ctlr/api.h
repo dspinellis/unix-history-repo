@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)api.h	4.2 (Berkeley) %G%
+ *	@(#)api.h	4.3 (Berkeley) %G%
  */
 
 /*
@@ -327,11 +327,11 @@ typedef struct {
 #define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
 #define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
 
-#if	defined(vax) || defined(ns32000)
+#if	defined(vax) || defined(ns32000) || defined(i386) || (defined(mips)&&defined(MIPSEL))
 #define	BYTE_ORDER	LITTLE_ENDIAN
 #endif	/* defined(vax) || defined(ns32000) */ 
 
-#if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) || defined(gould)
+#if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) || defined(gould) || (defined(mips)&&defined(MIPSEB))
 #define	BYTE_ORDER	BIG_ENDIAN
 #endif	/* defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) || defined(gould) */
 
