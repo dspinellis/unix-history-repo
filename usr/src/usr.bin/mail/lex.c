@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.9 %G%";
+static char *SccsId = "@(#)lex.c	1.10 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -527,7 +527,8 @@ announce(pr)
 	if (u-n > 0)
 		printf(" %d unread", u);
 	printf("\n");
-	headers(vec);
+	if (msgCount > 0)
+		headers(vec);
 	dot = &message[mdot - 1];
 }
 
