@@ -37,7 +37,6 @@ static char sccsid[] = "@(#)remote.c	5.6 (Berkeley) 8/6/92";
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <getcap.h>
 #include "pathnames.h"
 #include "tip.h"
 
