@@ -1,14 +1,17 @@
-/* ch2vft.c	1.3	84/02/27
+/* ch2vft.c	1.4	84/04/07
  *
  * Font translation to vfonts (RST format) from character format.
  *
- *	Use:	ch2vft  [ -i ]  charfile  > vfontfile
+ *	Use:	ch2vft  [ -i  -s ]  charfile  > vfontfile
  *
  *		Takes input from charfile (which must be in the format written
  *	by xxx2ch), converts to rst format and writes to stdout.  If charfile
  *	is missing, stdin is read.  The -i flag tells ch2rst to ignore the
  *	character codes at the start of each glyph definition, and pack the
- *	glyphs in consecutive code positions starting with 0.
+ *	glyphs in consecutive code positions starting with 0.  The -s flag
+ *	forces ch2vft to include the whole bit-map that defines the glyph.
+ *	Normally, it is trimmed of white space.  This is usefull for making
+ *	stipple patterns of fixed size.
  */
 
 #include <stdio.h>
@@ -35,6 +38,7 @@ int	width, length, maxv, minv, maxh, minh, refv, refh;
 int	fileaddr;
 
 int	ignorecode = 0;
+int	stipple = 0;
 FILE *	filep;
 char	ibuff[MAXLINE];
 char	ebuff[MAXLINE];
@@ -59,6 +63,10 @@ char **argv;
 	switch(argv[1][1]) {
 	case 'i':
 		ignorecode = 1;
+		break;
+
+	case 's':
+		stipple = 1;
 		break;
 	default:
 		error("%s, unknown option flag", argv[1]);
@@ -146,6 +154,13 @@ char **argv;
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
+
+	    if (stipple) {		/* force whole box if making stipples */
+		minv = 0;
+		minh = 0;
+		maxv = length - 1;
+		maxh = width - 1;
+	    }
 
 	    if (refv < 0) error("no reference point in glyph %d.", code);
 	    if (minv < 0) {
