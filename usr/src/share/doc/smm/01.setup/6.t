@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.12 (Berkeley) %G%
+.\"	@(#)6.t	6.13 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -306,67 +306,125 @@ limiting system load.
 .NH 2
 Recompiling and reinstalling system software
 .PP
-It is easy to regenerate the system, and it is a good
-idea to try rebuilding pieces of the system to build confidence
-in the procedures.
-The system consists of two major parts:
-the kernel itself (/sys) and the user programs
-(/usr/src and subdirectories).
-The major part of this is
+It is easy to regenerate either the entire system or a single utility,
+and it is a good idea to try rebuilding pieces of the system to build
+confidence in the procedures.
+.PP
+In general, there are six well-known targets supported by
+all of the makefiles on the system:
+.IP \(bu
+all
+This is the default target, the same as if no target is specified.
+This target builds the kernel, binary or library, as well as its
+associated manual pages.
+This target \fBdoes not\fP build the dependency files.
+Some of the utilities require that a \fImake depend\fP be done before
+a \fImake all\fP can succeed.
+.IP \(bu
+depend
+Build the include file dependency file, ``.depend'', which is
+read by
+.Xr make .
+See
+.Xr mkdep (1)
+for further details.
+.IP \(bu
+install
+Install the kernel, binary or library, as well as its associated
+manual pages.
+See
+.Xr install (1)
+for further details.
+.IP \(bu
+clean
+Remove the kernel, binary or library, as well as any object files
+created when building it.
+.IP \(bu
+cleandir
+The same as clean, except that the dependency files and formatted
+manual pages are removed as well.
+.IP \(bu
+obj
+Build a shadow directory structure in the area referenced by
+.Pn /usr/obj
+and create a symbolic link in the current source directory to
+referenced it, named ``obj''.
+Once this shadow structure has been created, all of the files
+created by
+.Xr make
+will live in the shadow structure, and
+.Pn /usr/src
+may be mounted read-only by multiple machines.
+Doing a \fImake obj\fP in
+.Pn /usr/src
+will build the shadow directory structure for everything on the
+system except for the contributed, deprecated and kernel software.
+.PP
+The system consists of three major parts:
+the kernel itself, found in
+.Pn /usr/src/sys ,
+the libraries , found in
+.Pn /usr/src/lib ,
+and the user programs (the rest of
+.Pn /usr/src ).
+.PP
+Deprecated software, found in
+.Pn /usr/src/old ,
+often has old style makefiles, as well as not compiling under \*(4B
+at all.
+.PP
+Contributed software, found in
+.Pn /usr/src/contrib ,
+usually doesn't support the ``cleandir'', ``depend'', or ``obj'' targets.
+.PP
+The kernel doesn't support the ``obj'' shadow structure.
+All kernels are compiled in subdirectories of
+.Pn /usr/src/compile .
+If you want to mount your source tree read-only,
+.Pn /usr/src/compile
+will have to be on a separate file system from
 .Pn /usr/src .
 .PP
-The major library is the C library in
-.Pn /usr/src/lib/libc .
-The library is remade by changing into the
-.Pn libc
-directory and doing
+Each of the standard utilities and libraries may be built and
+installed by changing directories into the correct location and
+doing:
 .DS
 \fB#\fP \fImake\fP
-.DE
-and then installed by
-.DS
 \fB#\fP \fImake install\fP
 .DE
-Similar to the system,
+Note, if system include files have changed between compiles,
+.Xr make
+will not perform the correct dependency checks if the dependency
+files have not been built using the ``depend'' target.
+.PP
+The entire library and utility suite for the system may be recompiled
+from scratch by changing directory to
+.Pn /usr/src
+and doing:
 .DS
-\fB#\fP \fImake clean\fP
+\fB#\fP \fImake build\fP
 .DE
-cleans up.
+This target installs the system include files, cleans the source
+tree, builds and installs the libraries, and builds and installs
+the system utilities.
 .PP
-The source for all other libraries is kept in subdirectories of
-/usr/src/lib; each has a makefile and can be recompiled by the above
-recipe.
-.PP
-If you look at
-.Pn /usr/src/Makefile ,
-you will see that you can recompile the entire system source with one command.
-To recompile a specific program, find
-out where the source resides with the
+To recompile a specific program, first determine where the binary
+resides with the
 .Xr whereis (1)
-command, then change to that directory and remake it
-with the Makefile present in the directory.
-For instance, to recompile ``date'', 
-all one has to do is
+command, then change to the corresponding source directory and build
+it with the Makefile in the directory.
+For instance, to recompile ``passwd'', 
+all one has to do is:
 .DS
-\fB#\fP \fIwhereis date\fP
-\fBdate: /bin/date\fP
-\fB#\fP \fIcd /usr/src/bin/date\fP
-\fB#\fP \fImake date\fP
+\fB#\fP \fIwhereis passwd\fP
+\fB/usr/bin/passwd\fP
+\fB#\fP \fIcd /usr/src/usr.bin/passwd\fP
+\fB#\fP \fImake\fP
+\fB#\fP \fImake install\fP
 .DE
-this will create an unstripped version of the binary of ``date''
-in the current directory.  To install the binary image, use the
-install command as in
-.DS
-\fB#\fP \fIinstall \-s date -o bin -g bin -m 755 /bin/date\fP
-.DE
-The \-s option will insure the installed version of date has
-its symbol table stripped.  The install command should be used
-instead of
-.Xr mv (1)
-or
-.Xr cp (1)
-as it understands how to install programs
-even when the program is currently in use.
+this will compile and install the
+.Xr passwd
+utility.
 .PP
 If you wish to recompile and install all programs into a particular
 target area you can override the default path prefix by doing:
@@ -374,53 +432,49 @@ target area you can override the default path prefix by doing:
 \fB#\fP \fImake\fP
 \fB#\fP \fImake DESTDIR=\fPpathname \fIinstall\fP
 .DE
+Similarly, the mode, owner, group, and other characteristics of
+the installed object can be modified by changing other default
+make variables.
+See
+.Xr make (1),
+.Pn /usr/src/share/mk/bsd.README ,
+and the ``.mk'' scripts in the
+.Pn /usr/share/mk
+directory for more information.
 .PP
-To regenerate all the system binaries you can do
+If you modify the C library or system include files, to change a
+system call for example, and want to rebuild and install everything,
+you have to be a little careful.
+You must insure that the include files are installed before anything
+is compiled, and that the libraries are installed before the remainder
+of the source, otherwise the loaded images will not contain the new
+routine from the library.
+If include files have been modified, the following commands should
+be done first:
 .DS
-\fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImake clean depend all\fP
+\fB#\fP \fIcd /usr/src/include\fP
+\fB#\fP \fImake install\fP
 .DE
-.PP
-The additional target
-.DS
-\fB#\fP \fImake cleandir\fP
-.DE
-not only removes the binaries and objects, but the dependency
-files and the formatted manual pages as well.
-The command \fImake depend\fP regenerates the dependency files,
-and the next make which builds the binary will also rebuild the
-formatted manual pages.
-.PP
-If you modify the C library, say to change a system call,
-and want to rebuild and install everything from scratch you
-have to be a little careful.
-You must insure that the libraries are installed before the
-remainder of the source, otherwise the loaded images will not
-contain the new routine from the library.
-The following sequence will accomplish this task.
+Then, if, for example, C library files have been modified, the
+following commands should be executed:
 .DS
 \fB#\fP \fIcd /usr/src/lib/libc\fP
-\fB#\fP \fImake clean depend install\fP
+\fB#\fP \fImake depend\fP
+\fB#\fP \fImake\fP
+\fB#\fP \fImake install\fP
 \fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImake clean depend install\fP
+\fB#\fP \fImake depend\fP
+\fB#\fP \fImake\fP
+\fB#\fP \fImake install\fP
 .DE
-The \fImake clean\fP removes any existing binary or object files in the source
-trees to insure that everything will be recompiled and reloaded.  The \fImake
-depend\fP recreates all the dependencies.  See
-.Xr mkdep (1)
-for further details.
-.PP
-Alternatively, the command \fImake build\fP in the
-.Pn /usr/src/
-directory will install the include files, and then build and
-install the libraries, and then build and install the system binaries
-and manual pages.
+Alternatively, the \fImake build\fP command described above will
+accomplish the same tasks.
 This takes several hours on a reasonably configured machine.
 .NH 2
 Making local modifications
 .PP
-Locally written commands that aren't distributed are kept in
-.Pn /usr/src/local
+The source for locally written commands is normally stored in
+.Pn /usr/src/local ,
 and their binaries are kept in
 .Pn /usr/local/bin .
 This isolation of local binaries allows
@@ -428,9 +482,10 @@ This isolation of local binaries allows
 and
 .Pn /bin
 to correspond to the distribution tape (and to the manuals that
-people can buy).  People using local commands should be made aware that
-they aren't in the base manual.  Manual pages for local commands should be
-installed in
+people can buy).
+People using local commands should be made aware that they aren't
+in the base manual.
+Manual pages for local commands should be installed in
 .Pn /usr/local/man/cat[1-8].
 The
 .Xr man (1)
