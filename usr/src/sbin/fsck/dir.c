@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -304,6 +304,8 @@ mkentry(idesc)
 	dirp->d_ino = idesc->id_parent;	/* ino to be entered is in id_parent */
 	if (newinofmt)
 		dirp->d_type = typemap[idesc->id_parent];
+	else
+		dirp->d_type = 0;
 	dirp->d_reclen = newent.d_reclen;
 	dirp->d_namlen = newent.d_namlen;
 	bcopy(idesc->id_name, dirp->d_name, (size_t)dirp->d_namlen + 1);
@@ -320,6 +322,8 @@ chgino(idesc)
 	dirp->d_ino = idesc->id_parent;
 	if (newinofmt)
 		dirp->d_type = typemap[idesc->id_parent];
+	else
+		dirp->d_type = 0;
 	return (ALTERED|STOP);
 }
 
