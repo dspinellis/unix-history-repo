@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.20 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -125,10 +125,10 @@ lfs_markv(p, uap, retval)
 		if (blkp->bi_lbn == LFS_UNUSED_LBN)
 			continue;
 		/*
-		 * If modify time later than segment create time, see if the
+		 * If change time later than segment create time, see if the
 		 * block has been replaced.
 		 */
-		if (ip->i_mtime.ts_sec > blkp->bi_segcreate &&
+		if (ip->i_ctime.ts_sec > blkp->bi_segcreate &&
 		    (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr) ||
 		    b_daddr != blkp->bi_daddr))
 			continue;
@@ -274,9 +274,8 @@ lfs_segclean(p, uap, retval)
 	fs->lfs_bfree += (sup->su_nsums * LFS_SUMMARY_SIZE / DEV_BSIZE) +
 	    sup->su_ninos * btodb(fs->lfs_bsize);
 	sup->su_flags &= ~SEGUSE_DIRTY;
-	sup->su_nbytes -= sup->su_nsums * LFS_SUMMARY_SIZE;
-	sup->su_ninos = 0;
-	sup->su_nsums = 0;
+printf ("segclean: segment %d has %d bytes %d sums %d ninos\n",
+uap->segment, sup->su_nbytes, sup->su_nsums, sup->su_ninos);
 	(void) VOP_BWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
@@ -420,6 +419,9 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 		ip->i_din = *lfs_ifind(ump->um_lfs, ino, bp->b_un.b_dino);
 		brelse(bp);
 	}
+
+	/* Inode was just read from user space or disk, make sure it's locked */
+	ip->i_flag |= ILOCKED;
 
 	/*
 	 * Initialize the vnode from the inode, check for aliases.  In all
