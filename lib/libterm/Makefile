@@ -21,4 +21,8 @@ LINKS=	${LIBDIR}/libtermcap.a ${LIBDIR}/libtermlib.a \
 LINKS+=	${LIBDIR}/libtermcap_p.a ${LIBDIR}/libtermlib_p.a
 .endif
 
+.if !defined(NOPIC) && defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
+LINKS+= ${LIBDIR}/libtermcap.so.1.0 ${LIBDIR}/libtermlib.so.1.0
+.endif
+
 .include <bsd.lib.mk>
