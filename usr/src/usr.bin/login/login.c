@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.74 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -349,7 +349,7 @@ main(argc, argv)
 		} else if (pwd->pw_change - tp.tv_sec <
 		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog)
 			(void)printf("Warning: your password expires on %s",
-			    ctime(&pwd->pw_expire));
+			    ctime(&pwd->pw_change));
 	if (pwd->pw_expire)
 		if (tp.tv_sec >= pwd->pw_expire) {
 			(void)printf("Sorry -- your account has expired.\n");
