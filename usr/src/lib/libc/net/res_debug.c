@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -229,8 +229,10 @@ p_rr(cp, msg, file)
 		break;
 	case T_CNAME:
 	case T_MB:
+#ifdef OLDRR
 	case T_MD:
 	case T_MF:
+#endif /* OLDRR */
 	case T_MG:
 	case T_MR:
 	case T_NS:
@@ -269,10 +271,10 @@ p_rr(cp, msg, file)
 		break;
 
 	case T_MX:
-		fprintf(file,"\tname = ");
+		fprintf(file,"\tpreference = %ld,",getshort(cp));
+		cp += sizeof(u_short);
+		fprintf(file," name = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,", preference = %ld",getlong(cp));
-		cp += sizeof(u_long);
 		break;
 
 	case T_MINFO:
@@ -340,10 +342,12 @@ p_type(type)
 		return("A");
 	case T_NS:		/* authoritative server */
 		return("NS");
+#ifdef OLDRR
 	case T_MD:		/* mail destination */
 		return("MD");
 	case T_MF:		/* mail forwarder */
 		return("MF");
+#endif /* OLDRR */
 	case T_CNAME:		/* connonical name */
 		return("CNAME");
 	case T_SOA:		/* start of authority zone */
