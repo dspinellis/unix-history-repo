@@ -1,4 +1,4 @@
-/*	param.h	1.6	87/01/16	*/
+/*	param.h	1.6.1.1	87/04/02	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -32,9 +32,24 @@ u_long	ntohl(), htonl();
 #define	PGSHIFT		10		/* LOG2(NBPG) */
 #define	NPTEPG		(NBPG/(sizeof (struct pte)))
 
+#define	KERNBASE	0xc0000000	/* start of kernel virtual */
+#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
+
+#ifndef SECSIZE
 #define	DEV_BSIZE	1024
 #define	DEV_BSHIFT	10		/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	1024		/* NBPG for physical controllers */
+#else SECSIZE
+/*
+ * Devices without disk labels and the swap virtual device
+ * use "blocks" of exactly pagesize.  Devices with disk labels
+ * use device-dependent sector sizes for block and character interfaces.
+ */
+#define	DEV_BSIZE	NBPG
+#define	DEV_BSHIFT	PGSHIFT		/* log2(DEV_BSIZE) */
+#define BLKDEV_IOSIZE	NBPG		/* NBPG for unlabeled block devices */
+#endif SECSIZE
+#define	MAXPHYS		(64 * 1024)	/* max raw I/O transfer size */
 
 #define	CLSIZE		1
 #define	CLSIZELOG2	0
@@ -55,10 +70,17 @@ u_long	ntohl(), htonl();
 #define	ctos(x)	(x)
 #define	stoc(x)	(x)
 
+#ifndef SECSIZE
 /* Core clicks (1024 bytes) to disk blocks */
 #define	ctod(x)	(x)
 #define	dtoc(x)	(x)
 #define	dtob(x)	((x)<<PGSHIFT)
+#else SECSIZE
+/* Core clicks (1024 bytes) to disk blocks; deprecated */
+#define	ctod(x)	(x)				/* XXX */
+#define	dtoc(x)	(x)				/* XXX */
+#define	dtob(x)	((x)<<PGSHIFT)			/* XXX */
+#endif SECSIZE
 
 /* clicks to bytes */
 #define	ctob(x)	((x)<<PGSHIFT)
@@ -66,6 +88,7 @@ u_long	ntohl(), htonl();
 /* bytes to clicks */
 #define	btoc(x)	((((unsigned)(x)+NBPG-1) >> PGSHIFT))
 
+#ifndef SECSIZE
 #define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
 	((unsigned)(bytes) >> DEV_BSHIFT)
 #define	dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
@@ -78,6 +101,11 @@ u_long	ntohl(), htonl();
  * For now though just use DEV_BSIZE.
  */
 #define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
+#else SECSIZE
+/* bytes to "disk blocks" and back; deprecated */
+#define	btodb(bytes)	((unsigned)(bytes) >> DEV_BSHIFT)	/* XXX */
+#define	dbtob(db)	((unsigned)(db) << DEV_BSHIFT)		/* XXX */
+#endif SECSIZE
 
 /*
  * Macros to decode processor status word.
