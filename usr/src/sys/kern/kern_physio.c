@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.27	82/03/26	*/
+/*	kern_physio.c	4.28	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -766,8 +766,8 @@ minphys(bp)
 struct buf *bp;
 {
 
-	if (bp->b_bcount > 65 * 1024)
-		bp->b_bcount = 65 * 1024;
+	if (bp->b_bcount > 63 * 1024)
+		bp->b_bcount = 63 * 1024;
 }
 
 /*
