@@ -1,10 +1,11 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.11	%G%
+#	@(#)makefile	1.12	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
 LIB = libI77.a
 CFLAGS = -O
+LPR = lpr
 
 # for CFO 11's
 #ENV = ucb
@@ -95,7 +96,7 @@ index:	$(SOURCES) mkindx
 	@mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
 
 print:	index
-	@pr index Makefile `ls $(SOURCES)` | lpr
+	@pr index Makefile `ls $(SOURCES)` | $(LPR)
 
 mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
