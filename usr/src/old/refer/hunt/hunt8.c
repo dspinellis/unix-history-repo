@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt8.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt8.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -13,7 +13,7 @@ char *s;
 {
 	/* make a file suitable for fgrep */
 	char tmp[200];
-	sprintf(tmp, "/usr/lib/refer/mkey %s >%s.ig", s,s);
+	sprintf(tmp, "/usr/lib/refer/mkey '%s' > '%s.ig'", s,s);
 	system(tmp);
 }
 
