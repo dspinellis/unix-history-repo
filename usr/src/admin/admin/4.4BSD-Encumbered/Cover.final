@@ -1,4 +1,4 @@
-.\" @(#)Cover.final	1.1 (CSRG - distribution) %G%
+.\" @(#)Cover.final	1.2 (CSRG - distribution) %G%
 .\"
 .\" use -ms
 .\"
@@ -439,7 +439,7 @@ Order of shipment will be based on time
 of arrival of the properly completed paperwork and
 confirmation with USL if necessary.
 Because of the differential in costs of shipping outside the United States,
-we ask that organizations beyond the North American continent pay
+we ask that organizations outside of the United States and its territories pay
 the collect shipping charges.
 If the destination is one where collect shipment
 cannot be made by the carrier,
@@ -473,8 +473,8 @@ To run 4.4BSD-Encumbered on any CPU,
 you must have a CPU authorization under
 The Regents of the University of California Software
 Agreement with USL.
-This can be obtained by contacting Pam True at (510) 642-6348
-in Berkeley Campus Materiel Management for an application. 
+This can be obtained by contacting Jane Schoenfeld at (510) 987-0638
+in the Office of the President for an application. 
 A copy of this should be sent to us.
 In addition, the following items must
 be sent to the Computer Systems Research Group:
