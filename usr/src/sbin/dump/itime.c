@@ -6,11 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <ufs/dir.h>
 #include <ufs/dinode.h>
 #include <fcntl.h>
 #include <protocols/dumprestore.h>
@@ -41,12 +40,26 @@ initdumptimes()
 	FILE *df;
 
 	if ((df = fopen(dumpdates, "r")) == NULL) {
-		if (errno == ENOENT) {
-			msg("WARNING: no file `%s'\n", dumpdates);
-			return;
+		if (errno != ENOENT) {
+			quit("cannot read %s: %s\n", dumpdates,
+			    strerror(errno));
+			/* NOTREACHED */
 		}
-		quit("cannot read %s: %s\n", dumpdates, strerror(errno));
-		/* NOTREACHED */
+		/*
+		 * Dumpdates does not exist, make an empty one.
+		 */
+		msg("WARNING: no file `%s', making an empty one\n", dumpdates);
+		if ((df = fopen(dumpdates, "w")) == NULL) {
+			quit("cannot create %s: %s\n", dumpdates,
+			    strerror(errno));
+			/* NOTREACHED */
+		}
+		(void) fclose(df);
+		if ((df = fopen(dumpdates, "r")) == NULL) {
+			quit("cannot read %s even after creating it: %s\n",
+			    dumpdates, strerror(errno));
+			/* NOTREACHED */
+		}
 	}
 	(void) flock(fileno(df), LOCK_SH);
 	readdumptimes(df);
