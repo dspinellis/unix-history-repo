@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)stty.c	4.13 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.14 (Berkeley) %G%";
 #endif
 /*
  * set teletype modes
