@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.26 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.27 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.26 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.27 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -372,7 +372,7 @@ setdaemonoptions(p)
 		  case 'A':		/* address */
 		  case 'a':
 			if (isascii(*v) && isdigit(*v))
-				(void) inet_aton(v, &DaemonAddr.sin.sin_addr);
+				DaemonAddr.sin.sin_addr.s_addr = inet_network(v);
 			else
 			{
 				register struct netent *np;
