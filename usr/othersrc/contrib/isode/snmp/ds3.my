@@ -1,0 +1,973 @@
+-- ds3.my - DS3-interface objects
+
+-- $Header: /f/osi/snmp/RCS/ds3.my,v 7.1 91/02/22 09:43:07 mrose Interim $
+--
+-- 
+-- $Log:	ds3.my,v $
+-- Revision 7.1  91/02/22  09:43:07  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.0  91/01/11  13:06:32  mrose
+-- *** empty log message ***
+-- 
+-- Revision 7.1  91/01/11  13:02:23  mrose
+-- update
+-- 
+-- Revision 7.0  90/09/27  10:46:07  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+
+
+               RFCxxxx-MIB DEFINITIONS ::= BEGIN
+
+               IMPORTS
+                       experimental, Counter
+                               FROM RFC1155-SMI
+                       DisplayString
+                               FROM RFC1158-MIB
+                       OBJECT-TYPE
+                               FROM RFC-oooo;
+
+               --  This MIB module uses the extended OBJECT-TYPE macro as
+               --  defined in [13].
+
+
+               --  this is the MIB module for the DS3 objects
+
+               ds3     OBJECT IDENTIFIER ::= { experimental 15 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               -- the DS3 Configuration group
+
+               -- Although the objects in this group are read-only, at the
+               -- agent's discretion they may be made read-write so that the
+               -- management station, when appropriately authorized, may
+               -- change the behavior of the CSU, e.g., to place the device
+               -- into a loopback state.
+
+               -- Implementation of this group is mandatory for all systems
+               -- that attach to a DS3 Interface.
+
+               ds3ConfigTable OBJECT-TYPE
+                   SYNTAX  SEQUENCE OF DS3ConfigEntry
+                   ACCESS  not-accessible
+                   STATUS  mandatory
+                   DESCRIPTION
+                           "The DS3 Configuration table."
+                  ::= { ds3 1 }
+
+              ds3ConfigEntry OBJECT-TYPE
+                  SYNTAX  DS3ConfigEntry
+                  ACCESS  not-accessible
+                  STATUS  mandatory
+                  DESCRIPTION
+                          "An entry in the DS3 Configuration table."
+                 INDEX   { ds3CSUIndex }
+                 ::= { ds3ConfigTable 1 }
+
+             DS3ConfigEntry ::=
+                 SEQUENCE {
+                     ds3CSUIndex
+                         INTEGER,
+                     ds3Index
+                         INTEGER,
+                     ds3TimeElapsed
+                         INTEGER (1..900),
+                     ds3ValidIntervals
+                         INTEGER (0..96),
+                     ds3LineType
+                         INTEGER,
+                     ds3ZeroCoding
+                         INTEGER,
+                     ds3Loopback
+                         INTEGER,
+                     ds3SendCode
+
+
+
+
+
+
+
+                         INTEGER,
+                     ds3YellowAlarm
+                         INTEGER,
+                     ds3RedAlarm
+                         INTEGER,
+                     ds3CircuitIdentifier
+                         DisplayString (SIZE (0..255))
+             }
+
+             ds3CSUIndex OBJECT-TYPE
+                 SYNTAX  INTEGER
+                 ACCESS  read-only
+                 STATUS  mandatory
+                 DESCRIPTION
+                         "The index value which uniquely identifies the
+                         CSU to which this entry is applicable."
+                ::= { ds3ConfigEntry 1 }
+
+            ds3Index OBJECT-TYPE
+                SYNTAX  INTEGER
+                ACCESS  read-only
+                STATUS  mandatory
+                DESCRIPTION
+                        "An index value that uniquely identifies a DS3
+                        Interface.  The interface identified by a
+                        particular value of this index is the same
+                        interface as identified by the same value an
+                        ifIndex object instance."
+               ::= { ds3ConfigEntry 2 }
+
+           ds3TimeElapsed OBJECT-TYPE
+               SYNTAX  INTEGER (1..900)
+               ACCESS  read-only
+               STATUS  mandatory
+               DESCRIPTION
+                       "The number of seconds, including partial
+                       seconds, that have elapsed since the beginning of
+                       the current error-measurement period."
+              ::= { ds3ConfigEntry 3 }
+
+          ds3ValidIntervals OBJECT-TYPE
+              SYNTAX  INTEGER (0..96)
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+
+
+
+
+
+
+
+                      "The number of previous intervals for which valid
+                      data was collected.  The value will be 96 unless
+                      the CSU device was brought online within the last
+                      24 hours, in which case the value will be the
+                      number of complete 15 minute intervals the CSU has
+                      been online."
+              ::= { ds3ConfigEntry 4 }
+
+          ds3LineType OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          other(1),
+                          ds3M23(2),
+                          ds3SYNTRAN(3),
+                          ds3CbitParity(4),
+                          ds3ClearChannel(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates the variety of DS3 C-bit
+                      application implementing this circuit.  The type
+                      of circuit affects the interpretation of the usage
+                      and error statistics.  The rate of all of them is
+                      44.736 Mbps.
+
+                      The values, in sequence, describe:
+                      TITLE:            SPECIFICATION:
+                      ds3M23            ANSI T1.107-1988 [10]
+                      ds3SYNTRAN        ANSI T1.107-1988 [10]
+                      ds3C-bitParity    ANSI T1.107a-1989 [10a]
+                      ds3ClearChannel   ANSI T1.102-1987 [9]
+                      "
+              ::= { ds3ConfigEntry 5 }
+
+          ds3ZeroCoding OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds3other(1),
+                          ds3B3ZS(2)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable describes the variety of Zero Code
+                      Suppression used on the link, which in turn
+                      affects a number of its characteristics.
+
+
+
+
+
+
+
+                      ds3B3ZS refers to the use of specified patterns of
+                      normal bits and bipolar violations which are used
+                      to replace sequences of zero bits of a specified
+                      length."
+              ::= { ds3ConfigEntry 6 }
+
+          ds3Loopback OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds3NoLoop(1),
+                          ds3LocalLoopbackLocalSide(2),
+                          ds3LocalLoopbackRemoteSide(3),
+                          ds3RemoteLoopbackLocalSide(4),
+                          ds3RemoteLoopbackRemoteSide(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable represents the loopback state of
+                      the CSU.  Devices supporting read/write access
+                      should return badValue in response to a requested
+                      loopback state that the CSU does not support.  The
+                      values mean:
+
+                        ds3NoLoop
+                           Not in the loopback state.  A device that is
+                           not capable of performing a loopback on
+                           either interface shall always return this as
+                           it's value.
+
+                        ds3LocalLoopbackLocalSide
+                           Signal received from the local side of the
+                           device is looped back at the local connector
+                           (eg, without involving the CSU).
+
+                        ds3LocalLoopbackRemoteSide
+                           Signal received from the local side of the
+                           device is looped back at the remote connector
+                           (eg, through the CSU).
+
+                        ds3RemoteLoopbackLocalSide
+                           Signal received from the remote side of the
+                           device is looped back at the local connector
+                           (eg, through the CSU).
+
+                        ds3RemoteLoopbackRemoteSide
+
+
+
+
+
+
+
+                           Signal received from the remote side of the
+                           device is looped back at the remote connector
+                           (eg, without involving the CSU).
+
+                      Note that M23 and ClearChannel interfaces do not
+                      support the Loopback managed object."
+              ::= { ds3ConfigEntry 7 }
+
+          ds3SendCode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds3SendTestMessage(1),
+                          ds3SendNoCode(2),
+                          ds3SendSetCode(3),
+                          ds3SendLoopbackCode(4),
+                          ds3SendResetCode(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates what type of code is
+                      being sent across the DS1 circuit by the CSU.  The
+                      values mean:
+
+                        ds3SendNoCode
+                           sending looped or normal data
+
+                        ds3SendSetCode
+                           sending a loopback request
+
+                        ds3SendLoopbackCode
+                           sending the code to choose a specific
+                           loopback
+
+                        ds3SendResetCode
+                           sending a loopback termination request
+
+                        ds3SendTestMessage
+                           sending a Test pattern as defined in
+                           T1.107a-1989 [10a].
+                      "
+                       ::= { ds3ConfigEntry 8 }
+
+                   ds3YellowAlarm OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   ds3YellowAlarm(1),
+
+
+
+
+
+
+
+                                   ds3NoYellowAlarm(2)
+                               }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       DESCRIPTION
+                               "This variable indicates if a Yellow
+                               Alarm condition exists."
+                      ::= { ds3ConfigEntry 9 }
+
+                  ds3RedAlarm OBJECT-TYPE
+                      SYNTAX  INTEGER {
+                                  ds3RedAlarm(1),
+                                  ds3NoRedAlarm(2)
+                              }
+                      ACCESS  read-only
+                      STATUS  mandatory
+                      DESCRIPTION
+                              "This variable indicates if a Red Alarm
+                              condition exists."
+                     ::= { ds3ConfigEntry 10 }
+
+                 ds3CircuitIdentifier OBJECT-TYPE
+                     SYNTAX  DisplayString (SIZE (0..255))
+                     ACCESS  read-only
+                     STATUS  mandatory
+                     DESCRIPTION
+                             "This variable contains the transmission
+                             vendor's circuit identifier, for the
+                             purpose of facilitating troubleshooting."
+                    ::= { ds3ConfigEntry 11 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                -- the DS3 Interval group
+
+                -- Implementation of this group is mandatory for all systems
+                -- that attach to a DS3 interface.
+
+                -- The DS3 Interval Table contains various statistics
+                -- collected by each CSU over the previous 24 hours of
+                -- operation.  The past 24 hours are broken into 96 completed
+                -- 15 minute intervals.
+
+                ds3IntervalTable OBJECT-TYPE
+                    SYNTAX  SEQUENCE OF DS3IntervalEntry
+                    ACCESS  not-accessible
+                    STATUS  mandatory
+                    DESCRIPTION
+                            "The DS3 Interval table."
+                   ::= { ds3 2 }
+
+               ds3IntervalEntry OBJECT-TYPE
+                   SYNTAX  DS3IntervalEntry
+                   ACCESS  not-accessible
+                   STATUS  mandatory
+                   DESCRIPTION
+                           "An entry in the DS3 Interval table."
+                  INDEX   { ds3IntervalIndex, ds3IntervalNumber }
+                  ::= { ds3IntervalTable 1 }
+
+              DS3IntervalEntry ::=
+                  SEQUENCE {
+                      ds3IntervalIndex
+                          INTEGER,
+                      ds3IntervalNumber
+                          INTEGER (1..96),
+                      ds3IntervalESs
+                          Counter,
+                      ds3IntervalSESs
+                          Counter,
+                      ds3IntervalSEFSs
+                          Counter,
+                      ds3IntervalUASs
+                          Counter,
+                      ds3IntervalCSSs
+                          Counter,
+                      ds3IntervalBPVs
+                          Counter,
+
+
+
+
+
+
+
+                      ds3IntervalCVs
+                          Counter
+                  }
+
+              ds3IntervalIndex OBJECT-TYPE
+                  SYNTAX  INTEGER
+                  ACCESS  read-only
+                  STATUS  mandatory
+                  DESCRIPTION
+                          "The index value which uniquely identifies the
+                          CSU to which this entry is applicable.  The
+                          interface identified by a particular value of
+                          this index is the same interface as identified
+                          by the same value an DS3CSUIndex object
+                          instance."
+                 ::= { ds3IntervalEntry 1 }
+
+             ds3IntervalNumber OBJECT-TYPE
+                 SYNTAX  INTEGER (1..96)
+                 ACCESS  read-only
+                 STATUS  mandatory
+                 DESCRIPTION
+                         "A number between 1 and 96, where 1 is the most
+                         recently completed 15 minute interval and 96 is
+                         the least recently completed 15 minutes
+                         interval (assuming that all 96 intervals are
+                         valid)."
+                ::= { ds3IntervalEntry 2 }
+
+            ds3IntervalESs OBJECT-TYPE
+                SYNTAX  Counter
+                ACCESS  read-only
+                STATUS  mandatory
+                DESCRIPTION
+                        "The counter associated with the number of
+                        Errored Seconds, as defined by [12], encountered
+                        by a DS3 CSU in one of the previous 96,
+                        individual 15 minute, intervals."
+               ::= { ds3IntervalEntry 3 }
+
+           ds3IntervalSESs OBJECT-TYPE
+               SYNTAX  Counter
+               ACCESS  read-only
+               STATUS  mandatory
+               DESCRIPTION
+
+
+
+
+
+
+
+                       "The counter associated with the number of
+                       Severely Errored Seconds, as defined by [12],
+                       encountered by a DS3 CSU in one of the previous
+                       96, individual 15 minute, intervals."
+              ::= { ds3IntervalEntry 4 }
+
+          ds3IntervalSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      [12], encountered by a DS3 CSU in one of the
+                      previous 96, individual 15 minute, intervals."
+              ::= { ds3IntervalEntry 5 }
+
+          ds3IntervalUASs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by [12],
+                      encountered by a DS3 CSU in one of the previous
+                      96, individual 15 minute, intervals."
+              ::= { ds3IntervalEntry 6 }
+
+          ds3IntervalCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by [12],
+                      encountered by a DS3 CSU in one of the previous
+                      96, individual 15 minute, intervals.
+
+                      Note that SYNTRAN interfaces are the only
+                      interfaces that support the Controlled Slip
+                      Seconds managed object.  Accordingly, agents
+                      configured with non-SYNTRAN interfaces may treat
+                      this object as having an ACCESS clause value of
+                      not-accessible."
+              ::= { ds3IntervalEntry 7}
+
+
+
+
+
+
+
+          ds3IntervalBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by [12], encountered by a
+                      DS3 CSU in one of the previous 96, individual 15
+                      minute, intervals."
+              ::= { ds3IntervalEntry 8 }
+
+          ds3IntervalCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Coding
+                      Violations, as defined by [12], encountered by a
+                      DS3 CSU in one of the previous 96, individual 15
+                      minute, intervals."
+              ::= { ds3IntervalEntry 9 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS3 Current group
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a DS3 Interface.
+
+          -- The DS3 current table contains various statistics being
+          -- collected for the current 15 minute interval.
+
+          ds3CurrentTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS3CurrentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS3 Current table."
+              ::= { ds3 3 }
+
+          ds3CurrentEntry OBJECT-TYPE
+              SYNTAX  DS3CurrentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS3 Current table."
+              INDEX   { ds3CurrentIndex }
+              ::= { ds3CurrentTable 1 }
+
+          DS3CurrentEntry ::=
+              SEQUENCE {
+                  ds3CurrentIndex
+                      INTEGER,
+                  ds3CurrentESs
+                      Counter,
+                  ds3CurrentSESs
+                      Counter,
+                  ds3CurrentSEFSs
+                      Counter,
+                  ds3CurrentUASs
+                      Counter,
+                  ds3CurrentCSSs
+                      Counter,
+                  ds3CurrentBPVs
+                      Counter,
+                  ds3CurrentCVs
+                      Counter
+              }
+
+
+
+
+
+
+
+
+          ds3CurrentIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an DS3CSUIndex object instance."
+              ::= { ds3CurrentEntry 1 }
+
+          ds3CurrentESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Errored
+                      Seconds, as defined by [12], encountered by a DS3
+                      CSU in the current 15 minute interval."
+              ::= { ds3CurrentEntry 2 }
+
+          ds3CurrentSESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the current 15 minute
+                      interval."
+              ::= { ds3CurrentEntry 3 }
+
+          ds3CurrentSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      [12], encountered by a DS3 CSU in the current 15
+                      minute interval."
+              ::= { ds3CurrentEntry 4 }
+
+          ds3CurrentUASs OBJECT-TYPE
+
+
+
+
+
+
+
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the current 15 minute
+                      interval."
+              ::= { ds3CurrentEntry 5 }
+
+          ds3CurrentCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the current 15 minute
+                      interval.
+
+                      Note that SYNTRAN interfaces are the only
+                      interfaces that support the Controlled Slip
+                      Seconds managed object.  Accordingly, agents
+                      configured with non-SYNTRAN interfaces may treat
+                      this object as having an ACCESS clause value of
+                      not-accessible."
+              ::= { ds3CurrentEntry 6 }
+
+          ds3CurrentBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by [12], encountered by a
+                      DS3 CSU in the current 15 minute interval."
+              ::= { ds3CurrentEntry 7}
+
+          ds3CurrentCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Coding
+                      Violations, as defined by [12], encountered by a
+
+
+
+
+
+
+
+                      DS3 CSU in the current 15 minute interval."
+              ::= { ds3CurrentEntry 8 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS3 Total group
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a DS3.
+
+          -- The DS3 Total Table contains the cumulative sum of the
+          -- various statistics for the 24 hour interval preceding the
+          -- first valid interval in the DS3CurrentTable.
+
+          ds3TotalTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS3TotalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS3 Total table.  24 hour interval."
+              ::= { ds3 4 }
+
+          ds3TotalEntry OBJECT-TYPE
+              SYNTAX  DS3TotalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS3 Total table."
+              INDEX   { ds3TotalIndex }
+              ::= { ds3TotalTable 1 }
+
+          DS3TotalEntry ::=
+              SEQUENCE {
+                  ds3TotalIndex
+                      INTEGER,
+                  ds3TotalESs
+                      Counter,
+                  ds3TotalSESs
+                      Counter,
+                  ds3TotalSEFSs
+                      Counter,
+                  ds3TotalUASs
+                      Counter,
+                  ds3TotalCSSs
+                      Counter,
+                  ds3TotalBPVs
+                      Counter,
+                  ds3TotalCVs
+                      Counter
+              }
+
+
+
+
+
+
+
+          ds3TotalIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an DS3CSUIndex object instance."
+              ::= { ds3TotalEntry 1 }
+
+          ds3TotalESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Errored
+                      Seconds, as defined by [12], encountered by a DS3
+                      CSU in the previous 24 hour interval."
+              ::= { ds3TotalEntry 2 }
+
+          ds3TotalSESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the previous 24 hour
+                      interval."
+              ::= { ds3TotalEntry 3 }
+
+          ds3TotalSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      [12], encountered by a DS3 CSU in the previous 24
+                      hour interval."
+              ::= { ds3TotalEntry 4 }
+
+
+
+
+
+
+
+
+
+          ds3TotalUASs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the previous 24 hour
+                      interval."
+              ::= { ds3TotalEntry 5 }
+
+          ds3TotalCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by [12],
+                      encountered by a DS3 CSU in the previous 24 hour
+                      interval.
+
+                      Note that SYNTRAN interfaces are the only
+                      interfaces that support the Controlled Slip
+                      Seconds managed object.  Accordingly, agents
+                      configured with non-SYNTRAN interfaces may treat
+                      this object as having an ACCESS clause value of
+                      not-accessible."
+              ::= { ds3TotalEntry 6 }
+
+          ds3TotalBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by [12], encountered by a
+                      DS3 CSU in the previous 24 hour interval."
+              ::= { ds3TotalEntry 7 }
+
+          ds3TotalCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Coding
+
+
+
+
+
+
+
+                      Violations, as defined by [12], encountered by a
+                      DS3 CSU in the previous 24 hour interval."
+              ::= { ds3TotalEntry 8 }
+
+
+
+          END
