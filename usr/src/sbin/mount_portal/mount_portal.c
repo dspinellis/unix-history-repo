@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_portal.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_portal.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ int sig;
 
 	while ((pid = waitpid((pid_t) -1, (int *) 0, WNOHANG)) > 0)
 		;
-	if (pid < 0)
+	if (pid < 0 && errno != ECHILD)
 		syslog(LOG_WARNING, "waitpid: %s", strerror(errno));
 }
 
@@ -134,12 +134,10 @@ main(argc, argv)
 	if (rc < 0)
 		err(1, NULL);
 
-#ifdef notdef
 	/*
 	 * Everything is ready to go - now is a good time to fork
 	 */
 	daemon(0, 0);
-#endif
 
 	/*
 	 * Start logging (and change name)
@@ -216,7 +214,7 @@ main(argc, argv)
 		case 0:
 			(void) close(so);
 			activate(&q, so2);
-			break;
+			exit(0);
 		default:
 			(void) close(so2);
 			break;
