@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.14 1993/12/30 05:20:12 davidg Exp $
+ *	$Id: vfs__bio.c,v 1.15 1994/01/31 05:57:45 davidg Exp $
  */
 
 #include "param.h"
@@ -625,12 +625,18 @@ biodone(register struct buf *bp)
  *	The variable vfs_update_wakeup allows for internal syncs.
  */
 int vfs_update_wakeup;
+#ifndef UPDATE_INTERVAL
+int vfs_update_interval = 30;
+#else
+int vfs_update_interval = UPDATE_INTERVAL;
+#endif
 
 void
 vfs_update() {
 	(void) spl0();
 	while(1) {
-		tsleep((caddr_t)&vfs_update_wakeup, PRIBIO, "update", hz*30);
+		tsleep((caddr_t)&vfs_update_wakeup, PRIBIO, "update",
+			hz * vfs_update_interval);
 		vfs_update_wakeup = 0;
 		sync(curproc, NULL, NULL);
 	}
