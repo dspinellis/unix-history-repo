@@ -82,6 +82,7 @@ cgetset(ent)
 		errno = ENOMEM;
                 return (-1);
 	}
+	gottoprec = 0;
         (void)strcpy(toprec, ent);
         return (0);
 }
@@ -197,7 +198,7 @@ getent(cap, len, db_array, fd, name, depth)
 	/*
 	 * Check if we have a top record from cgetset().
          */
-	if (depth == 0 && toprec != NULL && !gottoprec) {
+	if (depth == 0 && toprec != NULL && cgetmatch(toprec, name) == 0) {
 		if ((record = malloc (topreclen + BFRAG)) == NULL) {
 			errno = ENOMEM;
 			return (-2);
@@ -349,7 +350,7 @@ getent(cap, len, db_array, fd, name, depth)
 
 	if (!foundit)
 		return (-1);
-	
+
 	/*
 	 * Got the capability record, but now we have to expand all tc=name
 	 * references in it ...
@@ -519,20 +520,14 @@ cgetmatch(buf, name)
 	}
 }
 
+
+
+
+
 int
 cgetfirst(buf, db_array)
 	char **buf, **db_array;
 {
-	if (toprec) {
-		if ((*buf = malloc(topreclen + 1)) == NULL) {
-			errno = ENOMEM;
-			return(-2);
-		}
-		strcpy(*buf, toprec);
-		(void)cgetclose();
-		gottoprec = 1;
-		return(1);
-	}
 	(void)cgetclose();
 	return (cgetnext(buf, db_array));
 }
@@ -567,55 +562,52 @@ cgetnext(bp, db_array)
 	size_t len;
 	int status;
 	char *cp, *line, *rp, buf[BSIZE];
+	u_int dummy;
 
-	if (dbp == NULL) {
-		if (toprec && !gottoprec) {
-			if ((*bp = malloc(topreclen + 1)) == NULL) {
-				errno = ENOMEM;
-				return(-2);
-			}
-			strcpy(*bp, toprec);
-			gottoprec = 1;
-			return(1);
-		}
+	if (dbp == NULL)
 		dbp = db_array;
-	}
+
 	if (pfp == NULL && (pfp = fopen(*dbp, "r")) == NULL) {
 		(void)cgetclose();
 		return (-1);
 	}
 	for(;;) {
-		line = fgetline(pfp, &len);
-		if (line == NULL) {
-			(void)fclose(pfp);
-			if (ferror(pfp)) {
-				(void)cgetclose();
-				return (-1);
-			} else {
-				dbp++;
-				if (*dbp == NULL) {
-					(void)cgetclose();
-					return (0);
-				} else if ((pfp = fopen(*dbp, "r")) == NULL) {
+		if (toprec && !gottoprec) {
+			gottoprec = 1;
+			line = toprec;
+		} else {
+			line = fgetline(pfp, &len);
+			if (line == NULL && pfp) {
+				(void)fclose(pfp);
+				if (ferror(pfp)) {
 					(void)cgetclose();
 					return (-1);
-				} else
-					continue;
+				} else {
+					dbp++;
+					if (*dbp == NULL) {
+						(void)cgetclose();
+						return (0);
+					} else if ((pfp = fopen(*dbp, "r")) ==
+					    NULL) {
+						(void)cgetclose();
+						return (-1);
+					} else
+						continue;
+				}
 			}
-		}
-		if (isspace(*line) || *line == ':' || *line == '#' 
-		    || len == 0 || slash) {
+			if (isspace(*line) || *line == ':' || *line == '#' 
+			    || len == 0 || slash) {
+				if (len > 0 && line[len - 1] == '\\')
+					slash = 1;
+				else
+					slash = 0;
+				continue;
+			}
 			if (len > 0 && line[len - 1] == '\\')
 				slash = 1;
 			else
 				slash = 0;
-			continue;
-		}
-		if (len > 0 && line[len - 1] == '\\')
-			slash = 1;
-		else
-			slash = 0;
-
+		}			
 		/* line points to a name line */
 
 		rp = buf;
@@ -626,7 +618,7 @@ cgetnext(bp, db_array)
 				*rp++ = *cp;
 
 		*rp = '\0';
-		status = cgetent(bp, db_array, &buf[0]);
+		status = getent(bp, &dummy, db_array, -1, buf, 0);
 		if (status == 0)
 			return (1);
 		if (status == -2 || status == -3) {
