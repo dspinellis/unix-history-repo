@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.24 %G%";
+static char SccsId[] = "@(#)sccs.c	1.25 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -32,6 +32,11 @@ struct sccsprog
 # define NO_SDOT	0001	/* no s. on front of args */
 # define REALUSER	0002	/* protected (e.g., admin) */
 
+/* modes for the "clean", "info", "check" ops */
+# define CLEANC		0	/* clean command */
+# define INFOC		1	/* info command */
+# define CHECKC		2	/* check command */
+
 # ifdef CSVAX
 # define PROGPATH(name)	"/usr/local/name"
 # endif CSVAX
@@ -57,8 +62,9 @@ struct sccsprog SccsProg[] =
 	"del",		CMACRO,	0,			"delta/get",
 	"delt",		CMACRO,	0,			"delta/get",
 	"fix",		FIX,	0,			NULL,
-	"clean",	CLEAN,	REALUSER,		(char *) TRUE,
-	"info",		CLEAN,	REALUSER,		(char *) FALSE,
+	"clean",	CLEAN,	REALUSER,		(char *) CLEANC,
+	"info",		CLEAN,	REALUSER,		(char *) INFOC,
+	"check",	CLEAN,	REALUSER,		(char *) CHECKC,
 	"unedit",	UNEDIT,	0,			NULL,
 	NULL,		-1,	0,			NULL
 };
@@ -218,7 +224,7 @@ command(argv, forkflag)
 		exit(EX_SOFTWARE);
 
 	  case CLEAN:
-		clean((bool) cmd->sccspath);
+		clean((int) cmd->sccspath);
 		break;
 
 	  case UNEDIT:
@@ -506,18 +512,20 @@ safepath(p)
 **	exists in the current directory is purged.
 **
 **	Parameters:
-**		really -- if TRUE, remove everything.
-**			else, just report status.
+**		tells whether this came from a "clean", "info", or
+**		"check" command.
 **
 **	Returns:
 **		none.
 **
 **	Side Effects:
-**		removes files in the current directory.
+**		Removes files in the current directory.
+**		Prints information regarding files being edited.
+**		Exits if a "check" command.
 */
 
-clean(really)
-	bool really;
+clean(mode)
+	int mode;
 {
 	struct direct dir;
 	struct stat stbuf;
@@ -562,7 +570,7 @@ clean(really)
 		}
 		
 		/* the s. file exists and no p. file exists -- unlink the g-file */
-		if (really)
+		if (mode == CLEANC)
 		{
 			strncpy(buf, &dir.d_name[2], sizeof dir.d_name - 2);
 			buf[sizeof dir.d_name - 2] = '\0';
@@ -571,8 +579,10 @@ clean(really)
 	}
 
 	fclose(dirfd);
-	if (!gotedit && !really)
+	if (!gotedit && mode == INFOC)
 		printf("Nothing being edited\n");
+	if (mode == CHECKC)
+		exit(gotedit);
 }
 /*
 **  UNEDIT -- unedit a file
