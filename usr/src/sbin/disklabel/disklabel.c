@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.6 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -375,16 +375,34 @@ display(f, lp)
 	for (j = 0; j <= i; j++)
 		fprintf(f, "%d ", lp->d_drivedata[j]);
 	fprintf(f, "\n\n%d partitions:\n", lp->d_npartitions);
-	fprintf(f, "#\t       size    offset     fstype\n");
+	fprintf(f,
+	    "#        size   offset    fstype   [fsize bsize   cpg]\n");
 	pp = lp->d_partitions;
 	for (i = 0; i < lp->d_npartitions; i++, pp++) {
-		fprintf(f, "\t%c: %8d %8d    ", 'a' + i,
-		   pp->p_size, pp->p_offset);
 		if (pp->p_size) {
+			fprintf(f, "  %c: %8d %8d  ", 'a' + i,
+			   pp->p_size, pp->p_offset);
 			if ((unsigned) pp->p_fstype < FSMAXTYPES)
 				fprintf(f, "%8.8s", fstypenames[pp->p_fstype]);
 			else
 				fprintf(f, "%8d", pp->p_fstype);
+			switch (pp->p_fstype) {
+
+			case FS_UNUSED:				/* XXX */
+				fprintf(f, "    %5d %5d %5.5s ",
+				    pp->p_fsize, pp->p_fsize * pp->p_frag, "");
+				break;
+
+			case FS_BSDFFS:
+				fprintf(f, "    %5d %5d %5d ",
+				    pp->p_fsize, pp->p_fsize * pp->p_frag,
+				    pp->p_cpg);
+				break;
+
+			default:
+				fprintf(f, "%20.20s", "");
+				break;
+			}
 			fprintf(f, "\t# (Cyl. %4d",
 			    pp->p_offset / lp->d_secpercyl);
 			if (pp->p_offset % lp->d_secpercyl)
@@ -397,9 +415,8 @@ display(f, lp)
 			    lp->d_secpercyl - 1);
 			if (pp->p_size % lp->d_secpercyl)
 			    putc('*', f);
-			putc(')', f);
+			fprintf(f, ")\n");
 		}
-		fprintf(f, "\n");
 	}
 }
 
@@ -428,7 +445,7 @@ edit(lp)
 			fprintf(stderr, "%s: Can't reopen for reading\n");
 			break;
 		}
-		label = *lp;
+		bzero((char *)&label, sizeof(label));
 		if (getasciilabel(fd, &label)) {
 			*lp = label;
 			(void) unlink(tmpfil);
@@ -524,6 +541,7 @@ getasciilabel(f, lp)
 	register struct disklabel *lp;
 {
 	register char **cpp, *cp;
+	register struct partition *pp;
 	char *tp, *s, line[BUFSIZ];
 	int v, lineno = 0, errors = 0;
 
@@ -597,10 +615,12 @@ getasciilabel(f, lp)
 			continue;
 		}
 		if (sscanf(cp, "%d partitions", &v) == 1) {
-			if (v == 0 || (unsigned)v > MAXPARTITIONS)
+			if (v == 0 || (unsigned)v > MAXPARTITIONS) {
 				fprintf(stderr,
 				    "line %d: bad # of partitions\n", lineno);
-			else
+				lp->d_npartitions = MAXPARTITIONS;
+				errors++;
+			} else
 				lp->d_npartitions = v;
 			continue;
 		}
@@ -716,49 +736,74 @@ getasciilabel(f, lp)
 			continue;
 		}
 		if ('a' <= *cp && *cp <= 'z' && cp[1] == '\0') {
-			int part = *cp - 'a';
+			unsigned part = *cp - 'a';
 
-			if ((unsigned)part > MAXPARTITIONS) {
+			if (part > lp->d_npartitions) {
 				fprintf(stderr,
 				    "line %d: bad partition name\n", lineno);
 				errors++;
 				continue;
 			}
-			cp = tp, tp = word(cp);
-			if (tp == NULL)
-				tp = cp;
-			v = atoi(cp);
+			pp = &lp->d_partitions[part];
+#define NXTNUM(n) { \
+	cp = tp, tp = word(cp); \
+	if (tp == NULL) \
+		tp = cp; \
+	(n) = atoi(cp); \
+     }
+
+			NXTNUM(v);
 			if (v < 0) {
 				fprintf(stderr,
 				    "line %d: %s: bad partition size\n",
 				    lineno, cp);
 				errors++;
 			} else
-				lp->d_partitions[part].p_size = v;
-			cp = tp, tp = word(cp);
-			if (tp == NULL)
-				tp = cp;
-			v = atoi(cp);
+				pp->p_size = v;
+			NXTNUM(v);
 			if (v < 0) {
 				fprintf(stderr,
 				    "line %d: %s: bad partition offset\n",
 				    lineno, cp);
 				errors++;
 			} else
-				lp->d_partitions[part].p_offset = v;
+				pp->p_offset = v;
 			cp = tp, tp = word(cp);
 			cpp = fstypenames;
 			for (; cpp < &fstypenames[FSMAXTYPES]; cpp++)
 				if ((s = *cpp) && streq(s, cp)) {
-					lp->d_partitions[part].p_fstype =
-					    cpp - fstypenames;
-					goto next;
+					pp->p_fstype = cpp - fstypenames;
+					goto gottype;
 				}
 			v = atoi(cp);
 			if ((unsigned)v >= FSMAXTYPES)
 				fprintf(stderr, "line %d: %s %s\n", lineno,
 				    "Warning, unknown filesystem type", cp);
-			lp->d_partitions[part].p_fstype = v;
+			pp->p_fstype = v;
+	gottype:
+
+			switch (pp->p_fstype) {
+
+			case FS_UNUSED:				/* XXX */
+				NXTNUM(pp->p_fsize);
+				if (pp->p_fsize == 0)
+					break;
+				NXTNUM(v);
+				pp->p_frag = v / pp->p_fsize;
+				break;
+
+			case FS_BSDFFS:
+				NXTNUM(pp->p_fsize);
+				if (pp->p_fsize == 0)
+					break;
+				NXTNUM(v);
+				pp->p_frag = v / pp->p_fsize;
+				NXTNUM(pp->p_cpg);
+				break;
+
+			default:
+				break;
+			}
 			continue;
 		}
 		fprintf(stderr, "line %d: %s: Unknown disklabel field\n",
