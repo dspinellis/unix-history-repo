@@ -7,16 +7,16 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)npx.h	5.1 (Berkeley) %G%
+ *	@(#)npx.h	5.2 (Berkeley) %G%
  */
 
 /*
- * 287/387 Floating Point Data Structures and Constants
+ * 287/387 NPX Coprocessor Data Structures and Constants
  * W. Jolitz 1/90
  */
 
-#ifndef	___FPU87___
-#define	___FPU87___
+#ifndef	___NPX87___
+#define	___NPX87___
 
 /* Environment information of floating point unit */
 struct	env87 {
@@ -44,4 +44,10 @@ struct	save87 {
 	struct	fpacc87	sv_ac[8];	/* accumulator contents, 0-7 */
 };
 
-#endif	___FPU87___
+/* Cyrix EMC memory - mapped coprocessor context switch information */
+struct	emcsts {
+	long	em_msw;		/* memory mapped status register when swtched */
+	long	em_tar;		/* memory mapped temp A register when swtched */
+	long	em_dl;		/* memory mapped D low register when swtched */
+};
+#endif	___NPX87___
