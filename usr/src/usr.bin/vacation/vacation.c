@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-SCCSID(@(#)vacation.c	3.8		%G%);
+SCCSID(@(#)vacation.c	3.9		%G%);
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -246,7 +246,7 @@ sendmessage(msgf, user, myname)
 			syserr("No message to send");
 	}
 
-	execl("/usr/lib/sendmail", "sendmail", "-f", myname, "-n", user, NULL);
+	execl("/usr/lib/sendmail", "sendmail", "-f", myname, user, NULL);
 	syserr("Cannot exec /usr/lib/sendmail");
 }
 /*
