@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.8 %G%";
+static char sccsid[] = "@(#)commands.y 1.9 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)commands.y 1.8 %G%";
 #include "source.h"
 #include "scanner.h"
 #include "names.h"
+#include "lists.h"
 
 private String curformat = "X";
 
@@ -51,6 +52,7 @@ private String curformat = "X";
     String y_string;
     Boolean y_bool;
     Cmdlist y_cmdlist;
+    List y_list;
 };
 
 %type <y_op>	    trace stop
@@ -70,6 +72,7 @@ private String curformat = "X";
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    alias_command list_command line_number
 %type <y_cmdlist>   actions
+%type <y_list>      sourcepath
 
 %%
 
@@ -143,7 +146,7 @@ command:
 |
     CONT
 {
-	$$ = build(O_CONT, (long) 0);
+	$$ = build(O_CONT, (long) DEFSIG);
 }
 |
     CONT INT
@@ -289,9 +292,19 @@ command:
 |
     USE shellmode sourcepath
 {
+	String dir;
+
 	$$ = nil;
-	if (list_size(sourcepath) == 0) {
-	    list_append(list_item("."), nil, sourcepath);
+	if (list_size($3) == 0) {
+	    foreach (String, dir, sourcepath)
+		printf("%s ", dir);
+	    endfor
+	    printf("\n");
+	} else {
+	    foreach (String, dir, sourcepath)
+		list_delete(list_curitem(sourcepath), sourcepath);
+	    endfor
+	    sourcepath = $3;
 	}
 }
 ;
@@ -357,16 +370,13 @@ shellmode:
 sourcepath:
     sourcepath NAME
 {
-	list_append(list_item(ident($2)), nil, sourcepath);
+	$$ = $1;
+	list_append(list_item(ident($2)), nil, $$);
 }
 |
     /* empty */
 {
-	String dir;
-
-	foreach (String, dir, sourcepath)
-	    list_delete(list_curitem(sourcepath), sourcepath);
-	endfor
+	$$ = list_alloc();
 }
 ;
 event:
