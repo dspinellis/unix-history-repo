@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.16 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "reboot.h"
@@ -84,14 +83,10 @@ reboot(p, uap, retval)
 
 }
 
-ovhangup()
+#ifdef COMPAT_43
+oquota()
 {
 
-	return (EINVAL);
+	return (ENOSYS);
 }
-
-oldquota()
-{
-
-	return (EINVAL);
-}
+#endif
