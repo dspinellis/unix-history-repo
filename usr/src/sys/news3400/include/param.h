@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.1 (Berkeley) %G%
+ *	@(#)param.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -135,8 +135,6 @@ extern	int cpuspeed;
 #else /* !KERNEL */
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif /* !KERNEL */
-
-#define	SYSCALL_BSDOFFSET	1000
 
 #ifndef LOCORE
 extern int	intrcnt[];
