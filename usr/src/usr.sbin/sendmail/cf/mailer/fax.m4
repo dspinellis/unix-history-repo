@@ -9,13 +9,14 @@ PUSHDIVERT(-1)
 # %sccs.include.redist.sh%
 #
 
-ifdef(`FAX_MAILER_PATH',, `define(`FAX_MAILER_PATH', /usr/local/bin/mailfax)')
+ifdef(`FAX_MAILER_PATH',,
+	`define(`FAX_MAILER_PATH', /usr/local/lib/fax/mailfax)')
 POPDIVERT
 ####################################
 ###   FAX Mailer specification   ###
 ####################################
 
-VERSIONID(`@(#)fax.m4	6.1 (Berkeley) %G%')
+VERSIONID(`@(#)fax.m4	6.2 (Berkeley) %G%')
 
 Mfax,		P=FAX_MAILER_PATH, F=DFMhu, S=14, R=24, M=100000,
-		A=mailfax -d $u@$h
+		A=mailfax $u $h $f
