@@ -1,11 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)code.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)code.c	1.3 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
 # include <sys/types.h>
 # include <a.out.h>
 # include <stab.h>
+
+# define putstr(s)	fputs((s), stdout)
 
 int proflg = 0;	/* are we generating profiling code? */
 int strftn = 0;  /* is the current function one which returns a value */
@@ -59,25 +61,25 @@ locctr( l ){
 	switch( l ){
 
 	case PROG:
-		printf( "	.text\n" );
+		putstr( "	.text\n" );
 		psline();
 		break;
 
 	case DATA:
 	case ADATA:
-		printf( "	.data\n" );
+		putstr( "	.data\n" );
 		break;
 
 	case STRNG:
-		printf( "	.data	1\n" );
+		putstr( "	.data	1\n" );
 		break;
 
 	case ISTRNG:
-		printf( "	.data	2\n" );
+		putstr( "	.data	2\n" );
 		break;
 
 	case STAB:
-		printf( "	.stab\n" );
+		putstr( "	.stab\n" );
 		break;
 
 	default:
@@ -117,10 +119,10 @@ efcode(){
 
 		i = getlab();	/* label for return area */
 #ifndef LCOMM
-		printf("	.data\n" );
-		printf("	.align	2\n" );
+		putstr("	.data\n" );
+		putstr("	.align	2\n" );
 		printf("L%d:	.space	%d\n", i, tsize(t, p->dimoff, p->sizoff)/SZCHAR );
-		printf("	.text\n" );
+		putstr("	.text\n" );
 #else
 		{ int sz = tsize(t, p->dimoff, p->sizoff) / SZCHAR;
 		if (sz % (SZINT/SZCHAR))
@@ -168,7 +170,7 @@ bfcode( a, n ) int a[]; {
 
 	locctr( PROG );
 	p = &stab[curftn];
-	printf( "	.align	1\n");
+	putstr( "	.align	1\n");
 	defnam( p );
 	temp = p->stype;
 	temp = DECREF(temp);
@@ -195,11 +197,11 @@ bfcode( a, n ) int a[]; {
 	if( proflg ) {	/* profile code */
 		i = getlab();
 		printf("	pushl	$L%d\n", i);
-		printf("	callf	$8,mcount\n");
-		printf("	.data\n");
-		printf("	.align	2\n");
+		putstr("	callf	$8,mcount\n");
+		putstr("	.data\n");
+		putstr("	.align	2\n");
 		printf("L%d:	.long	0\n", i);
-		printf("	.text\n");
+		putstr("	.text\n");
 		psline();
 		}
 
@@ -215,7 +217,7 @@ bfcode( a, n ) int a[]; {
 #ifdef REG_CHAR
 			printf( "	%s", toreg(p->stype)) );
 #else
-			printf("	movl");
+			putstr("	movl");
 #endif
 			printf( "	%d(fp),%s\n", p->offset/SZCHAR, rname(temp) );
 			p->offset = temp;  /* remember register number */
@@ -287,9 +289,9 @@ static	int	lastoctal = 0;
 
 	i &= 077;
 	if ( t < 0 ){
-		if ( i != 0 )	printf( "\"\n" );
+		if ( i != 0 )	putstr( "\"\n" );
 	} else {
-		if ( i == 0 ) printf("\t.ascii\t\"");
+		if ( i == 0 ) putstr("\t.ascii\t\"");
 		if ( t == '\\' || t == '"'){
 			lastoctal = 0;
 			printf("\\%c", t);
@@ -307,20 +309,20 @@ static	int	lastoctal = 0;
 			lastoctal = 0;
 			putchar(t);
 		}
-		if ( i == 077 ) printf("\"\n");
+		if ( i == 077 ) putstr("\"\n");
 	}
 #else
 
 	i &= 07;
 	if( t < 0 ){ /* end of the string */
-		if( i != 0 ) printf( "\n" );
+		if( i != 0 ) putchar( '\n' );
 		}
 
 	else { /* stash byte t into string */
-		if( i == 0 ) printf( "	.byte	" );
-		else printf( "," );
+		if( i == 0 ) putstr( "	.byte	" );
+		else putchar( ',' );
 		printf( "0x%x", t );
-		if( i == 07 ) printf( "\n" );
+		if( i == 07 ) putchar( '\n' );
 		}
 #endif
 	}
@@ -409,9 +411,9 @@ genswitch(p,n) register struct sw *p;{
 		dlab = p->slab >= 0 ? p->slab : getlab();
 
 		/* already in r0 */
-		printf( "	casel	r0,$" );
+		putstr( "	casel	r0,$" );
 		printf( CONFMT, p[1].sval );
-		printf(",$");
+		putstr(",$");
 		printf( CONFMT, range);
 		printf("\n	.align 1\nL%d:\n", swlab);
 		for( i=1,j=p[1].sval; i<=n; j++) {
@@ -450,7 +452,7 @@ genswitch(p,n) register struct sw *p;{
 	for( i=1; i<=n; ++i ){
 		/* already in r0 */
 
-		printf( "	cmpl	r0,$" );
+		putstr( "	cmpl	r0,$" );
 		printf( CONFMT, p[i].sval );
 		printf( "\n	jeql	L%d\n", p[i].slab );
 		}
@@ -484,7 +486,7 @@ walkheap(start, limit)
 
 
 	if( start > limit ) return;
-	printf( "	cmpl	r0,$" );
+	putstr( "	cmpl	r0,$" );
 	printf( CONFMT, heapsw[start].sval);
 	printf("\n	jeql	L%d\n", heapsw[start].slab);
 	if( (2*start) > limit ) {
