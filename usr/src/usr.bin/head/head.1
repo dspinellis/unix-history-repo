@@ -3,26 +3,33 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)head.1	6.6 (Berkeley) %G%
+.\"	@(#)head.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HEAD 1
 .Os BSD 3
 .Sh NAME
 .Nm head
-.Nd give first few lines
+.Nd display first lines of a file
 .Sh SYNOPSIS
 .Nm head
-.Op Fl Ns Ar count
-.Op Ar
+.Op Fl n Ar count
+.Op Ar file ...
 .Sh DESCRIPTION
-This filter gives the first
+This filter displays the first
 .Ar count
-lines of each of the specified files, or of the standard input.
+lines of each of the specified files, or of the standard input if no
+files are specified.
 If
 .Ar count
-is omitted it defaults to
-10.
+is omitted it defaults to 10.
+.Pp
+If more than a single file is specified, each file is preceded by a
+header consisting of the string
+.Dq ==> XXX <==
+where
+.Dq XXX
+is the name of the file.
 .Sh SEE ALSO
 .Xr tail 1
 .Sh HISTORY
