@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -191,6 +191,7 @@ _respond(msgvec)
 		return(1);
 	}
 	mp = &message[msgvec[0] - 1];
+	touch(mp);
 	dot = mp;
 	if ((rcv = skin(hfield("from", mp))) == NOSTR)
 		rcv = skin(nameof(mp, 1));
@@ -582,6 +583,7 @@ _Respond(msgvec)
 	head.h_to = NIL;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
+		touch(mp);
 		dot = mp;
 		if ((cp = skin(hfield("from", mp))) == NOSTR)
 			cp = skin(nameof(mp, 2));
