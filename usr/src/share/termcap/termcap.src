@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.110 (Berkeley) %G%
+#	@(#)termcap.src	5.111 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -3260,7 +3260,7 @@ pc|ibmpc|ibm pc PC/IX:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
 pc3|ibmpc3|IBM PC 386BSD Console:\
-        :li#25:tc=pc:
+	:li#25:tc=pc:
 ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
