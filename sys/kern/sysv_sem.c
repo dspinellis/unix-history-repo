@@ -62,7 +62,7 @@ semsys(p, uap, retval)
 {
 	while ( semlock_holder != NULL && semlock_holder != p ) {
 	    /* printf("semaphore facility locked - sleeping ...\n"); */
-	    sleep( (caddr_t)&semlock_holder, (PZERO - 4) );
+	    tsleep( (caddr_t)&semlock_holder, (PZERO - 4), "semsys", 0 );
 	}
 
 	if (uap->which >= sizeof(semcalls)/sizeof(semcalls[0]))
@@ -1007,7 +1007,7 @@ semexit(p)
 #ifdef SEM_DEBUG
 	printf("semaphore facility locked - sleeping ...\n");
 #endif
-	sleep( (caddr_t)&semlock_holder, (PZERO - 4) );
+	tsleep( (caddr_t)&semlock_holder, (PZERO - 4), "semexit", 0 );
     }
 
     did_something = 0;
