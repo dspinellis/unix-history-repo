@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.37	83/04/22	*/
+/*	ufs_lookup.c	4.38	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -442,7 +442,7 @@ found:
 	 * and parent directories are removed before the `iget' for the
 	 * inode associated with ".." returns.  We hope that this occurs
 	 * infrequently since we cannot avoid this race condition without
-	 * implementing a sophistocated deadlock detection algorithm.
+	 * implementing a sophisticated deadlock detection algorithm.
 	 * Note also that this simple deadlock detection scheme will not
 	 * work if the file system has any hard links other than ".."
 	 * that point backwards in the directory structure.
