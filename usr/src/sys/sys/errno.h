@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.7 (Berkeley) %G%
+ *	@(#)errno.h	7.8 (Berkeley) %G%
  */
 
 #define	EPERM		1		/* Operation not permitted */
@@ -123,6 +123,12 @@
 
 #define	ENOLCK		77		/* No locks available */
 #define	ENOSYS		78		/* Function not implemented */
+
+#ifdef KERNEL
+/* pseudo-errors returned inside kernel to modify return to process */
+#define	ERESTART	-1		/* restart syscall */
+#define	EJUSTRETURN	-2		/* don't modify regs, just return */
+#endif
 
 /*
  * User variables for accessing the error codes
