@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.8 (Berkeley) %G%
+ *	@(#)mount.h	8.9 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -65,7 +65,7 @@ struct statfs {
 #define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
 #define MOUNT_PROCFS	12	/* /proc Filesystem */
 #define MOUNT_AFS	13	/* Andrew Filesystem */
-#define MOUNT_ISOFS	14	/* ISO9660 (aka CDROM) Filesystem */
+#define MOUNT_CD9660	14	/* ISO9660 (aka CDROM) Filesystem */
 #define	MOUNT_MAXTYPE	14
 
 #define INITMOUNTNAMES { \
@@ -83,7 +83,7 @@ struct statfs {
 	"kernfs",	/* 11 MOUNT_KERNFS */ \
 	"procfs",	/* 12 MOUNT_PROCFS */ \
 	"afs",		/* 13 MOUNT_AFS */ \
-	"iso9660fs",	/* 14 MOUNT_ISOFS */ \
+	"iso9660fs",	/* 14 MOUNT_CD9660 */ \
 	0,		/* 15 MOUNT_SPARE */ \
 }
 
@@ -275,7 +275,7 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-#ifdef ISOFS
+#ifdef CD9660
 /*
  * Arguments to mount ISO 9660 filesystems.
  */
@@ -289,7 +289,7 @@ struct iso_args {
 #define ISOFSMNT_GENS		0x00000002 /* enable generation numbers */
 #define ISOFSMNT_EXTATT		0x00000004 /* enable extended attributes */
 #define ISOFSMNT_NOTRANS	0x00000008 /* disable filename translation */
-#endif /* ISOFS */
+#endif /* CD9660 */
 
 #ifdef NFS
 /*
