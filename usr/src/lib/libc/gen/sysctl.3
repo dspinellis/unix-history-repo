@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.6 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.7 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -200,6 +200,7 @@ information.
 .Bl -column "KERNXCHOWNXRESTRICTEDXXX" "struct clockrateXXX" -offset indent
 .It Sy Pa Second level name	Type	Changeable
 .It KERN\_ARGMAX	integer	no
+.It KERN\_BOOTTIME	struct timeval	no
 .It KERN\_CHOWN\_RESTRICTED	integer	no
 .It KERN\_CLOCKRATE	struct clockinfo	no
 .It KERN\_FILE	struct file	no
@@ -233,6 +234,11 @@ information.
 .Bl -tag -width "123456"
 .It Li KERN_ARGMAX
 Maximum bytes of argument to exec.
+.It Li KERN_BOOTTIME
+A
+.Va struct timeval
+structure is returned.
+This structure contains the time that the system was booted.
 .It Li KERN_CHOWN_RESTRICTED
 Return 1 if appropriate privileges are required for the
 .Xr chown 2
