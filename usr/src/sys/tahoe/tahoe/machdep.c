@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,6 +18,10 @@
 #include "conf.h"
 #include "vnode.h"
 #include "../ufs/inode.h"
+#ifdef NFS
+#include "mount.h"
+#include "../nfs/nfsnode.h"
+#endif /* NFS */
 #include "file.h"
 #include "text.h"
 #include "clist.h"
@@ -112,6 +116,9 @@ startup(firstaddr)
 	valloc(cybuf, char, NCY * CYMAXIO);
 #endif
 	valloclim(inode, struct inode, ninode, inodeNINODE);
+#ifdef NFS
+	valloclim(nfsnode, struct nfsnode, nnfsnode, nfsnodeNNFSNODE);
+#endif /* NFS */
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
