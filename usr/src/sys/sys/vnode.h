@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.7 (Berkeley) %G%
+ *	@(#)vnode.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -77,6 +77,8 @@ struct vnode {
  */
 #define	VROOT		0x01	/* root of its file system */
 #define	VTEXT		0x02	/* vnode is a pure text prototype */
+#define VXLOCK		0x04	/* vnode is locked to change underlying type */
+#define VXWANT		0x08	/* process is waiting for vnode */
 #define	VEXLOCK		0x10	/* exclusive lock */
 #define	VSHLOCK		0x20	/* shared lock */
 #define	VLWAIT		0x40	/* proc is waiting on shared or excl. lock */
