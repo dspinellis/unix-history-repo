@@ -1,13 +1,12 @@
+/*	curses.ext	1.3	83/07/02	*/
+
 /*
- * External variables for the library
- *
- * @(#)curses.ext	1.2 (Berkeley) %G%
+ * External variables for the curses library
  */
 
 /* LINTLIBRARY */
 
 # include	"curses.h"
-# include	"unctrl.h"
 
 extern bool	_echoit, _rawmode, My_term, _endwin;
 
