@@ -1,4 +1,4 @@
-/*	up.c	4.24	81/02/26	*/
+/*	up.c	4.25	81/02/26	*/
 
 #include "up.h"
 #if NSC > 0
@@ -18,7 +18,6 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mba.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 #include "../h/uba.h"
@@ -669,7 +668,7 @@ upecc(ui)
 	 * is the byte offset in the transfer, the variable byte
 	 * is the offset from a page boundary in main memory.
 	 */
-	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
+	ubapurge(um);
 	i = up->upec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
