@@ -414,7 +414,7 @@ noswap:
 	 * Nothing to do, back to sleep
 	 */
 	if ((p = pp) == NULL) {
-		sleep((caddr_t)&proc0, PVM);
+		tsleep((caddr_t)&proc0, PVM, "sched", 0);
 		goto loop;
 	}
 
