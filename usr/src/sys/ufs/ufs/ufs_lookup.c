@@ -303,7 +303,7 @@ searchloop:
 				 * reclen in ndp->ni_ufs area, and release
 				 * directory buffer.
 				 */
-				if (DT_ISWHT(ep->d_type)) {
+				if (ep->d_type == DT_WHT) {
 					slotstatus = FOUND;
 					slotoffset = dp->i_offset;
 					slotsize = ep->d_reclen;
@@ -811,10 +811,7 @@ ufs_dirremove(dvp, cnp)
 		    VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
 			return (error);
 		ep->d_ino = WINO;
-		if (ep->d_type == DT_DIR)
-			ep->d_type = DT_WHTD;
-		else
-			ep->d_type = DT_WHT;
+		ep->d_type = DT_WHT;
 		error = VOP_BWRITE(bp);
 		dp->i_flag |= IN_CHANGE | IN_UPDATE;
 		return (error);
