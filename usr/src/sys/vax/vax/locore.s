@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.12	%G%
+#	locore.s		3.13	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -542,6 +542,12 @@ _mmap:
 	.globl	_vmmap
 	.set	_vmmap,((_mmap-_Sysmap)/4)*NBPG+0x80000000
 
+	.globl	_bufmap
+_bufmap:
+	.space	4*NBUF*CLSIZE
+	.globl	_buffers
+	.set	_buffers,((_bufmap-_Sysmap)/4)*NBPG+0x80000000
+	.globl	eSysmap
 eSysmap:
 	.set	Syssize,(eSysmap-_Sysmap)/4
 	.text
@@ -813,7 +819,7 @@ start:
 	movab	_mcrmap,r2
 	bisl3	$PG_V|PG_KW,r1,(r2)
 #
-# Initialize I/O space page table entries
+# Initialize UNIBUS page table entries
 #
 	movl	$PHYSUBA/NBPG,r1	# page frame number for uba
 	movab	UBA0map,r2		# page table address
@@ -1352,12 +1358,6 @@ ZERmsg:	.asciz	"ZERO VECTOR "
 #
 # Junk.
 #
-
-# these should be memall'ed
-	.data
-	.globl _buffers
-	.align  PGSHIFT
-_buffers:	.space NBUF*BSIZE
 
 #
 # This is needed when running old-style switch code.
