@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)netstat.1	6.6 (Berkeley) %G%
+.\"	@(#)netstat.1	6.7 (Berkeley) %G%
 .\"
 .TH NETSTAT 1 ""
 .UC 5
@@ -86,6 +86,11 @@ for debugging.
 With the default display,
 show the state of all sockets; normally sockets used by
 server processes are not shown.
+.B \-d
+With either interface display (option
+.B \-i
+or an interval, as described below),
+show the number of dropped packets.
 .TP
 .B \-h
 Show the state of the IMP host table.
@@ -187,8 +192,9 @@ The routing table display indicates the available routes and
 their status.  Each route consists of a destination host or network
 and a gateway to use in forwarding packets.  The flags field shows
 the state of the route (``U'' if ``up''), whether the route
-is to a gateway (``G''), and whether the route was created dynamically
-by a redirect (``D'').  Direct routes are created for each
+is to a gateway (``G''), whether the route was created dynamically
+by a redirect (``D''), and whether the route has been modified
+by a redirect (``M'').  Direct routes are created for each
 interface attached to the local host;
 the gateway field for such entries shows the address of the outgoing interface.
 The refcnt field gives the
