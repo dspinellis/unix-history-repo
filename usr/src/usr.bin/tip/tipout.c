@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tipout.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tipout.c	4.9 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -80,6 +80,7 @@ tipout()
 	char buf[BUFSIZ];
 	register char *cp;
 	register int cnt;
+	extern int errno;
 	int omask;
 
 	signal(SIGINT, SIG_IGN);
@@ -92,9 +93,16 @@ tipout()
 	(void) setjmp(sigbuf);
 	for (omask = 0;; sigsetmask(omask)) {
 		cnt = read(FD, buf, BUFSIZ);
-		if (cnt <= 0)
-			continue;
+		if (cnt <= 0) {
+			/* lost carrier */
+			if (cnt < 0 && errno == EIO) {
 #define	mask(s)	(1 << ((s) - 1))
+				sigblock(mask(SIGTERM));
+				intTERM();
+				/*NOTREACHED*/
+			}
+			continue;
+		}
 #define	ALLSIGS	mask(SIGEMT)|mask(SIGTERM)|mask(SIGIOT)|mask(SIGSYS)
 		omask = sigblock(ALLSIGS);
 		for (cp = buf; cp < buf + cnt; cp++)

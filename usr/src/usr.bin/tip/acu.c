@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	4.11 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -52,7 +52,7 @@ connect()
 		if (acu != NOACU) {
 			boolean(value(VERBOSE)) = FALSE;
 			if (conflag)
-				disconnect();
+				disconnect(NOSTR);
 			else
 				(*acu->acu_abort)();
 		}
@@ -121,13 +121,17 @@ connect()
 	return (tried ? "call failed" : "missing phone number");
 }
 
-disconnect()
+disconnect(reason)
+	char *reason;
 {
 	if (!conflag)
 		return;
-	logent(value(HOST), "", acu->acu_name, "call terminated");
-	if (boolean(value(VERBOSE)))
-		printf("\r\ndisconnecting...");
+	if (reason != NOSTR) {
+		logent(value(HOST), "", acu->acu_name, "call terminated");
+		if (boolean(value(VERBOSE)))
+			printf("\r\ndisconnecting...");
+	} else 
+		logent(value(HOST), "", acu->acu_name, reason);
 	(*acu->acu_disconnect)();
 }
 
