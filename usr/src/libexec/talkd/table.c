@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)table.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)table.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/time.h>
 #include <syslog.h>
+#include <sys/param.h>
 
 #include <protocols/talkd.h>
 
