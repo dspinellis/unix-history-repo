@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.4 83/07/19";
+static	char *sccsid = "@(#)wwinit.c	1.5 83/07/22";
 #endif
 
 #include "ww.h"
@@ -12,6 +12,7 @@ struct ww_tty wwnewtty = {
 	0, 0, 0
 };
 int _wwdtablesize;
+int wwncol, wwnrow;
 
 wwinit()
 {
@@ -38,5 +39,6 @@ wwinit()
 	if (Winit(2, 1) != 0)
 		return -1;
 	WSetRealCursor = 1;
+	Wscreensize(&wwnrow, &wwncol);
 	return 0;
 }

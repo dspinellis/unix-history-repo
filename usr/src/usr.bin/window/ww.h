@@ -1,8 +1,15 @@
-/*	@(#)ww.h	1.4 83/07/19		*/
+/*	@(#)ww.h	1.5 83/07/22		*/
 
 #include <stdio.h>
 #include <sgtty.h>
 #include "window.h"
+
+struct ww_dim {
+	short col;
+	short row;
+	short ncol;
+	short nrow;
+};
 
 struct ww {
 	char ww_state;		/* state of window creation */
@@ -12,18 +19,14 @@ struct ww {
 	int ww_refresh :1;	/* force refresh after \n and others */
 	char ww_ident;
 	Win *ww_win;
-	int ww_row;		/* outside dimensions */
-	int ww_col;
-	int ww_nrow;
-	int ww_ncol;
-	int ww_irow;		/* inside dimensions */
-	int ww_icol;
-	int ww_inrow;
-	int ww_incol;
+	struct ww_dim ww_o;	/* outside dimemsions */
+	struct ww_dim ww_i;	/* inside dimemsions */
+	struct ww_dim ww_w;	/* window dimemsions */
 	int ww_pty;		/* pty or socket pair */
 	int ww_tty;
 	int ww_pid;
 	struct ww *ww_next;
+	char ww_ttyname[11];
 };
 
 struct ww_tty {
@@ -53,6 +56,7 @@ struct ww_tty {
 extern struct ww *wwhead, *curwin;
 extern struct ww_tty wwoldtty, wwnewtty;
 extern int wwnwrite;
+extern int wwnrow, wwncol;		/* the screen size */
 
 #define wwputchar(c)	wwputc((c), curwin)
 #define wwputstr(s)	wwputs((s), curwin)

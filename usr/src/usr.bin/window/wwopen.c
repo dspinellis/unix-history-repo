@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	1.4 83/07/19";
+static	char *sccsid = "@(#)wwopen.c	1.5 83/07/22";
 #endif
 
 #include "ww.h"
@@ -29,15 +29,15 @@ wwopen(mode, id, nrow, ncol, row, col)
 	default:
 		goto bad;
 	}
-	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, nrow)) == 0)
+	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, 48)) == 0)
 		goto bad;
 	Woncursor(w->ww_win, 0);		/* don't show cursor */
 	w->ww_mode = mode;
 	w->ww_ident = id;
-	w->ww_icol = w->ww_col = col;
-	w->ww_irow = w->ww_row = row;
-	w->ww_incol = w->ww_ncol = ncol;
-	w->ww_inrow = w->ww_nrow = nrow;
+	w->ww_w.col = w->ww_i.col = w->ww_o.col = col;
+	w->ww_w.row = w->ww_i.row = w->ww_o.row = row;
+	w->ww_w.ncol = w->ww_i.ncol = w->ww_o.ncol = ncol;
+	w->ww_w.nrow = w->ww_i.nrow = w->ww_o.nrow = nrow;
 	w->ww_next = wwhead;
 	w->ww_state = WW_INITIAL;
 	wwhead = w;
@@ -57,7 +57,7 @@ wwgetpty(w)
 	register char c;
 	register char *line;
 	register int i;
-#define PTY "/dev/XtyXX"
+#define PTY "/dev/ptyXX"
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -69,6 +69,7 @@ wwgetpty(w)
 		if (stat(line, &stb) < 0)
 			break;
 		for (i = 0; i < 16; i++) {
+			line[sizeof PTY - 6] = 'p';
 			line[sizeof PTY - 2] = "0123456789abcdef"[i];
 			w->ww_pty = open(line, 2);
 			if (w->ww_pty >= 0) {
@@ -82,6 +83,7 @@ wwgetpty(w)
 	}
 	return -1;
 good:
+	strcpy(w->ww_ttyname, line);
 	return 0;
 bad:
 	close(w->ww_pty);

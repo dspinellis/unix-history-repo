@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.1 83/07/20";
+static	char *sccsid = "@(#)cmd5.c	1.2 83/07/22";
 #endif
 
 #include "defs.h"
@@ -55,11 +55,11 @@ char *filename;
 			else
 				col = atoi(*pp);
 			if (**++pp == '*')
-				nrow = WRows - row;
+				nrow = wwnrow - row;
 			else
 				nrow = atoi(*pp);
 			if (**++pp == '*')
-				ncol = WCols - col;
+				ncol = wwncol - col;
 			else
 				ncol = atoi(*pp);
 			w = doopen(id, nrow, ncol, row, col);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	1.1 83/07/20";
+static	char *sccsid = "@(#)startup.c	1.2 83/07/22";
 #endif
 
 #include "defs.h"
@@ -24,11 +24,11 @@ doconfig()
 dodefault()
 {
 	struct ww *w;
-	register r = WRows / 2;
+	register r = wwnrow / 2;
 
-	if ((w = doopen(-1, r + 1, WCols, 0, 0)) == 0)
+	if ((w = doopen(-1, r + 1, wwncol, 0, 0)) == 0)
 		goto bad;
-	if (doopen(-1, WRows - r, WCols, r, 0) == 0)
+	if (doopen(-1, wwnrow - r, wwncol, r, 0) == 0)
 		goto bad;
 	setselwin(w);
 	return;
