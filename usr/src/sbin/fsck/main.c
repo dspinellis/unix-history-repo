@@ -202,8 +202,10 @@ checkfilesys(filesys)
 	 */
 	n_ffree = sblock.fs_cstotal.cs_nffree;
 	n_bfree = sblock.fs_cstotal.cs_nbfree;
-	pwarn("%d files, %d used, %d free (%d frags, %d blocks)\n", n_files,
-	    n_blks, n_ffree + sblock.fs_frag * n_bfree, n_ffree, n_bfree);
+	pwarn("%d files, %d used, %d free ",
+	    n_files, n_blks, n_ffree + sblock.fs_frag * n_bfree);
+	printf("(%d frags, %d blocks, %.1f%% fragmentation)\n",
+	    n_ffree, n_bfree, (float)(n_ffree * 100) / sblock.fs_dsize);
 	if (debug && (n_files -= imax - ROOTINO - sblock.fs_cstotal.cs_nifree))
 		printf("%d files missing\n", n_files);
 	if (debug) {
