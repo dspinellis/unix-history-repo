@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.12 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -973,7 +973,7 @@ core()
 			munmapfd(fd);
 	}
 #endif
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
 	VOP_SETATTR(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
