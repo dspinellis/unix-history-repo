@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.12 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -556,15 +556,14 @@ ptransfer(direction, bytes, t0, t1)
 	struct timeval *t0, *t1;
 {
 	struct timeval td;
-	long ms;
-	float bs;
+	float s, bs;
 
 	tvsub(&td, t1, t0);
-	ms = (td.tv_sec * 1000) + (td.tv_usec / 1000);
+	s = td.tv_sec + (td.tv_usec / 1000000.);
 #define	nz(x)	((x) == 0 ? 1 : (x))
-	bs = ((bytes * NBBY * 1000) / (float) nz(ms)) / NBBY;
-	printf("%ld bytes %s in %d.%02d seconds (%.2g Kbytes/s)\n",
-		bytes, direction, td.tv_sec, td.tv_usec / 10000, bs / 1024.);
+	bs = bytes / nz(s);
+	printf("%ld bytes %s in %.2g seconds (%.2g Kbytes/s)\n",
+		bytes, direction, s, bs / 1024.);
 }
 
 tvadd(tsum, t0)
