@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.17 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.18 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -56,6 +56,8 @@ SRCS= ${PROG}.c
 ${PROG}: ${SRCS} ${LIBC} ${DPADD}
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
 
+MKDEP=	-p
+
 .endif
 
 .if	!defined(MAN1) && !defined(MAN2) && !defined(MAN3) && \
@@ -98,7 +100,7 @@ cleandir: _PROGSUBDIR
 depend: .depend _PROGSUBDIR
 .depend: ${SRCS}
 .if defined(PROG)
-	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
+	mkdep ${MKDEP} ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
 .endif
 .endif
 
