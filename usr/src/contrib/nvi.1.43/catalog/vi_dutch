@@ -1,0 +1,267 @@
+VI_MESSAGE_CATALOG
+Aanmaken van tijdelijk bestand is misluktX
+Waarschuwing: %s is geen regulier bestandX
+%s is al geopend, bestand is in deze sessie niet schrijfbaarX
+%s: verwijdering misluktX
+%s: sluiting misluktX
+%s: verwijdering misluktX
+%s: verwijdering misluktX
+Bestand niet schrijfbaar, niet weggeschreven; gebruik ! om het te forcerenX
+Bestand niet schrijfbaar, niet weggeschrevenX
+%s bestaat al, niet weggeschreven; gebruik ! om het te forcerenX
+%s bestaat al, niet weggeschrevenX
+Gebruik ! om een incompleet bestand weg te schrijvenX
+Bestand incompleet, niet weggeschrevenX
+Wegschrijven onderbroken: %s: bestaand bestand: %lu regels, %lu karaktersX
+%s: bestand op disk nieuwer dan deze versie; gebruik ! om het te forcerenX
+%s: bestand op disk nieuwer dan deze versieX
+Wegschrijven onderbroken: %s: nieuw bestand: %lu regels, %lu karaktersX
+%s: WAARSCHUWING: BESTAND INCOMPLEETX
+Wegschrijven onderbroken: %s: %lu regels, %lu karaktersX
+Bestand gewijzigd sinds laatste schrijfactie; schrijf het weg of gebruik ! om het te forcerenX
+Bestand gewijzigd sinds laatste schrijfactie; schrijf het weg of gebruik :edit! om het te forcerenX
+Bestand gewijzigd sinds laatste schrijfactie; schrijf het weg of gebruik ! om het te forcerenX
+Tijdelijk bestand; exit negeert wijzigingenX
+%s: bestaand bestand: %lu regels, %lu karaktersX
+%s/%d: kan regel %u niet lezenX
+%s/%d: kan regel %u niet verwijderenX
+%s/%d: kan niet toevoegen aan regel %uX
+%s/%d: kan niet invoegen vooraan regel %uX
+%s/%d: kan regel %u niet opslaanX
+%s/%d: kan laaste regel niet lezenX
+%s/%d: schrijven naar log misluktX
+log opnieuw gestartX
+log bestandX
+Er vindt geen logging plaats, kan wijzingingen niet ongedaan makenX
+geen wijzigingen om ongedaan te makenX
+Er vindt geen logging plaats, kan wijzigingen niet ongedaan makenX
+Er vindt geen logging plaats, herhaling niet mogelijkX
+geen wijzigingen om te herhalenX
+Vi's standaard invoer en uitvoer moeten aan een beeldscherm gekoppeld zijnX
+ondersteuning voor de -T optie niet aanwezig in deze versieX
+niet in staat om 'window' grootte in te stellen met commando regel optieX
+%s/%s: niet gelezen: noch U noch root is de eigenaarX
+%s/%s: niet gelezen: U bent niet de eigenaarX
+%s/%s: niet gelezen: kan gewijzigd worden door andere gebruikersX
+%s: niet gelezen: noch U noch root is de eigenaar"X
+%s: niet gelezen: U bent niet de eigenaarX
+%s: niet gelezen: kan gewijzigd worden door andere gebruikersX
+Merk %s: niet gezetX
+Merk %s: de regel is verwijderdX
+Merk %s: de cursor positie bestaat niet meerX
+Niet in staat om de standaard %s optie in te stellenX
+Gebruik: %sX
+optie %s onbekend: 'set all' laat alle opties zien, met hun waardenX
+set: [no]%s optie kan geen waarde hebbenX
+set: %s optie moet een waarde hebbenX
+set: ongeldig nummer %sX
+set: %s optie moet een waarde hebbenX
+
+Te weinig kolommen op het scherm, minder dan %dX
+Te weinig regels op het scherm, minder dan %dX
+De lisp optie is niet ondersteundX
+messages niet uitgeschakeld: %sX
+messages niet geactiveerd: %sX
+De modeline(s) optie mag niet gebruikt wordenX
+De paragraph optie moet karakter paren bevattenX
+De section optie moet karakter paren bevattenX
+De shiftwidth kan niet op 0 gezet wordenX
+De sourceany optie mag niet gebruikt wordenX
+Tabulator afstand kan niet op 0 gezet wordenX
+
+Window te klein, minder dan %dX
+De standaard buffer is leegX
+Buffer %s is leegX
+Bestanden met newlines in de naam kunnen niet hersteld wordenX
+Wijzigingen kunnen niet ongedaan gemaakt worden als deze sessie misluktX
+Herstel mechanisme werkt niet: %sX
+Wijzigingen kunnen niet ongedaan gemaakt worden als deze sessie misluktX
+Kon bestand niet veilig stellen: %sX
+Informatie met betrekking tot gebruiker nummer %u niet gevondenX
+Kan herstel bestand niet blokkerenX
+herstel buffer overgelopenX
+herstel bestandX
+%s: verminkt herstel bestandX
+%s: verminkt herstel bestandX
+U heeft geen bestand genaamd %s te herstellenX
+U kan eerdere versies van dit bestand herstellenX
+U kan nog meer bestanden herstellenX
+kan geen email versturen: %sX
+Geen onleesbare karakters gevondenX
+%s: toetsaanslagen genegeerdX
+%s: nieuw bestand: %lu regels, %lu karaktersX
+%s: %lu regels, %lu karaktersX
+Fout: X
+Commando niet beschikbaar in ex modeX
+%s: onbekend model beeldschermX
+beeldscherm eigenschap \"li\" ontbreekt voor %sX
+beeldscherm eigenschap \"co\" ontbreekt voor %sX
+Onbekend commandoX
+Het %s commando is onbekendX
+Het %s commando is vooralsnog niet ondersteundX
+Het %s commando kan niet gebruikt worden in een globaal commandoX
+Het %s commando vereist dat er een bestand geladen isX
+Aantal mag niet nul zijnX
+%s: ongeldige regel aanduidingX
+Interne fout in syntax tabel (%s: %s)X
+Gebruik: %sX
+Het %s commando staat het adres 0 niet toeX
+ex: tijdelijke buffer niet vrijgegevenX
+Vlag offset voor regel 1X
+Vlag offset voorbij bestands eindeX
+Ex commando mislukt: rest van commando genegeerdX
+Het tweede adres is kleiner dan het eersteX
+Geen merk naam opgegevenX
+\\ niet gevolgd door / of ?X
+
+Referentie aan een regel nummer kleiner dan 0X
+Ongeldig adres: het bestand is leegX
+Ongeldig adres: slechts %lu regels in het bestand aanwezigX
+Dit is het laatste bestandX
+Dit is het eerste bestandX
+Dit is het eerste bestandX
+Geen voorgaand commando om \"!\" te vervangenX
+Geen bestandsnaam voor %%X
+Geen bestandsnaam voor #X
+Fout: execl: %sX
+I/O fout: %sX
+Geen voorafgaande buffer om uit te voerenX
+Buffer %s is leegX
+Gebruik: %sX
+Bestand gewijzigd sinds laatste schrijfactie; schrijf het weg of gebruik ! om het te forcerenX
+Kan uw home directory niet vindenX
+Nieuwe huidige directory: %sX
+OnderbrokenX
+Geen volgende regel om samen te voegenX
+Geen input map entriesX
+Geen command map entriesX
+Het %s karakter kan niet ge-remapped wordenX
+\"%s\" is niet gemappedX
+Merk naam moet een enkel karakter zijnX
+%s bestaat al, niet weggeschreven; gebruik ! om het te forcerenX
+Nieuw .exrc bestand: %s. X
+%sX
+doel regel ligt in het blokX
+Het open commando vereist dat de open optie actief isX
+Het open commando is nog niet ondersteundX
+Kan dit bestand niet veilig stellenX
+Bestand veilig gesteldX
+%s resulteert in te veel bestandsnamenX
+Aleen normale bestanden kunnen gelezen wordenX
+Onderbroken lees actie: %s: %lu regels, %lu karaktersX
+%s: %lu regels, %lu karaktersX
+Het script commando is alleen beschikbaar in vi modeX
+Geen comando om uit te voerenX
+shiftwidth optie op 0 gezetX
+Count te grootX
+Count te kleinX
+Reguliere expressie opgegeven; r vlag heeft geen betekenisX
+De #, l en p vlaggen kunnen niet gecombineerd worden met de c vlag in vi modeX
+Geen match gevondenX
+%s: zoek patroon niet gevondenX
+Geen voorafgaande tag aanwezigX
+%s: zoek patroon niet gevondenX
+De tags stapel is leegX
+Minder dan %s elementen op de tags stapel; gebruik :display t[ags]X
+Geen bestand genaamd %s op de tags stapel; gebruik :display t[ags]X
+De tags stapel is leegX
+%s: tag niet gevondenX
+%s: beschadigde tag in %sX
+Meer bestanden te verwerken; gebruik n[ext] om naar het volgende bestand te gaan, q[uit]! om te stoppenX
+Het visual commando vereist dat de open optie actief isX
+%s resulteert in te veel bestandsnamenX
+Leeg bestandX
+Geen voorafgaand F, f, T of t zoek commandoX
+%s niet gevondenX
+Geen voorafgaand bestand te verwerkenX
+Gebruik: %sX
+Getal wordt te grootX
+Getal wordt te kleinX
+Geen overeenkomstig karakter op deze regelX
+Overeenkomstig karakter niet gevondenX
+Niet meer karakters te verwijderenX
+Ongeldig karakter; quote to enterX
+Reeds aan het begin van de invoerX
+Geen karakters te vervangenX
+Geen ander scherm aanwezigX
+Geen voorafgaand zoek patroonX
+Karakters achter het zoek patroon, de regel offset, en/of het z commandoX
+Zoekopdracht na omslag teruggekeerd op originele positieX
+Reeds bij het einde van het bestandX
+Reeds bij het einde van het bestandX
+Verplaatsing voorbij het einde van het bestandX
+Reeds bij het einde van de regelX
+Reeds bij het einde van de regelX
+Verplaatsing voorbij het einde van de regelX
+Cursor niet verplaatstX
+Reeds aan het begin van het bestandX
+Verplaatsing voorbij het begin van het bestandX
+Reeds in de eerste kolomX
+Geen karakters te verwijderenX
+Gebruik: %sX
+vi: tijdelijke buffer niet vrijgegevenX
+Buffers moeten voor het commando opgegeven wordenX
+Slechts een buffer kan opgegeven wordenX
+Buffers moeten voor het commando opgegeven wordenX
+%s is geen vi commandoX
+%s is geen vi commandoX
+Geen commando om te herhalenX
+Gebruik: %sX
+%s mag niet gebruikt worden als een verplaatsings commandoX
+Reeds in commando modusX
+Cursor niet op een woordX
+Cursor niet op een getalX
+Getal groter dan %luX
+TERM variabele heeft als waarde \"unknown\" of is niet gedefinieerdX
+%s: onbekend beeldscherm model, of beeldscherm mist noodzakelijke functionaliteitX
+%s: beeldscherm model ontbeert noodzakelijke functionaliteitX
+Windows optie waarde is te groot, maximum is %uX
+Verplaatsing voorbij het eind van het schermX
+Verplaatsing voorbij het begin van het schermX
+Scherm moet groter zijn dan %d regels voor een splitX
+U kan uw enige scherm niet in de achtergrond zettenX
+Er zijn geen achtergrond schermenX
+Er is geen achtergrond scherm waarin U bestand %s aan het verwerken bentX
+Het scherm kan niet kleinerX
+Het scherm kan niet groterX
+Het scherm kan slechts verkleind worden tot %d regelsX
+Termcap bevat geen code voor de functie toets %sX
+Dit beeldscherm heeft geen %s toetsX
+Geen vorige reguliere expressieX
+regel te langX
+Het bestand %s is geen message catalogX
+Geen afkortingen om weer te gevenX
+Afkortingen moeten eindigen met een \"woord\" letterX
+Afkortingen mogen geen tabulaties of spaties bevattenX
+Afkortingen mogen geen woord/niet-woord karakters mengen, behalve aan het eindeX
+\"%s\" is geen afkortingX
+Bestand leeg; niets om te doorzoekenX
+Einde van het bestand bereikt zonder dat het patroon gevonden isX
+Patroon niet gevondenX
+Begin van het bestand bereikt zonder dat het patroon gevonden isX
+Zoek-operatie omgeslagenX
+Geen vorig zoek patroonX
+
+Onderbroken.X
+Onderbroken.X
+
+
+
+
+
+Het Athena widget scherm wordt nog niet ondersteundX
+Ongeldige adres combinatieX
+Adres waarde te grootX
+Adres waarde te kleinX
+%s resulteert in te veel bestandsnamenX
+%s: geen normaal bestandX
+%s: U bent niet de eigenaarX
+%s: kan gewijzigd worden door andere gebruikersX
+Geen tags aanwezigX
+Geen achtergrond schermen aanwezigX
+Geen cut buffers aanwezigX
+lijst met bestanden is leegX
+%s: lees beveiliging niet beschikbaarX
+%s: schrijf beveiliging niet beschikbaarX
+Aantal kolommen te groot, meer dan %dX
+Aantal regels te groot, meer dan %dX
