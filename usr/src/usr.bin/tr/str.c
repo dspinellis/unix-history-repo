@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -215,8 +215,8 @@ genrange(s)
 	char *savestart;
 
 	savestart = s->str;
-	stopval = *++s->str == '\\' ? backslash(s) : *s->str;
-	if (stopval < s->lastch) {
+	stopval = *++s->str == '\\' ? backslash(s) : *s->str++;
+	if (stopval < (u_char)s->lastch) {
 		s->str = savestart;
 		return (0);
 	}
