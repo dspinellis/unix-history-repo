@@ -1,8 +1,11 @@
-static char *sccsid = "@(#)swapon.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)swapon.c	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
+#include <errno.h>
 
 #define	VSWAPON	85
+
+extern int errno;
 
 main(argc, argv)
 	int argc;
@@ -25,8 +28,22 @@ main(argc, argv)
 			printf("Adding %s as swap device\n",
 			    fsp->fs_spec);
 			if (syscall(VSWAPON, fsp->fs_spec) == -1) {
-				perror(fsp->fs_spec);
-				stat = 1;
+				switch(errno) {
+				case EINVAL:
+					fprintf(stderr,
+						"%s: Device not configured\n",
+						fsp->fs_spec);
+					stat = 1;
+					break;
+
+				case EBUSY:	/* ignore already in use */
+					break;
+
+				default:
+					perror(fsp->fs_spec);
+					stat = 1;
+					break;
+				}
 			}
 		}
 		endfsent();
@@ -35,7 +52,21 @@ main(argc, argv)
 	do {
 		if (syscall(VSWAPON, *argv++) == -1) {
 			stat = 1;
-			perror(argv[-1]);
+			switch (errno) {
+			case EINVAL:
+				fprintf(stderr, "%s: Device not configured\n",
+						argv[-1]);
+				break;
+
+			case EBUSY:
+				fprintf(stderr, "%s: Device already in use\n",
+						argv[-1]);
+				break;
+
+			default:
+				perror(argv[-1]);
+				break;
+			}
 		}
 		argc--;
 	} while (argc > 0);
