@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.2 %G%";
+static char sccsid[] = "@(#)newfs.c	4.3 %G%";
 #endif
 
 /*
@@ -120,19 +120,21 @@ next:
 		fprintf(stderr, "usage: makefs [ -v ] [ mkfs-options ] %s\n",
 			"special-device device-type");
 		fprintf(stderr, "where mkfs-options are:\n");
-		fprintf(stderr, "-s sectors/track\n");
-		fprintf(stderr, "-b block-size\n");
-		fprintf(stderr, "-f frag-size\n");
-		fprintf(stderr, "-t tracks/cylinder\n");
-		fprintf(stderr, "-c cylinders/group\n");
-		fprintf(stderr, "-S sector-size\n");
+		fprintf(stderr, "\t-s sectors/track\n");
+		fprintf(stderr, "\t-b block-size\n");
+		fprintf(stderr, "\t-f frag-size\n");
+		fprintf(stderr, "\t-t tracks/cylinder\n");
+		fprintf(stderr, "\t-c cylinders/group\n");
+		fprintf(stderr, "\t-S sector-size\n");
 		exit(1);
 	}
 	special = argv[0];
 again:
 	if (stat(special, &st) < 0) {
 		if (*special != '/') {
-			special = sprintf(device, "/dev/%s", argv[0]);
+			if (*special == 'r')
+				special++;
+			special = sprintf(device, "/dev/r%s", special);
 			goto again;
 		}
 		fprintf(stderr, "makefs: "); perror(special);
@@ -206,6 +208,8 @@ again:
 		if (cp == NULL)
 			fatal("%s: can't figure out disk type from name",
 				special);
+		if (cp[1] == 'r')
+			cp++;
 		type[0] = *++cp;
 		type[1] = *++cp;
 		type[2] = '\0';
