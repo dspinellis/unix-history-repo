@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.7 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -32,6 +32,27 @@ ufs_ihashinit()
 {
 
 	ihashtbl = hashinit(desiredvnodes, M_UFSMNT, &ihash);
+}
+
+/*
+ * Use the dev/ino pair to find the incore inode, and return a pointer to it.
+ * If it is in core, return it, even if it is locked.
+ */
+struct vnode *
+ufs_ihashlookup(dev, ino)
+	dev_t dev;
+	ino_t ino;
+{
+	register struct inode **ipp, *ip;
+
+	ipp = &ihashtbl[INOHASH(dev, ino)];
+loop:
+	for (ip = *ipp; ip; ip = ip->i_next) {
+		if (ino != ip->i_number || dev != ip->i_dev)
+			continue;
+		return (ITOV(ip));
+	}
+	return (NULL);
 }
 
 /*
