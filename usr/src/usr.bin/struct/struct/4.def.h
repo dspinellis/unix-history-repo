@@ -1,6 +1,5 @@
-/*
- *	@(#)4.def.h	4.1	(Berkeley)	83/02/11
- */
+/*	4.def.h	4.2	83/08/11	*/
+
 #define YESTAB	TRUE
 #define NOTAB	FALSE
 #define TABOVER(n)	tabover(n,outfd)

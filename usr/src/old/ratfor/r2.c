@@ -1,5 +1,8 @@
 Original BTL Ratfor System for 4.2
-/* @(#)r2.c	1.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)r2.c	1.2 (Berkeley) %G%";
+#endif
+
 #include "r.h"
 
 extern int hollerith;

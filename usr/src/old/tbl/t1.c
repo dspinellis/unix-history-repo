@@ -1,4 +1,6 @@
-/*	t1.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t1.c	4.2 %G%";
+#endif
 
  /* t1.c: main control and input switching */
 #

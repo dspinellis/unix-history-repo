@@ -1,4 +1,6 @@
-/*	t0.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t0.c	4.2 %G%";
+#endif
 
  /* t0.c: storage allocation */
 #

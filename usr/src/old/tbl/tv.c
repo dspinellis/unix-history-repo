@@ -1,4 +1,6 @@
-/*	tv.c	4.2	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)tv.c	4.3 %G%";
+#endif
 
  /* tv.c: draw vertical lines */
 # include "t..c"

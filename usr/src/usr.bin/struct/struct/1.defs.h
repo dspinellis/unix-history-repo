@@ -1,6 +1,5 @@
-/*
- *	@(#)1.defs.h	4.1	(Berkeley)	83/02/11
- */
+/*	1.defs.h	4.2	83/08/11	*/
+
 #define snum 	145
 #define _s0	0
 #define _s1	1

@@ -1,6 +1,5 @@
-/*
- *	@(#)sdef.h	4.1 %G%
- */
+/*	sdef.h	4.2	83/08/11	*/
+
 struct s {
 	int nargs;
 	struct s *pframe;

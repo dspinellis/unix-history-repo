@@ -1,6 +1,5 @@
-/*
- *	@(#)def.h	4.1	(Berkeley)	83/02/11
- */
+/*	def.h	4.2	83/08/11	*/
+
 #define ASSERT(P,R)	{if (!(P)) {fprintf(stderr,"failed assertion in routine R: P\n"); abort();}}
 
 extern int routnum, routerr;

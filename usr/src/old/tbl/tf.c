@@ -1,4 +1,6 @@
-/*	tf.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)tf.c	4.2 %G%";
+#endif
 
  /* tf.c: save and restore fill mode around table */
 # include "t..c"

@@ -1,5 +1,8 @@
 Original BTL Ratfor System for 4.2
-/* @(#)r1.c	1.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)r1.c	1.3 (Berkeley) %G%";
+#endif
+
 #include "r.h"
 
 #define	wasbreak	brkused[brkptr]==1 || brkused[brkptr]==3
