@@ -1,6 +1,6 @@
-.\"	@(#)abs.3	4.1 (Berkeley) %G%
+.\"	@(#)abs.3	5.1 (Berkeley) %G%
 .\"
-.TH ABS 3 
+.TH ABS 3 "18 January 1983"
 .AT 3
 .SH NAME
 abs \- integer absolute value
@@ -11,10 +11,13 @@ abs \- integer absolute value
 .fi
 .SH DESCRIPTION
 .I Abs
-returns
-the absolute value of its integer operand.
+returns the absolute value of its integer operand.
 .SH SEE ALSO
-floor(3) for
+floor(3M) for
 .I fabs
 .SH BUGS
-You get what the hardware gives on the smallest integer.
+Applying the \fIabs\fP function to the most negative integer generates a
+result which is the most negative integer.  That is, 
+.IP "abs(0x80000000)"
+.LP
+returns 0x80000000 as a result.
