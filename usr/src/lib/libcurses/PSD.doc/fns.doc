@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	1.2 (Berkeley) %G%
+.\"     @(#)fns.doc	1.3 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg
@@ -215,39 +215,6 @@ it will do the
 if it is FALSE.
 it will not.
 .Ds
-.Fn fullname "char *termbuf"  "char *name"
-.De
-.Fn longname
-fills in
-.Vn name
-with the long name of the terminal described by the
-.b termcap
-entry in
-.Vn termbuf .
-It is generally of little use,
-but is nice for telling the user in a readable format what terminal
-we think he has.
-This is available in the global variable
-.Vn ttytype .
-.Vn termbuf
-is usually set via the termlib routine
-.Fn tgetent .
-.Fn fullname
-is the same as
-.Fn longname ,
-except that it gives the fullest name given in the entry,
-which can be quite verbose.
-.Ds
-.Fn getcap "char *str"
-.De
-Return a pointer to the
-.b termcap
-capability described by
-.Vn str
-(see
-.b termcap (5)
-for details).
-.Ds
 .Fn getch "" \(dg
 .De
 Gets a character from the terminal and (if necessary)
@@ -387,9 +354,6 @@ This flag
 (initialy FALSE)
 retains its value until changed by the user.
 .Ds
-.Fn longname "char *termbuf" "char *name"
-.De
-.Ds
 .Fn move "int y" "int x"
 .De
 Change the current \*y of the window to
@@ -415,6 +379,22 @@ and
 should be used to move the cursor position,
 so that the routines know what's going on.
 .Ds
+.Fn mvprintw "int y" "int x" "const char *fmt" "..."
+.De
+Equivalent to:
+.(l
+move(y, x);
+printw(fmt, ...);
+.)l
+.Ds 
+.Fn mvscanw "int y" "int x" "const char *fmt" "..."
+.De
+Equivalent to:
+.(l
+move(y, x);
+scanw(fmt, ...);
+.)l
+.Ds
 .Fn mvwin "WINDOW *win" "int y" "int x"
 .De
 Move the home position of the window
@@ -431,6 +411,22 @@ For subwindows,
 also returns ERR if you attempt to move it off its main window.
 If you move a main window,
 all subwindows are moved along with it.
+.Ds
+.Fn mvwprintw "WINDOW *win" "int y" "int x" "const char *fmt" "..."
+.De
+Equivalent to 
+.(l
+wmove(win, y, x);
+printw(fmt, ...);
+.)l
+.Ds
+.Fn mvwscanw "WINDOW *win" "int y" "int x" "const char *fmt" "..."
+.De
+Equivalent to 
+.(l
+wmove(win, y, x);
+scanw(fmt, ...);
+.)l
 .Ds
 .Ft "WINDOW *"
 .Fn newwin "int lines" "int cols" "int begin_y" "int begin_x" 
@@ -557,9 +553,9 @@ On version 7
 .(f
 \**
 .Un
-is a trademark of Bell Laboratories.
+is a trademark of Unix System Laboratories.
 .)f
-this also turns of newline mapping
+this also turns off newline mapping
 (see
 .Fn nl ).
 .Ds
@@ -591,13 +587,15 @@ stored.
 These functions are performed automatically by
 .Fn initscr
 and
-.Fn endwin .
+.Fn endwin .  
+This function should not be used by the user.
 .Ds
 .Fn savetty "" \(dg
 .De
 .Fn savetty
 saves the current tty characteristic flags. See
 .Fn resetty .
+This function should not be used by the user.
 .Ds
 .Fn scanw "char *fmt" "..."
 .De
@@ -623,15 +621,6 @@ If
 .Vn boolf
 is FALSE, scrolling is not allowed.
 This is its default setting.
-.Ds
-.Fn setterm "char *name"
-.De
-Set the terminal characteristics to be those of the terminal named
-.Vn name ,
-getting the terminal size using
-.i tgetent(3).
-This is normally called by
-.Fn initscr .
 .Ds
 .Fn standend "" \(dg
 .De
@@ -703,30 +692,13 @@ Make it appear that the every location on the window
 has been changed.
 This is usually only needed for refreshes with overlapping windows.
 .Ds
-.Fn unctrl "char *ch" \(dg
-.De
-This is actually a debug function for the library,
-but it is of general usefulness.
-It returns a string which is a representation of
-.Vn ch .
-Control characters become their upper-case equivalents preceded by a "^".
-Other letters stay just as they are.
-To use
-.Fn unctrl ,
-you may have to have
-.b #include\ <unctrl.h>
-in your file.
-.Ds
 .Fn tstp
 .De
-If the new
-.b tty (4)
-driver is in use,
-this function
+This function
 will save the current tty state
 and then put the process to sleep.
 When the process gets restarted,
-it restores the tty state
+it restores the saved tty state
 and then calls
 .Fn wrefresh "curscr"
 to redraw the screen.
@@ -734,6 +706,17 @@ to redraw the screen.
 sets the signal
 SIGTSTP
 to trap to this routine.
+.Ds
+.Fn unctrl "char *ch" \(dg
+.De
+Returns a string which is an ASCII representation of
+.Vn ch .  
+Characters are 8 bits long.
+.Ds
+.Fn unctrllen "char *ch" \(dg
+.De
+Returns the length of the ASCII representation of 
+.Vn ch .
 .Ds
 .Fn vwprintw "WINDOW *win" "const char *fmt" "va_list ap"
 .De
@@ -748,11 +731,20 @@ Identical to
 .Fn scanw
 except that it takes both a window specification and a pointer to a variable
 length argument list.
+.Ds
+.Fn waddbytes "WINDOW *win" "char *str" "int len"
+.De
+This function is the low level character output function.  
+.Vn Len
+characters of the string
+.Vn str
+are output to the current \*y position of the window specified by
+.Vn win.
 .sp 2
 .pp
-The following functions differ from the standard functions only in their 
+\fIThe following functions differ from the standard functions only in their 
 specification of a window, rather than the use of the default
-.Vn stdscr.
+.Vn stdscr.\fP
 .Ds
 .Fn waddch "WINDOW *win" "char ch" ,
 .Fn waddstr "WINDOW *win" "char *str" ,
