@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.4	%G%	*/
+/*	kern_clock.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -269,13 +269,11 @@ out:
 			wakeup((caddr_t)&proc[2]);
 		if (USERMODE(ps)) {
 			pp = u.u_procp;
-#ifdef ERNIE
 			if (pp->p_uid)
 				if (pp->p_nice == NZERO && u.u_vm.vm_utime > 600 * HZ)
 					pp->p_nice = NZERO+4;
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
-#endif
 		}
 	}
 #if VAX==780
