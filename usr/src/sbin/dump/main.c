@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,7 +46,7 @@ main(argc, argv)
 	char **argv;
 {
 	register ino_t ino;
-	register long bits; 
+	register int dirty; 
 	register struct dinode *dp;
 	register struct	fstab *dt;
 	register char *map;
@@ -117,7 +117,7 @@ main(argc, argv)
 			if (argc < 1)
 				break;
 			bflag++;
-			ntrec = atol(*argv);
+			ntrec = atoi(*argv);
 			if (ntrec < 1) {
 				fprintf(stderr, "%s \"%s\"\n",
 				    "bad number of blocks per write ", *argv);
@@ -363,11 +363,11 @@ main(argc, argv)
 	msg("dumping (Pass III) [directories]\n");
 	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
 		if ((ino % NBBY) == 0)
-			bits = *map++;
+			dirty = *map++;
 		else
-			bits >>= 1;
+			dirty >>= 1;
 		ino++;
-		if ((bits & 1) == 0)
+		if ((dirty & 1) == 0)
 			continue;
 		/*
 		 * Skip directory inodes deleted and maybe reallocated
@@ -381,11 +381,11 @@ main(argc, argv)
 	msg("dumping (Pass IV) [regular files]\n");
 	for (map = dumpinomap, ino = 0; ino < maxino; ) {
 		if ((ino % NBBY) == 0)
-			bits = *map++;
+			dirty = *map++;
 		else
-			bits >>= 1;
+			dirty >>= 1;
 		ino++;
-		if ((bits & 1) == 0)
+		if ((dirty & 1) == 0)
 			continue;
 		/*
 		 * Skip inodes deleted and reallocated as directories.
