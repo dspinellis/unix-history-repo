@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	8.4 (Berkeley) %G%
+ *	@(#)tuba_table.c	8.5 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -68,7 +68,7 @@ tuba_lookup(siso, wait)
 	     && ((rn->rn_flags & RNF_ROOT) == 0)) {
 		tc = (struct tuba_cache *)rn;
 		tc->tc_time = time.tv_sec;
-		i = tc->index;
+		i = tc->tc_index;
 	done:	siso->siso_nlen--;
 		return (i);
 	}
