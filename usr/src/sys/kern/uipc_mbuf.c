@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.21	81/12/12	*/
+/*	uipc_mbuf.c	1.22	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -39,14 +39,12 @@ m_clalloc(ncl, how)
 COUNT(M_CLALLOC);
 	npg = ncl * CLSIZE;
 	mbx = rmalloc(mbmap, npg);
-printf("ncl %d how %d npg %d mbx %d\n", ncl, how, npg, mbx);
 	if (mbx == 0)
 		return (0);
 	m = cltom(mbx / CLSIZE);
 	if (memall(&Mbmap[mbx], ncl * CLSIZE, proc, CSYS) == 0)
 		return (0);
 	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
-printf("m %x &Mbmap[mbx] %x\n", m, &Mbmap[mbx]);
 	switch (how) {
 
 	case MPG_CLUSTERS:
@@ -80,7 +78,6 @@ m_pgfree(addr, n)
 {
 
 COUNT(M_PGFREE);
-	printf("m_pgfree %x %d\n", addr, n);
 }
 
 m_expand()
@@ -247,7 +244,6 @@ COUNT(M_COPY);
 	}
 	return (top);
 nospace:
-	printf("m_copy: no space\n");
 	m_freem(top);
 	return (0);
 }

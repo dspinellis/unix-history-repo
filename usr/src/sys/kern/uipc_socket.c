@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.17	81/12/12	*/
+/*	uipc_socket.c	4.18	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -109,12 +109,10 @@ soclose(so)
 COUNT(SOCLOSE);
 	if (so->so_pcb == 0)
 		goto discard;
-printf("soclose %x state %x\n", so, so->so_state);
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
 			u.u_error = sodisconnect(so, (struct sockaddr *)0);
 			if (u.u_error) {
-printf("soclose disconnect error %d\n", u.u_error);
 				splx(s);
 				return;
 			}
@@ -126,7 +124,6 @@ printf("soclose disconnect error %d\n", u.u_error);
 			return;
 		}
 		while (so->so_state & SS_ISCONNECTED) {
-printf("sleeping until not connected\n");
 			sleep((caddr_t)&so->so_timeo, PZERO+1);
 		}
 	}
@@ -183,7 +180,6 @@ COUNT(SOACCEPT);
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, 0, (caddr_t)asa);
-printf("PRU_ACCEPT returns error %d\n", error);
 bad:
 	splx(s);
 	return (error);
