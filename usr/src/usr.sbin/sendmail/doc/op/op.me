@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.23 (Berkeley) %G%
+.\"	@(#)op.me	5.24 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 5.23
+Version 5.24
 .sp
 For Sendmail Version 5.133
 .)l
@@ -2266,19 +2266,21 @@ is equivalent to:
 $[\fIhostname\fP$]
 .)b
 .pp
-There are three predefined database lookup classes:
+There are four predefined database lookup classes:
 .q dbm ,
 .q btree ,
+.q hash ,
 and
-.q hash .
+.q nis .
 The first requires that sendmail be compiled with the
 .b ndbm
 library;
 the second two require the
 .b db
-library.
-All three accept as arguments the some optional flags
-and a filename.
+library,
+and the third requires that sendmail be compiled with NIS support.
+All four accept as arguments the some optional flags
+and a filename (or a mapname for NIS).
 Known flags are:
 .ip "\-o"
 Indicates that this map is optional \*- that is,
@@ -2298,8 +2300,23 @@ on successful matches.
 For example, the default
 .i host
 map appends a dot on successful matches.
+.ip "\-d\fIdomain\fP"
+Use the indicated
+.i domain
+instead of the default domain.
+Used only for NIS maps.
 .ip "\-f"
 Fold upper to lower case before looking up the key.
+.ip "\-m"
+Match only (without replacing the value).
+If you only care about the existence of a key and not the value
+(as you might when searching the NIS map
+.q hosts.byname
+for example),
+this flag prevents the map from substituting the value.
+However,
+The \-a argument is still appended on a match,
+and the default is still taken if the match fails.
 .pp
 The
 .i dbm
@@ -2308,11 +2325,13 @@ map appends the strings
 and
 .q \&.dir
 to the given filename;
-the other two maps do not.
+the two
+.i db -based
+maps do not.
 .pp
 The program
 .i makemap (8)
-can be used to build any of these three maps.
+can be used to build any of the three database-oriented maps.
 It takes the following flags:
 .ip \-f
 Fold upper to lower case in the map.
@@ -5108,7 +5127,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.23
+.\"Version 5.24
 .\".ce 0
 .pn 2
 .bp
