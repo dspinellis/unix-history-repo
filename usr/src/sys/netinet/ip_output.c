@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.15 (Berkeley) %G%
+ *	@(#)ip_output.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -76,9 +76,10 @@ panic("ip_output no HDR");
 		ip->ip_off &= IP_DF;
 		ip->ip_id = htons(ip_id++);
 		ip->ip_hl = hlen >> 2;
-	} else
+	} else {
 		hlen = ip->ip_hl << 2;
-
+		ipstat.ips_localout++;
+	}
 	/*
 	 * Route packet.
 	 */
@@ -179,7 +180,7 @@ panic("ip_output no HDR");
 		error = (*ifp->if_output)(ifp, m, (struct sockaddr *)dst);
 		goto done;
 	}
-
+	ipstat.ips_fragmented++;
 	/*
 	 * Too large for interface; fragment if possible.
 	 * Must be able to put at least 8 bytes per fragment.
@@ -238,6 +239,7 @@ panic("ip_output no HDR");
 		mhip->ip_sum = in_cksum(m, mhlen);
 		*mnext = m;
 		mnext = &m->m_nextpkt;
+		ipstat.ips_ofragments++;
 	}
 	/*
 	 * Update first fragment by trimming what's been copied out
