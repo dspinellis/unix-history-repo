@@ -14,12 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "time.h"
+#include "kernel.h"
 #include "proc.h"
+#include "user.h"
 #include "buf.h"
 #include "vmmac.h"
 #include "errno.h"
@@ -82,8 +84,8 @@ struct vnodeops mfs_vnodeops = {
  * Vnode Operations.
  *
  * Open called to allow memory filesystem to initialize and
- * validate before actual IO. Nothing to do here as the
- * filesystem is ready to go in the process address space.
+ * validate before actual IO. Record our process identifier
+ * so we can tell when we are doing I/O to ourself.
  */
 /* ARGSUSED */
 mfs_open(vp, mode, cred)
@@ -91,11 +93,14 @@ mfs_open(vp, mode, cred)
 	int mode;
 	struct ucred *cred;
 {
+	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_type != VBLK) {
 		panic("mfs_ioctl not VBLK");
 		/* NOTREACHED */
 	}
+	ip->i_uid = u.u_procp->p_pid;
+	ip->i_spare[0] = 0;
 	return (0);
 }
 
@@ -123,16 +128,14 @@ mfs_strategy(bp)
 	register struct inode *ip = VTOI(bp->b_vp);
 	int error;
 
-	ILOCK(ip);
-	if (bp->b_vp->v_mount == NULL) {
+	if (ip->i_uid == u.u_procp->p_pid) {
 		mfs_doio(bp, (caddr_t)ip->i_diroff);
 	} else {
+		bp->av_forw = (struct buf *)ip->i_spare[0];
 		ip->i_spare[0] = (long)bp;
 		wakeup((caddr_t)bp->b_vp);
 	}
-	error = biowait(bp);
-	IUNLOCK(ip);
-	return (error);
+	return (0);
 }
 
 /*
@@ -244,10 +247,10 @@ mfs_close(vp, flag, cred)
 	/*
 	 * Send a request to the filesystem server to exit.
 	 */
-	ILOCK(ip);
-	ip->i_spare[0] = 0;
+	while (ip->i_spare[0])
+		sleep(&lbolt);
+	ip->i_spare[0] = -1;
 	wakeup((caddr_t)vp);
-	IUNLOCK(ip);
 	return (0);
 }
 
