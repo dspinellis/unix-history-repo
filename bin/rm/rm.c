@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)rm.c	4.26 (Berkeley) 3/10/91";*/
-static char rcsid[] = "$Id: rm.c,v 1.4 1994/01/26 19:23:09 ats Exp $";
+static char rcsid[] = "$Id: rm.c,v 1.5 1994/01/26 21:22:58 ats Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -266,7 +266,7 @@ check(path, name, sp)
 		 * talking to a terminal, ask.  Symbolic links are excluded
 		 * because their permissions are meaningless.
 		 */
-		if (S_ISLNK(sp->st_mode) || !stdin_ok || !access(name, W_OK))
+		if (!stdin_ok || S_ISLNK(sp->st_mode) || !access(name, W_OK))
 			return(1);
 		strmode(sp->st_mode, modep);
 		(void)fprintf(stderr, "override %s%s%s/%s for %s? ",
