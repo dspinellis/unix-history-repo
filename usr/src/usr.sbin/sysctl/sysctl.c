@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -20,21 +20,28 @@ static char sccsid[] = "@(#)sysctl.c	5.3 (Berkeley) %G%";
 #include <sys/sysctl.h>
 #include <sys/socket.h>
 #include <vm/vm_param.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/icmp_var.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-char *topname[] = CTL_NAMES;
-char *kernname[] = CTL_KERN_NAMES;
-char *vmname[] = CTL_VM_NAMES;
-char *netname[] = CTL_NET_NAMES;
-char *hwname[] = CTL_HW_NAMES;
+struct ctlname topname[] = CTL_NAMES;
+struct ctlname kernname[] = CTL_KERN_NAMES;
+struct ctlname vmname[] = CTL_VM_NAMES;
+struct ctlname netname[] = CTL_NET_NAMES;
+struct ctlname hwname[] = CTL_HW_NAMES;
 
 struct list {
-	char	**list;
+	struct	ctlname *list;
 	int	size;
-} secondlevel[] = {
+};
+struct list toplist = { topname, CTL_MAXID };
+struct list secondlevel[] = {
 	{ 0, 0 },			/* CTL_UNSPEC */
 	{ kernname, KERN_MAXID },	/* CTL_KERN */
 	{ vmname, VM_MAXID },		/* CTL_VM */
@@ -84,7 +91,7 @@ main(argc, argv)
 
 	if (Aflag || aflag) {
 		for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++)
-			listall(lvl1);
+			listall(topname[lvl1].ctl_name, &secondlevel[lvl1]);
 		exit(0);
 	}
 	if (argc == 0)
@@ -97,21 +104,22 @@ main(argc, argv)
 /*
  * List all variables known to the system.
  */
-listall(lvl1)
-	int lvl1;
-{
+listall(prefix, lp)
+	char *prefix;
 	struct list *lp;
+{
 	int lvl2;
 	char *cp, name[BUFSIZ];
 
-	lp = &secondlevel[lvl1];
 	if (lp->list == 0)
 		return;
-	strcpy(name, topname[lvl1]);
+	strcpy(name, prefix);
 	cp = &name[strlen(name)];
 	*cp++ = '.';
-	for (lvl2 = 1; lvl2 < lp->size; lvl2++) {
-		strcpy(cp, lp->list[lvl2]);
+	for (lvl2 = 0; lvl2 < lp->size; lvl2++) {
+		if (lp->list[lvl2].ctl_name == 0)
+			continue;
+		strcpy(cp, lp->list[lvl2].ctl_name);
 		parse(name, Aflag);
 	}
 }
@@ -125,11 +133,12 @@ parse(string, flags)
 	char *string;
 	int flags;
 {
-	int indx, size;
+	int indx, type, size, len;
 	int isclockrate = 0;
 	void *newval = 0;
 	int intval, newsize = 0;
-	struct list top, *lp;
+	quad_t quadval;
+	struct list *lp;
 	int mib[CTL_MAXNAME];
 	char *cp, *bufp, buf[BUFSIZ], strval[BUFSIZ];
 
@@ -144,18 +153,10 @@ parse(string, flags)
 		*cp++ = '\0';
 		while (isspace(*cp))
 			cp++;
-		if (isdigit(*cp)) {
-			intval = atoi(cp);
-			newval = &intval;
-			newsize = sizeof intval;
-		} else {
-			newval = cp;
-			newsize = strlen(cp);
-		}
+		newval = cp;
+		newsize = strlen(cp);
 	}
-	top.list = topname;
-	top.size = CTL_MAXID;
-	if ((indx = findname(string, "top", &bufp, &top)) == -1)
+	if ((indx = findname(string, "top", &bufp, &toplist)) == -1)
 		return;
 	mib[0] = indx;
 	lp = &secondlevel[indx];
@@ -165,16 +166,14 @@ parse(string, flags)
 		return;
 	}
 	if (bufp == NULL) {
-		listall(indx);
+		listall(topname[indx].ctl_name, lp);
 		return;
 	}
 	if ((indx = findname(string, "second", &bufp, lp)) == -1)
 		return;
 	mib[1] = indx;
-	if (bufp) {
-		fprintf(stderr, "name %s in %s is unknown\n", *bufp, string);
-		return;
-	}
+	type = lp->list[indx].ctl_type;
+	len = 2;
 	switch (mib[0]) {
 
 	case CTL_KERN:
@@ -219,6 +218,12 @@ parse(string, flags)
 		return;
 
 	case CTL_NET:
+		if (mib[1] == PF_INET) {
+			len = sysctl_inet(string, &bufp, mib, flags, &type);
+			if (len >= 0)
+				break;
+			return;
+		}
 		if (flags == 0)
 			return;
 		fprintf(stderr, "Use netstat to view %s information\n", string);
@@ -234,9 +239,27 @@ parse(string, flags)
 		return;
 	
 	}
+	if (bufp) {
+		fprintf(stderr, "name %s in %s is unknown\n", *bufp, string);
+		return;
+	}
+	if (newsize > 0) {
+		switch (type) {
+		case CTLTYPE_INT:
+			intval = atoi(newval);
+			newval = &intval;
+			newsize = sizeof intval;
+			break;
 
+		case CTLTYPE_QUAD:
+			sscanf(newval, "%qd", &quadval);
+			newval = &quadval;
+			newsize = sizeof quadval;
+			break;
+		}
+	}
 	size = BUFSIZ;
-	if (sysctl(mib, 2, buf, &size, newsize ? newval : 0, newsize) == -1) {
+	if (sysctl(mib, len, buf, &size, newsize ? newval : 0, newsize) == -1) {
 		if (flags == 0)
 			return;
 		switch (errno) {
@@ -266,8 +289,8 @@ parse(string, flags)
 		    clkp->hz, clkp->tick, clkp->profhz, clkp->stathz);
 		return;
 	}
-	if (size == sizeof(int) && !(isprint(buf[0]) && isprint(buf[1]) &&
-	    isprint(buf[2]) && isprint(buf[3])))
+	switch (type) {
+	case CTLTYPE_INT:
 		if (newsize == 0) {
 			if (!nflag)
 				fprintf(stdout, "%s = ", string);
@@ -278,7 +301,9 @@ parse(string, flags)
 				    *(int *)buf);
 			fprintf(stdout, "%d\n", *(int *)newval);
 		}
-	else
+		return;
+
+	case CTLTYPE_STRING:
 		if (newsize == 0) {
 			if (!nflag)
 				fprintf(stdout, "%s = ", string);
@@ -288,7 +313,81 @@ parse(string, flags)
 				fprintf(stdout, "%s: %s -> ", string, buf);
 			fprintf(stdout, "%s\n", newval);
 		}
-	return;
+		return;
+
+	case CTLTYPE_QUAD:
+		if (newsize == 0) {
+			if (!nflag)
+				fprintf(stdout, "%s = ", string);
+			fprintf(stdout, "%qd\n", *(quad_t *)buf);
+		} else {
+			if (!nflag)
+				fprintf(stdout, "%s: %qd -> ", string,
+				    *(quad_t *)buf);
+			fprintf(stdout, "%qd\n", *(quad_t *)newval);
+		}
+		return;
+
+	case CTLTYPE_STRUCT:
+		fprintf(stderr, "%s: unknown structure returned\n",
+		    string);
+		return;
+
+	default:
+	case CTLTYPE_NODE:
+		fprintf(stderr, "%s: unknown type returned\n",
+		    string);
+		return;
+	}
+}
+
+struct ctlname inetname[] = CTL_IPPROTO_NAMES;
+struct ctlname ipname[] = IPCTL_NAMES;
+struct ctlname icmpname[] = ICMPCTL_NAMES;
+struct list inetlist = { inetname, IPPROTO_MAXID };
+struct list inetvars[] = {
+	{ ipname, IPCTL_MAXID },
+	{ icmpname, ICMPCTL_MAXID },
+};
+
+/*
+ * handle internet requests
+ */
+sysctl_inet(string, bufpp, mib, flags, typep)
+	char *string;
+	char **bufpp;
+	int mib[];
+	int flags;
+	int *typep;
+{
+	struct list *lp;
+	int indx;
+
+	if (*bufpp == NULL) {
+		listall(string, &inetlist);
+		return (-1);
+	}
+	if ((indx = findname(string, "third", bufpp, &inetlist)) == -1)
+		return (-1);
+	mib[2] = indx;
+	if (indx < 2)
+		lp = &inetvars[indx];
+	else if (!flags)
+		return (-1);
+	else {
+		fprintf(stderr, "%s: no variables defined for this protocol\n",
+		    string);
+		return (-1);
+	}
+	if (*bufpp == NULL) {
+		listall(string, lp);
+		return (-1);
+	}
+	if ((indx = findname(string, "fourth", bufpp, lp)) == -1)
+		return (-1);
+	mib[3] = indx;
+	*typep = lp->list[indx].ctl_type;
+	return (4);
 }
 
 /*
@@ -308,7 +407,7 @@ findname(string, level, bufp, namelist)
 		return (-1);
 	}
 	for (i = 0; i < namelist->size; i++)
-		if (!strcmp(name, namelist->list[i]))
+		if (!strcmp(name, namelist->list[i].ctl_name))
 			break;
 	if (i == namelist->size) {
 		fprintf(stderr, "%s level name %s in %s is invalid\n",
