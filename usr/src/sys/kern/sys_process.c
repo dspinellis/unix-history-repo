@@ -1,4 +1,4 @@
-/*	sys_process.c	5.2	82/07/24	*/
+/*	sys_process.c	5.3	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,9 +14,7 @@
 #include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/buf.h"
-#include "../h/vlimit.h"
 #include "../h/acct.h"
-
 
 /*
  * Priority for tracing
