@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.15 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.16 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -846,7 +846,7 @@ again:
 		IncStat(ts_ER_rcvd);
 		e.ev_number = ER_TPDU;
 		e.ATTR(ER_TPDU).e_reason =  (u_char)hdr->tpdu_ERreason;
-		takes_data = 1;
+		takes_data = FALSE;
 	} else {
 		/* tpdu type is CC, XPD, XAK, GR, AK, DR, DC, or DT */
 
@@ -1317,8 +1317,12 @@ again:
 	if (takes_data) {
 		int max = tpdu_info[ hdr->tpdu_type ] [TP_MAX_DATA_INDEX];
 		int datalen = tpdu_len - hdr->tpdu_li - 1, mbtype = MT_DATA;
-		struct cmsghdr c_hdr;
-		struct mbuf *n;
+		struct {
+			struct tp_disc_reason dr;
+			struct cmsghdr x_hdr;
+		} x;
+#define c_hdr x.x_hdr
+		register struct mbuf *n;
 
 		CHECK( (max && datalen > max), E_TP_LENGTH_INVAL,
 		        ts_inv_length, respond, (max + hdr->tpdu_li + 1) );
@@ -1333,19 +1337,27 @@ again:
 			goto make_control_msg;
 
 		case DR_TPDU_type:
+			x.dr.dr_hdr.cmsg_len = sizeof(x) - sizeof(c_hdr);
+			x.dr.dr_hdr.cmsg_type = TPOPT_DISC_REASON;
+			x.dr.dr_hdr.cmsg_level = SOL_TRANSPORT;
+			x.dr.dr_reason = hdr->tpdu_DRreason;
 			c_hdr.cmsg_type = TPOPT_DISC_DATA;
 		make_control_msg:
+			datalen += sizeof(c_hdr);
+			c_hdr.cmsg_len = datalen;
 			c_hdr.cmsg_level = SOL_TRANSPORT;
 			mbtype = MT_CONTROL;
 			MGET(n, M_DONTWAIT, MT_DATA);
-			if (n) {
-				datalen += sizeof(c_hdr);
-				n->m_len = sizeof(c_hdr);
-				c_hdr.cmsg_len = datalen;
-				*mtod(n, struct cmsghdr *) = c_hdr;
-				n->m_next = m;
-				m = n;
-			} else {m_freem(m); m = 0; goto invoke;}
+			if (n == 0)
+				{m_freem(m); m = 0; datalen = 0; goto invoke; }
+			if (hdr->tpdu_type == DR_TPDU_type) {
+				datalen += sizeof(x) - sizeof(c_hdr);
+				bcopy((caddr_t)&x, mtod(n, caddr_t), n->m_len = sizeof(x));
+			} else
+				bcopy((caddr_t)&c_hdr, mtod(n, caddr_t),
+					  n->m_len = sizeof(c_hdr));
+			n->m_next = m;
+			m = n;
 			/* FALLTHROUGH */
 
 		case XPD_TPDU_type:
