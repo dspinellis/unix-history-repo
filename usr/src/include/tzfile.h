@@ -7,13 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tzfile.h	5.9 (Berkeley) %G%
+ *	@(#)tzfile.h	5.10 (Berkeley) %G%
  */
 
-/*
-** Information about time zone files.
-*/
+#ifndef _TZFILE_H_
+#define	_TZFILE_H_
 
+/*
+ * Information about time zone files.
+ */
 			/* Time zone object file directory */
 #define TZDIR		"/usr/share/zoneinfo"
 #define TZDEFAULT	"/etc/localtime"
@@ -119,3 +121,5 @@ struct tzhead {
 */
 
 #define isleap(y) (((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+
+#endif /* !_TZFILE_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)utime.h	5.3 (Berkeley) %G%
+ *	@(#)utime.h	5.4 (Berkeley) %G%
  */
+
+#ifndef	_UTIME_H_
+#define	_UTIME_H_
 
 struct utimbuf {
 	time_t actime;		/* Access time */
@@ -17,3 +20,5 @@ struct utimbuf {
 __BEGIN_DECLS
 int utime __P((const char *, const struct utimbuf *));
 __END_DECLS
+
+#endif /* !_UTIME_H_ */

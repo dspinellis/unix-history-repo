@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)utmp.h	5.10 (Berkeley) %G%
+ *	@(#)utmp.h	5.11 (Berkeley) %G%
  */
+
+#ifndef	_UTMP_H_
+#define	_UTMP_H_
 
 #define	_PATH_UTMP	"/var/run/utmp"
 #define	_PATH_WTMP	"/var/log/wtmp"
@@ -27,3 +30,5 @@ struct utmp {
 	char	ut_host[UT_HOSTSIZE];
 	long	ut_time;
 };
+
+#endif /* !_UTMP_H_ */
