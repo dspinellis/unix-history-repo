@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftp.1	5.1 (Berkeley) %G%
+.\"	@(#)ftp.1	6.1 (Berkeley) %G%
 .\"
-.TH FTP 1C "18 July 1983"
+.TH FTP 1C ""
 .UC 5
 .SH NAME
-ftp \- file transfer program
+ftp \- ARPANET file transfer program
 .SH SYNOPSIS
 .B ftp
 [ 
@@ -45,8 +45,10 @@ is provided the user.  The following commands are recognized
 by
 .IR ftp :
 .TP
-.B \&!
-Invoke a shell on the local machine.
+.B \&! [command [args] ]
+Invoke an interactive shell on the local machine.
+If there are arguments, the first is taken to be a command to execute
+directly, with the rest of the arguments as its arguments.
 .TP
 \fBappend\fP \fIlocal-file\fP [ \fIremote-file\fP ]
 Append a local file to a file on the remote machine.  If
@@ -109,7 +111,8 @@ and, optionally, placing the output in
 .IR local-file .
 If no directory is specified, the current working
 directory on the remote machine is used.  If no local
-file is specified, output comes to the terminal.
+file is specified, or \fIlocal-file\fP is \fB-\fP,
+output comes to the terminal.
 .TP
 .BI form " format"
 Set the file transfer 
@@ -132,19 +135,24 @@ and
 .I structure
 are used while transferring the file.
 .TP
+\fBglob\fP
+Toggle filename expansion for \fBmdelete\fP, \fBmget\fP and \fBmput\fP.
+If globbing is turned off with \fBglob\fP, the file name arguments
+are taken literally and not expanded.
+Globbing for \fBmput\fP is done as in \fBcsh\fP(1).
+For \fBmdelete\fP and \fBmget\fP, each remote file name is expanded
+separately on the remote machine and the lists are not merged.
+Expansion of a directory name is likely to be radically
+different from expansion of the name of an ordinary file:
+the exact result depends on the foreign operating system and ftp server,
+and can be previewed by doing `\fBmls\fP\ \fIremote-files\fP\ \fB-\fP'.
+Note:  \fBmget\fP and \fBmput\fP are not meant to transfer
+entire directory subtrees of files.  That can be done by
+transferring a \fBtar\fP(1) archive of the subtree (in binary mode).
+.TP
 \fBhash\f
 Toggle hash-sign (``#'') printing for each data block
 transferred.  The size of a data block is 1024 bytes.
-.TP
-.B glob
-Toggle file name globbing.  With file name globbing enabled,
-each local file or pathname is processed for 
-.IR csh (1)
-metacharacters.  These characters include ``*?[]~{}''.
-Remote files specified in mutliple item commands, e.g.
-.IR mput ,
-are globbed by the remote server.  With globbing disabled
-all files and pathnames are treated literally.
 .TP
 \fBhelp\fP [ \fIcommand\fP ]
 Print an informative message about the meaning of
@@ -164,34 +172,28 @@ Print an abbreviated listing of the contents of a
 directory on the remote machine.  If
 .I remote-directory
 is left unspecified, the current working directory
-is used.  If no local file is specified, the output
-is sent to the terminal.
+is used.  If no local file is specified, or if \fIlocal-file\fR is \fB-\fR,
+the output is sent to the terminal.
 .TP
-\fBmdelete\fP \fIremote-files\fP
-Delete the specified files on the remote machine.  If globbing
-is enabled, the specification of remote files will first be
-expanded using
-.IR ls .
+\fBmdelete\fP [ \fIremote-files\fP ]
+Delete the \fIremote-files\fP on the remote machine.
 .TP
-\fBmdir\fP \fIremote-files\fP \fIlocal-file\fP
-Obtain a directory listing of multiple files on the remote
-machine and place the result in
-.IR local-file .
+\fBmdir\fP [ \fIremote-files\fP ] [ \fIlocal-file\fP ]
+Like \fBdir\fP, except multiple remote files may be specified.
 .TP
 \fBmget\fP \fIremote-files\fP
-Retrieve the specified files from the remote machine and
-place them in the current local directory.  If globbing
-is enabled, the specification of remote files will first be
-expanding using
-.IR ls .
+Expand the \fIremote-files\fP on the remote machine
+and do a \fBget\fP for each file name thus produced.
+See \fBglob\fR for details on the filename expansion.
+Files are transferred into the local working directory,
+which can be changed with `\fBlcd\fP\ directory';
+new local directories can be created with `\fB!\fP\ mkdir\ directory'.
 .TP
 \fBmkdir\fP \fIdirectory-name\fP
 Make a directory on the remote machine.
 .TP
-\fBmls\fP \fIremote-files\fP \fIlocal-file\fP
-Obtain an abbreviated listing of multiple files on the remote
-machine and place the result in
-.IR local-file .
+\fBmls\fP [ \fIremote-files\fP ] [ \fIlocal-file\fP ]
+Like \fBls\fP, except multiple remote files may be specified.
 .TP
 \fBmode\fP [ \fImode-name\fP ]
 Set the file transfer
@@ -201,8 +203,9 @@ to
 The default mode is \*(lqstream\*(rq mode.
 .TP
 \fBmput\fP \fIlocal-files\fP
-Transfer multiple local files from the current local directory
-to the current working directory on the remote machine.
+Expand wild cards in the list of local files given as arguments
+and do a \fBput\fR for each file in the resulting list.
+See \fBglob\fP for details of filename expansion.
 .TP
 \fBopen\fP \fIhost\fP [ \fIport\fP ]
 Establish a connection to the specified
@@ -221,12 +224,9 @@ the FTP server (see below).
 .B prompt
 Toggle interactive prompting.  Interactive prompting
 occurs during multiple file transfers to allow the
-user to selectively retrieve or store files.  If
-prompting is turned off (default), any
-.I mget
-or
-.I mput
-will transfer all files.
+user to selectively retrieve or store files.
+If prompting is turned off (default), any \fBmget\fP or \fBmput\fP
+will transfer all files, and any \fBmdelete\fP will delete all files.
 .TP
 \fBput\fP \fIlocal-file\fP [ \fIremote-file\fP ]
 Store a local file on the remote machine.  If 
@@ -247,7 +247,7 @@ machine.
 .B quit
 A synonym for bye.
 .TP
-.BI quote " arg1 arg2 ..."
+.BI quote "arg1 arg2 ..."
 The arguments specified are sent, verbatim, to the remote FTP
 server.  A single FTP reply code is expected in return.
 .TP
@@ -373,7 +373,8 @@ may be one of \*(lqascii\*(rq, \*(lqimage\*(rq (binary),
 \*(lqebcdic\*(rq, and \*(lqlocal byte size\*(rq (for PDP-10's
 and PDP-20's mostly).
 .I Ftp
-supports the ascii and image types of file transfer.
+supports the ascii and image types of file transfer,
+plus local byte size 8 for \fBtenex\fP mode transfers.
 .PP
 .I Ftp
 supports only the default values for the remaining
@@ -412,7 +413,7 @@ and, optionally, an account with which to login.
 The
 .B \-i
 option turns off interactive prompting during
-mutliple file transfers.
+multiple file transfers.
 .PP
 The
 .B \-d
@@ -422,7 +423,7 @@ The
 .B \-g
 option disables file name globbing.
 .SH BUGS
-Many FTP server implementation do not support the experimental
+Many FTP server implementations do not support the experimental
 operations such as print working directory.  Aborting a file
 transfer does not work right; if one attempts this the local
 .I ftp
