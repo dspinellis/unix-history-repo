@@ -12,14 +12,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pow.c	4.5 (Berkeley) %G%";
 #endif not lint
 
 /* POW(X,Y)  
  * RETURN X**Y 
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/8/85; 
- * REVISED BY K.C. NG on 5/12/85.
+ * REVISED BY K.C. NG on 7/10/85.
  *
  * Required system supported functions:
  *      scalb(x,n)      
@@ -47,25 +47,25 @@ static char sccsid[] = "@(#)pow.c	4.4 (Berkeley) %G%";
  * Special cases:
  *	(anything) ** 0  is 1 ;
  *	(anything) ** 1  is itself;
- *	(anything) ** NAN is NAN;
- *	NAN ** (anything except 0) is NAN;
+ *	(anything) ** NaN is NaN;
+ *	NaN ** (anything except 0) is NaN;
  *	+-(anything > 1) ** +INF is +INF;
  *	+-(anything > 1) ** -INF is +0;
  *	+-(anything < 1) ** +INF is +0;
  *	+-(anything < 1) ** -INF is +INF;
- *	+-1 ** +-INF is NAN and signal INVALID;
- *	+0 ** +(anything except 0, NAN)  is +0;
- *	-0 ** +(anything except 0, NAN, odd integer)  is +0;
- *	+0 ** -(anything except 0, NAN)  is +INF and signal DIV-BY-ZERO;
- *	-0 ** -(anything except 0, NAN, odd integer)  is +INF with signal;
+ *	+-1 ** +-INF is NaN and signal INVALID;
+ *	+0 ** +(anything except 0, NaN)  is +0;
+ *	-0 ** +(anything except 0, NaN, odd integer)  is +0;
+ *	+0 ** -(anything except 0, NaN)  is +INF and signal DIV-BY-ZERO;
+ *	-0 ** -(anything except 0, NaN, odd integer)  is +INF with signal;
  *	-0 ** (odd integer) = -( +0 ** (odd integer) );
- *	+INF ** +(anything except 0,NAN) is +INF;
- *	+INF ** -(anything except 0,NAN) is +0;
+ *	+INF ** +(anything except 0,NaN) is +INF;
+ *	+INF ** -(anything except 0,NaN) is +0;
  *	-INF ** (odd integer) = -( +INF ** (odd integer) );
  *	-INF ** (even integer) = ( +INF ** (even integer) );
- *	-INF ** -(anything except integer,NAN) is NAN with signal;
+ *	-INF ** -(anything except integer,NaN) is NaN with signal;
  *	-(x=anything) ** (k=integer) is (-1)**k * (x ** k);
- *	-(anything except 0) ** (non-integer) is NAN with signal;
+ *	-(anything except 0) ** (non-integer) is NaN with signal;
  *
  * Accuracy:
  *	pow(x,y) returns x**y nearly rounded. In particular, on a SUN, a VAX,
@@ -85,9 +85,7 @@ static char sccsid[] = "@(#)pow.c	4.4 (Berkeley) %G%";
 
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
-extern errno;
-static long	NaN_[] = {0x8000, 0x0};
-#define NaN	(*(double *) NaN_)
+extern double infnan();
 
 /* double static */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
@@ -102,7 +100,7 @@ static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
 #define    ln2lo    (*(double*)ln2lox)
 #define   invln2    (*(double*)invln2x)
 #define    sqrt2    (*(double*)sqrt2x)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 double static
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
@@ -119,8 +117,14 @@ double x,y;
 	int finite();
 
 	if     (y==zero)      return(one);
-	else if(y==one||x!=x) return( x );      /* if x is NAN or y=1 */
-	else if(y!=y)         return( y );      /* if y is NAN */
+	else if(y==one
+#ifndef VAX
+		||x!=x
+#endif
+		) return( x );      /* if x is NaN or y=1 */
+#ifndef VAX
+	else if(y!=y)         return( y );      /* if y is NaN */
+#endif
 	else if(!finite(y))                     /* if y is INF */
 	     if((t=copysign(x,one))==one) return(zero/zero);
 	     else if(t>one) return((y>zero)?y:zero);
@@ -141,11 +145,10 @@ double x,y;
 	/* Henceforth y is not an integer */
 	else if(x==zero)	/* x is -0 */
 	    return((y>zero)?-x:one/(-x));
-	else {			/* return NAN */
+	else {			/* return NaN */
 #ifdef VAX
-	    errno = EDOM;
-	    return (NaN);
-#else
+	    return (infnan(EDOM));	/* NaN */
+#else	/* IEEE double */
 	    return(zero/zero);
 #endif
 	}
@@ -163,14 +166,16 @@ double x,y;
 
 	if(x==zero||!finite(x)) {           /* if x is +INF or +0 */
 #ifdef VAX
-	     if (y<zero) errno = ERANGE;
-#endif
+	     return((y>zero)?x:infnan(ERANGE));	/* if y<zero, return +INF */
+#else
 	     return((y>zero)?x:one/x);
+#endif
 	}
+	if(x==1.0) return(x);	/* if x=1.0, return 1 since y is finite */
 
     /* reduce x to z in [sqrt(1/2)-1, sqrt(2)-1] */
         z=scalb(x,-(n=logb(x)));  
-#ifndef VAX 	/* subnormal number */
+#ifndef VAX	/* IEEE double */	/* subnormal number */
         if(n <= -1022) {n += (m=logb(z)); z=scalb(z,-m);} 
 #endif
         if(z >= sqrt2 ) {n += 1; z *= half;}  z -= one ;
@@ -209,8 +214,8 @@ double x,y;
 	/* end of if log(y*log(x)) > -60.0 */
 	    
 	    else
-		/* exp(+- tiny) = 1 */
-			return(one);
+		/* exp(+- tiny) = 1 with inexact flag */
+			{ln2hi+ln2lo; return(one);}
 	    else if(copysign(one,y)*(n+invln2*t) <zero)
 		/* exp(-(big#)) underflows to zero */
 	        	return(scalb(one,-5000)); 
