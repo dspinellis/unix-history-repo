@@ -1,28 +1,20 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)callout.h	7.1 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)callout.h	7.2 (Berkeley) %G%
  */
 
-/*
- * The callout structure is for
- * a routine arranging
- * to be called by the clock interrupt
- * (clock.c) with a specified argument,
- * in a specified amount of time.
- * Used, for example, to time tab
- * delays on typewriters.
- */
-
-struct	callout {
-	int	c_time;		/* incremental time */
-	caddr_t	c_arg;		/* argument to routine */
-	int	(*c_func)();	/* routine */
-	struct	callout *c_next;
+struct callout {
+	struct callout *c_next;		/* next callout in queue */
+	caddr_t c_arg;			/* function argument */
+	int (*c_func)();		/* function to call */
+	int c_time;			/* ticks to the event */
 };
+
 #ifdef KERNEL
-struct	callout *callfree, *callout, calltodo;
-int	ncallout;
+struct callout *callfree, *callout, calltodo;
+int ncallout;
 #endif

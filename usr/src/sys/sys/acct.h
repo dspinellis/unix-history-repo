@@ -1,46 +1,44 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)acct.h	7.2 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)acct.h	7.3 (Berkeley) %G%
  */
 
 /*
- * Accounting structures;
- * these use a comp_t type which is a 3 bits base 8
- * exponent, 13 bit fraction ``floating point'' number.
- * Units are 1/AHZ seconds.
+ * Accounting structures; these use a comp_t type which is a 3 bits base 8
+ * exponent, 13 bit fraction ``floating point'' number.  Units are 1/AHZ
+ * seconds.
  */
-typedef	u_short comp_t;
+typedef u_short comp_t;
 
-struct	acct
-{
-	char	ac_comm[10];		/* Accounting command name */
-	comp_t	ac_utime;		/* Accounting user time */
-	comp_t	ac_stime;		/* Accounting system time */
-	comp_t	ac_etime;		/* Accounting elapsed time */
-	time_t	ac_btime;		/* Beginning time */
-	uid_t	ac_uid;			/* Accounting user ID */
-	gid_t	ac_gid;			/* Accounting group ID */
-	short	ac_mem;			/* average memory usage */
-	comp_t	ac_io;			/* number of disk IO blocks */
-	dev_t	ac_tty;			/* control typewriter */
-	char	ac_flag;		/* Accounting flag */
+struct acct {
+	char	ac_comm[10];	/* command name */
+	comp_t	ac_utime;	/* user time */
+	comp_t	ac_stime;	/* system time */
+	comp_t	ac_etime;	/* elapsed time */
+	time_t	ac_btime;	/* starting time */
+	uid_t	ac_uid;		/* user id */
+	gid_t	ac_gid;		/* group id */
+	short	ac_mem;		/* average memory usage */
+	comp_t	ac_io;		/* count of IO blocks */
+	dev_t	ac_tty;		/* controlling tty */
+#define	AFORK	0x01			/* forked but not execed */
+#define	ASU	0x02			/* used super-user permissions */
+#define	ACOMPAT	0x04			/* used compatibility mode */
+#define	ACORE	0x08			/* dumped core */
+#define	AXSIG	0x10			/* killed by a signal */
+	char	ac_flag;	/* accounting flags */
 };
 
-#define	AFORK	0001		/* has executed fork, but no exec */
-#define	ASU	0002		/* used super-user privileges */
-#define	ACOMPAT	0004		/* used compatibility mode */
-#define	ACORE	0010		/* dumped core */
-#define	AXSIG	0020		/* killed by a signal */
-
 /*
- * 1/AHZ is the granularity of the data encoded in the various
- * comp_t fields.  This is not necessarily equal to hz.
+ * 1/AHZ is the granularity of the data encoded in the comp_t fields.
+ * This is not necessarily equal to hz.
  */
-#define AHZ 64
+#define	AHZ	64
 
 #ifdef KERNEL
-struct	vnode	*acctp;
+struct vnode	*acctp;
 #endif

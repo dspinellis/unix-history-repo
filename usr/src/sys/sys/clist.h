@@ -1,22 +1,19 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)clist.h	7.2 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clist.h	7.3 (Berkeley) %G%
  */
 
-/*
- * Raw structures for the character list routines.
- */
 struct cblock {
-	struct cblock *c_next;
-	char	c_quote[CBQSIZE];
-	char	c_info[CBSIZE];
+	struct cblock *c_next;		/* next cblock in queue */
+	char c_quote[CBQSIZE];		/* quoted characters */
+	char c_info[CBSIZE];		/* characters */
 };
+
 #ifdef KERNEL
-struct	cblock *cfree;
-int	nclist;
-struct	cblock *cfreelist;
-int	cfreecount;
+struct cblock *cfree, *cfreelist;
+int cfreecount, nclist;
 #endif

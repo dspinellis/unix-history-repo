@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)gmon.h	7.1 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)gmon.h	7.2 (Berkeley) %G%
  */
 
 struct phdr {

@@ -1,30 +1,24 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ioctl.h	7.13 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ioctl.h	7.14 (Berkeley) %G%
  */
 
-/*
- * Ioctl definitions
- */
 #ifndef	_IOCTL_H_
 #define	_IOCTL_H_
 
 /*
- * Window/terminal size structure.
- * This information is stored by the kernel
- * in order to provide a consistent interface,
- * but is not used by the kernel.
- *
- * Type must be "unsigned short" so that types.h not required.
+ * Window/terminal size structure.  This information is stored by the kernel
+ * in order to provide a consistent interface, but is not used by the kernel.
  */
 struct winsize {
-	unsigned short	ws_row;			/* rows, in characters */
-	unsigned short	ws_col;			/* columns, in characters */
-	unsigned short	ws_xpixel;		/* horizontal size, pixels */
-	unsigned short	ws_ypixel;		/* vertical size, pixels */
+	unsigned short	ws_row;		/* rows, in characters */
+	unsigned short	ws_col;		/* columns, in characters */
+	unsigned short	ws_xpixel;	/* horizontal size, pixels */
+	unsigned short	ws_ypixel;	/* vertical size, pixels */
 };
 
 /*
@@ -41,10 +35,9 @@ struct ttysize {
 
 #ifndef _IO
 /*
- * Ioctl's have the command encoded in the lower word,
- * and the size of any in or out parameters in the upper
- * word.  The high 3 bits of the upper word are used
- * to encode the in/out status of the parameter.
+ * Ioctl's have the command encoded in the lower word, and the size of
+ * any in or out parameters in the upper word.  The high 3 bits of the
+ * upper word are used to encode the in/out status of the parameter.
  */
 #define	IOCPARM_MASK	0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_LEN(x)	(((x) >> 16) & IOCPARM_MASK)
@@ -68,11 +61,6 @@ struct ttysize {
 #define	_IOWX(x,y,s)	(IOC_IN|(((s)&IOCPARM_MASK)<<16)|(x<<8)|(y))
 #endif
 
-
-/*
- * tty ioctl commands
- */
-						/* 0-2 compat */
 #define	TIOCMODG	_IOR('t', 3, int)	/* get modem control state */
 #define	TIOCMODS	_IOW('t', 4, int)	/* set modem control state */
 #define		TIOCM_LE	0001		/* line enable */

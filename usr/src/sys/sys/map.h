@@ -1,13 +1,14 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)map.h	7.2 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)map.h	7.3 (Berkeley) %G%
  */
 
 /*
- * Resource Allocation Maps.
+ * Resource allocation maps.
  *
  * Associated routines manage sub-allocation of an address space using
  * an array of segment descriptors.  The first element of this array
@@ -30,22 +31,16 @@
  * as it is used internally by the resource map routines.
  */
 struct map {
-	struct	mapent *m_limit;	/* address of last slot in map */
-	char	*m_name;		/* name of resource */
-/* we use m_name when the map overflows, in warning messages */
+	struct mapent *m_limit;	/* address of last slot in map */
+	char *m_name;		/* name of resource, for messages */
 };
-struct mapent
-{
-	int	m_size;		/* size of this segment of the map */
-	int	m_addr;		/* resource-space addr of start of segment */
+struct mapent {
+	int m_size;		/* size of this segment of the map */
+	int m_addr;		/* resource-space addr of start of segment */
 };
 
 #ifdef KERNEL
-struct	map *swapmap;
-int	nswapmap;
-struct	map *argmap;
 #define	ARGMAPSIZE	16
-struct	map *kernelmap;
-struct	map *mbmap;
-struct	map *kmemmap;
+struct map *argmap, *kernelmap, *kmemmap, *mbmap, *swapmap;
+int nswapmap;
 #endif
