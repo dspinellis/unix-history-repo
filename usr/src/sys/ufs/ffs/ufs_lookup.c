@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.21	85/02/24	*/
+/*	ufs_lookup.c	6.22	85/04/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -1070,20 +1070,24 @@ blkatoff(ip, offset, res)
 {
 	register struct fs *fs = ip->i_fs;
 	daddr_t lbn = lblkno(fs, offset);
-	int base = blkoff(fs, offset);
 	int bsize = blksize(fs, ip, lbn);
-	daddr_t bn = fsbtodb(fs, bmap(ip, lbn, B_WRITE, base, bsize));
 	register struct buf *bp;
+	daddr_t bn;
 
+	bn = bmap(ip, lbn, B_READ, bsize);
 	if (u.u_error)
 		return (0);
-	bp = bread(ip->i_dev, bn, bsize);
+	if (bn == (daddr_t)-1) {
+		dirbad(ip, offset, "hole in dir");
+		return (0);
+	}
+	bp = bread(ip->i_dev, fsbtodb(fs, bn), bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return (0);
 	}
 	if (res)
-		*res = bp->b_un.b_addr + base;
+		*res = bp->b_un.b_addr + blkoff(fs, offset);
 	return (bp);
 }
 
