@@ -17,7 +17,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  *  ft.c - QIC-40/80 floppy tape driver
- *  $Id: ft.c,v 1.4 1994/02/14 22:24:28 nate Exp $
+ *  $Id: ft.c,v 1.2 1994/05/21 21:47:22 j Exp $
  *
  *
  *  01/26/94 v0.3b - Jim Babb
@@ -1382,11 +1382,11 @@ void tape_start(ftu_t ftu)
   s = splbio();
 
   /* reset, dma disable */
-  outb(fdc->baseport+fdout, 0x00);
+  outb(fdc->baseport+FDOUT, 0x00);
   (void)ftintr_wait(ftu, FTCMD_RESET, hz/10);
 
   /* raise reset, enable DMA */
-  outb(fdc->baseport+fdout, FDO_FRST | FDO_FDMAEN);
+  outb(fdc->baseport+FDOUT, FDO_FRST | FDO_FDMAEN);
   (void)ftintr_wait(ftu, FTCMD_RESET, hz/10);
 
   splx(s);
@@ -1394,7 +1394,7 @@ void tape_start(ftu_t ftu)
   tape_recal(ftu, 1);
 
   /* set transfer speed */
-  outb(fdc->baseport+fdctl, FDC_500KBPS);
+  outb(fdc->baseport+FDCTL, FDC_500KBPS);
   DELAY(10);
 
   DPRT(("tape_start end\n"));
@@ -1415,17 +1415,17 @@ void tape_end(ftu_t ftu)
   s = splbio();
 
   /* reset, dma disable */
-  outb(fdc->baseport+fdout, 0x00);
+  outb(fdc->baseport+FDOUT, 0x00);
   (void)ftintr_wait(ftu, FTCMD_RESET, hz/10);
 
   /* raise reset, enable DMA */
-  outb(fdc->baseport+fdout, FDO_FRST | FDO_FDMAEN);
+  outb(fdc->baseport+FDOUT, FDO_FRST | FDO_FDMAEN);
   (void)ftintr_wait(ftu, FTCMD_RESET, hz/10);
 
   splx(s);
 
   /* set transfer speed */
-  outb(fdc->baseport+fdctl, FDC_500KBPS);
+  outb(fdc->baseport+FDCTL, FDC_500KBPS);
   DELAY(10);
   fdc->flags &= ~FDC_TAPE_BUSY; 
 
