@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -118,6 +118,7 @@ wrefresh(win)
 #ifdef DEBUG
 	__TRACE("refresh: ly=%d, lx=%d\n", ly, lx);
 #endif
+
 	if (win == curscr)
 		domvcur(ly, lx, win->cury, win->curx);
 	else {
@@ -158,6 +159,13 @@ makech(win, wy)
 	register int nlsp, clsp;		/* Last space in lines. */
 	register short wx, lch, y;
 	register char *nsp, *csp, *ce;
+
+	/* Is the cursor still on the end of the last line? */
+	if (wy > 0 && win->lines[wy - 1]->flags & __ISPASTEOL) {
+			win->lines[wy - 1]->flags &= ~__ISPASTEOL;
+			ly++;
+			lx = 0;
+	}			
 
 	if (!(win->lines[wy]->flags & __ISDIRTY))
 		return (OK);
@@ -261,7 +269,7 @@ makech(win, wy)
 			}
 
 			wx++;
-			if (wx >= win->maxx && wy == win->maxy - 1)
+			if (wx >= win->maxx && wy == win->maxy - 1 && !curwin)
 				if (win->flags & __SCROLLOK) {
 					if (curscr->flags & __WSTANDOUT
 					    && win->flags & __ENDLINE)
@@ -276,7 +284,7 @@ makech(win, wy)
 					else
 						putchar(*nsp & 0177);
 #ifdef notdef
-					if (win->flags & __FULLWIN && !curwin){
+					if (win->flags & __FULLWIN && !curwin)
 						scroll(curscr);
 #endif
 					ly = win->begy + win->maxy - 1;
@@ -291,6 +299,7 @@ makech(win, wy)
 				putchar((*csp++ = *nsp) & 0177);
 			else
 				putchar(*nsp & 0177);
+			
 #ifdef DEBUG
 			__TRACE("makech: putchar(%c)\n", *nsp & 0177);
 #endif
@@ -307,15 +316,19 @@ makech(win, wy)
 			break;
 		lx = wx + win->begx;
 		if (lx >= COLS && AM) {
-			lx = 0;
-			ly++;
 			/*
 			 * xn glitch: chomps a newline after auto-wrap.
 			 * we just feed it now and forget about it.
 			 */
 			if (XN) {
+				lx = 0;
+				ly++;
 				putchar('\n');
 				putchar('\r');
+			} else {
+				if (wy != LINES)
+					win->lines[wy]->flags |= __ISPASTEOL;
+				lx = COLS - 1;
 			}
 		}
 #ifdef DEBUG
@@ -403,25 +416,37 @@ quickch(win)
 		curscr->lines[target] = tmp1;
 		/* Mark block as clean and blank out scrolled lines. */
 		clp = curscr->lines[target];
+#ifdef DEBUG
 		__TRACE("quickch: n=%d startw=%d curw=%d i = %d target=%d ",
 			n, startw, curw, i, target);
+#endif
 		if (target >= startw && target < curw) {
+#ifdef DEBUG
 			__TRACE("-- notdirty");
+#endif
 			win->lines[target]->flags &= ~__ISDIRTY;
 		} else if ((n < 0 && target >= win->maxy + n) || 
 			 (n > 0 && target < n)) {
 			if (clp->hash != blank_hash) {
 				(void)memset(clp->line, ' ', win->maxx);
+#ifdef DEBUG
 				__TRACE("-- memset");
+#endif
 				clp->hash = blank_hash;
 			} else 
+#ifdef DEBUG
 				__TRACE(" -- nonmemset");
+#endif
 			touchline(win, target, 0, win->maxx - 1);
 		} else {
+#ifdef DEBUG
 			__TRACE(" -- just dirty");
+#endif
 			touchline(win, target, 0, win->maxx - 1);
 		}
+#ifdef DEBUG
 		__TRACE("\n");
+#endif
 		if (target == remember) {
 			i = target + 1;
 			tmp1 = curscr->lines[i];
@@ -431,10 +456,12 @@ quickch(win)
 			i = target;
 		}
 	}
+#ifdef DEBUG
 	__TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 	for (i = 0; i < curscr->maxy; i++)
 		__TRACE("Q: %d: %.70s\n", i,
 	           curscr->lines[i]->line);
+#endif
 }
 
 static void
