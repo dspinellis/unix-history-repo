@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)anlwrk.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)anlwrk.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -20,6 +20,8 @@ char Filent[LLEN][NAMESIZE];
 long fseek(), ftell();
 extern int TransferSucceeded;
 
+/*LINTLIBRARY*/
+
 /*
  *	create a vector of command arguments
  *
@@ -33,7 +35,7 @@ int
 anlwrk(file, wvec)
 register char *file, **wvec;
 {
-	static char str[MAXRQST], nstr[MAXRQST];
+	static char str[MAXRQST], nstr[MAXRQST], lastfile[MAXFULLNAME] = "";
 	static FILE *fp = NULL;
 	static long nextread, nextwrite;
 
@@ -48,13 +50,18 @@ register char *file, **wvec;
 		return 0;
 	}
 	if (fp == NULL) {
+		if (strncmp(file, lastfile, MAXFULLNAME) == 0) { 
+			DEBUG(5,"Workfilename repeated: %s\n", file);
+			return 0;
+		}
+		strncpy(lastfile, file, MAXFULLNAME);
 		fp = fopen(subfile(file), "r+w");
 		if (fp == NULL) {
 			char *bnp, rqstr[MAXFULLNAME];
 			bnp = rindex(file, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : file);
 			xmv(file, rqstr);
-			logent(file, "CMD FILE UNREADABLE");
+			logent(subfile(file), "CMD FILE UNREADABLE");
 			unlink(subfile(file));
 			return 0;
 		}
@@ -79,6 +86,7 @@ register char *file, **wvec;
 			US_RRS(file, Usrf);
 			Usrf = 0;
 			file[0] = '\0';
+			nstr[0] = '\0';
 			fp = NULL;
 			return 0;
 		}
