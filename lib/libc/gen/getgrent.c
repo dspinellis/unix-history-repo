@@ -38,7 +38,13 @@ static char sccsid[] = "@(#)getgrent.c	5.9 (Berkeley) 4/1/91";
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <grp.h>
+#ifdef YP
+#include <rpc/rpc.h>
+#include <rpcsvc/yp_prot.h>
+#include <rpcsvc/ypclnt.h>
+#endif
 
 static FILE *_gr_fp;
 static struct group _gr_group;
@@ -49,6 +55,11 @@ static int grscan(), start_gr();
 static char *members[MAXGRP];
 #define	MAXLINELENGTH	1024
 static char line[MAXLINELENGTH];
+
+#ifdef YP
+static char	*__ypcurrent, *__ypdomain;
+static int	__ypcurrentlen, __ypmode=0;
+#endif
 
 struct group *
 getgrent()
@@ -90,7 +101,7 @@ getgrgid(gid)
 	return(rval ? &_gr_group : NULL);
 }
 
-static
+static int
 start_gr()
 {
 	if (_gr_fp) {
@@ -100,10 +111,10 @@ start_gr()
 	return((_gr_fp = fopen(_PATH_GROUP, "r")) ? 1 : 0);
 }
 
-int
+void
 setgrent()
 {
-	return(setgroupent(0));
+	(void) setgroupent(0);
 }
 
 int
@@ -125,7 +136,7 @@ endgrent()
 	}
 }
 
-static
+static int
 grscan(search, gid, name)
 	register int search, gid;
 	register char *name;
@@ -135,6 +146,59 @@ grscan(search, gid, name)
 	char *fgets(), *strsep(), *index();
 
 	for (;;) {
+#ifdef YP
+		if(__ypmode) {
+			char *key, *data;
+			int keylen, datalen;
+			int r;
+
+			if(!__ypdomain) {
+				if(yp_get_default_domain(&__ypdomain)) {
+					__ypmode = 0;
+					continue;
+				}
+			}
+			if(__ypcurrent) {
+				r = yp_next(__ypdomain, "group.byname",
+					__ypcurrent, __ypcurrentlen,
+					&key, &keylen, &data, &datalen);
+				free(__ypcurrent);
+				/*printf("yp_next %d\n", r);*/
+				switch(r) {
+				case 0:
+					break;
+				default:
+					__ypcurrent = NULL;
+					__ypmode = 0;
+					free(data);
+					continue;
+				}
+				__ypcurrent = key;
+				__ypcurrentlen = keylen;
+				bcopy(data, line, datalen);
+				free(data);
+			} else {
+				r = yp_first(__ypdomain, "group.byname",
+					&__ypcurrent, &__ypcurrentlen,
+					&data, &datalen);
+				/*printf("yp_first %d\n", r);*/
+				switch(r) {
+				case 0:
+					break;
+				default:
+					__ypmode = 0;
+					free(data);
+					continue;
+				}
+				bcopy(data, line, datalen);
+				free(data);
+			}
+			line[datalen] = '\0';
+			/*printf("line = %s\n", line);*/
+			bp = line;
+			goto parse;
+		}
+#endif
 		if (!fgets(line, sizeof(line), _gr_fp))
 			return(0);
 		bp = line;
@@ -146,6 +210,15 @@ grscan(search, gid, name)
 				;
 			continue;
 		}
+#ifdef YP
+		if ((strcmp("+\n", line) == 0) || (strncmp("+:*:0:", line, 5) == 0)) {
+			if(_yp_check(NULL)) {
+				__ypmode = 1;
+				continue;
+			}
+		}
+parse:
+#endif
 		_gr_group.gr_name = strsep(&bp, ":\n");
 		if (search && name && strcmp(_gr_group.gr_name, name))
 			continue;
