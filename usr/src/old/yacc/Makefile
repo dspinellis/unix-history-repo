@@ -1,6 +1,7 @@
 #
-#	@(#)Makefile	4.1	(Berkeley)	83/02/11
+#	@(#)Makefile	4.2	(Berkeley)	83/02/11
 #
+DESTDIR=
 CFLAGS=-O -DWORD32
 SRCS = Makefile dextern files yaccpar \
 	y1.c y2.c y3.c y4.c \
