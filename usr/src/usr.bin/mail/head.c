@@ -8,7 +8,7 @@
  * Routines for processing and detecting headlines.
  */
 
-static char *SccsId = "@(#)head.c	1.1 %G%";
+static char *SccsId = "@(#)head.c	1.2 %G%";
 
 /*
  * See if the passed line buffer is a mail header.
@@ -134,6 +134,28 @@ isname(as1, as2, acount)
 	if (count > 0)
 		do
 			if (*s1++ != *s2++)
+				return(0);
+		while (--count);
+	return(1);
+}
+
+/*
+ * See if the two passed strings agree in the first n characters.
+ * Return true if they do, ignoring case.
+ */
+
+icisname(as1, as2, acount)
+	char *as1, *as2;
+{
+	register char *s1, *s2;
+	register count;
+
+	s1 = as1;
+	s2 = as2;
+	count = acount;
+	if (count > 0)
+		do
+			if (raise(*s1++) != raise(*s2++))
 				return(0);
 		while (--count);
 	return(1);
