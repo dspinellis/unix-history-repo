@@ -6,11 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "error.h"
 
 int	wordc;		/* how long the current error message is */

@@ -12,12 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <signal.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 #include "error.h"
 #include "pathnames.h"
 
@@ -41,7 +44,7 @@ boolean	terse	= FALSE;	/* Terse output */
 char	*suffixlist = ".*";	/* initially, can touch any file */
 
 int	errorsort();
-int	onintr();
+void	onintr();
 /*
  *	error [-I ignorename] [-n] [-q] [-t suffixlist] [-s] [-v] [infile]
  *	
