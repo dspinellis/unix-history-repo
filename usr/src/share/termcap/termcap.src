@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.37	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.38	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1530,6 +1530,34 @@ dP|decpro|dec pro console:\
 	:k6=\Ei:k7=\Ej:\
 	:li#24:nd=\EC:pt:sr=\EI:up=\EA:\
 	:se=\E^N:so=\E^H:
+# From: Bracy H. Elton  <elton@lll-crg>
+dl|vt200|vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
+	:im=\E[4h:ei=\E[4l:mi:\
+	:dc=\E[P:dm=:ed=:\
+	:al=\E[L:dl=\E[M:\
+	:cs=\E[%i%d;%dr:sf=\ED:sr=\EM:sb=\EM:\
+	:ce=\E[K:cl=\E[H\E[J:cd=\E[J:\
+	:cm=\E[%i%d;%dH:\
+	:nd=\E[C:up=\E[A:\
+	:so=\E[7m:se=\E[27m:us=\E[4m:ue=\E[24m:\
+	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
+	:tc=vt100:
+dm|vt200-ss|vt220-ss|dec vt200 series with smooth scroll:\
+	:is=\E>\E[?3l\E[?4h\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3l\E[?4h\E[?5l\E[?7h\E[?8h:\
+	:tc=vt200:
+dn|vt200-w|vt220-w|vt200-wj|vt220-wj|dec vt200 series; 132 col.; jump scroll:\
+	:is=\E>\E[?3h\E[?4l\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3h\E[?4l\E[?5l\E[?7h\E[?8h:\
+	:co#132:\
+	:tc=vt200:
+do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
+	:is=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
+	:rs=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h:\
+	:co#132:\
+	:tc=vt200:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
