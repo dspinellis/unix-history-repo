@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	6.3 (Berkeley) %G%
+.\"	@(#)pstat.8	6.4 (Berkeley) %G%
 .\"
 .TH PSTAT 8 ""
 .UC 4
@@ -54,12 +54,8 @@ update time
 must be corrected
 .IP A
 access time must be corrected
-.IP M
-file system is mounted here
 .IP W
 wanted by another process (L flag is on)
-.IP T
-contains a text file
 .IP C
 changed time must be corrected
 .IP S
@@ -68,6 +64,10 @@ shared lock applied
 exclusive lock applied
 .IP Z
 someone waiting for a lock
+.IP M
+contains modifications
+.IP R
+has a rename in progress
 .RE
 .IP CNT
 Number of open file table entries for this inode.
@@ -113,7 +113,7 @@ locked
 .IP w
 wanted (L flag is on)
 .IP P
-resulted from demand-page-from-inode exec format (see
+resulted from demand-page-from-vnode exec format (see
 .IR execve (2))
 .RE
 .PD
@@ -125,8 +125,8 @@ Head of a linked list of loaded processes using this text segment.
 Size of resident text, measured in multiples of 512 bytes.
 .IP SIZE
 Size of text segment, measured in multiples of 512 bytes.
-.IP IPTR
-Core location of corresponding inode.
+.IP VPTR
+Core location of corresponding vnode.
 .IP CNT
 Number of processes using this text segment.
 .IP CCNT
@@ -198,7 +198,7 @@ another flag for
 process has no virtual memory, as it is a parent in the context of
 .IR vfork (2)
 .IP 8000
-process is demand paging data pages from its text inode.
+process is demand paging data pages from its text vnode.
 .IP 10000
 process using sequential VM patterns
 .IP 20000
@@ -346,7 +346,7 @@ Number of processes that know this open file.
 .IP MSG
 Number of messages outstanding for this file.
 .IP DATA
-The location of the inode table entry or socket structure for this file.
+The location of the vnode table entry or socket structure for this file.
 .IP OFFSET
 The file offset (see
 .IR lseek (2)).

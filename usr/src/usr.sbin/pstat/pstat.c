@@ -11,13 +11,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Print system stuff
  */
-
 #include <sys/param.h>
 #include <sys/dir.h>
 #define	KERNEL
@@ -26,7 +25,8 @@ static char sccsid[] = "@(#)pstat.c	5.20 (Berkeley) %G%";
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/text.h>
-#include <sys/inode.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
 #include <sys/map.h>
 #define KERNEL
 #include <sys/ioctl.h>
@@ -34,8 +34,10 @@ static char sccsid[] = "@(#)pstat.c	5.20 (Berkeley) %G%";
 #undef KERNEL
 #include <sys/conf.h>
 #include <sys/vm.h>
-#include <nlist.h>
+#include <ufs/inode.h>
 #include <machine/pte.h>
+
+#include <nlist.h>
 #include <stdio.h>
 #include "pathnames.h"
 
@@ -240,6 +242,7 @@ main(argc, argv)
 doinode()
 {
 	register struct inode *ip;
+	register struct vnode *vp;
 	struct inode *xinode, *ainode;
 	register int nin;
 	int ninode;
@@ -259,9 +262,11 @@ doinode()
 	}
 	lseek(fc, mkphys((off_t)ainode), 0);
 	read(fc, xinode, ninode * sizeof(struct inode));
-	for (ip = xinode; ip < &xinode[ninode]; ip++)
-		if (ip->i_count)
+	for (ip = xinode; ip < &xinode[ninode]; ip++) {
+		vp = &ip->i_vnode;
+		if (vp->v_count)
 			nin++;
+	}
 	if (totflg) {
 		printf("%3d/%3d inodes\n", nin, ninode);
 		return;
@@ -269,23 +274,24 @@ doinode()
 	printf("%d/%d active inodes\n", nin, ninode);
 printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\n");
 	for (ip = xinode; ip < &xinode[ninode]; ip++) {
-		if (ip->i_count == 0)
+		vp = &ip->i_vnode;
+		if (vp->v_count == 0)
 			continue;
 		printf("%8.1x ", ainode + (ip - xinode));
 		putf(ip->i_flag&ILOCKED, 'L');
 		putf(ip->i_flag&IUPD, 'U');
 		putf(ip->i_flag&IACC, 'A');
-		putf(ip->i_flag&IMOUNT, 'M');
 		putf(ip->i_flag&IWANT, 'W');
-		putf(ip->i_flag&ITEXT, 'T');
 		putf(ip->i_flag&ICHG, 'C');
 		putf(ip->i_flag&ISHLOCK, 'S');
 		putf(ip->i_flag&IEXLOCK, 'E');
 		putf(ip->i_flag&ILWAIT, 'Z');
-		printf("%4d", ip->i_count&0377);
+		putf(ip->i_flag&IMOD, 'M');
+		putf(ip->i_flag&IRENAME, 'R');
+		printf("%4d", vp->v_count&0377);
 		printf("%4d,%3d", major(ip->i_dev), minor(ip->i_dev));
-		printf("%4d", ip->i_shlockc&0377);
-		printf("%4d", ip->i_exlockc&0377);
+		printf("%4d", vp->v_shlockc&0377);
+		printf("%4d", vp->v_exlockc&0377);
 		printf("%6d", ip->i_number);
 		printf("%6x", ip->i_mode & 0xffff);
 		printf("%4d", ip->i_nlink);
@@ -343,7 +349,7 @@ dotext()
 	lseek(fc, mkphys((off_t)atext), 0);
 	read(fc, xtext, ntext * sizeof (struct text));
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_iptr != NULL)
+		if (xp->x_vptr != NULL)
 			ntxca++;
 		if (xp->x_count != 0)
 			ntx++;
@@ -354,13 +360,13 @@ dotext()
 	}
 	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
 	printf("\
-   LOC   FLAGS DADDR     CADDR  RSS SIZE     IPTR   CNT CCNT      FORW     BACK\n");
+   LOC   FLAGS DADDR     CADDR  RSS SIZE     VPTR   CNT CCNT      FORW     BACK\n");
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_iptr == NULL)
+		if (xp->x_vptr == NULL)
 			continue;
 		printf("%8.1x", atext + (xp - xtext));
 		printf(" ");
-		putf(xp->x_flag&XPAGI, 'P');
+		putf(xp->x_flag&XPAGV, 'P');
 		putf(xp->x_flag&XTRC, 'T');
 		putf(xp->x_flag&XWRIT, 'W');
 		putf(xp->x_flag&XLOAD, 'L');
@@ -370,7 +376,7 @@ dotext()
 		printf("%10x", xp->x_caddr);
 		printf("%5d", xp->x_rssize);
 		printf("%5d", xp->x_size);
-		printf("%10.1x", xp->x_iptr);
+		printf("%10.1x", xp->x_vptr);
 		printf("%5d", xp->x_count&0377);
 		printf("%5d", xp->x_ccount);
 		printf("%10x", xp->x_forw);
@@ -448,8 +454,7 @@ doproc()
 	free(xproc);
 }
 
-static char mesg[] =
-" #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
+static char mesg[] = " #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
 static int ttyspace = 128;
 static struct tty *tty;
 
@@ -668,7 +673,7 @@ dousr()
 	printf("cdir rdir %.1x %.1x\n", U.u_cdir, U.u_rdir);
 	printf("dirp %.1x\n", nd->ni_dirp);
 	printf("dent %d %.14s\n", nd->ni_dent.d_ino, nd->ni_dent.d_name);
-	printf("pdir %.1o\n", nd->ni_pdir);
+	printf("dvp vp %.1x %.1x\n", nd->ni_dvp, nd->ni_vp);
 	printf("file");
 	for (i=0; i<NOFILE; i++) {
 		if (i % 8 == 0)
@@ -717,6 +722,7 @@ dousr()
 	printf("ttyp\t%.1x\n", U.u_ttyp);
 	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
 	printf("comm %.14s\n", U.u_comm);
+	printf("logname %.12s\n", U.u_logname);
 	printf("start\t%ld\n", U.u_start.tv_sec);
 	printf("acflag\t%ld\n", U.u_acflag);
 	printf("cmask\t%ld\n", U.u_cmask);
@@ -883,9 +889,9 @@ doswap()
 		free += me->m_size;
 	tused = 0;
 	for (xp = xtext; xp < &xtext[ntext]; xp++)
-		if (xp->x_iptr!=NULL) {
+		if (xp->x_vptr!=NULL) {
 			tused += ctod(clrnd(xp->x_size));
-			if (xp->x_flag & XPAGI)
+			if (xp->x_flag & XPAGV)
 				tused += ctod(clrnd(ctopt(xp->x_size)));
 		}
 	used = tused;
