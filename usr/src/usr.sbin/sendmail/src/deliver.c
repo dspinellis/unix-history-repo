@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.134 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.135 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1255,10 +1255,7 @@ tryhost:
 			extern int DtableSize;
 
 			if (e->e_lockfp != NULL)
-			{
-				fclose(e->e_lockfp);
-				e->e_lockfp = NULL;
-			}
+				(void) close(fileno(e->e_lockfp));
 
 			/* child -- set up input & exec mailer */
 			(void) setsignal(SIGINT, SIG_IGN);
