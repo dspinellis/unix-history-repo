@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_acct.c	7.6 (Berkeley) %G%
+ *	@(#)pk_acct.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -46,9 +46,8 @@ pk_accton (path)
 
 	if (path == 0)
 		goto close;
-	nd.ni_segflg = UIO_USERSPACE;
-	nd.ni_dirp = path;
-	if (error = vn_open (&nd, p, FWRITE, 0644))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, path, p);
+	if (error = vn_open (&nd, FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
 	VOP_UNLOCK(vp);
