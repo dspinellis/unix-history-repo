@@ -1,0 +1,4 @@
+procedure main()
+   every write(fibseq()) \ 20
+   every write(fibseq()) \ 20
+end

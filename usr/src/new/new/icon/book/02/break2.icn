@@ -1,0 +1,8 @@
+procedure main()
+   while line := read() do
+      if match("skip",line) then	# check for lines to skip
+         while line := read() do	# skip loop
+            if match("end",line) then break
+            else next
+      else write(line)	# write line in main loop
+end

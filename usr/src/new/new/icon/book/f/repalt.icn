@@ -1,0 +1,8 @@
+procedure Repalt(e)
+   local x
+   repeat {
+     while x := @e do suspend x
+      if *e = 0 then fail
+      e := ^e
+      }
+end

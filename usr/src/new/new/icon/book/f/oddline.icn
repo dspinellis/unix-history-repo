@@ -1,0 +1,4 @@
+procedure main()
+   while write(read()) do
+      if not read() then break
+end

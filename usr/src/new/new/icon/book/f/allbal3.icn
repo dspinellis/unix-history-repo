@@ -1,0 +1,3 @@
+procedure allbal(c,s)
+   s ? suspend arb() & ("" ~== tab(bal(c)))
+end

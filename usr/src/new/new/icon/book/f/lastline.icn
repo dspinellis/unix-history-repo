@@ -1,0 +1,4 @@
+procedure main()
+   while line := read()
+   write(line)
+end

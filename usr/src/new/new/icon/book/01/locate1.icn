@@ -1,0 +1,4 @@
+procedure locate(s)
+   while line := read() do
+      if find(s,line) then write(line)
+end

@@ -1,0 +1,3 @@
+procedure arb()
+   suspend &subject[.&pos:&pos <- &pos to *&subject + 1]
+end
