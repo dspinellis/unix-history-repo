@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -85,7 +85,7 @@ main(argc, argv)
 	nosync = NULL;
 	readstdin = 0;
 	while ((ch = getopt(argc, argv, "-fhknr")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case '-':
 			readstdin = 1;
 			break;
@@ -232,20 +232,24 @@ static jmp_buf alarmbuf;
 warn()
 {
 	static int first;
+	static char hostname[MAXHOSTNAMELEN + 1];
+	char wcmd[MAXPATHLEN + 4];
 	FILE *pf;
 	char *ctime();
 	int timeout();
 
 	if (!first++)
-		(void)signal(SIGALRM, timeout);
+		(void)gethostname(hostname, sizeof(hostname));
 
-	if (!(pf = popen(_PATH_WALL, "w"))) {
+	/* undoc -n option to wall suppresses normal wall banner */
+	(void) sprintf(wcmd, "%s -n", _PATH_WALL);
+	if (!(pf = popen(wcmd, "w"))) {
 		syslog(LOG_ERR, "shutdown: can't find %s: %m", _PATH_WALL);
 		return;
 	}
 
-	fprintf(pf, "*** %sSystem shutdown message ***\n",
-	    tp->timeleft ? "": "FINAL ");
+	fprintf(pf, "\007*** %sSystem shutdown message from %s@%s ***\007\n",
+	    tp->timeleft ? "": "FINAL ", whom, hostname);
 
 	if (tp->timeleft > 10*60)
 		fprintf(pf, "System going down at %5.5s\n\n",
@@ -266,9 +270,11 @@ warn()
 	 * probably unecessary, given that wall is careful.
 	 */
 	if (!setjmp(alarmbuf)) {
+		(void)signal(SIGALRM, timeout);
 		(void)alarm((u_int)30);
 		(void)pclose(pf);
 		(void)alarm((u_int)0);
+		(void)signal(SIGALRM, SIG_DFL);
 	}
 }
 
