@@ -1,4 +1,4 @@
-/*	machdep.c	6.10	84/12/20	*/
+/*	machdep.c	6.11	85/03/01	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -51,9 +51,17 @@ int	szicode = sizeof(icode);
 /*
  * Declare these as initialized data so we can patch them.
  */
-int	nbuf = 0;
 int	nswbuf = 0;
+#ifdef	NBUF
+int	nbuf = NBUF;
+#else
+int	nbuf = 0;
+#endif
+#ifdef	BUFPAGES
+int	bufpages = BUFPAGES;
+#else
 int	bufpages = 0;
+#endif
 
 /*
  * Machine-dependent startup code
@@ -82,46 +90,23 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 	printf(version);
-	printf("real mem  = %d\n", ctob(maxmem));
-	
-	/*
-	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
-	 */
-	maxbufs = ((SYSPTSIZE * NBPG) - (5 * (int)(&etext - 0x80000000))) /
-	    MAXBSIZE;
-	if (bufpages == 0)
-		bufpages = (physmem * NBPG) / 10 / CLBYTES;
-	if (nbuf == 0) {
-		nbuf = (32 * physmem) / btoc(1024*1024);
-		if (nbuf < 32)
-			nbuf = 32;
-	}
-	if (bufpages > nbuf * (MAXBSIZE / CLBYTES))
-		bufpages = nbuf * (MAXBSIZE / CLBYTES);
-	if (nswbuf == 0) {
-		nswbuf = (nbuf / 2) &~ 1;	/* force even */
-		if (nswbuf > 256)
-			nswbuf = 256;		/* sanity */
-	}
+	printf("real mem  = %d\n", ctob(physmem));
 
 	/*
 	 * Allocate space for system data structures.
 	 * The first available real memory address is in "firstaddr".
-	 * As pages of memory are allocated, "firstaddr" is incremented.
 	 * The first available kernel virtual address is in "v".
 	 * As pages of kernel virtual memory are allocated, "v" is incremented.
+	 * As pages of memory are allocated and cleared,
+	 * "firstaddr" is incremented.
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-	mapaddr = firstaddr;
 	v = (caddr_t)(0x80000000 | (firstaddr * NBPG));
 #define	valloc(name, type, num) \
-	    (name) = (type *)(v); (v) = (caddr_t)((name)+(num))
+	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
-	    (name) = (type *)(v); (v) = (caddr_t)((lim) = ((name)+(num)))
-	valloc(buffers, char, BSIZE*nbuf);
-	valloc(buf, struct buf, nbuf);
-	valloc(swbuf, struct buf, nswbuf);
+	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
@@ -137,34 +122,99 @@ startup(firstaddr)
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
 #endif
+	
 	/*
-	 * Now allocate space for core map
+	 * Determine how many buffers to allocate.
+	 * Use 10% of memory, with min of 16.
+	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
+	 */
+	if (bufpages == 0)
+		bufpages = physmem / 10 / CLSIZE;
+	if (nbuf == 0) {
+		nbuf = bufpages / 2;
+		if (nbuf < 16)
+			nbuf = 16;
+	}
+	if (nswbuf == 0) {
+		nswbuf = (nbuf / 2) &~ 1;	/* force even */
+		if (nswbuf > 256)
+			nswbuf = 256;		/* sanity */
+	}
+	valloc(swbuf, struct buf, nswbuf);
+
+	/*
+	 * Now the amount of virtual memory remaining for buffers
+	 * can be calculated, estimating needs for the cmap.
+	 */
+	ncmap = (maxmem*NBPG - ((int)v &~ 0x80000000)) /
+		(CLBYTES + sizeof(struct cmap)) + 2;
+	maxbufs = ((SYSPTSIZE * NBPG) -
+	    ((int)(v + ncmap * sizeof(struct cmap)) - 0x80000000)) /
+		(MAXBSIZE + sizeof(struct buf));
+	if (maxbufs < 16)
+		panic("sys pt too small");
+	if (nbuf > maxbufs) {
+		printf("SYSPTSIZE limits number of buffers to %d\n", maxbufs);
+		nbuf = maxbufs;
+	}
+	if (bufpages > nbuf * (MAXBSIZE / CLBYTES))
+		bufpages = nbuf * (MAXBSIZE / CLBYTES);
+	valloc(buf, struct buf, nbuf);
+
+	/*
+	 * Allocate space for core map.
 	 * Allow space for all of phsical memory minus the amount 
 	 * dedicated to the system. The amount of physical memory
 	 * dedicated to the system is the total virtual memory of
-	 * the system minus the space in the buffers which is not
-	 * allocated real memory.
+	 * the system thus far, plus core map, buffer pages,
+	 * and buffer headers not yet allocated.
+	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
 	 */
-	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000) +
-		(nbuf * (MAXBSIZE - 2 * CLBYTES))) /
-		    (NBPG*CLSIZE + sizeof (struct cmap));
+	ncmap = (maxmem*NBPG - ((int)(v + bufpages*CLBYTES) &~ 0x80000000)) /
+		(CLBYTES + sizeof(struct cmap)) + 2;
 	valloclim(cmap, struct cmap, ncmap, ecmap);
-	if ((((int)(ecmap+1))&~0x80000000) > SYSPTSIZE*NBPG)
-		panic("sys pt too small");
 
 	/*
-	 * Clear allocated space, and make r/w entries
+	 * Clear space allocated thus far, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	unixsize = btoc((int)(ecmap+1) &~ 0x80000000);
-	for (i = mapaddr; i < unixsize; i++) {
-		*(int *)(&Sysmap[i]) = PG_V | PG_KW | firstaddr;
+	unixsize = btoc((int)v &~ 0x80000000);
+	while (firstaddr < unixsize) {
+		*(int *)(&Sysmap[firstaddr]) = PG_V | PG_KW | firstaddr;
 		clearseg((unsigned)firstaddr);
 		firstaddr++;
 	}
+
+	/*
+	 * Now allocate buffers proper.  They are different than the above
+	 * in that they usually occupy more virtual memory than physical.
+	 */
+	v = (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET);
+	valloc(buffers, char, MAXBSIZE * nbuf);
+	base = bufpages / nbuf;
+	residual = bufpages % nbuf;
+	mapaddr = firstaddr;
+	for (i = 0; i < residual; i++) {
+		for (j = 0; j < (base + 1) * CLSIZE; j++) {
+			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | firstaddr;
+			clearseg((unsigned)firstaddr);
+			firstaddr++;
+		}
+		mapaddr += MAXBSIZE / NBPG;
+	}
+	for (i = residual; i < nbuf; i++) {
+		for (j = 0; j < base * CLSIZE; j++) {
+			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | firstaddr;
+			clearseg((unsigned)firstaddr);
+			firstaddr++;
+		}
+		mapaddr += MAXBSIZE / NBPG;
+	}
+
+	unixsize = btoc((int)v &~ 0x80000000);
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
-	mtpr(TBIA, 1);
+	mtpr(TBIA, 1);			/* After we just cleared it all! */
 
 	/*
 	 * Initialize callouts
