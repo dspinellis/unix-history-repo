@@ -1,4 +1,4 @@
-#	@(#)Makefile	2.2	%G%
+#	@(#)Makefile	2.3	%G%
 #
 CC = cc
 .c.o:
@@ -31,10 +31,10 @@ SRCS = \
 all:	invert lookup listrefs bib
 
 install: all
-	install -s -c invert $(DESTDIR)/usr/local/invert
-	install -s -c lookup $(DESTDIR)/usr/local/lookup
-	install -s -c listrefs $(DESTDIR)/usr/local/listrefs
-	install -s -c bib $(DESTDIR)/usr/local/bib
+	install -s -c invert $(DESTDIR)/usr/new/invert
+	install -s -c lookup $(DESTDIR)/usr/new/lookup
+	install -s -c listrefs $(DESTDIR)/usr/new/listrefs
+	install -s -c bib $(DESTDIR)/usr/new/bib
 
 invert:  $(INVo)
 	$(CC)   $(INVo)   -o invert
