@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clean.h	8.1 (Berkeley) %G%
+ *	@(#)clean.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -80,7 +80,7 @@ typedef struct fs_info {
 __BEGIN_DECLS
 int	 dump_summary __P((struct lfs *, SEGSUM *, u_long, daddr_t **));
 void	 err __P((const int, const char *, ...));
-int	 fs_getmntinfo __P((struct statfs **, char *, int));
+int	 fs_getmntinfo __P((struct statfs **, char *, char *));
 int	 get __P((int, off_t, void *, size_t));
 FS_INFO	*get_fs_info __P((struct statfs *, int));
 int 	 lfs_segmapv __P((FS_INFO *, int, caddr_t, BLOCK_INFO **, int *));

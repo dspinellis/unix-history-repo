@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,7 +47,7 @@ int
 fs_getmntinfo(buf, name, type)
 	struct	statfs	**buf;
 	char	*name;
-	int	type;
+	char	*type;
 {
 	/* allocate space for the filesystem info */
 	*buf = (struct statfs *)malloc(sizeof(struct statfs));
@@ -61,7 +61,7 @@ fs_getmntinfo(buf, name, type)
 	}
 
 	/* check to see if it's the one we want */
-	if (((*buf)->f_type != type) ||
+	if (strcmp((*buf)->f_fstypename, type) ||
 	    strncmp(name, (*buf)->f_mntonname, MNAMELEN)) {
 		/* "this is not the filesystem you're looking for */
 		free(*buf);
