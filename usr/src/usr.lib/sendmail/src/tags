@@ -1,0 +1,150 @@
+DOFORK	deliver.c	/^# define DOFORK(fORKfN) \\$/
+Mmain	main.c	/^main(argc, argv)$/
+PLURAL	convtime.c	/^# define PLURAL(n)	((n) == 1 ? "" : "s")$/
+REPLYCLASS	usersmtp.c	/^#define REPLYCLASS(r)	(((r) \/ 10) % 10)	\/* second /
+REPLYTYPE	usersmtp.c	/^#define REPLYTYPE(r)	((r) \/ 100)		\/* first digit o/
+addheader	headers.c	/^addheader(field, value, e)$/
+alias	alias.c	/^alias(a, sendq)$/
+aliaslookup	alias.c	/^aliaslookup(name)$/
+arpadate	arpadate.c	/^arpadate(ud)$/
+atobool	util.c	/^atobool(s)$/
+atooct	util.c	/^atooct(s)$/
+bitintersect	util.c	/^bitintersect(a, b)$/
+bitzerop	util.c	/^bitzerop(map)$/
+bmove	bmove.c	/^bmove(s, d, l)$/
+buildaddr	parseaddr.c	/^buildaddr(tv, a)$/
+buildfname	util.c	/^buildfname(p, login, buf)$/
+capitalize	util.c	/^capitalize(s)$/
+cataddr	parseaddr.c	/^cataddr(pvp, buf, sz)$/
+checkcompat	conf.c	/^checkcompat(to)$/
+chompheader	headers.c	/^chompheader(line, def)$/
+clear	util.c	/^clear(p, l)$/
+closeall	util.c	/^closeall()$/
+clrdaemon	daemon.c	/^clrdaemon()$/
+clrevent	clock.c	/^clrevent(ev)$/
+collect	collect.c	/^collect(sayok)$/
+commaize	headers.c	/^commaize(h, p, fp, oldstyle, m)$/
+convtime	convtime.c	/^convtime(p)$/
+copyplist	util.c	/^copyplist(list, copycont)$/
+crackaddr	headers.c	/^crackaddr(addr)$/
+curtime	util.c	/^curtime()$/
+define	macro.c	/^define(n, v, e)$/
+deliver	deliver.c	/^deliver(e, firstto)$/
+dfopen	util.c	/^dfopen(filename, mode)$/
+disconnect	main.c	/^disconnect(fulldrop)$/
+dofork	deliver.c	/^dofork()$/
+dowork	queue.c	/^dowork(w)$/
+eatfrom	collect.c	/^eatfrom(fm)$/
+eatheader	headers.c	/^eatheader(e)$/
+endmailer	deliver.c	/^endmailer(pid, name)$/
+endsleep	clock.c	/^endsleep()$/
+errbody	savemail.c	/^errbody(fp, m, e)$/
+expand	macro.c	/^expand(s, buf, buflim, e)$/
+fdopen	conf.c	/^fdopen(fd, type)$/
+fgetfolded	util.c	/^fgetfolded(buf, n, f)$/
+fileclass	readcf.c	/^fileclass(class, filename, fmt)$/
+finis	main.c	/^finis()$/
+fixcrlf	util.c	/^fixcrlf(line, stripnl)$/
+fmtmsg	err.c	/^fmtmsg(eb, to, num, fmt, a, b, c, d, e)$/
+forward	alias.c	/^forward(user, sendq)$/
+freeze	main.c	/^freeze(freezefile)$/
+getegid	conf.c	/^getegid()$/
+geteuid	conf.c	/^geteuid()$/
+getrequests	daemon.c	/^getrequests()$/
+getrgid	conf.c	/^getrgid()$/
+getruid	conf.c	/^getruid()$/
+giveresponse	deliver.c	/^giveresponse(stat, m, e)$/
+help	srvrsmtp.c	/^help(topic)$/
+holdsigs	conf.c	/^holdsigs()$/
+hvalue	headers.c	/^hvalue(field)$/
+index	conf.c	/^index(s, c)$/
+initaliases	alias.c	/^initaliases(aliasfile, init)$/
+initmacros	main.c	/^initmacros()$/
+intsig	main.c	/^intsig()$/
+isatword	headers.c	/^isatword(p)$/
+isheader	headers.c	/^isheader(s)$/
+iswiz	srvrsmtp.c	/^iswiz()$/
+kbytes	stats.c	/^kbytes(bytes)$/
+logdelivery	deliver.c	/^logdelivery(stat)$/
+lower	util.c	/^lower(c)$/
+macvalue	macro.c	/^macvalue(n, e)$/
+mailfile	deliver.c	/^mailfile(filename, ctladdr)$/
+makeargv	readcf.c	/^makeargv(p)$/
+makeconnection	daemon.c	/^makeconnection(host, port, outfile, infile)$/
+makelower	util.c	/^makelower(p)$/
+makemailer	readcf.c	/^makemailer(line, safe)$/
+markfailure	deliver.c	/^markfailure(e, q, rcode)$/
+markstats	stats.c	/^markstats(e, to)$/
+message	err.c	/^message(num, msg, a, b, c, d, e)$/
+munchstring	readcf.c	/^munchstring(p)$/
+myhostname	daemon.c	/^myhostname(hostbuf)$/
+nmessage	err.c	/^nmessage(num, msg, a, b, c, d, e)$/
+openmailer	deliver.c	/^openmailer(m, pvp, ctladdr, clever, pmfile, prfile/
+orderq	queue.c	/^orderq()$/
+parseaddr	parseaddr.c	/^parseaddr(addr, a, copyf, delim)$/
+pintvl	convtime.c	/^pintvl(intvl, brief)$/
+poststats	stats.c	/^poststats(sfile)$/
+prescan	parseaddr.c	/^prescan(addr, delim)$/
+priencode	headers.c	/^priencode(p)$/
+printaddr	parseaddr.c	/^printaddr(a, follow)$/
+printav	util.c	/^printav(av)$/
+printqueue	queue.c	/^printqueue()$/
+printrules	readcf.c	/^printrules()$/
+putbody	deliver.c	/^putbody(fp, m, e)$/
+puterrmsg	err.c	/^puterrmsg(msg)$/
+putfromline	deliver.c	/^putfromline(fp, m)$/
+putheader	headers.c	/^putheader(fp, m, e)$/
+putline	util.c	/^putline(l, fp, m)$/
+putmsg	err.c	/^putmsg(msg, holdmsg)$/
+qstrlen	util.c	/^qstrlen(s)$/
+queueup	queue.c	/^queueup(e, queueall, announce)$/
+readaliases	alias.c	/^readaliases(aliasfile, init)$/
+readcf	readcf.c	/^readcf(cfname, safe)$/
+readqf	queue.c	/^readqf(e, full)$/
+readtimeout	util.c	/^readtimeout()$/
+remotename	parseaddr.c	/^remotename(name, m, senderaddress, canonical)$/
+reply	usersmtp.c	/^reply(m)$/
+returntosender	savemail.c	/^returntosender(msg, returnto, sendbody)$/
+rewrite	parseaddr.c	/^rewrite(pvp, ruleset)$/
+rlsesigs	conf.c	/^rlsesigs()$/
+runinchild	srvrsmtp.c	/^runinchild(label)$/
+runqueue	queue.c	/^runqueue(forkflag)$/
+s	Version.c	640
+safefile	util.c	/^safefile(fn, uid, mode)$/
+sameaddr	parseaddr.c	/^sameaddr(a, b)$/
+sameword	util.c	/^sameword(a, b)$/
+savemail	savemail.c	/^savemail(e)$/
+sendall	deliver.c	/^sendall(e, mode)$/
+sendoff	deliver.c	/^sendoff(e, m, pvp, ctladdr)$/
+setclass	readcf.c	/^setclass(class, word)$/
+setevent	clock.c	/^setevent(intvl, func, arg)$/
+setoption	readcf.c	/^setoption(opt, val, safe, sticky)$/
+sfgets	util.c	/^sfgets(buf, siz, fp)$/
+skipword	srvrsmtp.c	/^skipword(p, w)$/
+sleep	clock.c	/^sleep(intvl)$/
+smtp	srvrsmtp.c	/^smtp()$/
+smtpdata	usersmtp.c	/^smtpdata(m, e)$/
+smtpinit	usersmtp.c	/^smtpinit(m, pvp)$/
+smtpmessage	usersmtp.c	/^smtpmessage(f, m, a, b, c)$/
+smtpquit	usersmtp.c	/^smtpquit(name, m)$/
+smtprcpt	usersmtp.c	/^smtprcpt(to, m)$/
+stab	stab.c	/^stab(name, type, op)$/
+stripquotes	util.c	/^stripquotes(s, qf)$/
+syserr	err.c	/^syserr(fmt, a, b, c, d, e)$/
+syslog	util.c	/^syslog(pri, fmt, args)$/
+tTflag	trace.c	/^tTflag(s)$/
+tTsetup	trace.c	/^tTsetup(vect, size, defflags)$/
+thaw	main.c	/^thaw(freezefile)$/
+tick	clock.c	/^tick()$/
+toktype	parseaddr.c	/^toktype(c)$/
+toomany	readcf.c	/^toomany(id, maxcnt)$/
+ttyname	conf.c	/^ttyname(fd)$/
+ttypath	conf.c	/^ttypath()$/
+umask	conf.c	/^umask(nmask)$/
+username	conf.c	/^username()$/
+usrerr	err.c	/^usrerr(fmt, a, b, c, d, e)$/
+waitfor	util.c	/^waitfor(pid)$/
+workcmpf	queue.c	/^workcmpf(a, b)$/
+xalloc	util.c	/^xalloc(sz)$/
+xputs	util.c	/^xputs(s)$/
+xunlink	util.c	/^xunlink(f)$/
