@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.60 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.61 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.60 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.61 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -193,8 +193,6 @@ queueup(df)
 	/* output ESMTP-supplied "original" information */
 	if (e->e_envid != NULL)
 		fprintf(tfp, "Z%s\n", e->e_envid);
-	if (e->e_omts != NULL)
-		fprintf(tfp, "O%s\n", e->e_omts);
 
 	/* output list of error recipients */
 	printctladdr(NULL, NULL);
@@ -1264,10 +1262,6 @@ readqf(e)
 					break;
 				}
 			}
-			break;
-
-		  case 'O':		/* original MTS from ESMTP */
-			e->e_omts = newstr(&bp[1]);
 			break;
 
 		  case 'Z':		/* original envelope id from ESMTP */
