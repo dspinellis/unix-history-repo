@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)canfield.c 4.3 %G%";
+static char sccsid[] = "@(#)canfield.c 4.4 %G%";
 
 /*
  * The canfield program
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)canfield.c 4.3 %G%";
  *	Converted to use curses and debugged: Steve Feldman
  *	Card counting: Kirk McKusick and Mikey Olson
  *	User interface cleanups: Eric Allman and Kirk McKusick
+ *	Betting by Kirk McKusick
  */
 
 #include <curses.h>
@@ -90,6 +91,7 @@ struct cardtype {
 	char suit;
 	char color;
 	bool visible;
+	bool paid;
 	int rank;
 	struct cardtype *next;
 };
@@ -109,25 +111,74 @@ char srcpile, destpile;
 int mtforigin, tempbase;
 int coldcol, cnewcol, coldrow, cnewrow;
 bool errmsg, done;
-bool mtfdone, Cflag = FALSE, Iflag = TRUE;
+bool mtfdone, Cflag = FALSE;
+#define INSTRUCTIONBOX	1
+#define BETTINGBOX	2
+#define NOBOX		3
+int status = INSTRUCTIONBOX;
 
+/*
+ * Basic betting costs
+ */
+#define costofhand		13
+#define costofinspection	13
+#define costofgame		26
+#define costofrunthroughhand	 5
+#define costofinformation	 1
+#define valuepercardup	 	 5
+/*
+ * Variables associated with betting 
+ */
+struct betinfo {
+	long	hand;		/* cost of dealing hand */
+	long	inspection;	/* cost of inspecting hand */
+	long	game;		/* cost of buying game */
+	long	runs;		/* cost of running through hands */
+	long	information;	/* cost of information */
+	long	costs;		/* total costs */
+	long	wins;		/* total winnings */
+	long	worth;		/* net worth after costs */
+};
+struct betinfo this, total;
+bool startedgame = FALSE, infullgame = FALSE;
+int dbfd = -1;
 
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
  * The following procedures print the board onto the screen using the
  * addressible cursor. The end of these procedures will also be
  * separated from the rest of the program.
+ *
+ * procedure to set the move command box
  */
-/* procedure to set the move command box */
 movebox()
 {
-	    printtopinstructions();
-	    move(moverow, boxcol);
-	    printw("|                          |");
-	    move(msgrow, boxcol);
-	    printw("|                          |");
-	    printbottominstructions();
-	    refresh();
+	switch (status) {
+	case BETTINGBOX:
+		printtopbettingbox();
+		break;
+	case NOBOX:
+		clearabovemovebox();
+		break;
+	case INSTRUCTIONBOX:
+		printtopinstructions();
+		break;
+	}
+	move(moverow, boxcol);
+	printw("|                          |");
+	move(msgrow, boxcol);
+	printw("|                          |");
+	switch (status) {
+	case BETTINGBOX:
+		printbottombettingbox();
+		break;
+	case NOBOX:
+		clearbelowmovebox();
+		break;
+	case INSTRUCTIONBOX:
+		printbottominstructions();
+		break;
+	}
+	refresh();
 }
 
 /*
@@ -156,7 +207,7 @@ printtopinstructions()
 	    move(tboxrow + 9, boxcol);
 	    printw("|c = toggle card counting  |");
 	    move(tboxrow + 10, boxcol);
-	    printw("|i = toggle instructions   |");
+	    printw("|b = present betting info  |");
 	    move(tboxrow + 11, boxcol);
 	    printw("|q = quit to end the game  |");
 	    move(tboxrow + 12, boxcol);
@@ -164,9 +215,44 @@ printtopinstructions()
 }
 
 /*
- * clear directions above move box
+ * Print the betting box.
  */
-cleartopinstructions()
+printtopbettingbox()
+{
+	    int i;
+
+	    for (i = 0; i <= 1; i++) {
+		    move(tboxrow + i, boxcol);
+		    printw("                            ");
+	    }
+	    move(tboxrow + 2, boxcol);
+	    printw("*--------------------------*");
+	    move(tboxrow + 3, boxcol);
+	    printw("|Costs        Hand   Total |");
+	    move(tboxrow + 4, boxcol);
+	    printw("| Hands                    |");
+	    move(tboxrow + 5, boxcol);
+	    printw("| Inspections              |");
+	    move(tboxrow + 6, boxcol);
+	    printw("| Games                    |");
+	    move(tboxrow + 7, boxcol);
+	    printw("| Runs                     |");
+	    move(tboxrow + 8, boxcol);
+	    printw("| Information              |");
+	    move(tboxrow + 9, boxcol);
+	    printw("|Total Costs               |");
+	    move(tboxrow + 10, boxcol);
+	    printw("|Winnings                  |");
+	    move(tboxrow + 11, boxcol);
+	    printw("|Net Worth                 |");
+	    move(tboxrow + 12, boxcol);
+	    printw("|==========================|");
+}
+
+/*
+ * clear info above move box
+ */
+clearabovemovebox()
 {
 	int i;
 
@@ -192,9 +278,22 @@ printbottominstructions()
 }
 
 /*
- * clear directions below move box
+ * print betting information below move box
  */
-clearbottominstructions()
+printbottombettingbox()
+{
+	    move(bboxrow, boxcol);
+	    printw("|x = toggle information box|");
+	    move(bboxrow + 1, boxcol);
+	    printw("|i = list instructions     |");
+	    move(bboxrow + 2, boxcol);
+	    printw("*--------------------------*");
+}
+
+/*
+ * clear info below move box
+ */
+clearbelowmovebox()
 {
 	int i;
 
@@ -328,10 +427,12 @@ struct cardtype *deck[];
 	int i,j;
 	struct cardtype *temp;
 
-	for (i=0; i<decksize; i++)
+	for (i=0; i<decksize; i++) {
 		deck[i]->visible = FALSE;
+		deck[i]->paid = FALSE;
+	}
 	for (i = decksize-1; i>=0; i--) {
-		j = rand() % decksize;
+		j = random() % decksize;
 		if (i != j) {
 			temp = deck[i];
 			deck[i] = deck[j];
@@ -452,18 +553,26 @@ struct cardtype **cp;
 					nomore = TRUE;
 				}
 				cardsoff++;
+				if (infullgame) {
+					this.wins += valuepercardup;
+					total.wins += valuepercardup;
+				}
 			} else 
 				nomore = TRUE;
 	} while (nomore == FALSE);
 }
 
-/* procedure to initialize the things necessary for the game */
+/*
+ * procedure to initialize the things necessary for the game
+ */
 initgame()
 {
 	register i;
 
-	for (i=0; i<18; i++)
+	for (i=0; i<18; i++) {
 		deck[i]->visible = TRUE;
+		deck[i]->paid = TRUE;
+	}
 	stockcnt = 13;
 	stock = deck[12];
 	for (i=12; i>=1; i--)
@@ -505,6 +614,15 @@ startgame()
 
 	shuffle(deck);
 	initgame();
+	this.hand = costofhand;
+	total.hand += costofhand;
+	this.inspection = 0;
+	this.game = 0;
+	this.runs = 0;
+	this.information = 0;
+	this.wins = 0;
+	infullgame = FALSE;
+	startedgame = FALSE;
 	printcard(foundcol, foundrow, found[0]);
 	printcard(stockcol, stockrow, stock);
 	printcard(atabcol, tabrow, tableau[0]);
@@ -521,6 +639,8 @@ startgame()
 		fndbase(&tableau[j], pilemap[j], tabrow);
 	fndbase(&stock, stockcol, stockrow);
 	showstat();	/* show card counting info to cheaters */
+	movetotalon();
+	updatebettinginfo();
 }
 
 
@@ -615,8 +735,9 @@ struct cardtype *cp;
 		return (FALSE);
 }
 
-
-/* procedure to turn the cards onto the talon from the deck */
+/*
+ * procedure to turn the cards onto the talon from the deck
+ */
 movetotalon()
 {
 	int i, fin;
@@ -631,6 +752,8 @@ movetotalon()
 		move(msgrow, msgcol);
 		if (timesthru != 4) {
 			printw("Talon is now the new hand");
+			this.runs += costofrunthroughhand;
+			total.runs += costofrunthroughhand;
 			while (talon != NIL) {
 				transit(&talon, &hand);
 				cinhand++;
@@ -666,8 +789,14 @@ movetotalon()
 		removecard(cnewcol, cnewrow);
 		if (i == fin - 1)
 			talon->visible = TRUE;
-		if (Cflag)
+		if (Cflag) {
+			if (talon->paid == FALSE && talon->visible == TRUE) {
+				this.information += costofinformation;
+				total.information += costofinformation;
+				talon->paid = TRUE;
+			}
 			printcard(coldcol, coldrow, talon);
+		}
 	}
 	if (fin != 0) {
 		printcard(taloncol, talonrow, talon);
@@ -684,36 +813,49 @@ movetotalon()
 }
 
 
-/* procedure to print card counting info on screen */
+/*
+ * procedure to print card counting info on screen
+ */
 showstat()
 {
 	int row, col;
 	register struct cardtype *ptr;
 
-	if (Cflag) {
-		move(talonstatrow, talonstatcol - 7);
-		printw("Talon: %3d", taloncnt);
-		move(handstatrow, handstatcol - 7);
-		printw("Hand:  %3d", cinhand);
-		move(stockstatrow, stockstatcol - 7);
-		printw("Stock: %3d", stockcnt);
-		for ( row = coldrow, col = coldcol, ptr = talon;
-		      ptr != NIL;
-		      ptr = ptr->next ) {
-			printcard(col, row, ptr);
-			DECRHAND(row, col);
+	if (!Cflag)
+		return;
+	move(talonstatrow, talonstatcol - 7);
+	printw("Talon: %3d", taloncnt);
+	move(handstatrow, handstatcol - 7);
+	printw("Hand:  %3d", cinhand);
+	move(stockstatrow, stockstatcol - 7);
+	printw("Stock: %3d", stockcnt);
+	for ( row = coldrow, col = coldcol, ptr = talon;
+	      ptr != NIL;
+	      ptr = ptr->next ) {
+		if (ptr->paid == FALSE && ptr->visible == TRUE) {
+			ptr->paid = TRUE;
+			this.information += costofinformation;
+			total.information += costofinformation;
 		}
-		for ( row = cnewrow, col = cnewcol, ptr = hand;
-		      ptr != NIL;
-		      ptr = ptr->next ) {
-			INCRHAND(row, col);
-			printcard(col, row, ptr);
+		printcard(col, row, ptr);
+		DECRHAND(row, col);
+	}
+	for ( row = cnewrow, col = cnewcol, ptr = hand;
+	      ptr != NIL;
+	      ptr = ptr->next ) {
+		if (ptr->paid == FALSE && ptr->visible == TRUE) {
+			ptr->paid = TRUE;
+			this.information += costofinformation;
+			total.information += costofinformation;
 		}
+		INCRHAND(row, col);
+		printcard(col, row, ptr);
 	}
 }
 
-
-/* procedure to clear card counting info from screen */
+/*
+ * procedure to clear card counting info from screen
+ */
 clearstat()
 {
 	int row;
@@ -731,15 +873,21 @@ clearstat()
 }
 
 
-/* procedure to update card counting base */
+/*
+ * procedure to update card counting base
+ */
 usedtalon()
 {
 	removecard(coldcol, coldrow);
 	DECRHAND(coldrow, coldcol);
 	if (talon != NIL && (talon->visible == FALSE)) {
 		talon->visible = TRUE;
-		if (Cflag)
+		if (Cflag) {
+			this.information += costofinformation;
+			total.information += costofinformation;
+			talon->paid = TRUE;
 			printcard(coldcol, coldrow, talon);
+		}
 	}
 	taloncnt--;
 	if (Cflag) {
@@ -749,7 +897,9 @@ usedtalon()
 }
 
 
-/* procedure to update stock card counting base */
+/*
+ * procedure to update stock card counting base
+ */
 usedstock()
 {
 	stockcnt--;
@@ -759,8 +909,9 @@ usedstock()
 	}
 }
 
-
-/* let 'em know how they lost! */
+/*
+ * let 'em know how they lost!
+ */
 showcards()
 {
 	register struct cardtype *ptr;
@@ -768,10 +919,14 @@ showcards()
 
 	if (!Cflag)
 		return;
-	for (ptr = talon; ptr != NIL; ptr = ptr->next)
+	for (ptr = talon; ptr != NIL; ptr = ptr->next) {
 		ptr->visible = TRUE;
-	for (ptr = hand; ptr != NIL; ptr = ptr->next)
+		ptr->paid = TRUE;
+	}
+	for (ptr = hand; ptr != NIL; ptr = ptr->next) {
 		ptr->visible = TRUE;
+		ptr->paid = TRUE;
+	}
 	showstat();
 	move(stockrow + 1, sidecol);
 	printw("     ");
@@ -800,8 +955,40 @@ showcards()
 	getcmd(moverow, movecol, "Hit return to exit");
 }
 
+/*
+ * procedure to update the betting values
+ */
+updatebettinginfo()
+{
+	this.costs = this.hand + this.inspection +
+		this.game + this.runs + this.information;
+	total.costs = total.hand + total.inspection +
+		total.game + total.runs + total.information;
+	this.worth = this.wins - this.costs;
+	total.worth = total.wins - total.costs;
+	if (status != BETTINGBOX)
+		return;
+	move(tboxrow + 4, boxcol + 13);
+	printw("%4d%9d", this.hand, total.hand);
+	move(tboxrow + 5, boxcol + 13);
+	printw("%4d%9d", this.inspection, total.inspection);
+	move(tboxrow + 6, boxcol + 13);
+	printw("%4d%9d", this.game, total.game);
+	move(tboxrow + 7, boxcol + 13);
+	printw("%4d%9d", this.runs, total.runs);
+	move(tboxrow + 8, boxcol + 13);
+	printw("%4d%9d", this.information, total.information);
+	move(tboxrow + 9, boxcol + 13);
+	printw("%4d%9d", this.costs, total.costs);
+	move(tboxrow + 10, boxcol + 13);
+	printw("%4d%9d", this.wins, total.wins);
+	move(tboxrow + 11, boxcol + 13);
+	printw("%4d%9d", this.worth, total.worth);
+}
 
-/* procedure to move a card from the stock or talon to the tableau */
+/*
+ * procedure to move a card from the stock or talon to the tableau
+ */
 simpletableau(cp, des)
 struct cardtype **cp;
 {
@@ -934,6 +1121,10 @@ struct cardtype **cp;
 						length[source]--;
 					}
 					cardsoff++;
+					if (infullgame) {
+						this.wins += valuepercardup;
+						total.wins += valuepercardup;
+					}
 					mtfdone = TRUE;
 				} else
 					tempbase++;
@@ -1024,10 +1215,13 @@ suspend()
 movecard()
 {
 	int source, dest;
+	char osrcpile, odestpile;
 
 	done = FALSE;
 	errmsg = FALSE;
 	do {
+		if (talon == NIL && hand != NIL)
+			movetotalon();
 		if (cardsoff == 52) {
 			refresh();
 			srcpile = 'q';
@@ -1038,6 +1232,27 @@ movecard()
 			source = (int) (srcpile - '1');
 		if (destpile >= '1' && destpile <= '4')
 			dest = (int) (destpile - '1');
+		if (!startedgame &&
+		    (srcpile == 't' || srcpile == 's' || srcpile == 'h' ||
+		     srcpile == '1' || srcpile == '2' || srcpile == '3' ||
+		     srcpile == '4')) {
+			startedgame = TRUE;
+			osrcpile = srcpile;
+			odestpile = destpile;
+			if (status != BETTINGBOX)
+				srcpile = 'y';
+			else do {
+				getcmd(moverow, movecol, "Inspect game?");
+			} while (srcpile != 'y' && srcpile != 'n');
+			if (srcpile == 'n') {
+				srcpile = 'q';
+			} else {
+				this.inspection += costofinspection;
+				total.inspection += costofinspection;
+				srcpile = osrcpile;
+				destpile = odestpile;
+			}
+		}
 		switch (srcpile) {
 			case 't':
 				if (destpile == 'f' || destpile == 'F')
@@ -1055,23 +1270,51 @@ movecard()
 				else dumberror();
 				break;
 			case 'h':
-				if (destpile == 't' || destpile == 'T')
+				if (destpile != 't' && destpile != 'T') {
+					dumberror();
+					break;
+				}
+				if (infullgame) {
 					movetotalon();
-				else dumberror();
+					break;
+				}
+				if (status == BETTINGBOX) {
+					do {
+						getcmd(moverow, movecol,
+							"Buy game?");
+					} while (srcpile != 'y' &&
+						 srcpile != 'n');
+					if (srcpile == 'n') {
+						showcards();
+						done = TRUE;
+						break;
+					}
+				}
+				infullgame = TRUE;
+				this.wins += valuepercardup * cardsoff;
+				total.wins += valuepercardup * cardsoff;
+				this.game += costofgame;
+				total.game += costofgame;
+				movetotalon();
 				break;
 			case 'q':
 				showcards();
 				done = TRUE;
 				break;
+			case 'b':
+				printtopbettingbox();
+				printbottombettingbox();
+				status = BETTINGBOX;
+				break;
+			case 'x':
+				clearabovemovebox();
+				clearbelowmovebox();
+				status = NOBOX;
+				break;
 			case 'i':
-				Iflag = !Iflag;
-				if (Iflag) {
-					printtopinstructions();
-					printbottominstructions();
-				} else {
-					cleartopinstructions();
-					clearbottominstructions();
-				}
+				printtopinstructions();
+				printbottominstructions();
+				status = INSTRUCTIONBOX;
 				break;
 			case 'c':
 				Cflag = !Cflag;
@@ -1092,57 +1335,120 @@ movecard()
 		}
 		fndbase(&stock, stockcol, stockrow);
 		fndbase(&talon, taloncol, talonrow);
+		updatebettinginfo();
 	} while (!done);
 }
 
-/* procedure to printout instructions */
+char *basicinstructions[] = {
+	"Here are brief instuctions to the game of Canfield:\n\n",
+	"     If you have never played solitaire before, it is recom-\n",
+	"mended  that  you  consult  a solitaire instruction book. In\n",
+	"Canfield, tableau cards may be built on each other  downward\n",
+	"in  alternate colors. An entire pile must be moved as a unit\n",
+	"in building. Top cards of the piles are available to be able\n",
+	"to be played on foundations, but never into empty spaces.\n\n",
+	"     Spaces must be filled from the stock. The top  card  of\n",
+	"the  stock  also is available to be played on foundations or\n",
+	"built on tableau piles. After the stock  is  exhausted,  ta-\n",
+	"bleau spaces may be filled from the talon and the player may\n",
+	"keep them open until he wishes to use them.\n\n",
+	"     Cards are dealt from the hand to the  talon  by  threes\n",
+	"and  this  repeats until there are no more cards in the hand\n",
+	"or the player quits. To have cards dealt onto the talon  the\n",
+	"player  types  'ht'  for his move. Foundation base cards are\n",
+	"also automatically moved to the foundation when they  become\n",
+	"available.\n\n",
+	"push any key when you are finished: ",
+	0 };
+
+char *bettinginstructions[] = {
+	"     The rules for betting are  somewhat  less  strict  than\n",
+	"those  used in the official version of the game. The initial\n",
+	"deal costs $13. You may quit at this point  or  inspect  the\n",
+	"game.  Inspection  costs  $13 and allows you to make as many\n",
+	"moves as is possible without moving any cards from your hand\n",
+	"to  the  talon.  (the initial deal places three cards on the\n",
+	"talon; if all these cards are  used,  three  more  are  made\n",
+	"available)  Finally, if the game seems interesting, you must\n",
+	"pay the final installment of $26.  At  this  point  you  are\n",
+	"credited  at the rate of $5 for each card on the foundation;\n",
+	"as the game progresses you are credited  with  $5  for  each\n",
+	"card  that is moved to the foundation.  Each run through the\n",
+	"hand after the first costs $5.  The  card  counting  feature\n",
+	"costs  $1  for  each unknown card that is identified. If the\n",
+	"information is toggled on, you are only  charged  for  cards\n",
+	"that  became  visible  since it was last turned on. Thus the\n",
+	"maximum cost of information is $34.\n\n",
+	"push any key when you are finished: ",
+	0 };
+
+/*
+ * procedure to printout instructions
+ */
+
 instruct()
 {
+	register char **cp;
+
 	move(originrow, origincol);
 	printw("This is the game of solitaire called Canfield.  Do\n");
 	printw("you want instructions for the game?");
 	do {
 		getcmd(originrow + 3, origincol, "y or n?");
 	} while (srcpile != 'y' && srcpile != 'n');
-	if (srcpile == 'y') {
-		clear();
-		refresh();
-		printw("Here are brief instuctions to the game of Canfield:\n");
-		printw("\n");
-		printw("     If you have never played solitaire before, it is recom-\n");
-		printw("mended  that  you  consult  a solitaire instruction book. In\n");
-		printw("Canfield, tableau cards may be built on each other  downward\n");
-		printw("in  alternate colors. An entire pile must be moved as a unit\n");
-		printw("in building. Top cards of the piles are available to be able\n");
-		printw("to be played on foundations, but never into empty spaces.\n");
-		printw("\n");
-		printw("     Spaces must be filled from the stock. The top  card  of\n");
-		printw("the  stock  also is available to be played on foundations or\n");
-		printw("built on tableau piles. After the stock  is  exhausted,  ta-\n");
-		printw("bleau spaces may be filled from the talon and the player may\n");
-		printw("keep them open until he wishes to use them.\n");
-		printw("\n");
-		printw("     Cards are dealt from the hand to the  talon  by  threes\n");
-		printw("and  this  repeats until there are no more cards in the hand\n");
-		printw("or the player quits. To have cards dealt onto the talon  the\n");
-		printw("player  types  'ht'  for his move. Foundation base cards are\n");
-		printw("also automatically moved to the foundation when they  become\n");
-		printw("available.\n\n");
-		printw("push any key when you are finished: ");
-		refresh();
-		getch();
-	}
+	if (srcpile == 'n')
+		return;
+	clear();
+	for (cp = basicinstructions; *cp != 0; cp++)
+		printw(*cp);
+	refresh();
+	getch();
+	clear();
+	move(originrow, origincol);
+	printw("Do you want instructions for betting?");
+	do {
+		getcmd(originrow + 2, origincol, "y or n?");
+	} while (srcpile != 'y' && srcpile != 'n');
+	if (srcpile == 'n')
+		return;
+	clear();
+	for (cp = bettinginstructions; *cp != 0; cp++)
+		printw(*cp);
+	refresh();
+	getch();
 }
 
 /* procedure to initialize the game */
 initall()
-
 {
-	srand(getpid());
+	int uid, i;
+
+	srandom(getpid());
 	initdeck(deck);
+	uid = getuid();
+	if (uid < 0)
+		return;
+	dbfd = open("/usr/games/lib/cfscores", 2);
+	if (dbfd < 0)
+		return;
+	i = lseek(dbfd, uid * sizeof(struct betinfo), 0);
+	if (i < 0) {
+		close(dbfd);
+		dbfd = -1;
+		return;
+	}
+	i = read(dbfd, (char *)&total, sizeof(total));
+	if (i < 0) {
+		close(dbfd);
+		dbfd = -1;
+		return;
+	}
+	lseek(dbfd, uid * sizeof(struct betinfo), 0);
 }
 
-/* procedure to end the game */
+/*
+ * procedure to end the game
+ */
 bool
 finish()
 {
@@ -1181,6 +1487,40 @@ finish()
 		return (TRUE);
 }
 
+/*
+ * Field an interrupt.
+ */
+askquit()
+{
+	move(msgrow, msgcol);
+	printw("Really wish to quit?    ");
+	do {
+		getcmd(moverow, movecol, "y or n?");
+	} while (srcpile != 'y' && srcpile != 'n');
+	clearmsg();
+	if (srcpile == 'y')
+		cleanup();
+	signal(SIGINT, askquit);
+}
+
+/*
+ * procedure to clean up and exit
+ */
+cleanup()
+{
+
+	if (dbfd != -1) {
+		write(dbfd, (char *)&total, sizeof(total));
+		close(dbfd);
+	}
+	clear();
+	move(22,0);
+	refresh();
+	endwin();
+	exit(0);
+	/* NOTREACHED */
+}
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -1194,6 +1534,9 @@ main(argc, argv)
 		exit(0);
 	}
 #endif
+	signal(SIGINT, askquit);
+	signal(SIGHUP, cleanup);
+	signal(SIGTERM, cleanup);
 	initscr();
 	raw();
 	noecho();
@@ -1210,8 +1553,6 @@ main(argc, argv)
 		else
 			cleanupboard();
 	}
-	clear();
-	move(22,0);
-	refresh();
-	endwin();
+	cleanup();
+	/* NOTREACHED */
 }
