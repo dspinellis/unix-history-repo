@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.7	81/04/02	*/
+/*	lang.l	1.8	81/05/18	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -65,6 +65,9 @@ WORD	[A-Za-z_][-A-Za-z_]*
 			float atof();
 			yylval = (int) (60 * atof(yytext) + 0.5);
 			return FPNUMBER;
+		}
+"-"		{
+			return MINUS;
 		}
 "?"		{
 			yylval = -1;

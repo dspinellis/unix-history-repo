@@ -1,8 +1,8 @@
 %token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
-%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA
+%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS
 %{
-/*	config.y	1.9	81/05/18	*/
+/*	config.y	1.10	81/05/18	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -46,6 +46,14 @@ Config_spec:
 	TIMEZONE NUMBER DST = { timezone = 60 * $2; dst = 1; check_tz(); } |
 	TIMEZONE FPNUMBER = { timezone = $2; check_tz(); } |
 	TIMEZONE FPNUMBER DST = { timezone = $2; dst = 1; check_tz(); } |
+	MINUS TIMEZONE NUMBER =
+	    { timezone = -60 * $3; check_tz(); } |
+	MINUS TIMEZONE NUMBER DST =
+	    { timezone = -60 * $3; dst = 1; check_tz(); } |
+	MINUS TIMEZONE FPNUMBER =
+	    { timezone = -$3; check_tz(); } |
+	MINUS TIMEZONE FPNUMBER DST =
+	    { timezone = -$3; dst = 1; check_tz(); } |
 	MAXUSERS NUMBER = { maxusers = $2; }
 	;
 
