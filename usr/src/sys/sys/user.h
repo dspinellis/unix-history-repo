@@ -1,10 +1,9 @@
-/*	user.h	4.10	82/02/15	*/
+/*	user.h	4.11	82/03/27	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
 #include "../h/dmap.h"
 #include "../h/vtimes.h"
-#include "assym.s"
 #else
 #include <sys/pcb.h>
 #include <sys/dmap.h>
