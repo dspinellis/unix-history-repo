@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)paper.ms	5.2 (Berkeley) %G%
+.\"	@(#)paper.ms	5.3 (Berkeley) %G%
 .\"
 .\" use roff -ms
 .ds CM
@@ -46,7 +46,7 @@ Later that spring, a PDP-11/40 was configured with the newly available
 Version 5.
 Version 6 was running on a PDP-11/70 by the fall of 1975,
 with the arrival of two new graduate students, Bill Joy and Chuck Haley.
-They initially concentrating on making improvements to a Pascal system,
+They initially concentrating on making improvements to a Pascal system
 written by Ken Thompson while on sabbatical at Berkeley.
 With this completed, they turned their attention to the \fBed\fP editor,
 eventually producing a new version they called \fBex\fP.
@@ -366,7 +366,7 @@ the cost of a UNIX system with source code will be less in the future
 than in the current UNIX market by two orders of magnitude.
 The UNIX single-server release by the Carnegie Mellon University
 MACH group will also use the NET/2 release as a starting point, making
-their release freely redistributable without USL license.
+their release freely redistributable without a UNIX source license.
 The advent of cheaply available sources will make it far easier than
 ever before for research groups and users to develop and exchange software.
 .PP
