@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -142,7 +142,8 @@ odoffset(argc, argvp)
 	 *
 	 * We assume it's a file if the offset is bad.
 	 */
-	p = **argvp;
+	p = argc == 1 ? (*argvp)[0] : (*argvp)[1];
+
 	if (*p != '+' && (argc < 2 ||
 	    (!isdigit(p[0]) && (p[0] != 'x' || !isxdigit(p[1])))))
 		return;
@@ -182,35 +183,40 @@ odoffset(argc, argvp)
 	skip = strtol(num, &end, base ? base : 8);
 
 	/* if end isn't the same as p, we got a non-octal digit */
-	if (end != p)
+	if (end != p) {
 		skip = 0;
-	else {
-		if (*p) {
-			if (*p == 'b')
-				skip *= 512;
-			else if (*p == 'B')
-				skip *= 1024;
+		return;
+	}
+
+	if (*p)
+		if (*p == 'B') {
+			skip *= 1024;
+			++p;
+		} else if (*p == 'b') {
+			skip *= 512;
 			++p;
 		}
-		if (*p)
-			skip = 0;
-		else {
-			++*argvp;
-			/*
-			 * If the offset uses a non-octal base, the base of
-			 * the offset is changed as well.  This isn't pretty,
-			 * but it's easy.
-			 */
-#define	TYPE_OFFSET	7
-			if (base == 16) {
-				fshead->nextfu->fmt[TYPE_OFFSET] = 'x';
-				fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'x';
-			} else if (base == 10) {
-				fshead->nextfu->fmt[TYPE_OFFSET] = 'd';
-				fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'd';
-			}
-		}
+
+	if (*p) {
+		skip = 0;
+		return;
 	}
+
+	/*
+	 * If the offset uses a non-octal base, the base of the offset
+	 * is changed as well.  This isn't pretty, but it's easy.
+	 */
+#define	TYPE_OFFSET	7
+	if (base == 16) {
+		fshead->nextfu->fmt[TYPE_OFFSET] = 'x';
+		fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'x';
+	} else if (base == 10) {
+		fshead->nextfu->fmt[TYPE_OFFSET] = 'd';
+		fshead->nextfs->nextfu->fmt[TYPE_OFFSET] = 'd';
+	}
+
+	/* Terminate file list. */
+	(*argvp)[1] = NULL;
 }
 
 static void
