@@ -10,89 +10,113 @@ Dear Mary:
 .fi
 .sp
 .pp
-This letter outlines the steps that we proposed
+This letter outlines the steps that we have taken
 to establish the Regent's copyright on the parts of the Fourth Berkeley
 Software Distribution (4.2BSD and 4.3BSD) that are derived from work
 done at the University of California, Berkeley.
-Briefly, we plan to insert copyright notices into each of the separate
+Briefly, we have inserted copyright notices into each of the separate
 source files for original Berkeley work and major Berkeley additions.
-This will be done in such a way
-that the copyright notice will be included in the executable programs
+The notices were inserted so
+that the copyright notice is included in the executable programs
 when they are compiled from the copyrighted source.
-We will also place a copyright notice on the label of each tape
-shipped with the distribution, and examine the copyright notices in the
-printed documentation for completeness.
-The next release of the Fourth Berkeley Software Distribution, 4.3BSD,
-will include all of these changes.
+The copyright notices in the
+printed documentation were also verified for completeness.
+A copyright notice is put on the label of each tape
+shipped with the distribution.
+These changes were all completed in time for the
+4.3BSD release of the Fourth Berkeley Software Distribution.
 .pp
-In order to reclaim the copyright on the material which was distributed
-without copyright notices in 4.2BSD, we will send a letter, a draft
-of which is attached, to all of the existing licensees of 4.2BSD
-and to AT & T.
-This letter will require each licensee to insert the copyright notices
-in existing copies of the licensed material, and to similarly notify
-anyone to whom they have licensed 4.2BSD sources.
-I have not specifically addressed the question of binary-only
-redistributions of 4.2BSD, which would not include most of the
-files requiring modification.
-Alternatively, licensees of 4.2BSD may replace their existing
-licensed material with the 4.3BSD versions.
-.pp
-The copyright notices will be placed in each source file that was
+The copyright notices have been placed in each source file that was
 originally written at Berkeley, or which was rewritten or substantially
-modified at Berkeley such that the majority of the program was of
+modified at Berkeley such that the most of the program was of
 Berkeley origin.
 In addition, programs which have been modified to the extent that
-their function is significantly improved will also be marked
+their function is significantly improved have been marked
 with the University copyright.
-This distinction is different than the 90% derivation that we discussed,
+This distinction requires somewhat less change than the 90% derivation
+that we discussed,
 but I believe it to be reasonable for those few programs that it covers.
 Other programs that have not been modified,
 or have been less substantially modified at Berkeley,
-will not be marked as copyrighted.
+have not been marked as copyrighted.
 Programs received from sources other than 32/V or University work
-will also not be marked.
+have not been marked.
 .pp
-The copyright notices to be inserted are of the form
+The copyright notices that have been inserted are of two forms.
+The first form is for programs that still contain AT&T proprietary
+code and thus require an AT&T license as well as a Berkeley license:
 .nf
 .in+1i
-
+.sp
 Copyright (c) 1980 Regents of the University of California.
 All rights reserved.  The Berkeley software License Agreement
 specifies the terms and conditions for redistribution.
-
+.sp
 .in -1i
 .fi
-This will be surrounded by delimiters so that it will be ignored
-by the programs which need to read the file.
-For those programs which originated with 4.2BSD rather than 4.1BSD
-or before, the copyright date will be 1983.
+The second is for programs that do not contain any AT&T code,
+and thus require only that due credit be given to the University:
+.nf
+.in+1i
+.sp
+Copyright (c) 1980 Regents of the University of California.
+All rights reserved.
+.sp
+Redistribution and use in source and binary forms are permitted
+provided that this notice is preserved and that due credit is given
+to the University of California at Berkeley. The name of the University
+may not be used to endorse or promote products derived from this
+software without specific prior written permission. This software
+is provided ``as is'' without express or implied warranty.
+.sp
+.in -1i
+.fi
+These notices are surrounded by delimiters so that they are ignored
+by the programs that need to read the file.
+For those programs that originated with 4.2BSD rather than 4.1BSD
+or before, the copyright date is 1983.
 In the source files comprising a single program,
 one notice of the form
 .nf
 .in +1i
-
+.sp
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\en\e
  All rights reserved.\en";
-
+.sp
 .in -1i
 .fi
-will also be included.
-The part of the notice between quotes will be included
-in the executable binary program after compilation, and would be displayed
-when checking the version of the program.
+has also been included.
+The part of the notice between quotes is included
+in the executable binary program after compilation,
+and is displayed when checking the version of the program.
 .br
 .ne 2i
 .pp
 A tentative list of the source files to be copyrighted is attached
 as Appendix A.
-This list is approximately the same as the list of files
-that 4.2 licensees must modify, which will be attached to the letter
-to the licensees.
-
-
-
+.pp
+We are now preparing
+to reclaim the copyright on the material that was distributed
+without copyright notices in 4.2BSD.
+We intend to send a letter, a draft
+of which is attached, to all the existing licensees of 4.2BSD and to AT&T.
+This letter will require each licensee to insert the copyright notices
+in existing copies of the licensed material, and to similarly notify
+anyone to whom they have licensed 4.2BSD sources.
+To simplify the procedure,
+we will not distinguish between the files to contain the
+Berkeley-only copyright and the AT&T restricted copyright;
+instead we will instruct them to put the more restrictive
+copyright requiring an AT&T license in all the listed files.
+I have not specifically addressed the question of binary-only
+redistributions of 4.2BSD, which would not include most of the
+files requiring modification.
+.pp
+Alternatively, licensees of 4.2BSD may replace their existing
+licensed material with the 4.3BSD versions.
+We expect that most 4.2BSD sites will choose the approach of upgrading.
+.sp 3
 .in 3i
 .nf
 Michael Karels
@@ -115,4 +139,4 @@ Appendix A
 .nf
 .sz 8
 .2c
-.so AppendixA.short
+.so files.4.2.copyr
