@@ -1,4 +1,4 @@
-/*	systm.h	4.30	82/10/20	*/
+/*	systm.h	4.31	82/10/31	*/
 
 /*
  * Random set of variables
@@ -47,8 +47,10 @@ long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	argdev;			/* device for argument lists */
 
+#ifdef vax
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
+#endif
 #ifdef MUSH
 extern	int mcode[];		/* MUSH: startup code */
 extern	int szmcode;		/* & its size */
@@ -75,9 +77,7 @@ extern struct sysent
 } sysent[];
 
 char	vmmap[];		/* poor name! */
-int	umbabeg,umbaend;	/* where sensitive vm begins/ends */
 int	noproc;			/* no one is running just now */
-extern	int catcher[256];
 char	*panicstr;
 int	wantin;
 int	boothowto;		/* reboot flags, from console subsystem */
