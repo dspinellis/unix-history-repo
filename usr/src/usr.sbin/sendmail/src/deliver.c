@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.7	%G%";
+static char SccsId[] = "@(#)deliver.c	1.8	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -234,7 +234,7 @@ deliver(to, editfcn)
 		execv(m->m_mailer, pvp);
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
-		exit(EX_UNAVAIL);
+		exit(EX_UNAVAILABLE);
 	}
 
 	/* arrange to write out header message if error */
@@ -265,7 +265,7 @@ deliver(to, editfcn)
 	if ((st & 0377) != 0)
 	{
 		syserr("%s: stat %o", pvp[0], st);
-		ExitStat = EX_UNAVAIL;
+		ExitStat = EX_UNAVAILABLE;
 		return (-1);
 	}
 	i = (st >> 8) & 0377;
