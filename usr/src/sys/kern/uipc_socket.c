@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.11	81/11/21	*/
+/*	uipc_socket.c	4.12	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -285,7 +285,8 @@ again:
 		splx(s);
 		goto release;
 	}
-	if (sosendallatonce(so) && sbspace(&so->so_snd) < u.u_count) {
+	space = sbspace(&so->so_snd);
+	if (space == 0 || sosendallatonce(so) && space < u.u_count) {
 		if (so->so_options & SO_NBIO)
 			snderr(EWOULDBLOCK);
 		sbunlock(&so->so_snd);
@@ -294,7 +295,7 @@ again:
 		goto again;
 	}
 	splx(s);
-	while (u.u_count && (space = sbspace(&so->so_snd)) > 0) {
+	while (u.u_count && space > 0) {
 		MGET(m, 1);
 		if (m == NULL) {
 			error = ENOBUFS;
@@ -317,6 +318,7 @@ nopages:
 		m->m_len = len;
 		*mp = m;
 		mp = &m->m_next;
+		space = sbspace(&so->so_snd);
 	}
 	s = splnet();
 	goto again;
@@ -359,16 +361,16 @@ restart:
 	if (m == 0)
 		panic("receive");
 	if ((so->so_proto->pr_flags & PR_ADDR)) {
-		so->so_rcv.sb_mb = m->m_next;
 		if (asa) {
 			so->so_rcv.sb_cc -= m->m_len;
 			len = MIN(m->m_len, sizeof (struct sockaddr));
 			bcopy(mtod(m, caddr_t), (caddr_t)asa, len);
 		} else
 			bzero((caddr_t)asa, sizeof (*asa));
-		m = so->so_rcv.sb_mb;
+		m = m_free(m);
 		if (m == 0)
 			panic("receive 2");
+		so->so_rcv.sb_mb = m;
 	}
 	eor = 0;
 	do {
