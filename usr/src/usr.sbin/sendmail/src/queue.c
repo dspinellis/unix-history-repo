@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.32 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.33 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.32 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.33 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -785,8 +785,6 @@ dowork(id, forkflag, requeueflag, e)
 **
 **	Parameters:
 **		e -- the envelope of the job to run.
-**		announcefile -- if set, announce the name of the queue
-**			file in error messages.
 **
 **	Returns:
 **		TRUE if it successfully read the queue file.
@@ -797,9 +795,8 @@ dowork(id, forkflag, requeueflag, e)
 */
 
 bool
-readqf(e, announcefile)
+readqf(e)
 	register ENVELOPE *e;
-	bool announcefile;
 {
 	register FILE *qfp;
 	ADDRESS *ctladdr;
@@ -897,8 +894,6 @@ readqf(e, announcefile)
 	initsys(e);
 	define('i', e->e_id, e);
 
-	if (announcefile)
-		FileName = qf;
 	LineNumber = 0;
 	e->e_flags |= EF_GLOBALERRS;
 	OpMode = MD_DELIVER;
@@ -988,8 +983,8 @@ readqf(e, announcefile)
 			break;
 
 		  default:
-			syserr("readqf: bad line \"%s\"", e->e_id,
-				LineNumber, bp);
+			syserr("readqf: %s: line %s: bad line \"%s\"",
+				qf, LineNumber, bp);
 			fclose(qfp);
 			rename(qf, queuename(e, 'Q'));
 			return FALSE;
@@ -998,8 +993,6 @@ readqf(e, announcefile)
 		if (bp != buf)
 			free(bp);
 	}
-
-	FileName = NULL;
 
 	/*
 	**  If we haven't read any lines, this queue file is empty.
