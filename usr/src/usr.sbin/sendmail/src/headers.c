@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.64 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -366,7 +366,9 @@ isheader(h)
 **	Parameters:
 **		e -- the envelope to process.
 **		full -- if set, do full processing (e.g., compute
-**			message priority).
+**			message priority).  This should not be set
+**			when reading a queue file because some info
+**			needed to compute the priority is wrong.
 **
 **	Returns:
 **		none.
@@ -405,7 +407,7 @@ eatheader(e, full)
 
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
-	msgid = "<none>";
+	msgid = NULL;
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL)
@@ -453,7 +455,7 @@ eatheader(e, full)
 		}
 
 		/* save the message-id for logging */
-		if (full && strcasecmp(h->h_field, "message-id") == 0)
+		if (strcasecmp(h->h_field, "message-id") == 0)
 		{
 			msgid = h->h_value;
 			while (isascii(*msgid) && isspace(*msgid))
@@ -479,20 +481,20 @@ eatheader(e, full)
 	p = hvalue("precedence", e->e_header);
 	if (p != NULL)
 		e->e_class = priencode(p);
+	if (e->e_class < 0)
+		e->e_timeoutclass = TOC_NONURGENT;
+	else if (e->e_class > 0)
+		e->e_timeoutclass = TOC_URGENT;
 	if (full)
 	{
 		e->e_msgpriority = e->e_msgsize
 				 - e->e_class * WkClassFact
 				 + e->e_nrcpts * WkRecipFact;
-		if (e->e_class < 0)
-			e->e_timeoutclass = TOC_NONURGENT;
-		else if (e->e_class > 0)
-			e->e_timeoutclass = TOC_URGENT;
 	}
 
 	/* message timeout priority */
 	p = hvalue("priority", e->e_header);
-	if (full && p != NULL)
+	if (p != NULL)
 	{
 		/* (this should be in the configuration file) */
 		if (strcasecmp(p, "urgent"))
