@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.22 (Berkeley) %G%
+ *	@(#)syslog.h	7.23 (Berkeley) %G%
  */
 
 #define	_PATH_LOG	"/dev/log"
@@ -70,6 +70,7 @@ CODE prioritynames[] = {
 #define	LOG_UUCP	(8<<3)	/* UUCP subsystem */
 #define	LOG_CRON	(9<<3)	/* clock daemon */
 #define	LOG_AUTHPRIV	(10<<3)	/* security/authorization messages (private) */
+#define	LOG_FTP		(11<<3)	/* ftp daemon */
 
 	/* other codes through 15 reserved for system use */
 #define	LOG_LOCAL0	(16<<3)	/* reserved for local use */
@@ -92,6 +93,7 @@ CODE facilitynames[] = {
 	"authpriv",	LOG_AUTHPRIV,
 	"cron", 	LOG_CRON,
 	"daemon",	LOG_DAEMON,
+	"ftp",		LOG_FTP,
 	"kern",		LOG_KERN,
 	"lpr",		LOG_LPR,
 	"mail",		LOG_MAIL,
