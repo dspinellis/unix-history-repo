@@ -1,0 +1,29 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mincore.2	6.1 (Berkeley) %G%
+.\"
+.TH MINCORE 2 ""
+.UC 7
+.SH NAME
+mincore \- get advise about use of memory
+.SH SYNOPSIS
+.nf
+mincore(addr, len, vec)
+.B caddr_t addr;
+.B int len;
+.B char *vec;
+.fi
+.SH DESCRIPTION
+.PP
+The \fImincore\fP system call
+allows a process to obtain information about whether pages are
+core resident.
+Here the current core residency of the pages is returned
+in the character array \fIvec\fP, with a value of 1 meaning
+that the page is in-core.
+.SH "SEE ALSO"
+msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
+
