@@ -41,21 +41,22 @@
 
 #ifdef MULTICAST
 
-#include <sys/param.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/protosw.h>
+#include "param.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "protosw.h"
 
-#include <net/if.h>
-#include <net/route.h>
+#include "net/if.h"
+#include "net/route.h"
 
-#include <netinet/in.h>
-#include <netinet/in_var.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/ip_var.h>
-#include <netinet/igmp.h>
-#include <netinet/igmp_var.h>
+#include "in.h"
+#include "in_var.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_var.h"
+#include "igmp.h"
+#include "igmp_var.h"
+#include "machine/cpufunc.h"
 
 extern struct ifnet loif;
 

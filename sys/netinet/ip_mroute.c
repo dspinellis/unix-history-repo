@@ -52,35 +52,35 @@
 int	ip_mrtproto;				/* for netstat only */
 #else
 
-#include <sys/param.h>
-#include <sys/errno.h>
-#include <sys/ioctl.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/time.h>
+#include "param.h"
+#include "errno.h"
+#include "ioctl.h"
+#include "malloc.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "time.h"
 
 #ifndef __FreeBSD__
-#include <net/af.h>
+#include "net/af.h"
 #else
-#include <sys/systm.h>
+#include "systm.h"
 #endif
-#include <net/if.h>
-#include <net/route.h>
-#include <net/raw_cb.h>
+#include "net/if.h"
+#include "net/route.h"
+#include "net/raw_cb.h"
 
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/in_pcb.h>
-#include <netinet/in_var.h>
-#include <netinet/ip_var.h>
+#include "in.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "in_pcb.h"
+#include "in_var.h"
+#include "ip_var.h"
 
-#include <netinet/igmp.h>
-#include <netinet/igmp_var.h>
-#include <netinet/ip_mroute.h>
+#include "igmp.h"
+#include "igmp_var.h"
+#include "ip_mroute.h"
 
 /* Static forwards */
 static	int ip_mrouter_init __P((struct socket *));
