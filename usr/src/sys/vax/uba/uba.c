@@ -1,4 +1,4 @@
-/*	uba.c	4.5	%G%	*/
+/*	uba.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -115,6 +115,7 @@ ubarelse(amr)
 		splx(a);
 		return;
 	}
+	*amr = 0;
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
 		((struct uba_regs *)UBA0)->uba_dpr[bdp] |= BNE;	/* purge */
