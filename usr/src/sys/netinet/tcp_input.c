@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_input.c	7.20 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.15.1.3 (Berkeley) %G%
  */
 
 #include "param.h"
