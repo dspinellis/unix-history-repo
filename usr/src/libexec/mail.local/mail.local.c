@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.1	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.2	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -641,6 +641,8 @@ char *fromaddr;
 	register mask;
 	struct passwd *pw, *getpwnam();
 	struct stat statb;
+	char buf[128];
+	int f;
 
 # ifndef DELIVERMAIL
 	stripfx(LOCNAM1, &name);
@@ -677,7 +679,15 @@ char *fromaddr;
 	}
 	lock(file);
 	chown(file, pw->pw_uid, pw->pw_gid);
+	{
+		f = open("/dev/mail", 1);
+		sprintf(buf, "%s@%d\n", name, ftell(malf)); 
+	}
 	copylet(n, malf, ORDINARY);
+	if (f >= 0) {
+		write(f, buf, strlen(buf)+1);
+		close(f);
+	}
 	fclose(malf);
 	unlock();
 	return(1);
