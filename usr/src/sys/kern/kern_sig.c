@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.6 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "inode.h"
 #include "proc.h"
