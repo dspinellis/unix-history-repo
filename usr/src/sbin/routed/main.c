@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,6 +55,7 @@ main(argc, argv)
 	struct sockaddr from;
 	struct timeval *tvp, waittime;
 	struct itimerval itval;
+	register struct rip *query = msg;
 	fd_set ibits;
 	u_char retry;
 	
@@ -147,13 +148,13 @@ main(argc, argv)
 		rtdefault();
 	if (supplier < 0)
 		supplier = 0;
-	msg->rip_cmd = RIPCMD_REQUEST;
-	msg->rip_vers = RIPVERSION;
-	if (sizeof(msg->rip_nets[0].rip_dst.sa_family) > 1)	/* XXX */
-		msg->rip_nets[0].rip_dst.sa_family = htons((u_short)AF_UNSPEC);
+	query->rip_cmd = RIPCMD_REQUEST;
+	query->rip_vers = RIPVERSION;
+	if (sizeof(query->rip_nets[0].rip_dst.sa_family) > 1)	/* XXX */
+		query->rip_nets[0].rip_dst.sa_family = htons((u_short)AF_UNSPEC);
 	else
-		msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
-	msg->rip_nets[0].rip_metric = htonl((u_long)HOPCNT_INFINITY);
+		query->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
+	query->rip_nets[0].rip_metric = htonl((u_long)HOPCNT_INFINITY);
 	toall(sendmsg);
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
