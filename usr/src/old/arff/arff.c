@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.6 (Berkeley) 81/05/12";
+static	char *sccsid = "@(#)arff.c	4.7 (Berkeley) 81/05/18";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
