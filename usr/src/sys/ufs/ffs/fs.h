@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fs.h	7.8 (Berkeley) %G%
+ *	@(#)fs.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -122,6 +122,7 @@ struct csum {
  * Super block for a file system.
  */
 #define	FS_MAGIC	0x011954
+#define	FSOKAY		0x7c269d38
 struct	fs
 {
 	struct	fs *fs_link;		/* linked list of file systems */
@@ -197,7 +198,8 @@ struct	fs
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_opostbl[16][8];	/* old rotation block list head */
-	long	fs_sparecon[56];	/* reserved for future constants */
+	long	fs_sparecon[55];	/* reserved for future constants */
+	long	fs_state;		/* validate fs_clean field */
 	quad	fs_qbmask;		/* ~fs_bmask - for use with quad size */
 	quad	fs_qfmask;		/* ~fs_fmask - for use with quad size */
 	long	fs_postblformat;	/* format of positional layout tables */
