@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1515,12 +1515,21 @@ markfailure(e, q, rcode)
 {
 	char buf[MAXLINE];
 
-	if (rcode == EX_OK)
-		return;
-	else if (rcode == EX_TEMPFAIL)
+	switch (rcode)
+	{
+	  case EX_OK:
+		break;
+
+	  case EX_TEMPFAIL:
+	  case EX_IOERR:
+	  case EX_OSERR:
 		q->q_flags |= QQUEUEUP;
-	else if (rcode != EX_IOERR && rcode != EX_OSERR)
+		break;
+
+	  default:
 		q->q_flags |= QBADADDR;
+		break;
+	}
 }
 /*
 **  ENDMAILER -- Wait for mailer to terminate.
