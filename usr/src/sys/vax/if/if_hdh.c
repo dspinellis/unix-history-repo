@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	7.1 (Berkeley) %G% */
+/*	@(#)if_hdh.c	7.2 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -299,7 +299,7 @@ int unit;
 	 */
 	for(i=0;i<NHDHCH;i++) {
 		if (if_ubainit(&sc->hdh_ifuba[i], ui->ui_ubanum, 0,
-		    (int)btoc(IMPMTU)) == 0) {
+		    (int)btoc(IMPMTU + 2)) == 0) {
 			printf("hdh%d: cannot get chan %d uba resources\n",
 				unit, i);
 			ui->ui_alive = 0;
@@ -313,12 +313,12 @@ int unit;
 	/*
 	 * hang a supervisor read (for line status)
 	 */
-	hdh_iorq(unit, HDHSUPR, IMPMTU, HDHRDB);
+	hdh_iorq(unit, HDHSUPR, IMPMTU + 2, HDHRDB);
 
 	/*
 	 * hang a data read
 	 */
-	hdh_iorq(unit, HDHDATR, IMPMTU, HDHRDB+HDHSTR);
+	hdh_iorq(unit, HDHDATR, IMPMTU + 2, HDHRDB+HDHSTR);
 
 	/*
 	 * bring up line to IMP
@@ -573,7 +573,7 @@ int unit, lcn, cc, rcnt;
 
 		/* hang a new data read */
 
-		hdh_iorq(unit, lcn, IMPMTU, HDHRDB+HDHSTR);
+		hdh_iorq(unit, lcn, IMPMTU + 2, HDHRDB+HDHSTR);
 
 	} else {
 		/*
@@ -649,7 +649,7 @@ int unit, lcn, cc;
 
 		/* hang a new supr read */
 
-		hdh_iorq(unit, HDHSUPR, IMPMTU, HDHRDB+HDHSTR);
+		hdh_iorq(unit, HDHSUPR, IMPMTU + 2, HDHRDB+HDHSTR);
 	} 
 }
 
