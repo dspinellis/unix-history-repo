@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stdio.h	5.2 (Berkeley) %G%
+ *	@(#)stdio.h	5.3 (Berkeley) %G%
  */
 
 # ifndef FILE
@@ -33,8 +33,11 @@ extern	struct	_iobuf {
 #define	stdin	(&_iob[0])
 #define	stdout	(&_iob[1])
 #define	stderr	(&_iob[2])
+#ifndef lint
 #define	getc(p)		(--(p)->_cnt>=0? (int)(*(unsigned char *)(p)->_ptr++):_filbuf(p))
+#endif not lint
 #define	getchar()	getc(stdin)
+#ifndef lint
 #define putc(x, p)	(--(p)->_cnt >= 0 ?\
 	(int)(*(unsigned char *)(p)->_ptr++ = (x)) :\
 	(((p)->_flag & _IOLBF) && -(p)->_cnt < (p)->_bufsiz ?\
@@ -42,6 +45,7 @@ extern	struct	_iobuf {
 			(int)(*(unsigned char *)(p)->_ptr++) :\
 			_flsbuf(*(unsigned char *)(p)->_ptr, p)) :\
 		_flsbuf((unsigned char)(x), p)))
+#endif not lint
 #define	putchar(x)	putc(x,stdout)
 #define	feof(p)		(((p)->_flag&_IOEOF)!=0)
 #define	ferror(p)	(((p)->_flag&_IOERR)!=0)
