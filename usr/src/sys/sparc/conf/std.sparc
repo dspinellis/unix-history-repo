@@ -1,0 +1,19 @@
+#	@(#)std.sparc	7.1 (Berkeley) %G%
+#
+# standard SPARCstation information.
+
+machine	sparc
+
+mainbus0 at root
+
+audio0	at mainbus0
+auxreg0	at mainbus0
+clock0	at mainbus0
+cpu0	at mainbus0
+memreg0	at mainbus0
+timer0	at mainbus0
+
+zs0	at mainbus0
+zs1	at mainbus0
+
+sbus0	at mainbus0
