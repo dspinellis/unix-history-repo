@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.13 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.14 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.13 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.14 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -941,12 +941,13 @@ hes_udb_get(key, info)
 {
 	char *name, *type;
 	char *p, **hp;
+	char kbuf[MAXKEY + 1];
 
-	name = key->data;
+	strcpy(kbuf, key->data);
+	name = kbuf;
 	type = strchr(name, ':');
-	if (type == NULL)
+	if (type == NULL || type == name)
 		return 1;
-
 	*type++ = '\0';
 
 	if (tTd(28, 1))
