@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	8.5 (Berkeley) %G%
+ *	@(#)vm_pageout.c	8.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -176,7 +176,7 @@ vm_pageout_scan()
 		else
 #endif
 		vm_pageout_page(m, object);
-		thread_wakeup((int) object);
+		thread_wakeup(object);
 		vm_object_unlock(object);
 		/*
 		 * Former next page may no longer even be on the inactive
@@ -250,7 +250,7 @@ vm_pageout_page(m, object)
 	/*
 	 * Do a wakeup here in case the following operations block.
 	 */
-	thread_wakeup((int) &cnt.v_free_count);
+	thread_wakeup(&cnt.v_free_count);
 
 	/*
 	 * If there is no pager for the page, use the default pager.
@@ -414,7 +414,7 @@ vm_pageout_cluster(m, object)
 	object->paging_in_progress++;
 	vm_object_unlock(object);
 again:
-	thread_wakeup((int) &cnt.v_free_count);
+	thread_wakeup(&cnt.v_free_count);
 	postatus = vm_pager_put_pages(object->pager, plistp, count, FALSE);
 	/*
 	 * XXX rethink this
@@ -479,7 +479,8 @@ again:
  *	vm_pageout is the high level pageout daemon.
  */
 
-void vm_pageout()
+void
+vm_pageout()
 {
 	(void) spl0();
 
@@ -514,8 +515,7 @@ void vm_pageout()
 
 	simple_lock(&vm_pages_needed_lock);
 	while (TRUE) {
-		thread_sleep((int) &vm_pages_needed, &vm_pages_needed_lock,
-			     FALSE);
+		thread_sleep(&vm_pages_needed, &vm_pages_needed_lock, FALSE);
 		/*
 		 * Compute the inactive target for this scan.
 		 * We need to keep a reasonable amount of memory in the
@@ -536,6 +536,6 @@ void vm_pageout()
 			vm_pageout_scan();
 		vm_pager_sync();
 		simple_lock(&vm_pages_needed_lock);
-		thread_wakeup((int) &cnt.v_free_count);
+		thread_wakeup(&cnt.v_free_count);
 	}
 }

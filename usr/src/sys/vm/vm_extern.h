@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	8.2 (Berkeley) %G%
+ *	@(#)vm_extern.h	8.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -33,8 +33,8 @@ int		 smmap __P((struct proc *, void *, int *));
 int		 sstk __P((struct proc *, void *, int *));
 #endif
 
-void		 assert_wait __P((int, boolean_t));
-int		 grow __P((struct proc *, u_int));
+void		 assert_wait __P((void *, boolean_t));
+int		 grow __P((struct proc *, vm_offset_t));
 void		 iprintf __P((const char *, ...));
 int		 kernacc __P((caddr_t, int, int));
 int		 kinfo_loadavg __P((int, char *, int *, int, int *));
@@ -49,7 +49,7 @@ vm_offset_t	 kmem_malloc __P((vm_map_t, vm_size_t, boolean_t));
 vm_map_t	 kmem_suballoc __P((vm_map_t, vm_offset_t *, vm_offset_t *,
 		    vm_size_t, boolean_t));
 void		 loadav __P((struct loadavg *));
-void		 munmapfd __P((int));
+void		 munmapfd __P((struct proc *, int));
 int		 pager_cache __P((vm_object_t, boolean_t));
 void		 sched __P((void));
 int		 svm_allocate __P((struct proc *, void *, int *));
@@ -63,8 +63,8 @@ void		 swapout_threads __P((void));
 int		 swfree __P((struct proc *, int));
 void		 swstrategy __P((struct buf *));
 void		 thread_block __P((void));
-void		 thread_sleep __P((int, simple_lock_t, boolean_t));
-void		 thread_wakeup __P((int));
+void		 thread_sleep __P((void *, simple_lock_t, boolean_t));
+void		 thread_wakeup __P((void *));
 int		 useracc __P((caddr_t, int, int));
 int		 vm_allocate __P((vm_map_t,
 		    vm_offset_t *, vm_size_t, boolean_t));
