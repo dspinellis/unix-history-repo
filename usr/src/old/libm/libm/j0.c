@@ -1,4 +1,6 @@
-/*	@(#)j0.c	4.1	%G%	*/
+#ifndef lint
+static char sccsid[] = "@(#)j0.c	4.2 (Berkeley) %G%";
+#endif not lint
 
 /*
 	floating point Bessel's function
@@ -25,8 +27,9 @@
 
 	y0(x) returns the value of Y0(x)
 	for positive real values of x.
-	For x<=0, error number EDOM is set and a
-	large negative value is returned.
+	For x<=0, if on the VAX, error number EDOM is set and
+	the reserved operand fault is generated;
+	otherwise (an IEEE machine) an invalid operation is performed.
 
 	Calls sin, cos, sqrt, log, j0.
 
@@ -40,9 +43,11 @@
 */
 
 #include <math.h>
+#ifdef VAX
 #include <errno.h>
-
-int	errno;
+#else	/* IEEE double */
+static double zero = 0.e0;
+#endif
 static double pzero, qzero;
 static double tpi	= .6366197723675813430755350535e0;
 static double pio4	= .7853981633974483096156608458e0;
@@ -153,10 +158,13 @@ y0(arg) double arg;{
 	double sin(), cos(), sqrt(), log(), j0();
 	int i;
 
-	errno = 0;
 	if(arg <= 0.){
-		errno = EDOM;
-		return(-HUGE);
+#ifdef VAX
+		extern double infnan();
+		return(infnan(EDOM));		/* NaN */
+#else	/* IEEE double */
+		return(zero/zero);	/* IEEE machines: invalid operation */
+#endif
 	}
 	if(arg > 8.){
 		asympt(arg);
