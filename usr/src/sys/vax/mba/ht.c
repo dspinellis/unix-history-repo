@@ -1,4 +1,4 @@
-/*	ht.c	4.11	81/03/09	*/
+/*	ht.c	4.12	81/03/09	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -6,14 +6,12 @@
  * TM03/TU?? tape driver
  *
  * TODO:
- *	test tape writing
  *	test error handling
- *	test 2 tapes
  *	test tape with disk on same mba
- *	test dump code
- *	try a mounted filesys on tape to check positioning code
  *	test ioctl's
  *	see how many rewind interrups we get if we kick when not at BOT
+ *	test writing on write prot tape and error thereby
+ *	check rle error on block tape code
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -114,9 +112,9 @@ htopen(dev, flag)
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
 		HTTC_PDP11|sc->sc_slave;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0 || 
+	   (flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL) ||
 	   (sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
-		dens != sc->sc_dens ||
-	   (flag & (FREAD|FWRITE)) == FWRITE && sc->sc_dsreg&HTDS_WRL) {
+		dens != sc->sc_dens) {
 		u.u_error = EIO;
 		return;
 	}
@@ -152,8 +150,7 @@ htcommand(dev, com, count)
 	bp = &chtbuf[HTUNIT(dev)];
 	(void) spl5();
 	while (bp->b_flags&B_BUSY) {
-		if (bp->b_command == H_REWIND && bp->b_repcnt == 0 &&
-		    (bp->b_flags&B_DONE))
+		if(bp->b_repcnt == 0 && (bp->b_flags&B_DONE))
 			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
@@ -202,6 +199,10 @@ htustart(mi)
 	daddr_t blkno;
 
 	htaddr->httc = sc->sc_dens;
+	if (bp == &chtbuf[HTUNIT(bp->b_dev)] && bp->b_command == H_SENSE) {
+		htaddr->htcs1 = HT_SENSE|HT_GO;
+		mbclrattn(mi);
+	}
 	sc->sc_dsreg = htaddr->htds;
 	sc->sc_erreg = htaddr->hter;
 	sc->sc_resid = htaddr->htfc;
@@ -288,17 +289,22 @@ htdtint(mi, mbsr)
 		if (bp == &rhtbuf[HTUNIT(bp->b_dev)]) {
 			er &= ~HTER_FCE;
 			mbs &= ~(MBSR_DTABT|MBSR_MBEXC);
-		}
+		} else
 		if (bp->b_flags & B_READ && ds & HTDS_PES)
 			er &= ~(HTER_CSITM|HTER_CORCRC);
 		if (er&HTER_HARD || mbs&MBSR_EBITS || (ds&HTDS_MOL) == 0 ||
 		    er && ++mi->mi_tab.b_errcnt >= 7) {
 			if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 				sc->sc_openf = -1;
+			if ((er&HTER_HARD) == HTER_FCE &&
+			    (mbs&MBSR_EBITS) == (MBSR_DTABT|MBSR_MBEXC) &&
+			    (ds&HTDS_MOL))
+				goto noprint;
 			printf("tu%d: hard error bn%d mbsr=%b er=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbsr, mbsr_bits,
 			    MASKREG(htaddr->hter), HTER_BITS);
+noprint:
 			bp->b_flags |= B_ERROR;
 			return (MBD_DONE);
 		}
@@ -356,9 +362,9 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		printf("tu%d: hard error bn%d er=%b ds=%b\n",
+		printf("tu%d: hard error bn%d er=%b\n",
 		    TUUNIT(bp->b_dev), bp->b_blkno,
-		    sc->sc_erreg, HTER_BITS, sc->sc_dsreg, HTDS_BITS);
+		    sc->sc_erreg, HTER_BITS);
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 	}
@@ -508,7 +514,7 @@ htdump()
 		return (ENXIO);
 	mi = phys(htinfo[0], struct mba_device *);
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
-	mbainit(mp);
+	mp->mba_cr = MBCR_IE;
 	htaddr = (struct htdevice *)&mp->mba_drv[mi->mi_drive];
 	htaddr->httc = HTTC_PDP11|HTTC_1600BPI;
 	htaddr->htcs1 = HT_DCLR|HT_GO;
@@ -518,10 +524,12 @@ htdump()
 		start += blk;
 		num -= blk;
 	}
+	hteof(htaddr);
+	hteof(htaddr);
 	htwait(htaddr);
+	if (htaddr->htcs&HTDS_ERR)
+		return (EIO);
 	htaddr->htcs1 = HT_REW|HT_GO;
-	hteof(htaddr);
-	hteof(htaddr);
 	return (0);
 }
 
