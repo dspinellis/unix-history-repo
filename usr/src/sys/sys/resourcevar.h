@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resourcevar.h	8.2 (Berkeley) %G%
+ *	@(#)resourcevar.h	8.3 (Berkeley) %G%
  */
 
-#ifndef	_SYS_RESOURCEVAR_H_		/* tmp for user.h */
+#ifndef	_SYS_RESOURCEVAR_H_
 #define	_SYS_RESOURCEVAR_H_
 
 /*
@@ -45,22 +45,20 @@ struct pstats {
  */
 struct plimit {
 	struct	rlimit pl_rlimit[RLIM_NLIMITS];
-	int	p_lflags;		/* below */
+#define	PL_SHAREMOD	0x01		/* modifications are shared */
+	int	p_lflags;
 	int	p_refcnt;		/* number of references */
 };
 
-/* pl_lflags: */
-#define	PL_SHAREMOD	0x01		/* modifications are shared */
-
-/* make copy of plimit structure */
-struct	plimit *limcopy __P((struct plimit *lim));
-
-/* add profiling ticks: in interrupt context, and from AST */
-void	addupc_intr __P((struct proc *p, u_long pc, u_int ticks));
-void	addupc_task __P((struct proc *p, u_long pc, u_int ticks));
-
 /* add user profiling from AST */
-#define	ADDUPROF(p)	addupc_task(p, (p)->p_stats->p_prof.pr_addr, \
-			    (p)->p_stats->p_prof.pr_ticks)
+#define	ADDUPROF(p)							\
+	addupc_task(p,							\
+	    (p)->p_stats->p_prof.pr_addr, (p)->p_stats->p_prof.pr_ticks)
 
+#ifdef KERNEL
+void	 addupc_intr __P((struct proc *p, u_long pc, u_int ticks));
+void	 addupc_task __P((struct proc *p, u_long pc, u_int ticks));
+struct plimit
+	*limcopy __P((struct plimit *lim));
+#endif
 #endif	/* !_SYS_RESOURCEVAR_H_ */
