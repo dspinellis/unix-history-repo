@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.8 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -275,13 +275,10 @@ ufs_setattr(vp, vap, cred)
 		if (error = itrunc(ip, vap->va_size))
 			return (error);
 	}
-	/*
-	 * Check whether the following attributes can be changed.
-	 */
-	if (cred->cr_uid != ip->i_uid &&
-	    (error = suser(cred, &u.u_acflag)))
-		return (error);
 	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
+		if (cred->cr_uid != ip->i_uid &&
+		    (error = suser(cred, &u.u_acflag)))
+			return (error);
 		if (vap->va_atime.tv_sec != VNOVAL)
 			ip->i_flag |= IACC;
 		if (vap->va_mtime.tv_sec != VNOVAL)
@@ -305,7 +302,11 @@ chmod1(vp, mode, cred)
 	struct ucred *cred;
 {
 	register struct inode *ip = VTOI(vp);
+	int error;
 
+	if (cred->cr_uid != ip->i_uid &&
+	    (error = suser(cred, &u.u_acflag)))
+		return (error);
 	ip->i_mode &= ~07777;
 	if (cred->cr_uid) {
 		if (vp->v_type != VDIR)
