@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.33 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -339,16 +339,23 @@ ufs_unmount(mp, flags)
 	if (mntinvalbuf(mp))
 		return (EBUSY);
 	ump = VFSTOUFS(mp);
-	if (error = vflush(mp, ITOV(ump->um_qinod), flags))
 		return (error);
 #ifdef QUOTA
-	(void) closedq(ump);
-	/*
-	 * A drag, but it would be ugly to cheat, & this doesn't happen often.
-	 */
-	if (vflush(mp, (struct vnode *)NULL, MNT_NOFORCE))
-		panic("ufs_unmount: quota");
+	if (ump->um_qinod) {
+		if (error = vflush(mp, ITOV(ump->um_qinod), flags))
+			return (error);
+		(void) closedq(ump);
+		/*
+		 * Here we have to vflush again to get rid of the quota inode.
+		 * A drag, but it would be ugly to cheat, and this system
+		 * call does not happen often.
+		 */
+		if (vflush(mp, (struct vnode *)NULL, MNT_NOFORCE))
+			panic("ufs_unmount: quota");
+	} else
 #endif
+	if (error = vflush(mp, (struct vnode *)NULL, flags))
+		return (error);
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
 	free((caddr_t)fs->fs_csp[0], M_SUPERBLK);
