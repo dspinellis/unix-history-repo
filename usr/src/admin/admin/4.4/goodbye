@@ -1,4 +1,4 @@
-.\"	@(#)goodbye	5.2 (Berkeley) %G%
+.\"	@(#)goodbye	5.3 (Berkeley) %G%
 .\"
 .\" use -ms
 .PP
@@ -49,4 +49,5 @@ what it is today!
 .in 1i
 .sp 2
 Kirk McKusick
+.br
 Keith Bostic
