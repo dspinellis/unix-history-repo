@@ -1,10 +1,13 @@
-static	char *sccsid = "@(#)dumprmt.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.4 (Berkeley) %G%";
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
+#include <netdb.h>
 
 #define	TS_CLOSED	0
 #define	TS_OPEN		1
@@ -34,9 +37,16 @@ rmtconnaborted()
 
 rmtgetconn()
 {
+	static struct servent *sp = 0;
 
-	rmtape = rcmd(&rmtpeer, IPPORT_CMDSERVER,
-	    "root", "root", "/etc/rmt", 0);
+	if (sp == 0) {
+		sp = getservbyname("shell", "tcp");
+		if (sp == 0) {
+			fprintf(stderr, "rdump: shell/tcp: unknown service\n");
+			exit(1);
+		}
+	}
+	rmtape = rcmd(&rmtpeer, sp->s_port, "root", "root", "/etc/rmt", 0);
 }
 
 rmtopen(tape, mode)
