@@ -1,0 +1,338 @@
+
+Hello,
+
+This file contains a list of machines used, libraries compiler etc. If you
+find it out-of-date, or you have additions or changes, please let me know.
+
+christos
+
+
+VENDOR	:	sun
+MODELS	:	sun3, sun4, sun386i
+COMPILER:	cc, gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	sunos 3.5, 4.0, 4.1, 4.1.1
+CONFIG	:	config.sunos*
+ENVIRON	:	n/a
+NOTES	:	Don't compile with /usr/5bin/cc
+VERSION	:	6.00.01
+
+VENDOR	:	hp
+MODELS	:	apollo
+COMPILER:	cc
+CFLAGS	:	-U__STDC__ -I. -O
+LIBES	:	-ltermcap
+OS	:	domain 10.4.3
+CONFIG	:	config.bsd
+ENVIRON	:	bsd4.3
+NOTES	:	Don't use gcc; breaks tc.os.c
+VERSION	:	6.00.01
+
+VENDOR	:	hp
+MODELS	:	hp9000s300, hp9000s700, hp9000s800
+COMPILER:	cc, gcc
+CFLAGS	:	normal (-Aa -O3 hpux 8.0)
+LIBES	:	-ltermcap
+OS	:	hpux 6.5, 7.0.x, 8.0
+CONFIG	:	config.hpux
+ENVIRON	:	n/a
+NOTES	:	Don't use -lBSD; breaks getpgrp(). Config.hp-3.2 obsolete?
+VERSION	:	6.00.04
+
+VENDOR	:	hp
+MODELS	:	hp9000s500
+COMPILER:	cc
+CFLAGS	:	-I. -O
+LIBES	:	-ltermcap
+OS	:	hpux 5.2
+CONFIG	:	config.hp-5.2
+ENVIRON	:	n/a
+NOTES	:	very slow in executing commands (I think the reason is
+NOTES	:	a very slow fork)
+VERSION	:	6.00.01
+
+VENDOR	:	digital
+MODELS	:	vax
+COMPILER:	cc, gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	bsd4.3, bsd4.4
+CONFIG	:	config.bsd*
+ENVIRON	:	n/a
+NOTES	:	cc broken: typedef void sigret_t;
+VERSION	:	6.00.03
+
+VENDOR	:	digital
+MODELS	:	vax
+COMPILER:	cc, gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	mtXinu 4.3
+CONFIG	:	config.mtxinu 
+ENVIRON	:	n/a
+NOTES	:	cc broken: typedef void sigret_t;
+VERSION	:	6.00.00
+
+VENDOR	:	digital
+MODELS	:	vax, decstation
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	ultrix 3.0 (vax), 3.5, 4.0, 4.1, 4.2
+CONFIG	:	config.ultrix 
+ENVIRON	:	n/a
+NOTES	:	pcc broken: typedef void sigret_t (vax); 
+NOTES	:	mips compiler on ultrix 3.5 needs -Dvoid=int
+NOTES	:	vax compiler on ultrix 3.0 needs -Dvoid=int
+NOTES	:	Does Ultrix 4.x still need YPBUGS?
+VERSION	:	6.00.01
+
+VENDOR	:	apple
+MODELS	:	macII
+COMPILER:	cc
+CFLAGS	:	normal		(-ZP)
+LIBES	:	-ltermcap 	(-lposix -ltermcap)
+OS	:	aux 2.0
+CONFIG	:	config.mac2	(-DPOSIX -DPOSIXJOBS)
+ENVIRON	:	n/a
+NOTES	:	Tcsh can compile both in non POSIX and POSIX mode. The
+NOTES	:	default configuration is non POSIX. The flags in parentheses
+NOTES	:	are the changes that are needed to compile in POSIX mode
+VERSION	:	6.00.01
+
+VENDOR	:	ibm
+MODELS	:	ps/2, rs6000, ibm370, ibmESA
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-lcurses -lbsd
+OS	:	aix 3.1 (rs6000) aix 1.1 (ps/2) aix G9.9 (ibm370)
+	:	aix (ibmESA)
+CONFIG	:	config.aix
+ENVIRON	:	n/a
+NOTES	:	aix G9.9 sfname() frees bad pointers. Use TCF with care!
+VERSION	:	6.00.02
+
+VENDOR	:	ibm
+MODELS	:	rt
+COMPILER:	hc
+CFLAGS	:	-I. -U__STDC__
+LIBES	:	-ltermcap
+OS	:	aos 4.3
+CONFIG	:	config.bsd
+ENVIRON	:	n/a
+NOTES	:	Old versions of the compiler break with -O. No ansi include
+NOTES	:	files so we have to undef __STDC__
+VERSION	:	6.00.01
+
+VENDOR	:	ibm
+MODELS	:	rt
+COMPILER:	cc
+CFLAGS	:	-I. -Nd4000 -Nn3000
+LIBES	:	-lcurses
+OS	:	aix 2.2.1
+CONFIG	:	config.aix
+ENVIRON	:	n/a
+NOTES	:	Stacksize limit is 1K off?
+VERSION	:	6.00.03
+
+VENDOR	:	sequent
+MODELS	:	balance, symmetry
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap -lseq
+OS	:	Dynix 3.1, ptx 1.2
+CONFIG	:	config.sequent
+ENVIRON	:	universe on Dynix 3.1: ucb
+NOTES	:	none
+VERSION	:	6.00.03
+
+VENDOR	:	encore
+MODELS	:	multimax
+COMPILER:	gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	umax 4.2
+CONFIG	:	config.bsd
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.00
+
+VENDOR	:	sony
+MODELS	:	news 1850, 1750
+COMPILER:	gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	bsd 4.3, news-os 3.3
+CONFIG	:	config.bsd
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.00
+
+VENDOR	:	ibm + compatibles
+MODELS	:	i386,i286
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap -ldir -lx
+OS	:	xenix
+CONFIG	:	config.xenix
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.01
+
+VENDOR	:	hp
+MODELS	:	hp300
+COMPILER:	gcc/cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	MORE/bsd 4.3+
+CONFIG	:	config.mtxinu
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.02
+
+VENDOR	:	digital
+MODELS	:	vax
+COMPILER:	gcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	bsd 4.3reno
+CONFIG	:	config.bsdreno
+NOTES	:	ttyname() is buggy. calls closedir() twice. See README
+ENVIRON	:	n/a
+VERSION	:	6.00.04
+
+VENDOR	:	Cray Research
+MODELS	:	Y-MP
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	Unicos 6.0
+CONFIG	:	config.cray
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.01
+
+VENDOR	:	pyramid
+MODELS	:	MIS4/2T 
+COMPILER:	cc
+CFLAGS	:	-I. -O -DBSD
+LIBES	:	-ltermcap
+OS	:	OSx5.1
+CONFIG	:	config.bsd
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.02
+
+VENDOR	:	alliant
+MODELS	:	FX/8X series
+COMPILER:	pcc
+CFLAGS	:	normal
+LIBES	:	-ltermcap
+OS	:	Concentrix 5.7.00
+CONFIG	:	config.bsd
+ENVIRON	:	n/a
+NOTES	:	n/a
+VERSION	:	6.00.01
+
+VENDOR	:	next
+MODELS	:	any
+COMPILER:	cc
+CFLAGS	:	normal
+LIBES	:	-ltermcap -lcs
+OS	:	next os 2.x
+CONFIG	:	config.mach
+ENVIRON	:	n/a
+NOTES	:	n/a
+VERSION	:	6.00.01
+
+VENDOR	:	Heurikon
+MODELS	:	HK68
+COMPILER:	gcc (Green Hills C-68000)
+CFLAGS	:	-ga -X138 -X25 -I.
+LDFLAGS	:	-n
+LIBES	:	-lcurses -ltermcap -ldirent
+OS	:	UniPlus+ 5.0
+CONFIG	:	config.hk68
+ENVIRON	:	n/a
+NOTES	:	Need Doug Gwyn's POSIX directory library (libdirent.a)
+VERSION	:	6.00.01
+
+VENDOR	:	Amdahl
+MODELS	:	n/a
+COMPILER:	cc/gcc
+CFLAGS	:	normal
+LIBES	: 	-lcurses -lsocket -lbsd	
+CONFIG	:	config.amdahl
+ENVIRON	:	n/a
+VERSION	:	6.00.01
+
+VENDOR	:	prime
+MODELS	:	exl 300 series
+COMPILER:	cc
+CFLAGS	:	-O -s -I.
+LIBES	:	-lcurses -lstcp
+OS	:	system v.3.1.2
+CONFIG	:	config.sysv
+ENVIRON	:	sysv
+NOTES	:	Is libstcp.a on all exl 300s?
+VERSION	:	6.00.01
+
+VENDOR  :       convex
+MODELS  :       c220
+COMPILER:       cc
+CFLAGS  :       normal
+LIBES   :       -ltermcap
+OS      :       9.0.6 (bsd 4.3)
+CONFIG  :       config.convex
+ENVIRON :       n/a
+NOTES   :       Dont use the -pcc flag.
+	:	Use setty to fix the default tty settings.
+VERSION :       6.00.01
+
+VENDOR  :       Norsk Data
+MODELS  :       nd5000
+COMPILER:       cc
+CFLAGS  :       normal
+LIBES   :       -ltermcap
+OS      :       Ndix Version C
+CONFIG  :       config.bsd
+ENVIRON :       n/a
+NOTES   :       The -O option makes the compiler run for ages!
+VERSION :       6.00.03
+
+VENDOR	:	SGI
+MODELS	:	4D, 3000
+COMPILER:	cc
+CFLAGS	:	-D__STDC__
+LIBES	:	-lcurses -lsun -lbsd -lc_s
+OS	:	IRIX (3.?) 3.2 3.3 4.0
+CONFIG	:	config.sgi
+ENVIRON	:	n/a
+NOTES	:	AUTOLOGOUT is probably best undef'ed
+NOTES	:	For 4.0, the NLS define in config.h can be enabled.
+VERSION	:	6.00.03
+
+VENDOR	:	ibm + compatibles
+MODELS	:	i386,i486
+COMPILER:	/bin/cc
+CFLAGS	:	normal
+LIBES	:	-lcurses -lc /usr/ucblib/libucb.a
+OS	:	SVR4 (DELL, ESIX, ISC, UHC)
+CONFIG	:	config.sysv4
+ENVIRON	:	n/a
+NOTES	:	none
+VERSION	:	6.00.04
+
+VENDOR	:	stardent
+MODELS	:	gs2600
+COMPILER:	/bin/cc
+CFLAGS	:	-O
+LIBES	:	-lcurses
+OS	:	stellix
+CONFIG	:	config.stellar
+ENVIRON	:	n/a
+NOTES	:	works but not worth compiling with -O4...
+NOTES	:	setpgrp() and SIGCHLD work the BSD way, not the way documented.
+NOTES	:	we need to define BACKPIPE		
+VERSION	:	6.00.04

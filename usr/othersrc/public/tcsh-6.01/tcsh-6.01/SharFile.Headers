@@ -1,0 +1,217 @@
+=== tcsh.shar1 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i054: tcsh6.01 - a csh replacement with lots of extra goodies, Part01/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 54
+Archive-Name: tcsh-6.01/part01
+
+[ Tcsh is easily the best thing to come out since binary arithmetic.
+  No other program has ever been nearly as useful to me, and this version
+  does NOT require Berkeley csh sources -- so you don't need to do any
+  patching.  Just make it and run it.				--vix ]
+
+This is tcsh version tcsh 6.01.  Tcsh is a version of the Berkeley
+C-Shell, with the addition of: a command line editor, command and file
+name completion, listing, etc. and a bunch of small additions to the
+shell itself.
+
+Tcsh runs on BSD 4.2 and 4.3 Unix, Mach, Sun Unix (tested on 3.0, 3.2,
+3.4, 4.0, 4.1), Pyramid OS/X (in the bsd universe), Encore UMAX 4.2, 
+Apple A/UX 2.0, AT&T 3b machines under SysV.2 and V.3, HP/UX
+6.2 on series 300 and 800 machines and all HP machines under HP/UX
+6.5 and 7.0, and will probably work with a bit of tinkering on anything 
+else either BSD or SysV-ish.  Note that the above list is incomplete,
+and the place to look is the config directory to find a configuration 
+file appropriate for your machine. 
+
+=== tcsh.shar2 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i055: tcsh6.01 - a csh replacement with lots of extra goodies, Part02/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 55
+Archive-Name: tcsh-6.01/part02
+
+=== tcsh.shar3 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i056: tcsh6.01 - a csh replacement with lots of extra goodies, Part03/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 56
+Archive-Name: tcsh-6.01/part03
+
+=== tcsh.shar4 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i057: tcsh6.01 - a csh replacement with lots of extra goodies, Part04/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 57
+Archive-Name: tcsh-6.01/part04
+
+=== tcsh.shar5 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i058: tcsh6.01 - a csh replacement with lots of extra goodies, Part05/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 58
+Archive-Name: tcsh-6.01/part05
+
+=== tcsh.shar6 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i059: tcsh6.01 - a csh replacement with lots of extra goodies, Part06/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 59
+Archive-Name: tcsh-6.01/part06
+
+=== tcsh.shar7 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i060: tcsh6.01 - a csh replacement with lots of extra goodies, Part07/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 60
+Archive-Name: tcsh-6.01/part07
+
+=== tcsh.shar8 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i061: tcsh6.01 - a csh replacement with lots of extra goodies, Part08/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 61
+Archive-Name: tcsh-6.01/part08
+
+=== tcsh.shar9 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i062: tcsh6.01 - a csh replacement with lots of extra goodies, Part09/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 62
+Archive-Name: tcsh-6.01/part09
+
+=== tcsh.shar10 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i063: tcsh6.01 - a csh replacement with lots of extra goodies, Part10/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 63
+Archive-Name: tcsh-6.01/part10
+
+=== tcsh.shar11 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i064: tcsh6.01 - a csh replacement with lots of extra goodies, Part11/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 64
+Archive-Name: tcsh-6.01/part11
+
+=== tcsh.shar12 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i065: tcsh6.01 - a csh replacement with lots of extra goodies, Part12/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 65
+Archive-Name: tcsh-6.01/part12
+
+=== tcsh.shar13 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i066: tcsh6.01 - a csh replacement with lots of extra goodies, Part13/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 66
+Archive-Name: tcsh-6.01/part13
+
+=== tcsh.shar14 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i067: tcsh6.01 - a csh replacement with lots of extra goodies, Part14/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 67
+Archive-Name: tcsh-6.01/part14
+
+=== tcsh.shar15 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i068: tcsh6.01 - a csh replacement with lots of extra goodies, Part15/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 68
+Archive-Name: tcsh-6.01/part15
+
+=== tcsh.shar16 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i069: tcsh6.01 - a csh replacement with lots of extra goodies, Part16/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 69
+Archive-Name: tcsh-6.01/part16
+
+=== tcsh.shar17 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i070: tcsh6.01 - a csh replacement with lots of extra goodies, Part17/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 70
+Archive-Name: tcsh-6.01/part17
+
+=== tcsh.shar18 =========================
+Newsgroups: comp.sources.unix
+From: christos@ee.cornell.edu (Christos Zoulas)
+Subject: v25i071: tcsh6.01 - a csh replacement with lots of extra goodies, Part18/18
+Sender: sources-moderator@pa.dec.com
+Approved: vixie@pa.dec.com
+
+Submitted-By: christos@ee.cornell.edu (Christos Zoulas)
+Posting-Number: Volume 25, Issue 71
+Archive-Name: tcsh-6.01/part18
+
