@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Copyright (c) 1986 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)buildboot	1.1 (Berkeley) %G%
+#
+boot=dk5a
+boottype=eagle
+DISTROOT=/nbsd
+
+date
+umount /dev/${boot}
+newfs -s 500 -i 32000 ${boot} ${boottype}
+fsck /dev/r${boot}
+mount /dev/${boot} /mnt
+cp $DISTROOT/stand/copy /mnt
+#cp $DISTROOT/stand/vdformat /mnt
+cp $DISTROOT/boot /mnt
+cp $DISTROOT/wcs /mnt
+cp $DISTROOT/fppwcs /mnt
+#cp $DISTROOT/poc /mnt
+#cp $DISTROOT/poc1 /mnt
+#cp $DISTROOT/poc2 /mnt
+#cp $DISTROOT/fppoc /mnt
+sync
+umount /dev/${boot}
+fsck /dev/${boot}
+date
