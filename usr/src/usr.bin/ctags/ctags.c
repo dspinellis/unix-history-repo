@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ctags.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctags.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <ctags.h>
@@ -206,8 +206,10 @@ find_entries(file)
 				 * we search all 3 parts of a lex file
 				 * for C references.  This may be wrong.
 				 */
+				toss_yysec();
 				(void)strcpy(lbuf,"%%$");
-				pfnote("yylex",0);
+				pfnote("yylex",lineno);
+				rewind(inf);
 			}
 		}
 /* yacc */	else if (cp[1] == 'y' && !cp[2]) {
@@ -216,6 +218,8 @@ find_entries(file)
 			 * for C references.  This may be wrong.
 			 */
 			toss_yysec();
+			(void)strcpy(lbuf,"%%$");
+			pfnote("yyparse",lineno);
 			y_entries();
 		}
 /* fortran */	else if ((cp[1] != 'c' && cp[1] != 'h') && !cp[2]) {
