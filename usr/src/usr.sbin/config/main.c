@@ -1,5 +1,5 @@
 /*
- * main.c	1.4	81/03/09
+ * main.c	1.5	82/10/11
  * Config
  *	Do system configuration for VAX/UNIX
  *		1) Build system data structures
@@ -17,9 +17,13 @@ main(argc, argv)
 int argc;
 char **argv;
 {
+    if (argc > 1 && strcmp(argv[1], "-p") == 0) {
+	argv++, argc--;
+	profiling++;
+    }
     if (argc != 2)
     {
-	fprintf(stderr, "usage: config <sysname>\n");
+	fprintf(stderr, "usage: config [ -p ] <sysname>\n");
 	exit(1);
     }
     PREFIX = argv[1];
