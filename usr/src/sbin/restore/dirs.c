@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
+#include <string.h>
 #include <protocols/dumprestore.h>
 #include <sys/file.h>
 #include <ufs/ufs/dir.h>
@@ -65,7 +66,7 @@ static RST_DIR	*dirp;
 static char	dirfile[32] = "#";	/* No file */
 static char	modefile[32] = "#";	/* No file */
 static char	dot[2] = ".";		/* So it can be modified */
-extern ino_t	search();
+extern ino_t	searchdir();
 struct direct 	*rst_readdir();
 
 /*
@@ -90,7 +91,7 @@ extractdirs(genmode)
 	register struct dinode *ip;
 	struct inotab *itp;
 	struct direct nulldir;
-	int putdir(), null();
+	int putdir(), xtrnull();
 
 	vprintf(stdout, "Extract directories from tape\n");
 	(void) sprintf(dirfile, "%s/rstdir%d", _PATH_TMP, dumpdate);
@@ -135,7 +136,7 @@ extractdirs(genmode)
 			return;
 		}
 		itp = allocinotab(curfile.ino, ip, seekpt);
-		getfile(putdir, null);
+		getfile(putdir, xtrnull);
 		putent(&nulldir);
 		flushent();
 		itp->t_size = seekpt - itp->t_seekpt;
@@ -223,47 +224,34 @@ treescan(pname, ino, todo)
 }
 
 /*
- * Search the directory tree rooted at inode ROOTINO
- * for the path pointed at by n
+ * Lookup a pathname which is always assumed to start from the ROOTINO.
  */
 ino_t
-psearch(n)
-	char	*n;
+pathsearch(pathname)
+	char *pathname;
 {
-	register char *cp, *cp1;
 	ino_t ino;
-	char c;
+	char *name, buffer[MAXPATHLEN];
 
+	strcpy(buffer, pathname);
+	pathname = buffer;
 	ino = ROOTINO;
-	if (*(cp = n) == '/')
-		cp++;
-next:
-	cp1 = cp + 1;
-	while (*cp1 != '/' && *cp1)
-		cp1++;
-	c = *cp1;
-	*cp1 = 0;
-	ino = search(ino, cp);
-	if (ino == 0) {
-		*cp1 = c;
-		return(0);
-	}
-	*cp1 = c;
-	if (c == '/') {
-		cp = cp1+1;
-		goto next;
-	}
-	return(ino);
+	while (*pathname == '/')
+		pathname++;
+	while ((name = strsep(&pathname, "/")) != NULL)
+		if ((ino = searchdir(ino, name)) == 0)
+			return ((ino_t)0);
+	return (ino);
 }
 
 /*
- * search the directory inode ino
- * looking for entry cp
+ * Lookup the requested name in directory inum.
+ * Return its inode number if found, zero if it does not exist.
  */
 ino_t
-search(inum, cp)
+searchdir(inum, name)
 	ino_t	inum;
-	char	*cp;
+	char	*name;
 {
 	register struct direct *dp;
 	register struct inotab *itp;
@@ -273,12 +261,12 @@ search(inum, cp)
 	if (itp == NULL)
 		return(0);
 	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
-	len = strlen(cp);
+	len = strlen(name);
 	do {
 		dp = rst_readdir(dirp);
 		if (dp == NULL || dp->d_ino == 0)
 			return (0);
-	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len) != 0);
+	} while (dp->d_namlen != len || strncmp(dp->d_name, name, len) != 0);
 	return(dp->d_ino);
 }
 
