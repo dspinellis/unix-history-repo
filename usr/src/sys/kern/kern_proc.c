@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_proc.c	7.9 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,43 +40,6 @@
 #include "machine/reg.h"
 #include "machine/pte.h"
 #include "machine/psl.h"
-
-/*
- * Clear any pending stops for top and all descendents.
- */
-spgrp(top)
-	struct proc *top;
-{
-	register struct proc *p;
-	int f = 0;
-
-	p = top;
-	for (;;) {
-		p->p_sig &=
-			  ~(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU));
-		f++;
-		/*
-		 * If this process has children, descend to them next,
-		 * otherwise do any siblings, and if done with this level,
-		 * follow back up the tree (but not past top).
-		 */
-		if (p->p_cptr)
-			p = p->p_cptr;
-		else if (p == top)
-			return (f);
-		else if (p->p_osptr)
-			p = p->p_osptr;
-		else for (;;) {
-			p = p->p_pptr;
-			if (p == top)
-				return (f);
-			if (p->p_osptr) {
-				p = p->p_osptr;
-				break;
-			}
-		}
-	}
-}
 
 /*
  * Is p an inferior of the current process?
@@ -175,15 +138,12 @@ pgmv(p, pgid, mksess)
 		pgrphash[n] = pgrp;
 		pgrp->pg_jobc = 0;
 		pgrp->pg_mem = NULL;
-	}
+	} else if (pgrp == p->p_pgrp)
+		return;
 	/*
 	 * adjust eligibility of affected pgrps to participate in job control
 	 */
-	if (PGRP_JOBC(p))
-		p->p_pgrp->pg_jobc--;
-	for (cp = p->p_cptr; cp; cp = cp->p_osptr)
-		if (PGRP_JOBC(cp))
-			cp->p_pgrp->pg_jobc--;
+	fixjobc(p, 0);
 	/*
 	 * unlink p from old process group
 	 */
@@ -204,13 +164,9 @@ done:
 	/*
 	 * adjust eligibility of affected pgrps to participate in job control
 	 */
-	if (PGRP_JOBC(p))
-		p->p_pgrp->pg_jobc++;
-	for (cp = p->p_cptr; cp; cp = cp->p_osptr)
-		if (PGRP_JOBC(cp))
-			cp->p_pgrp->pg_jobc++;
+	fixjobc(p, 1);
 	/*
-	 * old pgrp empty?
+	 * delete old if empty
 	 */
 	if (!opgrp->pg_mem)
 		pgdelete(opgrp);
@@ -259,6 +215,60 @@ done:
 	FREE(pgrp, M_PGRP);
 }
 
+/*
+ * Adjust pgrp jobc counter.
+ * flag == 0 => p is leaving current state.
+ * flag == 1 => p is entering current state.
+ */
+fixjobc(p, flag)
+	register struct proc *p;
+	register flag;
+{
+	register struct pgrp *mypgrp = p->p_pgrp, *hispgrp;
+	register struct session *mysession = mypgrp->pg_session;
+	register struct proc *qp;
+
+	if ((hispgrp = p->p_pptr->p_pgrp) != mypgrp &&
+	    hispgrp->pg_session == mysession)
+		if (flag)
+			mypgrp->pg_jobc++;
+		else if (--mypgrp->pg_jobc == 0) {
+			int deliver = 0;
+
+			sigstopped:
+			for (qp = mypgrp->pg_mem; qp != NULL; 
+			     qp = qp->p_pgrpnxt)
+				if (deliver) {
+					psignal(qp, SIGHUP);
+					psignal(qp, SIGCONT);
+				} else if (qp->p_stat == SSTOP) {
+					deliver++;
+					goto sigstopped;
+				}
+		}
+
+	for (p = p->p_cptr; p != NULL; p = p->p_osptr)
+		if ((hispgrp = p->p_pgrp) != mypgrp &&
+		    hispgrp->pg_session == mysession &&
+		    p->p_stat != SZOMB)
+			if (flag)
+				hispgrp->pg_jobc++;
+			else if (--hispgrp->pg_jobc == 0) {
+				int deliver = 0;
+
+				sigstopped2:
+				for (qp = hispgrp->pg_mem; qp != NULL; 
+				     qp = qp->p_pgrpnxt)
+					if (deliver) {
+						psignal(qp, SIGHUP);
+						psignal(qp, SIGCONT);
+					} else if (qp->p_stat == SSTOP) {
+						deliver++;
+						goto sigstopped2;
+					}
+			}
+}
+				
 /*
  * init the process queues
  */
