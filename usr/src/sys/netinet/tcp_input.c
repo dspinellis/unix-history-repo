@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.30 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1504,8 +1504,6 @@ tcp_xmit_timer(tp, rtt)
  * window to be a single segment if the destination isn't local.
  * While looking at the routing entry, we also initialize other path-dependent
  * parameters from pre-set or cached values in the routing entry.
- * We must also take into account that timestamp options may be placed in
- * each segment.
  */
 
 tcp_mss(tp, offer)
@@ -1520,11 +1518,6 @@ tcp_mss(tp, offer)
 	struct inpcb *inp;
 	struct socket *so;
 	extern int tcp_mssdflt, tcp_rttdflt;
-	int room_for_options = 0;
-
-	/* Leave room for timestamping */
-	if (tp->t_flags & TF_REQ_TSTMP)
-		room_for_options += TCPOLEN_TSTAMP_APPA;
 
 	inp = tp->t_inpcb;
 	ro = &inp->inp_route;
@@ -1539,7 +1532,7 @@ tcp_mss(tp, offer)
 			rtalloc(ro);
 		}
 		if ((rt = ro->ro_rt) == (struct rtentry *)0)
-			return (tcp_mssdflt - room_for_options);
+			return (tcp_mssdflt);
 	}
 	ifp = rt->rt_ifp;
 	so = inp->inp_socket;
@@ -1573,12 +1566,11 @@ tcp_mss(tp, offer)
 	 * if there's an mtu associated with the route, use it
 	 */
 	if (rt->rt_rmx.rmx_mtu)
-		mss = rt->rt_rmx.rmx_mtu - sizeof(struct tcpiphdr)
-			- room_for_options;
+		mss = rt->rt_rmx.rmx_mtu - sizeof(struct tcpiphdr);
 	else
 #endif /* RTV_MTU */
 	{
-		mss = ifp->if_mtu - sizeof(struct tcpiphdr) - room_for_options;
+		mss = ifp->if_mtu - sizeof(struct tcpiphdr);
 #if	(MCLBYTES & (MCLBYTES - 1)) == 0
 		if (mss > MCLBYTES)
 			mss &= ~(MCLBYTES-1);
@@ -1587,7 +1579,7 @@ tcp_mss(tp, offer)
 			mss = mss / MCLBYTES * MCLBYTES;
 #endif
 		if (!in_localaddr(inp->inp_faddr))
-			mss = min(mss, tcp_mssdflt-room_for_options);
+			mss = min(mss, tcp_mssdflt);
 	}
 	/*
 	 * The current mss, t_maxseg, is initialized to the default value.
