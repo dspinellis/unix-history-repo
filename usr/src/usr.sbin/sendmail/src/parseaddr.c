@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1839,12 +1839,15 @@ sameaddr(a, b)
 		return (FALSE);
 
 	/* if we have good uids for both but they differ, these are different */
-	ca = getctladdr(a);
-	cb = getctladdr(b);
-	if (ca != NULL && cb != NULL &&
-	    bitset(QGOODUID, ca->q_flags & cb->q_flags) &&
-	    ca->q_uid != cb->q_uid)
-		return (FALSE);
+	if (a->q_mailer == ProgMailer)
+	{
+		ca = getctladdr(a);
+		cb = getctladdr(b);
+		if (ca != NULL && cb != NULL &&
+		    bitset(QGOODUID, ca->q_flags & cb->q_flags) &&
+		    ca->q_uid != cb->q_uid)
+			return (FALSE);
+	}
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */
 	if (a->q_host == b->q_host)
