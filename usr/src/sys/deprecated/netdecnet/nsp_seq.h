@@ -1,3 +1,4 @@
+/*	nsp_seq.h	1.2	82/05/15	*/
 
 /*
  * NSP sequence numbers are 12 bit integers operated

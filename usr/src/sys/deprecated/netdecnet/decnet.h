@@ -1,3 +1,4 @@
+/*	decnet.h	1.2	82/05/15	*/
 
 /*
  * DECnet address (should be expanded for Phase 3E)
