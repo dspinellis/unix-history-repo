@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.22 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -507,9 +507,11 @@ copen(scp, fmode, cmode, ndp, resultfd)
 	fp = nfp;
 	scp->sc_retval1 = indx;	/* XXX for fdopen() */
 	if (error = vn_open(ndp, fmode, (cmode & 07777) &~ ISVTX)) {
-		scp->sc_ofile[indx] = NULL;
 		crfree(fp->f_cred);
 		fp->f_count--;
+		if (error == -1)	/* XXX from fdopen */
+			return (0);	/* XXX from fdopen */
+		scp->sc_ofile[indx] = NULL;
 		return (error);
 	}
 	fp->f_flag = fmode & FMASK;
