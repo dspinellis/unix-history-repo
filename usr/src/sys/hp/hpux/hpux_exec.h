@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_exec.h 1.6 92/01/20$
  *
- *	@(#)hpux_exec.h	7.3 (Berkeley) %G%
+ *	@(#)hpux_exec.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -33,9 +33,3 @@ unsigned long	ha_pad3[4];	/* doesn't matter */
 #define	HPUXM_VALID	0x00000001
 #define HPUXM_STKWT	0x02000000
 #define HPUXM_DATAWT	0x04000000
-
-/*
- * If the HPUX object file version number is BSDVNUM the file was built
- * with the HPUX SGS but linked with the BSD libraries.
- */
-#define BSDVNUM		0x2BAD

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.19 92/01/20$
+ * from: Utah $Hdr: hpux.h 1.27 92/12/23$
  *
- *	@(#)hpux.h	7.7 (Berkeley) %G%
+ *	@(#)hpux.h	7.8 (Berkeley) %G%
  */
 
 #include <hp/hpux/hpux_exec.h>
@@ -193,3 +193,11 @@ struct hpuxsigaction {
 #define HPUX_SYSCONF_CPUM040	0x20E
 #define HPUX_SYSCONF_CPUPA10	0x20B
 #define HPUX_SYSCONF_CPUPA11	0x210
+
+/* mmap stuff */
+#define HPUXMAP_FIXED	0x04
+#define HPUXMAP_REPLACE	0x08
+#define HPUXMAP_ANON	0x10
+
+/* rlimit stuff */
+#define HPUXRLIMIT_NOFILE	6

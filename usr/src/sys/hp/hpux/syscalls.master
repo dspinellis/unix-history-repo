@@ -1,6 +1,9 @@
-	@(#)syscalls.master	7.1 (Berkeley) %G%
-; System call name/number master file (or rather, slave, from SunOS).
-; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
+	@(#)syscalls.master	7.2 (Berkeley) %G%
+; System call name/number master file (or rather, slave, from HP-UX).
+; Processed to created hpux_sysent.c, hpux_syscalls.c and hpux_syscall.h.
+;
+; from:	Utah $Hdr: hpux_sysent.c 1.26 92/12/26$
+;
 
 ; Columns: number type nargs name altname/comments
 ;	number	system call number, must be in order
@@ -91,7 +94,7 @@
 68	STD	0 hpuxwrite vwrite
 69	UNIMPL	0 nosys
 70	UNIMPL	0 nosys
-71	UNIMPL	0 nosys
+71	STD	6 hpuxmmap mmap
 72	UNIMPL	0 nosys
 73	UNIMPL	0 nosys
 74	NOTIMPL	3 mprotect
@@ -164,8 +167,8 @@
 141	UNIMPL	0 nosys
 142	UNIMPL	0 nosys
 143	UNIMPL	0 nosys
-144	UNIMPL	0 nosys
-145	UNIMPL	0 nosys
+144	STD	2 getrlimit
+145	STD	2 setrlimit
 146	UNIMPL	0 nosys
 147	UNIMPL	0 nosys
 148	UNIMPL	0 nosys
@@ -273,3 +276,49 @@
 243	NOTIMPL	4 fsctl
 244	UNIMPL	0 nosys
 245	NOTIMPL	3 pstat
+246	UNIMPL	0 nosys
+247	UNIMPL	0 nosys
+248	UNIMPL	0 nosys
+249	UNIMPL	0 nosys
+250	UNIMPL	0 nosys
+251	UNIMPL	0 nosys
+252	UNIMPL	0 nosys
+253	UNIMPL	0 nosys
+254	UNIMPL	0 nosys
+255	UNIMPL	0 nosys
+256	UNIMPL	0 nosys
+257	UNIMPL	0 nosys
+258	UNIMPL	0 nosys
+259	UNIMPL	0 nosys
+260	UNIMPL	0 nosys
+261	UNIMPL	0 nosys
+262	UNIMPL	0 nosys
+263	UNIMPL	0 nosys
+264	UNIMPL	0 nosys
+265	UNIMPL	0 nosys
+266	UNIMPL	0 nosys
+267	UNIMPL	0 nosys
+268	STD	0 getdtablesize getnumfds
+269	UNIMPL	0 nosys
+270	UNIMPL	0 nosys
+271	UNIMPL	0 nosys
+272	UNIMPL	0 nosys
+273	UNIMPL	0 nosys
+274	UNIMPL	0 nosys
+275	COMPAT	3 accept
+276	STD	3 bind
+277	STD	3 connect
+278	COMPAT	3 getpeername
+279	COMPAT	3 getsockname
+280	STD	5 getsockopt
+281	STD	2 listen
+282	COMPAT	4 recv
+283	COMPAT	6 recvfrom
+284	COMPAT	3 recvmsg
+285	COMPAT	4 send
+286	COMPAT	3 sendmsg
+287	STD	6 sendto
+288	STD	5 hpuxsetsockopt2 setsockopt2
+289	STD	2 shutdown
+290	STD	3 socket
+291	STD	4 socketpair

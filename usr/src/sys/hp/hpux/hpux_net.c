@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
+ * from: Utah $Hdr: hpux_net.c 1.6 92/12/26$
  *
- *	@(#)hpux_net.c	7.8 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -73,12 +73,13 @@ struct hpuxtobsdipc {
  * Single system call entry to BSD style IPC.
  * Gleened from disassembled libbsdipc.a syscall entries.
  */
+struct hpuxnetioctl_args {
+	int	call;
+	int	*args;
+};
 hpuxnetioctl(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	call;
-		int	*args;
-	} *uap;
+	struct hpuxnetioctl_args *uap;
 	int *retval;
 {
 	int *args, i;
@@ -106,15 +107,42 @@ hpuxnetioctl(p, uap, retval)
 	return ((*hpuxtobsdipc[code].rout)(p, uap, retval));
 }
 
+socksetsize(size, m)
+	int size;
+	struct mbuf *m;
+{
+	register int tmp;
+
+	if (size < sizeof(int)) {
+		switch(size) {
+	    	case 1:
+			tmp = (int) *mtod(m, char *);
+			break;
+	    	case 2:
+			tmp = (int) *mtod(m, short *);
+			break;
+	    	case 3:
+			tmp = (((int) *mtod(m, int *)) >> 8) & 0xffffff;
+			break;
+		}
+		*mtod(m, int *) = tmp;
+		m->m_len = sizeof(int);
+	} else {
+		m->m_len = size;
+	}
+}
+
+struct hpuxsetsockopt_args {
+	int	s;
+	int	level;
+	int	name;
+	caddr_t	val;
+	int	valsize;
+};
+/* ARGSUSED */
 hpuxsetsockopt(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	s;
-		int	level;
-		int	name;
-		caddr_t	val;
-		int	valsize;
-	} *uap;
+	struct hpuxsetsockopt_args *uap;
 	int *retval;
 {
 	struct file *fp;
@@ -140,7 +168,7 @@ hpuxsetsockopt(p, uap, retval)
 			mtod(m, struct linger *)->l_linger = tmp;
 			m->m_len = sizeof(struct linger);
 		} else
-			m->m_len = uap->valsize;
+			socksetsize(uap->valsize, m);
 	} else if (uap->name == ~SO_LINGER) {
 		m = m_get(M_WAIT, MT_SOOPTS);
 		if (m) {
@@ -153,15 +181,52 @@ hpuxsetsockopt(p, uap, retval)
 	    uap->name, m));
 }
 
+struct hpuxsetsockopt2_args {
+	int	s;
+	int	level;
+	int	name;
+	caddr_t	val;
+	int	valsize;
+};
+/* ARGSUSED */
+hpuxsetsockopt2(p, uap, retval)
+	struct proc *p;
+	register struct hpuxsetsockopt2_args *uap;
+	int *retval;
+{
+	struct file *fp;
+	struct mbuf *m = NULL;
+	int error;
+
+	if (error = getsock(p->p_fd, uap->s, &fp))
+		return (error);
+	if (uap->valsize > MLEN)
+		return (EINVAL);
+	if (uap->val) {
+		m = m_get(M_WAIT, MT_SOOPTS);
+		if (m == NULL)
+			return (ENOBUFS);
+		if (error = copyin(uap->val, mtod(m, caddr_t),
+		    (u_int)uap->valsize)) {
+			(void) m_free(m);
+			return (error);
+		}
+		socksetsize(uap->valsize, m);
+	}
+	return (sosetopt((struct socket *)fp->f_data, uap->level,
+	    uap->name, m));
+}
+
+struct hpuxgetsockopt_args {
+	int	s;
+	int	level;
+	int	name;
+	caddr_t	val;
+	int	*avalsize;
+};
 hpuxgetsockopt(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	s;
-		int	level;
-		int	name;
-		caddr_t	val;
-		int	*avalsize;
-	} *uap;
+	struct hpuxgetsockopt_args *uap;
 	int *retval;
 {
 	struct file *fp;

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
+ * from: Utah $Hdr: hpux_compat.c 1.55 92/12/26$
  *
- *	@(#)hpux_compat.c	7.32 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.33 (Berkeley) %G%
  */
 
 /*
@@ -39,12 +39,12 @@
 #include <sys/mount.h>
 #include <sys/ipc.h>
 #include <sys/user.h>
+#include <sys/mman.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/vmparam.h>
-
 #include <hp/hpux/hpux.h>
 #include <hp/hpux/hpux_termio.h>
 
@@ -54,7 +54,7 @@ int unimpresponse = 0;
 
 /* SYS5 style UTSNAME info */
 struct hpuxutsname protoutsname = {
-	"4.4bsd", "", "2.0", "B", "9000/3?0", ""
+	"4.4bsd", "", "0.5", "B", "9000/3?0", ""
 };
 
 /* 6.0 and later style context */
@@ -521,6 +521,11 @@ hpuxutssys(p, uap, retval)
 		case HP_380:
 			protoutsname.machine[6] = '8';
 			break;
+		case HP_433:
+			protoutsname.machine[5] = '4';
+			protoutsname.machine[6] = '3';
+			protoutsname.machine[7] = '3';
+			break;
 		}
 		/* copy hostname (sans domain) to nodename */
 		for (i = 0; i < 8 && hostname[i] != '.'; i++)
@@ -580,6 +585,7 @@ hpuxsysconf(p, uap, retval)
 			*retval = HPUX_SYSCONF_CPUM030;
 			break;
 		case HP_380:
+		case HP_433:
 			*retval = HPUX_SYSCONF_CPUM040;
 			break;
 		}
@@ -752,7 +758,7 @@ hpuxadvise(p, uap, retval)
 
 	switch (uap->arg) {
 	case 0:
-		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXMMAP;
+		p->p_md.md_flags |= MDP_HPUXMMAP;
 		break;
 	case 1:
 		ICIA();
@@ -778,16 +784,54 @@ hpuxptrace(p, uap, retval)
 	struct hpuxptrace_args *uap;
 	int *retval;
 {
-	int error;
+	int error, isps = 0;
+	struct proc *cp;
 
-	if (uap->req == PT_STEP || uap->req == PT_CONTINUE) {
+	switch (uap->req) {
+	/* map signal */
+	case PT_STEP:
+	case PT_CONTINUE:
 		if (uap->data) {
 			uap->data = hpuxtobsdsig(uap->data);
 			if (uap->data == 0)
 				uap->data = NSIG;
 		}
+		break;
+	/* map u-area offset */
+	case PT_READ_U:
+	case PT_WRITE_U:
+		/*
+		 * Big, cheezy hack: hpuxtobsduoff is really intended
+		 * to be called in the child context (procxmt) but we
+		 * do it here in the parent context to avoid hacks in
+		 * the MI sys_process.c file.  This works only because
+		 * we can access the child's md_regs pointer and it
+		 * has the correct value (the child has already trapped
+		 * into the kernel).
+		 */
+		if ((cp = pfind(uap->pid)) == 0)
+			return (ESRCH);
+		uap->addr = (int *) hpuxtobsduoff(uap->addr, &isps, cp);
+
+		/*
+		 * Since HP-UX PS is only 16-bits in ar0, requests
+		 * to write PS actually contain the PS in the high word
+		 * and the high half of the PC (the following register)
+		 * in the low word.  Move the PS value to where BSD
+		 * expects it.
+		 */
+		if (isps && uap->req == PT_WRITE_U)
+			uap->data >>= 16;
+		break;
 	}
 	error = ptrace(p, uap, retval);
+	/*
+	 * Align PS as HP-UX expects it (see WRITE_U comment above).
+	 * Note that we do not return the high part of PC like HP-UX
+	 * would, but the HP-UX debuggers don't require it.
+	 */
+	if (isps && error == 0 && uap->req == PT_READ_U)
+		*retval <<= 16;
 	return (error);
 }
 
@@ -928,6 +972,46 @@ hpuxsemop(p, uap, retval)
 	return (0);
 }
 
+/*
+ * HP-UX mmap() emulation (mainly for shared library support).
+ */
+struct hpuxmmap_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	long	pos;
+};
+hpuxmmap(p, uap, retval)
+	struct proc *p;
+	struct hpuxmmap_args *uap;
+	int *retval;
+{
+	struct mmap_args {
+		caddr_t	addr;
+		int	len;
+		int	prot;
+		int	flags;
+		int	fd;
+		long	pad;
+		off_t	pos;
+	} nargs;
+
+	nargs.addr = uap->addr;
+	nargs.len = uap->len;
+	nargs.prot = uap->prot;
+	nargs.flags = uap->flags &
+		~(HPUXMAP_FIXED|HPUXMAP_REPLACE|HPUXMAP_ANON);
+	if (uap->flags & HPUXMAP_FIXED)
+		nargs.flags |= MAP_FIXED;
+	if (uap->flags & HPUXMAP_ANON)
+		nargs.flags |= MAP_ANON;
+	nargs.fd = (nargs.flags & MAP_ANON) ? -1 : uap->fd;
+	nargs.pos = uap->pos;
+	return (smmap(p, &nargs, retval));
+}
+
 /* convert from BSD to HP-UX errno */
 bsdtohpuxerrno(err)
 	int err;
@@ -990,6 +1074,8 @@ bsdtohpuxstat(sb, hsb)
 	ds.hst_nlink = sb->st_nlink;
 	ds.hst_uid = (u_short)sb->st_uid;
 	ds.hst_gid = (u_short)sb->st_gid;
+	ds.hst_rdev = bsdtohpuxdev(sb->st_rdev);
+
 	/* XXX: I don't want to talk about it... */
 	if ((sb->st_mode & S_IFMT) == S_IFCHR) {
 #if NGRF > 0
@@ -1001,8 +1087,7 @@ bsdtohpuxstat(sb, hsb)
 			ds.hst_rdev = hildevno(sb->st_rdev);
 #endif
 		;
-	} else
-		ds.hst_rdev = bsdtohpuxdev(sb->st_rdev);
+	}
 	if (sb->st_size < (quad_t)1 << 32)
 		ds.hst_size = (long)sb->st_size;
 	else
@@ -1355,6 +1440,34 @@ hpuxsetresgid(p, uap, retval)
 	return (0);
 }
 
+struct hpuxrlimit_args {
+	u_int	which;
+	struct	orlimit *rlp;
+};
+hpuxgetrlimit(p, uap, retval)
+	struct proc *p;
+	struct hpuxrlimit_args *uap;
+	int *retval;
+{
+	if (uap->which > HPUXRLIMIT_NOFILE)
+		return (EINVAL);
+	if (uap->which == HPUXRLIMIT_NOFILE)
+		uap->which = RLIMIT_NOFILE;
+	return (getrlimit(p, uap, retval));
+}
+
+hpuxsetrlimit(p, uap, retval)
+	struct proc *p;
+	struct hpuxrlimit_args *uap;
+	int *retval;
+{
+	if (uap->which > HPUXRLIMIT_NOFILE)
+		return (EINVAL);
+	if (uap->which == HPUXRLIMIT_NOFILE)
+		uap->which = RLIMIT_NOFILE;
+	return (setrlimit(p, uap, retval));
+}
+
 /*
  * XXX: simple recognition hack to see if we can make grmd work.
  */
@@ -1477,11 +1590,6 @@ hpuxgetaccess(p, uap, retval)
 	return (error);
 }
 
-/*
- * Brutal hack!  Map HP-UX u-area offsets into BSD u offsets.
- * No apologies offered, if you don't like it, rewrite it!
- */
-
 extern char kstack[];
 #define UOFF(f)		((int)&((struct user *)0)->f)
 #define HPUOFF(f)	((int)&((struct hpuxuser *)0)->f)
@@ -1493,20 +1601,26 @@ struct bsdfp {
 	int ctrl[3];
 };
 
-hpuxtobsduoff(off)
-	int *off;
+/*
+ * Brutal hack!  Map HP-UX u-area offsets into BSD k-stack offsets.
+ */
+hpuxtobsduoff(off, isps, p)
+	int *off, *isps;
+	struct proc *p;
 {
-	register int *ar0 = curproc->p_md.md_regs;
+	register int *ar0 = p->p_md.md_regs;
 	struct hpuxfp *hp;
 	struct bsdfp *bp;
 	register u_int raddr;
+
+	*isps = 0;
 
 	/* u_ar0 field; procxmt puts in U_ar0 */
 	if ((int)off == HPUOFF(hpuxu_ar0))
 		return(UOFF(U_ar0));
 
 #ifdef FPCOPROC
-	/* 68881 registers from PCB */
+	/* FP registers from PCB */
 	hp = (struct hpuxfp *)HPUOFF(hpuxu_fp);
 	bp = (struct bsdfp *)UOFF(u_pcb.pcb_fpregs);
 	if (off >= hp->hpfp_ctrl && off < &hp->hpfp_ctrl[3])
@@ -1524,7 +1638,7 @@ hpuxtobsduoff(off)
 		off = (int *)((u_int)off + (u_int)kstack);
 
 	/*
-	 * 68020 registers.
+	 * General registers.
 	 * We know that the HP-UX registers are in the same order as ours.
 	 * The only difference is that their PS is 2 bytes instead of a
 	 * padded 4 like ours throwing the alignment off.
@@ -1533,11 +1647,23 @@ hpuxtobsduoff(off)
 		/*
 		 * PS: return low word and high word of PC as HP-UX would
 		 * (e.g. &u.u_ar0[16.5]).
+		 *
+		 * XXX we don't do this since HP-UX adb doesn't rely on
+		 * it and passing such an offset to procxmt will cause
+		 * it to fail anyway.  Instead, we just set the offset
+		 * to PS and let hpuxptrace() shift up the value returned.
 		 */
-		if (off == &ar0[PS])
+		if (off == &ar0[PS]) {
+#if 0
 			raddr = (u_int) &((short *)ar0)[PS*2+1];
+#else
+			raddr = (u_int) &ar0[(int)(off - ar0)];
+#endif
+			*isps = 1;
+		}
 		/*
-		 * PC: off will be &u.u_ar0[16.5]
+		 * PC: off will be &u.u_ar0[16.5] since HP-UX saved PS
+		 * is only 16 bits.
 		 */
 		else if (off == (int *)&(((short *)ar0)[PS*2+1]))
 			raddr = (u_int) &ar0[PC];
@@ -1586,7 +1712,7 @@ hpuxdumpu(vp, cred)
 	 * only uses this information to verify that a particular
 	 * core file goes with a particular binary.
 	 */
-	bcopy((caddr_t)p->p_addr->u_pcb.pcb_exec,
+	bcopy((caddr_t)p->p_addr->u_md.md_exec,
 	      (caddr_t)&faku->hpuxu_exdata, sizeof (struct hpux_exec));
 	/*
 	 * Adjust user's saved registers (on kernel stack) to reflect
@@ -1637,12 +1763,14 @@ hpuxdumpu(vp, cred)
  * and vfs_xxx.c as defined under "#ifdef COMPAT".  We replicate them here
  * to avoid HPUXCOMPAT dependencies in those files and to make sure that
  * HP-UX compatibility still works even when COMPAT is not defined.
+ *
+ * These are still needed as of HP-UX 7.05.
  */
 #ifdef COMPAT_OHPUX
 
 #define HPUX_HZ	50
 
-#include <sys/times.h>
+#include "sys/times.h"
 
 /* from old timeb.h */
 struct hpuxtimeb {
@@ -1917,32 +2045,33 @@ ohpuxstat(p, uap, retval)
 
 int
 ohpuxstat1(vp, ub, p)
-	register struct vnode *vp;
+	struct vnode *vp;
 	struct ohpuxstat *ub;
 	struct proc *p;
 {
-	struct ohpuxstat ds;
-	struct vattr vattr;
-	register int error;
+	struct ohpuxstat ohsb;
+	struct stat sb;
+	int error;
 
-	error = VOP_GETATTR(vp, &vattr, p->p_ucred, p);
+	error = vn_stat(vp, &sb, p);
 	if (error)
-		return(error);
-	/*
-	 * Copy from inode table
-	 */
-	ds.ohst_dev = vattr.va_fsid;
-	ds.ohst_ino = (short)vattr.va_fileid;
-	ds.ohst_mode = (u_short)vattr.va_mode;
-	ds.ohst_nlink = vattr.va_nlink;
-	ds.ohst_uid = (short)vattr.va_uid;
-	ds.ohst_gid = (short)vattr.va_gid;
-	ds.ohst_rdev = (u_short)vattr.va_rdev;
-	ds.ohst_size = (int)vattr.va_size;
-	ds.ohst_atime = (int)vattr.va_atime.ts_sec;
-	ds.ohst_mtime = (int)vattr.va_mtime.ts_sec;
-	ds.ohst_ctime = (int)vattr.va_ctime.ts_sec;
-	return (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)));
+		return (error);
+
+	ohsb.ohst_dev = sb.st_dev;
+	ohsb.ohst_ino = sb.st_ino;
+	ohsb.ohst_mode = sb.st_mode;
+	ohsb.ohst_nlink = sb.st_nlink;
+	ohsb.ohst_uid = sb.st_uid;
+	ohsb.ohst_gid = sb.st_gid;
+	ohsb.ohst_rdev = sb.st_rdev;
+	if (sb.st_size < (quad_t)1 << 32)
+		ohsb.ohst_size = sb.st_size;
+	else
+		ohsb.ohst_size = -2;
+	ohsb.ohst_atime = sb.st_atime;
+	ohsb.ohst_mtime = sb.st_mtime;
+	ohsb.ohst_ctime = sb.st_ctime;
+	return (copyout((caddr_t)&ohsb, (caddr_t)ub, sizeof(ohsb)));
 }
 #endif
 #endif
