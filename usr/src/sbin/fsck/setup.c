@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -434,7 +434,7 @@ getdisklabel(s, fd)
 			return ((struct disklabel *)NULL);
 		pwarn("");
 		perror("ioctl (GDINFO)");
-		errexit("%s: can't read disk label", s);
+		errexit("%s: can't read disk label\n", s);
 	}
 	return (&lab);
 }
