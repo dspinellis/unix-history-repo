@@ -48,7 +48,10 @@ __bdiv (a, b, q, r, m, n)
 
       /* Check for zero divisor.  */
       if (n == 0)
-	abort ();
+      {
+	*r /= n;	/* force a divide-by-zero trap */
+	return;
+      }
     }
       
   /* If divisor is a single digit, do short division.  */
@@ -170,7 +173,8 @@ bshift (u, k, w, carry_in, n)
 
   if (k == 0)
     {
-      bcopy (u, w, n * sizeof *u);
+      while (n-- > 0)
+        *w++ = *u++;
       return 0;
     }
 

@@ -31,12 +31,14 @@ bmul (a, b, c, m, n)
     size_t m, n;
 {
   int i, j;
+  unsigned short *d;
   unsigned long acc;
-
-  bzero (c, m + n);
 
   m /= sizeof *a;
   n /= sizeof *b;
+
+  for (i = m + n, d = c; i-- > 0; *d++ = 0)
+    ;
 
   for (j = little_end (n); is_not_msd (j, n); j = next_msd (j))
     {
