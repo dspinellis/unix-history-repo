@@ -13,14 +13,14 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rshd.8	6.6 (Berkeley) %G%
+.\"	@(#)rshd.8	6.7 (Berkeley) %G%
 .\"
 .TH RSHD 8 ""
 .UC 5
 .SH NAME
 rshd \- remote shell server
 .SH SYNOPSIS
-.B rshd [-p]
+.B rshd [-l]
 .SH DESCRIPTION
 .I Rshd
 is the server for the 
@@ -87,7 +87,8 @@ file found in the user's home directory.  The
 .I -p
 option prevents
 .IR ruserok (3)
-from doing any validation based on the user's ``.rhosts'' file.
+from doing any validation based on the user's ``.rhosts'' file,
+unless the user is the superuser.
 .IP 9)
 A null byte is returned on the initial socket
 and the command line is passed to the normal login
