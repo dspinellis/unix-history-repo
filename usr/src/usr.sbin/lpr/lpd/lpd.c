@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -93,7 +93,7 @@ main(argc, argv)
 	}
 #endif
 
-	openlog("lpd", LOG_PID, LOG_DAEMON);
+	openlog("lpd", LOG_PID, LOG_LPR);
 	(void) umask(0);
 	lfd = open(MASTERLOCK, O_WRONLY|O_CREAT, 0644);
 	if (lfd < 0) {
