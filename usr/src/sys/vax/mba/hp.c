@@ -1,4 +1,4 @@
-/*	hp.c	4.75	83/05/18	*/
+/*	hp.c	4.76	83/05/30	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -146,12 +146,6 @@ struct	size {
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
-#define	_hpSDIST	2
-#define	_hpRDIST	3
-
-int	hpSDIST = _hpSDIST;
-int	hpRDIST = _hpRDIST;
-
 /*
  * Table for converting Massbus drive types into
  * indices into the partition tables.  Slots are
@@ -195,26 +189,34 @@ struct	mba_driver hpdriver =
 	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
 	  hptypes, "hp", 0, hpinfo };
 
+/*
+ * Beware, sdist and rdist are not well tuned
+ * for many of the drives listed in this table.
+ * Try patching things with something i/o intensive
+ * running and watch iostat.
+ */
 struct hpst {
-	short	nsect;
-	short	ntrak;
-	short	nspc;
-	short	ncyl;
-	struct	size *sizes;
+	short	nsect;		/* # sectors/track */
+	short	ntrak;		/* # tracks/cylinder */
+	short	nspc;		/* # sector/cylinders */
+	short	ncyl;		/* # cylinders */
+	struct	size *sizes;	/* partition tables */
+	short	sdist;		/* seek distance metric */
+	short	rdist;		/* rotational distance metric */
 } hpst[] = {
-	32,	5,	32*5,	823,	rm03_sizes,	/* RM03 */
-	32,	19,	32*19,	823,	rm05_sizes,	/* RM05 */
-	22,	19,	22*19,	815,	rp06_sizes,	/* RP06 */
-	31,	14, 	31*14,	559,	rm80_sizes,	/* RM80 */
-	22,	19,	22*19,	411,	rp05_sizes,	/* RP05 */
-	50,	32,	50*32,	630,	rp07_sizes,	/* RP07 */
-	1,	1,	1,	1,	0,		/* ML11A */
-	1,	1,	1,	1,	0,		/* ML11B */
-	32,	40,	32*40,	843,	cdc9775_sizes,	/* 9775 */
-	32,	10,	32*10,	823,	cdc9730_sizes,	/* 9730 */
-	32,	16,	32*16,	1024,	capricorn_sizes,/* Capricorn */
-	48,	20,	48*20,	842,	eagle_sizes,	/* EAGLE */
-	32,	19,	32*19,	815,	cdc9300_sizes,	/* 9300 */
+	{ 32,	5,	32*5,	823,	rm03_sizes,	3, 4 },	/* RM03 */
+	{ 32,	19,	32*19,	823,	rm05_sizes,	3, 4 },	/* RM05 */
+	{ 22,	19,	22*19,	815,	rp06_sizes,	3, 4 },	/* RP06 */
+	{ 31,	14, 	31*14,	559,	rm80_sizes,	3, 4 },	/* RM80 */
+	{ 22,	19,	22*19,	411,	rp05_sizes,	3, 4 },	/* RP05 */
+	{ 50,	32,	50*32,	630,	rp07_sizes,	7, 8 },	/* RP07 */
+	{ 1,	1,	1,	1,	0,		0, 0 },	/* ML11A */
+	{ 1,	1,	1,	1,	0,		0, 0 },	/* ML11B */
+	{ 32,	40,	32*40,	843,	cdc9775_sizes,	3, 4 },	/* 9775 */
+	{ 32,	10,	32*10,	823,	cdc9730_sizes,	3, 4 },	/* 9730 */
+	{ 32,	16,	32*16,	1024,	capricorn_sizes,7, 8 },	/* Capricorn */
+	{ 48,	20,	48*20,	842,	eagle_sizes,	7, 8 },	/* EAGLE */
+	{ 32,	19,	32*19,	815,	cdc9300_sizes,	3, 4 },	/* 9300 */
 };
 
 u_char	hp_offset[16] = {
@@ -478,14 +480,14 @@ hpustart(mi)
 		return (MBU_DODATA);
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
-	sn = (sn+st->nsect-hpSDIST)%st->nsect;
+	sn = (sn + st->nsect - st->sdist) % st->nsect;
 	if (bp->b_cylin == MASKREG(hpaddr->hpdc)) {
 		if (sc->sc_doseeks)
 			return (MBU_DODATA);
 		dist = (MASKREG(hpaddr->hpla) >> 6) - st->nsect + 1;
 		if (dist < 0)
 			dist += st->nsect;
-		if (dist > st->nsect - hpRDIST)
+		if (dist > st->nsect - st->rdist)
 			return (MBU_DODATA);
 	} else
 		hpaddr->hpdc = bp->b_cylin;
