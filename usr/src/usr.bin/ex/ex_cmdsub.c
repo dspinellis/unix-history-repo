@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	7.3	%G%";
+static char *sccsid = "@(#)ex_cmdsub.c	7.4	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -469,6 +469,7 @@ tagfind(quick)
 	int tfcount = 0;
 	int omagic;
 	char *fn, *fne;
+	struct stat sbuf;
 #ifdef STDIO		/* mjm: was VMUNIX */
 	/*
 	 * We have lots of room so we bring in stdio and do
@@ -482,7 +483,6 @@ tagfind(quick)
 	char iofbuf[BUFSIZ];
 	long mid;	/* assumed byte offset */
 	long top, bot;	/* length of tag file */
-	struct stat sbuf;
 #endif
 
 	omagic = value(MAGIC);
@@ -540,6 +540,13 @@ badtag:
 		if (io<0)
 			continue;
 		tfcount++;
+		if (fstat(io, &sbuf) < 0)
+			bsize = LBSIZE;
+		else {
+			bsize = sbuf.st_blksize;
+			if (bsize <= 0)
+				bsize = LBSIZE;
+		}
 		while (getfile() == 0) {
 #endif
 			/* loop for each tags file entry */
