@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.19 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,6 +22,70 @@
 #include <sys/mbuf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+
+/*
+ * Structure associated with user cacheing.
+ */
+struct uidinfo {
+	struct	uidinfo *ui_next;
+	struct	uidinfo **ui_prev;
+	uid_t	ui_uid;
+	long	ui_proccnt;
+} **uihashtbl;
+u_long	uihash;		/* size of hash table - 1 */
+#define	UIHASH(uid)	((uid) & uihash)
+
+/*
+ * Allocate a hash table.
+ */
+usrinfoinit()
+{
+
+	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
+}
+
+/*
+ * Change the count associated with number of processes
+ * a given user is using.
+ */
+int
+chgproccnt(uid, diff)
+	uid_t	uid;
+	int	diff;
+{
+	register struct uidinfo **uipp, *uip, *uiq;
+
+	uipp = &uihashtbl[UIHASH(uid)];
+	for (uip = *uipp; uip; uip = uip->ui_next)
+		if (uip->ui_uid == uid)
+			break;
+	if (uip) {
+		uip->ui_proccnt += diff;
+		if (uip->ui_proccnt > 0)
+			return (uip->ui_proccnt);
+		if (uip->ui_proccnt < 0)
+			panic("chgproccnt: procs < 0");
+		if (uiq = uip->ui_next)
+			uiq->ui_prev = uip->ui_prev;
+		*uip->ui_prev = uiq;
+		FREE(uip, M_PROC);
+		return (0);
+	}
+	if (diff <= 0) {
+		if (diff == 0)
+			return(0);
+		panic("chgproccnt: lost user");
+	}
+	MALLOC(uip, struct uidinfo *, sizeof(*uip), M_PROC, M_WAITOK);
+	if (uiq = *uipp)
+		uiq->ui_prev = &uip->ui_next;
+	uip->ui_next = uiq;
+	uip->ui_prev = uipp;
+	*uipp = uip;
+	uip->ui_uid = uid;
+	uip->ui_proccnt = diff;
+	return (diff);
+}
 
 /*
  * Is p an inferior of the current process?
