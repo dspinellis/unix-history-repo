@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)abs.s	1.4 (Berkeley) %G%"
+	.asciz "@(#)abs.s	5.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* abs - int absolute value */
