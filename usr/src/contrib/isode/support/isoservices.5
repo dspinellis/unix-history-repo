@@ -1,0 +1,54 @@
+.TH ISOSERVICES 5 "08 Apr 1986"
+.\" $Header: /f/osi/support/RCS/isoservices.5,v 7.2 91/02/22 09:46:46 mrose Interim $
+.\"
+.\"
+.\" $Log:	isoservices.5,v $
+.\" Revision 7.2  91/02/22  09:46:46  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  90/10/15  22:54:23  mrose
+.\" typo
+.\" 
+.\" Revision 7.0  89/11/23  22:27:35  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+.B isoservices
+\- ISODE services database
+.SH DESCRIPTION
+The \fIisoservices\fR
+file contains information regarding the known services on the host.
+.PP
+\fBNB\0\fR: Use of this database is deprecated.
+Consult the ISODE \fIUser's Manual\fR for further information.
+.PP
+Items are separated by any number of blanks and/or tab characters.
+However, double\-quotes may be used to prevent separation between arguments
+in the vector.
+The character `#' at the beginning of a line indicates a comment line.
+.PP
+Each line consists of the name of the provider, a slash, and the name of the
+entity residing above the provider;
+the selector used to identify the entity to the provider;
+and,
+the program and argument vector to \fIexecvp\fR when the service is requested.
+If the selector starts with a hash\-mark (`#')
+it is interpreted numerically as a decimal short-word quantity;
+otherwise if it appears in double\-quotes,
+it is interpreted as an ascii string,
+with the usual escape mechanisms for introducing non\-printable characters;
+otherwise,
+it is interpreted as an exploded octet string.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH "SEE ALSO"
+isoentities(5), isobjects(5),
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 2:
+Underlying Services\fR, \*(lqThe ISODE Service Database\*(rq.
+.SH AUTHOR
+Marshall T. Rose

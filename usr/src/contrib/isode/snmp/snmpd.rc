@@ -1,0 +1,143 @@
+###############################################################################
+#
+# snmpd.rc - SNMP configuration information
+#
+# $Header: /f/osi/snmp/RCS/snmpd.rc,v 7.15 91/02/22 09:44:31 mrose Interim $
+#
+# Contributed by NYSERNet Inc.  This work was partially supported by the
+# U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+# Center of the U.S. Air Force Systems Command under contract number
+# F30602-88-C-0016.
+#
+#
+# $Log:	snmpd.rc,v $
+# Revision 7.15  91/02/22  09:44:31  mrose
+# Interim 6.8
+# 
+# Revision 7.14  91/01/11  15:35:26  mrose
+# sets
+# 
+# Revision 7.13  90/10/17  14:33:20  mrose
+# update
+# 
+# Revision 7.12  90/06/20  20:38:38  mrose
+# ho hum
+# 
+# Revision 7.11  90/06/13  17:46:24  mrose
+# touch-up
+# 
+# Revision 7.10  90/06/12  02:05:49  mrose
+# views ...
+# 
+# Revision 7.9  90/05/14  16:27:35  mrose
+# again
+# 
+# Revision 7.8  90/05/14  13:28:19  mrose
+# system
+# 
+# Revision 7.7  90/05/13  17:54:55  mrose
+# views again
+# 
+# Revision 7.6  90/05/13  16:18:30  mrose
+# views
+# 
+# Revision 7.5  90/03/27  07:39:58  mrose
+# touch-up
+# 
+# Revision 7.4  90/03/05  23:04:23  mrose
+# touch-up
+# 
+# Revision 7.3  90/02/19  15:39:06  mrose
+# one more time
+# 
+# Revision 7.2  90/01/11  18:34:39  mrose
+# real-sync
+# 
+# Revision 7.1  89/12/08  22:49:52  mrose
+# touch-up
+# 
+# Revision 7.0  89/11/23  22:23:28  mrose
+# Release 6.0
+# 
+###############################################################################
+
+###############################################################################
+#
+# How to configure this file for your system:
+#
+# 1. Fill-in the value for "sysContact" and "sysLocation" below, e.g.,
+#
+#	variable	sysContact	"Marshall Rose <mrose@psi.com>"
+#
+#	variable	sysLocation	"upstairs machine room"
+#
+#    All the other objects in the system group are automatically filled-in by
+#    the agent.
+#
+# 2. If your site has a management station that listens for traps, fill-in
+#    the information for the trap sink, e.g.,
+#
+#	trap		traps		a.b.c.d
+#
+#    where "traps" is the community that the traps should be logged under and
+#    a.b.c.d is the IP-address of the host where a trap sink is listening on
+#    UDP port 162.
+#
+# 3. Make sure that all of the network interfaces are listed below.  If you
+#    have a strange interface name, define it accordingly, e.g.,
+#
+#	variable	interface	NAME	ifType=XX	ifSpeed=YY
+#
+#    where "NAME" is the interface name according to ifconfig(8c), "XX" is
+#    the type of interface according to the MIB (look at the definition of
+#    the ifType variable), and "YY" is the speed in bits/second.
+#
+###############################################################################
+
+community	secret		0.0.0.0		readWrite	1.17.2
+community	public
+
+community	system		0.0.0.0		readOnly	1.17.2
+view		1.17.2		system unix
+
+logging		file=snmpd.log	size=50
+logging		slevel=fatal	slevel=exceptions	slevel=notice
+logging		sflags=close	sflags=create		sflags=zero
+
+#variable	sysContact	"Marshall Rose <mrose@psi.com>"
+#variable	sysLocation	"northside machine room, PSI Santa Clara Office"
+
+# replace a.b.c.d with real IP-address
+#	trap		traps		a.b.c.d
+
+variable	interface lo0	ifType=24	ifSpeed=0
+
+# here are all the ethernet names I know about...
+variable	interface ace0	ifType=6
+variable	interface de0	ifType=6
+variable	interface ec0	ifType=6
+variable	interface ei0	ifType=6
+variable	interface en0	ifType=6
+variable	interface enp0	ifType=6
+variable	interface ex0	ifType=6
+variable	interface ie0	ifType=6
+variable	interface il0	ifType=6
+variable	interface ix0	ifType=6
+variable	interface le0	ifType=6
+variable	interface qe0	ifType=6
+variable	interface se0	ifType=6
+variable	interface ln0	ifType=6
+
+# and slip...
+variable	interface sl0	ifType=22
+variable	interface sl1	ifType=22
+variable	interface sl2	ifType=22
+variable	interface sl3	ifType=22
+
+# and miscellany...
+variable	interface ddn0	ifType=4
+variable	interface dmc0	ifType=22
+variable	interface dmv0	ifType=22
+variable	interface hy0	ifType=14
+#could be proteon-80MBit
+#variable	interface vv0	ifType=12

@@ -1,0 +1,56 @@
+BEGIN {
+	printf "%-4s %-4s %-14s %-15s %-7s %-5s %-7s %-5s %-4s %-5s\n",
+		"Name",
+		     "Mtu",
+			  "Net/Dest",
+				"Address",
+				      "Ipkts",
+					  "Ierrs",
+					       "Opkts",
+						     "Oerrs",
+						          "Drop",
+							       "Queue";
+
+	didone = 0;
+	for (i in ifIndex) {
+	    didone = 1;
+
+	    dest = "";
+	    addr = "";
+	    for (j in ipAdEntAddr) {
+		if (ipAdEntIfIndex == ifIndex) {
+		    split(addr = ipAdEntAddr, a, ".");
+		    split(ipAdEntNetMask, b, ".");
+		    dest = bit_and(a[1],b[1]) "." \
+			   bit_and(a[2],b[2]) "." \
+			   bit_and(a[3],b[3]) "." \
+			   bit_and(a[4],b[4]);
+		    break;
+		}
+	    }
+
+	    printf (length(ifDescr) <= 4 ? "%-4s " : "%s\n     "),
+		ifDescr;
+	    printf      "%-4d %-14s %-15s %-7d %-5d %-7d %-5d %-4d %-5d\n",
+			 ifMtu,
+			      dest,
+				    addr,
+				          ifInUcastPkts+ifInNUcastPkts,
+					       ifInErrors,
+					            ifOutUcastPkts+ifOutNUcastPkts,
+						         ifOutErrors,
+						              ifOutDiscards,
+							           ifOutQLen;
+	    if (oflag)
+		for (j in clnpAdEntAddr) {
+		    if (clnpAdEntIfIndex == ifIndex) {
+			printf "%-4s %-5s %-14s NS+%s\n",
+			       "",  "",  "",   clnpAdEntAddr;
+			break;
+		    }
+		}
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "ifTable: %s\n", DIAGNOSTIC;
+
+      }

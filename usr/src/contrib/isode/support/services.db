@@ -1,0 +1,186 @@
+###############################################################################
+#
+# $Header: /f/osi/support/RCS/services.db,v 7.5 91/02/22 09:46:56 mrose Interim $
+#
+#
+# $Log:	services.db,v $
+# Revision 7.5  91/02/22  09:46:56  mrose
+# Interim 6.8
+# 
+# Revision 7.4  90/11/20  15:33:21  mrose
+# update
+# 
+# Revision 7.3  90/10/15  22:54:24  mrose
+# typo
+# 
+# Revision 7.2  90/07/09  14:50:58  mrose
+# sync
+# 
+# Revision 7.1  90/01/11  18:38:07  mrose
+# real-sync
+# 
+# Revision 7.0  89/11/23  22:27:44  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# Entities living above the lightweight presentation service
+#
+#	Selector is unimportant
+#
+###############################################################################
+
+"lpp/isode miscellany"		""		lpp.imisc
+lpp/mib				""		lpp.cmot
+
+
+###############################################################################
+#
+# Entities living above the transport layer, expressed as TSAP IDs
+#
+#	   0	  reserved
+#	  1-127	  reserved for GOSIP
+#	128-255	  GOSIP-style TSAP IDs for ISODE
+#	256-511	  TSAP selectors for ISO applications
+#	512-1023  TSAP selectors for ISODE
+#      1024-2047  TSAP selectors reserved for local programs
+#      2048-32767 unassigned
+#     32768-65535 process-specific
+#
+###############################################################################
+
+# internal server to support asynchronous event INDICATIONs
+tsap/isore			  #0		isore
+
+# GOSIP-style addressing
+tsap/session			  #1		tsapd-bootstrap
+
+# debug aids
+tsap/echo			#128		isod.tsap
+tsap/sink			#129		isod.tsap
+
+# ISO applications
+
+# this is where ISODE 5.0 FTAM (IS over IS) lives
+"tsap/filestore"		#259		iso.ftam
+
+# this is where ISODE 4.0 FTAM (DIS over IS) lives
+"tsap/filestore"		#258		iso.ftam-4.0
+
+# this is where ISODE 3.0 FTAM (DIS over DIS) lived
+"tsap/filestore"		#256		iso.ftam-3.0
+
+# QUIPU is a static server
+#"tsap/directory"		#257		iso.quipu
+
+"tsap/terminal"			#260		iso.vt
+
+"tsap/mib"			#261		ros.cmip
+
+"tsap/Z39.50"			#262		iso.z39-50
+
+# ISODE applications
+"tsap/isode echo"		#512		isod.acsap
+"tsap/isode rtse echo"		#513		isod.rtsap -rtse
+"tsap/isode ros_echo"		#514		isod.rtsap -rtse -rose
+"tsap/isode sink"		#515		isod.acsap
+"tsap/isode rtse sink"		#516		isod.rtsap -rtse
+"tsap/isode ros_sink"		#517		isod.rtsap -rtse -rose
+"tsap/isode miscellany"		#518		ros.imisc
+# imagestore is obsolete
+#"tsap/imagestore"		#519		ros.image
+"tsap/isode callback demo"	#520		iso.callback
+"tsap/passwdstore"		#521		ros.lookup
+# dbmstore is obsolete
+#"tsap/dbmstore"		#522		ros.dbm
+# temporary until the FTAM/FTP gateway is co-resident with the FTAM responder
+"tsap/ftpstore"			#523		iso.ftam-ftp
+"tsap/shell"			#524		ros.osh
+"tsap/isode idist"		#525		ros.idist
+"tsap/rfa"			#526		ros.rfa
+
+
+###############################################################################
+#
+# Entities living above the session layer, expressed as SSAP IDs
+#
+#	   0	  reserved
+#	  1-127	  reserved for GOSIP
+#	128-255   GOSIP-style SSAP IDs for ISODE
+#	256-1023  unassigned
+#      1024-2047  SSAP selectors reserved for local programs
+#      2048-32767 unassigned
+#     32768-65535 process-specific
+#
+###############################################################################
+
+# GOSIP-style addressing
+ssap/presentation		  #1		tsapd-bootstrap
+ssap/rts			  #2		tsapd-bootstrap
+ssap/ros			  #3		tsapd-bootstrap
+
+# debug aids
+ssap/echo			#128		isod.ssap
+ssap/sink			#129		isod.ssap
+
+
+###############################################################################
+#
+# Entities living above the presentation layer, expressed as PSAP IDs
+#
+#	   0	  reserved
+#	  1-127	  reserved for GOSIP
+#	128-255   GOSIP-style PSAP IDs for ISODE
+#	256-1023  unassigned
+#      1024-2047  PSAP selectors reserved for local programs
+#      2048-32767 unassigned
+#     32768-65535 process-specific
+#
+###############################################################################
+
+# GOSIP-style addressing
+psap/ftam			  #1		iso.ftam
+
+# debug aids
+psap/echo			#128		isod.psap
+psap/sink			#129		isod.psap
+
+
+###############################################################################
+#
+# Old-style RTS addressing
+#
+#	   0	  reserved
+#	  1-127	  reserved for GOSIP
+#	128-255   GOSIP-style for ISODE
+#
+###############################################################################
+
+# mhs
+rtsap/p1			  1
+rtsap/p3			  3
+
+# debug aids
+rtsap/echo			#128		isod.rtsap
+rtsap/sink			#129		isod.rtsap
+rtsap/ros_echo			#130		isod.rtsap
+rtsap/ros_sink			#131		isod.rtsap
+"rtsap/file transfer"		#132		iso.rtf
+
+
+###############################################################################
+#
+# Old-style ROS addressing
+#
+#	   0	  reserved
+#	  1-127	  reserved for GOSIP
+#	128-255	  GOSIP-style for ISODE
+#
+###############################################################################
+
+# debug aids
+rosap/echo			#128		isod.rosap
+rosap/sink			#129		isod.rosap

@@ -1,0 +1,50 @@
+.TH S-TRACEROUTE 1C "29 Aug 1990"
+.\" $Header: /f/osi/snmp/gawk-2.11/s-gawk/RCS/s-traceroute.1c,v 7.2 91/02/22 09:45:29 mrose Interim $
+.\"
+.\" Contributed by NYSERNet Inc.  This work was partially supported by the
+.\" U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+.\" Center of the U.S. Air Force Systems Command under contract number
+.\" F30602-88-C-0016.
+.\"
+.\"
+.\" $Log#
+.\" 
+.SH NAME
+s-traceroute \- SNMP-based route tracing facility
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B s-traceroute
+destination
+\%[community\0\%[agent]]
+.in -.5i
+.SH DESCRIPTION
+The \fIs-traceroute\fR script invokes SNMP-capable \fIgawk\fR with the
+arguments necessary to trace a route through the Internet.
+.PP
+Note that because \fIs-traceroute\fR uses SNMP to retrieve
+information,
+the destination (and optional agent) addresses should be specified in
+dot-notation,
+not as symbolic names.
+.SH FILES
+.nf
+.ta \w'\*(EDobjects.defs  'u
+\*(EDobjects.defs	MIB definitions
+.re
+.fi
+.SH AUTHOR
+Marshall T. Rose,
+Performance Systems International.
+.PP
+This work was partially supported by the
+U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+Center of the U.S. Air Force Systems Command under contract number
+F30602-88-C-0016.
+.PP
+Although this package is distributed with the ISODE,
+it is not an OSI program, per se.
+Inasmuch as the continued survival of the Internet hinges on all nodes
+becoming network manageable,
+this package was developed using the ISODE and is being freely
+distributed with releases of Berkeley UNIX.

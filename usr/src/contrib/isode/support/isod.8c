@@ -1,0 +1,44 @@
+.TH ISOD 8C "31 May 1988"
+.\" $Header: /f/osi/support/RCS/isod.8c,v 7.1 91/02/22 09:46:34 mrose Interim $
+.\"
+.\"
+.\" $Log:	isod.8c,v $
+.\" Revision 7.1  91/02/22  09:46:34  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:27:26  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+isod \- minimal ISODE server for testing
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDisod.\fIprovider\fP
+\%[\-async] \%[\-sync] ...
+\fImagic\0arguments\fR
+.in -.5i
+(under \fI\*(SDtsapd\fR\0)
+.SH DESCRIPTION
+The \fIisod\fR server implements a few minimal ISODE services
+and is useful primarily for debugging purposes.
+Currently,
+two services are implemented:
+\fIecho\fR, which simply echoes back everything it receives;
+and,
+\fIsink\fR, which simply tosses anything it receives.
+Both services have support for expedited data.
+.PP
+The providers supported are \fItsap\fR, \fIssap\fR, \fIpsap\fR, \fIacsap\fR,
+\fIrtsap\fR, and, \fIrosap\fR.
+.SH FILES
+.nf
+.ta \w'\*(LDisod.log  'u
+\*(EDisoservices	ISODE services database
+\*(LDisod.log	logfile
+.re
+.fi
+.SH "SEE ALSO"
+isoc(1c), isoservices(5)
+.SH AUTHOR
+Marshall T. Rose

@@ -1,0 +1,179 @@
+function p_name(f) {
+    if (f in peers)
+	return peers[f];
+
+    return (f);
+}
+
+function p_type(f) {
+    if (f in ptypes)
+	return ptypes[f];
+
+    return (f ? f : "unknown");
+}
+
+function do_stats() {
+	didone = 0;
+	for (i in snmpInPkts) {
+	    didone = 1;
+
+	    printf "%9s packets received\n", snmpInPkts;
+		printf "%9s packets with bad version\n", snmpInBadVersions;
+		printf "%9s packets with bad community\n",
+			snmpInBadCommunityNames;
+		printf "%9s packets with authentication failures\n",
+			snmpInBadCommunityUses;
+		printf "%9s packets with BER parse errors\n",
+			snmpInASNParseErrs;
+		printf "%9s packets with ASN.1 parse errors\n", snmpInBadTypes;
+		printf "%9s packets with tooBigs\n", snmpInTooBigs;
+		printf "%9s packets with noSuchNames\n", snmpInNoSuchNames;
+		printf "%9s packets with badValues\n", snmpInBadValues;
+		printf "%9s packets with readOnlys\n", snmpInReadOnlys;
+		printf "%9s packets with genErrs\n", snmpInGenErrs;
+		printf "%9s variables read\n", snmpInTotalReqVars;
+		printf "%9s variables written\n", snmpInTotalSetVars;
+		printf "%9s getRequests received\n", snmpInGetRequests;
+		printf "%9s getNexts received\n", snmpInGetNexts;
+		printf "%9s setRequests received\n", snmpInSetRequests;
+		printf "%9s getResponses received\n", snmpInGetResponses;
+		printf "%9s traps received\n", snmpInTraps;
+	    printf "\n";
+		printf "%9s packets generated\n", snmpOutPkts;
+		printf "%9s packets with tooBigs\n", snmpOutTooBigs;
+		printf "%9s packets with noSuchNames\n", snmpOutNoSuchNames;
+		printf "%9s packets with badValues\n", snmpOutBadValues;
+		printf "%9s packets with readOnlys\n", snmpOutReadOnlys;
+		printf "%9s packets with genErrs\n", snmpOutGenErrs;
+		printf "%9s getRequests generated\n", snmpOutGetRequests;
+		printf "%9s getNexts generated\n", snmpOutGetNexts;
+		printf "%9s setRequests generated\n", snmpOutSetRequests;
+		printf "%9s getResponses generated\n", snmpOutGetResponses;
+		printf "%9s traps generated\n", snmpOutTraps;
+		printf "%9s authorization traps\n",
+			snmpEnableAuthTraps == 1 ? "enabled" : "disabled";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "snmp statistics: %s\n", DIAGNOSTIC;
+}
+
+BEGIN {
+	if (sflag) {
+	    do_stats();
+	    exit(0);
+	}
+
+	INVALID = 2; CONNECTING = 3;
+	ptypes[1] = "valid";
+	ptypes[2] = "invalid";
+	ptypes[3] = "connecting";
+
+
+	printf "Primitive views:\n";
+	printf "%-20s %-20s %-15s %-15s\n",
+		"View",
+		      "Transport",
+			    "Address",
+				  "User";
+
+	didone = 0;
+	for (i in viewPrimName) {
+	    didone = 0;
+
+	    if (viewPrimType == INVALID)
+		continue;
+	    printf "%-20s %-20s %-15s %-15s\n",
+		    viewPrimName,
+			  viewPrimTDomain,
+				viewPrimTaddr,
+				      viewPrimUser;
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "primitive views: %s\n", DIAGNOSTIC;
+
+
+	printf "\nAccess policy:\n";
+	printf "%-5s %-20s %-30s %s\n",
+		"Priv.",
+		     "View",
+			   "Community",
+				 "User";
+
+	didone = 0;
+	for (i in viewAclView) {
+	    didone = 0;
+
+	    if (viewAclType == INVALID)
+		continue;
+	    printf "%5d %-20s %-30s %s\n",
+		    viewAclPrivileges,
+		        viewAclView,
+		              viewAclCommunity,
+				      viewAclUser;
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "access policies: %s\n", DIAGNOSTIC;
+
+
+	printf "\nTrap Destinations:\n";
+	printf "%-20s %s\n",
+		"View",
+		      "Generics";
+
+	didone = 0;
+	for (i in viewTrapView) {
+	    didone = 0;
+
+	    if (viewTrapView == INVALID)
+		continue;
+	    printf "%-20s %s\n",
+		    viewTrapView,
+		        viewTrapGenerics;
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "traps destinations: %s\n", DIAGNOSTIC;
+
+
+	printf "\nSMUX peers:\n";
+	printf "%-5s  %-25s %s\n",
+	        "Index",
+	             "Identity",
+			   "Description";
+
+	didone = 0;
+	for (i in smuxPindex) {
+	    didone = 1;
+	    
+	    if (smuxPstatus == INVALID)
+		continue;
+	    printf "%5d%s %-25s %s\n",
+		    smuxPindex,
+		        smuxPstatus == CONNECTING ? "*" : " ",
+			 smuxPidentity,
+			       smuxPdescription;
+	    peers[smuxPindex] = smuxPindex " (" smuxPdescription ")";
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "smux peers: %s\n", DIAGNOSTIC;
+
+
+	printf "\nSMUX subtrees:\n";
+	printf "%-5s  %-25s %s\n",
+		"Prio.",
+		      "Subtree",
+			    "Peer";
+
+	didone = 0;
+	for (i in smuxTsubtree) {
+	    didone = 1;
+
+	    if (smuxTstatus == INVALID)
+		continue;
+	    printf "%5d  %-25s %s\n",
+		    smuxTpriority,
+			 smuxTsubtree,
+				p_name(smuxTindex);
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "smux peers: %s\n", DIAGNOSTIC;
+      }

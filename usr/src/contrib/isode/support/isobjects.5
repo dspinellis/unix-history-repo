@@ -1,0 +1,37 @@
+.TH ISOBJECTS 5 "23 Jul 1987"
+.\" $Header: /f/osi/support/RCS/isobjects.5,v 7.1 91/02/22 09:46:27 mrose Interim $
+.\"
+.\"
+.\" $Log:	isobjects.5,v $
+.\" Revision 7.1  91/02/22  09:46:27  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:27:13  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+.B isobjects
+\- ISODE objects database
+.SH DESCRIPTION
+The \fIisobjects\fR
+file contains information regarding the known objects on the host.
+.PP
+Items are separated by any number of blanks and/or tab characters.
+However, double\-quotes may be used to prevent separation between arguments.
+The character `#' at the beginning of a line indicates a comment line.
+.PP
+The first item is the descriptor of the object, a simple string.
+The second item is the corresponding object identifier.
+.SH FILES
+.nf
+.ta \w'\*(EDisobjects  'u
+\*(EDisobjects	ISODE objects database
+.re
+.fi
+.SH "SEE ALSO"
+isoentities(5), isoservices(5),
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 1:
+Application Services\fR, \*(lqThe ISODE Objects Database\*(rq.
+.SH AUTHOR
+Marshall T. Rose
