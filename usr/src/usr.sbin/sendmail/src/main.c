@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1419,6 +1419,19 @@ dumpstate()
 	printopenfds(TRUE);
 	syslog(LOG_DEBUG, "--- connection cache: ---");
 	mci_dump_all(TRUE);
+	if (RewriteRules[89] != NULL)
+	{
+		int stat;
+		register char **pvp;
+		char *pv[MAXATOM + 1];
+
+		pv[0] = NULL;
+		stat = rewrite(pv, 89, 0, CurEnv);
+		syslog(LOG_DEBUG, "--- ruleset 89 returns stat %d, pv: ---",
+			stat);
+		for (pvp = pv; *pvp != NULL; pvp++)
+			syslog(LOG_DEBUG, "%s", *pvp);
+	}
 	syslog(LOG_DEBUG, "--- end of state dump ---");
 #endif
 }
