@@ -47,9 +47,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00007
+ * CURRENT PATCH LEVEL:         2       00042
  * --------------------         -----   ----------------------
  *
+ * 24 Apr 92	Martin Renters		Fix NFS read request hang
  * 20 Aug 92	David Greenman		Fix getnewbuf() 2xAllocation
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/vfs__bio.c,v 1.2 92/01/21 21:30:08 william Exp $";
@@ -119,6 +120,7 @@ bread(struct vnode *vp, daddr_t blkno, int size, struct ucred *cred,
 	if ((bp->b_flags & B_CACHE) == 0 || (bp->b_flags & B_INVAL) != 0) {
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
+		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
 		bp->b_rcred = cred;
 		VOP_STRATEGY(bp);
 		rv = biowait (bp);
@@ -145,6 +147,7 @@ breada(struct vnode *vp, daddr_t blkno, int size, daddr_t rablkno, int rabsize,
 	if ((bp->b_flags & B_CACHE) == 0 || (bp->b_flags & B_INVAL) != 0) {
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
+		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
 		bp->b_rcred = cred;
 		VOP_STRATEGY(bp);
 		needwait++;
@@ -156,6 +159,7 @@ breada(struct vnode *vp, daddr_t blkno, int size, daddr_t rablkno, int rabsize,
 	if ((rabp->b_flags & B_CACHE) == 0 || (rabp->b_flags & B_INVAL) != 0) {
 		rabp->b_flags |= B_READ | B_ASYNC;
 		rabp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
+		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
 		rabp->b_rcred = cred;
 		VOP_STRATEGY(rabp);
 	} else
@@ -381,6 +385,8 @@ tryfree:
 		brelvp(bp);
 
 	/* we are not free, nor do we contain interesting data */
+	if (bp->b_rcred != NOCRED) crfree(bp->b_rcred);		/* 25 Apr 92*/
+	if (bp->b_wcred != NOCRED) crfree(bp->b_wcred);
 	bp->b_flags = B_BUSY;
 fillin:
 	bremhash(bp);
