@@ -334,8 +334,8 @@ SlowScreen()
 			columnsleft = NumberColumns;
 		    }
 		    SetHighlightMode(pointer);	/* Turn on highlighting */
-		    while (!IsStartField(pointer) &&
-				!TermIsStartField(pointer)) {
+		    while ((!IsStartField(pointer)) &&
+				(!TermIsStartField(pointer))) {
 			c = GetHost(pointer);
 			DoCharacterAt(c,pointer);	/* MACRO */
 			pointer = ScreenInc(pointer);
@@ -382,6 +382,10 @@ SlowScreen()
 			 * the end of the screen.
 			 */
 		    if (j > pointer) {
+			/*
+			 * pointer is guaranteed to be higher than Highest...
+			 */
+			pointer = Highest+1;	/* We did the highest thing */
 			break;
 		    }
 		} else {
