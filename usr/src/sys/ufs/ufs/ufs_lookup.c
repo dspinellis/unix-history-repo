@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.17	82/07/15	*/
+/*	ufs_lookup.c	4.18	82/07/22	*/
 
 /* merged into kernel:	@(#)nami.c 2.3 4/8/82 */
 
@@ -211,6 +211,8 @@ dirloop2:
 		ep = (struct direct *)(bp->b_un.b_addr + loc);
 		i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
 		if (ep->d_reclen <= 0 || ep->d_reclen > i) {
+printf("bad reclen: dir#=<%d,%d>, e#=%d, reclen=%d, i=%d, loc=%d\n",
+	dp->i_dev, dp->i_number, ep->d_ino, ep->d_reclen, i, loc);
 			loc += i;
 			u.u_offset += i;
 			continue;
