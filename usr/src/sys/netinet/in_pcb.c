@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.38	83/01/04	*/
+/*	in_pcb.c	4.39	83/01/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -68,7 +68,8 @@ in_pcbbind(inp, nam)
 		/* GROSS */
 		if (aport < IPPORT_RESERVED && u.u_uid != 0)
 			return (EACCES);
-		if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0)
+		if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
+		    (so->so_options & SO_ACCEPTCONN) == 0)
 			wild = INPLOOKUP_WILDCARD;
 		if (in_pcblookup(head,
 		    zeroin_addr, 0, sin->sin_addr, lport, wild))
