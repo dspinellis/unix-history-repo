@@ -131,7 +131,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.5	%G%";
+static char SccsId[] = "@(#)conf.c	3.6	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -139,9 +139,48 @@ static char SccsId[] = "@(#)conf.c	3.5	%G%";
 # ifdef BERKELEY
 
 char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
-char	*UucpHost = "ucbvax";	/* host name of gateway on UUCP net */
 # define BerkHost   MyLocName	/* host name of gateway on Berk net */
 # define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
+
+/* Specific Configurations for Berkeley Machines */
+
+/* Berkeley people: mail changes to ingvax:eric or they will be lost! */
+
+# ifdef ING70
+# include "c.ing70.h"
+# endif ING70
+
+# ifdef INGVAX
+# include "c.ingvax.h"
+# endif INGVAX
+
+# ifdef CSVAX
+# include "c.csvax.h"
+# endif CSVAX
+
+# ifdef ARPAVAX
+# include "c.arpavax.h"
+# endif ARPAVAX
+
+# ifdef CORY
+# include "c.cory.h"
+# endif CORY
+
+# ifdef ONYX
+# include "c.onyx.h"
+# endif ONYX
+
+# ifdef IMAGE
+# include "c.image.h"
+# endif IMAGE
+
+# ifdef ESVAX
+# include "c.esvax.h"
+# endif ESVAX
+
+# ifdef EECS40
+# include "c.eecs40.h"
+# endif EECS40
 
 # else BERKELEY
 
@@ -149,76 +188,11 @@ char	*ArpaHost = "[unknown]";
 char	*MyLocName = sysname;
 # define HASUUCP		/* default to having UUCP net */
 char	*UucpLocal[] = { sysname, NULL };
+# define BerkMerge	NULL	/* don't merge any berknet sites */
+# define UucpMerge	NULL	/* don't merge any UUCP sites */
 
 # endif BERKELEY
 
-
-/* Specific Configurations for Berkeley Machines */
-
-/* Berkeley people: mail changes to csvax:eric or they will be lost! */
-
-# ifdef ING70
-static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
-char		*ArpaLocal = { "berkeley", "ucb", NULL };
-char		*MyLocName = "Ing70";
-char		*DaemonName = "Ing70:~MAILER~DAEMON~";
-# define HASARPA
-# define V6
-# endif ING70
-
-# ifdef INGVAX
-static char	*BerkLocal[] = { "j", "ingvax", NULL };
-char		*MyLocName = "IngVax";
-char		*DaemonName = "IngVax:~MAILER~DAEMON~";
-# endif INGVAX
-
-# ifdef CSVAX
-static char	*BerkLocal[] = { "v", "csvax", "vax", NULL };
-static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
-char		*MyLocName = "CSVAX";
-char		*DaemonName = "CSVAX:~MAILER~DAEMON~";
-# define HASUUCP
-# endif CSVAX
-
-# ifdef ARPAVAX
-static char	*BerkLocal[] = { "r", "arpavax", NULL };
-char		*MyLocName = "ARPAVAX";
-char		*DaemonName = "ARPAVAX:~MAILER~DAEMON~";
-# endif ARPAVAX
-
-# ifdef CORY
-static char	*BerkLocal[] = { "y", "cory", NULL };
-char		*MyLocName = "Cory";
-char		*DaemonName = "Cory:~MAILER~DAEMON~";
-# endif CORY
-
-# ifdef ONYX
-static char	*BerkLocal[[] = { "x", "onyx", NULL };
-char		*MyLocName = "Onyx";
-char		*DaemonName = "Onyx:~MAILER~DAEMON~";
-# endif ONYX
-
-# ifdef IMAGE
-/* untested */
-static char	*BerkLocal[] = { "m", "image", NULL };
-char		*MyLocName = "Image";
-char		*DaemonName = "Image:~MAILER~DAEMON~";
-# define V6
-# endif IMAGE
-
-# ifdef ESVAX
-static char	*BerkLocal[] = { "o", "esvax", NULL };
-char		*MyLocName = "ESVAX";
-char		*DaemonName = "ESVAX:~MAILER~DAEMON~";
-# endif ESVAX
-
-# ifdef EECS40
-/* untested */
-static char	*BerkLocal[] = { "z", "eecs40", NULL };
-char		*MyLocName = "EECS40";
-char		*DaemonName = "EECS40:~MAILER~DAEMON~";
-# define V6
-# endif EECS40
 
 
 # ifndef HASARPA
@@ -283,7 +257,7 @@ static struct mailer	BerkMailer =
 {
 	"/usr/net/bin/sendberkmail",
 	M_FOPT|M_HDR|M_STRIPQ,			EX_UNAVAILABLE,	BerkLocal,
-	"$B:$f",	NULL,			BerkArgv,
+	"$B:$f",	BerkMerge,		BerkArgv,
 };
 
 /* arpanet mail */
@@ -318,7 +292,7 @@ static struct mailer	UucpMailer =
 {
 	"/bin/mail",
 	M_ROPT|M_STRIPQ,			EX_NOUSER,	UucpLocal,
-	"$U!$f",	NULL,			UucpArgv,
+	"$U!$f",	UucpMerge,		UucpArgv,
 };
 
 struct mailer	*Mailer[] =
