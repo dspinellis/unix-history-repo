@@ -131,7 +131,9 @@ done:	argc -= optind;
 
 	prevline = malloc(MAXLINELEN);
 	thisline = malloc(MAXLINELEN);
-	(void)fgets(prevline, MAXLINELEN, ifp);
+	if (fgets(prevline, MAXLINELEN, ifp) == (char *) NULL) {
+		exit(0);
+	}
 
 	while (fgets(thisline, MAXLINELEN, ifp)) {
 		/* If requested get the chosen fields + character offsets. */
