@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.3 (Berkeley) %G%
+ *	@(#)kern_time.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,14 +34,16 @@ gettimeofday()
 	} *uap = (struct a *)u.u_ap;
 	struct timeval atv;
 
-	microtime(&atv);
-	u.u_error = copyout((caddr_t)&atv, (caddr_t)uap->tp, sizeof (atv));
-	if (u.u_error)
-		return;
-	if (uap->tzp == 0)
-		return;
-	/* SHOULD HAVE PER-PROCESS TIMEZONE */
-	u.u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz));
+	if (uap->tp) {
+		microtime(&atv);
+		u.u_error = copyout((caddr_t)&atv, (caddr_t)uap->tp,
+			sizeof (atv));
+		if (u.u_error)
+			return;
+	}
+	if (uap->tzp)
+		u.u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
+			sizeof (tz));
 }
 
 settimeofday()
@@ -53,11 +55,13 @@ settimeofday()
 	struct timeval atv;
 	struct timezone atz;
 
-	u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
-		sizeof (struct timeval));
-	if (u.u_error)
-		return;
-	setthetime(&atv);
+	if (uap->tv) {
+		u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+			sizeof (struct timeval));
+		if (u.u_error)
+			return;
+		setthetime(&atv);
+	}
 	if (uap->tzp && suser()) {
 		u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
 			sizeof (atz));
