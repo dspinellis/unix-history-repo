@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)ac.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.8 (Berkeley) %G%";
 #endif
 /*
  * ac [ -w wtmp ] [ -d ] [ -p ] [ people ]
@@ -175,13 +175,13 @@ print()
 		if (t>0)
 			ttime += t;
 		if (pflag && ubuf[i].utime > 0) {
-			printf("\t%-*.*s%6.2f\n", NMAX, NMAX,
+			printf("\t%-*.*s %6.2f\n", NMAX, NMAX,
 			    ubuf[i].uname, ubuf[i].utime/3600.);
 		}
 	}
 	if (ttime > 0) {
 		pdate();
-		printf("\ttotal%9.2f\n", ttime/3600.);
+		printf("\ttotal %9.2f\n", ttime/3600.);
 	}
 }
 
