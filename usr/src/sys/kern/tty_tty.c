@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	7.21 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -35,12 +35,12 @@ cttyopen(dev, flag, mode, p)
 	VOP_LOCK(ttyvp);
 #ifdef PARANOID
 	/*
-	 * Since group is tty and mode is 620 on all terminal lines
+	 * Since group is tty and mode is 620 on most terminal lines
 	 * and since sessions protect terminals from processes outside
 	 * your session, this check is probably no longer necessary.
 	 * Since it inhibits setuid root programs that later switch 
 	 * to another user from accessing /dev/tty, we have decided
-	 * to delete this test for now.
+	 * to delete this test. (mckusick 5/93)
 	 */
 	error = VOP_ACCESS(ttyvp,
 	  (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), p->p_ucred, p);
