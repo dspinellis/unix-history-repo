@@ -1,5 +1,5 @@
 /*
- *	@(#)parser.h	3.2 84/01/13
+ * @(#)parser.h	3.3 %G%
  */
 
 #include <stdio.h>

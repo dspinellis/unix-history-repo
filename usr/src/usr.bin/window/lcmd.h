@@ -1,5 +1,5 @@
 /*
- *	@(#)lcmd.h	3.2 84/03/23
+ * @(#)lcmd.h	3.3 %G%
  */
 
 #define LCMD_NARG 20			/* maximum number of arguments */

@@ -1,5 +1,5 @@
 /*
- *	@(#)token.h	3.1 83/11/22
+ * @(#)token.h	3.2 %G%
  */
 
 #define token		(cx.x_token)
