@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	8.3 (Berkeley) %G%
+ *	@(#)vm_page.c	8.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -84,7 +84,8 @@ int		page_shift;
  *
  *	Sets page_shift and page_mask from cnt.v_page_size.
  */
-void vm_set_page_size()
+void
+vm_set_page_size()
 {
 
 	if (cnt.v_page_size == 0)
@@ -107,7 +108,8 @@ void vm_set_page_size()
  *	for the object/offset-to-page hash table headers.
  *	Each page cell is initialized and placed on the free list.
  */
-void vm_page_startup(start, end)
+void
+vm_page_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
@@ -264,7 +266,7 @@ void vm_page_startup(start, end)
  *	NOTE:  This macro depends on vm_page_bucket_count being a power of 2.
  */
 #define vm_page_hash(object, offset) \
-	(((unsigned)object+(unsigned)atop(offset))&vm_page_hash_mask)
+	(((unsigned long)object+(unsigned long)atop(offset))&vm_page_hash_mask)
 
 /*
  *	vm_page_insert:		[ internal use only ]
@@ -275,7 +277,8 @@ void vm_page_startup(start, end)
  *	The object and page must be locked.
  */
 
-void vm_page_insert(mem, object, offset)
+void
+vm_page_insert(mem, object, offset)
 	register vm_page_t	mem;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
@@ -331,7 +334,8 @@ void vm_page_insert(mem, object, offset)
  *	The object and page must be locked.
  */
 
-void vm_page_remove(mem)
+void
+vm_page_remove(mem)
 	register vm_page_t	mem;
 {
 	register struct pglist	*bucket;
@@ -378,7 +382,8 @@ void vm_page_remove(mem)
  *	The object must be locked.  No side effects.
  */
 
-vm_page_t vm_page_lookup(object, offset)
+vm_page_t
+vm_page_lookup(object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
@@ -416,7 +421,8 @@ vm_page_t vm_page_lookup(object, offset)
  *
  *	The object must be locked.
  */
-void vm_page_rename(mem, new_object, new_offset)
+void
+vm_page_rename(mem, new_object, new_offset)
 	register vm_page_t	mem;
 	register vm_object_t	new_object;
 	vm_offset_t		new_offset;
@@ -439,7 +445,8 @@ void vm_page_rename(mem, new_object, new_offset)
  *
  *	Object must be locked.
  */
-vm_page_t vm_page_alloc(object, offset)
+vm_page_t
+vm_page_alloc(object, offset)
 	vm_object_t	object;
 	vm_offset_t	offset;
 {
@@ -477,7 +484,7 @@ vm_page_t vm_page_alloc(object, offset)
 	if (cnt.v_free_count < cnt.v_free_min ||
 	    (cnt.v_free_count < cnt.v_free_target &&
 	     cnt.v_inactive_count < cnt.v_inactive_target))
-		thread_wakeup((int)&vm_pages_needed);
+		thread_wakeup(&vm_pages_needed);
 	return (mem);
 }
 
@@ -489,7 +496,8 @@ vm_page_t vm_page_alloc(object, offset)
  *
  *	Object and page must be locked prior to entry.
  */
-void vm_page_free(mem)
+void
+vm_page_free(mem)
 	register vm_page_t	mem;
 {
 	vm_page_remove(mem);
@@ -527,7 +535,8 @@ void vm_page_free(mem)
  *
  *	The page queues must be locked.
  */
-void vm_page_wire(mem)
+void
+vm_page_wire(mem)
 	register vm_page_t	mem;
 {
 	VM_PAGE_CHECK(mem);
@@ -556,7 +565,8 @@ void vm_page_wire(mem)
  *
  *	The page queues must be locked.
  */
-void vm_page_unwire(mem)
+void
+vm_page_unwire(mem)
 	register vm_page_t	mem;
 {
 	VM_PAGE_CHECK(mem);
@@ -579,7 +589,8 @@ void vm_page_unwire(mem)
  *
  *	The page queues must be locked.
  */
-void vm_page_deactivate(m)
+void
+vm_page_deactivate(m)
 	register vm_page_t	m;
 {
 	VM_PAGE_CHECK(m);
@@ -614,7 +625,8 @@ void vm_page_deactivate(m)
  *	The page queues must be locked.
  */
 
-void vm_page_activate(m)
+void
+vm_page_activate(m)
 	register vm_page_t	m;
 {
 	VM_PAGE_CHECK(m);
@@ -642,7 +654,8 @@ void vm_page_activate(m)
  *	be used by the zero-fill object.
  */
 
-boolean_t vm_page_zero_fill(m)
+boolean_t
+vm_page_zero_fill(m)
 	vm_page_t	m;
 {
 	VM_PAGE_CHECK(m);
@@ -658,7 +671,8 @@ boolean_t vm_page_zero_fill(m)
  *	Copy one page to another
  */
 
-void vm_page_copy(src_m, dest_m)
+void
+vm_page_copy(src_m, dest_m)
 	vm_page_t	src_m;
 	vm_page_t	dest_m;
 {
