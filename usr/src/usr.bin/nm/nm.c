@@ -1,4 +1,6 @@
-static	char sccsid[] = "@(#)nm.c 4.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)nm.c 4.2 %G%";
+#endif
 /*
  * nm - print name list; VAX string table version
  */
@@ -8,7 +10,6 @@ static	char sccsid[] = "@(#)nm.c 4.1 %G%";
 #include <ctype.h>
 #include <a.out.h>
 #include <stab.h>
-#include <pagsiz.h>
 #include <stat.h>
 
 #define	SELECT	archive ? archdr.ar_name : *xargv

@@ -1,7 +1,9 @@
-static char *sccsid = "@(#)strip.c	4.3 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)strip.c	4.4 (Berkeley) %G%";
+#endif
+
 #include <a.out.h>
 #include <signal.h>
-#include <pagsiz.h>
 
 #define	BUFSIZ	1024
 
@@ -10,12 +12,14 @@ char	*mktemp();
 struct exec head;
 int	status;
 int	tf;
+int	pagesize;
 
 main(argc, argv)
 char *argv[];
 {
 	register i;
 
+	pagesize = getpagesize();
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
@@ -64,7 +68,7 @@ char *name;
 	lseek(tf, (long)0, 0);
 	write(tf, (char *)&head, sizeof(head));
 	if (head.a_magic == ZMAGIC)
-		size += PAGSIZ - sizeof (head);
+		size += pagesize - sizeof (head);
 	if (copy(name, f, tf, size)) {
 		status = 1;
 		goto out;
