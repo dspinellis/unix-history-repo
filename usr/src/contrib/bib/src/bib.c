@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.6	%G%";
+static char sccsid[] = "@(#)bib.c	2.7	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)bib.c	2.6	%G%";
    int numrefs = 0;            /* number of references generated so far */
    FILE *tfd;                   /* output of pass 1 of file(s)           */
    char tmpfile[] = TMPTEXTFILE ; /* output of pass 1                    */
-   char common[] = COMFILE ;    /* common word file                      */
+   char *common = COMFILE;       /* common word file                      */
    int  findex = false;         /* can we read the file INDEX ?          */
 
 /* global variables in bibargs */
@@ -60,6 +60,10 @@ main(argc, argv)
 
    /* the file INDEX in the current directory is the default index,
       if it is present */
+
+   strcpy(BMACLIB, N_BMACLIB);
+   strcpy(COMFILE, N_COMFILE);
+   strcpy(DEFSTYLE, N_DEFSTYLE);
 
    signal(SIGINT, intr);
    rfd = fopen( INDXFILE , "r");

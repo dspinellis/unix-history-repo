@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)streams.c	2.2	%G%";
+static char sccsid[] = "@(#)streams.c	2.3	%G%";
 #endif not lint
 #
 
@@ -132,4 +132,15 @@ char *p;
     while ( (*p= getc(stream)) != '\n' && *p!=EOF)
         if (p<stop)    p++;
     *p= NULL;
+}
+
+/* replace string old at the head of subj by new */
+strreplace(subj, old, new)
+	char *subj, *old, *new;
+{
+	char buf[128];
+	int lg;
+	strcpy(buf, &subj[strlen(old)]);
+	strcpy(subj, new);
+	strcat(subj, buf);
 }
