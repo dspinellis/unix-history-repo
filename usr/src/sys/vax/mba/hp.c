@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.9 (Berkeley) %G%
+ *	@(#)hp.c	7.10 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -245,6 +245,7 @@ hpopen(dev, flags, fmt)
 	return (0);
 }
 
+/* ARGSUSED */
 hpclose(dev, flags, fmt)
 	dev_t dev;
 	int flags, fmt;
@@ -386,7 +387,6 @@ hpinit(dev, flags)
 	sc->sc_state = OPEN;
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
-done:
 	wakeup((caddr_t)sc);
 	return (error);
 
