@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_rb.c 1.1 90/07/09$
+ * from: Utah $Hdr: grf_rb.c 1.13 91/04/02$
  *
- *	@(#)grf_rb.c	7.4 (Berkeley) %G%
+ *	@(#)grf_rb.c	7.5 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -36,20 +36,41 @@
  */
 rb_init(gp, addr)
 	struct grf_softc *gp;
-	u_char *addr;
+	caddr_t addr;
 {
 	register struct rboxfb *rbp;
 	struct grfinfo *gi = &gp->g_display;
 	int fboff;
+	extern caddr_t sctopa(), iomap();
 
 	rbp = (struct rboxfb *) addr;
-	gi->gd_regaddr = (caddr_t) UNIOV(addr);
+	if (ISIIOVA(addr))
+		gi->gd_regaddr = (caddr_t) IIOP(addr);
+	else
+		gi->gd_regaddr = sctopa(vatosc(addr));
 	gi->gd_regsize = 0x20000;
 	gi->gd_fbwidth = (rbp->fbwmsb << 8) | rbp->fbwlsb;
 	gi->gd_fbheight = (rbp->fbhmsb << 8) | rbp->fbhlsb;
-	fboff = (rbp->fbomsb << 8) | rbp->fbolsb;
-	gi->gd_fbaddr = (caddr_t) (*(addr + fboff) << 16);
 	gi->gd_fbsize = gi->gd_fbwidth * gi->gd_fbheight;
+	fboff = (rbp->fbomsb << 8) | rbp->fbolsb;
+	gi->gd_fbaddr = (caddr_t) (*((u_char *)addr + fboff) << 16);
+	if (gi->gd_regaddr >= (caddr_t)DIOIIBASE) {
+		/*
+		 * For DIO II space the fbaddr just computed is the offset
+		 * from the select code base (regaddr) of the framebuffer.
+		 * Hence it is also implicitly the size of the register set.
+		 */
+		gi->gd_regsize = (int) gi->gd_fbaddr;
+		gi->gd_fbaddr += (int) gi->gd_regaddr;
+		gp->g_regkva = addr;
+		gp->g_fbkva = addr + gi->gd_regsize;
+	} else {
+		/*
+		 * For DIO space we need to map the seperate framebuffer.
+		 */
+		gp->g_regkva = addr;
+		gp->g_fbkva = iomap(gi->gd_fbaddr, gi->gd_fbsize);
+	}
 	gi->gd_dwidth = (rbp->dwmsb << 8) | rbp->dwlsb;
 	gi->gd_dheight = (rbp->dwmsb << 8) | rbp->dwlsb;
 	gi->gd_planes = 0;	/* ?? */
@@ -68,7 +89,7 @@ rb_mode(gp, cmd)
 	register struct rboxfb *rbp;
 	int error = 0;
 
-	rbp = (struct rboxfb *) IOV(gp->g_display.gd_regaddr);
+	rbp = (struct rboxfb *) gp->g_regkva;
 	switch (cmd) {
 	/*
 	 * The minimal register info here is from the Renaissance X driver.
