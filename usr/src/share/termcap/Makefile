@@ -1,4 +1,4 @@
-# @(#)Makefile	1.9	(Berkeley) %G%
+# @(#)Makefile	1.10	(Berkeley) %G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -10,8 +10,7 @@ termcap: reorder termcap.src
 	ex - termcap.src < reorder
 
 install: termcap tabset
-	install -o root -m 664 -c termcap ${DESTDIR}/etc/termcap
-	chgrp termcap ${DESTDIR}/etc/termcap
+	install -m 664 termcap ${DESTDIR}/etc/termcap
 
 tabset:
 	rm -fr ${DESTDIR}/usr/lib/tabset
