@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	2.16 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	2.17 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -499,6 +499,34 @@ isprefix(as1, as2)
 
 int	inithdr;			/* am printing startup headers */
 
+#ifdef _NFILE
+static
+_fwalk(function)
+	register int (*function)();
+{
+	register FILE *iop;
+
+	for (iop = _iob; iop < _iob + _NFILE; iop++)
+		(*function)(iop);
+}
+#endif
+
+static
+xclose(iop)
+	register FILE *iop;
+{
+	if (iop == stdin || iop == stdout ||
+	    iop == stderr || iop == itf || iop == otf)
+		return;
+
+	if (iop != pipef)
+		fclose(iop);
+	else {
+		pclose(pipef);
+		pipef = NULL;
+	}
+}
+
 stop(s)
 {
 	register FILE *fp;
@@ -513,20 +541,12 @@ stop(s)
 	while (sourcing)
 		unstack();
 	getuserid((char *) -1);
-	for (fp = &_iob[0]; fp < &_iob[_NFILE]; fp++) {
-		if (fp == stdin || fp == stdout)
-			continue;
-		if (fp == itf || fp == otf)
-			continue;
-		if (fp == stderr)
-			continue;
-		if (fp == pipef) {
-			pclose(pipef);
-			pipef = NULL;
-			continue;
-		}
-		fclose(fp);
-	}
+
+	/*
+	 * Walk through all the open FILEs, applying xclose() to them
+	 */
+	_fwalk(xclose);
+
 	if (image >= 0) {
 		close(image);
 		image = -1;

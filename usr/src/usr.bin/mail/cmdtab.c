@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	2.10 (Berkeley) %G%";
+static char *sccsid = "@(#)cmdtab.c	2.11 (Berkeley) %G%";
 #endif
 
 #include "def.h"
@@ -17,7 +17,7 @@ extern int messize(), psalloc(), deltype(), unset(), set(), source();
 extern int pversion(), group(), top(), core(), null(), stouch(), visual();
 extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
 extern int elsecmd(), endifcmd(), mboxit(), clobber(), alternates();
-extern int local(), folders(), igfield(), Type();
+extern int local(), folders(), igfield(), Type(), retfield();
 
 struct cmd cmdtab[] = {
 	"next",		next,		NDMLIST,	0,	MMNDEL,
@@ -76,6 +76,7 @@ struct cmd cmdtab[] = {
 	"alternates",	alternates,	M|RAWLIST,	0,	1000,
 	"ignore",	igfield,	M|RAWLIST,	0,	1000,
 	"discard",	igfield,	M|RAWLIST,	0,	1000,
+	"retain",	retfield,	M|RAWLIST,	0,	1000,
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,
 	"clobber",	clobber,	M|RAWLIST,	0,	1,

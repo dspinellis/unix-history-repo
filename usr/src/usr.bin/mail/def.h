@@ -1,6 +1,6 @@
-/*	def.h	2.14	85/01/09	*/
+/*	def.h	2.15	85/04/18	*/
 
-#include <sys/types.h>
+#include <sys/param.h>		/* includes <sys/types.h> */
 #include <signal.h>
 #include <stdio.h>
 #include <sgtty.h>
