@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -34,6 +34,7 @@ char	*Macro[128];
 	bool skipping;		/* set if conditionally skipping output */
 	bool recurse = FALSE;	/* set if recursion required */
 	int i;
+	int iflev;		/* if nesting level */
 	char xbuf[BUFSIZ];
 	extern char *macvalue();
 
@@ -45,6 +46,7 @@ char	*Macro[128];
 	}
 
 	skipping = FALSE;
+	iflev = 0;
 	if (s == NULL)
 		s = "";
 	for (xp = xbuf; *s != '\0'; s++)
@@ -61,17 +63,26 @@ char	*Macro[128];
 		switch (c)
 		{
 		  case CONDIF:		/* see if var set */
-			c = *++s;
-			skipping = Macro[c] == NULL;
-			continue;
+			if (iflev++ <= 0)
+			{
+				c = *++s;
+				skipping = macvalue(c, e) == NULL;
+				continue;
+			}
+			break;
 
 		  case CONDELSE:	/* change state of skipping */
-			skipping = !skipping;
+			if (iflev == 1)
+				skipping = !skipping;
 			continue;
 
 		  case CONDFI:		/* stop skipping */
-			skipping = FALSE;
-			continue;
+			if (--iflev <= 0)
+			{
+				skipping = FALSE;
+				continue;
+			}
+			break;
 
 		  case '\001':		/* macro interpolation */
 			c = *++s;

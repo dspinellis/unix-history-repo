@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -151,6 +151,11 @@ dropenvelope(e)
 	/* make sure that this envelope is marked unused */
 	e->e_id = e->e_df = NULL;
 	e->e_dfp = NULL;
+
+#ifdef LOG
+	if (LogLevel >= 10)
+		syslog(LOG_INFO, "%s: done", e->e_id);
+#endif /* LOG */
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -456,7 +461,9 @@ setsender(from, e)
 		}
 	}
 
+/*
 	SuprErrs = TRUE;
+*/
 	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
@@ -464,8 +471,6 @@ setsender(from, e)
 					realname, from);
 		}
 # endif /* LOG */
-		from = newstr(realname);
-		(void) parseaddr(from, &CurEnv->e_from, 1, '\0');
 	}
 	else
 		FromFlag = TRUE;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -75,6 +75,7 @@ readcf(cfname)
 	char **pv;
 	struct rewrite *rwp = NULL;
 	char *bp;
+	int nfuzzy;
 	char buf[MAXLINE];
 	register char *p;
 	extern char **prescan();
@@ -210,8 +211,27 @@ readcf(cfname)
 			*p = '\0';
 			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
 			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf);
+			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
+			{
+				register char **ap;
+
 				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
+
+				/* count the number of fuzzy matches in LHS */
+				for (ap = rwp->r_lhs; *ap != NULL; ap++)
+				{
+					switch (**ap)
+					{
+					  case MATCHZANY:
+					  case MATCHANY:
+					  case MATCHONE:
+					  case MATCHCLASS:
+					  case MATCHNCLASS:
+						nfuzzy++;
+					}
+				}
+			}
 			else
 				syserr("R line: null LHS");
 
@@ -221,7 +241,24 @@ readcf(cfname)
 			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
 			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf);
 			if (rwp->r_rhs != NULL)
+			{
+				register char **ap;
+
 				rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
+
+				/* check no out-of-bounds replacements */
+				nfuzzy += '0';
+				for (ap = rwp->r_rhs; *ap != NULL; ap++)
+				{
+					if (**ap != MATCHREPL)
+						continue;
+					if ((*ap)[1] <= '0' || (*ap)[1] > nfuzzy)
+					{
+						syserr("replacement $%c out of bounds",
+							(*ap)[1]);
+					}
+				}
+			}
 			else
 				syserr("R line: null RHS");
 			break;
