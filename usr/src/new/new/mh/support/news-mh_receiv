@@ -1,0 +1,8 @@
+F=`grep '[Tt][Oo]:' $1 | sed 's/[Tt][Oo]:.*news\.//p'`
+if [ -d /usr/mhnews/$F ] ; then
+	cat /usr/mhnews/.1char >> /usr/mhnews/.$F
+	/usr/new/mh/file -link -file $1 +$F
+else
+	echo Unknown News Category: $F
+	exit 1
+fi
