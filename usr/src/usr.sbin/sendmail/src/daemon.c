@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.21 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.22 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.21 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.21 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.22 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -338,6 +338,7 @@ again:
 			return (EX_TEMPFAIL);
 
 		  default:
+			message(Arpa_Info, "%s", errstring(sav_errno));
 			return (EX_UNAVAILABLE);
 		}
 	}
