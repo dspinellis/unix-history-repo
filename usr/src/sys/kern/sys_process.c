@@ -117,6 +117,11 @@ ptrace(curp, uap, retval)
 }
 
 #define	PHYSOFF(p, o) ((caddr_t)(p) + (o))
+#if defined(hp300) || defined(luna68k)
+#define PHYSALIGNED(a) (((int)(a) & (sizeof(short) - 1)) == 0)
+#else
+#define PHYSALIGNED(a) (((int)(a) & (sizeof(int) - 1)) == 0)
+#endif
 
 #if defined(i386)
 #undef        PC
@@ -166,7 +171,7 @@ procxmt(p)
 
 	case PT_READ_U:			/* read the child's u. */
 		i = (int)ipc.ip_addr;
-		if ((u_int) i > ctob(UPAGES)-sizeof(int) || (i & 1) != 0)
+		if ((u_int) i > ctob(UPAGES)-sizeof(int) || !PHYSALIGNED(i))
 			goto error;
 		ipc.ip_data = *(int *)PHYSOFF(p->p_addr, i);
 		break;
@@ -200,7 +205,7 @@ procxmt(p)
 	case PT_WRITE_U:		/* write the child's u. */
 		i = (int)ipc.ip_addr;
 #ifdef mips
-		poff = (int *)PHYSOFF(curproc->p_addr, i);
+		poff = (int *)PHYSOFF(p->p_addr, i);
 #else
 		poff = (int *)PHYSOFF(kstack, i);
 #endif
