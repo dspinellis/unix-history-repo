@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.22	82/01/07	*/
+/*	uipc_socket.c	4.23	82/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -118,13 +118,14 @@ COUNT(SOCLOSE);
 				return;
 			}
 		}
-		if (so->so_options & SO_LETDATADRAIN) {
+		if ((so->so_options & SO_DONTLINGER) == 0) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
-			    (so->so_options & SO_NBIO)) {
+			    (so->so_options & SO_NONBLOCKING)) {
 				u.u_error = EINPROGRESS;
 				splx(s);
 				return;
 			}
+			/* should use tsleep here */
 			while (so->so_state & SS_ISCONNECTED)
 				sleep((caddr_t)&so->so_timeo, PZERO+1);
 		}
@@ -262,7 +263,7 @@ COUNT(SOSEND);
 		return (EPIPE);
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
-	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_options & SO_NBIO))
+	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_options & SO_NONBLOCKING))
 		return (EWOULDBLOCK);
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -296,7 +297,7 @@ again:
 	}
 	space = sbspace(&so->so_snd);
 	if (space == 0 || sosendallatonce(so) && space < u.u_count) {
-		if (so->so_options & SO_NBIO)
+		if (so->so_options & SO_NONBLOCKING)
 			snderr(EWOULDBLOCK);
 		sbunlock(&so->so_snd);
 		sbwait(&so->so_snd);
@@ -365,7 +366,7 @@ restart:
 		if ((so->so_state & SS_ISCONNECTED) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
 			rcverr(ENOTCONN);
-		if (so->so_options & SO_NBIO)
+		if (so->so_options & SO_NONBLOCKING)
 			rcverr(EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
 		sbwait(&so->so_rcv);
@@ -434,12 +435,81 @@ soioctl(so, cmd, cmdp)
 COUNT(SOIOCTL);
 	switch (cmd) {
 
+	case FIONBIO: {
+		int nbio;
+		if (copyin(cmdp, (caddr_t)&nbio, sizeof (nbio))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		if (nbio)
+			so->so_options |= SO_NONBLOCKING;
+		else
+			so->so_options &= ~SO_NONBLOCKING;
+		return;
+	}
+
+	case FIOASYNC: {
+		int async;
+		if (copyin(cmdp, (caddr_t)&async, sizeof (async))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		if (async)
+			;
+		else
+			;
+		return;
+	}
+
+	case SIOCSKEEP: {
+		int keep;
+		if (copyin(cmdp, (caddr_t)&keep, sizeof (keep))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		if (keep)
+			so->so_options &= ~SO_NOKEEPALIVE;
+		else
+			so->so_options |= SO_NOKEEPALIVE;
+		return;
+	}
+
+	case SIOCGKEEP: {
+		int keep = (so->so_options & SO_NOKEEPALIVE) == 0;
+		if (copyout((caddr_t)&keep, cmdp, sizeof (keep)))
+			u.u_error = EFAULT;
+		return;
+	}
+
+	case SIOCSLINGER: {
+		int linger;
+		if (copyin(cmdp, (caddr_t)&linger, sizeof (linger))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		so->so_linger = linger;
+		if (so->so_linger)
+			so->so_options &= ~SO_DONTLINGER;
+		else
+			so->so_options |= SO_DONTLINGER;
+		return;
+	}
+
+	case SIOCGLINGER: {
+		int linger = so->so_linger;
+		if (copyout((caddr_t)&linger, cmdp, sizeof (linger))) {
+			u.u_error = EFAULT;
+			return;
+		}
+	}
+
 	case SIOCDONE: {
 		int flags;
 		if (copyin(cmdp, (caddr_t)&flags, sizeof (flags))) {
 			u.u_error = EFAULT;
 			return;
 		}
+		flags++;
 		if (flags & FREAD) {
 			int s = splimp();
 			socantrcvmore(so);
@@ -464,6 +534,5 @@ COUNT(SOIOCTL);
 
 	case SOCK_RAW:
 		break;
-
 	}
 }
