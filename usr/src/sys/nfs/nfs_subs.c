@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -917,7 +917,7 @@ nfs_compress(m0)
 		clget = 0;
 	ileft = m->m_len - 9;
 	ip = mtod(m, u_char *);
-	MGETHDR(om, MT_DATA, M_WAIT);
+	MGETHDR(om, M_WAIT, MT_DATA);
 	if (clget)
 		MCLGET(om, M_WAIT);
 	retm = om;
@@ -925,7 +925,7 @@ nfs_compress(m0)
 	olen = om->m_len = 5;
 	oleft = M_TRAILINGSPACE(om);
 	op = mtod(om, u_char *);
-	*((u_long *)op) = *((u_long *)ip);
+	bcopy(ip, op, sizeof(u_long));
 	ip += 7;
 	op += 4;
 	*op++ = *ip++ + 1;
@@ -1012,7 +1012,7 @@ nfs_uncompress(m0)
 		clget = 1;
 	else
 		clget = 0;
-	MGETHDR(om, MT_DATA, M_WAIT);
+	MGETHDR(om, M_WAIT, MT_DATA);
 	if (clget)
 		MCLGET(om, M_WAIT);
 	olen = om->m_len = 8;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -242,8 +242,8 @@ nfssvc(p, uap, retval)
 			mreq->m_pkthdr.len = siz;
 			mreq->m_pkthdr.rcvif = (struct ifnet *)0;
 			if (wascomp && compressreply[procid]) {
-				m = nfs_compress(m);
-				siz = m->m_pkthdr.len;
+				mreq = nfs_compress(mreq);
+				siz = mreq->m_pkthdr.len;
 			}
 			/*
 			 * For non-atomic protocols, prepend a Sun RPC
