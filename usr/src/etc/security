@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.6 (Berkeley) %G%
+#	@(#)security	5.7 (Berkeley) %G%
 #
 PATH=/sbin:/bin:/usr/bin
 
@@ -14,7 +14,7 @@ echo ""
 echo "Checking setuid files and devices:"
 find / \( ! -fstype local \) -a -prune -o \
 	\( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) \
-	-a -ls 2>&1 > $TMP
+	-a -exec /bin/ls -cgl {} \; 2>&1 > $TMP
 
 if cmp $LOG/setuid.today $TMP >/dev/null; then :; else
 	echo "$host setuid/device diffs:"
