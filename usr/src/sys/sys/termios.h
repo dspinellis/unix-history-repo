@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.4 (Berkeley) %G%
+ *	@(#)termios.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -78,7 +78,6 @@
 #define	IXOFF		0x00000400	/* enable input flow control */
 #define	ITANDEM		IXOFF		/* "" */
 #define	IXANY		0x00000800	/* any char will restart after stop */
-#define	IEXTEN		0x00001000	/* enable FLUSHO and LNEXT */
 #define IMAXBEL		0x00002000	/* ring bell on input queue full */
 
 /*
@@ -94,7 +93,7 @@
  * Control flags - hardware control of terminal
  */
 #define CSIZE		0x00000300	/* character size mask */
-#define     CS5		    0x00000000	    /* 5 bits - pseudo */
+#define     CS5		    0x00000000	    /* 5 bits (pseudo) */
 #define     CS6		    0x00000100	    /* 6 bits */
 #define     CS7		    0x00000200	    /* 7 bits */
 #define     CS8		    0x00000300	    /* 8 bits */
@@ -112,7 +111,7 @@
  *
  * Warning: some flags in this structure begin with
  * the letter "I" and look like they belong in the
- * input flag.  Isn't history fun.
+ * input flag.
  */
 
 #define	ECHOKE		0x00000001	/* visual erase for line kill */
@@ -124,6 +123,7 @@
 #define	ISIG		0x00000080	/* enable signals INTR, QUIT, [D]SUSP */
 #define	ICANON		0x00000100	/* canonicalize input lines */
 #define ALTWERASE	0x00000200	/* use alternate WERASE algorithm */
+#define	IEXTEN		0x00000400	/* enable FLUSHO and LNEXT */
 #ifdef notdef	/* XXX already defined in ioctl.h */
 #define ECHO		0x00000008	/* enable echoing */
 #define	MDMBUF		0x00100000	/* flow control output via Carrier */
@@ -161,6 +161,6 @@ struct termios {
 /*
  * Is c equal to control character val?
  */
-#define CCEQ(val, c)	(c == val ? val != _POSIX_VDISABLE : 0)
+#define CCEQ(val, c)	((c) == (val) ? (val) != _POSIX_VDISABLE : 0)
 
 #endif _TERMIOS_
