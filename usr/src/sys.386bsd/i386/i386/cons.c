@@ -36,6 +36,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)cons.c	7.2 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00028
+ * --------------------         -----   ----------------------
+ *
+ * 16 Aug 92	Pace Willisson	/dev/console redirect (xterm -C, etc.)
  */
 
 
@@ -135,7 +142,10 @@ cnwrite(dev, uio, flag)
 {
 	if (cn_tab == NULL)
 		return (0);
-	dev = cn_tab->cn_dev;
+	if (constty)					/* 16 Aug 92*/
+		dev = constty->t_dev;
+	else
+		dev = cn_tab->cn_dev;
 	return ((*cdevsw[major(dev)].d_write)(dev, uio, flag));
 }
  
