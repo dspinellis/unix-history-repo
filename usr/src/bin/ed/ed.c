@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)ed.c	4.12 (Berkeley) %G%";
  */
 #define CRYPT
 
+#include <sys/param.h>
 #include <sys/signal.h>
 #include <sgtty.h>
 #undef CEOF
