@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.32 (Berkeley) %G%
+ *	@(#)conf.h	8.33 (Berkeley) %G%
  */
 
 /*
@@ -362,6 +362,8 @@ typedef int		pid_t;
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_ZERO
 # endif
+# undef WIFEXITED
+# undef WEXITSTATUS
 #endif
 
 
