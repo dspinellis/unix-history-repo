@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pte.h 1.11 89/09/03$
  *
- *	@(#)pte.h	7.1 (Berkeley) %G%
+ *	@(#)pte.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -116,18 +116,6 @@ unsigned int	pg_blkno:22,		/* file system block number */
 #define	kvtophys(x) ((kvtopte(x)->pg_pfnum << PGSHIFT) | ((int)(x) & PGOFSET))
 
 #if defined(KERNEL) && !defined(LOCORE)
-/* utilities defined in locore.s */
-extern	struct pte Sysmap[];
-extern	struct pte Usrptmap[];
-extern	struct pte usrpt[];
-extern	struct pte Swapmap[];
-extern	struct pte Forkmap[];
-extern	struct pte Xswapmap[];
-extern	struct pte Xswap2map[];
-extern	struct pte Pushmap[];
-extern	struct pte Vfmap[];
-extern	struct pte mmap[];
-extern	struct pte msgbufmap[];
-extern	struct pte kmempt[], ekmempt[];
-extern	struct ste Sysseg[];
+/* utilities defined in pmap.c */
+extern	struct pte *Sysmap;
 #endif /* defined(KERNEL) && !defined(LOCORE) */
