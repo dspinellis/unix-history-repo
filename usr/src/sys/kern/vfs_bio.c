@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_bio.c	7.57 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.58 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -142,7 +142,7 @@ bread(vp, blkno, size, cred, bpp)
 #ifdef SECSIZE
 	bp = getblk(dev, blkno, size, secsize);
 #else SECSIZE
-	*bpp = bp = getblk(vp, blkno, size);
+	*bpp = bp = getblk(vp, blkno, size, 0, 0);
 #endif SECSIZE
 	if (bp->b_flags & (B_DONE | B_DELWRI)) {
 		trace(TR_BREADHIT, pack(vp, size), blkno);
@@ -186,7 +186,7 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 	 * allocate a buffer and start I/O.
 	 */
 	if (!incore(vp, blkno)) {
-		*bpp = bp = getblk(vp, blkno, size);
+		*bpp = bp = getblk(vp, blkno, size, 0, 0);
 #endif SECSIZE
 		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
@@ -211,7 +211,7 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 	for (i = 0; i < num; i++) {
 		if (incore(vp, rablkno[i]))
 			continue;
-		rabp = getblk(vp, rablkno[i], rabsize[i]);
+		rabp = getblk(vp, rablkno[i], rabsize[i], 0, 0);
 #endif SECSIZE
 		if (rabp->b_flags & (B_DONE | B_DELWRI)) {
 			brelse(rabp);
@@ -287,7 +287,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 
 	error = 0;
 	flags = B_READ;
-	*bpp = bp = getblk(vp, lblkno, size);
+	*bpp = bp = getblk(vp, lblkno, size, 0, 0);
 	if (bp->b_flags & (B_CACHE | B_DONE | B_DELWRI)) {
 		/*
 		 * Desired block is in cache; do any readahead ASYNC.
@@ -297,7 +297,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		flags |= B_ASYNC;
 		ioblkno = lblkno +
 		    (lblkno < vp->v_ralen ? vp->v_ralen >> 1 : vp->v_ralen);
-		alreadyincore = incore(vp, ioblkno);
+		alreadyincore = (int)incore(vp, ioblkno);
 		bp = NULL;
 	} else {
 		/* Block wasn't in cache, case 3, 4, 5. */
@@ -348,13 +348,13 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 				rbp = cluster_rbuild(vp, filesize,
 				    NULL, ioblkno, blkno, size, num_ra, flags);
 			else {
-				rbp = getblk(vp, ioblkno, size);
+				rbp = getblk(vp, ioblkno, size, 0, 0);
 				rbp->b_flags |= flags;
 				rbp->b_blkno = blkno;
 			}
 		} else if (lblkno != 0) {
 			/* case 2; read ahead single block */
-			rbp = getblk(vp, ioblkno, size);
+			rbp = getblk(vp, ioblkno, size, 0, 0);
 			rbp->b_flags |= flags;
 			rbp->b_blkno = blkno;
 		} else if (bp)				/* case 1, 3, block 0 */
@@ -415,7 +415,7 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 		--run;
 	if (run == 0) {
 		if (!bp) {
-			bp = getblk(vp, lbn, size);
+			bp = getblk(vp, lbn, size, 0, 0);
 			bp->b_blkno = blkno;
 			bp->b_flags |= flags;
 		}
@@ -447,7 +447,7 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 				allocbuf(bp, size * i);
 			break;
 		}
-		tbp = getblk(vp, lbn + i, 0);
+		tbp = getblk(vp, lbn + i, 0, 0, 0);
 		tbp->b_bcount = tbp->b_bufsize = size;
 		tbp->b_blkno = bn;
 		tbp->b_flags |= flags | B_READ | B_ASYNC;
@@ -473,7 +473,7 @@ cluster_newbuf(vp, bp, flags, blkno, lblkno, size, run)
 	int run;
 {
 	if (!bp) {
-		bp = getblk(vp, lblkno, size);
+		bp = getblk(vp, lblkno, size, 0, 0);
 		if (bp->b_flags & (B_DONE | B_DELWRI)) {
 			bp->b_blkno = blkno;
 			return(bp);
@@ -497,7 +497,6 @@ cluster_callback(bp)
 	struct buf **tbp;
 	long bsize;
 	caddr_t cp;
-
 	b_save = (struct cluster_save *)(bp->b_saveaddr);
 	bp->b_saveaddr = b_save->bs_saveaddr;
 
@@ -545,6 +544,7 @@ bwrite(bp)
 		panic("bwrite");
 	s = splbio();
 	bp->b_vp->v_numoutput++;
+	bp->b_flags |= B_WRITEINPROG;
 	splx(s);
 	VOP_STRATEGY(bp);
 
@@ -559,6 +559,10 @@ bwrite(bp)
 			p->p_stats->p_ru.ru_oublock++;	/* no one paid yet */
 		else
 			reassignbuf(bp, bp->b_vp);
+		if (bp->b_flags & B_EINTR) {
+			bp->b_flags &= ~B_EINTR;
+			error = EINTR;
+		}
 		brelse(bp);
 	} else if (flag & B_DELWRI) {
 		s = splbio();
@@ -622,7 +626,7 @@ bawrite(bp)
 	 * after starting the I/O.
 	 */
 	bp->b_flags |= B_ASYNC;
-	(void) bwrite(bp);
+	(void) VOP_BWRITE(bp);
 }
 
 /*
@@ -751,7 +755,7 @@ redo:
 		return;
 	}
 
-	bp = getblk(vp, start_lbn, size);
+	bp = getblk(vp, start_lbn, size, 0, 0);
 	if (!(bp->b_flags & B_DELWRI)) {
 		++start_lbn;
 		--len;
@@ -778,7 +782,7 @@ redo:
 			break;
 
 		if (last_bp == NULL || start_lbn != last_bp->b_lblkno) {
-			tbp = getblk(vp, start_lbn, size);
+			tbp = getblk(vp, start_lbn, size, 0, 0);
 #ifdef DIAGNOSTIC
 			if (tbp->b_bcount != tbp->b_bufsize)
 				panic("cluster_wbuild: Buffer too big");
@@ -887,6 +891,7 @@ brelse(bp)
 /*
  * Check to see if a block is currently memory resident.
  */
+struct buf *
 incore(vp, blkno)
 	struct vnode *vp;
 	daddr_t blkno;
@@ -896,8 +901,8 @@ incore(vp, blkno)
 	for (bp = BUFHASH(vp, blkno)->le_next; bp; bp = bp->b_hash.qe_next)
 		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
-			return (1);
-	return (0);
+			return (bp);
+	return (NULL);
 }
 
 /*
@@ -909,17 +914,17 @@ struct buf *
 #ifdef SECSIZE
 getblk(dev, blkno, size, secsize)
 #else SECSIZE
-getblk(vp, blkno, size)
+getblk(vp, blkno, size, slpflag, slptimeo)
 	register struct vnode *vp;
 	daddr_t blkno;
-	int size;
+	int size, slpflag, slptimeo;
 #ifdef SECSIZE
 	long secsize;
 #endif SECSIZE
 {
 	register struct buf *bp;
 	struct list_entry *dp;
-	int s;
+	int s, error;
 
 	if (size > MAXBSIZE)
 		panic("getblk: size too big");
@@ -931,15 +936,28 @@ getblk(vp, blkno, size)
 	dp = BUFHASH(vp, blkno);
 loop:
 	for (bp = dp->le_next; bp; bp = bp->b_hash.qe_next) {
-		if (bp->b_lblkno != blkno || bp->b_vp != vp ||
-		    (bp->b_flags & B_INVAL))
+		if (bp->b_lblkno != blkno || bp->b_vp != vp)
 			continue;
 		s = splbio();
 		if (bp->b_flags & B_BUSY) {
 			bp->b_flags |= B_WANTED;
-			sleep((caddr_t)bp, PRIBIO + 1);
+			error = tsleep((caddr_t)bp, slpflag | (PRIBIO + 1),
+				"getblk", slptimeo);
 			splx(s);
+			if (error)
+				return (NULL);
 			goto loop;
+		}
+		/*
+		 * The test for B_INVAL is moved down here, since there
+		 * are cases where B_INVAL is set before VOP_BWRITE() is
+		 * called and for NFS, the process cannot be allowed to
+		 * allocate a new buffer for the same block until the write
+		 * back to the server has been completed. (ie. B_BUSY clears)
+		 */
+		if (bp->b_flags & B_INVAL) {
+			splx(s);
+			continue;
 		}
 		bremfree(bp);
 		bp->b_flags |= B_BUSY;
@@ -947,13 +965,22 @@ loop:
 		if (bp->b_bcount != size) {
 			printf("getblk: stray size");
 			bp->b_flags |= B_INVAL;
-			bwrite(bp);
+			VOP_BWRITE(bp);
 			goto loop;
 		}
 		bp->b_flags |= B_CACHE;
 		return (bp);
 	}
-	bp = getnewbuf();
+	/*
+	 * The loop back to the top when getnewbuf() fails is because
+	 * stateless filesystems like NFS have no node locks. Thus,
+	 * there is a slight chance that more than one process will
+	 * try and getnewbuf() for the same block concurrently when
+	 * the first sleeps in getnewbuf(). So after a sleep, go back
+	 * up to the top to check the hash lists again.
+	 */
+	if ((bp = getnewbuf(slpflag, slptimeo)) == 0)
+		goto loop;
 	bremhash(bp);
 	bgetvp(vp, bp);
 	bp->b_bcount = 0;
@@ -981,7 +1008,8 @@ geteblk(size)
 
 	if (size > MAXBSIZE)
 		panic("geteblk: size too big");
-	bp = getnewbuf();
+	while ((bp = getnewbuf(0, 0)) == NULL)
+		/* void */;
 	bp->b_flags |= B_INVAL;
 	bremhash(bp);
 	binshash(bp, &invalhash);
@@ -1042,7 +1070,8 @@ allocbuf(tp, size)
 	 */
 	while (tp->b_bufsize < sizealloc) {
 		take = sizealloc - tp->b_bufsize;
-		bp = getnewbuf();
+		while ((bp = getnewbuf(0, 0)) == NULL)
+			/* void */;
 		if (take >= bp->b_bufsize)
 			take = bp->b_bufsize;
 		pagemove(&bp->b_un.b_addr[bp->b_bufsize - take],
@@ -1071,7 +1100,8 @@ out:
  * Preference is to AGE list, then LRU list.
  */
 struct buf *
-getnewbuf()
+getnewbuf(slpflag, slptimeo)
+	int slpflag, slptimeo;
 {
 	register struct buf *bp;
 	register struct queue_entry *dp;
@@ -1085,9 +1115,10 @@ loop:
 			break;
 	if (dp == bufqueues) {		/* no free blocks */
 		needbuffer = 1;
-		sleep((caddr_t)&needbuffer, PRIBIO + 1);
+		(void) tsleep((caddr_t)&needbuffer, slpflag | (PRIBIO + 1),
+			"getnewbuf", slptimeo);
 		splx(s);
-		goto loop;
+		return (NULL);
 	}
 	bp = dp->qe_next;
 	bremfree(bp);
