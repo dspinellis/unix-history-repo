@@ -2,6 +2,7 @@
 
 PROG=	login
 MAN5=	login.access.5
+MAN1=	login.1
 SRCS=	klogin.c login.c login_access.c login_skey.c 
 DPADD=	${LIBUTIL} /usr/lib/libskey.a
 LDADD=	-lutil -lskey
