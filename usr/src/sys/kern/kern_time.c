@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	8.3 (Berkeley) %G%
+ *	@(#)kern_time.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,6 +66,14 @@ settimeofday(p, uap, retval)
 	struct timezone atz;
 
 	if (SCARG(uap, tv)) {
+		/*
+		 * If the system is secure, we do not allow the time to be 
+		 * set to an earlier value (it may be slowed using adjtime,
+		 * but not set back). This feature prevent interlopers from
+		 * setting arbitrary time stamps on files.
+		 */
+		if (securelevel > 0 && timercmp(&atv, &time, <))
+			return (EPERM);
 		setthetime(&atv);
 	}
 	if (SCARG(uap, tzp))
