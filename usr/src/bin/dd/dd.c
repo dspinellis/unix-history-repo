@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -96,14 +96,16 @@ setup()
 		out.fd = STDOUT_FILENO;
 		out.name = "stdout";
 	} else {
-		out.fd = open(out.name, O_RDWR|O_CREAT, DEFFILEMODE);
+#define	OFLAGS \
+    (O_CREAT | (ddflags & (C_SEEK | C_NOTRUNC) ? 0 : O_TRUNC))
+		out.fd = open(out.name, O_RDWR | OFLAGS, DEFFILEMODE);
 		/*
 		 * May not have read access, so try again with write only.
 		 * Without read we may have a problem if output also does
 		 * not support seeks.
 		 */
 		if (out.fd < 0) {
-			out.fd = open(out.name, O_WRONLY|O_CREAT, DEFFILEMODE);
+			out.fd = open(out.name, O_WRONLY | OFLAGS, DEFFILEMODE);
 			out.flags |= NOREAD;
 		}
 		if (out.fd < 0)
@@ -138,13 +140,12 @@ setup()
 	if (out.offset)
 		pos_out();
 
-	/* Truncate the output file. */
-	if (ddflags & C_NOTRUNC) {
-		if (out.flags & ISTAPE)
-			err("notrunc is not supported for tape devices");
-	} else if (S_ISREG(sb.st_mode) && ftruncate(out.fd,
-	    (off_t)out.offset * out.dbsz))
-		err("%s: truncate: %s", out.name, strerror(errno));
+	/*
+	 * Truncate the output file; ignore errors because it fails on some
+	 * kinds of output files, tapes, for example.
+	 */
+	if (ddflags & (C_OF | C_SEEK | C_NOTRUNC) == (C_OF | C_SEEK))
+		(void)ftruncate(out.fd, (off_t)out.offset * out.dbsz);
 
 	/*
 	 * If converting case at the same time as another conversion, build a
