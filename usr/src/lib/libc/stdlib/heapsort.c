@@ -12,10 +12,10 @@
 static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 /*
  * Swap two areas of size number of bytes.  Although qsort(3) permits random
@@ -25,8 +25,7 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
  * arithmetic gets lost in the time required for comparison function calls.
  */
 #define	SWAP(a, b) { \
-	int cnt = size; \
-	char	ch; \
+	cnt = size; \
 	do { \
 		ch = *a; \
 		*a++ = *b; \
@@ -34,18 +33,15 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
 	} while (--cnt); \
 }
 
-/*
- * Assign one block of size size to another.
- */
-
-#define ASSIGN(a,b) { \
-	int cnt = size; \
-	char *t1 = a, *t2 = b; \
+/* Copy one block of size size to another. */
+#define COPY(a, b) { \
+	cnt = size; \
+	t1 = a; \
+	t2 = b; \
 	do { \
 		*t1++ = *t2++; \
 	} while (--cnt); \
 }
-
 
 /*
  * Build the list into a heap, where a heap is defined such that for
@@ -53,11 +49,8 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
  *
  * There two cases.  If j == nmemb, select largest of Ki and Kj.  If
  * j < nmemb, select largest of Ki, Kj and Kj+1.
- *
  */
 #define CREATE(initval) { \
-	int i,j; \
-	char *t,*p; \
 	for (i = initval; (j = i * 2) <= nmemb; i = j) { \
 		p = (char *)bot + j * size; \
 		if (j < nmemb && compar(p, p + size) < 0) { \
@@ -65,7 +58,7 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
 			++j; \
 		} \
 		t = (char *)bot + i * size; \
-		if (compar(p,t) <= 0) \
+		if (compar(p, t) <= 0) \
 			break; \
 		SWAP(t, p); \
 	} \
@@ -73,42 +66,39 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
 
 /*
  * Select the top of the heap and 'heapify'.  Since by far the most expensive
- * action is the call to the compar function, an considerable optimization
+ * action is the call to the compar function, a considerable optimization
  * in the average case can be achieved due to the fact that k, the displaced
  * elememt, is ususally quite small, so it would be preferable to first
  * heapify, always maintaining the invariant that the larger child is copied
  * over its parent's record.
  *
- * Then, starting from the *bottom* of the heap, finding k's correct
- * place, again maintianing the invariant.  As a result of the invariant
- * no element is 'lost' when k is assigned it's correct place in the heap.
+ * Then, starting from the *bottom* of the heap, finding k's correct place,
+ * again maintianing the invariant.  As a result of the invariant no element
+ * is 'lost' when k is assigned its correct place in the heap.
  *
  * The time savings from this optimization are on the order of 15-20% for the
  * average case. See Knuth, Vol. 3, page 158, problem 18.
  */
-
-#define SELECT(initval) { \
-	int	i,j; \
-	char	*p,*t; \
-	for (i = initval; (j = i * 2) <= nmemb; i = j) { \
+#define SELECT { \
+	for (i = 1; (j = i * 2) <= nmemb; i = j) { \
 		p = (char *)bot + j * size; \
 		if (j < nmemb && compar(p, p + size) < 0) { \
 			p += size; \
 			++j; \
 		} \
 		t = (char *)bot + i * size; \
-		ASSIGN(t, p); \
+		COPY(t, p); \
 	} \
-	while (1) { \
+	for (;;) { \
 		j = i; \
 		i = j / 2; \
 		p = (char *)bot + j * size; \
 		t = (char *)bot + i * size; \
-		if ( j == initval || compar(k, t) < 0) { \
-			ASSIGN(p, k); \
+		if (j == 1 || compar(k, t) < 0) { \
+			COPY(p, k); \
 			break; \
 		} \
-		ASSIGN(p, t); \
+		COPY(p, t); \
 	} \
 }
 
@@ -117,23 +107,29 @@ static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
  * and worst.  While heapsort is faster than the worst case of quicksort,
  * the BSD quicksort does median selection so that the chance of finding
  * a data set that will trigger the worst case is nonexistent.  Heapsort's
- * only advantage over quicksort is that it requires no additional memory.
+ * only advantage over quicksort is that it requires little additional memory.
  */
 int
 heapsort(bot, nmemb, size, compar)
-	void   *bot;
-	size_t  nmemb, size;
-	int     (*compar) __P((const void *, const void *));
+	void *bot;
+	size_t nmemb, size;
+	int (*compar) __P((const void *, const void *));
 {
-	char   *p, *t, *k = (char *) malloc(size);
-	int     l;
+	register int cnt, i, j, l;
+	register char ch, *t1, *t2;
+	char *k, *p, *t;
 
 	if (nmemb <= 1)
 		return (0);
+
 	if (!size) {
 		errno = EINVAL;
 		return (-1);
 	}
+
+	if ((k = malloc(size)) == NULL)
+		return (-1);
+
 	/*
 	 * Items are numbered from 1 to nmemb, so offset from size bytes
 	 * below the starting address.
@@ -149,12 +145,11 @@ heapsort(bot, nmemb, size, compar)
 	 * heap.
 	 */
 	while (nmemb > 1) {
-		p = (char *) bot + size;
-		t = (char *) bot + nmemb * size;
-		ASSIGN(k, t);
-		ASSIGN(t, p);
+		COPY(k, (char *)bot + nmemb * size);
+		COPY((char *)bot + nmemb * size, (char *)bot + size);
 		--nmemb;
-		SELECT(1);
+		SELECT;
 	}
+	free(k);
 	return (0);
 }
