@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.8 83/08/26";
+static	char *sccsid = "@(#)cmd.c	3.9 83/08/31";
 #endif
 
 #include "defs.h"
@@ -62,6 +62,10 @@ top:
 			break;
 		case 'w':
 			dowindow();
+			break;
+		case 'm':
+			if ((w = getwin()) != 0)
+				c_move(w);
 			break;
 		case 'S':
 			doshow();
