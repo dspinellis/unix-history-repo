@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.100 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.101 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.100 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.101 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -523,40 +523,43 @@ myhostname(hostbuf, size)
 		hostbuf[size - 1] = '\0';
 	}
 
-#if NAMED_BIND
 	/*
-	**  If still no dot, try DNS directly (i.e., avoid NIS problems).
-	**  This ought to be driven from the configuration file, but
-	**  we are called before the configuration is read.  We could
-	**  check for an /etc/resolv.conf file, but that isn't required.
-	**  All in all, a bit of a mess.
+	**  If there is still no dot in the name, try looking for a
+	**  dotted alias.
 	*/
 
 	if (strchr(hostbuf, '.') == NULL)
 	{
-		int nmaps;
-		int i;
-		auto int stat;
-		char *maptype[MAXMAPSTACK];
-		short mapreturn[MAXMAPACTIONS];
+		char **ha;
 
-		nmaps = switch_map_find("hosts", maptype, mapreturn);
-		for (i = 0; i < nmaps; i++)
-			if (strcmp(maptype[i], "dns") == 0)
-				break;
-		if (i < nmaps &&
-		    !dns_getcanonname(hostbuf, size, TRUE, &stat) &&
-		    h_errno == TRY_AGAIN)
+		for (ha = hp->h_aliases; *ha != NULL; ha++)
 		{
-			/* try twice in case name server not yet started up */
-			message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
-				hostbuf);
-			sleep(60);
-			if (!dns_getcanonname(hostbuf, size, TRUE))
-				errno = h_errno + E_DNSBASE;
+			if (strchr(*ha, '.') != NULL)
+			{
+				(void) strncpy(hostbuf, *ha, size - 1);
+				hostbuf[size - 1] = '\0';
+				break;
+			}
 		}
 	}
-#endif
+
+	/*
+	**  If _still_ no dot, wait for a while and try again -- it is
+	**  possible that some service is starting up.  This can result
+	**  in excessive delays if the system is badly configured, but
+	**  there really isn't a way around that, particularly given that
+	**  the config file hasn't been read at this point.
+	**  All in all, a bit of a mess.
+	*/
+
+	if (strchr(hostbuf, '.') == NULL &&
+	    !getcanonname(hostbuf, size, TRUE))
+	{
+		message("My unqualifed host name (%s) unknown; sleeping for retry",
+			hostbuf);
+		sleep(60);
+		(void) getcanonname(hostbuf, size, TRUE);
+	}
 	return (hp);
 }
 /*
