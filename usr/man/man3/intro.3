@@ -1,0 +1,214 @@
+.TH INTRO 3 "25 February 1983"
+.SH NAME
+intro \- introduction to library functions
+.SH DESCRIPTION
+This section describes functions that may be found
+in various libraries.  The library functions are those other than the
+functions which directly invoke UNIX system primitives, described in section 2.
+This section has the libraries physically grouped together.  This is a
+departure from older versions of the UNIX Programmer's Reference Manual,
+which did not group functions by library.
+The functions described in this section are grouped into various libraries:
+.TP 6n
+(3) and (3S)
+The straight ``(3)'' functions are the standard C library functions.  The
+C library also includes all the functions described in section 2.  The
+3S functions comprise the standard I/O library.  Together with the (3N)
+and (3X) routines, these functions
+constitute library \fIlibc\fP,
+which is automatically loaded by the C compiler
+.IR cc (1)
+and the Fortran compiler
+.IR f77 (1).
+The link editor
+.IR ld (1)
+searches this library under the `\-lc' option.
+Declarations for some of these functions may be obtained
+from include files indicated on the appropriate pages.
+.TP
+(3F)
+The 3F functions are all functions callable from FORTRAN.  These
+functions perform the same jobs as do the straight ``(3)'' functions.
+.TP
+(3J)
+These functions are part of the job control facilities,
+contained in the library
+.RB \*(lq \-ljobs .\*(rq
+The job control facilities are outlined in
+.IR intro (3J).
+.TP
+(3M)
+These functions constitute the math library,
+.I libm.
+They are automatically loaded as needed by the Fortran compiler
+.IR f77 (1).
+The link editor searches this library under the \*(lq\-lm\*(rq option.
+Declarations for these functions may be obtained from the include file
+.RI < math.h >.
+.TP
+(3N)
+These functions constitute the internet network library,
+.TP 
+(3S)
+These functions constitute the `standard I/O package', see
+.IR stdio (3S).
+These functions are in the library
+.I libc
+already mentioned.  Declarations for these functions may be obtained from
+the include file 
+.RI < stdio.h >.
+.TP
+(3X)
+Various specialized libraries have not been given distinctive captions.
+Files in which such libraries are found are named on appropriate pages.
+.SH FILES
+.nf
+/lib/libc.a
+/usr/lib/libm.a
+/usr/lib/libjobs.a
+.fi
+.SH SEE ALSO
+stdio(3),
+nm(1), ld(1), cc(1), f77(1), intro(2)
+.SH DIAGNOSTICS
+Functions in the math library (3M) may return
+conventional values when the function is undefined for the
+given arguments or when the value is not representable.
+In these cases the external variable
+.I errno
+(see
+.IR intro (2))
+is set to the value EDOM (domain error) or ERANGE (range error).
+The values of EDOM and ERANGE are defined in the include file
+.RI < math.h >.
+.  \".SH "ASSEMBLER (PDP-11)"
+.  \"In assembly language these functions may be accessed
+.  \"by simulating the C calling sequence.
+.  \"For example,
+.  \".IR ecvt (3)
+.  \"might be called this way:
+.  \".IP ""
+.  \".globl	_ecvt
+.  \".nf
+.  \"setd
+.  \"mov	$sign,\-(sp)
+.  \"mov	$decpt,\-(sp)
+.  \"mov	ndigit,\-(sp)
+.  \"movf	value,\-(sp)
+.  \"jsr	pc,_ecvt
+.  \"add	$14.,sp
+.  \".fi
+.SH "LIST OF FUNCTIONS"
+The functions listed below are those available in the C library.
+Function names which are indented below others appear on the same manual
+page as the one from which they are indented.  For example,
+.I setkey
+appears on the same manual page as does
+.IR crypt ,
+but it is
+.I crypt
+which actually appears at the head of the manual page.
+.sp
+.ta 0.3i 2.5i
+.nf
+abort		exit and generate a core dump
+abs		integer absolute value
+atof		convert ASCII to numbers
+	atoi	convert ASCII to numbers (see atof.3)
+	atol	convert ASCII to numbers (see atof.3)
+bstring		byte string manipulation routines
+	bcopy	copy a byte string
+	bcmp	compare two byte strings
+	bzero	zero a byte string
+crypt		DES encryption
+	setkey	DES encryption (see crypt.3)
+	encrypt	DES encryption (see crypt.3)
+ctime		 convert date and time to ASCII
+	localtime	 convert date and time to ASCII (see ctime.3)
+	gmtime	 convert date and time to ASCII (see ctime.3)
+	asctime	 convert date and time to ASCII (see ctime.3)
+	timezone	 convert date and time to ASCII (see ctime.3)
+ctype		character classification
+	isalpha	test character is alphabetic (see ctype.3)
+	isupper	test character is upper case (see ctype.3)
+	islower	test character is lower case (see ctype.3)
+	isdigit	test character is digit (see ctype.3)
+	isalnum	test character is letter or digit (see ctype.3)
+	isspace	test character is whitespace (see ctype.3)
+	ispunct	test character is punctuation (see ctype.3)
+	isprint	test character is printable (see ctype.3)
+	iscntrl	test character is a control character (see ctype.3)
+	isascii	test character is ASCII (see ctype.3)
+ecvt		output conversion
+	fcvt	output conversion (see ecvt.3)
+	gcvt	output conversion (see ecvt.3)
+end		last locations in program
+	etext	last locations in program (see end.3)
+	edata	last locations in program (see end.3)
+frexp		split into mantissa and exponent
+	ldexp	split into mantissa and exponent (see frexp.3)
+	modf	split into mantissa and exponent (see frexp.3)
+getenv		value for environment name
+getfsent		file system descriptor file entry
+	getfsspec	file system descriptor file entry (see getfsent.3)
+	getfsfile	file system descriptor file entry (see getfsent.3)
+	setfsent	file system descriptor file entry (see getfsent.3)
+	endfsent	file system descriptor file entry (see getfsent.3)
+getgrent		group file entry
+	getgrgid	group file entry (see getgrent.3)
+	getgrnam	group file entry (see getgrent.3)
+	setgrent	group file entry (see getgrent.3)
+	endgrent	group file entry (see getgrent.3)
+getlogin		login name
+getpass		read a password
+getpw		get name from uid
+getpwent		password file entry
+	getpwuid	password file entry (see getpwent.3)
+	getpwnam	password file entry (see getpwent.3)
+	setpwent	password file entry (see getpwent.3)
+	endpwent	password file entry (see getpwent.3)
+initgroups		initialize group access list
+intro		introduction to library functions
+malloc		main memory allocator
+	free	main memory allocator (see malloc.3)
+	realloc	main memory allocator (see malloc.3)
+	calloc	main memory allocator (see malloc.3)
+mktemp		make a unique file name
+monitor		prepare execution profile
+	monstartup	prepare execution profile (see monitor.3)
+nlist		get entries from name list
+perror		system error messages
+	sys_errlist, sys_nerr	system error messages (see perror.3)
+	sys_nerr	system error messages (see perror.3)
+psignal		signal messages
+	sys_siglist	signal messages (see psignal.3)
+qsort		quicker sort
+rand		random number generator
+	srand	random number generator (see rand.3)
+random		better random number generator
+	srandom	better random number generator (see random.3)
+	initstate	routines for changing generators (see random.3)
+	setstate	routines for changing generators (see random.3)
+regex		regular expression handler
+	re_comp	regular expression compiler (see regex.3)
+	re_exec	compiled regular expression interpreter (see regex.3)
+scandir		scan a directory
+setjmp		non-local goto
+	longjmp	non-local goto (see setjmp.3)
+sleep		suspend execution for interval
+string		string operations
+	strcat	concatenate null terminated strings (see string.3)
+	strncat	concatenate n characters (see string.3)
+	strcmp	compare strings (see string.3)
+	strncmp	compare n characters (see string.3)
+	strcpy	copy string (see string.3)
+	strncpy	copy n characters (see string.3)
+	strlen	obtain string length (see string.3)
+	index	find first occurrence of character in string (see string.3)
+	rindex	find last occurrence of character in string (see string.3)
+swab		swap bytes
+system		issue a shell command
+ttyname		find name of a terminal
+valloc		aligned memory allocator
+varargs		variable argument list
+.fi
