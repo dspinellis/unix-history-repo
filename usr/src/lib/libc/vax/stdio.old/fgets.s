@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-_sccsid:.asciz	"@(#)fgets.s	5.1 (Berkeley) %G%"
+_sccsid:.asciz	"@(#)fgets.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /*
@@ -61,11 +61,15 @@ Lloop:
 	tstl	r0
 	jlss	Leof
 	movb	r0,(S)+			/* Save the returned character */
+	decl	N
+	decl	COUNT
+	jleq	1f
 	cmpb	r0,$NL			/* If it was a newline, we're done */
-	jneq	1f
+	jneq	2f
+1:
 	clrb	(S)
 	jbr	Lret
-1:
+2:
 	tstl	_BASE(IPTR)		/* Is the input buffered? */
 	jeql	Lloop			/* If not, loop inefficiently */
 
