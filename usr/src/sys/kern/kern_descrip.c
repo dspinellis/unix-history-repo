@@ -1,9 +1,10 @@
-/*	kern_descrip.c	5.5	82/08/22	*/
+/*	kern_descrip.c	5.6	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
 #include "../h/conf.h"
@@ -28,7 +29,7 @@
 /*
  * System calls on descriptors.
  */
-dstd()
+getdtablesize()
 {
 
 	u.u_r.r_val1 = NOFILE;
@@ -111,7 +112,7 @@ close()
 	u.u_pofile[uap->i] = 0;
 }
 
-dtype()
+getdprop()
 {
 	register struct a {
 		int	d;
@@ -132,7 +133,7 @@ dtype()
 	}
 }
 
-dwrap()
+wrap()
 {
 	register struct a {
 		int	d;
@@ -152,33 +153,9 @@ dwrap()
 	/* DO WRAP */
 }
 
-dselect()
+select()
 {
 
-}
-
-dnblock()
-{
-#ifdef notdef
-	register struct a {
-		int	d;
-		int	how;
-	} *uap = (struct a *)u.u_ap;
-
-	/* XXX */
-#endif
-}
-
-dsignal()
-{
-#ifdef notdef
-	register struct a {
-		int	d;
-		int	how;
-	} *uap = (struct a *)u.u_ap;
-
-	/* XXX */
-#endif
 }
 
 int	nselcoll;
@@ -190,36 +167,43 @@ oselect()
 	register struct uap  {
 		int	nfd;
 		fd_set	*rp, *wp;
-		int	timo;
-	} *ap = (struct uap *)u.u_ap;
+		struct	timeval *tv;
+	} *uap = (struct uap *)u.u_ap;
 	fd_set rd, wr;
 	int nfds = 0, readable = 0, writeable = 0;
-	time_t t = time;
+	struct timeval atv, origin, now;
 	int s, tsel, ncoll, rem;
 
-	if (ap->nfd > NOFILE)
-		ap->nfd = NOFILE;
-	if (ap->nfd < 0) {
+	if (uap->nfd > NOFILE)
+		uap->nfd = NOFILE;
+	if (uap->nfd < 0) {
 		u.u_error = EBADF;
 		return;
 	}
-	if (ap->rp && copyin((caddr_t)ap->rp,(caddr_t)&rd,sizeof(fd_set)))
+	if (uap->tv) {
+		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
+			u.u_error = EFAULT;
+			return;
+		}
+	} else
+		timerclear(&atv);
+	if (uap->rp && copyin((caddr_t)uap->rp,(caddr_t)&rd,sizeof(fd_set)))
 		return;
-	if (ap->wp && copyin((caddr_t)ap->wp,(caddr_t)&wr,sizeof(fd_set)))
+	if (uap->wp && copyin((caddr_t)uap->wp,(caddr_t)&wr,sizeof(fd_set)))
 		return;
 retry:
+	s = spl7(); now = time; splx(s);
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
-	if (ap->rp)
-		readable = selscan(ap->nfd, rd, &nfds, FREAD);
-	if (ap->wp)
-		writeable = selscan(ap->nfd, wr, &nfds, FWRITE);
+	if (uap->rp)
+		readable = selscan(uap->nfd, rd, &nfds, FREAD);
+	if (uap->wp)
+		writeable = selscan(uap->nfd, wr, &nfds, FWRITE);
 	if (u.u_error)
 		goto done;
 	if (readable || writeable)
 		goto done;
-	rem = (ap->timo+999)/1000 - (time - t);
-	if (ap->timo == 0 || rem <= 0)
+	if (!timerisset(&atv))
 		goto done;
 	s = spl6();
 	if ((u.u_procp->p_flag & SSEL) == 0 || nselcoll != ncoll) {
@@ -228,11 +212,16 @@ retry:
 		goto retry;
 	}
 	u.u_procp->p_flag &= ~SSEL;
-	tsel = tsleep((caddr_t)&selwait, PZERO+1, rem);
+	tsel = tsleep((caddr_t)&selwait, PZERO+1, &atv);
 	splx(s);
 	switch (tsel) {
 
 	case TS_OK:
+		now = time;
+		timevalsub(&now, &origin);
+		timevalsub(&atv, now);
+		if (atv.tv_sec < 0 || atv.tv_usec < 0)
+			timerclear(&atv);
 		goto retry;
 
 	case TS_SIG:
@@ -246,13 +235,13 @@ done:
 	rd.fds_bits[0] = readable;
 	wr.fds_bits[0] = writeable;
 	s = sizeof (fd_set);
-	if (s * NBBY > ap->nfd)
-		s = (ap->nfd + NBBY - 1) / NBBY;
+	if (s * NBBY > uap->nfd)
+		s = (uap->nfd + NBBY - 1) / NBBY;
 	u.u_r.r_val1 = nfds;
-	if (ap->rp)
-		(void) copyout((caddr_t)&rd, (caddr_t)ap->rp, sizeof(fd_set));
-	if (ap->wp)
-		(void) copyout((caddr_t)&wr, (caddr_t)ap->wp, sizeof(fd_set));
+	if (uap->rp)
+		(void) copyout((caddr_t)&rd, (caddr_t)uap->rp, sizeof(fd_set));
+	if (uap->wp)
+		(void) copyout((caddr_t)&wr, (caddr_t)uap->wp, sizeof(fd_set));
 }
 
 selscan(nfd, fds, nfdp, flag)
@@ -332,6 +321,12 @@ selwakeup(p, coll)
 			splx(s);
 		}
 	}
+}
+
+revoke()
+{
+
+	/* XXX */
 }
 
 /*
