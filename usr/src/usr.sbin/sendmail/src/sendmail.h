@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.17 (Berkeley) %G%
+ *	@(#)sendmail.h	6.18 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.17		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.18		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -666,6 +666,7 @@ EXTERN int	MaxHopCount;	/* number of hops until we give an error */
 EXTERN int	ConfigLevel;	/* config file level -- what does .cf expect? */
 EXTERN char	*TimeZoneSpec;	/* override time zone specification */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
+EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
 EXTERN int	MaxMciCache;	/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*ForwardPath;	/* path to search for .forward files */

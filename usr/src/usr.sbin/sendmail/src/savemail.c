@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -397,6 +397,9 @@ returntosender(msg, returnq, sendbody, e)
 	openxscript(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
+		if (!DontPruneRoutes && pruneroute(q->q_paddr))
+			parseaddr(q->q_paddr, q, 0, '\0', e);
+
 		if (q->q_alias == NULL)
 			addheader("to", q->q_paddr, ee);
 	}
@@ -558,4 +561,63 @@ errbody(fp, m, e)
 
 	if (errno != 0)
 		syserr("errbody: I/O error");
+}
+/*
+**  PRUNEROUTE -- prune an RFC-822 source route
+** 
+**	Trims down a source route to the last internet-registered hop.
+**	This is encouraged by RFC 1123 section 5.3.3.
+** 
+**	Parameters:
+**		addr -- the address
+** 
+**	Returns:
+**		TRUE -- address was modified
+**		FALSE -- address could not be pruned
+** 
+**	Side Effects:
+**		modifies addr in-place
+*/
+
+pruneroute(addr)
+	char *addr;
+{
+#ifdef NAMED_BIND
+	char *start, *at, *comma;
+	char c;
+	int rcode;
+	char hostbuf[BUFSIZ];
+	char *mxhosts[MAXMXHOSTS + 1];
+
+	/* check to see if this is really a route-addr */
+	if (*addr != '<' || addr[1] != '@' || addr[strlen(addr) - 1] != '>')
+		return FALSE;
+	start = strchr(addr, ':');
+	at = strrchr(addr, '@');
+	if (start == NULL || at == NULL || at < start)
+		return FALSE;
+
+	/* slice off the angle brackets */
+	strcpy(hostbuf, at + 1);
+	hostbuf[strlen(hostbuf) - 1] = '\0';
+
+	while (start)
+	{
+		if (getmxrr(hostbuf, mxhosts, "", &rcode) > 0)
+		{
+			strcpy(addr + 1, start + 1);
+			return TRUE;
+		}
+		c = *start;
+		*start = '\0';
+		comma = strrchr(addr, ',');
+		if (comma && comma[1] == '@')
+			strcpy(hostbuf, comma + 2);
+		else
+			comma = 0;
+		*start = c;
+		start = comma;
+	}
+#endif
+	return FALSE;
 }
