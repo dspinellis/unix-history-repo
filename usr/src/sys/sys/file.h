@@ -1,4 +1,4 @@
-/*	file.h	4.8	81/10/17	*/
+/*	file.h	4.9	81/11/08	*/
 
 /*
  * One file structure is allocated
@@ -7,25 +7,25 @@
  * pointer associated with each open
  * file.
  */
-struct	file
-{
-	short	f_flag;
-	short	f_count;		/* reference count */
-	struct inode *f_inode;		/* pointer to inode structure */
+struct	file {
+	short	f_flag;		/* read/write and type (socket or inode) */
+	short	f_count;	/* reference count */
 	union {
-		off_t	f_offset;	/* read/write character pointer */
-		struct port *f_port;	/* port (used for pipes, too) */
-#ifdef CHAOS
-		struct connection *f_conn;
-#endif
-#ifdef BBNNET
-		struct ucb *f_ucb;      /* net connection block pointer */
-#endif BBNNET
+		struct f_in {
+			struct inode *fi_inode;
+			off_t fi_offset;
+		} f_in;
+		struct f_so {
+			struct socket *fs_socket;
+		} f_so;
 	} f_un;
 };
+#define f_offset	f_un.f_in.fi_offset
+#define	f_inode		f_un.f_in.fi_inode
+#define	f_socket	f_un.f_so.fs_socket
 
 #ifdef	KERNEL
-struct	file *file, *fileNFILE;	/* the file table itself */
+struct	file *file, *fileNFILE;
 int	nfile;
 
 struct	file *getf();
@@ -33,8 +33,7 @@ struct	file *falloc();
 #endif
 
 /* flags */
-#define	FREAD	01
-#define	FWRITE	02
-#define	FPIPE	04
-#define	FPORT	040
-#define FNET    0100    /* this is a network entry */
+#define	FINODE		0x0		/* descriptor of an inode (pseudo) */
+#define	FREAD		0x1		/* descriptor read/receive'able */
+#define	FWRITE		0x2		/* descriptor write/send'able */
+#define	FSOCKET		0x4		/* descriptor of a socket */
