@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)init.8	5.1 (Berkeley) %G%
+.\"	@(#)init.8	6.1 (Berkeley) %G%
 .\"
-.TH INIT 8 4/1/83
+.TH INIT 8 ""
 .UC 4
 .SH NAME
 init \- process control initialization
@@ -40,30 +40,9 @@ terminal port on which a user may log in.
 To begin such operations, it reads the file
 .I /etc/ttys
 and
-forks several times to create a process
-for each terminal specified in the file.
-Each of these processes opens the appropriate terminal
-for reading and writing.  These channels thus
-receive file descriptors 0, 1 and 2, the standard input and
-output and the diagnostic output.
-Opening the terminal will usually involve a delay,
-since the
-.IR open ""
-is not completed until someone
-is dialed up and carrier established on the channel.
-If a terminal exists but an error occurs when trying to open the terminal
-.I init
-complains by writing a message to the system console;
-the message is repeated every 10 minutes for each such terminal
-until the terminal is shut off in /etc/ttys and init notified (by
-a hangup, as described below), or the terminal becomes accessible
-(init checks again every minute).
-After an open succeeds,
-.I /etc/getty
-is called with argument as specified by the second character of
-the
-.I ttys
-file line.
+executes a command for each terminal specified in the file.
+This command will usually be
+.IR /etc/getty .
 .I Getty
 reads the user's name and invokes
 .I login
