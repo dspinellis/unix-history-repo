@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.c	8.1 (Berkeley) %G%
+ *	@(#)cons.c	7.5 (Berkeley) %G%
  *
- * from: $Header: cons.c,v 1.11 92/11/26 01:09:28 torek Exp $
+ * from: $Header: cons.c,v 1.12 93/07/20 00:49:45 torek Exp $
  */
 
 /*
@@ -133,6 +133,7 @@ cnopen(dev, flag, mode, p)
 		tp->t_lflag = TTYDEF_LFLAG;
 		tp->t_cflag = TTYDEF_CFLAG;
 		tp->t_state = TS_ISOPEN | TS_CARR_ON;
+		(void)(*tp->t_param)(tp, &tp->t_termios);
 		ttsetwater(tp);
 	} else if (tp->t_state & TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
