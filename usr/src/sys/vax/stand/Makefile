@@ -1,4 +1,4 @@
-#	Makefile	4.19	83/01/11
+#	Makefile	4.19	83/01/18
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -75,21 +75,24 @@ copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 #chk:	chk.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
 #	ld -N -o chk srt0.o chk.o conf.o hp.new.o up.new.o -lsa -lc
 #
-hpchk:	chk.o srt0.o confhp.o hp.new.o /usr/lib/libsa.a
-	ld -N -o hpchk srt0.o chk.o confhp.o hp.new.o -lsa -lc
+hpchk:	chk.o srt0.o confhp.o hp.new.o isbad.o /usr/lib/libsa.a
+	ld -N -o hpchk srt0.o chk.o confhp.o hp.new.o isbad.o -lsa -lc
 
-upchk:	chk.o srt0.o confup.o up.new.o /usr/lib/libsa.a
-	ld -N -o upchk srt0.o chk.o confup.o up.new.o -lsa -lc
+upchk:	chk.o srt0.o confup.o up.new.o isbad.o /usr/lib/libsa.a
+	ld -N -o upchk srt0.o chk.o confup.o up.new.o isbad.o -lsa -lc
 
 # eventually we'll merge hpdrtest and updrtest into one program
 #drtest:drtest.o srt0.o conf.o hp.new.o up.new.o /usr/lib/libsa.a
 #	ld -N -o drtest srt0.o drtest.o conf.o hp.new.o up.new.o -lsa -lc
 #
-updrtest: drtest.o srt0.o confup.o up.new.o /usr/lib/libsa.a
-	ld -N -o updrtest srt0.o drtest.o confup.o up.new.o -lsa -lc
+updrtest: drtest.o srt0.o confup.o up.new.o isbad.o /usr/lib/libsa.a
+	ld -N -o updrtest srt0.o drtest.o confup.o up.new.o isbad.o -lsa -lc
 
-hpdrtest: drtest.o srt0.o confhp.o hp.new.o /usr/lib/libsa.a
-	ld -N -o hpdrtest srt0.o drtest.o confhp.o hp.new.o -lsa -lc
+hpdrtest: drtest.o srt0.o confhp.o hp.new.o isbad.o /usr/lib/libsa.a
+	ld -N -o hpdrtest srt0.o drtest.o confhp.o hp.new.o isbad.o -lsa -lc
+
+isbad.o: ../vax/isbad.c
+	${CC} -c ${CFLAGS} ../vax/isbad.c
 
 # bootstrap from ether
 
