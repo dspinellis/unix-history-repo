@@ -9,7 +9,7 @@
  * experiences (good or bad) with these elementary function codes, using
  * the sendbug(8) program, to the authors.
  *
- *	@(#)math.h	5.2 (Berkeley) %G%
+ *	@(#)math.h	5.3 (Berkeley) %G%
  */
 
 #if defined(vax) || defined(tahoe)
@@ -40,7 +40,7 @@ double	frexp __P((double, int *));
 double	ldexp __P((double, int));
 double	log __P((double));
 double	log10 __P((double));
-double	modf __P((double, int *));
+double	modf __P((double, double *));
 double	pow __P((double, double));
 double	sin __P((double));
 double	sinh __P((double));
