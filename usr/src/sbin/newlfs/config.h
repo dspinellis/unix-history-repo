@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.2 (Berkeley) %G%
+ *	@(#)config.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -91,4 +91,4 @@
 #define	LFS_MINBLOCKSIZE	1024
 #define	DFL_LFSBLOCK		4096
 #define	DFL_LFSBLOCK_SHIFT	12
-#define	DFL_LFSBLOCK_MASK	0x7FF
+#define	DFL_LFSBLOCK_MASK	0xFFF
