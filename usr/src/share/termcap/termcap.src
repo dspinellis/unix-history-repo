@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.71 (Berkeley) %G%
+#	@(#)termcap.src	5.72 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2111,6 +2111,20 @@ hc|300h|hp300h|HP Catseye console:\
 	:se=\E&d@:ue=\E&d@:im=\EQ:so=\E&dB:us=\E&dD:me=\E&d@:ei=\ER:\
 	:if=/usr/share/tabset/stdcrt:al=\EL:kb=\b:kd=\EB:kh=\Eh:kl=\ED:\
 	:kr=\EC:ku=\EA:ke=\E&s0A:ks=\E&s1A:sf=\n:ta=\t:
+#From gregc@ernie.berkeley.edu (Greg Couch)
+hd|9837|hp9837|98720|hp98720|98721|hp98721|HP 9000/300 workstations:\
+	:bs:pt:am:xs:da:db:mi:\
+	:co#128:li#46:lm#0:\
+	:is=\E&v0m1b0i&j@:bt=\Ei:bl=^G:ct=\E3:\
+	:cl=\E&a0y0C\EJ:ce=\EK:cd=\EJ:ch=\E&a%dC:\
+	:cm=\E&a%dy%dC:do=\EB:le=^H:nd=\EC:\
+	:up=\EA:dc=\EP:dl=\EM:im=\EQ:\
+	:so=\E&v5S:us=\E&dD:me=\E&d@:ei=\ER:\
+	:se=\E&v0S:ue=\E&d@:al=\EL:\
+	:kb=^H:kd=\EB:kh=\Eh:kl=\ED:\
+	:kr=\EC:ku=\EA:ke=\E&s0A:ks=\E&s1A:\
+	:cv=\E&a%dY:sf=\n:st=\E1:\
+	:ko=ce,cd,al,im,dl,dc:kN=\EU:kP=\EV
 # From: vic@fine.Princeton.EDU (Victor Duchovni)
 hy|hp700-wy|HP700/41 emulating wyse30:\
 	:al=0.7*\EE:am:bl=^G:bs:bt=\EI:bw:cd=\EY:ce=10\ET:cl=^Z:cm=\E=%+ %+ :\
