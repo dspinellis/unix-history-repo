@@ -1,12 +1,13 @@
-#	@(#)Makefile.inc	5.23 (Berkeley) %G%
+#	@(#)Makefile.inc	5.24 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
-SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
+SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype.c \
+	ctype_case.c \
 	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
 	fts.c getcwd.c getgrent.c getgrouplist.c getlogin.c getmntinfo.c \
-	getpass.c getpwent.c getsubopt.c getttyent.c getusershell.c glob.c \
+	getnetgrent.c getpass.c getpwent.c getttyent.c getusershell.c glob.c \
 	initgroups.c isatty.c isctype.c isinf.c mktemp.c nice.c nlist.c \
 	opendir.c pause.c popen.c psignal.c raise.c readdir.c \
 	rewinddir.c scandir.c seekdir.c setjmperr.c \
@@ -42,13 +43,14 @@ SRCS+=	udiv.s urem.s
 
 MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
 	exec.0 fnmatch.0 frexp.0 fts.0 getcwd.0 getdiskbyname.0 getfsent.0 \
-	getgrent.0 getgrouplist.0 getmntinfo.0 getpass.0 getpwent.0 \
-	getsubopt.0 getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
-	isalpha.0 isascii.0 iscntrl.0 isdigit.0 isgraph.0 isinf.0 \
+	getgrent.0 getgrouplist.0 getmntinfo.0 getnetgrent.0 getpass.0 \
+	getpwent.0 getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
+	isalpha.0 isascii.0 isblank.0 iscntrl.0 isdigit.0 isgraph.0 isinf.0 \
 	islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 isxdigit.0 \
 	ldexp.0 modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 \
 	raise.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
-	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
+	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 \
+	tcsendbreak.0 tcsetpgrp.0 tcgetpgrp.0 tcsetattr.0 time.0 \
 	times.0 timezone.0 tolower.0 toupper.0 ttyname.0 tzset.0 \
 	ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 vis.0
 
@@ -66,6 +68,8 @@ MLINKS+=getfsent.3 endfsent.3 getfsent.3 getfsfile.3 getfsent.3 getfsspec.3 \
 	getfsent.3 getfstype.3 getfsent.3 setfsent.3
 MLINKS+=getgrent.3 endgrent.3 getgrent.3 setgroupent.3 getgrent.3 getgrgid.3 \
 	getgrent.3 getgrnam.3 getgrent.3 setgrent.3 getgrent.3 setgrfile.3
+MLINKS+=getnetgrent.3 endnetgrent.3 getnetgrent.3 setnetgrent.3 \
+	getnetgrent.3 innetgr.3
 MLINKS+=getpwent.3 endpwent.3 getpwent.3 setpassent.3 getpwent.3 getpwnam.3 \
 	getpwent.3 getpwuid.3 getpwent.3 setpwent.3 getpwent.3 setpwfile.3
 MLINKS+=getttyent.3 endttyent.3 getttyent.3 getttynam.3 getttyent.3 setttyent.3
@@ -86,6 +90,11 @@ MLINKS+=sigsetops.3 sigemptyset.3 sigsetops.3 sigfillset.3 \
 	sigsetops.3 sigismember.3
 MLINKS+=syslog.3 closelog.3 syslog.3 openlog.3 syslog.3 setlogmask.3 \
 	syslog.3 vsyslog.3
+MLINKS+=tcsendbreak.3 tcdrain.3 tcsendbreak.3 tcflush.3 tcsendbreak.3 tcflow.3
+MLINKS+=tcsetattr.3 tcgetattr.3 tcsetattr.3 cfsetospeed.3 \
+	tcsetattr.3 cfgetospeed.3 tcsetattr.3 cfgetispeed.3 \
+	tcsetattr.3 cfsetispeed.3 tcsetattr.3 cfsetspeed.3 \
+	tcsetattr.3 cfmakeraw.3
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
 MLINKS+=tzset.3 tzsetwall.3
 
