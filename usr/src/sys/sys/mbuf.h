@@ -1,4 +1,4 @@
-/* mbuf.h 4.6 81/11/26 */
+/* mbuf.h 4.7 81/11/29 */
 
 /*
  * Constants related to memory allocator.
@@ -8,7 +8,7 @@
 #define	MTAIL		4
 #define	MMAXOFF		(MSIZE-MTAIL)		/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)	/* mbuf data length */
-#define	NMBPAGES	256
+#define	NMBCLUSTERS	256
 
 /*
  * Macros for type conversion
@@ -72,9 +72,9 @@ struct mbstat {
 extern	struct mbuf mbutl[];		/* virtual address of net free mem */
 extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
-int	nmbpages;
+int	nmbclusters;
 struct	mbuf *mfree, *mclfree;
 int	nmclfree;
-char	mclrefcnt[NMBPAGES];
+char	mclrefcnt[NMBCLUSTERS];
 struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more(), *m_copy();
 #endif

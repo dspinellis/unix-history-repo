@@ -1,4 +1,4 @@
-/*	user.h	4.8	81/04/28	*/
+/*	user.h	4.9	81/11/29	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -136,7 +136,11 @@ struct	user
 #define	SIMULATERTI	2
 
 /* u_error codes */
+#ifdef KERNEL
+#include "../errno.h"
+#else
 #include <errno.h>
+#endif
 
 #ifdef KERNEL
 extern	struct user u;
