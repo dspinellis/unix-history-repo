@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	8.8 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -303,6 +303,18 @@ fifo_select(ap)
 	else
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_writesock;
 	return (soo_select(&filetmp, ap->a_which, ap->a_p));
+}
+
+int
+fifo_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
+	return (0);
 }
 
 /*
