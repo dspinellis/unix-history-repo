@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.34 (Berkeley) %G%
+.\"	@(#)contrib	5.35 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -52,7 +52,6 @@ Kernel support	Bill Shannon and Sun Microsystems Inc.
 LFS	Margo Seltzer, Mendel Rosenblum, Carl Staelin
 MIPS support	Trent Hein
 Math library	K.C. Ng, Z-S. Alex Liu, S. McDonald, P. Tang and W. Kahan
-Multicast support	Stephen Deering
 NFS	Rick Macklem
 NFS automounter	Jan-Simon Pendry
 Network device drivers	Micom-Interlan and Excelan
@@ -227,6 +226,7 @@ more(1)	Mark Nudleman
 mountd(8)	Herb Hasler
 mprof(1)	Ben Zorn
 msgs(1)	David Wasley
+multicast	Stephen Deering
 mv(1)	Ken Smith
 named/bind(8)	Douglas Terry
 named/bind(8)	Kevin Dunlap
