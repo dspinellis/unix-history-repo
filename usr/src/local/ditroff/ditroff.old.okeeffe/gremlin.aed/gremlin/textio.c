@@ -1,5 +1,4 @@
-
-/* textio.c -
+/* @(#)textio.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -35,7 +34,7 @@ static putmsg;			/* TRUE means TxPutMsg has been called
 				 * since last character input.
 				 */
 
-
+
 /* The following structures define the various fields that are available
  * on the terminal screen.
  */
@@ -69,7 +68,7 @@ char val;			/* The character to be output */
     putc(val, stdout);
 }
 
-
+
 TxInit(ttytype)
 char *ttytype;			/* The name of the terminal type, as returned
 				 * by getenv("TERM") */
@@ -126,7 +125,7 @@ char *ttytype;			/* The name of the terminal type, as returned
     }
 }
 
-
+
 TxRedisplay()
 
 /*-----------------------------------------------------------------------------
@@ -241,7 +240,7 @@ Editing:                                \
     putmsg = FALSE;
 }
 
-
+
 TxClose()
 
 /*-----------------------------------------------------------------------------
@@ -254,7 +253,7 @@ TxClose()
  */
 
 {
-    char *dummy;
+    char *dummy, buf [100];
     sttybuf.sg_flags = sttyflags;
     (void) ioctl(fileno(stdin), TIOCSETN, (char *) &sttybuf);
     tchars.t_eofc = eofc;
@@ -267,7 +266,7 @@ TxClose()
     (void) fflush(stdout);
 }
 
-
+
 TxPutString(field, string)
 TXFIELD *field;			/* The screen field to be overwritten */
 char *string;			/* The character string to be written */
@@ -292,7 +291,7 @@ char *string;			/* The character string to be written */
     (void) fflush(stdout);
 }
 
-
+
 char
 TxGetChar()
 
@@ -309,7 +308,7 @@ TxGetChar()
     return getchar();
 }
 
-
+
 TxMsgOK()
 
 /*-----------------------------------------------------------------------------
@@ -331,7 +330,7 @@ TxMsgOK()
 	putmsg = FALSE;
 }
 
-
+
 TxGetLine(prompt, ptr, maxsize)
 char *prompt;			/* Prompt to be output at beginning of line */
 char *ptr;			/* Place to store the input line */
@@ -381,7 +380,7 @@ int maxsize;			/* Maximum number of characters to be read */
     (void) ioctl(fileno(stdin), TIOCSETN, (char *) &sttybuf);
 }
 
-
+
 TxPutMsg(msg)
 char *msg;			/* A message (not containing \r or \n) to
 				 * be output on the text screen.  It must
