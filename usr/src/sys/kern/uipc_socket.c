@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.33 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -449,7 +449,6 @@ soreceive(so, paddr, uio, mp0, controlp, flagsp)
 	struct mbuf **controlp;
 	int *flagsp;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct mbuf *m, **mp;
 	register int flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
@@ -547,7 +546,8 @@ restart:
 			return (error);
 		goto restart;
 	}
-	p->p_stats->p_ru.ru_msgrcv++;
+	if (uio->uio_procp)
+		uio->uio_procp->p_stats->p_ru.ru_msgrcv++;
 	nextrecord = m->m_nextpkt;
 	record_eor = m->m_flags & M_EOR;
 	if (pr->pr_flags & PR_ADDR) {
