@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)date.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)date.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -21,7 +21,10 @@ static	int	dmsize[12] =
     { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 static char *usage = "usage: date [-u] [yymmddhhmm[.ss]]\n";
 
-struct utmp wtmp[2] = { {"|", "", 0}, {"{", "", 0}};
+struct utmp wtmp[2] = {
+	{ "|", "", "", 0 },
+	{ "{", "", "", 0 }
+};
 
 char	*ctime();
 char	*asctime();
