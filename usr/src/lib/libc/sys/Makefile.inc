@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.22 (Berkeley) %G%
+#	@(#)Makefile.inc	5.23 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -45,7 +45,6 @@ POBJS+=	${ASM:.o=.po} ${PSEUDO:.o=.po}
 CLEANFILES+=${ASM} ${PSEUDO} ${POBJS} 
 
 ${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
-.if (${MACHINE} != "mips")
 	@echo creating ${.PREFIX}.o ${.PREFIX}.po
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
@@ -55,17 +54,8 @@ ${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
-.else
-	@echo creating ${.PREFIX}.o
-	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\n' > ${.PREFIX}.s
-	@${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.PREFIX}.o ${.PREFIX}.s
-	@rm -f ${.PREFIX}.s
-	@${LD} -x -r ${.PREFIX}.o
-	@mv a.out ${.PREFIX}.o
-.endif
 
 ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
-.if (${MACHINE} != "mips")
 	@echo creating ${.PREFIX}.o ${.PREFIX}.po
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
@@ -75,15 +65,6 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
-.else
-	@echo creating ${.PREFIX}.o
-	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' > \
-		${.PREFIX}.s
-	@${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.PREFIX}.o ${.PREFIX}.s
-	@rm -f ${.PREFIX}.s
-	@${LD} -x -r ${.PREFIX}.o
-	@mv a.out ${.PREFIX}.o
-.endif
 
 # Missing: profil.0, ptrace.0
 
