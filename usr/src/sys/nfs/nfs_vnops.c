@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.25 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -175,6 +175,7 @@ struct vnodeops spec_nfsv2nodeops = {
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
 extern char nfsiobuf[MAXPHYS+NBPG];
+extern int nonidempotent[NFS_NPROCS];
 struct map nfsmap[NFS_MSIZ];
 enum vtype v_type[NFLNK+1];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
@@ -195,7 +196,7 @@ nfs_null(vp, cred)
 	struct mbuf *mreq, *mrep, *md, *mb;
 	
 	nfsm_reqhead(nfs_procids[NFSPROC_NULL], cred, 0);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_NULL]);
 	nfsm_reqdone;
 	return (error);
 }
@@ -311,7 +312,7 @@ nfs_getattr(vp, vap, cred)
 	nfsstats.rpccnt[NFSPROC_GETATTR]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_GETATTR], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_GETATTR]);
 	nfsm_loadattr(vp, vap);
 	nfsm_reqdone;
 	return (error);
@@ -361,7 +362,7 @@ nfs_setattr(vp, vap, cred)
 	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec);
 	sp->sa_atime.tv_usec = txdr_unsigned(vap->va_flags);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_SETATTR]);
 	nfsm_loadattr(vp, (struct vattr *)0);
 	/* should we fill in any vap fields ?? */
 	nfsm_reqdone;
@@ -438,7 +439,7 @@ nfs_lookup(vp, ndp)
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 	nfsm_fhtom(vp);
 	nfsm_strtom(ndp->ni_ptr, len, NFS_MAXNAMLEN);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_LOOKUP]);
 nfsmout:
 	if (error) {
 		if (lockparent || (flag != CREATE && flag != RENAME) ||
@@ -564,7 +565,7 @@ nfs_readlink(vp, uiop, cred)
 	nfsstats.rpccnt[NFSPROC_READLINK]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_READLINK], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_READLINK]);
 	nfsm_strsiz(len, NFS_MAXPATHLEN);
 	nfsm_mtouio(uiop, len);
 	nfsm_reqdone;
@@ -600,7 +601,7 @@ nfs_readrpc(vp, uiop, cred)
 		*p++ = txdr_unsigned(uiop->uio_offset);
 		*p++ = txdr_unsigned(len);
 		*p = 0;
-		nfsm_request(vp);
+		nfsm_request(vp, nonidempotent[NFSPROC_READ]);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		nfsm_strsiz(retlen, nmp->nm_rsize);
 		nfsm_mtouio(uiop, retlen);
@@ -644,7 +645,7 @@ nfs_writerpc(vp, uiop, cred)
 		*(p+1) = txdr_unsigned(uiop->uio_offset);
 		*(p+3) = txdr_unsigned(len);
 		nfsm_uiotom(uiop, len);
-		nfsm_request(vp);
+		nfsm_request(vp, nonidempotent[NFSPROC_WRITE]);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		m_freem(mrep);
 		tsiz -= len;
@@ -697,7 +698,7 @@ nfs_create(ndp, vap)
 	/* or should these be VNOVAL ?? */
 	txdr_time(&vap->va_atime, &sp->sa_atime);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	nfsm_request(ndp->ni_dvp);
+	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_CREATE]);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
 	nfs_nput(ndp->ni_dvp);
@@ -754,7 +755,7 @@ nfs_remove(ndp)
 			NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 		nfsm_fhtom(ndp->ni_dvp);
 		nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-		nfsm_request(ndp->ni_dvp);
+		nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_REMOVE]);
 		nfsm_reqdone;
 		/*
 		 * Kludge City: If the first reply to the remove rpc is lost..
@@ -766,11 +767,11 @@ nfs_remove(ndp)
 			error = 0;
 	}
 	np->n_attrstamp = 0;
-	if (ndp->ni_dvp == ndp->ni_vp)
-		vrele(ndp->ni_vp);
+	if (ndp->ni_dvp == vp)
+		vrele(vp);
 	else
-		nfs_nput(ndp->ni_vp);
-	nfs_nput(ndp->ni_dvp);
+		nfs_nput(ndp->ni_dvp);
+	nfs_nput(vp);
 	return (error);
 }
 
@@ -793,7 +794,7 @@ nfs_removeit(ndp)
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(ndp->ni_dvp);
+	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_REMOVE]);
 	nfsm_reqdone;
 	return (error);
 }
@@ -820,7 +821,7 @@ nfs_rename(sndp, tndp)
 	nfsm_strtom(sndp->ni_dent.d_name,sndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_fhtom(tndp->ni_dvp);
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
-	nfsm_request(sndp->ni_dvp);
+	nfsm_request(sndp->ni_dvp, nonidempotent[NFSPROC_RENAME]);
 	nfsm_reqdone;
 	if (sndp->ni_vp->v_type == VDIR) {
 		if (tndp->ni_vp != NULL && tndp->ni_vp->v_type == VDIR)
@@ -829,6 +830,11 @@ nfs_rename(sndp, tndp)
 	}
 	nfs_abortop(sndp);
 	nfs_abortop(tndp);
+	/*
+	 * Kludge: Map ENOENT => 0 assuming that it is a reply to a retry.
+	 */
+	if (error == ENOENT)
+		error = 0;
 	return (error);
 }
 
@@ -854,7 +860,7 @@ nfs_renameit(sndp, tndp)
 	nfsm_strtom(sndp->ni_dent.d_name,sndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_fhtom(tndp->ni_dvp);
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
-	nfsm_request(sndp->ni_dvp);
+	nfsm_request(sndp->ni_dvp, nonidempotent[NFSPROC_RENAME]);
 	nfsm_reqdone;
 	return (error);
 }
@@ -882,12 +888,17 @@ nfs_link(vp, ndp)
 	nfsm_fhtom(vp);
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_LINK]);
 	nfsm_reqdone;
 	VTONFS(vp)->n_attrstamp = 0;
 	if (ndp->ni_dvp != vp)
 		nfs_unlock(vp);
 	nfs_nput(ndp->ni_dvp);
+	/*
+	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
+	 */
+	if (error == EEXIST)
+		error = 0;
 	return (error);
 }
 
@@ -919,11 +930,16 @@ nfs_symlink(ndp, vap, nm)
 	sp->sa_uid = txdr_unsigned(ndp->ni_cred->cr_uid);
 	sp->sa_gid = txdr_unsigned(ndp->ni_cred->cr_gid);
 	sp->sa_size = txdr_unsigned(VNOVAL);
-	txdr_time(&vap->va_atime, &sp->sa_atime);		/* or VNOVAL ?? */
+	txdr_time(&vap->va_atime, &sp->sa_atime);	/* or VNOVAL ?? */
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);	/* or VNOVAL ?? */
-	nfsm_request(ndp->ni_dvp);
+	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_SYMLINK]);
 	nfsm_reqdone;
 	nfs_nput(ndp->ni_dvp);
+	/*
+	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
+	 */
+	if (error == EEXIST)
+		error = 0;
 	return (error);
 }
 
@@ -953,12 +969,17 @@ nfs_mkdir(ndp, vap)
 	sp->sa_uid = txdr_unsigned(ndp->ni_cred->cr_uid);
 	sp->sa_gid = txdr_unsigned(ndp->ni_cred->cr_gid);
 	sp->sa_size = txdr_unsigned(VNOVAL);
-	txdr_time(&vap->va_atime, &sp->sa_atime);		/* or VNOVAL ?? */
+	txdr_time(&vap->va_atime, &sp->sa_atime);	/* or VNOVAL ?? */
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);	/* or VNOVAL ?? */
-	nfsm_request(ndp->ni_dvp);
+	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_MKDIR]);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
 	nfs_nput(ndp->ni_dvp);
+	/*
+	 * Kludge: Map EEXIST => 0 assuming that you have a reply to a retry.
+	 */
+	if (error == EEXIST)
+		error = 0;
 	return (error);
 }
 
@@ -986,12 +1007,17 @@ nfs_rmdir(ndp)
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(ndp->ni_dvp);
+	nfsm_request(ndp->ni_dvp, nonidempotent[NFSPROC_RMDIR]);
 	nfsm_reqdone;
 	cache_purge(ndp->ni_dvp);
 	cache_purge(ndp->ni_vp);
 	nfs_nput(ndp->ni_vp);
 	nfs_nput(ndp->ni_dvp);
+	/*
+	 * Kludge: Map ENOENT => 0 assuming that you have a reply to a retry.
+	 */
+	if (error == ENOENT)
+		error = 0;
 	return (error);
 }
 
@@ -1028,7 +1054,7 @@ nfs_readdir(vp, uiop, cred)
 	nfsm_build(p, u_long *, 2*NFSX_UNSIGNED);
 	*p++ = txdr_unsigned(uiop->uio_offset);
 	*p = txdr_unsigned(uiop->uio_resid);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_READDIR]);
 	siz = 0;
 	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
 	more_dirs = fxdr_unsigned(int, *p);
@@ -1116,7 +1142,7 @@ nfs_statfs(mp, sbp)
 	cred->cr_ngroups = 1;
 	nfsm_reqhead(nfs_procids[NFSPROC_STATFS], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_STATFS]);
 	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
 	sbp->f_type = MOUNT_NFS;
 	sbp->f_flags = nmp->nm_flag;
@@ -1222,7 +1248,7 @@ nfs_lookitup(vp, ndp, fhp)
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 	nfsm_fhtom(vp);
 	nfsm_strtom(ndp->ni_dent.d_name, len, NFS_MAXNAMLEN);
-	nfsm_request(vp);
+	nfsm_request(vp, nonidempotent[NFSPROC_LOOKUP]);
 	if (fhp != NULL) {
 		nfsm_disect(cp, caddr_t, NFSX_FH);
 		bcopy(cp, (caddr_t)fhp, NFSX_FH);
