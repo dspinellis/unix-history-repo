@@ -1,0 +1,2 @@
+Muulog	uulog.c	/^main(argc, argv)$/
+cleanup	uulog.c	/^cleanup(code)$/

@@ -1,0 +1,6 @@
+Muuclean	uuclean.c	/^main(argc, argv)$/
+chkpre	uuclean.c	/^chkpre(file)$/
+cleanup	uuclean.c	/^cleanup(code)$/
+notfyuser	uuclean.c	/^notfyuser(file)$/
+sdmail	uuclean.c	/^sdmail(file, uid)$/
+stpre	uuclean.c	/^stpre(p)$/

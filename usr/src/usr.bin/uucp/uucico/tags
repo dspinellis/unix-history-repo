@@ -1,0 +1,94 @@
+Acuopn	condevs.c	/^Acuopn(flds)$/
+DELAY	condevs.c	/^#define	DELAY(n)	{ register long N = (n); while (-/
+Mcico	cico.c	/^main(argc, argv, envp)$/
+RAMESG	cntrl.c	/^#define RAMESG(s, n) if (rmesg('\\0', s, n) != 0) /
+RMESG	cntrl.c	/^#define RMESG(m, s, n) if (rmesg(m, s, n) != 0) {(/
+WMESG	cntrl.c	/^#define WMESG(m, s) if(wmesg(m, s) != 0) {(*Turnof/
+alarmtr	conn.c	/^alarmtr()$/
+arrived	cntrl.c	/^arrived(opt, file, nuser, rmtsys, rmtuser)$/
+bld_partab	conn.c	/^bld_partab(type)$/
+blptcl	cntrl.c	/^blptcl(str)$/
+bzero	pk0.c	/^bzero(s,n)$/
+cgalarm	pk1.c	/^cgalarm()$/
+chksum	chksum.c	/^chksum (s, n)$/
+clsacu	conn.c	/^clsacu()$/
+cntrl	cntrl.c	/^cntrl(role, wkpre)$/
+conn	conn.c	/^conn(system)$/
+dircls	condevs.c	/^dircls(fd)$/
+diropn	condevs.c	/^diropn(flds)$/
+dochat	conn.c	/^dochat(dev, flds, fd)$/
+expect	conn.c	/^expect(str, fn)$/
+exphone	conn.c	/^exphone(in, out)$/
+falarm	fio.c	/^falarm()$/
+fdig	conn.c	/^fdig(cp)$/
+finds	conn.c	/^finds(fsys, sysnam, info, flds)$/
+fixline	conn.c	/^fixline(tty, spwant)$/
+fixmode	conn.c	/^fixmode(tty)$/
+fptcl	cntrl.c	/^fptcl(str)$/
+frdblk	fio.c	/^frdblk(ip, fn, rlen)$/
+frdbuf	fio.c	/^frdbuf(blk, len, fn)$/
+frddata	fio.c	/^frddata(fn, fp2)$/
+frdmsg	fio.c	/^frdmsg(str, fn)$/
+fturnoff	fio.c	/^fturnoff()$/
+fturnon	fio.c	/^fturnon()$/
+fwrblk	fio.c	/^fwrblk(fn, fp, lenp)$/
+fwrdata	fio.c	/^fwrdata(fp1, fn)$/
+fwrmsg	fio.c	/^fwrmsg(type, str, fn)$/
+getnextfd	conn.c	/^getnextfd()$/
+getto	conn.c	/^getto(flds)$/
+gnsys	gnsys.c	/^gnsys(sname, dir, pre)$/
+grdblk	gio.c	/^grdblk(blk, len,  fn)$/
+grddata	gio.c	/^grddata(fn, fp2)$/
+grdmsg	gio.c	/^grdmsg(str, fn)$/
+gturnoff	gio.c	/^gturnoff()$/
+gturnon	gio.c	/^gturnon()$/
+gwrblk	gio.c	/^gwrblk(blk, len, fn)$/
+gwrdata	gio.c	/^gwrdata(fp1, fn)$/
+gwrmsg	gio.c	/^gwrmsg(type, str, fn)$/
+ifadate	conn.c	/^ifadate(string)$/
+ifdate	conn.c	/^ifdate(p)$/
+imsg	imsg.c	/^imsg(amsg, fn)$/
+isoctal	conn.c	/^#define isoctal(x)	((x >= '0') && (x <= '7'))$/
+lnotify	cntrl.c	/^lnotify(user, file, mesg)$/
+login	conn.c	/^login(nf, flds, fn)$/
+min	tio.c	/^#define min(a,b)	(((a)<(b))?(a):(b))$/
+nodev	condevs.c	/^nodev()$/
+notify	cntrl.c	/^notify(mailopt, user, file, sys, msgcode)$/
+notin	conn.c	/^notin(sh, lg)$/
+nulldev	condevs.c	/^nulldev()$/
+nullf	cntrl.c	/^nullf()$/
+omsg	imsg.c	/^omsg(type, msg, fn)$/
+p_chwrite	conn.c	/^p_chwrite(fd, c)$/
+pkaccept	pk0.c	/^pkaccept(pk)$/
+pkcget	pk1.c	/^pkcget(fn, b, n)$/
+pkclose	pk0.c	/^pkclose(pk)$/
+pkcntl	pk0.c	/^pkcntl(c, pk)$/
+pkdata	pk1.c	/^pkdata(c, sum, pk, bp)$/
+pkfail	gio.c	/^pkfail()$/
+pkgetpack	pk1.c	/^pkgetpack(pk)$/
+pkopen	pk1.c	/^pkopen(ifn, ofn)$/
+pkoutput	pk0.c	/^pkoutput(pk)$/
+pkread	pk0.c	/^pkread(pk, ibuf, icount)$/
+pkreset	pk0.c	/^pkreset(pk)$/
+pksack	pk0.c	/^pksack(pk)$/
+pksize	pk0.c	/^pksize(n)$/
+pkwrite	pk0.c	/^pkwrite(pk, ibuf, icount)$/
+pkxstart	pk1.c	/^pkxstart(pk, cntl, x)$/
+putinpub	cntrl.c	/^putinpub(file, tmp, user)$/
+rddev	conn.c	/^rddev(fp, dev)$/
+rmesg	cntrl.c	/^rmesg(c, msg, n)$/
+sendthem	conn.c	/^sendthem(str, fn)$/
+snccmp	conn.c	/^snccmp(s1, s2)$/
+sncncmp	conn.c	/^sncncmp(s1, s2, n)$/
+srchst	gnsys.c	/^srchst(name, list, n)$/
+startup	cntrl.c	/^startup(role)$/
+stptcl	cntrl.c	/^stptcl(c)$/
+trdblk	tio.c	/^trdblk(blk, len,  fn)$/
+trddata	tio.c	/^trddata(fn, fp2)$/
+trdmsg	tio.c	/^trdmsg(str, fn)$/
+twrblk	tio.c	/^twrblk(blk, len, fn)$/
+twrdata	tio.c	/^twrdata(fp1, fn)$/
+twrmsg	tio.c	/^twrmsg(type, str, fn)$/
+unlinkdf	cntrl.c	/^unlinkdf(file)$/
+uucpdelay	condevs.c	/^#define uucpdelay(num,denom) intervaldelay(num,den/
+wmesg	cntrl.c	/^wmesg(m, s)$/
