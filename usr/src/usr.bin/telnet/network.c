@@ -55,6 +55,19 @@ int	s;		/* socket number */
 
 
 /*
+ *  setneturg()
+ *
+ *	Sets "neturg" to the current location.
+ */
+
+void
+setneturg()
+{
+    neturg = NETLOC()-1;	/* Some systems are off by one XXX */
+}
+
+
+/*
  *  netflush
  *		Send as much data as possible to the network,
  *	handling requests for urgent data.
@@ -170,7 +183,7 @@ char	*current;
  * us in any case.
  */
 
-static void
+void
 netclear()
 {
     register char *thisitem, *next;
@@ -208,83 +221,4 @@ netclear()
     nbackp = netobuf;
     nfrontp = good;		/* next byte to be sent */
     neturg = 0;
-}
-
-/*
- * These routines add various telnet commands to the data stream.
- */
-
-void
-xmitAO()
-{
-    NET2ADD(IAC, AO);
-    if (autoflush) {
-	doflush();
-    }
-}
-
-
-void
-xmitEL()
-{
-    NET2ADD(IAC, EL);
-}
-
-void
-xmitEC()
-{
-    NET2ADD(IAC, EC);
-}
-
-
-#if	defined(NOT43)
-int
-#else	/* defined(NOT43) */
-void
-#endif	/* defined(NOT43) */
-dosynch()
-{
-    netclear();			/* clear the path to the network */
-    NET2ADD(IAC, DM);
-    neturg = NETLOC()-1;	/* Some systems are off by one XXX */
-
-#if	defined(NOT43)
-    return 0;
-#endif	/* defined(NOT43) */
-}
-
-void
-doflush()
-{
-    NET2ADD(IAC, DO);
-    NETADD(TELOPT_TM);
-    flushline = 1;
-    flushout = 1;
-    ttyflush();
-    /* do printoption AFTER flush, otherwise the output gets tossed... */
-    printoption("<SENT", doopt, TELOPT_TM, 0);
-}
-
-void
-intp()
-{
-    NET2ADD(IAC, IP);
-    if (autoflush) {
-	doflush();
-    }
-    if (autosynch) {
-	dosynch();
-    }
-}
-
-void
-sendbrk()
-{
-    NET2ADD(IAC, BREAK);
-    if (autoflush) {
-	doflush();
-    }
-    if (autosynch) {
-	dosynch();
-    }
 }

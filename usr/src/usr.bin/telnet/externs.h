@@ -6,7 +6,6 @@
 extern int errno;		/* outside this world */
 
 extern int
-	SYNCHing,		/* we are in TELNET SYNCH mode */
 	flushout,		/* flush output */
 	connected,		/* Are we connected to the other side? */
 	globalmode,		/* Mode tty should be in */
@@ -15,7 +14,6 @@ extern int
 	localchars,		/* we recognize interrupt/quit */
 	donelclchars,		/* the user has set "localchars" */
 	showoptions,
-	flushline,
 	net,
 	tin,
 	tout,
