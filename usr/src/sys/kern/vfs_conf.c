@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.14 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -80,6 +80,21 @@ extern	struct vfsops portal_vfsops;
 #define	PORTAL_VFSOPS	NULL
 #endif
 
+#ifdef NULLFS
+extern	struct vfsops null_vfsops;
+#define NULL_VFSOPS	&null_vfsops
+#else
+#define NULL_VFSOPS	NULL
+#endif
+
+#ifdef UMAPFS
+extern	struct vfsops umap_vfsops;
+#define UMAP_VFSOPS	&umap_vfsops
+#else
+#define UMAP_VFSOPS	NULL
+#endif
+
+
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
 	UFS_VFSOPS,		/* 1 = MOUNT_UFS */
@@ -90,6 +105,9 @@ struct vfsops *vfssw[] = {
 	LOFS_VFSOPS,		/* 6 = MOUNT_LOFS */
 	FDESC_VFSOPS,		/* 7 = MOUNT_FDESC */
 	PORTAL_VFSOPS,		/* 8 = MOUNT_PORTAL */
+	NULL_VFSOPS,		/* 9 = MOUNT_NULL */
+	UMAP_VFSOPS,		/* 10 = MOUNT_UMAP */
+	0
 };
 
 
@@ -99,8 +117,6 @@ struct vfsops *vfssw[] = {
  * vnode operation vector.  It is consulted at system boot to build operation
  * vectors.  It is NULL terminated.
  *
- * Out-of-kernel, someone else (more knowlegable about what file systems live
- * in this address space) must specify this table.
  */
 extern struct vnodeopv_desc ffs_vnodeop_opv_desc;
 extern struct vnodeopv_desc ffs_specop_opv_desc;
@@ -118,6 +134,8 @@ extern struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc;
 extern struct vnodeopv_desc lofs_vnodeop_opv_desc;
 extern struct vnodeopv_desc fdesc_vnodeop_opv_desc;
 extern struct vnodeopv_desc portal_vnodeop_opv_desc;
+extern struct vnodeopv_desc null_vnodeop_opv_desc;
+extern struct vnodeopv_desc umap_vnodeop_opv_desc;
 
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&ffs_vnodeop_opv_desc,
@@ -155,6 +173,12 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #endif
 #ifdef PORTAL
 	&portal_vnodeop_opv_desc,
+#endif
+#ifdef NULLFS
+	&null_vnodeop_opv_desc,
+#endif
+#ifdef UMAPFS
+	&umap_vnodeop_opv_desc,
 #endif
 	NULL
 };
