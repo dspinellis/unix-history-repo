@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.11 (Berkeley) 84/05/17";
+static char sccsid[] = "@(#)route.c	4.12 (Berkeley) 84/10/15";
 #endif
 
 #include <sys/types.h>
@@ -177,7 +177,7 @@ newroute(argc, argv)
 {
 	struct sockaddr_in *sin;
 	char *cmd;
-	int ishost;
+	int ishost, metric = 0;
 
 	cmd = argv[0];
 	if (*cmd == 'a') {
@@ -186,6 +186,7 @@ newroute(argc, argv)
 			printf("(metric of 0 if gateway is this host)\n");
 			return;
 		}
+		metric = atoi(argv[3]);
 	} else {
 		if (argc != 3) {
 			printf("usage: %s destination gateway\n", cmd);
@@ -198,7 +199,7 @@ newroute(argc, argv)
 	route.rt_flags = RTF_UP;
 	if (ishost)
 		route.rt_flags |= RTF_HOST;
-	if (atoi(argv[3]) > 0)
+	if (metric > 0)
 		route.rt_flags |= RTF_GATEWAY;
 	printf("%s %s: gateway ", cmd, routename(sin->sin_addr));
 	sin = (struct sockaddr_in *)&route.rt_gateway;
