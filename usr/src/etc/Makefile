@@ -1,9 +1,10 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 # -rw-r--r--
 BIN1=	aliases crontab daily ftpusers group hosts hosts.equiv hosts.lpd \
-	inetd.conf man.conf monthly motd netstart printcap protocols rc \
-	rc.local security services shells syslog.conf ttys weekly
+	inetd.conf ../usr.bin/man/man/man.conf monthly motd netstart \
+	printcap protocols rc rc.local security services shells syslog.conf \
+	ttys weekly
 
 # -rw-rw-rw-
 BIN2=	motd
