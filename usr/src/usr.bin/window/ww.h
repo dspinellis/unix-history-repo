@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ww.h	3.45 (Berkeley) %G%
+ *	@(#)ww.h	3.46 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -227,8 +227,8 @@ jmp_buf wwjmpbuf;	/* jmpbuf for above */
 #define wwclrintr()	(wwintr = 0)
 
 	/* the window virtual terminal */
-#define WWT_TERM	"TERM=window"
-#define WWT_TERMCAP	"WW|window|window program:\
+#define WWT_TERM	"TERM=window-v2"	/* version 2 */
+#define WWT_TERMCAP	"WW|window-v2|window program:\
 	:cr=^M:nl=^J:bl=^G:\
 	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%+ %+ :\
 	:da:db:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:im=\\E@:mi:\
