@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 SUBDIR=	man3 man3f man4 man5 man7 man8
 
@@ -13,5 +13,4 @@ makedb:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 whatis.db \
 	    ${DESTDIR}/usr/share/man
 
-.include <bsd.own.mk>
 .include <bsd.subdir.mk>
