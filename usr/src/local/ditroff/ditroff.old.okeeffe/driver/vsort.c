@@ -1,4 +1,4 @@
-/* vsort.c	1.4	83/08/19
+/* vsort.c	1.5	83/09/23
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -25,7 +25,9 @@
 #define POINT	72	/* number of points per inch */
 #define WIDTH	7040	/* number of pixels across the page */
 #define HALF	(INCH/2)
-#define BAND	3
+#ifndef DEBUGABLE
+#define BAND	3	/* or defined below.... */
+#endif
 #define NLINES	(int)(BAND * INCH)	/* number of pixels in each band */
 
 #define hgoto(n)	if((hpos = leftmarg + n) > maxh) maxh = hpos
@@ -34,8 +36,10 @@
 
 
 #ifdef DEBUGABLE
-int	dbg	= 0;	/* debug flag != 0 means do debug output */
+int	dbg = 0;	/* debug flag != 0 means do debug output */
+float	BAND = 3.0;
 #endif
+
 
 int	size	= 10;	/* current size (points) */
 int	up	= 0;	/* number of pixels that the current size pushes up */
@@ -78,6 +82,7 @@ int argc;
 char *argv[];
 {
 	FILE *fp;
+	double atof();
 
 
 	vlp = &vlist[0] - 1;		/* initialize pointer to one less */
@@ -89,6 +94,9 @@ char *argv[];
 			fontdir = &(*argv)[2];
 			break;
 #ifdef DEBUGABLE
+		case 'B':
+			BAND = atof(&(*argv)[2]);
+			break;
 		case 'd':
 			dbg = atoi(&(*argv)[2]);
 			if (!dbg) dbg = 1;
