@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.20	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.21	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.20	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.21	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -148,7 +148,7 @@ initaliases(aliasfile, init)
 	**  See if the DBM version of the file is out of date with
 	**  the text version.  If so, go into 'init' mode automatically.
 	**	This only happens if our effective userid owns the DBM
-	**	version or if the mode of the database is 777 -- this
+	**	version or if the mode of the database is 666 -- this
 	**	is an attempt to avoid protection problems.  Note the
 	**	unpalatable hack to see if the stat succeeded.
 	*/
@@ -163,7 +163,7 @@ initaliases(aliasfile, init)
 	if ((stat(buf, &stb) < 0 || stb.st_mtime < modtime) && !init)
 	{
 		if (stb.st_ino != 0 &&
-		    ((stb.st_mode & 0777) == 0777 || stb.st_uid == geteuid()))
+		    ((stb.st_mode & 0666) == 0666 || stb.st_uid == geteuid()))
 		{
 			init = TRUE;
 			if (Verbose)
