@@ -1,58 +1,76 @@
 #
-#	@(#)Makefile	1.5	(Berkeley)	%G%
+#	@(#)Makefile	1.6	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-#LOAD1=-s
-#LOAD2=-s
 LOAD1=
 LOAD2=
 CFLAGS=-O -DFLEXNAMES
-head: lpass1 lpass2 llib-port.ln llib-lc.ln;
+LINTLIBS=llib-port.ln llib-lc.ln llib-lm.ln llib-lmp.ln
+
+all:	lpass1 lpass2 ${LINTLIBS}
+
 lpass1: cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o hash.o
-	cc $(LOAD1) cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o \
-		lint.o hash.o
-	mv a.out lpass1
+	${CC} cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o \
+		lint.o hash.o -o lpass1
+
 trees.o: $M/manifest macdefs $M/mfile1 $M/trees.c
-	cc -c $(CFLAGS) -I$M -I. $M/trees.c
+	${CC} -c ${CFLAGS} -I$M -I. $M/trees.c
+
 optim.o: $M/manifest macdefs $M/mfile1 $M/optim.c
-	cc -c $(CFLAGS) -I$M -I. $M/optim.c
+	${CC} -c ${CFLAGS} -I$M -I. $M/optim.c
+
 pftn.o: $M/manifest macdefs $M/mfile1 $M/pftn.c
-	cc -c $(CFLAGS) -I$M -I. $M/pftn.c
+	${CC} -c ${CFLAGS} -I$M -I. $M/pftn.c
+
 lint.o: $M/manifest macdefs $M/mfile1 lmanifest
-	cc -c $(CFLAGS) -I$M -I. lint.c
+	${CC} -c ${CFLAGS} -I$M -I. lint.c
+
 scan.o: $M/manifest macdefs $M/mfile1 $M/scan.c
-	cc -c $(CFLAGS) -I$M -I. $M/scan.c
+	${CC} -c ${CFLAGS} -I$M -I. $M/scan.c
+
 xdefs.o: $M/manifest $M/mfile1 macdefs $M/xdefs.c
-	cc -c $(CFLAGS) -I$M -I. $M/xdefs.c
+	${CC} -c ${CFLAGS} -I$M -I. $M/xdefs.c
+
 cgram.o: $M/manifest $M/mfile1 macdefs cgram.c
-	cc -c $(CFLAGS) -I$M -I. cgram.c
+	${CC} -c ${CFLAGS} -I$M -I. cgram.c
+
 cgram.c: $M/cgram.y
 	yacc $M/cgram.y
 	mv y.tab.c cgram.c
+
 comm1.o: $M/manifest $M/mfile1 $M/common macdefs $M/comm1.c
-	cc -c $(CFLAGS) -I. -I$M $M/comm1.c
+	${CC} -c ${CFLAGS} -I. -I$M $M/comm1.c
+
 llib-port.ln: llib-port lpass1
 	-(/lib/cpp -C -Dlint llib-port | ./lpass1 -puv > llib-port.ln )
+
+llib-lm.ln: llib-lm lpass1
+	-(/lib/cpp -C -Dlint llib-lm | ./lpass1 -puv > llib-lm.ln )
+
+llib-lmp.ln: llib-lmp lpass1
+	-(/lib/cpp -C -Dlint llib-lmp | ./lpass1 -puv > llib-lmp.ln )
+
 llib-lc.ln: llib-lc lpass1
 	-(/lib/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
-shrink:
-	rm -f *.o
-clean: shrink
-	rm -f lpass1 lpass2 cgram.c llib-lc.ln llib-port.ln
+
 lpass2: lpass2.o hash.o
-	cc $(LOAD2) lpass2.o hash.o
-	mv a.out lpass2
+	${CC} lpass2.o hash.o -o lpass2
+
 lpass2.o: $M/manifest lmanifest
-	cc $(CFLAGS) -c -I$M -I. lpass2.c
+	${CC} ${CFLAGS} -c -I$M -I. lpass2.c
+	
 lintall:
-	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c $M/pftn.c $M/trees.c $M/optim.c lint.c
-install: head SHELL
-	install -s lpass1 $(DESTDIR)/usr/lib/lint/lint1
-	install -s lpass2 $(DESTDIR)/usr/lib/lint/lint2
+	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c \
+		$M/pftn.c $M/trees.c $M/optim.c lint.c
+
+install: all SHELL
+	install -s lpass1 ${DESTDIR}/usr/lib/lint/lint1
+	install -s lpass2 ${DESTDIR}/usr/lib/lint/lint2
 	cp llib-* ${DESTDIR}/usr/lib/lint
 	install -c SHELL ${DESTDIR}/usr/bin/lint
 
-sources: READ_ME SHELL lint.c llib-lc llib-port lmanifest lpass2.c macdefs
+shrink:
+	rm -f *.o
 
-READ_ME SHELL lint.c llib-lc llib-port lmanifest lpass2.c macdefs:
-	sccs get $@
+clean: shrink
+	rm -f lpass1 lpass2 cgram.c ${LINTLIBS}

@@ -1,7 +1,10 @@
-/*
- *	@(#)macdefs.h	1.1	(Berkeley)	%G%
- */
-# define makecc(val,i)  lastcon |= val<<(8*i);  /* pdp-11 womp next char  */
+/*	@(#)macdefs.h	1.2	(Berkeley)	%G%	*/
+
+#if defined(pdp11) || defined(vax)
+#define makecc(val,i)  lastcon |= val<<(8*i);  /* pdp-11 womp next char  */
+#else
+#define makecc(val,i)	lastcon = i ? (val<<8)|lastcon : val
+#endif
 
 # define  ARGINIT 288 /* initial offset for arguments */
 # define  AUTOINIT 0   /* initial automatic offset */
