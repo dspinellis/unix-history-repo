@@ -1,4 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
+static	char copyright[] =
+	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
 static	char sccsid[] = "@(#)main.c 1.2 %G%";
 
