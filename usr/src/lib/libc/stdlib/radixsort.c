@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -119,9 +119,8 @@ r_sort_a(a, n, i, tr, endch)
 	int *cp, bigc;
 	const u_char **an, *t, **aj, **top[256];
 
-	sp = s;
-
 	/* Set up stack. */
+	sp = s;
 	push(a, n, i);
 	while (!empty(s)) {
 		pop(a, n, i);
@@ -164,7 +163,7 @@ r_sort_a(a, n, i, tr, endch)
 			top[255] = an;
 		}
 		for (cp = count + bmin; nc > 0; cp++) {
-			while (*cp == 0)
+			while (*cp == 0)	/* Find next non-empty pile. */
 				cp++;
 			if (*cp > 1) {
 				if (*cp > bigc) {
@@ -212,7 +211,6 @@ r_sort_b(a, ta, n, i, tr, endch)
 	int *cp, bigc;
 
 	sp = s;
-	/* Set up stack. */
 	push(a, n, i);
 	while (!empty(s)) {
 		pop(a, n, i);
@@ -237,9 +235,9 @@ r_sort_b(a, ta, n, i, tr, endch)
 			}
 		}
 
-		sp0 = sp1 = sp;		/* Stack position of biggest bin. */
-		bigc = 2;		/* Size of biggest bin. */
-		if (endch == 0) {	/* Special case: set top[eos]. */
+		sp0 = sp1 = sp;
+		bigc = 2;
+		if (endch == 0) {
 			top[0] = ak = a + count[0];
 			count[0] = 0;
 		} else {
@@ -247,7 +245,7 @@ r_sort_b(a, ta, n, i, tr, endch)
 			top[255] = a + n;
 			count[255] = 0;
 		}
-		for (cp = count + bmin; nc-- > 0; cp++) {
+		for (cp = count + bmin; nc > 0; cp++) {
 			while (*cp == 0)
 				cp++;
 			if ((c = *cp) > 1) {
@@ -258,13 +256,14 @@ r_sort_b(a, ta, n, i, tr, endch)
 				push(ak, c, i+1);
 			}
 			top[cp-count] = ak += c;
-			*cp = 0;
+			*cp = 0;			/* Reset count[]. */
+			nc--;
 		}
-		swap(*sp0, *sp1, temp);	/* Play it safe -- biggest bin last. */
+		swap(*sp0, *sp1, temp);
 
-		for (ak = ta + n, ai = a+n; ak > ta;)
+		for (ak = ta + n, ai = a+n; ak > ta;)	/* Copy to temp. */
 			*--ak = *--ai;
-		for (ak = ta+n; --ak >= ta;)
+		for (ak = ta+n; --ak >= ta;)		/* Deal to piles. */
 			*--top[tr[(*ak)[i]]] = *ak;
 	}
 }
