@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.33	83/02/16	*/
+/*	vfs_vnops.c	4.33	83/02/20	*/
 
 #include "../machine/reg.h"
 
@@ -65,6 +65,12 @@ access(ip, mode)
 
 	m = mode;
 	if (m == IWRITE) {
+		/*
+		 * Disallow write attempts on read-only
+		 * file systems; unless the file is a block
+		 * or character device resident on the
+		 * file system.
+		 */
 		if (ip->i_fs->fs_ronly != 0) {
 			if ((ip->i_mode & IFMT) != IFCHR &&
 			    (ip->i_mode & IFMT) != IFBLK) {
@@ -72,17 +78,35 @@ access(ip, mode)
 				return (1);
 			}
 		}
-		if (ip->i_flag&ITEXT)		/* try to free text */
+		/*
+		 * If there's shared text associated with
+		 * the inode, try to free it up once.  If
+		 * we fail, we can't allow writing.
+		 */
+		if (ip->i_flag&ITEXT)
 			xrele(ip);
 		if (ip->i_flag & ITEXT) {
 			u.u_error = ETXTBSY;
 			return (1);
 		}
 	}
+	/*
+	 * If you're the super-user,
+	 * you always get access.
+	 */
 	if (u.u_uid == 0)
 		return (0);
+	/*
+	 * Access check is based on only
+	 * one of owner, group, public.
+	 * If not owner, then check group.
+	 * If not a member of the group, then
+	 * check public access.
+	 */
 	if (u.u_uid != ip->i_uid) {
 		m >>= 3;
+		if (u.u_gid == ip->i_gid)
+			goto found;
 		for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
 			if (ip->i_gid == *gp)
 				goto found;
