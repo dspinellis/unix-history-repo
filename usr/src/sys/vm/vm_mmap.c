@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.29 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -458,7 +458,7 @@ mincore(p, uap, retval)
 
 struct mlock_args {
 	caddr_t	addr;
-	int	len;
+	size_t	len;
 };
 int
 mlock(p, uap, retval)
@@ -497,7 +497,7 @@ mlock(p, uap, retval)
 
 struct munlock_args {
 	caddr_t	addr;
-	int	len;
+	size_t	len;
 };
 int
 munlock(p, uap, retval)
