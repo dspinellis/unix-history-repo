@@ -1,7 +1,7 @@
 .\" The following requests are required for all man pages.
-.Dt DOCUMENT_TITLE
-.Os BSD 4.4
 .Dd DATE
+.Os
+.Dt DOCUMENT_TITLE
 .Sh NAME
 .Sh SYNOPSIS
 .Sh DESCRIPTION
