@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.h	8.2 (Berkeley) %G%
+ *	@(#)trap.h	8.3 (Berkeley) %G%
  */
 
 extern int pendingsigs;
@@ -15,7 +15,6 @@ extern int pendingsigs;
 int trapcmd __P((int, char **));
 void clear_traps __P((void)); 
 long setsignal __P((int)); 
-sig_t getsigaction __P((int));
 void ignoresig __P((int));
 void onsig __P((int));
 void dotrap __P((void));
