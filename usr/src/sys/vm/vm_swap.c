@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_swap.c	7.1.1.1 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,6 +16,7 @@
 #include "map.h"
 #include "uio.h"
 #include "file.h"
+#include "stat.h"
 #include "stat.h"
 
 struct	buf rswbuf;
@@ -145,11 +146,13 @@ swfree(index)
 	int index;
 {
 	register struct swdevt *sp;
+	register struct swdevt *sp;
 	register swblk_t vsbase;
 	register long blk;
 	dev_t dev;
 	register swblk_t dvbase;
 	register int nblks;
+	int error;
 	int error;
 
 	sp = &swdevt[index];
@@ -193,8 +196,16 @@ swfree(index)
 			 */
 			rmfree(swapmap, blk - ctod(CLSIZE),
 			    vsbase + ctod(CLSIZE));
+		} else if (dvbase == 0) {
+			/*
+			 * Don't use the first cluster of the device
+			 * in case it starts with a label or boot block.
+			 */
+			rmfree(swapmap, blk - ctod(CLSIZE),
+			    vsbase + ctod(CLSIZE));
 		} else
 			rmfree(swapmap, blk, vsbase);
 	}
+	return (0);
 	return (0);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"

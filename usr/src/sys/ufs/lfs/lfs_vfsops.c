@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,9 @@
 #include "mount.h"
 #include "file.h"
 #include "conf.h"
+#include "ioctl.h"
+#include "disklabel.h"
+#include "stat.h"
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
@@ -84,6 +87,12 @@ mountfs(dev, ronly, ip)
 	if (error)
 		goto out;
 	needclose = 1;
+	if ((*bdevsw[major(dev)].d_ioctl)(dev, DIOCGPART,
+	    (caddr_t)&dpart, FREAD) == 0) {
+		havepart = 1;
+		size = dpart.disklab->d_secsize;
+	} else
+		size = DEV_BSIZE;
 #ifdef SECSIZE
 	/*
 	 * If possible, determine hardware sector size
@@ -140,6 +149,12 @@ found:
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
+	if (havepart) {
+		dpart.part->p_fstype = FS_BSDFFS;
+		dpart.part->p_fsize = fs->fs_fsize;
+		dpart.part->p_frag = fs->fs_frag;
+		fs->fs_dbsize = size;
+	}
 #ifdef SECSIZE
 	/*
 	 * If we have a disk label, force per-partition
@@ -202,10 +217,14 @@ found:
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
 	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
 
+
 	return (fs);
 out:
 	if (error == 0)
 		error = EIO;
+	if (needclose)
+		(void) closei((dev_t)ip->i_rdev, IFBLK,
+		    ronly? FREAD : FREAD|FWRITE);
 	if (needclose)
 		(void) closei((dev_t)ip->i_rdev, IFBLK,
 		    ronly? FREAD : FREAD|FWRITE);
@@ -240,6 +259,7 @@ unmount1(fname, forcibly)
 	register struct inode *ip;
 	register struct fs *fs;
 
+	forcibly = 0;					/* XXX */
 	forcibly = 0;					/* XXX */
 	error = getmdev(&dev, fname);
 	if (error)

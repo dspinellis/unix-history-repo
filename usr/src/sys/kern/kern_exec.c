@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.3.1.1 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
