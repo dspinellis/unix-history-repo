@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.8 1994/02/02 05:54:28 wollman Exp $
+$Id: Changes,v 1.9 1994/02/03 02:45:41 davidg Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -41,8 +41,8 @@ Since 1.0.2:
 
 - Network booting is now supported, as is booting from DOS.  (martin)
 
-- Local LDTs are now supported for WINE (port by Jeffrey Hsu).
-  (davidg)
+- Local LDTs are now supported for WINE (based on work by John Brezak).
+  (hsu/davidg)
 
 - DDB will now print symbolic arguments and line numbers in
   backtraces (from John Brezak).  (davidg)
