@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id: tcp_input.c,v 1.6 1994/01/24 07:17:08 davidg Exp $
+ *	$Id: tcp_input.c,v 1.7 1994/01/29 12:10:20 davidg Exp $
  */
 
 #include "param.h"
@@ -456,7 +456,17 @@ findpcb:
 			m->m_len -= sizeof(struct tcpiphdr);
 			sbappend(&so->so_rcv, m);
 			sorwakeup(so);
-			tp->t_flags |= TF_DELACK;
+			/*
+			 * If this is a small packet, then ACK now - with Nagel
+			 *	congestion avoidance sender won't send more until
+			 *	he gets an ACK.
+			 */
+			if (ti->ti_len < tp->t_maxseg) {
+				tp->t_flags |= TF_ACKNOW;
+				tcp_output(tp);
+			} else {
+				tp->t_flags |= TF_DELACK;
+			}
 			return;
 		}
 	}
