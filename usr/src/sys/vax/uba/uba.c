@@ -1,4 +1,4 @@
-/*	uba.c	3.4	%G%	*/
+/*	uba.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -63,9 +63,9 @@ struct buf *bp;
 			*(int *)io++ = rp->p_addr[i].pg_pfnum | temp;
 		}
 	} else if ((bp->b_flags & B_PHYS) == 0) {
-		v &= 0x1fffff;			/* drop to physical addr */
+		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];
 		while (--npf != 0)
-			*(int *)io++ = v++ | temp;
+			*(int *)io++ = pte++->pg_pfnum | temp;
 	} else {
 		if (bp->b_flags & B_PAGET)
 			pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
