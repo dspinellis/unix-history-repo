@@ -37,14 +37,10 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stropts.h>
 #include <sys/termios.h>
-#include <sys/ttold.h>
-#include <sys/sockio.h>
+#include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/syslog.h>
-
-#include <sys/slip.h>
 
 #include <netinet/in.h>
 #include <net/if.h>
@@ -57,9 +53,12 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 #include <signal.h>
 #include <strings.h>
 #include <pwd.h>
-#ifdef BSD >= 43
 #include <ttyent.h>
-#endif
+
+#define	SLIPIFNAME	"sl"
+
+#define ADDR	1
+#define MASK	2
 
 #define	DCD_CHECK_INTERVAL 0	/* if > 0, time between automatic DCD checks */
 #define	DCD_SETTLING_TIME 1	/* time between DCD change and status check */
@@ -114,16 +113,14 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int	fd, s, unit;
+	int	fd, s, unit, ldisc;
 	struct	termios tios;
 	struct	ifreq ifr;
 
 	s = getdtablesize();
 	for (fd = 3 ; fd < s ; fd++)
 		close(fd);
-
 	openlog("sliplogin", LOG_PID, LOG_DAEMON);
-
 	if (getuid() == 0) {
 		if (argc <= 1) {
 			fprintf(stderr, "Usage: %s loginname\n", argv[0]);
@@ -150,77 +147,72 @@ main(argc, argv)
 		}
 	} else
 		findid((char *)0);
-
-	/* ensure that the slip line is our controlling terminal */
+	/* disassociate from current controlling terminal */
 	if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
 		(void) ioctl(fd, TIOCNOTTY, 0);
 		(void) close(fd);
-		fd = open(ttyname(0), O_RDWR, 0);
-		if (fd >= 0)
-			(void) close(fd);
-		(void) setpgrp(0, getpid());
 	}
-
+	/* ensure that the slip line is our new controlling terminal */
+	(void) setpgrp(0, getpid());
+	(void) ioctl(0, TIOCSCTTY, 0);
 	fchmod(0, 0600);
-
-	/* pop all streams modules */
-	while (ioctl(0, I_POP, 0) == 0)
-		continue;
-
 	/* set up the line parameters */
-	if (ioctl(0, TCGETS, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCGETS): %m");
+	if (ioctl(0, TCGETA, (caddr_t)&tios) < 0) {
+		syslog(LOG_ERR, "ioctl (TCGETA): %m");
 		exit(1);
 	}
 	tios.c_cflag &= 0xf;	/* only save the speed */
 	tios.c_cflag |= CS8|CREAD|HUPCL;
 	tios.c_iflag = IGNBRK;
-	if (ioctl(0, TCSETS, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCSETS): %m");
+	tios.c_oflag = tios.c_lflag = 0;
+	if (ioctl(0, TCSETA, (caddr_t)&tios) < 0) {
+		syslog(LOG_ERR, "ioctl (TCSETA): %m");
 		exit(1);
 	}
-
-	/* push the SLIP module */
-	if (ioctl(0, I_PUSH, "slip") < 0) {
-		syslog(LOG_ERR, "ioctl (I_PUSH): %m");
+	ldisc = SLIPDISC;
+	if (ioctl(0, TIOCSETD, (caddr_t)&ldisc) < 0) {
+		syslog(LOG_ERR, "ioctl(TIOCSETD): %m");
 		exit(1);
 	}
-
 	/* find out what unit number we were assigned */
-	if (ioctl(0, SLIOGUNIT, (caddr_t)&unit) < 0) {
-		syslog(LOG_ERR, "ioctl (SLIOGUNIT): %m");
+	if (ioctl(0, TIOCGETD, (caddr_t)&unit) < 0) {
+		syslog(LOG_ERR, "ioctl (TIOCGETD): %m");
 		exit(1);
 	}
-
-	syslog(LOG_NOTICE, "attaching slip%d: local %s remote %s mask %s\n",
-		unit, localaddr, dstaddr, netmask);
-
+	syslog(LOG_NOTICE, "attaching %s%d: local %s remote %s mask %s\n",
+		SLIPIFNAME, unit, localaddr, dstaddr, netmask);
+#ifdef notdef
 	/* set the local and remote interface addresses */
 	s = socket(AF_INET, SOCK_DGRAM, 0);
-
 	if (getuid() != 0 || argc == 4) {
 		(void) sprintf(ifr.ifr_name, "%s%d", SLIPIFNAME, unit);
-		in_getaddr(netmask, &ifr.ifr_addr);
+		in_getaddr(netmask, &ifr.ifr_addr, MASK);
 		if (ioctl(s, SIOCSIFNETMASK, (caddr_t)&ifr) < 0) {
 			syslog(LOG_ERR, "ioctl (SIOCSIFNETMASK): %m");
 			exit(1);
 		}
 	}
-
 	(void) sprintf(ifr.ifr_name, "%s%d", SLIPIFNAME, unit);
-	in_getaddr(dstaddr, &ifr.ifr_addr);
+	in_getaddr(dstaddr, &ifr.ifr_addr, ADDR);
 	if (ioctl(s, SIOCSIFDSTADDR, (caddr_t)&ifr) < 0) {
 		syslog(LOG_ERR, "ioctl (SIOCSIFDSTADDR): %m");
 		exit(1);
 	}
-
 	(void) sprintf(ifr.ifr_name, "%s%d", SLIPIFNAME, unit);
-	in_getaddr(localaddr, &ifr.ifr_addr);
+	in_getaddr(localaddr, &ifr.ifr_addr, ADDR);
 	/* this has the side-effect of marking the interface up */
 	if (ioctl(s, SIOCSIFADDR, (caddr_t)&ifr) < 0) {
 		syslog(LOG_ERR, "ioctl (SIOCSIFADDR): %m");
 		exit(1);
 	}
+#else
+	/* XXX -- give up for now and just invoke ifconfig XXX */
+	{ char cmd[256];
+	  sprintf(cmd, "/sbin/ifconfig %s%d inet %s %s netmask %s",
+	      SLIPIFNAME, unit, localaddr, dstaddr, netmask);
+	  system(cmd);
+	}
+#endif
 
 	/* set up signal handlers */
 #if	defined(SIGDCD) && SIGDCD > 0
@@ -292,9 +284,10 @@ findid(name)
 	exit(4);
 }
 
-in_getaddr(s, saddr)
+in_getaddr(s, saddr, which)
 	char *s;
 	struct sockaddr *saddr;
+	int which;
 {
 	register struct sockaddr_in *sin = (struct sockaddr_in *)saddr;
 	struct hostent *hp;
@@ -303,7 +296,11 @@ in_getaddr(s, saddr)
 	extern struct in_addr inet_makeaddr();
  
 	bzero((caddr_t)saddr, sizeof *saddr);
-	sin->sin_family = AF_INET;
+	if (which == ADDR) {
+		sin->sin_len = sizeof (*sin);
+		sin->sin_family = AF_INET;
+	} else
+		sin->sin_len = 8;
 	val = inet_addr(s);
 	if (val != -1) {
 		sin->sin_addr.s_addr = val;
@@ -325,4 +322,3 @@ in_getaddr(s, saddr)
 	syslog(LOG_ERR, "%s: bad value\n", s);
 	exit(1);
 }
-
