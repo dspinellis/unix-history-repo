@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dol.c 4.1 %G%";
+static	char *sccsid = "@(#)dol.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -388,7 +388,7 @@ syntax:
 		np = getenv(name);
 		if (np) {
 			addla(np);
-			return;
+			goto eatbrac;
 		}
 		udvar(name);
 		/*NOTREACHED*/
