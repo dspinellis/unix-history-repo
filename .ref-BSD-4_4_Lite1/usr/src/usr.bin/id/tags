@@ -1,8 +1,0 @@
-Mid	id.c	/^main(argc, argv)$/
-current	id.c	/^current()$/
-err	id.c	/^err(fmt, va_alist)$/
-group	id.c	/^group(pw, nflag)$/
-pretty	id.c	/^pretty(pw)$/
-usage	id.c	/^usage()$/
-user	id.c	/^user(pw)$/
-who	id.c	/^who(u)$/

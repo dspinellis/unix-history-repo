@@ -1,7 +1,0 @@
-# Host:  IBM RS/6000 running AIX
-ALLOCA = alloca.o
-# This #define is a kludge to allow coff-rs6000.c to compile on most host.
-# We only turn on archive & core support if this symbol is defined, since
-# we don't have distributable include files for them.
-HDEFINES = -DARCHIVES_PLEASE -DCOREFILES_PLEASE
-HDEPFILES = rs6000-core.o
