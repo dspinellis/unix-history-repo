@@ -1,0 +1,22 @@
+.TH DDLCOMP 6 UCLA 
+.SH NAME
+ddlcomp  \-  compile a DDL program
+.SH SYNOPSIS
+.B /usr/games/ddlcomp
+outfile
+.SH DESCRIPTION
+.I Ddlcomp
+reads a \s-2DDL\s+2 program from the standard input
+and produces an output file,
+.I outfile,
+which contains the tables and interpretive code necessary
+to play, using 
+.I ddlrun(6),
+the game described by the program.  Error messages
+and data summary are produced on standard output.
+.br
+.SH "SEE ALSO"
+ddlrun(6)
+.br
+Adler, Kostanick, Stein and Urban:
+.I "A Brief Introduction to UCLA Dungeon Definition Language"
