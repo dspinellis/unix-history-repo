@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.22 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.23 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -56,14 +56,14 @@ OBJS+=	${SRCS:R:S/$/.o/g}
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.a
-	@${AR} csq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
+	@${AR} cTq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
 	ranlib lib${LIB}.a
 
 POBJS+=	${OBJS:.o=.po}
 lib${LIB}_p.a:: ${POBJS}
 	@echo building profiled ${LIB} library
 	@rm -f lib${LIB}_p.a
-	@${AR} csq lib${LIB}_p.a `lorder ${POBJS} | tsort` ${LDADD}
+	@${AR} cTq lib${LIB}_p.a `lorder ${POBJS} | tsort` ${LDADD}
 	ranlib lib${LIB}_p.a
 
 llib-l${LIB}.ln: ${SRCS}
