@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.32	%G%";
+static char SccsId[] = "@(#)conf.c	3.33	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -395,7 +395,7 @@ checkcompat(to)
 	}
 # ifdef ING70
 	s = stab("arpa", ST_MAILER, ST_FIND);
-	if (s != NULL && From.q_mailer != MN_LOCAL && to->q_mailer == s->st_mailer->m_mno)
+	if (s != NULL && From.q_mailer != MN_LOCAL && to->q_mailer == s->s_mailer->m_mno)
 	{
 		usrerr("No ARPA mail through this machine: see your system administration");
 		return (FALSE);
