@@ -1,4 +1,4 @@
-/*	dh.c	6.4	84/08/15	*/
+/*	dh.c	6.5	84/08/30	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -9,27 +9,27 @@
 
 #include "bk.h"
 #include "uba.h"
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "map.h"
+#include "buf.h"
+#include "vm.h"
+#include "kernel.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/dhreg.h"
-#include "../vaxuba/dmreg.h"
+#include "ubareg.h"
+#include "ubavar.h"
+#include "dhreg.h"
+#include "dmreg.h"
 
-#include "../h/bk.h"
-#include "../h/clist.h"
-#include "../h/file.h"
-#include "../h/uio.h"
+#include "bkmac.h"
+#include "clist.h"
+#include "file.h"
+#include "uio.h"
 
 /*
  * Definition of the driver for the auto-configuration program.

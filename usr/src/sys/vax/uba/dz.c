@@ -1,4 +1,4 @@
-/*	dz.c	6.3	84/04/16	*/
+/*	dz.c	6.4	84/08/30	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -11,25 +11,25 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/conf.h"
-#include "../h/bk.h"
-#include "../h/file.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "map.h"
+#include "buf.h"
+#include "vm.h"
+#include "conf.h"
+#include "bkmac.h"
+#include "file.h"
+#include "uio.h"
+#include "kernel.h"
 
-#include "../vaxuba/pdma.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/dzreg.h"
+#include "pdma.h"
+#include "ubavar.h"
+#include "dzreg.h"
 
 /*
  * Driver information for auto-configuration stuff.
