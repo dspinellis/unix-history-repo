@@ -1,0 +1,25 @@
+RANDOM(6)                    BSD Reference Manual                    RANDOM(6)
+
+NNAAMMEE
+     rraannddoomm - random lines from a file or random numbers
+
+SSYYNNOOPPSSIISS
+     rraannddoomm [--eerr] [_d_e_n_o_m_i_n_a_t_o_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     RRaannddoomm reads lines from the standard input and copies them to the stan-
+     dard output with a probability of 1/denominator.  The default value for
+     _d_e_n_o_m_i_n_a_t_o_r is 2.
+
+     The options are as follows:
+
+     --ee      If the --ee option is specified, rraannddoomm does not read or write any-
+             thing, and simply exits with a random exit value of 0 to
+             _d_e_n_o_m_i_n_a_t_o_r - 1, inclusive.
+
+     --rr      The --rr option guarantees that the output is unbuffered.
+
+SSEEEE AALLSSOO
+     fortune(6)
+
+4th Berkeley Distribution       March 31, 1994                               1

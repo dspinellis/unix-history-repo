@@ -1,0 +1,26 @@
+WORMS(6)                     BSD Reference Manual                     WORMS(6)
+
+NNAAMMEE
+     wwoorrmmss - animate worms on a display terminal
+
+SSYYNNOOPPSSIISS
+     wwoorrmmss [--fftt] [--ll _l_e_n_g_t_h] [--nn _n_u_m_b_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     A UNIX version of the DEC-2136 program ``worms''.
+
+     The options are as follows:
+
+     --ff      Makes a ``field'' for the worm(s) to eat.
+
+     --tt      Makes each worm leave a trail behind it.
+
+     --ll      Specifies a length for each worm; the default is 16.
+
+     --nn      Specifies the number of worms; the default is 3.
+
+BBUUGGSS
+     The lower-right-hand character position will not be updated properly on a
+     terminal that wraps at the right margin.
+
+                                 May 31, 1993                                1
