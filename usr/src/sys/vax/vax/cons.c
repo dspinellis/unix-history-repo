@@ -1,4 +1,4 @@
-/*	cons.c	3.8	%G%	*/
+/*	cons.c	3.9	%G%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -156,7 +156,7 @@ register struct tty *tp;
 	s = spl5();
 	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
 		goto out;
-	if (tp->t_outq.c_cc <= TTLOWAT && tp->t_state&ASLEEP) {
+	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
 		if (tp->t_chan)
 			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);

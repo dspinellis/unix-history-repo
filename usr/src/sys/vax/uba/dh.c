@@ -1,4 +1,4 @@
-/*	dh.c	3.15	%G%	*/
+/*	dh.c	3.16	%G%	*/
 
 /*
  *	DH-11 driver
@@ -381,7 +381,7 @@ register struct tty *tp;
 	 * If the writer was sleeping on output overflow,
 	 * wake him when low tide is reached.
 	 */
-	if (tp->t_state&ASLEEP && tp->t_outq.c_cc<=TTLOWAT) {
+	if (tp->t_state&ASLEEP && tp->t_outq.c_cc<=TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
 		if (tp->t_chan)
 			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);

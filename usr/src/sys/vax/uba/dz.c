@@ -1,4 +1,4 @@
-/*	dz.c	3.15	%G%	*/
+/*	dz.c	3.16	%G%	*/
 
 /*
  *  DZ-11 Driver
@@ -32,7 +32,7 @@
 #ifdef DISTRIB
 #define	NDZ11	1
 #else
-#define NDZ11	3
+#define NDZ11	4
 #endif
 #define NDZ 	(NDZ11*8)
  
@@ -348,7 +348,7 @@ register struct tty *tp;
 	sps = spl5();
 	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
 		goto out;
-	if (tp->t_outq.c_cc <= TTLOWAT && tp->t_state&ASLEEP) {
+	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
 		if (tp->t_chan)
 			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
