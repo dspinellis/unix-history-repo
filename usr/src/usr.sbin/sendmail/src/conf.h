@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.28 (Berkeley) %G%
+ *	@(#)conf.h	8.29 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,7 @@
 
 # include <sys/param.h>
 # include <sys/stat.h>
+# include <sys/file.h>
 # include <fcntl.h>
 # include <signal.h>
 
@@ -309,6 +310,7 @@ typedef int		pid_t;
 # define BSD		1	/* pretend to be BSD based today */
 # undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define HASUNSETENV	1	/* has unsetenv(3) call */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
@@ -333,6 +335,26 @@ typedef int		pid_t;
 # endif
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
+# endif
+#endif
+
+
+/*
+**  Apple A/UX 3.0
+*/
+
+#ifdef _AUX_SOURCE
+# define BSD			/* has BSD routines */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASUNAME	1	/* use System V uname(2) system call */
+# define HASUSTAT	1	/* use System V ustat(2) syscall */
+# define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+# define FORK		fork
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_ZERO
 # endif
 #endif
 
@@ -499,10 +521,6 @@ struct utsname
 
 #ifndef STDERR_FILENO
 #define STDERR_FILENO	2
-#endif
-
-#ifdef HASFLOCK
-# include <sys/file.h>
 #endif
 
 #ifndef LOCK_SH

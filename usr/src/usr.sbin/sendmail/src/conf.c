@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -491,7 +491,7 @@ setsignal(sig, handler)
 	int sig;
 	setsig_t handler;
 {
-#if defined(SYS5SIGNALS) || defined(BSD4_3)
+#if defined(SYS5SIGNALS) || defined(BSD4_3) || defined(_AUX_SOURCE)
 	return signal(sig, handler);
 #else
 	struct sigaction n, o;
@@ -1282,7 +1282,7 @@ vsprintf(s, fmt, ap)
 # if defined(IRIX) || defined(apollo) || defined(_SCO_unix_)
 #  include <sys/statfs.h>
 # else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT)
+#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>
