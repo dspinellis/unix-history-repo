@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_subr.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ void
 ffs_fragacct(fs, fragmap, fraglist, cnt)
 	struct fs *fs;
 	int fragmap;
-	long fraglist[];
+	int32_t fraglist[];
 	int cnt;
 {
 	int inblk;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.12 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,8 +33,8 @@ static ino_t	ffs_dirpref __P((struct fs *));
 static daddr_t	ffs_fragextend __P((struct inode *, int, long, int, int));
 static void	ffs_fserr __P((struct fs *, u_int, char *));
 static u_long	ffs_hashalloc
-		    __P((struct inode *, int, long, int, u_long (*)()));
-static u_long	ffs_nodealloccg __P((struct inode *, int, daddr_t, int));
+		    __P((struct inode *, int, long, int, u_int32_t (*)()));
+static ino_t	ffs_nodealloccg __P((struct inode *, int, daddr_t, int));
 static daddr_t	ffs_mapsearch __P((struct fs *, struct cg *, daddr_t, int));
 
 /*
@@ -93,7 +93,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	else
 		cg = dtog(fs, bpref);
 	bno = (daddr_t)ffs_hashalloc(ip, cg, (long)bpref, size,
-	    (u_long (*)())ffs_alloccg);
+	    (u_int32_t (*)())ffs_alloccg);
 	if (bno > 0) {
 		ip->i_blocks += btodb(size);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
@@ -230,7 +230,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		/* NOTREACHED */
 	}
 	bno = (daddr_t)ffs_hashalloc(ip, cg, (long)bpref, request,
-	    (u_long (*)())ffs_alloccg);
+	    (u_int32_t (*)())ffs_alloccg);
 	if (bno > 0) {
 #ifdef SECSIZE
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize,
@@ -375,7 +375,7 @@ ffs_reallocblks(ap)
 	 * Search the block map looking for an allocation of the desired size.
 	 */
 	if ((newblk = (daddr_t)ffs_hashalloc(ip, dtog(fs, pref), (long)pref,
-	    len, (u_long (*)())ffs_clusteralloc)) == 0)
+	    len, (u_int32_t (*)())ffs_clusteralloc)) == 0)
 		goto fail;
 	/*
 	 * We have found a new contiguous block.
@@ -670,7 +670,7 @@ ffs_hashalloc(ip, cg, pref, size, allocator)
 	int cg;
 	long pref;
 	int size;	/* size for data blocks, mode for inodes */
-	u_long (*allocator)();
+	u_int32_t (*allocator)();
 {
 	register struct fs *fs;
 	long result;
@@ -1108,7 +1108,7 @@ fail:
  *   2) allocate the next available inode after the requested
  *      inode in the specified cylinder group.
  */
-static u_long
+static ino_t
 ffs_nodealloccg(ip, cg, ipref, mode)
 	struct inode *ip;
 	int cg;
@@ -1439,7 +1439,7 @@ ffs_clusteracct(fs, cgp, blkno, cnt)
 	daddr_t blkno;
 	int cnt;
 {
-	long *sump;
+	int32_t *sump;
 	int32_t *lp;
 	u_char *freemapp, *mapp;
 	int i, start, end, forw, back, map, bit;

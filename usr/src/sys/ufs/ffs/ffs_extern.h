@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	8.3 (Berkeley) %G%
+ *	@(#)ffs_extern.h	8.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -33,7 +33,7 @@ int	ffs_bmap __P((struct vop_bmap_args *));
 void	ffs_clrblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **));
-void	ffs_fragacct __P((struct fs *, int, long [], int));
+void	ffs_fragacct __P((struct fs *, int, int32_t [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
 int	ffs_init __P((void));
 int	ffs_isblock __P((struct fs *, u_char *, daddr_t));
