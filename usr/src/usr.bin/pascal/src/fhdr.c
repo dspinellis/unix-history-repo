@@ -42,9 +42,8 @@ funchdr(r)
 {
 	register struct nl *p;
 	register *il, **rl;
-	int *rll;
-	struct nl *cp, *dp, *sp;
-	int w, s, o, *pp;
+	struct nl *cp, *dp;
+	int s, o, *pp;
 
 	if (inpflist(r[2])) {
 		opush('l');
@@ -185,8 +184,9 @@ funchdr(r)
 				 */
 
 			    cp = defnl(r[2], FVAR, p->type,
-				    -(roundup((int)(DPOFF1+lwidth(p->type)),
-					(long)align(p->type))));
+				(int)-leven(roundup(
+			            (int)(DPOFF1+lwidth(p->type)),
+				    (long)align(p->type))));
 #			endif PC
 			cp->chain = p;
 			p->ptr[NL_FVAR] = cp;
@@ -195,118 +195,18 @@ funchdr(r)
 		 * Enter the parameters
 		 * and compute total size
 		 */
-		cp = sp = p;
-
-#		ifdef OBJ
-		    o = 0;
-#		endif OBJ
-#		ifdef PC
-			/*
-			 * parameters used to be allocated backwards,
-			 * then fixed.  for pc, they are allocated correctly.
-			 * also, they are aligned.
-			 */
-		o = DPOFF2;
-#		endif PC
-		for (rl = r[3]; rl != NIL; rl = rl[2]) {
-			p = NIL;
-			if (rl[1] == NIL)
-				continue;
-			/*
-			 * Parametric procedures
-			 * don't have types !?!
-			 */
-			if (rl[1][0] != T_PPROC) {
-				rll = rl[1][2];
-				if (rll[0] != T_TYID) {
-					error("Types for arguments can be specified only by using type identifiers");
-					p = NIL;
-				} else
-					p = gtype(rll);
-			}
-			for (il = rl[1][1]; il != NIL; il = il[2]) {
-				switch (rl[1][0]) {
-				    default:
-					    panic("funchdr2");
-				    case T_PVAL:
-					    if (p != NIL) {
-						    if (p->class == FILET)
-							    error("Files cannot be passed by value");
-						    else if (p->nl_flags & NFILES)
-							    error("Files cannot be a component of %ss passed by value",
-								    nameof(p));
-					    }
-#					    ifdef OBJ
-						w = width(p);
-						o -= even(w);
-#						ifdef DEC11
-						    dp = defnl(il[1], VAR, p, o);
-#						else
-						    dp = defnl(il[1], VAR, p,
-							(w < 2) ? o + 1 : o);
-#						endif DEC11
-#					    endif OBJ
-#					    ifdef PC
-						dp = defnl( il[1] , VAR , p 
-							, o = roundup( o , (long)A_STACK ) );
-						o += width( p );
-#					    endif PC
-					    dp->nl_flags |= NMOD;
-					    break;
-				    case T_PVAR:
-#					    ifdef OBJ
-						dp = defnl(il[1], REF, p, o -= sizeof ( int * ) );
-#					    endif OBJ
-#					    ifdef PC
-						dp = defnl( il[1] , REF , p
-							, o = roundup( o , (long)A_STACK ) );
-						o += sizeof(char *);
-#					    endif PC
-					    break;
-				    case T_PFUNC:
-#					    ifdef OBJ
-						dp = defnl(il[1], FFUNC, p, o -= sizeof ( int * ) );
-#					    endif OBJ
-#					    ifdef PC
-						dp = defnl( il[1] , FFUNC , p
-							, o = roundup( o , (long)A_STACK ) );
-						o += sizeof(char *);
-#					    endif PC
-					    dp -> nl_flags |= NMOD;
-					    break;
-				    case T_PPROC:
-#					    ifdef OBJ
-						dp = defnl(il[1], FPROC, p, o -= sizeof ( int * ) );
-#					    endif OBJ
-#					    ifdef PC
-						dp = defnl( il[1] , FPROC , p
-							, o = roundup( o , (long)A_STACK ) );
-						o += sizeof(char *);
-#					    endif PC
-					    dp -> nl_flags |= NMOD;
-					    break;
-				    }
-				if (dp != NIL) {
-					cp->chain = dp;
-					cp = dp;
-				}
-			}
-		}
+	        p->value[NL_OFFS] = params(p, r[3]);
+		/*
+		 * because NL_LINENO field in the function 
+		 * namelist entry has been used (as have all
+		 * the other fields), the line number is
+		 * stored in the NL_LINENO field of its fvar.
+		 */
+		if (p->class == FUNC)
+		    p->ptr[NL_FVAR]->value[NL_LINENO] = r[1];
+		else
+		    p->value[NL_LINENO] = r[1];
 		cbn--;
-		p = sp;
-#		ifdef OBJ
-		    p->value[NL_OFFS] = -o+DPOFF2;
-			/*
-			 * Correct the naivete (naievity)
-			 * of our above code to
-			 * calculate offsets
-			 */
-		    for (il = p->chain; il != NIL; il = il->chain)
-			    il->value[NL_OFFS] += p->value[NL_OFFS];
-#		endif OBJ
-#		ifdef PC
-		    p -> value[ NL_OFFS ] = roundup( o , (long)A_STACK );
-#		endif PC
 	} else { 
 		/*
 		 * The wonderful
@@ -358,4 +258,181 @@ funchdr(r)
 	    }
 #	endif PTREE
 	return (p);
+}
+
+	/*
+	 * deal with the parameter declaration for a routine.
+	 * p is the namelist entry of the routine.
+	 * formalist is the parse tree for the parameter declaration.
+	 * formalist	[0]	T_LISTPP
+	 *		[1]	pointer to a formal
+	 *		[2]	pointer to next formal
+	 * for by-value or by-reference formals, the formal is
+	 * formal	[0]	T_PVAL or T_PVAR
+	 *		[1]	pointer to id_list
+	 *		[2]	pointer to type (error if not typeid)
+	 * for function and procedure formals, the formal is
+	 * formal	[0]	T_PFUNC or T_PPROC
+	 *		[1]	pointer to id_list (error if more than one)
+	 *		[2]	pointer to type (error if not typeid, or proc)
+	 *		[3]	pointer to formalist for this routine.
+	 */
+fparams(p, formal)
+	register struct nl *p;
+	int *formal;
+{
+	params(p, formal[3]);
+	p -> value[ NL_LINENO ] = formal[4];
+	p -> ptr[ NL_FCHAIN ] = p -> chain;
+	p -> chain = NIL;
+}
+
+params(p, formalist)
+	register struct nl *p;
+	int *formalist;
+{
+	struct nl *chainp, *savedp;
+	struct nl *dp;
+	register int **formalp;		/* an element of the formal list */
+	register int *formal;		/* a formal */
+	int *typ, *idlist;
+	int w, o;
+
+	/*
+	 * Enter the parameters
+	 * and compute total size
+	 */
+	chainp = savedp = p;
+
+#	ifdef OBJ
+	    o = 0;
+#	endif OBJ
+#	ifdef PC
+		/*
+		 * parameters used to be allocated backwards,
+		 * then fixed.  for pc, they are allocated correctly.
+		 * also, they are aligned.
+		 */
+	    o = DPOFF2;
+#	endif PC
+	for (formalp = formalist; formalp != NIL; formalp = formalp[2]) {
+		p = NIL;
+		formal = formalp[1];
+		if (formal == NIL)
+			continue;
+		/*
+		 * Parametric procedures
+		 * don't have types !?!
+		 */
+		typ = formal[2];
+		if ( typ == NIL ) {
+		    if ( formal[0] != T_PPROC ) {
+			error("Types must be specified for arguments");
+			p = NIL;
+		    }
+		} else {
+		    if ( formal[0] == T_PPROC ) {
+			error("Procedures cannot have types");
+			p = NIL;
+		    } else {
+			if (typ[0] != T_TYID) {
+				error("Types for arguments can be specified only by using type identifiers");
+				p = NIL;
+			} else {
+				p = gtype(typ);
+			}
+		    }
+		}
+		for (idlist = formal[1]; idlist != NIL; idlist = idlist[2]) {
+			switch (formal[0]) {
+			    default:
+				    panic("funchdr2");
+			    case T_PVAL:
+				    if (p != NIL) {
+					    if (p->class == FILET)
+						    error("Files cannot be passed by value");
+					    else if (p->nl_flags & NFILES)
+						    error("Files cannot be a component of %ss passed by value",
+							    nameof(p));
+				    }
+#				    ifdef OBJ
+					w = lwidth(p);
+					o -= even(w);
+#					ifdef DEC11
+					    dp = defnl(idlist[1], VAR, p, o);
+#					else
+					    dp = defnl(idlist[1], VAR, p,
+						(w < 2) ? o + 1 : o);
+#					endif DEC11
+#				    endif OBJ
+#				    ifdef PC
+					dp = defnl( idlist[1] , VAR , p 
+						, o = roundup( o , (long)A_STACK ) );
+					o += lwidth( p );
+#				    endif PC
+				    dp->nl_flags |= NMOD;
+				    break;
+			    case T_PVAR:
+#				    ifdef OBJ
+					dp = defnl(idlist[1], REF, p, o -= sizeof ( int * ) );
+#				    endif OBJ
+#				    ifdef PC
+					dp = defnl( idlist[1] , REF , p
+						, o = roundup( o , (long)A_STACK ) );
+					o += sizeof(char *);
+#				    endif PC
+				    break;
+			    case T_PFUNC:
+				    if (idlist[2] != NIL) {
+					error("Each function argument must be declared separately");
+					idlist[2] = NIL;
+				    }
+#				    ifdef OBJ
+					dp = defnl(idlist[1], FFUNC, p, o -= sizeof ( int * ) );
+#				    endif OBJ
+#				    ifdef PC
+					dp = defnl( idlist[1] , FFUNC , p
+						, o = roundup( o , (long)A_STACK ) );
+					o += sizeof(char *);
+#				    endif PC
+				    dp -> nl_flags |= NMOD;
+				    fparams(dp, formal);
+				    break;
+			    case T_PPROC:
+				    if (idlist[2] != NIL) {
+					error("Each procedure argument must be declared separately");
+					idlist[2] = NIL;
+				    }
+#				    ifdef OBJ
+					dp = defnl(idlist[1], FPROC, p, o -= sizeof ( int * ) );
+#				    endif OBJ
+#				    ifdef PC
+					dp = defnl( idlist[1] , FPROC , p
+						, o = roundup( o , (long)A_STACK ) );
+					o += sizeof(char *);
+#				    endif PC
+				    dp -> nl_flags |= NMOD;
+				    fparams(dp, formal);
+				    break;
+			    }
+			if (dp != NIL) {
+				chainp->chain = dp;
+				chainp = dp;
+			}
+		}
+	}
+	p = savedp;
+#	ifdef OBJ
+		/*
+		 * Correct the naivete (naivety)
+		 * of our above code to
+		 * calculate offsets
+		 */
+	    for (dp = p->chain; dp != NIL; dp = dp->chain)
+		    dp->value[NL_OFFS] += -o + DPOFF2;
+	    return (-o + DPOFF2);
+#	endif OBJ
+#	ifdef PC
+	    return roundup( o , (long)A_STACK );
+#	endif PC
 }
