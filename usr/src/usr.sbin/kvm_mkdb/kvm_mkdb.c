@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,6 @@ static char sccsid[] = "@(#)kvm_mkdb.c	5.4 (Berkeley) %G%";
 char *tmp;
 #define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
 #define USAGE	"kvm_mkdb"
-extern errno;
 
 char *progname;
 
@@ -182,7 +181,7 @@ create_knlist(name, db)
 			 * store the value of version in VERSION
 			 */
 			datum vers;
-			char versbuf[LINE_MAX];
+			char versbuf[_BSD_LINE_MAX];
 			long versoff;
 			long reloffset;
 
@@ -212,7 +211,7 @@ create_knlist(name, db)
 			 * Just read version string up to, and
 			 * including newline.
 			 */
-			if (fgets(versbuf, LINE_MAX, fstr) == NULL)
+			if (fgets(versbuf, _BSD_LINE_MAX, fstr) == NULL)
 				syserrexit("can't read version");
 			strcpy(sbuf+1, "VERSION");
 			key.dsize = (sizeof ("VERSION") - 1) + 1;
