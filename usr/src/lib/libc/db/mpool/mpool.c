@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mpool.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mpool.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -76,6 +76,8 @@ mpool_open(key, fd, pagesize, maxcache)
 	mp->pagesize = pagesize;
 	mp->npages = sb.st_size / pagesize;
 	mp->fd = fd;
+	mp->pgcookie = NULL;
+	mp->pgin = mp->pgout = NULL;
 
 #ifdef STATISTICS
 	mp->cachehit = mp->cachemiss = mp->pagealloc = mp->pageflush = 
