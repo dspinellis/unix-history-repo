@@ -1,13 +1,15 @@
-/* sbrk.s 4.1 82/12/04 */
+/* sbrk.s 4.2 83/07/26 */
 
 #include "SYS.h"
 
 #define	SYS_brk		17
 
 	.globl	_end
+	.globl	minbrk
 	.globl	curbrk
 
 	.data
+minbrk: .long	_end
 curbrk:	.long	_end
 	.text
 
