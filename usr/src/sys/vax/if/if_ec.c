@@ -1,4 +1,4 @@
-/*	if_ec.c	4.17	82/06/17	*/
+/*	if_ec.c	4.18	82/06/17	*/
 
 #include "ec.h"
 
@@ -209,8 +209,7 @@ ecinit(unit)
 	int i, s;
 
 	/*
-	 * Hang receive buffers and start any pending
-	 * writes by faking a transmit complete.
+	 * Hang receive buffers and start any pending writes.
 	 * Writing into the rcr also makes sure the memory
 	 * is turned on.
 	 */
@@ -218,9 +217,11 @@ ecinit(unit)
 	s = splimp();
 	for (i=ECRHBF; i>=ECRLBF; i--)
 		addr->ec_rcr = EC_READ|i;
-	es->es_oactive = 1;
+	es->es_oactive = 0;
+	es->es_mask = ~0;
 	es->es_if.if_flags |= IFF_UP;
-	ecxint(unit);
+	if (es->es_if.if_snd.ifq_head)
+		ecstart(unit);
 	splx(s);
 	if_rtinit(&es->es_if, RTF_UP);
 }
