@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vdreg.h	7.3 (Berkeley) %G%
+ *	@(#)vdreg.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -337,6 +337,7 @@ struct skdcb {
 #define	VDOP_CONFIG	0xe00		/* reset & configure drive */
 #define	VDOP_STATUS	0xf00		/* get drive status */
 #define	VDOP_IDENT	0x700		/* identify controller */
+#define	VDOP_PROBE	0x500		/* probe drives and update status */
 
 #define	VDOP_ABORT	0x80000000	/* abort current command */
 
