@@ -35,6 +35,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)icu.s	7.2 (Berkeley) 5/21/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00064
+ * --------------------         -----   ----------------------
+ * 
+ * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
+ *					on 32bit boundaries.
  */
 
 /*
@@ -43,6 +51,7 @@
  */
 
 	.data
+	ALIGN32
 	.globl	_imen
 	.globl	_cpl
 _cpl:	.long	0xffff			# current priority level (all off)
@@ -62,6 +71,7 @@ _isa_intr:	.space	16*4
 /*
  * Handle return from interrupt after device handler finishes
  */
+	ALIGN32
 doreti:
 	cli
 	popl	%ebx			# remove intr number
@@ -89,6 +99,7 @@ doreti:
 	addl	$8,%esp
 	iret
 
+	ALIGN32
 1:	cmpl	$0,_netisr		# check for softint s/traps
 	jne	1f
 	cmpl	$0,_want_resched
@@ -102,6 +113,7 @@ doreti:
 	
 #include "../net/netisr.h"
 
+	ALIGN32
 1:
 
 #define DONET(s, c)	; \
@@ -171,6 +183,7 @@ doreti:
 
 	.globl	_splhigh
 	.globl	_splclock
+	ALIGN32
 _splhigh:
 _splclock:
 	cli				# disable interrupts
@@ -190,6 +203,7 @@ _splclock:
 	ret
 
 	.globl	_spltty			# block clists
+	ALIGN32
 _spltty:
 	cli				# disable interrupts
 	NOP
@@ -210,6 +224,7 @@ _spltty:
 
 	.globl	_splimp
 	.globl	_splnet
+	ALIGN32
 _splimp:
 _splnet:
 	cli				# disable interrupts
@@ -230,6 +245,7 @@ _splnet:
 	ret
 
 	.globl	_splbio	
+	ALIGN32
 _splbio:
 	cli				# disable interrupts
 	NOP
@@ -249,6 +265,7 @@ _splbio:
 	ret
 
 	.globl	_splsoftclock
+	ALIGN32
 _splsoftclock:
 	cli				# disable interrupts
 	NOP
@@ -269,6 +286,7 @@ _splsoftclock:
 
 	.globl _splnone
 	.globl _spl0
+	ALIGN32
 _splnone:
 _spl0:
 	cli				# disable interrupts
@@ -307,6 +325,7 @@ _spl0:
 	ret
 
 	.globl _splx
+	ALIGN32
 _splx:
 	cli				# disable interrupts
 	NOP
