@@ -1,10 +1,12 @@
-/*	ts.c	4.11	81/04/15	*/
+/*	ts.c	4.12	81/05/03	*/
 
 #include "ts.h"
 #include "te.h"
 #if NTS > 0
+#if TSDEBUG
 #define printd if(tsdebug)printf
 int tsdebug;
+#endif
 /*
  * TS11 tape driver
  *
@@ -192,12 +194,18 @@ tsopen(dev, flag)
 	}
 	if (tsinit(tsunit)) {
 		u.u_error = ENXIO;
+#ifdef TSDEBUG
 		printd("init failed\n");
+#endif
 		return;
 	}
+#ifdef TSDEBUG
 	printd("init ok\n");
+#endif
 	tscommand(dev, TS_SENSE, 1);
+#ifdef TSDEBUG
 	printd("sense xs0 %o\n", sc->sc_sts.s_xs0);
+#endif
 	if ((sc->sc_sts.s_xs0&TS_ONL) == 0 || ((flag&(FREAD|FWRITE)) ==
 	    FWRITE && (sc->sc_sts.s_xs0&TS_WLK))) {
 		/*
@@ -326,7 +334,9 @@ tscommand(dev, com, count)
 	}
 	bp->b_flags = B_BUSY|B_READ;
 	(void) spl0();
+#ifdef TSDEBUG
 	printd("command %o dev %x count %d\n", com, dev, count);
+#endif
 	bp->b_dev = dev;
 	bp->b_repcnt = count;
 	bp->b_command = com;
@@ -421,7 +431,9 @@ loop:
 		um->um_tab.b_active =
 		    bp->b_command == TS_REW ? SREW : SCOM;
 		tc->c_repcnt = bp->b_repcnt;
+#ifdef TSDEBUG
 		printd("strat: do cmd\n");
+#endif
 		goto dobpcmd;
 	}
 	/*
@@ -468,7 +480,9 @@ loop:
 			cmd |= TS_RETRY;
 		um->um_tab.b_active = SIO;
 		tc->c_cmd = TS_ACK | TS_CVC | TS_IE | cmd;
+#ifdef TSDEBUG
 		printd("r/w %o size %d\n", tc->c_cmd, tc->c_size);
+#endif
 		(void) ubago(ui);
 		return;
 	}
@@ -478,7 +492,9 @@ loop:
 	 * This happens for raw tapes only on error retries.
 	 */
 	um->um_tab.b_active = SSEEK;
+#ifdef TSDEBUG
 	printd("seek blkno %d b_blkno %d\n", blkno, bp->b_blkno);
+#endif
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		bp->b_command = TS_SFORW;
 		tc->c_repcnt = dbtofsb(bp->b_blkno) - blkno;
@@ -521,7 +537,9 @@ tsdgo(um)
 	register int i;
 
 	i = um->um_ubinfo & 0777777;
+#ifdef TSDEBUG
 	printd("dgo addr %o\n", i);
+#endif
 	sc->sc_cmd.c_loba = i;
 	sc->sc_cmd.c_hiba = (i>>16)&3;
 	addr->tsdb = sc->sc_uba;
@@ -541,7 +559,9 @@ tsintr(ts11)
 	int tsunit;
 	register state;
 
+#ifdef TSDEBUG
 	printd("intr\n");
+#endif
 	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
 		return;
 	tsunit = TSUNIT(bp->b_dev);
@@ -560,7 +580,9 @@ tsintr(ts11)
 	/*
 	 * An operation completed... record status
 	 */
+#ifdef TSDEBUG
 	printd("  ok1\n");
+#endif
 	sc = &ts_softc[tsunit];
 	if ((bp->b_flags & B_READ) == 0)
 		sc->sc_lastiow = 1;
@@ -633,8 +655,15 @@ tsintr(ts11)
 		/*
 		 * Couldn't recover error
 		 */
-		printf("ts%d: hard error bn%d xs0=%b\n", TSUNIT(bp->b_dev),
+		printf("ts%d: hard error bn%d xs0=%b", TSUNIT(bp->b_dev),
 		    bp->b_blkno, sc->sc_sts.s_xs0, TSXS0_BITS);
+		if (sc->sc_sts.s_xs1)
+			printf(" xs1=%b", sc->sc_sts.s_xs1, TSXS1_BITS);
+		if (sc->sc_sts.s_xs2)
+			printf(" xs2=%b", sc->sc_sts.s_xs2, TSXS2_BITS);
+		if (sc->sc_sts.s_xs3)
+			printf(" xs3=%b", sc->sc_sts.s_xs3, TSXS3_BITS);
+		printf("\n");
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
@@ -684,7 +713,9 @@ opdone:
 	um->um_tab.b_actf->b_actf = bp->av_forw;
 	bp->b_resid = sc->sc_sts.s_rbpcr;
 	ubadone(um);
+#ifdef TSDEBUG
 	printd("  iodone\n");
+#endif
 	iodone(bp);
 	if (um->um_tab.b_actf->b_actf == 0)
 		return;
@@ -809,6 +840,9 @@ tsioctl(dev, cmd, addr, flag)
 			fcount = 1;
 			break;
 		case MTFSF: case MTBSF:
+			callcount = mtop.mt_count;
+			fcount = INF;
+			break;
 		case MTFSR: case MTBSR:
 			callcount = 1;
 			fcount = mtop.mt_count;
