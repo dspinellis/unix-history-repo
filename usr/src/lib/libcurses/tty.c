@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -167,9 +167,6 @@ endwin()
 	(void)fflush(stdout);
 	(void)setvbuf(stdout, NULL, _IOLBF, 0);
 
-	__echoit = __orig_termios.c_lflag & ECHO;
-	__rawmode = __orig_termios.c_lflag & ICANON;
-	__pfast = __orig_termios.c_iflag & ICRNL ? __rawmode : 1;
 	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &__orig_termios));
 }
 
