@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.23.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)rsh.c	5.23.1.1 (Berkeley) %G%";
 
 CREDENTIALS cred;
 Key_schedule schedule;
-int use_kerberos = 1, encrypt;
+int use_kerberos = 1, doencrypt;
 char dst_realm_buf[REALM_SZ], *dest_realm;
 extern char *krb_realmofhost();
 #endif
@@ -88,7 +88,11 @@ main(argc, argv)
 	}
 
 #ifdef KERBEROS
+#ifdef CRYPT
+#define	OPTIONS	"8KLdek:l:nwx"
+#else
 #define	OPTIONS	"8KLdek:l:nw"
+#endif
 #else
 #define	OPTIONS	"8KLdel:nw"
 #endif
@@ -120,6 +124,12 @@ main(argc, argv)
 			nflag = 1;
 			break;
 #ifdef KERBEROS
+#ifdef CRYPT
+		case 'x':
+			doencrypt = 1;
+			des_set_key(cred.session, schedule);
+			break;
+#endif
 #endif
 		case '?':
 		default:
@@ -151,6 +161,11 @@ main(argc, argv)
 		user = pw->pw_name;
 
 #ifdef KERBEROS
+#ifdef CRYPT
+	/* -x turns off -n */
+	if (doencrypt)
+		nflag = 0;
+#endif
 #endif
 
 	args = copyargs(argv);
@@ -158,11 +173,11 @@ main(argc, argv)
 	sp = NULL;
 #ifdef KERBEROS
 	if (use_kerberos) {
-		sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
+		sp = getservbyname((doencrypt ? "ekshell" : "kshell"), "tcp");
 		if (sp == NULL) {
 			use_kerberos = 0;
 			warning("can't get entry for %s/tcp service",
-			    encrypt ? "ekshell" : "kshell");
+			    doencrypt ? "ekshell" : "kshell");
 		}
 	}
 #endif
@@ -181,6 +196,12 @@ try_connect:
 		if (dest_realm == NULL)
 			dest_realm = krb_realmofhost(host);
 
+#ifdef CRYPT
+		if (doencrypt)
+			rem = krcmd_mutual(&host, sp->s_port, user, args,
+			    &rfd2, dest_realm, &cred, schedule);
+		else
+#endif
 			rem = krcmd(&host, sp->s_port, user, args, &rfd2,
 			    dest_realm);
 		if (rem < 0) {
@@ -198,7 +219,7 @@ try_connect:
 			goto try_connect;
 		}
 	} else {
-		if (encrypt) {
+		if (doencrypt) {
 			(void)fprintf(stderr,
 			    "rsh: the -x flag requires Kerberos authentication.\n");
 			exit(1);
@@ -246,6 +267,9 @@ try_connect:
 	}
 
 #ifdef KERBEROS
+#ifdef CRYPT
+	if (!doencrypt)
+#endif
 #endif
 	{
 		(void)ioctl(rfd2, FIONBIO, &one);
@@ -289,6 +313,11 @@ rewrite:	rembits = 1 << rem;
 		if ((rembits & (1 << rem)) == 0)
 			goto rewrite;
 #ifdef KERBEROS
+#ifdef CRYPT
+		if (doencrypt)
+			wc = des_write(rem, bp, cc);
+		else
+#endif
 #endif
 			wc = write(rem, bp, cc);
 		if (wc < 0) {
@@ -321,6 +350,11 @@ done:
 		if (ready & (1 << rfd2)) {
 			errno = 0;
 #ifdef KERBEROS
+#ifdef CRYPT
+			if (doencrypt)
+				cc = des_read(rfd2, buf, sizeof buf);
+			else
+#endif
 #endif
 				cc = read(rfd2, buf, sizeof buf);
 			if (cc <= 0) {
@@ -332,6 +366,11 @@ done:
 		if (ready & (1 << rem)) {
 			errno = 0;
 #ifdef KERBEROS
+#ifdef CRYPT
+			if (doencrypt)
+				cc = des_read(rem, buf, sizeof buf);
+			else
+#endif
 #endif
 				cc = read(rem, buf, sizeof buf);
 			if (cc <= 0) {
@@ -348,6 +387,11 @@ sendsig(signo)
 	char signo;
 {
 #ifdef KERBEROS
+#ifdef CRYPT
+	if (doencrypt)
+		(void)des_write(rfd2, &signo, 1);
+	else
+#endif
 #endif
 		(void)write(rfd2, &signo, 1);
 }
@@ -398,7 +442,11 @@ usage()
 	(void)fprintf(stderr,
 	    "usage: rsh [-nd%s]%s[-l login] host [command]\n",
 #ifdef KERBEROS
+#ifdef CRYPT
+	    "x", " [-k realm] ");
+#else
 	    "", " [-k realm] ");
+#endif
 #else
 	    "", " ");
 #endif
