@@ -1,0 +1,11 @@
+overflowtext=,overflowoffset=1,compwidth=4
+ignores=msgid,message-id,received,via,color,quote,remember
+messagename:nocomponent
+From:
+Subject:
+Date:
+To:
+cc:
+extras:nocomponent
+:
+body:nocomponent,width=9999,overflowtext=,overflowoffset=0,noleftadjust
