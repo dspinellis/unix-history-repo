@@ -1,4 +1,4 @@
-/*	mem.c	1.1	85/07/21	*/
+/*	mem.c	1.2	86/01/05	*/
 
 /*
  * Memory special file
@@ -16,7 +16,7 @@
 #include "../h/cmap.h"
 #include "../h/uio.h"
 
-#include "../machine/mtpr.h"
+#include "../tahoe/mtpr.h"
 
 mmread(dev, uio)
 	dev_t dev;
@@ -64,7 +64,7 @@ mmrw(dev, uio, rw)
 				goto fault;
 			*(int *)mmap = v | PG_V |
 				(rw == UIO_READ ? PG_KR : PG_KW);
-			mtpr(vmmap, TBIS);
+			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
 			c = min(c, (u_int)(NBPG - ((int)iov->iov_base&PGOFSET)));

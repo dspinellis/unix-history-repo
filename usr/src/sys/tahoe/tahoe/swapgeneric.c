@@ -1,17 +1,17 @@
-/*	swapgeneric.c	1.1	85/07/21	*/
+/*	swapgeneric.c	1.2	86/01/05	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/systm.h"
-#include "../h/reboot.h"
+#include "param.h"
+#include "conf.h"
+#include "buf.h"
+#include "vm.h"
+#include "systm.h"
+#include "reboot.h"
 
-#include "../machine/cp.h"
-#include "../machine/mtpr.h"
-#include "../vba/vbavar.h"
+#include "../tahoe/cp.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoevba/vbavar.h"
 
 /*
  * Generic configuration;  all in one
@@ -35,6 +35,7 @@ struct	genericconf {
 	{ (caddr_t)&vddriver,	"fsd",	makedev(1, 0),	},
 	{ (caddr_t)&vddriver,	"smd",	makedev(1, 0),	},
 	{ (caddr_t)&vddriver,	"xfd",	makedev(1, 0),	},
+	{ (caddr_t)&vddriver,	"xsd",	makedev(1, 0),	},
 	{ 0 },
 };
 
@@ -66,7 +67,7 @@ gotit:
 		}
 		printf("bad/missing unit number\n");
 bad:
-		printf("use fsd%%d, smd%%d, or xfd%%d\n");
+		printf("use fsd%%d, smd%%d, xfd%%d, or xsd%%d\n");
 		goto retry;
 	}
 	unit = 0;
@@ -96,23 +97,23 @@ found:
 
 getchar()
 {
-	char	c;
+	char c;
 	int timo;
-	extern struct	cpdcb_i consin[];
-	extern struct	cphdr *lasthdr;
+	extern struct cpdcb_i consin[];
+	extern struct cphdr *lasthdr;
 #define cpin consin[CPCONS]
 
 	timo = 10000;
 	uncache((char *)&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit & CPTAKE)==0 && --timo )
-		uncache((char *)&lasthdr->cp_unit);
+	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
+		uncache(&lasthdr->cp_unit);
 	cpin.cp_hdr.cp_unit = CPCONS;	/* Resets done bit */
 	cpin.cp_hdr.cp_comm = CPREAD;
 	cpin.cp_hdr.cp_count = 1;
-	mtpr(&cpin, CPMDCB);
+	mtpr(CPMDCB, &cpin);
 	while ((cpin.cp_hdr.cp_unit & CPDONE) == 0) 
-		uncache (&cpin.cp_hdr.cp_unit);
-	uncache (&cpin.cpi_buf[0]);
+		uncache(&cpin.cp_hdr.cp_unit);
+	uncache(&cpin.cpi_buf[0]);
 	c = cpin.cpi_buf[0] & 0x7f;
 	lasthdr = (struct cphdr *)&cpin;
 	if (c == '\r')

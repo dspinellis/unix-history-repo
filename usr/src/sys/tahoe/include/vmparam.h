@@ -1,5 +1,4 @@
-/*	vmparam.h	1.3	5/25/85	*/
-/*	vmparam.h	6.1	83/07/29	*/
+/*	vmparam.h	1.2	86/01/05	*/
 
 /*
  * Machine dependent constants for TAHOE
@@ -11,28 +10,50 @@
  * beginning of the text and from the beginning of the P2 region to the
  * beginning of the stack respectively.
  */
-					/* number of ptes per page */
 #define	USRTEXT		0
-#define	USRSTACK	(0xC0000000-UPAGES*NBPG)
-					/* Start of user stack */
+#define	USRSTACK	(0xc0000000-UPAGES*NBPG) /* Start of user stack */
+#define	BTOPUSRSTACK	(0x300000 - UPAGES)	 /* btop(USRSTACK) */
 #define	P2PAGES		0x100000	/* number of pages in P2 region */
 #define	LOWPAGES	0
 #define	HIGHPAGES	UPAGES
 
 /*
- * Virtual memory related constants
+ * Virtual memory related constants, all in clicks
  */
-#define	SLOP	32
-#define	MAXTSIZ		(6*1024-SLOP)		/* max text size (clicks) */
-#define	MAXDSIZ		(19*2048-32-SLOP)	/* max data size (clicks) */
-#define	MAXSSIZ		(19*2048-32-SLOP)	/* max stack size (clicks) */
+#define	MAXTSIZ		(6*CLSIZE*1024)		/* max text size */
+#ifndef DFLDSIZ
+#define	DFLDSIZ		(6*1024*1024/NBPG)	/* initial data size limit */
+#endif
+#ifndef MAXDSIZ
+#define	MAXDSIZ		(19*1024*1024/NBPG)	/* max data size */
+#endif
+#ifndef	DFLSSIZ
+#define	DFLSSIZ		(512*1024/NBPG)		/* initial stack size limit */
+#endif
+#ifndef	MAXSSIZ
+#define	MAXSSIZ		MAXDSIZ			/* max stack size */
+#endif
+
+/*
+ * Default sizes of swap allocation chunks (see dmap.h).
+ * The actual values may be changed in vminit() based on MAXDSIZ.
+ * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
+ */
+#define	DMMIN	32			/* smallest swap allocation */
+#define	DMMAX	4096			/* largest potential swap allocation */
+#define	DMTEXT	1024			/* swap allocation for text */
 
 /*
  * Sizes of the system and user portions of the system page table.
  */
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
-#define	SYSPTSIZE	((30+MAXUSERS)*NPTEPG/4)
-#define	USRPTSIZE 	(2*NPTEPG)
+#ifdef notdef
+#define	SYSPTSIZE	((20+MAXUSERS)*NPTEPG)
+#define	USRPTSIZE 	(32*NPTEPG)
+#else
+#define	SYSPTSIZE	((128*NPTEPG/2)+(MAXUSERS*NPTEPG/16))
+#define	USRPTSIZE 	(4*NPTEPG)
+#endif
 
 /*
  * The size of the clock loop.
@@ -63,7 +84,7 @@
  * that we don't consider it worthwhile and swap it out to disk which costs
  * $30/mb or about $0.75.
  */
-#define	SAFERSS		16		/* nominal ``small'' resident set size
+#define	SAFERSS		32		/* nominal ``small'' resident set size
 					   protected against replacement */
 
 /*
@@ -96,16 +117,31 @@
 
 /*
  * Paging thresholds (see vm_sched.c).
- * Strategy of 4/22/81:
- *	lotsfree is 1/4 of memory free.
+ * Strategy of 1/19/85:
+ *	lotsfree is 512k bytes, but at most 1/4 of memory
  *	desfree is 200k bytes, but at most 1/8 of memory
  *	minfree is 64k bytes, but at most 1/2 of desfree
  */
+#define	LOTSFREE	(512 * 1024)
 #define	LOTSFREEFRACT	4
 #define	DESFREE		(200 * 1024)
 #define	DESFREEFRACT	8
 #define	MINFREE		(64 * 1024)
 #define	MINFREEFRACT	2
+
+/*
+ * There are two clock hands, initially separated by HANDSPREAD bytes
+ * (but at most all of user memory).  The amount of time to reclaim
+ * a page once the pageout process examines it increases with this
+ * distance and decreases as the scan rate rises.
+ */
+#define	HANDSPREAD	(2 * 1024 * 1024)
+
+/*
+ * The number of times per second to recompute the desired paging rate
+ * and poke the pagedaemon.
+ */
+#define	RATETOSCHEDPAGING	4
 
 /*
  * Believed threshold (in megabytes) for which interleaved
@@ -117,7 +153,14 @@
  * BEWARE THIS DEFINITION WORKS ONLY WITH COUNT OF 1
  */
 #define	mapin(pte, v, pfnum, count, prot) \
-	(*(int *)(pte) = (pfnum) | (prot), mtpr(ptob(v), TBIS))
+	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, ptob(v)))
+
+/*
+ * Invalidate a cluster (optimized here for standard CLSIZE).
+ */
+#if CLSIZE == 1
+#define	tbiscl(v)	mtpr(TBIS, ptob(v))
+#endif
 
 /* 
  * The following constant is used to initialize the map of the
@@ -125,10 +168,9 @@
  * It's value should be the highest i/o address used by all the 
  * controllers handled in the system as specified in ubminit 
  * structure in ioconf.c.
-*/
-#define MAXIOADDR 0xffffee45	/* highest physical io address */
-
-/* Number of entries in the system page pable for i/o space */
-#define IOSIZE	(( (MAXIOADDR - IOBASE+ NBPG -1) >> PGSHIFT )+1)
-#define TBUFSIZ	10		/* maximum tape buffer size */
-#define	ACEBPTE	32		/* ACC Ethernet (ACE) I/O window	*/
+ */
+#define MAXIOADDR	0xffffee45
+/* number of entries in the system page pable for i/o space */
+#define IOSIZE		(((MAXIOADDR - (int)IOBASE+ NBPG-1) >> PGSHIFT)+1)
+#define TBUFSIZ		32		/* maximum tape buffer size */
+#define	ACEBPTE		32		/* ACC Ethernet (ACE) I/O window */

@@ -1,18 +1,19 @@
-/*	vm_machdep.c	1.1	85/07/21	*/
+/*	vm_machdep.c	1.2	86/01/05	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/cmap.h"
-#include "../h/mount.h"
-#include "../h/vm.h"
-#include "../h/text.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "cmap.h"
+#include "mount.h"
+#include "vm.h"
+#include "text.h"
+#include "kernel.h"
 
-#include "../machine/mtpr.h"
+#include "../tahoe/mtpr.h"
 
 /*
  * Set a red zone in the kernel stack after the u. area.
@@ -26,7 +27,7 @@ setredzone(pte, vaddr)
 	*(int *)pte &= ~PG_PROT;
 	*(int *)pte |= PG_URKR;
 	if (vaddr)
-		mtpr(vaddr + sizeof (struct user) + NBPG - 1, TBIS);
+		mtpr(TBIS, vaddr + sizeof (struct user) + NBPG - 1);
 }
 
 #ifndef mapin
@@ -38,7 +39,7 @@ mapin(pte, v, pfnum, count, prot)
 
 	while (count > 0) {
 		*(int *)pte++ = pfnum | prot;
-		mtpr(ptob(v), TBIS);
+		mtpr(TBIS, ptob(v));
 		v++;
 		pfnum++;
 		count--;
@@ -60,38 +61,15 @@ mapout(pte, size)
 /*
  * Check for valid program size
  */
-chksize(ts, ds, ss)
-	register unsigned ts, ds, ss;
+chksize(ts, ids, uds, ss)
+	register unsigned ts, ids, uds, ss;
 {
-	static int maxdmap = 0;
 
-	if (ts > MAXTSIZ || ds > MAXDSIZ || ss > MAXSSIZ) {
-		u.u_error = ENOMEM;
-		return (1);
-	}
-	/* check for swap map overflow */
-	if (maxdmap == 0) {
-		register int i, blk;
-
-		blk = dmmin;
-		for (i = 0; i < NDMAP; i++) {
-			maxdmap += blk;
-			if (blk < dmmax)
-				blk *= 2;
-		}
-	}
-	if (ctod(ts) > NXDAD * dmtext ||
-	    ctod(ds) > maxdmap || ctod(ss) > maxdmap) {
-		u.u_error = ENOMEM;
-		return (1);
-	}
-	/*
-	 * Make sure the process isn't bigger than our
-	 * virtual memory limit.
-	 *
-	 * THERE SHOULD BE A CONSTANT FOR THIS.
-	 */
-	if (ts + ds + ss + LOWPAGES + HIGHPAGES > btoc(USRSTACK)) {
+	if (ts > maxtsize ||
+	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
 		u.u_error = ENOMEM;
 		return (1);
 	}
@@ -110,11 +88,11 @@ newptes(pte, v, size)
 	pte = pte;
 #endif
 	if (size >= 8) {
-		mtpr(0, TBIA);
+		mtpr(TBIA, 0);
 		return;
 	}
 	while (size > 0) {
-		mtpr(a, TBIS);
+		mtpr(TBIS, a);
 		a += NBPG;
 		size--;
 	}
@@ -164,13 +142,13 @@ settprot(tprot)
 		ptaddr[i] &= ~PG_PROT;
 		ptaddr[i] |= tprot;
 	}
-	mtpr(0, TBIA);
+	mtpr(TBIA, 0);
 }
 
+#ifdef notdef
 /*
  * Rest are machine-dependent
  */
-
 getmemc(addr)
 	caddr_t addr;
 {
@@ -179,11 +157,11 @@ getmemc(addr)
 
 	savemap = mmap[0];
 	*(int *)mmap = PG_V | PG_KR | btop(addr);
-	mtpr(vmmap, TBIS);
-	uncache (&vmmap[(int)addr & PGOFSET]);
+	mtpr(TBIS, vmmap);
+	uncache(&vmmap[(int)addr & PGOFSET]);
 	c = *(char *)&vmmap[(int)addr & PGOFSET];
 	mmap[0] = savemap;
-	mtpr(vmmap, TBIS);
+	mtpr(TBIS, vmmap);
 	return (c & 0377);
 }
 
@@ -194,15 +172,16 @@ putmemc(addr, val)
 
 	savemap = mmap[0];
 	*(int *)mmap = PG_V | PG_KW | btop(addr);
-	mtpr(vmmap, TBIS);
+	mtpr(TBIS, vmmap);
 	*(char *)&vmmap[(int)addr & PGOFSET] = val;
 
-	mtpr (0, PADC);
-	mtpr (0, PACC);
+	mtpr(PADC, 0);
+	mtpr(PACC, 0);
 
 	mmap[0] = savemap;
-	mtpr(vmmap, TBIS);
+	mtpr(TBIS, vmmap);
 }
+#endif
 
 /*
  * Move pages from one kernel virtual address to another.
@@ -222,114 +201,275 @@ pagemove(from, to, size)
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
-		mtpr(from, TBIS);
-		mtpr(to, TBIS);
-		mtpr(to, P1DC);		/* purge !! */
+		mtpr(TBIS, from);
+		mtpr(TBIS, to);
+		mtpr(P1DC, to);		/* purge !! */
 		from += NBPG;
 		to += NBPG;
 		size -= NBPG;
 	}
 }
 
-#ifndef GLOBKEY
-ckeyrelease(key)
-/* 
- * release code key
- */
-{
-	register int ipl,i,j ;
-	ipl = spl8();
-	if (--ckey_cnt[key-1] < 0 ) {
+#ifndef vtopte
 /*
-		panic ("Code key release");
-*/
-		printf("Ckey release, key=%d\n", key);
-		ckey_cnt[key-1] = 0;
-		splx(ipl);
-	}
-	splx(ipl);
-}
-
-
-dkeyrelease(key)
-/* 
- * release data key
+ * Convert a virtual page 
+ * number to a pte address.
  */
+/*VARARGS1*/
+struct pte *
+vtopte(p, v)
+	register struct proc *p;
 {
-	if (--dkey_cnt[key-1] != 0 ) panic ("Data key release");
-}
 
-
-int
-getcodekey()
-/* 
- * Get a code key
- */
-{
-	register int i, ipl, first;
-
-	first = 1;
-	ipl = spl8();
-retry:
-	for (i=0; i<255; i++) {
-		if ( (int)ckey_cache[i] == 0) {
-			ckey_cache[i] = 1;
-			ckey_cnt[i] = 1;
-			splx(ipl);
-			return (i+1);
-		};
-	}
-	if ( !first) {
-		splx(ipl);
-		panic ("Not enough code keys\n");
-	}
-	mtpr (0, PACC);
-	first = 0;
-	for (i=0; i<255; i++)
-		if ( ckey_cnt[i] > 0 ) ckey_cache[i] = 1;
-		else ckey_cache[i] = 0;
-	goto retry;
-}
-
-int
-getdatakey()
-/* 
- * Get a data key
- */
-{
-	register int i, ipl, first;
-	
-	first = 1;
-	ipl = spl8();
-retry:
-	for (i=0; i<255; i++)
-		if ( (int)dkey_cache[i] == 0) {
-			dkey_cache[i] = 1;
-			dkey_cnt[i] = 1;
-			splx(ipl);
-			return (i+1);
-		};
-	if ( !first) {
-		splx(ipl);
-		panic("Not enough data keys\n");
-	}
-	mtpr (0, PADC);
-	first = 0;
-	for (i=0; i<255; i++)
-		if ( dkey_cnt[i] > 0 ) dkey_cache[i] = 1;
-		else dkey_cache[i] = 0;
-	goto retry;
+	if ((v & 0x300000) == 0x300000)
+		return (struct pte *)(mfpr(SBR) + 0xc0000000 + (v&0xfffff)*4);
+	if (p == 0)
+		panic("vtopte (no proc)");
+	if (v < p->p_tsize + p->p_dsize)
+		return (p->p_p0br + v);
+	return (p->p_p0br + (p->p_szpt*NPTEPG + v - (BTOPUSRSTACK + UPAGES)));
 }
 #endif
 
-/* General (includes system) virtual address to physical */
-vtoph(p, v)
-register struct proc *p;
-register unsigned v;
-{
-	register struct pte *thispte;
+/*
+ * Code and data key management routines.
+ *
+ * The arrays ckey_cnt and ckey_cache are allways kept in such a way
+ * that the following invariant holds:
+ *	ckey_cnt > 0	=>'s	ckey_cache == 1
+ * meaning as long as a code key is used by at least one process, it's
+ * marked as being 'in the cache'. Of course, the following invariant
+ * also holds:
+ *	ckey_cache == 0	=>'s	ckey_cnt == 0
+ * which is just the reciprocal of the 1'st invariant.
+ * Equivalent invariants hold for the data key arrays.
+ */
 
-	thispte = vtopte (p, btop(v));
-	return ( (thispte->pg_pfnum << PGSHIFT) + (v & PGOFSET));
+/* 
+ * Release a code key.
+ */
+ckeyrelease(key)
+	int key;
+{
+	register int s;
+
+	s = spl8();
+	if (--ckey_cnt[key] < 0) {
+		printf("ckeyrelease: key = %d\n", key);
+		ckey_cnt[key] = 0;
+	}
+	splx(s);
 }
-		
+
+/* 
+ * Release a data key.
+ */
+dkeyrelease(key)
+	int key;
+{
+	register int s;
+
+	s = spl8();
+	if (--dkey_cnt[key] != 0) {
+		printf("dkeyrelease: key = %d\n", key);
+		dkey_cnt[key] = 0;
+	}
+	splx(s);	
+}
+
+struct	keystats {
+	long	ks_allocs;	/* number of keys allocated */
+	long	ks_free;	/* key allocated from free slot */
+	long	ks_norefs;	/* key marked in use, but refcnt 0 */
+	long	ks_taken;	/* key taken from single process */
+	long	ks_shared;	/* key taken from multiple processes */
+};
+struct	keystats ckeystats;
+struct	keystats dkeystats;
+
+/* 
+ * Get a code key.
+ */
+getcodekey()
+{
+	register int i, s, freekey, sharedkey;
+	register struct proc *p;
+
+	ckeystats.ks_allocs++;
+	s = spl8();
+	freekey = 0;
+	for (i = 1; i <= MAXCKEY; i++) {
+		if ((int)ckey_cache[i] == 0) {	/* free key, take it */
+			ckey_cache[i] = 1, ckey_cnt[i] = 1;
+			splx(s);
+			ckeystats.ks_free++;
+			return (i);
+		}
+		if (ckey_cnt[i] == 0) {		/* save for potential use */
+			if (freekey == 0)
+				freekey = i;
+		} else if (ckey_cnt[i] > 1 && i != MAXCKEY)
+			sharedkey = i;
+	}
+	/*
+	 * All code keys were marked as being in cache.
+	 * Moreover, we are assured that sharedkey has a meaningful value,
+	 * since we know that the init process and the shell are around
+	 * and they have shared text!
+	 */
+	/*
+	 * If a key was in the cache, but not in use, grab it.
+	 */
+	if (freekey != 0) {
+		/*
+		 * If we've run out of bonified free keys,
+		 * try and free up some other keys to avoid
+		 * future cache purges.
+		 */
+		for (i = 1; i <= MAXCKEY; i++)
+			if (ckey_cnt[i] == 0)
+				ckey_cache[i] = 0;
+		ckey_cnt[freekey] = 1, ckey_cache[freekey] = 1;
+		mtpr(PACC, 0);
+		splx(s);
+		ckeystats.ks_norefs++;
+		return (freekey);
+	}
+
+	/*
+	 * All keys are marked as in the cache and in use.
+	 *
+	 * Strip some process of their code key. First time,
+	 * 1) Try hard not to do that to kernel processes !!
+	 * 2) Try hard NOT to strip shared text processes of
+	 *    their (shared) key, because then they'll run
+	 *    with different keys from now on, i.e. less efficient
+	 *    cache utilization.
+	 */
+	for (p = proc; p < procNPROC; p++)
+		/*
+		 * Look for a meaningful key but not
+		 * used and not shared text.
+		 */
+		if (p->p_ckey && p->p_ckey != MAXCKEY &&
+		    ckey_cnt[p->p_ckey] < 2) {
+			i = p->p_ckey;
+			p->p_ckey = 0;
+			ckey_cnt[i] = 1, ckey_cache[i] = 1;
+			mtpr(PACC, 0);
+			splx(s);
+			ckeystats.ks_taken++;
+			return (i);
+		}
+
+	/*
+	 * Second time around!
+	 * Highly unlikely situation. It means that all keys are
+	 * allocated AND shared (i.e. we have at least 510 active
+	 * processes).
+	 * Strip some of them. We pick some key (known to be shared
+	 * by several processes) and strip the poor process group.
+	 * At least 2 processes will loose but we gain one key to be reused.
+	 * The way 'shared_key' was produced (above) virtually assures
+	 * us that this key isn't the 'init' group key (1) nor the
+	 * 'shell' group key (2 or 3). It's probably something like 254.
+	 * Could be more straightforward to strip all processes, but it's
+	 * better to invest in one more loop here and keep the cache
+	 * utilization to a maximum.
+	 */
+	for (p = proc; p < procNPROC; p++)
+		if (p->p_ckey == sharedkey) {
+			p->p_ckey = 0;
+			ckey_cnt[sharedkey]--;
+		}
+	if (ckey_cnt[sharedkey] != 0) {
+		printf("getcodekey: key = %d cnt = %d\n",
+		    sharedkey, ckey_cnt[sharedkey]);
+		panic("getcodekey");
+	}
+	ckey_cnt[sharedkey] = 1, ckey_cache[sharedkey] = 1;
+	mtpr(PACC, 0);
+	splx(s);
+	ckeystats.ks_shared++;
+	return (sharedkey);
+}
+
+/* 
+ * Get a data key.
+ *
+ * General strategy:
+ * 1) Try to find a data key that isn't in the cache. Allocate it.
+ * 2) If all data keys are in the cache, find one which isn't
+ *    allocated. Clear all status and allocate this one.
+ * 3) If all of them are allocated, pick some process, strip him
+ *    of the data key and allocate it. We (cold-bloodedly) pick
+ *    one process to be the poor looser because that's the
+ *    easiest way to do it and because this extreme situation
+ *    ( >255 active processes ) is expected to be temporary,
+ *    after which 1) or 2) above should be the usual case.
+ * The poor looser is the first process which has a data key.
+ * However, we try to spare known kernel processes and daemons
+ * (fired at bootstrap time), by searching from proc[LOOSER] and on.
+ */
+getdatakey()
+{
+	register int i, s, freekey;
+	register struct proc *p;
+
+	dkeystats.ks_allocs++;
+	s = spl8();
+	freekey = 0;
+	for (i = 1; i <= MAXDKEY; i++) {
+		if ((int)dkey_cache[i] == 0) {	/* free key, take it */
+			dkey_cache[i] = 1, dkey_cnt[i] = 1;
+			splx(s);
+			dkeystats.ks_free++;
+			return (i);
+		}
+		if (dkey_cnt[i] == 0 && freekey == 0)
+			freekey = i;
+	}
+	if (freekey) {
+		/*
+		 * Try and free up some more keys to avoid
+		 * future allocations causing a cache purge.
+		 */
+		for (i = 1; i < MAXDKEY; i++)
+			if (dkey_cnt[i] == 0)
+				dkey_cache[i] = 0;
+		dkey_cnt[freekey] = 1, dkey_cache[freekey] = 1;
+		mtpr(PADC, 0);
+		splx(s);
+		dkeystats.ks_norefs++;
+		return (freekey);
+	}
+
+	/*
+	 * Now, we have to take a code from someone.
+	 */
+#define LOOSER 20
+	for (p = &proc[LOOSER]; p < procNPROC; p++)
+		if (p->p_dkey != 0) {
+			i = p->p_dkey;
+			p->p_dkey = 0;
+			dkey_cnt[i] = 1;
+			dkey_cache[i] = 1;
+			mtpr(PADC, 0);
+			splx(s);
+			dkeystats.ks_taken++;
+			return (i);
+		}
+	panic("getdatakey");
+	/*NOTREACHED*/
+}
+
+/*VARGARGS1*/
+vtoph(p, v)
+	register struct proc *p;
+	register unsigned v;
+{
+	register struct pte *pte;
+
+	pte = vtopte(p, btop(v));
+	return ((pte->pg_pfnum << PGSHIFT) + (v & PGOFSET));
+}
