@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.3 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.4 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -12,7 +12,7 @@ addarc( parentp , childp , count )
     nltype	*childp;
     long	count;
 {
-    arctype		*malloc();
+    arctype		*calloc();
     arctype		*arcp;
 
 #   ifdef DEBUG
@@ -35,7 +35,7 @@ addarc( parentp , childp , count )
 	arcp -> arc_count += count;
 	return;
     }
-    arcp = malloc( sizeof *arcp );
+    arcp = calloc( 1 , sizeof *arcp );
     arcp -> arc_parentp = parentp;
     arcp -> arc_childp = childp;
     arcp -> arc_count = count;
