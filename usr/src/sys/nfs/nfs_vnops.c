@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.82 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.83 (Berkeley) %G%
  */
 
 /*
@@ -393,11 +393,11 @@ nfs_setattr(ap)
 	else
 		sp->sa_gid = txdr_unsigned(vap->va_gid);
 	sp->sa_size = txdr_unsigned(vap->va_size);
-	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec);
+	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.ts_sec);
 	sp->sa_atime.tv_usec = txdr_unsigned(vap->va_flags);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	if (vap->va_size != VNOVAL || vap->va_mtime.tv_sec != VNOVAL ||
-	    vap->va_atime.tv_sec != VNOVAL) {
+	if (vap->va_size != VNOVAL || vap->va_mtime.ts_sec != VNOVAL ||
+	    vap->va_atime.ts_sec != VNOVAL) {
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
 			if (vap->va_size == 0)
@@ -490,7 +490,7 @@ nfs_lookup(ap)
 					}
 				}
 			   } else if (!VOP_GETATTR(vdp, &vattr, cnp->cn_cred, cnp->cn_proc) &&
-			       vattr.va_ctime.tv_sec == VTONFS(vdp)->n_ctime) {
+			       vattr.va_ctime.ts_sec == VTONFS(vdp)->n_ctime) {
 				nfsstats.lookupcache_hits++;
 				if (cnp->cn_nameiop != LOOKUP &&
 				    (cnp->cn_flags&ISLASTCN))
@@ -598,7 +598,7 @@ nfsmout:
 	if ((cnp->cn_flags&MAKEENTRY) &&
 	    (cnp->cn_nameiop != DELETE || !(cnp->cn_flags&ISLASTCN))) {
 		if ((nmp->nm_flag & NFSMNT_NQNFS) == 0)
-			np->n_ctime = np->n_vattr.va_ctime.tv_sec;
+			np->n_ctime = np->n_vattr.va_ctime.ts_sec;
 		else if (nqlflag && reqtime > time.tv_sec) {
 			if (np->n_tnext) {
 				if (np->n_tnext == (struct nfsnode *)nmp)
@@ -778,7 +778,7 @@ nfs_writerpc(vp, uiop, cred)
 		nfsm_request(vp, NFSPROC_WRITE, uiop->uio_procp, cred);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		if (nmp->nm_flag & NFSMNT_MYWRITE)
-			VTONFS(vp)->n_mtime = VTONFS(vp)->n_vattr.va_mtime.tv_sec;
+			VTONFS(vp)->n_mtime = VTONFS(vp)->n_vattr.va_mtime.ts_sec;
 		else if ((nmp->nm_flag & NFSMNT_NQNFS) &&
 			 NQNFS_CKCACHABLE(vp, NQL_WRITE)) {
 			nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
@@ -1309,7 +1309,7 @@ nfs_readdir(ap)
 				return (0);
 			}
 		} else if (VOP_GETATTR(vp, &vattr, ap->a_cred, uio->uio_procp) == 0 &&
-			np->n_mtime == vattr.va_mtime.tv_sec) {
+			np->n_mtime == vattr.va_mtime.ts_sec) {
 			*eofflagp = 1;
 			nfsstats.direofcache_hits++;
 			return (0);
@@ -2168,10 +2168,16 @@ nfsspec_close(ap)
 		if (vp->v_usecount == 1 &&
 		    (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 			VATTR_NULL(&vattr);
-			if (np->n_flag & NACC)
-				vattr.va_atime = np->n_atim;
-			if (np->n_flag & NUPD)
-				vattr.va_mtime = np->n_mtim;
+			if (np->n_flag & NACC) {
+				vattr.va_atime.ts_sec = np->n_atim.tv_sec;
+				vattr.va_atime.ts_nsec =
+				    np->n_atim.tv_usec * 1000;
+			}
+			if (np->n_flag & NUPD) {
+				vattr.va_mtime.ts_sec = np->n_mtim.tv_sec;
+				vattr.va_mtime.ts_nsec =
+				    np->n_mtim.tv_usec * 1000;
+			}
 			(void)VOP_SETATTR(vp, &vattr, ap->a_cred, ap->a_p);
 		}
 	}
@@ -2239,10 +2245,16 @@ nfsfifo_close(ap)
 		if (vp->v_usecount == 1 &&
 		    (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 			VATTR_NULL(&vattr);
-			if (np->n_flag & NACC)
-				vattr.va_atime = np->n_atim;
-			if (np->n_flag & NUPD)
-				vattr.va_mtime = np->n_mtim;
+			if (np->n_flag & NACC) {
+				vattr.va_atime.ts_sec = np->n_atim.tv_sec;
+				vattr.va_atime.ts_nsec =
+				    np->n_atim.tv_usec * 1000;
+			}
+			if (np->n_flag & NUPD) {
+				vattr.va_mtime.ts_sec = np->n_mtim.tv_sec;
+				vattr.va_mtime.ts_nsec =
+				    np->n_mtim.tv_usec * 1000;
+			}
 			(void)VOP_SETATTR(vp, &vattr, ap->a_cred, ap->a_p);
 		}
 	}

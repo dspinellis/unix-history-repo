@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.94 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.95 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -262,6 +262,7 @@ ufs_setattr(ap)
 	register struct inode *ip = VTOI(vp);
 	register struct ucred *cred = ap->a_cred;
 	register struct proc *p = ap->a_p;
+	struct timeval atimeval, mtimeval;
 	int error;
 
 	/*
@@ -286,16 +287,20 @@ ufs_setattr(ap)
 			return (error);
 	}
 	ip = VTOI(vp);
-	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
+	if (vap->va_atime.ts_sec != VNOVAL || vap->va_mtime.ts_sec != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
 		    (error = suser(cred, &p->p_acflag)))
 			return (error);
-		if (vap->va_atime.tv_sec != VNOVAL)
+		if (vap->va_atime.ts_sec != VNOVAL)
 			ip->i_flag |= IACC;
-		if (vap->va_mtime.tv_sec != VNOVAL)
+		if (vap->va_mtime.ts_sec != VNOVAL)
 			ip->i_flag |= IUPD;
 		ip->i_flag |= ICHG;
-		if (error = VOP_UPDATE(vp, &vap->va_atime, &vap->va_mtime, 1))
+		atimeval.tv_sec = vap->va_atime.ts_sec;
+		atimeval.tv_usec = vap->va_atime.ts_nsec / 1000;
+		mtimeval.tv_sec = vap->va_mtime.ts_sec;
+		mtimeval.tv_usec = vap->va_mtime.ts_nsec / 1000;
+		if (error = VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
 			return (error);
 	}
 	error = 0;

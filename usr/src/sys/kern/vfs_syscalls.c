@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.84 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.85 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1461,8 +1461,10 @@ utimes(p, uap, retval)
 		goto out;
 	}
 	VATTR_NULL(&vattr);
-	vattr.va_atime.tv_sec = tv[0].tv_sec;
-	vattr.va_mtime.tv_sec = tv[1].tv_sec;
+	vattr.va_atime.ts_sec = tv[0].tv_sec;
+	vattr.va_atime.ts_nsec = tv[0].tv_usec * 1000;
+	vattr.va_mtime.ts_sec = tv[1].tv_sec;
+	vattr.va_mtime.ts_nsec = tv[1].tv_usec * 1000;
 	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
