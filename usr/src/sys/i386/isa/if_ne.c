@@ -3,7 +3,7 @@
 /*
  * NE2000 Ethernet driver
  * Copyright (C) 1990 W. Jolitz
- * @(#)if_ne.c	1.3 (Berkeley) %G%
+ * @(#)if_ne.c	1.4 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -240,7 +240,7 @@ neattach(dvp)
 	ifp->if_unit = unit;
 	ifp->if_name = nedriver.name ;
 	ifp->if_mtu = ETHERMTU;
-	printf (" physical address %s", ether_sprintf(ns->ns_addr)) ;
+	printf (" ethernet address %s", ether_sprintf(ns->ns_addr)) ;
 	ifp->if_flags = IFF_BROADCAST|IFF_NOTRAILERS;
 	ifp->if_init = neinit;
 	ifp->if_output = neoutput;
