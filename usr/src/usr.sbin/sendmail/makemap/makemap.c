@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -55,7 +55,7 @@ main(argc, argv)
 	bool notrunc = FALSE;
 	bool allowreplace = FALSE;
 	bool verbose = FALSE;
-	bool foldcase = FALSE;
+	bool foldcase = TRUE;
 	int exitstat;
 	int opt;
 	char *typename;
@@ -92,7 +92,7 @@ main(argc, argv)
 			break;
 
 		  case 'f':
-			foldcase = TRUE;
+			foldcase = FALSE;
 			break;
 
 		  case 'o':
