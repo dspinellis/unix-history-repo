@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -182,7 +182,7 @@ Dir_Init ()
 {
     dirSearchPath = Lst_Init (FALSE);
     openDirectories = Lst_Init (FALSE);
-    Hash_InitTable(&mtimes, 0, HASH_STRING_KEYS);
+    Hash_InitTable(&mtimes, 0);
     
     /*
      * Since the Path structure is placed on both openDirectories and
@@ -292,13 +292,13 @@ DirMatchFiles (pattern, p, expansions)
 	 * begins with a dot (note also that as a side effect of the hashing
 	 * scheme, .* won't match . or .. since they aren't hashed).
 	 */
-	if (Str_Match(entry->key.name, pattern) &&
-	    ((entry->key.name[0] != '.') ||
+	if (Str_Match(entry->name, pattern) &&
+	    ((entry->name[0] != '.') ||
 	     (pattern[0] == '.')))
 	{
 	    (void)Lst_AtEnd(expansions,
-			    (isDot ? strdup(entry->key.name) :
-			     str_concat(p->name, entry->key.name,
+			    (isDot ? strdup(entry->name) :
+			     str_concat(p->name, entry->name,
 					STR_ADDSLASH)));
 	}
     }
@@ -637,7 +637,7 @@ Dir_FindFile (name, path)
      * (fish.c) and what pmake finds (./fish.c).
      */
     if ((!hasSlash || (cp - name == 2 && *name == '.')) &&
-	(Hash_FindEntry (&dot->files, (Address)cp) != (Hash_Entry *)NULL)) {
+	(Hash_FindEntry (&dot->files, cp) != (Hash_Entry *)NULL)) {
 	    if (DEBUG(DIR)) {
 		printf("in '.'\n");
 	    }
@@ -667,7 +667,7 @@ Dir_FindFile (name, path)
 	if (DEBUG(DIR)) {
 	    printf("%s...", p->name);
 	}
-	if (Hash_FindEntry (&p->files, (Address)cp) != (Hash_Entry *)NULL) {
+	if (Hash_FindEntry (&p->files, cp) != (Hash_Entry *)NULL) {
 	    if (DEBUG(DIR)) {
 		printf("here...");
 	    }
@@ -849,7 +849,7 @@ Dir_FindFile (name, path)
 	p = (Path *) Lst_Datum (ln);
     }
     
-    if (Hash_FindEntry (&p->files, (Address)cp) != (Hash_Entry *)NULL) {
+    if (Hash_FindEntry (&p->files, cp) != (Hash_Entry *)NULL) {
 	return (strdup (name));
     } else {
 	return ((char *) NULL);
@@ -993,7 +993,7 @@ Dir_AddDir (path, name)
 	    p->name = strdup (name);
 	    p->hits = 0;
 	    p->refCount = 1;
-	    Hash_InitTable (&p->files, -1, HASH_STRING_KEYS);
+	    Hash_InitTable (&p->files, -1);
 	    
 	    /*
 	     * Skip the first two entries -- these will *always* be . and ..

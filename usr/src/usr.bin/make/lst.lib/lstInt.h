@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lstInt.h	5.3 (Berkeley) %G%
+ *	@(#)lstInt.h	5.4 (Berkeley) %G%
  */
 
 /*-
@@ -61,7 +61,7 @@ typedef struct	{
  * PAlloc (var, ptype) --
  *	Allocate a pointer-typedef structure 'ptype' into the variable 'var'
  */
-#define	PAlloc(var,ptype)	var = (ptype) Malloc (sizeof (*var))
+#define	PAlloc(var,ptype)	var = (ptype) malloc (sizeof (*var))
 
 /*
  * LstValid (l) --

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hash.h	5.3 (Berkeley) %G%
+ *	@(#)hash.h	5.4 (Berkeley) %G%
  */
 
 /* hash.h --
@@ -21,61 +21,26 @@
 #ifndef	_HASH
 #define	_HASH
 
-#include "list.h"
 /* 
  * The following defines one entry in the hash table.
  */
 
 typedef struct Hash_Entry {
-    List_Links	      links;		/* Used to link together all the
+    struct Hash_Entry *next;		/* Used to link together all the
     					 * entries associated with the same
 					 * bucket. */
     ClientData	      clientData;	/* Arbitrary piece of data associated
     					 * with key. */
-    union {
-	Address	 ptr;			/* One-word key value to identify
-					 * entry. */
-	int words[1];			/* N-word key value.  Note: the actual
-					 * size may be longer if necessary to
-					 * hold the entire key. */
-	char 	 name[4];		/* Text name of this entry.  Note: the
-					 * actual size may be longer if
-					 * necessary to hold the whole string.
-					 * This MUST be the last entry in the
-					 * structure!!! */
-    } key;
+    unsigned	      namehash;		/* hash value of key */
+    char	      name[1];		/* key string */
 } Hash_Entry;
 
-/* 
- * A hash table consists of an array of pointers to hash
- * lists.  Tables can be organized in either of three ways, depending
- * on the type of comparison keys:
- *
- *	Strings:	  these are NULL-terminated; their address
- *			  is passed to HashFind as a (char *).
- *	Single-word keys: these may be anything, but must be passed
- *			  to Hash_Find as an Address.
- *	Multi-word keys:  these may also be anything; their address
- *			  is passed to HashFind as an Address.
- *
- *	Single-word keys are fastest, but most restrictive.
- */
- 
-#define HASH_STRING_KEYS	0
-#define HASH_ONE_WORD_KEYS	1
-
 typedef struct Hash_Table {
-    List_Links 	*bucketPtr;	/* Pointer to array of List_Links, one
+    struct Hash_Entry **bucketPtr;/* Pointers to Hash_Entry, one
     				 * for each bucket in the table. */
     int 	size;		/* Actual size of array. */
     int 	numEntries;	/* Number of entries in the table. */
-    int 	downShift;	/* Shift count, used in hashing function. */
     int 	mask;		/* Used to select bits for hashing. */
-    int 	keyType;	/* Type of keys used in table:
-    				 * HASH_STRING_KEYS, HASH_ONE-WORD_KEYS,
-				 * or >1 menas keyType gives number of words
-				 * in keys.
-				 */
 } Hash_Table;
 
 /* 
@@ -87,7 +52,6 @@ typedef struct Hash_Search {
     Hash_Table  *tablePtr;	/* Table being searched. */
     int 	nextIndex;	/* Next bucket to check (after current). */
     Hash_Entry 	*hashEntryPtr;	/* Next entry to check in current bucket. */
-    List_Links	*hashList;	/* Hash chain currently being checked. */
 } Hash_Search;
 
 /*
@@ -103,7 +67,7 @@ typedef struct Hash_Search {
 
 /* 
  * Hash_SetValue(h, val); 
- *     HashEntry *h; 
+ *     Hash_Entry *h; 
  *     char *val; 
  */
 

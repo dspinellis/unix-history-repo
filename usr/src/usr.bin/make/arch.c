@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -417,7 +417,7 @@ ArchStatMember (archive, member, hash)
     if (ln != NILLNODE) {
 	ar = (Arch *) Lst_Datum (ln);
 
-	he = Hash_FindEntry (&ar->members, (Address) member);
+	he = Hash_FindEntry (&ar->members, member);
 
 	if (he != (Hash_Entry *) NULL) {
 	    return ((struct ar_hdr *) Hash_GetValue (he));
@@ -467,7 +467,7 @@ ArchStatMember (archive, member, hash)
 
     ar = (Arch *)emalloc (sizeof (Arch));
     ar->name = strdup (archive);
-    Hash_InitTable (&ar->members, -1, HASH_STRING_KEYS);
+    Hash_InitTable (&ar->members, -1);
     memName[AR_MAX_NAME_LEN] = '\0';
     
     while (fread ((char *)&arh, sizeof (struct ar_hdr), 1, arch) == 1) {
@@ -512,7 +512,7 @@ ArchStatMember (archive, member, hash)
      * Now that the archive has been read and cached, we can look into
      * the hash table to find the desired member's header.
      */
-    he = Hash_FindEntry (&ar->members, (Address) member);
+    he = Hash_FindEntry (&ar->members, member);
 
     if (he != (Hash_Entry *) NULL) {
 	return ((struct ar_hdr *) Hash_GetValue (he));
