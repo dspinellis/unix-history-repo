@@ -1,5 +1,5 @@
 /*
-char id_f_errlist[] = "@(#)f_errlist.c	1.2";
+char id_f_errlist[] = "@(#)f_errlist.c	1.3";
  *
  * f77 I/O error messages
  */
@@ -29,6 +29,7 @@ char *f_errlist[] =
 /* 120 */	"requires seek ability",
 /* 121 */	"illegal argument",
 /* 122 */	"negative repeat count",
+/* 123 */	"illegal operation for unit",
 };
 
 int f_nerr = (sizeof(f_errlist)/sizeof(char *));

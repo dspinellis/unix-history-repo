@@ -1,5 +1,5 @@
 /*
-char id_f_errno[] = "@(#)f_errno.h	1.4";
+char id_f_errno[] = "@(#)f_errno.h	1.5";
  *
  * f77 I/O error definitions
  */
@@ -34,5 +34,6 @@ extern int f_nerr;
 #define F_ERSEEK	120	/* requires seek ability */
 #define F_ERARG		121	/* illegal argument */
 #define F_ERNREP	122	/* negative repeat count */
+#define F_ERILLOP	123	/* illegal operation for channel or device */
 
 #define F_MAXERR	(f_nerr + F_ER)
