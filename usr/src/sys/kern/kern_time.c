@@ -1,4 +1,4 @@
-/*	kern_time.c	5.10	82/10/17	*/
+/*	kern_time.c	5.11	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -73,7 +73,7 @@ setthetime(tv)
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time.tv_sec;
 	s = spl7(); time = *tv; splx(s);
-	clockset();
+	resettodr();
 }
 
 /*
