@@ -1,4 +1,4 @@
-/*	tty.c	4.9	81/07/06	*/
+/*	tty.c	4.10	81/07/08	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -429,6 +429,8 @@ caddr_t addr;
 			/* fall into ... */
 
 		case NTTYDISC:
+			if (tp->t_local & LPENDIN)
+				ntypend(tp);
 			nread = tp->t_canq.c_cc;
 			if (tp->t_flags & (RAW|CBREAK))
 				nread += tp->t_rawq.c_cc;
