@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.14 (Berkeley) %G%
+ *	@(#)stdlib.h	5.15 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -93,7 +93,7 @@ void	*alloca __P((size_t));	/* built-in for gcc */
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
-int	 radixsort __P((const u_char **, int, const u_char *, u_char));
+int	 radixsort __P((const u_char **, int, const u_char *, u_int));
 long	 random __P((void));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));

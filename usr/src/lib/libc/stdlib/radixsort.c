@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -87,15 +87,11 @@ typedef struct _stack {
  * the number of bytes in the strings.
  */
 int
-#if __STDC__
-radixsort(const u_char **l1, int nmemb, const u_char *tab, u_char endbyte)
-#else
 radixsort(l1, nmemb, tab, endbyte)
 	const u_char **l1;
 	register int nmemb;
 	const u_char *tab;
-	u_char endbyte;
-#endif
+	u_int endbyte;
 {
 	register int i, indx, t1, t2;
 	register const u_char **l2;
