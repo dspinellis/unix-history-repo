@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.9 83/05/30";
+static char sccsid[] = "@(#)main.c	4.10 84/03/12";
 #endif
 
 #include <sys/param.h>
@@ -98,7 +98,7 @@ main(argc, argv)
 	argc--, argv++;
   	while (argc > 0 && **argv == '-') {
 		for (cp = &argv[0][1]; *cp; cp++)
-		switch(argv[0][1]) {
+		switch(*cp) {
 
 		case 'A':
 			Aflag++;
