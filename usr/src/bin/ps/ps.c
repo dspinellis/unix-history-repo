@@ -87,10 +87,9 @@ struct var {
 	char	*header;	/* default header */
 	int	flag;
 #define	USER	0x01	/* requires user structure */
-#define	TEXT	0x02	/* requires text table */
-#define	LJUST	0x04	/* right adjust on output */
-#define	COMM	0x08	/* requires exec arguments and environment (XXX) */
-#define	NLIST	0x10	/* requires nlist to get extra variables */
+#define	LJUST	0x02	/* right adjust on output */
+#define	COMM	0x04	/* requires exec arguments and environment (XXX) */
+#define	NLIST	0x08	/* requires nlist to get extra variables */
 	int	(*oproc)();	/* output routine */
 	short	width;		/* printing width */
 	/*
@@ -110,7 +109,7 @@ struct var {
 		command, 16}, 
 	{{"ucomm"}, "COMMAND",	LJUST, ucomm, MAXCOMLEN},
 	{{"logname"}, "LOGNAME", LJUST, logname, MAXLOGNAME},
-	{{"flag"}, "F", 0, pvar, 7, POFF(p_flag), LONG, "x"},
+	{{"flag", "f"}, "F", 0, pvar, 7, POFF(p_flag), LONG, "x"},
 	{{"uid"}, "UID", 0, pvar, UIDLEN, POFF(p_uid),USHORT, UIDFMT},
 	{{"ruid"}, "RUID", 0, pvar, UIDLEN, POFF(p_ruid), USHORT, UIDFMT},
 	{{"svuid"}, "SVUID", 0, pvar, UIDLEN, POFF(p_svuid), USHORT, UIDFMT},
@@ -144,14 +143,14 @@ struct var {
 	{{"jobc"}, "JOBC", 0, evar, 4, EOFF(e_jobc), SHORT, "d"},
 	{{"sess", "session"}, "SESS", 0, evar, 6, EOFF(e_sess), KPTR, "x"},
 	{{"tdev", "dev"}, "TDEV", 0, tdev, 4},
-	{{"tname", "tty", "tt"}, "TT", LJUST, tname, 2},
+	{{"tname", "tty", "tt"}, "TT", LJUST, tname, 3},
 	{{"longtname", "longtty"}, "TT", LJUST, longtname, 8},
 	{{"tpgid"}, "TPGID", 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
 	{{"tsession", "tsess"}, "TSESS", 
 		0, evar, 6, EOFF(e_tsess), KPTR, "x"},
 	{{"paddr", "procaddr"}, "PADDR",
 		0, evar, 6, EOFF(e_paddr), KPTR, "x"},
-	{{"state", "stat"}, "STAT", 0, state, 3},
+	{{"state", "stat"}, "STAT", 0, state, 4},
 	{{"pri"}, "PRI", 0, pri, 3},
 	{{"usrpri"}, "UPR", 0, pvar, 3, POFF(p_usrpri), CHAR, "d"},
 	{{"nice", "ni"}, "NI", 0, pvar, 2, POFF(p_nice), CHAR, "d"}, 
@@ -161,7 +160,7 @@ struct var {
 	{{"u_procp", "uprocp"}, "UPROCP",
 		USER, uvar, 6, UOFF(u_procp), KPTR, "x"},
 	{{"umask", "u_cmask"}, "UMASK",
-		USER, uvar, 3, UOFF(u_cmask), CHAR, "o"},
+		USER, uvar, 3, UOFF(u_cmask), CHAR, "#o"},
 	{{"acflag", "acflg"}, "ACFLG",
 		USER, uvar, 3, UOFF(u_acflag), SHORT, "x"},
 	{{"start"}, "STARTED", USER|LJUST, started, 8},
@@ -219,15 +218,15 @@ struct combovar {
 		msgsnd msgrcv nsigs nvcsw nivcsw",
 	0, 0
 };
-#define DFMT	"pid tname stat cputime comm"
+#define DFMT	"pid tname state cputime comm"
 #define LFMT \
-	"flag uid pid ppid cp pri nice vsz rss wchan stat tname cputime comm"
-#define	JFMT	"user pid ppid pgid sess jobc stat tname cputime comm"
+	"uid pid ppid cp pri nice vsz rss wchan state tname cputime comm"
+#define	JFMT	"user pid ppid pgid sess jobc state tname cputime comm"
 #define	SFMT	"user pid cursig sig sigmask sigignore sigcatch tname comm"
 #define	VFMT \
-	"pid tt stat time sl re pagein vsz rss lim tsiz trs %cpu %mem comm"
+	"pid tt state time sl re pagein vsz rss lim tsiz trs %cpu %mem comm"
 #define UFMT \
-	"uname pid %cpu %mem vsz rss tt stat start time comm"
+	"uname pid %cpu %mem vsz rss tt state start time comm"
 
 struct kinfo {
 	struct proc *ki_p;	/* proc structure */
@@ -309,7 +308,7 @@ main (argc, argv)
 		case 'O':
 			parsefmt("pid");
 			parsefmt(optarg);
-			parsefmt("stat tt time command");
+			parsefmt("state tt time command");
 			fmt++;
 			break;
 		case 'w':
@@ -365,7 +364,7 @@ main (argc, argv)
 				strcpy(termname, tname);
 			if (stat(termname, &stbuf) == -1)
 				syserror(termname);
-			if ((stbuf.st_mode&S_IFMT) != S_IFCHR)
+			if ((stbuf.st_mode & S_IFMT) != S_IFCHR)
 				error("%s: not a terminal", termname);
 			ttydev = stbuf.st_rdev;
 			break;
@@ -652,9 +651,10 @@ state(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
-	char buf[6];
-	char *cp = buf;
-	struct proc *p = k->ki_p;
+	char buf[16];
+	register char *cp = buf;
+	register struct proc *p = k->ki_p;
+	register flag = p->p_flag;
 
 	switch (p->p_stat) {
 
@@ -663,18 +663,12 @@ state(k, v)
 		break;
 
 	case SSLEEP:
-		if (p->p_pri > PZERO)
-			if (p->p_slptime >= MAXSLP)
-				*cp = 'I';
-			else
-				*cp = 'S';
-		else if (p->p_flag & SPAGE)
-			*cp = 'P';
-		else
-			*cp = 'D';
+		if (flag & SSINTR)	/* interuptable (long) */
+			*cp = p->p_slptime >= MAXSLP ? 'I' : 'S';
+		else 
+			*cp = (flag & SPAGE) ? 'P' : 'D';
 		break;
 
-	case SWAIT:
 	case SRUN:
 	case SIDL:
 		*cp = 'R';
@@ -688,7 +682,7 @@ state(k, v)
 		*cp = '?';
 	}
 	cp++;
-	if (p->p_flag & SLOAD) {
+	if (flag & SLOAD) {
 		if (p->p_rssize > p->p_maxrss)
 			*cp++ = '>';
 	} else
@@ -697,11 +691,19 @@ state(k, v)
 		*cp++ = '<';
 	else if (p->p_nice > NZERO)
 		*cp++ = 'N';
-	if (p->p_flag & SUANOM)
+	if (flag & SUANOM)
 		*cp++ = 'A';
-	else if (p->p_flag & SSEQL)
+	else if (flag & SSEQL)
 		*cp++ = 'S';
-	if (p->p_flag&SCTTY && k->ki_e->e_tpgid == k->ki_e->e_pgid)
+	if (flag & STRC)
+		*cp++ = 'X';
+	if (flag & SWEXIT)
+		*cp++ = 'E';
+	if (flag & SVFORK)
+		*cp++ = 'V';
+	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
+		*cp++ = 'L';
+	if ((flag & SCTTY) && k->ki_e->e_pgid == k->ki_e->e_pgid)
 		*cp++ = '+';
 	*cp = '\0';
 	printf("%-*s", v->width, buf);
@@ -761,7 +763,8 @@ tname(k, v)
 	else {
 		if (strncmp(tname, "tty", 3) == 0)
 			tname += 3;
-		printf("%-*.*s", v->width, v->width, tname);
+		printf("%*.*s%c", v->width-1, v->width-1, tname,
+			k->ki_p->p_flag & SCTTY ? ' ' : '-');
 	}
 }
 
@@ -859,8 +862,8 @@ cputime(k, v)
 	if (k->ki_p->p_stat == SZOMB || k->ki_u == NULL)
 		secs = 0;
 	else {
-		secs = k->ki_u->u_ru.ru_utime.tv_sec + 
-			k->ki_u->u_ru.ru_stime.tv_sec;
+		secs = k->ki_p->p_utime.tv_sec + 
+			k->ki_p->p_stime.tv_sec;
 		if (sumrusage)
 			secs += k->ki_u->u_cru.ru_utime.tv_sec + 
 				k->ki_u->u_cru.ru_stime.tv_sec;
@@ -882,7 +885,7 @@ getpcpu(k)
 	struct proc *p = k->ki_p;
 #define	fxtofl(fixpt)	((double)(fixpt) / fscale)
 
-	if (p->p_time == 0 || (p->p_flag&SLOAD) == 0)
+	if (p->p_time == 0 || (p->p_flag & SLOAD) == 0)
 		return (0.0);
 	if (rawcpu)
 		return (100.0 * fxtofl(p->p_pctcpu));
@@ -914,7 +917,7 @@ getpmem(k, v)
 	 * gets set.
 	 */
 
-	if (p->p_flag&SLOAD == 0)
+	if (p->p_flag & SLOAD == 0)
 		return (0.0);
 	szptudot = UPAGES + clrnd(ctopt(p->p_dsize + p->p_ssize + e->e_xsize));
 	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/ecmx;
@@ -1037,14 +1040,14 @@ printval(bp, v)
 	char *bp;
 	struct var *v;
 {
-	static char ofmt[16] = "%";
-	char *cp = ofmt+1;
+	static char ofmt[32] = "%";
+	register char *cp = ofmt+1, *fcp = v->fmt;
 
 	if (v->flag & LJUST)
 		*cp++ = '-';
 	*cp++ = '*';
-	*cp++ = *v->fmt;
-	*cp++ = '\0';
+	while (*cp++ = *fcp++)
+		;
 
 	switch (v->type) {
 	case CHAR:
