@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	6.1 (Berkeley) %G%
+.\"	@(#)fsck.8	6.2 (Berkeley) %G%
 .\"
 .TH FSCK 8 ""
 .UC 4
@@ -49,9 +49,8 @@ Normally, the root file system will be checked on pass 1, other
 small file systems on separate passes (e.g. the ``d'' file systems
 on pass 3 and the ``e'' file systems on pass 4), and finally
 the large user file systems on the last pass, e.g. pass 5.
-A pass number of 0 in fstab causes a disk to not be checked; similarly
-partitions which are not shown as to be mounted ``rw'' or ``ro''
-are not checked.
+Only partitions in fstab that are mounted ``rw'' or ``rq''
+and that have non-zero pass number are checked.
 .PP
 The system takes care that only a restricted class of innocuous
 inconsistencies can happen unless hardware or software failures intervene.
@@ -71,7 +70,7 @@ Blocks in the free list also in files
 .IP
 Counts in the super-block wrong
 .PP
-These are the only inconsistencies which
+These are the only inconsistencies that
 .I fsck
 with the
 .B \-p
@@ -82,8 +81,16 @@ identifying the file system on which the correction will take place,
 and the nature of the correction.  After successfully correcting a file
 system,
 .I fsck
-will print the number of files on that file system and the number of
-used and free blocks.
+will print the number of files on that file system,
+the number of used and free blocks,
+and the percentage of fragmentation.
+.PP
+If sent a QUIT signal,
+.I fsck
+will finish the file system checks, then exit with an abnormal
+return status that causes the automatic reboot to fail.
+This is useful when you wish to finish the file system checks,
+but do not want the machine to come up multiuser.
 .PP
 Without the
 .B \-p
@@ -92,16 +99,15 @@ option,
 audits and interactively repairs inconsistent conditions for file systems. 
 If the file system is inconsistent the operator is prompted for concurrence
 before each correction is attempted.
-It should be noted that a number of the corrective actions which are not
-fixable under the
+It should be noted that some of the corrective actions which are not
+correctable under the
 .B \-p
-option will result in some loss
-of data.
+option will result in some loss of data.
 The amount and severity of data lost may be determined from the diagnostic
 output.
 The default action for each consistency correction
 is to wait for the operator to respond \fByes\fP or \fBno\fP.
-If the operator does not have write permission 
+If the operator does not have write permission on the file system
 .I fsck
 will default to a 
 .BR "\-n " action.
@@ -219,19 +225,11 @@ with the operator's concurrence, reconnected by
 placing them in the 
 .B lost+found
 directory.
-The name assigned is the inode number. The only restriction
-is that the directory 
-.B lost+found
-must preexist
-in the root of the filesystem being checked and
-must have empty slots in which entries can be made.
-This is accomplished by making 
-.BR lost+found ,
-copying a number of files to the directory, and then removing them
-(before
-.I
-fsck
-is executed).
+The name assigned is the inode number.
+If the
+.I lost+found
+directory does not exist, it is created.
+If there is insufficient space its size is increased.
 .PP
 Checking the raw device is almost always faster.
 .SH FILES
@@ -243,7 +241,8 @@ contains default list of file systems to check.
 .SH DIAGNOSTICS
 The diagnostics produced by 
 .I fsck
-are intended to be self-explanatory.
+are fully enumerated and explained in Appendix A of
+``Fsck \- The UNIX File System Check Program'' (SMM:5).
 .SH "SEE ALSO"
 fstab(5),
 fs(5),
@@ -252,10 +251,4 @@ mkfs(8),
 crash(8V),
 reboot(8)
 .SH BUGS
-Inode numbers for
-.BR . ""
-and
-.BR .. ""
-in each directory should be checked for validity.
-.PP
 There should be some way to start a \fBfsck \-p\fR at pass \fIn\fR.
