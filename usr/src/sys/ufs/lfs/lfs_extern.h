@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	8.4 (Berkeley) %G%
+ *	@(#)lfs_extern.h	8.5 (Berkeley) %G%
  */
 
 struct fid;
@@ -32,7 +32,7 @@ int	 lfs_getattr __P((struct vop_getattr_args *));
 struct dinode *
 	 lfs_ifind __P((struct lfs *, ino_t, struct dinode *));
 int	 lfs_inactive __P((struct vop_inactive_args *));
-int	 lfs_init __P((void));
+int	 lfs_init __P((struct vfsconf *));
 int	 lfs_initseg __P((struct lfs *));
 int	 lfs_link __P((struct vop_link_args *));
 int	 lfs_makeinode __P((int, struct nameidata *, struct inode **));
@@ -54,6 +54,8 @@ int	 lfs_segwrite __P((struct mount *, int));
 int	 lfs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	 lfs_symlink __P((struct vop_symlink_args *));
 int	 lfs_sync __P((struct mount *, int, struct ucred *, struct proc *));
+#define	 lfs_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
+                                    size_t, struct proc *)))eopnotsupp)
 int	 lfs_truncate __P((struct vop_truncate_args *));
 int	 lfs_unmount __P((struct mount *, int, struct proc *));
 int	 lfs_update __P((struct vop_update_args *));
@@ -71,6 +73,7 @@ void	lfs_dump_dinode __P((struct dinode *));
 void	lfs_dump_super __P((struct lfs *));
 #endif
 __END_DECLS
+extern int lfs_mount_type;
 extern int (**lfs_vnodeop_p)();
 extern int (**lfs_specop_p)();
 #ifdef FIFO
