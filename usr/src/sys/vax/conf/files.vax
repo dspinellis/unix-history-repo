@@ -51,5 +51,6 @@ vaxuba/uba.c		standard device-driver
 vaxuba/uda.c		optional ra device-driver
 vaxuba/up.c		optional up device-driver
 vaxuba/ut.c		optional tj device-driver
+vaxuba/uu.c		optional uu device-driver
 vaxuba/va.c		optional va device-driver
 vaxuba/vp.c		optional vp device-driver
