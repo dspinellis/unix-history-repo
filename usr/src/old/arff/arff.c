@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)arff.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)arff.c	4.3 (Berkeley) 81/03/22";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -28,6 +28,7 @@ struct rt_ent {
 #define RT_FILE 4
 #define RT_ESEG 8
 #define RT_BLOCK 512
+#define RT_DIRSIZE 31			/* max # of directory segments */
 struct rt_head {
 	short	rt_numseg;		/*number of segments available*/
 	short	rt_nxtseg;		/*segment no of next log. seg */
@@ -40,7 +41,7 @@ struct	rt_dir {
 	struct rt_ent	rt_ents[72];
 	char	_dirpad[6];
 };
-extern struct rt_dir	rt_dir;
+extern struct rt_dir	rt_dir[RT_DIRSIZE];
 extern int		rt_entsiz;
 extern int		floppydes;
 extern char		*rt_last;
@@ -60,10 +61,11 @@ char	*man	=	{ "rxtd" };
 char zeroes[512];
 extern char *val;
 extern char table[256];
-struct rt_dir	rt_dir = {{4,0,1,0,14},{0,RT_NULL,{0,0,0},494,0}, {0,RT_ESEG}};
+struct rt_dir	
+   rt_dir[RT_DIRSIZE] = {{4,0,1,0,14},{0,RT_NULL,{0,0,0},494,0}, {0,RT_ESEG}};
 int		rt_entsiz;
 int		rt_nleft;
-struct rt_ent	*rt_curend;
+struct rt_ent	*rt_curend[RT_DIRSIZE];
 int		floppydes;
 int		dirdirty;
 char		*rt_last;
@@ -220,19 +222,27 @@ mesg(c)
 tcmd()
 {
 	register char *de;
+	int segnum;
+	register char *last;
 	FLDOPE *lookup(), *dope;
 	int nleft; register i;
 	register struct rt_ent *rde;
 
 	rt_init();
 	if(namc==0)
-		for(de=((char *)&rt_dir)+10; de <= rt_last; de += rt_entsiz) {
+	    for (segnum=0; segnum != -1;    /* for all dir. segments */
+		 segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+		last = rt_last + segnum*2*RT_BLOCK;
+		for(de=((char *)&rt_dir[segnum])+10; de <= last; 
+		    de += rt_entsiz) {
 			if(rtls(rt(de))) {
-				nleft = (rt_last - de) / rt_entsiz;
-				printf("\n\n%d entries remaining.\n",nleft);
+				nleft = (last - de) / rt_entsiz;
+				printf("\n%d entries remaining",nleft);
+				printf(" in directory segment %d.\n",segnum+1);
 				break;
 			}
 		}
+	    }
 	else
 		for(i = 0; i < namc; i++) {
 			if(dope = lookup(namv[i])) {
@@ -289,15 +299,22 @@ register struct rt_ent *de;
 xcmd()
 {
 	register char *de;
+	int segnum;
+	register char *last;
 	char name[12];
 	register int i;
 
 	rt_init();
 	if(namc==0)
-		for(de=((char *)&rt_dir)+10; de <= rt_last; de += rt_entsiz) {
+	    for (segnum=0; segnum != -1;    /* for all dir. segments */
+		 segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+		last = rt_last + segnum*2*RT_BLOCK;
+		for(de=((char *)&rt_dir[segnum])+10; de <= last; 
+		    de += rt_entsiz) {
 			sunrad50(name,rt(de)->rt_name);
 			rtx(name);
 		}
+	    }
 
 	else
 		for(i = 0; i < namc; i++)
@@ -336,7 +353,9 @@ rt_init()
 {
 	static initized = 0;
 	register char *de;
-	int mode;
+	register i;
+	int mode, dirnum;
+	register char *last;
 
 	if(initized) return;
 	initized = 1;
@@ -346,17 +365,30 @@ rt_init()
 		mode = 0;
 	if((floppydes = open(defdev,mode)) < 0)
 		dbprintf("Floppy open failed\n");
-	if(flag('c')==0)
-		lread(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir);
-
-	rt_entsiz = 2*rt_dir.rt_axhead.rt_entpad + 14;
-	rt_entsiz = 14;
-	rt_last = ((char *) &rt_dir) + 10 + 1014/rt_entsiz*rt_entsiz;
-	for(de=((char *)&rt_dir)+10; de <= rt_last; de += rt_entsiz) {
-		if(rt(de)->rt_stat==RT_ESEG) break;
+	if(flag('c')==0) {
+		lread(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[0]);
+		dirnum = rt_dir[0].rt_axhead.rt_numseg;
+		if (dirnum > RT_DIRSIZE) {
+		   fprintf(stderr,"arff: too many directory segments\n");
+		   exit(1);
+		}
+		for (i=1; i<dirnum; i++)
+		   lread((6+2*i)*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[i]);
 	}
-	rt_curend = rt(de);
-	rt_nleft = (rt_last - de) / rt_entsiz;
+
+	rt_entsiz = 2*rt_dir[0].rt_axhead.rt_entpad + 14;
+	rt_entsiz = 14;			/* assume rt_entpad = 0 ??? */
+	rt_last = ((char *) &rt_dir[0]) + 10 + 1014/rt_entsiz*rt_entsiz; 
+	rt_nleft = 0;
+	
+	for (i=0; i<dirnum; i++) {
+  	    last = rt_last + i*2*RT_BLOCK;
+	    for(de=((char *)&rt_dir[i])+10; de <= last; de += rt_entsiz) {
+		if(rt(de)->rt_stat==RT_ESEG) break;
+	    }
+	    rt_curend[i] = rt(de);
+	    rt_nleft += (last - de) / rt_entsiz;
+	}
 }
 
 static FLDOPE result;
@@ -366,6 +398,8 @@ char * name;
 {
 	unsigned short rname[3];
 	register char *de;
+	int segnum;
+	register char *last;
 	register index;
 
 	srad50(name,rname);
@@ -374,11 +408,15 @@ char * name;
 	 *  Search for name, accumulate blocks in index
 	 */
 	rt_init();
-	index = 0;
-	for(de = ((char *) &rt_dir) + 10; de <= rt_last; de += rt_entsiz) {
+	for (segnum=0; segnum != -1;    /* for all dir. segments */
+             segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+	    index = 0;
+	    last = rt_last + segnum*2*RT_BLOCK;
+	    for(de=((char *)&rt_dir[segnum])+10; 
+		rt(de)->rt_stat != RT_ESEG; de += rt_entsiz) {
 		switch(rt(de)->rt_stat) {
 		case RT_ESEG:
-			return((FLDOPE *) 0);
+		        exit(1);
 		case RT_FILE:
 		case RT_TEMP:
 		if(samename(rname,rt(de)->rt_name))
@@ -386,10 +424,11 @@ char * name;
 		case RT_NULL:
 			index += rt(de)->rt_len;
 		}
-	}
+	    }
+        }
 	return((FLDOPE *) 0);
 found:	result.count = rt(de)->rt_len * 512;
-	result.startad = 512 * (rt_dir.rt_axhead.rt_stfile + index);
+	result.startad = 512 * (rt_dir[segnum].rt_axhead.rt_stfile + index);
 	result.rtdope = (struct rt_ent *) de;
 	return(&result);
 }
@@ -586,11 +625,13 @@ register char * obuff;
 rcmd()
 {
 	register int i;
+	int debug;
 
 	rt_init();
 	if(namc>0)
 		for(i = 0; i < namc; i++)
-			if(rtr(namv[i])==0) namv[i]=0;
+			if((debug = rtr(namv[i]))==0) namv[i]=0;
+			else printf("debug-rtr returns %d\n",debug);
 	
 	
 }
@@ -600,6 +641,8 @@ char *name;
 {
 	register FLDOPE *dope; register struct rt_ent *de;
 	struct stat buf; register struct stat *bufp = &buf;
+	int segnum;
+	register char *last;
 
 	if(stat(name,bufp)<0) return(1);
 	if(dope = lookup(name)) {
@@ -613,21 +656,26 @@ char *name;
 			return(1);
 		}
 	} else {
-		/* Search for vacant spot */
-		for(de = rt_dir.rt_ents; (char *) de <= rt_last; de++) {
+	    /* Search for vacant spot */
+	    for (segnum=0; segnum != -1;    /* for all dir. segments */
+		 segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+		last = rt_last + segnum*2*RT_BLOCK;
+		for(de = rt_dir[segnum].rt_ents;
+		    rt(de)->rt_stat != RT_ESEG; de++) {
 			switch((de)->rt_stat) {
 			case RT_NULL:
 				if(bufp->st_size <= (de->rt_len * 512)) {
 					printf("a - %s\n",name),
-					mkent(de,bufp,name);
+					mkent(de,segnum,bufp,name);
 					goto found;
 				}
 				continue;
 			case RT_ESEG:
-				return(3);
+				exit(1);  
 			}
 		}
-		return(5);
+	    }
+	    return(3);
 	}
 found:	if(dope=lookup(name)) {
 		toflop(name,bufp->st_size,dope);
@@ -636,8 +684,9 @@ found:	if(dope=lookup(name)) {
 	return(7);
 
 }
-mkent(de,bufp,name)
+mkent(de,segnum,bufp,name)
 register struct rt_ent *de;
+int segnum;
 register struct stat *bufp;
 char *name;
 {
@@ -648,18 +697,20 @@ char *name;
 						/* Make sure there is room */
 	if(de->rt_len==count)
 		goto overwrite;
-	if(rt_nleft==0) {
+	if(rt_curend[segnum] == (rt_last + (segnum*2*RT_BLOCK))) {
+						/* no entries left on segment */
 		if(flg['o'-'a'])
 			goto overwrite;
-		fprintf(stderr,"Directory full on  %s\n",defdev);
+		fprintf(stderr,"Directory segment #%d full on  %s\n",segnum+1,
+                    defdev);
 		exit(1);
 	}	
 					/* copy directory entries up */
-	for(workp = rt_curend+1; workp > de; workp--)
+	for(workp = rt_curend[segnum]+1; workp > de; workp--)
 		*workp = workp[-1];
 	de[1].rt_len -= count;
 	de->rt_len = count;
-	rt_curend++;
+	rt_curend[segnum]++;
 	rt_nleft--;
 overwrite:
 	srad50(name,de->rt_name);
@@ -671,7 +722,7 @@ overwrite:
 	de->rt_pad = 0;
 	de->rt_chan = 0;
 	de->rt_job = 0;
-	lwrite(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir);
+	lwrite((6+segnum*2)*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[segnum]);
 
 }
 
@@ -737,16 +788,23 @@ char *name;
 	return(1);
 }
 scrunch() {
-	register struct rt_ent *de = rt_dir.rt_ents, *workp;
-	for(de = rt_dir.rt_ents; de <= rt_curend; de++) {
+	register struct rt_ent *de , *workp;
+	register segnum;
+	for (segnum=0; segnum != -1;    /* for all dir. segments */
+	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+	    dirdirty = 0;
+	    for(de = rt_dir[segnum].rt_ents; de <= rt_curend[segnum]; de++) {
 		if(de->rt_stat==RT_NULL && de[1].rt_stat==RT_NULL) {
 			(de+1)->rt_len += de->rt_len;
-			for(workp = de; workp < rt_curend; workp++)
+			for(workp = de; workp < rt_curend[segnum]; workp++)
 				*workp = workp[1];
 			de--;
-			rt_curend--;
+			rt_curend[segnum]--;
 			rt_nleft++;
+			dirdirty = 1;
 		}
+	    }
+	    if (dirdirty)
+	    lwrite((6+segnum*2)*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[segnum]);
 	}
-	lwrite(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir);
 }
