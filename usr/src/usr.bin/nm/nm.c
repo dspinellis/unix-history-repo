@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)nm.c 4.4 %G%";
+static	char sccsid[] = "@(#)nm.c 4.5 %G%";
 #endif
 /*
  * nm - print name list; VAX string table version
@@ -133,8 +133,10 @@ namelist()
 			continue;
 		}
 		if (N_STROFF(mag_un.mag_exp) + sizeof (off_t) >
-		    (archive ? off : stb.st_size))
-			error(1, "old format .o (no string table) or truncated file");
+		    (archive ? off : stb.st_size)) {
+			error(0, "old format .o (no string table) or truncated file");
+			continue;
+		}
 		i = 0;
 		if (strp)
 			free(strp), strp = 0;
