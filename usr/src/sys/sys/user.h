@@ -1,4 +1,4 @@
-/*	user.h	6.4	84/07/11	*/
+/*	user.h	6.5	84/07/21	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -19,7 +19,6 @@
  * isn't needed in core when the process is swapped out.
  */
  
-#define	SHSIZE		32
 #define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(a_comm) */
  
 struct	user {
@@ -114,29 +113,6 @@ struct	user {
 	} u_ncache;
 	struct	nameidata u_nd;
 
-/* BEGIN TRASH */
-	union {
-	   struct {			/* header of executable file */
-		int	Ux_mag;		/* magic number */
-		unsigned Ux_tsize;	/* text size */
-		unsigned Ux_dsize;	/* data size */
-		unsigned Ux_bsize;	/* bss size */
-		unsigned Ux_ssize;	/* symbol table size */
-		unsigned Ux_entloc;	/* entry location */
-		unsigned Ux_unused;
-		unsigned Ux_relflg;
-	   } Ux_A;
-	   char ux_shell[SHSIZE];	/* #! and name of interpreter */
-	} u_exdata;
-#define	ux_mag		Ux_A.Ux_mag
-#define	ux_tsize	Ux_A.Ux_tsize
-#define	ux_dsize	Ux_A.Ux_dsize
-#define	ux_bsize	Ux_A.Ux_bsize
-#define	ux_ssize	Ux_A.Ux_ssize
-#define	ux_entloc	Ux_A.Ux_entloc
-#define	ux_unused	Ux_A.Ux_unused
-#define	ux_relflg	Ux_A.Ux_relflg
-/* END TRASH */
 	int	u_stack[1];
 };
 
