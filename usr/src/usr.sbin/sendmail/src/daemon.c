@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.33		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.34		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.33		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.34		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -93,7 +93,10 @@ struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SMTP };
 
 getconnection()
 {
-	register int s;
+	int s;
+#ifdef NVMUNIX
+	int t;
+#endif NVMUNIX
 	struct sockaddr otherend;
 
 	/*
@@ -122,6 +125,11 @@ getconnection()
 		int i;
 
 		/* get a socket for the SMTP connection */
+#ifdef NVMUNIX
+		s = socket(AF_INET, SOCK_STREAM, 0, 0);
+		bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
+		listen(s, 10);
+#else NVMUNIX
 		/* do loop is to avoid 4.1b kernel bug (?) */
 		i = 60;
 		do
@@ -130,6 +138,7 @@ getconnection()
 			if (s < 0)
 				sleep(10);
 		} while (--i > 0 && s < 0);
+#endif NVMUNIX
 		if (s < 0)
 		{
 			/* probably another daemon already */
@@ -221,7 +230,11 @@ makeconnection(host, port, outfile, infile)
 		printf("makeconnection (%s)\n", host);
 # endif DEBUG
 
+#ifdef NVMUNIX
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
+#else NVMUNIX
 	s = socket(SOCK_STREAM, 0, (struct sockaddr_in *) 0, 0);
+#endif NVMUNIX
 	if (s < 0)
 	{
 		syserr("makeconnection: no socket");
@@ -233,7 +246,12 @@ makeconnection(host, port, outfile, infile)
 		printf("makeconnection: %d\n", s);
 # endif DEBUG
 	(void) fflush(Xscript);				/* for debugging */
+#ifdef NVMUNIX
+	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
+	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
+#else NVMUNIX
 	if (connect(s, &SendmailAddress) < 0)
+#endif NVMUNIX
 	{
 		/* failure, decide if temporary or not */
 	failure:
