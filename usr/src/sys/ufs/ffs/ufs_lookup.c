@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.2	83/09/09	*/
+/*	ufs_lookup.c	6.3	83/12/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/conf.h"
 #include "../h/uio.h"
 #include "../h/nami.h"
+#include "../h/kernel.h"
 
 struct	buf *blkatoff();
 int	dirchk = 0;
@@ -79,7 +80,8 @@ namei(func, flag, follow)
 	int slotfreespace;		/* amount of space free in slot */
 	int slotneeded;			/* size of the entry we're seeking */
 /* */
-	int dirsize;
+	int numdirpasses;		/* strategy for directory search */
+	int endsearch;			/* offset to end directory search */
 	int prevoff;			/* u.u_offset of previous entry */
 	int nlink = 0;			/* number of symbolic links taken */
 	struct inode *pdp;		/* saved dp during symlink work */
@@ -179,10 +181,38 @@ dirloop2:
 		slotfreespace = 0;
 		slotneeded = DIRSIZ(&u.u_dent);
 	}
+	/*
+	 * If this is the same directory that this process
+	 * previously searched, pick up where we last left off.
+	 * We cache only lookups as these are the most common,
+	 * and have the greatest payoff. Caching CREATE has little
+	 * benefit as it usually must search the entire directory
+	 * to determine that the entry does not exist. Caching the
+	 * location of the last DELETE has not reduced profiling time
+	 * and hence has been removed in the interest of simplicity.
+	 */
+	if (flag != LOOKUP || dp->i_number != u.u_ncache.nc_inumber ||
+	    dp->i_dev != u.u_ncache.nc_dev) {
+		u.u_offset = 0;
+		numdirpasses = 1;
+	} else {
+		if (dp->i_mtime >= u.u_ncache.nc_time) {
+			u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
+			u.u_ncache.nc_time = time.tv_sec;
+		}
+		u.u_offset = u.u_ncache.nc_prevoffset;
+		entryoffsetinblock = blkoff(fs, u.u_offset);
+		if (entryoffsetinblock != 0) {
+			bp = blkatoff(dp, u.u_offset, (char **)0);
+			if (bp == 0)
+				goto bad;
+		}
+		numdirpasses = 2;
+	}
+	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 
-	dirsize = roundup(dp->i_size, DIRBLKSIZ);
-	u.u_offset = 0;
-	while (u.u_offset < dirsize) {
+searchloop:
+	while (u.u_offset < endsearch) {
 		/*
 		 * If offset is on a block boundary,
 		 * read the next directory block.
@@ -273,6 +303,16 @@ dirloop2:
 		u.u_offset += ep->d_reclen;
 		entryoffsetinblock += ep->d_reclen;
 	}
+	/*
+	 * If we started in the middle of the directory and failed 
+	 * to find our target, we must check the beginning as well.
+	 */
+	if (numdirpasses == 2) {
+		numdirpasses--;
+		u.u_offset = 0;
+		endsearch = u.u_ncache.nc_prevoffset;
+		goto searchloop;
+	}
 /* notfound: */
 	/*
 	 * If creating, and at end of pathname and current
@@ -294,9 +334,10 @@ dirloop2:
 		 * If we found a slot, then the new entry can be
 		 * put in the range [u.u_offset..u.u_offset+u.u_count)
 		 */
-		if (slotstatus == NONE)
+		if (slotstatus == NONE) {
+			u.u_offset = roundup(dp->i_size, DIRBLKSIZ);
 			u.u_count = 0;
-		else {
+		} else {
 			u.u_offset = slotoffset;
 			u.u_count = slotsize;
 		}
@@ -329,8 +370,19 @@ found:
 	}
 
 	/*
-	 * Found component in pathname; save directory
-	 * entry in u.u_dent, and release directory buffer.
+	 * Found component in pathname.
+	 * If final component of path name, save information
+	 * in the cache as to where the entry was found.
+	 */
+	if (*cp == '\0' && flag == LOOKUP) {
+		u.u_ncache.nc_prevoffset = u.u_offset;
+		u.u_ncache.nc_inumber = dp->i_number;
+		u.u_ncache.nc_dev = dp->i_dev;
+		u.u_ncache.nc_time = time.tv_sec;
+	}
+	/*
+	 * Save directory entry in u.u_dent,
+	 * and release directory buffer.
 	 */
 	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, (u_int)DIRSIZ(ep));
 	brelse(bp);
