@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -115,8 +115,13 @@ intpr(interval, ifnetaddr)
 				{
 				struct sockaddr_ns *sns =
 				(struct sockaddr_ns *)&ifaddr.in.ia_addr;
-				printf("ns:%-8d ",
-					ntohl(ns_netof(sns->sns_addr)));
+				long net;
+				char host[8];
+				*(union ns_net *) &net = sns->sns_addr.x_net;
+				sprintf(host, "%lxH", ntohl(net));
+				upHex(host);
+				printf("ns:%-8s ", host);
+
 				printf("%-12s ",ns_phost(sns));
 				}
 				break;
