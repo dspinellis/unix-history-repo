@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.22 (Berkeley) %G%
+ *	@(#)tty.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,8 +32,8 @@
 /* symbolic sleep message strings */
 char ttyin[] = "ttyin";
 char ttyout[] = "ttyout";
-char ttopen[] = "ttopen";
-char ttclos[] = "ttclos";
+char ttopen[] = "ttyopn";
+char ttclos[] = "ttycls";
 char ttybg[] = "ttybg";
 char ttybuf[] = "ttybuf";
 
