@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.h	7.7 (Berkeley) %G%
+ *	@(#)if.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -127,16 +127,16 @@ struct ifnet {
 #define	IF_QFULL(ifq)		((ifq)->ifq_len >= (ifq)->ifq_maxlen)
 #define	IF_DROP(ifq)		((ifq)->ifq_drops++)
 #define	IF_ENQUEUE(ifq, m) { \
-	(m)->m_act = 0; \
+	(m)->m_nextpkt = 0; \
 	if ((ifq)->ifq_tail == 0) \
 		(ifq)->ifq_head = m; \
 	else \
-		(ifq)->ifq_tail->m_act = m; \
+		(ifq)->ifq_tail->m_nextpkt = m; \
 	(ifq)->ifq_tail = m; \
 	(ifq)->ifq_len++; \
 }
 #define	IF_PREPEND(ifq, m) { \
-	(m)->m_act = (ifq)->ifq_head; \
+	(m)->m_nextpkt = (ifq)->ifq_head; \
 	if ((ifq)->ifq_tail == 0) \
 		(ifq)->ifq_tail = (m); \
 	(ifq)->ifq_head = (m); \
@@ -145,9 +145,9 @@ struct ifnet {
 #define	IF_DEQUEUE(ifq, m) { \
 	(m) = (ifq)->ifq_head; \
 	if (m) { \
-		if (((ifq)->ifq_head = (m)->m_act) == 0) \
+		if (((ifq)->ifq_head = (m)->m_nextpkt) == 0) \
 			(ifq)->ifq_tail = 0; \
-		(m)->m_act = 0; \
+		(m)->m_nextpkt = 0; \
 		(ifq)->ifq_len--; \
 	} \
 }
