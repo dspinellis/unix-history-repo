@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.prm	8.2 (Berkeley) %G%
+.\"	@(#)title.prm	8.3 (Berkeley) %G%
 .\"
 .af % i
 .nr LL 6.5i
@@ -239,7 +239,7 @@ expand;
 l r.
 Introduction	vii
 List of Manual Pages	ix
-Permuted Index	xix
+Permuted Index	xxix
 Reference Manual Sections 2, 3, 4, 5	tabbed pages
 List of Documents	inside back cover
 .TE
