@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 2.1 %G%";
+static char sccsid[] = "@(#)rval.c 2.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -43,8 +43,7 @@ short nssetline = 0;
  * Rvalue - an expression.
  *
  * Contype is the type that the caller would prefer, nand is important
- * if constant sets or constant strings are involved, the latter
- * because of string padding.
+ * if constant strings are involved, because of string padding.
  * required is a flag whether an lvalue or an rvalue is required.
  * only VARs and structured things can have gt their lvalue this way.
  */
@@ -501,18 +500,34 @@ cstrng:
 	case T_SUB:
 #		ifdef OBJ
 		    /*
-		     * If the context hasn't told us the type
-		     * and a constant set is present
-		     * we need to infer the type 
-		     * before generating code.
+		     * get the type of the right hand side.
+		     * if it turns out to be a set,
+		     * use that type when getting
+		     * the type of the left hand side.
+		     * and then use the type of the left hand side
+		     * when generating code.
+		     * this will correctly decide the type of any
+		     * empty sets in the tree, since if the empty set 
+		     * is on the left hand side it will inherit
+		     * the type of the right hand side,
+		     * and if it's on the right hand side, its type (intset)
+		     * will be overridden by the type of the left hand side.
+		     * this is an awful lot of tree traversing, 
+		     * but it works.
 		     */
-		    if ( contype == NLNIL ) {
-			    codeoff();
-			    contype = rvalue( r[3] , NIL , RREQ );
-			    codeon();
-		    }
-		    if ( contype == NLNIL ) {
+		    codeoff();
+		    p1 = rvalue( r->expr_node.rhs , NLNIL , RREQ );
+		    codeon();
+		    if ( p1 == NLNIL ) {
 			return NIL;
+		    }
+		    if (isa(p1, "t")) {
+			codeoff();
+			contype = rvalue(r->expr_node.lhs, p1, RREQ);
+			codeon();
+			if (contype == NLNIL) {
+			    return NLNIL;
+			}
 		    }
 		    p = rvalue( r[2] , contype , RREQ );
 		    p1 = rvalue( r[3] , p , RREQ );
@@ -533,9 +548,9 @@ cstrng:
 			/*
 			 * the second pass can't do
 			 *	long op double  or  double op long
-			 * so we have to know the type of both operands
-			 * also, it gets tricky for sets, which are done
-			 * by function calls.
+			 * so we have to know the type of both operands.
+			 * also, see the note for obj above on determining
+			 * the type of empty sets.
 			 */
 		    codeoff();
 		    p1 = rvalue( r[ 3 ] , contype , RREQ );
@@ -558,11 +573,6 @@ cstrng:
 			    , ADDTYPE( ADDTYPE( P2PTR | P2STRTY , P2FTN )
 					, P2PTR )
 			    , setop[ r[0] - T_MULT ] );
-			    codeoff();
-			    contype = rvalue( r->expr_node.lhs, p1 , LREQ );
-			    codeon();
-			}
-			if ( contype == NLNIL ) {
 			    return NIL;
 			}
 			    /*
@@ -655,6 +665,8 @@ cstrng:
 		 * a type if possible.  Since constant strings can
 		 * always masquerade as identifiers, this is always
 		 * necessary.
+		 * see the note in the obj section of case T_MULT above
+		 * for the determination of the base type of empty sets.
 		 */
 		codeoff();
 		p1 = rvalue(r[3], NIL , RREQ );
@@ -678,6 +690,14 @@ cstrng:
 				    return (NIL);
 			    if (width(p) > width(p1))
 				    contype = p;
+		    }
+		    if (isa(p1, "t")) {
+			codeoff();
+			contype = rvalue(r->expr_node.lhs, p1, RREQ);
+			codeon();
+			if (contype == NLNIL) {
+			    return NLNIL;
+			}
 		    }
 		    /*
 		     * Now we generate code for
@@ -717,12 +737,11 @@ cstrng:
 			    }
 			} else if ( c1 == TSET ) {
 			    codeoff();
-			    p = rvalue( r->expr_node.lhs , contype , LREQ );
+			    contype = rvalue(r->expr_node.lhs, p1, LREQ);
 			    codeon();
-			    if ( p == NLNIL ) {
+			    if (contype == NLNIL) {
 				return NLNIL;
 			    }
-			    contype = p;
 			} 
 			    /*
 			     *	put out the width of the comparison.
