@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	7.6 (Berkeley) %G%
+ *	@(#)defs.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -11,11 +11,11 @@
  */
 
 #include "param.h"
-#include "dir.h"
-#include "machine/psl.h"
-#include "machine/pte.h"
 #include "user.h"
 #include "proc.h"
+
+#include "machine/psl.h"
+#include "machine/pte.h"
 
 #include <a.out.h>
 #include <ctype.h>
