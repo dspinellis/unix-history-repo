@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -71,6 +71,9 @@ static  double etime;
 static  int numbers = 0;		/* default display bar graphs */
 static  int msps = 0;			/* default ms/seek shown */
 
+static int numlabels(), barlabels(), stats();
+static void stat1();
+
 initiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0) {
@@ -99,7 +102,7 @@ fetchiostat()
 {
 	if (nlst[X_DK_BUSY].n_type == 0)
 		return;
-	s.dk_busy = getw(nlst[X_DK_BUSY].n_value);
+	s.dk_busy = getword(nlst[X_DK_BUSY].n_value);
 	lseek(kmem, (long)nlst[X_DK_TIME].n_value, L_SET);
 	read(kmem, s.dk_time, dk_ndrive * sizeof (long));
 	lseek(kmem, (long)nlst[X_DK_XFER].n_value, L_SET);
@@ -136,8 +139,9 @@ labeliostat()
 		row = barlabels(row + 1);
 }
 
-static
+static int
 numlabels(row)
+	int row;
 {
 	int i, col, regions, ndrives;
 
@@ -174,7 +178,7 @@ numlabels(row)
 	return (row);
 }
 
-static
+static int
 barlabels(row)
 	int row;
 {
@@ -248,9 +252,9 @@ showiostat()
 		}
 }
 
-static
+static int
 stats(row, col, dn)
-	int row, dn;
+	int row, col, dn;
 {
 	double atime, words, xtime, itime;
 
@@ -281,7 +285,7 @@ stats(row, col, dn)
 	return (row);
 }
 
-static
+static void
 stat1(row, o)
 	int row, o;
 {

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -202,21 +202,21 @@ initswap()
 		}
 	}
 	if (nswdev == 0) {
-		dmmin = getw(nlst[X_DMMIN].n_value);
-		dmmax = getw(nlst[X_DMMAX].n_value);
-		dmtext = getw(nlst[X_DMTEXT].n_value);
-		nswdev = getw(nlst[X_NSWDEV].n_value);
+		dmmin = getword(nlst[X_DMMIN].n_value);
+		dmmax = getword(nlst[X_DMMAX].n_value);
+		dmtext = getword(nlst[X_DMTEXT].n_value);
+		nswdev = getword(nlst[X_NSWDEV].n_value);
 		if (nswdev > MAXSWAPDEV)
 			nswdev = MAXSWAPDEV;
 		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
 		klseek(kmem, nlst[X_SWDEVT].n_value, L_SET);
 		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
-		ntext = getw(nlst[X_NTEXT].n_value);
-		textp = getw(nlst[X_TEXT].n_value);
+		ntext = getword(nlst[X_NTEXT].n_value);
+		textp = getword(nlst[X_TEXT].n_value);
 	}
 	if (procp == NULL) {
-		procp = getw(nlst[X_PROC].n_value);
-		nproc = getw(nlst[X_NPROC].n_value);
+		procp = getword(nlst[X_PROC].n_value);
+		nproc = getword(nlst[X_NPROC].n_value);
 	}
 	if (xtext == NULL)
 		xtext = (struct text *)calloc(ntext, sizeof (struct text));

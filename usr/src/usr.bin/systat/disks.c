@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -49,7 +49,7 @@ dkinit()
 		error("dk_ndrive undefined in kernel");
 		return(0);
 	}
-	dk_ndrive = getw(nlst[X_DK_NDRIVE].n_value);
+	dk_ndrive = getword(nlst[X_DK_NDRIVE].n_value);
 	if (dk_ndrive <= 0) {
 		error("dk_ndrive=%d according to %s", dk_ndrive, _PATH_UNIX);
 		return(0);
