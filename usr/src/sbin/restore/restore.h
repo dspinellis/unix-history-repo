@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.1	(Berkeley)	83/02/18	*/
+/*	@(#)restore.h	3.2	(Berkeley)	83/02/26	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -24,7 +24,8 @@ extern char	*clrimap; 	/* map of inodes to be deleted */
 extern ino_t	maxino;		/* highest numbered inode in this file system */
 extern long	dumpnum;	/* location of the dump on this tape */
 extern long	volno;		/* current volume being read */
-extern time_t	dumptime;	/* time that this dump was made */
+extern time_t	dumptime;	/* time that this dump begins */
+extern time_t	dumpdate;	/* time that this dump was made */
 extern char	command;	/* opration being performed */
 
 /*
@@ -121,5 +122,5 @@ extern void mktemp();
 #define dprintf		if (dflag) fprintf
 #define vprintf		if (vflag) fprintf
 
-#define GOOD 0
-#define FAIL 1
+#define GOOD 1
+#define FAIL 0
