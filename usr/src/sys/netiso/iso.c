@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso.c	7.12 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,15 +36,9 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.11 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
-
-#ifndef lint
-static char *rcsid = "$Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $";
-#endif
-
 
 #include "types.h"
 #include "param.h"

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_cons.c	7.7 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -28,7 +37,6 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_cons.c,v $
- *	@(#)tp_cons.c	7.6 (Berkeley) %G% *
  *
  * Here is where you find the iso- and cons-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -36,15 +44,10 @@ SOFTWARE.
  * through a switch table (struct nl_protosw *) tpcb->tp_nlproto 
  * (see tp_pcb.c). 
  * The routines here are:
- *		tpcons_input: pullup and call tp_input w/ correct arguments
- *		tpcons_output: package a pkt for cons given an isopcb & some data
- *		cons_chan_to_tpcb: find a tpcb based on the channel #
+ *	tpcons_input: pullup and call tp_input w/ correct arguments
+ *	tpcons_output: package a pkt for cons given an isopcb & some data
+ *	cons_chan_to_tpcb: find a tpcb based on the channel #
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $";
-#endif lint
-
 
 #ifdef ISO
 #ifdef TPCONS

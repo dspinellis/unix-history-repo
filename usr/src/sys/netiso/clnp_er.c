@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clnp_er.c	7.7 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,11 +35,6 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_er.c,v $ */
-/*	@(#)clnp_er.c	7.6 (Berkeley) %G% */
-
-#ifndef lint
-static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $";
-#endif lint
 
 #include "param.h"
 #include "mbuf.h"

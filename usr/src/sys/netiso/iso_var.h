@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1988, 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_var.h	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -20,15 +29,6 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
 ******************************************************************/
-/*
- * Modifications,
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
- *
- * %sccs.include.redist.c%
- *
- *	@(#)iso_var.h	7.4 (Berkeley) %G%
- */
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison

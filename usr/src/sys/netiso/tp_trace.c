@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_trace.c	7.4 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_trace.c,v 5.3 88/11/18 17:29:14 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_trace.c,v $
- *	@(#)tp_trace.c	7.3 (Berkeley) %G% *
  *
  * The whole protocol trace module.
  * We keep a circular buffer of trace structures, which are big
@@ -37,10 +45,6 @@ SOFTWARE.
  * Unfortunately this gets too big pretty easily. Pcbs were removed
  * from the tracing when the kernel got too big to boot.
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_trace.c,v 5.3 88/11/18 17:29:14 nhall Exp $";
-#endif lint
 
 #define TP_TRACEFILE
 

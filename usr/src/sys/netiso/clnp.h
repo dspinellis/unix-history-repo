@@ -1,3 +1,11 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clnp.h	7.8 (Berkeley) %G%
+ */
 
 /***********************************************************
 		Copyright IBM Corporation 1987
@@ -27,7 +35,6 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
-/*	@(#)clnp.h	7.7 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_timer.c	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_timer.c,v $
- *	@(#)tp_timer.c	7.4 (Berkeley) %G% *
  *
  * Contains all the timer code.  
  * There are two sources of calls to these routines:
@@ -47,10 +55,6 @@ SOFTWARE.
  * The E timers are handled like the generic kernel callouts.
  * Their "going off" is manifested by a function call w/ 3 arguments.
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $";
-#endif lint
 
 #include "param.h"
 #include "types.h"

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso.h	7.6 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,7 +35,6 @@ SOFTWARE.
  */
 /* $Header: iso.h,v 4.9 88/09/11 18:06:38 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso.h,v $ */
-/*	@(#)iso.h	7.5 (Berkeley) %G% */
 
 #ifndef __ISO__
 #define __ISO__

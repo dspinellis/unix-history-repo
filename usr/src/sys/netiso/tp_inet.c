@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_inet.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -28,7 +37,6 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_inet.c,v 5.3 88/11/18 17:27:29 nhall Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/tp_inet.c,v $
- *	@(#)tp_inet.c	7.7 (Berkeley) %G% *
  *
  * Here is where you find the inet-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -36,21 +44,17 @@ SOFTWARE.
  * through a switch table (struct nl_protosw *) tpcb->tp_nlproto 
  * (see tp_pcb.c). 
  * The routines here are:
- * 		in_getsufx: gets transport suffix out of an inpcb structure.
- * 		in_putsufx: put transport suffix into an inpcb structure.
- *		in_putnetaddr: put a whole net addr into an inpcb.
- *		in_getnetaddr: get a whole net addr from an inpcb.
- *		in_cmpnetaddr: compare a whole net addr from an isopcb.
- *		in_recycle_suffix: clear suffix for reuse in inpcb
- *		tpip_mtu: figure out what size tpdu to use
- *		tpip_input: take a pkt from ip, strip off its ip header, give to tp
- *		tpip_output_dg: package a pkt for ip given 2 addresses & some data
- *		tpip_output: package a pkt for ip given an inpcb & some data
+ * 	in_getsufx: gets transport suffix out of an inpcb structure.
+ * 	in_putsufx: put transport suffix into an inpcb structure.
+ *	in_putnetaddr: put a whole net addr into an inpcb.
+ *	in_getnetaddr: get a whole net addr from an inpcb.
+ *	in_cmpnetaddr: compare a whole net addr from an isopcb.
+ *	in_recycle_suffix: clear suffix for reuse in inpcb
+ *	tpip_mtu: figure out what size tpdu to use
+ *	tpip_input: take a pkt from ip, strip off its ip header, give to tp
+ *	tpip_output_dg: package a pkt for ip given 2 addresses & some data
+ *	tpip_output: package a pkt for ip given an inpcb & some data
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_inet.c,v 5.3 88/11/18 17:27:29 nhall Exp $";
-#endif lint
 
 #ifdef INET
 

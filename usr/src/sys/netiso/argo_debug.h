@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)argo_debug.h	7.4 (Berkeley) %G%
+ */
+
 /*****************************************************************
 				Copyright IBM Corporation 1987
 
@@ -27,8 +36,8 @@ SOFTWARE.
 /* 
  * $Header: argo_debug.h,v 4.6 88/07/19 15:53:40 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/argo_debug.h,v $
- *	@(#)argo_debug.h	7.3 (Berkeley) %G%
  */
+
 #ifndef __ARGO_DEBUG__
 #define __ARGO_DEBUG__
 

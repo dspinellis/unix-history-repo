@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)if_cons.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,15 +36,10 @@ SOFTWARE.
 /*
  * $Header: if_cons.c,v 4.7 88/08/11 15:52:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/if_cons.c,v $
- *	@(#)if_cons.c	7.7 (Berkeley) %G%
  *
  * cons.c - Connection Oriented Network Service:
  * including support for a) user transport-level service, 
  *	b) COSNS below CLNP, and c) CONS below TP.
-
-#ifndef lint
-static char *rcsid = "$Header: if_cons.c,v 4.7 88/08/11 15:52:55 nhall Exp $";
-#endif lint
  */
 
 #ifdef TPCONS

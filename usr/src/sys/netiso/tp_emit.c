@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_emit.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_emit.c,v $
- *	@(#)tp_emit.c	7.7 (Berkeley) %G% *
  *
  * This file contains tp_emit() and tp_error_emit(), which
  * form TPDUs and hand them to ip.
@@ -44,11 +52,6 @@ SOFTWARE.
  * We don't do any concatenation. (There's a kludge to test the
  * basic mechanism of separation under the 'w' tpdebug option, that's all.)
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $";
-#endif lint
-
 
 #include "param.h"
 #include "mbuf.h"

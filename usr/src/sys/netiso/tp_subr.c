@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_subr.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
- *	@(#)tp_subr.c	7.7 (Berkeley) %G%
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -39,10 +47,6 @@ SOFTWARE.
  * drop the data from the socket buffers (tp_sbdrop()),  
  * and put incoming packet data into socket buffers (tp_stash()).
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $";
-#endif lint
 
 #include "param.h"
 #include "mbuf.h"

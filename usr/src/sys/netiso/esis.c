@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)esis.c	7.18 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -24,10 +33,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.17 (Berkeley) %G% */
-#ifndef lint
-static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
-#endif
 
 #ifdef ISO
 

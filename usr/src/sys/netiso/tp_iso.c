@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_iso.c	7.11 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -28,7 +37,6 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.10 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -49,10 +57,6 @@ SOFTWARE.
  *		tpclnp_output_dg: package a pkt for clnp given 2 addresses & some data
  *		tpclnp_output: package a pkt for clnp given an isopcb & some data
  */
-
-#ifndef lint
-static char *rcsid = "$Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $";
-#endif lint
 
 #ifdef ISO
 

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)eonvar.h	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -23,7 +32,6 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- *	@(#)eonvar.h	7.4 (Berkeley) %G%
  */
 
 #define EON_986_VERSION 0x3

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_user.h	7.10 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.9 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */

@@ -2,7 +2,7 @@
  * Copyright (c) 1989, 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>

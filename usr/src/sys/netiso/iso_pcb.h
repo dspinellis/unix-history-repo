@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_pcb.h	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,7 +35,6 @@ SOFTWARE.
  */
 /* $Header: iso_pcb.h,v 4.3 88/06/29 15:00:01 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_pcb.h,v $ */
-/*	@(#)iso_pcb.h	7.4 (Berkeley) %G% */
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 

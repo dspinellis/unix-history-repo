@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)esis.h	7.4 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,7 +36,6 @@ SOFTWARE.
 /*
  *	$Header: esis.h,v 4.7 88/09/15 11:24:18 hagens Exp $
  *	$Source: /usr/argo/sys/netiso/RCS/esis.h,v $
- *	@(#)esis.h	7.3 (Berkeley) %G% *
  */
 
 #ifndef BYTE_ORDER

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_usrreq.c	7.16 (Berkeley) %G%
+ */
+
 /***********************************************************
 				Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.15 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -37,10 +45,6 @@ SOFTWARE.
  * wholly here.
  * tp_rcvoob() and tp_sendoob() are contained here and called by tp_usrreq().
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $";
-#endif lint
 
 #include "param.h"
 #include "systm.h"
