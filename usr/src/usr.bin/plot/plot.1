@@ -1,4 +1,4 @@
-.\"	@(#)plot.1	6.2 (Berkeley) %G%
+.\"	@(#)plot.1	6.3 (Berkeley) %G%
 .\"
 .TH PLOT 1G ""
 .AT 3
@@ -8,16 +8,24 @@ plot \- graphics filters
 .B plot
 [
 .BR \-T terminal
-[ raster ] ]
+] [
+.BR \-r resolution
+]
+[ files... ]
 .SH DESCRIPTION
 These commands read plotting instructions (see
 .IR  plot (5))
-from the standard input,
+from the standard input or the specified
+.IR files ,
 and in general
 produce plotting instructions suitable for
 a particular
 .I terminal
 on the standard output.
+The
+.B \-r
+flag may be used to specify the device's output resolution
+(currently only the Imagen laser printer understands this option).
 .PP
 If no
 .I terminal
@@ -51,6 +59,9 @@ AED 512 color graphics terminal.
 .BR bitgraph\  or\  bg
 BBN bitgraph graphics terminal.
 .TP
+.B imagen\ or\ ip
+Imagen laser printer (default 240 dots-per-inch resolution).
+.TP
 .B crt
 Any crt terminal capable of running
 .IR vi (1).
@@ -63,9 +74,6 @@ DEC vt125 terminal.
 .TP
 .BR hp2648\  or\  hp\  or\  hp8
 Hewlett Packard 2648 graphics terminal.
-.TP
-.B imagen\ or\ ip
-Imagen LBP-10 200 dots-per-inch laser printer.
 .TP
 .B ver
 Versatec D1200A printer-plotter.
