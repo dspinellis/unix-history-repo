@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -148,12 +148,15 @@ found:
 		;		/* print in pjwait */
 	    }
 	    /* PWP: print a newline after ^C */
-	    else if (jobflags & PINTERRUPTED)
-		(void) fputc('\r' | QUOTE, cshout), (void) fputc('\n', cshout);
+	    else if (jobflags & PINTERRUPTED) {
+		(void) fputc('\r' | QUOTE, cshout);
+		(void) fputc('\n', cshout);
+	    }
 	}
 	else {
 	    if (jobflags & PNOTIFY || adrof(STRnotify)) {
-		(void) fputc('\r' | QUOTE, cshout), (void) fputc('\n', cshout);
+		(void) fputc('\r' | QUOTE, cshout);
+		(void) fputc('\n', cshout);
 		(void) pprint(pp, NUMBER | NAME | REASON);
 		if ((jobflags & PSTOPPED) == 0)
 		    pflush(pp);
@@ -262,7 +265,7 @@ pjwait(pp)
     if ((jobflags & (PSIGNALED | PSTOPPED | PTIME)) ||
 	!eq(dcwd->di_name, fp->p_cwd->di_name)) {
 	if (jobflags & PSTOPPED) {
-	    (void) fprintf(cshout, "\n");
+	    (void) fputc('\n', cshout);
 	    if (adrof(STRlistjobs)) {
 		Char   *jobcommand[3];
 
@@ -296,8 +299,9 @@ pjwait(pp)
 	    reason = fp->p_flags & (PSIGNALED | PINTERRUPTED) ?
 		fp->p_reason | META : fp->p_reason;
     } while ((fp = fp->p_friends) != pp);
-    if ((reason != 0) && (adrof(STRprintexitvalue)))
+    if ((reason != 0) && (adrof(STRprintexitvalue))) {
 	(void) fprintf(cshout, "Exit %d\n", reason);
+    }
     set(STRstatus, putn(reason));
     if (reason && exiterr)
 	exitstat();
@@ -621,6 +625,7 @@ pprint(pp, flag)
     register status, reason;
     struct process *tp;
     int     jobflags, pstatus;
+    bool hadnl = 1;	/* did we just have a newline */
     char   *format;
 
     (void) fpurge(cshout);
@@ -637,14 +642,18 @@ pprint(pp, flag)
     do {
 	jobflags |= pp->p_flags;
 	pstatus = pp->p_flags & PALLSTATES;
-	if (tp != pp && !(flag & FANCY) 
-	    && (pstatus == status && pp->p_reason == reason ||
-	     !(flag & REASON)))
+	if (tp != pp && !hadnl && !(flag & FANCY) && 
+	    ((pstatus == status && pp->p_reason == reason) ||
+	     !(flag & REASON))) {
 	    (void) fputc(' ', cshout);
+	    hadnl = 0;
+	}
 	else {
-	    if (tp != pp)
+	    if (tp != pp && !hadnl) {
 		(void) fputc('\n', cshout);
-	    if (flag & NUMBER)
+		hadnl = 1;
+	    }
+	    if (flag & NUMBER) {
 		if (pp == tp)
 		    (void) fprintf(cshout, "[%d]%s %c ", pp->p_index,
 			    pp->p_index < 10 ? " " : "",
@@ -652,8 +661,11 @@ pprint(pp, flag)
 			    (pp == pprevious ? '-' : ' '));
 		else
 		    (void) fprintf(cshout, "       ");
+		hadnl = 0;
+	    }
 	    if (flag & FANCY) {
 		(void) fprintf(cshout, "%5d ", pp->p_pid);
+		hadnl = 0;
 	    }
 	    if (flag & (REASON | AREASON)) {
 		if (flag & NAME)
@@ -663,6 +675,7 @@ pprint(pp, flag)
 		if (pstatus == status)
 		    if (pp->p_reason == reason) {
 			(void) fprintf(cshout, format, "");
+			hadnl = 0;
 			goto prcomd;
 		    }
 		    else
@@ -675,25 +688,37 @@ pprint(pp, flag)
 
 		case PRUNNING:
 		    (void) fprintf(cshout, format, "Running ");
+		    hadnl = 0;
 		    break;
 
 		case PINTERRUPTED:
 		case PSTOPPED:
 		case PSIGNALED:
-		    if ((flag & REASON) || 
-			((flag & AREASON) && reason != SIGINT 
-			 && reason != SIGPIPE))
+                    /*
+                     * tell what happened to the background job
+                     * From: Michael Schroeder
+                     * <mlschroe@immd4.informatik.uni-erlangen.de>
+                     */
+                    if ((flag & REASON)
+                        || ((flag & AREASON)
+                            && reason != SIGINT
+                            && (reason != SIGPIPE
+                                || (pp->p_flags & PPOU) == 0))) {
 			(void) fprintf(cshout, format, 
 				       mesg[pp->p_reason].pname);
+			hadnl = 0;
+		    }
 		    break;
 
 		case PNEXITED:
 		case PAEXITED:
-		    if (flag & REASON)
+		    if (flag & REASON) {
 			if (pp->p_reason)
 			    (void) fprintf(cshout, "Exit %-18d", pp->p_reason);
 			else
 			    (void) fprintf(cshout, format, "Done");
+			hadnl = 0;
+		    }
 		    break;
 
 		default:
@@ -708,31 +733,42 @@ prcomd:
 		(void) fprintf(cshout, " |");
 	    if (pp->p_flags & PERR)
 		(void) fputc('&', cshout);
+	    hadnl = 0;
 	}
-	if (flag & (REASON | AREASON) && pp->p_flags & PDUMPED)
+	if (flag & (REASON | AREASON) && pp->p_flags & PDUMPED) {
 	    (void) fprintf(cshout, " (core dumped)");
+	    hadnl = 0;
+	}
 	if (tp == pp->p_friends) {
-	    if (flag & AMPERSAND)
+	    if (flag & AMPERSAND) {
 		(void) fprintf(cshout, " &");
+		hadnl = 0;
+	    }
 	    if (flag & JOBDIR &&
 		!eq(tp->p_cwd->di_name, dcwd->di_name)) {
 		(void) fprintf(cshout, " (wd: ");
 		dtildepr(value(STRhome), tp->p_cwd->di_name);
 		(void) fputc(')', cshout);
+		hadnl = 0;
 	    }
 	}
 	if (pp->p_flags & PPTIME && !(status & (PSTOPPED | PRUNNING))) {
-	    (void) fprintf(cshout, "\n\t");
+	    if (!hadnl)
+		(void) fprintf(cshout, "\n\t");
 	    prusage(&zru, &pp->p_rusage, &pp->p_etime,
 		    &pp->p_btime);
+	    hadnl = 1;
 	}
 	if (tp == pp->p_friends) {
-	    if (flag != SHELLDIR)
+	    if (!hadnl) {
 		(void) fputc('\n', cshout);
+		hadnl = 1;
+	    }
 	    if (flag & SHELLDIR && !eq(tp->p_cwd->di_name, dcwd->di_name)) {
 		(void) fprintf(cshout, "(wd now: ");
 		dtildepr(value(STRhome), dcwd->di_name);
 		(void) fprintf(cshout, ")\n");
+		hadnl = 1;
 	    }
 	}
     } while ((pp = pp->p_friends) != tp);
@@ -740,6 +776,7 @@ prcomd:
 	if (jobflags & NUMBER)
 	    (void) fprintf(cshout, "       ");
 	ptprint(tp);
+	hadnl = 1;
     }
     (void) fflush(cshout);
     return (jobflags);
