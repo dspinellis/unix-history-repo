@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.1	6.5 (Berkeley) %G%
+.\"	@(#)intro.1	6.6 (Berkeley) %G%
 .\"
 .bp
 .sh 1 Overview
@@ -24,15 +24,15 @@ In this document, the following terminology is used:
 .sp
 .in 5n
 .ti 0n
-.bi "\\$1" :
+.b "\\$1" :
 ..
-.b window
+.Ip window
 An internal representation
 containing an image of what a section of the terminal screen may look like
 at some point in time.
 This subsection can either encompass the entire terminal screen,
 or any smaller portion down to a single character within that screen.
-.b "terminal"
+.Ip terminal
 Sometimes called
 .b terminal
 .b screen .
@@ -41,7 +41,7 @@ The package's idea of what the terminal's screen currently looks like,
 what the user sees now.
 This is a special
 .i screen :
-.b screen
+.Ip screen
 This is a subset of windows which are as large as the terminal screen,
 .i i.e. ,
 they start at the upper left hand corner
