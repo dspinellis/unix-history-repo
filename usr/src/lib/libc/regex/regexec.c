@@ -1,18 +1,18 @@
 /*-
  * Copyright (c) 1992 Henry Spencer.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Henry Spencer of the University of Toronto.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regexec.c	5.4 (Berkeley) %G%
+ *	@(#)regexec.c	8.1 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regexec.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)regexec.c	8.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
