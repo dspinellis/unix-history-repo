@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.6 (Berkeley) %G%
+#	@(#)Makefile.vax	7.7 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -99,21 +99,7 @@ assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
 	./a.out >assym.s; rm -f a.out
 
 depend:	assym.s
-	${CC} -M ${COPTS} ${CFILES} | \
-	sed -e ':loop' \
-	    -e 's/\.\.\/[^ /]*\/\.\./../' \
-	    -e 't loop' | \
-	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		       else rec = rec " " $$2 } } \
-	      END { print rec } ' > makedep
-	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ex - Makefile < eddep
-	rm eddep makedep
-
+	mkdep ${COPTS} ${CFILES}
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
