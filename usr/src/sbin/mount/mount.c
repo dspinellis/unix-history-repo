@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -616,6 +616,8 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 				exit(1);
 			}
 			nfsargsp->flags |= NFSMNT_SPONGY;
+		} else if (!strcmp(cp, "compress")) {
+			nfsargsp->flags |= NFSMNT_COMPRESS;
 		} else if (!strcmp(cp, "intr")) {
 			nfsargsp->flags |= NFSMNT_INT;
 		} else if (!strcmp(cp, "tcp")) {
