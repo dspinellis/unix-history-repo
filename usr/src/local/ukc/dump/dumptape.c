@@ -5,15 +5,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumptape.c	5.5 (Berkeley) 5/23/86";
+static char sccsid[] = "@(#)dumptape.c	5.8 (Berkeley) 2/23/87";
 #endif not lint
 
 #include <sys/file.h>
 #include "dump.h"
 
-char	(*tblock)[TP_BSIZE];	/* Pointer to malloc()ed buffer for tape */
-int	writesize;		/* Size of malloc()ed buffer for tape */
-int	trecno = 0;
+char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
+int	writesize;		/* size of malloc()ed buffer for tape */
+long	lastspclrec = -1;	/* tape block number of last written header */
+int	trecno = 0;		/* next record to write in current block */
 extern int ntrec;		/* blocking factor on tape */
 extern int cartridge;
 extern int read(), write();
@@ -74,6 +75,7 @@ taprec(dp)
 	req[trecno].dblk = (daddr_t)0;
 	req[trecno].count = 1;
 	*(union u_spcl *)(*tblock++) = *(union u_spcl *)dp;	/* movc3 */
+	lastspclrec = spcl.c_tapea;
 	trecno++;
 	spcl.c_tapea++;
 	if(trecno >= ntrec)
@@ -218,6 +220,7 @@ otape()
 	int	status;
 	int	waitpid;
 	int	(*interrupt)() = signal(SIGINT, SIG_IGN);
+	int	blks, i;
 
 	parentpid = getpid();
 
@@ -300,9 +303,17 @@ otape()
 		asize = 0;
 		tapeno++;		/* current tape sequence */
 		newtape++;		/* new tape signal */
+		blks = 0;
+		if (spcl.c_type != TS_END)
+			for (i = 0; i < spcl.c_count; i++)
+				if (spcl.c_addr[i] != 0)
+					blks++;
+		spcl.c_count = blks + 1 - spcl.c_tapea + lastspclrec;
 		spcl.c_volume++;
 		spcl.c_type = TS_TAPE;
+		spcl.c_flags |= DR_NEWHEADER;
 		spclrec();
+		spcl.c_flags &=~ DR_NEWHEADER;
 		if (tapeno > 1)
 			msg("Tape %d begins with blocks from ino %d\n",
 				tapeno, ino);

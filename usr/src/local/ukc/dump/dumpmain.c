@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpmain.c	5.4 (Berkeley) 5/28/86";
+static char sccsid[] = "@(#)dumpmain.c	5.6 (Berkeley) 2/23/87";
 #endif not lint
 
 #include "dump.h"
@@ -191,8 +191,18 @@ main(argc, argv)
 	 *	the file system name with or without the leading '/'.
 	 */
 	dt = fstabsearch(disk);
-	if (dt != 0)
+	if (dt != 0) {
 		disk = rawname(dt->fs_spec);
+		strncpy(spcl.c_dev, dt->fs_spec, NAMELEN);
+		strncpy(spcl.c_filesys, dt->fs_file, NAMELEN);
+	} else {
+		strncpy(spcl.c_dev, disk, NAMELEN);
+		strncpy(spcl.c_filesys, "an unlisted file system", NAMELEN);
+	}
+	strcpy(spcl.c_label, "none");
+	gethostname(spcl.c_host, NAMELEN);
+	spcl.c_level = incno - '0';
+	spcl.c_type = TS_TAPE;
 	getitime();		/* /etc/dumpdates snarfed */
 
 	msg("Date of this level %c dump: %s\n", incno, prdate(spcl.c_date));
