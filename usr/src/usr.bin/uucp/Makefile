@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.20 (Berkeley) %G%
+#	@(#)Makefile	5.21 (Berkeley) %G%
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -47,6 +47,11 @@ MAN5=	L-devices.0 L-dialcodes.0 L.aliases.0 L.cmds.0 L.sys.0 \
 #These might be useful on non 4.3bsd systems.
 MISC= htonl.c ioctl.c index.c mkdir.c strpbrk.c 
 
+.SUFFIXES: .out .o .c .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
+
+.8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
+	nroff -mandoc -h ${.IMPSRC} > ${.TARGET}
+
 DESTDIR=
 
 # Define P=& if your make supports parallelism (e.g. Sequent)
@@ -62,8 +67,8 @@ LIBC=	/lib/libc.a
 LIBDIR=	${DESTDIR}/usr/lib/uucp
 BIN=	${DESTDIR}/usr/bin
 ETC=	${DESTDIR}/etc
-PUBDIR=	${DESTDIR}/usr/spool/uucppublic
-SPOOL=	${DESTDIR}/usr/spool/uucp
+PUBDIR=	${DESTDIR}/var/spool/uucppublic
+SPOOL=	${DESTDIR}/var/spool/uucp
 XQTDIR=	${SPOOL}/XTMP
 CORRUPT= ${SPOOL}/CORRUPT
 AUDIT=	${SPOOL}/AUDIT
@@ -92,6 +97,7 @@ uucico:	$(P) cico.o cntrl.o conn.o condevs.o gnsys.o pk0.o chksum.o pk1.o \
 	${CC} -o uucico ${LDFLAGS} cico.o cntrl.o conn.o condevs.o gnsys.o \
 	pk0.o chksum.o pk1.o tio.o fio.o gio.o imsg.o \
 	uulib.a aculib/aculib.a ${LIBS} -lcompat
+
 
 # Note: mode 700 on ${LIBDIR} would be safer.
 # Also,  L.sys etc should be 600.
@@ -134,9 +140,9 @@ install: ${MAN1} ${MAN8} ${MAN5}
 	install -s -m 755 -o bin -g bin uusend ${BIN}
 	rm -f ${BIN}/ruusend
 	ln ${BIN}/uusend ${BIN}/ruusend
-	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 ${MAN5} ${DESTDIR}/usr/man/cat5
-	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/man/cat8
+	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/share/man/cat1
+	install -c -o bin -g bin -m 444 ${MAN5} ${DESTDIR}/usr/share/man/cat5
+	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/share/man/cat8
 
 clean:
 	rm -f *.o ${ALL} uulib.a
