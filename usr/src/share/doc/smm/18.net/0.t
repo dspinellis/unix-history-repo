@@ -3,13 +3,16 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.6 (Berkeley) %G%
+.\"	@(#)0.t	6.7 (Berkeley) %G%
 .\"
+.de IR
+\fI\\$1\fP\\$2
+..
 .if n .ND
 .TL
 Networking Implementation Notes
 .br
-4.3BSD Edition
+4.4BSD Edition
 .AU
 Samuel J. Leffler, William N. Joy, Robert S. Fabry, and Michael J. Karels
 .AI
@@ -23,7 +26,7 @@ Berkeley, CA  94720
 * UNIX is a trademark of Bell Laboratories.
 .FE
 This report describes the internal structure of the
-networking facilities developed for the 4.3BSD version
+networking facilities developed for the 4.4BSD version
 of the UNIX* operating system
 for the VAX\(dg.  These facilities
 .FS
@@ -35,7 +38,7 @@ structure the external (user) view of network communication
 as well as the internal (system) implementation.
 .PP
 The report documents the internal structure of the networking system.
-The ``Berkeley Software Architecture Manual, 4.3BSD Edition'' (PS1:6)
+The ``Berkeley Software Architecture Manual, 4.4BSD Edition'' (PSD:5)
 provides a description of the user interface to the networking facilities.
 .sp
 .LP
