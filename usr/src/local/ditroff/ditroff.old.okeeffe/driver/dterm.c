@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.2	(Berkeley)	%G%"
+/* @(#)dterm.c	1.3	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -47,12 +47,15 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.2	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.3	(Berkeley)	%G%";
 
+			/* here're the special characters... */
 char *spectab[] ={
 	"em", "-", "hy", "-", "en", "-", "ru", "_", "l.", ".", "L.", ".",
-	"br", "|", "vr", "|", "fm", "'", "or", "|",
-	0, 0,
+	"br", "|", "vr", "|", "fm", "'", "or", "|", "ga", "`", "aa", "'",
+	"ul", "_", "\\_","_", "pl", "+", "mi", "-", "eq", "=", "ap", "~",
+	"sl", "/", "bv", "|",
+	0, 0
 };
 
 int 	keepon	= 0;	/* flag:  Do we not stop at the end of each page? */
