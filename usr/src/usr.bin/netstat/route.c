@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,12 +27,11 @@ static char sccsid[] = "@(#)route.c	5.18 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 
-extern	int kmem;
 extern	int nflag;
 extern	char *routename(), *netname(), *ns_print(), *plural();
 extern	char *malloc();
 #define kget(p, d) \
-	(klseek(kmem, (off_t)(p), 0), read(kmem, (char *)&(d), sizeof (d)))
+	(kvm_read((off_t)(p), (char *)&(d), sizeof (d)))
 
 /*
  * Definitions for showing gateway flags.
@@ -86,8 +85,7 @@ routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
 	}
 	kget(hashsizeaddr, hashsize);
 	routehash = (struct mbuf **)malloc( hashsize*sizeof (struct mbuf *) );
-	klseek(kmem, hostaddr, 0);
-	read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
+	kvm_read(hostaddr, (char *)routehash, hashsize*sizeof (struct mbuf *));
 again:
 	for (i = 0; i < hashsize; i++) {
 		if (routehash[i] == 0)
@@ -100,8 +98,8 @@ again:
 		}
 	}
 	if (doinghost) {
-		klseek(kmem, netaddr, 0);
-		read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
+		kvm_read(netaddr, (char *)routehash,
+			hashsize*sizeof (struct mbuf *));
 		doinghost = 0;
 		goto again;
 	}
@@ -142,8 +140,7 @@ register struct sockaddr *dst;
 {
 	kget(dst, pt_u.u_sa);
 	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa)) {
-		klseek(kmem, (off_t)dst, 0);
-		read(kmem, pt_u.u_data, pt_u.u_sa.sa_len);
+		kvm_read((off_t)dst, pt_u.u_data, pt_u.u_sa.sa_len);
 	}
 	return (&pt_u.u_sa);
 }
@@ -303,8 +300,7 @@ register struct rtentry *rt;
 		return;
 	}
 	kget(rt->rt_ifp, ifnet);
-	klseek(kmem, (off_t)ifnet.if_name, 0);
-	read(kmem, name, 16);
+	kvm_read((off_t)ifnet.if_name, name, 16);
 	printf(" %.15s%d\n", name, ifnet.if_unit);
 }
 
@@ -325,8 +321,7 @@ register struct ortentry *rt;
 		return;
 	}
 	kget(rt->rt_ifp, ifnet);
-	klseek(kmem, (off_t)ifnet.if_name, 0);
-	read(kmem, name, 16);
+	kvm_read((off_t)ifnet.if_name, name, 16);
 	printf(" %.15s%d\n", name, ifnet.if_unit);
 }
 
@@ -442,8 +437,7 @@ rt_stats(off)
 		printf("rtstat: symbol not in namelist\n");
 		return;
 	}
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&rtstat, sizeof (rtstat));
+	kvm_read(off, (char *)&rtstat, sizeof (rtstat));
 	printf("routing:\n");
 	printf("\t%u bad routing redirect%s\n",
 		rtstat.rts_badredirect, plural(rtstat.rts_badredirect));

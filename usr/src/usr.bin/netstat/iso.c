@@ -34,7 +34,7 @@ SOFTWARE.
 /*
  *	ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-static char sccsid[] = "@(#)iso.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.4 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
@@ -68,7 +68,6 @@ static char sccsid[] = "@(#)iso.c	5.3 (Berkeley) %G%";
 #include <netiso/cons_pcb.h>
 #include <netdb.h>
 
-extern	int kmem;
 
 /*
  *	Dump esis stats
@@ -81,8 +80,7 @@ esis_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&esis_stat, sizeof (struct esis_stat));
+	kvm_read(off, (char *)&esis_stat, sizeof (struct esis_stat));
 	printf("%s:\n", name);
 	printf("\t%d esh sent, %d esh received\n", esis_stat.es_eshsent,
 		esis_stat.es_eshrcvd);
@@ -110,8 +108,7 @@ clnp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&clnp_stat, sizeof (clnp_stat));
+	kvm_read(off, (char *)&clnp_stat, sizeof (clnp_stat));
 
 	printf("%s:\n\t%d total packets sent\n", name, clnp_stat.cns_sent);
 	printf("\t%d total fragments sent\n", clnp_stat.cns_fragments);
@@ -145,8 +142,7 @@ cltp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&cltpstat, sizeof (cltpstat));
+	kvm_read(off, (char *)&cltpstat, sizeof (cltpstat));
 	printf("%s:\n\t%u incomplete header%s\n", name,
 		cltpstat.cltps_hdrops, plural(cltpstat.cltps_hdrops));
 	printf("\t%u bad data length field%s\n",
@@ -163,8 +159,7 @@ struct sockaddr_iso	siso;
 char	data[128];
 } laddr, faddr;
 #define kget(o, p) \
-	(klseek(kmem, (off_t)(o), 0), read(kmem, (char *)&p, sizeof (p)))
-extern	int kmem;
+	(kvm_read((off_t)(o), (char *)&p, sizeof (p)))
 extern	int Aflag;
 extern	int aflag;
 extern	int nflag;
@@ -380,21 +375,18 @@ x25_protopr(off, name)
 		printf("%s control block: symbol not in namelist\n", name);
 		return;
 	}
-	klseek(kmem, off, 0);
-	read(kmem, &xpcb, sizeof (struct x25_pcb));
+	kvm_read(off, &xpcb, sizeof (struct x25_pcb));
 	prev = (struct isopcb *)off;
 	if (xpcb.x_next == (struct isopcb *)off)
 		return;
 	while (xpcb.x_next != (struct isopcb *)off) {
 		next = isopcb.isop_next;
-		klseek(kmem, (off_t)next, 0);
-		read(kmem, &xpcb, sizeof (struct x25_pcb));
+		kvm_read((off_t)next, &xpcb, sizeof (struct x25_pcb));
 		if (xpcb.x_prev != prev) {
 			printf("???\n");
 			break;
 		}
-		klseek(kmem, (off_t)xpcb.x_socket, 0);
-		read(kmem, &sockb, sizeof (sockb));
+		kvm_read((off_t)xpcb.x_socket, &sockb, sizeof (sockb));
 
 		if (!aflag &&
 			xpcb.x_state == LISTENING ||

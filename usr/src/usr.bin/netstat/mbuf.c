@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -16,7 +16,6 @@ static char sccsid[] = "@(#)mbuf.c	5.8 (Berkeley) %G%";
 typedef int bool;
 
 struct	mbstat mbstat;
-extern	int kmem;
 
 static struct mbtypes {
 	int	mt_type;
@@ -60,8 +59,8 @@ mbpr(mbaddr)
 		printf("mbstat: symbol not in namelist\n");
 		return;
 	}
-	klseek(kmem, mbaddr, 0);
-	if (read(kmem, (char *)&mbstat, sizeof (mbstat)) != sizeof (mbstat)) {
+	if (kvm_read(mbaddr, (char *)&mbstat, sizeof (mbstat))
+						!= sizeof (mbstat)) {
 		printf("mbstat: bad read\n");
 		return;
 	}

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -18,6 +18,8 @@ static char sccsid[] = "@(#)if.c	5.13 (Berkeley) %G%";
 #include <netinet/in_var.h>
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -25,7 +27,6 @@ static char sccsid[] = "@(#)if.c	5.13 (Berkeley) %G%";
 #define	YES	1
 #define	NO	0
 
-extern	int kmem;
 extern	int tflag;
 extern	int dflag;
 extern	int nflag;
@@ -45,6 +46,7 @@ intpr(interval, ifnetaddr)
 		struct ifaddr ifa;
 		struct in_ifaddr in;
 		struct ns_ifaddr ns;
+		struct iso_ifaddr iso;
 	} ifaddr;
 	off_t ifaddraddr;
 	struct sockaddr *sa;
@@ -58,8 +60,7 @@ intpr(interval, ifnetaddr)
 		sidewaysintpr((unsigned)interval, ifnetaddr);
 		return;
 	}
-	klseek(kmem, ifnetaddr, 0);
-	read(kmem, (char *)&ifnetaddr, sizeof ifnetaddr);
+	kvm_read(ifnetaddr, (char *)&ifnetaddr, sizeof ifnetaddr);
 	printf("%-5.5s %-5.5s %-11.11s %-15.15s %8.8s %5.5s %8.8s %5.5s",
 		"Name", "Mtu", "Network", "Address", "Ipkts", "Ierrs",
 		"Opkts", "Oerrs");
@@ -78,10 +79,8 @@ intpr(interval, ifnetaddr)
 		struct in_addr inet_makeaddr();
 
 		if (ifaddraddr == 0) {
-			klseek(kmem, ifnetaddr, 0);
-			read(kmem, (char *)&ifnet, sizeof ifnet);
-			klseek(kmem, (off_t)ifnet.if_name, 0);
-			read(kmem, name, 16);
+			kvm_read(ifnetaddr, (char *)&ifnet, sizeof ifnet);
+			kvm_read((off_t)ifnet.if_name, name, 16);
 			name[15] = '\0';
 			ifnetaddr = (off_t) ifnet.if_next;
 			if (interface != 0 &&
@@ -99,8 +98,7 @@ intpr(interval, ifnetaddr)
 			printf("%-11.11s ", "none");
 			printf("%-15.15s ", "none");
 		} else {
-			klseek(kmem, ifaddraddr, 0);
-			read(kmem, (char *)&ifaddr, sizeof ifaddr);
+			kvm_read(ifaddraddr, (char *)&ifaddr, sizeof ifaddr);
 #define CP(x) ((char *)(x))
 			cp = (CP(ifaddr.ifa.ifa_addr) - CP(ifaddraddr)) +
 				CP(&ifaddr); sa = (struct sockaddr *)cp;
@@ -209,8 +207,7 @@ sidewaysintpr(interval, off)
 	int oldmask;
 	int catchalarm();
 
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&firstifnet, sizeof (off_t));
+	kvm_read(off, (char *)&firstifnet, sizeof (off_t));
 	lastif = iftot;
 	sum = iftot + MAXIF - 1;
 	total = sum - 1;
@@ -218,11 +215,9 @@ sidewaysintpr(interval, off)
 	for (off = firstifnet, ip = iftot; off;) {
 		char *cp;
 
-		klseek(kmem, off, 0);
-		read(kmem, (char *)&ifnet, sizeof ifnet);
-		klseek(kmem, (off_t)ifnet.if_name, 0);
+		kvm_read(off, (char *)&ifnet, sizeof ifnet);
 		ip->ift_name[0] = '(';
-		read(kmem, ip->ift_name + 1, 15);
+		kvm_read((off_t)ifnet.if_name, ip->ift_name + 1, 15);
 		if (interface && strcmp(ip->ift_name + 1, interface) == 0 &&
 		    unit == ifnet.if_unit)
 			interesting = ip;
@@ -275,8 +270,7 @@ loop:
 	sum->ift_co = 0;
 	sum->ift_dr = 0;
 	for (off = firstifnet, ip = iftot; off && ip < lastif; ip++) {
-		klseek(kmem, off, 0);
-		read(kmem, (char *)&ifnet, sizeof ifnet);
+		kvm_read(off, (char *)&ifnet, sizeof ifnet);
 		if (ip == interesting) {
 			printf("%8d %5d %8d %5d %5d",
 				ifnet.if_ipackets - ip->ift_ip,

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)inet.c	5.14 (Berkeley) %G%";
 struct	inpcb inpcb;
 struct	tcpcb tcpcb;
 struct	socket sockb;
-extern	int kmem;
 extern	int Aflag;
 extern	int aflag;
 extern	int nflag;
@@ -68,8 +67,7 @@ protopr(off, name)
 	if (off == 0)
 		return;
 	istcp = strcmp(name, "tcp") == 0;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&cb, sizeof (struct inpcb));
+	kvm_read(off, (char *)&cb, sizeof (struct inpcb));
 	inpcb = cb;
 	prev = (struct inpcb *)off;
 	if (inpcb.inp_next == (struct inpcb *)off)
@@ -77,8 +75,7 @@ protopr(off, name)
 	while (inpcb.inp_next != (struct inpcb *)off) {
 
 		next = inpcb.inp_next;
-		klseek(kmem, (off_t)next, 0);
-		read(kmem, (char *)&inpcb, sizeof (inpcb));
+		kvm_read((off_t)next, (char *)&inpcb, sizeof (inpcb));
 		if (inpcb.inp_prev != prev) {
 			printf("???\n");
 			break;
@@ -88,11 +85,11 @@ protopr(off, name)
 			prev = next;
 			continue;
 		}
-		klseek(kmem, (off_t)inpcb.inp_socket, 0);
-		read(kmem, (char *)&sockb, sizeof (sockb));
+		kvm_read((off_t)inpcb.inp_socket,
+				(char *)&sockb, sizeof (sockb));
 		if (istcp) {
-			klseek(kmem, (off_t)inpcb.inp_ppcb, 0);
-			read(kmem, (char *)&tcpcb, sizeof (tcpcb));
+			kvm_read((off_t)inpcb.inp_ppcb,
+				(char *)&tcpcb, sizeof (tcpcb));
 		}
 		if (first) {
 			printf("Active Internet connections");
@@ -140,8 +137,7 @@ tcp_stats(off, name)
 	if (off == 0)
 		return;
 	printf ("%s:\n", name);
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
+	kvm_read(off, (char *)&tcpstat, sizeof (tcpstat));
 
 #define	p(f, m)		printf(m, tcpstat.f, plural(tcpstat.f))
 #define	p2(f1, f2, m)	printf(m, tcpstat.f1, plural(tcpstat.f1), tcpstat.f2, plural(tcpstat.f2))
@@ -206,8 +202,7 @@ udp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&udpstat, sizeof (udpstat));
+	kvm_read(off, (char *)&udpstat, sizeof (udpstat));
 	printf("%s:\n\t%u incomplete header%s\n", name,
 		udpstat.udps_hdrops, plural(udpstat.udps_hdrops));
 	printf("\t%u bad data length field%s\n",
@@ -231,8 +226,7 @@ ip_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&ipstat, sizeof (ipstat));
+	kvm_read(off, (char *)&ipstat, sizeof (ipstat));
 #if BSD>=43
 	printf("%s:\n\t%u total packets received\n", name,
 		ipstat.ips_total);
@@ -293,8 +287,7 @@ icmp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&icmpstat, sizeof (icmpstat));
+	kvm_read(off, (char *)&icmpstat, sizeof (icmpstat));
 	printf("%s:\n\t%u call%s to icmp_error\n", name,
 		icmpstat.icps_error, plural(icmpstat.icps_error));
 	printf("\t%u error%s not generated 'cuz old message was icmp\n",
