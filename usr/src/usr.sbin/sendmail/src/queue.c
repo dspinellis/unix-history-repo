@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.37 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.38 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.37 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.38 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -64,6 +64,7 @@ queueup(df)
 	bool newid;
 	register char *p;
 	MAILER nullmailer;
+	MCI mcibuf;
 	char buf[MAXLINE], tf[MAXLINE];
 
 	/*
@@ -203,6 +204,9 @@ queueup(df)
 	nullmailer.m_re_rwset = nullmailer.m_rh_rwset =
 			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = -1;
 	nullmailer.m_eol = "\n";
+	bzero(&mcibuf, sizeof mcibuf);
+	mcibuf.mci_mailer = &nullmailer;
+	mcibuf.mci_out = tfp;
 
 	define('g', "\201f", e);
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1854,6 +1854,7 @@ mailfile(filename, ctladdr, e)
 	{
 		/* child -- actually write to file */
 		struct stat stb;
+		MCI mcibuf;
 
 		(void) setsignal(SIGINT, SIG_DFL);
 		(void) setsignal(SIGHUP, SIG_DFL);
@@ -1917,11 +1918,17 @@ mailfile(filename, ctladdr, e)
 		}
 
 		putmessage(f, Mailer[1], FALSE);
-		putfromline(f, FileMailer, e);
-		(*e->e_puthdr)(f, FileMailer, e);
-		putline("\n", f, FileMailer);
-		(*e->e_putbody)(f, FileMailer, e, NULL);
-		putline("\n", f, FileMailer);
+		bzero(&mcibuf, sizeof mcibuf);
+		mcibuf.mci_mailer = FileMailer;
+		mcibuf.mci_out = f;
+		if (bitnset(M_7BITS, FileMailer->m_flags))
+			mcibuf.mci_flags |= MCIF_7BIT;
+
+		putfromline(&mcibuf, e);
+		(*e->e_puthdr)(&mcibuf, e);
+		putline("\n", &mcibuf);
+		(*e->e_putbody)(&mcibuf, e, NULL);
+		putline("\n", &mcibuf);
 		if (ferror(f))
 		{
 			message("451 I/O error: %s", errstring(errno));

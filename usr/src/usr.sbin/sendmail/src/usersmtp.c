@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -268,7 +268,10 @@ helo_options(line, m, mci, e)
 			mci->mci_maxsize = atol(p);
 	}
 	else if (strcasecmp(line, "8bitmime") == 0)
+	{
 		mci->mci_flags |= MCIF_8BITMIME;
+		mci->mci_flags &= ~MCIF_7BIT;
+	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
 }
