@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ex.c	7.5 (Berkeley) %G%
+ *	@(#)if_ex.c	7.6 (Berkeley) %G%
  */
 
 #include "ex.h"
@@ -84,7 +84,7 @@ struct	uba_device *exinfo[NEX];
 u_short exstd[] = { 0 };
 struct	uba_driver exdriver =
 	{ exprobe, 0, exattach, 0, exstd, "ex", exinfo };
-int	exinit(),ether_output(),exioctl(),exreset(),exwatch();
+int	exinit(),exstart(),ether_output(),exioctl(),exreset(),exwatch();
 struct ex_msg *exgetcbuf();
 
 /*
@@ -229,6 +229,7 @@ exattach(ui)
 
 	ifp->if_init = exinit;
 	ifp->if_output = ether_output;
+	ifp->if_start = exstart;
 	ifp->if_ioctl = exioctl;
 	ifp->if_reset = exreset;
 	ifp->if_flags = IFF_BROADCAST;
