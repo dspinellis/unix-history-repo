@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.1 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 # This makefile assumes that csh is running the figures
 #
@@ -19,9 +19,15 @@ FIGURES=\
 	katout copydataout kat2out katscript xxxxqqqout xxxxqqqout2\
 	primes primes-d\
 	comments1.p commentsout
+TROFF=	vtroff
+
 puman: ${FIGURES}
 	soelim puman${SEC}.n | tbl | csh -cf '/usr/ucb/vtroff -t ${DEV} >lpr'
 	vpr -t lpr
+
+troff:	${FIGURES}
+	soelim puman${SEC}.n | tbl | ${TROFF}
+
 csfix:
 	cc -O csfix.c -o csfix
 firstout: first.p csfix
