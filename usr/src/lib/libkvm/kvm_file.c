@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_file.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_file.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -75,7 +75,7 @@ kvm_deadfiles(kd, op, arg, filehead_o, nfiles)
 	 */
 	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
 		if (buflen > sizeof (struct file)) {
-			if (KREAD(kd, fp, ((struct file *)where))) {
+			if (KREAD(kd, (long)fp, ((struct file *)where))) {
 				_kvm_err(kd, kd->program, "can't read kfp");
 				return (0);
 			}
