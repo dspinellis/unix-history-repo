@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.26 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -429,7 +429,8 @@ badarg:
 		}
 		goto bad;
 	}
-	vp->v_text->x_mtime = vattr.va_mtime.tv_sec;
+	if (vp->v_text)
+		vp->v_text->x_mtime = vattr.va_mtime.tv_sec;
 	vput(vp);
 	vp = NULL;
 
