@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)modf.s	5.1 (Berkeley) %G%";
+.asciz  "@(#)modf.c	5.1 (Berkeley) 4/23/90"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -21,16 +21,37 @@ static char sccsid[] = "@(#)modf.s	5.1 (Berkeley) %G%";
  */
 
 /* With CHOP mode on, frndint behaves as TRUNC does.  Useful. */
-double
-modf(double value, double *iptr)
-{
-	double temp;
-	short i87flag, i87temp;
-	__asm ("fnstcw %0" : "=g" (i87flag) : );
-	i87temp = i87flag | 0xc00 ; /* turn on chop mode [truncation] */
-	__asm ("fldcw %0" : : "g" (i87temp));
-	__asm ("frndint" : "=f" (temp) : "0" (value)); /* temp = int of value */
-	__asm ("fldcw %0" : : "g" (i87flag));
-	*iptr = temp;
-	return (value - temp);
-}
+.text
+.globl _modf
+_modf:
+	pushl %ebp
+	movl %esp,%ebp
+	subl $16,%esp
+/APP
+	fnstcw -12(%ebp)
+/NO_APP
+	movw -12(%ebp),%dx
+	orw $3072,%dx
+	movw %dx,-16(%ebp)
+/APP
+	fldcw -16(%ebp)
+/NO_APP
+	fldl 8(%ebp)
+/APP
+	frndint
+/NO_APP
+	fstpl -8(%ebp)
+/APP
+	fldcw -12(%ebp)
+/NO_APP
+	movl 16(%ebp),%eax
+	movl -8(%ebp),%edx
+	movl -4(%ebp),%ecx
+	movl %edx,(%eax)
+	movl %ecx,4(%eax)
+	fldl 8(%ebp)
+	fsubl -8(%ebp)
+	jmp L1
+L1:
+	leave
+	ret

@@ -9,13 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fixdfsi.s	5.2 (Berkeley) %G%";
+	.asciz "@(#)fixdfsi.s	5.1 (Berkeley) 5/15/90"
 #endif /* LIBC_SCCS and not lint */
 
-__fixdfsi(d)
-double d;
-{
-	int val;
-	asm("fldl %1 ; fistpl %0" : "=g" (val) : "g" (d) );
-	return(val);
-}
+	.globl ___fixdfsi
+___fixdfsi:
+	fldl	4(%esp)
+	fistpl	4(%esp)
+	movl	4(%esp),%eax
+	ret
