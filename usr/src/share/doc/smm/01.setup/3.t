@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.11 (Berkeley) %G%
+.\"	@(#)3.t	6.12 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -120,7 +120,9 @@ Take off the rest of the morning, you've earned it!
 Section 3.2 lists the files to be saved as part of the conversion process.
 Section 3.3 describes the bootstrap process.
 Section 3.4 discusses the merger of the saved files back into the new system.
-Section 3.5 provides general hints on possible problems to be
+Section 3.5 gives an overview of the major
+bug fixes and changes between \(*Ps and \*(4B.
+Section 3.6 provides general hints on possible problems to be
 aware of when converting from \*(Ps to \*(4B.
 .NH 2
 Files to save
@@ -148,7 +150,10 @@ l c l.
 /etc/group	*	group data base
 /etc/hosts	\(dg	for local host information
 /etc/hosts.equiv	\(dg	for local host equivalence information
+/etc/hosts.lpd	\(dg	printer access file
 /etc/inetd.conf	*	Internet services configuration data
+/etc/named*	\(dg	named configuration files
+/etc/netstart	\(dg	network initialization
 /etc/networks	\(dg	for local network information
 /etc/passwd	*	user data base
 /etc/printcap	*	line printer database
@@ -157,6 +162,7 @@ l c l.
 /etc/rc.local	*	site specific system startup commands
 /etc/remote	\(dg	auto-dialer configuration
 /etc/services	\(dd	for local additions
+/etc/shells	\(dd	list of valid shells
 /etc/syslog.conf	*	system logger configuration
 /etc/securettys	*	merged into ttys
 /etc/ttys	*	terminal line configuration data
@@ -167,7 +173,9 @@ l c l.
 /usr/include/*	\(dd	for local additions
 /usr/lib/aliases	*	mail forwarding data base (moves to \f(CW/etc/aliases\fP)
 /usr/lib/crontab	*	cron daemon data base (moves to \f(CW/etc/crontab\fP)
+/usr/lib/crontab.local	*	local cron daemon data base (moves to \f(CW/etc/crontab.local\fP)
 /usr/lib/lib*.a	\(dg	for locally libraries
+/usr/lib/mail.rc	\(dg	system-wide mail(1) initialization (moves to \f(CW/etc/mail.rc\fP)
 /usr/lib/sendmail.cf	*	sendmail configuration (moves to \f(CW/etc/sendmail.cf\fP)
 /usr/lib/tmac/*	\(dd	for locally developed troff/nroff macros (moves to \f(CW/usr/share/tmac/*\fP)
 /usr/lib/uucp/*	\(dg	for local uucp configuration files
@@ -193,7 +201,7 @@ this document for extracting the root and
 filesystems from the distribution tape onto unused disk partitions.
 For the SPARC, the root filesystem dump on the tape could also be
 extracted directly.
-For the HP300 and DecStation, the raw disk image can be copied
+For the HP300 and DECstation, the raw disk image can be copied
 into an unused partition and this partition can then be dumped
 to create an image that can be restored.
 The exact procedure chosen will depend on the disk configuration
@@ -258,11 +266,11 @@ will also set default \fIinterleave\fP and
 filesystems, in which these fields were unused spares; this correction
 will produce messages of the form:
 .DS
-\fBIMPOSSIBLE INTERLEAVE=0 IN SUPERBLOCK (SET TO DEFAULT)\fP*
+\fBIMPOSSIBLE INTERLEAVE=0 IN SUPERBLOCK (SET TO DEFAULT)\fP\**
 \fBIMPOSSIBLE NPSECT=0 IN SUPERBLOCK (SET TO DEFAULT)\fP
 .DE
 .FS
-* The defaults are to set \fIinterleave\fP to 1 and
+The defaults are to set \fIinterleave\fP to 1 and
 \fInpsect\fP to \fInsect\fP.
 This is correct on most drives;
 it affects only performance (and in most cases, virtually unmeasurably).
@@ -402,11 +410,13 @@ filesystems.
 Once a filesystem has been made for
 .Pn /var ,
 .Xr mtree
-should be used to create a directory hierarchy there.
+can be used to create a directory hierarchy there
+or you can simply use tar to extract the prototype from
+the second file of the distribution tape.
 .NH 3
 Changes in the
 .Pn /etc
-filesystem
+directory
 .PP
 The
 .Pn /etc
@@ -453,8 +463,24 @@ l l l
 lfC lfC l.
 	New in \*(4B	Comments
 _	_	_
-	/etc/man.conf	lists directories searched by \fIman\fP\|(1)
+	/etc/aliases.db	database version of the aliases file
+	/etc/amd-home	location database of home directories
+	/etc/amd-vol	location database of exported filesystems
+	/etc/changelist	\f(CW/etc/security\fP files to back up and check
+	/etc/csh.cshrc	system-wide csh(1) initialization file
+	/etc/csh.login	system-wide csh(1) login file
+	/etc/csh.logout	system-wide csh(1) logout file
+	/etc/disklabels	directory for saving disklabels from disklabel(8)
+	/etc/exports	NFS list of export permissions
+	/etc/ftpwelcome	welcome message displayed for ftp users; see ftpd(8)
 	/etc/kerberosIV	Kerberos directory; see below
+	/etc/man.conf	lists directories searched by \fIman\fP\|(1)
+	/etc/master.passwd	master user data base; see pwd_mkdb(8).
+	/etc/mtree	directory for local mtree files; see mtree(8)
+	/etc/netgroup	NFS group list used in \f(CW/etc/exports\fP
+	/etc/pwd.db	non-secure hashed user data base file
+	/etc/spwd.db	secure hashed user data base file
+	/etc/security	daily system security checker
 .TE
 .DE
 .PP
@@ -499,9 +525,9 @@ Standard system programs that require this access are
 made set-group-id to that group.
 The group ``sys'' is intended to control access to kernel sources,
 and other sources belong to group ``wsrc.''
-Rather than make user's terminals writable by all users,
+Rather than make user terminals writable by all users,
 they are now placed in group ``tty'' and made only group writable.
-Programs that should legitimately have access to write on user's terminals
+Programs that should legitimately have access to write on user terminals
 such as
 .Xr talkd
 and
@@ -559,6 +585,45 @@ Note in particular that
 has had many changes,
 and that host names are now fully specified as domain-style names
 (e.g., vangogh.CS.Berkeley.EDU) for the benefit of the name server.
+.PP
+Some of the commands previously in
+.Pn /etc/daily
+have been moved to
+.Pn /etc/security ,
+and several new functions have been added to
+.Pn /etc/security
+to do nightly security checks on the system.
+The script
+.Pn /etc/daily
+runs
+.Pn /etc/security
+each night, and mails the output to the super-user.
+Some of the checks done by
+.Pn /etc/security
+are:
+.DS
+\(bu Syntax errors in the password and group files.
+\(bu Duplicate user and group names and id's.
+\(bu Dangerous search paths and umask values for the superuser.
+\(bu Dangerous values in various initialization files.
+\(bu Dangerous .rhosts files.
+\(bu Dangerous directory and file ownership or permissions.
+\(bu Globally exported filesystems.
+\(bu Dangerous owners or permissions for special devices.
+.DE
+In addition, any modifications to setuid and setgid files, special
+devices, or the files in
+.Pn /etc/changelist
+since the last run of
+.Pn /etc/security
+are noted.
+Backup copies of the files are saved in
+.Pn /var/backups .
+Finally, the system binaries are checksum'd and their permissions
+validated against the
+.Xr mtree (8)
+specifications in
+.Pn /etc/mtree .
 .PP
 The C-library and system binaries on the distribution tape
 are compiled with new versions of
@@ -726,257 +791,141 @@ mv messages messages.[0-9] ../log
 mv wtmp wtmp.[0-9] ../log
 mv lastlog ../log
 .DE
-.NH 3
-Block devices and the root filesystem
+.NH 2
+Bug fixes and changes between \*(Ps and \*(4B
 .PP
-The buffer cache in the kernel is now organized as a file block cache
-rather than a device block cache.
-As a consequence, cached blocks from a file
-and from the corresponding block device would no longer be kept consistent.
-The block device thus has little remaining value.
-Three changes have been made for these reasons:
-(1) block devices may not be opened while they are mounted,
-and may not be mounted while open, so that the two versions of cached
-file blocks cannot be created,
-(2) filesystem checks of the root now use the raw device
-to access the root filesystem, and
-(3) the root filesystem is initially mounted read-only
-so that nothing can be written back to disk during or after modification
-of the raw filesystem by
-.Xr fsck .
-The root filesystem may be made writable while in single-user mode
-with the command
-.Li "mount -u /" .
-The mount command has an option to update the flags on a mounted filesystem,
-including the ability to upgrade a filesystem from read-only to read-write
-or downgrade it from read-write to read-only.
+The major new facilities available in the \*(4B release are
+a new virtual memory system,
+the addition of ISO/OSI networking support,
+a new virtual filesystem interface supporting filesystem stacking,
+a freely redistributable implementation of NFS,
+a log-structured filesystem,
+enhancement of the local filesystems to support
+files and filesystems that are up to 2^63 bytes in size,
+enhanced security and system management support,
+and the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
+facilities and many of the IEEE Std1003.2 facilities.
+In addition, many new utilities and additions to the C
+library are present as well.
+The kernel sources have been reorganized to collect all machine-dependent
+files for each architecture under one directory,
+and most of the machine-independent code is now free of code
+conditional on specific machines.
+The user structure and process structure have been reorganized
+to eliminate the statically-mapped user structure and to make most
+of the process resources shareable by multiple processes.
+The system and include files have been converted to be compatible
+with ANSI C, including function prototypes for most of the exported
+functions.
+There are numerous other changes throughout the system.
 .NH 3
-Kerberos
+Changes to the kernel
 .PP
-The Kerberos authentication server from MIT (version 4)
-is included in this release.
-See
-.Xr kerberos (1)
-for a general, if MIT-specific, introduction.
-If it is configured,
-.Xr login (1),
-.Xr passwd (1),
-.Xr rlogin (1)
+This release includes several important structural kernel changes.
+The kernel uses a new internal system call convention;
+the use of global (``u-dot'') variables for parameters and error returns
+has been eliminated,
+and interrupted system calls no longer abort using non-local goto's (longjmp's).
+A new sleep interface separates signal handling from scheduling priority,
+returning characteristic errors to abort or restart the current system call.
+This sleep call also passes a string describing the process state,
+which is used by the ps(1) program.
+The old sleep interface can be used only for non-interruptible sleeps.
+The sleep interface (\fItsleep\fP) can be used at any priority,
+but is only interruptible if the PCATCH flag is set.
+When interrupted, \fItsleep\fP returns EINTR or ERESTART.
+.PP
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include mount entries, file entries,
+user open file descriptors, the process entries, the vnode table,
+the name cache, and the quota structures.
+.PP
+To protect against indiscriminate reading or writing of kernel
+memory, all writing and most reading of kernel data structures
+must be done using a new ``sysctl'' interface.
+The information to be accessed is described through an extensible
+``Management Information Base'' (MIB) style name,
+described as a dotted set of components.
+A new utility,
+.Xr sysctl (8),
+retrieves kernel state and allows processes with appropriate
+privilege to set kernel state.
+.PP
+The kernel runs with four different levels of security.
+Any superuser process can raise the security level, but only 
+.Fn init
+can lower it.
+Security levels are defined as follows:
+.IP \-1
+Permanently insecure mode \- always run system in level 0 mode.
+.IP "  0"
+Insecure mode \- immutable and append-only flags may be turned off.
+All devices may be read or written subject to their permissions.
+.IP "  1"
+Secure mode \- immutable and append-only flags may not be cleared;
+disks for mounted filesystems,
+.Pn /dev/mem ,
 and
-.Xr rsh (1)
-will all begin to use it automatically.
-The file
-.Pn /etc/kerberosIV/README
-describes the configuration.
-Each system needs the file
-.Pn /etc/kerberosIV/krb.conf
-to set its realm and local servers,
-and a private key stored in
-.Pn /etc/kerberosIV/srvtab
-(see
-.Xr ext_srvtab (8)).
-The Kerberos server should be set up on a single, physically secure,
-server machine.
-Users and hosts may be added to the server database manually with
-.Xr kdb_edit (8),
-or users on authorized hosts can add themselves and a Kerberos
-password upon verification of their ``local'' (passwd-file) password
-using the
-.Xr register (1)
-program.
+.Pn /dev/kmem
+are read-only.
+.IP "  2"
+Highly secure mode \- same as secure mode, plus disks are always
+read-only whether mounted or not.
+This level precludes tampering with filesystems by unmounting them,
+but also inhibits running
+.Xr newfs (8)
+while the system is multi-user.
 .PP
-Note that by default the password-changing program
-.Xr passwd (1)
-changes the Kerberos password, which must exist.
-The
-.Li \-l
-option to
-.Xr passwd (1)
-changes the ``local'' password if one exists.
+Normally, the system runs in level 0 mode while single user
+and in level 1 mode while multiuser.
+If the level 2 mode is desired while running multiuser,
+it can be set in the startup script
+.Pn /etc/rc
+using
+.Xr sysctl (1).
+If it is desired to run the system in level 0 mode while multiuser,
+the administrator must build a kernel with the variable
+.Li securelevel
+in the kernel source file
+.Pn /sys/kern/kern_sysctl.c
+initialized to \-1.
+.NH 4
+Virtual memory changes
 .PP
-Note that Version 5 of Kerberos will be released soon,
-and that Version 4 should probably be replaced at that time.
-.NH 3
-Make and Makefiles
-.PP
-This release uses a completely new version of the
-.Xr make
-program derived from the
-.Xr pmake
-program developed by the Sprite project at Berkeley.
-It supports existing makefiles, although certain incorrect makefiles
-may fail.
-The makefiles for the \*(4B sources make extensive use of the new
-facilities, especially conditionals and file inclusion, and are thus
-completely incompatible with older versions of
-.Xr make
-(but nearly all of the makefiles are now trivial!).
-The standard include files for
-.Xr make
-are in
-.Pn /usr/share/mk .
-There is a bsd.README file in
-.Pn /usr/src/share/mk .
-.PP
-Another global change supported by the new
-.Xr make
-is designed to allow multiple architectures to share a copy of the sources.
-If a subdirectory named
-.Pn obj
-is present in the current directory,
-.Xr make
-descends into that directory and creates all object and other files there.
-We use this by building a directory hierarchy in
-.Pn /var/obj
-that parallels
-.Pn /usr/src .
-We then create the
-.Pn obj
-subdirectories in
-.Pn /usr/src
-as symbolic links to the corresponding directories in
-.Pn /var/obj .
-(Both of these steps are automated; the makefile in the
-.Pn /usr/src
-directory has an example of a target (``shadow'') which builds
-the object filesystem, and ``make obj'' in a directory
-including the standard \*(Bs rules in its Makefile makes the
-.Pn obj
-links in the current directory and recursively in the normal subdirectories.)
-We have one
-.Pn /var/obj
-hierarchy on the local system, and another on each
-system that shares the source filesystem.
-.NH 3
-Additions and changes to filesystems
-.PP
-Network filesystem access is available in \*(4B.
-An implementation of the Network File System (NFS) was contributed
-by Rick Macklem of the University of Guelph.
-Its use will be fairly familiar to users of other implementations of NFS.
-See the manual pages
-.Xr mount (8),
-.Xr mountd (8),
-.Xr fstab (5),
-.Xr exports (5),
-.Xr netgroup (5),
-.Xr nfsd (8),
-.Xr nfsiod (8),
-and
-.Xr nfssvc (8).
-The format of
-.Pn /etc/fstab
-has changed from previous \*(Bs releases
-to a blank-separated format to allow colons in pathnames.
-.PP
-An implementation of an auto-mounter daemon,
-.Xr amd ,
-was contributed by Jan-Simon Pendry of the
-Imperial College of Science, Technology & Medicine.
-See the document ``AMD \- The 4.4BSD Automounter'' (SMM:13)
-for further information.
-.PP
-The directory
-.Pn /dev/fd
-contains special files
-.Pn 0
-through
-.Pn 63
-which, when opened, duplicate the corresponding file descriptor.
-The names
-.Pn /dev/stdin
-.Pn /dev/stdout
-.Pn /dev/stderr
-refer to file descriptors 0, 1 and 2.
-See
-.Xr fd (4)
-and
-.Xr mount_fdesc (8)
-for more information.
-.PP
-The system now supports stackable filesystems;
-this feature allows various filesystems to be stacked
-on top of each other to provide additive sets of semantics.
-For example,
-the umap filesystem (see
-.Xr mount_umap (8))
-is used to mount a sub-tree of an existing filesystem
-that uses a different set of uids and gids than the local system.
-Such a filesystem could be mounted from a remote site via NFS or it
-could be a filesystem on removable media brought from some foreign
-location that uses a different password file.
-.PP
-Other new filesystems include the loopback filesystem
-.Xr mount_lofs (8),
-the kernel filesystem
-.Xr mount_kernfs (8),
-and the portal filesystem
-.Xr mount_portal (8).
-.NH 3
-POSIX changes
-.PP
-The \*(4B system uses the IEEE P1003.1 (POSIX.1) terminal interface
-rather than the previous \*(Bs terminal interface.
-The new interface has nearly all of the functionality of the old interface,
-extending the POSIX interface as necessary.
-Both the old
-.Xr ioctl
-calls and old options to
-.Xr stty (1)
-are emulated.
-This emulation is expected to be unavailable in many vendors releases,
-so conversion to the new interface is encouraged.
-.PP
-The POSIX.1 job control interface is implemented in \*(4B.
-A new system call,
-.Fn setsid ,
-is used to create a job-control session consisting of a single process
-group with one member, the caller, which becomes a session leader.
-Only a session leader may acquire a controlling terminal.
-This is done explicitly via a
-.Sm TIOCSCTTY
-.Fn ioctl
-call, not implicitly by an
-.Fn open
-call.
-The call fails if the terminal is in use.
-Programs that allocate controlling terminals (or pseudo-terminals)
-require modification to work in this environment.
-The versions of
-.Xr xterm
-provided in the X11R5 release includes the necessary changes.
-New library routines are available for allocating and initializing
-pseudo-terminals and other terminals as controlling terminal; see
-.Pn /usr/src/lib/libutil/pty.c
-and
-.Pn /usr/src/lib/libutil/login_tty.c .
-.PP
-The POSIX job control model formalizes the previous conventions
-used in setting up a process group.
-Unfortunately, this requires that changes be made in a defined order
-and with some synchronization that were not necessary in the past.
-Older job control shells (csh, ksh) will generally not operate correctly
-with the new system.
-.PP
-Most of the other kernel interfaces have been changed to correspond
-with the POSIX.1 interface, although that work is not quite complete.
-See the relevant manual pages, perhaps in conjunction with the IEEE POSIX
-standard.
-.PP
-Many of the utilities have been changed to work as described in draft 14
-of the POSIX.2 Shell and Utilities document.
-Additional changes are likely in this area.
-.NH 3
+The new virtual memory implementation is derived from the MACH
+operating system developed at Carnegie-Mellon,
+and was ported to the BSD kernel at the University of Utah.
+The MACH virtual memory system call interface has been replaced with the
+``mmap''-based interface described in the ``Berkeley Software
+Architecture Manual'' (see UNIX Programmer's Manual,
+Supplementary Documents, PSD:5).
+The interface is similar to the interfaces shipped
+by several commercial vendors such as Sun, USL, and Convex Computer Corp.
+The integration of the new virtual memory is functionally complete,
+but still has serious performance problems under heavy memory load.
+The internal kernel interfaces have not yet been completed
+and the memory pool and buffer cache have not been merged.
+.NH 4
 Networking additions and changes
 .PP
-\*(4B provides some support for the ISO OSI protocols CLNP,
-TP4, and ES-IS.
-User level libraries and processes
-implement the application protocols such as FTAM and X.500;
-these are available in ISODE,
-the ISO Development Environment by Marshall Rose,
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet\**).
+.FS
+Ethernet is a trademark of the Xerox Corporation.
+.FE
+We also include support for ISO Connection-Oriented Network Service,
+X.25, TP-0.
+The session and presentation layers are provided outside
+the kernel using the ISO Development Environment by Marshall Rose,
 which is available via anonymous FTP
 (but is not included on the distribution tape).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500),
+and miscellaneous other utilities.
 .PP
 Kernel support for the ISO OSI protocols is enabled with the ISO option
 in the kernel configuration file.
@@ -1002,6 +951,16 @@ has a new syntax and a number of new capabilities:
 it can install routes with a specified destination and mask,
 and can change route characteristics such as hop count, packet size
 and window size.
+.PP
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
 .PP
 The format of the
 .I sockaddr
@@ -1066,8 +1025,365 @@ field when iterating through the array of addresses returned,
 as not all of the structures returned have the same length
 (in fact, this is nearly guaranteed by the presence of link-layer
 address structures).
+.NH 4
+Additions and changes to filesystems
+.PP
+The 4.4BSD distribution contains most of the interfaces
+specified in the IEEE Std1003.1 system interface standard.
+Filesystem additions include IEEE Std1003.1 FIFOs,
+byte-range file locking, and saved user and group identifiers.
+.PP
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+In comparison with other interfaces,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+The interface has been extended with support for stackable
+filesystems done at UCLA.
+These extensions allow for filesystems to be layered on top of each
+other and allow new vnode operations to be added without requiring
+changes to existing filesystem implementations.
+For example,
+the umap filesystem (see
+.Xr mount_umap (8))
+is used to mount a sub-tree of an existing filesystem
+that uses a different set of uids and gids than the local system.
+Such a filesystem could be mounted from a remote site via NFS or it
+could be a filesystem on removable media brought from some foreign
+location that uses a different password file.
+.PP
+Other new filesystems that may be stacked include the loopback filesystem
+.Xr mount_lofs (8),
+the kernel filesystem
+.Xr mount_kernfs (8),
+and the portal filesystem
+.Xr mount_portal (8).
+.PP
+The buffer cache in the kernel is now organized as a file block cache
+rather than a device block cache.
+As a consequence, cached blocks from a file
+and from the corresponding block device would no longer be kept consistent.
+The block device thus has little remaining value.
+Three changes have been made for these reasons:
+.IP 1)
+block devices may not be opened while they are mounted,
+and may not be mounted while open, so that the two versions of cached
+file blocks cannot be created,
+.IP 2)
+filesystem checks of the root now use the raw device
+to access the root filesystem, and
+.IP 3)
+the root filesystem is initially mounted read-only
+so that nothing can be written back to disk during or after modification
+of the raw filesystem by
+.Xr fsck .
+.LP
+The root filesystem may be made writable while in single-user mode
+with the command:
+.DS
+.ft CW
+mount -u /
+.DE
+The mount command has an option to update the flags on a mounted filesystem,
+including the ability to upgrade a filesystem from read-only to read-write
+or downgrade it from read-write to read-only.
+.PP
+In addition to the local ``fast filesystem'',
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented
+by Rick Macklem of the University of Guelph
+using only the publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+Using an extended protocol, it supports Leases to allow a limited
+callback mechanism that greatly reduces the network traffic necessary
+to maintain cache consistency between the server and its clients.
+Its use will be fairly familiar to users of other implementations of NFS.
+See the manual pages
+.Xr mount (8),
+.Xr mountd (8),
+.Xr fstab (5),
+.Xr exports (5),
+.Xr netgroup (5),
+.Xr nfsd (8),
+.Xr nfsiod (8),
+and
+.Xr nfssvc (8).
+and the document ``The 4.4BSD NFS Implementation'' (SMM:6)
+for further information.
+The format of
+.Pn /etc/fstab
+has changed from previous \*(Bs releases
+to a blank-separated format to allow colons in pathnames.
+.PP
+A new local file system, the log-structured file system (LFS),
+has been added to the system.
+It provides near disk-speed output and fast crash recovery.
+This work is based, in part, on the LFS file system created
+for the Sprite operating system at Berkeley.
+While the kernel implementation is fairly complete,
+only some of the utilities to support the
+filesystem have been written,
+so we do not recommend it for production use.
+See
+.Xr newlfs (8),
+.Xr mount_lfs (8)
+and
+.Xr lfs_cleanerd (8)
+for more information.
+For a in-depth description of the implementation and performance
+characteristics of log-structured file systems in general,
+and this one in particular, see Dr. Margo Seltzer's doctoral thesis,
+available from the University of California Computer Science Department.
+.PP
+We have also added a memory-based filesystem that runs in
+pageable memory, allowing large temporary filesystems without
+requiring dedicated physical memory.
+.PP
+The local ``fast filesystem'' has been enhanced to do 
+clustering which allows large pieces of files to be
+allocated contiguously resulting in near doubling
+of filesystem throughput.
+The filesystem interface has been extended to allow
+files and filesystems to grow to 2^63 bytes in size.
+The quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom login.
+.PP
+The system security has been greatly enhanced by the
+addition of additional file flags that permit a file to be
+marked as immutable or append only.
+Once set, these flags can only be cleared by the super-user
+when the system is running in insecure mode (normally single user).
+.PP
+An implementation of an auto-mounter daemon,
+.Xr amd ,
+was contributed by Jan-Simon Pendry of the
+Imperial College of Science, Technology & Medicine.
+See the document ``AMD \- The 4.4BSD Automounter'' (SMM:13)
+for further information.
+.PP
+The directory
+.Pn /dev/fd
+contains special files
+.Pn 0
+through
+.Pn 63
+which, when opened, duplicate the corresponding file descriptor.
+The names
+.Pn /dev/stdin
+.Pn /dev/stdout
+.Pn /dev/stderr
+refer to file descriptors 0, 1 and 2.
+See
+.Xr fd (4)
+and
+.Xr mount_fdesc (8)
+for more information.
+.NH 4
+POSIX terminal driver changes
+.PP
+The \*(4B system uses the IEEE P1003.1 (POSIX.1) terminal interface
+rather than the previous \*(Bs terminal interface.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the \*(Ps terminal driver.
+Both the old
+.Xr ioctl
+calls and old options to
+.Xr stty (1)
+are emulated.
+This emulation is expected to be unavailable in many vendors releases,
+so conversion to the new interface is encouraged.
+.PP
+\*(4B also adds the IEEE Std1003.1 job control interface,
+which is similar to the \(*Ps job control interface,
+but adds a security model that was missing in the
+\(*Ps job control implementation.
+A new system call,
+.Fn setsid ,
+is used to create a job-control session consisting of a single process
+group with one member, the caller, which becomes a session leader.
+Only a session leader may acquire a controlling terminal.
+This is done explicitly via a
+.Sm TIOCSCTTY
+.Fn ioctl
+call, not implicitly by an
+.Fn open
+call.
+The call fails if the terminal is in use.
+Programs that allocate controlling terminals (or pseudo-terminals)
+require modification to work in this environment.
+The versions of
+.Xr xterm
+provided in the X11R5 release includes the necessary changes.
+New library routines are available for allocating and initializing
+pseudo-terminals and other terminals as controlling terminal; see
+.Pn /usr/src/lib/libutil/pty.c
+and
+.Pn /usr/src/lib/libutil/login_tty.c .
+.PP
+The POSIX job control model formalizes the previous conventions
+used in setting up a process group.
+Unfortunately, this requires that changes be made in a defined order
+and with some synchronization that were not necessary in the past.
+Older job control shells (csh, ksh) will generally not operate correctly
+with the new system.
+.PP
+Most of the other kernel interfaces have been changed to correspond
+with the POSIX.1 interface, although that work is not quite complete.
+See the relevant manual pages, perhaps in conjunction with the IEEE POSIX
+standard.
 .NH 3
-Additions and changes to utilities
+Changes to the utilities
+.PP
+We have been tracking the IEEE Std1003.2 shell and utility work
+and have included prototypes of many of the proposed utilities
+based on draft 12 of the POSIX.2 Shell and Utilities document.
+Because most of the traditional utilities have been replaced
+with implementations conformant to the POSIX standards,
+you should realize that the utility software may not be as stable,
+reliable or well documented as in traditional Berkeley releases.
+In particular, almost the entire manual suite has been rewritten to
+reflect the POSIX defined interfaces, and in some instances
+it does not correctly reflect the current state of the software.
+It is also worth noting that, in rewriting this software, we have generally
+been rewarded with significant performance improvements.
+Most of the libraries and header files have been converted
+to be compliant with ANSI C.
+The shipped compiler (gcc) is a superset of ANSI C,
+but supports traditional C as a command-line option.
+The system libraries and utilities all compile
+with either ANSI or traditional C.
+.NH 4
+Make and Makefiles
+.PP
+This release uses a completely new version of the
+.Xr make
+program derived from the
+.Xr pmake
+program developed by the Sprite project at Berkeley.
+It supports existing makefiles, although certain incorrect makefiles
+may fail.
+The makefiles for the \*(4B sources make extensive use of the new
+facilities, especially conditionals and file inclusion, and are thus
+completely incompatible with older versions of
+.Xr make
+(but nearly all of the makefiles are now trivial!).
+The standard include files for
+.Xr make
+are in
+.Pn /usr/share/mk .
+There is a bsd.README file in
+.Pn /usr/src/share/mk .
+.PP
+Another global change supported by the new
+.Xr make
+is designed to allow multiple architectures to share a copy of the sources.
+If a subdirectory named
+.Pn obj
+is present in the current directory,
+.Xr make
+descends into that directory and creates all object and other files there.
+We use this by building a directory hierarchy in
+.Pn /var/obj
+that parallels
+.Pn /usr/src .
+We then create the
+.Pn obj
+subdirectories in
+.Pn /usr/src
+as symbolic links to the corresponding directories in
+.Pn /var/obj .
+(This step is automated.
+The command ``make obj'' builds both
+the local symlink and the shadow directory, using
+.Pn /usr/obj ,
+which may be a symbolic link, as the root of the shadow tree.
+The use of
+.Pn /usr/obj
+is for historic reasons only, and the system make configuration files in
+.Pn /usr/share/mk
+can trivially be modified to use
+.Pn /var/obj
+instead.)
+We have one
+.Pn /var/obj
+hierarchy on the local system, and another on each
+system that shares the source filesystem.
+All the programs in
+.Pn /usr/src
+except
+.Pn /usr/src/contrib
+have been converted to use the new make and
+.Pn obj
+subdirectories;
+this change allows compilation for multiple
+architectures from the same source tree
+(which may be mounted read-only).
+.NH 4
+Kerberos
+.PP
+The Kerberos authentication server from MIT (version 4)
+is included in this release.
+See
+.Xr kerberos (1)
+for a general, if MIT-specific, introduction.
+If it is configured,
+.Xr login (1),
+.Xr passwd (1),
+.Xr rlogin (1)
+and
+.Xr rsh (1)
+will all begin to use it automatically.
+The file
+.Pn /etc/kerberosIV/README
+describes the configuration.
+Each system needs the file
+.Pn /etc/kerberosIV/krb.conf
+to set its realm and local servers,
+and a private key stored in
+.Pn /etc/kerberosIV/srvtab
+(see
+.Xr ext_srvtab (8)).
+The Kerberos server should be set up on a single, physically secure,
+server machine.
+Users and hosts may be added to the server database manually with
+.Xr kdb_edit (8),
+or users on authorized hosts can add themselves and a Kerberos
+password upon verification of their ``local'' (passwd-file) password
+using the
+.Xr register (1)
+program.
+.PP
+Note that by default the password-changing program
+.Xr passwd (1)
+changes the Kerberos password, which must exist.
+The
+.Li \-l
+option to
+.Xr passwd (1)
+changes the ``local'' password if one exists.
+.PP
+Note that Version 5 of Kerberos will be released soon,
+and that Version 4 should probably be replaced at that time.
+.NH 4
+Additions and changes to other utilities
+.PP
+Notable additions to the libraries include functions to traverse a
+filesystem hierarchy, database interfaces to btree and hashing functions,
+a new, fast implementation of stdio and a radix sort function.
+The additions to the utility suite include greatly enhanced versions of
+programs that display system status information, implementations of
+various traditional tools described in the IEEE Std1003.2 standard,
+and many others.
 .PP
 New versions of
 .Xr lex (1)
@@ -1090,53 +1406,6 @@ See
 .Xr ktrace (1)
 and
 .Xr kdump (1).
-.PP
-A new utility,
-.Xr sysctl (8),
-retrieves kernel state and allows processes with appropriate
-privilege to set kernel state.
-The state to be retrieved or
-set is described using a ``Management Information Base'' (``MIB'') style
-name, described as a dotted set of components.
-.PP
-The kernel runs with four different levels of security.
-Any superuser process can raise the security level, but only 
-.Fn init
-can lower it.
-Security levels are defined as follows:
-.IP \-1
-Permanently insecure mode \- always run system in level 0 mode.
-.IP "  0"
-Insecure mode \- immutable and append-only flags may be turned off.
-All devices may be read or written subject to their permissions.
-.IP "  1"
-Secure mode \- immutable and append-only flags may not be cleared;
-disks for mounted filesystems,
-.Pn /dev/mem ,
-and
-.Pn /dev/kmem
-are read-only.
-.IP "  2"
-Highly secure mode \- same as secure mode, plus disks are always
-read-only whether mounted or not.
-This level precludes tampering with filesystems by unmounting them,
-but also inhibits running
-.Xr newfs (8)
-while the system is multi-user.
-.PP
-Normally, the system runs in level 0 mode while single user
-and in level 1 mode while multiuser.
-If the level 2 mode is desired while running multiuser,
-it can be set in the startup script
-.Pn /etc/rc
-using
-.Xr sysctl (1).
-If it is desired to run the system in level 0 mode while multiuser,
-the administrator must build a kernel with the variable
-.Li securelevel
-in the kernel source file
-.Pn /sys/kern/kern_sysctl.c
-initialized to \-1.
 .NH 2
 Hints on converting from \*(Ps to \*(4B
 .PP
