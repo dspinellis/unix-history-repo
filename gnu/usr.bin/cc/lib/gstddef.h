@@ -183,13 +183,13 @@ typedef __WCHAR_TYPE__ wchar_t;
 /*  In 4.3bsd-net2, leave these undefined to indicate that size_t, etc.
     are already defined.  */
 #ifdef _ANSI_H_
-#ifdef _GCC_PTRDIFF_T_
+#ifdef _GCC_PTRDIFF_T
 #undef _PTRDIFF_T_
 #endif
-#ifdef _GCC_SIZE_T_
+#ifdef _GCC_SIZE_T
 #undef _SIZE_T_
 #endif
-#ifdef _GCC_WCHAR_T_
+#ifdef _GCC_WCHAR_T
 #undef _WCHAR_T_
 #endif
 #endif /* _ANSI_H_ */

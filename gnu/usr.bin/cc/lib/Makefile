@@ -1,6 +1,6 @@
 LIB = gcc2
 
-CFLAGS += -I${.CURDIR} 
+CFLAGS += -I${.CURDIR} -DNOFPU
 
 SRCS =  toplev.c version.c tree.c print-tree.c \
 	stor-layout.c fold-const.c function.c stmt.c expr.c \
