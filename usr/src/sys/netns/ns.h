@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.5 (Berkeley) %G%
+ *	@(#)ns.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,7 @@
 #define	SO_LAST_HEADER		4
 #define	SO_NSIP_ROUTE		5
 #define SO_SEQNO		6
+#define	SO_ALL_PACKETS		7
 
 
 /*
