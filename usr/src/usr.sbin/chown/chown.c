@@ -11,7 +11,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -87,7 +87,7 @@ main(argc, argv)
 			status += Perror(argv[c]);
 			continue;
 		}
-		if (rflag && (stbuf.st_mode&S_IFMT) == S_IFDIR) {
+		if (rflag && ((stbuf.st_mode&S_IFMT) == S_IFDIR)) {
 			status += chownr(argv[c], uid, gid);
 			continue;
 		}
@@ -145,7 +145,7 @@ chownr(dir, uid, gid)
 				break;
 			continue;
 		}
-		if ((stbuf.st_mode&S_IFMT) == S_IFDIR) {
+		if ((st.st_mode&S_IFMT) == S_IFDIR) {
 			ecode = chownr(dp->d_name, uid, gid);
 			if (ecode)
 				break;
