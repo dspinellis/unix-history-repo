@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.36 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
