@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.61 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.62 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.61 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.62 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -196,6 +196,7 @@ makeconnection(host, port, mci, usesecureport)
 	SOCKADDR addr;
 	int sav_errno;
 	int addrlen;
+	bool firstconnect;
 #if NAMED_BIND
 	extern int h_errno;
 #endif
@@ -361,6 +362,7 @@ gothostent:
 		return EX_TEMPFAIL;
 #endif
 
+	firstconnect = TRUE;
 	for (;;)
 	{
 		if (tTd(16, 1))
@@ -412,6 +414,17 @@ gothostent:
 		errno = 0;					/* for debugging */
 		if (connect(s, (struct sockaddr *) &addr, addrlen) >= 0)
 			break;
+
+		/* if running demand-dialed connection, try again */
+		if (DialDelay > 0 && firstconnect)
+		{
+			if (tTd(16, 1))
+				printf("Connect failed (%s); trying again...\n",
+					errstring(sav_errno));
+			firstconnect = FALSE;
+			sleep(DialDelay);
+			continue;
+		}
 
 		/* couldn't connect.... figure out why */
 		sav_errno = errno;

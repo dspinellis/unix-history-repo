@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.53 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1224,6 +1224,8 @@ struct optioninfo
 	"DefaultCharSet",	O_DEFCHARSET,	TRUE,
 #define O_SSFILE	0x86
 	"ServiceSwitchFile",	O_SSFILE,	FALSE,
+#define O_DIALDELAY	0x87
+	"DialDelay",		O_DIALDELAY,	TRUE,
 
 	NULL,			'\0',		FALSE,
 };
@@ -1798,6 +1800,10 @@ setoption(opt, val, sticky)
 
 	  case O_SSFILE:	/* service switch file */
 		ServiceSwitchFile = newstr(val);
+		break;
+
+	  case O_DIALDELAY:	/* delay for dial-on-demand operation */
+		DialDelay = convtime(val, 's');
 		break;
 
 	  default:
