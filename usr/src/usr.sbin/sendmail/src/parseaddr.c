@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.10	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.11	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -46,7 +46,7 @@ static char	SccsId[] = "@(#)parseaddr.c	3.10	%G%";
 **		savemail
 */
 
-# define DELIMCHARS	"$()<>@!.,;:\\\" \t\r\n"	/* word delimiters */
+# define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
 # define SPACESUB	('.'|0200)		/* substitution for <lwsp> */
 
 ADDRESS *
@@ -435,9 +435,17 @@ prescan(addr, delim)
 toktype(c)
 	register char c;
 {
+	static char buf[50];
+	static char firstime;
+
+	if (firstime++ == 0)
+	{
+		expand("$o", buf, &buf[sizeof buf - 1]);
+		strcat(buf, DELIMCHARS);
+	}
 	if (isspace(c))
 		return (SPACE);
-	if (index(DELIMCHARS, c) != NULL || iscntrl(c))
+	if (iscntrl(c) || index(buf, c) != NULL)
 		return (OPER);
 	return (ATOM);
 }
