@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -102,7 +102,7 @@ mfs_mountroot()
 		free(mfsp, M_MFSNODE);
 		return (error);
 	}
-	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	ump = VFSTOUFS(mp);
