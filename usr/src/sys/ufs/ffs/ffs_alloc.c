@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.25 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -150,9 +150,6 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		return (error);
 	}
 #endif
-	allocbuf(bp, nsize);
-	bp->b_flags |= B_DONE;
-	bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 	/*
 	 * Check for extension in the existing location.
 	 */
@@ -162,6 +159,9 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 			panic("bad blockno");
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
+		allocbuf(bp, nsize);
+		bp->b_flags |= B_DONE;
+		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		*bpp = bp;
 		return (0);
 	}
@@ -233,6 +233,9 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 				(off_t)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
+		allocbuf(bp, nsize);
+		bp->b_flags |= B_DONE;
+		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		*bpp = bp;
 		return (0);
 	}
