@@ -7,7 +7,7 @@
 #
 #  This has been tested on NeXT 2.1.
 #
-#	@(#)Makefile.NeXT	8.4 (Berkeley) %G%
+#	@(#)Makefile.NeXT	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -20,10 +20,10 @@ O=	-O
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
-DBMDEF=	-DNDBM
+DBMDEF=	-DNDBM -DNETINFO
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-DNeXT -DNETINFO
+ENVDEF=	-DNeXT
 
 # see also conf.h for additional compilation flags
 
