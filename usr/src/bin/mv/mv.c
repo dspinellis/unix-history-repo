@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.6 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)mv.c	5.7 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * mv file1 file2
@@ -21,11 +21,8 @@ static char sccsid[] = "@(#)mv.c	5.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/file.h>
-
 #include <stdio.h>
-#include <sys/dir.h>
 #include <errno.h>
-#include <signal.h>
 
 #define	DELIM	'/'
 #define MODEBITS 07777
@@ -37,62 +34,48 @@ static char sccsid[] = "@(#)mv.c	5.6 (Berkeley) %G%";
 	(((st).st_mode&S_IFMT) == S_IFCHR || ((st).st_mode&S_IFMT) == S_IFBLK)
 
 char	*dname();
-struct	stat s1, s2;
 int	iflag = 0;	/* interactive mode */
 int	fflag = 0;	/* force overwriting */
 extern	unsigned errno;
 
 main(argc, argv)
-	register char *argv[];
+	register int argc;
+	register char **argv;
 {
-	register i, r;
-	register char *arg;
+	extern int optind;
+	struct stat st;
+	int ch, r;
 	char *dest;
 
-	if (argc < 2)
-		goto usage;
-	while (argc > 1 && *argv[1] == '-') {
-		argc--;
-		arg = *++argv;
-
-		/*
-		 * all files following a null option
-		 * are considered file names
-		 */
-		if (*(arg+1) == '\0')
-			break;
-		while (*++arg != '\0') switch (*arg) {
-
-		case 'i':
-			iflag++;
-			break;
-
+	while ((ch = getopt(argc, argv, "-fi")) != EOF)
+		switch((char)ch) {
+		case '-':
+			goto endarg;
 		case 'f':
 			fflag++;
 			break;
-
+		case 'i':
+			iflag++;
+			break;
+		case '?':
 		default:
-			goto usage;
+			usage();
 		}
-	}
-	if (argc < 3)
-		goto usage;
-	dest = argv[argc-1];
-	if (stat(dest, &s2) >= 0 && ISDIR(s2)) {
-		r = 0;
-		for (i = 1; i < argc-1; i++)
-			r |= movewithshortname(argv[i], dest);
+endarg:	argv += optind;
+	argc -= optind;
+
+	if (argc < 2)
+		usage();
+	dest = argv[argc - 1];
+	if (stat(dest, &st) >= 0 && ISDIR(st)) {
+		for (r = 0; --argc; ++argv)
+			r |= movewithshortname(*argv, dest);
 		exit(r);
 	}
-	if (argc > 3)
-		goto usage;
-	r = move(argv[1], argv[2]);
+	if (argc != 2)
+		usage();
+	r = move(argv[0], argv[1]);
 	exit(r);
-	/*NOTREACHED*/
-usage:
-	fprintf(stderr,
-"usage: mv [-if] f1 f2 or mv [-if] f1 ... fn d1 (`fn' is a file or directory)\n");
-	return (1);
 }
 
 movewithshortname(src, dest)
@@ -115,6 +98,7 @@ move(source, target)
 	char *source, *target;
 {
 	int targetexists;
+	struct stat s1, s2;
 
 	if (lstat(source, &s1) < 0) {
 		Perror2(source, "Cannot access");
@@ -304,4 +288,10 @@ Perror2(s1, s2)
 
 	(void)sprintf(buf, "mv: %s: %s", s1, s2);
 	perror(buf);
+}
+
+usage()
+{
+	fputs("usage: mv [-if] file1 file2 or mv [-if] file/directory ... directory\n", stderr);
+	exit(1);
 }
