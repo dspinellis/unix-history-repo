@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.22 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.23 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -64,7 +64,8 @@ SOFTWARE.
 int 				iso_systype = SNPA_ES;	/* default to be an ES */
 extern short	esis_holding_time, esis_config_time, esis_esconfig_time;
 extern struct	timeval time;
-extern int esis_config(), hz;
+extern void esis_config();
+extern int hz;
 static void snpac_fixdstandmask();
 
 struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
@@ -559,6 +560,7 @@ register struct rtentry *sc;
  *					would time out entries where expiry date is older
  *					than the current time.
  */
+void
 snpac_age()
 {
 	register struct	llinfo_llc *lc, *nlc;
