@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)special.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)special.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -48,7 +48,7 @@ c_special(fd1, file1, skip1, fd2, file2, skip2)
 		if (ch1 != ch2)
 			if (lflag) {
 				dfound = 1;
-				(void)printf("%6ld %3o %3o\n", byte, ch1, ch2);
+				(void)printf("%6qd %3o %3o\n", byte, ch1, ch2);
 			} else
 				diffmsg(file1, file2, byte, line);
 				/* NOTREACHED */
