@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.10 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.11 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -476,6 +476,34 @@ short	line;
  * this must be no greater than 32.
  */
 #define	DSPLYSZ 20
+
+    /*
+     *	the display is made up of saved AP's and FP's.
+     *	FP's are used to find locals, and AP's are used to find parameters.
+     *	FP and AP are untyped pointers, but are used throughout as (char *).
+     *	the display is used by adding AP_OFFSET or FP_OFFSET to the 
+     *	address of the approriate display entry.
+     */
+struct dispsave {
+    char	*savedAP;
+    char	*savedFP;
+} display[ DSPLYSZ ];
+
+#define	AP_OFFSET	( 0 )
+#define FP_OFFSET	( sizeof(char *) )
+
+    /*
+     *	formal routine structure:
+     */
+struct formalrtn {
+	long		(*fentryaddr)();	/* formal entry point */
+	long		fbn;			/* block number of function */
+	struct dispsave	fdisp[ DSPLYSZ ];	/* saved at first passing */
+} frtn;
+
+#define	FENTRYOFFSET	0
+#define FBNOFFSET	( FENTRYOFFSET + sizeof frtn.fentryaddr )
+#define	FDISPOFFSET	( FBNOFFSET + sizeof frtn.fbn )
 
 /*
  * The following structure is used

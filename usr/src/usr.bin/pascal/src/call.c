@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.12 %G%";
+static	char sccsid[] = "@(#)call.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -30,16 +30,19 @@ static	char sccsid[] = "@(#)call.c 1.12 %G%";
  *	formal functions do this because we have to save the result
  *	around a call to the runtime routine which restores the display,
  *	so we can't just leave the result lying around in registers.
+ *	calls to formal parameters pass the formal as a hidden argument 
+ *	to a special entry point for the formal call.
+ *	[this is somewhat dependent on the way arguments are addressed.]
  *	so PROCs and scalar FUNCs look like
  *		p(...args...)
  *	structure FUNCs look like
  *		(temp = p(...args...),&temp)
  *	formal FPROCs look like
- *		((FCALL( p ))(...args...),FRTN( p ))
+ *		( p -> entryaddr )(...args...,p),FRTN( p ))
  *	formal scalar FFUNCs look like
- *		(temp = (FCALL( p ))(...args...),FRTN( p ),temp)
+ *		(temp = ( p -> entryaddr )(...args...,p),FRTN( p ),temp)
  *	formal structure FFUNCs look like
- *		(temp = (FCALL( p ))(...args...),FRTN( p ),&temp)
+ *		(temp = ( p -> entryaddr )(...args...,p),FRTN( p ),&temp)
  */
 struct nl *
 call(p, argv, porf, psbn)
@@ -50,6 +53,7 @@ call(p, argv, porf, psbn)
 	int *r;
 	struct nl	*p_type_class = classify( p -> type );
 	bool chk = TRUE;
+	long	savedisp;	/* temporary to hold saved display */
 #	ifdef PC
 	    long	p_p2type = p2type( p );
 	    long	p_type_p2type = p2type( p -> type );
@@ -63,18 +67,26 @@ call(p, argv, porf, psbn)
 	    long	p_type_width;
 	    long	p_type_align;
 	    char	extname[ BUFSIZ ];
-
 #	endif PC
 
+        if (p->class == FFUNC || p->class == FPROC) {
+	    /*
+	     * allocate space to save the display for formal calls
+	     */
+	    savedisp = tmpalloc( sizeof display , NIL , NOREG );
+	}
 #	ifdef OBJ
-	    if (p->class == FFUNC || p->class == FPROC)
+	    if (p->class == FFUNC || p->class == FPROC) {
+		put(2, O_LV | cbn << 8 + INDX , (int) savedisp );
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
-	    if (porf == FUNC)
+	    }
+	    if (porf == FUNC) {
 		    /*
 		     * Push some space
 		     * for the function return type
 		     */
 		    put(2, O_PUSH, leven(-lwidth(p->type)));
+	    }
 #	endif OBJ
 #	ifdef PC
 		/*
@@ -122,13 +134,20 @@ call(p, argv, porf, psbn)
 		case FFUNC:
 		case FPROC:
 			    /*
-			     *	... (FCALL( p ))( ...
+			     *	... ( p -> entryaddr )( ...
 			     */
-		    	putleaf( P2ICON , 0 , 0
-			    , ADDTYPE( ADDTYPE( p_p2type , P2FTN ) , P2PTR )
-			    , "_FCALL" );
-			putRV( 0 , psbn , p -> value[NL_OFFS] , P2PTR|P2STRTY );
-			putop( P2CALL , p_p2type );
+			putRV( 0 , psbn , ( p -> value[NL_OFFS] ) ,
+				P2PTR | P2STRTY );
+			if ( FENTRYOFFSET != 0 ) {
+			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 0 );
+			    putop( P2PLUS , 
+				ADDTYPE(
+				    ADDTYPE( ADDTYPE( p2type( p ) , P2FTN ) ,
+					    P2PTR ) ,
+					P2PTR ) );
+			}
+			putop( P2UNARY P2MUL ,
+			    ADDTYPE( ADDTYPE( p2type( p ) , P2FTN ) , P2PTR ) );
 			break;
 		default:
 			panic("call class");
@@ -273,6 +292,7 @@ call(p, argv, porf, psbn)
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
+		put(2, O_LV | cbn << 8 + INDX , (int) savedisp );
 		put(1, O_FCALL);
 		put(2, O_FRTN, even(width(p->type)));
 	    } else {
@@ -281,9 +301,25 @@ call(p, argv, porf, psbn)
 #	endif OBJ
 #	ifdef PC
 		/*
+		 *	for formal calls: add the hidden argument
+		 *	which is the formal struct describing the
+		 *	environment of the routine.
+		 *	and the argument which is the address of the
+		 *	space into which to save the display.
+		 */
+	    if ( p -> class == FFUNC || p -> class == FPROC ) {
+		putRV( 0 , cbn , p -> value[ NL_OFFS ] , P2PTR|P2STRTY );
+		if ( !noarguments ) {
+		    putop( P2LISTOP , P2INT );
+		}
+		noarguments = FALSE;
+		putLV( 0 , cbn , savedisp , P2PTR | P2STRTY );
+		putop( P2LISTOP , P2INT );
+	    }
+		/*
 		 *	do the actual call:
 		 *	    either	... p( ... ) ...
-		 *	    or		... ( ...() )( ... ) ...
+		 *	    or		... ( p -> entryaddr )( ... ) ...
 		 *	and maybe an assignment.
 		 */
 	    if ( porf == FUNC ) {
@@ -318,6 +354,8 @@ call(p, argv, porf, psbn)
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
 			"_FRTN" );
 		putRV( 0 , psbn , p -> value[ NL_OFFS ] , P2PTR | P2STRTY );
+		putLV( 0 , cbn , savedisp , P2PTR | P2STRTY );
+		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putop( P2COMOP , P2INT );
 	    }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.2 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.3 %G%"; */
 
     /*
      *		random constants for pc
@@ -8,19 +8,8 @@
     
     /*
      *	the name of the display.
-     *	the display is made up of saved AP's and FP's.
-     *	FP's are used to find locals, and AP's are used to find parameters.
-     *	FP and AP are untyped pointers, but are used throughout as (char *).
-     *	the display is used by adding AP_OFFSET or FP_OFFSET to the 
-     *	address of the approriate display entry.
      */
 #define	DISPLAYNAME	"__disply"
-struct dispsave {
-    char	*savedAP;
-    char	*savedFP;
-};
-#define	AP_OFFSET	( 0 )
-#define FP_OFFSET	( sizeof(char *) )
 
     /*
      *	the structure below describes the locals used by the run time system.
@@ -64,6 +53,7 @@ struct rtlocals {
      *	    PREFIXFORMAT	used to print made up names with prefixes.
      *	    LABELPREFIX		with getlab() makes up label names.
      *	    LLABELPREFIX	with getlab() makes up sdb labels.
+     *	    FORMALPREFIX	prefix for EXTFORMAT for formal entry points.
      *	a typical use might be to print out a name with a preceeding underscore
      *	with putprintf( EXTFORMAT , 0 , name );
      */
@@ -72,6 +62,7 @@ struct rtlocals {
 #define	PREFIXFORMAT	"%s%d"
 #define	LABELPREFIX	"L"
 #define	LLABELPREFIX	"LL"
+#define	FORMALPREFIX	"__"
 
     /*
      *	the name of the statement counter
