@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.15 %G%";
+static char *SccsId = "@(#)lex.c	1.16 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -25,7 +25,7 @@ setfile(name, isedit)
 	static int shudclob;
 	static char efile[128];
 	extern char tempMesg[];
-	int (*sigs[2])();
+	int (*sigs[3])();
 
 	if ((ibuf = fopen(name, "r")) == NULL) {
 		if (isedit)
@@ -42,8 +42,7 @@ setfile(name, isedit)
 	 * the message[] data structure.
 	 */
 
-	for (i = SIGINT; i <= SIGQUIT; i++)
-		sigs[i - SIGINT] = signal(i, SIG_IGN);
+	sigsave(sigs, SIG_IGN);
 	if (shudclob) {
 		if (edit)
 			edstop();
@@ -84,8 +83,7 @@ setfile(name, isedit)
 	setptr(ibuf);
 	setmsize(msgCount);
 	fclose(ibuf);
-	for (i = SIGINT; i <= SIGQUIT; i++)
-		signal(i, sigs[i - SIGINT]);
+	sigret(sigs);
 	shudann = 1;
 	sawcom = 0;
 	return(0);
@@ -103,10 +101,14 @@ commands()
 	int prompt, firstsw, stop();
 	register int n;
 	char linebuf[LINESIZE];
+	int hangup();
 
-	if (rcvmode)
-		if (signal(SIGINT, SIG_IGN) == SIG_DFL)
-			signal(SIGINT, stop);
+	if (rcvmode) {
+		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
+			sigset(SIGINT, stop);
+		if (sigset(SIGHUP, SIG_IGN) != SIG_IGN)
+			sigset(SIGHUP, hangup);
+	}
 	input = stdin;
 	prompt = 1;
 	if (!intty)
@@ -164,10 +166,8 @@ top:
 					printf("Use \"quit\" to quit.\n");
 					goto top;
 				}
-				if (!edit) {
-					signal(SIGINT, SIG_IGN);
+				if (!edit)
 					return;
-				}
 				edstop();
 				return;
 			}
@@ -266,7 +266,7 @@ execute(linebuf, contxt)
 		return(0);
 	}
 	if (!edit && com->c_func == edstop) {
-		signal(SIGINT, SIG_IGN);
+		sigset(SIGINT, SIG_IGN);
 		return(1);
 	}
 
@@ -394,6 +394,24 @@ execute(linebuf, contxt)
 }
 
 /*
+ * Branch here on hangup signal and simulate quit.
+ */
+hangup()
+{
+	int (*sigs[3])();
+
+	sigsave(sigs);
+	if (edit) {
+		if (setexit())
+			exit(0);
+		edstop();
+	}
+	else
+		quit();
+	exit(0);
+}
+
+/*
  * Set the size of the message vector used to construct argument
  * lists to message list functions.
  */
@@ -454,12 +472,11 @@ isprefix(as1, as2)
 
 int	inithdr;			/* am printing startup headers */
 
-stop()
+stop(s)
 {
 	register FILE *fp;
 
 	noreset = 0;
-	signal(SIGINT, SIG_IGN);
 	if (!inithdr)
 		sawcom++;
 	inithdr = 0;
@@ -486,7 +503,7 @@ stop()
 	}
 	clrbuf(stdout);
 	printf("Interrupt\n");
-	signal(SIGINT, stop);
+	sigrelse(s);
 	reset(0);
 }
 
