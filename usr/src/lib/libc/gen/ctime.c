@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -274,13 +274,11 @@ register struct state * const	sp;
 	if (name == NULL && (name = TZDEFAULT) == NULL)
 		return -1;
 	{
-		register int 	doaccess;
 		char		fullname[FILENAME_MAX + 1];
 
 		if (name[0] == ':')
 			++name;
-		doaccess = name[0] == '/';
-		if (!doaccess) {
+		if (name[0] != '/') {
 			if ((p = TZDIR) == NULL)
 				return -1;
 			if ((strlen(p) + strlen(name) + 1) >= sizeof fullname)
@@ -288,15 +286,8 @@ register struct state * const	sp;
 			(void) strcpy(fullname, p);
 			(void) strcat(fullname, "/");
 			(void) strcat(fullname, name);
-			/*
-			** Set doaccess if '.' (as in "../") shows up in name.
-			*/
-			if (strchr(name, '.') != NULL)
-				doaccess = TRUE;
 			name = fullname;
 		}
-		if (doaccess && access(name, ACCESS_MODE) != 0)
-			return -1;
 		if ((fid = open(name, OPEN_MODE)) == -1)
 			return -1;
 	}
