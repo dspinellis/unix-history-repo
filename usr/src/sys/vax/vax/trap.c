@@ -1,4 +1,4 @@
-/*	trap.c	3.5	%G%	*/
+/*	trap.c	3.6	%G%	*/
 
 
 #include "../h/param.h"
@@ -38,9 +38,6 @@ unsigned code;
 
 	default:
 		printf("trap type %d, code = %x\n", type, code);
-#ifdef ERNIE
-		asm("halt");
-#endif
 		panic("trap");
 
 	case PROTFLT + USER:	/* protection fault */
