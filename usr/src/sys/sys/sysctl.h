@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.24 (Berkeley) %G%
+ *	@(#)sysctl.h	7.25 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
@@ -109,7 +109,8 @@ struct ctlname {
 #define	KERN_CHOWN_RESTRICTED	27	/* int: chown requires privilege */
 #define	KERN_NO_TRUNC		28	/* int: no path truncation */
 #define	KERN_VDISABLE		29	/* int: terminal character disable */
-#define	KERN_MAXID		30	/* number of valid kern ids */
+#define	KERN_BOOTTIME		30	/* struct: time kernel was booted */
+#define	KERN_MAXID		31	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -142,6 +143,7 @@ struct ctlname {
 	{ "chown_restricted", CTLTYPE_INT }, \
 	{ "no_trunc", CTLTYPE_INT }, \
 	{ "vdisable", CTLTYPE_INT }, \
+	{ "boottime", CTLTYPE_STRUCT }, \
 }
 
 /* 
