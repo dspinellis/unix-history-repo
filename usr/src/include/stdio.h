@@ -1,6 +1,6 @@
-/*	stdio.h	1.10	84/11/29	*/
+/*	stdio.h	1.11	85/01/08	*/
 #define	BUFSIZ	1024
-#define	_NFILE	20
+#define	_NFILE	48
 # ifndef FILE
 extern	struct	_iobuf {
 	int	_cnt;
