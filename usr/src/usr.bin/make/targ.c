@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)targ.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)targ.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -426,13 +426,9 @@ Targ_PrintType (type)
 	    PRINTBIT(SILENT);
 	    PRINTBIT(MAKE);
 	    PRINTBIT(JOIN);
-	    PRINTBIT(EXPORT);
-	    PRINTBIT(NOEXPORT);
-	    PRINTBIT(EXPORTSAME);
 	    PRINTBIT(INVISIBLE);
 	    PRINTBIT(NOTMAIN);
 	    PRINTDBIT(LIB);
-	    PRINTBIT(M68020);
 	    /*XXX: MEMBER is defined, so CONCAT(OP_,MEMBER) gives OP_"%" */
 	    case OP_MEMBER: if (DEBUG(TARG)) printf(".MEMBER "); break;
 	    PRINTDBIT(ARCHV);

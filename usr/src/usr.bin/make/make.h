@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.4 (Berkeley) %G%
+ *	@(#)make.h	5.5 (Berkeley) %G%
  */
 
 /*-
@@ -156,20 +156,11 @@ typedef struct GNode {
 				     * state of the -n or -t flags */
 #define OP_JOIN 	0x00000400  /* Target is out-of-date only if any of its
 				     * children was out-of-date */
-#define OP_EXPORT 	0x00000800  /* UNUSED: The creation of the target
-				     * should be sent somewhere else, if
-				     * possible. */
-#define OP_NOEXPORT	0x00001000  /* The creation should not be sent
-				     * elsewhere */
-#define OP_EXPORTSAME	0x00002000  /* Export only to machine with same
-				     * architecture */
 #define OP_INVISIBLE	0x00004000  /* The node is invisible to its parents.
 				     * I.e. it doesn't show up in the parents's
 				     * local variables. */
 #define OP_NOTMAIN	0x00008000  /* The node is exempt from normal 'main
 				     * target' processing in parse.c */
-/*XXX*/
-#define OP_M68020   	0x00010000  /* Command must be run on a 68020 */
 /* Attributes applied by PMake */
 #define OP_TRANSFORM	0x80000000  /* The node is a transformation rule */
 #define OP_MEMBER 	0x40000000  /* Target is a member of an archive */
@@ -282,7 +273,6 @@ extern Boolean 	queryFlag;    	/* TRUE if we aren't supposed to really make
 				 * of-date */
 
 extern Boolean	noWarnings;    	/* TRUE if should not print warning messages */
-extern Boolean  noExport;    	/* TRUE if should not export any jobs */
 extern Boolean	checkEnvFirst;	/* TRUE if environment should be searched for
 				 * variables before the global context */
 
@@ -344,12 +334,6 @@ extern int    	debug;
  */
 #include	"nonints.h"
 
-#ifdef Sprite
-#define Str_FindSubstring(s1, s2) strstr(s1, s2)
-#endif /* Sprite */
-
-extern char *index();
-extern char *rindex();
 extern char *malloc();
 
 #endif _MAKE_H_
