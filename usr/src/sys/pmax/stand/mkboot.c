@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkboot.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkboot.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,9 +24,6 @@ static char sccsid[] = "@(#)mkboot.c	7.4 (Berkeley) %G%";
 #include <stdio.h>
 
 #include <pmax/stand/dec_boot.h>
-
-/* this is the size of the standard ULTRIX boot */
-#define MAXBOOTSIZE (15 * DEV_BSIZE)
 
 struct	Dec_DiskBoot decBootInfo;
 char	block[DEV_BSIZE];
@@ -80,11 +77,6 @@ main(argc, argv)
 		fprintf(stderr, "Need impure text format (OMAGIC) file\n");
 		exit(1);
 	}
-	if (length > MAXBOOTSIZE) {
-		fprintf(stderr, "boot program is too big (%d > %d)\n",
-			length, MAXBOOTSIZE);
-		exit(1);
-	}
 
 	/*
 	 * Write the boot information block.
@@ -100,6 +92,9 @@ main(argc, argv)
 	if (write(ofd1, (char *)&decBootInfo, sizeof(decBootInfo)) !=
 	    sizeof(decBootInfo) || close(ofd1) != 0)
 		goto xxboot_err;
+
+	printf("load %x, start %x, len %d, nsectors %d\n", loadAddr, execAddr,
+		length, nsectors);
 
 	/*
 	 * Write the boot code to the bootxx file.
@@ -129,10 +124,9 @@ usage()
 {
 	printf("Usage: mkboot bootprog xxboot bootxx\n");
 	printf("where:\n");
-	printf("\t\"bootprog\" is a -N format file < %d bytes long\n",
-	       MAXBOOTSIZE);
-	printf("\t\"xxboot\" is the name of the first boot block\n");
-	printf("\t\"bootxx\" is the name of the remaining boot blocks.\n");
+	printf("\t\"bootprog\" is a -N format file\n");
+	printf("\t\"xxboot\" is the file name for the first boot block\n");
+	printf("\t\"bootxx\" is the file name for the remaining boot blocks.\n");
 	exit(1);
 }
 
@@ -176,6 +170,5 @@ DecHeader(bootFID, loadAddr, execAddr, length)
 		return 0;
 	}
 	printf("Input file is COFF format\n");
-	printf("load %x, start %x, len %d\n", *loadAddr, *execAddr, *length);
 	return 1;
 }
