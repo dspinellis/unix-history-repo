@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.33 (Berkeley) %G%
+ *	@(#)conf.h	6.34 (Berkeley) %G%
  */
 
 /*
@@ -57,17 +57,6 @@
 
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
-# define BTREE_MAP	1	/* enable BTREE mapping type (requires NEWDB) */
-# define HASH_MAP	1	/* enable HASH mapping type (requires NEWDB) */
-# endif
-
-# ifdef NIS
-# define NIS_ALIASES	1	/* include NIS support for aliases */
-# define NIS_MAP	1	/* include NIS mapping type */
-# endif
-
-# ifdef NDBM
-# define DBM_MAP	1	/* enable DBM mapping type (requires NDBM) */
 # endif
 
 /*
@@ -80,12 +69,14 @@
 /* HP-UX -- tested for 8.07 */
 # ifdef __hpux
 # define SYSTEM5	1
+# define UNSETENV	1	/* need unsetenv(3) support */
 # endif
 
 /* IBM AIX 3.x -- actually tested for 3.2.3 */
 # ifdef _AIX3
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
+# define UNSETENV	1	/* need unsetenv(3) support */
 # endif
 
 /* general System V defines */
@@ -95,8 +86,18 @@
 # define HASUNAME	1	/* use System V uname system call */
 # endif
 
-#if defined(sun) && !defined(BSD) && !defined(SOLARIS)
-# include <vfork.h>
+#if defined(sun) && !defined(BSD)
+# define UNSETENV	1	/* need unsetenv(3) support */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+
+# if !defined(SOLARIS)
+#  include <vfork.h>
+# endif
+
+#endif
+
+#ifdef ultrix
+# define HASSTATFS	1	/* has the statfs(2) syscall */
 #endif
 
 #ifdef _POSIX_VERSION
