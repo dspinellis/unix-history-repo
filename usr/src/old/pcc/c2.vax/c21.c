@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.21 %G%";
+static	char sccsid[] = "@(#)c21.c 4.22 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -580,7 +580,7 @@ register struct node *p;
 	if ((p->op==CVT || p->op==MOVZ)
 		&& (p->forw->op==CVT || p->forw->op==MOVZ)
 		&& p->forw->subop&0xf
-		&& compat(p->subop,p->forw->subop)
+		&& equtype(p->subop,p->forw->subop)
 		&& !source(cp1=regs[RT1])
 		&& !indexa(cp1)) goto movit;
 	if (equtype(p->subop,regs[r][0])
