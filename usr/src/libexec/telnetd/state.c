@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -265,22 +265,22 @@ gotiac:			switch (c) {
 			break;
 
 		case TS_WILL:
-			willoption(c, 0);
+			willoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
-			wontoption(c, 0);
+			wontoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
-			dooption(c, 0);
+			dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
-			dontoption(c, 0);
+			dontoption(c);
 			state = TS_DATA;
 			continue;
 
@@ -374,16 +374,35 @@ gotiac:			switch (c) {
  * to send or a response.  request is true if this is a request to 
  * send generated locally.
  */
-willoption(option, request)
-	int option, request;
+send_do(option, init)
+	int option, init;
+{
+	if (init) {
+		if ((do_dont_resp[option] == 0 && hisopts[option] == OPT_YES) ||
+		    hiswants[option] == OPT_YES)
+			return;
+		hiswants[option] = OPT_YES;
+		do_dont_resp[option]++;
+	}
+	(void) sprintf(nfrontp, doopt, option);
+	nfrontp += sizeof (dont) - 2;
+}
+
+willoption(option)
+	int option;
 {
 	int changeok = 0;
-	char *fmt = (char *)0;
 
-    /*
-     * process input from peer.
-     */
-    if (request == 0) {
+	/*
+	 * process input from peer.
+	 */
+
+	if (do_dont_resp[option]) {
+		do_dont_resp[option]--;
+		if (do_dont_resp[option] && hisopts[option] == OPT_YES)
+			do_dont_resp[option]--;
+	}
+	if ((do_dont_resp[option] == 0) && (hiswants[option] != OPT_YES)) {
 		switch (option) {
 
 		case TELOPT_BINARY:
@@ -394,19 +413,37 @@ willoption(option, request)
 			break;
 
 		case TELOPT_ECHO:
-			not42 = 0;		/* looks like a 4.2 system */
+			not42 = 0;	/* looks like a 4.2 system */
+#ifdef notdef
 			/*
-			 * Now, in a 4.2 system, to break them out of ECHOing
-			 * (to the terminal) mode, we need to send a
-			 * "WILL ECHO".  Kludge upon kludge!
+			 * Now, in a 4.2 system, to break them out of
+			 * ECHOing (to the terminal) mode, we need to
+			 * send a WILL ECHO.
 			 */
 			if (myopts[TELOPT_ECHO] == OPT_YES) {
-				dooption(TELOPT_ECHO, 1);
+				send_will(TELOPT_ECHO, 1);
 			}
+#else
+			/*
+			 * "WILL ECHO".  Kludge upon kludge!
+			 * A 4.2 client is now echoing user input at
+			 * the tty.  This is probably undesireable and
+			 * it should be stopped.  The client will
+			 * respond WONT TM to the DO TM that we send to
+			 * check for kludge linemode.  When the WONT TM
+			 * arrives, linemode will be turned off and a
+			 * change propogated to the pty.  This change
+			 * will cause us to process the new pty state
+			 * in localstat(), which will notice that
+			 * linemode is off and send a WILL ECHO
+			 * so that we are properly in character mode and
+			 * all is well.
+			 */
+#endif
 			/*
 			 * Fool the state machine into sending a don't.
-			 * This also allows the initial echo sending code to
-			 * break out of the loop that it is
+			 * This also allows the initial echo sending
+			 * code to break out of the loop that it is
 			 * in.  (Look in telnet())
 			 */
 			hiswants[TELOPT_ECHO] = OPT_NO;
@@ -415,12 +452,14 @@ willoption(option, request)
 		case TELOPT_TM:
 #if	defined(LINEMODE) && defined(KLUDGELINEMODE)
 			/*
-		 	 * This telnetd implementation does not really support
-			 * timing marks, it just uses them to support the kludge
-			 * linemode stuff.  If we receive a will or wont TM in
-			 * response to our do TM request that may have been sent
-			 * to determine kludge linemode support, process it,
-			 * otherwise TM should get a negative response back.
+			 * This telnetd implementation does not really
+			 * support timing marks, it just uses them to
+			 * support the kludge linemode stuff.  If we
+			 * receive a will or wont TM in response to our
+			 * do TM request that may have been sent to
+			 * determine kludge linemode support, process
+			 * it, otherwise TM should get a negative
+			 * response back.
 			 */
 			/*
 			 * Handle the linemode kludge stuff.
@@ -435,26 +474,21 @@ willoption(option, request)
 			if (lmodetype < KLUDGE_LINEMODE) {
 				lmodetype = KLUDGE_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WILL, 0);
-				dontoption(TELOPT_SGA, 0);
+				send_wont(TELOPT_SGA, 1);
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
-			 * cheat the state machine so that it
-			 * looks like we never sent the TM at
-			 * all.  The bad part of this is that
-			 * if the client sends a will TM on his
-			 * own to turn on linemode, then he
-			 * won't get a response.
+			 * Cheat the state machine so that it
+			 * looks like we got back a WONT.
 			 */
 			hiswants[TELOPT_TM] = OPT_NO;
-			resp[TELOPT_TM]--;
 			return;
 
 		case TELOPT_LFLOW:
 			/*
-			 * If we are going to support flow control option,
-			 * then don't worry peer that we can't change the
-			 * flow control characters.
+			 * If we are going to support flow control
+			 * option, then don't worry peer that we can't
+			 * change the flow control characters.
 			 */
 			slctab[SLC_XON].defset.flag &= ~SLC_LEVELBITS;
 			slctab[SLC_XON].defset.flag |= SLC_DEFAULT;
@@ -473,74 +507,71 @@ willoption(option, request)
 		default:
 			break;
 		}
-
-	}
-
-	if (request) {
-		if (!((resp[option] == 0 && hisopts[option] == OPT_YES) ||
-		    hiswants[option] == OPT_YES)) {
+		if (changeok) {
 			hiswants[option] = OPT_YES;
-			fmt = doopt;
-			resp[option]++;
+			send_do(option, 0);
+		} else {
+			do_dont_resp[option]++;
+			send_dont(option, 0);
 		}
-	} else {
-		if (resp[option]) {
-			resp[option]--;
-			if (resp[option] && hisopts[option] == OPT_YES)
-				resp[option]--;
-		}
-		if ((resp[option] == 0) && (hiswants[option] != OPT_YES)) {
-			if (changeok)
-				hiswants[option] = OPT_YES;
-			else
-				resp[option]++;
-			fmt = (hiswants[option] ? doopt : dont);
-		}
-		hisopts[option] = OPT_YES;
 	}
-
-	if (fmt) {
-		(void) sprintf(nfrontp, fmt, option);
-		nfrontp += sizeof (dont) - 2;
-	}
+	hisopts[option] = OPT_YES;
 
 	/*
 	 * Handle other processing that should occur after we have
 	 * responded to client input.
 	 */
-	if (!request) {
-		switch (option) {
+	switch (option) {
 #ifdef	LINEMODE
-		case TELOPT_LINEMODE:
+	case TELOPT_LINEMODE:
 # ifdef	KLUDGELINEMODE
-			/*
-			 * Note client's desire to use linemode.
-			 */
-			lmodetype = REAL_LINEMODE;
+		/*
+		 * Note client's desire to use linemode.
+		 */
+		lmodetype = REAL_LINEMODE;
 # endif	/* KLUDGELINEMODE */
-			clientstat(TELOPT_LINEMODE, WILL, 0);
-			break;
+		clientstat(TELOPT_LINEMODE, WILL, 0);
+		break;
 #endif	LINEMODE
-		
-		default:
-			break;
-		}
+	
+	default:
+		break;
 	}
-
 }  /* end of willoption */
 
-wontoption(option, request)
-	int option, request;
+send_dont(option, init)
+	int option, init;
+{
+	if (init) {
+		if ((do_dont_resp[option] == 0 && hisopts[option] == OPT_NO) ||
+		    hiswants[option] == OPT_NO)
+			return;
+		hiswants[option] = OPT_NO;
+		do_dont_resp[option]++;
+	}
+	(void) sprintf(nfrontp, dont, option);
+	nfrontp += sizeof (doopt) - 2;
+}
+
+wontoption(option)
+	int option;
 {
 	char *fmt = (char *)0;
 
 	/*
 	 * Process client input.
 	 */
-	if (!request) {
+
+	if (do_dont_resp[option]) {
+		do_dont_resp[option]--;
+		if (do_dont_resp[option] && hisopts[option] == OPT_NO)
+			do_dont_resp[option]--;
+	}
+	if ((do_dont_resp[option] == 0) && (hiswants[option] != OPT_NO)) {
+		/* it is always ok to change to negative state */
 		switch (option) {
 		case TELOPT_ECHO:
-			not42 = 1;	/* doesn't seem to be a 4.2 system */
+			not42 = 1; /* doesn't seem to be a 4.2 system */
 			break;
 
 		case TELOPT_BINARY:
@@ -567,26 +598,30 @@ wontoption(option, request)
 			if (lmodetype < REAL_LINEMODE) {
 				lmodetype = NO_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WONT, 0);
-				dooption(TELOPT_SGA, 0);
+				send_will(TELOPT_SGA, 1);
+/*@*/				send_will(TELOPT_ECHO, 1);
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
-			 * If we get a WONT TM, and had sent a DO TM, don't
-			 * respond with a DONT TM, just leave it as is.
-			 * Short circut the state machine to achive this.
-			 * The bad part of this is that if the client sends
-			 * a WONT TM on his own to turn off linemode, then he
-			 * won't get a response.
+			 * If we get a WONT TM, and had sent a DO TM,
+			 * don't respond with a DONT TM, just leave it
+			 * as is.  Short circut the state machine to
+			 * achive this. The bad part of this is that if
+			 * the client sends a WONT TM on his own to
+			 * turn off linemode, then he won't get a
+			 * response.
 			 */
 			hiswants[TELOPT_TM] = OPT_NO;
-			resp[TELOPT_TM]--;
+#ifdef	notdef
+			do_dont_resp[TELOPT_TM]--;
+#endif
 			return;
 
 		case TELOPT_LFLOW:
 			/*
-			 * If we are not going to support flow control option,
-			 * then let peer know that we can't change the
-			 * flow control characters.
+			 * If we are not going to support flow control
+			 * option, then let peer know that we can't
+			 * change the flow control characters.
 			 */
 			slctab[SLC_XON].defset.flag &= ~SLC_LEVELBITS;
 			slctab[SLC_XON].defset.flag |= SLC_CANTCHANGE;
@@ -597,51 +632,52 @@ wontoption(option, request)
 		default:
 			break;
 		}
+		hiswants[option] = OPT_NO;
+		fmt = dont;
+		send_dont(option, 0);
+	} else if (option == TELOPT_TM) {
+		/*
+		 * Special case for TM.
+		 */
+		hiswants[option] = OPT_NO;
 	}
-
-
-	if (request) {
-		if (!((resp[option] == 0 && hisopts[option] == OPT_NO) ||
-			hiswants[option] == OPT_NO)) {
-			hiswants[option] = OPT_NO;
-			fmt = dont;
-			resp[option]++;
-		}
-	} else {
-		if (resp[option]) {
-			resp[option]--;
-			if (resp[option] && hisopts[option] == OPT_NO)
-				resp[option]--;
-		}
-		if ((resp[option] == 0) && (hiswants[option] != OPT_NO)) {
-			/* it is always ok to change to negative state */
-			hiswants[option] = OPT_NO;
-			fmt = dont;
-		}
-		hisopts[option] = OPT_NO;
-	}
-
-	if (fmt) {
-		(void) sprintf(nfrontp, fmt, option);
-		nfrontp += sizeof (doopt) - 2;
-	}
+	hisopts[option] = OPT_NO;
 
 }  /* end of wontoption */
 
-dooption(option, request)
-	int option, request;
+send_will(option, init)
+	int option, init;
+{
+	if (init) {
+		if ((will_wont_resp[option] == 0 && myopts[option] == OPT_YES)||
+		    mywants[option] == OPT_YES)
+			return;
+		mywants[option] = OPT_YES;
+		will_wont_resp[option]++;
+	}
+	(void) sprintf(nfrontp, will, option);
+	nfrontp += sizeof (doopt) - 2;
+}
+
+dooption(option)
+	int option;
 {
 	int changeok = 0;
-	char *fmt = (char *)0;
 
 	/*
 	 * Process client input.
 	 */
-	if (!request) {
+
+	if (will_wont_resp[option]) {
+		will_wont_resp[option]--;
+		if (will_wont_resp[option] && myopts[option] == OPT_YES)
+			will_wont_resp[option]--;
+	}
+	if ((will_wont_resp[option] == 0) && (mywants[option] != OPT_YES)) {
 		switch (option) {
 		case TELOPT_ECHO:
 #ifdef	LINEMODE
-			if (hisopts[TELOPT_LINEMODE] == OPT_NO) {
+			if (lmodetype == NO_LINEMODE) {
 #endif
 				init_termbuf();
 				tty_setecho(1);
@@ -662,20 +698,23 @@ dooption(option, request)
 		case TELOPT_SGA:
 #if	defined(LINEMODE) && defined(KLUDGELINEMODE)
 			/*
-			 * If kludge linemode is in use, then we must process
-			 * an incoming do SGA for linemode purposes.
+			 * If kludge linemode is in use, then we must
+			 * process an incoming do SGA for linemode
+			 * purposes.
 			 */
 			if (lmodetype == KLUDGE_LINEMODE) {
 				/*
-				 * Receipt of "do SGA" in kludge linemode
-				 * is the peer asking us to turn off linemode.
-				 * Make note of the request.
+				 * Receipt of "do SGA" in kludge
+				 * linemode is the peer asking us to
+				 * turn off linemode.  Make note of
+				 * the request.
 				 */
 				clientstat(TELOPT_LINEMODE, WONT, 0);
 				/*
-				 * If linemode did not get turned off then
-				 * don't tell peer that we did.  Breaking
-				 * here forces a wont SGA to be returned.
+				 * If linemode did not get turned off
+				 * then don't tell peer that we did.
+				 * Breaking here forces a wont SGA to
+				 * be returned.
 				 */
 				if (linemode)
 					break;
@@ -689,6 +728,15 @@ dooption(option, request)
 			break;
 
 		case TELOPT_TM:
+			/*
+			 * Special case for TM.  We send a WILL, but
+			 * pretend we sent a WONT.
+			 */
+			send_will(option, 0);
+			mywants[option] = OPT_NO;
+			myopts[option] = OPT_NO;
+			return;
+
 		case TELOPT_LINEMODE:
 		case TELOPT_TTYPE:
 		case TELOPT_NAWS:
@@ -697,48 +745,44 @@ dooption(option, request)
 		default:
 			break;
 		}
-	}
-
-	if (request) {
-		if (!((resp[option] == 0 && myopts[option] == OPT_YES) ||
-		    mywants[option] == OPT_YES)) {
+		if (changeok) {
 			mywants[option] = OPT_YES;
-			fmt = will;
-			resp[option]++;
+			send_will(option, 0);
+		} else {
+			will_wont_resp[option]++;
+			send_wont(option, 0);
 		}
-	} else {
-		if (resp[option]) {
-			resp[option]--;
-			if (resp[option] && myopts[option] == OPT_YES)
-				resp[option]--;
-		}
-		if ((resp[option] == 0) && (mywants[option] != OPT_YES)) {
-			if (changeok)
-				mywants[option] = OPT_YES;
-			else
-				resp[option]++;
-			fmt = (mywants[option] ? will : wont);
-		}
-		myopts[option] = OPT_YES;
 	}
-
-	if (fmt) {
-		(void) sprintf(nfrontp, fmt, option);
-		nfrontp += sizeof (doopt) - 2;
-	}
+	myopts[option] = OPT_YES;
 
 }  /* end of dooption */
 
-
-dontoption(option, request)
-	int option, request;
+send_wont(option, init)
+	int option, init;
 {
-	char *fmt = (char *)0;
+	if (init) {
+		if ((will_wont_resp[option] == 0 && myopts[option] == OPT_NO) ||
+		    mywants[option] == OPT_NO)
+			return;
+		mywants[option] = OPT_NO;
+		will_wont_resp[option]++;
+	}
+	(void) sprintf(nfrontp, wont, option);
+	nfrontp += sizeof (wont) - 2;
+}
 
+dontoption(option)
+	int option;
+{
 	/*
 	 * Process client input.
 	 */
-	if (!request) {
+	if (will_wont_resp[option]) {
+		will_wont_resp[option]--;
+		if (will_wont_resp[option] && myopts[option] == OPT_NO)
+			will_wont_resp[option]--;
+	}
+	if ((will_wont_resp[option] == 0) && (mywants[option] != OPT_NO)) {
 		switch (option) {
 		case TELOPT_BINARY:
 			init_termbuf();
@@ -746,9 +790,9 @@ dontoption(option, request)
 			set_termbuf();
 			break;
 
-		case TELOPT_ECHO:		/* we should stop echoing */
+		case TELOPT_ECHO:	/* we should stop echoing */
 #ifdef	LINEMODE
-			if (hisopts[TELOPT_LINEMODE] == OPT_NO) {
+			if (lmodetype == NO_LINEMODE) {
 #endif
 				init_termbuf();
 				tty_setecho(0);
@@ -761,19 +805,21 @@ dontoption(option, request)
 		case TELOPT_SGA:
 #if	defined(LINEMODE) && defined(KLUDGELINEMODE)
 			/*
-			 * If kludge linemode is in use, then we must process an
-			 * incoming do SGA for linemode purposes.
+			 * If kludge linemode is in use, then we
+			 * must process an incoming do SGA for
+			 * linemode purposes.
 			 */
 			if (lmodetype == KLUDGE_LINEMODE) {
 				/*
-				 * The client is asking us to turn linemode
-				 * on.
+				 * The client is asking us to turn
+				 * linemode on.
 				 */
 				clientstat(TELOPT_LINEMODE, WILL, 0);
 				/*
-				 * If we did not turn line mode on, then what do
-				 * we say?  Will SGA?  This violates design of
-				 * telnet.  Gross.  Very Gross.
+				 * If we did not turn line mode on,
+				 * then what do we say?  Will SGA?
+				 * This violates design of telnet.
+				 * Gross.  Very Gross.
 				 */
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
@@ -781,32 +827,11 @@ dontoption(option, request)
 		default:
 			break;
 		}
-	}
 
-	if (request) {
-		if (!((resp[option] == 0 && myopts[option] == OPT_NO) ||
-		    mywants[option] == OPT_NO)) {
-			mywants[option] = OPT_NO;
-			fmt = wont;
-			resp[option]++;
-		}
-	} else {
-		if (resp[option]) {
-			resp[option]--;
-			if (resp[option] && myopts[option] == OPT_NO)
-				resp[option]--;
-		}
-		if ((resp[option] == 0) && (mywants[option] != OPT_NO)) {
-			mywants[option] = OPT_NO;
-			fmt = wont;
-		}
-		myopts[option] = OPT_NO;
+		mywants[option] = OPT_NO;
+		send_wont(option, 0);
 	}
-
-	if (fmt) {
-	    (void) sprintf(nfrontp, fmt, option);
-	    nfrontp += sizeof (wont) - 2;
-	}
+	myopts[option] = OPT_NO;
 
 }  /* end of dontoption */
 

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ext.h	5.1 (Berkeley) %G%
+ *	@(#)ext.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,8 @@ extern char	hisopts[256];
 extern char	myopts[256];
 extern char	hiswants[256];
 extern char	mywants[256];
-extern char	resp[256];
+extern char	do_dont_resp[256];
+extern char	will_wont_resp[256];
 extern int	linemode;	/* linemode on/off */
 #ifdef	LINEMODE
 extern int	uselinemode;	/* what linemode to use (on/off) */

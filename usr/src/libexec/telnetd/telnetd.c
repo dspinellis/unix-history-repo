@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -202,8 +202,8 @@ getterminaltype()
     void ttloop();
 
     settimer(baseline);
-    willoption(TELOPT_TTYPE, 1);
-    willoption(TELOPT_TSPEED, 1);
+    send_do(TELOPT_TTYPE, 1);
+    send_do(TELOPT_TSPEED, 1);
     while ((hiswants[TELOPT_TTYPE] != hisopts[TELOPT_TTYPE]) ||
 	   (hiswants[TELOPT_TSPEED] != hisopts[TELOPT_TSPEED])) {
 	ttloop();
@@ -369,7 +369,7 @@ int f, p;
 	 * at once.
 	 */
 	if (!myopts[TELOPT_SGA])
-		dooption(TELOPT_SGA);
+		send_will(TELOPT_SGA, 1);
 	/*
 	 * Is the client side a 4.2 (NOT 4.3) system?  We need to know this
 	 * because 4.2 clients are unable to deal with TCP urgent data.
@@ -380,7 +380,7 @@ int f, p;
 	 * WE, the server, sends it; it does NOT mean that the client will
 	 * echo the terminal input).
 	 */
-	willoption(TELOPT_ECHO, 1);
+	send_do(TELOPT_ECHO, 1);
 
 #ifdef	LINEMODE
 	if (hisopts[TELOPT_LINEMODE] == OPT_NO) {
@@ -389,17 +389,17 @@ int f, p;
 		 */
 		linemode = 1;
 		editmode = 0;
-		willoption(TELOPT_LINEMODE, 1);  /* send do linemode */
+		send_do(TELOPT_LINEMODE, 1);  /* send do linemode */
 	}
 #endif	/* LINEMODE */
 
 	/*
 	 * Send along a couple of other options that we wish to negotiate.
 	 */
-	willoption(TELOPT_NAWS, 1);
-	dooption(TELOPT_STATUS, 1);
+	send_do(TELOPT_NAWS, 1);
+	send_will(TELOPT_STATUS, 1);
 	flowmode = 1;  /* default flow control state */
-	willoption(TELOPT_LFLOW, 1);
+	send_do(TELOPT_LFLOW, 1);
 
 	/*
 	 * Spin, waiting for a response from the DO ECHO.  However,
@@ -424,7 +424,7 @@ int f, p;
 	 * mode, which we do not want.
 	 */
 	if (hiswants[TELOPT_ECHO] == OPT_YES)
-		willoption(TELOPT_ECHO, 0);
+		willoption(TELOPT_ECHO);
 
 	/*
 	 * Finally, to clean things up, we turn on our echo.  This
@@ -432,7 +432,7 @@ int f, p;
 	 */
 
 	if (!myopts[TELOPT_ECHO])
-		dooption(TELOPT_ECHO);
+		send_will(TELOPT_ECHO, 1);
 
 	/*
 	 * Turn on packet mode, and default to line at at time mode.
@@ -448,7 +448,7 @@ int f, p;
 	 * the do timing mark sequence.
 	 */
 	if (lmodetype < REAL_LINEMODE)
-		willoption(TELOPT_TM, 1);
+		send_do(TELOPT_TM, 1);
 # endif	/* KLUDGELINEMODE */
 #endif	/* LINEMODE */
 
