@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)netintro.4	8.1 (Berkeley) %G%
+.\"     @(#)netintro.4	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETINTRO 4
@@ -41,8 +41,7 @@ type.  It is not required that a protocol family support
 all socket types.  A protocol family may contain multiple
 protocols supporting the same socket abstraction. 
 .Pp
-A protocol supports one of the socket abstractions detailed
-in
+A protocol supports one of the socket abstractions detailed in
 .Xr socket 2 .
 A specific protocol may be accessed either by creating a
 socket of the appropriate type and protocol family, or
@@ -87,10 +86,7 @@ Raw socket interfaces are provided to the
 .Tn IP
 protocol
 layer of the
-Internet, to the
-.Tn IMP
-link layer (1822), and to
-the
+Internet, and to the
 .Tn IDP
 protocol of Xerox
 .Tn NS .
@@ -122,7 +118,6 @@ are known to the system
 .Bd -literal
 #define    AF_UNIX      1    /* local to host (pipes, portals) */
 #define    AF_INET      2    /* internetwork: UDP, TCP, etc. */
-#define    AF_IMPLINK   3    /* arpanet imp addresses */
 #define    AF_NS        6    /* Xerox NS protocols */
 #define    AF_CCITT     10   /* CCITT protocols, X.25 etc */
 #define    AF_HYLINK    15   /* NSC Hyperchannel */
