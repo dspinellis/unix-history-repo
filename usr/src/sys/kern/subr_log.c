@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.16 (Berkeley) %G%
+ *	@(#)subr_log.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "vnode.h"
 #include "ioctl.h"
