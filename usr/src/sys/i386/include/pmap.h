@@ -9,9 +9,15 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
+ * Derived from hp300 version by Mike Hibler, this version by William
+ * Jolitz uses a recursive map [a pde points to the page directory] to
+ * map the page tables using the pagetables themselves. This is done to
+ * reduce the impact on kernel virtual memory for lots of sparse address
+ * space, and to reduce the cost of memory to each process.
+ *
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  *
- *	@(#)pmap.h	1.1 (Berkeley) %G%
+ *	@(#)pmap.h	1.2 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -40,7 +46,9 @@ unsigned int
 };
 
 #define	PD_MASK		0xffc00000	/* page directory address bits */
-#define	PD_SHIFT	22		/* page directory address bits */
+#define	PT_MASK		0x003ff000	/* page table address bits */
+#define	PD_SHIFT	22		/* page directory address shift */
+#define	PG_SHIFT	12		/* page table address shift */
 
 struct pte
 {
@@ -58,6 +66,9 @@ unsigned int
 };
 
 #define	PG_V		0x00000001
+#define	PG_RO		0x00000000
+#define	PG_RW		0x00000002
+#define	PG_u		0x00000004
 #define	PG_PROT		0x00000006 /* all protection bits . */
 #define	PG_W		0x00000200
 #define PG_N		0x00000800 /* Non-cacheable */
@@ -72,6 +83,9 @@ unsigned int
 #define	PG_URKW		0x00000004
 #define	PG_UW		0x00000006
 
+/* Garbage for current bastardized pager that assumes a hp300 */
+#define	PG_NV	0
+#define	PG_CI	0
 /*
  * Page Protection Exception bits
  */
@@ -96,8 +110,17 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define I386_KPDES	8 /* KPT page directory size */
 #define I386_UPDES	NBPDR/sizeof(struct pde)-8 /* UPT page directory size */
 
-#define I386_MAX_PTSIZE	I386_UPDES*NBPG	/* max size of UPT */
-#define I386_MAX_KPTSIZE I386_KPDES*NBPG /* max memory to allocate to KPT */
+#define	UPTDI		0x3f6		/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI		0x3f7		/* ptd entry that points to ptd! */
+#define	KPTDI_FIRST	0x3f8		/* start of kernel virtual pde's */
+#define	KPTDI_LAST	0x3fA		/* last of kernel virtual pde's */
+
+#define I386_MAX_PTSIZE	NPTEPG*NBPG	/* max size of PT */
+#ifdef old
+#define I386_MAX_KPTSIZE 0x100000 /* max memory to allocate to KPT */
+
+#define	I386_PTBASE	0xfe200000
+#define	I386_PTMAXSIZE	0x01000000
 
 /*
  * Kernel virtual address to page table entry and to physical address.
@@ -108,6 +131,38 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 	((((pt_entry_t *)(pt) - Sysmap) << PGSHIFT) + VM_MIN_KERNEL_ADDRESS)
 #define	kvtophys(va) \
 	((kvtopte(va)->pg_pfnum << PGSHIFT) | ((int)(va) & PGOFSET))
+extern	pt_entry_t	*Sysmap;
+#else
+
+/*
+ * Address of current and alternate address space page table maps
+ * and directories.
+ */
+extern struct pte PTmap[], APTmap[], Upte;
+extern struct pde PTD[], APTD[], PTDpde, APTDpde, Upde;
+
+extern int IdlePTD;
+
+/*
+ * virtual address to page table entry and
+ * to physical address. Likewise for alternate address space.
+ */
+#define	vtopte(va)	(PTmap + i386_btop(va))
+#define	kvtopte(va)	vtopte(va)
+#define	ptetov(pt)	(i386_ptob(pt - PTmap)) 
+#define	vtophys(va)  (i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+
+#define	avtopte(va)	(APTmap + i386_btop(va))
+#define	ptetoav(pt)	(i386_ptob(pt - APTmap)) 
+#define	avtophys(va)  (i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+
+/*
+ * macros to generate page directory/table indicies
+ */
+
+#define	pdei(va)	(((va)&PD_MASK)>>PD_SHIFT)
+#define	ptei(va)	(((va)&PT_MASK)>>PT_SHIFT)
+#endif
 
 /*
  * Pmap stuff
@@ -115,8 +170,8 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define PMAP_NULL	((pmap_t) 0)
 
 struct pmap {
-	pt_entry_t		*pm_ptab;	/* KVA of page table */
 	pd_entry_t		*pm_pdir;	/* KVA of page directory */
+	/* caddr_t			*pm_ptobj;	/* page table object */
 	boolean_t		pm_pdchanged;	/* pdir changed */
 	short			pm_dref;	/* page directory ref count */
 	short			pm_count;	/* pmap reference count */
@@ -133,13 +188,14 @@ extern pmap_t		kernel_pmap;
  * Macros for speed
  */
 #define PMAP_ACTIVATE(pmapp, pcbp) \
-	if ((pmapp) != PMAP_NULL && (pmapp)->pm_pdchanged) { \
+	if ((pmapp) != PMAP_NULL /*&& (pmapp)->pm_pdchanged */) {  \
 		(pcbp)->pcb_cr3 = \
-		    i386_btop(pmap_extract(kernel_pmap, (pmapp)->pm_pdir)); \
+		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); \
 		if ((pmapp) == u.u_procp->p_map->pmap) \
 			load_cr3((pcbp)->pcb_cr3); \
 		(pmapp)->pm_pdchanged = FALSE; \
 	}
+
 #define PMAP_DEACTIVATE(pmapp, pcbp)
 
 /*
@@ -169,7 +225,6 @@ pv_entry_t	pv_table;		/* array of entries, one per page */
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 
-extern	pt_entry_t	*Sysmap;
 #endif	KERNEL
 
 #endif	_PMAP_MACHINE_
