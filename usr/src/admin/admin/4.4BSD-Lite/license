@@ -1,17 +1,16 @@
-.\"	@(#)license	1.7 (Berkeley) %G%
+.\"	@(#)license	1.8 (Berkeley) %G%
 .\"
 .nr LL 6.8i
 .OF '(June 1992)'''
 .EF '(June 1992)'''
 .ll 6.8i
-.ls 2
 .ce 2
 .ps 11
 .ft HB
 4.4BSD-LITE LICENSE AGREEMENT
-.sp
+.sp .25
 University of California, Berkeley
-.sp
+.sp .4
 .ft H
 .nr PS 10
 .ps 10
@@ -21,12 +20,11 @@ University of California, Berkeley
 This LICENSE AGREEMENT is made and entered into
 by and between THE REGENTS OF THE
 UNIVERSITY OF CALIFORNIA, a California corporation, hereinafter called
-"THE REGENTS", and
-\l'1.85i'
-\l'1.5i'
+``THE REGENTS'', and
+\l'3.4i'
 having its principal office at 
-\l'2.75i'\|,
-hereinafter called "LICENSEE",
+\l'4.00i'\|,
+hereinafter called ``LICENSEE'',
 and shall become effective
 on the date of execution by THE REGENTS.
 .nr FT HB
@@ -41,10 +39,10 @@ conditions hereinafter set forth:
 .IP 1.
 .I Other  
 .I Contributors.
-The term "Other Contributors" as used herein refers to persons or
+The term ``Other Contributors'' as used herein refers to persons or
 entities not employed by or affiliated with THE REGENTS 
 who have contributed software included in the    
-LICENSED MATERIAL."
+LICENSED MATERIAL.
 .IP 2.
 .I Term.
 The term of this Agreement shall commence on the
@@ -83,7 +81,7 @@ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .I Services.
 LICENSEE ACKNOWLEDGES THAT THE
 LICENSED MATERIAL
-IS BEING SUPPLIED "AS IS," WITHOUT ANY
+IS BEING SUPPLIED ``AS IS,'' WITHOUT ANY
 ACCOMPANYING SERVICES FROM THE REGENTS,
 FOR THE PURPOSES
 OF EDUCATIONAL AND SCIENTIFIC COLLABORATION AIMED AT FURTHER DEVELOPMENT
@@ -157,14 +155,14 @@ Electrical Engineering and Computer Science
 Department of the University of California at Berkeley.
 This obligation will be considered met if
 LICENSEE includes
-"Copyright (c) 1989, 1991, 1992, The Regents of the University of California"
+``Copyright (c) 1989, 1991, 1992, The Regents of the University of California''
 on the label for electronic media
 containing source or binary code, and the
 statement regarding derivation appears on the
 cover page of the installation or release documentation
 accompanying the electronic media,
 such statement to include
-"This software and documentation
+``This software and documentation
 is based in part on 4.4BSD-Lite 
 licensed from The Regents of the University of
 California.  We acknowledge the
@@ -172,7 +170,7 @@ role of the
 Computer Systems Research Group and the
 Electrical Engineering and Computer Sciences Department
 of the University of California at Berkeley and the Other
-Contributors in its development."
+Contributors in its development.''
 Advertisements or other promotional literature for
 products or features based on LICENSED MATERIAL
 should acknowledge the role of the University
@@ -231,7 +229,6 @@ consent of  THE REGENTS.
 .HB
 .ps 10
 .LP
-.bp
 IN WITNESS WHEREOF, THE REGENTS
 and LICENSEE have executed this Agreement
 on the dates specified below.  The
@@ -242,6 +239,7 @@ THE REGENTS.
 .TS
 expand tab(~);
 lw(2.9375i) lw(0.4i) lw(2.9375i).
+.B
 LICENSEE:\l'2.15i'~~LICENSOR: THE REGENTS OF THE
 ~~           UNIVERSITY OF CALIFORNIA
 \l'2.937i'~~
@@ -253,4 +251,5 @@ Name:\l'2.55i'~~Name:\l'2.55i'
 Title:\l'2.6i'~~Title:\l'2.6i'
 .sp 1
 Date:\l'2.6i'~~Date:\l'2.6i'
+.R
 .TE
