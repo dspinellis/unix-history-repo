@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.28 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -199,14 +199,37 @@ nfs_connect(nmp, rep)
 {
 	register struct socket *so;
 	int s, error, rcvreserve, sndreserve;
+	struct sockaddr *saddr;
+	struct sockaddr_in *sin;
 	struct mbuf *m;
+	u_short tport;
 
 	nmp->nm_so = (struct socket *)0;
-	if (error = socreate(mtod(nmp->nm_nam, struct sockaddr *)->sa_family,
+	saddr = mtod(nmp->nm_nam, struct sockaddr *);
+	if (error = socreate(saddr->sa_family,
 		&nmp->nm_so, nmp->nm_sotype, nmp->nm_soproto))
 		goto bad;
 	so = nmp->nm_so;
 	nmp->nm_soflags = so->so_proto->pr_flags;
+
+	/*
+	 * Some servers require that the client port be a reserved port number.
+	 */
+	if (saddr->sa_family == AF_INET && (nmp->nm_flag & NFSMNT_RESVPORT)) {
+		MGET(m, M_WAIT, MT_SONAME);
+		sin = mtod(m, struct sockaddr_in *);
+		sin->sin_len = m->m_len = sizeof (struct sockaddr_in);
+		sin->sin_family = AF_INET;
+		sin->sin_addr.s_addr = INADDR_ANY;
+		tport = IPPORT_RESERVED - 1;
+		sin->sin_port = htons(tport);
+		while ((error = sobind(so, m)) == EADDRINUSE &&
+		       --tport > IPPORT_RESERVED / 2)
+			sin->sin_port = htons(tport);
+		m_freem(m);
+		if (error)
+			goto bad;
+	}
 
 	/*
 	 * Protocols that do not require connections may be optionally left
