@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.16 (Berkeley) %G%
+ *	@(#)termios.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -60,7 +60,7 @@
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
 #define VSTATUS		18	/* ICANON */
-#define VERASE2		19	/* ICANON */
+/*			19	   spare 2 */
 #define	NCCS		20
 #endif
 
