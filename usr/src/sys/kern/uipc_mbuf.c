@@ -13,7 +13,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.4.1.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
