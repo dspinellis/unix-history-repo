@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	6.5 (Berkeley) %G%
+ *	@(#)ut.c	6.6 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -138,9 +138,10 @@ utopen(dev, flag)
 	int olddens, dens;
 	register int s;
 
-	if (tjunit >= NTJ || (sc = &tj_softc[tjunit])->sc_openf ||
-	    (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
+	if (tjunit >= NTJ || (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
+	if ((sc = &tj_softc[tjunit])->sc_openf)
+		return (EBUSY);
 	olddens = sc->sc_dens;
 	dens = sc->sc_dens =
 	    utdens[(minor(dev)&(T_1600BPI|T_6250BPI))>>3]|
