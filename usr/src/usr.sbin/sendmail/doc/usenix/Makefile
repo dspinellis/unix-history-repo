@@ -1,10 +1,11 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
-DIR=	smm/16.sendmail
-SRCS=	intro.me
+SRCS=	usenix.me
 MACROS=	-me
 
-paper.${PRINTER}: ${SRCS}
+all: usenix.${PRINTER}
+
+usenix.${PRINTER}: ${SRCS}
 	${PIC} ${SRCS} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
