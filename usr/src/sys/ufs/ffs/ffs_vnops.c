@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.62 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.63 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,6 +26,7 @@
 #include "lockf.h"
 #include "quota.h"
 #include "inode.h"
+#include "dir.h"
 #include "fs.h"
 
 /*
@@ -690,8 +691,14 @@ ufs_link(vp, ndp, p)
 	register struct inode *ip = VTOI(vp);
 	int error;
 
-	if ((unsigned short)ip->i_nlink >= LINK_MAX)
+#ifdef DIANOSTIC
+	if ((ndp->ni_nameiop & HASBUF) == 0)
+		panic("ufs_link: no name");
+#endif
+	if ((unsigned short)ip->i_nlink >= LINK_MAX) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		return (EMLINK);
+	}
 	if (ndp->ni_dvp != vp)
 		ILOCK(ip);
 	ip->i_nlink++;
@@ -701,6 +708,7 @@ ufs_link(vp, ndp, p)
 		error = direnter(ip, ndp);
 	if (ndp->ni_dvp != vp)
 		IUNLOCK(ip);
+	FREE(ndp->ni_pnbuf, M_NAMEI);
 	vput(ndp->ni_dvp);
 	if (error) {
 		ip->i_nlink--;
@@ -742,17 +750,36 @@ ufs_rename(fndp, tndp, p)
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	int error = 0;
 
+#ifdef DIANOSTIC
+	if ((tndp->ni_nameiop & HASBUF) == 0 ||
+	    (fndp->ni_nameiop & HASBUF) == 0)
+		panic("ufs_rename: no name");
+#endif
 	dp = VTOI(fndp->ni_dvp);
 	ip = VTOI(fndp->ni_vp);
+	/*
+	 * Check if just deleting a link name.
+	 */
+	if (fndp->ni_vp == tndp->ni_vp) {
+		VOP_ABORTOP(tndp);
+		vput(tndp->ni_dvp);
+		vput(tndp->ni_vp);
+		vrele(fndp->ni_dvp);
+		if ((ip->i_mode&IFMT) == IFDIR) {
+			VOP_ABORTOP(fndp);
+			vrele(fndp->ni_vp);
+			return (EINVAL);
+		}
+		doingdirectory = 0;
+		goto unlinkit;
+	}
 	ILOCK(ip);
 	if ((ip->i_mode&IFMT) == IFDIR) {
-		register struct direct *d = &fndp->ni_dent;
-
 		/*
 		 * Avoid ".", "..", and aliases of "." for obvious reasons.
 		 */
-		if ((d->d_namlen == 1 && d->d_name[0] == '.') || dp == ip ||
-		    fndp->ni_isdotdot || (ip->i_flag & IRENAME)) {
+		if ((fndp->ni_namelen == 1 && fndp->ni_ptr[0] == '.') ||
+		    dp == ip || fndp->ni_isdotdot || (ip->i_flag & IRENAME)) {
 			VOP_ABORTOP(tndp);
 			vput(tndp->ni_dvp);
 			if (tndp->ni_vp)
@@ -805,20 +832,18 @@ ufs_rename(fndp, tndp, p)
 		VOP_UNLOCK(fndp->ni_vp);
 		if (error)
 			goto bad;
-		tndp->ni_nameiop &= ~(MODMASK | OPMASK);
-		tndp->ni_nameiop |= RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
-		do {
-			dp = VTOI(tndp->ni_dvp);
-			if (xp != NULL)
-				iput(xp);
-			if (error = checkpath(ip, dp, tndp->ni_cred))
-				goto out;
-			if (error = namei(tndp, p))
-				goto out;
-			xp = NULL;
-			if (tndp->ni_vp)
-				xp = VTOI(tndp->ni_vp);
-		} while (dp != VTOI(tndp->ni_dvp));
+		if (xp != NULL)
+			iput(xp);
+		if (error = checkpath(ip, dp, tndp->ni_cred))
+			goto out;
+		if ((tndp->ni_nameiop & SAVESTART) == 0)
+			panic("ufs_rename: lost to startdir");
+		if (error = lookup(tndp, p))
+			goto out;
+		dp = VTOI(tndp->ni_dvp);
+		xp = NULL;
+		if (tndp->ni_vp)
+			xp = VTOI(tndp->ni_vp);
 	}
 	/*
 	 * 2) If target doesn't exist, link the target
@@ -875,11 +900,9 @@ ufs_rename(fndp, tndp, p)
 			goto bad;
 		}
 		/*
-		 * Target must be empty if a directory
-		 * and have no links to it.
-		 * Also, insure source and target are
-		 * compatible (both directories, or both
-		 * not directories).
+		 * Target must be empty if a directory and have no links
+		 * to it. Also, ensure source and target are compatible
+		 * (both directories, or both not directories).
 		 */
 		if ((xp->i_mode&IFMT) == IFDIR) {
 			if (!dirempty(xp, dp->i_number, tndp->ni_cred) || 
@@ -933,9 +956,12 @@ ufs_rename(fndp, tndp, p)
 	/*
 	 * 3) Unlink the source.
 	 */
-	fndp->ni_nameiop &= ~(MODMASK | OPMASK);
-	fndp->ni_nameiop |= DELETE | LOCKPARENT | LOCKLEAF;
-	(void)namei(fndp, p);
+unlinkit:
+	fndp->ni_nameiop &= ~MODMASK;
+	fndp->ni_nameiop |= LOCKPARENT | LOCKLEAF;
+	if ((fndp->ni_nameiop & SAVESTART) == 0)
+		panic("ufs_rename: lost from startdir");
+	(void) lookup(fndp, p);
 	if (fndp->ni_vp != NULL) {
 		xp = VTOI(fndp->ni_vp);
 		dp = VTOI(fndp->ni_dvp);
@@ -1041,22 +1067,26 @@ ufs_mkdir(ndp, vap, p)
 	int error;
 	int dmode;
 
+#ifdef DIANOSTIC
+	if ((ndp->ni_nameiop & HASBUF) == 0)
+		panic("ufs_mkdir: no name");
+#endif
 	dvp = ndp->ni_dvp;
 	dp = VTOI(dvp);
 	if ((unsigned short)dp->i_nlink >= LINK_MAX) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		iput(dp);
 		return (EMLINK);
 	}
 	dmode = vap->va_mode&0777;
 	dmode |= IFDIR;
 	/*
-	 * Must simulate part of maknode here
-	 * in order to acquire the inode, but
-	 * not have it entered in the parent
-	 * directory.  The entry is made later
-	 * after writing "." and ".." entries out.
+	 * Must simulate part of maknode here to acquire the inode, but
+	 * not have it entered in the parent directory. The entry is made
+	 * later after writing "." and ".." entries.
 	 */
 	if (error = ialloc(dp, dirpref(dp->i_fs), dmode, ndp->ni_cred, &tip)) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		iput(dp);
 		return (error);
 	}
@@ -1066,6 +1096,7 @@ ufs_mkdir(ndp, vap, p)
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) ||
 	    (error = chkiq(ip, 1, ndp->ni_cred, 0))) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		ifree(ip, ip->i_number, dmode);
 		iput(ip);
 		iput(dp);
@@ -1131,6 +1162,7 @@ bad:
 		iput(ip);
 	} else
 		ndp->ni_vp = ITOV(ip);
+	FREE(ndp->ni_pnbuf, M_NAMEI);
 	iput(dp);
 	return (error);
 }
@@ -1262,13 +1294,15 @@ ufs_readlink(vp, uiop, cred)
 
 /*
  * Ufs abort op, called after namei() when a CREATE/DELETE isn't actually
- * done. Nothing to do at the moment.
+ * done. If a buffer has been saved in anticipation of a CREATE, delete it.
  */
 /* ARGSUSED */
 ufs_abortop(ndp)
 	struct nameidata *ndp;
 {
 
+	if ((ndp->ni_nameiop & (HASBUF | SAVESTART)) == HASBUF)
+		FREE(ndp->ni_pnbuf, M_NAMEI);
 	return (0);
 }
 
@@ -1531,6 +1565,10 @@ maknode(mode, ndp, ipp)
 	ino_t ipref;
 	int error;
 
+#ifdef DIANOSTIC
+	if ((ndp->ni_nameiop & HASBUF) == 0)
+		panic("maknode: no name");
+#endif
 	*ipp = 0;
 	if ((mode & IFMT) == 0)
 		mode |= IFREG;
@@ -1539,6 +1577,7 @@ maknode(mode, ndp, ipp)
 	else
 		ipref = pdir->i_number;
 	if (error = ialloc(pdir, ipref, mode, ndp->ni_cred, &tip)) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		iput(pdir);
 		return (error);
 	}
@@ -1548,6 +1587,7 @@ maknode(mode, ndp, ipp)
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) ||
 	    (error = chkiq(ip, 1, ndp->ni_cred, 0))) {
+		free(ndp->ni_pnbuf, M_NAMEI);
 		ifree(ip, ip->i_number, mode);
 		iput(ip);
 		iput(pdir);
@@ -1569,6 +1609,8 @@ maknode(mode, ndp, ipp)
 		goto bad;
 	if (error = direnter(ip, ndp))
 		goto bad;
+	if ((ndp->ni_nameiop & SAVESTART) == 0)
+		FREE(ndp->ni_pnbuf, M_NAMEI);
 	iput(pdir);
 	*ipp = ip;
 	return (0);
@@ -1578,6 +1620,7 @@ bad:
 	 * Write error occurred trying to update the inode
 	 * or the directory so must deallocate the inode.
 	 */
+	free(ndp->ni_pnbuf, M_NAMEI);
 	iput(pdir);
 	ip->i_nlink = 0;
 	ip->i_flag |= ICHG;
