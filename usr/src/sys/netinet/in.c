@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in.c	7.12 (Berkeley) %G%
+ *	@(#)in.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,8 +122,8 @@ in_sockmaskof(in, sockmask)
 			mask =  ia->ia_subnetmask;
     }
     {
-	register char *cp = (char *)&(sockmask->sin_port);
 	register char *cpbase = (char *)&(sockmask->sin_addr);
+	register char *cp = (char *)(1 + &(sockmask->sin_addr));
 
 	sockmask->sin_addr.s_addr = htonl(mask);
 	sockmask->sin_len = 0;
@@ -309,9 +309,16 @@ in_control(so, cmd, data, ifp)
 			return (error);
 		/* FALLTHROUGH */
 
-	default:
+	case SIOCGIFADDR:
+	case SIOCGIFNETMASK:
+	case SIOCGIFDSTADDR:
+	case SIOCGIFBRDADDR:
 		if (ia == (struct in_ifaddr *)0)
 			return (EADDRNOTAVAIL);
+		break;
+
+	default:
+		return (EOPNOTSUPP);
 		break;
 	}
 	switch (cmd) {
@@ -497,6 +504,16 @@ in_ifinit(ifp, ia, sin, scrub)
 	ia->ia_subnetmask |= ia->ia_netmask;
 	ia->ia_subnet = i & ia->ia_subnetmask;
 	ia->ia_sockmask.sin_addr.s_addr = htonl(ia->ia_subnetmask);
+	{
+		register char *cp = (char *) (1 + &(ia->ia_sockmask.sin_addr));
+		register char *cpbase = (char *) &(ia->ia_sockmask.sin_addr);
+		while (--cp >= cpbase)
+			if (*cp) {
+				ia->ia_sockmask.sin_len =
+					1 + cp - (char *) &(ia->ia_sockmask);
+				break;
+			}
+	}
 	if (ifp->if_flags & IFF_BROADCAST) {
 		ia->ia_broadaddr.sin_addr = 
 			in_makeaddr(ia->ia_subnet, INADDR_BROADCAST);
