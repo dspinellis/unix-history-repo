@@ -1,0 +1,82 @@
+.\"	@(#)HP.06.91	1.1	91/06/19
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.HE
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.ti 5i
+June 15, 1991
+.LP
+.nf
+Dr. John Limb
+IAG, Building 46G
+Hewlett-Packard Company
+19046 Pruneridge Ave.
+Cupertino, CA 95014
+.sp 1
+.LP
+Dear Dr. Limb,
+.PP
+I am writing to you in my role as the head of operating
+system and networking research for the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+In the past year funding for our group has been provided by
+Hewlett-Packard, the Open Software Foundation (\s-1OSF\s0),
+and Cray Research.
+As the period of that funding has drawn to a close,
+we are hopeful that you will renew your support for the coming year
+so that we can continue our work at the university.
+A gift on the order of $150,000 would provide roughly
+a quarter of the budget needed by \s-1CSRG\s0
+for salaries and benefits, maintenance and network access fees,
+travel and other expenses.
+.PP
+We are very excited by the new HP700 ``Snake'' workstations.
+In the coming year, we plan to work with the people in the systems
+group at the University of Utah to get Berkeley UNIX fully supported
+on that platform.
+The initial plan will be to have Utah complete
+their port of 4.3BSD to the HP700;
+they hope to able to make that port available by the end
+of summer for those sites that want a system to run immediately.
+Once they have the port running successfully,
+they will work with CSRG to get it converted to run under
+the new virtual memory system used in 4.4BSD.
+Utah already has a MACH kernel running on the HP800;
+since the 4.4BSD virtual memory system is
+derived from the MACH vm implementation,
+we anticipate that it will not take long to get the conversion done.
+CSRG will then complete the integration of 4.4BSD.
+We hope to have a test release ready late in the year
+and a more general beta distribution available early in 1992.
+.PP
+To support the 4.4BSD development on the HP700 platform
+we anticipate the need for six machines consisting of
+two HP720's, three HP730's, and one HP750.
+The machines will be configured with various peripherals
+and grayscale and color (but not graphics) interfaces to
+ensure that we can support all the models in the product line.
+We are asking for an equipment grant of $200,000 to purchase
+these machines.
+.sp 2
+.in +1.5i
+Sincerely,
+.sp .65i
+Dr. Marshall Kirk McKusick
+.in -1.5i
+.sp 2
+.nf
+cc:	Mike Karels
+.fi
+.sp
+MKM/ss
