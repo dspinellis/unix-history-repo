@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.18 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -159,10 +159,13 @@ bwrite(bp)
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
 	if ((flag&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
+	else
+		reassignbuf(bp, bp->b_vp);
 	trace(TR_BWRITE,
 	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bcount), bp->b_lblkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
+	bp->b_vp->v_numoutput++;
 	VOP_STRATEGY(bp);
 
 	/*
@@ -192,8 +195,11 @@ bdwrite(bp)
 	register struct buf *bp;
 {
 
-	if ((bp->b_flags&B_DELWRI) == 0)
+	if ((bp->b_flags & B_DELWRI) == 0) {
+		bp->b_flags |= B_DELWRI;
+		reassignbuf(bp, bp->b_vp);
 		u.u_ru.ru_oublock++;		/* noone paid yet */
+	}
 	/*
 	 * If this is a tape drive, the write must be initiated.
 	 */
@@ -376,8 +382,9 @@ loop:
 			splx(s);
 			goto loop;
 		}
+		bremfree(bp);
+		bp->b_flags |= B_BUSY;
 		splx(s);
-		notavail(bp);
 		if (bp->b_bcount != size) {
 			printf("getblk: stray size");
 			bp->b_flags |= B_INVAL;
@@ -470,9 +477,10 @@ loop:
 		splx(s);
 		goto loop;
 	}
-	splx(s);
 	bp = dp->av_forw;
-	notavail(bp);
+	bremfree(bp);
+	bp->b_flags |= B_BUSY;
+	splx(s);
 	if (bp->b_flags & B_DELWRI) {
 		(void) bawrite(bp);
 		goto loop;
@@ -528,12 +536,23 @@ biowait(bp)
 biodone(bp)
 	register struct buf *bp;
 {
+	register struct vnode *vp;
 
 	if (bp->b_flags & B_DONE)
 		panic("dup biodone");
 	bp->b_flags |= B_DONE;
-	if ((bp->b_flags & B_READ) == 0)
+	if ((bp->b_flags & B_READ) == 0) {
 		bp->b_dirtyoff = bp->b_dirtyend = 0;
+		if (vp = bp->b_vp) {
+			vp->v_numoutput--;
+			if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
+				if (vp->v_numoutput < 0)
+					panic("biodone: neg numoutput");
+				vp->v_flag &= ~VBWAIT;
+				wakeup((caddr_t)&vp->v_numoutput);
+			}
+		}
+	}
 	if (bp->b_flags & B_CALL) {
 		bp->b_flags &= ~B_CALL;
 		(*bp->b_iodone)(bp);
@@ -581,36 +600,41 @@ vflushbuf(vp, flags)
 
 loop:
 	s = splbio();
-	for (bp = vp->v_blockh; bp; bp = nbp) {
+	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
 		nbp = bp->b_blockf;
 		if ((bp->b_flags & B_BUSY))
 			continue;
 		if ((bp->b_flags & B_DELWRI) == 0)
-			continue;
+			panic("vflushbuf: not dirty");
+		bremfree(bp);
+		bp->b_flags |= B_BUSY;
 		splx(s);
-		notavail(bp);
-		(void) bawrite(bp);
-		goto loop;
-	}
-	splx(s);
-	if ((flags & B_SYNC) == 0)
-		return;
-wloop:
-	s = splbio();
-	for (bp = vp->v_blockh; bp; bp = nbp) {
-		nbp = bp->b_blockf;
-		if (bp->b_flags & B_BUSY) {
-			bp->b_flags |= B_WANTED;
-			sleep((caddr_t)bp, PRIBIO+1);
-			splx(s);
-			goto wloop;
-		}
-		if ((bp->b_flags & B_DELWRI)) {
-			splx(s);
+		/*
+		 * Wait for I/O associated with indirect blocks to complete,
+		 * since there is no way to quickly wait for them below.
+		 * NB - This is really specific to ufs, but is done here
+		 * as it is easier and quicker.
+		 */
+		if (bp->b_vp == vp || (flags & B_SYNC) == 0) {
+			(void) bawrite(bp);
+		} else {
+			(void) bwrite(bp);
 			goto loop;
 		}
 	}
 	splx(s);
+	if ((flags & B_SYNC) == 0)
+		return;
+	s = splbio();
+	while (vp->v_numoutput) {
+		vp->v_flag |= VBWAIT;
+		sleep((caddr_t)&vp->v_numoutput, PRIBIO+1);
+	}
+	splx(s);
+	if (vp->v_dirtyblkhd) {
+		vprint("vflushbuf: dirty", vp);
+		goto loop;
+	}
 }
 
 /*
@@ -649,32 +673,38 @@ vinvalbuf(vp, save)
 	int save;
 {
 	register struct buf *bp;
-	struct buf *nbp;
+	struct buf *nbp, *blist;
 	int s, dirty = 0;
 
-loop:
-	for (bp = vp->v_blockh; bp; bp = nbp) {
-		nbp = bp->b_blockf;
-		s = splbio();
-		if (bp->b_flags & B_BUSY) {
-			bp->b_flags |= B_WANTED;
-			sleep((caddr_t)bp, PRIBIO+1);
+	for (;;) {
+		if (blist = vp->v_dirtyblkhd)
+			/* void */;
+		else if (blist = vp->v_cleanblkhd)
+			/* void */;
+		else
+			break;
+		for (bp = blist; bp; bp = nbp) {
+			nbp = bp->b_blockf;
+			s = splbio();
+			if (bp->b_flags & B_BUSY) {
+				bp->b_flags |= B_WANTED;
+				sleep((caddr_t)bp, PRIBIO+1);
+				splx(s);
+				break;
+			}
+			bremfree(bp);
+			bp->b_flags |= B_BUSY;
 			splx(s);
-			goto loop;
-		}
-		splx(s);
-		notavail(bp);
-		if (save) {
-			if (bp->b_flags & B_DELWRI) {
+			if (save && (bp->b_flags & B_DELWRI)) {
 				dirty++;
 				(void) bwrite(bp);
-				goto loop;
+				break;
 			}
+			bp->b_flags |= B_INVAL;
+			brelse(bp);
 		}
-		bp->b_flags |= B_INVAL;
-		brelse(bp);
 	}
-	if (vp->v_blockh != 0)
+	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
 		panic("vinvalbuf: flush failed");
 	return (dirty);
 }
@@ -698,14 +728,14 @@ bgetvp(vp, bp)
 	/*
 	 * Insert onto list for new vnode.
 	 */
-	if (vp->v_blockh) {
-		bp->b_blockf = vp->v_blockh;
-		bp->b_blockb = &vp->v_blockh;
-		vp->v_blockh->b_blockb = &bp->b_blockf;
-		vp->v_blockh = bp;
+	if (vp->v_cleanblkhd) {
+		bp->b_blockf = vp->v_cleanblkhd;
+		bp->b_blockb = &vp->v_cleanblkhd;
+		vp->v_cleanblkhd->b_blockb = &bp->b_blockf;
+		vp->v_cleanblkhd = bp;
 	} else {
-		vp->v_blockh = bp;
-		bp->b_blockb = &vp->v_blockh;
+		vp->v_cleanblkhd = bp;
+		bp->b_blockb = &vp->v_cleanblkhd;
 		bp->b_blockf = NULL;
 	}
 }
@@ -745,8 +775,10 @@ reassignbuf(bp, newvp)
 	register struct buf *bp;
 	register struct vnode *newvp;
 {
-	register struct buf *bq;
+	register struct buf *bq, **listheadp;
 
+	if (newvp == NULL)
+		panic("reassignbuf: NULL");
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
@@ -756,16 +788,21 @@ reassignbuf(bp, newvp)
 		*bp->b_blockb = bq;
 	}
 	/*
-	 * Insert onto list for new vnode.
+	 * If dirty, put on list of dirty buffers;
+	 * otherwise insert onto list of clean buffers.
 	 */
-	if (newvp->v_blockh) {
-		bp->b_blockf = newvp->v_blockh;
-		bp->b_blockb = &newvp->v_blockh;
-		newvp->v_blockh->b_blockb = &bp->b_blockf;
-		newvp->v_blockh = bp;
+	if (bp->b_flags & B_DELWRI)
+		listheadp = &newvp->v_dirtyblkhd;
+	else
+		listheadp = &newvp->v_cleanblkhd;
+	if (*listheadp) {
+		bp->b_blockf = *listheadp;
+		bp->b_blockb = listheadp;
+		bp->b_blockf->b_blockb = &bp->b_blockf;
+		*listheadp = bp;
 	} else {
-		newvp->v_blockh = bp;
-		bp->b_blockb = &newvp->v_blockh;
+		*listheadp = bp;
+		bp->b_blockb = listheadp;
 		bp->b_blockf = NULL;
 	}
 }
