@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
