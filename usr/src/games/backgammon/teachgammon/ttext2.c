@@ -1,6 +1,8 @@
-static char sccsid[] = "	ttext2.c	4.1	82/05/11	";
+static char sccsid[] = "	ttext2.c	4.2	82/10/24	";
 
 #include "back.h"
+
+char *prompt, *list, *opts;
 
 char	*doubl[] = {
     "\nDoubling:",
