@@ -1,5 +1,5 @@
 /*
- * 	unixhdr.h	1.1	82/05/12
+ * 	unixhdr.h	4.1	82/05/12
  */
 #define	MAGIC1	0407
 #define	MAGIC2	0410

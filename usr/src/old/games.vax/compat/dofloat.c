@@ -1,5 +1,5 @@
 #
-static char sccsid[] = "	dofloat.c	1.1	82/05/12	";
+static char sccsid[] = "	dofloat.c	4.1	82/05/12	";
 /*
  *	Simulate pdp11 floating point for compatability mode programs.
  *	Quick and dirty with no big effort at speed since it takes so

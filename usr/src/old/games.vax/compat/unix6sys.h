@@ -1,5 +1,5 @@
 /*
- * 	unix6sys.h	1.1	82/05/12
+ * 	unix6sys.h	4.1	82/05/12
  */
 #define	NSYSTRAPS	64
 #define	NSIGS	13

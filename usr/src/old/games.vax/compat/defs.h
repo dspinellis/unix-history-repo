@@ -1,5 +1,5 @@
 /*
- * 	defs.h	1.1	82/05/12
+ * 	defs.h	4.1	82/05/12
  */
 #define	EMTS	0210
 #define	TRAPS	0211

@@ -1,4 +1,4 @@
-static char sccsid[] = "	dosig.c	1.1	82/05/12	";
+static char sccsid[] = "	dosig.c	4.1	82/05/12	";
 
 #define FBSD
 /*	Handle signal trapping from version 6 or version 7 compatability
