@@ -1,0 +1,23 @@
+#print
+Suppose you have two files named "dick" and "jane", and you
+want to interchange them, so that "dick" contains whatever
+was originally in "jane", and "jane" contains what was in "dick".
+Will this sequence of commands do the job?
+
+mv dick jane
+mv jane dick
+
+There are two files named "john" and "mary"
+in this directory, if you wish to experiment.
+When you have decided, type yes or no.
+#create john
+this is originally file john
+#create mary
+this is originally file mary
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+13.1g

@@ -1,0 +1,30 @@
+#print
+You can use patterns for file names with commands
+other than "ls".  For example, you can use them with
+the "cat" command to print files.
+This directory has three files named
+  parta
+  partb
+  partc
+You can use
+  cat part?
+to print all of them.  Try that; then
+type "ready".
+#create parta
+This is file parta;
+it has two lines.
+#create partb
+File partb here - has only one line.
+#create partc
+And now in file partc, which has
+the enormous total of
+three lines.
+#create partxxx
+You shouldn't have printed this one.
+#copyin
+#user
+#uncopyin
+grep 'cat part?' .copy >/dev/null
+#log
+#next
+9.2b 5
