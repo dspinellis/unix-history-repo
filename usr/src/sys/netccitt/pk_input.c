@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.11 (Berkeley) %G%
+ *	@(#)pk_input.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,23 +26,101 @@
 #include "pk.h"
 #include "pk_var.h"
 
+struct pkcb *
+pk_newlink (ia, llnext)
+struct x25_ifaddr *ia;
+caddr_t llnext;
+{
+	register struct x25config *xcp = &ia->ia_xc;
+	register struct pkcb *pkp;
+	register struct pklcd *lcp;
+	register struct protosw *pp;
+	unsigned size;
+
+	pp = pffindproto (AF_CCITT, (int)xcp -> xc_lproto, 0);
+	if (pp == 0 || pp -> pr_output == 0) {
+		pk_message (0, xcp, "link level protosw error");
+		return ((struct pkcb *)0);
+	}
+	/*
+	 * Allocate a network control block structure
+	 */
+	size = sizeof (struct pkcb);
+	pkp = (struct pkcb *)malloc(size, M_PCB, M_WAITOK);
+	if (pkp == 0)
+		return ((struct pkcb *)0);
+	bzero ((caddr_t)pkp, size);
+	pkp -> pk_lloutput = pp -> pr_output;
+	pkp -> pk_xcp = xcp;
+	pkp -> pk_ia = ia;
+	pkp -> pk_state = DTE_WAITING;
+	pkp -> pk_next = pkcbhead;
+	pkp -> pk_llnext = llnext;
+	pkcbhead = pkp;
+
+	/*
+	 * set defaults
+	 */
+
+	if (xcp -> xc_pwsize == 0)
+		xcp -> xc_pwsize = DEFAULT_WINDOW_SIZE;
+	if (xcp -> xc_psize == 0)
+		xcp -> xc_psize = X25_PS128;
+	/*
+	 * Allocate logical channel descriptor vector
+	 */
+
+	(void)pk_resize(pkp);
+	return (pkp);
+}
+
+pk_resize (pkp)
+register struct pkcb *pkp;
+{
+	struct pklcd *dev_lcp = 0;
+	struct x25config *xcp = pkp -> pk_xcp;
+	if (pkp -> pk_chan &&
+	    (pkp -> pk_maxlcn != xcp -> xc_maxlcn)) {
+		pk_restart (pkp, X25_RESTART_NETWORK_CONGESTION);
+		dev_lcp = pkp -> pk_chan[0];
+		free ((caddr_t)pkp -> pk_chan, M_IFADDR);
+		pkp -> pk_chan = 0;
+	}
+	if (pkp -> pk_chan == 0) {
+		unsigned size;
+		pkp -> pk_maxlcn = xcp -> xc_maxlcn;
+		size = (pkp -> pk_maxlcn + 1) * sizeof (struct pklcd *);
+		pkp -> pk_chan =
+			(struct pklcd **) malloc (size, M_IFADDR, M_WAITOK);
+		if (pkp -> pk_chan) {
+			bzero ((caddr_t)pkp -> pk_chan, size);
+			/*
+			 * Allocate a logical channel descriptor for lcn 0
+			 */
+			if (dev_lcp == 0 &&
+			    (dev_lcp = pk_attach ((struct socket *)0)) == 0)
+				return (ENOBUFS);
+			dev_lcp -> lcd_state = READY;
+			dev_lcp -> lcd_pkp = pkp;
+			pkp -> pk_chan[0] = dev_lcp;
+		} else {
+			if (dev_lcp)
+				pk_close (dev_lcp);
+			return (ENOBUFS);
+		}
+	}
+	return 0;
+}
+
 /* 
  *  This procedure is called by the link level whenever the link
  *  becomes operational, is reset, or when the link goes down. 
  */
 
-pk_ctlinput (code, xcp)
-register struct x25config *xcp;
+pk_ctlinput (code, pkp)
+register struct pkcb *pkp;
 {
 
-	register struct pkcb *pkp;
-
-	for (pkp = pkcbhead; pkp; pkp = pkp -> pk_next)
-		if (pkp -> pk_xcp == xcp)
-			break;
-
-	if (pkp == 0)
-		return (EINVAL);
 
 	switch (code) {
 	case PRC_LINKUP: 
@@ -86,18 +164,7 @@ pkintr ()
 			m_freem (m);
 			continue;
 		}
-		if ((m->m_flags & M_PKTHDR) == 0)
-			panic("pkintr");
-		ifp = m->m_pkthdr.rcvif;
-		/*
-		 * look up the appropriate control block
-		 */
-		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
-			if (ifa->ifa_addr->sa_family == AF_CCITT)
-				break;
-		if (ifa == 0)
-			continue;
-		pk_input(m, ((struct x25_ifaddr *)ifa)->ia_xcp);
+		pk_input(m);
 	}
 }
 struct mbuf *pk_bad_packet;
@@ -109,38 +176,28 @@ struct mbuf_cache pk_input_cache = {0 };
  *  an information frame is received. It decodes the packet and
  *  demultiplexes based on the logical channel number.
  *
+ *  We change the original conventions of the UBC code here --
+ *  since there may be multiple pkcb's for 802.2 class 2
+ *  for a given interface, we must be informed which one it is;
+ *  so we overwrite the pkthdr.rcvif; it can be recovered if necessary.
+ *
  */
 
-pk_input (m, xcp)
+pk_input (m)
 register struct mbuf *m;
-struct x25config *xcp;
 {
 	register struct x25_packet *xp;
 	register struct pklcd *lcp;
 	register struct socket *so = 0;
 	register struct pkcb *pkp;
 	int  ptype, lcn, lcdstate = LISTEN;
-	static struct x25config *lastxcp;
-	static struct pkcb *lastpkp;
 
 	if (pk_input_cache.mbc_size || pk_input_cache.mbc_oldsize)
 		mbuf_cache(&pk_input_cache, m);
-	if (xcp == lastxcp)
-		pkp = lastpkp;
-	else {
-		for (pkp = pkcbhead; ; pkp = pkp -> pk_next) {
-			if (pkp == 0) {
-				pk_message (0, xcp, "pk_input: unknown network");
-				m_freem (m);
-				return;
-			}
-			if (pkp -> pk_xcp == xcp)
-				break;
-		}
-		lastxcp = xcp;
-		lastpkp = pkp;
-	}
-
+	if ((m->m_flags & M_PKTHDR) == 0)
+		panic("pkintr");
+	if ((pkp = (struct pkcb *)m->m_pkthdr.rcvif) == 0)
+		return;
 	xp = mtod (m, struct x25_packet *);
 	ptype = pk_decode (xp);
 	lcn = LCN(xp);
@@ -169,6 +226,7 @@ struct x25config *xcp;
 	} else {
 		if (ptype == CLEAR) {	/* idle line probe (Datapac specific) */
 			/* send response on lcd 0's output queue */
+			lcp = pkp -> pk_chan[0];
 			lcp -> lcd_template = pk_template (lcn, X25_CLEAR_CONFIRM);
 			pk_output (lcp);
 			m_freem (m);
@@ -263,6 +321,7 @@ struct x25config *xcp;
 	 *  results in a clear.
 	 */
 	case CLEAR_CONF + READY:
+	case CLEAR_CONF + LISTEN:
 		break;
 
 	/* 
@@ -298,6 +357,7 @@ struct x25config *xcp;
 		m -> m_len -= PKHEADERLN;
 		m -> m_pkthdr.len -= PKHEADERLN;
 
+		lcp -> lcd_rxcnt++;
 		if (lcp -> lcd_flags & X25_MBS_HOLD) {
 			register struct mbuf *n = lcp -> lcd_cps;
 			int mbit = MBIT(xp);
@@ -323,7 +383,6 @@ struct x25config *xcp;
 			}
 			if (mbit) {
 				lcp -> lcd_cps = m;
-				lcp -> lcd_rxcnt++;
 				pk_flowcontrol(lcp, 0, 1);
 				return;
 			}
@@ -348,7 +407,6 @@ struct x25config *xcp;
 		 */
 		if (xp -> q_bit && (lcp -> lcd_flags & X25_MQBIT) == 0) {
 			m_freem (m);
-			lcp -> lcd_rxcnt++;
 			/*
 			 * NB.  This is dangerous: sending a RR here can
 			 * cause sequence number errors if a previous data
@@ -538,6 +596,95 @@ struct x25config *xcp;
 		m_freem (m);
 }
 
+static
+prune_dnic(from, to, dnicname, xcp)
+char *from, *to, *dnicname;
+register struct x25config *xcp;
+{
+	register char *cp1 = from, *cp2 = from;
+	if (xcp->xc_prepnd0 && *cp1 == '0') {
+		from = ++cp1;
+		goto copyrest;
+	}
+	if (xcp->xc_nodnic) {
+		for (cp1 = dnicname; *cp2 = *cp1++;)
+			cp2++;
+		cp1 = from;
+	}
+copyrest:
+	for (cp1 = dnicname; *cp2 = *cp1++;)
+		cp2++;
+}
+/* static */
+pk_simple_bsd (from, to, lower, len)
+register octet *from, *to;
+register len, lower;
+{
+	register int c;
+	while (--len >= 0) {
+		c = *from;
+		if (lower & 0x01)
+			*from++;
+		else
+			c >>= 4;
+		c &= 0x0f; c |= 0x30; *to++ = c; lower++;
+	}
+	*to = 0;
+}
+
+/*static octet * */
+pk_from_bcd (a, iscalling, sa, xcp)
+register struct x25_calladdr *a;
+register struct sockaddr_x25 *sa;
+register struct x25config *xcp;
+{
+	octet buf[MAXADDRLN+1];
+	octet *cp;
+	unsigned count;
+
+	bzero ((caddr_t)sa, sizeof (*sa));
+	sa -> x25_len = sizeof (*sa);
+	sa -> x25_family = AF_CCITT;
+	if (iscalling) {
+		cp = a -> address_field + (a -> called_addrlen / 2);
+		count = a -> calling_addrlen;
+		pk_simple_bsd (cp, buf, a -> called_addrlen, count);
+	} else {
+		count = a -> called_addrlen;
+		pk_simple_bsd (a -> address_field, buf, 0, count);
+	}
+	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp ->xc_prepnd0)) {
+		octet dnicname[sizeof(long) * NBBY/3 + 2];
+
+		sprintf (dnicname, "%d", xcp -> xc_addr.x25_net);
+		prune_dnic (buf, sa -> x25_addr, dnicname, xcp);
+	} else
+		bcopy ((caddr_t)buf, (caddr_t)sa -> x25_addr, count + 1);
+}
+
+static
+save_extra(m0, fp, so)
+struct mbuf *m0;
+octet *fp;
+struct socket *so;
+{
+	register struct mbuf *m;
+	struct cmsghdr cmsghdr;
+	if (m = m_copym (m, 0, (int)M_COPYALL)) {
+		int off = fp - mtod (m0, octet *);
+		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
+		cmsghdr.cmsg_len = len;
+		cmsghdr.cmsg_level = AF_CCITT;
+		cmsghdr.cmsg_type = PK_FACILITIES;
+		m_adj (m, off);
+		M_PREPEND (m, sizeof(cmsghdr), M_DONTWAIT);
+		if (m == 0)
+			return;
+		bcopy ((caddr_t)&cmsghdr, mtod (m, caddr_t), sizeof (cmsghdr));
+		MCHTYPE(m, MT_CONTROL);
+		sbappendrecord(&so -> so_rcv, m);
+	}
+}
 
 /* 
  * This routine handles incoming call packets. It matches the protocol
@@ -553,40 +700,33 @@ struct pkcb *pkp;
 	register struct sockaddr_x25 *sa;
 	register struct x25_calladdr *a;
 	register struct socket *so = 0;
-	struct x25_packet *xp = mtod(m0, struct x25_packet *);
-	struct mbuf *m;
+	struct	x25_packet *xp = mtod(m0, struct x25_packet *);
+	struct	mbuf *m;
+	struct	x25config *xcp = pkp -> pk_xcp;
 	int len = m0->m_pkthdr.len;
-	register int l1, l2;
-	char *e, *errstr = "server unavailable";
+	unsigned udlen;
+	char *errstr = "server unavailable";
 	octet *u, *facp;
 	int lcn = LCN(xp);
 
-	/* First, copy the data from the incoming call packet to a X25_socket
-	   descriptor. */
-
-	a = (struct x25_calladdr *) &xp -> packet_data;
-	l1 = a -> calling_addrlen;
-	l2 = a -> called_addrlen;
-	if ((m = m_getclr (M_DONTWAIT, MT_SONAME)) == 0)
+	/* First, copy the data from the incoming call packet to a X25 address
+	   descriptor. It is to be regretted that you have
+	   to parse the facilities into a sockaddr to determine
+	   if reverse charging is being requested */
+	if ((m = m_get (M_DONTWAIT, MT_SONAME)) == 0)
 		return;
 	sa = mtod (m, struct sockaddr_x25 *);
-	u = (octet *) (a -> address_field + l2 / 2);
-	e = sa -> x25_addr;
-	if (l2 & 0x01) {
-		*e++ = *u++ & 0x0f;
-		l1--;
-	}
-	from_bcd (e, &u, l1);
-	if (l1 & 0x01)
-		u++;
-
-	facp = u;
-	pk_parse_facilities (u, sa);
+	a = (struct x25_calladdr *) &xp -> packet_data;
+	facp = u = (octet *) (a -> address_field +
+		((a -> called_addrlen + a -> calling_addrlen + 1) / 2));
 	u += *u + 1;
-	sa -> x25_udlen = min (16, ((octet *)xp) + len - u);
-	if (sa -> x25_udlen < 0)
-		sa -> x25_udlen = 0;
-	bcopy ((caddr_t)u, sa -> x25_udata, (unsigned)sa -> x25_udlen);
+	udlen = min (16, ((octet *)xp) + len - u);
+	if (udlen < 0)
+		udlen = 0;
+	pk_from_bcd (a, 1, sa, pkp -> pk_xcp); /* get calling address */
+	pk_parse_facilities (u, sa);
+	bcopy ((caddr_t)u, sa -> x25_udata, udlen);
+	sa -> x25_udlen = udlen;
 
 	/*
 	 * Now, loop through the  listen sockets looking for a match on the
@@ -598,11 +738,19 @@ struct pkcb *pkp;
 	for (l = pk_listenhead; l; l = l -> lcd_listen) {
 		struct sockaddr_x25 *sxp = l -> lcd_ceaddr;
 
-		if (bcmp (sxp -> x25_udata, sa -> x25_udata, sxp->x25_udlen))
+		if (bcmp (sxp -> x25_udata, u, sxp->x25_udlen))
 			continue;
 		if (sxp -> x25_net &&
-		    sxp -> x25_net != pkp->pk_xc.xc_addr.x25_net)
+		    sxp -> x25_net != xcp -> xc_addr.x25_net)
 			continue;
+		/*
+		 * don't accept incoming calls with the D-Bit on
+		 * unless the server agrees
+		 */
+		if (xp -> d_bit && !(sxp -> x25_opts.op_flags & X25_DBIT)) {
+			errstr = "incoming D-Bit mismatch";
+			break;
+		}
 		/*
 		 * don't accept incoming collect calls unless
 		 * the server sets the reverse charging option.
@@ -610,14 +758,6 @@ struct pkcb *pkp;
 		if ((sxp -> x25_opts.op_flags & (X25_OLDSOCKADDR|X25_REVERSE_CHARGE)) == 0 &&
 			sa -> x25_opts.op_flags & X25_REVERSE_CHARGE) {
 			errstr = "incoming collect call refused";
-			break;
-		}
-		/*
-		 * don't accept incoming calls with the D-Bit on
-		 * unless the server agrees
-		 */
-		if (xp -> d_bit && !(sxp -> x25_opts.op_flags & X25_DBIT)) {
-			errstr = "incoming D-Bit mismatch";
 			break;
 		}
 		if (l -> lcd_so) {
@@ -637,10 +777,12 @@ struct pkcb *pkp;
 		lcp -> lcd_upnext = l -> lcd_upnext;
 		lcp -> lcd_lcn = lcn;
 		lcp -> lcd_state = RECEIVED_CALL;
-		lcp -> lcd_craddr = sa;
 		sa -> x25_opts.op_flags |= sxp -> x25_opts.op_flags &
 			~X25_REVERSE_CHARGE;
 		pk_assoc (pkp, lcp, sa);
+		lcp -> lcd_faddr = *sa;
+		lcp -> lcd_laddr.x25_udlen = sxp -> x25_udlen;
+		lcp -> lcd_craddr = &lcp->lcd_faddr;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
 		if (lcp -> lcd_flags & X25_DBIT) {
 			if (xp -> d_bit)
@@ -655,10 +797,9 @@ struct pkcb *pkp;
 			if (so -> so_options & SO_OOBINLINE)
 				save_extra(m0, facp, so);
 		} else if (lcp -> lcd_upper) {
-			m -> m_next = m0;
-			(*lcp -> lcd_upper) (lcp, m);
-			(void) m_free (m);  /* only m; m0 freed by caller */
+			(*lcp -> lcd_upper) (lcp, m0);
 		}
+		(void) m_free (m);
 		return;
 	}
 
@@ -689,30 +830,6 @@ struct pkcb *pkp;
 	pk_assoc (pkp, lcp, sa);
 	(void) m_free (m);
 	pk_clear (lcp, 0, 1);
-}
-
-static
-save_extra(m0, fp, so)
-struct mbuf *m0;
-octet *fp;
-struct socket *so;
-{
-	register struct mbuf *m;
-	struct cmsghdr cmsghdr;
-	if (m = m_copym (m, 0, (int)M_COPYALL)) {
-		int off = fp - mtod (m0, octet *);
-		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
-		cmsghdr.cmsg_len = len;
-		cmsghdr.cmsg_level = AF_CCITT;
-		cmsghdr.cmsg_type = PK_FACILITIES;
-		m_adj (m, off);
-		M_PREPEND (m, sizeof(cmsghdr), M_DONTWAIT);
-		if (m == 0)
-			return;
-		bcopy ((caddr_t)&cmsghdr, mtod (m, caddr_t), sizeof (cmsghdr));
-		MCHTYPE(m, MT_CONTROL);
-		sbappendrecord(&so -> so_rcv, m);
-	}
 }
 
 pk_call_accepted (lcp, m)
@@ -803,21 +920,5 @@ register struct sockaddr_x25 *sa;
 				fcp += *fcp;
 			}
 		}
-	}
-}
-
-from_bcd (a, x, len)
-register char *a;
-register octet **x;
-register int len;
-{
-	register int posn = 0;
-
-	while (--len >= 0) {
-		if (posn++ & 0x01)
-			*a = *(*x)++ & 0x0f;
-		else
-			*a = (**x >> 4) & 0x0F;
-		*a++ |= 0x30;
 	}
 }
