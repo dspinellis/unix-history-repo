@@ -1,7 +1,9 @@
-.\"	@(#)appendix.t	1.1	(Copyright 1988 M. K. McKusick)	88/04/21
-.H 1 "Appendix 1 - Implementation Details"
-.PP
+.\"	@(#)appendix.t	1.2	(Copyright 1988 M. K. McKusick)	88/04/22
+.bp
+.H 1 "Appendix A - Implementation Details"
+.LP
 .nf
+.vS
 /*
  * Constants for setting the parameters of the kernel memory allocator.
  *
@@ -9,10 +11,10 @@
  * allocated. It must be at least large enough to hold a pointer.
  *
  * Units of memory less or equal to MAXALLOCSAVE will permanently
- * allocate physical memory; requests for these size pieces of
- * memory are quite fast. Allocations greater than MAXALLOCSAVE must
- * always allocate and free physical memory; requests for these
- * size allocations should be done infrequently as they will be slow.
+ * allocate physical memory; requests for these size pieces of memory
+ * are quite fast. Allocations greater than MAXALLOCSAVE must
+ * always allocate and free physical memory; requests for these size
+ * allocations should be done infrequently as they will be slow.
  * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14)
  * and MAXALLOCSIZE must be a power of two.
  */
@@ -23,7 +25,7 @@
  * Maximum amount of kernel dynamic memory.
  * Constraints: must be a multiple of the pagesize.
  */
-#define MAXKMEM		1024*PAGESIZE
+#define MAXKMEM		(1024 * PAGESIZE)
 
 /*
  * Arena for all kernel dynamic memory allocation.
@@ -45,11 +47,10 @@ struct kmemsizes {
 struct kmembuckets {
 	caddr_t kb_next;	/* list of free blocks */
 } bucket[MINBUCKET + 16];
-
+.bp
 /*
- * Macro to convert a size to a bucket index.
- * If the size is constant, this macro reduces to a
- * compile time constant.
+ * Macro to convert a size to a bucket index. If the size is constant,
+ * this macro reduces to a compile time constant.
  */
 #define MINALLOCSIZE	(1 << MINBUCKET)
 #define BUCKETINDX(size) \
@@ -70,20 +71,7 @@ struct kmembuckets {
 					? (MINBUCKET + 6) \
 					: (MINBUCKET + 7) \
 		: (size) <= (MINALLOCSIZE * 2048) \
-			? (size) <= (MINALLOCSIZE * 512) \
-				? (size) <= (MINALLOCSIZE * 256) \
-					? (MINBUCKET + 8) \
-					: (MINBUCKET + 9) \
-				: (size) <= (MINALLOCSIZE * 1024) \
-					? (MINBUCKET + 10) \
-					: (MINBUCKET + 11) \
-			: (size) <= (MINALLOCSIZE * 8192) \
-				? (size) <= (MINALLOCSIZE * 4096) \
-					? (MINBUCKET + 12) \
-					: (MINBUCKET + 13) \
-				: (size) <= (MINALLOCSIZE * 16384) \
-					? (MINBUCKET + 14) \
-					: (MINBUCKET + 15)
+			/* etc ... */
 
 /*
  * Macro versions for the usual cases of malloc/free
@@ -114,4 +102,4 @@ struct kmembuckets {
 	} \
 	splx(s); \
 }
-.fi
+.vE
