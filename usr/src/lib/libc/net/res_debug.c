@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.18 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -20,7 +20,8 @@ static char sccsid[] = "@(#)res_debug.c	5.17 (Berkeley) %G%";
 extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
 extern char *inet_ntoa();
 
-char *opcodes[] = {
+#ifdef DEBUG
+static char *_opcodes[] = {
 	"QUERY",
 	"IQUERY",
 	"CQUERYM",
@@ -39,7 +40,7 @@ char *opcodes[] = {
 	"ZONEREF",
 };
 
-char *rcodes[] = {
+static char *_rcodes[] = {
 	"NOERROR",
 	"FORMERR",
 	"SERVFAIL",
@@ -57,6 +58,7 @@ char *rcodes[] = {
 	"14",
 	"NOCHANGE",
 };
+#endif
 
 p_query(msg)
 	char *msg;
@@ -85,9 +87,9 @@ fp_query(msg,file)
 	hp = (HEADER *)msg;
 	cp = msg + sizeof(HEADER);
 	fprintf(file,"HEADER:\n");
-	fprintf(file,"\topcode = %s", opcodes[hp->opcode]);
+	fprintf(file,"\topcode = %s", _opcodes[hp->opcode]);
 	fprintf(file,", id = %d", ntohs(hp->id));
-	fprintf(file,", rcode = %s\n", rcodes[hp->rcode]);
+	fprintf(file,", rcode = %s\n", _rcodes[hp->rcode]);
 	fprintf(file,"\theader flags: ");
 	if (hp->qr)
 		fprintf(file," qr");
@@ -319,22 +321,22 @@ p_rr(cp, msg, file)
 		break;
 
 #ifdef ALLOW_T_UNSPEC
-        case T_UNSPEC:
-                {
-                        int NumBytes = 8;
-                        char *DataPtr;
-                        int i;
+	case T_UNSPEC:
+		{
+			int NumBytes = 8;
+			char *DataPtr;
+			int i;
 
-                        if (dlen < NumBytes) NumBytes = dlen;
-                        fprintf(file, "\tFirst %d bytes of hex data:",
-                                NumBytes);
-                        for (i = 0, DataPtr = cp; i < NumBytes; i++, DataPtr++)
-                                fprintf(file, " %x", *DataPtr);
-                        fputs("\n", file);
-                        cp += dlen;
-                }
-                break;
-#endif ALLOW_T_UNSPEC
+			if (dlen < NumBytes) NumBytes = dlen;
+			fprintf(file, "\tFirst %d bytes of hex data:",
+				NumBytes);
+			for (i = 0, DataPtr = cp; i < NumBytes; i++, DataPtr++)
+				fprintf(file, " %x", *DataPtr);
+			fputs("\n", file);
+			cp += dlen;
+		}
+		break;
+#endif /* ALLOW_T_UNSPEC */
 
 	default:
 		fprintf(file,"\t???\n");
@@ -405,9 +407,9 @@ p_type(type)
 	case T_GID:
 		return("GID");
 #ifdef ALLOW_T_UNSPEC
-        case T_UNSPEC:
-                return("UNSPEC");
-#endif ALLOW_T_UNSPEC
+	case T_UNSPEC:
+		return("UNSPEC");
+#endif /* ALLOW_T_UNSPEC */
 	default:
 		return (sprintf(nbuf, "%d", type));
 	}
