@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.32	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.33	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2244,6 +2244,9 @@ zu|go140|graphon go-140:\
 zv|go140w|graphon go-140 in 132 column mode:\
         :co#132:is=\E<\E=\E[?3h\E[?7h\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
         :tc=go140:
+zw|sanyo55|sanyo|sanyo mbc-55x pc compatible:\
+	:co#80:li#25:am:cl=\E[H\E[J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:
 # KERMIT standard all versions.  (gts 9-25-84)
 # Straight ascii keyboard. :sr=\EI: not avail. many versions + bug prone in vi.
 K0|kermit|standard kermit:\
