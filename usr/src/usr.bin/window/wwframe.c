@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.4 83/08/16";
+static	char *sccsid = "@(#)wwframe.c	3.5 83/08/18";
 #endif
 
 #include "ww.h"
@@ -182,15 +182,3 @@ register r, c;
 	w->ww_i.ncol = w->ww_o.ncol;
 	Wsetmargins(w->ww_win, 0, 0, w->ww_o.ncol, w->ww_o.nrow);
 }
-
-/*
-wwckns()
-{
-	register i, j;
-
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			if ((wwns[i][j].c_c & 0x7f) < ' ')
-				abort();
-}
-*/
