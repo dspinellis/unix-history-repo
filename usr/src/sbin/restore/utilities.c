@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -337,6 +337,8 @@ panic(msg, d1, d2)
 {
 
 	fprintf(stderr, msg, d1, d2);
+	if (yflag)
+		return;
 	if (reply("abort") == GOOD) {
 		if (reply("dump core") == GOOD)
 			abort();
