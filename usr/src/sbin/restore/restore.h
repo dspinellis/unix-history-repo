@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.11 (Berkeley) %G%
+ *	@(#)restore.h	5.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -131,6 +131,11 @@ extern char *malloc();
 extern char *calloc();
 extern char *realloc();
 extern long lseek();
+
+/*
+ * Flags to setdirmodes.
+ */
+#define FORCE	0x0001
 
 /*
  * Useful macros
