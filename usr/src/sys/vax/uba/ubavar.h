@@ -1,4 +1,4 @@
-/*	ubavar.h	4.23	81/11/26	*/
+/*	ubavar.h	4.24	82/04/01	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -101,7 +101,7 @@ struct uba_device {
 	int	(**ui_intr)();	/* interrupt handler(s) */
 	caddr_t	ui_addr;	/* address of device in i/o space */
 	short	ui_dk;		/* if init 1 set to number for iostat */
-	short	ui_flags;	/* parameter from system specification */
+	int	ui_flags;	/* parameter from system specification */
 	short	ui_alive;	/* device exists */
 	short	ui_type;	/* driver specific type information */
 	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
