@@ -1,0 +1,75 @@
+.TH VI UCB 4/4/79 UCB
+.SH NAME
+vi \- screen oriented (visual) display editor based on ex
+.SH SYNOPSIS
+.B vi
+[
+.B \-t
+tag
+] [
+.B \-r
+] [
+\fB+\fR\fIlineno\fR
+]
+name ...
+.SH DESCRIPTION
+.I Vi
+(visual) is a display oriented text editor based on
+.IR ex (UCB).
+.I Ex
+and
+.I vi
+run the same code; it is possible to get to
+the command mode of
+.I ex
+from within
+.I vi
+and vice-versa.
+.PP
+The
+.I "Vi Quick Reference"
+card and the
+.I "Introduction to Display Editing with Vi"
+provide full details on using
+.I vi.
+.SH FILES
+See
+.IR ex (UCB).
+.SH SEE ALSO
+ex (UCB), vi (UCB), ``Vi Quick Reference'' card,
+``An Introduction to Display Editing with Vi''.
+.SH BUGS
+Scans with \fB/\fR and \fB?\fR begin on the next line,
+skipping the remainder of the current line.
+.PP
+Software tabs using \fB^T\fR work only immediately after the
+.I autoindent.
+.PP
+Left and right shifts on intelligent terminals don't make use of
+insert and delete character operations in the terminal.
+.PP
+The
+.I wrapmargin
+option can be fooled since it looks at output columns when blanks are typed.
+If a long word passes through the margin and onto the next line without a 
+break, then the line won't be broken.
+.PP
+Insert/delete within a line can be slow if tabs are present on intelligent
+terminals, since the terminals need help in doing this correctly.
+.PP
+Occasionally inverse video scrolls up into the file from a diagnostic
+on the last line.
+.PP
+Saving text on deletes in the named buffers is somewhat inefficient.
+.PP
+The
+.I source
+command does not work when executed as \fB:source\fR;
+there is no way to use the \fB:append\fR, \fB:change\fR,
+and \fB:insert\fR commands, since it is not possible to give
+more than one line of input to a \fB:\fR escape.  To use these
+on a \fB:global\fR you must \fBQ\fR to \fIex\fR command mode,
+execute them, and then reenter the screen editor with
+.I vi
+or
+.I open.

@@ -1,0 +1,29 @@
+.TH SSP UCB 2/24/79 UCB
+.SH NAME
+ssp \- limit to single spacing
+.SH SYNOPSIS
+.B ssp
+[
+.B \-
+] [
+file ...
+]
+.SH DESCRIPTION
+.I Ssp
+compresses consecutive blank lines to at most one blank line to produce
+more compact output for a \s-2CRT\s0 or to save paper on the printer.
+If the optional
+.B \-
+is given
+.I ssp
+is even more zealous, getting rid of all empty lines.
+.PP
+.I Ssp
+is useful for compressing text with blank lines onto a \s-2CRT\s0,
+and is used by
+.IR  man (1).
+.SH SEE\ ALSO
+colcrt(UCB), cr3(UCB), man(UCB)
+.SH AUTHOR
+Bill Joy
+.SH BUGS
