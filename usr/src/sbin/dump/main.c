@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.12 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -115,13 +115,17 @@ main(argc, argv)
 		break;
 
 	default:
-		printf("bad key '%c%'\n", arg[-1]);
+		fprintf(stderr, "bad key '%c%'\n", arg[-1]);
 		Exit(X_ABORT);
 	}
 	if(argc > 1) {
 		argv++;
 		argc--;
 		disk = *argv;
+	}
+	if (strcmp(tape, "-") == 0) {
+		pipeout++;
+		tape = "standard output";
 	}
 
 	/*
@@ -280,11 +284,14 @@ main(argc, argv)
 
 	putitime();
 #ifndef RDUMP
-	close(to);
+	if (!pipeout) {
+		close(to);
+		rewind();
+	}
 #else
 	tflush(1);
-#endif
 	rewind();
+#endif
 	broadcast("DUMP IS DONE!\7\7\n");
 	Exit(X_FINOK);
 }
@@ -299,6 +306,10 @@ int	sigterm(){	msg("SIGTERM()  try rewriting\n"); sigAbort();}
 
 sigAbort()
 {
+	if (pipeout) {
+		msg("Unknown signal, cannot recover\n");
+		dumpabort();
+	}
 	msg("Rewriting attempted as response to unknown signal.\n");
 	fflush(stderr);
 	fflush(stdout);

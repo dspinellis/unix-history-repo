@@ -1,5 +1,5 @@
 /*
- * "@(#)dump.h	1.7 (Berkeley) %G%"
+ * "@(#)dump.h	1.8 (Berkeley) %G%"
  */
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -41,6 +41,7 @@ char	incno;		/* increment number */
 int	uflag;		/* update flag */
 int	fi;		/* disk file descriptor */
 int	to;		/* tape file descriptor */
+int	pipeout;	/* true => output to standard output */
 ino_t	ino;		/* current inumber; used globally */
 int	nsubdir;
 int	newtape;	/* new tape flag */
