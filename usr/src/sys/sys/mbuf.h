@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	6.10 (Berkeley) %G%
+ *	@(#)mbuf.h	6.11 (Berkeley) %G%
  */
 
 /*

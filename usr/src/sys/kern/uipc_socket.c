@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.20 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -349,11 +349,9 @@ restart:
 
 			MGET(m, M_WAIT, MT_DATA);
 			if (iov->iov_len >= NBPG && space >= CLBYTES) {
-				register struct mbuf *p;
-				MCLGET(p, 1);
-				if (p == 0)
+				MCLGET(m);
+				if (m->m_len != CLBYTES)
 					goto nopages;
-				m->m_off = (int)p - (int)m;
 				len = MIN(CLBYTES, iov->iov_len);
 				space -= CLBYTES;
 			} else {

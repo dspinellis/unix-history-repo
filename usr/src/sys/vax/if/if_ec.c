@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.16 (Berkeley) %G%
+ *	@(#)if_ec.c	6.17 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -764,16 +764,11 @@ ecget(ecbuf, totlen, off0, ifp)
 		if (ifp)
 			len += sizeof(ifp);
 		if (len >= NBPG) {
-			struct mbuf *p;
-
-			MCLGET(p, 1);
-			if (p != 0) {
+			MCLGET(m);
+			if (m->m_len == CLBYTES)
 				m->m_len = len = MIN(len, CLBYTES);
-				m->m_off = (int)p - (int)m;
-			} else {
+			else
 				m->m_len = len = MIN(MLEN, len);
-				m->m_off = MMINOFF;
-			}
 		} else {
 			m->m_len = len = MIN(MLEN, len);
 			m->m_off = MMINOFF;
