@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 # makefile for line printer spooling system
 #
@@ -37,7 +37,7 @@ lpr:	lpr.o startdaemon.o printcap.o
 	${CC} -o lpr lpr.o startdaemon.o printcap.o
 
 lpq:	lpq.o displayq.o common.o printcap.o
-	${CC} -o lpq lpq.o displayq.o common.o printcap.o -ltermcap
+	${CC} -o lpq lpq.o displayq.o common.o printcap.o
 
 lprm:	lprm.o rmjob.o startdaemon.o common.o printcap.o
 	${CC} -o lprm lprm.o rmjob.o startdaemon.o common.o printcap.o
