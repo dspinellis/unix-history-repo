@@ -1,4 +1,4 @@
-/*	conf.c	1.2	86/07/16	*/
+/*	conf.c	1.3	86/12/18	*/
 /*	conf.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
@@ -47,22 +47,42 @@ devclose(io)
 	(*devsw[io->i_ino.i_dev].dv_close)(io);
 }
 
+devioctl(io, cmd, arg)
+	register struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
+}
+
 /*ARGSUSED*/
 nullsys(io) struct iob *io; {}
 nullopen(io) struct iob *io; { _stop("bad device type"); }
+
+/*ARGSUSED*/
+noioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
+}
 
 int	udstrategy(), udopen();
 int	vdstrategy(), vdopen();
 int	cystrategy(), cyopen(), cyclose();
 
 struct devsw devsw[] = {
-	{ "ud",	udstrategy,	udopen,		nullsys },
-	{ "dk",	vdstrategy,	vdopen,		nullsys },
+	{ "ud",	udstrategy,	udopen,		nullsys,	noioctl },
+	{ "dk",	vdstrategy,	vdopen,		nullsys,	noioctl },
 #ifdef notdef
-	{ "xp",	xpstrategy,	xpopen,		nullsys },
+	{ "xp",	xpstrategy,	xpopen,		nullsys,	noioctl },
 #else
-	{ "xp",	nullopen,	nullsys,	nullsys },
+	{ "xp",	nullopen,	nullsys,	nullsys,	noioctl },
 #endif
-	{ "cy",	cystrategy,	cyopen,		cyclose },
+	{ "cy",	cystrategy,	cyopen,		cyclose,	noioctl },
 	{ 0 }
 };
+int	ndevs = (sizeof(devsw) / sizeof(devsw[0]) - 1);
