@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.35 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@
 #include <sys/map.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/specdev.h>
 
 #include <machine/vmparam.h>
 
@@ -48,7 +49,7 @@ struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
 	{ &vop_ioctl_desc, mfs_ioctl },			/* ioctl */
 	{ &vop_select_desc, mfs_select },		/* select */
 	{ &vop_mmap_desc, mfs_mmap },			/* mmap */
-	{ &vop_fsync_desc, mfs_fsync },			/* fsync */
+	{ &vop_fsync_desc, spec_fsync },		/* fsync */
 	{ &vop_seek_desc, mfs_seek },			/* seek */
 	{ &vop_remove_desc, mfs_remove },		/* remove */
 	{ &vop_link_desc, mfs_link },			/* link */
@@ -274,6 +275,7 @@ mfs_close (ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
+	int error;
 
 	/*
 	 * Finish any pending I/O requests.
@@ -288,9 +290,8 @@ mfs_close (ap)
 	 * we must invalidate any in core blocks, so that
 	 * we can, free up its vnode.
 	 */
-	vflushbuf(vp, 0);
-	if (vinvalbuf(vp, 1))
-		return (0);
+	if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p))
+		return (error);
 	/*
 	 * There should be no way to have any more uses of this
 	 * vnode, so if we find any other uses, it is a panic.
