@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	2.3 83/11/09
+# Makefile	@(#)Makefile	2.4 84/02/13
 #
 CC=	cc
 CTAGS=	ctags -w
@@ -67,3 +67,13 @@ logfile $(TARGET)/$(LOGFILE):
 	cp /dev/null ${TARGET}/${LOGFILE}
 	chown ${SAILMASTER} ${TARGET}/${LOGFILE}
 	chmod 644 ${TARGET}/${LOGFILE}
+
+miro:
+	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
+		/usr/man/man6/sail.6 miro
+cory:
+	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
+		/usr/man/man6/sail.6 cory
+dali:
+	rdist -c '$(TARGET)/{$(SAIL),sail.log,$(DRIVER)}' \
+		/usr/man/man6/sail.6 dali
