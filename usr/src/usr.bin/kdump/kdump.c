@@ -22,13 +22,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/dir.h>
-/*#include <time.h>*/
 #include <sys/user.h>
 #include <sys/ktrace.h>
 #include <stdio.h>
@@ -38,7 +37,7 @@ static char sccsid[] = "@(#)kdump.c	1.2 (Berkeley) %G%";
 #define FLG_SHODATA	0x4
 int flags;
 
-char *tracefile = "trace.out";
+char *tracefile = "ktrace.data";
 
 struct ktr_header ktr_header;
 int size = 1024;
@@ -269,4 +268,3 @@ ktrgenio(ktr, len)
 			putchar('\n');
 	}
 }
-
