@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -142,9 +142,9 @@ ckfini()
 
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
-	if (sblk.b_bno != SBLOCK * DEV_BSIZE / dev_bsize &&
+	if (sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
-		sblk.b_bno = SBLOCK * DEV_BSIZE / dev_bsize;
+		sblk.b_bno = SBOFF / dev_bsize;
 		sbdirty();
 		flush(&dfile, &sblk);
 	}
