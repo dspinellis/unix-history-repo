@@ -31,15 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 04 Sep 92	Paul Kranenburg		Fixed copy-on-write checking for pages
- *					other than anonymous (text pages, etc.)
- * 08 Apr 93	Bruce Evans		Several VM system fixes
+ *	$Id$
  */
 
 #include <stddef.h>

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sys_socket.c	7.11 (Berkeley) 4/16/91
+ *	from: @(#)sys_socket.c	7.11 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 #include "param.h"

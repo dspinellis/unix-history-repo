@@ -50,20 +50,7 @@
  * Significant limitations and lack of compatiblity with POSIX are
  * present with this version, to make its basic operation more clear.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         6       00165
- * --------------------         -----   ----------------------
- *
- * 05 Aug 92	Paul Kranenburg		Fixed #! as a magic number
- * 29 Jul 92	Mark Tinguely		Fixed execute permission enforcement
- * 15 Aug 92    Terry Lambert           Fixed CMOS RAM size bug
- * 12 Dec 92	Julians Elischer	Place argc into user address space
- *					correctly
- * 10 Apr 93	Yoval Yarom		Fix for busy text on executables
- * 20 Apr 93	markie			Stop execution of a file open for write
- *		Rodney W. Grimes	Fix date on Yoval Yarom's patch
- * 01 Jun 93	Chris Demetriou		Completed markie's patch for VTEXT busy
+ *	$Id$
  */
 
 #include "param.h"

@@ -45,15 +45,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00042
- * --------------------         -----   ----------------------
- *
- * 24 Apr 92	Martin Renters		Fix NFS read request hang
- * 20 Aug 92	David Greenman		Fix getnewbuf() 2xAllocation
+ *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/vfs__bio.c,v 1.4 1993/07/27 10:52:49 davidg Exp $";
 
 #include "param.h"
 #include "systm.h"

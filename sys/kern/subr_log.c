@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)subr_log.c	7.11 (Berkeley) 3/17/91
- *
- * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
- * --------------------		-----	----------------------
- * CURRENT PATCH LEVEL:		1	XXXXX
- * --------------------		-----	----------------------
- *
- * 16 Jun 93	Juha Nurmela		select uses pids, not pointers
+ *	from: @(#)subr_log.c	7.11 (Berkeley) 3/17/91
+ *	$Id$
  */
 
 /*

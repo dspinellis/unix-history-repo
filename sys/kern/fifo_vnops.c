@@ -30,16 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fifo_vnops.c	7.7 (Berkeley) 4/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00141
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Jay Fenlason	1. fi_{readers|fi_writers} of fifoinfo init to 0
- *				2. fifo_open() was calling tsleep() without
- *				unlocking the inode of the fifo
+ *	from: @(#)fifo_vnops.c	7.7 (Berkeley) 4/15/91
+ *	$Id$
  */
 
 #ifdef	FIFO

@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_tb.c	7.7 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00163
- * --------------------         -----   ----------------------
- *
- * 27 May 93	Andrew A. Chernov	Compatibility fix
- *
+ *	from: @(#)tty_tb.c	7.7 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 #include "tb.h"

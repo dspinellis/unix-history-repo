@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_conf.c	7.3 (Berkeley) 6/28/90
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00129
- * --------------------         -----   ----------------------
- *
- * 02 Apr 93	Paul Popelka		Added support for PCFS
- *
+ *	from: @(#)vfs_conf.c	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #include "param.h"

@@ -1,4 +1,5 @@
-	@(#)syscalls.master	7.26 (Berkeley) 3/25/91
+	$Id$
+;	from: @(#)syscalls.master	7.26 (Berkeley) 3/25/91
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 

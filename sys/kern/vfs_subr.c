@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
+ *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
+ *	$Id$
  */
 
 /*

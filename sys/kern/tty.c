@@ -31,22 +31,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty.c	7.44 (Berkeley) 5/28/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00163
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
- *					in the 386BSD kernel.	 
- * 27 May 93	Bruce Evans		Sign Ext fix for TIOCSTI from the net
- *					Kludge to hook in RTS/CTS flow control
- *					Avoid sleeping on lbolt, it slows down
- *					output unnecessarily.
+ *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.3 1993/10/11 03:12:59 davidg Exp $";
 
 #include "param.h"
 #include "systm.h"

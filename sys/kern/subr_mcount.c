@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
+ *	from: @(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 #ifdef GPROF

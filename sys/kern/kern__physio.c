@@ -45,15 +45,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00065
- * --------------------         -----   ----------------------
- *
- * 09 Sep 92	Paul Kranenburg		Fixed read from /dev/drum
- * 28 Nov 92	Mark Tinguely		Fixed small leak in physio()
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern__physio.c,v 1.3 92/01/21 21:29:06 william Exp $";
 
 #include "param.h"
 #include "systm.h"

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_prot.c	7.21 (Berkeley) 5/3/91
+ *	from: @(#)kern_prot.c	7.21 (Berkeley) 5/3/91
+ *	$Id$
  */
 
 /*

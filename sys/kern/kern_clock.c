@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00158
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Poul-Henning Kamp	Add support for dcfclock
- * 25 Apr 93	Bruce Evans		Support new interrupt code (intr-0.1)
+ *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 #include "param.h"

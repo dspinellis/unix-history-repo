@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sys_generic.c	7.30 (Berkeley) 5/30/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00061
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
+ *	from: @(#)sys_generic.c	7.30 (Berkeley) 5/30/91
+ *	$Id$
  */
 
 #include "param.h"

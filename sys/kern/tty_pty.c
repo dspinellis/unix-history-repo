@@ -30,24 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00094
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- *
- * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
- *					in the 386BSD kernel.	 
- * 6 Oct 1992	Holger Veit		Fixed 'hanging console' bug
- * 11 Jan 93	Julian Elischer		Fixes multiple processes on one
- *					pty bug
- * 27 Feb 93	Charles Hannum		Proper return values for ptsclose()
- *					and ptcclose()
+ *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty_pty.c,v 1.2 1993/08/15 06:11:22 alm Exp $";
 
 /*
  * Pseudo-teletype Driver
