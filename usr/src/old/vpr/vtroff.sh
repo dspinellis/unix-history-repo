@@ -1,4 +1,5 @@
-#	@(#)vtroff.sh	1.2	%G%
+#! /bin/csh -f
+#	@(#)vtroff.sh	1.3	%G%
 umask 0
 set flags=() noglob length=() fonts=() fontf=() macp=(/usr/lib/tmac/tmac.vcat)
 unset t
