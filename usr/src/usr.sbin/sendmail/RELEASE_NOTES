@@ -67,6 +67,11 @@ summary of the changes in that release.
 		``/try address'' will parse address, returning the value of
 			crackaddr (essentially, the comment information)
 			and the parsed address (the same as -bv).
+		``/tryflags flags'' will set flags used by parsing.  The
+			flags can be `H' for header or `E' for envelope,
+			and `S' for sender or `R' for recipient.  These
+			can be combined, so `HR' sets flags for header
+			recipients.
 	Somewhat better handling of UNIX-domain socket addresses -- it
 		should show the pathname rather than hex bytes.
 	Restore ``-ba'' mode -- this reads a file from stdin and parses
@@ -221,6 +226,10 @@ summary of the changes in that release.
 		which can not be 8 to 7 bit encoded because of other
 		considerations.  Types "multipart/*" and "message/*" are
 		never directly encoded (although their components can be).
+	Add new internal class 'm', which is the set of subtypes of the
+		MIME message/* content type that can be treated as though
+		they are an RFC822 message.  It is predefined to have
+		"rfc822".  Suggested By Kari Hurtta.
 	Add new internal class 'e'.  This is the set of MIME
 		Content-Transfer-Encodings that can be converted to
 		a seven bit format (Quoted-Printable or Base64).  It is
@@ -617,6 +626,9 @@ summary of the changes in that release.
 		and anything after the first dot in a release number can
 		be replaced with "x" (e.g., SunOS.4.x.sun4).  The previous
 		version used $os.$arch.$rel and was rather less general.
+	Change makesendmail to do a "make depend" in the target directory
+		when it is being created.  This involves adding an empty
+		"depend:" entry in most Makefiles.
 	Ignore IDENT return value if the OSTYPE field returns "OTHER",
 		as indicated by RFC 1413.  Pointed out by Kari Hurtta
 		of the Finnish Meteorological Institute.
@@ -630,10 +642,11 @@ summary of the changes in that release.
 		to canonify addresses in headers on the fly.  This is still
 		a rather ugly heuristic.  From Motonori Nakamura.
 	Add "HasWildcardMX" suboption to ResolverOptions; if set, MX
-		records are not used when canonifying names.  This is
-		useful if you have a wildcard MX record, although it
-		may cause other problems.  In general, don't use wildcard
-		MX records.  Patch from Motonori Nakamura.
+		records are not used when canonifying names, and when MX
+		lookups are done for addressing they must be fully
+		qualified.  This is useful if you have a wildcard MX record,
+		although it may cause other problems.  In general, don't use
+		wildcard MX records.  Patch from Motonori Nakamura.
 	Eliminate default two-line SMTP greeting message.  Instead of
 		adding an extra "ESMTP spoken here" line, the word "ESMTP"
 		is added between the first and second word of the first
@@ -770,9 +783,12 @@ summary of the changes in that release.
 		to detect attacks against the qf file.  In particular,
 		abort on any line beginning "From ", and add an "end of
 		file" line -- any data after that line is prohibited.
-	If /etc/sendmail.cf exists, use it regardless of the compile-time
-		setting of _PATH_SENDMAILCF.  This allows sendmail 8 to
-		have consistent install instructions.
+	Always use /etc/sendmail.cf, regardless of the arbitrary vendor
+		choices.  This can be overridden in the Makefile by using
+		either -DUSE_VENDOR_CF_PATH to get the vendor location
+		(to the extent that we know it) or by defining
+		_PATH_SENDMAILCF (which is a "hard override").  This allows
+		sendmail 8 to have more consistent installation instructions.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
@@ -1035,6 +1051,7 @@ summary of the changes in that release.
 		src/Makefiles/Makefile.ISC
 		src/Makefiles/Makefile.NEWS-OS.4.x
 		src/Makefiles/Makefile.NEWS-OS.6.x
+		src/Makefiles/Makefile.NEXTSTEP
 		src/Makefiles/Makefile.NonStop-UX
 		src/Makefiles/Makefile.Paragon
 		src/Makefiles/Makefile.SunOS.5.3
@@ -1061,6 +1078,7 @@ summary of the changes in that release.
 		cf/ostype/ultrix4.1.m4 =>	cf/ostype/ultrix4.m4
 		src/Makefile.* =>		src/Makefiles/Makefile.*
 		src/Makefile.BSDI =>		src/Makefiles/Makefile.BSD-OS
+		src/Makefile.DGUX =>		src/Makefiles/Makefile.dgux
 		src/Makefile.SunOS.4.0.3 =>	src/Makefiles/Makefile.SunOS.4.0
 	OBSOLETED FILES:
 		cf/cf/cogsci.mc
