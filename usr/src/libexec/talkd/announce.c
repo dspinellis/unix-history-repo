@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)announce.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)announce.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -85,7 +85,7 @@ announce_proc(request, remote_machine)
 	ioctl(fileno(tf), TIOCNOTTY, (struct sgttyb *) 0);
 	if (fstat(fileno(tf), &stbuf) < 0)
 		return (PERMISSION_DENIED);
-	if ((stbuf.st_mode&02) == 0)
+	if ((stbuf.st_mode&020) == 0)
 		return (PERMISSION_DENIED);
 	print_mesg(tf, request, remote_machine);
 	fclose(tf);
