@@ -1,5 +1,5 @@
 #
-# 	Makefile	4.2	82/10/24
+# 	Makefile	4.3	87/06/03
 #
 MISCSRCS = Readme v6run.1
 SSRCS = compat.s memsiz.s
@@ -99,9 +99,9 @@ install: v7run # v6run v6trc v7trc
 clean:
 	rm -f *.o v6run v7run v7trc v6trc
 
-
 sources: $(SRCS)
 
 $(SRCS):
 	sccs get $@
 
+depend:
