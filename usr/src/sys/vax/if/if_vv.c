@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_vv.c	7.8 (Berkeley) %G%
+ *	@(#)if_vv.c	7.9 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -870,10 +870,11 @@ dropit:
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
  */
-vvoutput(ifp, m0, dst)
+vvoutput(ifp, m0, dst, rt)
 	struct ifnet *ifp;
 	struct mbuf *m0;
 	struct sockaddr *dst;
+	struct rtentry *rt;
 {
 	register struct mbuf *m;
 	register struct vv_header *vv;
@@ -921,7 +922,7 @@ vvoutput(ifp, m0, dst)
 			dest = in_lnaof(((struct sockaddr_in *)dst)->sin_addr);
 #ifdef LOOPBACK
 		if (dest == vs->vs_host && (loif.if_flags & IFF_UP))
-			return (looutput(&loif, m0, dst));
+			return (looutput(&loif, m0, dst, rt));
 #endif LOOPBACK
 		if (dest >= 0x100) {
 			error = EPERM;
