@@ -1,4 +1,4 @@
-/*	autoconf.c	4.21	81/03/06	*/
+/*	autoconf.c	4.22	81/03/06	*/
 
 /*
  * Initialize the devices for the current machine.
@@ -291,7 +291,7 @@ found:
 		printf("%c%d at mba%d drive %d",
 		    mi->mi_name, mi->mi_unit, ni->mi_mbanum, ni->mi_drive);
 		if (type & MBDT_TAP)
-			printf(" slave %d", ni->ni_slave);
+			printf(" slave %d", ni->mi_slave);
 		printf("\n");
 		mi->mi_alive = 1;
 		mh = &mba_hd[ni->mi_mbanum];
