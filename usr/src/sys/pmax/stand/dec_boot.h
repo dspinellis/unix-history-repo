@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dec_boot.h	7.2 (Berkeley) %G%
+ *	@(#)dec_boot.h	7.3 (Berkeley) %G%
  *
  * devDiskLabel.h --
  *
@@ -46,5 +46,34 @@ struct Dec_DiskBoot {
 	struct	Dec_BootMap map[61];	/* boot program sections. */
 };
  
-#define DEC_BOOT_MAGIC	0x02757a
-#define DEC_BOOT_SECTOR	0
+#define DEC_BOOT_MAGIC		0x0002757a
+#define DEC_BOOT_SECTOR		0
+
+/*
+ * DEC_NUM_DISK_PARTS is the number of partitions that are recorded in
+ * the label information.  The size of the padding in the Dec_DiskLabel
+ * type is dependent on this number...
+ */
+#define DEC_NUM_DISK_PARTS	8
+
+/*
+ * A disk is divided into partitions and this type specifies where a
+ * partition starts and how many bytes it contains.
+ */
+typedef struct Dec_DiskMap {
+	int	numBlocks;	/* Number of 512 byte blocks in partition. */
+	int	startBlock;	/* Start of partition in blocks. */
+} Dec_DiskMap;
+
+/*
+ * Label information on the 31st (DEC_LABEL_SECTOR) sector.
+ */
+typedef struct Dec_DiskLabel {
+    char	pad0[440];		/* DIFFERENT from sprite!!! */
+    int		magic;			/* DEC_LABEL_MAGIC */
+    int		isPartitioned;		/* 1 if disk is partitioned. */
+    Dec_DiskMap map[DEC_NUM_DISK_PARTS]; /* Indicates disk partitions. */
+} Dec_DiskLabel;
+
+#define DEC_LABEL_MAGIC		0x00032957
+#define DEC_LABEL_SECTOR	31
