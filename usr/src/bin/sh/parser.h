@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	8.1 (Berkeley) %G%
+ *	@(#)parser.h	8.2 (Berkeley) %G%
  */
 
 /* control characters in argument strings */
@@ -21,16 +21,21 @@
 #define	CTLENDARI '\207'
 
 /* variable substitution byte (follows CTLVAR) */
-#define VSTYPE 07		/* type of variable substitution */
-#define VSNUL 040		/* colon--treat the empty string as unset */
-#define VSQUOTE 0100		/* inside double quotes--suppress splitting */
+#define VSTYPE	0x0f		/* type of variable substitution */
+#define VSNUL	0x10		/* colon--treat the empty string as unset */
+#define VSQUOTE 0x80		/* inside double quotes--suppress splitting */
 
 /* values of VSTYPE field */
-#define VSNORMAL 1		/* normal variable:  $var or ${var} */
-#define VSMINUS 2		/* ${var-text} */
-#define VSPLUS 3		/* ${var+text} */
-#define VSQUESTION 4		/* ${var?message} */
-#define VSASSIGN 5		/* ${var=text} */
+#define VSNORMAL	0x1		/* normal variable:  $var or ${var} */
+#define VSMINUS		0x2		/* ${var-text} */
+#define VSPLUS		0x3		/* ${var+text} */
+#define VSQUESTION	0x4		/* ${var?message} */
+#define VSASSIGN	0x5		/* ${var=text} */
+#define VSTRIMLEFT	0x6		/* ${var#pattern} */
+#define VSTRIMLEFTMAX	0x7		/* ${var##pattern} */
+#define VSTRIMRIGHT	0x8		/* ${var%pattern} */
+#define VSTRIMRIGHTMAX 	0x9		/* ${var%%pattern} */
+#define VSLENGTH	0xa		/* ${#var} */
 
 
 /*

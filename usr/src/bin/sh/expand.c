@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -61,6 +61,7 @@ struct arglist exparg;		/* holds expanded arg list */
 #ifdef __STDC__
 STATIC void argstr(char *, int);
 STATIC void expbackq(union node *, int, int);
+STATIC int  subevalvar(char *, char *, int, int, int);
 STATIC char *evalvar(char *, int);
 STATIC int varisset(int);
 STATIC void varvalue(int, int, int);
@@ -74,9 +75,11 @@ STATIC struct strlist *expsort(struct strlist *);
 STATIC struct strlist *msort(struct strlist *, int);
 STATIC int pmatch(char *, char *);
 STATIC char *exptilde(char *, int);
+STATIC char *cvtnum(int, char *);
 #else
 STATIC void argstr();
 STATIC void expbackq();
+STATIC int subevalvar();
 STATIC char *evalvar();
 STATIC int varisset();
 STATIC void varvalue();
@@ -90,6 +93,7 @@ STATIC struct strlist *expsort();
 STATIC struct strlist *msort();
 STATIC int pmatch();
 STATIC char *exptilde();
+STATIC char *cvtnum();
 #endif
 
 /*
@@ -395,6 +399,101 @@ expbackq(cmd, quoted, flag)
 
 
 
+STATIC int
+subevalvar(p, str, subtype, startloc, varflags)
+	char *p;
+	char *str;
+	int subtype;
+	int startloc;
+	int varflags;
+{
+
+	char *startp;
+	char *loc;
+	int c = 0;
+	int saveherefd = herefd;
+	struct nodelist *saveargbackq = argbackq;
+	herefd = -1;
+	argstr(p, 0);
+	STACKSTRNUL(expdest);
+	herefd = saveherefd;
+	argbackq = saveargbackq;
+	startp = stackblock() + startloc;
+
+	switch (subtype) {
+	case VSASSIGN:
+		setvar(str, startp, 0);
+		STADJUST(startp - expdest, expdest);
+		varflags &= ~VSNUL;
+		if (c != 0)
+			*loc = c;
+		return 1;
+
+	case VSQUESTION:
+		if (*p != CTLENDVAR) {
+			outfmt(&errout, "%s\n", startp);
+			error((char *)NULL);
+		}
+		error("%.*s: parameter %snot set", p - str - 1,
+		      str, (varflags & VSNUL) ? "null or "
+					      : nullstr);
+		return 0;
+
+	case VSTRIMLEFT:
+		for (loc = startp; loc < str - 1; loc++) {
+			c = *loc;
+			*loc = '\0';
+			if (patmatch(str, startp)) {
+				*loc = c;
+				goto recordleft;
+			}
+			*loc = c;
+		}
+		return 0;
+
+	case VSTRIMLEFTMAX:
+		for (loc = str - 1; loc >= startp; loc--) {
+			c = *loc;
+			*loc = '\0';
+			if (patmatch(str, startp)) {
+				*loc = c;
+				goto recordleft;
+			}
+			*loc = c;
+		}
+		return 0;
+
+	case VSTRIMRIGHT:
+		for (loc = str - 1; loc >= startp; loc--) {
+			if (patmatch(str, loc)) {
+				expdest = loc;
+				return 1;
+			}
+		}
+		return 0;
+
+	case VSTRIMRIGHTMAX:
+		for (loc = startp; loc < str - 1; loc++) {
+			if (patmatch(str, loc)) {
+				expdest = loc;
+				return 1;
+			}
+		}
+		return 0;
+
+
+	default:
+		abort();
+	}
+
+recordleft:
+	expdest = (str - 1) - (loc - startp);
+	while (loc != str - 1)
+		*startp++ = *loc++;
+	return 1;
+}
+
+
 /*
  * Expand a variable, and return a pointer to the next character in the
  * input string.
@@ -408,10 +507,13 @@ evalvar(p, flag)
 	int varflags;
 	char *var;
 	char *val;
+	char *pat;
 	int c;
 	int set;
 	int special;
 	int startloc;
+	int varlen;
+	int easy;
 	int quotes = flag & (EXP_FULL | EXP_CASE);
 
 	varflags = *p++;
@@ -433,54 +535,98 @@ again: /* jump here after setting a variable with ${var=text} */
 		} else
 			set = 1;
 	}
+	varlen = 0;
 	startloc = expdest - stackblock();
 	if (set && subtype != VSPLUS) {
 		/* insert the value of the variable */
 		if (special) {
+			char *exp, *oexpdest = expdest;
 			varvalue(*var, varflags & VSQUOTE, flag & EXP_FULL);
+			if (subtype == VSLENGTH) {
+				for (exp = oexpdest;exp != expdest; exp++)
+					varlen++;
+				expdest = oexpdest;
+			}
 		} else {
-			char const *syntax = (varflags & VSQUOTE)? DQSYNTAX : BASESYNTAX;
+			char const *syntax = (varflags & VSQUOTE) ? DQSYNTAX 
+								  : BASESYNTAX;
 
-			while (*val) {
-				if (quotes && syntax[*val] == CCTL)
-					STPUTC(CTLESC, expdest);
-				STPUTC(*val++, expdest);
+			if (subtype == VSLENGTH) {
+				for (;*val; val++)
+					varlen++;
+			}
+			else {
+				while (*val) {
+					if (quotes && syntax[*val] == CCTL)
+						STPUTC(CTLESC, expdest);
+					STPUTC(*val++, expdest);
+				}
+
 			}
 		}
 	}
+		
 	if (subtype == VSPLUS)
 		set = ! set;
-	if (((varflags & VSQUOTE) == 0 || (*var == '@' && shellparam.nparam != 1))
-	 && (set || subtype == VSNORMAL))
-		recordregion(startloc, expdest - stackblock(), varflags & VSQUOTE);
-	if (! set && subtype != VSNORMAL) {
-		if (subtype == VSPLUS || subtype == VSMINUS) {
+
+	easy = ((varflags & VSQUOTE) == 0 || 
+		(*var == '@' && shellparam.nparam != 1));
+
+
+	switch (subtype) {
+	case VSLENGTH:
+		expdest = cvtnum(varlen, expdest);
+		goto record;
+
+	case VSNORMAL:
+		if (!easy)
+			break;
+record:
+		recordregion(startloc, expdest - stackblock(), 
+			     varflags & VSQUOTE);
+		break;
+
+	case VSPLUS:
+	case VSMINUS:
+		if (!set) {
 			argstr(p, flag);
-		} else {
-			char *startp;
-			int saveherefd = herefd;
-			struct nodelist *saveargbackq = argbackq;
-			herefd = -1;
-			argstr(p, 0);
-			STACKSTRNUL(expdest);
-			herefd = saveherefd;
-			argbackq = saveargbackq;
-			startp = stackblock() + startloc;
-			if (subtype == VSASSIGN) {
-				setvar(var, startp, 0);
-				STADJUST(startp - expdest, expdest);
-				varflags &=~ VSNUL;
-				goto again;
-			}
-			/* subtype == VSQUESTION */
-			if (*p != CTLENDVAR) {
-				outfmt(&errout, "%s\n", startp);
-				error((char *)NULL);
-			}
-			error("%.*s: parameter %snot set", p - var - 1,
-				var, (varflags & VSNUL)? "null or " : nullstr);
+			break;
 		}
+		if (easy)
+			goto record;
+		break;
+
+	case VSTRIMLEFT:
+	case VSTRIMLEFTMAX:
+	case VSTRIMRIGHT:
+	case VSTRIMRIGHTMAX:
+		if (!set)
+			break;
+		/*
+		 * Terminate the string and start recording the pattern
+		 * right after it
+		 */
+		STPUTC('\0', expdest);
+		pat = expdest;
+		if (subevalvar(p, pat, subtype, startloc, varflags))
+			goto record;
+		break;
+
+	case VSASSIGN:
+	case VSQUESTION:
+		if (!set) {
+			if (subevalvar(p, var, subtype, startloc, varflags))
+				goto again;
+			break;
+		}
+		if (easy)
+			goto record;
+		break;
+
+	default:
+		abort();
 	}
+
 	if (subtype != VSNORMAL) {	/* skip to end of alternative */
 		int nesting = 1;
 		for (;;) {
@@ -540,7 +686,6 @@ varvalue(name, quoted, allow_split)
 	char name;
 	{
 	int num;
-	char temp[32];
 	char *p;
 	int i;
 	extern int exitstatus;
@@ -576,13 +721,7 @@ varvalue(name, quoted, allow_split)
 	case '!':
 		num = backgndpid;
 numvar:
-		p = temp + 31;
-		temp[31] = '\0';
-		do {
-			*--p = num % 10 + '0';
-		} while ((num /= 10) != 0);
-		while (*p)
-			STPUTC(*p++, expdest);
+		expdest = cvtnum(num, expdest);
 		break;
 	case '-':
 		for (i = 0 ; i < NOPTS ; i++) {
@@ -1131,4 +1270,31 @@ casematch(pattern, val)
 	result = patmatch(p, val);
 	popstackmark(&smark);
 	return result;
+}
+
+/*
+ * Our own itoa().
+ */
+
+STATIC char *
+cvtnum(num, buf)
+	int num;
+	char *buf;
+	{
+	char temp[32];
+	int neg = num < 0;
+	char *p = temp + 31;
+
+	temp[31] = '\0';
+
+	do {
+		*--p = num % 10 + '0';
+	} while ((num /= 10) != 0);
+
+	if (neg)
+		*--p = '-';
+
+	while (*p)
+		STPUTC(*p++, buf);
+	return buf;
 }
