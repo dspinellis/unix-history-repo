@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)c_macros	4.1 (Berkeley) %G%
+.\"	@(#)c_macros	5.1 (Berkeley) %G%
 .\"
 'ie t 'ds _ \d\(mi\u
 'el 'ds _ _
@@ -36,10 +36,10 @@
 'am +C
 'ne 3
 ..
-'de FN
-\\$1\c
-'ds =f \&...\\$1
-..
+.\"'de FN
+.\"\\$1\c
+.\"'ds =f \&...\\$1
+.\"..
 'de -F
 'rm =f
 ..
