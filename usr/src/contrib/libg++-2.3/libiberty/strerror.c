@@ -454,6 +454,7 @@ static int num_error_names = 0;
    same name, it differs from other implementations in that it is dynamically
    initialized rather than statically initialized. */
 
+#ifdef notdef
 #ifdef NEED_sys_errlist
 
 static int sys_nerr;
@@ -464,6 +465,7 @@ static char **sys_errlist;
 extern int sys_nerr;
 extern char *sys_errlist[];
 
+#endif
 #endif
 
 
