@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.3 (Berkeley) %G%
+ *	@(#)cpu.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -28,7 +28,7 @@
 #define	cpu_exec(p)		(p->p_md.md_ss_addr = 0) /* init single step */
 #define	cpu_wait(p)		/* nothing */
 #define cpu_setstack(p, ap)	(p)->p_md.md_regs[SP] = ap
-#define cpu_set_init_frame(p, fp) (p)->p_md.md_regs = fp
+#define cpu_set_init_frame(p, fp) /* nothing */
 
 /*
  * Arguments to hardclock and gatherstats encapsulate the previous
