@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -220,7 +220,16 @@ mfs_close(vp, flag, cred)
 	struct ucred *cred;
 {
 	register struct mfsnode *mfsp = VTOMFS(vp);
+	register struct buf *bp;
 
+	/*
+	 * Finish any pending I/O requests.
+	 */
+	while (bp = mfsp->mfs_buflist) {
+		mfsp->mfs_buflist = bp->av_forw;
+		mfs_doio(bp, mfsp->mfs_baseoff);
+		wakeup((caddr_t)bp);
+	}
 	/*
 	 * On last close of a memory filesystem
 	 * we must invalidate any in core blocks, so that
@@ -230,22 +239,16 @@ mfs_close(vp, flag, cred)
 	if (binval(vp->v_mount))
 		return (0);
 	/*
-	 * We don't want to really close the device if it is still
-	 * in use. Since every use (buffer, inode, swap, cmap)
-	 * holds a reference to the vnode, and because we ensure
-	 * that there cannot be more than one vnode per device,
-	 * we need only check that we are down to the last
-	 * reference before closing.
+	 * There should be no way to have any more uses of this
+	 * vnode, so if we find any other uses, it is a panic.
 	 */
-	if (vp->v_count > 1) {
+	if (vp->v_count > 1)
 		printf("mfs_close: ref count %d > 1\n", vp->v_count);
-		return (0);
-	}
+	if (vp->v_count > 1 || mfsp->mfs_buflist)
+		panic("mfs_close");
 	/*
 	 * Send a request to the filesystem server to exit.
 	 */
-	while (mfsp->mfs_buflist)
-		sleep(&lbolt);
 	mfsp->mfs_buflist = (struct buf *)(-1);
 	wakeup((caddr_t)vp);
 	return (0);
