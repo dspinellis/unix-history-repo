@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd5.c	3.12 %G%";
+static char sccsid[] = "@(#)cmd5.c	3.13 %G%";
 #endif
 
 #include "defs.h"
@@ -16,6 +16,8 @@ register struct ww *w;
 	int maxcol, maxrow;
 	int curcol, currow;
 
+	if (!terse)
+		wwputs("New window position: ", cmdwin);
 	col = w->ww_w.l;
 	row = w->ww_w.t;
 	wwadd(boxwin, framewin->ww_back);
@@ -55,8 +57,8 @@ register struct ww *w;
 {
 	struct ww *back = w->ww_back;
 
-	w->ww_altpos.r = w->ww_w.t;
-	w->ww_altpos.c = w->ww_w.l;
+	w->ww_alt.t = w->ww_w.t;
+	w->ww_alt.l = w->ww_w.l;
 	wwdelete(w);
 	wwmove(w, row, col);
 	wwadd(w, back);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwopen.c	3.18 %G%";
+static char sccsid[] = "@(#)wwopen.c	3.19 %G%";
 #endif
 
 #include "ww.h"
@@ -58,10 +58,19 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	w->ww_cur.c = w->ww_w.l;
 
 	if (flags & WWO_PTY) {
+		struct winsize winsize;
+
 		if (wwgetpty(w) < 0)
 			goto bad;
 		if (wwsettty(w->ww_pty, &wwwintty, (struct ww_tty *)0) < 0)
 			goto bad;
+		winsize.ws_row = nrow;
+		winsize.ws_col = ncol;
+		winsize.ws_xpixel = winsize.ws_ypixel = 0;
+		if (ioctl(w->ww_pty, TIOCSWINSZ, (char *)&winsize) < 0) {
+			wwerrno = WWE_SYS;
+			goto bad;
+		}
 		w->ww_ispty = 1;
 	} else if (flags & WWO_SOCKET) {
 		int d[2];
@@ -98,12 +107,12 @@ wwopen(flags, nrow, ncol, row, col, nline)
 		w->ww_fmap = wwalloc(w->ww_w.t, w->ww_w.l,
 			w->ww_w.nr, w->ww_w.nc, sizeof (char));
 		if (w->ww_fmap == 0)
-			wwerrno = WWE_NOMEM;
+			goto bad;
 		for (i = w->ww_w.t; i < w->ww_w.b; i++)
 			for (j = w->ww_w.l; j < w->ww_w.r; j++)
 				w->ww_fmap[i][j] = 0;
 	}
-	
+
 	w->ww_buf = (union ww_char **)
 		wwalloc(w->ww_b.t, w->ww_b.l,
 			w->ww_b.nr, w->ww_b.nc, sizeof (union ww_char));
@@ -124,6 +133,7 @@ wwopen(flags, nrow, ncol, row, col, nline)
 		w->ww_nvis[i] = nvis;
 
 	w->ww_state = WWS_INITIAL;
+	w->ww_oflags = flags;
 	return wwindex[w->ww_index] = w;
 bad:
 	if (w != 0) {

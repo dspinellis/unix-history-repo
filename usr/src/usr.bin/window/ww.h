@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.34 %G%	
+ * @(#)ww.h	3.35 %G%	
  */
 
 #include <sgtty.h>
@@ -23,10 +23,13 @@ struct ww_pos {
 
 	/* the window structure */
 struct ww {
+		/* general flags and states */
+	char ww_state;		/* state of window */
+	char ww_oflags;		/* wwopen flags */
+
 		/* information for overlap */
 	struct ww *ww_forw;	/* doubly linked list, for overlapping info */
 	struct ww *ww_back;
-	char ww_state;		/* state of window */
 	char ww_index;		/* the window index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 
@@ -51,7 +54,6 @@ struct ww {
 	char ww_unctrl;		/* expand control characters */
 	char ww_nointr;		/* wwwrite() not interruptable */
 	char ww_hascursor;	/* has fake cursor */
-	char ww_hasframe;	/* frame it */
 
 		/* things for the window process and io */
 	char ww_ispty;		/* ww_pty is really a pty, not socket pair */
@@ -66,10 +68,11 @@ struct ww {
 	char *ww_obq;		/* current write position in ww_ob */
 
 		/* things for the user, they really don't belong here */
-	char ww_center;		/* center the label */
 	char ww_id;		/* the user window id */
+	char ww_center;		/* center the label */
+	char ww_hasframe;	/* frame it */
 	char *ww_label;		/* the user supplied label */
-	struct ww_pos ww_altpos;/* alternate position */
+	struct ww_dim ww_alt;	/* alternate position and size */
 };
 
 	/* state of a tty */
