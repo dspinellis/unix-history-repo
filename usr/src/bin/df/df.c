@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 The Regents of the University of California.
+ * Copyright (c) 1980, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,9 +28,7 @@ static char sccsid[] = "@(#)df.c	5.20 (Berkeley) %G%";
 
 char	*getmntpt();
 int	iflag, kflag, nflag;
-#ifdef COMPAT_43
-int	oflag;
-#endif /* COMPAT_43 */
+struct	ufs_args mdev;
 
 main(argc, argv)
 	int argc;
@@ -42,9 +40,8 @@ main(argc, argv)
 	char *mntpt, *mktemp();
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
-	struct ufs_args mdev;
 
-	while ((ch = getopt(argc, argv, "ikon")) != EOF)
+	while ((ch = getopt(argc, argv, "ikn")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
@@ -55,11 +52,6 @@ main(argc, argv)
 		case 'n':
 			nflag = 1;
 			break;
-#ifdef COMPAT_43
-		case 'o':
-			oflag = 1;
-			break;
-#endif /* COMPAT_43 */
 		case '?':
 		default:
 			fprintf(stderr,
@@ -76,12 +68,6 @@ main(argc, argv)
 		if (width > maxwidth)
 			maxwidth = width;
 	}
-#ifdef COMPAT_43
-	if (oflag) {
-		olddf(argv, maxwidth);
-		exit(0);
-	}
-#endif /* COMPAT_43 */
 	if (!*argv) {
 		mntsize = getmntinfo(&mntbuf, (nflag ? MNT_NOWAIT : MNT_WAIT));
 		for (i = 0; i < mntsize; i++)
@@ -96,13 +82,24 @@ main(argc, argv)
 				    strerror(err));
 				continue;
 			}
+		} else if ((stbuf.st_mode & S_IFMT) == S_IFCHR) {
+			ufs_df(*argv, maxwidth);
+			continue;
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0) {
 				mntpt = mktemp("/tmp/df.XXXXXX");
 				mdev.fspec = *argv;
-				if (!mkdir(mntpt) &&
-				    !mount(MOUNT_UFS, mntpt, MNT_RDONLY, &mdev) &&
-				    !statfs(mntpt, &statfsbuf)) {
+				if (mkdir(mntpt) != 0) {
+					fprintf(stderr, "df: %s: %s\n",
+					    mntpt, strerror(errno));
+					continue;
+				}
+				if (mount(MOUNT_UFS, mntpt, MNT_RDONLY,
+				    &mdev) != 0) {
+					ufs_df(*argv, maxwidth);
+					(void)rmdir(mntpt);
+					continue;
+				} else if (statfs(mntpt, &statfsbuf)) {
 					statfsbuf.f_mntonname[0] = '\0';
 					prtstat(&statfsbuf, maxwidth);
 				} else
@@ -184,7 +181,6 @@ prtstat(sfsp, maxwidth)
 	printf("  %s\n", sfsp->f_mntonname);
 }
 
-#ifdef COMPAT_43
 /*
  * This code constitutes the old df code for extracting
  * information from filesystem superblocks.
@@ -192,8 +188,6 @@ prtstat(sfsp, maxwidth)
 #include <ufs/fs.h>
 #include <errno.h>
 #include <fstab.h>
-
-char	root[MAXPATHLEN];
 
 union {
 	struct fs iu_fs;
@@ -204,36 +198,8 @@ union {
 int	fi;
 char	*strcpy();
 
-olddf(argv, maxwidth)
-	char *argv[];
-	long maxwidth;
-{
-	struct fstab *fsp;
-
-	sync();
-	if (!*argv) {
-		if (setfsent() == 0)
-			perror(_PATH_FSTAB), exit(1);
-		while (fsp = getfsent()) {
-			if (strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RO) &&
-			    strcmp(fsp->fs_type, FSTAB_RQ))
-				continue;
-			if (root[0] == 0)
-				(void) strcpy(root, fsp->fs_spec);
-			dfree(fsp->fs_spec, 1, maxwidth);
-		}
-		(void)endfsent();
-		exit(0);
-	}
-	while (*argv)
-		dfree(*argv++, 0, maxwidth);
-	exit(0);
-}
-
-dfree(file, infsent, maxwidth)
+ufs_df(file, maxwidth)
 	char *file;
-	int infsent;
 	long maxwidth;
 {
 	extern int errno;
@@ -242,30 +208,11 @@ dfree(file, infsent, maxwidth)
 	register struct statfs *sfsp;
 	struct fstab *fsp;
 	char *mntpt;
+	static int synced;
 
-	if (stat(file, &stbuf) == 0 &&
-	    (stbuf.st_mode&S_IFMT) != S_IFCHR &&
-	    (stbuf.st_mode&S_IFMT) != S_IFBLK) {
-		if (infsent) {
-			fprintf(stderr, "df: %s: screwy fstab entry\n", file);
-			return;
-		}
-		(void)setfsent();
-		while (fsp = getfsent()) {
-			struct stat stb;
+	if (synced++ == 0)
+		sync();
 
-			if (stat(fsp->fs_spec, &stb) == 0 &&
-			    stb.st_rdev == stbuf.st_dev) {
-				file = fsp->fs_spec;
-				(void)endfsent();
-				goto found;
-			}
-		}
-		(void)endfsent();
-		fprintf(stderr, "df: %s: mounted on unknown device\n", file);
-		return;
-	}
-found:
 	if ((fi = open(file, O_RDONLY)) < 0) {
 		fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
 		return;
@@ -318,4 +265,3 @@ bread(off, buf, cnt)
 	}
 	return (1);
 }
-#endif /* COMPAT_43 */
