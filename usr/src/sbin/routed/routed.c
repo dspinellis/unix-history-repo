@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.10 %G%";
+static char sccsid[] = "@(#)routed.c	4.11 %G%";
 #endif
 
 /*
@@ -564,7 +564,7 @@ rip_input(from, size)
 	 * don't hear their own broadcasts?
 	 */
 	if (if_ifwithaddr(from)) {
-		rt = rtlookup(from);
+		rt = rtfind(from);
 		if (rt)
 			rt->rt_timer = 0;
 		return;
@@ -635,9 +635,47 @@ rtlookup(dst)
 {
 	register struct rt_entry *rt;
 	register struct rthash *rh;
-	register int hash, (*match)();
+	register int hash;
 	struct afhash h;
-	int af = dst->sa_family, doinghost = 1;
+	int doinghost = 1;
+
+	if (dst->sa_family >= AF_MAX)
+		return (0);
+	(*afswitch[dst->sa_family].af_hash)(dst, &h);
+	hash = h.afh_hosthash;
+	rh = &hosthash[hash % ROUTEHASHSIZ];
+again:
+	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
+		if (rt->rt_hash != hash)
+			continue;
+		if (equal(&rt->rt_dst, dst))
+			return (rt);
+	}
+	if (doinghost) {
+		doinghost = 0;
+		hash = h.afh_nethash;
+		rh = &nethash[hash % ROUTEHASHSIZ];
+		goto again;
+	}
+	return (0);
+}
+
+/*
+ * Find an entry based on address "dst", as the kernel
+ * does in selecting routes.  This means we look first
+ * for a point to point link, settling for a route to
+ * the destination network if the former fails.
+ */
+struct rt_entry *
+rtfind(dst)
+	struct sockaddr *dst;
+{
+	register struct rt_entry *rt;
+	register struct rthash *rh;
+	register int hash;
+	struct afhash h;
+	int af = dst->sa_family;
+	int doinghost = 1, (*match)();
 
 	if (af >= AF_MAX)
 		return (0);
@@ -661,8 +699,8 @@ again:
 	if (doinghost) {
 		doinghost = 0;
 		hash = h.afh_nethash;
-		match = afswitch[af].af_netmatch;
 		rh = &nethash[hash % ROUTEHASHSIZ];
+		match = afswitch[af].af_netmatch;
 		goto again;
 	}
 	return (0);

@@ -1,4 +1,4 @@
-/*	defs.h	4.4	82/05/31	*/
+/*	defs.h	4.5	82/05/31	*/
 
 /*
  * Internal data structure definitions for
@@ -60,7 +60,7 @@ struct rt_entry {
 #define	RTS_HIDDEN	0x8		/* don't send to router */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
-struct	rt_entry *rtlookup();
+struct	rt_entry *rtlookup(), *rtfind();
 
 /*
  * Per address family routines.
