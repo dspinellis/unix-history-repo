@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <math.h>
@@ -417,9 +417,9 @@ log(x) double x;
  */
 struct Double
 #ifdef _ANSI_SOURCE
-log__D(double x)
+__log__D(double x)
 #else
-log__D(x) double x;
+__log__D(x) double x;
 #endif
 {
 	int m, j;

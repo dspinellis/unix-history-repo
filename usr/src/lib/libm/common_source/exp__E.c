@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp__E.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp__E.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* exp__E(x,c)
@@ -81,7 +81,7 @@ ic(q2, 9.9176615021572857300E-4, -10, 1.03FC4CB8C98E8)
 #define       q3    vccast(q3)
 #endif
 
-double exp__E(x,c)
+double __exp__E(x,c)
 double x,c;
 {
 	const static double zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;

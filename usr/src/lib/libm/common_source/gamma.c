@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gamma.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gamma.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -120,7 +120,7 @@ gamma(x)
 		if(x > 171.63)
 			return(one/zero);
 		u = large_gam(x);
-		return(exp__D(u.a, u.b));
+		return(__exp__D(u.a, u.b));
 	} else if (x >= 1.0 + LEFT + x0)
 		return (small_gam(x));
 	else if (x > 1.e-17)
@@ -154,7 +154,7 @@ large_gam(x)
 	p = Pa0+z*(Pa1+z*(Pa2+z*(Pa3+z*(Pa4+z*(Pa5+z*(Pa6+z*Pa7))))));
 	p = p/x;
 
-	u = log__D(x);
+	u = __log__D(x);
 	u.a -= one;
 	v.a = (x -= .5);
 	TRUNC(v.a);
@@ -291,12 +291,12 @@ neg_gam(x)
 			return ((double)sgn*tiny*tiny);
 		y = one - x;		/* exact: 128 < |x| < 255 */
 		lg = large_gam(y);
-		lsine = log__D(M_PI/z);	/* = TRUNC(log(u)) + small */
-		lg.a -= lsine.a;	/* exact (opposite signs) */
+		lsine = __log__D(M_PI/z);	/* = TRUNC(log(u)) + small */
+		lg.a -= lsine.a;		/* exact (opposite signs) */
 		lg.b -= lsine.b;
 		y = -(lg.a + lg.b);
 		z = (y + lg.a) + lg.b;
-		y = exp__D(y, z);
+		y = __exp__D(y, z);
 		if (sgn < 0) y = -y;
 		return (y);
 	}

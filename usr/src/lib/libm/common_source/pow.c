@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pow.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /* POW(X,Y)  
@@ -147,8 +147,8 @@ pow_P(double x, double y)
 pow_P(x, y) double x, y;
 #endif
 {
-	struct Double s, t, log__D();
-	double  exp__D(), huge = 1e300, tiny = 1e-300;
+	struct Double s, t, __log__D();
+	double  __exp__D(), huge = 1e300, tiny = 1e-300;
 
 	if (x == 1)
 		return (one);
@@ -163,7 +163,7 @@ pow_P(x, y) double x, y;
 	/* Return exp(y*log(x)), using simulated extended */
 	/* precision for the log and the multiply.	  */
 
-	s = log__D(x);
+	s = __log__D(x);
 	t.a = y;
 	TRUNC(t.a);
 	t.b = y - t.a;
@@ -171,5 +171,5 @@ pow_P(x, y) double x, y;
 	t.a *= s.a;
 	s.a = t.a + t.b;
 	s.b = (t.a - s.a) + t.b;
-	return (exp__D(s.a, s.b));
+	return (__exp__D(s.a, s.b));
 }
