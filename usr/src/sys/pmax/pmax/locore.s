@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.13 (Berkeley) %G%
+ *	@(#)locore.s	7.14 (Berkeley) %G%
  */
 
 /*
@@ -3057,3 +3057,25 @@ LEAF(cpu_getregs)	/* XXX */
 	sw	s8, 28(a0)
 END(cpu_getregs)
 #endif /* DEBUG */
+
+/*
+ * Interrupt counters.
+ */
+	.data
+	.globl	intrcnt, eintrcnt, intrnames, eintrnames
+intrnames:
+	.asciz	"spur"
+	.asciz	"hil"
+	.asciz	"lev2"
+	.asciz	"lev3"
+	.asciz	"lev4"
+	.asciz	"lev5"
+	.asciz	"dma"
+	.asciz	"clock"
+	.asciz  "statclock"
+	.asciz	"nmi"
+eintrnames:
+	.align	2
+intrcnt:
+	.word	0,0,0,0,0,0,0,0,0,0
+eintrcnt:
