@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,6 +72,24 @@ nfs_nhinit()
 }
 
 /*
+ * Compute an entry in the NFS hash table structure
+ */
+union nhead *
+nfs_hash(fhp)
+	register nfsv2fh_t *fhp;
+{
+	register u_char *fhpp;
+	register u_long fhsum;
+	int i;
+
+	fhpp = &fhp->fh_bytes[0];
+	fhsum = 0;
+	for (i = 0; i < NFSX_FH; i++)
+		fhsum += *fhpp++;
+	return (&nhead[NFSNOHASH(fhsum)]);
+}
+
+/*
  * Look up a vnode/nfsnode by file handle.
  * Callers must check for mount points!!
  * In all cases, a pointer to a
@@ -84,40 +102,25 @@ nfs_nget(mntp, fhp, npp)
 {
 	register struct nfsnode *np;
 	register struct vnode *vp;
-	register u_char *fhpp;
-	register u_long fhsum;
+	extern struct vnodeops nfsv2_vnodeops;
 	struct vnode *nvp;
 	union nhead *nh;
-	int i, error;
+	int error;
 
-	fhpp = &fhp->fh_bytes[0];
-	fhsum = 0;
-	for (i = 0; i < NFSX_FH; i++)
-		fhsum += *fhpp++;
+	nh = nfs_hash(fhp);
 loop:
-	nh = &nhead[NFSNOHASH(fhsum)];
 	for (np = nh->nh_chain[0]; np != (struct nfsnode *)nh; np = np->n_forw) {
 		if (mntp != NFSTOV(np)->v_mount ||
 		    bcmp((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH))
 			continue;
-		/*
-		 * Following is essentially an inline expanded
-		 * copy of ngrab(), expanded inline for speed,
-		 * and so that the test for a mounted on nfsnode
-		 * can be deferred until after we are sure that
-		 * the nfsnode isn't busy.
-		 */
 		if ((np->n_flag & NLOCKED) != 0) {
 			np->n_flag |= NWANT;
 			sleep((caddr_t)np, PINOD);
 			goto loop;
 		}
 		vp = NFSTOV(np);
-		if (vp->v_count == 0)	/* nfsnode on free list */
-			vget(vp);
-		else
-			VREF(vp);
-		np->n_flag |= NLOCKED;
+		if (vget(vp))
+			goto loop;
 		*npp = np;
 		return(0);
 	}
@@ -138,35 +141,8 @@ loop:
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_size = 0;
 	np->n_mtime = 0;
-	/*
-	 * Initialize the associated vnode
-	 */
 	*npp = np;
 	return (0);
-}
-
-/*
- * Convert a pointer to an nfsnode into a reference to an nfsnode.
- *
- * This is basically the internal piece of nget (after the
- * nfsnode pointer is located) but without the test for mounted
- * filesystems.  It is caller's responsibility to check that
- * the nfsnode pointer is valid.
- */
-nfs_ngrab(np)
-	register struct nfsnode *np;
-{
-	register struct vnode *vp = NFSTOV(np);
-
-	while ((np->n_flag & NLOCKED) != 0) {
-		np->n_flag |= NWANT;
-		sleep((caddr_t)np, PINOD);
-	}
-	if (vp->v_count == 0)		/* ino on free list */
-		vget(vp);
-	else
-		VREF(vp);
-	np->n_flag |= NLOCKED;
 }
 
 nfs_inactive(vp)
@@ -177,9 +153,10 @@ nfs_inactive(vp)
 	register struct sillyrename *sp;
 	struct nfsnode *dnp;
 
-	if (vp == NULL || vp->v_count != 0)
-		panic("nfs_inactive: NULL or active vp");
 	np = VTONFS(vp);
+	if (vp->v_count != 0)
+		printf("nfs_inactive: pushing active fileid %d fsid 0x%x\n",
+			np->n_vattr.va_fileid, np->n_vattr.va_fsid);
 	nfs_lock(vp);
 	sp = np->n_sillyrename;
 	np->n_sillyrename = (struct sillyrename *)0;
@@ -230,7 +207,8 @@ nfs_reclaim(vp)
 	register struct nfsnode *np = VTONFS(vp);
 
 	if (vp->v_count != 0)
-		panic("nfs_reclaim: active inode");
+		printf("nfs_reclaim: pushing active fileid %d fsid 0x%x\n",
+			np->n_vattr.va_fileid, np->n_vattr.va_fsid);
 	/*
 	 * Remove the nfsnode from its hash chain.
 	 */
@@ -245,7 +223,6 @@ nfs_reclaim(vp)
 		np->n_flag |= NLOCKED;
 		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
 	}
-	vp->v_type = VNON;
 	return (0);
 }
 
@@ -258,22 +235,20 @@ nfs_reclaim(vp)
 nfs_nflush(mntp)
 	struct mount *mntp;
 {
-	register struct vnode *vp;
+	register struct vnode *nvp, *vp;
 	int busy = 0;
 
-	for (vp = mntp->m_mounth; vp; vp = vp->v_mountf) {
+	for (vp = mntp->m_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
 		if (vp->v_count) {
 			busy++;
 			continue;
 		}
 		/*
-		 * As v_count == 0, the nfsnode was on the free list already,
-		 * so it will fall off the bottom eventually.
-		 * We could perhaps move it to the head of the free list,
-		 * but as umounts are done so infrequently, we would gain
-		 * very little, while making the code bigger.
+		 * With v_count == 0, all we need to do is clear out the
+		 * vnode data structures and we are done.
 		 */
-		nfs_reclaim(vp);
+		vgone(vp);
 	}
 	if (busy)
 		return (EBUSY);
