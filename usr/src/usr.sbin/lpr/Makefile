@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 # Ownerships {see note at the top of lpd.c}
 # ROOT		a user that can access any and all files
@@ -22,7 +22,7 @@
 # SPGRP		the group id of the spooling programs
 #
 CFLAGS=	-O
-SPLDIR=	/var/spool/lpd
+SPLDIR=	/var/spool/output/lpd
 DAEMON=	daemon
 SPGRP=	daemon
 LIBC=	/lib/libc.a
