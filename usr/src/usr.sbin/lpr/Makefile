@@ -1,4 +1,4 @@
-#	Makefile	4.13	83/08/18
+#	Makefile	4.14	83/10/14
 #
 # makefile for line printer spooling system
 #
@@ -19,7 +19,7 @@ DESTDIR=
 SRCS=	lpd.c lpr.c lpq.c lprm.c pac.c lpd.c cmds.c cmdtab.c \
 	printjob.c recvjob.c displayq.c rmjob.c \
 	startdaemon.c common.c printcap.c lpdchar.c
-ALL=	lpd lpr lpq lprm pac lpc
+ALL=	lpd lpr lpq lprm lpc lptest pac
 
 all:	${ALL} FILTERS
 
@@ -40,6 +40,9 @@ lprm:	lprm.o rmjob.o startdaemon.o common.o printcap.o
 lpc:	lpc.o cmds.o cmdtab.o startdaemon.o common.o printcap.o
 	${CC} -o lpc lpc.o cmds.o cmdtab.o startdaemon.o common.o printcap.o
 
+lptest:	lptest.c
+	${CC} ${CFLAGS} -o lptest lptest.c
+
 pac:	pac.o printcap.o
 	${CC} -o pac pac.o printcap.o
 
@@ -58,6 +61,7 @@ install: all
 	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
 	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
 	install -s -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
+	install -s lptest ${DESTDIR}/${BINDIR}/lptest
 	install -s pac ${DESTDIR}/etc/pac
 	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
