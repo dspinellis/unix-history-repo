@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.7 (Berkeley) %G%
+ *	@(#)genassym.c	7.8 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -83,13 +83,16 @@ main()
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
 	printf("#define\tMCLBYTES %d\n", MCLBYTES);
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
+	printf("#define\tNKMEMCLUSTERS %d\n", NKMEMCLUSTERS);
+#ifdef SYSVSHM
+	printf("#define\tSHMMAXPGS %d\n", SHMMAXPGS);
+#endif
 	printf("#define\tU_PROCP %d\n", &up->u_procp);
 	printf("#define\tU_RU %d\n", &up->u_ru);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tSZ_CMAP %d\n", sizeof(struct cmap));
 	printf("#else\n");
 	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
-	printf("asm(\".set\tU_QSAVE,%d\");\n", &up->u_qsave);
 	printf("#endif\n");
 	exit(0);
 }
