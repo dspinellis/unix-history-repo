@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.21 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -707,6 +707,25 @@ void vgone(vp)
 		vfreeh = vp;
 	}
 	vp->v_type = VBAD;
+}
+
+/*
+ * Lookup a vnode by device number.
+ */
+vfinddev(dev, type, vpp)
+	dev_t dev;
+	enum vtype type;
+	struct vnode **vpp;
+{
+	register struct vnode *vp;
+
+	for (vp = speclisth[SPECHASH(dev)]; vp; vp = vp->v_specnext) {
+		if (dev != vp->v_rdev || type != vp->v_type)
+			continue;
+		*vpp = vp;
+		return (0);
+	}
+	return (1);
 }
 
 /*
