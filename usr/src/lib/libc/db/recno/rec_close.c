@@ -6,15 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/uio.h>
-#include <errno.h>
+
 #include <db.h>
-#include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
+
 #include "recno.h"
 
 /*
@@ -38,7 +40,8 @@ __rec_close(dbp)
 
 	/* Committed to closing. */
 	t = dbp->internal;
-	rval = t->bt_rfp == NULL ? close(t->bt_rfd) : fclose(t->bt_rfp);
+	rval = ISSET(t, BTF_RINMEM) ? 0 :
+	    t->bt_rfp == NULL ? close(t->bt_rfd) : fclose(t->bt_rfp);
 
 	if (__bt_close(dbp) == RET_ERROR)
 		return (RET_ERROR);
@@ -68,8 +71,7 @@ __rec_sync(dbp)
 
 	t = dbp->internal;
 
-	if (ISSET(t, BTF_INMEM) || ISSET(t, BTF_RDONLY) ||
-	    NOTSET(t, BTF_MODIFIED))
+	if (ISSET(t, BTF_RDONLY | BTF_RINMEM) || !ISSET(t, BTF_MODIFIED))
 		return (RET_SUCCESS);
 
 	/* Read any remaining records into the tree. */
@@ -102,6 +104,6 @@ __rec_sync(dbp)
 		return (RET_ERROR);
 	if (ftruncate(t->bt_rfd, off))
 		return (RET_ERROR);
-	UNSET(t, BTF_MODIFIED);
+	CLR(t, BTF_MODIFIED);
 	return (RET_SUCCESS);
 }
