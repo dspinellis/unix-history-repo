@@ -1,10 +1,10 @@
-static	char sccsid[] = "@(#)pc.c 3.1 %G%";
+static	char sccsid[] = "@(#)pc.c 3.2 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
 
 /*
- * pc - front end for pascal compiler.
+ * Pc - front end for Pascal compiler.
  */
 char	*pc0 = "/usr/new/pc0";
 char	*pc1 = "/usr/new/pc1";
@@ -14,6 +14,8 @@ char	*pc3 = "/usr/new/pc3";
 char	*ld = "/usr/new/ld";
 char	*as = "/usr/new/as";
 char	*lpc = "-lpc";
+char	*crt0 = "/usr/new/crt0.o";
+char	*mcrt0 = "/usr/new/mcrt0.o";
 
 char	*mktemp();
 char	*tname[2];
@@ -21,7 +23,7 @@ char	*tfile[2];
 
 char	*setsuf(), *savestr();
 
-int	Sflag, Oflag, cflag, gflag;
+int	Sflag, Oflag, cflag, gflag, pflag;
 int	debug;
 
 #define	NARGS	512
@@ -150,8 +152,9 @@ main(argc, argv)
 			fprintf(stderr, "pc: -t is default; -C for checking\n");
 			continue;
 		case 'p':
-			fprintf(stderr, "pc: -p (profiling) not implemented\n");
-			exit(1);
+			crt0 = mcrt0;
+			pflag++;
+			continue;
 		}
 	}
 	if (gflag && Oflag) {
@@ -170,18 +173,21 @@ main(argc, argv)
 		tfile[0] = tname[0];
 		pc0args[2] = tfile[0];
 		pc0argx = savargx;
+		if (pflag)
+			pc0args[pc0argx++] = "-p";
 		pc0args[pc0argx++] = argp;
 		pc0args[pc0argx] = 0;
 		if (dosys(pc0, pc0args, 0, 0))
 			continue;
 		pc1args[1] = tfile[0];
-		if (Sflag && !Oflag)
-			tfile[1] = setsuf(argp, 's');
-		else
-			tfile[1] = tname[1];
+		tfile[1] = tname[1];
 		if (dosys(pc1, pc1args, 0, tfile[1]))
 			continue;
 		unlink(tfile[0]);
+		if (Sflag && !Oflag)
+			tfile[0] = setsuf(argp, 's');
+		else
+			tfile[0] = tname[0];
 		if (dosys(pc2, pc2args, tfile[1], tfile[0]))
 			continue;
 		unlink(tfile[1]);
@@ -190,15 +196,17 @@ main(argc, argv)
 			if (Sflag)
 				tfile[1] = setsuf(argp, 's');
 			else
-				tfile[1] = tname[0];
+				tfile[1] = tname[1];
 			if (dosys(c2, c2args, tfile[0], tfile[1]))
 				continue;
 			unlink(tfile[0]);
 			tfile[0] = tfile[1];
 			tfile[1] = 0;
 		}
-		if (Sflag)
+		if (Sflag) {
+			tfile[0] = 0;
 			continue;
+		}
 		asargs[1] = tfile[0];
 		asargs[2] = "-o";
 		tfile[1] = setsuf(argp, 'o');
@@ -239,7 +247,7 @@ main(argc, argv)
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/usr/new/crt0.o", 0, }; */
 	ldargs[0] = "ld";
 	ldargs[1] = "-X";
-	ldargs[2] = "/usr/new/crt0.o";
+	ldargs[2] = crt0;
 	for (i = 0; i < argc; i++) {
 		argp = argv[i];
 		if (argp[0] != '-') {
@@ -403,20 +411,18 @@ getsuf(cp)
 	return (*cp);
 }
 
-char	sufbuf[BUFSIZ];
-
 char *
-setsuf(cp, c)
-	char *cp;
+setsuf(as, ch)
+	char *as;
 {
-	register char *dp;
+	register char *s, *s1;
 
-	for (dp = sufbuf; *cp; *dp++ = *cp++)
-		continue;
-	*dp = 0;
-	if (dp-sufbuf > 2 && dp[-2] == '.')
-		dp[-1] = c;
-	return (sufbuf);
+	s = s1 = savestr(as);
+	while (*s)
+		if (*s++ == '/')
+			s1 = s;
+	s[-1] = ch;
+	return (s1);
 }
 
 #define	NSAVETAB	512
