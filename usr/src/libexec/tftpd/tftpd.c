@@ -1,4 +1,4 @@
-/*	tftpd.c	4.1	82/08/16	*/
+/*	tftpd.c	4.2	82/08/19	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -14,8 +14,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include "tftp.h"
-
-#define	DEBUG		1
 
 extern	int errno;
 struct	sockaddr_in sin = { AF_INET, IPPORT_TFTP };
