@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_alloc.c	7.11 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -325,6 +325,7 @@ ialloc(pip, ipref, mode, ipp)
 		    fs->fs_fsmnt, ino, ip->i_blocks);
 		ip->i_blocks = 0;
 	}
+	ip->i_flags = 0;
 	/*
 	 * Set up a new generation number for this inode.
 	 */
