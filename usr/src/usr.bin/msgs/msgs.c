@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	4.14 (Berkeley) %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -564,8 +564,10 @@ int length;
 
 	while (fgets(inbuf, sizeof inbuf, newmsg)) {
 		fputs(inbuf, outf);
-		if (ferror(outf))
+		if (ferror(outf)) {
+			clearerr(outf);
 			break;
+		}
 	}
 
 	if (outf != stdout) {
