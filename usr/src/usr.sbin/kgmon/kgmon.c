@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.5 83/01/15";
+static char sccsid[] = "@(#)kgmon.c	4.6 83/01/16";
 #endif
 
 #include <sys/param.h>
@@ -51,32 +51,36 @@ struct	pte *Sysmap;
 char	*system = "/vmunix";
 char	*kmemf = "/dev/kmem";
 int	kmem;
-int	bflag, hflag, kflag, rflag, sflag;
+int	bflag, hflag, kflag, rflag, pflag;
 int	debug = 0;
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int mode, disp, ronly = 0;
+	int mode, disp, openmode = 0;
 
 	argc--, argv++;
 	while (argv[0][0] == '-') {
 		switch (argv[0][1]) {
 		case 'b':
 			bflag++;
+			openmode = 2;
 			break;
 		case 'h':
 			hflag++;
+			openmode = 2;
 			break;
 		case 'r':
 			rflag++;
+			openmode = 2;
 			break;
-		case 's':
-			sflag++;
+		case 'p':
+			pflag++;
+			openmode = 2;
 			break;
 		default:
-			printf("Usage: kgmon [ -b -h -r -s system memory ]\n");
+			printf("Usage: kgmon [ -b -h -r -p system memory ]\n");
 			exit(1);
 		}
 		argc--, argv++;
@@ -94,15 +98,15 @@ main(argc, argv)
 		kmemf = *argv;
 		kflag++;
 	}
-	kmem = open(kmemf, 2);
+	kmem = open(kmemf, openmode);
 	if (kmem < 0) {
-		kmem = open(kmemf, 0);
+		openmode = 0;
+		kmem = open(kmemf, openmode);
 		if (kmem < 0) {
 			fprintf(stderr, "cannot open ");
 			perror(kmemf);
 			exit(3);
 		}
-		ronly++;
 		fprintf(stderr, "%s opened read-only\n", kmemf);
 		if (rflag)
 			fprintf(stderr, "-r supressed\n");
@@ -134,8 +138,8 @@ main(argc, argv)
 		disp = PROFILING_ON;
 	else
 		disp = mode;
-	if (!sflag) {
-		if (ronly && mode == PROFILING_ON)
+	if (pflag) {
+		if (openmode == 0 && mode == PROFILING_ON)
 			fprintf(stderr, "data may be inconsistent\n");
 		dumpstate();
 	}
