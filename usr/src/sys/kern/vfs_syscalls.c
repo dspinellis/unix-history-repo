@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.83 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.84 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -563,10 +563,13 @@ open(p, uap, retval)
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
 	if (error = vn_open(&nd, fmode, cmode)) {
+		int dfd = p->p_dupfd;
+		p->p_dupfd = 0;
 		ffree(fp);
-		if (error == ENODEV &&		/* XXX from fdopen */
-		    p->p_dupfd >= 0 &&
-		    (error = dupfdopen(fdp, indx, p->p_dupfd, fmode)) == 0) {
+		if ((error == ENODEV || error == ENXIO) && /* XXX from fdopen */
+		    dfd >= 0 &&
+		    (error = dupfdopen(fdp, indx, p->p_dupfd,
+					fmode, error)) == 0) {
 			*retval = indx;
 			return (0);
 		}
@@ -575,6 +578,7 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
+	p->p_dupfd = 0;
 	vp = nd.ni_vp;
 	fp->f_flag = fmode & FMASK;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
@@ -774,8 +778,6 @@ link(p, uap, retval)
 		goto out;
 	}
 	xp = nd.ni_dvp;
-	if (vp->v_mount != xp->v_mount)
-		error = EXDEV;
 out:
 	if (!error) {
 		LEASE_CHECK(xp, p, p->p_ucred, LEASE_WRITE);
@@ -1666,14 +1668,6 @@ rename(p, uap, retval)
 			error = EISDIR;
 			goto out;
 		}
-		if (fvp->v_mount != tvp->v_mount) {
-			error = EXDEV;
-			goto out;
-		}
-	}
-	if (fvp->v_mount != tdvp->v_mount) {
-		error = EXDEV;
-		goto out;
 	}
 	if (fvp == tdvp)
 		error = EINVAL;
