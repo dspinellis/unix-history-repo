@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.2 (Berkeley) %G%";
 #endif
 
 # include "mfile2"
@@ -304,7 +304,7 @@ zzzcode( p, c ) register NODE *p; {
 		return;
 
 	case 'F':	/* masked constant for fields */
-		printf("$%d", (p->in.right->tn.lval&((1<<fldsz)-1))<<fldshf);
+		printf(ACONFMT, (p->in.right->tn.lval&((1<<fldsz)-1))<<fldshf);
 		return;
 
 	case 'H':	/* opcode for shift */
@@ -403,38 +403,27 @@ zzzcode( p, c ) register NODE *p; {
 
 			if( size <= 0 || size > 65535 )
 				cerror("structure size <0=0 or >65535");
-
-			switch(size) {
-				case 1:
-					printf("	movb	");
-					break;
-				case 2:
-					printf("	movw	");
-					break;
-				case 4:
-					printf("	movl	");
-					break;
-				case 8:
-					printf("	movl	");
-					upput(r);
-					printf(",");
-					upput(l);
-					printf("\n	movl	");
-					break;
-				default:
-					printf("	movab	");
-					adrput(l);
-					printf(",r1\n	movab	");
-					adrput(r);
-					printf(",r0\n	movl	$%d,r2\n	movblk\n", size);
-					rname(2);
-					goto endstasg;
+			/*
+			 * Can't optimize with movw's or movl's here as
+			 * we don't know the alignment properties of
+			 * either source or destination (governed, potentially
+			 * by alignment of enclosing structure/union).
+			 * (PERHAPS WE COULD SIMULATE dclstruct?)
+			 */
+			if (size != 1) {
+				printf("\tmovab\t");
+				adrput(l);
+				printf(",r1\n\tmovab\t");
+				adrput(r);
+				printf(",r0\n\tmovl\t$%d,r2\n\tmovblk\n", size);
+				rname(2);
+			} else {
+				printf("\tmovb\t");
+				adrput(r);
+				printf(",");
+				adrput(l);
+				printf("\n");
 			}
-			adrput(r);
-			printf(",");
-			adrput(l);
-			printf("\n");
-		endstasg:
 			if( r->in.op == NAME ) r->in.op = ICON;
 			else if( r->in.op == OREG ) r->in.op = REG;
 
@@ -591,8 +580,7 @@ special( p, shape ) register NODE *p; {
 }
 
 adrcon( val ) CONSZ val; {
-	printf( "$" );
-	printf( CONFMT, val );
+	printf(ACONFMT, val);
 	}
 
 conput( p ) register NODE *p; {
