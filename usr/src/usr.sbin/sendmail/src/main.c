@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -213,7 +213,11 @@ main(argc, argv, envp)
 	**	to the run that froze the configuration.
 	*/
 	nothaw = FALSE;
+#ifdef __alpha
+#define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvx"
+#else
 #define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:r:sTtv"
+#endif
 	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
 		switch (j)
@@ -515,6 +519,11 @@ main(argc, argv, envp)
 			OpMode = MD_INITALIAS;
 			break;
 # endif /* DBM */
+
+# ifdef __alpha
+		  case 'x':	/* random flag that DEC OSF/1 mailx passes */
+			break;
+# endif
 
 		  default:
 			ExitStat = EX_USAGE;
@@ -1096,7 +1105,7 @@ union frz
 	} frzinfo;
 };
 
-#ifdef __hpux
+#if defined(__hpux) || defined(__alpha)
 #define BRK_TYPE        int
 #define SBRK_TYPE       void *
 #else
@@ -1217,7 +1226,7 @@ thaw(freezefile, binfile)
 	}
 
 	/* arrange to have enough space */
-	if (brk(fhdr.frzinfo.frzbrk) == (caddr_t) -1)
+	if (brk(fhdr.frzinfo.frzbrk) == (BRK_TYPE) -1)
 	{
 		syserr("Cannot break to %x", fhdr.frzinfo.frzbrk);
 		(void) close(f);
