@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1531,9 +1531,8 @@ char	def;
 			prs("Ctrl-");
 			n ^= 0100;
 		}
-		p = "x\n";
-		p[0] = n;
-		prs(p);
+		prc(n);
+		prc('\n');
 	}
 	flush();
 }
