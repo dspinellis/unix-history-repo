@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.13	(Berkeley)	%G%"
+/* @(#)dterm.c	1.14	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -31,7 +31,7 @@
  *		for extra-wide printouts on the printer.
  *
  *	-fxxx	get special character definition file "xxx".  Default is
- *		/usr/lib/font/devter/specfile.
+ *		FONTDIR/devter/specfile.
  */
 
 
@@ -44,7 +44,10 @@
 #define	PGWIDTH		266		/* WAY too big - for good measure */
 #define	PGHEIGHT	220
 #define LINELEN		78
-#define SPECFILE	"/usr/local/lib/font/devter/specfile"
+#define SPECFILE	"devter/specfile"
+#ifndef FONTDIR
+#define FONTDIR		"/usr/lib/font"
+#endif
 
 #define hgoto(n)	hpos = n
 #define vgoto(n)	vpos = n
@@ -58,10 +61,10 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.13	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.14	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
-char	*specfile = SPECFILE;	/* place to look up special characters */
+char	specfile[100] = FONTDIR;/* place to look up special characters */
 char	*malloc();
 char	*operand();
 
@@ -101,10 +104,12 @@ main(argc, argv)
 int argc;
 char **argv;
 {
+	strcat(specfile, "/");
+	strcat(specfile, SPECFILE);
 	while (--argc > 0 && **++argv == '-') {
 	    switch ((*argv)[1]) {
 		case 'f':		/* special character filepath */
-			specfile = operand(&argc, &argv);
+			strncpy(specfile, operand(&argc, &argv), 100);
 			break;
 		case 'l':		/* output line length */
 			linelen = atoi(operand(&argc, &argv)) - 1;
