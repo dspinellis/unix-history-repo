@@ -1,9 +1,9 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)environ.7	6.5 (Berkeley) %G%
+.\"	@(#)environ.7	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ENVIRON 7
@@ -21,19 +21,19 @@ is made available by
 when a process begins.  By convention these strings have the form
 .Dq Ar name=value .
 The following names are used by various commands:
-.Tw Fl
-.Tp Ev EXINIT
+.Bl -tag -width Fl
+.It Ev EXINIT
 A startup list of commands read by
 .Xr ex  1  ,
 .Xr edit  1 ,
 and
 .Xr vi  1  .
-.Tp Ev HOME
+.It Ev HOME
 A user's login directory, set by
 .Xr login  1
 from the password file
 .Xr passwd  5  .
-.Tp Ev PATH
+.It Ev PATH
 The sequence of directories, separated by colons, searched by
 .Xr csh  1  ,
 .Xr sh  1 ,
@@ -42,15 +42,15 @@ The sequence of directories, separated by colons, searched by
 etc, when looking for an executable file.
 PATH is set to ``:/usr/ucb:/bin:/usr/bin'' initially by
 .Xr login  1  .
-.Tp Ev PRINTER
+.It Ev PRINTER
 The name of the default printer to be used by
 .Xr lpr  1  ,
 .Xr lpq  1 ,
 and
 .Xr lprm  1  .
-.Tp Ev SHELL
+.It Ev SHELL
 The full pathname of the user's login shell.
-.Tp Ev TERM
+.It Ev TERM
 The kind of terminal for which output is to be prepared.
 This information is used by commands, such as
 .Xr nroff  1
@@ -60,7 +60,7 @@ which may exploit special terminal capabilities.  See
 .Pa /usr/share/misc/termcap
 .Pq Xr tmercap 5
 for a list of terminal types.
-.Tp Ev TERMCAP
+.It Ev TERMCAP
 The string describing the terminal in TERM, or, if
 it begins with a '/', the name of the termcap file.
 See
@@ -69,7 +69,7 @@ below,
 .Xr termcap  5  ,
 and
 .Xr termcap  .
-.Tp Ev TERMPATH
+.It Ev TERMPATH
 A sequence of pathnames of termcap files, separated by colons or spaces,
 which are searched for terminal descriptions in the order listed.  Having
 no
@@ -82,9 +82,9 @@ of
 is ignored if
 .Ev TERMCAP
 contains a full pathname.
-.Tp Ev USER
+.It Ev USER
 The login name of the user.
-.Tp
+.El
 .Pp
 Further names may be placed in the environment by the
 .Xr export
@@ -118,5 +118,7 @@ unless you know what you are doing.
 .Xr termcap 3 ,
 .Xr termcap 5
 .Sh HISTORY
-.Nm Environ
-appeared in 4.2 BSD.
+The
+.Nm environ
+manual page appeared in
+.Bx 4.2 .
