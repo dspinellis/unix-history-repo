@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)kill.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)kill.c	4.3 (Berkeley) %G%";
 /*
  * kill - send signal to process
  */
