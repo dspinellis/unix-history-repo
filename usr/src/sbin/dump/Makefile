@@ -17,7 +17,7 @@
 #	TDEBUG			trace out the process forking
 #
 PSRCS = \
-	/usr/include/dumprestor.h dump.h \
+	/usr/include/protocols/dumprestore.h dump.h \
 	dumpmain.c dumptraverse.c dumptape.c dumpoptr.c dumpitime.c unctime.c
 
 SRCS =  \
@@ -67,4 +67,4 @@ print:
 
 $(OBJS): dump.h /usr/include/sys/param.h
 $(OBJS): /usr/include/sys/fs.h /usr/include/sys/inode.h
-$(OBJS): /usr/include/dumprestor.h /usr/include/sys/stat.h
+$(OBJS): /usr/include/protocols/dumprestore.h /usr/include/sys/stat.h
