@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -117,11 +117,18 @@ cmp: cmp.c
 cmp: /usr/include/stdio.h
 cmp: /usr/include/ctype.h
 date: date.c
+date: /usr/include/sys/types.h
 date: /usr/include/stdio.h
 date: /usr/include/sys/time.h
+date: /usr/include/sys/socket.h
+date: /usr/include/netinet/in.h
+date: /usr/include/netdb.h
+date: /usr/include/protocols/timed.h
+date: /usr/include/sys/file.h
+date: /usr/include/errno.h
+date: /usr/include/syslog.h
 date: /usr/include/utmp.h
 dd: dd.c
-dd: /usr/include/sys/file.h
 dd: /usr/include/stdio.h
 dd: /usr/include/signal.h
 du: du.c
@@ -370,6 +377,19 @@ passwd: /usr/include/ndbm.h
 passwd: /usr/include/errno.h
 passwd: /usr/include/strings.h
 passwd: /usr/include/ctype.h
+rcp: rcp.c
+rcp: /usr/include/sys/param.h
+rcp: /usr/include/sys/stat.h
+rcp: /usr/include/sys/time.h
+rcp: /usr/include/sys/ioctl.h
+rcp: /usr/include/netinet/in.h
+rcp: /usr/include/stdio.h
+rcp: /usr/include/signal.h
+rcp: /usr/include/pwd.h
+rcp: /usr/include/ctype.h
+rcp: /usr/include/netdb.h
+rcp: /usr/include/errno.h
+rcp: /usr/include/sys/dir.h
 su: su.c
 su: /usr/include/stdio.h
 su: /usr/include/pwd.h
