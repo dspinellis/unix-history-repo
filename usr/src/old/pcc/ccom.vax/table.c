@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)table.c	1.5 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)table.c	1.6 (Berkeley) %G%";
+#endif lint
+
 # include "mfile2"
 
 # define WPTR TPTRTO|TINT|TLONG|TFLOAT|TDOUBLE|TPOINT|TUNSIGNED|TULONG
@@ -34,7 +37,7 @@ PCONV,	INAREG|INTAREG,
 		NAREG|NASL,	RLEFT,
 		"",
 
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 SCONV,	INTAREG|FORCC,
 	SAREG|AWD,	TDOUBLE,
 	SANY,	TFLOAT,
@@ -94,7 +97,7 @@ GOTO,	FOREFF,
 		"	jbr	CL\n",
 
 GOTO,	FOREFF,
-	AWD,	TANY,
+	SNAME|SOREG,	TANY,
 	SANY,	TANY,
 		0,	RNOP,
 		"	jmp	*AL\n",
@@ -213,7 +216,7 @@ CCODES,	INAREG|INTAREG,
 		NAREG,	RESC1,
 		"	movl	$1,A1\nZN",
 
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 UNARY CALL,	INTAREG,
 	SCON,	TANY,
 	SANY,	TFLOAT,
@@ -418,8 +421,8 @@ REG,	INTEMP,
 		NTEMP,	RESC1,
 		"	movZF	AR,A1\n",
 
-#ifdef FORT
- REG,	FORARG,
+#if defined(FORT) || defined(SPRECC)
+REG,	FORARG,
 	SANY,	TANY,
 	SAREG,	TFLOAT,
 		0,	RNULL,
@@ -480,7 +483,7 @@ OPLTYPE,	FORARG,
 		0,	RNULL,
 		"	cvtfd	AR,-(sp)\n",
 
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 UNARY MINUS,	INTAREG|FORCC,
 	SAREG|AWD,	TINT|TUNSIGNED|TLONG|TULONG|TFLOAT|TDOUBLE,
 	SANY,	TANY,
@@ -728,7 +731,7 @@ ASG OPFLOAT,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TFLOAT,
 	SAREG|AWD,	TFLOAT,
 		0,	RLEFT|RESCC,
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 		"	OF2	AR,TAL\n",
 #else
 		"	OF2	AR,AL\n",
@@ -770,7 +773,7 @@ OPFLOAT,	INAREG|INTAREG|FORCC,
 		NAREG|NASR,	RESC1|RESCC,
 		"	cvtfd	AR,A1\n	OD3	A1,AL,A1\n",
 
-#ifdef FORT
+#if defined(FORT) || defined(SPRECC)
 OPFLOAT,	INAREG|INTAREG|FORCC,
 	STAREG,		TFLOAT,
 	SAREG|AWD,	TFLOAT,

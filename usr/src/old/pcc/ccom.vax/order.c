@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)order.c	1.4 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)order.c	1.5 (Berkeley) %G%";
+#endif lint
+
 # include "mfile2"
 
 int maxargs = { -1 };
@@ -20,9 +23,9 @@ deltest( p ) register NODE *p; {
 	}
 
 autoincr( p ) NODE *p; {
-	register NODE *q = p->in.left, *r;
+	register NODE *q = p->in.left;
 
-	if( q->in.op == INCR && (r=q->in.left)->in.op == REG &&
+	if( q->in.op == INCR && q->in.left->in.op == REG &&
 	    ISPTR(q->in.type) && p->in.type == DECREF(q->in.type) &&
 	    tlen(p) == q->in.right->tn.lval ) return(1);
 
@@ -58,7 +61,7 @@ mkadrs(p) register NODE *p; {
 		}
 	}
 
-notoff( t, r, off, cp) CONSZ off; char *cp; {
+notoff( t, r, off, cp) TWORD t; CONSZ off; char *cp; {
 	/* is it legal to make an OREG or NAME entry which has an
 	/* offset of off, (from a register of r), if the
 	/* resulting thing had type t */
@@ -74,7 +77,9 @@ sucomp( p ) register NODE *p; {
 	/* set the su field in the node to the sethi-ullman
 	   number, or local equivalent */
 
-	register o, ty, sul, sur, r;
+	register int o, ty, sul, sur, r;
+	int szr;
+	NODE *temp;
 
 	o = p->in.op;
 	ty = optype( o );
@@ -94,7 +99,14 @@ sucomp( p ) register NODE *p; {
 			}
 		if( p->in.su == szty(p->in.type) &&
 		   (p->in.op!=REG || !istreg(p->tn.rval)) &&
-		   (p->in.type==INT || p->in.type==UNSIGNED || p->in.type==DOUBLE) )
+		   (p->in.type==INT ||
+		    p->in.type==UNSIGNED ||
+#if defined(FORT) || defined(SPRECC)
+		    p->in.type==FLOAT ||
+#endif
+		    p->in.type==DOUBLE ||
+		    ISPTR(p->in.type) ||
+		    ISARY(p->in.type)) )
 			p->in.su = 0;
 		return;
 		}
@@ -117,6 +129,12 @@ sucomp( p ) register NODE *p; {
 
 	sul = p->in.left->in.su;
 	sur = p->in.right->in.su;
+	szr = szty( p->in.right->in.type );
+	if( szty( p->in.type ) > szr && szr >= 1 ) {
+		/* implicit conversion in rhs */
+		szr = szty( p->in.type );
+		sur = max( szr, sur );
+	}
 
 	if( o == ASSIGN ){
 		/* computed by doing right, then left (if not in mem), then doing it */
@@ -154,21 +172,29 @@ sucomp( p ) register NODE *p; {
 		p->in.su = max( max(sul,sur), 1);
 		return;
 
+	case MUL:
 	case PLUS:
 	case OR:
 	case ER:
 		/* commutative ops; put harder on left */
 		if( p->in.right->in.su > p->in.left->in.su && !istnode(p->in.left) ){
-			register NODE *temp;
 			temp = p->in.left;
 			p->in.left = p->in.right;
 			p->in.right = temp;
+			sul = p->in.left->in.su;
+			sur = p->in.right->in.su;
+			szr = szty( p->in.right->in.type );
+			if( szty( p->in.type ) > szr && szr >= 1 ) {
+				/* implicit conversion in rhs */
+				szr = szty( p->in.type );
+				sur = max( szr, sur );
+				}
 			}
 		break;
 		}
 
 	/* binary op, computed by left, then right, then do op */
-	p->in.su = max(sul,szty(p->in.right->in.type)+sur);
+	p->in.su = max(sul,szr+sur);
 /*
 	if( o==MUL||o==DIV||o==MOD) p->in.su = max(p->in.su,fregs);
  */
@@ -199,29 +225,6 @@ rallo( p, down ) NODE *p; {
 		down1 = NOPREF;
 		down2 = down;
 		break;
-
-/*
-	case MUL:
-	case DIV:
-	case MOD:
-		down1 = R3|MUSTDO;
-		down2 = R5|MUSTDO;
-		break;
-
-	case ASG MUL:
-	case ASG DIV:
-	case ASG MOD:
-		p->in.left->in.rall = down1 = R3|MUSTDO;
-		if( p->in.left->in.op == UNARY MUL ){
-			rallo( p->in.left->in.left, R4|MUSTDO );
-			}
-		else if( p->in.left->in.op == FLD  && p->in.left->in.left->in.op == UNARY MUL ){
-			rallo( p->in.left->in.left->in.left, R4|MUSTDO );
-			}
-		else rallo( p->in.left, R3|MUSTDO );
-		rallo( p->in.right, R5|MUSTDO );
-		return;
- */
 
 	case CALL:
 	case STASG:
@@ -395,7 +398,10 @@ setasop( p ) register NODE *p; {
 		return(1);
 		}
 	if( rt == CHAR || rt == SHORT || rt == UCHAR || rt == USHORT ||
-	    rt == FLOAT || ( ro != REG && ro != ICON && ro != NAME && ro != OREG ) ){
+#ifndef SPRECC
+	    rt == FLOAT ||
+#endif
+	    ( ro != REG && ro != ICON && ro != NAME && ro != OREG ) ){
 		order( p->in.right, INAREG|INBREG );
 		return(1);
 		}
@@ -427,9 +433,10 @@ setasop( p ) register NODE *p; {
 
 		}
 	cerror( "illegal setasop" );
+	/*NOTREACHED*/
 	}
 
-int crslab = 9999;  /* Honeywell */
+int crslab = 99999;  /* VAX */
 
 getlab(){
 	return( crslab-- );
@@ -443,7 +450,6 @@ genargs( p ) register NODE *p; {
 	register NODE *pasg;
 	register align;
 	register size;
-	register TWORD type;
 
 	/* generate code for the arguments */
 
@@ -513,5 +519,3 @@ argsize( p ) register NODE *p; {
 		return( t+4 );
 		}
 	}
-
-
