@@ -1,5 +1,5 @@
 /*
-char id_backspace[] = "@(#)backspace.c	1.3";
+char id_backspace[] = "@(#)backspace.c	1.4";
  *
  * Backspace records
  */
@@ -26,6 +26,7 @@ f_back(a) alist *a;
 	lfname = b->ufnm;
 	if(b->uend)
 	{	b->uend = NO;
+		clearerr(b->ufd);
 		return(OK);
 	}
 	if((x=ftell(b->ufd))==0) return(OK);
