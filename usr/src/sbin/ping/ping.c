@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -320,11 +320,7 @@ main(argc, argv)
 	while (preload--)		/* fire off them quickies */
 		pinger();
 
-	if (options & F_FLOOD) {
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
-		fdmask = 1 << s;
-	} else
+	if ((options & F_FLOOD) == 0)
 		catcher();		/* start things going */
 
 	for (;;) {
@@ -334,8 +330,11 @@ main(argc, argv)
 
 		if (options & F_FLOOD) {
 			pinger();
-			if (!select(32, (fd_set *)&fdmask, (fd_set *)NULL,
-			    (fd_set *)NULL, &timeout))
+			timeout.tv_sec = 0;
+			timeout.tv_usec = 10000;
+			fdmask = 1 << s;
+			if (select(s + 1, (fd_set *)&fdmask, (fd_set *)NULL,
+			    (fd_set *)NULL, &timeout) < 1)
 				continue;
 		}
 		fromlen = sizeof(from);
