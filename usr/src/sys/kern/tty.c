@@ -1,4 +1,4 @@
-/*	tty.c	6.1	83/07/29	*/
+/*	tty.c	6.2	83/09/09	*/
 
 #include "../machine/reg.h"
 
@@ -1050,8 +1050,8 @@ loop:
 			goto loop;
 		}
 		splx(s);
-		while (!error && tp->t_rawq.c_cc && uio->uio_iovcnt)
-			error = passuc(getc(&tp->t_rawq), uio);
+ 		while (!error && tp->t_rawq.c_cc && uio->uio_resid)
+ 			error = ureadc(getc(&tp->t_rawq), uio);
 		goto checktandem;
 	}
 
@@ -1120,10 +1120,10 @@ loop:
 		/*
 		 * Give user character.
 		 */
-		error = passuc(c & 0177, uio);
+ 		error = ureadc(c & 0177, uio);
 		if (error)
 			break;
-		if (uio->uio_iovcnt == 0)
+ 		if (uio->uio_resid == 0)
 			break;
 		/*
 		 * In cooked mode check for a "break character"
