@@ -1,4 +1,4 @@
-/*	drtest.c	4.11	83/03/02	*/
+/*	drtest.c	4.12	83/03/20	*/
 
 /*
  * Standalone program to test a disk and driver
@@ -29,10 +29,10 @@ again:
 	if (debug < 0)
 		debug = 0;
 	fd = getdevice();
-	ioctl(fd, SAIODEVDATA, &st);
+	ioctl(fd, SAIODEVDATA, (char *)&st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 		st.ncyl, st.ntrak, st.nsect);
-	ioctl(fd, SAIODEBUG, &debug);
+	ioctl(fd, SAIODEBUG, (char *)debug);
 	tracksize = st.nsect * SECTSIZ;
 	bp = malloc(tracksize);
 	printf("Reading in %d byte records\n", tracksize);
