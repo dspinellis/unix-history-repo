@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.4 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -47,6 +47,8 @@ struct	pt_ioctl {
 } pt_ioctl[NPTY];
 int	npty = NPTY;		/* for pstat -t */
 
+int ptydebug = 0;
+
 #define	PF_RCOLL	0x0001
 #define	PF_WCOLL	0x0002
 #define	PF_NBIO		0x0004
@@ -88,9 +90,11 @@ ptsopen(dev, flag)
 		tp->t_state |= TS_CARR_ON;
 	while ((tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
+		if (flag&FNDELAY)
+			break;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
-	error = (*linesw[tp->t_line].l_open)(dev, tp);
+	error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
 	ptcwakeup(tp, FREAD|FWRITE);
 	return (error);
 }
@@ -107,7 +111,7 @@ ptsclose(dev)
 	return (0);
 }
 
-ptsread(dev, uio)
+ptsread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -128,7 +132,7 @@ again:
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
-			if (tp->t_state & TS_NBIO)
+			if (flag & FNDELAY)
 				return (EWOULDBLOCK);
 			sleep((caddr_t)&tp->t_canq, TTIPRI);
 			goto again;
@@ -144,7 +148,7 @@ again:
 			return (error);
 	} else
 		if (tp->t_oproc)
-			error = (*linesw[tp->t_line].l_read)(tp, uio);
+			error = (*linesw[tp->t_line].l_read)(tp, uio, flag);
 	ptcwakeup(tp, FWRITE);
 	return (error);
 }
@@ -154,7 +158,7 @@ again:
  * Wakeups of controlling tty will happen
  * indirectly, when tty driver calls ptsstart.
  */
-ptswrite(dev, uio)
+ptswrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -169,7 +173,7 @@ ptswrite(dev, uio)
 		sleep((caddr_t)pti + 1, TTOPRI);
 	}
 
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -209,6 +213,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selw = 0;
 			pti->pt_flags &= ~PF_WCOLL;
 		}
+if (ptydebug) printf("WAKEUP c_cf %d\n", u.u_procp->p_pid);
 		wakeup((caddr_t)&tp->t_rawq.c_cf);
 	}
 }
@@ -247,7 +252,7 @@ ptcclose(dev)
 	return (0);
 }
 
-ptcread(dev, uio)
+ptcread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -295,9 +300,10 @@ ptcread(dev, uio)
 				break;
 		}
 		if ((tp->t_state&TS_CARR_ON) == 0)
-			return (EIO);
-		if (pti->pt_flags&PF_NBIO)
+			return (0);	/* EOF */
+		if (flag&FNDELAY)
 			return (EWOULDBLOCK);
+if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
 	}
 	if (pti->pt_flags & (PF_PKT|PF_UCNTL|PF_TIOC))
@@ -411,7 +417,7 @@ ptcselect(dev, rw)
 	return (0);
 }
 
-ptcwrite(dev, uio)
+ptcwrite(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
 {
@@ -480,7 +486,7 @@ again:
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
-			(*linesw[tp->t_line].l_rint)(*cp++, tp);
+			(*linesw[tp->t_line].l_rint)(*cp++&0377, tp);
 			cnt++;
 			cc--;
 		}
@@ -494,7 +500,7 @@ block:
 	 */
 	if ((tp->t_state&TS_CARR_ON) == 0)
 		return (EIO);
-	if (pti->pt_flags & PF_NBIO) {
+	if ((pti->pt_flags & PF_NBIO) || (flag & FNDELAY)) {
 		iov->iov_base -= cc;
 		iov->iov_len += cc;
 		uio->uio_resid += cc;
@@ -503,6 +509,7 @@ block:
 			return (EWOULDBLOCK);
 		return (0);
 	}
+if (ptydebug) printf("SLEEP(2) c_cf %d\n", u.u_procp->p_pid);
 	sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
 	goto again;
 }
@@ -689,7 +696,7 @@ ptyioctl(dev, cmd, data, flag)
 	if (linesw[tp->t_line].l_rint != ttyinput) {
 		(*linesw[tp->t_line].l_close)(tp);
 		tp->t_line = 0;
-		(void)(*linesw[tp->t_line].l_open)(dev, tp);
+		(void)(*linesw[tp->t_line].l_open)(dev, tp, flag);
 		error = ENOTTY;
 	}
 
