@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.14 1994/05/22 23:04:13 ache Exp $
+ *	$Id: vfs_syscalls.c,v 1.15 1994/05/23 01:00:03 ache Exp $
  */
 
 #include "param.h"
@@ -846,8 +846,6 @@ link(p, uap, retval)
 		goto out1;
 	}
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	if (vp->v_type == VDIR)
-		ndp->ni_nameiop |= WILLBEDIR;
 	ndp->ni_dirp = (caddr_t)uap->linkname;
 	if (error = namei(ndp, p))
 		goto out1;
@@ -1004,7 +1002,6 @@ lseek(p, uap, retval)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (ESPIPE);
-
 	switch (uap->sbase) {
 
 	case L_INCR:
@@ -1636,8 +1633,6 @@ rename(p, uap, retval)
 		return (error);
 	fvp = fromnd.ni_vp;
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART;
-	if (fvp->v_type == VDIR)
-		tond.ni_nameiop |= WILLBEDIR;
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
 	if (error = namei(&tond, p)) {
@@ -1735,7 +1730,7 @@ mkdir(p, uap, retval)
 	struct nameidata nd;
 
 	ndp = &nd;
-	ndp->ni_nameiop = CREATE | LOCKPARENT | WILLBEDIR;
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
 	if (error = namei(ndp, p))
