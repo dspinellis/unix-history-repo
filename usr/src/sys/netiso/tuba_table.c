@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	8.1 (Berkeley) %G%
+ *	@(#)tuba_table.c	8.2 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -19,7 +19,6 @@
 #include <sys/kernel.h>
 
 #include <net/if.h>
-#include <net/af.h>
 #include <net/radix.h>
 
 #include <netiso/iso.h>
