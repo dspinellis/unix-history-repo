@@ -1,0 +1,10 @@
+; %Z% %M% %I% %E% %Z%
+; type		domain			source file or host
+;
+directory					/etc/named
+domain          tic.com
+primary         tic.com                         tic.com
+primary		128.135.192.IN-ADDR.ARPA	f.192.135.128
+primary		0.0.127.IN-ADDR.ARPA		f.127
+primary		localhost			localhost
+cache		.				cache
