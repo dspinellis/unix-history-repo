@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.45 1994/06/04 10:59:58 davidg Exp $
+ *	$Id: machdep.c,v 1.46 1994/06/07 23:53:25 phk Exp $
  */
 
 #include "npx.h"
@@ -584,11 +584,11 @@ sigreturn(p, uap, retval)
 #define null_sel(sel) \
 	(!ISLDT(sel) && IDXSEL(sel) == 0)
 
-	if ((scp->sc_cs&0xffff != _ucodesel && !valid_ldt_sel(scp->sc_cs)) ||
-	    (scp->sc_ss&0xffff != _udatasel && !valid_ldt_sel(scp->sc_ss)) ||
-	    (scp->sc_ds&0xffff != _udatasel && !valid_ldt_sel(scp->sc_ds) &&
+	if (((scp->sc_cs&0xffff) != _ucodesel && !valid_ldt_sel(scp->sc_cs)) ||
+	    ((scp->sc_ss&0xffff) != _udatasel && !valid_ldt_sel(scp->sc_ss)) ||
+	    ((scp->sc_ds&0xffff) != _udatasel && !valid_ldt_sel(scp->sc_ds) &&
 	     !null_sel(scp->sc_ds)) ||
-	    (scp->sc_es&0xffff != _udatasel && !valid_ldt_sel(scp->sc_es) &&
+	    ((scp->sc_es&0xffff) != _udatasel && !valid_ldt_sel(scp->sc_es) &&
 	     !null_sel(scp->sc_es))) {
 #ifdef DEBUG
     		printf("sigreturn:  cs=0x%x ss=0x%x ds=0x%x es=0x%x\n",
