@@ -8,7 +8,7 @@
 .\" software without specific prior written permission. This software
 .\" is provided ``as is'' without express or implied warranty.
 .\"
-.\"	@(#)dm.8	5.4 (Berkeley) %G%
+.\"	@(#)dm.8	5.5 (Berkeley) %G%
 .\"
 .TH DM 8 ""
 .UC 8
@@ -24,7 +24,10 @@ of the regulated games.  The actual binaries for these games should be
 placed in a ``hidden'' directory, \fI/usr/games/hide\fP, that may only be
 accessed by the \fIdm\fP program.  \fIDm\fP determines if the requested
 game is available and, if so, runs it.  The file \fI/usr/games/dm.config\fP
-controls the conditions under which games may be run.
+controls the conditions under which games may be run.  For remotely mounted
+file systems, a machine name may be appended to the config file name,
+i.e. the machine ``rip.berkeley.edu'' will use the file \fIdm.config.rip\fP
+if it is present, otherwise it will use \fIdm.config\fP.
 .PP
 The file \fI/usr/games/nogames\fP may be used to ``turn off'' game
 playing.  If the file exists, no game playing is allowed; the contents
