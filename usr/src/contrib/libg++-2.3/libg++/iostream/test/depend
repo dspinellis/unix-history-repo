@@ -1,0 +1,30 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+hounddog.o : hounddog.C \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+putbackdog.o : putbackdog.C \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+tFile.o : tFile.C \
+  $(srcdir)/../../$(IO_DIR)/stream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  $(srcdir)/../../$(IO_DIR)/strstream.h \
+  $(srcdir)/../../$(IO_DIR)/SFile.h \
+  $(srcdir)/../../$(IO_DIR)/fstream.h \
+  $(srcdir)/../../$(IO_DIR)/PlotFile.h 
+tfseek.o : tfseek.c 
+tgetl.o : tgetl.C \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+trdseek.o : trdseek.c 
+tst.o : tst.C \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+twrseek.o : twrseek.c 
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
