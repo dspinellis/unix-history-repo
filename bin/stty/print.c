@@ -71,6 +71,9 @@ print(tp, wp, ldisc, fmt)
 		case SLIPDISC:	
 			cnt += printf("slip disc; ");
 			break;
+		case NTTYDISC:
+			cnt += printf("new tty disc; ");
+			break;
 		default:	
 			cnt += printf("#%d disc; ", ldisc);
 			break;
