@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	dmesg
 MAN8=	dmesg.0
