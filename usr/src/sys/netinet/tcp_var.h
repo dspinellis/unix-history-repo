@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.15	82/01/17	*/
+/*	tcp_var.h	4.16	82/01/18	*/
 
 /*
  * Kernel variables for tcp.
@@ -59,13 +59,14 @@ struct tcpcb {
 	float	t_srtt;			/* smoothed round-trip time */
 /* out-of-band data */
 	char	t_oobflags;		/* have some */
+	char	t_iobc;			/* input character */
 #define	TCPOOB_HAVEDATA	0x01
 
 #ifdef TCPTRUEOOB
 #define	TCPOOB_OWEACK	0x02
 #define	TCPOOB_NEEDACK	0x04
-	char	t_iobc;			/* input character */
 	u_char	t_iobseq;		/* input receive sequence number */
+	tcp_seq	t_oobmark;		/* output mark position */
 	char	t_oobc;			/* output character */
 	u_char	t_oobseq;		/* output transmit sequence number */
 #endif

@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.49	82/01/17	*/
+/*	tcp_input.c	1.50	82/01/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -531,29 +531,37 @@ printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, t
 	}
 
 	/*
-	 * If an URG bit is set and in the segment and is greater than the
-	 * current known urgent pointer, then mark the data stream.
-	 * If the TCP is not doing out-of-band data, then indicate
-	 * urgent to the user.  This should not happen
-	 * in CLOSE_WAIT, CLOSING, LAST-ACK or TIME_WAIT STATES since
-	 * a FIN has been received from the remote side.  In these states
-	 * we ignore the URG.
+	 * Process segments with URG.
 	 */
-	if ((tiflags & TH_URG) && TCPS_HAVERCVDFIN(tp->t_state) == 0 &&
-	    SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up)) {
-		tp->rcv_up = ti->ti_seq + ti->ti_urp;
-		so->so_oobmark = so->so_rcv.sb_cc +
-		    (tp->rcv_up - tp->rcv_nxt) - 1;
-		if (so->so_oobmark == 0)
-			so->so_state |= SS_RCVATMARK;
+	if ((tiflags & TH_URG) && TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+		/*
+		 * If this segment advances the known urgent pointer,
+		 * then mark the data stream.  This should not happen
+		 * in CLOSE_WAIT, CLOSING, LAST_ACK or TIME_WAIT STATES since
+		 * a FIN has been received from the remote side. 
+		 * In these states we ignore the URG.
+		 */
+		if (SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up)) {
+			tp->rcv_up = ti->ti_seq + ti->ti_urp;
+			so->so_oobmark = so->so_rcv.sb_cc +
+			    (tp->rcv_up - tp->rcv_nxt) - 1;
+			if (so->so_oobmark == 0)
+				so->so_state |= SS_RCVATMARK;
 #ifdef TCPTRUEOOB
-		if ((tp->t_flags & TF_DOOOB) == 0)
+			if ((tp->t_flags & TF_DOOOB) == 0)
 #endif
-		{
-			sohasoutofband(so);
-			tp->t_oobflags |= TCPOOB_HAVEDATA;
+				sohasoutofband(so);
+			tp->t_oobflags &= ~TCPOOB_HAVEDATA;
 		}
-
+		/*
+		 * Remove out of band data so doesn't get presented to user.
+		 * This can happen independent of advancing the URG pointer,
+		 * but if two URG's are pending at once, some out-of-band
+		 * data may creep in... ick.
+		 */
+		if (ti->ti_urp <= ti->ti_len) {
+			tcp_pulloutofband(so, ti);
+		}
 	}
 
 	/*
@@ -712,8 +720,10 @@ printf("tp %x dooob\n", tp);
 
 		case TCPOPT_OOBDATA: {
 			int seq;
+			register struct socket *so = tp->t_inpcb->inp_socket;
+			tcp_seq mark;
 
-			if (optlen != 4)
+			if (optlen != 8)
 				continue;
 			seq = cp[2];
 			if (seq < tp->t_iobseq)
@@ -726,8 +736,15 @@ printf("bad seq\n");
 			}
 			tp->t_iobseq = cp[2];
 			tp->t_iobc = cp[3];
+			mark = *(tcp_seq *)(cp + 4);
+#if vax
+			mark = ntohl(mark);
+#endif
+			so->so_oobmark = so->so_rcv.sb_cc + (mark-tp->rcv_nxt);
+			if (so->so_oobmark == 0)
+				so->so_state |= SS_RCVATMARK;
 printf("take oob data %x input iobseq now %x\n", tp->t_iobc, tp->t_iobseq);
-			sohasoutofband(tp->t_inpcb->inp_socket);
+			sohasoutofband(so);
 			break;
 		}
 
@@ -749,6 +766,39 @@ printf("take oob ack %x and cancel rexmt\n", cp[2]);
 		}
 	}
 	m_free(om);
+}
+
+/*
+ * Pull out of band byte out of a segment so
+ * it doesn't appear in the user's data queue.
+ * It is still reflected in the segment length for
+ * sequencing purposes.
+ */
+tcp_pulloutofband(so, ti)
+	struct socket *so;
+	struct tcpiphdr *ti;
+{
+	register struct mbuf *m;
+	int cnt = sizeof (struct tcpiphdr) + ti->ti_urp - 1;
+	
+	m = dtom(ti);
+	while (cnt >= 0) {
+		if (m->m_len > cnt) {
+			char *cp = mtod(m, caddr_t) + cnt;
+			struct tcpcb *tp = sototcpcb(so);
+
+			tp->t_iobc = *cp;
+			tp->t_oobflags |= TCPOOB_HAVEDATA;
+			bcopy(cp+1, cp, m->m_len - cnt - 1);
+			m->m_len--;
+			return;
+		}
+		cnt -= m->m_len;
+		m = m->m_next;
+		if (m == 0)
+			break;
+	}
+	panic("tcp_pulloutofband");
 }
 
 /*
