@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -131,6 +131,11 @@ main(argc, argv)
 			argc--, argv++;
 			++kflag;
 		}
+		/*
+		 * Discard setgid privileges if not the running kernel so that
+		 * bad guys can't print interesting stuff from kernel memory.
+		 */
+		setgid(getgid());
 	}
 	else
 		system = _PATH_UNIX;
