@@ -1,4 +1,4 @@
-/*	format.c	4.2	83/03/02	*/
+/*	format.c	4.3	83/03/02	*/
 
 /* 
  * Standalone program to do media checking
@@ -324,7 +324,6 @@ top:
 	}
 	printf("Formatting drive %d on %c%c%d ",
 		iob[fd - 3].i_unit % 8, cp[0], cp[1], iob[fd - 3].i_unit / 8);
-	printf("will destroy everything on the disk, ");
 	cp = prompt("verify (yes/no)? ");
 	while (*cp != 'y' && *cp != 'n')
 		cp = prompt("Huh, yes or no? ");
