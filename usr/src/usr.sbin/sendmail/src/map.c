@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -498,13 +498,20 @@ ndbm_map_close(map)
 	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
 #ifdef YPCOMPAT
+		bool inclnull;
 		char buf[200];
+
+		inclnull = bitset(MF_INCLNULL, map->map_mflags);
+		map->map_mflags &= ~MF_INCLNULL;
 
 		(void) sprintf(buf, "%010ld", curtime());
 		ndbm_map_store(map, "YP_LAST_MODIFIED", buf);
 
 		(void) myhostname(buf, sizeof buf);
 		ndbm_map_store(map, "YP_MASTER_NAME", buf);
+
+		if (inclnull)
+			map->map_mflags |= MF_INCLNULL;
 #endif
 
 		/* write out the distinguished alias */
