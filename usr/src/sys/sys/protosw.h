@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)protosw.h	7.9 (Berkeley) %G%
+ *	@(#)protosw.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -35,17 +35,17 @@ struct protosw {
 	short	pr_protocol;		/* protocol number */
 	short	pr_flags;		/* see below */
 /* protocol-protocol hooks */
-	int	(*pr_input)();		/* input to protocol (from below) */
+	void	(*pr_input)();		/* input to protocol (from below) */
 	int	(*pr_output)();		/* output to protocol (from above) */
-	int	(*pr_ctlinput)();	/* control input (from below) */
+	void	(*pr_ctlinput)();	/* control input (from below) */
 	int	(*pr_ctloutput)();	/* control output (from above) */
 /* user-protocol hook */
 	int	(*pr_usrreq)();		/* user request: see list below */
 /* utility hooks */
-	int	(*pr_init)();		/* initialization hook */
-	int	(*pr_fasttimo)();	/* fast timeout (200ms) */
-	int	(*pr_slowtimo)();	/* slow timeout (500ms) */
-	int	(*pr_drain)();		/* flush any excess space possible */
+	void	(*pr_init)();		/* initialization hook */
+	void	(*pr_fasttimo)();	/* fast timeout (200ms) */
+	void	(*pr_slowtimo)();	/* slow timeout (500ms) */
+	void	(*pr_drain)();		/* flush any excess space possible */
 	int	(*pr_sysctl)();		/* sysctl for protocol */
 };
 
