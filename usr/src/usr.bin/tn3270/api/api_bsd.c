@@ -139,4 +139,65 @@ api_exch_api(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
+    struct storage_descriptor sd;
+    int i;
+
+    if (api_exch_outcommand(EXCH_REQUEST) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_REGS, sizeof *regs, (char *)regs) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof *sregs, (char *)sregs) == -1) {
+	return -1;
+    }
+    sd.length = 0;
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    while ((i = api_exch_inbyte()) != EXCH_REPLY) {
+	switch (i) {
+	case EXCH_GIMME:
+	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+					== -1) {
+		return -1;
+	    }
+	    /*XXX validity check GIMME? */
+	    if (api_exch_outcommand(EXCH_HEREIS) == -1) {
+		return -1;
+	    }
+	    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+				== -1) {
+		return -1;
+	    }
+	    if (api_exch_outtype(EXCH_TYPE_BYTES, ntohs(sd.length),
+			    ntohl(sd.location)) == -1) {
+		return -1;
+	    }
+	    break;
+	case EXCH_HEREIS:
+	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+					== -1) {
+		return -1;
+	    }
+	    /* XXX Validty check HEREIS? */
+	    if (api_exch_intype(EXCH_TYPE_BYTES, ntohs(sd.length),
+			    ntohl(sd.location)) == -1) {
+		return -1;
+	    }
+	    break;
+	default:
+	    fprintf(stderr, "Waiting for reply command, we got command %d.\n",
+			i);
+	    return -1;
+	}
+    }
+    if (api_exch_intype(EXCH_TYPE_REGS, sizeof *regs, (char *)regs) == -1) {
+	return -1;
+    }
+    if (api_exch_intype(EXCH_TYPE_SREGS, sizeof *sregs, (char *)sregs) == -1) {
+	return -1;
+    }
+    /* YEAH */
+    return 0;		/* Happiness! */
 }
