@@ -1,6 +1,6 @@
-.\"	@(#)ar.1	4.1 (Berkeley) %G%
+.\"	@(#)ar.1	5.1 (Berkeley) %G%
 .\"
-.TH AR 1 
+.TH AR 1 "24 February 1979"
 .AT 3
 .SH NAME
 ar \- archive and library maintainer
@@ -20,14 +20,14 @@ This version of
 uses a ASCII-format archive which is portable among the various
 machines running \s-2UNIX\s0.
 Programs for dealing with older formats are available: see
-.IR old (8).
+.IR arcv (8).
 .PP
 .I Key
 is one character from the set
 .B drqtpmx,
 optionally concatenated with
 one or more of
-.B vuaibcl.
+.B vuaibclo.
 .I Afile
 is the archive file.
 The
@@ -46,8 +46,7 @@ If the optional character
 .B u
 is used with
 .B r,
-then only those files with
-modified dates later than
+then only those files with `last-modified' dates later than
 the archive files are replaced.
 If an optional positioning character from the set
 .B abi
@@ -97,7 +96,11 @@ If no names are given, all files in the archive are
 extracted.
 In neither case does
 .B x
-alter the archive file.
+alter the archive file. Normally the `last-modified' date of each
+extracted file is the date when it is extracted. However, if
+.B o
+is used, the `last-modified' date is reset to the date recorded in the
+archive.
 .TP
 .B v
 Verbose.
@@ -134,7 +137,11 @@ This option causes them to be placed in the local directory.
 .SH FILES
 /tmp/v*	temporaries
 .SH "SEE ALSO"
-lorder(1), ld(1), ranlib(1), ar(5), arcv(8), old(8)
+lorder(1), ld(1), ranlib(1), ar(5), arcv(8)
 .SH BUGS
 If the same file is mentioned twice in an argument list,
 it may be put in the archive twice.
+.LP
+The `last-modified' date of a file will not be altered by the
+.B o
+option if the user is not the owner of the extracted file, or the super-user.
