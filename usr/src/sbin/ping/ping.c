@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -374,6 +374,7 @@ int len;
 	register u_short *w = addr;
 	register u_short answer;
 	register int sum = 0;
+	u_short odd_byte = 0;
 
 	/*
 	 *  Our algorithm is simple, using a 32 bit accumulator (sum),
@@ -387,8 +388,10 @@ int len;
 	}
 
 	/* mop up an odd byte, if necessary */
-	if( nleft == 1 )
-		sum += *(u_char *)w;
+	if( nleft == 1 ) {
+		*(u_char *)(&odd_byte) = *(u_char *)w;
+		sum += odd_byte;
+	}
 
 	/*
 	 * add back carry outs from top 16 bits to low 16 bits
