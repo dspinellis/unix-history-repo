@@ -1,0 +1,383 @@
+.\" (c) Copyright 1986 Xerox Corporation
+.\" All rights reserved.
+.TH IPFE 1 6/16/86
+.UC 4
+.SH NAME
+IPFE \- Interpress File Editor
+.SH SYNOPSIS
+\fBipfe\fR [ \fIoptions\fR ] \fIinfile\fR [ \fIpagerange\fR ] ...
+[ \fIinfile\fR [ \fIpagerange\fR ] ... ]
+.sp 1
+Options:  [\fB\-l \fIlogfile\fR ]  [\fB\-dDiLqrRsSY ]  [\fB\-a 
+\fIalias:actual\fR [\fB\-a \fIalias:actual\fR ] ...]  [\fB\-b 
+\fIbinding-offset:unit\fR ]  [\fB\-c 
+\fIchapterize-count:unit\fR ]  [\fB\-o \fIoutfile\fR ]  [\fB\-p 
+\fIlevel:propfile\fR ]  [\fB\-S \fIscale-factor\fR ]  [\fB\-X 
+\fIX-offset:unit\fR ]  [\fB\-Y \fIY-offset:unit\fR ]
+.SH DESCRIPTION
+\fBIPFE\fR performs editing functions on Interpress masters. It
+reads the specified input Interpress files and writes the
+designated output file(s). By using page ranges and other options,
+pagebodies in Interpress masters may be concatenated, merged,
+split into several output files (i.e., chapterized), etc.
+.PP
+Concatenation is accomplished by specifying more than one input
+master with no pageranges.
+.PP
+Page selection and merging is accomplished by specifying more
+than one master with a pagerange specification for at least one
+of the masters. This accomplishes simple merging, such as pages 1,
+2, and 4 of Master1 merged with pages 2, 4, and 5 of Master2.
+.PP
+In addition, a page from one master may be overlaid with pages
+from other masters to create a single output page. The overlay
+pages may be repositioned by specifying an xOffset and yOffset.
+In this manner, graphics or images may be created as Interpress
+"pages" and then merge/overlaid onto a text page of a different
+master, with an option to reposition the images.
+See the \fIinfile\fR [ \fIpagerange\fR ] discussion below, following
+the options specifications, for syntax details.
+.PP
+The following options can be used with \fBipfe\fR:
+.PP
+.RS
+(\fINote:\fR Any option with one or more arguments may be
+specified as a single option, with no space between the
+switch and the [first] argument, or as two options, with an
+unquoted space between the switch and the [first] argument. If
+there is more than one argument, they must be specified together
+as a single option, separated by an [usually] optional colon. When
+the colon is required, it is so indicated in the option description.)
+.RE
+.TP
+\fB\-a \fIalias:actual\fR
+(alias). If the \fB\-s\fR option is specified, replace any SIF
+references matching the string \fIalias\fR with the string
+\fIactual\fR before attempting to satisfy the SIF. The colon
+between \fIalias\fR and \fIactual\fR is required. There may be
+spaces and colons in \fIalias\fR (if there are spaces, \fIalias\fR
+itself must be quoted). However, there must be no colons in
+\fIactual\fR, because IPFE searches from the end of \fIactual\fR
+to find the colon separating \fIalias\fR and \fIactual\fR.
+There may be multiple \fB\-a\fR options. However, if there is no
+\fB\-s\fR option specified, none of the alias options has any
+effect.
+If there is a match on any \fIalias\fR, and the corresponding
+file \fIactual\fR is not found or there is some error, the
+original SIF reference, \fIalias\fR, is preserved, unless the
+\fB\-r\fR option is also specified. In the latter case, the SIF
+reference is removed.
+.TP
+\fB\-b \fIoffset:unit\fR
+(binding offset). Shift the image \fIoffset units\fR in the
+x-direction, where \fIunit\fR may be none (default centimeters),
+\fBc\fR (centimeters), \fBi\fR (inches), \fBp\fR (points), or
+\fBP\fR(Picas). \fIOffset\fR may be a negative value. If the
+\fB\-L\fR option is also specified, the image shift is in the
+y-direction.
+.TP
+\fB\-c \fIcount:unit\fR
+(chapterize). If the size of the output file is larger than
+\fIcount units\fR, split the output file into multiple files.
+Chapterization occurs only on page boundaries, every time
+\fIcount units\fR is reached [where \fIunit\fR may be \fBp\fR
+(pages), \fBk\fR (kilobytes), or \fBm\fR (megabytes)], and
+there is no look-ahead. Therefore, if a byte specification
+is used, the size of each output file may actually be larger
+than \fIcount units\fR. Output file names are generated
+by appending "1", "2", etc. to the file extension of
+\fIoutfile\fR. (\fINote\fR that this is in \fIaddition\fR
+to the possibility of an integer being appended to the output
+filename if no \fB\-o\fR option is specified.)
+.TP
+\fB\-d\fR
+(duplex). If the \fB\-b\fR option (binding offset) is specified,
+apply the offset for duplex (two-sided) printing of the output
+master. That is, for odd-numbered pages, the offset is applied
+as specified; for even-numbered pages, the negative of the offset
+is applied. If there is no binding offset specified, the duplex
+option has no effect.
+.IP
+\fIExample:\fR
+If there is a binding offset of 2P and the duplex option
+is specified, odd-numbered pages are shifted 2 Picas to the right,
+even-numbered pages 2 Picas to the left. If the binding offset is
+-2P and duplex is specified, odd-numbered pages are shifted 2
+Picas to the left, even-numbered pages 2 Picas to the right.
+.TP
+\fB\-D\fR
+(Debug). If the \fB\-p\fR option is specified, write to the
+properties file the offset within the input stream of each
+skeleton-level token, in addition to the properties information
+detailed in the \fB\-p\fR option. If there is no \fB\-p\fR
+option specified, the Debug option has no effect.
+.TP
+\fB\-i\fR
+(insert SIF for overlay). Insert (create) a SIF reference for
+any unresolvable overlays. (See the discussion on overlays in
+the \fIinfile\fR [ \fIpagerange\fR ] section below, following
+the options specifications.) \fINote\fR that if an overlay is
+unresolvable and the overlay specification includes a pageNum
+greater than 1, no SIF reference will be created, even if the
+\fB\-i\fR option is specified.
+.TP
+\fB\-l \fIlogfile\fR
+(log). Open the file \fIlogfile\fR and record a transcript of
+IPFE actions, error reports, etc. The logfile is opened
+immediately upon encountering the \fB\-l\fR option in the
+command line. Therefore, to record errors in the command line
+specification, the \fB\-l\fR option must be the \fIfirst\fR
+option specified. If no \fIlogfile\fR is specified, the default
+filename "ipfe.log" is used.
+.TP
+\fB\-L\fR
+(Landscape). Rotate every output page 90 degrees counterclockwise.
+IPFE automatically applies an x- and y-image shift to preserve
+the upper left corner of the image. This option is intended for
+printing text pages in a landscape orientation.
+.TP
+\fB\-o \fIoutfile\fR
+(output). Write the output Interpress master to the file
+\fIoutfile\fR. If the \fB\-o \fIoutfile\fR option is \fInot\fR
+specified, the following algorithm determines the output
+filename (with one exception, noted below): remove the extension
+from the filespec of the first \fIinfile\fR and append ".ip",
+as long as \fIinfilename\fR.ip does not already exist. If it
+\fIdoes\fR exist, then append "\fIn\fR.ip", where
+\fIn\fR is the lowest integer that will not cause an existing
+file to be overwritten.
+.IP
+\fINote:\fR
+If the \fB\-p\fR option is specified with no \fB\-o\fR option,
+then the properties
+file is written with no Interpress output master. This allows
+you to get information about the input stream without the
+overhead of creating the Interpress output master.
+.TP
+\fB\-p \fIlevel:propfile\fR
+(properties). Open the file \fIpropfile\fR and write the
+following information about the properties of each input
+master: the skeleton structure and the number of blocks,
+pages, and sequenceInsertFile (SIF) references. If there
+is more than one input file, the total number of blocks,
+pages, and SIF references are also written. \fILevel\fR
+may be \fI0\fR (default) or \fI1\fR (verbose); if \fI1\fR,
+each valid pageBody and endpageBody token is indicated and
+numbered.
+In addition, the \fB\-D\fR (Debug) option causes the file
+position of each skeleton-level token to be written.
+.IP
+\fINote\fR that the properties are an accounting of the
+\fIinput\fR stream.
+If the properties of the \fIoutput\fR stream are desired, it is
+necessary to execute a second invocation of \fBipfe\fR on
+the output file(s) with just the \fB\-p\fR option specified.
+.TP
+\fB\-q\fR
+(quiet). Don't write information and error messages to STDERR.
+.TP
+\fB\-r\fR
+(remove SIFS). Remove sequenceInsertFile (SIF) references
+from the input stream. If the \fB\-s\fR option is also
+specified, the \fB\-s\fR option takes precedence, and a SIF
+reference is removed only if it is either unresolvable
+or there is some error, such as an invalid header.
+.TP
+\fB\-R\fR
+(Rotate). Rotate every output page 90 degrees clockwise. IPFE
+automatically applies an x- and y-image shift to preserve
+the center point of the image. This option is intended for
+printing an image created for a "landscape printer" in portrait
+orientation.
+.TP
+\fB\-s\fR
+(satisfy SIFS). Satisfy any sequenceInsertFile (SIF) references
+encountered in the input stream. This entails replacing the SIF
+reference with the actual tokens in the referenced file.
+The algorithm used is dependent upon the SIF type as found in the
+referenced file's header. If the referenced file is not found or
+there is some error, such as an invalid header, the SIF
+reference is preserved, unless the \fB\-r\fR (remove SIF
+references) is also specified. The Interpress filename alias
+mechanism is supported via the \fB\-a\fR option.
+.TP
+\fB\-S \fIscale-factor\fR
+(Scale). Scale the image by \fIscale-factor\fR, which can have
+the format 'n/d', where both n and d must be integers, or 'a.b'.
+.TP
+\fB\-X \fIX-offset:unit\fR
+(xImageShift). Shift the image \fIoffset units\fR in the
+x-direction, where \fIunit\fR may be none (default centimeters),
+\fBc\fR (centimeters), \fBi\fR (inches), \fBp\fR (points), or
+\fBP\fR(Picas). \fIOffset\fR may be a negative value. The
+x-direction is independent of the \fB\-L\fR and \fB\-R\fR
+options (i.e., the positive x-direction is still to the right
+as the image is viewed, even if a rotation is applied).
+.TP
+\fB\-Y \fIY-offset:unit\fR
+(yImageShift). Shift the image \fIoffset units\fR in the
+y-direction, where \fIunit\fR may be none (default centimeters),
+\fBc\fR (centimeters), \fBi\fR (inches), \fBp\fR (points), or
+\fBP\fR(Picas). \fIOffset\fR may be a negative value. The
+y-direction is independent of the \fB\-L\fR and \fB\-R\fR
+options (i.e., the positive y-direction is still up as the
+image is viewed, even if a rotation is applied).
+.TP
+\fIinfile \fR[ \fIpagerange\fR ]
+Each \fIinfile\fR may have a \fIpagerange\fR specification for
+selecting pages from the \fIinfile\fR to merge and/or overlay.
+The \fIpagerange\fR specification must immediately follow the
+corresponding \fIinfile\fR specification to which it applies,
+as a separate option (i.e., it must not be quoted along with
+\fIinfile\fR. For shell processing, however, the pagerange
+specification itself may be quoted in order to use the brackets
+and parentheses required by the syntax).
+.IP
+\fINote:\fR In the syntax below, pageNum refers to a count of
+pageBodies (excluding the preamble) in the Interpress master,
+and does not necessarily match the printed page numbers on the
+output pages. See the references below for a definition and
+discussion of pageBodies.
+.IP
+The syntax for the \fIpagerange\fR specification is given in the
+following psuedo Backus-Naur Form:
+.RS
+.IP
+pageRange	::= [pageSpec,...,endPageSpec]
+.IP
+pageSpec	::= pageNum | pageNum-pageNum |
+.br
+		      pageNum[overlaySpec][...]
+.IP
+endPageSpec	::= pageNum- | NULL
+.IP
+pageNum 	::= integer
+.IP
+overlaySpec	::= overlayFileName | overlayFileName:pageNum |
+.br
+		      overlayFileName(xOffset,yOffset) |
+.br
+		      overlayFileName:pageNum(xOffset,yOffset)
+.RE
+.sp 1
+.IP
+The syntax rules are:
+.RS
+.IP 1.
+The \fIpageRange\fR specification must begin with a left bracket
+and end with a right bracket ("[\fIpageRangeSpec\fR]").
+.IP 2.
+Pages are specified by an integer corresponding to a pageBody
+count, in increasing order, through the master.
+.IP 3.
+A minus ("-") indicates a page range.
+.IP
+\fIExample:\fR [4-6] includes pages 4 through 6.
+.IP 4.
+A comma separates pages and page ranges.
+.IP
+\fIExample:\fR [4,6-9] includes pages 4 and 6 through 9.
+.IP 5.
+A minus ("-") appearing after the final page specification
+includes all pages to the end of the master.
+.IP
+\fIExample:\fR [4,6,9-] includes pages 4, 6, and 9 through
+the last page of the master.
+.IP 6.
+Immediately following a page specification, a left/right bracket
+pair may enclose a filename to indicate an overlay
+("[\fIoverlayfile\fR]"). The overlay may be an Interpress master
+or an Interpress fragment. If the overlay is an Interpress master
+containing more than one page, and no overlay pageNum is
+specified, IPFE uses page 1 for the overlay. There may be
+more than one overlay specification for a page specification,
+each enclosed in a left/right bracket pair and immediately
+following one another.
+.IP
+\fIExample:\fR [4[pic1][pic2]] includes page 4 and overlays
+it with pic1 and pic2.
+.IP 7.
+Immediately following \fIoverlayfile\fR in an overlay
+specification, a colon followed by an \fIoverlayPageNum\fR
+selects a page from \fIoverlayfile\fR for the overlay
+("[\fIoverlayfile\fR:\fIoverlayPageNum\fR]").
+.IP
+If \fIoverlayfile\fR is an Interpress fragment, or
+\fIoverlayPageNum\fR doesn't exist, the overlay specification
+is ignored.
+.IP
+\fIExample:\fR [4[pic1:2] includes page 4 and overlays it with
+page 2 of pic1.
+.IP 8.
+Within an overlay specification, a left/right parenthesis pair
+may enclose a \fIpage offset\fR to reposition the overlay page
+("[\fIoverlayfile\fR(\fIxOffset,yOffset\fR)]" or
+"[\fIoverlayfile\fR:\fIoverlayPageNum\fR(\fIxOffset,yOffset\fR)]").
+.IP
+The \fIpage offset\fR has the form \fIxOffset,yOffset\fR
+and each offset has the form \fIvalue unit\fR. The comma between
+the offsets is required, and there must be no space between
+\fIvalue\fR and \fIunit\fR. Unit is one of the following: none
+(default centimeters), c (centimeters), i (inches), p (points),
+P (Picas). The origin is the bottom left corner of the page.
+The positive x-direction is to the right, and the positive
+y-direction is up. X/y-directions may be positive or negative.
+.IP
+\fIExample:\fR [4[pic1:2(2P,4P)][pic2(-3P,-1P)]] includes
+page 4 and overlays it with page 2 of pic1, offset 2 Picas
+to the right and 4 Picas up, and pic2, offset 3 Picas to the
+left and 1 Pica down.
+.RE
+.sp 1
+.IP
+\fIExample\fR of using a \fIpagerange\fR specification:
+.IP
+	ipfe infile "[1,4-6,9[pic1],10-11,12[pic2:2(2P,4P)][pic3(-4P,-2P)],15-]"
+.IP
+which reads:
+.RS
+.IP
+include page 1,
+.IP
+skip pages 2-3,
+.IP
+include pages 4-6,
+.IP
+skip pages 7-8,
+.IP
+include page 9 and overlay it with pic1 (with no offset),
+.IP
+include pages 10-11,
+.IP
+include page 12 and overlay it with page 2 of pic2
+(offset 2 Picas to the right and 4 Picas up) and
+pic3 (offset 4 Picas to the left and
+2 Picas down),
+.IP
+skip pages 13-14,
+.IP
+include pages 15 through the end of the master.
+.SH AUTHOR
+Mark Rollins, Xerox Corporation, Webster Research Center, October 1985.
+.SH SEE ALSO
+Interpress Electronic Printing Standard, Version 3.0, Xerox Corporation,
+January 1986, \s8XNSS\s10 048601
+.br
+Introduction to Interpress, Xerox Corporation, June 1983, \s8XSIG\s10 038404
+.br
+The address for obtaining these documents is:
+.br
+		Xerox Corporation
+.br
+		Printing Systems Administration Office
+.br
+		701 South Aviation Blvd.
+.br
+		El Segundo, CA  90245
+.SH BUGS
+IPFE assumes that SIF's and overlays are either valid Interpress
+fragments or Interpress masters containing a single BEGIN/END block.
+If an Interpress master containing nested blocks is attempted to be
+used as either a SIF or an overlay, the result may be unpredictable.
+The most likely error would be the erroneous inclusion of one or
+more extraneous preambles.
