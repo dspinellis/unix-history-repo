@@ -1,4 +1,4 @@
-/*	vmmeter.h	6.1	%G%	*/
+/*	vmmeter.h	6.2	%G%	*/
 
 /*
  * Virtual memory related instrumentation
@@ -10,6 +10,7 @@ struct vmmeter
 	unsigned v_trap;	/* calls to trap */
 	unsigned v_syscall;	/* calls to syscall() */
 	unsigned v_intr;	/* device interrupts */
+	unsigned v_soft;	/* software interrupts */
 	unsigned v_pdma;	/* pseudo-dma interrupts */
 	unsigned v_pswpin;	/* pages swapped in */
 	unsigned v_pswpout;	/* pages swapped out */
