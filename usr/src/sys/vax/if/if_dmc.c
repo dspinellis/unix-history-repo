@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.17	82/06/20	*/
+/*	if_dmc.c	4.18	82/10/09	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -24,13 +24,11 @@ int dmcdebug = 1;
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_uba.h"
-#include "../net/if_dmc.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
+#include "../vaxif/if_uba.h"
+#include "../vaxif/if_dmc.h"
 #include "../net/route.h"
 #include <errno.h>
 

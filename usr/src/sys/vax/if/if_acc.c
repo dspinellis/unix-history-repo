@@ -1,4 +1,4 @@
-/*	if_acc.c	4.19	82/06/20	*/
+/*	if_acc.c	4.20	82/10/09	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -19,12 +19,10 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_acc.h"
-#include "../net/if_imp.h"
-#include "../net/if_uba.h"
+#include "../vaxif/if_acc.h"
+#include "../netimp/if_imp.h"
+#include "../vaxif/if_uba.h"
 
 int     accprobe(), accattach(), accrint(), accxint();
 struct  uba_device *accinfo[NACC];
@@ -271,6 +269,7 @@ restart:
  * Output interrupt handler.
  */
 accxint(unit)
+	int unit;
 {
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;
@@ -300,6 +299,7 @@ accxint(unit)
  * Input interrupt handler
  */
 accrint(unit)
+	int unit;
 {
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;

@@ -1,4 +1,4 @@
-/*	if_vv.c	4.6	82/08/01	*/
+/*	if_vv.c	4.7	82/10/09	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -18,13 +18,15 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#ifdef INET
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#endif
 #include "../net/if.h"
-#include "../net/if_vv.h"
-#include "../net/if_uba.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
+#include "../vaxif/if_vv.h"
+#include "../vaxif/if_uba.h"
 #include "../net/route.h"
 #include <errno.h>
 
