@@ -1,0 +1,15 @@
+.TH LOGNAME 1L \" -*- nroff -*-
+.SH NAME
+logname \- print user's login name
+.SH SYNOPSIS
+.B logname
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR logname .
+.B logname
+prints the calling user's name, as found in the file /etc/utmp, and
+exits with a status of 0.  If there is no /etc/utmp entry for the
+calling process,
+.B logname
+prints an error message and exits with a status of 1.

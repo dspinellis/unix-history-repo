@@ -1,0 +1,24 @@
+.TH PRINTF 1L \" -*- nroff -*-
+.SH NAME
+printf \- format and print data
+.SH SYNOPSIS
+.B printf
+format [argument...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR printf .
+.B printf
+prints the
+.I format
+string, interpreting `%' directives and `\e' escapes in the same way
+as the C `printf' function.  It interprets `\e0ooo' as a an octal
+number (`ooo' is 0 to 3 digits) specifying a character to print, and
+`\exhhh' as a hexadecimal number (`hhh' is 1 to 3 digits) specifying a
+character to print.  It has an additional escape, `\ec', which causes
+.B printf
+to produce no further output, and an additional directive, `%b',
+which prints its argument string with `\e' escapes interpreted the way
+they are in the
+.I format
+string.
