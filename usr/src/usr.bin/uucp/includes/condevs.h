@@ -1,4 +1,11 @@
-/*	@(#)condevs.h	4.8	(Berkeley)	%G%	*/
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)condevs.h	4.9 (Berkeley) %G%
+ */
 
 #include "uucp.h"
 #include <errno.h>
