@@ -1,4 +1,4 @@
-/*	ip_input.c	6.2	84/04/14	*/
+/*	ip_input.c	6.3	84/05/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -571,7 +571,7 @@ ip_stripoptions(ip, mopt)
 	if (mopt) {
 		mopt->m_len = olen;
 		mopt->m_off = MMINOFF;
-		bcopy((caddr_t)ip, mtod(m, caddr_t), (unsigned)olen);
+		bcopy((caddr_t)ip, mtod(mopt, caddr_t), (unsigned)olen);
 	}
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
