@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.24 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -250,11 +250,16 @@ gethostbyname(name)
 		if (*cp == '.')
 			n++;
 	if ((n && *--cp == '.') || (_res.options & RES_DEFNAMES) == 0) {
+		int defflag = _res.options & RES_DEFNAMES;
+
+		_res.options &= ~RES_DEFNAMES;			/* XXX */
 		if (n && *cp == '.')
 			*cp = 0;
 		hp = gethostdomain(name, (char *)NULL);
-		if (n && cp == 0)
+		if (n && *cp == 0)
 			*cp = '.';
+		if (defflag)
+			_res.options |= RES_DEFNAMES;
 		return (hp);
 	}
 	if (n == 0 && (cp = hostalias(name)))
