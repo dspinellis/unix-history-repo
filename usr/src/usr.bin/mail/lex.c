@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)lex.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.13 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -571,13 +571,10 @@ stop(s)
  */
 
 char	*greeting	= "Mail version 2.1 %s.  Type ? for help.\n";
-announce(pr)
+announce()
 {
 	int vec[2], mdot;
-	extern char *version;
 
-	if (pr && value("quiet") == NOSTR)
-		printf( "Mail version %s.  Type ? for help.\n", version);
 	mdot = newfileinfo();
 	vec[0] = mdot;
 	vec[1] = 0;

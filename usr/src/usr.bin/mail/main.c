@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -57,12 +57,10 @@ main(argc, argv)
 	 * Figure out whether we are being run interactively, set up
 	 * all the temporary files, buffer standard output, and so forth.
 	 */
-
 	mypid = getpid();
 	if (isatty(0))
 		assign("interactive", "");
 	image = -1;
-
 	/*
 	 * Now, determine how we are being used.
 	 * We successively pick off instances of -r, -h, -f, and -i.
@@ -71,7 +69,6 @@ main(argc, argv)
 	 * of users to mail to.  Argp will be set to point to the
 	 * first of these users.
 	 */
-
 	ef = NOSTR;
 	to = NULL;
 	cc = NULL;
@@ -258,9 +255,14 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 		exit(1);
 	}
 	if (setjmp(hdrjmp) == 0) {
+		extern char *version;
+
 		if ((prevint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
 			signal(SIGINT, hdrstop);
-		announce(!0);
+		if (value("quiet") == NOSTR)
+			printf("Mail version %s.  Type ? for help.\n",
+				version);
+		announce();
 		fflush(stdout);
 		signal(SIGINT, prevint);
 	}

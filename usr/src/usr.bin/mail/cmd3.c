@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -590,7 +590,7 @@ file(argv)
 		perror(cp);
 		return -1;
 	}
-	announce(0);
+	announce();
 	return 0;
 }
 
