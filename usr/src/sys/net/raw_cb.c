@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_cb.c	7.9 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,6 +54,7 @@ raw_attach(so, proto)
 	int proto;
 {
 	register struct rawcb *rp = sotorawcb(so);
+	int error;
 
 	/*
 	 * It is assumed that raw_attach is called
@@ -62,19 +63,13 @@ raw_attach(so, proto)
 	 */
 	if (rp == 0)
 		return (ENOBUFS);
-	if (sbreserve(&so->so_snd, raw_sendspace) == 0)
-		goto bad;
-	if (sbreserve(&so->so_rcv, raw_recvspace) == 0)
-		goto bad2;
+	if (error = soreserve(so, raw_sendspace, raw_recvspace))
+		return (error);
 	rp->rcb_socket = so;
 	rp->rcb_proto.sp_family = so->so_proto->pr_domain->dom_family;
 	rp->rcb_proto.sp_protocol = proto;
 	insque(rp, &rawcb);
 	return (0);
-bad2:
-	sbrelease(&so->so_snd);
-bad:
-	return (ENOBUFS);
 }
 
 /*
