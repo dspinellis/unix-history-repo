@@ -1,21 +1,22 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tbl	8.2 (Berkeley) %G%
+.\"	@(#)tbl	8.3 (Berkeley) %G%
 .\"
 .EH 'USD:25-%''Tbl \(em A Program to Format Tables'
 .OH 'Tbl \(em A Program to Format Tables''USD:25-%'
-.if \nM=1 .RP
-\" .TM 76-1274-5 39199 39199-11
-.if \n(tm>0 .ND June 11, 1976*
+.\" .if \nM=1 .RP
+.\" .TM 76-1274-5 39199 39199-11
+.\" .if \n(tm>0 .ND June 11, 1976*
 .TL
 Tbl \(em A Program to Format Tables
 .AU "MH 2C-569" 6377
 M. E. Lesk
 .AI
-.MH
-.if \n(tm>0 .FS
-.if \n(tm>0 * This printing revised through August 5, 1977
-.if \n(tm>0 .FE
+AT&T Bell Laboratories
+Murray Hill, Nwe Jersey 07974
+.\" .if \n(tm>0 .FS
+.\" .if \n(tm>0 * This printing revised through August 5, 1977
+.\" .if \n(tm>0 .FE
 .AB
 .I
 Tbl
@@ -76,10 +77,10 @@ Mississippi	1.15	2.32	+1.17
 Texas	9.33	11.13	+1.80
 .TE
 .AE
-.OK
-Phototypesetting
-Documentation
-.CS  16 0 16 0 12 6
+.\" .OK
+.\" Phototypesetting
+.\" Documentation
+.\" .CS  16 0 16 0 12 6
 .tr # 
 .de e1
 .nr \\$1 \\$2
@@ -436,8 +437,8 @@ there are vertical lines adjoining this column,
 this horizontal line is extended to meet the nearby lines.
 If any data entry is provided for this column, it is ignored and
 a warning message is printed.
-.QQ do the D(x) and M(x) to draw a line of 'x' characters.
-.QQ D will draw divided lines, M merged lines. thus - is simplh M(\(ru)
+.\" .QQ do the D(x) and M(x) to draw a line of 'x' characters.
+.\" .QQ D will draw divided lines, M merged lines. thus - is simplh M(\(ru)
 .IP "\fI##Vertical lines#\fR"
 \(em A vertical bar may be placed between column key-letters.  This will
 cause a vertical line between the corresponding columns of the table.
@@ -580,7 +581,7 @@ The longest line in the format section, however,
 defines the number of columns
 in the table;
 extra columns in the data are ignored silently.
-.QQ put in the diagnostics.
+.\" .QQ put in the diagnostics.
 .RE
 .sp .5v
 .IP 3)
@@ -716,7 +717,7 @@ commands within the table data but not within the text block
 do not affect that block.
 .br
 .di RR
-.     this is going down a rathole
+.\" this is going down a rathole
 .EQ
 delim off
 .EN
@@ -989,7 +990,12 @@ Here are some examples illustrating features of
 .I
 tbl.
 .R
-.ds T \|\h'.4n'\v'-.2n'\s6\zT\s0\s10\v'.2n'\h'-.4n'\(ci\|\s0
+.\" for the Cat phototypesetter use:
+.\" .ds T \|\h'3.25p'\v'-1.5p'\s6\zT\s0\s10\v'1.5p'\h'-3.25p'\(ci\|\s0
+.\" for the QMS phototypesetter use:
+.\" .ds T \|\h'.4n'\v'-.2n'\s6\zT\s0\s10\v'.2n'\h'-.4n'\(ci\|\s0
+.\" for the high resolution Apple Lazerwriter typesetter use:
+.ds T \|\h'1.6p'\v'-0.8p'\s6\zT\s0\s12\v'0.8p'\h'-1.6p'\(ci\|\s0
 The symbol \*T in the input represents a tab character.
 .de IN
 .po \\n(POu
@@ -1807,7 +1813,7 @@ written by J. F. Gimpel.
 The assistance of
 T. A. Dolotta, B. W. Kernighan, and J. N. Sturman
 is gratefully acknowledged.
-.SG MH-1274-MEL-troff
+.\" .SG MH-1274-MEL-troff
 .ne 2i
 .SH
 References.
