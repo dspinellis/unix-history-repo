@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -1759,6 +1759,7 @@ enter_global_ref (nlist_p, name, entry)
   register int type = nlist_p->n_type;
   int oldref = sp->referenced;
   int olddef = sp->defined;
+  int com = sp->defined && sp->max_common_size;
 
   nlist_p->n_un.n_name = (char *) sp->refs;
   sp->refs = nlist_p;
@@ -1779,22 +1780,21 @@ enter_global_ref (nlist_p, name, entry)
 	  common_defined_global_count++;
 	  sp->max_common_size = nlist_p->n_value;
 	}
-      else if (olddef && sp->max_common_size && type != (N_UNDF | N_EXT))
+      else if (com && type != (N_UNDF | N_EXT))
 	{
 	  /* It used to be common and we're defining it as
 	     something else.  */
 	  common_defined_global_count--;
 	  sp->max_common_size = 0;
 	}
-      else if (olddef && sp->max_common_size && type == (N_UNDF | N_EXT)
+      else if (com && type == (N_UNDF | N_EXT)
 	  && sp->max_common_size < nlist_p->n_value)
 	/* It used to be common and this is a new common entry to
 	   which we need to pay attention.  */
 	sp->max_common_size = nlist_p->n_value;
 
       /* Are we defining it as a set element?  */
-      if (SET_ELEMENT_P (type)
-	  && (!olddef || (olddef && sp->max_common_size)))
+      if (SET_ELEMENT_P (type) && (!olddef || com))
 	set_vector_count++;
       /* As an indirection?  */
       else if (type == (N_INDR | N_EXT))
