@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.4 (Berkeley) %G%
+ *	@(#)pmap.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -907,10 +907,8 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * between R/W and R/O pages.
 	 * NOTE: we only support cache flush for read only text.
 	 */
-#if 0
 	if (prot == (VM_PROT_READ | VM_PROT_EXECUTE))
 		MachFlushICache(MACH_PHYS_TO_UNCACHED(pa), PAGE_SIZE);
-#endif
 
 	if (!pmap->pm_hash) {
 		register pt_entry_t *pte;
