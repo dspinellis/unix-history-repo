@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)files.c	4.2 (Berkeley) 81/02/28";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -28,7 +28,7 @@ char *builtin[] =
 	"CFLAGS=",
 	"RC=f77",
 	"RFLAGS=",
-	"EC=f77",
+	"FC=f77",
 	"EFLAGS=",
 	"FFLAGS=",
 	"LOADLIBES=",
