@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,7 @@ static char sccsid[] = "@(#)rshd.c	5.13 (Berkeley) %G%";
 #include <syslog.h>
 
 int	errno;
+int	keepalive = 1;
 char	*index(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
@@ -67,10 +68,13 @@ main(argc, argv)
 	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "l")) != EOF)
+	while ((ch = getopt(argc, argv, "ln")) != EOF)
 		switch((char)ch) {
 		case 'l':
 			_check_rhosts_file = 0;
+			break;
+		case 'n':
+			keepalive = 0;
 			break;
 		case '?':
 		default:
@@ -86,8 +90,9 @@ main(argc, argv)
 		perror("getpeername");
 		_exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, (char *)&on,
-	    sizeof (on)) < 0)
+	if (keepalive &&
+	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, (char *)&on,
+	    sizeof(on)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	linger.l_onoff = 1;
 	linger.l_linger = 60;			/* XXX */
