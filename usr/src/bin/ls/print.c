@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,12 +45,7 @@ printlong(stats, num)
 	LS *stats;
 	register int num;
 {
-	register long blocks;	/* sum of blocks */
-	register int i;
-
-	for (i = 0, blocks = 0; i < num; ++i)
-		blocks += stats[i].lstat.st_blocks;
-	(void)printf("total %ld\n", blocks);
+	(void)printf("total %lu\n", stats[0].lstat.st_flags);
 	for (; num--; ++stats) {
 		if (f_inode)
 			(void)printf("%6lu ", stats->lstat.st_ino);
@@ -86,7 +81,7 @@ printcol(stats, num)
 	LS *stats;
 	register int num;
 {
-	extern int (*lengthfcn)(), termwidth;
+	extern int termwidth;
 	int i;			/* subscript to stats */
 	int maxlen;		/* length of longest name string */
 	int colwidth;		/* width of a printing column */
@@ -96,16 +91,7 @@ printcol(stats, num)
 	int offset;		/* delta from base to next column */
 	int chcnt;		/* character count printed */
 
-	/*
-	 * assume tabs every 8 columns WARNING: bad code (hard coded
-	 * constants) follows:
-	 */
-	/* figure out max width */
-	maxlen = -1;
-	for (i = 0; i < num; ++i) {
-		if (maxlen < lengthfcn(stats[i].name))
-			maxlen = lengthfcn(stats[i].name);
-	}
+	maxlen = stats[0].lstat.st_flags;
 
 	/* add fudge factors to max name length */
 	if (f_inode)
