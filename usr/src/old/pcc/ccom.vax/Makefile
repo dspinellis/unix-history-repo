@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.25 (Berkeley) %G%
+#	@(#)Makefile	1.26 (Berkeley) %G%
 
 PROG=	ccom
 MIP=	${.CURDIR}/../mip
@@ -16,26 +16,23 @@ rodata.c cgram.c: ${MIP}/cgram.y pcctokens
 	yyfix rodata.c
 	mv y.tab.c cgram.c
 
-common.o: ${MIP}/common.c
-	${CC} ${CFLAGS} -DPASS1COMMON -c ${.ALLSRC}
+common.o:
+	${CC} ${CFLAGS} -DPASS1COMMON -c ${.IMPSRC}
 
-rodata.o: rodata.c
-	${CC} ${CFLAGS} -c -R rodata.c
+rodata.o table.o:
+	${CC} ${CFLAGS} -c -R ${.IMPSRC}
 
-table.o: ${.CURDIR}/${.PREFIX}.c
-	${CC} ${CFLAGS} -c -R ${.CURDIR}/${.PREFIX}.c
-
-pcclocal.h: ${.CURDIR}/localdefs.h /usr/include/pcc.h
+pcclocal.h: localdefs.h /usr/include/pcc.h
 	cat ${.ALLSRC} | \
 	    egrep '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	    sed -e 's/PCC[A-Z]*_//' > ${.TARGET}
 
-pcctokens: ${.CURDIR}/localdefs.h /usr/include/pcc.h
+pcctokens: localdefs.h /usr/include/pcc.h
 	cat ${.ALLSRC} | \
 	    egrep '^#[ 	]*define[ 	][ 	]*PCC_' | \
 	    sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > \
 	    ${.TARGET}
 
-.depend: pcclocal.h pcctokens
+${OBJS} .depend: pcclocal.h pcctokens
 
 .include <bsd.prog.mk>
