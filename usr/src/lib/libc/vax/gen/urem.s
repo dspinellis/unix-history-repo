@@ -1,4 +1,4 @@
-/*	urem.s	4.3	84/11/01	*/
+/*	urem.s	4.4	85/01/16	*/
 
 /*
  * urem - unsigned remainder for vax-11
@@ -37,4 +37,37 @@ ASENTRY(urem, 0)
 	jlssu	1f		/*  remainder is dividend */
 	subl2	r2,r0		/*  else remainder is dividend - divisor */
 1:
+	ret
+
+/*
+ * aurem - unsigned remainder for vax-11
+ *
+ * arguments: *dividend, divisor
+ * result: remainder in r0 and *dividend
+ * uses r0-r2
+ */
+#include "DEFS.h"
+
+ASENTRY(aurem, 0)
+	movl	*4(ap),r0	/* dividend */
+	movl	8(ap),r2	/* divisor */
+	jeql	1f		/* if divisor=0, force exception */
+	cmpl	r2,$1		/* if divisor <= 1 (signed), */
+	jleq	2f		/*  no division is necessary */
+1:
+	clrl	r1		/* zero-extend the dividend */
+	ediv	r2,r0,r2,r0	/* divide.  q->r2 (discarded), r->r0 */
+	movl	r0,*4(ap)	/* save result */
+	ret
+2:
+	jneq	1f		/* if divisor=1, return 0 */
+	clrl	r0		/*  (because doing the divide will overflow */
+	clrl	*4(ap)		/*  if the dividend has its high bit on) */
+	ret	
+1:
+	cmpl	r0,r2		/* if dividend < divisor (unsigned) */
+	jlssu	1f		/*  remainder is dividend */
+	subl2	r2,r0		/*  else remainder is dividend - divisor */
+1:
+	movl	r0,*4(ap)	/* save result */
 	ret
