@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tput.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tput.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/termios.h>
@@ -110,11 +110,10 @@ setospeed()
 	struct termios t;
 	char *strerror();
 
-	if (tcgetattr(STDOUT_FILENO, &t) == -1) {
-		(void)fprintf(stderr, "tput: %s\n", strerror(errno));
-		exit(1);
-	}
-	ospeed = cfgetospeed(&t);
+	if (tcgetattr(STDOUT_FILENO, &t) != -1)
+		ospeed = 0;
+	else
+		ospeed = cfgetospeed(&t);
 }
 
 outc(c)
