@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisink.c	7.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisink.c	7.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,7 +55,7 @@ char **xenvp;
 
 long size, forkp = 0, confp = 0, mynamep, verbose = 1, echop = 0;
 long records, intercept = 0, isode_mode = 0, dgramp = 0, tp0mode = 0;
-long dumpnodata = 0, playtag = 0, select_mode = 0;
+long dumpnodata = 0, playtag = 0, select_mode = 0, tuba = 0;
 void savedata();
 
 char buf[2048];
@@ -141,8 +141,9 @@ tisink()
 {
 	int x, s, pid, on = 1, loop = 0, n, ns;
 	extern int errno;
-	int socktype = (dgramp ? SOCK_DGRAM : SOCK_SEQPACKET);
-	int proto = (tp0mode ? ISOPROTO_TP0 : 0 );
+	int socktype = (dgramp ? SOCK_DGRAM :
+			(tuba ? SOCK_STREAM :SOCK_SEQPACKET));
+	int proto = (tp0mode ? ISOPROTO_TP0 : (tuba ? ISOPROTO_TCP : 0 ));
 	int addrlen = sizeof(faddr);
 
 	try(socket, (AF_ISO, socktype, proto),"");

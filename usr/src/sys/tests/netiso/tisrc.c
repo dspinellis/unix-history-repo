@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,12 +46,13 @@ static char sccsid[] = "@(#)tisrc.c	7.7 (Berkeley) %G%";
 struct	iso_addr eon = {20, 0x47, 0, 6, 3, 0, 0, 0, 25 /*EGP for Berkeley*/};
 struct	iso_addr *iso_addr();
 struct  sockaddr_iso to_s = { sizeof(to_s), AF_ISO }, *to = &to_s;
+struct  sockaddr_iso from_s = { sizeof(from_s), AF_ISO }, *from = 0;
 struct  sockaddr_iso old_s = { sizeof(to_s), AF_ISO }, *old = &old_s;
 struct	tp_conn_param tp_params;
 fd_set	readfds, writefds, exceptfds;
 long size, count = 0;
-int verbose = 1, selectp, type = SOCK_SEQPACKET, nobuffs, errno, playtag = 0;
-int echop = 0, dgramp = 0, debug = 0, tp0mode = 0, dumpnodata  = 0;
+int verbose = 1, selectp, socktype = SOCK_SEQPACKET, nobuffs, errno, playtag = 0;
+int echop = 0, dgramp = 0, debug = 0, tp0mode = 0, dumpnodata  = 0, tuba = 0;
 short portnumber = 3000;
 char your_it[] = "You're it!";
 char *Servername, *conndata, data_msg[8192];
@@ -90,6 +91,11 @@ char *argv[];
 			av++;
 			to_s.siso_addr = *iso_addr(*av);
 			argc--;
+		} else if(strcmp(*av,"from")==0) {
+			av++;
+			from_s.siso_addr = *iso_addr(*av);
+			from = &from_s;
+			argc--;
 		} else if(strcmp(*av,"port")==0) {
 			av++;
 			sscanf(*av,"%hd",&portnumber);
@@ -103,7 +109,7 @@ char *argv[];
 			sscanf(*av,"%ld",&size);
 			iov->iov_len = size;
 		} else if(strcmp(*av,"stream")==0) {
-			type = SOCK_STREAM;
+			socktype = SOCK_STREAM;
 		} else if (strcmp(*av, "echo")==0) {
 			echop++;
 		} else if (strcmp(*av,"eon") == 0) {
@@ -140,10 +146,12 @@ maketoaddr()
 }
 
 tisrc() {
-	int x, s, pid, on = 1, flags = 8, n, proto = tp0mode ? ISOPROTO_TP0: 0;
+	int x, s, pid, on = 1, flags = 8, n;
+	int proto = (tp0mode ? ISOPROTO_TP0 : (tuba ? ISOPROTO_TCP : 0 ));
+	int socktype = (dgramp ? SOCK_DGRAM :
+			(tuba ? SOCK_STREAM :SOCK_SEQPACKET));
 
-	if (dgramp) type = SOCK_DGRAM;
-	try(socket, (AF_ISO, type, proto),"");
+	try(socket, (AF_ISO, socktype, proto),"");
 	s = x;
 
 	if (debug)
@@ -151,6 +159,10 @@ tisrc() {
 	if (dgramp == 0) {
 		if (conndata)
 			doconndata(s);
+		if (from) {
+			try(bind,
+			    (s, (struct sockaddr *)from, from->siso_len), "");
+		}
 		try(connect, (s, (struct sockaddr *) to, to->siso_len), "");
 		recv_cdata(s);
 	}
