@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.31 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.32 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -973,9 +973,8 @@ sigexit(p, sig)
 
 /*
  * Create a core dump.
- * The file name should probably be "core.progname"
- * (or "mos.progname", or "dram.progname", or ...).
- * Core dumps aren't created if the process 
+ * The file name is "core.progname.pid".
+ * Core dumps are not created if the process is setuid.
  */
 coredump(p)
 	register struct proc *p;
