@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.14 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -103,11 +103,8 @@ solisten(so, backlog)
 		splx(s);
 		return (error);
 	}
-	if (so->so_q == 0) {
-		so->so_q = so;
-		so->so_q0 = so;
+	if (so->so_q == 0)
 		so->so_options |= SO_ACCEPTCONN;
-	}
 	if (backlog < 0)
 		backlog = 0;
 	so->so_qlimit = min(backlog, SOMAXCONN);
@@ -143,9 +140,9 @@ soclose(so)
 	int error = 0;
 
 	if (so->so_options & SO_ACCEPTCONN) {
-		while (so->so_q0 != so)
+		while (so->so_q0)
 			(void) soabort(so->so_q0);
-		while (so->so_q != so)
+		while (so->so_q)
 			(void) soabort(so->so_q);
 	}
 	if (so->so_pcb == 0)
@@ -312,13 +309,7 @@ restart:
 			snderr(so->so_error);
 		if ((so->so_state & SS_ISCONNECTED) == 0) {
 			if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
-				if (!uio->uio_resid && !rights && control) {
-					snderr((*so->so_proto->pr_usrreq)(so,
-				    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-					    top, (caddr_t)0, rights, control));
-				} else if (so->so_state & SS_ISCONFIRMING)
-					/* is ok */;
-				else
+				if ((so->so_state & SS_ISCONFIRMING) == 0)
 					snderr(ENOTCONN);
 			} else if (nam == 0)
 				snderr(EDESTADDRREQ);
@@ -496,7 +487,7 @@ restart:
 		}
 		if (so->so_state & SS_CANTRCVMORE)
 			goto release;
-		if ((so->so_state & SS_ISCONNECTED) == 0 &&
+		if ((so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED)) {
 			error = ENOTCONN;
 			goto release;
