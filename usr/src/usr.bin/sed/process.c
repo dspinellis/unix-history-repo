@@ -106,8 +106,6 @@ redirect:
 					(void)printf("%s", cp->t);
 				break;
 			case 'd':
-				if (pd)
-					goto new;
 				pd = 1;
 				goto new;
 			case 'D':
