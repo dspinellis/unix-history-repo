@@ -3,15 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.install	5.1 (Berkeley) %G%
+#	@(#)Makefile.install	5.2 (Berkeley) %G%
 #
-# Doing a make install builds /usr/include
-#
-# Define SHARED to indicate whether you want
-# symbolic links to the system source (``symlinks''),
-# or a separate copy (``copies'').
-# (latter useful in environments where it's
-# not possible to keep /sys publicly readable)
+# Makefile for /usr/include, used to convert system include subdirectories
+# between symbolic links and copies of kernel headers.
+# May also be used to update copies from kernel header files.
 #
 # The ``rm -rf''s used below are safe because rm doesn't
 # follow symbolic links.
