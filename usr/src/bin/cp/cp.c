@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -61,6 +61,7 @@ typedef struct {
 PATH_T from = { "", from.p_path };
 PATH_T to = { "", to.p_path };
 
+extern int errno;
 uid_t myuid;
 int exit_val, myumask;
 int interactive_flag, preserve_flag, recursive_flag;
@@ -72,7 +73,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind, errno;
+	extern int optind;
 	struct stat to_stat;
 	register int c, r;
 	int force_flag, symfollow, lstat(), stat();
@@ -511,7 +512,6 @@ setfile(fs, fd)
 ismember(gid)
 	gid_t gid;
 {
-	extern int errno;
 	register int cnt;
 	static int ngroups, groups[NGROUPS];
 
@@ -534,8 +534,6 @@ ismember(gid)
 error(s)
 	char *s;
 {
-	extern int errno;
-
 	exit_val = 1;
 	(void)fprintf(stderr, "%s: %s: %s\n", pname, s, strerror(errno));
 }

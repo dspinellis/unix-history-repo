@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nm.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,13 +39,15 @@ static char sccsid[] = "@(#)nm.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <strings.h>
 
-int	ignore_bad_archive_entries = 1;
-int	print_only_external_symbols;
-int	print_only_undefined_symbols;
-int	print_all_symbols;
-int	print_file_each_line;
-int	cmp_value(), cmp_name();
-int	(*sort_func)() = cmp_name;
+extern int errno;
+
+int ignore_bad_archive_entries = 1;
+int print_only_external_symbols;
+int print_only_undefined_symbols;
+int print_all_symbols;
+int print_file_each_line;
+int cmp_value(), cmp_name();
+int (*sort_func)() = cmp_name;
 
 enum { FORWARD, BACKWARD } sort_direction = FORWARD;
 int fcount;
@@ -169,7 +171,6 @@ show_archive(fname, fp)
 	char *fname;
 	FILE *fp;
 {
-	extern int errno;
 	struct ar_hdr ar_head;
 	struct exec exec_head;
 	off_t esize;
