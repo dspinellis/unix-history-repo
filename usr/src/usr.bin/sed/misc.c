@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -52,6 +52,20 @@ xrealloc(p, size)
 	if ((p = realloc(p, size)) == NULL)
 		err(FATAL, "%s", strerror(errno));
 	return (p);
+}
+
+char *
+strnchr(buf, c, len)
+	const char *buf;
+	int c;
+	size_t len;
+{
+	const char *cp;
+       
+	for (cp = buf; cp - buf < len; cp++)
+		if (*cp == c)
+			return ((char *)cp);
+	return (NULL);
 }
 
 /*
