@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)Clib.ms	8.1 (Berkeley) %G%
+.\"	@(#)Clib.ms	8.2 (Berkeley) %G%
 .\"
 .so /k3/unx/MACROS/cmac1
 .CH 3 "C LIBRARIES"
