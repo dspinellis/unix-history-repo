@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -102,7 +102,7 @@ main(argc, argv)
 	if (setsockopt(0, SOL_SOCKET, SO_LINGER, (char *)&linger,
 	    sizeof (linger)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
-	doit(0, &from);
+	doit(&from);
 }
 
 char	username[20] = "USER=";
@@ -112,8 +112,7 @@ char	*envinit[] =
 	    {homedir, shell, "PATH=/usr/ucb:/bin:/usr/bin:", username, 0};
 char	**environ;
 
-doit(f, fromp)
-	int f;
+doit(fromp)
 	struct sockaddr_in *fromp;
 {
 	char cmdbuf[NCARGS+1], *cp;
@@ -146,6 +145,32 @@ doit(f, fromp)
 		syslog(LOG_ERR, "malformed from address\n");
 		exit(1);
 	}
+#ifdef IP_OPTIONS
+      {
+	u_char optbuf[BUFSIZ/3], *cp;
+	char lbuf[BUFSIZ], *lp;
+	int optsize = sizeof(optbuf), ipproto;
+	struct protoent *ip;
+
+	if ((ip = getprotobyname("ip")) != NULL)
+		ipproto = ip->p_proto;
+	else
+		ipproto = IPPROTO_IP;
+	if (getsockopt(0, ipproto, IP_OPTIONS, (char *)optbuf, &optsize) == 0 &&
+	    optsize != 0) {
+		lp = lbuf;
+		for (cp = optbuf; optsize > 0; cp++, optsize--, lp += 3)
+			sprintf(lp, " %2.2x", *cp);
+		syslog(LOG_NOTICE,
+		    "Connection received using IP options (ignored):%s", lbuf);
+		if (setsockopt(0, ipproto, IP_OPTIONS,
+		    (char *)NULL, &optsize) != 0) {
+			syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
+			exit(1);
+		}
+	}
+      }
+#endif
 
 	if (fromp->sin_port >= IPPORT_RESERVED ||
 	    fromp->sin_port < IPPORT_RESERVED/2) {
@@ -158,10 +183,10 @@ doit(f, fromp)
 	port = 0;
 	for (;;) {
 		char c;
-		if ((cc = read(f, &c, 1)) != 1) {
+		if ((cc = read(0, &c, 1)) != 1) {
 			if (cc < 0)
 				syslog(LOG_NOTICE, "read: %m");
-			shutdown(f, 1+1);
+			shutdown(0, 1+1);
 			exit(1);
 		}
 		if (c == 0)
@@ -189,7 +214,7 @@ doit(f, fromp)
 	}
 
 #ifdef notdef
-	/* from inetd, f is already on 0, 1, 2 */
+	/* from inetd, socket is already on 0, 1, 2 */
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
@@ -279,7 +304,7 @@ doit(f, fromp)
 		nfd++;
 		if (pid) {
 			(void) close(0); (void) close(1); (void) close(2);
-			(void) close(f); (void) close(pv[1]);
+			(void) close(pv[1]);
 			FD_ZERO(&readfrom);
 			FD_SET(s, &readfrom);
 			FD_SET(pv[0], &readfrom);
@@ -316,7 +341,6 @@ doit(f, fromp)
 	}
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
-	/* (void) close(f); */
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid((uid_t)pwd->pw_uid);
