@@ -75,15 +75,15 @@ int	kerror = KSUCCESS, notickets = 1;
  */
 int	timeout = 300;
 
-struct passwd *pwd;
-int repeatcnt;
-char term[64], *hostname, *username, *tty;
+struct	passwd *pwd;
+int	failures;
+char	term[64], *hostname, *username, *tty;
 
-struct sgttyb sgttyb;
-struct tchars tc = {
+struct	sgttyb sgttyb;
+struct	tchars tc = {
 	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
 };
-struct ltchars ltc = {
+struct	ltchars ltc = {
 	CSUSP, CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT
 };
 
@@ -95,10 +95,10 @@ main(argc, argv)
 	extern char *optarg, **environ;
 	struct group *gr;
 	register int ch;
-	register char *p, *pp;
+	register char *p;
 	int ask, fflag, hflag, pflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
-	char *domain, *salt, *envinit[1], *ttyn;
+	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2];
 	char *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
@@ -150,10 +150,9 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 	if (*argv) {
-		ask = 0;
 		username = *argv;
-	}
-	else
+		ask = 0;
+	} else
 		ask = 1;
 
 	ioctlval = 0;
@@ -188,20 +187,18 @@ main(argc, argv)
 			fflag = 0;
 			getloginname();
 		}
-		/* note if trying multiple login's */
-		if (repeatcnt) {
-			if (strcmp(tbuf, username)) {
+		/*
+		 * Note if trying multiple user names;
+		 * log failures for previous user name,
+		 * but don't bother logging one failure
+		 * for nonexistent name (mistyped username).
+		 */
+		if (failures && strcmp(tbuf, username)) {
+			if (failures > (pwd ? 0 : 1))
 				badlogin(tbuf);
-				repeatcnt = 1;
-				(void)strcpy(tbuf, username);
-			}
-			else
-				++repeatcnt;
+			failures = 0;
 		}
-		else {
-			repeatcnt = 1;
-			(void)strcpy(tbuf, username);
-		}
+		(void)strcpy(tbuf, username);
 		if (pwd = getpwnam(username))
 			salt = pwd->pw_passwd;
 		else
@@ -242,11 +239,11 @@ main(argc, argv)
 		 * in without issueing any tickets.
 		 */
 
-		if(!get_krbrlm(realm,1)) {
+		if (!get_krbrlm(realm,1)) {
 			/* get TGT for local realm */
 			kerror = get_in_tkt(pwd->pw_name, inst, realm,
 				"krbtgt", realm, LIFE, pp);
-			if(kerror == KSUCCESS) {
+			if (kerror == KSUCCESS) {
 				bzero(pp, strlen(pp));
 				notickets = 0;	/* user got ticket */
 				break;
@@ -258,6 +255,7 @@ main(argc, argv)
 			break;
 
 		printf("Login incorrect\n");
+		failures++;
 		/* we allow 10 tries, but after 3 we start backing off */
 		if (++cnt > 3) {
 			if (cnt >= 10) {
@@ -272,20 +270,16 @@ main(argc, argv)
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
 
-	/* log any mistakes -- don't count last one */
-	--repeatcnt;
-	badlogin(username);
-
 	/*
 	 * If valid so far and root is logging in, see if root logins on
 	 * this terminal are permitted.
 	 */
-	if (pwd->pw_uid == 0 && !rootterm()) {
+	if (pwd->pw_uid == 0 && !rootterm(tty)) {
 		if (hostname)
-			syslog(LOG_ERR, "ROOT LOGIN REFUSED ON %s FROM %s",
-			    tty, hostname);
+			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED FROM %s",
+			    hostname);
 		else
-			syslog(LOG_ERR, "ROOT LOGIN REFUSED ON %s", tty);
+			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED ON %s", tty);
 		printf("Login incorrect\n");
 		sleepexit(1);
 	}
@@ -315,7 +309,7 @@ main(argc, argv)
 	}
 
 #ifdef	KERBEROS
-	if(notickets)
+	if (notickets)
 		printf("Warning: no Kerberos tickets issued\n");
 #endif
 
@@ -323,12 +317,11 @@ main(argc, argv)
 	{
 		struct utmp utmp;
 
+		bzero((char *)&utmp, sizeof(utmp));
 		(void)time(&utmp.ut_time);
 		strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
 		if (hostname)
 			strncpy(utmp.ut_host, hostname, sizeof(utmp.ut_host));
-		else
-			bzero(utmp.ut_host, sizeof(utmp.ut_host));
 		strncpy(utmp.ut_line, tty, sizeof(utmp.ut_line));
 		login(&utmp);
 	}
@@ -366,7 +359,7 @@ main(argc, argv)
 	(void)setenv("HOME", pwd->pw_dir, 1);
 	(void)setenv("SHELL", pwd->pw_shell, 1);
 	if (term[0] == '\0')
-		strncpy(term, stypeof(), sizeof(term));
+		strncpy(term, stypeof(tty), sizeof(term));
 	(void)setenv("TERM", term, 0);
 	(void)setenv("USER", pwd->pw_name, 1);
 	(void)setenv("PATH", "/usr/ucb:/bin:/usr/bin:", 0);
@@ -375,10 +368,10 @@ main(argc, argv)
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	if (pwd->pw_uid == 0)
 		if (hostname)
-			syslog(LOG_NOTICE, "ROOT LOGIN %s FROM %s",
+			syslog(LOG_NOTICE, "ROOT LOGIN ON %s FROM %s",
 			    tty, hostname);
 		else
-			syslog(LOG_NOTICE, "ROOT LOGIN %s", tty);
+			syslog(LOG_NOTICE, "ROOT LOGIN ON %s", tty);
 
 	if (!quietlog) {
 		struct stat st;
@@ -438,11 +431,12 @@ timedout()
 	exit(0);
 }
 
-rootterm()
+rootterm(ttyn)
+	char *ttyn;
 {
 	struct ttyent *t;
 
-	return((t = getttynam(tty)) && t->ty_status&TTY_SECURE);
+	return((t = getttynam(ttyn)) && t->ty_status&TTY_SECURE);
 }
 
 jmp_buf motdinterrupt;
@@ -502,13 +496,11 @@ dolastlog(quiet)
 			}
 			(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
 		}
+		bzero((char *)&ll, sizeof(ll));
 		(void)time(&ll.ll_time);
 		strncpy(ll.ll_line, tty, sizeof(ll.ll_line));
 		if (hostname)
 			strncpy(ll.ll_host, hostname, sizeof(ll.ll_host));
-		else
-			bzero(ll.ll_host, sizeof(ll.ll_host));
-		strncpy(ll.ll_host, hostname, sizeof(ll.ll_host));
 		(void)write(fd, (char *)&ll, sizeof(ll));
 		(void)close(fd);
 	}
@@ -517,25 +509,26 @@ dolastlog(quiet)
 badlogin(name)
 	char *name;
 {
-	if (!repeatcnt)
+	if (failures == 0)
 		return;
 	if (hostname)
-		syslog(LOG_ERR, "%d LOGIN FAILURE%s ON %s FROM %s, %s",
-		    repeatcnt, repeatcnt > 1 ? "S" : "", tty, hostname, name);
+		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s FROM %s, %s",
+		    failures, failures > 1 ? "S" : "", hostname, name);
 	else
-		syslog(LOG_ERR, "%d LOGIN FAILURE%s ON %s, %s",
-		    repeatcnt, repeatcnt > 1 ? "S" : "", tty, name);
+		syslog(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s, %s",
+		    failures, failures > 1 ? "S" : "", tty, name);
 }
 
 #undef	UNKNOWN
 #define	UNKNOWN	"su"
 
 char *
-stypeof()
+stypeof(ttyid)
+	char *ttyid;
 {
 	struct ttyent *t;
 
-	return(tty && (t = getttynam(tty)) ? t->ty_type : UNKNOWN);
+	return(ttyid && (t = getttynam(ttyid)) ? t->ty_type : UNKNOWN);
 }
 
 getstr(buf, cnt, err)
