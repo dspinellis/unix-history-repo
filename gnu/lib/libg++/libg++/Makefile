@@ -1,12 +1,11 @@
-CPLUSPLUSLIB=	yes
+LIB=		g++
 
 # This cruft is necessary due to the way shared library globals are
 # dereferenced.  The libg++ encapsulation of curses makes this necessary.
-
 LDADD+= -lcurses
 
-LIB=		g++
 CC=		gcc
+
 SRCS=	 	AllocRing.cc Obstack.cc builtin.cc \
 		regex.cc Regex.cc String.cc  Integer.cc Rational.cc Complex.cc Random.cc \
 		BitSet.cc BitString.cc LogNorm.cc SmplHist.cc SmplStat.cc \
