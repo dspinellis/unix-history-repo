@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #define _h_tc_err		/* Don't redefine the errors	 */
@@ -316,7 +316,7 @@ stderror(id, va_alist)
 
     id &= ~ERR_FLAGS;
 
-    if ((flags & ERR_OLD) && seterr == (char *) 0)
+    if ((flags & ERR_OLD) && seterr == NULL)
 	return;
 
     if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
@@ -353,7 +353,7 @@ stderror(id, va_alist)
 
     if (seterr) {
 	xfree((ptr_t) seterr);
-	seterr = (char *) 0;
+	seterr = NULL;
     }
 
     if (v = pargv)

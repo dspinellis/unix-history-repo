@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -15,12 +15,13 @@ static char sccsid[] = "@(#)dir.c	5.7 (Berkeley) %G%";
 
 /* Directory management. */
 
-static struct directory *dfind();
-static Char *dfollow();
-static void printdirs();
-static Char *dgoto();
-static void dnewcwd();
-static void dset();
+static struct directory 	
+		*dfind __P((Char *));
+static Char 	*dfollow __P((Char *));
+static void 	 printdirs __P((void));
+static Char 	*dgoto __P((Char *));
+static void 	 dnewcwd __P((struct directory *));
+static void 	 dset __P((Char *));
 
 struct directory dhead;		/* "head" of loop */
 int     printd;			/* force name to be printed */
@@ -48,13 +49,13 @@ dinit(hp)
 	    tcp = short2str(hp);
 	    (void) xprintf(emsg, tcp);
 	    if (chdir(tcp) == -1)
-		cp = (Char *) 0;
+		cp = NULL;
 	    else
 		cp = hp;
 	}
 	else
-	    cp = (Char *) 0;
-	if (cp == (Char *) 0) {
+	    cp = NULL;
+	if (cp == NULL) {
 	    (void) xprintf(emsg, "/");
 	    if (chdir("/") == -1)
 		/* I am not even try to print an error message! */
@@ -594,7 +595,7 @@ dcanon(cp, p)
 	Char    tmpdir[MAXPATHLEN];
 
 	p1 = value(STRcwd);
-	if (p1 == (Char *) 0 || *p1 != '/')
+	if (p1 == NULL || *p1 != '/')
 	    abort();
 	if (Strlen(p1) + Strlen(cp) + 1 >= MAXPATHLEN)
 	    abort();
@@ -801,7 +802,7 @@ dcanon(cp, p)
 	(Strncmp(p1, cp, cc) != 0 || (cp[cc] != '/' && cp[cc] != '\0'))) {
 	static ino_t home_ino = -1;
 	static dev_t home_dev = -1;
-	static Char *home_ptr = (Char *) 0;
+	static Char *home_ptr = NULL;
 	struct stat statbuf;
 
 	/*
@@ -817,7 +818,7 @@ dcanon(cp, p)
 	 * Start comparing dev & ino backwards
 	 */
 	p2 = Strcpy(link, cp);
-	for (sp = (Char *) 0; *p2 && stat(short2str(p2), &statbuf) != -1;) {
+	for (sp = NULL; *p2 && stat(short2str(p2), &statbuf) != -1;) {
 	    if (statbuf.st_dev == home_dev &&
 		statbuf.st_ino == home_ino) {
 		sp = (Char *) - 1;
@@ -829,7 +830,7 @@ dcanon(cp, p)
 	/*
 	 * See if we found it
 	 */
-	if (*p2 && sp == (Char *) - 1) {
+	if (*p2 && sp == (Char *) -1) {
 	    /*
 	     * Use STRhome to make '~' work
 	     */

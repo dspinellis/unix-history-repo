@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -36,22 +36,30 @@ typedef enum {
     LIST, RECOGNIZE
 }       COMMAND;
 
-static void setup_tty();
-static void back_to_col_1();
-static void pushback();
-static void catn();
-static void copyn();
-static Char filetype();
-static void extract_dir_and_name();
-static Char *getentry();
-static void free_items();
-static int tsearch();
-static int recognize();
-static int is_prefix();
-static int is_suffix();
-static int ignored();
-
-extern int sortscmp();		/* defined in sh.glob.c */
+static void	 setup_tty __P((int));
+static void	 back_to_col_1 __P((void));
+static void	 pushback __P((Char *));
+static void	 catn __P((Char *, Char *, int));
+static void	 copyn __P((Char *, Char *, int));
+static Char	 filetype __P((Char *, Char *));
+static void	 print_by_column __P((Char *, Char *[], int));
+static Char 	*tilde __P((Char *, Char *));
+static void	 retype __P((void));
+static void	 beep __P((void));
+static void 	 print_recognized_stuff __P((Char *));
+static void	 extract_dir_and_name __P((Char *, Char *, Char *));
+static Char	*getentry __P((DIR *, int));
+static void	 free_items __P((Char **));
+#ifdef  notdef
+/* gcc bug: Enums in decls */
+static int	 tsearch __P((Char *, int, COMMAND));
+#else
+static int	 tsearch ();
+#endif
+static int	 recognize __P((Char *, Char *, int, int));
+static int	 is_prefix __P((Char *, Char *));
+static int	 is_suffix __P((Char *, Char *));
+static int	 ignored __P((Char *));
 
 /*
  * Put this here so the binary can be patched with adb to enable file
@@ -191,7 +199,7 @@ pushback(string)
 static void
 catn(des, src, count)
     register Char *des, *src;
-    register count;
+    register int count;
 {
     while (--count >= 0 && *des)
 	des++;
@@ -208,7 +216,7 @@ catn(des, src, count)
 static void
 copyn(des, src, count)
     register Char *des, *src;
-    register count;
+    register int count;
 {
     while (--count >= 0)
 	if ((*des++ = *src++) == 0)
@@ -532,7 +540,8 @@ again:				/* search for matches */
 	return (numitems);
     }
     else {			/* LIST */
-	qsort((ptr_t) items, numitems, sizeof(items[0]), sortscmp);
+	qsort((ptr_t) items, numitems, sizeof(items[0]), 
+	      (int (*)(const void *, const void *)) sortscmp);
 	print_by_column(looking_for_lognames ? NULL : tilded_dir,
 			items, numitems);
 	if (items != NULL)

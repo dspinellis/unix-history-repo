@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.14 (Berkeley) %G%";
 
 #endif				/* not lint */
 
@@ -19,20 +19,24 @@ static char sccsid[] = "@(#)lex.c	5.13 (Berkeley) %G%";
  * of input buffering, and especially because of history substitution.
  */
 
-static Char *word();
-static int getC1();
-static void getdol();
-static void getexcl();
-static struct Hist *findev();
-static void setexclp();
-static int bgetc();
-static void bfree();
-static struct wordent *gethent();
-static int matchs();
-static int getsel();
-static struct wordent *getsub();
-static Char *subword();
-static struct wordent *dosub();
+static Char	*word __P((void));
+static int	 getC1 __P((int));
+static void	 getdol __P((void));
+static void	 getexcl __P((int));
+static struct Hist 
+		*findev __P((Char *, bool));
+static void	 setexclp __P((Char *));
+static int	 bgetc __P((void));
+static void	 bfree __P((void));
+static struct wordent 
+		*gethent __P((int));
+static int	 matchs __P((Char *, Char *));
+static int	 getsel __P((int *, int *, int));
+static struct wordent 
+		*getsub __P((struct wordent *));
+static Char 	*subword __P((Char *, int, bool *));
+static struct wordent 
+		*dosub __P((int, struct wordent *, bool));
 
 /*
  * Peekc is a peek character for getC, peekread for readc.
@@ -562,7 +566,7 @@ static int quesarg;
 
 static void
 getexcl(sc)
-    Char    sc;
+    int    sc;
 {
     register struct wordent *hp, *ip;
     int     left, right, dol;

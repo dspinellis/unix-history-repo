@@ -6,13 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
 #include "extern.h"
 
-static int renum();
+static int	renum __P((int, int));
 
 int
 any(s, c)
@@ -148,7 +148,7 @@ strstr(s, t)
 		return (s);
 	while (*ss++ == *tt++);
     } while (*s++ != '\0');
-    return ((char *) 0);
+    return (NULL);
 }
 
 #endif /* NOTUSED */

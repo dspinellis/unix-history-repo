@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -30,23 +30,23 @@ static char sccsid[] = "@(#)exp.c	5.8 (Berkeley) %G%";
 #define EQMATCH 7
 #define NOTEQMATCH 8
 
-static int exp1();
-static int exp2();
-static int exp2a();
-static int exp2b();
-static int exp2c();
-static Char *exp3();
-static Char *exp3a();
-static Char *exp4();
-static Char *exp5();
-static Char *exp6();
-static void evalav();
-static int isa();
-static int egetn();
+static int	exp1	__P((Char ***, bool));
+static int	exp2	__P((Char ***, bool));
+static int	exp2a	__P((Char ***, bool));
+static int	exp2b	__P((Char ***, bool));
+static int	exp2c	__P((Char ***, bool));
+static Char *	exp3	__P((Char ***, bool));
+static Char *	exp3a	__P((Char ***, bool));
+static Char *	exp4	__P((Char ***, bool));
+static Char *	exp5	__P((Char ***, bool));
+static Char *	exp6	__P((Char ***, bool));
+static void	evalav	__P((Char **));
+static int	isa	__P((Char *, int));
+static int	egetn	__P((Char *));
 
 #ifdef EDEBUG
-static void etracc();
-static void etraci();
+static void	etracc	__P((char *, Char *, Char ***));
+static void	etraci	__P((char *, int, Char ***));
 #endif
 
 int
@@ -427,8 +427,7 @@ exp6(vp, ignore)
 
 	faket.t_dtyp = NODE_COMMAND;
 	faket.t_dflg = 0;
-	faket.t_dcar = faket.t_dcdr = faket.t_dspr =
-	    (struct command *) 0;
+	faket.t_dcar = faket.t_dcdr = faket.t_dspr = NULL;
 	faket.t_dcom = fakecom;
 	fakecom[0] = STRfakecom;
 	fakecom[1] = NULL;
