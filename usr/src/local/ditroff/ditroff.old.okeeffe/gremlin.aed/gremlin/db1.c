@@ -1,4 +1,4 @@
-/* @(#)db1.c	1.2	%G%
+/* @(#)db1.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -8,6 +8,7 @@
 
 #include "gremlin.h"
 #include "grem2.h"
+#include <ctype.h>
 
 /* imports from undodb */
 
@@ -258,16 +259,29 @@ POINT *pos;
  * a carriage return.
  *
  * All numbers are printed using standard c output conversion (ascii).
+ *
+ * +++ NEW FORMAT FOR SUN +++
+ *
+ * Installed 10/21/84 by Mark Opperman
+ * This modification allows reading of either SUN or AED formats
+ *
+ * "sungremlinfile" is keyword in place of "gremlinfile"
+ *
+ * Point lists are terminated by a line containing a single asterik ('*')
+ * to allow the legal point (-1.00 -1.00) in the point list.  All negative
+ * coordinates are now legal.  Element types are indicated by ascii text,
+ * eg, POLYGON, VECTOR, ARC, BOTLEFT, TOPCENT, etc.
  */
 
 {
     FILE *fp, *POpen();
     ELT *elist;
     POINT *plist;
-    char string[100], *txt;
+    char string[128], *txt;
     float x, y;
-    int len, type, i, brush, size, done;
+    int len, type, i, brush, size, done, lastpoint, sunfile;
 
+    sunfile = FALSE;
     elist = DBInit();
     fp = POpen(filename,(char **) NULL,SEARCH);
     if (fp == NULL)
@@ -277,39 +291,65 @@ POINT *pos;
         return(elist);
     }
     TxPutMsg("reading file...");
-    (void) fscanf(fp,"%s",string);
+    (void) fscanf(fp,"%s\n",string);
     if ( strcmp(string, "gremlinfile") )
     {
-        error("not gremlin file");
-        return(elist);
+	if ( strcmp(string, "sungremlinfile") )
+	{
+	    error("not gremlin file");
+	    return(elist);
+	}
+	sunfile = TRUE;
     }
-    (void) fscanf(fp, "%d%f%f", orient, &x, &y);
+    (void) fscanf(fp, "%d%f%f\n", orient, &x, &y);
     pos->x = x;
     pos->y = y;
 
     done = FALSE;
     while (!done)
     {
-        if ( fscanf(fp,"%d", &type) == EOF )
+        if ( fscanf(fp,"%s\n", string) == EOF )		/* element type */
         {
             error("error in file format");
+	    fclose(fp);
             return(elist);
         }
-        if (type < 0)         /* no more data */
+        if ( (type = DBGetType(string))  < 0)         /* no more data */
         {
             done = TRUE;
-            (void) fclose(fp);
         }
         else
         {
-            (void) fscanf(fp, "%f%f", &x, &y);
+            (void) fscanf(fp, "%f%f\n", &x, &y);	/* read first point */
             plist = PTInit();
+
+	    /* Files created on the SUN have point lists terminated
+	     * by a line containing only an asterik ('*').  Files
+	     * created on the AED have point lists terminated by the
+	     * coordinate pair (-1.00 -1.00).
+	     */
+	    lastpoint = FALSE;
+	    do {
+		(void) PTMakePoint(x, y, &plist);
+		fgets(string, 127, fp);
+		if (string[0] == '*') {     /* SUN gremlin file */
+		    lastpoint = TRUE;
+		}
+		else {
+		    (void) sscanf(string, "%f%f", &x, &y);
+		    if ((x == -1.00 && y == -1.00) && (!sunfile))
+			lastpoint = TRUE;
+		}
+	    } while (!lastpoint);
+
+#ifdef oldway
             while ((x != -1) && (y != -1)) /* pointlist terminated by -1, -1 */
             {
                 (void) PTMakePoint(x, y, &plist);
                 (void) fscanf(fp, "%f%f", &x, &y);
             }
-            (void) fscanf(fp, "%d%d", &brush, &size);
+#endif
+            (void) fscanf(fp, "%d%d\n", &brush, &size);
             (void) fscanf(fp, "%d", &len);   
             txt = malloc((unsigned) len + 1);
             (void) getc(fp);        /* throw away space character */
@@ -320,8 +360,72 @@ POINT *pos;
         }  /* end else */
     }  /* end while not done */;
     TxMsgOK();
+    fclose(fp);
     return(elist);
 } /* end DBRead */
+
+
+/*               
+ * Interpret element type in string s.
+ * Old file format consisted of integer element types.
+ * New file format has literal names for element types.
+ */                           
+DBGetType(s)     
+register char *s;
+{        
+    if (isdigit(s[0]) || (s[0] == '-'))         /* old element format or EOF */
+        return(atoi(s));
+         
+    switch (s[0]) {
+        case 'P':
+            return(POLYGON);
+        case 'V':
+            return(VECTOR);
+        case 'A':
+            return(ARC);
+        case 'C':
+            if (s[1] == 'U')
+                return(CURVE);
+            switch (s[4]) {
+                case 'L':
+                    return(CENTLEFT);
+                case 'C':
+                    return(CENTCENT);
+                case 'R':
+                    return(CENTRIGHT);
+                default:
+                    error("unknown element type");
+                    return(-1);
+            }
+        case 'B':
+            switch (s[3]) {
+                case 'L':
+                    return(BOTLEFT);
+                case 'C':
+                    return(BOTCENT);
+                case 'R':
+                    return(BOTRIGHT);
+                default:
+                    error("unknown element type");
+                    return(-1);
+            }
+        case 'T':
+            switch (s[3]) {
+                case 'L':
+                    return(TOPLEFT);
+                case 'C':
+                    return(TOPCENT);
+                case 'R':
+                    return(TOPRIGHT);
+                default:
+                    error("unknown element type");
+                    return(-1);
+            }          
+        default:       
+            error("unknown element type");
+            return(-1);
+    }                  
+}  /* end DBGetType */ 
 
 
 DBBounded(elt, x1, y1, x2, y2)
