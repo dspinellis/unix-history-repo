@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1986,1988 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.2 (Berkeley) %G%
+.\"	@(#)6.t	6.3 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
@@ -21,7 +21,7 @@
 .R
 .NL
 .PP
-This section describes procedures used to operate a VAX UNIX system.
+This section describes procedures used to operate a \*(4B UNIX system.
 Procedures described here are used periodically, to reboot the system,
 analyze error messages from devices, do disk backups, monitor
 system performance, recompile system software and control local changes.
@@ -35,30 +35,62 @@ can be stopped (after it prints the date) with a ^C (interrupt).
 This will leave the system in single-user mode, with only the console
 terminal active.
 It is also possible to allow the filesystem checks to complete
-and then to return to single-user mode by signaling \fIfsck\fP
-with a QUIT signal (^\).
+and then to return to single-user mode by signaling \fIfsck\fP(8)
+with a QUIT signal (^\\).
+.if \n(Th \{\
 .PP
 If booting from the console command level is needed, then the command
 .DS
-\fB>>>\fP B
+\fB#>\fP\|fb
 .DE
 will boot from the default device.
-On an 8650, 8600, 11/785, 11/780, or 11/730 the default device is
+.PP
+You can boot a system up single user by doing
+.DS
+\fB#>\fP\fI\|p23 2.\fP\fB#>\fP\fIy.\fP\fB#>\fP\fI\|fb\fP
+.DE
+.PP
+Other possibilities are:
+.DS
+\fB#>\fP\fI\|p23 3.\fP\fB#>\fP\fIy.\fP\fB#>\fP\fI\|fb\fP
+.DE
+to do a full bootstrap, or
+.DS
+\fB#>\fP\fI\|p23 3.\fP\fB#>\fP\fIy.\fP\fB#>\fP\fI\|fr /boot\fP
+.DE
+to run the bootstrap without performing self-tests and
+reloading microcode; it can be used after a full bootstrap has been done
+once.
+.\}
+.if \n(Vx \{\
+.PP
+If booting from the console command level is needed, then the command
+.DS
+\fB>>>\fP\fIB\fP
+.DE
+will boot from the default device.
+On an 8600, 8200, 11/780, or 11/730 the default device is
 determined by a ``DEPOSIT''
 command stored on the console boot device in the file ``DEFBOO.CMD''
-(``DEFBOO.COM'' on an 8650 or 8600);
+(``DEFBOO.COM'' on an 8600);
 on an 11/750 the default device is determined by the setting of a switch
 on the front panel.
 .PP
 You can boot a system up single user
-on an 8650, 8600, 785, 780, or 730 by doing
+on an 8600, 780, or 730 by doing
 .DS
-\fB>>>\fP B \fIXX\fP\|S
+\fB>>>\fP\fIB xxS\fP
 .DE
-where \fIXX\fP is one of HP, HK, UP, RA, or RB for a 730.
+where \fIxx\fP is one of HP, HK, UP, RA, or RB.
 The corresponding command on an 11/750 is
 .DS
-\fB>>>\fP B/2
+\fB>>>\fP\fIB/2\fP
+.DE
+On an 8200, use
+.DS
+\fB>>>\fP\fIB/R5:800\fP
+(node and memory test values)
+\fBBOOT58>\fP \fI@\fPXX\fISBOO.CMD\fP
 .DE
 .PP
 For second vendor storage modules on the
@@ -69,20 +101,29 @@ if you don't have one.
 .PP
 Other possibilities are:
 .DS
-\fB>>>\fP B ANY
+\fB>>>\fP\fIB ANY\fP
 .DE
-or, on a 750
+or, on an 8200,
 .DS
-\fB>>>\fP B/3
+\fB>>>\fP\fIB/R5:800\fP
+\fBBOOT58>\fP\fI@ANYBOO.CMD\fP
 .DE
+or, on an 11/750
+.DS
+\fB>>>\fP\fIB/3\fP
+.DE
+.\}
 These commands boot and ask for the name of the system to be booted.
 They can be used after building a new test system to give the
-boot program the name of the test version of the system.
+boot program the name of the test version of the system.*
+.FS
+* Additional bootflags are used when a system is configured with
+the kernel debugger; consult \fIkdb\fP(4) for details.
+.FE
 .PP
 To bring the system up to a multi-user configuration from the single-user
-status after, e.g., a ``B HPS'' on an 8650, 8600, 11/785 or 11/780, ``B RBS''
-on a 11/730, or a ``B/2'' on an
-11/750 all you have to do is hit ^D on the console.  The system
+status,
+all you have to do is hit ^D on the console.  The system
 will then execute /etc/rc,
 a multi-user restart script (and /etc/rc.local),
 and come up on the terminals listed as
@@ -90,7 +131,7 @@ active in the file /etc/ttys.
 See
 \fIinit\fP\|(8)
 and
-\fIttys\fP\|(5).
+\fIttys\fP\|(5) for more details.
 Note, however, that this does not cause a file system check to be performed.
 Unless the system was taken down cleanly, you should run
 ``fsck \-p'' or force a reboot with
@@ -99,25 +140,25 @@ to have the disks checked.
 .PP
 To take the system down to a single user state you can use
 .DS
-\fB#\fP kill 1
+\fB#\fP \fIkill 1\fP
 .DE
 or use the
 \fIshutdown\fP\|(8)
-command (which is much more polite, if there are other users logged in.)
-when you are up multi-user.
+command (which is much more polite, if there are other users logged in)
+when you are running multi-user.
 Either command will kill all processes and give you a shell on the console,
 as if you had just booted.  File systems remain mounted after the
 system is taken single-user.  If you wish to come up multi-user again, you
 should do this by:
 .DS
-\fB#\fP cd /
-\fB#\fP /etc/umount -a
-\fB#\fP ^D
+\fB#\fP \fIcd /\fP
+\fB#\fP \fI/etc/umount -a\fP
+\fB#\fP \fI^D\fP
 .DE
 .PP
 Each system shutdown, crash, processor halt and reboot
 is recorded in the system log
-with the cause.
+with its cause.
 .NH 2
 Device errors and diagnostics
 .PP
@@ -133,14 +174,14 @@ which may log them on the console.
 The error priorities that are logged and the locations to which they are logged
 are controlled by \fI/etc/syslog.conf\fP.  See
 .IR syslogd (8)
-for details.
+for further details.
 .PP
 Error messages printed by the devices in the system are described with the
 drivers for the devices in section 4 of the programmer's manual.
 If errors occur suggesting hardware problems, you should contact
 your hardware support group or field service.  It is a good idea to
 examine the error log file regularly
-(e.g. with ``tail \-r \fI/usr/adm/messages\fP'').
+(e.g. with the command \fItail \-r /usr/adm/messages\fP).
 .NH 2
 File system checks, backups and disaster recovery
 .PP
@@ -233,26 +274,20 @@ same way that the initial root file system was created.
 .PP
 Exhaustion of user-file space is certain to occur
 now and then; disk quotas may be imposed, or if you
-prefer a less facist approach, try using the programs
+prefer a less fascist approach, try using the programs
 \fIdu\fP\|(1),
-\fIdf\fP\|(1),
+\fIdf\fP\|(1), and
 \fIquot\fP\|(8),
 combined with threatening
 messages of the day, and personal letters.
 .NH 2
 Moving file system data
 .PP
-If you have the equipment,
+If you have the resources,
 the best way to move a file system
-is to dump it to magtape using
-\fIdump\fP\|(8),
-use
-\fInewfs\fP\|(8)
-to create the new file system,
-and restore the tape, using \fIrestore\fP\|(8).
-If for some reason you don't want to use magtape,
-dump accepts an argument telling where to put the dump;
-you might use another disk.
+is to dump it to a spare disk partition, or magtape, using
+\fIdump\fP\|(8), use \fInewfs\fP\|(8) to create the new file system,
+and restore the file system using \fIrestore\fP\|(8).
 Filesystems may also be moved by piping the output of \fIdump\fP
 to \fIrestore\fP.
 The \fIrestore\fP program uses an ``in-place'' algorithm that
@@ -273,22 +308,25 @@ If the only drive is a Winchester disk, this procedure may not be used
 without overwriting the existing root or another partition.
 What you do is the following:
 .IP 1.
-GET A SECOND PACK!!!!
+GET A SECOND PACK, OR USE ANOTHER DISK DRIVE!!!!
 .IP 2.
 Dump the root file system to tape using
 \fIdump\fP\|(8).
 .IP 3.
-Bring the system down and mount the new pack.
+Bring the system down.
 .IP 4.
+Mount the new pack in the correct disk drive, if
+using removable media.
+.IP 5.
 Load the distribution tape and install the new
 root file system as you did when first installing the system.
-.IP 5.
 Boot normally
 using the newly created disk file system.
 .PP
 Note that if you change the disk partition tables or add new disk
 drivers they should also be added to the standalone system in
-\fI/sys/stand\fP and the default disk partition tables in \fI/etc/disktab\fP
+\fI/sys/\*(mCstand\fP,
+and the default disk partition tables in \fI/etc/disktab\fP
 should be modified.
 .NH 2
 Monitoring System Performance
@@ -355,15 +393,15 @@ and the \s-2FORTRAN\s0 libraries /usr/src/usr.lib/libI77 and
 case the library is remade by changing into the corresponding directory
 and doing
 .DS
-\fB#\fP make
+\fB#\fP \fImake\fP
 .DE
 and then installed by
 .DS
-\fB#\fP make install
+\fB#\fP \fImake install\fP
 .DE
 Similar to the system,
 .DS
-\fB#\fP make clean
+\fB#\fP \fImake clean\fP
 .DE
 cleans up.
 .PP
@@ -376,20 +414,20 @@ you can recompile the entire system source with one command.
 To recompile a specific program, find
 out where the source resides with the \fIwhereis\fP\|(1)
 command, then change to that directory and remake it
-with the makefile present in the directory.
+with the Makefile present in the directory.
 For instance, to recompile ``date'', 
 all one has to do is
 .DS
-\fB#\fP whereis date
-\fBdate: /usr/src/bin/date.c /bin/date /usr/man/man1/date.1\fP
-\fB#\fP cd /usr/src/bin
-\fB#\fP make date
+\fB#\fP \fIwhereis date\fP
+\fBdate: /usr/src/bin/date.c /bin/date\fP
+\fB#\fP \fIcd /usr/src/bin\fP
+\fB#\fP \fImake date\fP
 .DE
 this will create an unstripped version of the binary of ``date''
 in the current directory.  To install the binary image, use the
 install command as in
 .DS
-\fB#\fP install \-s date /bin/date
+\fB#\fP \fIinstall \-s date -o bin -g bin -m 755 /bin/date\fP
 .DE
 The \-s option will insure the installed version of date has
 its symbol table stripped.  The install command should be used
@@ -399,14 +437,14 @@ even when the program is currently in use.
 If you wish to recompile and install all programs in a particular
 target area you can override the default target by doing:
 .DS
-\fB#\fP make
-\fB#\fP make DESTDIR=\fIpathname\fP install
+\fB#\fP \fImake\fP
+\fB#\fP \fImake DESTDIR=\fPpathname \fIinstall\fP
 .DE
 .PP
 To regenerate all the system source you can do
 .DS
-\fB#\fP cd /usr/src
-\fB#\fP make
+\fB#\fP \fIcd /usr/src\fP
+\fB#\fP \fImake clean; make depend; make\fP
 .DE
 .PP
 If you modify the C library, say to change a system call,
@@ -417,38 +455,34 @@ remainder of the source, otherwise the loaded images will not
 contain the new routine from the library.  The following
 sequence will accomplish this.
 .DS
-\fB#\fP cd /usr/src
-\fB#\fP make clean
-\fB#\fP make build
-\fB#\fP make installsrc
+\fB#\fP \fIcd /usr/src\fP
+\fB#\fP \fImake clean\fP
+\fB#\fP \fImake depend\fP
+\fB#\fP \fImake build\fP
+\fB#\fP \fImake installsrc\fP
 .DE
-The first \fImake\fP removes any existing binaries in the source trees
-to insure that everything is reloaded.
-The next \fImake\fP compiles and installs the libraries and compilers,
-then compiles the remainder of the sources.
-The final line installs all of the commands not installed in the first phase.
-This will take about 18 hours on a reasonably configured 11/750.
+The \fImake clean\fP removes any existing binary or object files in the source
+trees to insure that everything will be recompiled and reloaded.  The \fImake
+depend\fP recreates all of the dependencies.  See \fImkdep\fP(1) for
+further details. The \fImake build\fP compiles and installs the libraries
+and compilers, then recompiles the libraries and compilers and the remainder
+of the sources.  The \fImake installsrc\fP installs all of the commands not
+installed as part of the \fImake build\fP.
+.if \n(Th \{\
+This will take approximately 10
+hours on a reasonably configured Tahoe.
+.\}
 .NH 2
 Making local modifications
 .PP
-To keep track of changes to system source we migrate changed
-versions of commands in /usr/src/bin, /usr/src/usr.bin, and /usr/src/ucb
-in through the directory /usr/src/new
-and out of the original directory into /usr/src/old for
-a time before removing them.
-(/usr/new is also used by default for the programs that constitute
-the contributed software portion of the distribution.)
 Locally written commands that aren't distributed are kept in /usr/src/local
 and their binaries are kept in /usr/local.  This allows /usr/bin, /usr/ucb,
 and /bin to correspond to the distribution tape (and to the manuals that
-people can buy).  People wishing to use /usr/local commands are made
-aware that they aren't in the base manual.  As manual updates incorporate
-these commands they are moved to /usr/ucb.
-.PP
-A directory, /usr/junk, to throw garbage into, as well as binary directories,
-/usr/old and /usr/new, are useful.  The man command supports manual
-directories such as /usr/man/mano for old and /usr/man/manl for local
-to make this or something similar practical.
+people can buy).  People using local commands should be made aware that
+they aren't in the base manual.  Manual pages for local commands should be
+installed in /usr/src/local/man and installed in /usr/local/man/cat[1-8].
+The \fIman\fP(1) command automatically finds manual pages placed in
+/usr/local/man/cat[1-8] to facilitate this practice.
 .NH 2
 Accounting
 .PP
@@ -553,7 +587,7 @@ appropriate manual pages for more information.
 Files that need periodic attention
 .PP
 We conclude the discussion of system operations by listing
-the files that require periodic attention or are system specific
+the files that require periodic attention or are system specific:
 .de BP
 .IP \fB\\$1\fP
 .br
@@ -562,7 +596,7 @@ the files that require periodic attention or are system specific
 center;
 lb a.
 /etc/fstab	how disk partitions are used
-/etc/disktab	disk partition sizes
+/etc/disktab	default disk partition sizes/labels
 /etc/printcap	printer data base
 /etc/gettytab	terminal type definitions
 /etc/remote	names and phone numbers of remote machines for \fItip\fP(1)

@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1986,1988 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.1 (Berkeley) %G%
+.\"	@(#)4.t	6.2 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
@@ -21,17 +21,18 @@
 .R
 .NL
 .PP
-This section describes procedures used to set up a VAX UNIX system.
+This section describes procedures used to set up a \*(Mc UNIX system.
 These procedures are used when a system is first installed
 or when the system configuration changes.  Procedures for normal
 system operation are described in the next section.
+.if \n(Vx \{\
 .NH 2
 Creating UNIX boot media
 .PP
 The procedures for making the various UNIX boot media are described in this
-section.  If you have an 11/785 or 11/780, you will need to make a floppy.
-For an 11/730, you will need to make a cassette.  While for an 8650
-or 8600, you will need to make a console RL02 pack.
+section.  If you have an 8200 or 11/780, you will need to make a floppy.
+For an 11/730, you will need to make a cassette.  For an
+8600, you will need to make a console RL02 pack.
 .PP
 The boot command files are all set up for booting off of the first
 UNIBUS or MASSBUS.  If you are booting off of a different UNIBUS
@@ -39,7 +40,7 @@ or MASSBUS, you will need to modify the boot command files appropriately.
 .NH 3
 Making a UNIX boot console RL02 pack
 .PP
-If you have an 8650 or 8600 you will want to create a
+If you have an 8600 you will want to create a
 .UX
 boot console RL02 pack by adding some files to your current DEC
 console pack, using
@@ -53,84 +54,119 @@ bootstrapping much easier.
 First change into the directory where the console RL02
 information is stored:
 .DS
-\fB#\fP cd /sys/consolerl
+\fB#\fI cd /sys/consolerl\fR
 .DE
 then set up the default boot device.
 If you have an RK07 as your primary root do:
 .DS
-\fB#\fP cp defboo.hk defboo.com
+\fB#\fI cp defboo.hk defboo.com\fR
 .DE
 If you have a drive on a UDA50 (e.g. an RA81) as your
 primary root do:
 .DS
-\fB#\fP cp defboo.ra defboo.com
+\fB#\fI cp defboo.ra defboo.com\fR
 .DE
 If you have a second vendor
 UNIBUS storage module as your primary root do:
 .DS
-\fB#\fP cp defboo.up defboo.com
+\fB#\fI cp defboo.up defboo.com\fR
 .DE
 Otherwise:
 .DS
-\fB#\fP cp defboo.hp defboo.com
+\fB#\fI cp defboo.hp defboo.com\fR
 .DE
 The final step in updating the console RL02 pack is:
 .DS
-\fB#\fP make update
+\fB#\fI make update\fR
 .DE
 More copies of this console RL02 pack can be made using
 .IR dd (1).
 .NH 3
 Making a UNIX boot floppy
 .PP
-If you have an 11/785 or 11/780 you will want to create a
+If you have an 8200 or 11/780 you will want to create a
 .UX
 boot floppy by adding some files to a copy of your current DEC
-console floppy, using
+console floppy, using either
 .IR flcopy (8)
-and
-\fIarff\fP\|(8).
+or
+.IR dd \|(1),
+and using
+.IR arff \|(8).
 This floppy will make standalone system operations such as
 bootstrapping much easier.
 .PP
 First change into the directory where the console floppy
 information is stored:
 .DS
-\fB#\fP cd /sys/floppy
+\fB#\fI cd /sys/floppy\fR
 .DE
 then set up the default boot device.
 If you have an RK07 as your primary root do:
 .DS
-\fB#\fP cp defboo.hk defboo.cmd
+\fB#\fI cp defboo.hk defboo.cmd\fR
 .DE
 If you have a drive on a UDA50 (e.g. an RA81) as your
 primary root do:
 .DS
-\fB#\fP cp defboo.ra defboo.cmd
+\fB#\fI cp defboo.ra defboo.cmd\fR
 .DE
 If you have a second vendor
 UNIBUS storage module as your primary root do:
 .DS
-\fB#\fP cp defboo.up defboo.cmd
+\fB#\fI cp defboo.up defboo.cmd\fR
+.DE
+If you have a drive on a KDB50 as your primary root do:
+.DS
+\fB#\fI cp defboo.kra defboo.cmd\fR
 .DE
 Otherwise:
 .DS
-\fB#\fP cp defboo.hp defboo.cmd
+\fB#\fI cp defboo.hp defboo.cmd\fR
 .DE
-If the local configuration requires any changes in restar.cmd
-or defboo.cmd (e.g., for interleaved memory controllers see
+On an 11/780,
+if the local configuration requires any changes in restar.cmd
+or defboo.cmd (e.g., for interleaved old-style memory controllers see
 defboo.MS780C-interleaved),
 these should be made now.
 The following command will then copy your DEC local console floppy,
 updating the copy appropriately.
 .DS
-\fB#\fP make update
+\fB#\fI make update\fR
 \fBChange Floppy, Hit return when done.\fP
 (waits for you to put clean floppy in console)
-\fBAre you sure you want to clobber the floppy?\fP yes
+\fBAre you sure you want to clobber the floppy?\fI yes\fR
 .DE
 More copies of this floppy can be made using
 .IR flcopy (8).
+.PP
+On an 8200, copy any of the DEC diagnostic floppies
+by placing the source in console drive 1 and the destination
+in console drive 2, then:
+.DS
+.\" XXX be sure to put /dev/csa? in root fs, or makedev first
+\fB#\fI dd if=/dev/csa1 of=/dev/csa2 bs=400k\fR 
+\fB1+0 records in\fP
+\fB1+0 records out\fP
+.DE
+Next remove all but the first few files, leaving only those
+that lead up to ``boot58.exe'' (as well as boot58.exe itself).
+It is a good idea to remove
+the original floppy from drive 1 first.
+.DS
+\fB#\fI arff tmf /dev/csa2\fR
+\&...(should list something like ``fg81.ve0'', followed by ``boot58.exe'';
+then a series of files that may be deleted)...\fP
+\fB#\fI arff dmf /dev/csa2\fR files to delete from previous list
+.DE
+Finally, add UNIX boot files:
+.DS
+\fB#\fI arff rmf /dev/csa2 boot format copy *boo.cmd\fR
+.DE
+Put the new boot floppy in drive 1.  To make copies of this floppy,
+use the same
+.I dd
+command shown above.
 .NH 3
 Making a UNIX boot cassette
 .PP
@@ -145,24 +181,24 @@ bootstrapping much easier.
 First change into the directory where the console cassette
 information is stored:
 .DS
-\fB#\fP cd /sys/cassette
+\fB#\fI cd /sys/cassette\fR
 .DE
 then set up the default boot device.
 If you have an IDC storage module as your primary root do:
 .DS
-\fB#\fP cp defboo.rb defboo.cmd
+\fB#\fI cp defboo.rb defboo.cmd\fR
 .DE
 If you have an RK07 as your primary root do:
 .DS
-\fB#\fP cp defboo.hk defboo.cmd
+\fB#\fI cp defboo.hk defboo.cmd\fR
 .DE
 If you have a drive on a UDA50 as your primary root do:
 .DS
-\fB#\fP cp defboo.ra defboo.cmd
+\fB#\fI cp defboo.ra defboo.cmd\fR
 .DE
 Otherwise:
 .DS
-\fB#\fP cp defboo.up defboo.cmd
+\fB#\fI cp defboo.up defboo.cmd\fR
 .DE
 To complete the procedure place your DEC local
 console cassette in 
@@ -170,13 +206,14 @@ drive 0 (the drive at front of the CPU);
 the following command will then copy it,
 updating the copy appropriately.
 .DS
-\fB#\fP make update
+\fB#\fI make update\fR
 \fBChange Floppy, Hit return when done.\fP
 (waits for you to put clean cassette in console drive 0)
-\fBAre you sure you want to clobber the floppy?\fP yes
+\fBAre you sure you want to clobber the floppy?\fI yes\fR
 .DE
 More copies of this cassette can best be made using
 .IR dd (1).
+.\}
 .NH 2
 Kernel configuration
 .PP
@@ -184,7 +221,7 @@ This section briefly describes the layout of the kernel code and
 how files for devices are made.
 For a full discussion of configuring
 and building system images, consult the document ``Building
-\*(4B UNIX Systems with Config''.
+4.3BSD UNIX Systems with Config''.
 .NH 3
 Kernel organization
 .PP
@@ -221,15 +258,27 @@ The remaining directories are organized as follows:
 .DS
 .TS
 lw(1.0i) l.
-/sys/h	machine independent include files
+/sys/h	machine-independent include files
 /sys/conf	site configuration files and basic templates
-/sys/net	network independent, but network related code
-/sys/netinet	DARPA Internet code
+/sys/kdb	machine-independent part of the kernel debugger
+/sys/net	protocol-independent, but network-related code
 /sys/netimp	IMP support code
-/sys/netns	Xerox NS support code
-/sys/vax	VAX specific mainline code
+/sys/netinet	DARPA Internet code
+/sys/netns	Xerox NS code
+/sys/stand	machine-independent standalone code
+/sys/tahoe	Tahoe-specific mainline code
+/sys/tahoealign	Tahoe unaligned-reference emulation code
+/sys/tahoedist	Tahoe distribution files
+/sys/tahoeif	Tahoe network interface code
+/sys/tahoevba	Tahoe VERSAbus device drivers and related code
+/sys/tahoemath	Tahoe floating point emulation code
+/sys/tahoestand	Tahoe standalone device drivers and related code
+/sys/vax	VAX-specific mainline code
+/sys/vaxbi	VAX BI device drivers and related code
+/sys/vaxdist	VAX distribution files
 /sys/vaxif	VAX network interface code
 /sys/vaxmba	VAX MASSBUS device drivers and related code
+/sys/vaxstand	VAX standalone device drivers and boot code
 /sys/vaxuba	VAX UNIBUS device drivers and related code
 .TE
 .DE
@@ -244,8 +293,14 @@ system mounted.
 Devices and device drivers
 .PP
 Devices supported by UNIX are implemented in the kernel
-by drivers whose source is kept in /sys/vax, /sys/vaxuba,
-or /sys/vaxmba.  These drivers are loaded
+by drivers whose source is kept in
+.if \n(Vx \{\
+/sys/vax, /sys/vaxbi, /sys/vaxuba, or /sys/vaxmba.
+.\}
+.if \n(Th \{\
+/sys/tahoe or /sys/tahoevba.
+.\}
+These drivers are loaded
 into the system when included in a cpu specific configuration file
 kept in the conf directory.  Devices are accessed through special
 files in the file system, made by the
@@ -261,27 +316,43 @@ First create a new directory
 /newdev, copy MAKEDEV into it, edit the file MAKEDEV.local
 to provide an entry for local needs,
 and run it to generate a /newdev directory.
+.if \n(Vx \{\
 For instance, if your machine has a single DZ11, a single
 DH11, a single DMF32, an RM03 disk, an EMULEX UNIBUS SMD disk controller, an
 AMPEX 9300 disk, and a TE16 tape drive you would do:
+.\}
+.if \n(Th \{\
+For instance, if your machine has a single VIOC terminal
+multiplexor, two CDC 340 megabyte Winchester drives, and
+a single Cipher tape drive you would do:
+.\}
 .DS
-\fB#\fP cd /
-\fB#\fP mkdir newdev
-\fB#\fP cp dev/MAKEDEV newdev/MAKEDEV
-\fB#\fP cd newdev
-\fB#\fP MAKEDEV dz0 dh0 dmf0 hp0 up0 ht0 std LOCAL
+\fB#\fP \fIcd /\fP
+\fB#\fP \fImkdir newdev\fP
+\fB#\fP \fIcp dev/MAKEDEV newdev/MAKEDEV\fP
+\fB#\fP \fIcd newdev\fP
+.if \n(Vx \{\
+\fB#\fP \fIMAKEDEV dz0 dh0 dmf0 hp0 up0 ht0 std LOCAL\fP
+.\}
+.if \n(Th \{\
+\fB#\fP \fIMAKEDEV vx0 dk0 dk1 cy0 std LOCAL\fP
+.\}
 .DE
 Note the ``std'' argument causes standard devices
-such as \fI/dev/console\fP, the machine console, \fI/dev/floppy\fP,
+such as \fI/dev/console\fP, the machine console,
+.if \n(Vx \{\
+\fI/dev/floppy\fP,
 the console floppy disk interface for the 11/780 and 11/785, and
 \fI/dev/tu0\fP and \fI/dev/tu1\fP, the console cassette interfaces
-for the 11/750 and 11/730, to be created.
+for the 11/750 and 11/730,
+.\}
+to be created.
 .PP
 You can then do
 .DS
-\fB#\fP cd /
-\fB#\fP mv dev olddev ; mv newdev dev
-\fB#\fP sync
+\fB#\fP \fIcd /\fP
+\fB#\fP \fImv dev olddev ; mv newdev dev\fP
+\fB#\fP \fIsync\fP
 .DE
 to install the new device directory.
 .NH 3
@@ -291,7 +362,7 @@ The kernel configuration of each UNIX system is described by
 a single configuration file, stored in the \fI/sys/conf\fP directory.
 To learn about the format of this file and the procedure used
 to build system images,
-start by reading ``Building \*(4B UNIX Systems with Config'',
+start by reading ``Building 4.3BSD UNIX Systems with Config'',
 look at the manual pages in section 4
 of the UNIX manual for the devices you have,
 and look at the sample configuration files in the /sys/conf
@@ -302,8 +373,8 @@ copied to the root, and then booted to try it out.
 It is best to name it /newvmunix so as not to destroy
 the working system until you're sure it does work:
 .DS
-\fB#\fP cp vmunix /newvmunix
-\fB#\fP sync
+\fB#\fP \fIcp vmunix /newvmunix\fP
+\fB#\fP \fIsync\fP
 .DE
 It is also a good idea to keep the previous system around under some other
 name.  In particular, we recommend that you save the generic distribution
@@ -323,6 +394,7 @@ performance.
 .NH 3
 Initializing /etc/fstab
 .PP
+.if \n(Vx \{\
 Change into the directory /etc and copy the appropriate file from:
 .DS
 fstab.rm03
@@ -335,35 +407,53 @@ fstab.rb80
 fstab.rp06
 fstab.rp07
 fstab.rk07
-fstab.up160m (160Mb up drives)
-fstab.hp400m (400Mb hp drives)
+fstab.up160m (160MB up drives)
+fstab.hp400m (400MB hp drives)
 fstab.up (other up drives)
 fstab.hp (other hp drives)
 .DE
 to the file /etc/fstab, i.e.:
 .DS
-\fB#\fP cd /etc
-\fB#\fP cp \fIfstab.xxx\fP fstab
+\fB#\fI cd /etc\fR
+\fB#\fI cp \fIfstab.xxx\fP fstab\fR
 .DE
 .PP
 This will set up the default information about the usage of disk
 partitions, which we see how to update more below.
+.\}
+.if \n(Th \{\
+The names of the disks on \*(4B all use the basename \fIdk\fP,
+unlike other systems on the Tahoe.
+Unfortunately, the console processor reads the file \fI/etc/fstab\fP
+and expects disk names that indicate the type of disk drive.
+Therefore, the first line in \fI/etc/fstab\fP is a dummy line
+to satisfy the console processor:
+.DS
+/dev/fsd0a:/:xx:1:1
+.DE
+If your root disk is a type other than \fIfsd\fP,
+edit \fI/etc/fstab\fP to change the first device
+to the appropriate type.
+.\}
 .NH 3
 Disk naming and divisions
 .PP
 Each physical disk drive can be divided into up to 8 partitions;
-UNIX typically
-uses only 3 or 4 partitions.
-For instance, on an RM03
-or RP06, the first partition, hp0a,
+UNIX typically uses only 3 or 4 partitions.
+For instance, on an \*(Dn,
+the first partition, \*(Dk0a,
 is used for a root file system, a backup thereof,
 or a small file system like, /tmp;
-the second partition, hp0b,
+the second partition, \*(Dk0b,
 is used for paging and swapping; and
-the third partition hp0g
-holds a user file system.  On an RM05, the first three partitions
-are used as for the RM03, and the fourth partition, hp0h,
+the third partition, \*(Dk0\*(Pa,
+holds a user file system.
+.if \n(Vx \{\
+On an RM05, the first three partitions
+are used as for the \*(Dn, and the fourth partition, \*(Dk0h,
 holds the /usr file system, including source code.
+.\}
+.if !\n(Th \{\
 .PP
 The disk partition sizes for a drive are based on a
 set of four prototype partition tables; c.f. \fIdiskpart\fP\|(8). 
@@ -387,33 +477,41 @@ partitions that overlap the ``g'' partition.  The default
 sizes for these partitions are 15884, 55936, and the remainder
 of the disk, respectively*.
 .FS
-* These rules are, unfortunately not evenly applied to all
-disks.  Drives on DEC UDA50 and IDC controllers do not
-completely follow these rules;
-in particular,
-no ``d'', ``e'', or ``f'' partitions are available on an
-RA60 and RA80.  Consult \fIuda\fP\|(4) for more information.
+* These rules are, unfortunately, not evenly applied to all
+disks.  \fI/etc/disktab\fP, and the pack label or driver tables,
+give the final word; consult section 4 of the manual, and
+read /etc/disktab, for more information.
 .FE
 .PP
 The disk partition sizes for DEC RA60, RA80, and RA81 have
 changed since 4.2BSD.  If upgrading from 4.2BSD,
 you will need to decide if you want
 to use the new partitions or the old partitions.  If you 
-desire to use the old partitions, you will need to update
-/etc/disktab and the device driver for the UDA50.  Any
-other partition sizes that were modified at your site, will
-require the same consideration.
+desire to use the old partitions, you will need to label your packs
+as `racompat', or create your own by updating
+/etc/disktab.  Any
+other partition sizes that were modified at your site will
+require the same consideration;
+if the device driver does not support pack labels, you will have to
+update its compiled-in tables as well.
+.\}
 .PP
 The space available on a disk varies per device.  The amount of space
 available on the common disk partitions is listed in the following table.
 Not shown in the table are the partitions of each drive devoted
 to the root file system and the paging area.
+Many other partitions are listed in the standard partitions,
+but most of them are not useful.
+Note that the standard partition tables usually list several alternative
+ways to divide a disk, but that only nonoverlapping partitions may be used
+on any one disk.
 .DS
 .TS
 center;
 l l n l n.
 Type	Name	Size	Name	Size
 _
+.if \n(Vx \{\
 rk07	hk?g	13 Mb
 rm03	hp?g	41 Mb
 rp06	hp?g	145 Mb
@@ -428,36 +526,59 @@ up300	up?g	80 Mb	up?h	145 Mb
 up330	up?g	90 Mb	up?h	145 Mb
 up400	hp?g	216 Mb	hp?h	145 Mb
 up160	up?g	106 Mb
+.\}
+.if \n(Th \{\
+xfd	dk?c	225 Mb	dk?g,h	112 Mb
+eagle	dk?c	301 Mb
+fsd	dk?c	106 Mb
+.\}
 .TE
 .DE
+.if \n(Vx \{\
 .LP
-Here up300 refers to either an AMPEX or CDC 300 Megabyte disk on a
+Here up300 refers to either an AMPEX or CDC 300 megabyte disk on a
 MASSBUS or UNIBUS disk controller, up330 refers to either an AMPEX
-or FUJITSU 330 Megabyte disk on a MASSBUS or UNIBUS controller,
-up160 refers to a FUJITSU 160 Megabyte disk
-on the UNIBUS, and up400 refers to a FUJITSU Eagle 400 Megabyte
+or FUJITSU 330 megabyte disk on a MASSBUS or UNIBUS controller,
+up160 refers to a FUJITSU 160 megabyte disk
+on the UNIBUS, and up400 refers to a FUJITSU Eagle 400 megabyte
 disk on a MASBUS or UNIBUS disk controller.  ``hp'' should be
 substituted for ``up'' above if the disk is on the MASSBUS.
 Consult the manual pages for the specific controllers for other
 supported disks or other partitions.
 .PP
-Each disk also has a paging area, typically of 16 Megabytes, and
-a root file system of 8 Megabytes.
-The distributed system binaries occupy about 34 Megabytes
-while the major sources occupy another 32 Megabytes.
+Each disk also has a paging area, typically 16 megabytes, and
+a root file system of 7.5 megabytes.
+.\}
+.if \n(Th \{\
+.PP
+Each disk also has a paging area and a root file system of between 10 and 30
+Megabytes apiece.
+.\}
+.\" XXX check
+The distributed system binaries occupy about 34 megabytes
+.\" XXX check
+while the major sources occupy another 32 megabytes.
+.if \n(Vx \{\
 This overflows dual RK07, dual RL02 and single RM03 systems,
 but fits easily on most other hardware configurations.
+.\}
+.if \n(Th \{\
+This is unlikely to
+overflow even the smallest Tahoe configurations.
+.\}
 .PP
 Be aware that the disks have their sizes
-measured in disk sectors (512 bytes), while the UNIX file
+measured in disk sectors (usually 512 bytes), while the UNIX file
 system blocks are variable sized.  All user programs report
 disk space in kilobytes and, where needed, disk sizes are always
 specified in units of
-sectors.  The /etc/disktab file used in making file systems
+sectors.  The /etc/disktab file used in labelling disks and making file systems
 specifies disk partition sizes in sectors; the default sector size
-may be overridden with the ``se'' attribute.  Note that the only
-sector size currently supported is DEV_BSIZE as defined in 
-\fI/sys/h/param.h\fP.
+(DEV_BSIZE as defined in /sys/h/param.h)
+may be overridden with the ``se'' attribute.
+.if \n(Th \{\
+All SMD disks on Tahoe currently use a sector size of 512 bytes.
+.\}
 .NH 3
 Layout considerations
 .PP
@@ -469,10 +590,13 @@ Paging space is an important parameter.
 The system, as distributed, sizes the configured
 paging areas each time the system is booted.  Further,
 multiple paging areas of different size may be interleaved.
+.if \n(Vx \{\
 Drives smaller than 400 megabytes have swap partitions of 16 megabytes
 while drives larger than 400 megabytes have 32 megabytes.  These
 values may be changed to get more paging space by changing
-the appropriate partition table in the disk driver.
+the label (or, if labels are unsupported,
+the appropriate partition table in the disk driver).
+.\}
 .PP
 Many common system programs (C, the editor, the assembler etc.)
 create intermediate files in the /tmp directory,
@@ -554,9 +678,9 @@ center;
 l l l.
 File system	Block size	Fragment size
 _
-/	8 Kbytes	1 Kbytes
-usr	4 Kbytes	512 bytes
-users	4 Kbytes	1 Kbytes
+/	8 kbytes	1 kbytes
+usr	4 kbytes	512 bytes
+users	4 kbytes	1 kbytes
 .TE
 .DE
 .PP
@@ -567,27 +691,27 @@ disk;  this is particularly important since the
 The large block size is also
 important as many of the most heavily used programs
 are demand paged out of the /bin directory.  The
-fragment size of 1 Kbytes is a ``nominal'' value to use
-with a file system.  With a 1 Kbyte fragment size
+fragment size of 1 kbyte is a ``nominal'' value to use
+with a file system.  With a 1 kbyte fragment size
 disk space utilization is about the same
 as with the earlier versions of the file system.
 .PP
-The usr file system uses a 4 Kbyte block size
+The usr file system uses a 4 kbyte block size
 with 512 byte fragment size in an effort to get
 high performance while conserving the amount of
 space wasted by a large fragment size.  Space compaction
 has been deemed important here because the source code
 for the system is normally placed on this file system.
 If the source code is placed on a separate filesystem,
-use of an 8 Kbyte block size with 1 Kbyte fragments might
+use of an 8 kbyte block size with 1 kbyte fragments might
 be considered for improved performance when paging from \fI/usr\fP binaries.
 .PP
-The file systems for users have a 4 Kbyte block
-size with 1 Kbyte fragment size.  These parameters
+The file systems for users have a 4 kbyte block
+size with 1 kbyte fragment size.  These parameters
 have been selected based on observations of the
-performance of our user file systems.  The 4 Kbyte
+performance of our user file systems.  The 4 kbyte
 block size provides adequate bandwidth while the
-1 Kbyte fragment size provides acceptable space compaction
+1 kbyte fragment size provides acceptable space compaction
 and disk fragmentation.
 .PP
 Other parameters may be chosen in constructing file
@@ -620,20 +744,20 @@ according to the block size of the file system.
 .PP
 In selecting a fragment size for a file system, at least
 two considerations should be given.  The major performance
-tradeoffs observed are between an 8 Kbyte block file system
-and a 4 Kbyte block file system.  Because of implementation
+tradeoffs observed are between an 8 kbyte block file system
+and a 4 kbyte block file system.  Because of implementation
 constraints, the block size / fragment size ratio can not
-be greater than 8.  This means that an 8 Kbyte file system
-will always have a fragment size of at least 1 Kbytes.  If
-a file system is created with a 4 Kbyte block size and a
-1 Kbyte fragment size, then upgraded to an 8 Kbyte block size
-and 1 Kbyte fragment size, identical space compaction will be
-observed.  However, if a file system has a 4 Kbyte block size
+be greater than 8.  This means that an 8 kbyte file system
+will always have a fragment size of at least 1 kbytes.  If
+a file system is created with a 4 kbyte block size and a
+1 kbyte fragment size, then upgraded to an 8 kbyte block size
+and 1 kbyte fragment size, identical space compaction will be
+observed.  However, if a file system has a 4 kbyte block size
 and 512 byte fragment size, converting it to an 8K/1K
 file system will result in significantly more space being
-used.  This implies that 4 Kbyte block file systems that
-might be upgraded to 8 Kbyte blocks for higher performance should
-use fragment sizes of at least 1 Kbytes to minimize the amount
+used.  This implies that 4 kbyte block file systems that
+might be upgraded to 8 kbyte blocks for higher performance should
+use fragment sizes of at least 1 kbytes to minimize the amount
 of work required in conversion.
 .PP
 A second, more important, consideration when selecting the
@@ -641,20 +765,20 @@ fragment size for a file system is the level of fragmentation
 on the disk.  With a 512 byte fragment size, storage fragmentation
 occurs much sooner, particularly with a busy file system running
 near full capacity.  By comparison, the level of fragmentation in a 
-1 Kbyte fragment file system is one tenth as severe.  This
+1 kbyte fragment file system is one tenth as severe.  This
 means that on file systems where many files are created and
 deleted, the 512 byte fragment size is more likely to result in apparent
 space exhaustion because of fragmentation.  That is, when the file 
 system is nearly full, file expansion that requires locating a
 contiguous area of disk space is more likely to fail on a 512
-byte file system than on a 1 Kbyte file system.  To minimize
+byte file system than on a 1 kbyte file system.  To minimize
 fragmentation problems of this sort, a parameter in the super
 block specifies a minimum acceptable free space threshold.  When
 normal users (i.e. anyone but the super-user) attempt to allocate
 disk space and the free space threshold is exceeded, the user is
 returned an error as if the file system were really full.  This
 parameter is nominally set to 10%; it may be changed by supplying
-a parameter to \fInewfs\fP, or by updating the super block of an
+a parameter to \fInewfs\fP(8), or by updating the super block of an
 existing file system using \fItunefs\fP\|(8).
 .PP
 In general, unless a file system is to be used
@@ -662,19 +786,24 @@ for a special purpose application (for example, storing
 image processing data), we recommend using the
 values supplied above.
 Remember that the current
-implementation limits the block size to at most 8 Kbytes
+implementation limits the block size to at most 8 kbytes
 and the ratio of block size / fragment size must be 1, 2, 4, or 8.
 .PP
 The disk geometry information used by the file system
 affects the block layout policies employed.  The file
 /etc/disktab, as supplied, contains the data for most
-all drives supported by the system.  When constructing
-a file system you should use the \fInewfs\fP\|(8) program
-and specify the type of disk on which the file system
-resides.  This file also contains the default
+all drives supported by the system.  Before constructing
+a file system with \fInewfs\fP\|(8)
+you should label the disk (if it has not yet been labeled,
+and the driver supports labels).
+If labels cannot be used, you must instead
+specify the type of disk on which the file system resides;
+\fInewfs\fP then reads /etc/disktab instead of the pack label.
+This file also contains the default
 file system partition
 sizes, and default block and fragment sizes.  To
-override any of the default values you can modify the file
+override any of the default values you can modify the file,
+edit the disk label,
 or use an option to \fInewfs\fP.
 .NH 3
 Implementing a layout
@@ -686,42 +815,46 @@ Each file system must also be added to the file
 /etc/fstab
 so that it will be checked and mounted when the system is bootstrapped.
 .PP
-As an example, consider a system with RM80's.  On the first RM80, hp0,
-we will put the root file system in hp0a, and the /usr
-file system in hp0g, which has enough space to hold it and then some.
+As an example, consider a system with \*(Dn's.  On the first \*(Dn, \*(Dk0,
+we will put the root file system in \*(Dk0a, and the /usr
+file system in \*(Dk0\*(pa, which has enough space to hold it and then some.
 The /tmp directory will be part of the root file system,
 as no file system will be mounted on /tmp.
-If we had only one RM80, we would put user files
-in the hp0g partition with the system source and binaries.
+If we had only one \*(Dn, we would put user files
+in the \*(Dk0\*(pa partition with the system source and binaries.
 .PP
-If we had a second RM80, we would place \fI/usr\fP in hp1g.
-We would put user files in hp0g, calling the file system /mnt.
+If we had a second \*(Dn, we would place \fI/usr\fP in \*(Dk1\*(Pa.
+We would put user files in \*(Dk0g, calling the file system /a.
 We would also interleave the paging
-between the 2 RM80's.  To do this we would build a system configuration
+between the 2 \*(Dn's.  To do this we would build a system configuration
 that specified:
 .DS
-config	vmunix	root on hp0 swap on hp0 and hp1
+config	vmunix	root on \*(Dk0 swap on \*(Dk0 and \*(Dk1
 .DE
-to get the swap interleaved, and \fI/etc/fstab would then contain
+to get the swap interleaved, and \fI/etc/fstab\fP would then contain
 .DS
-/dev/hp0a:/:rw:1:1
-/dev/hp0b::sw::
-/dev/hp0g:/mnt:rw:1:2
-/dev/hp1b::sw::
-/dev/hp1g:/usr:rw:1:2
+/dev/\*(Dk0a:/:rw:1:1
+/dev/\*(Dk0b::sw::
+/dev/\*(Dk0g:/a:rw:1:2
+/dev/\*(Dk1b::sw::
+/dev/\*(Dk1g:/usr:rw:1:2
 .DE
 We would keep a backup copy of the root
-file system in the \fBhp1a\fP disk partition.
+file system in the \fB\*(Dk1a\fP disk partition.
 Alternatively, that partition could be used for \fI/tmp\fP.
 .PP
-To make the /mnt file system we would do:
+To make the /a file system we would do:
+.if \n(Th \{\
+.ds Dn eagle
+.\}
 .DS
-\fB#\fP cd /dev
-\fB#\fP MAKEDEV hp1
-\fB#\fP newfs hp1g rm80
+\fB#\fP \fIcd /dev\fP
+\fB#\fP \fIMAKEDEV \*(Dk1\fP
+\fB#\fP \fIdisklabel -wr \*(Dk1 \*(Dn "disk name"\fP
+\fB#\fP \fInewfs \*(Dk1\*(Pa\fP
 (information about file system prints out)
-\fB#\fP mkdir /mnt
-\fB#\fP mount /dev/hp1g /mnt
+\fB#\fP \fImkdir /a\fP
+\fB#\fP \fImount /dev/\*(Dk1\*(Pa /a\fP
 .DE
 .NH 2
 Configuring terminals
@@ -729,6 +862,7 @@ Configuring terminals
 If UNIX is to support simultaneous
 access from directly-connected terminals other than the console,
 the file \fI/etc/ttys\fP (\fIttys\fP\|(5)) must be edited.
+.if \n(Vx \{\
 .PP
 Terminals connected via DZ11 interfaces are conventionally named \fBttyDD\fP
 where DD is a decimal number, the ``minor device'' number.
@@ -756,9 +890,26 @@ DHU11	S-Z	16	8
 pty	p-u	16	6
 .TE
 .DE
+.\}
+.if \n(Th \{\
+.PP
+Terminals connected via VIOC-X interfaces are conventionally named tty\fIDD\fP
+where \fIDD\fP is a hexadecimal number, the ``minor device'' number.
+The first digit is the multiplexor unit number, and the second digit
+is the line number.
+For VIOC's with fewer than 16 connectors, the missing unit numbers are unused.
+.\}
 .PP
 To add a new terminal device, be sure the device is configured into the system
 and that the special files for the device have been made by /dev/MAKEDEV.
+.if \n(Vx \{\
+(For example, use ``cd /dev; MAKEDEV dz1'' to make the special files
+for the second DZ11.)
+.\}
+.if \n(Th \{\
+(For example, use ``cd /dev; MAKEDEV vx1'' to make the special files
+for the second VIOC.)
+.\}
 Then, enable the appropriate lines of /etc/ttys by setting the ``status''
 field to \fBon\fP (or add new lines).
 Note that lines in \fI/etc/ttys\fP are one-for-one with entries
@@ -767,7 +918,7 @@ and therefore it is best to make changes
 while running in single-user mode
 and to add all of the entries for a new device at once.
 .PP
-The format of the /etc/ttys file is completely new in \*(4B.
+The format of the /etc/ttys file is completely new in 4.3BSD.
 Each line in the file is broken into four tab separated
 fields (comments are shown by a `#' character and extend to
 the end of the line).  For each terminal line the four fields
@@ -796,6 +947,7 @@ Dialup terminals should be wired so that carrier is asserted only when the
 phone line is dialed up.
 For non-dialup terminals from which modem control
 is not available, you must either wire back the signals so that
+.if \n(Vx \{\
 the carrier appears to always be present, or show in the system
 configuration that carrier is to be assumed to be present
 with \fIflags\fP for each terminal device.  See
@@ -806,6 +958,14 @@ with \fIflags\fP for each terminal device.  See
 and
 .IR dmf (4)
 for details.
+.\}
+.if \n(Th \{\
+the carrier appears to always be present.  For further details, see
+.IR vx (4),
+.IR mpcc (4),
+and
+.IR dlmpcc (8).
+.\}
 .PP
 For network terminals (i.e. pseudo terminals), no program should
 be started up on the lines.  Thus, the normal entry in /etc/ttys
@@ -813,7 +973,7 @@ would look like
 .DS
 ttyp0 	none	network
 .DE
-(Note the fourth field is not needed when here.)
+(Note, the fourth field is not needed here.)
 .PP
 When the system is running multi-user, all terminals that are listed
 in /etc/ttys as \fBon\fP have their line are enabled.
@@ -823,7 +983,7 @@ to disable a terminal line, you can edit the file
 to change the terminal's status to \fBoff\fP and
 then send a hangup signal to the \fIinit\fP process, by doing
 .DS
-\fB#\fP kill \-1 1
+\fB#\fP \fIkill \-1 1\fP
 .DE
 Terminals can similarly be enabled by changing the status field
 from \fBoff\fP to \fBon\fP and sending a hangup signal to \fIinit\fP.
@@ -843,6 +1003,11 @@ names to determine if a terminal is a dialup.
 Shell commands to do this should be put in the /dev/MAKEDEV.local
 script.
 .PP
+Also, lines in /etc/ttys are in one-to-one correspondence with entries
+in the file of current users (/etc/utmp), and therefore it is best to make
+changes while running in single-user mode, and to add all of the entries
+for a new device at once.
+.PP
 While it is possible to use truly arbitrary strings for terminal names,
 the accounting and noticeably the
 \fIps\fP\|(1)
@@ -856,12 +1021,7 @@ run MUCH slower.
 .NH 2
 Adding users
 .PP
-New users can be added to the system by adding a line to the
-password file
-/etc/passwd.
-The procedure for adding a new user is described in
-.IR adduser (8).
-.PP
+The procedure for adding a new user is described in \fIadduser\fP(8).
 You should add accounts for the initial user community, giving
 each a directory and a password, and putting users who will wish
 to share software in the same groups.
@@ -881,22 +1041,22 @@ or from files located in /etc.  Aside from parts of the
 system related to the network, to tailor the system to your
 site you must simply select a site name, then edit the file
 .DS
-/etc/rc.local
+/etc/netstart
 .DE
-The first line in /etc/rc.local,
+The first lines in /etc/netstart use a variable to set the hostname,
 .DS
-/bin/hostname \fImysitename\fP
+hostname=\fImysitename\fP
+/bin/hostname $hostname
 .DE
-defines the value returned by the 
+to define the value returned by the 
 .IR gethostname (2)
 system call.  If you are running the name server, your site
 name should be your fully qualified domain name.  Programs such as
 .IR getty (8),
 .IR mail (1),
 .IR wall (1),
-.IR uucp (1),
 and
-.IR who (1)
+.IR uucp (1)
 use this system call so that the binary images are site
 independent.
 .NH 2
@@ -945,7 +1105,7 @@ program shows the contents of spool
 queues on both the local and remote machines.
 .PP
 To configure your line printers, consult the printcap manual page
-and the accompanying document, ``\*(4B Line Printer Spooler Manual''.
+and the accompanying document, ``4.3BSD Line Printer Spooler Manual''.
 A call to the
 .I lpd
 program should be present in /etc/rc.
@@ -956,7 +1116,7 @@ The mail system consists of the following commands:
 .DS
 .TS
 l l.
-/bin/mail	old standard mail program, \fIbinmail\fP\|(1)
+/bin/mail	old standard mail program, described in \fIbinmail\fP\|(1)
 /usr/ucb/mail	UCB mail program, described in \fImail\fP\|(1)
 /usr/lib/sendmail	mail routing program
 /usr/spool/mail	mail spooling directory
@@ -971,7 +1131,8 @@ l l.
 .DE
 Mail is normally sent and received using the
 .IR mail (1)
-command, which provides a front-end to edit the messages sent
+command (found in /usr/ucb/mail),
+which provides a front-end to edit the messages sent
 and received, and passes the messages to
 .IR sendmail (8)
 for routing.
@@ -987,10 +1148,9 @@ is notified, which in turn notifies
 users who have issued a ``\fIbiff\fP y'' command that mail has arrived.
 .PP
 Mail queued in the directory /usr/spool/mail is normally readable
-only by the recipient.  To send mail that is secure against any possible
-perusal (except by a code-breaker) you should
-use the secret mail facility,
-which encrypts the mail so that no one can read it.
+only by the recipient.  To send mail that is secure against perusal
+(except by a code-breaker) you should use the secret mail facility,
+which encrypts the mail.
 .PP
 To set up the mail facility you should read the instructions in the
 file READ_ME in the directory /usr/src/usr.lib/sendmail and then adjust
@@ -1002,7 +1162,7 @@ operation and installation are also included in the distribution.
 .NH 3
 Setting up a UUCP connection
 .PP
-The version of \fIuucp\fP included in \*(4B is an
+The version of \fIuucp\fP included in \*(4B is a greatly
 enhanced version of the one originally distributed with 32/V*.
 .FS
 * The \fIuucp\fP included in this distribution is the result
