@@ -1,29 +1,32 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980, 1983 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkpasswd.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)mkpasswd.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/file.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
 
-char	buf[BUFSIZ];
-
-struct	passwd *fgetpwent();
-
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	DBM *dp;
@@ -31,6 +34,7 @@ main(argc, argv)
 	register char *cp, *tp;
 	register struct passwd *pwd;
 	int verbose = 0, entries = 0, maxlen = 0;
+	char buf[BUFSIZ];
 
 	if (argc > 1 && strcmp(argv[1], "-v") == 0) {
 		verbose++;
@@ -45,7 +49,7 @@ main(argc, argv)
 		perror(argv[1]);
 		exit(1);
 	}
-	umask(0);
+	(void)umask(0);
 	dp = dbm_open(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
 		fprintf(stderr, "mkpasswd: ");
@@ -55,19 +59,19 @@ main(argc, argv)
 	setpwfile(argv[1]);
 	while (pwd = getpwent()) {
 		cp = buf;
-#define	COMPACT(e)	tp = pwd->pw_/**/e; while (*cp++ = *tp++);
-		COMPACT(name);
-		COMPACT(passwd);
+#define	COMPACT(e)	tp = pwd->e; while (*cp++ = *tp++);
+		COMPACT(pw_name);
+		COMPACT(pw_passwd);
 		bcopy((char *)&pwd->pw_uid, cp, sizeof (int));
 		cp += sizeof (int);
 		bcopy((char *)&pwd->pw_gid, cp, sizeof (int));
 		cp += sizeof (int);
 		bcopy((char *)&pwd->pw_quota, cp, sizeof (int));
 		cp += sizeof (int);
-		COMPACT(comment);
-		COMPACT(gecos);
-		COMPACT(dir);
-		COMPACT(shell);
+		COMPACT(pw_comment);
+		COMPACT(pw_gecos);
+		COMPACT(pw_dir);
+		COMPACT(pw_shell);
 		content.dptr = buf;
 		content.dsize = cp - buf;
 		if (verbose)
