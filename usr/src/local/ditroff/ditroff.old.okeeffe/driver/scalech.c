@@ -1,4 +1,4 @@
-/*	scalech.c	(Berkeley)	1.4	84/02/27
+/*	scalech.c	(Berkeley)	1.4	84/04/12
  *
  * Font scaling for character format fonts.
  *
@@ -60,9 +60,9 @@ char **argv;
     } else filep = stdin;
 
     fgets(ibuff, MAXLINE, filep);
-    if (strcmp(ibuff, "header\n"))
+    if (strcmp(ibuff, "fontheader\n"))
 	error("not a character font file");
-    printf("header\n");
+    printf("fontheader\n");
 
     while (fgets(ibuff, MAXLINE, filep) != NULL) {
 	if (index(ibuff, '\n') == 0)
