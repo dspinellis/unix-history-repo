@@ -13,6 +13,7 @@ vax/sys_machdep.c	standard
 vax/trap.c		standard
 vax/tu.c		standard
 vax/udiv.s		standard
+vax/ufs_machdep.c	standard
 vax/urem.s		standard
 vax/vm_machdep.c	standard
 vaxif/if_acc.c		optional acc imp device-driver
