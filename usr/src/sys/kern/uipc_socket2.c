@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.17	81/12/22	*/
+/*	uipc_socket2.c	4.18	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,20 +111,24 @@ socantrcvmore(so)
  * Interface routine to select() system
  * call for sockets.
  */
-soselect(so, flag)
+soselect(so, rw)
 	register struct socket *so;
-	int flag;
+	int rw;
 {
 
-	if (flag & FREAD) {
+	switch (rw) {
+
+	case FREAD:
 		if (soreadable(so))
 			return (1);
 		sbselqueue(&so->so_rcv);
-	}
-	if (flag & FWRITE) {
+		break;
+
+	case FWRITE:
 		if (sowriteable(so))
 			return (1);
 		sbselqueue(&so->so_snd);
+		break;
 	}
 	return (0);
 }
