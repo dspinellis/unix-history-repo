@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fp.s	7.4 (Berkeley) %G%
+ *	@(#)fp.s	7.5 (Berkeley) %G%
  */
 
 /*
@@ -1388,7 +1388,7 @@ cvt_d_w:
  */
 1:
 	subu	t9, t9, DLEAD_ZEROS		# don't count leading zeros
-	li	t1, DEXP_BIAS + 23		# init exponent
+	li	t1, DEXP_BIAS + 20		# init exponent
 	subu	t1, t1, t9			# compute exponent
 	beq	t9, zero, 1f
 	li	v0, 32
