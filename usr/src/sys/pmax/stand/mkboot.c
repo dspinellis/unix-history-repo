@@ -15,49 +15,61 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkboot.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkboot.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
-#include "sys/param.h"
-#include "sys/exec.h"
-#include "../dev/devDiskLabel.h"
+#include "param.h"
+#include "exec.h"
+#include "disklabel.h"
+
+#include "dec_boot.h"
 
 /* this is the size of the standard ULTRIX boot */
 #define MAXBOOTSIZE (15 * DEV_BSIZE)
 
+struct	Dec_DiskBoot decBootInfo;
 char	block[DEV_BSIZE];
-char	*dev, *bootfname;
+char	*bootfname, *xxboot, *bootxx;
 
 /*
- * installboot bootprog device
+ * This program takes a boot program and splits it into xxboot and bootxx
+ * files for the disklabel program. The disklabel program should be used to
+ * label and install the boot program onto a new disk.
+ *
+ * mkboot bootprog xxboot bootxx
  */
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register int i, n;
-	int ifd, ofd;
-	Dec_DiskBoot decBootInfo;
+	int ifd, ofd1, ofd2;
 	int nsectors;
 	long loadAddr;
 	long execAddr;
 	long length;
 
-	if (argc != 3)
+	if (argc != 4)
 		usage();
-	dev = argv[2];
-	i = strlen(dev);
 	bootfname = argv[1];
+	xxboot = argv[2];
+	bootxx = argv[3];
 	ifd = open(bootfname, 0, 0);
 	if (ifd < 0) {
 		perror(bootfname);
 		exit(1);
 	}
-	ofd = open(dev, 2, 0);
-	if (ofd < 0) {
-	deverr:
-		perror(dev);
+	ofd1 = creat(xxboot, 0666);
+	if (ofd1 < 0) {
+	xxboot_err:
+		perror(xxboot);
+		exit(1);
+	}
+	ofd2 = creat(bootxx, 0666);
+	if (ofd2 < 0) {
+	bootxx_err:
+		perror(bootxx);
 		exit(1);
 	}
 
@@ -85,33 +97,29 @@ main(argc, argv)
 		(length + DEV_BSIZE - 1) >> DEV_BSHIFT;
 	decBootInfo.map[0].startBlock = 1;
 	decBootInfo.map[1].numBlocks = 0;
-	if (lseek(ofd, (long)(DEC_BOOT_SECTOR * DEV_BSIZE), 0) < 0 ||
-	    write(ofd, (char *)&decBootInfo, sizeof(decBootInfo)) !=
-	    sizeof(decBootInfo)) {
-		perror(dev);
-		fprintf(stderr, "Sector write %d failed: ", DEC_BOOT_SECTOR);
-		exit(1);
-	}
-	if (lseek(ofd, (long)(1 * DEV_BSIZE), 0) < 0)
-		goto deverr;
+	if (write(ofd1, (char *)&decBootInfo, sizeof(decBootInfo)) !=
+	    sizeof(decBootInfo) || close(ofd1) != 0)
+		goto xxboot_err;
 
 	/*
-	 * Write the remaining code to the correct place on the disk.
+	 * Write the boot code to the bootxx file.
 	 */
 	for (i = 0; i < nsectors && length > 0; i++) {
-		bzero(block, DEV_BSIZE);
-		n = length < DEV_BSIZE ? length : DEV_BSIZE;
+		if (length < DEV_BSIZE) {
+			n = length;
+			bzero(block, DEV_BSIZE);
+		} else
+			n = DEV_BSIZE;
 		if (read(ifd, block, n) != n) {
 			perror(bootfname);
 			break;
 		}
 		length -= n;
-		if (write(ofd, block, DEV_BSIZE) != DEV_BSIZE) {
-			perror(dev);
+		if (write(ofd2, block, DEV_BSIZE) != DEV_BSIZE) {
+			perror(bootxx);
 			break;
 		}
 	}
-	printf("Wrote %d sectors\n", i);
 	if (length > 0)
 		printf("Warning: didn't reach end of boot program!\n");
 	exit(0);
@@ -119,13 +127,12 @@ main(argc, argv)
 
 usage()
 {
-	printf("Usage: installboot bootprog device\n");
+	printf("Usage: mkboot bootprog xxboot bootxx\n");
 	printf("where:\n");
 	printf("\t\"bootprog\" is a -N format file < %d bytes long\n",
 	       MAXBOOTSIZE);
-	printf("\t\"device\" should be the 'a' partition of a bootable disk\n");
-	printf("WARNING!!  If the 'c' partition contains a file system, %s\n",
-	       "DON'T RUN THIS!!");
+	printf("\t\"xxboot\" is the name of the first boot block\n");
+	printf("\t\"bootxx\" is the name of the remaining boot blocks.\n");
 	exit(1);
 }
 
