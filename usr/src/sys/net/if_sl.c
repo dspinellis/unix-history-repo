@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.17 (Berkeley) %G%
+ *	@(#)if_sl.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -69,6 +69,7 @@
 #include "errno.h"
 
 #include "if.h"
+#include "if_types.h"
 #include "netisr.h"
 #include "route.h"
 #if INET
@@ -149,6 +150,7 @@ struct sl_softc sl_softc[NSL];
 #define t_sc T_LINEP
 
 int sloutput(), slioctl(), ttrstrt();
+extern struct timeval time;
 
 /*
  * Called from boot code to establish sl interfaces.
@@ -163,6 +165,7 @@ slattach()
 		sc->sc_if.if_unit = i++;
 		sc->sc_if.if_mtu = SLMTU;
 		sc->sc_if.if_flags = IFF_POINTOPOINT;
+		sc->sc_if.if_type = IFT_SLIP;
 		sc->sc_if.if_ioctl = slioctl;
 		sc->sc_if.if_output = sloutput;
 		sc->sc_if.if_snd.ifq_maxlen = 50;
@@ -218,6 +221,7 @@ slopen(dev, tp)
 				return (ENOBUFS);
 			tp->t_sc = (caddr_t)sc;
 			sc->sc_ttyp = tp;
+			sc->sc_if.if_baudrate = tp->t_ospeed;
 			ttyflush(tp, FREAD | FWRITE);
 			return (0);
 		}
@@ -350,6 +354,7 @@ sloutput(ifp, m, dst)
 		return (ENOBUFS);
 	}
 	IF_ENQUEUE(ifq, m);
+	sc->sc_if.if_lastchange = time;
 	if (sc->sc_ttyp->t_outq.c_cc == 0)
 		slstart(sc->sc_ttyp);
 	splx(s);
@@ -398,6 +403,7 @@ slstart(tp)
 		splx(s);
 		if (m == NULL)
 			return;
+		sc->sc_if.if_lastchange = time;
 		/*
 		 * If system is getting low on clists, just flush our
 		 * output queue (if the stuff was important, it'll get
@@ -484,6 +490,7 @@ slstart(tp)
 			++sc->sc_bytessent;
 			sc->sc_if.if_opackets++;
 		}
+		sc->sc_if.if_obytes = sc->sc_bytessent;
 	}
 }
 
@@ -550,6 +557,7 @@ slinput(c, tp)
 		return;
 
 	++sc->sc_bytesrcvd;
+	++sc->sc_if.if_ibytes;
 	c &= 0xff;			/* XXX */
 
 #ifdef ABT_ESC
@@ -616,10 +624,12 @@ slinput(c, tp)
 			goto error;
 
 		sc->sc_if.if_ipackets++;
+		sc->sc_if.if_lastchange = time;
 		s = splimp();
 		if (IF_QFULL(&ipintrq)) {
 			IF_DROP(&ipintrq);
 			sc->sc_if.if_ierrors++;
+			sc->sc_if.if_iqdrops++;
 			m_freem(m);
 		} else {
 			IF_ENQUEUE(&ipintrq, m);
