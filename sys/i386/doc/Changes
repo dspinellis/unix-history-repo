@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.12 1994/02/05 21:41:57 wollman Exp $
+$Id: Changes,v 1.13 1994/02/05 22:37:07 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -100,7 +100,7 @@ Since 1.0.2:
 	  kernel 'maxusers' parameter.
 	o Memory in the I/O hole is explicitly marked non-cacheable.
 
-- Added 3C509 driver written by Herb Peyerl. (nate)
+- Added 3C509 driver written by Herb Peyerl. (ats/nate)
 
 - Added a new 'wd' driver which does a much better job of probing, handles
   stray interrupts better, and supports multiple controllers.  In addition
@@ -111,7 +111,7 @@ Since 1.0.2:
 
 - Added support in the if_ed driver for the Toshiba ethernet cards.The
   support must be enabled with an "options TOSH_ETHER" in the config
-  file. Done it this way, because i don't know how widespread this cards
+  file. Done it this way, because i don't know how widespread the cards
   are. (ats)
 
 - Added support in the if_ed driver for the SMC Ultra via patches from
@@ -133,7 +133,7 @@ Since 1.0.2:
   This makes certain pseudo-devices and all image activators drop-in at
   link time, if desired.  (wollman)
 
-- Added YP code from Theo Deraadt.  (paul)
+- Added YP code from Theo Deraadt.  (paul/nate)
 
 - Make all mandatory options ``standard''.  (wollman)
 
