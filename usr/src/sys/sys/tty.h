@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.4 (Berkeley) %G%
+ *	@(#)tty.h	7.5 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -45,7 +45,7 @@ struct tty {
 	int	t_flags;		/* (compat) some of both */
 	int	t_state;		/* some of both */
 	struct	session *t_session;	/* tty */
-	pid_t	t_pgid;			/* tty */
+	struct	pgrp *t_pgrp;		/* foreground process group */
 	char	t_line;			/* glue */
 	char	t_col;			/* tty */
 	char	t_rocount, t_rocol;	/* tty */
@@ -127,6 +127,14 @@ struct speedtab {
 #define TTY_ERRORMASK   0xff000000      /* Error mask */
 #define TTY_FE          0x01000000      /* Framing error or BREAK condition */
 #define TTY_PE          0x02000000      /* Parity error */
+
+/*
+ * Macros
+ */
+#define isctty(p, tp)	((p)->p_session == (tp)->t_session && \
+			 (p)->p_flag&SCTTY)
+#define isbackground(p, tp)	(isctty((p), (tp)) && \
+				(p)->p_pgrp != (tp)->t_pgrp)
 
 /*
  * Modem control commands (driver).
