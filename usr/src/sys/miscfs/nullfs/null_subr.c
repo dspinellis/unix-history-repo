@@ -101,6 +101,12 @@ null_node_alloc(vp, targetvp)
 }
 
 #ifdef NULLFS_DIAGNOSTIC
+/*
+ * NEEDSWORK:  The ability to set lowervp to null here
+ * implies that one can never count on lowervp staying null
+ * (even if vp is locked).  This seems quite bad.  Think
+ * about these things.
+ */
 void
 null_node_flushmp (mp)
 	struct mount *mp;
@@ -173,8 +179,13 @@ null_node_find(mp, targetvp)
 	return (0);
 }
 
-static int
-null_node_alias(mp, targetvp, newvpp)
+/*
+ * Try to find an existing null_node vnode refering
+ * to it, otherwise make a new null_node vnode which
+ * contains a reference to the target vnode.
+ */
+int
+null_node_create(mp, targetvp, newvpp)
 	struct mount *mp;
 	struct vnode *targetvp;
 	struct vnode **newvpp;
@@ -235,40 +246,6 @@ null_node_alias(mp, targetvp, newvpp)
 	*newvpp = aliasvp;
 	return (0);
 }
-
-/*
- * Try to find an existing null_node vnode refering
- * to it, otherwise make a new null_node vnode which
- * contains a reference to the target vnode.
- */
-make_null_node(mp, vpp)
-	struct mount *mp;
-	struct vnode **vpp;
-{
-	int error;
-	struct vnode *aliasvp;
-	struct vnode *targetvp;
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("make_null_node(mp = %x, vp = %x\n", mp, *vpp);
-#endif
-
-	/*
-	 * (targetvp) is locked at this point.
-	 */
-	targetvp = *vpp;
-
-#ifdef NULLFS_DIAGNOSTIC
-	if (targetvp == 0)
-		panic("make_null_node: null vp");
-#endif
-
-	/*
-	 * Try to find an existing reference to the target vnodes.
-	 */
-	return (null_node_alias(mp, targetvp, vpp));
-}
-
 #ifdef NULLFS_DIAGNOSTIC
 struct vnode *
 null_checkvp(vp, fil, lno)
@@ -278,19 +255,18 @@ null_checkvp(vp, fil, lno)
 {
 	struct null_node *a = VTONULLNODE(vp);
 	if (a->null_lowervp == 0) {
+		/* Should never happen */
 		int i; u_long *p;
 		printf("vp = %x, ZERO ptr\n", vp);
-#ifdef notdef
 		for (p = (u_long *) a, i = 0; i < 8; i++)
 			printf(" %x", p[i]);
 		printf("\n");
 		DELAY(2000000);
 		panic("null_checkvp");
-#endif
 	}
-	printf("aliasvp %x/%d -> %x/%d [%s, %d]\n",
+	printf("nullvp %x/%d -> %x/%d [%s, %d]\n",
 		a->null_vnode, a->null_vnode->v_usecount,
-		a->null_lowervp, a->null_lowervp ? a->null_lowervp->v_usecount : -42,
+		a->null_lowervp, a->null_lowervp->v_usecount,
 		fil, lno);
 	return a->null_lowervp;
 }
