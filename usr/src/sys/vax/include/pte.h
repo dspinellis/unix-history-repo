@@ -1,4 +1,4 @@
-/*	pte.h	4.2	%G%	*/
+/*	pte.h	4.3	%G%	*/
 
 /*
  * VAX page table entry
@@ -77,4 +77,5 @@ extern	struct pte mmap[];
 extern	struct pte mcrmap[];
 extern	struct pte bufmap[];
 extern	struct pte msgbufmap[];
+extern	struct pte camap[];
 #endif
