@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	7.3 (Berkeley) %G%
+ *	@(#)ip_output.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,8 +31,9 @@ struct mbuf *ip_insertoptions();
 
 /*
  * IP output.  The packet in mbuf chain m contains a skeletal IP
- * header (as ipovly).  The mbuf chain containing the packet will
- * be freed.  The mbuf opt, if present, will not be freed.
+ * header (with len, off, ttl, proto, tos, src, dst).
+ * The mbuf chain containing the packet will be freed.
+ * The mbuf opt, if present, will not be freed.
  */
 ip_output(m, opt, ro, flags)
 	struct mbuf *m;
