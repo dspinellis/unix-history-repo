@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inbound.c	3.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)inbound.c	3.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -32,9 +32,8 @@ static char sccsid[] = "@(#)inbound.c	3.4 (Berkeley) %G%";
 #include "../api/ebc_disp.h"
 
 #include "../general/globals.h"
-#include "inbound.ext"
-#include "outbound.ext"
-#include "../telnet.ext"
+#include "externs.h"
+#include "declare.h"
 
 #define EmptyChar()	(ourPTail == ourPHead)
 #define FullChar()	(ourPHead == ourBuffer+sizeof ourBuffer)
@@ -65,7 +64,9 @@ static int	HadAid;			/* Had an AID haven't sent */
 
 static int InsertMode;			/* is the terminal in insert mode? */
 
-static int rememberedshiftstate;	/* Shift (alt) state of terminal */
+static unsigned int
+	rememberedshiftstate;	/* Shift (alt) state of terminal */
+
 #   define HITNUM(s) ((((s)&(SHIFT_CAPS|SHIFT_UPSHIFT))? 1:0) \
 			+ ((((s)&SHIFT_ALT)? 1:0)<<1))
 
@@ -229,7 +230,7 @@ register int	where,		/* Where to start deleting from */
 	if (IsStartField(from)) {
 	    AddHost(i, 0);		/* Stick the edge at the start field */
 	} else {
-	    AddHost(i, GetHost(from));
+	    AddHost(i, (char)GetHost(from));
 	    from = ScreenInc(from);		/* Move the edge */
 	}
 	i = ScreenInc(i);
@@ -346,7 +347,7 @@ char	character;
 
 	    sprintf(buffer, "File %s, line %d:  No room in network buffer!\n",
 				__FILE__, __LINE__);
-	    ExitString(stderr, buffer, 1);
+	    ExitString(buffer, 1);
 	    /*NOTREACHED*/
 	}
     }
@@ -373,16 +374,16 @@ SendUnformatted()
 		Nulls--;
 		AddChar(EBCDIC_BLANK);		/* put in blanks */
 	    }
-	    AddChar(disp_ebc[c]);
+	    AddChar((char)disp_ebc[c]);
 	}
 	i = ScreenInc(i);
     } while (i != j);
 }
 
 static
-SendField(i, command)
+SendField(i, cmd)
 register int i;			/* where we saw MDT bit */
-int	command;		/* The command code (type of read) */
+int	cmd;			/* The command code (type of read) */
 {
     register int j;
     register int k;
@@ -394,7 +395,7 @@ int	command;		/* The command code (type of read) */
 
 		/* On a test_request_read, don't send sba and address */
     if ((AidByte != AID_TREQ)
-			|| (command == CMD_SNA_READ_MODIFIED_ALL)) {
+			|| (cmd == CMD_SNA_READ_MODIFIED_ALL)) {
 	AddChar(ORDER_SBA);		/* set start field */
 	AddChar(BufferTo3270_0(j));	/* set address of this field */
 	AddChar(BufferTo3270_1(j));
@@ -405,7 +406,7 @@ int	command;		/* The command code (type of read) */
 		 * selector pen.
 		 */
     if ((AidByte != AID_SELPEN)
-			|| (command == CMD_SNA_READ_MODIFIED_ALL)) {
+			|| (cmd == CMD_SNA_READ_MODIFIED_ALL)) {
 	if (!IsStartField(j)) {
 	    Nulls = 0;
 	    k = ScreenInc(WhereHighByte(j));
@@ -418,7 +419,7 @@ int	command;		/* The command code (type of read) */
 			Nulls--;
 			AddChar(EBCDIC_BLANK);		/* put in blanks */
 		    }
-		    AddChar(disp_ebc[c]);
+		    AddChar((char)disp_ebc[c]);
 		}
 		j = ScreenInc(j);
 	    } while ((j != k) && (j != i));
@@ -431,8 +432,8 @@ int	command;		/* The command code (type of read) */
 
 /* Various types of reads... */
 void
-DoReadModified(command)
-int	command;			/* The command sent */
+DoReadModified(cmd)
+int	cmd;			/* The command sent */
 {
     register int i, j;
 
@@ -451,9 +452,9 @@ int	command;			/* The command sent */
     }
     if (((AidByte != AID_PA1) && (AidByte != AID_PA2)
 	    && (AidByte != AID_PA3) && (AidByte != AID_CLEAR))
-	    || (command == CMD_SNA_READ_MODIFIED_ALL)) {
+	    || (cmd == CMD_SNA_READ_MODIFIED_ALL)) {
 	if ((AidByte != AID_TREQ)
-	    || (command == CMD_SNA_READ_MODIFIED_ALL)) {
+	    || (cmd == CMD_SNA_READ_MODIFIED_ALL)) {
 		/* Test request read_modified doesn't give cursor address */
 	    AddChar(BufferTo3270_0(CursorAddress));
 	    AddChar(BufferTo3270_1(CursorAddress));
@@ -465,7 +466,7 @@ int	command;			/* The command sent */
 	} else {
 	    do {
 		if (HasMdt(i)) {
-		    i = SendField(i, command);
+		    i = SendField(i, cmd);
 		} else {
 		    i = FieldInc(i);
 		}
@@ -499,7 +500,7 @@ DoReadBuffer()
 	    AddChar(ORDER_SF);
 	    AddChar(BufferTo3270_1(FieldAttributes(i)));
 	} else {
-	    AddChar(disp_ebc[GetHost(i)]);
+	    AddChar((char)disp_ebc[GetHost(i)]);
 	}
 	i = ScreenInc(i);
     } while (i != j);
@@ -579,7 +580,7 @@ int insert;		/* are we in insert mode? */
 	} else {
 	    for (j = ScreenDec(i); i != CursorAddress;
 			    j = ScreenDec(j), i = ScreenDec(i)) {
-		AddHost(i, GetHost(j));
+		AddHost(i, (char)GetHost(j));
 	    }
 	}
     }
@@ -606,7 +607,7 @@ int insert;		/* are we in insert mode? */
 
 int
 AcceptKeystroke(scancode, shiftstate)
-int
+unsigned int
     scancode,			/* 3270 scancode */
     shiftstate;			/* The shift state */
 {
@@ -616,7 +617,7 @@ int
     enum ctlrfcn ctlrfcn;
 
     if (scancode >= numberof(hits)) {
-	ExitString(stderr,
+	ExitString(
 		"Unknown scancode encountered in AcceptKeystroke.\n", 1);
 	/*NOTREACHED*/
     }
@@ -1137,8 +1138,7 @@ int		count;			/* how much data there is */
 
     while (count) {
 	if (*buffer >= numberof(hits)) {
-	    ExitString(stderr,
-			"Unknown scancode encountered in DataFrom3270.\n", 1);
+	    ExitString("Unknown scancode encountered in DataFrom3270.\n", 1);
 	    /*NOTREACHED*/
 	}
 
