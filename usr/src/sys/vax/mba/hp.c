@@ -1,4 +1,4 @@
-/*	hp.c	4.14	81/02/25	*/
+/*	hp.c	4.15	81/02/25	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -242,12 +242,13 @@ hpdtint(mi, mbasr)
 		} else {
 			if (hpaddr->hper1&HP_WLE)	
 				printf("hp%d is write locked\n", dkunit(bp));
-			else
-		harderr(bp);
-		printf("hp%d mbasr %b er1 %b er2 %b\n",
+			else {
+				harderr(bp);
+				printf("hp%d mbasr %b er1 %b er2 %b\n",
 				    dkunit(bp), mbasr, mbasr_bits,
 				    hpaddr->hper1, HPER1_BITS,
 				    hpaddr->hper2, HPER2_BITS);
+			}
 			hpaddr->hpcs1 = HP_DCLR|HP_GO;
 			bp->b_flags |= B_ERROR;
 		}
