@@ -7,19 +7,41 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)isa.h	5.7 (Berkeley) %G%
+ *	@(#)isa.h	5.8 (Berkeley) %G%
  */
 
 /*
  * ISA Bus conventions
  */
 
-#ifndef LOCORE
+/*#ifndef LOCORE
 unsigned char inb(), rtcin();
 void outb();
+#endif*/
+
+#ifndef LOCORE
+unsigned char rtcin();
+
+#define inb(io) ({u_short iop; register u_char rtn; \
+	iop = (io); \
+	asm (" movl %1,%%edx; inb %%al,%%dx; movzbl %%al,%0 " \
+		: "=r" (rtn) \
+		: "g" (iop) \
+		: "ax,dx"); \
+	rtn; \
+})
+
+#define outb(io, v) ({u_short iop; u_char val; \
+	iop = (io); \
+	val = (v); \
+	asm (" movl %1,%%edx; movl %0,%%eax; outb %%dx,%%al " \
+		:  \
+		: "g" (val) \
+		: "g" (iop) \
+		: "ax,dx"); \
+})
+
 #endif
-
-
 /*
  * Input / Output Port Assignments
  */
@@ -83,9 +105,8 @@ void outb();
  */
 
 #ifndef	IOM_BEGIN
-#define	IOM_BEGIN	0x0a0000		/* Start of I/O Memory "hole" */
-#define	IOM_END		0x100000		/* End of I/O Memory "hole" */
-#define	IOM_SIZE	(IOM_END - IOM_BEGIN)
+#define	IOM_BEGIN	0xa0000		/* Start of I/O Memory "hole" */
+#define	IOM_END		0xFFFFF		/* End of I/O Memory "hole" */
 #endif	IOM_BEGIN
 
 /*
@@ -93,10 +114,9 @@ void outb();
  */
 
 #ifndef	RAM_BEGIN
-#define	RAM_BEGIN	0x0000000	/* Start of RAM Memory */
-#define	RAM_END		0x1000000	/* End of RAM Memory */
-#define	RAM_SIZE	(RAM_END - RAM_BEGIN)
-#endif	RAM_BEGIN
+#define	RAM_BEGIN	0x000000	/* Start of RAM Memory */
+#define	RAM_END		0xFFFFFF	/* End of RAM Memory */
+#endif	IOM_BEGIN
 
 /*
  * Oddball Physical Memory Addresses
