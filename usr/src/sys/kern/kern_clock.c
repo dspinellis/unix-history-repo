@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.49	82/12/30	*/
+/*	kern_clock.c	4.50	83/01/15	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -20,6 +20,10 @@
 
 #ifdef vax
 #include "../vax/mtpr.h"
+#endif
+
+#ifdef GPROF
+#include "../h/gprof.h"
 #endif
 
 #
@@ -160,7 +164,7 @@ hardclock(regs)
 #ifdef GPROF
 		int k = pc - s_lowpc;
 		if (profiling < 2 && k < s_textsize)
-			kcount[k / sizeof (*kcount)]++;
+			kcount[k / (HISTFRACTION * sizeof (*kcount))]++;
 #endif
 		cpstate = CP_SYS;
 		if (noproc) {
