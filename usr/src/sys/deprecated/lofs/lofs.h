@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs.h	1.1 (Berkeley) %G%
+ *	@(#)lofs.h	7.1 (Berkeley) %G%
  *
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
