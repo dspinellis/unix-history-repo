@@ -89,6 +89,7 @@ DESTDIR =
 #			than BUFSIZ long.
 #			
 
+AS = /bin/as
 LD = /bin/ld
 
 DFLAGS= -DAS -DUNIX -DUNIXDEVEL -DFLEXNAMES
