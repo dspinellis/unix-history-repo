@@ -1,24 +1,24 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)px_header.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)px_header.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * pxheader - program to sit in front of interpreter code to make shell mods
  *	      unnecessary to make Pascal obj's look like real programs.
  *
- * This program lives in /usr/lib/px_header
  * Bill Joy UCB February 6, 1978
  */
 

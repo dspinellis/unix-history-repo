@@ -1,12 +1,13 @@
-/*
- * Copyright (c) 1982 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readobj.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)readobj.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Read in the namelist from the obj file.

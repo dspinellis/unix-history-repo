@@ -1,10 +1,11 @@
+# Copyright (c) 1982 The Regents of the University of California.
+# All rights reserved.
 #
-# Copyright (c) 1982 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# %sccs.include.redist.sh%
 #
-#	@(#)cerror.s	5.1 (Berkeley) %G%
+#	@(#)cerror.s	5.2 (Berkeley) %G%
 #
+
 # modified version of cerror
 #
 # The idea is that every time an error occurs in a system call
