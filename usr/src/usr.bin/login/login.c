@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.46 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -273,15 +273,21 @@ main(argc, argv)
 			if (setenv("KRBTKFILE", tkfile, 1) < 0)
 				syslog(LOG_ERR, "couldn't set tkfile environ");
 			else {
+				setreuid(pwd->pw_uid, 0);
 				kerror = krb_get_pw_in_tkt(
 					PRINCIPAL_NAME, PRINCIPAL_INST, realm,
 					INITIAL_TICKET, realm, DEFAULT_TKT_LIFE,
 					pp);
+				setuid(0);
 				if ((kerror == KSUCCESS) &&
 				    (chown(tkfile, pwd->pw_uid) < 0)) {
 					syslog(LOG_ERR,
 						"couldn't chown tkfile: %m");
 					kerror = INTK_ERR;
+				} else if (kerror != KSUCCESS) {
+					syslog(LOG_ERR,
+						"problem getting intkt: %s\n",
+						krb_err_txt[kerror]);
 				}
 			}
 			/*
