@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)umount.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)umount.c	4.6 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <fstab.h>
@@ -31,12 +31,12 @@ main(argc, argv)
 	mf = open("/etc/mtab", 0);
 	read(mf, (char *)mtab, sizeof (mtab));
 again:
-	if (!strcmp(*argv, "-v")) {
+	if (argc > 0 && !strcmp(*argv, "-v")) {
 		vflag++;
 		argc--, argv++;
 		goto again;
 	}
-	if (!strcmp(*argv, "-a")) {
+	if (argc > 0 && !strcmp(*argv, "-a")) {
 		all++;
 		argc--, argv++;
 		goto again;
