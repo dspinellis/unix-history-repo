@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.1 (Berkeley) %G%
+	@(#)syscalls.master	7.46 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -26,7 +26,7 @@
 ; of the current calls.
 
 0	STD	0 nosys indir
-1	STD	1 rexit exit
+1	STD	1 exit
 2	STD	0 fork
 3	STD	3 read
 4	STD	3 write
@@ -58,7 +58,7 @@
 30	STD	3 accept
 31	STD	3 getpeername
 32	STD	3 getsockname
-33	STD	2 saccess access
+33	STD	2 access
 34	STD	2 chflags
 35	STD	2 fchflags
 36	STD	0 sync
@@ -80,7 +80,7 @@
 48	STD	2 sigprocmask
 49	STD	2 getlogin
 50	STD	1 setlogin
-51	STD	1 sysacct acct
+51	STD	1 acct
 52	STD	0 sigpending
 53	STD	2 sigaltstack
 54	STD	3 ioctl
@@ -100,7 +100,7 @@
 68	OBSOL	0 vwrite
 69	STD	1 sbrk
 70	STD	1 sstk
-71	COMPAT	7 smmap mmap
+71	COMPAT	7 mmap
 72	STD	1 ovadvise vadvise
 73	STD	2 munmap
 74	STD	3 mprotect
@@ -260,7 +260,7 @@
 194	STD	2 getrlimit
 195	STD	2 setrlimit
 196	STD	4 getdirentries
-197	STD	8 smmap mmap
+197	STD	8 mmap
 198	STD	0 nosys __indir
 199	STD	5 lseek
 200	STD	4 truncate
