@@ -1,4 +1,4 @@
-/*	locore.s	1.24	88/02/28	*/
+/*	locore.s	1.25	88/05/06	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -580,6 +580,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	.space	(npte)*4;			\
 	.globl	_/**/vname;			\
 	.set	_/**/vname,vaddr(_/**/mname)
+#define	ADDMAP(npte)	.space	(npte)*4
 
 	.data
 	.align	2
@@ -596,7 +597,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(kmempt	,kmembase	,1024*CLSIZE 	)
+	SYSMAP(kmempt	,kmembase	,300*CLSIZE 	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
@@ -605,24 +606,24 @@ _/**/mname:	.globl	_/**/mname;		\
 	 * by tahoe controllers.
 	 */
 #include "dk.h"
-	SYSMAP(_vdmap	,_vdbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
+				ADDMAP(	NVD*(MAXPHYS/NBPG+CLSIZE) )
 #include "yc.h"
-	SYSMAP(_cymap	,_cybase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
+				ADDMAP(	NCY*(MAXPHYS/NBPG+CLSIZE) )
 #include "mp.h"
-	SYSMAP(_mpmap	,_mpbase	,NMP*14		)
+				ADDMAP(	NMP*14		)
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
 	SYSMAP(VMEMmap1	,vmem1		,0		)
 #include "ace.h"
-	SYSMAP(_acemap1	,_acemem	,NACE*32	)
+				ADDMAP(	NACE*32	)
 	SYSMAP(VMEMend	,vmemend	,0		)
 
 	SYSMAP(VBmap	,vbbase		,CLSIZE		)
-	SYSMAP(_vdbmap	,_vdbbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
-	SYSMAP(_cybmap	,_cybbase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
-	SYSMAP(_mpbmap	,_mpbbase	,NMP*14		)
+				ADDMAP(	NVD*(MAXPHYS/NBPG+CLSIZE) )
+				ADDMAP(	NCY*(MAXPHYS/NBPG+CLSIZE) )
+				ADDMAP(	NMP*14		)
 	SYSMAP(eVBmap	,vbend		,0		)
 
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
