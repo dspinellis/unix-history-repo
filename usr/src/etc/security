@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.27 (Berkeley) %G%
+#	@(#)security	5.28 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -208,7 +208,7 @@ else
 fi
 
 # Uudecode should not be in the /etc/aliases file.
-if grep -w uudecode /etc/aliases; then
+if egrep 'uudecode|decode' /etc/aliases; then
 	printf "\nThere is an entry for uudecode in the /etc/aliases file.\n"
 fi
 
