@@ -1,4 +1,4 @@
-#	@(#)files.newconf	7.3 (Berkeley) %G%
+#	@(#)files.newconf	7.4 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -62,7 +62,6 @@ file	kern/sys_process.c
 file	kern/sys_socket.c
 file	kern/sysv_shm.c		sysvshm
 file	kern/tty.c
-file	kern/tty_clock.c
 file	kern/tty_compat.c
 file	kern/tty_conf.c
 file	kern/tty_pty.c		pty needs-count
