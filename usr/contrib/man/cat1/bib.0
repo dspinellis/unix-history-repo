@@ -1,0 +1,264 @@
+
+
+
+BIB(1)			       1988			   BIB(1)
+
+
+NNAAMMEE
+       bib, listrefs, bibinc, bib2tib -	bibliographic formatter
+
+SSYYNNOOPPSSIISS
+       bbiibb [options] ...
+       lliissttrreeffss	[options] ...
+       bbiibbiinncc [options]	...
+
+DDEESSCCRRIIPPTTIIOONN
+       _B_i_b  is	a preprocessor for _n_r_o_f_f or _t_r_o_f_f(1) that formats
+       citations and bibliographies.  The input	 files	(standard
+       input  default)	are copied to the standard output, except
+       for text	between	[. and .]  pairs, which	are assumed to be
+       keywords	 for  searching	 a  bibliographic database.  If	a
+       matching	 reference  is	found  a  citation  is	generated
+       replacing  the text.  References	are collected, optionally
+       sorted, and written out at a  location  specified  by  the
+       user.   Citation	 and  reference	formats	are controlled by
+       the -t option.
+
+       Reference databases are created using the _i_n_v_e_r_t	 utility.
+
+       The  following  options are available.  Note that standard
+       format styles (see the -t option)  set  options	automati-
+       cally.	Thus  if a standard format style is used the user
+       need not	indicate any further options for most  documents.
+
+       -aa     reduce authors first names to abbreviations.
+
+       -ar_n_u_m  reverse the first _n_u_m author's names.  If a number
+	       is not given all	authors	names are reversed.
+
+       -ax     print authors last names	in Caps-Small Caps style.
+	       For example Budd	becomes	BUDD.  This style is used
+	       by certain ACM publications.
+
+       -c_s_t_r   build citations according  to  the  template  _s_t_r.
+	       See  the	reference format designers guide for more
+	       information on templates.
+
+       -d      changes the default  search  directory  for  style
+	       files,  include files, etc.  and	changes	the value
+	       of the macro BMACLIB for	bib, and of the	macro  l]
+	       used  to	 find  the  troff  macro  definition file
+	       bmac.std.  Defaults to /usr/new/lib/bmac.  If  you
+	       have  your own private copies of	all the	necessary
+	       files, using this option	is  the	 easiest  way  to
+	       specify them.
+
+       -ea     reduce editors' first names to abbreviations.
+
+       -ex     print editors' last names in Caps-Small Caps style
+	       (see -ax	option).
+
+
+
+
+September			2				1
+
+
+
+
+
+BIB(1)			       1988			   BIB(1)
+
+
+       -er_n_u_m  reverse the first _n_u_m editors' names.  If a number
+	       is not given all	editors' names are reversed.
+
+       -f      instead of collecting references, dump each refer-
+	       ence immediately	following the line on  which  the
+	       citation	 is  placed  (used  for	 footnoted refer-
+	       ences).
+
+       -i _f_i_l_e
+
+       -i_f_i_l_e  process the indicated file, such	as a file of def-
+	       initions.  (see technical report	for a description
+	       of file format).
+
+       -h      replace citations to three or more adjacent refer-
+	       ence  items  with  a hyphenated string (eg 2,3,4,5
+	       becomes 2-5).  This option implies the -o  option.
+
+       -n_s_t_r   turn  off indicated options.  _s_t_r must be composed
+	       of the letters afhosx.
+
+       -o      contiguous citations are	ordered	according the the
+	       reference list before being printed (default).
+
+       -p _f_i_l_e
+
+       -p_f_i_l_e  instead	of  searching  the file	INDEX, search the
+	       indicated reference  files  before  searching  the
+	       system  file.   _f_i_l_e_s is	a comma	separated list of
+	       inverted	indices, created using the  _i_n_v_e_r_t  util-
+	       ity.
+
+       -s_s_t_r   sort references according to the	template _s_t_r.
+
+       -t _t_y_p_e
+
+       -t_t_y_p_e  use  the	 standard  macros and switch settings for
+	       the indicated style to generate citations and ref-
+	       erences.	  There	 are  a	number of standard styles
+	       provided.  In addition users  can  generate  their
+	       own  style macros.  See the format designers guide
+	       for details.
+
+       -Tib    the abbreviations and macros used all use the  TiB
+	       style  of macro call in which the name is enclosed
+	       in vertical |bars|.
+
+       -Tibx   instead of processing the input files,  write  the
+	       file  bib.m4.in containing m4(I)	macro definitions
+	       that make converting from bib style to  Tib  style
+	       macros  a  little  easier.   Note that m4 does not
+	       allow ampersands	in macro names:	this file and all
+	       of  the	files  to  be  converted  will have to be
+	       changed by hand.	 The m4	macros will _o_n_l_y identify
+
+
+
+September			2				2
+
+
+
+
+
+BIB(1)			       1988			   BIB(1)
+
+
+	       words  that  bib	would normally expand: they do no
+	       other conversions.  After creating .bib.m4.in, run
+	       the scriptfile bib2tib passing it the names of the
+	       files you wish converted.
+
+       _L_i_s_t_r_e_f_s	 formats  an  entire  reference	 database   file.
+       Options to _l_i_s_t_r_e_f_s are the same	as for _b_i_b.
+
+       _B_i_b_i_n_c  is an od	hack tool for solving the problem of mul-
+       tiple define files  for	multiple  styles.   Some  journal
+       styles  require	that  journal  names  be spelled out com-
+       pletely,	while others allow abbreviated names.  Two  macro
+       definition  files are available that allow this multiplic-
+       ity of style: bibinc.fullnames and  bibinc.shortnames.	A
+       frequent	 source	 of error is updating one of these files,
+       and forgetting to update	the other.  _B_i_b_i_n_c allows a  sin-
+       gle  file,  say	bibinc.names, to define	both the long and
+       the short versions of names, and	from which the files bib-
+       inc.fullnames and bibinc.shortnames can easily be created.
+       _B_i_b_i_n_c can also be used to define macro files for the  TiB
+       bibliographic preprocessor.
+
+       _B_i_b_2_t_i_b will use	the bib.m4.in file created with	the -Tibx
+       option to convert any files you specify into one	using the
+       TiB-style  macro	 conventions.  It is a simple script that
+       does about 95% of the necessary grunge work to  make  this
+       conversion,  but	be aware that the user will still need to
+       eyeball the converted files for correctness.  To	make  use
+       of  the facility, run a _b_i_b job with the	-Tibx option: _b_i_b
+       will  not  process  the	input  files,  but  will   create
+       bib.m4.in  instead, after gathering together all	the defi-
+       nitions it can find. Then for each of  your  bibliographic
+       database	files, run _b_i_b_i_n_c.
+
+       _B_i_b  was	 designed  initially for use with the -ms macros,
+       and uses	a couple of the	-ms macros (.ip	and .lp)  in  its
+       macro  definitions.  To use it with the -me macros, prefix
+       the file	being sent  to	nroff/troff  with  the	following
+       macro definitions:
+		 .de IP
+		 .ip \$1 \$2
+		 ..
+		 .de LP
+		 .lp
+		 ..
+
+       A  file "bibmac.me" containing these macro definitions may
+       be found	in /usr/new/lib/bmac.
+
+FFIILLEESS
+       INDEX		   inverted index for reference	database
+       /usr/dict/papers/INDEXdefault system index
+       /usr/new/lib/bmac/bmac.*formatting macro	packages
+       /usr/new/lib/bmac/bibinc.namesinput to _b_i_b_i_n_c
+
+
+
+September			2				3
+
+
+
+
+
+BIB(1)			       1988			   BIB(1)
+
+
+       /usr/new/lib/bmac/tibmacs/*for use with TiB-style |macros|
+       /usr/new/lib/bmac/bibmacs/*for	use  with  old	bib-style
+       macros
+       /usr/tmp/bibr*	   scratch file	for collecting references
+       /usr/tmp/bibp*	   output of pass one of bib
+       bib.m4.in	   macros  for	converting  to	TiB  (see
+       -Tibx above)
+
+SSEEEE AALLSSOO
+       _A _U_N_I_X _B_i_b_l_i_o_g_r_a_p_h_i_c _D_a_t_a_b_a_s_e _F_a_c_i_l_i_t_y,	Timothy	 A.  Budd
+       and  Gary M. Levin, University of Arizona Technical Report
+       82-1, 1982.  (includes format designers guide).
+       BIB - A Program for Formatting Bibliographies, Timothy  A.
+       Budd, a BSD UNIX	document found in /usr/doc/usd/31.bib.
+       invert(1), troff(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+September			2				4
+
+
