@@ -1,4 +1,4 @@
-/*	defs.h	4.2	81/05/14	*/
+/*	defs.h	4.3	82/03/30	*/
 
 /*
  * adb - vax string table version; common definitions
