@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.17	83/02/10	*/
+/*	raw_ip.c	4.18	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -86,7 +86,8 @@ rip_output(m0, so)
 		ip->ip_src.s_addr = 0;
 	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, &routetoif, 1));
+	return (ip_output(m, (struct mbuf *)0, (struct route *)0, 
+	   IP_ROUTETOIF|IP_ALLOWBROADCAST));
 bad:
 	m_freem(m);
 	return (error);

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.46	83/05/03	*/
+/*	udp_usrreq.c	4.47	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -159,6 +159,7 @@ udp_output(inp, m0)
 	register struct udpiphdr *ui;
 	register struct socket *so;
 	register int len = 0;
+	int flags;
 
 	/*
 	 * Calculate data length and get a mbuf
@@ -198,9 +199,8 @@ udp_output(inp, m0)
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
-	return (ip_output(m, (struct mbuf *)0,
-	    (so->so_options & SO_DONTROUTE) ? &routetoif : (struct route *)0,
-	    so->so_state & SS_PRIV));
+	flags = (so->so_options & SO_DONTROUTE) | (so->so_state & SS_PRIV);
+	return (ip_output(m, (struct mbuf *)0, (struct route *)0, flags));
 }
 
 /*ARGSUSED*/
