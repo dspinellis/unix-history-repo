@@ -1,6 +1,6 @@
-.\"	@(#)popen.3	4.1 (Berkeley) %G%
+.\"	@(#)popen.3	5.1 (Berkeley) %G%
 .\"
-.TH POPEN 3S
+.TH POPEN 3 "18 July 1983"
 .AT 3
 .SH NAME
 popen, pclose \- initiate I/O to/from a process
@@ -21,38 +21,32 @@ popen, pclose \- initiate I/O to/from a process
 .SH DESCRIPTION
 The arguments to 
 .I popen
-are pointers to null-terminated strings
-containing respectively a shell command line and an I/O
-mode, either "r" for reading or "w" for
-writing.
-It creates a pipe between
-the calling process and
-the command to be executed.
-The value returned 
-is a stream pointer that
+are pointers to null-terminated strings containing respectively a
+shell command line and an I/O mode, either "r" for reading or "w" for
+writing.  It creates a pipe between the calling process and
+the command to be executed.  The value returned is a stream pointer that
 can be used (as appropriate) to write to the standard input
 of the command or read from its standard output.
 .PP
 A stream opened by
 .I popen
 should be closed by
-.I pclose,
+.IR pclose ,
 which waits for the associated process to terminate
 and returns the exit status of the command.
 .PP
-Because open files are shared, a type "r" command
-may be used as an input filter,
-and a type "w" as an output filter.
+Because open files are shared, a type "r" command may be used as an input
+filter, and a type "w" as an output filter.
 .SH "SEE ALSO"
 pipe(2),
-fopen(3),
-fclose(3),
+fopen(3S),
+fclose(3S),
 system(3),
-wait(2)
+wait(2),
+sh(1)
 .SH DIAGNOSTICS
 .I Popen
-returns a null pointer
-if files or processes cannot be created, or the Shell 
+returns a null pointer if files or processes cannot be created, or the shell 
 cannot be accessed.
 .PP
 .I Pclose
@@ -63,7 +57,13 @@ is not associated with a `popened' command.
 Buffered reading before opening an input filter
 may leave the standard input of that filter mispositioned.
 Similar problems with an output filter may be
-forestalled by careful buffer flushing, e.g. with
+forestalled by careful buffer flushing, for instance, with
 .I fflush,
 see
 .IR fclose (3).
+.LP
+.I Popen
+always calls
+.IR sh ,
+never calls
+.IR csh .
