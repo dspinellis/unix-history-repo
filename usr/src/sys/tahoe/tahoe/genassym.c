@@ -1,19 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	1.2 (Berkeley) %G%";
 #endif
 
-#include "../h/param.h"
-#include "../h/vmmeter.h"
-#include "../h/vmparam.h"
-#include "../h/buf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/cmap.h"
-#include "../h/map.h"
-#include "../h/proc.h"
-#include "../h/text.h"
-#include "../h/mbuf.h"
-#include "../h/msgbuf.h"
+#include "../tahoe/pte.h"
+
+#include "param.h"
+#include "vmmeter.h"
+#include "vmparam.h"
+#include "buf.h"
+#include "dir.h"
+#include "user.h"
+#include "cmap.h"
+#include "map.h"
+#include "proc.h"
+#include "text.h"
+#include "mbuf.h"
+#include "msgbuf.h"
 
 main()
 {
