@@ -6,6 +6,7 @@
 
 #include <signal.h>
 #include <sgtty.h>
+#undef CEOF
 #include <setjmp.h>
 #define	NULL	0
 #define	FNSIZE	64
