@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)whereis.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.7 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -47,11 +47,6 @@ static char *srcdirs[]  = {
 	"/usr/src/new",
 	"/usr/src/old",
 	"/usr/src/undoc",
-	/* these are temporary */
-	"/usr/src/src.arpa/cmd",
-	"/usr/src/src.monet/4.1",
-	"/usr/src/src.monet/4.1a",
-	"/usr/src/src.monet/4.1b",
 	0
 };
 
