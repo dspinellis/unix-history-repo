@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pp.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -284,7 +284,7 @@ ppnumb(s)
 ppgoin(lv)
 {
 
-	pplev[lv] =+ unit;
+	pplev[lv] += unit;
 }
 
 ppgoout(lv)
@@ -344,8 +344,8 @@ putchar(c)
 			flush();
 			break;
 		case '\t':
-			outcol =+ 8;
-			outcol =& ~07;
+			outcol += 8;
+			outcol &= ~07;
 			break;
 		case '\b':
 			if (outcol)

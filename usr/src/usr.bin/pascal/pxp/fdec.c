@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fdec.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fdec.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,8 +29,8 @@ funchdr(r)
 	register **rl, *il;
 
 	if (inpflist(r[2])) {
-		optstk['z'-'a'] =<< 1;
-		optstk['z'-'a'] =| opts['z'-'a'];
+		optstk['z'-'a'] <<= 1;
+		optstk['z'-'a'] |= opts['z'-'a'];
 		opts['z'-'a'] = 1;
 	}
 	cbn++;
@@ -224,7 +224,7 @@ funcend(fp, bundle, binfo)
 		ppgoout(PRFN);
 	if (inpflist(fp)) {
 		opts['z'-'a'] = optstk['z'-'a'] & 1;
-		optstk['z'-'a'] =>> 1;
+		optstk['z'-'a'] >>= 1;
 	}
 	if (cbn == 0) {
 		flushcm();
