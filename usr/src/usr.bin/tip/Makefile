@@ -1,4 +1,4 @@
-#	Makefile	4.9	83/06/25
+#	Makefile	4.10	83/06/25
 #
 # make file for intermachine communications package
 #
@@ -79,6 +79,7 @@ tags:	${SOURCES} tip.h
 	ctags -w ${SOURCES} tip.h
 
 clean:
+	cd aculib; make ${MFLAGS} clean
 	rm -f tip cu *.o
 
 print:
