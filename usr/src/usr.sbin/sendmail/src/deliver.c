@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.64 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -334,7 +334,7 @@ sendenvelope(e, mode)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 
-# ifndef HASFLOCK
+# if !HASFLOCK
 		/*
 		**  Since fcntl locking has the interesting semantic that
 		**  the lock is owned by a process, not by an open file

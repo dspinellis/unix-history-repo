@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -612,7 +612,7 @@ bt_map_open(map, mode)
 	if (omode == O_RDWR)
 	{
 		omode |= O_CREAT|O_TRUNC;
-#if defined(O_EXLOCK) && defined(HASFLOCK)
+#if defined(O_EXLOCK) && HASFLOCK
 		omode |= O_EXLOCK;
 # if !defined(OLD_NEWDB)
 	}
@@ -638,7 +638,7 @@ bt_map_open(map, mode)
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
-#if !defined(OLD_NEWDB) && defined(HASFLOCK)
+#if !defined(OLD_NEWDB) && HASFLOCK
 	fd = db->fd(db);
 # if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
@@ -696,7 +696,7 @@ hash_map_open(map, mode)
 	if (omode == O_RDWR)
 	{
 		omode |= O_CREAT|O_TRUNC;
-#if defined(O_EXLOCK) && defined(HASFLOCK)
+#if defined(O_EXLOCK) && HASFLOCK
 		omode |= O_EXLOCK;
 # if !defined(OLD_NEWDB)
 	}
@@ -722,7 +722,7 @@ hash_map_open(map, mode)
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
-#if !defined(OLD_NEWDB) && defined(HASFLOCK)
+#if !defined(OLD_NEWDB) && HASFLOCK
 	fd = db->fd(db);
 # if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
