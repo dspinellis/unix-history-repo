@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.11	%G%";
+static char	SccsId[] = "@(#)err.c	3.12	%G%";
 
 extern bool	HasXscrpt;
 
@@ -138,7 +138,15 @@ message(num, msg, a, b, c, d, e)
 
 	/* print arpa format header if needed */
 	if (ArpaMode != ARPA_NONE && !HasXscrpt)
-		fprintf(OutChannel, "%.3s ", num);
+	{
+		register char del;
+
+		if (num[3] == '-')
+			del = '-';
+		else
+			del = ' ';
+		fprintf(OutChannel, "%3.3s%c", num, del);
+	}
 
 	if (To != NULL && To[0] != '\0')
 		fprintf(OutChannel, "%s... ", To);
