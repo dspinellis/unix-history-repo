@@ -1,11 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makewhatis.sed	5.6 (Berkeley) %G%
+#	@(#)makewhatis.sed	8.1 (Berkeley) %G%
 #
 
 /(\([a-zA-Z0-9]*\).*UNIX Programmer's Manual/ {
