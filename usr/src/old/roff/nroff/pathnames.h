@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
-#define	_PATH_TERM	"/usr/libdata/term/tablpr"
+#define	_PATH_TERM	"/usr/old/libdata/term/tablpr"
