@@ -1,4 +1,4 @@
-/* "@(#)mac.h 4.1 %G%" */
+/* "@(#)mac.h 4.2 %G%" */
 #
 /*
  *	UNIX debugger

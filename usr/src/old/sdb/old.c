@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)old.c 4.1 %G%";
+static	char sccsid[] = "@(#)old.c 4.2 %G%";
 /*
  * sdb - a symbolic debugger for UNIX.
  */

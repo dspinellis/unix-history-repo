@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)docomm.c 4.1 %G%";
+static	char sccsid[] = "@(#)docomm.c 4.2 %G%";
 #include <signal.h>
 #include "head.h"
 #include <a.out.h>

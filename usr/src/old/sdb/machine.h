@@ -1,4 +1,4 @@
-/* "@(#)machine.h 4.1 %G%" */
+/* "@(#)machine.h 4.2 %G%" */
 /*
  *	UNIX/vax debugger
  */

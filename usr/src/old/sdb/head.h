@@ -1,4 +1,4 @@
-/* "@(#)head.h 4.2 %G%" */
+/* "@(#)head.h 4.3 %G%" */
 #include <sys/vm.h>
 #define	PAGSIZ	(CLSIZE*NBPG)
 #include <stdio.h>
@@ -41,7 +41,7 @@ char	sl_name[8];
 #else
 char	*sl_name;
 #endif
-char	sl_class;
+u_char	sl_class;
 short	sl_type;
 int	sl_size, sl_addr;
 int	subflag;
@@ -68,7 +68,7 @@ ADDR	callpc, frame, argp;	/* current stack frame */
 char	odesc[10];		/* descriptor of last displayed variable */
 ADDR	oaddr;			/* address of last displayed variable */
 char	otype;			/* type of last displayed variable */
-char	oclass;			/* class of last displayed variable */
+u_char	oclass;			/* class of last displayed variable */
 char	oincr;			/* size of last displayed variable */
 struct sgttyb sdbttym, userttym;
 				/* tty modes for sdb and user */

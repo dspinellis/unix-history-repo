@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)prvar.c 4.2 %G%";
+static	char sccsid[] = "@(#)prvar.c 4.3 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -26,7 +26,7 @@ STRING	errflg;
  */
 outvar(proc, var, fmt, metaflag, addr, class, subflag, prnamep,
 		comblk, prvar)
-ADDR addr; char *proc, *var, *fmt, *prnamep, *comblk; int class; {
+ADDR addr; char *proc, *var, *fmt, *prnamep, *comblk; u_char class; {
 	char *p, *q, *r, *oldpr;
 	register int match;
 	long soffset, goffset;
@@ -225,6 +225,7 @@ prdebug() {
  *  type == 1 => use addr for value to print
  */
 dispf(addr, desc, class, type, size, subflag, space)
+u_char class;
 char *desc; short type; ADDR addr; {
 	dispx(addr, desc, class, type, size, subflag, DSP);
 	printf("\n");
@@ -233,6 +234,7 @@ char *desc; short type; ADDR addr; {
 /* display addr in instruction space using format desc or class s */
 /*  returns -1 if bad address */
 dispi(addr, desc, class, type, size, subflag, space)
+u_char class;
 char *desc; short type; ADDR addr; {
 	register i;
 	i = dispx(addr, desc, class, type, size, subflag, ISP);
@@ -242,6 +244,7 @@ char *desc; short type; ADDR addr; {
 
 char	pd[3];
 dispx(addr, desc, class, type, size, subflag, space)
+u_char class;
 char *desc; short type; ADDR addr; {
 	int i, sflag;
 	char *p;
@@ -382,7 +385,7 @@ char *desc; short type; ADDR addr; {
 
 	case 'g':
 		dbl.ww.w1 = value;
-		dbl.ww.w2 = (class == (char) N_RSYM) ?
+		dbl.ww.w2 = (class == N_RSYM) ?
 			*(ADDR *)(((ADDR) &u)+R0+(WORDSIZE)*(addr+1)) :
 			getval(addr+WORDSIZE, 'd', space);
 		printf("%.13g", dbl.d);
@@ -441,6 +444,7 @@ char *desc; short type; ADDR addr; {
 
 /* print variable as in prvar */
 printit(metaflag, prvar, addr, desc, class, type, size, subflag, space) 
+u_char class;
 char *desc; short type; ADDR addr; {
 	if (prvar == 0)
 		return;

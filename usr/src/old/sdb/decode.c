@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)decode.c 4.1 %G%";
+static	char sccsid[] = "@(#)decode.c 4.2 %G%";
 #include "head.h"
 
 /* decode() - read a line from standard input and decode it */
