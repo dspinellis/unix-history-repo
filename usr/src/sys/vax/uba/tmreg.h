@@ -1,9 +1,9 @@
-/*	tmreg.h	4.5	81/03/09	*/
+/*	tmreg.h	4.6	82/02/03	*/
 
 /*
  * TM11 controller registers
  */
-struct device {
+struct tmdevice {
 	u_short	tmer;		/* error register, per drive */
 	u_short	tmcs;		/* control-status register */
 	short	tmbc;		/* byte/frame count */

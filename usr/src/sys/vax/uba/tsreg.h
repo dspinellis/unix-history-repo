@@ -1,9 +1,9 @@
-/*	tsreg.h	4.1	81/03/21	*/
+/*	tsreg.h	4.2	82/02/03	*/
 
 /*
  * TS11 controller registers
  */
-struct	device {
+struct	tsdevice {
 	u_short	tsdb;		/* data buffer */
 	u_short	tssr;		/* status register */
 };
