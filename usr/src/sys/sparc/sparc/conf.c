@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  *
  * from: $Header: conf.c,v 1.14 92/11/26 03:04:49 torek Exp $ (LBL)
  */
