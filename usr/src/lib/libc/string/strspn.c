@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -12,29 +12,34 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strspn.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)strspn.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/stdc.h>
 #include <string.h>
 
-strspn(s, set)
-	register char *s, *set;
+/*
+ * Span the string s2 (skip characters that are in s2).
+ */
+size_t
+strspn(s1, s2)
+	const char *s1;
+	register const char *s2;
 {
-	register n = 0;
-	register char *p;
-	register c;
+	register const char *p = s1, *spanp;
+	register char c, sc;
 
-	while (c = *s++) {
-		for (p = set; *p; p++)
-			if (c == *p)
-				break;
-		if (!*p)
-			return (n);
-		n++;
-	}
-	return (n);
+	/*
+	 * Skip any characters in s2, excluding the terminating \0.
+	 */
+cont:
+	c = *p++;
+	for (spanp = s2; (sc = *spanp++) != 0;)
+		if (sc == c)
+			goto cont;
+	return (p - 1 - s1);
 }
