@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -78,8 +78,7 @@ vsyslog(pri, fmt, ap)
 	saved_errno = errno;
 
 	/* see if we should just throw out this message */
-	if ((u_int)LOG_FAC(pri) >= LOG_NFACILITIES ||
-	    !LOG_MASK(LOG_PRI(pri)) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
+	if (!LOG_MASK(LOG_PRI(pri)) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
 		return;
 	if (LogFile < 0 || !connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
