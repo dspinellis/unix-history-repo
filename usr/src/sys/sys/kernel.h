@@ -1,8 +1,10 @@
-/*	kernel.h	4.5	82/10/20	*/
+/*	kernel.h	4.6	82/10/21	*/
 
 /*
  * Global variables for the kernel
  */
+
+long	rmalloc();
 
 /* 1.1 */
 long	hostid;
