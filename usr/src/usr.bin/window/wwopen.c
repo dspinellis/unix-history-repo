@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.5 83/08/22";
+static	char *sccsid = "@(#)wwopen.c	3.6 83/08/22";
 #endif
 
 #include "ww.h"
@@ -12,6 +12,8 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	char m;
 	short nvis;
 
+	if (nrow <= 0 || ncol <= 0)
+		return 0;
 	if (row < 0 || row + nrow > wwnrow || col < 0 || col + ncol > wwncol)
 		return 0;
 	for (i = 0; i < NWW && wwindex[i] != 0; i++)
