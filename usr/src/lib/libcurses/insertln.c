@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)insertln.c	5.6 (Berkeley) %G%";
 
 /*
  * winsertln --
- *	Do an insert-line on the window, leaving (_cury,_curx) unchanged.
+ *	Do an insert-line on the window, leaving (cury, curx) unchanged.
  */
 int
 winsertln(win)
@@ -22,28 +22,29 @@ winsertln(win)
 {
 
 	register int y;
-	register char *end, *temp;
+	register char *end;
+	register LINE *temp;
 
 #ifdef DEBUG
 	__TRACE("insertln: (%0.2o)\n", win);
 #endif
-	if (win->_orig == NULL)
-		temp = win->_y[win->_maxy - 1];
-	for (y = win->_maxy - 1; y > win->_cury; --y) {
-		if (win->_orig == NULL)
-			win->_y[y] = win->_y[y - 1];
+	if (win->orig == NULL)
+		temp = win->lines[win->maxy - 1];
+	for (y = win->maxy - 1; y > win->cury; --y) {
+		if (win->orig == NULL)
+			win->lines[y] = win->lines[y - 1];
 		else
-			bcopy(win->_y[y - 1], win->_y[y], win->_maxx);
-		touchline(win, y, 0, win->_maxx - 1);
+			bcopy(win->lines[y - 1]->line, 
+			      win->lines[y]->line, win->maxx);
+		touchline(win, y, 0, win->maxx - 1);
 	}
-	if (win->_orig == NULL)
-		win->_y[y] = temp;
+	if (win->orig == NULL)
+		win->lines[y] = temp;
 	else
-		temp = win->_y[y];
-	for (end = &temp[win->_maxx]; temp < end;)
-		*temp++ = ' ';
-	touchline(win, y, 0, win->_maxx - 1);
-	if (win->_orig == NULL)
+		temp = win->lines[y];
+	(void)memset(temp->line, ' ', &temp->line[win->maxx] - temp->line);
+	touchline(win, y, 0, win->maxx - 1);
+	if (win->orig == NULL)
 		__id_subwins(win);
 	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -41,29 +41,29 @@ wrefresh(win)
 
 	/* Initialize loop parameters. */
 
-	ly = curscr->_cury;
-	lx = curscr->_curx;
+	ly = curscr->cury;
+	lx = curscr->curx;
 	wy = 0;
 	_win = win;
 	curwin = (win == curscr);
 
-	if (win->_clear || curscr->_clear || curwin) {
-		if ((win->_flags & _FULLWIN) || curscr->_clear) {
+	if (win->flags & __CLEAROK || curscr->flags & __CLEAROK || curwin) {
+		if ((win->flags & __FULLWIN) || curscr->flags & __CLEAROK) {
 			tputs(CL, 0, __cputchar);
 			ly = 0;
 			lx = 0;
 			if (!curwin) {
-				curscr->_clear = 0;
-				curscr->_cury = 0;
-				curscr->_curx = 0;
+				curscr->flags &= ~__CLEAROK;
+				curscr->cury = 0;
+				curscr->curx = 0;
 				werase(curscr);
 			}
 			touchwin(win);
 		}
-		win->_clear = 0;
+		win->flags &= ~__CLEAROK;
 	}
 	if (!CA) {
-		if (win->_curx != 0)
+		if (win->curx != 0)
 			putchar('\n');
 		if (!curwin)
 			werase(curscr);
@@ -72,48 +72,51 @@ wrefresh(win)
 	__TRACE("wrefresh: (%0.2o): curwin = %d\n", win, curwin);
 	__TRACE("wrefresh: \tfirstch\tlastch\n");
 #endif
-	for (wy = 0; wy < win->_maxy; wy++) {
+	for (wy = 0; wy < win->maxy; wy++) {
 #ifdef DEBUG
 		__TRACE("%d\t%d\t%d\n",
-		    wy, win->_firstch[wy], win->_lastch[wy]);
+		    wy, win->lines[wy]->firstch, win->lines[wy]->lastch);
 #endif
-		if (win->_firstch[wy] != _NOCHANGE)
+		if (win->lines[wy]->flags & __ISDIRTY)
 			if (makech(win, wy) == ERR)
 				return (ERR);
 			else {
-				if (win->_firstch[wy] >= win->_ch_off)
-					win->_firstch[wy] = win->_maxx +
-					    win->_ch_off;
-				if (win->_lastch[wy] < win->_maxx +
-				    win->_ch_off)
-					win->_lastch[wy] = win->_ch_off;
-				if (win->_lastch[wy] < win->_firstch[wy])
-					win->_firstch[wy] = _NOCHANGE;
+				if (win->lines[wy]->firstch >= win->ch_off)
+					win->lines[wy]->firstch = win->maxx +
+					    win->ch_off;
+				if (win->lines[wy]->lastch < win->maxx +
+				    win->ch_off)
+					win->lines[wy]->lastch = win->ch_off;
+				if (win->lines[wy]->lastch < 
+				    win->lines[wy]->firstch)
+					win->lines[wy]->flags &= ~__ISDIRTY;
 			}
 #ifdef DEBUG
-		__TRACE("\t%d\t%d\n", win->_firstch[wy], win->_lastch[wy]);
+		__TRACE("\t%d\t%d\n", win->lines[wy]->firstch, 
+			win->lines[wy]->lastch);
 #endif
 	}
-
+	
+	__TRACE("refresh: ly=%d, lx=%d\n", ly, lx);
 	if (win == curscr)
-		domvcur(ly, lx, win->_cury, win->_curx);
+		domvcur(ly, lx, win->cury, win->curx);
 	else {
-		if (win->_leave) {
-			curscr->_cury = ly;
-			curscr->_curx = lx;
-			ly -= win->_begy;
-			lx -= win->_begx;
-			if (ly >= 0 && ly < win->_maxy && lx >= 0 &&
-			    lx < win->_maxx) {
-				win->_cury = ly;
-				win->_curx = lx;
+		if (win->flags & __LEAVEOK) {
+			curscr->cury = ly;
+			curscr->curx = lx;
+			ly -= win->begy;
+			lx -= win->begx;
+			if (ly >= 0 && ly < win->maxy && lx >= 0 &&
+			    lx < win->maxx) {
+				win->cury = ly;
+				win->curx = lx;
 			} else
-				win->_cury = win->_curx = 0;
+				win->cury = win->curx = 0;
 		} else {
-			domvcur(ly, lx, win->_cury + win->_begy,
-			    win->_curx + win->_begx);
-			curscr->_cury = win->_cury + win->_begy;
-			curscr->_curx = win->_curx + win->_begx;
+			domvcur(ly, lx, win->cury + win->begy,
+			    win->curx + win->begx);
+			curscr->cury = win->cury + win->begy;
+			curscr->curx = win->curx + win->begx;
 		}
 	}
 	retval = OK;
@@ -136,29 +139,32 @@ makech(win, wy)
 	register short wx, lch, y;
 	register char *nsp, *csp, *ce;
 
-	wx = win->_firstch[wy] - win->_ch_off;
-	if (wx >= win->_maxx)
+	if (!(win->lines[wy]->flags & __ISDIRTY))
+		return (OK);
+	wx = win->lines[wy]->firstch - win->ch_off;
+	if (wx >= win->maxx)
 		return (OK);
 	else if (wx < 0)
 		wx = 0;
-	lch = win->_lastch[wy] - win->_ch_off;
+	lch = win->lines[wy]->lastch - win->ch_off;
 	if (lch < 0)
 		return (OK);
-	else if (lch >= win->_maxx)
-		lch = win->_maxx - 1;;
-	y = wy + win->_begy;
+	else if (lch >= win->maxx)
+		lch = win->maxx - 1;
+	y = wy + win->begy;
 
 	if (curwin)
 		csp = " ";
 	else
-		csp = &curscr->_y[wy + win->_begy][wx + win->_begx];
+		csp = &curscr->lines[wy + win->begy]->line[wx + win->begx];
 
-	nsp = &win->_y[wy][wx];
+	nsp = &win->lines[wy]->line[wx];
 	if (CE && !curwin) {
-		for (ce = &win->_y[wy][win->_maxx - 1]; *ce == ' '; ce--)
-			if (ce <= win->_y[wy])
+		for (ce = &win->lines[wy]->line[win->maxx - 1]; 
+		     *ce == ' '; ce--)
+			if (ce <= win->lines[wy]->line)
 				break;
-		nlsp = ce - win->_y[wy];
+		nlsp = ce - win->lines[wy]->line;
 	}
 	if (!curwin)
 		ce = CE;
@@ -178,31 +184,32 @@ makech(win, wy)
 			}
 			break;
 		}
-		domvcur(ly, lx, y, wx + win->_begx);
+		domvcur(ly, lx, y, wx + win->begx);
 #ifdef DEBUG
 		__TRACE("makech: 1: wx = %d, lx = %d, newy = %d, newx = %d\n", 
-		    wx, lx, y, wx + win->_begx);
+		    wx, lx, y, wx + win->begx);
 #endif
 		ly = y;
-		lx = wx + win->_begx;
+		lx = wx + win->begx;
 		while (*nsp != *csp && wx <= lch) {
 			if (ce != NULL && wx >= nlsp && *nsp == ' ') {
 				/* Check for clear to end-of-line. */
-				ce = &curscr->_y[ly][COLS - 1];
+				ce = &curscr->lines[ly]->line[COLS - 1];
 				while (*ce == ' ')
 					if (ce-- <= csp)
 						break;
-				clsp = ce - curscr->_y[ly] - win->_begx;
+				clsp = ce - curscr->lines[ly]->line - 
+				       win->begx;
 #ifdef DEBUG
 			__TRACE("makech: clsp = %d, nlsp = %d\n", clsp, nlsp);
 #endif
 				if (clsp - nlsp >= strlen(CE) &&
-				    clsp < win->_maxx) {
+				    clsp < win->maxx) {
 #ifdef DEBUG
 					__TRACE("makech: using CE\n");
 #endif
 					tputs(CE, 0, __cputchar);
-					lx = wx + win->_begx;
+					lx = wx + win->begx;
 					while (wx++ <= clsp)
 						*csp++ = ' ';
 					return (OK);
@@ -211,39 +218,39 @@ makech(win, wy)
 			}
 
 			/* Enter/exit standout mode as appropriate. */
-			if (SO && (*nsp & _STANDOUT) !=
-			    (curscr->_flags & _STANDOUT)) {
-				if (*nsp & _STANDOUT) {
+			if (SO && (*nsp & __STANDOUT) !=
+			    (curscr->flags & __STANDOUT)) {
+				if (*nsp & __STANDOUT) {
 					tputs(SO, 0, __cputchar);
-					curscr->_flags |= _STANDOUT;
+					curscr->flags |= __WSTANDOUT;
 				} else {
 					tputs(SE, 0, __cputchar);
-					curscr->_flags &= ~_STANDOUT;
+					curscr->flags &= ~__WSTANDOUT;
 				}
 			}
 
 			wx++;
-			if (wx >= win->_maxx && wy == win->_maxy - 1)
-				if (win->_scroll) {
-					if (curscr->_flags & _STANDOUT
-					    && win->_flags & _ENDLINE)
+			if (wx >= win->maxx && wy == win->maxy - 1)
+				if (win->flags & __SCROLLOK) {
+					if (curscr->flags & __WSTANDOUT
+					    && win->flags & __ENDLINE)
 						if (!MS) {
 							tputs(SE, 0,
 							    __cputchar);
-							curscr->_flags &=
-							    ~_STANDOUT;
+							curscr->flags &=
+							    ~__WSTANDOUT;
 						}
 					if (!curwin)
 						putchar((*csp = *nsp) & 0177);
 					else
 						putchar(*nsp & 0177);
-					if (win->_flags & _FULLWIN && !curwin)
+					if (win->flags & __FULLWIN && !curwin)
 						scroll(curscr);
-					ly = win->_begy + win->_cury;
-					lx = win->_begx + win->_curx;
+					ly = win->begy + wy;
+					lx = win->begx + wx;
 					return (OK);
 				} else
-					if (win->_flags & _SCROLLWIN) {
+					if (win->flags & __SCROLLWIN) {
 						lx = --wx;
 						return (ERR);
 					}
@@ -254,7 +261,7 @@ makech(win, wy)
 #ifdef DEBUG
 			__TRACE("makech: putchar(%c)\n", *nsp & 0177);
 #endif
-			if (UC && (*nsp & _STANDOUT)) {
+			if (UC && (*nsp & __STANDOUT)) {
 				putchar('\b');
 				tputs(UC, 0, __cputchar);
 			}
@@ -263,9 +270,9 @@ makech(win, wy)
 #ifdef DEBUG
 		__TRACE("makech: 2: wx = %d, lx = %d\n", wx, lx);
 #endif
-		if (lx == wx + win->_begx)	/* If no change. */
+		if (lx == wx + win->begx)	/* If no change. */
 			break;
-		lx = wx + win->_begx;
+		lx = wx + win->begx;
 		if (lx >= COLS && AM) {
 			lx = 0;
 			ly++;
@@ -293,9 +300,9 @@ static void
 domvcur(oy, ox, ny, nx)
 	int oy, ox, ny, nx;
 {
-	if (curscr->_flags & _STANDOUT && !MS) {
+	if (curscr->flags & __WSTANDOUT && !MS) {
 		tputs(SE, 0, __cputchar);
-		curscr->_flags &= ~_STANDOUT;
+		curscr->flags &= ~__WSTANDOUT;
 	}
 	mvcur(oy, ox, ny, nx);
 }

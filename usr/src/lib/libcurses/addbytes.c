@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 #include <termios.h>
 
-#define	SYNCH_IN	{y = win->_cury; x = win->_curx;}
-#define	SYNCH_OUT	{win->_cury = y; win->_curx = x;}
+#define	SYNCH_IN	{y = win->cury; x = win->curx;}
+#define	SYNCH_OUT	{win->cury = y; win->curx = x;}
 
 /*
  * waddbytes --
@@ -27,6 +27,7 @@ waddbytes(win, bytes, count)
 {
 	static char blanks[] = "        ";
 	register int c, newx, x, y;
+	LINE *lp;
 
 	SYNCH_IN;
 
@@ -46,34 +47,37 @@ waddbytes(win, bytes, count)
 		default:
 #ifdef DEBUG
 	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
-	    y, x, win->_firstch[y], win->_lastch[y]);
+	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
-			if (win->_flags & _STANDOUT)
-				c |= _STANDOUT;
+			if (win->flags & __WSTANDOUT)
+				c |= __STANDOUT;
 #ifdef DEBUG
 	__TRACE("ADDBYTES(%0.2o, %d, %d)\n", win, y, x);
 #endif
-			if (win->_y[y][x] != c) {
-				newx = x + win->_ch_off;
-				if (win->_firstch[y] == _NOCHANGE)
-					win->_firstch[y] =
-					    win->_lastch[y] = newx;
-				else if (newx < win->_firstch[y])
-					win->_firstch[y] = newx;
-				else if (newx > win->_lastch[y])
-					win->_lastch[y] = newx;
+			lp = win->lines[y];
+			
+			if (lp->line[x] != c) {
+				newx = x + win->ch_off;
+				if (!(lp->flags & __ISDIRTY)) {
+					lp->flags |= __ISDIRTY;
+					lp->firstch = lp->lastch = newx;
+				}
+				else if (newx < lp->firstch)
+					lp->firstch = newx;
+				else if (newx > lp->lastch)
+					lp->lastch = newx;
 #ifdef DEBUG
 	__TRACE("ADDBYTES: change gives f/l: %d/%d [%d/%d]\n",
-	    win->_firstch[y], win->_lastch[y],
-	    win->_firstch[y] - win->_ch_off,
-	    win->_lastch[y] - win->_ch_off);
+	    lp->firstch, lp->lastch,
+	    lp->firstch - win->ch_off,
+	    lp->lastch - win->ch_off);
 #endif
 			}
-			win->_y[y][x] = c;
-			if (++x >= win->_maxx) {
+			lp->line[x] = c;
+			if (++x >= win->maxx) {
 				x = 0;
-newline:			if (++y >= win->_maxy)
-					if (win->_scroll) {
+newline:			if (++y >= win->maxy) 
+					if (win->flags & __SCROLLOK) {
 						SYNCH_OUT;
 						scroll(win);
 						SYNCH_IN;
@@ -83,7 +87,7 @@ newline:			if (++y >= win->_maxy)
 			}
 #ifdef DEBUG
 	__TRACE("ADDBYTES: 2: y = %d, x = %d, firstch = %d, lastch = %d\n",
-	    y, x, win->_firstch[y], win->_lastch[y]);
+	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
 			break;
 		case '\n':

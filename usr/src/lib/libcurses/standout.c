@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)standout.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)standout.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -22,7 +22,7 @@ wstandout(win)
 	if (!SO && !UC)
 		return (0);
 
-	win->_flags |= _STANDOUT;
+	win->flags |= __WSTANDOUT;
 	return (SO ? SO : UC);
 }
 
@@ -37,6 +37,6 @@ wstandend(win)
 	if (!SO && !UC)
 		return (0);
 
-	win->_flags &= ~_STANDOUT;
+	win->flags &= ~__WSTANDOUT;
 	return (SE ? SE : UC);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)insch.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -23,18 +23,19 @@ winsch(win, ch)
 
 	register char *end, *temp1, *temp2;
 
-	end = &win->_y[win->_cury][win->_curx];
-	temp1 = &win->_y[win->_cury][win->_maxx - 1];
+	end = &win->lines[win->cury]->line[win->curx];
+	temp1 = &win->lines[win->cury]->line[win->maxx - 1];
 	temp2 = temp1 - 1;
 	while (temp1 > end)
 		*temp1-- = *temp2--;
 	*temp1 = ch;
-	touchline(win, win->_cury, win->_curx, win->_maxx - 1);
-	if (win->_cury == LINES - 1 && win->_y[LINES - 1][COLS - 1] != ' ')
-		if (win->_scroll) {
+	touchline(win, win->cury, win->curx, win->maxx - 1);
+	if (win->cury == LINES - 1 && 
+	    win->lines[LINES - 1]->line[COLS - 1] != ' ')
+		if (win->flags & __SCROLLOK) {
 			wrefresh(win);
 			scroll(win);
-			win->_cury--;
+			win->cury--;
 		} else
 			return (ERR);
 	return (OK);

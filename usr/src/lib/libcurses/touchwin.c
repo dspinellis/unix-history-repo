@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)touchwin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)touchwin.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -24,9 +24,9 @@ touchwin(win)
 #ifdef DEBUG
 	__TRACE("touchwin: (%0.2o)\n", win);
 #endif
-	maxy = win->_maxy;
+	maxy = win->maxy;
 	for (y = 0; y < maxy; y++)
-		touchline(win, y, 0, win->_maxx - 1);
+		touchline(win, y, 0, win->maxx - 1);
 	return (OK);
 }
 
@@ -42,22 +42,23 @@ touchline(win, y, sx, ex)
 #ifdef DEBUG
 	__TRACE("touchline: (%0.2o, %d, %d, %d)\n", win, y, sx, ex);
 	__TRACE("touchline: first = %d, last = %d\n",
-	    win->_firstch[y], win->_lastch[y]);
+	    win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
-	sx += win->_ch_off;
-	ex += win->_ch_off;
-	if (win->_firstch[y] == _NOCHANGE) {
-		win->_firstch[y] = sx;
-		win->_lastch[y] = ex;
+	sx += win->ch_off;
+	ex += win->ch_off;
+	if (!(win->lines[y]->flags & __ISDIRTY)) {
+		win->lines[y]->flags |= __ISDIRTY;
+		win->lines[y]->firstch = sx;
+		win->lines[y]->lastch = ex;
 	} else {
-		if (win->_firstch[y] > sx)
-			win->_firstch[y] = sx;
-		if (win->_lastch[y] < ex)
-			win->_lastch[y] = ex;
+		if (win->lines[y]->firstch > sx)
+			win->lines[y]->firstch = sx;
+		if (win->lines[y]->lastch < ex)
+			win->lines[y]->lastch = ex;
 	}
 #ifdef DEBUG
 	__TRACE("touchline: first = %d, last = %d\n",
-	    win->_firstch[y], win->_lastch[y]);
+	    win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
 	return (OK);
 }

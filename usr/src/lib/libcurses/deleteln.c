@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deleteln.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)deleteln.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -14,33 +14,36 @@ static char sccsid[] = "@(#)deleteln.c	5.7 (Berkeley) %G%";
 
 /*
  * wdeleteln --
- *	Delete a line from the screen.  It leaves (_cury, _curx) unchanged.
+ *	Delete a line from the screen.  It leaves (cury, curx) unchanged.
  */
 int
 wdeleteln(win)
 	register WINDOW *win;
 {
 	register int y;
-	register char *temp;
+	register LINE *temp;
 
 #ifdef DEBUG
 	__TRACE("deleteln: (%0.2o)\n", win);
 #endif
-	temp = win->_y[win->_cury];
-	for (y = win->_cury; y < win->_maxy - 1; y++) {
-		if (win->_orig == NULL)
-			win->_y[y] = win->_y[y + 1];
+	temp = win->lines[win->cury];
+	for (y = win->cury; y < win->maxy - 1; y++) {
+		if (win->orig == NULL)
+			win->lines[y] = win->lines[y + 1];
 		else
-			bcopy(win->_y[y + 1], win->_y[y], win->_maxx);
-		touchline(win, y, 0, win->_maxx - 1);
+			bcopy(win->lines[y + 1]->line, win->lines[y]->line, 
+			      win->maxx);
+		touchline(win, y, 0, win->maxx - 1);
 	}
-	if (win->_orig == NULL)
-		win->_y[y] = temp;
+
+	if (win->orig == NULL)
+		win->lines[y] = temp;
 	else
-		temp = win->_y[y];
-	(void)memset(temp, ' ', &temp[win->_maxx] - temp);
-	touchline(win, win->_cury, 0, win->_maxx - 1);
-	if (win->_orig == NULL)
+		temp = win->lines[y];
+
+	(void)memset(temp->line, ' ', &temp->line[win->maxx] - temp->line);
+	touchline(win, y, 0, win->maxx - 1);
+	if (win->orig == NULL)
 		__id_subwins(win);
 	return (OK);
 }

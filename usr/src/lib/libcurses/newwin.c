@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -14,96 +14,74 @@ static char sccsid[] = "@(#)newwin.c	5.6 (Berkeley) %G%";
 
 #undef	nl		/* Don't need it here, and it interferes. */
 
-static WINDOW *makenew __P((int, int, int, int));
+static WINDOW 	*makenew __P((int, int, int, int));
+static void	 __swflags __P((WINDOW *));
+
+void	 __set_subwin __P((WINDOW *, WINDOW *));
 
 /*
  * newwin --
  *	Allocate space for and set up defaults for a new window.
  */
 WINDOW *
-newwin(num_lines, num_cols, begy, begx)
-	int num_lines, num_cols, begy, begx;
+newwin(nl, nc, by, bx)
+	register int nl, nc, by, bx;
 {
 	register WINDOW *win;
-	register int by, bx, i, j, nl, nc;
+	register LINE *lp;
+	register int  i, j;
 	register char *sp;
-
-	by = begy;
-	bx = begx;
-	nl = num_lines;
-	nc = num_cols;
 
 	if (nl == 0)
 		nl = LINES - by;
 	if (nc == 0)
 		nc = COLS - bx;
+
 	if ((win = makenew(nl, nc, by, bx)) == NULL)
 		return (NULL);
-	if ((win->_firstch = malloc(nl * sizeof(win->_firstch[0]))) == NULL) {
-		free(win->_y);
-		free(win);
-		return (NULL);
-	}
-	if ((win->_lastch = malloc(nl * sizeof(win->_lastch[0]))) == NULL) {
-		free(win->_y);
-		free(win->_firstch);
-		free(win);
-		return (NULL);
-	}
-	win->_nextp = win;
-	for (i = 0; i < nl; i++) {
-		win->_firstch[i] = _NOCHANGE;
-		win->_lastch[i] = _NOCHANGE;
-	}
-	for (i = 0; i < nl; i++)
-		if ((win->_y[i] = malloc(nc * sizeof(win->_y[0]))) == NULL) {
-			for (j = 0; j < i; j++)
-				free(win->_y[j]);
-			free(win->_firstch);
-			free(win->_lastch);
-			free(win->_y);
-			free(win);
-			return (NULL);
-		} else
-			for (sp = win->_y[i]; sp < win->_y[i] + nc;)
-				*sp++ = ' ';
-	win->_ch_off = 0;
+
+	win->nextp = win;
+	win->ch_off = 0;
+
 #ifdef DEBUG
-	__TRACE("newwin: win->_ch_off = %d\n", win->_ch_off);
+	__TRACE("newwin: win->ch_off = %d\n", win->ch_off);
 #endif
+
+	for (lp = win->topline, i = 0; i < nl; i++, lp = lp->next) {
+		lp->flags = 0;
+		lp->flags &= ~__ISDIRTY;
+		for (sp = lp->line; sp < lp->line + nc; sp++)
+			*sp = ' ';
+		lp->hash = __hash(lp->line);
+	}
+
 	return (win);
 }
 
 WINDOW *
-subwin(orig, num_lines, num_cols, begy, begx)
+subwin(orig, nl, nc, by, bx)
 	register WINDOW *orig;
-	int num_lines, num_cols, begy, begx;
+	register int by, bx, nl, nc;
 {
 	register WINDOW *win;
-	register int by, bx, nl, nc;
-
-	by = begy;
-	bx = begx;
-	nl = num_lines;
-	nc = num_cols;
 
 	/* Make sure window fits inside the original one. */
 #ifdef	DEBUG
 	__TRACE("subwin: (%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
 #endif
-	if (by < orig->_begy || bx < orig->_begx
-	    || by + nl > orig->_maxy + orig->_begy
-	    || bx + nc > orig->_maxx + orig->_begx)
+	if (by < orig->begy || bx < orig->begx
+	    || by + nl > orig->maxy + orig->begy
+	    || bx + nc > orig->maxx + orig->begx)
 		return (NULL);
 	if (nl == 0)
-		nl = orig->_maxy + orig->_begy - by;
+		nl = orig->maxy + orig->begy - by;
 	if (nc == 0)
-		nc = orig->_maxx + orig->_begx - bx;
+		nc = orig->maxx + orig->begx - bx;
 	if ((win = makenew(nl, nc, by, bx)) == NULL)
 		return (NULL);
-	win->_nextp = orig->_nextp;
-	orig->_nextp = win;
-	win->_orig = orig;
+	win->nextp = orig->nextp;
+	orig->nextp = win;
+	win->orig = orig;
 	__set_subwin(orig, win);
 	return (win);
 }
@@ -115,18 +93,30 @@ void
 __set_subwin(orig, win)
 	register WINDOW *orig, *win;
 {
-	register int i, j, k;
+	register int j, k, ocnt, cnt;
+	register LINE *lp, *olp;
 
-	j = win->_begy - orig->_begy;
-	k = win->_begx - orig->_begx;
-	win->_ch_off = k;
+	j = win->begy - orig->begy;
+	k = win->begx - orig->begx;
+	win->ch_off = k;
 #ifdef DEBUG
-	__TRACE("__set_subwin: win->_ch_off = %d\n", win->_ch_off);
+	__TRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
 #endif
-	win->_firstch = &orig->_firstch[j];
-	win->_lastch = &orig->_lastch[j];
-	for (i = 0; i < win->_maxy; i++, j++)
-		win->_y[i] = &orig->_y[j][k];
+
+	lp = win->topline;
+	olp = orig->topline; 
+	ocnt = 0;
+	for (ocnt = 0; ocnt < orig->maxy && cnt < win->maxy; ocnt++) {
+		if (ocnt >= j) {
+			lp->firstch = olp->firstch;
+			lp->lastch = olp->lastch;
+			lp->line = &olp->line[k];
+			lp = lp->next;
+			lp->flags = olp->flags;
+			cnt++;
+		}
+		olp = olp->next;
+	}
 }
 
 /*
@@ -134,16 +124,12 @@ __set_subwin(orig, win)
  *	Set up a window buffer and returns a pointer to it.
  */
 static WINDOW *
-makenew(num_lines, num_cols, begy, begx)
-	int num_lines, num_cols, begy, begx;
+makenew(nl, nc, by, bx)
+	register int by, bx, nl, nc;
 {
 	register WINDOW *win;
-	register int by, bx, nl, nc;
-
-	by = begy;
-	bx = begx;
-	nl = num_lines;
-	nc = num_cols;
+	register LINE *cur, *prev;
+	int i;
 
 #ifdef	DEBUG
 	__TRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
@@ -153,49 +139,78 @@ makenew(num_lines, num_cols, begy, begx)
 #ifdef DEBUG
 	__TRACE("makenew: nl = %d\n", nl);
 #endif
-	if ((win->_y = malloc(nl * sizeof(win->_y[0]))) == NULL) {
-		free(win);
-		return (NULL);
+
+	/*
+	 * Allocate structure of lines in a window.
+         */
+	if ((win->topline = malloc (nl * sizeof (LINE))) == NULL) {
+		free (win);
+		return NULL;
 	}
+
+	/*
+	 * Allocate window space in one chunk.
+	 */
+	if ((win->wspace = malloc(nc * nl)) == NULL) {
+		free(win->topline);
+		free(win);
+		return NULL;
+	}
+	/* 
+ 	 * Link up the lines, set up line pointer array and point line pointers
+	 * to the line space.
+         */
+	if ((win->lines = malloc (nl * sizeof (LINE *))) == NULL) {
+		free(win->wspace);
+		free(win->topline);
+		free(win);
+		return NULL;
+	}
+	prev = &win->topline[nl - 1];
+	cur = win->topline;
+	for (i = 1; i <= nl; i++, prev = cur, cur = cur->next) {
+		cur->next = &win->topline[i % nl];
+		cur->prev = prev;
+		cur->line = &win->wspace[(i - 1) * nc];
+		win->lines[i - 1] = cur;
+	}
+
 #ifdef DEBUG
 	__TRACE("makenew: nc = %d\n", nc);
 #endif
-	win->_cury = win->_curx = 0;
-	win->_clear = 0;
-	win->_maxy = nl;
-	win->_maxx = nc;
-	win->_begy = by;
-	win->_begx = bx;
-	win->_flags = 0;
-	win->_scroll = win->_leave = 0;
+	win->cury = win->curx = 0;
+	win->maxy = nl;
+	win->maxx = nc;
+
+	win->begy = by;
+	win->begx = bx;
+	win->flags = 0;
 	__swflags(win);
 #ifdef DEBUG
-	__TRACE("makenew: win->_clear = %d\n", win->_clear);
-	__TRACE("makenew: win->_leave = %d\n", win->_leave);
-	__TRACE("makenew: win->_scroll = %d\n", win->_scroll);
-	__TRACE("makenew: win->_flags = %0.2o\n", win->_flags);
-	__TRACE("makenew: win->_maxy = %d\n", win->_maxy);
-	__TRACE("makenew: win->_maxx = %d\n", win->_maxx);
-	__TRACE("makenew: win->_begy = %d\n", win->_begy);
-	__TRACE("makenew: win->_begx = %d\n", win->_begx);
+	__TRACE("makenew: win->flags = %0.2o\n", win->flags);
+	__TRACE("makenew: win->maxy = %d\n", win->maxy);
+	__TRACE("makenew: win->maxx = %d\n", win->maxx);
+	__TRACE("makenew: win->begy = %d\n", win->begy);
+	__TRACE("makenew: win->begx = %d\n", win->begx);
 #endif
 	return (win);
 }
 
-void
+static void
 __swflags(win)
 	register WINDOW *win;
 {
-	win->_flags &= ~(_ENDLINE | _FULLLINE | _FULLWIN | _SCROLLWIN);
-	if (win->_begx + win->_maxx == COLS) {
-		win->_flags |= _ENDLINE;
-		if (win->_begx == 0) {
+	win->flags &= 
+	    ~(__ENDLINE | __FULLLINE | __FULLWIN | __SCROLLWIN | __LEAVEOK);
+	if (win->begx + win->maxx == COLS) {
+		win->flags |= __ENDLINE;
+		if (win->begx == 0) {
 			if (AL && DL)
-				win->_flags |= _FULLLINE;
-			if (win->_maxy == LINES && win->_begy == 0)
-				win->_flags |= _FULLWIN;
+				win->flags |= __FULLLINE;
+			if (win->maxy == LINES && win->begy == 0)
+				win->flags |= __FULLWIN;
 		}
-		if (win->_begy + win->_maxy == LINES)
-			win->_flags |= _SCROLLWIN;
+		if (win->begy + win->maxy == LINES)
+			win->flags |= __SCROLLWIN;
 	}
 }

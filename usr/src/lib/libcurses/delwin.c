@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delwin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)delwin.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -22,20 +22,23 @@ delwin(win)
 {
 
 	register WINDOW *wp, *np;
+	register LINE *lp;
 	register int i;
 
-	if (win->_orig == NULL) {
+	if (win->orig == NULL) {
 		/*
 		 * If we are the original window, delete the space for all
-		 * the subwindows, and the array of space as well.
+		 * the subwindows, and the array of space as well which is
+		 * pointed to by win->topline->line.
 		 */
-		for (i = 0; i < win->_maxy && win->_y[i]; i++)
-			free(win->_y[i]);
-		free(win->_firstch);
-		free(win->_lastch);
-		wp = win->_nextp;
+
+		for (lp = win->topline, i = 0; i < win->maxy; i++) 
+			free(lp);
+		free(win->wspace);
+		free(win->lines);
+		wp = win->nextp;
 		while (wp != win) {
-			np = wp->_nextp;
+			np = wp->nextp;
 			delwin(wp);
 			wp = np;
 		}
@@ -46,11 +49,10 @@ delwin(win)
 		 * followed by this subwindow, so there are always at least
 		 * two windows in the list.
 		 */
-		for (wp = win->_nextp; wp->_nextp != win; wp = wp->_nextp)
+		for (wp = win->nextp; wp->nextp != win; wp = wp->nextp)
 			continue;
-		wp->_nextp = win->_nextp;
+		wp->nextp = win->nextp;
 	}
-	free(win->_y);
 	free(win);
 	return (OK);
 }

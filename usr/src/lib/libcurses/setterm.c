@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -134,23 +134,30 @@ zap()
 {
 	register char *namp, ***sp;
 	register char **fp;
+	char tmp[3];
 #ifdef DEBUG
 	register char	*cp;
 #endif
+	tmp[2] = '\0';
 
 	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxsxx";
 	fp = sflags;
 	do {
-		*(*fp++) = tgetflag(namp);
+		*tmp = *namp;
+		*(tmp + 1) = *(namp + 1);
+		*(*fp++) = tgetflag(tmp);
 #ifdef DEBUG
 		__TRACE("2.2s = %s\n", namp, *fp[-1] ? "TRUE" : "FALSE");
 #endif
 		namp += 2;
+		
 	} while (*namp);
 	namp = "albcbtcdceclcmcrcsdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullmandnlpcrcscsesfsosrtatetiucueupusvbvsveALDLUPDOLERI";
 	sp = sstrs;
 	do {
-		*(*sp++) = tgetstr(namp, &aoftspace);
+		*tmp = *namp;
+		*(tmp + 1) = *(namp + 1);
+		*(*sp++) = tgetstr(tmp, &aoftspace);
 #ifdef DEBUG
 		__TRACE("2.2s = %s", namp, *sp[-1] == NULL ? "NULL\n" : "\"");
 		if (*sp[-1] != NULL) {

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clear.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)clear.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -20,7 +20,7 @@ wclear(win)
 	register WINDOW *win;
 {
 	if (werase(win) == OK) {
-		win->_clear = 1;
+		win->flags |= __CLEAROK;
 		return (OK);
 	}
 	return (ERR);
