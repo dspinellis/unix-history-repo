@@ -1,4 +1,4 @@
-/*	dz.c	4.42	82/08/22	*/
+/*	dz.c	4.43	82/09/12	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -673,10 +673,12 @@ dzscan()
 
 dztimer()
 {
-	int dz;
+	register int dz;
+	register int s = spl5();
 
 	for (dz = 0; dz < NDZ; dz++)
 		dzrint(dz);
+	splx(s);
 }
 
 /*
