@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.25 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -368,9 +368,10 @@ hostalias(name)
 	buf[sizeof(buf) - 1] = '\0';
 	while (fgets(buf, sizeof(buf), fp)) {
 		for (C1 = buf; *C1 && !isspace(*C1); ++C1);
-		if (!*C1 || *C1 == '\n')
+		if (!*C1)
 			break;
-		if (!strncasecmp(buf, name, C1 - buf)) {
+		*C1 = '\0';
+		if (!strcasecmp(buf, name)) {
 			while (isspace(*++C1));
 			if (!*C1)
 				break;
