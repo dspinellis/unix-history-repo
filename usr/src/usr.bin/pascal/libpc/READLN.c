@@ -9,13 +9,8 @@ READLN(curfile)
 
 	register struct iorec	*curfile;
 {
-	if (curfile->funit & FWRITE) {
-		ERROR(EREADIT, curfile->pfname);
-		return;
-	}
-	IOSYNC(curfile);
-	if ((curfile->funit & EOLN) == 0) {
-		fscanf(curfile->fbuf, "%*[^\n]%*c");
-	}
-	curfile->funit |= SYNC;
+	do	{
+		IOSYNC(curfile);
+		curfile->funit |= SYNC;
+	} while ((curfile->funit & EOLN) == 0);
 }
