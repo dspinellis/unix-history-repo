@@ -1,0 +1,63 @@
+This file attempts to document just who is `responsible' for what in
+the FreeBSD world.  Since we're an all-volunteer group, the whole
+concept of `responsibility' must, of course, be taken with a grain of
+salt since the folks here may not always have time to deal with your
+problem right away.  With that in mind, you are encouraged to contact
+these folks directly when your problem or suggestion clearly falls
+into their area of responsibility.  If your queries don't net any
+positive results in, say, 48 hours, THEN you should try and contact
+the group at large.  In most cases, however, using these folks as
+first-contacts will both cut down on our mail-overload and give you
+faster service.
+
+Thank you!
+
+				The FreeBSD Team
+				freebsd-hackers@freefall.cdrom.com
+
+---
+Legend:
+ports	= Ported software in /usr/ports
+sys	= Kernel and system code
+tools	= DOS support utilities
+misc	= Misc user-land utility (contrib, other)
+prog	= User-land program
+lib	= User-land library
+doc	= Documentation
+
+Catagory		Person			Email addr
+===============================================================================
+doc/FAQ			FAQ Team		freebsd-faq@freefall.cdrom.com
+lib/libthread		Chris Provenzano	proven@mit.edu
+misc/manctl		Geoff Rehmet		csgr@cs.ru.ac.za
+ports/aXe		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/bash		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/blt		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/dgd		Adam David		adam@veda.is
+ports/emacs		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/exmh		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/franz		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/fvwm		Geoff Rehmet		csgr@cs.ru.ac.za
+ports/ile		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/lynx		Serge V.Vakulenko	vak@cronyx.msk.su
+ports/pcvt		J"org Wunsch		joerg_wunsch@uriah.sax.de
+ports/pkg_install	Jordan Hubbard		jkh@freefall.cdrom.com
+ports/point		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/sup		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/tcl		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/tcl-dp		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/tclX		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/tk		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/vile		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/vim		Jordan Hubbard		jkh@freefall.cdrom.com
+ports/wu-ftpd		Justin T. Gibbs		gibbs@freefall.cdrom.com
+ports/ytalk		Geoff Rehmet		csgr@cs.ru.ac.za
+ports/zircon		Jordan Hubbard		jkh@freefall.cdrom.com
+prog/man		Jordan Hubbard		jkh@freefall.cdrom.com
+sys/VM			John Dyson		dyson@freefall.cdrom.com
+sys/fd			Serge V.Vakulenko	vak@cronyx.msk.su
+sys/lpt			Geoff Rehmet		csgr@cs.ru.ac.za
+sys/netboot		Martin Renters		martin@innovus.com
+sys/scheduler		John Dyson		dyson@freefall.cdrom.com
+sys/wt			Serge V.Vakulenko	vak@cronyx.msk.su
+tools/booteasy		Serge V.Vakulenko	vak@cronyx.msk.su
