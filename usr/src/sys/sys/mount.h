@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.18 (Berkeley) %G%
+ *	@(#)mount.h	7.19 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
