@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -190,25 +190,25 @@ struct {
 	int	sub;
 	u_char	def;
 } cchars[] = {
-	{ "erase", "era" },		VERASE,	CERASE,
-	{ "werase", "wera" },		VWERASE, CWERASE,
-	{ "kill", "kill" },		VKILL,	CKILL,
-	{ "intr", "int" },		VINTR,	CINTR,
-	{ "quit", "quit" },		VQUIT,	CQUIT,
-	{ "susp", "susp" },		VSUSP,	CSUSP,
-	{ "dsusp", "dsus" },		VDSUSP,	CDSUSP,
-	{ "eof", "eof" },		VEOF,	CEOF,
-	{ "eol", "eol", "brk" },	VEOL,	CEOL,
-	{ "eol2", "eol2" },		VEOL2,	CEOL,
-	{ "stop", "stop", "xoff" },	VSTOP,	CSTOP,
-	{ "start", "star", "xon" },	VSTART,	CSTART,
-	{ "lnext", "lnxt" },		VLNEXT,	CLNEXT,
-	{ "flusho", "fls", "flush" },	VFLUSHO, CFLUSHO,
-	{ "reprint", "rpnt", "rprnt" },	VREPRINT, CREPRINT,
-	{ "info", "info" },		VINFO, CINFO,
+	{{ "erase", "era" },		VERASE,	CERASE, },
+	{{ "werase", "wera" },		VWERASE, CWERASE, },
+	{{ "kill", "kill" },		VKILL,	CKILL, },
+	{{ "intr", "int" },		VINTR,	CINTR, },
+	{{ "quit", "quit" },		VQUIT,	CQUIT, },
+	{{ "susp", "susp" },		VSUSP,	CSUSP, },
+	{{ "dsusp", "dsus" },		VDSUSP,	CDSUSP, },
+	{{ "eof", "eof" },		VEOF,	CEOF, },
+	{{ "eol", "eol", "brk" },	VEOL,	CEOL, },
+	{{ "eol2", "eol2" },		VEOL2,	CEOL, },
+	{{ "stop", "stop", "xoff" },	VSTOP,	CSTOP, },
+	{{ "start", "star", "xon" },	VSTART,	CSTART, },
+	{{ "lnext", "lnxt" },		VLNEXT,	CLNEXT, },
+	{{ "flusho", "fls", "flush" },	VFLUSHO, CFLUSHO, },
+	{{ "reprint", "rpnt", "rprnt" },	VREPRINT, CREPRINT, },
+	{{ "info", "info" },		VINFO, CINFO, },
 	0
 };
-	
+
 struct winsize win;
 int ldisc;
 int dodisc;
