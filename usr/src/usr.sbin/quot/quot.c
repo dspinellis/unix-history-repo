@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.14 (Berkeley) 88/04/18";
+static char *sccsid = "@(#)quot.c	4.15 (Berkeley) 89/03/05";
 #endif
 
 /*
@@ -82,6 +82,7 @@ main(argc, argv)
 	argv += optind;
 
 	(void)time(&now);
+	setpassent(1);
 	if (argc)
 		for (; *argv; ++argv) {
 			if (check(*argv, (char *)NULL) == 0)
@@ -357,10 +358,8 @@ getname(uid)
 {
 	register struct passwd *pw;
 	struct passwd *getpwent();
-	extern int _pw_stayopen;
 	register int cp;
 
-	_pw_stayopen = 1;
 	cp = uid & UIDMASK;
 	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
 		return (nc[cp].name);
