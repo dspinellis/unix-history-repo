@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -34,8 +34,12 @@ main(argc, argv)
 	}
 	while(*arg)
 	switch (*arg++) {
+	case 'w':
+		lastdump('w');		/* tell us only what has to be done */
+		exit(0);
+		break;
 	case 'W':			/* what to do */
-		lastdump();
+		lastdump('W');		/* tell us the current state of what has been done */
 		exit(0);		/* do nothing else */
 		break;
 
