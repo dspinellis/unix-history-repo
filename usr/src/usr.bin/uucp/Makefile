@@ -1,4 +1,4 @@
-#	Makefile	5.4	83/07/05
+#	Makefile	5.5	83/07/18
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -126,10 +126,8 @@ install: all
 		uupoll ${DESTDIR}/${BIN}/uupoll
 	install -s -m 6111 -o ${OWNER} -g ${GROUP} \
 		uusnap ${DESTDIR}/${BIN}/uusnap
-	install -s -m 6111 -o ${OWNER} -g ${GROUP} \
-		uuencode ${DESTDIR}/${BIN}/uuencode
-	install -s -m 6111 -o ${OWNER} -g ${GROUP} \
-		uudecode ${DESTDIR}/${BIN}/uudecode
+	install -s uuencode ${DESTDIR}/${BIN}/uuencode
+	install -s uudecode ${DESTDIR}/${BIN}/uudecode
 	install -s -m 6111 -o ${OWNER} -g ${GROUP} \
 		uusend ${DESTDIR}/${BIN}/uusend
 	rm -f ${DESTDIR}/${BIN}/ruusend
