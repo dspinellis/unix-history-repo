@@ -107,6 +107,8 @@ ns_pcbconnect(nsp, nam)
 	struct ns_ifaddr *ia;
 	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 	register struct ns_addr *dst;
+	register struct route *ro;
+	struct ifnet *ifp;
 
 	if (nam->m_len != sizeof (*sns))
 		return (EINVAL);
@@ -114,36 +116,56 @@ ns_pcbconnect(nsp, nam)
 		return (EAFNOSUPPORT);
 	if (sns->sns_port==0 || ns_nullhost(sns->sns_addr))
 		return (EADDRNOTAVAIL);
-	if (ns_nullhost(nsp->nsp_laddr)) {
-		register struct route *ro;
-		struct ifnet *ifp;
+	/*
+	 * If we haven't bound which network number to use as ours,
+	 * we will use the number of the outgoing interface.
+	 * This depends on having done a routing lookup, which
+	 * we will probably have to do anyway, so we might
+	 * as well do it now.  On the other hand if we are
+	 * sending to multiple destinations we may have already
+	 * done the lookup, so see if we can use the route
+	 * from before.  In any case, we only
+	 * chose a port number once, even if sending to multiple
+	 * destinations.
+	 */
+	ro = &nsp->nsp_route;
+	dst = &satons_addr(ro->ro_dst);
+	if (ro->ro_rt) {
+		if (nsp->nsp_socket->so_options & SO_DONTROUTE)
+			goto flush;
+		if (!ns_neteq(nsp->nsp_lastdst, sns->sns_addr))
+			goto flush;
+		if (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr)) {
+			if (((ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
+			     == RTF_GATEWAY)
+			    || ((ifp = ro->ro_rt->rt_ifp) &&
+				 !(ifp->if_flags & IFF_POINTOPOINT))) {
+				/* can patch route to avoid rtalloc */
+				*dst = sns->sns_addr;
+			} else {
+		flush:
+				RTFREE(ro->ro_rt);
+				ro->ro_rt = (struct rtentry *)0;
+			}
+		}/* else cached route is ok; do nothing */
+	}
+	nsp->nsp_lastdst = sns->sns_addr;
+	if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
+	    (ro->ro_rt == (struct rtentry *)0 ||
+	     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
+		    /* No route yet, so try to acquire one */
+		    ro->ro_dst.sa_family = AF_NS;
+		    *dst = sns->sns_addr;
+		    dst->x_port = 0;
+		    rtalloc(ro);
+	}
+	if (ns_neteqnn(nsp->nsp_laddr.x_net, ns_zeronet)) {
 		/* 
 		 * If route is known or can be allocated now,
 		 * our src addr is taken from the i/f, else punt.
 		 */
-		ro = &nsp->nsp_route;
-		dst = &satons_addr(ro->ro_dst);
 
 		ia = (struct ns_ifaddr *)0;
-		if (ro->ro_rt) {
-		    if ((!ns_neteq(nsp->nsp_lastdst, sns->sns_addr)) ||
-			((ifp = ro->ro_rt->rt_ifp) &&
-			 (ifp->if_flags & IFF_POINTOPOINT) &&
-			 (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr))) ||
-			(nsp->nsp_socket->so_options & SO_DONTROUTE)) {
-				RTFREE(ro->ro_rt);
-				ro->ro_rt = (struct rtentry *)0;
-			}
-		}
-		if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
-		    (ro->ro_rt == (struct rtentry *)0 ||
-		     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
-			    /* No route yet, so try to acquire one */
-			    ro->ro_dst.sa_family = AF_NS;
-			    *dst = sns->sns_addr;
-			    dst->x_port = 0;
-			    rtalloc(ro);
-		}
 		/*
 		 * If we found a route, use the address
 		 * corresponding to the outgoing interface
@@ -166,7 +188,6 @@ ns_pcbconnect(nsp, nam)
 				return (EADDRNOTAVAIL);
 		}
 		nsp->nsp_laddr.x_net = satons_addr(ia->ia_addr).x_net;
-		nsp->nsp_lastdst = sns->sns_addr;
 	}
 	if (ns_pcblookup(&sns->sns_addr, nsp->nsp_lport, 0))
 		return (EADDRINUSE);
