@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.32 (Berkeley) %G%
+.\"	@(#)op.me	6.33 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.32
+Version 6.33
 .sp
-For Sendmail Version 6.46
+For Sendmail Version 6.47
 .)l
 .sp 2
 .pp
@@ -3313,6 +3313,22 @@ it will be assumed that commas already exist.
 If this flag is not on,
 only commas delimit names.
 Headers are always output with commas between the names.
+.ip O\fIoptions\fP
+Set server SMTP options.
+The options are
+.i key=value
+pairs.
+Known keys are:
+.(b
+.ta 1i
+Port	Name/number of listening port (defaults to "smtp")
+Addr	Address mask (defaults INADDR_ANY)
+Family	Address family (defaults to INET)
+.)b
+The
+.i Addr ess
+mask may be a numeric address in dot notation
+or a network name.
 .ip p\fI\|opt,opt,...\fP
 Set the privacy
 .i opt ions.
@@ -3457,6 +3473,12 @@ should
 .i never
 be set in the configuration file;
 it is intended for command line use only.
+.ip V\fIfallbackhost\fP
+If specified, the
+.i fallbackhost
+acts like a very low priority MX
+on every host.
+This is intended to be used by sites with poor network connectivity.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -5890,7 +5912,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.32
+.\"Version 6.33
 .\".ce 0
 .pn 2
 .bp
