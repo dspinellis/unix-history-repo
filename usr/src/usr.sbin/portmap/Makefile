@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROG=	portmap
-DPADD=	${LIBRPC} ${LIBUTIL}
-LDADD=	-lrpc -lutil
+DPADD=	${LIBRPC}
+LDADD=	-lrpc
 MAN8=	portmap.0
 
 .include <bsd.prog.mk>
