@@ -1,4 +1,4 @@
-/*	va.c	4.1	%G%	*/
+/*	va.c	4.2	%G%	*/
 
 #include "../conf/va.h"
 #if NVA > 0
@@ -166,6 +166,7 @@ vastart()
 {
 	if (va11.va_wc) {
 		VAADDR->vaba = va11.va_bufp;
+		VAADDR->vacsl = (va11.va_bufp >> 12) & 0x30;
 		VAADDR->vawc = va11.va_wc;
 		return;
 	}
