@@ -1,0 +1,15 @@
+(Courier) findfont 10 scalefont setfont
+currentfont 1.5 scalefont setfont
+/sp ( !"#$%&'\(\)*+,-./  [[\\\\]]^^__  `{|}~) def
+/sd (001122334456789<=>:;?@) def
+/smaj (ABCDEFGHIJKLMNOPQRSTUVWXYZ) def
+/smin (abcdefghijklmnopqrstuvwxyz) def
+
+20 0 moveto
+4 {
+[ sp sd smaj smin ]
+ { 0 15 rmoveto gsave show grestore
+ } forall
+1.6 1.6 scale
+} repeat
+showpage
