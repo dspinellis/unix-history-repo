@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.32 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,7 +21,7 @@
 #include "tty.h"
 
 struct 	fileops vnops =
-	{ vn_read, vn_write, vn_ioctl, vn_select, vn_close };
+	{ vn_read, vn_write, vn_ioctl, vn_select, vn_closefile };
 
 /*
  * Common code for vnode open operations.
@@ -138,7 +138,25 @@ vn_writechk(vp)
 }
 
 /*
- * Vnode version of rdwri() for calls on file systems.
+ * Vnode close call
+ */
+vn_close(vp, flags, cred, p)
+	register struct vnode *vp;
+	int flags;
+	struct ucred *cred;
+	struct proc *p;
+{
+	int error;
+
+	if (flags & FWRITE)
+		vp->v_writecount--;
+	error = VOP_CLOSE(vp, flags, cred, p);
+	vrele(vp);
+	return (error);
+}
+
+/*
+ * Package up an I/O request on a vnode into a uio and do it.
  */
 vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	enum uio_rw rw;
@@ -181,6 +199,9 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	return (error);
 }
 
+/*
+ * File table vnode read routine.
+ */
 vn_read(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -199,6 +220,9 @@ vn_read(fp, uio, cred)
 	return (error);
 }
 
+/*
+ * File table vnode write routine.
+ */
 vn_write(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -224,7 +248,7 @@ vn_write(fp, uio, cred)
 }
 
 /*
- * Get stat info for a vnode.
+ * File table vnode stat routine.
  */
 vn_stat(vp, sb, p)
 	struct vnode *vp;
@@ -291,7 +315,7 @@ vn_stat(vp, sb, p)
 }
 
 /*
- * Vnode ioctl call
+ * File table vnode ioctl routine.
  */
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
@@ -333,7 +357,7 @@ vn_ioctl(fp, com, data, p)
 }
 
 /*
- * Vnode select call
+ * File table vnode select routine.
  */
 vn_select(fp, which, p)
 	struct file *fp;
@@ -342,25 +366,19 @@ vn_select(fp, which, p)
 {
 
 	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
-		p->p_ucred, p));
+		fp->f_cred, p));
 }
 
 /*
- * Vnode close call
+ * File table vnode close routine.
  */
-vn_close(vp, flags, cred, p)
-	register struct vnode *vp;
-	int flags;
-	struct ucred *cred;
+vn_closefile(fp, p)
+	struct file *fp;
 	struct proc *p;
 {
-	int error;
 
-	if (flags & FWRITE)
-		vp->v_writecount--;
-	error = VOP_CLOSE(vp, flags, cred, p);
-	vrele(vp);
-	return (error);
+	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag,
+		fp->f_cred, p));
 }
 
 /*
