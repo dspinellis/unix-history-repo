@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.7 (Berkeley) %G%
+ *	@(#)lfs.h	7.8 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -115,16 +115,15 @@ struct lfs {
 };
 
 /*
- * Inode 0 is the out-of-band inode, and inode 1 is the inode number for the
- * ifile.  Thus the root inode is 2, and the lost+found inode is 3.
+ * Inode 0 is the out-of-band inode number, inode 1 is the inode number for
+ * the IFILE, the root inode is 2 and the lost+found inode is 3.
  */
-#define	LOSTFOUNDINO	((ino_t)3)
 
 /* Fixed inode numbers. */
 #define	LFS_UNUSED_INUM	0		/* out of band inode number */
-#define	LFS_IFILE_INUM	1		/* inode number of the ifile */
-					/* first free inode number */
-#define	LFS_FIRST_INUM	(LOSTFOUNDINO + 1)
+#define	LFS_IFILE_INUM	1		/* IFILE inode number */
+#define	LOSTFOUNDINO	3		/* lost+found inode number */
+#define	LFS_FIRST_INUM	4		/* first free inode number */
 
 /*
  * Used to access the first spare of the dinode which we use to store
@@ -151,12 +150,7 @@ struct ifile {
 	u_long	if_version;		/* inode version number */
 #define	LFS_UNUSED_DADDR	0	/* out-of-band daddr */
 	daddr_t	if_daddr;		/* inode disk address */
-	union {
-		ino_t	nextfree;	/* next-unallocated inode */
-		time_t	st_atime;	/* access time */
-	} __ifile_u;
-#define	if_st_atime	__ifile_u.st_atime
-#define	if_nextfree	__ifile_u.nextfree
+	ino_t	if_nextfree;		/* next-unallocated inode */
 };
 
 /*
@@ -203,8 +197,15 @@ struct segsum {
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
 	((loc) >> (fs)->lfs_bshift)
 
+#define	datosn(fs, daddr)	/* disk address to segment number */ \
+	(((daddr) - (fs)->lfs_sboffs[0]) / fsbtodb((fs), (fs)->lfs_ssize))
+#define sntoda(fs, sn) 		/* segment number to disk address */ \
+	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) + \
+	    (fs)->lfs_sboffs[0]))
+
 /* Read in the block with the cleaner info from the ifile. */
 #define LFS_CLEANERINFO(CP, F, BP) { \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
 	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read"); \
 	(CP) = (CLEANERINFO *)(BP)->b_un.b_addr; \
@@ -229,18 +230,12 @@ struct segsum {
 	(SP) = (SEGUSE *)(BP)->b_un.b_addr + (IN) % (F)->lfs_sepb; \
 }
 
-/* Release the ifile block, updating the access time. */
-#define	LFS_IRELEASE(F, BP) { \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
-	brelse((BP)); \
+/* Write a block and update the inode change times. */
+#define	LFS_UBWRITE(BP) { \
+	VTOI((BP)->b_vp)->i_flag |= ICHG | IUPD; \
+	lfs_bwrite(BP); \
 }
 
-/* Release the ifile block, scheduling it for writing. */
-#define	LFS_IWRITE(F, BP) { \
-	VTOI((F)->lfs_ivnode)->i_flag |= ICHG | IUPD; \
-	lfs_bwrite((BP)); \
-}
-	
 /*
  * Structures used by lfs_bmapv and lfs_markv to communicate information
  * about inodes and data blocks.
