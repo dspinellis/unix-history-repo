@@ -3,12 +3,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
 
-CFLAGS = -O -DUNIXCOMP
+BUGS_NAME = 4bsd-bugs
+BUGS_HOME = @ucbarpa.BERKELEY.EDU
+DEFS = -DBUGS_NAME='"$(BUGS_NAME)"' -DBUGS_HOME='"$(BUGS_HOME)"'
+CFLAGS = -O -DUNIXCOMP $(DEFS)
 LIBDIR=	/usr/lib
 DESTDIR=
 
