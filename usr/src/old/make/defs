@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)defs	4.1 (Berkeley) 81/02/28";
+/* defs 4.2 81/03/15 */
 #include <stdio.h>
 #include <ctype.h>
 
