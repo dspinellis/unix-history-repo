@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.33 (Berkeley) %G%
+ *	@(#)route.c	7.34 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -33,16 +33,18 @@
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
 
+void
 rtable_init(table)
-void **table;
+	void **table;
 {
 	struct domain *dom;
 	for (dom = domains; dom; dom = dom->dom_next)
 		if (dom->dom_rtattach)
 			dom->dom_rtattach(&table[dom->dom_family],
-							dom->dom_rtoffset);
+			    dom->dom_rtoffset);
 }
 
+void
 route_init()
 {
 	rn_init();	/* initialize all zeroes, all ones, mask table */
@@ -52,6 +54,7 @@ route_init()
 /*
  * Packet routing routines.
  */
+void
 rtalloc(ro)
 	register struct route *ro;
 {
@@ -63,7 +66,7 @@ rtalloc(ro)
 struct rtentry *
 rtalloc1(dst, report)
 	register struct sockaddr *dst;
-	int  report;
+	int report;
 {
 	register struct radix_node_head *rnh = rt_tables[dst->sa_family];
 	register struct rtentry *rt;
@@ -101,6 +104,7 @@ rtalloc1(dst, report)
 	return (newrt);
 }
 
+void
 rtfree(rt)
 	register struct rtentry *rt;
 {
@@ -150,6 +154,7 @@ ifafree(ifa)
  * N.B.: must be called at splnet
  *
  */
+int
 rtredirect(dst, gateway, netmask, flags, src, rtp)
 	struct sockaddr *dst, *gateway, *netmask, *src;
 	int flags;
@@ -240,6 +245,7 @@ out:
 /*
 * Routing table ioctl interface.
 */
+int
 rtioctl(req, data, p)
 	int req;
 	caddr_t data;
@@ -250,8 +256,8 @@ rtioctl(req, data, p)
 
 struct ifaddr *
 ifa_ifwithroute(flags, dst, gateway)
-int	flags;
-struct sockaddr	*dst, *gateway;
+	int flags;
+	struct sockaddr	*dst, *gateway;
 {
 	register struct ifaddr *ifa;
 	if ((flags & RTF_GATEWAY) == 0) {
@@ -286,7 +292,7 @@ struct sockaddr	*dst, *gateway;
 			return (0);
 	}
 	if (ifa->ifa_addr->sa_family != dst->sa_family) {
-		struct ifaddr *oifa = ifa, *ifaof_ifpforaddr();
+		struct ifaddr *oifa = ifa;
 		ifa = ifaof_ifpforaddr(dst, ifa->ifa_ifp);
 		if (ifa == 0)
 			ifa = oifa;
@@ -296,6 +302,7 @@ struct sockaddr	*dst, *gateway;
 
 #define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
+int
 rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	int req, flags;
 	struct sockaddr *dst, *gateway, *netmask;
@@ -305,7 +312,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	register struct radix_node_head *rnh;
-	struct ifaddr *ifa, *ifa_ifwithdstaddr();
+	struct ifaddr *ifa;
 	struct sockaddr *ndst;
 #define senderr(x) { error = x ; goto bad; }
 
@@ -315,8 +322,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		netmask = 0;
 	switch (req) {
 	case RTM_DELETE:
-		if ((rn = rnh->rnh_deladdr((caddr_t)dst, (caddr_t)netmask, 
-					rnh)) == 0)
+		if ((rn = rnh->rnh_deladdr(dst, netmask, rnh)) == 0)
 			senderr(ESRCH);
 		if (rn->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtrequest delete");
@@ -392,9 +398,10 @@ bad:
 	return (error);
 }
 
+int
 rt_setgate(rt0, dst, gate)
-struct rtentry *rt0;
-struct sockaddr *dst, *gate;
+	struct rtentry *rt0;
+	struct sockaddr *dst, *gate;
 {
 	caddr_t new, old;
 	int dlen = ROUNDUP(dst->sa_len), glen = ROUNDUP(gate->sa_len);
@@ -425,8 +432,9 @@ struct sockaddr *dst, *gate;
 	return 0;
 }
 
+void
 rt_maskedcopy(src, dst, netmask)
-struct sockaddr *src, *dst, *netmask;
+	struct sockaddr *src, *dst, *netmask;
 {
 	register u_char *cp1 = (u_char *)src;
 	register u_char *cp2 = (u_char *)dst;
@@ -447,6 +455,7 @@ struct sockaddr *src, *dst, *netmask;
  * Set up a routing table entry, normally
  * for an interface.
  */
+int
 rtinit(ifa, cmd, flags)
 	register struct ifaddr *ifa;
 	int cmd, flags;
