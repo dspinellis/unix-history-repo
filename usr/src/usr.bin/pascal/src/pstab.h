@@ -1,9 +1,10 @@
-    /*	static	char sccsid[] = "@(#)pstab.h 1.3 %G%"; */
+    /*	static	char sccsid[] = "@(#)pstab.h 1.4 %G%"; */
 
     /*
-     *	subtypes within the above type
-     *	subtypes N_PSO and N_PSOL are	.stabs	name,,0,subtype,0
-     *	others subtypes are		.stabs	name,,0,subtype,line
+     *	subtypes within the stab type N_PC
+     *
+     *	subtypes N_PSO and N_PSOL are	.stabs	name,N_PC,0,subtype,checksum
+     *	others subtypes are		.stabs	name,N_PC,0,subtype,line
      */
 #define	N_PSO		0x1	/* source file name */
 #define	N_PSOL		0x2	/* include file name */
@@ -17,3 +18,17 @@
 #define	N_PEPROC	0xa	/* external procedure */
 #define	N_PLDATA	0xb	/* library variable */
 #define	N_PLTEXT	0xc	/* library routine */
+
+    /*
+     *	checksums are used to check if included files have changed.
+     *	we also use them to check that .o files are up to date with
+     *	the libraries.
+     *	if a checksum is less than the flag checksum,
+     *	then the checksum (and therefore the .o file) is out of date.
+     *	if a checksum is equal to the flag checksum,
+     *	then no furthur checking of the checksum is done.
+     *	this is for the 2nd and subsequent times a file is stabed.
+     *	to declare a flag day, increment this value. (also be sure 
+     *  to update this value in ../utilities/externs.awk)
+     */
+#define	N_FLAGCHECKSUM	1
