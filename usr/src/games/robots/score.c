@@ -16,12 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)score.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)score.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"robots.h"
 # include	<sys/types.h>
 # include	<pwd.h>
+# include	"pathnames.h"
 
 typedef struct {
 	int	s_uid;
@@ -31,7 +32,7 @@ typedef struct {
 
 typedef struct passwd	PASSWD;
 
-char	*Scorefile = SCOREFILE;
+char	*Scorefile = _PATH_SCORE;
 
 int	Max_per_uid = MAX_PER_UID;
 
