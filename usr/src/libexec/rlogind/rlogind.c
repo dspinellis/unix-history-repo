@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -319,13 +319,15 @@ doit(f, fromp)
 		fatal(STDERR_FILENO, _PATH_LOGIN, 1);
 		/*NOTREACHED*/
 	}
-#if defined(KERBEROS) && defined(CRYPT)
+#ifdef	CRYPT
+#ifdef	KERBEROS
 	/*
 	 * If encrypted, don't turn on NBIO or the des read/write
 	 * routines will croak.
 	 */
 
 	if (!encrypt)
+#endif
 #endif
 		ioctl(f, FIONBIO, &on);
 	ioctl(master, FIONBIO, &on);
@@ -421,10 +423,12 @@ protocol(f, p)
 			}
 		}
 		if (FD_ISSET(f, &ibits)) {
-#if defined(KERBEROS) && defined(CRYPT)
+#ifdef	CRYPT
+#ifdef	KERBEROS
 			if (encrypt)
 				fcc = des_read(f, fibuf, sizeof(fibuf));
 			else
+#endif
 #endif
 				fcc = read(f, fibuf, sizeof(fibuf));
 			if (fcc < 0 && errno == EWOULDBLOCK)
@@ -461,8 +465,10 @@ protocol(f, p)
 				break;
 			else if (pibuf[0] == 0) {
 				pbp++, pcc--;
-#if defined(KERBEROS) && defined(CRYPT)
+#ifdef	CRYPT
+#ifdef	KERBEROS
 				if (!encrypt)
+#endif
 #endif
 					FD_SET(f, &obits);	/* try write */
 			} else {
@@ -474,7 +480,8 @@ protocol(f, p)
 			}
 		}
 		if ((FD_ISSET(f, &obits)) && pcc > 0) {
-#if defined(KERBEROS) && defined(CRYPT)
+#ifdef	CRYPT
+#ifdef	KERBEROS
 			if (encrypt)
 				cc = des_write(f, pbp, pcc);
 			if (cc > 0) {
