@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	8.1 (Berkeley) %G%
+ *	@(#)unistd.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -143,7 +143,7 @@ int	 ttyslot __P((void));
 unsigned int	 ualarm __P((unsigned int, unsigned int));
 void	 usleep __P((unsigned int));
 void	*valloc __P((size_t));			/* obsoleted by malloc() */
-int	 vfork __P((void));
+pid_t	 vfork __P((void));
 
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
