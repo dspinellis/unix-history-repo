@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "sh.local.h"
@@ -225,7 +225,7 @@ struct	mesg {
 	"XFSZ", "Filesize limit exceeded",
 	"VTALRM","Virtual timer expired",
 	"PROF",	"Profiling timer expired",
-	0,	"Signal 28",
+	"WINCH","Window size changed",
 	0,	"Signal 29",
 	0,	"Signal 30",
 	0,	"Signal 31",
