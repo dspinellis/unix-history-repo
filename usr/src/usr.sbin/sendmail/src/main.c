@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -137,8 +137,12 @@ main(argc, argv, envp)
 
 	/*
 	**  Be sure we have enough file descriptors.
+	**	But also be sure that 0, 1, & 2 are open.
 	*/
 
+	i = open("/dev/null", 2);
+	while (i >= 0 && i < 2)
+		i = dup(i);
 	for (i = 3; i < 50; i++)
 		(void) close(i);
 	errno = 0;
