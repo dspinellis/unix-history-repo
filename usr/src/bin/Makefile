@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.18 (Berkeley) %G%
+#	@(#)Makefile	5.19 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,9 +19,9 @@ SCRIPT=	false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	ar cat cc chmod cmp date dd du echo ed grep hostid hostname \
-	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
-	rmdir size stty sync tar tee test time who
+STD=	ar cat cc chgrp chmod cmp date dd du echo ed grep hostid \
+	hostname kill ld ln ls mkdir mt nice nm od pagesize pr \
+	pwd rm rmail rmdir size stty sync tar tee test time who
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -29,7 +29,7 @@ NSTD=	expr
 
 # Programs that must run setuid to root
 #
-SETUID=	chgrp login mail passwd rcp su
+SETUID=	login mail passwd rcp su
 
 # Programs that run set-group-id operator
 #
@@ -122,6 +122,9 @@ cat: /usr/include/sys/stat.h
 cc: cc.c /usr/include/sys/param.h /usr/include/machine/machparam.h
 cc: /usr/include/signal.h /usr/include/sys/types.h /usr/include/stdio.h
 cc: /usr/include/ctype.h /usr/include/signal.h /usr/include/sys/dir.h
+chgrp: chgrp.c /usr/include/stdio.h /usr/include/ctype.h
+chgrp: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/grp.h
+chgrp: /usr/include/pwd.h /usr/include/sys/dir.h
 chmod: chmod.c /usr/include/stdio.h /usr/include/sys/types.h
 chmod: /usr/include/sys/stat.h /usr/include/sys/dir.h
 cmp: cmp.c /usr/include/stdio.h /usr/include/ctype.h
@@ -191,6 +194,7 @@ tar: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/sys/dir.h
 tar: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 tar: /usr/include/sys/ttydev.h /usr/include/sys/mtio.h /usr/include/sys/time.h
 tar: /usr/include/time.h /usr/include/signal.h /usr/include/errno.h
+tar: /usr/include/fcntl.h
 tee: tee.c /usr/include/signal.h /usr/include/sys/types.h
 tee: /usr/include/sys/stat.h /usr/include/errno.h
 test: test.c /usr/include/stdio.h /usr/include/sys/types.h
@@ -198,15 +202,9 @@ test: /usr/include/sys/stat.h
 time: time.c /usr/include/stdio.h /usr/include/signal.h
 time: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
 time: /usr/include/sys/resource.h
-wall: wall.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/errno.h
-wall: /usr/include/signal.h /usr/include/sys/time.h /usr/include/time.h
-wall: /usr/include/fcntl.h /usr/include/sys/types.h /usr/include/sys/stat.h
 who: who.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/pwd.h
 who: /usr/include/ctype.h
 expr: expr.c /usr/include/stdio.h
-chgrp: chgrp.c /usr/include/stdio.h /usr/include/ctype.h
-chgrp: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/grp.h
-chgrp: /usr/include/pwd.h /usr/include/sys/dir.h
 login: login.c /usr/include/sys/param.h /usr/include/machine/machparam.h
 login: /usr/include/signal.h /usr/include/sys/types.h /usr/include/sys/quota.h
 login: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
@@ -255,6 +253,9 @@ ps: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
 ps: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h
 ps: /usr/include/sys/text.h /usr/include/sys/stat.h /usr/include/sys/mbuf.h
 ps: /usr/include/math.h /usr/include/errno.h /usr/include/utmp.h
+wall: wall.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/errno.h
+wall: /usr/include/signal.h /usr/include/sys/time.h /usr/include/time.h
+wall: /usr/include/fcntl.h /usr/include/sys/types.h /usr/include/sys/stat.h
 write: write.c /usr/include/stdio.h /usr/include/ctype.h
 write: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/signal.h
 write: /usr/include/utmp.h /usr/include/sys/time.h /usr/include/time.h
