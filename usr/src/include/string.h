@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.9 (Berkeley) %G%
+ *	@(#)string.h	5.10 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
 #define	_STRING_H_
-#include <machine/types.h>
+#include <machine/ansi.h>
 
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;

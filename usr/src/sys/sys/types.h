@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.13 (Berkeley) %G%
+ *	@(#)types.h	7.14 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -25,21 +25,24 @@ typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* Sys V compatibility */
 
+#include <machine/ansi.h>
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #include <machine/types.h>
+#endif
 
 #ifdef	_CLOCK_T_
 typedef	_CLOCK_T_	clock_t;
 #undef	_CLOCK_T_
 #endif
 
-#ifdef	_TIME_T_
-typedef	_TIME_T_	time_t;
-#undef	_TIME_T_
-#endif
-
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;
 #undef	_SIZE_T_
+#endif
+
+#ifdef	_TIME_T_
+typedef	_TIME_T_	time_t;
+#undef	_TIME_T_
 #endif
 
 #ifndef _POSIX_SOURCE
