@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.14 (Berkeley) %G%
+#	@(#)Makefile	7.15 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -113,6 +113,8 @@ clean:
 #	If we dont have ex we cant make it so don't rm ex_vars.h
 	-rm -f a.out exrecover expreserve strings core errs trace
 	-rm -f *.o x*.[cs]
+
+depend:
 
 # install a new version for testing in /usr/new
 ninstall: a.out

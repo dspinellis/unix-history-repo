@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 ALL=	tftp
 DESTDIR=
@@ -16,6 +16,8 @@ tftp:	main.o tftp.o tftpsubs.o
 
 clean:
 	rm -f ${ALL} *.o *.s errs core a.out t.?
+
+depend:
 
 install: 
 	install -s tftp ${DESTDIR}/usr/ucb

@@ -3,8 +3,8 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -185,6 +185,8 @@ mkdate: mkdate.c
 
 print:
 	@echo "don't print it, it's too long"
+
+depend:
 
 #
 # Don't worry about the removal of header files, they're created from

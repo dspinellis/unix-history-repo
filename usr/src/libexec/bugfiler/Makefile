@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
@@ -22,6 +22,8 @@ install: bugfiler sendbug.sh bugformat
 
 clean:
 	rm -f ${OBJS} core bugfiler
+
+depend:
 
 tags:
 	ctags ${SRCS}
