@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -85,39 +85,41 @@ int	nfs_lookup(),
 	nfs_strategy(),
 	nfs_fsync(),
 	nfs_inactive(),
-	nfs_reclaim();
+	nfs_reclaim(),
+	nfs_print();
 
 struct vnodeops nfsv2_vnodeops = {
-	nfs_lookup,
-	nfs_create,
-	nfs_mknod,
-	nfs_open,
-	nfs_close,
-	nfs_access,
-	nfs_getattr,
-	nfs_setattr,
-	nfs_read,
-	nfs_write,
-	vfs_noop,
-	vfs_noop,
-	vfs_noop,
-	nfs_fsync,
-	vfs_nullop,
-	nfs_remove,
-	nfs_link,
-	nfs_rename,
-	nfs_mkdir,
-	nfs_rmdir,
-	nfs_symlink,
-	nfs_readdir,
-	nfs_readlink,
-	nfs_abortop,
-	nfs_inactive,
-	nfs_reclaim,
-	nfs_lock,
-	nfs_unlock,
-	nfs_bmap,
-	nfs_strategy,
+	nfs_lookup,		/* lookup */
+	nfs_create,		/* create */
+	nfs_mknod,		/* mknod */
+	nfs_open,		/* open */
+	nfs_close,		/* close */
+	nfs_access,		/* access */
+	nfs_getattr,		/* getattr */
+	nfs_setattr,		/* setattr */
+	nfs_read,		/* read */
+	nfs_write,		/* write */
+	vfs_noop,		/* ioctl */
+	vfs_noop,		/* select */
+	vfs_noop,		/* mmap */
+	nfs_fsync,		/* fsync */
+	vfs_nullop,		/* seek */
+	nfs_remove,		/* remove */
+	nfs_link,		/* link */
+	nfs_rename,		/* rename */
+	nfs_mkdir,		/* mkdir */
+	nfs_rmdir,		/* rmdir */
+	nfs_symlink,		/* symlink */
+	nfs_readdir,		/* readdir */
+	nfs_readlink,		/* readlink */
+	nfs_abortop,		/* abortop */
+	nfs_inactive,		/* inactive */
+	nfs_reclaim,		/* reclaim */
+	nfs_lock,		/* lock */
+	nfs_unlock,		/* unlock */
+	nfs_bmap,		/* bmap */
+	nfs_strategy,		/* strategy */
+	nfs_print,		/* print */
 };
 
 /* Special device vnode ops */
@@ -126,6 +128,7 @@ int	spec_lookup(),
 	spec_read(),
 	spec_write(),
 	spec_strategy(),
+	spec_bmap(),
 	spec_ioctl(),
 	spec_select(),
 	spec_close(),
@@ -161,8 +164,9 @@ struct vnodeops spec_nfsv2nodeops = {
 	nfs_reclaim,		/* reclaim */
 	nfs_lock,		/* lock */
 	nfs_unlock,		/* unlock */
-	spec_badop,		/* bmap */
+	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
+	nfs_print,		/* print */
 };
 
 extern u_long nfs_procids[NFS_NPROCS];
@@ -1316,12 +1320,12 @@ nfs_doio(bp)
 	uiop->uio_segflg = UIO_SYSSPACE;
 	if (bp->b_flags & B_READ) {
 		io.iov_len = uiop->uio_resid = bp->b_bcount;
-		uiop->uio_offset = bp->b_blkno*DEV_BSIZE;
+		uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
 		addr = bp->b_un.b_addr;
 		bcnt = bp->b_bcount;
 	} else {
-		io.iov_len = uiop->uio_resid = bp->b_dirtyend-bp->b_dirtyoff;
-		uiop->uio_offset = (bp->b_blkno*DEV_BSIZE)+bp->b_dirtyoff;
+		io.iov_len = uiop->uio_resid = bp->b_dirtyend - bp->b_dirtyoff;
+		uiop->uio_offset = (bp->b_lblkno * DEV_BSIZE) + bp->b_dirtyoff;
 		addr = bp->b_un.b_addr+bp->b_dirtyoff;
 		bcnt = bp->b_dirtyend-bp->b_dirtyoff;
 	}
@@ -1430,4 +1434,17 @@ nfs_fsync(vp, fflags, cred, waitfor)
 		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE);
 	}
 	return (error);
+}
+
+/*
+ * Print out the contents of an nfsnode.
+ */
+nfs_print(vp)
+	struct vnode *vp;
+{
+	register struct nfsnode *np = VTONFS(vp);
+
+	printf("tag VT_NFS, fileid %d fsid 0x%x%s\n",
+		np->n_vattr.va_fileid, np->n_vattr.va_fsid,
+		(np->n_flag & NLOCKED) ? " (LOCKED)" : "");
 }
