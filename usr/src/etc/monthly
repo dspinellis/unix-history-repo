@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)monthly	5.2 (Berkeley) %G%
+#	@(#)monthly	5.3 (Berkeley) %G%
 #
 
 host=`hostname -s`
@@ -12,7 +12,7 @@ echo "Subject: $host monthly run output"
 
 echo ""
 echo "Rotating wtmp files:"
-cd /var/account
+cd /var/log
 if [ -f wtmp.5 ]; then mv -f wtmp.5 wtmp.6; fi
 if [ -f wtmp.4 ]; then mv -f wtmp.4 wtmp.5; fi
 if [ -f wtmp.3 ]; then mv -f wtmp.3 wtmp.4; fi
