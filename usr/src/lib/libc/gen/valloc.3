@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)valloc.3	6.1 (Berkeley) %G%
+.\"	@(#)valloc.3	6.2 (Berkeley) %G%
 .\"
-.TH VALLOC 3 ""
+.TH VALLOC 3C ""
 .UC 3
 .SH NAME
 valloc \- aligned memory allocator
@@ -14,6 +14,11 @@ valloc \- aligned memory allocator
 .B unsigned size;
 .fi
 .SH DESCRIPTION
+.ft B
+Valloc is obsoleted by the current version of malloc,
+which aligns page-sized and larger allocations.
+.ft R
+.PP
 .I Valloc
 allocates
 .I size
