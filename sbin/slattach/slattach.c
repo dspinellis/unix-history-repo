@@ -79,7 +79,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.4 1993/08/30 09:51:01 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.5 1993/09/06 23:24:07 rgrimes Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -131,7 +131,7 @@ char	*exit_cmd = 0;		/* command to exec before exiting. */
 char	string[100];
 
 static char usage_str[] = "\
-usage: %s [-a ][-c ][-d ][-e <command> ][-n ][-s <speed> ]<device>\n\
+usage: %s [-achlnz] [-e command] [-r command] [-s speed] [-u command] device\n\
 	-a	-- autoenable VJ compression\n\
 	-c	-- enable VJ compression\n\
 	-e ECMD	-- execute ECMD before exiting\n\
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	extern char *optarg;
 	extern int optind;
 
-	while ((option = getopt(argc, argv, "ace:hnr:s:u:z")) != EOF) {
+	while ((option = getopt(argc, argv, "ace:hlnr:s:u:z")) != EOF) {
 		switch (option) {
 		case 'a':
 			slflags |= SC_AUTOCOMP;
@@ -241,9 +241,9 @@ int main(int argc, char **argv)
 		sighup_handler();
 	else
 		attach_line();
-	if (modem_control) {
-	ioctl(fd, TIOCMGET, &comstate);
-	if (!(comstate & MSR_DCD)) { /* check for carrier */
+	if (!(modem_control & CLOCAL)) {
+		ioctl(fd, TIOCMGET, &comstate);
+		if (!(comstate & MSR_DCD)) { /* check for carrier */
 			/* force a redial if no carrier */
 			kill (getpid(), SIGHUP);
 		}
