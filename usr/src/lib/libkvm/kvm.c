@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -409,17 +409,6 @@ kvm_nlist(kd, nl)
 }
 
 ssize_t
-kvm_write(kd, kva, buf, len)
-	kvm_t *kd;
-	register u_long kva;
-	register const char *buf;
-	register size_t len;
-{
-	_kvm_err(kd, kd->program, "kvm_write not implemented");
-	return (ssize_t)(0);
-}
-
-ssize_t
 kvm_read(kd, kva, buf, len)
 	kvm_t *kd;
 	register u_long kva;
@@ -445,7 +434,7 @@ kvm_read(kd, kva, buf, len)
 			return (0);
 		} else if (cc < len)
 			_kvm_err(kd, kd->program, "short read");
-		return (ssize_t)(cc);
+		return (cc);
 	} else {
 		cp = buf;
 		while (len > 0) {
@@ -471,6 +460,39 @@ kvm_read(kd, kva, buf, len)
 			len -= cc;
 		}
 		return (cp - buf);
+	}
+	/* NOTREACHED */
+}
+
+ssize_t
+kvm_write(kd, kva, buf, len)
+	kvm_t *kd;
+	register u_long kva;
+	register const char *buf;
+	register size_t len;
+{
+	register int cc;
+
+	if (ISALIVE(kd)) {
+		/*
+		 * Just like kvm_read, only we write.
+		 */
+		errno = 0;
+		if (lseek(kd->vmfd, (off_t)kva, 0) == -1 && errno != 0) {
+			_kvm_err(kd, 0, "invalid address (%x)", kva);
+			return (0);
+		}
+		cc = write(kd->vmfd, buf, len);
+		if (cc < 0) {
+			_kvm_syserr(kd, 0, "kvm_write");
+			return (0);
+		} else if (cc < len)
+			_kvm_err(kd, kd->program, "short write");
+		return (cc);
+	} else {
+		_kvm_err(kd, kd->program,
+		    "kvm_write not implemented for dead kernels");
+		return (0);
 	}
 	/* NOTREACHED */
 }
