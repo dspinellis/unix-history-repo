@@ -1,4 +1,4 @@
-# @(#)Makefile	4.6 (Berkeley) %G%
+# @(#)Makefile	4.7 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -34,21 +34,19 @@ gcrt0.o: moncrt0.o gmon.o
 mcrt0.o: moncrt0.o mon.o
 	ld -x -r -o mcrt0.o moncrt0.o mon.o
 
-mon.o: mon.c mcount.ex
+mon.o: mon.c mon.ex
 	cc -S ${DFLAGS} mon.c
-	ex - mon.s < mcount.ex
-	/lib/cpp mon.s > x.s
-	as -o x.o x.s
+	ex - mon.s < mon.ex
+	as -o x.o mon.s
 	ld -x -r -o mon.o x.o
-	rm -f x.s x.o mon.s
+	rm -f x.o mon.s
 
-gmon.o: gmon.c gmon.h mcount.ex
+gmon.o: gmon.c gmon.h gmon.ex
 	cc -S ${DFLAGS} gmon.c
-	ex - gmon.s < mcount.ex
-	/lib/cpp gmon.s > x.s
-	as -o x.o x.s
+	ex - gmon.s < gmon.ex
+	as -o x.o gmon.s
 	ld -x -r -o gmon.o x.o
-	rm -f x.s x.o gmon.s
+	rm -f x.o gmon.s
 
 clean:
 	rm -f ${OBJS} *.o *.s core errs
