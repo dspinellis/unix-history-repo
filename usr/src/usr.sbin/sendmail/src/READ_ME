@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.80 (Berkeley) %G%
+#	@(#)READ_ME	8.61.1.1 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -942,4 +942,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.80, last update %G% 12:50:13)
+(Version 8.61.1.1, last update %G% 12:52:33)
