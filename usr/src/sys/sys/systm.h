@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.3 (Berkeley) %G%
+ *	@(#)systm.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -14,18 +14,13 @@
 extern	char version[];		/* system version */
 
 /*
- * Nblkdev is the number of entries
- * (rows) in the block switch. It is
- * set in binit/bio.c by making
- * a pass over the switch.
- * Used in bounds checking on major
- * device numbers.
+ * Nblkdev is the number of entries (rows) in the block switch.
+ * Used in bounds checking on major device numbers.
  */
 int	nblkdev;
 
 /*
  * Number of character switch entries.
- * Set by cinit/prim.c
  */
 int	nchrdev;
 
