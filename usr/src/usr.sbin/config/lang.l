@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.6	81/03/31	*/
+/*	lang.l	1.7	81/04/02	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -40,6 +40,11 @@ WORD	[A-Za-z_][-A-Za-z_]*
 			}
 			tprintf("(%s) ", yytext);
 			return i;
+		}
+\"[^"]+\"	{
+			yytext[strlen(yytext)-1] = '\0';
+			yylval = (int) yytext + 1;
+			return ID;
 		}
 0[0-7]*		{
 			yylval = octal(yytext);

@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
 %token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA
 %{
-/*	config.y	1.5	81/03/31	*/
+/*	config.y	1.6	81/04/02	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -28,9 +28,9 @@ Spec:
 	;
 
 Config_spec:
-	CPU Save_id NUMBER = {
+	CPU Save_id = {
 		    struct cputype *cp = malloc(sizeof (struct cputype));
-		    cp->cpu_name = ns(sprintf(errbuf, "%s%d", $2, $3));
+		    cp->cpu_name = ns($2);
 		    cp->cpu_next = cputype;
 		    cputype = cp;
 		    free(temp_id);
