@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	1.1 %G%";
+static char *SccsId = "@(#)quit.c	1.2 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -26,6 +26,13 @@ quit()
 	extern char tempQuit[], tempResid[];
 	struct stat minfo;
 
+	/*
+	 * If we are read only, we can't do anything,
+	 * so just return quickly.
+	 */
+
+	if (readonly)
+		return;
 	/*
 	 * See if there any messages to save in mbox.  If no, we
 	 * can save copying mbox to /tmp and back.
