@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uudecode.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uudecode.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -65,15 +65,14 @@ char **argv;
 		if (strncmp(buf, "begin ", 6) == 0)
 			break;
 	}
-	sscanf(buf, "begin %o %s", &mode, dest);
+	(void)sscanf(buf, "begin %o %s", &mode, dest);
 
 	/* handle ~user/file format */
 	if (dest[0] == '~') {
 		char *sl;
 		struct passwd *getpwnam();
-		char *index();
 		struct passwd *user;
-		char dnbuf[100];
+		char dnbuf[100], *index(), *strcat(), *strcpy();
 
 		sl = index(dest, '/');
 		if (sl == NULL) {
@@ -160,41 +159,4 @@ FILE *f;
 		putc(c2, f);
 	if (n >= 3)
 		putc(c3, f);
-}
-
-
-/* fr: like read but stdio */
-int
-fr(fd, buf, cnt)
-FILE *fd;
-char *buf;
-int cnt;
-{
-	int c, i;
-
-	for (i=0; i<cnt; i++) {
-		c = getc(fd);
-		if (c == EOF)
-			return(i);
-		buf[i] = c;
-	}
-	return (cnt);
-}
-
-/*
- * Return the ptr in sp at which the character c appears;
- * NULL if not found
- */
-
-#define	NULL	0
-
-char *
-index(sp, c)
-register char *sp, c;
-{
-	do {
-		if (*sp == c)
-			return(sp);
-	} while (*sp++);
-	return(NULL);
 }
