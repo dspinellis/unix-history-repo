@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.67 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -394,24 +394,19 @@ execve(p, uap, retval)
 	 * ssize = ssize + nc + machine-dependent space;
 	 */
 	nc = (sizeof(ps) + szsigcode + 4 + nc + NBPW-1) & ~(NBPW - 1);
+#if defined(sparc) || defined(mips)
+	ucp = USRSTACK;
+	ssize = ALIGN(nc + (na + 3) * NBPW);
+	ap = ucp - ssize;
+	ucp -= nc;
 #ifdef sparc
-	ucp = USRSTACK;
-	ssize = (nc + (na + 3) * NBPW + 7) & ~7;
-	ap = ucp - ssize;
-	ucp -= nc;
 	ssize += sizeof(struct rwindow);
-#else
-#ifdef mips
-	ucp = USRSTACK;
-	ssize = (nc + (na + 3) * NBPW + 7) & ~7;
-	ap = ucp - ssize;
-	ucp -= nc;
+#endif
 #else
 	ssize = (na + 3) * NBPW;
 	ucp = USRSTACK - nc;
 	ap = ucp - ssize;
 	ssize += nc;
-#endif
 #endif
 	error = getxfile(p, vp, &exdata.ex_exec, paged, ssize, uid, gid);
 	if (error)
