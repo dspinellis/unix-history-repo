@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)size.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)size.c	4.4 (Berkeley) %G%";
 /*
  * size
  */
@@ -14,6 +14,7 @@ char **argv;
 	struct exec buf;
 	long sum;
 	int gorp,i;
+	int err = 0;
 	FILE *f;
 
 	if (argc==1) {
@@ -26,12 +27,14 @@ char **argv;
 		++argv;
 		if ((f = fopen(*argv, "r"))==NULL) {
 			printf("size: %s not found\n", *argv);
+			err++;
 			continue;
 		}
 		if (fread((char *)&buf, sizeof(buf), 1, f) != 1 ||
 		    N_BADMAG(buf)) {
 			printf("size: %s not an object file\n", *argv);
 			fclose(f);
+			err++;
 			continue;
 		}
 		if (header == 0) {
@@ -46,4 +49,5 @@ char **argv;
 		printf("\n");
 		fclose(f);
 	}
+	exit(err);
 }
