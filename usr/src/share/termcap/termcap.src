@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.99 (Berkeley) %G%
+#	@(#)termcap.src	5.100 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2012,6 +2012,8 @@ d8|vt102|vt100 w/adv. video:\
 	:al=\E[1L:dl=\E[1M:im=\E[4h:ei=\E[4l:mi:dc=\E[1P:ku=\EOA:kd=\EOB:\
 	:kr=\EOC:kl=\EOD:k0=\EOp:k1=\EOq:k2=\EOr:k3=\EOs:k4=\EOt:k5=\EOu:\
 	:k6=\EOv:k7=\EOw:k8=\EOx:k9=\EOy:as=\E(0:ae=\E(B:am@:xn@:tc=vt100am:
+du|vt102-w|dec vt102 132 cols (w/advanced video):\
+	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:tc=vt102:
 # (from lai@decwrl) should be a vt102, but have heard enough
 # unsubstantiated complaints to make it an alternate (obsolete) version
 dy|vt102-obs|dec vt102:\
