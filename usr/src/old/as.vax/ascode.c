@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.3 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.4 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
@@ -7,80 +7,80 @@ static	char sccsid[] = "@(#)ascode.c 4.3 %G%";
 insout(op, ap, nact)
 	struct arg *ap;
 {
-	int jxxflg;
-
+	int		jxxflg;
+	register	struct	instab	*ip;		/* the instruction */
+	register	struct	arg	*ap_walk;	/* actual param walk */
+	register	int	i;
+	register	int	ap_type;		/* actual param type */
+	register	int	ap_type_mask;		/* masked actual param */
 	op &= 0xFF;
 	jxxflg = nact;
 	if (nact < 0)
 		nact = -nact;
 	if (passno == 1) {
-		register struct arg 	*ap2;
-		register struct instab 	*ip;
-		int 			i,nexp;
-		ip = itab[op];
-		nexp = ip->i_nargs;
-		if (nact < nexp)
-			yyerror("Too few arguments");
-		if (nact > nexp) {
-			yyerror("Too many arguments");
-			nact = nexp;
-		}
-		/*
-		 *	Check argument compatability with instruction template
-		 */
-		for (ap2 = ap+nact, i = nact; --i >= 0;)
-			argcompat(--ap2, fetcharg(ip, i), i+1);
-	}
+	    ip = itab[op];
+	    if (nact < ip->i_nargs)
+		yyerror("Too few arguments");
+	    if (nact > ip->i_nargs) {
+		yyerror("Too many arguments");
+		nact = ip->i_nargs;
+	    }
+	    /*
+	     *	Check argument compatability with instruction template
+	     */
+	    for (ap_walk = ap, i = 1; i <= nact; ap_walk++, i++){
+		ap_type = ap_walk->a_type;
+		ap_type_mask = ap_type & AMASK;
+		switch( (fetcharg(ip, i-1)) & AMASK){	/* type of fp */
+		case ACCB:
+			if ( !((ap_type_mask == AEXP) || (ap_type_mask == AIMM)) ){
+				yyerror("arg %d, branch displacement must be an expression",i);
+				return;
+			}
+			break;
+		case ACCA:
+			switch(ap_type_mask){
+			case AREG:	yyerror("arg %d, addressing a register",i);
+					return;
+			case AIMM:	if ( !(ap_type & ASTAR) ){
+					 yyerror("arg %d, addressing an immediate operand",i);
+					 return;
+					}
+			}
+			break;
+		case ACCM:
+		case ACCW:
+			switch(ap_type_mask){
+			case AIMM:	if (!(ap_type&ASTAR)) {
+					 yyerror("arg %d, modifying a constant",i);
+					 return;
+					}
+			}
+			break;
+		}	/* end of the switch on fp_type */
+		if (ap_type & AINDX) {
+			if (ap_walk->a_areg2==0xF) {
+				yyerror("arg %d, PC used as index",i);
+				return;
+			}
+			switch(ap_type_mask){
+			case AREG:	yyerror("arg %d, indexing the register file",i);
+					return;
+			case AIMM:	yyerror("arg %d, indexing a constant",i);
+					return;
+			case DECR:
+			case INCR:	if (ap_walk->a_areg1==ap_walk->a_areg2) {
+						yyerror("arg %d, indexing with modified register",i);
+						return;
+					}
+					break;
+			}	/* end of switch on ap_type_mask */
+		} /* end of AINDX */
+	   }
+	} /* both passes here */
 	if (jxxflg < 0)
 		ijxout(op, ap, nact);
 	else putins(op, ap, nact);
-}
-
-argcompat(act, exp, i)
-	struct arg *act;
-	int exp,i;
-{
-	register 	at,atm;
-
-	at = act->a_atype;
-	atm = at & AMASK;
-
-	if ( (exp & ACCB) && (!((atm == AEXP) || (atm == AIMM))) ){
-		yyerror("arg %d, branch displacement must be an expression",i);
-		return;
-	}
-	if (exp & ACCA){
-		if (atm == AREG) {
-			yyerror("arg %d, addressing a register",i);
-			return;
-		}
-		if ( (atm == AIMM) && !(at & ASTAR) ){
-			yyerror("arg %d, addressing an immediate operand",i);
-			return;
-		}
-	}
-	if ((exp&ACCW) && (atm==AIMM) && !(at&ASTAR)) {
-		yyerror("arg %d, modifying a constant",i);
-		return;
-	}
-	if (at & AINDX) {
-		if (act->a_areg2==017) {
-			yyerror("arg %d, PC used as index",i);
-			return;
-		}
-		if (atm==AREG) {
-			yyerror("arg %d, indexing the register file",i);
-			return;
-		}
-		if (atm==AIMM) {
-			yyerror("arg %d, indexing a constant",i);
-			return;
-		}
-		if (((atm==ADECR) || (atm==AINCR)) && (act->a_areg1==act->a_areg2)) {
-			yyerror("arg %d, indexing with modified register",i);
-			return;
-		}
-	}
 }
 
 extern	int d124;
