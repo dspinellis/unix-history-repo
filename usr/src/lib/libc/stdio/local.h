@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)local.h	5.1 (Berkeley) %G%
+ *	@(#)local.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -15,33 +15,20 @@
  * in particular, macros and private variables.
  */
 
-#if __STDC__ || c_plusplus
-extern int	__sflush(FILE *);
-extern FILE	*__sfp(void);
-extern int	__srefill(FILE *);
-extern int	__sread(void *, char *, int);
-extern int	__swrite(void *, char const *, int);
-extern fpos_t	__sseek(void *, fpos_t, int);
-extern int	__sclose(void *);
-extern void	__sinit(void);
-extern void	_cleanup(void);
-extern void	(*__cleanup)(void);
-extern void	__smakebuf(FILE *);
-extern int	_fwalk(int (*)(FILE *));
-#else /* __STDC__ || c_plusplus */
-extern int	__sflush();
-extern FILE	*__sfp();
-extern int	__srefill();
-extern int	__sread();
-extern int	__swrite();
-extern fpos_t	__sseek();
-extern int	__sclose();
-extern void	__sinit();
-extern void	_cleanup();
-extern void	(*__cleanup)();
-extern void	__smakebuf();
-extern int	__sfwalk();
-#endif /* __STDC__ || c_plusplus */
+int	__sflush __P((FILE *));
+FILE	*__sfp __P((void));
+int	__srefill __P((FILE *));
+int	__sread __P((void *, char *, int));
+int	__swrite __P((void *, char const *, int));
+fpos_t	__sseek __P((void *, fpos_t, int));
+int	__sclose __P((void *));
+void	__sinit __P((void));
+void	_cleanup __P((void));
+void	(*__cleanup) __P((void));
+void	__smakebuf __P((FILE *));
+int	_fwalk __P((int (*)(FILE *)));
+int	__swsetup __P((FILE *));
+int	__sflags __P((const char *, int *));
 
 extern int __sdidinit;
 
