@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.7 (Berkeley) %G%
+ *	@(#)locore.s	7.8 (Berkeley) %G%
  */
 
 /*
@@ -35,7 +35,6 @@
 #include <sys/syscall.h>
 
 #include <machine/param.h>
-#include <machine/vmparam.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/machAsmDefs.h>
@@ -100,7 +99,8 @@ start:
 /* proc[1] == /etc/init now running here; run icode */
 	li	v0, PSL_USERSET
 	mtc0	v0, MACH_COP_0_STATUS_REG	# switch to user mode
-	j	zero				# icode is at address zero
+	li	v0, VM_MIN_ADDRESS
+	j	v0				# jump to icode
 	rfe
 	.set	reorder
 
@@ -118,7 +118,7 @@ END(__main)
 	.globl	icode
 icode:
 	.set	noreorder
-	li	a1, (9 * 4)		# address of 'icode_argv'
+	li	a1, VM_MIN_ADDRESS + (9 * 4)	# address of 'icode_argv'
 	addu	a0, a1, (3 * 4)		# address of 'icode_fname'
 	move	a2, zero		# no environment
 	li	v0, SYS_execve		# code for execve system call
@@ -129,8 +129,8 @@ icode:
 	nop
 	.set	reorder
 icode_argv:
-	.word	(12 * 4)		# address of 'icode_fname'
-	.word	(15 * 4)		# address of 'icodeEnd'
+	.word	VM_MIN_ADDRESS + (12 * 4)	# address of 'icode_fname'
+	.word	VM_MIN_ADDRESS + (15 * 4)	# address of 'icodeEnd'
 	.word	0
 icode_fname:
 	.asciiz	"/sbin/init"		# occupies 3 words
