@@ -70,86 +70,16 @@ struct vnode *targetvp;
 }
 
 /*
- * Make a new umap_node node.
- * Vp is the alias vnode, lofsvp is the target vnode.
- * Maintain a reference to (targetvp).
- */
-static void
-umap_node_alloc(vp, targetvp)
-	struct vnode *vp;
-	struct vnode *targetvp;
-{
-	struct umap_node_cache *hd;
-	struct umap_node *a;
-
-#ifdef UMAPFS_DIAGNOSTIC
-	printf("umap_node_alloc(%x, %x)\n", vp, targetvp);
-#endif
-
-	MALLOC(a, struct umap_node *, sizeof(struct umap_node), M_TEMP, M_WAITOK);
-	vp->v_type = targetvp->v_type;
-	a->umap_vnode = vp;
-	vp->v_data = a;
-	VREF(targetvp);   /* Extra VREF will be vrele'd in umap_node_create */
-	a->umap_lowervp = targetvp;
-	hd = umap_node_hash(targetvp);
-	insque(a, hd);
-
-#ifdef UMAPFS_DIAGNOSTIC
-	vprint("umap_node_alloc vp", vp);
-	vprint("umap_node_alloc targetvp", targetvp);
-#endif
-}
-
-#ifdef UMAPFS_DIAGNOSTIC
-/*
- * NEEDSWORK:  The ability to set lowervp to umap here
- * implies that one can never count on lowervp staying umap
- * (even if vp is locked).  This seems quite bad.  Think
- * about these things.
- */
-void
-umap_node_flushmp (mp)
-	struct mount *mp;
-{
-	struct umap_node_cache *ac;
-	int i = 0;
-	struct umap_node *roota;
-
-	printf("umap_node_flushmp (%x)\n", mp);
-
-	roota = VTOUMAP(MOUNTTOUMAPMOUNT(mp)->umapm_rootvp);
-
-	for (ac = umap_node_cache; ac < umap_node_cache + NUMAPNODECACHE; ac++) {
-		struct umap_node *a = ac->ac_forw;
-		while (a != (struct umap_node *) ac) {
-			if (a != roota && a->umap_vnode->v_mount == mp) {
-				struct vnode *vp = a->umap_lowervp;
-				if (vp) {
-					a->umap_lowervp = 0;
-					vprint("umap_flushmp: would vrele", vp);
-					/*vrele(vp);*/
-					i++;
-				}
-			}
-			a = a->umap_forw;
-		}
-	}
-	if (i > 0)
-		printf("umap_node: vrele'd %d aliases\n", i);
-}
-#endif
-
-/*
  * Return alias for target vnode if already exists, else 0.
  */
-static struct umap_node *
+static struct vnode *
 umap_node_find(mp, targetvp)
 	struct mount *mp;
 	struct vnode *targetvp;
 {
 	struct umap_node_cache *hd;
 	struct umap_node *a;
+	struct vnode *vp;
 
 #ifdef UMAPFS_DIAGNOSTIC
 	printf("umap_node_find(mp = %x, target = %x)\n", mp, targetvp);
@@ -163,13 +93,20 @@ umap_node_find(mp, targetvp)
 	 */
 	hd = umap_node_hash(targetvp);
 
+ loop:
 	for (a = hd->ac_forw; a != (struct umap_node *) hd; a = a->umap_forw) {
 		if (a->umap_lowervp == targetvp && a->umap_vnode->v_mount == mp) {
-#ifdef UMAPFS_DIAGNOSTIC
-			printf("umap_node_find(%x): found (%x,%x)->%x\n",
-				targetvp, mp, a->umap_vnode, targetvp);
-#endif
-			return (a);
+			vp = UMAPTOV(a);
+			/*
+			 * We need vget for the VXLOCK
+			 * stuff, but we don't want to lock
+			 * the lower node.
+			 */
+			if (vget_nolock(vp)) {
+				printf ("null_node_find: vget failed.\n");
+				goto loop;
+			};
+			return (vp);
 		}
 	}
 
@@ -179,6 +116,50 @@ umap_node_find(mp, targetvp)
 
 	return (0);
 }
+
+/*
+ * Make a new umap_node node.
+ * Vp is the alias vnode, lofsvp is the target vnode.
+ * Maintain a reference to (targetvp).
+ */
+static int
+umap_node_alloc(mp, lowervp, vpp)
+	struct mount *mp;
+	struct vnode *lowervp;
+	struct vnode **vpp;
+{
+	struct umap_node_cache *hd;
+	struct umap_node *xp;
+	struct vnode *othervp, *vp;
+	int error;
+
+	if (error = getnewvnode(VT_UFS, mp, umap_vnodeop_p, vpp))
+		return (error);	/* XXX: VT_UMAP above */
+	vp = *vpp;
+
+	MALLOC(xp, struct umap_node *, sizeof(struct umap_node), M_TEMP, M_WAITOK);
+	vp->v_type = lowervp->v_type;
+	xp->umap_vnode = vp;
+	vp->v_data = xp;
+	xp->umap_lowervp = lowervp;
+	/*
+	 * Before we insert our new node onto the hash chains,
+	 * check to see if someone else has beaten us to it.
+	 * (We could have slept in MALLOC.)
+	 */
+	if (othervp = umap_node_find(lowervp)) {
+		FREE(xp, M_TEMP);
+		vp->v_type = VBAD;	/* node is discarded */
+		vp->v_usecount = 0;	/* XXX */
+		*vpp = othervp;
+		return 0;
+	};
+	VREF(lowervp);   /* Extra VREF will be vrele'd in umap_node_create */
+	hd = umap_node_hash(lowervp);
+	insque(xp, hd);
+	return 0;
+}
+
 
 /*
  * Try to find an existing umap_node vnode refering
@@ -191,20 +172,16 @@ umap_node_create(mp, targetvp, newvpp)
 	struct vnode *targetvp;
 	struct vnode **newvpp;
 {
-	struct umap_node *ap;
 	struct vnode *aliasvp;
 
-	ap = umap_node_find(mp, targetvp);
-
-	if (ap) {
+	if (aliasvp = umap_node_find(mp, targetvp)) {
 		/*
 		 * Take another reference to the alias vnode
 		 */
 #ifdef UMAPFS_DIAGNOSTIC
 		vprint("umap_node_create: exists", ap->umap_vnode);
 #endif
-		aliasvp = ap->umap_vnode;
-		VREF(aliasvp);
+		/* VREF(aliasvp); */
 	} else {
 		int error;
 
@@ -214,13 +191,11 @@ umap_node_create(mp, targetvp, newvpp)
 #ifdef UMAPFS_DIAGNOSTIC
 		printf("umap_node_create: create new alias vnode\n");
 #endif
-		if (error = getnewvnode(VT_UFS, mp, umap_vnodeop_p, &aliasvp))
-			return (error);	/* XXX: VT_LOFS above */
-
 		/*
 		 * Make new vnode reference the umap_node.
 		 */
-		umap_node_alloc(aliasvp, targetvp);
+		if (error = umap_node_alloc(mp, targetvp, &aliasvp))
+			return error;
 
 		/*
 		 * aliasvp is already VREF'd by getnewvnode()
@@ -290,34 +265,36 @@ umap_checkvp(vp, fil, lno)
 
 /* umap_mapids maps all of the ids in a credential, both user and group. */
 
-umap_mapids(credp,usermap,unentries,groupmap,gnentries)
+umap_mapids(v_mount,credp)
+	struct mount *v_mount;
 	struct ucred *credp;
-	int * usermap, groupmap;
-	int unentries,gnentries;
 {
-	int i,gid,uid;
+	int i,gid,uid,unentries,gnentries,*groupmap,*usermap;
+
+	unentries =  MOUNTTOUMAPMOUNT(v_mount)->info_nentries;
+	usermap =  &(MOUNTTOUMAPMOUNT(v_mount)->info_mapdata[0][0]);
+	gnentries =  MOUNTTOUMAPMOUNT(v_mount)->info_gnentries;
+	groupmap =  &(MOUNTTOUMAPMOUNT(v_mount)->info_gmapdata[0][0]);
 
 	/* Find uid entry in map */
 
 	uid = umap_findid(credp->cr_uid,usermap,unentries);
 
 	if (uid != -1) {
-		credp->cr_ruid =
 		credp->cr_uid =
 			(u_short)uid;
 	} else 
-		credp->cr_ruid = credp->cr_uid = (u_short)NOBODY;
+		credp->cr_uid = (u_short)NOBODY;
 
 	/* Find gid entry in map */
 
 	gid = umap_findid(credp->cr_gid,groupmap,gnentries);
 
 	if (gid != -1) {
-		credp->cr_rgid =
 		credp->cr_gid =
 			(u_short)gid;
 	} else 
-		credp->cr_rgid = credp->cr_gid = (u_short)NULLGROUP;
+		credp->cr_gid = (u_short)NULLGROUP;
 
 	/* Now we must map each of the set of groups in the cr_groups 
 		structure. */
