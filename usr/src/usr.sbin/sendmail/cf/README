@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.62 (Berkeley) %G%
+		@(#)README	8.63 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1221,6 +1221,8 @@ confDOMAIN_NAME		$j macro	If defined, sets $j.  This should
 					and then it should be set to
 					$w.Foo.COM, where Foo.COM is your
 					domain name.
+confCF_VERSION		$Z macro	If defined, this is appended to the
+					configuration version name.
 confRECEIVED_HEADER	Received:
       [.$?_($?s$|from $.$_) $.by $j ($v/$Z)$?r with $r$. id $i$?u for $u$.; $b]
 					The format of the Received: header
