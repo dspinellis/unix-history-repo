@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.71 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.72 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,9 +145,20 @@ lfs_truncate(ap)
 #ifdef VERBOSE
 	printf("lfs_truncate\n");
 #endif
+	ip = VTOI(vp);
+	tv = time;
+	if (vp->v_type == VLNK && vp->v_mount->mnt_maxsymlinklen > 0) {
+#ifdef DIAGNOSTIC
+		if (length != 0)
+			panic("lfs_truncate: partial truncate of symlink");
+#endif
+		bzero((char *)&ip->i_shortlink, (u_int)ip->i_size);
+		ip->i_size = 0;
+		ip->i_flag |= ICHG|IUPD;
+		return (VOP_UPDATE(vp, &tv, &tv, 1));
+	}
 	vnode_pager_setsize(vp, (u_long)length);
 
-	ip = VTOI(vp);
 	fs = ip->i_lfs;
 
 	/* If truncating the file to 0, update the version number. */
@@ -158,7 +169,6 @@ lfs_truncate(ap)
 	}
 
 	/* If length is larger than the file, just update the times. */
-	tv = time;
 	if (ip->i_size <= length) {
 		ip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(vp, &tv, &tv, 1));
@@ -272,7 +282,7 @@ lfs_truncate(ap)
 		}
 	}
 	UPDATE_SEGUSE;
-	ip->i_blocks -= blocksreleased;
+	ip->i_blocks -= btodb(blocksreleased << fs->lfs_bshift);
 	/* 
 	 * XXX
 	 * Currently, we don't know when we allocate an indirect block, so
@@ -283,6 +293,6 @@ lfs_truncate(ap)
 		ip->i_blocks = 0;
 	ip->i_flag |= ICHG|IUPD;
 	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
-	e2 = VOP_UPDATE(vp, &tv, &tv, MNT_WAIT);
+	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
 	return (e1 ? e1 : e2 ? e2 : 0);
 }
