@@ -1,4 +1,4 @@
-/*	cyvar.h	1.1	86/01/12	*/
+/*	cyvar.h	1.2	86/12/18	*/
 
 #define TM_ATTENTION(addr,x) 	movob(addr,x)	/* also known as: GO */
 
@@ -8,7 +8,6 @@
 #define GATE_OPEN			(char)(0x00)
 #define GATE_CLOSED			(char)(0xFF)
 
-#define cyaddr	((char *)(0xf4000 + IOBASE))	/* controller physical addr */
 #define b_repcnt  b_bcount
 #define b_command b_resid
 
@@ -140,5 +139,3 @@
 /*		(0x17)		/* Not used */
 #define ER_ER	(0x18)		/* unidentified hardware error */
 #define ER_STER	(0x19)		/* streaming terminated */
-
-#define WRITE_FMARK	5
