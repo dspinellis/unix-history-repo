@@ -1,10 +1,10 @@
 .\"
-.\" Copyright (c) 1990 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.s	8.1 (Berkeley) %G%
+.\"	@(#)tmac.s	1.3 (Berkeley) %G%
 .\"
 .\" If groff, use groff -ms, else use local -ms (w/ditroff, troff, nroff)
 .ie \n(.g \{\
