@@ -106,7 +106,7 @@ typedef struct {
 	columns;
     char far
 	*presentation_space;
-} QuerySessionParmetersParms;
+} QuerySessionParametersParms;
 
 #define	TYPE_WSCTL		0x01		/* Work Station Control */
 #define	TYPE_DFT		0x02		/* DFT Host Session */
@@ -152,7 +152,7 @@ typedef struct {
 	session_id,
 	reserved;
     int
-	connector_task_id;
+	connectors_task_id;
 } DisconnectFromKeyboardParms;
 
 typedef struct {
