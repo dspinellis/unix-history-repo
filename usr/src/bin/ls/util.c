@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)util.c	5.10 (Berkeley) %G%";
 #include <ctype.h>
 #include <fts.h>
 #include <errno.h>
+#include <string.h>
 #include "ls.h"
 #include "extern.h"
 
