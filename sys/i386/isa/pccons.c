@@ -54,7 +54,7 @@
  *					to eliminate ESC sequence in 
  *					init_main.c
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/i386/isa/pccons.c,v 1.1.1.1 1993/06/12 14:58:00 rgrimes Exp $";
 
 /*
  * code to work keyboard & display for PC-style console
@@ -285,8 +285,8 @@ struct isa_device *dev;
 	u_short was;
 
 	if (vs.color == 0)
-		printf("<mono>");
-	else	printf("<color>");
+		printf("pc%d: type monochrome\n",dev->id_unit);
+	else	printf("pc%d: type color\n",dev->id_unit);
 	cursor(0);
 }
 
@@ -1443,8 +1443,17 @@ loop:
 		}
 	}
 #else	/* !XSERVER*/
-	if (inb(KBSTATP) & KBS_DIB)
+	if (inb(KBSTATP) & KBS_DIB) {
 		dt = inb(KBDATAP);
+#ifdef REVERSE_CAPS_CTRL
+		/* switch the caps lock and control keys */
+		if ((dt & 0x7f) == 29)
+			dt = (dt & 0x80) | 58;
+		else
+			if ((dt & 0x7f) == 58)
+				dt = (dt & 0x80) | 29;
+#endif
+	}
 #endif /* !XSERVER*/
 	else
 	{
