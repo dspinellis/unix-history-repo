@@ -1,4 +1,4 @@
-/*	tm.c	4.23	%G%	*/
+/*	tm.c	4.24	%G%	*/
 
 #include "te.h"
 #if NTM > 0
@@ -6,12 +6,14 @@ int	tmgapsdcnt;		/* DEBUG */
 /*
  * TM11/TE10 tape driver
  *
- * Todo:
- *	Test driver with more than one slave
- *	Test reset code
- *	Do rewinds without hanging in driver
+ * TODO:
+ *	test driver with more than one slave
+ *	test driver with more than one controller
+ *	test reset code
+ *	test rewinds without hanging in driver
+ *	what happens if you offline tape during rewind?
+ *	test using file system on tape
  */
-#define	DELAY(N)		{ register int d = N; while (--d > 0); }
 #include "../h/param.h"
 #include "../h/buf.h"
 #include "../h/dir.h"
@@ -30,22 +32,40 @@ int	tmgapsdcnt;		/* DEBUG */
 
 #include "../h/tmreg.h"
 
-struct	buf	ctmbuf[NTE];
-struct	buf	rtmbuf[NTE];
+/*
+ * There is a ctmbuf per tape controller.
+ * It is used as the token to pass to the internal routines
+ * to execute tape ioctls, and also acts as a lock on the slaves
+ * on the controller, since there is only one per controller.
+ * In particular, when the tape is rewinding on close we release
+ * the user process but any further attempts to use the tape drive
+ * before the rewind completes will hang waiting for ctmbuf.
+ */
+struct	buf	ctmbuf[NTM];
 
+/*
+ * Raw tape operations use rtmbuf.  The driver
+ * notices when rtmbuf is being used and allows the user
+ * program to continue after errors and read records
+ * not of the standard length (BSIZE).
+ */
+struct	buf	rtmbuf[NTM];
+
+/*
+ * Driver unibus interface routines and variables.
+ */
 int	tmprobe(), tmslave(), tmattach(), tmdgo(), tmintr();
 struct	uba_ctlr *tmminfo[NTM];
-struct	uba_device *tmdinfo[NTE];
-struct	buf tmutab[NTE];
-#ifdef notyet
-struct	uba_device *tmip[NTM][4];
-#endif
+struct	uba_device *tedinfo[NTE];
+struct	buf teutab[NTE];
+short	tetotm[NTE];
 u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
- { tmprobe, tmslave, tmattach, tmdgo, tmstd, "te", tmdinfo, "tm", tmminfo, 0 };
+ { tmprobe, tmslave, tmattach, tmdgo, tmstd, "te", tedinfo, "tm", tmminfo, 0 };
 
 /* bits in minor device */
-#define	TMUNIT(dev)	(minor(dev)&03)
+#define	TEUNIT(dev)	(minor(dev)&03)
+#define	TMUNIT(dev)	(tetotm[TEUNIT(dev)])
 #define	T_NOREWIND	04
 #define	T_1600BPI	08
 
@@ -53,32 +73,41 @@ struct	uba_driver tmdriver =
 
 /*
  * Software state per tape transport.
+ *
+ * 1. A tape drive is a unique-open device; we refuse opens when it is already.
+ * 2. We keep track of the current position on a block tape and seek
+ *    before operations by forward/back spacing if necessary.
+ * 3. We remember if the last operation was a write on a tape, so if a tape
+ *    is open read write and the last thing done is a write we can
+ *    write a standard end of tape mark (two eofs).
+ * 4. We remember the status registers after the last command, using
+ *    then internally and returning them to the SENSE ioctl.
+ * 5. We remember the last density the tape was used at.  If it is
+ *    not a BOT when we start using it and we are writing, we don't
+ *    let the density be changed.
  */
-struct	tm_softc {
+struct	te_softc {
 	char	sc_openf;	/* lock against multiple opens */
 	char	sc_lastiow;	/* last op was a write */
 	daddr_t	sc_blkno;	/* block number, for block device tape */
-	daddr_t	sc_nxrec;	/* desired block position */
+	daddr_t	sc_nxrec;	/* position of end of tape, if known */
 	u_short	sc_erreg;	/* copy of last erreg */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
 #ifdef notdef
 	short	sc_lastcmd;	/* last command to handle direction changes */
 #endif
-} tm_softc[NTM];
+	u_short	sc_dens;	/* prototype command with density info */
+} te_softc[NTM];
 
 /*
- * States for um->um_tab.b_active, the
- * per controller state flag.
+ * States for um->um_tab.b_active, the per controller state flag.
+ * This is used to sequence control in the driver.
  */
 #define	SSEEK	1		/* seeking */
 #define	SIO	2		/* doing seq i/o */
 #define	SCOM	3		/* sending control command */
 #define	SREW	4		/* sending a drive rewind */
-
-/* WE CURRENTLY HANDLE REWINDS PRIMITIVELY, BUSYING OUT THE CONTROLLER */
-/* DURING THE REWIND... IF WE EVER GET TWO TRANSPORTS, WE CAN DEBUG MORE */
-/* SOPHISTICATED LOGIC... THIS SIMPLE CODE AT LEAST MAY WORK. */
 
 /*
  * Determine if there is a controller for
@@ -88,7 +117,7 @@ struct	tm_softc {
 tmprobe(reg)
 	caddr_t reg;
 {
-	register int br, cvec;
+	register int br, cvec;		/* must be r11,r10; value-result */
 
 #ifdef lint
 	br = 0; br = cvec; cvec = br;
@@ -127,41 +156,53 @@ tmslave(ui, reg)
 }
 
 /*
- * Record attachment of the unit to the controller port.
+ * Record attachment of the unit to the controller.
  */
 /*ARGSUSED*/
 tmattach(ui)
 	struct uba_device *ui;
 {
 
-#ifdef notyet
-	tmip[ui->ui_ctlr][ui->ui_slave] = ui;
-#endif
+	/*
+	 * Tetotm is used in TMUNIT to index the ctmbuf and rtmbuf
+	 * arrays given a te unit number.
+	 */
+	tetotm[ui->ui_unit] = ui->ui_mi->um_ctlr;
 }
 
 /*
  * Open the device.  Tapes are unique open
  * devices, so we refuse if it is already open.
  * We also check that a tape is available, and
- * don't block waiting here.
+ * don't block waiting here; if you want to wait
+ * for a tape you should timeout in user code.
  */
 tmopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register int unit;
+	register int teunit;
 	register struct uba_device *ui;
-	register struct tm_softc *sc;
+	register struct te_softc *sc;
+	int dens;
 
-	unit = TMUNIT(dev);
-	if (unit>=NTE || (sc = &tm_softc[unit])->sc_openf ||
-	    (ui = tmdinfo[unit]) == 0 || ui->ui_alive == 0) {
+	teunit = TEUNIT(dev);
+	if (teunit>=NTE || (sc = &te_softc[teunit])->sc_openf ||
+	    (ui = tedinfo[teunit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
 	tmcommand(dev, TM_SENSE, 1);
-	if ((sc->sc_erreg&(TM_SELR|TM_TUR)) != (TM_SELR|TM_TUR) ||
-	    (flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TM_WRL) {
+	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
+	if ((minor(dev) & T_1600BPI) == 0)
+		dens |= TM_D800;
+	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR) ||
+	    (sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
+		dens != sc->sc_dens ||
+	    (flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TMER_WRL) {
+		/*
+		 * Not online or density switch in mid-tape or write locked.
+		 */
 		u.u_error = EIO;
 		return;
 	}
@@ -169,6 +210,7 @@ tmopen(dev, flag)
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
+	sc->sc_dens = dens;
 }
 
 /*
@@ -183,7 +225,7 @@ tmclose(dev, flag)
 	register dev_t dev;
 	register flag;
 {
-	register struct tm_softc *sc = &tm_softc[TMUNIT(dev)];
+	register struct te_softc *sc = &te_softc[TEUNIT(dev)];
 
 	if (flag == FWRITE || (flag&FWRITE) && sc->sc_lastiow) {
 		tmcommand(dev, TM_WEOF, 1);
@@ -191,7 +233,13 @@ tmclose(dev, flag)
 		tmcommand(dev, TM_SREV, 1);
 	}
 	if ((minor(dev)&T_NOREWIND) == 0)
-		tmcommand(dev, TM_REW, 1);
+		/*
+		 * 0 count means don't hang waiting for rewind complete
+		 * rather ctmbuf stays busy until the operation completes
+		 * preventing further opens from completing by
+		 * preventing a TM_SENSE from completing.
+		 */
+		tmcommand(dev, TM_REW, 0);
 	sc->sc_openf = 0;
 }
 
@@ -208,6 +256,13 @@ tmcommand(dev, com, count)
 	bp = &ctmbuf[TMUNIT(dev)];
 	(void) spl5();
 	while (bp->b_flags&B_BUSY) {
+		/*
+		 * This special check is because B_BUSY never
+		 * gets cleared in the non-waiting rewind case.
+		 */
+		if (bp->b_command == TM_REW && bp->b_repcnt == 0 &&
+		    (bp->b_flags&B_DONE))
+			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
 	}
@@ -218,6 +273,12 @@ tmcommand(dev, com, count)
 	bp->b_command = com;
 	bp->b_blkno = 0;
 	tmstrategy(bp);
+	/*
+	 * In case of rewind from close, don't wait.
+	 * This is the only case where count can be 0.
+	 */
+	if (count == 0)
+		return;
 	iowait(bp);
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
@@ -225,21 +286,20 @@ tmcommand(dev, com, count)
 }
 
 /*
- * Decipher a tape operation and do what is needed
- * to see that it happens.
+ * Queue a tape operation.
  */
 tmstrategy(bp)
 	register struct buf *bp;
 {
-	int unit = TMUNIT(bp->b_dev);
+	int teunit = TEUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
-	register struct tm_softc *sc = &tm_softc[unit];
+	register struct te_softc *sc = &te_softc[teunit];
 
 	/*
 	 * Put transfer at end of unit queue
 	 */
-	dp = &tmutab[unit];
+	dp = &teutab[teunit];
 	bp->av_forw = NULL;
 	(void) spl5();
 	if (dp->b_actf == NULL) {
@@ -249,7 +309,7 @@ tmstrategy(bp)
 		 * put at end of controller queue.
 		 */
 		dp->b_forw = NULL;
-		um = tmdinfo[unit]->ui_mi;
+		um = tedinfo[teunit]->ui_mi;
 		if (um->um_tab.b_actf == NULL)
 			um->um_tab.b_actf = dp;
 		else
@@ -275,9 +335,9 @@ tmstart(um)
 {
 	register struct buf *bp, *dp;
 	register struct device *addr = (struct device *)um->um_addr;
-	register struct tm_softc *sc;
+	register struct te_softc *sc;
 	register struct uba_device *ui;
-	int unit, cmd;
+	int teunit, cmd;
 	daddr_t blkno;
 
 	/*
@@ -290,12 +350,12 @@ loop:
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
-	unit = TMUNIT(bp->b_dev);
-	ui = tmdinfo[unit];
+	teunit = TEUNIT(bp->b_dev);
+	ui = tedinfo[teunit];
 	/*
 	 * Record pre-transfer status (e.g. for TM_SENSE)
 	 */
-	sc = &tm_softc[unit];
+	sc = &te_softc[teunit];
 	addr = (struct device *)um->um_addr;
 	addr->tmcs = (ui->ui_slave << 8);
 	sc->sc_dsreg = addr->tmcs;
@@ -308,42 +368,17 @@ loop:
 	sc->sc_lastiow = 1;
 	if (sc->sc_openf < 0 || (addr->tmcs&TM_CUR) == 0) {
 		/*
-		 * Have had a hard error on this (non-raw) tape,
-		 * or the tape unit is now unavailable (e.g. taken off
-		 * line).
+		 * Have had a hard error on a non-raw tape
+		 * or the tape unit is now unavailable
+		 * (e.g. taken off line).
 		 */
 		bp->b_flags |= B_ERROR;
 		goto next;
 	}
-	/*
-	 * If operation is not a control operation,
-	 * check for boundary conditions.
-	 */
-	if (bp != &ctmbuf[unit]) {
-		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
-			bp->b_flags |= B_ERROR;
-			bp->b_error = ENXIO;		/* past EOF */
-			goto next;
-		}
-		if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
-		    bp->b_flags&B_READ) {
-			bp->b_resid = bp->b_bcount;
-			clrbuf(bp);			/* at EOF */
-			goto next;
-		}
-		if ((bp->b_flags&B_READ) == 0)
-			/* write sets EOF */
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
-	}
-	/*
-	 * Set up the command, and then if this is a mt ioctl,
-	 * do the operation using, for TM_SFORW and TM_SREV, the specified
-	 * operation count.
-	 */
-	cmd = TM_IE | TM_GO | (ui->ui_slave << 8);
-	if ((minor(bp->b_dev) & T_1600BPI) == 0)
-		cmd |= TM_D800;
-	if (bp == &ctmbuf[unit]) {
+	if (bp == &ctmbuf[TMUNIT(bp->b_dev)]) {
+		/*
+		 * Execute control operation with the specified count.
+		 */
 		if (bp->b_command == TM_SENSE)
 			goto next;
 		um->um_tab.b_active =
@@ -352,6 +387,34 @@ loop:
 			addr->tmbc = bp->b_repcnt;
 		goto dobpcmd;
 	}
+	/*
+	 * The following checks handle boundary cases for operation
+	 * on non-raw tapes.  On raw tapes the initialization of
+	 * sc->sc_nxrec by tmphys causes them to be skipped normally
+	 * (except in the case of retries).
+	 */
+	if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+		/*
+		 * Can't read past known end-of-file.
+		 */
+		bp->b_flags |= B_ERROR;
+		bp->b_error = ENXIO;
+		goto next;
+	}
+	if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+	    bp->b_flags&B_READ) {
+		/*
+		 * Reading at end of file returns 0 bytes.
+		 */
+		bp->b_resid = bp->b_bcount;
+		clrbuf(bp);
+		goto next;
+	}
+	if ((bp->b_flags&B_READ) == 0)
+		/*
+		 * Writing sets EOF
+		 */
+		sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
 	/*
 	 * If the data transfer command is in the correct place,
 	 * set up all the registers except the csr, and give
@@ -362,16 +425,16 @@ loop:
 		addr->tmbc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
 			if (um->um_tab.b_errcnt)
-				cmd |= TM_WIRG;
+				cmd = TM_WIRG;
 			else
-				cmd |= TM_WCOM;
+				cmd = TM_WCOM;
 		} else
-			cmd |= TM_RCOM;
+			cmd = TM_RCOM;
 		um->um_tab.b_active = SIO;
-		um->um_cmd = cmd;
+		um->um_cmd = sc->sc_dens|cmd;
 #ifdef notdef
 		if (tmreverseop(sc->sc_lastcmd))
-			while (addr->tmer & TM_SDWN)
+			while (addr->tmer & TMER_SDWN)
 				tmgapsdcnt++;
 		sc->sc_lastcmd = TM_RCOM;		/* will serve */
 #endif
@@ -379,8 +442,9 @@ loop:
 		return;
 	}
 	/*
-	 * Block tape positioned incorrectly;
-	 * seek forwards or backwards to the correct spot.
+	 * Tape positioned incorrectly;
+	 * set to seek forwards or backwards to the correct spot.
+	 * This happens for raw tapes only on error retries.
 	 */
 	um->um_tab.b_active = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
@@ -392,12 +456,20 @@ loop:
 	}
 dobpcmd:
 #ifdef notdef
+	/*
+	 * It is strictly necessary to wait for the tape
+	 * to stop before changing directions, but the TC11
+	 * handles this for us.
+	 */
 	if (tmreverseop(sc->sc_lastcmd) != tmreverseop(bp->b_command))
 		while (addr->tmer & TM_SDWN)
 			tmgapsdcnt++;
 	sc->sc_lastcmd = bp->b_command;
 #endif
-	addr->tmcs = (cmd | bp->b_command);
+	/*
+	 * Do the command in bp.
+	 */
+	addr->tmcs = (sc->sc_dens | bp->b_command);
 	return;
 
 next:
@@ -438,28 +510,29 @@ tmintr(tm11)
 	struct buf *dp;
 	register struct buf *bp;
 	register struct uba_ctlr *um = tmminfo[tm11];
-	register struct device *addr = (struct device *)tmdinfo[tm11]->ui_addr;
-	register struct tm_softc *sc;
-	int unit;
+	register struct device *addr;
+	register struct te_softc *sc;
+	int teunit;
 	register state;
 
+	if ((dp = um->um_tab.b_actf) == NULL)
+		return;
+	bp = dp->b_actf;
+	teunit = TEUNIT(bp->b_dev);
+	addr = (struct device *)tedinfo[teunit]->ui_addr;
 	/*
 	 * If last command was a rewind, and tape is still
 	 * rewinding, wait for the rewind complete interrupt.
 	 */
 	if (um->um_tab.b_active == SREW) {
 		um->um_tab.b_active = SCOM;
-		if (addr->tmer&TM_RWS)
+		if (addr->tmer&TMER_RWS)
 			return;
 	}
 	/*
 	 * An operation completed... record status
 	 */
-	if ((dp = um->um_tab.b_actf) == NULL)
-		return;
-	bp = dp->b_actf;
-	unit = TMUNIT(bp->b_dev);
-	sc = &tm_softc[unit];
+	sc = &te_softc[teunit];
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
 	sc->sc_resid = addr->tmbc;
@@ -471,12 +544,12 @@ tmintr(tm11)
 	 * Check for errors.
 	 */
 	if (addr->tmcs&TM_ERR) {
-		while (addr->tmer & TM_SDWN)
+		while (addr->tmer & TMER_SDWN)
 			;			/* await settle down */
 		/*
-		 * If we hit the end of the tape update our position.
+		 * If we hit the end of the tape file, update our position.
 		 */
-		if (addr->tmer&TM_EOF) {
+		if (addr->tmer&TMER_EOF) {
 			tmseteof(bp);		/* set blkno and nxrec */
 			state = SCOM;		/* force completion */
 			/*
@@ -487,17 +560,17 @@ tmintr(tm11)
 			goto opdone;
 		}
 		/*
-		 * If we were reading and the only error was that the
-		 * record was to long, then we don't consider this an error.
+		 * If we were reading raw tape and the only error was that the
+		 * record was too long, then we don't consider this an error.
 		 */
-		if ((bp->b_flags&B_READ) &&
-		    (addr->tmer&(TM_HARD|TM_SOFT)) == TM_RLE)
+		if (bp == &rtmbuf[TMUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
+		    (addr->tmer&(TMER_HARD|TMER_SOFT)) == TMER_RLE)
 			goto ignoreerr;
 		/*
 		 * If error is not hard, and this was an i/o operation
 		 * retry up to 8 times.
 		 */
-		if ((addr->tmer&TM_HARD)==0 && state==SIO) {
+		if ((addr->tmer&TMER_HARD)==0 && state==SIO) {
 			if (++um->um_tab.b_errcnt < 7) {
 				sc->sc_blkno++;
 				ubadone(um);
@@ -508,13 +581,13 @@ tmintr(tm11)
 			 * Hard or non-i/o errors on non-raw tape
 			 * cause it to close.
 			 */
-			if (sc->sc_openf>0 && bp != &rtmbuf[unit])
+			if (sc->sc_openf>0 && bp != &rtmbuf[TMUNIT(bp->b_dev)])
 				sc->sc_openf = -1;
 		/*
 		 * Couldn't recover error
 		 */
 		printf("te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
-		    bp->b_blkno, sc->sc_erreg, TMEREG_BITS);
+		    bp->b_blkno, sc->sc_erreg, TMER_BITS);
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
@@ -533,31 +606,20 @@ ignoreerr:
 
 	case SCOM:
 		/*
-		 * Unless special operation, op completed.
+		 * For forward/backward space record update current position.
 		 */
-		if (bp != &ctmbuf[unit])
-			goto opdone;
-		/*
-		 * Operation on block device...
-		 * iterate operations which don't repeat
-		 * for themselves in the hardware; for forward/
-		 * backward space record update the current position.
-		 */
+		if (bp == &ctmbuf[TMUNIT(bp->b_dev)])
 		switch (bp->b_command) {
 
 		case TM_SFORW:
 			sc->sc_blkno -= bp->b_repcnt;
-			goto opdone;
+			break;
 
 		case TM_SREV:
 			sc->sc_blkno += bp->b_repcnt;
-			goto opdone;
-
-		default:
-			if (++bp->b_repcnt < 0)
-				goto opcont;
-			goto opdone;
+			break;
 		}
+		goto opdone;
 
 	case SSEEK:
 		sc->sc_blkno = dbtofsb(bp->b_blkno);
@@ -598,12 +660,12 @@ opcont:
 tmseteof(bp)
 	register struct buf *bp;
 {
-	register int unit = TMUNIT(bp->b_dev);
+	register int teunit = TEUNIT(bp->b_dev);
 	register struct device *addr = 
-	    (struct device *)tmdinfo[unit]->ui_addr;
-	register struct tm_softc *sc = &tm_softc[unit];
+	    (struct device *)tedinfo[teunit]->ui_addr;
+	register struct te_softc *sc = &te_softc[teunit];
 
-	if (bp == &ctmbuf[unit]) {
+	if (bp == &ctmbuf[TMUNIT(bp->b_dev)]) {
 		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
 			/* reversing */
 			sc->sc_nxrec = dbtofsb(bp->b_blkno) - addr->tmbc;
@@ -639,18 +701,24 @@ tmwrite(dev)
 	physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_WRITE, minphys);
 }
 
+/*
+ * Check that a raw device exists.
+ * If it does, set up sc_blkno and sc_nxrec
+ * so that the tape will appear positioned correctly.
+ */
 tmphys(dev)
 	dev_t dev;
 {
-	register int unit = TMUNIT(dev);
+	register int teunit = TEUNIT(dev);
 	register daddr_t a;
-	register struct tm_softc *sc;
+	register struct te_softc *sc;
+	register struct uba_device *ui;
 
-	if (unit >= NTM) {
+	if (teunit >= NTE || (ui=tedinfo[teunit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	sc = &tm_softc[TMUNIT(dev)];
+	sc = &te_softc[teunit];
 	a = dbtofsb(u.u_offset >> 9);
 	sc->sc_blkno = a;
 	sc->sc_nxrec = a + 1;
@@ -660,7 +728,7 @@ tmreset(uban)
 	int uban;
 {
 	register struct uba_ctlr *um;
-	register tm11, unit;
+	register tm11, teunit;
 	register struct uba_device *ui;
 	register struct buf *dp;
 
@@ -676,12 +744,11 @@ tmreset(uban)
 			ubadone(um);
 		}
 		((struct device *)(um->um_addr))->tmcs = TM_DCLR;
-		for (unit = 0; unit < NTE; unit++) {
-			if ((ui = tmdinfo[unit]) == 0)
+		for (teunit = 0; teunit < NTE; teunit++) {
+			if ((ui = tedinfo[teunit]) == 0 || ui->ui_mi != um ||
+			    ui->ui_alive == 0)
 				continue;
-			if (ui->ui_alive == 0)
-				continue;
-			dp = &tmutab[unit];
+			dp = &teutab[teunit];
 			dp->b_active = 0;
 			dp->b_forw = 0;
 			if (um->um_tab.b_actf == NULL)
@@ -689,7 +756,7 @@ tmreset(uban)
 			else
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
-			tm_softc[unit].sc_openf = -1;
+			te_softc[teunit].sc_openf = -1;
 		}
 		tmstart(um);
 	}
@@ -700,9 +767,9 @@ tmioctl(dev, cmd, addr, flag)
 	caddr_t addr;
 	dev_t dev;
 {
-	int unit = TMUNIT(dev);
-	register struct tm_softc *sc = &tm_softc[unit];
-	register struct buf *bp = &ctmbuf[unit];
+	int teunit = TEUNIT(dev);
+	register struct te_softc *sc = &te_softc[teunit];
+	register struct buf *bp = &ctmbuf[TMUNIT(dev)];
 	register callcount;
 	int fcount;
 	struct mtop mtop;
@@ -749,7 +816,7 @@ tmioctl(dev, cmd, addr, flag)
 				u.u_error = EIO;
 				break;
 			}
-			if ((bp->b_flags&B_ERROR) || sc->sc_erreg&TM_BOT)
+			if ((bp->b_flags&B_ERROR) || sc->sc_erreg&TMER_BOT)
 				break;
 		}
 		geterror(bp);
@@ -779,9 +846,9 @@ tmdump()
 	start = 0;
 	num = maxfree;
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	if (tmdinfo[0] == 0)
+	if (tedinfo[0] == 0)
 		return (ENXIO);
-	ui = phys(tmdinfo[0], struct uba_device *);
+	ui = phys(tedinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 #if VAX780
 	if (cpu == VAX_780)

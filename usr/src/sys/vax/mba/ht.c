@@ -1,9 +1,19 @@
-/*	ht.c	4.8	81/03/07	*/
+/*	ht.c	4.9	81/03/08	*/
 
 #include "tu.h"
 #if NHT > 0
 /*
  * TM03/TU?? tape driver
+ *
+ * TODO:
+ *	test tape writing
+ *	test error handling
+ *	test 2 tapes
+ *	test tape with disk on same mba
+ *	test dump code
+ *	try a mounted filesys on tape to check positioning code
+ *	test ioctl's
+ *	see how many rewind interrups we get if we kick when not at BOT
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,11 +51,11 @@ struct	mba_driver htdriver =
 #define	H_NOREWIND	04
 #define	H_1600BPI	08
 
-#define HTUNIT(dev)	(htunit[TUUNIT(dev)])
+#define HTUNIT(dev)	(tutoht[TUUNIT(dev)])
 
 #define	INF	(daddr_t)1000000L	/* a block number that wont exist */
 
-struct	ht_softc {
+struct	tu_softc {
 	char	sc_openf;
 	char	sc_flags;
 	daddr_t	sc_blkno;
@@ -56,8 +66,8 @@ struct	ht_softc {
 	short	sc_dens;
 	struct	mba_device *sc_mi;
 	int	sc_slave;
-} ht_softc[NTU];
-short	htunit[NTU];
+} tu_softc[NTU];
+short	tutoht[NTU];
 
 /*
  * Bits for sc_flags.
@@ -77,52 +87,51 @@ htslave(mi, ms)
 	struct mba_device *mi;
 	struct mba_slave *ms;
 {
-	register struct ht_softc *sc = &ht_softc[ms->ms_unit];
+	register struct tu_softc *sc = &tu_softc[ms->ms_unit];
 
 	sc->sc_mi = mi;
 	sc->sc_slave = ms->ms_slave;
-	htunit[ms->ms_unit] = mi->mi_unit;
+	tutoht[ms->ms_unit] = mi->mi_unit;
 }
 
 htopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register int unit;
+	register int tuunit;
 	register struct mba_device *mi;
-	register struct ht_softc *sc;
+	register struct tu_softc *sc;
+	int dens;
 
-	unit = TUUNIT(dev);
-	if (unit >= NTU || (sc = &ht_softc[unit])->sc_openf ||
+	tuunit = TUUNIT(dev);
+	if (tuunit >= NTU || (sc = &tu_softc[tuunit])->sc_openf ||
 	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	/*
-	 * The NOP below serves two purposes:
-	 * 1. To get a recent copy of the status registers.
-	 * 2. To ensure that any outstanding rewinds are truly finished
-	 */
 	htcommand(dev, HT_SENSE, 1);
+	dens =
+	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
+		HTTC_PDP11|sc->sc_slave;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0 || 
+	   (sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
+		dens != sc->sc_dens ||
 	   (flag & (FREAD|FWRITE)) == FWRITE && sc->sc_dsreg&HTDS_WRL) {
 		u.u_error = EIO;
 		return;
 	}
-	sc->sc_dens =
-	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
-		HTTC_PDP11|sc->sc_slave;
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_flags = 0;
+	sc->sc_dens = dens;
 }
 
 htclose(dev, flag)
 	register dev_t dev;
 	register flag;
 {
-	register struct ht_softc *sc = &ht_softc[TUUNIT(dev)];
+	register struct tu_softc *sc = &tu_softc[TUUNIT(dev)];
 
 	if (flag == FWRITE || ((flag&FWRITE) && (sc->sc_flags&H_WRITTEN))) {
 		htcommand(dev, HT_WEOF, 1);
@@ -130,16 +139,10 @@ htclose(dev, flag)
 		htcommand(dev, HT_SREV, 1);
 	}
 	if ((minor(dev)&H_NOREWIND) == 0)
-		/* 0 as third arg means don't wait */
 		htcommand(dev, HT_REW, 0);
 	sc->sc_openf = 0;
 }
 
-/*
- * Do a non-data-transfer command.
- *
- * N.B.: Count should be zero ONLY for rewind during close.
- */
 htcommand(dev, com, count)
 	dev_t dev;
 	int com, count;
@@ -173,8 +176,7 @@ htcommand(dev, com, count)
 htstrategy(bp)
 	register struct buf *bp;
 {
-	register int unit = HTUNIT(bp->b_dev);
-	register struct mba_device *mi = htinfo[unit];
+	register struct mba_device *mi = htinfo[HTUNIT(bp->b_dev)];
 	register struct buf *dp;
 
 	bp->av_forw = NULL;
@@ -196,8 +198,7 @@ htustart(mi)
 	register struct htdevice *htaddr =
 	    (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	int unit = TUUNIT(bp->b_dev);
-	register struct ht_softc *sc = &ht_softc[unit];
+	register struct tu_softc *sc = &tu_softc[TUUNIT(bp->b_dev)];
 	daddr_t blkno;
 
 	htaddr->httc = sc->sc_dens;
@@ -212,17 +213,19 @@ htustart(mi)
 		bp->b_flags |= B_ERROR;
 		return (MBU_NEXT);
 	}
-	if (bp != &chtbuf[unit]) {
+	if (bp != &chtbuf[HTUNIT(bp->b_dev)]) {
 		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENXIO;
 			return (MBU_NEXT);
-		} else if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		}
+		if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
 		    bp->b_flags&B_READ) {
 			bp->b_resid = bp->b_bcount;
 			clrbuf(bp);
 			return (MBU_NEXT);
-		} else if ((bp->b_flags&B_READ)==0)
+		}
+		if ((bp->b_flags&B_READ)==0)
 			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
 	} else {
 		if (bp->b_command == HT_SENSE)
@@ -237,14 +240,14 @@ htustart(mi)
 	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
 		htaddr->htfc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
-			if (mi->mi_tab.b_errcnt)
-				if (sc->sc_flags & H_ERASED)
-					sc->sc_flags &= ~H_ERASED;
-				else {
+			if (mi->mi_tab.b_errcnt) {
+				if ((sc->sc_flags & H_ERASED) == 0) {
 					sc->sc_flags |= H_ERASED;
 					htaddr->htcs1 = HT_ERASE | HT_GO;
 					return (MBU_STARTED);
 				}
+				sc->sc_flags &= ~H_ERASED;
+			}
 			if (htaddr->htds & HTDS_EOT) {
 				bp->b_resid = bp->b_bcount;
 				return (MBU_NEXT);
@@ -262,45 +265,39 @@ htustart(mi)
 	return (MBU_STARTED);
 }
 
-/*
- * data transfer interrupt - must be read or write
- */
-/*ARGSUSED*/
-htdtint(mi, mbasr)
+htdtint(mi, mbsr)
 	register struct mba_device *mi;
-	int mbasr;
+	int mbsr;
 {
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct ht_softc *sc;
+	register struct tu_softc *sc;
 	int ds, er, mbs;
 
-	sc = &ht_softc[TUUNIT(bp->b_dev)];
+	sc = &tu_softc[TUUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
 	sc->sc_resid = MASKREG(htaddr->htfc);
-	mbs = mbasr;
+	mbs = mbsr;
 	sc->sc_blkno++;
 	if((bp->b_flags & B_READ) == 0)
 		sc->sc_flags |= H_WRITTEN;
-	if ((ds&(HTDS_ERR|HTDS_MOL)) != HTDS_MOL ||
-	    mbs & MBAEBITS) {
+	if ((ds&(HTDS_ERR|HTDS_MOL)) != HTDS_MOL || mbs & MBSR_EBITS) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		mbclrattn(mi);
 		if (bp == &rhtbuf[HTUNIT(bp->b_dev)]) {
 			er &= ~HTER_FCE;
-			mbs &= ~(MBS_DTABT|MBS_MBEXC);
+			mbs &= ~(MBSR_DTABT|MBSR_MBEXC);
 		}
 		if (bp->b_flags & B_READ && ds & HTDS_PES)
 			er &= ~(HTER_CSITM|HTER_CORCRC);
-		if (er&HTER_HARD ||
-		    mbs&MBAEBITS || (ds&HTDS_MOL) == 0 ||
+		if (er&HTER_HARD || mbs&MBSR_EBITS || (ds&HTDS_MOL) == 0 ||
 		    er && ++mi->mi_tab.b_errcnt >= 7) {
 			if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 				sc->sc_openf = -1;
-			printf("tu%d: hard error bn%d mbasr=%b er=%b\n",
+			printf("tu%d: hard error bn%d mbsr=%b er=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
-			    mbasr, mbasr_bits,
+			    mbsr, mbsr_bits,
 			    MASKREG(htaddr->hter), HTER_BITS);
 			bp->b_flags |= B_ERROR;
 			return (MBD_DONE);
@@ -318,39 +315,40 @@ htdtint(mi, mbasr)
 	return (MBD_DONE);
 }
 
-/*
- * non-data-transfer interrupt
- */
 htndtint(mi)
 	register struct mba_device *mi;
 {
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct ht_softc *sc;
+	register struct tu_softc *sc;
 	int er, ds, fc;
 
-	if (bp == 0)
-		return (MBN_SKIP);
-	sc = &ht_softc[TUUNIT(bp->b_dev)];
-	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
-	er = sc->sc_erreg = MASKREG(htaddr->hter);
-	fc = sc->sc_resid = MASKREG(htaddr->htfc);
-	if (sc->sc_erreg) {
+	ds = MASKREG(htaddr->htds);
+	er = MASKREG(htaddr->hter);
+	fc = MASKREG(htaddr->htfc);
+	if (er) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		mbclrattn(mi);
 	}
-	if (sc->sc_flags&H_REWIND) {
-		sc->sc_flags &= ~H_REWIND;
-		return (MBN_CONT);
-	}
-	if (bp == &chtbuf[TUUNIT(bp->b_dev)]) {
-		if (bp->b_command == HT_REWOFFL)
+	if (bp == 0)
+		return (MBN_SKIP);
+	sc = &tu_softc[TUUNIT(bp->b_dev)];
+	sc->sc_dsreg = ds;
+	sc->sc_erreg = er;
+	sc->sc_resid = fc;
+	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
+		switch (bp->b_command) {
+		case HT_REWOFFL:
 			/* offline is on purpose; don't do anything special */
 			ds |= HTDS_MOL;	
-		else if (bp->b_resid == HT_SREV &&
-		    er == (HTER_NEF|HTER_FCE) &&
-		    ds&HTDS_BOT && bp->b_bcount == INF)
-			er &= ~HTER_NEF;
+			break;
+		case HT_SREV:
+			/* if backspace file hit bot, its not an error */
+		        if (er == (HTER_NEF|HTER_FCE) && ds&HTDS_BOT &&
+			    bp->b_repcnt == INF)
+				er &= ~HTER_NEF;
+			break;
+		}
 		er &= ~HTER_FCE;
 		if (er == 0)
 			ds &= ~HTDS_ERR;
@@ -364,17 +362,17 @@ htndtint(mi)
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 	}
-	if (bp == &chtbuf[TUUNIT(bp->b_dev)]) {
+	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
 		if (sc->sc_flags & H_REWIND)
 			return (ds & HTDS_BOT ? MBN_DONE : MBN_RETRY);
 		bp->b_resid = -sc->sc_resid;
 		return (MBN_DONE);
 	}
 	if (ds & HTDS_TM)
-		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {/* reversing */
+		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
 			sc->sc_nxrec = dbtofsb(bp->b_blkno) - fc;
 			sc->sc_blkno = sc->sc_nxrec;
-		} else {			/* spacing forward */
+		} else {
 			sc->sc_blkno = dbtofsb(bp->b_blkno) + fc;
 			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
@@ -405,17 +403,18 @@ htwrite(dev)
 htphys(dev)
 	dev_t dev;
 {
-	register int unit;
-	register struct ht_softc *sc;
+	register int htunit;
+	register struct tu_softc *sc;
+	register struct mba_device *mi;
 	daddr_t a;
 
-	unit = HTUNIT(dev);
-	if (unit >= NHT) {
+	htunit = HTUNIT(dev);
+	if (htunit >= NHT || (mi = htinfo[htunit]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
 	a = u.u_offset >> 9;
-	sc = &ht_softc[unit];
+	sc = &tu_softc[TUUNIT(dev)];
 	sc->sc_blkno = dbtofsb(a);
 	sc->sc_nxrec = dbtofsb(a)+1;
 }
@@ -427,9 +426,8 @@ htioctl(dev, cmd, addr, flag)
 	caddr_t addr;
 	int flag;
 {
-	register unit = HTUNIT(dev);
-	register struct ht_softc *sc = &ht_softc[unit];
-	register struct buf *bp = &chtbuf[unit];
+	register struct tu_softc *sc = &tu_softc[TUUNIT(dev)];
+	register struct buf *bp = &chtbuf[HTUNIT(dev)];
 	register callcount;
 	int fcount;
 	struct mtop mtop;
@@ -476,8 +474,7 @@ htioctl(dev, cmd, addr, flag)
 				u.u_error = EIO;
 				break;
 			}
-			if ((chtbuf[HTUNIT(bp->b_dev)].b_flags&B_ERROR) ||
-			    sc->sc_dsreg&HTDS_BOT)
+			if ((bp->b_flags&B_ERROR) || sc->sc_dsreg&HTDS_BOT)
 				break;
 		}
 		geterror(bp);
@@ -511,10 +508,7 @@ htdump()
 		return (ENXIO);
 	mi = phys(htinfo[0], struct mba_device *);
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
-#if VAX780
-	if (cpu == VAX780)
-		mbainit(mp);
-#endif
+	mbainit(mp);
 	htaddr = (struct htdevice *)&mp->mba_drv[mi->mi_drive];
 	htaddr->httc = HTTC_PDP11|HTTC_1600BPI;
 	htaddr->htcs1 = HT_DCLR|HT_GO;
