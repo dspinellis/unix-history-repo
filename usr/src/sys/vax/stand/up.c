@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.3 (Berkeley) %G%
+ *	@(#)up.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -32,12 +32,14 @@
 #define SECTSIZ		512	/* sector size in bytes */
 #define HDRSIZ		4	/* number of bytes in sector header */
 
-u_short	ubastd[] = { 0776700 };
+#define	MAXPART		8
+#define	MAXCTLR		1	/* all addresses must be specified */
+u_short	ubastd[MAXCTLR] = { 0776700 };
 
 extern	struct st upst[];
 
 #ifndef SMALL
-struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
+struct  dkbad upbad[MAXNUBA][MAXCTLR][8];	/* bad sector table */
 #endif
 int 	sectsiz;			/* real sector size */
 
@@ -49,7 +51,7 @@ struct	up_softc {
 #	define	UPF_ECCDEBUG	02	/* debugging ecc correction */
 	int	retries;
 	int	ecclim;
-} up_softc[MAXNUBA * 8];
+} up_softc[MAXNUBA][MAXCTLR][8];
 
 u_char	up_offset[16] = {
 	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
@@ -63,15 +65,17 @@ upopen(io)
 {
 	register unit = io->i_unit;
 	register struct updevice *upaddr;
-	register struct up_softc *sc = &up_softc[unit];
+	register struct up_softc *sc;
 	register struct st *st;
 
-	if (io->i_boff < 0 || io->i_boff > 7)
-		_stop("up bad unit");
-	upaddr = (struct updevice *)ubamem(unit, ubastd[0]);
+	if ((u_int)io->i_ctlr >= MAXCTLR)
+		return (ECTLR);
+	if ((u_int)io->i_part >= MAXPART)
+		return (EPART);
+	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	upaddr->upcs2 = unit % 8;
-	while ((upaddr->upcs1 & UP_DVA) == 0)
-		;
+	while ((upaddr->upcs1 & UP_DVA) == 0);
+	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
 	if (sc->gottype == 0) {
 		register int i;
 		struct iob tio;
@@ -80,18 +84,20 @@ upopen(io)
 		sc->ecclim = 11;
 		sc->debug = 0;
 		sc->type = upmaptype(unit, upaddr);
-		if (sc->type < 0)
-			_stop("unknown drive type");
+		if (sc->type < 0) {
+			printf("unknown drive type\n");
+			return (ENXIO);
+		}
 		st = &upst[sc->type];
-		if (st->off[io->i_boff] == -1)
-			_stop("up bad unit");
+		if (st->off[io->i_part] == -1)
+			return (EPART);
 #ifndef SMALL
 		/*
 		 * Read in the bad sector table.
 		 */
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
-		tio.i_ma = (char *)&upbad[tio.i_unit];
+		tio.i_ma = (char *)&upbad[tio.i_adapt][tio.i_ctlr][tio.i_unit];
 		tio.i_cc = sizeof (struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
@@ -102,15 +108,15 @@ upopen(io)
 		if (i == 5) {
 			printf("Unable to read bad sector table\n");
 			for (i = 0; i < MAXBADDESC; i++) {
-				upbad[unit].bt_bad[i].bt_cyl = -1;
-				upbad[unit].bt_bad[i].bt_trksec = -1;
+				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_cyl = -1;
+				upbad[tio.i_adapt][tio.i_ctlr][unit].bt_bad[i].bt_trksec = -1;
 			}
 		}	
 #endif
 		sc->gottype = 1;
 	}
 	st = &upst[sc->type];
-	io->i_boff = st->off[io->i_boff] * st->nspc;
+	io->i_boff = st->off[io->i_part] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
 	return (0);
 }
@@ -122,15 +128,17 @@ upstrategy(io, func)
 	register unit = io->i_unit;
 	register daddr_t bn;
 	int recal, info, waitdry;
-	register struct updevice *upaddr =
-	    (struct updevice *)ubamem(unit, ubastd[0]);
-	struct up_softc *sc = &up_softc[unit];
-	register struct st *st = &upst[sc->type];
+	register struct updevice *upaddr;
+	struct up_softc *sc;
+	register struct st *st;
 	int error, rv = io->i_cc;
 #ifndef SMALL
 	int doprintf = 0;
 #endif
 
+	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
+	st = &upst[sc->type];
 	sectsiz = SECTSIZ;
 	if (io->i_flgs & (F_HDR|F_HCHECK))
 		sectsiz += HDRSIZ;
@@ -317,10 +325,9 @@ upecc(io, flag)
 	register struct iob *io;
 	int flag;
 {
-	register i, unit = io->i_unit;
-	register struct up_softc *sc = &up_softc[unit];
-	register struct updevice *up = 
-		(struct updevice *)ubamem(unit, ubastd[0]);
+	register i, unit;
+	register struct up_softc *sc;
+	register struct updevice *up;
 	register struct st *st;
 	caddr_t addr;
 	int bn, twc, npf, mask, cn, tn, sn;
@@ -331,6 +338,9 @@ upecc(io, flag)
 	 * before the sector containing the ECC error;
 	 * bn is the current block number.
 	 */
+	unit = io->i_unit;
+	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
+	up = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
 	if (flag == ECC)
@@ -411,7 +421,7 @@ upecc(io, flag)
 		 * indicate a hard error to caller.
 		 */
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
-		if ((bbn = isbad(&upbad[unit], cn, tn, sn)) < 0)
+		if ((bbn = isbad(&upbad[io->i_adapt][io->i_ctlr][unit], cn, tn, sn)) < 0)
 			return (1);
 		bbn = (st->ncyl * st->nspc) - st->nsect - 1 - bbn;
 		twc = up->upwc + sectsiz;
@@ -442,18 +452,20 @@ upecc(io, flag)
 		up->upwc = twc;
 	return (0);
 }
-#endif
+#endif /* !SMALL */
 
 upstart(io, bn)
 	register struct iob *io;
 	daddr_t bn;
 {
-	register struct updevice *upaddr = 
-		(struct updevice *)ubamem(io->i_unit, ubastd[0]);
-	register struct up_softc *sc = &up_softc[io->i_unit];
-	register struct st *st = &upst[sc->type];
+	register struct updevice *upaddr;
+	register struct up_softc *sc;
+	register struct st *st;
 	int sn, tn;
 
+	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	sc = &up_softc[io->i_adapt][io->i_ctlr][io->i_unit];
+	st = &upst[sc->type];
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn %= st->nsect;
@@ -470,7 +482,7 @@ upstart(io, bn)
 		break;
 
 #ifndef SMALL
-	case F_HDR|F_RDDATA:	
+	case F_HDR|F_RDDATA:
 		upaddr->upcs1 = UP_RHDR|UP_GO;
 		break;
 
@@ -497,17 +509,19 @@ upstart(io, bn)
 	return (0);
 }
 
+#ifndef SMALL
 /*ARGSUSED*/
 upioctl(io, cmd, arg)
 	struct iob *io;
 	int cmd;
 	caddr_t arg;
 {
-#ifndef SMALL
 	int unit = io->i_unit;
-	register struct up_softc *sc = &up_softc[unit];
-	struct st *st = &upst[sc->type];
+	register struct up_softc *sc;
+	struct st *st;
 
+	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
+	st = &upst[sc->type];
 	switch(cmd) {
 
 	case SAIODEBUG:
@@ -519,7 +533,7 @@ upioctl(io, cmd, arg)
 		break;
 
 	case SAIOGBADINFO:
-		*(struct dkbad *)arg = upbad[unit];
+		*(struct dkbad *)arg = upbad[io->i_adapt][io->i_ctlr][unit];
 		break;
 
 	case SAIOECCLIM:
@@ -534,7 +548,5 @@ upioctl(io, cmd, arg)
 		return (ECMD);
 	}
 	return (0);
-#else SMALL
-	return (ECMD);
-#endif
 }
+#endif /* !SMALL */

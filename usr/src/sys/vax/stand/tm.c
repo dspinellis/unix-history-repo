@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.2 (Berkeley) %G%
+ *	@(#)tm.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -21,21 +21,22 @@
 #include "saio.h"
 #include "savax.h"
 
-
-u_short	tmstd[] = { 0172520 };
+#define	MAXCTLR		1		/* all addresses must be specified */
+u_short	tmstd[MAXCTLR] = { 0172520 };
 
 tmopen(io)
 	register struct iob *io;
 {
-	register skip;
+	register int skip;
 
-	if (badaddr((char *)ubamem(io->i_unit, tmstd[0]), sizeof (short))) {
-		printf("nonexistent device\n");
+	if ((u_int)io->i_ctlr >= MAXCTLR)
+		return (ECTLR);
+	if (badaddr((char *)ubamem(io->i_adapt, tmstd[io->i_ctlr]), sizeof(short))) {
+		printf("tm: nonexistent device\n");
 		return (ENXIO);
 	}
 	tmstrategy(io, TM_REW);
-	skip = io->i_boff;
-	while (skip--) {
+	for (skip = io->i_part; skip--;) {
 		io->i_cc = 0;
 		tmstrategy(io, TM_SFORW);
 	}
@@ -45,36 +46,34 @@ tmopen(io)
 tmclose(io)
 	register struct iob *io;
 {
-
 	tmstrategy(io, TM_REW);
 }
 
 tmstrategy(io, func)
 	register struct iob *io;
 {
-	register int com, unit, errcnt;
-	register struct tmdevice *tmaddr =
-	    (struct tmdevice *)ubamem(io->i_unit, tmstd[0]);
+	register int com, errcnt;
+	register struct tmdevice *tmaddr;
 	int word, info;
 
-	unit = io->i_unit;
+	tmaddr = (struct tmdevice *)ubamem(io->i_adapt, tmstd[io->i_ctlr]);
 	errcnt = 0;
 retry:
 	tmquiet(tmaddr);
-	com = (unit<<8);
 	info = ubasetup(io, 1);
 	tmaddr->tmbc = -io->i_cc;
 	tmaddr->tmba = info;
+	com = (io->i_unit<<8) | TM_GO;
 	if (func == READ)
-		tmaddr->tmcs = com | TM_RCOM | TM_GO;
+		tmaddr->tmcs = com | TM_RCOM;
 	else if (func == WRITE)
-		tmaddr->tmcs = com | TM_WCOM | TM_GO;
+		tmaddr->tmcs = com | TM_WCOM;
 	else if (func == TM_SREV) {
 		tmaddr->tmbc = -1;
-		tmaddr->tmcs = com | TM_SREV | TM_GO;
+		tmaddr->tmcs = com | TM_SREV;
 		return (0);
 	} else
-		tmaddr->tmcs = com | func | TM_GO;
+		tmaddr->tmcs = com | func;
 	for (;;) {
 		word = tmaddr->tmcs;
 		DELAY(100);
@@ -88,18 +87,16 @@ retry:
 	if (word & TM_ERR) {
 		if (word & TMER_EOF)
 			return (0);
-		if (errcnt == 0)
-			printf("te error: er=%b", word, TMER_BITS);
-		if (errcnt == 10) {
-			printf("\n");
+		printf("tm tape error: er=%b\n", word, TMER_BITS);
+		if (errcnt++ == 10) {
+			printf("tm: unrecovered error\n");
 			return (-1);
 		}
-		errcnt++;
 		tmstrategy(io, TM_SREV);
 		goto retry;
 	}
 	if (errcnt)
-		printf(" recovered by retry\n");
+		printf("tm: recovered by retry\n");
 	if (word & TMER_EOF)
 		return (0);
 	return (io->i_cc + tmaddr->tmbc);
