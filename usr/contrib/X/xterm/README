@@ -1,0 +1,60 @@
+Xterm is in a reasonably usable state.  We are sick and tired of working
+on it, but there are clearly major areas of improvement possible.  Do
+not look to us to do more than integration work on other people's
+improvement.  About 50% of it is the oldest existing code in the package
+and needing major rewrite.  Our thanks to Bob McNamara for the 50% which
+is solid.  If you feel motivated to work on xterm, the following are
+areas which need improvement.
+
+	1) The backing store is done incorrectly; the attributes of the
+characters should be stored in a seperate array from the characters themselves.
+Much more work than necessary is going into converting to and from short
+representation.  This limits Xterm's performance, and 30% higher is easily
+within reach.  Unfortunately, this is about a 35% rewrite to do.  Remember that
+if your display is slow, you won't see very much performance gains, but
+on VaxStation II/GPX's and Sun 3's it would help considerably.
+
+	2) some people like title bars.
+
+	3) the cut and paste stuff is a complete crock.  The user interface to
+it is very primative.  We are also not handling the pty properly, causing the
+hang problem with paste.
+
+	4) lots more stuff can now be done since there is now a menu
+package.
+
+	5) highlighting when doing cut operations.
+
+	6) changing fonts on the fly.
+
+	7) should put an entry in /etc/utmp when being rsh'd.  (Simple,
+but didn't have time this time around).
+
+	8) completion of the 4014 emulation.
+
+	9) the backing store for the tek emulator is just the bytestream
+originally sent.  Refresh could be many times faster if a proper
+display list were maintained instead of having to reparse the byte stream.
+
+	10) partial exposures in the Tek emulator could be much better
+if a transparent window were placed over the area affected, cutting down
+the unnessary painting.
+
+	11) clean up main.c....
+
+	12) resize should be able to generate strings for the Bourne shell.
+
+	13) figure out what we're doing wrong with SIGHUP on exit (code is
+notdef'd out to aviod disaster when you are root; it was logging everyone
+out simultaneously!).  Sighup should be sent to the process group when
+xterm exits.
+
+	14) scroll bars.
+
+	15) multiple pages being saved....
+
+And so on until it is a completely different program...  Might be worth
+starting from scratch.....  Or go write a base editor for X.
+
+				Jim Gettys
+				January 1986
