@@ -20,7 +20,7 @@ int	pid;			/* pid of lpd process */
 int	prchild;		/* id of pr process */
 int	child;			/* id of any filters */
 int	ofilter;		/* id of output filter, if any */
-int	tof = 1;		/* top of form; init true if open does ff */
+int	tof;			/* true if at top of form */
 int	remote;			/* non zero if sending files to remote */
 
 extern	banner();		/* big character printer */
@@ -31,6 +31,7 @@ char	width[10] = "-w";	/* page width in characters */
 char	length[10] = "-l";	/* page length in lines */
 char	pxwidth[10] = "-x";	/* page width in pixels */
 char	pxlength[10] = "-y";	/* page length in pixels */
+char	indent[10] = "-i0";	/* indentation size in characters */
 
 printjob()
 {
@@ -194,8 +195,7 @@ printit(file)
 	 *		T -- "title" for pr
 	 *		H -- "host name" of machine where lpr was done
 	 *              P -- "person" user's login name
-	 *              I -- "indent" changes default indents driver
-	 *                   must have stty/gtty avaialble
+	 *              I -- "indent" amount to indent output
 	 *              f -- "file name" name of text file to print
 	 *		l -- "file name" text file with control chars
 	 *		p -- "file name" text file to print with pr(1)
@@ -272,6 +272,10 @@ printit(file)
 			strcpy(width+2, line+1);
 			continue;
 
+		case 'I':	/* indent amount */
+			strcpy(indent+2, line+1);
+			continue;
+
 		default:	/* some file to print */
 			if ((i = print(line[0], line+1)) > 0) {
 				(void) fclose(cfp);
@@ -281,7 +285,6 @@ printit(file)
 			title[0] = '\0';
 			continue;
 
-		case 'I':
 		case 'N':
 		case 'U':
 		case 'M':
@@ -381,14 +384,16 @@ print(format, file)
 		prog = IF;
 		av[1] = width;
 		av[2] = length;
-		n = 3;
+		av[3] = indent;
+		n = 4;
 		break;
 	case 'l':	/* like 'f' but pass control characters */
 		prog = IF;
 		av[1] = "-l";
 		av[2] = width;
 		av[3] = length;
-		n = 4;
+		av[4] = indent;
+		n = 5;
 		break;
 	case 'r':	/* print a fortran text file */
 		prog = RF;
@@ -901,6 +906,7 @@ init()
 		XC = 0;
 	if ((XS = pgetnum("xs")) < 0)
 		XS = 0;
+	tof = !pgetflag("fo");
 }
 
 /*
