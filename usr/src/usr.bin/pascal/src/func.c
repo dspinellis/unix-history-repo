@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.5 %G%";
+static	char sccsid[] = "@(#)func.c 1.6 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -124,7 +124,7 @@ funccod(r)
 		case O_EXPO:
 		case O_UNDEF:
 			if (isa(p1, "i"))
-				convert(p1, nl+TDOUBLE);
+				convert( nl+T4INT , nl+TDOUBLE);
 			else if (isnta(p1, "d")) {
 				error("%s's argument must be integer or real, not %s", p->symbol, nameof(p1));
 				return (NIL);
