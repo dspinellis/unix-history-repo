@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)xargs.1	5.5 (Berkeley) %G%
+.\"	@(#)xargs.1	5.6 (Berkeley) %G%
 .\"
 .TH XARGS 1 ""
 .UC 7
@@ -15,7 +15,7 @@
 xargs \- construct argument list(s) and execute utility.
 .SH SYNOPSIS
 .ft B
-xargs [\-ft] [[\-x] \-n number] [\-s size] [utility [argument ...]]
+xargs [\-t] [[\-x] \-n number] [\-s size] [utility [arg ...]]
 .ft R
 .SH DESCRIPTION
 The
@@ -43,21 +43,6 @@ up to the matching double quote.
 Any single character, including newlines, may be escaped by a backslash.
 .PP
 The options are as follows:
-.TP
-\-f
-Force
-.I xargs
-to ignore the exit status returned by
-.IR utility .
-By default,
-.I xargs
-will exit immediately if
-.I utility
-exits with a non-zero exit status.
-This does not include ignoring
-.I utility
-exiting due to a signal or without calling
-.IR exit (2).
 .TP
 \-n number
 Set the maximum number of arguments taken from standard input for each
@@ -109,23 +94,25 @@ Undefined behavior may occur if
 .I utility
 reads from the standard input.
 .PP
-.I Xargs
-exits with an exit status of 0 if no error occurs.
+The
+.I xargs
+utility exits immediately (without processing any further input) if a
+command line cannot be assembled,
+.I utility
+cannot be invoked, an invocation of the utility is terminated by a signal
+or an invocation of the utility exits with a value of 255.
+.PP
+The
+.I xargs
+utility exits with a value of 0 if no error occurs.
 If
 .I utility
-cannot be invoked, is terminated by a signal or terminates without
-calling
-.IR exit (2),
+cannot be invoked,
 .I xargs
-exits with an exit status of 127.
-If
-.I utility
-exits with an exit status other than 0,
+exits with a value of 127.
+If any other error occurs,
 .I xargs
-exits with that exit status.
-Otherwise,
-.I xargs
-exits with an exit status of 1.
+exits with a value of 1.
 .SH "SEE ALSO"
 .IR echo (1),
 .IR find (1)
