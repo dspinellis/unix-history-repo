@@ -1,4 +1,4 @@
-/*	ufs_inode.c	6.3	84/02/15	*/
+/*	ufs_inode.c	6.4	84/05/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #endif
 #include "../h/kernel.h"
 
-#define	INOHSZ	63
+#define	INOHSZ	64
 #if	((INOHSZ&(INOHSZ-1)) == 0)
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 #else
@@ -109,8 +109,6 @@ iget(dev, fs, ino)
 	register struct inode *iq;
 
 loop:
-	if (getfs(dev) != fs)
-		panic("iget: bad fs");
 	ih = &ihead[INOHASH(dev, ino)];
 	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
 		if (ino == ip->i_number && dev == ip->i_dev) {
