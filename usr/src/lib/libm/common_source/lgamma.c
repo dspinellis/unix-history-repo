@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	1.1 (ELEFUNT) %G%";
+static char sccsid[] =
+"@(#)lgamma.c	4.4 (Berkeley) 9/11/85; 1.2 (ucb.elefunt) %G%";
 #endif not lint
 
 /*
 	C program for floating point log Gamma function
 
-	lgama(x) computes the log of the absolute
+	lgamma(x) computes the log of the absolute
 	value of the Gamma function.
 	The sign of the Gamma function is returned in the
 	external quantity signgam.
@@ -57,7 +58,7 @@ static double q2[] = {
 };
 
 double
-lgama(arg)
+lgamma(arg)
 double arg;
 {
 	double log(), pos(), neg(), asym();

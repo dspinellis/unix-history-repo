@@ -1,4 +1,4 @@
-.\" @(#)README.txt	1.1 (ELEFUNT) %G%
+.\" @(#)README.txt	1.2 (ucb.elefunt) %G%
 .\" troff -ms README.txt
 .de Pi
 .if n \
@@ -16,7 +16,7 @@ is now \*Q/usr/lib/libom.a\*U.  To compile with those routines use \-lom.
 .LP
 .nf
 K.C. Ng, March 7, 1985, with Z-S. Alex Liu, S. McDonald, P. Tang, W. Kahan.
-Revised on 5/10/85, 5/13/85, 6/14/85, 8/20/85, 8/27/85.
+Revised on 5/10/85, 5/13/85, 6/14/85, 8/20/85, 8/27/85, 9/11/85.
 .fi
 .if n \{\
 .LP
@@ -49,7 +49,7 @@ Total number of files: 40
 .sp 0.5
 .nf
 .ta +\w'IEEE/support.c'u+2n +\w'VAX/Makefile'u+2n +\w'VAX/support.s'u+2n +\w'exp__E.c'u+2n \w'log__L.c'u+2n
-IEEE/Makefile	VAX/Makefile	VAX/support.s	erf.c	lgama.c
+IEEE/Makefile	VAX/Makefile	VAX/support.s	erf.c	lgamma.c
 IEEE/atan2.c	VAX/argred.s	VAX/tan.s	exp.c	log.c
 IEEE/cabs.c	VAX/atan2.s	acosh.c	exp__E.c	log10.c
 IEEE/cbrt.c	VAX/cabs.s	asincos.c	expm1.c	log1p.c
