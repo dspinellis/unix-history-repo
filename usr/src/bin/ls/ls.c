@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -90,7 +90,7 @@ main(argc, argv)
 		(void) gtty(1, &sgbuf);
 		if (ioctl(1, TIOCGWINSZ, &win) != -1)
 			twidth = (win.ws_col == 0 ? 80 : win.ws_col);
-		if ((sgbuf.sg_flags & XTABS) == 0)
+		if ((sgbuf.sg_flags & XTABS) != XTABS)
 			usetabs = 1;
 	} else
 		usetabs = 1;
