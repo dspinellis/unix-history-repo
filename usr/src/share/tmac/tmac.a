@@ -1,3 +1,11 @@
+.\" Copyright (c) 1981 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.a	5.2 (Berkeley) %G%
+.\"
+
 .\"	********** dictionary **********
 .\"		B0 size of wide figure just diverted
 .\"		B1 size of figure at top full wdith
