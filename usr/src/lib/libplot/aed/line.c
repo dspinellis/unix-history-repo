@@ -1,6 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)line.c	4.1 (Berkeley) 11/11/83";
-#endif
+static char sccsid[] = "@(#)line.c	5.2 (Berkeley) %G%";
+#endif not lint
 
 #include "aed.h"
 
