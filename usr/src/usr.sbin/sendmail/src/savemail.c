@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -276,7 +276,7 @@ savemail(e)
 			}
 			if (p == NULL)
 			{
-				syserr("554 Can't return mail to %s", e->e_from.q_paddr);
+				/* no local directory */
 				state = ESM_MAIL;
 				break;
 			}
