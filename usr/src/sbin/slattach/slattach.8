@@ -1,10 +1,11 @@
-.TH SLATTACH 8C "20 September 1984"
+.\"	@(#)slattach.8	1.2 (Berkeley) %G%
+.TH SLATTACH 8C ""
 .UC 6
 .SH NAME
 slattach \- attach serial lines as network interfaces
 .SH SYOPNSIS
 .B /etc/slattach
-ttyname source destination [
+ttyname [
 .I baudrate
 ]
 .SH DESCRIPTION
@@ -12,12 +13,8 @@ ttyname source destination [
 is used to assign a tty line to a network interface,
 and to define the network source and destination addresses. The
 .I ttyname
-parameter is a string of the form ``ttyXX'', or ``/dev/ttyXX'', while
-the source and destination are either host names present
-in the host name data base,
-.IR hosts (5),
-or DARPA Internet addresses expressed in the Internet standard
-``dot notation''.  The optional
+parameter is a string of the form ``ttyXX'', or ``/dev/ttyXX''.
+The optional
 .I baudrate
 parameter is used to set the speed of the connection. If not specified, the
 default of 9600 is used.
@@ -34,9 +31,9 @@ is the name that is shown by
 .B netstat(1)
 .SH EXAMPLES
 .ta 8
-	/etc/slattach ttyh8 seismo osg3
+	/etc/slattach ttyh8
 .br
-	/etc/slattach /dev/tty01 hugo dahl 4800
+	/etc/slattach /dev/tty01 4800
 .SH DIAGNOSTICS
 Messages indicating the specified interface does not exit, the
 requested address is unknown, the user is not privileged and
