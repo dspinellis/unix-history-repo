@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogind.8	6.1 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.2 (Berkeley) %G%
 .\"
 .TH RLOGIND 8C ""
 .UC 5
@@ -18,7 +18,7 @@ rlogind \- remote login server
 is the server for the 
 .IR rlogin (1C)
 program.  The server provides a remote login facility
-with authentication based on privileged port numbers.
+with authentication based on privileged port numbers from trusted hosts.
 .PP
 .I Rlogind
 listens for service requests at the port indicated in
@@ -34,8 +34,11 @@ aborts the connection.
 The server checks the client's source address.
 If the address is associated with a host for which no
 corresponding entry exists in the host name data base (see
-.IR hosts (5)),
-the server aborts the connection.
+.IR gethostbyaddr (3N),
+.IR hosts (5)
+and
+.IR named (8)),
+the dot-notation representation of the host address is used.
 .PP
 Once the source port and address have been checked, 
 .I rlogind
@@ -70,17 +73,14 @@ interrupt signals to the remote programs.  The login process
 propagates the client terminal's baud rate and terminal type,
 as found in the environment variable, ``TERM''; see
 .IR environ (7).
+The screen or window size of the terminal is requested from the client,
+and window size changes from the client are propagated to the pseudo terminal.
 .SH DIAGNOSTICS
 All diagnostic messages are returned on the connection
 associated with the
 .BR stderr ,
 after which any network connections are closed.
 An error is indicated by a leading byte with a value of 1.
-.PP
-.B ``Hostname for your address unknown.''
-.br
-No entry in the host name database existed for
-the client's machine.
 .PP
 .B ``Try again.''
 .br
