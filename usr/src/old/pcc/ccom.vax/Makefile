@@ -1,5 +1,5 @@
 #
-#	Makefile	1.14	86/10/13
+#	Makefile	1.15	86/10/15
 #
 # Makefile for PCC
 #
@@ -37,7 +37,9 @@ P1ONEP=	$(P1INCS) $M/onepass.h
 P2INCS=	$M/pass2.h macdefs.h mac2defs.h $M/manifest.h pcclocal.h $M/config.h \
 	$M/ndu.h /usr/include/stdio.h
 P2ONEP=	$(P2INCS) $M/onepass.h
-
+OBJS=	code.o rel.o stab.o comm1.o match.o optim.o pftn.o \
+	reader.o scan.o xdefs.o cgram.o rodata.o
+DOBJS=	allo.o local.o local2.o order.o trees.o table.o
 M=../../mip
 TESTDIR = .
 
@@ -46,11 +48,8 @@ all: ccom sccom f1
 #
 # 'ccom' is a one-pass C compiler.
 #
-ccom: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
-	reader.o local2.o order.o match.o allo.o comm1.o table.o stab.o
-	$(CC) $(LDFLAGS) rodata.o cgram.o xdefs.o scan.o pftn.o trees.o \
-		optim.o code.o local.o reader.o local2.o order.o match.o \
-		allo.o comm1.o table.o stab.o -o $(TESTDIR)/ccom
+ccom:	${OBJS} ${DOBJS} rel.o
+	$(CC) $(LDFLAGS) ${OBJS} ${DOBJS} rel.o -o $(TESTDIR)/ccom
 trees.o: $(P1ONEP) $M/trees.c
 	$(CC) -c $(COPTS) $M/trees.c
 optim.o: $(P1ONEP) $M/optim.c
@@ -99,11 +98,8 @@ allo.o: $(P2ONEP) $M/allo.c
 # 'sccom' is a C compiler that does single precision computations in
 #	single precision rather than double precision.
 #
-sccom: rodata.o cgram.o xdefs.o scan.o pftn.o strees.o optim.o code.o slocal.o \
-	reader.o slocal2.o sorder.o match.o sallo.o comm1.o stable.o stab.o
-	$(CC) $(LDFLAGS) rodata.o cgram.o xdefs.o scan.o pftn.o strees.o \
-		optim.o code.o slocal.o reader.o slocal2.o sorder.o match.o \
-		sallo.o comm1.o stable.o stab.o -o $(TESTDIR)/sccom
+sccom:	${OBJS} ${SOBJS} rel.o
+	$(CC) $(LDFLAGS) ${OBJS} ${SOBJS} rel.o -o $(TESTDIR)/sccom
 strees.o: $(P1ONEP) $M/trees.c
 	$(LN) $M/trees.c strees.c
 	$(CC) -c $(SCOPTS) strees.c
