@@ -1,4 +1,4 @@
-/*	srt0.c	1.4	86/12/19	*/
+/*	srt0.c	1.5	87/02/17	*/
 
 #include "../machine/mtpr.h"
 #define	LOCORE
@@ -31,7 +31,7 @@ _start:
 
 	movl	$RELOC,r0	/* source address to copy from */
 	movl	$BOOTRELOC,r1	/* destination address */
-	movl	aedata,r2	/* length to copy */
+	movl	tdlen,r2	/* length to copy */
 	addl2	r2,r0
 	addl2	r2,r1
 mvloop:
@@ -44,16 +44,16 @@ mvloop:
 /*
  * zero bss
  */
-	movab	_edata,r1	/* destination address */
-	subl3	aend,aedata,r2	/* length to zero */
+	movl	aedata,r1		/* destination address */
+	subl3	$_edata,$_end,r2	/* length to zero */
 zloop:
 	movb	$0,(r1)
 	incl	r1
 	decl	r2
 	bgeq	zloop
 
-	mtpr	$0,$PACC
-	mtpr	$0,$PADC
+	mtpr	$1,$PACC
+	mtpr	$1,$PADC
 	jmp	*abegin
 #endif
 
@@ -77,10 +77,7 @@ __rtt:
 	.data
 abegin:	.long	begin
 #ifdef REL
-aend:	.long	_end-BOOTRELOC
-aedata:	.long	_edata-BOOTRELOC
-#else
-aend:	.long	_end-RELOC
-aedata:	.long	_edata-RELOC
+aedata:	.long	_edata
+tdlen:	.long	_edata-BOOTRELOC
 #endif
 ofp:	.long	0
