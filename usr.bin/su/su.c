@@ -51,19 +51,18 @@ static char sccsid[] = "@(#)su.c	5.26 (Berkeley) 7/6/91";
 #include <string.h>
 #include <unistd.h>
 #include <paths.h>
+#include <stdlib.h>
 
 #ifdef KERBEROS
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #include <netdb.h>
 
-#define	ARGSTR	"-Kflmc:"
-#define USAGE	"usage: su [-Kflm] [login] [-c cmd]\n"
+#define	ARGSTR	"-Kflm"
 
 int use_kerberos = 1;
 #else
-#define	ARGSTR	"-flmc:"
-#define USAGE	"usage: su [-flm] [login] [-c cmd]\n"
+#define	ARGSTR	"-flm"
 #endif
 
 main(argc, argv)
@@ -76,21 +75,18 @@ main(argc, argv)
 	register char *p, **g;
 	struct group *gr;
 	uid_t ruid, getuid();
-	int asme, ch, asthem, fastlogin, prio, docmd, gotuser;
+	int asme, ch, asthem, fastlogin, prio;
 	enum { UNSET, YES, NO } iscsh = UNSET;
-	char *user, *shell, *username, *cleanenv[20], *nargv[6], **np, *cmd;
+	char *user, *shell, *username, *cleanenv[20], **nargv, **np;
 	char shellbuf[MAXPATHLEN];
 	char avshellbuf[MAXPATHLEN];
 	char *crypt(), *getpass(), *getenv(), *getlogin(), *ontty();
-	extern char *optarg;
+	int i;
 
-	np = &nargv[5];
-	*np-- = NULL;
 	asme = asthem = fastlogin = 0;
+
 	user = "root";
-	docmd = 0;
-	gotuser = 0;
-	while ( optind < argc )
+	while ( optind <= argc )
 		if ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 			switch((char)ch) {
 #ifdef KERBEROS
@@ -110,26 +106,28 @@ main(argc, argv)
 				asme = 1;
 				asthem = 0;
 				break;
-			case 'c':
-				cmd = strdup( optarg );
-				if (!cmd ) {
-					(void)fprintf( stderr, "su: malloc failure\n" );				exit(1);
-				}
-				docmd = 1;
-				break;
 			case '?':
 			default:
-				(void)fprintf(stderr, USAGE );
+				(void)fprintf(stderr, "usage: su [%s] [login]\n",
+				    ARGSTR);
 				exit(1);
 			}
-		else {
-			if (gotuser) {
-				(void)fprintf(stderr, USAGE );
-				exit(1);
-			}
+		else
+		{
 			user = argv[optind++];
-			gotuser = 1;
+			break;
 		}
+
+	if ((nargv = malloc (sizeof (char *) * (argc + 4))) == NULL) {
+		(void)fprintf(stderr, "su: alloc failure\n" );
+		exit(1);
+	}
+
+	nargv[argc + 3] = NULL;
+	for (i = argc; i >= optind; i--)
+		nargv[i + 3] = argv[i];
+	np = &nargv[i + 3];
+
 	argv += optind;
 
 	errno = 0;
@@ -149,7 +147,12 @@ main(argc, argv)
 		fprintf(stderr, "su: who are you?\n");
 		exit(1);
 	}
-	username = strdup(pwd->pw_name);
+	if ((username = strdup(pwd->pw_name)) == NULL ) {            
+		(void)fprintf(stderr, "su: alloc failure\n" );
+		exit(1);
+        }
+
+
 	if (asme)
 		if (pwd->pw_shell && *pwd->pw_shell)
 			shell = strcpy(shellbuf,  pwd->pw_shell);
@@ -249,11 +252,6 @@ main(argc, argv)
 			(void)setenv("USER", pwd->pw_name, 1);
 		(void)setenv("HOME", pwd->pw_dir, 1);
 		(void)setenv("SHELL", shell, 1);
-	}
-
-	if (docmd) {
-			*np-- = cmd;
-			*np-- = "-c";
 	}
 
 	if (iscsh == YES) {
