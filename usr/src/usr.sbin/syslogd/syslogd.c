@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,30 +7,30 @@ static char sccsid[] = "@(#)syslogd.c	4.7 (Berkeley) %G%";
  *
  * This program implements a system log. It takes a series of lines.
  * Each line may have a priority, signified as "<n>" as
- * the first three characters of the line.  If this is
- * not present, a default priority (DefPri) is used, which
- * starts out as LOG_NOTICE.  The default priority can get
- * changed using "<*>n".
+ * the first characters of the line.  If this is
+ * not present, a default priority is used.
  *
  * To kill syslogd, send a signal 15 (terminate).  A signal 1 (hup) will
  * cause it to reread its configuration file.
  *
  * Defined Constants:
  *
- * DAEMON -- Userid number to setuid to after setup.
  * MAXLINE -- the maximimum line length that can be handled.
- * NLOGS -- the maximum number of simultaneous log files.
- * NUSERS -- the maximum number of people that can
- *	be designated as "superusers" on your system.
+ * NLOGS   -- the maximum number of simultaneous log files.
+ * NUSERS  -- the maximum number of people that can
+ *		be designated as "superusers" on your system.
+ * DEFUPRI -- the default priority for user messages
+ * DEFSPRI -- the default priority for kernel messages
  *
  * Author: Eric Allman
- * Modified to use UNIX domain IPC by Ralph Campbell
+ * extensive changes by Ralph Campbell
  */
 
-#define DAEMON		1	/* Daemon user-id */
-#define	NLOGS		10	/* max number of log files */
-#define	NSUSERS		10	/* max number of special users */
-#define	MAXLINE		1024	/* maximum line length */
+#define	NLOGS		10		/* max number of log files */
+#define	NSUSERS		10		/* max number of special users */
+#define	MAXLINE		1024		/* maximum line length */
+#define DEFUPRI		LOG_NOTICE
+#define DEFSPRI		LOG_EMERG
 
 #include <syslog.h>
 #include <errno.h>
@@ -62,11 +62,15 @@ char	ctty[] = "/dev/console";
 
 #define UNAMESZ	8	/* length of a login name */
 
+#define mask(x)	(1 << (x))
+
 /*
  * Flags to logmsg().
  */
 #define IGN_CONS	0x1
 #define SYNC_FILE	0x2
+#define NOCOPY		0x4
+#define ISMARK		0x10
 
 /*
  * This structure represents the files that will have log
@@ -75,8 +79,8 @@ char	ctty[] = "/dev/console";
 
 struct filed {
 	int	f_file;			/* file descriptor */
-	short	f_pmask;		/* priority mask */
-	short	f_flags;		/* see #defines below */
+	u_int	f_pmask;		/* priority mask */
+	u_int	f_flags;		/* see #defines below */
 	struct	sockaddr_in f_addr;	/* forwarding address */
 	char	f_name[248];		/* filename */
 };
@@ -90,7 +94,7 @@ struct filed	Files[NLOGS];
 
 /* list of superusers */
 struct susers {
-	short	s_pmask;		/* priority mask */
+	u_int	s_pmask;		/* priority mask */
 	char	s_name[UNAMESZ+1];
 };
 
@@ -98,19 +102,24 @@ struct	susers Susers[NSUSERS];
 
 int	Debug;			/* debug flag */
 int	LogFile;		/* log file descriptor */
-int	DefPri = LOG_NOTICE;	/* default priority for untagged msgs */
-int	DefSysPri = LOG_EMERG;	/* default priority for untagged system msgs */
-int	Sumask;			/* lowest priority written to super-users */
+u_int	Sumask;			/* priorities written to super-users */
 int	MarkIntvl = 15;		/* mark interval in minutes */
 char	*ConfFile = defconf;	/* configuration file */
 char	host[32];		/* our hostname */
 char	rhost[32];		/* hostname of sender (forwarded messages) */
 int	inet = 0;		/* non-zero if INET sockets are being used */
 int	port;			/* port number for INET connections */
+u_int	Copymask = 0xffffffff;	/* priorities to supress multiple copies */
+char	prevline[MAXLINE + 1];	/* copy of last line to supress repeats */
+char	*prevdate;		/* pointer to the date in prevline */
+char	prevhost[32];		/* previous host */
+int	prevflags;
+int	prevpri;
+int	count = 0;		/* number of times seen */
 
 extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
-extern	char *ctime();
+extern	char *ctime(), *index();
 
 main(argc, argv)
 	int argc;
@@ -118,7 +127,7 @@ main(argc, argv)
 {
 	register int i;
 	register char *p;
-	int klog, funix, finet, defreadfds, len;
+	int klog, funix, finet, defreadfds, klogm, len;
 	struct sockaddr_un sun, fromunix;
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
@@ -131,29 +140,32 @@ main(argc, argv)
 
 	while (--argc > 0) {
 		p = *++argv;
-		if (p[0] == '-') {
-			switch (p[1]) {
-			case 'm':		/* set mark interval */
-				MarkIntvl = atoi(&p[2]);
-				if (MarkIntvl <= 0)
-					MarkIntvl = 1;
-				break;
+		if (p[0] != '-')
+			usage();
+		switch (p[1]) {
+		case 'm':		/* set mark interval */
+			MarkIntvl = atoi(&p[2]);
+			if (MarkIntvl <= 0)
+				MarkIntvl = 1;
+			break;
 
-			case 'f':		/* configuration file */
-				if (p[2] != '\0')
-					ConfFile = &p[2];
-				break;
+		case 'f':		/* configuration file */
+			if (p[2] != '\0')
+				ConfFile = &p[2];
+			break;
 
-			case 'd':		/* debug */
-				Debug++;
-				break;
+		case 'd':		/* debug */
+			Debug++;
+			break;
 
-			case 'p':		/* path */
-				if (p[2] != '\0')
-					strncpy(sun.sun_path, &p[2], 
-						sizeof sun.sun_path);
-				break;
-			}
+		case 'p':		/* path */
+			if (p[2] != '\0')
+				strncpy(sun.sun_path, &p[2], 
+					sizeof sun.sun_path);
+			break;
+
+		default:
+			usage();
 		}
 	}
 
@@ -165,13 +177,10 @@ main(argc, argv)
 		(void) open("/", 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		i = open("/dev/tty", O_RDWR);
-	  	if (i >= 0) {
-			ioctl(i, TIOCNOTTY, (char *)0);
-			(void) close(i);
-	  	}
+		untty();
 	}
 	signal(SIGTERM, die);
+	signal(SIGINT, die);
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (funix >= 0 && bind(funix, &sun,
 	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0) {
@@ -180,11 +189,11 @@ main(argc, argv)
 	}
 	if (funix < 0) {
 		fp = fopen(ctty, "w");
-		fprintf(fp, "\r\nsyslog: cannot create %s (%d)\r\n", logname, errno);
+		fprintf(fp, "\r\nsyslogd: cannot create %s (%d)\r\n", logname, errno);
 		dprintf("cannot create %s (%d)\n", logname, errno);
 		exit(1);
 	}
-	defreadfds = 1 << funix;
+	defreadfds = mask(funix);
 	finet = socket(AF_INET, SOCK_DGRAM, 0);
 	if (finet >= 0) {
 		struct servent *sp;
@@ -201,13 +210,16 @@ main(argc, argv)
 			logerror("bind");
 			die();
 		}
-		defreadfds |= 1 << finet;
+		defreadfds |= mask(finet);
 		inet = 1;
 	}
-	if ((klog = open("/dev/klog", O_RDONLY)) >= 0)
-		defreadfds |= 1 << klog;
-	else
+	if ((klog = open("/dev/klog", O_RDONLY)) >= 0) {
+		klogm = mask(klog);
+		defreadfds |= klogm;
+	} else {
 		dprintf("can't open /dev/klog (%d)\n", errno);
+		klogm = 0;
+	}
 
 	/* tuck my process id away */
 	fp = fopen(defpid, "w");
@@ -228,6 +240,7 @@ main(argc, argv)
 		int nfds, readfds = defreadfds;
 
 		nfds = select(20, &readfds, 0, 0, 0);
+		dprintf("got a message (%d, %#x)\n", nfds, readfds);
 		if (nfds == 0)
 			continue;
 		if (nfds < 0) {
@@ -236,15 +249,19 @@ main(argc, argv)
 			logerror("select");
 			continue;
 		}
-		if (readfds & (1 << klog)) {
+		if (readfds & klogm) {
 			i = read(klog, line, sizeof(line) - 1);
 			if (i > 0) {
 				line[i] = '\0';
 				printsys(line);
-			} else if (i < 0 && errno != EINTR)
+			} else if (i < 0 && errno != EINTR) {
 				logerror("read");
+				defreadfds &= ~klogm;
+				klog = -1;
+				klogm = 0;
+			}
 		}
-		if (readfds & (1 << funix)) {
+		if (readfds & mask(funix)) {
 			len = sizeof fromunix;
 			i = recvfrom(funix, line, MAXLINE, 0, &fromunix, &len);
 			if (i > 0) {
@@ -253,7 +270,7 @@ main(argc, argv)
 			} else if (i < 0 && errno != EINTR)
 				logerror("recvfrom");
 		}
-		if (readfds & (1 << finet)) {
+		if (readfds & mask(finet)) {
 			len = sizeof frominet;
 			i = recvfrom(finet, line, MAXLINE, 0, &frominet, &len);
 			if (i > 0 && chkhost(&frominet)) {
@@ -262,6 +279,25 @@ main(argc, argv)
 			} else if (i < 0 && errno != EINTR)
 				logerror("recvfrom");
 		} 
+	}
+}
+
+usage()
+{
+	fprintf(stderr, "usage: syslogd [-m#] [-d] [-ppath] [-fconffile]\n");
+	exit(1);
+}
+
+untty()
+{
+	int i;
+
+	if (!Debug) {
+		i = open("/dev/tty", O_RDWR);
+		if (i >= 0) {
+			ioctl(i, TIOCNOTTY, (char *)0);
+			(void) close(i);
+		}
 	}
 }
 
@@ -280,26 +316,16 @@ printline(local, msg)
 	int pri;
 
 	/* test for special codes */
-	pri = DefPri;
+	pri = DEFUPRI;
 	p = msg;
-	if (p[0] == '<' && p[2] == '>') {
-		switch (p[1]) {
-		case '*':	/* reset default message priority */
-			dprintf("default priority = %c\n", p[3]);
-			c = p[3] - '0';
-			if ((unsigned) c <= 9)
-				DefPri = c;
-			break;
-
-		case '$':	/* reconfigure */
-			dprintf("reconfigure\n");
-			init();
-		}
-		p++;
-		pri = *p++ - '0';
-		p++;
-		if ((unsigned) pri > LOG_DEBUG)
-			pri = DefPri;
+	if (*p == '<') {
+		pri = 0;
+		while (isdigit(*++p))
+			pri = 10 * pri + (*p - '0');
+		if (*p == '>')
+			++p;
+		if (pri <= 0 || pri >= 32)
+			pri = DEFUPRI;
 	}
 
 	q = line;
@@ -326,59 +352,33 @@ printsys(msg)
 	register char *p, *q;
 	register int c;
 	char line[MAXLINE + 1];
-	static char prevline[MAXLINE + 1];
-	static int count = 0;
 	int pri, flags;
+	char *lp;
 	long now;
 
 	time(&now);
+	sprintf(line, "vmunix: %.15s-- ", ctime(&now) + 4);
+	lp = line + strlen(line);
 	for (p = msg; *p != '\0'; ) {
-		/* test for special codes */
 		flags = SYNC_FILE;	/* fsync file after write */
-		pri = DefSysPri;
-		if (p[0] == '<' && p[2] == '>') {
-			switch (p[1]) {
-			case '*':	/* reset default message priority */
-				dprintf("default priority = %c\n", p[3]);
-				c = p[3] - '0';
-				if ((unsigned) c <= 9)
-					DefSysPri = c;
-				break;
-
-			case '$':	/* reconfigure */
-				dprintf("reconfigure\n");
-				init();
-			}
-			p++;
-			pri = *p++ - '0';
-			p++;
-			if ((unsigned) pri > LOG_DEBUG)
-				pri = DefSysPri;
+		pri = DEFSPRI;
+		if (*p == '<') {
+			pri = 0;
+			while (isdigit(*++p))
+				pri = 10 * pri + (*p - '0');
+			if (*p == '>')
+				++p;
+			if (pri <= 0 || pri >= 32)
+				pri = DEFSPRI;
 		} else {
 			/* kernel printf's come out on console */
 			flags |= IGN_CONS;
 		}
-
-		q = line;
-		sprintf(q, "vmunix: %.15s-- ", ctime(&now) + 4);
-		q += strlen(q);
-		while ((c = *p++) != '\0' && c != '\n' &&
-		    q < &line[sizeof(line) - 1])
+		q = lp;
+		while (*p != '\0' && (c = *p++) != '\n' &&
+		    q < &line[MAXLINE])
 			*q++ = c;
 		*q = '\0';
-		if (strcmp(line+26, prevline+26) == 0) {
-			count++;
-			strncpy(prevline+8, line+8, 15); /* update time */
-			continue;
-		}
-		if (count) {
-			if (count > 1)
-				sprintf(prevline+26,
-				    "last message repeated %d times", count);
-			logmsg(pri, prevline, host, flags);
-		}
-		count = 0;
-		strcpy(prevline, line);
 		logmsg(pri, line, host, flags);
 	}
 }
@@ -399,6 +399,36 @@ logmsg(pri, msg, from, flags)
 	struct iovec iov[4];
 	register struct iovec *v = iov;
 
+	if ((flags & NOCOPY) == 0) {
+		register char *cp;
+
+		/*
+		 * Check to see if copies should be supressed or
+		 * msg looks non-standard (e.g., 'prog: Feb 16 13:23:56-- ').
+		 */
+		if ((Copymask & mask(pri)) == 0 ||
+		    (cp = index(msg, ':')) == NULL || strlen(cp) < 20 ||
+		    cp[5] != ' ' || cp[8] != ' ' || cp[11] != ':' ||
+		    cp[14] != ':' || cp[17] != '-' || cp[18] != '-' ||
+		    cp[19] != ' ')
+			flushmsg();
+		else if (!strncmp(msg, prevline, cp-msg) &&
+		    !strcmp(cp+20, prevdate+18)) {
+			/* we found a match, update the time */
+			strncpy(prevdate, cp+2, 15);
+			count++;
+			return;
+		} else {
+			/* new line, save it */
+			flushmsg();
+			strcpy(prevline, msg);
+			strcpy(prevhost, from);
+			prevdate = prevline + (cp - msg) + 2;
+			prevflags = flags;
+			prevpri = pri;
+		}
+	}
+
 	v->iov_base = from;
 	v->iov_len = strlen(v->iov_base);
 	v++;
@@ -410,11 +440,9 @@ logmsg(pri, msg, from, flags)
 	v++;
 	/* log the message to the particular outputs */
 	for (f = Files; f < &Files[NLOGS]; f++) {
-		if (f->f_file < 0 || f->f_pmask < pri)
+		if (f->f_file < 0)
 			continue;
-		if ((flags & IGN_CONS) && (f->f_flags & F_CONS))
-			continue;
-		if (pri < 0) {	/* mark message */
+		if (flags & ISMARK) {	/* mark message */
 			struct stat stb;
 			long now;
 
@@ -426,7 +454,9 @@ logmsg(pri, msg, from, flags)
 			if (!(f->f_flags & F_CONS) &&
 			    stb.st_mtime > now - MarkIntvl * 60)
 				continue;
-		}
+		} else if ((f->f_pmask & mask(pri)) == 0 ||
+		    (flags & IGN_CONS) && (f->f_flags & F_CONS))
+			continue;
 		if (f->f_flags & F_FORW) {
 			sprintf(line, "<%d>%s", pri, msg);
 			l = strlen(line);
@@ -462,29 +492,31 @@ logmsg(pri, msg, from, flags)
 	/*
 	 * Output high priority messages to terminals.
 	 */
-	if (pri >= 0 && pri <= Sumask)
+	if (mask(pri) & Sumask)
 		wallmsg(pri, msg, from);
 }
 
 /*
- *  INIT -- Initialize syslog from configuration table
+ *  INIT -- Initialize syslogd from configuration table
  *
- *	The configuration table consists of a series of lines
- *	broken into two sections by a blank line.  The first
- *	section gives a list of files to log on.  The first
- *	character is a digit which is the priority mask for
- *	that file.  If the second character is an asterisk, then
- *	syslog arranges for something to be printed every fifteen
- *	minutes (even if only a null line), so that crashes and
- *	other events can be localized.  The rest of the line is
- *	the pathname of the log file.  The second section is
- *	a list of user names; these people are all notified
- *	when subalert messages occur (if they are logged on).
+ *	The configuration table consists of a series of lines broken
+ *	into two sections by a blank line.  The first section gives a
+ *	list of files to log on.  Each line begins with a
+ *	comma-separated list of digits or ranges of digits (pairs of
+ *	digits separated by a dash); if the priority of a message falls
+ *	in the set of digits defined by this list, then the message is
+ *	logged in the file corresponding to this line.  If the
+ *	following character is an asterisk, then syslogd arranges for
+ *	something to be printed every fifteen minutes (even if only a
+ *	null line), so that crashes and other events can be localized.
+ *	The rest of the line is the pathname of the log file.  The
+ *	second section is a list of user names; these people are all
+ *	notified when subalert messages occur (if they are logged on).
+ *	These lines may also have associated priority lists.
  *
- *	The configuration table will be reread by this routine
- *	if a signal 1 occurs; for that reason, it is tricky
- *	about not re-opening files and closing files it will
- *	not be using.
+ *	The configuration table will be reread by this routine if a
+ *	SIGHUP signal occurs; for that reason, it is tricky about not
+ *	re-opening files and closing files it will not be using.
  */
 
 init()
@@ -494,15 +526,18 @@ init()
 	register struct filed *f;
 	register char *p;
 	char cline[BUFSIZ];
-	struct servent *sp;
 	struct hostent *hp;
 	int pmask, flags;
 	long now;
+	char *getpmask();
 
 	dprintf("init\n");
 
 	/* ignore interrupts during this routine */
 	signal(SIGHUP, SIG_IGN);
+
+	/* flush any pending output */
+	flushmsg();
 
 	/*
 	 *  Close all open log files.
@@ -519,8 +554,9 @@ init()
 		f = Files;
 		if ((f->f_file = open(ctty, O_WRONLY)) >= 0) {
 			strncpy(f->f_name, ctty, sizeof(f->f_name)-1);
-			f->f_pmask = LOG_CRIT;
+			f->f_pmask = mask(LOG_CRIT);
 			f->f_flags = F_TTY|F_MARK|F_CONS;
+			untty();
 		}
 		return;
 	}
@@ -529,7 +565,6 @@ init()
 	 *  Foreach line in the conf table, open that file.
 	 */
 	f = Files;
-	sp = getservbyname("syslogd", "udp");
 	while (fgets(cline, sizeof cline, cf) != NULL) {
 		/* check for end-of-section */
 		if (cline[0] == '\n')
@@ -545,7 +580,7 @@ init()
 		/* extract priority mask and mark flag */
 		p = cline;
 		flags = 0;
-		pmask = *p++ - '0';
+		p = getpmask(p, &pmask);
 		if (*p == '*') {
 			p++;
 			flags |= F_MARK;
@@ -579,7 +614,7 @@ init()
 			flags |= F_FORW;
 			f->f_pmask = pmask;
 			f->f_flags = flags;
-			dprintf("Host %s pmask %d flags %o\n", p, pmask, flags);
+			dprintf("Host %s pmask %#x flags %#x\n", p, pmask, flags);
 			f++;
 			continue;
 		}
@@ -588,13 +623,15 @@ init()
 			logerror(p);
 			continue;
 		}
-		if (isatty(f->f_file))
+		if (isatty(f->f_file)) {
 			flags |= F_TTY;
+			untty();
+		}
 		if (strcmp(p, ctty) == 0)
 			flags |= F_CONS;
 		f->f_pmask = pmask;
 		f->f_flags = flags;
-		dprintf("File %s pmask %d flags %o\n", p, pmask, flags);
+		dprintf("File %s pmask %#x flags %#x\n", p, pmask, flags);
 		f++;
 	}
 
@@ -604,7 +641,7 @@ init()
 	 *	Anyone in this list is informed directly if s/he
 	 *	is logged in when a high priority message comes through.
 	 */
-	Sumask = LOG_SALERT;
+	Sumask = mask(LOG_SALERT);
 	for (i = 0; i < NSUSERS && fgets(cline, sizeof cline, cf) != NULL; i++) {
 		/* strip off newline */
 		p = index(cline, '\n');
@@ -613,13 +650,13 @@ init()
 		dprintf("U: got line '%s'\n", cline);
 		p = cline;
 		if (isdigit(*p)) {
-			Susers[i].s_pmask = pmask = *p++ - '0';
-			if (pmask > Sumask)
-				Sumask = pmask;
+			p = getpmask(p, &pmask);
+			Sumask |= pmask;
+			Susers[i].s_pmask = pmask;
 		} else
-			Susers[i].s_pmask = pmask = LOG_SALERT;
+			Susers[i].s_pmask = pmask = mask(LOG_SALERT);
 		strncpy(Susers[i].s_name, p, UNAMESZ);
-		dprintf("Suser %s pmask %d\n", p, pmask);
+		dprintf("Suser %s pmask %#x\n", p, pmask);
 	}
 
 	/* zero the rest of the old superusers */
@@ -675,7 +712,7 @@ wallmsg(pri, msg, from)
 		/* should we send the message to this user? */
 		if (pri != LOG_ALERT) {
 			for (i = 0; i < NSUSERS; i++) {
-				if (pri > Susers[i].s_pmask)
+				if ((mask(pri) & Susers[i].s_pmask) == 0)
 					continue;
 				if (strncmp(Susers[i].s_name, ut.ut_name,
 				    sizeof ut.ut_name) == 0)
@@ -731,7 +768,8 @@ domark()
 
 	time(&now);
 	sprintf(buf, "syslogd: %.24s-- MARK", ctime(&now));
-	logmsg(-1, buf, host, 0);
+	flushmsg();
+	logmsg(0, buf, host, NOCOPY|ISMARK);
 	alarm(MarkIntvl * 60);
 }
 
@@ -761,6 +799,28 @@ chkhost(f)
 }
 
 /*
+ * Compare current message with previous and return true if match.
+ * Side effect is to update the time in the previous message.
+ */
+match(msg)
+	char *msg;
+{
+	register char *cp;
+
+}
+
+flushmsg()
+{
+	if (count == 0)
+		return;
+	if (count > 1)
+		sprintf(prevdate+18, "last message repeated %d times", count);
+	logmsg(prevpri, prevline, prevhost, prevflags|NOCOPY);
+	prevline[0] = '\0';
+	count = 0;
+}
+
+/*
  * Print syslogd errors some place.
  */
 logerror(type)
@@ -786,7 +846,51 @@ logerror(type)
 die()
 {
 
+	flushmsg();
 	dprintf("syslogd: going down\n");
 	(void) unlink(logname);
 	exit(0);
+}
+
+/*
+ * getpmask() parses a string cp looking for a set of numbers like
+ * '1-5,8,16' and returns in *ppmask the set of bits represented by
+ * these numbers.  A notation '1-5' is interpreted to mean 'turn on
+ * bits 1 through 5 inclusive'.  getpmask() returns the address of
+ * first byte after the number set.
+ */
+char *
+getpmask(cp, ppmask)
+	register char *cp;
+	unsigned *ppmask;
+{
+	int count1, count2;
+	register int i;
+
+	*ppmask = 0;
+	while (isdigit(*cp)) {
+		count1 = count2 = 0;
+		do {
+			count1 = 10 * count1 + (*cp++ - '0');
+		} while (isdigit(*cp));
+		switch (*cp) {
+		case ',':
+			++cp;
+			/* FALL THRU */
+		default:
+			*ppmask |= mask(count1);
+			continue;
+
+		case '-':
+			while (isdigit(*++cp))
+				count2 = 10 * count2 + (*cp - '0');
+			for (i = count1; i <= count2; ++i)
+				*ppmask |= mask(i);
+			if (*cp == ',')
+				++cp;
+			continue;
+		}
+	}
+
+	return (cp);
 }
