@@ -1,4 +1,4 @@
-/*	vm_machdep.c	6.4	84/11/19	*/
+/*	vm_machdep.c	6.5	85/03/08	*/
 
 #include "pte.h"
 
@@ -63,35 +63,10 @@ mapout(pte, size)
 chksize(ts, ds, ss)
 	register unsigned ts, ds, ss;
 {
-	static int maxdmap = 0;
+	extern int maxtsize;
 
-	if (ts > MAXTSIZ || ds > MAXDSIZ || ss > MAXSSIZ) {
-		u.u_error = ENOMEM;
-		return (1);
-	}
-	/* check for swap map overflow */
-	if (maxdmap == 0) {
-		register int i, blk;
-
-		blk = dmmin;
-		for (i = 0; i < NDMAP; i++) {
-			maxdmap += blk;
-			if (blk < dmmax)
-				blk *= 2;
-		}
-	}
-	if (ctod(ts) > NXDAD * dmtext ||
-	    ctod(ds) > maxdmap || ctod(ss) > maxdmap) {
-		u.u_error = ENOMEM;
-		return (1);
-	}
-	/*
-	 * Make sure the process isn't bigger than our
-	 * virtual memory limit.
-	 *
-	 * THERE SHOULD BE A CONSTANT FOR THIS.
-	 */
-	if (ts + ds + ss + LOWPAGES + HIGHPAGES > btoc(USRSTACK)) {
+	if (ts > maxtsize || ctob(ds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
 		u.u_error = ENOMEM;
 		return (1);
 	}
