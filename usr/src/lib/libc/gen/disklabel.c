@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -100,8 +100,12 @@ getdiskbyname(name)
 			cgetnum(buf, poffset, (long *) &pp->p_offset);
 			getnumdflt(pp->p_fsize, pfsize, 0);
 			if (pp->p_fsize) {
-			        cgetnum(buf, pbsize, (long *) &pp->p_frag);
-				pp->p_frag /= pp->p_fsize;
+				long bsize;
+
+				if (cgetnum(buf, pbsize, &bsize) == 0)
+					pp->p_frag = bsize / pp->p_fsize;
+				else
+					pp->p_frag = 8;
 			}
 			getnumdflt(pp->p_fstype, ptype, 0);
 			if (pp->p_fstype == 0 && cgetstr(buf, ptype, &cq) > 0)
