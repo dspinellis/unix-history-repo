@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.39 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.40 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -149,18 +149,19 @@ lfs_vcreate(mp, ino, vpp)
 	MALLOC(ip, struct inode *, sizeof(struct inode), M_LFSNODE, M_WAITOK);
 	(*vpp)->v_data = ip;
 	ip->i_vnode = *vpp;
+	ip->i_devvp = ump->um_devvp;
 	ip->i_flag = 0;
-	ip->i_mode = 0;
-	ip->i_diroff = 0;
-	ip->i_lockf = 0;
 	ip->i_dev = ump->um_dev;
 	ip->i_number = ip->i_din.di_inum = ino;
 	ip->i_lfs = ump->um_lfs;
-	ip->i_devvp = ump->um_devvp;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
 #endif
+	ip->i_lockf = 0;
+	ip->i_diroff = 0;
+	ip->i_mode = 0;
+	ip->i_size = 0;
 	return (0);
 }
 
