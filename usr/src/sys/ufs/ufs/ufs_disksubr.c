@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.9 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -332,7 +332,10 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 		(*pr)("%d-%d", bp->b_blkno,
 		    bp->b_blkno + (bp->b_bcount - 1) / DEV_BSIZE);
 	}
-	if (lp && (blkdone >= 0 || bp->b_bcount <= DEV_BSIZE)) {
+	if (lp && (blkdone >= 0 || bp->b_bcount <= lp->d_secsize)) {
+#ifdef tahoe
+		sn *= DEV_BSIZE / lp->d_secsize;		/* XXX */
+#endif
 		sn += lp->d_partitions[part].p_offset;
 		(*pr)(" (%s%d bn %d; cn %d", dname, unit, sn,
 		    sn / lp->d_secpercyl);
