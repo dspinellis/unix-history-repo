@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] =	"@(#)ul.c	4.6 (Berkeley) %G%";
+static char sccsid[] =	"@(#)ul.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -312,12 +312,8 @@ iattr()
 
 initbuf()
 {
-	register i;
 
-	for (i=0; i<MAXBUF; i++) {
-		obuf[i].c_char = '\0';
-		obuf[i].c_mode = NORMAL;
-	}
+	bzero(obuf, sizeof (obuf));		/* depends on NORMAL == 0 */
 	col = 0;
 	maxcol = 0;
 	mode &= ALTSET;
@@ -393,11 +389,6 @@ initcap()
 	 * letters the 37 has.
 	 */
 
-#ifdef notdef
-printf("so %s se %s us %s ue %s me %s\n",
-	ENTER_STANDOUT, EXIT_STANDOUT, ENTER_UNDERLINE,
-	EXIT_UNDERLINE, EXIT_ATTRIBUTES);
-#endif
 	UNDER_CHAR =		tgetstr("uc", &bp);
 	must_use_uc = (UNDER_CHAR && !ENTER_UNDERLINE);
 }
