@@ -1,77 +1,49 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)nohup.1	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH NICE 1 ""
-.UC 4
+.\"	@(#)nohup.1	6.3 (Berkeley) %G%
+.\"
+.TH NOHUP 1 ""
 .SH NAME
-nice, nohup \- run a command at low priority (\fIsh\fR only)
+nohup - run a utility immune to hangups and quits
 .SH SYNOPSIS
-.B nice
-[
-.BI \- number
-]
-command [ arguments ]
-.PP
-.B nohup
-command [ arguments ]
+.B nohup command
 .SH DESCRIPTION
-.I Nice
-executes
-.I command
-with low scheduling priority.
-If the
-.I number
-argument is present, the priority is incremented (higher
-numbers mean lower priorities) by that amount up to a limit of 20.
-The default
-.I number
-is 10.
-.PP
-The super-user may run commands with
-priority higher than normal
-by using a negative priority,
-e.g. `\-\-10'.
-.PP
-.I Nohup
-executes
-.I command
-immune to hangup and terminate signals from the controlling terminal.
-The priority is incremented by 5.
-.I Nohup
-should be invoked from the shell with `&' in order to 
-prevent it from responding to interrupts by or
-stealing the input from
-the next person who logs in on the same terminal.
-.SH FILES
-nohup.out	standard output and standard error file under
+The
 .I nohup
+utility invokes a command with the signals SIGHUP and SIGQUIT
+initially ignored.
+If the standard output is a terminal, the standard output is
+appended to the file
+.I nohup.out
+in the current directory.
+If standard error is a terminal, it is directed to the same place
+as the standard output.
+.PP
+.I Nohup
+exits 1 if an error occurs, otherwise the exit status is that of
+.IR command .
+.SH "ENVIRONMENTAL VARIABLES"
+.TP
+.I HOME
+If the output file
+.I nohup.out
+cannot be created in the current directory, the
+.I nohup
+utility uses the directory named by
+.I HOME
+to create the file.
 .SH "SEE ALSO"
-csh(1), setpriority(2), renice(8)
-.SH DIAGNOSTICS
-.I Nice
-returns the exit status of the subject command.
-.SH BUGS
-.I Nice
-and
-.I nohup
-are particular to
-.IR sh (1).
-If you use
-.IR csh (1),
-then commands executed with ``&'' are automatically immune to hangup
-signals while in the background.
-There is a builtin command
-.I nohup
-which provides immunity from terminate, but it does not
-redirect output to
-.I nohup.out.
-.PP
-.I Nice
-is built into
-.IR csh (1)
-with a slightly different syntax than described here.  The form
-``nice +10'' nices to positive nice, and ``nice \-10'' can be used
-by the super-user to give a process more of the processor.
+signal(3)
