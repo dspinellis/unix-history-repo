@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.6 (Berkeley) %G%
+ *	@(#)machdep.c	7.7 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -552,14 +552,14 @@ sendsig(catcher, sig, mask, code)
 {
 	register struct proc *p = curproc;
 	register struct sigframe *fp;
-	register struct sigacts *ps = p->p_sigacts;
+	register struct sigacts *psp = p->p_sigacts;
 	register struct sigcontext *scp;
 	register int *regs;
 	int oonstack, fsize;
 	struct sigcontext ksc;
 
 	regs = p->p_md.md_regs;
-	oonstack = ps->ps_onstack;
+	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
 	/*
 	 * Allocate and validate space for the signal handler
 	 * context. Note that if the stack is in data space, the
@@ -567,9 +567,12 @@ sendsig(catcher, sig, mask, code)
 	 * will fail if the process has not already allocated
 	 * the space with a `brk'.
 	 */
-	if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
-		scp = (struct sigcontext *)ps->ps_sigsp - 1;
-		ps->ps_onstack = 1;
+	if ((psp->ps_flags & SAS_ALTSTACK) &&
+	    (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0 &&
+	    (psp->ps_sigonstack & sigmask(sig))) {
+		scp = (struct sigcontext *)(psp->ps_sigstk.ss_base +
+		    psp->ps_sigstk.ss_size - 1;
+		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else
 		scp = (struct sigcontext *)regs[SP] - 1;
 	fp = (struct sigframe *)scp - 1;
@@ -695,7 +698,10 @@ sigreturn(p, uap, retval)
 	/*
 	 * Restore the user supplied information
 	 */
-	p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
+	if (scp->sc_onstack & 01)
+		p->p_sigacts->ps_sigstk.ss_flags |= SA_ONSTACK;
+	else
+		p->p_sigacts->ps_sigstk.ss_flags &= ~SA_ONSTACK;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[PC] = ksc.sc_pc;
 	bcopy((caddr_t)&ksc.sc_regs[1], (caddr_t)&regs[1],

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.11 (Berkeley) %G%
+ *	@(#)machdep.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -300,11 +300,11 @@ sendsig(catcher, sig, mask, code)
 	register struct proc *p = curproc;
 	register int *regs;
 	register struct sigframe *fp;
-	struct sigacts *ps = p->p_sigacts;
+	struct sigacts *psp = p->p_sigacts;
 	int oonstack, frmtrap;
 
 	regs = p->p_md.md_regs;
-        oonstack = ps->ps_onstack;
+        oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
 	frmtrap = curpcb->pcb_flags & FM_TRAP;
 	/*
 	 * Allocate and validate space for the signal handler
@@ -313,10 +313,12 @@ sendsig(catcher, sig, mask, code)
 	 * will fail if the process has not already allocated
 	 * the space with a `brk'.
 	 */
-        if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
-		fp = (struct sigframe *)(ps->ps_sigsp
-				- sizeof(struct sigframe));
-                ps->ps_onstack = 1;
+	if ((psp->ps_flags & SAS_ALTSTACK) &&
+	    (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0 &&
+	    (psp->ps_sigonstack & sigmask(sig))) {
+		fp = (struct sigframe *)(psp->ps_sigstk.ss_base +
+		    psp->ps_sigstk.ss_size - sizeof(struct sigframe));
+		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else {
 		if (frmtrap)
 			fp = (struct sigframe *)(regs[tESP]
@@ -423,7 +425,10 @@ sigreturn(p, uap, retval)
 		return(EINVAL);
 	}
 #endif
-        p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
+	if (scp->sc_onstack & 01)
+		p->p_sigacts->ps_sigstk.ss_flags |= SA_ONSTACK;
+	else
+		p->p_sigacts->ps_sigstk.ss_flags &= ~SA_ONSTACK;
 	p->p_sigmask = scp->sc_mask &~
 	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
 	regs[sEBP] = scp->sc_fp;
