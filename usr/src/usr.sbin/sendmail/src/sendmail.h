@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.34	%G%
+**	@(#)sendmail.h	3.35	%G%
 */
 
 
@@ -12,7 +12,8 @@
 # include "useful.h"
 
 /*
-**  Manifest constants.
+**  Configuration constants.
+**	There shouldn't be much need to change these....
 */
 
 # define MAXLINE	256	/* maximum line length */
@@ -22,8 +23,6 @@
 # define MAXHOP		30	/* maximum value of HopCount */
 # define MAXATOM	15	/* max atoms per address */
 # define MAXMAILERS	10	/* maximum mailers known to system */
-# define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
-# define CONFFILE	"/usr/lib/sendmail.cf"	/* configuration file */
 
 /* values for ArpaMode -- these are ordered!! */
 # define ARPA_NONE	0	/* not in arpanet mode */
@@ -231,10 +230,29 @@ extern STAB	*stab();
 
 
 /*
+**  Statistics structure.
+*/
+
+struct statistics
+{
+	time_t	stat_itime;		/* file initialization time */
+	short	stat_size;		/* size of this structure */
+	long	stat_nf[MAXMAILERS];	/* # msgs from each mailer */
+	long	stat_bf[MAXMAILERS];	/* kbytes from each mailer */
+	long	stat_nt[MAXMAILERS];	/* # msgs to each mailer */
+	long	stat_bt[MAXMAILERS];	/* kbytes to each mailer */
+};
+
+extern struct statistics	Stat;
+extern long			kbytes();	/* for _bf, _bt */
+
+
+
+
+/*
 **  Global variables.
 */
 
-extern int	ArpaMode;	/* ARPANET handling mode */
 extern bool	FromFlag;	/* if set, "From" person is explicit */
 extern bool	MailBack;	/* mail back response on error */
 extern bool	BerkNet;	/* called from BerkNet */
@@ -250,6 +268,8 @@ extern bool	DontSend;	/* mark recipients as QDONTSEND */
 extern int	Debug;		/* debugging level */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
+extern int	ArpaMode;	/* ARPANET handling mode */
+extern long	MsgSize;	/* size of the message in bytes */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
 extern FILE	*TempFile;	/* mail temp file */

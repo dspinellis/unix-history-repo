@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.31	%G%";
+static char SccsId[] = "@(#)deliver.c	3.32	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -174,6 +174,10 @@ deliver(to, editfcn)
 
 		if (bitset(QBADADDR, to->q_flags))
 			continue;
+
+		/* save statistics.... */
+		Stat.stat_nt[to->q_mailer]++;
+		Stat.stat_bt[to->q_mailer] += kbytes(MsgSize);
 
 		/*
 		**  See if this user name is "special".
@@ -457,7 +461,6 @@ giveresponse(stat, force, m)
 	extern char *SysExMsg[];
 	register int i;
 	extern int N_SysEx;
-	extern long MsgSize;
 	char buf[30];
 
 	i = stat - EX__BASE;
