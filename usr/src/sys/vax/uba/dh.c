@@ -1,4 +1,4 @@
-/*	dh.c	3.2	%H%	*/
+/*	dh.c	3.3	%H%	*/
 
 /*
  *	DH-11 driver
@@ -16,8 +16,8 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/uba.h"
+#include "../h/bk.h"
 
-#define	q3	tp->t_outq
 #define	DHADDR	((struct device *)(UBA0_DEV + 0160020))
 #define	NDH11	16	/* number of lines */
 #define UBACVT(x) (cbase + (short)((x)-(char *)cfree))
@@ -28,7 +28,6 @@ struct cblock {
 };
 
 struct	tty dh11[NDH11];
-short	dhcc[NDH11];
 int	dhchars[(NDH11+15)/16];
 int	ndh11	= NDH11;
 int	dhstart();
@@ -210,7 +209,13 @@ dhrint(dev)
 				c = 0;	/* null (for getty) */
 			else
 				c = 0177;	/* DEL (intr) */
-		(*linesw[tp->t_line].l_rint)(c,tp);
+#ifdef BERKNET
+			if (tp->t_line == BNETLDIS) {
+				c &= 0177;
+				NETINPUT(c, tp);
+			} else
+#endif
+				(*linesw[tp->t_line].l_rint)(c,tp);
 	}
 }
 
@@ -224,6 +229,9 @@ caddr_t addr;
 	register struct tty *tp;
 
 	tp = &dh11[minor(dev) & 0177];
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	if (cmd==0)
+		return;
 	if (ttioccomm(cmd, tp, addr, dev)) {
 		if (cmd==TIOCSETP||cmd==TIOCSETN)
 			dhparam(dev);
@@ -321,18 +329,17 @@ dhxint(dev)
 			*sbar &= ~ttybit;
 			bar &= ~ttybit;
 			tp = &dh11[d];
-			if (tp->t_line) {
-				(*linesw[tp->t_line].l_start)(tp);
-			} else {
+			tp->t_state &= ~BUSY;
+			if (tp->t_state&FLUSH)
+				tp->t_state &= ~FLUSH;
+			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
-				if (tp->t_state&FLUSH)
-					tp->t_state &= ~FLUSH;
-				else {
-					ndflush(&q3, dhcc[d]);
-				}
-				tp->t_state &= ~BUSY;
-				dhstart(tp);
+				ndflush(&tp->t_outq, addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
+			if (tp->t_line)
+				(*linesw[tp->t_line].l_start)(tp);
+			else
+				dhstart(tp);
 		}
 	}
 }
@@ -357,7 +364,6 @@ register struct tty *tp;
 	if (tp->t_state&(TIMEOUT|BUSY|TTSTOP))
 		goto out;
 
-
 	/*
 	 * If the writer was sleeping on output overflow,
 	 * wake him when low tide is reached.
@@ -371,8 +377,6 @@ register struct tty *tp;
 
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-
-
 
 	/*
 	 * Find number of characters to transfer.
@@ -395,7 +399,6 @@ register struct tty *tp;
 		addr->un.dhcsrl = (d&017)|IENAB;
 		addr->dhcar = UBACVT(tp->t_outq.c_cf);
 		addr->dhbcr = -nch;
-		dhcc[d] = nch;
 		nch = 1<<(d&017);
 		addr->dhbar |= nch;
 		dhsar[d>>4] |= nch;
@@ -414,15 +417,22 @@ register struct tty *tp;
 dhstop(tp, flag)
 register struct tty *tp;
 {
-	register s;
+	register struct device *addr;
+	register d, s;
 
+	addr = (struct device *)tp->t_addr;
 	s = spl6();
-	if (tp->t_state & BUSY)
+	if (tp->t_state & BUSY) {
+		d = minor(tp->t_dev);
+		addr->un.dhcsrl = (d&017) | IENAB;
 		if ((tp->t_state&TTSTOP)==0)
 			tp->t_state |= FLUSH;
+		addr->dhbcr = -1;
+	}
 	splx(s);
 }
 
+int	minsilo = 16;
 /*ARGSUSED*/
 dhtimer(dev)
 {
@@ -436,10 +446,9 @@ register struct device *addr;
 			cc = 32; else
 			if (cc > 3*DHTIME)
 				cc = 16; else
-				cc = 0;
+				cc = minsilo;
 		addr->dhsilo = cc;
 		addr++;
-		dhxint(d);		/* in case lost interrupt */
 		dhrint(d++);
 	} while (d < (NDH11+15)/16);
 	timeout(dhtimer, (caddr_t)0, DHTIME);
