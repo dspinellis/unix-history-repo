@@ -1,4 +1,4 @@
-/*	lp.h	4.3	83/06/17	*/
+/*	lp.h	4.4	83/06/22	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -34,6 +34,7 @@ extern char	*OF;		/* name of output filter (created once) */
 extern char	*IF;		/* name of input filter (created per job) */
 extern char	*RF;		/* name of fortran text filter (per job) */
 extern char	*TF;		/* name of troff(1) filter (per job) */
+extern char	*NF;		/* name of ditroff(1) filter (per job) */
 extern char	*DF;		/* name of tex filter (per job) */
 extern char	*GF;		/* name of graph(1G) filter (per job) */
 extern char	*VF;		/* name of raster filter (per job) */

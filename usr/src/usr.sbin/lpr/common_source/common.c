@@ -1,4 +1,4 @@
-/*	common.c	4.6	83/06/17	*/
+/*	common.c	4.7	83/06/22	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -20,6 +20,7 @@ char	*OF;		/* name of output filter (created once) */
 char	*IF;		/* name of input filter (created per job) */
 char	*RF;		/* name of fortran text filter (per job) */
 char	*TF;		/* name of troff filter (per job) */
+char	*NF;		/* name of ditroff filter (per job) */
 char	*DF;		/* name of tex filter (per job) */
 char	*GF;		/* name of graph(1G) filter (per job) */
 char	*VF;		/* name of vplot filter (per job) */
