@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.28 1993/12/15 02:10:14 jkh Exp $
+#	$Id: Makefile,v 1.29 1993/12/16 01:30:15 ljo Exp $
 #
 
 SUBDIR=
@@ -50,7 +50,7 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
-world:	directories cleandist mk includes bootstrapld libraries tools mdec
+world:	directories cleandist mk includes libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} The whole thing"
 	@echo "--------------------------------------------------------------"
@@ -79,10 +79,12 @@ mk:
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR}/usr/share/mk"
 	@echo "--------------------------------------------------------------"
+.if defined(CLOBBER)
 	# DONT DO THIS!! rm -rf ${DESTDIR}/usr/share/mk
 	# DONT DO THIS!! mkdir ${DESTDIR}/usr/share/mk
-	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/share/mk
-	chmod 755 ${DESTDIR}/usr/share/mk
+	# DONT DO THIS!! chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/share/mk
+	# DONT DO THIS!! chmod 755 ${DESTDIR}/usr/share/mk
+.endif
 	cd ${.CURDIR}/share/mk;			make install;
 
 includes:
@@ -103,26 +105,27 @@ includes:
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
 
-# XXX -- This will go away later -- hack to get up to speed with shlibs
-# setenv NOBOOTSTRAPLD to prevent building new shlib tools.
-# This is to save build time if you've already done it before,
-# you MUST run it the first time you get the new sources.
+# You MUST run this the first time you get the new sources to boot strap
+# the shared library tools onto you system.  This target should only
+# need to be run once on a system.
 
-bootstrapld:
-.if !defined(NOBOOTSTRAPLD)
+bootstrapld:	directories cleandist mk includes
 	@echo "--------------------------------------------------------------"
 	@echo " Building new shlib compiler tools"
 	@echo "--------------------------------------------------------------"
-	cd ${.CURDIR}/usr.bin/strip; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/usr.bin/mkdep; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gas; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gcc2; make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/ld; make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gcc2/libgcc; make all install ${CLEANDIR} obj
-	cd ${.CURDIR}/lib/libc; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/lib/csu.i386; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/ld/rtld; make depend all install ${CLEANDIR} obj
-.endif
+	# These tools need built very eary do to a.out.h changes:
+	# possible ar needed too
+	cd ${.CURDIR}/usr.bin/mkdep;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/nm;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/ranlib;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/strip;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/ld;		make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gas;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gcc2;		make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gcc2/libgcc;	make all install ${CLEANDIR} obj
+	cd ${.CURDIR}/lib/csu.i386;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/lib/libc;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/ld/rtld;	make depend all install ${CLEANDIR} obj
 
 libraries:
 	# setenv NOPROFILE if you do not want profiled libraries
@@ -145,8 +148,8 @@ tools:
 	@echo " Rebuilding ${DESTDIR} Compiler and Make"
 	@echo "--------------------------------------------------------------"
 	@echo
-	cd ${.CURDIR}/gnu/gcc2;			make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/usr.bin/make;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gcc2;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/make;	make depend all install ${CLEANDIR} obj
 
 mdec:
 	@echo "--------------------------------------------------------------"
