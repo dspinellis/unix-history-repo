@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -80,12 +80,12 @@ nfs_read(vp, uio, ioflag, cred)
 	 */
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
-		if (vp->v_blockh && vinvalbuf(vp, TRUE)) {
+		if (vinvalbuf(vp, TRUE)) {
 			if (error = nfs_getattr(vp, &vattr, cred))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		}
-	} else if (vp->v_blockh) {
+	} else if (vp->v_cleanblkhd || vp->v_dirtyblkhd) {
 		if (error = nfs_getattr(vp, &vattr, cred))
 			return (error);
 		if (np->n_mtime != vattr.va_mtime.tv_sec) {
@@ -204,6 +204,7 @@ nfs_write(vp, uio, ioflag, cred)
 				bp->b_flags &= ~(B_READ | B_DONE |
 				    B_ERROR | B_DELWRI | B_ASYNC);
 				u.u_ru.ru_oublock++;
+				bp->b_vp->v_numoutput++;
 				VOP_STRATEGY(bp);
 				error = biowait(bp);
 				if (bp->b_flags & B_ERROR) {
