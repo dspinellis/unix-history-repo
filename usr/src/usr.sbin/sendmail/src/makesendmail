@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.5 (Berkeley) %G%
+#       @(#)makesendmail	8.6 (Berkeley) %G%
 #
 
 #
@@ -54,25 +54,25 @@ elif [ -r obj.$rel ]; then
 else
 	# no existing obj directory -- try to create one if Makefile found
 	obj=obj.$os.$arch.$rel
-	if [ -r Makefile.$os.$arch.$rel ]; then
+	if [ -r Makefiles/Makefile.$os.$arch.$rel ]; then
 		makefile=Makefile.$os.$arch.$rel
-	elif [ -r Makefile.$os.$arch.$rbase.x ]; then
+	elif [ -r Makefiles/Makefile.$os.$arch.$rbase.x ]; then
 		makefile=Makefile.$os.$arch.$rbase.x
-	elif [ -r Makefile.$os.$rel ]; then
+	elif [ -r Makefiles/Makefile.$os.$rel ]; then
 		makefile=Makefile.$os.$rel
-	elif [ -r Makefile.$os.$rbase.x ]; then
+	elif [ -r Makefiles/Makefile.$os.$rbase.x ]; then
 		makefile=Makefile.$os.$rbase.x
-	elif [ -r Makefile.$os.$arch ]; then
+	elif [ -r Makefiles/Makefile.$os.$arch ]; then
 		makefile=Makefile.$os.$arch
-	elif [ -r Makefile.$arch.$rel ]; then
+	elif [ -r Makefiles/Makefile.$arch.$rel ]; then
 		makefile=Makefile.$arch.$rel
-	elif [ -r Makefile.$arch.$rbase.x ]; then
+	elif [ -r Makefiles/Makefile.$arch.$rbase.x ]; then
 		makefile=Makefile.$arch.$rbase.x
-	elif [ -r Makefile.$os ]; then
+	elif [ -r Makefiles/Makefile.$os ]; then
 		makefile=Makefile.$os
-	elif [ -r Makefile.$arch ]; then
+	elif [ -r Makefiles/Makefile.$arch ]; then
 		makefile=Makefile.$arch
-	elif [ -r Makefile.$rel ]; then
+	elif [ -r Makefiles/Makefile.$rel ]; then
 		makefile=Makefile.$rel
 	else
 		echo "Cannot determine how to support $arch.$os.$rel"
@@ -80,7 +80,7 @@ else
 	fi
 	echo "Creating $obj using $makefile"
 	mkdir $obj
-	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../$makefile Makefile)
+	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../Makefiles/$makefile Makefile)
 fi
 echo "Making in $obj"
 cd $obj
