@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -364,7 +364,7 @@ recipient(a, sendq, e)
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");
 		}
-		else if (!writable(buf, SFF_ANYFILE))
+		else if (!writable(buf, getctladdr(a), SFF_ANYFILE))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias, e);
@@ -611,6 +611,7 @@ finduser(name, fuzzyp)
 **
 **	Parameters:
 **		filename -- the file name to check.
+**		ctladdr -- the controlling address for this file.
 **		flags -- SFF_* flags to control the function.
 **
 **	Returns:
@@ -622,8 +623,9 @@ finduser(name, fuzzyp)
 */
 
 bool
-writable(filename, flags)
+writable(filename, ctladdr, flags)
 	char *filename;
+	ADDRESS *ctladdr;
 	int flags;
 {
 	uid_t euid;
@@ -670,16 +672,18 @@ writable(filename, flags)
 		return (FALSE);
 	}
 
-	euid = RealUid;
-	uname = RealUserName;
-	if (euid == 0)
+	if (ctladdr != NULL && geteuid() == 0)
 	{
-		euid = DefUid;
-		uname = DefUser;
+		euid = ctladdr->q_uid;
+		egid = ctladdr->q_gid;
+		uname = ctladdr->q_user;
 	}
-	egid = RealGid;
-	if (egid == 0)
-		egid = DefGid;
+	else
+	{
+		euid = RealUid;
+		egid = RealGid;
+		uname = RealUserName;
+	}
 	if (geteuid() == 0)
 	{
 		if (bitset(S_ISUID, stb.st_mode))
@@ -690,6 +694,14 @@ writable(filename, flags)
 		if (bitset(S_ISGID, stb.st_mode))
 			egid = stb.st_gid;
 	}
+	if (euid == 0)
+	{
+		euid = DefUid;
+		uname = DefUser;
+	}
+	if (egid == 0)
+		egid = DefGid;
+	
 
 	if (tTd(29, 5))
 		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",

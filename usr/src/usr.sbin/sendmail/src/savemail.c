@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -349,7 +349,7 @@ savemail(e)
 			}
 
 			strcpy(buf, "/usr/tmp/dead.letter");
-			if (!writable(buf, SFF_NOSLINK))
+			if (!writable(buf, NULLADDR, SFF_NOSLINK))
 			{
 				state = ESM_PANIC;
 				break;
