@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)forop.c 1.6 %G%";
 #    include	"pc.h"
 #    include	"pcops.h"
 #endif PC
+
     /*
      *	forop for pc:
      *	    this evaluates the initial and termination expressions,
@@ -39,6 +40,7 @@ forop( arg )
 	int		*init;
 	struct nl	*inittype;
 	int		initoff;
+	char		forflags;
 	int		*term;
 	struct nl	*termtype;
 	int		termoff;
@@ -97,12 +99,12 @@ nogood:
 	    /*
 	     * mark the forvar so we can't change it during the loop
 	     */
-	if (forvar->value[NL_FORV]) {
+	if ( forvar->value[ NL_FORV ] & FORBOUND ) {
 	    error("Can't modify the for variable %s in the range of the loop", forvar->symbol);
 	    forvar = NIL;
 	    goto nogood;
 	}
-	forvar -> value[ NL_FORV ] = 1;
+	forvar -> value[ NL_FORV ] |= LOOPVAR;
 	if ( fortype == NIL ) {
 	    goto nogood;
 	}
@@ -112,11 +114,18 @@ nogood:
 	}
 	    /*
 	     * allocate space for the initial and termination expressions
+	     * save the old offset of this variable in NL_SOFFS
+	     * save the old flags (and block) in NL_FORV
+	     * and mark the variable as being a for-variable in a temporary
+	     * set the new offset to be the offset of the initial temp
+	     * set the flags/block to be the old flags and the current block
 	     */
 	initoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
 	forvar -> value[ NL_SOFFS ] = forvar -> value[ NL_OFFS ];
+	forvar -> value[ NL_FORV ] = TEMPBOUND | forvar -> nl_flags;
 	forvar -> value[ NL_OFFS ] = initoff;
-	forvar -> value[ NL_FORV ] = 3;
+	forflags = NLFLAGS( forvar -> nl_flags ) + cbn;
+	forvar -> nl_flags = forflags;
 	termoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
 #	ifdef PC
 		/*
@@ -180,8 +189,11 @@ nogood:
 		 * see the note in asgnop1 about why this is an rvalue.
 		 */
 	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
-	    rvalue( lhs , NIL , RREQ );
+	    forflags |= forvar -> nl_flags;
+	    forvar -> nl_flags = (char) forvar -> value[ NL_FORV ] &~ FORBOUND;
+	    lvalue( lhs , NOUSE , RREQ );
 	    forvar -> value[ NL_OFFS ] = initoff;
+	    forvar -> nl_flags = forflags;
 	    if ( opt( 't' ) ) {
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
@@ -213,11 +225,14 @@ nogood:
 		 * assign the initial expression to the for variable.
 		 */
 	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
+	    forflags |= forvar -> nl_flags;
+	    forvar -> nl_flags = (char) forvar -> value[ NL_FORV ] &~ FORBOUND;
 	    lvalue( lhs , NOUSE , LREQ );
+	    forvar -> value[ NL_OFFS ] = initoff;
+	    forvar -> nl_flags = forflags;
 	    put(2, O_RV4 | cbn<<8+INDX, initoff);
 	    rangechk(fortype, nl+T4INT);
 	    gen(O_AS2, O_AS2, width(fortype), sizeof(long));
-	    forvar -> value[ NL_OFFS ] = initoff;
 #	endif OBJ
 	    /*
 	     * and don't forget ...
@@ -255,7 +270,7 @@ nogood:
 		 * but first, increment the for variable.
 		 * there it is again, an rvalue on the lhs of an assignment.
 		 */
-	    rvalue( lhs , NIL , RREQ );
+	    lvalue( lhs , MOD , RREQ );
 	    if ( opt( 't' ) ) {
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
@@ -303,9 +318,13 @@ nogood:
 byebye:
 	noreach = 0;
 	if ( forvar != NIL ) {
-	    if (forvar -> value[ NL_FORV ] > 1)
+	    if (forvar -> value[ NL_FORV ] & TEMPBOUND ) {
 		forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
-	    forvar -> value[ NL_FORV ] = 0;
+		forvar -> nl_flags =
+			    (char)  ( ( forvar -> value[ NL_FORV ] &~ FORBOUND )
+				    | NLFLAGS( forvar -> nl_flags ) );
+	    }
+	    forvar -> value[ NL_FORV ] = NIL;
 	}
 	if ( goc != gocnt ) {
 	    putcnt();
