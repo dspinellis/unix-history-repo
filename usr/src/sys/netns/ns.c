@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.c	6.2 (Berkeley) %G%
+ *	@(#)ns.c	6.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,12 +63,11 @@ ns_control(so, cmd, data, ifp)
 	struct mbuf *m;
 	int error;
 
-	if (!suser())
-		return (u.u_error);
-
 	/*
 	 * Find address for this interface, if it exists.
 	 */
+	if (ifp==0)
+		return (EADDRNOTAVAIL);
 	for (ia = ns_ifaddr; ia; ia = ia->ia_next)
 		if (ia->ia_ifp == ifp)
 			break;
@@ -76,11 +75,33 @@ ns_control(so, cmd, data, ifp)
 	switch (cmd) {
 
 	case SIOCGIFADDR:
+		if (ia == (struct ns_ifaddr *)0)
+			return (EADDRNOTAVAIL);
+		ifr->ifr_addr = ia->ia_addr;
+		return (0);
+
+
 	case SIOCGIFBRDADDR:
+		if (ia == (struct ns_ifaddr *)0)
+			return (EADDRNOTAVAIL);
+		if ((ifp->if_flags & IFF_BROADCAST) == 0)
+			return (EINVAL);
+		ifr->ifr_dstaddr = ia->ia_broadaddr;
+		return (0);
+
 	case SIOCGIFDSTADDR:
 		if (ia == (struct ns_ifaddr *)0)
 			return (EADDRNOTAVAIL);
-		break;
+		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
+			return (EINVAL);
+		ifr->ifr_dstaddr = ia->ia_dstaddr;
+		return (0);
+	}
+
+	if (!suser())
+		return (u.u_error);
+
+	switch (cmd) {
 
 	case SIOCSIFDSTADDR:
 		return (EOPNOTSUPP);
@@ -106,32 +127,6 @@ ns_control(so, cmd, data, ifp)
 			ia->ia_ifp = ifp;
 			IA_SNS(ia)->sns_family = AF_NS;
 		}
-		break;
-	}
-
-	switch (cmd) {
-
-	case SIOCGIFADDR:
-		ifr->ifr_addr = ia->ia_addr;
-		break;
-
-	case SIOCGIFBRDADDR:
-		if (ia == (struct ns_ifaddr *)0)
-			return (EADDRNOTAVAIL);
-		if ((ifp->if_flags & IFF_BROADCAST) == 0)
-			return (EINVAL);
-		ifr->ifr_dstaddr = ia->ia_broadaddr;
-		break;
-
-	case SIOCGIFDSTADDR:
-		if (ia == (struct ns_ifaddr *)0)
-			return (EADDRNOTAVAIL);
-		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
-			return (EINVAL);
-		ifr->ifr_dstaddr = ia->ia_dstaddr;
-		break;
-
-	case SIOCSIFADDR:
 		return
 		    (ns_ifinit(ifp, ia, (struct sockaddr_ns *)&ifr->ifr_addr));
 
@@ -140,7 +135,6 @@ ns_control(so, cmd, data, ifp)
 			return (EOPNOTSUPP);
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
 	}
-	return (0);
 }
 
 /*
