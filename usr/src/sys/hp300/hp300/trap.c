@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.6 (Berkeley) %G%
+ *	@(#)trap.c	7.7 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -526,7 +526,10 @@ syscall(code, frame)
 	register struct sysent *callp;
 	register struct proc *p = u.u_procp;
 	int error, opc, numsys;
-	int args[8], rval[2];
+	struct args {
+		int i[8];
+	} args;
+	int rval[2];
 	struct timeval syst;
 	struct sysent *systab;
 #ifdef HPUXCOMPAT
@@ -558,7 +561,7 @@ syscall(code, frame)
 	else
 		callp = &systab[code];
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)args, (u_int)i))) {
+	    (error = copyin(params, (caddr_t)&args, (u_int)i))) {
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
 			error = bsdtohpuxerrno(error);
@@ -567,23 +570,23 @@ syscall(code, frame)
 		frame.f_sr |= PSL_C;	/* carry bit */
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
+			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
 		goto done;
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
-		ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
+		ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
 	rval[0] = 0;
 	rval[1] = frame.f_regs[D1];
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
-		error = notimp(u.u_procp, args, rval, code, callp->sy_narg);
+		error = notimp(u.u_procp, args.i, rval, code, callp->sy_narg);
 	else
 #endif
-	error = (*callp->sy_call)(u.u_procp, args, rval);
+	error = (*callp->sy_call)(u.u_procp, &args, rval);
 	if (error == ERESTART)
 		frame.f_pc = opc;
 	else if (error != EJUSTRETURN) {
