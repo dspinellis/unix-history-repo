@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -194,6 +194,9 @@ allocaddr(a, copyf, paddr, delimptr)
 	char *delimptr;
 {
 	register MAILER *m = a->q_mailer;
+
+	if (tTd(24, 4))
+		printf("allocaddr(copyf=%d, paddr=%s)\n", copyf, paddr);
 
 	if (copyf > 0 && paddr != NULL)
 	{
@@ -1170,10 +1173,7 @@ buildaddr(tv, a)
 		a->q_flags |= QNOTREMOTE;
 	}
 
-	/* rewrite according recipient mailer rewriting rules */
-	rewrite(tv, 2);
-	if (m->m_re_rwset > 0)
-		rewrite(tv, m->m_re_rwset);
+	/* do cleanup of final address */
 	rewrite(tv, 4);
 
 	/* save the result for the command line/RCPT argument */
