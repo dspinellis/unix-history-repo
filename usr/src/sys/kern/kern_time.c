@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	6.5 (Berkeley) %G%
+ *	@(#)kern_time.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -80,6 +80,7 @@ setthetime(tv)
 }
 
 int adjtimedelta;
+extern int tickadj;
 
 adjtime()
 {
@@ -87,8 +88,8 @@ adjtime()
 		struct timeval *delta;
 		struct timeval *olddelta;
 	} *uap = (struct a *)u.u_ap;
-
 	struct timeval atv, oatv;
+	int s;
 
 	if (!suser()) 
 		return;
@@ -96,6 +97,7 @@ adjtime()
 		sizeof (struct timeval));
 	if (u.u_error)
 		return;
+	s = splclock();
 	if (uap->olddelta) {
 		oatv.tv_sec = adjtimedelta / 1000000;
 		oatv.tv_usec = adjtimedelta % 1000000;
@@ -103,6 +105,9 @@ adjtime()
 			sizeof (struct timeval));
 	}
 	adjtimedelta = atv.tv_sec * 1000000 + atv.tv_usec;
+	if (adjtimedelta % tickadj)
+		adjtimedelta = adjtimedelta / tickadj * tickadj;
+	splx(s);
 }
 
 /*
