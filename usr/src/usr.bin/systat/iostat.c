@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -213,8 +213,8 @@ barlabels(row)
 void
 showiostat()
 {
-	register int i, row, col;
 	register long t;
+	register int i, row, col;
 
 	if (namelist[X_DK_BUSY].n_type == 0)
 		return;
@@ -305,7 +305,7 @@ static void
 stat1(row, o)
 	int row, o;
 {
-	register i;
+	register int i;
 	double time;
 
 	time = 0;

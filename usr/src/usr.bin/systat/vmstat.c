@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -246,7 +246,7 @@ fetchkre()
 void
 labelkre()
 {
-	register i, j;
+	register int i, j;
 
 	clear();
 	mvprintw(STATROW, STATCOL + 4, "users    Load");
@@ -526,7 +526,7 @@ cputime(indx)
 	int indx;
 {
 	double t;
-	register i;
+	register int i;
 
 	t = 0;
 	for (i = 0; i < CPUSTATES; i++)
