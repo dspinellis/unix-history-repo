@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelete.c	3.9 83/11/28";
+static	char *sccsid = "@(#)wwdelete.c	3.10 83/11/29";
 #endif
 
 #include "ww.h"
@@ -47,11 +47,19 @@ register struct ww *w;
 {
 	int i;
 	int tt, bb, ll, rr;
+	char hasglass;
 
+again:
+	hasglass = 0;
 	tt = MAX(t, w->ww_i.t);
 	bb = MIN(b, w->ww_i.b);
 	ll = MAX(l, w->ww_i.l);
 	rr = MIN(r, w->ww_i.r);
+	if (tt >= bb || ll >= rr) {
+		if ((w = w->ww_forw) == &wwhead)
+			return;
+		goto again;
+	}
 	for (i = tt; i < bb; i++) {
 		register j;
 		register char *smap = wwsmap[i];
@@ -62,8 +70,12 @@ register struct ww *w;
 		char touched = wwtouched[i];
 
 		for (j = ll; j < rr; j++) {
-			if (smap[j] != WWX_NOBODY || win[j] & WWM_GLS)
+			if (smap[j] != WWX_NOBODY)
 				continue;
+			if (win[j] & WWM_GLS) {
+				hasglass = 1;
+				continue;
+			}
 			smap[j] = w->ww_index;
 			ns[j].c_w = buf[j].c_w ^ win[j] << WWC_MSHIFT;
 			touched = 1;
@@ -75,12 +87,14 @@ register struct ww *w;
 	}
 	if ((w = w->ww_forw) == &wwhead)
 		return;
+	if (hasglass)
+		goto again;
 	if (tt > t)
 		wwdelete1(w, t, tt, l, r);
 	if (bb < b)
 		wwdelete1(w, bb, b, l, r);
 	if (ll > l)
-		wwdelete1(w, t, b, l, ll);
+		wwdelete1(w, tt, bb, l, ll);
 	if (rr < r)
-		wwdelete1(w, t, b, rr, r);
+		wwdelete1(w, tt, bb, rr, r);
 }
