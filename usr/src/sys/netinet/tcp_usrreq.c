@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,7 +42,6 @@
  */
 extern	char *tcpstates[];
 struct	tcpcb *tcp_newtcpcb();
-int	tcpsenderrors;
 
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
@@ -231,11 +230,6 @@ tcp_usrreq(so, req, m, nam, rights)
 	case PRU_SEND:
 		sbappend(&so->so_snd, m);
 		error = tcp_output(tp);
-		if (error) {		/* XXX fix to use other path */
-			if (error == ENOBUFS)		/* XXX */
-				error = 0;		/* XXX */
-			tcpsenderrors++;
-		}
 		break;
 
 	/*
