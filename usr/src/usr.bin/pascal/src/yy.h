@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)yy.h 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)yy.h 1.2 %G%"; */
 
 #include "y.tab.h"
 /*
@@ -23,7 +23,12 @@ FILE		*ibuf, *ibp;
  * length allowed on input and is doubtless too small.
  * The token buffer should be a local array in yylex.
  */
+#ifdef ADDR16
 #define CBSIZE 161
+#endif ADDR16
+#ifdef ADDR32
+#define CBSIZE 1024
+#endif ADDR32
 
 char	charbuf[CBSIZE], *bufp, token[CBSIZE];
 
