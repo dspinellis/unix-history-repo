@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ps.c	6.3 (Berkeley) %G%
+ *	@(#)ps.c	6.4 (Berkeley) %G%
  */
 
 /*
- * Evans and Sutherland Picture System 2 driver
+ * Evans and Sutherland Picture System 2 driver -- Bill Reeves.
  */
 
 /*
