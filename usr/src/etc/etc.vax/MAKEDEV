@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.10	%G%
+#	@(#)MAKEDEV	4.11	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -79,7 +79,7 @@ ht*|tm*|ts*|mt*|ut*)
 		umask 77
 		;;
 	*)
-		bad unit for tape in: $1
+		echo bad unit for tape in: $1
 		;;
 	esac
 	;;
@@ -91,7 +91,7 @@ hp*|hk*|up*|ra*|rb*)
 	hk*) name=hk; blk=3; chr=11;;
 	up*) name=up; blk=2; chr=13;;
 	ra*) name=ra; blk=9; chr=9;;
-	rb*) name=rb; blk=13; chr=23;;
+	rb*) name=rb; blk=11; chr=23;;
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
