@@ -139,7 +139,8 @@ QUEUE_DIR		[/var/spool/mqueue] The directory containing
 			queue files.
 STATUS_FILE		[/etc/sendmail.st] The file containing status
 			information.
-LOCAL_MAILER_PATH	[/bin/mail] The program used to deliver local mail.
+LOCAL_MAILER_PATH	[/usr/libexec/mail.local] The program used to 
+			deliver local mail.
 LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
 			flags lsDFMm are always included.
 LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
@@ -568,7 +569,7 @@ Sam Leffler's FlexFAX software is still in beta test -- but he expects a
 public version out "later this week" [as of 3/1/93].  The following
 blurb is direct from Sam:
 
-	$Header: /b/source/CVS/src/usr.sbin/sendmail/cf/README,v 1.4 1993/07/20 18:10:37 glass Exp $
+	$Header: /freefall/a/cvs/386BSD/src/usr.sbin/sendmail/cf/README,v 1.3 1993/07/30 17:20:26 nate Exp $
 
 	How To Obtain This Software (in case all you get is this file)
 
