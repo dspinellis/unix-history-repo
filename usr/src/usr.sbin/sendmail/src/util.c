@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.19		%G%);
+SCCSID(@(#)util.c	3.20		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -546,27 +546,4 @@ putline(l, fp, fullsmtp)
 	fputs(l, fp);
 	fputs("\r\n", fp);
 	*p = '\n';
-}
-/*
-**  TICK -- take a clock tick
-**
-**	Someday this will have to do more complex event scheduling.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		non-local through TickFrame.
-**
-**	Side Effects:
-**		none.
-*/
-
-tick()
-{
-# ifdef DEBUG
-	if (Debug > 0)
-		printf("tick\n");
-# endif DEBUG
-	longjmp(TickFrame, 1);
 }
