@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -64,7 +64,7 @@ fts_open(argv, options, compar)
 	/* Allocate/initialize the stream */
 	if ((sp = malloc((u_int)sizeof(FTS))) == NULL)
 		return (NULL);
-	bzero(sp, sizeof(FTS));
+	memset(sp, 0, sizeof(FTS));
 	sp->fts_compar = compar;
 	sp->fts_options = options;
 
@@ -167,10 +167,10 @@ fts_load(sp, p)
 	 * known that the path will fit.
 	 */
 	len = p->fts_pathlen = p->fts_namelen;
-	bcopy(p->fts_name, sp->fts_path, len + 1);
-	if ((cp = rindex(p->fts_name, '/')) && (cp != p->fts_name || cp[1])) {
+	memmove(sp->fts_path, p->fts_name, len + 1);
+	if ((cp = strrchr(p->fts_name, '/')) && (cp != p->fts_name || cp[1])) {
 		len = strlen(++cp);
-		bcopy(cp, p->fts_name, len + 1);
+		memmove(p->fts_name, cp, len + 1);
 		p->fts_namelen = len;
 	}
 	p->fts_accpath = p->fts_path = sp->fts_path;
@@ -365,7 +365,7 @@ next:	tmp = p;
 
 name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		*t++ = '/';
-		bcopy(p->fts_name, t, p->fts_namelen + 1);
+		memmove(t, p->fts_name, p->fts_namelen + 1);
 		return (sp->fts_cur = p);
 	}
 
@@ -665,7 +665,7 @@ mem1:				saved_errno = errno;
 			/* Build a file name for fts_stat to stat. */
 			if (ISSET(FTS_NOCHDIR)) {
 				p->fts_accpath = p->fts_path;
-				bcopy(p->fts_name, cp, p->fts_namelen + 1);
+				memmove(cp, p->fts_name, p->fts_namelen + 1);
 			} else
 				p->fts_accpath = p->fts_name;
 			/* Stat it. */
@@ -766,7 +766,7 @@ fts_stat(sp, p, follow)
 		}
 	} else if (lstat(p->fts_accpath, sbp)) {
 		p->fts_errno = errno;
-err:		bzero(sbp, sizeof(struct stat));
+err:		memset(sbp, 0, sizeof(struct stat));
 		return (FTS_NS);
 	}
 
@@ -862,7 +862,7 @@ fts_alloc(sp, name, namelen)
 		return (NULL);
 
 	/* Copy the name plus the trailing NULL. */
-	bcopy(name, p->fts_name, namelen + 1);
+	memmove(p->fts_name, name, namelen + 1);
 
 	if (!ISSET(FTS_NOSTAT))
 		p->fts_statp = (struct stat *)ALIGN(p->fts_name + namelen + 2);
