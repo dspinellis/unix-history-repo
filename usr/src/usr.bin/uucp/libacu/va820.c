@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)va820.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)va820.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -46,14 +46,15 @@ struct Devices *dev;
 	getnextfd();
 	signal(SIGALRM, alarmtr);
 	alarm(10);
-	if ((va = open(acu, 2)) < 0) {
+	va = open(acu, 2);
+	alarm(0);
+	next_fd = -1;
+	if (va < 0) {
 		DEBUG(4, "ACU OPEN FAIL %d\n", errno);
 		logent(acu, "CAN'T OPEN");
 		i = CF_NODEV;
 		goto ret;
 	}
-	alarm(0);
-	next_fd = -1;
 	/*
 	 * Set speed and modes on dialer and clear any
 	 * previous requests
