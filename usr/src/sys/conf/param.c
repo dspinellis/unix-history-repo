@@ -4,14 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.17 (Berkeley) %G%
+ *	@(#)param.c	7.18 (Berkeley) %G%
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980, 1986, 1989 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
 
 #include "sys/param.h"
 #include "sys/systm.h"
