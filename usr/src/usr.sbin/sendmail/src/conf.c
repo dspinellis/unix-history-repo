@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.100 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.101 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -54,44 +54,45 @@ static char sccsid[] = "@(#)conf.c	8.100 (Berkeley) %G%";
 struct hdrinfo	HdrInfo[] =
 {
 		/* originator fields, most to least significant  */
-	"resent-sender",	H_FROM|H_RESENT,
-	"resent-from",		H_FROM|H_RESENT,
-	"resent-reply-to",	H_FROM|H_RESENT,
-	"sender",		H_FROM,
-	"from",			H_FROM,
-	"reply-to",		H_FROM,
-	"full-name",		H_ACHECK,
-	"return-receipt-to",	H_FROM|H_RECEIPTTO,
-	"errors-to",		H_FROM|H_ERRORSTO,
+	"resent-sender",		H_FROM|H_RESENT,
+	"resent-from",			H_FROM|H_RESENT,
+	"resent-reply-to",		H_FROM|H_RESENT,
+	"sender",			H_FROM,
+	"from",				H_FROM,
+	"reply-to",			H_FROM,
+	"full-name",			H_ACHECK,
+	"return-receipt-to",		H_FROM|H_RECEIPTTO,
+	"errors-to",			H_FROM|H_ERRORSTO,
 
 		/* destination fields */
-	"to",			H_RCPT,
-	"resent-to",		H_RCPT|H_RESENT,
-	"cc",			H_RCPT,
-	"resent-cc",		H_RCPT|H_RESENT,
-	"bcc",			H_RCPT|H_ACHECK,
-	"resent-bcc",		H_RCPT|H_ACHECK|H_RESENT,
-	"apparently-to",	H_RCPT,
+	"to",				H_RCPT,
+	"resent-to",			H_RCPT|H_RESENT,
+	"cc",				H_RCPT,
+	"resent-cc",			H_RCPT|H_RESENT,
+	"bcc",				H_RCPT|H_ACHECK,
+	"resent-bcc",			H_RCPT|H_ACHECK|H_RESENT,
+	"apparently-to",		H_RCPT,
 
 		/* message identification and control */
-	"message-id",		0,
-	"resent-message-id",	H_RESENT,
-	"message",		H_EOH,
-	"text",			H_EOH,
+	"message-id",			0,
+	"resent-message-id",		H_RESENT,
+	"message",			H_EOH,
+	"text",				H_EOH,
 
 		/* date fields */
-	"date",			0,
-	"resent-date",		H_RESENT,
+	"date",				0,
+	"resent-date",			H_RESENT,
 
 		/* trace fields */
-	"received",		H_TRACE|H_FORCE,
-	"x400-received",	H_TRACE|H_FORCE,
-	"via",			H_TRACE|H_FORCE,
-	"mail-from",		H_TRACE|H_FORCE,
+	"received",			H_TRACE|H_FORCE,
+	"x400-received",		H_TRACE|H_FORCE,
+	"via",				H_TRACE|H_FORCE,
+	"mail-from",			H_TRACE|H_FORCE,
 
 		/* miscellaneous fields */
-	"comments",		H_FORCE,
-	"return-path",		H_FORCE|H_ACHECK,
+	"comments",			H_FORCE,
+	"return-path",			H_FORCE|H_ACHECK,
+	"content-transfer-encoding",	H_CTE,
 
 	NULL,			0,
 };
