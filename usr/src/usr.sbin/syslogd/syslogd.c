@@ -1,5 +1,5 @@
 #ifndef lint
-static char SccsId[] = "@(#)syslogd.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -22,6 +22,9 @@ static char SccsId[] = "@(#)syslogd.c	4.2 (Berkeley) %G%";
  * NLOGS -- the maximum number of simultaneous log files.
  * NUSERS -- the maximum number of people that can
  *	be designated as "superusers" on your system.
+ *
+ * Author: Eric Allman
+ * Modified to use UNIX domain IPC by Ralph Campbell
  */
 
 #define DAEMON		1	/* Daemon user-id */
@@ -41,6 +44,7 @@ static char SccsId[] = "@(#)syslogd.c	4.2 (Berkeley) %G%";
 #include <sysexits.h>
 #include <sys/socket.h>
 #include <sys/file.h>
+#include <sys/uio.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -49,10 +53,6 @@ char	logname[] = "/dev/log";
 char	defconf[] = "/etc/syslog.conf";
 char	defpid[] = "/etc/syslog.pid";
 char	ctty[] = "/dev/console";
-
-typedef char	bool;
-#define	TRUE	1
-#define	FALSE	0
 
 #define	dprintf		if (Debug) printf
 
@@ -88,10 +88,13 @@ struct	susers Susers[NSUSERS];
 int	Debug;			/* debug flag */
 int	LogFile;		/* log file descriptor */
 int	DefPri = LOG_NOTICE;	/* the default priority for untagged msgs */
-int	Sumask = LOG_SALERT;	/* lowest priority written to super-users */
+int	Sumask;			/* lowest priority written to super-users */
 int	MarkIntvl = 15;		/* mark interval in minutes */
 char	*ConfFile = defconf;	/* configuration file */
+char	host[32];		/* our hostname */
 char	rhost[32];		/* hostname of sender (forwarded messages) */
+int	inet = 0;		/* non-zero if INET sockets are being used */
+int	port;			/* port number for INET connections */
 
 extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
@@ -108,11 +111,11 @@ main(argc, argv)
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
 	char line[MAXLINE + 1];
-	extern die();
-	extern int domark();
+	extern int die(), domark();
 
 	sun.sun_family = AF_UNIX;
 	strncpy(sun.sun_path, logname, sizeof sun.sun_path);
+	gethostname(host, sizeof host);
 
 	while (--argc > 0) {
 		p = *++argv;
@@ -133,7 +136,7 @@ main(argc, argv)
 				Debug++;
 				break;
 
-			case 'p':		/* port */
+			case 'p':		/* path */
 				if (p[2] != '\0')
 					strncpy(sun.sun_path, &p[2], 
 						sizeof sun.sun_path);
@@ -150,7 +153,7 @@ main(argc, argv)
 		(void) open("/", 0);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		i = open("/dev/tty", 2);
+		i = open("/dev/tty", O_RDWR);
 	  	if (i >= 0) {
 			ioctl(i, TIOCNOTTY, (char *)0);
 			(void) close(i);
@@ -181,12 +184,13 @@ main(argc, argv)
 			die();
 		}
 		sin.sin_family = AF_INET;
-		sin.sin_port = sp->s_port;
+		sin.sin_port = port = sp->s_port;
 		if (bind(finet, &sin, sizeof(sin), 0) < 0) {
 			logerror("bind");
 			die();
 		}
 		defreadfds |= 1 << finet;
+		inet = 1;
 	}
 
 	/* tuck my process id away */
@@ -276,10 +280,6 @@ printline(local, msg)
 	}
 
 	q = line;
-	if (!local) {
-		sprintf(q, "%s: ", rhost);
-		q += strlen(q);
-	}
 	while ((c = *p++ & 0177) != '\0' && c != '\n' &&
 	    q < &line[sizeof(line) - 2]) {
 		if (iscntrl(c)) {
@@ -288,10 +288,9 @@ printline(local, msg)
 		} else
 			*q++ = c;
 	}
-	*q++ = '\n';
 	*q = '\0';
 
-	logmsg(pri, line);
+	logmsg(pri, line, local ? host : rhost);
 }
 
 /*
@@ -299,14 +298,25 @@ printline(local, msg)
  * the priority.
  */
 
-logmsg(pri, msg)
+logmsg(pri, msg, from)
 	int	pri;
-	char	*msg;
+	char	*msg, *from;
 {
 	char line[MAXLINE + 1];
 	register struct filed *f;
 	register int l;
+	struct iovec iov[4];
+	register struct iovec *v = iov;
 
+	v->iov_base = from;
+	v->iov_len = strlen(v->iov_base);
+	v++;
+	v->iov_base = " ";
+	v->iov_len = 1;
+	v++;
+	v->iov_base = msg;
+	v->iov_len = strlen(v->iov_base);
+	v++;
 	/* log the message to the particular outputs */
 	for (f = Files; f < &Files[NLOGS]; f++) {
 		if (f->f_file < 0 || f->f_pmask < pri)
@@ -321,13 +331,14 @@ logmsg(pri, msg)
 				logerror("sendto");
 			continue;
 		}
-		l = strlen(msg);
-		if (write(f->f_file, msg, l) != l) {
-			logerror(f->f_name);
-			(void) close(f->f_file);
-			f->f_file = -1;
+		if (f->f_flags & F_TTY) {
+			v->iov_base = "\r\n";
+			v->iov_len = 2;
+		} else {
+			v->iov_base = "\n";
+			v->iov_len = 1;
 		}
-		if ((f->f_flags & F_TTY) && write(f->f_file, "\r", 1) != 1) {
+		if (writev(f->f_file, iov, 4) < 0) {
 			logerror(f->f_name);
 			(void) close(f->f_file);
 			f->f_file = -1;
@@ -338,7 +349,7 @@ logmsg(pri, msg)
 	 * Output high priority messages to terminals.
 	 */
 	if (pri <= Sumask)
-		wallmsg(pri, msg);
+		wallmsg(pri, msg, from);
 }
 
 /*
@@ -433,17 +444,25 @@ init()
 
 		/* mark entry as used and update flags */
 		if (*p == '@') {
+			if (!inet)
+				continue;
 			hp = gethostbyname(++p);
-			if (sp != NULL && hp != NULL) {
-				bzero(&f->f_addr, sizeof f->f_addr);
-				f->f_addr.sin_family = AF_INET;
-				f->f_addr.sin_port = sp->s_port;
-				bcopy(hp->h_addr, (char *) &f->f_addr.sin_addr, hp->h_length);
-				f->f_file = socket(AF_INET, SOCK_DGRAM, 0);
-				if (f->f_file < 0) {
-					logerror("socket");
-					continue;
-				}
+			if (hp == NULL) {
+				char buf[100];
+
+				sprintf(buf, "unknown host %s", p);
+				errno = 0;
+				logerror(buf);
+				continue;
+			}
+			bzero(&f->f_addr, sizeof f->f_addr);
+			f->f_addr.sin_family = AF_INET;
+			f->f_addr.sin_port = port;
+			bcopy(hp->h_addr, (char *) &f->f_addr.sin_addr, hp->h_length);
+			f->f_file = socket(AF_INET, SOCK_DGRAM, 0);
+			if (f->f_file < 0) {
+				logerror("socket");
+				continue;
 			}
 			flags |= F_FORW;
 			f->f_pmask = pmask;
@@ -471,6 +490,7 @@ init()
 	 *	Anyone in this list is informed directly if s/he
 	 *	is logged in when a high priority message comes through.
 	 */
+	Sumask = LOG_SALERT;
 	for (i = 0; i < NSUSERS && fgets(cline, sizeof cline, cf) != NULL; i++) {
 		/* strip off newline */
 		for (p = cline; *p != '\0'; p++)
@@ -485,7 +505,7 @@ init()
 			if (pmask > Sumask)
 				Sumask = pmask;
 		} else
-			Susers[i].s_pmask = LOG_SALERT;
+			Susers[i].s_pmask = pmask = LOG_SALERT;
 		strncpy(Susers[i].s_name, p, UNAMESZ);
 		dprintf("Suser %s pmask %d\n", p, pmask);
 	}
@@ -497,9 +517,7 @@ init()
 	/* close the configuration file */
 	(void) fclose(cf);
 
-	time(&now);
-	sprintf(cline, "syslog restarted %s", ctime(&now));
-	logmsg(LOG_DEBUG, cline);
+	dprintf("syslogd: restarted\n");
 
 	/* arrange for signal 1 to reconfigure */
 	signal(SIGHUP, init);
@@ -512,32 +530,32 @@ init()
  *	world, or a list of approved users.
  */
 
-wallmsg(pri, msg)
+wallmsg(pri, msg, from)
 	int pri;
-	char *msg;
+	char *msg, *from;
 {
 	register char *p;
 	register int i;
-	int f, uf, flags, len, e;
+	int f, flags, len, e;
+	FILE *uf;
 	struct utmp ut;
 	long now;
 	char line[MAXLINE + 100];
-	char hbuf[32];
 
 	/* open the user login file */
-	uf = open("/etc/utmp", 0);
-	if (uf < 0)
+	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
+		logerror("/etc/utmp");
 		return;
+	}
 
 	time(&now);
-	gethostname(hbuf, sizeof hbuf);
 	sprintf(line,
-	    "\r\n\007Message from syslogd@%s at %.24s ...\r\n%s\r",
-		hbuf, ctime(&now), msg);
+	    "\r\n\7Message from syslogd@%s at %.24s ...\r\n%s\r\n",
+		from, ctime(&now), msg);
 	len = strlen(line);
 
 	/* scan the user login file */
-	while (read(uf, &ut, sizeof ut) == sizeof ut) {
+	while (fread(&ut, sizeof ut, 1, uf) == 1) {
 		/* is this slot used? */
 		if (ut.ut_name[0] == '\0')
 			continue;
@@ -607,8 +625,8 @@ domark()
 			continue;
 		if (stb.st_mtime >= now - MarkIntvl * 60)
 			continue;
-		sprintf(buf, " --- MARK --- %s", ctime(&now));
-		logmsg(-1, buf);
+		sprintf(buf, "syslogd: %.24s-- MARK", ctime(&now));
+		logmsg(-1, buf, host);
 	}
 	alarm(MarkIntvl * 60);
 }
@@ -645,21 +663,26 @@ logerror(type)
 	char *type;
 {
 	char buf[100];
+	long now;
 
+	time(&now);
 	if (errno == 0)
-		sprintf(buf, "syslogd: %s\n", type);
+		sprintf(buf, "syslogd: %.24s-- %s", ctime(&now), type);
 	else if ((unsigned) errno > sys_nerr)
-		sprintf(buf, "syslogd: %s: error %d\n", type, errno);
+		sprintf(buf, "syslogd: %.24s-- %s: error %d",
+			ctime(&now), type, errno);
 	else
-		sprintf(buf, "syslogd: %s: %s\n", type, sys_errlist[errno]);
+		sprintf(buf, "syslogd: %.24s-- %s: %s",
+			ctime(&now), type, sys_errlist[errno]);
 	errno = 0;
-	dprintf(buf);
-	logmsg(LOG_ERR, buf);
+	dprintf("%s\n", buf);
+	logmsg(LOG_ERR, buf, host);
 }
 
 die()
 {
-	logmsg(LOG_DEBUG, "syslog: down\n");
+
+	dprintf("syslogd: going down\n");
 	(void) unlink(logname);
 	exit(0);
 }
