@@ -1,0 +1,3 @@
+Mfactor	factor.c	/^main(argc, argv)$/
+pr_fact	factor.c	/^pr_fact(val)$/
+read_num_buf	factor.c	/^read_num_buf(input, buf)$/

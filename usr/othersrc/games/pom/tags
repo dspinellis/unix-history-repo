@@ -1,0 +1,4 @@
+Mpom	pom.c	/^main()$/
+adj360	pom.c	/^adj360(deg)$/
+dtor	pom.c	/^dtor(deg)$/
+potm	pom.c	/^potm(days)$/
