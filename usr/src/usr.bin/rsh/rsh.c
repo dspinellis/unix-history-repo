@@ -1,3 +1,9 @@
+
+/*
+ *	$Source: /a/staff/kfall/mit/rsh/RCS/rsh.c,v $
+ *	$Header: /a/staff/kfall/mit/rsh/RCS/rsh.c,v 5.1 89/07/31 19:28:59 kfall Exp Locker: kfall $
+ */
+
 /*
  * Copyright (c) 1983 The Regents of the University of California.
  * All rights reserved.
@@ -22,7 +28,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.12 (Berkeley) 5/11/89";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,11 +46,13 @@ static char sccsid[] = "@(#)rsh.c	5.12 (Berkeley) %G%";
 #include "pathnames.h"
 
 #ifdef	KERBEROS
-#include <kerberos/krb.h>
-char	krb_realm[REALM_SZ];
+#include <krb.h>
+char	dst_realm_buf[REALM_SZ];
+char	*dest_realm = NULL;
 int	use_kerberos = 1, encrypt = 0;
 CREDENTIALS	cred;
 Key_schedule	schedule;
+extern char	*krb_realmofhost();
 #endif	/* KERBEROS */
 
 /*
@@ -97,7 +105,10 @@ another:
 	}
 	if (argc > 0 && !strcmp(*argv, "-n")) {
 		argv++, argc--;
-		nflag++;
+#ifdef	KERBEROS
+		if (!encrypt)
+			nflag++;
+#endif
 		goto another;
 	}
 	if (argc > 0 && !strcmp(*argv, "-d")) {
@@ -132,6 +143,8 @@ another:
 	if(argc > 0 && !strncmp(*argv, "-x", 2)) {
 		encrypt = 1;
 		des_set_key(cred.session, schedule);
+		if (nflag)
+			nflag = 0;
 		argv++, argc--;
 		goto another;
 	}
@@ -142,7 +155,8 @@ another:
 			fprintf(stderr, "-k option requires an argument\n");
 			exit(1);
 		}
-		strncpy(krb_realm, *argv, REALM_SZ);
+		dest_realm = dst_realm_buf;
+		strncpy(dest_realm, *argv, REALM_SZ);
 		argv++, argc--;
 		goto another;
 	}
@@ -174,17 +188,20 @@ another:
 			*cp++ = ' ';
 	}
 #ifdef	KERBEROS
-	sp = getservbyname("kshell", "tcp");
+	sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
 	if (sp == NULL) {
+		char	msgbuf[64];
 		use_kerberos = 0;
-		old_warning("kshell service unknown");
+		(void) sprintf(msgbuf, "can't get entry for %s/tcp service",
+			(encrypt ? "ekshell" : "kshell"));
+		old_warning(msgbuf);
 		sp = getservbyname("shell", "tcp");
 	}
 #else
 	sp = getservbyname("shell", "tcp");
 #endif
 
-	if (sp == 0) {
+	if (sp == NULL) {
 		fprintf(stderr, "rsh: shell/tcp: unknown service\n");
 		exit(1);
 	}
@@ -193,43 +210,39 @@ another:
 try_connect:
 	if(use_kerberos) {
 		rem = KSUCCESS;
-		if(krb_realm[0] == '\0') {
-			rem = krb_get_lrealm(krb_realm, 1);
-		}
+		errno = 0;
+		if (dest_realm == NULL)
+			dest_realm = krb_realmofhost(host);
 
-		if(rem == KSUCCESS) {
-			if(encrypt) {
-				rem = krcmd_mutual(
-					&host, sp->s_port,
-					user ? user : pwd->pw_name,
-					args,
-					&rfd2,
-					krb_realm,
-					&cred, schedule);
-			} else {
-				rem = krcmd(
-					&host,
-					sp->s_port,
-					user ? user : pwd->pw_name,
-					args,
-					&rfd2,
-					krb_realm
-				);
-			}
+		if(encrypt) {
+			rem = krcmd_mutual(
+				&host, sp->s_port,
+				user ? user : pwd->pw_name,
+				args,
+				&rfd2,
+				dest_realm,
+				&cred, schedule);
 		} else {
-			fprintf(stderr,
-			    "%s: error getting local realm\n",
-			    argv0[0]);
-			exit(1);
+			rem = krcmd(
+				&host,
+				sp->s_port,
+				user ? user : pwd->pw_name,
+				args,
+				&rfd2,
+				dest_realm,
+				NULL, NULL);
 		}
-		if((rem < 0) && errno == ECONNREFUSED) {
+		if (rem < 0) {
 			use_kerberos = 0;
 			sp = getservbyname("shell", "tcp");
 			if(sp == NULL) {
 				fprintf(stderr, "unknown service shell/tcp\n");
 				exit(1);
 			}
-			old_warning("remote host doesn't support Kerberos");
+			if (errno == ECONNREFUSED)
+				old_warning("remote host doesn't support Kerberos");
+			if (errno == ENOENT)
+				old_warning("Can't provide Kerberos auth data");
 			goto try_connect;
 		}
 	} else {
@@ -275,8 +288,13 @@ try_connect:
 			exit(1);
 		}
 	}
-	ioctl(rfd2, FIONBIO, &one);
-	ioctl(rem, FIONBIO, &one);
+#ifdef	KERBEROS
+	if (!encrypt)
+#endif
+	{
+		ioctl(rfd2, FIONBIO, &one);
+		ioctl(rem, FIONBIO, &one);
+	}
         if (nflag == 0 && pid == 0) {
 		char *bp; int rembits, wc;
 		(void) close(rfd2);
@@ -297,7 +315,12 @@ try_connect:
 		}
 		if ((rembits & (1<<rem)) == 0)
 			goto rewrite;
-		wc = write(rem, bp, cc);
+#ifdef	KERBEROS
+		if (encrypt)
+			wc = des_write(rem, bp, cc);
+		else
+			wc = write(rem, bp, cc);
+#endif
 		if (wc < 0) {
 			if (errno == EWOULDBLOCK)
 				goto rewrite;
@@ -324,7 +347,12 @@ try_connect:
 		}
 		if (ready & (1<<rfd2)) {
 			errno = 0;
-			cc = read(rfd2, buf, sizeof buf);
+#ifdef	KERBEROS
+			if (encrypt)
+				cc = des_read(rfd2, buf, sizeof buf);
+			else
+#endif
+				cc = read(rfd2, buf, sizeof buf);
 			if (cc <= 0) {
 				if (errno != EWOULDBLOCK)
 					readfrom &= ~(1<<rfd2);
@@ -333,7 +361,12 @@ try_connect:
 		}
 		if (ready & (1<<rem)) {
 			errno = 0;
-			cc = read(rem, buf, sizeof buf);
+#ifdef	KERBEROS
+			if (encrypt)
+				cc = des_read(rem, buf, sizeof buf);
+			else
+				cc = read(rem, buf, sizeof buf);
+#endif
 			if (cc <= 0) {
 				if (errno != EWOULDBLOCK)
 					readfrom &= ~(1<<rem);
@@ -357,8 +390,12 @@ usage:
 sendsig(signo)
 	char signo;
 {
-
-	(void) write(rfd2, &signo, 1);
+#ifdef	KERBEROS
+	if (encrypt)
+		(void) des_write(rfd2, &signo, 1);
+	else
+#endif
+		(void) write(rfd2, &signo, 1);
 }
 
 #ifdef	KERBEROS
