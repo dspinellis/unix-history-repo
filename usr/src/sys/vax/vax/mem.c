@@ -1,4 +1,4 @@
-/*	mem.c	3.1	%H%	*/
+/*	mem.c	3.2	%H%	*/
 
 /*
  * Memory special file
@@ -37,6 +37,7 @@ mmread(dev)
 			mtpr(TBIS, vmmap);
 			o = (int)u.u_offset & PGOFSET;
 			c = min((unsigned)(NBPG - o), u.u_count);
+			c = min(c, (unsigned)((int)u.u_base & PGOFSET));
 			if (copyout((caddr_t)&vmmap[o], u.u_base, c))
 				goto fault;
 			u.u_count -= c;
@@ -102,6 +103,7 @@ mmwrite(dev)
 			mtpr(TBIS, vmmap);
 			o = (int)u.u_offset & PGOFSET;
 			c = min((unsigned)(NBPG - o), u.u_count);
+			c = min(c, (unsigned)((int)u.u_base & PGOFSET));
 			if (copyin(u.u_base, (caddr_t)&vmmap[o], c))
 				goto fault;
 			u.u_count -= c;
