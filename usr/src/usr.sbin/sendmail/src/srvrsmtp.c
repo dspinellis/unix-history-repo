@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.73 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.74 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.73 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.74 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -1082,7 +1082,7 @@ runinchild(label, e)
 		childpid = dofork();
 		if (childpid < 0)
 		{
-			syserr("%s: cannot fork", label);
+			syserr("451 %s: cannot fork", label);
 			return (1);
 		}
 		if (childpid > 0)
@@ -1093,9 +1093,9 @@ runinchild(label, e)
 			setproctitle("server %s child wait", CurHostName);
 			st = waitfor(childpid);
 			if (st == -1)
-				syserr("%s: lost child", label);
+				syserr("451 %s: lost child", label);
 			else if (!WIFEXITED(st))
-				syserr("%s: died on signal %d",
+				syserr("451 %s: died on signal %d",
 					label, st & 0177);
 
 			/* if we exited on a QUIT command, complete the process */
