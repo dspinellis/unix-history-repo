@@ -1,4 +1,4 @@
-/*	if_acc.c	4.14	82/04/16	*/
+/*	if_acc.c	4.15	82/04/20	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -84,7 +84,9 @@ COUNT(ACCPROBE);
 	addr->ocsr = 0;
 	if (cvec && cvec != 0x200)	/* transmit -> receive */
 		cvec -= 4;
-	br = 0x16;		/* temporary ec hack */
+#ifdef ECHACK
+	br = 0x16;
+#endif
 	return (1);
 }
 

@@ -1,4 +1,4 @@
-/* in_systm.h 4.9 82/04/11 */
+/*	in_systm.h	4.10	82/04/20	*/
 
 /*
  * Miscellaneous internetwork
@@ -31,7 +31,11 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  */
 
 /* splnet is defined in ../sys/asm.sed */
-#define	splimp		spl6	/* temporary hack, usually spl5 */
+#ifdef ECHACK
+#define	splimp		spl6
+#else
+#define	splimp		spl5
+#endif
 #define	setsoftnet()	mtpr(SIRR, 12)
 
 /*

@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.12	82/04/16	*/
+/*	if_dmc.c	4.13	82/04/20	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -101,7 +101,9 @@ COUNT(DMCPROBE);
 	addr->bsel1 = DMC_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
-	br = 0x16;		/* temporary ec hack */
+#ifdef ECHACK
+	br = 0x16;
+#endif
 	return (1);
 }
 

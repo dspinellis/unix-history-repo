@@ -1,4 +1,4 @@
-/*	if_en.c	4.57	82/04/16	*/
+/*	if_en.c	4.58	82/04/20	*/
 
 #include "en.h"
 #include "imp.h"
@@ -85,7 +85,9 @@ COUNT(ENPROBE);
 	addr->en_ostat = EN_IEN|EN_GO;
 	DELAY(100000);
 	addr->en_ostat = 0;
-	br = 0x16;		/* temporary ec hack */
+#ifdef ECHACK
+	br = 0x16;
+#endif
 	return (1);
 }
 
