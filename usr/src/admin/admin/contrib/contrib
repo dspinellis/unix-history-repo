@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.31 (Berkeley) %G%
+.\"	@(#)contrib	5.32 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -48,7 +48,7 @@ Intel 386/486 support	Bill Jolitz and TeleMuse
 ISODE	Marshall Rose
 Job control	Jim Kulp
 Kerberos	Project Athena and MIT
-LFS		Margo Seltzer, Mendel Rosenblum
+LFS	Margo Seltzer, Mendel Rosenblum
 Math library	K.C. Ng, Z-S. Alex Liu, S. McDonald, P. Tang and W. Kahan
 Multicast support	Stephen Deering
 NFS	Rick Macklem
@@ -233,7 +233,7 @@ pascal(1)	Kirk McKusick
 pascal(1)	Peter Kessler
 paste(1)	Adam S. Moskowitz
 patch(1)	Larry Wall
-pax(1)		Keith Muller
+pax(1)	Keith Muller
 phantasia(6)	C. Robertson
 phantasia(6)	Edward A. Estes
 ping(8)	Mike Muuss
@@ -247,7 +247,7 @@ quiz(6)	Jim R. Oldroyd
 quiz(6)	Keith Gabryelski
 radixsort(3)	Dan Bernstein
 radixsort(3)	Peter McIlroy
-rain(6)		Eric P. Scott
+rain(6)	Eric P. Scott
 ranlib(1)	Hugh A. Smith
 rcs(1)	Walter F. Tichy
 regex(3)	Henry Spencer
@@ -278,7 +278,7 @@ talk(1)	Peter Moore
 telnet(1)	Dave Borman
 termcap(5)	John A. Kunze
 termcap(5)	Mark Horton
-test(1)		Kenneth Almquist
+test(1)	Kenneth Almquist
 tetris(6)	Chris Torek
 tetris(6)	Darren F. Provine
 timed(8)	Riccardo Gusella
