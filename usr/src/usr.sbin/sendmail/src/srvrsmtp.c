@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.37 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.38 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.37 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.38 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -145,6 +145,11 @@ smtp(e)
 			/* end of file, just die */
 			message("421", "%s Lost input channel from %s",
 				MyHostName, CurHostName);
+#ifdef LOG
+			if (LogLevel >= 4)
+				syslog(LOG_NOTICE, "lost input channel from %s",
+					CurHostName);
+#endif
 			finis();
 		}
 
