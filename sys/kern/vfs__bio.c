@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.18 1994/04/05 03:23:27 davidg Exp $
+ *	$Id: vfs__bio.c,v 1.19 1994/05/24 22:10:15 ats Exp $
  */
 
 #include "param.h"
@@ -359,18 +359,8 @@ start:
 		&& bfreelist[BQ_EMPTY].av_forw != (struct buf *)bfreelist+BQ_EMPTY) {
 		caddr_t addr;
 
-/*#define notyet*/
-#ifndef notyet
-		if ((addr = malloc (sz, M_IOBUF, M_WAITOK)) == 0) goto tryfree;
-#else /* notyet */
-		/* get new memory buffer */
-		if (round_page(sz) == sz)
-			addr = (caddr_t) kmem_alloc_wired_wait(buffer_map, sz);
-		else
-			addr = (caddr_t) malloc (sz, M_IOBUF, M_WAITOK);
-	/*if ((addr = malloc (sz, M_IOBUF, M_NOWAIT)) == 0) goto tryfree;*/
-		bzero(addr, sz);
-#endif /* notyet */
+		if ((addr = malloc (sz, M_IOBUF, M_NOWAIT)) == 0)
+			goto tryfree;
 		freebufspace -= sz;
 		allocbufspace += sz;
 
@@ -482,7 +472,14 @@ loop:
 		/* if (bp->b_bufsize != size) allocbuf(bp, size); */
 	} else {
 
-		if ((bp = getnewbuf(size)) == 0) goto loop;
+		if ((bp = getnewbuf(size)) == 0)
+			goto loop;
+		if ( incore(vp, blkno)) {
+			bp->b_flags |= B_INVAL;
+			brelse(bp);
+			goto loop;
+		}
+			
 		bp->b_blkno = bp->b_lblkno = blkno;
 		bgetvp(vp, bp);
 		bh = BUFHASH(vp, blkno);
@@ -527,27 +524,13 @@ allocbuf(register struct buf *bp, int size)
 	caddr_t newcontents;
 
 	/* get new memory buffer */
-#ifndef notyet
 	newcontents = (caddr_t) malloc (size, M_IOBUF, M_WAITOK);
-#else /* notyet */
-	if (round_page(size) == size)
-		newcontents = (caddr_t) kmem_alloc_wired_wait(buffer_map, size);
-	else
-		newcontents = (caddr_t) malloc (size, M_IOBUF, M_WAITOK);
-#endif /* notyet */
 
 	/* copy the old into the new, up to the maximum that will fit */
 	bcopy (bp->b_un.b_addr, newcontents, min(bp->b_bufsize, size));
 
 	/* return old contents to free heap */
-#ifndef notyet
 	free (bp->b_un.b_addr, M_IOBUF);
-#else /* notyet */
-	if (round_page(bp->b_bufsize) == bp->b_bufsize)
-		kmem_free_wakeup(buffer_map, bp->b_un.b_addr, bp->b_bufsize);
-	else
-		free (bp->b_un.b_addr, M_IOBUF);
-#endif /* notyet */
 
 	/* adjust buffer cache's idea of memory allocated to buffer contents */
 	freebufspace -= size - bp->b_bufsize;
@@ -620,9 +603,7 @@ biodone(register struct buf *bp)
 			
 			biodone(tbp);
 		}
-#ifndef NOBOUNCE
 		vm_bounce_kva_free( bp->b_un.b_addr, bp->b_bufsize, 0);
-#endif
 		relpbuf(bp);
 		splx(s);
 		return;
