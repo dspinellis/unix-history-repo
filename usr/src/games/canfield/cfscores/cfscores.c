@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)cfscores.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)cfscores.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include <pwd.h>
@@ -85,7 +85,7 @@ printuser(pw, printfail)
 		perror("read");
 		return;
 	}
-	if (total.hand == 0) {
+	if (i == 0 || total.hand == 0) {
 		if (printfail)
 			printf("%s has never played canfield.\n", pw->pw_name);
 		return;
