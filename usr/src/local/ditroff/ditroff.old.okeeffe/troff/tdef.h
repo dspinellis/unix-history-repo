@@ -136,16 +136,15 @@
 
 /* the following defines the size of the infamous environment block.
    this macro is guaranteed to blow older C preprocessors out of the
-   water.
-   Furthermore, it is wrong: the proper value is more accurately
-   determined by using sizeof *tchar in several places.
-   no harm is done as long as it's big enough.
+   water.  Any additions to ni.c between "block" and the end of the
+   data space affects this macro.
 */
 
 #define	EVUSED	\
-		(59 * sizeof(int)	/* integers in env block */	\
-		+ 9 * sizeof(tchar)	/* tchars in env block */	\
-		+ NHYP * sizeof(tchar)	/* hytab */	\
+		(61 * sizeof(int)	/* integers in env block */	\
+		+ 4 * sizeof(tchar)	/* tchars in env block */	\
+		+ 5 * sizeof(tchar *)	/* tchar pointers in env block */ \
+		+ NHYP * sizeof(tchar *)/* hytab */	\
 		+ NTAB * sizeof(int)	/* tabtab */	\
 		+ (LNSIZE+WDSIZE) * sizeof(tchar))	/* line+word */
 
