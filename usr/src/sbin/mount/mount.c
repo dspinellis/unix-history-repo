@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -358,6 +358,8 @@ prmount(spec, name, flags)
 		PR("with quotas");
 	if (flags & MNT_LOCAL)
 		PR("local");
+	if (flags & MNT_USER)
+		PR("user mount");
 	if (flags & MNT_UNION)
 		PR("union");
 	if (flags & MNT_EXPORTED)
@@ -558,10 +560,10 @@ usage()
 {
 
 	(void)fprintf(stderr,
-		"usage:\n  mount %s %s\n  mount %s\n  mount %s\n",
-		"[ -frwu ] [ -t ufs | external_type ]",
-		"[ -o options ] special node",
-		"[ -afrwu ] [ -t ufs | external_type ]",
-		"[ -frwu ] special | node");
+		"usage: %s %s\n       %s\n       %s\n",
+		"mount [-dfruvw] [-t ufs | external_type]",
+			"[-o options] special node",
+		"mount [-adfruvw] [-t ufs | external_type]",
+		"mount [-dfruvw] special | node");
 	exit(1);
 }
