@@ -1,0 +1,66 @@
+
+
+
+XNEST(8)	    UNIX Programmer's Manual		 XNEST(8)
+
+
+
+NAME
+     Xnest - Recursive X window system implementation
+
+DESCRIPTION
+     This implementation allows you to run an X server in a win-
+     dow of another X server.  Full functionality is supported.
+     The number of planes provided by this pseudo-device is the
+     same as the underlying device.  The cursor sizes, tile
+     sizes, and brush sizes supported are also the same.  The
+     number of color cells provided is specified with a ._X_d_e_-
+     _f_a_u_l_t_s option.
+
+     Aside from being a good hack, this implementation exists
+     primarily to aid system developers when debugging the
+     device-independent portion of the server.	The debugging can
+     be accomplished without requiring a second physical display.
+
+     Exposures on (and resizings of) the window are ignored, and
+     so corrupt the "screen".
+
+X DEFAULTS
+     Accepts the following defaults (for the program "X", not
+     "Xnest"):
+
+     BorderWidth
+	     Set the border width of the window.
+
+     Border  Set the border color.
+
+     CellExponent
+	     If not set or set to zero, a monochrome psuedo-
+	     display is created.  Otherwise, if a value of N is
+	     provided, specifies the maximum number color cells
+	     to be 2^N.  The number actually provided will be a
+	     power of two, but may be less than 2^N if allocation
+	     fails.
+
+ENVIRONMENT
+     Uses the environment variable ``DISPLAY'' to specify which
+     display to use.
+
+SEE ALSO
+     X(8c), X(1)
+     `ddX - Device Dependent X Interface'
+
+AUTHOR
+     Bob Scheifler, MIT Laboratory for Computer Science
+     Copyright (c) 1986, by Massachusetts Institute of Technol-
+     ogy.
+
+
+
+
+
+
+Printed 9/15/87          9 January 1986                         1
+
+
+

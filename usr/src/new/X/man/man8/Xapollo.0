@@ -1,0 +1,132 @@
+
+
+
+XAPOLLO(8)	    UNIX Programmer's Manual	       XAPOLLO(8)
+
+
+
+NAME
+     Xapollo - X window system Apollo implementation notes
+
+DESCRIPTION
+     The Apollo X server can be started as a command to /bin/csh.
+     It requires two arguments, both of which should be 0.  Nor-
+     mally, however, the server should be started by invoking
+     _x_i_n_i_t(1).
+
+     The device dependent portion of the server is implemented
+     using GPR system calls, and is known to work on DN300,
+     DN330, DN560, DN660, and DN3000 systems,  all running SR9.2.
+
+SEE ALSO
+     X(1)
+     `Xlib - C Language X Interface'
+     `ddX - Device Dependent X Interface'
+
+AUTHOR
+     Mark Swanson
+     Copyright (c) 1986 by University of Utah.
+
+     Much of the initial work was done by Doug Orr.
+
+BUGS
+     Restrictions in the current implementation:
+
+     -	  Brush shapes are ignored and all result in 1x1 brush.
+
+     -	  The labelled control and shift keys do not affect the
+	  mouse buttons;  the keys LD, LE, and LF have been
+	  pressed into service to provide control, meta, and
+	  shift, respectively, for the mouse buttons.  The "POP"
+	  key also serves as a general meta key.  Should the
+	  server become "wedged", typing shift F8 will terminate
+	  the server.
+
+     -	  Apollo fonts impose restrictions on the number of char-
+	  acters (127) and their maximum size;	thus, some fonts
+	  cannot be converted to Apollo format and performance
+	  using them is badly degraded.  Those fonts that can be
+	  converted to Apollo format should be converted using
+	  the cvtfont program.
+
+     -	  XY masks (for defining non-rectangular clipping regions
+	  or "stencils") are not implemented.
+
+     -	  No SHIFT LOCK key is implementd.
+
+     -	  Only down events are available for the standard "print-
+	  able" keys.
+
+
+
+
+Printed 9/15/87          3O October 1986			1
+
+
+
+
+
+
+XAPOLLO(8)	    UNIX Programmer's Manual	       XAPOLLO(8)
+
+
+
+     -	  Up- and Down-events for the normal Control and Shift
+	  keys are simulated, as these keys do not correspond to
+	  separate GPR events.
+
+     -	  The csh invoking xinit should not have inprocess set.
+	  This will cause the initial xterm process to hang.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          3O October 1986			2
+
+
+
