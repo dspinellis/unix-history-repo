@@ -1,4 +1,4 @@
-/*	hp.c	4.13	83/02/17	*/
+/*	hp.c	4.14	83/02/17	*/
 
 /*
  * RP??/RM?? disk driver
@@ -42,10 +42,12 @@ short	hpam_off[8] =	{ 0, 32, 0, 668, 723, 778, 668, 98 };
 short	hpfj_off[8] =	{ 0, 19, 0, -1, -1, -1, 398, 59 };
 /* END SHOULD BE READ IN */
 
-short	hptypes[] =
-    { MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, MBDT_RP05, MBDT_RP07,
-      MBDT_ML11A, MBDT_ML11B, -1/*9755*/, -1/*9730*/, -1/*Capr*/,
-      -1/* eagle */, -1/* 48 sect eagle */, MBDT_RM02, 0};
+short	hptypes[] = {
+	MBDT_RM03,	MBDT_RM05,	MBDT_RP06,	MBDT_RM80,
+	MBDT_RP05,	MBDT_RP07,	MBDT_ML11A,	MBDT_ML11B,
+	-1 /*9755*/,	-1 /*9730*/,	-1 /*Cap*/,	-1 /* Eagle */,
+	-1 /* Eagle */,	MBDT_RM02,	0
+};
 
 #define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
 #define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
@@ -72,7 +74,7 @@ struct st hpst[] = {
 	32,	16,	32*16,	1024,	hpam_off,	/* capricorn */
 	43,	20,	43*20,	842,	hpfj_off,	/* Eagle */
 	48,	20,	48*20,	842,	hpfj_off,	/* modif. eagle */
-	1,	1,	1,	1,	0,	/* rm02 - not used */
+	1,	1,	1,	1,	0,		/* rm02 - not used */
 };
 
 struct dkbad hpbad[MAXNMBA*8];
