@@ -3,11 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * the University of Utah, and William Jolitz.
+ * William Jolitz.
  *
  * %sccs.include.386.c%
  *
- *	@(#)segments.h	5.2 (Berkeley) %G%
+ *	@(#)segments.h	5.3 (Berkeley) %G%
  */
 
 /*
