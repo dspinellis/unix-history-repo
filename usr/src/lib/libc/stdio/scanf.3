@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)scanf.3	6.7 (Berkeley) %G%
+.\"     @(#)scanf.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SCANF 3
@@ -160,7 +160,7 @@ The following conversions are available:
 .Bl -tag -width XXXX
 .It Cm %
 Matches a literal `%'.
-That is, `%%' in the format string
+That is, `%\&%' in the format string
 matches a single input `%' character.
 No conversion is done, and assignment does not occur.
 .It Cm d
