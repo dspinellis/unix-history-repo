@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	ntalkd
 SRCS=	talkd.c announce.c process.c table.c print.c ttymsg.c
