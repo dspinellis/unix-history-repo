@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,6 +29,12 @@ static char sccsid[] = "@(#)tables.c	5.15 (Berkeley) %G%";
 
 #ifndef DEBUG
 #define	DEBUG	0
+#endif
+
+#ifdef RTM_ADD
+#define FIXLEN(s) {if ((s)->sa_len == 0) (s)->sa_len = sizeof *(s);}
+#else
+#define FIXLEN(s) { }
 #endif
 
 int	install = !DEBUG;		/* if 1 call kernel */
@@ -138,6 +144,8 @@ rtadd(dst, gate, metric, state)
 	/*
 	 * Subnet flag isn't visible to kernel, move to state.	XXX
 	 */
+	FIXLEN(dst);
+	FIXLEN(gate);
 	if (flags & RTF_SUBNET) {
 		state |= RTS_SUBNET;
 		flags &= ~RTF_SUBNET;
@@ -158,7 +166,7 @@ rtadd(dst, gate, metric, state)
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | flags;
 	rt->rt_state = state | RTS_CHANGED;
-	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
+	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_dst);
 	if (rt->rt_ifp == 0)
 		rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 	if ((state & RTS_INTERFACE) == 0)
@@ -195,6 +203,9 @@ rtchange(rt, gate, metric)
 	int add = 0, delete = 0, newgateway = 0;
 	struct rtentry oldroute;
 
+	FIXLEN(gate);
+	FIXLEN(&(rt->rt_router));
+	FIXLEN(&(rt->rt_dst));
 	if (!equal(&rt->rt_router, gate)) {
 		newgateway++;
 		TRACE_ACTION("CHANGE FROM ", rt);
@@ -237,12 +248,22 @@ rtchange(rt, gate, metric)
 	rt->rt_state |= RTS_CHANGED;
 	if (newgateway)
 		TRACE_ACTION("CHANGE TO   ", rt);
+#ifndef RTM_ADD
 	if (add && install)
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 			perror("SIOCADDRT");
 	if (delete && install)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
+#else
+	if (delete && install)
+		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+			perror("SIOCDELRT");
+	if (add && install) {
+		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+			perror("SIOCADDRT");
+	}
+#endif
 }
 
 rtdelete(rt)
@@ -250,6 +271,8 @@ rtdelete(rt)
 {
 
 	TRACE_ACTION("DELETE", rt);
+	FIXLEN(&(rt->rt_router));
+	FIXLEN(&(rt->rt_dst));
 	if (rt->rt_metric < HOPCNT_INFINITY) {
 	    if ((rt->rt_state & (RTS_INTERFACE|RTS_INTERNAL)) == RTS_INTERFACE)
 		syslog(LOG_ERR,

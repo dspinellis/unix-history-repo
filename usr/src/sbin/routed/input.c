@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -69,9 +69,13 @@ rip_input(from, rip, size)
 			count -= sizeof (struct netinfo);
 
 #if BSD < 198810
-			if (sizeof(n->rip_dst.sa_family) > 1)/* XXX */
-				n->rip_dst.sa_family =
-					ntohs(n->rip_dst.sa_family);
+			if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
+			    n->rip_dst.sa_family = ntohs(n->rip_dst.sa_family);
+#else
+#define osa(x) ((struct osockaddr *)(&(x)))
+			    n->rip_dst.sa_family =
+					ntohs(osa(n->rip_dst)->sa_family);
+			    n->rip_dst.sa_len = sizeof(n->rip_dst);
 #endif
 			n->rip_metric = ntohl(n->rip_metric);
 			/* 
@@ -92,11 +96,15 @@ rip_input(from, rip, size)
 				rt = rtlookup(&n->rip_dst);
 			else
 				rt = 0;
+#define min(a, b) (a < b ? a : b)
 			n->rip_metric = rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric + 1, HOPCNT_INFINITY);
 #if BSD < 198810
 			if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
 			    n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
+#else
+			    osa(n->rip_dst)->sa_family =
+						htons(n->rip_dst.sa_family);
 #endif
 			n->rip_metric = htonl(n->rip_metric);
 		}
@@ -184,6 +192,10 @@ rip_input(from, rip, size)
 			if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
 				n->rip_dst.sa_family =
 					ntohs(n->rip_dst.sa_family);
+#else
+			    n->rip_dst.sa_family =
+					ntohs(osa(n->rip_dst)->sa_family);
+			    n->rip_dst.sa_len = sizeof(n->rip_dst);
 #endif
 			n->rip_metric = ntohl(n->rip_metric);
 			if (n->rip_dst.sa_family >= af_max ||
