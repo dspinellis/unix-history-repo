@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rshd.c	4.2 82/10/07";
 #endif
 
 #include <stdio.h>
@@ -11,11 +11,12 @@ static char sccsid[] = "@(#)rshd.c	4.1 82/04/02";
 #include <pwd.h>
 #include <wait.h>
 #include <signal.h>
+#include <netdb.h>
 
 int	errno;
-struct	sockaddr_in sin = { AF_INET, IPPORT_CMDSERVER };
+struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
-char	*index(), *rindex(), *raddr(), *sprintf();
+char	*index(), *rindex(), *sprintf();
 int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 /* VARARGS 1 */
 int	error();
@@ -33,7 +34,13 @@ main(argc, argv)
 	union wait status;
 	int f;
 	struct sockaddr_in from;
+	struct servent *sp;
 
+	sp = getservbyname("shell", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "rshd: tcp/shell: unknown service\n");
+		exit(1);
+	}
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -49,12 +56,20 @@ main(argc, argv)
 	  }
 	}
 #endif
-#if vax
-	sin.sin_port = htons(sin.sin_port);
-#endif
+	sin.sin_port = htons(sp->s_port);
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG;
+		options |= SO_DEBUG, argc--, argv++;
+	if (argc > 0) {
+		int port = atoi(argv[0]);
+
+		if (port < 0) {
+			fprintf(stderr, "%s: bad port #\n", argv[0]);
+			exit(1);
+		}
+		sin.sin_port = htons(port);
+		argc--, argv++;
+	}
 	for (;;) {
 		errno = 0;
 		f = socket(SOCK_STREAM, 0, &sin, options);
@@ -91,8 +106,8 @@ doit(f, fromp)
 	char cmdbuf[NCARGS+1], *cp;
 	char locuser[16], remuser[16];
 	struct passwd *pwd;
-	char *rhost;
 	int s;
+	struct hostent *hp;
 	short port;
 	int pv[2], pid, ready, readfrom, cc;
 	char buf[BUFSIZ], sig;
@@ -112,9 +127,7 @@ doit(f, fromp)
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
-#if vax
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
-#endif
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED)
 		exit(1);
@@ -136,16 +149,14 @@ doit(f, fromp)
 		if (port >= IPPORT_RESERVED)
 			goto protofail;
 		(void) alarm(60);
-		fromp->sin_port = port;
-#if vax
-		fromp->sin_port = ntohs(fromp->sin_port);
-#endif
+		fromp->sin_port = ntohs(port);
 		if (connect(s, fromp) < 0)
 			exit(1);
 		(void) alarm(0);
 	}
-	rhost = raddr(fromp->sin_addr.s_addr);
-	if (rhost == 0) {
+	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
+		fromp->sin_family);
+	if (hp == 0) {
 		error("Host name for your address unknown\n");
 		exit(1);
 	}
@@ -163,7 +174,7 @@ doit(f, fromp)
 		error("No remote directory.\n");
 		exit(1);
 	}
-	if (ruserok(rhost, remuser, locuser) < 0) {
+	if (ruserok(hp->h_name, remuser, locuser) < 0) {
 		error("Permission denied.\n");
 		exit(1);
 	}
