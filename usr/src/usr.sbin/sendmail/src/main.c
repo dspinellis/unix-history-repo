@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.112 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.113 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1739,7 +1739,7 @@ testmodeline(line, e)
 			char *mxhosts[MAXMXHOSTS + 1];
 
 			nmx = getmxrr(p, mxhosts, FALSE, &rcode);
-			printf("%d MX records:\n", nmx);
+			printf("getmxrr(%s) returns %d value(s):\n", p, nmx);
 			for (i = 0; i < nmx; i++)
 				printf("\t%s\n", mxhosts[i]);
 #else
