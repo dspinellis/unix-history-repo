@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	4.4		%G%);
+SCCSID(@(#)savemail.c	4.5		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -193,7 +193,7 @@ savemail(e)
 **
 **	Parameters:
 **		msg -- the explanatory message.
-**		returnto -- the queue of people to send the message to.
+**		returnq -- the queue of people to send the message to.
 **		sendbody -- if TRUE, also send back the body of the
 **			message; otherwise just send the header.
 **
@@ -210,9 +210,9 @@ static bool	SendBody;
 
 #define MAXRETURNS	6	/* max depth of returning messages */
 
-returntosender(msg, returnto, sendbody)
+returntosender(msg, returnq, sendbody)
 	char *msg;
-	ADDRESS *returnto;
+	ADDRESS *returnq;
 	bool sendbody;
 {
 	char buf[MAXNAME];
@@ -229,14 +229,14 @@ returntosender(msg, returnto, sendbody)
 		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
 		       msg, returndepth, CurEnv);
 		printf("\treturnto=");
-		printaddr(returnto, TRUE);
+		printaddr(returnq, TRUE);
 	}
 # endif DEBUG
 
 	if (++returndepth >= MAXRETURNS)
 	{
 		if (returndepth != MAXRETURNS)
-			syserr("returntosender: infinite recursion on %s", returnto->q_paddr);
+			syserr("returntosender: infinite recursion on %s", returnq->q_paddr);
 		/* don't "unrecurse" and fake a clean exit */
 		/* returndepth--; */
 		return (0);
@@ -248,9 +248,9 @@ returntosender(msg, returnto, sendbody)
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
-	ee->e_sendqueue = returnto;
+	ee->e_sendqueue = returnq;
 	openxscript(ee);
-	for (q = returnto; q != NULL; q = q->q_next)
+	for (q = returnq; q != NULL; q = q->q_next)
 	{
 		if (q->q_alias == NULL)
 			addheader("to", q->q_paddr, ee);
