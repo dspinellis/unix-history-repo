@@ -1,0 +1,80 @@
+.th BJ VI 3/15/72
+.sh NAME
+bj \*- the game of black jack
+.sh SYNOPSIS
+.bd /usr/games/bj
+.sh DESCRIPTION
+.it Bj
+is a serious attempt at
+simulating the dealer
+in the game of black jack (or twenty-one)
+as might be found in Reno.
+The following rules apply:
+.s3
+.lp +5 5
+The bet is $2 every hand.
+.s3
+A player `natural' (black jack) pays $3.
+A dealer natural loses $2.
+Both dealer and player naturals
+is a `push' (no money exchange).
+.s3
+If the dealer has an ace up,
+the player is allowed to make an `insurance'
+bet against the chance of a dealer natural.
+If this bet is not taken, play resumes as normal.
+If the bet is taken, it is a side bet
+where the player wins $2 if the dealer has
+a natural and loses $1 if the dealer does not.
+.s3
+If the player is dealt two cards
+of the same value, he is allowed to
+`double'.
+He is allowed to play two
+hands, each with one of these cards.
+(The bet is doubled also; $2 on each hand.)
+.s3
+If a dealt hand
+has a total of ten or eleven,
+the player may `double down'.
+He may double the bet ($2 to $4)
+and receive exactly one more card on that hand.
+.s3
+Under normal play,
+the player may `hit' (draw a card)
+as long as his total is not over twenty-one.
+If the player `busts' (goes over twenty-one),
+the dealer wins the bet.
+.s3
+When the player `stands' (decides not to hit),
+the dealer hits until he attains
+a total of seventeen or more.
+If the dealer busts, the player wins the bet.
+.s3
+If both player and dealer stand,
+the one with the largest total wins.
+A tie is a push.
+.s3
+.i0
+The machine deals and keeps score.
+The following questions will be asked at
+appropriate times.
+Each question is
+answered by
+.bd y
+followed by a new line for `yes',
+or just new line for `no'.
+.s3
+?		(means, ``do you want a hit?'')
+.br
+Insurance?
+.br
+Double down?
+.s3
+Every time the deck is shuffled,
+the dealer so states and the `action' (total bet)
+and `standing' (total won or lost)
+is printed.
+To exit, hit the interrupt key (DEL)
+and the action and standing will be printed.
+.sh BUGS
