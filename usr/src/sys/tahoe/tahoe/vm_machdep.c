@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.5	86/04/03	*/
+/*	vm_machdep.c	1.6	86/11/03	*/
 
 #include "../machine/pte.h"
 
@@ -13,6 +13,7 @@
 #include "text.h"
 #include "kernel.h"
 
+#include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
 
 /*

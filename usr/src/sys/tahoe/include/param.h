@@ -1,8 +1,19 @@
-/*	param.h	1.4	86/10/13	*/
+/*	param.h	1.4	86/11/03	*/
 
 /*
  * Machine dependent constants for TAHOE.
  */
+
+#ifndef ENDIAN
+/*
+ * Definitions for byte order,
+ * according to byte significance from low address to high.
+ */
+#define	LITTLE	1234		/* least-significant byte first (vax) */
+#define	BIG	4321		/* most-significant byte first */
+#define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
+#define	ENDIAN	BIG		/* byte order on tahoe */
+
 #define	NBPG	1024		/* bytes/page */
 #define	PGOFSET	(NBPG-1)	/* byte offset into page */
 #define	PGSHIFT	10		/* LOG2(NBPG) */
@@ -18,18 +29,6 @@
 #define	MAXDKEY	255		/* maximal allowed data key */
 #define	NCKEY	(MAXCKEY+1)	/* # code keys, including 0 (reserved) */
 #define	NDKEY	(MAXDKEY+1)	/* # data keys, including 0 (reserved) */
-
-/*
- * Statistics maintained for code and
- * data cache key allocations algorithms.
- */
-struct	keystats {
-	long	ks_allocs;	/* number of keys allocated */
-	long	ks_free;	/* key allocated from free slot */
-	long	ks_norefs;	/* key marked in use, but refcnt 0 */
-	long	ks_taken;	/* key taken from single process */
-	long	ks_shared;	/* key taken from multiple processes */
-};
 
 /*
  * Some macros for units conversion
@@ -56,3 +55,4 @@ struct	keystats {
 #define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)
 
 #define	DELAY(n)	{ register int N = 3*(n); while (--N > 0); }
+#endif

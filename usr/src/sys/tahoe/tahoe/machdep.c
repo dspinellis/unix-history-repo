@@ -1,8 +1,4 @@
-/*	machdep.c	1.5	86/07/16	*/
-
-#include "../tahoe/reg.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/psl.h"
+/*	machdep.c	1.6	86/11/03	*/
 
 #include "param.h"
 #include "systm.h"
@@ -25,6 +21,10 @@
 #include "msgbuf.h"
 #include "quota.h"
 
+#include "../tahoe/cpu.h"
+#include "../tahoe/reg.h"
+#include "../tahoe/pte.h"
+#include "../tahoe/psl.h"
 #include "../tahoe/mem.h"
 #include "../tahoe/mtpr.h"
 #include "../tahoe/cp.h"
