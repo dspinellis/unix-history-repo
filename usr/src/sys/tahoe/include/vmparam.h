@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vmparam.h	7.1 (Berkeley) %G%
+ *	@(#)vmparam.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,8 @@
  * Default sizes of swap allocation chunks (see dmap.h).
  * The actual values may be changed in vminit() based on MAXDSIZ.
  * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
+ * DMMIN should be at least ctod(1) so that vtod() works.
+ * vminit() ensures this.
  */
 #define	DMMIN	32			/* smallest swap allocation */
 #define	DMMAX	4096			/* largest potential swap allocation */
@@ -56,6 +58,19 @@
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
 #define	SYSPTSIZE	((20+MAXUSERS/2)*NPTEPG)
 #define	USRPTSIZE 	(4*NPTEPG)
+
+/*
+ * PTEs for system V compatible shared memory.
+ * This is basically slop for kmempt which we actually allocate (malloc) from.
+ */
+#define SHMMAXPGS	512
+
+/*
+ * Boundary at which to place first MAPMEM segment if not explicitly
+ * specified.  Should be a power of two.  This allows some slop for
+ * the data segment to grow underneath the first mapped segment.
+ */
+#define MMSEG		0x200000
 
 /*
  * The size of the clock loop.
@@ -102,7 +117,9 @@
  * larger than it really is.
  *
  * KLMAX gives maximum cluster size in CLSIZE page (cluster-page)
- * units.  Note that KLMAX*CLSIZE must be <= DMMIN in dmap.h.
+ * units.  Note that ctod(KLMAX*CLSIZE) must be <= DMMIN in dmap.h.
+ * ctob(KLMAX) should also be less than MAXPHYS (in vm_swp.c) to
+ * avoid "big push" panics.
  */
 
 #define	KLMAX	(32/CLSIZE)
