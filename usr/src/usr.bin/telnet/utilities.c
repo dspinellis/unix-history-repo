@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -268,7 +268,7 @@ printsub(direction, pointer, length)
     int		  length;	/* length of suboption data */
 {
     register int i;
-    char buf[256];
+    char buf[512];
     extern int want_status_response;
 
     if (showoptions || direction == 0 ||
@@ -406,9 +406,9 @@ printsub(direction, pointer, length)
 		    break;
 		}
 		fprintf(NetTrace, "%s|%s",
-			(pointer[3] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+			((pointer[3] & AUTH_WHO_MASK) == AUTH_WHO_CLIENT) ?
 			"CLIENT" : "SERVER",
-			(pointer[3] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+			((pointer[3] & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) ?
 			"MUTUAL" : "ONE-WAY");
 
 		auth_printsub(&pointer[1], length - 1, buf, sizeof(buf));
@@ -428,12 +428,20 @@ printsub(direction, pointer, length)
 			break;
 		    }
 		    fprintf(NetTrace, "%s|%s ",
-			(pointer[i] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+			((pointer[i] & AUTH_WHO_MASK) == AUTH_WHO_CLIENT) ?
 							"CLIENT" : "SERVER",
-			(pointer[i] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+			((pointer[i] & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) ?
 							"MUTUAL" : "ONE-WAY");
 		    ++i;
 		}
+		break;
+
+	    case TELQUAL_NAME:
+		i = 2;
+		fprintf(NetTrace, " NAME \"");
+		while (i < length)
+		    putc(pointer[i++], NetTrace);
+		putc('"', NetTrace);
 		break;
 
 	    default:
@@ -497,8 +505,17 @@ printsub(direction, pointer, length)
 		}
 		break;
 
+	    case ENCRYPT_ENC_KEYID:
+		fprintf(NetTrace, " ENC_KEYID ");
+		goto encommon;
+
+	    case ENCRYPT_DEC_KEYID:
+		fprintf(NetTrace, " DEC_KEYID ");
+		goto encommon;
+
 	    default:
-		fprintf(NetTrace, "%d (unknown)", pointer[1]);
+		fprintf(NetTrace, " %d (unknown)", pointer[1]);
+	    encommon:
 		for (i = 2; i < length; i++)
 		    fprintf(NetTrace, " %d", pointer[i]);
 		break;

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -142,6 +142,9 @@ main(argc, argv)
 		case 'a':
 			autologin = 1;
 			break;
+		case 'c':
+			skiprc = 1;
+			break;
 		case 'd':
 			debug = 1;
 			break;
@@ -196,7 +199,8 @@ main(argc, argv)
 			break;
 		case 'x':
 #ifdef	ENCRYPT
-			encrypt_auto();
+			encrypt_auto(1);
+			decrypt_auto(1);
 #else
 			fprintf(stderr,
 			    "%s: Warning: -x ignored, no ENCRYPT support.\n",

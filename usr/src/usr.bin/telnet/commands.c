@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -578,6 +578,15 @@ togxbinary(val)
 
 
 extern int togglehelp P((void));
+#if	defined(AUTHENTICATE)
+extern int auth_togdebug P((int));
+#endif
+#if	defined(ENCRYPT)
+extern int EncryptAutoEnc P((int));
+extern int EncryptAutoDec P((int));
+extern int EncryptDebug P((int));
+extern int EncryptVerbose P((int));
+#endif
 
 struct togglelist {
     char	*name;		/* name of toggle */
@@ -598,6 +607,45 @@ static struct togglelist Togglelist[] = {
 	    0,
 		&autosynch,
 		    "send interrupt characters in urgent mode" },
+#if	defined(AUTHENTICATE)
+    { "autologin",
+	"automatic sending of login and/or authentication info",
+	    0,
+		&autologin,
+		    "send login name and/or authentication information" },
+    { "authdebug",
+	"Toggle authentication debugging",
+	    auth_togdebug,
+		0,
+		     "print authentication debugging information" },
+#endif
+#if	defined(ENCRYPT)
+    { "autoencrypt",
+	"automatic encryption of data stream",
+	    EncryptAutoEnc,
+		0,
+		    "automatically encrypt output" },
+    { "autodecrypt",
+	"automatic decryption of data stream",
+	    EncryptAutoDec,
+		0,
+		    "automatically decrypt input" },
+    { "verbose_encrypt",
+	"Toggle verbose encryption output",
+	    EncryptVerbose,
+		0,
+		    "print verbose encryption output" },
+    { "encdebug",
+	"Toggle encryption debugging",
+	    EncryptDebug,
+		0,
+		    "print encryption debugging information" },
+#endif
+    { "skiprc",
+	"don't read ~/.telnetrc file",
+	    0,
+		&skiprc,
+		    "read ~/.telnetrc file" },
     { "binary",
 	"sending and receiving of binary data",
 	    togbinary,
@@ -1764,14 +1812,11 @@ extern int
 	auth_enable P((int)),
 	auth_disable P((int)),
 	auth_status P((void)),
-	auth_togdebug P((void)),
 	auth_help P((void));
 
 struct authlist AuthList[] = {
     { "status",	"Display current status of authentication information",
 						auth_status,	0 },
-    { "debug",	"Toggle authentication debugging",
-						auth_togdebug,	0 },
     { "disable", "Disable an authentication type ('auth disable ?' for more)",
 						auth_disable,	1 },
     { "enable", "Enable an authentication type ('auth enable ?' for more)",
@@ -1842,6 +1887,7 @@ struct encryptlist {
 
 extern int
 	EncryptEnable P((char *, char *)),
+	EncryptDisable P((char *, char *)),
 	EncryptType P((char *, char *)),
 	EncryptStart P((char *)),
 	EncryptStartInput P((void)),
@@ -1849,15 +1895,14 @@ extern int
 	EncryptStop P((char *)),
 	EncryptStopInput P((void)),
 	EncryptStopOutput P((void)),
-	EncryptTogAuto P((void)),
-	EncryptTogDebug P((void)),
-	EncryptTogVerbose P((void)),
 	EncryptStatus P((void)),
 	EncryptHelp P((void));
 
 struct encryptlist EncryptList[] = {
     { "enable", "Enable encryption. ('encrypt enable ?' for more)",
 						EncryptEnable, 1, 1, 2 },
+    { "disable", "Disable encryption. ('encrypt enable ?' for more)",
+						EncryptDisable, 0, 1, 2 },
     { "type", "Set encryptiong type. ('encrypt type ?' for more)",
 						EncryptType, 0, 1, 1 },
     { "start", "Start encryption. ('encrypt start ?' for more)",
@@ -1875,12 +1920,6 @@ struct encryptlist EncryptList[] = {
 
     { "status",	"Display current status of authentication information",
 						EncryptStatus,	0, 0, 0 },
-    { "auto", "Toggle automatic enabling of encryption",
-						EncryptTogAuto, 0, 0, 0 },
-    { "verbose", "Toggle verbose encryption output",
-						EncryptTogVerbose, 0, 0, 0 },
-    { "debug",	"Toggle encryption debugging",
-						EncryptTogDebug, 0, 0, 0 },
     { "help",	0,				EncryptHelp,	0, 0, 0 },
     { "?",	"Print help information",	EncryptHelp,	0, 0, 0 },
     { 0 },
@@ -2534,6 +2573,9 @@ cmdrc(m1, m2)
     int l2 = strlen(m2);
     char m1save[64];
 
+    if (skiprc)
+	return;
+
     strcpy(m1save, m1);
     m1 = m1save;
 
@@ -2558,6 +2600,10 @@ cmdrc(m1, m2)
 	    break;
 	if (line[0] == '#')
 	    continue;
+	if (gotmachine) {
+	    if (!isspace(line[0]))
+		gotmachine = 0;
+	}
 	if (gotmachine == 0) {
 	    if (isspace(line[0]))
 		continue;
@@ -2565,14 +2611,13 @@ cmdrc(m1, m2)
 		strncpy(line, &line[l1], sizeof(line) - l1);
 	    else if (strncasecmp(line, m2, l2) == 0)
 		strncpy(line, &line[l2], sizeof(line) - l2);
+	    else if (strncasecmp(line, "DEFAULT", 7) == 0)
+		strncpy(line, &line[7], sizeof(line) - 7);
 	    else
 		continue;
-	    gotmachine = 1;
-	} else {
-	    if (!isspace(line[0])) {
-		gotmachine = 0;
+	    if (line[0] != ' ' && line[0] != '\t' && line[0] != '\n')
 		continue;
-	    }
+	    gotmachine = 1;
 	}
 	makeargv();
 	if (margv[0] == 0)

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)encrypt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)encrypt.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,37 +60,53 @@ static int encrypt_verbose = 0;
 static int autoencrypt = 0;
 static int autodecrypt = 0;
 static int havesessionkey = 0;
-static int encrypt_mark = 0;
-static int decrypt_mark = 0;
 static int Server = 0;
 static char *Name = "Noname";
 
 #define	typemask(x)	((x) > 0 ? 1 << ((x)-1) : 0)
 
-static long i_support_encrypt = typemask(ENCTYPE_KRBDES);
-static long i_support_decrypt = typemask(ENCTYPE_KRBDES);
+static long i_support_encrypt = typemask(ENCTYPE_DES_CFB64)
+				| typemask(ENCTYPE_DES_OFB64);
+static long i_support_decrypt = typemask(ENCTYPE_DES_CFB64)
+				| typemask(ENCTYPE_DES_OFB64);
+static long i_wont_support_encrypt = 0;
+static long i_wont_support_decrypt = 0;
+#define	I_SUPPORT_ENCRYPT	(i_support_encrypt & ~i_wont_support_encrypt)
+#define	I_SUPPORT_DECRYPT	(i_support_decrypt & ~i_wont_support_decrypt)
+
 static long remote_supports_encrypt = 0;
 static long remote_supports_decrypt = 0;
 
 static Encryptions encryptions[] = {
-#if	defined(KRBDES_ENCRYPT)
-    { "KRBDES",		ENCTYPE_KRBDES,
-			krbdes_encrypt,	
-			krbdes_decrypt,
-			krbdes_init,
-			krbdes_start,
-			krbdes_is,
-			krbdes_reply,
-			krbdes_session,
-			krbdes_printsub },
+#if	defined(DES_ENCRYPT)
+    { "DES_CFB64",	ENCTYPE_DES_CFB64,
+			cfb64_encrypt,	
+			cfb64_decrypt,
+			cfb64_init,
+			cfb64_start,
+			cfb64_is,
+			cfb64_reply,
+			cfb64_session,
+			cfb64_keyid,
+			cfb64_printsub },
+    { "DES_OFB64",	ENCTYPE_DES_OFB64,
+			ofb64_encrypt,	
+			ofb64_decrypt,
+			ofb64_init,
+			ofb64_start,
+			ofb64_is,
+			ofb64_reply,
+			ofb64_session,
+			ofb64_keyid,
+			ofb64_printsub },
 #endif
     { 0, },
 };
 
 static unsigned char str_send[64] = { IAC, SB, TELOPT_ENCRYPT,
-					 ENCRYPT_SUPPORT, };
+					 ENCRYPT_SUPPORT };
 static unsigned char str_suplen = 0;
-static unsigned char str_start[] = { IAC, SB, TELOPT_ENCRYPT, 0, IAC, SE };
+static unsigned char str_start[72] = { IAC, SB, TELOPT_ENCRYPT };
 static unsigned char str_end[] = { IAC, SB, TELOPT_ENCRYPT, 0, IAC, SE };
 
 	Encryptions *
@@ -99,7 +115,7 @@ findencryption(type)
 {
 	Encryptions *ep = encryptions;
 
-	if (!(i_support_encrypt & remote_supports_decrypt & typemask(type)))
+	if (!(I_SUPPORT_ENCRYPT & remote_supports_decrypt & typemask(type)))
 		return(0);
 	while (ep->type && ep->type != type)
 		++ep;
@@ -112,12 +128,25 @@ finddecryption(type)
 {
 	Encryptions *ep = encryptions;
 
-	if (!(i_support_decrypt & remote_supports_encrypt & typemask(type)))
+	if (!(I_SUPPORT_DECRYPT & remote_supports_encrypt & typemask(type)))
 		return(0);
 	while (ep->type && ep->type != type)
 		++ep;
 	return(ep->type ? ep : 0);
 }
+
+#define	MAXKEYLEN 64
+
+static struct key_info {
+	unsigned char keyid[MAXKEYLEN];
+	int keylen;
+	int dir;
+	int *modep;
+	Encryptions *(*getcrypt)();
+} ki[2] = {
+	{ { 0 }, 0, DIR_ENCRYPT, &encrypt_mode, findencryption },
+	{ { 0 }, 0, DIR_DECRYPT, &decrypt_mode, finddecryption },
+};
 
 	void
 encrypt_init(name, server)
@@ -146,8 +175,9 @@ encrypt_init(name, server)
 				Name, ENCTYPE_NAME(ep->type));
 		i_support_encrypt |= typemask(ep->type);
 		i_support_decrypt |= typemask(ep->type);
-		if ((str_send[str_suplen++] = ep->type) == IAC)
-			str_send[str_suplen++] = IAC;
+		if ((i_wont_support_decrypt & typemask(ep->type)) == 0)
+			if ((str_send[str_suplen++] = ep->type) == IAC)
+				str_send[str_suplen++] = IAC;
 		if (ep->init)
 			(*ep->init)(Server);
 		++ep;
@@ -163,7 +193,7 @@ encrypt_list_types()
 
 	printf("Valid encryption types:\n");
 	while (ep->type) {
-		printf("\t%s\n\n", ENCTYPE_NAME(ep->type));
+		printf("\t%s (%d)\r\n", ENCTYPE_NAME(ep->type), ep->type);
 		++ep;
 	}
 }
@@ -183,41 +213,70 @@ EncryptEnable(type, mode)
 }
 
 	int
+EncryptDisable(type, mode)
+	char *type, *mode;
+{
+	register Encryptions *ep;
+	int ret = 0;
+
+	if (isprefix(type, "help") || isprefix(type, "?")) {
+		printf("Usage: encrypt disable <type> [input|output]\n");
+		encrypt_list_types();
+	} else if ((ep = (Encryptions *)genget(type, encryptions,
+						sizeof(Encryptions))) == 0) {
+		printf("%s: invalid encryption type\n", type);
+	} else if (Ambiguous(ep)) {
+		printf("Ambiguous type '%s'\n", type);
+	} else {
+		if ((mode == 0) || (isprefix(mode, "input") ? 1 : 0)) {
+			if (decrypt_mode == ep->type)
+				EncryptStopInput();
+			i_wont_support_decrypt |= typemask(ep->type);
+			ret = 1;
+		}
+		if ((mode == 0) || (isprefix(mode, "output"))) {
+			if (encrypt_mode == ep->type)
+				EncryptStopOutput();
+			i_wont_support_encrypt |= typemask(ep->type);
+			ret = 1;
+		}
+		if (ret == 0)
+			printf("%s: invalid encryption mode\n", mode);
+	}
+	return(ret);
+}
+
+	int
 EncryptType(type, mode)
 	char *type;
 	char *mode;
 {
 	register Encryptions *ep;
+	int ret = 0;
 
 	if (isprefix(type, "help") || isprefix(type, "?")) {
 		printf("Usage: encrypt type <type> [input|output]\n");
 		encrypt_list_types();
-		return(0);
-	}
-
-	ep = (Encryptions *)genget(type, encryptions, sizeof(Encryptions));
-
-	if (ep == 0) {
+	} else if ((ep = (Encryptions *)genget(type, encryptions,
+						sizeof(Encryptions))) == 0) {
 		printf("%s: invalid encryption type\n", type);
-		return(0);
-	}
-	if (Ambiguous(ep)) {
+	} else if (Ambiguous(ep)) {
 		printf("Ambiguous type '%s'\n", type);
-		return(0);
-	}
-
-	if (mode) {
-		if (isprefix(mode, "input"))
+	} else {
+		if ((mode == 0) || isprefix(mode, "input")) {
 			decrypt_mode = ep->type;
-		else if (isprefix(mode, "output"))
-			encrypt_mode = ep->type;
-		else {
-			printf("%s: invalid encryption mode\n", mode);
-			return(0);
+			i_wont_support_decrypt &= ~typemask(ep->type);
+			ret = 1;
 		}
-	} else
-		decrypt_mode = encrypt_mode = ep->type;
-	return(1);
+		if ((mode == 0) || isprefix(mode, "output")) {
+			encrypt_mode = ep->type;
+			i_wont_support_encrypt &= ~typemask(ep->type);
+			ret = 1;
+		}
+		if (ret == 0)
+			printf("%s: invalid encryption mode\n", mode);
+	}
+	return(ret);
 }
 
 	int
@@ -351,33 +410,50 @@ encrypt_send_support()
 }
 
 	int
-EncryptTogDebug()
+EncryptDebug(on)
+	int on;
 {
-	encrypt_debug_mode ^= 1;
+	if (on < 0)
+		encrypt_debug_mode ^= 1;
+	else
+		encrypt_debug_mode = on;
 	printf("Encryption debugging %s\r\n",
 		encrypt_debug_mode ? "enabled" : "disabled");
 	return(1);
 }
 
 	int
-EncryptTogVerbose()
+EncryptVerbose(on)
+	int on;
 {
-	encrypt_verbose ^= 1;
+	if (on < 0)
+		encrypt_verbose ^= 1;
+	else
+		encrypt_verbose = on;
 	printf("Encryption %s verbose\r\n",
 		encrypt_verbose ? "is" : "is not");
 	return(1);
 }
 
 	int
-EncryptTogAuto()
+EncryptAutoEnc(on)
+	int on;
 {
-	autoencrypt ^= 1;
-	autodecrypt ^= 1;
-	printf("Automatic encryption of data is %s\r\n",
+	encrypt_auto(on);
+	printf("Automatic encryption of output is %s\r\n",
 		autoencrypt ? "enabled" : "disabled");
 	return(1);
 }
 
+	int
+EncryptAutoDec(on)
+	int on;
+{
+	decrypt_auto(on);
+	printf("Automatic decryption of input is %s\r\n",
+		autodecrypt ? "enabled" : "disabled");
+	return(1);
+}
 
 /*
  * Called when ENCRYPT SUPPORT is received.
@@ -402,7 +478,7 @@ encrypt_support(typelist, cnt)
 				Name,
 				ENCTYPE_NAME(type), type);
 		if ((type < ENCTYPE_CNT) &&
-		    (i_support_encrypt & typemask(type))) {
+		    (I_SUPPORT_ENCRYPT & typemask(type))) {
 			remote_supports_decrypt |= typemask(type);
 			if (use_type == 0)
 				use_type = type;
@@ -418,7 +494,7 @@ encrypt_support(typelist, cnt)
 					Name, type);
 		if (type < 0)
 			return;
-		encrypt_mode = type;
+		encrypt_mode = use_type;
 		if (type == 0)
 			encrypt_start_output(use_type);
 	}
@@ -441,21 +517,25 @@ encrypt_is(data, cnt)
 		if (encrypt_debug_mode)
 			printf(">>>%s: Can't find type %s (%d) for initial negotiation\r\n",
 				Name,
-				ENCTYPE_NAME(data[-1]), data[1]);
+				ENCTYPE_NAME_OK(type)
+					? ENCTYPE_NAME(type) : "(unknown)",
+				type);
 		return;
 	}
 	if (!ep->is) {
 		if (encrypt_debug_mode)
 			printf(">>>%s: No initial negotiation needed for type %s (%d)\r\n",
 				Name,
-				ENCTYPE_NAME(type), type);
+				ENCTYPE_NAME_OK(type)
+					? ENCTYPE_NAME(type) : "(unknown)",
+				type);
 		ret = 0;
 	} else {
 		ret = (*ep->is)(data, cnt);
-/*@*/		if (encrypt_debug_mode)
-/*@*/			printf("(*ep->is)(%x, %d) returned %s(%d)\n", data, cnt,
-/*@*/				(ret < 0) ? "FAIL " :
-/*@*/				(ret == 0) ? "SUCCESS " : "MORE_TO_DO ", ret);
+		if (encrypt_debug_mode)
+			printf("(*ep->is)(%x, %d) returned %s(%d)\n", data, cnt,
+				(ret < 0) ? "FAIL " :
+				(ret == 0) ? "SUCCESS " : "MORE_TO_DO ", ret);
 	}
 	if (ret < 0) {
 		autodecrypt = 0;
@@ -481,22 +561,26 @@ encrypt_reply(data, cnt)
 		if (encrypt_debug_mode)
 			printf(">>>%s: Can't find type %s (%d) for initial negotiation\r\n",
 				Name,
-				ENCTYPE_NAME(data[-1]), data[1]);
+				ENCTYPE_NAME_OK(type)
+					? ENCTYPE_NAME(type) : "(unknown)",
+				type);
 		return;
 	}
 	if (!ep->reply) {
 		if (encrypt_debug_mode)
 			printf(">>>%s: No initial negotiation needed for type %s (%d)\r\n",
 				Name,
-				ENCTYPE_NAME(data[-1]), data[1]);
+				ENCTYPE_NAME_OK(type)
+					? ENCTYPE_NAME(type) : "(unknown)",
+				type);
 		ret = 0;
 	} else {
 		ret = (*ep->reply)(data, cnt);
-/*@*/		if (encrypt_debug_mode)
-/*@*/			printf("(*ep->reply)(%x, %d) returned %s(%d)\n",
-/*@*/				data, cnt,
-/*@*/				(ret < 0) ? "FAIL " :
-/*@*/				(ret == 0) ? "SUCCESS " : "MORE_TO_DO ", ret);
+		if (encrypt_debug_mode)
+			printf("(*ep->reply)(%x, %d) returned %s(%d)\n",
+				data, cnt,
+				(ret < 0) ? "FAIL " :
+				(ret == 0) ? "SUCCESS " : "MORE_TO_DO ", ret);
 	}
 	if (encrypt_debug_mode)
 		printf(">>>%s: encrypt_reply returned %d\n", Name, ret);
@@ -513,7 +597,9 @@ encrypt_reply(data, cnt)
  * Called when a ENCRYPT START command is received.
  */
 	void
-encrypt_start()
+encrypt_start(data, cnt)
+	unsigned char *data;
+	int cnt;
 {
 	Encryptions *ep;
 
@@ -539,7 +625,11 @@ encrypt_start()
 				Name, ENCTYPE_NAME(decrypt_mode));
 	} else {
 		printf("%s: Warning, Cannot decrypt type %s (%d)!!!\r\n",
-				Name, ENCTYPE_NAME(decrypt_mode), decrypt_mode);
+				Name,
+				ENCTYPE_NAME_OK(decrypt_mode)
+					? ENCTYPE_NAME(decrypt_mode)
+					: "(unknown)",
+				decrypt_mode);
 		encrypt_send_request_end();
 	}
 }
@@ -556,10 +646,6 @@ encrypt_session_key(key, server)
 	while (ep->type) {
 		if (ep->session)
 			(*ep->session)(key, server);
-		if (!encrypt_output && autoencrypt && !server)
-			encrypt_start_output(ep->type);
-		if (!decrypt_input && autodecrypt && !server)
-			encrypt_send_request_start();
 		++ep;
 	}
 }
@@ -593,20 +679,122 @@ encrypt_request_end()
  * can. 
  */
 	void
-encrypt_request_start()
+encrypt_request_start(data, cnt)
+	unsigned char *data;
+	int cnt;
 {
-	if (!encrypt_mode && Server) {
-		autoencrypt = 1;
+	if (encrypt_mode == 0)  {
+		if (Server)
+			autoencrypt = 1;
 		return;
 	}
 	encrypt_start_output(encrypt_mode);
 }
 
-	void
-encrypt_auto()
+static unsigned char str_keyid[(MAXKEYLEN*2)+5] = { IAC, SB, TELOPT_ENCRYPT };
+
+encrypt_enc_keyid(keyid, len)
+	unsigned char *keyid;
+	int len;
 {
-	autoencrypt = 1;
-	autodecrypt = 1;
+	encrypt_keyid(&ki[1], keyid, len);
+}
+
+encrypt_dec_keyid(keyid, len)
+	unsigned char *keyid;
+	int len;
+{
+	encrypt_keyid(&ki[0], keyid, len);
+}
+
+encrypt_keyid(kp, keyid, len)
+	struct key_info *kp;
+	unsigned char *keyid;
+	int len;
+{
+	Encryptions *ep;
+	unsigned char *strp, *cp;
+	int dir = kp->dir;
+	register int ret = 0;
+
+	if (!(ep = (*kp->getcrypt)(*kp->modep))) {
+		if (len == 0)
+			return;
+		kp->keylen = 0;
+	} else if (len == 0) {
+		/*
+		 * Empty option, indicates a failure.
+		 */
+		if (kp->keylen == 0)
+			return;
+		kp->keylen = 0;
+		if (ep->keyid)
+			(void)(*ep->keyid)(dir, kp->keyid, &kp->keylen);
+
+	} else if ((len != kp->keylen) || (bcmp(keyid, kp->keyid, len) != 0)) {
+		/*
+		 * Length or contents are different
+		 */
+		kp->keylen = len;
+		bcopy(keyid, kp->keyid, len);
+		if (ep->keyid)
+			(void)(*ep->keyid)(dir, kp->keyid, &kp->keylen);
+	} else {
+		if (ep->keyid)
+			ret = (*ep->keyid)(dir, kp->keyid, &kp->keylen);
+		if ((ret == 0) && (dir == DIR_ENCRYPT) && autoencrypt)
+			encrypt_start_output(*kp->modep);
+		return;
+	}
+
+	encrypt_send_keyid(dir, kp->keyid, kp->keylen, 0);
+}
+
+	void
+encrypt_send_keyid(dir, keyid, keylen, saveit)
+	int dir;
+	unsigned char *keyid;
+	int keylen;
+	int saveit;
+{
+	unsigned char *strp;
+
+	str_keyid[3] = (dir == DIR_ENCRYPT)
+			? ENCRYPT_ENC_KEYID : ENCRYPT_DEC_KEYID;
+	if (saveit) {
+		struct key_info *kp = &ki[(dir == DIR_ENCRYPT) ? 0 : 1];
+		bcopy(keyid, kp->keyid, keylen);
+		kp->keylen = keylen;
+	}
+
+	for (strp = &str_keyid[4]; keylen > 0; --keylen) {
+		if ((*strp++ = *keyid++) == IAC)
+			*strp++ = IAC;
+	}
+	*strp++ = IAC;
+	*strp++ = SE;
+	net_write(str_keyid, strp - str_keyid);
+	printsub('>', &str_keyid[2], strp - str_keyid - 2);
+}
+
+	void
+encrypt_auto(on)
+	int on;
+{
+	if (on < 0)
+		autoencrypt ^= 1;
+	else
+		autoencrypt = on ? 1 : 0;
+}
+
+	void
+decrypt_auto(on)
+	int on;
+{
+	if (on < 0)
+		autodecrypt ^= 1;
+	else
+		autodecrypt = on ? 1 : 0;
 }
 
 	void
@@ -614,36 +802,42 @@ encrypt_start_output(type)
 	int type;
 {
 	Encryptions *ep;
-	register int ret;
+	register unsigned char *p;
+	register int i;
 
 	if (!(ep = findencryption(type))) {
 		if (encrypt_debug_mode) {
-			printf(">>>%s: Marking type %s for later encryption use\r\n",
+			printf(">>>%s: Can't encrypt with type %s (%d)\r\n",
 				Name,
-				ENCTYPE_NAME(type));
+				ENCTYPE_NAME_OK(type)
+					? ENCTYPE_NAME(type) : "(unknown)",
+				type);
 		}
-		encrypt_mark |= typemask(type);
 		return;
 	}
 	if (ep->start) {
-		ret = (*ep->start)(DIR_ENCRYPT, Server);
-		if (ret) {
-			if (encrypt_debug_mode) {
-				if (ret < 0)
-					printf(">>>%s: Start failed for %s\r\n",
-						Name, ENCTYPE_NAME(type));
-				else
-					printf(">>>%s: Start: initial negotiation in progress%s\r\n",
-						Name, ENCTYPE_NAME(type));
-			}
-
-			return;
+		i = (*ep->start)(DIR_ENCRYPT, Server);
+		if (encrypt_debug_mode) {
+			printf(">>>%s: Encrypt start: %s (%d) %s\r\n",
+				Name, 
+				(i < 0) ? "failed" :
+					"initial negotiation in progress",
+				i, ENCTYPE_NAME(type));
 		}
+		if (i)
+			return;
 	}
-	str_start[3] = ENCRYPT_START;
-	net_write(str_start, sizeof(str_start));
+	p = str_start + 3;
+	*p++ = ENCRYPT_START;
+	for (i = 0; i < ki[0].keylen; ++i) {
+		if ((*p++ = ki[0].keyid[i]) == IAC)
+			*p++ = IAC;
+	}
+	*p++ = IAC;
+	*p++ = SE;
+	net_write(str_start, p - str_start);
 	net_encrypt();
-	printsub('>', &str_start[2], sizeof(str_start) - 2);
+	printsub('>', &str_start[2], p - &str_start[2]);
 	/*
 	 * If we are already encrypting in some mode, then
 	 * encrypt the ring (which includes our request) in
@@ -684,32 +878,19 @@ encrypt_send_end()
 	void
 encrypt_send_request_start()
 {
-#ifdef notdef
-	Encryptions *ep;
+	register unsigned char *p;
+	register int i;
 
-	if (!(ep = findencryption(type))) {
-		if (encrypt_debug_mode) {
-			printf(">>>%s: Marking type %s for later decryption use\r\n",
-				Name,
-				ENCTYPE_NAME(type));
-		}
-		decrypt_mark |= typemask(type);
-		return;
+	p = &str_start[3];
+	*p++ = ENCRYPT_REQSTART;
+	for (i = 0; i < ki[1].keylen; ++i) {
+		if ((*p++ = ki[1].keyid[i]) == IAC)
+			*p++ = IAC;
 	}
-
-	if (ep->start && (*ep->start)(DIR_DECRYPT, Server)) {
-		if (encrypt_debug_mode) {
-			printf(">>>%s: Request failed for %s\r\n",
-				Name,
-				ENCTYPE_NAME(type));
-		}
-		return;
-	}
-#endif
-
-	str_start[3] = ENCRYPT_REQSTART;
-	net_write(str_start, sizeof(str_start));
-	printsub('>', &str_start[2], sizeof(str_start) - 2);
+	*p++ = IAC;
+	*p++ = SE;
+	net_write(str_start, p - str_start);
+	printsub('>', &str_start[2], p - &str_start[2]);
 	if (encrypt_debug_mode)
 		printf(">>>%s: Request input to be encrypted\r\n", Name);
 }
@@ -731,7 +912,7 @@ encrypt_wait()
 	register int encrypt, decrypt;
 	if (encrypt_debug_mode)
 		printf(">>>%s: in encrypt_wait\r\n", Name);
-	if (!havesessionkey || !(i_support_encrypt & remote_supports_decrypt))
+	if (!havesessionkey || !(I_SUPPORT_ENCRYPT & remote_supports_decrypt))
 		return;
 	while (autoencrypt && !encrypt_output)
 		if (telnet_spin())
