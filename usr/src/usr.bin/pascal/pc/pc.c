@@ -11,13 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pc.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <signal.h>
-#include <sys/wait.h>
 #include <sys/param.h>
+#include <sys/wait.h>
 
 /*
  * Pc - front end for Pascal compiler.
