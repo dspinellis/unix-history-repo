@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	1.4 %G%";
+static char *SccsId = "@(#)quit.c	1.5 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -19,7 +19,7 @@ static char *SccsId = "@(#)quit.c	1.4 %G%";
 
 quit()
 {
-	int mcount, p, modify, autohold, anystat;
+	int mcount, p, modify, autohold, anystat, holdbit;
 	FILE *ibuf, *obuf, *fbuf, *rbuf;
 	register struct message *mp;
 	register int c;
@@ -86,6 +86,8 @@ quit()
 	 */
 
 	anystat = 0;
+	autohold = value("hold") != NOSTR;
+	holdbit = autohold ? MPRESERVE : MBOX;
 	for (mp = &message[0]; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW) {
 			mp->m_flag &= ~MNEW;
@@ -93,19 +95,16 @@ quit()
 		}
 		if (mp->m_flag & MSTATUS)
 			anystat++;
-		if (mp->m_flag & MDELETED)
-			mp->m_flag = MDELETED|MTOUCH;
 		if ((mp->m_flag & MTOUCH) == 0)
-			mp->m_flag |= MDELETED;
+			mp->m_flag |= MPRESERVE;
+		if ((mp->m_flag & (MBOX|MSAVED|MDELETED|MPRESERVE)) == 0)
+			mp->m_flag |= holdbit;
 	}
-	autohold = value("hold") != NOSTR;
 	modify = 0;
 	for (c = 0, p = 0, mp = &message[0]; mp < &message[msgCount]; mp++) {
-		if ((mp->m_flag & (MSAVED|MDELETED)) == 0 && autohold)
-			mp->m_flag |= MPRESERVE;
-		if ((mp->m_flag & (MSAVED|MDELETED|MPRESERVE)) == 0)
+		if (mp->m_flag & MBOX)
 			c++;
-		if ((mp->m_flag & MPRESERVE) || (mp->m_flag & MTOUCH) == 0)
+		if (mp->m_flag & MPRESERVE)
 			p++;
 		if (mp->m_flag & MODIFY)
 			modify++;
@@ -177,7 +176,7 @@ quit()
 			return;
 		}
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
-		if ((mp->m_flag & (MDELETED|MSAVED|MPRESERVE)) == 0)
+		if (mp->m_flag & MBOX)
 			if (send(mp, obuf) < 0) {
 				perror(mbox);
 				fclose(ibuf);
