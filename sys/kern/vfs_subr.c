@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.4 1993/10/18 14:22:16 davidg Exp $
+ *	$Id: vfs_subr.c,v 1.5 1993/11/07 17:46:27 wollman Exp $
  */
 
 /*
@@ -79,7 +79,7 @@ vfs_lock(mp)
 
 	while(mp->mnt_flag & MNT_MLOCK) {
 		mp->mnt_flag |= MNT_MWAIT;
-		sleep((caddr_t)mp, PVFS);
+		tsleep((caddr_t)mp, PVFS, "vfslock", 0);
 	}
 	mp->mnt_flag |= MNT_MLOCK;
 	return (0);
@@ -113,7 +113,7 @@ vfs_busy(mp)
 
 	while(mp->mnt_flag & MNT_MPBUSY) {
 		mp->mnt_flag |= MNT_MPWANT;
-		sleep((caddr_t)&mp->mnt_flag, PVFS);
+		tsleep((caddr_t)&mp->mnt_flag, PVFS, "vfsbusy", 0);
 	}
 	if (mp->mnt_flag & MNT_UNMOUNT)
 		return (1);
@@ -352,7 +352,7 @@ loop:
 	s = splbio();
 	while (vp->v_numoutput) {
 		vp->v_flag |= VBWAIT;
-		sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
+		tsleep((caddr_t)&vp->v_numoutput, PRIBIO + 1, "vflushbf", 0);
 	}
 	splx(s);
 	if (vp->v_dirtyblkhd) {
@@ -434,7 +434,7 @@ vinvalbuf(vp, save)
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO + 1);
+				tsleep((caddr_t)bp, PRIBIO + 1, "vinvalbf", 0);
 				splx(s);
 				break;
 			}
@@ -653,7 +653,7 @@ vget(vp)
 
 	if (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
+		tsleep((caddr_t)vp, PINOD, "vget", 0);
 		return (1);
 	}
 	if (vp->v_usecount == 0) {
@@ -904,7 +904,7 @@ void vgoneall(vp)
 		 */
 		if (vp->v_flag & VXLOCK) {
 			vp->v_flag |= VXWANT;
-			sleep((caddr_t)vp, PINOD);
+			tsleep((caddr_t)vp, PINOD, "vgoneall", 0);
 			return;
 		}
 		/*
@@ -948,7 +948,7 @@ void vgone(vp)
 	 */
 	if (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
+		tsleep((caddr_t)vp, PINOD, "vgone", 0);
 		return;
 	}
 	/*

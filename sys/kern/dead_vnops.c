@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)dead_vnops.c	7.13 (Berkeley) 4/15/91
- *	$Id$
+ *	$Id: dead_vnops.c,v 1.2 1993/10/16 15:23:59 rgrimes Exp $
  */
 
 #include "param.h"
@@ -411,7 +411,7 @@ chkvnlock(vp)
 
 	while (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
+		tsleep((caddr_t)vp, PINOD, "chkvnlk", 0);
 		locked = 1;
 	}
 	return (locked);

@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.7 1993/10/19 01:06:29 nate Exp $
+ *	$Id: vfs__bio.c,v 1.8 1993/11/07 17:46:24 wollman Exp $
  */
 
 #include "param.h"
@@ -385,7 +385,7 @@ tryfree:
 	} else	{
 		/* wait for a free buffer of any kind */
 		(bfreelist + BQ_AGE)->b_flags |= B_WANTED;
-		sleep(bfreelist, PRIBIO);
+		tsleep(bfreelist, PRIBIO, "newbuf", 0);
 		splx(x);
 		return (0);
 	}
@@ -465,7 +465,7 @@ getblk(register struct vnode *vp, daddr_t blkno, int size)
 			x = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
-				sleep (bp, PRIBIO);
+				tsleep (bp, PRIBIO, "getblk", 0);
 				splx(x);
 				continue;
 			}
@@ -567,7 +567,7 @@ biowait(register struct buf *bp)
 
 	x = splbio();
 	while ((bp->b_flags & B_DONE) == 0)
-		sleep((caddr_t)bp, PRIBIO);
+		tsleep((caddr_t)bp, PRIBIO, "biowait", 0);
 	if((bp->b_flags & B_ERROR) || bp->b_error) {
 		if ((bp->b_flags & B_INVAL) == 0) {
 			bp->b_flags |= B_INVAL;

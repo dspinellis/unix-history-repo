@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id$
+ *	$Id: tty.c,v 1.5 1993/10/16 15:24:54 rgrimes Exp $
  */
 
 #include "param.h"
@@ -1350,7 +1350,7 @@ ttycheckoutq(tp, wait)
 			}
 			timeout(wakeup, (caddr_t)&tp->t_out, hz);
 			tp->t_state |= TS_ASLEEP;
-			sleep((caddr_t)&tp->t_out, PZERO - 1);
+			tsleep((caddr_t)&tp->t_out, PZERO - 1, "ttchout", 0);
 		}
 	splx(s);
 	return (1);
