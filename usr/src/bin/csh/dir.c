@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)dir.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)dir.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -162,8 +162,8 @@ dfollow(cp)
 			}
 		}
 	}
-	if ((dp = value(cp))[0] &&
-	    (dp[0] == '/' || dp[0] == '.' && chdir(dp) >= 0)) {
+	dp = value(cp);
+	if ((dp[0] == '/' || dp[0] == '.') && chdir(dp) >= 0) {
 		xfree(cp);
 		cp = savestr(dp);
 		printd = 1;
