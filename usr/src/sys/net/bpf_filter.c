@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf_filter.c	7.4 (Berkeley) %G%
+ *      @(#)bpf_filter.c	7.5 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf_filter.c,v 1.16 91/10/27 21:22:35 mccanne Exp $";
@@ -25,22 +25,22 @@
 #endif
 
 #if defined(sparc) || defined(mips) || defined(ibm032)
-#define ALIGN
+#define BPF_ALIGN
 #endif
 
-#ifndef ALIGN
-#define EXTRACT_SHORT(p)	(ntohs(*(u_short *)p))
+#ifndef BPF_ALIGN
+#define EXTRACT_SHORT(p)	((u_short)ntohs(*(u_short *)p))
 #define EXTRACT_LONG(p)		(ntohl(*(u_long *)p))
 #else
 #define EXTRACT_SHORT(p)\
 	((u_short)\
-		(*((u_char *)(p)+0)<<8|\
-		 *((u_char *)(p)+1)<<0))
+		((u_short)*((u_char *)p+0)<<8|\
+		 (u_short)*((u_char *)p+1)<<0))
 #define EXTRACT_LONG(p)\
-		(*((u_char *)(p)+0)<<24|\
-		 *((u_char *)(p)+1)<<16|\
-		 *((u_char *)(p)+2)<<8|\
-		 *((u_char *)(p)+3)<<0)
+		((u_long)*((u_char *)p+0)<<24|\
+		 (u_long)*((u_char *)p+1)<<16|\
+		 (u_long)*((u_char *)p+2)<<8|\
+		 (u_long)*((u_char *)p+3)<<0)
 #endif
 
 #ifdef KERNEL
@@ -134,8 +134,6 @@ m_xhalf(m, k, err)
 	*err = 1;
 	return 0;
 }
-
-
 #endif
 
 /*
@@ -150,7 +148,7 @@ bpf_filter(pc, p, wirelen, buflen)
 	u_int wirelen;
 	register u_int buflen;
 {
-	register long A, X;
+	register u_long A, X;
 	register int k;
 	long mem[BPF_MEMWORDS];
 
@@ -196,12 +194,12 @@ bpf_filter(pc, p, wirelen, buflen)
 				return 0;
 #endif
 			}
-#ifdef ALIGN
+#ifdef BPF_ALIGN
 			if (((int)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
 			else
 #endif
-				A = *(long *)(p + k);
+				A = ntohl(*(long *)(p + k));
 			continue;
 
 		case BPF_LD|BPF_H|BPF_ABS:
@@ -264,12 +262,12 @@ bpf_filter(pc, p, wirelen, buflen)
 				return 0;
 #endif
 			}
-#ifdef ALIGN
+#ifdef BPF_ALIGN
 			if (((int)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
 			else
 #endif
-				A = *(long *)(p + k);
+				A = ntohl(*(long *)(p + k));
 			continue;
 
 		case BPF_LD|BPF_H|BPF_IND:
