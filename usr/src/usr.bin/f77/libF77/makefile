@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.8	%G%
+#	@(#)makefile	1.9	%G%
 
 LIB = libF77.a
 
@@ -57,6 +57,7 @@ install:	$(LIB)
 	mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
+	chmod 644 $(LIBDIR)/$(LIB)
 
 clean:
 	rm -f $(ALL) $(LIB)
