@@ -3,21 +3,27 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.13	(Berkeley)	%G%
+#	@(#)Makefile	4.14	(Berkeley)	%G%
 #
-# This makefile is designed to be run as:
+# This makefile is designed to be run in one of three ways:
+#
 #	make build
 #	make installsrc
-# The `make build' will compile and install the libraries
-# before building the rest of the sources. The `make installsrc'
-# will then install the remaining binaries.
-# 
-# It can also be run in the more conventional way:
-#	make
+# The `make build' will compile and install the libraries and the compiler
+# twice before building the rest of the sources.  The `make installsrc' will
+# then install the remaining binaries.
+#
+#	make libthenall
+#	make installsrc
+# The `make libthenall' will compile and install the libraries, compile
+# and install the compiler and then compile everything else.  Note,
+# however, that the libraries will have been built with the old compiler.
+# The `make installsrc' will then install the remaining binaries.
+#
+#	make all
 #	make install
-# The `make' will compile everything without installing anything.
-# The `make install' will then install everything. Note however
-# that all the binaries will have been loaded with the old libraries.
+# The `make all' (the default) will compile everything, and install
+# nothing.  The `make install' will then install everything.
 #
 # C library options: passed to libc makefile.
 # See lib/libc/Makefile for explanation.
@@ -44,7 +50,11 @@ SRC_MFLAGS = -k
 LIBDIR= lib usr.lib
 SRCDIR=	bin usr.bin etc ucb new games local old
 
-all:	${LIBDIR} ${SRCDIR}
+all: ${LIBDIR} ${SRCDIR}
+
+libthenall: buildlib1 buildlib3 ${SRCDIR}
+
+build: buildlib1 buildlib2 buildlib3 ${SRCDIR}
 
 lib:	FRC
 	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
@@ -53,9 +63,7 @@ lib:	FRC
 usr.lib ${SRCDIR}: FRC
 	cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
-build: buildlib ${SRCDIR}
-
-buildlib: FRC
+buildlib1: FRC
 	@echo installing /usr/include
 	cd include; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	@echo
@@ -70,8 +78,10 @@ buildlib: FRC
 	cd lib/pcc; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	cd lib/cpp; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	cd lib/c2; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	cd lib; make ${MFLAGS} clean
 	@echo
+
+buildlib2: FRC
+	cd lib; make ${MFLAGS} clean
 	@echo re-compiling libc.a
 	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
 	@echo re-installing /lib/libc.a
@@ -84,10 +94,13 @@ buildlib: FRC
 	cd lib/cpp; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	cd lib/c2; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	@echo
+
+buildlib3: FRC
 	@echo compiling usr.lib
 	cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS}
 	@echo installing /usr/lib
 	cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install
+	@echo
 
 FRC:
 
