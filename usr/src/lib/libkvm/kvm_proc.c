@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1989, 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software developed by the Computer Systems
@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
