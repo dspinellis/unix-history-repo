@@ -20,9 +20,9 @@ AFLAGS=
 CC=		/usr/bin/cc
 CFLAGS=		-O
 
-CI=		ci
+CI=		/usr/new/ci
 CIFLAGS=
-CO=		co
+CO=		/usr/new/co
 COFLAGS=
 
 CPP=		/usr/bin/newcpp
