@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.25 (Berkeley) %G%
+ *	@(#)db.h	5.26 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
