@@ -1,0 +1,66 @@
+# macros for chem; 1.1	(CWI)	87/03/31
+
+pi = 3.141592654
+deg = 57.29578
+# cr = 0.08		# radius of invis circle at ring vertices (see cr[vh])
+# crh = 0.16; crw = 0.12 # ht & wid of invis ellipse around atoms at ring vertices
+# dav = 0.015		# vertical shift up for atoms in atom macro
+
+# atom(text, wid, ht, carbon position, crh, crw, dav)
+define atom { [
+	T: $1 wid $2 ht $3-2*$7
+	C: ellipse invis ht $5 wid $6 at T.w + ($4,$7)
+	L: ellipse invis ht $5 wid $6 at T.w + (cwid/2,$7)
+	R: ellipse invis ht $5 wid $6 at T.e + (-cwid/2,$7)
+] }
+
+# bond(length, angle in degrees, whatever)
+define bond {
+	line $3 by ($1) * sin(($2)/deg), ($1) * cos(($2)/deg)
+}
+
+# fancy bonds:  r, theta, from/at
+define doublebond {
+	line $3 invis by ($1) * sin(($2)/deg), ($1) * cos(($2)/deg)
+	V1: last line.start; V2: last line.end; dx = V2.x-V1.x; dy = V2.y-V1.y
+	norm = sqrt(dx*dx + dy*dy)
+	ny = dx * .02 / norm
+	nx = -dy * .02 / norm
+	line from V1 + (nx,ny) to V2 + (nx,ny)
+	line from V1 - (nx,ny) to V2 - (nx,ny)
+	move to V2
+}
+define triplebond {
+	line $3 invis by ($1) * sin(($2)/deg), ($1) * cos(($2)/deg)
+	V1: last line.start; V2: last line.end; dx = V2.x-V1.x; dy = V2.y-V1.y
+	norm = sqrt(dx*dx + dy*dy)
+	ny = dx * .025 / norm
+	nx = -dy * .025 / norm
+	line from V1 + (nx,ny) to V2 + (nx,ny)
+	line from V1 - (nx,ny) to V2 - (nx,ny)
+	line from V1 to V2
+	move to V2
+}
+define backbond {
+	line $3 invis by ($1) * sin(($2)/deg), ($1) * cos(($2)/deg)
+	V1: last line.start; V2: last line.end; dx = V2.x-V1.x; dy = V2.y-V1.y
+	norm = sqrt(dx*dx + dy*dy)
+	n = norm / .025
+	ny = dx * .02 / norm
+	nx = -dy * .02 / norm
+	for i = 1 to n-1 do {
+		XZ: i/n <V1,V2>
+		line from XZ + (nx,ny) to XZ - (nx,ny)
+	}
+	move to V2
+}
+define frontbond {
+	line $3 invis by ($1) * sin(($2)/deg), ($1) * cos(($2)/deg)
+	V1: last line.start; V2: last line.end; dx = V2.x-V1.x; dy = V2.y-V1.y
+	ah = arrowht; aw = arrowwid; ahead = arrowhead
+	arrowht = sqrt(dx*dx + dy*dy)
+	arrowwid = 0.05
+	arrowhead = 7
+	line <- from V1 to V2
+	arrowht = ah; arrowwid = aw; arrowhead = ahead
+}
