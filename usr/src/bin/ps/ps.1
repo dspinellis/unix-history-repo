@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ps.1	6.19 (Berkeley) %G%
+.\"     @(#)ps.1	6.20 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PS 1
@@ -113,7 +113,7 @@ option implies the
 option.
 .It Fl v
 Display information associated with the following keywords:
-pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trss,
+pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz,
 %cpu, %mem and command.
 The
 .Fl v
@@ -420,8 +420,8 @@ accumulated cpu time, user + system (alias cputime)
 .It tpgid
 control terminal process group
 .Tn ID
-.It trss
-text resident set size (in Kbytes)
+.\".It trss
+.\"text resident set size (in Kbytes)
 .It tsess
 control terminal session pointer
 .It tsiz
