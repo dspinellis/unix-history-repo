@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00014
+ * --------------------         -----   ----------------------
+ *
+ * 04 Sep 92	Paul Kranenburg		Fixed kill -1 and kill -15 for
+ *					daemons started from /etc/rc.
  */
 
 
@@ -80,7 +88,8 @@ extern int errno;
 	signal(SIGHUP, SIG_DFL); signal(SIGINT, SIG_DFL); \
 	signal(SIGTERM, SIG_DFL); signal(SIGALRM, SIG_DFL); \
 	signal(SIGTSTP, SIG_DFL); signal(SIGCHLD, SIG_DFL); \
-	signal(SIGTTIN, SIG_DFL); signal(SIGTTOU, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL); signal(SIGTTOU, SIG_DFL); \
+	sigsetmask( 0);				/* 04 Sep 92*/
 
 /* SIGHUP: reread /etc/ttys */
 void
@@ -396,7 +405,7 @@ char *s;
 	login_tty(open("/dev/console", 2));
 	writes(2, "init FATAL error: ");
 	perror(s);
-	exit(1);
+	_exit(1);				/* 04 Sep 92*/
 	/* panic: init died */
 }
 
