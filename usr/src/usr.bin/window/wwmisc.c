@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	3.4 83/11/28";
+static	char *sccsid = "@(#)wwmisc.c	3.5 83/12/02";
 #endif
 
 #include "ww.h"
@@ -16,7 +16,7 @@ register struct ww *w;
 	for (i = w->ww_i.t; i < w->ww_i.b; i++)
 		nvis += w->ww_nvis[i];
 	if (w->ww_hascursor
-	    && w->ww_cur.r >= w->ww_i.b && w->ww_cur.r < w->ww_i.t
+	    && w->ww_cur.r >= w->ww_i.t && w->ww_cur.r < w->ww_i.b
 	    && w->ww_cur.c >= w->ww_i.l && w->ww_cur.c < w->ww_i.r
 	    && wwsmap[w->ww_cur.r][w->ww_cur.c] == w->ww_index)
 		nvis++;
