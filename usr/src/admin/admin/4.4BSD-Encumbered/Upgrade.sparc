@@ -1,0 +1,70 @@
+.\" @(#)Upgrade.sparc	1.1 (CSRG - distribution) %G%
+.\"
+.\" use -ms
+.\"
+.so HEADERS
+.FH
+.sp .75i
+.tl '''July 1, 1994'
+.LP
+Dear 4.4BSD SPARC Site:
+.sp
+.PP
+We are happy to announce that we have a revised version
+of 4.4BSD available for the SPARC processor.
+We have completely rebuilt the SPARC binaries
+from the 4.4BSD-Lite version of the sources.
+The tape contains a complete set of binaries built from
+a 4.4BSD-Encumbered system.
+However, to make it easier to identify the encumbered sources from
+the 4.4BSD-Lite sources,
+all the encumbered sources have been moved into
+a single directory \fB/usr/src/encumbered\fP.
+Thus, you can distribute any sources outside that directory (and
+none of the sources within that directory, except to USL licensed sites).
+The kernel tree is completely unencumbered except for the
+eight dirty files.
+These eight files are in \fB/usr/src/encumbered/sys\fP
+and are referenced out of the system sources by symbolic links.
+Thus, you can safely create a `tar' archive of \fB/usr/src/sys\fP
+without picking them up
+(though of course it will not build or run without them).
+.PP
+As with the previous 4.4BSD SPARC distribution,
+you need a SunOS system to build a root partition
+and to create a \fB/boot\fP startup image.
+The tape does contain the Sun contributed loader and X11R5
+libraries so that it is possible to run X-windows without
+any further compilation or additions.
+An account with an example startup of the window system is provided.
+.PP
+The distribution is available on three 6250bpi 1/2'' 9-track tapes
+or one 8mm Exabyte cassette only.
+The revision to the original distribution is available
+only for the SPARC architecture.
+In addition to the hardware supported by the previous SPARC kernel,
+the kernel on this distribution supports larger memories,
+all known implementations of Sun's SCSI-disk controllers,
+and the GX Graphics card (cgsix).
+Note that the SPARC kernel still will not run on
+machines with a reference MMU
+(such as the Sparcstation 5 or 10).
+.PP
+This tape is being made available only to those licensed for 4.4BSD-Encumbered.
+If you would like order one of these distributions,
+please return the enclosed order form and a check
+for $500.00 for an 8mm Exabyte distribution
+or $600.00 for a 6250bpi 9-track distribution.
+.PP
+.sp 2
+.ti +2.5i
+Sincerely yours,
+.sp 3
+.ti +2.5i
+Marshall Kirk McKusick
+.br
+.ti +2.5i
+Research Computer Scientist
+.br
+.ti +2.5i
+Computer Systems Research Group
