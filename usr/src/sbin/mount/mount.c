@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -257,6 +257,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			argc += getexecopts(options, &argv[argc]);
 		argv[argc++] = spec;
 		argv[argc++] = name;
+		argv[argc++] = NULL;
 		sprintf(execname, "%s/%s", _PATH_EXECDIR, mntname);
 		if (verbose) {
 			printf("exec: %s", execname);
@@ -603,8 +604,9 @@ getnfsargs(spec)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
-		fprintf(stderr, "Can't access %s, errno=%d\n", spec,
-		    nfhret.stat);
+		fprintf(stderr, "Can't access %s: ", spec);
+		errno = nfhret.stat;
+		perror(NULL);
 		return (0);
 	}
 	saddr.sin_port = htons(tport);
