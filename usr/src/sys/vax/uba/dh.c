@@ -1,4 +1,4 @@
-/*	dh.c	6.1	83/07/29	*/
+/*	dh.c	6.2	84/02/16	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -8,6 +8,7 @@
 #include "../machine/pte.h"
 
 #include "bk.h"
+#include "uba.h"
 #include "../h/param.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -69,8 +70,8 @@ int	dhstart(), ttrstrt();
  * The UBACVT macro converts a clist space address for unibus uban
  * into an i/o space address for the DMA routine.
  */
-int	dh_ubinfo[MAXNUBA];		/* info about allocated unibus map */
-int	cbase[MAXNUBA];			/* base address in unibus map */
+int	dh_ubinfo[NUBA];		/* info about allocated unibus map */
+int	cbase[NUBA];			/* base address in unibus map */
 #define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char *)cfree))
 
 /*

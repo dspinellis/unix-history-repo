@@ -1,4 +1,4 @@
-/*	dmf.c	6.1	83/07/29	*/
+/*	dmf.c	6.2	84/02/16	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -18,6 +18,7 @@
 #include "../machine/pte.h"
 
 #include "bk.h"
+#include "uba.h"
 #include "../h/param.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -65,8 +66,8 @@ int	dmfstart(), ttrstrt();
  * The UBACVT macro converts a clist space address for unibus uban
  * into an i/o space address for the DMA routine.
  */
-int	dmf_ubinfo[MAXNUBA];		/* info about allocated unibus map */
-static int cbase[MAXNUBA];		/* base address in unibus map */
+int	dmf_ubinfo[NUBA];		/* info about allocated unibus map */
+static int cbase[NUBA];			/* base address in unibus map */
 #define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char *)cfree))
 #endif
 
