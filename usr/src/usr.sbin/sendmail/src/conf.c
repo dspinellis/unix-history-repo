@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.127 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.128 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -428,7 +428,7 @@ inithostmaps()
 			strcpy(buf, "hosts.files text -k 0 -v 1 /etc/hosts");
 			makemapentry(buf);
 		}
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		else if (strcmp(maptype[i], "dns") == 0 &&
 		    stab("hosts.dns", ST_MAP, ST_FIND) == NULL)
 		{
