@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -28,12 +28,22 @@ char copyright[] =
 #include <sys/mount.h>
 
 #include <errno.h>
+#if __STDC__
 #include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <paths.h>
+
+#if __STDC__
+void	fatal(const char *fmt, ...);
+#else
+void	fatal();
+#endif
 
 #define	COMPAT			/* allow non-labeled disks */
 
@@ -533,13 +543,23 @@ rewritelabel(s, fd, lp)
 }
 
 /*VARARGS*/
-fatal(fmt)
+void
+#if __STDC__
+fatal(const char *fmt, ...)
+#else
+fatal(fmt, va_alist)
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 
-	fprintf(stderr, "%s: ", progname);
+#if __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	fprintf(stderr, "%s: ", progname);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	putc('\n', stderr);
