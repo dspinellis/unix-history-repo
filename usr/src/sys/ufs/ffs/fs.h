@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.11	%G%	*/
+/*	fs.h	1.12	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -236,6 +236,7 @@ struct	cg {
 	long	cg_frotor;		/* position of last used frag */
 	long	cg_irotor;		/* position of last used inode */
 	long	cg_frsum[MAXFRAG];	/* counts of available frags */
+	long	cg_btot[MAXCPG];	/* block totals per cylinder */
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
 	char	cg_free[1];		/* free block map */
@@ -270,50 +271,30 @@ struct	cg {
 #define	cgsblock(c,fs)	(fsbtodb(fs, cgbase(c,fs)) + (fs)->fs_sblkno)
 
 /*
- * cylinder group to disk block at very beginning
+ * file system addresses of cylinder group data structures
  */
-#define	cgbase(c,fs)	((daddr_t)((fs)->fs_fpg * (c)))
+#define	cgbase(c,fs)	((daddr_t)((fs)->fs_fpg * (c)))		/* base addr */
+#define	cgtod(c,fs)	(cgbase(c,fs) + (fs)->fs_cblkno)	/* cg block */
+#define	cgimin(c,fs)	(cgbase(c,fs) + (fs)->fs_iblkno)	/* inode blk */
+#define	cgdmin(c,fs)	(cgbase(c,fs) + (fs)->fs_dblkno)	/* 1st data */
 
 /*
- * convert cylinder group to index of its cg block
+ * macros for handling inode numbers
+ *     inode number to file system block offset
+ *     inode number to cylinder group number
+ *     inode number to file system block address
  */
-#define	cgtod(c,fs)	(cgbase(c,fs) + (fs)->fs_cblkno)
-
-/*
- * give address of first inode block in cylinder group
- */
-#define	cgimin(c,fs)	(cgbase(c,fs) + (fs)->fs_iblkno)
-
-/*
- * give address of first data block in cylinder group
- */
-#define	cgdmin(c,fs)	(cgbase(c,fs) + (fs)->fs_dblkno)
-
-/*
- * turn inode number into cylinder group number
- */
+#define	itoo(x,fs)	((x) % INOPB(fs))
 #define	itog(x,fs)	((x) / (fs)->fs_ipg)
-
-/*
- * turn inode number into file system block address
- */
 #define	itod(x,fs) \
 	((daddr_t)(cgimin(itog(x,fs),fs) + \
 	(x) % (fs)->fs_ipg / INOPB(fs) * (fs)->fs_frag))
 
 /*
- * turn inode number into file system block offset
- */
-#define	itoo(x,fs)	((x) % INOPB(fs))
-
-/*
  * give cylinder group number for a file system block
- */
-#define	dtog(d,fs)	((d) / (fs)->fs_fpg)
-
-/*
  * give cylinder group block number for a file system block
  */
+#define	dtog(d,fs)	((d) / (fs)->fs_fpg)
 #define	dtogd(d,fs)	((d) % (fs)->fs_fpg)
 
 /*
