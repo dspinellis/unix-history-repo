@@ -1,4 +1,4 @@
-/*	ut.c	4.4	81/11/08	*/
+/*	ut.c	4.5	81/11/10	*/
 
 #include "ut.h"
 #if NUT > 0
@@ -632,13 +632,14 @@ uttimer(dev)
 	int dev;
 {
 	register struct tj_softc *sc = &tj_softc[TJUNIT(dev)];
+	register short x;
 
 	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
 		printf("te%d: lost interrupt\n", TJUNIT(dev));
 		sc->sc_timo = INF;
-		(void) spl5();
+		x = spl5();
 		utintr(UTUNIT(dev));
-		(void) spl0();
+		(void) splx(x);
 	}
 	timeout(uttimer, (caddr_t)dev, 5*hz);
 }
