@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs.c	8.1 (Berkeley) %G%
+ *	@(#)ufs.c	8.2 (Berkeley) %G%
  *  
  *
  * Copyright (c) 1990, 1991 Carnegie Mellon University
@@ -59,7 +59,7 @@ struct file {
 					   indirect block at level i */
 	char		*f_blk[NIADDR];	/* buffer for indirect block at
 					   level i */
-	u_long		f_blksize[NIADDR];
+	u_int		f_blksize[NIADDR];
 					/* size of buffer */
 	daddr_t		f_blkno[NIADDR];/* disk address of block in buffer */
 	char		*f_buf;		/* buffer for data block */
@@ -86,7 +86,8 @@ read_inode(inumber, f)
 	 */
 	buf = alloc(fs->fs_bsize);
 	rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ,
-		fsbtodb(fs, itod(fs, inumber)), fs->fs_bsize, buf, &rsize);
+		fsbtodb(fs, ino_to_fsba(fs, inumber)), fs->fs_bsize,
+		buf, &rsize);
 	if (rc)
 		goto out;
 	if (rsize != fs->fs_bsize) {
@@ -98,7 +99,7 @@ read_inode(inumber, f)
 		register struct dinode *dp;
 
 		dp = (struct dinode *)buf;
-		fp->f_di = dp[itoo(fs, inumber)];
+		fp->f_di = dp[ino_to_fsbo(fs, inumber)];
 	}
 
 	/*
