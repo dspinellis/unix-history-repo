@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.83 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.84 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -242,7 +242,7 @@ ffs_reload(mountp, cred, p)
 	 * Step 1: invalidate all cached meta-data.
 	 */
 	devvp = VFSTOUFS(mountp)->um_devvp;
-	if (vinvalbuf(devvp, 0, cred, p))
+	if (vinvalbuf(devvp, 0, cred, p, 0, 0))
 		panic("ffs_reload: dirty1");
 	/*
 	 * Step 2: re-read superblock from disk.
@@ -294,7 +294,7 @@ loop:
 		 */
 		if (vget(vp))
 			goto loop;
-		if (vinvalbuf(vp, 0, cred, p))
+		if (vinvalbuf(vp, 0, cred, p, 0, 0))
 			panic("ffs_reload: dirty2");
 		/*
 		 * Step 6: re-read inode data for all active vnodes.
@@ -346,7 +346,7 @@ ffs_mountfs(devvp, mp, p)
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p))
+	if (error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p, 0, 0))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
@@ -834,7 +834,7 @@ ffs_sbupdate(mp, waitfor)
 	caddr_t space;
 	int i, size, error = 0;
 
-	bp = getblk(mp->um_devvp, SBLOCK, (int)fs->fs_sbsize);
+	bp = getblk(mp->um_devvp, SBLOCK, (int)fs->fs_sbsize, 0, 0);
 	bcopy((caddr_t)fs, bp->b_un.b_addr, (u_int)fs->fs_sbsize);
 	/* Restore compatibility to old file systems.		   XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
@@ -849,7 +849,8 @@ ffs_sbupdate(mp, waitfor)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i), size);
+		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i),
+		    size, 0, 0);
 		bcopy(space, bp->b_un.b_addr, (u_int)size);
 		space += size;
 		if (waitfor == MNT_WAIT)
