@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mdef.h	5.1 (Berkeley) %G%
+ *	@(#)mdef.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -142,10 +142,6 @@
 #define TRUE            1
 #define FALSE           0
 #define cycle           for(;;)
-
-#ifdef VOID
-#define void            int             /* define if void is void. */
-#endif
 
 /*
  * m4 data structures
