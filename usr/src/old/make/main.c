@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.4 (Berkeley) 82/10/11";
+static	char *sccsid = "@(#)main.c	4.5 (Berkeley) 83/03/03";
 # include "defs"
 /*
 command make to update programs.
@@ -208,7 +208,7 @@ if(nfargs == 0)
 exit(0);
 }
 
-
+#include <sys/stat.h>
 
 #ifdef unix
 intrupt()
@@ -216,9 +216,12 @@ intrupt()
 struct varblock *varptr();
 char *p;
 TIMETYPE exists();
+struct stat sbuf;
 
 if(okdel && !noexflag && !touchflag &&
-	(p = varptr("@")->varval) && exists(p)>0 && !isprecious(p) )
+	(p = varptr("@")->varval) &&
+	(stat(p, &sbuf) >= 0 && (sbuf.st_mode&S_IFMT) == S_IFREG) &&
+	!isprecious(p) )
 		{
 		fprintf(stderr, "\n***  %s removed.", p);
 		unlink(p);
