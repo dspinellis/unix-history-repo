@@ -62,8 +62,6 @@ clean:
 
 print:
 	@pr makefile
-	@size *.o | pr -h SIZES
 	@${CXREF} *.c | pr -h XREF
-	@ls -l | pr 
 	@pr *.h *.c
 
