@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)strip.1	6.5 (Berkeley) %G%
+.\"     @(#)strip.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRIP 1
@@ -13,7 +13,8 @@
 .Nd remove unnecessary information from executable files
 .Sh SYNOPSIS
 .Nm strip
-.Ar
+.Op Fl d
+.Ar file ...
 .Sh DESCRIPTION
 The
 .Nm strip
@@ -23,14 +24,18 @@ assemblers, loaders and debuggers.
 This significantly
 decreases the size of the installed binaries and saves disk space.
 .Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Delete only debugging and empty symbols.
+.El
+.Pp
 .Nm Strip
-exits 0 on success (or if the file had already been stripped), 1 if
-an error occurred.
+exits 0 on success and 1 if an error occurred.
 .Sh SEE ALSO
-.Xr as 1 ,
 .Xr cc 1 ,
-.Xr install 1 ,
-.Xr ld 1
+.Xr ld 1 ,
+.Xr stab 5
 .Sh HISTORY
 A
 .Nm
