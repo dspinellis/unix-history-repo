@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)whereis.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.6 (Berkeley) %G%";
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/dir.h>
+#include <dir.h>
 
 static char *bindirs[] = {
 	"/etc",
@@ -16,6 +16,7 @@ static char *bindirs[] = {
 	"/usr/local",
 	"/usr/new",
 	"/usr/old",
+	"/usr/hosts",
 	0
 };
 static char *mandirs[] = {
@@ -30,15 +31,27 @@ static char *mandirs[] = {
 	0
 };
 static char *srcdirs[]  = {
-	"/usr/src/cmd",
+	"/usr/src/etc",
+	"/usr/src/bin",
+	"/usr/src/usr.bin",
 	"/usr/src/games",
-	"/usr/src/libc/gen",
-	"/usr/src/libc/stdio",
-	"/usr/src/libc/sys",
+	"/usr/src/lib",
+	"/usr/src/lib/libc/gen",
+	"/usr/src/lib/libc/stdio",
+	"/usr/src/lib/libc/sys",
+	"/usr/src/ucb",
+	"/usr/src/ucb/netser",
+	"/usr/src/ucb/arpanet",
+	"/usr/src/usr.lib",
+	"/usr/src/local",
 	"/usr/src/new",
 	"/usr/src/old",
-	"/usr/src/local",
 	"/usr/src/undoc",
+	/* these are temporary */
+	"/usr/src/src.arpa/cmd",
+	"/usr/src/src.monet/4.1",
+	"/usr/src/src.monet/4.1a",
+	"/usr/src/src.monet/4.1b",
 	0
 };
 
@@ -61,6 +74,12 @@ main(argc, argv)
 	char *argv[];
 {
 
+#ifdef CORY
+	if (getuid() == 0)
+		nice(-20);
+	if (((getuid() >> 8) & 0377) > 10)
+		setuid(getuid());
+#endif
 	argc--, argv++;
 	if (argc == 0) {
 usage:
@@ -242,22 +261,20 @@ find(dirs, cp)
 findin(dir, cp)
 	char *dir, *cp;
 {
-	register FILE *d;
-	struct direct direct;
+	DIR *dirp;
+	struct direct *dp;
 
-	d = fopen(dir, "r");
-	if (d == NULL)
+	dirp = opendir(dir);
+	if (dirp == NULL)
 		return;
-	while (fread(&direct, sizeof direct, 1, d) == 1) {
-		if (direct.d_ino == 0)
-			continue;
-		if (itsit(cp, direct.d_name)) {
+	while ((dp = readdir(dirp)) != NULL) {
+		if (itsit(cp, dp->d_name)) {
 			count++;
 			if (print)
-				printf(" %s/%.14s", dir, direct.d_name);
+				printf(" %s/%.14s", dir, dp->d_name);
 		}
 	}
-	fclose(d);
+	closedir(dirp);
 }
 
 itsit(cp, dp)
