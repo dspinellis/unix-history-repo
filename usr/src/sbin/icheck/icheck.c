@@ -5,9 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)icheck.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)icheck.c	5.4 (Berkeley) %G%";
 #endif not lint
-
 
 /*
  * icheck
@@ -19,19 +18,13 @@ static char sccsid[] = "@(#)icheck.c	5.3 (Berkeley) %G%";
 #ifndef STANDALONE
 #include <stdio.h>
 #endif
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#endif
 
 union {
 	struct	fs sb;
-	char pad[MAXBSIZE];
+	char pad[SBSIZE];
 } sbun;
 #define	sblock sbun.sb
 
@@ -41,13 +34,13 @@ union {
 } cgun;
 #define	cgrp cgun.cg
 
-struct	dinode	itab[MAXIPG];
+struct dinode itab[MAXBSIZE / sizeof(struct dinode)];
+
 daddr_t	blist[NB];
 daddr_t	fsblist[NB];
 char	*bmap;
 
 int	mflg;
-int	sflg;
 int	dflg;
 int	fi;
 ino_t	ino;
@@ -58,6 +51,7 @@ ino_t	ndfile;
 ino_t	nbfile;
 ino_t	ncfile;
 ino_t	nlfile;
+ino_t	nsfile;
 
 daddr_t	nblock;
 daddr_t	nfrag;
@@ -71,9 +65,6 @@ daddr_t	ndup;
 
 int	nerror;
 long	dev_bsize = 1;
-
-extern int inside[], around[];
-extern unsigned char *fragtbl[];
 
 long	atol();
 #ifndef STANDALONE
@@ -100,10 +91,6 @@ main(argc, argv)
 
 		case 'm':
 			mflg++;
-			continue;
-
-		case 's':
-			sflg++;
 			continue;
 
 		case 'b':
@@ -143,7 +130,7 @@ check(file)
 	long n;
 	char buf[BUFSIZ];
 
-	fi = open(file, sflg ? 2 : 0);
+	fi = open(file, 0);
 	if (fi < 0) {
 		perror(file);
 		nerror |= 04;
@@ -155,6 +142,7 @@ check(file)
 	ncfile = 0;
 	nbfile = 0;
 	nlfile = 0;
+	nsfile = 0;
 
 	nblock = 0;
 	nfrag = 0;
@@ -180,10 +168,6 @@ check(file)
 	if (bmap==NULL) {
 		printf("Not enough core; duplicates unchecked\n");
 		dflg++;
-		if (sflg) {
-			printf("No Updates\n");
-			sflg = 0;
-		}
 	}
 	ino = 0;
 	cginit = 1;
@@ -222,42 +206,37 @@ check(file)
 	ino = 0;
 	cginit = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for (j=0; j < sblock.fs_ipg; j++) {
-			pass1(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				pass1(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	ino = 0;
 #ifndef STANDALONE
 	sync();
 #endif
-	if (sflg) {
-		makecg();
-		close(fi);
-#ifndef STANDALONE
-		if (bmap)
-			free(bmap);
-#endif
-		return;
-	}
 	nffree = 0;
 	nbfree = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		cbase = cgbase(&sblock, c);
 		bread(fsbtodb(&sblock, cgtod(&sblock, c)), (char *)&cgrp,
 			sblock.fs_cgsize);
-		if (cgrp.cg_magic != CG_MAGIC)
+		if (!cg_chkmagic(&cgrp))
 			printf("cg %d: bad magic number\n", c);
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
-			if (isblock(&sblock, cgrp.cg_free,
+			if (isblock(&sblock, cg_blksfree(&cgrp),
 			    b / sblock.fs_frag)) {
 				nbfree++;
 				chk(cbase+b, "free block", sblock.fs_bsize);
 			} else {
 				for (d = 0; d < sblock.fs_frag; d++)
-					if (isset(cgrp.cg_free, b+d)) {
+					if (isset(cg_blksfree(&cgrp), b+d)) {
 						chk(cbase+b+d, "free frag", sblock.fs_fsize);
 						nffree++;
 					}
@@ -270,13 +249,13 @@ check(file)
 		free(bmap);
 #endif
 
-	i = nrfile + ndfile + ncfile + nbfile + nlfile;
+	i = nrfile + ndfile + ncfile + nbfile + nlfile + nsfile;
 #ifndef STANDALONE
-	printf("files %6u (r=%u,d=%u,b=%u,c=%u,sl=%u)\n",
-		i, nrfile, ndfile, nbfile, ncfile, nlfile);
+	printf("files %6u (r=%u,d=%u,b=%u,c=%u,sl=%u,sock=%u)\n",
+		i, nrfile, ndfile, nbfile, ncfile, nlfile, nsfile);
 #else
-	printf("files %u (r=%u,d=%u,b=%u,c=%u,sl=%u)\n",
-		i, nrfile, ndfile, nbfile, ncfile, nlfile);
+	printf("files %u (r=%u,d=%u,b=%u,c=%u,sl=%u,sock=%u)\n",
+		i, nrfile, ndfile, nbfile, ncfile, nlfile, nsfile);
 #endif
 	n = (nblock + nindir + niindir) * sblock.fs_frag + nfrag;
 #ifdef STANDALONE
@@ -327,6 +306,9 @@ pass1(ip)
 		break;
 	case IFREG:
 		nrfile++;
+		break;
+	case IFSOCK:
+		nsfile++;
 		break;
 	case IFLNK:
 		nlfile++;
@@ -450,169 +432,6 @@ duped(bno, size)
 	return(0);
 }
 
-makecg()
-{
-	int c, blk;
-	daddr_t dbase, d, dlower, dupper, dmax;
-	long i, j, s;
-	register struct csum *cs;
-	register struct dinode *dp;
-
-	sblock.fs_cstotal.cs_nbfree = 0;
-	sblock.fs_cstotal.cs_nffree = 0;
-	sblock.fs_cstotal.cs_nifree = 0;
-	sblock.fs_cstotal.cs_ndir = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		dbase = cgbase(&sblock, c);
-		dmax = dbase + sblock.fs_fpg;
-		if (dmax > sblock.fs_size) {
-			for ( ; dmax >= sblock.fs_size; dmax--)
-				clrbit(cgrp.cg_free, dmax - dbase);
-			dmax++;
-		}
-		dlower = cgsblock(&sblock, c) - dbase;
-		dupper = cgdmin(&sblock, c) - dbase;
-		cs = &sblock.fs_cs(&sblock, c);
-		cgrp.cg_time = time(0);
-		cgrp.cg_magic = CG_MAGIC;
-		cgrp.cg_cgx = c;
-		if (c == sblock.fs_ncg - 1)
-			cgrp.cg_ncyl = sblock.fs_ncyl % sblock.fs_cpg;
-		else
-			cgrp.cg_ncyl = sblock.fs_cpg;
-		cgrp.cg_niblk = sblock.fs_ipg;
-		cgrp.cg_ndblk = dmax - dbase;
-		cgrp.cg_cs.cs_ndir = 0;
-		cgrp.cg_cs.cs_nffree = 0;
-		cgrp.cg_cs.cs_nbfree = 0;
-		cgrp.cg_cs.cs_nifree = 0;
-		cgrp.cg_rotor = 0;
-		cgrp.cg_frotor = 0;
-		cgrp.cg_irotor = 0;
-		for (i = 0; i < sblock.fs_frag; i++)
-			cgrp.cg_frsum[i] = 0;
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		      sblock.fs_ipg * sizeof(struct dinode));
-		for (i = 0; i < sblock.fs_ipg; i++) {
-			cgrp.cg_cs.cs_nifree++;
-			clrbit(cgrp.cg_iused, i);
-			dp = &itab[i];
-			if ((dp->di_mode & IFMT) != 0) {
-				if ((dp->di_mode & IFMT) == IFDIR)
-					cgrp.cg_cs.cs_ndir++;
-				cgrp.cg_cs.cs_nifree--;
-				setbit(cgrp.cg_iused, i);
-				continue;
-			}
-		}
-		while (i < MAXIPG) {
-			clrbit(cgrp.cg_iused, i);
-			i++;
-		}
-		if (c == 0)
-			for (i = 0; i < ROOTINO; i++) {
-				setbit(cgrp.cg_iused, i);
-				cgrp.cg_cs.cs_nifree--;
-			}
-		for (s = 0; s < MAXCPG; s++) {
-			cgrp.cg_btot[s] = 0;
-			for (i = 0; i < NRPOS; i++)
-				cgrp.cg_b[s][i] = 0;
-		}
-		if (c == 0) {
-			dupper += howmany(sblock.fs_cssize, sblock.fs_fsize);
-		}
-		for (d = dlower; d < dupper; d++)
-			clrbit(cgrp.cg_free, d);
-		for (d = 0; (d + sblock.fs_frag) <= dmax - dbase;
-		    d += sblock.fs_frag) {
-			j = 0;
-			for (i = 0; i < sblock.fs_frag; i++) {
-				if (!isset(bmap, dbase + d + i)) {
-					setbit(cgrp.cg_free, d + i);
-					j++;
-				} else
-					clrbit(cgrp.cg_free, d+i);
-			}
-			if (j == sblock.fs_frag) {
-				cgrp.cg_cs.cs_nbfree++;
-				cgrp.cg_btot[cbtocylno(&sblock, d)]++;
-				cgrp.cg_b[cbtocylno(&sblock, d)]
-				    [cbtorpos(&sblock, d)]++;
-			} else if (j > 0) {
-				cgrp.cg_cs.cs_nffree += j;
-				blk = blkmap(&sblock, cgrp.cg_free, d);
-				fragacct(&sblock, blk, cgrp.cg_frsum, 1);
-			}
-		}
-		for (j = d; d < dmax - dbase; d++) {
-			if (!isset(bmap, dbase + d)) {
-				setbit(cgrp.cg_free, d);
-				cgrp.cg_cs.cs_nffree++;
-			} else
-				clrbit(cgrp.cg_free, d);
-		}
-		for (; d % sblock.fs_frag != 0; d++)
-			clrbit(cgrp.cg_free, d);
-		if (j != d) {
-			blk = blkmap(&sblock, cgrp.cg_free, j);
-			fragacct(&sblock, blk, cgrp.cg_frsum, 1);
-		}
-		for (d /= sblock.fs_frag; d < MAXBPG(&sblock); d ++)
-			clrblock(&sblock, cgrp.cg_free, d);
-		sblock.fs_cstotal.cs_nffree += cgrp.cg_cs.cs_nffree;
-		sblock.fs_cstotal.cs_nbfree += cgrp.cg_cs.cs_nbfree;
-		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
-		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
-		*cs = cgrp.cg_cs;
-		bwrite(fsbtodb(&sblock, cgtod(&sblock, c)), &cgrp,
-			sblock.fs_cgsize);
-	}
-	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
-		bwrite(fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
-		    (char *)sblock.fs_csp[j],
-		    sblock.fs_cssize - i < sblock.fs_bsize ?
-		    sblock.fs_cssize - i : sblock.fs_bsize);
-	}
-	sblock.fs_ronly = 0;
-	sblock.fs_fmod = 0;
-	bwrite(SBOFF / dev_bsize, (char *)&sblock, SBSIZE);
-}
-
-/*
- * update the frsum fields to reflect addition or deletion 
- * of some frags
- */
-fragacct(fs, fragmap, fraglist, cnt)
-	struct fs *fs;
-	int fragmap;
-	long fraglist[];
-	int cnt;
-{
-	int inblk;
-	register int field, subfield;
-	register int siz, pos;
-
-	inblk = (int)(fragtbl[fs->fs_frag][fragmap] << 1);
-	fragmap <<= 1;
-	for (siz = 1; siz < fs->fs_frag; siz++) {
-		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
-			continue;
-		field = around[siz];
-		subfield = inside[siz];
-		for (pos = siz; pos <= fs->fs_frag; pos++) {
-			if ((fragmap & field) == subfield) {
-				fraglist[siz] += cnt;
-				pos += siz;
-				field <<= siz;
-				subfield <<= siz;
-			}
-			field <<= 1;
-			subfield <<= 1;
-		}
-	}
-}
-
 getsb(fs, file)
 	register struct fs *fs;
 	char *file;
@@ -640,22 +459,6 @@ getsb(fs, file)
 	}
 }
 
-bwrite(blk, buf, size)
-	char *buf;
-	daddr_t blk;
-	register size;
-{
-	if (lseek(fi, blk * dev_bsize, 0) < 0) {
-		perror("FS SEEK");
-		return(1);
-	}
-	if (write(fi, buf, size) != size) {
-		perror("FS WRITE");
-		return(1);
-	}
-	return (0);
-}
-
 bread(bno, buf, cnt)
 	daddr_t bno;
 	char *buf;
@@ -664,10 +467,6 @@ bread(bno, buf, cnt)
 
 	lseek(fi, bno * dev_bsize, 0);
 	if ((i = read(fi, buf, cnt)) != cnt) {
-		if (sflg) {
-			printf("No Update\n");
-			sflg = 0;
-		}
 		for(i=0; i<sblock.fs_bsize; i++)
 			buf[i] = 0;
 		return (1);
@@ -708,37 +507,6 @@ isblock(fs, cp, h)
 }
 
 /*
- * take a block out of the map
- */
-clrblock(fs, cp, h)
-	struct fs *fs;
-	unsigned char *cp;
-	int h;
-{
-	switch ((fs)->fs_frag) {
-	case 8:
-		cp[h] = 0;
-		return;
-	case 4:
-		cp[h >> 1] &= ~(0x0f << ((h & 0x1) << 2));
-		return;
-	case 2:
-		cp[h >> 2] &= ~(0x03 << ((h & 0x3) << 1));
-		return;
-	case 1:
-		cp[h >> 3] &= ~(0x01 << (h & 0x7));
-		return;
-	default:
-#ifdef STANDALONE
-		printf("clrblock bad fs_frag %d\n", fs->fs_frag);
-#else
-		fprintf(stderr, "clrblock bad fs_frag %d\n", fs->fs_frag);
-#endif
-		return;
-	}
-}
-
-/*
  * put a block into the map
  */
 setblock(fs, cp, h)
@@ -768,110 +536,3 @@ setblock(fs, cp, h)
 		return;
 	}
 }
-
-/*	tables.c	4.1	82/03/25	*/
-
-/* merged into kernel:	tables.c 2.1 3/25/82 */
-
-/* last monet version:	partab.c	4.2	81/03/08	*/
-
-/*
- * bit patterns for identifying fragments in the block map
- * used as ((map & around) == inside)
- */
-int around[9] = {
-	0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff
-};
-int inside[9] = {
-	0x0, 0x2, 0x6, 0xe, 0x1e, 0x3e, 0x7e, 0xfe, 0x1fe
-};
-
-/*
- * given a block map bit pattern, the frag tables tell whether a
- * particular size fragment is available. 
- *
- * used as:
- * if ((1 << (size - 1)) & fragtbl[fs->fs_frag][map] {
- *	at least one fragment of the indicated size is available
- * }
- *
- * These tables are used by the scanc instruction on the VAX to
- * quickly find an appropriate fragment.
- */
-
-unsigned char fragtbl124[256] = {
-	0x00, 0x16, 0x16, 0x2a, 0x16, 0x16, 0x26, 0x4e,
-	0x16, 0x16, 0x16, 0x3e, 0x2a, 0x3e, 0x4e, 0x8a,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x2a, 0x3e, 0x3e, 0x2a, 0x3e, 0x3e, 0x2e, 0x6e,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x2a, 0x3e, 0x6e, 0xaa,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x26, 0x36, 0x36, 0x2e, 0x36, 0x36, 0x26, 0x6e,
-	0x36, 0x36, 0x36, 0x3e, 0x2e, 0x3e, 0x6e, 0xae,
-	0x4e, 0x5e, 0x5e, 0x6e, 0x5e, 0x5e, 0x6e, 0x4e,
-	0x5e, 0x5e, 0x5e, 0x7e, 0x6e, 0x7e, 0x4e, 0xce,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
-	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e, 0xbe,
-	0x2a, 0x3e, 0x3e, 0x2a, 0x3e, 0x3e, 0x2e, 0x6e,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x2a, 0x3e, 0x6e, 0xaa,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e,
-	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e, 0xbe,
-	0x4e, 0x5e, 0x5e, 0x6e, 0x5e, 0x5e, 0x6e, 0x4e,
-	0x5e, 0x5e, 0x5e, 0x7e, 0x6e, 0x7e, 0x4e, 0xce,
-	0x8a, 0x9e, 0x9e, 0xaa, 0x9e, 0x9e, 0xae, 0xce,
-	0x9e, 0x9e, 0x9e, 0xbe, 0xaa, 0xbe, 0xce, 0x8a,
-};
-
-unsigned char fragtbl8[256] = {
-	0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x02, 0x04,
-	0x01, 0x01, 0x01, 0x03, 0x02, 0x03, 0x04, 0x08,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x02, 0x03, 0x03, 0x02, 0x04, 0x05, 0x08, 0x10,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
-	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
-	0x04, 0x05, 0x05, 0x06, 0x08, 0x09, 0x10, 0x20,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x03, 0x03, 0x03, 0x03, 0x05, 0x05, 0x09, 0x11,
-	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
-	0x03, 0x03, 0x03, 0x03, 0x02, 0x03, 0x06, 0x0a,
-	0x04, 0x05, 0x05, 0x06, 0x05, 0x05, 0x06, 0x04,
-	0x08, 0x09, 0x09, 0x0a, 0x10, 0x11, 0x20, 0x40,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x03, 0x03, 0x03, 0x03, 0x05, 0x05, 0x09, 0x11,
-	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
-	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
-	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x07,
-	0x05, 0x05, 0x05, 0x07, 0x09, 0x09, 0x11, 0x21,
-	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
-	0x03, 0x03, 0x03, 0x03, 0x02, 0x03, 0x06, 0x0a,
-	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x07,
-	0x02, 0x03, 0x03, 0x02, 0x06, 0x07, 0x0a, 0x12,
-	0x04, 0x05, 0x05, 0x06, 0x05, 0x05, 0x06, 0x04,
-	0x05, 0x05, 0x05, 0x07, 0x06, 0x07, 0x04, 0x0c,
-	0x08, 0x09, 0x09, 0x0a, 0x09, 0x09, 0x0a, 0x0c,
-	0x10, 0x11, 0x11, 0x12, 0x20, 0x21, 0x40, 0x80,
-};
-
-/*
- * the actual fragtbl array
- */
-unsigned char *fragtbl[MAXFRAG + 1] = {
-	0, fragtbl124, fragtbl124, 0, fragtbl124, 0, 0, 0, fragtbl8,
-};
