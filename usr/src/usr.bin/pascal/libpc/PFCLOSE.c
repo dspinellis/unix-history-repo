@@ -1,12 +1,11 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)PFCLOSE.c	1.1	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)PFCLOSE.c	1.2	(Berkeley)	%G%";
 
 /*
  * Close a Pascal file deallocating resources as appropriate.
  */
 
-#include <stdio.h>
 #include "h00vars.h"
 #include "libpc.h"
 
@@ -14,7 +13,6 @@ struct iorec *
 PFCLOSE(filep)
 	register struct iorec *filep;
 {
-	fprintf(stderr, "Closing file %s\n", filep->pfname);
 	if ((filep->funit & FDEF) == 0 && filep->fbuf != NULL) {
 		/*
 		 * Have a previous buffer, close associated file.
