@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kadb.c	7.3 (Berkeley) %G%
+ *	@(#)kadb.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -558,7 +558,7 @@ kdbstacktrace(printlocals)
 {
 	unsigned pc, sp, ra, va, subr;
 	int a0, a1, a2, a3;
-	unsigned instr;
+	unsigned instr, mask;
 	InstFmt i;
 	int more, stksize;
 	extern MachKernGenException();
@@ -612,6 +612,7 @@ loop:
 	/* scan forwards to find stack size and any saved registers */
 	stksize = 0;
 	more = 3;
+	mask = 0;
 	for (; more; va += sizeof(int), more = (more == 3) ? 3 : more - 1) {
 		/* stop if hit our current position */
 		if (va >= pc)
@@ -657,6 +658,10 @@ loop:
 			/* look for saved registers on the stack */
 			if (i.IType.rs != 29)
 				break;
+			/* only restore the first one */
+			if (mask & (1 << i.IType.rt))
+				break;
+			mask |= 1 << i.IType.rt;
 			switch (i.IType.rt) {
 			case 4: /* a0 */
 				a0 = kdbchkget(sp + (short)i.IType.imm, DSP);
