@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.27 (Berkeley) %G%
+ *	@(#)param.h	7.28 (Berkeley) %G%
  */
 
-#define	BSD	199207		/* System version (year & month). */
+#define	BSD	199306		/* System version (year & month). */
 #define BSD4_3	1
-#define BSD4_4	0.5
+#define BSD4_4	1
 
 #ifndef NULL
 #define	NULL	0
