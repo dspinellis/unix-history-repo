@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_io.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_io.c	1.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)ar_io.c	1.3 (Berkeley) %G%";
 #define STDO		"<STDOUT>"	/* psuedo name for stdout */
 #define STDN		"<STDIN>"	/* psuedo name for stdin */
 static int arfd = -1;			/* archive file descriptor */
-static int artyp;			/* archive type: file/FIFO/tape */
+static int artyp = ISREG;		/* archive type: file/FIFO/tape */
 static int arvol = 1;			/* archive volume number */
 static int lstrval = -1;		/* return value from last i/o */
 static int io_ok;			/* i/o worked on volume after resync */
@@ -51,6 +51,7 @@ static struct stat arsb;		/* stat of archive device at open */
 static int invld_rec;			/* tape has out of spec record size */
 static int phyblk; 			/* size of physical block on TAPE */
 static int wr_trail = 1;		/* trailer was rewritten in append */
+static int can_unlnk = 0;		/* do we unlink null archives?  */
 char *arcname;                  	/* printable name of archive */
 
 static int get_phys __P((void));
@@ -79,7 +80,8 @@ ar_open(name)
 	if (arfd != -1)
 		(void)close(arfd);
 	arfd = -1;
-	phyblk = did_io = io_ok = invld_rec = 0;
+	can_unlnk = phyblk = did_io = io_ok = invld_rec = 0;
+	artyp = ISREG;
 	flcnt = 0;
 
 	/*
@@ -100,6 +102,8 @@ ar_open(name)
 			arcname = STDO;
 		} else if ((arfd = open(name, AR_MODE, DMOD)) < 0)
 			syswarn(0, errno, "Failed open to write on %s", name);
+		else
+			can_unlnk = 1;
 		break;
 	case APPND:
 		if (name == NULL) {
@@ -125,13 +129,20 @@ ar_open(name)
 	 */
 	if (fstat(arfd, &arsb) < 0) {
 		syswarn(0, errno, "Failed stat on %s", arcname);
+		(void)close(arfd);
+		arfd = -1;
+		can_unlnk = 0;
 		return(-1);
 	}
 	if (S_ISDIR(arsb.st_mode)) {
 		warn(0, "Cannot write an archive on top of a directory %s",
 		    arcname);
+		(void)close(arfd);
+		arfd = -1;
+		can_unlnk = 0;
 		return(-1);
 	}
+
 	if (S_ISCHR(arsb.st_mode))
 		artyp = ioctl(arfd, MTIOCGET, &mb) ? ISCHR : ISTAPE;
 	else if (S_ISBLK(arsb.st_mode))
@@ -141,6 +152,12 @@ ar_open(name)
 	else
 		artyp = ISREG;
 
+	/*
+	 * make sure we beyond any doubt that we only can unlink regular files
+	 * we created
+	 */
+	if (artyp != ISREG)
+		can_unlnk = 0;
 	/*
 	 * if we are writing, we are done
 	 */
@@ -279,6 +296,16 @@ ar_close()
 		(void)fputs("pax: Waiting for tape drive close to complete...",
 		    outf);
 		(void)fflush(outf);
+	}
+
+	/*
+	 * if nothing was written to the archive (and we created it), we remove
+	 * it
+	 */
+	if (can_unlnk && (fstat(arfd, &arsb) == 0) && (S_ISREG(arsb.st_mode)) &&
+	    (arsb.st_size == 0)) {
+		(void)unlink(arcname);
+		can_unlnk = 0;
 	}
 
 	(void)close(arfd);
