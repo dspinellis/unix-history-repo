@@ -1,4 +1,4 @@
-/*	tu.c	4.16	83/06/01	*/
+/*	tu.c	4.17	83/06/01	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -24,8 +24,7 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-
-#include "tu58.h"
+#include "../vax/rsp.h"
 
 #define	printd	if(tudebug) printf
 #ifdef	printd
