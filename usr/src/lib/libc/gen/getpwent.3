@@ -1,109 +1,185 @@
-.\" Copyright (c) 1988 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getpwent.3	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getpwent.3	6.5 (Berkeley) %G%
 .\"
 .TH GETPWENT 3  ""
 .AT 3
 .SH NAME
-getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file entry
+getpwent, getpwnam, getpwuid, setpassent,
+setpwfile, setpwent, endpwent \- get password file entries
 .SH SYNOPSIS
 .nf
+.B #include <sys/types.h>
 .B #include <pwd.h>
+.PP
+.B struct passwd *getpwent()
+.PP
+.B struct passwd *getpwnam(login)
+.B char *login;
 .PP
 .B struct passwd *getpwuid(uid)
 .B uid_t uid;
 .PP
-.B struct passwd *getpwnam(name)
-.B char *name;
+.B int setpassent(stayopen)
+.B int stayopen;
 .PP
-.B struct passwd *getpwent()
+.B void setpwfile(file)
+.B char *file;
 .PP
-.B void setpwent()
+.B int setpwent()
 .PP
 .B void endpwent()
-.PP
-.B setpwfile(name)
-.B char *name;
 .fi
 .SH DESCRIPTION
-.I Getpwent,
-.I getpwuid
+.IR Getpwent ,
+.IR getpwuid ,
 and
 .I getpwnam
-each return a pointer to an object with the following structure,
-containing the broken-out fields of a line in the password file,
-as described in
-.IR < pwd.h > .
-.RS
+each return a pointer to a structure containing the broken-out
+fields of a line in the password file.  This structure is defined
+by the include file
+.IR < pwd.h > ,
+and contains the following fields:
 .PP
+.RS
 .nf
 struct passwd {
-	char	*pw_name;
-	char	*pw_passwd;
-	uid_t	pw_uid;
-	gid_t	pw_gid;
-	int	pw_quota;
-	char	*pw_comment;
-	char	*pw_gecos;
-	char	*pw_dir;
-	char	*pw_shell;
+	char	*pw_name;			/* user name */
+	char	*pw_passwd;		/* encrypted password */
+	uid_t	pw_uid;		/* user uid */
+	gid_t	pw_gid;		/* user gid */
+	time_t	pw_change;	/* password change time */
+	char	*pw_class;		/* user access class */
+	char	*pw_gecos;		/* Honeywell login info */
+	char	*pw_dir;			/* home directory */
+	char	*pw_shell;		/* default shell */
+	time_t	pw_expire;	/* account expiration */
 };
-.ft R
-.ad
 .fi
 .RE
 .PP
-The fields
-.I pw_quota
-and
-.I pw_comment
-are unused; the others have meanings described in
+These fields are more completely described in
 .IR passwd (5).
+.PP
+.I Getpwnam
+and
+.I getpwuid
+search the password database for a matching user name or user uid,
+respectively, returning the first one encountered.  Identical
+user names or user uids may result in undefined behavior.
+.PP
+.I Getpwent
+sequentially reads the password database and is intended for programs
+that wish to step through the complete list of users.
+.PP
+All three routines will open the password file for reading, if
+necessary.
 .PP
 .I Setpwfile
 changes the default password file to
-.IR name ,
-thus allowing usage of alternate password files.  If \fIndbm\fP databases
-are available for any password files, they are used, otherwise the file
-itself is linearly searched.
+.IR file ,
+thus allowing the use of alternate password files.
+.PP
+.I Setpassent
+opens the file or rewinds it if it is already open.  If
+.I stayopen
+is non-zero, file descriptors are left open, significantly speeding
+up subsequent calls.  This functionality is unnecessary for
+.I getpwent
+as it doesn't close its file descriptors by default.  It should also
+be noted that it is dangerous for long-running programs to use this
+functionality as the password file may be updated by
+.IR chpass (1),
+.IR passwd (1),
+or
+.IR vipw (8).
 .PP
 .I Setpwent
-opens the database or file (closing any previously opened database or file)
-or rewinds it if it is already open.
+is identical to
+.I setpassent
+with an argument of zero.
 .PP
 .I Endpwent
-closes any open databases or files.
+closes any open files.
 .PP
-.I Getpwuid
+These routines have been written to ``shadow'' the password file, e.g.
+allow only certain programs to have access to the encrypted password.
+This is done by using the
+.IR mkpasswd (8)
+program, which creates
+.IR ndbm (3)
+databases that correspond to the password file, with the single exception
+that, rather than storing the encrypted password in the database, it stores
+the offset in the password file where the encrypted password may be found.
+.IR Getpwent ,
+.IR getpwnam ,
 and
-.I getpwnam
-search the entire database or file (opening it if necessary) for a matching
-.I uid
-or
-.IR name .
-.PP
-For programs wishing to read the entire database,
-.I getpwent
-reads the next entry (opening the database or file if necessary).
+.I getpwuid
+will use the
+.I ndbm
+files in preference to the ``real'' password files, only reading the
+password file itself, to obtain the encrypted password, if the process
+is running with an effective user id equivalent to super-user.
+If the password file itself is protected, and the
+.I ndbm
+files are not, this makes the password available only to programs
+running with super-user privileges.
 .SH FILES
 /etc/passwd
 .SH "SEE ALSO"
-getlogin(3), getgrent(3), passwd(5)
+getlogin(3), getgrent(3), ndbm(3), passwd(5)
 .SH DIAGNOSTICS
 The routines
 .IR getpwent ,
-.IR getpwuid ,
-and
 .IR getpwnam ,
-return a null pointer (0) on EOF or error.
-.I Setpwent
-returns 0 on failure, 1 on success.
+and
+.IR getpwuid ,
+return a null pointer on EOF or error.
+.I Setpassent
+and
+.I setpwent
+return 0 on failure and 1 on success.
 .I Endpwent
 and
 .I setpwfile
 have no return value.
 .SH BUGS
-All information is contained in a static area so it must be
-copied if it is to be saved.
+All information is contained in a static buffer which is overwritten
+by each new call.  It must be copied elsewhere to be retained.
+.PP
+Intermixing calls to
+.IR getpwent
+with calls to
+.I getpwnam
+or
+.IR getpwuid ,
+or intermixing calls to
+.I getpwnam
+and
+.IR getpwuid ,
+after using
+.I setpassent
+to require that file descriptors be left open, may result
+in undefined behavior.
+.PP
+The routines
+.IR getpwent ,
+.IR endpwent ,
+.IR setpassent ,
+and
+.IR setpwent
+are fairly useless in a networked environment and should be
+avoided, if possible.
