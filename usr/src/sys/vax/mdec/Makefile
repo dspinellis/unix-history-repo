@@ -1,146 +1,79 @@
 #
-# Copyright (c) 1980, 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1980, 1986, 1987 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	7.2 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
-ALL=	hkboot hpboot htboot mtboot noboot raboot rlboot \
-	upboot utboot tmboot tsboot tuboot \
-	httoggle mttoggle tmtoggle tstoggle uttoggle
+#	@(#)Makefile	7.3 (Berkeley) %G%
+#
+CFLAGS=	-DLOCORE
 
-CFLAGS= -DLOCORE
-INCLUDE= /usr/include
+# source files that live in the current directory
+SRCS=	hkboot.c hpboot.c htboot.c mtboot.c raboot.c rlboot.c upboot.c \
+	utboot.c tmboot.c tsboot.c tuboot.c httoggle.s mttoggle.s \
+	tmtoggle.s tstoggle.s uttoggle.s
 
-all: ${ALL}
+# boot blocks that are preprocessed, then assembled
+BOOTS=	hkboot hpboot htboot mtboot raboot rlboot upboot utboot tmboot \
+	tsboot tuboot
 
-hkboot: hkboot.c ${INCLUDE}/sys/disklabel.h
-	cc -E ${CFLAGS} hkboot.c | as
+# toggle files that are assembled, but not installed
+TOGGLES=httoggle mttoggle tmtoggle tstoggle uttoggle
+
+all: ${BOOTS} ${TOGGLES} noboot
+
+${BOOTS}:
+	${CC} -E ${CFLAGS} $@.c | as
 	nm -u a.out
 	strip a.out
 	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=hkboot conv=sync
+	dd if=b.out of=$@ conv=sync
 	rm b.out
 
-hpboot: hpboot.c ${INCLUDE}/sys/disklabel.h
-	cc -E ${CFLAGS} hpboot.c | as
+${TOGGLES}:
+	as $@.s
 	nm -u a.out
 	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=hpboot conv=sync
-	rm b.out
-
-htboot: htboot.c
-	cc -E ${CFLAGS} htboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out of=b.out bs=32 skip=1
-	dd if=b.out of=htboot conv=sync
-	rm b.out
-
-mtboot: mtboot.c
-	cc -E ${CFLAGS} mtboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=mtboot conv=sync
-	rm b.out
-
-raboot: raboot.c ${INCLUDE}/sys/disklabel.h
-	cc -E ${CFLAGS} raboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=raboot conv=sync
-	rm b.out
-
-rlboot: rlboot.c ${INCLUDE}/sys/disklabel.h
-	cc -E ${CFLAGS} rlboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=rlboot conv=sync
-	rm b.out
-
-tmboot: tmboot.c
-	cc -E ${CFLAGS} tmboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out of=b.out bs=32 skip=1
-	dd if=b.out of=tmboot conv=sync
-	rm b.out
-
-tsboot: tsboot.c
-	cc -E ${CFLAGS} tsboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out of=b.out bs=32 skip=1
-	dd if=b.out of=tsboot conv=sync
-	rm b.out
-
-upboot: upboot.c ${INCLUDE}/sys/disklabel.h
-	cc -E ${CFLAGS} upboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=upboot conv=sync
-	rm b.out
-
-tuboot: tuboot.c
-	cc -E ${CFLAGS} tuboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out of=b.out bs=32 skip=1
-	dd if=b.out of=tuboot conv=sync
-	rm b.out
-
-utboot: utboot.c
-	cc -E ${CFLAGS} utboot.c | as
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=utboot conv=sync
-	rm b.out
-
-httoggle: httoggle.s
-	as httoggle.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=httoggle
-
-mttoggle: mttoggle.s
-	as mttoggle.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=mttoggle
-
-tmtoggle: tmtoggle.s
-	as tmtoggle.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=tmtoggle
-
-tstoggle: tstoggle.s
-	as tstoggle.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=tstoggle
-
-uttoggle: uttoggle.s
-	as uttoggle.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=uttoggle
+	dd if=a.out bs=32 skip=1 of=$@
 
 noboot:
 	echo | dd of=noboot conv=sync
 
 clean:
-	rm -f a.out b.out ${ALL}
+	rm -f a.out b.out ${BOOTS} ${TOGGLES} noboot
 
 install:
-	cp *boot ${DESTDIR}/usr/mdec
-	rm -f ${DESTDIR}/usr/mdec/mboot
+	install -o bin -g bin -m 444 ${BOOTS} ${DESTDIR}/usr/mdec
+	rm -f ${DESTDIR}/usr/mdec/mboot ${DESTDIR}/usr/mdec/uboot
 	ln ${DESTDIR}/usr/mdec/htboot ${DESTDIR}/usr/mdec/mboot
-	rm -f ${DESTDIR}/usr/mdec/uboot
 	ln ${DESTDIR}/usr/mdec/hpboot ${DESTDIR}/usr/mdec/uboot
+
+depend:
+	mkdep -p ${CFLAGS} ${SRCS}
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+hkboot: hkboot.c /usr/include/sys/disklabel.h
+hpboot: hpboot.c /usr/include/sys/disklabel.h
+htboot: htboot.c
+mtboot: mtboot.c
+raboot: raboot.c /usr/include/sys/disklabel.h
+rlboot: rlboot.c /usr/include/sys/disklabel.h
+upboot: upboot.c /usr/include/sys/disklabel.h
+utboot: utboot.c
+tmboot: tmboot.c
+tsboot: tsboot.c
+tuboot: tuboot.c
+httoggle: httoggle.s
+mttoggle: mttoggle.s
+tmtoggle: tmtoggle.s
+tstoggle: tstoggle.s
+uttoggle: uttoggle.s
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
