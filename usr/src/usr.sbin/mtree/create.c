@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ cwalk()
 		exit(1);
 	}
 	(void)time(&clock);
-	(void)printf("#\n#\t  fs: %s\n#\t  by: %s\n#\tdate: %s#\n",
+	(void)printf("#\t  fs: %s\n#\t  by: %s\n#\tdate: %s\n",
 	    curp, getlogin(), ctime(&clock));
 
 	if (!(t = ftsopen(".", ftsoptions, dsort))) {
