@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)confhpup.c	7.1 (Berkeley) %G%
+ *	@(#)confhpup.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -41,7 +41,7 @@ devopen(io)
 	register struct iob *io;
 {
 
-	(*devsw[io->i_ino.i_dev].dv_open)(io);
+	return (*devsw[io->i_ino.i_dev].dv_open)(io);
 }
 
 devclose(io)
@@ -87,3 +87,5 @@ struct devsw devsw[] = {
 	{ "up",	upstrategy,	upopen,		nullsys,	upioctl },
 	{ 0, 0, 0, 0, 0 }
 };
+
+int	ndevs = (sizeof(devsw) / sizeof(devsw[0]) - 1);
