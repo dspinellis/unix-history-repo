@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	7.9 (Berkeley) %G%
+ *	@(#)ffs_extern.h	7.10 (Berkeley) %G%
  */
 
 struct buf;
@@ -25,37 +25,37 @@ int	ffs_alloc __P((struct inode *,
 	    daddr_t, daddr_t, int, struct ucred *, daddr_t *));
 int	ffs_balloc __P((struct inode *,
 	    daddr_t, int, struct ucred *, struct buf **, int));
-int	ffs_blkatoff __P((struct vop_blkatoff_args *)); /* XXX */
+int	ffs_blkatoff __P((struct vop_blkatoff_args *));
 int	ffs_blkfree __P((struct inode *, daddr_t, long));
 daddr_t	ffs_blkpref __P((struct inode *, daddr_t, int, daddr_t *));
-int	ffs_bmap __P((struct vop_bmap_args *)); /* XXX */
+int	ffs_bmap __P((struct vop_bmap_args *));
 void	ffs_clrblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_fhtovp __P((struct mount *, struct fid *, int, struct vnode **));
 void	ffs_fragacct __P((struct fs *, int, long [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
-int	ffs_inactive __P((struct vop_inactive_args *)); /* XXX */
+int	ffs_inactive __P((struct vop_inactive_args *));
 int	ffs_init __P((void));
 int	ffs_isblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
 int	ffs_mountfs __P((struct vnode *, struct mount *, struct proc *));
 int	ffs_mountroot __P((void));
-int	ffs_read __P((struct vop_read_args *)); /* XXX */
+int	ffs_read __P((struct vop_read_args *));
 int	ffs_realloccg __P((struct inode *,
 	    daddr_t, daddr_t, int, int, struct ucred *, struct buf **));
-int	ffs_reclaim __P((struct vop_reclaim_args *)); /* XXX */
+int	ffs_reclaim __P((struct vop_reclaim_args *));
 int	ffs_root __P((struct mount *, struct vnode **));
 void	ffs_setblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	ffs_sync __P((struct mount *, int));
-int	ffs_truncate __P((struct vop_truncate_args *)); /* XXX */
+int	ffs_truncate __P((struct vop_truncate_args *));
 int	ffs_unmount __P((struct mount *, int, struct proc *));
 int	ffs_update __P((struct vop_update_args *));
-int	ffs_valloc __P((struct vop_valloc_args *)); /* XXX */
-void	ffs_vfree __P((struct vop_vfree_args *)); /* XXX */
-int	ffs_vget __P((struct vop_vget_args *)); /* XXX */
+int	ffs_valloc __P((struct vop_valloc_args *));
+int	ffs_vfree __P((struct vop_vfree_args *));
+int	ffs_vget __P((struct vop_vget_args *));
 int	ffs_vptofh __P((struct vnode *, struct fid *));
-int	ffs_write __P((struct vop_write_args *)); /* XXX */
+int	ffs_write __P((struct vop_write_args *));
 
 int	bwrite();		/* FFS needs a bwrite routine.  XXX */
 
