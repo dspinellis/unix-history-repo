@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.8 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -207,8 +207,12 @@ register struct pack *pk;
 	} else
 		return;
 
-	if (pkcget(pk->p_ifn, (char *) bp, pk->p_rsize) == SUCCESS)
+	if (pkcget(pk->p_ifn, (char *) bp, pk->p_rsize) == SUCCESS) {
 		pkdata(h->cntl, h->sum, pk, (char **) bp);
+	} else {
+		*bp = (char *)pk->p_ipool;
+		pk->p_ipool = bp;
+	}
 }
 
 pkdata(c, sum, pk, bp)
