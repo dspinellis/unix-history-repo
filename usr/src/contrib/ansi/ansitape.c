@@ -4,13 +4,14 @@
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+
 #include <a.out.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 char *malloc();
-static void rewind();
-long lseek();
+static void ansi_rewind();
 int wflag;
 int xflag;
 int tflag;
@@ -198,7 +199,7 @@ main(argc,argv)
 		fprintf(stderr,"tape not accessable - check if drive online and write ring present\n");
 		exit(1);
 	}
-	rewind(tape);
+	ansi_rewind(tape);
 	filenum=1;
 	casefix(tapename);
 
@@ -253,7 +254,7 @@ main(argc,argv)
 		writetm(tape);
 		writetm(tape);
 	}
-	rewind(tape);
+	ansi_rewind(tape);
 	close(tape);
 	if(vflag && (tflag || xflag)) {
 		fprintf(stdout," read  %d files in %d blocks (%d lines, %d chars)\n",
@@ -356,7 +357,7 @@ int success;
 				if(success != blocksize) {
 					perror("tape");
 					fprintf(stderr," hard write error:  write aborted\n");
-					rewind(tape);
+					ansi_rewind(tape);
 					exit(1);
 				}
 				obuf=obufstart;
@@ -392,7 +393,7 @@ int success;
 			if(success != blocksize) {
 				perror("tape");
 				fprintf(stderr," hard write error:  write aborted\n");
-				rewind(tape);
+				ansi_rewind(tape);
 				exit(1);
 			}
 			numblock++;
@@ -414,7 +415,7 @@ int success;
 				printf("short read: filled\n");
 			} else if( *(ibuf+recsize) != '\n') {
 				printf("corrupted record - write aborted\b");
-				rewind(tape);
+				ansi_rewind(tape);
 				exit(1);
 			}
 			if(obuf+recsize >endobuf) {
@@ -427,7 +428,7 @@ int success;
 				if(success != blocksize) {
 					perror("tape");
 					fprintf(stderr," hard write error:   write aborted\n");
-					rewind(tape);
+					ansi_rewind(tape);
 					exit(1);
 				}
 				obuf=obufstart;
@@ -463,7 +464,7 @@ writetm(tape)
 }
 
 void
-static rewind(tape)
+static ansi_rewind(tape)
 	int tape;
 {
 	struct mtop mtop;
