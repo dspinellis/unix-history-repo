@@ -1,4 +1,4 @@
-/*	vd.c	1.15	87/02/28	*/
+/*	vd.c	1.16	87/03/01	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -55,7 +55,6 @@ struct vdsoftc {
 #define	VD_DOSEEKS	0x4	/* should overlap seeks */
 	u_short	vd_type;	/* controller type */
 	u_short	vd_wticks;	/* timeout */
-	u_short	vd_offcyl;	/* off cylinder bitmask */
 	struct	mdcb vd_mdcb;	/* master command block */
 	u_long	vd_mdcbphys;	/* physical address of vd_mdcb */
 	struct	dcb vd_dcb;	/* i/o command block */
@@ -71,7 +70,6 @@ struct vdsoftc {
 struct	dksoftc {
 	u_short	dk_state;	/* open fsm */
 	u_short	dk_openpart;	/* units open on this drive */
-	u_short	dk_curdaddr;	/* last selected track & sector */
 	u_int	dk_curcyl;	/* last selected cylinder */
 	struct	dcb dk_dcb;	/* seek command block */
 	u_long	dk_dcbphys;	/* physical address of dk_dcb */
@@ -94,7 +92,9 @@ struct	buf dkutab[NDK];	/* i/o queue headers */
 struct	disklabel dklabel[NDK];	/* pack labels */
 
 #define b_cylin	b_resid
-#define	b_daddr	b_error
+#define	b_track	b_error		/* used for seek commands */
+#define	b_seekf	b_forw		/* second queue on um_tab */
+#define	b_seekl	b_back		/* second queue on um_tab */
 
 int	vdwstart, vdwatch();
 
@@ -487,33 +487,40 @@ vdustart(vi)
 	if ((bp = dp->b_actf) == NULL)
 		return;
 	/*
-	 * If drive is off-cylinder, mark unit to force
-	 * overlap seek with next transfer on this controller.
+	 * If drive is off-cylinder and controller supports seeks,
+	 * place drive on seek queue for controller.
+	 * Otherwise, place on transfer queue.
 	 */
 	vd = &vdsoftc[vi->ui_ctlr];
 	dk = &dksoftc[unit];
+	vm = vi->ui_mi;
 	if (bp->b_cylin != dk->dk_curcyl && vd->vd_flags&VD_DOSEEKS) {
 		lp = &dklabel[unit];
-		bp->b_daddr = (bp->b_blkno % lp->d_secpercyl) / lp->d_nsectors;
-		if (bp->b_daddr != dk->dk_curdaddr)
-			vd->vd_offcyl |= 1 << vi->ui_slave;
+		bp->b_track = (bp->b_blkno % lp->d_secpercyl) / lp->d_nsectors;
+		if (vm->um_tab.b_seekf == NULL)
+			vm->um_tab.b_seekf = dp;
+		else
+			vm->um_tab.b_seekl->b_forw = dp;
+		vm->um_tab.b_seekl = dp;
+	} else {
+		if (vm->um_tab.b_actf == NULL)
+			vm->um_tab.b_actf = dp;
+		else
+			vm->um_tab.b_actl->b_forw = dp;
+		vm->um_tab.b_actl = dp;
 	}
-	/*
-	 * If controller is not busy, place request on the
-	 * controller's ready queue).
-	 */
 	dp->b_forw = NULL;
-	vm = vi->ui_mi;
-	if (vm->um_tab.b_actf == NULL)
-		vm->um_tab.b_actf = dp;
-	else
-		vm->um_tab.b_actl->b_forw = dp;
-	vm->um_tab.b_actl = dp;
 	dp->b_active++;
 }
 
 /*
  * Start next transfer on a controller.
+ * There are two queues of drives, the first on-cylinder
+ * and the second off-cylinder from their next transfers.
+ * Perform the first transfer for the first drive on the on-cylinder
+ * queue, if any, otherwise the first transfer for the first drive
+ * on the second queue.  Initiate seeks on remaining drives on the
+ * off-cylinder queue, then move them all to the on-cylinder queue.
  */
 vdstart(vm)
 	register struct vba_ctlr *vm;
@@ -533,7 +540,8 @@ loop:
 	/*
 	 * Pull a request off the controller queue.
 	 */
-	if ((dp = vm->um_tab.b_actf) == NULL)
+	if ((dp = vm->um_tab.b_actf) == NULL &&
+	    (dp = vm->um_tab.b_seekf) == NULL)
 		return;
 	if ((bp = dp->b_actf) == NULL) {
 		vm->um_tab.b_actf = dp->b_forw;
@@ -570,6 +578,13 @@ loop:
 	vd->vd_dcb.trail.rwtrail.disk.cylinder = bp->b_cylin;
 	vd->vd_dcb.trail.rwtrail.disk.track = tn;
 	vd->vd_dcb.trail.rwtrail.disk.sector = sn;
+	dk->dk_curcyl = bp->b_cylin;
+	bp->b_track = 0;		/* init overloaded field */
+	if (vi->ui_dk >= 0) {
+		dk_busy |= 1<<vi->ui_dk;
+		dk_xfer[vi->ui_dk]++;
+		dk_wds[vi->ui_dk] += bp->b_bcount>>6;
+	}
 
 	/*
 	 * Look for any seeks to be performed on other drives on this
@@ -577,47 +592,43 @@ loop:
 	 * on the controller's command queue before the transfer.
 	 */
 	dcbp = &vd->vd_mdcb.mdcb_head;
-	if (vd->vd_offcyl &~ (1<<slave)) {
-		register struct dksoftc *tdk;
-		register struct buf *tp;
 
-		for (dp = dp->b_forw; dp != NULL; dp = dp->b_forw) {
-			if ((tp = dp->b_actf) == NULL)
-				continue;
-			slave = (vi = vddinfo[vdunit(tp->b_dev)])->ui_slave;
-			if ((vd->vd_offcyl & (1<<slave)) == 0)
-				continue;
-			vd->vd_offcyl &= ~(1 << slave);
-			tdk = &dksoftc[vi->ui_unit];
-			if (tdk->dk_curcyl != tp->b_cylin) {
-				tdk->dk_curcyl = tp->b_cylin;
-				dk_seek[vi->ui_dk]++;
-			}
-			tdk->dk_curdaddr = tp->b_daddr;
-			tdk->dk_dcb.operrsta = 0;
-			tdk->dk_dcb.trail.sktrail.skaddr.cylinder = tp->b_cylin;
-			tdk->dk_dcb.trail.sktrail.skaddr.track = tp->b_daddr>>8;
-			tdk->dk_dcb.trail.sktrail.skaddr.sector =
-			    tp->b_daddr & 0xff;
-			*dcbp = (struct dcb *)tdk->dk_dcbphys;
-			dcbp = &tdk->dk_dcb.nxtdcb;
-		}
-	} else {
+	if (dp == vm->um_tab.b_seekf)
+		dp = dp->b_forw;
+	else
+		dp = vm->um_tab.b_seekf;
+	for (; dp != NULL; dp = dp->b_forw) {
+		if ((bp = dp->b_actf) == NULL)
+			continue;
+		vi = vddinfo[vdunit(bp->b_dev)];
+		dk = &dksoftc[vi->ui_unit];
 		dk->dk_curcyl = bp->b_cylin;
-		dk->dk_curdaddr = (tn << 8) | sn;
-		vd->vd_offcyl = 0;
+		if (vi->ui_dk >= 0)
+			dk_seek[vi->ui_dk]++;
+		dk->dk_dcb.operrsta = 0;
+		dk->dk_dcb.trail.sktrail.skaddr.cylinder = bp->b_cylin;
+#ifdef notdef
+		dk->dk_dcb.trail.sktrail.skaddr.track = bp->b_daddr>>8;
+		dk->dk_dcb.trail.sktrail.skaddr.sector =
+		    bp->b_daddr & 0xff;
+#else
+		dk->dk_dcb.trail.sktrail.skaddr.track = bp->b_track;
+#endif
+		*dcbp = (struct dcb *)dk->dk_dcbphys;
+		dcbp = &dk->dk_dcb.nxtdcb;
 	}
 	*dcbp = (struct dcb *)vd->vd_dcbphys;
+	if (vm->um_tab.b_actf)
+		vm->um_tab.b_actl->b_forw = vm->um_tab.b_seekf;
+	else
+		vm->um_tab.b_actf = vm->um_tab.b_seekf;
+	vm->um_tab.b_actl = vm->um_tab.b_seekl;
+	vm->um_tab.b_seekf = 0;
+	vm->um_tab.b_seekl = 0;
 
 	/*
 	 * Initiate operation.
 	 */
-	bp->b_daddr = 0;		/* init overloaded field */
-	if (vi->ui_dk >= 0) {
-		dk_busy |= 1<<vi->ui_dk;
-		dk_xfer[vi->ui_dk]++;
-		dk_wds[vi->ui_dk] += bp->b_bcount>>6;
-	}
 	vd->vd_mdcb.mdcb_status = 0;
 	VDGO(vm->um_addr, vd->vd_mdcbphys, vd->vd_type);
 }
@@ -648,7 +659,8 @@ vdintr(ctlr)
 	dp = vm->um_tab.b_actf;
 	bp = dp->b_actf;
 	vi = vddinfo[vdunit(bp->b_dev)];
-	dk_busy &= ~(1<<vi->ui_dk);
+	if (vi->ui_dk >= 0)
+		dk_busy &= ~(1<<vi->ui_dk);
 	/*
 	 * Check for and process errors on
 	 * either the drive or the controller.
