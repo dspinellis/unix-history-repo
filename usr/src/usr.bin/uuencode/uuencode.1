@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)uuencode.1	6.5 (Berkeley) %G%
+.\"	@(#)uuencode.1	6.6 (Berkeley) %G%
 .\"
 .TH UUENCODE 1 ""
 .UC 4
@@ -49,7 +49,8 @@ transforms
 files (or by default, the standard input) into the original form.
 The resulting file is named
 .IR name
-and will have the mode of the original file.
+and will have the mode of the original file except that setuid
+and execute bits are not retained.
 .I Uudecode
 ignores any leading and trailing lines.
 .SH EXAMPLES
