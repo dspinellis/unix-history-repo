@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)objfmt.h 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)objfmt.h 1.4 %G%"; */
 
 #ifdef OBJ
 	/*
@@ -15,7 +15,7 @@
 #   define	HEADER_BYTES	1024		/* the size of px_header */
 #   define PX_HEADER "/usr/lib/px_header"	/* px_header's name */
 #   define PX_INTRP "/usr/ucb/px"		/* the interpreter's name */
-#   define INDX 0				/* amt to shift display index */
+#   define INDX 1				/* amt to shift display index */
 #endif OBJ
 
     /*
