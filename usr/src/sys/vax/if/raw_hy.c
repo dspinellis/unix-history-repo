@@ -1,5 +1,5 @@
 /*
- *	@(#)raw_hy.c	6.5	%G%
+ *	@(#)raw_hy.c	7.1	%G%
  *
  * 4.3 BSD Unix kernel - NSC HYPERchannel support
  *
