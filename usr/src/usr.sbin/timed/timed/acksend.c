@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acksend.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)acksend.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -20,6 +20,8 @@ static char sccsid[] = "@(#)acksend.c	1.2 (Berkeley) %G%";
 struct tsp *answer;
 extern int sock;
 extern struct sockaddr_in server;
+extern int trace;
+extern FILE *fd;
 
 /*
  * Acksend implements reliable datagram transmission by using sequence 
@@ -39,21 +41,28 @@ int ack;
 	extern u_short sequence;
 	struct timeval tout;
 	struct tsp *readmsg();
-	int bytenetorder();
 
 	count = 0;
 
+	message->tsp_vers = TSPVERSION;
+	message->tsp_seq = sequence;
+	if (trace) {
+		fprintf(fd, "acksend: ");
+		if (name == ANYADDR)
+			fprintf(fd, "broadcast: ");
+		else
+			fprintf(fd, "%s: ", name);
+		print(message);
+	}
+	bytenetorder(message);
 	do {
-		message->tsp_seq = sequence;
 		if (name == ANYADDR) {
 			broadcast(message);
 		} else {
-			message->tsp_vers = TSPVERSION;
-			bytenetorder(message);
 			if (sendto(sock, (char *)message, sizeof(struct tsp),
 					0, &server, 
 					sizeof(struct sockaddr_in)) < 0) {
-				syslog(LOG_ERR, "sendto: %m");
+				syslog(LOG_ERR, "acksend: sendto: %m");
 				exit(1);
 			}
 		}
