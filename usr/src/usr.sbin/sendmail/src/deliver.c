@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.93 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.94 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2246,7 +2246,7 @@ putbody(mci, e, separator)
 				/* had a naked carriage return */
 				*pbp++ = c;
 				c = '\r';
-				goto putchar;
+				goto putch;
 
 			  case OS_INLINE:
 				if (c == '\r')
@@ -2254,7 +2254,7 @@ putbody(mci, e, separator)
 					ostate = OS_CR;
 					continue;
 				}
-putchar:
+putch:
 				if (pos > mci->mci_mailer->m_linelimit &&
 				    c != '\n')
 				{
