@@ -2,6 +2,9 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -14,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_enp.c	7.2 (Berkeley) %G%
+ *	@(#)if_enp.c	7.3 (Berkeley) %G%
  */
 
 #include "enp.h"
@@ -72,7 +75,7 @@ struct  vba_device *enpinfo[NENP];
 struct  vba_driver enpdriver = 
     { enpprobe, 0, enpattach, 0, enpstd, "enp", enpinfo, "enp-20", 0 };
 
-int	enpinit(), enpioctl(), enpreset(), enpoutput();
+int	enpinit(), enpioctl(), enpreset(), enpoutput(), enpstart();
 struct  mbuf *enpget();
 
 /*
@@ -126,8 +129,9 @@ enpattach(ui)
 	ifp->if_mtu = ETHERMTU;
 	ifp->if_init = enpinit;
 	ifp->if_ioctl = enpioctl;
-	ifp->if_output = enpoutput;
+	ifp->if_output = enoutput;
 	ifp->if_reset = enpreset;
+	ifp->if_start = enpstart;
 	ifp->if_flags = IFF_BROADCAST;
 	if_attach(ifp);
 }
@@ -187,7 +191,7 @@ enpintr(unit)
 	ACK_ENP_INTR(addr);
 #endif
 	while ((bcbp = (BCB *)ringget((RING *)&addr->enp_tohost )) != 0) {
-		(void) enpread(&enp_softc[unit], bcbp);
+		enpread(&enp_softc[unit], bcbp);
 		(void) ringput((RING *)&addr->enp_enpfree, bcbp); 
 	}
 }
@@ -202,7 +206,6 @@ enpread(es, bcbp)
 	register struct ether_header *enp;
 	struct mbuf *m;
 	int s, len, off, resid;
-	register struct ifqueue *inq;
 
 	es->es_if.if_ipackets++; 
 	/*
@@ -221,219 +224,61 @@ enpread(es, bcbp)
 	    enp->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
 		off = (enp->ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
-			goto setup;
+			return;
 		enp->ether_type = ntohs(*enpdataaddr(enp, off, u_short *));
 		resid = ntohs(*(enpdataaddr(enp, off+2, u_short *)));
 		if (off + resid > len)
-			goto setup;
+			return;
 		len = off + resid;
 	} else
 		off = 0;
 	if (len == 0)
-		goto setup;
+		return;
 
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; enpget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
+	 * information to be at the front.
 	 */
 	m = enpget((u_char *)enp, len, off, &es->es_if);
 	if (m == 0)
-		goto setup;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (enp->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-#endif
-	case ETHERTYPE_ARP:
-		arpinput(&es->es_ac, m);
-		goto setup;
-
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-#endif
-	default:
-		m_freem(m);
-		goto setup;
-	}
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-		goto setup;
-	}
-	s = splimp();
-	IF_ENQUEUE(inq, m);
-	splx(s);
-setup:
-	return (0);
+		return;
+	en_doproto(&es->es_if, enp, m);
 }
 
-/*
- * Ethernet output routine. (called by user)
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- * If destination is this address or broadcast, send packet to
- * loop device to kludge around the fact that 3com interfaces can't
- * talk to themselves.
- */
-enpoutput(ifp, m0, dst)
+enpstart(ifp)
 	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
 {
-	register struct enp_softc *es = &enp_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *enp;
-	register int off;
-	struct mbuf *mcopy = (struct mbuf *)0;
-	int type, s, error, usetrailers;
-	u_char edst[6];
-	struct in_addr idst;
+	int error = 0;
+	int s = splimp();	
 
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&es->es_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
-		    sizeof (edst)))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
-		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost, sizeof (edst)))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
-		    sizeof (edst)))
-			return (looutput(&loif, m, dst));
-		type = ETHERTYPE_NS;
-		off = 0;
-		goto gottype;
-#endif
-	case AF_UNSPEC:
-		enp = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)enp->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = enp->ether_type;
-		goto gottype;
-
-	default:
-		log(LOG_ERR, "enp%d: can't handle af%d\n",
-		    ifp->if_unit, dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-         * Add local net header.  If no space in first mbuf,
-         * allocate another.
-         */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	enp = mtod(m, struct ether_header *);
-	bcopy((caddr_t)edst, (caddr_t)enp->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)es->es_addr, (caddr_t)enp->ether_shost,
-	    sizeof (es->es_addr));
-	enp->ether_type = htons((u_short)type);
-
-	/*
-	 * Queue message on interface if possible 
-	 */
-	s = splimp();	
-	if (enpput(ifp->if_unit, m)) {
+	if (enpput(ifp))
 		error = ENOBUFS;
-		goto qfull;
-	}
 	splx(s);	
-	es->es_if.if_opackets++; 
-	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
-qfull:
-	splx(s);	
-	m0 = m;
-bad:
-	m_freem(m0);
-	if (mcopy)
-		m_freem(mcopy);
 	return (error);
 }
 
 /*
  * Routine to copy from mbuf chain to transmitter buffer on the VERSAbus.
  */
-enpput(unit, m)
-	int unit;
-	struct mbuf *m;
+enpput(ifp)
+struct ifnet *ifp;
 {
 	register BCB *bcbp;
 	register struct enpdevice *addr;
 	register struct mbuf *mp;
 	register u_char *bp;
 	register u_int len;
+	int unit = ifp->if_unit;
 	u_char *mcp;
+	struct mbuf *m;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
+again:
 	if (ringempty((RING *)&addr->enp_hostfree)) 
 		return (1);	
+	IF_DEQUEUE(&ifp->if_snd, m);
+	if (m == 0) return (0);
 	bcbp = (BCB *)ringget((RING *)&addr->enp_hostfree);
 	bcbp->b_len = 0;
 	bp = (u_char *)ENPGETLONG(&bcbp->b_addr);
@@ -451,7 +296,7 @@ enpput(unit, m)
 	if (ringput((RING *)&addr->enp_toenp, bcbp) == 1)
 		INTR_ENP(addr);
 	m_freem(m);
-	return (0);
+	goto again;
 }
 
 /*
@@ -461,65 +306,70 @@ enpput(unit, m)
  * mbufs have even lengths.
  */
 struct mbuf *
-enpget(rxbuf, totlen, off0, ifp)
+enpget(rxbuf, totlen, off, ifp)
 	u_char *rxbuf;
-	int totlen, off0;
+	int totlen, off;
 	struct ifnet *ifp;
 {
 	register u_char *cp, *mcp;
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
-	int len, off = off0;
+	int len;
+	u_char *packet_end;
 
-	cp = rxbuf + sizeof (struct ether_header);
+	rxbuf += sizeof (struct ether_header);
+	cp = rxbuf;
+	packet_end = cp + totlen;
+	if (off) {
+		off += 2 * sizeof(u_short);
+		totlen -= 2 *sizeof(u_short);
+		cp = rxbuf + off;
+	}
+
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
 	while (totlen > 0) {
-		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0) 
-			goto bad;
-		if (off) {
-			len = totlen - off;
-			cp = rxbuf + sizeof (struct ether_header) + off;
-		} else
-			len = totlen;
-		if (len >= NBPG) {
-			MCLGET(m);
-			if (m->m_len == CLBYTES)
-				m->m_len = len = MIN(len, CLBYTES);
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
+		}
+		len = min(totlen, (packet_end - cp));
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
 			else
-				m->m_len = len = MIN(MLEN, len);
+				len = m->m_len;
 		} else {
-			m->m_len = len = MIN(MLEN, len);
-			m->m_off = MMINOFF;
+			/*
+			 * Place initial small packet/header at end of mbuf.
+			 */
+			if (len < m->m_len) {
+				if (top == 0 && len < max_linkhdr + m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
 		}
 		mcp = mtod(m, u_char *);
-		if (ifp) {
-			/*
-			 * Prepend interface pointer to first mbuf.
-			 */
-			*(mtod(m, struct ifnet **)) = ifp;
-			mcp += sizeof (ifp);
-			len -= sizeof (ifp);
-			ifp = (struct ifnet *)0;
-		}
 		enpcopy(cp, mcp, (u_int)len);
-		cp += len;
 		*mp = m;
 		mp = &m->m_next;
-		if (off == 0) {
-			totlen -= len;
-			continue;
-		}
-		off += len;
-		if (off == totlen) {
-			cp = rxbuf + sizeof (struct ether_header);
-			off = 0;
-			totlen = off0;
-		}
+		totlen -= len;
+		cp += len;
+		if (cp == packet_end)
+			cp = rxbuf;
 	}
 	return (top);
-bad:
-	m_freem(top);
-	return (0);
 }
 
 enpcopy(from, to, cnt)
