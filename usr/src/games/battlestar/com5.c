@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com5.c	1.1 %G%";
+static char sccsid[] = "@(#)com5.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -109,9 +109,9 @@ zzz()
 			else
 				notes[LAUNCHED] = 0;
 		}
-		if (OUTSIDE && rnd(100) < 20){
+		if (OUTSIDE && rnd(100) < 50){
 			puts("You are awakened abruptly by the sound of someone nearby.");
-			switch(rnd(3)){
+			switch(rnd(4)){
 				case 0:
 					if (ucard(inven)){
 						n = rnd(NUMOFOBJECTS);
@@ -131,6 +131,8 @@ zzz()
 					break;
 				case 2:
 					setbit(location[position].objects,HALBERD);
+					break;
+				default:
 					break;
 			}
 		}
@@ -259,13 +261,12 @@ give()
 				break;
 			case TIMER:
 				if (obj == COINS){
-					puts("He fingers the coins for a moment and then looks up agape. 'Kind you are and");
-					puts("I mean to repay you as best I can.'  Grabbing a pencil and cocktail napkin...");
-					printf("\n-------------------------------------------------------------------------------\n");
-					printf(  "|				xxxxxxxxxx\\				      |\n");
-					printf(  "|				    xxxxxxx\\	CLIFFS			      |\n");
-					printf(  "|					xxxx\\				      |\n");
-					printf(  "|		FOREST			   xx\\				      |\n");
+					puts("He fingers the coins for a moment and then looks up agape.  `Kind you are and");
+					puts("I mean to repay you as best I can.'  Grabbing a pencil and cocktail napkin...\n");
+					printf(  "+-----------------------------------------------------------------------------+\n");
+					printf(  "|				   xxxxxxxx\\				      |\n");
+					printf(  "|				       xxxxx\\	CLIFFS			      |\n");
+					printf(  "|		FOREST			  xxx\\				      |\n");
 					printf(  "|				\\\\	     x\\        	OCEAN		      |\n");
 					printf(  "|				||	       x\\			      |\n");
 					printf(  "|				||  ROAD	x\\			      |\n");
@@ -275,11 +276,11 @@ give()
 					printf(  "|		ENTRANCE	||		...      BEACH		      |\n");
 					printf(  "|				||		...		  E	      |\n");
 					printf(  "|				||		...		  |	      |\n");
-					printf(  "|				//		...	    N <-- + ---  S     |\n");
+					printf(  "|				//		...	    N <-- + --- S     |\n");
 					printf(  "|		PALM GROVE     //		...		  |	      |\n");
 					printf(  "|			      //		...		  W	      |\n");
-					printf(  "-------------------------------------------------------------------------------\n");
-					puts("\n'This map shows a secret entrance to the catacombs.");
+					printf(  "+-----------------------------------------------------------------------------+\n");
+					puts("\n`This map shows a secret entrance to the catacombs.");
 					puts("You will know when you arrive because I left an old pair of shoes there.'");
 				}
 				break;

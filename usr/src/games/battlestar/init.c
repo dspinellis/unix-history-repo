@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)init.c	1.1 %G%";
+static char sccsid[] = "@(#)init.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -43,19 +43,23 @@ getutmp(uname)
 	strcpy(uname, ptr ? ptr->pw_name : "");
 }
 
-char *list[] = {
+char *list[] = {	/* hereditary wizards */
 	"riggle",
 	"chris",
-	"caro",
 	"edward",
-	"chin",
-	"ervin-tr",
 	"comay",
-	"conde",
+	"yee",
+	"dmr",
+	"ken",
 	0
 };
 
-char *badguys[] = 0;
+char *badguys[] = {
+	"wnj",
+	"root",
+	"ted",
+	0
+};
 
 wizard(uname)
 	char *uname;
@@ -80,7 +84,7 @@ checkout(uname)
 			printf("You are the Poor anti-wizard %s.  Good Luck!\n",
 				uname);
 			CUMBER = 3;
-			WEIGHT = 9;	/* that'l get him */
+			WEIGHT = 9;	/* that'll get him! */
 			clock = 10;
 			setbit(location[7].objects, WOODSMAN);	/* viper room */
 			setbit(location[20].objects, WOODSMAN);	/* laser " */

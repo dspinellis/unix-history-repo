@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com4.c	1.1 %G%";
+static char sccsid[] = "@(#)com4.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -100,10 +100,10 @@ unsigned int from[];
 
 			case AMULET:
 				if (testbit(location[position].objects,AMULET)){
-					puts("The amulet is warm to the touch and its beauty catches your breath.");
-					puts("A mist falls over your eyes and then it is gone.  Sounds seem clearer");
+					puts("The amulet is warm to the touch, and its beauty catches your breath.");
+					puts("A mist falls over your eyes, but then it is gone.  Sounds seem clearer");
 					puts("and sharper but far away as if in a dream.  The sound of purling water reaches");
-					puts("you from afar.  The mist falls again and your heart leaps in horror.  The gold");
+					puts("you from afar.  The mist falls again, and your heart leaps in horror.  The gold");
 					puts("freezes your hands and fathomless darkness engulfs your soul.");
 				}
 				wordtype[wordnumber--] = OBJECT;
@@ -111,7 +111,7 @@ unsigned int from[];
 
 			case MEDALION:
 				if (testbit(location[position].objects, MEDALION)){
-					puts("The medallion is warm and it rekindles your spirit with the warmth of life.");
+					puts("The medallion is warm, and it rekindles your spirit with the warmth of life.");
 					puts("Your amulet begins to glow as the medallion is brought near to it, and together\nthey radiate.");
 				}
 				wordtype[wordnumber--] = OBJECT;
@@ -119,14 +119,14 @@ unsigned int from[];
 
 			case TALISMAN:
 				if (testbit(location[position].objects,TALISMAN)){
-					puts("The talisman is cold to the touch and it sends a chill down your spine.");
+					puts("The talisman is cold to the touch, and it sends a chill down your spine.");
 				}
 				wordtype[wordnumber--] = OBJECT;
 				return(take(from));
 
 			case NORMGOD:
 				if (testbit(location[position].objects,BATHGOD) && (testbit(wear,AMULET) || testbit(inven,AMULET))){
-					puts("She offers a delicate hand and you help her out of the sparkling springs.");
+					puts("She offers a delicate hand, and you help her out of the sparkling springs.");
 					puts("Water droplets like liquid silver bedew her golden skin, but when they part");
 					puts("from her, they fall as teardrops.  She wraps a single cloth around her and");
 					puts("ties it at the waist.  Around her neck hangs a golden amulet.");
@@ -148,14 +148,15 @@ unsigned int from[];
 	return(firstnumber);
 }
 
-throw()
+throw(name)
+	char *name;
 {
 	int n;
 	int deposit = 0;
 	int first, value;
 
 	first = wordnumber;
-	if (drop("Thrown") != -1){
+	if (drop(name) != -1){
 		switch(wordvalue[wordnumber]){
 			
 			case AHEAD:
@@ -234,8 +235,9 @@ char *name;
 	int firstnumber, value;
 
 	firstnumber = wordnumber;
-	while(wordtype[++wordnumber] == ADJS);
-	while(wordnumber<=wordcount && (wordtype[wordnumber] == OBJECT || wordtype[wordnumber] == NOUNS)){
+	while (wordtype[++wordnumber] == ADJS)
+		;
+	while (wordnumber<=wordcount && (wordtype[wordnumber] == OBJECT || wordtype[wordnumber] == NOUNS)) {
 		value = wordvalue[wordnumber];
 		printf("%s:\n", objsht[value]);
 		if (testbit(inven,value)){
@@ -251,16 +253,22 @@ char *name;
 			else
 				tempwiz = 0;
 			time++;
-			printf("%s.\n", name);
+			if (*name == 'K')
+				puts("Drop kicked.");
+			else
+				printf("%s.\n", name);
 		}
 		else {
-			printf("You aren't holding the %s.\n", objsht[value]);
-			if (testbit(location[position].objects,value)){
-				if (*name == 'T')
-					puts("Kicked instead.");
-				if (*name == 'G')
-					puts("Given anyway.");
-			}
+			if (*name != 'K') {
+				printf("You aren't holding the %s.\n", objsht[value]);
+				if (testbit(location[position].objects,value)) {
+					if (*name == 'T')
+						puts("Kicked instead.");
+					else if (*name == 'G')
+						puts("Given anyway.");
+				}
+			} else
+				puts("Kicked.");
 		}
 		if (wordnumber < wordcount - 1 && wordvalue[++wordnumber] == AND)
 			wordnumber++;
@@ -317,10 +325,10 @@ eat()
 					ate = max(time,ate) + CYCLE/3;
 					snooze += CYCLE/10;
 					time++;
-					puts("Eaten.  I can explore a little longer now.");
+					puts("Eaten.  You can explore a little longer now.");
 				}
 				else if (time < ate - CYCLE)
-					puts("I'm stuffed.");
+					puts("You're stuffed.");
 				else if (!testbit(inven,KNIFE))
 					puts("You need a knife.");
 				else
@@ -332,4 +340,4 @@ eat()
 		} /* end switch */
 	} /* end while */
 	return(firstnumber);
-}	
+}

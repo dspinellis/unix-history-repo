@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com6.c	1.1 %G%";
+static char sccsid[] = "@(#)com6.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -62,6 +62,7 @@ char ch;
 	FILE *fp;
 	struct timeval tv;
 	char *date;
+	int s = sigblock(sigmask(SIGINT));
 
 	gettimeofday(&tv, (struct timezone *)0);	/* can't call time */
 	date = ctime(&tv.tv_sec);
@@ -76,6 +77,7 @@ char ch;
 			fprintf(fp, "\n");
 	} else
 		perror(logfile);
+	sigsetmask(s);
 }
 
 char *
@@ -118,7 +120,7 @@ rate()
 drive()
 {
 	if (testbit(location[position].objects,CAR)){
-		puts("You hop in the car and turn the key.  There is a perceptible grating noise");
+		puts("You hop in the car and turn the key.  There is a perceptible grating noise,");
 		puts("and an explosion knocks you unconscious...");
 		clearbit(location[position].objects,CAR);
 		setbit(location[position].objects,CRASH);

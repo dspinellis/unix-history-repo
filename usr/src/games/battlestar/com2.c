@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com2.c	1.1 %G%";
+static char sccsid[] = "@(#)com2.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -171,7 +171,7 @@ murder()
 				break;
 			case MAN:
 				if (testbit(location[position].objects,MAN)){
-					puts("You strike him to the ground and he coughs up blood.");
+					puts("You strike him to the ground, and he coughs up blood.");
 					puts("Your fantasy is over.");
 					die();
 				}
@@ -195,7 +195,7 @@ ravage()
 		time++;
 		switch(wordvalue[wordnumber]){
 			case NORMGOD:
-				puts("You attack the goddess and she screams as you beat her.  She falls down");
+				puts("You attack the goddess, and she screams as you beat her.  She falls down");
 				puts("crying and tries to hold her torn and bloodied dress around her.");
 				power += 5;
 				pleasure += 8;
@@ -206,14 +206,14 @@ ravage()
 				win = -30000;
 				break;
 			case NATIVE:
-				puts("The girl tries to run but you catch her and throw her down.  Her face is");
-				puts("bleeding and she screams as you tear off her clothes.");
+				puts("The girl tries to run, but you catch her and throw her down.  Her face is");
+				puts("bleeding, and she screams as you tear off her clothes.");
 				power += 3;
 				pleasure += 5;
 				ego -= 10;
 				wordnumber--;
 				murder();
-				if (rnd(100) < 20){
+				if (rnd(100) < 50){
 					puts("Her screams have attracted attention.  I think we are surrounded.");
 					setbit(location[ahead].objects,WOODSMAN);
 					setbit(location[ahead].objects,DEADWOOD);
@@ -240,9 +240,9 @@ ravage()
 follow()
 {
 	if (followfight == time){
-		puts("The Dark Lord leaps and runs down secret tunnels and corridoors.  You chase");
-		puts("him through the darkness and splash in pools of water.  You have cornered him.");
-		puts("His laser sword extends as he steps forward.");
+		puts("The Dark Lord leaps away and runs down secret tunnels and corridoors.");
+		puts("You chase him through the darkness and splash in pools of water.");
+		puts("You have cornered him.  His laser sword extends as he steps forward.");
 		position = FINAL;
 		fight(DARK,75);
 		setbit(location[position].objects,TALISMAN);
