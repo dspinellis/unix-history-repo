@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.10 (Berkeley) %G%
+#	@(#)Makefile	1.11 (Berkeley) %G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -40,10 +40,10 @@ SUBDIR=	vax tahoe national common ieee
 # actually there are more under ${MACHINE}/ subdirectory.
 #
 SRCS=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c \
-	exp.c exp__E.c expm1.c floor.c lgamma.c j0.c j1.c jn.c \
+	exp.c exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c \
 	log.c log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 OBJS=	acosh.o asincos.o asinh.o atan.o atanh.o cosh.o erf.o \
-	exp.o exp__E.o expm1.o floor.o lgamma.o j0.o j1.o jn.o \
+	exp.o exp__E.o expm1.o floor.o fmod.o lgamma.o j0.o j1.o jn.o \
 	log.o log10.o log1p.o log__L.o pow.o sinh.o tanh.o 
 MAN=	abs.0 asinh.0 erf.0 exp.0 floor.0 hypot.0 ieee.0 infnan.0 j0.0 \
 	lgamma.0 math.0 sin.0 sinh.0 sqrt.0
