@@ -5,11 +5,13 @@
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.5 %G%";
+static	char	*sccsid = "@(#)popen.c	1.6 %G%";
 
-# ifndef VMUNIX
-# define vfork	fork
-# endif VMUNIX
+#ifdef VMUNIX
+#define	mask(s)	(1<<((s)-1))
+#else
+#define vfork	fork
+#endif VMUNIX
 #ifndef	SIGRETRO
 #define	sigchild()
 #endif
@@ -46,24 +48,20 @@ pclose(ptr)
 FILE *ptr;
 {
 	register f, r;
-	int status;
+	int status, omask;
 	extern int errno;
 
 	f = fileno(ptr);
 	fclose(ptr);
 # ifdef VMUNIX
-	sighold(SIGINT);
-	sighold(SIGQUIT);
-	sighold(SIGHUP);
+	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
 # endif VMUNIX
 	while((r = wait(&status)) != popen_pid[f] && r != -1 && errno != EINTR)
 		;
 	if(r == -1)
 		status = -1;
 # ifdef VMUNIX
-	sigrelse(SIGINT);
-	sigrelse(SIGQUIT);
-	sigrelse(SIGHUP);
+	sigsetmask(omask);
 # endif VMUNIX
 	return(status);
 }

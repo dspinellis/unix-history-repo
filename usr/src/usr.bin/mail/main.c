@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.10 %G%";
+static char *SccsId = "@(#)main.c	2.11 %G%";
 
 jmp_buf	hdrjmp;
 
@@ -308,6 +308,5 @@ hdrstop()
 	clrbuf(stdout);
 	printf("\nInterrupt\n");
 	fflush(stdout);
-	sigrelse(SIGINT);
 	longjmp(hdrjmp, 1);
 }

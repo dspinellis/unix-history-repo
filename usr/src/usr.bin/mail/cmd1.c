@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	2.10 %G%";
+static char *SccsId = "@(#)cmd1.c	2.11 %G%";
 
 /*
  * Print the current active headings.
@@ -342,9 +342,7 @@ type1(msgvec, doign)
 
 brokpipe()
 {
-# ifdef VMUNIX
-	sigrelse(SIGPIPE);
-# else
+# ifndef VMUNIX
 	signal(SIGPIPE, brokpipe);
 # endif
 	longjmp(pipestop, 1);

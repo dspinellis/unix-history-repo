@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.13 %G%";
+static char *SccsId = "@(#)collect.c	2.14 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -58,9 +58,9 @@ collect(hp)
 	hadintr = 0;
 # ifdef VMUNIX
 	if ((savesig = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
-		sigset(SIGINT, hf ? intack : collrub), sighold(SIGINT);
+		sigset(SIGINT, hf ? intack : collrub), sigblock(mask(SIGINT));
 	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
-		sigset(SIGHUP, collrub), sighold(SIGHUP);
+		sigset(SIGHUP, collrub), sigblock(mask(SIGHUP));
 	savecont = sigset(SIGCONT, collcont);
 # else VMUNIX
 	savesig = signal(SIGINT, SIG_IGN);
@@ -103,10 +103,11 @@ collect(hp)
 		escape = *cp;
 	eof = 0;
 	for (;;) {
+		int omask = sigblock(0) &~ (mask(SIGINT)|mask(SIGHUP));
+
 		setjmp(coljmp);
 # ifdef VMUNIX
-		sigrelse(SIGINT);
-		sigrelse(SIGHUP);
+		sigsetmask(omask);
 # else VMUNIX
 		if (savesig != SIG_IGN)
 			signal(SIGINT, hf ? intack : collintsig);
@@ -399,6 +400,7 @@ eofl:
 	sigset(SIGHUP, savehup);
 # ifdef VMUNIX
 	sigset(SIGCONT, savecont);
+	sigsetmask(0);
 # endif VMUNIX
 	noreset = 0;
 	return(ibuf);
@@ -412,6 +414,7 @@ err:
 	sigset(SIGHUP, savehup);
 # ifdef VMUNIX
 	sigset(SIGCONT, savecont);
+	sigsetmask(0);
 # endif VMUNIX
 	noreset = 0;
 	return(NULL);
@@ -795,9 +798,6 @@ collrub(s)
 		hadintr++;
 		clrbuf(stdout);
 		printf("\n(Interrupt -- one more to kill letter)\n");
-# ifdef VMUNIX
-		sigrelse(s);
-# endif VMUNIX
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);

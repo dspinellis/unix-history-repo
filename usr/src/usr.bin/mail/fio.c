@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.13 %G%";
+static char *SccsId = "@(#)fio.c	2.14 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -394,6 +394,7 @@ done:
 }
 
 static int sigdepth = 0;		/* depth of holdsigs() */
+static int sigmask = 0;
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -402,8 +403,7 @@ holdsigs()
 	register int i;
 
 	if (sigdepth++ == 0)
-		for (i = SIGHUP; i <= SIGQUIT; i++)
-			sighold(i);
+		sigmask = sigblock(mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT));
 }
 
 /*
@@ -414,8 +414,7 @@ relsesigs()
 	register int i;
 
 	if (--sigdepth == 0)
-	    for (i = SIGHUP; i <= SIGQUIT; i++)
-		    sigrelse(i);
+		sigsetmask(sigmask);
 }
 
 /*

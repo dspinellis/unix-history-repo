@@ -10,7 +10,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.10 %G%";
+ * Sccs Id = "@(#)def.h	2.11 %G%";
  */
 
 /*
@@ -248,6 +248,15 @@ struct ignore {
 #endif
 
 /*
+ * 4.2bsd signal interface help...
+ */
+#ifdef VMUNIX
+#define	sigset(s, a)	signal(s, a)
+#define	mask(s)		(1 << ((s) - 1))
+#define	sigsys(s, a)	signal(s, a)
+#endif
+
+/*
  * Forward declarations of routine types to keep lint and cc happy.
  */
 
@@ -293,7 +302,9 @@ char	*value();
 char	*vcopy();
 char	*yankword();
 off_t	fsize();
+#ifndef VMUNIX
 int	(*sigset())();
+#endif
 struct	cmd	*lex();
 struct	grouphead	*findgroup();
 struct	name	*cat();
