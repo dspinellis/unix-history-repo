@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	1.12	(Berkeley)	%G%
+#	@(#)Makefile	1.13	(Berkeley)	%G%
 #
 # make file for pdx
 #
@@ -25,11 +25,11 @@
 DESTDIR	=
 HOME	= /usr/src/ucb/pdx
 LIB	= library.o cerror.o
-PASCAL	= /usr/src/ucb/pascal/
+SRCDIR	= ../src/
 INSTALL	= ${DESTDIR}/usr/ucb/pdx
 
 RM	= /bin/rm -f
-CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -DVAX -O
+CFLAGS	= -Disvaxpx -I.. -I../${SRCDIR} -DOBJ -DADDR32 -O
 LDFLAGS	= # -i for pdp-11
 
 .c.o:
@@ -169,7 +169,7 @@ ${PROCOBJ}:	${PROCESS}process.rep
 ${SYMOBJ}:	${SYM}sym.rep
 ${TREEOBJ}:	${TREE}tree.rep
 ${OBJOBJ}:	${OBJECT}objsym.rep
-${OBJECT}readobj.o ${OBJECT}readsym.o: ${PASCAL}objfmt.h
+${OBJECT}readobj.o ${OBJECT}readsym.o: ${SRCDIR}objfmt.h
 
 install: a.out
 	mv a.out ${INSTALL}
