@@ -8,14 +8,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 extern struct s_command *prog;
 extern struct s_appends *appends;
 extern u_long linenum;
 extern int appendnum;
-extern int compile_errors;
 extern int lastline;
 extern int aflag, eflag, nflag;
 extern char *fname;
