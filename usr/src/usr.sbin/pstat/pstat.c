@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -946,7 +946,6 @@ struct {
 	TS_ASLEEP,	'A',
 	TS_XCLUDE,	'X',
 	TS_TTSTOP,	'S',
-	TS_HUPCLS,	'H',
 	TS_TBLOCK,	'K',
 	TS_RCOLL,	'R',
 	TS_WCOLL,	'I',	/* running short on letters ! */
@@ -1169,8 +1168,10 @@ dofile()
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
 		putf(fp->f_flag&FAPPEND, 'A');
+#ifdef FSHLOCK	/* currently gone */
 		putf(fp->f_flag&FSHLOCK, 'S');
 		putf(fp->f_flag&FEXLOCK, 'X');
+#endif
 		putf(fp->f_flag&FASYNC, 'I');
 		printf("  %3d", mask(fp->f_count));
 		printf("  %3d", mask(fp->f_msgcount));
