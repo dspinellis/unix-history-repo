@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.3 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.4 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1563,6 +1563,12 @@ ht|hp2621-nt|2621nt|2621-nt|hp2621nt|hp 2621 w/no tabs:\
 # 2621 with labels on all the time - normal outside vi, function inside vi.
 hw|hp2621wl|2621wl|2621-wl|hp2621-wl|hp 2621 w/labels:\
 	:is=\E&jA\r:ke=\E&jA:tc=hp2621-fl:
+# 2392 (from haddix@arpa?)
+hz|2392|hp2392|hp2392a:\
+	:bt=\Ei:ip=2:is=\E&j@\E3\r:if=/usr/lib/tabset/stdcrt:\
+	:ml=\El:MT:mu=\Em:km:\
+	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
+	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
 # # --------------------------------
 #
 # i: INFOTON (GENERAL TERMINAL)
