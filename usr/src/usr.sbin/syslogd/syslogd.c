@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -101,7 +101,7 @@ struct filed {
 	short	f_file;			/* file descriptor */
 	u_char	f_pmask[LOG_NFACILITIES];	/* priority mask */
 	union {
-		char	f_uname[UNAMESZ+1][MAXUNAMES];
+		char	f_uname[MAXUNAMES][UNAMESZ+1];
 		struct
 		{
 			char	f_hname[32];
