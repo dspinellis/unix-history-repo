@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.11 (Berkeley) %G%
  */
 
 /*
@@ -621,15 +621,6 @@ kernfs_vfree(ap)
 }
 
 /*
- * /dev/fd vnode unsupported operation
- */
-kernfs_enotsupp()
-{
-
-	return (EOPNOTSUPP);
-}
-
-/*
  * /dev/fd "should never get here" operation
  */
 kernfs_badop()
@@ -648,40 +639,39 @@ kernfs_nullop()
 	return (0);
 }
 
-#define kernfs_create ((int (*) __P((struct  vop_create_args *)))kernfs_enotsupp)
-#define kernfs_mknod ((int (*) __P((struct  vop_mknod_args *)))kernfs_enotsupp)
+#define kernfs_create ((int (*) __P((struct  vop_create_args *)))eopnotsupp)
+#define kernfs_mknod ((int (*) __P((struct  vop_mknod_args *)))eopnotsupp)
 #define kernfs_close ((int (*) __P((struct  vop_close_args *)))nullop)
-#define kernfs_ioctl ((int (*) __P((struct  vop_ioctl_args *)))kernfs_enotsupp)
-#define kernfs_select ((int (*) __P((struct  vop_select_args *)))kernfs_enotsupp)
-#define kernfs_mmap ((int (*) __P((struct  vop_mmap_args *)))kernfs_enotsupp)
+#define kernfs_ioctl ((int (*) __P((struct  vop_ioctl_args *)))eopnotsupp)
+#define kernfs_select ((int (*) __P((struct  vop_select_args *)))eopnotsupp)
+#define kernfs_revoke vop_revoke
+#define kernfs_mmap ((int (*) __P((struct  vop_mmap_args *)))eopnotsupp)
 #define kernfs_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define kernfs_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
-#define kernfs_remove ((int (*) __P((struct  vop_remove_args *)))kernfs_enotsupp)
-#define kernfs_link ((int (*) __P((struct  vop_link_args *)))kernfs_enotsupp)
-#define kernfs_rename ((int (*) __P((struct  vop_rename_args *)))kernfs_enotsupp)
-#define kernfs_mkdir ((int (*) __P((struct  vop_mkdir_args *)))kernfs_enotsupp)
-#define kernfs_rmdir ((int (*) __P((struct  vop_rmdir_args *)))kernfs_enotsupp)
-#define kernfs_symlink ((int (*) __P((struct vop_symlink_args *)))kernfs_enotsupp)
-#define kernfs_readlink \
-	((int (*) __P((struct  vop_readlink_args *)))kernfs_enotsupp)
+#define kernfs_remove ((int (*) __P((struct  vop_remove_args *)))eopnotsupp)
+#define kernfs_link ((int (*) __P((struct  vop_link_args *)))eopnotsupp)
+#define kernfs_rename ((int (*) __P((struct  vop_rename_args *)))eopnotsupp)
+#define kernfs_mkdir ((int (*) __P((struct  vop_mkdir_args *)))eopnotsupp)
+#define kernfs_rmdir ((int (*) __P((struct  vop_rmdir_args *)))eopnotsupp)
+#define kernfs_symlink ((int (*) __P((struct vop_symlink_args *)))eopnotsupp)
+#define kernfs_readlink ((int (*) __P((struct  vop_readlink_args *)))eopnotsupp)
 #define kernfs_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
 #define kernfs_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
 #define kernfs_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
 #define kernfs_bmap ((int (*) __P((struct  vop_bmap_args *)))kernfs_badop)
-#define kernfs_strategy ((int (*) __P((struct  vop_strategy_args *)))kernfs_badop)
+#define kernfs_strategy \
+	((int (*) __P((struct  vop_strategy_args *)))kernfs_badop)
 #define kernfs_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
-#define kernfs_advlock ((int (*) __P((struct vop_advlock_args *)))kernfs_enotsupp)
-#define kernfs_blkatoff \
-	((int (*) __P((struct  vop_blkatoff_args *)))kernfs_enotsupp)
+#define kernfs_advlock ((int (*) __P((struct vop_advlock_args *)))eopnotsupp)
+#define kernfs_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))eopnotsupp)
 #define kernfs_valloc ((int(*) __P(( \
 		struct vnode *pvp, \
 		int mode, \
 		struct ucred *cred, \
-		struct vnode **vpp))) kernfs_enotsupp)
-#define kernfs_truncate \
-	((int (*) __P((struct  vop_truncate_args *)))kernfs_enotsupp)
-#define kernfs_update ((int (*) __P((struct  vop_update_args *)))kernfs_enotsupp)
-#define kernfs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))kernfs_enotsupp)
+		struct vnode **vpp))) eopnotsupp)
+#define kernfs_truncate ((int (*) __P((struct  vop_truncate_args *)))eopnotsupp)
+#define kernfs_update ((int (*) __P((struct  vop_update_args *)))eopnotsupp)
+#define kernfs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))eopnotsupp)
 
 int (**kernfs_vnodeop_p)();
 struct vnodeopv_entry_desc kernfs_vnodeop_entries[] = {
@@ -698,6 +688,7 @@ struct vnodeopv_entry_desc kernfs_vnodeop_entries[] = {
 	{ &vop_write_desc, kernfs_write },	/* write */
 	{ &vop_ioctl_desc, kernfs_ioctl },	/* ioctl */
 	{ &vop_select_desc, kernfs_select },	/* select */
+	{ &vop_revoke_desc, kernfs_revoke },	/* revoke */
 	{ &vop_mmap_desc, kernfs_mmap },	/* mmap */
 	{ &vop_fsync_desc, kernfs_fsync },	/* fsync */
 	{ &vop_seek_desc, kernfs_seek },	/* seek */
