@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)mount_nfs.c	5.9 (Berkeley) %G%";
 #endif
 
 #ifdef KERBEROS
+#include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #endif
 
@@ -285,12 +286,9 @@ main(argc, argv)
 				syslog(LOG_ERR, "nfssvc err %m");
 				continue;
 			}
-syslog(LOG_ERR, "in eacces");
 			nfssvc_flag =
 			    NFSSVC_MNTD | NFSSVC_GOTAUTH | NFSSVC_AUTHINFAIL;
 #ifdef KERBEROS
-syslog(LOG_ERR,
-    "Calling krb uid=%d inst=%s realm=%s", ncd.ncd_authuid, inst,realm);
 			/*
 			 * Set up as ncd_authuid for the kerberos call.
 			 * Must set ruid to ncd_authuid and reset the
@@ -306,14 +304,12 @@ syslog(LOG_ERR,
 			if (krb_mk_req(&kt, "rcmd", inst, realm, 0) ==
 			    KSUCCESS &&
 			    kt.length <= (RPCAUTH_MAXSIZ - 2 * NFSX_UNSIGNED)) {
-syslog(LOG_ERR, "Got it\n");
 				ncd.ncd_authtype = RPCAUTH_NQNFS;
 				ncd.ncd_authlen = kt.length;
 				ncd.ncd_authstr = (char *)kt.dat;
 				nfssvc_flag = NFSSVC_MNTD | NFSSVC_GOTAUTH;
 			}
 			setreuid(0, 0);
-syslog(LOG_ERR, "ktlen=%d\n", kt.length);
 #endif /* KERBEROS */
 		}
 	}

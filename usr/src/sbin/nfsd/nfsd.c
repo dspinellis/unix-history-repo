@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -47,6 +47,7 @@ static char sccsid[] = "@(#)nfsd.c	5.12 (Berkeley) %G%";
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
 #ifdef KERBEROS
+#include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #endif
 
@@ -220,7 +221,6 @@ main(argc, argv, envp)
 			}
 #endif	/* KERBEROS */
 		    } else {
-fprintf(stderr, "errno=%d\n",errno);
 			syslog(LOG_ERR, "Nfsd died %m");
 			exit(1);
 		    }
