@@ -15,10 +15,11 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)random.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)random.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include <err.h>
 #include <errno.h>
@@ -35,7 +36,7 @@ main(argc, argv)
 	char *argv[];
 {
 	extern int optind;
-	time_t now;
+	struct timeval tp;
 	double denom;
 	int ch, random_exit, selected, unbuffer_output;
 	char *ep;
@@ -75,8 +76,8 @@ main(argc, argv)
 		/* NOTREACHED */
 	}
 
-	(void)time(&now);
-	srandom((u_int)(now + getpid()));
+	(void)gettimeofday(&tp, NULL);
+	srandom((u_int)(tp.tv_usec + tp.tv_sec + getpid()));
 
 	/* Compute a random exit status between 0 and denom - 1. */
 	if (random_exit)
