@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.22		%G%);
+SCCSID(@(#)headers.c	3.23		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -77,7 +77,7 @@ chompheader(line, def)
 		fvalue++;
 
 	/* hack, hack -- save From: line specially */
-	if (!def && !QueueRun && strcmp(fname, "from") == 0)
+	if (!def && strcmp(fname, "from") == 0)
 	{
 		CurEnv->e_origfrom = newstr(fvalue);
 		return (0);
@@ -100,10 +100,6 @@ chompheader(line, def)
 	/* if this means "end of header" quit now */
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
-
-	/* don't put timestamps in every queue run */
-	if (QueueRun && h != NULL && bitset(H_FORCE, h->h_flags))
-		return (h->h_flags);
 
 	/* count Mail-From: lines to avoid loops (simulate hop counts) */
 	if (strcmp(fname, "mail-from") == 0)

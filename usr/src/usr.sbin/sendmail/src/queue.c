@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.30		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.31		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.30		%G%);
+SCCSID(@(#)queue.c	3.31		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -34,7 +34,7 @@ queueup(e, queueall)
 	bool queueall;
 {
 	char cf[MAXNAME];
-	char buf[MAXNAME];
+	char buf[MAXLINE];
 	register FILE *cfp;
 	register HDR *h;
 	register ADDRESS *q;
@@ -104,6 +104,7 @@ queueup(e, queueall)
 	fprintf(cfp, "C%d\n", e->e_class);
 
 	/* output macro definitions */
+	/* I don't think this is needed any more.....
 	for (i = 0; i < 128; i++)
 	{
 		register char *p = e->e_macro[i];
@@ -111,6 +112,7 @@ queueup(e, queueall)
 		if (p != NULL && i != (int) 'b')
 			fprintf(cfp, "M%c%s\n", i, p);
 	}
+	.....  */
 
 	/* output list of recipient addresses */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
@@ -122,11 +124,13 @@ queueup(e, queueall)
 			printaddr(q, FALSE);
 		}
 # endif DEBUG
-		if (queueall || bitset(QQUEUEUP, q->q_flags))
+		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
+			       bitset(QQUEUEUP, q->q_flags))
 			fprintf(cfp, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */
+	define('g', "$f");
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
@@ -134,7 +138,14 @@ queueup(e, queueall)
 		fprintf(cfp, "H");
 		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
 			mfdecode(h->h_mflags, cfp);
-		fprintf(cfp, "%s: %s\n", h->h_field, h->h_value);
+		fprintf(cfp, "%s: ", h->h_field);
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
+			fprintf(cfp, "%s\n", buf);
+		}
+		else
+			fprintf(cfp, "%s\n", h->h_value);
 	}
 
 	/*
@@ -497,10 +508,17 @@ dowork(w)
 		**		can recover on interrupt.
 		*/
 
+		/* set basic modes, etc. */
 		(void) alarm(0);
 		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
+
+		/* don't use the headers from sendmail.cf... */
+		CurEnv->e_header = NULL;
+		chompheader("from: $q", TRUE);
+
+		/* create the link to the control file during processing */
 		(void) strcpy(buf, QueueDir);
 		(void) strcat(buf, "/tfXXXXXX");
 		(void) mktemp(buf);
