@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -58,9 +58,9 @@ __bt_put(dbp, key, data, flags)
 
 	switch (flags) {
 	case R_CURSOR:
-		if (!ISSET(t, BTF_SEQINIT))
+		if (!ISSET(t, B_SEQINIT))
 			goto einval;
-		if (ISSET(t, BTF_DELCRSR))
+		if (ISSET(t, B_DELCRSR))
 			goto einval;
 		break;
 	case 0:
@@ -71,7 +71,7 @@ einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 
-	if (ISSET(t, BTF_RDONLY)) {
+	if (ISSET(t, B_RDONLY)) {
 		errno = EPERM;
 		return (RET_ERROR);
 	}
@@ -148,15 +148,15 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 		 * leaving the cursor there -- this means that the inserted
 		 * record will not be seen in a cursor scan.
 		 */
-		if (ISSET(t, BTF_DELCRSR) && t->bt_bcursor.pgno == h->pgno &&
+		if (ISSET(t, B_DELCRSR) && t->bt_bcursor.pgno == h->pgno &&
 		    t->bt_bcursor.index == index) {
-			CLR(t, BTF_DELCRSR);
+			CLR(t, B_DELCRSR);
 			goto delete;
 		}
 		mpool_put(t->bt_mp, h, 0);
 		return (RET_SPECIAL);
 	default:
-		if (!exact || !ISSET(t, BTF_NODUPS))
+		if (!exact || !ISSET(t, B_NODUPS))
 			break;
 delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 			mpool_put(t->bt_mp, h, 0);
@@ -210,7 +210,7 @@ success:
 		t->bt_bcursor.pgno = e->page->pgno;
 		t->bt_bcursor.index = e->index;
 	}
-	SET(t, BTF_MODIFIED);
+	SET(t, B_MODIFIED);
 	return (RET_SUCCESS);
 }
 

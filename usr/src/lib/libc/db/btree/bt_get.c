@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_get.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_get.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -63,7 +63,7 @@ __bt_get(dbp, key, data, flags)
 	 * __bt_first and have it redo the search, as __bt_first will not
 	 * return keys marked for deletion.  Slow, but should never happen.
 	 */
-	if (ISSET(t, BTF_DELCRSR) && e->page->pgno == t->bt_bcursor.pgno &&
+	if (ISSET(t, B_DELCRSR) && e->page->pgno == t->bt_bcursor.pgno &&
 	    e->index == t->bt_bcursor.index) {
 		mpool_put(t->bt_mp, e->page, 0);
 		if ((e = __bt_first(t, key, &exact)) == NULL)
@@ -110,7 +110,7 @@ __bt_first(t, key, exactp)
 	if (!*exactp)
 		return (e);
 
-	if (ISSET(t, BTF_DELCRSR)) {
+	if (ISSET(t, B_DELCRSR)) {
 		cpgno = t->bt_bcursor.pgno;
 		cindex = t->bt_bcursor.index;
 	} else {
