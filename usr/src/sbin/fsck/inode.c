@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -412,7 +412,7 @@ pinode(ino)
 		printf("%u ", (unsigned)dp->di_uid);
 	printf("MODE=%o\n", dp->di_mode);
 	if (preen)
-		printf("%s: ", devname);
+		printf("%s: ", cdevname);
 	printf("SIZE=%qu ", dp->di_size);
 	p = ctime(&dp->di_mtime.ts_sec);
 	printf("MTIME=%12.12s %4.4s ", &p[4], &p[20]);
