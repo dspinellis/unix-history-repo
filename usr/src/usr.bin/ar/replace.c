@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,7 +36,7 @@ extern char *tname;                     /* temporary file "name" */
 replace(argv)
 	char **argv;
 {
-	extern char *posname;		/* positioning file name */
+	extern char *posarg, *posname;	/* positioning file name */
 	register char *file;
 	register int afd, curfd, mods, sfd;
 	struct stat sb;
@@ -82,7 +82,7 @@ replace(argv)
 				goto useold;
 
 			if (options & AR_V)
-			     (void)printf("r - %s\n", chdr.name);
+			     (void)printf("r - %s\n", file);
 
 			/* Read from disk, write to an archive; pad on write */
 			SETCF(sfd, file, curfd, tname, WPAD);
@@ -110,7 +110,7 @@ useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
 
 	if (mods) {
 		(void)fprintf(stderr, "ar: %s: archive member not found.\n",
-		    posname);
+		    posarg);
                 close_archive(afd);
                 return(1);
         }
@@ -118,7 +118,7 @@ useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
 	/* Append any left-over arguments to the end of the after file. */
 append:	while (file = *argv++) {
 		if (options & AR_V)
-			(void)printf("a - %s\n", rname(file));
+			(void)printf("a - %s\n", file);
 		if ((sfd = open(file, O_RDONLY)) < 0) {
 			err = 1;
 			(void)fprintf(stderr, "ar: %s: %s.\n",

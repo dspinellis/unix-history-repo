@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)contents.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)contents.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,26 +37,30 @@ contents(argv)
 	register int afd, all;
 	int eval;
 	struct tm *tp;
-	char buf[25];
+	char *file, buf[25];
 	
 	afd = open_archive(O_RDONLY);
 
 	for (all = !*argv; get_header(afd);) {
-		if (all || files(argv)) {
-			if (options & AR_V) {
-				(void)strmode(chdr.mode, buf);
-				(void)printf("%s %6d/%-6d %8ld ",
-				    buf + 1, chdr.uid, chdr.gid, chdr.size);
-				tp = localtime(&chdr.date);
-				(void)strftime(buf, sizeof(buf),
-				    "%b %e %H:%M %Y", tp);
-				(void)printf("%s %s\n", buf, chdr.name);
-			} else
-				(void)printf("%s\n", chdr.name);
-			if (!all && !*argv)
-				break;
+		if (all)
+			file = chdr.name;
+		else {
+			file = *argv;
+			if (!files(argv))
+				goto next;
 		}
-		skipobj(afd);
+		if (options & AR_V) {
+			(void)strmode(chdr.mode, buf);
+			(void)printf("%s %6d/%-6d %8ld ",
+			    buf + 1, chdr.uid, chdr.gid, chdr.size);
+			tp = localtime(&chdr.date);
+			(void)strftime(buf, sizeof(buf), "%b %e %H:%M %Y", tp);
+			(void)printf("%s %s\n", buf, file);
+		} else
+			(void)printf("%s\n", file);
+		if (!all && !*argv)
+			break;
+next:		skipobj(afd);
 	} 
 	eval = 0;
 	ORPHANS;

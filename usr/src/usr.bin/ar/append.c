@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)append.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)append.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ append(argv)
 			continue;
 		}
 		if (options & AR_V)
-			(void)printf("q - %s\n", rname(file));
+			(void)printf("q - %s\n", file);
 		cf.rfd = fd;
 		cf.rname = file;
 		put_object(&cf, &sb);
