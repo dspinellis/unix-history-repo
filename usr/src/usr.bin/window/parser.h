@@ -1,5 +1,5 @@
 /*
- *	@(#)parser.h	3.1 84/01/12
+ *	@(#)parser.h	3.2 84/01/13
  */
 
 #include <stdio.h>
@@ -7,8 +7,6 @@
 #include "context.h"
 #include "token.h"
 #include "string.h"
-#include "lcmd.h"
-#include "var.h"
 
 #define p_erred()	(cx.x_erred)
 #define p_synerred()	(cx.x_synerred)
