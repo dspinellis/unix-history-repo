@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	7.4 (Berkeley) %G% */
+/*	@(#)if_hdh.c	7.5 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -571,7 +571,7 @@ int unit, lcn, cc, rcnt;
 		 */
 		sc->hdh_imp->imp_if.if_opackets++;
 		sc->hdh_imp->imp_cb.ic_oactive = 0;
-		impstart(sc->hdh_imp->imp_if.if_unit);
+		impstart(sc->hdh_imp);
 	}
 }
 
@@ -603,7 +603,7 @@ int unit, lcn, cc;
 			case HDHLNUP:
 				printf("hdh%d: LINE UP\n", unit);
 				sc->hdh_flags |= HDH_UP;
-				impstart(sc->hdh_imp->imp_if.if_unit);
+				impstart(sc->hdh_imp);
 				break;
 	
 			case HDHLNDN:
