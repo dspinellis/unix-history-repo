@@ -1,0 +1,51 @@
+.th CHMOD I 2/8/75
+.sh NAME
+chmod \*- change mode
+.sh SYNOPSIS
+.bd chmod
+octal file ...
+.sh DESCRIPTION
+The octal mode
+replaces the mode of each of the files.
+The mode is constructed from the OR of the
+following modes:
+.s3
+.lp +10 7
+4000	set user ID on execution
+.lp +10 7
+2000	set group ID on execution
+.lp +10 7
+1000	sticky bit for shared, pure-procedure programs (see below)
+.lp +10 7
+0400	read by owner
+.lp +10 7
+0200	write by owner
+.lp +10 7
+0100	execute (search in directory) by owner
+.lp +10 7
+0070	read, write, execute (search) by group
+.lp +10 7
+0007	read, write, execute (search) by others
+.s3
+.i0
+Only the owner of a file (or the super-user) may change its mode.
+.s3
+If an executable file is set up for sharing (``\*-n'' option
+of
+.it "ld (I)"
+), then mode 1000 prevents the system from
+abandoning the swap-space image of the program-text portion
+of the file when its last user
+terminates.
+Thus when the next user of the file executes it,
+the text need not be read from the file
+system but can simply be swapped in,
+saving time.
+Ability to set this bit is restricted to the super-user
+since swap space is consumed
+by the images; it is only worth while for heavily used commands.
+.s3
+.sh "SEE ALSO"
+ls (I),
+chmod (II)
+.sh BUGS
