@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -107,7 +107,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 		if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode)) == NULL)
 		{
 			syserr("Cannot create %s", e->e_df);
-			e->e_flags |= EF_NORETURN;
+			e->e_flags |= EF_NO_BODY_RETN;
 			finis();
 		}
 		if (fstat(fileno(tf), &stbuf) < 0)
@@ -551,7 +551,7 @@ tferror(tf, e)
 		long avail;
 		long bsize;
 
-		e->e_flags |= EF_NORETURN;
+		e->e_flags |= EF_NO_BODY_RETN;
 		if (fstat(fileno(tf), &st) < 0)
 			st.st_size = 0;
 		(void) freopen(e->e_df, "w", tf);

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.69 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.70 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.69 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.70 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1149,14 +1149,6 @@ readqf(e)
 
 					  case 'D':
 						qflags |= QPINGONDELAY;
-						break;
-
-					  case 'B':
-						qflags |= QHAS_RET_PARAM;
-						break;
-
-					  case 'N':
-						qflags |= QHAS_RET_PARAM|QRET_HDRS;
 						break;
 
 					  case 'P':
