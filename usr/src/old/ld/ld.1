@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ld.1	6.1 (Berkeley) %G%
+.\"	@(#)ld.1	6.2 (Berkeley) %G%
 .\"
 .TH LD 1 ""
 .UC 4
@@ -113,7 +113,7 @@ Add
 to the list of directories in which libraries are searched for.
 Directories specified with 
 .B \-L
-are searched before the standard directories `/lib' and `/usr/lib'.
+are searched before the standard directories.
 .TP 
 .BI \-l x
 This
@@ -126,7 +126,8 @@ is a string.
 searches for libraries first in any directories
 specified with
 .B \-L
-options, then in the standard directories `/lib' and `/usr/lib'.
+options, then in the standard directories `/lib', `/usr/lib', and
+`/usr/local/lib'.
 A library is searched when its name is encountered,
 so the placement of a
 .B  \-l
