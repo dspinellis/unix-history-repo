@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.25 84/04/06";
+static	char *sccsid = "@(#)cmd.c	3.26 84/04/07";
 #endif
 
 #include "defs.h"
@@ -73,12 +73,6 @@ docmd()
 				if ((w = getwin()) != 0)
 					movewin(w, w->ww_altpos.r,
 						w->ww_altpos.c);
-				break;
-			case 'L':
-				c_list();
-				break;
-			case 'v':
-				c_variable();
 				break;
 			case ':':
 				c_colon();
@@ -249,6 +243,8 @@ struct ww *w;
 {
 	if (selwin == w)
 		return;
-	lastselwin = selwin;
-	front(selwin = w, 1);
+	if (selwin != 0)
+		lastselwin = selwin;
+	if ((selwin = w) != 0)
+		front(selwin, 1);
 }
