@@ -1,3 +1,4 @@
+#	@(#)afmdit.awk	1.3 (Berkeley) %G%
 # lib/ditroff.font/afmdit.awk
 #
 # Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
@@ -255,7 +256,7 @@ BEGIN {
 # PostScript prolog
 
 	ditmap[".proctext"] = "14 12 34 18 38 58 78 13 23"
-	ditmap[".procspecial"] = "is sr -> <- =="
+	ditmap[".procspecial"] = "is sr -> <- == uc"
 
 	# character-code and width info for synthetic characters
 
@@ -269,6 +270,7 @@ BEGIN {
 	proc["78"] = cc++ " 0 833"	# 7/8
 	proc["13"] = cc++ " 0 833"	# 1/3
 	proc["23"] = cc++ " 0 833"	# 2/3
+	proc["uc"] = cc++ " 0 0"	# uc seal
 
 #	proc["mi"] = cc++ " 0 549"	# minus
 

@@ -1,4 +1,4 @@
-%	@(#)psdit.pro	1.2 %G%
+%	@(#)psdit.pro	1.3 %G%
 % lib/psdit.pro -- prolog for psdit (ditroff) files
 % Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
 % last edit: shore Sat Nov 23 20:28:03 1985
@@ -279,6 +279,8 @@ end
 (->){gsave 0 .02 dm rmoveto(\256)show oce}def
 (<-){gsave 0 .02 dm rmoveto(\254)show oce}def
 (==){gsave 0 .05 dm rmoveto(\272)show oce}def
+(uc){gsave currentpoint 400 .009 dm mul add translate
+     8 -8 scale ucseal oce}def
 end
 
 % an attempt at a PostScript FONT to implement ditroff special chars
