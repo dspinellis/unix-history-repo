@@ -1,0 +1,10 @@
+Matrm	atrm.c	/^main(argc,argv)$/
+filewanted	atrm.c	/^filewanted(direntry)$/
+fowner	atrm.c	/^fowner(file)$/
+getid	atrm.c	/^getid(name)$/
+getname	atrm.c	/^getname(uid)$/
+isowner	atrm.c	/^isowner(name,jobname)$/
+isusername	atrm.c	/^isusername(string)$/
+removentry	atrm.c	/^removentry(filename, inode, owner)$/
+usage	atrm.c	/^usage()$/
+yes	atrm.c	/^yes()$/

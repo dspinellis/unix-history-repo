@@ -1,0 +1,7 @@
+Matrun	atrun.c	/^main(argc, argv)$/
+getname	atrun.c	/^getname(uid)$/
+makenowtime	atrun.c	/^makenowtime(nowtime)$/
+run	atrun.c	/^run(spoolfile)$/
+sendmailto	atrun.c	/^sendmailto(user,jobname,exitstatus)$/
+should_be_run	atrun.c	/^should_be_run(direntry)$/
+updatetime	atrun.c	/^updatetime()$/

@@ -1,0 +1,60 @@
+AU	deroff.c	/^AU()$/
+EQ	deroff.c	/^EQ()$/
+M	deroff.c	/^#define	M(cond, c1, c2, func) {cond, tomac(c1, c2)/
+MMHU	deroff.c	/^MMHU(c12)$/
+Mderoff	deroff.c	/^main(ac, av)$/
+PP	deroff.c	/^PP(c12)$/
+PS	deroff.c	/^PS()$/
+SH	deroff.c	/^SH(c12)$/
+SKIPBLANK	deroff.c	/^#define SKIPBLANK(cp)	while(*cp == ' ' || *cp == '/
+SKIPNONBLANK	deroff.c	/^#define SKIPNONBLANK(cp) while(*cp !=' ' && *cp !=/
+UX	deroff.c	/^UX()$/
+_C	deroff.c	/^_C()$/
+_C1	deroff.c	/^_C1()$/
+backsl	deroff.c	/^backsl()	\/* skip over a complete backslash constr/
+buildtab	deroff.c	/^buildtab(r_back, r_size)$/
+ce	deroff.c	/^ce()$/
+comline	deroff.c	/^comline()$/
+copys	deroff.c	/^char *copys(s)$/
+defcomline	deroff.c	/^defcomline(c12)$/
+domacro	deroff.c	/^domacro()$/
+eof	deroff.c	/^eof()$/
+eqn	deroff.c	/^eqn()$/
+fatal	deroff.c	/^fatal(s,p)$/
+frommac	deroff.c	/^#define	frommac(src, c1, c2)	(((c1)=((src)>>8)&0xF/
+getfname	deroff.c	/^getfname()$/
+inpic	deroff.c	/^inpic()$/
+intbl	deroff.c	/^intbl()$/
+macfill	deroff.c	/^struct mactab *macfill(dst, src)$/
+macro	deroff.c	/^macro()$/
+macsort	deroff.c	/^int macsort(p1, p2)$/
+manfont	deroff.c	/^manfont(c12)$/
+manpp	deroff.c	/^manpp(c12)$/
+mefont	deroff.c	/^mefont(c12)$/
+meip	deroff.c	/^meip(c12)$/
+mepp	deroff.c	/^mepp(c12)$/
+meputmac	deroff.c	/^meputmac(cp, constant)$/
+meputwords	deroff.c	/^meputwords(macline)$/
+mesh	deroff.c	/^mesh(c12)$/
+mesnblock	deroff.c	/^mesnblock(c12)$/
+msputmac	deroff.c	/^msputmac(s, constant)$/
+msputwords	deroff.c	/^msputwords(macline)	$/
+mssnblock	deroff.c	/^mssnblock(c12)$/
+nf	deroff.c	/^nf()$/
+noblock	deroff.c	/^noblock(a1, a2)$/
+nx	deroff.c	/^nx()$/
+opn	deroff.c	/^FILE *opn(p)$/
+outtbl	deroff.c	/^outtbl(){ intable = NO; }$/
+refer	deroff.c	/^refer(c1)$/
+regline	deroff.c	/^regline(pfunc, constant)$/
+sce	deroff.c	/^sce()$/
+sizetab	deroff.c	/^int sizetab(mp)$/
+skeqn	deroff.c	/^skeqn()$/
+skip	deroff.c	/^skip()$/
+skiptocom	deroff.c	/^skiptocom(){ SKIP_TO_COM; return(COMX); }$/
+so	deroff.c	/^so()$/
+stbl	deroff.c	/^stbl()$/
+tbl	deroff.c	/^tbl()$/
+textline	deroff.c	/^textline(str, constant)$/
+tomac	deroff.c	/^#define	tomac(c1, c2)		((((c1) & 0xFF) << 8) | ((c/
+work	deroff.c	/^work()$/

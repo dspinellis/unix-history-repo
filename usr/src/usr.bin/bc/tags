@@ -1,0 +1,16 @@
+Mbc	bc.c	/^main(argc, argv)$/
+bundle	bc.c	/^bundle(va_alist) va_dcl {$/
+conout	bc.c	/^conout( p, s ) int *p; char *s; {$/
+cpeek	bc.c	/^cpeek( c, yes, no ){$/
+geta	bc.c	/^geta(p) char *p;{$/
+getch	bc.c	/^getch(){$/
+getf	bc.c	/^getf(p) char *p;{$/
+getout	bc.c	/^int *getout(){$/
+output	bc.c	/^output( p ) int *p; {$/
+pp	bc.c	/^pp( s ) char *s; {$/
+routput	bc.c	/^routput(p) int *p; {$/
+tp	bc.c	/^tp( s ) char *s; { \/* same as pp, but for temps */
+yyerror	bc.c	/^yyerror( s ) char *s; {$/
+yyinit	bc.c	/^yyinit(argc,argv) int argc; char *argv[];{$/
+yylex	bc.c	/^yylex(){$/
+yyparse	bc.c	/^yyparse()$/
