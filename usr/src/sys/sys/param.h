@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.13 (Berkeley) %G%
+ *	@(#)param.h	6.14 (Berkeley) %G%
  */
 
 #define	BSD	4.3
