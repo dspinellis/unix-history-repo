@@ -1,5 +1,7 @@
-.\"	@(#)iosys	5.1 (Berkeley) %G%
+.\"	@(#)iosys	6.1 (Berkeley) %G%
 .\"
+.EH 'PS2:5-%''The UNIX I/O System'
+.OH 'The UNIX I/O System''PS2:5-%'
 .TL
 The UNIX I/O System
 .AU
