@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	4.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -127,7 +127,7 @@ main(argc, argv)
  */
 static
 getline(buf)
-	char	*buf;
+	register char	*buf;
 {
 	register int	c;
 
