@@ -1,0 +1,69 @@
+ack_err	ack_err.c	?^ack_err()$?
+addresdom	tree.c	?^addresdom(lptr, rptr)$?
+adjust	norml.c	?^adjust(pp)$?
+attadd	att_fcn.c	?^attadd(slot, tuple)$?
+attalloc	att_fcn.c	?^attalloc()$?
+attcheck	att_fcn.c	?^attcheck(aptr)$?
+attcount	att_fcn.c	?^attcount(slot)$?
+attfind	att_fcn.c	?^attfind(slot, attrib)$?
+attfree	att_fcn.c	?^attfree(aptr)$?
+attinit	att_fcn.c	?^attinit()$?
+attlookup	att_fcn.c	?^attlookup(slot, attrib)$?
+backup	s_inout.c	?^backup(chr)$?
+call_tree	call_tree.c	?^call_tree(qmode, dest, err_fcn)$?
+checkupd	range_fcn.c	?^checkupd(entnum)$?
+comment	s_comment.c	?^comment()$?
+ctlmod_decl	range_fcn.c	?^ctlmod_decl(slot)$?
+endgo	control.c	?^endgo()$?
+endquelst	control.c	?^endquelst(op)$?
+endretrieve	control.c	?^endretrieve(err_fcn)$?
+format	format.c	?^format(result1)$?
+freesym	s_symtab.c	?^freesym()$?
+get_scan	get_scan.c	?^get_scan(mode)$?
+getcop	tree.c	?^getcop(string)$?
+getcvar	s_yylex.c	?^getcvar(type, len)$?
+gtchar	s_inout.c	?^gtchar()$?
+header	par_util.c	?^header(pv)$?
+init_quelst	control.c	?^init_quelst()$?
+makestr	par_util.c	?^makestr(str)$?
+mvands	norml.c	?^mvands(andp)$?
+name	s_name.c	?^name(chr)$?
+neederr	yyerror.y	?^neederr(errnum)$?
+nnorm	norml.c	?^nnorm(p1)$?
+norm	norml.c	?^norm(p)$?
+norml	norml.c	?^norml(ptr)$?
+notpush	norml.c	?^notpush(p1)$?
+number	s_number.c	?^number(chr)$?
+operator	s_operator.c	?^operator(chr)$?
+par_error	yyerror.y	?^par_error(num, result, a, b, c)$?
+par_init	par_init.c	?^par_init(argc, argv1)$?
+parser	parser.c	?^parser()$?
+pass_err	pass_err.c	?^pass_err(pc, pv)$?
+patmat	par_util.c	?^patmat(str)$?
+permcom	par_util.c	?^permcom(a)$?
+printslot	range_fcn.c	?^printslot(slot)$?
+printtable	range_fcn.c	?^printtable()$?
+printtrail	control.c	?^printtrail()$?
+rngback	range_fcn.c	?^rngback(slot)$?
+rngdel	range_fcn.c	?^rngdel(rel)$?
+rngent	range_fcn.c	?^rngent(type, var, desc)$?
+rngfresh	range_fcn.c	?^rngfresh(op)$?
+rngfront	range_fcn.c	?^rngfront(slot)$?
+rngget	range_fcn.c	?^rngget(slot)$?
+rnginit	range_fcn.c	?^rnginit()$?
+rnglook	range_fcn.c	?^rnglook(name, type)$?
+rngold	range_fcn.c	?^rngold()$?
+rngreset	range_fcn.c	?^rngreset()$?
+startgo	control.c	?^startgo()$?
+string	s_string.c	?^string(op)$?
+syment	s_symtab.c	?^syment(ptr, len1)$?
+timeofday	par_util.c	?^timeofday(hrs, mins)$?
+tlprepend	par_util.c	?^tlprepend(a, b)$?
+travers	norml.c	?^travers(p1)$?
+tree	tree.c	?^tree(lptr, rptr, typ, len, valu, attnum)$?
+treedup	norml.c	?^*treedup(p1)$?
+windup	tree.c	?^windup(ptr)$?
+xdot	xdot.c	?^xdot(slot)$?
+yyerror	yyerror.y	?^yyerror(errmessage)$?
+yylex	s_yylex.c	?^yylex()$?
+yyparse	grammar.c	?^yyparse() {$?
