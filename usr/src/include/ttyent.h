@@ -1,4 +1,4 @@
-/*	ttyent.h	4.1	84/04/27	*/
+/*	ttyent.h	4.2	85/01/30	*/
 
 struct	ttyent { /* see getttyent(3) */
 	char	*ty_name;	/* terminal device name */
