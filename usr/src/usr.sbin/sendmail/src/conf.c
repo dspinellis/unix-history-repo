@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -679,7 +679,7 @@ setproctitle(fmt, a, b, c)
 		buf[i] = '\0';
 	}
 	(void) strcpy(Argv[0], buf);
-	p = Argv[i];
+	p = &Argv[0][i];
 	while (p < LastArgv)
 		*p++ = ' ';
 # endif SETPROCTITLE
