@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	4.7		%G%);
+SCCSID(@(#)util.c	4.8		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -173,8 +173,8 @@ copyplist(list, copycont)
 
 	vp++;
 
-	newvp = (char **) xalloc((vp - list) * sizeof *vp);
-	bcopy((char *) list, (char *) newvp, (vp - list) * sizeof *vp);
+	newvp = (char **) xalloc((int) (vp - list) * sizeof *vp);
+	bcopy((char *) list, (char *) newvp, (int) (vp - list) * sizeof *vp);
 
 	if (copycont)
 	{

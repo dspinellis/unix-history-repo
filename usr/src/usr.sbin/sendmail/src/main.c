@@ -2,9 +2,8 @@
 # include <signal.h>
 # include <sgtty.h>
 # include "sendmail.h"
-# include <sys/file.h>
 
-SCCSID(@(#)main.c	4.11		%G%);
+SCCSID(@(#)main.c	4.12		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -171,6 +170,8 @@ main(argc, argv, envp)
 		OpMode = MD_INITALIAS;
 	else if (strcmp(p, "mailq") == 0)
 		OpMode = MD_PRINT;
+	else if (strcmp(p, "smtpd") == 0)
+		OpMode = MD_DAEMON;
 	while ((p = *++av) != NULL && p[0] == '-')
 	{
 		switch (p[1])

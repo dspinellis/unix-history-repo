@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.7		%G%);
+SCCSID(@(#)parseaddr.c	4.8		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -716,7 +716,7 @@ rewrite(pvp, ruleset)
 		if (**npvp == CALLSUBR)
 		{
 			bcopy((char *) &npvp[2], (char *) pvp,
-				(avp - npvp - 2) * sizeof *avp);
+				(int) (avp - npvp - 2) * sizeof *avp);
 # ifdef DEBUG
 			if (tTd(21, 3))
 				printf("-----callsubr %s\n", npvp[1]);
@@ -726,7 +726,7 @@ rewrite(pvp, ruleset)
 		else
 		{
 			bcopy((char *) npvp, (char *) pvp,
-				(avp - npvp) * sizeof *avp);
+				(int) (avp - npvp) * sizeof *avp);
 		}
 # ifdef DEBUG
 		if (tTd(21, 4))
