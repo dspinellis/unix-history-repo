@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ static int   hash_access __P((ACTION, DBT *, DBT *));
 static int   hash_close __P((DB *));
 static int   hash_delete __P((const DB *, const DBT *, u_int));
 static int   hash_get __P((const DB *, const DBT *, DBT *, u_int));
-static int   hash_put __P((const DB *, const DBT *, const DBT *, u_int));
+static int   hash_put __P((const DB *, DBT *, const DBT *, u_int));
 static void *hash_realloc __P((SEGMENT **, int, int));
 static int   hash_seq __P((const DB *, DBT *, DBT *, u_int));
 static int   hash_sync __P((const DB *));
@@ -91,8 +91,7 @@ __hash_open(file, flags, mode, info)
 	 * But, the field in the hashp structure needs to be accurate so that
 	 * we can check accesses.
 	 */
-	hashp->flags = flags = flags & (O_CREAT | O_EXCL | O_EXLOCK | 
-	    O_RDONLY | O_RDWR | O_SHLOCK | O_TRUNC);
+	hashp->flags = flags = flags & __USE_OPEN_FLAGS;
 
 	new_table = 0;
 	if (!file || (flags & O_TRUNC) ||
@@ -474,7 +473,8 @@ hash_get(dbp, key, data, flag)
 static int
 hash_put(dbp, key, data, flag)
 	const DB *dbp;
-	const DBT *key, *data;
+	DBT *key;
+	const DBT *data;
 	u_int flag;
 {
 	if (flag && flag != R_NOOVERWRITE) {
