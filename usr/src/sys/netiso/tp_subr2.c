@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.12 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -273,7 +273,8 @@ struct tp_pcb *tpcb;
 	tpcb->tp_seqhalf = tpcb->tp_seqbit >> 1;
 	tpcb->tp_dt_ticks =
 		MAX(tpcb->tp_dt_ticks, (tpcb->tp_peer_acktime + 2));
-
+	(void) tp_rsyset(tpcb);
+	
 }
 
 /*
