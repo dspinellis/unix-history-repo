@@ -9,7 +9,7 @@
  * Message list handling.
  */
 
-static char *SccsId = "@(#)list.c	1.2 %G%";
+static char *SccsId = "@(#)list.c	1.3 %G%";
 
 /*
  * Convert the user string of message numbers and
@@ -467,7 +467,7 @@ matchsubj(str, mesg)
 	char *str;
 {
 	register struct message *mp;
-	register char *cp, *cp2;
+	register char *cp, *cp2, *backup;
 
 	str++;
 	if (strlen(str) == 0)
@@ -484,11 +484,14 @@ matchsubj(str, mesg)
 	cp2 = hfield("subject", mp);
 	if (cp2 == NOSTR)
 		return(0);
+	backup = cp2;
 	while (*cp2) {
 		if (*cp == 0)
 			return(1);
-		if (raise(*cp++) != raise(*cp2++))
+		if (raise(*cp++) != raise(*cp2++)) {
+			cp2 = ++backup;
 			cp = str;
+		}
 	}
 	return(*cp == 0);
 }
