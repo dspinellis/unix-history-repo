@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.15 (Berkeley) %G%
+ *	@(#)user.h	7.16 (Berkeley) %G%
  */
 
 #include <machine/pcb.h>
@@ -53,14 +53,7 @@ struct	user {
 	int	u_code;			/* for core dump/debugger XXX */
 
 /* 1.4 - descriptor management */
-	struct	file *u_ofile[NOFILE];	/* file structures for open files */
-	char	u_pofile[NOFILE];	/* per-process flags of open files */
-	int	u_lastfile;		/* high-water mark of u_ofile */
-#define	UF_EXCLOSE 	0x1		/* auto-close on exec */
-#define	UF_MAPPED 	0x2		/* mapped from device */
-#define u_cdir u_nd.ni_cdir		/* current directory */
-#define u_rdir u_nd.ni_rdir		/* root directory of current process */
-	short	u_cmask;		/* mask for file creation */
+	long	u_pad2[82];
 
 /* 1.5 - timing and statistics */
 	struct	rusage u_ru;		/* stats for this proc */
