@@ -1,0 +1,1 @@
+#define NDMC 0

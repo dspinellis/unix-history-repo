@@ -1,0 +1,1 @@
+#define NVP 0
