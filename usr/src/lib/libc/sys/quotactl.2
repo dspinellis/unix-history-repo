@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotactl.2	6.4 (Berkeley) %G%
+.\"	@(#)quotactl.2	6.5 (Berkeley) %G%
 .\"
 .TH QUOTA 2 ""
 .UC 5
@@ -20,7 +20,7 @@ quota \- manipulate disk quotas
 The
 .I quota
 call manipulates disk quotas for file systems
-which have had quotas enabled with
+that have had quotas enabled with
 .IR setquota (2).
 The
 .I cmd
@@ -31,7 +31,7 @@ the user ID
 is a command specific argument and
 .I addr
 is the address of an optional, command specific, data structure
-which is copied in or out of the system.  The interpretation of
+that is copied in or out of the system.  The interpretation of
 .I arg
 and
 .I addr
@@ -68,7 +68,7 @@ Update the on-disc copy of quota usages.
 is a major-minor device indicating the file system to be sync'ed.
 If the
 .I arg
-parameter is specified as NODEV, all file systems which have
+parameter is specified as NODEV, all file systems that have
 disc quotas will be sync'ed.
 The \fIuid\fP and \fIaddr\fP parameters are ignored.
 .TP
@@ -104,7 +104,7 @@ If the user is under quota, his warning count is reset to MAX_*_WARN
 .RI < sys/quota.h >).
 If the
 .I arg
-parameter is specified as NODEV, all file systems which have
+parameter is specified as NODEV, all file systems that have
 disc quotas will be checked.  Otherwise, 
 .I arg
 indicates a specific major-minor device to be checked.
