@@ -1,4 +1,4 @@
-/*	scalech.c	(Berkeley)	1.6	85/02/04
+/*	scalech.c	1.6	85/02/04
  *
  * Font scaling for character format fonts.
  *
@@ -21,9 +21,10 @@
 					/* don't ask, really */
 int	width, length, vdest, hdest, code;
 int	refv, refh, spot, start, Bduring, Wduring;
-int	notfirsttime, build, voffset, hoffset;
+int	notfirsttime, build, refvdest, refhdest, destwidth;
 
-int	scale = SCALE;
+int	scale = SCALE;		/* percentage to scale by (in 100's) */
+int	hscale;			/* half scale value:  used in computations */
 FILE *	filep;
 char	ibuff[MAXHEIGHT][MAXLINE], ebuff[MAXLINE];
 
@@ -59,6 +60,7 @@ char **argv;
 	    error("can't open file \"%s\"", argv[1]);
     } else filep = stdin;
 
+    hscale = scale / 2;
     fgets(ibuff, MAXLINE, filep);
     if (strcmp(ibuff, "fontheader\n"))
 	error("not a character font file");
@@ -89,13 +91,15 @@ char **argv;
 						/* first read in whole glyph */
 	    refh = -1;				/* and put in ibuff */
 	    for (length = 0; *(chp = &(ibuff[length][0])) != '\n'; length++) {
-		for (j = 0; j < width; j++, chp++) {
+		for (j = 0; j <= width; j++, chp++) {
 		    switch (*chp) {
 			case '@':
 			case '*':
 				*chp = 1;
 				break;
 			case '.':
+			case '\n':
+			case '\r':
 				*chp = 0;
 				break;
 			case 'x':
@@ -106,7 +110,7 @@ char **argv;
 		mark:		if (refh >= 0)
 				    error ("glyph %d - two reference points",
 									code);
-				refh = j + 1;
+				refh = j;
 				refv = length;
 				break;
 			default:
@@ -119,13 +123,15 @@ char **argv;
 	    if (refh < 0) error("No position point in glyph %d", code);
 
 
-	    voffset = (refv * scale) / 100;
-	    hoffset = (refh * scale) / 100;
+	    refvdest = (refv * scale + hscale) / 100;
+	    refhdest = (refh * scale - hscale) / 100 + (refh ? 2 : 1);
+	    destwidth = refhdest + ((width - refh) * scale - hscale) / 100;
 	    vdest = 0;
 	    notfirsttime = 0;
+	    build = 0;
 	    for (j = 0; j <= width; j++)
-		Black[build][j] = BtoW[build][j] =
-			WtoB[build][j] = White[build][j] = 0;
+		Black[build][j] = BtoW[build][j] = WtoB[build][j] =
+		    White[build][j] = lastline[j] = 0;
 
 	    for (i = 0; i < length; i++) {
 		chp = &(ibuff[i][0]);
@@ -134,8 +140,8 @@ char **argv;
 		Bduring = 0;
 		Wduring = 0;
 		White[build][0]++;
-		for (j = 0; j < width; j++, chp++) {
-		    code = ((j-refh) * scale) / 100 + (j<refh ? 1:2) + hoffset;
+		for (j = 0; j <= width; j++, chp++) {
+		    code = ((j-refh)*scale+hscale)/100+refhdest-((j<refh)?1:0);
 		    if (hdest != code) {
 			if ((start && !Wduring) ||
 			    ((!start)&& Bduring &&!spot)) Black[build][hdest]++;
@@ -159,11 +165,13 @@ char **argv;
 		    || ((!start) && Bduring)) Black[build][hdest]++;
 		if (start) BtoW[build][hdest]++;
 		if ((!start) && !Bduring) White[build][hdest]++;
-
-		code = voffset - (((refv - (i+1))*scale)/100 - (i>=refv ? 1:0));
+				/* look at what line we're gonna build for NEXT
+				   and if that's different than what we WERE
+				   building for, output the line BEFORE that */
+		code = refvdest+((i>=refv)?1:0)-((refv-(i+1))*scale+hscale)/100;
 		if (code != vdest || i == (length - 1)) {
 		    if (notfirsttime)
-			outline(vdest == (voffset + 1));
+			outline(vdest == (refvdest + 1));
 		    else
 			notfirsttime = 1;
 		    vdest = code;
@@ -176,12 +184,17 @@ char **argv;
 	    } /* for i */
 
 	    for (j = 0; j <= width; j++) White[build][j] = 1;
-	    outline(vdest == (voffset + 1));		/* output last line */
-	    putchar('\n');
-	} /* else */
+	    outline(refv == length - 1);	/* output last line - ref */
+	    putchar('\n');			/* point only if it's on the */
+	} /* else */				/* last line of the block */
     } /* while */
+    exit(0);
 }
 
+
+#define	upleft	(lastline[j-1])
+#define	up	(lastline[j])
+#define	upright	(lastline[j+1])
 
 /*----------------------------------------------------------------------------*
  | Routine:	outline (baseline)
@@ -199,14 +212,20 @@ int baseline;
 	register int set;
 	register int output = !build;
 	register int j;
-	int oldset = 0;
+	register int left = 0;
+	int right, down, downright, downleft;
 
-	for (j = 1; j <= hdest; j++) {
+	for (j = 1; j <= destwidth; j++) {
 					/* decide whether to put out a '.' */
 					/* or '@' spot for pixel j */
-		set = ((!BtoW[output][j]) << 3) | ((!WtoB[output][j]) << 2) |
+	    right = Black[output][j+1] || WtoB[output][j+1];
+	    downleft = Black[build][j-1] || WtoB[build][j-1];
+	    down = Black[build][j] || WtoB[build][j];
+	    downright = Black[build][j+1] || WtoB[build][j+1];
+
+	    set = ((!BtoW[output][j]) << 3) | ((!WtoB[output][j]) << 2) |
 			((!White[output][j]) << 1) | !Black[output][j];
-		switch (set) {
+	    switch (set) {
 		case 14:	/* all black */
 		case 11:	/* all white->black */
 		case 10:	/* black and white->black */
@@ -217,35 +236,28 @@ int baseline;
 		case 13:	/* all white */
 		case  7:	/* all black->white */
 		case  5:	/* white and black->white */
+		case  1:	/* everything but all black */
 		    set = 0;
 		    break;
 
-		case  1:	/* everything but all black */
-		    if (oldset && (Black[output][j+1] || WtoB[output][j+1]))
-			set = 0;
-		    else
-			set = 1;
-		    break;
-
-		case 12:	/* black and white only */
+		case 12:	/* black and white */
 		case  8:	/* black and white and white->black */
 		case  4:	/* black and white and black->white */
-		    if (Black[build][j])
+		    if (down)
 			set = !lastline[j];
 		    else
 			set = 1;
 		    break;
 
 		case  6:	/* black and black->white */
-		    if (lastline[j] && !White[build][j])
+		    if (right && upright && downright && (down || up))
 			set = 0;
 		    else
 			set = 1;
 		    break;
 
 		case  9:	/* white and white->black */
-		    if ((!lastline[j] && !Black[build][j] && !WtoB[build][j])
-				|| White[output][j+1] || BtoW[output][j+1])
+		    if ((up && upright) || (down && downright) || left || right)
 			set = 1;
 		    else
 			set = 0;
@@ -254,11 +266,7 @@ int baseline;
 		case 15:	/* none of them */
 		case  3:	/* black->white and white->black */
 		case  0:	/* everything */
-		    if (lastline[j-1] + lastline[j] + lastline[j+1] + oldset +
-			(Black[output][j+1] || WtoB[output][j+1]) + 
-			(Black[build][j-1] || WtoB[build][j-1]) + 
-			(Black[build][j] || WtoB[build][j]) + 
-			(Black[build][j+1] || WtoB[build][j+1]) > 5)
+		    if((up+down+right+left+upright+downleft+upleft+downright)>4)
 			set = 0;
 		    else
 			set = 1;
@@ -266,20 +274,20 @@ int baseline;
 		}
 
 		if (set)  {
-		    if (!baseline || j != (hoffset + 1))
+		    if (!baseline || j != refhdest)
 			putchar('@');
 		    else
 			putchar('X');
 		} else {
-		    if (!baseline || j != (hoffset + 1))
+		    if (!baseline || j != refhdest)
 			putchar('.');
 		    else
 			putchar('x');
 		}
-		lastline[j-1] = oldset;
-		oldset = set;
+		lastline[j-1] = left;
+		left = set;
 	}
-	lastline[j-1] = oldset;
+	lastline[j-1] = left;
 	putchar('\n');
 }
 
