@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctags.1	6.1 (Berkeley) %G%
+.\"	@(#)ctags.1	6.2 (Berkeley) %G%
 .\"
 .TH CTAGS 1 ""
 .UC 4
@@ -12,6 +12,9 @@ ctags \- create a tags file
 .B ctags
 [ 
 .B \-BFatuwvx
+] [
+.B \-f 
+.I tagsfile
 ]
 name ...
 .SH DESCRIPTION
@@ -57,6 +60,14 @@ Sample use:
 	ctags \-v files | sort \-f > index
 	vgrind \-x index
 .fi
+.PP
+Normally 
+.I ctags
+places the tag descriptions in a file called
+.IR tags ;
+this may be overridden with the
+.B \-f
+option.
 .PP
 Files whose names end in 
 .B \.c
