@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 env printenv ${DESTDIR}/usr/ucb
+	install -s -o bin -g bin -m 755 env printenv ${DESTDIR}/usr/bin
 	rm -f ${DESTDIR}/usr/man/cat1/env.0
 	install -c -o bin -g bin -m 444 printenv.0 ${DESTDIR}/usr/man/cat1
 	ln ${DESTDIR}/usr/man/cat1/printenv.0 ${DESTDIR}/usr/man/cat1/env.0

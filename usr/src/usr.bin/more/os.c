@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)os.c	5.9 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <less.h>
+#include "pathnames.h"
 
 int reading;
 
@@ -91,7 +92,7 @@ lsystem(cmd)
 	 */
 	inp = dup(0);
 	(void)close(0);
-	if (open("/dev/tty", O_RDONLY, 0) < 0)
+	if (open(_PATH_TTY, O_RDONLY, 0) < 0)
 		(void)dup(inp);
 
 	/*

@@ -14,10 +14,10 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.3 (Berkeley) %G%
+# @(#)Makefile	5.4 (Berkeley) %G%
 #
 
-CFLAGS=	-O -I/nbsd/usr/include -I.
+CFLAGS=	-g -I.
 LIBC=	/lib/libc.a
 SRCS=	ch.c command.c decode.c help.c input.c line.c linenum.c main.c \
 	option.c os.c output.c position.c prim.c screen.c \
@@ -30,7 +30,7 @@ MAN=	more.0
 all: more
 
 more: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap /nbsd/lib/libc.a
+	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap
 
 clean:
 	rm -f ${OBJS} core more
@@ -42,9 +42,9 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/ucb/more
-	install -o bin -g bin -m 444 more.0 ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 more.help ${DESTDIR}/usr/lib
+	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 more.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 more.help ${DESTDIR}/usr/share/misc
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}

@@ -18,13 +18,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <less.h>
+#include "pathnames.h"
 
 #define	NO_MCA		0
 #define	MCA_DONE	1
@@ -581,8 +582,7 @@ editfile()
 		editor = getenv("EDITOR");
 		/* pass the line number to vi */
 		if (editor == NULL || *editor == '\0') {
-#define	EDIT_PGM	"/usr/ucb/vi"
-			editor = EDIT_PGM;
+			editor = _PATH_VI;
 			dolinenumber = 1;
 		}
 		else

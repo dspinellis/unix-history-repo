@@ -18,17 +18,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)help.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)help.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <less.h>
+#include "pathnames.h"
 
-#define	HELPFILE	"/usr/lib/more.help"
 help()
 {
 	char cmd[MAXPATHLEN + 20];
 
-	(void)sprintf(cmd, "-more %s", HELPFILE);
+	(void)sprintf(cmd, "-more %s", _PATH_HELPFILE);
 	lsystem(cmd);
 }

@@ -14,21 +14,16 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 #
-# -DEGREPSTD=path	location of std egrep (normally /usr/bin/egrep).
-# -DGREPSTD=path	location of std grep (normally /bin/grep).
-# -DFGREPSTD=path	location of std fgrep (normally /usr/bin/fgrep).
 # -Dstrrchr=rindex, -Dstrchr=index	for troglodytes.
 # -DSLOWSYS		invoke xread() for system time quirk on PDP, others? 
 # -DNOKANJI		default is for Japanese Unix.  undef only for raw
 #			 parity-marked search capability, not standard w/grep.
 # -DCHINESE		for systems using EUC Chinese2 codes
 
-CFLAGS=	-O -Dstrrchr=rindex -Dstrchr=index -DNOKANJI \
-	-DEGREPSTD=\"/usr/lib/old.egrep\" -DGREPSTD=\"/usr/lib/old.bin.grep\" \
-	-DFGREPSTD=\"/usr/lib/old.fgrep\"
+CFLAGS=	-O -Dstrrchr=rindex -Dstrchr=index -DNOKANJI
 LIBC=	/lib/libc.a
 ALL=	egrep old.ucb.grep old.bin.grep old.fgrep old.egrep
 SRCS=	egrep.c old.ucb.grep.c old.bin.grep.c old.fgrep.c old.egrep.c
@@ -50,14 +45,12 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 egrep ${DESTDIR}/usr/ucb/egrep
-	rm -f ${DESTDIR}/usr/ucb/fgrep ${DESTDIR}/usr/ucb/grep
-	ln ${DESTDIR}/usr/ucb/egrep ${DESTDIR}/usr/ucb/grep
-	ln ${DESTDIR}/usr/ucb/egrep ${DESTDIR}/usr/ucb/fgrep
-	install -s -o bin -g bin -m 755 old.bin.grep ${DESTDIR}/usr/lib/old.bin.grep
-	install -s -o bin -g bin -m 755 old.ucb.grep ${DESTDIR}/usr/lib/old.ucb.grep
-	install -s -o bin -g bin -m 755 old.fgrep ${DESTDIR}/usr/lib/old.fgrep
-	install -s -o bin -g bin -m 755 old.egrep ${DESTDIR}/usr/lib/old.egrep
+	install -s -o bin -g bin -m 755 egrep ${DESTDIR}/usr/bin/egrep
+	rm -f ${DESTDIR}/usr/bin/fgrep ${DESTDIR}/usr/bin/grep
+	ln ${DESTDIR}/usr/bin/egrep ${DESTDIR}/usr/bin/grep
+	ln ${DESTDIR}/usr/bin/egrep ${DESTDIR}/usr/bin/fgrep
+	install -s -o bin -g bin -m 755 old.ucb.grep old.bin.grep old.fgrep \
+		old.egrep ${DESTDIR}/usr/libexec
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/egrep.0
 	rm -f ${DESTDIR}/usr/man/cat1/fgrep.0

@@ -1,17 +1,19 @@
 #ifndef lint
-static char sccsid[] = "@(#)xget.c	4.4 %G%";
+static char sccsid[] = "@(#)xget.c	4.5 %G%";
 #endif
 
-#include "xmail.h"
 #include <sys/types.h>
 #include <sys/dir.h>
+#include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
-#include <sys/stat.h>
+#include "xmail.h"
+#include "pathnames.h"
+
 char *myname;
 int uid;
 struct direct *dbuf;
-char *maildir = "/usr/spool/secretmail/";
+char *maildir = _PATH_SECRETMAIL;
 FILE *kf, *mf;
 DIR *df;
 MINT *x, *b, *one, *t45, *z, *q, *r;

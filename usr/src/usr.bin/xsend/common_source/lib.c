@@ -1,8 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.1 %G%";
+static char sccsid[] = "@(#)lib.c	4.2 %G%";
 #endif
 
 #include "xmail.h"
+#include "pathnames.h"
+
 MINT *x, *b, *one, *c64, *t45, *z, *q, *r, *two, *t15;
 MINT *a[42];
 setup(s) char *s;
@@ -16,8 +18,7 @@ setup(s) char *s;
 		close(1);
 		dup(pf[0]);
 		dup(pf[1]);
-		execl("/usr/lib/makekey", "-", 0);
-		execl("/lib/makekey", "-", 0);
+		execl(_PATH_MAKEKEY, "-", 0);
 		exit(1);
 	}
 	write(pf[1], buf, 10);

@@ -22,12 +22,8 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
-
-#include <stdio.h>
-#include <ctype.h>
-#include <nlist.h>
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -39,6 +35,10 @@ static char sccsid[] = "@(#)vmstat.c	5.12 (Berkeley) %G%";
 #include <sys/namei.h>
 #include <sys/text.h>
 #include <sys/malloc.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <nlist.h>
+#include <paths.h>
 
 struct nlist nl[] = {
 #define	X_CPTIME	0
@@ -155,14 +155,14 @@ main(argc, argv)
 	long t;
 	char *arg, **cp, buf[BUFSIZ];
 
-	nlist("/vmunix", nl);
+	nlist(_PATH_UNIX, nl);
 	if(nl[0].n_type == 0) {
-		fprintf(stderr, "no /vmunix namelist\n");
+		fprintf(stderr, "vmstat: no %s namelist\n", _PATH_UNIX);
 		exit(1);
 	}
-	mf = open("/dev/kmem", 0);
+	mf = open(_PATH_KMEM, 0);
 	if(mf < 0) {
-		fprintf(stderr, "cannot open /dev/kmem\n");
+		fprintf(stderr, "vmstat: cannot open %s\n", _PATH_KMEM);
 		exit(1);
 	}
 	iter = 0;
@@ -178,7 +178,7 @@ main(argc, argv)
 
 		case 'z':
 			close(mf);
-			mf = open("/dev/kmem", 2);
+			mf = open(_PATH_KMEM, 2);
 			lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 			write(mf, &z.Sum, sizeof z.Sum);
 			exit(0);
