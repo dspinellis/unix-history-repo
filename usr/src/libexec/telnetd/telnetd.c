@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -11,13 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
- * Stripped-down telnet server.
+ * Telnet server.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
@@ -177,7 +177,7 @@ int	f;		/* the file descriptor */
     char	input;
 
     if (read(f, &input, 1) != 1) {
-	syslog(LOG_ERR, "read: %m\n");
+	syslog(LOG_INFO, "read: %m\n");
 	exit(1);
     }
     return input&0xff;
@@ -210,7 +210,7 @@ doit(f, who)
 
 	    terminaltype = 0;
 	    if (write(f, sbuf, sizeof sbuf) == -1) {
-		syslog(LOG_ERR, "write sbuf: %m\n");
+		syslog(LOG_INFO, "write sbuf: %m\n");
 		exit(1);
 	    }
 	    for (;;) {		/* ugly, but we are VERY early */
@@ -222,7 +222,7 @@ doit(f, who)
 			static char sbbuf[] = { IAC, SB, TELOPT_TTYPE,
 							TELQUAL_SEND, IAC, SE };
 			if (write(f, sbbuf, sizeof sbbuf) == -1) {
-			    syslog(LOG_ERR, "write sbbuf: %m\n");
+			    syslog(LOG_INFO, "write sbbuf: %m\n");
 			    exit(1);
 			}
 			break;
@@ -399,7 +399,7 @@ int	s;		/* socket number */
 	FD_ZERO(&excepts);
 	FD_SET(s, &excepts);
 	value = select(s+1, (fd_set *)0, (fd_set *)0, &excepts, &timeout);
-    } while ((value == -1) && (errno = EINTR));
+    } while ((value == -1) && (errno == EINTR));
 
     if (value < 0) {
 	fatalperror(pty, "select", errno);
@@ -418,7 +418,7 @@ int	s;		/* socket number */
 telnet(f, p)
 {
 	int on = 1;
-	char hostname[32];
+	char hostname[MAXHOSTNAMELEN];
 
 	net = f, pty = p;
 	ioctl(f, FIONBIO, &on);
@@ -522,7 +522,7 @@ telnet(f, p)
 		if (FD_ISSET(net, &ibits)) {
 #if	!defined(SO_OOBINLINE)
 			/*
-			 * In 4.2 (and some early 4.3) systems, the
+			 * In 4.2 (and 4.3 beta) systems, the
 			 * OOB indication and data handling in the kernel
 			 * is such that if two separate TCP Urgent requests
 			 * come in, one byte of TCP data will be overlaid.
@@ -830,6 +830,7 @@ telrcv()
 			continue;
 
 		default:
+			syslog(LOG_ERR, "telnetd: panic state=%d\n", state);
 			printf("telnetd: panic state=%d\n", state);
 			exit(1);
 		}
