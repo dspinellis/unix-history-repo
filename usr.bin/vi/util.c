@@ -545,6 +545,14 @@ baud_from_bval(sp)
 		if (v == EXTB)
 			return (38400);
 #endif
+#ifdef B57600
+		if (v == B57600)
+			return (57600);
+#endif
+#ifdef B115200
+		if (v == B115200)
+			return (115200);
+#endif
 		msgq(sp, M_ERR, "Unknown terminal baud rate %u.\n", v);
 		return (9600);
 	}
