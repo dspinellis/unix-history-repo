@@ -1,4 +1,4 @@
-/*	if_loop.c	4.6	82/03/15	*/
+/*	if_loop.c	4.7	82/03/19	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -54,7 +54,7 @@ looutput(ifp, m0, pf)
 			return (0);
 		}
 		IF_ENQUEUE(ifq, m0);
-		setipintr();
+		schednetisr(NETISR_IP);
 		break;
 #endif
 

@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.5	82/03/15	*/
+/*	if_dmc.c	4.6	82/03/19	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -314,7 +314,7 @@ dmcxint(unit)
 		switch (ui->ui_flags & DMC_PF) {
 #ifdef INET
 		case PF_INET:
-			setipintr();
+			schednetisr(NETISR_IP);
 			inq = &ipintrq;
 			break;
 #endif
