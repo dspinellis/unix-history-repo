@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.13	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.14	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -80,7 +80,7 @@ parse(addr, a, copyf)
 	**  Apply rewriting rules.
 	*/
 
-	rewrite(pvp);
+	rewrite(pvp, 0);
 
 	/*
 	**  See if we resolved to a real mailer.
@@ -478,8 +478,9 @@ struct match
 # define MAXMATCH	8	/* max params per rewrite */
 
 
-rewrite(pvp)
+rewrite(pvp, ruleset)
 	char **pvp;
+	int ruleset;
 {
 	register char *ap;		/* address pointer */
 	register char *rp;		/* rewrite pointer */
@@ -503,7 +504,7 @@ rewrite(pvp)
 	**	any that match.
 	*/
 
-	for (rwr = RewriteRules; rwr != NULL; )
+	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
 # ifdef DEBUGX
 		if (Debug)
