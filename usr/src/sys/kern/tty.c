@@ -1,4 +1,4 @@
-/*	tty.c	4.30	82/10/13	*/
+/*	tty.c	4.31	82/10/17	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -245,6 +245,7 @@ ttioctl(tp, com, data, flag)
 {
 	int dev = tp->t_dev;
 	extern int nldisp;
+	int s;
 
 	/*
 	 * If the ioctl involves modification,
@@ -263,64 +264,44 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIS:
 	case TIOCLBIC:
 	case TIOCLSET:
-/* this is reasonable, but impractical... 
-		if ((flag & FWRITE) == 0) {
-			u.u_error = EBADF;
-			return (1);
-		}
- */
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
 		   u.u_signal[SIGTTOU] != SIG_IGN &&
-		   u.u_signal[SIGTTOU] != SIG_HOLD
-/*
-						   &&
-		   (u.u_procp->p_flag&SDETACH)==0) {
-*/
-		   ) {
+		   u.u_signal[SIGTTOU] != SIG_HOLD) {
 			gsignal(u.u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t)&lbolt, TTOPRI);
 		}
 		break;
 	}
 
-	/*
-	 * Process the ioctl.
-	 */
 	switch (com) {
 
-	/*
-	 * Get discipline number
-	 */
+	/* get discipline number */
 	case TIOCGETD:
 		*(int *)data = tp->t_line;
 		break;
 
-	/*
-	 * Set line discipline
-	 */
+	/* set line discipline */
 	case TIOCSETD: {
 		register int t = *(int *)data;
+		int error;
 
-		if (t >= nldisp) {
-			u.u_error = ENXIO;
-			break;
-		}
-		(void) spl5();
+		if (t >= nldisp)
+			return (ENXIO);
+		s = spl5();
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
-			(*linesw[t].l_open)(dev, tp);
-		if (u.u_error==0)
-			tp->t_line = t;
-		(void) spl0();
+			error = (*linesw[t].l_open)(dev, tp);
+		splx(s);
+		if (error)
+			return (error);
+		tp->t_line = t;
 		break;
 	}
 
-	/*
-	 * Prevent more opens on channel
-	 */
+	/* prevent more opens on channel */
 	case TIOCEXCL:
 		tp->t_state |= TS_XCLUDE;
 		break;
@@ -329,9 +310,7 @@ ttioctl(tp, com, data, flag)
 		tp->t_state &= ~TS_XCLUDE;
 		break;
 
-	/*
-	 * Set new parameters
-	 */
+	/* set new parameters */
 	case TIOCSETP:
 	case TIOCSETN: {
 		register struct sgttyb *sg = (struct sgttyb *)data;
@@ -364,9 +343,7 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	/*
-	 * Send current parameters to user
-	 */
+	/* send current parameters to user */
 	case TIOCGETP: {
 		register struct sgttyb *sg = (struct sgttyb *)data;
 
@@ -378,9 +355,7 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	/*
-	 * Hang up line on last close
-	 */
+	/* hang up line on last close */
 	case TIOCHPCL:
 		tp->t_state |= TS_HUPCLS;
 		break;
@@ -410,9 +385,7 @@ ttioctl(tp, com, data, flag)
 			tp->t_state &= ~TS_ASYNC;
 		break;
 
-	/*
-	 * Set and fetch special characters
-	 */
+	/* set and fetch special characters */
 	case TIOCSETC:
 		bcopy(data, (caddr_t)&tun, sizeof (struct tchars));
 		break;
@@ -421,10 +394,7 @@ ttioctl(tp, com, data, flag)
 		bcopy((caddr_t)&tun, data, sizeof (struct tchars));
 		break;
 
-/* local ioctls */
-	/*
-	 * Set/get local special characters.
-	 */
+	/* set/get local special characters */
 	case TIOCSLTC:
 		bcopy(data, (caddr_t)&tlun, sizeof (struct ltchars));
 		break;
@@ -433,16 +403,12 @@ ttioctl(tp, com, data, flag)
 		bcopy((caddr_t)&tlun, data, sizeof (struct ltchars));
 		break;
 
-	/*
-	 * Return number of characters immediately available.
-	 */
+	/* return number of characters immediately available */
 	case FIONREAD:
 		*(off_t *)data = ttnread(tp);
 		break;
 
-	/*
-	 * Should allow SPGRP and GPGRP only if tty open for reading.
-	 */
+	/* should allow SPGRP and GPGRP only if tty open for reading */
 	case TIOCSPGRP:
 		tp->t_pgrp = *(int *)data;
 		break;
@@ -451,9 +417,7 @@ ttioctl(tp, com, data, flag)
 		*(int *)data = tp->t_pgrp;
 		break;
 
-	/*
-	 * Modify local mode word.
-	 */
+	/* Modify local mode word */
 	case TIOCLBIS:
 		tp->t_local |= *(int *)data;
 		break;
@@ -493,12 +457,10 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-/* end of locals */
-
 	default:
-		return (0);
+		return (-1);
 	}
-	return (1);
+	return (0);
 }
 
 ttnread(tp)
@@ -578,6 +540,7 @@ ttyopen(dev, tp)
 	tp->t_state |= TS_ISOPEN;
 	if (tp->t_line != NTTYDISC)
 		wflushtty(tp);
+	return (0);
 }
 
 /*
