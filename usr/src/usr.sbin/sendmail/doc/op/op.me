@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.51 (Berkeley) %G%
+.\"	@(#)op.me	8.52 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.51
+Version 8.52
 .sp
 For Sendmail Version 8.7
 .)l
@@ -4434,24 +4434,26 @@ The possible
 .i action s
 are:
 .(b
-  r	Reject undeclared 8-bit data;
-	don't convert 8BITMIME\(->7BIT (``reject'')
-  s	Reject undeclared 8-bit data;
-	do convert 8BITMIME\(->7BIT (``strict'')
-  c	Convert undeclared 8-bit data to MIME;
-	don't convert 8BITMIME\(->7BIT (``convert'')
-  m	Convert undeclared 8-bit data to MIME;
-	do convert 8BITMIME\(->7BIT (``mime'')
-  j	Pass undeclared 8-bit data;
-	don't convert 8BITMIME\(->7BIT (``just send 8'')
-  p	Pass undeclared 8-bit data;
-	do convert 8BITMIME\(->7BIT (``pass'')
-  a	Adaptive algorithm: see below
+.\"  r	Reject undeclared 8-bit data;
+.\"	don't convert 8BITMIME\(->7BIT (``reject'')
+  s	Reject undeclared 8-bit data (``strict'')
+.\"	do convert 8BITMIME\(->7BIT (``strict'')
+.\"  c	Convert undeclared 8-bit data to MIME;
+.\"	don't convert 8BITMIME\(->7BIT (``convert'')
+  m	Convert undeclared 8-bit data to MIME (``mime'')
+.\"	do convert 8BITMIME\(->7BIT (``mime'')
+.\"  j	Pass undeclared 8-bit data;
+.\"	don't convert 8BITMIME\(->7BIT (``just send 8'')
+  p	Pass undeclared 8-bit data (``pass'')
+.\"	do convert 8BITMIME\(->7BIT (``pass'')
+.\"  a	Adaptive algorithm: see below
 .)b
-The adaptive algorithm is to accept 8-bit data,
-converting it to 8BITMIME only if the receiver understands that,
-otherwise just passing it as undeclared 8-bit data;
-8BITMIME\(->7BIT conversions are done.
+.\"The adaptive algorithm is to accept 8-bit data,
+.\"converting it to 8BITMIME only if the receiver understands that,
+.\"otherwise just passing it as undeclared 8-bit data;
+.\"8BITMIME\(->7BIT conversions are done.
+In all cases properly declared 8BITMIME data will be converted to 7BIT
+as needed.
 .ip ErrorHeader=\fIfile-or-message\fP
 [E]
 Prepend error messages with the indicated message.
@@ -7398,7 +7400,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.51
+.\"Version 8.52
 .\".ce 0
 .bp 2
 .rs
