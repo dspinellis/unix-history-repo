@@ -205,6 +205,7 @@ scsi/cd.c		optional cd
 scsi/ch.c		optional ch
 scsi/scsiconf.c		optional scbus
 scsi/sd.c		optional sd
+scsi/sg.c		optional sg
 scsi/st.c		optional st
 ufs/mfs_vfsops.c	optional mfs
 ufs/mfs_vnops.c		optional mfs
