@@ -65,7 +65,10 @@
  * BPF trailer support added by David Greenman, 1/7/93
  * we_attach enhanced with link level address by Rodney W. Grimes, 1/30/93
  *
- * $Log:	if_we.c,v $
+ * $Log: if_we.c,v $
+ * Revision 1.1.1.1  1993/06/12  14:58:01  rgrimes
+ * Initial import, 0.1 + pk 0.2.4-B1
+ *
  * Revision 1.2  93/02/18  17:21:57  davidg
  * Bugs in mbuf cluster allocation fixed
  * Problem with nfs wanting mbufs aligned on longword boundries fixed
@@ -84,6 +87,7 @@
  * based on the National DS8390 Network Interface chip set.
  */
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "ioctl.h"

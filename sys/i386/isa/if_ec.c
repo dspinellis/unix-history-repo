@@ -65,6 +65,7 @@
  *   what else within the depths of the kernel would freak out if I left it.
  */
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "ioctl.h"
