@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	8.2.2.1 (Berkeley) %G%
+ *	@(#)radix.c	8.3 (Berkeley) %G%
  */
 
 /*

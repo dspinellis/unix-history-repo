@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.3.1.1 (Berkeley) %G%
+ *	@(#)rtsock.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -163,7 +163,12 @@ route_output(m, so)
 
 	case RTM_DELETE:
 		error = rtrequest(RTM_DELETE, dst, gate, netmask,
-				rtm->rtm_flags, (struct rtentry **)0);
+				rtm->rtm_flags, &saved_nrt);
+		if (error == 0) {
+			if ((rt = saved_nrt)->rt_refcnt <= 0)
+				rt->rt_refcnt++;
+			goto report;
+		}
 		break;
 
 	case RTM_GET:
@@ -179,6 +184,7 @@ route_output(m, so)
 		switch(rtm->rtm_type) {
 
 		case RTM_GET:
+		report:
 			dst = rt_key(rt);
 			gate = rt->rt_gateway;
 			netmask = rt_mask(rt);
@@ -193,7 +199,7 @@ route_output(m, so)
 					ifaaddr = 0;
 			    }
 			}
-			len = rt_msg2(RTM_GET, &info, (caddr_t)0,
+			len = rt_msg2(rtm->rtm_type, &info, (caddr_t)0,
 				(struct walkarg *)0);
 			if (len > rtm->rtm_msglen) {
 				struct rt_msghdr *new_rtm;
@@ -203,7 +209,7 @@ route_output(m, so)
 				Bcopy(rtm, new_rtm, rtm->rtm_msglen);
 				Free(rtm); rtm = new_rtm;
 			}
-			(void)rt_msg2(RTM_GET, &info, (caddr_t)rtm,
+			(void)rt_msg2(rtm->rtm_type, &info, (caddr_t)rtm,
 				(struct walkarg *)0);
 			rtm->rtm_flags = rt->rt_flags;
 			rtm->rtm_rmx = rt->rt_rmx;
