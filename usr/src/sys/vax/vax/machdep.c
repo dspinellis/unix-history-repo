@@ -1,4 +1,4 @@
-/*	machdep.c	4.58	82/07/22	*/
+/*	machdep.c	4.59	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -322,7 +322,7 @@ vmtime(otime, olbolt, oicr)
 /*
  * Send an interrupt to process
  *
- * SHOULD CHANGE THIS TO PASS ONE MORE WORK SO THAT ALL INFORMATION
+ * SHOULD CHANGE THIS TO PASS ONE MORE WORD SO THAT ALL INFORMATION
  * PROVIDED BY HARDWARE IS AVAILABLE TO THE USER PROCESS.
  */
 sendsig(p, n)
@@ -774,7 +774,7 @@ machinecheck(cmcf)
 		   mcf->mc8_timo*4, mcf->mc8_parity, mcf->mc8_sbier,
 		   mcf->mc8_pc, mcf->mc8_psl, sbifs);
 		/* THE FUNNY BITS IN THE FOLLOWING ARE FROM THE ``BLACK */
-		/* BOOK AND SHOULD BE PUT IN AN ``sbi.h'' */
+		/* BOOK'' AND SHOULD BE PUT IN AN ``sbi.h'' */
 		mtpr(SBIFS, sbifs &~ 0x2000000);
 		mtpr(SBIER, mfpr(SBIER) | 0x70c0);
 		break;
