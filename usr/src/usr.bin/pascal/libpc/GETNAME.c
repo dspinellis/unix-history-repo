@@ -77,6 +77,10 @@ GETNAME(filep, name, maxnamlen, datasize)
 			/*
 			 * have a previous buffer, close associated file
 			 */
+			if (filep->fblk > PREDEF) {
+				fflush(filep->fbuf);
+				setbuf(filep->fbuf, NULL);
+			}
 			fclose(filep->fbuf);
 			if (ferror(filep->fbuf)) {
 				ERROR(ECLOSE, filep->pfname);
