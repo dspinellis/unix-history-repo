@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.3 (CWI) 85/10/02";
+static char sccsid[] = "@(#)main.c	1.4 (CWI) 86/11/10";
 #endif lint
 
 /*
@@ -31,6 +31,8 @@ int	argc; char   *argv[];
 			device = HARRIS;
 		else if(strcmp(p, "ver") == 0)
 			device = DEVVER;
+		else if(strcmp(p, "psc") == 0)
+			device = DEVPSC;
 		else
 			fprintf(stderr, "tbl: warning: unknown typesetter %s\n", p);
 	}
@@ -74,6 +76,12 @@ swapin()
 		}
 		if(strcmp("-Tver", *sargv) == 0){
 			device = DEVVER;
+			sargc--;
+			sargv++;
+			break;
+		}
+		if(strcmp("-Tpsc", *sargv) == 0){
+			device = DEVPSC;
 			sargc--;
 			sargv++;
 			break;
@@ -122,6 +130,9 @@ tableput(){
 		break;
 	case HARRIS:
 		dprint(".\\\" -- device HARRIS\n");
+		break;
+	case DEVPSC:
+		dprint(".\\\" -- device PostScript\n");
 		break;
 	case DEVVER:
 		dprint(".\\\" -- device VERSATEC\n");
