@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	4.6 (Berkeley) %G%
+ *	@(#)syslog.h	4.7 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,8 @@
 #define LOG_MAIL	(2<<3)	/* mail system */
 #define LOG_DAEMON	(3<<3)	/* system daemons */
 #define LOG_AUTH	(4<<3)	/* security/authorization messages */
-	/* codes 5 - 15 reserved for system use */
+#define LOG_SYSLOG	(5<<3)	/* messages generated internally by syslogd */
+	/* other codes through 15 reserved for system use */
 #define LOG_LOCAL0	(16<<3)	/* reserved for local use */
 #define LOG_LOCAL1	(17<<3)	/* reserved for local use */
 #define LOG_LOCAL2	(18<<3)	/* reserved for local use */
