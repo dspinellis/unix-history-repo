@@ -1,4 +1,4 @@
-/*	in.c	4.11	82/11/13	*/
+/*	in.c	4.12	83/03/14	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -25,7 +25,7 @@ inet_netmatch(sin1, sin2)
 	struct sockaddr_in *sin1, *sin2;
 {
 
-	return (sin1->sin_addr.s_net == sin2->sin_addr.s_net);
+	return (in_netof(sin1->sin_addr) == in_netof(sin2->sin_addr));
 }
 
 /*
@@ -95,7 +95,7 @@ if_rtinit(ifp, flags)
 		return;
 	bzero((caddr_t)&sin, sizeof (sin));
 	sin.sin_family = AF_INET;
-	sin.sin_addr = if_makeaddr(ifp->if_net, 0);
+	sin.sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
 	rtinit((struct sockaddr *)&sin, &ifp->if_addr, flags);
 }
 #endif
