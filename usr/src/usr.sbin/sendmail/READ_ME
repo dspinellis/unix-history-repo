@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.6 (Berkeley) %G%
+ *	@(#)READ_ME	8.7 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -122,6 +122,18 @@ is highly recommended; it gets rid of several stupid limits, it's much
 faster, and the interface is nicer to animals and plants.  You will
 also probably find that you have to add -I/where/you/put/db/include
 to the sendmail makefile to get db.h to work properly.
+
+
++-------------+
+| USE WITH MH |
++-------------+
+
+This version of sendmail notices and reports certain kinds of SMTP
+protocol violations that were ignored by older versions.  If you
+are running MH you may wish to install the patch in contrib/mh.patch
+that will prevent these warning reports.  This patch also works
+with the old version of sendmail, so it's safe to go ahead and
+install it.
 
 
 +---------------------+
