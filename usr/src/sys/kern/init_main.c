@@ -1,4 +1,4 @@
-/*	init_main.c	4.48	83/03/31	*/
+/*	init_main.c	4.49	83/04/04	*/
 
 #include "../machine/pte.h"
 
@@ -170,14 +170,8 @@ main(regs)
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
 		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
-#ifdef NOPAGING
-		for (;;)
-			sleep((caddr_t)&u, PSLEP);
-		/*NOTREACHED*/
-#else
 		pageout();
 		/*NOTREACHED*/
-#endif
 	}
 
 	/*
