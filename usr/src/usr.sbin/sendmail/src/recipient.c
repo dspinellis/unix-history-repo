@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -677,7 +677,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ADDRESS **sendq;
 	ENVELOPE *e;
 {
-	register FILE *fp;
+	register FILE *fp = NULL;
 	char *oldto = e->e_to;
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
@@ -764,29 +764,46 @@ include(fname, forwarding, ctladdr, sendq, e)
 	if (fp == NULL)
 	{
 		rval = errno;
-		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: open: %s\n", errstring(rval));
-		goto resetuid;
 	}
-
-	if (ca == NULL)
+	else if (ca == NULL)
 	{
 		struct stat st;
 
 		if (fstat(fileno(fp), &st) < 0)
 		{
 			rval = errno;
-			clrevent(ev);
 			syserr("Cannot fstat %s!", fname);
-			goto resetuid;
 		}
-		ctladdr->q_uid = st.st_uid;
-		ctladdr->q_gid = st.st_gid;
-		ctladdr->q_flags |= QGOODUID;
+		else
+		{
+			ctladdr->q_uid = st.st_uid;
+			ctladdr->q_gid = st.st_gid;
+			ctladdr->q_flags |= QGOODUID;
+		}
 	}
 
 	clrevent(ev);
+
+resetuid:
+
+#ifdef HASSETREUID
+	if (saveduid == 0)
+	{
+		if (uid != 0)
+			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
+				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
+					RealUid, getuid(), geteuid());
+		setgid(savedgid);
+	}
+#endif
+
+	if (tTd(27, 9))
+		printf("include: reset uid = %d/%d\n", getuid(), geteuid());
+
+	if (fp == NULL)
+		return rval;
 
 	if (bitset(EF_VRFYONLY, e->e_flags))
 	{
@@ -794,7 +811,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		ctladdr->q_flags |= QVERIFIED;
 		e->e_nrcpts++;
 		xfclose(fp, "include", fname);
-		goto resetuid;
+		return rval;
 	}
 
 	/* read the file -- each line is a comma-separated list. */
@@ -841,22 +858,6 @@ include(fname, forwarding, ctladdr, sendq, e)
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
 	e->e_to = oldto;
-
-resetuid:
-
-#ifdef HASSETREUID
-	if (saveduid == 0)
-	{
-		if (uid != 0)
-			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
-				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
-					RealUid, getuid(), geteuid());
-		setgid(savedgid);
-	}
-#endif
-
-	if (tTd(27, 9))
-		printf("include: reset uid = %d/%d\n", getuid(), geteuid());
 	return rval;
 }
 
