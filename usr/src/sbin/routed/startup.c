@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -188,7 +188,7 @@ addrouteforif(ifp)
 {
 	struct sockaddr_in net;
 	struct sockaddr *dst;
-	int state, metric;
+	int state;
 	register struct rt_entry *rt;
 
 	if (ifp->int_flags & IFF_POINTOPOINT)
@@ -271,7 +271,7 @@ add_ptopt_localrt(ifp)
 			return;
 		rtdelete(rt);
 	}
-	rtadd(dst, &loopaddr, 0, state);
+	rtadd(dst, &loopaddr, 1, state);
 }
 
 /*
@@ -319,6 +319,8 @@ gwkludge()
 			continue;
 		if (!gethostnameornumber(gname, &gate))
 			continue;
+		if (metric == 0)			/* XXX */
+			metric = 1;
 		if (strcmp(qual, "passive") == 0) {
 			/*
 			 * Passive entries aren't placed in our tables,
