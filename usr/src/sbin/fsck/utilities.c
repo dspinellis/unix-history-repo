@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -311,6 +311,32 @@ catch()
 
 	ckfini();
 	exit(12);
+}
+
+/*
+ * When preening, allow a single quit to signal
+ * a special exit after filesystem checks complete
+ * so that reboot sequence may be interrupted.
+ */
+catchquit()
+{
+	extern returntosingle;
+
+	printf("returning to single-user after filesystem check\n");
+	returntosingle = 1;
+	(void)signal(SIGQUIT, SIG_DFL);
+}
+
+/*
+ * Ignore a single quit signal; wait and flush just in case.
+ * Used by child processes in preen.
+ */
+voidquit()
+{
+
+	sleep(1);
+	(void)signal(SIGQUIT, SIG_IGN);
+	(void)signal(SIGQUIT, SIG_DFL);
 }
 
 /*

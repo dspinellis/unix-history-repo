@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,7 +24,8 @@ static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
 #include "fsck.h"
 
 char	*rawname(), *unrawname(), *blockcheck();
-int	catch();
+int	catch(), catchquit(), voidquit();
+int	returntosingle;
 int	(*signal())();
 
 main(argc, argv)
@@ -75,6 +76,8 @@ main(argc, argv)
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void)signal(SIGINT, catch);
+	if (preen)
+		(void)signal(SIGQUIT, catchquit);
 	if (argc) {
 		while (argc-- > 0) {
 			hotroot = 0;
@@ -109,6 +112,7 @@ main(argc, argv)
 					exit(8);
 				}
 				if (pid == 0) {
+					(void)signal(SIGQUIT, voidquit);
 					name = blockcheck(fsp->fs_spec);
 					if (name == NULL)
 						exit(8);
@@ -127,6 +131,8 @@ main(argc, argv)
 	if (sumstatus)
 		exit(8);
 	(void)endfsent();
+	if (returntosingle)
+		exit(2);
 	exit(0);
 }
 
