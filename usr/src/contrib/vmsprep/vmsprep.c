@@ -108,6 +108,7 @@ int pipeout=0;
 					fixedpath[i]=toupper(fixedpath[i]);
 				}
 			}
+			dot=0;
 			for(i=0;i<strlen(fixedname);i++) {
 				if(fixedname[i]=='/') {
 					fixedname[i]='.';
