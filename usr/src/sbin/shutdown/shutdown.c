@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -52,6 +52,11 @@ time_t	getsdt();
 
 extern	char *ctime();
 extern	struct tm *localtime();
+extern	long time();
+
+extern	char *strcpy();
+extern	char *strncat();
+extern	off_t lseek();
 
 struct	utmp utmp;
 int	sint;
@@ -59,7 +64,7 @@ int	stogo;
 char	tpath[] =	"/dev/";
 int	nlflag = 1;		/* nolog yet to be done */
 int	killflg = 1;
-int	reboot = 0;
+int	doreboot = 0;
 int	halt = 0;
 int     fast = 0;
 char    *nosync = NULL;
@@ -109,7 +114,7 @@ main(argc,argv)
 	FILE *termf;
 
 	shutter = getlogin();
-	gethostname(hostname, sizeof (hostname));
+	(void) gethostname(hostname, sizeof (hostname));
 	argc--, argv++;
 	while (argc > 0 && (f = argv[0], *f++ == '-')) {
 		while (i = *f++) switch (i) {
@@ -123,7 +128,7 @@ main(argc,argv)
 			fast = 1;
 			continue;
 		case 'r':
-			reboot = 1;
+			doreboot = 1;
 			continue;
 		case 'h':
 			halt = 1;
@@ -147,7 +152,7 @@ main(argc,argv)
 		fprintf(stderr, "NOT super-user\n");
 		finish();
 	}
-	nowtime = time((time_t *)0);
+	nowtime = time((long *)0);
 	sdt = getsdt(argv[0]);
 	argc--, argv++;
 	i = 0;
@@ -164,22 +169,22 @@ main(argc,argv)
 		printf("%d hour%s ", h, h != 1 ? "s" : "");
 	printf("%d minute%s) ", m, m != 1 ? "s" : "");
 #ifndef DEBUG
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
+	(void) signal(SIGHUP, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
 #endif
-	signal(SIGTTOU, SIG_IGN);
-	signal(SIGTERM, finish);
-	signal(SIGALRM, timeout);
-	setpriority(PRIO_PROCESS, 0, PRIO_MIN);
-	fflush(stdout);
+	(void) signal(SIGTTOU, SIG_IGN);
+	(void) signal(SIGTERM, finish);
+	(void) signal(SIGALRM, timeout);
+	(void) setpriority(PRIO_PROCESS, 0, PRIO_MIN);
+	(void) fflush(stdout);
 #ifndef DEBUG
 	if (i = fork()) {
 		printf("[pid %d]\n", i);
 		exit(0);
 	}
 #else
-	putc('\n', stdout);
+	(void) putc('\n', stdout);
 #endif
 	sint = 1 HOURS;
 	f = "";
@@ -200,23 +205,23 @@ main(argc,argv)
 		}
 		if (sint >= stogo || sint == 0)
 			f = "FINAL ";
-		nowtime = time((time_t *) 0);
-		lseek(ufd, 0L, 0);
-		while (read(ufd,&utmp,sizeof utmp)==sizeof utmp)
+		nowtime = time((long *)0);
+		(void) lseek(ufd, 0L, 0);
+		while (read(ufd,(char *)&utmp,sizeof utmp)==sizeof utmp)
 		if (utmp.ut_name[0] &&
 		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name))) {
 			if (setjmp(alarmbuf))
 				continue;
-			strcpy(term, tpath);
-			strncat(term, utmp.ut_line, sizeof utmp.ut_line);
-			alarm(3);
+			(void) strcpy(term, tpath);
+			(void) strncat(term, utmp.ut_line, sizeof utmp.ut_line);
+			(void) alarm(3);
 #ifdef DEBUG
 			if ((termf = stdout) != NULL)
 #else
 			if ((termf = fopen(term, "w")) != NULL)
 #endif
 			{
-				alarm(0);
+				(void) alarm(0);
 				setbuf(termf, tbuf);
 				fprintf(termf, "\n\r\n");
 				warn(termf, sdt, nowtime, f);
@@ -226,21 +231,21 @@ main(argc,argv)
 					for (mess = nolog2; *mess; mess++)
 						fprintf(termf, " %s", *mess);
 				}
-				fputc('\r', termf);
-				fputc('\n', termf);
-				alarm(5);
+				(void) fputc('\r', termf);
+				(void) fputc('\n', termf);
+				(void) alarm(5);
 #ifdef DEBUG
-				fflush(termf);
+				(void) fflush(termf);
 #else
-				fclose(termf);
+				(void) fclose(termf);
 #endif
-				alarm(0);
+				(void) alarm(0);
 			}
 		}
 		if (stogo <= 0) {
 	printf("\n\007\007System shutdown time has arrived\007\007\n");
 			log_entry(sdt);
-			unlink(nologin);
+			(void) unlink(nologin);
 			if (!killflg) {
 				printf("but you'll have to do it yourself\n");
 				finish();
@@ -248,18 +253,18 @@ main(argc,argv)
 			if (fast)
 				doitfast();
 #ifndef DEBUG
-			kill(-1, SIGTERM);	/* terminate everyone */
+			(void) kill(-1, SIGTERM);	/* terminate everyone */
 			sleep(5);		/* & wait while they die */
-			if (reboot)
+			if (doreboot)
 				execle(REBOOT, "reboot", nosync, 0, 0);
 			if (halt)
 				execle(HALT, "halt", nosync, 0, 0);
-			kill(1, SIGTERM);	/* sync */
-			kill(1, SIGTERM);	/* sync */
+			(void) kill(1, SIGTERM);	/* sync */
+			(void) kill(1, SIGTERM);	/* sync */
 			sleep(20);
 #else
 			printf("EXTERMINATE EXTERMINATE\n");
-			if (reboot)
+			if (doreboot)
 				printf("REBOOT");
 			if (halt)
 				printf(" HALT");
@@ -271,9 +276,9 @@ main(argc,argv)
 #endif
 			finish();
 		}
-		stogo = sdt - time((time_t *) 0);
+		stogo = sdt - time((long *) 0);
 		if (stogo > 0 && sint > 0)
-			sleep(sint<stogo ? sint : stogo);
+			sleep((unsigned)(sint<stogo ? sint : stogo));
 		stogo -= sint;
 		first = 0;
 	}
@@ -301,7 +306,7 @@ getsdt(s)
 		if (t <= 0)
 			t = 5;
 		t *= 60;
-		tim = time((time_t *) 0) + t;
+		tim = time((long *) 0) + t;
 		return(tim);
 	}
 	t = 0;
@@ -319,7 +324,7 @@ getsdt(s)
 		goto badform;
 	tim += t; 
 	tim *= 60;
-	t1 = time((time_t *) 0);
+	t1 = time((long *) 0);
 	lt = localtime(&t1);
 	t = lt->tm_sec + lt->tm_min*60 + lt->tm_hour*3600;
 	if (tim < t || tim >= (24*3600)) {
@@ -331,6 +336,7 @@ getsdt(s)
 badform:
 	printf("Bad time format\n");
 	finish();
+	/*NOTREACHED*/
 }
 
 warn(term, sdt, now, type)
@@ -373,7 +379,7 @@ doitfast()
 
 	if ((fastd = fopen(fastboot, "w")) != NULL) {
 		putc('\n', fastd);
-		fclose(fastd);
+		(void) fclose(fastd);
 	}
 }
 
@@ -383,21 +389,21 @@ nolog(sdt)
 	FILE *nologf;
 	register char **mess;
 
-	unlink(nologin);			/* in case linked to std file */
+	(void) unlink(nologin);			/* in case linked to std file */
 	if ((nologf = fopen(nologin, "w")) != NULL) {
 		fprintf(nologf, nolog1, (ctime(&sdt)) + 11);
-		putc('\t', nologf);
+		(void) putc('\t', nologf);
 		for (mess = nolog2; *mess; mess++)
 			fprintf(nologf, " %s", *mess);
-		putc('\n', nologf);
-		fclose(nologf);
+		(void) putc('\n', nologf);
+		(void) fclose(nologf);
 	}
 }
 
 finish()
 {
-	signal(SIGTERM, SIG_IGN);
-	unlink(nologin);
+	(void) signal(SIGTERM, SIG_IGN);
+	(void) unlink(nologin);
 	exit(0);
 }
 
@@ -432,7 +438,7 @@ log_entry(now)
 		printf("Shutdown: log entry failed\n");
 		return;
 	}
-	fseek(fp, 0L, 2);
+	(void) fseek(fp, 0L, 2);
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Shutdown:", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
 		tm->tm_mday, tm->tm_year + 1900);
@@ -440,6 +446,6 @@ log_entry(now)
 		fprintf(fp, " %s", *mess);
 	if (shutter)
 		fprintf(fp, " (by %s!%s)", hostname, shutter);
-	fputc('\n', fp);
-	fclose(fp);
+	(void) fputc('\n', fp);
+	(void) fclose(fp);
 }
