@@ -1,4 +1,4 @@
-/*	systm.h	4.4	%G%	*/
+/*	systm.h	4.5	%G%	*/
 
 /*
  * Random set of variables
@@ -60,6 +60,7 @@ extern	int coresw;		/* switch to force action on core dumps */
 
 dev_t	getmdev();
 daddr_t	bmap();
+caddr_t	calloc();
 unsigned max();
 unsigned min();
 int	memall();
