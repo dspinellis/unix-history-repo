@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,9 +38,6 @@ domaininit()
 #endif
 #ifdef ISO
 	ADDDOMAIN(iso);
-#endif
-#ifdef RMP
-	ADDDOMAIN(rmp);
 #endif
 #ifdef CCITT
 	ADDDOMAIN(ccitt);
