@@ -11,6 +11,7 @@
 # Missing:  ms
 # Broken: doc
 
-SUBDIR=	dict man me misc mk skel tabset termcap tmac zoneinfo
+SUBDIR=	dict man me misc mk skel syscons.fonts syscons.keymaps tabset \
+	termcap tmac zoneinfo
 
 .include <bsd.subdir.mk>
