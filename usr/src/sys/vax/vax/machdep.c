@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.30 (Berkeley) %G%
+ *	@(#)machdep.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -60,6 +60,14 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 int	physmem = MAXMEM;	/* max supported memory, changes to actual */
+/*
+ * safepri is a safe priority for sleep to set for a spin-wait
+ * during autoconfiguration or after a panic.  On the vax, this must
+ * be > 0 so that we can take interrupts after a panic while on the interrupt
+ * stack.  Otherwise, we will get a reserved operand fault when we return
+ * from any interrupt that comes in.
+ */
+int	safepri = 1;
 
 /*
  * Machine-dependent startup code
