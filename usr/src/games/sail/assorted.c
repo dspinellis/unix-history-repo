@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)assorted.c	2.1 83/10/31";
+static	char *sccsid = "@(#)assorted.c	2.2 83/11/01";
 #endif
 
 #include "externs.h"
@@ -197,7 +197,7 @@ int which;
 	register struct snag *s = to->file->fouls;
 
 	Write(W_FOUL, from, 0, which, 0, 0, 0);
-	for (n = 0; n < NSHIP && (s->turnfoul || s->toship != from); n++, s++)
+	for (n = 0; n < NSHIP && (!s->turnfoul || s->toship != from); n++, s++)
 		;
 	if (n < NSHIP)
 		Write(W_FOUL, to, 0, n, 0, 0, 0);
@@ -223,10 +223,10 @@ int which;
 	register struct snag *s = to->file->grapples;
 
 	Write(W_GRAP, from, 0, which, 0, 0, 0);
-	for (n = 0; n < NSHIP && (s->turnfoul || s->toship != from); n++, s++)
+	for (n = 0; n < NSHIP && (!s->turnfoul || s->toship != from); n++, s++)
 		;
 	if (n < NSHIP)
-		Write(W_FOUL, to, 0, n, 0, 0, 0);
+		Write(W_GRAP, to, 0, n, 0, 0, 0);
 	if (!snagged2(from, to)) {
 		if (!fouled(from) && !grappled(from)) {
 			unboard(from, from, 1);		/* defense */
