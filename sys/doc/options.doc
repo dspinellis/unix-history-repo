@@ -1,4 +1,4 @@
-$Id: options.doc,v 1.8 1994/06/08 23:42:02 phk Exp $
+$Id: options.texi,v 1.11 1994/06/28 06:10:40 jkh Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -555,6 +555,19 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      required unless `COMCONSOLE' is enabled, in which case a serial
      port is made into the console.
 
+`device psm0 at isa? port "IO_KBD" tty irq 12 vector psmintr'
+     This driver provides support for the IBM-style PS/2 mouse now
+     popular on many PCs.  This driver shares an address with the
+     console driver and therefore requires that the option
+     `ALLOW_CONFLICT_IOADDR' also be set.  It is also important that
+     the console driver (`pc' or `sc') *preceed* this driver in your
+     kernel configuration file in order to get priority.  All in all,
+     this driver is a hack and should really be integrated into the
+     console driver itself, evidence of which can be easily seen when
+     trying to use the mouse and keyboard at the same time in X (try
+     it).  Volunteers willing to clean this up and do it properly are
+     most welcome!
+
 `device sio0 at isa? port "IO_COM1" tty irq 4 vector siointr'
 `device sio1 at isa? port "IO_COM2" tty irq 3 vector siointr'
 `device sio2 at isa? port "IO_COM3" tty irq 5 vector siointr'
@@ -586,9 +599,9 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      cartridge tape controllers.
 
 `device ze0 at isa? port 0x300 net irq 5 iomem 0xd8000 vector zeintr'
-     This driver supports certain PCMCIA ethernet cards.  It was originally
-     written for the IBM Credit Card Adapter and has also been tested
-     with the National Semi `InfoMover' PCMCIA card.
+     This driver supports certain PCMCIA ethernet cards.  It was
+     originally written for the IBM Credit Card Adapter and has also
+     been tested with the National Semi `InfoMover' PCMCIA card.
 
 EISA-bus Devices and Options
 ============================
