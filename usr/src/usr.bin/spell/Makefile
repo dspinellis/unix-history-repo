@@ -1,11 +1,15 @@
-#	@(#)Makefile	4.5	%G%
+#	@(#)Makefile	4.6	%G%
 
-# The word lists may be extended by adding local words.
+# The word lists may be extended by adding special words.
 # The set of files containing words to be added are defined
-# by LOCAL below. By default we add commands and library
-# function names defined in /usr/man/man[1238n].
+# by SPECIAL below. By default we add commands and library
+# function names defined in /usr/man/man[1238n]. The word
+# lists also may be extended by adding local words. The set
+# of files containing words to be added are defined by LOCAL
+# below. Typically these lists reside in /usr/local/dict.
 
-LOCAL=special.4bsd
+SPECIAL=special.4bsd
+LOCAL=
 
 CFLAGS= -O
 
@@ -16,9 +20,10 @@ install:	all
 	install -s spellin ${DESTDIR}/usr/bin
 	install -s spellout ${DESTDIR}/usr/bin
 	install -c spell.sh $(DESTDIR)/usr/bin/spell
-	install -m 444 -c hlista $(DESTDIR)/usr/dict
-	install -m 444 -c hlistb $(DESTDIR)/usr/dict
-	install -m 444 -c hstop $(DESTDIR)/usr/dict
+	install -m 444 hlista $(DESTDIR)/usr/dict
+	install -m 444 hlistb $(DESTDIR)/usr/dict
+	install -m 444 hstop $(DESTDIR)/usr/dict
+	install -m 444 hlist $(DESTDIR)/usr/dict
 	install -m 444 -c words $(DESTDIR)/usr/dict
 	install -m 444 -c american $(DESTDIR)/usr/dict
 	install -m 444 -c british $(DESTDIR)/usr/dict
@@ -40,9 +45,9 @@ spellout: spellout.o
 
 hlist: /usr/dict/words spellin
 	spellin <words >hlist
-hlista: american $(LOCAL) hlist spellin
-	(cat american $(LOCAL))|spellin hlist >hlista
-hlistb: british $(LOCAL) hlist spellin
-	(cat british $(LOCAL))|spellin hlist >hlistb
+hlista: american $(SPECIAL) $(LOCAL) hlist spellin
+	(cat american $(SPECIAL) $(LOCAL))|spellin hlist >hlista
+hlistb: british $(SPECIAL) $(LOCAL) hlist spellin
+	(cat british $(SPECIAL) $(LOCAL))|spellin hlist >hlistb
 hstop: stop spellin
 	spellin <stop >hstop
