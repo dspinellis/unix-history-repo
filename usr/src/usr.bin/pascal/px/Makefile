@@ -3,15 +3,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-SCCSID = "@(#)Makefile 5.4 %G%"
+SCCSID = "@(#)Makefile 5.5 %G%"
 
 DESTDIR =
 BINDIR = /usr/ucb
 LIBDIR = /usr/lib
 SRCDIR = ../src
-LIBPCDIR = /usr/src/usr.lib/libpc
+LIBPCDIR = ../../../usr.lib/libpc
 CC = cc
 CFLAGS = -O -I${SRCDIR} -I${LIBPCDIR}
 OPT = /lib/c2
@@ -102,14 +102,14 @@ utilities.o: utilities.c
 version.o: version.c
 int.o: whoami.h
 int.o: vars.h
-int.o: /usr/src/usr.lib/libpc/libpc.h
+int.o: ../../../usr.lib/libpc/libpc.h
 int.o: ../src/objfmt.h
 interp.o: whoami.h
 interp.o: vars.h
 interp.o: ../src/objfmt.h
 interp.o: h02opcs.h
 interp.o: machdep.h
-interp.o: /usr/src/usr.lib/libpc/libpc.h
+interp.o: ../../../usr.lib/libpc/libpc.h
 utilities.o: whoami.h
 utilities.o: vars.h
 utilities.o: ../src/objfmt.h
