@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.3 (Berkeley) %G%
+ *	@(#)ip_input.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -300,7 +300,7 @@ ip_reass(ip, fp)
 	 * If first fragment to arrive, create a reassembly queue.
 	 */
 	if (fp == 0) {
-		if ((t = m_get(M_WAIT, MT_FTABLE)) == NULL)
+		if ((t = m_get(M_DONTWAIT, MT_FTABLE)) == NULL)
 			goto dropfrag;
 		fp = mtod(t, struct ipq *);
 		insque(fp, &ipq);
@@ -730,7 +730,9 @@ ip_srcroute()
 
 	if (ip_nhops == 0)
 		return ((struct mbuf *)0);
-	m = m_get(M_WAIT, MT_SOOPTS);
+	m = m_get(M_DONTWAIT, MT_SOOPTS);
+	if (m == 0)
+		return ((struct mbuf *)0);
 	m->m_len = ip_nhops * sizeof(struct in_addr) + IPOPT_OFFSET + 1 + 1;
 
 	/*
