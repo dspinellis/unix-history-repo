@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -303,7 +303,7 @@ source(argc, argv)
 	struct stat stb;
 	static struct buffer buffer;
 	struct buffer *bp;
-	int x, sizerr, f, amt;
+	int x, readerr, f, amt;
 	off_t i;
 	char buf[BUFSIZ];
 
@@ -362,20 +362,20 @@ notreg:
 			(void) close(f);
 			continue;
 		}
-		sizerr = 0;
+		readerr = 0;
 		for (i = 0; i < stb.st_size; i += bp->cnt) {
 			amt = bp->cnt;
 			if (i + amt > stb.st_size)
 				amt = stb.st_size - i;
-			if (sizerr == 0 && read(f, bp->buf, amt) != amt)
-				sizerr = 1;
+			if (readerr == 0 && read(f, bp->buf, amt) != amt)
+				readerr = errno;
 			(void) write(rem, bp->buf, amt);
 		}
 		(void) close(f);
-		if (sizerr == 0)
+		if (readerr == 0)
 			ga();
 		else
-			error("rcp: %s: file changed size\n", name);
+			error("rcp: %s: %s\n", name, sys_errlist[readerr]);
 		(void) response();
 	}
 }
