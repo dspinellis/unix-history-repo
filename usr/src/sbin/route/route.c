@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -133,13 +133,6 @@ char *argv[];
 	int bufsize, needed, seqno, rlen;
 	char *buf, *next, *lim;
 	register struct rt_msghdr *rtm;
-	struct {
-		struct rt_msghdr m_rtm;
-		union {
-			char u_saddrs[200];
-			struct sockaddr u_sa;
-		} m_u;
-	} m;
 
 	shutdown(s, 0); /* Don't want to read back our messages */
 	if (argc > 1) {
@@ -182,7 +175,7 @@ char *argv[];
 		if (verbose) {
 			print_rtmsg(rtm, rlen);
 		} else {
-			struct sockaddr *sa = &m.m_u.u_sa;
+			struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
 			printf("%-20.20s ", (rtm->rtm_flags & RTF_HOST) ?
 			    routename(sa) : netname(sa));
 			sa = (struct sockaddr *)(sa->sa_len + (char *)sa);
@@ -443,6 +436,9 @@ newroute(argc, argv)
 				/* FALLTHROUGH */
 			case K_NET:
 				forcenet++;
+				break;
+			case K_REJECT:
+				flags |= RTF_REJECT;
 				break;
 			case K_CLONING:
 				flags |= RTF_CLONING;
@@ -865,7 +861,7 @@ char *msgtypes[] = {
 char metricnames[] =
 "\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
 char routeflags[] = 
-"\1UP\2GATEWAY\3HOST\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE";
+"\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE";
 
 #define ROUNDUP(a) ((char *)(1 + (((((int)a)) - 1) | (sizeof(long) - 1))))
 
