@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 news_sysent.c news_syscalls.c news_syscall.h: makesyscalls.sh syscalls.master
 	-mv -f news_sysent.c news_sysent.c.bak
