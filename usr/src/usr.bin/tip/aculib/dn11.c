@@ -1,4 +1,4 @@
-/*	dn11.c	4.4	81/06/16	*/
+/*	dn11.c	4.5	81/06/21	*/
 
 #if DN11
 /*
@@ -13,13 +13,14 @@ int dn_abort();
 int alarmtr();
 
 static jmp_buf jmpbuf;
+static int child = -1, dn;
 
 dn_dialer(num, acu)
 char *num, *acu;
 {
 	extern errno;
 	char *p, *q, phone[40];
-	int child = -1, dn, lt, nw, connected = 1;
+	int lt, nw, connected = 1;
 	register int timelim;
 
 	if (boolean(value(VERBOSE)))
@@ -107,6 +108,10 @@ dn_disconnect()
 dn_abort()
 {
 	sleep(2);
+	if (child > 0)
+		kill(child, SIGKILL);
+	if (dn > 0)
+		close(dn);
 #ifdef VMUNIX
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
