@@ -1,4 +1,4 @@
-#	@(#)TODO	5.3 (Berkeley) %G%
+#	@(#)TODO	5.4 (Berkeley) %G%
 
 TODO:  =======================
 
@@ -10,7 +10,7 @@ Keith:
 	Delete unnecessary source from utils in main-line source tree.
 	Make sure that we're counting meta blocks in the inode i_block count.
 	Overlap the version and nextfree fields in the IFILE
-	Talk to Kirk about vinvalbuf:
+	Vinvalbuf (Kirk):
 		Why writing blocks that are no longer useful?
 		Are the semantics of close such that blocks have to be flushed?
 		How specify in the buf chain the blocks that don't need
