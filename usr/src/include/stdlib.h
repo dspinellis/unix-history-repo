@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.1 (Berkeley) %G%
+ *	@(#)stdlib.h	5.2 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
-#include <machine/x3j11.h>
+#include <machine/machtypes.h>
 
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;
@@ -61,8 +61,24 @@ int	 rand(void);
 void	*realloc(void *_ptr, size_t _size);
 void	 srand(unsigned _seed);
 long	 strtol(const char *_nptr, char **_endptr, int _base);
-u_long	 strtoul(const char *_nptr, char **_endptr, int _base);
+unsigned long
+	 strtoul(const char *_nptr, char **_endptr, int _base);
 int	 system(const char *_string);
+
+#ifndef __STDC__
+void	 cfree(void *_ptr);
+int	putenv(const char *_string);
+int	setenv(const char *_string, const char *_value, int _overwrite);
+#endif
+
+#ifdef NOT_YET_IMPLEMENTED
+int	mblen(const char *_s, size_t _n);
+size_t	mbstowcs(wchar_t *_pwcs, const char *_s, size_t _n);
+int	wctomb(char *_s, wchar_t _wchar);
+int	mbtowc(wchar_t *_pwc, const char *_s, size_t _n);
+double	strtod(const char *_nptr, char **_endptr);
+size_t	wcstombs(char *_s, const wchar_t *_pwcs, size_t _n);
+#endif
 
 #else /* !__STDC__ */
 
@@ -86,18 +102,25 @@ int	 rand();
 void	*realloc();
 void	 srand();
 long	 strtol();
-u_long	 strtoul();
+unsigned long
+	 strtoul();
 int	 system();
 
-#endif /* __STDC__ */
+#ifndef __STDC__
+void	 cfree();
+int	putenv();
+int	setenv();
+#endif
 
 #ifdef NOT_YET_IMPLEMENTED
-int	mblen(const char *_s, size_t _n);
-size_t	mbstowcs(wchar_t *_pwcs, const char *_s, size_t _n);
-int	wctomb(char *_s, wchar_t _wchar);
-int	mbtowc(wchar_t *_pwc, const char *_s, size_t _n);
-double	strtod(const char *_nptr, char **_endptr);
-size_t	wcstombs(char *_s, const wchar_t *_pwcs, size_t _n);
+int	mblen();
+size_t	mbstowcs();
+int	wctomb();
+int	mbtowc();
+double	strtod();
+size_t	wcstombs();
 #endif
+
+#endif /* __STDC__ */
 
 #endif /* _STDLIB_H_ */
