@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.44 92/12/26$
  *
- *	@(#)rd.c	8.1 (Berkeley) %G%
+ *	@(#)rd.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -363,6 +363,9 @@ rdgetinfo(dev)
 #else
 	printf("defining `c' partition as entire disk\n");
 	pi[2].p_size = rdidentinfo[rs->sc_type].ri_nblocks;
+	/* XXX reset other info since readdisklabel screws with it */
+	lp->d_npartitions = 3;
+	pi[0].p_size = 0;
 #endif
 	return(0);
 }
