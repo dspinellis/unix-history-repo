@@ -6,14 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_utils.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_utils.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+
 #include <db.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "recno.h"
 
 /*
@@ -28,15 +30,20 @@ static char sccsid[] = "@(#)rec_utils.c	5.3 (Berkeley) %G%";
  *	RET_SUCCESS, RET_ERROR.
  */
 int
-__rec_ret(t, e, data)
+__rec_ret(t, e, nrec, key, data)
 	BTREE *t;
 	EPG *e;
-	DBT *data;
+	recno_t nrec;
+	DBT *key, *data;
 {
 	register RLEAF *rl;
-	register char *p;
+	register void *p;
+
+	if (data == NULL)
+		goto retkey;
 
 	rl = GETRLEAF(e->page, e->index);
+
 	if (rl->flags & P_BIGDATA) {
 		if (__ovfl_get(t, rl->bytes,
 		    &data->size, &t->bt_dbuf, &t->bt_dbufsz))
@@ -54,5 +61,17 @@ __rec_ret(t, e, data)
 	}
 	data->data = t->bt_dbuf;
 
+retkey:	if (key == NULL)
+		return (RET_SUCCESS);
+
+	if (sizeof(recno_t) > t->bt_kbufsz) {
+		if ((p = realloc(t->bt_kbuf, sizeof(recno_t))) == NULL)
+			return (RET_ERROR);
+		t->bt_kbuf = p;
+		t->bt_kbufsz = sizeof(recno_t);
+	}
+	bcopy(&nrec, t->bt_kbuf, sizeof(recno_t));
+	key->size = sizeof(recno_t);
+	key->data = t->bt_kbuf;
 	return (RET_SUCCESS);
 }
