@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
  *	@(#)auxreg.c	7.4 (Berkeley) %G%
  *
- * from: $Header: auxreg.c,v 1.7 92/06/17 05:21:54 torek Exp $ (LBL)
+ * from: $Header: auxreg.c,v 1.11 92/11/26 03:04:44 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -27,10 +27,10 @@
 #include <sparc/sparc/vaddrs.h>
 #include <sparc/sparc/auxreg.h>
 
+static int auxregmatch __P((struct device *, struct cfdata *, void *));
 static void auxregattach __P((struct device *, struct device *, void *));
 struct cfdriver auxregcd =
-    { NULL, "auxiliary-io", matchbyname, auxregattach,
-      DV_DULL, sizeof(struct device) };
+    { 0, "auxreg", auxregmatch, auxregattach, DV_DULL, sizeof(struct device) };
 
 #ifdef BLINK
 static int
@@ -41,7 +41,7 @@ blink(zero)
 	register fixpt_t lav;
 
 	s = splhigh();
-	*AUXIO_REG = (*AUXIO_REG | AUXIO_MB1) ^ AUXIO_LED;
+	LED_FLIP;
 	splx(s);
 	/*
 	 * Blink rate is:
@@ -54,6 +54,19 @@ blink(zero)
 	timeout(blink, (caddr_t)0, s);
 }
 #endif
+
+/*
+ * The OPENPROM calls this "auxiliary-io".
+ */
+static int
+auxregmatch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
+{
+
+	return (strcmp("auxiliary-io", ((struct romaux *)aux)->ra_name) == 0);
+}
 
 /* ARGSUSED */
 static void
