@@ -9,27 +9,40 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)memreg.c	7.3 (Berkeley) %G%
+ *	@(#)memreg.c	7.4 (Berkeley) %G%
  *
- * from: $Header: memreg.c,v 1.4 92/06/17 05:22:17 torek Exp $ (LBL)
+ * from: $Header: memreg.c,v 1.7 92/11/26 03:05:04 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
 #include <sys/device.h>
 
 #include <machine/autoconf.h>
+#include <machine/ctlreg.h>
 
-#include <sparc/sparc/ctlreg.h>
 #include <sparc/sparc/memreg.h>
 
+static int memregmatch __P((struct device *, struct cfdata *, void *));
 static void memregattach __P((struct device *, struct device *, void *));
 struct cfdriver memregcd =
-    { NULL, "memory-error", matchbyname, memregattach,
-      DV_DULL, sizeof(struct device) };
+    { 0, "memreg", memregmatch, memregattach, DV_DULL, sizeof(struct device) };
+
+/*
+ * The OPENPROM calls this "memory-error".
+ */
+static int
+memregmatch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
+{
+
+	return (strcmp("memory-error", ((struct romaux *)aux)->ra_name) == 0);
+}
 
 /* ARGSUSED */
 static void
