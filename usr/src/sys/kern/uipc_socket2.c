@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.9 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "tsleep.h"
 
 /*
  * Primitive routines for operating on sockets and socket buffers
@@ -69,7 +70,6 @@ soisconnecting(so)
 
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTING;
-	wakeup((caddr_t)&so->so_timeo);
 }
 
 soisconnected(so)
@@ -77,18 +77,17 @@ soisconnected(so)
 {
 	register struct socket *head = so->so_head;
 
-	if (head) {
-		if (soqremque(so, 0) == 0)
-			panic("soisconnected");
+	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING|SS_ISCONFIRMING);
+	so->so_state |= SS_ISCONNECTED;
+	if (head && soqremque(so, 0)) {
 		soqinsque(head, so, 1);
 		sorwakeup(head);
 		wakeup((caddr_t)&head->so_timeo);
+	} else {
+		wakeup((caddr_t)&so->so_timeo);
+		sorwakeup(so);
+		sowwakeup(so);
 	}
-	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
-	so->so_state |= SS_ISCONNECTED;
-	wakeup((caddr_t)&so->so_timeo);
-	sorwakeup(so);
-	sowwakeup(so);
 }
 
 soisdisconnecting(so)
@@ -119,12 +118,15 @@ soisdisconnected(so)
  * connection is possible (subject to space constraints, etc.)
  * then we allocate a new structure, propoerly linked into the
  * data structure of the original socket, and return this.
+ * Connstatus may be 0, or SO_ISCONFIRMING, or SO_ISCONNECTED.
  */
 struct socket *
-sonewconn(head)
+sonewsock(head, connstatus)
 	register struct socket *head;
+	int connstatus;
 {
 	register struct socket *so;
+	int soqueue = connstatus ? 1 : 0;
 
 	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
 		return ((struct socket *)0);
@@ -140,12 +142,17 @@ sonewconn(head)
 	so->so_timeo = head->so_timeo;
 	so->so_pgid = head->so_pgid;
 	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
-	soqinsque(head, so, 0);
+	soqinsque(head, so, soqueue);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
-		(void) soqremque(so, 0);
+		(void) soqremque(so, soqueue);
 		(void) free((caddr_t)so, M_SOCKET);
 		return ((struct socket *)0);
+	}
+	if (connstatus) {
+		sorwakeup(head);
+		wakeup((caddr_t)&head->so_timeo);
+		so->so_state |= connstatus;
 	}
 	return (so);
 }
@@ -154,17 +161,21 @@ soqinsque(head, so, q)
 	register struct socket *head, *so;
 	int q;
 {
+	register struct socket **prev;
 
 	so->so_head = head;
 	if (q == 0) {
 		head->so_q0len++;
-		so->so_q0 = head->so_q0;
-		head->so_q0 = so;
+		so->so_q0 = 0;
+		for (prev = &(head->so_q0); *prev; )
+			prev = &((*prev)->so_q0);
 	} else {
 		head->so_qlen++;
-		so->so_q = head->so_q;
-		head->so_q = so;
+		so->so_q = 0;
+		for (prev = &(head->so_q); *prev; )
+			prev = &((*prev)->so_q);
 	}
+	*prev = so;
 }
 
 soqremque(so, q)
@@ -179,7 +190,7 @@ soqremque(so, q)
 		next = q ? prev->so_q : prev->so_q0;
 		if (next == so)
 			break;
-		if (next == head)
+		if (next == 0)
 			return (0);
 		prev = next;
 	}
@@ -247,7 +258,7 @@ sbwait(sb)
 {
 
 	sb->sb_flags |= SB_WAIT;
-	sleep((caddr_t)&sb->sb_cc, PZERO+1);
+	tsleep((caddr_t)&sb->sb_cc, PZERO+1, SLP_SO_SBWAIT, 0);
 }
 
 /*
@@ -397,7 +408,11 @@ sbappend(sb, m)
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
 		while (n->m_next)
-			n = n->m_next;
+			if (n->m_flags & M_EOR) {
+				sbappendrecord(sb, m); /* XXXXXX!!!! */
+				return;
+			} else
+				n = n->m_next;
 	}
 	sbcompress(sb, m, n);
 }
