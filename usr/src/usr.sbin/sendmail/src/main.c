@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1445,7 +1445,7 @@ auth_warning(e, msg, va_alist)
 		if (hostbuf[0] == '\0')
 			(void) myhostname(hostbuf, sizeof hostbuf);
 
-		(void) sprintf(buf, "from %s: ", hostbuf);
+		(void) sprintf(buf, "%s: ", hostbuf);
 		p = &buf[strlen(buf)];
 		VA_START(msg);
 		vsprintf(p, msg, ap);
