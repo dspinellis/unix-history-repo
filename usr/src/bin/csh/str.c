@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #define MALLOC_INCR	128
 
 /*
  * tc.str.c: Short string package
- * 	     This has been a lesson of how to write buggy code!
+ *	     This has been a lesson of how to write buggy code!
  */
 
 #if __STDC__
@@ -37,7 +37,8 @@ blk2short(src)
     /*
      * Count
      */
-    for (n = 0; src[n] != NULL; n++);
+    for (n = 0; src[n] != NULL; n++)
+	continue;
     sdst = dst = (Char **) xmalloc((size_t) ((n + 1) * sizeof(Char *)));
 
     for (; *src != NULL; src++)
@@ -56,7 +57,8 @@ short2blk(src)
     /*
      * Count
      */
-    for (n = 0; src[n] != NULL; n++);
+    for (n = 0; src[n] != NULL; n++)
+	continue;
     sdst = dst = (char **) xmalloc((size_t) ((n + 1) * sizeof(char *)));
 
     for (; *src != NULL; src++)
@@ -135,7 +137,8 @@ s_strcpy(dst, src)
     register Char *sdst;
 
     sdst = dst;
-    while (*dst++ = *src++);
+    while (*dst++ = *src++)
+	continue;
     return (sdst);
 }
 
@@ -150,7 +153,7 @@ s_strncpy(dst, src, n)
 	return(dst);
 
     sdst = dst;
-    do 
+    do
 	if ((*dst++ = *src++) == '\0') {
 	    while (--n != 0)
 		*dst++ = '\0';
@@ -167,9 +170,11 @@ s_strcat(dst, src)
     register short *sdst;
 
     sdst = dst;
-    while (*dst++);
+    while (*dst++)
+	continue;
     --dst;
-    while (*dst++ = *src++);
+    while (*dst++ = *src++)
+	continue;
     return (sdst);
 }
 
@@ -181,18 +186,20 @@ s_strncat(dst, src, n)
 {
     register Char *sdst;
 
-    if (n == 0) 
+    if (n == 0)
 	return (dst);
 
     sdst = dst;
 
-    while (*dst++);
+    while (*dst++)
+	continue;
     --dst;
 
-    do 
+    do
 	if ((*dst++ = *src++) == '\0')
 	    return(sdst);
-    while (--n != 0);
+    while (--n != 0)
+	continue;
 
     *dst = '\0';
     return (sdst);
@@ -233,7 +240,8 @@ s_strlen(str)
 {
     register size_t n;
 
-    for (n = 0; *str++; n++);
+    for (n = 0; *str++; n++)
+	continue;
     return (n);
 }
 
@@ -241,7 +249,8 @@ int
 s_strcmp(str1, str2)
     register Char *str1, *str2;
 {
-    for (; *str1 && *str1 == *str2; str1++, str2++);
+    for (; *str1 && *str1 == *str2; str1++, str2++)
+	continue;
     /*
      * The following case analysis is necessary so that characters which look
      * negative collate low against normal characters but high against the
@@ -267,7 +276,7 @@ s_strncmp(str1, str2, n)
     do {
 	if (*str1 != *str2) {
 	    /*
-	     * The following case analysis is necessary so that characters 
+	     * The following case analysis is necessary so that characters
 	     * which look negative collate low against normal characters
 	     * but high against the end-of-string NUL.
 	     */
@@ -295,9 +304,11 @@ s_strsave(s)
 
     if (s == 0)
 	s = STRNULL;
-    for (p = s; *p++;);
+    for (p = s; *p++;)
+	continue;
     n = p = (Char *) xmalloc((size_t) ((p - s) * sizeof(Char)));
-    while (*p++ = *s++);
+    while (*p++ = *s++)
+	continue;
     return (n);
 }
 
@@ -312,12 +323,16 @@ s_strspl(cp, dp)
 	cp = STRNULL;
     if (!dp)
 	dp = STRNULL;
-    for (p = cp; *p++;);
-    for (q = dp; *q++;);
+    for (p = cp; *p++;)
+	continue;
+    for (q = dp; *q++;)
+	continue;
     ep = (Char *) xmalloc((size_t)
 			  (((p - cp) + (q - dp) - 1) * sizeof(Char)));
-    for (p = ep, q = cp; *p++ = *q++;);
-    for (p--, q = dp; *p++ = *q++;);
+    for (p = ep, q = cp; *p++ = *q++;)
+	continue;
+    for (p--, q = dp; *p++ = *q++;)
+	continue;
     return (ep);
 }
 

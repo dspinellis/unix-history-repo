@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)set.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,12 +25,12 @@ static char sccsid[] = "@(#)set.c	5.15 (Berkeley) %G%";
 
 static Char	*getinx __P((Char *, int *));
 static void	 asx __P((Char *, int, Char *));
-static struct varent 
+static struct varent
 		*getvx __P((Char *, int));
 static Char	*xset __P((Char *, Char ***));
 static Char	*operate __P((int, Char *, Char *));
 static void	 putn1 __P((int));
-static struct varent 
+static struct varent
 		*madrof __P((Char *, struct varent *));
 static void	 unsetv1 __P((struct varent *));
 static void	 exportpath __P((Char **));
@@ -571,7 +571,8 @@ unsetv1(p)
     else if (p->v_left == 0)
 	c = p->v_right;
     else {
-	for (c = p->v_left; c->v_right; c = c->v_right);
+	for (c = p->v_left; c->v_right; c = c->v_right)
+	    continue;
 	p->v_name = c->v_name;
 	p->vec = c->vec;
 	p = c;

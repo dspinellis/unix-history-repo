@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -821,7 +821,7 @@ wfree()
     struct whyle *nwp;
     btell(&o);
 
-    if (o.type != F_SEEK) 
+    if (o.type != F_SEEK)
 	return;
 
     for (; whyles; whyles = nwp) {
@@ -832,7 +832,7 @@ wfree()
 	if (wp->w_end.type != I_SEEK) {
 	    if (wp->w_end.type != F_SEEK)
 		break;
-	    if (o.f_seek >= wp->w_start.f_seek && 
+	    if (o.f_seek >= wp->w_start.f_seek &&
 		(wp->w_end.f_seek == 0 || o.f_seek < wp->w_end.f_seek))
 		break;
 	}
@@ -937,7 +937,8 @@ dosetenv(v, t)
 	int     k;
 
 	(void) setlocale(LC_ALL, "");
-	for (k = 0200; k <= 0377 && !Isprint(k); k++);
+	for (k = 0200; k <= 0377 && !Isprint(k); k++)
+		continue;
 	AsciiOnly = k > 0377;
 #else
 	AsciiOnly = 0;
@@ -962,7 +963,8 @@ dounsetenv(v, t)
      * Find the longest environment variable
      */
     for (maxi = 0, ep = STR_environ; *ep; ep++) {
-	for (i = 0, p = *ep; *p && *p != '='; p++, i++);
+	for (i = 0, p = *ep; *p && *p != '='; p++, i++)
+	    continue;
 	if (i > maxi)
 	    maxi = i;
     }
@@ -972,7 +974,8 @@ dounsetenv(v, t)
     while (++v && *v)
 	for (maxi = 1; maxi;)
 	    for (maxi = 0, ep = STR_environ; *ep; ep++) {
-		for (n = name, p = *ep; *p && *p != '='; *n++ = *p++);
+		for (n = name, p = *ep; *p && *p != '='; *n++ = *p++)
+		    continue;
 		*n = '\0';
 		if (!Gmatch(name, *v))
 		    continue;
@@ -982,7 +985,8 @@ dounsetenv(v, t)
 		    int     k;
 
 		    (void) setlocale(LC_ALL, "");
-		    for (k = 0200; k <= 0377 && !Isprint(k); k++);
+		    for (k = 0200; k <= 0377 && !Isprint(k); k++)
+			continue;
 		    AsciiOnly = k > 0377;
 #else
 		    AsciiOnly = getenv("LANG") == NULL &&
@@ -1087,16 +1091,16 @@ static struct limits {
     int     limdiv;
     char   *limscale;
 }       limits[] = {
-    RLIMIT_CPU, 	"cputime",	1,	"seconds",
+    RLIMIT_CPU,		"cputime",	1,	"seconds",
     RLIMIT_FSIZE,	"filesize",	1024,	"kbytes",
     RLIMIT_DATA,	"datasize",	1024,	"kbytes",
     RLIMIT_STACK,	"stacksize",	1024,	"kbytes",
     RLIMIT_CORE,	"coredumpsize", 1024,	"kbytes",
-    RLIMIT_RSS,		"memoryuse", 	1024,	"kbytes",
+    RLIMIT_RSS,		"memoryuse",	1024,	"kbytes",
     RLIMIT_MEMLOCK,	"memorylocked",	1024,	"kbytes",
     RLIMIT_NPROC,	"maxproc",	1,	"",
     RLIMIT_OFILE,	"openfiles",	1,	"",
-    -1, 		NULL, 		0,	NULL
+    -1,			NULL,		0,	NULL
 };
 
 static struct limits *findlim();
@@ -1255,7 +1259,7 @@ plim(lp, hard)
     else if (lp->limconst == RLIMIT_CPU)
 	psecs((long) limit);
     else
-	(void) fprintf(cshout, "%ld %s", (long) (limit / lp->limdiv), 
+	(void) fprintf(cshout, "%ld %s", (long) (limit / lp->limdiv),
 		       lp->limscale);
     (void) fputc('\n', cshout);
 }
@@ -1446,11 +1450,10 @@ doprintf(v, t)
     char **c;
     extern int progprintf __P((int, char **));
     int ret;
-    
+
     ret = progprintf(blklen(v), c = short2blk(v));
 
     blkfree((Char **) c);
     if (ret)
 	stderror(ERR_SILENT);
 }
-
