@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostbyname.3	8.3 (Berkeley) %G%
+.\"     @(#)gethostbyname.3	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETHOSTBYNAME 3
@@ -59,19 +59,20 @@ The members of this structure are:
 .It Fa h_name
 Official name of the host.
 .It Fa h_aliases
-A zero terminated array of alternate names for the host.
+A NULL-terminated array of alternate names for the host.
 .It Fa h_addrtype
 The type of address being returned; currently always
 .Dv AF_INET .
 .It Fa h_length
 The length, in bytes, of the address.
 .It Fa h_addr_list
-A zero terminated array of network addresses for the host.
+A NULL-terminated array of network addresses for the host.
 Host addresses are returned in network byte order.
 .It Fa h_addr
 The first address in
 .Fa h_addr_list ;
 this is for backward compatibility.
+.El
 .Pp
 When using the nameserver,
 .Fn gethostbyname
