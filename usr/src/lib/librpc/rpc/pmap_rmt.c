@@ -167,7 +167,8 @@ getbroadcastnets(addrs, sock, buf)
 	struct ifconf ifc;
         struct ifreq ifreq, *ifr;
 	struct sockaddr_in *sin;
-        int n, i;
+        char *cp, *cplim;
+        int n, i = 0;
 
         ifc.ifc_len = UDPMSGSIZE;
         ifc.ifc_buf = buf;
@@ -175,16 +176,21 @@ getbroadcastnets(addrs, sock, buf)
                 perror("broadcast: ioctl (get interface configuration)");
                 return (0);
         }
-        ifr = ifc.ifc_req;
-        for (i = 0, n = ifc.ifc_len/sizeof (struct ifreq); n > 0; n--, ifr++) {
-                ifreq = *ifr;
+#define max(a, b) (a > b ? a : b)
+#define size(p)	max((p).sa_len, sizeof(p))
+	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
+	for (cp = buf; cp < cplim;
+			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
+		ifr = (struct ifreq *)cp;
+		if (ifr->ifr_addr.sa_family != AF_INET)
+			continue;
+		ifreq = *ifr;
                 if (ioctl(sock, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
                         perror("broadcast: ioctl (get interface flags)");
                         continue;
                 }
                 if ((ifreq.ifr_flags & IFF_BROADCAST) &&
-		    (ifreq.ifr_flags & IFF_UP) &&
-		    ifr->ifr_addr.sa_family == AF_INET) {
+		    (ifreq.ifr_flags & IFF_UP)) {
 			sin = (struct sockaddr_in *)&ifr->ifr_addr;
 #ifdef SIOCGIFBRDADDR   /* 4.3BSD */
 			if (ioctl(sock, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
