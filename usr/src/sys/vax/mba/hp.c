@@ -1,4 +1,4 @@
-/*	hp.c	3.5	%G%	*/
+/*	hp.c	3.6	%G%	*/
 
 /*
  * RP04/RP06/RM03 disk driver
@@ -6,6 +6,7 @@
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/dk.h"
 #include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
