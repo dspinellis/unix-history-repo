@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	make
 CFLAGS+=-I${.CURDIR}
-SRCS=	arch.c buf.c compat.c cond.c dir.c hash.c job.c list.c main.c \
+SRCS=	arch.c buf.c compat.c cond.c dir.c hash.c job.c main.c \
 	make.c parse.c str.c suff.c targ.c var.c
 SRCS+=	lstAppend.c lstAtEnd.c lstAtFront.c lstClose.c lstConcat.c \
 	lstDatum.c lstDeQueue.c lstDestroy.c lstDupl.c lstEnQueue.c \

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lstInit.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lstInit.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -47,12 +47,4 @@ Lst_Init(circ)
     nList->atEnd = Unknown;
     
     return ((Lst)nList);
-}
-
-Malloc(nbytes)
-{
-#ifdef DEBUG
-    printf("malloc: %d\n", nbytes);
-#endif DEBUG
-    return(malloc(nbytes));
 }
