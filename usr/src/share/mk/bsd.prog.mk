@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.11 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.12 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -10,6 +10,12 @@
 	nroff -man -h ${.IMPSRC} > ${.TARGET}
 
 CFLAGS+=${COPTS}
+
+STRIP?=	-s
+
+BINGRP?=	bin
+BINOWN?=	bin
+BINMODE?=	555
 
 LIBC?=		/lib/libc.a
 LIBCOMPAT?=	/usr/lib/libcompat.a
@@ -59,29 +65,29 @@ MAN1=	${PROG}.0
 .endif
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
-PROGSUBDIR: .USE
+_PROGSUBDIR: .USE
 .if defined(SUBDIR) && !empty(SUBDIR)
 	@for entry in ${SUBDIR}; do \
-		(echo "===> ${PROG}/$$entry"; \
+		(echo "===> $$entry"; \
 		if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
 			cd ${.CURDIR}/$${entry}.${MACHINE}; \
 		else \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
-		${MAKE} ${.TARGET}) \
+		${MAKE} ${.TARGET:realinstall=install}) \
 	done
 .endif
 
 .MAIN: all
-all: ${PROG} ${MANALL} PROGSUBDIR
+all: ${PROG} ${MANALL} _PROGSUBDIR
 
 .if !target(clean)
-clean: PROGSUBDIR
+clean: _PROGSUBDIR
 	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES}
 .endif
 
 .if !target(cleandir)
-cleandir: PROGSUBDIR
+cleandir: _PROGSUBDIR
 	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES}
 	rm -f .depend ${.CURDIR}/tags ${MANALL}
 .endif
@@ -89,7 +95,7 @@ cleandir: PROGSUBDIR
 # some of the rules involve .h sources, so remove them from mkdep line
 .if !target(depend)
 depend: .depend
-.depend: ${SRCS} PROGSUBDIR
+.depend: ${SRCS} _PROGSUBDIR
 	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
 .endif
 
@@ -97,29 +103,48 @@ depend: .depend
 .if !target(beforeinstall)
 beforeinstall:
 .endif
+.if !target(afterinstall)
+afterinstall:
+.endif
 
-realinstall: beforeinstall PROGSUBDIR
+realinstall: _PROGSUBDIR
+.if defined(PROG)
 	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${PROG} ${DESTDIR}${BINDIR}
+.endif
 .if defined(HIDEGAME)
 	(cd ${DESTDIR}/usr/games; rm -f ${PROG}; ln -s dm ${PROG}; \
 	    chown games.bin ${PROG})
 .endif
+.if defined(LINKS) && !empty(LINKS)
+	@set ${LINKS}; \
+	while test $$# -ge 2; do \
+		l=${DESTDIR}$$1; \
+		shift; \
+		t=${DESTDIR}$$1; \
+		shift; \
+		echo $$t -\> $$l; \
+		rm -f $$t; \
+		ln $$l $$t; \
+	done; true
+.endif
 
-install: afterinstall PROGSUBDIR
-afterinstall: realinstall maninstall
-.else
-install: PROGSUBDIR
+install: maninstall
+maninstall: afterinstall
+afterinstall: realinstall
+realinstall: beforeinstall
 .endif
 
 .if !target(lint)
-lint: ${SRCS} PROGSUBDIR
+lint: ${SRCS} _PROGSUBDIR
 	@${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC} | more 2>&1
 .endif
 
 .if !target(tags)
-tags: ${SRCS} PROGSUBDIR
+tags: ${SRCS} _PROGSUBDIR
 	ctags -f ${.CURDIR}/tags ${.ALLSRC}
 .endif
 
-.include <bsd.own.mk>
+.if !defined(NOMAN)
+.include <bsd.man.mk>
+.endif
