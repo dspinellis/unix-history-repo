@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -43,8 +43,10 @@ static char sccsid[] = "@(#)fmt.c	5.6 (Berkeley) %G%";
 #define	NOSTR	((char *) 0)	/* Null string pointer for lint */
 
 /* LIZ@UOM 6/18/85 --New variables goal_length and max_length */
-int	goal_length = 65;	/* Target or goal line length in output */
-int	max_length = 75;	/* Max line length in output */
+#define GOAL_LENGTH 65
+#define MAX_LENGTH 75
+int	goal_length;		/* Target or goal line length in output */
+int	max_length;		/* Max line length in output */
 int	pfx;			/* Current leading blank count */
 int	lineno;			/* Current input line */
 int	mark;			/* Last place we saw a head line */
@@ -66,6 +68,8 @@ main(argc, argv)
 	register int errs = 0;
 	int number;		/* LIZ@UOM 6/18/85 */
 
+	goal_length = GOAL_LENGTH;
+	max_length = MAX_LENGTH;
 	setout();
 	lineno = 1;
 	mark = -10;
