@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -246,11 +246,9 @@ main(argc, argv)
     (void) sigaction(SIGTERM, NULL, &oact);
     parterm = oact.sa_handler;
 
-    if (loginsh) {
-	(void) signal(SIGHUP, phup);	/* exit processing on HUP */
-	(void) signal(SIGXCPU, phup);	/* ...and on XCPU */
-	(void) signal(SIGXFSZ, phup);	/* ...and on XFSZ */
-    }
+    (void) signal(SIGHUP, phup);	/* exit processing on HUP */
+    (void) signal(SIGXCPU, phup);	/* ...and on XCPU */
+    (void) signal(SIGXFSZ, phup);	/* ...and on XFSZ */
 
     /*
      * Process the arguments.
@@ -707,7 +705,7 @@ srcunit(unit, onlyown, hflg)
 	sigprocmask(SIG_BLOCK, &sigset, &osigset);
     }
     /* Setup the new values of the state stuff saved above */
-    bcopy((char *) &B, (char *) &(saveB), sizeof(B));
+    memmove(&saveB, &B, sizeof(B));
     fbuf = NULL;
     fseekp = feobp = fblocks = 0;
     oSHIN = SHIN, SHIN = unit, arginp = 0, onelflg = 0;
@@ -741,7 +739,7 @@ srcunit(unit, onlyown, hflg)
 	xfree((ptr_t) fbuf);
 
 	/* Reset input arena */
-	bcopy((char *) &(saveB), (char *) &B, sizeof(B));
+	memmove(&B, &saveB, sizeof(B));
 
 	(void) close(SHIN), SHIN = oSHIN;
 	arginp = oarginp, onelflg = oonelflg;
@@ -790,7 +788,8 @@ rechist()
   	    (void) Strcat(buf, STRsldthist);
   	}
 
-  	if ((fp = creat(short2str(hfile), 0600)) == -1) 
+  	if ((fp = open(short2str(hfile), O_WRONLY | O_CREAT | O_TRUNC,
+	    0600)) == -1) 
   	    return;
 
 	oldidfds = didfds;
@@ -882,7 +881,7 @@ int sig;
 	    while ((np = np->p_friends) != pp);
 	}
     }
-    _exit(sig);
+    xexit(sig);
 }
 
 Char   *jobargv[2] = {STRjobs, 0};

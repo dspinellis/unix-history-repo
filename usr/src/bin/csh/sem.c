@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -572,7 +572,7 @@ doio(t, pipein, pipeout)
 		    stderror(ERR_SYSTEM, tmp, strerror(errno));
 		chkclob(tmp);
 	    }
-	    if ((fd = creat(tmp, 0666)) < 0)
+	    if ((fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
 		stderror(ERR_SYSTEM, tmp, strerror(errno));
 	}
 	(void) dmove(fd, 1);
