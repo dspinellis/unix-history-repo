@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990, 1993
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	8.3 (Berkeley) %G%
+ *	@(#)tcp_output.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,9 +292,10 @@ send:
 	 * Adjust data length if insertion of options will
 	 * bump the packet length beyond the t_maxseg length.
 	 */
-	 if (len > tp->t_maxseg - optlen) {
+	if (len > tp->t_maxseg - optlen) {
 		len = tp->t_maxseg - optlen;
 		sendalot = 1;
+		flags &= ~TH_FIN;
 	 }
 
 
@@ -338,8 +339,11 @@ send:
 		m->m_data += max_linkhdr;
 		m->m_len = hdrlen;
 		if (len <= MHLEN - hdrlen - max_linkhdr) {
-			if (m->m_next == 0)
-				len = 0;
+			if (m->m_next == 0) {
+				(void) m_free(m);
+				error = ENOBUFS;
+				goto out;
+			}
 		}
 #endif
 		/*
