@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.26 (Berkeley) %G%
+ *	@(#)machdep.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,6 +29,7 @@
 #include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
+#include "mount.h"
 #include "user.h"
 #include "exec.h"
 #ifdef SYSVSHM
@@ -46,12 +47,7 @@
 #include "net/netisr.h"
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
-#include "vm/vm_param.h"
-#include "vm/pmap.h"
-#include "vm/vm_map.h"
-#include "vm/vm_object.h"
 #include "vm/vm_kern.h"
-#include "vm/vm_page.h"
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
