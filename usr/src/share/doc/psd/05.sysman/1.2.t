@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.3 (Berkeley) %G%
+.\"	@(#)1.2.t	6.4 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -39,7 +39,7 @@ The system supports sharing of data between processes
 by allowing pages to be mapped into memory.  These mapped
 pages may be \fIshared\fP with other processes or \fIprivate\fP
 to the process.
-Protection and sharing options are defined in <mman.h> as:
+Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 .DS
 ._d
 /* protections are chosen from these bits, or-ed together */
@@ -47,19 +47,21 @@ Protection and sharing options are defined in <mman.h> as:
 #define	PROT_WRITE	0x02	/* pages can be written */
 #define	PROT_EXEC	0x01	/* pages can be executed */
 
+/* flags contain mapping type, sharing type and options */
 /* mapping type; choose one */
-#define MAP_FILE	0x01	/* mapped from a file */
-#define MAP_SWAP	0x02	/* mapped from swap space */
-#define MAP_MEMORY	0x03	/* mapped from device memory */
+#define MAP_FILE	0x0001	/* mapped from a file or device */
+#define MAP_ANON	0x0002	/* allocated from memory, swap space */
+#define MAP_TYPE	0x000f	/* mask for type field */
 
 /* sharing types; choose one */
-#define	MAP_SHARED	0x04	/* share changes */
-#define	MAP_PRIVATE	0x00	/* changes are private */
+#define	MAP_SHARED	0x0010	/* share changes */
+#define	MAP_PRIVATE	0x0000	/* changes are private */
 
 /* other flags */
-#define MAP_FIXED	0x10	/* map region must be allocated at addr */
-#define MAP_EXTEND	0x20	/* for MAP_FILE, the file may be extended */
-#define MAP_HASSEMPHORE	0x40	/* region may contain semaphores */
+#define MAP_FIXED	0x0020	/* map addr must be exactly as requested */
+#define MAP_NOEXTEND	0x0040	/* for MAP_FILE, don't change file size */
+#define MAP_HASSEMPHORE	0x0080	/* region may contain semaphores */
+#define MAP_INHERIT	0x0100	/* region is retained after exec */
 .DE
 The cpu-dependent size of a page is returned by the
 \fIgetpagesize\fP system call:
@@ -76,36 +78,54 @@ result caddr_t maddr; caddr_t addr; int *len, prot, flags, fd; off_t pos;
 causes the pages starting at \fIaddr\fP and continuing
 for at most \fIlen\fP bytes to be mapped from the object represented by
 descriptor \fIfd\fP, starting at byte offset \fIpos\fP.
-The starting address of the region is returned.
+The starting address of the region is returned;
+for the convenience of the system,
+it may be different than that supplied
+unless the MAP_FIXED flag is given,
+in which case the exact address will be used or the call will fail.
 The actual amount mapped is returned in \fIlen\fP.
-The parameter \fIflags\fP specifies whether modifications made to
-this mapped copy of the page,
-are to be kept \fIprivate\fP, or are to be \fIshared\fP with
-other references.
-The parameter \fIprot\fP specifies the accessibility
-of the mapped pages.
 The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
 must all be multiples of the pagesize.
+The parameter \fIprot\fP specifies the accessibility
+of the mapped pages.
+The parameter \fIflags\fP specifies
+the type of object to be mapped,
+mapping options, and
+whether modifications made to
+this mapped copy of the page
+are to be kept \fIprivate\fP, or are to be \fIshared\fP with
+other references.
+Possible types include MAP_FILE,
+mapping a regular file or character-special device memory,
+and MAP_ANON, which maps memory not associated with any specific file.
+The file descriptor used for creating MAP_ANON regions is used only
+for naming, and may be given as -1 if no name is associated with the region.
+The MAP_NOEXTEND flag prevents the mapped file from being extended
+despite rounding due to the granularity of mapping.
+Other flags allow special handling for regions that may contain semaphores
+or that may be inherited after an \fIexec\fP.
 .PP
-A process can move pages within its own memory by using the
-.I mremap
-call:
+A facility is provided to synchronize a mapped region with the file
+it maps; the call
 .DS
-mremap(addr, len, prot, flags, fromaddr);
-caddr_t addr; int len, prot, flags; caddr_t fromaddr;
-.DE
-This call maps the pages starting at \fIfromaddr\fP to the address specified
-by \fIaddr\fP.
+msync(addr, len);
+caddr_t addr; int len;
+writes any modified pages back to the filesystem and updates
+the file modification time.
+If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
+will be flushed;
+if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
+succeeding locations will be examined.
+Any required invalidation of memory caches will also take place at this time.
 .PP
 A mapping can be removed by the call
 .DS
-munmap(addr, len);
-caddr_t addr; int len;
+munmap(addr);
+caddr_t addr;
 .DE
-This call causes further references to these pages
+This call deletes the region containing the address given,
+and causes further references to addresses within the region
 to generate invalid memory references.
-If the region is mapped MAP_FILE with mode PROT_WRITE,
-the file is truncated to the length specified by \fIlen\fP.
 .NH 3
 Page protection control
 .PP
@@ -115,6 +135,8 @@ mprotect(addr, len, prot);
 caddr_t addr; int len, prot;
 .DE
 This call changes the specified pages to have protection \fIprot\fP\|.
+Not all implementations will guarantee protection on a page basis;
+the granularity of protection changes may be as large as an entire region.
 .NH 3
 Giving and getting advice
 .PP
@@ -146,46 +168,59 @@ that the page is in-core.
 .NH 3
 Synchronization primitives
 .PP
+.if \n(sw=0 .ig sw
 Two routines provide services analogous to the kernel
 \fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
 shared memory.
 A process may relinquish the processor by calling \fImsleep\fP:
 .DS
-msleep(addr)
-caddr_t addr;
+msleep(sem)
+semaphore *sem;
 .DE
-\fIAddr\fP must lie within a MAP_SHARED region with at least modes
+\fISem\fP must lie within a MAP_SHARED region with at least modes
 PROT_READ and PROT_WRITE.
 The MAP_HASSEMAPHORE flag must have been specified when the region was created.
 The process will remain in a sleeping state
-until some other process issues an \fImwakeup\fP for the same byte
+until some other process issues an \fImwakeup\fP for the same semaphore
 within the region using the call:
 .DS
-mwakeup(addr)
-caddr_t addr;
+mwakeup(sem)
+semaphore *sem;
 .DE
+An \fImwakeup\fP may awaken all sleepers on the semaphore,
+or may awaken only the next sleeper on a queue.
 .PP
 To avoid system calls for the usual case of an uncontested lock,
-library routines are provided to acquire and release locks.
+routines are provided to acquire and release locks.
+.sw
+.if \n(sw .ig sw
+Primitives are provided for synchronization using semaphores in shared memory.
+Semaphores must lie within a MAP_SHARED region with at least modes
+PROT_READ and PROT_WRITE.
+The MAP_HASSEMAPHORE flag must have been specified when the region was created.
+.sw
 To acquire a lock a process calls:
 .DS
-mset(addr)
-caddr_t addr;
+value = mset(sem, wait)
+result int value; semaphore *sem; int wait;
 .DE
-\fIMset\fP indivisibly tests and sets the memory location \fIaddr\fP.
+\fIMset\fP indivisibly tests and sets the semaphore \fIsem\fP.
 If the the previous value is zero, the process has acquired the lock
-and \fImset\fP returns immediately.
-If the previous value is non-zero, the ``want'' bit is set and
-the test-and-set is retried;
-if the lock is still unavailable \fImset\fP calls \fImsleep\fP and tries again.
+and \fImset\fP returns true immediately.
+Otherwise, if the \fIwait\fP flag is zero,
+failure is returned.
+If \fIwait\fP is true and the previous value is non-zero,
+the ``want'' flag is set and the test-and-set is retried;
+if the lock is still unavailable \fImset\fP relinquishes the processor
+until notified that it should retry.
 .LP
 To release a lock a process calls:
 .DS
-mclear(addr)
-caddr_t addr;
+mclear(sem)
+semaphore *sem;
 .DE
-\fIMclear\fP indivisibly tests and clears the memory location \fIaddr\fP.
-If the ``want'' bit is zero in the previous value,
+\fIMclear\fP indivisibly tests and clears the semaphore \fIsem\fP.
+If the ``want'' flag is zero in the previous value,
 \fImclear\fP returns immediately.
-If the ``want'' bit is non-zero in the previous value,
-\fImclear\fP calls \fImwakeup\fP before returning.
+If the ``want'' flag is non-zero in the previous value,
+\fImclear\fP arranges for waiting processes to retry before returning.

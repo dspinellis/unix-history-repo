@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.6.t	6.1 (Berkeley) %G%
+.\"	@(#)1.6.t	6.2 (Berkeley) %G%
 .\"
 .sh "Resource controls
 .NH 3
@@ -38,7 +38,7 @@ Only the super-user may lower priorities.
 Resource utilization
 .PP
 The resources used by a process are returned by a \fIgetrusage\fP call,
-returning information in a structure defined in <sys/resource.h>:
+returning information in a structure defined in \fI<sys/resource.h>\fP:
 .DS
 ._d
 #define	RUSAGE_SELF	0		/* usage by this process */
@@ -53,18 +53,18 @@ struct rusage {
 	struct	timeval ru_stime;	/* system time used */
 	int	ru_maxrss;	/* maximum core resident set size: kbytes */
 	int	ru_ixrss;	/* integral shared memory size (kbytes*sec) */
-	int	ru_idrss;	/* unshared data " */
-	int	ru_isrss;	/* unshared stack " */
+	int	ru_idrss;	/* unshared data memory size */
+	int	ru_isrss;	/* unshared stack memory size */
 	int	ru_minflt;	/* page-reclaims */
 	int	ru_majflt;	/* page faults */
 	int	ru_nswap;	/* swaps */
 	int	ru_inblock;	/* block input operations */
-	int	ru_oublock;	/* block output " */
+	int	ru_oublock;	/* block output operations */
 	int	ru_msgsnd;	/* messages sent */
 	int	ru_msgrcv;	/* messages received */
 	int	ru_nsignals;	/* signals received */
 	int	ru_nvcsw;	/* voluntary context switches */
-	int	ru_nivcsw;	/* involuntary " */
+	int	ru_nivcsw;	/* involuntary context switches */
 };
 .DE
 The \fIwho\fP parameter specifies whose resource usage is to be returned.
@@ -74,7 +74,7 @@ the terminated children of the current process may be requested.
 Resource limits
 .PP
 The resources of a process for which limits are controlled by the
-kernel are defined in <sys/resource.h>, and controlled by the
+kernel are defined in \fI<sys/resource.h>\fP, and controlled by the
 \fIgetrlimit\fP and \fIsetrlimit\fP calls:
 .DS
 ._d

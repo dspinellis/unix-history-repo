@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.2.t	6.1 (Berkeley) %G%
+.\"	@(#)2.2.t	6.2 (Berkeley) %G%
 .\"
 .sh "File system
 .NH 3
@@ -28,16 +28,16 @@ Naming
 .PP
 The file system calls take \fIpath name\fP arguments.
 These consist of a zero or more component \fIfile names\fP
-separated by ``/'' characters, where each file name
-is up to 255 ASCII characters excluding null and ``/''.
+separated by ``/\^'' characters, where each file name
+is up to 255 ASCII characters excluding null and ``/\^''.
 .PP
 Each process always has two naming contexts: one for the
 root directory of the file system and one for the
 current working directory.  These are used
 by the system in the filename translation process.
-If a path name begins with a ``/'', it is called
+If a path name begins with a ``/\^'', it is called
 a full path name and interpreted relative to the root directory context.
-If the path name does not begin with a ``/'' it is called
+If the path name does not begin with a ``/\^'' it is called
 a relative path name and interpreted relative to the current directory
 context.
 .PP
@@ -46,7 +46,7 @@ the total length of a path name to 1024 characters.
 .PP
 The file name ``..'' in each directory refers to
 the parent directory of that directory.
-The parent directory of a file system is always the systems root directory.
+The parent directory of the root of the file system is always that directory.
 .PP
 The calls
 .DS
@@ -71,7 +71,8 @@ A directory is created with the \fImkdir\fP system call:
 mkdir(path, mode);
 char *path; int mode;
 .DE
-and removed with the \fIrmdir\fP system call:
+where the mode is defined as for files (see below).
+Directories are removed with the \fIrmdir\fP system call:
 .DS
 rmdir(path);
 char *path;
@@ -87,9 +88,9 @@ result int fd; char *path; int oflag, mode;
 .DE
 The \fIpath\fP parameter specifies the name of the
 file to be created.  The \fIoflag\fP parameter must
-include O_CREAT from below to cause the file to be created.  The protection
-for the new file is specified in \fImode\fP.  Bits for \fIoflag\fP are
-defined in <sys/file.h>:
+include O_CREAT from below to cause the file to be created.
+Bits for \fIoflag\fP are
+defined in \fI<sys/file.h>\fP:
 .DS
 ._d
 #define	O_RDONLY	000	/* open for reading */
@@ -109,13 +110,22 @@ access rights to the file before allowing the \fIopen\fP to succeed.
 Specifying O_APPEND causes writes to automatically append to the
 file.
 The flag O_CREAT causes the file to be created if it does not
-exist, with the specified \fImode\fP, owned by the current user
+exist, owned by the current user
 and the group of the containing directory.
+The protection for the new file is specified in \fImode\fP.
+The file mode is used as a three digit octal number.
+Each digit encodes read access as 4, write access as 2 and execute
+access as 1, or'ed together.  The 0700 bits describe owner
+access, the 070 bits describe the access rights for processes in the same
+group as the file, and the 07 bits describe the access rights
+for other processes.
 .PP
 If the open specifies to create the file with O_EXCL
 and the file already exists, then the \fIopen\fP will fail
 without affecting the file in any way.  This provides a
 simple exclusive access facility.
+If the file exists but is a symbolic link, the open will fail
+regardless of the existence of the file specified by the link.
 .NH 4
 Creating references to devices
 .PP
@@ -131,7 +141,7 @@ Structured devices have all operations performed internally
 in ``block'' quantities while
 unstructured devices often have a number of
 special \fIioctl\fP operations, and may have input and output
-performed in large units.
+performed in varying units.
 The \fImknod\fP call creates special entries:
 .DS
 mknod(path, mode, dev);
@@ -140,7 +150,7 @@ char *path; int mode, dev;
 where \fImode\fP is formed from the object type
 and access permissions.  The parameter \fIdev\fP is a configuration
 dependent parameter used to identify specific character or
-block i/o devices.
+block I/O devices.
 .NH 4
 Portal creation\(dg
 .PP
@@ -235,12 +245,7 @@ fchmod(fd, mode);
 int fd, mode;
 .DE
 where \fImode\fP is a value indicating the new protection
-of the file.  The file mode is a three digit octal number.
-Each digit encodes read access as 4, write access as 2 and execute
-access as 1, or'ed together.  The 0700 bits describe owner
-access, the 070 bits describe the access rights for processes in the same
-group as the file, and the 07 bits describe the access rights
-for other processes. 
+of the file, as listed in section 2.2.3.2.
 .PP
 Finally, the access and modify times on a file may be set by the call:
 .DS
@@ -312,7 +317,7 @@ call may be used,
 oldoffset = lseek(fd, offset, type);
 result off_t oldoffset; int fd; off_t offset; int type;
 .DE
-where \fItype\fP is given in <sys/file.h> as one of,
+where \fItype\fP is given in \fI<sys/file.h>\fP as one of:
 .DS
 ._d
 #define	L_SET	0	/* set absolute file offset */
@@ -350,7 +355,7 @@ accessible = access(path, how);
 result int accessible; char *path; int how;
 .DE
 Here \fIhow\fP is constructed by or'ing the following bits, defined
-in <sys/file.h>:
+in \fI<sys/file.h>\fP:
 .DS
 ._d
 #define	F_OK	0	/* file exists */
@@ -380,7 +385,7 @@ Locking is performed after an \fIopen\fP call by applying the
 flock(fd, how);
 int fd, how;
 .DE
-where the \fIhow\fP parameter is formed from bits defined in <sys/file.h>:
+where the \fIhow\fP parameter is formed from bits defined in \fI<sys/file.h>\fP:
 .DS
 ._d
 #define	LOCK_SH	1	/* shared lock */
@@ -434,5 +439,5 @@ int cmd, uid, arg; caddr_t addr;
 .DE
 The indicated \fIcmd\fP is applied to the user ID \fIuid\fP.
 The parameters \fIarg\fP and \fIaddr\fP are command specific.
-The file <sys/quota.h> contains definitions pertinent to the
+The file \fI<sys/quota.h>\fP contains definitions pertinent to the
 use of this call.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.3.t	6.1 (Berkeley) %G%
+.\"	@(#)2.3.t	6.2 (Berkeley) %G%
 .\"
 .sh "Interprocess communications
 .NH 3
@@ -13,23 +13,25 @@ Communication domains
 The system provides access to an extensible set of 
 communication \fIdomains\fP.  A communication domain
 is identified by a manifest constant defined in the
-file <sys/socket.h>.
+file \fI<sys/socket.h>\fP.
 Important standard domains supported by the system are the ``unix''
-domain, AF_UNIX, for communication within the system, and the ``internet''
-domain for communication in the DARPA internet, AF_INET.  Other domains can
-be added to the system.
+domain, AF_UNIX, for communication within the system, the ``Internet''
+domain for communication in the DARPA Internet, AF_INET,
+and the ``NS'' domain, AF_NS, for communication
+using the Xerox Network Systems protocols.
+Other domains can be added to the system.
 .NH 4
 Socket types and protocols
 .PP
 Within a domain, communication takes place between communication endpoints
 known as \fIsockets\fP.  Each socket has the potential to exchange
-information with other sockets within the domain.
+information with other sockets of an appropriate type within the domain.
 .PP
 Each socket has an associated
 abstract type, which describes the semantics of communication using that
 socket.  Properties such as reliability, ordering, and prevention
 of duplication of messages are determined by the type.
-The basic set of socket types is defined in <sys/socket.h>:
+The basic set of socket types is defined in \fI<sys/socket.h>\fP:
 .DS
 /* Standard socket types */
 ._d
@@ -41,6 +43,8 @@ The basic set of socket types is defined in <sys/socket.h>:
 .DE
 The SOCK_DGRAM type models the semantics of datagrams in network communication:
 messages may be lost or duplicated and may arrive out-of-order.
+A datagram socket may send messages to and receive messages from multiple
+peers.
 The SOCK_RDM type models the semantics of reliable datagrams: messages
 arrive unduplicated and in-order, the sender is notified if
 messages are lost.
@@ -48,6 +52,7 @@ The \fIsend\fP and \fIreceive\fP operations (described below)
 generate reliable/unreliable datagrams.
 The SOCK_STREAM type models connection-based virtual circuits: two-way
 byte streams with no record boundaries.
+Connection setup is required before data communication may begin.
 The SOCK_SEQPACKET type models a connection-based,
 full-duplex, reliable, sequenced packet exchange;
 the sender is notified if messages are lost, and messages are never
@@ -58,16 +63,15 @@ out-of-band transmission to send out-of-band data.
 SOCK_RAW is used for unprocessed access to internal network layers
 and interfaces; it has no specific semantics.
 .PP
-Other socket types can be defined.\(dg
-.FS
-\(dg 4.3BSD does not support the SOCK_RDM and SOCK_SEQPACKET types
-in the INET family; it does not support SOCK_RDM in the NS family.
-.FE
+Other socket types can be defined.
 .PP
-Each socket may have a concrete \fIprotocol\fP associated with it.
+Each socket may have a specific \fIprotocol\fP associated with it.
 This protocol is used within the domain to provide the semantics
 required by the socket type.
-For example, within the ``internet'' domain, the SOCK_DGRAM type may be
+Not all socket types are supported by each domain;
+support depends on the existence and the implementation
+of a suitable protocol within the domain.
+For example, within the ``Internet'' domain, the SOCK_DGRAM type may be
 implemented by the UDP user datagram protocol, and the SOCK_STREAM
 type may be implemented by the TCP transmission control protocol, while
 no standard protocols to provide SOCK_RDM or SOCK_SEQPACKET sockets exist.
@@ -80,35 +84,46 @@ socket descriptor is obtained by the \fIsocket\fP call:
 s = socket(domain, type, protocol);
 result int s; int domain, type, protocol;
 .DE
+The socket domain and type are as described above,
+and are specified using the definitions from \fI<sys/socket.h>\fP.
+The protocol may be given as 0, meaning any suitable protocol.
+One of several possible protocols may be selected using identifiers
+obtained from a library routine, \fIgetprotobyname\fP.
 .PP
-An unconnected socket descriptor may yield a connected socket descriptor
+An unconnected socket descriptor of a connection-oriented type
+may yield a connected socket descriptor
 in one of two ways: either by actively connecting to another socket,
 or by becoming associated with a name in the communications domain and
 \fIaccepting\fP a connection from another socket.
+Datagram sockets need not establish connections before use.
 .PP
-To accept connections, a socket must first have a binding
-to a name within the communications domain.  Such a binding
-is established by a \fIbind\fP call:
+To accept connections or to receive datagrams,
+a socket must first have a binding
+to a name (or address) within the communications domain.
+Such a binding may be established by a \fIbind\fP call:
 .DS
 bind(s, name, namelen);
-int s; char *name; int namelen;
+int s; struct sockaddr *name; int namelen;
 .DE
-A socket's bound name may be retrieved with a \fIgetsockname\fP call:
+Datagram sockets may have default bindings established when first
+sending data if not explicitly bound earlier.
+In either case,
+a socket's bound name may be retrieved with a \fIgetsockname\fP call:
 .DS
 getsockname(s, name, namelen);
-int s; result caddr_t name; result int *namelen;
+int s; result struct sockaddr *name; result int *namelen;
 .DE
 while the peer's name can be retrieved with \fIgetpeername\fP:
 .DS
 getpeername(s, name, namelen);
-int s; result caddr_t name; result int *namelen;
+int s; result struct sockaddr *name; result int *namelen;
 .DE
 Domains may support sockets with several names.
 .NH 4
 Accepting connections
 .PP
-Once a binding is made, it is possible to \fIlisten\fP for
-connections:
+Once a binding is made to a connection-oriented socket,
+it is possible to \fIlisten\fP for connections:
 .DS
 listen(s, backlog);
 int s, backlog;
@@ -119,18 +134,27 @@ that can be simultaneously queued awaiting acceptance.
 An \fIaccept\fP call:
 .DS
 t = accept(s, name, anamelen);
-result int t; int s; result caddr_t name; result int *anamelen;
+result int t; int s; result struct sockaddr *name; result int *anamelen;
 .DE
 returns a descriptor for a new, connected, socket
 from the queue of pending connections on \fIs\fP.
+If no new connections are queued for acceptance,
+the call will wait for a connection unless non-blocking I/O has been enabled.
 .NH 4
 Making connections
 .PP
 An active connection to a named socket is made by the \fIconnect\fP call:
 .DS
 connect(s, name, namelen);
-int s; caddr_t name; int namelen;
+int s; struct sockaddr *name; int namelen;
 .DE
+Although datagram sockets do not establish connections,
+the \fIconnect\fP call may be used with such sockets
+to create an \fIassociation\fP with the foreign address.
+The address is recorded for use in future \fIsend\fP calls,
+which then need not supply destination addresses.
+Datagrams will be received only from that peer,
+and asynchronous error reports may be received.
 .PP
 It is also possible to create connected pairs of sockets without
 using the domain's name space to rendezvous; this is done with the
@@ -140,8 +164,8 @@ using the domain's name space to rendezvous; this is done with the
 communication domain.
 .FE
 .DS
-socketpair(d, type, protocol, sv);
-int d, type, protocol; result int sv[2];
+socketpair(domain, type, protocol, sv);
+int domain, type, protocol; result int sv[2];
 .DE
 Here the returned \fIsv\fP descriptors correspond to those obtained with
 \fIaccept\fP and \fIconnect\fP.
@@ -203,7 +227,7 @@ Scatter/gather and exchanging access rights
 It is possible scatter and gather data and to exchange access rights
 with messages.  When either of these operations is involved,
 the number of parameters to the call becomes large.
-Thus the system defines a message header structure, in <sys/socket.h>,
+Thus the system defines a message header structure, in \fI<sys/socket.h>\fP,
 which can be
 used to conveniently contain the parameters to the calls:
 .DS
@@ -257,12 +281,16 @@ int s, direction;
 .DE
 where \fIdirection\fP is 0 to not read further, 1 to not
 write further, or 2 to completely shut the connection down.
+If the underlying protocol supports unidirectional or bidirectional shutdown,
+this indication will be passed to the peer.
+For example, a shutdown for writing might produce an end-of-file
+condition at the remote end.
 .NH 4
 Socket and protocol options
 .PP
 Sockets, and their underlying communication protocols, may
 support \fIoptions\fP.  These options may be used to manipulate
-implementation specific or non-standard facilities. 
+implementation- or protocol-specific facilities. 
 The \fIgetsockopt\fP
 and \fIsetsockopt\fP calls are used to control options:
 .DS
@@ -299,8 +327,8 @@ Socket names are strings and may appear in the UNIX file
 system name space through portals\(dg.
 .FS
 \(dg The 4.3BSD implementation of the UNIX domain embeds
-bound sockets in the UNIX file system name space; this
-is a side effect of the implementation.
+bound sockets in the UNIX file system name space;
+this may change in future releases.
 .FE
 .NH 4
 Access rights transmission
@@ -311,35 +339,47 @@ user processes to be used in building system facilities.
 .NH 3
 INTERNET domain
 .PP
-This section describes briefly how the INTERNET domain is
+This section describes briefly how the Internet domain is
 mapped to the model described in this section.  More
 information will be found in the document describing the
 network implementation in 4.3BSD.
 .NH 4
 Socket types and protocols
 .PP
-SOCK_STREAM is supported by the INTERNET TCP protocol;
-SOCK_DGRAM by the UDP protocol.  The SOCK_SEQPACKET
-has no direct INTERNET family analogue; a protocol
+SOCK_STREAM is supported by the Internet TCP protocol;
+SOCK_DGRAM by the UDP protocol.
+Each is layered atop the transport-level Internet Protocol (IP).
+The Internet Control Message Protocol is implemented atop/beside IP
+and is accessible via a raw socket.
+The SOCK_SEQPACKET
+has no direct Internet family analogue; a protocol
 based on one from the XEROX NS family and layered on
 top of IP could be implemented to fill this gap.
 .NH 4
 Socket naming
 .PP
-Sockets in the INTERNET domain have names composed of the 32 bit
-internet address, and a 16 bit port number.
+Sockets in the Internet domain have names composed of the 32 bit
+Internet address, and a 16 bit port number.
 Options may be used to
-provide source routing for the address, security options,
-or additional address for subnets of INTERNET for which the basic 32 bit
-addresses are insufficient.
+provide IP source routing or security options.
+The 32-bit address is composed of network and host parts;
+the network part is variable in size and is frequency encoded.
+The host part may optionally be interpreted as a subnet field
+plus the host on subnet; this is is enabled by setting a network address
+mask at boot time.
 .NH 4
 Access rights transmission
 .PP
-No access rights transmission facilities are provided in the INTERNET domain.
+No access rights transmission facilities are provided in the Internet domain.
 .NH 4
 Raw access
 .PP
-The INTERNET domain allows the super-user access to the raw facilities
-of the various network interfaces and the various internal layers
-of the protocol implementation.  This allows administrative and debugging
-functions to occur.  These interfaces are modeled as SOCK_RAW sockets.
+The Internet domain allows the super-user access to the raw facilities
+of IP.
+These interfaces are modeled as SOCK_RAW sockets.
+Each raw socket is associated with one IP protocol number,
+and receives all traffic received for that protocol.
+This allows administrative and debugging
+functions to occur,
+and enables user-level implementations of special-purpose protocols
+such as inter-gateway routing protocols.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.7.t	6.1 (Berkeley) %G%
+.\"	@(#)1.7.t	6.2 (Berkeley) %G%
 .\"
 .sh "System operation support
 .PP
@@ -57,7 +57,7 @@ int how;
 .DE
 causes a machine halt or reboot.  The call may request a reboot
 by specifying \fIhow\fP as RB_AUTOBOOT, or that the machine be halted
-with RB_HALT.  These constants are defined in <sys/reboot.h>.
+with RB_HALT.  These constants are defined in \fI<sys/reboot.h>\fP.
 .NH 3
 Accounting
 .PP

@@ -2,10 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.2 (Berkeley) %G%
+.\"	@(#)0.t	6.3 (Berkeley) %G%
 .\"
-.EH 'PS1:6-%''4.3BSD Architecture Manual'
-.OH '4.3BSD Architecture Manual''PS1:6-%'
 .if n .ND
 .TL
 Berkeley Software Architecture Manual
@@ -23,12 +21,14 @@ Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
+.EH 'PS1:6-%''4.3BSD Architecture Manual'
+.OH '4.3BSD Architecture Manual''PS1:6-%'
 .AB
 .FS
 * UNIX is a trademark of Bell Laboratories.
 .FE
 This document summarizes the facilities
-provided by the 4.3BSD version of the UNIX operating system.
+provided by the 4.3BSD version of the UNIX\|* operating system.
 It does not attempt to act as a tutorial for use of the system
 nor does it attempt to explain or justify the design of the
 system facilities.
@@ -254,7 +254,8 @@ when an error occurs, returning the error code in the global variable
 \fIerrno\fP.
 Other languages may present errors in different ways.
 .PP
-A number of system standard types are defined in the include file <sys/types.h>
+A number of system standard types are defined in the include file
+.I <sys/types.h>
 and used in the specifications here and in many C programs.
 These include \fBcaddr_t\fP giving a memory address (typically as
 a character pointer), 

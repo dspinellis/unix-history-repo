@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.3.t	6.1 (Berkeley) %G%
+.\"	@(#)1.3.t	6.2 (Berkeley) %G%
 .\"
 .sh "Signals
 .PP
@@ -39,7 +39,7 @@ The signals defined by the system fall into one of
 five classes: hardware conditions,
 software conditions, input/output notification, process control, or
 resource control.
-The set of signals is defined in the file <signal.h>.
+The set of signals is defined in the file \fI<signal.h>\fP.
 .PP
 Hardware signals are derived from exceptional conditions which
 may occur during
@@ -74,8 +74,8 @@ A process may be \fIstopped\fP by a signal sent to it or the members
 of its process group.  The SIGSTOP signal is a powerful stop
 signal, because it cannot be caught.  Other stop signals
 SIGTSTP, SIGTTIN, and SIGTTOU are used when a user request, input
-request, or output request respectively is the reason the process
-is being stopped.  A SIGCONT signal is sent to a process when it is
+request, or output request respectively is the reason for stopping the process.
+A SIGCONT signal is sent to a process when it is
 continued from a stopped state.
 Processes may receive notification with a SIGCHLD signal when
 a child process changes state, either by stopping or by terminating.
@@ -86,8 +86,8 @@ warns that the limit on file size creation has been reached.
 .NH 3
 Signal handlers
 .PP
-A process has a handler associated with each signal that
-controls the way the signal is delivered.
+A process has a handler associated with each signal.
+The handler controls the way the signal is delivered.
 The call
 .DS
 #include <signal.h>
@@ -112,7 +112,11 @@ The constants
 SIG_IGN and SIG_DEF used as values for \fIsv_handler\fP
 cause ignoring or defaulting of a condition.
 The \fIsv_mask\fP value specifies the
-signal mask to be used when the handler is invoked.
+signal mask to be used when the handler is invoked; it implicitly includes
+the signal which invoked the handler.
+Signal masks include one bit for each signal;
+the mask for a signal \fIsigno\fP is provided by the macro
+\fIsigmask\fP(\fIsigno\fP), from \fI<signal.h>\fP.
 \fISv_flags\fP specifies whether system calls should be
 restarted if the signal handler returns and
 whether the handler should operate on the normal run-time
@@ -135,8 +139,8 @@ If the process wishes to resume in a different context, then
 it must arrange to restore the signal mask itself.
 .PP
 The mask of \fIblocked\fP signals is independent of handlers for
-signals.  It prevents signals from being delivered much as a
-raised hardware interrupt priority level prevents hardware interrupts.
+signals.  It delays signals from being delivered much as a
+raised hardware interrupt priority level delays hardware interrupts.
 Preventing an interrupt from occurring by changing the handler is analogous to
 disabling a device from further interrupts.
 .PP
@@ -164,7 +168,7 @@ killpgrp(pgrp, signo)
 int pgrp, signo;
 .DE
 Unless the process sending the signal is privileged,
-it and the process receiving the signal must have the same effective user id.
+it must have the same effective user id as the process receiving the signal.
 .PP
 Signals are also sent implicitly from a terminal device to the
 process group associated with the terminal when certain input characters

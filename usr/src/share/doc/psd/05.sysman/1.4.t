@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.4.t	6.1 (Berkeley) %G%
+.\"	@(#)1.4.t	6.2 (Berkeley) %G%
 .\"
 .sh "Timers
 .NH 3
@@ -21,7 +21,7 @@ gettimeofday(tp, tzp);
 result struct timeval *tp;
 result struct timezone *tzp;
 .DE
-where the structures are defined in <sys/time.h> as:
+where the structures are defined in \fI<sys/time.h>\fP as:
 .DS
 ._f
 struct timeval {
@@ -34,6 +34,7 @@ struct timezone {
 	int	tz_dsttime;	/* type of dst correction to apply */
 };
 .DE
+The precision of the system clock is hardware dependent.
 Earlier versions of UNIX contained only a 1-second resolution version
 of this call, which remains as a library routine:
 .DS
@@ -45,7 +46,7 @@ returning only the tv_sec field from the \fIgettimeofday\fP call.
 Interval time
 .PP
 The system provides each process with three interval timers,
-defined in <sys/time.h>:
+defined in \fI<sys/time.h>\fP:
 .DS
 ._d
 #define	ITIMER_REAL	0	/* real time intervals */
@@ -99,7 +100,11 @@ remain because
 it is not always possible to guarantee
 the automatic restart of system calls after 
 receipt of a signal.
+The \fIprofil\fP call arranges for the kernel to begin gathering
+execution statistics for a process:
 .DS
 profil(buf, bufsize, offset, scale);
 result char *buf; int bufsize, offset, scale;
 .DE
+This begins sampling of the program counter, with statistics maintained
+in the user-provided buffer.

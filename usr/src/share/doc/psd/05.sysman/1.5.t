@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.5.t	6.1 (Berkeley) %G%
+.\"	@(#)1.5.t	6.2 (Berkeley) %G%
 .\"
 .sh Descriptors
 .PP
@@ -75,18 +75,30 @@ The system provides a
 standard way to do
 synchronous and asynchronous multiplexing of operations.
 .PP
-Synchronous multiplexing is performed by using the \fIselect\fP call:
+Synchronous multiplexing is performed by using the \fIselect\fP call
+to examine the state of multiple descriptors simultaneously,
+and to wait for state changes on those descriptors.
+Sets of descriptors of interest are specified as bit masks,
+as follows:
 .DS
+#include <sys/types.h>
+
 nds = select(nd, in, out, except, tvp);
-result int nds; int nd; result *in, *out, *except;
+result int nds; int nd; result fd_set *in, *out, *except;
 struct timeval *tvp;
+
+FD_ZERO(&fdset);
+FD_SET(fd, &fdset);
+FD_CLR(fd, &fdset);
+FD_ISSET(fd, &fdset);
+int fs; fs_set fdset;
 .DE
 The \fIselect\fP call examines the descriptors
 specified by the
 sets \fIin\fP, \fIout\fP and \fIexcept\fP, replacing
-the specified bit masks by the subsets that select for input,
+the specified bit masks by the subsets that select true for input,
 output, and exceptional conditions respectively (\fInd\fP
-indicates the size, in bytes, of the bit masks).
+indicates the number of file descriptors specified by the bit masks).
 If any descriptors meet the following criteria,
 then the number of such descriptors is returned in \fInds\fP and the
 bit masks are updated.
@@ -103,13 +115,15 @@ that was ``in progress'', such as connection establishment,
 has completed (see section 2.1.3).
 .IP \*(bu
 A descriptor selects for an exceptional condition if a condition
-that would cause a SIGURG signal to be generated exists (see section 1.3.2).
+that would cause a SIGURG signal to be generated exists (see section 1.3.2),
+or other device-specific events have occurred.
 .LP
-If none of the specified conditions is true, the operation blocks for
-at most the amount of time specified by \fItvp\fP, or waits for one of the
-conditions to arise if \fItvp\fP is given as 0.
+If none of the specified conditions is true, the operation
+waits for one of the conditions to arise,
+blocking at most the amount of time specified by \fItvp\fP.
+If \fItvp\fP is given as 0, the \fIselect\fP waits indefinitely.
 .PP
-Options affecting i/o on a descriptor
+Options affecting I/O on a descriptor
 may be read and set by the call:
 .DS
 ._d
@@ -123,9 +137,10 @@ result int dopt; int d, cmd, arg;
 #define	F_GETOWN	6	/* get descriptor owner (pid/pgrp) */
 .DE
 The F_SETFL \fIcmd\fP may be used to set a descriptor in 
-non-blocking i/o mode and/or enable signalling when i/o is
+non-blocking I/O mode and/or enable signalling when I/O is
 possible.  F_SETOWN may be used to specify a process or process
-group to be signalled when using the latter mode of operation.
+group to be signalled when using the latter mode of operation
+or when urgent indications arise.
 .PP
 Operations on non-blocking descriptors will
 either complete immediately,
@@ -175,8 +190,8 @@ read-ahead may provide higher performance but have a more difficult
 implementation.
 .PP
 Another example is the terminal driving facilities.  Normally a terminal
-is associated with a communications line and the terminal type
-and standard terminal access protocol is wrapped around a synchronous
+is associated with a communications line, and the terminal type
+and standard terminal access protocol are wrapped around a synchronous
 communications line and given to the user.  If a virtual terminal
 is required, the terminal driver can be wrapped around a communications
 link, the other end of which is held by a virtual terminal protocol

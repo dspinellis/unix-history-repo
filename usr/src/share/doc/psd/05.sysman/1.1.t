@@ -2,14 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.1.t	6.1 (Berkeley) %G%
+.\"	@(#)1.1.t	6.2 (Berkeley) %G%
 .\"
 .sh "Processes and protection
 .NH 3
 Host and process identifiers
 .PP
 Each UNIX host has associated with it a 32-bit host id, and a host
-name of up to 255 characters.  These are set (by a privileged user)
+name of up to 64 characters (as defined by MAXHOSTNAMELEN in
+\fI<sys/param.h>\fP).
+These are set (by a privileged user)
 and returned by the calls:
 .DS
 sethostid(hostid)
@@ -94,36 +96,43 @@ the execution of a specified interpreter program to process its contents.
 User and group ids
 .PP
 Each process in the system has associated with it two user-id's:
-a \fIreal user id\fP and a \fIeffective user id\fP, both non-negative 16 bit
-integers.
+a \fIreal user id\fP and a \fIeffective user id\fP, both 16 bit
+unsigned integers (type \fBuid_t\fP).
 Each process has an \fIreal accounting group id\fP and an \fIeffective
 accounting group id\fP and a set of
-\fIaccess group id's\fP.  The group id's are non-negative 16 bit integers.
+\fIaccess group id's\fP.  The group id's are 16 bit unsigned integers
+(type \fBgid_t\fP).
 Each process may be in several different access groups, with the maximum
 concurrent number of access groups a system compilation parameter,
-the constant NGROUPS in the file <sys/param.h>, guaranteed to be at least 8.
+the constant NGROUPS in the file \fI<sys/param.h>\fP,
+guaranteed to be at least 8.
 .PP
 The real and effective user ids associated with a process are returned by:
 .DS
 ruid = getuid();
-result int ruid;
+result uid_t ruid;
 
 euid = geteuid();
-result int euid;
+result uid_t euid;
 .DE
 the real and effective accounting group ids by:
 .DS
 rgid = getgid();
-result int rgid;
+result gid_t rgid;
 
 egid = getegid();
-result int egid;
+result gid_t egid;
 .DE
-and the access group id set is returned by a \fIgetgroups\fP call:
+The access group id set is returned by a \fIgetgroups\fP call*:
 .DS
 ngroups = getgroups(gidsetsize, gidset);
 result int ngroups; int gidsetsize; result int gidset[gidsetsize];
 .DE
+.FS
+* The type of the gidset array in getgroups and setgroups
+remains integer for compatibility with 4.2BSD.
+It may change to \fBgid_t\fP in future releases.
+.FE
 .PP
 The user and group id's
 are assigned at login time using the \fIsetreuid\fP, \fIsetregid\fP,
