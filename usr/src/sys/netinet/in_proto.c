@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.11 (Berkeley) %G%
+ *	@(#)in_proto.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,46 +13,41 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 
+#include <net/if.h>
+#include <net/radix.h>
+#include <net/route.h>
+
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-
-#include <net/radix.h>
-
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/in_pcb.h>
+#include <netinet/igmp_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
-int	ip_output(),ip_ctloutput();
-int	ip_init(),ip_slowtimo(),ip_drain(),ip_sysctl();
-int	icmp_input(),icmp_sysctl();
-int	igmp_init(),igmp_input(),igmp_fasttimo();
-int	udp_input(),udp_ctlinput();
-int	udp_usrreq(),udp_sysctl();
-int	udp_init();
-int	tcp_input(),tcp_ctlinput();
-int	tcp_usrreq(),tcp_ctloutput();
-int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_init(),rip_input(),rip_output(),rip_ctloutput(), rip_usrreq();
-/*
- * IMP protocol family: raw interface.
- * Using the raw interface entry to get the timer routine
- * in is a kludge.
- */
-#include "imp.h"
-#if NIMP > 0
-int	rimp_output(), hostslowtimo();
-#endif
 
 #ifdef NSIP
-int	idpip_input(), nsip_ctlinput();
+void	idpip_input(), nsip_ctlinput();
 #endif
 
 #ifdef TPIP
-int	tpip_input(), tpip_ctlinput(), tp_ctloutput(), tp_usrreq();
-int	tp_init(), tp_slowtimo(), tp_drain();
+void	tpip_input(), tpip_ctlinput(), tp_ctloutput();
+int	tp_init(), tp_slowtimo(), tp_drain(), tp_usrreq();
 #endif
 
 #ifdef EON
-int	eoninput(), eonctlinput(), eonprotoinit();
+void	eoninput(), eonctlinput(), eonprotoinit();
 #endif /* EON */
 
 extern	struct domain inetdomain;
@@ -123,8 +118,10 @@ struct domain inetdomain =
       inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])], 0,
       rn_inithead, 32, sizeof(struct sockaddr_in) };
 
+#include "imp.h"
 #if NIMP > 0
 extern	struct domain impdomain;
+int	rimp_output(), hostslowtimo();
 
 struct protosw impsw[] = {
 { SOCK_RAW,	&impdomain,	0,		PR_ATOMIC|PR_ADDR,

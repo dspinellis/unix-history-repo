@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_debug.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_debug.c	7.8 (Berkeley) %G%
  */
 
 #ifdef TCPDEBUG
@@ -45,6 +45,7 @@ int	tcpconsdebug = 0;
 /*
  * Tcp debug routines
  */
+void
 tcp_trace(act, ostate, tp, ti, req)
 	short act, ostate;
 	struct tcpcb *tp;

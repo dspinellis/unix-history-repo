@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.32 (Berkeley) %G%
+ *	@(#)in.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -21,6 +21,7 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
+#include <netinet/if_ether.h>
 
 #ifdef INET
 /*
@@ -350,6 +351,7 @@ in_control(so, cmd, data, ifp)
 /*
  * Delete any existing route for an interface.
  */
+void
 in_ifscrub(ifp, ia)
 	register struct ifnet *ifp;
 	register struct in_ifaddr *ia;
@@ -377,7 +379,6 @@ in_ifinit(ifp, ia, sin, scrub)
 	register u_long i = ntohl(sin->sin_addr.s_addr);
 	struct sockaddr_in oldaddr;
 	int s = splimp(), flags = RTF_UP, error, ether_output();
-	void arp_rtrequest();
 
 	oldaddr = ia->ia_addr;
 	ia->ia_addr = *sin;
@@ -480,7 +481,7 @@ in_broadcast(in, ifp)
 		      */
 		     t == ia->ia_subnet || t == ia->ia_net))
 			    return 1;
-	return 0;
+	return (0);
 #undef ia
 }
 /*
