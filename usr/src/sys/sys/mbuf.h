@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	7.19 (Berkeley) %G%
+ *	@(#)mbuf.h	8.1 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
