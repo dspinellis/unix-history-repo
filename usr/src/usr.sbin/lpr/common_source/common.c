@@ -1,4 +1,4 @@
-/*	common.c	4.3	83/05/18	*/
+/*	common.c	4.4	83/05/27	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -236,20 +236,6 @@ fatal(msg, a1, a2, a3)
 	if (printer)
 		printf("%s: ", printer);
 	printf(msg, a1, a2, a3);
-	putchar('\n');
-	exit(1);
-}
-
-fatalerror(msg)
-	char *msg;
-{
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-
-	printf("%s: ", name);
-	if (*msg)
-		printf("%s: ", msg);
-	fputs(errno < sys_nerr ? sys_errlist[errno] : "Unknown error" , stdout);
 	putchar('\n');
 	exit(1);
 }

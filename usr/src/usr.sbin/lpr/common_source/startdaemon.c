@@ -1,4 +1,4 @@
-/*	startdaemon.c	4.3	83/05/18	*/
+/*	startdaemon.c	4.4	83/05/27	*/
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
@@ -11,11 +11,14 @@ startdaemon()
 	char buf[BUFSIZ];
 
 	rem = getport(host);
-	if (rem < 0)
+	if (rem < 0) {
+		perr();
 		return(0);
+	}
 	(void) sprintf(buf, "\1%s\n", printer);
 	i = strlen(buf);
 	if (write(rem, buf, i) != i) {
+		perr();
 		(void) close(rem);
 		return(0);
 	}
@@ -23,6 +26,19 @@ startdaemon()
 		(void) fwrite(buf, 1, i, stdout);
 		err++;
 	}
+	if (i < 0)
+		perr();
 	(void) close(rem);
 	return(i == 0 && err == 0);
+}
+
+static
+perr()
+{
+	extern int sys_nerr;
+	extern char *sys_errlist[];
+
+	printf("%s: ", name);
+	fputs(errno < sys_nerr ? sys_errlist[errno] : "Unknown error" , stdout);
+	putchar('\n');
 }
