@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,8 +44,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	extern char *optarg;
 	struct passwd *pw;
 	int ch, fd, eval;
 	uid_t uid;
@@ -141,7 +139,7 @@ deliver(fd, name)
 	struct passwd *pw;
 	int created, mbfd, nr, nw, off, rval;
 	char biffmsg[100], buf[8*1024], path[MAXPATHLEN];
-	off_t curoff, lseek();
+	off_t curoff;
 
 	/*
 	 * Disallow delivery to unknown names -- special mailboxes can be
@@ -178,9 +176,9 @@ deliver(fd, name)
 		goto bad;
 	}
 
-	curoff = lseek(mbfd, 0L, SEEK_END);
-	(void)sprintf(biffmsg, "%s@%ld\n", name, curoff);
-	if (lseek(fd, 0L, SEEK_SET) == (off_t)-1) {
+	curoff = lseek(mbfd, (off_t)0, SEEK_END);
+	(void)sprintf(biffmsg, "%s@%qd\n", name, curoff);
+	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
 		err(FATAL, "temporary file: %s", strerror(errno));
 		rval = 1;
 		goto bad;
