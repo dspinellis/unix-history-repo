@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer1.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)refer1.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -81,6 +81,14 @@ char *argv[];
 		*search++ = getenv("REFER");
 	else if (nodeflt == 0)
 		*search++ = "/usr/dict/papers/Ind";
+	if (!labels) {
+		sprintf(ofile, "/tmp/rj%db", getpid());
+		ftemp = fopen(ofile, "w");
+		if (ftemp == NULL) {
+			fprintf(stderr, "Can't open scratch file\n");
+			exit(1);
+		}
+	}
 	if (endpush) {
 		sprintf(tfile, "/tmp/rj%da", getpid());
 		fo = fopen(tfile, "w");
@@ -89,15 +97,8 @@ char *argv[];
 			fprintf(stderr, "Can't open scratch file");
 		}
 		sep = 002; /* separate records without confusing sort..*/
-	}
-	if (sort && !labels) {
-		sprintf(ofile, "/tmp/rj%db", getpid());
-		ftemp = fopen(ofile, "w");
-		if (ftemp == NULL) {
-			fprintf(stderr, "Can't open scratch file\n");
-			exit(1);
-		}
-	}
+	} else 
+		fo = ftemp;
 	do {
 		if (argc > 1) {
 			fclose(in);
@@ -126,7 +127,7 @@ char *argv[];
 	if (endpush && fo != NULL)
 		dumpold();
 	output("");
-	if (sort && !labels)
+	if (!labels)
 		recopy(ofile);
 	clfgrep();
 	cleanup();
