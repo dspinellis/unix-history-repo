@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)od.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.5 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
- * usage:  od [-abcdDefFhHiIlLopPvxX] [file] [[+]offset[.][b] [label]]
+ * usage:  od [-abBcdDefFhHiIlLopPsvxX] [file] [[+]offset[.][b] [label]]
  *
  * where the option flags have the following meaning:
  *   character	object	radix	signed?
@@ -17,8 +17,9 @@ static char *sccsid = "@(#)od.c	5.4 (Berkeley) %G%";
  *	H,X	long	 16	 no
  *	i	short	 10	yes
  *	I,l,L	long	 10	yes
- *	o	short	  8	 no	(default conversion)
+ *	o,B	short	  8	 no	(default conversion)
  *	O	long	  8	 no
+ *	s	string	 (8)		ASCII graphic strings
  *
  *	p				indicate EVEN parity on 'a' conversion
  *	P				indicate ODD parity on 'a' conversion
@@ -34,12 +35,15 @@ static char *sccsid = "@(#)od.c	5.4 (Berkeley) %G%";
 
 #include <stdio.h>
 
-#define NO	0
-#define YES	1
-#define EVEN	-1
-#define ODD	1
-#define UNSIGNED 0
-#define SIGNED	1
+#define DBUF_SIZE      16
+#define NO		0
+#define YES		1
+#define EVEN	       -1
+#define ODD		1
+#define UNSIGNED	0
+#define SIGNED		1
+#define PADDR		1
+#define MIN_SLEN	3
 
 int	a_put();
 int	b_put();
@@ -49,46 +53,102 @@ int	us_put();
 int	l_put();
 int	f_put();
 int	d_put();
+int	st_put();
 
 struct dfmt {
 	int	df_field;	/* external field required for object */
 	int	df_size;	/* size (bytes) of object */
 	int	df_radix;	/* conversion radix */
 	int	df_signed;	/* signed? flag */
+	int	df_paddr;	/* "put address on each line?" flag */
 	int	(*df_put)();	/* function to output object */
-	char	*df_fmt;
+	char	*df_fmt;	/* output string format */
 } *conv_vec[32];		/* vector of conversions to be done */
 
-struct dfmt	ascii	= { 3, sizeof (char),   10,        0,  a_put, 0};
-struct dfmt	byte	= { 3, sizeof (char),    8, UNSIGNED,  b_put, 0};
-struct dfmt	cchar	= { 3, sizeof (char),    8, UNSIGNED,  c_put, 0};
-struct dfmt	u_s_oct	= { 6, sizeof (short),   8, UNSIGNED, us_put, 0};
-struct dfmt	u_s_dec	= { 5, sizeof (short),  10, UNSIGNED, us_put, 0};
-struct dfmt	u_s_hex	= { 4, sizeof (short),  16, UNSIGNED, us_put, 0};
-struct dfmt	u_l_oct	= {11, sizeof (long),    8, UNSIGNED,  l_put, 0};
-struct dfmt	u_l_dec	= {10, sizeof (long),   10, UNSIGNED,  l_put, 0};
-struct dfmt	u_l_hex	= { 8, sizeof (long),   16, UNSIGNED,  l_put, 0};
-struct dfmt	s_s_dec	= { 6, sizeof (short),  10,   SIGNED,  s_put, 0};
-struct dfmt	s_l_dec	= {11, sizeof (long),   10,   SIGNED,  l_put, 0};
-struct dfmt	flt	= {14, sizeof (float),  10,   SIGNED,  f_put, 0};
-struct dfmt	dble	= {21, sizeof (double), 10,   SIGNED,  d_put, 0};
+struct dfmt	ascii	= { 3, sizeof (char),   10,        0, PADDR,  a_put, 0};
+struct dfmt	byte	= { 3, sizeof (char),    8, UNSIGNED, PADDR,  b_put, 0};
+struct dfmt	cchar	= { 3, sizeof (char),    8, UNSIGNED, PADDR,  c_put, 0};
+struct dfmt	u_s_oct	= { 6, sizeof (short),   8, UNSIGNED, PADDR, us_put, 0};
+struct dfmt	u_s_dec	= { 5, sizeof (short),  10, UNSIGNED, PADDR, us_put, 0};
+struct dfmt	u_s_hex	= { 4, sizeof (short),  16, UNSIGNED, PADDR, us_put, 0};
+struct dfmt	u_l_oct	= {11, sizeof (long),    8, UNSIGNED, PADDR,  l_put, 0};
+struct dfmt	u_l_dec	= {10, sizeof (long),   10, UNSIGNED, PADDR,  l_put, 0};
+struct dfmt	u_l_hex	= { 8, sizeof (long),   16, UNSIGNED, PADDR,  l_put, 0};
+struct dfmt	s_s_dec	= { 6, sizeof (short),  10,   SIGNED, PADDR,  s_put, 0};
+struct dfmt	s_l_dec	= {11, sizeof (long),   10,   SIGNED, PADDR,  l_put, 0};
+struct dfmt	flt	= {14, sizeof (float),  10,   SIGNED, PADDR,  f_put, 0};
+struct dfmt	dble	= {21, sizeof (double), 10,   SIGNED, PADDR,  d_put, 0};
+struct dfmt	string	= { 0,               0,  8,        0,    NO, st_put, 0};
 
 
-char	usage[]	= "od [-abcdfhilopvx] [file] [[+]offset[.][b] [label]]";
-char	dbuf[16];
-char	lastdbuf[16];
+char	usage[]	= "usage: od [-abcdfhilopsvx] [file] [[+]offset[.][b] [label]]";
+char	dbuf[DBUF_SIZE];
+char	lastdbuf[DBUF_SIZE];
 int	addr_base;
 long	addr;
 long	label = -1L;
 int	_parity = NO;
 char	fmt[]	= "            %s";	/* 12 blanks */
 char	*icvt();
+char	*scvt();
 char	*underline();
 long	get_addr();
 
 
+/*
+ * special form of _ctype
+ */
+
+#define A	01
+#define G	02
+#define D	04
+#define P	010
+#define X	020
+#define isdigit(c)	(_ctype[c] & D)
+#define isascii(c)	(_ctype[c] & A)
+#define isgraphic(c)	(_ctype[c] & G)
+#define isprint(c)	(_ctype[c] & P)
+#define ishex(c)	(_ctype[c] & (X|D))
+
+char	_ctype[256] = {
+/* 000 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 010 */	A,	A,	A,	0,	A,	A,	0,	0,
+/* 020 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 030 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 040 */     P|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 050 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 060 */ P|G|D|A,P|G|D|A,P|G|D|A,P|G|D|A,P|G|D|A,P|G|D|A,P|G|D|A,P|G|D|A,
+/* 070 */ P|G|D|A,P|G|D|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 100 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 110 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 120 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 130 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 140 */   P|G|A,X|P|G|A,X|P|G|A,X|P|G|A,X|P|G|A,X|P|G|A,X|P|G|A,  P|G|A,
+/* 150 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 160 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,
+/* 170 */   P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,  P|G|A,	0,
+/* 200 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 210 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 220 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 230 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 240 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 250 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 260 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 270 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 300 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 310 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 320 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 330 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 340 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 350 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 360 */	0,	0,	0,	0,	0,	0,	0,	0,
+/* 370 */	0,	0,	0,	0,	0,	0,	0,	0,
+};
+
+
 main(argc, argv)
-char **argv;
+int	argc;
+char	**argv;
 {
 	register char *p;
 	register char *l;
@@ -103,11 +163,15 @@ char **argv;
 	argc--;
 	max_llen = max_nelm = 0;
 
-	if(argc > 0) {
+	if(argc > 0)
+	{
 		p = *argv;
-		if(*p == '-') {
-			while(*++p != '\0') {
-				switch(*p) {
+		if(*p == '-')
+		{
+			while(*++p != '\0')
+			{
+				switch(*p)
+				{
 				case 'a':
 					d = &ascii;
 					break;
@@ -147,6 +211,7 @@ char **argv;
 					d = &s_l_dec;
 					break;
 				case 'o':
+				case 'B':
 					d = &u_s_oct;
 					break;
 				case 'O':
@@ -158,6 +223,17 @@ char **argv;
 				case 'P':
 					_parity = ODD;
 					continue;
+				case 's':
+					d = &string;
+					*(cv++) = d;
+					if (addr_base == 0)
+						addr_base = d->df_radix;
+					while (isdigit(p[1]))
+						d->df_size = (10 * d->df_size) + (*++p - '0');
+					if (d->df_size <= 0)
+						d->df_size = MIN_SLEN;
+					showall = YES;
+					continue;
 				case 'v':
 					showall = YES;
 					continue;
@@ -166,7 +242,7 @@ char **argv;
 					puts(usage);
 					exit(1);
 				}
-				nelm = 16 / d->df_size;
+				nelm = DBUF_SIZE / d->df_size;
 				llen = (d->df_field + 1) * nelm;
 				if (llen > max_llen)
 					max_llen = llen;
@@ -188,23 +264,39 @@ char **argv;
 		}
 	}
 
-	if(cv == conv_vec) {
+	/*
+	 * if nothing spec'd, setup default conversion.
+	 */
+	if(cv == conv_vec)
+	{
 		addr_base = 8;
 		*(cv++) = &u_s_oct;
-		max_nelm = 16 / u_s_oct.df_size;
+		max_nelm = DBUF_SIZE / u_s_oct.df_size;
 		max_llen = max_nelm * (u_s_oct.df_field + 1);
 	}
 	*cv = (struct dfmt *)0;
 
+	/*
+	 * setup df_fmt to point to uniform output fields.
+	 */
 	cv = conv_vec;
-	while (d = *cv++) {
-		nelm = 16 / d->df_size;
-		field = max_llen / nelm;
-		d->df_fmt = fmt + 12 - (field - d->df_field);
+	while (d = *cv++)
+	{
+		if (d->df_field)	/* only if external field is known */
+		{
+			nelm = DBUF_SIZE / d->df_size;
+			field = max_llen / nelm;
+			d->df_fmt = fmt + 12 - (field - d->df_field);
+		}
 	}
 
-	if(argc > 0 && **argv != '+') {
-		if (freopen(*argv, "r", stdin) == NULL) {
+	/*
+	 * input file specified ?
+	 */
+	if(argc > 0 && **argv != '+')
+	{
+		if (freopen(*argv, "r", stdin) == NULL)
+		{
 			printf("od: cannot open %s\n", *argv);
 			exit(1);
 		}
@@ -212,6 +304,9 @@ char **argv;
 		argc--;
 	}
 
+	/*
+	 * check for possible offset [label]
+	 */
 	if (argc > 0)
 	{
 		addr = get_addr(*argv);
@@ -223,20 +318,28 @@ char **argv;
 			label = get_addr(*argv);
 	}
 
+	/*
+	 * main dump loop
+	 */
 	same = -1;
-	while ((n = fread(dbuf, 1, sizeof(dbuf), stdin)) > 0) {
-		if (same>=0 && strncmp(dbuf, lastdbuf, 16) == 0 && !showall) {
-			if (same==0) {
+	while ((n = fread(dbuf, 1, DBUF_SIZE, stdin)) > 0)
+	{
+		if (same>=0 && strncmp(dbuf, lastdbuf, DBUF_SIZE) == 0 && !showall)
+		{
+			if (same==0)
+			{
 				printf("*\n");
 				same = 1;
 			}
 		}
-		else {
+		else
+		{
 			line(n);
 			same = 0;
 			p = dbuf;
 			l = lastdbuf;
-			for (nelm=0; nelm<16; nelm++) {
+			for (nelm = 0; nelm < DBUF_SIZE; nelm++)
+			{
 				*l++ = *p;
 				*p++ = '\0';
 			}
@@ -245,15 +348,31 @@ char **argv;
 		if (label >= 0)
 			label += n;
 	}
-	put_addr('\n');
+
+	/*
+	 * Some conversions require "flushing".
+	 */
+	n = 0;
+	for (cv = conv_vec; *cv; cv++)
+	{
+		if ((*cv)->df_paddr)
+		{
+			if (n++ == 0)
+				put_addr(addr, label, '\n');
+		}
+		else
+			(*((*cv)->df_put))(0, *cv);
+	}
 }
 
-put_addr(c)
+put_addr(a, l, c)
+long	a;
+long	l;
 char	c;
 {
-	fputs(icvt(addr, addr_base, UNSIGNED, 7), stdout);
-	if (label >= 0)
-		printf(" (%s)", icvt(label, addr_base, UNSIGNED, 7));
+	fputs(icvt(a, addr_base, UNSIGNED, 7), stdout);
+	if (l >= 0)
+		printf(" (%s)", icvt(l, addr_base, UNSIGNED, 7));
 	putchar(c);
 }
 
@@ -265,19 +384,27 @@ int	n;
 	register struct dfmt **cv = conv_vec;
 
 	first = YES;
-	while (c = *cv++) {
-		if (first) {
-			put_addr(' ');
-			first = NO;
-		} else {
-			putchar('\t');
-			if (label >= 0)
-				fputs("\t  ", stdout);
+	while (c = *cv++)
+	{
+		if (c->df_paddr)
+		{
+			if (first)
+			{
+				put_addr(addr, label, ' ');
+				first = NO;
+			}
+			else
+			{
+				putchar('\t');
+				if (label >= 0)
+					fputs("\t  ", stdout);
+			}
 		}
 		i = 0;
 		while (i < n)
 			i += (*(c->df_put))(dbuf+i, c);
-		putchar('\n');
+		if (c->df_paddr)
+			putchar('\n');
 	}
 }
 
@@ -342,40 +469,11 @@ struct dfmt *d;
 
 
 char	asc_name[34][4] = {
-	"nul",
-	"soh",
-	"stx",
-	"etx",
-	"eot",
-	"enq",
-	"ack",
-	"bel",
-	" bs",
-	" ht",
-	" nl",
-	" vt",
-	" ff",
-	" cr",
-	" so",
-	" si",
-	"dle",
-	"dc1",
-	"dc2",
-	"dc3",
-	"dc4",
-	"nak",
-	"syn",
-	"etb",
-	"can",
-	" em",
-	"sub",
-	"esc",
-	" fs",
-	" gs",
-	" rs",
-	" us",
-	" sp",
-	"del"
+/* 000 */	"nul",	"soh",	"stx",	"etx",	"eot",	"enq",	"ack",	"bel",
+/* 010 */	" bs",	" ht",	" nl",	" vt",	" ff",	" cr",	" so",	" si",
+/* 020 */	"dle",	"dc1",	"dc2",	"dc3",	"dc4",	"nak",	"syn",	"etb",
+/* 030 */	"can",	" em",	"sub",	"esc",	" fs",	" gs",	" rs",	" us",
+/* 040 */	" sp",	"del"
 };
 
 a_put(cc, d)
@@ -387,9 +485,9 @@ struct dfmt *d;
 	register pbit = parity((int)c & 0377);
 
 	c &= 0177;
-	if (c > ' ' && c < 0177)
+	if (isgraphic(c))
 	{
-		s[2] = *cc;
+		s[2] = c;
 		if (pbit == _parity)
 			printf(d->df_fmt, underline(s));
 		else
@@ -414,7 +512,8 @@ int	word;
 	register int w = word;
 
 	if (w)
-		do {
+		do
+		{
 			p ^= 1;
 		} while(w &= (~(-w)));
 	return (p? ODD:EVEN);
@@ -427,8 +526,10 @@ char	*s;
 	static char ulbuf[16];
 	register char *u = ulbuf;
 
-	while (*s) {
-		if (*s != ' ') {
+	while (*s)
+	{
+		if (*s != ' ')
+		{
 			*u++ = '_';
 			*u++ = '\b';
 		}
@@ -450,39 +551,135 @@ c_put(cc, d)
 char	*cc;
 struct dfmt *d;
 {
-	int c = *cc & 0377;
-	register char *s = "   ";
+	register char	*s;
+	register int	n;
+	register int	c = *cc & 0377;
 
-	if(c>037 && c<0177) {
-		s[2] = *cc;
-		printf(d->df_fmt, s);
-		return(1);
-	}
-
-	switch(c) {
-	case '\0':
-		s = " \\0";
-		break;
-	case '\b':
-		s = " \\b";
-		break;
-	case '\f':
-		s = " \\f";
-		break;
-	case '\n':
-		s = " \\n";
-		break;
-	case '\r':
-		s = " \\r";
-		break;
-	case '\t':
-		s = " \\t";
-		break;
-	default:
-		s = icvt((long)c, d->df_radix, d->df_signed, d->df_field);
-	}
+	s = scvt(c, d);
+	for (n = d->df_field - strlen(s); n > 0; n--)
+		putchar(' ');
 	printf(d->df_fmt, s);
 	return(1);
+}
+
+char *scvt(c, d)
+int	c;
+struct dfmt	*d;
+{
+	static char s[2];
+
+	switch(c)
+	{
+		case '\0':
+			return("\\0");
+
+		case '\b':
+			return("\\b");
+
+		case '\f':
+			return("\\f");
+
+		case '\n':
+			return("\\n");
+
+		case '\r':
+			return("\\r");
+
+		case '\t':
+			return("\\t");
+
+		default:
+			if (isprint(c))
+			{
+				s[0] = c;
+				return(s);
+			}
+			return(icvt((long)c, d->df_radix, d->df_signed, d->df_field));
+	}
+}
+
+/*
+ * Look for strings.
+ * A string contains bytes > 037 && < 177, and ends with a null.
+ * The minimum length is given in the dfmt structure.
+ */
+
+#define CNULL		'\0'
+#define S_EMPTY	0
+#define S_FILL	1
+#define	S_CONT	2
+#define SBUFSIZE	1024
+
+static char	str_buf[SBUFSIZE];
+static int	str_mode = S_EMPTY;
+static char	*str_ptr;
+static long	str_addr;
+static long	str_label;
+
+st_put(c, d)
+register char	*c;
+struct dfmt	*d;
+{
+	if (c == 0)
+	{
+		pr_sbuf(d, YES);
+	}
+	else if (str_mode & S_FILL)
+	{
+		if (isascii(*c))
+			put_sbuf(*c, d);
+		else
+		{
+			*str_ptr = CNULL;
+			if (*c == CNULL)
+				pr_sbuf(d, YES);
+			str_mode = S_EMPTY;
+		}
+	}
+	else if (isascii(*c))
+	{
+		str_mode = S_FILL;
+		str_addr = addr + (c - dbuf);	/* ugly */
+		if ((str_label = label) >= 0)
+			str_label += (c - dbuf);/*  ''  */
+		str_ptr = str_buf;
+		put_sbuf(*c, d);
+	}
+
+	return(1);
+}
+
+put_sbuf(c, d)
+char	c;
+struct dfmt	*d;
+{
+	*str_ptr++ = c;
+	if (str_ptr >= (str_buf + SBUFSIZE))
+	{
+		pr_sbuf(d, NO);
+		str_ptr = str_buf;
+		str_mode |= S_CONT;
+	}
+}
+
+pr_sbuf(d, end)
+struct dfmt	*d;
+int	end;
+{
+	register char	*p = str_buf;
+
+	if (str_mode == S_EMPTY
+	    || (!(str_mode & S_CONT) && (str_ptr - str_buf) < d->df_size))
+		return;
+
+	if (!(str_mode & S_CONT))
+		put_addr(str_addr, str_label, ' ');
+
+	while (p < str_ptr)
+		fputs(scvt(*p++, d), stdout);
+
+	if (end)
+		putchar('\n');
 }
 
 /*
@@ -586,8 +783,7 @@ done:
 	return(b);
 }
 
-long
-get_addr(s)
+long get_addr(s)
 register char *s;
 {
 	register char *p;
@@ -596,24 +792,30 @@ register char *s;
 
 	if (*s=='+')
 		s++;
-	if (*s=='x') {
+	if (*s=='x')
+	{
 		s++;
 		addr_base = 16;
-	} else if (*s=='0' && s[1]=='x') {
+	}
+	else if (*s=='0' && s[1]=='x')
+	{
 		s += 2;
 		addr_base = 16;
-	} else if (*s == '0')
+	}
+	else if (*s == '0')
 		addr_base = 8;
 	p = s;
-	while(*p) {
+	while(*p)
+	{
 		if (*p++=='.')
 			addr_base = 10;
 	}
-	for (a=0; *s; s++) {
+	for (a=0; *s; s++)
+	{
 		d = *s;
-		if(d>='0' && d<='9')
+		if(isdigit(d))
 			a = a*addr_base + d - '0';
-		else if (d>='a' && d<='f' && addr_base==16)
+		else if (ishex(d) && addr_base==16)
 			a = a*addr_base + d + 10 - 'a';
 		else
 			break;
