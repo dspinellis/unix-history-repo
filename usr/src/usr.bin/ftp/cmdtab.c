@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.3 (Berkeley) %G%";
 #endif
 #include "ftp_var.h"
 
@@ -7,11 +7,11 @@ static char sccsid[] = "@(#)cmdtab.c	4.2 (Berkeley) %G%";
  * User FTP -- Command Tables.
  */
 int	setascii(), setbell(), setbinary(), setdebug(), setform();
-int	setmode(), setpeer(), setprompt(), setstruct(), settenex();
-int	settrace(), settype(), setverbose();
+int	setglob(), setmode(), setpeer(), setprompt(), setstruct();
+int	settenex(), settrace(), settype(), setverbose();
 int	disconnect();
 int	cd(), lcd(), delete(), user();
-int	ls(), get(), help(), put();
+int	ls(), get(), mget(), help(), put(), mput();
 int	quit(), renamefile(), status();
 int	quote(), rmthelp(), shell();
 int	pwd(), makedir(), removedir();
@@ -26,11 +26,14 @@ char	debughelp[] =	"toggle/set debugging mode";
 char	dirhelp[] =	"list contents of remote directory";
 char	disconhelp[] =	"terminate ftp session";
 char	formhelp[] =	"set file transfer format";
+char	globhelp[] =	"toggle metacharacter expansion of local file names";
 char	helphelp[] =	"print local help information";
 char	lcdhelp[] =	"change local working directory";
 char	lshelp[] =	"nlist contents of remote directory";
+char	mgethelp[] =	"get multiple files";
 char	mkdirhelp[] =	"make directory on the remote machine";
 char	modehelp[] =	"set file transfer mode";
+char	mputhelp[] =	"send multiple files";
 char	prompthelp[] =	"force interactive prompting on multiple commands";
 char	pwdhelp[] =	"print working directory on remote machine";
 char	quithelp[] =	"terminate ftp session and exit";
@@ -39,7 +42,7 @@ char	receivehelp[] =	"receive file";
 char	remotehelp[] =	"get help from remote server";
 char	renamehelp[] =	"rename file";
 char	rmdirhelp[] =	"remove directory on the remote machine";
-char	sendhelp[] =	"send file";
+char	sendhelp[] =	"send one file";
 char	shellhelp[] =	"escape to the shell";
 char	statushelp[] =	"show current status";
 char	structhelp[] =	"set file transfer structure";
@@ -62,11 +65,14 @@ struct cmd cmdtab[] = {
 	{ "dir",	dirhelp,	1,	ls },
 	{ "form",	formhelp,	0,	setform },
 	{ "get",	receivehelp,	1,	get },
+	{ "glob",	globhelp,	0,	setglob },
 	{ "help",	helphelp,	0,	help },
 	{ "lcd",	lcdhelp,	0,	lcd },
 	{ "ls",		lshelp,		1,	ls },
-	{ "mode",	modehelp,	0,	setmode },
+	{ "mget",	mgethelp,	1,	mget },
 	{ "mkdir",	mkdirhelp,	0,	makedir },
+	{ "mode",	modehelp,	0,	setmode },
+	{ "mput",	mputhelp,	1,	mput },
 	{ "open",	connecthelp,	0,	setpeer },
 	{ "prompt",	prompthelp,	0,	setprompt },
 	{ "put",	sendhelp,	1,	put },
