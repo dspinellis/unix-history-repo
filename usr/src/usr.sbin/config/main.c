@@ -1,5 +1,5 @@
 /*
- * main.c	1.2	81/02/25
+ * main.c	1.3	81/02/26
  * Config
  *	Do system configuration for VAX/UNIX
  *		1) Build system data structures
@@ -86,8 +86,10 @@ char *file;
 {
     register char *cp;
 
-    cp = malloc(strlen(PREFIX)+strlen(file)+1);
-    strcpy(cp, PREFIX);
-    strcpy(cp, file);
+    cp = malloc(strlen(PREFIX)+strlen(file)+5);
+    strcpy(cp, "../");
+    strcat(cp, PREFIX);
+    strcat(cp, "/");
+    strcat(cp, file);
     return cp;
 }

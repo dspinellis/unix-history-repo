@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER OPTIONS TRACE
 %token DISK SLAVE AT
 %{
-/*	config.y	1.2	81/02/25	*/
+/*	config.y	1.3	81/02/26	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -27,7 +27,10 @@ Spec:
 	;
 
 Config_spec:
-	CPU ID NUMBER = { cpu_type = ns(sprintf(errbuf, "%s%d", $2, $3)); } |
+	CPU Save_id NUMBER = {
+		    cpu_type = ns(sprintf(errbuf, "%s%d", $2, $3));
+		    free(temp_id);
+		    } |
 	IDENT ID { ident = ns($2); } |
 	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); }
 	;
