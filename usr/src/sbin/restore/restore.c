@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.2	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)restore.c	3.3	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -438,7 +438,7 @@ createfiles()
 
 	vprintf(stdout, "Extract requested files\n");
 	curfile.action = SKIP;
-	getvol((long)0);
+	getvol((long)1);
 	first = lowerbnd(ROOTINO);
 	last = upperbnd(maxino - 1);
 	for (;;) {
@@ -466,7 +466,7 @@ createfiles()
 			ep->e_flags &= ~NEW;
 			next = lowerbnd(next + 1);
 		}
-		if (next == curfile.ino) {
+		if (next == curfile.ino && next <= last) {
 			ep = lookupino(next);
 			if (ep == NIL)
 				panic("corrupted symbol table\n");
