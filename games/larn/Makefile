@@ -53,7 +53,7 @@
 
 PROG=	larn
 MAN6=	larn.6
-CFLAGS+=-DBSD -DVER=12 -DSUBVER=0 -DNONAP
+CFLAGS+=-DBSD -DVER=12 -DSUBVER=0 -DNONAP -fwritable-strings
 SRCS=	main.c object.c create.c tok.c display.c global.c data.c io.c \
 	monster.c store.c diag.c help.c config.c nap.c bill.c scores.c \
 	signal.c moreobj.c movem.c regen.c fortune.c savelev.c
