@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkdir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkdir.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,11 +31,13 @@ static char sccsid[] = "@(#)mkdir.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <strings.h>
 
+extern int errno;
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	int ch, exitval, pflag;
 
 	pflag = 0;
