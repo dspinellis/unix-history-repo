@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.96 (Berkeley) %G%
+ *	@(#)conf.h	8.97 (Berkeley) %G%
  */
 
 /*
@@ -229,6 +229,11 @@ extern int	syslog(int, char *, ...);
 typedef int		pid_t;
 extern char		*getenv();
 
+#  else
+			/* 4.1.x specifics */
+#   define HASSETSID	1	/* has Posix setsid(2) call */
+#   define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+
 #  endif
 # endif
 #endif
@@ -371,8 +376,7 @@ typedef int		pid_t;
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
 #  define HASSETPROCTITLE 1	/* setproctitle is in libc */
-# else
-#  define SETPROCTITLE	1
+#  undef SETPROCTITLE		/* so don't redefine it in conf.c */
 # endif
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
