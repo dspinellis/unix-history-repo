@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)utilities.c	5.10 (Berkeley) %G%";
 #include <sys/dir.h>
 #include "fsck.h"
 
+long	diskreads, totalreads;	/* Disk cache statistics */
 long	lseek();
 
 ftypeok(dp)
@@ -83,6 +84,73 @@ getline(fp, loc, maxlen)
 	return (p - loc);
 }
 
+/*
+ * Malloc buffers and set up cache.
+ */
+bufinit()
+{
+	register BUFAREA *bp;
+	long bufcnt, i;
+	char *bufp;
+
+	bufp = (char *)malloc(sblock.fs_bsize);
+	if (bufp == 0)
+		errexit("cannot allocate buffer pool\n");
+	cgblk.b_un.b_buf = bufp;
+	initbarea(&cgblk);
+	bufhead.b_next = bufhead.b_prev = &bufhead;
+	bufcnt = MAXBUFSPACE / sblock.fs_bsize;
+	if (bufcnt < MINBUFS)
+		bufcnt = MINBUFS;
+	for (i = 0; i < bufcnt; i++) {
+		bp = (BUFAREA *)malloc(sizeof(BUFAREA));
+		bufp = (char *)malloc(sblock.fs_bsize);
+		if (bp == 0 || bufp == 0) {
+			if (i >= MINBUFS)
+				break;
+			errexit("cannot allocate buffer pool\n");
+		}
+		bp->b_un.b_buf = bufp;
+		bp->b_prev = &bufhead;
+		bp->b_next = bufhead.b_next;
+		bufhead.b_next->b_prev = bp;
+		bufhead.b_next = bp;
+		initbarea(bp);
+	}
+}
+
+/*
+ * Manage a cache of directory blocks.
+ */
+BUFAREA *
+getdatablk(blkno, size)
+	daddr_t blkno;
+	long size;
+{
+	register BUFAREA *bp;
+
+	for (bp = bufhead.b_next; bp != &bufhead; bp = bp->b_next)
+		if (bp->b_bno == blkno)
+			goto foundit;
+	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev)
+		if ((bp->b_flags & B_INUSE) == 0)
+			break;
+	if (bp == &bufhead)
+		errexit("deadlocked buffer pool\n");
+	getblk(bp, blkno, size);
+	/* fall through */
+foundit:
+	totalreads++;
+	bp->b_prev->b_next = bp->b_next;
+	bp->b_next->b_prev = bp->b_prev;
+	bp->b_prev = &bufhead;
+	bp->b_next = bufhead.b_next;
+	bufhead.b_next->b_prev = bp;
+	bufhead.b_next = bp;
+	bp->b_flags |= B_INUSE;
+	return (bp);
+}
+
 BUFAREA *
 getblk(bp, blk, size)
 	register BUFAREA *bp;
@@ -93,12 +161,12 @@ getblk(bp, blk, size)
 	daddr_t dblk;
 
 	fcp = &dfile;
-	dblk = fsbtodb(&sblock, blk);
-	if (bp->b_bno == dblk)
+	if (bp->b_bno == blk)
 		return (bp);
 	flush(fcp, bp);
-	bp->b_errs = bread(fcp, bp->b_un.b_buf, dblk, size);
-	bp->b_bno = dblk;
+	diskreads++;
+	bp->b_errs = bread(fcp, bp->b_un.b_buf, fsbtodb(&sblock, blk), size);
+	bp->b_bno = blk;
 	bp->b_size = size;
 	return (bp);
 }
@@ -142,8 +210,8 @@ rwerr(s, blk)
 
 ckfini()
 {
+	register BUFAREA *bp;
 
-	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
 	if (havesb && sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
@@ -151,8 +219,12 @@ ckfini()
 		sbdirty();
 		flush(&dfile, &sblk);
 	}
-	flush(&dfile, &inoblk);
 	flush(&dfile, &cgblk);
+	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev)
+		flush(&dfile, bp);
+	if (debug)
+		printf("cache hit %d of %d (%d%%)\n", totalreads - diskreads,
+		    totalreads, (totalreads - diskreads) * 100 / totalreads);
 	(void)close(dfile.rfdes);
 	(void)close(dfile.wfdes);
 }

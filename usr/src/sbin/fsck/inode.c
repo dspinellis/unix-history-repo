@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -14,6 +14,8 @@ static char sccsid[] = "@(#)inode.c	5.5 (Berkeley) %G%";
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include "fsck.h"
+
+BUFAREA *pbp = 0;
 
 ckinode(dp, idesc)
 	DINODE *dp;
@@ -67,7 +69,7 @@ iblock(idesc, ilevel, isize)
 	register daddr_t *ap;
 	register daddr_t *aplim;
 	int i, n, (*func)(), nif, sizepb;
-	BUFAREA ib;
+	register BUFAREA *bp;
 	char buf[BUFSIZ];
 	extern int dirscan(), pass1check();
 
@@ -79,8 +81,7 @@ iblock(idesc, ilevel, isize)
 		func = dirscan;
 	if (outrange(idesc->id_blkno, idesc->id_numfrags)) /* protect thyself */
 		return (SKIP);
-	initbarea(&ib);
-	getblk(&ib, idesc->id_blkno, sblock.fs_bsize);
+	bp = getdatablk(idesc->id_blkno, sblock.fs_bsize);
 	ilevel--;
 	for (sizepb = sblock.fs_bsize, i = 0; i < ilevel; i++)
 		sizepb *= NINDIR(&sblock);
@@ -88,30 +89,34 @@ iblock(idesc, ilevel, isize)
 	if (nif > NINDIR(&sblock))
 		nif = NINDIR(&sblock);
 	if (idesc->id_func == pass1check && nif < NINDIR(&sblock)) {
-		aplim = &ib.b_un.b_indir[NINDIR(&sblock)];
-		for (ap = &ib.b_un.b_indir[nif]; ap < aplim; ap++) {
+		aplim = &bp->b_un.b_indir[NINDIR(&sblock)];
+		for (ap = &bp->b_un.b_indir[nif]; ap < aplim; ap++) {
 			if (*ap == 0)
 				continue;
 			(void)sprintf(buf, "PARTIALLY TRUNCATED INODE I=%d",
 				idesc->id_number);
 			if (dofix(idesc, buf)) {
 				*ap = 0;
-				dirty(&ib);
+				dirty(bp);
 			}
 		}
-		flush(&dfile, &ib);
+		flush(&dfile, bp);
 	}
-	aplim = &ib.b_un.b_indir[nif];
-	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
+	aplim = &bp->b_un.b_indir[nif];
+	for (ap = bp->b_un.b_indir, i = 1; ap < aplim; ap++, i++) {
 		if (*ap) {
 			idesc->id_blkno = *ap;
 			if (ilevel > 0)
 				n = iblock(idesc, ilevel, isize - i * sizepb);
 			else
 				n = (*func)(idesc);
-			if (n & STOP)
+			if (n & STOP) {
+				bp->b_flags &= ~B_INUSE;
 				return (n);
+			}
 		}
+	}
+	bp->b_flags &= ~B_INUSE;
 	return (KEEPON);
 }
 
@@ -160,10 +165,18 @@ ginode(inumber)
 	if (startinum == 0 ||
 	    inumber < startinum || inumber >= startinum + INOPB(&sblock)) {
 		iblk = itod(&sblock, inumber);
-		getblk(&inoblk, iblk, sblock.fs_bsize);
+		if (pbp != 0)
+			pbp->b_flags &= ~B_INUSE;
+		pbp = getdatablk(iblk, sblock.fs_bsize);
 		startinum = (inumber / INOPB(&sblock)) * INOPB(&sblock);
 	}
-	return (&inoblk.b_un.b_dinode[inumber % INOPB(&sblock)]);
+	return (&pbp->b_un.b_dinode[inumber % INOPB(&sblock)]);
+}
+
+inodirty()
+{
+	
+	dirty(pbp);
 }
 
 clri(idesc, s, flg)

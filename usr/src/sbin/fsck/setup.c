@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)setup.c	5.18 (Berkeley) %G%";
 #include "fsck.h"
 
 BUFAREA asblk;
-#define altsblock asblk.b_un.b_fs
+#define altsblock (*asblk.b_un.b_fs)
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
 char	*calloc();
@@ -74,10 +74,11 @@ setup(dev)
 	dfile.mod = 0;
 	lfdir = 0;
 	initbarea(&sblk);
-	initbarea(&fileblk);
-	initbarea(&inoblk);
-	initbarea(&cgblk);
 	initbarea(&asblk);
+	sblk.b_un.b_buf = (char *)malloc(SBSIZE);
+	asblk.b_un.b_buf = (char *)malloc(SBSIZE);
+	if (sblk.b_un.b_buf == 0 || asblk.b_un.b_buf == 0)
+		errexit("cannot allocate space for superblock\n");
 	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
 		dev_bsize = secsize = lp->d_secsize;
 	else
@@ -238,6 +239,7 @@ setup(dev)
 		goto badsb;
 	}
 
+	bufinit();
 	return (1);
 
 badsb:

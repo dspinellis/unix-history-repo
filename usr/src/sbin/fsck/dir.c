@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@ struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
 struct	dirtemplate dirhead = { 0, 12, 1, ".", 0, DIRBLKSIZ - 12, 2, ".." };
 
 DIRECT	*fsck_readdir();
+BUFAREA	*getdirblk();
 
 descend(parentino, inumber)
 	struct inodesc *parentino;
@@ -74,6 +75,7 @@ dirscan(idesc)
 	register struct inodesc *idesc;
 {
 	register DIRECT *dp;
+	register BUFAREA *bp;
 	int dsize, n;
 	long blksiz;
 	char dbuf[DIRBLKSIZ];
@@ -94,9 +96,9 @@ dirscan(idesc)
 		bcopy((char *)dp, dbuf, dsize);
 		idesc->id_dirp = (DIRECT *)dbuf;
 		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
-			getblk(&fileblk, idesc->id_blkno, blksiz);
+			bp = getdirblk(idesc->id_blkno, blksiz);
 			bcopy(dbuf, (char *)dp, dsize);
-			dirty(&fileblk);
+			dirty(bp);
 			sbdirty();
 		}
 		if (n & STOP) 
@@ -113,13 +115,14 @@ fsck_readdir(idesc)
 	register struct inodesc *idesc;
 {
 	register DIRECT *dp, *ndp;
+	register BUFAREA *bp;
 	long size, blksiz;
 
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
-	getblk(&fileblk, idesc->id_blkno, blksiz);
+	bp = getdirblk(idesc->id_blkno, blksiz);
 	if (idesc->id_loc % DIRBLKSIZ == 0 && idesc->id_filesize > 0 &&
 	    idesc->id_loc < blksiz) {
-		dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+		dp = (DIRECT *)(bp->b_un.b_buf + idesc->id_loc);
 		if (dircheck(idesc, dp))
 			goto dpok;
 		idesc->id_loc += DIRBLKSIZ;
@@ -129,18 +132,18 @@ fsck_readdir(idesc)
 		dp->d_namlen = 0;
 		dp->d_name[0] = '\0';
 		if (dofix(idesc, "DIRECTORY CORRUPTED"))
-			dirty(&fileblk);
+			dirty(bp);
 		return (dp);
 	}
 dpok:
 	if (idesc->id_filesize <= 0 || idesc->id_loc >= blksiz)
 		return NULL;
-	dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+	dp = (DIRECT *)(bp->b_un.b_buf + idesc->id_loc);
 	idesc->id_loc += dp->d_reclen;
 	idesc->id_filesize -= dp->d_reclen;
 	if ((idesc->id_loc % DIRBLKSIZ) == 0)
 		return (dp);
-	ndp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+	ndp = (DIRECT *)(bp->b_un.b_buf + idesc->id_loc);
 	if (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
 	    dircheck(idesc, ndp) == 0) {
 		size = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
@@ -148,7 +151,7 @@ dpok:
 		idesc->id_loc += size;
 		idesc->id_filesize -= size;
 		if (dofix(idesc, "DIRECTORY CORRUPTED"))
-			dirty(&fileblk);
+			dirty(bp);
 	}
 	return (dp);
 }
@@ -431,6 +434,7 @@ expanddir(dp)
 	register DINODE *dp;
 {
 	daddr_t lastbn, newblk;
+	register BUFAREA *bp;
 	char *cp, firstblk[DIRBLKSIZ];
 
 	lastbn = lblkno(&sblock, dp->di_size);
@@ -442,31 +446,31 @@ expanddir(dp)
 	dp->di_db[lastbn] = newblk;
 	dp->di_size += sblock.fs_bsize;
 	dp->di_blocks += btodb(sblock.fs_bsize);
-	getblk(&fileblk, dp->di_db[lastbn + 1],
-	    dblksize(&sblock, dp, lastbn + 1));
-	if (fileblk.b_errs != NULL)
+	bp = getdirblk(dp->di_db[lastbn + 1],
+		dblksize(&sblock, dp, lastbn + 1));
+	if (bp->b_errs != NULL)
 		goto bad;
-	bcopy(dirblk.b_buf, firstblk, DIRBLKSIZ);
-	getblk(&fileblk, newblk, sblock.fs_bsize);
-	if (fileblk.b_errs != NULL)
+	bcopy(bp->b_un.b_buf, firstblk, DIRBLKSIZ);
+	bp = getdirblk(newblk, sblock.fs_bsize);
+	if (bp->b_errs != NULL)
 		goto bad;
-	bcopy(firstblk, dirblk.b_buf, DIRBLKSIZ);
-	for (cp = &dirblk.b_buf[DIRBLKSIZ];
-	     cp < &dirblk.b_buf[sblock.fs_bsize];
+	bcopy(firstblk, bp->b_un.b_buf, DIRBLKSIZ);
+	for (cp = &bp->b_un.b_buf[DIRBLKSIZ];
+	     cp < &bp->b_un.b_buf[sblock.fs_bsize];
 	     cp += DIRBLKSIZ)
 		bcopy((char *)&emptydir, cp, sizeof emptydir);
-	dirty(&fileblk);
-	getblk(&fileblk, dp->di_db[lastbn + 1],
-	    dblksize(&sblock, dp, lastbn + 1));
-	if (fileblk.b_errs != NULL)
+	dirty(bp);
+	bp = getdirblk(dp->di_db[lastbn + 1],
+		dblksize(&sblock, dp, lastbn + 1));
+	if (bp->b_errs != NULL)
 		goto bad;
-	bcopy((char *)&emptydir, dirblk.b_buf, sizeof emptydir);
+	bcopy((char *)&emptydir, bp->b_un.b_buf, sizeof emptydir);
 	pwarn("NO SPACE LEFT IN %s", pathname);
 	if (preen)
 		printf(" (EXPANDED)\n");
 	else if (reply("EXPAND") == 0)
 		goto bad;
-	dirty(&fileblk);
+	dirty(bp);
 	inodirty();
 	return (1);
 bad:
@@ -487,22 +491,23 @@ allocdir(parent, request)
 	ino_t ino;
 	char *cp;
 	DINODE *dp;
+	register BUFAREA *bp;
 
 	ino = allocino(request, IFDIR|0755);
 	dirhead.dot_ino = ino;
 	dirhead.dotdot_ino = parent;
 	dp = ginode(ino);
-	getblk(&fileblk, dp->di_db[0], sblock.fs_fsize);
-	if (fileblk.b_errs != NULL) {
+	bp = getdirblk(dp->di_db[0], sblock.fs_fsize);
+	if (bp->b_errs != NULL) {
 		freeino(ino);
 		return (0);
 	}
-	bcopy((char *)&dirhead, dirblk.b_buf, sizeof dirhead);
-	for (cp = &dirblk.b_buf[DIRBLKSIZ];
-	     cp < &dirblk.b_buf[sblock.fs_fsize];
+	bcopy((char *)&dirhead, bp->b_un.b_buf, sizeof dirhead);
+	for (cp = &bp->b_un.b_buf[DIRBLKSIZ];
+	     cp < &bp->b_un.b_buf[sblock.fs_fsize];
 	     cp += DIRBLKSIZ)
 		bcopy((char *)&emptydir, cp, sizeof emptydir);
-	dirty(&fileblk);
+	dirty(bp);
 	dp->di_nlink = 2;
 	inodirty();
 	if (ino == ROOTINO) {
@@ -563,4 +568,21 @@ lftempname(bufp, ino)
 	}
 	*cp = '#';
 	return (namlen);
+}
+
+/*
+ * Get a directory block.
+ * Insure that it is held until another is requested.
+ */
+BUFAREA *
+getdirblk(blkno, size)
+	daddr_t blkno;
+	long size;
+{
+	static BUFAREA *pbp = 0;
+
+	if (pbp != 0)
+		pbp->b_flags &= ~B_INUSE;
+	pbp = getdatablk(blkno, size);
+	return (pbp);
 }
