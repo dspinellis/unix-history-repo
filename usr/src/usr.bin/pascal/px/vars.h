@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.7 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.8 %G%"; */
 
 #include <stdio.h>
 
@@ -58,6 +58,7 @@
 #define	PX	0	/* normal run of px */
 #define	PIX	1	/* load and go */
 #define	PIPE	2	/* bootstrap via a pipe */
+#define	PDX	3	/* invoked by the debugger "pdx" */
 #define releq 0
 #define relne 2
 #define rellt 4
