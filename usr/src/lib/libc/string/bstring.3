@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bstring.3	5.1 (Berkeley) %G%
+.\"	@(#)bstring.3	6.1 (Berkeley) %G%
 .\"
-.TH BSTRING 3  "4 March 1983"
+.TH BSTRING 3  ""
 .UC 5
 .SH NAME
 bcopy, bcmp, bzero, ffs \- bit and byte string operations
 .SH SYNOPSIS
 .nf
-.B bcopy(b1, b2, length)
-.B char *b1, *b2;
+.B bcopy(src, dst, length)
+.B char *src, *dst;
 .B int length;
 .PP
 .B bcmp(b1, b2, length)
@@ -40,9 +40,9 @@ do.
 copies 
 .I length
 bytes from string
-.I b1
+.I src
 to the string
-.IR b2 .
+.IR dst .
 .PP
 .I Bcmp
 compares byte string
@@ -64,14 +64,10 @@ places
 .I Ffs
 find the first bit set in the argument passed it and
 returns the index of that bit.  Bits are numbered
-starting at 1.  A return value of \-1 indicates the
+starting at 1.  A return value of 0 indicates the
 value passed is zero.
 .SH BUGS
 The
-.I bcmp
-and 
 .I bcopy
-routines take parameters backwards from
-.I strcmp
-and
+routine take parameters backwards from
 .IR strcpy .
