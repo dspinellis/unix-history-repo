@@ -1,6 +1,7 @@
-/*	getnetent.c	4.7	83/01/02	*/
+/*	getnetent.c	4.8	83/05/23	*/
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <ctype.h>
