@@ -1,4 +1,4 @@
-/*	tcp_timer.c	6.5	84/11/14	*/
+/*	tcp_timer.c	6.6	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -154,9 +154,11 @@ tcp_timers(tp, timer)
 		}
 		tp->snd_nxt = tp->snd_una;
 		/*
-		 * If timing a segment in this window, stop the timer.
+		 * If timing a segment in this window,
+		 * and we have already gotten some timing estimate,
+		 * stop the timer.
 		 */
-		if (tp->t_rtt && SEQ_GT(tp->t_rtseq, tp->snd_una))
+		if (tp->t_rtt && tp->t_srtt)
 			tp->t_rtt = 0;
 		(void) tcp_output(tp);
 		break;
