@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.15 (Berkeley) %G%
+ *	@(#)tp_output.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -384,7 +384,14 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		goto done;
 	} else if ( level == SOL_SOCKET) {
 		if (optname == SO_RCVBUF && cmd == PRCO_SETOPT) {
+			u_long old_credit = tpcb->tp_maxlcredit;
 			tp_rsyset(tpcb);
+			if (tpcb->tp_rhiwat != so->so_rcv.sb_hiwat &&
+			    tpcb->tp_state == TP_OPEN &&
+			    (old_credit < tpcb->tp_maxlcredit))
+				tp_emit(AK_TPDU_type, tpcb,
+					tpcb->tp_rcvnxt, 0, MNULL);
+			tpcb->tp_rhiwat = so->so_rcv.sb_hiwat;
 		}
 		goto done;
 	} else if ( level !=  SOL_TRANSPORT ) {
@@ -661,9 +668,10 @@ done:
 	 * reside in the first mbuf 
 	 */
 	if (*mp) {
-		if (cmd == PRCO_SETOPT)
+		if (cmd == PRCO_SETOPT) {
 			m_freem(*mp);
-		else {
+			*mp = MNULL;
+		} else {
 			ASSERT ( m_compress(*mp, mp) <= MLEN );
 			if (error)
 				(*mp)->m_len = 0;
