@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.3	4.1 (Berkeley) %G%
+.\"	@(#)termcap.3	5.1 (Berkeley) %G%
 .\"
-.TH TERMCAP 3
+.TH TERMCAP 3X "9 February 1983"
 .UC 4
 .SH NAME
 tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs \- terminal independent operation routines
@@ -43,7 +43,7 @@ base
 .IR termcap (5).
 These are low level routines;
 see
-.IR curses (3)
+.IR curses (3X)
 for a higher level package.
 .PP
 .I Tgetent
@@ -113,7 +113,9 @@ and
 if necessary to avoid placing \fB\en\fR, \fB^D\fR or \fB^@\fR in
 the returned string.
 (Programs which call tgoto should be sure to turn off the XTABS bit(s),
-since tgoto may now output a tab.
+since
+.I tgoto
+may now output a tab.
 Note that programs using termcap should in general turn off XTABS
 anyway since some terminals use control I for other functions,
 such as nondestructive space.)
@@ -123,7 +125,7 @@ returns \*(lqOOPS\*(rq.
 .PP
 .I Tputs
 decodes the leading padding information of the string
-.I cp;
+.IR cp ;
 .I affcnt
 gives the number of lines affected by the operation, or 1 if this is
 not applicable,
@@ -132,7 +134,7 @@ is a routine which is called with each character in turn.
 The external variable
 .I ospeed
 should contain the output speed of the terminal as encoded by
-.I stty (2).
+.IR stty (3).
 The external variable
 .B PC
 should contain a pad character to be used (from the \fBpc\fR capability)
@@ -144,7 +146,6 @@ if a null (\fB^@\fR) is inappropriate.
 /etc/termcap	data base
 .DT
 .SH SEE ALSO
-ex(1), curses(3), termcap(5)
+ex(1), curses(3X), termcap(5)
 .SH AUTHOR
 William Joy
-.SH BUGS
