@@ -7,11 +7,11 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)pte.h	5.1 (Berkeley) %G%
+ *	@(#)pte.h	5.2 (Berkeley) %G%
  */
 
 /*
- * 386 page table entry and page directory entry
+ * 386 page table entry and page table directory
  * W.Jolitz, 8/89
  *
  * There are two major kinds of pte's: those which have ever existed (and are
@@ -34,7 +34,6 @@ unsigned int
 		:3,			/* reserved for software */
 		pd_pfnum:20;		/* physical page frame number of pte's*/
 };
-
 struct pte
 {
 unsigned int	
@@ -49,14 +48,12 @@ unsigned int
 		pg_nc:1,		/* 'uncacheable page' bit */
 		pg_pfnum:20;		/* physical page frame number */
 };
-
 struct hpte
 {
 unsigned int	
 		pg_high:12,		/* special for clustering */
 		pg_pfnum:20;
 };
-
 struct fpte
 {
 unsigned int	
