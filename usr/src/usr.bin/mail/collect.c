@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.3 %G%";
+static char *SccsId = "@(#)collect.c	2.4 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -111,7 +111,8 @@ collect(hp)
 		}
 		eof = 0;
 		hadintr = 0;
-		if (intty && equal(".", linebuf) && value("dot") != NOSTR)
+		if (intty && equal(".", linebuf) &&
+		    (value("dot") != NOSTR || value("ignoreeof") != NOSTR))
 			break;
 		if (linebuf[0] != escape || rflag != NOSTR) {
 			if ((t = putline(obuf, linebuf)) < 0)
