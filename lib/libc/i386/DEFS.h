@@ -33,15 +33,30 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)DEFS.h	5.1 (Berkeley) 4/23/90
+ *	from: @(#)DEFS.h	5.1 (Berkeley) 4/23/90
+ *
+ *	$Id$
  */
 
 #ifdef PROF
-#define	ENTRY(x)	.globl _/**/x; _/**/x:  \
-			.data; 1:; .long 0; .text; lea 1b,%eax ; call mcount
-#define	ASENTRY(x)	.globl x; x: \
-			.data; 1:; .long 0; .text; lea 1b,%eax ; call mcount
+#define ALTENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:;	\
+			.data; .align 2; 1:; .long 0;		\
+			.text; lea 1b,%eax; call mcount; jmp 2f
+
+#define	ENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:;	\
+			.data; .align 2; 1:; .long 0;		\
+			.text; lea 1b,%eax ; call mcount; 2:
+
+#define	ALTASENTRY(x)	.align 2,0x90; .globl x; x:;			\
+			.data; .align 2; 1:; .long 0;		\
+			.text; lea 1b,%eax; call mcount; jmp 2f
+
+#define	ASENTRY(x)	.align 2,0x90; .globl x; x:;			\
+			.data; .align 2; 1:; .long 0;		\
+			.text; lea 1b,%eax; call mcount; 2:
 #else
-#define	ENTRY(x)	.globl _/**/x; _/**/x: 
-#define	ASENTRY(x)	.globl x; x: 
+#define	ALTENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:
+#define	ENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:
+#define	ALTASENTRY(x)	.align 2,0x90; .globl x; x:
+#define	ASENTRY(x)	.align 2,0x90; .globl x; x:
 #endif

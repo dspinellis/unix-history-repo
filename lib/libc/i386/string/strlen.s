@@ -27,11 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: strlen.s,v 1.3 1993/08/16 17:06:41 jtc Exp $
+ *	$Id: strlen.s,v 1.1 1993/08/16 18:40:46 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: strlen.s,v 1.3 1993/08/16 17:06:41 jtc Exp $"
+        .asciz "$Id: strlen.s,v 1.1 1993/08/16 18:40:46 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -52,8 +52,7 @@ ENTRY(strlen)
 	movl	$-1,%ecx		/* set search for lots of characters */
 	repne				/* search! */
 	scasb
-	movl	%ecx,%eax		/* get length by taking	twos-	*/
-	notl	%eax			/* complement and subtracting	*/
-	decl	%eax			/* one */
+	notl	%ecx			/* get length by taking complement */
+	leal	-1(%ecx),%eax		/* and subtracting one */
 	popl	%edi
 	ret

@@ -32,11 +32,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: bcopy.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: bcopy.s,v 1.2 1993/08/16 18:40:24 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-	.asciz "$Id: bcopy.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+	.asciz "$Id: bcopy.s,v 1.2 1993/08/16 18:40:24 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -64,7 +64,6 @@ ENTRY(bcopy)
 	movsb
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	ret
 1:
 	addl	%ecx,%edi	/* copy backwards. */
@@ -83,6 +82,5 @@ ENTRY(bcopy)
 	movsl
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	cld
 	ret

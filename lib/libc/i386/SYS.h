@@ -33,17 +33,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)SYS.h	5.5 (Berkeley) 5/7/91
+ *	from: @(#)SYS.h	5.5 (Berkeley) 5/7/91
+ *
+ *	$Id$
  */
 
 #include <syscall.h>
 
 #ifdef PROF
 #define	ENTRY(x)	.globl _/**/x; \
-			.data; 1:; .long 0; .text; .align 2; _/**/x: \
+			.data; 1:; .long 0; .text; .align 2,0x90; _/**/x: \
 			movl $1b,%eax; call mcount
 #else
-#define	ENTRY(x)	.globl _/**/x; .text; .align 2; _/**/x: 
+#define	ENTRY(x)	.globl _/**/x; .text; .align 2,0x90; _/**/x: 
 #endif PROF
 #define	SYSCALL(x)	2: jmp cerror; ENTRY(x); lea SYS_/**/x,%eax; LCALL(7,0); jb 2b
 #define	RSYSCALL(x)	SYSCALL(x); ret

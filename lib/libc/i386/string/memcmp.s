@@ -27,11 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: memcmp.s,v 1.3 1993/08/16 17:06:33 jtc Exp $
+ *	$Id: memcmp.s,v 1.1 1993/08/16 18:40:33 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: memcmp.s,v 1.3 1993/08/16 17:06:33 jtc Exp $"
+        .asciz "$Id: memcmp.s,v 1.1 1993/08/16 18:40:33 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -43,25 +43,39 @@
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-/*
- * XXX should compare by words
- */
-
 ENTRY(memcmp)
 	pushl	%edi
 	pushl	%esi
 	movl	12(%esp),%edi
 	movl	16(%esp),%esi
-	movl	20(%esp),%ecx
-	xorl	%eax,%eax		/* clear return value */
+	movl	20(%esp),%edx
 	cld				/* set compare direction forward */
-	repe				/* compare! */
+
+	movl	%edx,%ecx		/* compare by words */
+	shrl	$2,%ecx
+	repe
+	cmpsl
+	jne	L5			/* do we match so far? */
+
+	movl	%edx,%ecx		/* compare remainder by bytes */
+	andl	$3,%ecx
+	repe
 	cmpsb
-	je	L1			/* matches! */
-	movsbl  -1(%edi),%eax		/* unsigned comparison */
-        movsbl  -1(%esi),%edx
-        subl    %edx,%eax
-L1:	popl	%esi
+	jne	L6			/* do we match? */
+
+	xorl	%eax,%eax		/* we match, return zero	*/
+	popl	%esi
 	popl	%edi
 	ret
 
+L5:	movl	$4,%ecx			/* We know that one of the next	*/
+	subl	%ecx,%edi		/* four pairs of bytes do not	*/
+	subl	%ecx,%esi		/* match.			*/
+	repe
+	cmpsb
+L6:	movsbl  -1(%edi),%eax		/* Perform unsigned comparison	*/
+        movsbl  -1(%esi),%edx
+        subl    %edx,%eax
+	popl	%esi
+	popl	%edi
+	ret

@@ -16,7 +16,7 @@ SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.s memcmp.s memset.s \
 	rindex.s strcat.s strcmp.s strcpy.s strcspn.c strlen.s \
 	strncat.c strncmp.s strncpy.c strpbrk.c strsep.c \
 	strspn.c strstr.c
-SRCS+=	memcpy.s memmove.s strchr.s strrchr.s
+SRCS+=	memmove.s strchr.s strrchr.s
 .elif (${MACHINE} == "tahoe")
 SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.c memcmp.s memset.c \
 	rindex.c strcat.s strcmp.s strcpy.s strcspn.c strlen.s \
@@ -32,6 +32,7 @@ SRCS+=	memmove.s strchr.s strrchr.s
 .endif
 
 # if no machine specific memmove(3), build one out of bcopy(3).
+.if empty(SRCS:Mmemcpy.s)
 .if empty(SRCS:Mmemmove.s)
 OBJS+=	memmove.o
 memmove.o: bcopy.c
@@ -44,19 +45,6 @@ memmove.po: bcopy.c
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 .endif
-
-# if no machine specific memcpy(3), build one out of bcopy(3).
-.if empty(SRCS:Mmemcpy.s)
-OBJS+=	memcpy.o
-memcpy.o: bcopy.c
-	${CC} -DMEMCOPY ${CFLAGS} -c ${.ALLSRC} -o ${.TARGET}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
-
-memcpy.po: bcopy.c
-	${CC} -DMEMCOPY ${CFLAGS} -c -p ${.ALLSRC} -o ${.TARGET}
-	@${LD} -X -r ${.TARGET}
-	@mv a.out ${.TARGET}
 .endif
 
 # if no machine specific strchr(3), build one out of index(3).
