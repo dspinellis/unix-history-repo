@@ -335,8 +335,6 @@ dev_pager_getfake(paddr)
 
 	if (queue_empty(&dev_pager_fakelist)) {
 		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
-		/* bzero isn't really necessary, but we're being extra tidy */
-		bzero((caddr_t)m, PAGE_SIZE);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
 			m++;
@@ -344,14 +342,8 @@ dev_pager_getfake(paddr)
 	}
 	queue_remove_first(&dev_pager_fakelist, m, vm_page_t, pageq);
 
-	/* Initialize all fields to zero */
-	bzero((caddr_t)m, sizeof(*m));
-
-#if 0
 	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
-#endif
 
-	m->busy = m->clean = m->fake = m->fictitious = TRUE;
 	m->wire_count = 1;
 	m->phys_addr = paddr;
 
@@ -363,10 +355,7 @@ dev_pager_putfake(m)
 	vm_page_t m;
 {
 #ifdef DIAGNOSTIC
-#if 0
 	if (!(m->flags & PG_FICTITIOUS))
-#endif
-	if (!m->ficticious)
 		panic("dev_pager_putfake: bad page");
 #endif
 	queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);

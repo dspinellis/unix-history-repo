@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.10 1993/11/25 12:07:41 davidg Exp $
+ *	$Id: vm_object.c,v 1.11 1993/12/19 00:56:07 wollman Exp $
  */
 
 /*
@@ -284,7 +284,7 @@ void vm_object_deallocate(object)
 				VM_PAGE_CHECK(p);
 
 				if (pmap_is_modified(VM_PAGE_TO_PHYS(p)) ||
-								!p->clean) {
+								!(p->flags & PG_CLEAN)) {
 
 					printf("vm_object_dealloc: persistent object %x isn't clean\n", object);
 					goto cant_persist;
@@ -376,17 +376,17 @@ void vm_object_terminate(object)
 		VM_PAGE_CHECK(p);
 
 		vm_page_lock_queues();
-		if (p->active) {
+		if (p->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, p, vm_page_t,
 						pageq);
-			p->active = FALSE;
+			p->flags &= ~PG_ACTIVE;
 			vm_page_active_count--;
 		}
 
-		if (p->inactive) {
+		if (p->flags & PG_INACTIVE) {
 			queue_remove(&vm_page_queue_inactive, p, vm_page_t,
 						pageq);
-			p->inactive = FALSE;
+			p->flags &= ~PG_INACTIVE;
 			vm_page_inactive_count--;
 		}
 		vm_page_unlock_queues();
@@ -465,17 +465,17 @@ again:
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if (start == end ||
 		    p->offset >= start && p->offset < end) {
-			if (p->clean && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
-				p->clean = FALSE;
+			if ((p->flags & PG_CLEAN) && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
+				p->flags &= ~PG_CLEAN;
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
-			if (!p->clean) {
-				p->busy = TRUE;
+			if (!(p->flags & PG_CLEAN)) {
+				p->flags |= PG_BUSY;
 				object->paging_in_progress++;
 				vm_object_unlock(object);
 				(void) vm_pager_put(object->pager, p, TRUE);
 				vm_object_lock(object);
 				object->paging_in_progress--;
-				p->busy = FALSE;
+				p->flags &= ~PG_BUSY;
 				PAGE_WAKEUP(p);
 				goto again;
 			}
@@ -502,7 +502,7 @@ vm_object_deactivate_pages(object)
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		next = (vm_page_t) queue_next(&p->listq);
 		vm_page_lock_queues();
-		if (!p->busy)
+		if (!(p->flags & PG_BUSY))
 			vm_page_deactivate(p);	/* optimisation from mach 3.0 -
 						 * andrew@werple.apana.org.au,
 						 * Feb '93
@@ -615,7 +615,7 @@ void vm_object_pmap_copy(object, start, end)
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if ((start <= p->offset) && (p->offset < end)) {
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_READ);
-			p->copy_on_write = TRUE;
+			p->flags |= PG_COPY_ON_WRITE;
 		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
@@ -718,7 +718,7 @@ void vm_object_copy(src_object, src_offset, size,
 		     p = (vm_page_t) queue_next(&p->listq)) {
 			if (src_offset <= p->offset &&
 			    p->offset < src_offset + size)
-				p->copy_on_write = TRUE;
+				p->flags |= PG_COPY_ON_WRITE;
 		}
 		vm_object_unlock(src_object);
 
@@ -847,7 +847,7 @@ void vm_object_copy(src_object, src_offset, size,
 	p = (vm_page_t) queue_first(&src_object->memq);
 	while (!queue_end(&src_object->memq, (queue_entry_t) p)) {
 		if ((new_start <= p->offset) && (p->offset < new_end))
-			p->copy_on_write = TRUE;
+			p->flags |= PG_COPY_ON_WRITE;
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 
@@ -1196,7 +1196,7 @@ void vm_object_collapse(object)
 					vm_page_unlock_queues();
 				} else {
 				    pp = vm_page_lookup(object, new_offset);
-				    if (pp != NULL && !pp->fake) {
+				    if (pp != NULL && !(pp->flags & PG_FAKE)) {
 					vm_page_lock_queues();
 					vm_page_free(p);
 					vm_page_unlock_queues();
@@ -1348,7 +1348,7 @@ void vm_object_collapse(object)
 				    new_offset <= size &&
 				    ((pp = vm_page_lookup(object, new_offset))
 				      == NULL ||
-				     pp->fake)) {
+				     (pp->flags & PG_FAKE))) {
 					/*
 					 *	Page still needed.
 					 *	Can't go any further.

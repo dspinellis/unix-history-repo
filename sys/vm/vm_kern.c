@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_kern.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_kern.c,v 1.5 1993/11/25 01:39:02 wollman Exp $
+ *	$Id: vm_kern.c,v 1.6 1993/12/19 00:56:01 wollman Exp $
  */
 
 /*
@@ -194,7 +194,7 @@ vm_offset_t kmem_alloc(map, size)
 			vm_object_lock(kernel_object);
 		}
 		vm_page_zero_fill(mem);
-		mem->busy = FALSE;
+		mem->flags &= ~PG_BUSY;
 	}
 	vm_object_unlock(kernel_object);
 		
@@ -443,7 +443,7 @@ kmem_malloc(map, size, canwait)
 #if 0
 		vm_page_zero_fill(m);
 #endif
-		m->busy = FALSE;
+		m->flags &= ~PG_BUSY;
 	}
 	vm_object_unlock(kmem_object);
 

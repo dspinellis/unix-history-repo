@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id: vm_fault.c,v 1.8 1993/12/12 12:27:22 davidg Exp $
+ *	$Id: vm_fault.c,v 1.9 1993/12/19 00:55:59 wollman Exp $
  */
 
 /*
@@ -246,7 +246,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	If the page is being brought in,
 			 *	wait for it and then retry.
 			 */
-			if (m->busy) {
+			if (m->flags & PG_BUSY) {
 #ifdef DOTHREADS
 				int	wait_result;
 
@@ -268,43 +268,8 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 #endif
 			}
 
-			if (m->absent)
+			if (m->flags & PG_ABSENT)
 				panic("vm_fault: absent");
-
-			/*
-			 *	If the desired access to this page has
-			 *	been locked out, request that it be unlocked.
-			 */
-
-#ifdef PAGER_PAGE_LOCKING
-			if (fault_type & m->page_lock) {
-#ifdef DOTHREADS
-				int	wait_result;
-
-				if ((fault_type & m->unlock_request) != fault_type)
-					panic("vm_fault: pager_data_unlock");
-
-				PAGE_ASSERT_WAIT(m, !change_wiring);
-				UNLOCK_THINGS;
-				thread_block("pgunlck");
-				wait_result = current_thread()->wait_result;
-				vm_object_deallocate(first_object);
-				if (wait_result != THREAD_AWAKENED)
-					return(KERN_SUCCESS);
-				goto RetryFault;
-#else
-				if ((fault_type & m->unlock_request) != fault_type)
-					panic("vm_fault: pager_data_unlock");
-
-				PAGE_ASSERT_WAIT(m, !change_wiring);
-				UNLOCK_THINGS;
-				thread_wakeup((int)&vm_pages_needed); /* XXX */
-				thread_block("pgunlck");
-				vm_object_deallocate(first_object);
-				goto RetryFault;
-#endif
-			}
-#endif
 
 			/*
 			 *	Remove the page from the pageout daemon's
@@ -312,18 +277,18 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 */
 
 			vm_page_lock_queues();
-			if (m->inactive) {
+			if (m->flags & PG_INACTIVE) {
 				queue_remove(&vm_page_queue_inactive, m,
 						vm_page_t, pageq);
-				m->inactive = FALSE;
+				m->flags &= ~PG_INACTIVE;
 				vm_page_inactive_count--;
 				vm_stat.reactivations++;
 			} 
 
-			if (m->active) {
+			if (m->flags & PG_ACTIVE) {
 				queue_remove(&vm_page_queue_active, m,
 						vm_page_t, pageq);
-				m->active = FALSE;
+				m->flags &= ~PG_ACTIVE;
 				vm_page_active_count--;
 			}
 			vm_page_unlock_queues();
@@ -331,8 +296,8 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			/*
 			 *	Mark page busy for other threads.
 			 */
-			m->busy = TRUE;
-			m->absent = FALSE;
+			m->flags |= PG_BUSY;
+			m->flags &= ~PG_ABSENT;
 			break;
 		}
 
@@ -386,7 +351,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				m = vm_page_lookup(object, offset);
 
 				vm_stat.pageins++;
-				m->fake = FALSE;
+				m->flags &= ~PG_FAKE;
 				pmap_clear_modify(VM_PAGE_TO_PHYS(m));
 				break;
 			}
@@ -457,8 +422,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			vm_page_zero_fill(m);
 			vm_stat.zero_fill_count++;
-			m->fake = FALSE;
-			m->absent = FALSE;
+			m->flags &= ~(PG_FAKE | PG_ABSENT);
 			break;
 		}
 		else {
@@ -471,7 +435,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		}
 	}
 
-	if (m->absent || m->active || m->inactive || !m->busy)
+	if ((m->flags & (PG_ABSENT|PG_ACTIVE|PG_INACTIVE)) || !(m->flags & PG_BUSY))
 		panic("vm_fault: absent or active or inactive or not busy after main loop");
 
 	/*
@@ -519,8 +483,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 */
 
 			vm_page_copy(m, first_m);
-			first_m->fake = FALSE;
-			first_m->absent = FALSE;
+			first_m->flags &= ~(PG_FAKE | PG_ABSENT);
 
 			/*
 			 *	If another map is truly sharing this
@@ -572,11 +535,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		}
 		else {
 		    	prot &= (~VM_PROT_WRITE);
-			m->copy_on_write = TRUE;
+			m->flags |= PG_COPY_ON_WRITE;
 		}
 	}
 
-	if (m->active || m->inactive)
+	if (m->flags & (PG_ACTIVE|PG_INACTIVE))
 		panic("vm_fault: active or inactive before copy object handling");
 
 	/*
@@ -594,7 +557,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		 */
 		if ((fault_type & VM_PROT_WRITE) == 0) {
 			prot &= ~VM_PROT_WRITE;
-			m->copy_on_write = TRUE;
+			m->flags |= PG_COPY_ON_WRITE;
 		}
 		else {
 			/*
@@ -621,7 +584,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				- copy_object->shadow_offset;
 			copy_m = vm_page_lookup(copy_object, copy_offset);
 			if (page_exists = (copy_m != NULL)) {
-				if (copy_m->busy) {
+				if (copy_m->flags & PG_BUSY) {
 #ifdef DOTHREADS
 					int	wait_result;
 
@@ -739,8 +702,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				 *	Must copy page into copy-object.
 				 */
 				vm_page_copy(m, copy_m);
-				copy_m->fake = FALSE;
-				copy_m->absent = FALSE;
+				copy_m->flags &= ~(PG_FAKE|PG_ABSENT);
 
 				/*
 				 * Things to remember:
@@ -755,7 +717,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				vm_page_lock_queues();
 				pmap_page_protect(VM_PAGE_TO_PHYS(old_m),
 						  VM_PROT_NONE);
-				copy_m->clean = FALSE;
+				copy_m->flags &= ~PG_CLEAN;
 				vm_page_activate(copy_m);	/* XXX */
 				vm_page_unlock_queues();
 
@@ -770,11 +732,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 */
 			copy_object->ref_count--;
 			vm_object_unlock(copy_object);
-			m->copy_on_write = FALSE;
+			m->flags &= ~PG_COPY_ON_WRITE;
 		}
 	}
 
-	if (m->active || m->inactive)
+	if (m->flags & (PG_ACTIVE|PG_INACTIVE))
 		panic("vm_fault: active or inactive before retrying lookup");
 
 	/*
@@ -839,7 +801,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		 *	can't mark the page write-enabled after all.
 		 */
 		prot &= retry_prot;
-		if (m->copy_on_write)
+		if (m->flags & PG_COPY_ON_WRITE)
 			prot &= ~VM_PROT_WRITE;
 	}
 
@@ -851,14 +813,14 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	/* XXX This distorts the meaning of the copy_on_write bit */
 
 	if (prot & VM_PROT_WRITE)
-		m->copy_on_write = FALSE;
+		m->flags &= ~PG_COPY_ON_WRITE;
 
 	/*
 	 *	It's critically important that a wired-down page be faulted
 	 *	only once in each map for which it is wired.
 	 */
 
-	if (m->active || m->inactive)
+	if (m->flags & (PG_ACTIVE|PG_INACTIVE))
 		panic("vm_fault: active or inactive before pmap_enter");
 
 	vm_object_unlock(object);
@@ -870,13 +832,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	 *	page back on the active queue until later so
 	 *	that the page-out daemon won't find us (yet).
 	 */
-
-#ifdef PAGER_PAGE_LOCKING
-	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(m), 
-			prot & ~(m->page_lock), wired);
-#else
 	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(m), prot, wired);
-#endif
 
 	/*
 	 *	If the page is not wired down, then put it where the

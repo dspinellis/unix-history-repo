@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.5 1993/12/19 00:56:17 wollman Exp $
+ *	$Id: vnode_pager.c,v 1.6 1993/12/19 23:24:18 wollman Exp $
  */
 
 /*
@@ -240,7 +240,7 @@ vnode_pager_putpage(pager, m, sync)
 		return 0;
 	err = vnode_pager_io((vn_pager_t)pager->pg_data, m, UIO_WRITE);
 	if (err == VM_PAGER_OK) {
-		m->clean = TRUE;			/* XXX - wrong place */
+		m->flags |= PG_CLEAN;			/* XXX - wrong place */
 		pmap_clear_modify(VM_PAGE_TO_PHYS(m));	/* XXX - wrong place */
 	}
 	return(err);

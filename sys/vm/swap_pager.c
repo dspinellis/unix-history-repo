@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.7 1993/12/19 00:55:56 wollman Exp $
+ *	$Id: swap_pager.c,v 1.8 1993/12/19 23:24:15 wollman Exp $
  */
 
 /*
@@ -684,7 +684,7 @@ swap_pager_io(swp, m, flags)
 		thread_wakeup((int)&bswlist);
 	}
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
-		m->clean = TRUE;
+		m->flags |= PG_CLEAN;
 		pmap_clear_modify(VM_PAGE_TO_PHYS(m));
 	}
 	splx(s);
@@ -822,7 +822,7 @@ swap_pager_finish(spc)
 		if (swpagerdebug & SDB_ANOM)
 			printf("swap_pager_finish: page %x dirty again\n",
 			       spc->spc_m);
-		spc->spc_m->busy = FALSE;
+		spc->spc_m->flags &= ~PG_BUSY;
 		PAGE_WAKEUP(spc->spc_m);
 		vm_object_unlock(object);
 		return(1);
@@ -836,12 +836,12 @@ swap_pager_finish(spc)
 	if (spc->spc_flags & SPC_ERROR) {
 		printf("swap_pager_finish: clean of page %x failed\n",
 		       VM_PAGE_TO_PHYS(spc->spc_m));
-		spc->spc_m->laundry = TRUE;
+		spc->spc_m->flags |= PG_LAUNDRY;
 	} else {
-		spc->spc_m->clean = TRUE;
+		spc->spc_m->flags |= PG_CLEAN;
 		pmap_clear_modify(VM_PAGE_TO_PHYS(spc->spc_m));
 	}
-	spc->spc_m->busy = FALSE;
+	spc->spc_m->flags &= ~PG_BUSY;
 	PAGE_WAKEUP(spc->spc_m);
 
 	vm_object_unlock(object);

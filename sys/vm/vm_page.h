@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.4 1993/12/12 12:27:25 davidg Exp $
+ *	$Id: vm_page.h,v 1.5 1993/12/19 00:56:11 wollman Exp $
  */
 
 /*
@@ -96,45 +96,33 @@
  *	queues (P).
  */
 
+#define PG_INACTIVE		0x0001
+#define PG_ACTIVE		0x0002
+#define PG_LAUNDRY		0x0004
+#define PG_CLEAN		0x0008
+#define PG_BUSY			0x0010
+#define PG_WANTED		0x0020
+#define PG_TABLED		0x0040
+#define PG_COPY_ON_WRITE	0x0080
+#define PG_FICTITIOUS		0x0100
+#define PG_ABSENT		0x0200
+#define PG_FAKE			0x0400
+#define PG_PAGEROWNED		0x0800
+#define PG_PTPAGE		0x1000
+
 struct vm_page {
-	queue_chain_t	pageq;		/* queue info for FIFO
-					 * queue or free list (P) */
+	queue_chain_t	pageq;		/* queue info for FIFO */
+					/* queue or free list (P) */
 	queue_chain_t	hashq;		/* hash table links (O)*/
 	queue_chain_t	listq;		/* all pages in same object (O)*/
 
 	vm_object_t	object;		/* which object am I in (O,P)*/
 	vm_offset_t	offset;		/* offset into that object (O,P) */
 
-	unsigned int	wire_count:16,	/* how many wired down maps use me?
-					   (P) */
-			inactive:1,	/* page is in inactive list (P) */
-			active:1,	/* page is in active list (P) */
-			laundry:1,	/* page is being cleaned now (P)*/
-			clean:1,	/* page has not been modified */
-			busy:1,		/* page is in transit (O) */
-			wanted:1,	/* someone is waiting for page (O) */
-			tabled:1,	/* page is in VP table (O) */
-			copy_on_write:1,/* page must be copied before being
-					   changed (O) */
-			fictitious:1,	/* physical page doesn't exist (O) */
-			absent:1,	/* virtual page doesn't exist (O) */
-			fake:1,		/* page is a placeholder for page-in
-					   (O) */
-#ifdef DEBUG
-			pagerowned:1,	/* async paging op in progress */
-			ptpage:1,	/* is a user page table page */
-#endif
-			:0;		/* (force to 'long' boundary) */
-#ifdef	ns32000
-	int		pad;		/* extra space for ns32000 bit ops */
-#endif /* ns32000 */
+	unsigned int	wire_count;	/* how many wired down maps use me? */
+	unsigned int	flags;		/* bit encoded flags */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
-
-#ifdef PAGER_PAGE_LOCKING
-	vm_prot_t	page_lock;	/* Uses prohibited by data manager */
-	vm_prot_t	unlock_request;	/* Outstanding unlock request */
-#endif
 };
 
 typedef struct vm_page	*vm_page_t;
@@ -143,7 +131,7 @@ typedef struct vm_page	*vm_page_t;
 #define	VM_PAGE_CHECK(mem) { \
 		if ( (((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
 		     (((unsigned int) mem) > ((unsigned int) &vm_page_array[last_page-first_page])) || \
-		     (mem->active && mem->inactive) \
+		     ((mem->flags & PG_ACTIVE) && (mem->flags & PG_INACTIVE)) \
 		    ) panic("vm_page_check: not valid!"); \
 		}
 #else /* VM_PAGE_DEBUG */
@@ -224,7 +212,6 @@ simple_lock_data_t	vm_page_queue_free_lock;
 vm_offset_t	vm_page_startup();
 vm_page_t	vm_page_lookup();
 vm_page_t	vm_page_alloc();
-void		vm_page_init();
 void		vm_page_free();
 void		vm_page_activate();
 void		vm_page_deactivate();
@@ -244,14 +231,14 @@ void		vm_set_page_size();
  */
 
 #define PAGE_ASSERT_WAIT(m, interruptible)	{ \
-				(m)->wanted = TRUE; \
+				(m)->flags |= PG_WANTED; \
 				assert_wait((int) (m), (interruptible)); \
 			}
 
 #define PAGE_WAKEUP(m)	{ \
-				(m)->busy = FALSE; \
-				if ((m)->wanted) { \
-					(m)->wanted = FALSE; \
+				(m)->flags &= ~PG_BUSY; \
+				if ((m)->flags & PG_WANTED) { \
+					(m)->flags &= ~PG_WANTED; \
 					thread_wakeup((int) (m)); \
 				} \
 			}
@@ -259,7 +246,7 @@ void		vm_set_page_size();
 #define	vm_page_lock_queues()	simple_lock(&vm_page_queue_lock)
 #define	vm_page_unlock_queues()	simple_unlock(&vm_page_queue_lock)
 
-#define vm_page_set_modified(m)	{ (m)->clean = FALSE; }
+#define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
 /* Some pmap things are declared here for the convenience of other bits of
    code. */
