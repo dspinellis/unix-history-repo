@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.17 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -720,9 +720,9 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		if (nvp = checkalias(vp, ip->inode.iso_rdev, mp)) {
 			/*
 			 * Discard unneeded vnode, but save its iso_node.
+			 * Note that the lock is carried over in the iso_node
+			 * to the replacement vnode.
 			 */
-			cd9660_ihashrem(ip);
-			VOP_UNLOCK(vp, 0, p);
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
 			vp->v_op = spec_vnodeop_p;
@@ -733,7 +733,6 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 			 */
 			vp = nvp;
 			ip->i_vnode = vp;
-			cd9660_ihashins(ip);
 		}
 		break;
 	}
