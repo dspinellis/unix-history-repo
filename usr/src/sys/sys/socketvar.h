@@ -59,7 +59,7 @@ struct socket {
 		u_long	sb_hiwat;	/* max actual char count */
 		u_long	sb_mbcnt;	/* chars of mbufs used */
 		u_long	sb_mbmax;	/* max chars of mbufs to use */
-		u_long	sb_lowat;	/* low water mark */
+		long	sb_lowat;	/* low water mark */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
@@ -69,9 +69,13 @@ struct socket {
 #define	SB_LOCK		0x01		/* lock on data queue */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
-#define	SB_COLL		0x08		/* collision selecting */
-#define	SB_NOINTR	0x10		/* operations not interruptible */
-	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX*/
+#define	SB_SEL		0x08		/* someone is selecting */
+#define	SB_ASYNC	0x10		/* ASYNC I/O, need signals */
+#define	SB_NOTIFY	(SB_WAIT|SB_SEL|SB_ASYNC)
+#define	SB_COLL		0x20		/* collision selecting */
+#define	SB_NOINTR	0x40		/* operations not interruptible */
+
+	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX */
 };
 
 /*
@@ -95,10 +99,15 @@ struct socket {
  * Macros for sockets and socket buffering.
  */
 
-/* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
+/*
+ * How much space is there in a socket buffer (so->so_snd or so->so_rcv)?
+ * This is problematical if the fields are unsigned, as the space might
+ * still be negative (cc > hiwat or mbcnt > mbmax).  Should detect
+ * overflow and return 0.  Should use "lmin" but it doesn't exist now.
+ */
 #define	sbspace(sb) \
-    (min((long)((sb)->sb_hiwat - (sb)->sb_cc),\
-	 (long)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
+    ((long) imin((int)((sb)->sb_hiwat - (sb)->sb_cc), \
+	 (int)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
@@ -123,7 +132,7 @@ struct socket {
 	(sb)->sb_cc += (m)->m_len; \
 	(sb)->sb_mbcnt += MSIZE; \
 	if ((m)->m_flags & M_EXT) \
-		(sb)->sb_mbcnt += MCLBYTES; \
+		(sb)->sb_mbcnt += (m)->m_ext.ext_size; \
 }
 
 /* adjust counters in sb reflecting freeing of m */
@@ -131,7 +140,7 @@ struct socket {
 	(sb)->sb_cc -= (m)->m_len; \
 	(sb)->sb_mbcnt -= MSIZE; \
 	if ((m)->m_flags & M_EXT) \
-		(sb)->sb_mbcnt -= MCLBYTES; \
+		(sb)->sb_mbcnt -= (m)->m_ext.ext_size; \
 }
 
 /*
