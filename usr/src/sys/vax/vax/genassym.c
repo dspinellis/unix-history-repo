@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.4 (Berkeley) %G%
+ *	@(#)genassym.c	7.5 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -82,6 +82,7 @@ main()
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
+	printf("#define\tMCLBYTES %d\n", MCLBYTES);
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
 	printf("#define\tU_PROCP %d\n", &up->u_procp);
 	printf("#define\tU_RU %d\n", &up->u_ru);
