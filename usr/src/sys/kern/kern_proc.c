@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.24	82/03/27	*/
+/*	kern_proc.c	4.25	82/04/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -391,7 +391,7 @@ setregs()
 	register i;
 	long sigmask;
 
-	for (rp = &u.u_signal[0], sigmask = 1L; rp < &u.u_signal[NSIG];
+	for (rp = &u.u_signal[1], sigmask = 1L; rp < &u.u_signal[NSIG];
 	    sigmask <<= 1, rp++) {
 		switch (*rp) {
 
@@ -563,8 +563,8 @@ done:
 			 */
 			(void) spgrp(q, -1);
 		}
-	wakeup((caddr_t)p->p_pptr);
 	psignal(p->p_pptr, SIGCHLD);
+	wakeup((caddr_t)p->p_pptr);
 	swtch();
 }
 
