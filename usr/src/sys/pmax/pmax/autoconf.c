@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.9 (Berkeley) %G%
+ *	@(#)autoconf.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -282,13 +282,34 @@ setroot()
 
 /*
  * Look at the string 'cp' and decode the boot device.
+ * Boot names can be something like 'rz(0,0,0)vmunix' or '5/rz0/vmunix'.
  */
 void
 makebootdev(cp)
 	register char *cp;
 {
-	int  majdev, unit, part, ctrl;
+	int majdev, unit, part, ctrl;
 
+	if (*cp >= '0' && *cp <= '9') {
+		/* XXX should be able to specify controller */
+		if (cp[1] != '/' || cp[4] < '0' || cp[4] > '9')
+			 goto defdev;
+		unit = cp[4] - '0';
+		if (cp[5] >= 'a' && cp[5] <= 'h')
+			part = cp[5] - 'a';
+		else
+			part = 0;
+		cp += 2;
+		for (majdev = 0; majdev < sizeof(devname)/sizeof(devname[0]);
+		    majdev++) {
+			if (cp[0] == devname[majdev][0] &&
+			    cp[1] == devname[majdev][1]) {
+				bootdev = MAKEBOOTDEV(majdev, 0, 0, unit, part);
+				return;
+			}
+		}
+		goto defdev;
+	}
 	for (majdev = 0; majdev < sizeof(devname)/sizeof(devname[0]); majdev++)
 		if (cp[0] == devname[majdev][0] &&
 		    cp[1] == devname[majdev][1] &&
