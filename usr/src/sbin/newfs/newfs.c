@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -72,11 +72,11 @@ void	fatal();
  * only the superuser may continue to allocate blocks. This may
  * be set to 0 if no reserve of free blocks is deemed necessary,
  * however throughput drops by fifty percent if the file system
- * is run at between 90% and 100% full; thus the default value of
- * fs_minfree is 10%. With 10% free space, fragmentation is not a
+ * is run at between 95% and 100% full; thus the default value of
+ * fs_minfree is 5%. With 5% free space, fragmentation is not a
  * problem, so we choose to optimize for time.
  */
-#define MINFREE		10
+#define MINFREE		5
 #define DEFAULTOPT	FS_OPTTIME
 
 /*
@@ -86,14 +86,6 @@ void	fatal();
  * within a file; the default of fs_rotdelay is 4ms.
  */
 #define ROTDELAY	4
-
-/*
- * MAXCONTIG sets the default for the maximum number of blocks
- * that may be allocated sequentially. Since UNIX drivers are
- * not capable of scheduling multi-block transfers, this defaults
- * to 1 (ie no contiguous blocks are allocated).
- */
-#define MAXCONTIG	1
 
 /*
  * MAXBLKPG determines the maximum number of data blocks which are
@@ -121,6 +113,7 @@ void	fatal();
 
 int	mfs;			/* run as the memory based filesystem */
 int	Nflag;			/* run without writing file system */
+int	Oflag;			/* format as an 4.3BSD file system */
 int	fssize;			/* file system size */
 int	ntracks;		/* # tracks/cylinder */
 int	nsectors;		/* # sectors/track */
@@ -144,7 +137,7 @@ int	cpgflg;			/* cylinders/cylinder group flag was given */
 int	minfree = MINFREE;	/* free space threshold */
 int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
 int	density;		/* number of bytes per inode */
-int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
+int	maxcontig = 0;		/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
 int	maxbpg;			/* maximum blocks per file in a cyl group */
 int	nrpos = NRPOS;		/* # of distinguished rotational positions */
@@ -189,7 +182,7 @@ main(argc, argv)
 		Nflag++;
 	}
 
-	opstring = "F:NS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
+	opstring = "F:NOS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
 	if (!mfs)
 		opstring += 2;		/* -F is mfs only */
 
@@ -201,6 +194,9 @@ main(argc, argv)
 			break;
 		case 'N':
 			Nflag++;
+			break;
+		case 'O':
+			Oflag++;
 			break;
 		case 'S':
 			if ((sectorsize = atoi(optarg)) <= 0)
@@ -423,6 +419,14 @@ main(argc, argv)
 		if (bsize <= 0)
 			bsize = MIN(DFL_BLKSIZE, 8 * fsize);
 	}
+	/*
+	 * Maxcontig sets the default for the maximum number of blocks
+	 * that may be allocated sequentially. With filesystem clustering
+	 * it is possible to allocate contiguous blocks up to the maximum
+	 * transfer size permitted by the controller or buffering.
+	 */
+	if (maxcontig == 0)
+		maxcontig = MAX(1, MIN(MAXPHYS, MAXBSIZE) / bsize);
 	if (density == 0)
 		density = NFPI * fsize;
 	if (minfree < 10 && opt != FS_OPTSPACE) {
