@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
