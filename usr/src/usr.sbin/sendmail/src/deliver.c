@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.91		%G%);
+SCCSID(@(#)deliver.c	3.92		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -210,11 +210,6 @@ deliver(firstto, editfcn)
 		user = to->q_user;
 		CurEnv->e_to = to->q_paddr;
 		to->q_flags |= QDONTSEND;
-		if (tempfail)
-		{
-			to->q_flags |= QQUEUEUP;
-			continue;
-		}
 
 		/*
 		**  Check to see that these people are allowed to
@@ -279,10 +274,8 @@ deliver(firstto, editfcn)
 					to->q_flags |= QQUEUEUP;
 				else
 # endif QUEUE
-				{
 					to->q_flags |= QBADADDR;
-					giveresponse(i, TRUE, m);
-				}
+				giveresponse(i, TRUE, m);
 			}
 # else SMTP
 			syserr("trying to be clever");
@@ -298,7 +291,7 @@ deliver(firstto, editfcn)
 		**	>>>>>>>>>> function is subsumed by sendmail.
 		*/
 
-		if (bitset(QBADADDR, to->q_flags))
+		if (bitset(QBADADDR|QQUEUEUP, to->q_flags))
 			continue;
 
 		/* save statistics.... */
