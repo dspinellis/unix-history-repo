@@ -136,7 +136,9 @@ Summary:
 #endif
 
 #ifdef __STDC__
-#define PTR_INT_TYPE ptrdiff_t
+
+
+#define PTR_INT_TYPE int
 #else
 #define PTR_INT_TYPE long
 #endif
@@ -155,7 +157,7 @@ struct obstack		/* control current object in current chunk */
   char	*object_base;		/* address of object we are building */
   char	*next_free;		/* where to add next char to current object */
   char	*chunk_limit;		/* address of char after current chunk */
-  PTR_INT_TYPE temp;		/* Temporary for some macros.  */
+  int    temp;		/* Temporary for some macros.  */
   int   alignment_mask;		/* Mask of alignment for each object. */
   struct _obstack_chunk *(*chunkfun) (); /* User's fcn to allocate a chunk.  */
   void (*freefun) ();		/* User's function to free a chunk.  */
