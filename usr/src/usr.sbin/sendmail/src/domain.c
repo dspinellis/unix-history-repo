@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.34 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.35 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.34 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.35 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -857,8 +857,6 @@ retry:
 #endif /* DNS_MAILB */
 
 #else /* not NAMED_BIND */
-
-#include <netdb.h>
 
 bool
 getcanonname(host, hbsize, trymx)
