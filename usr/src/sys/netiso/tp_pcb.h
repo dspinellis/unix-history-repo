@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *	@(#)tp_pcb.h	7.7 (Berkeley) %G% *
+ *	@(#)tp_pcb.h	7.8 (Berkeley) %G% *
  *
  * 
  * This file defines the transport protocol control block (tpcb).
@@ -325,7 +325,7 @@ u_int	tp_start_win;
 
 #ifdef KERNEL
 extern struct timeval 	time;
-extern struct tp_ref 	tp_ref[];
+extern struct tp_ref 	*tp_ref;
 extern struct tp_param	tp_param;
 extern struct nl_protosw  nl_protosw[];
 extern struct tp_pcb	*tp_listeners;
