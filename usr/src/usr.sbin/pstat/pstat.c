@@ -1,4 +1,4 @@
-static char *sccsid = "@(#) (Berkeley) 82/02/28";
+static char *sccsid = "@(#) (Berkeley) 82/03/31";
 /*
  * Print system stuff
  */
@@ -53,23 +53,17 @@ struct nlist nl[] = {
 	{ "_dh11" },
 #define	SNDH	12
 	{ "_ndh11" },
-#define	SGROUP	13
-	{ "_groups" },
-#define	SCHANS	14
-	{ "_chans" },
-#define	SSCHANS	15
-	{ "_schans" },
-#define	SNPROC	16
+#define	SNPROC	13
 	{ "_nproc" },
-#define	SNTEXT	17
+#define	SNTEXT	14
 	{ "_ntext" },
-#define	SNFILE	18
+#define	SNFILE	15
 	{ "_nfile" },
-#define	SNINODE	19
+#define	SNINODE	16
 	{ "_ninode" },
-#define	SNSWAPMAP 20
+#define	SNSWAPMAP 17
 	{ "_nswapmap" },
-#define	SPTY	21
+#define	SPTY	18
 	{ "_pt_tty" },
 	0,
 };
@@ -357,7 +351,7 @@ doproc()
 
 dotty()
 {
-	struct tty dz_tty[64];
+	struct tty dz_tty[128];
 	int ndz;
 	register struct tty *tp;
 	register char *mesg;
@@ -380,7 +374,7 @@ dotty()
 	read(fc, &ndz, sizeof(ndz));
 	printf("%d dz lines\n", ndz);
 	lseek(fc, (long)nl[SDZ].n_value, 0);
-	read(fc, dz_tty, sizeof(dz_tty));
+	read(fc, dz_tty, ndz * sizeof (struct tty));
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dh:
@@ -394,7 +388,7 @@ dh:
 	read(fc, &ndz, sizeof(ndz));
 	printf("%d dh lines\n", ndz);
 	lseek(fc, (long)nl[SDH].n_value, 0);
-	read(fc, dz_tty, sizeof(dz_tty));
+	read(fc, dz_tty, ndz * sizeof(struct tty));
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 pty:
@@ -403,10 +397,10 @@ pty:
 	if (kflg) {
 		nl[SPTY].n_value = clear(nl[SPTY].n_value);
 	}
-	printf("16 pty lines\n");
+	printf("32 pty lines\n");
 	lseek(fc, (long)nl[SPTY].n_value, 0);
-	read(fc, dz_tty, sizeof(dz_tty));
-	for (tp = dz_tty; tp < &dz_tty[16]; tp++)
+	read(fc, dz_tty, 32*sizeof(struct tty));
+	for (tp = dz_tty; tp < &dz_tty[32]; tp++)
 		ttyprt(tp, tp - dz_tty);
 }
 
