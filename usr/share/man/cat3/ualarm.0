@@ -1,0 +1,35 @@
+UALARM(3)                   BSD Programmer's Manual                  UALARM(3)
+
+NNAAMMEE
+     uuaallaarrmm - schedule signal after specified time
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _u___i_n_t
+     uuaallaarrmm(_u___i_n_t _m_i_c_r_o_s_e_c_o_n_d_s, _u___i_n_t _i_n_t_e_r_v_a_l);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iiss aa ssiimmpplliiffiieedd iinntteerrffaaccee ttoo sseettiittiimmeerr((22))..
+
+     The uuaallaarrmm() function waits a count of _m_i_c_r_o_s_e_c_o_n_d_s before asserting the
+     terminating signal SIGALRM. System activity or time used in processing
+     the call may cause a slight delay.
+
+     If the _i_n_t_e_r_v_a_l argument is non-zero, the SIGALRM signal will be sent to
+     the process every _i_n_t_e_r_v_a_l microseconds after the timer expires (e.g. af-
+     ter _v_a_l_u_e microseconds have passed).
+
+RREETTUURRNN VVAALLUUEESS
+     When the signal has successfully been caught, aallaarrmm() returns the amount
+     of time left on the clock.  The maximum mumber of _m_i_c_r_o_s_e_c_o_n_d_s allowed is
+     2147483647.
+
+SSEEEE AALLSSOO
+     getitimer(2),  setitimer(2),  sigpause(2),  sigvec(2),  signal(3),
+     sleep(3),  alarm(3),  usleep(3)
+
+HHIISSTTOORRYY
+     The uuaallaarrmm() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

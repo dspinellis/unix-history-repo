@@ -1,0 +1,27 @@
+ABS(3)                      BSD Programmer's Manual                     ABS(3)
+
+NNAAMMEE
+     aabbss - integer absolute value function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _i_n_t
+     aabbss(_i_n_t _j);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aabbss() function computes the absolute value of the integer _j.
+
+RREETTUURRNN VVAALLUUEESS
+     The aabbss() function returns the absolute value.
+
+SSEEEE AALLSSOO
+     floor(3),  labs(3) cabs(3) hypot(3) math(3)
+
+SSTTAANNDDAARRDDSS
+     The aabbss() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+BBUUGGSS
+     The absolute value of the most negative integer remains negative.
+
+4.4BSD                           June 4, 1993                                1

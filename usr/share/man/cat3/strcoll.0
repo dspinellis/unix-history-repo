@@ -1,0 +1,25 @@
+STRCOLL(3)                  BSD Programmer's Manual                 STRCOLL(3)
+
+NNAAMMEE
+     ssttrrccoollll - compare strings according to current collation
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _i_n_t
+     ssttrrccoollll(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrccoollll() function lexicographically compares the null-terminated
+     strings _s_1 and _s_2 according to the current locale collation and returns
+     an integer greater than, equal to, or less than 0, according as _s_1 is
+     greater than, equal to, or less than _s_2.
+
+SSEEEE AALLSSOO
+     bcmp(3),  memcmp(3),  setlocale(3),  strcasecmp(3),  strcmp(3),
+     strxfrm(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrccoollll() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,79 @@
+ACCEPT(2)                   BSD Programmer's Manual                  ACCEPT(2)
+
+NNAAMMEE
+     aacccceepptt - accept a connection on a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     aacccceepptt(_i_n_t _s, _s_t_r_u_c_t _s_o_c_k_a_d_d_r _*_a_d_d_r, _i_n_t _*_a_d_d_r_l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The argument _s is a socket that has been created with socket(2),  bound
+     to an address with bind(2),  and is listening for connections after a
+     listen(2).  The aacccceepptt() argument extracts the first connection request
+     on the queue of pending connections, creates a new socket with the same
+     properties of _s and allocates a new file descriptor for the socket.  If
+     no pending connections are present on the queue, and the socket is not
+     marked as non-blocking, aacccceepptt() blocks the caller until a connection is
+     present.  If the socket is marked non-blocking and no pending connections
+     are present on the queue, aacccceepptt() returns an error as described below.
+     The accepted socket may not be used to accept more connections.  The
+     original socket _s remains open.
+
+     The argument _a_d_d_r is a result parameter that is filled in with the ad-
+     dress of the connecting entity, as known to the communications layer.
+     The exact format of the _a_d_d_r parameter is determined by the domain in
+     which the communication is occurring.  The _a_d_d_r_l_e_n is a value-result pa-
+     rameter; it should initially contain the amount of space pointed to by
+     _a_d_d_r; on return it will contain the actual length (in bytes) of the ad-
+     dress returned.  This call is used with connection-based socket types,
+     currently with SOCK_STREAM.
+
+     It is possible to select(2) a socket for the purposes of doing an
+     aacccceepptt() by selecting it for read.
+
+     For certain protocols which require an explicit confirmation, such as ISO
+     or DATAKIT, aacccceepptt() can be thought of as merely dequeueing the next con-
+     nection request and not implying confirmation.  Confirmation can be im-
+     plied by a normal read or write on the new file desciptor, and rejection
+     can be implied by closing the new socket.
+
+     One can obtain user connection request data without confirming the con-
+     nection by issuing a recvmsg(2) call with an _m_s_g___i_o_v_l_e_n of 0 and a non-
+     zero _m_s_g___c_o_n_t_r_o_l_l_e_n, or by issuing a getsockopt(2) request.  Similarly,
+     one can provide user connection rejection information by issuing a
+     sendmsg(2) call with providing only the control information, or by call-
+     ing setsockopt(2).
+
+RREETTUURRNN VVAALLUUEESS
+     The call returns -1 on error.  If it succeeds, it returns a non-negative
+     integer that is a descriptor for the accepted socket.
+
+EERRRROORRSS
+     The aacccceepptt() will fail if:
+
+     [EBADF]      The descriptor is invalid.
+
+     [ENOTSOCK]   The descriptor references a file, not a socket.
+
+     [EOPNOTSUPP]
+                  The referenced socket is not of type SOCK_STREAM.
+
+     [EFAULT]     The _a_d_d_r parameter is not in a writable part of the user ad-
+
+                  dress space.
+
+     [EWOULDBLOCK]
+                  The socket is marked non-blocking and no connections are
+                  present to be accepted.
+
+SSEEEE AALLSSOO
+     bind(2),  connect(2),  listen(2),  select(2),  socket(2)
+
+HHIISSTTOORRYY
+     The aacccceepptt function appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

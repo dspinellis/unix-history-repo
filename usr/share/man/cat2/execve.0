@@ -1,0 +1,164 @@
+EXECVE(2)                   BSD Programmer's Manual                  EXECVE(2)
+
+NNAAMMEE
+     eexxeeccvvee - execute a file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     eexxeeccvvee(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_o_n_s_t _* _c_h_a_r _*_a_r_g_v, _c_o_n_s_t _* _c_h_a_r _*_e_n_v_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     EExxeeccvvee() transforms the calling process into a new process.  The new pro-
+     cess is constructed from an ordinary file, whose name is pointed to by
+     _p_a_t_h, called the _n_e_w _p_r_o_c_e_s_s _f_i_l_e. This file is either an executable ob-
+     ject file, or a file of data for an interpreter.  An executable object
+     file consists of an identifying header, followed by pages of data repre-
+     senting the initial program (text) and initialized data pages.  Addition-
+     al pages may be specified by the header to be initialized with zero data;
+     see a.out(5).
+
+     An interpreter file begins with a line of the form:
+
+           ##!! _i_n_t_e_r_p_r_e_t_e_r [_a_r_g]
+
+     When an interpreter file is eexxeeccvvee(_A_p, _d), the system eexxeeccvvee(_A_p, _s) the
+     specified _i_n_t_e_r_p_r_e_t_e_r. If the optional _a_r_g is specified, it becomes the
+     first argument to the _i_n_t_e_r_p_r_e_t_e_r, and the name of the originally
+     eexxeeccvvee(_A_p, _d) file becomes the second argument; otherwise, the name of
+     the originally eexxeeccvvee(_A_p, _d) file becomes the first argument.  The origi-
+     nal arguments are shifted over to become the subsequent arguments.  The
+     zeroth argument, normally the name of the eexxeeccvvee(_A_p, _d) file, is left un-
+     changed.
+
+     The argument _a_r_g_v is a pointer to a null-terminated array of character
+     pointers to null-terminated character strings.  These strings construct
+     the argument list to be made available to the new process.  At least one
+     argument must be present in the array; by custom, the first element
+     should be the name of the executed program (for example, the last compo-
+     nent of _p_a_t_h).
+
+     The argument _e_n_v_p is also a pointer to a null-terminated array of charac-
+     ter pointers to null-terminated strings.  A pointer to this array is nor-
+     mally stored in the global variable _e_n_v_i_r_o_n_. These strings pass informa-
+     tion to the new process that is not directly an argument to the command
+     (see environ(7)).
+
+     File descriptors open in the calling process image remain open in the new
+     process image, except for those for which the close-on-exec flag is set
+     (see close(2) and fcntl(2)).  Descriptors that remain open are unaffected
+     by eexxeeccvvee().
+
+     Signals set to be ignored in the calling process are set to be ignored in
+     the new process. Signals which are set to be caught in the calling pro-
+     cess image are set to default action in the new process image.  Blocked
+     signals remain blocked regardless of changes to the signal action.  The
+     signal stack is reset to be undefined (see sigaction(2) for more informa-
+     tion).
+
+     If the set-user-ID mode bit of the new process image file is set (see
+     chmod(2)),  the effective user ID of the new process image is set to the
+     owner ID of the new process image file.  If the set-group-ID mode bit of
+     the new process image file is set, the effective group ID of the new pro-
+     cess image is set to the group ID of the new process image file.  (The
+     effective group ID is the first element of the group list.)  The real us-
+     er ID, real group ID and other group IDs of the new process image remain
+     the same as the calling process image.  After any set-user-ID and set-
+     group-ID processing, the effective user ID is recorded as the saved set-
+     user-ID, and the effective group ID is recorded as the saved set-group-
+     ID.  These values may be used in changing the effective IDs later (see
+     setuid(2)).
+
+     The new process also inherits the following attributes from the calling
+     process:
+
+           process ID           see getpid(2)
+           parent process ID    see getppid(2)
+           process group ID     see getpgrp(2)
+           access groups        see getgroups(2)
+           working directory    see chdir(2)
+           root directory       see chroot(2)
+           control terminal     see termios(4)
+           resource usages      see getrusage(2)
+           interval timers      see getitimer(2)
+           resource limits      see getrlimit(2)
+           file mode mask       see umask(2)
+           signal mask          see sigvec(2),  sigsetmask(2)
+
+     When a program is executed as a result of an eexxeeccvvee() call, it is entered
+     as follows:
+
+           main(argc, argv, envp)
+           int argc;
+           char **argv, **envp;
+
+     where _a_r_g_c is the number of elements in _a_r_g_v (the ``arg count'') and _a_r_g_v
+     points to the array of character pointers to the arguments themselves.
+
+RREETTUURRNN VVAALLUUEESS
+     As the eexxeeccvvee() function overlays the current process image with a new
+     process image the successful call has no process to return to.  If
+     eexxeeccvvee() does return to the calling process an error has occurred; the
+     return value will be -1 and the global variable _e_r_r_n_o is set to indicate
+     the error.
+
+EERRRROORRSS
+     EExxeeccvvee() will fail and return to the calling process if:
+
+     [ENOTDIR]       A component of the path prefix is not a directory.
+
+     [EINVAL]        The pathname contains a character with the high-order bit
+                     set.
+
+     [ENAMETOOLONG]  A component of a pathname exceeded 255 characters, or an
+                     entire path name exceeded 1023 characters.
+
+     [ENOENT]        The new process file does not exist.
+
+     [ELOOP]         Too many symbolic links were encountered in translating
+                     the pathname.
+
+     [EACCES]        Search permission is denied for a component of the path
+                     prefix.
+
+     [EACCES]        The new process file is not an ordinary file.
+
+     [EACCES]        The new process file mode denies execute permission.
+
+     [ENOEXEC]       The new process file has the appropriate access permis-
+
+
+                     sion, but has an invalid magic number in its header.
+
+     [ETXTBSY]       The new process file is a pure procedure (shared text)
+                     file that is currently open for writing or reading by
+                     some process.
+
+     [ENOMEM]        The new process requires more virtual memory than is al-
+                     lowed by the imposed maximum (getrlimit(2)).
+
+     [E2BIG]         The number of bytes in the new process's argument list is
+                     larger than the system-imposed limit.  The limit in the
+                     system as released is 20480 bytes (NCARGS in
+                     <_s_y_s_/_p_a_r_a_m_._h>.
+
+     [EFAULT]        The new process file is not as long as indicated by the
+                     size values in its header.
+
+     [EFAULT]        _P_a_t_h, _a_r_g_v, or _e_n_v_p point to an illegal address.
+
+     [EIO]           An I/O error occurred while reading from the file system.
+
+CCAAVVEEAATT
+     If a program is _s_e_t_u_i_d to a non-super-user, but is executed when the real
+     _u_i_d is ``root'', then the program has some of the powers of a super-user
+     as well.
+
+SSEEEE AALLSSOO
+     exit(2),  fork(2),  execl(3),  environ(7)
+
+HHIISSTTOORRYY
+     The eexxeeccvvee function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                3

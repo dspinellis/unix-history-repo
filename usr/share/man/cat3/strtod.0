@@ -1,0 +1,69 @@
+STRTOD(3)                   BSD Programmer's Manual                  STRTOD(3)
+
+NNAAMMEE
+     ssttrrttoodd - convert ASCII string to double
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _d_o_u_b_l_e
+     ssttrrttoodd(_c_o_n_s_t _c_h_a_r _*_n_p_t_r, _c_h_a_r _*_*_e_n_d_p_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrttoodd() function converts the initial portion of the string pointed
+     to by _n_p_t_r to _d_o_u_b_l_e representation.
+
+     The expected form of the string is an optional plus (``+'') or minus sign
+     (``-'') followed by a sequence of digits optionally containing a decimal-
+     point character, optionally followed by an exponent.  An exponent con-
+     sists of an ``E'' or ``e'', followed by an optional plus or minus sign,
+     followed by a sequence of digits.
+
+     Leading white-space characters in the string (as defined by the iss-
+     pace(3) function) are skipped.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrttoodd() function returns the converted value, if any.
+
+     If _e_n_d_p_t_r is not NULL, a pointer to the character after the last charac-
+     ter used in the conversion is stored in the location referenced by
+     _e_n_d_p_t_r.
+
+     If no conversion is performed, zero is returned and the value of _n_p_t_r is
+     stored in the location referenced by _e_n_d_p_t_r.
+
+     If the correct value would cause overflow, plus or minus HUGE_VAL is re-
+     turned (according to the sign of the value), and ERANGE is stored in
+     _e_r_r_n_o. If the correct value would cause underflow, zero is returned and
+     ERANGE is stored in _e_r_r_n_o.
+
+EERRRROORRSS
+     [ERANGE]  Overflow or underflow occurred.
+
+SSEEEE AALLSSOO
+     atof(3),  atoi(3),  atol(3),  strtol(3),  strtoul(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrttoodd() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+AAUUTTHHOORRSS
+     The author of this software is David M. Gay.
+
+     Copyright (c) 1991 by AT&T.
+
+     Permission to use, copy, modify, and distribute this software for any
+     purpose without fee is hereby granted, provided that this entire notice
+     is included in all copies of any software which is or includes a copy or
+     modification of this software and in all copies of the supporting docu-
+     mentation for such software.
+
+     THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+     WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR AT&T MAKES ANY REPRESEN-
+     TATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS
+     SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+
+
+     Contact your vendor for a free copy of the source code to ssttrrttoodd() and
+     accompanying functions.
+
+4.4BSD                           June 4, 1993                                2

@@ -1,0 +1,79 @@
+CHDIR(2)                    BSD Programmer's Manual                   CHDIR(2)
+
+NNAAMMEE
+     cchhddiirr, ffcchhddiirr - change current working directory
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     cchhddiirr(_c_o_n_s_t _c_h_a_r _*_p_a_t_h);
+
+     _i_n_t
+     ffcchhddiirr(_i_n_t _f_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The _p_a_t_h arument points to the pathname of a directory.  The cchhddiirr()
+     function causes the named directory to become the current working direc-
+     tory, that is, the starting point for path searches of pathnames not be-
+     ginning with a slash, `/'.
+
+     The ffcchhddiirr() function causes the directory referenced by _f_d to become the
+     current working directory, the starting point for path searches of path-
+     names not beginning with a slash, `/'.
+
+     In order for a directory to become the current directory, a process must
+     have execute (search) access to the directory.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     CChhddiirr() will fail and the current working directory will be unchanged if
+     one or more of the following are true:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named directory does not exist.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EACCES]      Search permission is denied for any component of the path
+                   name.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+     FFcchhddiirr() will fail and the current working directory will be unchanged if
+     one or more of the following are true:
+
+     [EACCES]      Search permission is denied for the directory referenced by
+                   the file descriptor.
+
+
+
+     [ENOTDIR]     The file descriptor does not reference a directory.
+
+     [EBADF]       The argument _f_d is not a valid file descriptor.
+
+SSEEEE AALLSSOO
+     chroot(2)
+
+SSTTAANNDDAARRDDSS
+     CChhddiirr() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The ffcchhddiirr() function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,59 @@
+NS(3)                       BSD Programmer's Manual                      NS(3)
+
+NNAAMMEE
+     nnss__aaddddrr, nnss__nnttooaa - Xerox NS(tm) address conversion routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<nneettnnss//nnss..hh>>
+
+     _s_t_r_u_c_t _n_s___a_d_d_r
+     nnss__aaddddrr(_c_h_a_r _*_c_p);
+
+     _c_h_a_r _*
+     nnss__nnttooaa(_s_t_r_u_c_t _n_s___a_d_d_r _n_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The routine nnss__aaddddrr() interprets character strings representing XNS ad-
+     dresses, returning binary information suitable for use in system calls.
+     The routine nnss__nnttooaa() takes XNS addresses and returns ASCII strings rep-
+     resenting the address in a notation in common use in the Xerox Develop-
+     ment Environment:
+
+           <network number>.<host number>.<port number>
+
+     Trailing zero fields are suppressed, and each number is printed in hex-
+     adecimal, in a format suitable for input to nnss__aaddddrr().  Any fields lack-
+     ing super-decimal digits will have a trailing `H' appended.
+
+     Unfortunately, no universal standard exists for representing XNS address-
+     es.  An effort has been made to insure that nnss__aaddddrr() be compatible with
+     most formats in common use.  It will first separate an address into 1 to
+     3 fields using a single delimiter chosen from period `.', colon `:' or
+     pound-sign `#'. Each field is then examined for byte separators (colon or
+     period).  If there are byte separators, each subfield separated is taken
+     to be a small hexadecimal number, and the entirety is taken as a network-
+     byte-ordered quantity to be zero extended in the high-network-order
+     bytes.  Next, the field is inspected for hyphens, in which case the field
+     is assumed to be a number in decimal notation with hyphens separating the
+     millenia.  Next, the field is assumed to be a number: It is interpreted
+     as hexadecimal if there is a leading `0x' (as in C), a trailing `H' (as
+     in Mesa), or there are any super-decimal digits present.  It is inter-
+     preted as octal is there is a leading `0' and there are no super-octal
+     digits.  Otherwise, it is converted as a decimal number.
+
+RREETTUURRNN VVAALLUUEESS
+     None. (See _B_U_G_S.)
+
+SSEEEE AALLSSOO
+     hosts(5),  networks(5),
+
+HHIISSTTOORRYY
+     The nnss__aaddddrr() and nnss__ttooaa() functions appeared in 4.3BSD.
+
+BBUUGGSS
+     The string returned by nnss__nnttooaa() resides in a static memory area.  The
+     function nnss__aaddddrr() should diagnose improperly formed input, and there
+     should be an unambiguous way to recognize this.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,232 @@
+FCNTL(2)                    BSD Programmer's Manual                   FCNTL(2)
+
+NNAAMMEE
+     ffccnnttll - file control
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffccnnttll..hh>>
+
+     _i_n_t
+     ffccnnttll(_i_n_t _f_d, _i_n_t _c_m_d, _i_n_t _a_r_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     FFccnnttll() provides for control over descriptors.  The argument _f_d is a de-
+     scriptor to be operated on by _c_m_d as follows:
+
+     F_DUPFD    Return a new descriptor as follows:
+
+                    ++oo   Lowest numbered available descriptor greater than or
+                        equal to _a_r_g.
+                    ++oo   Same object references as the original descriptor.
+                    ++oo   New descriptor shares the same file offset if the ob-
+                        ject was a file.
+                    ++oo   Same access mode (read, write or read/write).
+                    ++oo   Same file status flags (i.e., both file descriptors
+                        share the same file status flags).
+                    ++oo   The close-on-exec flag associated with the new file
+                        descriptor is set to remain open across execv(2) sys-
+                        tem calls.
+
+     F_GETFD    Get the close-on-exec flag associated with the file descriptor
+                _f_d. If the low-order bit of the returned value is 0, the file
+                will remain open across eexxeecc(), otherwise the file will be
+                closed upon execution of eexxeecc() (_a_r_g is ignored).
+
+     F_SETFD    Set the close-on-exec flag associated with _f_d to the low order
+                bit of _a_r_g (0 or 1 as above).
+
+     F_GETFL    Get descriptor status flags, as described below (_a_r_g is ig-
+                nored).
+
+     F_SETFL    Set descriptor status flags to _a_r_g.
+
+     F_GETOWN   Get the process ID or process group currently receiving SIGIO
+                and SIGURG signals; process groups are returned as negative
+                values (_a_r_g is ignored).
+
+     F_SETOWN   Set the process or process group to receive SIGIO and SIGURG
+                signals; process groups are specified by supplying _a_r_g as neg-
+                ative, otherwise _a_r_g is interpreted as a process ID.
+
+     The flags for the F_GETFL and F_SETFL flags are as follows:
+
+     O_NONBLOCK   Non-blocking I/O; if no data is available to a read call, or
+                  if a write operation would block, the read or write call re-
+                  turns -1 with the error EAGAIN.
+
+     O_APPEND     Force each write to append at the end of file; corresponds
+                  to the O_APPEND flag of open(2).
+
+     O_ASYNC      Enable the SIGIO signal to be sent to the process group when
+                  I/O is possible, e.g., upon availability of data to be read.
+
+     Several commands are available for doing advisory file locking; they all
+     operate on the following structure:
+
+     struct flock {
+             off_t   l_start;        /* starting offset */
+             off_t   l_len;          /* len = 0 means until end of file */
+             pid_t   l_pid;          /* lock owner */
+             short   l_type;         /* lock type: read/write, etc. */
+             short   l_whence;       /* type of l_start */
+     };
+     The commands available for advisory record locking are as follows:
+
+     F_GETLK    Get the first lock that blocks the lock description pointed to
+                by the third argument, _a_r_g, taken as a pointer to a _s_t_r_u_c_t
+                _f_l_o_c_k (see above).  The information retrieved overwrites the
+                information passed to ffccnnttll in the _f_l_o_c_k structure.  If no
+                lock is found that would prevent this lock from being created,
+                the structure is left unchanged by this function call except
+                for the lock type which is set to F_UNLCK.
+
+     F_SETLK    Set or clear a file segment lock according to the lock de-
+                scription pointed to by the third argument, _a_r_g, taken as a
+                pointer to a _s_t_r_u_c_t _f_l_o_c_k (see above).  F_SETLK is used to es-
+                tablish shared (or read) locks (F_RDLCK) or exclusive (or
+                write) locks, (F_WRLCK), as well as remove either type of lock
+                (F_UNLCK). If a shared or exclusive lock cannot be set, ffccnnttll
+                returns immediately with EACCES.
+
+     F_SETLKW   This command is the same as F_SETLK except that if a shared or
+                exclusive lock is blocked by other locks, the process waits
+                until the request can be satisfied.  If a signal that is to be
+                caught is received while ffccnnttll is waiting for a region, the
+                ffccnnttll will be interrupted if the signal handler has not speci-
+                fied the SA_RESTART (see sigaction(2)).
+
+     When a shared lock has been set on a segment of a file, other processes
+     can set shared locks on that segment or a portion of it.  A shared lock
+     prevents any other process from setting an exclusive lock on any portion
+     of the protected area.  A request for a shared lock fails if the file de-
+     scriptor was not opened with read access.
+
+     An exclusive lock prevents any other process from setting a shared lock
+     or an exclusive lock on any portion of the protected area.  A request for
+     an exclusive lock fails if the file was not opened with write access.
+
+     The value of _l___w_h_e_n_c_e is SEEK_SET, SEEK_CUR, or SEEK_END to indicate that
+     the relative offset, _l___s_t_a_r_t bytes, will be measured from the start of
+     the file, current position, or end of the file, respectively.  The value
+     of _l___l_e_n is the number of consecutive bytes to be locked.  If _l___l_e_n is
+     negative, the result is undefined.  The _l___p_i_d field is only used with
+     F_GETLK to return the process ID of the process holding a blocking lock.
+     After a successful F_GETLK request, the value of _l___w_h_e_n_c_e is SEEK_SET.
+
+     Locks may start and extend beyond the current end of a file, but may not
+     start or extend before the beginning of the file.  A lock is set to ex-
+     tend to the largest possible value of the file offset for that file if
+     _l___l_e_n is set to zero. If _l___w_h_e_n_c_e and _l___s_t_a_r_t point to the beginning of
+     the file, and _l___l_e_n is zero, the entire file is locked.  If an applica-
+     tion wishes only to do entire file locking, the flock(2) system call is
+     much more efficient.
+
+     There is at most one type of lock set for each byte in the file.  Before
+     a successful return from an F_SETLK or an F_SETLKW request when the call-
+     ing process has previously existing locks on bytes in the region speci-
+     fied by the request, the previous lock type for each byte in the speci-
+     fied region is replaced by the new lock type.  As specified above under
+     the descriptions of shared locks and exclusive locks, an F_SETLK or an
+     F_SETLKW request fails or blocks respectively when another process has
+     existing locks on bytes in the specified region and the type of any of
+     those locks conflicts with the type specified in the request.
+
+     This interface follows the completely stupid semantics of System V and
+     IEEE Std1003.1-1988 (``POSIX'') that require that all locks associated
+     with a file for a given process are removed when _a_n_y file descriptor for
+     that file is closed by that process.  This semantic means that applica-
+     tions must be aware of any files that a subroutine library may access.
+     For example if an application for updating the password file locks the
+     password file database while making the update, and then calls getpw-
+     name(3) to retrieve a record, the lock will be lost because getpwname(3)
+     opens, reads, and closes the password database.  The database close will
+     release all locks that the process has associated with the database, even
+     if the library routine never requested a lock on the database.  Another
+     minor semantic problem with this interface is that locks are not inherit-
+     ed by a child process created using the fork(2) function.  The flock(2)
+     interface has much more rational last close semantics and allows locks to
+     be inherited by child processes.  Flock(2) is recommended for applica-
+     tions that want to ensure the integrity of their locks when using library
+     routines or wish to pass locks to their children.  Note that flock(2) and
+     fcntl(2) locks may be safely used concurrently.
+
+     All locks associated with a file for a given process are removed when the
+     process terminates.
+
+     A potential for deadlock occurs if a process controlling a locked region
+     is put to sleep by attempting to lock the locked region of another pro-
+     cess.  This implementation detects that sleeping until a locked region is
+     unlocked would cause a deadlock and fails with an EDEADLK error.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, the value returned depends on _c_m_d as follows:
+
+           F_DUPFD    A new file descriptor.
+
+           F_GETFD    Value of flag (only the low-order bit is defined).
+
+           F_GETFL    Value of flags.
+
+           F_GETOWN   Value of file descriptor owner.
+
+           other      Value other than -1.
+
+     Otherwise, a value of -1 is returned and _e_r_r_n_o is set to indicate the er-
+     ror.
+
+EERRRROORRSS
+     FFccnnttll() will fail if:
+
+     [EACCES]      The argument _a_r_g is F_SETLK, the type of lock _(_l___t_y_p_e_) is a
+                   shared lock (F_RDLCK) or exclusive lock (F_WRLCK), and the
+                   segment of a file to be locked is already exclusive-locked
+                   by another process; or the type is an exclusive lock and
+                   some portion of the segment of a file to be locked is al-
+                   ready shared-locked or exclusive-locked by another process.
+
+     [EBADF]       _F_i_l_d_e_s is not a valid open file descriptor.
+
+                   The argument _c_m_d is F_SETLK or F_SETLKW, the type of lock
+                   _(_l___t_y_p_e_) is a shared lock (F_RDLCK), and _f_i_l_d_e_s is not a
+                   valid file descriptor open for reading.
+
+                   The argument _c_m_d is F_SETLK or F_SETLKW, the type of lock
+                   _(_l___t_y_p_e_) is an exclusive lock (F_WRLCK), and _f_i_l_d_e_s is not
+                   a valid file descriptor open for writing.
+
+     [EMFILE]      _C_m_d is F_DUPFD and the maximum allowed number of file de-
+
+                   scriptors are currently open.
+
+     [EDEADLK]     The argument _c_m_d is F_SETLKW, and a deadlock condition was
+                   detected.
+
+     [EINTR]       The argument _c_m_d is F_SETLKW, and the function was inter-
+                   rupted by a signal.
+
+     [EINVAL]      _C_m_d is F_DUPFD and _a_r_g is negative or greater than the max-
+                   imum allowable number (see getdtablesize(2)).
+
+                   The argument _c_m_d is F_GETLK, F_SETLK, or F_SETLKW and the
+                   data to which _a_r_g points is not valid, or _f_i_l_d_e_s refers to
+                   a file that does not support locking.
+
+     [EMFILE]      The argument _c_m_d is F_DUPED and the maximum number of file
+                   descriptors permitted for the process are already in use,
+                   or no file descriptors greater than or equal to _a_r_g are
+                   available.
+
+     [ENOLCK]      The argument _c_m_d is F_SETLK or F_SETLKW, and satisfying the
+                   lock or unlock request would result in the number of locked
+                   regions in the system exceeding a system-imposed limit.
+
+     [ESRCH]       _C_m_d is F_SETOWN and the process ID given as argument is not
+                   in use.
+
+SSEEEE AALLSSOO
+     close(2),  execve(2),  flock(2),  getdtablesize(2),  open(2),  sigvec(2)
+
+HHIISSTTOORRYY
+     The ffccnnttll function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        July 11, 1993                               4

@@ -1,0 +1,58 @@
+LSEEK(2)                    BSD Programmer's Manual                   LSEEK(2)
+
+NNAAMMEE
+     llsseeeekk - reposition read/write file offset
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _o_f_f___t
+     llsseeeekk(_i_n_t _f_i_l_d_e_s, _o_f_f___t _o_f_f_s_e_t, _i_n_t _w_h_e_n_c_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The llsseeeekk() function repositions the offset of the file descriptor _f_i_l_d_e_s
+     to the argument _o_f_f_s_e_t according to the directive _w_h_e_n_c_e_. The argument
+     _f_i_l_d_e_s must be an open file descriptor.  LLsseeeekk() repositions the file
+     pointer _f_i_l_d_e_s as follows:
+
+           If _w_h_e_n_c_e is SEEK_SET, the offset is set to _o_f_f_s_e_t bytes.
+
+           If _w_h_e_n_c_e is SEEK_CUR, the offset is set to its current location
+           plus _o_f_f_s_e_t bytes.
+
+           If _w_h_e_n_c_e is SEEK_END, the offset is set to the size of the file
+           plus _o_f_f_s_e_t bytes.
+
+     The llsseeeekk() function allows the file offset to be set beyond the end of
+     the existing end-of-file of the file. If data is later written at this
+     point, subsequent reads of the data in the gap return bytes of zeros (un-
+     til data is actualy written into the gap).
+
+     Some devices are incapable of seeking.  The value of the pointer associ-
+     ated with such a device is undefined.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, llsseeeekk() returns the resulting offset location
+     as measured in bytes from the begining of the file.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     LLsseeeekk() will fail and the file pointer will remain unchanged if:
+
+     [EBADF]   _F_i_l_d_e_s is not an open file descriptor.
+
+     [ESPIPE]  _F_i_l_d_e_s is associated with a pipe, socket, or FIFO.
+
+     [EINVAL]  _W_h_e_n_c_e is not a proper value.
+
+SSEEEE AALLSSOO
+     dup(2),  open(2)
+
+BBUUGGSS
+     This document's use of _w_h_e_n_c_e is incorrect English, but maintained for
+     historical reasons.
+
+SSTTAANNDDAARRDDSS
+     The llsseeeekk() function conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,104 @@
+PATHCONF(2)                 BSD Programmer's Manual                PATHCONF(2)
+
+NNAAMMEE
+     ppaatthhccoonnff, ffppaatthhccoonnff - get configurable pathname variables
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _l_o_n_g
+     ppaatthhccoonnff(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _i_n_t _n_a_m_e);
+
+     _l_o_n_g
+     ffppaatthhccoonnff(_i_n_t _f_d, _i_n_t _n_a_m_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ppaatthhccoonnff() and ffppaatthhccoonnff() functions provides a method for applica-
+     tions to determine the current value of a configurable system limit or
+     option variable associated with a pathname or file descriptor.
+
+     For ppaatthhccoonnff, the _p_a_t_h argument is the name of a file or directory.  For
+     ffppaatthhccoonnff, the _f_d argument is an open file descriptor.  The _n_a_m_e argument
+     specifies the system variable to be queried.  Symbolic constants for each
+     name value are found in the include file <unistd.h>.
+
+     The available values are as follows:
+
+     _PC_LINK_MAX
+             The maximum file link count.
+
+     _PC_MAX_CANON
+             The maximum number of bytes in terminal canonical input line.
+
+     _PC_MAX_INPUT
+             The minimum maximum number of bytes for which space is available
+             in a terminal input queue.
+
+     _PC_NAME_MAX
+             The maximum number of bytes in a file name.
+
+     _PC_PATH_MAX
+             The maximum number of bytes in a pathname.
+
+     _PC_PIPE_BUF
+             The maximum number of bytes which will be written atomically to a
+             pipe.
+
+     _PC_CHOWN_RESTRICTED
+             Return 1 if appropriate privileges are required for the chown(2)
+             system call, otherwise 0.
+
+     _PC_NO_TRUNC
+             Return 1 if file names longer than KERN_NAME_MAX are truncated.
+
+     _PC_VDISABLE
+             Returns the terminal character disabling value.
+
+RREETTUURRNN VVAALLUUEESS
+     If the call to ppaatthhccoonnff or ffppaatthhccoonnff is not successful, -1 is returned
+     and _e_r_r_n_o is set appropriately.  Otherwise, if the variable is associated
+     with functionality that does not have a limit in the system, -1 is re-
+     turned and _e_r_r_n_o is not modified.  Otherwise, the current variable value
+     is returned.
+
+EERRRROORRSS
+     If any of the following conditions occur, the ppaatthhccoonnff and ffppaatthhccoonnff
+
+     functions shall return -1 and set _e_r_r_n_o to the corresponding value.
+
+     [EINVAL]      The value of the _n_a_m_e argument is invalid.
+
+     [EINVAL]      The implementation does not support an association of the
+                   variable name with the associated file.
+     PPaatthhccoonnff() will fail if:
+
+     [ENOTDIR]       A component of the path prefix is not a directory.
+
+     [ENAMETOOLONG]  A component of a pathname exceeded 255 characters, or an
+                     entire path name exceeded 1023 characters.
+
+     [ENOENT]        The named file does not exist.
+
+     [EACCES]        Search permission is denied for a component of the path
+                     prefix.
+
+     [ELOOP]         Too many symbolic links were encountered in translating
+                     the pathname.
+
+     [EIO]           An I/O error occurred while reading from or writing to
+                     the file system.
+
+     FFppaatthhccoonnff() will fail if:
+
+     [EBADF]   _f_d is not a valid open file descriptor.
+
+     [EIO]     An I/O error occurred while reading from or writing to the file
+               system.
+
+SSEEEE AALLSSOO
+     sysctl(3)
+
+HHIISSTTOORRYY
+     The ppaatthhccoonnff and ffppaatthhccoonnff functions first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

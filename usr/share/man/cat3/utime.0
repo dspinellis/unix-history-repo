@@ -1,0 +1,39 @@
+UTIME(3)                    BSD Programmer's Manual                   UTIME(3)
+
+NNAAMMEE
+     uuttiimmee - set file times
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<uuttiimmee..hh>>
+
+     _i_n_t
+     uuttiimmee(_c_o_n_s_t _c_h_a_r _*_f_i_l_e, _c_o_n_s_t _s_t_r_u_c_t _u_t_i_m_b_u_f _*_t_i_m_e_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy uuttiimmeess((22)) ..
+
+     The uuttiimmee() function sets the access and modification times of the named
+     file from the structures in the argument array _t_i_m_e_p.
+
+     If the times are specified (the _t_i_m_e_p argument is non-NULL) the caller
+     must be the owner of the file or be the super-user.
+
+     If the times are not specified (the _t_i_m_e_p argument is NULL) the caller
+     must be the owner of the file, have permission to write the file, or be
+     the super-user.
+
+EERRRROORRSS
+     The uuttiimmee() function may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library function utimes(2).
+
+SSEEEE AALLSSOO
+     utimes(2),  stat(2)
+
+HHIISSTTOORRYY
+     A uuttiimmee() function appeared in Version 7 AT&T UNIX.
+
+SSTTAANNDDAARRDDSS
+     The uuttiimmee function conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

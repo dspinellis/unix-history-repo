@@ -1,0 +1,25 @@
+GETPAGESIZE(3)              BSD Programmer's Manual             GETPAGESIZE(3)
+
+NNAAMMEE
+     ggeettppaaggeessiizzee - get system page size
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ggeettppaaggeessiizzee(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     GGeettppaaggeessiizzee() returns the number of bytes in a page.  Page granularity is
+     the granularity of many of the memory management calls.
+
+     The page size is a system page size and may not be the same as the under-
+     lying hardware page size.
+
+SSEEEE AALLSSOO
+     sbrk(2),  pagesize(1)
+
+HHIISSTTOORRYY
+     The ggeettppaaggeessiizzee function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,38 @@
+UNGETC(3)                   BSD Programmer's Manual                  UNGETC(3)
+
+NNAAMMEE
+     uunnggeettcc - un-get character from input stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     uunnggeettcc(_i_n_t _c, _F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uunnggeettcc() function pushes the character _c (converted to an unsigned
+     char) back onto the input stream pointed to by _s_t_r_e_a_m. The pushed-backed
+     characters will be returned by subsequent reads on the stream (in reverse
+     order).  A successful intervening call, using the same stream, to one of
+     the file positioning functions (fseek(3),  fsetpos(3),  or rewind(3))
+     will discard the pushed back characters.
+
+     One character of push-back is guaranteed, but as long as there is suffi-
+     cient memory, an effectively infinite amount of pushback is allowed.
+
+     If a character is successfully pushed-back, the end-of-file indicator for
+     the stream is cleared.
+
+RREETTUURRNN VVAALLUUEESS
+     The uunnggeettcc() function returns the character pushed-back after the conver-
+     sion, or EOF if the operation fails.  If the value of the argument _c
+     character equals EOF, the operation will fail and the stream will remain
+     unchanged.
+
+SSEEEE AALLSSOO
+     getc(3),  fseek(3),  setvbuf(3)
+
+SSTTAANNDDAARRDDSS
+     The uunnggeettcc() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

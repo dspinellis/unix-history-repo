@@ -1,0 +1,21 @@
+MINCORE(2)                  BSD Programmer's Manual                 MINCORE(2)
+
+NNAAMMEE
+     mmiinnccoorree - get advise about use of memory
+
+SSYYNNOOPPSSIISS
+     mmiinnccoorree(_c_a_d_d_r___t _a_d_d_r, _i_n_t _l_e_n, _c_h_a_r _*_v_e_c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmiinnccoorree() system call allows a process to obtain information about
+     whether pages are core resident.  Here the current core residency of the
+     pages is returned in the character array _v_e_c, with a value of 1 meaning
+     that the page is in-core.
+
+SSEEEE AALLSSOO
+     msync(2),  munmap(2),  mprotect(2),  madvise(2),
+
+HHIISSTTOORRYY
+     The mmiinnccoorree() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

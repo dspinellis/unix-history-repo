@@ -1,0 +1,116 @@
+RUNE(3)                     BSD Programmer's Manual                    RUNE(3)
+
+NNAAMMEE
+     sseettrruunneellooccaallee, sseettiinnvvaalliiddrruunnee, ssggeettrruunnee, ssppuuttrruunnee - rune support for C
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<rruunnee..hh>>
+     ##iinncclluuddee <<eerrrrnnoo..hh>>
+
+     _i_n_t
+     sseettrruunneellooccaallee(_c_h_a_r _*_l_o_c_a_l_e);
+
+     _v_o_i_d
+     sseettiinnvvaalliiddrruunnee(_r_u_n_e___t _r_u_n_e);
+
+     _r_u_n_e___t
+     ssggeettrruunnee(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g, _s_i_z_e___t _n, _c_h_a_r _c_o_n_s_t _*_*_r_e_s_u_l_t);
+
+     _i_n_t
+     ssppuuttrruunnee(_r_u_n_e___t _r_u_n_e, _c_h_a_r _*_s_t_r_i_n_g, _s_i_z_e___t _n, _c_h_a_r _*_*_r_e_s_u_l_t);
+
+
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _l_o_n_g
+     ffggeettrruunnee(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffuunnggeettrruunnee(_r_u_n_e___t _r_u_n_e, _F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffppuuttrruunnee(_r_u_n_e___t _r_u_n_e, _F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseettrruunneellooccaallee() controls the type of encoding used to represent runes
+     as multibyte strings as well as the properties of the runes as defined in
+     <<ccttyyppee..hh>>.  The _l_o_c_a_l_e argument indicates the locale which to load.  If
+     the locale is successfully loaded, 0 is returned, otherwise an errno val-
+     ue is returned to indicate the type of error.
+
+     The sseettiinnvvaalliiddrruunnee() function sets the value of the global value
+     _INVALID_RUNE to be _r_u_n_e_.
+
+     The ssggeettrruunnee() function tries to read a single multibyte character from
+     _s_t_r_i_n_g, which is at most _n bytes long.  If ssggeettrruunnee() is successful, the
+     rune is returned.  If _r_e_s_u_l_t is not NULL, _*_r_e_s_u_l_t will point to the first
+     byte which was not converted in _s_t_r_i_n_g_. If the first _n bytes of _s_t_r_i_n_g do
+     not describe a full multibyte character, _INVALID_RUNE is returned and
+     _*_r_e_s_u_l_t will point to _s_t_r_i_n_g_. If there is an encoding error at the start
+     of _s_t_r_i_n_g, _INVALID_RUNE is returned and _*_r_e_s_u_l_t will point to the second
+     character of _s_t_r_i_n_g_.
+
+     the ssppuuttrruunnee() function tries to encode _r_u_n_e as a multibyte string and
+     store it at _s_t_r_i_n_g, but no more than _n bytes will be stored.  If _r_e_s_u_l_t
+     is not NULL, _*_r_e_s_u_l_t will be set to point to the first byte in string
+     following the new multibyte character.  If _s_t_r_i_n_g is NULL, _*_r_e_s_u_l_t will
+     point to (char *)0 + _x, where _x is the number of bytes that would be
+     needed to store the multibyte value.  If the multibyte character would
+     consist of more than _n bytes and _r_e_s_u_l_t is not NULL, _*_r_e_s_u_l_t will be set
+     to NULL. In all cases, ssppuuttrruunnee() will return the number of bytes which
+     would be needed to store _r_u_n_e as a multibyte character.
+
+     The ffggeettrruunnee() function operates the same as ssggeettrruunnee() with the excep-
+     tion that it attempts to read enough bytes from _s_t_r_e_a_m to decode a single
+     rune.  It returns either EOF on end of file, _INVALID_RUNE on an encoding
+     error, or the rune decoded if all went well.
+
+     The ffuunnggeettrruunnee() function function pushes the multibyte encoding, as pro-
+     vided by ssppuuttrruunnee(), of _r_u_n_e onto _s_t_r_e_a_m such that the next ffggeettrruunnee()
+     call will return _r_u_n_e. It returns EOF if it fails and 0 on success.
+
+     The ffppuuttrruunnee() function writes the multibyte encoding of _r_u_n_e, as provid-
+     ed by ssppuuttrruunnee(), onto _s_t_r_e_a_m. It returns EOF on failure and 0 on suc-
+     cess.
+
+RREETTUURRNN VVAALLUUEESS
+     The sseettrruunneellooccaallee() function returns one of the following values:
+
+     0         _s_e_t_r_u_n_e_l_o_c_a_l_e _w_a_s _s_u_c_c_e_s_s_f_u_l_.
+
+     EFAULT    _l_o_c_a_l_e was NULL.
+
+     ENOENT    The locale could not be found.
+
+     EFTYPE    The file found was not a valid file.
+
+     EINVAL    The encoding indicated by the locale was unknown.
+
+     The ssggeettrruunnee() function either returns the rune read or _INVALID_RUNE.
+     The ssppuuttrruunnee() function returns the number of bytes needed to store _r_u_n_e
+     as a multibyte string.
+
+FFIILLEESS
+     $PATH_LOCALE/_l_o_c_a_l_e/LC_CTYPE
+     /usr/share/locale/_l_o_c_a_l_e/LC_CTYPE  binary LC_CTYPE file for the locale
+                                        _l_o_c_a_l_e.
+
+SSEEEE AALLSSOO
+     euc(4),  mbrune(3),  setlocale(3),  utf2(4)
+
+NNOOTTEE
+     The ANSI C type wchar_t is the same as rune_t. Rune_t was chosen to ac-
+     cent the purposeful choice of not basing the system with the ANSI C prim-
+     itives, which were, shall we say, less aesthetic.
+
+HHIISSTTOORRYY
+     These functions first appeared in 4.4BSD.
+
+     The sseettrruunneellooccaallee() function and the other non-ANSI rune functions were
+     inspired by PPllaann 99 ffrroomm BBeellll LLaabbss as a much more sane alternative to the
+     ANSI multibyte and wide character support.
+
+     All of the ANSI multibyte and wide character support functions are built
+     using the rune functions.
+
+4.4BSD                           June 27, 1993                               2

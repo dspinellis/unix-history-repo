@@ -1,0 +1,40 @@
+MALLOC(3)                   BSD Programmer's Manual                  MALLOC(3)
+
+NNAAMMEE
+     mmaalllloocc, - general memory allocation function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d _*
+     mmaalllloocc(_s_i_z_e___t _s_i_z_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmaalllloocc() function allocates uninitialized space for an object whose
+     size is specified by _s_i_z_e. The mmaalllloocc() function maintains multiple lists
+     of free blocks according to size, allocating space from the appropriate
+     list.
+
+     The allocated space is suitably aligned (after possible pointer coercion)
+     for storage of any type of object. If the space is of _p_a_g_e_s_i_z_e or larger,
+     the memory returned will be page-aligned.
+
+RREETTUURRNN VVAALLUUEESS
+     The mmaalllloocc() function returns a pointer to the allocated space if suc-
+     cessful; otherwise a null pointer is returned.
+
+SSEEEE AALLSSOO
+     brk(2),  pagesize(2),  free(3),  calloc(3),  alloca(3),  realloc(3),
+     memory(3)
+
+SSTTAANNDDAARRDDSS
+     The mmaalllloocc() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+BBUUGGSS
+     The current implementation of malloc does not always fail gracefully when
+     system memory limits are approached.  It may fail to allocate memory when
+     larger free blocks could be broken up, or when limits are exceeded be-
+     cause the size is rounded up.  It is optimized for sizes that are powers
+     of two.
+
+4th Berkeley Distribution        June 4, 1993                                1

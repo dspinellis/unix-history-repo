@@ -1,0 +1,48 @@
+FGETLINE(3)                 BSD Programmer's Manual                FGETLINE(3)
+
+NNAAMMEE
+     ffggeettlliinnee - get a line from a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _c_h_a_r _*
+     ffggeettlliinnee(_F_I_L_E _*_s_t_r_e_a_m, _s_i_z_e___t _*_l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffggeettlliinnee() function returns a pointer to the next line from the
+     stream referenced by _s_t_r_e_a_m. This line is _n_o_t a C string as it does not
+     end with a terminating NUL character.  The length of the line, including
+     the final newline, is stored in the memory location to which _l_e_n points.
+     (Note, however, that if the line is the last in a file that does not end
+     in a newline, the returned text will not contain a newline.)
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion a pointer is returned; this pointer becomes
+     invalid after the next I/O operation on _s_t_r_e_a_m (whether successful or
+     not) or as soon as the stream is closed.  Otherwise, NULL is returned.
+     The ffggeettlliinnee() function does not distinguish between end-of-file and er-
+     ror; the routines feof(3) and ferror(3) must be used to determine which
+     occurred.  If an error occurrs, the global variable _e_r_r_n_o is set to indi-
+     cate the error.  The end-of-file condition is remembered, even on a ter-
+     minal, and all subsequent attempts to read will return NULL until the
+     condition is cleared with clearerr(3).
+
+     The text to which the returned pointer points may be modified, provided
+     that no changes are made beyond the returned size.  These changes are
+     lost as soon as the pointer becomes invalid.
+
+EERRRROORRSS
+     [EBADF]  The argument _s_t_r_e_a_m is not a stream open for reading.
+
+     The ffggeettlliinnee() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routines fflush(3),  malloc(3),  read(2),  stat(2),  or
+     realloc(3).
+
+SSEEEE AALLSSOO
+     ferror(3),  fgets(3),  fopen(3),  putc(3)
+
+HHIISSTTOORRYY
+     The ffggeettlliinnee() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

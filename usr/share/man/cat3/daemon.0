@@ -1,0 +1,29 @@
+DAEMON(3)                   BSD Programmer's Manual                  DAEMON(3)
+
+NNAAMMEE
+     ddaaeemmoonn - run in the background
+
+SSYYNNOOPPSSIISS
+     ddaaeemmoonn(_i_n_t _n_o_c_h_d_i_r, _i_n_t _n_o_c_l_o_s_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddaaeemmoonn() function is for programs wishing to detach themselves from
+     the controlling terminal and run in the background as system daemons.
+
+     Unless the argument _n_o_c_h_d_i_r is non-zero, ddaaeemmoonn() changes the current
+     working directory to the root (``/'').
+
+     Unless the argument _n_o_c_l_o_s_e is non-zero, ddaaeemmoonn() will redirect standard
+     input, standard output and standard error to ``/dev/null''.
+
+EERRRROORRSS
+     The function ddaaeemmoonn() may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library functions fork(2) and setsid(2).
+
+SSEEEE AALLSSOO
+     setsid(2)
+
+HHIISSTTOORRYY
+     The ddaaeemmoonn() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

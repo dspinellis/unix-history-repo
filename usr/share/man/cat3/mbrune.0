@@ -1,0 +1,52 @@
+MBRUNE(3)                   BSD Programmer's Manual                  MBRUNE(3)
+
+NNAAMMEE
+     mmbbrruunnee, mmbbrrrruunnee, mmbbmmbb - multibyte rune support for C
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<rruunnee..hh>>
+
+     _c_h_a_r _*
+     mmbbrruunnee(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g, _r_u_n_e___t _r_u_n_e);
+
+     _c_h_a_r _*
+     mmbbrrrruunnee(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g, _r_u_n_e___t _r_u_n_e);
+
+     _c_h_a_r _*
+     mmbbmmbb(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g, _c_h_a_r _*_p_a_t_t_e_r_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines provide the corresponding functionality of ssttrrcchhrr(),
+     ssttrrrrcchhrr() and ssttrrssttrr() for multibyte strings.
+
+     The mmbbrruunnee() function locates the first occurence of rruunnee() in the string
+     pointed to by _s_t_r_i_n_g. The terminating NULL character is considered part
+     of the string.  If _r_u_n_e is `\0', mmbbrruunnee() locates the terminating `\0'.
+
+     The mmbbrrrruunnee() function locates the last occurrence of _r_u_n_e in the string
+     _s_t_r_i_n_g. If _r_u_n_e is `\0', mmbbrruunnee() locates the terminating `\0'.
+
+     The mmbbmmbb() function locates the first occurence of the null-terminated
+     string _p_a_t_t_e_r_n in the null-terminated string _s_t_r_i_n_g_. If _p_a_t_t_e_r_n is the
+     empty string, mmbbmmbb() returns _s_t_r_i_n_g; if _p_a_t_t_e_r_n occurs nowhere in _s_t_r_i_n_g,
+     mmbbmmbb() returns NULL; otherwise mmbbmmbb() returns a pointer to the first
+     character of the first occurrence of _p_a_t_t_e_r_n.
+
+RREETTUURRNN VVAALLUUEESS
+     The function mmbbrruunnee() returns a pointer to the located character, or NULL
+     if the character does not appear in the string.
+
+     The mmbbrrrruunnee() function returns a pointer to the character, or NULL if the
+     character does not appear in the string.
+
+     The mmbbmmbb() function returns a pointer to the _p_a_t_t_e_r_n, or NULL if the
+     _p_a_t_t_e_r_n does not appear in the string.
+
+SSEEEE AALLSSOO
+     euc(4),  mbrune(3),  rune(3),  setlocale(3),  utf2(4)
+
+HHIISSTTOORRYY
+     The mmbbrruunnee(), mmbbrrrruunnee(), and mmbbmmbb() functions first appeared in Plan 9
+     from Bell Labs as uuttffrruunnee(), uuttffrrrruunnee(), and uuttffuuttff().
+
+4.4BSD                           June 4, 1993                                1

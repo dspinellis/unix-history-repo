@@ -1,0 +1,109 @@
+NFSSVC(2)                   BSD Programmer's Manual                  NFSSVC(2)
+
+NNAAMMEE
+     nnffssssvvcc - NFS services
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+     ##iinncclluuddee <<nnffss//nnffss..hh>>
+
+     _i_n_t
+     nnffssssvvcc(_i_n_t _f_l_a_g_s, _v_o_i_d _*_a_r_g_s_t_r_u_c_t_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnffssssvvcc() function is used by the NFS daemons to pass information into
+     and out of the kernel and also to enter the kernel as a server daemon.
+     The _f_l_a_g_s argument consists of several bits that show what action is to
+     be taken once in the kernel and the _a_r_g_s_t_r_u_c_t_p points to one of three
+     structures depending on which bits are set in flags.
+
+     On the client side, nfsiod(8) calls nnffssssvvcc() with the _f_l_a_g_s argument set
+     to NFSSVC_BIOD and _a_r_g_s_t_r_u_c_t_p set to NULL to enter the kernel as a block
+     I/O server daemon.  For NNQQNNFFSS, mount_nfs(8) calls nnffssssvvcc() with the
+     NFSSVC_MNTD flag, optionally or'd with the flags NFSSVC_GOTAUTH and
+     NFSSVC_AUTHINFAIL along with a pointer to a
+
+     struct nfsd_cargs {
+             char            *ncd_dirp;      /* Mount dir path */
+             uid_t           ncd_authuid;    /* Effective uid */
+             int             ncd_authtype;   /* Type of authenticator */
+             int             ncd_authlen;    /* Length of authenticator string */
+             char            *ncd_authstr;   /* Authenticator string */
+     };
+
+     structure.  The initial call has only the NFSSVC_MNTD flag set to specify
+     service for the mount point.  If the mount point is using Kerberos, then
+     the mount_nfs(8) daemon will return from nnffssssvvcc() with errno == ENEEDAUTH
+     whenever the client side requires an ``rcmd'' authentication ticket for
+     the user.  Mount_nfs(8) will attempt to get the Kerberos ticket, and if
+     successful will call nnffssssvvcc() with the flags NFSSVC_MNTD and
+     NFSSVC_GOTAUTH after filling the ticket into the ncd_authstr field and
+     setting the ncd_authlen and ncd_authtype fields of the nfsd_cargs struc-
+     ture.  If mount_nfs(8) failed to get the ticket, nnffssssvvcc() will be called
+     with the flags NFSSVC_MNTD, NFSSVC_GOTAUTH and NFSSVC_AUTHINFAIL to de-
+     note a failed authentication attempt.
+
+     On the server side, nnffssssvvcc() is called with the flag NFSSVC_NFSD and a
+     pointer to a
+
+     struct nfsd_srvargs {
+             struct nfsd     *nsd_nfsd;      /* Pointer to in kernel nfsd struct */
+             uid_t           nsd_uid;        /* Effective uid mapped to cred */
+             u_long          nsd_haddr;      /* Ip address of client */
+             struct ucred    nsd_cr;         /* Cred. uid maps to */
+             int             nsd_authlen;    /* Length of auth string (ret) */
+             char            *nsd_authstr;   /* Auth string (ret) */
+     };
+
+     to enter the kernel as an nfsd(8) daemon.  Whenever an nfsd(8) daemon re-
+     ceives a Kerberos authentication ticket, it will return from nnffssssvvcc()
+     with errno == ENEEDAUTH.  The nfsd(8) will attempt to authenticate the
+     ticket and generate a set of credentials on the server for the ``user
+     id'' specified in the field nsd_uid.  This is done by first authenticat-
+     ing the Kerberos ticket and then mapping the Kerberos principal to a lo-
+     cal name and getting a set of credentials for that user via.  getpwnam(3)
+     and getgrouplist(3).  If successful, the nfsd(8) will call nnffssssvvcc() with
+     the NFSSVC_NFSD and NFSSVC_AUTHIN flags set to pass the credential map-
+     ping in nsd_cr into the kernel to be cached on the server socket for that
+     client.  If the authentication failed, nfsd(8) calls nnffssssvvcc() with the
+     flags NFSSVC_NFSD and NFSSVC_AUTHINFAIL to denote an authentication fail-
+     ure.
+
+     The master nfsd(8) server daemon calls nnffssssvvcc() with the flag
+     NFSSVC_ADDSOCK and a pointer to a
+
+     struct nfsd_args {
+             int     sock;           /* Socket to serve */
+             caddr_t name;           /* Client address for connection based sockets */
+             int     namelen;        /* Length of name */
+     };
+
+     to pass a server side NFS socket into the kernel for servicing by the
+     nfsd(8) daemons.
+
+RREETTUURRNN VVAALLUUEESS
+     Normally nnffssssvvcc does not return unless the server is terminated by a sig-
+     nal when a value of 0 is returned.  Otherwise, -1 is returned and the
+     global variable _e_r_r_n_o is set to specify the error.
+
+EERRRROORRSS
+     [ENEEDAUTH]  This special error value is really used for authentication
+                  support, particularly Kerberos, as explained above.
+
+     [EPERM]      The caller is not the super-user.
+
+SSEEEE AALLSSOO
+     nfsd(8),  mount_nfs(8),  nfsiod(8)
+
+HHIISSTTOORRYY
+     The nnffssssvvcc function first appeared in 4.4BSD.
+
+BBUUGGSS
+     The nnffssssvvcc system call is designed specifically for the NFS support dae-
+     mons and as such is specific to their requirements.  It should really re-
+     turn values to indicate the need for authentication support, since
+     ENEEDAUTH is not really an error.  Several fields of the argument struc-
+     tures are assumed to be valid and sometimes to be unchanged from a previ-
+     ous call, such that nnffssssvvcc must be used with extreme care.
+
+4.4BSD                           June 9, 1993                                2

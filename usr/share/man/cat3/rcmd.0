@@ -1,0 +1,96 @@
+RCMD(3)                     BSD Programmer's Manual                    RCMD(3)
+
+NNAAMMEE
+     rrccmmdd, rrrreessvvppoorrtt, rruusseerrookk - routines for returning a stream to a remote
+     command
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     rrccmmdd(_c_h_a_r _*_*_a_h_o_s_t, _i_n_t _i_n_p_o_r_t, _c_o_n_s_t _c_h_a_r _*_l_o_c_u_s_e_r, _c_o_n_s_t _c_h_a_r _*_r_e_m_u_s_e_r,
+             _c_o_n_s_t _c_h_a_r _*_c_m_d, _i_n_t _*_f_d_2_p);
+
+     _i_n_t
+     rrrreessvvppoorrtt(_i_n_t _*_p_o_r_t);
+
+     _i_n_t
+     iirruusseerrookk(_u___l_o_n_g _r_a_d_d_r, _i_n_t _s_u_p_e_r_u_s_e_r, _c_o_n_s_t _c_h_a_r _*_r_u_s_e_r,
+             _c_o_n_s_t _c_h_a_r _*_l_u_s_e_r);
+
+     _i_n_t
+     rruusseerrookk(_c_o_n_s_t _c_h_a_r _*_r_h_o_s_t, _i_n_t _s_u_p_e_r_u_s_e_r, _c_o_n_s_t _c_h_a_r _*_r_u_s_e_r,
+             _c_o_n_s_t _c_h_a_r _*_l_u_s_e_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The rrccmmdd() function is used by the super-user to execute a command on a
+     remote machine using an authentication scheme based on reserved port num-
+     bers.  The rrrreessvvppoorrtt() function returns a descriptor to a socket with an
+     address in the privileged port space.  The rruusseerrookk() function is used by
+     servers to authenticate clients requesting service with rrccmmdd().  All
+     three functions are present in the same file and are used by the rshd(8)
+     server (among others).
+
+     The rrccmmdd() function looks up the host _*_a_h_o_s_t using gethostbyname(3),  re-
+     turning -1 if the host does not exist.  Otherwise _*_a_h_o_s_t is set to the
+     standard name of the host and a connection is established to a server re-
+     siding at the well-known Internet port _i_n_p_o_r_t.
+
+     If the connection succeeds, a socket in the Internet domain of type
+     SOCK_STREAM is returned to the caller, and given to the remote command as
+     _s_t_d_i_n and _s_t_d_o_u_t. If _f_d_2_p is non-zero, then an auxiliary channel to a
+     control process will be set up, and a descriptor for it will be placed in
+     _*_f_d_2_p. The control process will return diagnostic output from the command
+     (unit 2) on this channel, and will also accept bytes on this channel as
+     being UNIX signal numbers, to be forwarded to the process group of the
+     command.  If _f_d_2_p is 0, then the _s_t_d_e_r_r (unit 2 of the remote command)
+     will be made the same as the _s_t_d_o_u_t and no provision is made for sending
+     arbitrary signals to the remote process, although you may be able to get
+     its attention by using out-of-band data.
+
+     The protocol is described in detail in rshd(8).
+
+     The rrrreessvvppoorrtt() function is used to obtain a socket with a privileged ad-
+     dress bound to it.  This socket is suitable for use by rrccmmdd() and several
+     other functions.  Privileged Internet ports are those in the range 0 to
+     1023.  Only the super-user is allowed to bind an address of this sort to
+     a socket.
+
+     The iirruusseerrookk() and rruusseerrookk() functions take a remote host's IP address or
+     name, as returned by the gethostbyname(3) routines, two user names and a
+     flag indicating whether the local user's name is that of the super-user.
+     Then, if the user is _N_O_T the super-user, it checks the _/_e_t_c_/_h_o_s_t_s_._e_q_u_i_v
+     file.  If that lookup is not done, or is unsuccessful, the _._r_h_o_s_t_s in the
+     local user's home directory is checked to see if the request for service
+     is allowed.
+
+     If this file does not exist, is not a regular file, is owned by anyone
+     other than the user or the super-user, or is writeable by anyone other
+     than the owner, the check automatically fails.  Zero is returned if the
+     machine name is listed in the ``_h_o_s_t_s_._e_q_u_i_v'' file, or the host and re-
+     mote user name are found in the ``_._r_h_o_s_t_s'' file; otherwise iirruusseerrookk()
+     and rruusseerrookk() return -1.  If the local domain (as obtained from
+     gethostname(2))  is the same as the remote domain, only the machine name
+     need be specified.
+
+     The iirruusseerrookk() function is strongly preferred for security reasons.  It
+     requires trusting the local DNS at most, while the rruusseerrookk() function re-
+     quires trusting the entire DNS, which can be spoofed.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The rrccmmdd() function returns a valid socket descriptor on success.  It re-
+     turns -1 on error and prints a diagnostic message on the standard error.
+
+     The rrrreessvvppoorrtt() function returns a valid, bound socket descriptor on suc-
+     cess.  It returns -1 on error with the global value _e_r_r_n_o set according
+     to the reason for failure.  The error code EAGAIN is overloaded to mean
+     ``All network ports in use.''
+
+SSEEEE AALLSSOO
+     rlogin(1),  rsh(1),  intro(2),  rexec(3),  rexecd(8),  rlogind(8),
+     rshd(8)
+
+HHIISSTTOORRYY
+     These functions appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,110 @@
+RENAME(2)                   BSD Programmer's Manual                  RENAME(2)
+
+NNAAMMEE
+     rreennaammee - change the name of a file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     rreennaammee(_c_o_n_s_t _c_h_a_r _*_f_r_o_m, _c_o_n_s_t _c_h_a_r _*_t_o);
+
+DDEESSCCRRIIPPTTIIOONN
+     RReennaammee() causes the link named _f_r_o_m to be renamed as _t_o. If _t_o exists, it
+     is first removed.  Both _f_r_o_m and _t_o must be of the same type (that is,
+     both directories or both non-directories), and must reside on the same
+     file system.
+
+     RReennaammee() guarantees that an instance of _t_o will always exist, even if the
+     system should crash in the middle of the operation.
+
+     If the final component of _f_r_o_m is a symbolic link, the symbolic link is
+     renamed, not the file or directory to which it points.
+
+CCAAVVEEAATT
+     The system can deadlock if a loop in the file system graph is present.
+     This loop takes the form of an entry in directory `_a', say `_a_/_f_o_o', being
+     a hard link to directory `_b', and an entry in directory `_b', say `_b_/_b_a_r',
+     being a hard link to directory `_a'. When such a loop exists and two sepa-
+     rate processes attempt to perform `rename a/foo b/bar' and `rename b/bar
+     a/foo', respectively, the system may deadlock attempting to lock both di-
+     rectories for modification.  Hard links to directories should be replaced
+     by symbolic links by the system administrator.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 value is returned if the operation succeeds, otherwise rreennaammee() re-
+     turns -1 and the global variable _e_r_r_n_o indicates the reason for the fail-
+     ure.
+
+EERRRROORRSS
+     RReennaammee() will fail and neither of the argument files will be affected if:
+
+     [EINVAL]      Either pathname contains a character with the high-order
+                   bit set.
+
+     [ENAMETOOLONG]
+                   A component of either pathname exceeded 255 characters, or
+                   the entire length of either path name exceeded 1023 charac-
+                   ters.
+
+     [ENOENT]      A component of the _f_r_o_m path does not exist, or a path pre-
+                   fix of _t_o does not exist.
+
+     [EACCES]      A component of either path prefix denies search permission.
+
+     [EACCES]      The requested link requires writing in a directory with a
+                   mode that denies write permission.
+
+     [EPERM]       The directory containing _f_r_o_m is marked sticky, and neither
+                   the containing directory nor _f_r_o_m are owned by the effec-
+                   tive user ID.
+
+     [EPERM]       The _t_o file exists, the directory containing _t_o is marked
+                   sticky, and neither the containing directory nor _t_o are
+
+
+                   owned by the effective user ID.
+
+     [ELOOP]       Too many symbolic links were encountered in translating ei-
+                   ther pathname.
+
+     [ENOTDIR]     A component of either path prefix is not a directory.
+
+     [ENOTDIR]     _f_r_o_m is a directory, but _t_o is not a directory.
+
+     [EISDIR]      _t_o is a directory, but _f_r_o_m is not a directory.
+
+     [EXDEV]       The link named by _t_o and the file named by _f_r_o_m are on dif-
+                   ferent logical devices (file systems).  Note that this er-
+                   ror code will not be returned if the implementation permits
+                   cross-device links.
+
+     [ENOSPC]      The directory in which the entry for the new name is being
+                   placed cannot be extended because there is no space left on
+                   the file system containing the directory.
+
+     [EDQUOT]      The directory in which the entry for the new name is being
+                   placed cannot be extended because the user's quota of disk
+                   blocks on the file system containing the directory has been
+                   exhausted.
+
+     [EIO]         An I/O error occurred while making or updating a directory
+                   entry.
+
+     [EROFS]       The requested link requires writing in a directory on a
+                   read-only file system.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+     [EINVAL]      _F_r_o_m is a parent directory of _t_o, or an attempt is made to
+                   rename `.' or `..'.
+
+     [ENOTEMPTY]   _T_o is a directory and is not empty.
+
+SSEEEE AALLSSOO
+     open(2) symlink(7)
+
+SSTTAANNDDAARRDDSS
+     RReennaammee() conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+4.2 Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,107 @@
+WRITE(2)                    BSD Programmer's Manual                   WRITE(2)
+
+NNAAMMEE
+     wwrriittee, wwrriitteevv - write output
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//uuiioo..hh>>
+
+     _s_s_i_z_e___t
+     wwrriittee(_i_n_t _d, _c_o_n_s_t _v_o_i_d _*_b_u_f, _s_i_z_e___t _n_b_y_t_e_s);
+
+     _i_n_t
+     wwrriitteevv(_i_n_t _d, _s_t_r_u_c_t _i_o_v_e_c _*_i_o_v, _i_n_t _i_o_v_c_n_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     WWrriittee() attempts to write _n_b_y_t_e_s of data to the object referenced by the
+     descriptor _d from the buffer pointed to by _b_u_f. WWrriitteevv() performs the
+     same action, but gathers the output data from the _i_o_v_c_n_t buffers speci-
+     fied by the members of the _i_o_v array: iov[0], iov[1], ..., iov[iovcnt-1].
+
+     For wwrriitteevv(), the _i_o_v_e_c structure is defined as:
+           struct iovec {
+                   void *iov_base;
+                   int iov_len;
+           };
+
+     Each _i_o_v_e_c entry specifies the base address and length of an area in mem-
+     ory from which data should be written.  WWrriitteevv() will always write a com-
+     plete area before proceeding to the next.
+
+     On objects capable of seeking, the wwrriittee() starts at a position given by
+     the pointer associated with _d, see lseek(2).  Upon return from wwrriittee(),
+     the pointer is incremented by the number of bytes which were written.
+
+     Objects that are not capable of seeking always write from the current po-
+     sition.  The value of the pointer associated with such an object is unde-
+     fined.
+
+     If the real user is not the super-user, then wwrriittee() clears the set-user-
+     id bit on a file.  This prevents penetration of system security by a user
+     who ``captures'' a writable set-user-id file owned by the super-user.
+
+     When using non-blocking I/O on objects such as sockets that are subject
+     to flow control, wwrriittee() and wwrriitteevv() may write fewer bytes than request-
+     ed; the return value must be noted, and the remainder of the operation
+     should be retried when possible.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion the number of bytes which were written is re-
+     turned.  Otherwise a -1 is returned and the global variable _e_r_r_n_o is set
+     to indicate the error.
+
+EERRRROORRSS
+     WWrriittee() and wwrriitteevv() will fail and the file pointer will remain unchanged
+     if:
+
+     [EBADF]       _D is not a valid descriptor open for writing.
+
+     [EPIPE]       An attempt is made to write to a pipe that is not open for
+                   reading by any process.
+
+     [EPIPE]       An attempt is made to write to a socket of type that is not
+
+                   connected to a peer socket.
+
+     [EFBIG]       An attempt was made to write a file that exceeds the pro-
+                   cess's file size limit or the maximum file size.
+
+     [EFAULT]      Part of _i_o_v or data to be written to the file points out-
+                   side the process's allocated address space.
+
+     [EINVAL]      The pointer associated with _d was negative.
+
+     [ENOSPC]      There is no free space remaining on the file system con-
+                   taining the file.
+
+     [EDQUOT]      The user's quota of disk blocks on the file system contain-
+                   ing the file has been exhausted.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+     [EAGAIN]      The file was marked for non-blocking I/O, and no data could
+                   be written immediately.
+
+     In addition, wwrriitteevv() may return one of the following errors:
+
+     [EINVAL]      _I_o_v_c_n_t was less than or equal to 0, or greater than 16.
+
+     [EINVAL]      One of the _i_o_v___l_e_n values in the _i_o_v array was negative.
+
+     [EINVAL]      The sum of the _i_o_v___l_e_n values in the _i_o_v array overflowed a
+                   32-bit integer.
+
+SSEEEE AALLSSOO
+     fcntl(2),  lseek(2),  open(2),  pipe(2),  select(2)
+
+SSTTAANNDDAARRDDSS
+     WWrriittee() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The wwrriitteevv() function call appeared in 4.2BSD. A wwrriittee function call ap-
+     peared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                2

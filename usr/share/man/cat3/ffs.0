@@ -1,0 +1,23 @@
+FFS(3)                      BSD Programmer's Manual                     FFS(3)
+
+NNAAMMEE
+     ffffss - find first bit set in a bit string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _i_n_t
+     ffffss(_i_n_t _v_a_l_u_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffffss() fucntion finds the first bit set in _v_a_l_u_e and returns the index
+     of that bit.  Bits are numbered starting from 1, starting at the right-
+     most bit.  A return value of 0 means that the argument was zero.
+
+SSEEEE AALLSSOO
+     bitstring(3)
+
+HHIISSTTOORRYY
+     The ffffss() function appeared in 4.3BSD.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,146 @@
+RECV(2)                     BSD Programmer's Manual                    RECV(2)
+
+NNAAMMEE
+     rreeccvv, rreeccvvffrroomm, rreeccvvmmssgg - receive a message from a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     rreeccvv(_i_n_t _s, _v_o_i_d _*_b_u_f, _i_n_t _l_e_n, _i_n_t _f_l_a_g_s);
+
+     _i_n_t
+     rreeccvvffrroomm(_i_n_t _s, _v_o_i_d _*_b_u_f, _i_n_t _l_e_n, _i_n_t _f_l_a_g_s, _s_t_r_u_c_t _s_o_c_k_a_d_d_r _*_f_r_o_m,
+             _i_n_t _*_f_r_o_m_l_e_n);
+
+     _i_n_t
+     rreeccvvmmssgg(_i_n_t _s, _s_t_r_u_c_t _m_s_g_h_d_r _*_m_s_g, _i_n_t _f_l_a_g_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     RReeccvvffrroomm() and rreeccvvmmssgg() are used to receive messages from a socket, and
+     may be used to receive data on a socket whether or not it is connection-
+     oriented.
+
+     If _f_r_o_m is non-nil, and the socket is not connection-oriented, the source
+     address of the message is filled in.  _F_r_o_m_l_e_n is a value-result parame-
+     ter, initialized to the size of the buffer associated with _f_r_o_m, and mod-
+     ified on return to indicate the actual size of the address stored there.
+
+     The rreeccvv() call is normally used only on a _c_o_n_n_e_c_t_e_d socket (see
+     connect(2))  and is identical to rreeccvvffrroomm() with a nil _f_r_o_m parameter.
+     As it is redundant, it may not be supported in future releases.
+
+     All three routines return the length of the message on successful comple-
+     tion.  If a message is too long to fit in the supplied buffer, excess
+     bytes may be discarded depending on the type of socket the message is re-
+     ceived from (see socket(2)).
+
+     If no messages are available at the socket, the receive call waits for a
+     message to arrive, unless the socket is nonblocking (see fcntl(2))  in
+     which case the value -1 is returned and the external variable _e_r_r_n_o set
+     to EAGAIN. The receive calls normally return any data available, up to
+     the requested amount, rather than waiting for receipt of the full amount
+     requested; this behavior is affected by the socket-level options
+     SO_RCVLOWAT and SO_RCVTIMEO described in getsockopt(2).
+
+     The select(2) call may be used to determine when more data arrive.
+
+     The _f_l_a_g_s argument to a recv call is formed by _o_r _A_p _i_n_g one or more of
+     the values:
+
+           MSG_OOB        process out-of-band data
+           MSG_PEEK       peek at incoming message
+           MSG_WAITALL    wait for full request or error
+     The MSG_OOB flag requests receipt of out-of-band data that would not be
+     received in the normal data stream.  Some protocols place expedited data
+     at the head of the normal data queue, and thus this flag cannot be used
+     with such protocols.  The MSG_PEEK flag causes the receive operation to
+     return data from the beginning of the receive queue without removing that
+     data from the queue.  Thus, a subsequent receive call will return the
+     same data.  The MSG_WAITALL flag requests that the operation block until
+     the full request is satisfied.  However, the call may still return less
+     data than requested if a signal is caught, an error or disconnect occurs,
+     or the next data to be received is of a different type than that re-
+     turned.
+
+     The rreeccvvmmssgg() call uses a _m_s_g_h_d_r structure to minimize the number of di-
+     rectly supplied parameters.  This structure has the following form, as
+     defined in <_s_y_s_/_s_o_c_k_e_t_._h>:
+
+     struct msghdr {
+             caddr_t msg_name;       /* optional address */
+             u_int   msg_namelen;    /* size of address */
+             struct  iovec *msg_iov; /* scatter/gather array */
+             u_int   msg_iovlen;     /* # elements in msg_iov */
+             caddr_t msg_control;    /* ancillary data, see below */
+             u_int   msg_controllen; /* ancillary data buffer len */
+             int     msg_flags;      /* flags on received message */
+     };
+
+     Here _m_s_g___n_a_m_e and _m_s_g___n_a_m_e_l_e_n specify the destination address if the
+     socket is unconnected; _m_s_g___n_a_m_e may be given as a null pointer if no
+     names are desired or required.  _M_s_g___i_o_v and _m_s_g___i_o_v_l_e_n describe scatter
+     gather locations, as discussed in read(2).  _M_s_g___c_o_n_t_r_o_l, which has length
+     _m_s_g___c_o_n_t_r_o_l_l_e_n, points to a buffer for other protocol control related
+     messages or other miscellaneous ancillary data.  The messages are of the
+     form:
+
+     struct cmsghdr {
+             u_int   cmsg_len;       /* data byte count, including hdr */
+             int     cmsg_level;     /* originating protocol */
+             int     cmsg_type;      /* protocol-specific type */
+     /* followed by
+             u_char  cmsg_data[]; */
+     };
+     As an example, one could use this to learn of changes in the data-stream
+     in XNS/SPP, or in ISO, to obtain user-connection-request data by request-
+     ing a recvmsg with no data buffer provided immediately after an aacccceepptt()
+     call.
+
+     Open file descriptors are now passed as ancillary data for AF_UNIX domain
+     sockets, with _c_m_s_g___l_e_v_e_l set to SOL_SOCKET and _c_m_s_g___t_y_p_e set to
+     SCM_RIGHTS.
+
+     The _m_s_g___f_l_a_g_s field is set on return according to the message received.
+     MSG_EOR indicates end-of-record; the data returned completed a record
+     (generally used with sockets of type SOCK_SEQPACKET). MSG_TRUNC indicates
+     that the trailing portion of a datagram was discarded because the data-
+     gram was larger than the buffer supplied.  MSG_CTRUNC indicates that some
+     control data were discarded due to lack of space in the buffer for ancil-
+     lary data.  MSG_OOB is returned to indicate that expedited or out-of-band
+     data were received.
+
+RREETTUURRNN VVAALLUUEESS
+     These calls return the number of bytes received, or -1 if an error oc-
+     curred.
+
+EERRRROORRSS
+     The calls fail if:
+
+     [EBADF]     The argument _s is an invalid descriptor.
+
+     [ENOTCONN]  The socket is assoicated with a connection-oriented protocol
+                 and has not been connected (see connect(2) and accept(2)).
+
+     [ENOTSOCK]  The argument _s does not refer to a socket.
+
+     [EAGAIN]    The socket is marked non-blocking, and the receive operation
+                 would block, or a receive timeout had been set, and the time-
+
+
+                 out expired before data were received.
+
+     [EINTR]     The receive was interrupted by delivery of a signal before
+                 any data were available.
+
+     [EFAULT]    The receive buffer pointer(s) point outside the process's ad-
+                 dress space.
+
+SSEEEE AALLSSOO
+     fcntl(2),  read(2),  select(2),  getsockopt(2),  socket(2)
+
+HHIISSTTOORRYY
+     The rreeccvv function call appeared in 4.2BSD.
+
+4.3-Reno Berkeley Distribution   June 4, 1993                                3

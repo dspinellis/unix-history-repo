@@ -1,0 +1,70 @@
+UTIMES(2)                   BSD Programmer's Manual                  UTIMES(2)
+
+NNAAMMEE
+     uuttiimmeess - set file access and modification times
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttiimmee..hh>>
+
+     _i_n_t
+     uuttiimmeess(_c_o_n_s_t _c_h_a_r _*_f_i_l_e, _c_o_n_s_t _s_t_r_u_c_t _t_i_m_e_v_a_l _*_t_i_m_e_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uuttiimmeess() function sets the access and modification times of the named
+     file from the structures in the argument array _t_i_m_e_s.
+
+     The first structure is the access time, and the second is the modifica-
+     tion time.
+
+     If the times are specified (the _t_i_m_e_s argument is non-NULL) the caller
+     must be the owner of the file or be the super-user.
+
+     If the times are not specified (the _t_i_m_e_s argument is NULL) the caller
+     must be the owner of the file, have permission to write the file, or be
+     the super-user.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     UUttiimmeess() will fail if:
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix; or the _t_i_m_e_s argument is NULL and the effective us-
+                   er ID of the process does not match the owner of the file,
+                   and is not the super-user, and write access is denied.
+
+     [EFAULT]      File or _t_i_m_e_s points outside the process's allocated ad-
+                   dress space.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [EIO]         An I/O error occurred while reading or writing the affected
+                   inode.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EPERM]       The _t_i_m_e_s argument is not NULL and the calling process's
+                   effective user ID does not match the owner of the file and
+                   is not the super-user.
+
+     [EROFS]       The file system containing the file is mounted read-only.
+
+SSEEEE AALLSSOO
+     stat(2)
+
+HHIISSTTOORRYY
+     The uuttiimmeess function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

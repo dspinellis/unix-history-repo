@@ -1,0 +1,30 @@
+FREXP(3)                    BSD Programmer's Manual                   FREXP(3)
+
+NNAAMMEE
+     ffrreexxpp - convert floating-point number to fractional and integral compo-
+     nents
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     ffrreexxpp(_d_o_u_b_l_e _v_a_l_u_e, _i_n_t _*_e_x_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffrreexxpp() function breaks a floating-point number into a normalized
+     fraction and an integral power of 2.  It stores the integer in the _i_n_t
+     object pointed to by _e_x_p.
+
+RREETTUURRNN VVAALLUUEESS
+     The ffrreexxpp() function returns the value _x, such that _x is a _d_o_u_b_l_e with
+     magnitude in the interval [1/2, 1] or zero, and _v_a_l_u_e equals _x times 2
+     raised to the power _*_e_x_p. If _v_a_l_u_e is zero, both parts of the result are
+     zero.
+
+SSEEEE AALLSSOO
+     ldexp(3),  modf(3),  math(3)
+
+SSTTAANNDDAARRDDSS
+     The ffrreexxpp() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

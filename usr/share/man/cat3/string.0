@@ -1,0 +1,95 @@
+STRING(3)                   BSD Programmer's Manual                  STRING(3)
+
+NNAAMMEE
+     ssttrrccaatt, ssttrrnnccaatt, ssttrrcchhrr, ssttrrrrcchhrr, ssttrrccmmpp, ssttrrnnccmmpp, ssttrrccaasseeccmmpp,,
+     ssttrrnnccaasseeccmmpp, ssttrrccppyy, ssttrrnnccppyy, ssttrreerrrroorr, ssttrrlleenn, ssttrrppbbrrkk, ssttrrsseepp,, ssttrrssppnn,
+     ssttrrccssppnn, ssttrrssttrr, ssttrrttookk, iinnddeexx, rriinnddeexx - string specific functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrrccaatt(_c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _* _a_p_p_e_n_d);
+
+     _c_h_a_r _*
+     ssttrrnnccaatt(_c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_a_p_p_e_n_d, _s_i_z_e___t _c_o_u_n_t);
+
+     _c_h_a_r _*
+     ssttrrcchhrr(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+     _c_h_a_r _*
+     ssttrrrrcchhrr(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+     _i_n_t
+     ssttrrccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2);
+
+     _i_n_t
+     ssttrrnnccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2, _s_i_z_e___t _c_o_u_n_t);
+
+     _i_n_t
+     ssttrrccaasseeccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2);
+
+     _i_n_t
+     ssttrrnnccaasseeccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2, _s_i_z_e___t _c_o_u_n_t);
+
+     _c_h_a_r _*
+     ssttrrccppyy(_c_h_a_r _*_d_s_t, _c_o_n_s_t _c_h_a_r _*_s_r_c);
+
+     _c_h_a_r _*
+     ssttrrnnccppyy(_c_h_a_r _*_d_s_t, _c_o_n_s_t _c_h_a_r _*_s_r_c, _s_i_z_e___t _c_o_u_n_t);
+
+     _c_h_a_r _*
+     ssttrreerrrroorr(_i_n_t _e_r_r_n_o);
+
+     _s_i_z_e___t
+     ssttrrlleenn(_c_o_n_s_t _c_h_a_r _*_s);
+
+     _c_h_a_r _*
+     ssttrrppbbrrkk(_c_o_n_s_t _c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_c_h_a_r_s_e_t);
+
+     _c_h_a_r _*
+     ssttrrsseepp(_c_h_a_r _*_*_s_t_r_i_n_g_p, _c_o_n_s_t _c_h_a_r _*_d_e_l_i_m);
+
+     _s_i_z_e___t
+     ssttrrssppnn(_c_o_n_s_t _c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_c_h_a_r_s_e_t);
+
+     _s_i_z_e___t
+     ssttrrccssppnn(_c_o_n_s_t _c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_c_h_a_r_s_e_t);
+
+     _c_h_a_r _*
+     ssttrrssttrr(_c_o_n_s_t _c_h_a_r _*_b_i_g, _c_o_n_s_t _c_h_a_r _*_l_i_t_t_l_e);
+
+     _c_h_a_r _*
+     ssttrrttookk(_c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_d_e_l_i_m);
+
+
+     _c_h_a_r _*
+     iinnddeexx(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+     _c_h_a_r _*
+     rriinnddeexx(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The string functions functions manipulate strings terminated by a null
+     byte.
+
+     See the specific manual pages for more information.  For manipulating
+     variable length generic objects as byte strings (without the null byte
+     check), see bstring(3).
+
+     Except as noted in their specific manual pages, the string functions do
+     not test the destination for size limitations.
+
+SSEEEE AALLSSOO
+     index(3),  strcat(3),  strchr(3),  strrchr(3),  strcmp(3),
+     strcasecmp(3),  strcpy(3),  strerror(3),  strlen(3),  strpbrk(3),
+     strsep(3),  strspn(3),  strcspn(3),  strstr(3),  strtok(3),  rindex(3)
+     bstring(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrccaatt(), ssttrrnnccaatt(), ssttrrcchhrr(), ssttrrrrcchhrr(), ssttrrccmmpp(), ssttrrnnccmmpp(),
+     ssttrrccppyy(), ssttrrnnccppyy(), ssttrreerrrroorr(), ssttrrlleenn(), ssttrrppbbrrkk(), ssttrrsseepp(), ssttrrssppnn(),
+     ssttrrccssppnn(), ssttrrssttrr(), and ssttrrttookk() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+4th Berkeley Distribution        June 4, 1993                                2

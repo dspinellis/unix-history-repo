@@ -1,0 +1,42 @@
+STRCPY(3)                   BSD Programmer's Manual                  STRCPY(3)
+
+NNAAMMEE
+     ssttrrccppyy - copy strings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrrccppyy(_c_h_a_r _*_d_s_t, _c_o_n_s_t _c_h_a_r _*_s_r_c);
+
+     _c_h_a_r _*
+     ssttrrnnccppyy(_c_h_a_r _*_d_s_t, _c_o_n_s_t _c_h_a_r _*_s_r_c, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrccppyy() and ssttrrnnccppyy() functions copy the string _s_r_c to _d_s_t (includ-
+     ing the terminating `\0' character).
+
+     The ssttrrnnccppyy() copies not more than _l_e_n characters into _d_s_t, appending
+     `\0' characters if _s_r_c is less than _l_e_n characters long, and _n_o_t termi-
+     nating _d_s_t if _s_r_c is more than _l_e_n characters long.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrccppyy() and ssttrrnnccppyy() functions return _d_s_t.
+
+EEXXAAMMPPLLEESS
+     The following sets ``chararray'' to ``abc\0\0\0'':
+
+           (void)strncpy(chararray, "abc", 6).
+
+     The following sets ``chararray'' to ``abcdef'':
+
+           (void)strncpy(chararray, "abcdefgh", 6);
+
+SSEEEE AALLSSOO
+     bcopy(3),  memccpy(3),  memcpy(3),  memmove(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrccppyy() and ssttrrnnccppyy() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,43 @@
+SETGROUPS(2)                BSD Programmer's Manual               SETGROUPS(2)
+
+NNAAMMEE
+     sseettggrroouuppss - set group access list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+
+     _i_n_t
+     sseettggrroouuppss(_i_n_t _n_g_r_o_u_p_s, _c_o_n_s_t _i_n_t _*_g_i_d_s_e_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSeettggrroouuppss() sets the group access list of the current user process ac-
+     cording to the array _g_i_d_s_e_t. The parameter _n_g_r_o_u_p_s indicates the number
+     of entries in the array and must be no more than NGROUPS, as defined in
+     <_s_y_s_/_p_a_r_a_m_._h>.
+
+     Only the super-user may set new groups.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 value is returned on success, -1 on error, with an error code stored
+     in _e_r_r_n_o.
+
+EERRRROORRSS
+     The sseettggrroouuppss() call will fail if:
+
+     [EPERM]       The caller is not the super-user.
+
+     [EFAULT]      The address specified for _g_i_d_s_e_t is outside the process ad-
+                   dress space.
+
+SSEEEE AALLSSOO
+     getgroups(2),  initgroups(3)
+
+BBUUGGSS
+     The _g_i_d_s_e_t array should be of type _g_i_d___t, but remains integer for compat-
+     ibility with earlier systems.
+
+HHIISSTTOORRYY
+     The sseettggrroouuppss function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

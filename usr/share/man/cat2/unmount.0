@@ -1,0 +1,202 @@
+MOUNT(2)                    BSD Programmer's Manual                   MOUNT(2)
+
+NNAAMMEE
+     mmoouunntt, uunnmmoouunntt - mount or dismount a filesystem
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+     ##iinncclluuddee <<ssyyss//mmoouunntt..hh>>
+
+     _i_n_t
+     mmoouunntt(_i_n_t _t_y_p_e, _c_o_n_s_t _c_h_a_r _*_d_i_r, _i_n_t _f_l_a_g_s, _c_a_d_d_r___t _d_a_t_a);
+
+     _i_n_t
+     uunnmmoouunntt(_c_o_n_s_t _c_h_a_r _*_d_i_r, _i_n_t _f_l_a_g_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt() function grafts a filesystem object onto the system file tree
+     at the point _d_i_r. The argument _d_a_t_a describes the filesystem object to be
+     mounted.  The argument _t_y_p_e tells the kernel how to interpret _d_a_t_a (See
+     _t_y_p_e below).  The contents of the filesystem become available through the
+     new mount point _d_i_r. Any files in _d_i_r at the time of a successful mount
+     are swept under the carpet so to speak, and are unavailable until the
+     filesystem is unmounted.
+
+     The following _f_l_a_g_s may be specified to suppress default semantics which
+     affect filesystem access.
+
+     MNT_RDONLY       The filesystem should be treated as read-only; Even the
+                      super-user may not write on it.
+
+     MNT_NOEXEC       Do not allow files to be executed from the filesystem.
+
+     MNT_NOSUID       Do not honor setuid or setgid bits on files when execut-
+                      ing them.
+
+     MNT_NODEV        Do not interpret special files on the filesystem.
+
+     MNT_SYNCHRONOUS  All I/O to the filesystem should be done synchronously.
+
+     The flag MNT_UPDATE indicates that the mount command is being applied to
+     an already mounted filesystem.  This allows the mount flags to be changed
+     without requiring that the filesystem be unmounted and remounted.  Some
+     filesystems may not allow all flags to be changed.  For example, most
+     filesystems will not allow a change from read-write to read-only.
+
+     The _t_y_p_e argument defines the type of the filesystem.  The types of
+     filesystems known to the system are defined in <_s_y_s_/_m_o_u_n_t_._h>. _D_a_t_a is a
+     pointer to a structure that contains the type specific arguments to
+     mount.  The currently supported types of filesystems and their type spe-
+     cific data are:
+
+     MOUNT_UFS
+           struct ufs_args {
+                 char      *fspec;  /* Block special file to mount */
+                 int       exflags; /* export related flags */
+                 uid_t     exroot;  /* mapping for root uid */
+           };
+
+     MOUNT_NFS
+           struct nfs_args {
+                 struct sockaddr_in *addr; /* file server address */
+                 nfsv2fh_t *fh;       /* File handle to be mounted */
+                 int       flags;     /* flags */
+                 int       wsize;     /* write size in bytes */
+                 int       rsize;     /* read size in bytes */
+                 int       timeo;     /* initial timeout 0.1 secs */
+                 int       retrans;   /* times to retry send */
+                 char      *hostname; /* server's name */
+           };
+
+     MOUNT_MFS
+           struct mfs_args {
+                 char      *name;  /* name of backing process */
+                 caddr_t   base;   /* base address of the filesystem */
+                 u_long    size;   /* size of the filesystem */
+           };
+
+     The uummoouunntt() function call disassociates the filesystem from the speci-
+     fied mount point _d_i_r.
+
+     The _f_l_a_g_s argument may specify MNT_FORCE to specify that the filesystem
+     should be forcibly unmounted even if files are still active.  Active spe-
+     cial devices continue to work, but any further accesses to any other ac-
+     tive files result in errors even if the filesystem is later remounted.
+
+RREETTUURRNN VVAALLUUEESS
+     The mmoouunntt() returns the value 0 if the mount was successful, otherwise -1
+     is returned and the variable _e_r_r_n_o is set to indicate the error.
+
+     UUmmoouunntt returns the value 0 if the umount succeeded; otherwise -1 is re-
+     turned and the variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     MMoouunntt() will fail when one of the following occurs:
+
+     [EPERM]    The caller is not the super-user.
+
+     [ENAMETOOLONG]
+                A component of a pathname exceeded 255 characters, or the en-
+                tire length of a path name exceeded 1023 characters.
+
+     [ELOOP]    Too many symbolic links were encountered in translating a
+                pathname.
+
+     [ENOENT]   A component of _d_i_r does not exist.
+
+     [ENOTDIR]  A component of _n_a_m_e is not a directory, or a path prefix of
+                _s_p_e_c_i_a_l is not a directory.
+
+     [EINVAL]   A pathname contains a character with the high-order bit set.
+
+     [EBUSY]    Another process currently holds a reference to _d_i_r.
+
+     [EFAULT]   _D_i_r points outside the process's allocated address space.
+
+     The following errors can occur for a _u_f_s filesystem mount:
+
+     [ENODEV]   A component of ufs_args _f_s_p_e_c does not exist.
+
+     [ENOTBLK]  _F_s_p_e_c is not a block device.
+
+     [ENXIO]    The major device number of _f_s_p_e_c is out of range (this indi-
+                cates no device driver exists for the associated hardware).
+
+     [EBUSY]    _F_s_p_e_c is already mounted.
+
+     [EMFILE]   No space remains in the mount table.
+
+     [EINVAL]   The super block for the filesystem had a bad magic number or
+
+
+                an out of range block size.
+
+     [ENOMEM]   Not enough memory was available to read the cylinder group in-
+                formation for the filesystem.
+
+     [EIO]      An I/O error occurred while reading the super block or cylin-
+                der group information.
+
+     [EFAULT]   _F_s_p_e_c points outside the process's allocated address space.
+
+     The following errors can occur for a _n_f_s filesystem mount:
+
+     [ETIMEDOUT]
+                _N_f_s timed out trying to contact the server.
+
+     [EFAULT]   Some part of the information described by nfs_args points out-
+                side the process's allocated address space.
+
+     The following errors can occur for a _m_f_s filesystem mount:
+
+     [EMFILE]   No space remains in the mount table.
+
+     [EINVAL]   The super block for the filesystem had a bad magic number or
+                an out of range block size.
+
+     [ENOMEM]   Not enough memory was available to read the cylinder group in-
+                formation for the filesystem.
+
+     [EIO]      An paging error occurred while reading the super block or
+                cylinder group information.
+
+     [EFAULT]   _N_a_m_e points outside the process's allocated address space.
+
+     UUmmoouunntt may fail with one of the following errors:
+
+     [EPERM]    The caller is not the super-user.
+
+     [ENOTDIR]  A component of the path is not a directory.
+
+     [EINVAL]   The pathname contains a character with the high-order bit set.
+
+     [ENAMETOOLONG]
+                A component of a pathname exceeded 255 characters, or an en-
+                tire path name exceeded 1023 characters.
+
+     [ELOOP]    Too many symbolic links were encountered in translating the
+                pathname.
+
+     [EINVAL]   The requested directory is not in the mount table.
+
+     [EBUSY]    A process is holding a reference to a file located on the
+                filesystem.
+
+     [EIO]      An I/O error occurred while writing cached filesystem informa-
+                tion.
+
+     [EFAULT]   _D_i_r points outside the process's allocated address space.
+
+     A _u_f_s or _m_f_s mount can also fail if the maximum number of filesystems are
+     currently mounted.
+
+SSEEEE AALLSSOO
+     mount(8),  umount(8),  mfs(8)
+
+BBUUGGSS
+     Some of the error codes need translation to more obvious messages.
+
+HHIISSTTOORRYY
+     MMoouunntt() and uummoouunntt() function calls appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        July 11, 1993                               4

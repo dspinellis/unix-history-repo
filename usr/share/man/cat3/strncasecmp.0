@@ -1,0 +1,31 @@
+STRCASECMP(3)               BSD Programmer's Manual              STRCASECMP(3)
+
+NNAAMMEE
+     ssttrrccaasseeccmmpp - compare strings, ignoring case
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _i_n_t
+     ssttrrccaasseeccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2);
+
+     _i_n_t
+     ssttrrnnccaasseeccmmpp(_c_o_n_s_t _c_h_a_r _*_s_1, _c_o_n_s_t _c_h_a_r _*_s_2, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrccaasseeccmmpp() and ssttrrnnccaasseeccmmpp() functions compare the null-terminated
+     strings _s_1 and _s_2 and return an integer greater than, equal to, or less
+     than 0, according as _s_1 is lexicographically greater than, equal to, or
+     less than _s_2 after translation of each corresponding character to lower-
+     case.  The strings themselves are not modified.  The comparison is done
+     using unsigned characters, so that `\200' is greater than `\0'.
+
+     The ssttrrnnccaasseeccmmpp() compares at most _l_e_n characters.
+
+SSEEEE AALLSSOO
+     bcmp(3),  memcmp(3),  strcmp(3),  strcoll(3),  strxfrm(3)
+
+HHIISSTTOORRYY
+     The ssttrrccaasseeccmmpp() and ssttrrnnccaasseeccmmpp() functions first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

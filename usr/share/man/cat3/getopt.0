@@ -1,0 +1,127 @@
+GETOPT(3)                   BSD Programmer's Manual                  GETOPT(3)
+
+NNAAMMEE
+     ggeettoopptt - get option character from command line argument list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _e_x_t_e_r_n _c_h_a_r _*_o_p_t_a_r_g
+     _e_x_t_e_r_n _i_n_t _o_p_t_i_n_d
+     _e_x_t_e_r_n _i_n_t _o_p_t_o_p_t
+     _e_x_t_e_r_n _i_n_t _o_p_t_e_r_r
+     _e_x_t_e_r_n _i_n_t _o_p_t_r_e_s_e_t
+
+     _i_n_t
+     ggeettoopptt(_i_n_t _a_r_g_c, _c_h_a_r _* _c_o_n_s_t _*_a_r_g_v, _c_o_n_s_t _c_h_a_r _*_o_p_t_s_t_r_i_n_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettoopptt() function incrementally parses a command line argument list
+     _a_r_g_v and returns the next _k_n_o_w_n option character.  An option character is
+     _k_n_o_w_n if it has been specified in the string of accepted option charac-
+     ters, _o_p_t_s_t_r_i_n_g.
+
+     The option string _o_p_t_s_t_r_i_n_g may contain the following elements: individu-
+     al characters, and characters followed by a colon to indicate an option
+     argument is to follow.  For example, an option string "x" recognizes an
+     option ``--xx'', and an option string "x:" recognizes an option and argu-
+     ment ``--xx _a_r_g_u_m_e_n_t''. It does not matter to ggeettoopptt() if a following argu-
+     ment has leading white space.
+
+     On return from ggeettoopptt(), _o_p_t_a_r_g points to an option argument, if it is
+     anticipated, and the variable _o_p_t_i_n_d contains the index to the next _a_r_g_v
+     argument for a subsequent call to ggeettoopptt().  The variable _o_p_t_o_p_t saves
+     the last _k_n_o_w_n option character returned by ggeettoopptt().
+
+     The variable _o_p_t_e_r_r and _o_p_t_i_n_d are both initialized to 1.  The _o_p_t_i_n_d
+     variable may be set to another value before a set of calls to ggeettoopptt() in
+     order to skip over more or less argv entries.
+
+     In order to use ggeettoopptt() to evaluate multiple sets of arguments, or to
+     evaluate a single set of arguments multiple times, the variable _o_p_t_r_e_s_e_t
+     must be set to 1 before the second and each additional set of calls to
+     ggeettoopptt(), and the variable _o_p_t_i_n_d must be reinitialized.
+
+     The ggeettoopptt() function returns an EOF when the argument list is exhausted,
+     or a non-recognized option is encountered.  The interpretation of options
+     in the argument list may be cancelled by the option `--' (double dash)
+     which causes ggeettoopptt() to signal the end of argument processing and return
+     an EOF. When all options have been processed (i.e., up to the first non-
+     option argument), ggeettoopptt() returns EOF.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the ggeettoopptt() function encounters a character not found in the string
+     _o_p_t_a_r_g or detects a missing option argument it writes an error message
+     and returns `?' to the _s_t_d_e_r_r. Setting _o_p_t_e_r_r to a zero will disable
+     these error messages.  If _o_p_t_s_t_r_i_n_g has a leading `:' then then a missing
+     option argumet causes a `:' to be returned in addition to supressing any
+     error messages.  option argument
+
+     Option arguments are allowed to begin with ``-''; this is reasonable but
+     reduces the amount of error checking possible.
+
+EEXXTTEENNSSIIOONNSS
+     The _o_p_t_r_e_s_e_t variable was added to make it possible to call the ggeettoopptt()
+     function multiple times.  This is an extension to the IEEE Std1003.2
+     (``POSIX'') specification.
+
+EEXXAAMMPPLLEE
+     extern char *optarg;
+     extern int optind;
+     int bflag, ch, fd;
+
+     bflag = 0;
+     while ((ch = getopt(argc, argv, "bf:")) != EOF)
+             switch(ch) {
+             case 'b':
+                     bflag = 1;
+                     break;
+             case 'f':
+                     if ((fd = open(optarg, O_RDONLY, 0)) < 0) {
+                             (void)fprintf(stderr,
+                                 "myname: %s: %s\n", optarg, strerror(errno));
+                             exit(1);
+                     }
+                     break;
+             case '?':
+             default:
+                     usage();
+     }
+     argc -= optind;
+     argv += optind;
+
+HHIISSTTOORRYY
+     The ggeettoopptt() function appeared 4.3BSD.
+
+BBUUGGSS
+     A single dash ``-'' may be specified as an character in _o_p_t_s_t_r_i_n_g, howev-
+     er it should _n_e_v_e_r have an argument associated with it.  This allows
+     ggeettoopptt() to be used with programs that expect ``-'' as an option flag.
+     This practice is wrong, and should not be used in any current develop-
+     ment.  It is provided for backward compatibility _o_n_l_y. By default, a sin-
+     gle dash causes ggeettoopptt() to return EOF. This is, we believe, compatible
+     with System V.
+
+     It is also possible to handle digits as option letters.  This allows
+     ggeettoopptt() to be used with programs that expect a number (``-3'') as an op-
+     tion.  This practice is wrong, and should not be used in any current de-
+     velopment.  It is provided for backward compatibility _o_n_l_y. The following
+     code fragment works in most cases.
+
+           int length;
+           char *p;
+
+           while ((c = getopt(argc, argv, "0123456789")) != EOF)
+                   switch (c) {
+                   case '0': case '1': case '2': case '3': case '4':
+                   case '5': case '6': case '7': case '8': case '9':
+                           p = argv[optind - 1];
+                           if (p[0] == '-' && p[1] == ch && !p[2])
+                                   length = atoi(++p);
+                           else
+                                   length = atoi(argv[optind] + 1);
+                           break;
+                   }
+           }
+
+4.3 Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,129 @@
+SIGNAL(3)                   BSD Programmer's Manual                  SIGNAL(3)
+
+NNAAMMEE
+     ssiiggnnaall - simplified software signal facilities
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _v_o_i_d
+     **ssiiggnnaall(_s_i_g, _f_u_n_c());
+
+     _v_o_i_d
+     (**ffuunncc)()
+
+DDEESSCCRRIIPPTTIIOONN
+     This ssiiggnnaall() facility is a simplified interface to the more general
+     sigaction(2) facility.
+
+     Signals allow the manipulation of a process from outside its domain as
+     well as allowing the process to manipulate itself or copies of itself
+     (children). There are two general types of signals: those that cause ter-
+     mination of a process and those that do not.  Signals which cause termi-
+     nation of a program might result from an irrecoverable error or might be
+     the result of a user at a terminal typing the `interrupt' character.
+     Signals are used when a process is stopped because it wishes to access
+     its control terminal while in the background (see tty(4)).  Signals are
+     optionally generated when a process resumes after being stopped, when the
+     status of child processes changes, or when input is ready at the control
+     terminal.  Most signals result in the termination of the process receiv-
+     ing them if no action is taken; some signals instead cause the process
+     receiving them to be stopped, or are simply discarded if the process has
+     not requested otherwise.  Except for the SIGKILL and SIGSTOP signals, the
+     ssiiggnnaall() function allows for a signal to be caught, to be ignored, or to
+     generate an interupt.  These signals are defined in the file <_s_i_g_n_a_l_._h>:
+
+     NNaammee              DDeeffaauulltt AAccttiioonn                      DDeessccrriippttiioonn
+     SIGHUP          terminate process       terminal line hangup
+     SIGINT          terminate process       interrupt program
+     SIGQUIT         create core image       quit program
+     SIGILL          create core image       illegal instruction
+     SIGTRAP         create core image       trace trap
+     SIGABRT         create core image       abort(2) call (formerly SIGIOT)
+     SIGEMT          create core image       emulate instruction executed
+     SIGFPE          create core image       floating-point exception
+     SIGKILL         terminate process       kill program
+     SIGBUS          create core image       bus error
+     SIGSEGV         create core image       segmentation violation
+     SIGSYS          create core image       system call given invalid
+                                             argument
+     SIGPIPE         terminate process       write on a pipe with no reader
+     SIGALRM         terminate process       real-time timer expired
+     SIGTERM         terminate process       software termination signal
+     SIGURG          discard signal          urgent condition present on
+                                             socket
+     SIGSTOP         stop process            stop (cannot be caught or
+                                             ignored)
+     SIGTSTP         stop process            stop signal generated from
+                                             keyboard
+     SIGCONT         discard signal          continue after stop
+     SIGCHLD         discard signal          child status has changed
+     SIGTTIN         stop process            background read attempted from
+                                             control terminal
+     SIGTTOU         stop process            background write attempted to
+
+
+                                             control terminal
+     SIGIO           discard signal          I/O is possible on a descriptor
+                                             (see fcntl(2))
+     SIGXCPU         terminate process       cpu time limit exceeded (see
+                                             setrlimit(2))
+     SIGXFSZ         terminate process       file size limit exceeded (see
+                                             setrlimit(2))
+     SIGVTALRM       terminate process       virtual time alarm (see
+                                             setitimer(2))
+     SIGPROF         terminate process       profiling timer alarm (see
+                                             setitimer(2))
+     SIGWINCH        discard signal          Window size change
+     SIGINFO         discard signal          status request from keyboard
+     SIGUSR1         terminate process       User defined signal 1
+     SIGUSR2         terminate process       User defined signal 2
+
+     The _f_u_n_c procedure allows a user to choose the action upon receipt of a
+     signal.  To set the default action of the signal to occur as listed
+     above, _f_u_n_c should be SIG_DFL. A SIG_DFL resets the default action.  To
+     ignore the signal _f_u_n_c should be SIG_IGN. This will cause subsequent in-
+     stances of the signal to be ignored and pending instances to be discard-
+     ed. If SIG_IGN is not used, further occurrences of the signal are auto-
+     matically blocked and _f_u_n_c is called.
+
+     The handled signal is unblocked with the function returns and the process
+     continues from where it left off when the signal occured.  UUnnlliikkee pprreevvii--
+     oouuss ssiiggnnaall ffaacciilliittiieess,, tthhee hhaannddlleerr ffuunncc(()) rreemmaaiinnss iinnssttaalllleedd aafftteerr aa ssiigg--
+     nnaall hhaass bbeeeenn ddeelliivveerreedd..
+
+     For some system calls, if a signal is caught while the call is executing
+     and the call is permaturely terminated, the call is automatically
+     restarted.  (The handler is installed using the SA_RESTART flag with
+     sigaction(2).)  The affected system calls include read(2),  write(2),
+     sendto(2),  recvfrom(2),  sendmsg(2) and recvmsg(2) on a communications
+     channel or a low speed device and during a ioctl(2) or wait(2).  However,
+     calls that have already committed are not restarted, but instead return a
+     partial success (for example, a short read count).
+
+     When a process which has installed signal handlers forks, the child pro-
+     cess inherits the signals.  All caught signals may be reset to their de-
+     fault action by a call to the execve(2) function; ignored signals remain
+     ignored.
+
+RREETTUURRNN VVAALLUUEESS
+     The previous action is returned on a successful call.  Otherwise, -1 is
+     returned and  the global variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     Signal will fail and no action will take place if one of the following
+     occur:
+
+     [EINVAL]  _S_i_g is not a valid signal number.
+
+     [EINVAL]  An attempt is made to ignore or supply a handler for SIGKILL or
+               SIGSTOP.
+
+SSEEEE AALLSSOO
+     kill(1),  ptrace(2),  kill(2),  sigaction(2),  sigaltstack(2),
+     sigprocmask(2),  sigsuspend(2),  setjmp(3),  tty(4)
+
+HHIISSTTOORRYY
+     This ssiiggnnaall facility appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

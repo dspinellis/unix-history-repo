@@ -1,0 +1,113 @@
+CHMOD(2)                    BSD Programmer's Manual                   CHMOD(2)
+
+NNAAMMEE
+     cchhmmoodd, ffcchhmmoodd - change mode of file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssttaatt..hh>>
+
+     _i_n_t
+     cchhmmoodd(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _m_o_d_e___t _m_o_d_e);
+
+     _i_n_t
+     ffcchhmmoodd(_i_n_t _f_d, _m_o_d_e___t _m_o_d_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The function cchhmmoodd() sets the file permission bits of the file specified
+     by the pathname _p_a_t_h to _m_o_d_e. FFcchhmmoodd() sets the permission bits of the
+     specified file descriptor _f_d. CChhmmoodd() verifies that the process owner
+     (user) either owns the file specified by _p_a_t_h (or _f_d), or is the super-
+     user.  A mode is created from _o_r _A_p _d permission bit masks defined in
+     <_s_y_s_/_s_t_a_t_._h>:
+           #define S_IRWXU 0000700    /* RWX mask for owner */
+           #define S_IRUSR 0000400    /* R for owner */
+           #define S_IWUSR 0000200    /* W for owner */
+           #define S_IXUSR 0000100    /* X for owner */
+
+           #define S_IRWXG 0000070    /* RWX mask for group */
+           #define S_IRGRP 0000040    /* R for group */
+           #define S_IWGRP 0000020    /* W for group */
+           #define S_IXGRP 0000010    /* X for group */
+
+           #define S_IRWXO 0000007    /* RWX mask for other */
+           #define S_IROTH 0000004    /* R for other */
+           #define S_IWOTH 0000002    /* W for other */
+           #define S_IXOTH 0000001    /* X for other */
+
+           #define S_ISUID 0004000    /* set user id on execution */
+           #define S_ISGID 0002000    /* set group id on execution */
+           #define S_ISVTX 0001000    /* save swapped text even after use */
+
+     The ISVTX (the _s_t_i_c_k_y _b_i_t) indicates to the system which executable files
+     are shareable (the default) and the system maintains the program text of
+     the files in the swap area. The sticky bit may only be set by the super
+     user on shareable executable files.
+
+     If mode ISVTX (the `sticky bit') is set on a directory, an unprivileged
+     user may not delete or rename files of other users in that directory. The
+     sticky bit may be set by any user on a directory which the user owns or
+     has appropriate permissions.  For more details of the properties of the
+     sticky bit, see sticky(8).
+
+     Writing or changing the owner of a file turns off the set-user-id and
+     set-group-id bits unless the user is the super-user.  This makes the sys-
+     tem somewhat more secure by protecting set-user-id (set-group-id) files
+     from remaining set-user-id (set-group-id) if they are modified, at the
+     expense of a degree of compatibility.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     CChhmmoodd() will fail and the file mode will be unchanged if:
+
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EPERM]       The effective user ID does not match the owner of the file
+                   and the effective user ID is not the super-user.
+
+     [EROFS]       The named file resides on a read-only file system.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+     FFcchhmmoodd() will fail if:
+
+     [EBADF]       The descriptor is not valid.
+
+     [EINVAL]      _F_d refers to a socket, not to a file.
+
+     [EROFS]       The file resides on a read-only file system.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+SSEEEE AALLSSOO
+     chmod(1),  open(2),  chown(2),  stat(2),  sticky(8)
+
+SSTTAANNDDAARRDDSS
+     CChhmmoodd() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The ffcchhmmoodd() function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

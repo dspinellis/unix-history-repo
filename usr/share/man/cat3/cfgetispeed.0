@@ -1,0 +1,177 @@
+TCSETATTR(3)                BSD Programmer's Manual               TCSETATTR(3)
+
+NNAAMMEE
+     ccffggeettiissppeeeedd, ccffsseettiissppeeeedd, ccffggeettoossppeeeedd, ccffsseettoossppeeeedd, ccffsseettssppeeeedd,
+     ccffmmaakkeerraaww, ttccggeettaattttrr, ttccsseettaattttrr - manipulating the termios structure
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<tteerrmmiiooss..hh>>
+
+     _s_p_e_e_d___t
+     ccffggeettiissppeeeedd(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t);
+
+     _i_n_t
+     ccffsseettiissppeeeedd(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t, _s_p_e_e_d___t _s_p_e_e_d);
+
+     _s_p_e_e_d___t
+     ccffggeettoossppeeeedd(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t);
+
+     _i_n_t
+     ccffsseettoossppeeeedd(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t, _s_p_e_e_d___t _s_p_e_e_d);
+
+     _v_o_i_d
+     ccffsseettssppeeeedd(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t, _s_p_e_e_d___t _s_p_e_e_d);
+
+     _v_o_i_d
+     ccffmmaakkeerraaww(_s_t_r_u_c_t _t_e_r_m_i_o_s _*_t);
+
+     _i_n_t
+     ttccggeettaattttrr(_i_n_t _f_d, _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t);
+
+     _i_n_t
+     ttccsseettaattttrr(_i_n_t _f_d, _i_n_t _a_c_t_i_o_n, _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccffmmaakkeerraaww, ttccggeettaattttrr and ttccsseettaattttrr functions are provided for getting
+     and setting the termios structure.
+
+     The ccffggeettiissppeeeedd, ccffsseettiissppeeeedd, ccffggeettoossppeeeedd, ccffsseettoossppeeeedd and ccffsseettssppeeeedd
+     functions are provided for getting and setting the baud rate values in
+     the termios structure.  The effects of the functions on the terminal as
+     described below do not become effective, nor are all errors detected, un-
+     til the ttccsseettaattttrr function is called.  Certain values for baud rates set
+     in the termios structure and passed to ttccsseettaattttrr have special meanings.
+     These are discussed in the portion of the manual page that describes the
+     ttccsseettaattttrr function.
+
+GGEETTTTIINNGG AANNDD SSEETTTTIINNGG TTHHEE BBAAUUDD RRAATTEE
+     The input and output baud rates are found in the termios structure.  The
+     unsigned integer speed_t is typdef'd in the include file <_t_e_r_m_i_o_s_._h>. The
+     value of the integer corresponds directly to the baud rate being repre-
+     sented, however, the following symbolic values are defined.
+
+     #define B0      0
+     #define B50     50
+     #define B75     75
+     #define B110    110
+     #define B134    134
+     #define B150    150
+     #define B200    200
+     #define B300    300
+     #define B600    600
+     #define B1200   1200
+     #define B1800   1800
+     #define B2400   2400
+     #define B4800   4800
+     #define B9600   9600
+     #define B19200  19200
+     #define B38400  38400
+     #ifndef _POSIX_SOURCE
+     #define EXTA    19200
+     #define EXTB    38400
+     #endif  /*_POSIX_SOURCE */
+
+     The ccffggeettiissppeeeedd function returns the input baud rate in the termios
+     structure referenced by _t_p.
+
+     The ccffsseettiissppeeeedd function sets the input baud rate in the termios struc-
+     ture referenced by _t_p to _s_p_e_e_d.
+
+     The ccffggeettoossppeeeedd function returns the output baud rate in the termios
+     structure referenced by _t_p.
+
+     The ccffsseettoossppeeeedd function sets the output baud rate in the termios struc-
+     ture referenced by _t_p to _s_p_e_e_d.
+
+     The ccffsseettssppeeeedd function sets both the input and output baud rate in the
+     termios structure referenced by _t_p to _s_p_e_e_d.
+
+     Upon successful completion, the functions ccffsseettiissppeeeedd, ccffsseettoossppeeeedd, and
+     ccffsseettssppeeeedd return a value of 0.  Otherwise, a value of -1 is returned and
+     the global variable _e_r_r_n_o is set to indicate the error.
+
+GGEETTTTIINNGG AANNDD SSEETTTTIINNGG TTHHEE TTEERRMMIIOOSS SSTTAATTEE
+     This section describes the functions that are used to control the general
+     terminal interface.  Unless otherwise noted for a specific command, these
+     functions are restricted from use by background processes.  Attempts to
+     perform these operations shall cause the process group to be sent a SIGT-
+     TOU signal.  If the calling process is blocking or ignoring SIGTTOU sig-
+     nals, the process is allowed to perform the operation and the SIGTTOU
+     signal is not sent.
+
+     In all the functions, although _f_d is an open file descriptor, the func-
+     tions affect the underlying terminal file, not just the open file de-
+     scription associated with the particular file descriptor.
+
+     The ccffmmaakkeerraaww function sets the flags stored in the termios structure to
+     a state disabling all input and output processing, giving a ``raw I/O
+     path.'' It should be noted that there is no function to reverse this ef-
+     fect.  This is because there are a variety of processing options that
+     could be re-enabled and the correct method is for an application to snap-
+     shot the current terminal state using the function ttccggeettaattttrr, setting raw
+     mode with ccffmmaakkeerraaww and the subsequent ttccsseettaattttrr, and then using another
+     ttccsseettaattttrr with the saved state to revert to the previous terminal state.
+
+     The ttccggeettaattttrr function copies the parameters associated with the terminal
+     referenced by _f_d in the termios structure referenced by _t_p. This function
+     is allowed from a background process, however, the terminal attributes
+     may be subsequently changed by a foreground process.
+
+     The ttccsseettaattttrr function sets the parameters associated with the terminal
+     from the termios structure referenced by _t_p. The _a_c_t_i_o_n field is created
+     by _o_r'ing the following values, as specified in the include file
+     <_t_e_r_m_i_o_s_._h>.
+
+     _T_C_S_A_N_O_W    The change occurs immediately.
+
+     _T_C_S_A_D_R_A_I_N  The change occurs after all output written to _f_d has been
+                transmitted to the terminal.  This value of _a_c_t_i_o_n should be
+                used when changing parameters that affect output.
+
+     _T_C_S_A_F_L_U_S_H  The change occurs after all output written to _f_d has been
+                transmitted to the terminal Additionally, any input that has
+                been received but not read is discarded.
+
+     _T_C_S_A_S_O_F_T   If this value is _o_r'ed into the _a_c_t_i_o_n value, the values of
+                the _c___c_f_l_a_g, _c___i_s_p_e_e_d, and _c___o_s_p_e_e_d fields are ignored.
+
+     The 0 baud rate is used to terminate the connection.  If 0 is specified
+     as the output speed to the function ttccsseettaattttrr, modem control will no
+     longer be asserted on the terminal, disconnecting the terminal.
+
+     If zero is specified as the input speed to the function ttccsseettaattttrr, the
+     input baud rate will be set to the same value as that specified by the
+     output baud rate.
+
+     If ttccsseettaattttrr is unable able to make any of the requested changes, it re-
+     turns -1 and sets errno.  Otherwise, it makes all of the requested
+     changes it can.  If the specified input and output baud rates differ and
+     are a combination that is not supported, neither baud rate is changed.
+
+     Upon successful completion, the functions ttccggeettaattttrr and ttccsseettaattttrr return
+     a value of 0.  Otherwise, they return -1 and the global variable _e_r_r_n_o is
+     set to indicate the error, as follows:
+
+     [EBADF]       The _f_d argument to ttccggeettaattttrr or ttccsseettaattttrr was not a valid
+                   file descriptor.
+
+     [EINTR]       The ttccsseettaattttrr function was interrupted by a signal.
+
+     [EINVAL]      The _a_c_t_i_o_n argument to the ttccsseettaattttrr function was not
+                   valid, or an attempt was made to change an attribute repre-
+                   sented in the termios structure to an unsupported value.
+
+     [ENOTTY]      The file associated with the _f_d argument to ttccggeettaattttrr or
+                   ttccsseettaattttrr is not a terminal.
+
+SSEEEE AALLSSOO
+     tcsendbreak(3),  termios(4)
+
+SSTTAANNDDAARRDDSS
+     The ccffggeettiissppeeeedd, ccffsseettiissppeeeedd, ccffggeettoossppeeeedd, ccffsseettoossppeeeedd, ttccggeettaattttrr and
+     ttccsseettaattttrr functions are expected to be compliant with the IEEE
+     Std1003.1-1988 (``POSIX'') specification.  The ccffmmaakkeerraaww and ccffsseettssppeeeedd
+     functions, as well as the TCSASOFT option to the ttccsseettaattttrr function are
+     extensions to the IEEE Std1003.1-1988 (``POSIX'') specification.
+
+4.4BSD                           June 4, 1993                                3

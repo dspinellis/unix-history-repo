@@ -1,0 +1,36 @@
+GETHOSTID(3)                BSD Programmer's Manual               GETHOSTID(3)
+
+NNAAMMEE
+     ggeetthhoossttiidd, sseetthhoossttiidd - get/set unique identifier of current host
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _l_o_n_g
+     ggeetthhoossttiidd(_v_o_i_d);
+
+     _i_n_t
+     sseetthhoossttiidd(_l_o_n_g _h_o_s_t_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSeetthhoossttiidd() establishes a 32-bit identifier for the current processor
+     that is intended to be unique among all UNIX systems in existence.  This
+     is normally a DARPA Internet address for the local machine.  This call is
+     allowed only to the super-user and is normally performed at boot time.
+
+     GGeetthhoossttiidd() returns the 32-bit identifier for the current processor.
+
+     This function has been deprecated.  The hostid should be set or retrieved
+     by use of sysctl(2).
+
+SSEEEE AALLSSOO
+     sysctl(2),  gethostname(3),  sysctl(8).
+
+BBUUGGSS
+     32 bits for the identifier is too small.
+
+HHIISSTTOORRYY
+     The ggeetthhoossttiidd() and sseetthhoossttiidd() syscalls appeared in 4.2BSD and were
+     dropped in 4.4BSD.
+
+4.2 Berkeley Distribution        June 2, 1993                                1

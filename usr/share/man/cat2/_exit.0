@@ -1,0 +1,52 @@
+EXIT(2)                     BSD Programmer's Manual                    EXIT(2)
+
+NNAAMMEE
+     __eexxiitt - terminate the calling process
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _v_o_i_d
+     __eexxiitt(_i_n_t _s_t_a_t_u_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The __eexxiitt() function terminates a process with the following conse-
+     quences:
+
+     ++oo   All of the descriptors open in the calling process are closed.  This
+         may entail delays, for example, waiting for output to drain; a pro-
+         cess in this state may not be killed, as it is already dying.
+
+     ++oo   If the parent process of the calling process has an outstanding wait
+         call or catches the SIGCHLD signal, it is notified of the calling
+         process's termination and the _s_t_a_t_u_s is set as defined by wait(2).
+
+     ++oo   The parent process-ID of all of the calling process's existing child
+         processes are set to 1; the initialization process (see the DEFINI-
+         TIONS section of intro(2))  inherits each of these processes.
+
+     ++oo   If the termination of the process causes any process group to become
+         orphaned (usually because the parents of all members of the group
+         have now exited; see ``orphaned process group'' in intro(2)),  and if
+         any member of the orphaned group is stopped, the SIGHUP signal and
+         the SIGCONT signal are sent to all members of the newly-orphaned pro-
+         cess group.
+
+     ++oo   If the process is a controlling process (see intro(2)),  the SIGHUP
+         signal is sent to the foreground process group of the controlling
+         terminal, and all current access to the controlling terminal is re-
+         voked.
+
+     Most C programs call the library routine exit(3),  which flushes buffers,
+     closes streams, unlinks temporary files, etc., before calling __eexxiitt().
+
+RREETTUURRNN VVAALLUUEE
+     __eexxiitt() can never return.
+
+SSEEEE AALLSSOO
+     fork(2),  sigvec(2),  wait(2),  exit(3)
+
+SSTTAANNDDAARRDDSS
+     The __eexxiitt function is defined by IEEE Std1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

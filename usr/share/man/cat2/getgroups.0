@@ -1,0 +1,43 @@
+GETGROUPS(2)                BSD Programmer's Manual               GETGROUPS(2)
+
+NNAAMMEE
+     ggeettggrroouuppss - get group access list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ggeettggrroouuppss(_i_n_t _g_i_d_s_e_t_l_e_n, _i_n_t _*_g_i_d_s_e_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     GGeettggrroouuppss() gets the current group access list of the user process and
+     stores it in the array _g_i_d_s_e_t. The parameter _g_i_d_s_e_t_l_e_n indicates the num-
+     ber of entries that may be placed in _g_i_d_s_e_t. GGeettggrroouuppss() returns the ac-
+     tual number of groups returned in _g_i_d_s_e_t. No more than NGROUPS, as de-
+     fined in <_s_y_s_/_p_a_r_a_m_._h>, will ever be returned.
+
+RREETTUURRNN VVAALLUUEESS
+     A successful call returns the number of groups in the group set.  A value
+     of -1 indicates that an error occurred, and the error code is stored in
+     the global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     The possible errors for ggeettggrroouuppss() are:
+
+     [EINVAL]      The argument _g_i_d_s_e_t_l_e_n is smaller than the number of groups
+                   in the group set.
+
+     [EFAULT]      The argument _g_i_d_s_e_t specifies an invalid address.
+
+SSEEEE AALLSSOO
+     setgroups(2),  initgroups(3)
+
+BBUUGGSS
+     The _g_i_d_s_e_t array should be of type _g_i_d___t _,
+     but remains integer for compatibility with earlier systems.
+
+HHIISSTTOORRYY
+     The ggeettggrroouuppss function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

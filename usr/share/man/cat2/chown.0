@@ -1,0 +1,92 @@
+CHOWN(2)                    BSD Programmer's Manual                   CHOWN(2)
+
+NNAAMMEE
+     cchhoowwnn, ffcchhoowwnn - change owner and group of a file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     cchhoowwnn(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _u_i_d___t _o_w_n_e_r, _g_i_d___t _g_r_o_u_p);
+
+     _i_n_t
+     ffcchhoowwnn(_i_n_t _f_d, _u_i_d___t _o_w_n_e_r, _u_i_d___t _g_r_o_u_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The owner ID and group ID of the file named by _p_a_t_h or referenced by _f_d
+     is changed as specified by the arguments _o_w_n_e_r and _g_r_o_u_p. The owner of a
+     file may change the _g_r_o_u_p to a group of which he or she is a member, but
+     the change _o_w_n_e_r capability is restricted to the super-user.
+
+     CChhoowwnn() clears the set-user-id and set-group-id bits on the file to pre-
+     vent accidental or mischievious creation of set-user-id and set-group-id
+     programs.
+
+     FFcchhoowwnn() is particularly useful when used in conjunction with the file
+     locking primitives (see flock(2)).
+
+     One of the owner or group id's may be left unchanged by specifying it as
+     -1.
+
+     If the final component of _p_a_t_h is a symbolic link, the ownership and
+     group of the symbolic link is changed, not the ownership and group of the
+     file or directory to which it points.
+
+RREETTUURRNN VVAALLUUEESS
+     Zero is returned if the operation was successful; -1 is returned if an
+     error occurs, with a more specific error code being placed in the global
+     variable _e_r_r_n_o.
+
+EERRRROORRSS
+     CChhoowwnn() will fail and the file will be unchanged if:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EPERM]       The effective user ID is not the super-user.
+
+     [EROFS]       The named file resides on a read-only file system.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+     FFcchhoowwnn() will fail if:
+
+     [EBADF]       _F_d does not refer to a valid descriptor.
+
+     [EINVAL]      _F_d refers to a socket, not a file.
+
+     [EPERM]       The effective user ID is not the super-user.
+
+     [EROFS]       The named file resides on a read-only file system.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+SSEEEE AALLSSOO
+     chown(8),  chgrp(1),  chmod(2),  flock(2)
+
+SSTTAANNDDAARRDDSS
+     CChhoowwnn() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The ffcchhoowwnn() function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

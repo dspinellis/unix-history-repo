@@ -1,0 +1,82 @@
+ACCESS(2)                   BSD Programmer's Manual                  ACCESS(2)
+
+NNAAMMEE
+     aacccceessss - check access permissions of a file or pathname
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     aacccceessss(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _i_n_t _m_o_d_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aacccceessss() function checks the accessibility of the file named by _p_a_t_h
+     for the access permissions indicated by _m_o_d_e. The value of _m_o_d_e is the
+     bitwise inclusive OR of the access permissions to be checked (R_OK for
+     read permission, W_OK for write permission and X_OK for execute/search
+     permission) or the existence test, F_OK. All components of the pathname
+     _p_a_t_h are checked for access permissions (including F_OK).
+
+     The real user ID is used in place of the effective user ID and the real
+     group access list (including the real group ID) are used in place of the
+     effective ID for verifying permission.
+
+     Even if a process has appropriate privileges and indicates success for
+     X_OK, the file may not actually have execute permission bits set.  Like-
+     wise for R_OK and W_OK.
+
+RREETTUURRNN VVAALLUUEESS
+     If _p_a_t_h cannot be found or if any of the desired access modes would not
+     be granted, then a -1 value is returned; otherwise a 0 value is returned.
+
+EERRRROORRSS
+     Access to the file is denied if:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EROFS]       Write access is requested for a file on a read-only file
+                   system.
+
+     [ETXTBSY]     Write access is requested for a pure procedure (shared
+                   text) file presently being executed.
+
+     [EACCES]      Permission bits of the file mode do not permit the request-
+                   ed access, or search permission is denied on a component of
+                   the path prefix.  The owner of a file has permission
+                   checked with respect to the ``owner'' read, write, and exe-
+                   cute mode bits, members of the file's group other than the
+                   owner have permission checked with respect to the ``group''
+                   mode bits, and all others have permissions checked with re-
+
+                   spect to the ``other'' mode bits.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+SSEEEE AALLSSOO
+     chmod(2),  stat(2)
+
+SSTTAANNDDAARRDDSS
+     AAcccceessss() conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+CCAAVVEEAATT
+     AAcccceessss() is a potential security hole and should never be used.
+
+4th Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,54 @@
+SIGRETURN(2)                BSD Programmer's Manual               SIGRETURN(2)
+
+NNAAMMEE
+     ssiiggrreettuurrnn - return from signal
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+     struct sigcontext {
+             int sc_onstack;
+             int sc_mask;
+             int sc_sp;
+             int sc_fp;
+             int sc_ap;
+             int sc_pc;
+             int sc_ps;
+     };
+
+     _i_n_t
+     ssiiggrreettuurrnn(_s_t_r_u_c_t _s_i_g_c_o_n_t_e_x_t _*_s_c_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSiiggrreettuurrnn() allows users to atomically unmask, switch stacks, and return
+     from a signal context.  The processes signal mask and stack status are
+     restored from the context.  The system call does not return; the users
+     stack pointer, frame pointer, argument pointer, and processor status
+     longword are restored from the context.  Execution resumes at the speci-
+     fied pc.  This system call is used by the trampoline code and longjmp(3)
+     when returning from a signal to the previously executing program.
+
+NNOOTTEESS
+     This system call is not available in 4.2 BSD hence it should not be used
+     if backward compatibility is needed.
+
+RREETTUURRNN VVAALLUUEESS
+     If successful, the system call does not return.  Otherwise, a value of -1
+     is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     SSiiggrreettuurrnn() will fail and the process context will remain unchanged if
+     one of the following occurs.
+
+     [EFAULT]  _S_c_p points to memory that is not a valid part of the process
+               address space.
+
+     [EINVAL]  The process status longword is invalid or would improperly
+               raise the privilege level of the process.
+
+SSEEEE AALLSSOO
+     sigvec(2),  setjmp(3)
+
+HHIISSTTOORRYY
+     The ssiiggrreettuurrnn function call appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

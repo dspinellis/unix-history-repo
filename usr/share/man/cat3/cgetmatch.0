@@ -1,0 +1,279 @@
+GETCAP(3)                   BSD Programmer's Manual                  GETCAP(3)
+
+NNAAMMEE
+     ccggeetteenntt, ccggeettsseett, ccggeettmmaattcchh, ccggeettccaapp, ccggeettnnuumm, ccggeettssttrr, ccggeettuussttrr,
+     ccggeettffiirrsstt, ccggeettnneexxtt, ccggeettcclloossee - capability database access routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _i_n_t
+     ccggeetteenntt(_c_h_a_r _*_*_b_u_f, _c_h_a_r _*_*_d_b___a_r_r_a_y, _c_h_a_r _*_n_a_m_e);
+
+     _i_n_t
+     ccggeettsseett(_c_h_a_r _*_e_n_t);
+
+     _i_n_t
+     ccggeettmmaattcchh(_c_h_a_r _*_b_u_f, _c_h_a_r _*_n_a_m_e);
+
+     _c_h_a_r _*
+     ccggeettccaapp(_c_h_a_r _*_b_u_f, _c_h_a_r _*_c_a_p, _c_h_a_r _t_y_p_e);
+
+     _i_n_t
+     ccggeettnnuumm(_c_h_a_r _*_b_u_f, _c_h_a_r _*_c_a_p, _l_o_n_g _*_n_u_m);
+
+     _i_n_t
+     ccggeettssttrr(_c_h_a_r _*_b_u_f, _c_h_a_r _*_c_a_p, _c_h_a_r _*_*_s_t_r);
+
+     _i_n_t
+     ccggeettuussttrr(_c_h_a_r _*_b_u_f, _c_h_a_r _*_c_a_p, _c_h_a_r _*_*_s_t_r);
+
+     _i_n_t
+     ccggeettffiirrsstt(_c_h_a_r _*_*_b_u_f, _c_h_a_r _*_*_d_b___a_r_r_a_y);
+
+     _i_n_t
+     ccggeettnneexxtt(_c_h_a_r _*_*_b_u_f, _c_h_a_r _*_*_d_b___a_r_r_a_y);
+
+     _i_n_t
+     ccggeettcclloossee(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     CCggeetteenntt() extracts the capability rec _n_a_m_e from the database specified by
+     the NULL terminated file array _d_b___a_r_r_a_y and returns a pointer to a
+     malloc'd  copy of it in _b_u_f. CCggeetteenntt will first look for files ending in
+     ..ddbb (see cap_mkdb(1)) before accessing the ASCII file.  _B_u_f must be re-
+     tained through all subsequent calls to ccggeettmmaattcchh(), ccggeettccaapp(), ccggeettnnuumm(),
+     ccggeettssttrr(), and ccggeettuussttrr(), but may then be free'd.  On success 0 is re-
+     turned, 1 if the returned record contains an unresolved ttcc expansion, -1
+     if the requested record couldn't be found, -2 if a system error was en-
+     countered (couldn't open/read a file, etc.) also setting _e_r_r_n_o, and -3 if
+     a potential reference loop is detected (see ttcc== comments below).
+
+     CCggeettsseett enables the addition of a character buffer containing a single
+     capability record entry to the capability database.  Conceptually, the
+     entry is added as the first ``file'' in the database, and is therefore
+     searched first on the call to ccggeetteenntt. The entry is passed in _e_n_t. If _e_n_t
+     is NULL, the current entry is removed from the database.  CCggeettsseett must
+     precede the database traversal.  It must be called before the ccggeetteenntt
+     call. If a sequential access is being performed (see below), it must be
+     called before the first sequential access call ( ccggeettffiirrsstt or ccggeettnneexxtt ),
+     or be directly preceded by a ccggeettcclloossee call.  On success 0 is returned
+     and -1 on failure.
+
+     CCggeettmmaattcchh will return 0 if _n_a_m_e is one of the names of the capability
+     record _b_u_f, -1 if not.
+
+
+     CCggeettccaapp searches the capability record _b_u_f for the capability _c_a_p with
+     type _t_y_p_e. A _t_y_p_e is specified using any single character.  If a colon
+     (`:') is used, an untyped capability will be searched for (see below for
+     explanation of types).  A pointer to the value of _c_a_p in _b_u_f is returned
+     on success, NULL if the requested capability couldn't be found.  The end
+     of the capability value is signaled by a `:' or ASCII NUL (see below for
+     capability database syntax).
+
+     CCggeettnnuumm retrieves the value of the numeric capability _c_a_p from the capa-
+     bility record pointed to by _b_u_f. The numeric value is returned in the
+     _l_o_n_g pointed to by _n_u_m. 0 is returned on success, -1 if the requested nu-
+     meric capability couldn't be found.
+
+     CCggeettssttrr retrieves the value of the string capability _c_a_p from the capa-
+     bility record pointed to by _b_u_f. A pointer to a decoded, NUL terminated,
+     malloc'd  copy of the string is returned in the _c_h_a_r _* pointed to by _s_t_r.
+     The number of characters in the decoded string not including the trailing
+     NUL is returned on success, -1 if the requested string capability
+     couldn't be found, -2 if a system error was encountered (storage alloca-
+     tion failure).
+
+     CCggeettuussttrr is identical to ccggeettssttrr except that it does not expand special
+     characters, but rather returns each character of the capability string
+     literally.
+
+     CCggeettffiirrsstt, ccggeettnneexxtt, comprise a function group that provides for sequen-
+     tial access of the NULL pointer terminated array of file names, _d_b___a_r_r_a_y.
+     CCggeettffiirrsstt returns the first record in the database and resets the access
+     to the first record.  CCggeettnneexxtt returns the next record in the database
+     with respect to the record returned by the previous ccggeettffiirrsstt or ccggeettnneexxtt
+     call.  If there is no such previous call, the first record in the
+     database is returned.  Each record is returned in a malloc'd  copy point-
+     ed to by _b_u_f. TTcc expansion is done (see ttcc== comments below).  Upon com-
+     pletion of the database 0 is returned,  1 is returned upon successful re-
+     turn of record with possibly more remaining (we haven't reached the end
+     of the database yet), 2 is returned if the record contains an unresolved
+     ttcc expansion, -1 is returned if an system error occured, and -2 is re-
+     turned if a potential reference loop is detected (see ttcc== comments be-
+     low).  Upon completion of database (0 return) the database is closed.
+
+     CCggeettcclloossee closes the sequential access and frees any memory and file de-
+     scriptors being used.  Note that it does not erase the buffer pushed by a
+     call to ccggeettsseett.
+
+CCAAPPAABBIILLIITTYY DDAATTAABBAASSEE SSYYNNTTAAXX
+     Capability databases are normally ASCII and may be edited with standard
+     text editors.  Blank lines and lines beginning with a `#' are comments
+     and are ignored.  Lines ending with a `\' indicate that the next line is
+     a continuation of the current line; the `\' and following newline are ig-
+     nored.  Long lines are usually continued onto several physical lines by
+     ending each line except the last with a `\'.
+
+     Capability databases consist of a series of records, one per logical
+     line.  Each record contains a variable number of `:'-separated fields
+     (capabilities).  Empty fields consisting entirely of white space charac-
+     ters (spaces and tabs) are ignored.
+
+     The first capability of each record specifies its names, separated by `|'
+     characters.  These names are used to reference records in the database.
+     By convention, the last name is usually a comment and is not intended as
+     a lookup tag.  For example, the _v_t_1_0_0 record from the tteerrmmccaapp database
+     begins:
+
+           d0|vt100|vt100-am|vt100am|dec vt100:
+
+
+     giving four names that can be used to access the record.
+
+     The remaining non-empty capabilities describe a set of (name, value)
+     bindings, consisting of a names optionally followed by a typed values:
+
+     name          typeless [boolean] capability _n_a_m_e is present [true]
+     name_Tvalue    capability (_n_a_m_e, _T) has value _v_a_l_u_e
+     name@         no capability _n_a_m_e exists
+     name_T@        capability (_n_a_m_e, _T) does not exist
+
+     Names consist of one or more characters.  Names may contain any character
+     except `:', but it's usually best to restrict them to the printable char-
+     acters and avoid use of graphics like `#', `=', `%', `@', etc.  Types are
+     single characters used to separate capability names from their associated
+     typed values.  Types may be any character except a `:'.  Typically,
+     graphics like `#', `=', `%', etc. are used.  Values may be any number of
+     characters and may contain any character except `:'.
+
+CCAAPPAABBIILLIITTYY DDAATTAABBAASSEE SSEEMMAANNTTIICCSS
+     Capability records describe a set of (name, value) bindings.  Names may
+     have multiple values bound to them.  Different values for a name are dis-
+     tinguished by their _t_y_p_e_s. CCggeettccaapp will return a pointer to a value of a
+     name given the capability name and the type of the value.
+
+     The types `#' and `=' are conventionally used to denote numeric and
+     string typed values, but no restriction on those types is enforced.  The
+     functions ccggeettnnuumm and ccggeettssttrr can be used to implement the traditional
+     syntax and semantics of `#' and `='.  Typeless capabilities are typically
+     used to denote boolean objects with presence or absence indicating truth
+     and false values respectively.  This interpretation is conveniently rep-
+     resented by:
+
+           (getcap(buf, name, ':') != NULL)
+
+     A special capability, ttcc== nnaammee, is used to indicate that the record spec-
+     ified by _n_a_m_e should be substituted for the ttcc capability.  TTcc capabili-
+     ties may interpolate records which also contain ttcc capabilities and more
+     than one ttcc capability may be used in a record.  A ttcc expansion scope
+     (i.e., where the argument is searched for) contains the file in which the
+     ttcc is declared and all subsequent files in the file array.
+
+     When a database is searched for a capability record, the first matching
+     record in the search is returned.  When an record is scanned for a capa-
+     bility, the first matching capability is returned; the capability
+     ::nnaammeeTT@@:: will hide any following definition of a value of type _T for
+     _n_a_m_e; and the capability ::nnaammee@@:: will prevent any following values of
+     _n_a_m_e from being seen.
+
+     These features combined with ttcc capabilities can be used to generate
+     variations of other databases and records by either adding new capabili-
+     ties, overriding definitions with new definitions, or hiding following
+     definitions via `@' capabilities.
+
+EEXXAAMMPPLLEESS
+           example|an example of binding multiple values to names:\
+                :foo%bar:foo^blah:foo@:\
+                :abc%xyz:abc^frap:abc$@:\
+                :tc=more:
+
+     The capability foo has two values bound to it (bar of type `%' and blah
+     of type `^') and any other value bindings are hidden.  The capability abc
+     also has two values bound but only a value of type `$' is prevented from
+     being defined in the capability record more.
+
+
+           file1:
+                new|new_record|a modification of "old":\
+                     :fript=bar:who-cares@:tc=old:blah:tc=extensions:
+           file2:
+                old|old_record|an old database record:\
+                     :fript=foo:who-cares:glork#200:
+
+     The records are extracted by calling ccggeetteenntt with file1 preceding file2.
+     In the capability record new in file1, fript=bar overrides the definition
+     of fript=foo interpolated from the capability record old in file2, who-
+     cares@ prevents the definition of any who-cares definitions in old from
+     being seen, glork#200 is inherited from old, and blah and anything de-
+     fined by the record extensions is added to those definitions in old.
+     Note that the position of the fript=bar and who-cares@ definitions before
+     tc=old is important here.  If they were after, the definitions in old
+     would take precedence.
+
+CCGGEETTNNUUMM AANNDD CCGGEETTSSTTRR SSYYNNTTAAXX AANNDD SSEEMMAANNTTIICCSS
+     Two types are predefined by ccggeettnnuumm and ccggeettssttrr:
+
+     _n_a_m_e#_n_u_m_b_e_r    numeric capability _n_a_m_e has value _n_u_m_b_e_r
+     _n_a_m_e=_s_t_r_i_n_g    string capability _n_a_m_e has value _s_t_r_i_n_g
+     _n_a_m_e#@         the numeric capability _n_a_m_e does not exist
+     _n_a_m_e=@         the string capability _n_a_m_e does not exist
+
+     Numeric capability values may be given in one of three numeric bases.  If
+     the number starts with either `0x' or `0X' it is interpreted as a hex-
+     adecimal number (both upper and lower case a-f may be used to denote the
+     extended hexadecimal digits).  Otherwise, if the number starts with a `0'
+     it is interpreted as an octal number.  Otherwise the number is interpret-
+     ed as a decimal number.
+
+     String capability values may contain any character.  Non-printable ASCII
+     codes, new lines, and colons may be conveniently represented by the use
+     of escape sequences:
+
+     ^X        ('_X' & 037)          control-_X
+     \b, \B    (ASCII 010)          backspace
+     \t, \T    (ASCII 011)          tab
+     \n, \N    (ASCII 012)          line feed (newline)
+     \f, \F    (ASCII 014)          form feed
+     \r, \R    (ASCII 015)          carriage return
+     \e, \E    (ASCII 027)          escape
+     \c, \C    (:)                  colon
+     \\        (\)                  back slash
+     \^        (^)                  caret
+     \_n_n_n      (ASCII octal _n_n_n)
+
+     A `\' may be followed by up to three octal digits directly specifies the
+     numeric code for a character.  The use of ASCII NULs, while easily encod-
+     ed, causes all sorts of problems and must be used with care since NULs
+     are typically used to denote the end of strings; many applications use
+     `\200' to represent a NUL.
+
+DDIIAAGGNNOOSSTTIICCSS
+     CCggeetteenntt, ccggeettsseett, ccggeettmmaattcchh, ccggeettnnuumm, ccggeettssttrr, ccggeettuussttrr, ccggeettffiirrsstt, and
+     ccggeettnneexxtt return a a value greater than or equal to 0 on success and a
+     value less than 0 on failure.  CCggeettccaapp returns a character pointer on
+     success and a NULL on failure.
+
+     CCggeetteenntt, and ccggeettsseeqq may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library functions: fopen(2),  fclose(2),  open(2),  and
+     close(2).
+
+     CCggeetteenntt, ccggeettsseett, ccggeettssttrr, and ccggeettuussttrr may fail and set _e_r_r_n_o as fol-
+
+     lows:
+
+     [ENOMEM]      No memory to allocate.
+
+SSEEEE AALLSSOO
+     cap_mkdb(1),  malloc(3)
+
+BBUUGGSS
+     Colons (`:') can't be used in names, types, or values.
+
+     There are no checks for ttcc==nnaammee loops in ccggeetteenntt.
+
+     The buffer added to the database by a call to ccggeettsseett is not unique to
+     the database but is rather prepended to any database used.
+
+4.4BSD                           June 4, 1993                                5

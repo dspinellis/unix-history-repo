@@ -1,0 +1,64 @@
+GETENV(3)                   BSD Programmer's Manual                  GETENV(3)
+
+NNAAMMEE
+     ggeetteennvv, ppuutteennvv, sseetteennvv, uunnsseetteennvv - environment variable functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _c_h_a_r _*
+     ggeetteennvv(_c_o_n_s_t _c_h_a_r _*_n_a_m_e);
+
+     _i_n_t
+     sseetteennvv(_c_o_n_s_t _c_h_a_r _*_n_a_m_e, _c_o_n_s_t _c_h_a_r _*_v_a_l_u_e, _i_n_t _o_v_e_r_w_r_i_t_e);
+
+     _i_n_t
+     ppuutteennvv(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g);
+
+     _v_o_i_d
+     uunnsseetteennvv(_c_o_n_s_t _c_h_a_r _*_n_a_m_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions set, unset and fetch environment variables from the host
+     _e_n_v_i_r_o_n_m_e_n_t _l_i_s_t. For compatibility with differing environment conven-
+     tions, the given arguments _n_a_m_e and _v_a_l_u_e may be appended and prepended,
+     respectively, with an equal sign ``=''.
+
+     The ggeetteennvv() function obtains the current value of the environment vari-
+     able, _n_a_m_e. If the variable _n_a_m_e is not in the current environment , a
+     null pointer is returned.
+
+     The sseetteennvv() function inserts or resets the environment variable _n_a_m_e in
+     the current environment list.  If the variable _n_a_m_e does not exist in the
+     list, it is inserted with the given _v_a_l_u_e_. If the variable does exist,
+     the argument _o_v_e_r_w_r_i_t_e is tested; if _o_v_e_r_w_r_i_t_e _i_s zero, the variable is
+     not reset, otherwise it is reset to the given _v_a_l_u_e.
+
+     The ppuutteennvv() function takes an argument of the form ``name=value'' and is
+     equivalent to:
+
+           setenv(name, value, 1);
+
+     The uunnsseetteennvv() function deletes all instances of the variable name point-
+     ed to by _n_a_m_e from the list.
+
+RREETTUURRNN VVAALLUUEESS
+     The functions sseetteennvv() and ppuutteennvv() return zero if successful; otherwise
+     the global variable _e_r_r_n_o is set to indicate the error and a -1 is re-
+     turned.
+
+EERRRROORRSS
+     [ENOMEM]  The function sseetteennvv() or ppuutteennvv() failed because they were un-
+               able to allocate memory for the environment.
+
+SSEEEE AALLSSOO
+     csh(1),  sh(1),  execve(2),  environ(7)
+
+SSTTAANNDDAARRDDSS
+     The ggeetteennvv() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+HHIISSTTOORRYY
+     The functions sseetteennvv() and uunnsseetteennvv() appeared in Version 7 AT&T UNIX.
+     The ppuutteennvv() function appeared in 4.3BSD-Reno.
+
+4.4BSD                           June 4, 1993                                1

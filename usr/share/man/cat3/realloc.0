@@ -1,0 +1,35 @@
+REALLOC(3)                  BSD Programmer's Manual                 REALLOC(3)
+
+NNAAMMEE
+     rreeaalllloocc - reallocation of memory function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d _*
+     rreeaalllloocc(_v_o_i_d _*_p_t_r, _s_i_z_e___t _s_i_z_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The rreeaalllloocc() function changes the size of the object pointed to by _p_t_r
+     to the size specified by _s_i_z_e. The contents of the object are unchanged
+     up to the lesser of the new and old sizes.  If the new size is larger,
+     the value of the newly allocated portion of the object is indeterminate.
+     If _p_t_r is a null pointer, the rreeaalllloocc() function behaves like the mal-
+     loc(3) function for the specified size.  Otherwise, if _p_t_r does not match
+     a pointer earlier returned by the calloc(3),  malloc(3),  or rreeaalllloocc()
+     function, or if the space has been deallocated by a call to the free or
+     rreeaalllloocc() function, unpredictable and usually detrimental behaviour will
+     occur.  If the space cannot be allocated, the object pointed to by _p_t_r is
+     unchanged.  If _s_i_z_e is zero and _p_t_r is not a null pointer, the object it
+     points to is freed.
+
+     The rreeaalllloocc() function returns either a null pointer or a pointer to the
+     possibly moved allocated space.
+
+SSEEEE AALLSSOO
+     alloca(3),  calloc(3),  free(3),  malloc(3),
+
+SSTTAANNDDAARRDDSS
+     The rreeaalllloocc() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

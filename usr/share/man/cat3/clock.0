@@ -1,0 +1,26 @@
+CLOCK(3)                    BSD Programmer's Manual                   CLOCK(3)
+
+NNAAMMEE
+     cclloocckk - determine processor time used
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _c_l_o_c_k___t
+     cclloocckk(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The cclloocckk() function determines the amount of processor time used since
+     the invocation of the calling process, measured in CLK_TCKs.
+
+RREETTUURRNN VVAALLUUEESS
+     The cclloocckk() function returns the amount of time used unless an error oc-
+     curs, in which case the return value is -1.
+
+SSEEEE AALLSSOO
+     getrusage(2)
+
+SSTTAANNDDAARRDDSS
+     The cclloocckk() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

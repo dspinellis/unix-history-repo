@@ -1,0 +1,81 @@
+GETNETENT(3)                BSD Programmer's Manual               GETNETENT(3)
+
+NNAAMMEE
+     ggeettnneetteenntt, ggeettnneettbbyyaaddddrr, ggeettnneettbbyynnaammee, sseettnneetteenntt, eennddnneetteenntt - get network
+     entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     _s_t_r_u_c_t _n_e_t_e_n_t _*
+     ggeettnneetteenntt();
+
+     _s_t_r_u_c_t _n_e_t_e_n_t _*
+     ggeettnneettbbyynnaammee(_c_h_a_r _*_n_a_m_e);
+
+     _s_t_r_u_c_t _n_e_t_e_n_t _*
+     ggeettnneettbbyyaaddddrr(_l_o_n_g _n_e_t, _i_n_t _t_y_p_e);
+
+     sseettnneetteenntt(_i_n_t _s_t_a_y_o_p_e_n);
+
+     eennddnneetteenntt();
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettnneetteenntt(), ggeettnneettbbyynnaammee(), and ggeettnneettbbyyaaddddrr() functions each return
+     a pointer to an object with the following structure containing the bro-
+     ken-out fields of a line in the network data base, _/_e_t_c_/_n_e_t_w_o_r_k_s.
+
+           struct  netent {
+                   char            *n_name;        /* official name of net */
+                   char            **n_aliases;    /* alias list */
+                   int             n_addrtype;     /* net number type */
+                   unsigned long   n_net;          /* net number */
+           };
+
+     The members of this structure are:
+
+     _n___n_a_m_e      The official name of the network.
+
+     _n___a_l_i_a_s_e_s   A zero terminated list of alternate names for the network.
+
+     _n___a_d_d_r_t_y_p_e  The type of the network number returned; currently only
+                 AF_INET.
+
+     _n___n_e_t       The network number.  Network numbers are returned in machine
+                 byte order.
+
+     The ggeettnneetteenntt() function reads the next line of the file, opening the
+     file if necessary.
+
+     The sseettnneetteenntt() function opens and rewinds the file.  If the _s_t_a_y_o_p_e_n
+     flag is non-zero, the net data base will not be closed after each call to
+     ggeettnneettbbyynnaammee() or ggeettnneettbbyyaaddddrr().
+
+     The eennddnneetteenntt() function closes the file.
+
+     The ggeettnneettbbyynnaammee() function and ggeettnneettbbyyaaddddrr() sequentially search from
+     the beginning of the file until a matching net name or net address and
+     type is found, or until EOF is encountered.  Network numbers are supplied
+     in host order.
+
+FFIILLEESS
+     /etc/networks
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer (0) returned on EOF or error.
+
+SSEEEE AALLSSOO
+     networks(5)
+
+HHIISSTTOORRYY
+     The ggeettnneetteenntt(), ggeettnneettbbyyaaddddrr(), ggeettnneettbbyynnaammee(), sseettnneetteenntt(), and
+     eennddnneetteenntt() functions appeared in 4.2BSD.
+
+BBUUGGSS
+     The data space used by these functions is static; if future use requires
+     the data, it should be copied before any subsequent calls to these func-
+     tions overwrite it.  Only Internet network numbers are currently under-
+     stood.  Expecting network numbers to fit in no more than 32 bits is prob-
+     ably naive.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

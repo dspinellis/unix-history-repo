@@ -1,0 +1,41 @@
+MONCONTROL(3)               BSD Programmer's Manual              MONCONTROL(3)
+
+NNAAMMEE
+     mmoonnccoonnttrrooll, mmoonnssttaarrttuupp - control execution profile
+
+SSYYNNOOPPSSIISS
+     mmoonnccoonnttrrooll(_i_n_t _m_o_d_e);
+
+     mmoonnssttaarrttuupp(_u___l_o_n_g _*_l_o_w_p_c, _u___l_o_n_g _*_h_i_g_h_p_c);
+
+DDEESSCCRRIIPPTTIIOONN
+     An executable program compiled using the --ppgg option to cc(1) automatical-
+     ly includes calls to collect statistics for the gprof(1) call-graph exe-
+     cution profiler.  In typical operation, profiling begins at program
+     startup and ends when the program calls exit.  When the program exits,
+     the profiling data are written to the file _g_m_o_n_._o_u_t, then gprof(1) can be
+     used to examine the results.
+
+     mmoonnccoonnttrrooll() selectively controls profiling within a program.  When the
+     program starts, profiling begins.  To stop the collection of histogram
+     ticks and call counts use mmoonnccoonnttrrooll(_0); to resume the collection of his-
+     togram ticks and call counts use mmoonnccoonnttrrooll(_1).  This feature allows the
+     cost of particular operations to be measured.  Note that an output file
+     will be produced on program exit regardless of the state of mmoonnccoonnttrrooll().
+
+     Programs that are not loaded with --ppgg may selectively collect profiling
+     statistics by calling mmoonnssttaarrttuupp() with the range of addresses to be pro-
+     filed.  _l_o_w_p_c and _h_i_g_h_p_c specify the address range that is to be sampled;
+     the lowest address sampled is that of _l_o_w_p_c and the highest is just below
+     _h_i_g_h_p_c. Only functions in that range that have been compiled with the --ppgg
+     option to cc(1) will appear in the call graph part of the output; howev-
+     er, all functions in that address range will have their execution time
+     measured.  Profiling begins on return from mmoonnssttaarrttuupp().
+
+FFIILLEESS
+     gmon.out  execution data file
+
+SSEEEE AALLSSOO
+     cc(1),  gprof(1),  profil(2)
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,53 @@
+CONFSTR(3)                  BSD Programmer's Manual                 CONFSTR(3)
+
+NNAAMMEE
+     ccoonnffssttrr - get string-valued configurable variables
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _s_i_z_e___t
+     ccoonnffssttrr(_i_n_t _n_a_m_e, _c_h_a_r _*_b_u_f, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy ssyyssccttll((33))..
+
+     The ccoonnffssttrr() function provides a method for applications to get configu-
+     ration defined string values.
+
+     The _n_a_m_e argument specifies the system variable to be queried.  Symbolic
+     constants for each name value are found in the include file <unistd.h>.
+     The _l_e_n argument specifies the size of the buffer referenced by the argu-
+     ment _b_u_f. If _l_e_n is non-zero, _b_u_f is a non-null pointer, and _n_a_m_e has a
+     value, up to _l_e_n - 1 bytes of the value are copied into the buffer _b_u_f.
+     The copied value is always null terminated.
+
+     The available values are as follows:
+
+     _CS_PATH
+             Return a value for the PATH environment variable that finds all
+             the standard utilities.
+
+RREETTUURRNN VVAALLUUEESS
+     If the call to ccoonnffssttrr is not successful, -1 is returned and _e_r_r_n_o is set
+     appropriately.  Otherwise, if the variable does not have a configuration
+     defined value, 0 is returned and _e_r_r_n_o is not modified.  Otherwise, the
+     buffer size needed to hold the entire configuration-defined value is re-
+     turned.  If this size is greater than the argument _l_e_n, the string in _b_u_f
+     was truncated.
+
+EERRRROORRSS
+     The ccoonnffssttrr function may fail and set _e_r_r_o_r for any of the errors speci-
+     fied for the library functions malloc(3) and sysctl(3).
+
+     In addition, the following errors may be reported:
+
+     [EINVAL]      The value of the _n_a_m_e argument is invalid.
+
+SSEEEE AALLSSOO
+     sysctl(3)
+
+HHIISSTTOORRYY
+     The ccoonnffssttrr function first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 4, 1993                                1

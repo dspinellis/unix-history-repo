@@ -1,0 +1,44 @@
+STRSEP(3)                   BSD Programmer's Manual                  STRSEP(3)
+
+NNAAMMEE
+     ssttrrsseepp - separate strings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrrsseepp(_c_h_a_r _*_*_s_t_r_i_n_g_p, _c_h_a_r _*_d_e_l_i_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrsseepp() function locates, in the string referenced by _*_s_t_r_i_n_g_p, the
+     first occurrence of any character in the string _d_e_l_i_m (or the terminating
+     `\0' character) and replaces it with a `\0'. The location of the next
+     character after the delimiter character (or NULL, if the end of the
+     string was reached) is stored in _*_s_t_r_i_n_g_p. The original value of _*_s_t_r_i_n_g_p
+     is returned.
+
+     An ``empty'' field, i.e. one caused by two adjacent delimiter characters,
+     can be detected by comparing the location referenced by the pointer re-
+     turned in _*_s_t_r_i_n_g_p to `\0'.
+
+     If _*_s_t_r_i_n_g_p is initially NULL, ssttrrsseepp() returns NULL.
+
+EEXXAAMMPPLLEESS
+     The following uses ssttrrsseepp() to parse a string, containing tokens delimit-
+     ed by white space, into an argument vector:
+
+           char **ap, *argv[10], *inputstring;
+
+           for (ap = argv; (*ap = strsep(&inputstring, " \t")) != NULL;)
+                   if (**ap != '\0')
+                           ++ap;
+
+HHIISSTTOORRYY
+     The ssttrrsseepp() function is intended as a replacement for the ssttrrttookk() func-
+     tion.  While the ssttrrttookk() function should be preferred for portability
+     reasons (it conforms to ANSI C X3.159-1989 (``ANSI C '')) it is unable to
+     handle empty fields, i.e. detect fields delimited by two adjacent delim-
+     iter characters, or to be used for more than a single string at a time.
+     The ssttrrsseepp() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

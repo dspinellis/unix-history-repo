@@ -1,0 +1,119 @@
+QUOTACTL(2)                 BSD Programmer's Manual                QUOTACTL(2)
+
+NNAAMMEE
+     qquuoottaaccttll - manipulate filesystem quotas
+
+SSYYNNOOPPSSIISS
+     _#_i_n_c_l_u_d_e _<_u_f_s_/_q_u_o_t_a_._h_>   _/_* _f_o_r _u_f_s _q_u_o_t_a_s _*_/ _i_n_t
+     qquuoottaaccttll(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _i_n_t _c_m_d, _i_n_t _i_d, _c_h_a_r _*_a_d_d_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The qquuoottaaccttll() call enables, disables and manipulates filesystem quotas.
+     A quota control command given by _c_m_d operates on the given filename _p_a_t_h
+     for the given user _i_d. The address of an optional command specific data
+     structure, _a_d_d_r, may be given; its interpretation is discussed below with
+     each command.
+
+     Currently quotas are supported only for the ``ufs'' filesystem.  For
+     ``ufs'', a command is composed of a primary command (see below) and a
+     command type used to interpret the _i_d. Types are supported for interpre-
+     tation of user identifiers and group identifiers.  The ``ufs'' specific
+     commands are:
+
+     Q_QUOTAON  Enable disk quotas for the filesystem specified by _p_a_t_h. The
+                command type specifies the type of the quotas being enabled.
+                The _a_d_d_r argument specifies a file from which to take the quo-
+                tas.  The quota file must exist; it is normally created with
+                the quotacheck(8) program.  The _i_d argument is unused.  Only
+                the super-user may turn quotas on.
+
+     Q_QUOTAOFF
+                Disable disk quotas for the filesystem specified by _p_a_t_h. The
+                command type specifies the type of the quotas being disabled.
+                The _a_d_d_r and _i_d arguments are unused.  Only the super-user may
+                turn quotas off.
+
+     Q_GETQUOTA
+                Get disk quota limits and current usage for the user or group
+                (as determined by the command type) with identifier _i_d. _A_d_d_r
+                is a pointer to a _s_t_r_u_c_t _d_q_b_l_k structure (defined in
+                <_u_f_s_/_q_u_o_t_a_._h>).
+
+     Q_SETQUOTA
+                Set disk quota limits for the user or group (as determined by
+                the command type) with identifier _i_d. _A_d_d_r is a pointer to a
+                _s_t_r_u_c_t _d_q_b_l_k structure (defined in <_u_f_s_/_q_u_o_t_a_._h>). The usage
+                fields of the _d_q_b_l_k structure are ignored.  This call is re-
+                stricted to the super-user.
+
+     Q_SETUSE   Set disk usage limits for the user or group (as determined by
+                the command type) with identifier _i_d. _A_d_d_r is a pointer to a
+                _s_t_r_u_c_t _d_q_b_l_k structure (defined in <_u_f_s_/_q_u_o_t_a_._h>). Only the
+                usage fields are used.  This call is restricted to the super-
+                user.
+
+     Q_SYNC     Update the on-disk copy of quota usages.  The command type
+                specifies which type of quotas are to be updated.  The _i_d and
+                _a_d_d_r parameters are ignored.
+
+RREETTUURRNN VVAALLUUEESS
+     A successful call returns 0, otherwise the value -1 is returned and the
+     global variable _e_r_r_n_o indicates the reason for the failure.
+
+EERRRROORRSS
+
+
+     A qquuoottaaccttll() call will fail if:
+
+     [EOPNOTSUPP]    The kernel has not been compiled with the QUOTA option.
+
+     [EUSERS]        The quota table cannot be expanded.
+
+     [EINVAL]        _C_m_d or the command type is invalid.
+
+     [EINVAL]        A pathname contains a character with the high-order bit
+                     set.
+
+     [EACCES]        In Q_QUOTAON, the quota file is not a plain file.
+
+     [EACCES]        Search permission is denied for a component of a path
+                     prefix.
+
+     [ENOTDIR]       A component of a path prefix was not a directory.
+
+     [ENAMETOOLONG]  A component of either pathname exceeded 255 characters,
+                     or the entire length of either path name exceeded 1023
+                     characters.
+
+     [ENOENT]        A filename does not exist.
+
+     [ELOOP]         Too many symbolic links were encountered in translating a
+                     pathname.
+
+     [EROFS]         In Q_QUOTAON, the quota file resides on a read-only
+                     filesystem.
+
+     [EIO]           An I/O error occurred while reading from or writing to a
+                     file containing quotas.
+
+     [EFAULT]        An invalid _a_d_d_r was supplied; the associated structure
+                     could not be copied in or out of the kernel.
+
+     [EFAULT]        _P_a_t_h points outside the process's allocated address
+                     space.
+
+     [EPERM]         The call was privileged and the caller was not the super-
+                     user.
+
+SSEEEE AALLSSOO
+     quota(1),  fstab(5),  edquota(8),  quotacheck(8),  quotaon(8),  repquo-
+     ta(8)
+
+BBUUGGSS
+     There should be some way to integrate this call with the resource limit
+     interface provided by setrlimit(2) and getrlimit(2).
+
+HHIISSTTOORRYY
+     The qquuoottaaccttll function call appeared in 4.3BSD-Reno.
+
+4.4BSD                           June 4, 1993                                2

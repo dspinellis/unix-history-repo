@@ -1,0 +1,44 @@
+SETREGID(2)                 BSD Programmer's Manual                SETREGID(2)
+
+NNAAMMEE
+     sseettrreeggiidd - set real and effective group ID
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     sseettrreeggiidd(_i_n_t _r_g_i_d, _i_n_t _e_g_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The real and effective group ID's of the current process are set to the
+     arguments.  Unprivileged users may change the real group ID to the effec-
+     tive group ID and vice-versa; only the super-user may make other changes.
+
+     Supplying a value of -1 for either the real or effective group ID forces
+     the system to substitute the current ID in place of the -1 parameter.
+
+     The sseettrreeggiidd(_f_u_n_c_t_i_o_n, _w_a_s, _i_n_t_e_n_d_e_d, _t_o, _a_l_l_o_w, _s_w_a_p_p_i_n_g) the real and
+     effective group IDs in set-group-ID programs to temporarily relinquish
+     the set-group-ID value.  This function did not work correctly, and its
+     purpose is now better served by the use of the sseetteeggiidd() function (see
+     setuid(2)).
+
+     When setting the real and effective group IDs to the same value, the
+     standard sseettggiidd() function is preferred.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     [EPERM]  The current process is not the super-user and a change other
+              than changing the effective group-id to the real group-id was
+              specified.
+
+SSEEEE AALLSSOO
+     getgid(2),  setegid(2),  setgid(2),  setuid(2)
+
+HHIISSTTOORRYY
+     The sseettrreeggiidd function call appeared in 4.2BSD and was dropped in 4.4BSD.
+
+4.2 Berkeley Distribution        June 2, 1993                                1

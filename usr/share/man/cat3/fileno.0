@@ -1,0 +1,47 @@
+FERROR(3)                   BSD Programmer's Manual                  FERROR(3)
+
+NNAAMMEE
+     cclleeaarreerrrr, ffeeooff, ffeerrrroorr, ffiilleennoo - check and reset stream status
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _v_o_i_d
+     cclleeaarreerrrr(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffeeooff(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffeerrrroorr(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffiilleennoo(_F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The function cclleeaarreerrrr() clears the end-of-file and error indicators for
+     the stream pointed to by _s_t_r_e_a_m.
+
+     The function ffeeooff() tests the end-of-file indicator for the stream point-
+     ed to by _s_t_r_e_a_m, returning non-zero if it is set.  The end-of-file indi-
+     cator can only be cleared by the function cclleeaarreerrrr().
+
+     The function ffeerrrroorr() tests the error indicator for the stream pointed to
+     by _s_t_r_e_a_m, returning non-zero if it is set.  The error indicator can only
+     be reset by the cclleeaarreerrrr() function.
+
+     The function ffiilleennoo() examines the argument _s_t_r_e_a_m and returns its inte-
+     ger desciptor.
+
+EERRRROORRSS
+     These functions should not fail and do not set the external variable
+     _e_r_r_n_o.
+
+SSEEEE AALLSSOO
+     open(2),  stdio(3)
+
+SSTTAANNDDAARRDDSS
+     The functions cclleeaarreerrrr(), ffeeooff(), and ffeerrrroorr() conform to ANSI C
+     X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,29 @@
+FREE(3)                     BSD Programmer's Manual                    FREE(3)
+
+NNAAMMEE
+     ffrreeee - free up memory allocated with malloc, calloc or realloc
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d
+     ffrreeee(_v_o_i_d _*_p_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffrreeee() function causes the space pointed to by _p_t_r to be deallocated,
+     that is, made available for further allocation.  If _p_t_r is a null point-
+     er, no action occurs.  Otherwise, if the argument does not match a point-
+     er earlier returned by the calloc,  malloc,  or realloc function, or if
+     the space has been deallocated by a call to ffrreeee() or realloc,  general
+     havoc may occur.
+
+RREETTUURRNN VVAALLUUEESS
+     The ffrreeee() function returns no value.
+
+SSEEEE AALLSSOO
+     calloc(3),  malloc(3),  realloc(3)
+
+SSTTAANNDDAARRDDSS
+     The ffrreeee() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,23 @@
+LDIV(3)                     BSD Programmer's Manual                    LDIV(3)
+
+NNAAMMEE
+     llddiivv - return quotient and remainder from division
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _l_d_i_v___t
+     llddiivv(_i_n_t _n_u_m, _i_n_t _d_e_n_o_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The llddiivv() function computes the value _n_u_m_/_d_e_n_o_m and returns the quotient
+     and remainder in a structure named _l_d_i_v___t that contains two _l_o_n_g _i_n_t_e_g_e_r
+     members named _q_u_o_t and _r_e_m.
+
+SSEEEE AALLSSOO
+     div(3),  math(3)
+
+SSTTAANNDDAARRDDSS
+     The llddiivv() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

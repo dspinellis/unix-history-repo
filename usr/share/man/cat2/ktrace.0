@@ -1,0 +1,98 @@
+KTRACE(2)                   BSD Programmer's Manual                  KTRACE(2)
+
+NNAAMMEE
+     kkttrraaccee - process tracing
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//kkttrraaccee..hh>>
+
+     _i_n_t
+     kkttrraaccee(_c_o_n_s_t _c_h_a_r _*_t_r_a_c_e_f_i_l_e, _i_n_t _o_p_s, _i_n_t _t_r_p_o_i_n_t_s, _i_n_t _p_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkttrraaccee() function enables or disables tracing of one or more process-
+     es.  Users may only trace their own processes.  Only the super-user can
+     trace setuid or setgid programs.
+
+     The _t_r_a_c_e_f_i_l_e gives the pathname of the file to be used for tracing.  The
+     file must exist and be writable by the calling process.  All trace
+     records are always appended to the file, so the file must be truncated to
+     zero length to discard previous trace data.  If tracing points are being
+     disabled (see KTROP_CLEAR below), _t_r_a_c_e_f_i_l_e may be NULL.
+
+     The ooppss parameter specifies the requested ktrace operation.  The defined
+     operations are:
+
+           KTROP_SET             Enable trace points specified in _t_r_p_o_i_n_t_s.
+           KTROP_CLEAR           Disable trace points specified in _t_r_p_o_i_n_t_s.
+           KTROP_CLEARFILE       Stop all tracing.
+           KTRFLAG_DESCEND       The tracing change should apply to the speci-
+                                 fied process and all its current children.
+
+     The ttrrppooiinnttss parameter specifies the trace points of interest.  The de-
+     fined trace points are:
+
+           KTRFAC_SYSCALL       Trace system calls.
+           KTRFAC_SYSRET        Trace return values from system calls.
+           KTRFAC_NAMEI         Trace name lookup operations.
+           KTRFAC_GENIO         Trace all I/O (note that this option can gen-
+                                erate much output).
+           KTRFAC_PSIG          Trace posted signals.
+           KTRFAC_CSW           Trace context switch points.
+           KTRFAC_INHERIT       Inherit tracing to future children.
+
+     Each tracing event outputs a record composed of a generic header followed
+     by a trace point specific structure.  The generic header is:
+
+     struct ktr_header {
+             int     ktr_len;                /* length of buf */
+             short   ktr_type;               /* trace record type */
+             pid_t   ktr_pid;                /* process id */
+             char    ktr_comm[MAXCOMLEN+1];  /* command name */
+             struct  timeval ktr_time;       /* timestamp */
+             caddr_t ktr_buf;
+     };
+
+     The kkttrr__lleenn field specifies the length of the kkttrr__ttyyppee data that follows
+     this header.  The kkttrr__ppiidd and kkttrr__ccoommmm fields specify the process and
+     command generating the record.  The kkttrr__ttiimmee field gives the time (with
+     microsecond resolution) that the record was generated.  The kkttrr__bbuuff is an
+     internal kernel pointer and is not useful.
+
+     The generic header is followed by kkttrr__lleenn bytes of a kkttrr__ttyyppee record.
+     The type specific records are defined in the _<_s_y_s_/_k_t_r_a_c_e_._h_> include file.
+
+RREETTUURRNN VVAALLUUEESS
+     On successful completion a value of 0 is returned.  Otherwise, a value of
+     -1 is returned and _e_r_r_n_o is set to show the error.
+
+EERRRROORRSS
+     KKttrraaccee() will fail if:
+
+     [ENOTDIR]       A component of the path prefix is not a directory.
+
+     [EINVAL]        The pathname contains a character with the high-order bit
+                     set.
+
+     [ENAMETOOLONG]  A component of a pathname exceeded 255 characters, or an
+                     entire path name exceeded 1023 characters.
+
+     [ENOENT]        The named tracefile does not exist.
+
+     [EACCES]        Search permission is denied for a component of the path
+                     prefix.
+
+     [ELOOP]         Too many symbolic links were encountered in translating
+                     the pathname.
+
+     [EIO]           An I/O error occurred while reading from or writing to
+                     the file system.
+
+SSEEEE AALLSSOO
+     ktrace(1),  kdump(1)
+
+HHIISSTTOORRYY
+     A kkttrraaccee function call first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,124 @@
+EXEC(3)                     BSD Programmer's Manual                    EXEC(3)
+
+NNAAMMEE
+     eexxeeccll, eexxeeccllpp, eexxeeccllee, eexxeecctt, eexxeeccvv, eexxeeccvvpp - execute a file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _e_x_t_e_r_n _c_h_a_r _*_*_e_n_v_i_r_o_n_;
+
+     _i_n_t
+     eexxeeccll(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_o_n_s_t _c_h_a_r _*_a_r_g, _._._.);
+
+     _i_n_t
+     eexxeeccllpp(_c_o_n_s_t _c_h_a_r _*_f_i_l_e, _c_o_n_s_t _c_h_a_r _*_a_r_g, _._._.);
+
+     _i_n_t
+     eexxeeccllee(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_o_n_s_t _c_h_a_r _*_a_r_g, _._._., _c_h_a_r _*_c_o_n_s_t _e_n_v_p_[_]);
+
+     _i_n_t
+     eexxeecctt(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_h_a_r _*_c_o_n_s_t _a_r_g_v_[_]);
+
+     _i_n_t
+     eexxeeccvv(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_h_a_r _*_c_o_n_s_t _a_r_g_v_[_]);
+
+     _i_n_t
+     eexxeeccvvpp(_c_o_n_s_t _c_h_a_r _*_f_i_l_e, _c_h_a_r _*_c_o_n_s_t _a_r_g_v_[_]);
+
+DDEESSCCRRIIPPTTIIOONN
+     The eexxeecc family of functions replaces the current process image with a
+     new process image.  The functions described in this manual page are
+     front-ends for the function execve(2).  (See the manual page for execve
+     for detailed information about the replacement of the current process.)
+
+     The initial argument for these functions is the pathname of a file which
+     is to be executed.
+
+     The _c_o_n_s_t _c_h_a_r _*_a_r_g and subsequent ellipses in the eexxeeccll(), eexxeeccllpp(), and
+     eexxeeccllee() functions can be thought of as _a_r_g_0, _a_r_g_1, ..., _a_r_g_n. Together
+     they describe a list of one or more pointers to null-terminated strings
+     that represent the argument list available to the executed program.  The
+     first argument, by convention, should point to the file name associated
+     with the file being executed.  The list of arguments _m_u_s_t be terminated
+     by a NULL pointer.
+
+     The eexxeecctt(), eexxeeccvv(), and eexxeeccvvpp() functions provide an array of pointers
+     to null-terminated strings that represent the argument list available to
+     the new program.  The first argument, by convention, should point to the
+     file name associated with the file begin executed.  The array of pointers
+     mmuusstt be terminated by a NULL pointer.
+
+     The eexxeeccllee() and eexxeecctt() functions also specify the environment of the
+     executed process by following the NULL pointer that terminates the list
+     of arguments in the parameter list or the pointer to the argv array with
+     an additional parameter.  This additional parameter is an array of point-
+     ers to null-terminated strings and _m_u_s_t be terminated by a NULL pointer.
+     The other functions take the environment for the new process image from
+     the external variable _e_n_v_i_r_o_n in the current process.
+
+     Some of these functions have special semantics.
+
+     The functions eexxeeccllpp() and eexxeeccvvpp() will duplicate the actions of the
+     shell in searching for an executable file if the specified file name does
+     not contain a slash ``/'' character.  The search path is the path speci-
+     fied in the environment by ``PATH'' variable.  If this variable isn't
+     specified, the default path ``/bin:/usr/bin:'' is used.  In addtion, cer-
+     tain errors are treated specially.
+
+     If permission is denied for a file (the attempted execve returned
+     EACCES), these functions will continue searching the rest of the search
+     path.  If no other file is found, however, they will return with the
+     global variable _e_r_r_n_o set to EACCES.
+
+     If the header of a file isn't recognized (the attempted execve returned
+     ENOEXEC), these functions will execute the shell with the path of the
+     file as its first argument.  (If this attempt fails, no further searching
+     is done.)
+
+     If the file is currently busy (the attempted execve returned ETXTBUSY),
+     these functions will sleep for several seconds, periodically re-
+     attempting to execute the file.
+
+     The function eexxeecctt() executes a file with the program tracing facilities
+     enabled (see ptrace(2)).
+
+RREETTUURRNN VVAALLUUEESS
+     If any of the exec functions returns, an error will have occurred.  The
+     return value is -1, and the global variable _e_r_r_n_o will be set to indicate
+     the error.
+
+FFIILLEESS
+     /bin/sh  The shell.
+
+EERRRROORRSS
+     EExxeeccll(), eexxeeccllee(), eexxeeccllpp() and eexxeeccvvpp() may fail and set _e_r_r_n_o for any
+     of the errors specified for the library functions execve(2) and
+     malloc(3).
+
+     EExxeecctt() and eexxeeccvv() may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library function execve(2).
+
+SSEEEE AALLSSOO
+     sh(1),  execve(2),  fork(2),  trace(2),  environ(7),  ptrace(2),
+     environ(7),
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Historically, the default path for the eexxeeccllpp() and eexxeeccvvpp() functions
+     was ``_:_/_b_i_n_:_/_u_s_r_/_b_i_n''. This was changed to place the current directory
+     last to enhance system security.
+
+     The behavior of eexxeeccllpp() and eexxeeccvvpp() when errors occur while attempting
+     to execute the file is historic practice, but has not traditionally been
+     documented and is not specified by the POSIX standard.
+
+     Traditionally, the functions eexxeeccllpp() and eexxeeccvvpp() ignored all errors ex-
+     cept for the ones described above and ENOMEM and E2BIG, upon which they
+     returned.  They now return if any error other than the ones described
+     above occurs.
+
+SSTTAANNDDAARRDDSS
+     EExxeeccll(), eexxeeccvv(), eexxeeccllee(), eexxeeccllpp() and eexxeeccvvpp() conform to IEEE
+     Std1003.1-1988 (``POSIX'').
+
+4.4BSD                           June 4, 1993                                2

@@ -1,0 +1,24 @@
+MSYNC(2)                    BSD Programmer's Manual                   MSYNC(2)
+
+NNAAMMEE
+     mmssyynncc - synchronize a mapped region
+
+SSYYNNOOPPSSIISS
+     mmssyynncc(_c_a_d_d_r___t _a_d_d_r, _i_n_t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmssyynncc() system call writes any modified pages back to the filesystem
+     and updates the file modification time.  If _l_e_n is 0, all modified pages
+     within the region containing _a_d_d_r will be flushed; if _l_e_n is non-zero,
+     only the pages containing _a_d_d_r and _l_e_n succeeding locations will be exam-
+     ined.  Any required synchronization of memory caches will also take place
+     at this time.  Filesystem operations on a file that is mapped for shared
+     modifications are unpredictable except after an mmssyynncc().
+
+SSEEEE AALLSSOO
+     madvise(2),  munmap(2),  mprotect(2),  mincore(2)
+
+HHIISSTTOORRYY
+     The mmssyynncc() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,56 @@
+ZOPEN(3)                    BSD Programmer's Manual                   ZOPEN(3)
+
+NNAAMMEE
+     zzooppeenn - compressed stream open function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _F_I_L_E _*
+     zzooppeenn(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_o_n_s_t _c_h_a_r _*_m_o_d_e, _i_n_t _b_i_t_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The zzooppeenn() function opens the compressed file whose name is the string
+     pointed to by _p_a_t_h and associates a stream with it.
+
+     The argument _m_o_d_e points to one of the following one-character strings:
+
+     ``r''   Open compressed file for reading.  The stream is positioned at
+             the beginning of the file.
+
+     ``w''   Truncate file to zero length or create compressed file for writ-
+             ing.  The stream is positioned at the beginning of the file.
+
+     Any created files will have mode "S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+     S_IROTH | S_IWOTH" (0666), as modified by the process' umask value (see
+     umask(2)).
+
+     Files may only be read or written.  Seek operations are not allowed.
+
+     The _b_i_t_s argument, if non-zero, is set to the bits code limit.  If zero,
+     the default is 16.  See ccoommpprreessss(_1) for more information.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion zzooppeenn() returns a FILE pointer.  Otherwise,
+     NULL is returned and the global variable _e_r_r_n_o is set to indicate the er-
+     ror.
+
+EERRRROORRSS
+     [EINVAL]  The _m_o_d_e or _b_i_t_s arguments specified to zzooppeenn() were invalid.
+
+     [EFTYPE]  The compressed file starts with an invalid header, or the com-
+               pressed file is compressed with more bits than can be handled.
+
+     The zzooppeenn() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routines fopen(3) or funopen(3).
+
+SSEEEE AALLSSOO
+     compress(1),  fopen(3),  funopen(3)
+
+HHIISSTTOORRYY
+     The zzooppeenn function first appeared in 4.4BSD.
+
+BBUUGGSS
+     The zzooppeenn() function may not be portable to systems other than BSD.
+
+4.4BSD                           June 9, 1993                                1

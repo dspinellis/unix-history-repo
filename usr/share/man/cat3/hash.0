@@ -1,0 +1,132 @@
+
+
+
+HASH(3)              BSD Programmer's Manual              HASH(3)
+
+
+NNAAMMEE
+       hash - hash database access method
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+       ##iinncclluuddee <<ddbb..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+       The  routine  _d_b_o_p_e_n  is the library interface to database
+       files.  One of the supported file formats is  hash  files.
+       The  general description of the database access methods is
+       in _d_b_o_p_e_n(3), this manual page  describes  only  the  hash
+       specific information.
+
+       The  hash data structure is an extensible, dynamic hashing
+       scheme.
+
+       The access method  specific  data  structure  provided  to
+       _d_b_o_p_e_n is defined in the <db.h> include file as follows:
+
+       typedef struct {
+              int bsize;
+              int ffactor;
+              int nelem;
+              int cachesize;
+              u_long (*hash)(const void *, size_t);
+              int lorder;
+       } HASHINFO;
+
+       The elements of this structure are as follows:
+
+       bsize  _B_s_i_z_e  defines  the hash table bucket size, and is,
+              by default, 256 bytes.  It  may  be  preferable  to
+              increase the page size for disk-resident tables and
+              tables with large data items.
+
+       cachesize
+              A suggested maximum size, in bytes, of  the  memory
+              cache.  This value is oonnllyy advisory, and the access
+              method will allocate more memory rather than  fail.
+
+       ffactor
+              _F_f_a_c_t_o_r indicates a desired density within the hash
+              table.  It is an approximation  of  the  number  of
+              keys  allowed  to  accumulate  in  any  one bucket,
+              determining when the hash table grows  or  shrinks.
+              The default value is 8.
+
+       hash   _H_a_s_h  is  a  user  defined hash function.  Since no
+              hash function performs equally well on all possible
+              data,  the  user  may  find  that the built-in hash
+
+
+
+4.4 Berkeley Distribution July 19, 1993                         1
+
+
+
+
+
+
+
+
+HASH(3)              BSD Programmer's Manual              HASH(3)
+
+
+              function does poorly  on  a  particular  data  set.
+              User  specified  hash functions must take two argu-
+              ments (a pointer to a byte string and a length) and
+              return an u_long to be used as the hash value.
+
+       lorder The  byte order for integers in the stored database
+              metadata.  The number should represent the order as
+              an  integer; for example, big endian order would be
+              the number 4,321.  If _l_o_r_d_e_r  is  0  (no  order  is
+              specified)  the current host order is used.  If the
+              file already exists, the specified value is ignored
+              and  the  value specified when the tree was created
+              is used.
+
+       nelem  _N_e_l_e_m is an estimate of the final size of the  hash
+              table.  If not set or set too low, hash tables will
+              expand gracefully as keys are entered,  although  a
+              slight performance degradation may be noticed.  The
+              default value is 1.
+
+       If the file already exists (and the O_TRUNC  flag  is  not
+       specified), the values specified for the parameters bsize,
+       ffactor, lorder and nelem are ignored and the values spec-
+       ified when the tree was created are used.
+
+       If a hash function is specified, _h_a_s_h___o_p_e_n will attempt to
+       determine if the hash function specified is  the  same  as
+       the one with which the database was created, and will fail
+       if it is not.
+
+       Backward compatible interfaces to the  routines  described
+       in _d_b_m(3), and _n_d_b_m(3) are provided, however, these inter-
+       faces are not compatible with previous file formats.
+
+SSEEEE AALLSSOO
+       _b_t_r_e_e(3), _d_b_o_p_e_n(3), _m_p_o_o_l(3), _r_e_c_n_o(3)
+       _D_y_n_a_m_i_c _H_a_s_h _T_a_b_l_e_s, Per-Ake Larson, Communications of the
+       ACM, April 1988.
+       _A  _N_e_w  _H_a_s_h  _P_a_c_k_a_g_e _f_o_r _U_N_I_X, Margo Seltzer, USENIX Pro-
+       ceedings, Winter 1991.
+
+BBUUGGSS
+       Only big and little endian byte order is supported.
+
+
+
+
+
+
+
+
+
+
+
+4.4 Berkeley Distribution July 19, 1993                         2
+
+
+
+
+

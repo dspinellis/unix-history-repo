@@ -1,0 +1,83 @@
+GETSERVENT(3)               BSD Programmer's Manual              GETSERVENT(3)
+
+NNAAMMEE
+     ggeettsseerrvveenntt, ggeettsseerrvvbbyyppoorrtt, ggeettsseerrvvbbyynnaammee, sseettsseerrvveenntt, eennddsseerrvveenntt - get
+     service entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     _s_t_r_u_c_t _s_e_r_v_e_n_t _*
+     ggeettsseerrvveenntt();
+
+     _s_t_r_u_c_t _s_e_r_v_e_n_t _*
+     ggeettsseerrvvbbyynnaammee(_c_h_a_r _*_n_a_m_e, _c_h_a_r _*_p_r_o_t_o);
+
+     _s_t_r_u_c_t _s_e_r_v_e_n_t _*
+     ggeettsseerrvvbbyyppoorrtt(_i_n_t _p_o_r_t, _p_r_o_t_o);
+
+     _v_o_i_d
+     sseettsseerrvveenntt(_i_n_t _s_t_a_y_o_p_e_n);
+
+     _v_o_i_d
+     eennddsseerrvveenntt(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettsseerrvveenntt(), ggeettsseerrvvbbyynnaammee(), and ggeettsseerrvvbbyyppoorrtt() functions each re-
+     turn a pointer to an object with the following structure containing the
+     broken-out fields of a line in the network services data base,
+     _/_e_t_c_/_s_e_r_v_i_c_e_s.
+
+           struct  servent {
+                   char    *s_name;        /* official name of service */
+                   char    **s_aliases;    /* alias list */
+                   int     s_port;         /* port service resides at */
+                   char    *s_proto;       /* protocol to use */
+           };
+
+     The members of this structure are:
+
+     _s___n_a_m_e     The official name of the service.
+
+     _s___a_l_i_a_s_e_s  A zero terminated list of alternate names for the service.
+
+     _s___p_o_r_t     The port number at which the service resides.  Port numbers
+                are returned in network byte order.
+
+     _s___p_r_o_t_o    The name of the protocol to use when contacting the service.
+
+     The ggeettsseerrvveenntt() function reads the next line of the file, opening the
+     file if necessary.
+
+     The sseettsseerrvveenntt() function opens and rewinds the file.  If the _s_t_a_y_o_p_e_n
+     flag is non-zero, the net data base will not be closed after each call to
+     ggeettsseerrvvbbyynnaammee() or ggeettsseerrvvbbyyppoorrtt().
+
+     The eennddsseerrvveenntt() function closes the file.
+
+     The ggeettsseerrvvbbyynnaammee() and ggeettsseerrvvbbyyppoorrtt() functions sequentially search
+     from the beginning of the file until a matching protocol name or port
+     number is found, or until EOF is encountered.  If a protocol name is also
+     supplied (non- NULL), searches must also match the protocol.
+
+FFIILLEESS
+
+
+     /etc/services
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer (0) returned on EOF or error.
+
+SSEEEE AALLSSOO
+     getprotoent(3),  services(5)
+
+HHIISSTTOORRYY
+     The ggeettsseerrvveenntt(), ggeettsseerrvvbbyyppoorrtt(), ggeettsseerrvvbbyynnaammee(), sseettsseerrvveenntt(), and
+     eennddsseerrvveenntt() functions appeared in 4.2BSD.
+
+BBUUGGSS
+     These functions use static data storage; if the data is needed for future
+     use, it should be copied before any subsequent calls overwrite it.  Ex-
+     pecting port numbers to fit in a 32 bit quantity is probably naive.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,157 @@
+STAT(2)                     BSD Programmer's Manual                    STAT(2)
+
+NNAAMMEE
+     ssttaatt, llssttaatt, ffssttaatt - get file status
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssttaatt..hh>>
+
+     _i_n_t
+     ssttaatt(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _s_t_r_u_c_t _s_t_a_t _*_b_u_f);
+
+     _i_n_t
+     llssttaatt(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _s_t_r_u_c_t _s_t_a_t _*_b_u_f);
+
+     _i_n_t
+     ffssttaatt(_i_n_t _f_d, _s_t_r_u_c_t _s_t_a_t _*_b_u_f);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttaatt() function obtains information about the file pointed to by
+     _p_a_t_h. Read, write or execute permission of the named file is not re-
+     quired, but all directories listed in the path name leading to the file
+     must be seachable.
+
+     LLssttaatt() is like ssttaatt() except in the case where the named file is a sym-
+     bolic link, in which case llssttaatt() returns information about the link,
+     while ssttaatt() returns information about the file the link references.  Un-
+     like other filesystem objects, symbolic links do not have an owner,
+     group, access mode, times, etc.  Instead, these attributes are taken from
+     the directory that contains the link.  The only attributes returned from
+     an llssttaatt() that refer to the symbolic link itself are the file type
+     (S_IFLNK), size, blocks, and link count (always 1).
+
+     The ffssttaatt() obtains the same information about an open file known by the
+     file descriptor _f_d, such as would be obtained by an open call.
+
+     _B_u_f is a pointer to a ssttaatt() structure as defined by <_s_y_s_/_s_t_a_t_._h> (shown
+     below) and into which information is placed concerning the file.
+
+     struct stat {
+         dev_t    st_dev;    /* device inode resides on */
+         ino_t    st_ino;    /* inode's number */
+         mode_t   st_mode;   /* inode protection mode */
+         nlink_t  st_nlink;  /* number or hard links to the file */
+         uid_t    st_uid;    /* user-id of owner */
+         gid_t    st_gid;    /* group-id of owner */
+         dev_t    st_rdev;   /* device type, for special file inode */
+         off_t    st_size;   /* file size, in bytes */
+         time_t   st_atime;  /* time of last access */
+         long     st_spare1;
+         time_t   st_mtime;  /* time of last data modification */
+         long     st_spare2;
+         time_t   st_ctime;  /* time of last file status change */
+         long     st_spare3;
+         long     st_blksize;/* optimal file sys I/O ops blocksize */
+         long     st_blocks; /* blocks allocated for file */
+         u_long   st_flags;  /* user defined flags for file */
+         u_long   st_gen;    /* file generation number */
+     };
+
+     The time-related fields of _s_t_r_u_c_t _s_t_a_t are as follows:
+
+     st_atime   Time when file data last accessed.  Changed by the following
+
+
+                system calls: mknod(2),  utimes(2),  and read(2).
+
+     st_mtime   Time when file data last modified.  Changed by the following
+                system calls: mknod(2),  utimes(2),  write(2).
+
+     st_ctime   Time when file status was last changed (inode data modifica-
+                tion).  Changed by the following system calls: chmod(2)
+                chown(2),  link(2),  mknod(2),  rename(2),  unlink(2),
+                utimes(2),  write(2).
+
+     st_blocks  The actual number of blocks allocated for the file in 512-byte
+                units.
+
+     The status information word _s_t___m_o_d_e has bits:
+
+     #define S_IFMT 0170000           /* type of file */
+     #define        S_IFIFO  0010000  /* named pipe (fifo) */
+     #define        S_IFCHR  0020000  /* character special */
+     #define        S_IFDIR  0040000  /* directory */
+     #define        S_IFBLK  0060000  /* block special */
+     #define        S_IFREG  0100000  /* regular */
+     #define        S_IFLNK  0120000  /* symbolic link */
+     #define        S_IFSOCK 0140000  /* socket */
+     #define S_ISUID 0004000  /* set user id on execution */
+     #define S_ISGID 0002000  /* set group id on execution */
+     #define S_ISVTX 0001000  /* save swapped text even after use */
+     #define S_IRUSR 0000400  /* read permission, owner */
+     #define S_IWUSR 0000200  /* write permission, owner */
+     #define S_IXUSR 0000100  /* execute/search permission, owner */
+
+     For a list of access modes, see <_s_y_s_/_s_t_a_t_._h>, access(2) and chmod(2).
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     SSttaatt() and llssttaatt() will fail if:
+
+     [ENOTDIR]       A component of the path prefix is not a directory.
+
+     [EINVAL]        The pathname contains a character with the high-order bit
+                     set.
+
+     [ENAMETOOLONG]  A component of a pathname exceeded 255 characters, or an
+                     entire path name exceeded 1023 characters.
+
+     [ENOENT]        The named file does not exist.
+
+     [EACCES]        Search permission is denied for a component of the path
+                     prefix.
+
+     [ELOOP]         Too many symbolic links were encountered in translating
+                     the pathname.
+
+     [EFAULT]        _B_u_f or _n_a_m_e points to an invalid address.
+
+     [EIO]           An I/O error occurred while reading from or writing to
+                     the file system.
+
+     FFssttaatt() will fail if:
+
+     [EBADF]   _f_d is not a valid open file descriptor.
+
+
+
+     [EFAULT]  _B_u_f points to an invalid address.
+
+     [EIO]     An I/O error occurred while reading from or writing to the file
+               system.
+
+CCAAVVEEAATT
+     The fields in the stat structure currently marked _s_t___s_p_a_r_e_1, _s_t___s_p_a_r_e_2,
+     and _s_t___s_p_a_r_e_3 are present in preparation for inode time stamps expanding
+     to 64 bits.  This, however, can break certain programs that depend on the
+     time stamps being contiguous (in calls to utimes(2)).
+
+SSEEEE AALLSSOO
+     chmod(2),  chown(2),  utimes(2) symlink(7)
+
+BBUUGGSS
+     Applying fstat to a socket (and thus to a pipe) returns a zero'd buffer,
+     except for the blocksize field, and a unique device and inode number.
+
+SSTTAANNDDAARRDDSS
+     The ssttaatt() and ffssttaatt() function calls are expected to conform to IEEE Std
+     1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     A llssttaatt function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                3

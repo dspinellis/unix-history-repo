@@ -1,0 +1,181 @@
+GETSOCKOPT(2)               BSD Programmer's Manual              GETSOCKOPT(2)
+
+NNAAMMEE
+     ggeettssoocckkoopptt, sseettssoocckkoopptt - get and set options on sockets
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     ggeettssoocckkoopptt(_i_n_t _s, _i_n_t _l_e_v_e_l, _i_n_t _o_p_t_n_a_m_e, _v_o_i_d _*_o_p_t_v_a_l, _i_n_t _*_o_p_t_l_e_n);
+
+     _i_n_t
+     sseettssoocckkoopptt(_i_n_t _s, _i_n_t _l_e_v_e_l, _i_n_t _o_p_t_n_a_m_e, _c_o_n_s_t _v_o_i_d _*_o_p_t_v_a_l,
+             _i_n_t _o_p_t_l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     GGeettssoocckkoopptt() and sseettssoocckkoopptt() manipulate the _o_p_t_i_o_n_s associated with a
+     socket.  Options may exist at multiple protocol levels; they are always
+     present at the uppermost ``socket'' level.
+
+     When manipulating socket options the level at which the option resides
+     and the name of the option must be specified.  To manipulate options at
+     the socket level, _l_e_v_e_l is specified as SOL_SOCKET. To manipulate options
+     at any other level the protocol number of the appropriate protocol con-
+     trolling the option is supplied.  For example, to indicate that an option
+     is to be interpreted by the TCP protocol, _l_e_v_e_l should be set to the pro-
+     tocol number of TCP; see getprotoent(3).
+
+     The parameters _o_p_t_v_a_l and _o_p_t_l_e_n are used to access option values for
+     sseettssoocckkoopptt().  For ggeettssoocckkoopptt() they identify a buffer in which the value
+     for the requested option(s) are to be returned.  For ggeettssoocckkoopptt(), _o_p_t_l_e_n
+     is a value-result parameter, initially containing the size of the buffer
+     pointed to by _o_p_t_v_a_l, and modified on return to indicate the actual size
+     of the value returned.  If no option value is to be supplied or returned,
+     _o_p_t_v_a_l may be NULL.
+
+     _O_p_t_n_a_m_e and any specified options are passed uninterpreted to the appro-
+     priate protocol module for interpretation.  The include file
+     <_s_y_s_/_s_o_c_k_e_t_._h> contains definitions for socket level options, described
+     below.  Options at other protocol levels vary in format and name; consult
+     the appropriate entries in section 4 of the manual.
+
+     Most socket-level options utilize an _i_n_t parameter for _o_p_t_v_a_l. For
+     sseettssoocckkoopptt(), the parameter should be non-zero to enable a boolean op-
+     tion, or zero if the option is to be disabled.  SO_LINGER uses a _s_t_r_u_c_t
+     _l_i_n_g_e_r parameter, defined in <_s_y_s_/_s_o_c_k_e_t_._h>, which specifies the desired
+     state of the option and the linger interval (see below).  SO_SNDTIMEO and
+     SO_RCVTIMEO use a _s_t_r_u_c_t _t_i_m_e_v_a_l parameter, defined in <_s_y_s_/_t_i_m_e_._h>.
+
+     The following options are recognized at the socket level.  Except as not-
+     ed, each may be examined with ggeettssoocckkoopptt() and set with sseettssoocckkoopptt().
+
+           SO_DEBUG        enables recording of debugging information
+           SO_REUSEADDR    enables local address reuse
+           SO_REUSEPORT    enables duplicate address and port bindings
+           SO_KEEPALIVE    enables keep connections alive
+           SO_DONTROUTE    enables routing bypass for outgoing messages
+           SO_LINGER       linger on close if data present
+           SO_BROADCAST    enables permission to transmit broadcast messages
+           SO_OOBINLINE    enables reception of out-of-band data in band
+           SO_SNDBUF       set buffer size for output
+           SO_RCVBUF       set buffer size for input
+
+
+           SO_SNDLOWAT     set minimum count for output
+           SO_RCVLOWAT     set minimum count for input
+           SO_SNDTIMEO     set timeout value for output
+           SO_RCVTIMEO     set timeout value for input
+           SO_TYPE         get the type of the socket (get only)
+           SO_ERROR        get and clear error on the socket (get only)
+
+     SO_DEBUG enables debugging in the underlying protocol modules.
+     SO_REUSEADDR indicates that the rules used in validating addresses sup-
+     plied in a bind(2) call should allow reuse of local addresses.
+     SO_REUSEPORT allows completely duplicate bindings by multiple processes
+     if they all set SO_REUSEPORT before binding the port.  This option per-
+     mits multiple instances of a program to each receive UDP/IP multicast or
+     broadcast datagrams destined for the bound port.  SO_KEEPALIVE enables
+     the periodic transmission of messages on a connected socket.  Should the
+     connected party fail to respond to these messages, the connection is con-
+     sidered broken and processes using the socket are notified via a SIGPIPE
+     signal when attempting to send data.  SO_DONTROUTE indicates that outgo-
+     ing messages should bypass the standard routing facilities.  Instead,
+     messages are directed to the appropriate network interface according to
+     the network portion of the destination address.
+
+     SO_LINGER controls the action taken when unsent messags are queued on
+     socket and a close(2) is performed.  If the socket promises reliable de-
+     livery of data and SO_LINGER is set, the system will block the process on
+     the close attempt until it is able to transmit the data or until it de-
+     cides it is unable to deliver the information (a timeout period, termed
+     the linger interval, is specified in the sseettssoocckkoopptt() call when SO_LINGER
+     is requested).  If SO_LINGER is disabled and a close is issued, the sys-
+     tem will process the close in a manner that allows the process to contin-
+     ue as quickly as possible.
+
+     The option SO_BROADCAST requests permission to send broadcast datagrams
+     on the socket.  Broadcast was a privileged operation in earlier versions
+     of the system.  With protocols that support out-of-band data, the
+     SO_OOBINLINE option requests that out-of-band data be placed in the nor-
+     mal data input queue as received; it will then be accessible with recv or
+     read calls without the MSG_OOB flag.  Some protocols always behave as if
+     this option is set.  SO_SNDBUF and SO_RCVBUF are options to adjust the
+     normal buffer sizes allocated for output and input buffers, respectively.
+     The buffer size may be increased for high-volume connections, or may be
+     decreased to limit the possible backlog of incoming data.  The system
+     places an absolute limit on these values.
+
+     SO_SNDLOWAT is an option to set the minimum count for output operations.
+     Most output operations process all of the data supplied by the call, de-
+     livering data to the protocol for transmission and blocking as necessary
+     for flow control.  Nonblocking output operations will process as much da-
+     ta as permitted subject to flow control without blocking, but will pro-
+     cess no data if flow control does not allow the smaller of the low water
+     mark value or the entire request to be processed.  A select(2) operation
+     testing the ability to write to a socket will return true only if the low
+     water mark amount could be processed.  The default value for SO_SNDLOWAT
+     is set to a convenient size for network efficiency, often 1024.
+     SO_RCVLOWAT is an option to set the minimum count for input operations.
+     In general, receive calls will block until any (non-zero) amount of data
+     is received, then return with smaller of the amount available or the
+     amount requested.  The default value for SO_RCVLOWAT is 1.  If
+     SO_RCVLOWAT is set to a larger value, blocking receive calls normally
+     wait until they have received the smaller of the low water mark value or
+     the requested amount.  Receive calls may still return less than the low
+     water mark if an error occurs, a signal is caught, or the type of data
+     next in the receive queue is different than that returned.
+
+     SO_SNDTIMEO is an option to set a timeout value for output operations.
+     It accepts a _s_t_r_u_c_t _t_i_m_e_v_a_l parameter with the number of seconds and mi-
+     croseconds used to limit waits for output operations to complete.  If a
+     send operation has blocked for this much time, it returns with a partial
+     count or with the error EWOULDBLOCK if no data were sent.  In the current
+     implementation, this timer is restarted each time additional data are de-
+     livered to the protocol, implying that the limit applies to output por-
+     tions ranging in size from the low water mark to the high water mark for
+     output.  SO_RCVTIMEO is an option to set a timeout value for input opera-
+     tions.  It accepts a _s_t_r_u_c_t _t_i_m_e_v_a_l parameter with the number of seconds
+     and microseconds used to limit waits for input operations to complete.
+     In the current implementation, this timer is restarted each time addi-
+     tional data are received by the protocol, and thus the limit is in effect
+     an inactivity timer.  If a receive operation has been blocked for this
+     much time without receiving additional data, it returns with a short
+     count or with the error EWOULDBLOCK if no data were received.
+
+     Finally, SO_TYPE and SO_ERROR are options used only with ggeettssoocckkoopptt().
+     SO_TYPE returns the type of the socket, such as SOCK_STREAM; it is useful
+     for servers that inherit sockets on startup.  SO_ERROR returns any pend-
+     ing error on the socket and clears the error status.  It may be used to
+     check for asynchronous errors on connected datagram sockets or for other
+     asynchronous errors.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 is returned if the call succeeds, -1 if it fails.
+
+EERRRROORRSS
+     The call succeeds unless:
+
+     [EBADF]        The argument _s is not a valid descriptor.
+
+     [ENOTSOCK]     The argument _s is a file, not a socket.
+
+     [ENOPROTOOPT]  The option is unknown at the level indicated.
+
+     [EFAULT]       The address pointed to by _o_p_t_v_a_l is not in a valid part of
+                    the process address space.  For ggeettssoocckkoopptt(), this error
+                    may also be returned if _o_p_t_l_e_n is not in a valid part of
+                    the process address space.
+
+SSEEEE AALLSSOO
+     ioctl(2),  socket(2),  getprotoent(3) protocols(5)
+
+BBUUGGSS
+     Several of the socket options should be handled at lower levels of the
+     system.
+
+HHIISSTTOORRYY
+     The ggeettssoocckkoopptt system call appeared in 4.2BSD.
+
+4.3-Reno Berkeley Distribution   June 5, 1993                                3

@@ -1,0 +1,36 @@
+MEMORY(3)                   BSD Programmer's Manual                  MEMORY(3)
+
+NNAAMMEE
+     mmaalllloocc, ffrreeee, rreeaalllloocc, ccaalllloocc, aallllooccaa - general memory allocation opera-
+     tions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d _*
+     mmaalllloocc(_s_i_z_e___t _s_i_z_e);
+
+     _v_o_i_d
+     ffrreeee(_v_o_i_d _*_p_t_r);
+
+     _v_o_i_d _*
+     rreeaalllloocc(_v_o_i_d _*_p_t_r, _s_i_z_e___t _s_i_z_e);
+
+     _v_o_i_d _*
+     ccaalllloocc(_s_i_z_e___t _n_e_l_e_m, _s_i_z_e___t _e_l_s_i_z_e);
+
+     _v_o_i_d _*
+     aallllooccaa(_s_i_z_e___t _s_i_z_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions allocate and free memory for the calling process.  They
+     are described in the individual manual pages.
+
+SSEEEE AALLSSOO
+     calloc(3),  free(3),  malloc(3),  realloc(3),  alloca(3),
+
+SSTTAANNDDAARRDDSS
+     These functions, with the exception of aallllooccaa() conform to ANSI C
+     X3.159-1989 (``ANSI C '').
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,35 @@
+SIGSUSPEND(2)               BSD Programmer's Manual              SIGSUSPEND(2)
+
+NNAAMMEE
+     ssiiggssuussppeenndd - atomically release blocked signals and wait for interrupt
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _i_n_t
+     ssiiggssuussppeenndd(_c_o_n_s_t _s_i_g_s_e_t___t _*_s_i_g_m_a_s_k);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSiiggssuussppeenndd() temporarily changes the blocked signal mask to the set to
+     which _s_i_g_m_a_s_k points, and then waits for a signal to arrive; on return
+     the previous set of masked signals is restored.  The signal mask set is
+     usually empty to indicate that all signals are to be unblocked for the
+     duration of the call.
+
+     In normal usage, a signal is blocked using sigprocmask(2) to begin a
+     critical section, variables modified on the occurrence of the signal are
+     examined to determine that there is no work to be done, and the process
+     pauses awaiting work by using ssiiggssuussppeenndd() with the previous mask re-
+     turned by sigprocmask.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssiiggssuussppeenndd() function always terminates by being interrupted, return-
+     ing -1 with _e_r_r_n_o set to EINTR.
+
+SSEEEE AALLSSOO
+     sigprocmask(2),  sigaction(2),  sigsetops(3)
+
+SSTTAANNDDAARRDDSS
+     The ssiiggssuuppeenndd function call conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+4.4BSD                           June 4, 1993                                1

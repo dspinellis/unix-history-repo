@@ -1,0 +1,37 @@
+PSIGNAL(3)                  BSD Programmer's Manual                 PSIGNAL(3)
+
+NNAAMMEE
+     ppssiiggnnaall, ssyyss__ssiigglliisstt ssyyss__ssiiggnnaammee - system signal messages
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssiiggnnaall..hh>>
+
+     _v_o_i_d
+     ppssiiggnnaall(_u_n_s_i_g_n_e_d _s_i_g, _c_o_n_s_t _c_h_a_r _*_s);
+
+     _e_x_t_e_r_n _c_h_a_r _*_s_y_s___s_i_g_l_i_s_t_[_]_;
+     _e_x_t_e_r_n _c_h_a_r _*_s_y_s___s_i_g_n_a_m_e_[_]_;
+
+DDEESSCCRRIIPPTTIIOONN
+     The ppssiiggnnaall() function locates the descriptive message string for the
+     given signal number _s_i_g and writes it to the standard error.
+
+     If the argument _s is non-NULL it is written to the standard error file
+     descriptor prior to the message string, immediately followed by a colon
+     and a space.  If the signal number is not recognized (sigaction(2)),  the
+     string ``Unknown signal'' is produced.
+
+     The message strings can be accessed directly through the external array
+     _s_y_s___s_i_g_l_i_s_t, indexed by recognized signal numbers.  The external array
+     _s_y_s___s_i_g_n_a_m_e is used similarly and contains short, lower-case abbrevia-
+     tions for signals which are useful for recognizing signal names in user
+     input.  The defined variable NSIG contains a count of the strings in
+     _s_y_s___s_i_g_l_i_s_t and _s_y_s___s_i_g_n_a_m_e.
+
+SSEEEE AALLSSOO
+     sigaction(2),  perror(3)
+
+HHIISSTTOORRYY
+     The ppssiiggnnaall() function appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1
