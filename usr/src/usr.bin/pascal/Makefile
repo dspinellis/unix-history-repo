@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 
@@ -22,7 +22,8 @@ SUBDIR=	pi pc0 px pxp pdx man utilities
 
 all clean cleandir install lint tags:
 	for i in eyacc ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
@@ -31,4 +32,5 @@ depend:
 	(cd eyacc; make ${MFLAGS} depend)
 	(cd eyacc; make ${MFLAGS} all)
 	for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} depend); done
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} depend); done
