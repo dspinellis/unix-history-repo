@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -126,42 +126,6 @@ main(argc, argv)
 		prtstat(&statfsbuf);
 	}
 	exit(0);
-}
-
-long
-getmntinfo(mntbufp)
-	struct statfs **mntbufp;
-{
-	int i;
-	static long mntsize;
-	static struct statfs *mntbuf = 0;
-	char *malloc();
-
-	if (mntbuf) {
-		*mntbufp = mntbuf;
-		return (mntsize);
-	}
-	if ((mntsize = getfsstat((struct statfs *)0, 0)) < 0) {
-		perror("df");
-		exit(1);
-	}
-	mntbuf = 0;
-	do {
-		if (mntbuf)
-			free((char *)mntbuf);
-		i = (mntsize + 1) * sizeof(struct statfs);
-		if ((mntbuf = (struct statfs *)malloc((unsigned)i)) == 0) {
-			fprintf(stderr,
-			    "df: no space for mount table buffer\n");
-			exit(1);
-		}
-		if ((mntsize = getfsstat(mntbuf, i)) < 0) {
-			perror("df");
-			exit(1);
-		}
-	} while (i == mntsize * sizeof(struct statfs));
-	*mntbufp = mntbuf;
-	return (mntsize);
 }
 
 char *
