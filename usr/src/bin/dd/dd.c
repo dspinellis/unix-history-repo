@@ -16,21 +16,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdio.h>
+
 #include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "dd.h"
 #include "extern.h"
 
@@ -40,7 +42,7 @@ static void setup __P((void));
 
 IO	in, out;		/* input/output state */
 STAT	st;			/* statistics */
-void	(*cfunc)();		/* conversion function */
+void	(*cfunc) __P((void));	/* conversion function */
 u_long	cpy_cnt;		/* # of blocks to copy */
 u_int	ddflags;		/* conversion options */
 u_int	cbsz;			/* conversion block size */
@@ -198,7 +200,7 @@ dd_in()
 			if (flags & (C_BLOCK|C_UNBLOCK))
 				memset(in.dbp, ' ', in.dbsz);
 			else
-				bzero(in.dbp, in.dbsz);
+				memset(in.dbp, 0, in.dbsz);
 
 		n = read(in.fd, in.dbp, in.dbsz);
 		if (n == 0) {
@@ -348,6 +350,6 @@ dd_out(force)
 
 	/* Reassemble the output block. */
 	if (out.dbcnt)
-		bcopy(out.dbp - out.dbcnt, out.db, out.dbcnt);
+		memmove(out.db, out.dbp - out.dbcnt, out.dbcnt);
 	out.dbp = out.db + out.dbcnt;
 }
