@@ -3,10 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttychars.h	7.3 (Berkeley) %G%
+ *	@(#)ttychars.h	7.3 (Berkeley) 10/18/88
  */
 
 /*
+ * 4.3 COMPATIBILITY FILE
+ *
  * User visible structures and constants
  * related to terminal handling.
  */
@@ -29,11 +31,7 @@ struct ttychars {
 	char	tc_werasc;	/* word erase */
 	char	tc_lnextc;	/* literal next character */
 };
-
-#ifdef KERNEL
-#include "ttydefaults.h"
-#else
-#include <sys/ttydefaults.h>
+#ifdef USE_OLD_TTY
+#include <sys/ttydefaults.h>	/* to pick up character defaults */
 #endif
-
-#endif
+#endif /* _TTYCHARS */
