@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.53 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -769,10 +769,14 @@ getla()
 #if LA_TYPE == LA_MACH
 
 /*
-**  This has been tested on NeXT release 2.1.
+**  This has been tested on NEXTSTEP release 2.1/3.X.
 */
 
-#include <mach.h>
+#if defined(NX_CURRENT_COMPILER_RELEASE) && NX_CURRENT_COMPILER_RELEASE > NX_COMPILER_RELEASE_3_0
+# include <mach/mach.h>
+#else
+# include <mach.h>
+#endif
 
 getla()
 {
