@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)errlst.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 char *sys_errlist[] = {
@@ -62,7 +62,7 @@ char *sys_errlist[] = {
 	"Protocol not available",		/* 42 - ENOPROTOOPT */
 	"Protocol not supported",		/* 43 - EPROTONOSUPPORT */
 	"Socket type not supported",		/* 44 - ESOCKTNOSUPPORT */
-	"Operation not supported on socket",	/* 45 - EOPNOTSUPP */
+	"Operation not supported",		/* 45 - EOPNOTSUPP */
 	"Protocol family not supported",	/* 46 - EPFNOSUPPORT */
 						/* 47 - EAFNOSUPPORT */
 	"Address family not supported by protocol family",
