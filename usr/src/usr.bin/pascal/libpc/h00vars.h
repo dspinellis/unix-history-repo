@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.7 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.8 %G%"; */
 
 #include <stdio.h>
 #include "whoami.h"
@@ -73,7 +73,7 @@ struct iorechd {
 	struct iorec	*flev;		/* ptr to associated file variable */
 	char		*pfname;	/* ptr to name of file */
 	short		funit;		/* file status flags */
-	short		fblk;		/* index into active file table */
+	unsigned short	fblk;		/* index into active file table */
 	long		fsize;		/* size of elements in the file */
 	char		fname[NAMSIZ];	/* name of associated UNIX file */
 };
@@ -87,7 +87,7 @@ struct iorec {
 	struct iorec	*flev;		/* ptr to associated file variable */
 	char		*pfname;	/* ptr to name of file */
 	short		funit;		/* file status flags */
-	short		fblk;		/* index into active file table */
+	unsigned short	fblk;		/* index into active file table */
 	long		fsize;		/* size of elements in the file */
 	char		fname[NAMSIZ];	/* name of associated UNIX file */
 	char		buf[BUFSIZ];	/* I/O buffer */
