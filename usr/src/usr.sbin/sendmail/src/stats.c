@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stats.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stats.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -68,6 +68,9 @@ poststats(sfile)
 	register int fd;
 	struct statistics stat;
 	extern off_t lseek();
+
+	if (sfile == NULL)
+		return;
 
 	(void) time(&Stat.stat_itime);
 	Stat.stat_size = sizeof Stat;
