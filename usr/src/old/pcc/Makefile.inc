@@ -1,5 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.2 (Berkeley) %G%
 
-.if exists(../Makefile.inc)
-.include "../Makefile.inc"
-.endif
+BINDIR?=	/usr/old/libexec
+MANDIR?=	/usr/share/man/old/cat
