@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -220,7 +220,7 @@ process(l, f)
 		return;
 	}
 	ip = (struct imp_leader *)buf;
-	ip->il_imp = ntohs((u_short)ip->il_imp);
+	ip->il_imp = ntohs(ip->il_imp);
 	if (ip->il_format != IMP_NFF)
 		fn = impundef;
 	else {
@@ -238,9 +238,13 @@ process(l, f)
 	if (packettype >= 0 && ip->il_mtype != packettype)
 		return;
 	printf("%.24s: ", ctime(&f->sin_time));
+	if (f->sin_cc < sizeof(struct control_leader))
+		printf("(truncated header, %d bytes): ", f->sin_cc);
 	(*fn)(ip, f->sin_cc);
-	if (rawheader && fn != impundef)
+	if (rawheader && fn != impundef) {
+		putchar('\t');
 		impundef(ip, f->sin_cc);
+	}
 }
 
 impdata(ip, cc)
@@ -464,16 +468,20 @@ impready(ip)
 	printf("ready\n");
 }
 
-impundef(ip)
+impundef(ip, len)
 	register struct imp_leader *ip;
 {
 	printf("<fmt=%x, net=%x, flags=%x, mtype=", ip->il_format,
 		ip->il_network, ip->il_flags);
-	printf("%x, htype=%x, host=%x, imp=%x, link=", ip->il_mtype,
-		ip->il_htype, ip->il_host, ip->il_imp);
+	printf("%x, htype=%x,\n\t host=%d(x%x), imp=%d(x%x), link=",
+		ip->il_mtype, ip->il_htype, ip->il_host, ip->il_host,
+		ip->il_imp, ip->il_imp);
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
-		printf("%d,", ip->il_link);
-	printf(" subtype=%x>\n", ip->il_subtype);
+		printf("%d (x%x),", ip->il_link, ip->il_link);
+	printf(" subtype=%x", ip->il_subtype);
+	if (len >= sizeof(struct imp_leader) && ip->il_length)
+		printf(" len=%d bytes", ntohs((u_short)ip->il_length) >> 3);
+	printf(">\n");
 }
