@@ -1,8 +1,8 @@
-.\" @(#)Add.Reno.86.for	1.1 (CSRG - distribution) %G%
+.\" @(#)Add.Reno.86.for	1.2 (CSRG - distribution) %G%
 .ND
+.OF '23 April 1991'''
 .nh
 .nr LL 6.75i
-.LP
 .ce 5
 RENO ADDENDUM
 .sp 2
@@ -29,7 +29,8 @@ with the following additional terms and conditions:
 4.3BSD-Reno is a test release.
 .IP 2.
 Sublicensing of 4.3BSD-Reno is allowed only until one (1) year after the
-first shipment by Regents to any licensee of 4.4BSD.
+first shipment by Regents to any licensee of 4.4BSD, following the
+announcement of availability of 4.4BSD to the general public.
 .IP 3.
 Licensee may not include 4.3BSD-Reno or any portion thereof in any
 sublicenses entered into after the one (1) year period specified above.
@@ -37,10 +38,10 @@ sublicenses entered into after the one (1) year period specified above.
 After the one (1) year period specified above, Licensee may continue
 to use 4.3BSD-Reno for its internal purposes only.
 .IP 5.
-After the first shipment by Regents to any licensee of 4.4BSD, Licensee
-shall endeavor to replace any 4.3BSD-Reno software or
-software derived from 4.3BSD-Reno sublicensed to others with
-equivalent portions of 4.4BSD.
+After the first shipment of 4.4BSD specified in (2) above,
+Licensee shall endeavor to make available to its sublicensees
+a software version based on 4.4BSD to replace any 4.3BSD-Reno derived
+software previously provided to its sublicensees.
 .sp 1
 .RE
 .LP
