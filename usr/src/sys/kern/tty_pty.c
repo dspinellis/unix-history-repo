@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.18 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.19 (Berkeley) %G%
  */
 
 /*
@@ -358,7 +358,7 @@ ptcselect(dev, rw)
 			    if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG-2)
 				    return (1);
 			    if (tp->t_canq.c_cc == 0 &&
-			        tp->t_flags & (RAW|CBREAK) == 0)
+			        (tp->t_flags & (RAW|CBREAK)) == 0)
 				    return (1);
 			}
 		}
