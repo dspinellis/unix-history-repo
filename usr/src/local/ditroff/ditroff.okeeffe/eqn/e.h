@@ -1,4 +1,4 @@
-/*	e.h	(CWI)	1.1	85/03/01	*/
+/*	e.h	(CWI)	1.2	85/03/12	*/
 #include <stdio.h>
 
 
@@ -29,6 +29,7 @@ extern int	ttype;		/* actual type of typesetter: */
 #define	DEV202	2
 #define	DEVAPS	3
 #define DEVHAR	4
+#define DEVVER	5
 
 extern FILE	*curfile;	/* current input file */
 extern int	ifile;	/* input file number */
