@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.18 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)addbytes.c	5.17 (Berkeley) %G%";
 int
 waddbytes(win, bytes, count)
 	WINDOW *win;
-	char *bytes;
+	const char *bytes;
 	int count;
 {
 	__waddbytes(win, bytes, count, 0);
@@ -31,7 +31,7 @@ waddbytes(win, bytes, count)
 int
 __waddbytes(win, bytes, count, so)
 	register WINDOW *win;
-	register char *bytes;
+	register const char *bytes;
 	register int count;
 	int so;
 {
