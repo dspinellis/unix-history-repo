@@ -326,6 +326,15 @@ oops:
 	lseek(tfile, 0l, 0);
 	if (write(tfile, (char *) &H, sizeof H) != sizeof H)
 		goto oops;
+#ifdef notdef
+	/*
+	 * This will insure that exrecover gets as much
+	 * back after a crash as is absolutely possible,
+	 * but can result in pregnant pauses between commands
+	 * when the TSYNC call is made, so...
+	 */
+	(void) fsync(tfile);
+#endif
 }
 
 TSYNC()
