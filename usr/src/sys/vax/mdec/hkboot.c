@@ -4,7 +4,8 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* @(#)hkboot.c	7.1 (Berkeley) %G% */
+/* @(#)hkboot.c	7.2 (Berkeley) %G% */
+#include <sys/disklabel.h>
 
 	.set	MAJOR,3		/* major("/dev/hk0a") */
 
@@ -48,6 +49,17 @@ init:
 	bicw2	$0xf000,r5		/* remove from r5 */
 	insv	r4,$8,$8,r10		/* set partition */
 	movl	r5,r11			/* boot flags */
+	brw	start0
+
+/*
+ * Leave space for pack label.
+ */
+pad:
+	.space	LABELOFFSET - (pad - init)
+packlabel:
+	.space	d_end_
+
+start0:
 	movl	physUBA[r9],r9		/* UNIBUS adaptor address */
 	movl	r2,r8			/* boot device CSR */
 	movl	r3,r7			/* unit number */
@@ -82,9 +94,9 @@ start2:
 	movw	$-PROGSIZE/2,HK_wc(r8)
 	clrl	r0
 1:
-#	bisl3	$0x80000000,r0,UBA_MAP(r9)
-#	addl2	$4,r9
-#	aobleq	$BOOTSIZE,r0,1b
+/*	bisl3	$0x80000000,r0,UBA_MAP(r9) */
+/*	addl2	$4,r9 */
+/*	aobleq	$BOOTSIZE,r0,1b */
 	clrw	HK_ba(r8)
 	movw	$HK_SEL7+HK_RCOM+HK_GO,HK_cs1(r8)
 hkrdy:

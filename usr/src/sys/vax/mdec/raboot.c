@@ -4,7 +4,8 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* "@(#)raboot.c	7.1 (Berkeley) %G%" */
+/* "@(#)raboot.c	7.2 (Berkeley) %G%" */
+#include <sys/disklabel.h>
 
 	.set	MAJOR,9			/* major("/dev/ra0a") */
 
@@ -35,6 +36,17 @@ start:
 	movl	r1,r9			/* UNIBUS I/O page address */
 	movl	r2,r8			/* boot device CSR */
 	movl	r3,r7			/* unit number */
+	brw	start0
+
+/*
+ * Leave space for pack label.
+ */
+pad:
+	.space	LABELOFFSET - (pad - init)
+packlabel:
+	.space	d_end_
+
+start0:
 	movl	$RELOC,sp
 	moval	init,r4
 	movc3	$end,(r4),(sp)
