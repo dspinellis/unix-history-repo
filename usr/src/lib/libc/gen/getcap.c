@@ -409,7 +409,7 @@ tc_exp:	{
 					break;
 				else
 					if (*s++ == ':') {
-						*(s-1) = '\0';
+						*(s - 1) = '\0';
 						break;
 					}
 			tcstart = tc - 3;
@@ -424,7 +424,7 @@ tc_exp:	{
 				if (iret == 1)
 					tc_not_resolved = 1;
 				if (iret == -1) {
-					*(s-1) = ':';			
+					*(s - 1) = ':';			
 					scan = s - 1;
 					tc_not_resolved = 1;
 					continue;
@@ -507,7 +507,12 @@ tc_exp:	{
 		(void)close(fd);
 	*len = rp - record - 1;	/* don't count NUL */
 	if (r_end > rp)
-		record = realloc(record, (size_t)(rp - record));
+		if ((record = 
+		     realloc(record, (size_t)(rp - record))) == NULL) {
+			errno = ENOMEM;
+			return (-2);
+		}
+		
 	*cap = record;
 	if (tc_not_resolved)
 		return (1);
@@ -820,7 +825,8 @@ cgetstr(buf, cap, str)
 	 * Give back any extra memory and return value and success.
 	 */
 	if (m_room != 0)
-		mem = realloc(mem, (size_t)(mp - mem));
+		if ((mem = realloc(mem, (size_t)(mp - mem))) == NULL)
+			return (-2);
 	*str = mem;
 	return (len);
 }
@@ -892,7 +898,8 @@ cgetustr(buf, cap, str)
 	 * Give back any extra memory and return value and success.
 	 */
 	if (m_room != 0)
-		mem = realloc(mem, (size_t)(mp - mem));
+		if ((mem = realloc(mem, (size_t)(mp - mem))) == NULL)
+			return (-2);
 	*str = mem;
 	return (len);
 }
