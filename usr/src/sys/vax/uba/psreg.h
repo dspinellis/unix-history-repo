@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)psreg.h	7.1 (Berkeley) %G%
+ *	@(#)psreg.h	7.2 (Berkeley) %G%
  */
 
 
@@ -22,19 +22,19 @@ struct psdevice {
 /*
  *	Possible ioctl's
  */
-#define PSIOAUTOREFRESH		_IO(p, 0)	/* auto refresh */
-#define PSIOSINGLEREFRESH	_IO(p, 1)	/* single refresh */
-#define PSIOAUTOMAP		_IO(p, 2)	/* auto map */
-#define PSIOSINGLEMAP		_IO(p, 3)	/* single map */
-#define PSIODOUBLEBUFFER	_IO(p, 4)	/* double buffer */
-#define PSIOSINGLEBUFFER	_IO(p, 5)	/* single buffer */
-#define PSIOWAITREFRESH		_IO(p, 6)	/* await refresh */
-#define PSIOWAITMAP		_IO(p, 7)	/* await map */
-#define PSIOWAITHIT		_IO(p, 8)	/* await hit */
-#define PSIOSTOPREFRESH		_IO(p, 9)	/* stop refresh */
-#define PSIOSTOPMAP		_IO(p,10)	/* stop map */
-#define PSIOGETADDR		_IOR(p,11, int)	/* get Unibus address */
-#define PSIOTIMEREFRESH		_IO(p,12)	/* time refresh */
+#define PSIOAUTOREFRESH		_IO('p', 0)		/* auto refresh */
+#define PSIOSINGLEREFRESH	_IO('p', 1)		/* single refresh */
+#define PSIOAUTOMAP		_IO('p', 2)		/* auto map */
+#define PSIOSINGLEMAP		_IO('p', 3)		/* single map */
+#define PSIODOUBLEBUFFER	_IO('p', 4)		/* double buffer */
+#define PSIOSINGLEBUFFER	_IO('p', 5)		/* single buffer */
+#define PSIOWAITREFRESH		_IO('p', 6)		/* await refresh */
+#define PSIOWAITMAP		_IO('p', 7)		/* await map */
+#define PSIOWAITHIT		_IO('p', 8)		/* await hit */
+#define PSIOSTOPREFRESH		_IO('p', 9)		/* stop refresh */
+#define PSIOSTOPMAP		_IO('p',10)		/* stop map */
+#define PSIOGETADDR		_IOR('p',11, int)	/* get Unibus address */
+#define PSIOTIMEREFRESH		_IO('p',12)		/* time refresh */
 
 /*
  *	Picture system io status register bits
