@@ -1,4 +1,4 @@
-/*	ffs_subr.c	6.2	84/02/07	*/
+/*	ffs_subr.c	6.3	84/07/10	*/
 
 #ifdef KERNEL
 #include "../h/param.h"
@@ -69,7 +69,7 @@ update()
 	 */
 	for (ip = inode; ip < inodeNINODE; ip++) {
 		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0 ||
-		    (ip->i_flag & (IACC|IUPD|ICHG) == 0))
+		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
 			continue;
 		ip->i_flag |= ILOCKED;
 		ip->i_count++;
