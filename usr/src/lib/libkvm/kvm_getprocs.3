@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_getprocs.3	5.3 (Berkeley) %G%
+.\"     @(#)kvm_getprocs.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_GETPROCS 3
@@ -101,14 +101,17 @@ is zero, no limit is imposed and all argument strings are returned in
 their entirety.
 .Pp
 The memory allocated to the argv pointers and string storage
-is owned by the kvm library.  Since subsequent kvm calls may clobber
-this storage, data must be copied out if it needs to be saved.
+is owned by the kvm library.  Subsequent 
+.Fn kvm_getprocs 
+and 
+.Xr kvm_close 3
+calls will clobber this storage.
 .Pp
 The
 .Fn kvm_getenvv
 function is similar to
 .Fn kvm_getargv
-but returns the vector of environment strings.  This is data is
+but returns the vector of environment strings.  This data is
 also alterable by the process.
 .Sh RETURN VALUES
 .Fn kvm_getprocs ,
