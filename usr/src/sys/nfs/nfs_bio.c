@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.38 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -123,6 +123,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 		    if (error)
 			return (error);
 		    if (np->n_lrev != np->n_brev ||
+			(np->n_flag & NQNFSNONCACHE) ||
 			((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
 			if (vp->v_type == VDIR) {
 			    np->n_direofoffset = 0;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.105 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.106 (Berkeley) %G%
  */
 
 /*
@@ -318,7 +318,8 @@ nfs_open(ap)
 		    } while (error == NQNFS_EXPIRED);
 		    if (error)
 			return (error);
-		    if (np->n_lrev != np->n_brev) {
+		    if (np->n_lrev != np->n_brev ||
+			(np->n_flag & NQNFSNONCACHE)) {
 			if ((error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred,
 				ap->a_p, 1)) == EINTR)
 				return (error);
