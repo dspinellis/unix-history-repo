@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmds.c	1.2 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -19,17 +19,13 @@ command(cmd)
                 ;
         if (*cp)
                 *cp++ = '\0';
-        if (strcmp(cmd, "quit") == 0)
+        if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
                 die();
-        if (strcmp(cmd, "status") == 0 || strcmp(cmd, "help") == 0) {
-                status();
-                return;
-        }
 	if (strcmp(cmd, "load") == 0) {
 		load();
 		return;
 	}
-	p = getcmd(cmd);
+	p = lookup(cmd);
         if (p != (struct cmdtab *)-1) {
                 if (curcmd == p)
                         return;
@@ -55,7 +51,7 @@ command(cmd)
         /* commands with arguments */
         for (; *cp && isspace(*cp); cp++)
                 ;
-        if (strcmp(cmd, "start") == 0) {
+        if (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0) {
                 int x;
 
                 if (*cp == '\0')
@@ -80,7 +76,7 @@ command(cmd)
 }
 
 struct cmdtab *
-getcmd(name)
+lookup(name)
 	register char *name;
 {
 	register char *p, *q;
