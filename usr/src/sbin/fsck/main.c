@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -209,8 +209,9 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	n_bfree = sblock.fs_cstotal.cs_nbfree;
 	pwarn("%ld files, %ld used, %ld free ",
 	    n_files, n_blks, n_ffree + sblock.fs_frag * n_bfree);
-	printf("(%ld frags, %ld blocks, %.1f%% fragmentation)\n",
-	    n_ffree, n_bfree, (float)(n_ffree * 100) / sblock.fs_dsize);
+	printf("(%ld frags, %ld blocks, %d.%d%% fragmentation)\n",
+	    n_ffree, n_bfree, (n_ffree * 100) / sblock.fs_dsize,
+	    ((n_ffree * 1000 + sblock.fs_dsize / 2) / sblock.fs_dsize) % 10);
 	if (debug &&
 	    (n_files -= maxino - ROOTINO - sblock.fs_cstotal.cs_nifree))
 		printf("%ld files missing\n", n_files);
