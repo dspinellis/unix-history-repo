@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 
@@ -21,7 +21,7 @@ int	null_hash(), null_netmatch(), null_output(),
 	null_portmatch(), null_portcheck(),
 	null_checkhost(), null_ishost(), null_canon();
 int	xnnet_hash(), xnnet_netmatch(), xnnet_output(),
-	xnnet_portmatch();
+	xnnet_portmatch(),
 	xnnet_checkhost(), xnnet_ishost(), xnnet_canon();
 #define NIL \
 	{ null_hash,		null_netmatch,		null_output, \
