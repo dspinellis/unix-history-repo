@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)mkdep.sh	5.4	(Berkeley)	%G%
+#	@(#)mkdep.sh	5.5	(Berkeley)	%G%
 #
 
 PATH=:/bin:/usr/bin:/usr/ucb
@@ -43,7 +43,7 @@ cat << _EOF_ >> $TMP
 
 _EOF_
 
-cc -M $* | /bin/sed -e "s; \./;;g" $SED | \
+cc -M $* | /bin/sed -e "s; \./; ;g" $SED | \
 	awk ' { \
 		if ($1 != prev) { \
 			if (rec != "") \
