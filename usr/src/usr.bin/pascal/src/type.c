@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)type.c 1.12 %G%";
+static char sccsid[] = "@(#)type.c 1.13 %G%";
 #endif
 
 #include "whoami.h"
@@ -266,14 +266,15 @@ tyscal(r)
 /*
  * Declare a subrange for conformant arrays.
  */
+struct nl *
 tycrang(r)
-	register int *r;
+	register struct tnode *r;
 {
 	register struct nl *p, *op, *tp;
 
 	tp = gtype(r->crang_ty.type);
-	if ( tp == NIL )
-		return (NIL);
+	if ( tp == NLNIL )
+		return (NLNIL);
 	/*
 	 * Just make a new type -- the lower and upper bounds must be
 	 * set by params().
