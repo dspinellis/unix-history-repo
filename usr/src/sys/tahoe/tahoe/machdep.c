@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.15 (Berkeley) %G%
+ *	@(#)machdep.c	7.16 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -386,12 +386,13 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
+struct sigreturn_args {
+	struct sigcontext *sigcntxp;
+};
 /* ARGSUSED */
 sigreturn(p, uap, retval)
 	struct proc *p;
-	struct args {
-		struct sigcontext *sigcntxp;
-	} *uap;
+	struct sigreturn_args *uap;
 	int *retval;
 {
 	register struct sigcontext *scp;
