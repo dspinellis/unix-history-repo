@@ -1,4 +1,4 @@
-/*	telnetd.c	4.1	82/02/28	*/
+/*	telnetd.c	4.2	82/03/01	*/
 
 /*
  * Stripped-down telnet server.
@@ -43,6 +43,15 @@ char	line[] = "/dev/ptyp0";
 
 struct	sockaddr_in sin = { AF_INET, swab(IPPORT_TELNET) };
 int	options = SO_ACCEPTCONN;
+
+/*
+ * Debugging hooks.  Turned on with a SIGTERM.
+ * Successive SIGTERM's toggle the switch.
+ */
+int	toggle();
+int	debug;
+FILE	*log;
+char	logfile[80] = "/tmp/teldebugx";
 
 main(argc, argv)
 	char *argv[];
@@ -98,6 +107,7 @@ doit(f)
 	printf("All network ports in use.\n");
 	exit(1);
 gotpty:
+	logfile[strlen("/tmp/teldebug")] = "0123456789abcdef"[i];
 	dup2(f, 0);
 	cp[strlen("/dev/")] = 't';
 	t = open("/dev/tty", 2);
@@ -145,6 +155,7 @@ telnet(f, p)
 	ioctl(p, FIONBIO, &on);
 	signal(SIGTSTP, SIG_IGN);
 	sigset(SIGCHLD, cleanup);
+	sigset(SIGTERM, toggle);
 
 	for (;;) {
 		int ibits = 0, obits = 0;
@@ -164,7 +175,12 @@ telnet(f, p)
 			ibits |= (1 << f);
 		if (ncc < 0 && pcc < 0)
 			break;
+		if (debug)
+			fprintf(log, "select: ibits=%d, obits=%d\n",
+				ibits, obits);
 		select(32, &ibits, &obits, INFINITY);
+		if (debug)
+			fprintf(log, "ibits=%d, obits=%d\n", ibits, obits);
 		if (ibits == 0 && obits == 0) {
 			sleep(5);
 			continue;
@@ -175,6 +191,8 @@ telnet(f, p)
 		 */
 		if (ibits & (1 << f)) {
 			ncc = read(f, netibuf, BUFSIZ);
+			if (debug)
+				fprintf(log, "read %d from net\n", ncc);
 			if (ncc < 0 && errno == EWOULDBLOCK)
 				ncc = 0;
 			else {
@@ -189,6 +207,8 @@ telnet(f, p)
 		 */
 		if (ibits & (1 << p)) {
 			pcc = read(p, ptyibuf, BUFSIZ);
+			if (debug)
+				fprintf(log, "read %d from pty\n", pcc);
 			if (pcc < 0 && errno == EWOULDBLOCK)
 				pcc = 0;
 			else {
@@ -390,7 +410,7 @@ willoption(option)
 		fmt = dont;
 		break;
 	}
-	sprintf(nfrontp, dont, option);
+	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(dont) - 2;
 }
 
@@ -510,6 +530,23 @@ netflush()
 	nbackp += n;
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
+}
+
+toggle()
+{
+	if (debug) {
+		fprintf(log, "log stopped\n");
+		if (log)
+			fclose(log);
+	} else {
+		if ((log = fopen(logfile, "a")) != NULL) {
+			setbuf(log, 0);
+			fprintf(log, "log started on /dev/pty%c\n",
+				logfile[strlen("/tmp/teldebug")]);
+			fprintf(log, "net=%d, pty=%d\n", net, pty);
+		}
+	}
+	debug = !debug;
 }
 
 cleanup()
