@@ -1,5 +1,5 @@
 /*
- *	@(#)disklabel.h	7.3 (Berkeley) %G%
+ *	@(#)disklabel.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -12,7 +12,6 @@
  * disk geometry, filesystem partitions, and drive specific information.
  * The label is in block 0 or 1, possibly offset from the beginning
  * to leave room for a bootstrap, etc.
- * All fields are stored in "standard" (network) byte order.
  */
 
 #define LABELSECTOR	0		/* sector containing label */
@@ -30,7 +29,6 @@ struct disklabel {
 	short	d_subtype;		/* controller/d_type specific */
 	char	d_typename[16];		/* type name, e.g. "eagle" */
 	char	d_name[16];		/* pack identifier */
-#define	d_swabfirst d_secsize
 
 			/* disk geometry: */
 	u_long	d_secsize;		/* # of bytes per sector */
@@ -45,8 +43,8 @@ struct disklabel {
 	 * Spare sectors are assumed to be physical sectors
 	 * which occupy space at the end of each track and/or cylinder.
 	 */
-	u_long	d_sparespertrack;	/* # of spare sectors per track */
-	u_long	d_sparespercyl;		/* # of spare sectors per cylinder */
+	u_short	d_sparespertrack;	/* # of spare sectors per track */
+	u_short	d_sparespercyl;		/* # of spare sectors per cylinder */
 	/*
 	 * Alternate cylinders include maintenance, replacement,
 	 * configuration description areas, etc.
@@ -54,7 +52,6 @@ struct disklabel {
 	u_long	d_acylinders;		/* # of alt. cylinders per unit */
 
 			/* hardware characteristics: */
-	u_long	d_rpm;			/* rotational speed */
 	/*
 	 * d_interleave, d_trackskew and d_cylskew describe perturbations
 	 * in the media format used to compensate for a slow controller.
@@ -71,9 +68,10 @@ struct disklabel {
 	 * Finally, d_cylskew is the offset of sector 0 on cylinder N
 	 * relative to sector 0 on cylinder N-1.
 	 */
-	u_long	d_interleave;		/* hardware sector interleave */
-	u_long	d_trackskew;		/* sector 0 skew, per track */
-	u_long	d_cylskew;		/* sector 0 skew, per cylinder */
+	u_short	d_rpm;			/* rotational speed */
+	u_short	d_interleave;		/* hardware sector interleave */
+	u_short	d_trackskew;		/* sector 0 skew, per track */
+	u_short	d_cylskew;		/* sector 0 skew, per cylinder */
 	u_long	d_headswitch;		/* head switch time, usec */
 	u_long	d_trkseek;		/* track-to-track seek, usec */
 	u_long	d_flags;		/* generic flags */
@@ -82,14 +80,12 @@ struct disklabel {
 #define NSPARE 5
 	u_long	d_spare[NSPARE];	/* reserved for future use */
 	u_long	d_magic2;		/* the magic number (again) */
-	u_long	d_checksum;		/* xor of data incl. partitions */
+	u_short	d_checksum;		/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
+	u_short	d_npartitions;		/* number of partitions in following */
 	u_long	d_bbsize;		/* size of boot area at sn0, bytes */
 	u_long	d_sbsize;		/* max size of fs superblock, bytes */
-#define	d_swablast d_sbsize
-	u_char	d_unused[3];		/* padding */
-	u_char	d_npartitions;		/* number of partitions in following */
 	struct	partition {		/* the partition table */
 		u_long	p_size;		/* number of sectors in partition */
 		u_long	p_offset;	/* starting sector */
@@ -102,7 +98,6 @@ struct disklabel {
 #else LOCORE
 	/*
 	 * offsets for asm boot files.
-	 * Warning: all fields in big-endian byte order!
 	 */
 	.set	d_secsize,40
 	.set	d_nsectors,44
@@ -110,7 +105,7 @@ struct disklabel {
 	.set	d_ncylinders,52
 	.set	d_secpercyl,56
 	.set	d_secperunit,60
-	.set	d_end_,292		/* size of disk label */
+	.set	d_end_,276		/* size of disk label */
 #endif LOCORE
 
 /* d_type values: */
