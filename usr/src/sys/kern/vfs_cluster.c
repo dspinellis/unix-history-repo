@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.39 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -185,10 +185,12 @@ bwrite(bp)
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
-	if ((flag & B_DELWRI) == 0)
-		p->p_stats->p_ru.ru_oublock++;		/* no one paid yet */
-	else
-		reassignbuf(bp, bp->b_vp);
+	if (flag & B_ASYNC) {
+		if ((flag & B_DELWRI) == 0)
+			p->p_stats->p_ru.ru_oublock++;	/* no one paid yet */
+		else
+			reassignbuf(bp, bp->b_vp);
+	}
 	trace(TR_BWRITE, pack(bp->b_vp, bp->b_bcount), bp->b_lblkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
@@ -204,6 +206,10 @@ bwrite(bp)
 	 */
 	if ((flag & B_ASYNC) == 0) {
 		error = biowait(bp);
+		if ((flag&B_DELWRI) == 0)
+			p->p_stats->p_ru.ru_oublock++;	/* no one paid yet */
+		else
+			reassignbuf(bp, bp->b_vp);
 		brelse(bp);
 	} else if (flag & B_DELWRI) {
 		bp->b_flags |= B_AGE;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.54 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.55 (Berkeley) %G%
  */
 
 /*
@@ -353,13 +353,11 @@ loop:
 		 * NB: This is really specific to ufs, but is done here
 		 * as it is easier and quicker.
 		 */
-		if (bp->b_vp == vp || (flags & B_SYNC) == 0) {
+		if (bp->b_vp == vp || (flags & B_SYNC) == 0)
 			(void) bawrite(bp);
-			s = splbio();
-		} else {
+		else
 			(void) bwrite(bp);
-			goto loop;
-		}
+		goto loop;
 	}
 	splx(s);
 	if ((flags & B_SYNC) == 0)
