@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.5 (Berkeley) %G%
+ *	@(#)stat.h	8.6 (Berkeley) %G%
  */
 
 #ifndef _SYS_STAT_H_
@@ -103,15 +103,16 @@ struct stat {
 #define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
 #define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
 #define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
-#define	S_ISFIFO(m)	((m & 0170000) == 0010000)	/* fifo */
+#define	S_ISFIFO(m)	((m & 0170000) == 0100000 || \
+			 (m & 0170000) == 0140000)	/* fifo or socket */
 #ifndef _POSIX_SOURCE
 #define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
-#define	S_ISSOCK(m)	((m & 0170000) == 0140000)	/* socket */
+#define	S_ISSOCK(m)	((m & 0170000) == 0100000 || \
+			 (m & 0170000) == 0140000)	/* fifo or socket */
 #endif
 
 #ifndef _POSIX_SOURCE
-							/* 0777 */
-#define	ACCESSPERMS	(S_IRWXU|S_IRWXG|S_IRWXO)
+#define	ACCESSPERMS	(S_IRWXU|S_IRWXG|S_IRWXO)	/* 0777 */
 							/* 7777 */
 #define	ALLPERMS	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
 							/* 0666 */
