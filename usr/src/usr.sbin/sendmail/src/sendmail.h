@@ -31,7 +31,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.27		%G%";
 # include <string.h>
 # include <time.h>
 # include <errno.h>
-# include <sys/un.h>
 
 # include "conf.h"
 # include "useful.h"
@@ -514,7 +513,9 @@ struct prival
 union bigsockaddr
 {
 	struct sockaddr		sa;	/* general version */
+#ifdef NETUNIX
 	struct sockaddr_un	sunix;	/* UNIX family */
+#endif
 #ifdef NETINET
 	struct sockaddr_in	sin;	/* INET family */
 #endif
@@ -579,7 +580,7 @@ EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
 EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
-EXTERN bool	CheckLoopBack;	/* check for loopback on HELO packet */
+extern bool	CheckLoopBack;	/* check for loopback on HELO packet */
 EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
