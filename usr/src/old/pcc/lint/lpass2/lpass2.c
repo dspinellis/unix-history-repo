@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.7	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -146,15 +146,17 @@ lread(m){ /* read a line into r.l */
 		if( r.l.decflag & LFN ){
 			/* new filename */
 #ifdef FLEXNAMES
-			r.f.fn = getstr();
+			r.f.fn = getstr(0);
 #endif
 			if( Pflag ) return( 1 );
 			setfno( r.f.fn );
 			continue;
 			}
 #ifdef FLEXNAMES
-		r.l.name = getstr();
-#endif
+		r.l.name = getstr(1);
+#else /* !FLEXNAMES */
+		portify(r.l.name);
+#endif /* !FLEXNAMES */
 		n = r.l.nargs;
 		if( n<0 ) n = -n;
 		if( n>=NTY ) error( "more than %d args?", n );
@@ -668,7 +670,7 @@ pty1( t, name, level ) TWORD t; {
 
 #ifdef FLEXNAMES
 char *
-getstr()
+getstr(doport)
 {
 	char buf[BUFSIZ];
 	register char *cp = buf;
@@ -683,6 +685,8 @@ getstr()
 		exit(1);
 	}
 	*cp++ = 0;
+	if (doport)
+		portify(buf);
 	return (hash(buf));
 }
 
@@ -783,3 +787,20 @@ hash(s)
 }
 char	*tstrbuf[1];
 #endif
+
+#include "ctype.h"
+
+portify(cp)
+register char *	cp;
+{
+	register int	i;
+
+	if (!pflag)
+		return;
+	for (i = 0; i < 6; ++i)
+		if (cp[i] == '\0')
+			return;
+		else if (isascii(cp[i]) && isupper(cp[i]))
+			cp[i] = tolower(cp[i]);
+	cp[i] = '\0';
+}
