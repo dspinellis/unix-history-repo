@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)last.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)last.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -87,7 +87,7 @@ main(ac, av)
 			print = want(bp);
 			if (print) {
 				ct = ctime(&bp->ut_time);
-				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s",
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s ",
 				    NMAX, NMAX, bp->ut_name,
 				    LMAX, LMAX, bp->ut_line,
 				    HMAX, HMAX, bp->ut_host,
@@ -108,7 +108,9 @@ main(ac, av)
 				}
 			}
 			if (print) {
-				if (otime == 0)
+				if (lineq(bp->ut_line, "~"))
+					printf("\n");
+				else if (otime == 0)
 					printf("  still logged in\n");
 				else {
 					long delta;
