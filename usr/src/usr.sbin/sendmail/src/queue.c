@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.72 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -158,7 +158,7 @@ queueup(df)
 		fprintf(tfp, "I%d/%d/%ld\n",
 			major(e->e_dfdev), minor(e->e_dfdev), e->e_dfino);
 
-	/* output type and name of data file */
+	/* output body type */
 	if (e->e_bodytype != NULL)
 		fprintf(tfp, "B%s\n", e->e_bodytype);
 	fprintf(f, "D%s\n", df);
@@ -1103,10 +1103,10 @@ readqf(e)
 	OpMode = MD_DELIVER;
 	ctladdr = NULL;
 	e->e_dfino = -1;
+	e->e_msgsize = -1;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
 		register char *p;
-		struct stat st;
 		u_long qflags;
 		ADDRESS *q;
 
@@ -1195,19 +1195,7 @@ readqf(e)
 			break;
 
 		  case 'D':		/* data file name */
-			e->e_df = newstr(&bp[1]);
-			e->e_dfp = fopen(e->e_df, "r");
-			if (e->e_dfp == NULL)
-			{
-				syserr("readqf: cannot open %s", e->e_df);
-				e->e_msgsize = -1;
-			}
-			else if (fstat(fileno(e->e_dfp), &st) >= 0)
-			{
-				e->e_msgsize = st.st_size;
-				e->e_dfdev = st.st_dev;
-				e->e_dfino = st.st_ino;
-			}
+			/* obsolete -- ignore */
 			break;
 
 		  case 'T':		/* init time */
@@ -1284,6 +1272,26 @@ readqf(e)
 		errno = 0;
 		e->e_flags |= EF_CLRQUEUE | EF_FATALERRS | EF_RESPONSE;
 	}
+	else
+	{
+		/*
+		**  Arrange to read the data file.
+		*/
+
+		p = queuename(e, 'd');
+		e->e_dfp = fopen(p, "r");
+		if (e->e_dfp == NULL)
+		{
+			syserr("readqf: cannot open %s", p);
+		}
+		else if (fstat(fileno(e->e_dfp), &st) >= 0)
+		{
+			e->e_msgsize = st.st_size;
+			e->e_dfdev = st.st_dev;
+			e->e_dfino = st.st_ino;
+		}
+	}
+
 	return TRUE;
 }
 /*

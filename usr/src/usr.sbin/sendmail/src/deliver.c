@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.131 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.132 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -221,7 +221,6 @@ sendall(e, mode)
 			ee->e_from.q_flags |= QDONTSEND;
 			ee->e_dfp = NULL;
 			ee->e_xfp = NULL;
-			ee->e_df = NULL;
 			ee->e_errormode = EM_MAIL;
 			ee->e_sibling = splitenv;
 			splitenv = ee;
@@ -239,15 +238,17 @@ sendall(e, mode)
 					q->q_flags &= ~QQUEUEUP;
 				}
 
-			if (e->e_df != NULL && mode != SM_VERIFY)
+			if (mode != SM_VERIFY && bitset(EF_HAS_DF, e->e_flags))
 			{
+				char df1buf[20], df2buf[20];
+
 				ee->e_dfp = NULL;
-				ee->e_df = queuename(ee, 'd');
-				ee->e_df = newstr(ee->e_df);
-				if (link(e->e_df, ee->e_df) < 0)
+				strcpy(df1buf, queuename(e, 'd'));
+				strcpy(df2buf, queuename(ee, 'd'));
+				if (link(df1buf, df2buf) < 0)
 				{
 					syserr("sendall: link(%s, %s)",
-						e->e_df, ee->e_df);
+						df1buf, df2buf);
 				}
 			}
 #ifdef LOG
@@ -334,15 +335,16 @@ sendall(e, mode)
 			/* be sure we leave the temp files to our child */
 			/* can't call unlockqueue to avoid unlink of xfp */
 			if (e->e_lockfp != NULL)
-				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+				(void) xfclose(e->e_lockfp, "sendenvelope lockfp", e->e_id);
 			e->e_lockfp = NULL;
 
 			/* close any random open files in the envelope */
 			closexscript(e);
 			if (e->e_dfp != NULL)
-				(void) xfclose(e->e_dfp, "sendenvelope", e->e_df);
+				(void) xfclose(e->e_dfp, "sendenvelope dfp", e->e_id);
 			e->e_dfp = NULL;
-			e->e_id = e->e_df = NULL;
+			e->e_id = NULL;
+			e->e_flags &= ~EF_HAS_DF;
 
 			/* catch intermediate zombie */
 			(void) waitfor(pid);
@@ -2063,13 +2065,15 @@ mailfile(filename, ctladdr, e)
 		}
 
 		/* we have to open the dfile BEFORE setuid */
-		if (e->e_dfp == NULL && e->e_df != NULL)
+		if (e->e_dfp == NULL && bitset(EF_HAS_DF, e->e_flags))
 		{
-			e->e_dfp = fopen(e->e_df, "r");
+			char *df = queuename(e, 'd');
+
+			e->e_dfp = fopen(df, "r");
 			if (e->e_dfp == NULL)
 			{
 				syserr("mailfile: Cannot open %s for %s from %s",
-					e->e_df, e->e_to, e->e_from.q_paddr);
+					df, e->e_to, e->e_from.q_paddr);
 			}
 		}
 

@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -238,7 +238,7 @@ mime8to7(mci, header, e, boundaries, flags)
 		/* remember where we were */
 		offset = ftell(e->e_dfp);
 		if (offset == -1)
-			syserr("mime8to7: cannot ftell on %s", e->e_df);
+			syserr("mime8to7: cannot ftell on df%s", e->e_id);
 
 		/* do a scan of this body type to count character types */
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
@@ -270,7 +270,7 @@ mime8to7(mci, header, e, boundaries, flags)
 		/* return to the original offset for processing */
 		/* XXX use relative seeks to handle >31 bit file sizes? */
 		if (fseek(e->e_dfp, offset, SEEK_SET) < 0)
-			syserr("mime8to7: cannot fseek on %s", e->e_df);
+			syserr("mime8to7: cannot fseek on df%s", e->e_id);
 	}
 
 	/*
