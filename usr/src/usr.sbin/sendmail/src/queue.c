@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.30		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.31		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.30		%G%);
+SCCSID(@(#)queue.c	3.31		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -73,6 +73,7 @@ queueup(df)
 	fprintf(f, "P%ld\n", CurEnv->e_msgpriority);
 
 	/* output macro definitions */
+	/* I don't think this is needed any more.....
 	for (i = 0; i < 128; i++)
 	{
 		extern char *Macro[128];
@@ -81,6 +82,7 @@ queueup(df)
 		if (p != NULL && i != (int) 'b')
 			fprintf(f, "M%c%s\n", i, p);
 	}
+	.....  */
 
 	/* output list of recipient addresses */
 	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
@@ -92,11 +94,13 @@ queueup(df)
 			printaddr(q, FALSE);
 		}
 # endif DEBUG
-		if (queueall || bitset(QQUEUEUP, q->q_flags))
+		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
+			       bitset(QQUEUEUP, q->q_flags))
 			fprintf(f, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */
+	define('g', "$f");
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
@@ -444,10 +448,17 @@ dowork(w)
 		**  CHILD
 		*/
 
+		/* set basic modes, etc. */
 		(void) alarm(0);
 		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
+
+		/* don't use the headers from sendmail.cf... */
+		CurEnv->e_header = NULL;
+		chompheader("from: $q", TRUE);
+
+		/* create the link to the control file during processing */
 		openxscrpt();
 		initsys();
 		readqf(w->w_name);
