@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.exec	5.1 (Berkeley) %G%
+ *	@(#)gram.exec	5.2 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,14 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.exec,v $
+ * Revision 5.2  85/12/18  20:17:38  donn
+ * Modified end_spec to insist on parser state INEXEC after seeing an
+ * executable statement.  This allows us to limit statement functions to
+ * parser state INDATA.
+ * 
+ * Revision 5.1  85/08/10  03:47:22  donn
+ * 4.3 alpha
+ * 
  * Revision 3.1  84/10/13  00:36:41  donn
  * Installed Jerry Berkman's version; preserved comment header.
  * 
@@ -182,6 +190,7 @@ end_spec:
 			startproc(PNULL, CLMAIN);
 			}
 		  if(parstate < INDATA) enddcl();
+		  parstate = INEXEC;
 		  if( yystno != 0 && thislabel->labtype != LABFORMAT)
 			if (optimflag)
 				optbuff (SKLABEL, 0, thislabel->labelno, 1);
