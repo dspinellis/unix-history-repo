@@ -1,10 +1,9 @@
-/*	if_vv.h	4.1	82/06/04	*/
+/*	if_vv.h	4.2	82/08/01	*/
 /*
  * Local network header for V2LNI Ring
  * This is arbitrated by "V2LNI-PEOPLE@MIT-MC"
  * (aka Joel N. Chiappa)
  */
-
 struct vv_header {
 	 /* the first two fields are required by the hardware */
 	u_char	vh_dhost;	/* destination address */
@@ -19,9 +18,15 @@ struct vv_header {
 
 /*
  * Packet types (protocol numbers) in v2lni header
+ *
+ * NOTE: the Trailer format stuff is lifted right out of
+ * the other drivers.  It will be changed to take advantage
+ * of the fields in the vv_header, but the packet throw-away
+ * code must first be improved.
  */
 #define	RING_IP		1
 #define	RING_IPTrailer	2
+#define	RING_IPNTrailer	16
 #define	RING_WHOAMI	0xa5	/* insure some bit transitions */
 
 #define	VV_BROADCAST	0	/* hardware-defined broadcast address */
