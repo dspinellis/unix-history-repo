@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.61	82/07/24	*/
+/*	tcp_usrreq.c	1.62	82/09/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,11 +33,11 @@ struct	tcpcb *tcp_newtcpcb();
  * then m is the mbuf chain of send data.  If this is a timer expiration
  * (called from the software clock routine), then timertype tells which timer.
  */
-tcp_usrreq(so, req, m, addr)
+tcp_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;
-	struct mbuf *m;
-	caddr_t addr;
+	struct mbuf *m, *nam;
+	struct socketopt *opt;
 {
 	register struct inpcb *inp = sotoinpcb(so);
 	register struct tcpcb *tp;
@@ -49,16 +49,6 @@ tcp_usrreq(so, req, m, addr)
 	 * When a TCP is attached to a socket, then there will be
 	 * a (struct inpcb) pointed at by the socket, and this
 	 * structure will point at a subsidary (struct tcpcb).
-	 * The normal sequence of events is:
-	 *	PRU_ATTACH		creating these structures
-	 *	PRU_CONNECT		connecting to a remote peer
-	 *	(PRU_SEND|PRU_RCVD)*	exchanging data
-	 *	PRU_DISCONNECT		disconnecting from remote peer
-	 *	PRU_DETACH		deleting the structures
-	 * With the operations from PRU_CONNECT through PRU_DISCONNECT
-	 * possible repeated several times.
-	 *
-	 * MULTIPLE CONNECTS ARE NOT YET IMPLEMENTED.
 	 */
 	if (inp == 0 && req != PRU_ATTACH) {
 		splx(s);
@@ -66,6 +56,7 @@ tcp_usrreq(so, req, m, addr)
 	}
 	if (inp) {
 		tp = intotcpcb(inp);
+		/* WHAT IF TP IS 0? */
 #ifdef KPROF
 		tcp_acounts[tp->t_state][req]++;
 #endif
@@ -76,16 +67,14 @@ tcp_usrreq(so, req, m, addr)
 
 	/*
 	 * TCP attaches to socket via PRU_ATTACH, reserving space,
-	 * and internet and TCP control blocks.
-	 * If the socket is to receive connections,
-	 * then the LISTEN state is entered.
+	 * and an internet control block.
 	 */
 	case PRU_ATTACH:
 		if (inp) {
 			error = EISCONN;
 			break;
 		}
-		error = tcp_attach(so, (struct sockaddr *)addr);
+		error = tcp_attach(so, nam);
 		if (error)
 			break;
 		if ((so->so_options & SO_DONTLINGER) == 0)
@@ -110,6 +99,25 @@ tcp_usrreq(so, req, m, addr)
 		break;
 
 	/*
+	 * Give the socket an address.
+	 */
+	case PRU_BIND:
+		error = in_pcbbind(inp, nam);
+		if (error)
+			break;
+		break;
+
+	/*
+	 * Prepare to accept connections.
+	 */
+	case PRU_LISTEN:
+		if (inp->inp_lport == 0)
+			error = in_pcbbind(inp, (struct mbuf *)0);
+		if (error == 0)
+			tp->t_state = TCPS_LISTEN;
+		break;
+
+	/*
 	 * Initiate connection to peer.
 	 * Create a template for use in transmissions on this connection.
 	 * Enter SYN_SENT state, and mark socket as connecting.
@@ -117,7 +125,12 @@ tcp_usrreq(so, req, m, addr)
 	 * Send initial segment on connection.
 	 */
 	case PRU_CONNECT:
-		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
+		if (inp->inp_lport == 0) {
+			error = in_pcbbind(inp, (struct mbuf *)0);
+			if (error)
+				break;
+		}
+		error = in_pcbconnect(inp, nam);
 		if (error)
 			break;
 		tp->t_template = tcp_template(tp);
@@ -155,16 +168,14 @@ tcp_usrreq(so, req, m, addr)
 	 * of the peer, storing through addr.
 	 */
 	case PRU_ACCEPT: {
-		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
+		struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 
-		if (sin) {
-			bzero((caddr_t)sin, sizeof (*sin));
-			sin->sin_family = AF_INET;
-			sin->sin_port = inp->inp_fport;
-			sin->sin_addr = inp->inp_faddr;
-		}
-		}
+		nam->m_len = sizeof (struct sockaddr_in);
+		sin->sin_family = AF_INET;
+		sin->sin_port = inp->inp_fport;
+		sin->sin_addr = inp->inp_faddr;
 		break;
+		}
 
 	/*
 	 * Mark the connection as being incapable of further output.
@@ -253,7 +264,7 @@ tcp_usrreq(so, req, m, addr)
 		break;
 
 	case PRU_SOCKADDR:
-		in_setsockaddr((struct sockaddr_in *)addr, inp);
+		in_setsockaddr(inp, nam);
 		break;
 
 	/*
@@ -261,8 +272,8 @@ tcp_usrreq(so, req, m, addr)
 	 * routine for tracing's sake.
 	 */
 	case PRU_SLOWTIMO:
-		tcp_timers(tp, (int)addr);
-		req |= (int)addr << 8;		/* for debug's sake */
+		tcp_timers(tp, (int)nam);
+		req |= (int)nam << 8;		/* for debug's sake */
 		break;
 
 	default:
@@ -281,9 +292,8 @@ int	tcp_recvspace = 1024*2;
  * internet protocol control block, tcp control block,
  * bufer space, and entering LISTEN state if to accept connections.
  */
-tcp_attach(so, sa)
+tcp_attach(so)
 	struct socket *so;
-	struct sockaddr *sa;
 {
 	register struct tcpcb *tp;
 	struct inpcb *inp;
@@ -294,20 +304,14 @@ tcp_attach(so, sa)
 		goto bad;
 	error = in_pcballoc(so, &tcb);
 	if (error)
-		goto bad2;
-	inp = (struct inpcb *)so->so_pcb;
-	if (sa || ((so->so_options & SO_ACCEPTCONN) == 0 && so->so_head == 0)) {
-		error = in_pcbbind(inp, sa);
-		if (error)
-			goto bad2;
-	}
+		goto bad;
+	inp = sotoinpcb(so);
 	tp = tcp_newtcpcb(inp);
 	if (tp == 0) {
 		error = ENOBUFS;
 		goto bad2;
 	}
-	tp->t_state =
-	    (so->so_options & SO_ACCEPTCONN) ? TCPS_LISTEN : TCPS_CLOSED;
+	tp->t_state = TCPS_CLOSED;
 	return (0);
 bad2:
 	in_pcbdetach(inp);

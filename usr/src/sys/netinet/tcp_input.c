@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.73	82/07/24	*/
+/*	tcp_input.c	1.74	82/09/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 
 int	tcpprintfs = 0;
 int	tcpcksum = 1;
-struct	sockaddr_in tcp_in = { AF_INET };
+struct	mbuf tcp_mb;
 struct	tcpiphdr tcp_saveti;
 extern	tcpnodelack;
 
@@ -133,8 +133,7 @@ tcp_input(m0)
 #endif
 
 	/*
-	 * Locate pcb for segment.  On match, update the local
-	 * address stored in the block to reflect anchoring.
+	 * Locate pcb for segment.
 	 */
 	inp = in_pcblookup
 		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport,
@@ -202,22 +201,33 @@ tcp_input(m0)
 	 * Enter SYN_RECEIVED state, and process any other fields of this
 	 * segment in this state.
 	 */
-	case TCPS_LISTEN:
+	case TCPS_LISTEN: {
+		struct mbuf *m = m_get(M_DONTWAIT);
+		register struct sockaddr_in *sin;
+
+		if (m == 0)
+			goto drop;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct sockaddr_in);
 		if (tiflags & TH_RST)
 			goto drop;
 		if (tiflags & TH_ACK)
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
-		tcp_in.sin_addr = ti->ti_src;
-		tcp_in.sin_port = ti->ti_sport;
+		sin = mtod(m, struct sockaddr_in *);
+		sin->sin_family = AF_INET;
+		sin->sin_addr = ti->ti_src;
+		sin->sin_port = ti->ti_sport;
 		laddr = inp->inp_laddr;
 		if (inp->inp_laddr.s_addr == 0)
 			inp->inp_laddr = ti->ti_dst;
-		if (in_pcbconnect(inp, (struct sockaddr_in *)&tcp_in)) {
+		if (in_pcbconnect(inp, m)) {
 			inp->inp_laddr = laddr;
+			m_free(m);
 			goto drop;
 		}
+		m_free(m);
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
@@ -232,6 +242,7 @@ tcp_input(m0)
 		tp->t_state = TCPS_SYN_RECEIVED;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		goto trimthenstep6;
+		}
 
 	/*
 	 * If the state is SYN_SENT:

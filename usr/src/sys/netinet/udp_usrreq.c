@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.31	82/08/15	*/
+/*	udp_usrreq.c	4.32	82/09/26	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -204,11 +204,11 @@ udp_output(inp, m0)
 	    so->so_state & SS_PRIV));
 }
 
-udp_usrreq(so, req, m, addr)
+udp_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;
-	struct mbuf *m;
-	caddr_t addr;
+	struct mbuf *m, *nam;
+	struct socketopt *opt;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
@@ -220,8 +220,12 @@ udp_usrreq(so, req, m, addr)
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		error = in_pcbattach(so, &udb, 2048, 2048,
-				(struct sockaddr_in *)addr);
+		error = in_pcballoc(so, &udb);
+		if (error)
+			break;
+		error = in_pcbreserve(so, 2048, 2048);
+		if (error)
+			break;
 		break;
 
 	case PRU_DETACH:
@@ -230,10 +234,18 @@ udp_usrreq(so, req, m, addr)
 		in_pcbdetach(inp);
 		break;
 
+	case PRU_BIND:
+		error = in_pcbbind(inp, nam);
+		break;
+
+	case PRU_LISTEN:
+		error = EOPNOTSUPP;
+		break;
+
 	case PRU_CONNECT:
 		if (inp->inp_faddr.s_addr)
 			return (EISCONN);
-		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
+		error = in_pcbconnect(inp, nam);
 		if (error == 0)
 			soisconnected(so);
 		break;
@@ -255,11 +267,11 @@ udp_usrreq(so, req, m, addr)
 	case PRU_SEND: {
 		struct in_addr laddr;
 
-		if (addr) {
+		if (nam) {
 			laddr = inp->inp_laddr;
 			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
-			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
+			error = in_pcbconnect(inp, nam);
 			if (error)
 				break;
 		} else {
@@ -267,7 +279,7 @@ udp_usrreq(so, req, m, addr)
 				return (ENOTCONN);
 		}
 		error = udp_output(inp, m);
-		if (addr) {
+		if (nam) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
 		}
@@ -284,7 +296,7 @@ udp_usrreq(so, req, m, addr)
 		return (EOPNOTSUPP);
 
 	case PRU_SOCKADDR:
-		in_setsockaddr((struct sockaddr_in *)addr, inp);
+		in_setsockaddr(inp, nam);
 		break;
 
 	default:
