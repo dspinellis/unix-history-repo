@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.58 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.59 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,11 @@
 #include <nfs/nfsmount.h>
 #include <nfs/nqnfs.h>
 #include <nfs/nfsrtt.h>
+
+#include <netinet/in.h>
+#ifdef ISO
+#include <netiso/iso.h>
+#endif
 
 #define TRUE	1
 #define	FALSE	0
@@ -1015,4 +1020,73 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
 	return (0);
+}
+
+/*
+ * This function compares two net addresses by family and returns TRUE
+ * if they are the same host.
+ * If there is any doubt, return FALSE.
+ * The AF_INET family is handled as a special case so that address mbufs
+ * don't need to be saved to store "struct in_addr", which is only 4 bytes.
+ */
+netaddr_match(family, haddr, hmask, nam)
+	int family;
+	union nethostaddr *haddr;
+	union nethostaddr *hmask;
+	struct mbuf *nam;
+{
+	register struct sockaddr_in *inetaddr;
+#ifdef ISO
+	register struct sockaddr_iso *isoaddr1, *isoaddr2;
+#endif
+
+
+	switch (family) {
+	case AF_INET:
+		inetaddr = mtod(nam, struct sockaddr_in *);
+		if (inetaddr->sin_family != AF_INET)
+			return (0);
+		if (hmask) {
+			if ((inetaddr->sin_addr.s_addr & hmask->had_inetaddr) ==
+			    (haddr->had_inetaddr & hmask->had_inetaddr))
+				return (1);
+		} else if (inetaddr->sin_addr.s_addr == haddr->had_inetaddr)
+			return (1);
+		break;
+#ifdef ISO
+	case AF_ISO:
+		isoaddr1 = mtod(nam, struct sockaddr_iso *);
+		if (isoaddr1->siso_family != AF_ISO)
+			return (0);
+		isoaddr2 = mtod(haddr->had_nam, struct sockaddr_iso *);
+		if (isoaddr1->siso_nlen > 0 &&
+		    isoaddr1->siso_nlen == isoaddr2->siso_nlen &&
+		    SAME_ISOADDR(isoaddr1, isoaddr2))
+			return (1);
+		break;
+#endif	/* ISO */
+	default:
+		break;
+	};
+	return (0);
+}
+
+/*
+ * Generate a hash code for an iso host address. Used by NETADDRHASH() for
+ * iso addresses.
+ */
+iso_addrhash(saddr)
+	struct sockaddr *saddr;
+{
+#ifdef ISO
+	register struct sockaddr_iso *siso;
+	register int i, sum;
+
+	sum = 0;
+	for (i = 0; i < siso->siso_nlen; i++)
+		sum += siso->siso_data[i];
+	return (sum & (NETHASHSZ - 1));
+#else
+	return (0);
+#endif	/* ISO */
 }
