@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.9	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.10	(Berkeley)	%G%	*/
 
 /*
  * getwd() returns the pathname of the current working directory. On error
@@ -8,11 +8,7 @@
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-#define CURDIR		"."
 #define GETWDERR(s)	strcpy(pathname, (s));
-#define PARENTDIR	".."
-#define PATHSEP		"/"
-#define ROOTDIR		"/"
 
 char *strcpy();
 static int pathsize;			/* pathname length */
@@ -23,33 +19,43 @@ getwd(pathname)
 {
 	char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
+	char curdir[MAXPATHLEN];	/* current directory buffer */
+	char *dptr = curdir;		/* directory pointer */
 	char *prepend();		/* prepend dirname to pathname */
-	dev_t rdev;			/* root device number */
+	dev_t cdev, rdev;		/* current & root device number */
+	ino_t cino, rino;		/* current & root inode number */
 	DIR *dirp;			/* directory stream */
-	ino_t rino;			/* root inode number */
 	struct direct *dir;		/* directory entry struct */
-	struct stat d ,dd;		/* file status struct */
+	struct stat d, dd;		/* file status struct */
 
 	pathsize = 0;
 	*pnptr = '\0';
-	stat(ROOTDIR, &d);
+	if (stat("/", &d) < 0) {
+		GETWDERR("getwd: can't stat /");
+		return (NULL);
+	}
 	rdev = d.st_dev;
 	rino = d.st_ino;
+	strcpy(dptr, "./");
+	dptr += 2;
+	if (stat(curdir, &d) < 0) {
+		GETWDERR("getwd: can't stat .");
+		return (NULL);
+	}
 	for (;;) {
-		stat(CURDIR, &d);
 		if (d.st_ino == rino && d.st_dev == rdev)
 			break;		/* reached root directory */
-		if ((dirp = opendir(PARENTDIR)) == NULL) {
+		cino = d.st_ino;
+		cdev = d.st_dev;
+		strcpy(dptr, "../");
+		dptr += 3;
+		if ((dirp = opendir(curdir)) == NULL) {
 			GETWDERR("getwd: can't open ..");
-			goto fail;
+			return (NULL);
 		}
-		if (chdir(PARENTDIR) < 0) {
-			GETWDERR("getwd: can't chdir to ..");
-			goto fail;
-		}
-		fstat(dirp->dd_fd, &dd);
-		if (d.st_dev == dd.st_dev) {
-			if (d.st_ino == dd.st_ino) {
+		fstat(dirp->dd_fd, &d);
+		if (cdev == d.st_dev) {
+			if (cino == d.st_ino) {
 				/* reached root directory */
 				closedir(dirp);
 				break;
@@ -58,35 +64,27 @@ getwd(pathname)
 				if ((dir = readdir(dirp)) == NULL) {
 					closedir(dirp);
 					GETWDERR("getwd: read error in ..");
-					goto fail;
+					return (NULL);
 				}
-			} while (dir->d_ino != d.st_ino);
+			} while (dir->d_ino != cino);
 		} else
 			do {
-				if((dir = readdir(dirp)) == NULL) {
+				if ((dir = readdir(dirp)) == NULL) {
 					closedir(dirp);
 					GETWDERR("getwd: read error in ..");
-					goto fail;
+					return (NULL);
 				}
-				lstat(dir->d_name, &dd);
-			} while(dd.st_ino != d.st_ino || dd.st_dev != d.st_dev);
+				strcpy(dptr, dir->d_name);
+				lstat(curdir, &dd);
+			} while(dd.st_ino != cino || dd.st_dev != cdev);
 		closedir(dirp);
-		pnptr = prepend(PATHSEP, prepend(dir->d_name, pnptr));
+		pnptr = prepend("/", prepend(dir->d_name, pnptr));
 	}
 	if (*pnptr == '\0')		/* current dir == root dir */
-		strcpy(pathname, ROOTDIR);
-	else {
+		strcpy(pathname, "/");
+	else
 		strcpy(pathname, pnptr);
-		if (chdir(pnptr) < 0) {
-			GETWDERR("getwd: can't change back to .");
-			return (NULL);
-		}
-	}
 	return (pathname);
-
-fail:
-	chdir(prepend(CURDIR, pnptr));
-	return (NULL);
 }
 
 /*
