@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.27 (Berkeley) %G%
+		@(#)README	6.28 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -768,6 +768,9 @@ RULESETS (* means built in to sendmail)
    7	Hook for recursive ruleset 0 call
    8
    9
+  1x	mailer rules (sender qualification)
+  2x	mailer rules (recipient qualification)
+  90	Mailertable host stripping
 
 
 MAILERS
