@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)lock.1	6.4 (Berkeley) %G%
+.\"	@(#)lock.1	6.5 (Berkeley) %G%
 .\"
 .TH LOCK 1 ""
 .UC
@@ -28,12 +28,20 @@ lock \- reserve a terminal
 ]
 .br
 .SH DESCRIPTION
-\fILock\fP requests a password from the user, reads it again for verification
-and then it will normally not relinquish the terminal until the password is
-repeated.  There are three other conditions under which it will terminate: it
-accepts the password for root as an alternative to the one given by the
-user, it will timeout after some interval of time, and it may be killed by
-somebody with the appropriate permission. The default time limit is 15 minutes
-but it may be changed with the \fI-t\fP option where \fItimeout\fP is the
-time limit in minutes.  The \fI-p\fP option has \fIlock\fP use the user's
-standard password instead of requesting another one.
+.I Lock
+requests a password from the user, reads it again for verification
+and then will normally not relinquish the terminal until the password is
+repeated.
+There are two other conditions under which it will terminate: it
+will timeout after some interval of time and it may be killed by someone
+with the appropriate permission.
+The default time limit is 15 minutes, which may be changed with the
+.I -t
+option where
+.I timeout
+is the time limit in minutes.
+The
+.I -p
+option causes
+.I lock
+to use the user's current password instead of requesting another one.
