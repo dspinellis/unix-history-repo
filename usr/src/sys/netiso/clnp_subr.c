@@ -24,11 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_subr.c,v 4.10 88/09/14 11:31:33 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_subr.c,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_subr.c,v 4.10 88/09/14 11:31:33 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
 #endif lint
 
 #ifdef ISO
@@ -184,6 +184,9 @@ register struct iso_addr *dst;		/* ptr to destination address */
 	return 0;
 }
 
+/* Dec bit set if ifp qlen is greater than congest_threshold */
+int congest_threshold = 0;
+
 /*
  * FUNCTION:		clnp_forward
  *
@@ -300,9 +303,32 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 			clnp_discard(m, ADDR_DESTUNREACH);
 			goto done;
 		} else {
-		(void) clnp_dooptions(m, oidx, ifp, mysrc);
+			(void) clnp_dooptions(m, oidx, ifp, mysrc);
 		}
 	}
+
+#ifdef	DECBIT
+	if (ifp->if_snd.ifq_len > congest_threshold) {
+		/*
+		 *	Congestion! Set the Dec Bit and thank Dave Oran
+		 */
+		IFDEBUG(D_FORWARD)
+			printf("clnp_forward: congestion experienced\n");
+		ENDDEBUG
+		if ((oidx) && (oidx->cni_qos_formatp)) {
+			caddr_t	qosp = CLNP_OFFTOOPT(m, oidx->cni_qos_formatp);
+			u_char	qos = *qosp;
+			IFDEBUG(D_FORWARD)
+				printf("clnp_forward: setting congestion bit (qos x%x)\n", qos);
+			ENDDEBUG
+			if ((qos & CLNPOVAL_GLOBAL) == CLNPOVAL_GLOBAL) {
+				qos |= CLNPOVAL_CONGESTED;
+				INCSTAT(cns_congest_set);
+				*qosp = qos;
+			}
+		}
+	}
+#endif	DECBIT
 	
 	/*
 	 *	Dispatch the datagram if it is small enough, otherwise fragment
