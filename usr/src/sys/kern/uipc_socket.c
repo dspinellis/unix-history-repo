@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.16 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,6 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "tsleep.h"
 
 /*
  * Socket operation routines.
@@ -84,8 +83,7 @@ sobind(so, nam)
 	int s = splnet();
 	int error;
 
-	error =
-	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
+	error = (*so->so_proto->pr_usrreq)(so, PRU_BIND,
 		(struct mbuf *)0, nam, (struct mbuf *)0);
 	splx(s);
 	return (error);
@@ -159,10 +157,17 @@ soclose(so)
 			    (so->so_state & SS_NBIO))
 				goto drop;
 			while (so->so_state & SS_ISCONNECTED)
-				tsleep((caddr_t)&so->so_timeo, PZERO+1,
-					SLP_SO_LINGER, 0);
+				if (error = tsleep((caddr_t)&so->so_timeo,
+				    PSOCK | PCATCH, netcls, so->so_linger))
+					break;
 		}
 	}
+	/*
+	 * If there is an error on the socket, disregard any
+	 * error from tsleep and return the socket error.
+	 */
+	if (so->so_error)
+		error = so->so_error;
 drop:
 	if (so->so_pcb) {
 		int error2 =
@@ -288,7 +293,7 @@ sosend(so, nam, uio, flags, control)
 	struct mbuf *top = 0, **mp;
 	register struct mbuf *m;
 	register int space, len;
-	int rlen = 0, error = 0, s, dontroute, first = 1, mlen;
+	int rlen = 0, error, s, dontroute, mlen;
 	int atomic = sosendallatonce(so);
 
 	if (atomic && uio->uio_resid > so->so_snd.sb_hiwat)
@@ -302,7 +307,8 @@ sosend(so, nam, uio, flags, control)
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
 restart:
-	sblock(&so->so_snd);
+	if (error = sblock(&so->so_snd))
+		return (error);
 	do {
 		s = splnet();
 		if (so->so_state & SS_CANTSENDMORE)
@@ -325,14 +331,11 @@ restart:
 			   (uio->uio_resid >= MCLBYTES && space < MCLBYTES &&
 			   so->so_snd.sb_cc >= MCLBYTES &&
 			   (so->so_state & SS_NBIO) == 0)) {
-				if (so->so_state & SS_NBIO) {
-					if (first)
-						error = EWOULDBLOCK;
-					splx(s);
-					goto release;
-				}
+				if (so->so_state & SS_NBIO)
+					snderr(EWOULDBLOCK);
 				sbunlock(&so->so_snd);
-				sbwait(&so->so_snd);
+				if (error = sbwait(&so->so_snd))
+					snderr(error);
 				splx(s);
 				goto restart;
 			}
@@ -401,7 +404,6 @@ nopages:
 		    rlen = 0;
 		    top = 0;
 		    mp = &top;
-		    first = 0;
 		    if (error)
 			goto release;
 		} while (uio->uio_resid && space > 0);
@@ -411,8 +413,6 @@ release:
 	sbunlock(&so->so_snd);
 	if (top)
 		m_freem(top);
-	if (error == EPIPE)
-		psignal(u.u_procp, SIGPIPE);
 	return (error);
 }
 
@@ -436,7 +436,7 @@ soreceive(so, aname, uio, flagsp, rightsp, controlp)
 	struct mbuf **rightsp, **controlp;
 {
 	register struct mbuf *m;
-	register int flags, len, error = 0, s, offset;
+	register int flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord, *m_with_eor;
 	int moff;
@@ -474,7 +474,8 @@ bad:
 		    (struct mbuf *)0, (struct mbuf *)0);
 
 restart:
-	sblock(&so->so_rcv);
+	if (error = sblock(&so->so_rcv))
+		return (error);
 	s = splnet();
 
 	m = so->so_rcv.sb_mb;
@@ -500,7 +501,8 @@ restart:
 			goto release;
 		}
 		sbunlock(&so->so_rcv);
-		sbwait(&so->so_rcv);
+		if (error = sbwait(&so->so_rcv))
+			goto release;
 		splx(s);
 		goto restart;
 	}
@@ -672,7 +674,8 @@ sorflush(so)
 	register int s;
 	struct sockbuf asb;
 
-	sblock(sb);
+	sb->sb_flags |= SB_NOINTR;
+	(void) sblock(sb);
 	s = splimp();
 	socantrcvmore(so);
 	sbunlock(sb);
@@ -690,7 +693,9 @@ sosetopt(so, level, optname, m0)
 	struct mbuf *m0;
 {
 	int error = 0;
+	u_long val;
 	register struct mbuf *m = m0;
+	register struct sockbuf *sb;
 
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput)
@@ -726,11 +731,16 @@ sosetopt(so, level, optname, m0)
 			break;
 
 		case SO_SNDBUF:
-		case SO_RCVBUF:
 		case SO_SNDLOWAT:
-		case SO_RCVLOWAT:
 		case SO_SNDTIMEO:
+			sb = &so->so_snd;
+			goto bufopts;
+
+		case SO_RCVBUF:
+		case SO_RCVLOWAT:
 		case SO_RCVTIMEO:
+			sb = &so->so_rcv;
+		bufopts:
 			if (m == NULL || m->m_len < sizeof (int)) {
 				error = EINVAL;
 				goto bad;
@@ -739,25 +749,31 @@ sosetopt(so, level, optname, m0)
 
 			case SO_SNDBUF:
 			case SO_RCVBUF:
-				if (sbreserve(optname == SO_SNDBUF ?
-				    &so->so_snd : &so->so_rcv,
-				    (u_long) *mtod(m, int *)) == 0) {
+				if ((val = (u_long) *mtod(m, int *)) == 0) {
+					error = EINVAL;
+					goto bad;
+				}
+				if (sbreserve(sb, val) == 0) {
 					error = ENOBUFS;
 					goto bad;
 				}
+				if (sb->sb_lowat > sb->sb_hiwat)
+					sb->sb_lowat = sb->sb_hiwat;
 				break;
 
 			case SO_SNDLOWAT:
-				so->so_snd.sb_lowat = *mtod(m, int *);
-				break;
 			case SO_RCVLOWAT:
-				so->so_rcv.sb_lowat = *mtod(m, int *);
+				if ((val = (u_long) *mtod(m, int *)) == 0 ||
+				    val > sb->sb_hiwat) {
+					error = EINVAL;
+					goto bad;
+				}
+				sb->sb_lowat = val;
 				break;
+
 			case SO_SNDTIMEO:
-				so->so_snd.sb_timeo = *mtod(m, int *);
-				break;
 			case SO_RCVTIMEO:
-				so->so_rcv.sb_timeo = *mtod(m, int *);
+				sb->sb_timeo = *mtod(m, int *);
 				break;
 			}
 			break;
