@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.17 (Berkeley) %G%
+ *	@(#)tp.trans	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.17 (Berkeley) %G% */
+/* @(#)tp.trans	7.18 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -90,9 +90,11 @@ int 	tp_emit(),
 void	tp_indicate(),				tp_getoptions(),	
 		tp_soisdisconnecting(), 	tp_soisdisconnected(),
 		tp_recycle_tsuffix(),		
+#ifdef TP_DEBUG_TIMERS
 		tp_etimeout(),				tp_euntimeout(),
-		tp_ctimeout(),
-		tp_cuntimeout(),			tp_ctimeout_MIN(),
+		tp_ctimeout(),				tp_cuntimeout(),
+		tp_ctimeout_MIN(),
+#endif
 		tp_freeref(),				tp_detach(),
 		tp0_stash(), 				tp0_send(),
 		tp_netcmd(),				tp_send()
