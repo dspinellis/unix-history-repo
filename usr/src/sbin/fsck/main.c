@@ -1,15 +1,20 @@
-static	char sccsid[] = "@(#)main.c	2.16	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.11.1.1	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
+#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/inode.h>
 #include <dir.h>
+#else
+#include "../h/param.h"
+#include "../h/fs.h"
+#include "../h/inode.h"
+#include "../h/ndir.h"
+#endif
 #include <sys/stat.h>
 #include <fstab.h>
-
-/* RECONSTRUCT ONLY BAD CG IN PASS 6 */
 
 typedef	int	(*SIG_TYP)();
 
@@ -138,6 +143,10 @@ int	sbsumbad;
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
 
+#define	setlncnt(x)	(lncntp[inum] = x)
+#define	getlncnt()	(lncntp[inum])
+#define	declncnt()	(--lncntp[inum])
+
 #define	setbmap(x)	setbit(blockmap, x)
 #define	getbmap(x)	isset(blockmap, x)
 #define	clrbmap(x)	clrbit(blockmap, x)
@@ -145,6 +154,9 @@ struct	dinode zino;
 #define	setfmap(x)	setbit(freemap, x)
 #define	getfmap(x)	isset(freemap, x)
 #define	clrfmap(x)	clrbit(freemap, x)
+
+#define	setstate(x)	(statemap[inum] = x)
+#define	getstate()	statemap[inum]
 
 #define	DATA	1
 #define	ADDR	0
@@ -164,7 +176,7 @@ int	findino();
 int	catch();
 int	mkentry();
 int	chgdd();
-int	pass1check(), pass1bcheck(), pass2check(), pass4check(), pass5check();
+int	pass1(), pass1b(), pass2(), pass4(), pass5();
 int	(*pfunc)();
 char	*rawname(), *rindex(), *unrawname();
 extern int inside[], around[];
@@ -217,7 +229,7 @@ main(argc, argv)
 	if (argc) {
 		while (argc-- > 0) {
 			hotroot = 0;
-			checkfilesys(*argv++);
+			check(*argv++);
 		}
 		exit(0);
 	}
@@ -291,7 +303,7 @@ retry:
 				hotroot++;
 				raw = unrawname(name);
 			}
-			checkfilesys(raw);
+			check(raw);
 			return (1);
 		} else {
 			error("%s is not a character device\n", raw);
@@ -310,8 +322,44 @@ retry:
 	return (0);
 }
 
-checkfilesys(filesys)
-	char *filesys;
+char *
+unrawname(cp)
+	char *cp;
+{
+	char *dp = rindex(cp, '/');
+	struct stat stb;
+
+	if (dp == 0)
+		return (cp);
+	if (stat(cp, &stb) < 0)
+		return (cp);
+	if ((stb.st_mode&S_IFMT) != S_IFCHR)
+		return (cp);
+	if (*(dp+1) != 'r')
+		return (cp);
+	strcpy(dp+1, dp+2);
+	return (cp);
+}
+
+char *
+rawname(cp)
+	char *cp;
+{
+	static char rawbuf[32];
+	char *dp = rindex(cp, '/');
+
+	if (dp == 0)
+		return (0);
+	*dp = 0;
+	strcpy(rawbuf, cp);
+	*dp = '/';
+	strcat(rawbuf, "/r");
+	strcat(rawbuf, dp+1);
+	return (rawbuf);
+}
+
+check(dev)
+	char *dev;
 {
 	register DINODE *dp;
 	register ino_t *blp;
@@ -320,48 +368,346 @@ checkfilesys(filesys)
 	int b, c, j, partial, ndb;
 	daddr_t d, s;
 
-	devname = filesys;
-	if (setup(filesys) == 0) {
+	devname = dev;
+	if (setup(dev) == 0) {
 		if (preen)
-			pfatal("CAN'T CHECK FILE SYSTEM.");
+			pfatal("CAN'T CHECK DEVICE.");
 		return;
 	}
-/* 1: scan inodes tallying blocks used */
+/* 1 */
 	if (preen == 0) {
 		printf("** Last Mounted on %s\n", sblock.fs_fsmnt);
 		if (hotroot)
 			printf("** Root file system\n");
 		printf("** Phase 1 - Check Blocks and Sizes\n");
 	}
-	pass1();
-
-/* 1b: locate first references to duplicates, if any */
+	pfunc = pass1;
+	inum = 0;
+	n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
+	for (c = 0; c < sblock.fs_ncg; c++) {
+		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
+			continue;
+		if (debug && cgrp.cg_magic != CG_MAGIC)
+			printf("cg %d: bad magic number\n", c);
+		n = 0;
+		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
+			dp = ginode();
+			if (dp == NULL)
+				continue;
+			n++;
+			if (ALLOC) {
+				if (!isset(cgrp.cg_iused, i)) {
+					if (debug)
+						printf("%d bad, not used\n",
+						    inum);
+					inosumbad++;
+				}
+				n--;
+				lastino = inum;
+				if (ftypeok(dp) == 0)
+					goto unknown;
+				if (dp->di_size < 0)
+					goto unknown;
+				ndb = howmany(dp->di_size, sblock.fs_bsize);
+				if (SPECIAL)
+					ndb++;
+				for (j = ndb; j < NDADDR; j++)
+					if (dp->di_db[j] != 0)
+						goto unknown;
+				for (j = 0, ndb -= NDADDR; ndb > 0; j++)
+					ndb /= NINDIR(&sblock);
+				for (; j < NIADDR; j++)
+					if (dp->di_ib[j] != 0)
+						goto unknown;
+				n_files++;
+				if (setlncnt(dp->di_nlink) <= 0) {
+					if (badlnp < &badlncnt[MAXLNCNT])
+						*badlnp++ = inum;
+					else {
+						pfatal("LINK COUNT TABLE OVERFLOW");
+						if (reply("CONTINUE") == 0)
+							errexit("");
+					}
+				}
+				setstate(DIRCT ? DSTATE : FSTATE);
+				badblk = dupblk = 0; filsize = 0; maxblk = 0;
+				ckinode(dp, ADDR);
+				continue;
+		unknown:
+				pfatal("UNKNOWN FILE TYPE I=%u", inum);
+				if (reply("CLEAR") == 1) {
+					zapino(dp);
+					inodirty();
+					inosumbad++;
+				}
+			} else {
+				if (isset(cgrp.cg_iused, i)) {
+					if (debug)
+						printf("%d bad, marked used\n",
+						    inum);
+					inosumbad++;
+					n--;
+				}
+				partial = 0;
+				for (j = 0; j < NDADDR; j++)
+					if (dp->di_db[j] != 0)
+						partial++;
+				for (j = 0; j < NIADDR; j++)
+					if (dp->di_ib[j] != 0)
+						partial++;
+				if (partial || dp->di_mode != 0 ||
+				    dp->di_size != 0) {
+					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
+					if (reply("CLEAR") == 1) {
+						zapino(dp);
+						inodirty();
+						inosumbad++;
+					}
+				}
+			}
+		}
+		if (n != cgrp.cg_cs.cs_nifree) {
+			if (debug)
+				printf("cg[%d].cg_cs.cs_nifree is %d; calc %d\n",
+				    c, cgrp.cg_cs.cs_nifree, n);
+			inosumbad++;
+		}
+		if (cgrp.cg_cs.cs_nbfree != sblock.fs_cs(&sblock, c).cs_nbfree
+		  || cgrp.cg_cs.cs_nffree != sblock.fs_cs(&sblock, c).cs_nffree
+		  || cgrp.cg_cs.cs_nifree != sblock.fs_cs(&sblock, c).cs_nifree
+		  || cgrp.cg_cs.cs_ndir != sblock.fs_cs(&sblock, c).cs_ndir)
+			sbsumbad++;
+	}
+/* 1b */
 	if (enddup != &duplist[0]) {
 		if (preen)
 			pfatal("INTERNAL ERROR: dups with -p");
 		printf("** Phase 1b - Rescan For More DUPS\n");
-		pass1b();
+		pfunc = pass1b;
+		inum = 0;
+		for (c = 0; c < sblock.fs_ncg; c++) {
+			for (i = 0; i < sblock.fs_ipg; i++, inum++) {
+				dp = ginode();
+				if (dp == NULL)
+					continue;
+				if (getstate() != USTATE &&
+				    (ckinode(dp, ADDR) & STOP))
+					goto out1b;
+			}
+		}
 	}
-
-/* 2: traverse directories to check reference counts */
+out1b:
+	flush(&dfile, &inoblk);
+/* 2 */
 	if (preen == 0)
 		printf("** Phase 2 - Check Pathnames\n");
-	pass2();
+	inum = ROOTINO;
+	thisname = pathp = pathname;
+	pfunc = pass2;
+	switch (getstate()) {
 
+	case USTATE:
+		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
+
+	case FSTATE:
+		pfatal("ROOT INODE NOT DIRECTORY");
+		if (reply("FIX") == 0 || (dp = ginode()) == NULL)
+			errexit("");
+		dp->di_mode &= ~IFMT;
+		dp->di_mode |= IFDIR;
+		inodirty();
+		inosumbad++;
+		setstate(DSTATE);
+		/* fall into ... */
+
+	case DSTATE:
+		descend();
+		break;
+
+	case CLEAR:
+		pfatal("DUPS/BAD IN ROOT INODE");
+		printf("\n");
+		if (reply("CONTINUE") == 0)
+			errexit("");
+		setstate(DSTATE);
+		descend();
+	}
 /* 3 */
 	if (preen == 0)
 		printf("** Phase 3 - Check Connectivity\n");
-	pass3();
-
+	for (inum = ROOTINO; inum <= lastino; inum++) {
+		if (getstate() == DSTATE) {
+			pfunc = findino;
+			srchname = "..";
+			savino = inum;
+			do {
+				orphan = inum;
+				if ((dp = ginode()) == NULL)
+					break;
+				filsize = dp->di_size;
+				parentdir = 0;
+				ckinode(dp, DATA);
+				if ((inum = parentdir) == 0)
+					break;
+			} while (getstate() == DSTATE);
+			inum = orphan;
+			if (linkup() == 1) {
+				thisname = pathp = pathname;
+				*pathp++ = '?';
+				pfunc = pass2;
+				descend();
+			}
+			inum = savino;
+		}
+	}
 /* 4 */
 	if (preen == 0)
 		printf("** Phase 4 - Check Reference Counts\n");
-	pass4();
+	pfunc = pass4;
+	for (inum = ROOTINO; inum <= lastino; inum++) {
+		switch (getstate()) {
+
+		case FSTATE:
+			if (n = getlncnt())
+				adjust((short)n);
+			else {
+				for (blp = badlncnt;blp < badlnp; blp++)
+					if (*blp == inum) {
+						clri("UNREF", 1);
+						break;
+					}
+			}
+			break;
+
+		case DSTATE:
+			clri("UNREF", 1);
+			break;
+
+		case CLEAR:
+			clri("BAD/DUP", 1);
+			break;
+		}
+	}
+	if (imax - ROOTINO - n_files != sblock.fs_cstotal.cs_nifree) {
+		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
+		if (preen)
+			printf(" (FIXED)\n");
+		if (preen || reply("FIX") == 1) {
+			sblock.fs_cstotal.cs_nifree = imax - ROOTINO - n_files;
+			sbdirty();
+		}
+	}
+	flush(&dfile, &fileblk);
 
 /* 5 */
 	if (preen == 0)
 		printf("** Phase 5 - Check Cyl groups\n");
-	pass5();
+	copy(blockmap, freemap, (unsigned)bmapsz);
+	dupblk = 0;
+	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
+	for (c = 0; c < sblock.fs_ncg; c++) {
+		daddr_t cbase = cgbase(&sblock, c);
+		short bo[MAXCPG][NRPOS];
+		long botot[MAXCPG];
+		long frsum[MAXFRAG];
+		int blk;
+
+		for (n = 0; n < sblock.fs_cpg; n++) {
+			botot[n] = 0;
+			for (i = 0; i < NRPOS; i++)
+				bo[n][i] = 0;
+		}
+		for (i = 0; i < sblock.fs_frag; i++) {
+			frsum[i] = 0;
+		}
+		/*
+		 * need to account for the super blocks
+		 * which appear (inaccurately) bad
+		 */
+		n_bad += cgtod(&sblock, c) - cgsblock(&sblock, c);
+		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
+			continue;
+		if (debug && cgrp.cg_magic != CG_MAGIC)
+			printf("cg %d: bad magic number\n", c);
+		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
+			if (isblock(&sblock, cgrp.cg_free, b/sblock.fs_frag)) {
+				if (pass5(cbase+b, sblock.fs_frag) == STOP)
+					goto out5;
+				/* this is clumsy ... */
+				n_ffree -= sblock.fs_frag;
+				n_bfree++;
+				botot[cbtocylno(&sblock, b)]++;
+				bo[cbtocylno(&sblock, b)]
+				    [cbtorpos(&sblock, b)]++;
+			} else {
+				for (d = 0; d < sblock.fs_frag; d++)
+					if (isset(cgrp.cg_free, b+d))
+						if (pass5(cbase+b+d,1) == STOP)
+							goto out5;
+				blk = ((cgrp.cg_free[b / NBBY] >> (b % NBBY)) &
+				       (0xff >> (NBBY - sblock.fs_frag)));
+				if (blk != 0)
+					fragacct(&sblock, blk, frsum, 1);
+			}
+		}
+		for (i = 0; i < sblock.fs_frag; i++) {
+			if (cgrp.cg_frsum[i] != frsum[i]) {
+				if (debug)
+					printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
+					    c, i, cgrp.cg_frsum[i], frsum[i]);
+				frsumbad++;
+			}
+		}
+		for (n = 0; n < sblock.fs_cpg; n++) {
+			if (botot[n] != cgrp.cg_btot[n]) {
+				if (debug)
+					printf("cg[%d].cg_btot[%d] have %d calc %d\n",
+					    c, n, cgrp.cg_btot[n], botot[n]);
+				offsumbad++;
+			}
+			for (i = 0; i < NRPOS; i++)
+				if (bo[n][i] != cgrp.cg_b[n][i]) {
+					if (debug)
+						printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
+						    c, n, i, cgrp.cg_b[n][i],
+						    bo[n][i]);
+					offsumbad++;
+				}
+		}
+	}
+out5:
+	if (dupblk)
+		pwarn("%d DUP BLKS IN BIT MAPS\n", dupblk);
+	if (fixcg == 0) {
+		if ((b = n_blks+n_ffree+sblock.fs_frag*n_bfree+n_index+n_bad) != fmax) {
+			pwarn("%ld BLK(S) MISSING\n", fmax - b);
+			fixcg = 1;
+		} else if (inosumbad + offsumbad + frsumbad + sbsumbad) {
+			pwarn("SUMMARY INFORMATION %s%s%s%sBAD\n",
+			    inosumbad ? "(INODE FREE) " : "",
+			    offsumbad ? "(BLOCK OFFSETS) " : "",
+			    frsumbad ? "(FRAG SUMMARIES) " : "",
+			    sbsumbad ? "(SUPER BLOCK SUMMARIES) " : "");
+			fixcg = 1;
+		} else if (n_ffree != sblock.fs_cstotal.cs_nffree ||
+		    n_bfree != sblock.fs_cstotal.cs_nbfree) {
+			pwarn("FREE BLK COUNT(S) WRONG IN SUPERBLK");
+			if (preen)
+				printf(" (FIXED)\n");
+			if (preen || reply("FIX") == 1) {
+				sblock.fs_cstotal.cs_nffree = n_ffree;
+				sblock.fs_cstotal.cs_nbfree = n_bfree;
+				sbdirty();
+			}
+		}
+	}
+	if (fixcg) {
+		pwarn("BAD CYLINDER GROUPS");
+		if (preen)
+			printf(" (SALVAGED)\n");
+		else if (reply("SALVAGE") == 0)
+			fixcg = 0;
+	}
 
 	if (fixcg) {
 		if (preen == 0)
@@ -383,19 +729,558 @@ checkfilesys(filesys)
 	free(freemap);
 	free(statemap);
 	free(lncntp);
-	if (dfile.mod) {
+	if (dfile.mod)
 		if (preen) {
-			if (hotroot)
-				exit(4);
-		} else {
 			printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 			if (hotroot) {
-				printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
+				sync();
 				exit(4);
 			}
+		} else if (hotroot) {
+			printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
+			exit(4);
+		}
+	sync();
+}
+
+/* VARARGS1 */
+error(s1, s2, s3, s4)
+	char *s1;
+{
+
+	printf(s1, s2, s3, s4);
+}
+
+/* VARARGS1 */
+errexit(s1, s2, s3, s4)
+	char *s1;
+{
+	error(s1, s2, s3, s4);
+	exit(8);
+}
+
+/*
+ * An inconsistency occured which shouldn't during normal operations.
+ * Die if preening, otw just printf.
+ */
+/* VARARGS1 */
+pfatal(s, a1, a2, a3)
+	char *s;
+{
+
+	if (preen) {
+		printf("%s: ", devname);
+		printf(s, a1, a2, a3);
+		printf("\n");
+		preendie();
+	}
+	printf(s, a1, a2, a3);
+}
+
+preendie()
+{
+
+	printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n", devname);
+	exit(8);
+}
+
+/*
+ * Pwarn is like printf when not preening,
+ * or a warning (preceded by filename) when preening.
+ */
+/* VARARGS1 */
+pwarn(s, a1, a2, a3, a4, a5, a6)
+	char *s;
+{
+
+	if (preen)
+		printf("%s: ", devname);
+	printf(s, a1, a2, a3, a4, a5, a6);
+}
+
+ckinode(dp, flg)
+	DINODE *dp;
+	register flg;
+{
+	register daddr_t *ap;
+	register ret;
+	int (*func)(), n, ndb, size, offset;
+	ino_t number = inum;
+	DINODE dino;
+
+	if (SPECIAL)
+		return (KEEPON);
+	dino = *dp;
+	func = (flg == ADDR) ? pfunc : dirscan;
+	ndb = howmany(dino.di_size, sblock.fs_bsize);
+	for (ap = &dino.di_db[0]; ap < &dino.di_db[NDADDR]; ap++) {
+		if (--ndb == 0 && (offset = blkoff(&sblock, dino.di_size)) != 0)
+			size = numfrags(&sblock, fragroundup(&sblock, offset));
+		else
+			size = sblock.fs_frag;
+		dnum = number;
+		if (*ap && (ret = (*func)(*ap, size)) & STOP)
+			return (ret);
+	}
+	for (ap = &dino.di_ib[0], n = 1; n <= 2; ap++, n++) {
+		dnum = number;
+		if (*ap && (ret = iblock(*ap, n, flg, dino.di_size - sblock.fs_bsize * NDADDR)) & STOP)
+			return (ret);
+	}
+	return (KEEPON);
+}
+
+iblock(blk, ilevel, flg, isize)
+	daddr_t blk;
+	register ilevel;
+	int isize;
+{
+	register daddr_t *ap;
+	register daddr_t *aplim;
+	register int i, n;
+	int (*func)(), nif;
+	BUFAREA ib;
+
+	if (flg == ADDR) {
+		func = pfunc;
+		if (((n = (*func)(blk, sblock.fs_frag)) & KEEPON) == 0)
+			return (n);
+	} else
+		func = dirscan;
+	if (outrange(blk))		/* protect thyself */
+		return (SKIP);
+	initbarea(&ib);
+	if (getblk(&ib, blk, sblock.fs_bsize) == NULL)
+		return (SKIP);
+	ilevel--;
+	if (ilevel == 0) {
+		nif = lblkno(&sblock, isize) + 1;
+	} else /* ilevel == 1 */ {
+		nif = isize / (sblock.fs_bsize * NINDIR(&sblock)) + 1;
+	}
+	if (nif > NINDIR(&sblock))
+		nif = NINDIR(&sblock);
+	aplim = & ib.b_un.b_indir[nif];
+	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
+		if (*ap) {
+			if (ilevel > 0)
+				n = iblock(*ap, ilevel, flg, isize - i * NINDIR(&sblock) * sblock.fs_bsize);
+			else
+				n = (*func)(*ap, sblock.fs_frag);
+			if (n & STOP)
+				return (n);
+		}
+	return (KEEPON);
+}
+
+pass1(blk, size)
+	daddr_t blk;
+	int size;
+{
+	register daddr_t *dlp;
+	int res = KEEPON;
+
+	for (; size > 0; blk++, size--) {
+		if (outrange(blk)) {
+			blkerr("BAD", blk);
+			if (++badblk >= MAXBAD) {
+				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
+				if (preen)
+					printf(" (SKIPPING)\n");
+				else if (reply("CONTINUE") == 0)
+					errexit("");
+				return (STOP);
+			}
+			res = SKIP;
+		} else if (getbmap(blk)) {
+			blkerr("DUP", blk);
+			if (++dupblk >= MAXDUP) {
+				pwarn("EXCESSIVE DUP BLKS I=%u", inum);
+				if (preen)
+					printf(" (SKIPPING)\n");
+				else if (reply("CONTINUE") == 0)
+					errexit("");
+				return (STOP);
+			}
+			if (enddup >= &duplist[DUPTBLSIZE]) {
+				pfatal("DUP TABLE OVERFLOW.");
+				if (reply("CONTINUE") == 0)
+					errexit("");
+				return (STOP);
+			}
+			for (dlp = duplist; dlp < muldup; dlp++)
+				if (*dlp == blk) {
+					*enddup++ = blk;
+					break;
+				}
+			if (dlp >= muldup) {
+				*enddup++ = *muldup;
+				*muldup++ = blk;
+			}
+		} else {
+			n_blks++;
+			setbmap(blk);
+		}
+		filsize++;
+	}
+	return (res);
+}
+
+pass1b(blk, size)
+	daddr_t blk;
+	int size;
+{
+	register daddr_t *dlp;
+	int res = KEEPON;
+
+	for (; size > 0; blk++, size--) {
+		if (outrange(blk))
+			res = SKIP;
+		for (dlp = duplist; dlp < muldup; dlp++)
+			if (*dlp == blk) {
+				blkerr("DUP", blk);
+				*dlp = *--muldup;
+				*muldup = blk;
+				if (muldup == duplist)
+					return (STOP);
+			}
+	}
+	return (res);
+}
+
+pass2(dirp)
+	register DIRECT *dirp;
+{
+	register char *p;
+	register n;
+	DINODE *dp;
+
+	if ((inum = dirp->d_ino) == 0)
+		return (KEEPON);
+	thisname = pathp;
+	for (p = dirp->d_name; p < &dirp->d_name[MAXNAMLEN]; )
+		if ((*pathp++ = *p++) == 0) {
+			--pathp;
+			break;
+		}
+	*pathp = 0;
+	n = 0;
+	if (inum > imax || inum <= 0)
+		n = direrr("I OUT OF RANGE");
+	else {
+again:
+		switch (getstate()) {
+		case USTATE:
+			n = direrr("UNALLOCATED");
+			break;
+
+		case CLEAR:
+			if ((n = direrr("DUP/BAD")) == 1)
+				break;
+			if ((dp = ginode()) == NULL)
+				break;
+			setstate(DIRCT ? DSTATE : FSTATE);
+			goto again;
+
+		case FSTATE:
+			declncnt();
+			break;
+
+		case DSTATE:
+			declncnt();
+			descend();
+			break;
 		}
 	}
-	sync();			/* ??? */
+	pathp = thisname;
+	if (n == 0)
+		return (KEEPON);
+	dirp->d_ino = 0;
+	return (KEEPON|ALTERD);
+}
+
+pass4(blk, size)
+	daddr_t blk;
+{
+	register daddr_t *dlp;
+	int res = KEEPON;
+
+	for (; size > 0; blk++, size--) {
+		if (outrange(blk))
+			res = SKIP;
+		else if (getbmap(blk)) {
+			for (dlp = duplist; dlp < enddup; dlp++)
+				if (*dlp == blk) {
+					*dlp = *--enddup;
+					return (KEEPON);
+				}
+			clrbmap(blk);
+			n_blks--;
+		}
+	}
+	return (res);
+}
+
+pass5(blk, size)
+	daddr_t blk;
+	int size;
+{
+	int res = KEEPON;
+
+	for (; size > 0; blk++, size--) {
+		if (outrange(blk)) {
+			fixcg = 1;
+			if (preen)
+				pfatal("BAD BLOCKS IN BIT MAPS.");
+			if (++badblk >= MAXBAD) {
+				printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
+				if (reply("CONTINUE") == 0)
+					errexit("");
+				return (STOP);
+			}
+		} else if (getfmap(blk)) {
+			fixcg = 1;
+			if (preen)
+				pfatal("DUP BLKS IN BIT MAPS.");
+			if (++dupblk >= DUPTBLSIZE) {
+				printf("EXCESSIVE DUP BLKS IN BIT MAPS.");
+				if (reply("CONTINUE") == 0)
+					errexit("");
+				return (STOP);
+			}
+		} else {
+			n_ffree++;
+			setfmap(blk);
+		}
+	}
+	return (res);
+}
+
+outrange(blk)
+	daddr_t blk;
+{
+	register int c;
+
+	c = dtog(&sblock, blk);
+	if ((unsigned)blk >= fmax) {
+		return (1);
+	}
+	return (0);
+}
+
+blkerr(s, blk)
+	daddr_t blk;
+	char *s;
+{
+	pfatal("%ld %s I=%u", blk, s, inum);
+	printf("\n");
+	setstate(CLEAR);	/* mark for possible clearing */
+}
+
+descend()
+{
+	register DINODE *dp;
+	register char *savname;
+	off_t savsize;
+
+	setstate(FSTATE);
+	if ((dp = ginode()) == NULL)
+		return;
+	savname = thisname;
+	*pathp++ = '/';
+	savsize = filsize;
+	filsize = dp->di_size;
+	ckinode(dp, DATA);
+	thisname = savname;
+	*--pathp = 0;
+	filsize = savsize;
+}
+
+struct dirstuff {
+	int loc;
+	int blkno;
+	int blksiz;
+	ino_t number;
+	enum {DONTKNOW, NOFIX, FIX} fix;
+};
+
+dirscan(blk, nf)
+	daddr_t blk;
+	int nf;
+{
+	register DIRECT *dp;
+	struct dirstuff dirp;
+	int blksiz, dsize, n;
+	char dbuf[DIRBLKSIZ];
+
+	if (outrange(blk)) {
+		filsize -= sblock.fs_bsize;
+		return (SKIP);
+	}
+	blksiz = nf * sblock.fs_fsize;
+	dirp.loc = 0;
+	dirp.blkno = blk;
+	dirp.blksiz = blksiz;
+	if (dirp.number != dnum) {
+		dirp.number = dnum;
+		dirp.fix = DONTKNOW;
+	}
+	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		dsize = dp->d_reclen;
+		copy(dp, dbuf, dsize);
+		if ((n = (*pfunc)(dbuf)) & ALTERD) {
+			if (getblk(&fileblk, blk, blksiz) != NULL) {
+				copy(dbuf, dp, dsize);
+				dirty(&fileblk);
+				sbdirty();
+			} else
+				n &= ~ALTERD;
+		}
+		if (n & STOP) 
+			return (n);
+	}
+	return (filsize > 0 ? KEEPON : STOP);
+}
+
+/*
+ * get next entry in a directory.
+ */
+DIRECT *
+readdir(dirp)
+	register struct dirstuff *dirp;
+{
+	register DIRECT *dp, *ndp;
+	long size;
+
+	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
+		filsize -= dirp->blksiz - dirp->loc;
+		return NULL;
+	}
+	while (dirp->loc % DIRBLKSIZ == 0 && filsize > 0 &&
+	    dirp->loc < dirp->blksiz) {
+		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+	   	if (dp->d_ino < imax &&
+		    dp->d_namlen <= MAXNAMLEN && dp->d_namlen >= 0 &&
+		    dp->d_reclen > 0 && dp->d_reclen <= DIRBLKSIZ)
+			break;
+		dirp->loc += DIRBLKSIZ;
+		filsize -= DIRBLKSIZ;
+		if (dirp->fix == DONTKNOW) {
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			dirp->fix = NOFIX;
+			if (preen) {
+				printf(" (SALVAGED)\n");
+				dirp->fix = FIX;
+			} else if (reply("SALVAGE") != 0)
+				dirp->fix = FIX;
+		}
+		if (dirp->fix != FIX)
+			continue;
+		dp->d_reclen = DIRBLKSIZ;
+		dp->d_ino = 0;
+		dp->d_namlen = 0;
+		dirty(&fileblk);
+	}
+	if (filsize <= 0 || dirp->loc >= dirp->blksiz)
+		return NULL;
+	dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+	dirp->loc += dp->d_reclen;
+	filsize -= dp->d_reclen;
+	ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+	if ((filsize <= 0 && dirp->loc % DIRBLKSIZ != 0) ||
+	    (dirp->loc < dirp->blksiz && filsize > 0 &&
+	    (ndp->d_ino >= imax ||
+	    ndp->d_namlen > MAXNAMLEN || ndp->d_namlen < 0 ||
+	    ndp->d_reclen <= 0 || 
+	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ)))) {
+		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
+		dirp->loc += size;
+		filsize -= size;
+		if (dirp->fix == DONTKNOW) {
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			dirp->fix = NOFIX;
+			if (preen) {
+				printf(" (SALVAGED)\n");
+				dirp->fix = FIX;
+			} else if (reply("SALVAGE") != 0)
+				dirp->fix = FIX;
+		}
+		if (dirp->fix == FIX) {
+			dp->d_reclen += size;
+			dirty(&fileblk);
+		}
+	}
+	return (dp);
+}
+
+direrr(s)
+	char *s;
+{
+	register DINODE *dp;
+
+	pwarn("%s ", s);
+	pinode();
+	printf("\n");
+	if ((dp = ginode()) != NULL && ftypeok(dp))
+		pfatal("%s=%s", DIRCT?"DIR":"FILE", pathname);
+	else
+		pfatal("NAME=%s", pathname);
+	return (reply("REMOVE"));
+}
+
+adjust(lcnt)
+	register short lcnt;
+{
+	register DINODE *dp;
+
+	if ((dp = ginode()) == NULL)
+		return;
+	if (dp->di_nlink == lcnt) {
+		if (linkup() == 0)
+			clri("UNREF", 0);
+	}
+	else {
+		pwarn("LINK COUNT %s",
+			(lfdir==inum)?lfname:(DIRCT?"DIR":"FILE"));
+		pinode();
+		printf(" COUNT %d SHOULD BE %d",
+			dp->di_nlink, dp->di_nlink-lcnt);
+		if (preen) {
+			if (lcnt < 0) {
+				printf("\n");
+				preendie();
+			}
+			printf(" (ADJUSTED)\n");
+		}
+		if (preen || reply("ADJUST") == 1) {
+			dp->di_nlink -= lcnt;
+			inodirty();
+		}
+	}
+}
+
+clri(s, flg)
+	char *s;
+{
+	register DINODE *dp;
+
+	if ((dp = ginode()) == NULL)
+		return;
+	if (flg == 1) {
+		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
+		pinode();
+	}
+	if (preen || reply("CLEAR") == 1) {
+		if (preen)
+			printf(" (CLEARED)\n");
+		n_files--;
+		pfunc = pass4;
+		ckinode(dp, ADDR);
+		zapino(dp);
+		setstate(USTATE);
+		inodirty();
+		inosumbad++;
+	}
 }
 
 setup(dev)
@@ -550,863 +1435,6 @@ setup(dev)
 badsb:
 	ckfini();
 	return (0);
-}
-
-pass1()
-{
-	register int c, i, n, j;
-	register DINODE *dp;
-	int savino, ndb, partial;
-
-	pfunc = pass1check;
-	inum = 0;
-	n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
-			continue;
-		if (cgrp.cg_magic != CG_MAGIC) {
-			pfatal("cg %d: bad magic number\n", c);
-			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
-		}
-		n = 0;
-		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
-			dp = ginode();
-			if (dp == NULL)
-				continue;
-			n++;
-			if (ALLOC) {
-				if (!isset(cgrp.cg_iused, i)) {
-					if (debug)
-						printf("%d bad, not used\n",
-						    inum);
-					inosumbad++;
-				}
-				n--;
-				lastino = inum;
-				if (ftypeok(dp) == 0)
-					goto unknown;
-				if (dp->di_size < 0)
-					goto unknown;
-				ndb = howmany(dp->di_size, sblock.fs_bsize);
-				if (SPECIAL)
-					ndb++;
-				for (j = ndb; j < NDADDR; j++)
-					if (dp->di_db[j] != 0)
-						goto unknown;
-				for (j = 0, ndb -= NDADDR; ndb > 0; j++)
-					ndb /= NINDIR(&sblock);
-				for (; j < NIADDR; j++)
-					if (dp->di_ib[j] != 0)
-						goto unknown;
-				n_files++;
-				lncntp[inum] = dp->di_nlink;
-				if (dp->di_nlink <= 0) {
-					if (badlnp < &badlncnt[MAXLNCNT])
-						*badlnp++ = inum;
-					else {
-						pfatal("LINK COUNT TABLE OVERFLOW");
-						if (reply("CONTINUE") == 0)
-							errexit("");
-					}
-				}
-				statemap[inum] = DIRCT ? DSTATE : FSTATE;
-				badblk = dupblk = 0; filsize = 0; maxblk = 0;
-				ckinode(dp, ADDR);
-				continue;
-		unknown:
-				pfatal("UNKNOWN FILE TYPE I=%u", inum);
-				if (reply("CLEAR") == 1) {
-					zapino(dp);
-					inodirty();
-					inosumbad++;
-				}
-			} else {
-				if (isset(cgrp.cg_iused, i)) {
-					if (debug)
-						printf("%d bad, marked used\n",
-						    inum);
-					inosumbad++;
-					n--;
-				}
-				partial = 0;
-				for (j = 0; j < NDADDR; j++)
-					if (dp->di_db[j] != 0)
-						partial++;
-				for (j = 0; j < NIADDR; j++)
-					if (dp->di_ib[j] != 0)
-						partial++;
-				if (partial || dp->di_mode != 0 ||
-				    dp->di_size != 0) {
-					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
-					if (reply("CLEAR") == 1) {
-						zapino(dp);
-						inodirty();
-						inosumbad++;
-					}
-				}
-			}
-		}
-		if (n != cgrp.cg_cs.cs_nifree) {
-			if (debug)
-				printf("cg[%d].cg_cs.cs_nifree is %d; calc %d\n",
-				    c, cgrp.cg_cs.cs_nifree, n);
-			inosumbad++;
-		}
-		if (cgrp.cg_cs.cs_nbfree != sblock.fs_cs(&sblock, c).cs_nbfree
-		  || cgrp.cg_cs.cs_nffree != sblock.fs_cs(&sblock, c).cs_nffree
-		  || cgrp.cg_cs.cs_nifree != sblock.fs_cs(&sblock, c).cs_nifree
-		  || cgrp.cg_cs.cs_ndir != sblock.fs_cs(&sblock, c).cs_ndir)
-			sbsumbad++;
-	}
-}
-
-pass1check(blk, size)
-	daddr_t blk;
-	int size;
-{
-	register daddr_t *dlp;
-	int res = KEEPON;
-	int anyout;
-
-	anyout = outrange(blk, size);
-	for (; size > 0; blk++, size--) {
-		if (anyout && outrange(blk, 1)) {
-			blkerr("BAD", blk);
-			if (++badblk >= MAXBAD) {
-				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
-				if (preen)
-					printf(" (SKIPPING)\n");
-				else if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
-			res = SKIP;
-		} else if (getbmap(blk)) {
-			blkerr("DUP", blk);
-			if (++dupblk >= MAXDUP) {
-				pwarn("EXCESSIVE DUP BLKS I=%u", inum);
-				if (preen)
-					printf(" (SKIPPING)\n");
-				else if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
-			if (enddup >= &duplist[DUPTBLSIZE]) {
-				pfatal("DUP TABLE OVERFLOW.");
-				if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
-			for (dlp = duplist; dlp < muldup; dlp++)
-				if (*dlp == blk) {
-					*enddup++ = blk;
-					break;
-				}
-			if (dlp >= muldup) {
-				*enddup++ = *muldup;
-				*muldup++ = blk;
-			}
-		} else {
-			n_blks++;
-			setbmap(blk);
-		}
-		filsize++;
-	}
-	return (res);
-}
-
-pass1b()
-{
-	register int c, i;
-	register DINODE *dp;
-
-	pfunc = pass1bcheck;
-	inum = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
-			dp = ginode();
-			if (dp == NULL)
-				continue;
-			if (statemap[inum] != USTATE &&
-			    (ckinode(dp, ADDR) & STOP))
-				goto out1b;
-		}
-	}
-out1b:
-	flush(&dfile, &inoblk);
-}
-
-pass1bcheck(blk, size)
-	daddr_t blk;
-	int size;
-{
-	register daddr_t *dlp;
-	int res = KEEPON;
-
-	for (; size > 0; blk++, size--) {
-		if (outrange(blk, 1))
-			res = SKIP;
-		for (dlp = duplist; dlp < muldup; dlp++)
-			if (*dlp == blk) {
-				blkerr("DUP", blk);
-				*dlp = *--muldup;
-				*muldup = blk;
-				if (muldup == duplist)
-					return (STOP);
-			}
-	}
-	return (res);
-}
-
-pass2()
-{
-	register DINODE *dp;
-
-	inum = ROOTINO;
-	thisname = pathp = pathname;
-	pfunc = pass2check;
-	switch (statemap[inum]) {
-
-	case USTATE:
-		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
-
-	case FSTATE:
-		pfatal("ROOT INODE NOT DIRECTORY");
-		if (reply("FIX") == 0 || (dp = ginode()) == NULL)
-			errexit("");
-		dp->di_mode &= ~IFMT;
-		dp->di_mode |= IFDIR;
-		inodirty();
-		inosumbad++;
-		statemap[inum] = DSTATE;
-		/* fall into ... */
-
-	case DSTATE:
-		descend();
-		break;
-
-	case CLEAR:
-		pfatal("DUPS/BAD IN ROOT INODE");
-		printf("\n");
-		if (reply("CONTINUE") == 0)
-			errexit("");
-		statemap[inum] = DSTATE;
-		descend();
-	}
-}
-
-pass2check(dirp)
-	register DIRECT *dirp;
-{
-	register char *p;
-	register n;
-	DINODE *dp;
-
-	if ((inum = dirp->d_ino) == 0)
-		return (KEEPON);
-	thisname = pathp;
-	for (p = dirp->d_name; p < &dirp->d_name[MAXNAMLEN]; )
-		if ((*pathp++ = *p++) == 0) {
-			--pathp;
-			break;
-		}
-	*pathp = 0;
-	n = 0;
-	if (inum > imax || inum <= 0)
-		n = direrr("I OUT OF RANGE");
-	else {
-again:
-		switch (statemap[inum]) {
-		case USTATE:
-			n = direrr("UNALLOCATED");
-			break;
-
-		case CLEAR:
-			if ((n = direrr("DUP/BAD")) == 1)
-				break;
-			if ((dp = ginode()) == NULL)
-				break;
-			statemap[inum] = DIRCT ? DSTATE : FSTATE;
-			goto again;
-
-		case FSTATE:
-			lncntp[inum]--;
-			break;
-
-		case DSTATE:
-			lncntp[inum]--;
-			descend();
-			break;
-		}
-	}
-	pathp = thisname;
-	if (n == 0)
-		return (KEEPON);
-	dirp->d_ino = 0;
-	return (KEEPON|ALTERD);
-}
-
-pass3()
-{
-	ino_t savino;
-	register DINODE *dp;
-
-	for (inum = ROOTINO; inum <= lastino; inum++) {
-		if (statemap[inum] == DSTATE) {
-			pfunc = findino;
-			srchname = "..";
-			savino = inum;
-			do {
-				orphan = inum;
-				if ((dp = ginode()) == NULL)
-					break;
-				filsize = dp->di_size;
-				parentdir = 0;
-				ckinode(dp, DATA);
-				if ((inum = parentdir) == 0)
-					break;
-			} while (statemap[inum] == DSTATE);
-			inum = orphan;
-			if (linkup() == 1) {
-				thisname = pathp = pathname;
-				*pathp++ = '?';
-				pfunc = pass2check;
-				descend();
-			}
-			inum = savino;
-		}
-	}
-}
-
-pass4()
-{
-	register int n;
-	register ino_t *blp;
-
-	pfunc = pass4check;
-	for (inum = ROOTINO; inum <= lastino; inum++) {
-		switch (statemap[inum]) {
-
-		case FSTATE:
-			n = lncntp[inum];
-			if (n)
-				adjust((short)n);
-			else {
-				for (blp = badlncnt;blp < badlnp; blp++)
-					if (*blp == inum) {
-						clri("UNREF", 1);
-						break;
-					}
-			}
-			break;
-
-		case DSTATE:
-			clri("UNREF", 1);
-			break;
-
-		case CLEAR:
-			clri("BAD/DUP", 1);
-			break;
-		}
-	}
-	if (imax - ROOTINO - n_files != sblock.fs_cstotal.cs_nifree) {
-		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
-		if (preen)
-			printf(" (FIXED)\n");
-		if (preen || reply("FIX") == 1) {
-			sblock.fs_cstotal.cs_nifree = imax - ROOTINO - n_files;
-			sbdirty();
-		}
-	}
-	flush(&dfile, &fileblk);
-}
-
-pass4check(blk, size)
-	daddr_t blk;
-{
-	register daddr_t *dlp;
-	int res = KEEPON;
-
-	for (; size > 0; blk++, size--) {
-		if (outrange(blk, 1))
-			res = SKIP;
-		else if (getbmap(blk)) {
-			for (dlp = duplist; dlp < enddup; dlp++)
-				if (*dlp == blk) {
-					*dlp = *--enddup;
-					return (KEEPON);
-				}
-			clrbmap(blk);
-			n_blks--;
-		}
-	}
-	return (res);
-}
-
-pass5()
-{
-	register int c, n, i, b, d;
-	short bo[MAXCPG][NRPOS];
-	long botot[MAXCPG];
-	long frsum[MAXFRAG];
-	int blk;
-	daddr_t cbase;
-	int blockbits = (1<<sblock.fs_frag)-1;
-
-	blkcpy((unsigned)bmapsz, blockmap, freemap);
-	dupblk = 0;
-	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		cbase = cgbase(&sblock, c);
-		bzero(botot, sizeof (botot));
-		bzero(bo, sizeof (bo));
-		bzero(frsum, sizeof (frsum));
-		/*
-		 * need to account for the super blocks
-		 * which appear (inaccurately) bad
-		 */
-		n_bad += cgtod(&sblock, c) - cgsblock(&sblock, c);
-		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
-			continue;
-		if (cgrp.cg_magic != CG_MAGIC) {
-			pfatal("cg %d: bad magic number\n", c);
-			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
-		}
-		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
-			blk = blkmap(&sblock, cgrp.cg_free, b);
-			if (blk == 0)
-				continue;
-			if (blk == blockbits) {
-				if (pass5check(cbase+b, sblock.fs_frag) == STOP)
-					goto out5;
-				/* this is clumsy ... */
-				n_ffree -= sblock.fs_frag;
-				n_bfree++;
-				botot[cbtocylno(&sblock, b)]++;
-				bo[cbtocylno(&sblock, b)]
-				    [cbtorpos(&sblock, b)]++;
-				continue;
-			}
-			for (d = 0; d < sblock.fs_frag; d++)
-				if ((blk & (1<<d)) &&
-				    pass5check(cbase+b+d,1) == STOP)
-					goto out5;
-			fragacct(&sblock, blk, frsum, 1);
-		}
-		if (bcmp(cgrp.cg_frsum, frsum, sizeof (frsum))) {
-			if (debug)
-			for (i = 0; i < sblock.fs_frag; i++)
-				if (cgrp.cg_frsum[i] != frsum[i])
-				printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
-				    c, i, cgrp.cg_frsum[i], frsum[i]);
-			frsumbad++;
-		}
-		if (bcmp(cgrp.cg_btot, botot, sizeof (botot))) {
-			if (debug)
-			for (n = 0; n < sblock.fs_cpg; n++)
-				if (botot[n] != cgrp.cg_btot[n])
-				printf("cg[%d].cg_btot[%d] have %d calc %d\n",
-				    c, n, cgrp.cg_btot[n], botot[n]);
-			offsumbad++;
-		}
-		if (bcmp(cgrp.cg_b, bo, sizeof (bo))) {
-			if (debug)
-			for (i = 0; i < NRPOS; i++)
-				if (bo[n][i] != cgrp.cg_b[n][i])
-				printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
-				    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
-			offsumbad++;
-		}
-	}
-out5:
-	if (dupblk)
-		pwarn("%d DUP BLKS IN BIT MAPS\n", dupblk);
-	if (fixcg == 0) {
-		if ((b = n_blks+n_ffree+sblock.fs_frag*n_bfree+n_index+n_bad) != fmax) {
-			pwarn("%ld BLK(S) MISSING\n", fmax - b);
-			fixcg = 1;
-		} else if (inosumbad + offsumbad + frsumbad + sbsumbad) {
-			pwarn("SUMMARY INFORMATION %s%s%s%sBAD\n",
-			    inosumbad ? "(INODE FREE) " : "",
-			    offsumbad ? "(BLOCK OFFSETS) " : "",
-			    frsumbad ? "(FRAG SUMMARIES) " : "",
-			    sbsumbad ? "(SUPER BLOCK SUMMARIES) " : "");
-			fixcg = 1;
-		} else if (n_ffree != sblock.fs_cstotal.cs_nffree ||
-		    n_bfree != sblock.fs_cstotal.cs_nbfree) {
-			pwarn("FREE BLK COUNT(S) WRONG IN SUPERBLK");
-			if (preen)
-				printf(" (FIXED)\n");
-			if (preen || reply("FIX") == 1) {
-				sblock.fs_cstotal.cs_nffree = n_ffree;
-				sblock.fs_cstotal.cs_nbfree = n_bfree;
-				sbdirty();
-			}
-		}
-	}
-	if (fixcg) {
-		pwarn("BAD CYLINDER GROUPS");
-		if (preen)
-			printf(" (SALVAGED)\n");
-		else if (reply("SALVAGE") == 0)
-			fixcg = 0;
-	}
-}
-
-pass5check(blk, size)
-	daddr_t blk;
-	int size;
-{
-
-	if (outrange(blk, size)) {
-		fixcg = 1;
-		if (preen)
-			pfatal("BAD BLOCKS IN BIT MAPS.");
-		if (++badblk >= MAXBAD) {
-			printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
-			if (reply("CONTINUE") == 0)
-				errexit("");
-			return (STOP);
-		}
-	}
-	for (; size > 0; blk++, size--)
-		if (getfmap(blk)) {
-			fixcg = 1;
-			++dupblk;
-		} else {
-			n_ffree++;
-			setfmap(blk);
-		}
-	return (KEEPON);
-}
-
-ckinode(dp, flg)
-	DINODE *dp;
-	register flg;
-{
-	register daddr_t *ap;
-	register ret;
-	int (*func)(), n, ndb, size, offset;
-	ino_t number = inum;
-	DINODE dino;
-
-	if (SPECIAL)
-		return (KEEPON);
-	dino = *dp;
-	func = (flg == ADDR) ? pfunc : dirscan;
-	ndb = howmany(dino.di_size, sblock.fs_bsize);
-	for (ap = &dino.di_db[0]; ap < &dino.di_db[NDADDR]; ap++) {
-		if (--ndb == 0 && (offset = blkoff(&sblock, dino.di_size)) != 0)
-			size = numfrags(&sblock, fragroundup(&sblock, offset));
-		else
-			size = sblock.fs_frag;
-		dnum = number;
-		if (*ap && (ret = (*func)(*ap, size)) & STOP)
-			return (ret);
-	}
-	for (ap = &dino.di_ib[0], n = 1; n <= 2; ap++, n++) {
-		dnum = number;
-		if (*ap) {
-			ret = iblock(*ap, n, flg,
-			    dino.di_size - sblock.fs_bsize * NDADDR);
-			if (ret & STOP)
-				return (ret);
-		}
-	}
-	return (KEEPON);
-}
-
-iblock(blk, ilevel, flg, isize)
-	daddr_t blk;
-	register ilevel;
-	int isize;
-{
-	register daddr_t *ap;
-	register daddr_t *aplim;
-	register int i, n;
-	int (*func)(), nif;
-	BUFAREA ib;
-
-	if (flg == ADDR) {
-		func = pfunc;
-		if (((n = (*func)(blk, sblock.fs_frag)) & KEEPON) == 0)
-			return (n);
-	} else
-		func = dirscan;
-	if (outrange(blk, sblock.fs_frag))		/* protect thyself */
-		return (SKIP);
-	initbarea(&ib);
-	if (getblk(&ib, blk, sblock.fs_bsize) == NULL)
-		return (SKIP);
-	ilevel--;
-	if (ilevel == 0) {
-		nif = lblkno(&sblock, isize) + 1;
-	} else /* ilevel == 1 */ {
-		nif = isize / (sblock.fs_bsize * NINDIR(&sblock)) + 1;
-	}
-	if (nif > NINDIR(&sblock))
-		nif = NINDIR(&sblock);
-	aplim = &ib.b_un.b_indir[nif];
-	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
-		if (*ap) {
-			if (ilevel > 0)
-				n = iblock(*ap, ilevel, flg,
-				    isize - i*NINDIR(&sblock)*sblock.fs_bsize);
-			else
-				n = (*func)(*ap, sblock.fs_frag);
-			if (n & STOP)
-				return (n);
-		}
-	return (KEEPON);
-}
-
-outrange(blk, cnt)
-	daddr_t blk;
-	int cnt;
-{
-	register int c;
-
-	if ((unsigned)(blk+cnt) > fmax)
-		return (1);
-	c = dtog(&sblock, blk);
-	if (blk < cgdmin(&sblock, c)) {
-		if ((blk+cnt) > cgsblock(&sblock, c)) {
-			if (debug) {
-				printf("blk %d < cgdmin %d;",
-				    blk, cgdmin(&sblock, c));
-				printf(" blk+cnt %d > cgsbase %d\n",
-				    blk+cnt, cgsblock(&sblock, c));
-			}
-			return (1);
-		}
-	} else {
-		if ((blk+cnt) > cgbase(&sblock, c+1)) {
-			if (debug)  {
-				printf("blk %d >= cgdmin %d;",
-				    blk, cgdmin(&sblock, c));
-				printf(" blk+cnt %d > sblock.fs_fpg %d\n",
-				    blk+cnt, sblock.fs_fpg);
-			}
-			return (1);
-		}
-	}
-	return (0);
-}
-
-blkerr(s, blk)
-	daddr_t blk;
-	char *s;
-{
-
-	pfatal("%ld %s I=%u", blk, s, inum);
-	printf("\n");
-	statemap[inum] = CLEAR;
-}
-
-descend()
-{
-	register DINODE *dp;
-	register char *savname;
-	off_t savsize;
-
-	statemap[inum] = FSTATE;
-	if ((dp = ginode()) == NULL)
-		return;
-	savname = thisname;
-	*pathp++ = '/';
-	savsize = filsize;
-	filsize = dp->di_size;
-	ckinode(dp, DATA);
-	thisname = savname;
-	*--pathp = 0;
-	filsize = savsize;
-}
-
-struct dirstuff {
-	int loc;
-	int blkno;
-	int blksiz;
-	ino_t number;
-	enum {DONTKNOW, NOFIX, FIX} fix;
-};
-
-dirscan(blk, nf)
-	daddr_t blk;
-	int nf;
-{
-	register DIRECT *dp;
-	struct dirstuff dirp;
-	int blksiz, dsize, n;
-	char dbuf[DIRBLKSIZ];
-
-	if (outrange(blk, 1)) {
-		filsize -= sblock.fs_bsize;
-		return (SKIP);
-	}
-	blksiz = nf * sblock.fs_fsize;
-	dirp.loc = 0;
-	dirp.blkno = blk;
-	dirp.blksiz = blksiz;
-	if (dirp.number != dnum) {
-		dirp.number = dnum;
-		dirp.fix = DONTKNOW;
-	}
-	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
-		dsize = dp->d_reclen;
-		bcopy(dp, dbuf, dsize);
-		if ((n = (*pfunc)(dbuf)) & ALTERD) {
-			if (getblk(&fileblk, blk, blksiz) != NULL) {
-				bcopy(dbuf, dp, dsize);
-				dirty(&fileblk);
-				sbdirty();
-			} else
-				n &= ~ALTERD;
-		}
-		if (n & STOP) 
-			return (n);
-	}
-	return (filsize > 0 ? KEEPON : STOP);
-}
-
-/*
- * get next entry in a directory.
- */
-DIRECT *
-readdir(dirp)
-	register struct dirstuff *dirp;
-{
-	register DIRECT *dp, *ndp;
-	long size;
-
-	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
-		filsize -= dirp->blksiz - dirp->loc;
-		return NULL;
-	}
-	while (dirp->loc % DIRBLKSIZ == 0 && filsize > 0 &&
-	    dirp->loc < dirp->blksiz) {
-		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	   	if (dp->d_ino < imax &&
-		    dp->d_namlen <= MAXNAMLEN && dp->d_namlen >= 0 &&
-		    dp->d_reclen > 0 && dp->d_reclen <= DIRBLKSIZ)
-			break;
-		dirp->loc += DIRBLKSIZ;
-		filsize -= DIRBLKSIZ;
-		if (dirp->fix == DONTKNOW) {
-			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = NOFIX;
-			if (preen) {
-				printf(" (SALVAGED)\n");
-				dirp->fix = FIX;
-			} else if (reply("SALVAGE") != 0)
-				dirp->fix = FIX;
-		}
-		if (dirp->fix != FIX)
-			continue;
-		dp->d_reclen = DIRBLKSIZ;
-		dp->d_ino = 0;
-		dp->d_namlen = 0;
-		dirty(&fileblk);
-	}
-	if (filsize <= 0 || dirp->loc >= dirp->blksiz)
-		return NULL;
-	dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	dirp->loc += dp->d_reclen;
-	filsize -= dp->d_reclen;
-	ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	if ((filsize <= 0 && dirp->loc % DIRBLKSIZ != 0) ||
-	    (dirp->loc < dirp->blksiz && filsize > 0 &&
-	    (ndp->d_ino >= imax ||
-	    ndp->d_namlen > MAXNAMLEN || ndp->d_namlen < 0 ||
-	    ndp->d_reclen <= 0 || 
-	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ)))) {
-		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
-		dirp->loc += size;
-		filsize -= size;
-		if (dirp->fix == DONTKNOW) {
-			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = NOFIX;
-			if (preen) {
-				printf(" (SALVAGED)\n");
-				dirp->fix = FIX;
-			} else if (reply("SALVAGE") != 0)
-				dirp->fix = FIX;
-		}
-		if (dirp->fix == FIX) {
-			dp->d_reclen += size;
-			dirty(&fileblk);
-		}
-	}
-	return (dp);
-}
-
-direrr(s)
-	char *s;
-{
-	register DINODE *dp;
-
-	pwarn("%s ", s);
-	pinode();
-	printf("\n");
-	if ((dp = ginode()) != NULL && ftypeok(dp))
-		pfatal("%s=%s", DIRCT?"DIR":"FILE", pathname);
-	else
-		pfatal("NAME=%s", pathname);
-	return (reply("REMOVE"));
-}
-
-adjust(lcnt)
-	register short lcnt;
-{
-	register DINODE *dp;
-
-	if ((dp = ginode()) == NULL)
-		return;
-	if (dp->di_nlink == lcnt) {
-		if (linkup() == 0)
-			clri("UNREF", 0);
-	}
-	else {
-		pwarn("LINK COUNT %s",
-			(lfdir==inum)?lfname:(DIRCT?"DIR":"FILE"));
-		pinode();
-		printf(" COUNT %d SHOULD BE %d",
-			dp->di_nlink, dp->di_nlink-lcnt);
-		if (preen) {
-			if (lcnt < 0) {
-				printf("\n");
-				preendie();
-			}
-			printf(" (ADJUSTED)\n");
-		}
-		if (preen || reply("ADJUST") == 1) {
-			dp->di_nlink -= lcnt;
-			inodirty();
-		}
-	}
-}
-
-clri(s, flg)
-	char *s;
-{
-	register DINODE *dp;
-
-	if ((dp = ginode()) == NULL)
-		return;
-	if (flg == 1) {
-		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
-		pinode();
-	}
-	if (preen || reply("CLEAR") == 1) {
-		if (preen)
-			printf(" (CLEARED)\n");
-		n_files--;
-		pfunc = pass4check;
-		ckinode(dp, ADDR);
-		zapino(dp);
-		statemap[inum] = USTATE;
-		inodirty();
-		inosumbad++;
-	}
 }
 
 badsb(s)
@@ -1589,6 +1617,15 @@ pinode()
 	printf("MTIME=%12.12s %4.4s ", p+4, p+20);
 }
 
+copy(fp, tp, size)
+	register char *tp, *fp;
+	unsigned size;
+{
+
+	while (size--)
+		*tp++ = *fp++;
+}
+
 makecg()
 {
 	int c, blk;
@@ -1714,6 +1751,40 @@ makecg()
 	sbdirty();
 }
 
+/*
+ * update the frsum fields to reflect addition or deletion 
+ * of some frags
+ */
+fragacct(fs, fragmap, fraglist, cnt)
+	struct fs *fs;
+	int fragmap;
+	long fraglist[];
+	int cnt;
+{
+	int inblk;
+	register int field, subfield;
+	register int siz, pos;
+
+	inblk = (int)(fragtbl[fs->fs_frag][fragmap] << 1);
+	fragmap <<= 1;
+	for (siz = 1; siz < fs->fs_frag; siz++) {
+		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
+			continue;
+		field = around[siz];
+		subfield = inside[siz];
+		for (pos = siz; pos <= fs->fs_frag; pos++) {
+			if ((fragmap & field) == subfield) {
+				fraglist[siz] += cnt;
+				pos += siz;
+				field <<= siz;
+				subfield <<= siz;
+			}
+			field <<= 1;
+			subfield <<= 1;
+		}
+	}
+}
+
 findino(dirp)
 	register DIRECT *dirp;
 {
@@ -1812,7 +1883,7 @@ linkup()
 		}
 	}
 	inum = lfdir;
-	if ((dp = ginode()) == NULL || !DIRCT || statemap[inum] != FSTATE) {
+	if ((dp = ginode()) == NULL || !DIRCT || getstate() != FSTATE) {
 		inum = orphan;
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
@@ -1830,7 +1901,7 @@ linkup()
 		printf("\n\n");
 		return (0);
 	}
-	lncntp[inum]--;
+	declncnt();
 	if (lostdir) {
 		pfunc = chgdd;
 		dp = ginode();
@@ -1840,7 +1911,7 @@ linkup()
 		if ((dp = ginode()) != NULL) {
 			dp->di_nlink++;
 			inodirty();
-			lncntp[inum]++;
+			setlncnt(getlncnt()+1);
 		}
 		inum = orphan;
 		pwarn("DIR I=%u CONNECTED. ", orphan);
@@ -1891,101 +1962,138 @@ catch()
 	exit(12);
 }
 
-char *
-unrawname(cp)
-	char *cp;
+/*
+ * block operations
+ */
+
+isblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
 {
-	char *dp = rindex(cp, '/');
-	struct stat stb;
+	unsigned char mask;
 
-	if (dp == 0)
-		return (cp);
-	if (stat(cp, &stb) < 0)
-		return (cp);
-	if ((stb.st_mode&S_IFMT) != S_IFCHR)
-		return (cp);
-	if (*(dp+1) != 'r')
-		return (cp);
-	strcpy(dp+1, dp+2);
-	return (cp);
-}
-
-char *
-rawname(cp)
-	char *cp;
-{
-	static char rawbuf[32];
-	char *dp = rindex(cp, '/');
-
-	if (dp == 0)
+	switch (fs->fs_frag) {
+	case 8:
+		return (cp[h] == 0xff);
+	case 4:
+		mask = 0x0f << ((h & 0x1) << 2);
+		return ((cp[h >> 1] & mask) == mask);
+	case 2:
+		mask = 0x03 << ((h & 0x3) << 1);
+		return ((cp[h >> 2] & mask) == mask);
+	case 1:
+		mask = 0x01 << (h & 0x7);
+		return ((cp[h >> 3] & mask) == mask);
+	default:
+		error("isblock bad fs_frag %d\n", fs->fs_frag);
 		return (0);
-	*dp = 0;
-	strcpy(rawbuf, cp);
-	*dp = '/';
-	strcat(rawbuf, "/r");
-	strcat(rawbuf, dp+1);
-	return (rawbuf);
-}
-
-/* VARARGS1 */
-error(s1, s2, s3, s4)
-	char *s1;
-{
-
-	printf(s1, s2, s3, s4);
-}
-
-/* VARARGS1 */
-errexit(s1, s2, s3, s4)
-	char *s1;
-{
-	error(s1, s2, s3, s4);
-	exit(8);
-}
-
-/*
- * An inconsistency occured which shouldn't during normal operations.
- * Die if preening, otw just printf.
- */
-/* VARARGS1 */
-pfatal(s, a1, a2, a3)
-	char *s;
-{
-
-	if (preen) {
-		printf("%s: ", devname);
-		printf(s, a1, a2, a3);
-		printf("\n");
-		preendie();
 	}
-	printf(s, a1, a2, a3);
 }
 
-preendie()
-{
+/*	tables.c	4.1	82/03/25	*/
 
-	printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n", devname);
-	exit(8);
-}
+/* merged into kernel:	tables.c 2.1 3/25/82 */
+
+/* last monet version:	partab.c	4.2	81/03/08	*/
 
 /*
- * Pwarn is like printf when not preening,
- * or a warning (preceded by filename) when preening.
+ * bit patterns for identifying fragments in the block map
+ * used as ((map & around) == inside)
  */
-/* VARARGS1 */
-pwarn(s, a1, a2, a3, a4, a5, a6)
-	char *s;
-{
+int around[9] = {
+	0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff
+};
+int inside[9] = {
+	0x0, 0x2, 0x6, 0xe, 0x1e, 0x3e, 0x7e, 0xfe, 0x1fe
+};
 
-	if (preen)
-		printf("%s: ", devname);
-	printf(s, a1, a2, a3, a4, a5, a6);
-}
+/*
+ * given a block map bit pattern, the frag tables tell whether a
+ * particular size fragment is available. 
+ *
+ * used as:
+ * if ((1 << (size - 1)) & fragtbl[fs->fs_frag][map] {
+ *	at least one fragment of the indicated size is available
+ * }
+ *
+ * These tables are used by the scanc instruction on the VAX to
+ * quickly find an appropriate fragment.
+ */
 
-panic(s)
-	char *s;
-{
+unsigned char fragtbl124[256] = {
+	0x00, 0x16, 0x16, 0x2a, 0x16, 0x16, 0x26, 0x4e,
+	0x16, 0x16, 0x16, 0x3e, 0x2a, 0x3e, 0x4e, 0x8a,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x2a, 0x3e, 0x3e, 0x2a, 0x3e, 0x3e, 0x2e, 0x6e,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x2a, 0x3e, 0x6e, 0xaa,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x26, 0x36, 0x36, 0x2e, 0x36, 0x36, 0x26, 0x6e,
+	0x36, 0x36, 0x36, 0x3e, 0x2e, 0x3e, 0x6e, 0xae,
+	0x4e, 0x5e, 0x5e, 0x6e, 0x5e, 0x5e, 0x6e, 0x4e,
+	0x5e, 0x5e, 0x5e, 0x7e, 0x6e, 0x7e, 0x4e, 0xce,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
+	0x16, 0x16, 0x16, 0x3e, 0x3e, 0x3e, 0x5e, 0x9e,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e, 0xbe,
+	0x2a, 0x3e, 0x3e, 0x2a, 0x3e, 0x3e, 0x2e, 0x6e,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x2a, 0x3e, 0x6e, 0xaa,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e,
+	0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x7e, 0xbe,
+	0x4e, 0x5e, 0x5e, 0x6e, 0x5e, 0x5e, 0x6e, 0x4e,
+	0x5e, 0x5e, 0x5e, 0x7e, 0x6e, 0x7e, 0x4e, 0xce,
+	0x8a, 0x9e, 0x9e, 0xaa, 0x9e, 0x9e, 0xae, 0xce,
+	0x9e, 0x9e, 0x9e, 0xbe, 0xaa, 0xbe, 0xce, 0x8a,
+};
 
-	pfatal("internal inconsistency: %s\n");
-	exit(12);
-}
+unsigned char fragtbl8[256] = {
+	0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x02, 0x04,
+	0x01, 0x01, 0x01, 0x03, 0x02, 0x03, 0x04, 0x08,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x02, 0x03, 0x03, 0x02, 0x04, 0x05, 0x08, 0x10,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
+	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
+	0x04, 0x05, 0x05, 0x06, 0x08, 0x09, 0x10, 0x20,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x03, 0x03, 0x03, 0x03, 0x05, 0x05, 0x09, 0x11,
+	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
+	0x03, 0x03, 0x03, 0x03, 0x02, 0x03, 0x06, 0x0a,
+	0x04, 0x05, 0x05, 0x06, 0x05, 0x05, 0x06, 0x04,
+	0x08, 0x09, 0x09, 0x0a, 0x10, 0x11, 0x20, 0x40,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x03, 0x03, 0x03, 0x03, 0x05, 0x05, 0x09, 0x11,
+	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
+	0x01, 0x01, 0x01, 0x03, 0x03, 0x03, 0x05, 0x09,
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x07,
+	0x05, 0x05, 0x05, 0x07, 0x09, 0x09, 0x11, 0x21,
+	0x02, 0x03, 0x03, 0x02, 0x03, 0x03, 0x02, 0x06,
+	0x03, 0x03, 0x03, 0x03, 0x02, 0x03, 0x06, 0x0a,
+	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x07,
+	0x02, 0x03, 0x03, 0x02, 0x06, 0x07, 0x0a, 0x12,
+	0x04, 0x05, 0x05, 0x06, 0x05, 0x05, 0x06, 0x04,
+	0x05, 0x05, 0x05, 0x07, 0x06, 0x07, 0x04, 0x0c,
+	0x08, 0x09, 0x09, 0x0a, 0x09, 0x09, 0x0a, 0x0c,
+	0x10, 0x11, 0x11, 0x12, 0x20, 0x21, 0x40, 0x80,
+};
+
+/*
+ * the actual fragtbl array
+ */
+unsigned char *fragtbl[MAXFRAG + 1] = {
+	0, fragtbl124, fragtbl124, 0, fragtbl124, 0, 0, 0, fragtbl8,
+};
