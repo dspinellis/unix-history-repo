@@ -1,31 +1,50 @@
 /*
- *	@(#)uda.c	7.7 (Berkeley) %G%
- */
-
-/************************************************************************
- *									*
- *			Copyright (c) 1983 by				*
- *		Digital Equipment Corporation, Maynard, MA		*
- *			All rights reserved.				*
- *									*
- ************************************************************************/
-/* 
- * uda.c - UDA50A Driver
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- * decvax!rich
+ *	@(#)uda.c	7.8 (Berkeley) %G%
+ *
  */
 
-#define	COMPAT_42
-#define	DEBUG
-#define	UDADEVNUM	(9)		/* entry in bdevsw */
-#include "ra.h"
-#if NUDA > 0
 /*
- * UDA50/RAxx disk device driver
- *
- * Restrictions:
- *      Unit numbers must be less than 8.
+ * UDA50/MSCP device driver
  */
+
+#define	POLLSTATS
+
+/*
+ * TODO
+ *	write bad block forwarding code
+ */
+
+#include "ra.h"
+
+#if NUDA > 0
+
+/*
+ * CONFIGURATION OPTIONS.  The next three defines are tunable -- tune away!
+ *
+ * COMPAT_42 enables 4.2/4.3 compatibility (label mapping)
+ *
+ * NRSPL2 and NCMDL2 control the number of response and command
+ * packets respectively.  They may be any value from 0 to 7, though
+ * setting them higher than 5 is unlikely to be of any value.
+ * If you get warnings about your command ring being too small,
+ * try increasing the values by one.
+ *
+ * MAXUNIT controls the maximum unit number (number of drives per
+ * controller) we are prepared to handle.
+ *
+ * DEFAULT_BURST must be at least 1.
+ */
+#define	COMPAT_42
+
+#define	NRSPL2	5		/* log2 number of response packets */
+#define NCMDL2	5		/* log2 number of command packets */
+#define	MAXUNIT	8		/* maximum allowed unit number */
+#define	DEFAULT_BURST	4	/* default DMA burst size */
+
 #include "../machine/pte.h"
 
 #include "param.h"
@@ -40,7 +59,6 @@
 #include "vm.h"
 #include "dkstat.h"
 #include "cmap.h"
-#include "uio.h"
 #include "disklabel.h"
 #include "syslog.h"
 #include "stat.h"
@@ -48,73 +66,119 @@
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
+
+#define	NRSP	(1 << NRSPL2)
+#define	NCMD	(1 << NCMDL2)
+
+#include "udareg.h"
+#include "../vax/mscp.h"
+#include "../vax/mscpvar.h"
 #include "../vax/mtpr.h"
 
-#define TENSEC	(1000)
- 
-#define NRSPL2  3               /* log2 number of response packets */
-#define NCMDL2  3               /* log2 number of command packets */
-#define NRSP    (1<<NRSPL2)
-#define NCMD    (1<<NCMDL2)
-#define	UDABURST	4	/* default for DMA burst size */
+/*
+ * Backwards compatibility:  Reuse the old names.  Should fix someday.
+ */
+#define	udaprobe	udprobe
+#define	udaslave	udslave
+#define	udaattach	udattach
+#define	udaopen		udopen
+#define	udaclose	udclose
+#define	udastrategy	udstrategy
+#define	udaread		udread
+#define	udawrite	udwrite
+#define	udaioctl	udioctl
+#define	udareset	udreset
+#define	udaintr		udintr
+#define	udadump		uddump
+#define	udasize		udsize
 
-#include "../vaxuba/udareg.h"
-#include "../vax/mscp.h"
-
-
-struct uda_softc {
-	short   sc_state;       /* state of controller */
-	short   sc_mapped;      /* Unibus map allocated for uda struct? */
-	int     sc_ubainfo;     /* Unibus mapping info */
-	struct uda *sc_uda;     /* Unibus address of uda struct */
-	int     sc_ivec;        /* interrupt vector address */
-	short   sc_credits;     /* transfer credits */
-	short   sc_lastcmd;     /* pointer into command ring */
-	short   sc_lastrsp;     /* pointer into response ring */
-} uda_softc[NUDA];
-struct uda {
-	struct udaca    uda_ca;         /* communications area */
-	struct mscp     uda_rsp[NRSP];  /* response packets */
-	struct mscp     uda_cmd[NCMD];  /* command packets */
+/*
+ * UDA communications area and MSCP packet pools, per controller.
+ */
+struct	uda {
+	struct	udaca uda_ca;		/* communications area */
+	struct	mscp uda_rsp[NRSP];	/* response packets */
+	struct	mscp uda_cmd[NCMD];	/* command packets */
 } uda[NUDA];
 
-#define udunit(dev)	(minor(dev) >> 3)
-#define udpart(dev)	(minor(dev) & 07)
-#define udminor(unit, part)	(((unit) << 3) | (part))
+/*
+ * Software status, per controller.
+ */
+struct	uda_softc {
+	struct	uda *sc_uda;	/* Unibus address of uda struct */
+	short	sc_state;	/* UDA50 state; see below */
+	short	sc_flags;	/* flags; see below */
+	int	sc_micro;	/* microcode revision */
+	int	sc_ivec;	/* interrupt vector address */
+	struct	mscp_info sc_mi;/* MSCP info (per mscpvar.h) */
+#ifndef POLLSTATS
+	int	sc_wticks;	/* watchdog timer ticks */
+#else
+	short	sc_wticks;
+	short	sc_ncmd;
+#endif
+} uda_softc[NUDA];
 
-struct	ra_info {
-	daddr_t		radsize;	/* Max user size form online pkt */
-	unsigned	ratype;		/* Drive type int field  */
-	unsigned	rastatus;	/* Command status from */
-					/* last onlin or GTUNT */
-	int		rastate;   	/* open/closed state */
-	u_long		openpart;	/* partitions open */
-	u_long		bopenpart;	/* block partitions open */
-	u_long		copenpart;	/* characters partitions open */
-} ra_info[NRA];
-
-struct  uba_ctlr *udminfo[NUDA];
-struct  uba_device *uddinfo[NRA];
-struct  uba_device *udip[NUDA][8];      /* 8 == max number of drives */
-struct  disklabel udlabel[NRA];
-struct  buf rudbuf[NRA];
-struct  buf udutab[NRA];
-struct  buf udwtab[NUDA];               /* I/O wait queue, per controller */
-
-
-int     udamicro[NUDA];         /* to store microcode level */
-int     udaburst[NUDA] = { 0 };	/* DMA burst size, 0 is default */
-
+#ifdef POLLSTATS
+struct udastats {
+	int	ncmd;
+	int	cmd[NCMD + 1];
+} udastats = { NCMD + 1 };
+#endif
 
 /*
  * Controller states
  */
-#define S_IDLE  0               /* hasn't been initialized */
-#define S_STEP1 1               /* doing step 1 init */
-#define S_STEP2 2               /* doing step 2 init */
-#define S_STEP3 3               /* doing step 3 init */
-#define S_SCHAR 4               /* doing "set controller characteristics" */
-#define S_RUN   5               /* running */
+#define	ST_IDLE		0	/* uninitialised */
+#define	ST_STEP1	1	/* in `STEP 1' */
+#define	ST_STEP2	2	/* in `STEP 2' */
+#define	ST_STEP3	3	/* in `STEP 3' */
+#define	ST_SETCHAR	4	/* in `Set Controller Characteristics' */
+#define	ST_RUN		5	/* up and running */
+
+/*
+ * Flags
+ */
+#define	SC_MAPPED	0x01	/* mapped in Unibus I/O space */
+#define	SC_INSTART	0x02	/* inside udastart() */
+#define	SC_GRIPED	0x04	/* griped about cmd ring too small */
+#define	SC_INSLAVE	0x08	/* inside udaslave() */
+#define	SC_DOWAKE	0x10	/* wakeup when ctlr init done */
+#define	SC_STARTPOLL	0x20	/* need to initiate polling */
+
+/*
+ * Device to unit number and partition and back
+ */
+#define	UNITSHIFT	3
+#define	UNITMASK	7
+#define	udaunit(dev)	(minor(dev) >> UNITSHIFT)
+#define	udapart(dev)	(minor(dev) & UNITMASK)
+#define	udaminor(u, p)	(((u) << UNITSHIFT) | (p))
+
+/*
+ * Drive status, per drive
+ */
+struct ra_info {
+	daddr_t	ra_dsize;	/* size in sectors */
+	u_long	ra_type;	/* drive type */
+	u_long	ra_mediaid;	/* media id */
+	int	ra_state;	/* open/closed state */
+	struct	ra_geom {	/* geometry information */
+		u_short	rg_nsectors;	/* sectors/track */
+		u_short	rg_ngroups;	/* track groups */
+		u_short	rg_ngpc;	/* groups/cylinder */
+		u_short	rg_ntracks;	/* ngroups*ngpc */
+		u_short	rg_ncyl;	/* ra_dsize/ntracks/nsectors */
+#ifdef notyet
+		u_short	rg_rctsize;	/* size of rct */
+		u_short	rg_rbns;	/* replacement blocks per track */
+		u_short	rg_nrct;	/* number of rct copies */
+#endif
+	} ra_geom;
+	u_long	ra_openpart;	/* partitions open */
+	u_long	ra_bopenpart;	/* block partitions open */
+	u_long	ra_copenpart;	/* character partitions open */
+} ra_info[NRA];
 
 /*
  * Software state, per drive
@@ -125,1377 +189,1404 @@ int     udaburst[NUDA] = { 0 };	/* DMA burst size, 0 is default */
 #define	OPEN		3
 #define	OPENRAW		4
 
-int     udaerror = 0;                   /* causes hex dump of packets */
-int     udadebug = 0;
-int	uda_cp_wait = 0;		/* Something to wait on for command */
-					/* packets and or credits. */
+/*
+ * Definition of the driver for autoconf.
+ */
+int	udaprobe(), udaslave(), udaattach(), udadgo(), udaintr();
+struct	uba_ctlr *udaminfo[NUDA];
+struct	uba_device *udadinfo[NRA];
+struct	disklabel udalabel[NRA];
+
+u_short	udastd[] = { 0772150, 0772550, 0777550, 0 };
+struct	uba_driver udadriver =
+ { udaprobe, udaslave, udaattach, udadgo, udastd, "ra", udadinfo, "uda",
+   udaminfo };
+
+/*
+ * More driver definitions, for generic MSCP code.
+ */
+int	udadgram(), udactlrdone(), udaunconf(), udaiodone();
+int	udaonline(), udagotstatus(), udaioerror(), udareplace(), udabb();
+
+struct	buf udautab[NRA];	/* per drive transfer queue */
+
+struct	mscp_driver udamscpdriver =
+ { MAXUNIT, NRA, UNITSHIFT, udautab, udadinfo,
+   udadgram, udactlrdone, udaunconf, udaiodone,
+   udaonline, udagotstatus, udareplace, udaioerror, udabb,
+   "uda", "ra" };
+
+/*
+ * Miscellaneous private variables.
+ */
+char	udasr_bits[] = UDASR_BITS;
+
+struct	uba_device *udaip[NUDA][MAXUNIT];
+				/* inverting pointers: ctlr & unit => Unibus
+				   device pointer */
+
+int	udaburst[NUDA] = { 0 };	/* burst size, per UDA50, zero => default;
+				   in data space so patchable via adb */
+
+struct	mscp udaslavereply;	/* get unit status response packet, set
+				   for udaslave by udaunconf, via udaintr */
+
+static struct uba_ctlr *probeum;/* this is a hack---autoconf should pass ctlr
+				   info to slave routine; instead, we remember
+				   the last ctlr argument to probe */
+
+int	udawstart, udawatch();	/* watchdog timer */
+
+/*
+ * Externals
+ */
 int	wakeup();
-extern	int	hz;			/* Should find the right include */
-#ifdef	DEBUG
-#define printd  if (udadebug) printf
-#define	printd10	if(udadebug >= 10) printf
-#endif 
-#define mprintf printf			/* temporary JG hack until Rich fixes*/
+int	hz;
 
-int     udprobe(), udslave(), udattach(), udintr(), udstrategy();
-struct  mscp *udgetcp();
-
-u_short udstd[] = { 0772150, 0772550, 0777550, 0 };
-struct  uba_driver udadriver =
- { udprobe, udslave, udattach, 0, udstd, "ra", uddinfo, "uda", udminfo, 0 };
-
-#define b_qsize         b_resid         /* queue size per drive, in udutab */
-#define b_ubinfo        b_resid         /* Unibus mapping info, per buffer */
-
-udprobe(reg, ctlr)
+/*
+ * Poke at a supposed UDA50 to see if it is there.
+ * This routine duplicates some of the code in udainit() only
+ * because autoconf has not set up the right information yet.
+ * We have to do everything `by hand'.
+ */
+udaprobe(reg, ctlr, um)
 	caddr_t reg;
 	int ctlr;
+	struct uba_ctlr *um;
 {
 	register int br, cvec;
-	register struct uda_softc *sc = &uda_softc[ctlr];
-	struct udadevice *udaddr;
+	register struct uda_softc *sc;
+	register struct udadevice *udaddr;
+	register struct mscp_info *mi;
+	int timeout, tries;
 
-	int	cur_time;
-
-#ifdef lint
-	br = 0; cvec = br; br = cvec;
-	udreset(0); udintr(0);
+#ifdef VAX750
+	/*
+	 * The UDA50 wants to share BDPs on 750s, but not on 780s or
+	 * 8600s.  (730s have no BDPs anyway.)  Toward this end, we
+	 * here set the `keep bdp' flag in the per-driver information
+	 * if this is a 750.  (We just need to do it once, but it is
+	 * easiest to do it now, for each UDA50.)
+	 */
+	if (cpu == VAX_750)
+		udadriver.ud_keepbdp = 1;
 #endif
+
+	probeum = um;			/* remember for udaslave() */
+#ifdef lint
+	br = 0; cvec = br; br = cvec; udaintr(0);
+#endif
+	/*
+	 * Set up the controller-specific generic MSCP driver info.
+	 * Note that this should really be done in the (nonexistent)
+	 * controller attach routine.
+	 */
+	sc = &uda_softc[ctlr];
+	mi = &sc->sc_mi;
+	mi->mi_md = &udamscpdriver;
+	mi->mi_ctlr = um->um_ctlr;
+	mi->mi_tab = &um->um_tab;
+	mi->mi_ip = udaip[ctlr];
+	mi->mi_cmd.mri_size = NCMD;
+	mi->mi_cmd.mri_desc = uda[ctlr].uda_ca.ca_cmddsc;
+	mi->mi_cmd.mri_ring = uda[ctlr].uda_cmd;
+	mi->mi_rsp.mri_size = NRSP;
+	mi->mi_rsp.mri_desc = uda[ctlr].uda_ca.ca_rspdsc;
+	mi->mi_rsp.mri_ring = uda[ctlr].uda_rsp;
+	mi->mi_wtab.av_forw = mi->mi_wtab.av_back = &mi->mi_wtab;
+
+	/*
+	 * More controller specific variables.  Again, this should
+	 * be in the controller attach routine.
+	 */
+	if (udaburst[ctlr] == 0)
+		udaburst[ctlr] = DEFAULT_BURST;
+		
+	/*
+	 * Get an interrupt vector.  Note that even if the controller
+	 * does not respond, we keep the vector.  This is not a serious
+	 * problem; but it would be easily fixed if we had a controller
+	 * attach routine.  Sigh.
+	 */
+	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
 	udaddr = (struct udadevice *) reg;
 
-	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
-#if VAX630
-	if (cpu == VAX_630) {
-		br = 0x15;
-		cvec = sc->sc_ivec;
- 		return(sizeof (struct udadevice));
-	}
-#endif
-	udaddr->udaip = 0;              /* start initialization */
-
-	cur_time = mfpr(TODR);			/* Time of day */
-	while(cur_time + TENSEC > mfpr(TODR)){	/* wait for at most 10 secs */
-		if((udaddr->udasa & UDA_STEP1) != 0)
-			break;
-	}
-	if(cur_time + TENSEC <= mfpr(TODR))
-		return(0);		/* Not a uda or it won't init as it  */
-					/* should within ten seconds.  */
-	udaddr->udasa=UDA_ERR|(NCMDL2<<11)|(NRSPL2<<8)|UDA_IE|(sc->sc_ivec/4);
-	while((udaddr->udasa&UDA_STEP2)==0)
-		DELAY(1000);		/* intr should have */
-					/*   have happened by now */
-	
-	return(sizeof (struct udadevice));
-}
-
-/* ARGSUSED */
-udslave(ui, reg)
-	struct uba_device *ui;
-	caddr_t reg;
-{
-	register struct uba_ctlr *um = udminfo[ui->ui_ctlr];
-	register struct uda_softc *sc = &uda_softc[ui->ui_ctlr];
-	struct udadevice *udaddr;
-	struct	mscp	*mp;
-	int	i;			/* Something to write into to start */
-					/* the uda polling */
-
-
-	udaddr = (struct udadevice *)um->um_addr;
-	if(sc->sc_state != S_RUN){
-		if(!udinit(ui->ui_ctlr))
-			return(0);
-	}
-	/* Here we will wait for the controller */
-	/* to come into the run state or go idle.  If we go idle we are in */
-	/* touble and I don't yet know what to do so I will punt */
-	while(sc->sc_state != S_RUN && sc->sc_state != S_IDLE);	/* spin */
-	if(sc->sc_state == S_IDLE){	/* The Uda failed to initialize */
-		printf("UDA failed to init\n");
-		return(0);
-	}
-	/* The controller is up so let see if the drive is there! */
-	if(0 == (mp = udgetcp(um))){	/* ditto */
-		printf("UDA can't get command packet\n");
-		return(0);
-	}
-	mp->mscp_opcode = M_OP_GTUNT;	/* This should give us the drive type*/
-	mp->mscp_unit = ui->ui_slave;
-	mp->mscp_cmdref = (long) ui->ui_slave;
-#ifdef	DEBUG
-	printd("uda%d Get unit status slave %d\n",ui->ui_ctlr,ui->ui_slave);
-#endif	
-	ra_info[ui->ui_unit].rastatus = 0;	/* set to zero */
-	udip[ui->ui_ctlr][ui->ui_slave] = ui;
-	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT;/* maybe we should poll*/
-	i = udaddr->udaip;
-#ifdef lint
-	i = i;
-#endif
-	while(!ra_info[ui->ui_unit].rastatus);  /* Wait for some status */
-	udip[ui->ui_ctlr][ui->ui_slave] = 0;
-	if(!ra_info[ui->ui_unit].ratype)	/* packet from a GTUNT */
-		return(0);		/* Failed No such drive */
-	else
-		return(1);		/* Got it and it is there */
-}
-
-udattach(ui)
-	register struct uba_device *ui;
-{
-	register struct uba_ctlr *um = ui->ui_mi ;
-	struct udadevice *udaddr = (struct udadevice *) um->um_addr;
-	register struct	mscp	*mp;
-	register unit = ui->ui_unit;
-	int	i;			/* Something to write into to start */
-					/* the uda polling */
-	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);     /* approx */
-	ui->ui_flags = 0;
-	udip[ui->ui_ctlr][ui->ui_slave] = ui;
-	/* check to see if the drive is a available if it is bring it online */
-	/* if not then just return.  open will try an online later */
-	if(ra_info[unit].rastatus != M_ST_AVLBL)
-		return;			/* status was set by a GTUNT */
-	if(0 == (mp = udgetcp(um))){	/* ditto */
-		printf("UDA can't get command packet\n");
-		return;
-	}
-	mp->mscp_opcode = M_OP_ONLIN;
-	mp->mscp_unit = ui->ui_slave;
-	mp->mscp_cmdref = (long) ui->ui_slave;
-#ifdef	DEBUG
-	printd("uda%d ONLIN slave %d\n",ui->ui_ctlr,ui->ui_slave);
-#endif	
-	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT;
-	i = udaddr->udaip;
-#ifdef	lint
-	i = i;
-#endif
-	for (i = 1000; ui->ui_flags == 0 && ra_info[unit].ratype != 0; ) {
-		if (--i == 0)
-			break;
-		DELAY(1000);
-	}
 	/*
-	 * Try to read pack label.
+	 * Initialise the controller (partially).  The UDA50 programmer's
+	 * manual states that if initialisation fails, it should be retried
+	 * at least once, but after a second failure the port should be
+	 * considered `down'; it also mentions that the controller should
+	 * initialise within ten seconds.  Or so I hear; I have not seen
+	 * this manual myself.
 	 */
-	if (rainit(ui, 0) == 0) {
-		printf("ra%d: %s\n", unit, udlabel[unit].d_typename);
-#ifdef notyet
-		addswap(makedev(UDADEVNUM, udminor(unit, 0)), &udlabel[unit]);
+	tries = 0;
+again:
+	udaddr->udaip = 0;		/* start initialisation */
+	timeout = todr() + 1000;	/* timeout in 10 seconds */
+	while ((udaddr->udasa & UDA_STEP1) == 0)
+		if (todr() > timeout)
+			goto bad;
+	udaddr->udasa = UDA_ERR | (NCMDL2 << 11) | (NRSPL2 << 8) | UDA_IE |
+		(sc->sc_ivec >> 2);
+	while ((udaddr->udasa & UDA_STEP2) == 0)
+		if (todr() > timeout)
+			goto bad;
+
+	/* should have interrupted by now */
+#ifdef VAX630
+	if (cpu == VAX_630)
+		br = 0x15;	/* screwy interrupt structure */
 #endif
-	} else
-		printf("ra%d: offline\n", unit);
+	return (sizeof (struct udadevice));
+bad:
+	if (++tries < 2)
+		goto again;
+	return (0);
 }
 
 /*
- * Open a UDA.  Initialize the device and
- * set the unit online.
+ * Find a slave.  We allow wildcard slave numbers (something autoconf
+ * is not really prepared to deal with); and we need to know the
+ * controller number to talk to the UDA.  For the latter, we keep
+ * track of the last controller probed, since a controller probe
+ * immediately precedes all slave probes for that controller.  For the
+ * former, we simply put the unit number into ui->ui_slave after we
+ * have found one.
+ *
+ * Note that by the time udaslave is called, the interrupt vector
+ * for the UDA50 has been set up (so that udaunconf() will be called).
  */
-udopen(dev, flag, fmt)
+udaslave(ui, reg)
+	register struct uba_device *ui;
+	caddr_t reg;
+{
+	register struct uba_ctlr *um = probeum;
+	register struct mscp *mp;
+	register struct uda_softc *sc;
+	register struct ra_info *ra;
+	int next = 0, type, timeout, tries, i;
+
+#ifdef lint
+	i = 0; i = i;
+#endif
+	/*
+	 * Make sure the controller is fully initialised, by waiting
+	 * for it if necessary.
+	 */
+	sc = &uda_softc[um->um_ctlr];
+	if (sc->sc_state == ST_RUN)
+		goto findunit;
+	tries = 0;
+again:
+	if (udainit(ui->ui_ctlr))
+		return (0);
+	timeout = todr() + 1000;		/* 10 seconds */
+	while (todr() < timeout)
+		if (sc->sc_state == ST_RUN)	/* made it */
+			goto findunit;
+	if (++tries < 2)
+		goto again;
+	printf("uda%d: controller hung\n", um->um_ctlr);
+	return (0);
+
+	/*
+	 * The controller is all set; go find the unit.  Grab an
+	 * MSCP packet and send out a Get Unit Status command, with
+	 * the `next unit' modifier if we are looking for a generic
+	 * unit.  We set the `in slave' flag so that udaunconf()
+	 * knows to copy the response to `udaslavereply'.
+	 */
+findunit:
+	udaslavereply.mscp_opcode = 0;
+	sc->sc_flags |= SC_INSLAVE;
+	if ((mp = mscp_getcp(&sc->sc_mi, MSCP_DONTWAIT)) == NULL)
+		panic("udaslave");		/* `cannot happen' */
+	mp->mscp_opcode = M_OP_GETUNITST;
+	if (ui->ui_slave == '?') {
+		mp->mscp_unit = next;
+		mp->mscp_modifier = M_GUM_NEXTUNIT;
+	} else {
+		mp->mscp_unit = ui->ui_slave;
+		mp->mscp_modifier = 0;
+	}
+	*mp->mscp_addr |= MSCP_OWN | MSCP_INT;
+	i = ((struct udadevice *) reg)->udaip;	/* initiate polling */
+	mp = &udaslavereply;
+	timeout = todr() + 1000;
+	while (todr() < timeout)
+		if (mp->mscp_opcode)
+			goto gotit;
+	printf("uda%d: no response to Get Unit Status request\n",
+		um->um_ctlr);
+	sc->sc_flags &= ~SC_INSLAVE;
+	return (0);
+
+gotit:
+	sc->sc_flags &= ~SC_INSLAVE;
+
+	/*
+	 * Got a slave response.  If the unit is there, use it.
+	 */
+	switch (mp->mscp_status & M_ST_MASK) {
+
+	case M_ST_SUCCESS:	/* worked */
+	case M_ST_AVAILABLE:	/* found another drive */
+		break;		/* use it */
+
+	case M_ST_OFFLINE:
+		/*
+		 * Figure out why it is off line.  It may be because
+		 * it is nonexistent, or because it is spun down, or
+		 * for some other reason.
+		 */
+		switch (mp->mscp_status & ~M_ST_MASK) {
+
+		case M_OFFLINE_UNKNOWN:
+			/*
+			 * No such drive, and there are none with
+			 * higher unit numbers either, if we are
+			 * using M_GUM_NEXTUNIT.
+			 */
+			return (0);
+
+		case M_OFFLINE_UNMOUNTED:
+			/*
+			 * The drive is not spun up.  Use it anyway.
+			 *
+			 * N.B.: this seems to be a common occurrance
+			 * after a power failure.  The first attempt
+			 * to bring it on line seems to spin it up
+			 * (and thus takes several minutes).  Perhaps
+			 * we should note here that the on-line may
+			 * take longer than usual.
+			 */
+			break;
+
+		default:
+			/*
+			 * In service, or something else equally unusable.
+			 */
+			printf("uda%d: unit %d off line: ", um->um_ctlr,
+				mp->mscp_unit);
+			mscp_printevent(mp);
+			goto try_another;
+		}
+		break;
+
+	default:
+		printf("uda%d: unable to get unit status: ", um->um_ctlr);
+		mscp_printevent(mp);
+		return (0);
+	}
+
+	/*
+	 * Does this ever happen?  What (if anything) does it mean?
+	 */
+	if (mp->mscp_unit < next) {
+		printf("uda%d: unit %d, next %d\n",
+			um->um_ctlr, mp->mscp_unit, next);
+		return (0);
+	}
+
+	if (mp->mscp_unit >= MAXUNIT) {
+		printf("uda%d: cannot handle unit number %d (max is %d)\n",
+			um->um_ctlr, mp->mscp_unit, MAXUNIT - 1);
+		return (0);
+	}
+
+	/*
+	 * See if we already handle this drive.
+	 * (Only likely if ui->ui_slave=='?'.)
+	 */
+	if (udaip[um->um_ctlr][mp->mscp_unit] != NULL) {
+try_another:
+		if (ui->ui_slave != '?')
+			return (0);
+		next = mp->mscp_unit + 1;
+		goto findunit;
+	}
+
+	/*
+	 * Voila!
+	 */
+	uda_rasave(ui->ui_unit, mp, 0);
+	ui->ui_flags = 0;	/* not on line, nor anything else */
+	ui->ui_slave = mp->mscp_unit;
+	return (1);
+}
+
+/*
+ * Attach a found slave.  Make sure the watchdog timer is running.
+ * If this disk is being profiled, fill in the `mspw' value (used by
+ * what?).  Set up the inverting pointer, and attempt to bring the
+ * drive on line and read its label.
+ */
+udaattach(ui)
+	register struct uba_device *ui;
+{
+	register int unit = ui->ui_unit;
+
+	if (udawstart == 0) {
+		timeout(udawatch, (caddr_t) 0, hz);
+		udawstart++;
+	}
+	if (ui->ui_dk >= 0)
+		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
+	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
+	if (uda_rainit(ui, 0))
+		printf("ra%d: offline", unit);
+	else {
+		printf("ra%d: %s\n", unit, udalabel[unit].d_typename);
+#ifdef notyet
+		addswap(makedev(UDADEVNUM, udaminor(unit, 0)), &udalabel[unit]);
+#endif
+	}
+}
+
+/*
+ * Initialise a UDA50.  Return true iff something goes wrong.
+ */
+udainit(ctlr)
+	int ctlr;
+{
+	register struct uda_softc *sc;
+	register struct udadevice *udaddr;
+	struct uba_ctlr *um;
+	int timo, ubinfo;
+
+	sc = &uda_softc[ctlr];
+	um = udaminfo[ctlr];
+	if ((sc->sc_flags & SC_MAPPED) == 0) {
+		/*
+		 * Map the communication area and command and
+		 * response packets into Unibus space.
+		 */
+		ubinfo = uballoc(um->um_ubanum, (caddr_t) &uda[ctlr],
+			sizeof (struct uda), UBA_CANTWAIT);
+		if (ubinfo == 0) {
+			printf("uda%d: uballoc map failed\n", ctlr);
+			return (-1);
+		}
+		sc->sc_uda = (struct uda *) (ubinfo & 0x3ffff);
+		sc->sc_flags |= SC_MAPPED;
+	}
+
+	/*
+	 * While we are thinking about it, reset the next command
+	 * and response indicies.
+	 */
+	sc->sc_mi.mi_cmd.mri_next = 0;
+	sc->sc_mi.mi_rsp.mri_next = 0;
+
+	/*
+	 * Start up the hardware initialisation sequence.
+	 */
+#define	STEP0MASK	(UDA_ERR | UDA_STEP4 | UDA_STEP3 | UDA_STEP2 | \
+			 UDA_STEP1 | UDA_NV)
+
+	sc->sc_state = ST_IDLE;	/* in case init fails */
+	udaddr = (struct udadevice *) um->um_addr;
+	udaddr->udaip = 0;
+	timo = todr() + 1000;
+	while ((udaddr->udasa & STEP0MASK) == 0) {
+		if (todr() > timo) {
+			printf("uda%d: timeout during init\n", ctlr);
+			return (-1);
+		}
+	}
+	if ((udaddr->udasa & STEP0MASK) != UDA_STEP1) {
+		printf("uda%d: init failed, sa=%b\n", ctlr,
+			udaddr->udasa, udasr_bits);
+		return (-1);
+	}
+
+	/*
+	 * Success!  Record new state, and start step 1 initialisation.
+	 * The rest is done in the interrupt handler.
+	 */
+	sc->sc_state = ST_STEP1;
+	udaddr->udasa = UDA_ERR | (NCMDL2 << 11) | (NRSPL2 << 8) | UDA_IE |
+	    (sc->sc_ivec >> 2);
+	return (0);
+}
+
+/*
+ * Open a drive.
+ */
+/*ARGSUSED*/
+udaopen(dev, flag, fmt)
 	dev_t dev;
 	int flag, fmt;
 {
-	int unit;
+	register int unit;
 	register struct uba_device *ui;
 	register struct uda_softc *sc;
 	register struct disklabel *lp;
 	register struct partition *pp;
 	register struct ra_info *ra;
-	int s, i, part, mask, error;
+	int s, i, part, mask, error = 0;
 	daddr_t start, end;
 
-	unit = udunit(dev);
-	part = udpart(dev);
-	mask = 1 << part;
-	ra = &ra_info[unit];
-	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
+	/*
+	 * Make sure this is a reasonable open request.
+	 */
+	unit = udaunit(dev);
+	if (unit >= NRA || (ui = udadinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
+
+	/*
+	 * Make sure the controller is running, by (re)initialising it if
+	 * necessary.
+	 */
 	sc = &uda_softc[ui->ui_ctlr];
-	lp = &udlabel[unit];
 	s = spl5();
-	if (sc->sc_state != S_RUN) {
-		if (sc->sc_state == S_IDLE)
-			if(!udinit(ui->ui_ctlr)){
-				printf("uda: Controller failed to init\n");
-				(void) splx(s);
-				return(ENXIO);
-			}
-		/* wait for initialization to complete */
-		timeout(wakeup,(caddr_t)ui->ui_mi,11*hz);	/* to be sure*/
-		sleep((caddr_t)ui->ui_mi, 0);
-		if (sc->sc_state != S_RUN)
-		{
-			(void) splx(s); /* added by Rich */
+	if (sc->sc_state != ST_RUN) {
+		if (sc->sc_state == ST_IDLE && udainit(ui->ui_ctlr)) {
+			splx(s);
 			return (EIO);
 		}
+		/*
+		 * In case it does not come up, make sure we will be
+		 * restarted in 10 seconds.  This corresponds to the
+		 * 10 second timeouts in udaprobe() and udaslave().
+		 */
+		sc->sc_flags |= SC_DOWAKE;
+		timeout(wakeup, (caddr_t) sc, 10 * hz);
+		sleep((caddr_t) sc, PRIBIO);
+		if (sc->sc_state != ST_RUN) {
+			splx(s);
+			printf("uda%d: controller hung\n", ui->ui_ctlr);
+			return (EIO);
+		}
+		untimeout(wakeup, (caddr_t) sc);
 	}
-	while (ra->rastate != OPEN && ra->rastate != OPENRAW &&
-	    ra->rastate != CLOSED)
-		sleep((caddr_t)ra, PZERO+1);
-	splx(s);
-	if (ui->ui_flags == 0 ||
-	    (ra->rastate != OPEN && ra->rastate != OPENRAW))
-		if (error = rainit(ui, flag))
-			return (error);
 
+	/*
+	 * Wait for the state to settle
+	 */
+	ra = &ra_info[unit];
+	while (ra->ra_state != OPEN && ra->ra_state != OPENRAW &&
+	    ra->ra_state != CLOSED)
+		sleep((caddr_t)ra, PZERO + 1);
+
+	/*
+	 * If not on line, or we are not sure of the label, reinitialise
+	 * the drive.
+	 */
+	if ((ui->ui_flags & UNIT_ONLINE) == 0 ||
+	    (ra->ra_state != OPEN && ra->ra_state != OPENRAW))
+		error = uda_rainit(ui, flag);
+	splx(s);
+	if (error)
+		return (error);
+
+	part = udapart(dev);
+	lp = &udalabel[unit];
 	if (part >= lp->d_npartitions)
 		return (ENXIO);
 	/*
-	 * Warn if a partion is opened
-	 * that overlaps another partition which is open
-	 * unless one is the "raw" partition (whole disk).
+	 * Warn if a partition is opened that overlaps another
+	 * already open, unless either is the `raw' partition
+	 * (whole disk).
 	 */
-#define	RAWPART		2		/* 'c' partition */	/* XXX */
-	if ((ra->openpart & mask) == 0 &&
-	    part != RAWPART) {
+#define	RAWPART		2	/* 'c' partition */	/* XXX */
+	mask = 1 << part;
+	if ((ra->ra_openpart & mask) == 0 && part != RAWPART) {
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
 		end = pp->p_offset + pp->p_size;
-		for (pp = lp->d_partitions;
-		     pp < &lp->d_partitions[lp->d_npartitions]; pp++) {
+		for (pp = lp->d_partitions, i = 0;
+		     i < lp->d_npartitions; pp++, i++) {
 			if (pp->p_offset + pp->p_size <= start ||
-			    pp->p_offset >= end)
+			    pp->p_offset >= end || i == RAWPART)
 				continue;
-			if (pp - lp->d_partitions == RAWPART)
-				continue;
-			if (ra->openpart &
-			    (1 << (pp - lp->d_partitions)))
+			if (ra->ra_openpart & (1 << i))
 				log(LOG_WARNING,
 				    "ra%d%c: overlaps open partition (%c)\n",
-				    unit, part + 'a',
-				    pp - lp->d_partitions + 'a');
+				    unit, part + 'a', i + 'a');
 		}
 	}
 	switch (fmt) {
 	case S_IFCHR:
-		ra->copenpart |= mask;
+		ra->ra_copenpart |= mask;
 		break;
 	case S_IFBLK:
-		ra->bopenpart |= mask;
+		ra->ra_bopenpart |= mask;
 		break;
 	}
-	ra->openpart |= mask;
+	ra->ra_openpart |= mask;
 	return (0);
 }
 
-/* ARGSUSED */
-udclose(dev, flags, fmt)
+udaclose(dev, flags, fmt)
 	dev_t dev;
 	int flags, fmt;
 {
-	register int unit = udunit(dev);
+	register int unit = udaunit(dev);
 	register struct ra_info *ra = &ra_info[unit];
-	int s, mask = (1 << udpart(dev));
+	int s, mask = (1 << udapart(dev));
 
 	switch (fmt) {
 	case S_IFCHR:
-		ra->copenpart &= ~mask;
+		ra->ra_copenpart &= ~mask;
 		break;
 	case S_IFBLK:
-		ra->bopenpart &= ~mask;
+		ra->ra_bopenpart &= ~mask;
 		break;
 	}
-	if (((ra->copenpart | ra->bopenpart) & mask) == 0)
-		ra->openpart &= ~mask;
+	ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
+
 	/*
-	 * Should wait for I/O to complete on this partition
-	 * even if others are open, but wait for work on blkflush().
+	 * Should wait for I/O to complete on this partition even if
+	 * others are open, but wait for work on blkflush().
 	 */
-	if (ra->openpart == 0) {
+	if (ra->ra_openpart == 0) {
 		s = spl5();
-		while (udutab[unit].b_actf)
-			sleep((caddr_t)&udutab[unit], PZERO - 1);
+		while (udautab[unit].b_actf)
+			sleep((caddr_t)&udautab[unit], PZERO - 1);
 		splx(s);
-		ra->rastate = CLOSED;
+		ra->ra_state = CLOSED;
 	}
 	return (0);
 }
 
 /*
- * Initialize a UDA.  Set up UBA mapping registers,
- * initialize data structures, and start hardware
- * initialization sequence.
+ * Initialise a drive.  If it is not already, bring it on line,
+ * and set a timeout on it in case it fails to respond.
+ * When on line, read in the pack label.
  */
-udinit(d)
-	int d;
-{
-	register struct uda_softc *sc;
-	register struct uda *ud;
-	struct udadevice *udaddr;
-	struct uba_ctlr *um;
-
-	sc = &uda_softc[d];
-	um = udminfo[d];
-	um->um_tab.b_active++;
-	ud = &uda[d];
-	udaddr = (struct udadevice *)um->um_addr;
-	if (sc->sc_mapped == 0) {
-		/*
-		 * Map the communications area and command
-		 * and response packets into Unibus address
-		 * space.
-		 */
-		sc->sc_ubainfo = uballoc(um->um_ubanum, (caddr_t)ud,
-		    sizeof (struct uda), 0);
-		sc->sc_uda = (struct uda *)(sc->sc_ubainfo & 0x3ffff);
-		sc->sc_mapped = 1;
-	}
-
-	/*
-	 * Start the hardware initialization sequence.
-	 */
-
-	if (udaburst[d] == 0)
-		udaburst[d] = UDABURST;
- 	udaddr->udaip = 0;              /* start initialization */
-
-	while((udaddr->udasa & UDA_STEP1) == 0){
-		if(udaddr->udasa & UDA_ERR)
-			return(0);	/* CHECK */
-	}
-	udaddr->udasa=UDA_ERR|(NCMDL2<<11)|(NRSPL2<<8)|UDA_IE|(sc->sc_ivec/4);
-	/*
-	 * Initialization continues in interrupt routine.
-	 */
-	sc->sc_state = S_STEP1;
-	sc->sc_credits = 0;
-	return(1);
-}
-
-/*
- * Initialize a drive:
- * bring on line and read in pack label.
- */
-rainit(ui, flags)
+uda_rainit(ui, flags)
 	register struct uba_device *ui;
+	int flags;
 {
-	register struct mscp *mp;
+	register struct uda_softc *sc = &uda_softc[ui->ui_ctlr];
 	register struct disklabel *lp;
-	register struct uda_softc *sc;
-	register unit = ui->ui_unit;
-	register struct ra_info *ra = &ra_info[unit];
-	struct udadevice *udaddr;
+	register struct mscp *mp;
+	register int unit = ui->ui_unit;
+	register struct ra_info *ra;
 	char *msg, *readdisklabel();
-	int s, i;
+	int s, i, udastrategy();
 	extern int cold;
 
-	lp = &udlabel[unit];
-	sc = &uda_softc[ui->ui_ctlr];
-
-	if (ui->ui_flags == 0) {
-		/* check to see if the device is really there. */
-		/* this code was taken from Fred Canters 11 driver */
-		udaddr = (struct udadevice *) ui->ui_mi->um_addr;
-
-		ra->rastate = WANTOPEN;
-		s = spl5();
-		while(0 ==(mp = udgetcp(ui->ui_mi))){
-			uda_cp_wait++;
-			sleep((caddr_t)&uda_cp_wait,PSWP+1);
-			uda_cp_wait--;
-		}
-		mp->mscp_opcode = M_OP_ONLIN;
+	ra = &ra_info[unit];
+	if ((ui->ui_flags & UNIT_ONLINE) == 0) {
+		mp = mscp_getcp(&sc->sc_mi, MSCP_WAIT);
+		mp->mscp_opcode = M_OP_ONLINE;
 		mp->mscp_unit = ui->ui_slave;
-			/* need to sleep on something */
-		mp->mscp_cmdref = (long)ra;
-#ifdef	DEBUG
-		printd("uda: bring unit %d online\n",unit);
-#endif	
-		*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
-		i = udaddr->udaip;
-#ifdef	lint
-		i = i;
-#endif
-			/* make sure we wake up */
+		mp->mscp_cmdref = (long)&ui->ui_flags;
+		*mp->mscp_addr |= MSCP_OWN | MSCP_INT;
+		ra->ra_state = WANTOPEN;
+		if (!cold)
+			s = spl5();
+		i = ((struct udadevice *)ui->ui_addr)->udaip;
+
 		if (cold) {
-			(void) splx(s);
-			for (i = 10*1000; ra->rastate == WANTOPEN && --i; )
-				DELAY(1000);
+			i = todr() + 1000;
+			while ((ui->ui_flags & UNIT_ONLINE) == 0)
+				if (todr() > i)
+					break;
 		} else {
-			timeout(wakeup, (caddr_t)ra, 10 * hz);
-			sleep((caddr_t)ra, PSWP+1);
-			/*wakeup in udrsp() */
-			(void) splx(s);
+			timeout(wakeup, (caddr_t)&ui->ui_flags, 10 * hz);
+			sleep((caddr_t)&ui->ui_flags, PSWP + 1);
+			splx(s);
+			untimeout(wakeup, (caddr_t)&ui->ui_flags);
 		}
-		if (ra->rastate != OPENRAW) {
-			ra->rastate = CLOSED;
+		if (ra->ra_state != OPENRAW) {
+			ra->ra_state = CLOSED;
+			wakeup((caddr_t)ra);
 			return (EIO);
 		}
 	}
 
+	lp = &udalabel[unit];
 	lp->d_secsize = DEV_BSIZE;
-	lp->d_secperunit = ra->radsize;
+	lp->d_secperunit = ra->ra_dsize;
 
 	if (flags & O_NDELAY)
 		return (0);
-	ra->rastate = RDLABEL;
+	ra->ra_state = RDLABEL;
 	/*
-	 * Set up default sizes until we've read the label,
-	 * or longer if there isn't one there.
-	 * Set secpercyl, as readdisklabel wants to compute b_cylin
-	 * (although we don't need it).
+	 * Set up default sizes until we have the label, or longer
+	 * if there is none.  Set secpercyl, as readdisklabel wants
+	 * to compute b_cylin (although we do not need it).
 	 */
 	lp->d_secpercyl = 1;
 	lp->d_npartitions = 1;
 	lp->d_partitions[0].p_size = lp->d_secperunit;
 	lp->d_partitions[0].p_offset = 0;
+
 	/*
 	 * Read pack label.
 	 */
-	if (msg = readdisklabel(udminor(unit, 0), udstrategy, lp)) {
+	if ((msg = readdisklabel(udaminor(unit, 0), udastrategy, lp)) != NULL) {
 		log(LOG_ERR, "ra%d: %s\n", unit, msg);
 #ifdef COMPAT_42
-		if (udmaptype(unit, lp))
-			ra->rastate = OPEN;
+		if (udamaptype(unit, lp))
+			ra->ra_state = OPEN;
 		else
-			ra->rastate = OPENRAW;
+			ra->ra_state = OPENRAW;
 #else
-		ra->rastate = OPENRAW;
+		ra->ra_state = OPENRAW;
+		/* uda_makefakelabel(ra, lp); */
 #endif
 	} else
-		ra->rastate = OPEN;
+		ra->ra_state = OPEN;
 	wakeup((caddr_t)ra);
 	return (0);
 }
 
-udstrategy(bp)
+/*
+ * Copy the geometry information for the given ra from a
+ * GET UNIT STATUS response.  If check, see if it changed.
+ */
+uda_rasave(unit, mp, check)
+	int unit;
+	register struct mscp *mp;
+	int check;
+{
+	register struct ra_info *ra = &ra_info[unit];
+
+	if (check && ra->ra_type != mp->mscp_guse.guse_drivetype) {
+		printf("ra%d: changed types! was %d now %d\n",
+			ra->ra_type, mp->mscp_guse.guse_drivetype);
+		ra->ra_state = CLOSED;	/* ??? */
+	}
+	ra->ra_type = mp->mscp_guse.guse_drivetype;
+	ra->ra_mediaid = mp->mscp_guse.guse_mediaid;
+	ra->ra_geom.rg_nsectors = mp->mscp_guse.guse_nspt;
+	ra->ra_geom.rg_ngroups = mp->mscp_guse.guse_group;
+	ra->ra_geom.rg_ngpc = mp->mscp_guse.guse_ngpc;
+	ra->ra_geom.rg_ntracks = ra->ra_geom.rg_ngroups * ra->ra_geom.rg_ngpc;
+	/* ra_geom.rg_ncyl cannot be computed until we have ra_dsize */
+#ifdef notyet
+	ra->ra_geom.rg_rctsize = mp->mscp_guse.guse_rctsize;
+	ra->ra_geom.rg_rbns = mp->mscp_guse.guse_nrpt;
+	ra->ra_geom.rg_nrct = mp->mscp_guse.guse_nrct;
+#endif
+}
+
+/*
+ * Queue a transfer request, and if possible, hand it to the controller.
+ *
+ * This routine is broken into two so that the internal version
+ * udastrat1() can be called by the (nonexistent, as yet) bad block
+ * revectoring routine.
+ */
+udastrategy(bp)
 	register struct buf *bp;
 {
-	register struct uba_device *ui;
-	register struct uba_ctlr *um;
-	register struct buf *dp;
-	register struct disklabel *lp;
 	register int unit;
-	struct uda_softc *sc;
-	int xunit = udpart(bp->b_dev);
+	register struct uba_device *ui;
+	register struct disklabel *lp;
+	register struct ra_info *ra;
+	struct partition *pp;
+	int p;
 	daddr_t sz, maxsz;
-	int s;
 
-	unit = udunit(bp->b_dev);
-	if (unit >= NRA) {
+	/*
+	 * Make sure this is a reasonable drive to use.
+	 */
+	if ((unit = udaunit(bp->b_dev)) >= NRA ||
+	    (ui = udadinfo[unit]) == NULL || ui->ui_alive == 0 ||
+	    (ra = &ra_info[unit])->ra_state == CLOSED) {
 		bp->b_error = ENXIO;
 		goto bad;
 	}
-	ui = uddinfo[unit];
-	lp = &udlabel[unit];
-	sc = &uda_softc[ui->ui_ctlr];
-	um = ui->ui_mi;
-	if (ui == 0 || ui->ui_alive == 0 || ra_info[unit].rastate == CLOSED) {
-		bp->b_error = ENXIO;
-		goto bad;
+
+	/*
+	 * If drive is open `raw' or reading label, let it at it.
+	 */
+	if (ra->ra_state < OPEN) {
+		udastrat1(bp);
+		return;
 	}
-	if (ra_info[unit].rastate < OPEN)
-		goto q;
-	if ((ra_info[unit].openpart & (1 << xunit)) == 0) {
-		bp->b_error = ENODEV;
-		goto bad;
-	}
-	maxsz = lp->d_partitions[xunit].p_size; 
+	p = udapart(bp->b_dev);
+	if ((ra->ra_openpart & (1 << p)) == 0)	/* can't happen? */
+		panic("udastrategy");
+		/* alternatively, ENODEV */
+
+	/*
+	 * Determine the size of the transfer, and make sure it is
+	 * within the boundaries of the partition.
+	 */
+	pp = &udalabel[unit].d_partitions[p];
+	maxsz = pp->p_size;
+	if (pp->p_offset + pp->p_size > ra->ra_dsize)
+		maxsz = ra->ra_dsize - pp->p_offset;
 	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
 	if (bp->b_blkno < 0 || bp->b_blkno + sz > maxsz) {
+		/* if exactly at end of disk, return an EOF */
 		if (bp->b_blkno == maxsz) {
 			bp->b_resid = bp->b_bcount;
-			goto done;
+			biodone(bp);
+			return;
 		}
+		/* or truncate if part of it fits */
 		sz = maxsz - bp->b_blkno;
 		if (sz <= 0) {
-			bp->b_error = EINVAL;
+			bp->b_error = EINVAL;	/* or hang it up */
 			goto bad;
 		}
 		bp->b_bcount = sz << DEV_BSHIFT;
 	}
-q:
-	s = spl5();
-	/*
-	 * Link the buffer onto the drive queue
-	 */
-	dp = &udutab[ui->ui_unit];
-	if (dp->b_actf == 0)
-		dp->b_actf = bp;
-	else
-		dp->b_actl->av_forw = bp;
-	dp->b_actl = bp;
-	bp->av_forw = 0;
-	/*
-	 * Link the drive onto the controller queue
-	 */
-	if (dp->b_active == 0) {
-		dp->b_forw = NULL;
-		if (um->um_tab.b_actf == NULL)
-			um->um_tab.b_actf = dp;
-		else
-			um->um_tab.b_actl->b_forw = dp;
-		um->um_tab.b_actl = dp;
-		dp->b_active = 1;
-	}
-	if (um->um_tab.b_active == 0) {
-#if defined(VAX750)
-		if (cpu == VAX_750
-		    && udwtab[um->um_ctlr].av_forw == &udwtab[um->um_ctlr]) {
-			if (um->um_ubinfo != 0) {
-				printd("udastrat: ubinfo 0x%x\n",um->um_ubinfo);
-			} else
-				um->um_ubinfo =
-				   uballoc(um->um_ubanum, (caddr_t)0, 0,
-					UBA_NEEDBDP);
-		}
-#endif
-		(void) udstart(um);
-	}
-	splx(s);
+	udastrat1(bp);
 	return;
-
 bad:
 	bp->b_flags |= B_ERROR;
-done:
-	iodone(bp);
-	return;
-}
-
-udstart(um)
-	register struct uba_ctlr *um;
-{
-	register struct buf *bp, *dp;
-	register struct mscp *mp;
-	register struct uda_softc *sc;
-	register struct uba_device *ui;
-	struct disklabel *lp;
-	struct udadevice *udaddr;
-	struct uda *ud = &uda[um->um_ctlr];
-	daddr_t sz;
-	int i;
-
-	sc = &uda_softc[um->um_ctlr];
-	
-loop:
-	if ((dp = um->um_tab.b_actf) == NULL) {
-
-		um->um_tab.b_active = 0;
-		/* Check for response ring transitions lost in the
-		 * Race condition
-		 */
-		for (i = sc->sc_lastrsp;; i++) {
-			i %= NRSP;
-			if (ud->uda_ca.ca_rspdsc[i]&UDA_OWN)
-				break;
-			udrsp(um, ud, sc, i);
-			ud->uda_ca.ca_rspdsc[i] |= UDA_OWN;
-		}
-		sc->sc_lastrsp = i;
-		return (0);
-	}
-	if ((bp = dp->b_actf) == NULL) {
-		/*
-		 * No more requests for this drive, remove
-		 * from controller queue and look at next drive.
-		 * We know we're at the head of the controller queue.
-		 */
-		dp->b_active = 0;
-		um->um_tab.b_actf = dp->b_forw;
-		if (ra_info[dp - udutab].openpart == 0)
-			wakeup((caddr_t)dp);
-		goto loop;		/* Need to check for loop */
-	}
-	um->um_tab.b_active++;
-	udaddr = (struct udadevice *)um->um_addr;
-	if ((udaddr->udasa&UDA_ERR) || sc->sc_state != S_RUN) {
-		harderr(bp, "ra");
-		mprintf("Uda%d udasa %o, state %d\n",um->um_ctlr , udaddr->udasa&0xffff, sc->sc_state);
-		(void)udinit(um->um_ctlr);
-		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE UDRESET */
-		return (0);
-	}
-	ui = uddinfo[udunit(bp->b_dev)];
-	lp = &udlabel[ui->ui_unit];
-	if (ui->ui_flags == 0) {        /* not online */
-		if ((mp = udgetcp(um)) == NULL){
-			return (0);
-		}
-		mp->mscp_opcode = M_OP_ONLIN;
-		mp->mscp_unit = ui->ui_slave;
-		dp->b_active = 2;
-		um->um_tab.b_actf = dp->b_forw; /* remove from controller q */
-#ifdef	DEBUG
-		printd("uda: bring unit %d online\n", ui->ui_slave);
-#endif		
-		*((long *)mp->mscp_dscptr) |= UDA_OWN|UDA_INT;
-		if (udaddr->udasa&UDA_ERR)
-			printf("Uda (%d) Error (%x)\n",um->um_ctlr , udaddr->udasa&0xffff);
-		i = udaddr->udaip;
-		goto loop;
-	}
-	switch (cpu) {
-	case VAX_8600:
-	case VAX_780:
-		i = UBA_NEEDBDP|UBA_CANTWAIT;
-		break;
-
-	case VAX_750:
-		i = um->um_ubinfo|UBA_HAVEBDP|UBA_CANTWAIT;
-		break;
-
-	case VAX_730:
-	case VAX_630:
-		i = UBA_CANTWAIT;
-		break;
-	}
-	if ((i = ubasetup(um->um_ubanum, bp, i)) == 0)
-		return(1);
-	if ((mp = udgetcp(um)) == NULL) {
-#if defined(VAX750)
-		if (cpu == VAX_750)
-			i &= 0xfffffff;         /* mask off bdp */
-#endif
-		ubarelse(um->um_ubanum,&i);
-		return(0);
-	}
-	mp->mscp_cmdref = (long)bp;     /* pointer to get back */
-	mp->mscp_opcode = bp->b_flags&B_READ ? M_OP_READ : M_OP_WRITE;
-	mp->mscp_unit = ui->ui_slave;
-	mp->mscp_buffer = (i & 0x3ffff) | (((i>>28)&0xf)<<24);
-#if defined(VAX750)
-	if (cpu == VAX_750)
-		i &= 0xfffffff;         /* mask off bdp */
-#endif
-	bp->b_ubinfo = i;               /* save mapping info */
-	i = udpart(bp->b_dev);
-	mp->mscp_lbn = bp->b_blkno +
-	    lp->d_partitions[i].p_offset;
-	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
-	if (bp->b_blkno + sz > lp->d_partitions[i].p_size)
-		mp->mscp_bytecnt = (lp->d_partitions[i].p_size - bp->b_blkno) >>
-		    DEV_BSHIFT;
-	else
-		mp->mscp_bytecnt = bp->b_bcount;
-	*((long *)mp->mscp_dscptr) |= UDA_OWN|UDA_INT;
-	if (udaddr->udasa&UDA_ERR) 
-		printf("Uda(%d) udasa (%x)\n",um->um_ctlr , udaddr->udasa&0xffff);
-	i = udaddr->udaip;              /* initiate polling */
-	dp->b_qsize++;
-	if (ui->ui_dk >= 0) {
-		dk_busy |= 1<<ui->ui_dk;
-		dk_xfer[ui->ui_dk]++;
-		dk_wds[ui->ui_dk] += bp->b_bcount>>6;
-	}
-
-	/*
-	 * Move drive to the end of the controller queue
-	 */
-	if (dp->b_forw != NULL) {
-		um->um_tab.b_actf = dp->b_forw;
-		um->um_tab.b_actl->b_forw = dp;
-		um->um_tab.b_actl = dp;
-		dp->b_forw = NULL;
-	}
-	/*
-	 * Move buffer to I/O wait queue
-	 */
-	dp->b_actf = bp->av_forw;
-	dp = &udwtab[um->um_ctlr];
-	bp->av_forw = dp;
-	bp->av_back = dp->av_back;
-	dp->av_back->av_forw = bp;
-	dp->av_back = bp;
-	goto loop;
+	biodone(bp);
 }
 
 /*
- * UDA interrupt routine.
+ * Work routine for udastrategy.
  */
-udintr(d)
-	register d;
+udastrat1(bp)
+	register struct buf *bp;
 {
-	struct uba_ctlr *um = udminfo[d];
-	register struct udadevice *udaddr = (struct udadevice *)um->um_addr;
-	struct buf *bp;
-	register int i;
-	register struct uda_softc *sc = &uda_softc[d];
-	register struct uda *ud = &uda[d];
-	struct uda *uud;
+	register int unit = udaunit(bp->b_dev);
+	register struct uba_ctlr *um;
+	register struct buf *dp;
+	struct uba_device *ui;
+	int s = spl5();
+
+	/*
+	 * Append the buffer to the drive queue, and if it is not
+	 * already there, the drive to the controller queue.  (However,
+	 * if the drive queue is marked to be requeued, we must be
+	 * awaiting an on line or get unit status command; in this
+	 * case, leave it off the controller queue.)
+	 */
+	um = (ui = udadinfo[unit])->ui_mi;
+	dp = &udautab[unit];
+	APPEND(bp, dp, av_forw);
+	if (dp->b_active == 0 && (ui->ui_flags & UNIT_REQUEUE) == 0) {
+		APPEND(dp, &um->um_tab, b_forw);
+		dp->b_active++;
+	}
+
+	/*
+	 * Start activity on the controller.  Note that unlike other
+	 * Unibus drivers, we must always do this, not just when the
+	 * controller is not active.
+	 */
+	udastart(um);
+	splx(s);
+}
+
+/*
+ * Start up whatever transfers we can find.
+ * Note that udastart() must be called at spl5().
+ */
+udastart(um)
+	register struct uba_ctlr *um;
+{
+	register struct uda_softc *sc = &uda_softc[um->um_ctlr];
+	register struct buf *bp, *dp;
 	register struct mscp *mp;
+	struct uba_device *ui;
+	struct udadevice *udaddr;
+	struct partition *pp;
+	int i, sz;
 
-#ifdef	DEBUG
-	printd10("udintr: state %d, udasa %o\n", sc->sc_state, udaddr->udasa);
-#endif	
-#ifdef VAX630
-	(void) spl5();
+#ifdef lint
+	i = 0; i = i;
 #endif
+	/*
+	 * If it is not running, try (again and again...) to initialise
+	 * it.  If it is currently initialising just ignore it for now.
+	 */
+	if (sc->sc_state != ST_RUN) {
+		if (sc->sc_state == ST_IDLE && udainit(um->um_ctlr))
+			printf("uda%d: still hung\n", um->um_ctlr);
+		return;
+	}
+
+	/*
+	 * If um_cmd is nonzero, this controller is on the Unibus
+	 * resource wait queue.  It will not help to try more requests;
+	 * instead, when the Unibus unblocks and calls udadgo(), we
+	 * will call udastart() again.
+	 */
+	if (um->um_cmd)
+		return;
+
+	sc->sc_flags |= SC_INSTART;
+	udaddr = (struct udadevice *) um->um_addr;
+
+loop:
+	/*
+	 * Service the drive at the head of the queue.  It may not
+	 * need anything, in which case it might be shutting down
+	 * in udaclose().
+	 */
+	if ((dp = um->um_tab.b_actf) == NULL)
+		goto out;
+	if ((bp = dp->b_actf) == NULL) {
+		dp->b_active = 0;
+		um->um_tab.b_actf = dp->b_forw;
+		if (ra_info[dp - udautab].ra_openpart == 0)
+			wakeup((caddr_t)dp); /* finish close protocol */
+		goto loop;
+	}
+
+	if (udaddr->udasa & UDA_ERR) {	/* ctlr fatal error */
+		udasaerror(um);
+		goto out;
+	}
+
+	/*
+	 * Get an MSCP packet, then figure out what to do.  If
+	 * we cannot get a command packet, the command ring may
+	 * be too small:  We should have at least as many command
+	 * packets as credits, for best performance.
+	 */
+	if ((mp = mscp_getcp(&sc->sc_mi, MSCP_DONTWAIT)) == NULL) {
+		if (sc->sc_mi.mi_credits > MSCP_MINCREDITS &&
+		    (sc->sc_flags & SC_GRIPED) == 0) {
+			log(LOG_NOTICE, "uda%d: command ring too small\n",
+				um->um_ctlr);
+			sc->sc_flags |= SC_GRIPED;/* complain only once */
+		}
+		goto out;
+	}
+
+	/*
+	 * Bring the drive on line if it is not already.  Get its status
+	 * if we do not already have it.  Otherwise just start the transfer.
+	 */
+	ui = udadinfo[udaunit(bp->b_dev)];
+	if ((ui->ui_flags & UNIT_ONLINE) == 0) {
+		mp->mscp_opcode = M_OP_ONLINE;
+		goto common;
+	}
+	if ((ui->ui_flags & UNIT_HAVESTATUS) == 0) {
+		mp->mscp_opcode = M_OP_GETUNITST;
+common:
+if (ui->ui_flags & UNIT_REQUEUE) panic("udastart");
+		/*
+		 * Take the drive off the controller queue.  When the
+		 * command finishes, make sure the drive is requeued.
+		 */
+		um->um_tab.b_actf = dp->b_forw;
+		dp->b_active = 0;
+		ui->ui_flags |= UNIT_REQUEUE;
+		mp->mscp_unit = ui->ui_slave;
+		*mp->mscp_addr |= MSCP_OWN | MSCP_INT;
+		sc->sc_flags |= SC_STARTPOLL;
+#ifdef POLLSTATS
+		sc->sc_ncmd++;
+#endif
+		goto loop;
+	}
+
+	pp = &udalabel[ui->ui_unit].d_partitions[udapart(bp->b_dev)];
+	mp->mscp_opcode = (bp->b_flags & B_READ) ? M_OP_READ : M_OP_WRITE;
+	mp->mscp_unit = ui->ui_slave;
+	mp->mscp_seq.seq_lbn = bp->b_blkno + pp->p_offset;
+	pp = &udalabel[ui->ui_unit].d_partitions[udapart(bp->b_dev)];
+	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+	mp->mscp_seq.seq_bytecount = bp->b_blkno + sz > pp->p_size ?
+		(pp->p_size - bp->b_blkno) >> DEV_BSHIFT : bp->b_bcount;
+	/* mscp_cmdref is filled in by mscp_go() */
+
+	/*
+	 * Drop the packet pointer into the `command' field so udadgo()
+	 * can tell what to start.  If ubago returns 1, we can do another
+	 * transfer.  If not, um_cmd will still point at mp, so we will
+	 * know that we are waiting for resources.
+	 */
+	um->um_cmd = (int)mp;
+	if (ubago(ui))
+		goto loop;
+
+	/*
+	 * All done, or blocked in ubago().  If we managed to
+	 * issue some commands, start up the beast.
+	 */
+out:
+	if (sc->sc_flags & SC_STARTPOLL) {
+#ifdef POLLSTATS
+		udastats.cmd[sc->sc_ncmd]++;
+		sc->sc_ncmd = 0;
+#endif
+		i = ((struct udadevice *) um->um_addr)->udaip;
+	}
+	sc->sc_flags &= ~(SC_INSTART | SC_STARTPOLL);
+}
+
+/*
+ * Start a transfer.
+ *
+ * If we are not called from within udastart(), we must have been
+ * blocked, so call udastart to do more requests (if any).  If
+ * this calls us again immediately we will not recurse, because
+ * that time we will be in udastart().  Clever....
+ */
+udadgo(um)
+	register struct uba_ctlr *um;
+{
+	struct uda_softc *sc = &uda_softc[um->um_ctlr];
+	struct mscp *mp = (struct mscp *)um->um_cmd;
+
+	um->um_tab.b_active++;	/* another transfer going */
+
+	/*
+	 * Fill in the MSCP packet and move the buffer to the
+	 * I/O wait queue.  Mark the controller as no longer on
+	 * the resource queue, and remember to initiate polling.
+	 */
+	mp->mscp_seq.seq_buffer = (um->um_ubinfo & 0x3ffff) |
+		(UBAI_BDP(um->um_ubinfo) << 24);
+	mscp_go(&sc->sc_mi, mp, um->um_ubinfo);
+	um->um_cmd = 0;	
+	um->um_ubinfo = 0;	/* tyke it awye */
+	sc->sc_flags |= SC_STARTPOLL;
+#ifdef POLLSTATS
+	sc->sc_ncmd++;
+#endif
+	if ((sc->sc_flags & SC_INSTART) == 0)
+		udastart(um);
+}
+
+udaiodone(mi, bp, info)
+	register struct mscp_info *mi;
+	struct buf *bp;
+	int info;
+{
+	register struct uba_ctlr *um = udaminfo[mi->mi_ctlr];
+
+	um->um_ubinfo = info;
+	ubadone(um);
+	biodone(bp);
+	if (um->um_bdp && mi->mi_wtab.av_forw == &mi->mi_wtab)
+		ubarelse(um->um_ubanum, &um->um_bdp);
+	um->um_tab.b_active--;	/* another transfer done */
+}
+
+/*
+ * The error bit was set in the controller status register.  Gripe,
+ * reset the controller, requeue pending transfers.
+ */
+udasaerror(um)
+	register struct uba_ctlr *um;
+{
+
+	printf("uda%d: controller error, sa=%b\n", um->um_ctlr,
+		((struct udadevice *) um->um_addr)->udasa, udasr_bits);
+	mscp_requeue(&uda_softc[um->um_ctlr].sc_mi);
+	(void) udainit(um->um_ctlr);
+}
+
+/*
+ * Interrupt routine.  Depending on the state of the controller,
+ * continue initialisation, or acknowledge command and response
+ * interrupts, and process responses.
+ */
+udaintr(ctlr)
+	int ctlr;
+{
+	register struct uba_ctlr *um = udaminfo[ctlr];
+	register struct uda_softc *sc = &uda_softc[ctlr];
+	register struct udadevice *udaddr = (struct udadevice *) um->um_addr;
+	register struct uda *ud;
+	register struct mscp *mp;
+	register int i;
+
+#ifdef VAX630
+	(void) spl5();		/* Qbus interrupt protocol is odd */
+#endif
+	sc->sc_wticks = 0;	/* reset interrupt watchdog */
+
+	/*
+	 * Combinations during steps 1, 2, and 3: STEPnMASK
+	 * corresponds to which bits should be tested;
+	 * STEPnGOOD corresponds to the pattern that should
+	 * appear after the interrupt from STEPn initialisation.
+	 * All steps test the bits in ALLSTEPS.
+	 */
+#define	ALLSTEPS	(UDA_ERR|UDA_STEP4|UDA_STEP3|UDA_STEP2|UDA_STEP1)
+
+#define	STEP1MASK	(ALLSTEPS | UDA_IE | UDA_NCNRMASK)
+#define	STEP1GOOD	(UDA_STEP2 | UDA_IE | (NCMDL2 << 3) | NRSPL2)
+
+#define	STEP2MASK	(ALLSTEPS | UDA_IE | UDA_IVECMASK)
+#define	STEP2GOOD	(UDA_STEP3 | UDA_IE | (sc->sc_ivec >> 2))
+
+#define	STEP3MASK	ALLSTEPS
+#define	STEP3GOOD	UDA_STEP4
+
 	switch (sc->sc_state) {
-	case S_IDLE:
-		printf("uda%d: random interrupt ignored\n", d);
-		return;
 
-	case S_STEP1:
-#define STEP1MASK       0174377
-#define STEP1GOOD       (UDA_STEP2|UDA_IE|(NCMDL2<<3)|NRSPL2)
-		if ((udaddr->udasa&STEP1MASK) != STEP1GOOD) {
-			sc->sc_state = S_IDLE;
-			wakeup((caddr_t)um);
-			return;
-		}
-		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_ringbase)|
-		    ((cpu == VAX_780) || (cpu == VAX_8600) ? UDA_PI : 0);
-		sc->sc_state = S_STEP2;
-		return;
-
-	case S_STEP2:
-#define STEP2MASK       0174377
-#define STEP2GOOD       (UDA_STEP3|UDA_IE|(sc->sc_ivec/4))
-		if ((udaddr->udasa&STEP2MASK) != STEP2GOOD) {
-			sc->sc_state = S_IDLE;
-			wakeup((caddr_t)um);
-			return;
-		}
-		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_ringbase)>>16;
-		sc->sc_state = S_STEP3;
-		return;
-
-	case S_STEP3:
-#define STEP3MASK       0174000
-#define STEP3GOOD       UDA_STEP4
-		if ((udaddr->udasa&STEP3MASK) != STEP3GOOD) {
-			sc->sc_state = S_IDLE;
-			wakeup((caddr_t)um);
-			return;
-		}
-		udamicro[d] = udaddr->udasa;
-		log(LOG_INFO, "uda%d: version %d model %d\n", d,
-		    udamicro[d] & 0xf, (udamicro[d] >> 4) & 0xf);
+	case ST_IDLE:
 		/*
-		 * Requesting the error status (|= 2)
-		 * may hang older controllers.
+		 * Ignore unsolicited interrupts.
 		 */
-		i = UDA_GO | (udaerror? 2 : 0);
-		if (udaburst[d])
-			i |= (udaburst[d] - 1) << 2;
-		udaddr->udasa = i;
+		log(LOG_WARNING, "uda%d: stray intr\n", ctlr);
+		return;
+
+	case ST_STEP1:
+		/*
+		 * Begin step two initialisation.
+		 */
+		if ((udaddr->udasa & STEP1MASK) != STEP1GOOD) {
+			i = 1;
+initfailed:
+			printf("uda%d: init step %d failed, sa=%b\n",
+				ctlr, i, udaddr->udasa, udasr_bits);
+			sc->sc_state = ST_IDLE;
+			if (sc->sc_flags & SC_DOWAKE) {
+				sc->sc_flags &= ~SC_DOWAKE;
+				wakeup((caddr_t) sc);
+			}
+			return;
+		}
+		udaddr->udasa = (int) &sc->sc_uda->uda_ca.ca_rspdsc[0] |
+			(cpu == VAX_780 || cpu == VAX_8600 ? UDA_PI : 0);
+		sc->sc_state = ST_STEP2;
+		return;
+
+	case ST_STEP2:
+		/*
+		 * Begin step 3 initialisation.
+		 */
+		if ((udaddr->udasa & STEP2MASK) != STEP2GOOD) {
+			i = 2;
+			goto initfailed;
+		}
+		udaddr->udasa = ((int) &sc->sc_uda->uda_ca.ca_rspdsc[0]) >> 16;
+		sc->sc_state = ST_STEP3;
+		return;
+
+	case ST_STEP3:
+		/*
+		 * Set controller characteristics (finish initialisation).
+		 */
+		if ((udaddr->udasa & STEP3MASK) != STEP3GOOD) {
+			i = 3;
+			goto initfailed;
+		}
+		i = udaddr->udasa & 0xff;
+		if (i != sc->sc_micro) {
+			sc->sc_micro = i;
+			printf("uda%d: version %d model %d\n",
+				ctlr, i & 0xf, i >> 4);
+		}
+
+		/*
+		 * Present the burst size, then remove it.  Why this
+		 * should be done this way, I have no idea.
+		 *
+		 * Note that this assumes udaburst[ctlr] > 0.
+		 */
+		udaddr->udasa = UDA_GO | (udaburst[ctlr] - 1) << 2;
 		udaddr->udasa = UDA_GO;
-		sc->sc_state = S_SCHAR;
+		printf("uda%d: DMA burst size set to %d\n",
+			ctlr, udaburst[ctlr]);
+
+		udainitds(ctlr);	/* initialise data structures */
 
 		/*
-		 * Initialize the data structures.
+		 * Before we can get a command packet, we need some
+		 * credits.  Fake some up to keep mscp_getcp() happy,
+		 * get a packet, and cancel all credits (the right
+		 * number should come back in the response to the
+		 * SCC packet).
 		 */
-		uud = sc->sc_uda;
-		for (i = 0; i < NRSP; i++) {
-			ud->uda_ca.ca_rspdsc[i] = UDA_OWN|UDA_INT|
-				(long)&uud->uda_rsp[i].mscp_cmdref;
-			ud->uda_rsp[i].mscp_dscptr = &ud->uda_ca.ca_rspdsc[i];
-			ud->uda_rsp[i].mscp_header.uda_msglen = mscp_msglen;
-		}
-		for (i = 0; i < NCMD; i++) {
-			ud->uda_ca.ca_cmddsc[i] = UDA_INT|
-				(long)&uud->uda_cmd[i].mscp_cmdref;
-			ud->uda_cmd[i].mscp_dscptr = &ud->uda_ca.ca_cmddsc[i];
-			ud->uda_cmd[i].mscp_header.uda_msglen = mscp_msglen;
-		}
-		bp = &udwtab[d];
-		bp->av_forw = bp->av_back = bp;
-		sc->sc_lastcmd = 1;
-		sc->sc_lastrsp = 0;
-		mp = &uda[um->um_ctlr].uda_cmd[0];
-		mp->mscp_unit = mp->mscp_modifier = 0;
-		mp->mscp_flags = 0;
-		mp->mscp_bytecnt = mp->mscp_buffer = 0;
-		mp->mscp_errlgfl = mp->mscp_copyspd = 0;
-		mp->mscp_opcode = M_OP_STCON;
-		mp->mscp_cntflgs = M_CF_ATTN|M_CF_MISC|M_CF_THIS;
-		*((long *)mp->mscp_dscptr) |= UDA_OWN|UDA_INT;
-		i = udaddr->udaip;      /* initiate polling */
+		sc->sc_mi.mi_credits = MSCP_MINCREDITS + 1;
+		mp = mscp_getcp(&sc->sc_mi, MSCP_DONTWAIT);
+		if (mp == NULL)	/* `cannot happen' */
+			panic("udaintr");
+		sc->sc_mi.mi_credits = 0;
+		mp->mscp_opcode = M_OP_SETCTLRC;
+		mp->mscp_unit = 0;
+		mp->mscp_sccc.sccc_ctlrflags = M_CF_ATTN | M_CF_MISC |
+			M_CF_THIS;
+		*mp->mscp_addr |= MSCP_OWN | MSCP_INT;
+		i = udaddr->udaip;
+		sc->sc_state = ST_SETCHAR;
 		return;
 
-	case S_SCHAR:
-	case S_RUN:
+	case ST_SETCHAR:
+	case ST_RUN:
+		/*
+		 * Handle Set Ctlr Characteristics responses and operational
+		 * responses (via mscp_dorsp).
+		 */
 		break;
 
 	default:
-		printf("uda%d: interrupt in unknown state %d ignored\n",
-			d, sc->sc_state);
+		printf("uda%d: driver bug, state %d\n", ctlr, sc->sc_state);
+		panic("udastate");
+	}
+
+	if (udaddr->udasa & UDA_ERR) {	/* ctlr fatal error */
+		udasaerror(um);
 		return;
 	}
 
-	if (udaddr->udasa&UDA_ERR) {
-		printf("uda(%d): fatal error (%o)\n", d, udaddr->udasa&0xffff);
-		udaddr->udaip = 0;
-		wakeup((caddr_t)um);
-	}
+	ud = &uda[ctlr];
 
 	/*
-	 * Check for a buffer purge request.
+	 * Handle buffer purge requests.
+	 * I have never seen these to work usefully, thus the log().
 	 */
 	if (ud->uda_ca.ca_bdp) {
-#ifdef	DEBUG
-		printd("uda: purge bdp %d\n", ud->uda_ca.ca_bdp);
-#endif		
+		log(LOG_DEBUG, "uda%d: purge bdp %d\n",
+			ctlr, ud->uda_ca.ca_bdp);
 		UBAPURGE(um->um_hd->uh_uba, ud->uda_ca.ca_bdp);
 		ud->uda_ca.ca_bdp = 0;
-		udaddr->udasa = 0;      /* signal purge complete */
+		udaddr->udasa = 0;	/* signal purge complete */
 	}
 
 	/*
-	 * Check for response ring transition.
+	 * Check for response and command ring transitions.
 	 */
 	if (ud->uda_ca.ca_rspint) {
 		ud->uda_ca.ca_rspint = 0;
-		for (i = sc->sc_lastrsp;; i++) {
-			i %= NRSP;
-			if (ud->uda_ca.ca_rspdsc[i]&UDA_OWN)
-				break;
-			udrsp(um, ud, sc, i);
-			ud->uda_ca.ca_rspdsc[i] |= UDA_OWN;
-		}
-		sc->sc_lastrsp = i;
+		mscp_dorsp(&sc->sc_mi);
 	}
-
-	/*
-	 * Check for command ring transition.
-	 */
 	if (ud->uda_ca.ca_cmdint) {
-#ifdef	DEBUG
-		printd("uda: command ring transition\n");
-#endif		
 		ud->uda_ca.ca_cmdint = 0;
+		MSCP_DOCMD(&sc->sc_mi);
 	}
-	if(uda_cp_wait)
-		wakeup((caddr_t)&uda_cp_wait);
-	(void) udstart(um);
+	udastart(um);
+}
+
+#ifndef GENERIC_RAW
+struct buf rudabuf[NRA];
+
+/*
+ * Read and write.
+ */
+udaread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+
+	return (physio(udastrategy, &rudabuf[udaunit(dev)], dev, B_READ,
+		minphys, uio));
+}
+
+udawrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+
+	return (physio(udastrategy, &rudabuf[udaunit(dev)], dev, B_WRITE,
+		minphys, uio));
+}
+#endif /* GENERIC_RAW */
+
+/*
+ * Initialise the various data structures that control the UDA50.
+ */
+udainitds(ctlr)
+	int ctlr;
+{
+	register struct uda *ud = &uda[ctlr];
+	register struct uda *uud = uda_softc[ctlr].sc_uda;
+	register struct mscp *mp;
+	register int i;
+
+	for (i = 0, mp = ud->uda_rsp; i < NRSP; i++, mp++) {
+		ud->uda_ca.ca_rspdsc[i] = MSCP_OWN | MSCP_INT |
+			(long)&uud->uda_rsp[i].mscp_cmdref;
+		mp->mscp_addr = &ud->uda_ca.ca_rspdsc[i];
+		mp->mscp_msglen = MSCP_MSGLEN;
+	}
+	for (i = 0, mp = ud->uda_cmd; i < NCMD; i++, mp++) {
+		ud->uda_ca.ca_cmddsc[i] = MSCP_INT |
+			(long)&uud->uda_cmd[i].mscp_cmdref;
+		mp->mscp_addr = &ud->uda_ca.ca_cmddsc[i];
+		mp->mscp_msglen = MSCP_MSGLEN;
+	}
 }
 
 /*
- * Process a response packet
+ * Handle an error datagram.  All we do now is decode it.
  */
-udrsp(um, ud, sc, i)
-	register struct uba_ctlr *um;
-	register struct uda *ud;
-	register struct uda_softc *sc;
-	int i;
+udadgram(mi, mp)
+	struct mscp_info *mi;
+	struct mscp *mp;
 {
+
+	mscp_decodeerror(mi->mi_md->md_mname, mi->mi_ctlr, mp);
+}
+
+/*
+ * The Set Controller Characteristics command finished.
+ * Record the new state of the controller.
+ */
+udactlrdone(mi, mp)
+	register struct mscp_info *mi;
+	struct mscp *mp;
+{
+	register struct uda_softc *sc = &uda_softc[mi->mi_ctlr];
+
+	if ((mp->mscp_status & M_ST_MASK) == M_ST_SUCCESS)
+		sc->sc_state = ST_RUN;
+	else {
+		printf("uda%d: SETCTLRC failed: ",
+			mi->mi_ctlr, mp->mscp_status);
+		mscp_printevent(mp);
+		sc->sc_state = ST_IDLE;
+	}
+	if (sc->sc_flags & SC_DOWAKE) {
+		sc->sc_flags &= ~SC_DOWAKE;
+		wakeup((caddr_t)sc);
+	}
+}
+
+/*
+ * Received a response from an as-yet unconfigured drive.  Configure it
+ * in, if possible.
+ */
+udaunconf(mi, mp)
+	struct mscp_info *mi;
 	register struct mscp *mp;
-	register struct uba_device *ui;
-	register int unit;
-	struct buf *dp, *bp, nullbp;
-	int st;
+{
 
-	mp = &ud->uda_rsp[i];
-	mp->mscp_header.uda_msglen = mscp_msglen;
-	sc->sc_credits += mp->mscp_header.uda_credits & 0xf;  /* just 4 bits?*/
-	if ((mp->mscp_header.uda_credits & 0xf0) > 0x10)	/* Check */
-		return;
-#ifdef	DEBUG
-	printd10("udarsp, opcode 0x%x status 0x%x\n",mp->mscp_opcode,mp->mscp_status);
-#endif	
 	/*
-	 * If it's an error log message (datagram),
-	 * pass it on for more extensive processing.
+	 * If it is a slave response, copy it to udaslavereply for
+	 * udaslave() to look at.
 	 */
-	if ((mp->mscp_header.uda_credits & 0xf0) == 0x10) {	/* check */
-		uderror(um, (struct mslg *)mp);
-		return;
+	if (mp->mscp_opcode == (M_OP_GETUNITST | M_OP_END) &&
+	    (uda_softc[mi->mi_ctlr].sc_flags & SC_INSLAVE) != 0) {
+		udaslavereply = *mp;
+		return (MSCP_DONE);
 	}
-	st = mp->mscp_status&M_ST_MASK;
-	/* The controller interrupts as drive 0 */
-	/* this means that you must check for controller interrupts */
-	/* before you check to see if there is a drive 0 */
-	if((M_OP_STCON|M_OP_END) == mp->mscp_opcode){
-		if (st == M_ST_SUCC)
-			sc->sc_state = S_RUN;
-		else
-			sc->sc_state = S_IDLE;
-		um->um_tab.b_active = 0;
-		wakeup((caddr_t)um);
-		return;
-	}
-	if (mp->mscp_unit >= 8)
-		return;
-	if ((ui = udip[um->um_ctlr][mp->mscp_unit]) == 0)
-		return;
-	unit = ui->ui_unit;
-	switch (mp->mscp_opcode) {
 
-	case M_OP_ONLIN|M_OP_END:
-		ra_info[unit].rastatus = st;
-		ra_info[unit].ratype =  mp->mscp_mediaid;
-		dp = &udutab[unit];
-		if (st == M_ST_SUCC) {
-			/*
-			 * Link the drive onto the controller queue
-			 */
-			dp->b_forw = NULL;
-			if (um->um_tab.b_actf == NULL)
-				um->um_tab.b_actf = dp;
-			else
-				um->um_tab.b_actl->b_forw = dp;
-			um->um_tab.b_actl = dp;
-			ui->ui_flags = 1;       /* mark it online */
-			ra_info[unit].rastate = OPENRAW;
-			ra_info[unit].radsize=(daddr_t)mp->mscp_untsize;
-#ifdef	DEBUG
-			printd("uda: unit %d online\n", mp->mscp_unit);
-#endif			
-#define F_to_C(x,i)     ( ((x)->mscp_mediaid) >> (i*5+7) & 0x1f ? ( ( (((x)->mscp_mediaid) >>( i*5 + 7)) & 0x1f) + 'A' - 1): ' ')
-		/* this mess decodes the Media type identifier */
-#ifdef	DEBUG
-			printd("uda: unit %d online %x %c%c %c%c%c%d\n"
-				,mp->mscp_unit, mp->mscp_mediaid
-				,F_to_C(mp,4),F_to_C(mp,3),F_to_C(mp,2)
-				,F_to_C(mp,1),F_to_C(mp,0)
-				,mp->mscp_mediaid & 0x7f);
-#endif				
-			dp->b_active = 1;
-		} else {
-			if(dp->b_actf){
-				harderr(dp->b_actf,"ra");
-			} else {
-				nullbp.b_blkno = 0;
-				nullbp.b_dev = makedev(UDADEVNUM,unit);
-				harderr(&nullbp, "ra");
-			}
-			printf("OFFLINE\n");
-			while (bp = dp->b_actf) {
-				dp->b_actf = bp->av_forw;
-				bp->b_flags |= B_ERROR;
-				iodone(bp);
-			}
-			ra_info[unit].rastate = CLOSED;
-		}
-		if(mp->mscp_cmdref!=NULL){/* Seems to get lost sometimes */
-			wakeup((caddr_t)mp->mscp_cmdref);
-		}
-		break;
+	/*
+	 * Otherwise, it had better be an available attention response.
+	 */
+	if (mp->mscp_opcode != M_OP_AVAILATTN)
+		return (MSCP_FAILED);
+
+	/* do what autoconf does */
+	return (MSCP_FAILED);	/* not yet, arwhite, not yet */
+}
 
 /*
- * The AVAILABLE ATTENTION messages occurs when the
- * unit becomes available after spinup,
- * marking the unit offline will force an online command
- * prior to using the unit.
+ * A drive came on line.  Check its type and size.  Return DONE if
+ * we think the drive is truly on line.  In any case, awaken anyone
+ * sleeping on the drive on-line-ness.
  */
-	case M_OP_AVATN:
-#ifdef	DEBUG
-		printd("uda: unit %d attention\n", mp->mscp_unit);
-#endif		
-		ui->ui_flags = 0;       /* it went offline and we didn't notice */
-		ra_info[unit].ratype =  mp->mscp_mediaid;
-		break;
+udaonline(ui, mp)
+	register struct uba_device *ui;
+	struct mscp *mp;
+{
+	register struct ra_info *ra = &ra_info[ui->ui_unit];
 
-	case M_OP_END:
+	wakeup((caddr_t)&ui->ui_flags);
+	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
+		printf("uda%d: attempt to bring ra%d on line failed: ",
+			ui->ui_ctlr, ui->ui_unit);
+		mscp_printevent(mp);
+		ra->ra_state = CLOSED;
+		return (MSCP_FAILED);
+	}
+
+	ra->ra_state = OPENRAW;
+	ra->ra_dsize = (daddr_t)mp->mscp_onle.onle_unitsize;
+	printf("ra%d: uda%d, unit %d, size = %d sectors\n", ui->ui_unit,
+		ui->ui_ctlr, mp->mscp_unit, ra->ra_dsize);
+	/* can now compute ncyl */
+	ra->ra_geom.rg_ncyl = ra->ra_dsize / ra->ra_geom.rg_ntracks /
+		ra->ra_geom.rg_nsectors;
+	return (MSCP_DONE);
+}
+
 /*
- * An endcode without an opcode (0200) is an invalid command.
- * The mscp specification states that this would be a protocol
- * type error, such as illegal opcodes. The mscp spec. also
- * states that parameter error type of invalid commands should
- * return the normal end message for the command. This does not appear
- * to be the case. An invalid logical block number returned an endcode
- * of 0200 instead of the 0241 (read) that was expected.
+ * We got some (configured) unit's status.  Return DONE if it succeeded.
  */
-	
-		printf("endcd=%o, stat=%o\n", mp->mscp_opcode, mp->mscp_status);
-		break;
-	case M_OP_READ|M_OP_END:
-	case M_OP_WRITE|M_OP_END:
-		bp = (struct buf *)mp->mscp_cmdref;
-		ubarelse(um->um_ubanum, (int *)&bp->b_ubinfo);
+udagotstatus(ui, mp)
+	register struct uba_device *ui;
+	register struct mscp *mp;
+{
+
+	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
+		printf("uda%d: attempt to get status for ra%d failed: ",
+			ui->ui_ctlr, ui->ui_unit);
+		mscp_printevent(mp);
+		return (MSCP_FAILED);
+	}
+	/* record for (future) bad block forwarding and whatever else */
+	uda_rasave(ui->ui_unit, mp, 1);
+	return (MSCP_DONE);
+}
+
+/*
+ * A transfer failed.  We get a chance to fix or restart it.
+ * Need to write the bad block forwaring code first....
+ */
+/*ARGSUSED*/
+udaioerror(ui, mp, bp)
+	register struct uba_device *ui;
+	register struct mscp *mp;
+	struct buf *bp;
+{
+
+	if (mp->mscp_flags & M_EF_BBLKR) {
 		/*
-		 * Unlink buffer from I/O wait queue.
+		 * A bad block report.  Eventually we will
+		 * restart this transfer, but for now, just
+		 * log it and give up.
 		 */
-		bp->av_back->av_forw = bp->av_forw;
-		bp->av_forw->av_back = bp->av_back;
-#if defined(VAX750)
-		if (cpu == VAX_750 && um->um_tab.b_active == 0
-		    && udwtab[um->um_ctlr].av_forw == &udwtab[um->um_ctlr]) {
-			if (um->um_ubinfo == 0)
-				printf("udintr: um_ubinfo == 0\n");
-			else
-				ubarelse(um->um_ubanum, &um->um_ubinfo);
-		}
-#endif
-		dp = &udutab[unit];
-		dp->b_qsize--;
-		if (ui->ui_dk >= 0)
-			if (dp->b_qsize == 0)
-				dk_busy &= ~(1<<ui->ui_dk);
-		if (st == M_ST_OFFLN || st == M_ST_AVLBL) {
-			ui->ui_flags = 0;       /* mark unit offline */
-			/*
-			 * Link the buffer onto the front of the drive queue
-			 */
-			if ((bp->av_forw = dp->b_actf) == 0)
-				dp->b_actl = bp;
-			dp->b_actf = bp;
-			/*
-			 * Link the drive onto the controller queue
-			 */
-			if (dp->b_active == 0) {
-				dp->b_forw = NULL;
-				if (um->um_tab.b_actf == NULL)
-					um->um_tab.b_actf = dp;
-				else
-					um->um_tab.b_actl->b_forw = dp;
-				um->um_tab.b_actl = dp;
-				dp->b_active = 1;
-			}
-#if defined(VAX750)
-			if (cpu == VAX750 && um->um_ubinfo == 0)
-				um->um_ubinfo =
-				   uballoc(um->um_ubanum, (caddr_t)0, 0,
-					UBA_NEEDBDP);
-#endif
-			return;
-		}
-		if (st != M_ST_SUCC) {
-			harderr(bp, "ra");
-#ifdef	DEBUG
-			printd("status %o\n", mp->mscp_status);
-#endif
-			bp->b_flags |= B_ERROR;
-		}
-		bp->b_resid = bp->b_bcount - mp->mscp_bytecnt;
-		iodone(bp);
-		break;
-
-	case M_OP_GTUNT|M_OP_END:
-#ifdef	DEBUG
-		printd("GTUNT end packet status = 0x%x media id 0x%x\n"
-			,st,mp->mscp_mediaid);
-#endif		
-		ra_info[unit].rastatus = st;
-		ra_info[unit].ratype = mp->mscp_mediaid;
-		break;
-
-	default:
-		printf("uda: unknown packet\n");
-		uderror(um, (struct mslg *)mp);
+		log(LOG_ERR, "ra%d: bad block report: %d%s\n",
+			ui->ui_unit, mp->mscp_seq.seq_lbn,
+			mp->mscp_flags & M_EF_BBLKU ? " + others" : "");
+	} else {
+		/*
+		 * What the heck IS a `serious exception' anyway?
+		 * IT SURE WOULD BE NICE IF DEC SOLD DOCUMENTATION
+		 * FOR THEIR OWN CONTROLLERS.
+		 */
+		if (mp->mscp_flags & M_EF_SEREX)
+			log(LOG_ERR, "ra%d: serious exception reported\n",
+				ui->ui_unit);
 	}
+	return (MSCP_FAILED);
+}
+
+/*
+ * A replace operation finished.
+ */
+/*ARGSUSED*/
+udareplace(ui, mp)
+	struct uba_device *ui;
+	struct mscp *mp;
+{
+
+	panic("udareplace");
+}
+
+/*
+ * A bad block related operation finished.
+ */
+/*ARGSUSED*/
+udabb(ui, mp, bp)
+	struct uba_device *ui;
+	struct mscp *mp;
+	struct buf *bp;
+{
+
+	panic("udabb");
 }
 
 
 /*
- * Process an error log message
- *
- * For now, just log the error on the console.
- * Only minimal decoding is done, only "useful"
- * information is printed.  Eventually should
- * send message to an error logger.
+ * I/O controls.
  */
-uderror(um, mp)
-	register struct uba_ctlr *um;
-	register struct mslg *mp;
-{
-	register	i;
-
-
-	if(!(mp->mslg_flags & (M_LF_SUCC | M_LF_CONT)))
-		printf("uda%d: hard error\n");
-
-	mprintf("uda%d: %s error, ", um->um_ctlr,
-		mp->mslg_flags & ( M_LF_SUCC | M_LF_CONT ) ? "soft" : "hard");
-	switch (mp->mslg_format) {
-	case M_FM_CNTERR:
-		mprintf("controller error, event 0%o\n", mp->mslg_event);
-		break;
-
-	case M_FM_BUSADDR:
-		mprintf("host memory access error, event 0%o, addr 0%o\n",
-			mp->mslg_event, mp->mslg_busaddr);
-		break;
-
-	case M_FM_DISKTRN:
-		mprintf("disk transfer error, unit %d, grp 0x%x, hdr 0x%x, event 0%o\n",
-			mp->mslg_unit, mp->mslg_group, mp->mslg_hdr,
-mp->mslg_event);
-		break;
-
-	case M_FM_SDI:
-		mprintf("SDI error, unit %d, event 0%o, hdr 0x%x\n",
-			mp->mslg_unit, mp->mslg_event, mp->mslg_hdr);
-		for(i = 0; i < 12;i++)
-			mprintf("\t0x%x",mp->mslg_sdistat[i] & 0xff);
-		mprintf("\n");
-		break;
-
-	case M_FM_SMLDSK:
-		mprintf("small disk error, unit %d, event 0%o, cyl %d\n",
-			mp->mslg_unit, mp->mslg_event, mp->mslg_sdecyl);
-		break;
-
-	default:
-		mprintf("unknown error, unit %d, format 0%o, event 0%o\n",
-			mp->mslg_unit, mp->mslg_format, mp->mslg_event);
-	}
-
-	if (udaerror) {
-		register long *p = (long *)mp;
-
-		for (i = 0; i < mp->mslg_header.uda_msglen; i += sizeof(*p))
-			printf("%x ", *p++);
-		printf("\n");
-	}
-}
-
-
-/*
- * Find an unused command packet
- */
-struct mscp *
-udgetcp(um)
-	struct uba_ctlr *um;
-{
-	register struct mscp *mp;
-	register struct udaca *cp;
-	register struct uda_softc *sc;
-	register int i;
-	int	s;
-
-	s = spl5();
-	cp = &uda[um->um_ctlr].uda_ca;
-	sc = &uda_softc[um->um_ctlr];
-	/*
-	 * If no credits, can't issue any commands
-	 * until some outstanding commands complete.
-	 */
-	i = sc->sc_lastcmd;
-	if(((cp->ca_cmddsc[i]&(UDA_OWN|UDA_INT))==UDA_INT)&&
-	    (sc->sc_credits >= 2)) {
-		sc->sc_credits--;       /* committed to issuing a command */
-		cp->ca_cmddsc[i] &= ~UDA_INT;
-		mp = &uda[um->um_ctlr].uda_cmd[i];
-		mp->mscp_unit = mp->mscp_modifier = 0;
-		mp->mscp_opcode = mp->mscp_flags = 0;
-		mp->mscp_bytecnt = mp->mscp_buffer = 0;
-		mp->mscp_errlgfl = mp->mscp_copyspd = 0;
-		sc->sc_lastcmd = (i + 1) % NCMD;
-		(void) splx(s);
-		return(mp);
-	}
-	(void) splx(s);
-	return(NULL);
-}
-
-udread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = udunit(dev);
-
-	if (unit >= NRA)
-		return (ENXIO);
-	return (physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys, uio));
-}
-
-udwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = udunit(dev);
-
-	if (unit >= NRA)
-		return (ENXIO);
-	return (physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys, uio));
-}
-
-udreset(uban)
-	int uban;
-{
-	register struct uba_ctlr *um;
-	register struct uba_device *ui;
-	register struct buf *bp, *dp;
-	register int unit;
-	struct buf *nbp;
-	int d;
-
-	for (d = 0; d < NUDA; d++) {
-		if ((um = udminfo[d]) == 0 || um->um_ubanum != uban ||
-		    um->um_alive == 0)
-			continue;
-		printf(" uda%d", d);
-		um->um_tab.b_active = 0;
-		um->um_tab.b_actf = um->um_tab.b_actl = 0;
-		uda_softc[d].sc_state = S_IDLE;
-		uda_softc[d].sc_mapped = 0;	/* Rich */
-		for (unit = 0; unit < NRA; unit++) {
-			if ((ui = uddinfo[unit]) == 0)
-				continue;
-			if (ui->ui_alive == 0 || ui->ui_mi != um)
-				continue;
-			udutab[unit].b_active = 0;
-			udutab[unit].b_qsize = 0;
-		}
-		for (bp = udwtab[d].av_forw; bp != &udwtab[d]; bp = nbp) {
-			nbp = bp->av_forw;
-			bp->b_ubinfo = 0;
-			/*
-			 * Link the buffer onto the drive queue
-			 */
-			dp = &udutab[udunit(bp->b_dev)];
-			if (dp->b_actf == 0)
-				dp->b_actf = bp;
-			else
-				dp->b_actl->av_forw = bp;
-			dp->b_actl = bp;
-			bp->av_forw = 0;
-			/*
-			 * Link the drive onto the controller queue
-			 */
-			if (dp->b_active == 0) {
-				dp->b_forw = NULL;
-				if (um->um_tab.b_actf == NULL)
-					um->um_tab.b_actf = dp;
-				else
-					um->um_tab.b_actl->b_forw = dp;
-				um->um_tab.b_actl = dp;
-				dp->b_active = 1;
-			}
-		}
-		(void)udinit(d);
-	}
-}
-
-#define DBSIZE 32
-
-#define ca_Rspdsc       ca_rspdsc[0]
-#define ca_Cmddsc       ca_rspdsc[1]
-#define uda_Rsp         uda_rsp[0]
-#define uda_Cmd         uda_cmd[0]
-
-struct  uda     udad[NUDA];
-
-uddump(dev)
-	dev_t dev;
-{
-	struct udadevice *udaddr;
-	struct uda *ud_ubaddr;
-	char *start;
-	int num, blk, unit;
-	int maxsz;
-	int blkoff;
-	register struct uba_regs *uba;
-	register struct uba_device *ui;
-	register struct uda *udp;
-	register struct pte *io;
-	register int i;
-	struct disklabel *lp;
-	unit = udunit(dev);
-	if (unit >= NRA)
-		return (ENXIO);
-#define phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
-	ui = phys(struct uba_device *, uddinfo[unit]);
-	if (ui->ui_alive == 0)
-		return (ENXIO);
-	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
-	ubainit(uba);
-	udaddr = (struct udadevice *)ui->ui_physaddr;
-	DELAY(2000000);
-	udp = phys(struct uda *, &udad[ui->ui_ctlr]);
-	lp = &udlabel[unit];
-
-	num = btoc(sizeof(struct uda)) + 1;
-	io = &uba->uba_map[NUBMREG-num];
-	for(i = 0; i<num; i++)
-		*(int *)io++ = UBAMR_MRV|(btop(udp)+i);
-	ud_ubaddr = (struct uda *)(((int)udp & PGOFSET)|((NUBMREG-num)<<9));
-
-	udaddr->udaip = 0;
-	while ((udaddr->udasa & UDA_STEP1) == 0)
-		if(udaddr->udasa & UDA_ERR) return(EFAULT);
-	udaddr->udasa = UDA_ERR;
-	while ((udaddr->udasa & UDA_STEP2) == 0)
-		if(udaddr->udasa & UDA_ERR) return(EFAULT);
-	udaddr->udasa = (short)&ud_ubaddr->uda_ca.ca_ringbase;
-	while ((udaddr->udasa & UDA_STEP3) == 0)
-		if(udaddr->udasa & UDA_ERR) return(EFAULT);
-	udaddr->udasa = (short)(((int)&ud_ubaddr->uda_ca.ca_ringbase) >> 16);
-	while ((udaddr->udasa & UDA_STEP4) == 0)
-		if(udaddr->udasa & UDA_ERR) return(EFAULT);
-	udaddr->udasa = UDA_GO;
-	udp->uda_ca.ca_Rspdsc = (long)&ud_ubaddr->uda_Rsp.mscp_cmdref;
-	udp->uda_ca.ca_Cmddsc = (long)&ud_ubaddr->uda_Cmd.mscp_cmdref;
-	udp->uda_Cmd.mscp_cntflgs = 0;
-	udp->uda_Cmd.mscp_version = 0;
-	if (udcmd(M_OP_STCON, udp, udaddr) == 0) {
-		return(EFAULT);
-	}
-	udp->uda_Cmd.mscp_unit = ui->ui_slave;
-	if (udcmd(M_OP_ONLIN, udp, udaddr) == 0) {
-		return(EFAULT);
-	}
-
-	num = maxfree;
-	start = 0;
-	blkoff = lp->d_partitions[udpart(dev)].p_offset;
-	maxsz = lp->d_partitions[udpart(dev)].p_size;
-	if (dumplo < 0)
-		return (EINVAL);
-	if (dumplo + num >= maxsz)
-		num = maxsz - dumplo;
-	blkoff += dumplo;
-	while (num > 0) {
-		blk = num > DBSIZE ? DBSIZE : num;
-		io = uba->uba_map;
-		for (i = 0; i < blk; i++)
-			*(int *)io++ = (btop(start)+i) | UBAMR_MRV;
-		*(int *)io = 0;
-		udp->uda_Cmd.mscp_lbn = btop(start) + blkoff;
-		udp->uda_Cmd.mscp_unit = ui->ui_slave;
-		udp->uda_Cmd.mscp_bytecnt = blk*NBPG;
-		udp->uda_Cmd.mscp_buffer = 0;
-		if (udcmd(M_OP_WRITE, udp, udaddr) == 0) {
-			return(EIO);
-		}
-		start += blk*NBPG;
-		num -= blk;
-	}
-	return (0);
-}
-
-
-udcmd(op, udp, udaddr)
-	int op;
-	register struct uda *udp;
-	struct udadevice *udaddr;
-{
-	int i;
-
-	udp->uda_Cmd.mscp_opcode = op;
-	udp->uda_Rsp.mscp_header.uda_msglen = mscp_msglen;
-	udp->uda_Cmd.mscp_header.uda_msglen = mscp_msglen;
-	udp->uda_ca.ca_Rspdsc |= UDA_OWN|UDA_INT;
-	udp->uda_ca.ca_Cmddsc |= UDA_OWN|UDA_INT;
-	if (udaddr->udasa&UDA_ERR)
-		printf("Udaerror udasa (%x)\n", udaddr->udasa&0xffff);
-	i = udaddr->udaip;
-#ifdef	lint
-	i = i;
-#endif
-	for (;;) {
-		if (udp->uda_ca.ca_cmdint)
-			udp->uda_ca.ca_cmdint = 0;
-		if (udp->uda_ca.ca_rspint)
-			break;
-	}
-	udp->uda_ca.ca_rspint = 0;
-	if (udp->uda_Rsp.mscp_opcode != (op|M_OP_END) ||
-	    (udp->uda_Rsp.mscp_status&M_ST_MASK) != M_ST_SUCC) {
-		printf("error: com %d opc 0x%x stat 0x%x\ndump ",
-			op,
-			udp->uda_Rsp.mscp_opcode,
-			udp->uda_Rsp.mscp_status);
-		return(0);
-	}
-	return(1);
-}
-
-udioctl(dev, cmd, data, flag)
+udaioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
 	caddr_t data;
 	int flag;
 {
-	int unit = udunit(dev);
+	register int unit = udaunit(dev);
 	register struct disklabel *lp;
 	int error = 0;
 
-	lp = &udlabel[unit];
+	lp = &udalabel[unit];
 
 	switch (cmd) {
 
@@ -1506,7 +1597,7 @@ udioctl(dev, cmd, data, flag)
 	case DIOCGPART:
 		((struct partinfo *)data)->disklab = lp;
 		((struct partinfo *)data)->part =
-		    &lp->d_partitions[udpart(dev)];
+		    &lp->d_partitions[udapart(dev)];
 		break;
 
 	case DIOCSDINFO:
@@ -1516,26 +1607,25 @@ udioctl(dev, cmd, data, flag)
 			*lp = *(struct disklabel *)data;
 		break;
 
-	case DIOCWDINFO:
-		if ((flag & FWRITE) == 0) {
-			error = EBADF;
-			break;
-		}
-		{
+	case DIOCWDINFO: {
 		struct buf *bp;
 		struct disklabel *dlp;
 #ifdef notdef
 		daddr_t alt, end;
 #endif
 
+		if ((flag & FWRITE) == 0) {
+			error = EBADF;
+			break;
+		}
 		*lp = *(struct disklabel *)data;
 		bp = geteblk(lp->d_secsize);
-		bp->b_dev = makedev(major(dev), udminor(udunit(dev), 0));
+		bp->b_dev = makedev(major(dev), udaminor(udaunit(dev), 0));
 		bp->b_bcount = lp->d_secsize;
 		bp->b_blkno = LABELSECTOR;
 		bp->b_flags = B_READ;
 		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-		udstrategy(bp);
+		udastrategy(bp);
 		biowait(bp);
 		if (bp->b_flags & B_ERROR) {
 			error = u.u_error;		/* XXX */
@@ -1548,7 +1638,7 @@ udioctl(dev, cmd, data, flag)
 		end = alt + 8;
 		for (;;) {
 			bp->b_flags = B_WRITE;
-			udstrategy(bp);
+			udastrategy(bp);
 			biowait(bp);
 			if (bp->b_flags & B_ERROR) {
 				error = u.u_error;	/* XXX */
@@ -1559,36 +1649,376 @@ udioctl(dev, cmd, data, flag)
 			bp->b_blkno = alt;
 			alt += 2;
 		}
+#else
+		bp->b_flags = B_WRITE;
+		udastrategy(bp);
+		biowait(bp);
+		if (bp->b_flags & B_ERROR) {
+			error = u.u_error;		/* XXX */
+			u.u_error = 0;
+		}
 #endif
 bad:
 		brelse(bp);
 		}
 		break;
 
+#ifdef notyet
+	case UDAIOCREPLACE:
+		/*
+		 * Initiate bad block replacement for the given LBN.
+		 * (Should we allow modifiers?)
+		 */
+		error = EOPNOTSUPP;
+		break;
+
+	case UDAIOCGMICRO:
+		/*
+		 * Return the microcode revision for the UDA50 running
+		 * this drive.
+		 */
+		*(int *) data = uda_softc[uddinfo[unit]->ui_ctlr].sc_micro;
+		break;
+#endif
+
 	default:
 		error = ENOTTY;
 		break;
 	}
+	return (error);
+}
+
+/*
+ * A Unibus reset has occurred on UBA uban.  Reinitialise the controller(s)
+ * on that Unibus, and requeue outstanding I/O.
+ */
+udareset(uban)
+	int uban;
+{
+	register struct uba_ctlr *um;
+	register struct uda_softc *sc;
+	register int ctlr;
+
+	for (ctlr = 0, sc = uda_softc; ctlr < NUDA; ctlr++, sc++) {
+		if ((um = udaminfo[ctlr]) == NULL || um->um_ubanum != uban ||
+		    um->um_alive == 0)
+			continue;
+		printf(" uda%d", ctlr);
+
+		/*
+		 * Our BDP (if any) is gone; our command (if any) is
+		 * flushed; the device is no longer mapped; and the
+		 * UDA50 is not yet initialised.
+		 */
+		if (um->um_bdp) {
+			printf("<%d>", UBAI_BDP(um->um_bdp));
+			um->um_bdp = 0;
+		}
+		um->um_ubinfo = 0;
+		um->um_cmd = 0;
+		sc->sc_flags &= ~SC_MAPPED;
+		sc->sc_state = ST_IDLE;
+
+		/* reset queues and requeue pending transfers */
+		mscp_requeue(&sc->sc_mi);
+
+		/*
+		 * If it fails to initialise we will notice later and
+		 * try again (and again...).  Do not call udastart()
+		 * here; it will be done after the controller finishes
+		 * initialisation.
+		 */
+		if (udainit(ctlr))
+			printf(" (hung)");
+	}
+}
+
+/*
+ * Watchdog timer:  If the controller is active, and no interrupts
+ * have occurred for 30 seconds, assume it has gone away.
+ */
+udawatch()
+{
+	register int i;
+	register struct uba_ctlr *um;
+	register struct uda_softc *sc;
+
+	timeout(udawatch, (caddr_t) 0, hz);	/* every second */
+	for (i = 0, sc = uda_softc; i < NUDA; i++, sc++) {
+		if ((um = udaminfo[i]) == 0 || !um->um_alive)
+			continue;
+		if (sc->sc_state == ST_IDLE)
+			continue;
+		if (sc->sc_state == ST_RUN && !um->um_tab.b_active)
+			sc->sc_wticks = 0;
+		else if (++sc->sc_wticks >= 30) {
+			sc->sc_wticks = 0;
+			printf("uda%d: lost interrupt\n", i);
+			ubareset(um->um_ubanum);
+		}
+	}
+}
+
+/*
+ * Do a panic dump.  We set up the controller for one command packet
+ * and one response packet, for which we use `struct uda1'.
+ */
+struct	uda1 {
+	struct	uda1ca uda1_ca;	/* communications area */
+	struct	mscp uda1_rsp;	/* response packet */
+	struct	mscp uda1_cmd;	/* command packet */
+} uda1;
+
+#define	DBSIZE	32		/* dump 16K at a time */
+
+udadump(dev)
+	dev_t dev;
+{
+	struct udadevice *udaddr;
+	struct uda1 *ud_ubaddr;
+	char *start;
+	int num, blk, unit, maxsz, blkoff, reg;
+	struct partition *pp;
+	register struct uba_regs *uba;
+	register struct uba_device *ui;
+	register struct uda1 *ud;
+	register struct pte *io;
+	register int i;
+
+	/*
+	 * Make sure the device is a reasonable place on which to dump.
+	 */
+	unit = udaunit(dev);
+	if (unit >= NRA)
+		return (ENXIO);
+#define	phys(cast, addr)	((cast) ((int) addr & 0x7fffffff))
+	ui = phys(struct uba_device *, udadinfo[unit]);
+	if (ui == NULL || ui->ui_alive == 0)
+		return (ENXIO);
+
+	/*
+	 * Find and initialise the UBA; get the physical address of the
+	 * device registers, and of communications area and command and
+	 * response packet.
+	 */
+	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
+	ubainit(uba);
+	udaddr = (struct udadevice *)ui->ui_physaddr;
+	ud = phys(struct uda1 *, &uda1);
+
+	/*
+	 * Map the ca+packets into Unibus I/O space so the UDA50 can get
+	 * at them.  Use the registers at the end of the Unibus map (since
+	 * we will use the registers at the beginning to map the memory
+	 * we are dumping).
+	 */
+	num = btoc(sizeof(struct uda1)) + 1;
+	reg = NUBMREG - num;
+	io = &uba->uba_map[reg];
+	for (i = 0; i < num; i++)
+		*(int *)io++ = UBAMR_MRV | (btop(ud) + i);
+	ud_ubaddr = (struct uda1 *)(((int)ud & PGOFSET) | (reg << 9));
+
+	/*
+	 * Initialise the controller, with one command and one response
+	 * packet.
+	 */
+	udaddr->udaip = 0;
+	if (udadumpwait(udaddr, UDA_STEP1))
+		return (EFAULT);
+	udaddr->udasa = UDA_ERR;
+	if (udadumpwait(udaddr, UDA_STEP2))
+		return (EFAULT);
+	udaddr->udasa = (int)&ud_ubaddr->uda1_ca.ca_rspdsc;
+	if (udadumpwait(udaddr, UDA_STEP3))
+		return (EFAULT);
+	udaddr->udasa = ((int)&ud_ubaddr->uda1_ca.ca_rspdsc) >> 16;
+	if (udadumpwait(udaddr, UDA_STEP4))
+		return (EFAULT);
+	uda_softc[ui->ui_ctlr].sc_micro = udaddr->udasa & 0xff;
+	udaddr->udasa = UDA_GO;
+
+	/*
+	 * Set up the command and response descriptor, then set the
+	 * controller characteristics and bring the drive on line.
+	 * Note that all uninitialised locations in uda1_cmd are zero.
+	 */
+	ud->uda1_ca.ca_rspdsc = (long)&ud_ubaddr->uda1_rsp.mscp_cmdref;
+	ud->uda1_ca.ca_cmddsc = (long)&ud_ubaddr->uda1_cmd.mscp_cmdref;
+	/* ud->uda1_cmd.mscp_sccc.sccc_ctlrflags = 0; */
+	/* ud->uda1_cmd.mscp_sccc.sccc_version = 0; */
+	if (udadumpcmd(M_OP_SETCTLRC, ud, ui))
+		return (EFAULT);
+	ud->uda1_cmd.mscp_unit = ui->ui_slave;
+	if (udadumpcmd(M_OP_ONLINE, ud, ui))
+		return (EFAULT);
+
+	pp = phys(struct partition *,
+	    &udalabel[unit].d_partitions[udapart(dev)]);
+	maxsz = pp->p_size;
+	blkoff = pp->p_offset;
+
+	/*
+	 * Dump all of physical memory, or as much as will fit in the
+	 * space provided.
+	 */
+	start = 0;
+	num = maxfree;
+	if (dumplo < 0)
+		return (EINVAL);
+	if (dumplo + num >= maxsz)
+		num = maxsz - dumplo;
+	blkoff += dumplo;
+
+	/*
+	 * Write out memory, DBSIZE pages at a time.
+	 * N.B.: this code depends on the fact that the sector
+	 * size == the page size.
+	 */
+	while (num > 0) {
+		blk = num > DBSIZE ? DBSIZE : num;
+		io = uba->uba_map;
+		/*
+		 * Map in the pages to write, leaving an invalid entry
+		 * at the end to guard against wild Unibus transfers.
+		 * Then do the write.
+		 */
+		for (i = 0; i < blk; i++)
+			*(int *) io++ = UBAMR_MRV | (btop(start) + i);
+		*(int *) io = 0;
+		ud->uda1_cmd.mscp_unit = ui->ui_slave;
+		ud->uda1_cmd.mscp_seq.seq_lbn = btop(start) + blkoff;
+		ud->uda1_cmd.mscp_seq.seq_bytecount = blk << PGSHIFT;
+		if (udadumpcmd(M_OP_WRITE, ud, ui))
+			return (EIO);
+		start += blk << PGSHIFT;
+		num -= blk;
+	}
+	return (0);		/* made it! */
+}
+
+/*
+ * Wait for some of the bits in `bits' to come on.  If the error bit
+ * comes on, or ten seconds pass without response, return true (error).
+ */
+udadumpwait(udaddr, bits)
+	register struct udadevice *udaddr;
+	register int bits;
+{
+	register int timo = todr() + 1000;
+
+	while ((udaddr->udasa & bits) == 0) {
+		if (udaddr->udasa & UDA_ERR) {
+			printf("udasa=%b\ndump ", udaddr->udasa, udasr_bits);
+			return (1);
+		}
+		if (todr() >= timo) {
+			printf("timeout\ndump ");
+			return (1);
+		}
+	}
 	return (0);
 }
 
-udsize(dev)
+/*
+ * Feed a command to the UDA50, wait for its response, and return
+ * true iff something went wrong.
+ */
+udadumpcmd(op, ud, ui)
+	int op;
+	register struct uda1 *ud;
+	struct uba_device *ui;
+{
+	register struct udadevice *udaddr;
+	register int n;
+#define mp (&ud->uda1_rsp)
+
+	udaddr = (struct udadevice *) ui->ui_physaddr;
+	ud->uda1_cmd.mscp_opcode = op;
+	ud->uda1_cmd.mscp_msglen = MSCP_MSGLEN;
+	ud->uda1_rsp.mscp_msglen = MSCP_MSGLEN;
+	ud->uda1_ca.ca_rspdsc |= MSCP_OWN | MSCP_INT;
+	ud->uda1_ca.ca_cmddsc |= MSCP_OWN | MSCP_INT;
+	if (udaddr->udasa & UDA_ERR) {
+		printf("udasa=%b\ndump ", udaddr->udasa, udasr_bits);
+		return (1);
+	}
+	n = udaddr->udaip;
+	n = todr() + 1000;
+	for (;;) {
+		if (todr() > n) {
+			printf("timeout\ndump ");
+			return (1);
+		}
+		if (ud->uda1_ca.ca_cmdint)
+			ud->uda1_ca.ca_cmdint = 0;
+		if (ud->uda1_ca.ca_rspint == 0)
+			continue;
+		ud->uda1_ca.ca_rspint = 0;
+		if (mp->mscp_opcode == (op | M_OP_END))
+			break;
+		printf("\n");
+		switch (MSCP_MSGTYPE(mp->mscp_msgtc)) {
+
+		case MSCPT_SEQ:
+			printf("sequential");
+			break;
+
+		case MSCPT_DATAGRAM:
+			mscp_decodeerror("uda", ui->ui_ctlr, mp);
+			printf("datagram");
+			break;
+
+		case MSCPT_CREDITS:
+			printf("credits");
+			break;
+
+		case MSCPT_MAINTENANCE:
+			printf("maintenance");
+			break;
+
+		default:
+			printf("unknown (type 0x%x)",
+				MSCP_MSGTYPE(mp->mscp_msgtc));
+			break;
+		}
+		printf(" ignored\ndump ");
+		ud->uda1_ca.ca_rspdsc |= MSCP_OWN | MSCP_INT;
+	}
+	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
+		printf("error: op 0x%x => 0x%x status 0x%x\ndump ", op,
+			mp->mscp_opcode, mp->mscp_status);
+		return (1);
+	}
+	return (0);
+#undef mp
+}
+
+/*
+ * Return the size of a partition, if known, or -1 if not.
+ */
+udasize(dev)
 	dev_t dev;
 {
-	register int unit = udunit(dev);
+	register int unit = udaunit(dev);
 	register struct uba_device *ui;
+	register struct size *st;
 
-	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0 ||
-	    ui->ui_flags == 0 || ra_info[unit].rastate != OPEN)
+	if (unit >= NRA || (ui = udadinfo[unit]) == NULL ||
+	    ui->ui_alive == 0 || (ui->ui_flags & UNIT_ONLINE) == 0 ||
+	    ra_info[unit].ra_state != OPEN)
 		return (-1);
-	return ((int)udlabel[unit].d_partitions[udpart(dev)].p_size);
+	return ((int)udalabel[unit].d_partitions[udapart(dev)].p_size);
 }
 
 #ifdef COMPAT_42
+/*
+ * Tables mapping unlabelled drives.
+ */
 struct size {
 	daddr_t nblocks;
 	daddr_t blkoff;
-}  ra25_sizes[8] = {
+} ra25_sizes[8] = {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	10032,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
@@ -1597,6 +2027,15 @@ struct size {
 	0,	0,		/* F=blk 412490 thru end */
 	-1,	25916,		/* G=blk 49324 thru 131403 */
 	0,	0,		/* H=blk 131404 thru end */
+}, rx50_sizes[8] = {
+	800,	0,		/* A=blk 0 thru 799 */
+	0,	0,
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
 }, rd52_sizes[8] = {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	9766,	15884,		/* B=blk 15884 thru 25649 */
@@ -1674,76 +2113,89 @@ struct size {
 #endif UCBRA
 };
 
-udmaptype(unit, lp)
-	register unit;
+/*
+ * Drive type index decoding table.  `ut_name' is null iff the
+ * type is not known.
+ */
+struct	udatypes {
+	char	*ut_name;	/* drive type name */
+	struct	size *ut_sizes;	/* partition tables */
+	int	ut_nsectors, ut_ntracks, ut_ncylinders;
+} udatypes[] = {
+	NULL,		NULL,
+		0, 0, 0,
+	"ra80",		ra80_sizes,	/* 1 = ra80 */
+		31, 14, 559,
+	"rc25-removable", ra25_sizes,	/* 2 = rc25-r */
+		42, 4, 302,
+	"rc25-fixed",	ra25_sizes,	/* 3 = rc25-f */
+		42, 4, 302,
+	"ra60",		ra60_sizes,	/* 4 = ra60 */
+		42, 4, 2382,
+	"ra81",		ra81_sizes,	/* 5 = ra81 */
+		51, 14, 1248,
+	NULL,		NULL,		/* 6 = ? */
+		0, 0, 0,
+	"rx50",		rx50_sizes,	/* 7 = rx50 */
+		10, 1, 80,
+	"rd52",		rd52_sizes,	/* 8 = rd52 */
+		18, 7, 480,
+	"rd53",		rd53_sizes,	/* 9 = rd53 */
+		18, 8, 963,
+};
+
+#define NTYPES (sizeof(udatypes) / sizeof(*udatypes))
+
+udamaptype(unit, lp)
+	int unit;
 	register struct disklabel *lp;
 {
-	register struct size *rasizes;
+	register struct udatypes *ut;
+	register struct size *sz;
 	register struct partition *pp;
-	register type;
+	register char *p;
+	register int i;
+	register struct ra_info *ra = &ra_info[unit];
 
-	lp->d_secperunit = ra_info[unit].radsize;
-	type = ra_info[unit].ratype & 0x7f;
-	lp->d_typename[0] = 'r';
-	lp->d_typename[1] = 'a';
-	lp->d_typename[2] = '0' + type/10;
-	lp->d_typename[3] = '0' + type%10;
-	switch (type) {
-	case    25:
-		rasizes = ra25_sizes;
-		lp->d_nsectors = 42;
-		lp->d_ntracks = 4;
-		lp->d_ncylinders = 302;
-		break;
-	case    52:
-		lp->d_typename[1] = 'd';
-		rasizes = rd52_sizes;
-		lp->d_nsectors = 18;
-		lp->d_ntracks = 7;
-		lp->d_ncylinders = 480;
-		break;
-	case    53:
-		rasizes = rd53_sizes;
-		lp->d_typename[1] = 'd';
-		lp->d_nsectors = 18;
-		lp->d_ntracks = 8;
-		lp->d_ncylinders = 963;
-		break;
-	case    60:
-		rasizes = ra60_sizes;
-		lp->d_nsectors = 42;
-		lp->d_ntracks = 4;
-		lp->d_ncylinders = 2382;
-		break;
-	case    80:
-		rasizes = ra80_sizes;
-		lp->d_nsectors = 31;
-		lp->d_ntracks = 14;
-		lp->d_ncylinders = 559;
-		break;
-	case    81:
-		rasizes = ra81_sizes;
-		lp->d_nsectors = 51;
-		lp->d_ntracks = 14;
-		lp->d_ncylinders = 1248;
-		break;
-	default:
-		printf("Don't have a partition table for an ra%d\n", type);
+	lp->d_secsize = 512;
+	lp->d_secperunit = ra->ra_dsize;
+	if ((u_long)ra->ra_type >= NTYPES) {
+		printf("ra%d: don't have a partition table for", unit);
+		mscp_printmedia(ra->ra_mediaid);
+		lp->d_nsectors = ra->ra_geom.rg_nsectors;
+		lp->d_ntracks = ra->ra_geom.rg_ntracks;
+		lp->d_ncylinders = ra->ra_geom.rg_ncyl;
+		printf(";\nusing (t,s,c)=(%d,%d,%d)\n", lp->d_nsectors,
+			lp->d_ntracks, lp->d_ncylinders);
+		lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
+		lp->d_typename[0] = 'r';
+		lp->d_typename[1] = 'a';
+		lp->d_typename[2] = '?';
+		lp->d_typename[3] = '?';
+		lp->d_typename[4] = 0;
 		lp->d_npartitions = 1;
 		lp->d_partitions[0].p_offset = 0;
 		lp->d_partitions[0].p_size = lp->d_secperunit;
 		return (0);
 	}
-	lp->d_secsize = 512;
+	ut = &udatypes[ra->ra_type];
+	p = ut->ut_name;
+	for (i = 0; i < sizeof(lp->d_typename) - 1 && *p; i++)
+		lp->d_typename[i] = *p++;
+	lp->d_typename[i] = 0;
+	sz = ut->ut_sizes;
+	/* GET nsectors, ntracks, ncylinders FROM SAVED GEOMETRY? */
+	lp->d_nsectors = ut->ut_nsectors;
+	lp->d_ntracks = ut->ut_ntracks;
+	lp->d_ncylinders = ut->ut_ncylinders;
 	lp->d_npartitions = 8;
 	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
-	for (pp = lp->d_partitions; pp < &lp->d_partitions[8];
-	    pp++, rasizes++) {
-		pp->p_offset = rasizes->blkoff;
-		if ((pp->p_size = rasizes->nblocks) == (u_long)-1)
-			pp->p_size = ra_info[unit].radsize - rasizes->blkoff;
+	for (pp = lp->d_partitions; pp < &lp->d_partitions[8]; pp++, sz++) {
+		pp->p_offset = sz->blkoff;
+		if ((pp->p_size = sz->nblocks) == (u_long)-1)
+			pp->p_size = ra->ra_dsize - sz->blkoff;
 	}
 	return (1);
 }
-#endif COMPAT_42
-#endif
+#endif /* COMPAT_42 */
+#endif /* NUDA > 0 */
