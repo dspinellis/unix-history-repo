@@ -1,11 +1,10 @@
 /* $Header: strfile.c,v 1.19 89/05/05 16:07:46 arnold Exp $ */
 
+# include	<sys/param.h>
+# include	<sys/types.h>
 # include	<stdio.h>
 # include	<ctype.h>
-# include	<sys/types.h>
-# include	<sys/param.h>
 # include	"strfile.h"
-# include	"random.h"
 
 # ifndef MAXPATHLEN
 # define	MAXPATHLEN	1024
@@ -203,10 +202,10 @@ char	**av;
 		if (Num_pts == 2)
 			puts("There was 1 string");
 		else
-			printf("There were %u strings\n", Num_pts - 1);
-		printf("Longest string: %u byte%s\n", Tbl.str_longlen,
+			printf("There were %d strings\n", Num_pts - 1);
+		printf("Longest string: %lu byte%s\n", Tbl.str_longlen,
 		       Tbl.str_longlen == 1 ? "" : "s");
-		printf("Shortest string: %u byte%s\n", Tbl.str_shortlen,
+		printf("Shortest string: %lu byte%s\n", Tbl.str_shortlen,
 		       Tbl.str_shortlen == 1 ? "" : "s");
 	}
 	exit(0);
@@ -418,7 +417,7 @@ randomize()
 	 */
 
 	for (sp = Seekpts; cnt > 0; cnt--, sp++) {
-		i = rnd((long) cnt);
+		i = random() % cnt;
 		tmp = sp[0];
 		sp[0] = sp[i];
 		sp[i] = tmp;
