@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)atrun.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)atrun.c	4.2 (Berkeley) %G%";
 /*
  * Run programs submitted by at.
  */
@@ -103,7 +103,6 @@ char *file;
 	}
 	setgid(stbuf.st_gid);
 	setuid(stbuf.st_uid);
-	nice(5);
 	execl("/bin/sh", "sh", file, 0);
 	execl("/usr/bin/sh", "sh", file, 0);
 	fprintf(stderr, "Can't execl shell\n");
