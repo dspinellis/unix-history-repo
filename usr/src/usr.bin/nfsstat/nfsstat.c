@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -195,6 +195,9 @@ intpr(interval, nfsstataddr)
 		nfsstats.read_bios,
 		nfsstats.biocache_writes-nfsstats.write_bios,
 		nfsstats.write_bios);
+	printf("%9.9s %9.9s\n", "DirE Hits", "Misses");
+	printf("%9d %9d\n",
+		nfsstats.direofcache_hits, nfsstats.direofcache_misses);
 	printf("Server Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
