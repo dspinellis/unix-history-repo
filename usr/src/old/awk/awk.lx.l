@@ -1,4 +1,4 @@
-/*	awk.lx.l	4.1	82/05/07	*/
+/*	awk.lx.l	4.2	83/02/09	*/
 
 %Start A str chc sc reg comment
 
@@ -73,9 +73,9 @@ WS	[ \t]
 			}
 		}
 <A>"$"{WS}*	{ RETURN(INDIRECT); }
-<A>NF		{ mustfld=1; yylval = (hack)setsymtab(yytext, NULL, 0.0, NUM, symtab); RETURN(VAR); }
+<A>NF		{ mustfld=1; yylval = (hack)setsymtab(yytext, EMPTY, 0.0, NUM, symtab); RETURN(VAR); }
 <A>({D}+("."?){D}*|"."{D}+)((e|E)("+"|-)?{D}+)?	{
-		yylval = (hack)setsymtab(yytext, NULL, atof(yytext), CON|NUM, symtab); RETURN(NUMBER); }
+		yylval = (hack)setsymtab(yytext, EMPTY, atof(yytext), CON|NUM, symtab); RETURN(NUMBER); }
 <A>"}"{WS}*\n	{ BEGIN sc; lineno++; RETURN(';'); }
 <A>"}"		{ BEGIN sc; RETURN(';'); }
 <A>;\n		{ lineno++; RETURN(';'); }

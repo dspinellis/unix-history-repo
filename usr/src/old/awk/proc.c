@@ -1,4 +1,4 @@
-/*	proc.c	4.1	82/05/07	*/
+/*	proc.c	4.2	83/02/09	*/
 
 #include "awk.h"
 #define NULL 0
@@ -80,7 +80,8 @@ main()
 	for(p=proc; p->token!=0; p++)
 		names[p->token-FIRSTTOKEN] = p->pname;
 	for(i=0; i<SIZE; i++)
-		printf("/*%s*/\t\"%s\",\n",tokname(i+FIRSTTOKEN),names[i]);
+		printf("/*%s*/\t\"%s\",\n",tokname(i+FIRSTTOKEN),
+						names[i]?names[i]:"");
 	printf("};\n");
 	exit(0);
 }

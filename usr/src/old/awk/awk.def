@@ -1,8 +1,9 @@
-/*	awk.def	4.1	82/05/07	*/
+/*	awk.def	4.2	83/02/09	*/
 
 #define hack	int
 #define	AWKFLOAT	float
 #define	xfree(a)	{ if(a!=NULL) { yfree(a); a=NULL;} }
+#define	strfree(a)	{ if(a!=NULL && a!=EMPTY) { yfree(a);} a=EMPTY; }
 #define yfree free
 #ifdef	DEBUG
 #	define	dprintf	if(dbg)printf
@@ -21,6 +22,7 @@ extern awkfloat *NF;
 extern char	**FILENAME;
 
 extern char	record[];
+extern char	EMPTY[];
 extern int	dbg;
 extern int	lineno;
 extern int	errorflag;
@@ -121,8 +123,8 @@ extern int	pairstack[], paircnt;
 #define isstr(n)	(n.optr->tval & STR)
 #define istrue(n)	(n.otype == OBOOL && n.osub == BTRUE)
 #define istemp(n)	(n.otype == OCELL && n.osub == CTEMP)
-#define isfld(n)	(!donefld && n.osub==CFLD && n.otype==OCELL && n.optr->nval==0)
-#define isrec(n)	(donefld && n.osub==CFLD && n.otype==OCELL && n.optr->nval!=0)
+#define isfld(n)	(!donefld && n.osub==CFLD && n.otype==OCELL && n.optr->nval==EMPTY)
+#define isrec(n)	(donefld && n.osub==CFLD && n.otype==OCELL && n.optr->nval!=EMPTY)
 obj	nullproc();
 obj	relop();
 

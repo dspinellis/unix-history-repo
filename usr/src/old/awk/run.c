@@ -1,4 +1,4 @@
-/*	run.c	4.1	82/05/07	*/
+/*	run.c	4.2	83/02/09	*/
 
 #include "awk.def"
 #include	"math.h"
@@ -20,7 +20,7 @@ int pairstack[PA2NUM], paircnt;
 node *winner = (node *)NULL;
 #define MAXTMP 20
 cell tmps[MAXTMP];
-static cell nullval ={0,0,0.0,NUM,0};
+static cell nullval ={EMPTY,EMPTY,0.0,NUM,0};
 obj	true	={ OBOOL, BTRUE, 0 };
 obj	false	={ OBOOL, BFALSE, 0 };
 
@@ -118,7 +118,7 @@ obj arrayel(a,b) node *a; obj b;
 	s = getsval(b.optr);
 	x = (cell *) a;
 	if (!(x->tval&ARR)) {
-		xfree(x->sval);
+		strfree(x->sval);
 		x->tval &= ~STR;
 		x->tval |= ARR;
 		x->sval = (char *) makesymtab();
@@ -214,7 +214,7 @@ obj relop(a,n) node **a;
 tempfree(a) obj a;
 {
 	if (!istemp(a)) return;
-	xfree(a.optr->sval);
+	strfree(a.optr->sval);
 	a.optr->tval = 0;
 }
 
