@@ -1,11 +1,11 @@
-# include	"stdio.h"
+# include	<stdio.h>
+# include	<sys/time.h>
 # include	"../hdr/macros.h"
 # include	"../hdr/fatal.h"
-# include	"time.h"
 
 /*
  *	defines.h 2.3 of 5/18/78
- *	defines.h 4.2 of %G%
+ *	defines.h 4.3 of %G%
  */
 
 # define CTLSTR		"%c%c\n"
