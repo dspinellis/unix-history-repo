@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -625,7 +625,7 @@ getfile(fill, skip)
 {
 	register int i;
 	int curblk = 0;
-	long size = spcl.c_dinode.di_size;
+	quad_t size = spcl.c_dinode.di_size;
 	static char clearedbuf[MAXBSIZE];
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
 	char junk[TP_BSIZE];
@@ -642,20 +642,19 @@ loop:
 		if (spcl.c_addr[i]) {
 			readtape(&buf[curblk++][0]);
 			if (curblk == fssize / TP_BSIZE) {
-				(*fill)((char *)buf, size > TP_BSIZE ?
-				     (long) (fssize) :
-				     (curblk - 1) * TP_BSIZE + size);
+				(*fill)((char *)buf, (long)(size > TP_BSIZE ?
+				     fssize : (curblk - 1) * TP_BSIZE + size));
 				curblk = 0;
 			}
 		} else {
 			if (curblk > 0) {
-				(*fill)((char *)buf, size > TP_BSIZE ?
-				     (long) (curblk * TP_BSIZE) :
-				     (curblk - 1) * TP_BSIZE + size);
+				(*fill)((char *)buf, (long)(size > TP_BSIZE ?
+				     curblk * TP_BSIZE :
+				     (curblk - 1) * TP_BSIZE + size));
 				curblk = 0;
 			}
-			(*skip)(clearedbuf, size > TP_BSIZE ?
-				(long) TP_BSIZE : size);
+			(*skip)(clearedbuf, (long)(size > TP_BSIZE ?
+				TP_BSIZE : size));
 		}
 		if ((size -= TP_BSIZE) <= 0) {
 			for (i++; i < spcl.c_count; i++)
@@ -672,7 +671,7 @@ loop:
 			curfile.name, blksread);
 	}
 	if (curblk > 0)
-		(*fill)((char *)buf, (curblk * TP_BSIZE) + size);
+		(*fill)((char *)buf, (long)((curblk * TP_BSIZE) + size));
 	findinode(&spcl);
 	gettingfile = 0;
 }
