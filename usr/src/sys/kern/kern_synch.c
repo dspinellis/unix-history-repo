@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.15	%G%	*/
+/*	kern_synch.c	3.16	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -259,7 +259,7 @@ register struct proc *pp;
 	register p;
 
 	p = (pp->p_cpu & 0377)/16;
-	p += PUSER + pp->p_nice - NZERO;
+	p += PUSER + 2*(pp->p_nice - NZERO);
 	if(p > 127)
 		p = 127;
 	if(p < curpri)
