@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_subr.c	7.9 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
+#include "malloc.h"
 
 uiomove(cp, n, uio)
 	register caddr_t cp;
@@ -151,3 +152,25 @@ again:
 	return (c);
 }
 #endif /* vax */
+
+/*
+ * General routine to allocate a hash table.
+ */
+void *
+hashinit(elements, type, hashmask)
+	int elements, type;
+	u_long *hashmask;
+{
+	long hashsize;
+	void *hashtbl;
+
+	if (elements <= 0)
+		panic("hashinit: bad cnt");
+	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
+		continue;
+	hashsize >>= 1;
+	hashtbl = malloc((u_long)hashsize * sizeof(void *), type, M_WAITOK);
+	bzero(hashtbl, hashsize * sizeof(void *));
+	*hashmask = hashsize - 1;
+	return (hashtbl);
+}
