@@ -121,46 +121,15 @@ struct nl_protosw {
 	caddr_t	nlp_pcblist;			/* list of xx_pcb's for connections */
 } nl_protosw[];
 
-struct tp_pcb_aux {
-	/* addressing */
-	u_short				tpa_domain;		/* domain (INET, ISO) */
-	/* for compatibility with the *old* way and with INET, be sure that
-	 * that lsuffix and fsuffix are aligned to a short addr.
-	 * having them follow the u_short *suffixlen should suffice (choke)
-	 */
-	u_short				tpa_fsuffixlen;	/* foreign suffix */
-	u_char				tpa_fsuffix[MAX_TSAP_SEL_LEN];
-	u_short				tpa_lsuffixlen;	/* local suffix */
-	u_char				tpa_lsuffix[MAX_TSAP_SEL_LEN];
-#define SHORT_LSUFXP(tpcb) ((short *)((tpcb)->tp_aux->tpa_lsuffix))
-#define SHORT_FSUFXP(tpcb) ((short *)((tpcb)->tp_aux->tpa_fsuffix))
-
-	u_char 				tpa_vers;		/* protocol version */
-	u_char 				tpa_peer_acktime; /* used to compute DT retrans time */
-
-	struct sockbuf		tpa_Xsnd;		/* for expedited data */
-	struct sockbuf		tpa_Xrcv;		/* for expedited data */
-	SeqNum				tpa_Xsndnxt;	/* next XPD seq # to send */
-	SeqNum				tpa_Xuna;		/* seq # of unacked XPD */
-	SeqNum				tpa_Xrcvnxt;	/* next XPD seq # expect to recv */
-
-	/* AK subsequencing */
-	u_short				tpa_s_subseq;	/* next subseq to send */
-	u_short				tpa_r_subseq;	/* highest recv subseq */
-
-};
 
 struct tp_pcb {
 	u_short 			tp_state;		/* state of fsm */
 	short 				tp_retrans;		/* # times can still retrans */
 	struct tp_ref 		*tp_refp;		/* rest of pcb	*/
-	struct tp_pcb_aux	*tp_aux;		/* second half of the tpcb */
 	caddr_t				tp_npcb;		/* to lower layer pcb */
 	struct nl_protosw	*tp_nlproto;	/* lower-layer dependent routines */
 	struct socket 		*tp_sock;		/* back ptr */
 
-#define tp_Xsnd tp_aux->tpa_Xsnd
-#define tp_Xrcv tp_aux->tpa_Xrcv
 
 	RefNum				tp_lref;	 	/* local reference */
 	RefNum 				tp_fref;		/* foreign reference */
@@ -168,9 +137,6 @@ struct tp_pcb {
 	u_int				tp_seqmask;		/* mask for seq space */
 	u_int				tp_seqbit;		/* bit for seq number wraparound */
 	u_int				tp_seqhalf;		/* half the seq space */
-
-#define		tp_vers	tp_aux->tpa_vers
-#define		tp_peer_acktime tp_aux->tpa_peer_acktime
 
 	/* credit & sequencing info for SENDING */
 	u_short 			tp_fcredit;		/* current remote credit in # packets */
@@ -184,13 +150,12 @@ struct tp_pcb {
 										 * Minimizes the amount sent in a
 										 * regular tp_send() also.
 										 */
-#define tp_Xsndnxt  tp_aux->tpa_Xsndnxt
-#define tp_Xuna  	tp_aux->tpa_Xuna
 	SeqNum				tp_snduna;		/* seq # of lowest unacked DT */
 	struct tp_rtc		*tp_snduna_rtc;	/* lowest unacked stuff sent so far */
 	SeqNum				tp_sndhiwat;	/* highest seq # sent so far */
 	struct tp_rtc		*tp_sndhiwat_rtc;	/* last stuff sent so far */
 	int					tp_Nwindow;		/* for perf. measurement */
+	struct mbuf			*tp_ucddata;	/* user connect/disconnect data */
 
 	/* credit & sequencing info for RECEIVING */
 	SeqNum	 			tp_sent_lcdt;	/* cdt according to last ack sent */
@@ -201,12 +166,6 @@ struct tp_pcb {
 	u_short				tp_lcredit;		/* current local credit in # packets */
 	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
 	struct tp_rtc		*tp_rcvnxt_rtc;	/* unacked stuff recvd out of order */
-#define	tp_Xrcvnxt		tp_aux->tpa_Xrcvnxt
-#define tp_domain		tp_aux->tpa_domain
-#define tp_fsuffix		tp_aux->tpa_fsuffix
-#define tp_fsuffixlen		tp_aux->tpa_fsuffixlen
-#define tp_lsuffix		tp_aux->tpa_lsuffix
-#define tp_lsuffixlen		tp_aux->tpa_lsuffixlen
 
 	/* parameters per-connection controllable by user */
 	struct tp_conn_param _tp_param; 
@@ -267,29 +226,48 @@ struct tp_pcb {
 
 		tp_unused:16;
 
-#define tp_s_subseq tp_aux->tpa_s_subseq
-#define tp_r_subseq tp_aux->tpa_r_subseq
 
 #ifdef TP_PERF_MEAS
 	/* performance stats - see tp_stat.h */
-	struct tp_pmeas *tp_p_meas;
+	struct tp_pmeas		*tp_p_meas;
+	struct mbuf			*tp_p_mbuf;
 #endif TP_PERF_MEAS
+	/* addressing */
+	u_short				tp_domain;		/* domain (INET, ISO) */
+	/* for compatibility with the *old* way and with INET, be sure that
+	 * that lsuffix and fsuffix are aligned to a short addr.
+	 * having them follow the u_short *suffixlen should suffice (choke)
+	 */
+	u_short				tp_fsuffixlen;	/* foreign suffix */
+	char				tp_fsuffix[MAX_TSAP_SEL_LEN];
+	u_short				tp_lsuffixlen;	/* local suffix */
+	char				tp_lsuffix[MAX_TSAP_SEL_LEN];
+#define SHORT_LSUFXP(tpcb) ((short *)((tpcb)->tp_lsuffix))
+#define SHORT_FSUFXP(tpcb) ((short *)((tpcb)->tp_fsuffix))
+
+	u_char 				tp_vers;		/* protocol version */
+	u_char 				tp_peer_acktime; /* used to compute DT retrans time */
+
+	struct sockbuf		tp_Xsnd;		/* for expedited data */
+/*	struct sockbuf		tp_Xrcv;		/* for expedited data */
+#define tp_Xrcv tp_sock->so_rcv
+	SeqNum				tp_Xsndnxt;	/* next XPD seq # to send */
+	SeqNum				tp_Xuna;		/* seq # of unacked XPD */
+	SeqNum				tp_Xrcvnxt;	/* next XPD seq # expect to recv */
+
+	/* AK subsequencing */
+	u_short				tp_s_subseq;	/* next subseq to send */
+	u_short				tp_r_subseq;	/* highest recv subseq */
+
 };
 
 extern struct timeval 	time;
 extern struct tp_ref 	tp_ref[];
 extern struct tp_param	tp_param;
 
-#ifdef lint
-#define	sototpcb(so) 	((struct tp_pcb *)0)
-#define	sototpref(so)	((struct tp_ref *)0)
-#define	tpcbtoso(tp)	((struct socket *)0)
-#define	tpcbtoref(tp)	((struct tp_ref *)0)
-#else
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_tpcb))
 #define	sototpref(so)	((struct tp_ref *)((so)->so_tpcb->tp_ref))
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tp_sock))
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
-#endif
 
 #endif  __TP_PCB__

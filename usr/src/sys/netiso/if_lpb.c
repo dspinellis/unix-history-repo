@@ -54,8 +54,8 @@ static char *rcsid = "$Header: if_lpb.c,v 4.2 88/06/29 14:59:38 hagens Exp $";
 #include "../machineio/ioccvar.h"
 
 #include "ecn.h"
-#include "../netiso/iso.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "argo_debug.h"
 #include "../caif/eicon.h"
 #include "iso_errno.h"
 

@@ -37,24 +37,42 @@ struct isopcb {
 	struct	isopcb			*isop_head;	/* pointer back to chain of pcbs for 
 								this protocol */
 	struct	socket			*isop_socket;	/* back pointer to socket */
-	struct	sockaddr_iso	isop_laddr;
-#define isop_lport isop_laddr.siso_tsuffix
-#define isop_lportlen isop_laddr.siso_tsuffixlen
-	struct	sockaddr_iso	isop_faddr;
-#define isop_fport isop_faddr.siso_tsuffix
-#define isop_fportlen isop_faddr.siso_tsuffixlen
-	struct	route			isop_route;			/* CLNP routing entry */
+	struct	sockaddr_iso	*isop_laddr;
+	struct	sockaddr_iso	*isop_faddr;
+#define isop_lportlen isop_laddr->siso_tsuffixlen
+#define isop_fportlen isop_faddr->siso_tsuffixlen
+	struct	route_iso {
+		struct	rtentry 	*ro_rt;
+		struct	sockaddr_iso ro_dst;
+	}						isop_route;			/* CLNP routing entry */
 	struct	mbuf			*isop_options;		/* CLNP options */
 	struct	mbuf			*isop_optindex;		/* CLNP options index */
 	struct	mbuf			*isop_clnpcache;	/* CLNP cached hdr */
 	u_int			isop_chanmask;		/* which ones used - max 32 supported */
 	u_int			isop_negchanmask;	/* which ones used - max 32 supported */
+	u_short					isop_lport;			/* MISLEADLING work var */
 	int						isop_x25crud_len;	/* x25 call request ud */
 	char					isop_x25crud[MAXX25CRUDLEN];
-	struct ifnet			*isop_ifp;		/* ESIS interface assoc w/sock */
+	struct ifaddr			*isop_ifa;		/* ESIS interface assoc w/sock */
+	struct	sockaddr_iso	isop_sladdr,		/* preallocated laddr */
+							isop_sfaddr;		/* preallocated faddr */
 };
 
-#define	sotoisopcb(so)	((struct isopcb *)(so)->so_npcb)
+#ifdef sotorawcb
+/*
+ * Common structure pcb for raw clnp protocol access.
+ * Here are clnp specific extensions to the raw control block,
+ * and space is allocated to the necessary sockaddrs.
+ */
+struct rawisopcb {
+	struct	rawcb risop_rcb;		/* common control block prefix */
+	int		risop_flags;			/* flags, e.g. raw sockopts */
+	struct	isopcb risop_isop;		/* space for bound addresses, routes etc.*/
+};
+#endif
+
+#define	sotoisopcb(so)	((struct isopcb *)(so)->so_pcb)
+#define	sotorawisopcb(so)	((struct rawisopcb *)(so)->so_pcb)
 
 #ifdef KERNEL
 struct	isopcb *iso_pcblookup();

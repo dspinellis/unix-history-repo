@@ -33,25 +33,26 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/0
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/time.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "time.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/iso_snpac.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_pcb.h"
+#include "iso_snpac.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 /*
  * FUNCTION:		clnp_data_ck
@@ -214,6 +215,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	int						error;	/* return value of route function */
 	struct sockaddr			*next_hop;	/* next hop for dgram */
 	struct ifnet			*ifp;	/* ptr to outgoing interface */
+	struct iso_ifaddr		*ia = 0;/* ptr to iso name for ifp */
 	struct route_iso		route;	/* filled in by clnp_route */
 	extern int				iso_systype;
 
@@ -227,7 +229,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: dropping multicast packet\n");
 		ENDDEBUG
-		clnp->cnf_err_ok = 0;	/* so we don't generate an ER */
+		clnp->cnf_type &= ~CNF_ERR_OK; /* so we don't generate an ER */
 		clnp_discard(m, 0);
 		goto done;
 	}
@@ -249,7 +251,6 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 		clnp_discard(m, TTL_EXPTRANSIT);
 		goto done;
 	}
-	
 	/*
 	 *	Route packet; special case for source rt
 	 */
@@ -258,17 +259,18 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 		 *	Update src route first
 		 */
 		clnp_update_srcrt(m, oidx);
-		error = clnp_srcroute(m, oidx, &route, &next_hop, &ifp, dst);
+		error = clnp_srcroute(m, oidx, &route, &next_hop, &ia, dst);
 	} else {
-		error = clnp_route(dst, &route, 0, &next_hop, &ifp);
+		error = clnp_route(dst, &route, 0, &next_hop, &ia);
 	}
-	if (error) {
+	if (error || ia == 0) {
 		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: can't route packet (errno %d)\n", error);
 		ENDDEBUG
 		clnp_discard(m, ADDR_DESTUNREACH);
 		goto done;
 	}
+	ifp = ia->ia_ifp;
 
 	IFDEBUG(D_FORWARD)
 		printf("clnp_forward: packet routed to %s\n", 
@@ -297,8 +299,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	 *	If options are present, update them
 	 */
 	if (oidx) {
-		struct iso_addr	*mysrc = 
-			clnp_srcaddr(ifp, &((struct sockaddr_iso *)next_hop)->siso_addr);
+		struct iso_addr	*mysrc = &ia->ia_addr.siso_addr;
 		if (mysrc == NULL) {
 			clnp_discard(m, ADDR_DESTUNREACH);
 			goto done;
@@ -399,23 +400,35 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
  * NOTES:			It is up to the caller to free the routing entry
  *					allocated in route.
  */
-clnp_route(dst, ro, flags, first_hop, ifp)
-struct iso_addr		*dst;			/* ptr to datagram destination */
-struct route_iso	*ro;			/* existing route structure */
-int					flags;			/* flags for routing */
-struct sockaddr		**first_hop;	/* result: fill in with ptr to firsthop */
-struct ifnet		**ifp;			/* result: fill in with ptr to interface */
+clnp_route(dst, ro, flags, first_hop, ifa)
+	struct iso_addr	*dst;			/* ptr to datagram destination */
+	register struct	route_iso *ro;	/* existing route structure */
+	int flags;						/* flags for routing */
+	struct sockaddr **first_hop;	/* result: fill in with ptr to firsthop */
+	struct iso_ifaddr **ifa;		/* result: fill in with ptr to interface */
 {
-	register struct sockaddr_iso	*ro_dst;	/* ptr to route's destination */
+	if (flags & SO_DONTROUTE) {
+		struct sockaddr_iso dest;
+		struct iso_ifaddr *ia;
 
-	ro_dst = (struct sockaddr_iso *)&ro->ro_dst;
-
+		bzero((caddr_t)&dest, sizeof(dest));
+		bcopy((caddr_t)dst, (caddr_t)&dest.siso_addr,
+			1 + (unsigned)dst->isoa_len);
+		dest.siso_family = AF_ISO;
+		dest.siso_len = sizeof(dest);
+		ia = iso_localifa(&dest);
+		if (ia == 0)
+			return EADDRNOTAVAIL;
+		if (ifa)
+			*ifa = (struct iso_ifaddr *)ia;
+		return 0;
+	}
 	/*
 	 *	If there is a cached route, check that it is still up and to
 	 *	the same destination. If not, free it and try again.
 	 */
 	if (ro->ro_rt && ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
-		(!iso_addrmatch1(&ro_dst->siso_addr, dst)))) {
+		(Bcmp(ro->ro_dst.siso_data, dst->isoa_genaddr, dst->isoa_len)))) {
 		IFDEBUG(D_ROUTE)
 			printf("clnp_route: freeing old route: ro->ro_rt 0x%x\n",
 				ro->ro_rt);
@@ -434,27 +447,29 @@ struct ifnet		**ifp;			/* result: fill in with ptr to interface */
 
 	if (ro->ro_rt == 0) {
 		/* set up new route structure */
-		ro_dst->siso_family = AF_ISO;
-		ro_dst->siso_addr = *dst;
-
+		bzero((caddr_t)&ro->ro_dst, sizeof(ro->ro_dst));
+		ro->ro_dst.siso_len = sizeof(ro->ro_dst);
+		ro->ro_dst.siso_family = AF_ISO;
+		Bcopy(dst, &ro->ro_dst.siso_addr, 1 + dst->isoa_len);
 		/* allocate new route */
 		IFDEBUG(D_ROUTE)
 			printf("clnp_route: allocating new route to %s\n",
 				clnp_iso_addrp(dst));
 		ENDDEBUG
-		rtalloc(ro);
+		rtalloc((struct route *)ro);
 	}
-
-	if ((ro->ro_rt == 0) || ((*ifp = ro->ro_rt->rt_ifp) == 0)) {
+	if (ro->ro_rt == 0)
 		return(ENETUNREACH);	/* rtalloc failed */
-	}
-
 	ro->ro_rt->rt_use++;
-	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-		*first_hop = &ro->ro_rt->rt_gateway;
-	else
-		*first_hop = (struct sockaddr *)ro_dst;
-		
+	if (ifa)
+		if ((*ifa = (struct iso_ifaddr *)ro->ro_rt->rt_ifa) == 0)
+			panic("clnp_route");
+	if (first_hop) {
+		if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
+			*first_hop = ro->ro_rt->rt_gateway;
+		else
+			*first_hop = (struct sockaddr *)&ro->ro_dst;
+	}
 	return(0);
 }
 
@@ -475,12 +490,12 @@ struct ifnet		**ifp;			/* result: fill in with ptr to interface */
  * NOTES:			Remember that option index pointers are really
  *					offsets from the beginning of the mbuf.
  */
-clnp_srcroute(options, oidx, route, first_hop, ifp, final_dst)
+clnp_srcroute(options, oidx, route, first_hop, ifa, final_dst)
 struct mbuf			*options;		/* ptr to options */
 struct clnp_optidx	*oidx;			/* index to options */
-struct route		*route;			/* route structure */
+struct route_iso	*route;			/* route structure */
 struct sockaddr		**first_hop;	/* RETURN: fill in with ptr to firsthop */
-struct ifnet		**ifp;			/* RETURN: fill in with ptr to interface */
+struct iso_ifaddr	**ifa;			/* RETURN: fill in with ptr to interface */
 struct iso_addr		*final_dst;		/* final destination */
 {
 	struct iso_addr	dst;		/* first hop specified by src rt */
@@ -492,19 +507,19 @@ struct iso_addr		*final_dst;		/* final destination */
 	 */
 	if CLNPSRCRT_TERM(oidx, options) {
 		dst.isoa_len = final_dst->isoa_len;
-		bcopy((caddr_t)final_dst, (caddr_t)&dst, dst.isoa_len);
+		bcopy(final_dst->isoa_genaddr, dst.isoa_genaddr, dst.isoa_len);
 	} else {
 		/*
 		 * setup dst based on src rt specified
 		 */
 		dst.isoa_len = CLNPSRCRT_CLEN(oidx, options);
-		bcopy(CLNPSRCRT_CADDR(oidx, options), (caddr_t)&dst, dst.isoa_len);
+		bcopy(CLNPSRCRT_CADDR(oidx, options), dst.isoa_genaddr, dst.isoa_len);
 	}
 
 	/*
 	 *	try to route it
 	 */
-	error = clnp_route(&dst, route, 0, first_hop, ifp);
+	error = clnp_route(&dst, route, 0, first_hop, ifa);
 	if (error != 0)
 		return error;
 	
@@ -520,66 +535,6 @@ struct iso_addr		*final_dst;		/* final destination */
 	}
 	
 	return error;
-}
-
-/*
- * FUNCTION:		clnp_srcaddr
- *
- * PURPOSE:			Build the correct source address for a datagram based on the
- *					outgoing interface and firsthop. The firsthop information
- *					is needed inorder to decide which addr to use if
- *					>1 ISO addr is present for an ifp.
- *
- * RETURNS:			a ptr to a static copy of the source address.
- *					or NULL
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			The ifp must be valid, or we will return NULL
- */
-static struct iso_addr mysrc;
-struct iso_addr *
-clnp_srcaddr(ifp, firsthop)
-struct ifnet	*ifp;		/* ptr to interface to send packet on */
-struct iso_addr	*firsthop;	/* ptr to first hop for packet */
-{
-	register struct iso_ifaddr *ia;	/* scan through interface addresses */
-	struct iso_addr				*maybe = NULL;
-
-	for (ia = iso_ifaddr; ia; ia = ia->ia_next) {
-		if (ia->ia_ifp == ifp) {
-			struct iso_addr	*isoa = &IA_SIS(ia)->siso_addr;
-
-			IFDEBUG(D_ROUTE)
-				printf("clnp_srcaddr: isoa is %s\n", clnp_iso_addrp(isoa));
-			ENDDEBUG
-
-			if (iso_eqtype(isoa, firsthop)) {
-				mysrc.isoa_len = isoa->isoa_len;
-				bcopy((caddr_t)isoa, (caddr_t)&mysrc, mysrc.isoa_len);
-				return(&mysrc);
-			} else 
-				maybe = isoa;
-		}
-	}
-
-	if (maybe != NULL) {
-		mysrc.isoa_len = maybe->isoa_len;
-		bcopy((caddr_t)maybe, (caddr_t)&mysrc, mysrc.isoa_len);
-		return(&mysrc);
-	} else {
-		/*
-		 *	This will only happen if there are routes involving
-		 *	an interface that has just had all iso addresses deleted
-		 *	from it. This will happen if esisd has added a default
-		 *	route to an interface, and then the interface was
-		 *	marked down. As soon as esisd tries to send a pdu on that
-		 *	interface, it will discover it is down, and remove the
-		 *	route.  Nonetheless, there is a window for this discrepancy,
-		 *	so we will return null here rather than panicing.
-		 */
-		return(NULL);
-	}
 }
 
 /*

@@ -58,17 +58,17 @@ static char *rcsid = "$Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $";
 #include "errno.h"
 #include "types.h"
 #include "time.h"
-#include "../netiso/iso.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_meas.h"
-#include "../netiso/tp_seq.h"
-#include "../netiso/iso_errno.h"
+#include "iso.h"
+#include "argo_debug.h"
+#include "tp_timer.h"
+#include "tp_param.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_tpdu.h"
+#include "tp_trace.h"
+#include "tp_meas.h"
+#include "tp_seq.h"
+#include "iso_errno.h"
 
 void iso_gen_csum();
 
@@ -144,11 +144,22 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 	 */
 	IFDEBUG(D_EMIT)
 		printf(
-	"tp_emit dutype 0x%x, tpcb 0x%x, eot 0x%x, seq 0x%x, data 0x%x mfree 0x%x",
-		dutype, tpcb, eot, seq, data, mfree);
+	"tp_emit dutype 0x%x, tpcb 0x%x, eot 0x%x, seq 0x%x, data 0x%x",
+		dutype, tpcb, eot, seq, data);
 	ENDDEBUG
 
-	MGET(m, M_DONTWAIT, TPMT_TPHDR); 
+	if (dutype == CR_TPDU || dutype == CC_TPDU) {
+		m = (struct mbuf *) malloc((u_long)256, M_MBUF, M_DONTWAIT);
+		if (m) {
+			m->m_type = TPMT_TPHDR;
+			mbstat.m_mtypes[TPMT_TPHDR]++;
+			m->m_next = MNULL;
+			m->m_data = m->m_dat;
+			m->m_flags = 0;
+		}
+	} else {
+		MGET(m, M_DONTWAIT, TPMT_TPHDR); 
+	}
 	if (m == NULL) {
 		if(data != (struct mbuf *)0)
 			m_freem(data);
@@ -159,7 +170,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 	m->m_act = MNULL;
 
 	hdr = mtod(m, struct tpdu *);
-	bzero(hdr, sizeof(struct tpdu));
+	bzero((caddr_t)hdr, sizeof(struct tpdu));
 
 	{
 		int 	tp_headersize();
@@ -221,9 +232,9 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 					ASSERT( tpcb->tp_fsuffixlen > 0 );
 
 					ADDOPTION(TPP_calling_sufx, hdr,
-						tpcb->tp_lsuffixlen, tpcb->tp_lsuffix);
+						tpcb->tp_lsuffixlen, tpcb->tp_lsuffix[0]);
 					ADDOPTION(TPP_called_sufx, hdr,
-						tpcb->tp_fsuffixlen, tpcb->tp_fsuffix);
+						tpcb->tp_fsuffixlen, tpcb->tp_fsuffix[0]);
 				} else {
 					IncStat(ts_CC_sent);
 				}
@@ -334,10 +345,10 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 
 			/* kludge to test the input size checking */
 			IFDEBUG(D_SIZE_CHECK)
-				if(data->m_len <= 16 && data->m_off < (MLEN-18) ) {
+				/*if(data->m_len <= 16 && data->m_off < (MLEN-18) ) {
 					printf("Sending too much data on XPD: 18 bytes\n");
 					data->m_len = 18;
-				}
+				}*/
 			ENDDEBUG
 			break;
 
@@ -403,7 +414,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 				 *	a) when using optimistic credit (which we no longer do).
 				 *  b) when drain() gets implemented (not in the plans).
 				 *  c) when D_RENEG is on.
-				 *  d) when DEC BIT response (PRC_QUENCH2) is implemented.
+				 *  d) when DEC BIT response is implemented.
 				 *	(not- when we do this, we'll need to implement flow control
 				 *	confirmation)
 				 */
@@ -515,9 +526,9 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 				subseq = htons(tpcb->tp_r_subseq);
 				fcredit = htons(tpcb->tp_fcredit);
 
-				bcopy((caddr_t) &lwe, &bogus[0], sizeof(SeqNum));
-				bcopy((caddr_t) &subseq, &bogus[2], sizeof(u_short));
-				bcopy((caddr_t) &fcredit, &bogus[3], sizeof(u_short));
+				bcopy((caddr_t) &lwe, (caddr_t)&bogus[0], sizeof(SeqNum));
+				bcopy((caddr_t) &subseq, (caddr_t)&bogus[2], sizeof(u_short));
+				bcopy((caddr_t) &fcredit, (caddr_t)&bogus[3], sizeof(u_short));
 
 				IFTRACE(D_ACKSEND)
 					tptraceTPCB(TPPTmisc, 
@@ -568,7 +579,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 
 	m->m_next = data;
 
-	ASSERT( hdr->tpdu_li < MMAXOFF ); /* leave this in */
+	ASSERT( hdr->tpdu_li < MLEN ); /* leave this in */
 	ASSERT( hdr->tpdu_li != 0 ); /* leave this in */
 
 	m->m_len = hdr->tpdu_li ; 
@@ -600,13 +611,13 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 	IFDEBUG(D_EMIT)
 	printf("tp_emit before tpxxx_output tpcb 0x%x, dutype 0x%x, datalen 0x%x\n",
 		tpcb, dutype, datalen);
-		dump_buf( m, datalen+12);
+		dump_buf(mtod(m, caddr_t), datalen);
 	ENDDEBUG
 
 	IFPERF(tpcb)
 		if( dutype == DT_TPDU_type ) {
 			PStat(tpcb, Nb_to_ll) += (datalen - m->m_len);
-			tpmeas( tpcb->tp_lref, TPtime_to_ll,  0,
+			tpmeas( tpcb->tp_lref, TPtime_to_ll,  (struct timeval *)0,
 				seq, PStat(tpcb, Nb_to_ll), (datalen - m->m_len));
 		}
 	ENDPERF
@@ -641,12 +652,11 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 	ENDTRACE
 done:
 	if( error == E_CO_QFULL ) {
-		tp_quench( tpcb );
+		tp_quench(tpcb, PRC_QUENCH);
 		return 0;
 	}
 	return error;
 }
-
 /*
  * NAME:		tp_error_emit()
  * CALLED FROM:	tp_input() when a DR or ER is to be issued in
@@ -757,7 +767,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			csum_offset =  hdr->tpdu_li - 2;
 		}
 
-	ASSERT( hdr->tpdu_li < MMAXOFF );
+	ASSERT( hdr->tpdu_li < MLEN ); 
 
 	if (dutype == ER_TPDU_type) {
 		/* copy the errant tpdu into another 'variable part' */
@@ -787,8 +797,11 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 		if(erdata->m_len == 0) {
 			erdata = m_free(erdata); /* returns the next mbuf on the chain */
 		}
-		m->m_next = m_copy(erdata, 0, erlen); /* copy only up to the
-					bad octet (or max that will fit in a header */
+		/*
+		 * copy only up to the bad octet
+		 * (or max that will fit in a header
+		 */
+		m->m_next = m_copy(erdata, 0, erlen);
 		hdr->tpdu_li += erlen + 2; 
 		m_freem(erdata);
 	} else {
@@ -832,9 +845,9 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 
 		IFDEBUG(D_ERROR_EMIT)
 			printf("tp_error_emit 1 sending DG: Laddr\n");
-			dump_isoaddr( laddr );
+			dump_addr((struct sockaddr *)laddr);
 			printf("Faddr\n");
-			dump_isoaddr( faddr );
+			dump_addr((struct sockaddr *)faddr);
 		ENDDEBUG
 		return (tpcb->tp_nlproto->nlp_dgoutput)(
 			&laddr->siso_addr, 
@@ -844,7 +857,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 	} else  {
 		if( cons_channel ) {
 #if NARGOXTWENTYFIVE > 0
-#include "../netiso/cons.h"
+#include "cons.h"
 			/* This is unfortunate...
 				cons_send_on_vc(cons_channel, m, datalen);
 			*/
@@ -859,24 +872,24 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 				cons_channel);
 #endif NARGOXTWENTYFIVE > 0
 		} else {
-#ifndef nodef
+#ifndef notdef
 			IFDEBUG(D_ERROR_EMIT)
 				printf("tp_error_emit sending DG: Laddr\n");
-				dump_isoaddr( laddr );
+				dump_addr((struct sockaddr *)laddr);
 				printf("Faddr\n");
-				dump_isoaddr( laddr );
+				dump_addr((struct sockaddr *)faddr);
 			ENDDEBUG
 			return (*dgout_routine)( &laddr->siso_addr, &faddr->siso_addr, 
 				m, datalen, /* no route */ 
 				(caddr_t)0, /* nochecksum==false */0);
-#else nodef
+#else notdef
 			IFDEBUG(D_ERROR_EMIT)
 				printf("tp_error_emit DROPPING \n", m);
 			ENDDEBUG
 			IncStat(ts_send_drop);
 			m_freem(m);
 			return 0;
-#endif nodef
+#endif notdef
 		}
 	}
 }

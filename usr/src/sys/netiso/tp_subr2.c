@@ -60,20 +60,20 @@ static char *rcsid = "$Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $";
 #include "time.h"
 #include "kernel.h"
 #undef MNULL
-#include "../netiso/tp_ip.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/iso.h"
-#include "../netiso/iso_errno.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_seq.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/iso_pcb.h"
-#include "../netiso/tp_user.h"
-#include "../netiso/cons.h"
+#include "argo_debug.h"
+#include "tp_param.h"
+#include "tp_ip.h"
+#include "iso.h"
+#include "iso_errno.h"
+#include "iso_pcb.h"
+#include "tp_timer.h"
+#include "tp_stat.h"
+#include "tp_tpdu.h"
+#include "tp_pcb.h"
+#include "tp_seq.h"
+#include "tp_trace.h"
+#include "tp_user.h"
+#include "cons.h"
 
 /*
  * NAME: 	tp_local_credit()
@@ -185,18 +185,18 @@ tp_indicate(ind, tpcb, error)
 	register struct socket *so = tpcb->tp_sock;
 	IFTRACE(D_INDICATION)
 		tptraceTPCB(TPPTindicate, ind, *(int *)(tpcb->tp_lsuffix), 
-			*(int *)(tpcb->tp_fsuffix), error,so->so_pgrp);
+			*(int *)(tpcb->tp_fsuffix), error,so->so_pgid);
 	ENDTRACE
 	IFDEBUG(D_INDICATION)
-		u_char *ls, *fs;
+		char *ls, *fs;
 		ls = tpcb->tp_lsuffix, 
 		fs = tpcb->tp_fsuffix, 
 
 		printf(
-"indicate 0x%x lsuf 0x%02x%02x fsuf 0x%02x%02x err 0x%x prgp 0x%x noind 0x%x ref 0x%x\n",
+"indicate 0x%x lsuf 0x%02x%02x fsuf 0x%02x%02x err 0x%x  noind 0x%x ref 0x%x\n",
 		ind, 
 		*ls, *(ls+1), *fs, *(fs+1),
-		error,so->so_pgrp,
+		error, /*so->so_pgrp,*/
 		tpcb->tp_no_disc_indications,
 		tpcb->tp_lref);
 	ENDDEBUG
@@ -263,8 +263,8 @@ void
 tp_recycle_tsuffix(tpcb)
 	struct tp_pcb	*tpcb;
 {
-	bzero( tpcb->tp_lsuffix, sizeof( tpcb->tp_lsuffix));
-	bzero( tpcb->tp_fsuffix, sizeof( tpcb->tp_fsuffix));
+	bzero((caddr_t)tpcb->tp_lsuffix, sizeof( tpcb->tp_lsuffix));
+	bzero((caddr_t)tpcb->tp_fsuffix, sizeof( tpcb->tp_fsuffix));
 	tpcb->tp_fsuffixlen = tpcb->tp_lsuffixlen = 0;
 
 	(tpcb->tp_nlproto->nlp_recycle_suffix)(tpcb->tp_npcb);
@@ -396,7 +396,7 @@ copyQOSparms(src, dst)
 	/* copy all but the bits stuff at the end */
 #define COPYSIZE (12 * sizeof(short))
 
-	bcopy( src, dst, COPYSIZE);
+	bcopy((caddr_t)src, (caddr_t)dst, COPYSIZE);
 	dst->p_tpdusize = src->p_tpdusize;
 	dst->p_ack_strat = src->p_ack_strat;
 	dst->p_rx_strat = src->p_rx_strat;
@@ -443,7 +443,7 @@ tp_route_to( m, tpcb, channel)
 	IFTRACE(D_CONN)
 		tptraceTPCB(TPPTmisc, 
 		"route_to: so  afi netservice class",
-		tpcb->tp_sock, siso->siso_addr.isoa_afi, tpcb->tp_netservice,
+		tpcb->tp_sock, siso->siso_addr.isoa_genaddr[0], tpcb->tp_netservice,
 			tpcb->tp_class);
 	ENDTRACE
 	IFDEBUG(D_CONN)
@@ -456,6 +456,14 @@ tp_route_to( m, tpcb, channel)
 		error = EAFNOSUPPORT;
 		goto done;
 	}
+	IFDEBUG(D_CONN)
+		printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
+			tpcb->tp_netservice);
+	ENDDEBUG
+	error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_sock->so_pcb, m);
+	if( error )
+		goto done;
+
 	{
 		register int save_netservice = tpcb->tp_netservice;
 
@@ -464,8 +472,9 @@ tp_route_to( m, tpcb, channel)
 		case ISO_CLNS:
 			/* This is a kludge but seems necessary so the passive end
 			 * can get long enough timers. sigh.
+			if( siso->siso_addr.osinet_idi[1] == (u_char)IDI_OSINET )
 			 */
-			if( siso->siso_addr.osinet_idi[1] == (u_char)IDI_OSINET ) {
+			if( siso->siso_addr.isoa_genaddr[2] == (char)IDI_OSINET ) {
 				if( tpcb->tp_dont_change_params == 0) {
 					copyQOSparms( &tp_conn_param[ISO_COSNS],
 							&tpcb->_tp_param);
@@ -474,6 +483,8 @@ tp_route_to( m, tpcb, channel)
 			}
 			/* drop through to IN_CLNS*/
 		case IN_CLNS:
+			if (iso_localifa(siso))
+				tpcb->tp_flags |= TPF_PEER_ON_SAMENET;
 			if( (tpcb->tp_class & TP_CLASS_4)==0 ) {
 				error = EPROTOTYPE;
 				break;
@@ -549,27 +560,10 @@ tp_route_to( m, tpcb, channel)
 
 		ASSERT( save_netservice == tpcb->tp_netservice);
 	}
-	if( error )
-		goto done;
-	IFDEBUG(D_CONN)
-		printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
-			tpcb->tp_netservice);
-	ENDDEBUG
-	error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_sock->so_pcb, m);
-
 	if( error && vc_to_kill ) {
 		tp_netcmd( tpcb, CONN_CLOSE);
 		goto done;
 	} 
-
-	/* PHASE 2: replace iso_netmatch with iso_on_localnet(foreign addr) */
-	if( iso_netmatch( 
-		&(((struct isopcb *)(tpcb->tp_sock->so_pcb))->isop_laddr), 
-		&(((struct isopcb *)(tpcb->tp_sock->so_pcb))->isop_faddr)
-					 )) {
-		tpcb->tp_flags |= TPF_PEER_ON_SAMENET;
-	}
-
 	{	/* start with the global rtt, rtv stats */
 		register int i =
 		   (int) tpcb->tp_flags & (TPF_PEER_ON_SAMENET | TPF_NLQOS_PDN);
@@ -607,32 +601,26 @@ tp_setup_perf(tpcb)
 {
 	register struct mbuf *q;
 
-	if( tpcb->tp_p_meas == (struct tp_pmeas *)0 ) {
-
-		/* allocate a cluster for all the stats */
-		MGET(q, M_DONTWAIT, TPMT_PERF); /* something we don't otherwise use */
+	if( tpcb->tp_p_meas == 0 ) {
+		MGET(q, M_WAITOK, MT_PCB);
 		if (q == 0)
 			return ENOBUFS;
-		q->m_act = MNULL;
-		MCLGET(q);	/* for the tp_pmeas struct */
-		if(q->m_len == 0) {
-			m_free(q);
+		MCLGET(q, M_WAITOK);
+		if ((q->m_flags & M_EXT) == 0) {
+			(void) m_free(q);
 			return ENOBUFS;
-		} else {
-			/* point into the cluster */
-			tpcb->tp_p_meas = mtod(q, struct tp_pmeas *);
-			/* get rid of the original little mbuf */
-			q->m_off = 0; q->m_len = 0;
-			m_free(q);
-			bzero( (caddr_t)tpcb->tp_p_meas, sizeof (struct tp_pmeas) );
-			IFDEBUG(D_PERF_MEAS)
-				printf(
-				"tpcb 0x%x so 0x%x ref 0x%x tp_p_meas 0x%x tp_perf_on 0x%x\n", 
-					tpcb, tpcb->tp_sock, tpcb->tp_lref, 
-					tpcb->tp_p_meas, tpcb->tp_perf_on);
-			ENDDEBUG
-			tpcb->tp_perf_on = 1;
 		}
+		q->m_len = sizeof (struct tp_pmeas);
+		tpcb->tp_p_mbuf = q;
+		tpcb->tp_p_meas = mtod(q, struct tp_pmeas *);
+		bzero( (caddr_t)tpcb->tp_p_meas, sizeof (struct tp_pmeas) );
+		IFDEBUG(D_PERF_MEAS)
+			printf(
+			"tpcb 0x%x so 0x%x ref 0x%x tp_p_meas 0x%x tp_perf_on 0x%x\n", 
+				tpcb, tpcb->tp_sock, tpcb->tp_lref, 
+				tpcb->tp_p_meas, tpcb->tp_perf_on);
+		ENDDEBUG
+		tpcb->tp_perf_on = 1;
 	}
 	return 0;
 }
@@ -644,16 +632,56 @@ dump_addr (addr)
 {
 	switch( addr->sa_family ) {
 		case AF_INET:
-			dump_inaddr(addr);
+			dump_inaddr((struct sockaddr_in *)addr);
 			break;
+#ifdef ISO
 		case AF_ISO:
-			dump_isoaddr(addr);
+			dump_isoaddr((struct sockaddr_iso *)addr);
 			break;
+#endif ISO
 		default:
 			printf("BAD AF: 0x%x\n", addr->sa_family);
 			break;
 	}
 }
+
+#define	MAX_COLUMNS	8
+/*
+ *	Dump the buffer to the screen in a readable format. Format is:
+ *
+ *		hex/dec  where hex is the hex format, dec is the decimal format.
+ *		columns of hex/dec numbers will be printed, followed by the
+ *		character representations (if printable).
+ */
+Dump_buf(buf, len)
+caddr_t	buf;
+int		len;
+{
+	int		i,j;
+
+	printf("Dump buf 0x%x len 0x%x\n", buf, len);
+	for (i = 0; i < len; i += MAX_COLUMNS) {
+		printf("+%d:\t", i);
+		for (j = 0; j < MAX_COLUMNS; j++) {
+			if (i + j < len) {
+				printf("%x/%d\t", buf[i+j]&0xff, buf[i+j]);
+			} else {
+				printf("	");
+			}
+		}
+
+		for (j = 0; j < MAX_COLUMNS; j++) {
+			if (i + j < len) {
+				if (((buf[i+j]) > 31) && ((buf[i+j]) < 128))
+					printf("%c", buf[i+j]&0xff);
+				else
+					printf(".");
+			}
+		}
+		printf("\n");
+	}
+}
+
 
 #endif ARGO_DEBUG
 

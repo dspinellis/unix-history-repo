@@ -43,10 +43,10 @@ static char *rcsid = "$Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 #ifdef	ARGO_DEBUG
 
@@ -144,7 +144,8 @@ struct iso_addr *isoa;
 		cp++;
 
 	/* print afi */
-	cp = clnp_hexp(&isoa->isoa_afi, 1, cp);
+	cp = clnp_hexp(isoa->isoa_genaddr, (int)isoa->isoa_len, cp);
+#ifdef notdef
 	*cp++ = DELIM;
 
 	/* print type specific part */
@@ -205,46 +206,24 @@ struct iso_addr *isoa;
 			*cp++ = '?';
 			break;
 	}
+#endif notdef
 	*cp = (char)0;
 	
 	return(iso_addr_b);
 }
 
-#define	MAX_COLUMNS	8
-/*
- *	Dump the buffer to the screen in a readable format. Format is:
- *
- *		hex/dec  where hex is the hex format, dec is the decimal format.
- *		columns of hex/dec numbers will be printed, followed by the
- *		character representations (if printable).
- */
-dump_buf(buf, len)
-char	*buf;
-int		len;
+char *
+clnp_saddr_isop(s)
+register struct sockaddr_iso *s;
 {
-	int		i,j;
+	register char	*cp = clnp_iso_addrp(&s->siso_addr);
 
-	printf("Dump buf 0x%x len 0x%x\n", buf, len);
-	for (i = 0; i < len; i += MAX_COLUMNS) {
-		printf("+%d:\t", i);
-		for (j = 0; j < MAX_COLUMNS; j++) {
-			if (i + j < len) {
-				printf("%x/%d\t", buf[i+j]&0xff, buf[i+j]);
-			} else {
-				printf("	");
-			}
-		}
-
-		for (j = 0; j < MAX_COLUMNS; j++) {
-			if (i + j < len) {
-				if (((buf[i+j]) > 31) && ((buf[i+j]) < 128))
-					printf("%c", buf[i+j]&0xff);
-				else
-					printf(".");
-			}
-		}
-		printf("\n");
-	}
+	while (*cp) cp++;
+	*cp++ = '(';
+	cp = clnp_hexp(TSEL(s), (int)s->siso_tsuffixlen, cp);
+	*cp++ = ')';
+	*cp++ = 0;
+	return (iso_addr_b);
 }
 
 
@@ -252,18 +231,18 @@ int		len;
  *		The following hacks are a trimmed down version of sprintf.
  */
 /*VARARGS1*/
+/*ARGSUSED*/
 clnp_sprintf(buf, fmt, x1, x2)
-	register char *fmt;
+	register char *buf, *fmt;
 	unsigned x1, x2;
 {
-	clnp_prf(buf, fmt, &x1, 0);
+	clnp_prf(buf, fmt, (unsigned int *)&x1);
 }
 
-clnp_prf(buf, fmt, adx, dummy)
+clnp_prf(buf, fmt, adx)
 	register char	*buf;
 	register char *fmt;
 	register unsigned int *adx;
-	int	dummy;
 {
 	register int b, c, i;
 	char *s;

@@ -56,17 +56,17 @@ static char *rcsid = "$Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $";
 #include "protosw.h"
 #include "errno.h"
 #include "time.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_ip.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_meas.h"
-#include "../netiso/tp_seq.h"
-#include "../netiso/tp_clnp.h"
+#include "argo_debug.h"
+#include "tp_param.h"
+#include "tp_timer.h"
+#include "tp_ip.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_tpdu.h"
+#include "tp_trace.h"
+#include "tp_meas.h"
+#include "tp_seq.h"
+#include "tp_clnp.h"
 
 /* list of reference structures */
 struct tp_ref tp_ref[N_TPREF];
@@ -276,6 +276,7 @@ int 	tpcons_output_dg();
 struct isopcb	tp_isopcb;
 #endif NARGOXTWENTYFIVE
 
+
 struct nl_protosw nl_protosw[] = {
 	/* ISO_CLNS */
 #ifdef ISO
@@ -288,6 +289,8 @@ struct nl_protosw nl_protosw[] = {
 		tpclnp_output, tpclnp_output_dg, iso_nlctloutput,
 		(caddr_t) &tp_isopcb,
 		},
+#else
+	{ 0 },
 #endif ISO
 	/* IN_CLNS */
 #ifdef INET
@@ -300,10 +303,11 @@ struct nl_protosw nl_protosw[] = {
 		tpip_output, tpip_output_dg, /* nl_ctloutput */ NULL,
 		(caddr_t) &tp_inpcb,
 		},
+#else
+	{ 0 },
 #endif INET
 	/* ISO_CONS */
-#ifdef ISO
-#if	NARGOXTWENTYFIVE > 0
+#if defined(ISO) && (NARGOXTWENTYFIVE > 0)
 	{ AF_ISO, iso_putnetaddr, iso_getnetaddr,
 		iso_putsufx, iso_getsufx,
 		iso_recycle_tsuffix,
@@ -313,17 +317,11 @@ struct nl_protosw nl_protosw[] = {
 		tpcons_output, tpcons_output_dg, iso_nlctloutput,
 		(caddr_t) &tp_isopcb,
 		},
-#endif NARGOXTWENTYFIVE
-#endif ISO
-	{ 0, 0, 0,
-		0, 0,
-		0,
-		0, 0, 0,
-		0,	0,
-		0,
-		0, 0, 0,
-		(caddr_t) 0,
-		}
+#else
+	{ 0 },
+#endif ISO_CONS
+	/* End of protosw marker */
+	{ 0 }
 };
 
 /*
@@ -341,25 +339,15 @@ struct nl_protosw nl_protosw[] = {
  * 
  * NOTES:
  */
-void
+int
 tp_init()
 {
 	static int 	init_done=0;
 	void	 	tp_timerinit();
 
 	if (init_done++)
-		return;
+		return 0;
 
-#ifndef lint
-	if ( (sizeof(struct tp_pcb) >= MLEN)  || (sizeof(struct tp_pcb_aux) >= MLEN)  ){
-		tp_param.tpp_configed = 0;
-		printf(
-			"TP not configured !!! pcb (0x%x, %d) or aux (0x%x, %d) too big!\n",
-			sizeof(struct tp_pcb), sizeof(struct tp_pcb), 
-			sizeof(struct tp_pcb_aux), sizeof(struct tp_pcb_aux));
-		printf("MLEN (0x%x, %d)\n", MLEN, MLEN);
-	}
-#endif lint
 
 	/* FOR INET */
 	tp_inpcb.inp_next = tp_inpcb.inp_prev = &tp_inpcb;
@@ -368,6 +356,7 @@ tp_init()
 
 	tp_timerinit();
 	bzero((caddr_t)&tp_stat, sizeof(struct tp_stat));
+	return 0;
 }
 
 /*
@@ -408,11 +397,10 @@ tp_soisdisconnecting(so)
 		register struct tp_pcb *tpcb = sototpcb(so);
 		u_int 	fsufx, lsufx;
 
-		bcopy ( tpcb->tp_fsuffix, &fsufx, sizeof(u_int) );
-		bcopy ( tpcb->tp_lsuffix, &lsufx, sizeof(u_int) );
+		bcopy ((caddr_t)tpcb->tp_fsuffix, (caddr_t)&fsufx, sizeof(u_int) );
+		bcopy ((caddr_t)tpcb->tp_lsuffix, (caddr_t)&lsufx, sizeof(u_int) );
 
-		tpmeas( tpcb->tp_lref, TPtime_close, 
-			&time, fsufx, lsufx, tpcb->tp_fref);
+		tpmeas(tpcb->tp_lref, TPtime_close, &time, fsufx, lsufx, tpcb->tp_fref);
 		tpcb->tp_perf_on = 0; /* turn perf off */
 	ENDPERF
 }
@@ -457,15 +445,15 @@ tp_soisdisconnected(tpcb)
 	sowwakeup(so);
 	sorwakeup(so);
 	IFPERF(sototpcb(so))
-		register struct tp_pcb *tpcb = sototpcb(so);
+		register struct tp_pcb *ttpcb = sototpcb(so);
 		u_int 	fsufx, lsufx;
 
 		/* CHOKE */
-		bcopy ( tpcb->tp_fsuffix, &fsufx, sizeof(u_int) );
-		bcopy ( tpcb->tp_lsuffix, &lsufx, sizeof(u_int) );
+		bcopy ((caddr_t)ttpcb->tp_fsuffix, (caddr_t)&fsufx, sizeof(u_int) );
+		bcopy ((caddr_t)ttpcb->tp_lsuffix, (caddr_t)&lsufx, sizeof(u_int) );
 
-		tpmeas( tpcb->tp_lref, TPtime_close, 
-			&time, &lsufx, &fsufx, tpcb->tp_fref);
+		tpmeas(ttpcb->tp_lref, TPtime_close, 
+		   &time, &lsufx, &fsufx, ttpcb->tp_fref);
 		tpcb->tp_perf_on = 0; /* turn perf off */
 	ENDPERF
 
@@ -594,14 +582,11 @@ tp_getref(tpcb)
  *
  * NOTES:
  */
-int
-tp_attach(so,dom)
+tp_attach(so, dom)
 	struct socket 	*so;
 	int 			dom;
 {
 	register struct tp_pcb	*tpcb;
-	register struct mbuf 	*m;
-	register struct mbuf	*p;
 	int 					error;
 	int 					protocol = so->so_proto->pr_protocol;
 	extern struct tp_conn_param tp_conn_param[];
@@ -627,26 +612,12 @@ tp_attach(so,dom)
 	if (error)
 		goto bad2;
 
-	MGET(m, M_DONTWAIT, TPMT_PCB);	/* for tpcb, main half */
-	if (m == NULL) {
+	MALLOC(tpcb, struct tp_pcb *, sizeof(*tpcb), M_PCB, M_NOWAIT);
+	if (tpcb == NULL) {
 		error = ENOBUFS;
 		goto bad2;
 	}
-
-	tpcb = mtod( m, struct tp_pcb * );
 	bzero( (caddr_t)tpcb, sizeof (struct tp_pcb) );
-
-	MGET(p, M_DONTWAIT, TPMT_PCB);	/* for the tpcb, auxilliary half */
-	if (p == NULL) {
-		error = ENOBUFS;
-		m_free(m); /* which is tpcb */
-		goto bad2;
-	} else {
-		p->m_len = sizeof(struct tp_pcb_aux);
-		p->m_act = MNULL;
-		tpcb->tp_aux = mtod(p, struct tp_pcb_aux *);
-		bzero( (caddr_t)tpcb->tp_aux, sizeof (struct tp_pcb_aux) );
-	}
 
 	if ( ((tpcb->tp_lref = tp_getref(tpcb)) &  TP_ENOREF) != 0 ) { 
 		error = ETOOMANYREFS; 
@@ -732,8 +703,7 @@ bad3:
 		printf("BAD3 in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
 
-	m_free(dtom(tpcb)); /* never a cluster  */
-	m_free(dtom(tpcb->tp_aux)); /* never a cluster */
+	free((caddr_t)tpcb, M_PCB); /* never a cluster  */
 
 bad2:
 	IFDEBUG(D_CONN)
@@ -743,7 +713,7 @@ bad2:
 	so->so_tpcb = 0;
 	sofree(so);
 
-bad:
+/*bad:*/
 	IFDEBUG(D_CONN)
 		printf("BAD in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
@@ -781,8 +751,8 @@ tp_detach(tpcb)
 	register struct socket	 *so = tpcb->tp_sock;
 
 	IFDEBUG(D_CONN)
-		printf("tp_detach(tpcb 0x%x, so 0x%x) freelist 0%x\n",
-			tpcb,so, mfree);
+		printf("tp_detach(tpcb 0x%x, so 0x%x)\n",
+			tpcb,so);
 	ENDDEBUG
 	IFTRACE(D_CONN)
 		tptraceTPCB(TPPTmisc, "tp_detach tpcb so lsufx", 
@@ -824,7 +794,7 @@ tp_detach(tpcb)
 		so->so_q0len, so->so_qlen, so->so_qlimit);
 	ENDDEBUG
 
-	if ( tpcb->tp_flags & (TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT ) ) {
+	if ( tpcb->tp_flags & (TPF_DISC_DATA_OUT | TPF_CONN_DATA_OUT ) )  {
 		ASSERT( so->so_snd.sb_cc != 0 );
 		IFDEBUG(D_CONN)
 			printf(
@@ -833,7 +803,7 @@ tp_detach(tpcb)
 			dump_mbuf( so->so_snd.sb_mb, "detach so snd: \n");
 		ENDDEBUG
 		if ( so->so_snd.sb_cc != 0 )
-			sbdrop( &so->so_snd, so->so_snd.sb_cc);
+			sbflush(&so->so_snd);
 		tpcb->tp_flags &= ~(TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT); 
 	}
 	if ( tpcb->tp_flags & (TPF_DISC_DATA_IN | TPF_CONN_DATA_IN ) ) {
@@ -845,7 +815,7 @@ tp_detach(tpcb)
 			dump_mbuf( tpcb->tp_Xrcv.sb_mb, "detach Xrcv: \n");
 		ENDDEBUG
 		if( tpcb->tp_Xrcv.sb_cc != 0 )
-			sbdrop( &tpcb->tp_Xrcv, tpcb->tp_Xrcv.sb_cc);
+			sbdrop(&tpcb->tp_Xrcv, (int)tpcb->tp_Xrcv.sb_cc);
 		tpcb->tp_flags &= ~(TPF_CONN_DATA_IN | TPF_DISC_DATA_IN); 
 	}
 
@@ -856,13 +826,11 @@ tp_detach(tpcb)
 				tpcb->tp_nlproto, tpcb->tp_nlproto->nlp_pcbdetach);
 	ENDDEBUG
 
-	if ((tpcb->tp_nlproto->nlp_pcbdetach) (
-				(struct inpcb *)so->so_pcb) /* does an sofree(so) */ < 0 ) {
-#ifdef 	ARGO_DEBUG
-		printf("tp: nl_detach failed: tpcb 0x%x so 0x%x\n", tpcb, so);
-#endif 	ARGO_DEBUG
-	}
 		
+		
+	(tpcb->tp_nlproto->nlp_pcbdetach)((struct inpcb *)so->so_pcb);
+				/* does an sofree(so) */
+
 	IFDEBUG(D_CONN)
 		printf("after xxx_pcbdetach\n");
 	ENDDEBUG
@@ -877,6 +845,10 @@ tp_detach(tpcb)
 		tp_freeref(tpcb->tp_refp);
 	}
 
+	if (tpcb->tp_Xsnd.sb_mb) {
+		printf("Unsent Xdata on detach; would panic");
+		sbflush(&tpcb->tp_Xsnd);
+	}
 	so->so_tpcb = (caddr_t)0;
 
 	/* 
@@ -887,27 +859,23 @@ tp_detach(tpcb)
 	 * of code, not the IFPERFs)
 	 */
 #ifdef TP_PERF_MEAS
-	if( tpcb->tp_p_meas != (struct tp_pmeas *)0 ) {
-		register struct mbuf *n;
-
-		n = MTOCL((struct mbuf *)(tpcb->tp_p_meas));
+	if(tpcb->tp_p_mbuf) {
+		register struct mbuf *m = tpcb->tp_p_mbuf;
+		struct mbuf *n;
 		IFDEBUG(D_PERF_MEAS)
 			printf("freeing tp_p_meas 0x%x  ", tpcb->tp_p_meas);
-			printf("n = 0x%x\n", n);
 		ENDDEBUG
-		if (--mclrefcnt[mtocl(n)] == 0) { 
-			n->m_next = mclfree;
-			mclfree = n;
-			mbstat.m_clfree++;
-		} 
+		do {
+		    MFREE(m, n);
+		    m = n;
+		} while (n);
+		tpcb->tp_p_meas = 0;
+		tpcb->tp_p_mbuf = 0;
 	}
 #endif TP_PERF_MEAS
 
 	IFDEBUG(D_CONN)
-		printf(
-"end of detach, NOT single, tpcb 0x%x, dtom(tpcb) 0x%x tp_aux 0x%x dtom(aux) 0x%x\n",
-		 tpcb, dtom(tpcb), tpcb->tp_aux, dtom(tpcb->tp_aux));
+		printf( "end of detach, NOT single, tpcb 0x%x\n", tpcb);
 	ENDDEBUG
-	m_free(dtom(tpcb->tp_aux)); 
-	m_free(dtom(tpcb)); 
+	/* free((caddr_t)tpcb, M_PCB); WHere to put this ? */
 }

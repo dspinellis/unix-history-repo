@@ -57,29 +57,23 @@ struct esis_fixed {
 	u_char	esis_hdr_len;		/* length indicator (octets) */
 	u_char	esis_vers;			/* version/protocol identifier extension */
 	u_char	esis_res1;			/* reserved */
-#if BYTE_ORDER == LITTLE_ENDIAN
-	u_char		esis_type:5,		/* type code */
-			esis_res4:1,		/* reserved */
-			esis_res3:1,		/* reserved */
-			esis_res2:1;		/* reserved */
+	u_char	esis_type;			/* type code */
+/* technically, type should be &='d 0x1f */
 #define ESIS_ESH	0x02		/* End System Hello */
 #define ESIS_ISH	0x04		/* Intermediate System Hello */
 #define ESIS_RD		0x06		/* Redirect */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	u_char	esis_res2:1,		/* reserved */
-			esis_res3:1,		/* reserved */
-			esis_res4:1,		/* reserved */
-			esis_type:5;		/* type code */
-#define ESIS_ESH	0x02		/* End System Hello */
-#define ESIS_ISH	0x04		/* Intermediate System Hello */
-#define ESIS_RD		0x06		/* Redirect */
-#endif
 	u_char	esis_ht_msb;		/* holding time (seconds) high byte */
 	u_char	esis_ht_lsb;		/* holding time (seconds) low byte */
 	u_char	esis_cksum_msb;		/* checksum high byte */
 	u_char	esis_cksum_lsb;		/* checksum low byte */
 };
+/*
+ * Values for ESIS datagram options
+ */
+#define ESISOVAL_NETMASK	0xe1	/* address mask option, RD PDU only */
+#define ESISOVAL_SNPAMASK	0xe2	/* snpa mask option, RD PDU only */
+#define ESISOVAL_ESCT		0xc6	/* end system conf. timer, ISH PDU only */
+
 
 #define	ESIS_CKSUM_OFF		0x07
 #define ESIS_CKSUM_REQUIRED(pdu)\

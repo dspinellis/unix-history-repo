@@ -54,15 +54,16 @@ static char *rcsid = "$Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $";
 #include "param.h"
 #include "types.h"
 #include "time.h"
+#include "malloc.h"
 
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_seq.h"
+#include "tp_param.h"
+#include "tp_timer.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_tpdu.h"
+#include "argo_debug.h"
+#include "tp_trace.h"
+#include "tp_seq.h"
 
 static  struct	Ecallout *TP_callfree;
 static  struct	Ecallout TP_callout[N_TPREF*2]; 
@@ -143,6 +144,7 @@ tp_Eclock(refp)
 	}
 
 	for (;;) {
+		struct tp_pcb *tpcb;
 		if ((p1 = refp->tpr_calltodo.c_next) == 0 || p1->c_time > 0) {
 			break;
 		}
@@ -163,7 +165,9 @@ tp_Eclock(refp)
 
 		TP_callfree = p1;
 		IncStat(ts_Eexpired);
-		(void) tp_driver( refp->tpr_pcb, &E);
+		(void) tp_driver( tpcb = refp->tpr_pcb, &E);
+		if (p1->c_func == TM_reference && tpcb->tp_state == TP_CLOSED)
+			free((caddr_t)tpcb, M_PCB); /* XXX wart; where else to do it? */
 	}
 }
 
@@ -410,7 +414,7 @@ tp_cuntimeout(refp, which)
 	cp = &(refp->tpr_callout[which]);
 
 	IFDEBUG(D_TIMER)
-		printf("tp_cuntimeout(0x%x, %d) active\n", refp, which, cp->c_active);
+		printf("tp_cuntimeout(0x%x, %d) active %d\n", refp, which, cp->c_active);
 	ENDDEBUG
 
 	IFTRACE(D_TIMER)

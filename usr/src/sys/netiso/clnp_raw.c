@@ -1,5 +1,4 @@
-/***********************************************************
-		Copyright IBM Corporation 1987
+/*********************************************************** Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -46,14 +45,16 @@ static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 #include "../net/route.h"
 #include "../net/raw_cb.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_pcb.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_pcb.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
-struct sockaddr_iso	rclnp_src	= { AF_ISO };
-struct sockaddr_iso	rclnp_dst	= { AF_ISO };
+#include "tp_user.h"/* XXX -- defines SOL_NETWORK */
+
+struct sockaddr_iso	rclnp_src	= { sizeof(rclnp_src), AF_ISO };
+struct sockaddr_iso	rclnp_dst	= { sizeof(rclnp_src), AF_ISO };
 struct sockproto	rclnp_proto	= { PF_ISO, 0 };
 /*
  * FUNCTION:		rclnp_input
@@ -108,103 +109,32 @@ struct socket	*so;	/* socket to send from */
 {
 	register struct mbuf	*m;			/* used to scan a chain */
 	int						len = 0;	/* store length of chain here */
-	struct rawcb			*rp = sotorawcb(so); /* ptr to raw cb */
+	struct rawisopcb		*rp = sotorawisopcb(so); /* ptr to raw cb */
 	int						error;		/* return value of function */
-	u_int					flags;		/* flags for clnp_output */
-	struct isopcb			isopcb;		/* isopcb used to interface w/clnp */
-
-	/* Calculate length of data */
-	for (m = m0; m; m = m->m_next)
-		len += m->m_len;
-	
-	bzero((caddr_t)&isopcb, sizeof(isopcb));
+	int						flags;		/* flags for clnp_output */
 
 	/*
 	 *	Set up src address. If user has bound socket to an address, use it.
 	 *	Otherwise, do not specify src (clnp_output will fill it in).
 	 */
-	if (rp->rcb_flags & RAW_LADDR) {
-		if (rp->rcb_laddr.sa_family != AF_ISO) {
+	if (rp->risop_rcb.rcb_laddr) {
+		if (rp->risop_isop.isop_sladdr.siso_family != AF_ISO) {
+bad:
 			m_freem(m0);
 			return(EAFNOSUPPORT);
 		}
-		bcopy((caddr_t)&rp->rcb_laddr, &isopcb.isop_laddr,
-			sizeof(struct sockaddr_iso));
 	}
-
-	/* set up route structure, if route is present */
-	if (rp->rcb_route.ro_rt != NULL)
-		bcopy((caddr_t)&rp->rcb_route, (caddr_t)&isopcb.isop_route,
-			sizeof(struct route));
-
 	/* set up dest address */
-	bcopy((caddr_t)&rp->rcb_faddr, &isopcb.isop_faddr,
-		sizeof(struct sockaddr_iso));
-		
-	/* 
-	 *	setup option index - this was done when option was set, but raw
-	 *	cb has no place to put it.
-	 */
-	if (rp->rcb_options != NULL) {
-		isopcb.isop_options = rp->rcb_options;
-		isopcb.isop_optindex = m_get(M_WAIT, MT_SOOPTS);
-		(void) clnp_opt_sanity(isopcb.isop_options, 
-			mtod(isopcb.isop_options, caddr_t), isopcb.isop_options->m_len, 
-			mtod(isopcb.isop_optindex, struct clnp_optidx *));
-	}
+	if (rp->risop_rcb.rcb_faddr == 0)
+		goto bad;
+	rp->risop_isop.isop_sfaddr =
+				*(struct sockaddr_iso *)rp->risop_rcb.rcb_faddr;
+	rp->risop_isop.isop_faddr = &rp->risop_isop.isop_sfaddr;
 
 	/* get flags and ship it off */
-	flags = rp->rcb_flags & CLNP_VFLAGS;
+	flags = rp->risop_flags & CLNP_VFLAGS;
 
-#ifdef	TROLL
-	if (trollctl.tr_ops & TR_BLAST) {
-		register int i;
-		struct timeval start, stop;
-		extern struct timeval	time;
-		struct mbuf *mbuf_orig;
-
-		mbuf_orig = m0;
-		start = time;
-		for (i=0; i<trollctl.tr_blast_cnt; i++) {
-			m0 = m_copy(mbuf_orig, 0, M_COPYALL);
-			if (m0 == NULL) {
-				error = ENOBUFS;
-			} else {
-				error = clnp_output(m0, &isopcb, len, flags);
-			}
-			if (error)
-				break;
-		}
-		stop = time;
-		printf("rclnp_output: %d pkts in %d sec\n", i,
-			stop.tv_sec - start.tv_sec);
-		m_freem(mbuf_orig);
-	} else {
-		/*
-		 *	Don't bother creating the cache since this is raw; probably
-		 *	a one shot send
-		 */
-		error = clnp_output(m0, &isopcb, len, flags|CLNP_NOCACHE);
-	}
-#else
-		error = clnp_output(m0, &isopcb, len, flags|CLNP_NOCACHE);
-#endif	TROLL
-
-	if (isopcb.isop_route.ro_rt)
-		RTFREE(isopcb.isop_route.ro_rt);
-
-	/* free clnp cached hdr if necessary */
-	if (isopcb.isop_clnpcache != NULL) {
-		struct clnp_cache *clcp = 
-			mtod(isopcb.isop_clnpcache, struct clnp_cache *);
-		if (clcp->clc_hdr != NULL) {
-			m_free(clcp->clc_hdr);
-		}
-		m_free(isopcb.isop_clnpcache);
-	}
-
-	if (isopcb.isop_optindex != NULL)
-		m_free(isopcb.isop_optindex);
+	error = clnp_output(m0, &rp->risop_isop, flags|CLNP_NOCACHE);
 
 	return (error);
 }
@@ -231,7 +161,7 @@ int				optname;		/* name of option */
 struct mbuf		**m;			/* ptr to ptr to option data */
 {
 	int						error = 0;
-	register struct rawcb	*rp = sotorawcb(so);/* raw cb ptr */
+	register struct rawisopcb	*rp = sotorawisopcb(so);/* raw cb ptr */
 
 	IFDEBUG(D_CTLOUTPUT)
 		printf("rclnp_ctloutput: op = x%x, level = x%x, name = x%x\n",
@@ -269,12 +199,19 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 					if ((usr_flags & (CLNP_VFLAGS)) != usr_flags) {
 						error = EINVAL;
 					} else
-						rp->rcb_flags |= usr_flags;
+						rp->risop_flags |= usr_flags;
 
 					} break;
 			
 				case CLNPOPT_OPTS:
-					error = clnp_set_opts(&rp->rcb_options, m);
+					if (error = clnp_set_opts(&rp->risop_isop.isop_options, m))
+						break;
+					rp->risop_isop.isop_optindex = m_get(M_WAIT, MT_SOOPTS);
+					(void) clnp_opt_sanity(rp->risop_isop.isop_options, 
+						mtod(rp->risop_isop.isop_options, caddr_t),
+						rp->risop_isop.isop_options->m_len, 
+						mtod(rp->risop_isop.isop_optindex,
+							struct clnp_optidx *));
 					break;
 			} 
 			break;
@@ -303,11 +240,86 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 }
 
 /*ARGSUSED*/
-clnp_usrreq(so, req, m, nam, rights)
-	struct socket *so;
+clnp_usrreq(so, req, m, nam, rights, control)
+	register struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *rights, *control;
 {
-	return EPROTOTYPE;
+	register int error = 0;
+	register struct rawisopcb *rp = sotorawisopcb(so);
+
+	rp = sotorawisopcb(so);
+	switch (req) {
+
+	case PRU_ATTACH:
+		if (rp)
+			panic("rip_attach");
+		MALLOC(rp, struct rawisopcb *, sizeof *rp, M_PCB, M_WAITOK);
+		if (rp == 0)
+			return (ENOBUFS);
+		bzero((caddr_t)rp, sizeof *rp);
+		so->so_pcb = (caddr_t)rp;
+		break;
+
+	case PRU_DETACH:
+		if (rp == 0)
+			panic("rip_detach");
+		if (rp->risop_isop.isop_options)
+			m_freem(rp->risop_isop.isop_options);
+		if (rp->risop_isop.isop_route.ro_rt)
+			RTFREE(rp->risop_isop.isop_route.ro_rt);
+		if (rp->risop_rcb.rcb_laddr)
+			rp->risop_rcb.rcb_laddr = 0;
+		/* free clnp cached hdr if necessary */
+		if (rp->risop_isop.isop_clnpcache != NULL) {
+			struct clnp_cache *clcp = 
+				mtod(rp->risop_isop.isop_clnpcache, struct clnp_cache *);
+			if (clcp->clc_hdr != NULL) {
+				m_free(clcp->clc_hdr);
+			}
+			m_free(rp->risop_isop.isop_clnpcache);
+		}
+		if (rp->risop_isop.isop_optindex != NULL)
+			m_free(rp->risop_isop.isop_optindex);
+
+		break;
+
+	case PRU_BIND:
+	    {
+		struct sockaddr_iso *addr = mtod(nam, struct sockaddr_iso *);
+
+		if (nam->m_len != sizeof(*addr))
+			return (EINVAL);
+		if ((ifnet == 0) ||
+		    (addr->siso_family != AF_ISO) ||
+		    (addr->siso_addr.isoa_len  &&
+		     ifa_ifwithaddr((struct sockaddr *)addr) == 0))
+			return (EADDRNOTAVAIL);
+		rp->risop_isop.isop_sladdr = *addr;
+		rp->risop_rcb.rcb_laddr = (struct sockaddr *)
+			(rp->risop_isop.isop_laddr = &rp->risop_isop.isop_sladdr);
+		return (0);
+	    }
+	case PRU_CONNECT:
+	    {
+		struct sockaddr_iso *addr = mtod(nam, struct sockaddr_iso *);
+
+		if ((nam->m_len > sizeof(*addr)) || (addr->siso_len > sizeof(*addr)))
+			return (EINVAL);
+		if (ifnet == 0)
+			return (EADDRNOTAVAIL);
+		if (addr->siso_family != AF_ISO)
+		rp->risop_isop.isop_sfaddr = *addr;
+		rp->risop_rcb.rcb_faddr = (struct sockaddr *)
+			(rp->risop_isop.isop_faddr = &rp->risop_isop.isop_sfaddr);
+		soisconnected(so);
+		return (0);
+	    }
+	}
+	error =  raw_usrreq(so, req, m, nam, rights, control);
+
+	if (error && req == PRU_ATTACH && so->so_pcb)
+		free((caddr_t)rp, M_PCB);
+	return (error);
 }
 #endif	ISO

@@ -38,14 +38,14 @@ static char *rcsid = "$Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $"
 #endif
 
 #ifdef	ISO
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
-#include "../h/mbuf.h"
+#include "types.h"
+#include "param.h"
+#include "socket.h"
+#include "protosw.h"
+#include "domain.h"
+#include "mbuf.h"
 
-#include "../netiso/iso.h"
+#include "iso.h"
 
 int clnp_output(), clnp_init(),clnp_slowtimo(),clnp_drain();
 int rclnp_input(), rclnp_output(), rclnp_ctloutput(), raw_usrreq();

@@ -227,8 +227,7 @@ struct tp_pmeas {
 		int		Nb_from_ll;
 };
 
-#define  IFPERF(tpcb)  if (tpcb->tp_perf_on &&\
-					(tpcb->tp_p_meas != (struct tp_pmeas *)0 )) {
+#define  IFPERF(tpcb)  if (tpcb->tp_perf_on && tpcb->tp_p_meas) {
 #define  ENDPERF }
 
 #else

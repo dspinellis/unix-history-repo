@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.3 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.4 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -43,16 +43,20 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/
 #include "../h/time.h"
 
 #include "../net/if.h"
+#include "../net/iftypes.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnl.h"
-#include "../netiso/esis.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_snpac.h"
+#include "clnp.h"
+#include "clnl.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "eonvar.h"
+#include "esis.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 #ifdef ISO
 u_char		clnp_protox[ISOPROTO_MAX];
@@ -120,7 +124,6 @@ clnlintr()
 {
 	register struct mbuf		*m;		/* ptr to first mbuf of pkt */
 	register struct clnl_fixed	*clnl;	/* ptr to fixed part of clnl hdr */
-	struct ifnet				*ifp;	/* ptr to interface pkt arrived on */
 	int							s;		/* save and restore priority */
 	struct clnl_protosw			*clnlsw;/* ptr to protocol switch */
 	struct snpa_hdr				sh;		/* subnetwork hdr */
@@ -130,24 +133,41 @@ clnlintr()
 	 */
 next:
 	s = splimp();
-
 	/* IF_DEQUEUESNPAHDR(&clnlintrq, m, sh);*/
 	IF_DEQUEUE(&clnlintrq, m);
-
-
 	splx(s);
+
+
 	if (m == 0)		/* nothing to do */
 		return;
-	if (m->m_flags & M_PKTHDR == 0) {
+	if ((m->m_flags & M_PKTHDR) == 0) {
 		m_freem(m);
 		goto next;
 	}
-	bcopy((caddr_t)(mtod(m, struct llc_etherhdr *)->dst),
-		(caddr_t)sh.snh_dhost, 2*sizeof(sh.snh_dhost));
-	m->m_data += sizeof (struct llc_etherhdr);
-	m->m_len -= sizeof (struct llc_etherhdr);
-	m->m_pkthdr.len -= sizeof (struct llc_etherhdr);
-	sh.snh_ifp = m->m_pkthdr.rcvif;
+	bzero((caddr_t)&sh, sizeof(sh));
+	sh.snh_flags = m->m_flags & (M_MCAST|M_BCAST);
+	switch((sh.snh_ifp = m->m_pkthdr.rcvif)->if_type) {
+		extern int ether_output();
+	case IFT_EON:
+		bcopy(mtod(m, caddr_t), (caddr_t)sh.snh_dhost, sizeof(u_long));
+		bcopy(sizeof(u_long) + mtod(m, caddr_t),
+					(caddr_t)sh.snh_shost, sizeof(u_long));
+		sh.snh_dhost[4] = mtod(m, u_char *)[sizeof(struct ip) +
+								_offsetof(struct eon_hdr, eonh_class)];
+		m->m_data += EONIPLEN;
+		m->m_len -= EONIPLEN;
+		m->m_pkthdr.len -= EONIPLEN;
+		break;
+
+	default:
+		if (sh.snh_ifp->if_output == ether_output) {
+			bcopy((caddr_t)(mtod(m, struct llc_etherhdr *)->dst),
+				(caddr_t)sh.snh_dhost, 2*sizeof(sh.snh_dhost));
+			m->m_data += sizeof (struct llc_etherhdr);
+			m->m_len -= sizeof (struct llc_etherhdr);
+			m->m_pkthdr.len -= sizeof (struct llc_etherhdr);
+		}
+	}
 	IFDEBUG(D_INPUT)
 		int i;
 		printf("clnlintr: src:");
@@ -189,7 +209,7 @@ next:
 	 *	Note: m_pullup will allocate a cluster mbuf if necessary
 	 */
 	if (clnl->cnf_hdr_len > m->m_len) {
-		if ((m = m_pullup(m, clnl->cnf_hdr_len)) == 0) {
+		if ((m = m_pullup(m, (int)clnl->cnf_hdr_len)) == 0) {
 			INCSTAT(cns_badhlen);	/* TODO: use clnl stats */
 			goto next;	/* m_pullup discards mbuf */
 		}
@@ -220,7 +240,7 @@ next:
  *	TODO: I would like to make seg_part a pointer into the mbuf, but 
  *	will it be correctly aligned?
  */
-int clnp_input(m, shp)
+clnp_input(m, shp)
 struct mbuf		*m;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
@@ -275,23 +295,23 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	Compute checksum (if necessary) and drop packet if
 	 *	checksum does not match
 	 */
-	if (CKSUM_REQUIRED(clnp) && iso_check_csum(m, clnp->cnf_hdr_len)) {
+	if (CKSUM_REQUIRED(clnp) && iso_check_csum(m, (int)clnp->cnf_hdr_len)) {
 		INCSTAT(cns_badcsum);
 		clnp_discard(m, GEN_BADCSUM);
-		return 0;
+		return;
 	}
 
 	if (clnp->cnf_vers != ISO8473_V1) {
 		INCSTAT(cns_badvers);
 		clnp_discard(m, DISC_UNSUPPVERS);
-		return 0;
+		return;
 	}
 
 
  	/* check mbuf data length: clnp_data_ck will free mbuf upon error */
 	CTOH(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, seg_len);
 	if ((m = clnp_data_ck(m, seg_len)) == 0)
-		return 0;
+		return;
 	
 	clnp = mtod(m, struct clnp_fixed *);
 	hend = (caddr_t)clnp + clnp->cnf_hdr_len;
@@ -308,13 +328,13 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	if (hoff == (caddr_t)0) {
 		INCSTAT(cns_badaddr);
 		clnp_discard(m, GEN_INCOMPLETE);
-		return 0;
+		return;
 	}
 	CLNP_EXTRACT_ADDR(src, hoff, hend);
 	if (hoff == (caddr_t)0) {
 		INCSTAT(cns_badaddr);
 		clnp_discard(m, GEN_INCOMPLETE);
-		return 0;
+		return;
 	}
 
 	IFDEBUG(D_INPUT)
@@ -326,11 +346,12 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	extract the segmentation information, if it is present.
 	 *	drop packet on failure
 	 */
-	if ((clnp->cnf_type != CLNP_ER) && (clnp->cnf_seg_ok)) {
+	if (((clnp->cnf_type & CNF_TYPE) != CLNP_ER) &&
+		(clnp->cnf_type & CNF_SEG_OK)) {
 		if (hoff + sizeof(struct clnp_segment) > hend) {
 			INCSTAT(cns_noseg);
 			clnp_discard(m, GEN_INCOMPLETE);
-			return 0;
+			return;
 		} else {
 			(void) bcopy(hoff, (caddr_t)&seg_part, sizeof(struct clnp_segment));
 			/* make sure segmentation fields are in host order */
@@ -360,7 +381,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 
 		/* the er option is valid with ER pdus only */
 		if ((errcode == 0) && (oidxp->cni_er_reason != ER_INVALREAS) && 
-			(clnp->cnf_type != CLNP_ER))
+			((clnp->cnf_type & CNF_TYPE) != CLNP_ER))
 			errcode = DISC_UNSUPPOPT;
 
 #ifdef	DECBIT
@@ -382,7 +403,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 				printf("clnp_input: dropped (err x%x) due to bad options\n",
 					errcode);
 			ENDDEBUG
-			return 0;
+			return;
 		}
 	}
 	
@@ -394,7 +415,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			printf("clnp_input: forwarding packet not for us\n");
 		ENDDEBUG
  		clnp_forward(m, seg_len, &dst, oidxp, seg_off, shp);
-		return 0;
+		return;
 	}
 
 	/*
@@ -403,7 +424,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	If the packet received was sent to the multicast address
 	 *	all end systems, then send an esh to the source
 	 */
-	if ((IS_MULTICAST(shp->snh_dhost)) && (iso_systype == SNPA_ES)) {
+	if ((shp->snh_flags & M_MCAST) && (iso_systype == SNPA_ES)) {
 		extern short esis_holding_time;
 
 		esis_shoutput(shp->snh_ifp, ESIS_ESH, esis_holding_time,
@@ -417,7 +438,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	by the reassembly code (either stored or deleted). In either case
 	 *	we should have nothing more to do with it.
 	 */
-	if ((clnp->cnf_type != CLNP_ER) && (clnp->cnf_seg_ok) &&
+	if (((clnp->cnf_type & CNF_TYPE) != CLNP_ER) &&
+		(clnp->cnf_type & CNF_SEG_OK) &&
 		(seg_len != seg_part.cng_tot_len)) {
 		struct mbuf	*m0;
 
@@ -425,7 +447,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			m = m0;
 			clnp = mtod(m, struct clnp_fixed *);
 		} else {
-			return 0;
+			return;
 		}
 	}
 	
@@ -437,7 +459,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	or, if absent, the segment length field of the
 	 *	header.
 	 */
-	switch (clnp->cnf_type) {
+	switch (clnp->cnf_type & CNF_TYPE) {
 	case CLNP_ER:
 		/*
 		 *	This ER must have the er option.
@@ -467,7 +489,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	case CLNP_ECR:
 		IFDEBUG(D_INPUT)
 			printf("clnp_input: raw input of %d bytes\n",
-				clnp->cnf_seg_ok ? seg_part.cng_tot_len : seg_len);
+				clnp->cnf_type & CNF_SEG_OK ? seg_part.cng_tot_len : seg_len);
 		ENDDEBUG
 		(*isosw[clnp_protox[ISOPROTO_RAW]].pr_input)(m, &src, &dst,
 					clnp->cnf_hdr_len);
@@ -481,19 +503,21 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		 *	Switch the source and destination address,
 		 */
 		hoff = (caddr_t)clnp + sizeof(struct clnp_fixed);
-		CLNP_INSERT_ADDR(hoff, &src);
-		CLNP_INSERT_ADDR(hoff, &dst);
-		clnp->cnf_type = CLNP_ECR;
+		CLNP_INSERT_ADDR(hoff, src);
+		CLNP_INSERT_ADDR(hoff, dst);
+		clnp->cnf_type &= ~CNF_TYPE;
+		clnp->cnf_type |= CLNP_ECR;
 
 		/*
 		 *	Forward back to sender
 		 */
- 		clnp_forward(m, clnp->cnf_seg_ok ? seg_part.cng_tot_len : seg_len,
+ 		clnp_forward(m, (int)(clnp->cnf_type & CNF_SEG_OK?seg_part.cng_tot_len : seg_len),
 			&src, oidxp, seg_off, shp);
 		break;
 
 	default:
- 		printf("clnp_input: unknown clnp pkt type %d\n", clnp->cnf_type);
+ 		printf("clnp_input: unknown clnp pkt type %d\n",
+			clnp->cnf_type & CNF_TYPE);
 		clnp_discard(m, GEN_HDRSYNTAX);
  		break;
 	}

@@ -23,6 +23,7 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
+ *	@(#)eonvar.h	7.2 (Berkeley) %G%
  */
 
 #define EON_986_VERSION 0x3
@@ -41,36 +42,43 @@ SOFTWARE.
  */
 
 struct sockaddr_eon {
-	short 			seon_family;	/* AF_ISO */
-	u_short			seon_status;	/* overlays transport suffix */
+	u_char 			seon_len;	/* Length */
+	u_char 			seon_family;	/* AF_ISO */
+	u_char			seon_status;	/* overlays session suffixlen */
 #define EON_ESLINK_UP		0x1
 #define EON_ESLINK_DOWN		0x2
 #define EON_ISLINK_UP		0x10
 #define EON_ISLINK_DOWN		0x20
 /* no change is neither up or down */
-
+	u_char			seon_pad1;	/* 0, overlays tsfxlen */
+	u_char			seon_adrlen;
 	u_char			seon_afi;		/* 47 */
 	u_char			seon_idi[2];	/* 0006 */
 	u_char			seon_vers;		/* 03 */
+	u_char			seon_glbnum[2];	/* see RFC 1069 */
+	u_char			seon_RDN[2];	/* see RFC 1070 */
+	u_char			seon_pad2[3];	/* see RFC 1070 */
+	u_char			seon_LAREA[2];	/* see RFC 1070 */
+	u_char			seon_pad3[2];	/* see RFC 1070 */
 		/* right now ip addr is  aligned  -- be careful --
 		 * future revisions may have it u_char[4]
 		 */
 	u_int			seon_ipaddr;	/* a.b.c.d */
-	u_char			seon_protoid[1]; /* */
-	u_char			seon_adrlen;
-	u_short			seon_netype[2];
+	u_char			seon_protoid;	/* NSEL */
 };
 
+#ifdef EON_TEMPLATE
 struct sockaddr_eon eon_template = {
-	AF_ISO, 0, 0x47, 0x0, 0x6, 0x3,
-	0,
-	0,
-	0xa,
-	0
+	sizeof (eon_template), AF_ISO, 0, 0, 0x14,
+	0x47, 0x0, 0x6, 0x3, 0
 };
+#endif
 
 #define DOWNBITS ( EON_ESLINK_DOWN | EON_ISLINK_DOWN )
 #define UPBITS ( EON_ESLINK_UP | EON_ISLINK_UP )
+
+#define	SIOCSEONCORE _IOWR('i',10, struct iso_ifreq) /* EON core member */
+#define	SIOCGEONCORE _IOWR('i',11, struct iso_ifreq) /* EON core member */
 
 struct eon_hdr {
 	u_char 	eonh_vers; /* value 1 */
@@ -81,6 +89,7 @@ struct eon_hdr {
 #define		EON_BROADCAST		0x3
 	u_short eonh_csum;  /* osi checksum (choke)*/
 };
+#define EONIPLEN (sizeof(struct eon_hdr) + sizeof(struct ip))
 
 /* stole these 2 fields of the flags for I-am-ES and I-am-IS */
 #define	IFF_ES	0x400
@@ -105,3 +114,7 @@ struct eon_stat {
 
 #undef IncStat
 #define IncStat(xxx) eonstat.xxx++
+
+typedef struct qhdr {
+	struct qhdr *link, *rlink;
+} *queue_t;

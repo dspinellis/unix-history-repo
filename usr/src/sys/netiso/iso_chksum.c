@@ -47,13 +47,15 @@ SOFTWARE.
  * logically adjacent, but may be physically located in separate mbufs.
  */
 
+#ifdef ISO
 #ifndef lint
 static char *rcsid = "$Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $";
 #endif
 
-#include "../netiso/argo_debug.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
+#include "argo_debug.h"
+#include "param.h"
+#include "mbuf.h"
+#endif ISO
 
 #ifndef MNULL
 #define MNULL (struct mbuf *)0
@@ -108,8 +110,8 @@ iso_check_csum(m, len)
 				printf("iso_check_csum: new mbuf\n");
 				if(l-i < m->m_len)
 					printf(
-					"bad mbuf chain in check csum l 0x%x i 0x%x m_off 0x%x",
-						l,i,m->m_off);
+					"bad mbuf chain in check csum l 0x%x i 0x%x m_data 0x%x",
+						l,i,m->m_data);
 			ENDDEBUG
 			ASSERT( m != MNULL);
 			len = MIN( m->m_len, l-i);
@@ -151,11 +153,7 @@ iso_gen_csum(m,n,l)
 	int n; /* offset of 2 checksum bytes */
 	int l;
 {
-#ifdef lint
-	register u_char *p = (u_char *)((int)m + m->m_off);
-#else
 	register u_char *p = mtod(m, u_char *);
-#endif
 	register int c0=0, c1=0;
 	register int i=0;
 	int loc = n++, len=0; /* n is position, loc is offset */
@@ -177,21 +175,21 @@ iso_gen_csum(m,n,l)
 
 		if(loc>=0) {
 			if (loc < len) {
-				xloc = ((u_char *)((int)(m) + (m)->m_off + loc));
+				xloc = loc + mtod(m, u_char *);
 				IFDEBUG(D_CHKSUM)
 					printf("1: zeroing xloc 0x%x loc 0x%x\n",xloc, loc );
 				ENDDEBUG
 				*xloc = (u_char)0;
 				if (loc+1 < len) {
 					/* both xloc and yloc are in same mbuf */
-					yloc = ((u_char *)((int)(m) + (m)->m_off + loc + 1));
+					yloc = 1  + xloc;
 					IFDEBUG(D_CHKSUM)
 						printf("2: zeroing yloc 0x%x loc 0x%x\n",yloc, loc );
 					ENDDEBUG
 					*yloc = (u_char)0;
 				} else {
 					/* crosses boundary of mbufs */
-					yloc = ((u_char *)((int)(m->m_next) + (m->m_next)->m_off));
+					yloc = mtod(m->m_next, u_char *);
 					IFDEBUG(D_CHKSUM)
 						printf("3: zeroing yloc 0x%x \n",yloc );
 					ENDDEBUG
@@ -304,28 +302,29 @@ m_compress(in, out)
 	while (in) {
 		IFDEBUG(D_REQUEST)
 			printf("m_compress in 0x%x *out 0x%x\n", in, *out);
-			printf("m_compress in: len 0x%x, off 0x%x\n", in->m_len, in->m_off);
+			printf("m_compress in: len 0x%x, off 0x%x\n", in->m_len, in->m_data);
 			printf("m_compress *out: len 0x%x, off 0x%x\n", (*out)->m_len, 
-				(*out)->m_off);
+				(*out)->m_data);
 		ENDDEBUG
-		if ( in->m_off >= MMAXOFF) {
+		if (in->m_flags & M_EXT) {
 			ASSERT(in->m_len == 0);
 		}
 		if ( in->m_len == 0) {
 			in = in->m_next;
 			continue;
 		}
-		if ((*out)->m_off < MMAXOFF) {
+		if (((*out)->m_flags & M_EXT) == 0) {
 			int len;
 
-		    len = MMAXOFF - ((*out)->m_off + (*out)->m_len);
+			len = M_TRAILINGSPACE(*out);
 			len = MIN(len, in->m_len);
 			datalen += len;
 
 			IFDEBUG(D_REQUEST)
 				printf("m_compress copying len %d\n", len);
 			ENDDEBUG
-			bcopy(mtod(in, caddr_t), mtod((*out), caddr_t) + (*out)->m_len, len);
+			bcopy(mtod(in, caddr_t), mtod((*out), caddr_t) + (*out)->m_len,
+						(unsigned)len);
 
 			(*out)->m_len += len;
 			in->m_len -= len;

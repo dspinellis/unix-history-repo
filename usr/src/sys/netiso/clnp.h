@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
-/*	@(#)clnp.h	7.3 (Berkeley) %G% */
+/*	@(#)clnp.h	7.4 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*
@@ -79,23 +79,18 @@ struct clnp_fixed {
 	u_char	cnf_hdr_len;		/* length indicator (octets) */
 	u_char	cnf_vers;			/* version/protocol identifier extension */
 	u_char	cnf_ttl;			/* lifetime (500 milliseconds) */
-#if BYTE_ORDER == LITTLE_ENDIAN
-	u_char	cnf_type:5,			/* type code */
-			cnf_err_ok:1,		/* flag: error report */
-			cnf_more_segs:1,	/* flag: more segments */
-			cnf_seg_ok:1;		/* flag: segmentation permitted */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	u_char	cnf_seg_ok:1,		/* flag: segmentation permitted */
-			cnf_more_segs:1,	/* flag: more segments */
-			cnf_err_ok:1,		/* flag: error report */
-			cnf_type:5;			/* type code */
-#endif
+	u_char	cnf_type;			/* type code */
+								/* Includes err_ok, more_segs, and seg_ok */
 	u_char	cnf_seglen_msb;		/* pdu segment length (octets) high byte */
 	u_char	cnf_seglen_lsb;		/* pdu segment length (octets) low byte */
 	u_char	cnf_cksum_msb;		/* checksum high byte */
 	u_char	cnf_cksum_lsb;		/* checksum low byte */
 };
+#define CNF_TYPE	0x1f
+#define CNF_ERR_OK	0x20
+#define CNF_MORE_SEGS	0x40
+#define CNF_SEG_OK	0x80
+
 #define CLNP_CKSUM_OFF	0x07	/* offset of checksum */
 
 #define	clnl_fixed	clnp_fixed
@@ -177,13 +172,24 @@ struct clnp_optidx {
 	char	cni_qos_len;		/* length of entire qos option */
 
 	u_char	cni_er_reason;		/* reason from ER pdu option */
+
+								/* ESIS options */
+
+	u_short	cni_esct;			/* value from ISH ESCT option */
+
+	u_short	cni_netmaskp;		/* ptr to beginning of netmask option */
+	char	cni_netmask_len;		/* length of entire netmask option */
+
+	u_short	cni_snpamaskp;		/* ptr to beginning of snpamask option */
+	char	cni_snpamask_len;		/* length of entire snpamask option */
+
 };
 
 #define	ER_INVALREAS	0xff	/* code for invalid ER pdu discard reason */
 
 /* given an mbuf and addr of option, return offset from data of mbuf */
 #define CLNP_OPTTOOFF(m, opt)\
-	((u_short) (opts - mtod(m, caddr_t)))
+	((u_short) (opt - mtod(m, caddr_t)))
 
 /* given an mbuf and offset of option, return address of option */
 #define CLNP_OFFTOOPT(m, off)\
@@ -340,15 +346,19 @@ struct troll {
 };
 
 #define	SN_OUTPUT(clcp, m)\
-	troll_output(clcp->clc_ifp, m, clcp->clc_firsthop)
+	troll_output(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop)
 
 #define	SN_MTU(ifp)\
 	(ifp->if_mtu - trollctl.tr_mtu_adj)
 
+#ifdef KERNEL
+extern float troll_random;
+#endif
+
 #else	/* NO TROLL */
 
 #define	SN_OUTPUT(clcp, m)\
-	(*clcp->clc_ifp->if_output)(clcp->clc_ifp, m, clcp->clc_firsthop)
+	(*clcp->clc_ifa->ia_ifp->if_output)(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop)
 
 #define	SN_MTU(ifp)\
 	(ifp->if_mtu)
@@ -365,7 +375,7 @@ struct troll {
 			(isoa.isoa_len > 20) || (isoa.isoa_len == 0)) {\
 			hoff = (caddr_t)0;\
 		} else {\
-			(void) bcopy(hoff, (caddr_t)&isoa, isoa.isoa_len);\
+			(void) bcopy(hoff, (caddr_t)isoa.isoa_genaddr, isoa.isoa_len);\
 			hoff += isoa.isoa_len;\
 		}\
 	}
@@ -373,10 +383,10 @@ struct troll {
 /*
  *	Macro to insert an address into a clnp header
  */
-#define CLNP_INSERT_ADDR(hoff, isoap)\
-	*hoff++ = (isoap)->isoa_len;\
-	(void) bcopy((caddr_t)(isoap), hoff, (isoap)->isoa_len);\
-	hoff += (isoap)->isoa_len;
+#define CLNP_INSERT_ADDR(hoff, isoa)\
+	*hoff++ = (isoa).isoa_len;\
+	(void) bcopy((caddr_t)((isoa).isoa_genaddr), hoff, (isoa).isoa_len);\
+	hoff += (isoa).isoa_len;
 
 /*
  *	Clnp hdr cache.	Whenever a clnp packet is sent, a copy of the
@@ -395,7 +405,7 @@ struct clnp_cache {
 	int					clc_segoff;		/* offset of seg part of header */
 	struct sockaddr		*clc_firsthop;	/* first hop of packet (points into
 											the route structure) */
-	struct ifnet		*clc_ifp;		/* ptr to interface (points into
+	struct iso_ifaddr	*clc_ifa;		/* ptr to interface (points into
 											the route structure) */
 	struct mbuf 		*clc_hdr;		/* cached pkt hdr (finally)! */
 };
