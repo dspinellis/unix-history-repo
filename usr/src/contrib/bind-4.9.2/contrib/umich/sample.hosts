@@ -1,0 +1,174 @@
+;-----------------------------------------------------------------
+;	rs.itd.umich.edu
+;-----------------------------------------------------------------
+@	in	soa	dns.itd.umich.edu.	hostmaster.umich.edu.  (
+		921110  ; serial number
+		28800   ; secondaries refresh every 8 hours
+		14400   ; if refresh fails, retry every 4 hours
+		2419200 ; if cannot refresh, expire in 30 days
+		86400 ) ; default ttl
+	in	ns	dns.itd.umich.edu.
+	in	ns	dns2.itd.umich.edu.
+	in	ns	joker.cs.wisc.edu.
+	in	a	141.211.164.11
+;-----------------------------------------------------------------
+kerberos	in	cname	terminator
+loghost		in	a	127.0.0.1
+localhost	in	a	127.0.0.1
+;-----------------------------------------------------------------
+;	Junk
+;-----------------------------------------------------------------
+cms1		in	a	35.1.1.149
+		in	hinfo	"IBM-9021/720" "VM/CMS"
+rs1		in	cname	cms1
+r		in	cname	cms1
+;-----------------------------------------------------------------
+;	Apollo
+;-----------------------------------------------------------------
+katana		in	a	141.211.164.42
+		in	a	141.211.166.3
+		in	hinfo	"APOLLO" "DOMAIN"
+dagger		in	a	141.211.166.5
+		in	hinfo	"APOLLO" "DOMAIN"
+shuriken	in	a	141.211.166.8
+		in	hinfo	"APOLLO" "DOMAIN"
+idahoan		in	a	141.211.165.31
+		in	hinfo	"APOLLO" "DOMAIN"
+;-----------------------------------------------------------------
+;	2nd floor stuff
+;-----------------------------------------------------------------
+kayak		in	a	141.211.165.25
+		in	hinfo	"PS/2-80" "AIX"
+newfoundland	in	a	141.211.165.27
+		in	hinfo	"IBM-RS/6000" "AIX"
+labrador	in	a	141.211.165.35
+		in	hinfo	"SPARC IPC" "SunOS 4.1"
+demo		in	a	141.211.165.37
+crocodile	in	a	141.211.165.38
+;-----------------------------------------------------------------
+;	NCD-19
+;-----------------------------------------------------------------
+spanky		in	a	141.211.164.111
+		in	hinfo	"NCD19" "NCDware"
+darla		in	a	141.211.164.112
+		in	hinfo	"NCD19" "NCDware"
+;-----------------------------------------------------------------
+;	DOS
+;-----------------------------------------------------------------
+jacobsladder	in	a	141.211.164.150
+		in	hinfo	"Diamond 486" "BSD"
+peesee		in	a	141.211.164.156
+;-----------------------------------------------------------------
+;	DEC
+;-----------------------------------------------------------------
+bloodsport	in	a	141.211.164.169
+		in	hinfo	"DECStation-3100" "Ultrix 4.3"
+bs		in	cname	bloodsport
+;-----------------------------------------------------------------
+;	RIOS
+;-----------------------------------------------------------------
+spanglebaby	in	a	141.211.164.173
+		in	hinfo	"IBM/PC-RT" "AOS"
+;-----------------------------------------------------------------
+;	Macs
+;-----------------------------------------------------------------
+deadbeef	in	a	141.211.164.190
+		in	hinfo	"MAC-IIX" "MACOS"
+clarus		in	a	141.211.164.192
+		in	hinfo	"MAC-IIX" "MACOS"
+kirwin		in	a	141.211.164.193
+		in	hinfo	"MAC-II" "MACOS"
+gml		in	a	141.211.164.195
+		in	hinfo	"MAC-II" "MACOS"
+klm		in	a	141.211.164.196
+		in	hinfo	"MAC" "MACOS"
+inxs		in	a	141.211.164.201
+		in	hinfo	"MAC" "MACOS"
+;-----------------------------------------------------------------
+;	Sun-3/50
+;-----------------------------------------------------------------
+commando	in	a	141.211.165.33
+		in	mx 10	terminator
+		in	hinfo	"SUN-3/50" "UNIX"
+pumpingiron	in	a	141.211.164.33
+		in	mx 0	terminator
+		in	hinfo	"SUN-3/50" "UNIX"
+predator	in	a	141.211.164.35
+		in	mx 0	terminator
+		in	hinfo	"SUN-3/50" "UNIX"
+redsonja	in	a	141.211.164.37
+		in	mx 0	terminator
+		in	hinfo	"SUN-3/50" "UNIX"
+redheat		in	a	141.211.165.29
+		in	mx 0	terminator
+		in	hinfo	"SUN-3/50" "UNIX"
+;-----------------------------------------------------------------
+;	Sun-4/40
+;-----------------------------------------------------------------
+notorious	in	a	141.211.164.10
+		in	mx 0	notorious
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+vertigo		in	a	141.211.164.11
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+rearwindow	in	a	141.211.164.12
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+psycho		in	a	141.211.164.13
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+topaz		in	a	141.211.164.14
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+shad		in	cname	shadowofadoubt
+shadowofadoubt	in	a	141.211.164.15
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+lifeboat	in	a	141.211.164.16
+		in	hinfo	"SUN-4/40" "SunOS 4.1.1"
+;-----------------------------------------------------------------
+;	Sun-4/470
+;-----------------------------------------------------------------
+e		in	cname	totalrecall
+totalrecall	in	a	35.1.1.91
+		in	hinfo	"SUN-4/470" "SunOS 4.1.1"
+		in	mx 0	totalrecall
+;-----------------------------------------------------------------
+;	Sun-4/360
+;-----------------------------------------------------------------
+judgmentday	in	cname	destroyer
+b		in	cname	destroyer
+t2		in	cname	destroyer
+destroyer	in	a	35.1.1.90
+		in	hinfo	"SUN-4/360" "UNIX"
+		in	mx 0	destroyer
+		in	mx 10	terminator
+d		in	cname	terminator
+terminator	in	a	141.211.164.2
+		in	hinfo	"SUN-4/670" "UNIX"
+;-----------------------------------------------------------------
+;	Dynamic macs
+;-----------------------------------------------------------------
+mac01		in	a	141.211.164.212
+mac02		in	a	141.211.164.213
+mac03		in	a	141.211.164.214
+mac04		in	a	141.211.164.215
+mac05		in	a	141.211.164.216
+mac06		in	a	141.211.164.217
+mac07		in	a	141.211.164.218
+mac08		in	a	141.211.164.219
+mac09		in	a	141.211.164.220
+mac10		in	a	141.211.164.221
+mac11		in	a	141.211.164.222
+mac12		in	a	141.211.164.223
+mac13		in	a	141.211.164.224
+mac14		in	a	141.211.164.225
+mac15		in	a	141.211.164.226
+mac16		in	a	141.211.164.227
+mac17		in	a	141.211.164.228
+mac18		in	a	141.211.164.229
+mac19		in	a	141.211.164.230
+mac20		in	a	141.211.164.231
+;-----------------------------------------------------------------
+;	For testing
+;-----------------------------------------------------------------
+mta		in	a	141.211.164.10
+		in	a	141.211.164.11
+		in	a	141.211.164.12
+		in	a	141.211.164.13
+		in	a	141.211.164.14

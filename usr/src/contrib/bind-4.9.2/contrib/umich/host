@@ -1,0 +1,23 @@
+#!/bin/sh
+#------------------------------------------------------------------
+#	host
+#	input ->  numerical representation of an Internet address
+#	output -> textual representation of the host at the address
+#------------------------------------------------------------------
+/usr/local/bin/query -h  `echo $1 |
+/bin/awk  '
+{
+	n = split($1, oct, ".")
+	if (n != 4)
+		printf("127.0.0.1.in-addr.arpa.\n")
+	else {
+		printf("%s.%s.%s.%s.in-addr.arpa.\n", oct[4], oct[3], oct[2], oct[1])
+	}
+}' ` -t ptr |
+/bin/awk '
+ {
+ 	if (($1 == "domain") && ($2 == "name")) {
+ 		printf("%s\n", $4)
+ 		exit
+ 	}
+ }'
