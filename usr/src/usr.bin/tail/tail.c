@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ main(argc, argv)
 	FILE *fp;
 	long off;
 	enum STYLE style;
-	int ch;
+	int ch, first;
 	char *p;
 
 	/*
@@ -61,7 +61,7 @@ main(argc, argv)
 		usage(); \
 	off = strtol(optarg, &p, 10) * (units); \
 	if (*p) \
-		err("illegal offset -- %s", optarg); \
+		err(1, "illegal offset -- %s", optarg); \
 	switch(optarg[0]) { \
 	case '+': \
 		if (off) \
@@ -129,30 +129,46 @@ main(argc, argv)
 			style = RLINES;
 		}
 
-	if (fname = *argv) {
-		if ((fp = fopen(fname, "r")) == NULL)
-			ierr();
-	} else {
+	if (*argv)
+		for (first = 1; fname = *argv++;) {
+			if ((fp = fopen(fname, "r")) == NULL) {
+				ierr();
+				continue;
+			}
+			if (argc > 1) {
+				(void)printf("%s==> %s <==\n",
+				    first ? "" : "\n", fname);
+				first = 0;
+			}
+
+			if (rflag)
+				reverse(fp, style, off, &sb);
+			else
+				forward(fp, style, off, &sb);
+		}
+	else {
 		fp = stdin;
 		fname = "stdin";
+
+		if (fstat(fileno(fp), &sb)) {
+			ierr();
+			exit(1);
+		}
+
+		/*
+		 * Determine if input is a pipe.  4.4BSD will set the SOCKET
+		 * bit in the st_mode field for pipes.  Fix this then.
+		 */
+		if (lseek(fileno(fp), 0L, SEEK_CUR) == -1 && errno == ESPIPE) {
+			errno = 0;
+			fflag = 0;		/* POSIX.2 requires this. */
+		}
+
+		if (rflag)
+			reverse(fp, style, off, &sb);
+		else
+			forward(fp, style, off, &sb);
 	}
-
-	if (fstat(fileno(fp), &sb))
-		ierr();
-
-	/*
-	 * Determine if input is a pipe.  4.4BSD will set the SOCKET
-	 * bit in the st_mode field for pipes.  Fix this then.
-	 */
-	if (lseek(fileno(fp), 0L, SEEK_CUR) == -1 && errno == ESPIPE) {
-		errno = 0;
-		fflag = 0;		/* POSIX.2 requires this. */
-	}
-
-	if (rflag)
-		reverse(fp, style, off, &sb);
-	else
-		forward(fp, style, off, &sb);
 	exit(rval);
 }
 
@@ -185,7 +201,7 @@ obsolete(argv)
 			/* Malloc space for dash, new option and argument. */
 			len = strlen(*argv);
 			if ((start = p = malloc(len + 3)) == NULL)
-				err("%s", strerror(errno));
+				err(1, "%s", strerror(errno));
 			*p++ = '-';
 
 			/*
@@ -215,7 +231,7 @@ obsolete(argv)
 				*p++ = 'n';
 				break;
 			default:
-				err("illegal option -- %s", *argv);
+				err(1, "illegal option -- %s", *argv);
 			}
 			*p++ = *argv[0];
 			(void)strcpy(p, ap);

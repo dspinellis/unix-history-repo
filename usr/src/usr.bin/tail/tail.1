@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tail.1	6.8 (Berkeley) %G%
+.\"	@(#)tail.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TAIL 1
@@ -22,7 +22,7 @@
 .Fl c Ar number |
 .Fl n Ar number
 .Oc
-.Op Ar file
+.Op Ar file ...
 .Sh DESCRIPTION
 The
 .Nm tail
@@ -64,7 +64,7 @@ to not stop when end of file is reached, but rather to wait for additional
 data to be appended to the input.
 The
 .Fl f
-option is ignored on pipes but not on FIFO's.
+option is ignored if the standard input is a pipe, but not if it is a FIFO.
 .It Fl n Ar number
 The location is
 .Ar number
@@ -88,6 +88,13 @@ The default for the
 .Fl r
 option is to display all of the input.
 .El
+.Pp
+If more than a single file is specified, each file is preceded by a
+header consisting of the string
+.Dq ==> XXX <==
+where
+.Dq XXX
+is the name of the file.
 .Pp
 The
 .Nm tail

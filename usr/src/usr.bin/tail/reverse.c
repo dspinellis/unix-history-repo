@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reverse.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)reverse.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,9 +88,11 @@ r_reg(fp, style, off, sbp)
 		return;
 
 	fd = fileno(fp);
-	if ((p =
-	    mmap(NULL, size, PROT_READ, MAP_FILE, fd, (off_t)0)) == (caddr_t)-1)
-		err("%s", strerror(errno));
+	if ((p = mmap(NULL,
+	    size, PROT_READ, MAP_FILE, fd, (off_t)0)) == (caddr_t)-1) {
+		err(0, "%s", strerror(errno));
+		return;
+	}
 	p += size - 1;
 
 	if (style == RBYTES && off < size)
@@ -146,7 +148,7 @@ r_buf(fp)
 		if (enomem || (tl = malloc(sizeof(BF))) == NULL ||
 		    (tl->l = malloc(BSZ)) == NULL) {
 			if (!mark)
-				err("%s", strerror(errno));
+				err(1, "%s", strerror(errno));
 			tl = enomem ? tl->next : mark;
 			enomem += tl->len;
 		} else if (mark) {

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,13 +24,13 @@ static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
 void
 ierr()
 {
-	err("%s: %s", fname, strerror(errno));
+	err(0, "%s: %s", fname, strerror(errno));
 }
 
 void
 oerr()
 {
-	err("stdout: %s", strerror(errno));
+	err(1, "stdout: %s", strerror(errno));
 }
 
 #if __STDC__
@@ -41,9 +41,10 @@ oerr()
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+err(int fatal, const char *fmt, ...)
 #else
-err(fmt, va_alist)
+err(fatal, fmt, va_alist)
+	int fatal;
 	char *fmt;
 	va_dcl
 #endif
@@ -58,6 +59,7 @@ err(fmt, va_alist)
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
+	if (fatal)
+		exit(1);
+	rval = 1;
 }
