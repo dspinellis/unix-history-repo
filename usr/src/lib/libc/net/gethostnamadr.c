@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.46 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -202,10 +202,10 @@ getanswer(answer, anslen, iquery)
 
 struct hostent *
 gethostbyname(name)
-	char *name;
+	const char *name;
 {
 	querybuf buf;
-	register char *cp;
+	register const char *cp;
 	int n;
 	extern struct hostent *_gethtbyname();
 
@@ -229,7 +229,7 @@ gethostbyname(name)
 					h_errno = HOST_NOT_FOUND;
 					return((struct hostent *) NULL);
 				}
-				host.h_name = name;
+				host.h_name = (char *)name;
 				host.h_aliases = host_aliases;
 				host_aliases[0] = NULL;
 				host.h_addrtype = AF_INET;
