@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.3		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.4		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -12,11 +12,19 @@ static char	SccsId[] =	"@(#)cpr.c	1.3		%G%";
 **	models in the Concept 100 series also.
 **
 **	Usage:
-**		cpr [file ...]
+**		cpr [-f] [file ...]
+**
+**	Flags:
+**		-f	form feed following to print.
 */
+
+typedef char	bool;
+#define TRUE	1
+#define FALSE	0
 
 struct sgttyb	tbuf;
 int		SysLine;
+bool		FormFeedFollowing;
 
 main(argc, argv)
 	int argc;
@@ -26,13 +34,30 @@ main(argc, argv)
 	extern cleanterm();
 	extern char *getenv();
 
+	/* arrange to stop the sysline program during printing */
+	p = getenv("SYSLINE");
+	if (p != NULL)
+		SysLine = atoi(p);
+
+	/* process arguments */
+	while (--argc > 0)
+	{
+		p = *++argv;
+		if (*p == '-')
+		{
+			switch (*++p)
+			{
+			  case 'f':
+				FormFeedFollowing = TRUE;
+				break;
+			}
+		}
+	}
+
 	/* be nice on interrupts, etc. */
 	signal(SIGINT, cleanterm);
 
 	/* set the terminal to output to printer */
-	p = getenv("SYSLINE");
-	if (p != NULL)
-		SysLine = atoi(p);
 	setupterm();
 
 	/* print the appropriate files */
@@ -95,6 +120,11 @@ setupterm()
 
 cleanterm()
 {
+	/* output trailing formfeed */
+	if (FormFeedFollowing)
+		fputs("\r\f", stdout);
+
+	/* disconnect printer */
 	resetmodes();
 	exit(0);
 }
