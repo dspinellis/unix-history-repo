@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)init_disp.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)init_disp.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -17,8 +17,12 @@ static char sccsid[] = "@(#)init_disp.c	1.2 (Berkeley) %G%";
 init_display()
 {
 	void sig_sent();
+	struct sigvec sigv;
 
 	initscr();
+	(void) sigvec(SIGTSTP, (struct sigvec *)0, &sigv);
+	sigv.sv_mask |= sigmask(SIGALRM);
+	(void) sigvec(SIGTSTP, &sigv, (struct sigvec *)0);
 	curses_initialized = 1;
 	clear();
 	refresh();
