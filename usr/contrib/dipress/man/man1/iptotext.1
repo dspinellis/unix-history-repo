@@ -1,0 +1,58 @@
+.de sh
+.ne 5
+.PP
+\fB\\$1\fR
+.PP
+..
+.TH IPTOTEXT 1 5/23/85
+.UC 4
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+iptotext \- convert an interpress file into intertext
+.SH SYNOPSIS
+.B iptotext
+[
+.B \-d
+]
+[
+.B \-o
+.I outputfile
+] [ file ... ]
+.SH DESCRIPTION
+.I Iptotext
+will convert an interpress file into a readable Ascii form.  This textual
+form, called
+.IR intertext ,
+consists of, basically, numbers and operator names.  The output can be
+edited by any conventional text editor and converted back to an interpress
+file with
+.IR texttoip (1).
+.PP
+The
+.B \-d
+option will cause pixel arrays to be formatted and included in the output.
+The default is to not dump pixel array data because of its voluminous nature.
+.PP
+If
+.B \-o
+is specified, the text is written to the file
+.IR outputfile .
+If no output file name is given, the output appears on standard out.
+Note that this is a little different than
+.IR texttoip (1).
+.SH AUTHOR
+William LeFebvre
+.SH "SEE ALSO"
+texttoip(1)
+.PP
+Intertext\-a Textual Representation of Interpress, William LeFebvre
+.br
+Interpress Electronic Printing Standard, \s8XSIS\s0 048404
