@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.14 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.15 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -68,9 +68,10 @@ topcmp( npp1 , npp2 )
     return (*npp1) -> toporder - (*npp2) -> toporder;
 }
 
+nltype **
 doarcs()
 {
-    nltype	*parentp;
+    nltype	*parentp, **timesortnlp;
     arctype	*arcp;
     long	index;
 
@@ -150,7 +151,26 @@ doarcs()
 	 *	propogate children times up to parents.
 	 */
     dotime();
-    printgprof();
+	/*
+	 *	Now, sort by propself + propchild.
+	 *	sorting both the regular function names
+	 *	and cycle headers.
+	 */
+    timesortnlp = (nltype **) calloc( nname + ncycle , sizeof(nltype *) );
+    if ( timesortnlp == (nltype **) 0 ) {
+	fprintf( stderr , "%s: ran out of memory for sorting\n" , whoami );
+    }
+    for ( index = 0 ; index < nname ; index++ ) {
+	timesortnlp[index] = &nl[index];
+    }
+    for ( index = 1 ; index <= ncycle ; index++ ) {
+	timesortnlp[nname+index-1] = &cyclenl[index];
+    }
+    qsort( timesortnlp , nname + ncycle , sizeof(nltype *) , totalcmp );
+    for ( index = 0 ; index < nname + ncycle ; index++ ) {
+	timesortnlp[ index ] -> index = index + 1;
+    }
+    return( timesortnlp );
 }
 
 dotime()
