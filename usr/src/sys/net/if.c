@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.8 (Berkeley) %G%
+ *	@(#)if.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,11 +36,8 @@ ifinit()
 	register struct ifnet *ifp;
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (ifp->if_init) {
-			(*ifp->if_init)(ifp->if_unit);
-			if (ifp->if_snd.ifq_maxlen == 0)
-				ifp->if_snd.ifq_maxlen = ifqmaxlen;
-		}
+		if (ifp->if_snd.ifq_maxlen == 0)
+			ifp->if_snd.ifq_maxlen = ifqmaxlen;
 	if_slowtimo();
 }
 
@@ -175,7 +172,7 @@ if_down(ifp)
 
 	ifp->if_flags &= ~IFF_UP;
 	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
-		pfctlinput(PRC_IFDOWN, (caddr_t)&ifa->ifa_addr);
+		pfctlinput(PRC_IFDOWN, &ifa->ifa_addr);
 }
 
 /*
@@ -239,7 +236,7 @@ ifioctl(so, cmd, data)
 	case SIOCGIFCONF:
 		return (ifconf(cmd, data));
 
-#if defined(INET) && NETHER > 0
+#if (defined(INET) || defined(BBNNET)) && NETHER > 0
 	case SIOCSARP:
 	case SIOCDARP:
 		if (!suser())
@@ -267,6 +264,8 @@ ifioctl(so, cmd, data)
 		}
 		ifp->if_flags = (ifp->if_flags & IFF_CANTCHANGE) |
 			(ifr->ifr_flags &~ IFF_CANTCHANGE);
+		if (ifp->if_ioctl)
+			(void) (*ifp->if_ioctl)(ifp, cmd, data);
 		break;
 
 	default:
