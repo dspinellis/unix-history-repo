@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 typedef struct {
@@ -17,8 +17,8 @@ extern char *progname;			/* program name */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	 path_set(PATH_T *, char *);
-char	*path_append(PATH_T *, char *, int);
-char	*path_basename(PATH_T *);
-void	 path_restore(PATH_T *, char *);
+int	 path_set __P((PATH_T *, char *));
+char	*path_append __P((PATH_T *, char *, int));
+char	*path_basename __P((PATH_T *));
+void	 path_restore __P((PATH_T *, char *));
 __END_DECLS
