@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.16 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -253,7 +253,7 @@ main(argc, argv)
 	hz = getw(nl[X_HZ].n_value);
 	savcom = (struct savcom *)calloc(nproc, sizeof (*savcom));
 	for (i=0; i<nproc; i += 8) {
-		lseek(kmem, (char *)procp, 0);
+		klseek(kmem, (char *)procp, 0);
 		j = nproc - i;
 		if (j > 8)
 			j = 8;
@@ -267,7 +267,7 @@ main(argc, argv)
 			    mproc->p_pgrp == 0 && xflg == 0)
 				continue;
 			if (tptr == 0 && gflg == 0 && xflg == 0 &&
-			    mproc->p_ppid == 1 && (mproc->p_flag&SDETACH) == 0)
+			    mproc->p_ppid == 1)
 				continue;
 			if (uid != mproc->p_uid && aflg==0 ||
 			    chkpid != 0 && chkpid != mproc->p_pid)
@@ -321,10 +321,19 @@ getw(loc)
 {
 	long word;
 
-	lseek(kmem, loc, 0);
+	klseek(kmem, loc, 0);
 	if (read(kmem, &word, sizeof (word)) != sizeof (word))
 		printf("error reading kmem at %x\n", loc);
 	return (word);
+}
+
+klseek(fd, loc, off)
+	int fd, loc, off;
+{
+
+	if (kflg)
+		loc &= 0x7fffffff;
+	lseek(fd, loc, off);
 }
 
 openfiles(argc, argv)
@@ -374,22 +383,22 @@ getkvars(argc, argv)
 			nlp->n_value = clear(nlp->n_value);
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
-	lseek(kmem, (long)nl[X_NSWAP].n_value, 0);
+	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
 	if (read(kmem, &nswap, sizeof (nswap)) != sizeof (nswap)) {
 		cantread("nswap", kmemf);
 		exit(1);
 	}
-	lseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
+	klseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
 	if (read(kmem, &maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
 		cantread("maxslp", kmemf);
 		exit(1);
 	}
-	lseek(kmem, (long)nl[X_CCPU].n_value, 0);
+	klseek(kmem, (long)nl[X_CCPU].n_value, 0);
 	if (read(kmem, &ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
 		cantread("ccpu", kmemf);
 		exit(1);
 	}
-	lseek(kmem, (long)nl[X_ECMX].n_value, 0);
+	klseek(kmem, (long)nl[X_ECMX].n_value, 0);
 	if (read(kmem, &ecmx, sizeof (ecmx)) != sizeof (ecmx)) {
 		cantread("ecmx", kmemf);
 		exit(1);
@@ -402,7 +411,7 @@ getkvars(argc, argv)
 			exit(1);
 		}
 		atext = (struct text *)getw(nl[X_TEXT].n_value);
-		lseek(kmem, (int)atext, 0);
+		klseek(kmem, (int)atext, 0);
 		if (read(kmem, (char *)text, ntext * sizeof (struct text))
 		    != ntext * sizeof (struct text)) {
 			cantread("text table", kmemf);
@@ -753,8 +762,10 @@ getu()
 		argaddr = 0;
 		return (1);
 	}
+	if (kflg)
+		mproc->p_p0br = (struct pte *)clear(mproc->p_p0br);
 	pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
-	lseek(kmem, kflg ? clear(pteaddr) : (int)pteaddr, 0);
+	klseek(kmem, pteaddr, 0);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
 		printf("ps: cant read indir pte to get u for pid %d from %s\n",
 		    mproc->p_pid, swapf);
