@@ -1,4 +1,4 @@
-/*	kern_acct.c	6.6	84/12/12	*/
+/*	kern_acct.c	6.7	85/05/21	*/
 
 #include "param.h"
 #include "systm.h"
@@ -47,6 +47,11 @@ sysacct()
 			return;
 		if((ip->i_mode & IFMT) != IFREG) {
 			u.u_error = EACCES;
+			iput(ip);
+			return;
+		}
+		if (ip->i_fs->fs_ronly) {
+			u.u_error = EROFS;
 			iput(ip);
 			return;
 		}
