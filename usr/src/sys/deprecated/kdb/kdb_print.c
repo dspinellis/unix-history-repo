@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.13 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.14 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -190,6 +190,12 @@ printtrace(modif)
 				if ((ip->i_flag & ILOCKED) == 0)
 					continue;
 				vprint((char *)0, vp);
+				if (ip->i_spare0 == 0)
+					continue;
+				printf("\towner pid %d", ip->i_spare0);
+				if (ip->i_spare1)
+					printf(" waiting pid %d", ip->i_spare1);
+				printf("\n");
 			}
 		}
 		break;
