@@ -1,10 +1,10 @@
-/* gprint.h	1.4	83/05/13
+/* gprint.h	1.5	83/05/22
  *
  * This file contains standard definitions used by the gprint program.
  */
 
 #define Vxlen		2048		/* varian dimensions */
-#define Vylen		1536
+#define Vylen		1600
 #define Vbytperlin	264
 
 #define Wxlen		2048		/* versatec dimensions */
