@@ -1,19 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.c%
 .\"
-.\"	@(#)recv.2	6.6 (Berkeley) %G%
+.\"	@(#)recv.2	6.7 (Berkeley) %G%
 .\"
 .TH RECV 2 ""
 .UC 5
@@ -46,23 +36,11 @@ struct msghdr *msg;
 int flags;
 .ft R
 .SH DESCRIPTION
-.IR Recv ,
-.IR recvfrom ,
+.IR Recvfrom ,
 and
 .IR recvmsg
-are used to receive messages from a socket.
-.PP
-The 
-.I recv
-call is normally used only on a 
-.I connected
-socket (see
-.IR connect (2)),
-while 
-.I recvfrom
-and 
-.I recvmsg
-may be used to receive data on a socket whether
+are used to receive messages from a socket,
+and may be used to receive data on a socket whether
 it is in a connected state or not.
 .PP
 If
@@ -74,6 +52,20 @@ the buffer associated with
 .IR from ,
 and modified on return to indicate the actual size of the
 address stored there.
+.PP
+The 
+.I recv
+call is normally used only on a 
+.I connected
+socket (see
+.IR connect (2))
+and is identitical to
+.I recfrom
+with a zero-valued
+.I fromlen
+parameter.
+As it is redundant, it may not be supported in future releases.
+.PP
 The length of the message is returned in
 .IR cc .
 If a message is too long to fit in the supplied buffer,
@@ -105,6 +97,10 @@ one or more of the values,
 .ta \w'#define\ \ 'u +\w'MSG_DONTROUTE\ \ \ 'u +\w'0x\0\0\0\ \ 'u
 #define	MSG_OOB	0x1	/* process out-of-band data */
 #define	MSG_PEEK	0x2	/* peek at incoming message */
+#define	MSG_DONTROUTE	0x4	/* send without using routing tables */
+#define	MSG_EOR	0x8	/* data completes record */
+#define	MSG_TRUNC	0x10	/* data discarded before delivery */
+#define	MSG_CTRUNC	0x20	/* control data lost before delivery */
 .RE
 .fi
 .PP
@@ -117,17 +113,16 @@ This structure has the following form, as defined in
 .IR <sys/socket.h> :
 .PP
 .nf
-.RS
-.DT
+.ta \w'struct  'u +\w'caddr_t   'u +\w'msg_controllen    'u
 struct msghdr {
-	caddr_t	msg_name;		/* optional address */
-	int	msg_namelen;		/* size of address */
-	struct	iovec *msg_iov;		/* scatter/gather array */
-	int	msg_iovlen;		/* # elements in msg_iov */
-	caddr_t	msg_accrights;		/* access rights sent/received */
-	int	msg_accrightslen;
+	caddr_t	msg_name;	/* optional address */
+	u_int	msg_namelen;	/* size of address */
+	struct	iovec *msg_iov;	/* scatter/gather array */
+	u_int	msg_iovlen;	/* # elements in msg_iov */
+	caddr_t	msg_control;	/* ancillary data, see below */
+	u_int	msg_controllen;	/* ancillary data buffer len */
+	int	msg_flags;		/* flags on received message */
 };
-.RE
 .fi
 .PP
 Here
@@ -137,24 +132,50 @@ and
 specify the destination address if the socket is unconnected;
 .I msg_name
 may be given as a null pointer if no names are desired or required.
-The 
+The
 .I msg_iov
 and
 .I msg_iovlen
 describe the scatter gather locations, as described in
 .IR read (2).
-A buffer to receive any access rights sent along with the message is specified
-in 
-.IR msg_accrights ,
+.IR msg_control ,
 which has length
-.IR msg_accrightslen .
-Access rights are currently limited to file descriptors,
-which each occupy the size of an
-.BR int .
-If access rights are not being transferred, the 
-.I msg_accrights
-field should be set to NULL.
-.SH "RETURN VALUE
+.IR msg_controllen .
+This is a buffer for other protocol control related messages
+or other miscellaneous ancillary data.
+The messages are of the form:
+.PP
+.nf
+.ta \w'struct  'u +\w'u_char   'u +\w'msg_controllen    'u
+struct cmsghdr {
+	u_int	cmsg_len;	/* data byte count, including hdr */
+	int	cmsg_level;	/* originating protocol */
+	int	cmsg_type;	/* protocol-specific type */
+/* followed by
+	u_char	cmsg_data[]; */
+};
+.fi
+.RE
+As an example, one could use this to learn of changes in the data-stream
+in XNS/SPP, or in ISO, to obtain user-connection-request data by requesting
+a recvmsg with no uio provided immediately after an
+.IR accept (),
+thought of here in the sense of get-next-connection-request without
+an implicit connection confirmation.
+.PP
+Open file descriptors are now passed as ancillary data for AF_UNIX
+domain sockets, with cmsg_level being SOL_SOCKET and  cmsg_type being
+SCM_RIGHTS.
+.PP
+.I msg_flags
+is set on return in a way that may include some of the same values specified
+for the flags parameter to a recv system call.
+The returned values MSG_EOR indicates end-of-record, MSG_TRUNC indicates that
+some trailing datagram data was discarded, MSG_CTRUNC indicates that some
+control data was discarded due to lack of space.
+MSG_OOB is returned to indicate that expedited data was received.
+.PP
+.SH "RETURN VALUE"
 These calls return the number of bytes received, or \-1
 if an error occurred.
 .SH ERRORS
