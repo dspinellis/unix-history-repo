@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.4 (Berkeley) %G%
+ *	@(#)sd.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -23,18 +23,16 @@ static char rcsid[] = "$Header: sd.c,v 1.3 90/10/10 14:55:10 mike Exp $";
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/buf.h"
-#include "sys/errno.h"
 #include "sys/dkstat.h"
 #include "sys/disklabel.h"
-#include "device.h"
 #include "sys/malloc.h"
-#include "scsireg.h"
-
-#include "sys/user.h"
 #include "sys/proc.h"
-#include "sys/uio.h"
 
+#include "device.h"
+#include "scsireg.h"
 #include "vm/vm_param.h"
+#include "vm/lock.h"
+#include "vm/vm_statistics.h"
 #include "vm/pmap.h"
 #include "vm/vm_prot.h"
 
@@ -49,11 +47,7 @@ extern int scsigo();
 extern void scsifree();
 extern void scsireset();
 
-extern void printf();
-extern void bcopy();
 extern void disksort();
-extern int splbio();
-extern void splx();
 extern void biodone();
 extern int physio();
 extern void TBIS();
@@ -124,14 +118,13 @@ struct sdstats {
 } sdstats[NSD];
 
 struct	buf sdtab[NSD];
-struct	buf sdbuf[NSD];
 struct	scsi_fmt_cdb sdcmd[NSD];
 struct	scsi_fmt_sense sdsense[NSD];
 
 static struct scsi_fmt_cdb sd_read_cmd = { 10, CMD_READ_EXT };
 static struct scsi_fmt_cdb sd_write_cmd = { 10, CMD_WRITE_EXT };
 
-#define	sdunit(x)	((minor(x) >> 3) & 0x7)
+#define	sdunit(x)	(minor(x) >> 3)
 #define sdpart(x)	(minor(x) & 0x7)
 #define	sdpunit(x)	((x) & 7)
 #define	b_cylin		b_resid
@@ -371,16 +364,17 @@ sdreset(sc, hd)
 }
 
 int
-sdopen(dev, flags)
+sdopen(dev, flags, mode, p)
 	dev_t dev;
-	int flags;
+	int flags, mode;
+	struct proc *p;
 {
 	register int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
 
 	if (unit >= NSD)
 		return(ENXIO);
-	if ((sc->sc_flags & SDF_ALIVE) == 0 && suser(u.u_cred, &u.u_acflag))
+	if ((sc->sc_flags & SDF_ALIVE) == 0 && suser(p->p_ucred, &p->p_acflag))
 		return(ENXIO);
 
 	if (sc->sc_hd->hp_dk >= 0)
@@ -409,7 +403,7 @@ sdlblkstrat(bp, bsize)
 	register caddr_t addr;
 
 	bzero((caddr_t)cbp, sizeof(*cbp));
-	cbp->b_proc = u.u_procp;
+	cbp->b_proc = curproc;		/* XXX */
 	cbp->b_dev = bp->b_dev;
 	bn = bp->b_blkno;
 	resid = bp->b_bcount;
@@ -498,7 +492,7 @@ sdstrategy(bp)
 	register int sz, s;
 
 	if (sc->sc_format_pid) {
-		if (sc->sc_format_pid != u.u_procp->p_pid) {
+		if (sc->sc_format_pid != curproc->p_pid) {	/* XXX */
 			bp->b_error = EPERM;
 			bp->b_flags |= B_ERROR;
 			goto done;
@@ -712,39 +706,44 @@ sdintr(unit, stat)
 }
 
 int
-sdread(dev, uio)
+sdread(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
+	int flags;
 {
 	register int unit = sdunit(dev);
 	register int pid;
 
-	if ((pid = sd_softc[unit].sc_format_pid) && pid != u.u_procp->p_pid)
+	if ((pid = sd_softc[unit].sc_format_pid) &&
+	    pid != uio->uio_procp->p_pid)
 		return (EPERM);
 		
-	return(physio(sdstrategy, &sdbuf[unit], dev, B_READ, minphys, uio));
+	return (physio(sdstrategy, NULL, dev, B_READ, minphys, uio));
 }
 
 int
-sdwrite(dev, uio)
+sdwrite(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
+	int flags;
 {
 	register int unit = sdunit(dev);
 	register int pid;
 
-	if ((pid = sd_softc[unit].sc_format_pid) && pid != u.u_procp->p_pid)
+	if ((pid = sd_softc[unit].sc_format_pid) &&
+	    pid != uio->uio_procp->p_pid)
 		return (EPERM);
 		
-	return(physio(sdstrategy, &sdbuf[unit], dev, B_WRITE, minphys, uio));
+	return (physio(sdstrategy, NULL, dev, B_WRITE, minphys, uio));
 }
 
 int
-sdioctl(dev, cmd, data, flag)
+sdioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	int cmd;
 	caddr_t data;
 	int flag;
+	struct proc *p;
 {
 	register int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
@@ -755,13 +754,13 @@ sdioctl(dev, cmd, data, flag)
 
 	case SDIOCSFORMAT:
 		/* take this device into or out of "format" mode */
-		if (suser(u.u_cred, &u.u_acflag))
+		if (suser(p->p_ucred, &p->p_acflag))
 			return(EPERM);
 
 		if (*(int *)data) {
 			if (sc->sc_format_pid)
 				return (EPERM);
-			sc->sc_format_pid = u.u_procp->p_pid;
+			sc->sc_format_pid = p->p_pid;
 		} else
 			sc->sc_format_pid = 0;
 		return (0);
@@ -776,7 +775,7 @@ sdioctl(dev, cmd, data, flag)
 		 * Save what user gave us as SCSI cdb to use with next
 		 * read or write to the char device.
 		 */
-		if (sc->sc_format_pid != u.u_procp->p_pid)
+		if (sc->sc_format_pid != p->p_pid)
 			return (EPERM);
 		if (legal_cmds[((struct scsi_fmt_cdb *)data)->cdb[0]] == 0)
 			return (EINVAL);

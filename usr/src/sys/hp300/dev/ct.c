@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.2 (Berkeley) %G%
+ *	@(#)ct.c	7.3 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -23,16 +23,15 @@
  *	finish support of 9145
  */
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/mtio.h"
-#include "sys/errno.h"
+#include "param.h"
+#include "buf.h"
+#include "ioctl.h"
+#include "mtio.h"
+#include "tprintf.h"
+#include "proc.h"
+
 #include "ctreg.h"
 #include "device.h"
-#include "sys/user.h"
-#include "sys/tty.h"
-#include "sys/proc.h"
 
 /* number of eof marks to remember */
 #define EOFS	128
@@ -61,7 +60,7 @@ struct	ct_softc {
 	int	sc_flags;
 	short	sc_type;
 	short	sc_punit;
-	caddr_t	sc_ctty;
+	tpr_t	sc_tpr;
 	struct	devqueue sc_dq;
 	int	sc_eofp;
 	int	sc_eofs[EOFS];
@@ -231,8 +230,10 @@ ctreset(sc, hd)
 }
 
 /*ARGSUSED*/
-ctopen(dev, flag)
+ctopen(dev, flag, type, p)
 	dev_t dev;
+	int flag, type;
+	struct proc *p;
 {
 	register struct ct_softc *sc = &ct_softc[UNIT(dev)];
 	u_char stat;
@@ -263,8 +264,7 @@ ctopen(dev, flag)
 	              &stat, sizeof(stat));
 	if (cc != sizeof(stat))
 		return(EBUSY);
-	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
-			u.u_procp->p_session->s_ttyvp : 0);
+	sc->sc_tpr = tprintf_open(p);
 	sc->sc_flags |= CTF_OPEN;
 	return(0);
 }
@@ -292,7 +292,7 @@ ctclose(dev, flag)
 	if ((minor(dev) & CT_NOREW) == 0)
 		ctcommand(dev, MTREW, 1);
 	sc->sc_flags &= ~(CTF_OPEN | CTF_WRT | CTF_WRTTN);
-	sc->sc_ctty = NULL;
+	tprintf_close(sc->sc_tpr);
 #ifdef DEBUG
 	if (ctdebug & CDB_FILES)
 		printf("ctclose: flags %x\n", sc->sc_flags);
@@ -657,14 +657,14 @@ ctintr(unit)
 			}
 			if (sc->sc_stat.c_aef & 0x5800) {
 				if (sc->sc_stat.c_aef & 0x4000)
-					tprintf(sc->sc_ctty,
+					tprintf(sc->sc_tpr,
 						"ct%d: uninitialized media\n",
 						unit);
 				if (sc->sc_stat.c_aef & 0x1000)
-					tprintf(sc->sc_ctty,
+					tprintf(sc->sc_tpr,
 						"ct%d: not ready\n", unit);
 				if (sc->sc_stat.c_aef & 0x0800)
-					tprintf(sc->sc_ctty,
+					tprintf(sc->sc_tpr,
 						"ct%d: write protect\n", unit);
 			} else {
 				printf("ct%d err: v%d u%d ru%d bn%d, ",
