@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,8 +66,7 @@ char lfmt[] = "uid pid ppid cpu pri nice vsz rss wchan state tt time command";
 char   o1[] = "pid";
 char   o2[] = "tt state time command";
 char ufmt[] = "user pid %cpu %mem vsz rss tt state start time command";
-char vfmt[] =
-	"pid state time sl re pagein vsz rss lim tsiz trs %cpu %mem command";
+char vfmt[] = "pid state time sl re pagein vsz rss lim tsiz %cpu %mem command";
 
 kvm_t *kd;
 
