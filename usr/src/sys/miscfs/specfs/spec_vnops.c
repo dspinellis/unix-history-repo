@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.34 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -156,7 +156,7 @@ spec_read(vp, uio, ioflag, cred)
 			return (EINVAL);
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[major(vp->v_rdev)].d_read)
-			(vp->v_rdev, uio, ioflag, p);
+			(vp->v_rdev, uio, ioflag);
 		VOP_LOCK(vp);
 		return (error);
 
@@ -236,7 +236,7 @@ spec_write(vp, uio, ioflag, cred)
 			return (EINVAL);
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[major(vp->v_rdev)].d_write)
-			(vp->v_rdev, uio, ioflag, p);
+			(vp->v_rdev, uio, ioflag);
 		VOP_LOCK(vp);
 		return (error);
 
