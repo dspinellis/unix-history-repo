@@ -1,0 +1,66 @@
+MOUNT_PORTAL(8)           BSD System Manager's Manual          MOUNT_PORTAL(8)
+
+NNAAMMEE
+     mmoouunntt__ppoorrttaall - mount the portal daemon
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__ppoorrttaall [--oo _o_p_t_i_o_n_s] _/_e_t_c_/_p_o_r_t_a_l_._c_o_n_f _m_o_u_n_t___p_o_i_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__ppoorrttaall command attaches an instance of the portal daemon to the
+     global filesystem namespace.  The conventional mount point is _/_p. This
+     command is normally executed by mount(8) at boot time.
+
+     The options are as follows:
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     The portal daemon provides an _o_p_e_n service.  Objects opened under the
+     portal mount point are dynamically created by the portal daemon according
+     to rules specified in the named configuration file.  Using this mechanism
+     allows descriptors such as sockets to be made available in the filesystem
+     namespace.
+
+     The portal daemon works by being passed the full pathname of the object
+     being opened.  The daemon creates an appropriate descriptor according to
+     the rules in the configuration file, and then passes the descriptor back
+     to the calling process as the result of the open system call.
+
+NNAAMMEESSPPAACCEE
+     By convention, the portal daemon divides the namespace into sub-
+     namespaces, each of which handles objects of a particular type.
+
+     Currently, two sub-namespaces are implemented: _t_c_p and _f_s. The _t_c_p names-
+     pace takes a hostname and a port (slash separated) and creates an open
+     TCP/IP connection.  The _f_s namespace opens the named file, starting back
+     at the root directory.  This can be used to provide a controlled escape
+     path from a chrooted environment.
+
+CCOONNFFIIGGUURRAATTIIOONN FFIILLEE
+     The configuration file contains a list of rules.  Each rule takes one
+     line and consists of two or more whitespace separated fields.  A hash
+     (``#'') character causes the remainder of a line to be ignored.  Blank
+     lines are ignored.
+
+     The first field is a pathname prefix to match against the requested path-
+     name.  If a match is found, the second field tells the daemon what type
+     of object to create.  Subsequent fields are passed to the creation func-
+     tion.
+
+     # @(#)portal.conf       5.1 (Berkeley) 7/13/92
+     tcp/            tcp tcp/
+     fs/             file fs/
+
+FFIILLEESS
+     /p/*
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  fstab(5),  mount(8)
+
+CCAAVVEEAATTSS
+     This filesystem may not be NFS-exported.
+
+HHIISSTTOORRYY
+     The mmoouunntt__ppoorrttaall utility first appeared in 4.4BSD.

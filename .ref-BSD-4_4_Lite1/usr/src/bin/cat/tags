@@ -1,5 +1,0 @@
-Mcat	cat.c	/^main(argc, argv)$/
-cook_args	cat.c	/^cook_args(argv)$/
-cook_buf	cat.c	/^cook_buf(fp)$/
-raw_args	cat.c	/^raw_args(argv)$/
-raw_cat	cat.c	/^raw_cat(rfd)$/

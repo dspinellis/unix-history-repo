@@ -1,3 +1,0 @@
-This directory contains the source for the XNS courier daemon, which listens
-on the Courier SPP socket and spawns children to handle incoming Courier
-requests, one child per SPP connection.

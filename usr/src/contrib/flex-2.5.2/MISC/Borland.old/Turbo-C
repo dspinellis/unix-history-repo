@@ -1,0 +1,179 @@
+Received: from 128.84.254.220 by ee.lbl.gov for <vern@ee.lbl.gov> (8.6.8.1/1.43r)
+	id PAA27266; Mon, 18 Apr 1994 15:08:26 -0700
+Received: from CLOYD.CS.CORNELL.EDU by thialfi.cs.cornell.edu (5.67/I-1.99E)
+	id AA28742; Mon, 18 Apr 94 18:08:14 -0400
+Received: from iraun1.ira.uka.de by cloyd.cs.cornell.edu (5.67/I-1.99D)
+	id AA19613; Mon, 18 Apr 94 18:08:19 -0400
+Received: from t500i2.telematik.informatik. (actually t500i2.telematik.informatik.uni-karlsruhe.de) 
+          by iraun1.ira.uka.de with SMTP (PP); Tue, 19 Apr 1994 00:07:55 +0200
+Received: by t500i2.telematik.informatik.uni-karlsruhe.de (5.57/Ultrix3.0-C) 
+          id AA10269; Tue, 19 Apr 94 00:09:14 +0200
+From: beigl@t500i2.telematik.informatik.uni-karlsruhe.de (Michael Beigl)
+Message-Id: <9404182209.AA10269@t500i2.telematik.informatik.uni-karlsruhe.de>
+Subject: Makefile-TurboC
+To: vern@cs.cornell.edu
+Date: Tue, 19 Apr 1994 00:09:13 +0200 (MET DST)
+X-Mailer: ELM [version 2.4 PL22]
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Length: 2739
+
+Hello
+
+Here are some additional adjustments to my Makefile. I was using "pure" DOS
+and an old Turbo C++ 1.0 version, so I had some problems with systemtools
+like mv etc. and problems with variables in my Makefile.
+
+Now follows my Makefile
+############################################################################
+# make file for "flex" tool
+
+# @(#) $Header: Makefile,v 2.3 89/06/20 17:27:12 vern Exp $ (LBL)
+
+# Porting considerations:
+#
+#    For BSD machines:
+#  CFLAGS =
+#  LDFLAGS = -s
+#  LINK = $(CC) $(CFLAGS) -o flex $(LDFLAGS) $(FLEXOBJS)
+#  SKELETON_DIR = .
+#  SKELETON_FILE = flex.skel
+#  SKELFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_DIR)/$(SKELETON_FILE)\"
+#  O = o
+#  YTAB = y.tab
+#  FLEX = ./flex
+#
+#    For System V Unix or Vax/VMS machines, merely add:
+#  CFLAGS = -DSYS_V
+#
+#    For MS-DOS, Turbo C:
+CC = tcc
+# -2+ 286 Options
+CFLAGS = -DSYS_V -DMS_DOS -O -G -Z -ml -v -2
+# /3 enable 32 bit processing
+# /ye expanded memory swapping
+# /yx extended memory swapping
+LINK = tlink @flex.lnk/c/x/v/3/ye
+SKELETON_DIR = .
+SKELETON_FILE = flex.skl
+SKELFLAGS = -DDEFAULT_SKELETON_FILE="$(SKELETON_DIR)/$(SKELETON_FILE)"
+O = obj
+EXE = .exe
+YTAB = y_tab
+FLEX = flex
+YACC = /yacc/byacc
+
+#
+# the first time around use "make first_flex"
+#
+
+FLEX_FLAGS =
+
+FLEXOBJS = \
+	ccl.$O \
+	dfa.$O \
+	ecs.$O \
+	gen.$O \
+	main.$O \
+	misc.$O \
+	nfa.$O \
+	parse.$O \
+	scan.$O \
+	sym.$O \
+	tblcmp.$O \
+	yylex.$O
+
+FLEX_C_SOURCES = \
+	ccl.c \
+	dfa.c \
+	ecs.c \
+	gen.c \
+	main.c \
+	misc.c \
+	nfa.c \
+	parse.c \
+	scan.c \
+	sym.c \
+	tblcmp.c \
+	yylex.c
+
+FLEX_C_SOURCES_1 = \
+	ccl.c \
+	dfa.c \
+	ecs.c \
+	gen.c \
+	main.c \
+	misc.c
+
+FLEX_C_SOURCES_2 = \
+	nfa.c \
+	parse.c \
+	scan.c \
+	sym.c \
+	tblcmp.c \
+	yylex.c
+
+flex.exe: $(FLEXOBJS)
+	$(LINK)
+
+
+flex: $(FLEX_C_SOURCES)
+	$(CC) $(CFLAGS) -c $(SKELFLAGS) $(FLEX_C_SOURCES_1)
+	$(CC) $(CFLAGS) -c $(SKELFLAGS) $(FLEX_C_SOURCES_2)
+	$(LINK)
+
+
+first_flex:
+	copy initscan.c scan.c
+	$(MAKE) flex
+
+parse.h parse.c: parse.y
+	$(YACC) -d parse.y
+	@rename $(YTAB).c parse.c
+	@rename $(YTAB).h parse.h
+
+scan.c: scan.l
+	$(FLEX) -ist $(FLEX_FLAGS) scan.l >scan.c
+
+scan.$O: scan.c parse.h
+
+main.$O: main.c
+	$(CC) $(CFLAGS) -c $(SKELFLAGS) main.c
+
+flex.man: flex.1
+	nroff -man flex.1 >flex.man
+
+lint: $(FLEX_C_SOURCES)
+	lint $(FLEX_C_SOURCES) > flex.lint
+
+distrib:
+	rename scan.c initscan.c
+	attrib +R -A -H -S initscan.c
+	$(MAKE) clean
+
+clean:
+	del *.obj
+	del *.lint
+	del core
+	del errs
+	del flex.exe
+	del parse.c
+	del parse.h
+	del flex.man
+	del tags
+
+tags:
+	ctags $(FLEX_C_SOURCES)
+
+vms:	flex.man
+	$(MAKE) distrib
+
+test:
+	$(FLEX) -ist $(FLEX_FLAGS) scan.l | diff scan.c -
+ 
+############################################################################
+
+I think this Makefile will help some other simple DOS user
+
+	M. Beigl

@@ -1,5 +1,0 @@
-Mlam	lam.c	/^main(argc, argv)$/
-error	lam.c	/^error(msg, s)$/
-gatherline	lam.c	/^gatherline(ip)$/
-getargs	lam.c	/^getargs(av)$/
-pad	lam.c	/^pad(ip)$/
