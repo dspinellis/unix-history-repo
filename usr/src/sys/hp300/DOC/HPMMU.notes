@@ -22,11 +22,11 @@ Overview:
 	and supervisor modes, each containing 1024 entries.
 
 	To augment the 68020's instruction cache, the HP CPU has an
-	external cache.  A logical cache implementation is used with 16
-	Kbytes of cache on 320 systems and 32 Kbytes on 350 systems.
-	Each cache entry can contain instructions or data, from either
-	user or supervisor space.  Seperate valid bits are kept for
-	user and supervisor entries, allowing for descriminatory
+	external cache.  A direct-mapped, virtual cache implementation
+	is used with 16 Kbytes of cache on 320 systems and 32 Kbytes on
+	350 systems.  Each cache entry can contain instructions or data,
+	from either user or supervisor space.  Seperate valid bits are
+	kept for user and supervisor entries, allowing for descriminatory
 	flushing of the cache.
 
 	MMU translation and cache-miss detection are done in parallel.
