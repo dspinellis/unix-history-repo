@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -123,10 +123,11 @@ malloc(nbytes)
 	 * Record allocated size of block and
 	 * bound space with magic numbers.
 	 */
-  	if (nbytes <= 0x10000)
-		p->ov_size = nbytes - 1;
 	p->ov_rmagic = RMAGIC;
-  	*((u_int *)((caddr_t)p + nbytes - RSLOP)) = RMAGIC;
+  	if (bucket <= 13) {
+		p->ov_size = nbytes - 1;
+  		*((u_int *)((caddr_t)p + nbytes - RSLOP)) = RMAGIC;
+	}
 #endif
   	return ((char *)(p + 1));
 }
@@ -260,8 +261,15 @@ realloc(cp, nbytes)
 	onb = (1 << (i + 3)) - sizeof (*op) - RSLOP;
 	/* avoid the copy if same size block */
 	if (was_alloced &&
-	    nbytes <= onb && nbytes > (onb >> 1) - sizeof(*op) - RSLOP)
+	    nbytes <= onb && nbytes > (1 << (i + 2)) - sizeof(*op) - RSLOP) {
+#ifdef RCHECK
+  		if (i <= 13) {
+			op->ov_size = nbytes - 1;
+  			*((u_int *)((caddr_t)op + nbytes - RSLOP)) = RMAGIC;
+		}
+#endif
 		return(cp);
+	}
   	if ((res = malloc(nbytes)) == NULL)
   		return (NULL);
   	if (cp != res)			/* common optimization */
