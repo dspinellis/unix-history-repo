@@ -1,10 +1,11 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1990-1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
- * to Berkeley by Steven McCanne of Lawrence Berkeley Laboratory.
+ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
+ * Berkeley Laboratory.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -16,8 +17,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -34,9 +35,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)bpf.h	7.1 (Berkeley) 5/7/91
+ *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: bpf.h,v 1.20 91/04/24 22:06:24 mccanne Locked $ (LBL)
+ * @(#) $Header: bpf.h,v 1.27 92/05/25 14:42:52 mccanne Exp $ (LBL)
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00112
+ * --------------------         -----   ----------------------
+ *
+ * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
  */
 
 /*
@@ -48,6 +56,7 @@
 
 #define BPF_MAXINSNS 512
 #define BPF_MAXBUFSIZE 0x8000
+#define BPF_MINBUFSIZE 32
 
 /*
  *  Structure for BIOCSETF.
@@ -66,15 +75,34 @@ struct bpf_stat {
 };
 
 /*
+ * Struct return by BIOCVERSION.  This represents the version number of 
+ * the filter language described by the instruction encodings below.
+ * bpf understands a program iff kernel_major == filter_major &&
+ * kernel_minor >= filter_minor, that is, if the value returned by the
+ * running kernel has the same major number and a minor number equal
+ * equal to or less than the filter being downloaded.  Otherwise, the
+ * results are undefined, meaning an error may be returned or packets
+ * may be accepted haphazardly.
+ * It has nothing to do with the source code version.
+ */
+struct bpf_version {
+	u_short bv_major;
+	u_short bv_minor;
+};
+/* Current version number. */
+#define BPF_MAJOR_VERSION 1
+#define BPF_MINOR_VERSION 1
+
+/*
  * BPF ioctls
  *
  * The first set is for compatibility with Sun's pcc style
  * header files.  If your using gcc, we assume that you
  * have run fixincludes so the latter set should work.
  */
-#if defined(sun) && !defined(__GNUC__)
-#define	BIOCGFLEN	_IOR(B,101, u_int)
+#if (defined(sun) || defined(ibm032)) && !defined(__GNUC__)
 #define	BIOCGBLEN	_IOR(B,102, u_int)
+#define	BIOCSBLEN	_IOWR(B,102, u_int)
 #define	BIOCSETF	_IOW(B,103, struct bpf_program)
 #define	BIOCFLUSH	_IO(B,104)
 #define BIOCPROMISC	_IO(B,105)
@@ -85,9 +113,10 @@ struct bpf_stat {
 #define BIOCGRTIMEOUT	_IOR(B,110, struct timeval)
 #define BIOCGSTATS	_IOR(B,111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW(B,112, u_int)
+#define BIOCVERSION	_IOR(B,113, struct bpf_version)
 #else
-#define	BIOCGFLEN	_IOR('B',101, u_int)
 #define	BIOCGBLEN	_IOR('B',102, u_int)
+#define	BIOCSBLEN	_IOWR('B',102, u_int)
 #define	BIOCSETF	_IOW('B',103, struct bpf_program)
 #define	BIOCFLUSH	_IO('B',104)
 #define BIOCPROMISC	_IO('B',105)
@@ -98,6 +127,7 @@ struct bpf_stat {
 #define BIOCGRTIMEOUT	_IOR('B',110, struct timeval)
 #define BIOCGSTATS	_IOR('B',111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW('B',112, u_int)
+#define BIOCVERSION	_IOR('B',113, struct bpf_version)
 #endif
 
 /*
@@ -123,6 +153,7 @@ struct bpf_hdr {
  * Data-link level type codes.
  * Currently, only DLT_EN10MB and DLT_SLIP are supported.
  */
+#define DLT_NULL	0	/* no link-layer encapsulation */
 #define DLT_EN10MB	1	/* Ethernet (10Mb) */
 #define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
 #define DLT_AX25	3	/* Amateur Radio AX.25 */
@@ -137,7 +168,7 @@ struct bpf_hdr {
 /*
  * The instruction encondings.
  */
-/* classes <2:0> */
+/* instruction classes */
 #define BPF_CLASS(code) ((code) & 0x07)
 #define		BPF_LD		0x00
 #define		BPF_LDX		0x01
@@ -217,3 +248,4 @@ extern void bpf_mtap();
  * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
  */
 #define BPF_MEMWORDS 16
+

@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_loop.c	7.13 (Berkeley) 4/26/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00112
+ * --------------------         -----   ----------------------
+ *
+ * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
  */
 
 /*
@@ -68,6 +75,13 @@
 #include "../netiso/iso_var.h"
 #endif
 
+#include "bpfilter.h"
+#if NBPFILTER > 0
+#include <sys/time.h>
+#include <net/bpf.h>
+static caddr_t lo_bpf;
+#endif
+
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
@@ -86,6 +100,9 @@ loattach()
 	ifp->if_hdrlen = 0;
 	ifp->if_addrlen = 0;
 	if_attach(ifp);
+#if NBPFILTER > 0
+	bpfattach(&lo_bpf, ifp, DLT_NULL, sizeof(u_int));
+#endif
 }
 
 looutput(ifp, m, dst, rt)
@@ -99,6 +116,25 @@ looutput(ifp, m, dst, rt)
 
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("looutput no HDR");
+#if NBPFILTER > 0
+	if (lo_bpf) {
+		/*
+		 * We need to prepend the address family as
+		 * a four byte field.  Cons up a dummy header
+		 * to pacify bpf.  This is safe because bpf
+		 * will only read from the mbuf (i.e., it won't
+		 * try to free it or keep a pointer to it).
+		 */
+		struct mbuf m0;
+		u_int af = dst->sa_family;
+
+		m0.m_next = m;
+		m0.m_len = 4;
+		m0.m_data = (char *)&af;
+
+		bpf_mtap(lo_bpf, &m0);
+	}
+#endif
 	m->m_pkthdr.rcvif = ifp;
 
 	if (rt && rt->rt_flags & RTF_REJECT) {

@@ -36,10 +36,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00019
+ * CURRENT PATCH LEVEL:         2       00112
  * --------------------         -----   ----------------------
  *
  * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
+ * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
  */
 
 /*
@@ -65,6 +66,7 @@ struct sl_softc {
 #ifdef INET				/* XXX */
 	struct	slcompress sc_comp;	/* tcp compression data */
 #endif
+	caddr_t	sc_bpf;
 };
 
 /* visible flags */

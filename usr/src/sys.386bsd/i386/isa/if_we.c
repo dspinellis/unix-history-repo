@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00100
+ * CURRENT PATCH LEVEL:         2       00112
  * --------------------         -----   ----------------------
  *
  * 09 Sep 92	Mike Durkin		Fix Danpex EW-2016 & other 8013 clones
@@ -45,6 +45,9 @@
  * 19 Sep 92	Michael Galassi		Fixed multiboard routing
  * 20 Sep 92	Barry Lustig		WD8013 16 bit mode -- enable
  *						with "options WD8013".
+ * 14 Mar 93	Marc Frajola		BPF packet filter support
+ * 14 Mar 93	David Greenman		Input and other routines re-written
+ * 14 Mar 93	Rodney W. Grimes	Added link level address to we_attach
  */
 
 /*
@@ -56,6 +59,17 @@
  *          Allowed interupt handler to look at unit other than 0
  *            Bdry was static, made it into an array w/ one entry per
  *          interface.  nerd@percival.rain.com (Michael Galassi)
+ *
+ * BPF Packet Filter Support added by Marc Frajola, 12/30/92
+ * Input & other routines re-written by David Greenman, 1/2/93
+ * BPF trailer support added by David Greenman, 1/7/93
+ * we_attach enhanced with link level address by Rodney W. Grimes, 1/30/93
+ *
+ * $Log:	if_we.c,v $
+ * Revision 1.2  93/02/18  17:21:57  davidg
+ * Bugs in mbuf cluster allocation fixed
+ * Problem with nfs wanting mbufs aligned on longword boundries fixed
+ * 
  */
  
 #include "we.h"
@@ -77,6 +91,8 @@
 #include "syslog.h"
 
 #include "net/if.h"
+#include "net/if_types.h"
+#include "net/if_dl.h"
 #include "net/netisr.h"
 
 #ifdef INET
@@ -92,10 +108,19 @@
 #include "netns/ns_if.h"
 #endif
 
+#include "bpfilter.h"
+#if NBPFILTER > 0
+#include "net/bpf.h"
+#include "net/bpfdesc.h"
+#endif
+
 #include "i386/isa/isa.h"
 #include "i386/isa/if_wereg.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/icu.h"
+#include "i386/include/pio.h"
+
+static inline char *we_ring_copy();
  
 /*
  * This constant should really be 60 because the we adds 4 bytes of crc.
@@ -121,6 +146,9 @@ struct	we_softc {
 	u_char	we_flags;		/* software state		*/
 #define	WDF_RUNNING	0x01
 #define WDF_TXBUSY	0x02
+#if NBPFILTER > 0
+#define	WDF_ATTACHED	0x80
+#endif
 
 	u_char	we_type;		/* interface type code		*/
 	u_short	we_vector;		/* interrupt vector 		*/
@@ -131,6 +159,7 @@ struct	we_softc {
 	u_long	we_vmem_size;		/* card RAM bytes		*/
 	caddr_t	we_vmem_ring;		/* receive ring RAM vaddress	*/
 	caddr_t	we_vmem_end;		/* receive ring RAM end	*/
+	caddr_t	we_bpf;			/* Magic Cookie for BPF */
 } we_softc[NWE];
 
 int	weprobe(), weattach(), weintr(), westart();
@@ -263,6 +292,8 @@ weattach(is)
 	register struct we_softc *sc = &we_softc[is->id_unit];
 	register struct ifnet *ifp = &sc->we_if;
 	union we_command wecmd;
+	struct ifaddr *ifa;
+	struct sockaddr_dl *sdl;
  
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_stp = 1;
@@ -283,12 +314,35 @@ weattach(is)
 	ifp->if_reset = wereset;
 	ifp->if_watchdog = wewatchdog;
 	if_attach(ifp);
+	/* Search down the ifa address list looking for the AF_LINK type entry */
+ 	ifa = ifp->if_addrlist;
+	while ((ifa != 0) &&
+	       (ifa->ifa_addr != 0) &&
+	       (ifa->ifa_addr->sa_family != AF_LINK))
+		{
+		ifa = ifa->ifa_next;
+		}
+	/* If we find an AF_LINK type entry, we well fill in the hardware addr */
+	if ((ifa != 0) &&
+	    (ifa->ifa_addr != 0))
+		{
+		/* Fill in the link level address for this interface */
+		sdl = (struct sockaddr_dl *)ifa->ifa_addr;
+		sdl->sdl_type = IFT_ETHER;
+		sdl->sdl_alen = ETHER_ADDR_LEN;
+		sdl->sdl_slen = 0;
+		bcopy(sc->we_addr, LLADDR(sdl), ETHER_ADDR_LEN);
+		}
+
+#if NBPFILTER > 0
+	sc->we_flags &= ~WDF_ATTACHED;	/* Make sure BPF attach flag clear */
+#endif
  
 	/*
 	 * Banner...
 	 */
-	printf(" %s address %s",
-		(sc->we_type & WD_ETHERNET) ? "ethernet" : "starlan",
+	printf(" %saddr %s",
+		(sc->we_type & WD_ETHERNET) ? "enet" : "slan",
 		ether_sprintf(sc->we_addr));
 }
  
@@ -329,9 +383,10 @@ westop(unit)
 
 wewatchdog(unit) {
 
-	log(LOG_WARNING,"we%d: soft reset\n", unit);
+	weintr(unit);
+	/*log(LOG_WARNING,"we%d: soft reset\n", unit);
 	westop(unit);
-	weinit(unit);
+	weinit(unit);*/
 }
 
 static Bdry[NWE];					/* 19 Sep 92*/
@@ -345,7 +400,15 @@ weinit(unit)
 	register struct ifnet *ifp = &sc->we_if;
 	union we_command wecmd;
 	int i, s;
- 
+
+#if NBPFILTER > 0
+	if ((sc->we_flags & WDF_ATTACHED) == 0) {
+		bpfattach(&sc->we_bpf, ifp, DLT_EN10MB,
+			sizeof(struct ether_header));
+		sc->we_flags |= WDF_ATTACHED;
+	}
+#endif
+
 	/* address not known */
 	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
@@ -393,7 +456,13 @@ weinit(unit)
 	wecmd.cs_sta = 1;
 	wecmd.cs_rd = 0x4;
 	outb(sc->we_io_nic_addr + WD_P1_COMMAND, wecmd.cs_byte);
-	outb(sc->we_io_nic_addr + WD_P0_RCR, WD_R_CONFIG);
+#if NBPFILTER > 0
+	if (sc->we_if.if_flags & IFF_PROMISC) {
+		outb(sc->we_io_nic_addr + WD_P0_RCR,
+			 WD_R_PRO | WD_R_SEP | WD_R_AR | WD_R_CONFIG);
+	} else
+#endif
+		outb(sc->we_io_nic_addr + WD_P0_RCR, WD_R_CONFIG);
 
 	/*
 	 * Take the interface out of reset, program the vector, 
@@ -416,12 +485,13 @@ westart(ifp)
 	register caddr_t buffer;
 	int len, s;
 	union we_command wecmd;
- 
+
 	/*
 	 * The DS8390 has only one transmit buffer, if it is busy we
 	 * must wait until the transmit interrupt completes.
 	 */
 	s = splhigh();
+
 	if (sc->we_flags & WDF_TXBUSY) {
 		(void) splx(s);
 		return;
@@ -432,7 +502,71 @@ westart(ifp)
 		return;
 	}
 	sc->we_flags |= WDF_TXBUSY; 
+
 	(void) splx(s);
+
+#if NBPFILTER > 0
+	if (sc->we_bpf) {
+		u_short etype;
+		int off, datasize, resid;
+		struct ether_header *eh;
+		struct trailer_header {
+			u_short ether_type;
+			u_short ether_residual;
+		} trailer_header;
+		char ether_packet[ETHERMTU+100];
+		char *ep;
+
+		ep = ether_packet;
+
+		/*
+		 * We handle trailers below:
+		 * Copy ether header first, then residual data,
+		 * then data. Put all this in a temporary buffer
+		 * 'ether_packet' and send off to bpf. Since the
+		 * system has generated this packet, we assume
+		 * that all of the offsets in the packet are
+		 * correct; if they're not, the system will almost
+		 * certainly crash in m_copydata.
+		 * We make no assumptions about how the data is
+		 * arranged in the mbuf chain (i.e. how much
+		 * data is in each mbuf, if mbuf clusters are
+		 * used, etc.), which is why we use m_copydata
+		 * to get the ether header rather than assume
+		 * that this is located in the first mbuf.
+		 */
+		/* copy ether header */
+		m_copydata(m, 0, sizeof(struct ether_header), ep);
+		eh = (struct ether_header *) ep;
+		ep += sizeof(struct ether_header);
+		etype = ntohs(eh->ether_type);
+		if (etype >= ETHERTYPE_TRAIL &&
+		    etype < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+			datasize = ((etype - ETHERTYPE_TRAIL) << 9);
+			off = datasize + sizeof(struct ether_header);
+
+			/* copy trailer_header into a data structure */
+			m_copydata(m, off, sizeof(struct trailer_header),
+				&trailer_header.ether_type);
+
+			/* copy residual data */
+			m_copydata(m, off+sizeof(struct trailer_header),
+				resid = ntohs(trailer_header.ether_residual) -
+				sizeof(struct trailer_header), ep);
+			ep += resid;
+
+			/* copy data */
+			m_copydata(m, sizeof(struct ether_header), datasize, ep);
+			ep += datasize;
+
+			/* restore original ether packet type */
+			eh->ether_type = trailer_header.ether_type;
+
+			bpf_tap(sc->we_bpf, ether_packet, ep - ether_packet);
+		} else
+			bpf_mtap(sc->we_bpf, m);
+	}
+#endif
 
 	/*
 	 * Copy the mbuf chain into the transmit buffer
@@ -459,6 +593,7 @@ westart(ifp)
 	outb(sc->we_io_nic_addr + WD_P0_TBCR1, len >> 8);
 	wecmd.cs_txp = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
+	sc->we_if.if_timer = 3;
 	(void) splx(s);
 }
  
@@ -472,6 +607,7 @@ weintr(unit)
 	union we_command wecmd;
 	union we_interrupt weisr;
 
+ 
 	/* disable onboard interrupts, then get interrupt status */
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
@@ -567,10 +703,9 @@ werint(unit)
 
 		/* count includes CRC */
 		len = wer->we_count - 4;
-		if (len > 30 && len <= ETHERMTU+100
-			/*&& (*(char *)wer  == 1 || *(char *) wer == 0x21)*/)
+		if (len > 30 && len <= ETHERMTU+100)
 			weread(sc, (caddr_t)(wer + 1), len);
-		else printf("reject %d", len);
+		else printf("we%d: reject - bad length %d", unit, len);
 
 outofbufs:
 		wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
@@ -668,6 +803,13 @@ weioctl(ifp, cmd, data)
 		} else if (ifp->if_flags & IFF_UP &&
 		    (ifp->if_flags & IFF_RUNNING) == 0)
 			weinit(ifp->if_unit);
+#if NBPFILTER > 0
+		if (sc->we_if.if_flags & IFF_PROMISC) {
+			outb(sc->we_io_nic_addr + WD_P0_RCR,
+				 WD_R_PRO | WD_R_SEP | WD_R_AR | WD_R_CONFIG);
+		} else
+#endif
+			outb(sc->we_io_nic_addr + WD_P0_RCR, WD_R_CONFIG);
 		break;
 
 #ifdef notdef
@@ -702,11 +844,11 @@ wesetaddr(physaddr, unit)
 	weinit(unit);
 }
  
-#define	wedataaddr(sc, eh, off, type) \
-	((type) ((caddr_t)((eh)+1)+(off) >= (sc)->we_vmem_end) ? \
-		(((caddr_t)((eh)+1)+(off))) - (sc)->we_vmem_end \
+#define	ringoffset(sc, eh, off, type) \
+	((type)( ((caddr_t)(eh)+(off) >= (sc)->we_vmem_end) ? \
+		(((caddr_t)(eh)+(off))) - (sc)->we_vmem_end \
 		+ (sc)->we_vmem_ring: \
-		((caddr_t)((eh)+1)+(off)))
+		((caddr_t)(eh)+(off)) ))
 /*
  * Pass a packet to the higher levels.
  * We deal with the trailer protocol here.
@@ -716,39 +858,124 @@ weread(sc, buf, len)
 	char *buf;
 	int len;
 {
-	register struct ether_header *eh;
-    	struct mbuf *m, *weget();
+	caddr_t we_ring_copy();
+	struct ether_header *eh;
+    	struct mbuf *m, *head, *we_ring_to_mbuf();
 	int off, resid;
+	u_short etype;
+	struct trailer_header {
+		u_short	trail_type;
+		u_short trail_residual;
+	} trailer_header;
 
-	/*
-	 * Deal with trailer protocol: if type is trailer type
-	 * get true type from first 16-bit word past data.
-	 * Remember that type was trailer by setting off.
-	 */
+	++sc->we_if.if_ipackets;
+
+	/* Allocate a header mbuf */
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		goto bad;
+	m->m_pkthdr.rcvif = &sc->we_if;
+	m->m_pkthdr.len = len;
+	m->m_len = 0;
+	head = m;
+
 	eh = (struct ether_header *)buf;
-	eh->ether_type = ntohs((u_short)eh->ether_type);
-	if (eh->ether_type >= ETHERTYPE_TRAIL &&
-	    eh->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
-		off = (eh->ether_type - ETHERTYPE_TRAIL) * 512;
-		if (off >= ETHERMTU) return;		/* sanity */
-		eh->ether_type = ntohs(*wedataaddr(sc, eh, off, u_short *));
-		resid = ntohs(*(wedataaddr(sc, eh, off+2, u_short *)));
-		if (off + resid > len) return;		/* sanity */
-		len = off + resid;
-	} else	off = 0;
 
-	len -= sizeof(struct ether_header);
-	if (len <= 0) return;
+#define EROUND	((sizeof(struct ether_header) + 3) & ~3)
+#define EOFF	(EROUND - sizeof(struct ether_header))
 
 	/*
-	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; neget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
+	 * The following assumes there is room for
+	 * the ether header in the header mbuf
 	 */
-	m = weget(buf, len, off, &sc->we_if, sc);
-	if (m == 0) return;
-	ether_input(&sc->we_if, eh, m);
+	head->m_data += EOFF;
+	bcopy(buf, mtod(head, caddr_t), sizeof(struct ether_header));
+	buf += sizeof(struct ether_header);
+	head->m_len += sizeof(struct ether_header);
+	len -= sizeof(struct ether_header);
+
+	etype = ntohs((u_short)eh->ether_type);
+
+	/*
+	 * Deal with trailer protocol:
+	 * If trailer protocol, calculate the datasize as 'off',
+	 * which is also the offset to the trailer header.
+	 * Set resid to the amount of packet data following the
+	 * trailer header.
+	 * Finally, copy residual data into mbuf chain.
+	 */
+	if (etype >= ETHERTYPE_TRAIL &&
+	    etype < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+
+		off = (etype - ETHERTYPE_TRAIL) << 9;
+		if ((off + sizeof(struct trailer_header)) > len)
+			goto bad;	/* insanity */
+
+		eh->ether_type = *ringoffset(sc, buf, off, u_short *);
+		resid = ntohs(*ringoffset(sc, buf, off+2, u_short *));
+
+		if ((off + resid) > len) goto bad;	/* insanity */
+
+		resid -= sizeof(struct trailer_header);
+		if (resid < 0) goto bad;	/* insanity */
+
+		m = we_ring_to_mbuf(sc, ringoffset(sc, buf, off+4, char *), head, resid);
+		if (m == 0) goto bad;
+
+		len = off;
+		head->m_pkthdr.len -= 4; /* subtract trailer header */
+	}
+
+	/*
+	 * Pull packet off interface. Or if this was a trailer packet,
+	 * the data portion is appended.
+	 */
+	m = we_ring_to_mbuf(sc, buf, m, len);
+	if (m == 0) goto bad;
+
+#if NBPFILTER > 0
+	/*
+	 * Check if there's a bpf filter listening on this interface.
+	 * If so, hand off the raw packet to bpf. 
+	 */
+	if (sc->we_bpf) {
+		bpf_mtap(sc->we_bpf, head);
+	}
+
+	/*
+	 * Note that the interface cannot be in promiscuous mode if
+	 * there are no bpf listeners.  And if we are in promiscuous
+	 * mode, we have to check if this packet is really ours.
+	 *
+	 * XXX This test does not support multicasts.
+	 */
+	if ((sc->we_if.if_flags & IFF_PROMISC) &&
+		bcmp(eh->ether_dhost, sc->we_addr,
+			sizeof(eh->ether_dhost)) != 0 &&
+		bcmp(eh->ether_dhost, etherbroadcastaddr,
+			sizeof(eh->ether_dhost)) != 0) {
+
+		m_freem(head);
+		return;
+	}
+#endif
+
+	/*
+	 * Fix up data start offset in mbuf to point past ether header
+	 */
+	m_adj(head, sizeof(struct ether_header));
+
+	/*
+	 * silly ether_input routine needs 'type' in host byte order
+	 */
+	eh->ether_type = ntohs(eh->ether_type);
+
+	ether_input(&sc->we_if, eh, head);
+	return;
+
+bad:	if (head)
+		m_freem(head);
+	return;
 }
 
 /*
@@ -756,94 +983,75 @@ weread(sc, buf, len)
  */
 
 /*
- * Pull read data off a interface.
- * Len is length of data, with local net header stripped.
- * Off is non-zero if a trailer protocol was used, and
- * gives the offset of the trailer information.
- * We copy the trailer information and then all the normal
- * data into mbufs.  When full cluster sized units are present
- * we copy into clusters.
+ * Copy data from receive buffer to end of mbuf chain
+ * allocate additional mbufs as needed. return pointer
+ * to last mbuf in chain.
+ * sc = we info
+ * src = pointer in we ring buffer
+ * dst = pointer to last mbuf in mbuf chain to copy to
+ * amount = amount of data to copy
  */
 struct mbuf *
-weget(buf, totlen, off0, ifp, sc)
-	caddr_t buf;
-	int totlen, off0;
-	struct ifnet *ifp;
+we_ring_to_mbuf(sc,src,dst,total_len)
 	struct we_softc *sc;
+	char *src;
+	struct mbuf *dst;
+	int total_len;
 {
-	struct mbuf *top, **mp, *m, *p;
-	int off = off0, len;
-	register caddr_t cp = buf;
-	char *epkt;
-	int tc =totlen;
+	register struct mbuf *m = dst;
 
-	buf += sizeof(struct ether_header);
-	cp = buf;
-	epkt = cp + totlen;
+	while (total_len > 0) {
+		register int amount = min(total_len, M_TRAILINGSPACE(m));
 
-	if (off) {
-		cp += off + 2 * sizeof(u_short);
-		totlen -= 2 * sizeof(u_short);
-	}
-
-	MGETHDR(m, M_DONTWAIT, MT_DATA);
-	if (m == 0)
-		return (0);
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = totlen;
-	m->m_len = MHLEN;
-
-	top = 0;
-	mp = &top;
-	while (totlen > 0) {
-		if (top) {
-			MGET(m, M_DONTWAIT, MT_DATA);
-			if (m == 0) {
-				m_freem(top);
-				return (0);
-			}
-			m->m_len = MLEN;
-		}
-		len = min(totlen, epkt - cp);
-		if (len >= MINCLSIZE) {
-			MCLGET(m, M_DONTWAIT);
-			if (m->m_flags & M_EXT)
-				m->m_len = len = min(len, MCLBYTES);
-			else
-				len = m->m_len;
-		} else {
+		if (amount == 0) { /* no more data in this mbuf, alloc another */
 			/*
-			 * Place initial small packet/header at end of mbuf.
-			 */
-			if (len < m->m_len) {
-				if (top == 0 && len + max_linkhdr <= m->m_len)
-					m->m_data += max_linkhdr;
-				m->m_len = len;
-			} else
-				len = m->m_len;
+			 * if there is enough data for an mbuf cluster, attempt
+			 * to allocate one of those, otherwise, a regular mbuf
+			 * will do.
+			 */ 
+			dst = m;
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0)
+				return (0);
+
+			if (total_len >= MINCLSIZE)
+				MCLGET(m, M_DONTWAIT);
+
+			m->m_len = 0;
+			dst->m_next = m;
+			amount = min(total_len, M_TRAILINGSPACE(m));
 		}
 
-		totlen -= len;
-		/* only do up to end of buffer */
-		if (cp+len > sc->we_vmem_end) {
-			unsigned toend = sc->we_vmem_end - cp;
+		src = we_ring_copy(sc, src, mtod(m, caddr_t) + m->m_len, amount);
 
-			bcopy(cp, mtod(m, caddr_t), toend);
-			cp = sc->we_vmem_ring;
-			bcopy(cp, mtod(m, caddr_t)+toend, len - toend);
-			cp += len - toend;
-			epkt = cp + totlen;
-		} else {
-			bcopy(cp, mtod(m, caddr_t), (unsigned)len);
-			cp += len;
-		}
-		*mp = m;
-		mp = &m->m_next;
-		if (cp == epkt) {
-			cp = buf;
-			epkt = cp + tc;
-		}
+		m->m_len += amount;
+		total_len -= amount;
+
 	}
-	return (top);
+	return (m);
+}
+
+static inline char *
+we_ring_copy(sc,src,dst,amount)
+	struct we_softc *sc;
+	char	*src;
+	char	*dst;
+	int	amount;
+{
+	int	tmp_amount;
+
+	/* does copy wrap to lower addr in ring buffer? */
+	if (src + amount > sc->we_vmem_end) {
+		tmp_amount = sc->we_vmem_end - src;
+		bcopy(src,dst,tmp_amount); /* copy amount up to end */
+		amount -= tmp_amount;
+		src = sc->we_vmem_ring;
+		dst += tmp_amount;
+	}
+
+	bcopy(src, dst, amount);
+
+	return(src + amount);
 }
 #endif
+
