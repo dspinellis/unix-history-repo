@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	8.1 (Berkeley) %G%
+ *	@(#)open.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,6 +24,14 @@ struct dirstuff {
 };
 
 #ifndef SMALL
+/*
+ * XXX avoid stdio... its a long story.
+ */
+#define isupper(c)	((c) >= 'A' && (c) <= 'Z')
+#define tolower(c)	((c) - 'A' + 'a')
+#define isspace(c)	((c) == ' ' || (c) == '\t')
+#define isdigit(c)	((c) >= '0' && (c) <= '9')
+
 static ino_t dlook __P((char *, struct iob *, char *));
 static int find __P((char *, struct iob *));
 static int getdev __P((char *, int));
@@ -203,6 +211,20 @@ getunit(cp)
 		return (-1);
 	}
 	return (unit);
+}
+
+/*
+ * XXX more stdio-avoidance.
+ */
+static
+atoi(cp)
+	char *cp;
+{
+	int val = 0;
+
+	while (*cp >= '0' && *cp <= '9')
+		val = val * 10 + (*cp++ - '0');
+	return (val);
 }
 #endif /* SMALL */
 
