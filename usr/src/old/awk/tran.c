@@ -1,4 +1,4 @@
-/*	tran.c	4.1	82/05/07	*/
+/*	tran.c	4.2	83/02/09	*/
 
 #include "stdio.h"
 #include "awk.def"
@@ -31,10 +31,10 @@ syminit()
 	OFS = &setsymtab("OFS", tostring(" "), 0.0, STR|FLD, symtab)->sval;
 	ORS = &setsymtab("ORS", tostring("\n"), 0.0, STR|FLD, symtab)->sval;
 	OFMT = &setsymtab("OFMT", tostring("%.6g"), 0.0, STR|FLD, symtab)->sval;
-	FILENAME = &setsymtab("FILENAME", NULL, 0.0, STR|FLD, symtab)->sval;
-	nfloc = setsymtab("NF", NULL, 0.0, NUM, symtab);
+	FILENAME = &setsymtab("FILENAME", EMPTY, 0.0, STR|FLD, symtab)->sval;
+	nfloc = setsymtab("NF", EMPTY, 0.0, NUM, symtab);
 	NF = &nfloc->fval;
-	nrloc = setsymtab("NR", NULL, 0.0, NUM, symtab);
+	nrloc = setsymtab("NR", EMPTY, 0.0, NUM, symtab);
 	NR = &nrloc->fval;
 }
 
@@ -62,8 +62,8 @@ cell *ap;
 	tp = (cell **) ap->sval;
 	for (i = 0; i < MAXSYM; i++) {
 		for (cp = tp[i]; cp != NULL; cp = cp->nextval) {
-			xfree(cp->nval);
-			xfree(cp->sval);
+			strfree(cp->nval);
+			strfree(cp->sval);
 			free(cp);
 		}
 	}
@@ -81,7 +81,7 @@ cell **tab;
 	cell *lookup();
 
 	if (n != NULL && (p = lookup(n, tab, 0)) != NULL) {
-		xfree(s);
+		if (s != EMPTY ) xfree(s); /* careful here */
 		dprintf("setsymtab found %o: %s", p, p->nval, NULL);
 		dprintf(" %s %g %o\n", p->sval, p->fval, p->tval);
 		return(p);
@@ -152,7 +152,7 @@ char *s;
 	if ((vp->tval & FLD) && vp->nval == 0)
 		donerec = 0;
 	if (!(vp->tval&FLD))
-		xfree(vp->sval);
+		strfree(vp->sval);
 	vp->tval &= ~FLD;
 	return(vp->sval = tostring(s));
 }
@@ -193,7 +193,7 @@ register cell *vp;
 	checkval(vp);
 	if ((vp->tval & STR) == 0) {
 		if (!(vp->tval&FLD))
-			xfree(vp->sval);
+			strfree(vp->sval);
 		if ((long)vp->fval==vp->fval)
 			sprintf(s, "%.20g", vp->fval);
 		else
@@ -221,10 +221,17 @@ register char *s;
 {
 	register char *p;
 
-	p = malloc(strlen(s)+1);
-	if (p == NULL)
-		error(FATAL, "out of space in tostring on %s", s);
-	strcpy(p, s);
+	if (s==NULL){
+		p = malloc(1);
+		if (p == NULL)
+			error(FATAL, "out of space in tostring on %s", s);
+		*p = '\0';
+	} else {
+		p = malloc(strlen(s)+1);
+		if (p == NULL)
+			error(FATAL, "out of space in tostring on %s", s);
+		strcpy(p, s);
+	}
 	return(p);
 }
 #ifndef yfree
