@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpq.1	6.1 (Berkeley) %G%
+.\"	@(#)lpq.1	6.2 (Berkeley) %G%
 .\"
 .TH LPQ 1 ""
 .UC 5
@@ -26,12 +26,12 @@ flag may be used
 to specify a particular printer, otherwise the default line printer
 is used (or the value of the PRINTER variable in the environment).
 If a
-.B \+
+.B \(pl
 argument is supplied,
 .I lpq
 displays the spool queue until it empties.  Supplying a number
 immediately after the
-.B \+
+.B \(pl
 sign indicates that
 .I lpq
 should sleep \fIn\fR seconds in between scans of the queue.
