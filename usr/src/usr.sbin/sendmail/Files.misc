@@ -1,0 +1,19 @@
+#	@(#)Files.misc	8.1 (Berkeley) %G%
+praliases/Makefile
+praliases/Makefile.dist
+praliases/praliases.c
+rmail/Makefile
+rmail/rmail.8
+rmail/rmail.c
+contrib/README
+contrib/bitdomain.c
+contrib/converting.sun.configs
+contrib/expn.pl
+contrib/mail.local.linux
+contrib/mh.patch
+contrib/mmuegel
+contrib/oldbind.compat.c
+contrib/rcpt-streaming
+contrib/xla/README
+contrib/xla/xla.c
+src/sysexits.h
