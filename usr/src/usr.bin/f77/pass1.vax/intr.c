@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)intr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)intr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,15 @@ static char sccsid[] = "@(#)intr.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	intr.c,v $
+ * Revision 5.2  85/08/10  04:39:23  donn
+ * Various changes from Jerry Berkman.  We now call the new builtin log10()
+ * instead of the f77 library emulations; we figure out that builtins will
+ * return type double instead of type float; we get rid of lots of
+ * undocumented material; we ifdef 66 code and handle -r8/double flag.
+ * 
+ * Revision 5.1  85/08/10  03:47:37  donn
+ * 4.3 alpha
+ * 
  * Revision 1.4  85/02/22  00:54:59  donn
  * Mark intrinsic functions as having storage class STGINTR.  builtin()
  * always returns STGEXT nodes.  Notice that the reference to the function
@@ -44,7 +53,7 @@ union
 struct Intrbits
 	{
 	int intrgroup /* :3 */;
-	int intrstuff /* result type or number of generics */;
+	int intrstuff /* result type or number of specifics */;
 	int intrno /* :7 */;
 	};
 
@@ -66,9 +75,7 @@ LOCAL struct Intrblock
 "dfloat",	{ INTRCONV, TYDREAL },
 "sngl", 	{ INTRCONV, TYREAL },
 "ichar", 	{ INTRCONV, TYLONG },
-"iachar", 	{ INTRCONV, TYLONG },
 "char", 	{ INTRCONV, TYCHAR },
-"achar", 	{ INTRCONV, TYCHAR },
 
 "max", 		{ INTRMAX, TYUNKNOWN },
 "max0", 	{ INTRMAX, TYLONG },
@@ -195,22 +202,7 @@ LOCAL struct Intrblock
 "lle",		{ INTRSPEC, TYLOGICAL, 77},
 "llt",		{ INTRSPEC, TYLOGICAL, 79},
 
-"epbase",	{ INTRCNST, 4, 0 },
-"epprec",	{ INTRCNST, 4, 4 },
-"epemin",	{ INTRCNST, 2, 8 },
-"epemax",	{ INTRCNST, 2, 10 },
-"eptiny",	{ INTRCNST, 2, 12 },
-"ephuge",	{ INTRCNST, 4, 14 },
-"epmrsp",	{ INTRCNST, 2, 18 },
-
-"fpexpn",	{ INTRGEN, 4, 81 },
-"fpabsp",	{ INTRGEN, 2, 85 },
-"fprrsp",	{ INTRGEN, 2, 87 },
-"fpfrac",	{ INTRGEN, 2, 89 },
-"fpmake",	{ INTRGEN, 2, 91 },
-"fpscal",	{ INTRGEN, 2, 93 },
-
-"" };
+"",		{ INTREND, 0, 0} };
 
 
 LOCAL struct Specblock
@@ -284,8 +276,8 @@ LOCAL struct Specblock
 	{ TYCOMPLEX,TYCOMPLEX,1,"c_log" },
 	{ TYDCOMPLEX,TYDCOMPLEX,1,"z_log" },
 
-	{ TYREAL,TYREAL,1,"r_lg10" },
-	{ TYDREAL,TYDREAL,1,"d_lg10" },
+	{ TYREAL,TYREAL,1,"r_lg10", 14 },
+	{ TYDREAL,TYDREAL,1,"d_lg10", 14 },
 
 	{ TYREAL,TYREAL,1,"r_sin", 4 },
 	{ TYDREAL,TYDREAL,1,"d_sin", 4 },
@@ -333,89 +325,8 @@ LOCAL struct Specblock
 	{ TYCHAR,TYLOGICAL,2,"hl_lt" },
 	{ TYCHAR,TYLOGICAL,2,"l_lt" },
 
-	{ TYREAL,TYSHORT,1,"hr_expn" },
-	{ TYREAL,TYLONG,1,"ir_expn" },
-	{ TYDREAL,TYSHORT,1,"hd_expn" },
-	{ TYDREAL,TYLONG,1,"id_expn" },
-
-	{ TYREAL,TYREAL,1,"r_absp" },
-	{ TYDREAL,TYDREAL,1,"d_absp" },
-
-	{ TYREAL,TYDREAL,1,"r_rrsp" },
-	{ TYDREAL,TYDREAL,1,"d_rrsp" },
-
-	{ TYREAL,TYREAL,1,"r_frac" },
-	{ TYDREAL,TYDREAL,1,"d_frac" },
-
-	{ TYREAL,TYREAL,2,"r_make" },
-	{ TYDREAL,TYDREAL,2,"d_make" },
-
-	{ TYREAL,TYREAL,2,"r_scal" },
-	{ TYDREAL,TYDREAL,2,"d_scal" }
+	{ TYDREAL,TYDREAL,2,"d_dprod"}  /* dprod() with dblflag */
 } ;
-
-LOCAL struct Incstblock
-	{
-	char atype;
-	char rtype;
-	char constno;
-	} consttab[ ] =
-{
-	{ TYSHORT, TYLONG, 0 },
-	{ TYLONG, TYLONG, 1 },
-	{ TYREAL, TYLONG, 2 },
-	{ TYDREAL, TYLONG, 3 },
-
-	{ TYSHORT, TYLONG, 4 },
-	{ TYLONG, TYLONG, 5 },
-	{ TYREAL, TYLONG, 6 },
-	{ TYDREAL, TYLONG, 7 },
-
-	{ TYREAL, TYLONG, 8 },
-	{ TYDREAL, TYLONG, 9 },
-
-	{ TYREAL, TYLONG, 10 },
-	{ TYDREAL, TYLONG, 11 },
-
-	{ TYREAL, TYREAL, 0 },
-	{ TYDREAL, TYDREAL, 1 },
-
-	{ TYSHORT, TYLONG, 12 },
-	{ TYLONG, TYLONG, 13 },
-	{ TYREAL, TYREAL, 2 },
-	{ TYDREAL, TYDREAL, 3 },
-
-	{ TYREAL, TYREAL, 4 },
-	{ TYDREAL, TYDREAL, 5 }
-};
-
-/* For each machine, two arrays must be initialized.
-intcon contains
-	radix for short int
-	radix for long int
-	radix for single precision
-	radix for double precision
-	precision for short int
-	precision for long int
-	precision for single precision
-	precision for double precision
-	emin for single precision
-	emin for double precision
-	emax for single precision
-	emax for double prcision
-	largest short int
-	largest long int
-
-realcon contains
-	tiny for single precision
-	tiny for double precision
-	huge for single precision
-	huge for double precision
-	mrsp (epsilon) for single precision
-	mrsp (epsilon) for double precision
-
-the realcons should probably be filled in in binary if TARGET==HERE
-*/
 
 char callbyvalue[ ][XL] =
 	{
@@ -431,7 +342,8 @@ char callbyvalue[ ][XL] =
 	"atan2",
 	"sinh",
 	"cosh",
-	"tanh"
+	"tanh",
+	"log10"
 	};
 
 expptr intrcall(np, argsp, nargs)
@@ -444,7 +356,6 @@ Addrp ap;
 register struct Specblock *sp;
 register struct Chain *cp;
 expptr inline(), mkcxcon(), mkrealcon();
-register struct Incstblock *cstp;
 expptr q, ep;
 int mtype;
 int op;
@@ -514,11 +425,10 @@ switch(f1field)
 				}
 			}
 		rettype = f2field;
-		if(rettype == TYLONG)
-			rettype = tyint;
 		if( ISCOMPLEX(rettype) && nargs==2)
 			{
 			expptr qr, qi;
+			if(dblflag) rettype = TYDCOMPLEX;
 			qr = (expptr) (argsp->listp->datap);
 			qi = (expptr) (argsp->listp->nextp->datap);
 			if(ISCONST(qr) && ISCONST(qi))
@@ -527,7 +437,17 @@ switch(f1field)
 					intrconv(rettype-2,qi));
 			}
 		else if(nargs == 1)
+			{
+			if(rettype == TYLONG) rettype = tyint;
+			else if( dblflag )
+				{
+				if ( rettype == TYREAL )
+					rettype = TYDREAL;
+				else if( rettype == TYCOMPLEX )
+					rettype = TYDCOMPLEX;
+				}
 			q = intrconv(rettype, argsp->listp->datap);
+			}
 		else goto badnargs;
 
 		q->headblock.vtype = rettype;
@@ -535,37 +455,14 @@ switch(f1field)
 		free( (charptr) argsp);
 		return(q);
 
-
-	case INTRCNST:
-		cstp = consttab + f3field;
-		for(i=0 ; i<f2field ; ++i)
-			if(cstp->atype == mtype)
-				goto foundconst;
-			else
-				++cstp;
-		goto badtype;
-
-	foundconst:
-		switch(cstp->rtype)
-			{
-			case TYLONG:
-				return(mkintcon(intcon[cstp->constno]));
-
-			case TYREAL:
-			case TYDREAL:
-				return(mkrealcon(cstp->rtype,
-					realcon[cstp->constno]) );
-
-			default:
-				fatal("impossible intrinsic constant");
-			}
-
 	case INTRGEN:
 		sp = spectab + f3field;
+#ifdef ONLY66
 		if(no66flag)
 			if(sp->atype == mtype)
 				goto specfunct;
 			else err66("generic function");
+#endif
 
 		for(i=0; i<f2field ; ++i)
 			if(sp->atype == mtype)
@@ -576,6 +473,18 @@ switch(f1field)
 
 	case INTRSPEC:
 		sp = spectab + f3field;
+		if( dblflag )
+			{
+			/* convert specific complex functions to double complex:
+			 *	 cabs,csqrt,cexp,clog,csin,ccos, aimag
+			 * and convert real specifics to double:
+			 *	 amod,alog,alog10
+			 * (sqrt,cos,sin,... o.k. since go through INTRGEN)
+			 */
+			if( (sp->atype==TYCOMPLEX && (sp+1)->atype==TYDCOMPLEX)
+				||(sp->atype==TYREAL && (sp+1)->atype==TYDREAL))
+					sp++;
+			}
 	specfunct:
 		if(tyint==TYLONG && ONEOF(sp->rtype,M(TYSHORT)|M(TYLOGICAL))
 			&& (sp+1)->atype==sp->atype)
@@ -583,8 +492,9 @@ switch(f1field)
 
 		if(nargs != sp->nargs)
 			goto badnargs;
-		if(mtype != sp->atype)
-			goto badtype;
+		if(mtype != sp->atype
+			&& (!dblflag || f3field != 26 || mtype != TYDREAL ) )
+				goto badtype;
 		fixargs(YES, argsp);
 		if(q = inline(sp-spectab, mtype, argsp->listp))
 			{
@@ -593,10 +503,12 @@ switch(f1field)
 			}
 		else if(sp->othername)
 			{
-			ap = builtin(sp->rtype,
+			ap = builtin(TYDREAL,
 				varstr(XL, callbyvalue[sp->othername-1]) );
 			ap->vstg = STGINTR;
 			q = fixexpr( mkexpr(OPCCALL, ap, argsp) );
+			if( sp->rtype != TYDREAL )
+				q = mkconv( sp->rtype, q );
 			}
 		else
 			{
@@ -621,6 +533,8 @@ switch(f1field)
 			rettype = tyint;
 		else if(rettype == TYUNKNOWN)
 			rettype = mtype;
+		else if( dblflag && rettype == TYREAL )
+			rettype = TYDREAL;
 		return( intrconv(rettype, q) );
 
 	default:
@@ -690,6 +604,19 @@ switch(packed.bits.f1)
 
 	case INTRSPEC:
 		sp = spectab + f3field;
+		if( dblflag )
+			{
+			if((sp->atype==TYCOMPLEX && (sp+1)->atype==TYDCOMPLEX)
+				||(sp->atype==TYREAL && (sp+1)->atype==TYDREAL))
+					sp++;
+			else if( f3field==4 )
+					sp += 2;  /* h_nint -> h_dnnt */
+			else if( f3field==8 || f3field==18 || f3field==22)
+					sp += 3;  /* r_{abs,sign,dim} ->d_... */
+			else if( f3field==26 )
+					sp = spectab + 81; /* dprod */
+
+			}
 		if(tyint==TYLONG && sp->rtype==TYSHORT)
 			++sp;
 		q = builtin(sp->rtype, varstr(XL,sp->spxname) );
@@ -700,7 +627,6 @@ switch(packed.bits.f1)
 	case INTRMIN:
 	case INTRMAX:
 	case INTRBOOL:
-	case INTRCNST:
 	bad:
 		errstr("cannot pass %s as actual",
 			varstr(VL,np->varname));
