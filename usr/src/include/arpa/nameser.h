@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nameser.h	5.18 (Berkeley) %G%
+ *	@(#)nameser.h	5.19 (Berkeley) %G%
  */
 
 /*
@@ -110,6 +110,19 @@
 #define CONV_BADCKSUM -3
 #define CONV_BADBUFLEN -4
 
+#ifndef BYTE_ORDER
+#if defined(vax) || defined(ns32000) || defined(BIT_ZERO_ON_RIGHT)
+#define BYTE_ORDER	LITTLE_ENDIAN
+#endif
+#if defined(sun) || defined(sel) || defined(pyr) || defined(mc68000) || \
+    defined(is68k) || defined (tahoe) || defined (BIT_ZERO_ON_LEFT)
+#define BYTE_ORDER	BIG_ENDIAN
+#endif
+#endif /* BYTE_ORDER */
+#ifndef BYTE_ORDER
+	/* you must determine what the correct bit order is for your compiler */
+	UNDEFINED_BIT_ORDER;
+#endif
 /*
  * Structure for query header, the order of the fields is machine and
  * compiler dependent, in our case, the bits within a byte are assignd 
@@ -119,9 +132,7 @@
 
 typedef struct {
 	u_short	id;		/* query identification number */
-#if defined (sun) || defined (sel) || defined (pyr) || defined (is68k) \
-|| defined (tahoe) || defined (BIT_ZERO_ON_LEFT)
-	/* Bit zero on left:  Gould and similar architectures */
+#if BYTE_ORDER == BIG_ENDIAN
 			/* fields in third byte */
 	u_char	qr:1;		/* response flag */
 	u_char	opcode:4;	/* purpose of message */
@@ -133,24 +144,19 @@ typedef struct {
 	u_char	pr:1;		/* primary server required (non standard) */
 	u_char	unused:2;	/* unused bits */
 	u_char	rcode:4;	/* response code */
-#else
-#if defined (vax) || defined(ns32000) || defined (BIT_ZERO_ON_RIGHT)
-	/* Bit zero on right:  VAX */
-			/* fields in third byte */
-	u_char	rd:1;		/* recursion desired */
-	u_char	tc:1;		/* truncated message */
-	u_char	aa:1;		/* authoritive answer */
-	u_char	opcode:4;	/* purpose of message */
-	u_char	qr:1;		/* response flag */
-			/* fields in fourth byte */
-	u_char	rcode:4;	/* response code */
-	u_char	unused:2;	/* unused bits */
-	u_char	pr:1;		/* primary server required (non standard) */
-	u_char	ra:1;		/* recursion available */
-#else
-	/* you must determine what the correct bit order is for your compiler */
-	UNDEFINED_BIT_ORDER;
 #endif
+#if BYTE_ORDER == LITTLE_ENDIAN
+			/* fields in third byte */
+	u_char	rd:1;		/* recursion desired */
+	u_char	tc:1;		/* truncated message */
+	u_char	aa:1;		/* authoritive answer */
+	u_char	opcode:4;	/* purpose of message */
+	u_char	qr:1;		/* response flag */
+			/* fields in fourth byte */
+	u_char	rcode:4;	/* response code */
+	u_char	unused:2;	/* unused bits */
+	u_char	pr:1;		/* primary server required (non standard) */
+	u_char	ra:1;		/* recursion available */
 #endif
 			/* remaining bytes */
 	u_short	qdcount;	/* number of question entries */
