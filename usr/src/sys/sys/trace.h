@@ -1,4 +1,4 @@
-/*	trace.h	4.8	81/07/25	*/
+/*	trace.h	4.9	82/05/31	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
@@ -72,5 +72,7 @@ int	tracebuf[TRCSIZ];
 unsigned tracex;
 int	tracewhich;
 #define	trace(a,b,c)	if (traceflags[a]) trace1(a,b,c)
+#else
+#define	trace(a,b,b)	;
 #endif
 #endif
