@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.4 (Berkeley) %G%
+ *	@(#)rz.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -362,7 +362,7 @@ rzlblkstrat(bp, bsize)
 
 		if (boff || resid < bsize) {
 			rz_softc[rzunit(bp->b_dev)].sc_stats.rzpartials++;
-			count = MIN(resid, bsize - boff);
+			count = min(resid, bsize - boff);
 			cbp->b_flags = B_BUSY | B_PHYS | B_READ;
 			cbp->b_blkno = bn - btodb(boff);
 			cbp->b_un.b_addr = cbuf;
