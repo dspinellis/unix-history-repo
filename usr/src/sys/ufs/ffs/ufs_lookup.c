@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_lookup.c	6.28 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	6.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,25 +44,28 @@ struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
 struct	nchstats nchstats;		/* cache effectiveness statistics */
 
 /*
- * Convert a pathname into a pointer to a locked inode,
- * with side effects usable in creating and removing files.
+ * Convert a pathname into a pointer to a locked inode.
  * This is a very central and rather complicated routine.
- *
- * The segflg defines whether the name is to be copied from user
- * space or kernel space.
- *
- * The flag argument is (LOOKUP, CREATE, DELETE) depending on whether
- * the name is to be (looked up, created, deleted).  If flag has
- * LOCKPARENT or'ed into it and the target of the pathname exists,
- * namei returns both the target and its parent directory locked. 
  * If the file system is not maintained in a strict tree hierarchy,
- * this can result in a deadlock situation.  When creating and
+ * this can result in a deadlock situation (see comments in code below).
+ *
+ * The flag argument is LOOKUP, CREATE, or DELETE depending on whether
+ * the name is to be looked up, created, or deleted. When CREATE or
+ * DELETE is specified, information usable in creating or deleteing a
+ * directory entry is also calculated. If flag has LOCKPARENT or'ed
+ * into it and the target of the pathname exists, namei returns both
+ * the target and its parent directory locked. When creating and
  * LOCKPARENT is specified, the target may not be ".".  When deleting
  * and LOCKPARENT is specified, the target may be ".", but the caller
  * must check to insure it does an irele and iput instead of two iputs.
  *
  * The FOLLOW flag is set when symbolic links are to be followed
  * when they occur at the end of the name translation process.
+ * Symbolic links are always followed for all other pathname
+ * components other than the last.
+ *
+ * The segflg defines whether the name is to be copied from user
+ * space or kernel space.
  *
  * Name caching works as follows:
  *
@@ -73,18 +76,12 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  * directory containing name.
  *
  * For simplicity (and economy of storage), names longer than
- * some (small) maximum length are not cached, they occur
+ * a maximum length of NCHNAMLEN are not cached; they occur
  * infrequently in any case, and are almost never of interest.
  *
  * Upon reaching the last segment of a path, if the reference
  * is for DELETE, or NOCACHE is set (rewrite), and the
  * name is located in the cache, it will be dropped.
- *
- * We must be sure never to enter the name ".." into the cache
- * because of the extremely kludgey way that rename() alters
- * ".." in a situation like
- * 	mv a/x b/x
- * where x is a directory, and x/.. is the ".." in question.
  *
  * Overall outline of namei:
  *
@@ -103,10 +100,11 @@ struct	nchstats nchstats;		/* cache effectiveness statistics */
  *	else return error
  * found:
  *	if at end of path and deleting, return information to allow delete
- *	if at end of path and rewriting (create and LOCKPARENT), lock target
+ *	if at end of path and rewriting (CREATE and LOCKPARENT), lock target
  *	  inode and return info to allow rewrite
  *	if .. and on mounted filesys, look in mount table for parent
- *	if not at end, if neither creating nor deleting, add name to cache
+ *	if not at end, add name to cache; if at end and neither creating
+ *	  nor deleting, add name to cache
  * haveino:
  *	if symbolic link, massage name in buffer and continue at dirloop
  *	if more components of name, do next level at dirloop
@@ -387,7 +385,8 @@ dirloop2:
 		ndp->ni_offset = 0;
 		numdirpasses = 1;
 	} else {
-		if ((dp->i_flag & ICHG) || dp->i_ctime >= u.u_ncache.nc_time) {
+		if ((dp->i_flag & (ICHG|IMOD)) ||
+		    dp->i_ctime >= u.u_ncache.nc_time) {
 			if (u.u_ncache.nc_prevoffset > dp->i_size)
 				u.u_ncache.nc_prevoffset = 0;
 			else
