@@ -1,0 +1,906 @@
+.\" $Revision: 1.10 $
+.NH 1
+Known Problems
+.PP
+If you use NIS (formerly Yellow Pages) on SunOS, you will need to add
+a ``domainname'' entry to your \fIinn.conf\fP file if your hosts do
+not contain fully-qualified domain names.
+The most common symptom of this is that \fIinews\fP will fail because
+it cannot generate a Message-ID.
+Another problem with NIS is that reverse name lookups do not return the
+fully-qualified domain name.
+If you know that none of your local clients have a period in their name,
+you can use a pattern like ``*[^.]*'' in your \fInnrp.access\fP file.
+.PP
+SunOS4.1.1 has a bug where \fIwrite\fP(2) can return EINTR.
+The most common symptom is the following fatal error message from \fIinnd\fP:
+.DS
+Can't sync history, interrupted system call
+.DE
+This is Sun bug 1052649.
+It is fixed in patch 100293-01.
+According to the release manual, it is also fixed in all releases of SunOS
+since 4.1.2.
+.PP
+If you have \fINOFILE_LIMIT\fP set you should know that the standard I/O
+library in SunOS4.x has trouble with more than 127 descriptors.
+The most common symptom is the following fatal error message from \fIinnd\fP:
+.DS
+can't fopen /usr/local/news/history, invalid argument
+.DE
+This occurs after doing a \fIctlinnd\fP ``reload'' command.
+For a work-around, reboot your server instead of trying to ``reload.''
+Another symptom is that \fIinnd\fP will exit if you do a \fIctlinnd\fP
+\&``flush'' command while the server is paused or throttled.
+This is Sun bug 1045141.
+Sun does not plan to fix it for any 4.x release.
+.PP
+One site has reported the same error message happens after doing
+a sequence of ``throttle'' and ``go'' commands.
+It does not appear to be related to the bug mentioned above, although
+the symptom is the same.
+If you replace the body of INN's \fIxfopena\fP routine with the following,
+it will work:
+.DS
+return fopen(p, "a+");
+.DE
+This is in the file \fIlib/xfopena.c\fP.
+.PP
+If you use Sun's unbundled compiler, \fIacc\fP, you must make sure
+to use the unbundled assembler, too.
+You might also get lots of ``left operand must be modifiable lvalue'' errors.
+Setting \fIUSE_CHAR_CONST\fP to ``DONT'' will help.
+.PP
+There have been reports that the VAX Ultrix 4.2 \fImalloc\fP doesn't work
+well with \fIinnd\fP, causing it to slowly fill up all swap space.
+I believe that all of the memory leaks in \fIinnd\fP have been fixed,
+but you might want to look at using a different \fImalloc\fP package.
+The Kingsley/Perl \fImalloc\fP package is provided in the \fIlib\fP directory.
+Add ``malloc.c'' and ``malloc.o'' to the MISSING_SRC and MISSING_OBJ lines
+in \fIconfig.data\fP and rebuild.
+.PP
+I have been told that on SunSoft Interactive
+UNIX System V Release 3.2 Version 3.0 systems <errno.h> has been
+broken up into separate files.
+The easiest way to work around this problem is to add
+\&``#include\ <net/errno.h>'' to \fIinclude/clibrary.h\fP.
+.PP
+If you use 386BSD (the Jolitz port, not the BSDI product) you will have to
+set \fIACT_STYLE\fP to ``READ''.
+If you do not do this then the active file will not get updated.
+Another work-around is to insert an ``msync'' call in the ICDwriteactive
+routine in \fIinnd/icd.c\fP.
+This is not supported because I consider the 386BSD behavior to be buggy.
+.PP
+The default configuration of some Sequent kernels does not provide enough
+descriptors for \fIinnd\fP to run.
+You might have to rebuild your kernel with the ``MAXNOFILE=128''
+and ``NOFILEEXT=64'' options.
+You will also have to had a ``setdtablesize(nnn)'' call in the main routine
+of \fIinnd\fP, and a ``setdtablesize(0)'' call in the Spawn routine.
+.PP
+I have been told that some older versions of the SCO \fIopendir\fP routine
+have file descriptor leaks.
+The most noticeable symptom is probably that \fIinnd\fP will die while
+trying to renumber the \fIactive\fP file.
+You might want to use a freely-redistributable ``dirent'' package such
+as one distributed by the Free Software Foundation.
+.PP
+On some SVR4 systems, attempting to set the socket buffer size is either
+not supported or, even worse, might result in \fIinnd\fP's data size
+growing.
+The most noticeable symptom is ``cant setsockopt(SNDBUF)'' messages in
+your \fIsyslog\fP output.
+To fix this, either comment out the calls to \fIsetsockopt\fP in
+\fIinnd/nc.c\fP or add ``\-USO_SNDBUF'' to your \fIDEFS\fP config
+parameter.
+.PP
+I have heard that Sony SVR4 systems have lots of problems.
+You must set \fIHAVE_UNIX_DOMAIN\fP to ``DONT''; sockets in general seem
+to have problems, including kernel crashes and a blocked \fIinnd\fP.
+.PP
+If you use the GNU \fIsed\fP in the \fI_PATH_SED\fP configuration parameter,
+make sure you get version 1.13; earlier versions have a bug that breaks
+the \fIparsecontrol\fP scripts.
+The most noticeable symptom is that all ``newgroup'' control messages
+result in mail saying that they are unparseable.
+.PP
+Some versions of the shell in HP-UX do not properly parse a quoted ``[''
+when it is in a pattern for a \fIcase\fP statement.
+The most noticeable symptom is that \fInews.daily\fP does not properly
+expire articles if \fIinnwatch\fP has throttled the server.
+Contact HP and get a fix for SR # 5003-009811.
+.PP
+On some versions of AIX on the RS/6000, using memory-mapping can eat
+up all the page space or crash the machine.
+This will be noticeable if you have \fIACT_STYLE\fP set to ``MMAP'' and/or
+have ``-DMMAP'' in \fIDBZCFLAGS\fP.
+Ask your IBM representative for the ``U413090'' PTF and prerequisites to
+apply it; it is believed that this will fix it.
+.bp
+.SH
+Appendix I:  Differences from other News software
+.PP
+Administrators will find that INN is fairly incompatible with B and C News.
+This section tries to mention the most important places where INN differs
+from the other news systems.
+If you have not maintained B or C News, you should probably skip this
+section.
+.PP
+Users will generally only notice is that INN is faster; it should be
+100% compatible with the other systems at the user level.
+If you had particular problems that aren't mentioned here, please let me know.
+Note, however, that this is \fInot\fP a tutorial on how to set up a new
+INN system, or convert older software to it; no such document exists.
+.NH 0
+Configuration Files
+.PP
+Below is a list of the data files used by B and C News, and the reference
+NNTP implementation, along with a short summary of how they map into INN
+configuration files.
+The syntax is always different: INN files are almost always a set of
+colon-separated fields where lines beginning with a poundsign are ignored.
+.IP \fIexplist\fP 15
+This is replaced by the similar \fIexpire.ctl\fP file.
+Archiving is done by a separate program.
+.IP \fImailpaths\fP 15
+This is replaced by the \fImoderators\fP file.
+The ``default'' entry in \fImailpaths\fP is replaced by either a
+full wildcard (``*'') entry in the \fImoderators\fP file, or by a
+\&``moderatormailer'' entry in the \fIinn.conf\fP file.
+.IP \fInntp.access\fP 15
+This is replaced by the \fIhosts.nntp\fP (for NNTP peers) and
+\fInnrp.access\fP (for newsreading) files.
+.IP \fInntp.sys\fP 15
+This is a password file used if NNTP is compiled with the ``AUTH'' option.
+It is replaced by the \fIpasswd.nntp\fP file.
+Note that \fIinews\fP and \fIrnews\fP will also try to read \fIpasswd.nntp\fP.
+Therefore, you will probably want to have one-line versions of it for your
+on-campus clients.
+.IP \fIorganization\fP 15
+This is replaced by the ``organization'' entry in the \fIinn.conf\fP file.
+.IP \fIrn/server\fP 15
+This is replaced by the ``server'' entry in the \fIinn.conf\fP file.
+.IP \fIwhoami\fP 15
+This is replaced by the ``pathhost'' and ``fromhost'' entries in the
+\fIinn.conf\fP file.
+.NH 1
+Newsgroups, Active, Sys, and Newsfeeds
+.PP
+The biggest difference is how the \fInewsfeeds\fP file compares with the
+\fIsys\fP file.
+Newsgroup patterns like ``all.all.ctl'' are completely gone.
+All newsgroup patterns are shell-style wildcards, matched against the
+\fIactive\fP file.
+.PP
+The \fIactive\fP file is taken to be the definitive list of newsgroups that you
+want to receive.
+With B and C news, an article must match the subscription list of the
+local site as specified in the \fIsys\fP file.
+If it matches, each newsgroup is then looked up in the \fIactive\fP file.
+If none of the newsgroups are found, then the article is filed into the
+newsgroup named ``junk''.
+.PP
+INN's behavior is much simpler.
+If a newsgroup does not appear in the \fIactive\fP file, it is ignored.
+If none of the groups are mentioned, then the article is rejected:
+nothing is written to disk.
+This is a deliberate design decision:  if you do not want a particular
+newsgroup to take up your disk space, remove it from the \fIactive\fP file;
+if your neighbors have not gotten around to updating your newsfeed, then
+the only thing that will happen is that some network bandwidth will have
+been wasted when they send you the article.
+.PP
+You can change INN's behavior so that it resembles the other systems.
+To do this, compile with \fIWANT_JUNK\fP set to ``DO.''
+Note that this will accept \fIeverything\fP.
+Because there is no subscription list, you cannot say ``give me all of the
+foo hierarchy (filed into junk), but not the alt hierarchy.''
+You must list the group in the \fIactive\fP file.
+.PP
+INN strictly believes in distributions.
+If the site named \fIME\fP has any distributions, then incoming articles
+must either have no Distribution header, or the header must match the
+distribution list.
+If you want to blindly accept all distributions, make sure you do not
+have a ``/distrib,...'' section in your \fIME\fP entry.
+Distributions are fixed strings \(em there are no patterns or special
+wildcards like ``all.''
+.PP
+For more details on these items, see \fIdoc/newsfeeds.5\fP.
+.NH 1
+Control Messages
+.PP
+Like C News, INN implements all control messages other than cancel as
+shell scripts.
+The number and type of parameters is different from that of C News.
+All control messages consult the file \fIcontrol.ctl\fP before acting on
+the message.  If the sender's address matches with the list of authorized
+addresses (e.g., ``tale@uunet.uu.net'', ``*'', etc.), the control
+message is either acted upon, mailed to the news administrator, or logged.
+For example, messages from ``tale@uunet.uu.net'' (the current moderator
+of news.announce.newgroups) are honored.
+.PP
+The ``control'', ``junk'', and ``to'' newsgroups can be explicitly sent
+or not sent.
+See \fIdoc/newsfeeds.5\fP and \fIdoc/innd.8\fP.
+.PP
+The \fIctlinnd\fP program is what really directs the server to create or
+remove newsgroups.
+This results in a semi-recursive process:  the control message arrives, and
+a script is invoked to process the message.
+If approved, the script invokes \fIctlinnd\fP to send a message back to the
+server telling it to create or remove the group.
+.NH 1
+Locking
+.PP
+A running news system has many open files.
+These files can be divided into two groups.
+The first group includes the history database and \fIactive\fP file.
+The second group includes the logfiles and batch files used to send articles
+to your feeds.
+.PP
+B news uses an internal protocol for the first group.
+For the second group, since \fIinews\fP does ``atomic appends,''
+no locking is necessary.
+C news uses the \fIlocknews\fP and \fInewslock\fP scripts for the first
+group, and provides no fine-grain mechanism for the second group.
+.PP
+With INN, the server is running all the time and all locking is done under
+the direction of \fIctlinnd\fP.
+The first group is generally handled by using the ``throttle,'' ``pause,''
+and ``go'' commands (sometimes ``reload'' will be necessary).
+The second group is handled by the ``flushlogs'' and ``flush'' commands.
+See the \fIdoc/ctlinnd.8\fP manpage; examples of their use can be found in
+various scripts in the \fIsamples\fP directory.
+.\"
+.bp
+.SH
+Appendix II:  Converting from other News software
+.PP
+INN is a complete news transport and expiration system.
+Since few people will be installing INN from scratch, this section
+should help you determine what you can ``throw out'' from your earlier
+news setups.
+It is also compatible with much of the existing news software, so you
+can create a mixed environment if you want to, and if you are careful.
+.NH 0
+C News Expire
+.PP
+The \fIexpire\fP program that is distributed with INN does not do
+any archiving.
+Since the history databases currently have the same format, it is possible to
+use the C News \fIexpire\fP if you want to.
+(The INN history database may change, however, so you should only do this
+if you really have to \(em you really should use INN's \fIexpire\fP.)
+There are three ways to do this.
+.PP
+The first way is to change your \fIdoexpire\fP script so that it calls
+\fIctlinnd\fP to ``throttle'' \fIinnd\fP just before \fIexpire\fP
+runs.
+It should then issue a \fIctlinnd\fP ``go'' command after \fIexpire\fP
+is done.
+The drawback to this method is that no incoming news is accepted until
+all expiration is finished.
+.PP
+The second way is to compile \fIlib/lock.c\fP and add it to your C News
+library \fIlibcnews.a\fP, replacing the provided lock functions.
+You should then remove \fIexpire\fP and relink it.
+This method has not been tested very thoroughly, but it is rather simple.
+.PP
+The third way is to teach the C News \fIexpire\fP to talk to \fIinnd\fP
+and tell it to cancel articles that it would remove.
+To do this, apply the patch file \fIexpire/expire.pch\fP to your C News
+\fIexpire.c\fP sources.
+You will also have to add \fIlib/inndcomm.o\fP to \fIlibcnews.a\fP and
+then rebuild \fIexpire\fP.
+.NH 1
+Standard NNTP daemon
+.PP
+You can use the ``standard'' \fInntpd\fP server.
+You should only have to do this if you have hosts that feed you news,
+and where the users on that machine also want to read news on your
+machine.
+.PP
+Make sure that you configure \fInntpd\fP so that it is using DBZ, and have
+it feed each individual article to \fIinews\fP; don't use the \&``batched
+input'' option.
+It should also be set up so that it acts as if it is running under
+\fIinetd\fP.
+You should also make sure that \fIinetd\fP does nothing with the NNTP
+port, number 119.
+.NH 1
+NNTP-based newsreaders
+.PP
+If you already have your NNTP-using newsreaders installed and running,
+you do not have to do anything.
+This includes \fIxvnews\fP, \fIxrn\fP, \fIrrn\fP and so on.
+INN implements the standard NNTP protocol, with some extensions.
+INN does not provide the extensions used by \fItrn\fP, \fItin\fP or
+other newsreaders.
+(You can enable the \fItrn\fP ``XTHREADS'' by modifing \fInnrpd/nnrpd.h\fP;
+change the ``DONT_DO_XTHREAD'' to ``DO_DO_XTHREAD'' and verify the other
+macros in that section.
+INN will not implement all the different indexing systems because the
+right solution is to have a generic interface that all readers can use.)
+.PP
+For administrative convenience, however, you might wish to have all your
+newsreaders use the INN library and configuration files to talk to the server.
+The next section describes how to do that for \fIrn\fP.
+It is provided as an example, to help you convert other programs you
+might have.
+INN does not provide, nor fully support, any newsreaders.
+.NH 1
+Remote rn
+.PP
+The ``remote'' version of \fIrn\fP (also called \fIrrn\fP) uses a set of
+routines in the NNTP ``clientlib'' file.
+INN can emulate these routines; see \fIdoc/clientlib.3\fP.
+If you need to build \fIrn\fP for client machines that don't have the
+entire INN distribution available, use the \fIMakeLib\fP script to
+build a distribution directory of the necessary routines.
+Use this script the same way you use the \fIMakeInews\fP script.
+.PP
+\fIRn\fP, \fIrrn\fP, and \fItrn\fP are moving targets so these instructions
+may be out of date.
+The maintainers have agreed to officially support INN, however, which is
+a good thing.
+.PP
+There are two ways to build \fIrn\fP so that it uses the INN library.
+If you don't have the NNTP distribution installed you will have to use
+the first way.
+.PP
+The first way is to apply a patch to the latest \fIrn\fP \fIConfigure\fP
+script and then execute it and rebuild the program.
+To do this, type the following:
+.DS
+cd \fIrn_source\fP
+patch <$inn/frontends/rn.pch
+\&./Configure
+make
+.DE
+At some point, \fIConfigure\fP will ask you if you want to use the
+InterNetNews library; answer \fIyes\fP.
+You can then use either the full sources, or a special library that
+contains just the needed header and sources files.
+Tell \fIConfigure\fP the appropriate pathnames, and then proceed
+with the rest of the \fIrn\fP installation.
+.PP
+The second way is to edit a couple of files after you have run \fIConfigure\fP
+and set it up to build the remote rn.
+First, replace the \fIrn\fP file \fIserver.h\fP with the INN file
+\fIinclude/myserver.h\fP.
+The next step is to edit the \fIrn\fP Makefile to remove the ``clientlib''
+file from the source and object file lists.
+This can probably be done by commenting out the definitions of the
+\fIc5\fP and \fIobj5\fP variables.
+You must also edit the Makefile to add the INN library to the list of
+libraries that are linked in.
+This can probably be done by editing the line that defines the \fIlibs\fP
+variable so that the full pathname to \fIlibinn.a\fP is the first item
+after the equal sign.
+.NH 1
+Removing the Other Stuff
+.PP
+The names below assume a ``standard'' news setup; things might be different
+on your machine.
+Also, many programs have alternate names and links; make sure you chase down
+and remove \fBall\fP of them.
+.PP
+You might find it easiest to rename your \fI/usr/lib/news\fP (and
+\fI/usr/lib/newsbin\fP) directories to something else and start with a
+clean slate, copying over the files as they are needed.
+Make \fBsure\fP that your news processing is completely stopped before
+you begin this process.
+That includes any \fIcron\fP jobs that may be running.
+.PP
+The \fI/usr/lib/news\fP directory can become cluttered \(em that's why
+C News split everything up into separate directories.
+The following files are compatible with C News and B2.11 News, and should be
+\fIkept\fP:
+.DS
+.ta 1.5i
+active	active.times
+.DE
+If you are running C News keep these files, otherwise delete them and use
+\fImakehistory\fP to rebuild them:
+.DS
+history
+history.dir
+history.pag
+.DE
+.PP
+\fIRn\fP does not have to be modified so leave this directory alone (or
+copy it back if you moved your original):
+.DS
+/usr/local/lib/rn
+.DE
+If you set up \fIrn\fP to use the INN library, remove this file:
+.DS
+/usr/local/lib/rn/server
+.DE
+.PP
+The input system is completely replaced.
+Remove the following programs and their manpages:
+.DS
+/bin/cunbatch
+/bin/inews, /usr/lib/news/inews, etc...
+/bin/rnews, /usr/bin/rnews, etc...
+/usr/lib/news/rnews.stall
+/etc/nntpd, /usr/etc/nntpd, etc...
+.DE
+Also remove the following directories and everything within them:
+.DS
+/usr/lib/news/bin/input
+/usr/lib/news/bin/relay
+/usr/lib/news/bin/ctl
+/usr/lib/news/bin/inject
+/usr/lib/news/nntp (mkgrdates, nntp_access, shlock, etc)
+.DE
+.PP
+The transmission facility is completely replaced.
+You may keep your current feed subsystem if you want to, but it will require
+some changes to make sure that batchfiles are properly flushed; see the
+\fIsend-xxx\fP scripts for examples.
+Remove these files and programs:
+.DS
+/usr/lib/news/batchparms
+/usr/man/man8/newsbatch.8
+.DE
+Remove the following directory and everything within it:
+.DS
+/usr/lib/news/bin/batch
+.DE
+You can continue to use \fInntplink\fP, \fInewsxd\fP, and the like, subject
+to the caveat just mentioned.
+.PP
+Article expiration and maintenance of the history and active files is
+completely replaced.
+Remove this file:
+.DS
+/usr/lib/news/explist
+.DE
+Remove the following directories and everything within them:
+.DS
+/usr/lib/news/bin/expire
+/usr/lib/news/bin/maint
+.DE
+If you do not remove the \fIexpire\fP directory, you will probably have
+problems installing INN's \fIexpire\fP, which is a program that often
+has the same name as the C News directory.
+.PP
+The following programs in \fI/usr/lib/newsbin\fP are not needed and can be
+deleted.
+Keeping them around is harmless, and if you find them useful don't delete
+them:
+.DS
+.ta 1.5i
+canonhdr	newshostname
+ctime	newslock
+dbz	queuelen
+getabsdate	sizeof
+getdate	spacefor
+gngp
+.DE
+Note that \fIctime\fP, \fIgetabsdate\fP, and \fIgetdate\fP are replaced by
+\fIconvdate\fP.
+More importantly, \fInewslock\fP does not lock \fIinnd\fP; it is best
+to remove it.
+.PP
+The following files are replaced by INN configuration files.
+You should delete them, just to avoid confusion:
+.DS
+.ta 1.5i
+mailname	sys
+mailpaths	whoami
+organization
+.DE
+If you have other software that uses them (except \fIsys\fP),
+you can keep them.
+The following will be rebuilt (or overwritten) by \fIinnd\fP and
+\fIscanlogs\fP so you should remove them:
+.DS
+.ta 1.5i
+errlog	log
+.DE
+.PP
+In addition to the manpages for the programs listed above, the following
+manual pages should be removed:
+.DS
+.ta 1.5i
+active.times.5	newsmail.8
+expire.8	newsmaint.8
+mkgrdates.8c	nntpd.8c
+news.5	nntpxmit.1
+newsaux.8
+.DE
+.PP
+Any other files and directories can probably also be discarded.
+.\"
+.bp
+.SH
+Appendix III:  Setting up different feeds
+.PP
+This section gives some notes and advice on how to set up different
+types of outgoing news feeds.
+It duplicates and expands upon the information in the manual pages.
+.NH 0
+Ihave/sendme feed
+.PP
+For a standard UUCP newsfeed, a site batches up all the articles it
+receives and sends them to the downstream site, which unpacks the batch
+and processes each article.  If the downstream site has multiple feeds,
+however, it might want to ``filter'' the articles that get sent.  This is
+done by having the feeding site send a list of Message-ID's as an
+``ihave'' control message.  The receiving site examines the list to see
+which articles it does not currently have, and sends it back to the
+upstream site as a ``sendme'' message.  The original site receives this
+message and prepares a batch in the standard way.
+.PP
+Note that this has nothing to do with NNTP.  It is a specialized type of
+batched feed that is not used very often.
+To do ihave/sendme with a site named remote, the local site must either
+have a ``to.remote'' newsgroup or be compiled with MERGE_TO_GROUPS set to
+\&``DO''
+.PP
+Accepting an ihave/sendme feed is easy.  Suppose an ``ihave'' message is
+received from a site named remote.  When \fIinnd\fP processes the message
+it will invoke the appropriate control script,
+\fI/usr/local/news/bin/control/ihave\fP.  The script will filter the body
+using \fIgrephistory\fP, creating a list of Message-ID's not found in the
+\fIhistory\fP database.  It uses this output to create a ``sendme''
+control article which is posted to the ``to.remote'' newsgroup using
+\fIinews\fP.  This article will then be queued and sent to remote in the
+normal way.  The remote site will then send the desired articles back.
+.PP
+Providing an ihave/sendme feed is a bit more complicated.  First, you must
+create two entries in your \fInewsfeeds\fP file.  The first should be
+named remote.ihave.  Make this a ``Tf,Wm'' feed that contains the remote's
+subscription list.  This entry results in a a file that accumulates the
+Message-ID's of all articles that remote might want.  The other entry
+should be named remote.  This should be a ``Tf,Wn'' feed that only
+subscribes to the ``to.remote'' newsgroup.
+(Actually, if you feed some groups as a standard feed, you can put them
+on the remote entry, rather then the remote.ihave entry.)
+.PP
+The next step is to have the ``ihave'' control messages sent out.  To do
+this, review the \fIsend-ihave\fP script and make sure it is invoked as
+needed (usually out of \fIcron\fP).  It splits the batchfile from the
+remote.ihave \fInewsfeeds\fP entry and posts ``ihave'' control messages
+into the ``to.remote'' newsgroup.  These messages will get queued for the
+remote entry.
+.PP
+The next step is to send out any articles queued for the remote entry.
+Treat this as a standard UUCP feed, invoking \fIsend-uucp\fP or
+\fIsendbatch\fP as appropriate, typically a few minutes after
+\fIsend-ihave\fP runs.
+.PP
+When the remote site receives the ``ihave'' message it will filter it and
+send back a ``sendme'' message whose body is the list of desired
+Message-ID's.  When \fIinnd\fP processes this message it will invoke the
+appropriate control script, \fI/usr/local/news/bin/control/sendme\fP.  This
+script will call \fIgrephistory\fP to turn the list into a list of files
+appended to the batchfile for remote.  Examine this script (the filename
+should probably match the filename in the remote \fInewsfeeds\fP entry)
+and send the batch to the remote site (using \fIbatcher\fP, often called by
+\fIsend-uucp\fP or \fIsendbatch\fP).
+.NH 1
+Feeding a large number of sites
+.PP
+\fIInnd\fP tries to keep as many batchfiles open for as long as possible.
+It will normally open as many as it can, using all the available
+descriptors minus a fixed number for internal use (log files, etc.).
+You can explicitly set the number of files to open by using the ``\-o'' flag.
+.PP
+If you have more outgoing feeds than available descriptors, \fIinnd\fP
+will recycle the files on a a ``least recently used'' basis.
+If most of your feeds get most articles (or you have vastly more feeds
+then available descriptors), this will lead to ``file thrashing,'' closing
+and opening all the excess feeds on each article.
+To reduce this, you can have \fIinnd\fP use an internal buffer for a site
+by using the ``I'' parameter in the \fInewsfeeds\fP file.
+If a site does not have its batchfile open, the server will not try to open
+it until there is more data to be written then will fit in the buffer.
+For example, suppose \fIinnd\fP was started with ``\-o10'' and there
+are 12 sites, all with ``I512'' in their \fInewsfeeds\fP entry.
+If each article generates 50 bytes (a pathname and a Message-ID), then
+\fIinnd\fP will close and re-assign two descriptors every 10 or so articles.
+.PP
+A better alternative is to use funnels and an exploder.
+Funnels, specified in the \fInewsfeeds\fP file, let multiple sites send
+their output down a single stream.
+The advantage of funnels is that this stream can be a channel; the primary
+disadvantage is that the funnel specifies what data is to be written,
+not the individual sites.
+(Since most feeds will want either ``Wn'' or ``Wnm'' entries, this is
+usually not a problem.)
+.PP
+In order for the funnel output to be useful, it usually must be split into
+individual, per-site, files.
+Programs that do this type of splitting are called ``exploders.''
+INN provides two exploders, \fIfilechan\fP and \fIbuffchan\fP.
+.PP
+\fIFilechan\fP is the simplest, and most inefficient, exploder.
+It does not keep any files open and is very system-call intensive.
+It can be used to provide behavior (and performance!) that is similar to
+B2.11 \fIinews\fP.
+It can, however, be used as the funnel for an unlimited number of sites.
+.PP
+\fIBuffchan\fP keeps all its output files open all the time.
+It should not be used for more sites then a single process can have open.
+\fIBuffchan\fP also has flags to automatically flush its files, as well
+as close and re-open them, every specified number of articles.
+(The re-open capability is useful for things like \fInntplink\fP in its
+\&``watch the batchfile'' mode.)
+Using \fIbuffchan\fP with the ``\-l1\ \-c50'' flags will give behavior
+that is similar to the C News \fIrelaynews\fP.
+.PP
+\fIBuffchan\fP can be run as a full exploder (``Tx'') in the
+\fInewsfeeds\fP file.
+This means that you can use \fIctlinnd\fP to send a command line down
+\fIbuffchan\fP's input stream.
+(\fIInnd\fP will also send a command whenever newsgroups are modified.)
+The only useful message is ``flush'' which will close, and re-open, the
+specified site files.
+You should also note that the flow is one-way; full exploders cannot send
+any acknowledgement back.
+.NH 1
+Master/slave replication
+.PP
+INN supports a simple model of replicated news databases:
+a single master host pushes out updates to its slaves.
+The master is the only host that receives articles \(em this includes
+both outside newsfeeds and articles written by local users.
+The slaves only receive articles from the master.
+.PP
+No special work is required to set up a master host.
+.PP
+A slave is set up by starting \fIinnd\fP with the ``\-S'' flag to specify
+the name or IP address of the master host.
+This should be done by modifying the ``FLAG'' variable in your
+\fI_PATH_NEWSBOOT\fP script.
+If \fIinnd\fP is started with the ``\-S'' flag it will pass this flag on
+to \fInnrpd\fP.
+This means that when anyone connects to the slave and does a ``POST'' command,
+\fInnrpd\fP will connect to the master and offer the article.
+.PP
+Since the \fInnrpd\fP on the slave host will usually add its name to
+the Path header, you should add ``Ap'' to the \fIflags\fP field of
+the slave's entry on the master.
+.PP
+Once the slave has been set up it is necessary to have the master feed it.
+This is done by using an extension to the NNTP protocol.
+This extension, the ``XREPLIC'' command, is is documented in \fIinnd.8\fP.
+In order to do this you will have to set up a \fInewsfeeds\fP entry for
+the slave.
+This should be a standard entry except that you will need to have both
+the filename and the replication information written int the batchfile.
+To do this, put ``WnR'' in the \fIflags\fP field of the entry.
+.PP
+When you want to actually send the articles to the slave site you will
+have to specify the ``\-S'' flag in your \fIinnxmit\fP command.
+Current versions of \fInntplink\fP use the ``\-x'' flag.
+.PP
+When running as a slave, \fIinnd\fP is very paranoid about staying synchronized
+with its master.
+Most noticeably, you should make sure that all newgroup and rmgroup control
+messages are handled identically on both systems.
+.\"
+.bp
+.SH
+Appendix IV:  First-time Usenet or NNTP Installation
+.PP
+Since the needs and administration of systems varies so much, I can
+only give some general guidelines and advice in this section.
+Like 
+.UX
+system administration in general, it is unfortunately still true that
+most of the job will be learned ``in the heat of the moment.''
+Once you have INN set up, however, it should not require much attention.
+For general problems, try posting to ``news.sysadmin'';
+use ``news.software.nntp'' and ``news.software.b'' for installation problems.
+.PP
+Once all the software has been compiled and installed, you must now
+get a newsfeed.
+This involves having one (or more) sites pass along to you all the
+articles that they have received.
+Getting articles is a passive action, because it is generally more
+efficient that way.
+(The \fInntpget\fP program is primarily a debugging aide and utility
+program.
+It is not the recommended way to get a newsfeed, and most sites will
+prefer you not to use it for that.)
+.PP
+If you already have Usenet access, you could post a note to ``news.admin''
+asking for a feed.
+Make sure to say that you are looking for an NNTP connection!
+If you are a member of an NSFNet regional network, or subscribe to
+a commercial IP network, ask your contact there at the network center.
+If they do not provide feeds directly, they can probably help you find
+one.
+You also might try writing to the <nntp-managers@colossus.apple.com>
+mailing list.
+This will reach the news administrators of many NNTP sites on the Internet.
+(If you want to join the list, remember to send it to
+nntp-managers-request, \fBnot\fP nntp-managers!)
+.PP
+Once have a site willing to give you a feed, you need to get the
+list of groups that they will give you.
+You also need to create those groups on your machine.
+The easiest way to do this is usually to ask them for a copy of
+their active file, and for you to add the entries of the groups that
+you're interested in.
+.PP
+Once the groups are set up, your newsfeed will periodically connect to
+your NNTP server and offer it any new articles that have arrived since the
+last connection.
+\fIInnd\fP will accept the connection, receive the articles, and
+queue them up for any sites that you feed.
+.PP
+The next step is to set it up so that your articles are sent back to
+your newsfeed.
+To do this, create a \fInewsfeeds\fP entry, using the same name that shows
+up in the Path header that you see.
+(If you use a different name, then use the ``excludes'' sub-field to avoid
+offering back everything they offer you.)
+This is usually done by giving them all non-local articles as a file
+feed.
+For example, ``Foo, Incorporated'' does not give any foo.* articles to
+anyone else.
+.PP
+When someone at your site writes an article, \fIinnd\fP will record the
+filename in the batch file for your upstream site.
+Either \fIsend-nntp\fP or \fInntpsend\fP will flush and lock the batchfile,
+and then call \fIinnxmit\fP to connect to the remote site and send these
+queued articles out.
+You should edit the script to list the sites you want, and arrange for
+\fIcron\fP to run this script on a regular basis.
+You can run it as often as you like, but 10 minutes is a common interval.
+.PP
+If you want to feed any sites via UUCP, then you will have to set
+up file feed entries for them in the \fInewsfeeds\fP file, and arrange
+to have \fIcron\fP run the \fIsend-uucp\fP script as desired.
+(UUCP batches are typically only done every few hours.)
+.PP
+Once you have news flowing in and out of the system, you will have
+to expire it or your disks will fill up.
+The \fInews.daily\fP script should be run by \fIcron\fP in the middle
+of the night.
+It will summarize that day's log files, and then call \fIexpire\fP to
+purge old news.
+You might also want to have \fIcron\fP run \fIrnews\fP hourly to pick
+up any stalled batches.
+Finally, if your feeds change IP address, you might want a daily job
+that does ``ctlinnd reload hosts.nntp "flush cache"''.
+This is because \fIinnd\fP does not currently time-out DNS entries.
+.PP
+You will generally want to set up the \fIcron\fP jobs
+so that they are run as the news administrator, and not as root.
+A good version of \fIcron\fP that makes it easy to do this can be found
+on gatekeeper.dec.com in pub/misc/vixie/cron.tar.Z.
+.PP
+You will also need to get one or more programs to read news.
+There are several freely-available programs around.
+\fIRn\fP is popular, and is probably the best place to start.
+The official distribution is available for anonymous FTP at tmc.edu
+in the \fIrn\fP directory.
+.PP
+Welcome to Usenet, and have fun!
+.\"
+.bp
+.SH
+Appendix V:  News overview database
+.PP
+There are now many newsreaders available that are able to do ``threading.''
+This is the ability to track a discussion within a newsgroup by using
+the References header (or other data), regardless of changes in headers
+like the Subject line.
+Examples of these readers include \fInn\fP, \fItrn\fP, and \fIgnus\fP,
+and more are becoming available.
+Until recently, a major problem with these readers is that they all
+required a specialized external database that contained the threading
+data.
+.PP
+In late 1992, Geoff Collyer <geoff@world.std.com> released the \fInov\fP,
+or ``news overview,'' package.
+This included database tools and, and client access routines,
+that let the current threaded newsreaders use a common, textual,
+database.
+An overview database typically adds adds about 7-9% to your storage
+requirements.
+By default, the overview files are stored in the spool directory;
+you can change this to use an alternate tree that mirrors the spool
+hierarchy by changing the \fI_PATH_OVERVIEWDIR\fP parameter.
+.PP
+INN includes full support for creating and expiring news overview databases.
+To do this, add an entry like the following to your \fInewsfeeds\fP file:
+.DS
+overview:*:Tc,WO:/path/to/bin/overchan
+.DE
+(Make sure to replace \fI/path/to/bin\fP with the value of your
+\fI_PATH_NEWSBIN\fP parameter.)
+Then reload the \fInewsfeeds\fP file or restart your server.
+To create the initial database, run the following command after you have
+started \fIoverchan\fP:
+.DS
+expireover -a -s
+.DE
+You will also need to expire the overview data.
+The easiest way to do this is to add the ``expireover'' keyword to
+the \fIcron\fP job that runs \fInews.daily\fP.
+.PP
+The \fInnrpd\fP server includes two command extensions to access the database;
+they are documented in the ``protocol extensions'' part of \fIdoc/nnrpd.8\fP.
+INN does not include any client code or modifications to any newsreaders
+to use the overview data.
+Most maintainers have agreed to support the overview database, including
+the INN extensions for remote access.
+You can find prototype versions of many readers (work done by Geoff) on
+world.std.com in the directory src/news; look for files named
+\fIreader\fP.dist.tar.Z.
+.\"
+.bp
+.SH
+Appendix VI:  Limited MIME Support
+.PP
+This version of INN includes limited support for MIME, the Multipurpose
+Internet Mail Extensions, described in RFC 1341.
+The support is the ability to do limited transport of arbitrary
+MIME messages, and \fInnrpd\fP can add MIME headers to all local postings
+that do not have them.
+.PP
+In addition, there are patches available for \fInntplink\fP that
+allow it to do MIME transport.
+The patches are not (yet) part of the official release; if you need them,
+contact Christophe Wolfhugel <Christophe.Wolfhugel@hsc-sec.fr>; he did
+most of the INN work, too.
+.PP
+You should be very careful if you have \fInnrpd\fP add MIME headers.
+To do this, edit \fIinn.conf\fP as indicated in \fIdoc/inn.conf.5\fP.
+Once this is done, \fBall\fP articles posted will get MIME headers added.
+Existing MIME headers will not be modified, but missing ones will be added.
+The default values to add to \fIinn.conf\fP are these:
+.DS
+mime-version: 1.0
+mime-contenttype text/plain; charset=us-ascii
+mime-encoding: 7bit
+.DE
+An internationalized site might want to use these values:
+.DS
+mime-version: 1.0
+mime-contentType: text/plain; charset=iso-8859-1
+mime-encoding: 8bit
+.DE
+It is possible to use these values because INN provides a clean eight-bit
+data path.
+Unless you make special arrangements with your peers, however, you
+must transmit seven-bit data.
+Doing this will require special transmit agents.
+Note that \fInnrpd\fP is not a Mime-compatible reader.
+You must have software to extract the data and present it appropriately.
+.PP
+If you configure your site to use seven-bit data, then you must also
+make sure that none of your software creates eight-bit articles.
+\fINnrpd\fP does not verify this.
+If you configure your site to use eight-bit data, then ASCII works fine,
+but remember that in quoted-printable long lines are cut and
+that the equal sign (``='') is quoted; this is really bad for source code
+postings, among others.
+.PP
+The character set can also cause problems.
+If you use ``iso-8859-1'' you must make sure that your posting software
+uses this character set (e.g., not CP-437 under MS-DOS) because \fInnrpd\fP
+does not do any conversion.
+.PP
+In general, be very cautious.
+.PP
+MIME articles can only be sent using \fIinnxmit\fP; work on \fIbatcher\fP
+is in progress.
+Unless the ``\-M'' flag is used, no MIME conversions are done.
+If the flag is used, the following happens:
+Articles with a Content-Transfer-Encoding header of ``8bit'' or ``binary''
+are forwaded in ``quoted-printable'' format (the ``base64'' format will
+be available soon).
+All other articles -- in particular, those without MIME headers, those of
+type ``message'' or ``multipart,'' those with Content-Transfer-Encoding
+header of ``7bit'' -- are forwarded without any change.
