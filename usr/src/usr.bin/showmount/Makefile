@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
 PROG=	showmount
 DPADD=	${LIBRPC}

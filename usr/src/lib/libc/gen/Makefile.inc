@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.11 (Berkeley) %G%
+#	@(#)Makefile.inc	5.12 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -31,6 +31,7 @@ SRCS+=	_setjmp.s alloca.s fabs.s frexp.c insque.c ldexp.c modf.s remque.c \
 	setjmp.s
 SRCS+=	divsi3.s fixdfsi.s fixunsdfsi.s udivsi3.s
 .elif (${MACHINE} == "tahoe")
+CFLAGS+=-I/sys
 SRCS+=	_setjmp.s alloca.s fabs.s frexp.c insque.s ldexp.s modf.s remque.s \
 	setjmp.s
 SRCS+=	udiv.s urem.s

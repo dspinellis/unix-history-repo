@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.17 (Berkeley) 89/05/29";
+static	char *sccsid = "@(#)iostat.c	4.18 (Berkeley) 91/01/14";
 #endif
 
 /*
@@ -329,7 +329,7 @@ read_names()
 #endif
 
 #ifdef tahoe
-#include <tahoevba/vbavar.h>
+#include <tahoe/vba/vbavar.h>
 
 /*
  * Read the drive names out of kmem.
