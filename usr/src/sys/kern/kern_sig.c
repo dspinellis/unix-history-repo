@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.53 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.54 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -370,7 +370,8 @@ sigsuspend(p, uap, retval)
 	ps->ps_oldmask = p->p_sigmask;
 	ps->ps_flags |= SAS_OLDMASK;
 	p->p_sigmask = uap->mask &~ sigcantmask;
-	(void) tsleep((caddr_t) ps, PPAUSE|PCATCH, "pause", 0);
+	while (tsleep((caddr_t) ps, PPAUSE|PCATCH, "pause", 0) == 0)
+		/* void */;
 	/* always return EINTR rather than ERESTART... */
 	return (EINTR);
 }
