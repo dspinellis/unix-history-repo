@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt10	8.1 (Berkeley) %G%
+.\"	@(#)tt10	8.2 (Berkeley) %G%
 .\"
 .NH
 Number Registers and Arithmetic
@@ -178,6 +178,7 @@ Remember that the default units for horizontal parameters like
 are ems.
 That's really `7 ems / 2 inches',
 and when translated into machine units, it becomes zero.
+.ne 1i
 How about
 .P1
 ^ll 7i/2

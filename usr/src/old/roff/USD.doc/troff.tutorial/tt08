@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt08	8.1 (Berkeley) %G%
+.\"	@(#)tt08	8.2 (Berkeley) %G%
 .\"
 .NH
 Introduction to Macros
@@ -141,6 +141,7 @@ by the commands
 and
 .BD .BE ,
 and it will come out as it did above.
+.ne 1i
 Notice that we indented by
 .BD .in\ +0.3i
 instead of
