@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.45	83/02/16	*/
+/*	udp_usrreq.c	4.46	83/05/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -78,7 +78,6 @@ udp_input(m0)
 		ui->ui_len = htons((u_short)len);
 		if (ui->ui_sum = in_cksum(m, len + sizeof (struct ip))) {
 			udpstat.udps_badsum++;
-			printf("udp cksum %x\n", ui->ui_sum);
 			m_freem(m);
 			return;
 		}
@@ -308,16 +307,25 @@ udp_usrreq(so, req, m, nam)
 		soisdisconnected(so);
 		break;
 
-	case PRU_CONTROL:
-		error =  EOPNOTSUPP;
-		break;
-
 	case PRU_SOCKADDR:
 		in_setsockaddr(inp, nam);
 		break;
 
 	default:
+		printf("request %d\n", req);
 		panic("udp_usrreq");
+
+	case PRU_RCVD:
+	case PRU_CONTROL:
+	case PRU_SENSE:
+	case PRU_RCVOOB:
+	case PRU_SENDOOB:
+	case PRU_FASTTIMO:
+	case PRU_SLOWTIMO:
+	case PRU_PROTORCV:
+	case PRU_PROTOSEND:
+		error =  EOPNOTSUPP;
+		break;
 	}
 release:
 	if (m != NULL)
