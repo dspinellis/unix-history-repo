@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.17	%G%	*/
+/*	kern_proc.c	3.18	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,6 +17,7 @@
 #include "../h/vm.h"
 #include "../h/text.h"
 #include "../h/psl.h"
+#include "../h/limit.h"
 
 /*
  * exec system call, with and without environments.
