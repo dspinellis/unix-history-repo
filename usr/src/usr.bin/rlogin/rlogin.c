@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -79,7 +79,7 @@ main(argc, argv)
 	long omask;
 	int argoff, ch, dflag, one, uid;
 	char *host, *p, *user, term[1024];
-	void lostpeer();
+	void lostpeer(), copytochild(), writeroob();
 	u_char getescape();
 	char *getenv();
 
@@ -206,7 +206,7 @@ struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
 
 {
 	struct sgttyb sb;
-	void catch_child(), copytochild(), exit(), writeroob();
+	void catch_child(), exit();
 
 	(void)ioctl(0, TIOCGETP, (char *)&sb);
 	defflags = sb.sg_flags;
@@ -241,11 +241,11 @@ struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
 
 	/*
 	 * We may still own the socket, and may have a pending SIGURG (or might
-	 * receive one soon) that we really want to send to the reader.  Set a
-	 * trap that simply copies such signals to the child.
+	 * receive one soon) that we really want to send to the reader.  When
+	 * one of these comes in, the trap copytochild simply copies such
+	 * signals to the child. We can now unblock SIGURG and SIGUSR1
+	 * that were set above.
 	 */
-	(void)signal(SIGURG, copytochild);
-	(void)signal(SIGUSR1, writeroob);
 	(void)sigsetmask(omask);
 	(void)signal(SIGCHLD, catch_child);
 	writer();
