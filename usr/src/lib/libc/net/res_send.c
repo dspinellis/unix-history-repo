@@ -44,8 +44,6 @@ res_send(buf, buflen, answer, anslen)
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
 
-	extern u_short htons(), ntohs();
-
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
 		printf("res_send()\n");
@@ -61,7 +59,7 @@ res_send(buf, buflen, answer, anslen)
 	/*
 	 * Send request, RETRY times, or until successful
 	 */
-	for (retry = _res.retry; --retry >= 0; ) {
+	for (retry = _res.retry; retry > 0; retry--) {
 	   for (ns = 0; ns < _res.nscount; ns++) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -226,7 +224,11 @@ wait:
 #endif DEBUG
 				(void) close(s);
 				s = -1;
-				retry = _res.retry;
+				/*
+				 * retry decremented on continue
+				 * to desired starting value
+				 */
+				retry = _res.retry + 1;
 				v_circuit = 1;
 				continue;
 			}
