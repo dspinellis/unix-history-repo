@@ -1,12 +1,10 @@
 /*-
  * This code is derived from software copyrighted by the Free Software
  * Foundation.
- *
- * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cplus-dem.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cplus-dem.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Demangler for GNU C++ 
