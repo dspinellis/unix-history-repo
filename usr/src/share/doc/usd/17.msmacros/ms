@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ms	8.1 (Berkeley) %G%
+.\"	@(#)ms	6.4 (Berkeley) %G%
 .\"
 .EH 'USD:17-%''Using the \-ms Macros with Troff and Nroff'
 .OH 'Using the \-ms Macros with Troff and Nroff''USD:17-%'
@@ -900,29 +900,9 @@ A2	C1	DA	EM	FV	IP	MH	PY	RP	TA	XD
 A3	C2	DE	EN	FY	IZ	MN	QF	RQ	TE	XF
 A4	CA	DS	EQ	HO	KE	MO	R	RS	TH	XK
 .TE
-.ne 4i
-.br
-.ne 5i
-.ta 1i 2i 3i 4i
-.vs .6i
-.nf
-.in 1i
-.ll 4.2i
-.ce
-Order of Commands in Input
-
-	RP
-TL
-AU
-AI
-	AB
-	AE
-
-		NH, SH
-			PP, LP
-			text ...
-.br
-.ce
-Figure 1
-.fi
-.in 0
+.(z
+.so fig1.pic
+.ce 2
+Figure 1:\ \ Order of Commands in Input
+.ce 0
+.)z
