@@ -1,4 +1,4 @@
-/*	hgraph.c	1.13	(Berkeley) 84/10/08
+/*	hgraph.c	1.14	(Berkeley) 84/11/27
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -98,11 +98,15 @@ int baseline;
 			    if (stipple) {
 				didstipple = 1;
 				if (element->brushf) {
-				    printf("\\D'p %d",
-					    stipple_index[element->size - 1]);
+				    printf("\\D'p %d", 
+					    element->size <= NSTIPPLES ?
+					    stipple_index[element->size - 1] :
+					    element->size);
 				} else {
 				    printf("\\D'P %d",
-					    stipple_index[element->size - 1]);
+					    element->size <= NSTIPPLES ?
+					    stipple_index[element->size - 1] :
+					    element->size);
 				}
 			    } else {
 				if (didstipple) {
