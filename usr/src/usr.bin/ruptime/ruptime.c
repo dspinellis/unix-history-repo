@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruptime.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -158,7 +158,7 @@ interval(time, updown)
 	static char resbuf[32];
 	int days, hours, minutes;
 
-	if (time < 0 || time > 3*30*24*60*60) {
+	if (time < 0 || time > 365*24*60*60) {
 		(void) sprintf(resbuf, "   %s ??:??", updown);
 		return (resbuf);
 	}
