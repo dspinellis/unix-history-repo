@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.24	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.25	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -445,6 +445,13 @@ MV|cita|:\
         :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
 MW|cit101:li#24:vb@:tc=cita
 MX|cit101b:li#24:tc=cita
+Mh|cit500|cit-500|cit 500:\
+	:co#80:li#40:cl=50\E[;H\E[2J:bs:am:cm=5\E[%i%2;%2H:nd=2\E[C:up=2\E[A:\
+	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
+	:is=\E(B\E)0\E>\E[?3l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:if=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:xn:\
+	:do=\ED:al=\E[L:dc=\E[P:dl=\E[M:
 # Note several versions of blit.  I don't know exactly what is what
 # so please send me any corrections to this -- mrh
 # From research!ikeya!rob Tue Aug 31 23:41 EDT 1982
@@ -767,55 +774,55 @@ NS|aaa-unk-s|ann arbor ambassador unknown with/status:\
 	:tc=aaa-unk:
 NM|aaa-18-s|ambassador|ann arbor ambassador/18 lines + status line:\
 	:ti=\E[2J\E[18;1;0;18p:\
-	:te=\E[60;1;0;18p\E[18;1H\E[J:\
+	:te=\E[60;1;0;18p\E[17;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#17:tc=aaa-unk-s:
 NN|aaa-20-s|ambassador|ann arbor ambassador/20 lines + status line:\
 	:ti=\E[2J\E[20;1;0;20p:\
-	:te=\E[60;1;0;20p\E[20;1H\E[J:\
+	:te=\E[60;1;0;20p\E[19;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#19:tc=aaa-unk-s:
 NO|aaa-22-s|ambassador|ann arbor ambassador/22 lines + status line:\
 	:ti=\E[2J\E[22;1;0;22p:\
-	:te=\E[60;1;0;22p\E[22;1H\E[J:\
+	:te=\E[60;1;0;22p\E[21;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#21:tc=aaa-unk-s:
 NP|aaa-24-s|ambassador|ann arbor ambassador/24 lines + status line:\
 	:ti=\E[2J\E[24;1;0;24p:\
-	:te=\E[60;1;0;24p\E[24;1H\E[J:\
+	:te=\E[60;1;0;24p\E[23;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#23:tc=aaa-unk-s:
 NQ|aaa-26-s|ambassador|ann arbor ambassador/26 lines + status line:\
 	:ti=\E[2J\E[26;1;0;26p:\
-	:te=\E[60;1;0;26p\E[26;1H\E[J:\
+	:te=\E[60;1;0;26p\E[25;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#25:tc=aaa-unk-s:
 NR|aaa-28-s|ambassador|ann arbor ambassador/28 lines + status line:\
 	:ti=\E[2J\E[28;1;0;28p:\
-	:te=\E[60;1;0;28p\E[28;1H\E[J:\
+	:te=\E[60;1;0;28p\E[27;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#27:tc=aaa-unk-s:
 NT|aaa-30-s|ambassador|ann arbor ambassador/30 lines + status line:\
 	:ti=\E[2J\E[30;1;0;30p:\
-	:te=\E[60;1;0;30p\E[30;1H\E[J:\
+	:te=\E[60;1;0;30p\E[29;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#29:tc=aaa-unk-s:
 NU|aaa-36-s|ambassador|ann arbor ambassador/36 lines + status line:\
 	:ti=\E[2J\E[36;1;0;36p:\
-	:te=\E[60;1;0;36p\E[36;1H\E[J:\
+	:te=\E[60;1;0;36p\E[35;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#35:tc=aaa-unk-s:
 NV|aaa-40-s|ambassador|ann arbor ambassador/40 lines + status line:\
 	:ti=\E[2J\E[40;1;0;40p:\
-	:te=\E[60;1;0;40p\E[40;1H\E[J:\
+	:te=\E[60;1;0;40p\E[39;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#39:tc=aaa-unk-s:
 NW|aaa-48-s|ann arbor ambassador/48 lines+sl:\
-	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[48;1H\E[J:\
+	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[47;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\EP`?y~[[2J~[[H\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#47:tc=aaa-unk-s:
 NX|aaa-60-s|ambassador|ann arbor ambassador/60 lines + status line:\
-	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[60;1H\E[J:\
+	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#59:tc=aaa-unk-s:
 NY|aaa-18-rv|ambassador/18 lines+rv:\
@@ -876,68 +883,69 @@ Ni|aaa-60-rv|ann arbor ambassador/60 lines in reverse video:\
 Nj|aaa-18-rv-s|aaa-18-s-rv|ambassador/18 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[18;1;0;18p:te=\E[60;1;0;18p\E[18;1H\E[J:li#17:\
+	:ti=\E[2J\E[18;1;0;18p:te=\E[60;1;0;18p\E[17;1H\E[J:li#17:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nk|aaa-20-rv-s|aaa-20-s-rv|ambassador/20 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[20;1;0;20p:te=\E[60;1;0;20p\E[20;1H\E[J:li#19:\
+	:ti=\E[2J\E[20;1;0;20p:te=\E[60;1;0;20p\E[19;1H\E[J:li#19:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nl|aaa-22-rv-s|aaa-22-s-rv|ambassador/22 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[22;1;0;22p:te=\E[60;1;0;22p\E[22;1H\E[J:li#21:\
+	:ti=\E[2J\E[22;1;0;22p:te=\E[60;1;0;22p\E[21;1H\E[J:li#21:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nm|aaa-24-rv-s|aaa-24-s-rv|ambassador/24 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[24;1;0;24p:te=\E[60;1;0;24p\E[24;1H\E[J:li#23:\
+	:ti=\E[2J\E[24;1;0;24p:te=\E[60;1;0;24p\E[23;1H\E[J:li#23:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nn|aaa-26-rv-s|aaa-26-s-rv|ambassador/26 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[26;1;0;26p:te=\E[60;1;0;26p\E[26;1H\E[J:li#25:\
+	:ti=\E[2J\E[26;1;0;26p:te=\E[60;1;0;26p\E[25;1H\E[J:li#25:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 No|aaa-28-rv-s|aaa-28-s-rv|ambassador/28 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[28;1;0;28p:te=\E[60;1;0;28p\E[28;1H\E[J:li#27:\
+	:ti=\E[2J\E[28;1;0;28p:te=\E[60;1;0;28p\E[27;1H\E[J:li#27:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Np|aaa-rv|aaa-30-rv-s|aaa-30-s-rv|ambassador/30 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[30;1;0;30p:te=\E[60;1;0;30p\E[30;1H\E[J:li#29:\
+	:ti=\E[2J\E[30;1;0;30p:te=\E[60;1;0;30p\E[29;1H\E[J:li#29:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nq|aaa-36-rv-s|aaa-36-s-rv|ambassador/36 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[36;1;0;36p:te=\E[60;1;0;36p\E[36;1H\E[J:li#35:\
+	:ti=\E[2J\E[36;1;0;36p:te=\E[60;1;0;36p\E[35;1H\E[J:li#35:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nr|aaa-40-rv-s|aaa-40-s-rv|ambassador/40 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[40;1;0;40p:te=\E[60;1;0;40p\E[40;1H\E[J:li#39:\
+	:ti=\E[2J\E[40;1;0;40p:te=\E[60;1;0;40p\E[39;1H\E[J:li#39:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Ns|aaa-48-rv-s|aaa-48-s-rv|ambassador/48 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
-	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[48;1H\E[J:li#47:\
+	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[47;1H\E[J:li#47:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
 Nt|aaa-60-rv-s|aaa-60-s-rv|ambassador/60 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:li#59:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:li#50:tc=aaa-unk-s:
+	:tc=aaa-unk-s:
 NL|aaa-24-ctxt|ann arbor ambassador/24 lines:\
 	:ti=\E[30;1H\E[K\E[24;0;0;24p:te=\E[60;1;0;24p\E[60;1H\E[K:tc=aaa-24:
 NL|aaa-24-rv-ctxt|ambassador/24+rv:\
@@ -1150,8 +1158,6 @@ Xz|4105|tek4105: \
 #
 # a: ADDS
 #
-# From ralph@UCBARPA Tue May 17 10:49:19 1983
-#
 # Regent: lowest common denominator, works on all regents.
 a0|regent|Adds Regent Series:li#24:co#80:am:cl=^L:ll=^A:up=^Z:\
 	:bs:bc=^U:nd=^F:do=^J:bl=^G:ho=\EY  :
@@ -1186,8 +1192,8 @@ as|viewpt60|viewpoint60|addsviewpoint60|adds viewpoint60:\
 # From Onyx:edward  Thu Jul  9 09:27:33 1981
 av|viewpoint|addsviewpoint|adds viewpoint:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:am:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
-	:up=^Z:cl=^L:ll=^A:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
+	:am:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:\
+	:up=^Z:cl=^L:ll=^A:kl=^U:kd=^J:ku=^Z:kh=^A:\
 	:so=^N:se=^O:us=^N:ue=^O:is=^O\E0`:vs=^O\E0P:ve=^O\E0`:
 # # --------------------------------
 #
@@ -1976,6 +1982,14 @@ vf|tvi950-rv-4p|950-rv-4p|televideo950 rev video w/4 pages:\
 	\Ex3\200\200\Ex4\r\200\E\\3\E-07 :\
 	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
 	:te=\E\\3\E-07 :ti=\E\\1\E-07 :ks=\El:ke=\Ek:tc=tvi950:
+ve|tvi924|924|televideo model 924:\
+	:am:bs:xn:co#80:li#24:cm=\E=%+ %+ :cl=\E*0:cd=\Ey:ce=\Et:is=\Ek0\E"^O:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:ho=^^:\
+	:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:up=^K:do=^V:kb=^H:\
+	:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^Vj^Kk^Ll^^H^R^L:k1=^A@\r:k2=^AA\r:\
+	:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
+	:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:sr=\Ej:\
+	:hs:fs=^Y\Es1:ts=\Ef:ds=\Es0\Ef^Y:
 # # --------------------------------
 #
 # y: TELERAY
@@ -2018,6 +2032,19 @@ y7|t10|teleray 10 special:\
 	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
+# Wyse 50 entry by Toni Guttman extended by Jeff Anton
+ye|w50|wyse50|Wyse 50:\
+	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:\
+	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\:\200\EC\EDF\E0\E'\E(\EA21:\
+	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
+	:so=\EG4:se=\EG0:
+#	:hs:ts=\Ef:fs=\Eg:	status line does not work with sysline
+yg|w50-132|wyse50-132|Wyse 50-132:\
+	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#132:\
+	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:\
+	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
+	:so=\EG4:se=\EG0:
+#
 # # --------------------------------
 #
 # z: MISC (cont)
@@ -2112,12 +2139,46 @@ zg|o85h|oabm85h:Kimtron ABM 85H, old firmware rev.:\
 zh|appleII|apple ii plus:vs=\024\103\066:ve=\024\103\062:\
         :am:co#80:ce=\035:li#24:cl=\014:bs:nd=\034:up=\037:ho=\E\031:pt:\
         :cd=\013:so=\017:se=\016:cm=\036%r%+ %+ :is=\024T1\016:do=^J:kd=^J:\
-        :ma=^Ul:vb=\024G1\024T1:
+        :vb=\024G1\024T1:kr=:
 #  Gary Ford 21NOV83
 zi|apple-80|apple II with smarterm 80 col:\
         :cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:le=^H:bs:am:\
         :cl=50^L:cm=5^^%r%+ %+ :ta=^I:bt=2^R:cd=50^K:\
         :ce=3^]:nd=2^\:up=2^_:is=^TR^V^A:
+#
+zj|lisa|apple lisa xenix console display (white on black):\
+	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%i%d;%dH:co#88:\
+	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#32:\
+	:nd=\E[C:ms:pt:so=\E[m:se=\E[7m:us=\E[4m:ue=\E[7m:up=\E[A:\
+	:kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
+	:is=\E[7m^L:\
+	:GS=\E[11m:GE=\E[10m:GV=\140:GH=a:G1=c:G2=f:G3=e:G4=d:GU=u:\
+	:GD=s:GC=b:GL=v:GR=t:
+zk|ibm|ibmpc|IBM PC xenix console display:\
+ 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
+ 	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
+ 	:nd=\E[C:ms:se=\E[0m:so=\E[7m:us=\E[4m:\
+	:ue=\E[m:up=\E[A:MR=\E[0m:\
+ 	:kb=^h:kh=\E[Y:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
+ 	:GS=\E[11m:GE=\E[10m:\
+ 	:GC=b:GL=v:GR=t:RT=^J:\
+	:GH=\E[196g:GV=\E[179g:\
+	:GU=\E[193g:GD=\E[194g:\
+	:G1=\E[191g:G2=\E[218g:G3=\E[192g:G4=\E[217g:\
+	:CW=\E[E:NU=\E[F:RF=\E[G:RC=\E[H:\
+	:WL=\E[K:WR=\E[L:CL=\E[M:CR=\E[N:\
+	:HM=\E[Y:EN=\E[d:PU=\E[Z:PD=\E[e:
+zl|ibmc|ibmcpc|IBM PC xenix color console display:\
+	:tc=ibm:
+zm|kaypro|kaypro II:\
+	:am:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:\
+        :kr=:kl=^H:ku=:kd=^J:
+# From Suk Lee ..!{decvax,linus,allegra,ihnp4}!utcsrgv!spoo
+zn|trs100|Radio Shack Model 100:\
+	:am:bs:le=^H:li#8:co#40:\
+	:ku=^^:kd=^_:kl=^]:kr=^\:up=\EA:nd=\EC:ho=\EH:ce=\EK:\
+	:cd=\EJ:cl=\EE:xt:cm=\EY%+ %+ :\
+	:so=\Ep:se=\Eq:al=\EL:dl=\EM:
 #
 # END OF TERMCAP
 #  ------------------------
