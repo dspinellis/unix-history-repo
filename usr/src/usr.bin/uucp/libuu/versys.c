@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)versys.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)versys.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -7,6 +7,8 @@ static char sccsid[] = "@(#)versys.c	5.4 (Berkeley) %G%";
 #include <ctype.h>
 
 /*LINTLIBRARY*/
+
+char PhoneNumber[MAXPH];
 
 /*
  *	verify system names n1 and n2
@@ -35,12 +37,14 @@ register char **nameptr;
 
 	fp = fopen(SYSFILE, "r");
 	ASSERT(fp != NULL, CANTOPEN, SYSFILE, 0);
+	PhoneNumber[0] = '\0';
 	while (cfgets(line, sizeof(line), fp) != NULL) {
 		char *targs[100];
 
 		getargs(line, targs, 100);
 		if (strncmp(name, targs[0], MAXBASENAME) == SAME) {
 			fclose(fp);
+			strncpy(PhoneNumber, targs[F_PHONE], MAXPH);
 			return SUCCESS;
 		}
 	}
@@ -61,10 +65,10 @@ register char **nameptr;
  *		SUCCESS		Anything else
  */
 
-uualias (hostptr)
+uualias(hostptr)
 char  **hostptr;			  /* we change it */
 {
-	FILE * Aliases;			  /* list of aliases */
+	FILE *Aliases;			  /* list of aliases */
 	char buf[BUFSIZ];
 	int atend;
 	char *p, *q;
@@ -76,9 +80,7 @@ char  **hostptr;			  /* we change it */
 	}
 
 	DEBUG (11, "Alias expansion for %s\n", *hostptr);
-	while (fgets(buf, sizeof (buf), Aliases)) {
-		if (buf[0] == '#')		  /* comment line */
-			continue;
+	while (cfgets(buf, sizeof (buf), Aliases)) {
 		p = &buf[0];
 		atend = 0;
 		DEBUG(11, "Alias line: %s\n", buf);

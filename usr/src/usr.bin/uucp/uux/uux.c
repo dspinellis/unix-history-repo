@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -7,12 +7,17 @@ static char sccsid[] = "@(#)uux.c	5.4 (Berkeley) %G%";
 #define NOSYSPART 0
 #define HASSYSPART 1
 
+#define LQUOTE	'('
+#define RQUOTE ')'
+
 #define APPCMD(d) {\
 char *p; for (p = d; *p != '\0';) *cmdp++ = *p++; *cmdp++ = ' '; *cmdp = '\0';}
 
 #define GENSEND(f, a, b, c, d, e) {\
 fprintf(f, "S %s %s %s -%s %s 0666\n", a, b, c, d, e); }
 #define GENRCV(f, a, b, c) {fprintf(f, "R %s %s %s - \n", a, b, c);}
+
+struct timeb Now;
 
 main(argc, argv)
 char *argv[];
@@ -112,12 +117,10 @@ char *argv[];
 		}
 		--argc;  argv++;
 	}
-	if (argc > 2) {
-		ap = getwd(Wrkdir);
-		if (ap == 0) {
-			fprintf(stderr, "can't get working directory; will try to continue\n");
-			strcpy(Wrkdir, "/UNKNOWN");
-		}
+	ap = getwd(Wrkdir);
+	if (ap == 0) {
+		fprintf(stderr, "can't get working directory; will try to continue\n");
+		strcpy(Wrkdir, "/UNKNOWN");
 	}
 
 	DEBUG(4, "\n\n** %s **\n", "START");
@@ -161,14 +164,11 @@ char *argv[];
 			continue;
 		}
 
-
 		split(prm, xsys, rest);
 		break;
 	}
 	if (xsys[0] == '\0')
 		strcpy(xsys, local);
-	strncpy(Rmtname, xsys, MAXBASENAME);
-	DEBUG(4, "xsys %s\n", xsys);
 	if (versys(&xsys) != 0) {
 		/*  bad system name  */
 		fprintf(stderr, "bad system name: %s\n", xsys);
@@ -176,6 +176,9 @@ char *argv[];
 		fclose(fpc);
 		cleanup(EX_NOHOST);
 	}
+
+	strncpy(Rmtname, xsys, MAXBASENAME);
+	DEBUG(4, "xsys %s\n", xsys);
 
 	if (pipein) {
 		gename(DATAPRE, local, 'B', dfile);
@@ -188,7 +191,10 @@ char *argv[];
 		fclose(fpd);
 		strcpy(tfile, dfile);
 		if (strcmp(local, xsys) != SAME) {
-			tfile[strlen(local) + 2] = 'S';
+			register int Len = strlen(local);
+			if (Len > SYSNSIZE)
+				Len = SYSNSIZE;
+			tfile[Len + 2] = 'S';
 			GENSEND(fpc, dfile, tfile, User, "", dfile);
 			cflag++;
 		}
@@ -478,3 +484,44 @@ char **argv;
 	}
 }
 #endif VMS
+
+/*
+ *	split into system and file part
+ *
+ *	return codes:
+ *		NOSYSPART
+ *		HASSYSPART
+ */
+
+split(name, sys, rest)
+register char *name, *rest;
+char *sys;
+{
+	register char *c;
+	register int i;
+
+	if (*name == LQUOTE) {
+		if ((c = index(name + 1, RQUOTE)) != NULL) {
+		/* strip off quotes */
+			name++;
+			while (c != name)
+				*rest++ = *name++;
+			*rest = '\0';
+			*sys = '\0';
+			return NOSYSPART;
+		}
+	}
+
+	if ((c = index(name, '!')) == NULL) {
+		strcpy(rest, name);
+		*sys = '\0';
+		return NOSYSPART;
+	}
+
+	*c++ = '\0';
+	strncpy(sys, name, MAXBASENAME);
+	sys[MAXBASENAME] = '\0';
+
+	strcpy(rest, c);
+	return HASSYSPART;
+}
