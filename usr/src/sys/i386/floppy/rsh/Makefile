@@ -1,10 +1,8 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	rsh
-SRCS=   rsh.c krcmd.c kcmd.c des_rw.c
-CFLAGS+=-DLETS_GET_SMALL -DKERBEROS -DCRYPT
-DPADD=	${LIBKRB} ${LIBDES}
-LDADD=	-lkrb -ldes
+SRCS=   rsh.c
+CFLAGS+=-DLETS_GET_SMALL
 BINOWN=	root
 BINMODE=4555
 NOMAN=	noman
