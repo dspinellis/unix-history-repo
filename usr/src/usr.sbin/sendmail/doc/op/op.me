@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.13 (Berkeley) %G%
+.\"	@(#)op.me	8.14 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.13
+Version 8.14
 .sp
 For Sendmail Version 8.6
 .)l
@@ -214,7 +214,7 @@ if you do,
 old databases are read,
 but when a new database is created it will be in NEWDB format.
 As a nasty hack,
-if you have NEWDB, NDBM, and YPCOMPAT defined,
+if you have NEWDB, NDBM, and NIS defined,
 and if the file
 .i /var/yp/Makefile
 exists and is readable,
@@ -1198,6 +1198,7 @@ it is in no sense perfect;
 a determined forger can easily spoof the IDENT protocol.
 The following description is excerpted from RFC 1413:
 .ba +5
+.lp
 6.  Security Considerations
 .lp
 The information returned by this protocol is at most as trustworthy
@@ -4308,6 +4309,21 @@ Allow replacement of existing keys;
 normally, re-inserting an existing key is an error.
 .ip \-v
 Print what is happening.
+.lp
+The
+.i sendmail
+daemon does not have to be restarted to read the new maps
+as long as you change them in place;
+file locking is used so that the maps won't be read
+while they are being updated.\**
+.(f
+\**That is, don't create new maps and then use
+.i mv (1)
+to move them into place.
+I consider this a shortfall (a.k.a. bug) in
+.i sendmail
+which should be fixed in a future release.
+.)f
 .pp
 There are also two builtin maps that are,
 strictly speaking,
@@ -5136,7 +5152,8 @@ If NEWDB and NDBM are both set,
 .i sendmail
 will read DBM files,
 but will create and use NEWDB files.
-.ip YPCOMPAT
+.ip NIS
+Include support for NIS.
 If set together with
 .i both
 NEWDB and NDBM,
@@ -5147,9 +5164,6 @@ exists and is readable.
 This is intended for compatibility with Sun Microsystems'
 .i mkalias
 program used on YP masters.
-.ip _AIX3
-Compile for IBM AIX 3.x.
-This has only been tested on 3.2.3.
 .ip SYSTEM5
 Set all of the compilation parameters appropriate for System V.
 .ip LOCKF
@@ -5245,6 +5259,14 @@ usually
 .q _avenrun
 or
 .q avenrun ).
+.pp
+There are also several compilation flags to indicate the environment
+such as
+.q _AIX3
+and
+.q _SCO_unix_ .
+See the READ_ME
+file for the latest scoop on these flags.
 .sh 2 "Parameters in src/conf.h"
 .pp
 Parameters and compilation options
@@ -6070,6 +6092,9 @@ User database spec.
 Fallback
 .q MX
 host.
+.ip w
+.q "Best MX"
+handling technique.
 .ip 7
 Do not run eight bit clean.
 .sh 2 "Extended Options"
@@ -6168,6 +6193,7 @@ Previous versions of
 treated VRFY and EXPN the same.
 In this version,
 VRFY doesn't expand aliases or follow .forward files.
+EXPN still does.
 .pp
 As an optimization, if you run with your default delivery mode being
 queue-only,
@@ -6676,7 +6702,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.13
+.\"Version 8.14
 .\".ce 0
 .bp 2
 .ce
