@@ -49,16 +49,17 @@ int argc;
 char **argv;
 
 {
-	int i;				/* for loop index */
-	int userid;			/* uid of owner of file */
+	register int i;			/* for loop index */
 	int isuname;			/* is a command line argv a user name?*/
 	int numjobs;			/* # of jobs in spooling area */
 	int usage();			/* print usage info and exit */
 	int allflag = 0;		/* remove all jobs belonging to user? */
+	int jobno;
 	int jobexists;			/* does a requested job exist? */
 	int alphasort();		/* sort jobs by date of execution */
 	int filewanted();		/* should a file be listed in queue? */
-	char *getname();		/* get a user name from a uid */
+	char *myname, *getname();	/* current user's name */
+	char *owner, *fowner();
 	struct stat *statptr;		/* pointer to file stat structure */
 	struct stat *stbuf[MAXENTRIES]; /* array of pointers to stat structs */
 	struct direct **namelist;	/* names of jobs in spooling area */
@@ -122,6 +123,7 @@ char **argv;
 		exit(1);
 	}
 	user = getuid();
+	myname = getname(user);
 
 	/*
 	 * Get a list of the files in the spooling area.
@@ -156,11 +158,10 @@ char **argv;
 	 */
 	if (allflag) {
 		for (i = 0; i < numjobs; ++i) { 
-			if (user == SUPERUSER || isowner(getname(user),
-							namelist[i]->d_name)) 
-				(void) removentry(namelist[i]->d_name,
-						(int)stbuf[i]->st_ino,
-							user);
+			owner = fowner(namelist[i]->d_name); 
+			if (isowner(myname, owner)) 
+				removentry(namelist[i]->d_name,
+				    (int)stbuf[i]->st_ino, NULL);
 		}
 		exit(0);
 	}
@@ -183,37 +184,42 @@ char **argv;
 	while (argc--) {
 		jobexists = 0;
 		isuname = isusername(*argv);
+		if (!isuname)
+			jobno = atoi(*argv);
 		for (i = 0; i < numjobs; ++i) {
 
 			/* if the inode number is 0, this entry was removed */
 			if (stbuf[i]->st_ino == 0)
 				continue;
 
+			owner = fowner(namelist[i]->d_name);
 			/* 
-			 * if argv is a username, compare his/her uid to
-			 * the uid of the owner of the file......
-			 */
-			if (isuname) {
-				if (!isowner(*argv,namelist[i]->d_name))
-					continue;
-
-			/*
+			 * if argv is a username, compare it to
+			 * the owner of the file......
 			 * otherwise, we assume that the argv is a job # and
 			 * thus compare argv to the inode (job #) of the file.
 			 */
+			if (isuname) {
+				if (strcmp(*argv, owner))
+					continue;
 			} else {
-				if (stbuf[i]->st_ino != atoi(*argv)) 
+				if (stbuf[i]->st_ino != jobno) 
 					continue;
 			}
 			++jobexists;
 			/*
-			 * if the entry is ultimately removed, don't
+			 * if the entry is removed, don't
 			 * try to remove it again later.
 			 */
-			if (removentry(namelist[i]->d_name,
-			    (int)stbuf[i]->st_ino, user)) {
+			if (user == SUPERUSER || isowner(myname, owner)) {
+				removentry(namelist[i]->d_name,
+				    (int)stbuf[i]->st_ino, owner);
 				stbuf[i]->st_ino = 0;
-			}
+			} else if (!fflag)
+				printf("%6d: permission denied\n",
+				    stbuf[i]->st_ino);
+			if (!isuname)
+				break;
 		}
 
 		/*
@@ -280,83 +286,50 @@ char *string;
  * check (either "permission denied" or "removed"). If we are running 
  * interactively (iflag), prompt the user before we unlink the file. If 
  * the super-user is removing jobs, inform him/her who owns each file before 
- * it is removed.  Return TRUE if file removed, else FALSE.
+ * it is removed.
  */
-int
-removentry(filename,inode,user)
+removentry(filename, inode, owner)
 char *filename;
 int inode;
-int user;
+char *owner;
 {
 
 	if (!fflag)
 		printf("%6d: ",inode);
 
-	if (!isowner(getname(user),filename) && user != SUPERUSER) {
-
-		if (!fflag) {
-			printf("permission denied\n");
-		}
-		return (0);
-
-	} else {
-		if (iflag) {
-			if (user == SUPERUSER) {
-				printf("\t(owned by ");
-				powner(filename);
-				printf(") ");
-			}
-			printf("remove it? ");
-			if (!yes())
-				return (0);
-		}
-		if (unlink(filename) < 0) {
-			if (!fflag) {
-				fputs("could not remove\n", stdout);
-				perror(filename);
-			}
-			return (0);
-		}
-		if (!fflag && !iflag)
-			printf("removed\n");
-		return (1);
+	if (iflag) {
+		if (user == SUPERUSER && owner)
+			printf("\t(owned by %s) ", owner);
+		printf("remove? ");
+		if (!yes())
+			return;
 	}
+	if (unlink(filename) < 0)
+		perror(filename);
+	else if (!fflag && !iflag)
+		printf("removed\n");
 }
 
 /*
- * See if "name" owns "job".
+ * See if "name" owns job owned by "jobname".
  */
-isowner(name,job)
+isowner(name,jobname)
 char *name;
-char *job;
+char *jobname;
 {
-	char buf[128];			/* buffer for 1st line of spoolfile 
-					   header */
-	FILE *infile;			/* I/O stream to spoolfile */
 
-	if ((infile = fopen(job,"r")) == NULL) {
-		fprintf(stderr,"Couldn't open spoolfile ");
-		perror(job);
-		return(0);
-	}
-
-	if (fscanf(infile,"# owner: %127s%*[^\n]\n",buf) != 1) {
-		fclose(infile);
-		return(0);
-	}
-
-	fclose(infile);
-	return((strcmp(name,buf) == 0) ? 1 : 0);
+	return (strcmp(name,jobname) == 0);
 }
 
 /*
- * Print the owner of the job. This is stored on the first line of the
- * spoolfile. If we run into trouble getting the name, we'll just print "???".
+ * Return the owner of the job. This is stored on the first line of the
+ * spoolfile. If we run into trouble getting the name, we'll just return "???".
  */
-powner(file)
+char *
+fowner(file)
 char *file;
 {
-	char owner[128];			/* the owner */
+	static char owner[128];			/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
 
 	/*
@@ -364,19 +337,17 @@ char *file;
 	 */
 
 	if ((infile = fopen(file,"r")) == NULL) {
-		printf("%s","???");
 		perror(file);
-		return;
+		return ("???");
 	}
 
 	if (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) {
-		printf("%s","???");
 		fclose(infile);
-		return;
+		return ("???");
 	}
 
 	fclose(infile);
-	printf("%s",owner);
+	return (owner);
 
 }
 
@@ -421,10 +392,16 @@ getname(uid)
 int uid;
 {
 	struct passwd *pwdinfo;			/* password info structure */
+	char *logname, *getlogin();
 	
 
-	if ((pwdinfo = getpwuid(uid)) == 0)
-		return("???");
+	logname = getlogin();
+	if (logname == NULL || (pwdinfo = getpwnam(logname)) == NULL ||
+	    pwdinfo->pw_uid != uid)
+		pwdinfo = getpwuid(uid);
+	if (pwdinfo == 0) {
+		fprintf(stderr, "no name for uid %d?\n", uid);
+		exit(1);
+	}
 	return(pwdinfo->pw_name);
 }
-
