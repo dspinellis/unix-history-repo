@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.78 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,6 +53,9 @@ void	 sigint __P((int));
 void	 sleepexit __P((int));
 char	*stypeof __P((char *));
 void	 timedout __P((int));
+#ifdef KERBEROS
+int	 klogin __P((struct passwd *, char *, char *, char *));
+#endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
 
@@ -105,7 +108,7 @@ main(argc, argv)
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
 	 * -r is used by rlogind to cause the autologin protocol;
- 	 * -f is used to skip a second login authentication 
+	 * -f is used to skip a second login authentication
 	 * -h is used by other servers to pass the name of the remote
 	 *    host to login so that it may be placed in utmp and wtmp
 	 */
@@ -367,7 +370,7 @@ main(argc, argv)
 	/* Nothing else left to fail -- really log in. */
 	bzero((void *)&utmp, sizeof(utmp));
 	(void)time(&utmp.ut_time);
-	strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
+	(void)strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
 	if (hostname)
 		(void)strncpy(utmp.ut_host, hostname, sizeof(utmp.ut_host));
 	(void)strncpy(utmp.ut_line, tty, sizeof(utmp.ut_line));
@@ -390,7 +393,7 @@ main(argc, argv)
 	(void)setenv("HOME", pwd->pw_dir, 1);
 	(void)setenv("SHELL", pwd->pw_shell, 1);
 	if (term[0] == '\0')
-		strncpy(term, stypeof(tty), sizeof(term));
+		(void)strncpy(term, stypeof(tty), sizeof(term));
 	(void)setenv("TERM", term, 0);
 	(void)setenv("LOGNAME", pwd->pw_name, 1);
 	(void)setenv("USER", pwd->pw_name, 1);
@@ -561,18 +564,20 @@ dolastlog(quiet)
 				    24-5, (char *)ctime(&ll.ll_time));
 				if (*ll.ll_host != '\0')
 					(void)printf("from %.*s\n",
-					    sizeof(ll.ll_host), ll.ll_host);
+					    (int)sizeof(ll.ll_host),
+					    ll.ll_host);
 				else
 					(void)printf("on %.*s\n",
-					    sizeof(ll.ll_line), ll.ll_line);
+					    (int)sizeof(ll.ll_line),
+					    ll.ll_line);
 			}
 			(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
 		}
 		bzero((void *)&ll, sizeof(ll));
 		(void)time(&ll.ll_time);
-		strncpy(ll.ll_line, tty, sizeof(ll.ll_line));
+		(void)strncpy(ll.ll_line, tty, sizeof(ll.ll_line));
 		if (hostname)
-			strncpy(ll.ll_host, hostname, sizeof(ll.ll_host));
+			(void)strncpy(ll.ll_host, hostname, sizeof(ll.ll_host));
 		(void)write(fd, (char *)&ll, sizeof(ll));
 		(void)close(fd);
 	}
