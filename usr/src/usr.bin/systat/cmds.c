@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmds.c	1.3 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -19,14 +19,43 @@ command(cmd)
                 ;
         if (*cp)
                 *cp++ = '\0';
+	if (*cmd == '\0')
+		return;
         if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
                 die();
 	if (strcmp(cmd, "load") == 0) {
 		load();
 		return;
 	}
+        if (strcmp(cmd, "stop") == 0) {
+                alarm(0);
+                mvaddstr(22, 0, "Refresh disabled.");
+                clrtoeol();
+                return;
+        }
+        if (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0) {
+                int x;
+
+		for (; *cp && isspace(*cp); cp++)
+			;
+		x = *cp ? atoi(cp) : naptime;
+                if (x <= 0) {
+                        mvprintw(22, 0, "%d: bad interval.", x);
+                        clrtoeol();
+                        return;
+                }
+                alarm(0);
+                naptime = x;
+                display();
+                status();
+                return;
+        }
 	p = lookup(cmd);
-        if (p != (struct cmdtab *)-1) {
+	if (p == (struct cmdtab *)-1) {
+		error("%s: Ambiguous command.", cmd);
+		return;
+	}
+        if (p) {
                 if (curcmd == p)
                         return;
                 alarm(0);
@@ -42,37 +71,8 @@ command(cmd)
                 status();
                 return;
         }
-        if (strcmp(cmd, "stop") == 0) {
-                alarm(0);
-                mvaddstr(22, 0, "Refresh disabled.");
-                clrtoeol();
-                return;
-        }
-        /* commands with arguments */
-        for (; *cp && isspace(*cp); cp++)
-                ;
-        if (strcmp(cmd, "start") == 0 || strcmp(cmd, "interval") == 0) {
-                int x;
-
-                if (*cp == '\0')
-                        x = naptime;
-                else
-                        x = atoi(cp);
-                if (x <= 0) {
-                        mvprintw(22, 0, "%d: bad interval.", x);
-                        clrtoeol();
-                        return;
-                }
-                alarm(0);
-                naptime = x;
-                display();
-                status();
-                return;
-        }
-	if (*cmd) {
-		mvprintw(22, 0, "%s: Unknown command.", cmd);
-		clrtoeol();
-	}
+	mvprintw(22, 0, "%s: Unknown command.", cmd);
+	clrtoeol();
 }
 
 struct cmdtab *
