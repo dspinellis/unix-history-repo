@@ -1,0 +1,47 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)chown.2	4.1 (Berkeley) %G%
+.\"
+.TH CHOWN 2 
+.UC 4
+.SH NAME
+chown \- change owner and group of a file
+.SH SYNOPSIS
+.nf
+.B chown(name, owner, group)
+.B char *name;
+.fi
+.SH DESCRIPTION
+The file
+whose name is given by the null-terminated string pointed
+to by
+.I name
+has its
+.I owner
+and 
+.I group
+changed as specified.
+Only the super-user may
+execute this call,
+because if users were able to give files away,
+they could defeat the (nonexistent)
+file-space accounting procedures.
+.PP
+On some systems,
+.I chown
+clears the set-user-id bit
+on the file
+to prevent accidental creation of
+set-user-id programs owned by the super-user.
+.SH "SEE ALSO"
+chown(1), passwd(5)
+.SH DIAGNOSTICS
+Zero is returned if the owner is changed;
+\-1 is returned
+on illegal owner changes.
+.SH "ASSEMBLER (PDP-11)"
+(chown = 16.)
+.br
+.B sys chown; name; owner; group
