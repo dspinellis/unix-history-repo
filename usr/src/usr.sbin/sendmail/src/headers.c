@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -383,7 +383,7 @@ eatheader(e)
 		else if (RealHostName[0] == '[')
 			name = RealHostName;
 		else
-			(void)sprintf(hbuf, "%.90s (%s)", 
+			(void)sprintf(hbuf, "%.80s (%s)", 
 			    RealHostName, inet_ntoa(RealHostAddr.sin_addr));
 		syslog(LOG_INFO,
 		    "%s: from=%s, size=%ld, class=%d, received from %s\n",
