@@ -1,4 +1,4 @@
-.\"	@(#)getpwent.3	6.1 (Berkeley) %G%
+.\"	@(#)getpwent.3	6.2 (Berkeley) %G%
 .\"
 .TH GETPWENT 3  ""
 .AT 3
@@ -16,9 +16,9 @@ getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file
 .B struct passwd *getpwnam(name)
 .B char *name;
 .PP
-.B int setpwent()
+.B setpwent()
 .PP
-.B int endpwent()
+.B endpwent()
 .PP
 .B setpwfile(name)
 .B char *name;
@@ -81,11 +81,14 @@ is found
 .SH "SEE ALSO"
 getlogin(3), getgrent(3), passwd(5)
 .SH DIAGNOSTICS
-Null pointer
-(0) returned on EOF or error.
+The routines
+.IR getpwent ,
+.IR getpwuid ,
+and
+.IR getpwnam ,
+return a null pointer (0) on EOF or error.
 .SH BUGS
 All information
 is contained in a static area
 so it must be copied if it is
 to be saved.
-.br
