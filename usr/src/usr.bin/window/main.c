@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.9 83/09/01";
+static	char *sccsid = "@(#)main.c	3.10 83/09/02";
 #endif
 
 #include "defs.h"
@@ -18,7 +18,6 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
-	int imask;
 	struct timezone timezone;
 
 	if (p = rindex(*argv, '/'))
@@ -62,7 +61,7 @@ char **argv;
 	(void) gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
 		(void) fflush(stdout);
-		(void) fprintf(stderr, "Can't do windows on this terminal.\n");
+		(void) fprintf(stderr, "%s.\n", wwerror());
 		exit(1);
 	}
 	if (debug)
@@ -76,26 +75,28 @@ char **argv;
 
 	if ((cmdwin = wwopen(WWO_REVERSE, 1, wwncol, 0, 0, 0)) == 0) {
 		(void) wwflush();
-		(void) fprintf(stderr, "Can't open command window.\r\n");
+		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
 	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))
 	    == 0) {
 		(void) wwflush();
-		(void) fprintf(stderr, "Can't open frame window.\r\n");
+		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
 	wwadd(framewin, &wwhead);
 	if ((boxwin = wwopen(WWO_GLASS, wwnrow, wwncol, 0, 0, 0)) == 0) {
 		(void) wwflush();
-		(void) fprintf(stderr, "Can't open box window.\r\n");
+		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
 
 	wwupdate();
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
-	if (!fflag) {
+	if (fflag)
+		incmd = 1;
+	else {
 		if (!terse)
 			wwadd(cmdwin, &wwhead);
 		if (dflag || doconfig() < 0)
@@ -109,57 +110,9 @@ char **argv;
 			reframe();
 		}
 	}
-	while (!quit) {
-		if (incmd) {
-			docmd();
-			continue;
-		}
-		/*
-		 * Loop until we get some keyboard input.
-		 */
-		while (ibufc == 0) {
-			wwcurtowin(selwin);
-			wwupdate();
-			wwflush();
-			while (imask = 1, wwforce(&imask) < 0)
-				;
-			if ((imask & 1) == 0)
-				continue;
-			/* NOTE: ibufc == 0 */
-			ibufp = ibuf;
-			if ((ibufc = read(0, ibuf, sizeof ibuf)) < 0) {
-				ibufc = 0;
-				nreade++;
-			} else if (ibufc == 0)
-				nreadz++;
-			else
-				nreadc += ibufc;
-			nread++;
-		}
-		/*
-		 * Weird loop.  Copy the buffer to the pty
-		 * and stopping on the escape character
-		 * in a hopefully efficient way.
-		 * Probably a good thing to make ibufc == 1 a special
-		 * case.
-		 */
-		for (p = ibufp, n = ibufc;;) {
-			if (--n < 0) {
-				(void) write(selwin->ww_pty, ibufp, ibufc);
-				ibufp = ibuf;
-				ibufc = 0;
-				break;
-			} else if (*p++ == escapec) {
-				if ((n = p - ibufp) > 1)
-					(void) write(selwin->ww_pty,
-						ibufp, n - 1);
-				ibufp = p;
-				ibufc -= n;
-				incmd = 1;
-				break;
-			}
-		}
-	}
+
+	mloop();
+
 	wwupdate();
 	wwflush();
 bad:
