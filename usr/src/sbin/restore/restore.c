@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.4	(Berkeley)	83/02/28";
+static char sccsid[] = "@(#)restore.c	3.5	(Berkeley)	83/03/05";
 #endif
 
 #include "restore.h"
@@ -87,7 +87,7 @@ addfile(name, ino, type)
 }
 
 /*
- *	For each directory entry, determine which catagory it falls
+ *	For each directory entry, determine which category it falls
  *	into as follows:
  *	KEEP - entries that are to be left alone.
  *	NEW - new entries to be added.
@@ -113,7 +113,7 @@ markfile(name, ino, type)
 
 	/*
 	 * This routine is called once for each element in the 
-	 * directory heirarchy, with a full path name.
+	 * directory hierarchy, with a full path name.
 	 * The "type" value is incorrectly specified as LEAF for
 	 * directories that are not on the dump tape.
 	 */
@@ -450,39 +450,68 @@ createfiles()
 	vprintf(stdout, "Extract requested files\n");
 	curfile.action = SKIP;
 	getvol((long)1);
+	skipmaps();
+	skipdirs();
 	first = lowerbnd(ROOTINO);
 	last = upperbnd(maxino - 1);
 	for (;;) {
-		skipmaps();
-		skipdirs();
 		first = lowerbnd(first);
 		last = upperbnd(last);
+		/*
+		 * Check to see if any files remain to be extracted
+		 */
 		if (first > last)
 			return;
+		/*
+		 * Reject any volumes with inodes greater
+		 * than the last one needed
+		 */
 		while (curfile.ino > last) {
 			curfile.action = SKIP;
 			getvol((long)0);
-			if (volno == 1) {
-				skipmaps();
-				skipdirs();
-			}
+			skipmaps();
+			skipdirs();
 		}
+		/*
+		 * Decide on the next inode needed.
+		 * Skip across the inodes until it is found
+		 * or an out of order volume change is encountered
+		 */
 		next = lowerbnd(curfile.ino);
 		do	{
 			curvol = volno;
 			while (next > curfile.ino && volno == curvol)
 				skipfile();
+			skipmaps();
+			skipdirs();
 		} while (volno == curvol + 1);
+		/*
+		 * If volume change out of order occurred the
+		 * current state must be re calculated
+		 */
 		if (volno != curvol)
 			continue;
+		/*
+		 * If the current inode is greater than the one we were
+		 * looking for then we missed the one we were looking for.
+		 * Since we only attempt to extract files listed in the
+		 * dump map, the file must have been lost due to a tape
+		 * read error. Thus we report all requested files between
+		 * the one we were looking for, and the one we found as
+		 * missing, and delete their request flags.
+		 */
 		while (next < curfile.ino) {
 			ep = lookupino(next);
 			if (ep == NIL)
 				panic("corrupted symbol table\n");
 			fprintf(stderr, "%s: not found on tape\n", myname(ep));
 			ep->e_flags &= ~NEW;
-			next = lowerbnd(next + 1);
+			next = lowerbnd(next);
 		}
+		/*
+		 * The current inode is the one that we are looking for,
+		 * so extract it per its requested name.
+		 */
 		if (next == curfile.ino && next <= last) {
 			ep = lookupino(next);
 			if (ep == NIL)

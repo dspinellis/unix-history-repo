@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.4	(Berkeley)	83/02/28";
+static char sccsid[] = "@(#)main.c	3.5	(Berkeley)	83/03/05";
 #endif
 
 /*
@@ -85,6 +85,10 @@ usage:
 			yflag++;
 			break;
 		case 'f':
+			if (argc < 1) {
+				fprintf(stderr, "missing device specifier\n");
+				done(1);
+			}
 			inputdev = *argv++;
 			argc--;
 			break;
@@ -92,6 +96,10 @@ usage:
 			/*
 			 * dumpnum (skip to) for multifile dump tapes
 			 */
+			if (argc < 1) {
+				fprintf(stderr, "missing dump number\n");
+				done(1);
+			}
 			dumpnum = atoi(*argv++);
 			if (dumpnum <= 0) {
 				fprintf(stderr, "Dump number must be a positive integer\n");
@@ -100,40 +108,16 @@ usage:
 			argc--;
 			break;
 		case 't':
-			if (command != '\0') {
-				fprintf(stderr,
-					"t and %c are mutually exclusive\n",
-					command);
-				goto usage;
-			}
-			command = 't';
-			break;
 		case 'R':
-			if (command != '\0') {
-				fprintf(stderr,
-					"R and %c are mutually exclusive\n",
-					command);
-				goto usage;
-			}
-			command = 'R';
-			break;
 		case 'r':
-			if (command != '\0') {
-				fprintf(stderr,
-					"r and %c are mutually exclusive\n",
-					command);
-				goto usage;
-			}
-			command = 'r';
-			break;
 		case 'x':
 			if (command != '\0') {
 				fprintf(stderr,
-					"x and %c are mutually exclusive\n",
-					command);
+					"%c and %c are mutually exclusive\n",
+					*cp, command);
 				goto usage;
 			}
-			command = 'x';
+			command = *cp;
 			break;
 		default:
 			fprintf(stderr, "Bad key character %c\n", *cp);
@@ -161,7 +145,10 @@ usage:
 				fprintf(stderr, "%s: not on tape\n", name);
 				continue;
 			}
-			treescan(name, ino, listfile);
+			if (hflag)
+				treescan(name, ino, listfile);
+			else
+				listfile(name, ino, inodetype(ino));
 		}
 		done(0);
 
