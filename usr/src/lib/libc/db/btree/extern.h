@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 int	 __bt_close __P((DB *));
@@ -19,7 +19,6 @@ EPG	*__bt_first __P((BTREE *, const DBT *, int *));
 int	 __bt_free __P((BTREE *, PAGE *));
 int	 __bt_get __P((const DB *, const DBT *, DBT *, u_int));
 PAGE	*__bt_new __P((BTREE *, pgno_t *));
-DB	*__bt_open __P((const char *, int, int, const BTREEINFO *));
 void	 __bt_pgin __P((void *, pgno_t, void *));
 void	 __bt_pgout __P((void *, pgno_t, void *));
 int	 __bt_push __P((BTREE *, pgno_t, int));
