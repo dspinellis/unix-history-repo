@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.7 (Berkeley) %G%";
 
 #include "dump.h"
 #include <ndir.h>
@@ -41,7 +41,7 @@ mark(ip)
 	if ((ip->di_mtime >= spcl.c_ddate || ip->di_ctime >= spcl.c_ddate) &&
 	    !BIT(ino, nodmap)) {
 		BIS(ino, nodmap);
-		if (f != IFREG && f != IFDIR) {
+		if (f != IFREG && f != IFDIR && f != IFLNK) {
 			esize += 1;
 			return;
 		}
@@ -117,7 +117,7 @@ dump(ip)
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
 	i = ip->di_mode & IFMT;
-	if ((i != IFDIR && i != IFREG) || ip->di_size == 0) {
+	if ((i != IFDIR && i != IFREG && i != IFLNK) || ip->di_size == 0) {
 		spclrec();
 		return;
 	}
