@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.3 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.4 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -123,16 +123,6 @@ af.o uipc_proto.o uipc_domain.o locore.o: Makefile
 
 # depends on kdb being configured
 trap.o:	Makefile
-
-# depend on maxusers
-assym.h: Makefile
-assym.h: $S/sys/param.h ${NEWS3400}/include/pte.h $S/sys/buf.h
-assym.h: $S/sys/vmmeter.h $S/sys/dir.h $S/sys/mbuf.h $S/sys/signal.h
-assym.h: $S/sys/map.h $S/sys/proc.h $S/sys/msgbuf.h $S/sys/syscall.h
-assym.h: $S/sys/user.h ${NEWS3400}/news3400/genassym.c
-assym.h: ${NEWS3400}/include/param.h ${NEWS3400}/include/pcb.h
-assym.h: ${NEWS3400}/include/vmparam.h ${NEWS3400}/include/pmap.h
-assym.h: ${NEWS3400}/include/pte.h ${NEWS3400}/include/reg.h
 
 assym.h: genassym
 	./genassym >assym.h
