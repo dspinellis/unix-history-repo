@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.12 (Berkeley) %G%
+ *	@(#)pccons.c	5.13 (Berkeley) %G%
  */
 
 /*
@@ -214,14 +214,16 @@ pcrint(dev, irq, cpl)
 	(*linesw[pccons.t_line].l_rint)(c&0xff, &pccons);
 }
 
-pcioctl(dev, cmd, data, flag)
+pcioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd, flag;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct tty *tp = &pccons;
 	register error;
  
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
