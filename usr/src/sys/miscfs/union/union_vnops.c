@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 1992, 1993, 1994 The Regents of the University of California.
- * Copyright (c) 1992, 1993, 1994 Jan-Simon Pendry.
- * All rights reserved.
+ * Copyright (c) 1992, 1993, 1994, 1995 Jan-Simon Pendry.
+ * Copyright (c) 1992, 1993, 1994, 1995
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.24 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1318,12 +1318,13 @@ start:
 	if (un->un_uppervp != NULLVP) {
 		if (((un->un_flags & UN_ULOCK) == 0) &&
 		    (vp->v_usecount != 0)) {
-			un->un_flags |= UN_ULOCK;
 			VOP_LOCK(un->un_uppervp);
+			un->un_flags |= UN_ULOCK;
 		}
 #ifdef DIAGNOSTIC
 		if (un->un_flags & UN_KLOCK)
-			panic("union: dangling upper lock");
+			vprint("union: dangling klock", vp);
+			panic("union: dangling upper lock (%lx)", vp);
 #endif
 	}
 
@@ -1349,6 +1350,17 @@ start:
 	return (0);
 }
 
+/*
+ * When operations want to vput() a union node yet retain a lock on
+ * the upper vnode (say, to do some further operations like link(),
+ * mkdir(), ...), they set UN_KLOCK on the union node, then call
+ * vput() which calls VOP_UNLOCK() and comes here.  union_unlock()
+ * unlocks the union node (leaving the upper vnode alone), clears the
+ * KLOCK flag, and then returns to vput().  The caller then does whatever
+ * is left to do with the upper vnode, and ensures that it gets unlocked.
+ *
+ * If UN_KLOCK isn't set, then the upper vnode is unlocked here.
+ */
 int
 union_unlock(ap)
 	struct vop_lock_args *ap;
@@ -1417,6 +1429,11 @@ union_print(ap)
 
 	printf("\ttag VT_UNION, vp=%x, uppervp=%x, lowervp=%x\n",
 			vp, UPPERVP(vp), LOWERVP(vp));
+	if (UPPERVP(vp) != NULLVP)
+		vprint("union: upper", UPPERVP(vp));
+	if (LOWERVP(vp) != NULLVP)
+		vprint("union: lower", LOWERVP(vp));
+
 	return (0);
 }
 
