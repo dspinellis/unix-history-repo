@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mdef.h	5.7 (Berkeley) %G%
+ *	@(#)mdef.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -132,7 +132,7 @@ typedef union {			/* stack structure */
  *      pushf() - push a call frame entry onto stack
  *      pushs() - push a string pointer onto stack
  */
-#define gpbc() 	 (bp > buf) ? *--bp : getc(infile[ilevel])
+#define gpbc() 	 (bp > bufbase) ? *--bp : getc(infile[ilevel])
 #define pushf(x) if (sp < STACKMAX) mstack[++sp].sfra = (x)
 #define pushs(x) if (sp < STACKMAX) mstack[++sp].sstr = (x)
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 char	*basename __P((char *));
@@ -55,6 +55,8 @@ extern int oindex;		/* diversion index. */
 extern int sp;			/* current m4 stack pointer */
 extern char *bp;		/* first available character */
 extern char buf[];		/* push-back buffer */
+extern char *bufbase;		/* buffer base for this ilevel */
+extern char *bbase[];		/* buffer base per ilevel */
 extern char ecommt;		/* end character for comment */
 extern char *endest;		/* end of string space */
 extern char *endpbb;		/* end of push-back buffer */
