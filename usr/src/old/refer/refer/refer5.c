@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -15,7 +15,7 @@ static char labc[NLABC];
 static char stbuff[50];
 static int  prevsig;
 
-putsig (nf, flds, nref, nstline, endline)	/* choose signal style */
+putsig (nf, flds, nref, nstline, endline, toindex)   /* choose signal style */
 char *flds[], *nstline, *endline;
 {
 	char t[100], t1[100], t2[100], format[10], *sd, *stline;
@@ -138,7 +138,7 @@ char *flds[], *nstline, *endline;
 		}
 	}
 	if (bare < 2)
-		if (nf > 0)
+		if (nf > 0 && toindex)
 			fprintf(fo,".ds [F %s%c",t,sep);
 	if (bare > 0)
 		flout();

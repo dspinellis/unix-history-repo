@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer2.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)refer2.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -112,7 +112,7 @@ char *line1;
 						nf = tabs(flds, one);
 						nf += tabs(flds+nf, dbuff);
 						assert(nf < NFLD);
-						putsig(nf,flds,nr,line1,line);
+						putsig(nf,flds,nr,line1,line,0);
 					}
 					return;
 				}
@@ -129,7 +129,7 @@ char *line1;
 	if (sort)
 		putkey(nf, flds, refnum, keystr);
 	if (bare < 2)
-		putsig(nf, flds, refnum, line1, line);
+		putsig(nf, flds, refnum, line1, line, 1);
 	else
 		flout();
 	putref(nf, flds);
