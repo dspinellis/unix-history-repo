@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -392,7 +392,7 @@ sendrequest(cmd, local, remote)
 	FILE *fin, *dout = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)();
 	int abortsend();
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *bufp;
 	long bytes = 0, hashbytes = HASHBYTES;
 	register int c, d;
 	struct stat st;
@@ -466,25 +466,24 @@ sendrequest(cmd, local, remote)
 	if (setjmp(sendabort))
 		goto abort;
 
-	if (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0) {
-		if (restart_point) {
-			if (fseek(fin, (long) restart_point, 0) < 0) {
-				perror(local);
-				restart_point = 0;
-				if (closefunc != NULL)
-					(*closefunc)(fin);
-				return;
-			}
-			if (command("REST %ld", (long) restart_point)
-				!= CONTINUE) {
-				restart_point = 0;
-				if (closefunc != NULL)
-					(*closefunc)(fin);
-				return;
-			}
+	if (restart_point &&
+	    (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0)) {
+		if (fseek(fin, (long) restart_point, 0) < 0) {
+			perror(local);
 			restart_point = 0;
-			mode = "r+w";
+			if (closefunc != NULL)
+				(*closefunc)(fin);
+			return;
 		}
+		if (command("REST %ld", (long) restart_point)
+			!= CONTINUE) {
+			restart_point = 0;
+			if (closefunc != NULL)
+				(*closefunc)(fin);
+			return;
+		}
+		restart_point = 0;
+		mode = "r+w";
 	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
@@ -514,10 +513,11 @@ sendrequest(cmd, local, remote)
 	case TYPE_I:
 	case TYPE_L:
 		errno = d = 0;
-		while ((c = read(fileno (fin), buf, sizeof (buf))) > 0) {
-			if ((d = write(fileno (dout), buf, c)) != c)
-				break;
+		while ((c = read(fileno(fin), buf, sizeof (buf))) > 0) {
 			bytes += c;
+			for (bufp = buf; c > 0; c -= d, bufp += d)
+				if ((d = write(fileno(dout), bufp, c)) <= 0)
+					break;
 			if (hash) {
 				while (bytes >= hashbytes) {
 					(void) putchar('#');
@@ -534,8 +534,10 @@ sendrequest(cmd, local, remote)
 		}
 		if (c < 0)
 			perror(local);
-		if (d < 0) {
-			if (errno != EPIPE) 
+		if (d <= 0) {
+			if (d == 0)
+				fprintf(stderr, "netout: write returned 0?\n");
+			else if (errno != EPIPE) 
 				perror("netout");
 			bytes = -1;
 		}
@@ -628,7 +630,8 @@ recvrequest(cmd, local, remote, mode)
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
 	int abortrecv(), oldverbose, oldtype = 0, is_retr, tcrflag, nfnd;
-	char *buf, *gunique(), msg;
+	char *bufp, *gunique(), msg;
+	static char *buf;
 	static int bufsize;
 	long bytes = 0, hashbytes = HASHBYTES;
 	struct fd_set mask;
@@ -737,7 +740,7 @@ recvrequest(cmd, local, remote, mode)
 					case TYPE_L:
 						settenex();
 						break;
-					}
+				}
 				verbose = oldverbose;
 			}
 			return;
@@ -758,7 +761,7 @@ recvrequest(cmd, local, remote, mode)
 					case TYPE_L:
 						settenex();
 						break;
-					}
+				}
 				verbose = oldverbose;
 			}
 			return;
@@ -793,6 +796,7 @@ recvrequest(cmd, local, remote, mode)
 		buf = malloc(st.st_blksize);
 		if (buf == NULL) {
 			perror("malloc");
+			bufsize = 0;
 			goto abort;
 		}
 		bufsize = st.st_blksize;
@@ -833,8 +837,12 @@ recvrequest(cmd, local, remote, mode)
 				perror("netin");
 			bytes = -1;
 		}
-		if (d < 0)
-			perror(local);
+		if (d < c) {
+			if (d < 0)
+				perror(local);
+			else
+				fprintf(stderr, "%s: short write\n", local);
+		}
 		break;
 
 	case TYPE_A:
@@ -850,7 +858,7 @@ recvrequest(cmd, local, remote, mode)
 					goto done;
 				if (c == '\n')
 					i++;
-			}	
+			}
 			if (fseek(fout, 0L, L_INCR) < 0) {
 done:
 				perror(local);
@@ -871,7 +879,11 @@ done:
 					if (ferror(fout))
 						goto break2;
 					(void) putc('\r', fout);
-					if (c == '\0' || c == EOF)
+					if (c == '\0') {
+						bytes++;
+						goto contin2;
+					}
+					if (c == EOF)
 						goto contin2;
 				}
 			}
@@ -886,13 +898,13 @@ break2:
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
-		if (ferror(din)){
+		if (ferror(din)) {
 			if (errno != EPIPE)
-				perror ("netin");
+				perror("netin");
 			bytes = -1;
 		}
 		if (ferror(fout))
-			perror (local);
+			perror(local);
 		break;
 	}
 	if (closefunc != NULL)
