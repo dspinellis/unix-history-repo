@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ main(argc, argv)
 	register struct mtab *mp;
 	register struct fstab *fs;
 	register int cnt;
-	int all, ch, fd, rval;
+	int all, ch, fd, rval, sfake;
 	char *type;
 
 	all = 0;
@@ -79,10 +79,15 @@ main(argc, argv)
 
 	if (all) {
 		rval = 0;
-		while ((fs = getfsent()))
-			if (strcmp(fs->fs_file, "/") && !BADTYPE(fs->fs_type))
-				rval |= mountfs(fs->fs_spec, fs->fs_file,
-				    type ? type : fs->fs_type);
+		for (sfake = fake; fs = getfsent(); fake = sfake) {
+			if (BADTYPE(fs->fs_type))
+				continue;
+			/* `/' is special, it's always mounted */
+			if (!strcmp(fs->fs_file, "/"))
+				fake = 1;
+			rval |= mountfs(fs->fs_spec, fs->fs_file,
+			    type ? type : fs->fs_type);
+		}
 		exit(rval);
 	}
 
