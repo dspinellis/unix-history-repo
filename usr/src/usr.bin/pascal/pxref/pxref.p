@@ -165,19 +165,15 @@ var
     inp :file of char;
     
     procedure lwriteln;
-    var
-	i :linptr;
     begin
 	if list then begin
-	    { actually should use ...
-	    for i:=1 to lineptr do
-		write(line[i]);
-	    }
-	    line[lineptr+1]:=chr(0);
-	    writeln(line);
+	    { write sans trailing blanks }
+	    if lineptr > 0 then
+		writeln(line: lineptr)
+	    else
+		writeln;
 	end;
 	get(inp);
-	line:=blanks;
 	lineptr:=0
     end { lwriteln };
 
