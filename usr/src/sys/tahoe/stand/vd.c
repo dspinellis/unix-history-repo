@@ -1,4 +1,4 @@
-/*	vd.c	7.3	86/07/16	*/
+/*	vd.c	7.4	86/11/04	*/
 
 /*
  * Stand alone driver for the VDDC controller 
@@ -60,7 +60,7 @@ vdopen(io)
 		_stop("");
 	}
 	/* check file system for validity */
-	if ((unsigned)io->i_boff > 5) {
+	if ((unsigned)io->i_boff > 8) {
 		printf("dk%d: invalid partition number (%d)\n",
 		    io->i_unit, io->i_boff);
 		_stop("");
@@ -170,7 +170,7 @@ vdstart_drive(io)
 	}
 	vdinfo[ctlr].vd_flags |= VDF_BUSY;
 	io->i_unit = ounit;
-	DELAY((unit * 5500000) + 62000000);
+	DELAY(62000000);
 }
 
 /*
@@ -197,16 +197,22 @@ vdconfigure(io, pass)
 	dcb.trail.rstrail.ncyl = dkinfo[ctlr][unit].info.ncyl;
 	dcb.trail.rstrail.nsurfaces = dkinfo[ctlr][unit].info.ntrak;
 	if (vdinfo[ctlr].vd_type == SMD_ECTLR) {
-		dcb.trailcnt = (char)4;
+		dcb.trailcnt = (char)5;
 		dcb.trail.rstrail.nsectors = dkinfo[ctlr][unit].info.nsec;
 		dcb.trail.rstrail.slip_sec = dkinfo[ctlr][unit].info.nslip;
+		dcb.trail.rstrail.recovery = 0x18f;
 	} else
 		dcb.trailcnt = (char)2;
 	mdcb.firstdcb = &dcb;
 	mdcb.vddcstat = 0;
 	VDDC_ATTENTION(ctlr_addr, &mdcb, vdinfo[ctlr].vd_type);
-	if (!vdpoll(ctlr_addr,&dcb,10,vdinfo[ctlr].vd_type))
-		_stop(" during drive configuration.\n");
+	if (!vdpoll(ctlr_addr,&dcb,10,vdinfo[ctlr].vd_type)) {
+		if (pass == 0) {
+			VDDC_RESET(ctlr_addr, vdinfo[ctlr].vd_type);
+			vdconfigure(io, 1);
+		} else
+			_stop(" during drive configuration.\n");
+	}
 	if ((dcb.operrsta & (NOTCYLERR | DRVNRDY)) && !pass) {
 		vdstart_drive(io);
 		vdconfigure(io, 1);
@@ -221,7 +227,7 @@ vdconfigure(io, pass)
 /*
  * Strategy is called to do the actual I/O to the disk drives.
  *
- * Some simple checks are made to make sure we don't do anything rediculus,
+ * Some simple checks are made to make sure we don't do anything rediculous,
  * If everything is sane then the request is issued.
  *
  * If no errors occured then the original byte count is returned,
@@ -393,6 +399,7 @@ vdpoll(addr, dcb, t, type)
 			uncache(&addr->cdr_csr);
 		}
 		DELAY(300);
+		uncache(&dcb->err_code);
 	}
 	DELAY(200);
 	uncache(&dcb->operrsta);
