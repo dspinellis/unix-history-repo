@@ -7,18 +7,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.2 (Berkeley) %G%
+ *	@(#)SYS.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/syscall.h>
 #include <machine/machAsmDefs.h>
 
-/* vax/tahoe compat */
-#define	ret
-#define	r0	v0
-#define	r1	v1
-
-#define	SYSCALL(x)	LEAF(x); li v0,SYS_/**/x; syscall; bne a3,zero,err; \
+#ifdef __STDC__
+#define	RSYSCALL(x)	LEAF(x); li v0,SYS_ ## x; syscall; bne a3,zero,err; \
+			j ra; err: j _cerror; END(x);
+#define	PSEUDO(x,y)	LEAF(x); li v0,SYS_ ## y; syscall; bne a3,zero,err; \
+			j ra; err: j _cerror; END(x);
+#else
+#define	RSYSCALL(x)	LEAF(x); li v0,SYS_/**/x; syscall; bne a3,zero,err; \
 			j ra; err: j _cerror; END(x);
 #define	PSEUDO(x,y)	LEAF(x); li v0,SYS_/**/y; syscall; bne a3,zero,err; \
 			j ra; err: j _cerror; END(x);
+#endif
