@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.9 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -96,7 +96,7 @@ ffs_update(ap)
 	}
 	*((struct dinode *)bp->b_data +
 	    ino_to_fsbo(fs, ip->i_number)) = ip->i_din;
-	if (ap->a_waitfor)
+	if (ap->a_waitfor && (ap->a_vp->v_mount->mnt_flag & MNT_ASYNC) == 0)
 		return (bwrite(bp));
 	else {
 		bdwrite(bp);
