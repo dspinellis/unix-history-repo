@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.3 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.4 (Berkeley) %G%
  */
 #include "../machine/mtpr.h"
 
@@ -32,6 +32,11 @@
  * call to panic.
  */
 char	*panicstr;
+
+extern	cnputc();			/* standard console putc */
+extern	struct tty cons;		/* standard console tty */
+struct	tty *constty;			/* pointer to console "window" tty */
+int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
 
 extern	cnputc();			/* standard console putc */
 extern	struct tty cons;		/* standard console tty */
@@ -324,7 +329,14 @@ putchar(c, flags, tp)
 	register int c;
 	struct tty *tp;
 {
+	int startflags = flags;
 
+	if (panicstr)
+		constty = 0;
+	if ((flags & TOCONS) && tp == 0 && constty) {
+		tp = constty;
+		flags |= TOTTY;
+	}
 	if ((flags & TOCONS) && panicstr == 0 && tp == 0 && constty) {
 		tp = constty;
 		flags |= TOTTY;
@@ -360,6 +372,5 @@ putchar(c, flags, tp)
 		if (msgbuf.msg_bufx < 0 || msgbuf.msg_bufx >= MSG_BSIZE)
 			msgbuf.msg_bufx = 0;
 	}
-	if ((flags & TOCONS) && c != '\0')
 		(*v_console)(c);
 }
