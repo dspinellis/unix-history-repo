@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -263,6 +263,10 @@ main(argc, argv)
 	if (argwidth < 4)
 		argwidth = 8;
 	for (ep = ehead; ep != NULL; ep = ep->next) {
+		if (ep->proc == 0) {
+			ep->args = "-";
+			continue;
+		}
 		ep->args = strdup(kvm_getargs(ep->proc, kvm_getu(ep->proc)));
 		if (ep->args == NULL) {
 			error("out of memory");
