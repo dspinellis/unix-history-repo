@@ -1,15 +1,13 @@
-#	@(#)Makefile	5.6 (Berkeley) 6/27/91
+#	$Id$
+#	From: @(#)Makefile	5.6 (Berkeley) 6/27/91
 
 PROG=	route
 MAN8=	route.8
-SRCS=	route.c
-#SRCS=	route.c ccitt_addr.c
+SRCS=	route.c ccitt_addr.c
 CFLAGS+=-I.
 #CLEANFILES+=keywords.h
 BINOWN=	root
 BINMODE=4555
-
-all route depend lint tags: keywords.h
 
 # keywords.h: keywords
 # 	sed -e '/^#/d' -e '/^$$/d' ${.CURDIR}/keywords > _keywords.tmp
