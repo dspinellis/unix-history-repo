@@ -1,4 +1,4 @@
-/*	sys_socket.c	4.1	83/05/27	*/
+/*	sys_socket.c	4.2	83/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,6 +53,10 @@ soo_ioctl(fp, cmd, data)
 			so->so_state |= SS_ASYNC;
 		else
 			so->so_state &= ~SS_ASYNC;
+		break;
+
+	case FIONREAD:
+		*(int *)data = so->so_rcv.sb_cc;
 		break;
 
 	case SIOCSPGRP:
