@@ -1,4 +1,4 @@
-/*	rk.c	4.35	81/05/10	*/
+/*	rk.c	4.36	81/07/25	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -665,10 +665,10 @@ rkreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		for (unit = 0; unit < NHK; unit++) {
+		for (unit = 0; unit < NRK; unit++) {
 			if ((ui = rkdinfo[unit]) == 0)
 				continue;
-			if (ui->ui_alive == 0)
+			if (ui->ui_alive == 0 || ui->ui_mi != um)
 				continue;
 			rkutab[unit].b_active = 0;
 			(void) rkustart(ui);
