@@ -3,648 +3,502 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define boolean int
+#define TRUE 1
+#define FALSE 0
+#define NIL 0
+
 /*
  * Vfontedpr.
  *
- * Bill Joy, Apr. 1979.
- * (made somewhat table driven - Dave Presotto 11/17/80)
- *
- * To add a new language:
- *	1) add a new keyword table
- *	2) add a new entry to "struct langdef ld[]" to
- *	   describe comments, strings, etc.
- *	3) add two routines to recognize start and end of 
- *	   procedures
+ * Dave Presotto 1/12/81 (adapted from an earlier version by Bill Joy)
  *
  */
-#define NOLANG -1		/* indicates no language chosen */
-#define C 0
-#define PASCAL 1
-#define MODEL 2
-#define NLANG 4			/* total number of languages */
 
 #define STRLEN 10		/* length of strings introducing things */
 #define PNAMELEN 40		/* length of a function/procedure name */
+#define PSMAX 20		/* size of procedure name stacking */
 
-/* routines used by the different languages */
+/* regular expression routines */
 
-int	cprbegin();
-int	cprend();
-int	iprbegin();
-int	iprend();
-int	pprbegin();
-int	pprend();
-int	mprbegin();
-int	mprend();
+char	*expmatch();		/* match a string to an expression */
+char	*STRNCMP();		/* a different kindof strncmp */
+char	*convexp();		/* convert expression to internal form */
 
-/* keywords for the model language */
+boolean	isproc();
 
-char	*mkw[] = {
-	"abs",
-	"and",
-	"array",
-	"beginproc",
-	"boolean",
-	"by",
-	"case",
-	"cdnl",
-	"char",
-	"copied",
-	"dispose",
-	"div",
-	"do",
-	"dynamic",
-	"else",
-	"elsif",
-	"end",
-	"endproc",
-	"entry",
-	"external",
-	"f",
-	"FALSE",
-	"false",
-	"fi",
-	"file",
-	"for",
-	"formal",
-	"fortran",
-	"global",
-	"if",
-	"in",
-	"include",
-	"inline",
-	"is",
-	"lbnd",
-	"max",
-	"min",
-	"mod",
-	"new",
-	"NIL",
-	"nil",
-	"noresult",
-	"not",
-	"notin",
-	"od",
-	"of",
-	"or",
-	"procedure",
-	"public",
-	"read",
-	"readln",
-	"readonly",
-	"record",
-	"recursive",
-	"rem",
-	"rep",
-	"repeat",
-	"result",
-	"return",
-	"set",
-	"space",
-	"string",
-	"subscript",
-	"such",
-	"then",
-	"TRUE",
-	"true",
-	"type",
-	"ubnd",
-	"union",
-	"until",
-	"varies",
-	"while",
-	"width",
-	"write",
-	"writeln",
-	0,
-};
-
-/* keywords for the pascal language */
-
-char	*pkw[] = {
-	"and",
-	"array",
-	"assert",
-	"begin",
-	"case",
-	"const",
-	"div",
-	"do",
-	"downto",
-	"else",
-	"end",
-	"file",
-	"for",
-	"forward",
-	"function",
-	"goto",
-	"if",
-	"in",
-	"label",
-	"mod",
-	"nil",
-	"not",
-	"of",
-	"or",
-	"packed",
-	"procedure",
-	"program",
-	"record",
-	"repeat",
-	"set",
-	"then",
-	"to",
-	"type",
-	"until",
-	"var",
-	"while",
-	"with",
-	"oct",
-	"hex",
-	"external",
-	0,
-};
-
-/* keywords for the C language */
-
-char	*ckw[] = {
-	"asm",
-	"auto",
-	"break",
-	"case",
-	"char",
-	"continue",
-	"default",
-	"do",
-	"double",
-	"else",
-	"enum",
-	"extern",
-	"float",
-	"for",
-	"fortran",
-	"goto",
-	"if",
-	"int",
-	"long",
-	"register",
-	"return",
-	"short",
-	"sizeof",
-	"static",
-	"struct",
-	"switch",
-	"typedef",
-	"union",
-	"unsigned",
-	"while",
-	"#define",
-	"#else",
-	"#endif",
-	"#if",
-	"#ifdef",
-	"#ifndef",
-	"#include",
-	"#undef",
-	"#",
-	"define",
-	"else",
-	"endif",
-	"if",
-	"ifdef",
-	"ifndef",
-	"include",
-	"undef",
-	0,
-};
-
-/* keywords for the ISP language */
-
-char	*ikw[] = {
-	"and",
-	"begin",
-	"decode",
-	"define",
-	"end",
-	"eql",
-	"eqv",
-	"geq",
-	"gtr",
-	"if",
-	"leave",
-	"leq",
-	"lss",
-	"mod",
-	"neq",
-	"next",
-	"not",
-	"or",
-	"otherwise",
-	"repeat",
-	"restart",
-	"resume",
-	"sr0",
-	"sr1",
-	"srd",
-	"srr",
-	"sl0",
-	"sl1",
-	"sld",
-	"slr",
-	"tst",
-	"xor",
-	0,
-};
-
-/*
- * the following structure defines a language
- */
-
-struct langdef {
-	char	*option;	/* its option switch */
-	char	**kwd;		/* address of its keyword table */
-	int	(*isproc)();	/* test for procedure begin */
-	int	(*ispend)();	/* test for procedure end */
-	char	*combeg;	/* string introducing a comment */
-	char	*comend;	/* string ending a comment */
-	char	*comout;	/* string output in place of combeg string */
-	char	*acmbeg;	/* alternate comment start */
-	char	*acmend;	/* alternate comment end */
-	char	*acmout;	/* alternate comment start preface */
-	char    strdel;		/* delimiter for string constant */
-	char	chrdel;		/* delimiter for character constant */
-	int	onelncom;	/* comments do not continue on next line */
-	int	onelnstr;	/* string constants do not continue on next */
-	int	onecase;	/* upper and lower case are equivalent */
-};
-
-struct langdef ld[] = {
-	/* the C language */
-	"-c",
-	ckw,		/* kwd */
-	cprbegin,	/* isproc */
-	cprend,		/* ispend */
-	"/*",		/* combeg */
-	"*/",		/* comend */
-	"\\*(/*",	/* comout */
-	0,		/* acmbeg */
-	0,		/* acmend */
-	0,		/* acmout */
-	'"',		/* strdel */
-	'\'',		/* chrdel */
-	0,		/* onelncom */
-	0,		/* onelnstr */
-	0,		/* onecase */
-
-	/* the ISP language */
-	"-i",
-	ikw,		/* kwd */
-	iprbegin,	/* isproc */
-	iprend,		/* ispend */
-	"!",		/* combeg */
-	0,		/* comend */
-	"!",		/* comout */
-	0,		/* acmbeg */
-	0,		/* acmend */
-	0,		/* acmout */
-	0,		/* strdel */
-	0,		/* chrdel */
-	1,		/* onelncom */
-	1,		/* onelnstr */
-	1,		/* onecase */
-
-	/* the pascal language */
-	"-p",
-	pkw,		/* kwd */
-	pprbegin,	/* isproc */
-	pprend,		/* ispend */
-	"{",		/* combeg */
-	"}",		/* comend */
-	"{",		/* comout */
-	"(*",		/* acmbeg */
-	"*)",		/* acmend */
-	"(*",		/* acmout */
-	'\'',		/* strdel */
-	0,		/* chrdel */
-	0,		/* onelncom */
-	0,		/* onelnstr */
-	0,		/* onecase */
-
-	/* the model language */
-	"-m",
-	mkw,		/* kwd */
-	mprbegin,	/* isproc */
-	mprend,		/* ispend */
-	"$",		/* combeg */
-	"$",		/* comend */
-	"$",		/* comout */
-	0,		/* acmbeg */
-	0,		/* acmend */
-	0,		/* acmout */
-	'"',		/* strdel */
-	'\'',		/* chrdel */
-	1,		/* onelncom */
-	0,		/* onelnstr */
-	0,		/* onecase */
-};
 
 char	*ctime();
-int	incomm;			/* in a comment of the primary type */
-int	inacomm;		/* in the alternate type of comment */
-int	instr;			/* in a string constant */
-int	nokeyw;
-int	index;
-int	margin;
 
-char	*comcol;		/* character position comment starts in */
-int	language = NOLANG;	/* the language indicator */
-char	**keywds;		/* keyword table address */
-int	(*isprbeg)();		/* test for beginning of procedure */
-int	(*isprend)();		/* test for end of procedure */
-char	*cstart;		/* start of comment string */
-char	*cstop;			/* end of comment string */
-char	*cout;			/* string to substitute for cstart */
-int	lcstart;		/* length of comment string starter */
-int	lcstop;			/* length of comment string terminator */
-char	*acstart;		/* start of comment string */
-char	*acstop;		/* end of comment string */
-char	*acout;			/* string to substitute for cstart */
-int	lacstart;		/* length of comment string starter */
-int	lacstop;		/* length of comment string terminator */
-char	sdelim;			/* string constant delimiter */
-char	cdelim;			/* character constant delimiter */
-int	com1line;		/* one line comments */
-int	str1line;		/* one line strings */
-int	upeqlow;		/* upper and lower case equivalent */
-char	pname[PNAMELEN];
+/*
+ *	The state variables
+ */
+
+boolean	incomm;			/* in a comment of the primary type */
+boolean	instr;			/* in a string constant */
+boolean	inchr;			/* in a string constant */
+boolean	nokeyw = FALSE;		/* no keywords being flagged */
+boolean	index = FALSE;		/* form an index */
+boolean filter = FALSE;		/* act as a filter (like eqn) */
+boolean pass = FALSE;		/* when acting as a filter, pass indicates
+				 * whether we are currently processing
+				 * input.
+				 */
+boolean prccont;		/* continue last procedure */
+int	margin;
+int	psptr;			/* the stack index of the current procedure */
+char	pstack[PSMAX][PNAMELEN+1];	/* the procedure name stack */
+int	plstack[PSMAX];		/* the procedure nesting level stack */
+int	blklevel;		/* current nesting level */
+char	*defsfile = "/usr/lib/vgrindefs";	/* name of language definitions file */
+char	pname[BUFSIZ+1];
+
+/*
+ *	The language specific globals
+ */
+
+char	*language = "c";	/* the language indicator */
+char	*l_keywds[BUFSIZ/2];	/* keyword table address */
+char	*l_prcbeg;		/* regular expr for procedure begin */
+char	*l_combeg;		/* string introducing a comment */
+char	*l_comend;		/* string ending a comment */
+char	*l_blkbeg;		/* string begining of a block */
+char	*l_blkend;		/* string ending a block */
+char    *l_strbeg;		/* delimiter for string constant */
+char    *l_strend;		/* delimiter for string constant */
+char    *l_chrbeg;		/* delimiter for character constant */
+char    *l_chrend;		/* delimiter for character constant */
+char	l_escape;		/* character used to  escape characters */
+boolean	l_toplex;		/* procedures only defined at top lex level */
+
+/*
+ *  global variables also used by expmatch
+ */
+boolean _escaped;		/* if last character was an escape */
+char *_start;			/* start of the current string */
+boolean	l_onecase;		/* upper and lower case are equivalent */
 
 #define	ps(x)	printf("%s", x)
 
 main(argc, argv)
-	int argc;
-	char *argv[];
+    int argc;
+    char *argv[];
 {
-	int lineno;
-	char *fname = "";
-	struct stat stbuf;
-	char buf[BUFSIZ];
-	int needbp = 0;
+    int lineno;
+    char *fname = "";
+    char *ptr;
+    struct stat stbuf;
+    char buf[BUFSIZ];
+    char strings[2 * BUFSIZ];
+    char defs[2 * BUFSIZ];
+    int needbp = 0;
 
-	argc--, argv++;
-	do {
-		char *cp;
-		int i;
+    argc--, argv++;
+    do {
+	char *cp;
+	int i;
 
-		if (argc > 0) {
-			if (!strcmp(argv[0], "-h")) {
-				if (argc == 1) {
-					printf("'ds =H\n");
-					argc = 0;
-					goto rest;
-				}
-				printf("'ds =H %s\n", argv[1]);
-				argc -= 2;
-				argv += 2;
-				if (argc > 0)
-					continue;
-				goto rest;
-			}
-			if (!strcmp(argv[0], "-x")) {
-				index++;
-				argv[0] = "-n";
-			}
-			if (!strcmp(argv[0], "-n")) {
-				nokeyw++;
-				argc--, argv++;
-				continue;
-			}
-			if (!strncmp(argv[0], "-s", 2)) {
-				i = 0;
-				cp = argv[0] + 2;
-				while (*cp)
-					i = i * 10 + (*cp++ - '0');
-				printf("'ps %d\n'vs %d\n", i, i+1);
-				argc--, argv++;
-				continue;
-			}
-			for (i = 0; i < NLANG; i++)
-				if (!strcmp(argv[0], ld[i].option)) {
-					language = i;
-					break;
-				}
-			if (i != NLANG) {
-				argc--, argv++;
-				continue;
-			}
-			if (freopen(argv[0], "r", stdin) == NULL) {
-				perror(argv[0]);
-				exit(1);
-			}
-			if (index)
-				printf("'ta 4i 4.25i 5.5iR\n'in .5i\n");
-			fname = argv[0];
-			argc--, argv++;
+	if (argc > 0) {
+	    if (!strcmp(argv[0], "-h")) {
+		if (argc == 1) {
+		    printf("'ds =H\n");
+		    argc = 0;
+		    goto rest;
 		}
-rest:
-		if (language == NOLANG)
-			language = C;		/* C is the default */
+		printf("'ds =H %s\n", argv[1]);
+		argc -= 2;
+		argv += 2;
+		if (argc > 0)
+		    continue;
+		goto rest;
+	    }
 
-		/* initialize for the appropriate language */
-		/* This is done because subscripting is too */
-		/* damned slow to be done every reference */
+	    /* act as a filter like eqn */
+	    if (!strcmp(argv[0], "-f")) {
+		filter++;
+		argv[0] = argv[argc-1];
+		argv[argc-1] = "-";
+		continue;
+	    }
 
-		keywds = ld[language].kwd;
-		isprbeg = ld[language].isproc;
-		isprend = ld[language].ispend;
+	    /* take input from the standard place */
+	    if (!strcmp(argv[0], "-")) {
+		argc = 0;
+		goto rest;
+	    }
 
-		cstart = ld[language].combeg;
-		cstop = ld[language].comend;
-		cout = ld[language].comout;
-		lcstart = strlen (cstart);
-		lcstop = strlen (cstop);
+	    /* build an index */
+	    if (!strcmp(argv[0], "-x")) {
+		index++;
+		argv[0] = "-n";
+	    }
 
-		acstart = ld[language].acmbeg;
-		acstop = ld[language].acmend;
-		acout = ld[language].acmout;
-		lacstart = strlen (acstart);
-		lacstop = strlen (acstop);
+	    /* indicate no keywords */
+	    if (!strcmp(argv[0], "-n")) {
+		nokeyw++;
+		argc--, argv++;
+		continue;
+	    }
 
-		sdelim = ld[language].strdel;
-		cdelim = ld[language].chrdel;
-		com1line = ld[language].onelncom;
-		str1line = ld[language].onelnstr;
-		upeqlow = ld[language].onecase;
-		pname[0] = 0;
+	    /* specify the font size */
+	    if (!strncmp(argv[0], "-s", 2)) {
+		i = 0;
+		cp = argv[0] + 2;
+		while (*cp)
+		    i = i * 10 + (*cp++ - '0');
+		printf("'ps %d\n'vs %d\n", i, i+1);
+		argc--, argv++;
+		continue;
+	    }
 
-		/* initialize the program */
+	    /* specify the language */
+	    if (!strncmp(argv[0], "-l", 2)) {
+		language = argv[0]+2;
+		argc--, argv++;
+		continue;
+	    }
 
-		incomm = 0;
-		inacomm = 0;
-		instr = 0;
-		ps("'-F\n");
-		printf(".ds =F %s\n", fname);
-		fstat(fileno(stdin), &stbuf);
-		cp = ctime(&stbuf.st_mtime);
-		cp[16] = '\0';
-		cp[24] = '\0';
-		printf(".ds =M %s %s\n", cp+4, cp+20);
-		if (needbp) {
-			needbp = 0;
-			printf(".()\n");
-			printf(".bp\n");
-		}
-		while (fgets(buf, sizeof buf, stdin) != NULL) {
-			if (buf[0] == '\f' && buf[1] == '\n') {
-				printf(".bp\n");
-				continue;
-			}
-			if (com1line && (incomm || inacomm)) {
-				incomm = 0;
-				inacomm = 0;
-				ps("\\c\n'-C\n");
-			}
-			if (str1line)
-				instr = 0;
-			comcol = NULL;
-			putScp(buf);
-			if (buf[strlen(buf) - 2] != '\\')
-				instr = 0;
-			margin = 0;
-		}
-		needbp = 1;
-	} while (argc > 0);
-	exit(0);
+	    /* specify the language description file */
+	    if (!strncmp(argv[0], "-d", 2)) {
+		defsfile = argv[1];
+		argc--, argv++;
+		argc--, argv++;
+		continue;
+	    }
+
+	    /* open the file for input */
+	    if (freopen(argv[0], "r", stdin) == NULL) {
+		perror(argv[0]);
+		exit(1);
+	    }
+	    if (index)
+		printf("'ta 4i 4.25i 5.5iR\n'in .5i\n");
+	    fname = argv[0];
+	    argc--, argv++;
+	}
+    rest:
+
+	/*
+	 *  get the  language definition from the defs file
+	 */
+	i = tgetent (defs, language, defsfile);
+	if (i == 0) {
+	    fprintf (stderr, "no entry for language %s\n", language);
+	    exit (0);
+	} else  if (i < 0) {
+	    fprintf (stderr,  "cannot find vgrindefs file %s\n", defsfile);
+	    exit (0);
+	}
+	cp = strings;
+	if (tgetstr ("kw", &cp) == NIL)
+	    nokeyw = TRUE;
+	else  {
+	    char **cpp;
+
+	    cpp = l_keywds;
+	    cp = strings;
+	    while (*cp) {
+		while (*cp == ' ' || *cp =='\t')
+		    *cp++ = NULL;
+		if (*cp)
+		    *cpp++ = cp;
+		while (*cp != ' ' && *cp  != '\t' && *cp)
+		    cp++;
+	    }
+	    *cpp = NIL;
+	}
+	cp = buf;
+	l_prcbeg = convexp (tgetstr ("pb", &cp));
+	cp = buf;
+	l_combeg = convexp (tgetstr ("cb", &cp));
+	cp = buf;
+	l_comend = convexp (tgetstr ("ce", &cp));
+	cp = buf;
+	l_strbeg = convexp (tgetstr ("sb", &cp));
+	cp = buf;
+	l_strend = convexp (tgetstr ("se", &cp));
+	cp = buf;
+	l_blkbeg = convexp (tgetstr ("bb", &cp));
+	cp = buf;
+	l_blkend = convexp (tgetstr ("be", &cp));
+	cp = buf;
+	l_chrbeg = convexp (tgetstr ("lb", &cp));
+	cp = buf;
+	l_chrend = convexp (tgetstr ("le", &cp));
+	l_escape = '\\';
+	l_onecase = tgetflag ("oc");
+	l_toplex = tgetflag ("tl");
+	/* initialize the program */
+
+	incomm = FALSE;
+	instr = FALSE;
+	inchr = FALSE;
+	_escaped = FALSE;
+	blklevel = 0;
+	for (psptr=0; psptr<PSMAX; psptr++) {
+	    pstack[psptr][0] = NULL;
+	    plstack[psptr] = 0;
+	}
+	psptr = -1;
+	ps("'-F\n");
+	if (!filter) {
+	    printf(".ds =F %s\n", fname);
+	    fstat(fileno(stdin), &stbuf);
+	    cp = ctime(&stbuf.st_mtime);
+	    cp[16] = '\0';
+	    cp[24] = '\0';
+	    printf(".ds =M %s %s\n", cp+4, cp+20);
+	}
+	if (needbp) {
+	    needbp = 0;
+	    printf(".()\n");
+	    printf(".bp\n");
+	}
+
+	/*
+	 *	MAIN LOOP!!!
+	 */
+	while (fgets(buf, sizeof buf, stdin) != NULL) {
+	    if (buf[0] == '\f') {
+		printf(".bp\n");
+	    }
+	    if (buf[0] == '.') {
+		printf("%s", buf);
+		if (!strncmp (buf+1, "vS", 2))
+		    pass = TRUE;
+		if (!strncmp (buf+1, "vE", 2))
+		    pass = FALSE;
+		continue;
+	    }
+	    prccont = FALSE;
+	    if (!filter || pass)
+		putScp(buf);
+	    else
+		printf("%s", buf);
+	    if (prccont && (psptr >= 0)) {
+		ps("'FC ");
+		ps(pstack[psptr]);
+		ps("\n");
+	    }
+#ifdef DEBUG
+	    printf ("com %o str %o chr %o ptr %d\n", incomm, instr, inchr, psptr);
+#endif
+	    margin = 0;
+	}
+	needbp = 1;
+    } while (argc > 0);
+    exit(0);
 }
 
 #define isidchr(c) (isalnum(c) || (c) == '_')
 
 putScp(os)
-	char *os;
+    char *os;
 {
-	register char *s = os;
-	register int i;
-	int xfld = 0;
+    register char *s = os;		/* pointer to unmatched string */
+    char dummy[BUFSIZ];			/* dummy to be used by expmatch */
+    int xfld = 0;
+    char *comptr;			/* end of a comment delimiter */
+    char *strptr;			/* end of a string delimiter */
+    char *chrptr;			/* end of a character const delimiter */
+    char *blksptr;			/* end of a lexical block start */
+    char *blkeptr;			/* end of a lexical block end */
 
-	if (nokeyw || incomm || inacomm || instr)
-		goto skip;
-	if ((*isprbeg)(s)) {
-		ps("'FN ");
-		ps(pname);
-		ps("\n");
-	} else if ((*isprend)(s))
-		ps("'-F\n");
-skip:
-	while (*s) {
-		if (*s == '\f') {
-			ps("\n.bp\n");
-			s++;
-			continue;
-		}
-		if (index) {
-			if (*s == ' ' || *s == '\t') {
-				if (xfld == 0)	
-					printf("");
-				printf("\t");
-				xfld = 1;
-				while (*s == ' ' || *s == '\t')
-					s++;
-				continue;
-			}
-		}
-
-		/* 
-		 *  for the following "really" hacked code, I
-		 *  apologize. Creeping featurism got me. DLP
-		 */
-
-		/* check for the start of a string */
-		if (!nokeyw && !(incomm || inacomm) && *s == sdelim) {
-			if (instr) {
-				if (s[-1] != '\\')
-					instr = 0;
-			} else
-				if (s[-1] != cdelim)
-					instr = 1;
-		}
-
-		/* check for the end of a comment */
-		if (incomm && lcstop != 0 && comcol != s-1 && s - os >= lcstop 
-		    && !strncmp(cstop, s - lcstop, lcstop)) {
-			incomm = 0;
-			ps("\\c\n'-C\n");
-
-		/* check for the end of a comment of the alternate type */
-		} else if (inacomm && lacstop != 0 && comcol != s-1 
-		    && s - os >= lacstop 
-		    && !strncmp(acstop, s - lacstop, lacstop)) {
-			inacomm = 0;
-			ps("\\c\n'-C\n");
-
-		/* check for the start of a comment */
-		} else if (!instr && !nokeyw && !(incomm || inacomm)
-		    && lcstart != 0
-		    && !strncmp(cstart, s, lcstart)) {
-			comcol = s;
-			incomm = 1;
-			if (s != os)
-				ps("\\c");
-			ps("\\c\n'+C\n");
-			margin = width(os, s);
-			ps(cout);
-			s += lcstart;
-			continue;
-
-		/* check for the start of a comment of the alternate type */
-		} else if (!instr && !nokeyw && !(incomm || inacomm)
-		    && lacstart != 0
-		    && !strncmp(acstart, s, lacstart)) {
-			comcol = s;
-			inacomm = 1;
-			if (s != os)
-				ps("\\c");
-			ps("\\c\n'+C\n");
-			margin = width(os, s);
-			ps(acout);
-			s += lacstart;
-			continue;
-		}
-
-		/* take care of nice tab stops */
-		if (*s == '\t') {
-			while (*s == '\t')
-				s++;
-			i = tabs(os, s) - margin / 8;
-			printf("\\h'|%dn'", i * 10 + 1 - margin % 8);
-			continue;
-		}
-/*
-		if (*s == '-' && s[1] == '>') {
-			s += 2;
-			ps("\\(->");
-			continue;
-		}
-*/
-		if (!incomm && !nokeyw && !instr && (*s == '#' || isalpha(*s)) 
-		    && (s == os || !isidchr(s[-1]))) {
-			i = iskw(s);
-			if (i > 0) {
-				ps("\\*(+K");
-				do 
-					putcp(*s++);
-				while (--i > 0);
-				ps("\\*(-K");
-				continue;
-			}
-		}
-		putcp(*s++);
+    _start = os;			/* remember the start for expmatch */
+    _escaped = FALSE;
+    if (nokeyw || incomm || instr)
+	goto skip;
+    if (isproc(s)) {
+	ps("'FN ");
+	ps(pname);
+	if (psptr < PSMAX) {
+	    ++psptr;
+	    strncpy (pstack[psptr], pname, PNAMELEN);
+	    pstack[psptr][PNAMELEN] = NULL;
+	    ps("\n");
+	    plstack[psptr] = blklevel;
 	}
+    } 
+skip:
+    do {
+	if (index) {
+	    if (*s == ' ' || *s == '\t') {
+		if (xfld == 0)	
+		    printf("");
+		printf("\t");
+		xfld = 1;
+		while (*s == ' ' || *s == '\t')
+		    s++;
+		continue;
+	    }
+	}
+
+	/* check for string, comment, blockstart, etc */
+	if (!incomm && !instr && !inchr) {
+
+	    blkeptr = expmatch (s, l_blkend, dummy);
+	    blksptr = expmatch (s, l_blkbeg, dummy);
+	    comptr = expmatch (s, l_combeg, dummy);
+	    strptr = expmatch (s, l_strbeg, dummy);
+	    chrptr = expmatch (s, l_chrbeg, dummy);
+
+	    /* start of a comment? */
+	    if (comptr != NIL)
+		if ((comptr < strptr || strptr == NIL)
+		  && (comptr < chrptr || chrptr == NIL)
+		  && (comptr < blksptr || blksptr == NIL)
+		  && (comptr < blkeptr || blkeptr == NIL)) {
+		    putKcp (s, comptr-1, FALSE);
+		    s = comptr;
+		    incomm = TRUE;
+		    if (s != os)
+			ps ("\\c");
+		    ps ("\\c\n'+C\n");
+		    continue;
+		}
+
+	    /* start of a string? */
+	    if (strptr != NIL)
+		if ((strptr < chrptr || chrptr == NIL)
+		  && (comptr < blksptr || blksptr == NIL)
+		  && (comptr < blkeptr || blkeptr == NIL)) {
+		    putKcp (s, strptr-1, FALSE);
+		    s = strptr;
+		    instr = TRUE;
+		    continue;
+		}
+
+	    /* start of a character string? */
+	    if (chrptr != NIL)
+		if ((comptr < blksptr || blksptr == NIL)
+		  && (comptr < blkeptr || blkeptr == NIL)) {
+		    putKcp (s, chrptr-1, FALSE);
+		    s = chrptr;
+		    inchr = TRUE;
+		    continue;
+		}
+
+	    /* end of a lexical block */
+	    if (blkeptr != NIL) {
+		if (blkeptr < blksptr || blksptr == NIL) {
+		    putKcp (s, blkeptr - 1, FALSE);
+		    s = blkeptr;
+		    blklevel--;
+		    if (psptr >= 0 && plstack[psptr] >= blklevel) {
+
+			/* end of current procedure */
+			if (s != os)
+			    ps ("\\c");
+			ps ("\\c\n'-F\n");
+			blklevel = plstack[psptr];
+
+			/* see if we should print the last proc name */
+			if (--psptr >= 0)
+			    prccont = TRUE;
+			else
+			    psptr = -1;
+		    }
+		    continue;
+		}
+	    }
+
+	    /* start of a lexical block */
+	    if (blksptr != NIL) {
+		putKcp (s, blksptr - 1, FALSE);
+		s = blksptr;
+		blklevel++;
+		continue;
+	    }
+
+	/* check for end of comment */
+	} else if (incomm) {
+	    if ((comptr = expmatch (s, l_comend, dummy)) != NIL) {
+		putKcp (s, comptr-1, TRUE);
+		s = comptr;
+		incomm = FALSE;
+		ps("\\c\n'-C\n");
+		continue;
+	    } else {
+		putKcp (s, s + strlen(s) -1);
+		s = s + strlen(s);
+		continue;
+	    }
+
+	/* check for end of string */
+	} else if (instr) {
+	    if ((strptr = expmatch (s, l_strend, dummy)) != NIL) {
+		putKcp (s, strptr-1, TRUE);
+		s = strptr;
+		instr = FALSE;
+		continue;
+	    } else {
+		putKcp (s, s+strlen(s)-1, TRUE);
+		s = s + strlen(s);
+		continue;
+	    }
+
+	/* check for end of character string */
+	} else if (inchr) {
+	    if ((chrptr = expmatch (s, l_chrend, dummy)) != NIL) {
+		putKcp (s, chrptr-1, TRUE);
+		s = chrptr;
+		inchr = FALSE;
+		continue;
+	    } else {
+		putKcp (s, s+strlen(s)-1, TRUE);
+		s = s + strlen(s);
+		continue;
+	    }
+	}
+
+	/* print out the line */
+	putKcp (s, s + strlen(s) -1, FALSE);
+	s = s + strlen(s);
+    } while (*s);
 }
 
+putKcp (start, end, force)
+    char	*start;		/* start of string to write */
+    char	*end;		/* end of string to write */
+    boolean	force;		/* true if we should force nokeyw */
+{
+    int i;
+
+    while (start <= end) {
+
+	/* take care of nice tab stops */
+	if (*start == '\t') {
+	    while (*start == '\t')
+		start++;
+	    i = tabs(_start, start) - margin / 8;
+	    printf("\\h'|%dn'", i * 10 + 1 - margin % 8);
+	    continue;
+	}
+
+	if (!nokeyw && !force)
+	    if ((*start == '#' || isidchr(*start)) 
+	    && (start == _start || !isidchr(start[-1]))) {
+		i = iskw(start);
+		if (i > 0) {
+		    ps("\\*(+K");
+		    do 
+			putcp(*start++);
+		    while (--i > 0);
+		    ps("\\*(-K");
+		    continue;
+		}
+	    }
+
+	putcp (*start++);
+    }
+}
+
+
 tabs(s, os)
-	char *s, *os;
+    char *s, *os;
 {
 
-	return (width(s, os) / 8);
+    return (width(s, os) / 8);
 }
 
 width(s, os)
@@ -672,6 +526,12 @@ putcp(c)
 {
 
 	switch(c) {
+
+	case 0:
+		break;
+
+	case '\f':
+		break;
 
 	case '{':
 		ps("\\*(+K{\\*(-K");
@@ -705,6 +565,10 @@ putcp(c)
 		ps("\\&.");
 		break;
 
+	case '/':
+		ps("\\*/");
+		break;
+
 	default:
 		if (c < 040)
 			putchar('^'), c |= '@';
@@ -714,26 +578,21 @@ putcp(c)
 	}
 }
 
-
-/*  STRNCMP -	like strncmp except that we convert the
- *	 	first string to lower case before comparing.
+/*
+ *	look for a process beginning on this line
  */
-#define makelower(c) (isupper((c)) ? tolower((c)) : (c))
-
-STRNCMP(s1, s2, len)
-	register char *s1,*s2;
-	register int len;
+boolean
+isproc(s)
+    char *s;
 {
-	do
-	    if (*s2 - makelower(*s1))
-		    return (*s2 - makelower(*s1));
-	    else {
-		    s2++;
-		    s1++;
-	    }
-	while (--len);
-	return(0);
+    pname[0] = NULL;
+    if (!l_toplex || blklevel == 0)
+	if (expmatch (s, l_prcbeg, pname) != NIL) {
+	    return (TRUE);
+	}
+    return (FALSE);
 }
+
 
 /*  iskw -	check to see if the next word is a keyword
  */
@@ -741,118 +600,14 @@ STRNCMP(s1, s2, len)
 iskw(s)
 	register char *s;
 {
-	register char **ss = keywds;
+	register char **ss = l_keywds;
 	register int i = 1;
 	register char *cp = s;
 
 	while (++cp, isidchr(*cp))
 		i++;
 	while (cp = *ss++)
-		if (!(upeqlow?STRNCMP(s,cp,i):strncmp(s,cp,i)) 
-		    && !isidchr(cp[i]))
+		if (!STRNCMP(s,cp,i) && !isidchr(cp[i]))
 			return (i);
 	return (0);
-}
-
-cprbegin(s)
-	register char *s;
-{
-	register char *p;
-
-	p = pname;
-
-	/*
-	 * some people like to start the names of routines that return
-	 * a pointer with a '*'.
-	 */
-	if (*s == '*')
-		s++;
-
-	if ((*s == '_' || isalpha(*s)) && s[strlen(s) - 2] == ')') {
-		while (isidchr(*s))
-			*p++ = *s++;
-		*p = 0;
-		return (1);
-	}
-	return (0);
-}
-
-cprend(s)
-	register char *s;
-{
-	if (!strcmp(s, "}\n"))
-		return (1);
-	else
-		return (0);
-}
-
-iprbegin(s)
-	register char *s;
-{
-	return(0);
-}
-
-iprend(s)
-	register char *s;
-{
-	return(0);
-}
-
-pprbegin(s)
-	register char *s;
-{
-	register char *p;
-
-	p = pname;
-	while ((*s == ' ') || (*s == '\t'))
-		s++;
-	if (strncmp(s, "procedure", 9) == 0)
-		s += 9;
-	else if (strncmp(s, "function", 8) ==0)
-		s += 8;
-	else
-		return (0);
-	while ((*s == ' ') || (*s == '\t'))
-		s++;
-	while ((*s != ' ') && (*s != '\t') && (*s != '(') && (*s != ';'))
-		*p++ = *s++;
-	*p = 0;
-	return (1);
-}
-
-pprend(s)
-	register char *s;
-{
-	if (strncmp (s, "end", 3) == 0)
-		return (1);
-	else
-		return (0);
-}
-
-mprbegin(s)
-	register char *s;
-{
-	register char *p;
-
-	p = pname;
-	if (strcmp(&s[strlen(s) - 10], "beginproc\n") == 0) {
-
-		while ((*s == ' ') || (*s == '\t'))
-			s++;
-
-		while (*s != ' ')
-			*p++ = *s++;
-		*p = 0;
-		return (1);
-	} else
-		return (0);
-}
-
-mprend(s)
-	register char *s;
-{
-	if (!strcmp(&s[strlen(s) - 9], "endproc;\n"))
-		return (1);
-	else
-		return (0);
 }
