@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.88 (Berkeley) %G%
+ *	@(#)sendmail.h	8.89 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.88		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.89		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -677,7 +677,7 @@ extern void		stabapply __P((void (*)(STAB *, int), int));
 struct event
 {
 	time_t		ev_time;	/* time of the function call */
-	int		(*ev_func)__P((int));
+	void		(*ev_func)__P((int));
 					/* function to call */
 	int		ev_arg;		/* argument to ev_func */
 	int		ev_pid;		/* pid that set this event */
@@ -1017,7 +1017,7 @@ extern ADDRESS		*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *
 extern char		*xalloc __P((int));
 extern bool		sameaddr __P((ADDRESS *, ADDRESS *));
 extern FILE		*dfopen __P((char *, int, int));
-extern EVENT		*setevent __P((time_t, int(*)(), int));
+extern EVENT		*setevent __P((time_t, void(*)(), int));
 extern char		*sfgets __P((char *, int, FILE *, time_t, char *));
 extern char		*queuename __P((ENVELOPE *, int));
 extern time_t		curtime __P(());
@@ -1057,6 +1057,13 @@ extern bool		emptyaddr __P((ADDRESS *));
 extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
 extern bool		wordinclass __P((char *, char));
 extern char		*denlstring __P((char *));
+extern void		printaddr __P((ADDRESS *, bool));
+extern void		makelower __P((char *));
+extern void		rebuildaliases __P((MAP *, bool));
+extern void		readaliases __P((MAP *, FILE *, bool, bool));
+extern void		finis __P(());
+extern void		clrevent __P((EVENT *));
+extern void		setsender __P((char *, ENVELOPE *, char **, bool));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -209,7 +209,7 @@ invalidaddr(addr, delimptr)
 	register char *addr;
 	char *delimptr;
 {
-	char savedelim;
+	char savedelim = '\0';
 
 	if (delimptr != NULL)
 	{
@@ -1925,6 +1925,7 @@ struct qflags	AddressFlags[] =
 	NULL
 };
 
+void
 void
 printaddr(a, follow)
 	register ADDRESS *a;

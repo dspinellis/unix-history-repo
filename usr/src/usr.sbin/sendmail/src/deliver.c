@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.123 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.124 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -39,6 +39,7 @@ extern char	SmtpError[];
 **			appropriate action.
 */
 
+void
 sendall(e, mode)
 	ENVELOPE *e;
 	char mode;
@@ -49,7 +50,7 @@ sendall(e, mode)
 	bool announcequeueup;
 	bool oldverbose = Verbose;
 	int pid;
-	char *qid;
+	extern void sendenvelope();
 	int pid;
 #ifdef LOCKF
 	struct flock lfd;
@@ -437,12 +438,12 @@ sendall(e, mode)
 	Verbose = oldverbose;
 }
 
+void
 sendenvelope(e, mode)
 	register ENVELOPE *e;
 	char mode;
 {
 	register ADDRESS *q;
-	char *qf;
 	bool didany;
 
 	/*
@@ -583,7 +584,7 @@ sendenvelope(e, mode)
 
 dofork()
 {
-	register int pid;
+	register int pid = -1;
 
 	DOFORK(fork);
 	return (pid);
@@ -610,6 +611,7 @@ dofork()
 **		The standard input is passed off to someone.
 */
 
+int
 deliver(e, firstto)
 	register ENVELOPE *e;
 	ADDRESS *firstto;
@@ -624,10 +626,10 @@ deliver(e, firstto)
 	register MCI *mci;
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
-	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
+	ADDRESS *tochain = NULL;	/* users chain in this mailer call */
 	int rcode;			/* response code */
 	char *firstsig;			/* signature of firstto */
-	int pid;
+	int pid = -1;
 	char *curhost;
 	time_t xstart;
 	int mpvect[2];
@@ -1047,7 +1049,7 @@ deliver(e, firstto)
 	{
 #ifdef DAEMON
 		register int i;
-		register u_short port;
+		register u_short port = 0;
 
 		if (pv[0] == NULL || pv[1] == NULL || pv[1][0] == '\0')
 		{
@@ -1074,8 +1076,6 @@ deliver(e, firstto)
 		}
 		if (pv[2] != NULL)
 			port = atoi(pv[2]);
-		else
-			port = 0;
 tryhost:
 		while (*curhost != '\0')
 		{
@@ -2298,7 +2298,7 @@ putbody(mci, e, separator)
 		register int c;
 		int padc;
 		char *buflim;
-		int pos;
+		int pos = 0;
 		char peekbuf[10];
 
 		/* we can pass it through unmodified */
@@ -2507,7 +2507,7 @@ mailfile(filename, ctladdr, e)
 	register ENVELOPE *e;
 {
 	register FILE *f;
-	register int pid;
+	register int pid = -1;
 	int mode;
 
 	if (tTd(11, 1))
@@ -2669,7 +2669,7 @@ hostsignature(m, host, e)
 	auto int rcode;
 	char *hp;
 	char *endp;
-	int oldoptions;
+	int oldoptions = _res.options;
 	char *mxhosts[MAXMXHOSTS + 1];
 #endif
 
@@ -2698,10 +2698,7 @@ hostsignature(m, host, e)
 
 #if NAMED_BIND
 	if (ConfigLevel < 2)
-	{
-		oldoptions = _res.options;
 		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
-	}
 
 	for (hp = host; hp != NULL; hp = endp)
 	{
@@ -2719,9 +2716,7 @@ hostsignature(m, host, e)
 			mci = mci_get(hp, m);
 			mci->mci_exitstat = rcode;
 			mci->mci_errno = errno;
-#if NAMED_BIND
 			mci->mci_herrno = h_errno;
-#endif
 
 			/* and return the original host name as the signature */
 			nmx = 1;

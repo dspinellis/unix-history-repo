@@ -86,7 +86,8 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	querybuf answer;
 	int ancount, qdcount, buflen;
 	bool seenlocal = FALSE;
-	u_short pref, localpref, type;
+	u_short pref, type;
+	u_short localpref = 256;
 	char *fallbackMX = FallBackMX;
 	static bool firsttime = TRUE;
 	bool trycanon = FALSE;
@@ -431,7 +432,7 @@ getcanonname(host, hbsize, trymx)
 	char **dp;
 	char *mxmatch;
 	bool amatch;
-	bool gotmx;
+	bool gotmx = FALSE;
 	int qtype;
 	int loopcnt;
 	char *xp;
@@ -689,7 +690,7 @@ gethostalias(host)
 {
 	char *fname;
 	FILE *fp;
-	register char *p;
+	register char *p = NULL;
 	char buf[MAXLINE];
 	static char hbuf[MAXDNAME];
 

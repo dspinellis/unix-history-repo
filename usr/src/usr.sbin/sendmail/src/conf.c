@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.131 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.132 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -154,10 +154,15 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 
 #define DAYS		* 24 * 60 * 60
 
+void
 setdefaults(e)
 	register ENVELOPE *e;
 {
 	int i;
+	extern void inittimeouts();
+	extern void setdefuser();
+	extern void setupmaps();
+	extern void setupmailers();
 
 	SpaceSub = ' ';				/* option B */
 	QueueLA = 8;				/* option x */
@@ -197,6 +202,7 @@ setdefaults(e)
 **  SETDEFUSER -- set/reset DefUser using DefUid (for initgroups())
 */
 
+void
 setdefuser()
 {
 	struct passwd *defpwent;
@@ -246,9 +252,11 @@ host_map_init(map, args)
 **  SETUPMAILERS -- initialize default mailers
 */
 
+void
 setupmailers()
 {
 	char buf[100];
+	extern void makemailer();
 
 	strcpy(buf, "prog, P=/bin/sh, F=lsoD, A=sh -c $u");
 	makemailer(buf);
@@ -281,6 +289,7 @@ setupmailers()
 		s->s_mapclass.map_store = store; \
 	}
 
+void
 setupmaps()
 {
 	register STAB *s;
@@ -860,6 +869,7 @@ ttypath()
 **		none (unless you include the usrerr stuff)
 */
 
+int
 checkcompat(to, e)
 	register ADDRESS *to;
 	register ENVELOPE *e;
@@ -927,6 +937,7 @@ setsignal(sig, handler)
 **		Arranges that signals are held.
 */
 
+void
 holdsigs()
 {
 }
@@ -945,6 +956,7 @@ holdsigs()
 **		Arranges that signals are released.
 */
 
+void
 rlsesigs()
 {
 }
@@ -959,6 +971,7 @@ rlsesigs()
 # include	<compat.h>
 #endif
 
+void
 init_md(argc, argv)
 	int argc;
 	char **argv;
@@ -1473,6 +1486,7 @@ refuseconnections()
 char	ProcTitleBuf[MAXLINE];
 
 /*VARARGS1*/
+void
 # ifdef __STDC__
 setproctitle(char *fmt, ...)
 # else
@@ -2111,7 +2125,6 @@ freespace(dir, bsize)
 #   endif
 #  endif
 # endif
-	extern int errno;
 
 # if SFS_TYPE == SFS_USTAT
 	if (stat(dir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
@@ -2503,6 +2516,7 @@ chownsafe(fd)
 # include <sys/resource.h>
 #endif
 
+void
 resetlimits()
 {
 #if HASSETRLIMIT

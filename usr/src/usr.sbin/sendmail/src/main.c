@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.83 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.84 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -101,7 +101,6 @@ main(argc, argv, envp)
 	register char *p;
 	char **av;
 	char *locname;
-	extern int finis();
 	extern char Version[];
 	char *ep, *from;
 	typedef int (*fnptr)();
@@ -1231,6 +1230,7 @@ main(argc, argv, envp)
 **		exits sendmail
 */
 
+void
 finis()
 {
 	if (tTd(2, 1))

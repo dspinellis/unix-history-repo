@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.48.1.2 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.69 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.48.1.2 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.69 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -82,6 +82,7 @@ int		ListenQueueSize = 10;		/* size of listen queue */
 int		TcpRcvBufferSize = 0;		/* size of TCP receive buffer */
 int		TcpSndBufferSize = 0;		/* size of TCP send buffer */
 
+void
 getrequests()
 {
 	int t;
@@ -191,7 +192,8 @@ makeconnection(host, port, mci, usesecureport)
 	register MCI *mci;
 	bool usesecureport;
 {
-	register int i, s;
+	register int i = 0;
+	register int s;
 	register struct hostent *hp = (struct hostent *)NULL;
 	SOCKADDR addr;
 	int sav_errno;
@@ -429,7 +431,7 @@ gothostent:
 		/* couldn't connect.... figure out why */
 		sav_errno = errno;
 		(void) close(s);
-		if (hp && hp->h_addr_list[i])
+		if (hp != NULL && hp->h_addr_list[i])
 		{
 			if (tTd(16, 1))
 				printf("Connect failed (%s); trying new address....\n",
@@ -528,8 +530,6 @@ myhostname(hostbuf, size)
 	    !getcanonname(hostbuf, size, TRUE) &&
 	    h_errno == TRY_AGAIN)
 	{
-		struct stat stbuf;
-
 		/* try twice in case name server not yet started up */
 		message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
 			hostbuf);
@@ -554,7 +554,7 @@ myhostname(hostbuf, size)
 
 static jmp_buf	CtxAuthTimeout;
 
-static
+static void
 authtimeout()
 {
 	longjmp(CtxAuthTimeout, 1);
@@ -758,7 +758,6 @@ host_map_lookup(map, name, av, statp)
 	register struct hostent *hp;
 	struct in_addr in_addr;
 	char *cp;
-	int i;
 	register STAB *s;
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();

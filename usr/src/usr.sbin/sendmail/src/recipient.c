@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -817,7 +817,7 @@ writable(filename, ctladdr, flags)
 */
 
 static jmp_buf	CtxIncludeTimeout;
-static int	includetimeout();
+static void	includetimeout();
 
 #ifndef S_IWOTH
 # define S_IWOTH	(S_IWRITE >> 6)
@@ -832,7 +832,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 	int aliaslevel;
 	ENVELOPE *e;
 {
-	register FILE *fp = NULL;
+	FILE *fp = NULL;
 	char *oldto = e->e_to;
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
@@ -1095,7 +1095,7 @@ resetuid:
 	return rval;
 }
 
-static
+static void
 includetimeout()
 {
 	longjmp(CtxIncludeTimeout, 1);
