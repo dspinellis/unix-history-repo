@@ -1,4 +1,4 @@
-/*	kdb_machdep.c	7.1	86/11/20	*/
+/*	kdb_machdep.c	7.2	86/11/21	*/
 
 #include "param.h"
 #include "conf.h"
@@ -90,18 +90,17 @@ kdbrintr(c, tp)
 	if (!escape)
 		return (c == ESC &&  ++escape);
 	escape = 0;
-	if (c != 'k' && c != 'K' && c != CTRL(k)) {
+	/*
+	 * Transfer control to the debugger only if the
+	 * system was booted with RB_KDB and the trap
+	 * enable flag (RB_NOYSNC) is set.
+	 */
+	if ((boothowto&(RB_KDB|RB_NOSYNC)) != (RB_KDB|RB_NOSYNC) ||
+	    (c != 'k' && c != 'K' && c != CTRL(k))) {
 		(*linesw[tp->t_line].l_rint)(ESC, tp);
 		return (0);
 	}
-	/*
-	 * Transfer control to the debugger.  If we're
-	 * already in the debugger or we weren't booted
-	 * with the debugger enabled, we igore the request;
-	 * otherwise we post a software interrupt to force
-	 * entry.
-	 */
-	if (!kdbactive && boothowto&RB_NOSYNC)
+	if (!kdbactive)
 		setsoftkdb();
 	return (1);
 }
@@ -122,6 +121,11 @@ kdb_trap(apsl)
 	extern char *trap_type[];
 	extern int TRAP_TYPES;
 
+	/*
+	 * Allow panic if the debugger is not enabled.
+	 */
+	if ((boothowto&RB_KDB) == 0)
+		return (0);
 	locr0 = apsl - PS;
 	type = locr0[TYPE], code = locr0[CODE];
 	if (type == T_KDBTRAP && prevtype != -1) {
