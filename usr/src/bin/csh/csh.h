@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)csh.h	5.8 (Berkeley) %G%
+ *	@(#)csh.h	5.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -25,8 +25,6 @@
  * Jim Kulp, IIASA, Laxenburg Austria
  * April, 1980
  */
-
-#define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
 
 typedef	char	bool;
 
@@ -84,7 +82,7 @@ int	opgrp;			/* Initial pgrp and tty pgrp */
  * initialized in sh.init.c (to allow them to be made readonly)
  */
 
-struct	biltins {
+struct biltins {
 	char	*bname;
 	int	(*bfunct)();
 	short	minargs, maxargs;
@@ -120,11 +118,9 @@ short	OLDSTD;			/* Old standard input (def for cmds) */
 
 jmp_buf	reslab;
 
-#define	setexit()	((void) setjmp(reslab))
-#define	reset()		longjmp(reslab, 0)
-	/* Should use structure assignment here */
-#define	getexit(a)	bcopy((char *)reslab, (char *)(a), sizeof reslab)
-#define	resexit(a)	bcopy(((char *)(a)), (char *)reslab, sizeof reslab)
+/* Should use structure assignment here. */
+#define	getexit(a)	bcopy((void *)reslab, (void *)(a), sizeof(reslab))
+#define	resexit(a)	bcopy(((void *)(a)), (void *)reslab, sizeof(reslab))
 
 char	*gointr;		/* Label for an onintr transfer */
 sig_t	parintr;		/* Parents interrupt catch */
@@ -147,7 +143,7 @@ sig_t	parterm;		/* Parents terminate catch */
  * In other cases, the shell buffers enough blocks to keep all loops
  * in the buffer.
  */
-struct	Bin {
+struct Bin {
 	off_t	Bfseekp;		/* Seek pointer */
 	off_t	Bfbobp;			/* Seekp of beginning of buffers */
 	off_t	Bfeobp;			/* Seekp of end of buffers */
@@ -182,7 +178,7 @@ bool	cantell;			/* Is current source tellable ? */
  * Input lines are parsed into doubly linked circular
  * lists of words of the following form.
  */
-struct	wordent {
+struct wordent {
 	char	*word;
 	struct	wordent *prev;
 	struct	wordent *next;
@@ -203,10 +199,10 @@ struct	wordent {
 
 /*
  * Labuf implements a general buffer for lookahead during lexical operations.
- * Text which is to be placed in the input stream can be stuck here.
- * We stick parsed ahead $ constructs during initial input,
- * process id's from `$$', and modified variable values (from qualifiers
- * during expansion in sh.dol.c) here.
+ * Text which is to be placed in the input stream can be stuck here.  We stick
+ * parsed ahead $ constructs during initial input, process id's from `$$',
+ * and modified variable values (from qualifiers during expansion in sh.dol.c)
+ * here.
  */
 char	labuf[BUFSIZ];
 
@@ -215,76 +211,73 @@ char	*lap;
 /*
  * Parser structure
  *
- * Each command is parsed to a tree of command structures and
- * flags are set bottom up during this process, to be propagated down
- * as needed during the semantics/exeuction pass (sh.sem.c).
+ * Each command is parsed to a tree of command structures and flags are set
+ * bottom up during this process, to be propagated down as needed during the
+ * semantics/exeuction pass (sh.sem.c).
  */
 struct	command {
-	short	t_dtyp;				/* Type of node */
-	short	t_dflg;				/* Flags, e.g. FAND|... */
+#define	NODE_COMMAND	1		/* t_dcom <t_dlef >t_drit	*/
+#define	NODE_PAREN	2		/* ( t_dspr ) <t_dlef >t_drit	*/
+#define	NODE_PIPE	3		/* t_dlef | t_drit		*/
+#define	NODE_LIST	4		/* t_dlef ; t_drit		*/
+#define	NODE_OR		5		/* t_dlef || t_drit		*/
+#define	NODE_AND	6		/* t_dlef && t_drit		*/
+	short t_dtyp;			/* Node type */
+
+#define	F_SAVE	(F_NICE|F_TIME|F_NOHUP)	/* save these when re-doing */
+
+#define	F_AMPERSAND	0x0001		/* executes in background	*/
+#define	F_APPEND	0x0002		/* output is redirected >>	*/
+#define	F_NICE		0x0004		/* t_nice is meaningful */
+#define	F_NOFORK	0x0008		/* don't fork, last ()ized cmd	*/
+#define	F_NOHUP		0x0010		/* nohup this command */
+#define	F_NOINTERRUPT	0x0020		/* should be immune from intr's */
+#define	F_OVERWRITE	0x0040		/* output was !			*/
+#define	F_PIPEIN	0x0080		/* input is a pipe		*/
+#define	F_PIPEOUT	0x0100		/* output is a pipe		*/
+#define	F_READ		0x0200		/* input redirection is <<	*/
+#define	F_REPEAT	0x0400		/* reexec aft if, repeat,...	*/
+#define	F_STDERR	0x0800		/* redirect unit 2 with unit 1	*/
+#define	F_TIME		0x1000		/* time this command */
+	short t_dflg;			/* flags */
+
 	union {
-		char	*T_dlef;		/* Input redirect word */
-		struct	command *T_dcar;	/* Left part of list/pipe */
+		char *T_dlef;		/* Input redirect word */
+		struct command *T_dcar;	/* Left part of list/pipe */
 	} L;
 	union {
-		char	*T_drit;		/* Output redirect word */
-		struct	command *T_dcdr;	/* Right part of list/pipe */
+		char *T_drit;		/* Output redirect word */
+		struct command *T_dcdr;	/* Right part of list/pipe */
 	} R;
 #define	t_dlef	L.T_dlef
 #define	t_dcar	L.T_dcar
 #define	t_drit	R.T_drit
 #define	t_dcdr	R.T_dcdr
-	char	**t_dcom;			/* Command/argument vector */
-	struct	command *t_dspr;		/* Pointer to ()'d subtree */
-	short	t_nice;
+	char **t_dcom;			/* Command/argument vector */
+	struct command *t_dspr;		/* Pointer to ()'d subtree */
+	short t_nice;
 };
 
-#define	TCOM	1		/* t_dcom <t_dlef >t_drit	*/
-#define	TPAR	2		/* ( t_dspr ) <t_dlef >t_drit	*/
-#define	TFIL	3		/* t_dlef | t_drit		*/
-#define	TLST	4		/* t_dlef ; t_drit		*/
-#define	TOR	5		/* t_dlef || t_drit		*/
-#define	TAND	6		/* t_dlef && t_drit		*/
-
-#define	FSAVE	(FNICE|FTIME|FNOHUP)	/* save these when re-doing */
-
-#define	FAND	(1<<0)		/* executes in background	*/
-#define	FCAT	(1<<1)		/* output is redirected >>	*/
-#define	FPIN	(1<<2)		/* input is a pipe		*/
-#define	FPOU	(1<<3)		/* output is a pipe		*/
-#define	FPAR	(1<<4)		/* don't fork, last ()ized cmd	*/
-#define	FINT	(1<<5)		/* should be immune from intr's */
-/* spare */
-#define	FDIAG	(1<<7)		/* redirect unit 2 with unit 1	*/
-#define	FANY	(1<<8)		/* output was !			*/
-#define	FHERE	(1<<9)		/* input redirection is <<	*/
-#define	FREDO	(1<<10)		/* reexec aft if, repeat,...	*/
-#define	FNICE	(1<<11)		/* t_nice is meaningful */
-#define	FNOHUP	(1<<12)		/* nohup this command */
-#define	FTIME	(1<<13)		/* time this command */
-
-/*
- * The keywords for the parser
- */
-#define	ZBREAK		0
-#define	ZBRKSW		1
-#define	ZCASE		2
-#define	ZDEFAULT 	3
-#define	ZELSE		4
-#define	ZEND		5
-#define	ZENDIF		6
-#define	ZENDSW		7
-#define	ZEXIT		8
-#define	ZFOREACH	9
-#define	ZGOTO		10
-#define	ZIF		11
-#define	ZLABEL		12
-#define	ZLET		13
-#define	ZSET		14
-#define	ZSWITCH		15
-#define	ZTEST		16
-#define	ZTHEN		17
-#define	ZWHILE		18
+/* Parser tokens. */
+#define	T_BREAK		0
+#define	T_BRKSW		1
+#define	T_CASE		2
+#define	T_DEFAULT 	3
+#define	T_ELSE		4
+#define	T_END		5
+#define	T_ENDIF		6
+#define	T_ENDSW		7
+#define	T_EXIT		8
+#define	T_FOREACH	9
+#define	T_GOTO		10
+#define	T_IF		11
+#define	T_LABEL		12
+#define	T_LET		13
+#define	T_SET		14
+#define	T_SWITCH	15
+#define	T_TEST		16
+#define	T_THEN		17
+#define	T_WHILE		18
 
 /*
  * Structure defining the existing while/foreach loops at this
@@ -387,8 +380,10 @@ char	HISTSUB;			/* auto-substitute character */
 		free(cp); \
 }
 char	*alloctmp;
-#define xalloc(i) ((alloctmp = malloc(i)) ? alloctmp : (char *)nomem(i))
-#define xrealloc(p, i) ((alloctmp = realloc(p, i)) ? alloctmp : (char *)nomem(i))
+#define xalloc(i) \
+	((alloctmp = malloc(i)) ? alloctmp : (char *)nomem(i))
+#define xrealloc(p, i) \
+	((alloctmp = realloc(p, i)) ? alloctmp : (char *)nomem(i))
 
 char	*Dfix1();
 char	**blkcat();

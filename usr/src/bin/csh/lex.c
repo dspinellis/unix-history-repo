@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -1110,7 +1110,7 @@ top:
 	if (evalvec) {
 		if (evalvec == (char **)1) {
 			doneinp = 1;
-			reset();
+			longjmp(reslab, 0);
 		}
 		if (evalp = *evalvec) {
 			evalvec++;
@@ -1161,14 +1161,14 @@ printf("Reset tty pgrp from %d to %d\n", ctpgrp, tpgrp);
 						printf("\nUse \"logout\" to logout.\n");
 					else
 						printf("\nUse \"exit\" to leave csh.\n");
-					reset();
+					longjmp(reslab, 0);
 				}
 				if (chkstop == 0)
 					panystop(1);
 			}
 oops:
 			doneinp = 1;
-			reset();
+			longjmp(reslab, 0);
 		}
 		sincereal = 0;
 		if (c == '\n' && onelflg)

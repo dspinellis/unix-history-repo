@@ -294,7 +294,7 @@ dohash()
 		dirp = opendir(*pv);
 		if (dirp == NULL)
 			continue;
-		if (fstat(dirp->dd_fd, &stb) < 0 || !isdir(stb)) {
+		if (fstat(dirp->dd_fd, &stb) < 0 || !S_ISDIR(stb.st_mode)) {
 			closedir(dirp);
 			continue;
 		}

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exp.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)exp.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -390,7 +390,7 @@ exp6(vp, ignore)
 		struct command faket;
 		char *fakecom[2];
 
-		faket.t_dtyp = TCOM;
+		faket.t_dtyp = NODE_COMMAND;
 		faket.t_dflg = 0;
 		faket.t_dcar = faket.t_dcdr = faket.t_dspr = (struct command *)0;
 		faket.t_dcom = fakecom;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
@@ -32,8 +32,8 @@ isbfunc(t)
 		return (&label);
 	}
 	if (*cp == '%') {
-		if (t->t_dflg & FAND) {
-			t->t_dflg &= ~FAND;
+		if (t->t_dflg & F_AMPERSAND) {
+			t->t_dflg &= ~F_AMPERSAND;
 			backgnd.bname = cp;
 			return (&backgnd);
 		}
@@ -212,7 +212,7 @@ doif(v, kp)
 		 * otherwise just fall into following code.
 		 */
 		if (!i)
-			search(ZIF, 0);
+			search(T_IF, 0);
 		return;
 	}
 	/*
@@ -235,8 +235,8 @@ reexecute(kp)
 	register struct command *kp;
 {
 
-	kp->t_dflg &= FSAVE;
-	kp->t_dflg |= FREDO;
+	kp->t_dflg &= F_SAVE;
+	kp->t_dflg |= F_REPEAT;
 	/*
 	 * If tty is still ours to arbitrate, arbitrate it;
 	 * otherwise dont even set pgrp's as the jobs would
@@ -249,7 +249,7 @@ reexecute(kp)
 doelse()
 {
 
-	search(ZELSE, 0);
+	search(T_ELSE, 0);
 }
 
 dogoto(v)
@@ -265,11 +265,11 @@ dogoto(v)
 	 */
 	for (wp = whyles; wp; wp = wp->w_next)
 		if (wp->w_end == 0) {
-			search(ZBREAK, 0);
+			search(T_BREAK, 0);
 			wp->w_end = btell();
 		} else
 			bseek(wp->w_end);
-	search(ZGOTO, 0, lp = globone(v[1]));
+	search(T_GOTO, 0, lp = globone(v[1]));
 	xfree(lp);
 	/*
 	 * Eliminate loops which were exited.
@@ -291,7 +291,7 @@ doswitch(v)
 	if (*v)
 syntax:
 		error("Syntax error");
-	search(ZSWITCH, 0, lp = globone(cp));
+	search(T_SWITCH, 0, lp = globone(cp));
 	xfree(lp);
 }
 
@@ -405,7 +405,7 @@ preread()
 	whyles->w_end = -1;
 	if (setintr)
 		(void) sigsetmask(sigblock(0L) & ~sigmask(SIGINT));
-	search(ZBREAK, 0);
+	search(T_BREAK, 0);
 	if (setintr)
 		(void) sigblock(sigmask(SIGINT));
 	whyles->w_end = btell();
@@ -474,7 +474,7 @@ dorepeat(v, kp)
 doswbrk()
 {
 
-	search(ZBRKSW, 0);
+	search(T_BRKSW, 0);
 }
 
 srchx(cp)
@@ -515,7 +515,7 @@ search(type, level, goal)
 	register char *cp;
 
 	Stype = type; Sgoal = goal;
-	if (type == ZGOTO)
+	if (type == T_GOTO)
 		bseek((off_t)0);
 	do {
 		if (intty && fseekp == feobp)
@@ -524,61 +524,63 @@ search(type, level, goal)
 		(void) getword(aword);
 		switch (srchx(aword)) {
 
-		case ZELSE:
-			if (level == 0 && type == ZIF)
+		case T_ELSE:
+			if (level == 0 && type == T_IF)
 				return;
 			break;
 
-		case ZIF:
+		case T_IF:
 			while (getword(aword))
 				continue;
-			if ((type == ZIF || type == ZELSE) && eq(aword, "then"))
+			if ((type == T_IF || type == T_ELSE) &&
+			    eq(aword, "then"))
 				level++;
 			break;
 
-		case ZENDIF:
-			if (type == ZIF || type == ZELSE)
+		case T_ENDIF:
+			if (type == T_IF || type == T_ELSE)
 				level--;
 			break;
 
-		case ZFOREACH:
-		case ZWHILE:
-			if (type == ZBREAK)
+		case T_FOREACH:
+		case T_WHILE:
+			if (type == T_BREAK)
 				level++;
 			break;
 
-		case ZEND:
-			if (type == ZBREAK)
+		case T_END:
+			if (type == T_BREAK)
 				level--;
 			break;
 
-		case ZSWITCH:
-			if (type == ZSWITCH || type == ZBRKSW)
+		case T_SWITCH:
+			if (type == T_SWITCH || type == T_BRKSW)
 				level++;
 			break;
 
-		case ZENDSW:
-			if (type == ZSWITCH || type == ZBRKSW)
+		case T_ENDSW:
+			if (type == T_SWITCH || type == T_BRKSW)
 				level--;
 			break;
 
-		case ZLABEL:
-			if (type == ZGOTO && getword(aword) && eq(aword, goal))
+		case T_LABEL:
+			if (type == T_GOTO && getword(aword) && eq(aword, goal))
 				level = -1;
 			break;
 
 		default:
-			if (type != ZGOTO && (type != ZSWITCH || level != 0))
+			if (type != T_GOTO && (type != T_SWITCH || level != 0))
 				break;
 			if (lastchr(aword) != ':')
 				break;
 			aword[strlen(aword) - 1] = 0;
-			if (type == ZGOTO && eq(aword, goal) || type == ZSWITCH && eq(aword, "default"))
+			if (type == T_GOTO && eq(aword, goal) ||
+			    type == T_SWITCH && eq(aword, "default"))
 				level = -1;
 			break;
 
-		case ZCASE:
-			if (type != ZSWITCH || level != 0)
+		case T_CASE:
+			if (type != T_SWITCH || level != 0)
 				break;
 			(void) getword(aword);
 			if (lastchr(aword) == ':')
@@ -589,8 +591,8 @@ search(type, level, goal)
 			xfree(cp);
 			break;
 
-		case ZDEFAULT:
-			if (type == ZSWITCH && level == 0)
+		case T_DEFAULT:
+			if (type == T_SWITCH && level == 0)
 				level = -1;
 			break;
 		}
@@ -645,20 +647,20 @@ getword(wp)
 past:
 	switch (Stype) {
 
-	case ZIF:
+	case T_IF:
 		bferr("then/endif not found");
 
-	case ZELSE:
+	case T_ELSE:
 		bferr("endif not found");
 
-	case ZBRKSW:
-	case ZSWITCH:
+	case T_BRKSW:
+	case T_SWITCH:
 		bferr("endsw not found");
 
-	case ZBREAK:
+	case T_BREAK:
 		bferr("end not found");
 
-	case ZGOTO:
+	case T_GOTO:
 		setname(Sgoal);
 		bferr("label not found");
 	}
@@ -669,7 +671,7 @@ toend()
 {
 
 	if (whyles->w_end == 0) {
-		search(ZBREAK, 0);
+		search(T_BREAK, 0);
 		whyles->w_end = btell() - 1;
 	} else
 		bseek(whyles->w_end);
@@ -1111,7 +1113,7 @@ doeval(v)
 		trim(v);
 	getexit(osetexit);
 	reenter = 0;
-	setexit();
+	(void)setjmp(reslab);
 	reenter++;
 	if (reenter == 1) {
 		evalvec = v;
