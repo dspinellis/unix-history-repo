@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	7.8 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.9 (Berkeley) %G%
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
  */
 
@@ -86,6 +86,7 @@ cpu_fork(p1, p2)
 	return (0);
 }
 
+#include "npx.h"
 #if NNPX > 0
 extern struct proc *npxproc;
 #endif
