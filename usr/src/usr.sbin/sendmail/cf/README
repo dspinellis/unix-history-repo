@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.5 (Berkeley) %G%
+		@(#)README	6.6 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -39,6 +39,7 @@ to keep this up in the future.  [Note to GNU folks:  the construct
 I'm not pretending that this README describes everything that these
 configuration files can do; clever people can probably tweak them
 to great effect.  But it should get you started.
+
 
 +--------------------------+
 | INTRODUCTION AND EXAMPLE |
@@ -103,6 +104,7 @@ local hostname.  Internaly this is effected by using
 These describe the mailers used at the default CS site site.  The
 local mailer is always included automatically.
 
+
 +--------+
 | OSTYPE |
 +--------+
@@ -123,14 +125,19 @@ ALIAS_FILE		[/etc/aliases] The location of the text version
 HELP_FILE		[/usr/lib/sendmail.hf] The name of the file
 			containing information printed in response to
 			the SMTP HELP command.
-LOCAL_MAILER		[/bin/mail] The program used to deliver local mail.
-LOCAL_SHELL		[/bin/sh] The shell used to deliver piped email.
 QUEUE_DIR		[/var/spool/mqueue] The directory containing
 			queue files.
 STATUS_FILE		[/etc/sendmail.st] The file containing status
 			information.
+LOCAL_MAILER_PATH	[/bin/mail] The program used to deliver local mail.
 LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
 			flags lsDFMm are always included.
+LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
+USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
+			used to submit news.
+USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
+USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
+			usenet mailer.
 HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			hostmap key definition.  You can redefine this
 			to change the class, flags, and filename of
@@ -147,9 +154,12 @@ NEED_DOMAIN		If set, the $j macro is defined as $w.$D.
 			but possibly in the .mc file).  You will only
 			need this if you define your system hostname
 			without a domain (type "hostname" -- if it
-			has no dots in the output, you qualify) or if
-			you are running Ultrix or OSF/1 sendmail.
-			Either of these is probably a mistake.
+			has no dots in the output, you qualify) AND
+			if you are not running the nameserver AND if
+			the first (canonical) name in /etc/hosts for
+			your machine has no domain -- OR if you are
+			running Ultrix or OSF/1 sendmail.  Either of
+			these is probably a mistake.
 
 +---------+
 | DOMAINS |
@@ -207,6 +217,13 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		this is a function of what version of rmail runs on
 		the receiving end, and hence may be out of your control.
 
+usenet		Usenet (network news) delivery.  If this is specified,
+		an extra rule is added to ruleset 0 that forwards all
+		local email for users named ``group.usenet'' to the
+		``inews'' program.  Note that this works for all groups,
+		and may be considered a security problem.
+
+
 +----------+
 | FEATURES |
 +----------+
@@ -224,9 +241,14 @@ use_cw_file	Read the file /etc/sendmail.cw file to get alternate
 		on a host that MXed for a dynamic set of other
 		hosts.  If the set is static, just including the line
 		"Cw<name1> <name2> ..." is probably superior.
+redirect	Reject all mail addressed to "address.REDIRECT" with
+		a ``551 User not local; please try <address>'' message.
+		If this is set, you can alias people who have left
+		to their new address with ".REDIRECT" appended.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
+
 
 +-------+
 | HACKS |
@@ -239,6 +261,7 @@ includes the Berkeley-dependent "cssubdomain" hack (that makes
 sendmail accept local names in either Berkeley.EDU or CS.Berkeley.EDU;
 this is intended as a short-term aid while we move hosts into
 subdomains.
+
 
 +--------------------+
 | SITE CONFIGURATION |
@@ -278,6 +301,7 @@ example:
 The second example demonstrates that you can use two names on the
 same line; these are usually aliases for the same host (or are at
 least in the same company).
+
 
 +-------------------+
 | TWEAKING RULESETS |
@@ -323,6 +347,7 @@ declare local database maps or whatever.  For example:
 	LOCAL_CONFIG
 	Khostmap hash /etc/hostmap.db
 	Kyplocal nis -m hosts.byname
+
 
 +---------------------------+
 | MASQUERADING AND RELAYING |
@@ -445,6 +470,9 @@ confSTMP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 confEIGHT_BIT_INPUT	False		O8	Use 8-bit input?
 confALIAS_WAIT		10		Oa	Wait (in minutes) for alias
 						file rebuild.
+confMIN_FREE_BLOCKS	4		Ob	Minimum number of free blocks
+						on queue filesystem to accept
+						SMTP mail.
 confBLANK_SUB		.		OB	Blank (space) substitution
 						character.
 confCON_EXPENSIVE	False		Oc	Connect immediately to
@@ -474,6 +502,7 @@ confCHECK_ALIASES	True		On	Check RHS of aliases when
 						running newaliases.
 confOLD_STYLE_HEADERS	True		Oo	Assume that headers without
 						special chars are old style.
+confPRIVACY_FLAGS	public		Op	Privacy flags.
 confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
 confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
@@ -500,6 +529,7 @@ confWORK_RECIPIENT_FACTOR
 			(undefined)	OY	Cost of each recipient.
 confWORK_CLASS_FACTOR	(undefined)	Oz	Priority multiplier for class.
 confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
+
 
 +-----------+
 | HIERARCHY |
@@ -577,7 +607,8 @@ MAILERS
 
    0	local, prog	local and program mailers
    1	smtp		SMTP channel
-   2	uucp
+   2	uucp		UNIX-to-UNIX Copy Program
+   3	netnews		Network News delivery
 
 
 MACROS
@@ -651,4 +682,4 @@ M4 DIVERSIONS
    6	local configuration (at top of file)
    7	mailer definitions
    8	special local name recognition (late in ruleset 3)
-   9
+   9	special local name recognition (late in ruleset 0)
