@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.h	7.2 (Berkeley) %G%
+ *	@(#)vm_kern.h	7.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -40,16 +40,18 @@
  *	Kernel memory management definitions.
  */
 
-void		kmem_init();
-vm_offset_t	kmem_alloc();
-vm_offset_t	kmem_alloc_pageable();
-void		kmem_free();
-vm_map_t	kmem_suballoc();
+void		kmem_init __P((vm_offset_t, vm_offset_t));
+vm_offset_t	kmem_alloc __P((vm_map_t, vm_size_t));
+vm_offset_t	kmem_alloc_pageable __P((vm_map_t, vm_size_t));
+void		kmem_free __P((vm_map_t, vm_offset_t, vm_size_t));
+vm_map_t	kmem_suballoc __P((vm_map_t, vm_offset_t *, vm_offset_t *,
+				   vm_size_t, boolean_t));
 
-vm_offset_t	vm_move();
+vm_offset_t	vm_move __P((vm_map_t, vm_offset_t, vm_map_t, vm_offset_t,
+			     vm_size_t, boolean_t));
 
-vm_offset_t	kmem_alloc_wait();
-void		kmem_free_wakeup();
+vm_offset_t	kmem_alloc_wait __P((vm_map_t, vm_size_t));
+void		kmem_free_wakeup __P((vm_map_t, vm_offset_t, vm_size_t));
 
 vm_map_t	kernel_map;
 vm_map_t	mb_map;

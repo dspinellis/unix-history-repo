@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	7.4 (Berkeley) %G%
+ *	@(#)vm_object.h	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -108,25 +108,30 @@ vm_object_t	kmem_object;
  *	Declare procedures that operate on VM objects.
  */
 
-void		vm_object_init ();
-void		vm_object_terminate();
-vm_object_t	vm_object_allocate();
-void		vm_object_reference();
-void		vm_object_deallocate();
-void		vm_object_pmap_copy();
-void		vm_object_pmap_remove();
-void		vm_object_page_remove();
-void		vm_object_shadow();
-void		vm_object_copy();
-void		vm_object_collapse();
-vm_object_t	vm_object_lookup();
-void		vm_object_enter();
-void		vm_object_setpager();
-#define		vm_object_cache(pager)		pager_cache(vm_object_lookup(pager),TRUE)
-#define		vm_object_uncache(pager)	pager_cache(vm_object_lookup(pager),FALSE)
+void	vm_object_init __P((void));
+void	vm_object_terminate __P((vm_object_t));
+vm_object_t	vm_object_allocate __P((vm_size_t));
+void	vm_object_reference __P((vm_object_t));
+void	vm_object_deallocate __P((vm_object_t));
+void	vm_object_pmap_copy __P((vm_object_t, vm_offset_t, vm_offset_t));
+void	vm_object_pmap_remove __P((vm_object_t, vm_offset_t, vm_offset_t));
+void	vm_object_page_remove __P((vm_object_t, vm_offset_t, vm_offset_t));
+void	vm_object_shadow __P((vm_object_t *, vm_offset_t *, vm_size_t));
+void	vm_object_copy __P((vm_object_t, vm_offset_t, vm_size_t,
+			    vm_object_t *, vm_offset_t *, boolean_t *));
+void	vm_object_collapse __P((vm_object_t));
+vm_object_t	vm_object_lookup __P((vm_pager_t));
+void	vm_object_enter __P((vm_object_t, vm_pager_t));
+void	vm_object_setpager __P((vm_object_t, vm_pager_t,
+				vm_offset_t, boolean_t));
+#define	vm_object_cache(pager)	 pager_cache(vm_object_lookup(pager),TRUE)
+#define	vm_object_uncache(pager) pager_cache(vm_object_lookup(pager),FALSE)
 
-void		vm_object_cache_clear();
-void		vm_object_print();
+void	vm_object_cache_clear __P((void));
+void	vm_object_print __P((vm_object_t, boolean_t));
+
+void	thread_sleep __P((int, simple_lock_t, boolean_t));
+void	thread_wakeup __P((int));
 
 #if	VM_OBJECT_DEBUG
 #define	vm_object_lock_init(object)	{ simple_lock_init(&(object)->Lock); (object)->LockHolder = 0; }
