@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.43 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -65,7 +65,10 @@ struct nfs_diskless nfs_diskless = { 0 };
 static u_char nfs_mntid;
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
-void nfs_disconnect(), nfsargs_ntoh();
+void nfs_disconnect __P((struct nfsmount *));
+void nfsargs_ntoh __P((struct nfs_args *));
+static struct mount *nfs_mountdiskless __P((char *, char *, int,
+    struct sockaddr_in *, struct nfs_args *, register struct vnode **));
 
 #define TRUE	1
 #define	FALSE	0
@@ -73,6 +76,7 @@ void nfs_disconnect(), nfsargs_ntoh();
 /*
  * nfs statfs call
  */
+int
 nfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
@@ -83,7 +87,6 @@ nfs_statfs(mp, sbp, p)
 	register caddr_t cp;
 	register long t1;
 	caddr_t bpos, dpos, cp2;
-	u_long xid;
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsmount *nmp;
@@ -133,28 +136,42 @@ nfs_statfs(mp, sbp, p)
  *	if swdevt[0].sw_dev == NODEV
  * - build the rootfs mount point and call mountnfs() to do the rest.
  */
+int
 nfs_mountroot()
 {
 	register struct mount *mp;
-	register struct mbuf *m;
+	register struct nfs_diskless *nd = &nfs_diskless;
 	struct socket *so;
 	struct vnode *vp;
+	struct proc *p = curproc;		/* XXX */
 	int error, i;
+
+	/*
+	 * XXX time must be non-zero when we init the interface or else
+	 * the arp code will wedge...
+	 */
+	if (time.tv_sec == 0)
+		time.tv_sec = 1;
+
+#ifdef notyet
+	/* Set up swap credentials. */
+	*proc0.p_ucred = nfs_diskless.swap_ucred;
+#endif
 
 	/*
 	 * Do enough of ifconfig(8) so that the critical net interface can
 	 * talk to the server.
 	 */
-	if (socreate(nfs_diskless.myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0))
-		panic("nfs ifconf");
-	if (ifioctl(so, SIOCAIFADDR, &nfs_diskless.myif, curproc)) /* XXX */
-		panic("nfs ifconf2");
+	if (error = socreate(nd->myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0))
+		panic("nfs_mountroot: socreate: %d", error);
+	if (error = ifioctl(so, SIOCAIFADDR, (caddr_t)&nd->myif, p))
+		panic("nfs_mountroot: SIOCAIFADDR: %d", error);
 	soclose(so);
 
 	/*
 	 * If the gateway field is filled in, set it as the default route.
 	 */
-	if (nfs_diskless.mygateway.sin_len != 0) {
+	if (nd->mygateway.sin_len != 0) {
 		struct sockaddr_in sin;
 		extern struct sockaddr_in icmpmask;
 
@@ -162,11 +179,11 @@ nfs_mountroot()
 		sin.sin_family = AF_INET;
 		sin.sin_addr.s_addr = 0;	/* default */
 		in_sockmaskof(sin.sin_addr, &icmpmask);
-		if (rtrequest(RTM_ADD, (struct sockaddr *)&sin,
-			(struct sockaddr *)&nfs_diskless.mygateway,
-			(struct sockaddr *)&icmpmask,
-			RTF_UP | RTF_GATEWAY, (struct rtentry **)0))
-			panic("nfs root route");
+		if (error = rtrequest(RTM_ADD, (struct sockaddr *)&sin,
+		    (struct sockaddr *)&nd->mygateway,
+		    (struct sockaddr *)&icmpmask,
+		    RTF_UP | RTF_GATEWAY, (struct rtentry **)0))
+			panic("nfs_mountroot: RTM_ADD: %d", error);
 	}
 
 	/*
@@ -175,66 +192,31 @@ nfs_mountroot()
 	 * swap file can be on a different server from the rootfs.
 	 */
 	if (swdevt[0].sw_dev == NODEV) {
-		mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-			M_MOUNT, M_NOWAIT);
-		if (mp == NULL)
-			panic("nfs root mount");
-		mp->mnt_op = &nfs_vfsops;
-		mp->mnt_flag = 0;
-		mp->mnt_mounth = NULLVP;
+		nd->swap_args.fh = (nfsv2fh_t *)nd->swap_fh;
+		(void) nfs_mountdiskless(nd->swap_hostnam, "/swap", 0,
+		    &nd->swap_saddr, &nd->swap_args, &vp);
 	
 		/*
-		 * Set up the diskless nfs_args for the swap mount point
-		 * and then call mountnfs() to mount it.
 		 * Since the swap file is not the root dir of a file system,
 		 * hack it to a regular file.
 		 */
-		nfs_diskless.swap_args.fh = (nfsv2fh_t *)nfs_diskless.swap_fh;
-		MGET(m, MT_SONAME, M_DONTWAIT);
-		if (m == NULL)
-			panic("nfs root mbuf");
-		bcopy((caddr_t)&nfs_diskless.swap_saddr, mtod(m, caddr_t),
-			nfs_diskless.swap_saddr.sin_len);
-		m->m_len = (int)nfs_diskless.swap_saddr.sin_len;
-		nfsargs_ntoh(&nfs_diskless.swap_args);
-		if (mountnfs(&nfs_diskless.swap_args, mp, m, "/swap",
-			nfs_diskless.swap_hostnam, &vp))
-			panic("nfs swap");
 		vp->v_type = VREG;
 		vp->v_flag = 0;
 		swapdev_vp = vp;
 		VREF(vp);
 		swdevt[0].sw_vp = vp;
-		swdevt[0].sw_nblks = ntohl(nfs_diskless.swap_nblks);
+		swdevt[0].sw_nblks = ntohl(nd->swap_nblks);
 	}
 
 	/*
 	 * Create the rootfs mount point.
 	 */
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-		M_MOUNT, M_NOWAIT);
-	if (mp == NULL)
-		panic("nfs root mount2");
-	mp->mnt_op = &nfs_vfsops;
-	mp->mnt_flag = MNT_RDONLY;
-	mp->mnt_mounth = NULLVP;
+	nd->root_args.fh = (nfsv2fh_t *)nd->root_fh;
+	mp = nfs_mountdiskless(nd->root_hostnam, "/", MNT_RDONLY,
+	    &nd->root_saddr, &nd->root_args, &vp);
 
-	/*
-	 * Set up the root fs args and call mountnfs() to do the rest.
-	 */
-	nfs_diskless.root_args.fh = (nfsv2fh_t *)nfs_diskless.root_fh;
-	MGET(m, MT_SONAME, M_DONTWAIT);
-	if (m == NULL)
-		panic("nfs root mbuf2");
-	bcopy((caddr_t)&nfs_diskless.root_saddr, mtod(m, caddr_t),
-		nfs_diskless.root_saddr.sin_len);
-	m->m_len = (int)nfs_diskless.root_saddr.sin_len;
-	nfsargs_ntoh(&nfs_diskless.root_args);
-	if (mountnfs(&nfs_diskless.root_args, mp, m, "/",
-		nfs_diskless.root_hostnam, &vp))
-		panic("nfs root");
 	if (vfs_lock(mp))
-		panic("nfs root2");
+		panic("nfs_mountroot: vfs_lock");
 	rootfs = mp;
 	mp->mnt_next = mp;
 	mp->mnt_prev = mp;
@@ -247,14 +229,50 @@ nfs_mountroot()
 	 * set hostname here and then let the "/etc/rc.xxx" files
 	 * mount the right /var based upon its preset value.
 	 */
-	bcopy(nfs_diskless.my_hostnam, hostname, MAXHOSTNAMELEN);
+	bcopy(nd->my_hostnam, hostname, MAXHOSTNAMELEN);
 	hostname[MAXHOSTNAMELEN - 1] = '\0';
 	for (i = 0; i < MAXHOSTNAMELEN; i++)
 		if (hostname[i] == '\0')
 			break;
 	hostnamelen = i;
-	inittodr((time_t)0);	/* There is no time in the nfs fsstat so ?? */
+	inittodr(nfs_diskless.root_time);
 	return (0);
+}
+
+/*
+ * Internal version of mount system call for diskless setup.
+ */
+static struct mount *
+nfs_mountdiskless(path, which, mountflag, sin, args, vpp)
+	char *path;
+	char *which;
+	int mountflag;
+	struct sockaddr_in *sin;
+	struct nfs_args *args;
+	register struct vnode **vpp;
+{
+	register struct mount *mp;
+	register struct mbuf *m;
+	register int error;
+
+	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
+	    M_MOUNT, M_NOWAIT);
+	if (mp == NULL)
+		panic("nfs_mountroot: %s mount malloc", which);
+	mp->mnt_op = &nfs_vfsops;
+	mp->mnt_flag = mountflag;
+	mp->mnt_mounth = NULLVP;
+
+	MGET(m, MT_SONAME, M_DONTWAIT);
+	if (m == NULL)
+		panic("nfs_mountroot: %s mount mbuf", which);
+	bcopy((caddr_t)sin, mtod(m, caddr_t), sin->sin_len);
+	m->m_len = sin->sin_len;
+	nfsargs_ntoh(args);
+	if (error = mountnfs(args, mp, m, which, path, vpp))
+		panic("nfs_mountroot: mount %s on %s: %d", path, which, error);
+
+	return (mp);
 }
 
 /*
@@ -289,6 +307,7 @@ nfsargs_ntoh(nfsp)
  * an error after that means that I have to release the mbuf.
  */
 /* ARGSUSED */
+int
 nfs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
@@ -304,8 +323,6 @@ nfs_mount(mp, path, data, ndp, p)
 	u_int len;
 	nfsv2fh_t nfh;
 
-	if (mp->mnt_flag & MNT_UPDATE)
-		return (0);
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct nfs_args)))
 		return (error);
 	if (error = copyin((caddr_t)args.fh, (caddr_t)&nfh, sizeof (nfsv2fh_t)))
@@ -328,6 +345,7 @@ nfs_mount(mp, path, data, ndp, p)
 /*
  * Common code for mount and mountroot
  */
+int
 mountnfs(argp, mp, nam, pth, hst, vpp)
 	register struct nfs_args *argp;
 	register struct mount *mp;
@@ -340,10 +358,17 @@ mountnfs(argp, mp, nam, pth, hst, vpp)
 	int error;
 	fsid_t tfsid;
 
-	MALLOC(nmp, struct nfsmount *, sizeof (struct nfsmount), M_NFSMNT,
-		M_WAITOK);
-	bzero((caddr_t)nmp, sizeof (struct nfsmount));
-	mp->mnt_data = (qaddr_t)nmp;
+	if (mp->mnt_flag & MNT_UPDATE) {
+		nmp = VFSTONFS(mp);
+		/* update paths, file handles, etc, here	XXX */
+		m_freem(nam);
+		return (0);
+	} else {
+		MALLOC(nmp, struct nfsmount *, sizeof (struct nfsmount),
+		    M_NFSMNT, M_WAITOK);
+		bzero((caddr_t)nmp, sizeof (struct nfsmount));
+		mp->mnt_data = (qaddr_t)nmp;
+	}
 	getnewfsid(mp, MOUNT_NFS);
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
@@ -473,6 +498,7 @@ bad:
 /*
  * unmount system call
  */
+int
 nfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -548,6 +574,7 @@ nfs_unmount(mp, mntflags, p)
 /*
  * Return root of a filesystem
  */
+int
 nfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
@@ -573,6 +600,7 @@ extern int syncprt;
  * Flush out the buffer cache
  */
 /* ARGSUSED */
+int
 nfs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
@@ -623,6 +651,7 @@ nfs_vget(mp, ino, vpp)
  * At this point, this should never happen
  */
 /* ARGSUSED */
+int
 nfs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	register struct mount *mp;
 	struct fid *fhp;
@@ -639,6 +668,7 @@ nfs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
  * Vnode pointer to File handle, should never happen either
  */
 /* ARGSUSED */
+int
 nfs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
@@ -651,6 +681,7 @@ nfs_vptofh(vp, fhp)
  * Vfs start routine, a no-op.
  */
 /* ARGSUSED */
+int
 nfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -664,6 +695,7 @@ nfs_start(mp, flags, p)
  * Do operations associated with quotas, not supported
  */
 /* ARGSUSED */
+int
 nfs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
