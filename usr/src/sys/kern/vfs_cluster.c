@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.5 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -273,7 +273,7 @@ incore(vp, blkno)
 	register struct buf *bp;
 	register struct buf *dp;
 
-	dp = BUFHASH(vp->v_rdev, blkno);
+	dp = BUFHASH(vp, blkno);
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
 		if (bp->b_blkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
