@@ -1,0 +1,8 @@
+/##  Filter noise out of Sun, BSD, v7 lint output./d
+/##  $Revision: 1.6 $/d
+/^[a-z32.]*.c:$/d
+/Lint pass2:/d
+/##  My specific fluff I don't want to see/d
+/yynewstate unused in function date_parse/d
+/errno used( .* ), but not defined/d
+/./p
