@@ -1,5 +1,0 @@
-Mdf	df.c	/^main(argc, argv)$/
-bread	df.c	/^bread(off, buf, cnt)$/
-getmntpt	df.c	/^getmntpt(name)$/
-prtstat	df.c	/^prtstat(sfsp, maxwidth)$/
-ufs_df	df.c	/^ufs_df(file, maxwidth)$/
