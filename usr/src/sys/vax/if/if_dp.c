@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.2 (Berkeley) %G%
+ *	@(#)if_dp.c	7.3 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -33,6 +33,7 @@
 #include "ioctl.h"		/* must precede tty.h */
 #include "protosw.h"
 #include "socket.h"
+#include "socketvar.h"
 #include "syslog.h"
 #include "vmmac.h"
 #include "errno.h"
@@ -46,10 +47,13 @@
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 
+#define	dzdevice dpdevice
 #include "../vaxuba/pdma.h"
 #include "../vaxuba/ubavar.h"
 
-#include "../netcitt/x25.h"
+#include "../netccitt/x25.h"
+#include "../netccitt/pk.h"
+#include "../netccitt/pk_var.h"
 
 #include "if_dpreg.h"
 
@@ -57,7 +61,7 @@
  * Driver information for auto-configuration stuff.
  */
 int	dpprobe(), dpattach(), dpinit(), dpioctl(), dprint(), dpxint();
-int	dpoutput(), dpreset(), dptimeout(), dpstart(), x25_ifoutput();
+int	dpoutput(), dpreset(), dptimeout(), dpstart(), x25_ifoutput(), dptestoutput();
 
 struct	uba_device *dpinfo[NDP];
 
@@ -65,6 +69,21 @@ u_short	dpstd[] = { 0 };
 struct	uba_driver dpdriver =
 	{ dpprobe, 0, dpattach, 0, dpstd, "dp", dpinfo };
 
+/*
+ * debug info
+ */
+struct	dpstat {
+	long	start;
+	long	nohdr;
+	long	init;
+	long	rint;
+	long	xint;
+	long	reset;
+	long	ioctl;
+	long	down;
+	long	mchange;
+	long	timeout;
+} dpstat;
 /*
  * Pdma structures for fast interrupts.
  */
@@ -86,24 +105,25 @@ struct	pdma dppdma[2*NDP];
  */
 struct dp_softc {
 	struct	ifnet dp_if;		/* network-visible interface */
+	int	dp_ipl;
 	short	dp_iused;		/* input buffers given to DP */
 	short	dp_flags;		/* flags */
+#define DPF_RUNNING	0x01		/* device initialized */
+#define DPF_ONLINE	0x02		/* device running (had a RDYO) */
+#define DPF_RESTART	0x04		/* software restart in progress */
+#define DPF_FLUSH	0x08		/* had a ROVR, flush ipkt when done */
 	short	dp_ostate;		/* restarting, etc. */
 	short	dp_istate;		/* not sure this is necessary */
 #define DPS_IDLE	0
 #define DPS_RESTART	1
 #define DPS_ACTIVE	2
 #define DPS_XEM		3		/* transmitting CRC, etc. */
-/* flags */
-#define DPF_RUNNING	0x01		/* device initialized */
-#define DPF_ONLINE	0x02		/* device running (had a RDYO) */
-#define DPF_RESTART	0x04		/* software restart in progress */
-#define DPF_FLUSH	0x08		/* had a ROVR, flush ipkt when done */
 	int	dp_errors[4];		/* non-fatal error counters */
 #define dp_datck dp_errors[0]
 #define dp_timeo dp_errors[1]
 #define dp_nobuf dp_errors[2]
 #define dp_disc  dp_errors[3]
+	struct timeval	dp_xt;			/* start of last transmission */
 	char	dp_obuf[DP_MTU+8];
 	char	dp_ibuf[DP_MTU+8];
 } dp_softc[NDP];
@@ -120,10 +140,15 @@ dpprobe(reg, ui)
 	br = 0; cvec = br; br = cvec;
 	dprint(0); dpxint(0);
 #endif
+	(void) spl6();
 	addr->dpclr = DP_CLR;
 	addr->dpclr = DP_XIE|DP_XE;
 	DELAY(100000);
+	dp_softc[ui->ui_unit].dp_ipl = br = qbgetpri();
 	addr->dpclr = 0;
+	if (cvec && cvec != 0x200){
+		cvec -= 4;
+	}
 	return (1);
 }
 
@@ -136,7 +161,6 @@ dpattach(ui)
 	register struct uba_device *ui;
 {
 	register struct dp_softc *dp = &dp_softc[ui->ui_unit];
-	register struct pdma *pdp = &dppdma[ui->ui_unit*2];
 
 	dp->dp_if.if_unit = ui->ui_unit;
 	dp->dp_if.if_name = "dp";
@@ -147,19 +171,7 @@ dpattach(ui)
 	dp->dp_if.if_ioctl = dpioctl;
 	dp->dp_if.if_reset = dpreset;
 	dp->dp_if.if_watchdog = dptimeout;
-	dp->dp_if.if_flags = IFF_POINTOPOINT;
-
-
-	pdp->p_addr = (struct dzdevice *)ui->ui_addr;
-	pdp->p_arg = (int)dp;
-	pdp->p_fcn = dpxint;
-	pdp->p_mem = pdp->p_end = dp->dp_obuf;
-	pdp++;
-	pdp->p_addr = (struct dzdevice *)ui->ui_addr;
-	pdp->p_arg = (int)dp;
-	pdp->p_fcn = dprint;
-	pdp->p_mem = pdp->p_end = dp->dp_ibuf;
-
+	dp->dp_if.if_flags = 0;
 	if_attach(&dp->dp_if);
 }
 
@@ -174,6 +186,7 @@ dpreset(unit, uban)
 	register struct dp_softc *dp = &dp_softc[unit];
 	register struct dpdevice *addr;
 
+	dpstat.reset++;
 	if (unit >= NDP || (ui = dpinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
 		return;
@@ -182,6 +195,7 @@ dpreset(unit, uban)
 	dp->dp_if.if_flags &= ~IFF_RUNNING;
 	addr = (struct dpdevice *)ui->ui_addr;
 	addr->dpclr = DP_CLR;
+	DELAY(1000);
 	addr->dpsar = 0;
 	addr->dprcsr = 0;
 	dpinit(unit);
@@ -196,34 +210,50 @@ dpinit(unit)
 	register struct dp_softc *dp = &dp_softc[unit];
 	register struct uba_device *ui = dpinfo[unit];
 	register struct dpdevice *addr;
-	register struct ifnet *ifp = &dp->dp_if;
-	struct ifaddr *ifa;
-	int base;
-	int s;
+	register struct ifaddr *ifa;
+	register struct pdma *pdp = &dppdma[unit*2];
+	int base, s;
 
-	addr = (struct dpdevice *)ui->ui_addr;
-
+	dpstat.init++;
 	/*
 	 * Check to see that an address has been set.
 	 */
-	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+	for (ifa = dp->dp_if.if_addrlist; ifa; ifa = ifa->ifa_next)
 		if (ifa->ifa_addr->sa_family != AF_LINK)
 			break;
 	if (ifa == (struct ifaddr *) 0)
 		return;
 
-	s = spl5();
+	addr = (struct dpdevice *)ui->ui_addr;
+	s = splimp();
 	dp->dp_iused = 0;
 	dp->dp_istate = dp->dp_ostate = DPS_IDLE;
-	dppdma[2*unit+1].p_end = 
-		dppdma[2*unit+1].p_mem = dp->dp_ibuf;
-	/* enable receive interrupt; CTS comming up will trigger it also */
-	addr->dpsar = DP_CHRM | 0x7E; /* 7E is the flag character */
+	dp->dp_if.if_flags |= IFF_RUNNING;
+	dp->dp_if.if_flags &= ~IFF_OACTIVE;
+
+	pdp->p_addr = addr;
+	pdp->p_fcn = dpxint;
+	pdp->p_mem = pdp->p_end = dp->dp_obuf;
+	pdp++;
+	pdp->p_addr = addr;
+	pdp->p_fcn = dprint;
+	/* force initial interrupt to come to dprint */
+	pdp->p_mem = pdp->p_end = dp->dp_ibuf + DP_MTU + 8;
+
+	addr->dpclr = DP_CLR;
+	DELAY(1000);
 	addr->dpclr = 0;
-	addr->dprcsr = DP_RIE | DP_DTR | DP_RE;
+	DELAY(1000);
+	/* DP_ATA = 0, DP_CHRM = 0,
+			    CRC = CCIIT, initially all ones, 2nd addr = 0 */
+	addr->dpsar = 0;
+	/* enable receive interrupt */
+	addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
+	dpstart(&dp->dp_if);
 	splx(s);
 }
 
+int dpMessy = 0;
 /*
  * Start output on interface.  Get another datagram
  * to send from the interface queue and map it to
@@ -233,7 +263,7 @@ dpinit(unit)
 dpstart(ifp)
 	struct ifnet *ifp;
 {
-	int s, unit = ifp->if_unit;
+	int s, unit = ifp->if_unit, error = 0, len;
 	register struct dp_softc *dp = &dp_softc[unit];
 	register struct dpdevice *addr =
 				(struct dpdevice *)(dpinfo[unit]->ui_addr);
@@ -245,33 +275,49 @@ dpstart(ifp)
 	 * If already doing output, go away and depend on transmit
 	 * complete or error.
 	 */
-	s = splimp();
-	if (dp->dp_if.if_flags & IFF_OACTIVE) {
-		splx(s);
-		return (0);
-	}
+	dpstat.start++;
+	if (dp->dp_if.if_flags & IFF_OACTIVE)
+		goto out;
 	IF_DEQUEUE(&dp->dp_if.if_snd, m);
 	if (m == 0)
-		return (0);
-	if ((m->m_flags | M_PKTHDR) == 0 || m->m_pkthdr.len > DP_MTU)
-		return (EINVAL);
-	s = spl5();
-	dppdma[2*unit].p_mem = cp = dp->dp_obuf;
+		goto out;
+	dp->dp_if.if_collisions++;
+	if (m->m_flags & M_PKTHDR)
+		len = m->m_pkthdr.len;
+	else {
+		struct mbuf *m0 = m;
+		for (len = 0; m; m = m->m_next)
+			len += m->m_len;
+		m = m0;
+		dpstat.nohdr++;
+	}
+	if (len == 0)
+		goto out;
+	if (len > DP_MTU) {
+		error = EINVAL;
+		goto out;
+	}
+	cp = dp->dp_obuf;
+	dppdma[2*unit].p_mem = cp + 1;
 	while (m) {
 		struct mbuf *n;
 		bcopy(mtod(m, caddr_t), (caddr_t)cp, m->m_len);
 		cp += m->m_len;
 		MFREE(m, n); m = n;
 	}
-	if (cp == dp->dp_obuf)
-		return (0);
 	dppdma[2*unit].p_end = cp;
-	addr->dpclr = DP_XE | DP_XIE;
-	addr->dptdsr = DP_XSM;
+	if (dpMessy)
+		printf("dp: len %d, start %x, end %x, first %x, next %x",
+			len, dp->dp_obuf, cp, *(int *)dp->dp_obuf,
+			1[(int *)dp->dp_obuf]);
 	dp->dp_if.if_flags |= IFF_OACTIVE;
 	dp->dp_ostate = DPS_ACTIVE;
-	splx(s);
-	return (0);
+	dp->dp_if.if_collisions--;
+dp->dp_xt = time;
+	addr->dpclr = DP_XE | DP_XIE;
+	addr->dptdsr = DP_XSM | (0xff & dp->dp_obuf[0]);
+out:
+	return (error);
 }
 /*
  * Receive done or error interrupt
@@ -281,12 +327,10 @@ register struct pdma *pdma;
 register struct dpdevice *addr;
 {
 	register struct dp_softc *dp = &dp_softc[unit];
-	short rdsr = addr->dprdsr;
+	short rdsr = addr->dprdsr, rcsr;
 
-	if (rdsr & DP_ROVR) {
-		dp->dp_flags |= DPF_FLUSH;
-		return;
-	}
+	dpstat.rint++;
+	splx(dp->dp_ipl);
 	if (rdsr & DP_RSM) { /* Received Start of Message */
 		dp->dp_ibuf[0] = rdsr & DP_RBUF;
 		pdma->p_mem = dp->dp_ibuf + 1;
@@ -296,17 +340,31 @@ register struct dpdevice *addr;
 	if (rdsr & DP_REM) { /* Received End of Message */
 		if (rdsr & DP_REC || dp->dp_flags & DPF_FLUSH) {
 			dp->dp_if.if_ierrors++;
-			pdma->p_mem = dp->dp_ibuf;
-			dp->dp_flags &= ~ DPF_FLUSH;
-			return;
+		} else
+			dpinput(&dp->dp_if,
+				pdma->p_mem - dp->dp_ibuf, dp->dp_ibuf);
+		pdma->p_mem = pdma->p_end;
+		dp->dp_flags &= ~ DPF_FLUSH;
+		return;
+	}
+	if (rdsr & DP_ROVR) {
+		dp->dp_flags |= DPF_FLUSH;
+		return;
+	}
+	rcsr = pdma->p_arg;
+	if (rcsr & DP_MSC) {
+		dpstat.mchange++;
+		if (0 == (rcsr & DP_DSR)) {
+			log(LOG_DEBUG, "dp%d: lost modem\n", unit);
+			dpdown(unit);
 		}
-		dpinput(dp, pdma->p_mem - dp->dp_ibuf, dp->dp_ibuf);
 		return;
 	}
 	dp->dp_flags |= DPF_FLUSH;
 	if (pdma->p_mem != pdma->p_end)
 		log("dp%d: unexplained receiver interrupt\n", unit);
 }
+struct timeval dp_xt;
 
 /*
  * Transmit complete or error interrupt
@@ -316,19 +374,23 @@ register struct pdma *pdma;
 register struct dpdevice *addr;
 {
 	register struct dp_softc *dp = &dp_softc[unit];
+	int s;
 
+	splx(dp->dp_ipl);
+	dpstat.xint++;
 	if (addr->dptdsr & DP_XERR) {
 		log("if_dp%d: data late\n", unit);
 	restart:
 		pdma->p_mem = dp->dp_obuf;
 		addr->dptdsr = DP_XSM;
+		dp->dp_if.if_oerrors++;
 		return;
 	}
 	switch (dp->dp_ostate) {
 
 	case DPS_ACTIVE:
 		if (pdma->p_mem != pdma->p_end) {
-			log("if_dp%d: misc error in dpxint\n");
+			log("if_dp%d: misc error in dpxint\n", unit);
 			goto restart;
 		}
 		addr->dptdsr = DP_XEM;
@@ -336,7 +398,12 @@ register struct dpdevice *addr;
 		break;
 
 	case DPS_XEM:
+		dp->dp_if.if_opackets++;
 		dp->dp_if.if_flags &= ~IFF_OACTIVE;
+s = splclock();
+dp_xt = time;
+timevalsub(&dp_xt, &dp->dp_xt);
+splx(s);
 		if (dp->dp_if.if_snd.ifq_len)
 			dpstart(&dp->dp_if);
 		else {
@@ -420,32 +487,48 @@ dpget(rxbuf, totlen, off, ifp)
 	return (top);
 }
 
-dpinput(dp, len, buffer)
-register struct dp_softc *dp;
+dpinput(ifp, len, buffer)
+register struct ifnet *ifp;
 caddr_t buffer;
 {
-	register struct ifnet *ifp = &dp->dp_if;
 	register struct ifqueue *inq;
 	register struct mbuf *m;
-	extern struct ifqueue hdintrq;
+	extern struct ifqueue hdintrq, ipintrq;
+	int netisr;
 
-	if(len <= 0 || ifp->if_addrlist == 0)
+	ifp->if_ipackets++;
+    {
+	register struct ifaddr *ifa = ifp->if_addrlist;
+	register u_char *cp = (u_char *)buffer;
+
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+		if (ifa->ifa_addr->sa_family != AF_LINK)
+			break;
+	if (cp[0] == 0xff && cp[1] == 0x3) {
+		/* This is a UI HDLC Packet, so we'll assume PPP
+		   protocol.  for now, IP only. */
+		buffer += 4;
+		len -= 4;
+		inq = &ipintrq;
+		netisr = NETISR_IP;
+	} else {
+		inq = &hdintrq;
+		netisr = NETISR_CCITT;
+	}
+    }
+	if (len <= 0)
 		return;
 
 	m = dpget(buffer, len , 0, ifp);
 	if (m == 0)
 		return;
-	ifp->if_ipackets++;
-	
-	/* Only AF_CCITT makes sense at this point */
-	inq = &hdintrq;
 
 	if(IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
 	} else {
 		IF_ENQUEUE(inq, m);
-		schednetisr(NETISR_CCITT);
+		schednetisr(netisr);
 	}
 }
 
@@ -461,34 +544,38 @@ dpioctl(ifp, cmd, data)
 	int s = splimp(), error = 0;
 	struct dp_softc *dp = &dp_softc[ifp->if_unit];
 
+	dpstat.ioctl++;
 	switch (cmd) {
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		switch (ifa->ifa_addr->sa_family) {
-#ifdef CCITT
-		case AF_CCITT:
-			error = hd_ctlinput(PRC_IFUP, (caddr_t)&ifa->ifa_addr);
-			if (error == 0)
-				dpinit(ifp->if_unit);
-			break;
-#endif
-		case SIOCSIFFLAGS:
-			if ((ifp->if_flags & IFF_UP) == 0 &&
-			    (dp->dp_flags & DPF_RUNNING))
-				dpdown(ifp->if_unit);
-			else if (ifp->if_flags & IFF_UP &&
-			    (dp->dp_flags & DPF_RUNNING) == 0)
-				dpinit(ifp->if_unit);
-			break;
-
+		case AF_INET:
+			ifp->if_output = dptestoutput;
 		default:
 			dpinit(ifp->if_unit);
 			break;
 		}
 		break;
+#ifdef CCITT
+	case SIOCSIFCONF_X25:
+		ifp->if_flags |= IFF_UP;
+		ifp->if_output = x25_ifoutput;
+		error = hd_ctlinput(PRC_IFUP, ifa->ifa_addr);
+		if (error == 0)
+			dpinit(ifp->if_unit);
+		break;
+#endif
 
-	/* case SIOCSIFFLAGS: ... */
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    (ifp->if_flags & IFF_RUNNING))
+			dpdown(ifp->if_unit);
+		else if (ifp->if_flags & IFF_UP &&
+		    (ifp->if_flags & IFF_RUNNING) == 0)
+			dpinit(ifp->if_unit);
+		break;
+
 
 	default:
 		error = EINVAL;
@@ -504,14 +591,10 @@ dpdown(unit)
 	int unit;
 {
 	register struct dp_softc *dp = &dp_softc[unit];
-	register struct ifxmt *ifxp;
-	register struct dpdevice *addr = (struct dpdevice *)dpinfo[unit]->ui_addr;
 
-	dp->dp_flags &= ~(DPF_RUNNING | DPF_ONLINE);
-	addr->dpclr = DP_CLR;
-	addr->dpclr = 0;
-
+	dpstat.down++;
 	if_qflush(&dp->dp_if.if_snd);
+	dpreset(unit);
 }
 
 /*
@@ -523,12 +606,51 @@ dptimeout(unit)
 	int unit;
 {
 	register struct dp_softc *dp;
-	struct dpdevice *addr;
 
+	/* currently not armed */
+	dpstat.timeout++;
 	dp = &dp_softc[unit];
-	if (dp->dp_flags & DPF_ONLINE) {
-		addr = (struct dpdevice *)(dpinfo[unit]->ui_addr);
-		dpstart(unit);
+	if (dp->dp_if.if_flags & IFF_OACTIVE) {
+		dpstart(&dp->dp_if);
 	}
 }
+/*
+ * For debugging loopback activity.
+ */
+static char pppheader[4] = { -1, 3, 0, 0x21 };
+int dp_louts;
+
+dptestoutput(ifp, m, dst, rt)
+register struct ifnet *ifp;
+register struct mbuf *m;
+struct sockaddr *dst;
+struct rtentry *rt;
+{
+	/*
+	 * Queue message on interface, and start output if interface
+	 * not yet active.
+	 */
+	int s = splimp(), error = 0;
+	dp_louts++;
+	M_PREPEND(m, sizeof pppheader, M_DONTWAIT);
+	if (m == 0) {
+		splx(s);
+		return ENOBUFS;
+	}
+	bcopy(pppheader, mtod(m, caddr_t), sizeof pppheader);
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+	    /* printf("%s%d: HDLC says OK to send but queue full, may hang\n",
+			ifp->if_name, ifp->if_unit);*/
+		m_freem(m);
+		error = ENOBUFS;
+	} else {
+		IF_ENQUEUE(&ifp->if_snd, m);
+		if ((ifp->if_flags & IFF_OACTIVE) == 0)
+			(*ifp->if_start)(ifp);
+	}
+	splx(s);
+	return (error);
+}
+
 #endif
