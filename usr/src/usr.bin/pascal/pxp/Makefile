@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	2.2 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	2.3 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -120,7 +120,6 @@ rec.o: rec.c
 rmothers.o: rmothers.c
 rval.o: rval.c
 stat.o: stat.c
-string.o: string.c
 type.o: type.c
 var.o: var.c
 version.o: version.c
@@ -241,9 +240,6 @@ rval.o: 0.h
 rval.o: ../src/tree.h
 stat.o: 0.h
 stat.o: ../src/tree.h
-string.o: whoami.h
-string.o: 0.h
-string.o: ../src/send.h
 type.o: 0.h
 type.o: ../src/tree.h
 var.o: 0.h
