@@ -334,7 +334,12 @@ int doNewLine;
 {
     if (screenInitd && !screenStopped) {
 	scrrest(saveScreen);
-	setcursor(NumberLines-1, NumberColumns-1, 0);
+	setcursor(NumberLines-1, 1, 0);
+	if (doNewLine) {
+	    StringToTerminal("\r\n");
+	}
+	EmptyTerminal();
+	screenStopped = 1;
     }
 }
 
