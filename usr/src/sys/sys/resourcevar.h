@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resourcevar.h	7.1 (Berkeley) %G%
+ *	@(#)resourcevar.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_RESOURCEVAR_H_		/* tmp for user.h */
@@ -25,9 +25,11 @@ struct pstats {
 
 	struct uprof {			/* profile arguments */
 		short	*pr_base;	/* buffer base */
-		unsigned pr_size;	/* buffer size */
-		unsigned pr_off;	/* pc offset */
-		unsigned pr_scale;	/* pc scaling */
+		u_long	pr_size;	/* buffer size */
+		u_long	pr_off;		/* pc offset */
+		u_long	pr_scale;	/* pc scaling */
+		u_long	pr_addr;	/* temp storage for addr until AST */
+		u_long	pr_ticks;	/* temp storage for ticks until AST */
 	} p_prof;
 #define	pstat_endcopy	p_start
 	struct	timeval p_start;	/* starting time */
