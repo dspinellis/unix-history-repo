@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ifconfig.8	6.8 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.9 (Berkeley) %G%
 .\"
 .TH IFCONFIG 8 ""
 .UC 5
@@ -171,16 +171,13 @@ network.
 The default broadcast address is the address with a host part of all 1's.
 .TP 15
 .B ipdst
-(NS and ISO)
 This is used to specify an Internet host who is willing to receive
-ip packets encapsulating packets bound for a remote network.
-For the NS  case, an apparent point to point link is constructed, and
+ip packets encapsulating NS packets bound for a remote network.
+An apparent point to point link is constructed, and
 the address specified will be taken as the NS address and network
-of the destinee.
-For the ISO case, the eon
-.IR eon (5)
-interface must be specified, the supplied iso address must
-conform to RFC1070, IP address will indicate the status bits.
+of the destination.
+IP encapsulation of CLNP packets is done differently, see 
+.IR eon (5).
 .TP 15
 .B alias
 Establish an additional network address for this interface.
@@ -194,6 +191,19 @@ was no longer needed.
 If you have incorrectly set an NS address having the side effect
 of specifying the host portion, removing all NS addresses will
 allow you to respecify the host portion.
+.tp 15
+.BI nsellength " n"
+(ISO only)
+This specifies a trailing number of bytes for a received NSAP
+used for local identification, the remaining leading part of which is
+taken to be the NET (Network Entity Title).
+The default value is 1, which is conformant to US GOSIP.
+When an iso address is set in an ifconfig command,
+it is really the NET which is being specified.
+For example, in US GOSIP, 19 hex digits should be
+specified in the ISO NET to be assigned to the interface.
+There is some evidence that a number different 1 may be useful
+for AFI 37 type addresses.
 .PP
 .I Ifconfig
 displays the current configuration for a network interface
@@ -207,4 +217,4 @@ Messages indicating the specified interface does not exit, the
 requested address is unknown, or the user is not privileged and
 tried to alter an interface's configuration.
 .SH "SEE ALSO"
-netstat(1), netintro(4), rc(8)
+netstat(1), netintro(4), rc(8), routed(8), eon(5) 
