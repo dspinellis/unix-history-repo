@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 LIB=	F77
 SRCS=	abort_.c besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
@@ -23,10 +23,10 @@ SRCS=	abort_.c besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
 LDADD=		Version.o
 CLEANFILES+=	Usef Version.o Version.c mkvers
 
-all: Usef Version.o
+libF77.a libF77_p.a:: Version.o
 
 Version.o: Version.c
-	${CC} -c Version.c
+	${CC} -R -c Version.c
 
 Version.c: mkvers ${SRCS}
 	mkvers libF77.a ${.ALLSRC:M*.c} > ${.TARGET}
@@ -38,7 +38,7 @@ Usef: Usef.c
 	${CC} ${CFLAGS} ${.CURDIR}/Usef.c -o ${.TARGET}
 
 trapov_.o trapov_.po: trapov_.c
-	${CC} -S -DUCBVAX ${.CURDIR}/trapov_.c
+	${CC} -S -DUCBVAX ${.CURDIR}/trapov_.c;
 	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") | \
 	    ex - trapov_.s;
 	${AS} trapov_.s -o ${.TARGET}
@@ -47,19 +47,19 @@ trapov_.o trapov_.po: trapov_.c
 .include <bsd.lib.mk>
 
 # 'Usef' is part of a kuldge to get around a bug in the C compiler.
-# C (sec. 9.10 of C ref manual) should round the return value of
-# functions of type float from double to float.  It doesn't, so f77
-# truncates it losing a half bit of accuracy.  See file Test_float
-# for a test.  When it is fixed, get rid of Usef & the extraneous
-# stores in pow_ri, r_dim, r_mod, r_nint.
+# C (sec. 9.10 of C ref manual) should round the return value of functions of
+# type float from double to float.  It doesn't, so f77 truncates it losing a
+# half bit of accuracy.  See file Test_float for a test.  When it is fixed,
+# get rid of Usef & the extraneous stores in pow_ri, r_dim, r_mod, r_nint.
 
-.c.o:
+.if (${MACHINE} == "vax" || ${MACHINE} == "tahoe")
+.c.o: Usef
 	${CC} `Usef ${.PREFIX}` ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	${LD} -x -r ${.TARGET}
-	mv a.out ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
-.c.po:
+.c.po: Usef
 	${CC} -p `Usef ${.PREFIX}` ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	${LD} -x -r ${.TARGET}
-	mv a.out ${.TARGET}
-
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
+.endif
