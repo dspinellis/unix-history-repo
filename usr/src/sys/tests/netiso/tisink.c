@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 #ifndef lint
-static char sccsid[] = "@(#)tisink.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisink.c	7.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,23 +37,26 @@ struct  ifreq ifr;
 short port = 3000;
 struct  sockaddr_iso faddr, laddr = { sizeof(laddr), AF_ISO };
 struct  sockaddr_iso *siso = &laddr;
+char **xenvp;
 
 long size, count = 10, forkp, confp, echop, mynamep, verbose = 1, playtag = 0;
-long records, intercept = 0;
+long records, intercept = 0, isode_mode;
 
 char buf[2048];
 char your_it[] = "You're it!";
 
 char *Servername;
 
-main(argc, argv)
+main(argc, argv, envp)
 int argc;
 char *argv[];
+char *envp[];
 {
 	register char **av = argv;
 	register char *cp;
 	struct iso_addr iso_addr();
 
+	xenvp = envp;
 	while(--argc > 0) {
 		av++;
 		if(strcmp(*av,"Servername")==0) {
@@ -176,6 +179,15 @@ tisink()
 			}
 			sleep(10);
 		    }
+#ifdef ISODE_MODE
+		    if (isode_mode) {
+			static char fdbuf[10];
+			static char *nargv[4] =
+			    {"/usr/sbin/isod.tsap", fdbuf, "", 0};
+			sprintf(fdbuf, "Z%d", ns);
+			old_isod_main(3, nargv, xenvp);
+		    } else
+#endif
 		    for (;;) {
 			msghdr.msg_iovlen = 1;
 			msghdr.msg_controllen = sizeof(control);
