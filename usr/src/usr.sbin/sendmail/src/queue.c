@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.48		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.49		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.48		%G%);
+SCCSID(@(#)queue.c	3.49		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -258,7 +258,7 @@ runqueue(forkflag)
 # define DIR		FILE
 # define direct		dir
 # define opendir(d)	fopen(d, "r")
-# define readdir(f)	(fread(dbuf, sizeof dbuf, 1, f) > 0 ? &dbuf : 0)
+# define readdir(f)	((fread(&dbuf, sizeof dbuf, 1, f) > 0) ? &dbuf : 0)
 static struct dir	dbuf;
 # define closedir(f)	fclose(f)
 # endif DIR
@@ -303,6 +303,12 @@ orderq()
 		FILE *cf;
 
 		/* is this an interesting entry? */
+		if (d->d_ino == 0)
+			continue;
+# ifdef DEBUG
+		if (tTd(40, 10))
+			printf("orderq: %12s\n", d->d_name);
+# endif DEBUG
 		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
 
