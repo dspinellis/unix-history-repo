@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.5	82/03/05	*/
+/*	raw_ip.c	4.6	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -29,8 +29,6 @@ rip_input(m)
 	struct mbuf *m;
 {
 	register struct ip *ip = mtod(m, struct ip *);
-	struct sockaddr_in sin;
-	struct sockproto sp;
 
 COUNT(RIP_INPUT);
 	ripproto.sp_protocol = ip->ip_p;
@@ -69,7 +67,7 @@ COUNT(RIP_OUTPUT);
 	m = m_get(M_DONTWAIT);
 	if (m == 0) {
 		m_freem(m);
-		return;
+		return (0);
 	}
 	
 	/*
