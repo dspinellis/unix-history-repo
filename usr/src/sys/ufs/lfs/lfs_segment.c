@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -101,12 +101,12 @@ lfs_vflush(vp)
 
 
 	ip = VTOI(vp);
-	if (vp->v_dirtyblkhd.le_next == NULL)
+	if (vp->v_dirtyblkhd.lh_first == NULL)
 		lfs_writevnodes(fs, vp->v_mount, sp, VN_EMPTY);
 
 	do {
 		do {
-			if (vp->v_dirtyblkhd.le_next != NULL)
+			if (vp->v_dirtyblkhd.lh_first != NULL)
 				lfs_writefile(fs, sp, vp);
 		} while (lfs_writeinode(fs, sp, ip));
 
@@ -134,7 +134,10 @@ lfs_writevnodes(fs, mp, sp, op)
 	struct vnode *vp;
 	int error, s, active;
 
-loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+loop:
+	for (vp = mp->mnt_vnodelist.lh_first;
+	     vp != NULL;
+	     vp = vp->v_mntvnodes.le_next) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
@@ -148,7 +151,7 @@ loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 			continue;
 		*/
 
-		if (op == VN_EMPTY && vp->v_dirtyblkhd.le_next)
+		if (op == VN_EMPTY && vp->v_dirtyblkhd.lh_first)
 			continue;
 
 		if (vp->v_type == VNON)
@@ -164,9 +167,9 @@ loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 		ip = VTOI(vp);
 		if ((ip->i_flag &
 		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE) ||
-		    vp->v_dirtyblkhd.le_next != NULL) &&
+		    vp->v_dirtyblkhd.lh_first != NULL) &&
 		    ip->i_number != LFS_IFILE_INUM) {
-			if (vp->v_dirtyblkhd.le_next != NULL)
+			if (vp->v_dirtyblkhd.lh_first != NULL)
 				lfs_writefile(fs, sp, vp);
 			(void) lfs_writeinode(fs, sp, ip);
 		}
@@ -256,9 +259,9 @@ lfs_segwrite(mp, flags)
 	if (do_ckp || fs->lfs_doifile) {
 redo:
 		vp = fs->lfs_ivnode;
-		while (vget(vp));
+		while (vget(vp, 1));
 		ip = VTOI(vp);
-		if (vp->v_dirtyblkhd.le_next != NULL)
+		if (vp->v_dirtyblkhd.lh_first != NULL)
 			lfs_writefile(fs, sp, vp);
 		(void)lfs_writeinode(fs, sp, ip);
 		vput(vp);
@@ -495,7 +498,7 @@ lfs_gather(fs, sp, vp, match)
 
 	sp->vp = vp;
 	s = splbio();
-loop:	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = bp->b_vnbufs.qe_next) {
+loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {
 		if (bp->b_flags & B_BUSY || !match(fs, bp) ||
 		    bp->b_flags & B_GATHERED)
 			continue;
@@ -1058,49 +1061,29 @@ lfs_shellsort(bp_array, lb_array, nmemb)
 }
 
 /*
- * Check VXLOCK.  Return 1 if the vnode is locked.  Otherwise, bump the
- * ref count, removing the vnode from the free list if it is on it.
+ * Check VXLOCK.  Return 1 if the vnode is locked.  Otherwise, vget it.
  */
 lfs_vref(vp)
 	register struct vnode *vp;
 {
-	register struct vnode *vq;
-	extern struct vnode *vfreeh;
-	extern struct vnode **vfreet;
 
 	if (vp->v_flag & VXLOCK)
 		return(1);
-
-	if (vp->v_usecount == 0) {
-		if (vq = vp->v_freef)
-			vq->v_freeb = vp->v_freeb;
-		else
-			vfreet = vp->v_freeb;
-		*vp->v_freeb = vq;
-		vp->v_freef = NULL;
-		vp->v_freeb = NULL;
-	}
-	VREF(vp);
-	return (0);
+	return (vget(vp, 0));
 }
 
 void
 lfs_vunref(vp)
 	register struct vnode *vp;
 {
-	extern struct vnode *vfreeh;
-	extern struct vnode **vfreet;
-
-	--vp->v_usecount;
+	extern int lfs_no_inactive;
 
 	/*
-	 * return to free list
+	 * This is vrele except that we do not want to VOP_INACTIVE
+	 * this vnode. Rather than inline vrele here, we use a global
+	 * flag to tell lfs_inactive not to run. Yes, its gross.
 	 */
-	if (vp->v_usecount == 0) {
-		*vfreet = vp;
-		vp->v_freeb = vfreet;
-		vp->v_freef = NULL;
-		vfreet = &vp->v_freef;
-	}
-	return;
+	lfs_no_inactive = 1;
+	vrele(vp);
+	lfs_no_inactive = 0;
 }
