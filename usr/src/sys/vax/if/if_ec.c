@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ec.c	7.3 (Berkeley) %G%
+ *	@(#)if_ec.c	7.4 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -70,7 +70,7 @@ u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
 	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo, 0, 0, 0, 0, ecubamem };
 
-int	ecinit(),ecioctl(),ecoutput(),ecreset();
+int	ecinit(),ecioctl(),ecstart(),ecreset(),ether_output();
 struct	mbuf *ecget();
 
 extern struct ifnet loif;
@@ -93,7 +93,6 @@ struct	ec_softc {
 #define	es_addr	es_ac.ac_enaddr		/* hardware Ethernet address */
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
 	short	es_mask;		/* mask for current output delay */
-	short	es_oactive;		/* is output active? */
 	u_char	*es_buf[16];		/* virtual addresses of buffers */
 } ec_softc[NEC];
 
@@ -237,9 +236,10 @@ ecattach(ui)
 		ether_sprintf(es->es_addr));
 	ifp->if_init = ecinit;
 	ifp->if_ioctl = ecioctl;
-	ifp->if_output = ecoutput;
+	ifp->if_output = ether_output;
+	ifp->if_start = ecstart;
 	ifp->if_reset = ecreset;
-	ifp->if_flags = IFF_BROADCAST;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 	for (i=0; i<16; i++)
 		es->es_buf[i] 
 		    = (u_char *)&umem[ui->ui_ubanum][ui->ui_flags + 2048*i];
@@ -285,6 +285,7 @@ ecinit(unit)
 	 * is turned on.
 	 */
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		u_short start_read;
 		addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 		s = splimp();
 		/*
@@ -296,14 +297,22 @@ ecinit(unit)
 		ec_setaddr(es->es_addr, unit);
 		/*
 		 * Arm the receiver
+#ifdef MULTI
+		if (es->es_if.if_flags & IFF_PROMISC)
+			start_read = EC_PROMISC;
+		else if (es->es_if.if_flags & IFF_MULTI)
+			start_read = EC_MULTI;
+		else
+#endif MULTI
+			start_read = EC_READ;
 		 */
 		for (i = ECRHBF; i >= ECRLBF; i--)
 			addr->ec_rcr = EC_READ | i;
-		es->es_oactive = 0;
+		es->es_if.if_flags &= ~IFF_OACTIVE;
 		es->es_mask = ~0;
 		es->es_if.if_flags |= IFF_RUNNING;
 		if (es->es_if.if_snd.ifq_head)
-			ecstart(unit);
+			(void) ecstart(&es->es_if);
 		splx(s);
 	}
 }
@@ -313,21 +322,24 @@ ecinit(unit)
  * off of the interface queue, and copy it to the interface
  * before starting the output.
  */
-ecstart(unit)
+ecstart(ifp)
+struct ifnet *ifp;
 {
+	int unit = ifp->if_unit;
 	register struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	struct mbuf *m;
 
 	if ((es->es_if.if_flags & IFF_RUNNING) == 0)
-		return;
+		return (0);
 	IF_DEQUEUE(&es->es_if.if_snd, m);
 	if (m == 0)
-		return;
+		return (0);
 	ecput(es->es_buf[ECTBF], m);
 	addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	addr->ec_xcr = EC_WRITE|ECTBF;
-	es->es_oactive = 1;
+	es->es_if.if_flags |= IFF_OACTIVE;
+	return (0);
 }
 
 /*
@@ -341,21 +353,21 @@ ecxint(unit)
 	register struct ecdevice *addr =
 		(struct ecdevice *)ecinfo[unit]->ui_addr;
 
-	if (es->es_oactive == 0)
+	if ((es->es_if.if_flags & IFF_OACTIVE) == 0)
 		return;
 	if ((addr->ec_xcr&EC_XDONE) == 0 || (addr->ec_xcr&EC_XBN) != ECTBF) {
 		printf("ec%d: stray xmit interrupt, xcr=%b\n", unit,
 			addr->ec_xcr, EC_XBITS);
-		es->es_oactive = 0;
+		es->es_if.if_flags &= ~IFF_OACTIVE;
 		addr->ec_xcr = EC_XCLR;
 		return;
 	}
 	es->es_if.if_opackets++;
-	es->es_oactive = 0;
+	es->es_if.if_flags &= ~IFF_OACTIVE;
 	es->es_mask = ~0;
 	addr->ec_xcr = EC_XCLR;
 	if (es->es_if.if_snd.ifq_head)
-		ecstart(unit);
+		(void) ecstart(&es->es_if);
 }
 
 /*
@@ -373,7 +385,7 @@ eccollide(unit)
 	int delay;
 
 	es->es_if.if_collisions++;
-	if (es->es_oactive == 0)
+	if ((es->es_if.if_flags & IFF_OACTIVE) == 0)
 		return;
 
 	/*
@@ -382,6 +394,7 @@ eccollide(unit)
 	 * backed off 16 times, and give up.
 	 */
 	if (es->es_mask == 0) {
+		u_short start_read;
 		es->es_if.if_oerrors++;
 		log(LOG_ERR, "ec%d: send error\n", unit);
 		/*
@@ -390,15 +403,23 @@ eccollide(unit)
 		 * can't be helped.
 		 */
 		addr->ec_xcr = EC_UECLR;
+#ifdef MULTI
+		if (es->es_if.if_flags & IFF_PROMISC)
+			start_read = EC_PROMISC;
+		else if (es->es_if.if_flags & IFF_MULTI)
+			start_read = EC_MULTI;
+		else
+#endif MULTI
+			start_read = EC_READ;
 		for (i=ECRHBF; i>=ECRLBF; i--)
-			addr->ec_rcr = EC_READ|i;
+			addr->ec_rcr = start_read|i;
 		/*
 		 * Reset and transmit next packet (if any).
 		 */
-		es->es_oactive = 0;
+		es->es_if.if_flags &= ~IFF_OACTIVE;
 		es->es_mask = ~0;
 		if (es->es_if.if_snd.ifq_head)
-			ecstart(unit);
+			(void) ecstart(&es->es_if);
 		return;
 	}
 	/*
@@ -445,6 +466,7 @@ ecread(unit)
     	struct mbuf *m;
 	int len, off, resid, ecoff, rbuf;
 	register struct ifqueue *inq;
+	u_short start_read;
 	u_char *ecbuf;
 
 	es->es_if.if_ipackets++;
@@ -495,200 +517,21 @@ ecread(unit)
 	 * the type and length which are at the front of any trailer data.
 	 */
 	m = ecget(ecbuf, len, off, &es->es_if);
-	if (m == 0)
-		goto setup;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (ec->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&es->es_ac, m);
-		goto setup;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		goto setup;
-	}
-
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-		goto setup;
-	}
-	IF_ENQUEUE(inq, m);
-
-setup:
+	if (m)
+		ether_input(&es->es_if, ec, m);
 	/*
 	 * Reset for next packet.
 	 */
-	addr->ec_rcr = EC_READ|EC_RCLR|rbuf;
-}
-
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- * If destination is this address or broadcast, send packet to
- * loop device to kludge around the fact that 3com interfaces can't
- * talk to themselves.
- */
-ecoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
- 	u_char edst[6];
-	struct in_addr idst;
-	register struct ec_softc *es = &ec_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *ec;
-	register int off;
-	struct mbuf *mcopy = (struct mbuf *)0;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&es->es_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
-		    sizeof(edst)))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* need per host negotiation */
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ntohs((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-
-		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost,
-			sizeof(edst))) {
-
-				mcopy = m_copy(m, 0, (int)M_COPYALL);
-		} else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
-			sizeof(edst))) {
-
-				return(looutput(&loif, m, dst));
-		}
-		type = ETHERTYPE_NS;
-		off = 0;
-		goto gottype;
-#endif
-
-	case AF_UNSPEC:
-		ec = (struct ether_header *)dst->sa_data;
- 		bcopy((caddr_t)ec->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = ec->ether_type;
-		goto gottype;
-
-	default:
-		printf("ec%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	ec = mtod(m, struct ether_header *);
- 	bcopy((caddr_t)edst, (caddr_t)ec->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)es->es_addr, (caddr_t)ec->ether_shost,
-	    sizeof(ec->ether_shost));
-	ec->ether_type = htons((u_short)type);
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		error = ENOBUFS;
-		goto qfull;
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	if (es->es_oactive == 0)
-		ecstart(ifp->if_unit);
-	splx(s);
-	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
-
-qfull:
-	m0 = m;
-	splx(s);
-bad:
-	m_freem(m0);
-	if (mcopy)
-		m_freem(mcopy);
-	return (error);
+setup:
+#ifdef MULTI
+		if (es->es_if.if_flags & IFF_PROMISC)
+			start_read = EC_PROMISC;
+		else if (es->es_if.if_flags & IFF_MULTI)
+			start_read = EC_MULTI;
+		else
+#endif MULTI
+			start_read = EC_READ;
+	addr->ec_rcr = start_read|EC_RCLR|rbuf;
 }
 
 /*
@@ -756,43 +599,51 @@ ecget(ecbuf, totlen, off0, ifp)
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
 	register int off = off0, len;
-	u_char *cp;
+	u_char *cp = (ecbuf += ECRDOFF + sizeof (struct ether_header));
+	u_char *packet_end = cp + totlen;
 
-	cp = ecbuf + ECRDOFF + sizeof (struct ether_header);
+	if (off) {
+		off += 2 * sizeof(u_short);
+		totlen -= 2 *sizeof(u_short);
+		cp += off;
+	}
+
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
 	while (totlen > 0) {
 		register int words;
 		u_char *mcp;
 
-		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0)
-			goto bad;
-		if (off) {
-			len = totlen - off;
-			cp = ecbuf + ECRDOFF +
-				sizeof (struct ether_header) + off;
-		} else
-			len = totlen;
-		if (ifp)
-			len += sizeof(ifp);
-		if (len >= NBPG) {
-			MCLGET(m);
-			if (m->m_len == CLBYTES)
-				m->m_len = len = MIN(len, CLBYTES);
-			else
-				m->m_len = len = MIN(MLEN, len);
-		} else {
-			m->m_len = len = MIN(MLEN, len);
-			m->m_off = MMINOFF;
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
 		}
-		mcp = mtod(m, u_char *);
-		if (ifp) {
+		len = min(totlen, (packet_end - cp));
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
+			else
+				len = m->m_len;
+		} else {
 			/*
-			 * Prepend interface pointer to first mbuf.
+			 * Place initial small packet/header at end of mbuf.
 			 */
-			*(mtod(m, struct ifnet **)) = ifp;
-			mcp += sizeof(ifp);
-			len -= sizeof(ifp);
-			ifp = (struct ifnet *)0;
+			if (len < m->m_len) {
+				if (top == 0 && len + max_linkhdr <= m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
 		}
 		if (words = (len >> 1)) {
 			register u_short *to, *from;
@@ -809,16 +660,9 @@ ecget(ecbuf, totlen, off0, ifp)
 			*mcp++ = *cp++;
 		*mp = m;
 		mp = &m->m_next;
-		if (off == 0) {
-			totlen -= len;
-			continue;
-		}
-		off += len;
-		if (off == totlen) {
-			cp = ecbuf + ECRDOFF + sizeof (struct ether_header);
-			off = 0;
-			totlen = off0;
-		}
+		totlen -= len;
+		if (cp == packet_end)
+			cp = ecbuf;
 	}
 	return (top);
 bad:
@@ -846,7 +690,7 @@ ecioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			ecinit(ifp->if_unit);	/* before arpwhohas */

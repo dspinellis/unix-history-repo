@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_pcl.c	7.2 (Berkeley) %G%
+ *	@(#)if_pcl.c	7.3 (Berkeley) %G%
  */
 
 #include "pcl.h"
@@ -241,20 +241,10 @@ pcloutput(ifp, m, dst)
 	 * off and used by the START routine to route the packet.
 	 * If no space in first mbuf, allocate another.
 	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct pcl_header) > m->m_off) {
-		m2 = m_get(M_DONTWAIT, MT_HEADER);
-		if (m2 == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m2->m_next = m;
-		m2->m_off = MMINOFF;
-		m2->m_len = sizeof (struct pcl_header);
-		m = m2;
-	} else {
-		m->m_off -= sizeof (struct pcl_header);
-		m->m_len += sizeof (struct pcl_header);
+	M_PREPEND(m, sizeof(struct pcl_header), M_DONTWAIT);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
 	}
 	pclp = mtod(m, struct pcl_header *);
 	pclp->pcl_dest = dest;
@@ -319,8 +309,10 @@ pclstart(dev)
 	 */
 	sc->sc_bdest = mtod(m, struct pcl_header *)->pcl_dest;
 	sc->sc_odest = sc->sc_bdest? sc->sc_bdest: 1;
-	m->m_off += sizeof (struct pcl_header);
+	m->m_data += sizeof (struct pcl_header);
 	m->m_len -= sizeof (struct pcl_header);
+	if (m->m_flags & M_PKTHDR)
+		m->m_pkthdr.len -= sizeof (struct pcl_header);
 
 	/* Map out to the DMA area */
 	sc->sc_olen = if_wubaput(&sc->sc_ifuba, m);

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_en.c	7.3 (Berkeley) %G%
+ *	@(#)if_en.c	7.4 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -373,8 +373,8 @@ endocoll(unit)
 
 #ifdef notdef
 struct	sockproto enproto = { AF_ETHERLINK };
-struct	sockaddr_en endst = { AF_ETHERLINK };
-struct	sockaddr_en ensrc = { AF_ETHERLINK };
+struct	sockaddr_en endst = { sizeof(endst), AF_ETHERLINK };
+struct	sockaddr_en ensrc = { sizeof(ensrc), AF_ETHERLINK };
 #endif
 /*
  * Ethernet interface receiver interrupt.
@@ -671,7 +671,7 @@ enioctl(ifp, cmd, data)
 		 * Attempt to check agreement of protocol address
 		 * and board address.
 		 */
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 		case AF_INET:
 			if (in_lnaof(IA_SIN(ifa)->sin_addr) != es->es_host)
 				return (EADDRNOTAVAIL);

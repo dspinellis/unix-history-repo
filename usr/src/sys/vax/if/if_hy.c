@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_hy.c	7.3 (Berkeley) %G%
+ *	@(#)if_hy.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -1096,8 +1096,8 @@ endintr:
 }
 
 struct sockproto hypproto = { PF_HYLINK };
-struct sockaddr_in hypdst = { AF_HYLINK };
-struct sockaddr_in hypsrc = { AF_HYLINK };
+struct sockaddr_in hypdst = { sizeof(hypdst), AF_HYLINK };
+struct sockaddr_in hypsrc = { sizeof(hypsrc), AF_HYLINK };
 
 /*
  * Called from device interrupt when receiving data.
@@ -1371,7 +1371,7 @@ hyioctl(ifp, cmd, data)
 	switch(cmd) {
 
 	case SIOCSIFADDR:
-		if (ifa->ifa_addr.sa_family != AF_INET)
+		if (ifa->ifa_addr->sa_family != AF_INET)
 			return(EINVAL);
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			hyinit(ifp->if_unit);
