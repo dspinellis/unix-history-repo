@@ -1,4 +1,4 @@
-/*	ufs_inode.c	6.7	84/07/04	*/
+/*	ufs_inode.c	6.8	84/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -155,6 +155,8 @@ loop:
 		u.u_error = ENFILE;
 		return(NULL);
 	}
+	if (ip->i_count)
+		panic("free inode isn't");
 	if (iq = ip->i_freef)
 		iq->i_freeb = &ifreeh;
 	ifreeh = iq;
@@ -169,9 +171,6 @@ loop:
 	 */
 	remque(ip);
 	insque(ip, ih);
-#ifdef QUOTA
-	dqrele(ip->i_dquot);
-#endif
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
@@ -186,6 +185,9 @@ loop:
 	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
+#ifdef QUOTA
+	dqrele(ip->i_dquot);
+#endif
 	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize);
 	/*
 	 * Check I/O errors
