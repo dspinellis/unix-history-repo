@@ -1,19 +1,22 @@
-#	Makefile	4.31	83/07/06
+#	Makefile	4.32	83/07/08
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730
-730OPTS=-O -DVAX730
+730OPTS=-O -DSTANDALONE -DVAX730
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
 	rl.c tm.c ts.c \
 	up.c upmaptype.c uba.c uda.c ut.c \
-	drtest.c format.c up.new.c
+	drtest.c format.c up.old.c hp.old.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 	rk.o rl.o tm.o ts.o \
 	up.o upmaptype.o uba.o uda.o ut.o
-NEWDRIVERS=hp.new.o up.new.o
+# These drivers don't have ecc correction and bad sector forwarding;
+# they are placed in the file system boot area for 750's.  If your
+# root has bad sectors you can try and squeeze the newer drivers in...
+ODRIVERS=hp.old.o up.old.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
 	format tpformat drtest boothp boothk bootup bootra bootrl \
@@ -21,14 +24,17 @@ ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
 
 all: ${ALL}
 
-/usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o
+/usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
 	ar crv /usr/lib/libsa.a $?
 	ranlib /usr/lib/libsa.a
 
-${NEWDRIVERS} ${DRIVERS}: savax.h
+${ODRIVERS} ${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm $*.s
+
+dkbad.o: ../vax/dkbad.c
+	${CC} -c ${CFLAGS} ../vax/dkbad.c
 
 # startups
 
@@ -58,13 +64,11 @@ tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
 	cp a.out b.out; strip b.out; \
 		dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
 
-tpformat: format.o tpsrt0.o dkbad.o
-tpformat: confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
+tpformat: format.o tpsrt0.o confhpup.o /usr/lib/libsa.a
 	cp format.c tpformat.c; chmod +w tpformat.c
 	cc -c -O -DJUSTEXIT tpformat.c
 	rm tpformat.c
-	ld -N tpsrt0.o tpformat.o dkbad.o confhpup.o \
-		hp.new.o up.new.o -lsa -lc
+	ld -N tpsrt0.o tpformat.o confhpup.o -lsa -lc
 	cp a.out b.out; strip b.out; \
 		dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
 
@@ -82,18 +86,11 @@ bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
 
-format:	format.o srt0.o dkbad.o
-format:	confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
-	ld -N -o format srt0.o format.o dkbad.o confhpup.o \
-		hp.new.o up.new.o -lsa -lc
+format:	format.o srt0.o confhpup.o /usr/lib/libsa.a
+	ld -N -o format srt0.o format.o confhpup.o -lsa -lc
 
-drtest:	drtest.o srt0.o dkbad.o
-drtest:	confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
-	ld -N -o drtest srt0.o drtest.o dkbad.o confhpup.o \
-		hp.new.o up.new.o -lsa -lc
-
-dkbad.o: ../vax/dkbad.c
-	${CC} -c ${CFLAGS} ../vax/dkbad.c
+drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
+	ld -N -o drtest srt0.o drtest.o confhpup.o -lsa -lc
 
 # for 730s minimize size to avoid microcode botch
 # (won't load files larger than 12.5 Kbytes)
@@ -116,16 +113,16 @@ dkbad.o: ../vax/dkbad.c
 730copy: copy.o srt0.o 730conf.o /usr/lib/libsa.a
 	ld -N -o 730copy srt0.o copy.o 730conf.o -lsa -lc
 
-730drtest: drtest.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o 730drtest srt0.o drtest.o confup.o up.new.o dkbad.o -lsa -lc
+730drtest: drtest.o srt0.o confup.o /usr/lib/libsa.a
+	ld -N -o 730drtest srt0.o drtest.o confup.o -lsa -lc
 
-730format: format.o srt0.o confup.o up.new.o dkbad.o /usr/lib/libsa.a
-	ld -N -o 730format srt0.o format.o confup.o up.new.o dkbad.o -lsa -lc
+730format: format.o srt0.o confup.o /usr/lib/libsa.a
+	ld -N -o 730format srt0.o format.o confup.o -lsa -lc
 
 730conf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 730conf.o: ../h/fs.h saio.h
 	cp conf.c 730conf.c
-	cc -c ${730OPTS} -DBOOT 730conf.c
+	cc -c ${730OPTS} 730conf.c
 	rm -f 730conf.c
 
 # bootstrap from ether
@@ -138,12 +135,12 @@ boothk: relsrt0.o boothk.o confrk.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm b.out
 
-boothp: relsrt0.o boothp.o confhp.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o -lsa -lc
+boothp: relsrt0.o boothp.o confhp.o hp.old.o /usr/lib/libsa.a
+	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm b.out
 
-bootup: relsrt0.o bootup.o confup.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o -lsa -lc
+bootup: relsrt0.o bootup.o confup.o up.old.o /usr/lib/libsa.a
+	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm b.out
 
 bootra: relsrt0.o bootra.o confra.o /usr/lib/libsa.a
