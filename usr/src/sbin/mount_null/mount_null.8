@@ -1,0 +1,49 @@
+.\"
+.\" Copyright (c) 1992 The Regents of the University of California
+.\" Copyright (c) 1990, 1992 Jan-Simon Pendry
+.\" All rights reserved.
+.\"
+.\" This code is derived from software donated to Berkeley by
+.\" Jan-Simon Pendry and the null layer from John Heidemann of
+.\" the UCLA Ficus proejct.
+.\"
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)mount_null.8	5.1 (Berkeley) %G%
+.\"
+.\"
+.Dd 
+.Dt MOUNT_NULL 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_null
+.Nd mount a null layer, making a virtual copy of an existing filesystem sub-tree
+.Sh SYNOPSIS
+.Nm mount_null
+.Op Fl F Ar fsoptions
+.Ar target mount-point
+.Sh DESCRIPTION
+The
+.Nm mount_null
+command makes a sub-tree of an existing filesystem visible
+in another part of the global filesystem namespace.
+This allows existing files and directories to be accessed
+using a different pathname.
+.Pp
+Virtual file system sub-trees created by the null layer should
+be identical to those created by the loopback
+The virtual copy of a file system sub-tree created by the null
+layer should be nearly identical to one created by
+.Xr mount_lofs 8 .
+The purpose of the null layer is to serve as a basis for future
+layer development.
+.Pp
+An example of a layer constructed from the null layer is
+the umap layer (see
+.Xr mount_umap 8 ).
+.Sh HISTORY
+The
+loopback filesystem
+is
+.Ud
