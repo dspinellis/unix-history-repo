@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.11	82/03/13	*/
+/*	uipc_pipe.c	4.12	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -31,10 +31,7 @@ piconnect(wso, rso)
 {
 
 COUNT(PICONNECT);
-	if (m_reserve(PIPSIZ*2/MSIZE) == 0) {
-		u.u_error = ENOBUFS;
-		return (0);
-	}
+	/* when we reserve memory this routine may fail */
 	wso->so_proto = rso->so_proto = &pipeproto;
 	wso->so_pcb = (caddr_t)rso;
 	rso->so_pcb = (caddr_t)wso;
@@ -138,17 +135,3 @@ COUNT(PIUSRREQ);
 	}
 	return (0);
 }
-
-#ifdef notdef
-psndrcv(snd, rcv)
-	struct sockbuf *snd, *rcv;
-{
-
-	printf("snd: (cc,hiwat,mbcnt,mbmax) (%d,%d,%d,%d) ",
-	    snd->sb_cc, snd->sb_hiwat, snd->sb_mbcnt, snd->sb_mbmax);
-	printf("m %x, m->m_len %d\n", snd->sb_mb, snd->sb_mb ? snd->sb_mb->m_len : 0);
-	printf("rcv: (cc,hiwat,mbcnt,mbmax) (%d,%d,%d,%d) ",
-	    rcv->sb_cc, rcv->sb_hiwat, rcv->sb_mbcnt, rcv->sb_mbmax);
-	printf("m %x, m->m_len %d\n", rcv->sb_mb, rcv->sb_mb ? rcv->sb_mb->m_len : 0);
-}
-#endif
