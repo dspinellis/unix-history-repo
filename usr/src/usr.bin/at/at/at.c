@@ -300,18 +300,12 @@ char **argv;
 
 	/*
 	 * The protection mechanism works like this:
-	 * We are running ruid=user, euid=daemon.  So far we have been
-	 * messing around in the spool directory, so we needed the
-	 * daemon stuff.  Now, we want to read the users file,
-	 * so we must give up the daemon protection,  but we might
-	 * need the daemon's protection if the user interrupts and
-	 * we need to remove the spool files.
-	 * So, we fork and let the kid set the real and effective
-	 * user id's to the user, so he can read everything of his
-	 * own, but not his professor's final exam and not stuff
-	 * owned by daemon.  If the kid exits with non-zero status,
-	 * that means that the user typed interrupt, and the parent
-	 * (still with daemon permissions) removes the spool file.
+	 * We are running ruid=user, euid=spool owner.  So far we have been
+	 * messing around in the spool directory, so we needed to run
+	 * as the owner of the spool directory.
+	 * We now need to switch to the user's effective uid
+	 * to simplify permission checking.  However, we fork first,
+	 * so that we can clean up if interrupted.
 	 */
 	signal(SIGINT, SIG_IGN);
 	pid = fork();
@@ -343,7 +337,7 @@ char **argv;
 	signal(SIGINT, SIG_DFL);
 
 	/*
-	 * We are the kid, give up daemon permissions.
+	 * We are the kid, give up special permissions.
 	 */
 	setuid(getuid());
 
@@ -356,18 +350,6 @@ char **argv;
 			perror(jobfile);
 			exit(1);
 		}
-	}
-		
-	/*
-	 * If the inputfile is not from a tty then turn off standardin
-	 * If the inputfile is a tty, put out a prompt now, instead of
-	 * waiting for a lot of file activity to complete.
-	 */
-	if (!(isatty(fileno(inputfile)))) 
-		standardin = 0 ;
-	if (standardin) {
-		fputs("at> ", stdout);
-		fflush(stdout);
 	}
 
 	/*
@@ -416,26 +398,18 @@ char **argv;
 	/*
 	 * Put in a line to run the proper shell using the rest of
 	 * the file as input.  Note that 'exec'ing the shell will
-	 * cause sh() to leave a /tmp/sh### file around.
+	 * cause sh() to leave a /tmp/sh### file around.  This line
+	 * depends on the shells allowing EOF to end tagged input.  The
+	 * quotes also guarantee a quoting of the lines before EOF.
 	 */
-	fprintf(spoolfile,
-	    "%s << '...the rest of this file is shell input'\n", shell);
+	fprintf(spoolfile, "%s << 'QAZWSXEDCRFVTGBYHNUJMIKOLP'\n", shell);
 
 	/*
 	 * Now that we have all the files set up, we can start reading in
-	 * the job. (I added the prompt "at>" so that the user could tell
-	 * when/if he/she was supposed to enter commands from standard
-	 * input. The old "at" just sat there and didn't send any kind of 
-	 * message that said it was waiting for input if it was reading
-	 * form standard input).
+	 * the job.
 	 */
-	while (fgets(line, LINSIZ, inputfile) != NULL) {
+	while (fgets(line, LINSIZ, inputfile) != NULL)
 		fputs(line, spoolfile);
-		if (standardin)
-			fputs("at> ", stdout);
-	}
-	if (standardin)
-		fputs("<EOT>\n", stdout);	/* clean up the final output */
 
 	/*
 	 * Close all files and change the mode of the spoolfile.
@@ -902,10 +876,14 @@ getname(uid)
 int uid;
 {
 	struct passwd *pwdinfo;			/* password info structure */
-	
+	char *logname, *getlogin();
 
-	if ((pwdinfo = getpwuid(uid)) == 0) {
-		perror(uid);
+	logname = getlogin();
+	if (logname == NULL || (pwdinfo = getpwnam(logname)) == NULL ||
+	    pwdinfo->pw_uid != uid)
+		pwdinfo = getpwuid(uid);
+	if (pwdinfo == 0) {
+		fprintf(stderr, "no name for uid %d?\n", uid);
 		exit(1);
 	}
 	return(pwdinfo->pw_name);
