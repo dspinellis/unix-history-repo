@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.3 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.4 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -172,7 +172,10 @@
 .		na
 .		nr nS 1
 .	\}
-.       if "\\$1"SEE" .nr nA 1
+.       if "\\$1"SEE" \{\
+.               nr nA 1
+.               na
+.       \}
 .       if "\\$1"FILES" .nr nF 1
 .       in 0
 .       nr aN 0
