@@ -1,4 +1,4 @@
-/*	ts.c	4.1	%G%	*/
+/*	ts.c	4.2	%G%	*/
 
 #include "../conf/ts.h"
 #if NTS > 0
@@ -17,11 +17,9 @@
 #include "../h/map.h"
 #include "../h/uba.h"
 
-typedef	unsigned short ushort;
-
 struct	device {
-	ushort	tsdb;
-	ushort	tssr;
+	u_short	tsdb;
+	u_short	tssr;
 };
 
 struct	buf	tstab;
@@ -30,7 +28,7 @@ struct	buf	ctsbuf;
 
 #define	INF	1000000000
 
-ushort	ts_uba;
+u_short	ts_uba;
 long	ts_iouba;
 char	ts_flags;
 char	ts_openf;
@@ -39,13 +37,11 @@ daddr_t	ts_nxrec;
 
 /* status message */
 struct	sts {
-	ushort	s_sts;
-	ushort	len;
-	ushort	rbpcr;
-	ushort	xs0;
-	ushort	xs1;
-	ushort	xs2;
-	ushort	xs3;
+	u_short	s_sts;
+	u_short	xs0;
+	u_short	xs1;
+	u_short	xs2;
+	u_short	xs3;
 };
 
 /* Error codes in stat 0 */
@@ -56,10 +52,10 @@ struct	sts {
 
 /* command message */
 struct cmd {
-	ushort	c_cmd;
-	ushort	c_loba;
-	ushort	c_hiba;
-	ushort	c_size;
+	u_short	c_cmd;
+	u_short	c_loba;
+	u_short	c_hiba;
+	u_short	c_size;
 };
 
 #define	ACK	0100000
@@ -83,10 +79,10 @@ struct cmd {
 
 /* characteristics data */
 struct charac {
-	ushort	char_loba;
-	ushort	char_hiba;
-	ushort	char_size;
-	ushort	char_mode;
+	u_short	char_loba;
+	u_short	char_hiba;
+	u_short	char_size;
+	u_short	char_mode;
 };
 
 /* All the packets, collected */
@@ -144,14 +140,14 @@ tsopen(dev, flag)
 		ctsbuf.b_bcount = sizeof(ts);
 		if (ubaddr == 0)
 			ubaddr = (struct tsmesg *)ubasetup(&ctsbuf, 0);
-		ts_uba = (ushort)((long)ubaddr + (((long)ubaddr >> 16) & 03));
+		ts_uba = (u_short)((long)ubaddr + (((long)ubaddr >> 16) & 03));
 		ts.ts_char.char_loba = (int)&ubaddr->ts_sts;
-		ts.ts_char.char_hiba = (ushort)((long)&ubaddr->ts_sts >> 16) & 03;
+		ts.ts_char.char_hiba = (u_short)((long)&ubaddr->ts_sts >> 16) & 03;
 		ts.ts_char.char_size = sizeof(ts.ts_sts);
 		ts.ts_char.char_mode = 0400;		/* Stop on 2 tape marks */
 		ts.ts_cmd.c_cmd = ACK + 04;	/* write characteristics */
 		ts.ts_cmd.c_loba = (int)&ubaddr->ts_char;
-		ts.ts_cmd.c_hiba = (ushort)((long)&ubaddr->ts_sts >> 16) & 03;
+		ts.ts_cmd.c_hiba = (u_short)((long)&ubaddr->ts_sts >> 16) & 03;
 		ts.ts_cmd.c_size = sizeof(ts.ts_sts);
 		tsaddr->tsdb = ts_uba;
 	}
@@ -251,8 +247,8 @@ tsstart()
 	} else if (blkno == dbtofsb(bp->b_blkno)) {
 		tstab.b_active = SIO;
 		ts_iouba = ubasetup(bp, 1);
-		ts.ts_cmd.c_loba = (ushort)ts_iouba;
-		ts.ts_cmd.c_hiba = (ushort)(ts_iouba >> 16) & 03;
+		ts.ts_cmd.c_loba = (u_short)ts_iouba;
+		ts.ts_cmd.c_hiba = (u_short)(ts_iouba >> 16) & 03;
 		ts.ts_cmd.c_size = bp->b_bcount;
 		if(bp->b_flags & B_READ)
 			ts.ts_cmd.c_cmd = ACK+CVC+IE+READ;
@@ -393,5 +389,96 @@ tsphys(dev)
 	a = u.u_offset >> 9;
 	ts_blkno = dbtofsb(a);
 	ts_nxrec = dbtofsb(a)+1;
+}
+
+#define	UBMAP	(int *)0xf30800
+
+int dtsinfo;
+
+twall(start, num)
+{
+	register struct device *tsaddr = TSPHYS;
+	register int *ubap = UBMAP;
+	register int p, i;
+
+	tsinit();
+	/* dump mem */
+	p = PG_V;
+	i = 0;
+	while (i<num) {
+		*(ubap) = p|i++;
+		*(ubap+1) = p|i;
+		dts.ts_cmd.c_loba = 0;
+		dts.ts_cmd.c_hiba = 0;
+		dts.ts_cmd.c_size = NBPG;
+		dts.ts_cmd.c_cmd = ACK+CVC+WRITE;
+		tsaddr->tsdb = dtsinfo;
+		twait();
+	}
+	printf("done\n");
+}
+
+tsinit()
+{
+	register struct device *tsaddr = TSPHYS;
+	register struct tsmesg *tsm;
+	register int *ubap = UBMAP;
+	register i;
+
+	tsaddr->tssr = 0;
+	while ((tsaddr->tssr&SSR)==0)
+		;
+	i = (int)&dts;
+	i &= 0xefffff;
+	dtsinfo = ((i&0777)|02000);
+	tsm = (struct tsmesg *)dtsinfo;
+	i >>= 9;
+	i |= PG_V;
+	*(ubap+2) = i;
+	*(ubap+3) = i+1;
+	dts.ts_cmd.c_cmd = ACK + 04;
+	dts.ts_cmd.c_loba = &tsm->ts_char;
+	dts.ts_cmd.c_hiba = 0;
+	dts.ts_cmd.c_size = sizeof(dts.ts_char);
+	dts.ts_char.char_loba = &tsm->ts_sts;
+	dts.ts_char.char_hiba = 0;
+	dts.ts_char.char_size = sizeof(dts.ts_sts);
+	dts.ts_char.char_mode = 0400;
+	tsaddr->tsdb = dtsinfo;
+	twait();
+}
+
+teof()
+{
+
+	dtscommand(WTM);
+}
+
+rewind()
+{
+
+	dtscommand(REW);
+}
+
+dtscommand(com)
+{
+	register struct device *tsaddr = TSPHYS;
+
+	dts.ts_cmd.c_cmd = ACK+CVC+com;
+	dts.ts_cmd.c_loba = 1;
+	tsaddr->tsdb = dtsinfo;
+	twait();
+}
+
+twait()
+{
+	register struct device *tsaddr = TSPHYS;
+	register i;
+
+	while ((tsaddr->tssr&SSR)==0)
+		;
+	i = tsaddr->tssr;
+	if (i&SC)
+		printf("tssr %x ", i);
 }
 #endif

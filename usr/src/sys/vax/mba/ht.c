@@ -1,4 +1,4 @@
-/*	ht.c	4.2	%G%	*/
+/*	ht.c	4.3	%G%	*/
 
 #include "../conf/ht.h"
 #if NHT > 0
@@ -16,6 +16,8 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/mba.h"
+#include "../h/vm.h"
+#include "../h/cmap.h"
 
 struct	device
 {
@@ -320,6 +322,7 @@ htintr(mbastat, as)
 		} else
 			h_blkno[unit] = blk;
 		break;
+#undef blk
 
 	default:
 		return;
@@ -350,5 +353,65 @@ htphys(dev)
 		h_blkno[unit] = dbtofsb(a);
 		h_nxrec[unit] = dbtofsb(a)+1;
 	}
+}
+
+#define	HTADDR	((struct device *)(HTPHYSMBA + 0x400))
+#define	HTMAP ((struct pte *) (HTPHYSMBA + 0x800))
+
+#define	DBSIZE	20
+
+twall(start, num)
+	char *start;
+	int num;
+{
+	int blk;
+
+	HTADDR->httc = P800;	/* set 800 bpi mode */
+	HTADDR->htcs1 = DCLR | GO;
+	while (num > 0) {
+		blk = num > DBSIZE ? DBSIZE : num;
+		twrite(start, blk);
+		start += blk*NBPG;
+		num -= blk;
+	}
+}
+
+twrite(buf, num)
+char *buf;
+{
+	register struct pte *hpte = HTMAP;
+	register int i;
+
+	twait();
+	HTADDR->htfc = -(num*NBPG);
+	for (i = 0; i < num; i++)
+		*(int *)hpte++ = (btop(buf)+i) | PG_V;
+	((struct mba_regs *)PHYSMBA1)->mba_sr = -1;
+	((struct mba_regs *)PHYSMBA1)->mba_bcr = -(num*NBPG);
+	((struct mba_regs *)PHYSMBA1)->mba_var = 0;
+	HTADDR->htcs1 = WCOM | GO;
+}
+
+twait()
+{
+	register s;
+
+	do
+		s = HTADDR->htds;
+	while ((s & RDY) == 0);
+}
+
+rewind()
+{
+
+	twait();
+	HTADDR->htcs1 = REW | GO;
+}
+
+teof()
+{
+
+	twait();
+	HTADDR->htcs1 = WEOF | GO;
 }
 #endif
