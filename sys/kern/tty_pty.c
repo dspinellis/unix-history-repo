@@ -47,7 +47,7 @@
  * 27 Feb 93	Charles Hannum		Proper return values for ptsclose()
  *					and ptcclose()
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty_pty.c,v 1.1.1.1 1993/06/12 14:57:31 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty_pty.c,v 1.2 1993/08/15 06:11:22 alm Exp $";
 
 /*
  * Pseudo-teletype Driver
@@ -655,8 +655,9 @@ ptyioctl(dev, cmd, data, flag)
 			return(0);
 		}
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (error < 0)
-		 error = ttioctl(tp, cmd, data, flag);
+	if (error >= 0)
+	    return (error);
+	error = ttioctl(tp, cmd, data, flag);
 	/*
 	 * Since we use the tty queues internally,
 	 * pty's can't be switched to disciplines which overwrite

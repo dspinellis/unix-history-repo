@@ -40,7 +40,7 @@
  * 26 May 93	Holger Veit		Remove hard coded escapes
  *		Rodney W. Grimes	Added two more \n to clean up output
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.1.1.1 1993/06/12 14:57:34 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.2 1993/08/06 09:53:06 rgrimes Exp $";
 
 #include "param.h"
 #include "filedesc.h"
@@ -228,6 +228,10 @@ main()
 #include "sl.h"
 #if NSL > 0
 	slattach();			/* XXX */
+#endif
+#include "ppp.h"
+#if NPPP > 0
+	pppattach();			/* XXX */
 #endif
 #include "loop.h"
 #if NLOOP > 0

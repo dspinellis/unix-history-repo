@@ -2,7 +2,9 @@
 /*
  * Definitions for tcp compression routines.
  *
- * $Header: slcompress.h,v 1.10 89/12/31 08:53:02 van Exp $
+ * $Id$
+ * From: slcompress.h,v 1.13 1993/08/09 02:37:32 paulus Exp
+ * From: slcompress.h,v 1.10 89/12/31 08:53:02 van Exp 
  *
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
@@ -37,6 +39,9 @@
  *
  *	Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
  *	- Initial distribution.
+ *
+ *	Paul Mackerras (paulus@cs.anu.edu.au), June 1993:
+ *	- added sl_uncompress_tcp_part.
  */
 
 #define MAX_STATES 16		/* must be > 2 and < 256 */
@@ -151,7 +156,11 @@ struct slcompress {
 /* flag values */
 #define SLF_TOSS 1		/* tossing rcvd frames because of input err */
 
-extern void sl_compress_init(/* struct slcompress * */);
-extern u_char sl_compress_tcp(/* struct mbuf *, struct ip *,
-				struct slcompress *, int compress_cid_flag */);
-extern int sl_uncompress_tcp(/* u_char **, int,  u_char, struct slcompress * */);
+extern void sl_compress_init __P((struct slcompress *));
+extern u_char sl_compress_tcp __P((struct mbuf *m, struct ip *ip,
+				   struct slcompress *, int comp_cid_flag));
+extern int sl_uncompress_tcp __P((u_char **bufp, int len, u_int type,
+				  struct slcompress *));
+extern int sl_uncompress_tcp_part __P((u_char **bufp, int buflen,
+				       int total_len, u_int type,
+				       struct slcompress *));

@@ -20,21 +20,24 @@
  *	Van Jacobson (van@ee.lbl.gov), Dec 31, 1989:
  *	- Initial distribution.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00112
- * --------------------         -----   ----------------------
+ * Modified March 14, 1993 by David Greenman, upgraded to slcompress.c
+ * from tcpdump 2.2.1.
  *
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ * Modified June 1993 by Paul Mackerras, paulus@cs.anu.edu.au,
+ * so that the entire packet being decompressed doesn't have
+ * to be in contiguous memory (just the compressed header).
+ *
+ *	$Id$
+ *	From: slcompress.c,v 1.22 92/05/24 11:48:20 van Exp $ (LBL)
  */
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header: /a/cvs/386BSD/src/sys.386bsd/net/slcompress.c,v 1.1.1.1 1993/06/12 14:57:51 rgrimes Exp $ (LBL)";
+    "$Id$";
 #endif
 
 #include <sys/types.h>
 #include <sys/param.h>
-#include "systm.h"
+#include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -393,6 +396,23 @@ sl_uncompress_tcp(bufp, len, type, comp)
 	u_int type;
 	struct slcompress *comp;
 {
+	return sl_uncompress_tcp_part(bufp, len, len, type, comp);
+}
+
+
+/*
+ * Uncompress a packet of total length total_len.  The first buflen
+ * bytes are at *bufp; this must include the entire (compressed or
+ * uncompressed) TCP/IP header.  In addition, there must be enough
+ * clear space before *bufp to build a full-length TCP/IP header.
+ */
+int
+sl_uncompress_tcp_part(bufp, buflen, total_len, type, comp)
+	u_char **bufp;
+	int buflen, total_len;
+	u_int type;
+	struct slcompress *comp;
+{
 	register u_char *cp;
 	register u_int hlen, changes;
 	register struct tcphdr *th;
@@ -415,7 +435,7 @@ sl_uncompress_tcp(bufp, len, type, comp)
 		cs->cs_ip.ip_sum = 0;
 		cs->cs_hlen = hlen;
 		INCR(sls_uncompressedin)
-		return (len);
+		return (total_len);
 
 	default:
 		goto bad;
@@ -496,20 +516,21 @@ sl_uncompress_tcp(bufp, len, type, comp)
 	 * prepend 128 bytes of header).  Adjust the length to account for
 	 * the new header & fill in the IP total length.
 	 */
-	len -= (cp - *bufp);
-	if (len < 0)
+	buflen -= (cp - *bufp);
+	total_len -= (cp - *bufp);
+	if (buflen < 0)
 		/* we must have dropped some characters (crc should detect
 		 * this but the old slip framing won't) */
 		goto bad;
 
 	if ((int)cp & 3) {
-		if (len > 0)
-			(void) ovbcopy(cp, (caddr_t)((int)cp &~ 3), len);
+		if (buflen > 0)
+			(void) ovbcopy(cp, (caddr_t)((int)cp &~ 3), buflen);
 		cp = (u_char *)((int)cp &~ 3);
 	}
 	cp -= cs->cs_hlen;
-	len += cs->cs_hlen;
-	cs->cs_ip.ip_len = htons(len);
+	total_len += cs->cs_hlen;
+	cs->cs_ip.ip_len = htons(total_len);
 	BCOPY(&cs->cs_ip, cp, cs->cs_hlen);
 	*bufp = cp;
 
@@ -522,7 +543,7 @@ sl_uncompress_tcp(bufp, len, type, comp)
 		changes = (changes & 0xffff) + (changes >> 16);
 		((struct ip *)cp)->ip_sum = ~ changes;
 	}
-	return (len);
+	return (total_len);
 bad:
 	comp->flags |= SLF_TOSS;
 	INCR(sls_errorin)

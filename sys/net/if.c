@@ -484,6 +484,15 @@ ifioctl(so, cmd, data, p)
 		ifp->if_metric = ifr->ifr_metric;
 		break;
 
+	case SIOCSIFMTU:
+	case SIOCGIFMTU:
+	case SIOCSIFASYNCMAP:
+	case SIOCGIFASYNCMAP:
+		if (!ifp->if_ioctl)
+			return (EOPNOTSUPP);
+		return ((*ifp->if_ioctl)(ifp, cmd, data));
+		break;
+
 	default:
 		if (so->so_proto == 0)
 			return (EOPNOTSUPP);

@@ -89,6 +89,7 @@ net/bpf_filter.c	optional bpfilter
 net/if.c		standard
 net/if_ethersubr.c	optional ether
 net/if_loop.c		optional loop
+net/if_ppp.c		optional ppp
 net/if_sl.c		optional sl
 net/if_tun.c		optional tun device-driver
 net/radix.c		standard
@@ -97,6 +98,7 @@ net/raw_usrreq.c	standard
 net/route.c		standard
 net/rtsock.c		standard
 net/slcompress.c	optional sl
+net/slcompress.c	optional ppp
 netccitt/ccitt_proto.c	optional ccitt
 netccitt/hd_debug.c	optional ccitt
 netccitt/hd_input.c	optional ccitt

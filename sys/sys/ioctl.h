@@ -160,6 +160,7 @@ struct ttysize {
 #define TTYDISC		0		/* termios tty line discipline */
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
+#define	PPPDISC		5		/* PPP discipline */
 
 
 #define	FIOCLEX		_IO('f', 1)		/* set close on exec on fd */
@@ -207,6 +208,11 @@ struct ttysize {
 #define	OSIOCGARP	_IOWR('i',31, struct arpreq)	/* get arp entry */
 #define	SIOCGARP	_IOWR('i',38, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW('i', 32, struct arpreq)	/* delete arp entry */
+
+#define	SIOCSIFMTU	_IOW('i', 127, struct ifreq)	/* set ifnet mtu */
+#define	SIOCGIFMTU	_IOWR('i',126, struct ifreq)	/* get ifnet mtu */
+#define	SIOCSIFASYNCMAP	_IOW('i', 125, struct ifreq)	/* set ppp asyncmap */
+#define	SIOCGIFASYNCMAP	_IOWR('i',124, struct ifreq)	/* get ppp asyncmap */
 
 #ifndef KERNEL
 
