@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bstring.3	6.3 (Berkeley) %G%
+.\"	@(#)bstring.3	6.4 (Berkeley) %G%
 .\"
 .TH BSTRING 3  ""
 .UC 5
@@ -43,6 +43,11 @@ bytes from string
 .I src
 to the string
 .IR dst .
+The
+.I src
+and
+.I dst
+strings may overlap.
 .PP
 .I Bcmp
 compares byte string
