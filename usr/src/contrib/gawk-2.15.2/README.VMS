@@ -1,0 +1,108 @@
+
+Compiling GAWK on VMS:
+
+     There's a DCL command procedure that will issue all the necessary
+CC and LINK commands, and there's also a Makefile for use with the MMS
+utility.  From the source directory, use either
+ |$ @[.VMS]VMSBUILD.COM
+or
+ |$ MMS/DECRIPTION=[.VMS]DECSRIP.MMS GAWK
+
+VAX C V3.x  -- use either vmsbuild.com or descrip.mms as is.  These use
+        CC/OPTIMIZE=NOLINE, which is essential for version 3.0.
+VAX C V2.x  -- (version 2.3 or 2.4; older ones won't work); edit either
+        vmsbuild.com or descrip.mms according to the comments in them.
+        For vmsbuild.com, this just entails removing two '!' delimiters.
+        Also edit config.h (which is a copy of file [.config]vms-conf.h)
+        and comment out or delete the two lines ``#define __STDC__ 0''
+        and ``#define VAXC_BUILTINS'' near the end.
+GNU C  -- edit vmsbuild.com or descrip.mms; the changes are different
+        from those for VAX C V2.x, but equally straightforward.  No
+        changes to config.h should be needed.
+DEC C  -- edit vmsbuild.com or descrip.mms according to their comments.
+
+     Tested under VAX/VMS V5.5-1 using VAX C V3.2, GNU C 1.40 and 2.3.
+Should work without modifications for VMS V4.6 and up.
+
+
+Installing GAWK on VMS:
+
+     All that's needed is a 'foreign' command, which is a DCL symbol
+whose value begins with a dollar sign.
+ |$ GAWK :== $device:[directory]GAWK
+(Substitute the actual location of gawk.exe for 'device:[directory]'.)
+That symbol should be placed in the user's login.com or in the system-
+wide sylogin.com procedure so that it will be defined every time the
+user logs on.
+
+     Optionally, the help entry can be loaded into a VMS help library.
+ |$ LIBRARY/HELP SYS$HELP:HELPLIB [.VMS]GAWK.HLP
+(You may want to substitute a site-specific help library rather than
+the standard VMS library 'HELPLIB'.)  After loading the help text,
+ |$ HELP GAWK
+will provide information about both the gawk implementation and the
+awk programming language.
+
+     The logical name AWK_LIBRARY can designate a default location
+for awk program files.  For the '-f' option, if the specified filename
+has no device or directory path information in it, Gawk will look in
+the current directory first, then in the directory specified by the
+translation of AWK_LIBRARY if it the file wasn't found.  If the file
+still isn't found, then ".awk" will be appended and the file access
+will be re-tried.  If AWK_LIBRARY is not defined, that portion of the
+file search will fail benignly.
+
+
+Running GAWK on VMS:
+
+     Command line parsing and quoting conventions are significantly
+different on VMS, so examples in _The_GAWK_Manual_ or the awk book
+often need minor changes.  They *are* minor though, and all the awk
+programs should run correctly.
+
+     Here are a couple of trivial tests:
+ |$ gawk -- "BEGIN {print ""Hello, World!""}"
+ |$ gawk -"W" version     !could also be -"W version" or "-W version"
+Note that upper- and mixed-case text must be quoted.
+
+     The VMS port of Gawk includes a DCL-style interface in addition
+to the original shell-style interface.  See the help entry for details.
+One side-effect of dual command line parsing is that if there's only a
+single parameter (as in the quoted string program above), the command
+becomes ambiguous.  To work-around this, the normally optional "--"
+flag is required to force shell rather than DCL parsing.  If any other
+dash-type options (or multiple parameters such as data files to be
+processed) are present, there is no ambiguity and "--" can be omitted.
+
+     The logical name AWKPATH can be used to override the default
+search path of "SYS$DISK:[],AWK_LIBRARY:" when looking for awk program
+files specified by the '-f' option.  The format of AWKPATH is a comma-
+separated list of directory specifications.  When defining it, the
+value should be quoted so that it retains a single translation, not a
+multi-translation RMS searchlist.
+
+
+Building and using GAWK under VMS POSIX:
+
+     Ignore the instructions above, although vms/gawk.hlp should still
+be made available in a help library.  Make sure that the two scripts,
+'configure' and 'mungeconf', are executable; use `chmod +x' on them if
+necessary.  Then execute the following two commands:
+ |psx> configure vms-posix
+ |psx> make awktab.c gawk
+The first command will construct files "config.h" and "Makefile" out of
+templates.  The second command will compile and link 'gawk'.  Due to
+a 'make' bug in VMS POSIX 1.0 and V1.1, the file "awktab.c" must be
+given as an explicit target or it will not be built and the final link
+step will fail.  Ignore the warning "Could not find lib m in lib list";
+it is harmless, caused by the Makefile's explicit use of -lm as a linker
+option which is not needed under VMS POSIX.  Under V1.1 (but not V1.0)
+a problem with the yacc skeleton /etc/yyparse.c will cause a compiler
+warning for awktab.c, followed by a linker warning about compilation
+warnings in the resulting object module.  These warnings can be ignored.
+
+     Another 'make' bug interferes with exercising various components
+of the test suite, but all the actual tests should execute correctly.
+(The main exception being book/wordfreq, which gives different results
+due to VMS POSIX 'sort' rather than to 'gawk'.)
+
