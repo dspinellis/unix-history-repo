@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -73,8 +73,8 @@ main(argc, argv)
 	char **argv;
 {
 	extern int optind;
-	register char *p;
-	int arglen, ch, len;
+	register char *p, *endp;
+	int arglen, ch, len, readstdin;
 	struct passwd *pw, *getpwuid();
 	char *strcat(), *getlogin();
 	uid_t geteuid();
@@ -85,9 +85,13 @@ main(argc, argv)
 		exit(1);
 	}
 #endif
-	nosync = "";
-	while ((ch = getopt(argc, argv, "fhknr")) != EOF)
+	nosync = NULL;
+	readstdin = 0;
+	while ((ch = getopt(argc, argv, "-fhknr")) != EOF)
 		switch((char)ch) {
+		case '-':
+			readstdin = 1;
+			break;
 		case 'f':
 			dofast = 1;
 			break;
@@ -113,7 +117,7 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
-	if (dofast && *nosync) {
+	if (dofast && nosync) {
 		fprintf(stderr,
 		    "shutdown: incompatible switches -f and -n.\n");
 		usage();
@@ -124,18 +128,34 @@ main(argc, argv)
 		usage();
 	}
 	getoffset(*argv++);
+
 	if (*argv) {
-		do {
-			(void)strcat(mbuf, *argv);
-			(void)strcat(mbuf, " ");
-		} while(*++argv);
-		(void)strcat(mbuf, "\n");
+		for (p = mbuf, len = sizeof(mbuf); *argv; ++argv) {
+			arglen = strlen(*argv);
+			if ((len -= arglen) <= 2)
+				break;
+			if (p != mbuf)
+				*p++ = ' ';
+			bcopy(*argv, p, arglen);
+			p += arglen;
+		}
+		*p = '\n';
+		*++p = '\0';
 	}
-	else for (len = sizeof(mbuf), p = mbuf; fgets(p, len, stdin);) {
-		arglen = strlen(p);
-		if (!(len -= arglen))
-			break;
-		p += arglen;
+
+	if (readstdin) {
+		p = mbuf;
+		endp = mbuf + sizeof(mbuf) - 2;
+		for (;;) {
+			if (!fgets(p, endp - p + 1, stdin))
+				break;
+			for (; *p &&  p < endp; ++p);
+			if (p == endp) {
+				*p = '\n';
+				*++p = '\0';
+				break;
+			}
+		}
 	}
 	mbuflen = strlen(mbuf);
 
@@ -246,7 +266,8 @@ warn()
 	else
 		fprintf(pf, "System going down IMMEDIATELY\n\n");
 
-	(void)fwrite(mbuf, sizeof(*mbuf), mbuflen, pf);
+	if (mbuflen)
+		(void)fwrite(mbuf, sizeof(*mbuf), mbuflen, pf);
 
 	/*
 	 * play some games, just in case wall doesn't come back
@@ -279,22 +300,22 @@ die_you_gravy_sucking_pig_dog()
 		doitfast();
 #ifdef DEBUG
 	if (doreboot)
-		printf("REBOOT");
-	if (dohalt)
-		printf(" HALT");
+		printf("reboot");
+	else if (dohalt)
+		printf("halt");
+	if (nosync)
+		printf(" no sync");
 	if (dofast)
-		printf(" -l %s (without fsck's)\n", nosync);
-	else
-		printf(" -l %s\n", nosync);
-	printf("kill -HUP 1\n");
+		printf(" no fsck");
+	printf("\nkill -HUP 1\n");
 #else
 	if (doreboot) {
-		execle(REBOOT, "reboot", "-l", nosync, 0, 0);
+		execle(REBOOT, "reboot", "-l", nosync, 0);
 		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", REBOOT);
 		perror("shutdown");
 	}
 	else if (dohalt) {
-		execle(HALT, "halt", "-l", nosync, 0, 0);
+		execle(HALT, "halt", "-l", nosync, 0);
 		syslog(LOG_ERR, "shutdown: can't exec %s: %m.", HALT);
 		perror("shutdown");
 	}

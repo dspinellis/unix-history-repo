@@ -1,16 +1,29 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)shutdown.8	6.5 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)shutdown.8	6.6 (Berkeley) %G%
 .\"
 .TH SHUTDOWN 8 ""
 .UC 4
 .SH NAME
 shutdown \- close down the system at a given time
 .SH SYNOPSIS
-.B /etc/shutdown
+.B shutdown
 [
+.B -
+] [
 .B \-fhkrn
 ]
 time [ warning-message ... ]
@@ -30,8 +43,9 @@ to the current system values.  The first form brings the system down in
 \fInumber\fP minutes and the second at the absolute time specified.
 .PP
 Any other arguments comprise the warning message that is broadcast
-to users currently logged into the system; if no other arguments
-are provided, the warning message is read from the standard input.
+to users currently logged into the system; if a single dash (``-'')
+is supplied as an option, the warning message is read from the standard
+input.
 .PP
 At intervals, which get closer together as apocalypse approaches,
 starting at ten hours before shutdown, warning messages are displayed
