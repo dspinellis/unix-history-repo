@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vba.c	1.1 (Berkeley) %G%
+ *	@(#)if_vba.c	1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,20 +36,26 @@
 
 #include "if_vba.h"
 
-if_vbareserve(ifvba0, n, size)
+if_vbareserve(ifvba0, n, bufsize, extra, extrasize)
 struct ifvba *ifvba0;
 register int n;
-int size;
+int bufsize;
+caddr_t *extra;
+int extrasize;
 {
 	register caddr_t cp;
 	register struct pte *pte;
 	register struct ifvba *ifvba = ifvba0;
 	struct ifvba *vlim  = ifvba + n;
 
-	n = roundup(n * size, NBPG);
+	n = roundup(extrasize + (n * bufsize), NBPG);
 	cp = (caddr_t)malloc((u_long)n, M_DEVBUF, M_NOWAIT);
+	if ((n + kvtophys(cp)) > VB_MAXADDR24) {
+		free(cp, M_DEVBUF);
+		cp = 0;
+	}
 	if (cp == 0) {
-		printf("No memory for device buffer\n");
+		printf("No memory for device buffer(s)\n");
 		return (0);
 	}
 	/*
@@ -59,10 +65,14 @@ int size;
 	for (n = btoc(n); n--; pte++)
 		pte->pg_nc = 1;
 	mtpr(TBIA, 0);
+	if (extra) {
+		*extra = cp;
+		cp += extrasize;
+	}
 	for (; ifvba < vlim; ifvba++) {
 		ifvba->iff_buffer = cp;
 		ifvba->iff_physaddr = kvtophys(cp);
-		cp += size;
+		cp += bufsize;
 	}
 	return (1);
 }
@@ -74,15 +84,15 @@ int size;
  */
 struct mbuf *
 if_vbaget(rxbuf, totlen, off, ifp, flags)
-	u_char *rxbuf;
+	caddr_t rxbuf;
 	int totlen, off, flags;
 	struct ifnet *ifp;
 {
-	register u_char *cp;
+	register caddr_t cp;
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
 	int len;
-	u_char *packet_end;
+	caddr_t packet_end;
 
 	rxbuf += sizeof (struct ether_header);
 	cp = rxbuf;
@@ -128,9 +138,9 @@ if_vbaget(rxbuf, totlen, off, ifp, flags)
 				len = m->m_len;
 		}
 		if (flags)
-			if_vba16copy(cp, mtod(m, u_char *), (u_int)len);
+			if_vba16copy(cp, mtod(m, caddr_t), (u_int)len);
 		else
-			bcopy(cp, mtod(m, u_char *), (u_int)len);
+			bcopy(cp, mtod(m, caddr_t), (u_int)len);
 
 		*mp = m;
 		mp = &m->m_next;
@@ -143,17 +153,17 @@ if_vbaget(rxbuf, totlen, off, ifp, flags)
 }
 
 if_vbaput(ifu, m0, flags)
-register u_char *ifu;
-register struct mbuf *m0;
+caddr_t ifu;
+struct mbuf *m0;
 {
 	register struct mbuf *m = m0;
-	register u_char *cp = ifu;
+	register caddr_t cp = ifu;
 
 	while (m) {
 		if (flags)
-			if_vba16copy(mtod(m, u_char *), cp, m->m_len);
+			if_vba16copy(mtod(m, caddr_t), cp, (u_int)m->m_len);
 		else
-			bcopy(mtod(m, u_char *), cp, m->m_len);
+			bcopy(mtod(m, caddr_t), cp, (u_int)m->m_len);
 		cp += m->m_len;
 		MFREE(m, m0);
 		m = m0;
@@ -164,8 +174,8 @@ register struct mbuf *m0;
 }
 
 if_vba16copy(from, to, cnt)
-	register u_char *from, *to;
-	register u_int cnt;
+	register caddr_t from, to;
+	register unsigned cnt;
 {
 	register c;
 	register short *f, *t;
@@ -182,8 +192,8 @@ if_vba16copy(from, to, cnt)
 			*t++ = *f++;
 		cnt &= 1;
 		if (cnt) {			/* odd len */
-			from = (u_char *)f;
-			to = (u_char *)t;
+			from = (caddr_t)f;
+			to = (caddr_t)t;
 			*to = *from;
 		}
 	}

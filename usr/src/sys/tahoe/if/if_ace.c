@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ace.c	7.3 (Berkeley) %G%
+ *	@(#)if_ace.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -146,7 +146,6 @@ aceattach(ui)
 	register struct ifnet *ifp = &is->is_if;
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register short *wp, i;
-	extern enoutput();
 
 	ifp->if_unit = unit;
 	ifp->if_name = "ace";
@@ -173,7 +172,7 @@ aceattach(ui)
 	}
 
 	ifp->if_init = aceinit;
-	ifp->if_output = enoutput;
+	ifp->if_output = ether_output;
 	ifp->if_start = acestart;
 	ifp->if_ioctl = aceioctl;
 	ifp->if_reset = acereset;
@@ -455,6 +454,7 @@ setup:
 aceput(txbuf, m)
 	char *txbuf;
 	struct mbuf *m;
+#ifdef notdef
 {
 	register u_char *bp, *mcp;
 	register short *s1, *s2;
@@ -464,7 +464,7 @@ aceput(txbuf, m)
 
 	total = mp->m_pkthdr.len;
 	bp = (u_char *)txbuf;
-	for (mp = m; (mp); mp = mp->m_next) {
+	for (mp = m; mp; mp = mp->m_next) {
 		len = mp->m_len;
 		if (len == 0)
 			continue;
@@ -475,14 +475,14 @@ aceput(txbuf, m)
 			--len;
 		}
 		if (len > 1 && (((int)mcp & 01)==0) && (((int)bp & 01)==0)) {
-			int l = len;
+			int l = len & 1;
 
 			s1 = (short *)bp;
 			s2 = (short *)mcp;
 			len >>= 1;		/* count # of shorts */
 			while (len-- != 0)
 				movow(s1++, *s2++);
-			len = l & 1;		/* # remaining bytes */
+			len = l;		/* # remaining bytes */
 			bp = (u_char *)s1;
 			mcp = (u_char *)s2;
 		}
@@ -492,6 +492,46 @@ aceput(txbuf, m)
 	m_freem(m);
 	return (total);
 }
+#else
+{
+	register u_char *bp, *mcp;
+	register short *s1, *s2;
+	register u_int len;
+	register struct mbuf *mp;
+	int total;
+
+	total = 0;
+	bp = (u_char *)txbuf;
+	for (mp = m; (mp); mp = mp->m_next) {
+		len = mp->m_len;
+		if (len == 0)
+			continue;
+		total += len;
+		mcp = mtod(mp, u_char *);
+		if (((int)mcp & 01) && ((int)bp & 01)) {
+			/* source & destination at odd addresses */
+			movob(bp++, *mcp++);
+			--len;
+		}
+		if (len > 1 && (((int)mcp & 01)==0) && (((int)bp & 01)==0)) {
+			register u_int l;
+
+			s1 = (short *)bp;
+			s2 = (short *)mcp;
+			l = len >> 1;		/* count # of shorts */
+			while (l-- != 0)
+				movow(s1++, *s2++);
+			len &= 1;		/* # remaining bytes */
+			bp = (u_char *)s1;
+			mcp = (u_char *)s2;
+		}
+		while (len-- != 0)
+			movob(bp++, *mcp++);
+	}
+	m_freem(m);
+	return (total);
+}
+#endif
 
 /*
  * Routine to copy from VERSAbus memory into mbufs.
@@ -499,7 +539,6 @@ aceput(txbuf, m)
  * Warning: This makes the fairly safe assumption that
  * mbufs have even lengths.
  */
-/*ARGSUSED*/
 struct mbuf *
 aceget(rxbuf, totlen, off, ifp)
 	u_char *rxbuf;
@@ -628,7 +667,7 @@ aceioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			aceinit(ifp->if_unit);	/* before arpwhohas */

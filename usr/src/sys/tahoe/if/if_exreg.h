@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_exreg.h	7.1 (Berkeley) %G%
+ *	@(#)if_exreg.h	7.2 (Berkeley) %G%
  */
 
 struct exdevice {
@@ -61,7 +61,8 @@ struct exdevice {
 #define	LLXM_NCS	0x20	/* xmission failed, no carrier sense */
 #define	LLXM_LNGTH	0x40	/* xmission failed, bad packet length */
 #define	XMIT_BITS	"\7\7LENGTH\6CARRIER\5XCLSNS\4SQETST"
-#define	LLXM_ERROR	(LLXM_NSQE|LLXM_CLSN|LLXM_NCS|LLXM_LNGTH)
+/*#define	LLXM_ERROR	(LLXM_NSQE|LLXM_CLSN|LLXM_NCS|LLXM_LNGTH)*/
+#define	LLXM_ERROR	(LLXM_CLSN|LLXM_NCS|LLXM_LNGTH)
 
 /* LLRECEIVE unique return codes */
 #define	LLRC_TRUNC	0x4	/* pkt received, but truncated to fit buffer */
@@ -103,11 +104,7 @@ struct exdevice {
 #define	MODE_HW		2	/* hardware-only multicast address filtering */
 #define	MODE_PROM	3	/* promiscuous reception */
 
-#ifdef  NEWEX
 #define	NFRAGMENTS 8	/* number fragments that the EXOS will scatter/gather */
-#else	NEWEX
-#define	NFRAGMENTS 1	/* number fragments that the EXOS will scatter/gather */
-#endif  NEWEX
 #define	EXMAXRBUF 1518	/* per EXOS 202 manual 5.3.7 (maybe 1518 would do) */
 
 /*
@@ -117,7 +114,7 @@ struct exdevice {
  * padding.  Be especially careful about VAX C longword alignment!
  */
 
-struct	stat_array {
+struct	ex_stat {
 	u_long	sa_fsent;	/* frames sent without errors */
 	u_long	sa_xsclsn;	/* frames aborted excess collisions */
 	u_long	sa_nsqe;	/* frames subject to heartbeat failure */
@@ -223,7 +220,7 @@ struct	ex_msg {
 #define	mb_rply	mb_nm.nm_rply
 #define	MBDATALEN (sizeof(union mb_all)+6)
 
-struct	confmsg {
+struct	ex_conf {
 /*00*/	u_short	cm_1rsrv;	/* reserved, must be 1 */
 /*02*/	char	cm_vc[4];	/* returns ASCII version code */
 /*06*/	u_char	cm_cc;		/* returns config completion code */
