@@ -11,11 +11,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/fs.h>
+#include <ufs/fs.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
@@ -78,7 +78,7 @@ main(argc, argv)
 		struct fstab *fsp;
 
 		if (setfsent() == 0)
-			perror(FSTAB), exit(1);
+			perror(_PATH_FSTAB), exit(1);
 		while (fsp = getfsent()) {
 			if (strcmp(fsp->fs_type, FSTAB_RW) &&
 			    strcmp(fsp->fs_type, FSTAB_RO) &&
