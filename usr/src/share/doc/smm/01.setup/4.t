@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.14 (Berkeley) %G%
+.\"	@(#)4.t	6.15 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -59,7 +59,7 @@ ufs		local filesystems broken down as follows
 	mfs	memory based filesystem
 nfs		Sun-compatible network filesystem
 miscfs		miscellaneous filesystems
-	deadfs	where old vnodes go to die
+	deadfs	where rejected vnodes go to die
 	fdesc	access to per-process file descriptors
 	fifofs	IEEE Std1003.1 FIFOs
 	kernfs	filesystem access to kernel data structures
