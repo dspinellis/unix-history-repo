@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.61 (Berkeley) %G%
+#	@(#)termcap.src	5.62 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -1408,6 +1408,34 @@ X5|4025|4027|4024|tek4025|tek4027|tek4024|4025cu|4027cu|tektronix 4024/4025/4027
 	:dc=^_dch\r:im=^_ich\r:ei=^F^_dow\r^K:nl=^F\n:\
 	:cd=^_dli 50\r:CC=^_:AL=^_up\r^_ili %d\r:DL=^_dli %d\r^F:\
 	:UP=^_up %d\r:DO=^_dow %d\r:LE=^_lef %d\r:RI=^_rig %d\r:
+# Tektronix 4025A from gwyn@brl-smoke.ARPA (Doug Gwyn )
+# The following status modes are assumed for normal operation (replace the
+# initial "!" by whatever the current command character is):
+#	!COM 29			# NOTE: changes command character to GS (^])
+#	^]DUP
+#	^]ECH R
+#	^]EOL
+#	^]RSS T
+#	^]SNO N
+#	^]STO 9 17 25 33 41 49 57 65 73
+# Other modes may be set according to communication requirements.
+# If the command character is inadvertently changed, termcap can't restore it.
+# Insert-character cannot be made to work on both top and bottom rows.
+# Clear-to-end-of-display emulation via !DLI 988 is too groady to use, alas.
+# There also seems to be a problem with vertical motion, perhaps involving
+# delete/insert-line, following a typed carriage return.  This terminal sucks.
+# Delays not specified; use "stty ixon -ixany" to enable DC3/DC1 flow control!
+X6|tek4025a|4025a|Tektronix 4025A:\
+	:al=^K^]ili;:am:bl=^G:bt=^]bac;:bw:CC=^]:cl=^]era;^J^]rup;:co#80:\
+	:cr=^M:ct=^]sto;:da:db:DC=^]dch %d;:dc=^]dch;:DL=^]dli %d;:dl=^]dli;:\
+	:DO=^]dow %d;:do=^J:it#8:LE=^]lef %d;:le=^H:li#34:nd=^]rig;:\
+	:RI=^]rig %d;:\
+	:rs=!com 29^]del 0^]rss t^]buf^]buf n^]cle^]dis^]dup^]ech r^]eol\
+^]era g^]for n^]pad 203^]pad 209^]sno n^]sto 9 17 25 33 41 49 57 65 73\
+^]wor 0;:\
+	:SF=^]dow %d;:sf=^J:ta=^I:UP=^]up %d;:up=^K:xo:\
+	:ce=^]dch 80;:ch=\r^]rig %d;:\
+	:bs:pt:xx:
 X7|4025-17|4027-17|tek 4025 17 line window:\
 	:li#17:tc=4025:
 X8|4025-17ws|4027-17ws|tek 4025 17 line window in workspace:\
@@ -1417,14 +1445,14 @@ X9|4025ex|4027ex|tek 4025 w/!:\
 	:ti=\41com 31\r:te=^_com 33\r:\
 	:is=^_com 33\r\n\41sto 9,17,25,33,41,49,57,65,73\r:tc=4025:
 # From jcoker@ucbic
-Xp|4107|tek4107|Tektronix 4107 graphics terminal with memory:\
+Xp|tek4107|tek4207|4107|4207|Tektronix 4107 graphics terminal with memory:\
 	:ti=\E[?6l\E[H\E[J:te=\E[?6h\E%!0\ELBP0\E%!1\E[32;1f:\
 	:is=\E%!0\ELBP0\E%!1\E[H\E[2g\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[8C\EH\E[J:\
 	:li#32:do=^J:al=3\E[L:xn:am:le=^H:bs:cd=\E[J:\
 	:ce=5\E[K:cl=156\E[H\E[J:cm=\E[%i%d;%dH:co#80:dc=4\E[P:dl=3\E[M:\
 	:ho=\E[H:ic=4\E[@:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:ku=\EM:\
 	:kd=\ED:kl=\E[D:kr=\E[C:kh=\E[H:\
-	:ei=:im=:pt:bw:bt=\E[Z:mi:nd=\E[C:se=\E[m:so=\E[7m:\
+	:ul:ei=:im=:pt:bw:bt=\E[Z:mi:nd=\E[C:se=\E[m:so=\E[7m:\
 	:ue=\E[m:us=\E[4m:up=\EM:
 #  Tektronix 4107 with sysline
 Xq|4107-s|tek4107-s|Tektronix 4107 with sysline but no memory:\
