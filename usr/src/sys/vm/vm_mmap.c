@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.4 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -161,7 +161,7 @@ mmap(p, uap, retval)
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct vnode *vp;
-	vm_offset_t addr;
+	vm_offset_t addr, pos;
 	vm_size_t size;
 	vm_prot_t prot, maxprot;
 	caddr_t handle;
@@ -169,11 +169,12 @@ mmap(p, uap, retval)
 
 	prot = uap->prot & VM_PROT_ALL;
 	flags = uap->flags;
+	pos = uap->pos;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mmap(%d): addr %x len %x pro %x flg %x fd %d pos %x\n",
 		       p->p_pid, uap->addr, uap->len, prot,
-		       flags, uap->fd, (vm_offset_t)uap->pos);
+		       flags, uap->fd, pos);
 #endif
 	/*
 	 * Address (if FIXED) must be page aligned.
@@ -197,13 +198,14 @@ mmap(p, uap, retval)
 			return (EINVAL);
 	}
 	/*
-	 * XXX if no hint provided for a non-fixed mapping place it after
-	 * the end of the largest possible heap.
+	 * XXX for non-fixed mappings where no hint is provided or
+	 * the hint would fall in the potential heap space,
+	 * place it after the end of the largest possible heap.
 	 *
 	 * There should really be a pmap call to determine a reasonable
 	 * location.
 	 */
-	if (addr == 0 && (flags & MAP_FIXED) == 0)
+	else if (addr < round_page(p->p_vmspace->vm_daddr + MAXDSIZ))
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	if (flags & MAP_ANON) {
 		/*
@@ -211,6 +213,7 @@ mmap(p, uap, retval)
 		 */
 		handle = NULL;
 		maxprot = VM_PROT_ALL;
+		pos = 0;
 	} else {
 		/*
 		 * Mapping file, get fp for validation.
