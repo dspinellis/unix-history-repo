@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.6 (Berkeley) %G%
+ *	@(#)trap.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -73,7 +73,7 @@ if(cold) goto we_re_toast;
 	syst = p->p_stime;
 	if (ISPL(frame.tf_cs) == SEL_UPL) {
 		type |= T_USER;
-		p->p_regs = (int *)&frame;
+		p->p_md.md_regs = (int *)&frame;
 		curpcb->pcb_flags |= FM_TRAP;	/* used by sendsig */
 	}
 
@@ -333,7 +333,7 @@ syscall(frame)
 		panic("syscall");
 
 	code = frame.sf_eax;
-	p->p_regs = (int *)&frame;
+	p->p_md.md_regs = (int *)&frame;
 	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
 	params = (caddr_t)frame.sf_esp + sizeof (int) ;
 

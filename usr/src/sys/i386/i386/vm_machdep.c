@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.7 (Berkeley) %G%
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
  */
 
@@ -57,7 +57,7 @@ cpu_fork(p1, p2)
 	offset = mvesp() - (int)kstack;
 	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset,
 	    (unsigned) ctob(UPAGES) - offset);
-	p2->p_regs = p1->p_regs;
+	p2->p_md.md_regs = p1->p_md.md_regs;
 
 	/*
 	 * Wire top of address space of child to it's u.

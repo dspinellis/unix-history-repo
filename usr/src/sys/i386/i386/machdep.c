@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.9 (Berkeley) %G%
+ *	@(#)machdep.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -302,7 +302,7 @@ sendsig(catcher, sig, mask, code)
 	struct sigacts *ps = p->p_sigacts;
 	int oonstack, frmtrap;
 
-	regs = p->p_regs;
+	regs = p->p_md.md_regs;
         oonstack = ps->ps_onstack;
 	frmtrap = curpcb->pcb_flags & FM_TRAP;
 	/*
@@ -401,7 +401,7 @@ sigreturn(p, uap, retval)
 {
 	register struct sigcontext *scp;
 	register struct sigframe *fp;
-	register int *regs = p->p_regs;
+	register int *regs = p->p_md.md_regs;
 
 
 	fp = (struct sigframe *) regs[sESP] ;
@@ -596,8 +596,8 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	p->p_regs[sEBP] = 0;	/* bottom of the fp chain */
-	p->p_regs[sEIP] = entry;
+	p->p_md.md_regs[sEBP] = 0;	/* bottom of the fp chain */
+	p->p_md.md_regs[sEIP] = entry;
 
 	p->p_addr->u_pcb.pcb_flags = 0;	/* no fp at all */
 	load_cr0(rcr0() | CR0_EM);	/* start emulating */
