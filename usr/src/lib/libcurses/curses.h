@@ -14,14 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)curses.h	5.6 (Berkeley) %G%
+ *	@(#)curses.h	5.7 (Berkeley) %G%
  */
 
 #ifndef WINDOW
 
 #include	<stdio.h>
  
+#define USE_OLD_TTY
 #include	<sys/ioctl.h>
+#undef USE_OLD_TTY
 
 #define	bool	char
 #define	reg	register
