@@ -33,7 +33,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.2		%G%);
+SCCSID(@(#)conf.c	4.3		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -103,8 +103,8 @@ char	*FreezeFile =	"/usr/lib/sendmail.fc";	/* frozen version of above */
 */
 
 char	SpaceSub =	'.';	/* character to replace <lwsp> in addrs */
-int	QueueLA =	12;	/* if load average > 12, just queue */
-int	RefuseLA =	25;	/* if load average > 25, refuse connections */
+int	QueueLA =	8;	/* load avg > QueueLA -> just queue */
+int	RefuseLA =	12;	/* load avg > RefuseLA -> refuse connections */
 
 # ifdef V6
 /*
