@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.105 (Berkeley) %G%
+#	@(#)termcap.src	5.106 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -648,7 +648,7 @@ citc|Citoh fast vt100:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
 	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:vs=\E7\E[U:ve=\E[V\E8:xn:
-cita|:\
+cita:\
 	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
@@ -1358,7 +1358,7 @@ ansi.sysk|ansisysk|PC-DOS 3.1 ANSI.SYS with keypad redefined for vi:\
 	:tc=ansi.sys:
 #
 # Adds ins/del line/character, hence vi reverse scrolls/inserts/deletes nicer.
-nansi.sys|nansisys||PC-DOS Public Domain NANSI.SYS:\
+nansi.sys|nansisys|PC-DOS Public Domain NANSI.SYS:\
 	:al=\E[1L:dl=\E[1M:ic=\E[1@:dc=\E[1P:\
 	:is=U3 PC-DOS Public Domain NANSI.SYS 9-23-86\n:\
 	:tc=ansi.sys:
