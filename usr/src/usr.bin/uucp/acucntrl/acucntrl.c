@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.12	(Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -201,10 +201,8 @@ int argc; char *argv[];
 	i = 0;
 	do {
 		uname[i] = *p;
-		Uname[i] = (*p>='a' && *p<='z') ? (*p - ('a'-'A')) : *p;
-		i++; p++;
-	} while (*p && i<NAMSIZ);
-
+		Uname[i++] = (*p>='a' && *p<='z') ? (*p - ('a'-'A')) : *p;
+	} while (*p++ && i<NAMSIZ);
 
 	/* check to see if line is being used */
 	if( (etcutmp = open(Etcutmp, 2)) < 0) {
