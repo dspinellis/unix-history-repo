@@ -1,4 +1,4 @@
-/*	locore.s	4.40	81/03/21	*/
+/*	locore.s	4.41	81/04/02	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -90,6 +90,8 @@ SCBVEC(chme): SCBVEC(chms): SCBVEC(chmu):
 SCBVEC(stray):
 	PUSHR; PRINTF(0, "stray scb interrupt\n"); POPR;
 	rei
+SCBVEC(nexzvec):
+	PUSHR; mfpr $IPL,-(sp); PRINTF(1, "nexus stray intr ipl%x\n"); POPR; rei
 SCBVEC(cmrd):
 	PUSHR; calls $0,_memerr; POPR; rei
 SCBVEC(wtime):
@@ -130,6 +132,7 @@ SCBVEC(ua1int):
 SCBVEC(ua0int):
 	PUSHR; movl $0,rUBANUM; moval _uba_hd+(0*UH_SIZE),rUBAHD;
 1:
+	incl	_cnt+V_INTR
 	mfpr	$IPL,r2				/* r2 = mfpr(IPL); */
 	movl	UH_UBA(rUBAHD),rUBA		/* uba = uhp->uh_uba; */
 	movl	UBA_BRRVR-0x14*4(rUBA)[r2],rUVEC
