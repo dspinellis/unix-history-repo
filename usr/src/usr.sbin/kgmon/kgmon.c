@@ -11,11 +11,12 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <machine/pte.h>
+#include <sys/file.h>
 #include <sys/vm.h>
 #include <stdio.h>
 #include <nlist.h>
@@ -57,6 +58,10 @@ struct nlist nl[] = {
 	0,
 };
 
+#if defined(vax)
+#define	clear(x)	((x) &~ 0x80000000)
+#endif
+
 struct	pte *Sysmap;
 
 char	*system = "/vmunix";
@@ -69,26 +74,26 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int mode, disp, openmode = 0;
+	int mode, disp, openmode = O_RDONLY;
 
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
 		switch (argv[0][1]) {
 		case 'b':
 			bflag++;
-			openmode = 2;
+			openmode = O_RDWR;
 			break;
 		case 'h':
 			hflag++;
-			openmode = 2;
+			openmode = O_RDWR;
 			break;
 		case 'r':
 			rflag++;
-			openmode = 2;
+			openmode = O_RDWR;
 			break;
 		case 'p':
 			pflag++;
-			openmode = 2;
+			openmode = O_RDWR;
 			break;
 		default:
 			printf("Usage: kgmon [ -b -h -r -p system memory ]\n");
@@ -111,7 +116,7 @@ main(argc, argv)
 	}
 	kmem = open(kmemf, openmode);
 	if (kmem < 0) {
-		openmode = 0;
+		openmode = O_RDONLY;
 		kmem = open(kmemf, openmode);
 		if (kmem < 0) {
 			fprintf(stderr, "cannot open ");
@@ -132,8 +137,8 @@ main(argc, argv)
 	if (kflag) {
 		off_t off;
 
-		off = nl[N_SYSMAP].n_value & 0x7fffffff;
-		lseek(kmem, off, 0);
+		off = clear(nl[N_SYSMAP].n_value);
+		lseek(kmem, off, L_SET);
 		nl[N_SYSSIZE].n_value *= 4;
 		Sysmap = (struct pte *)malloc(nl[N_SYSSIZE].n_value);
 		if (Sysmap == 0) {
@@ -150,7 +155,7 @@ main(argc, argv)
 	else
 		disp = mode;
 	if (pflag) {
-		if (openmode == 0 && mode == PROFILING_ON)
+		if (openmode == O_RDONLY && mode == PROFILING_ON)
 			fprintf(stderr, "data may be inconsistent\n");
 		dumpstate();
 	}
@@ -179,7 +184,7 @@ dumpstate()
 	}
 	ssiz = kfetch(N_SSIZ);
 	sbuf = kfetch(N_SBUF);
-	klseek(kmem, (off_t)sbuf, 0);
+	klseek(kmem, (off_t)sbuf, L_SET);
 	for (i = ssiz; i > 0; i -= BUFSIZ) {
 		read(kmem, buf, i < BUFSIZ ? i : BUFSIZ);
 		write(fd, buf, i < BUFSIZ ? i : BUFSIZ);
@@ -188,7 +193,7 @@ dumpstate()
 	fromssize = s_textsize / HASHFRACTION;
 	froms = (u_short *)malloc(fromssize);
 	kfroms = kfetch(N_FROMS);
-	klseek(kmem, kfroms, 0);
+	klseek(kmem, kfroms, L_SET);
 	i = read(kmem, ((char *)(froms)), fromssize);
 	if (i != fromssize) {
 		fprintf(stderr, "read froms: request %d, got %d", fromssize, i);
@@ -198,7 +203,7 @@ dumpstate()
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
 	tos = (struct tostruct *)malloc(tossize);
 	ktos = kfetch(N_TOS);
-	klseek(kmem, ktos, 0);
+	klseek(kmem, ktos, L_SET);
 	i = read(kmem, ((char *)(tos)), tossize);
 	if (i != tossize) {
 		fprintf(stderr, "read tos: request %d, got %d", tossize, i);
@@ -243,7 +248,7 @@ resetstate()
 	sbuf = kfetch(N_SBUF);
 	ssiz -= sizeof(struct phdr);
 	sbuf += sizeof(struct phdr);
-	klseek(kmem, (off_t)sbuf, 0);
+	klseek(kmem, (off_t)sbuf, L_SET);
 	for (i = ssiz; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("sbuf write");
@@ -252,7 +257,7 @@ resetstate()
 	s_textsize = kfetch(N_S_TEXTSIZE);
 	fromssize = s_textsize / HASHFRACTION;
 	kfroms = kfetch(N_FROMS);
-	klseek(kmem, kfroms, 0);
+	klseek(kmem, kfroms, L_SET);
 	for (i = fromssize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("kforms write");
@@ -260,7 +265,7 @@ resetstate()
 		}
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
 	ktos = kfetch(N_TOS);
-	klseek(kmem, ktos, 0);
+	klseek(kmem, ktos, L_SET);
 	for (i = tossize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("ktos write");
@@ -277,7 +282,7 @@ turnonoff(onoff)
 		printf("profiling: not defined in kernel\n");
 		exit(10);
 	}
-	klseek(kmem, off, 0);
+	klseek(kmem, off, L_SET);
 	write(kmem, (char *)&onoff, sizeof (onoff));
 }
 
@@ -291,7 +296,7 @@ kfetch(index)
 		printf("%s: not defined in kernel\n", nl[index].n_name);
 		exit(11);
 	}
-	if (klseek(kmem, off, 0) == -1) {
+	if (klseek(kmem, off, L_SET) == -1) {
 		perror("lseek");
 		exit(12);
 	}
@@ -308,9 +313,7 @@ klseek(fd, base, off)
 
 	if (kflag) {
 		/* get kernel pte */
-#if vax
-		base &= 0x7fffffff;
-#endif
+		base = clear(base);
 		base = ((int)ptob(Sysmap[btop(base)].pg_pfnum))+(base&(NBPG-1));
 	}
 	return (lseek(fd, base, off));
