@@ -1,4 +1,4 @@
-/*	@(#)ld.c	6.4 (Berkeley) %G%
+/*	@(#)ld.c	6.5 (Berkeley) %G%
 
 Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
 
@@ -4673,7 +4673,7 @@ getpagesize ()
 
 #endif
 
-#if TARGET == SUN4
+#if defined(sun) && (TARGET == SUN4)
 
 /* Don't use local pagesize to build for Sparc.  */
 
