@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
     /*
@@ -249,7 +249,7 @@ private snestspec(buffer, level)
 	    sprintf(starthere, "%s:", enclosing[i]);
 	    starthere += strlen(enclosing[i]) + 1;
 	}
-	*starthere-- = '\0'; /* remove last colon */
+	*--starthere = '\0'; /* remove last colon */
 	if (starthere >= &buffer[BUFSIZ-1]) {
 	    panic("snestspec");
 	}
@@ -595,8 +595,8 @@ struct nl *t;
 {
     register struct nl *p;
 
-    putprintf("a", 1);
     for (p = t->chain; p != NIL; p = p->chain) {
+	putprintf("a", 1);
 	gentype(p);
 	putprintf(";", 1);
     }
