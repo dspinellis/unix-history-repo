@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -180,7 +180,7 @@ struct protox isoprotox[] = {
 struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULL };
 
 static void printproto __P((struct protox *, char *));
-static void usage __P(());
+static void usage __P((void));
 static struct protox *name2protox __P((char *));
 static struct protox *knownname __P((char *));
 
@@ -189,7 +189,7 @@ kvm_t *kvmd;
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
@@ -466,10 +466,10 @@ usage()
 	(void)fprintf(stderr,
 "usage: %s [-Aan] [-f address_family] [-M core] [-N system]\n", prog);
 	(void)fprintf(stderr,
-"               [-ghimnrs] [-f address_family] [-M core] [-N system]\n");
+"       %s [-ghimnrs] [-f address_family] [-M core] [-N system]\n", prog);
 	(void)fprintf(stderr,
-"               [-n] [-I interface] [-M core] [-N system] [-w wait]\n");
+"       %s [-n] [-I interface] [-M core] [-N system] [-w wait]\n", prog);
 	(void)fprintf(stderr,
-"               [-M core] [-N system] [-p protocol]\n");
+"       %s [-M core] [-N system] [-p protocol]\n", prog);
 	exit(1);
 }
