@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.14	%G%	*/
+/*	fs.h	1.15	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -134,6 +134,13 @@
 #define	MAXCPG		32	/* maximum fs_cpg */
 
 /*
+ * The path name on which the file system is mounted is maintained
+ * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
+ * the super block for this name.
+ */
+#define MAXMNTLEN 34
+
+/*
  * Per cylinder group information; summarized in blocks allocated
  * from first cylinder group data blocks.  These blocks have to be
  * read in from fs_csaddr (size fs_cssize) in addition to the
@@ -194,10 +201,10 @@ struct	fs
 /* these fields are cleared at mount time */
 	char   	fs_fmod;    		/* super block modified flag */
 	char   	fs_ronly;   		/* mounted read-only flag */
-	char	fs_fsmnt[34];		/* name mounted on */
+	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
-	struct	csum *fs_csp[NBUF];	/* list of fs_cs info buffers */
+	struct	csum *fs_csp[NBUF / 2];	/* list of fs_cs info buffers */
 	short	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
 	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
@@ -205,7 +212,7 @@ struct	fs
 };
 
 /*
- * convert cylinder group to base address of its global summary info.
+ * Convert cylinder group to base address of its global summary info.
  *
  * N.B. This macro assumes that sizeof(struct csum) is a power of two.
  */
@@ -266,8 +273,8 @@ struct	cg {
 /*
  * Cylinder group macros to locate things in cylinder groups.
  *
- * cylinder group to disk block address of spare boot block
- * and super block
+ * Cylinder group to disk block address of spare boot block
+ * and super block.
  * Note that these are in absolute addresses, and can NOT
  * in general be expressable in terms of file system addresses.
  */
@@ -275,7 +282,7 @@ struct	cg {
 #define	cgsblock(fs, c)	(fsbtodb(fs, cgbase(fs, c)) + (fs)->fs_sblkno)
 
 /*
- * file system addresses of cylinder group data structures
+ * File system addresses of cylinder group data structures.
  */
 #define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))		/* base addr */
 #define	cgtod(fs, c)	(cgbase(fs, c) + (fs)->fs_cblkno)	/* cg block */
@@ -283,10 +290,10 @@ struct	cg {
 #define	cgdmin(fs, c)	(cgbase(fs, c) + (fs)->fs_dblkno)	/* 1st data */
 
 /*
- * macros for handling inode numbers
- *     inode number to file system block offset
- *     inode number to cylinder group number
- *     inode number to file system block address
+ * Macros for handling inode numbers:
+ *     inode number to file system block offset.
+ *     inode number to cylinder group number.
+ *     inode number to file system block address.
  */
 #define	itoo(fs, x)	((x) % INOPB(fs))
 #define	itog(fs, x)	((x) / (fs)->fs_ipg)
@@ -295,15 +302,18 @@ struct	cg {
 	(x) % (fs)->fs_ipg / INOPB(fs) * (fs)->fs_frag))
 
 /*
- * give cylinder group number for a file system block
- * give cylinder group block number for a file system block
+ * Give cylinder group number for a file system block.
+ * Give cylinder group block number for a file system block.
  */
 #define	dtog(fs, d)	((d) / (fs)->fs_fpg)
 #define	dtogd(fs, d)	((d) % (fs)->fs_fpg)
 
 /*
- * compute the cylinder and rotational position of a cyl block addr
+ * Extract the bits for a block from a map.
+ * Compute the cylinder and rotational position of a cyl block addr.
  */
+#define blkmap(fs, map, loc) \
+    (((map)[loc / NBBY] >> (loc % NBBY)) & (0xff >> (NBBY - (fs)->fs_frag)))
 #define cbtocylno(fs, bno) \
 	((bno) * NSPF(fs) / (fs)->fs_spc)
 #define cbtorpos(fs, bno) \
@@ -328,7 +338,7 @@ struct	cg {
 	(((size) + (fs)->fs_fsize - 1) & (fs)->fs_fmask)
 
 /*
- * determining the size of a file block in the file system
+ * Determining the size of a file block in the file system.
  */
 #define blksize(fs, ip, lbn) \
 	(((lbn) >= NDADDR || (ip)->i_size >= ((lbn) + 1) * (fs)->fs_bsize) \
@@ -340,19 +350,19 @@ struct	cg {
 	    : (fragroundup(fs, blkoff(fs, (dip)->di_size))))
 
 /*
- * number of disk sectors per block; assumes DEV_BSIZE byte sector size
+ * Number of disk sectors per block; assumes DEV_BSIZE byte sector size.
  */
 #define	NSPB(fs)	((fs)->fs_bsize / DEV_BSIZE)
 #define	NSPF(fs)	((fs)->fs_fsize / DEV_BSIZE)
 
 /*
- * INOPB is the number of inodes in a secondary storage block
+ * INOPB is the number of inodes in a secondary storage block.
  */
 #define	INOPB(fs)	((fs)->fs_bsize / sizeof (struct dinode))
 #define	INOPF(fs)	((fs)->fs_fsize / sizeof (struct dinode))
 
 /*
- * NINDIR is the number of indirects in a file system block
+ * NINDIR is the number of indirects in a file system block.
  */
 #define	NINDIR(fs)	((fs)->fs_bsize / sizeof (daddr_t))
 
