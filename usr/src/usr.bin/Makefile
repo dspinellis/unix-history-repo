@@ -1,11 +1,11 @@
-#	@(#)Makefile	5.16 (Berkeley) %G%
+#	@(#)Makefile	5.17 (Berkeley) %G%
 
 # BROKEN: tn3270
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	checknr chflags chpass cksum col colcrt colrm column comm compress \
 	cpio ctags cut dc deroff diction diff dirname du env error ex \
 	expand false file find finger fmt fold fpr from fsplit fstat ftp \
-	gcore gprof graph grep groff head hexdump id indent join last \
+	gcore gprof graph grep head hexdump id indent join last \
 	lastcomm learn leave lex locate lock logger login logname lorder \
 	m4 mail make man mesg mkdep mkfifo mkstr more msgs mt netstat \
 	nfsstat nice nm nohup nvi pagesize passwd paste plot pr printenv \
@@ -17,15 +17,14 @@ SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	vgrind vis vmstat w wall wc what who whois window write xargs \
 	xinstall xsend xstr yacc yes
 
-# Gcc suit is new-VM only.
 # Cmp, look and tail all use mmap, so new-VM only.
 # F77 and pascal are VAX/Tahoe only.
 .if	${MACHINE} == "hp300"
-SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
+SUBDIR+=cmp ktrace ld look tail
 .elif	${MACHINE} == "i386"
-SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
+SUBDIR+=cmp ktrace ld look tail
 .elif	${MACHINE} == "luna68k"
-SUBDIR+=cmp g++ gas gcc ktrace ld look tail
+SUBDIR+=cmp ktrace ld look tail
 .elif	${MACHINE} == "sparc"
 SUBDIR+=cmp ktrace ld look tail
 .elif	${MACHINE} == "tahoe"
