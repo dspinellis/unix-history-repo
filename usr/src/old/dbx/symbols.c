@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.7 %G%";
+static char sccsid[] = "@(#)symbols.c 1.8 %G%";
 
 /*
  * Symbol management.
@@ -33,10 +33,12 @@ typedef struct Symbol *Symbol;
 
 typedef enum {
     BADUSE, CONST, TYPE, VAR, ARRAY, PTRFILE, RECORD, FIELD,
-    PROC, FUNC, FVAR, REF, PTR, FILET, SET, RANGE,
+    PROC, FUNC, FVAR, REF, PTR, FILET, SET, RANGE, 
     LABEL, WITHPTR, SCAL, STR, PROG, IMPROPER, VARNT,
-    FPROC, FFUNC, MODULE, TYPEREF, TAG
+    FPROC, FFUNC, MODULE, TAG, COMMON, TYPEREF
 } Symclass;
+
+typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype; 
 
 struct Symbol {
     Name name;
@@ -53,7 +55,13 @@ struct Symbol {
 	    int offset;
 	    int length;
 	} field;
+	struct {		/* common offset and chain; used to relocate */
+	    int offset;         /* vars in global BSS */
+	    Symbol chain;
+	} common;
 	struct {		/* range bounds */
+            Rangetype lowertype : 16; 
+            Rangetype uppertype : 16;  
 	    long lower;
 	    long upper;
 	} rangev;
@@ -153,10 +161,23 @@ public Symbol symbol_alloc()
     return &(sympool->sym[nleft]);
 }
 
+
+public symbol_dump(func)
+Symbol func;
+{
+  register Symbol s;
+  register Integer i;
+
+	printf(" symbols in %s \n",symname(func));
+	for(i=0; i< HASHTABLESIZE; i++)
+	   for(s=hashtab[i]; s != nil; s=s->next_sym)  {
+		if (s->block == func) psym(s);
+		}
+}
+
 /*
  * Free all the symbols currently allocated.
  */
-
 public symbol_free()
 {
     Sympool s, t;
@@ -317,7 +338,7 @@ Symbol type;
 
     t = type;
     if (t != nil) {
-	if (t->class == VAR or t->class == FIELD) {
+	if (t->class == VAR or t->class == FIELD or t->class == REF ) {
 	    t = t->type;
 	}
 	while (t->class == TYPE or t->class == TAG) {
@@ -463,12 +484,12 @@ Symbol s;
  * and fields.  I haven't gotten around to cleaning this up yet.
  */
 
+#define MAXUCHAR 255
+#define MAXUSHORT 65535L
 #define MINCHAR -128
 #define MAXCHAR 127
-#define MAXUCHAR 255
 #define MINSHORT -32768
 #define MAXSHORT 32767
-#define MAXUSHORT 65535L
 
 public Integer size(sym)
 Symbol sym;
@@ -487,14 +508,14 @@ Symbol sym;
 	    if (upper == 0 and lower > 0) {		/* real */
 		r = lower;
 	    } else if (
-		(lower >= MINCHAR and upper <= MAXCHAR) or
-		(lower >= 0 and upper <= MAXUCHAR)
-	      ) {
+  		(lower >= MINCHAR and upper <= MAXCHAR) or
+  		(lower >= 0 and upper <= MAXUCHAR)
+  	      ) {
 		r = sizeof(char);
-	    } else if (
-		(lower >= MINSHORT and upper <= MAXSHORT) or
-		(lower >= 0 and upper <= MAXUSHORT)
-	      ) {
+  	    } else if (
+  		(lower >= MINSHORT and upper <= MAXSHORT) or
+  		(lower >= 0 and upper <= MAXUSHORT)
+  	      ) {
 		r = sizeof(short);
 	    } else {
 		r = sizeof(long);
@@ -505,14 +526,28 @@ Symbol sym;
 	    elsize = size(t->type);
 	    nel = 1;
 	    for (t = t->chain; t != nil; t = t->chain) {
-		s = rtype(t);
-		lower = s->symvalue.rangev.lower;
-		upper = s->symvalue.rangev.upper;
+
+		if(t->symvalue.rangev.lowertype == R_ARG
+                   or t->symvalue.rangev.lowertype == R_TEMP )  {
+			if( ! getbound(t, t->symvalue.rangev.lower,
+		                         t->symvalue.rangev.lowertype, &lower))
+			error(" dynamic bounds not currently available ");
+		}
+		else lower = t->symvalue.rangev.lower;
+
+		if(t->symvalue.rangev.uppertype == R_ARG
+                   or t->symvalue.rangev.uppertype == R_TEMP )  {
+			if( ! getbound(t, t->symvalue.rangev.upper,
+		                         t->symvalue.rangev.uppertype, &upper))
+			error(" dynamic bounds not currently available ");
+		}
+		else upper = t->symvalue.rangev.upper;
 		nel *= (upper-lower+1);
 	    }
 	    r = nel*elsize;
 	    break;
 
+	case REF:
 	case VAR:
 	case FVAR:
 	    r = size(t->type);
@@ -521,7 +556,7 @@ Symbol sym;
 	    if (r < sizeof(Word) and isparam(t)) {
 		r = sizeof(Word);
 	    }
-	     */
+	    */
 	    break;
 
 	case CONST:
@@ -552,7 +587,6 @@ Symbol sym;
 	    break;
 
 	case PTR:
-	case REF:
 	case FILET:
 	    r = sizeof(Word);
 	    break;
@@ -687,6 +721,10 @@ register Symbol t1, t2;
     } else if (t1->language == nil) {
 	b = (Boolean) (t2->language == nil or
 	    (*language_op(t2->language, L_TYPEMATCH))(t1, t2));
+    } else if (t2->language == nil) {
+	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+    } else if ( isbuiltin(t1) or isbuiltin(t1->type) ) {
+	b = (Boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
     } else {
 	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
     }
@@ -1044,59 +1082,17 @@ Name fieldname;
 public Node subscript(a, slist)
 Node a, slist;
 {
-    register Symbol t;
-    register Node p;
-    Symbol etype, atype, eltype;
-    Node esub, r;
+Symbol t;
 
-    r = a;
-    t = rtype(a->nodetype);
-    eltype = t->type;
-    if (t->class == PTR) {
-	p = slist->value.arg[0];
-	if (not compatible(p->nodetype, t_int)) {
-	    beginerrmsg();
-	    fprintf(stderr, "bad type for subscript of ");
-	    prtree(stderr, a);
-	    enderrmsg();
-	}
-	r = build(O_MUL, p, build(O_LCON, (long) size(eltype)));
-	r = build(O_ADD, build(O_RVAL, a), r);
-	r->nodetype = eltype;
-    } else if (t->class != ARRAY) {
-	beginerrmsg();
-	prtree(stderr, a);
-	fprintf(stderr, " is not an array");
-	enderrmsg();
-    } else {
-	p = slist;
-	t = t->chain;
-	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
-	    esub = p->value.arg[0];
-	    etype = rtype(esub->nodetype);
-	    atype = rtype(t);
-	    if (not compatible(atype, etype)) {
-		beginerrmsg();
-		fprintf(stderr, "subscript ");
-		prtree(stderr, esub);
-		fprintf(stderr, " is the wrong type");
-		enderrmsg();
-	    }
-	    r = build(O_INDEX, r, esub);
-	    r->nodetype = eltype;
-	}
-	if (p != nil or t != nil) {
-	    beginerrmsg();
-	    if (p != nil) {
-		fprintf(stderr, "too many subscripts for ");
-	    } else {
-		fprintf(stderr, "not enough subscripts for ");
-	    }
-	    prtree(stderr, a);
-	    enderrmsg();
-	}
-    }
-    return r;
+   t = rtype(a->nodetype);
+   if(t->language == nil) {
+	error("unknown language");
+   }
+   else {
+        return ( (Node)
+        (*language_op(t->language, L_BUILDAREF)) (a,slist)
+               );
+   }
 }
 
 /*
@@ -1107,15 +1103,17 @@ public int evalindex(s, i)
 Symbol s;
 long i;
 {
-    long lb, ub;
+Symbol t;
 
-    s = rtype(s)->chain;
-    lb = s->symvalue.rangev.lower;
-    ub = s->symvalue.rangev.upper;
-    if (i < lb or i > ub) {
-	error("subscript out of range");
-    }
-    return (i - lb);
+   t = rtype(s);
+   if(t->language == nil) {
+	error("unknown language");
+   }
+   else {
+        return (
+             (*language_op(t->language, L_EVALAREF)) (s,i)
+               );
+   }
 }
 
 /*
@@ -1259,4 +1257,35 @@ Symbol record;
 	t = t->chain;
     }
     return t;
+}
+
+public Boolean getbound(s,off,type,valp)
+Symbol s;
+int off;
+Rangetype type;
+int *valp;
+{
+    Frame frp;
+    Address addr;
+    Symbol cur;
+
+    if (not isactive(s->block)) {
+	return(false);
+    }
+    cur = s->block;
+    while (cur != nil and cur->class == MODULE) {  /* WHY*/
+    		cur = cur->block;
+    }
+    if(cur == nil) {
+		cur = whatblock(pc);
+    }
+    frp = findframe(cur);
+    if (frp == nil) {
+	return(false);
+    }
+    if(type == R_TEMP) addr = locals_base(frp) + off;
+    else if (type == R_ARG) addr = args_base(frp) + off;
+    else return(false);
+    dread(valp,addr,sizeof(long));
+    return(true);
 }
