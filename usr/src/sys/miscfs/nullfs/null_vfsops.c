@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	1.3 (Berkeley) %G%
+ *	@(#)null_vfsops.c	1.4 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -27,11 +27,12 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <lofs/lofs.h>
+#include <nullfs/null.h>
 
 /*
  * Mount null layer
  */
+int
 nullfs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
@@ -39,7 +40,6 @@ nullfs_mount(mp, path, data, ndp, p)
 	struct nameidata *ndp;
 	struct proc *p;
 {
-	USES_VOP_UNLOCK;
 	int error = 0;
 	struct null_args args;
 	struct vnode *lowerrootvp, *vp;
@@ -108,7 +108,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	 * Save reference.  Each mount also holds
 	 * a reference on the root vnode.
 	 */
-	error = make_null_node(mp, lowerrootvp, &vp);
+	error = null_node_create(mp, lowerrootvp, &vp);
 	/*
 	 * Unlock the node (either the target or the alias)
 	 */
@@ -129,7 +129,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	nullm_rootvp = vp;
 	nullm_rootvp->v_flag |= VROOT;
 	amp->nullm_rootvp = nullm_rootvp;
-	if (NULLTOLOWERVP(nullm_rootvp)->v_mount->mnt_flag & MNT_LOCAL)
+	if (NULLVPTOLOWERVP(nullm_rootvp)->v_mount->mnt_flag & MNT_LOCAL)
 		mp->mnt_flag |= MNT_LOCAL;
 	mp->mnt_data = (qaddr_t) amp;
 	getnewfsid(mp, MOUNT_LOFS);
@@ -151,6 +151,7 @@ nullfs_mount(mp, path, data, ndp, p)
  * on the underlying filesystem will have been called
  * when that filesystem was mounted.
  */
+int
 nullfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -163,6 +164,7 @@ nullfs_start(mp, flags, p)
 /*
  * Free reference to null layer
  */
+int
 nullfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -189,9 +191,11 @@ nullfs_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
+#if 0
 	mntflushbuf(mp, 0); 
 	if (mntinvalbuf(mp, 1))
 		return (EBUSY);
+#endif
 	if (nullm_rootvp->v_usecount > 1)
 		return (EBUSY);
 	if (error = vflush(mp, nullm_rootvp, flags))
@@ -223,17 +227,17 @@ nullfs_unmount(mp, mntflags, p)
 	return 0;
 }
 
+int
 nullfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	USES_VOP_LOCK;
 	struct vnode *vp;
 
 #ifdef NULLFS_DIAGNOSTIC
 	printf("nullfs_root(mp = %x, vp = %x->%x)\n", mp,
 			MOUNTTONULLMOUNT(mp)->nullm_rootvp,
-			NULLTOLOWERVP(MOUNTTONULLMOUNT(mp)->nullm_rootvp)
+			NULLVPTOLOWERVP(MOUNTTONULLMOUNT(mp)->nullm_rootvp)
 			);
 #endif
 
@@ -247,6 +251,7 @@ nullfs_root(mp, vpp)
 	return 0;
 }
 
+int
 nullfs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
@@ -257,6 +262,7 @@ nullfs_quotactl(mp, cmd, uid, arg, p)
 	return VFS_QUOTACTL(MOUNTTONULLMOUNT(mp)->nullm_vfs, cmd, uid, arg, p);
 }
 
+int
 nullfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
@@ -268,7 +274,7 @@ nullfs_statfs(mp, sbp, p)
 #ifdef NULLFS_DIAGNOSTIC
 	printf("nullfs_statfs(mp = %x, vp = %x->%x)\n", mp,
 			MOUNTTONULLMOUNT(mp)->nullm_rootvp,
-			NULLTOLOWERVP(MOUNTTONULLMOUNT(mp)->nullm_rootvp)
+			NULLVPTOLOWERVP(MOUNTTONULLMOUNT(mp)->nullm_rootvp)
 			);
 #endif
 
@@ -296,31 +302,48 @@ nullfs_statfs(mp, sbp, p)
 	return (0);
 }
 
-nullfs_sync(mp, waitfor)
-struct mount *mp;
-int waitfor;
+int
+nullfs_sync(mp, waitfor, cred, p)
+	struct mount *mp;
+	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
 	/*
-	 * NEEDSWORK: Assumes no data cached at null layer.
-	 * Is this true?
+	 * XXX - Assumes no data cached at null layer.
 	 */
 	return (0);
 }
 
-nullfs_fhtovp(mp, fhp, setgen, vpp)
+int
+nullfs_vget(mp, ino, vpp)
 	struct mount *mp;
-	struct fid *fhp;
-	int setgen;
+	ino_t ino;
 	struct vnode **vpp;
 {
-	return VFS_FHTOVP(MOUNTTONULLMOUNT(mp)->nullm_vfs, fhp, setgen, vpp);
+	
+	return VFS_VGET(MOUNTTONULLMOUNT(mp)->nullm_vfs, ino, vpp);
 }
 
+int
+nullfs_fhtovp(mp, fidp, nam, vpp, exflagsp, credanonp)
+	struct mount *mp;
+	struct fid *fidp;
+	struct mbuf *nam;
+	struct vnode **vpp;
+	int *exflagsp;
+	struct ucred**credanonp;
+{
+
+	return VFS_FHTOVP(MOUNTTONULLMOUNT(mp)->nullm_vfs, fidp, nam, vpp, exflagsp,credanonp);
+}
+
+int
 nullfs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
 {
-	return VFS_VPTOFH(NULLTOLOWERVP(vp), fhp);
+	return VFS_VPTOFH(NULLVPTOLOWERVP(vp), fhp);
 }
 
 int nullfs_init __P((void));
@@ -333,6 +356,7 @@ struct vfsops null_vfsops = {
 	nullfs_quotactl,
 	nullfs_statfs,
 	nullfs_sync,
+	nullfs_vget,
 	nullfs_fhtovp,
 	nullfs_vptofh,
 	nullfs_init,

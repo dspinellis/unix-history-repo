@@ -21,7 +21,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <lofs/lofs.h>
+#include <nullfs/null.h>
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NNULLNODECACHE 16
