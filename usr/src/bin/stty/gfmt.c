@@ -6,12 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gfmt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gfmt.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
+#include <err.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "stty.h"
 #include "extern.h"
 
@@ -41,13 +44,13 @@ gread(tp, s)
 	long tmp;
 
 #define	CHK(s)	(*p == s[0] && !strcmp(p, s))
-	if (!(s = index(s, ':')))
+	if (!(s = strchr(s, ':')))
 		gerr(NULL);
 	for (++s; s;) {
 		p = strsep(&s, ":\0");
 		if (!p || !*p)
 			break;
-		if (!(ep = index(p, '=')))
+		if (!(ep = strchr(p, '=')))
 			gerr(p);
 		*ep++ = '\0';
 		(void)sscanf(ep, "%lx", &tmp);
@@ -150,7 +153,7 @@ gerr(s)
 	char *s;
 {
 	if (s)
-		err("illegal gfmt1 option -- %s", s);
+		errx(1, "illegal gfmt1 option -- %s", s);
 	else
-		err("illegal gfmt1 option");
+		errx(1, "illegal gfmt1 option");
 }
