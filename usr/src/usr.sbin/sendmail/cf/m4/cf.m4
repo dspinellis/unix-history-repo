@@ -80,7 +80,7 @@ m4wrap(`include(`../m4/proto.m4')')
 
 # set up default values for options
 define(`confMAILER_NAME', ``MAILER-DAEMON'')
-define(`confFROM_LINE', `From $?<$<$|$g$.  $d')
+define(`confFROM_LINE', `From $g  $d')
 define(`confOPERATORS', `.:%@!^/[]')
 define(`confSMTP_LOGIN_MSG', `$j Sendmail $v/$Z ready at $b')
 define(`confEIGHT_BIT_INPUT', `False')
@@ -115,4 +115,4 @@ define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.9 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.10 (Berkeley) %G%')
