@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)subr_rmap.c	7.8 (Berkeley) %G%
+ *	@(#)subr_rmap.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -76,15 +76,11 @@ rminit(mp, size, addr, name, mapsize)
 }
 
 /*
- * Allocate 'size' units from the given
- * map. Return the base of the allocated space.
- * In a map, the addresses are increasing and the
- * list is terminated by a 0 size.
+ * A piece of memory of at least size units is allocated from the
+ * specified map using a first-fit algorithm. It returns the starting
+ * address of the allocated space.
  *
- * Algorithm is first-fit.
- *
- * This routine knows about the interleaving of the swapmap
- * and handles that.
+ * This routine knows about and handles the interleaving of the swapmap.
  */
 long
 rmalloc(mp, size)
@@ -143,10 +139,10 @@ rmalloc(mp, size)
 }
 
 /*
- * Free the previously allocated space at addr
- * of size units into the specified map.
- * Sort addr into map and combine on
- * one or both ends if possible.
+ * The previously allocated space at addr of size units is freed
+ * into the specified map. This routine is responsible for sorting
+ * the frred space into the correct location in the map, and coalescing
+ * it with free space on either side if they adjoin.
  */
 rmfree(mp, size, addr)
 	struct map *mp;
@@ -247,89 +243,4 @@ rmfree(mp, size, addr)
 	return;
 badrmfree:
 	panic("bad rmfree");
-}
-
-/*
- * Allocate 'size' units from the given map, starting at address 'addr'.
- * Return 'addr' if successful, 0 if not.
- * This may cause the creation or destruction of a resource map segment.
- *
- * This routine will return failure status if there is not enough room
- * for a required additional map segment.
- *
- * An attempt to use this on 'swapmap' will result in
- * a failure return.  This is due mainly to laziness and could be fixed
- * to do the right thing, although it probably will never be used.
- */
-rmget(mp, size, addr)
-	register struct map *mp;
-{
-	register struct mapent *ep = (struct mapent *)(mp+1);
-	register struct mapent *bp, *bp2;
-
-	if (size <= 0)
-		panic("rmget");
-	if (mp == swapmap)
-		return (0);
-	/*
-	 * Look for a map segment containing the requested address.
-	 * If none found, return failure.
-	 */
-	for (bp = ep; bp->m_size; bp++)
-		if (bp->m_addr <= addr && bp->m_addr + bp->m_size > addr)
-			break;
-	if (bp->m_size == 0)
-		return (0);
-
-	/*
-	 * If segment is too small, return failure.
-	 * If big enough, allocate the block, compressing or expanding
-	 * the map as necessary.
-	 */
-	if (bp->m_addr + bp->m_size < addr + size)
-		return (0);
-	if (bp->m_addr == addr)
-		if (bp->m_addr + bp->m_size == addr + size) {
-			/*
-			 * Allocate entire segment and compress map
-			 */
-			bp2 = bp;
-			while (bp2->m_size) {
-				bp2++;
-				(bp2-1)->m_addr = bp2->m_addr;
-				(bp2-1)->m_size = bp2->m_size;
-			}
-		} else {
-			/*
-			 * Allocate first part of segment
-			 */
-			bp->m_addr += size;
-			bp->m_size -= size;
-		}
-	else
-		if (bp->m_addr + bp->m_size == addr + size) {
-			/*
-			 * Allocate last part of segment
-			 */
-			bp->m_size -= size;
-		} else {
-			/*
-			 * Allocate from middle of segment, but only
-			 * if table can be expanded.
-			 */
-			for (bp2=bp; bp2->m_size; bp2++)
-				;
-			if (bp2 + 1 >= mp->m_limit)
-				return (0);
-			while (bp2 > bp) {
-				(bp2+1)->m_addr = bp2->m_addr;
-				(bp2+1)->m_size = bp2->m_size;
-				bp2--;
-			}
-			(bp+1)->m_addr = addr + size;
-			(bp+1)->m_size =
-			    bp->m_addr + bp->m_size - (addr + size);
-			bp->m_size = addr - bp->m_addr;
-		}
-	return (addr);
 }
