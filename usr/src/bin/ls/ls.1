@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	8.2 (Berkeley) %G%
+.\"     @(#)ls.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -170,7 +170,7 @@ linked-to file is preceded by
 .Dq \-> .
 .Pp
 The file mode printed under the -l option consists of the
-the entry type, owner permissions, and group permissions.
+entry type, owner permissions, and group permissions.
 The entry type character describes the type of file, as
 follows:
 .Pp
@@ -227,8 +227,8 @@ and setgroup-ID mode is set.
 The file is executable or the directory is
 searchable.
 .It Sy \-
-The file is neither readable, writeable, exectutable,
-or set-user-ID or set-group-ID mode nor sticky. (See below.)
+The file is neither readable, writeable, executable,
+nor set-user-ID nor set-group-ID mode, nor sticky. (See below.)
 .El
 .Pp
 These next two apply only to the third character in the last group
@@ -295,7 +295,7 @@ specification.
 .Xr symlink 7 ,
 .Xr sticky 8
 .Sh HISTORY
-A
+An
 .Nm ls
 command appeared in
 .At v6 .

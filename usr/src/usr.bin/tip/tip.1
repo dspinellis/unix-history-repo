@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tip.1	8.2 (Berkeley) %G%
+.\"	@(#)tip.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TIP 1
@@ -225,7 +225,7 @@ Bizcomp 1031 and 1032 integral call unit/modems.
 maintains a set of
 .Ar variables
 which control its operation.
-Some of these variable are read-only to normal users (root is allowed
+Some of these variables are read-only to normal users (root is allowed
 to change anything of interest).  Variables may be displayed
 and set through the ``s'' escape.  The syntax for variables is patterned
 after
@@ -273,7 +273,7 @@ to wait for a connection to be established; abbreviated
 waiting for the echo of the last character transmitted; default is
 .Ar off  .
 .It Ar eofread
-(str) The set of characters which signify and end-of-tranmission
+(str) The set of characters which signify an end-of-tranmission
 during a ~< file transfer command; abbreviated
 .Ar eofr  .
 .It Ar eofwrite
@@ -306,12 +306,12 @@ writes when receiving files; abbreviated
 (str) The name of the host to which you are connected; abbreviated
 .Ar ho  .
 .It Ar prompt
-(char) The character which indicates and end-of-line on the remote
+(char) The character which indicates an end-of-line on the remote
 host; abbreviated
 .Ar pr  ;
 default value is `\en'.  This value is used to synchronize during
 data transfers.  The count of lines transferred during a file transfer
-command is based on recipt of this character.
+command is based on receipt of this character.
 .It Ar raise
 (bool) Upper case mapping mode; abbreviated
 .Ar ra  ;
@@ -422,4 +422,4 @@ appeared command in
 .Bx 4.2 .
 .Sh BUGS
 The full set of variables is undocumented and should, probably, be
-paired down.
+pared down.

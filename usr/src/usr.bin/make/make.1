@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	8.1 (Berkeley) %G%
+.\"	@(#)make.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -502,13 +502,13 @@ Test the value of an expression.
 .Oo \&! Oc Ns Ar variable
 .Op Ar operator variable ...
 .Xc
-Test the value of an variable.
+Test the value of a variable.
 .It Xo
 .Ic .ifndef
 .Oo \&! Oc Ns Ar variable
 .Op Ar operator variable ...
 .Xc
-Test the value of an variable.
+Test the value of a variable.
 .It Xo
 .Ic .ifmake
 .Oo \&! Oc Ns Ar target
@@ -589,7 +589,7 @@ As in C,
 .Nm make
 will only evaluate a conditional as far as is necessary to determine
 its value.
-Parenthesis may be used to change the order of evaluation.
+Parentheses may be used to change the order of evaluation.
 The boolean operator
 .Ql Ic \&!
 may be used to logically negate an entire
@@ -613,7 +613,7 @@ explicitly, see
 .Va .MAIN )
 before the line containing the conditional.
 .It Ic empty
-Takes a variable, with possible modifiers, and evalutes to true if
+Takes a variable, with possible modifiers, and evaluates to true if
 the expansion of the variable would result in an empty string.
 .It Ic exists
 Takes a file name as an argument and evaluates to true if the file exists.

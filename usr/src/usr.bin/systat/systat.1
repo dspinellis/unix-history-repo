@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)systat.1	8.1 (Berkeley) %G%
+.\"	@(#)systat.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYSTAT 1
@@ -146,7 +146,8 @@ display; the minimum unambiguous prefix may be supplied.
 .Bl -tag -width Fl -compact
 .It Cm numbers
 Show the disk
-.Tn I/O statistics in numeric form.  Values are
+.Tn I/O 
+statistics in numeric form.  Values are
 displayed in numeric columns which scroll downward.
 .It Cm bars
 Show the disk
@@ -239,7 +240,6 @@ intransit blocking page faults (`It'),
 swap text pages found in free list (`F/S'),
 file system text pages found in free list (`F/F'),
 reclaims from free list
-.Pp Sq RFL ,
 pages freed by the clock daemon (`Fre'),
 and sequential process pages freed (`SFr')
 per second over the refresh interval.
@@ -249,7 +249,7 @@ zero filled pages (`zf') and demand filled text pages (`xf')
 per second over the refresh period.
 The first row indicates the number of requests that were
 resolved, the second row shows the number that were set up,
-and the last row shows the percentage of setup requests were
+and the last row shows the percentage of setup requests that were
 actually used.
 Note that this percentage is usually less than 100%,
 however it may exceed 100% if a large number of requests
@@ -394,4 +394,4 @@ Certain displays presume a minimum of 80 characters per line.
 The
 .Ic vmstat
 display looks out of place because it is (it was added in as
-a separate display rather than create a new program).
+a separate display rather than created as a new program).

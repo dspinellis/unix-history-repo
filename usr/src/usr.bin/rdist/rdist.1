@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rdist.1	8.1 (Berkeley) %G%
+.\"	@(#)rdist.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RDIST 1
@@ -118,7 +118,7 @@ and warn the user if all the links cannot be found.
 .It Fl m Ar host
 Limit which machines are to be updated. Multiple
 .Fl m
-arguments can be given to limit updates to a subset of the hosts listed the
+arguments can be given to limit updates to a subset of the hosts listed in the
 .Ar distfile  .
 .It Fl n
 Print the commands without executing them. This option is
@@ -132,7 +132,7 @@ option suppresses this.
 .It Fl R
 Remove extraneous files. If a directory is being updated, any files that exist
 on the remote host that do not exist in the master directory are removed.
-This is useful for maintaining truely identical copies of directories.
+This is useful for maintaining truly identical copies of directories.
 .It Fl v
 Verify that the files are up to date on all the hosts. Any files
 that are out of date will be displayed but no files will be changed

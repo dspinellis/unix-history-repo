@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)window.1	8.1 (Berkeley) %G%
+.\"	@(#)window.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WINDOW 1
@@ -33,7 +33,7 @@ position can be changed by the user at any time.  Processes
 communicate with their window in the same way they normally
 interact with a terminal\-through their standard input, output,
 and diagnostic file descriptors.  The window program handles the
-details of redirecting input an output to and from the
+details of redirecting input and output to and from the
 windows.  At any one time, only one window can receive
 input from the keyboard, but all windows can simultaneously send output
 to the display.
@@ -569,7 +569,7 @@ unpredictable.  Most arguments can be omitted; default values will
 be supplied for them.  The
 .Ar argnames
 can be unique prefixes
-of the the argument names.  The commas separating
+of the argument names.  The commas separating
 arguments are used only to disambiguate, and can usually be omitted.
 .Pp
 Only the first argument form is valid for user defined aliases.  Aliases
@@ -581,7 +581,7 @@ above).
 .Pp
 Most functions return value, but some are used for side effect
 only and so must be used as statements.  When a function or an alias is used
-as a statement, the parenthesis surrounding
+as a statement, the parentheses surrounding
 the argument list may be omitted.  Aliases return no value.
 .El
 .Ss  Builtin Functions
