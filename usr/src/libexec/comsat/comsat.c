@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -227,14 +227,15 @@ jkfprintf(tp, name, offset)
 			    strncmp(line, "Subject:", 8))
 				continue;
 		}
+		if (linecnt <= 0 || charcnt <= 0) {
+			fprintf(tp, "...more...%s\n", cr);
+			return;
+		}
 		if (cp = index(line, '\n'))
 			*cp = '\0';
 		fprintf(tp, "%s%s\n", line, cr);
 		charcnt -= strlen(line);
-		if (--linecnt <= 0 || charcnt <= 0) {
-			fprintf(tp, "...more...%s\n", cr);
-			return;
-		}
+		linecnt--;
 	}
 	fprintf(tp, "----%s\n", cr);
 }
