@@ -1,4 +1,4 @@
-/*	up.c	4.7	%G%	*/
+/*	up.c	4.8	%G%	*/
 
 #include "up.h"
 #if NUP > 0
@@ -228,8 +228,8 @@ register struct buf *bp;
 		iodone(bp);
 		return;
 	}
-	if (DK_N+unit <= DK_NMAX)
-		dk_mspw[DK_N+unit] = .0000020345;
+	if (UPDK_N+unit <= UPDK_NMAX)
+		dk_mspw[UPDK_N+unit] = .0000020345;
 	bp->b_cylin = bn/(NSECT*NTRAC) + up_sizes[xunit&07].cyloff;
 	dp = &uputab[unit];
 	(void) spl5();
@@ -272,8 +272,8 @@ register unit;
 	 */
 	if (unit >= NUP)
 		goto out;
-	if (unit+DK_N <= DK_NMAX)
-		dk_busy &= ~(1<<(unit+DK_N));
+	if (unit+UPDK_N <= UPDK_NMAX)
+		dk_busy &= ~(1<<(unit+UPDK_N));
 	dp = &uputab[unit];
 	if ((bp = dp->b_actf) == NULL)
 		goto out;
@@ -341,8 +341,8 @@ search:
 	/*
 	 * Mark this unit busy.
 	 */
-	unit += DK_N;
-	if (unit <= DK_NMAX) {
+	unit += UPDK_N;
+	if (unit <= UPDK_NMAX) {
 		dk_busy |= 1<<unit;
 		dk_seek[unit]++;
 	}
@@ -456,13 +456,13 @@ loop:
 	upaddr->upcs1 = cmd;
 	/*
 	 * This is a controller busy situation.
-	 * Record in dk slot NUP+DK_N (after last drive)
+	 * Record in dk slot NUP+UPDK_N (after last drive)
 	 * unless there aren't that many slots reserved for
 	 * us in which case we record this as a drive busy
 	 * (if there is room for that).
 	 */
-	unit = dn+DK_N;
-	if (unit <= DK_NMAX) {
+	unit = dn+UPDK_N;
+	if (unit <= UPDK_NMAX) {
 		dk_busy |= 1<<unit;
 		dk_xfer[unit]++;
 		dk_wds[unit] += bp->b_bcount>>6;
@@ -509,8 +509,8 @@ upintr()
 		dp = uptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
-		if (DK_N+unit <= DK_NMAX)
-			dk_busy &= ~(1<<(DK_N+unit));
+		if (UPDK_N+unit <= UPDK_NMAX)
+			dk_busy &= ~(1<<(UPDK_N+unit));
 		if ((upaddr->upcs2 & 07) != unit)
 			upaddr->upcs2 = unit;
 		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {

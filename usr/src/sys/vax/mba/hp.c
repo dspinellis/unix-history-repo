@@ -1,4 +1,4 @@
-/*	hp.c	4.2	%G%	*/
+/*	hp.c	4.3	%G%	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -164,8 +164,8 @@ register struct buf *bp;
 		case RM5:	mspw = .0000020345; break;
 		case RP:	mspw = .0000029592; break;
 		}
-		if (DK_N + unit <= DK_NMAX)
-			dk_mspw[DK_N+unit] = mspw;
+		if (HPDK_N + unit <= HPDK_NMAX)
+			dk_mspw[HPDK_N+unit] = mspw;
 	}
 	switch (hp_type[unit]) {
 
@@ -219,8 +219,8 @@ register unit;
 
 	if(unit >= NHP)
 		return;
-	if (unit+DK_N <= DK_NMAX)
-		dk_busy &= ~(1<<(unit+DK_N));
+	if (unit+HPDK_N <= HPDK_NMAX)
+		dk_busy &= ~(1<<(unit+HPDK_N));
 	dp = &hputab[unit];
 	if((bp=dp->b_actf) == NULL)
 		return;
@@ -273,8 +273,8 @@ search:
 		hpaddr->hpda = sn;
 		hpaddr->hpcs1 = SEARCH|GO;
 	}
-	unit += DK_N;
-	if (unit <= DK_NMAX) {
+	unit += HPDK_N;
+	if (unit <= HPDK_NMAX) {
 		dk_busy |= 1<<unit;
 		dk_seek[unit]++;
 	}
@@ -353,8 +353,8 @@ loop:
 	hpaddr->hpda = (tn << 8) + sn;
 	mbastart(bp, (int *)hpaddr);
 
-	unit = dn+DK_N;
-	if (unit <= DK_NMAX) {
+	unit = dn+HPDK_N;
+	if (unit <= HPDK_NMAX) {
 		dk_busy |= 1<<unit;
 		dk_xfer[unit]++;
 		dk_wds[unit] += bp->b_bcount>>6;
@@ -371,8 +371,8 @@ hpintr(mbastat, as)
 		dp = hptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
-		if (DK_N+unit <= DK_NMAX)
-			dk_busy &= ~(1<<(DK_N+unit));
+		if (HPDK_N+unit <= HPDK_NMAX)
+			dk_busy &= ~(1<<(HPDK_N+unit));
 		hpaddr = mbadev(HPMBA, unit);
 		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {
 			while((hpaddr->hpds & DRY) == 0)
