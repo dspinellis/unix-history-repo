@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.30 1994/06/02 11:50:23 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.31 1994/06/11 17:58:17 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -315,7 +315,8 @@ we're not sure where (could someone please point us at it?).
 The Seagate and Future Domain SCSI cards are supported through contributed
 code.  Please see the installation notes in:
         /usr/src/contrib/FAQ/programs/SCSI/st01fd950/README.seagate
-for instructions on how to install these drivers.  
+for instructions on how to install these drivers.  There maybe some 
+problems with these drivers.  
 
 2.3:  What CD-ROM drives are supported by FreeBSD?
 
