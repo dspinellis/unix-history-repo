@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmfreg.h	6.4 (Berkeley) %G%
+ *	@(#)dmfreg.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,9 @@ struct dmfdevice {
 		u_short	dmfirw;		/* indirect register word */
 		u_char	dmfirc[2];	/*    "         "    bytes */
 	} dmfun;
-	short	dmfl[2];
-	short	dmfd[4];
+	short	dmfl_ctrl;	/* line printer control register */
+	short	dmfl_indrct;	/* line printer indirect register */
+	short	dmfd[4];	/* for dr11 (not implemented) */
 };
 
 #define	dmfrsp	dmfrbuf		/* receive silo parameter register (wo) */
@@ -133,6 +134,8 @@ struct dmfdevice {
 #define DMFL_BUFSIZ	512		/* max chars per dma */
 #define DMFL_DEFCOLS	132		/* default # of cols/line <=255 */
 #define DMFL_DEFLINES	66		/* default # of lines/page <=255 */
+#define DMFL_OPTIONS	((1 << 8) | (1 << 9) | (1 << 15))
+					/* auto cr, real ff, no lower to upper */
 
 /*
  *  Bits in the configuration register
