@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id$
+ *	$Id: vfs_subr.c,v 1.3 1993/10/16 15:25:25 rgrimes Exp $
  */
 
 /*
@@ -555,20 +555,6 @@ bdevvp(dev, vpp)
 	dev_t dev;
 	struct vnode **vpp;
 {
-	return(getdevvp(dev, vpp, VBLK));
-}
-
-
-/*
- * Create a vnode for a device.
- * Used by bdevvp (block device) for root file system etc.,
- * and by cnopen for console (character device).
- */
-getdevvp(dev, vpp, type)
-	dev_t dev;
-	struct vnode **vpp;
-	enum vtype type;
-{
 	register struct vnode *vp;
 	struct vnode *nvp;
 	int error;
@@ -577,11 +563,11 @@ getdevvp(dev, vpp, type)
 		return (0);
 	error = getnewvnode(VT_NON, (struct mount *)0, &spec_vnodeops, &nvp);
 	if (error) {
-		*vpp = NULLVP;
+		*vpp = 0;
 		return (error);
 	}
 	vp = nvp;
-	vp->v_type = type;
+	vp->v_type = VBLK;
 	if (nvp = checkalias(vp, dev, (struct mount *)0)) {
 		vput(vp);
 		vp = nvp;
