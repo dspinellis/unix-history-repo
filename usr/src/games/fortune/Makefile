@@ -1,59 +1,59 @@
-FORTUNES=	scene obscene
-SOURCE=		fortune.c strfile.h strfile.c rnd.c unstr.c $(FORTUNES)
-TFILES=		Troff.mac Troff.sed Do_troff
-LIBDIR=		/usr/games/lib
-BINDIR=		/usr/games
-OWN=		arnold
-GRP=		arpa
-DEFS=
-CFLAGS=		-O $(DEFS)
-SFLAGS=		-r
-TDEV=		-Pver
-TROFF=		ditroff $(TDEV)
-DESTDIR=
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	1.2	(Berkeley)	%G%
+#
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+SFLAGS=	-r
+TDEV=	-Pver
+TROFF=	ditroff ${TDEV}
+SRCS=	fortune.c rnd.c strfile.c unstr.c
 
 all: fortune strfile unstr fortunes.dat
 
-fortune: fortune.o rnd.o
-	$(CC) $(CFLAGS) -o fortune fortune.o rnd.o
+fortune: fortune.o rnd.o ${LIBC}
+	${CC} ${CFLAGS} -o $@ fortune.o rnd.o
 
-strfile: strfile.o rnd.o
-	$(CC) $(CFLAGS) -o strfile strfile.o rnd.o
+strfile: strfile.o rnd.o ${LIBC}
+	${CC} ${CFLAGS} -o $@ strfile.o rnd.o
 
-unstr: unstr.o
-	$(CC) $(CFLAGS) -o unstr unstr.o
-
-fortune.o strfile.o unstr.o: strfile.h
+unstr: unstr.o ${LIBC}
+	${CC} ${CFLAGS} -o $@ unstr.o
 
 fortunes.dat: fortunes strfile
-	./strfile $(SFLAGS) fortunes
+	./strfile ${SFLAGS} fortunes
 
-fortunes: $(FORTUNES)
+fortunes: scene obscene
 	cp scene fortunes
+	chmod 666 fortunes
 	echo "%-" >> fortunes
 	cat obscene >> fortunes
 
-lint:
-	lint -hxb $(DEFS) fortune.c rnd.c 2>&1 > fortune.lint
-	lint -hxb $(DEFS) strfile.c rnd.c 2>&1 > strfile.lint
-	lint -hxb $(DEFS) unstr.c 2>&1 > unstr.lint
+clean: FRC
+	rm -f fortune fortunes fortunes.dat strfile unstr core *.o
+	rm -f Oscene Oobscene
 
-install: all install.data
-	install -s -m 4711 -o daemon fortune $(DESTDIR)$(BINDIR)
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-install.data: fortunes.dat
-	install -m 600 -o daemon fortunes.dat $(DESTDIR)$(LIBDIR)
+install: FRC
+	install -s -o bin -g bin -m 4711 fortune ${DESTDIR}/usr/games
+	install -o bin -g bin -m 600 fortunes.dat ${DESTDIR}/usr/games/lib
 
-troff: troff.scene troff.obscene
+lint: FRC
+	lint ${CFLAGS} fortune.c rnd.c
+	lint ${CFLAGS} strfile.c rnd.c
+	lint ${CFLAGS} unstr.c
 
-troff.scene:
-	./Do_troff scene $(TROFF)
+tags: FRC
+	ctags ${SRCS}
 
-troff.obscene:
-	./Do_troff obscene $(TROFF)
-
-clean: sort.clean
-	rm -f fortune fortunes fortunes.dat strfile unstr ? core *.o
+troff: FRC
+	./Do_troff scene ${TROFF}
+	./Do_troff obscene ${TROFF}
 
 sort: sort.scene sort.obscene
 
@@ -67,7 +67,15 @@ sort.obscene: strfile unstr
 	mv obscene Oobscene
 	unstr -o obscene
 
-sort.clean:
-	rm -f Oscene Oobscene
+FRC:
 
-depend:
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+fortune.o: fortune.c /usr/include/sys/types.h /usr/include/stdio.h
+fortune.o: /usr/include/sys/file.h strfile.h
+rnd.o: rnd.c
+strfile.o: strfile.c /usr/include/stdio.h /usr/include/ctype.h strfile.h
+unstr.o: unstr.c /usr/include/stdio.h strfile.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

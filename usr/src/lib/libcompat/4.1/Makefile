@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O ${DEFS}
 STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
@@ -38,25 +38,31 @@ tags:
 	done
 
 clean:
-	rm -f compat-4.1lib compat-4.1lib_p *.o profiled/*.o tags Makefile.bak
+	rm -f compat-4.1lib compat-4.1lib_p *.o profiled/*.o tags
 
 depend:
-	for i in ${SRCS}; do \
-	    cc -M ${CFLAGS} $$i | awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+	mkdep ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
+ftime.o: ftime.c /usr/include/sys/types.h /usr/include/sys/time.h
+ftime.o: /usr/include/time.h
+gtty.o: gtty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
+gtty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+nice.o: nice.c /usr/include/sys/time.h /usr/include/time.h
+nice.o: /usr/include/sys/resource.h
+pause.o: pause.c
+rand.o: rand.c
+stty.o: stty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
+stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+tell.o: tell.c
+times.o: times.c /usr/include/sys/time.h /usr/include/time.h
+times.o: /usr/include/sys/resource.h
+utime.o: utime.c /usr/include/sys/time.h /usr/include/time.h
+vlimit.o: vlimit.c /usr/include/sys/time.h /usr/include/time.h
+vlimit.o: /usr/include/sys/resource.h /usr/include/errno.h
+vtimes.o: vtimes.c /usr/include/sys/time.h /usr/include/time.h
+vtimes.o: /usr/include/sys/resource.h
 
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
