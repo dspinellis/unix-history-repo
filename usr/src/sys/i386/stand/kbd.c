@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	7.1 (Berkeley) %G%
+ *	@(#)kbd.c	7.2 (Berkeley) %G%
  */
 
 #define	L		0x01	/* locking function */
@@ -113,10 +113,11 @@ u_char kbd() {
 	u_char dt, brk, act;
 	
 loop:
+	while(inb(0x64)&1 == 0);
+	dt = inb(0x60);
 	do {
-		while (inb(0x64)&2) ;
-		dt = inb(0x60);
-	} while (dt == odt);
+		while(inb(0x64)&1 == 0);
+	} while(dt == inb(0x60));
 	odt = dt;
 
 	brk = dt & 0x80 ; dt = dt & 0x7f ;
@@ -146,6 +147,7 @@ loop:
 			if(!brk) stp ^= 1;
 		} else if(brk)	stp = 0; else stp = 1;
 	}
+	if(ctl && alts && dt == 83) exit();
 	if ((act&ASCII) && !brk) {
 		u_char chr;
 
@@ -157,7 +159,62 @@ loop:
 		if (caps && (chr >= 'a' && chr <= 'z')) {
 			chr -= 'a' - 'A' ;
 		}
+		/*do
+			while(inb(0x64)&1 == 0) ;
+		while (inb(0x60) == (chr | 0x80));
+		while(inb(0x64)&1 == 1) inb(0x60);A*/
 		return(chr);
 	}
 	goto loop;
+}
+
+scankbd() {
+u_char c;
+	
+	c = inb(0x60);
+	if (c == 0xaa) { odt = 0x2a; return (0); }
+	if (c == 0xfa) { odt = 0x7a; return (0); }
+	c &= 0x7f;
+	
+	if ( (odt&0x7f) == c )return(0);
+	if(odt == 0) { odt = c;  return(0); }
+	return(kbd());
+}
+
+kbdreset()
+{
+	u_char c;
+
+	/* Enable interrupts and keyboard controller */
+	while (inb(0x64)&2); outb(0x64,0x60);
+	while (inb(0x64)&2); outb(0x60,0x4D);
+
+	/* Start keyboard stuff RESET */
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x60,0xFF);	/* RESET */
+
+	while((c=inb(0x60))!=0xFA) ;
+
+	/* While we are here, defeat gatea20 */
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x64,0xd1);	
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x60,0xdf);	
+}
+
+u_char getchar() {
+	u_char c;
+
+	c = kbd();
+	if (c == '\r') c = '\n';
+	putchar(c);
+	return(c);
+}
+
+reset_cpu() {
+
+	while (inb(0x64)&2);	/* wait input ready */
+	outb(0x64,0xFE);	/* Reset Command */
+	wait(4000000);
+	/* NOTREACHED */
 }
