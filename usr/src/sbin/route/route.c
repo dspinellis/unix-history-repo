@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.10 (Berkeley) 84/05/16";
+static char sccsid[] = "@(#)route.c	4.11 (Berkeley) 84/05/17";
 #endif
 
 #include <sys/types.h>
@@ -150,7 +150,10 @@ routename(in)
 		subnaddr = inet_makeaddr(subnet, INADDR_ANY);
 		if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
 			cp = np->n_name;
+		else
+			goto host;
 	} else {
+host:
 		hp = gethostbyaddr(&in, sizeof (struct in_addr), AF_INET);
 		if (hp)
 			cp = hp->h_name;
