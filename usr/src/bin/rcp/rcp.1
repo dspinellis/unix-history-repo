@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)rcp.1	6.5 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH RCP 1C ""
+.\"	@(#)rcp.1	6.6 (Berkeley) %G%
+.\"
+.TH RCP 1 ""
 .UC 5
 .SH NAME
 rcp \- remote file copy
@@ -67,7 +78,7 @@ does not prompt for passwords; your current local user name
 must exist on
 .I rhost
 and allow remote command execution via
-.IR rsh (1C).
+.IR rsh (1).
 .PP
 .I Rcp
 handles third party copies, where neither source nor target files
@@ -76,7 +87,7 @@ Hostnames may also take the form ``rname@rhost'' to use
 .I rname
 rather than the current user name on the remote host.
 .SH SEE ALSO
-cp(1), ftp(1C), rsh(1C), rlogin(1C)
+cp(1), ftp(1), rsh(1), rlogin(1)
 .SH BUGS
 Doesn't detect all cases where the target of a copy might
 be a file in cases where only a directory should be legal.
