@@ -3,13 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.11 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "resourcevar.h"
 #include "malloc.h"
 #include "proc.h"
+
+#include "vm/vm.h"
 
 /*
  * Resource controls and accounting.
@@ -193,6 +195,30 @@ setrlimit(p, uap, retval)
 			alim.rlim_cur = maxdmap;
 		if (alim.rlim_max > maxdmap)
 			alim.rlim_max = maxdmap;
+		/*
+		 * Stack is allocated to the max at exec time with only
+		 * "rlim_cur" bytes accessible.  If stack limit is going
+		 * up make more accessible, if going down make inaccessible.
+		 */
+		if (alim.rlim_cur != alimp->rlim_cur) {
+			vm_offset_t addr;
+			vm_size_t size;
+			vm_prot_t prot;
+
+			if (alim.rlim_cur > alimp->rlim_cur) {
+				prot = VM_PROT_ALL;
+				size = alim.rlim_cur - alimp->rlim_cur;
+				addr = USRSTACK - alim.rlim_cur;
+			} else {
+				prot = VM_PROT_NONE;
+				size = alimp->rlim_cur - alim.rlim_cur;
+				addr = USRSTACK - alimp->rlim_cur;
+			}
+			addr = trunc_page(addr);
+			size = round_page(size);
+			(void) vm_map_protect(&p->p_vmspace->vm_map,
+					      addr, addr+size, prot, FALSE);
+		}
 		break;
 	}
 	p->p_rlimit[uap->which] = alim;
