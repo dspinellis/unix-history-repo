@@ -1,6 +1,4 @@
-#define	RKDEBUG
-#define RKBDEBUG
-/*	rk.c	4.45	82/09/12	*/
+/*	rk.c	4.46	82/10/10	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -29,15 +27,15 @@ int	rkbdebug;
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/dk.h"
-#include "../h/cpu.h"
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
 #include "../h/uio.h"
 
-#include "../h/rkreg.h"
+#include "../vax/cpu.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/rkreg.h"
 
 struct	rk_softc {
 	int	sc_softas;

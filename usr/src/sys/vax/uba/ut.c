@@ -1,4 +1,4 @@
-/*	ut.c	4.18	82/09/12	*/
+/*	ut.c	4.19	82/10/10	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -19,15 +19,15 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"
-#include "../h/cpu.h"
 #include "../h/uio.h"
 
-#include "../h/utreg.h"
+#include "../vax/cpu.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/utreg.h"
 
 struct	buf	rutbuf[NUT];	/* bufs for raw i/o */
 struct	buf	cutbuf[NUT];	/* bufs for control operations */

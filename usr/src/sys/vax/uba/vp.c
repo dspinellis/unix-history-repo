@@ -1,4 +1,4 @@
-/*	vp.c	4.18	82/09/12	*/
+/*	vp.c	4.19	82/10/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -17,10 +17,11 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
 
 unsigned minvpph();
 

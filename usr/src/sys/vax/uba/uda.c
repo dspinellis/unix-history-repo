@@ -1,4 +1,4 @@
-/*	uda.c	4.9	82/09/12	*/
+/*	uda.c	4.10	82/10/10	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -22,12 +22,14 @@
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/dk.h"
-#include "../h/cpu.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
+
+#include "../vax/cpu.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/udareg.h"
 
 int udadebug;
 #define	printd	if(udadebug&1)printf
@@ -43,8 +45,7 @@ int udaerror = 0;	/* set to cause hex dump of error log packets */
 #define	NRSP	(1<<NRSPL2)
 #define	NCMD	(1<<NCMDL2)
 
-#include "../h/udareg.h"
-#include "../h/mscp.h"
+#include "../vax/mscp.h"
 
 struct uda_softc {
 	short	sc_state;	/* state of controller */

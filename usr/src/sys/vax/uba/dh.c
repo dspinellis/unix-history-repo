@@ -1,4 +1,4 @@
-/*	dh.c	4.50	82/09/12	*/
+/*	dh.c	4.51	82/10/10	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -16,8 +16,10 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+
 #include "../h/bk.h"
 #include "../h/clist.h"
 #include "../h/file.h"
