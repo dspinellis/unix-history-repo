@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,7 +20,7 @@ char	*sp = "";
 #define ack()	(void) write(1, sp, 1);
 
 char    tfname[40];		/* tmp copy of cf before linking */
-char    *dfname;		/* data files */
+char    dfname[40];		/* data files */
 int	minfree;		/* keep at least minfree blocks available */
 char	*ddev;			/* disk device (for checking free space) */
 int	dfd;			/* file system device descriptor */
@@ -174,7 +174,8 @@ readjob()
 				(void) write(1, "\2", 1);
 				continue;
 			}
-			(void) readfile(dfname = cp, size);
+			strcpy(dfname, cp);
+			(void) readfile(dfname, size);
 			continue;
 		}
 		frecverr("protocol screwup");
@@ -289,13 +290,14 @@ rcleanup()
 
 	if (tfname[0])
 		(void) unlink(tfname);
-	if (dfname)
+	if (dfname[0])
 		do {
 			do
 				(void) unlink(dfname);
 			while (dfname[2]-- != 'A');
 			dfname[2] = 'z';
 		} while (dfname[0]-- != 'd');
+	dfname[0] = '\0';
 }
 
 frecverr(msg, a1, a2)
