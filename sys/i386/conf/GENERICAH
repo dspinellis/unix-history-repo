@@ -1,7 +1,7 @@
 #
 # GENERICAH -- Generic machine with WD/AHx family disks
 #
-#	$Id: GENERICAH,v 1.32 1994/05/19 10:55:32 jkh Exp $
+#	$Id: GENERICAH,v 1.33 1994/05/24 08:09:46 jkh Exp $
 #
 
 machine		"i386"
@@ -24,7 +24,6 @@ options		"FAT_CURSOR"		#block cursor in syscons or pccons
 #options	GATEWAY			#Host is a Gateway (forwards packets)
 options		"SCSI_DELAY=15"		#Be pessimistic about Joe SCSI device
 options		"NCONS=4"		#4 virtual consoles
-options		"STAR_SAVER"		#syscons "stars" screen saver
 
 config		"386bsd"	root on wd0 swap on wd0 and wd1 and sd0 and sd1 dumps on wd0
 
