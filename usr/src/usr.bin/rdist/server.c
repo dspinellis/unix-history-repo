@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.11 (Berkeley) 83/12/09";
+static	char *sccsid = "@(#)server.c	4.12 (Berkeley) 83/12/19";
 #endif
 
 #include "defs.h"
@@ -27,8 +27,6 @@ server()
 {
 	char cmdbuf[BUFSIZ];
 	register char *cp;
-	register struct block *bp = NULL;
-	int opts;
 
 	oumask = umask(0);
 	(void) sprintf(buf, "V%d\n", VERSION);
@@ -224,7 +222,6 @@ sendf(rname, opts)
 	char *rname;
 	int opts;
 {
-	register char *cp;
 	register struct block *c;
 	struct stat stb;
 	int sizerr, f, u;
@@ -529,7 +526,7 @@ recvf(cmd, isdir)
 	int isdir;
 {
 	register char *cp;
-	int f, mode, opts, wrerr, olderrno, u;
+	int f, mode, opts, wrerr, olderrno;
 	off_t i, size;
 	time_t mtime;
 	struct stat stb;
@@ -620,14 +617,10 @@ recvf(cmd, isdir)
 	new[0] = '\0';
 	if (catname)
 		(void) sprintf(tp, "/%s", cp);
-	if (stat(target, &stb) == 0) {
-		if ((stb.st_mode & S_IFMT) != S_IFREG) {
-			error("%s: not a regular file\n", target);
-			return;
-		}
-		u = 2;
-	} else
-		u = 1;
+	if (stat(target, &stb) == 0 && (stb.st_mode & S_IFMT) != S_IFREG) {
+		error("%s: not a regular file\n", target);
+		return;
+	}
 	if (chkparent(target) < 0)
 		goto bad;
 	cp = rindex(target, '/');
@@ -701,7 +694,8 @@ recvf(cmd, isdir)
 		if (opts & VERIFY) {
 			(void) unlink(new);
 			buf[0] = '\0';
-			sprintf(buf + 1, "need to update %s:%s\n", host, target);
+			(void) sprintf(buf + 1, "need to update %s:%s\n",
+				host, target);
 			(void) write(rem, buf, strlen(buf + 1) + 1);
 			return;
 		}
@@ -734,7 +728,7 @@ bad:
 	}
 	if (opts & COMPARE) {
 		buf[0] = '\0';
-		sprintf(buf + 1, "updated %s:%s\n", host, target);
+		(void) sprintf(buf + 1, "updated %s:%s\n", host, target);
 		(void) write(rem, buf, strlen(buf + 1) + 1);
 	} else
 		ack();
