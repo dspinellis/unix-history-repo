@@ -371,12 +371,25 @@ lseek()
 	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (uap->sbase == L_INCR)
-		uap->off += fp->f_offset;
-	else if (uap->sbase == L_XTND)
-		uap->off += ((struct inode *)fp->f_data)->i_size;
-	fp->f_offset = uap->off;
-	u.u_r.r_off = uap->off;
+	switch (uap->sbase) {
+
+	case L_INCR:
+		fp->f_offset += uap->off;
+		break;
+
+	case L_XTND:
+		fp->f_offset = uap->off + ((struct inode *)fp->f_data)->i_size;
+		break;
+
+	case L_SET:
+		fp->f_offset = uap->off;
+		break;
+
+	default:
+		u.u_error = EINVAL;
+		return;
+	}
+	u.u_r.r_off = fp->f_offset;
 }
 
 /*
