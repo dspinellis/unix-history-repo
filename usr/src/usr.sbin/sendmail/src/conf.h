@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.50 (Berkeley) %G%
+ *	@(#)conf.h	8.51 (Berkeley) %G%
  */
 
 /*
@@ -432,11 +432,16 @@ extern int		errno;
 **
 **	It's on #ifdef DELL_SVR4 because Solaris also gets __svr4__
 **	defined, and the definitions conflict.
+**
+**	Peter Wemm <peter@perth.DIALix.oz.au> claims that the setreuid
+**	trick works on DELL 2.2 (SVR4.0/386 version 4.0) and ESIX 4.0.3A
+**	(SVR4.0/386 version 3.0).
 */
 
 #ifdef DELL_SVR4
 # define SYSTEM5	1
-/* # define setreuid(r, e)	seteuid(e) */
+# define HASSETREUID	1	/* has seteuid(2) call & working saved uids */
+# define setreuid(r, e)	seteuid(e)
 /* # include <sys/time.h> */
 # define _PATH_UNIX	"/unix"
 # ifndef _PATH_SENDMAILCF
