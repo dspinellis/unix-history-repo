@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.29 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.29 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -24,10 +24,6 @@ static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <sys/wait.h>
 # include <sys/time.h>
-
-#ifdef NETISO
-# include <netiso/iso.h>
-#endif
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
