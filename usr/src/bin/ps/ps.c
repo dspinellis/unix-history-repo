@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.21 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.22 (Berkeley) %G%";
 #endif
 
 /*
@@ -103,6 +103,7 @@ int	aflg, cflg, eflg, gflg, kflg, lflg, sflg,
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
+char	*index(), *ttyname(), mytty[16];
 long	lseek();
 double	pcpu(), pmem();
 int	pscomp();
@@ -178,6 +179,11 @@ main(argc, argv)
 		case 't':
 			if (*ap)
 				tptr = ap;
+			else if ((tptr = ttyname(2)) != 0) {
+				strcpy(mytty, tptr);
+				if ((tptr = index(mytty,'y')) != 0)
+					tptr++;
+			}
 			aflg++;
 			gflg++;
 			if (tptr && *tptr == '?')
