@@ -1,11 +1,12 @@
-/* main.c	(Berkeley)	1.5	83/10/18	*/
+/* main.c	(Berkeley)	1.6	83/12/19	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 #include	"dev.h"
 
-
+#idndef DEVDIR
 #define DEVDIR	"/usr/lib/font"		/* place to look up device files */
+#endif
 
 char	*devdir = DEVDIR;
 char	*dev = "va";			/* default typesetter is varian */
