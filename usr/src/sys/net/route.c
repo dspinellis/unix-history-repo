@@ -1,4 +1,4 @@
-/*	route.c	4.7	82/05/04	*/
+/*	route.c	4.8	82/05/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,6 +38,9 @@ COUNT(RTALLOC);
 		rt = mtod(m, struct rtentry *);
 		if (rt->rt_hash != hash)
 			continue;
+		if ((rt->rt_flags & RTF_UP) == 0 ||
+		    (rt->rt_ifp->if_flags & IFF_UP) == 0)
+			continue;
 		if (bcmp((caddr_t)&rt->rt_dst, (caddr_t)dst, sizeof (*dst)))
 			continue;
 		if (rtmin == 0 || rt->rt_use < rtmin->rt_use)
@@ -51,6 +54,9 @@ COUNT(RTALLOC);
 	for (m = rtnet[hash % RTHASHSIZ]; m; m = m->m_next) {
 		rt = mtod(m, struct rtentry *);
 		if (rt->rt_hash != hash)
+			continue;
+		if ((rt->rt_flags & RTF_UP) == 0 ||
+		    (rt->rt_ifp->if_flags & IFF_UP) == 0)
 			continue;
 		if (rt->rt_dst.sa_family != af || !(*match)(&rt->rt_dst, dst))
 			continue;
