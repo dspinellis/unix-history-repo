@@ -1,4 +1,4 @@
-/*	vpsf.c	4.1	83/03/07	*/
+/*	vpsf.c	4.2	83/03/17	*/
 /*
  * Versatec printer filter
  * 	make wide listings by placing pages side by side
