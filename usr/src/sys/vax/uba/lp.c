@@ -1,4 +1,4 @@
-/*	lp.c	4.6	81/02/16	*/
+/*	lp.c	4.7	81/02/27	*/
 
 #include "lp.h"
 #if NLP11 > 0
@@ -74,7 +74,7 @@ lpopen(dev, flag)
 	spl4();
 	if ((lp11.state&TOUT) == 0) {
 		lp11.state |= TOUT;
-		timeout(lptout, 0, 10*HZ);
+		timeout(lptout, 0, 10*hz);
 	}
 	spl0();
 	lpcanon('\f');
@@ -245,7 +245,7 @@ lptout()
 
 	if ((lp11.state&MOD) != 0) {
 		lp11.state &= ~MOD;		/* something happened */
-		timeout(lptout, 0, 2*HZ);	/* so don't sweat */
+		timeout(lptout, 0, 2*hz);	/* so don't sweat */
 		return;
 	}
 	sr = &LPADDR->lpsr;
@@ -256,7 +256,7 @@ lptout()
 	}
 	if (lp11.outq.c_cc && (*sr&DONE) && (*sr&ERROR)==0)
 		lpintr();			/* ready to go */
-	timeout(lptout, 0, 10*HZ);
+	timeout(lptout, 0, 10*hz);
 }
 
 /*ARGSUSED*/

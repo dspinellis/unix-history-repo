@@ -1,4 +1,4 @@
-/*	va.c	4.5	%G%	*/
+/*	va.c	4.6	%G%	*/
 
 #include "va.h"
 #if NVA > 0
@@ -237,7 +237,7 @@ vacmd(vcmd)
 vatimo()
 {
 	if (va11.va_open)
-		timeout(vatimo, (caddr_t)0, HZ/10);
+		timeout(vatimo, (caddr_t)0, hz/10);
 	vaintr(0);
 }
 

@@ -1,4 +1,4 @@
-/*	rk.c	4.15	%G%	*/
+/*	rk.c	4.16	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -122,11 +122,11 @@ rkattach(ui)
 {
 
 	if (rkwstart == 0) {
-		timeout(rkwatch, (caddr_t)0, HZ);
+		timeout(rkwatch, (caddr_t)0, hz);
 		rkwstart++;
 	}
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = 1.0 / (HZ * NRKSECT * 256);
+		dk_mspw[ui->ui_dk] = 1.0 / (60 * NRKSECT * 256);
 	rkip[ui->ui_ctlr][ui->ui_slave] = ui;
 	rk_softc[ui->ui_ctlr].sc_ndrive++;
 	rkcyl[ui->ui_unit] = -1;
@@ -543,7 +543,7 @@ rkwatch()
 	register rk11, unit;
 	register struct rk_softc *sc;
 
-	timeout(rkwatch, (caddr_t)0, HZ);
+	timeout(rkwatch, (caddr_t)0, hz);
 	for (rk11 = 0; rk11 < NHK; rk11++) {
 		um = rkminfo[rk11];
 		if (um == 0 || um->um_alive == 0)

@@ -1,4 +1,4 @@
-/*	up.c	4.25	81/02/26	*/
+/*	up.c	4.26	81/02/27	*/
 
 #include "up.h"
 #if NSC > 0
@@ -141,7 +141,7 @@ upattach(ui)
 #endif
 
 	if (upwstart == 0) {
-		timeout(upwatch, (caddr_t)0, HZ);
+		timeout(upwatch, (caddr_t)0, hz);
 		upwstart++;
 	}
 	if (ui->ui_dk >= 0)
@@ -772,7 +772,7 @@ upwatch()
 	register sc21, unit;
 	register struct up_softc *sc;
 
-	timeout(upwatch, (caddr_t)0, HZ);
+	timeout(upwatch, (caddr_t)0, hz);
 	for (sc21 = 0; sc21 < NSC; sc21++) {
 		um = upminfo[sc21];
 		if (um == 0 || um->um_alive == 0)

@@ -1,4 +1,4 @@
-/*	hp.c	4.15	81/02/25	*/
+/*	hp.c	4.16	81/02/27	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -112,7 +112,7 @@ hpdkinit(mi)
 	register struct hpst *st = &hpst[mi->mi_type];
 
 	if (mi->mi_dk >= 0)
-		dk_mspw[mi->mi_dk] = 1.0 / HZ / (st->nsect * 256);
+		dk_mspw[mi->mi_dk] = 1.0 / 60 / (st->nsect * 256);
 }
 
 hpstrategy(bp)

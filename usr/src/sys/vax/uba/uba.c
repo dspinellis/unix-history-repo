@@ -1,4 +1,4 @@
-/*	uba.c	4.16	%G%	*/
+/*	uba.c	4.17	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -349,7 +349,7 @@ unhang()
 		if (up->uba_sr == 0)
 			return;
 		uh->uh_hangcnt++;
-		if (uh->uh_hangcnt > 5*HZ) {
+		if (uh->uh_hangcnt > 5*hz) {
 			uh->uh_hangcnt = 0;
 			printf("HANG ");
 			ubareset(uban);
