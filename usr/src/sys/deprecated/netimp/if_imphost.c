@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.6	82/03/09	*/
+/*	if_imphost.c	4.7	82/03/12	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -101,8 +101,6 @@ foundhost:
 hostfree(hp)                               
 	register struct host *hp;
 {
-	register struct mbuf *m;
-
 COUNT(HOSTFREE);
 	if (--hp->h_refcnt)
 		return;
@@ -131,7 +129,7 @@ COUNT(HOSTRESET);
 		while (hm->hm_count != 0 && hp < lp) {
 			if (hp->h_addr.s_net == net) {
 				hp->h_refcnt = 0;
-				hostrelease(mtod(m, struct hmbuf *), hp);
+				hostrelease(hp);
 			}
 			hp++;
 		}
