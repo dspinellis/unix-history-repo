@@ -86,7 +86,7 @@ main(argc, argv)
 	asme = asthem = fastlogin = 0;
 
 	user = "root";
-	while ( optind <= argc )
+	while ( optind < argc )
 		if ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 			switch((char)ch) {
 #ifdef KERBEROS
