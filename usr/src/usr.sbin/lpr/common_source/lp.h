@@ -1,4 +1,4 @@
-/*	lp.h	4.7	84/07/24	*/
+/*	lp.h	4.8	85/02/07	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -26,6 +26,7 @@ extern int	MX;		/* maximum number of blocks to copy */
 extern int	MC;		/* maximum number of copies allowed */
 extern char	*LP;		/* line printer device name */
 extern char	*RM;		/* remote machine name */
+extern char	*RG;		/* restricted group */
 extern char	*RP;		/* remote printer name */
 extern char	*LO;		/* lock file name */
 extern char	*ST;		/* status file name */
