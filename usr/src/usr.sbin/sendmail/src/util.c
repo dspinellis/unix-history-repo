@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -83,8 +83,7 @@ xalloc(sz)
 	p = malloc((unsigned) sz);
 	if (p == NULL)
 	{
-		syserr("Out of memory!!");
-		abort();
+		syserr("!Out of memory!!");
 		/* exit(EX_UNAVAILABLE); */
 	}
 	return (p);

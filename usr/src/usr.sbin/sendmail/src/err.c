@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -129,6 +129,8 @@ syserr(fmt, va_alist)
 #ifdef XLA
 		xla_all_end();
 #endif
+		if (tTd(0, 1))
+			abort();
 		exit(EX_OSERR);
 	}
 	errno = 0;
