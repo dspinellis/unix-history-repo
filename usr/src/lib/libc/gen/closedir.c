@@ -16,23 +16,24 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)closedir.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)closedir.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <dirent.h>
 
 /*
  * close a directory.
  */
-void
 closedir(dirp)
 	register DIR *dirp;
 {
+	int fd;
 
-	close(dirp->dd_fd);
+	fd = dirp->dd_fd;
 	dirp->dd_fd = -1;
 	dirp->dd_loc = 0;
-	free(dirp->dd_buf);
-	free((caddr_t)dirp);
+	(void)free((void *)dirp->dd_buf);
+	(void)free((void *)dirp);
+	return(close(fd));
 }
