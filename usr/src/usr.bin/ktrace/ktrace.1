@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ktrace.1	5.1 (Berkeley) %G%
+.\"     @(#)ktrace.1	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KTRACE 1
@@ -51,7 +51,10 @@ Append to the trace file instead of truncating it.
 Disable tracing on all user owned processes, and, if executed by root, all
 processes in the system.
 .Tp Fl c
-Clear the trace points associated with the specified file or process(es).
+Clear the trace points associated with the specified file or processes.
+.Tp Fl d
+Descendants; perform the operation for all current children of the
+designated processes.
 .Tc Fl f
 .Ws
 .Ar file
@@ -67,7 +70,7 @@ Enable (disable) tracing on all processes in the process group (only one
 .Fl g
 flag is permitted).
 .Tp Fl i
-Inherit; pass the trace flag to all future children of the designated
+Inherit; pass the trace flags to all future children of the designated
 processes.
 .Tc Fl p
 .Ws
