@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.11 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -150,6 +150,8 @@ struct tp_pcb {
 	u_int				tp_seqbit;		/* bit for seq number wraparound */
 	u_int				tp_seqhalf;		/* half the seq space */
 
+	struct mbuf			*tp_ucddata;	/* user connect/disconnect data */
+
 	/* credit & sequencing info for SENDING */
 	u_short 			tp_fcredit;		/* current remote credit in # packets */
 
@@ -166,22 +168,23 @@ struct tp_pcb {
 	SeqNum              tp_last_retrans;
 	SeqNum              tp_retrans_hiwat;
 	SeqNum				tp_snduna;		/* seq # of lowest unacked DT */
-	struct tp_rtc		*tp_snduna_rtc;	/* lowest unacked stuff sent so far */
 	SeqNum				tp_sndhiwat;	/* highest seq # sent so far */
-
-	struct tp_rtc		*tp_sndhiwat_rtc;	/* last stuff sent so far */
+	SeqNum				tp_sndnum;		/* next seq # to be assigned */
+	struct mbuf			*tp_sndhiwat_m; /* packet corres. to sndhiwat*/
 	int					tp_Nwindow;		/* for perf. measurement */
-	struct mbuf			*tp_ucddata;	/* user connect/disconnect data */
 
 	/* credit & sequencing info for RECEIVING */
 	SeqNum	 			tp_sent_lcdt;	/* cdt according to last ack sent */
 	SeqNum	 			tp_sent_uwe;	/* uwe according to last ack sent */
+	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
 	SeqNum	 			tp_sent_rcvnxt;	/* rcvnxt according to last ack sent 
 										 * needed for perf measurements only
 										 */
 	u_short				tp_lcredit;		/* current local credit in # packets */
-	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
-	struct tp_rtc		*tp_rcvnxt_rtc;	/* unacked stuff recvd out of order */
+	u_short				tp_maxlcredit;	/* needed for reassembly queue */
+	u_long				tp_sbmax;		/* needed for reassembly queue */
+	struct mbuf			**tp_rsyq;		/* unacked stuff recvd out of order */
+	int					tp_rsycnt;		/* number of packets */
 
 	/* receiver congestion state stuff ...  */
 	u_int               tp_win_recv;
@@ -248,7 +251,8 @@ struct tp_pcb {
 #define PEER_IS_LOCAL(t)	(((t)->tp_flags & TPF_PEER_ON_SAME_NET) != 0)
 #define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
 
-		tp_unused:16;
+		tp_oktonagle:1,			/* Last unsent packet that may be append to */
+		tp_unused:15;
 
 
 #ifdef TP_PERF_MEAS

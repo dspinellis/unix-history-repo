@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.10 (Berkeley) %G%
+ *	@(#)tp.trans	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.10 (Berkeley) %G% */
+/* @(#)tp.trans	7.11 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -1011,8 +1011,7 @@ SAME 			<==		TP_OPEN									TM_data_retrans
 	( $$.e_retrans > 0 )
 	{	
 		register 	SeqNum			low, lowsave = 0;
-		register	struct tp_rtc 	*r = $P.tp_snduna_rtc;
-		register	struct mbuf 	*m;
+		register	struct mbuf 	*m, *n = $P.tp_sock->so_snd.sb_mb;
 		register	SeqNum			high = $$.e_high;
 
 		low = $P.tp_snduna;
@@ -1036,21 +1035,16 @@ SAME 			<==		TP_OPEN									TM_data_retrans
 
 		}
 
-		while( SEQ_LEQ($P, low, high) ){
-			if ( r == (struct tp_rtc *)0 ){
-				IFDEBUG(D_RTC)
-					printf( "tp: retrans rtc list is GONE!\n");
-				ENDDEBUG
-				break;
-			}
-			if ( r->tprt_seq == low ){
-				if(( m = m_copy(r->tprt_data, 0, r->tprt_octets ))== MNULL)
+		while (SEQ_LEQ($P, low, high)) {
+			if (n) {
+				if ((m = m_copy(n, 0, M_COPYALL))== MNULL)
 					break;
-				(void) tp_emit(DT_TPDU_type, $P, low, r->tprt_eot, m);
+				(void) tp_emit(DT_TPDU_type, $P,
+					low, (m->m_flags & M_EOR) != 0, m);
 				IncStat(ts_retrans_dt);
 				SEQ_INC($P, low );
 			}
-			r = r->tprt_next;
+			n = n->m_nextpkt;
 		}
 /* CE_BIT
 		if ( SEQ_LEQ($P, lowsave, high) ){
@@ -1173,6 +1167,8 @@ SAME 			<==		TP_OPEN 									AK_TPDU
 	 * OR no news but the credit should be processed.
 	 */
 	{
+		struct sockbuf *sb = &$P.tp_sock->so_snd;
+
 		IFDEBUG(D_ACKRECV)
 			printf("GOOD ACK seq 0x%x cdt 0x%x\n", $$.e_seq, $$.e_cdt);
 		ENDDEBUG
@@ -1180,43 +1176,36 @@ SAME 			<==		TP_OPEN 									AK_TPDU
 			tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
 			tp_euntimeout_lss($P.tp_refp, TM_data_retrans, $$.e_seq);
 		}
-		sbwakeup( &$P.tp_sock->so_snd );
-
+		sbwakeup(sb);
 		if ($P.tp_sndhiwat <= $P.tp_retrans_hiwat &&
 			$P.tp_snduna <= $P.tp_retrans_hiwat) {
 
-			register    struct mbuf     *m;
-			/* extern      struct mbuf     *m_copy(); */
-			register    struct tp_rtc   *r;
-			SeqNum      high, retrans, low_save;
+			register struct mbuf     *m, *n = sb->sb_mb;
+			SeqNum		high, retrans, lowsave;
 
 			high = SEQ_MIN($P, SEQ_ADD($P, $P.tp_snduna,
 					MIN($P.tp_cong_win, $P.tp_fcredit)) - 1,
 					$P.tp_sndhiwat);
-			low_save = retrans = SEQ_MAX($P, SEQ_ADD($P, $P.tp_last_retrans, 1),
+			retrans = SEQ_MAX($P, SEQ_ADD($P, $P.tp_last_retrans, 1),
 					$P.tp_snduna);
+			for (lowsave = $P.tp_snduna;
+					SEQ_LT($P, lowsave, retrans); SEQ_INC($P, lowsave))
+				n = n->m_nextpkt;
 			for (; SEQ_LEQ($P, retrans, high); SEQ_INC($P, retrans)) {
-
-				for (r = $P.tp_snduna_rtc; r; r = r->tprt_next){
-					if ( r->tprt_seq == retrans ){
-						if(( m = m_copy(r->tprt_data, 0, r->tprt_octets ))
-								== MNULL)
-							break;
-						(void) tp_emit(DT_TPDU_type, $P, retrans,
-							r->tprt_eot, m);
-						$P.tp_last_retrans = retrans;
-						IncStat(ts_retrans_dt);
-						break;
-					}
-				}
-				if ( r == (struct tp_rtc *)0 ){
+				if (n == 0) {
 					IFDEBUG(D_RTC)
-						printf( "tp: retrans rtc list is GONE!\n");
+						printf("tp: retrans list is GONE!\n");
 					ENDDEBUG
 					break;
+				} else if (m = m_copy(n, 0, M_COPYALL)) {
+					(void) tp_emit(DT_TPDU_type, $P, retrans,
+						(m->m_flags & M_EOR) != 0, m);
+					$P.tp_last_retrans = retrans;
+					IncStat(ts_retrans_dt);
 				}
+				n = n->m_nextpkt;
 			}
-			tp_etimeout($P.tp_refp, TM_data_retrans, (caddr_t)low_save,
+			tp_etimeout($P.tp_refp, TM_data_retrans, (caddr_t)lowsave,
 					(caddr_t)high, $P.tp_retrans, (int)$P.tp_dt_ticks);
 			if (SEQ_DEC($P, retrans) == $P.tp_retrans_hiwat)
 				tp_send($P);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.14 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -737,7 +737,7 @@ void
 tp_detach(tpcb)
 	register struct tp_pcb 	*tpcb;
 {
-	void					tp_freeref();
+	void					tp_freeref(), tp_rsyflush();
 	register struct socket	 *so = tpcb->tp_sock;
 
 	IFDEBUG(D_CONN)
@@ -748,27 +748,6 @@ tp_detach(tpcb)
 		tptraceTPCB(TPPTmisc, "tp_detach tpcb so lsufx", 
 			tpcb, so, *(u_short *)(tpcb->tp_lsuffix), 0);
 	ENDTRACE
-
-	IFDEBUG(D_CONN)
-		printf("tp_detach(freeing RTC list snduna 0x%x rcvnxt 0x%x)\n",
-		tpcb->tp_snduna_rtc,
-		tpcb->tp_rcvnxt_rtc);
-	ENDDEBUG
-
-#define FREE_RTC_LIST(XXX)\
-	{ register struct tp_rtc *xxr = XXX, *xxs; while (xxr) {\
-		xxs = xxr->tprt_next;\
-		m_freem( xxr->tprt_data );\
-		m_free( dtom(xxr) ); xxr = xxs; }\
-		XXX = (struct tp_rtc *)0;\
-	}
-
-	FREE_RTC_LIST( tpcb->tp_snduna_rtc );
-	tpcb->tp_sndhiwat_rtc = (struct tp_rtc *)0;
-
-	FREE_RTC_LIST( tpcb->tp_rcvnxt_rtc );
-
-#undef FREE_RTC_LIST
 
 	IFDEBUG(D_CONN)
 		printf("so_snd at 0x%x so_rcv at 0x%x\n", &so->so_snd, &so->so_rcv);
@@ -785,13 +764,19 @@ tp_detach(tpcb)
 		m_freem(tpcb->tp_ucddata);
 
 	IFDEBUG(D_CONN)
+		printf("reassembly info cnt %d rsyq 0x%x\n",
+		    tpcb->tp_rsycnt, tpcb->tp_rsyq);
+	ENDDEBUG
+	if (tpcb->tp_rsyq)
+		tp_rsyflush(tpcb);
+
+	IFDEBUG(D_CONN)
 		printf("calling (...nlproto->...)(0x%x, so 0x%x)\n", 
 			tpcb->tp_npcb, so);
 		printf("so 0x%x so_head 0x%x,  qlen %d q0len %d qlimit %d\n", 
 		so,  so->so_head,
 		so->so_q0len, so->so_qlen, so->so_qlimit);
 	ENDDEBUG
-
 
 	(tpcb->tp_nlproto->nlp_pcbdetach)(tpcb->tp_npcb);
 				/* does an so->so_pcb = 0; sofree(so) */
