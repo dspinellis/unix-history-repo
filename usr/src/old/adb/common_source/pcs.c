@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pcs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pcs.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -216,7 +216,8 @@ bperr(b, how)
 }
 
 /*
- * ... return true iff stopped due to breakpoint
+ * Run subprocess for a while.
+ * Return true iff stopped due to breakpoint.
  */
 int
 runpcs(runmode, execsig)
@@ -242,6 +243,10 @@ runpcs(runmode, execsig)
 		(void) ptrace(runmode == CONTINUOUS ? PT_CONTINUE : PT_STEP,
 			pid, (int *)getpc(), execsig);
 		/* END XXX */
+
+		/* paranoia, SP_DATA usually sufficient, but this is easy */
+		cacheinval(SP_INSTR | SP_DATA);
+
 		bpwait();
 		checkerr();
 		execsig = 0;
@@ -315,6 +320,7 @@ nullsig()
 setup()
 {
 
+	cacheinval(SP_INSTR | SP_DATA);	/* paranoia */
 	(void) close(symfile.fd);
 	symfile.fd = -1;
 #ifndef VFORK
@@ -329,9 +335,10 @@ setup()
 		(void) signal(SIGQUIT, sigquit);
 		doexec();
 		exit(0);
-	} else if (pid == -1)
+	} else if (pid == -1) {
+		pid = 0;
 		error(NOFORK);
-	else {
+	} else {
 		bpwait();
 		readregs();
 		symfile.fd = open(symfile.name, wtflag);
