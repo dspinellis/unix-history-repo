@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.5 83/10/10";
+static	char *sccsid = "@(#)dr_1.c	1.6 83/10/14";
 #endif
 
 #include "driver.h"
@@ -465,4 +465,11 @@ next()
 			Write(W_WIND, SHIP(0), 0, winddir, windspeed, 0, 0);
 		}
 	}
+}
+
+/*VARARGS2*/
+Signal(fmt, ship, a, b, c)
+char *fmt;
+struct ship *ship;
+{
 }
