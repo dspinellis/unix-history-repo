@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.15 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.16 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -10,13 +10,13 @@ static char *sccsid = "@(#)rm.c	4.15 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/file.h>
 
-int	fflg;			/* -f force - supress error messages */
-int	iflg;			/* -i interrogate user on each file */
-int	rflg;			/* -r recurse */
+int	fflg;		/* -f force - supress error messages */
+int	iflg;		/* -i interrogate user on each file */
+int	rflg;		/* -r recurse */
 
-int	errcode;		/* true if errors occured */
+int	errcode;	/* true if errors occured */
 
-char	*strcpy();
+char	*strcpy(), *malloc(), *realloc();
 
 main(argc, argv)
 	char *argv[];
@@ -68,10 +68,9 @@ main(argc, argv)
 	exit(errcode != 0);
 }
 
-struct nambuf {
-	char	*name;			/* pointer to name */
-	struct	nambuf *next;		/* linked list of names */
-} path, *pathp;
+char	*path;		/* pointer to malloc'ed buffer for path */
+char	*pathp;		/* current pointer to end of path */
+int	pathsz;		/* size of path */
 
 /*
  * Return TRUE if sucessful. Recursive with -r (rflg)
@@ -83,22 +82,16 @@ rm(arg, level)
 	struct stat buf;		/* for finding out what a file is */
 	struct direct *dp;		/* for reading a directory */
 	DIR *dirp;			/* for reading a directory */
-	char name[MAXNAMLEN + 1];	/* buffer for file name */
 	char prevname[MAXNAMLEN + 1];	/* previous name for -r */
-	struct nambuf nambuf, *pp;
+	char *cp;
 
 	if (dotname(arg)) {
 		fprintf(stderr, "rm: cannot remove `.' or `..'\n");
 		return (0);
 	}
-	if (level == 0) {
-		path.name = arg;
-		path.next = NULL;
-		pathp = &path;
-	}
 	if (lstat(arg, &buf)) {
 		if (!fflg) {
-			error("nonexistent");
+			fprintf(stderr, "rm: %s nonexistent\n", arg);
 			errcode++;
 		}
 		return (0);		/* error */
@@ -106,48 +99,50 @@ rm(arg, level)
 	if ((buf.st_mode&S_IFMT) == S_IFDIR) {
 		if (!rflg) {
 			if (!fflg) {
-				error("directory");
+				fprintf(stderr, "rm: %s directory\n", arg);
 				errcode++;
 			}
 			return (0);
+		}
+		if (iflg && level != 0) {
+			printf("rm: remove directory %s? ", arg);
+			if (!yes())
+				return (0);	/* didn't remove everything */
 		}
 		if (access(arg, R_OK|W_OK|X_OK) != 0) {
 			if (rmdir(arg) == 0)
 				return (1);	/* salvaged: removed empty dir */
 			if (!fflg) {
-				error("not changed");
+				fprintf(stderr, "rm: %s not changed\n", arg);
 				errcode++;
 			}
 			return (0);		/* error */
 		}
-		if (iflg && level != 0) {
-			if (!yes("remove directory"))
-				return (0);	/* didn't remove everything */
-		}
-		if (chdir(arg) < 0 || (dirp = opendir(".")) == NULL) {
+		if ((dirp = opendir(arg)) == NULL) {
 			if (!fflg) {
-				error("cannot read?");
+				fprintf(stderr, "rm: cannot read %s?\n", arg);
 				errcode++;
 			}
 			return (0);
 		}
-		nambuf.name = name;
-		nambuf.next = NULL;
-		pathp->next = &nambuf;
-		pp = pathp;
-		pathp = &nambuf;
+		if (level == 0)
+			append(arg);
 		prevname[0] = '\0';
 		while ((dp = readdir(dirp)) != NULL) {
 			if (dotname(dp->d_name)) {
 				strcpy(prevname, dp->d_name);
 				continue;
 			}
-			strcpy(name, dp->d_name);
+			append(dp->d_name);
 			closedir(dirp);
-			ok = rm(name, level + 1);
-			if ((dirp = opendir(".")) == NULL) {
+			ok = rm(path, level + 1);
+			for (cp = pathp; *--cp != '/' && cp > path; )
+				;
+			pathp = cp;
+			*cp++ = '\0';
+			if ((dirp = opendir(arg)) == NULL) {
 				if (!fflg) {
-					error("cannot read?");
+					fprintf(stderr, "rm: cannot read %s?\n", arg);
 					errcode++;
 				}
 				break;
@@ -161,28 +156,27 @@ rm(arg, level)
 			/* skip the one we just failed to delete */
 			if (!ok) {
 				dp = readdir(dirp);
-				if (dp != NULL && strcmp(name, dp->d_name) != 0)
-					error("internal synchronization error");
-				strcpy(prevname, name);
+				if (dp != NULL && strcmp(cp, dp->d_name)) {
+					fprintf(stderr,
+			"rm: internal synchronization error: %s, %s, %s\n",
+						arg, cp, dp->d_name);
+				}
+				strcpy(prevname, dp->d_name);
 			}
 		}
 		closedir(dirp);
-		pathp = pp;
-		pathp->next = NULL;
-		if (chdir("..") < 0) {
-			if (!fflg) {
-				error("cannot cd to '..'?");
-				errcode++;
-			}
-			return (0);
+		if (level == 0) {
+			pathp = path;
+			*pathp = '\0';
 		}
 		if (iflg) {
-			if (!yes("remove"))
+			printf("rm: remove %s? ", arg);
+			if (!yes())
 				return (0);
 		}
 		if (rmdir(arg) < 0) {
 			if (!fflg || iflg) {
-				error("not removed");
+				fprintf(stderr, "rm: %s not removed\n", arg);
 				errcode++;
 			}
 			return (0);
@@ -191,19 +185,20 @@ rm(arg, level)
 	}
 
 	if (iflg) {
-		if (!yes("remove"))
+		printf("rm: remove %s? ", arg);
+		if (!yes())
 			return (0);
 	} else if (!fflg) {
 		if ((buf.st_mode&S_IFMT) != S_IFLNK && access(arg, W_OK) < 0) {
-			sprintf(name, "override protection %o for",
-				buf.st_mode&0777);
-			if (!yes(name))
+			printf("rm: override protection %o for %s? ",
+				buf.st_mode&0777, arg);
+			if (!yes())
 				return (0);
 		}
 	}
 	if (unlink(arg) < 0) {
 		if (!fflg || iflg) {
-			error("not removed");
+			fprintf(stderr, "rm: %s not removed\n", arg);
 			errcode++;
 		}
 		return (0);
@@ -231,16 +226,10 @@ dotname(s)
 /*
  * Get a yes/no answer from the user.
  */
-yes(msg)
-	char *msg;
+yes()
 {
-	register struct nambuf *pp;
 	int i, b;
 
-	printf("rm: %s %s", msg, path.name);
-	for (pp = &path; pp->next != NULL; pp = pp->next)
-		printf("/%s", pp->next->name);
-	printf("? ");
 	i = b = getchar();
 	while (b != '\n' && b != EOF)
 		b = getchar();
@@ -248,15 +237,30 @@ yes(msg)
 }
 
 /*
- * Print the current path and error message.
+ * Append 'name' to 'path'.
  */
-error(msg)
-	char *msg;
+append(name)
+	char *name;
 {
-	register struct nambuf *pp;
+	register int n;
 
-	fprintf(stderr, "rm: %s", path.name);
-	for (pp = &path; pp->next != NULL; pp = pp->next)
-		fprintf(stderr, "/%s", pp->next->name);
-	fprintf(stderr, ": %s\n", msg);
+	n = strlen(name);
+	if (path == NULL) {
+		pathsz = n + 2048;
+		if ((path = malloc(pathsz)) == NULL) {
+			fprintf(stderr, "rm: ran out of memory\n");
+			exit(1);
+		}
+		pathp = path;
+	} else if (pathp + n + 2 > path + pathsz) {
+		pathsz = n + 2048;
+		if ((path = realloc(path, pathsz)) == NULL) {
+			fprintf(stderr, "rm: ran out of memory\n");
+			exit(1);
+		}
+		pathp = path;
+	} else if (pathp != path && pathp[-1] != '/')
+		*pathp++ = '/';
+	strcpy(pathp, name);
+	pathp += n;
 }
