@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.12 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -12,6 +12,7 @@ static char *sccsid = "@(#)cron.c	4.11 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <pwd.h>
+#include <fcntl.h>
 
 #define	LISTS	(2*BUFSIZ)
 #define	MAXLIN	BUFSIZ
@@ -43,15 +44,29 @@ char	*list;
 char	*listend;
 unsigned listsize;
 
-main()
+FILE	*debug;
+#define dprintf if (debug) fprintf
+
+main(argc, argv)
+	int argc;
+	char **argv;
 {
 	register char *cp;
 	char *cmp();
 	time_t filetime = 0;
 	time_t lfiletime = 0;
+	char c;
+	extern char *optarg;
 
 	if (fork())
 		exit(0);
+	c = getopt(argc, argv, "d:");
+	if (c == 'd') {
+		debug = fopen(optarg, "w");
+		if (debug == NULL)
+			exit(1);
+		fcntl(fileno(debug), F_SETFL, FAPPEND);
+	}
 	chdir("/");
 	freopen("/", "r", stdout);
 	freopen("/", "r", stderr);
@@ -170,22 +185,29 @@ char *s;
 	register struct passwd *pwd;
 	char user[BUFSIZ];
 	char *c = user;
+	int pid;
 
-	if(fork()) {
+	if (fork()) {
 		return;
 	}
 
+	pid = getpid();
 	while(*s != ' ' && *s != '\t')
 		*c++ = *s++;
 	*c = '\0';
+	s++;
 	if ((pwd = getpwnam(user)) == NULL) {
+		dprintf(debug, "%d: cannot find %s\n", pid, user),
+			fflush(debug);
 		exit(1);
 	}
 	(void) setgid(pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid(pwd->pw_uid);
 	freopen("/", "r", stdin);
-	execl("/bin/sh", "sh", "-c", ++s, 0);
+	dprintf(debug, "%d: executing %s", pid, s), fflush (debug);
+	execl("/bin/sh", "sh", "-c", s, 0);
+	dprintf(debug, "%d: cannot execute sh\n", pid), fflush (debug);
 	exit(0);
 }
 
@@ -316,9 +338,12 @@ register c;
 reapchild()
 {
 	union wait status;
+	int pid;
 
-	while(wait3(&status, WNOHANG, 0) > 0)
-		;
+	while ((pid = wait3(&status, WNOHANG, 0)) > 0)
+		dprintf(debug, "%d: child exits with signal %d status %d\n",
+			pid, status.w_termsig, status.w_retcode),
+			fflush (debug);
 }
 
 untty()
