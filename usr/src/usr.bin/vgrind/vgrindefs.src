@@ -11,7 +11,9 @@ model|mod|m:\
 pascal|pasc|p:\
 	:pb=(^\d?procedure|function|program\d\p\d|\(|;|\:)|(=\d?record\d):\
 	:bb=\dcase|begin\d:be=\dend|forward\d|;:\
-	:cb={|\(*:ce=}|*\):sb=':se=':\
+	:cb={:ce=}:\
+	:ab=\(*:ae=*\):\
+	:sb=':se=':\
 	:kw=and array assert begin case const div do downto else end file for\
 	forward function goto if in label mod nil not of or packed procedure\
 	program record repeat set then to type until var while with oct hex\
