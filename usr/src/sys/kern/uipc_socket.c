@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.24 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -344,18 +344,16 @@ restart:
 		mp = &top;
 		space -= rlen;
 		while (space > 0) {
-			register struct iovec *iov = uio->uio_iov;
-
 			MGET(m, M_WAIT, MT_DATA);
-			if (iov->iov_len >= NBPG && space >= CLBYTES) {
+			if (uio->uio_resid >= CLBYTES / 2 && space >= CLBYTES) {
 				MCLGET(m);
 				if (m->m_len != CLBYTES)
 					goto nopages;
-				len = MIN(CLBYTES, iov->iov_len);
+				len = MIN(CLBYTES, uio->uio_resid);
 				space -= CLBYTES;
 			} else {
 nopages:
-				len = MIN(MIN(MLEN, iov->iov_len), space);
+				len = MIN(MIN(MLEN, uio->uio_resid), space);
 				space -= len;
 			}
 			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
@@ -366,12 +364,6 @@ nopages:
 			mp = &m->m_next;
 			if (uio->uio_resid <= 0)
 				break;
-			while (uio->uio_iov->iov_len == 0) {
-				uio->uio_iov++;
-				uio->uio_iovcnt--;
-				if (uio->uio_iovcnt <= 0)
-					panic("sosend");
-			}
 		}
 		if (dontroute)
 			so->so_options |= SO_DONTROUTE;
@@ -418,7 +410,7 @@ soreceive(so, aname, uio, flags, rightsp)
 	int flags;
 	struct mbuf **rightsp;
 {
-	register struct mbuf *m, *n;
+	register struct mbuf *m;
 	register int len, error = 0, s, tomark;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
@@ -494,16 +486,18 @@ restart:
 				*aname = m;
 				m = m->m_next;
 				(*aname)->m_next = 0;
+				so->so_rcv.sb_mb = m;
 			} else {
-				nextrecord = m->m_act;
-				MFREE(m, n);
-				m = n;
+				MFREE(m, so->so_rcv.sb_mb);
+				m = so->so_rcv.sb_mb;
 			}
+			if (m)
+				m->m_act = nextrecord;
 		}
 	}
 	if (m && m->m_type == MT_RIGHTS) {
 		if ((pr->pr_flags & PR_RIGHTS) == 0)
-			panic("receive 2a");
+			panic("receive 2");
 		if (flags & MSG_PEEK) {
 			if (rightsp)
 				*rightsp = m_copy(m, 0, m->m_len);
@@ -512,13 +506,15 @@ restart:
 			sbfree(&so->so_rcv, m);
 			if (rightsp) {
 				*rightsp = m;
-				n = m->m_next;
+				so->so_rcv.sb_mb = m->m_next;
 				m->m_next = 0;
-				m = n;
+				m = so->so_rcv.sb_mb;
 			} else {
-				MFREE(m, n);
-				m = n;
+				MFREE(m, so->so_rcv.sb_mb);
+				m = so->so_rcv.sb_mb;
 			}
+			if (m)
+				m->m_act = nextrecord;
 		}
 	}
 	moff = 0;
@@ -532,10 +528,6 @@ restart:
 			len = tomark;
 		if (len > m->m_len - moff)
 			len = m->m_len - moff;
-		if ((flags & MSG_PEEK) == 0) {
-			so->so_rcv.sb_mb = m;
-			m->m_act = nextrecord;
-		}
 		splx(s);
 		error =
 		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
@@ -545,10 +537,12 @@ restart:
 				m = m->m_next;
 				moff = 0;
 			} else {
-				sbfree(&so->so_rcv, m);
 				nextrecord = m->m_act;
-				MFREE(m, n);
-				so->so_rcv.sb_mb = m = n;
+				sbfree(&so->so_rcv, m);
+				MFREE(m, so->so_rcv.sb_mb);
+				m = so->so_rcv.sb_mb;
+				if (m)
+					m->m_act = nextrecord;
 			}
 		} else {
 			if (flags & MSG_PEEK)
@@ -575,11 +569,8 @@ restart:
 	if ((flags & MSG_PEEK) == 0) {
 		if (m == 0)
 			so->so_rcv.sb_mb = nextrecord;
-		else {
-			m->m_act = nextrecord;
-			if (pr->pr_flags & PR_ATOMIC)
-				(void) sbdroprecord(&so->so_rcv);
-		}
+		else if (pr->pr_flags & PR_ATOMIC)
+			(void) sbdroprecord(&so->so_rcv);
 		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 			    (struct mbuf *)0, (struct mbuf *)0);
