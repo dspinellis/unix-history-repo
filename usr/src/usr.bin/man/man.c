@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -122,11 +122,9 @@ main(argc, argv)
 		if (p_augment)
 			res = manual(p_augment, *argv);
 		res = manual(p_path, *argv);
-		if (res || f_where)
-			continue;
-		(void)fprintf(stderr,
-		    "man: no entry for %s in the manual.\n", *argv);
-		exit(1);
+		if (!res && !f_where)
+			(void)fprintf(stderr,
+			    "man: no entry for %s in the manual.\n", *argv);
 	}
 
 	/* use system(3) in case someone's pager is "pager arg1 arg2" */
