@@ -1,4 +1,4 @@
-/*	defs.h	4.12	84/04/06	*/
+/*	defs.h	4.13	84/05/03	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -32,8 +32,9 @@
 #define INSTALL	10
 #define NOTIFY	11
 #define EXCEPT	12
-#define SPECIAL	13
-#define OPTION	14
+#define PATTERN	13
+#define SPECIAL	14
+#define OPTION	15
 
 	/* lexical definitions */
 #define	QUOTE 	0200		/* used internally for quoted characters */
@@ -101,7 +102,6 @@ extern char tmpfile[];		/* file name for logging changes */
 extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
-extern struct namelist *except;	/* list of files to exclude */
 extern char buf[];		/* general purpose buffer */
 extern int errno;		/* system error number */
 extern char *sys_errlist[];

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.16 (Berkeley) 84/03/14";
+static	char *sccsid = "@(#)server.c	4.17 (Berkeley) 84/05/03";
 #endif
 
 #include "defs.h"
@@ -235,12 +235,12 @@ sendf(rname, opts)
 	struct stat stb;
 	int sizerr, f, u;
 	off_t i;
-	extern struct subcmd *special;
+	extern struct subcmd *subcmds;
 
 	if (debug)
 		printf("sendf(%s, %x)\n", rname, opts);
 
-	if (inlist(except, target))
+	if (except(target))
 		return;
 	if (access(target, 4) < 0 || lstat(target, &stb) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
@@ -328,7 +328,7 @@ sendf(rname, opts)
 	if (response() == 0 && (opts & COMPARE))
 		return;
 dospecial:
-	for (sc = special; sc != NULL; sc = sc->sc_next) {
+	for (sc = subcmds; sc != NULL; sc = sc->sc_next) {
 		if (sc->sc_type != SPECIAL)
 			continue;
 		if (!inlist(sc->sc_args, target))
@@ -897,7 +897,7 @@ rmchk(opts)
 			(void) sprintf(tp, "/%s", s);
 			if (debug)
 				printf("check %s\n", target);
-			if (inlist(except, target))
+			if (except(target))
 				(void) write(rem, "N\n", 2);
 			else if (stat(target, &stb) < 0)
 				(void) write(rem, "Y\n", 2);

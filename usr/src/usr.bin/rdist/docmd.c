@@ -1,12 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.19 (Berkeley) 84/04/06";
+static	char *sccsid = "@(#)docmd.c	4.20 (Berkeley) 84/05/03";
 #endif
 
 #include "defs.h"
 #include <setjmp.h>
 
 FILE	*lfp;			/* log file for recording files updated */
-struct	subcmd *special;	/* list of special commands */
+struct	subcmd *subcmds;	/* list of sub-commands for current cmd */
 jmp_buf	env;
 
 int	cleanup();
@@ -33,7 +33,7 @@ docmds(argc, argv)
 		if (argc) {
 			for (cpp = argv; *cpp; cpp++) {
 				if (c->c_label != NULL &&
-				    strcmp(c->c_label, (*cpp)+1) == 0) {
+				    strcmp(c->c_label, *cpp) == 0) {
 					cpp = NULL;
 					goto found;
 				}
@@ -80,12 +80,9 @@ doarrow(filev, files, rhost, cmds)
 		error("no files to be updated\n");
 		return;
 	}
-	if (!mkexceptlist(cmds))
-		return;
-	special = cmds;
 
+	subcmds = cmds;
 	ddir = files->n_next != NULL;	/* destination is a directory */
-
 	if (nflag)
 		printf("updating host %s\n", rhost);
 	else {
@@ -265,9 +262,6 @@ dodcolon(filev, files, stamp, cmds)
 		error("no files to be updated\n");
 		return;
 	}
-	if (!mkexceptlist(cmds))
-		return;
-
 	if (stat(stamp, &stb) < 0) {
 		error("%s: %s\n", stamp, sys_errlist[errno]);
 		return;
@@ -275,6 +269,7 @@ dodcolon(filev, files, stamp, cmds)
 	if (debug)
 		printf("%s: %d\n", stamp, stb.st_mtime);
 
+	subcmds = cmds;
 	lastmod = stb.st_mtime;
 	if (nflag || (options & VERIFY))
 		tfp = NULL;
@@ -320,7 +315,7 @@ cmptime(name)
 	if (debug)
 		printf("cmptime(%s)\n", name);
 
-	if (inlist(except, name))
+	if (except(name))
 		return;
 
 	if (nflag) {
@@ -476,8 +471,6 @@ notify(file, rhost, to, lmod)
 	(void) pclose(pf);
 }
 
-struct	namelist *except;		/* list of files to exclude */
-
 /*
  * Return true if name is in the list.
  */
@@ -494,35 +487,32 @@ inlist(list, file)
 }
 
 /*
- * Build the exception list from the EXCEPT commands.
+ * Return TRUE if file is in the exception list.
  */
-mkexceptlist(cmds)
-	struct subcmd *cmds;
+except(file)
+	char *file;
 {
-	register struct subcmd *sc;
-	register struct namelist *el, *nl;
+	register struct	subcmd *sc;
+	register struct	namelist *nl;
 
 	if (debug)
-		printf("mkexceptlist()\n");
+		printf("except(%s)\n", file);
 
-	except = el = NULL;
-	for (sc = cmds; sc != NULL; sc = sc->sc_next) {
-		if (sc->sc_type != EXCEPT)
+	for (sc = subcmds; sc != NULL; sc = sc->sc_next) {
+		if (sc->sc_type != EXCEPT && sc->sc_type != PATTERN)
 			continue;
 		for (nl = sc->sc_args; nl != NULL; nl = nl->n_next) {
-			if (el == NULL)
-				except = el = makenl(nl->n_name);
-			else {
-				el->n_next = makenl(nl->n_name);
-				el = el->n_next;
+			if (sc->sc_type == EXCEPT) {
+				if (!strcmp(file, nl->n_name))
+					return(1);
+				continue;
 			}
+			re_comp(nl->n_name);
+			if (re_exec(file) > 0)
+				return(1);
 		}
 	}
-	if (debug) {
-		printf("except = ");
-		prnames(except);
-	}
-	return(1);
+	return(0);
 }
 
 char *
