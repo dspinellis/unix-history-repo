@@ -1,6 +1,6 @@
-.ls 2
+.if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.14'DRAFT'Last Mod %G%'
+.fo 'Version 3.15'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -17,18 +17,30 @@
 ..
 .+c
 .(l C
+.sz 16
+.b SENDMAIL
 .sz 12
-.b
-SENDMAIL
-INSTALLATION AND OPERATION GUIDE
+.sp
+.b "INSTALLATION AND OPERATION GUIDE"
+.sz 10
+.sp
 .r
-.sz
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.14
+Version 3.15
 .)l
-.sp 3
+.sp
+.(l F
+.b NOTE:
+.i
+This is a working paper, not a specification.
+Details of operation of
+.r sendmail
+may change as necessary
+before final release.
+.)l
+.sp 2
 .pp
 .i Sendmail
 implements a general purpose internetwork mail routing facility
@@ -89,6 +101,14 @@ and people who must write their own configuration file.
 The appendixes give a brief
 but detailed explanation of a number of features
 not described in the rest of the paper.
+.pp
+The references in this paper are actually found
+in the companion paper
+.ul
+Sendmail \- An Internetwork Mail Router.
+This other paper should be read before this manual
+to gain a basic understanding
+of how the pieces fit together.
 .sh 1 "BASIC INSTALLATION"
 .pp
 There are two basic steps to installing sendmail.
@@ -118,7 +138,7 @@ are all in the subdirectory
 .i cf
 of the sendmail directory.
 The ones used at Berkeley are in
-.i m4 (1)
+.i m4 \|(1)
 format;
 files with names ending
 .q .m4
@@ -198,13 +218,13 @@ where
 .i system
 is the name of your system
 (i.e., what is returned by
-.i hostname (1)).
+.i hostname \|(1)).
 If you do not have
 .i hostname
 you can use the declaration
 .q HOST=\fIsystem\fP
 on the
-.i make (1)
+.i make \|(1)
 command line.
 .pp
 The basic installation procedure is to type:
@@ -261,7 +281,7 @@ that is probably inadequate for your system.
 You should plan on recompiling and installing the entire system:
 .(b
 cd src
-rm -f *.o
+rm \-f *.o
 make
 cp sendmail /usr/lib
 .)b
@@ -282,7 +302,7 @@ command be replaced.
 This can just be a link to
 .i sendmail :
 .(b
-rm -f /usr/ucb/newaliases
+rm \-f /usr/ucb/newaliases
 ln /usr/lib/sendmail /usr/ucb/newaliases
 .)b
 .sh 3 "/usr/lib/sendmail.cf"
@@ -321,7 +341,7 @@ You should extend this file with any aliases that are apropos to your system.
 Normally
 .i sendmail
 looks at a version of these files maintained by the
-.i dbm (3)
+.i dbm \|(3)
 routines.
 These are stored in
 .q /usr/lib/aliases.dir
@@ -334,7 +354,7 @@ These should be mode 666 if you are running a reasonably relaxed system:
 cp /dev/null /usr/lib/aliases.dir
 cp /dev/null /usr/lib/aliases.pag
 chmod 666 /usr/lib/aliases.*
-/usr/lib/sendmail \-bi
+newaliases
 .)b
 .sh 3 "/usr/lib/sendmail.fc"
 .pp
@@ -435,7 +455,7 @@ The file
 describes the file(s) that sendmail will log in.
 For a complete description of syslog,
 see the manual page for
-.i syslog (8)
+.i syslog \|(8)
 (located in
 .i sendmail/doc
 on the distribution).
@@ -500,7 +520,7 @@ so this should not be trusted.
 .sh 2 "The System Log"
 .pp
 The system log is supported by the
-.i syslog (8)
+.i syslog \|(8)
 program.
 .sh 3 "Format"
 .pp
@@ -515,7 +535,7 @@ and a message.
 .sh 3 "Levels"
 .pp
 If you have
-.i syslog (8)
+.i syslog \|(8)
 or an equivalent installed,
 you will be able to do logging.
 There is a large amount of information that can be logged.
@@ -547,10 +567,13 @@ you may find performance unacceptably bad in the meantime.
 .pp
 The contents of the queue can be printed
 using the
+.i mailq
+command
+(or by specifying the
 .b \-bp
-flag:
+flag to sendmail):
 .(b
-/usr/lib/sendmail -bp
+mailq
 .)b
 This will produce a listing of the queue id's,
 the size of the message,
@@ -559,9 +582,9 @@ and the sender and recipients.
 .sh 3 "Format of queue files"
 .pp
 All queue files have the form
-\fIx\fP\fBf\fP\fIA99999\fP
+\fIx\fP\|\fBf\fP\fIAA99999\fP
 where
-.i A99999
+.i AA99999
 is the
 .i id
 for this file
@@ -668,7 +691,7 @@ Hmessage-id: <8209232249.13557@UCBARPA.BERKELEY.ARPA>
 Hreceived: by UCBARPA.BERKELEY.ARPA (3.227 [10/22/82])
 	id A13557; 23-Oct-82 15:49:32-PDT (Sat)
 Hphone: (415) 548-3211
-HTo: calder:mckusick, wnj
+HTo: mckusick@calder, wnj
 .)b
 This shows the name of the data file,
 the person who sent the message,
@@ -772,7 +795,7 @@ Blank lines and lines beginning with a sharp sign
 are comments.
 .pp
 The second form is processed by the
-.i dbm (3)
+.i dbm \|(3)
 library.
 This form is in the files
 .i /usr/lib/aliases.dir
@@ -786,6 +809,14 @@ This technique is used to improve performance.
 .pp
 The DBM version of the database
 may be rebuilt explicitly by executing the command
+.(b
+newaliases
+.)b
+This is equivalent to giving
+.i sendmail
+the
+.b \-bi
+flag:
 .(b
 /usr/lib/sendmail \-bi
 .)b
@@ -1144,7 +1175,7 @@ by running the queue
 with a short message timeout.
 For example,
 .(b
-/usr/lib/sendmail -oT1d -q
+/usr/lib/sendmail \-oT1d \-q
 .)b
 will run the queue
 and flush anything that is one day old.
@@ -1177,6 +1208,8 @@ but means that delivery may be delayed for up to the queue interval.
 Mode
 .q b
 is probably a good compromise.
+However, this mode can cause large numbers of processes
+if you have a mailer that takes a long time to deliver a message.
 .sh 2 "Log Level"
 .pp
 The level of logging can be set for sendmail.
@@ -1216,7 +1249,7 @@ and the level of security you require.
 can safely be made
 setuid to root.
 At the point where it is about to
-.i exec (2)
+.i exec \|(2)
 a mailer,
 it checks to see if the userid is zero;
 if so,
@@ -1236,7 +1269,7 @@ However,
 this will cause mail processing
 to be accounted
 (using
-.i sa (8))
+.i sa \|(8))
 to root
 rather than to the user sending the mail.
 .sh 3 "Temporary file modes"
@@ -1312,7 +1345,7 @@ option),
 then you must be careful to reconstruct the alias database
 each time you change the text version:
 .(b
-/usr/lib/sendmail \-bi
+newaliases
 .)b
 If this step is ignored or forgotten
 any intended changes will also be ignored or forgotten.
@@ -1472,7 +1505,9 @@ from the named
 .i file ;
 the
 .i format
-is a scanf(3) pattern
+is a
+.i scanf \|(3)
+pattern
 that should produce a single string.
 .sh 3 "M \*- define mailer"
 .pp
@@ -1482,8 +1517,9 @@ The format is:
 .(b F
 .b M \c
 .i name ,
+{\c
 .i field =\c
-.i value
+.i value \|}*
 .)b
 where
 .i name
@@ -1620,7 +1656,7 @@ our list of precedences is:
 .(b
 Pfirst-class=0
 Pspecial-delivery=100
-Pjunk=-100
+Pjunk=\-100
 .)b
 .sh 2 "The Semantics"
 .pp
@@ -1888,9 +1924,10 @@ Normal words are simply matched directly.
 Metasyntax is introduced using a dollar sign.
 The metasymbols are:
 .(b
+.ta \w'\fB$=\fP\fIx\fP  'u
 \fB$*\fP	Match zero or more tokens
 \fB$+\fP	Match one or more tokens
-\fB$-\fP	Match exactly one token
+\fB$\-\fP	Match exactly one token
 \fB$=\fP\fIx\fP	Match any token in class \fIx\fP
 \fB$~\fP\fIx\fP	Match any token not in class \fIx\fP
 .)b
@@ -1905,7 +1942,7 @@ is the index in the LHS.
 For example,
 if the LHS:
 .(b
-$-:$+
+$\-:$+
 .)b
 is applied to the input:
 .(b
@@ -1938,7 +1975,7 @@ The
 .i n
 syntax substitutes the corresponding value from a
 .b $+ ,
-.b $- ,
+.b $\- ,
 .b $* ,
 .b $= ,
 or
@@ -2273,7 +2310,7 @@ happen to the master host first.
 This philosophy results as much from the need
 to have a single source for the configuration files
 (typically built using
-.i m4 (1)
+.i m4 \|(1)
 or some similar tool)
 as any logical need.
 Maintaining more than three separate tables by hand
@@ -2537,7 +2574,7 @@ flag will mark the mailer as being
 which will cause
 .i sendmail
 to defer connection
-until a queue run\**
+until a queue run\**.
 .(f
 \**The
 .q c
@@ -2797,7 +2834,7 @@ flag on the command line
 or the
 .b O
 line in the configuration file:
-.nr ii 4n
+.nr ii 1i
 .ip A\fIfile\fP
 Use the named
 .i file
@@ -2952,6 +2989,7 @@ will run as this user.
 Run in verbose mode.
 .+c "MAILER FLAGS"
 The following flags may be set in the mailer description.
+.nr ii 4n
 .ip f
 The mailer wants a
 .b \-f
@@ -3126,18 +3164,11 @@ etc.
 If set,
 you will be assumed to have a Berkeley 4BSD or 4.1BSD,
 including the
-.i vfork (2)
+.i vfork \|(2)
 system call,
 special types defined in <sys/types.h>
 (e.g, u_char),
 etc.
-.ip NVMUNIX
-This flag indicates a new (4.2BSD) version of VMUNIX.
-Included are the new communication primitives,
-file locking,
-etc.
-If this is set,
-VMUNIX must also be set.
 .lp
 If none of these flags are set,
 a version 7 system is assumed.
@@ -3151,6 +3182,7 @@ However, the sizes of certain primitive vectors, etc.,
 are included in this file.
 The numbers following the parameters
 are their default value.
+.nr ii 1.2i
 .ip "MAXLINE [256]"
 The maximum line length of any input line.
 If message lines exceed this length
@@ -3210,6 +3242,7 @@ line in sendmail.cf).
 .lp
 A number of other compilation options exist.
 These specify whether or not specific code should be compiled in.
+.nr ii 1i
 .ip DBM
 If set,
 the
@@ -3348,7 +3381,6 @@ Let's look at a sample
 .i HdrInfo
 specification:
 .(b
-.sz -2
 .ta 4n +\w'"return-receipt-to",  'u
 struct hdrinfo	HdrInfo[] =
 {
@@ -3370,7 +3402,6 @@ struct hdrinfo	HdrInfo[] =
 
 	NULL,	0,
 };
-.sz
 .)b
 This structure indicates that the
 .q To: ,
@@ -3442,7 +3473,7 @@ The file
 also contains the specification of ARPANET reply codes.
 There are four classifications these fall into:
 .(b
-.sz -2
+.sz -1
 .ta \w'char  'u +\w'Arpa_TUsrerr[] =  'u +\w'"888";  'u
 char	Arpa_Info[] =	"050";	/* arbitrary info */
 char	Arpa_TSyserr[] =	"455";	/* some (transient) system error */
@@ -3501,7 +3532,7 @@ For example,
 could read:
 .(b
 .re
-.sz -2
+.sz -1
 .ta 4n +4n +4n +4n +4n +4n +4n
 bool
 checkcompat(to)
@@ -3534,8 +3565,17 @@ The binary of
 .ip /usr/bin/newaliases
 A link to /usr/lib/sendmail;
 causes the alias database to be rebuilt.
+Running this program is completely equivalent to giving
+.i sendmail
+the
+.b \-bi
+flag.
 .ip /usr/bin/mailq
 Prints a listing of the mail queue.
+This program is equivalent to using the
+.b \-bp
+flag to
+.i sendmail .
 .ip /usr/lib/sendmail.cf
 The configuration file,
 in textual form.
@@ -3550,7 +3590,7 @@ A statistics file; need not be present.
 The textual version of the alias file.
 .ip /usr/lib/aliases.{pag,dir}
 The alias file in
-.i dbm (3)
+.i dbm \|(3)
 format.
 .ip /etc/syslog
 The program to do logging.
@@ -3580,21 +3620,26 @@ A transcript of the current session.
 .sp 2i
 .in 0
 .ce 100
-.sz 16
-SENDMAIL
-.sz 12
+.sz 24
+.b SENDMAIL
+.sz 14
 .sp
 INSTALLATION AND OPERATION GUIDE
 .sp
-.sz
+.sz 10
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.14
+Version 3.15
+.sp 2
+.sz 14
+DRAFT
 .ce 0
 .bp 1
 .ce
+.sz 12
 TABLE OF CONTENTS
+.sz 10
 .sp 2
 .\" remove some things to avoid "out of temp file space" problem
 .rm sh
