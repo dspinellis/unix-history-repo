@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.11 %G%";
+static char sccsid[] = "@(#)symbols.c 1.12 %G%";
 
 /*
  * Symbol management.
@@ -1227,7 +1227,9 @@ Name n;
 {
     register Symbol s, p, t, f;
 
-    find(s, n) where s->class != FIELD and s->class != TAG endfind(s);
+    find(s, n)
+	where s->class != FIELD and s->class != TAG and s->class != MODULE
+    endfind(s);
     if (s == nil) {
 	s = lookup(n);
     }
@@ -1236,24 +1238,12 @@ Name n;
     } else if (s == program or isbuiltin(s)) {
 	t = s;
     } else {
-    /*
-     * Old way
-     *
-	if (not isactive(program)) {
-	    f = program;
-	} else {
-	    f = whatblock(pc);
-	    if (f == nil) {
-		panic("no block for addr 0x%x", pc);
-	    }
-	}
-     *
-     * Now start with curfunc.
-     */
+       /* start with current function */
 	p = curfunc;
 	do {
 	    find(t, n) where
-		t->block == p and t->class != FIELD and t->class != TAG
+		t->block == p and t->class != FIELD and
+		t->class != TAG and t->class != MODULE
 	    endfind(t);
 	    p = p->block;
 	} while (t == nil and p != nil);
