@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.3 (Berkeley) 81/11/12";
+static	char *sccsid = "@(#)mt.c	4.4 (Berkeley) 82/12/19";
 /*
  * mt --
  *   magnetic tape manipulation program
@@ -87,12 +87,15 @@ main(argc, argv)
 	}
 }
 
-#include <sys/mtreg.h>
-#include <sys/utreg.h>
-#include <sys/htreg.h>
-#include <sys/tmreg.h>
+#ifdef vax
+#include <vaxmba/mtreg.h>
+#include <vaxmba/htreg.h>
+
+#include <vaxuba/utreg.h>
+#include <vaxuba/tmreg.h>
 #undef b_repcnt		/* argh */
-#include <sys/tsreg.h>
+#include <vaxuba/tsreg.h>
+#endif
 
 struct tape_desc {
 	short	t_type;		/* type of magtape device */
@@ -100,11 +103,13 @@ struct tape_desc {
 	char	*t_dsbits;	/* "drive status" register */
 	char	*t_erbits;	/* "error" register */
 } tapes[] = {
+#ifdef vax
 	{ MT_ISTS,	"ts11",		0,		TSXS0_BITS },
 	{ MT_ISHT,	"tm03",		HTDS_BITS,	HTER_BITS },
 	{ MT_ISTM,	"tm11",		0,		TMER_BITS },
 	{ MT_ISMT,	"tu78",		MTDS_BITS,	0 },
 	{ MT_ISUT,	"tu45",		UTDS_BITS,	UTER_BITS },
+#endif
 	{ 0 }
 };
 
