@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.4		%G%);
+SCCSID(@(#)envelope.c	4.5		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -626,16 +626,11 @@ setsender(from)
 	{
 		/* extract home directory */
 		CurEnv->e_from.q_home = newstr(pw->pw_dir);
+		define('z', CurEnv->e_from.q_home, CurEnv);
 
 		/* extract user and group id */
 		CurEnv->e_from.q_uid = pw->pw_uid;
 		CurEnv->e_from.q_gid = pw->pw_gid;
-
-		/* run user's .mailcf file */
-		define('z', CurEnv->e_from.q_home, CurEnv);
-		expand("\001z/.mailcf", buf, &buf[sizeof buf - 1], CurEnv);
-		if (safefile(buf, getruid(), S_IREAD))
-			readcf(buf, FALSE);
 
 		/* if the user has given fullname already, don't redefine */
 		if (FullName == NULL)
