@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.56 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.57 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -547,12 +547,12 @@ open(p, uap, retval)
 	cmode = ((uap->crtmode &~ u.u_cmask) & 07777) &~ S_ISVTX;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	p->p_dupfd = -1;			/* XXX check for fdopen */
+	p->p_dupfd = (u_char)-1;		/* XXX check for fdopen */
 	if (error = vn_open(ndp, fmode, cmode)) {
 		crfree(fp->f_cred);
 		fp->f_count--;
 		if (error == ENODEV &&		/* XXX from fdopen */
-		    p->p_dupfd >= 0 &&
+		    p->p_dupfd != (u_char)-1 &&
 		    (error = dupfdopen(indx, p->p_dupfd, fmode)) == 0) {
 			*retval = indx;
 			RETURN (0);
