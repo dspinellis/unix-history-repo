@@ -14,7 +14,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.12 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.13 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
@@ -62,7 +62,7 @@ R$*			$@ $>61 $1			qualify unqual'ed names
 
 
 #
-#  common rewriting for all SMTP addresses
+#  convert pseudo-domain addresses to real domain addresses
 #
 S51
 
@@ -74,12 +74,18 @@ ifdef(`BITNET_RELAY',
 `R$+ <@ $+ .BITNET. >	$: $1 % $2 .BITNET < @ $B >	user@host.BITNET
 R$+.BITNET <@ $+:$+ >	$: $1 .BITNET < @ $3 >		strip mailer: part',
 	`dnl')
-ifdef(`UUCP_RELAY',
-`R$+ <@ $+ .UUCP. >	$: $1 % $2 .UUCP < @ $Y >	user@host.UUCP
-R$+.UUCP <@ $+:$+ >	$: $1 .UUCP < @ $3 >		strip mailer: part',
-	`dnl')
-ifdef(`_NO_UUCP_', `dnl',
-`R$+ <@ $+ .UUCP. >	$: $2 ! $1 < @ $j >		user@host.UUCP')
+ifdef(`_NO_UUCP_', `dnl', `
+# do UUCP heuristics; note that these are shared with UUCP mailers
+R$+ < @ $+ .UUCP. >	$: < $2 ! > $1			convert to UUCP form
+R$+ < @ $* > $*		$@ $1 < @ $2 > $3		not UUCP form
+
+# leave these in .UUCP form to avoid further tampering
+R< $&h ! > $- ! $+	$@ $2 < @ $1 .UUCP. >
+R< $&h ! > $-.$+ ! $+	$@ $3 < @ $1.$2 >
+R< $&h ! > $+		$@ $1 < @ $&h .UUCP. >
+R< $+ ! > $+		$: $1 ! $2 < @ $Y >
+R$+ < @ >		$: $1 < @ $j >			in case $Y undefined
+R$+ < @ $+ : $+ >	$: $1 < @ $3 >			strip mailer: part')
 
 
 #
