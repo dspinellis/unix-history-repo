@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.1	82/02/01	*/
+/*	raw_imp.c	4.2	82/02/01	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -36,7 +36,7 @@ imp_output(m, so)		/* too close to impoutput */
 {
 	struct mbuf *n;
 	int len;
-	register struct imp_leader *il;
+	register struct imp_leader *ip;
 	register struct sockaddr_in *sin;
 	register struct rawcb *rp = sotorawcb(so);
 
@@ -48,11 +48,11 @@ COUNT(IMP_OUTPUT);
 	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct imp_leader)) &&
 	    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
 		goto bad;
-	il = mtod(m, struct imp_leader *);
-	if (il->il_format != IMP_NFF)
+	ip = mtod(m, struct imp_leader *);
+	if (ip->il_format != IMP_NFF)
 		goto bad;
-	if (il->il_link != IMPLINK_IP &&
-	    (il->il_link < IMPLINK_LOWEXPER || il->il_link > IMPLINK_HIGHEXPER))
+	if (ip->il_link != IMPLINK_IP &&
+	    (ip->il_link < IMPLINK_LOWEXPER || ip->il_link > IMPLINK_HIGHEXPER))
 		goto bad;
 
 	/*
@@ -62,11 +62,11 @@ COUNT(IMP_OUTPUT);
 	 */
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
-	il->il_length = len << 3;
+	ip->il_length = len << 3;
 	sin = (struct sockaddr_in *)&rp->rcb_addr;
-	il->il_network = sin->sin_addr.s_net;
-	il->il_host = sin->sin_addr.s_host;
-	il->il_imp = sin->sin_addr.s_imp;
+	ip->il_network = sin->sin_addr.s_net;
+	ip->il_host = sin->sin_addr.s_host;
+	ip->il_imp = sin->sin_addr.s_imp;
 
 	return (impoutput((struct ifnet *)rp->rcb_pcb, m, PF_IMPLINK));
 
