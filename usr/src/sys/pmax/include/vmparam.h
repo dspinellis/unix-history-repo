@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
  *
- *	@(#)vmparam.h	7.2 (Berkeley) %G%
+ *	@(#)vmparam.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -24,12 +24,10 @@
  * beginning of the text and from the beginning of the P1 region to the
  * beginning of the stack respectively.
  */
-#define	USRTEXT		0x00400000
-#define	USRDATA		0x10000000
+#define	USRTEXT		0x00001000
 #define	USRSTACK	0x80000000	/* Start of user stack */
 #define	BTOPUSRSTACK	0x80000		/* btop(USRSTACK) */
-#define	LOWPAGES	0x00400
-#define	MIDPAGES	0x10000
+#define	LOWPAGES	0x00001
 #define	HIGHPAGES	0
 
 /*
