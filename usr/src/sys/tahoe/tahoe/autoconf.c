@@ -1,4 +1,4 @@
-/*	autoconf.c	1.15	87/06/30	*/
+/*	autoconf.c	1.16	88/02/08	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -486,19 +486,20 @@ static	char devname[][2] = {
  */
 setroot()
 {
-	int  majdev, mindev, unit, part, adaptor;
+	int  majdev, mindev, unit, part, controller, adaptor;
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
 	if (boothowto & RB_DFLTROOT ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
 		return;
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0]))
+	majdev = B_TYPE(bootdev);
+	if (majdev >= sizeof(devname) / sizeof(devname[0]))
 		return;
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	adaptor = B_ADAPTOR(bootdev);
+	controller = B_CONTROLLER(bootdev);
+	part = B_PARTITION(bootdev);
+	unit = B_UNIT(bootdev);
 	/*
 	 * Search Versabus devices.
 	 *
@@ -509,6 +510,7 @@ setroot()
 
 		for (vbap = vbdinit; vbap->ui_driver; vbap++)
 			if (vbap->ui_alive && vbap->ui_slave == unit &&
+			   vbap->ui_ctlr == controller &&
 			   vbap->ui_vbanum == adaptor &&
 			   vbap->ui_driver->ud_dname[0] == devname[majdev][0] &&
 			   vbap->ui_driver->ud_dname[1] == devname[majdev][1])

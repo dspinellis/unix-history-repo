@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.12 (Berkeley) %G%
+ *	@(#)autoconf.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -1056,19 +1056,20 @@ static	char devname[][2] = {
  */
 setroot()
 {
-	int  majdev, mindev, unit, part, adaptor;
+	int  majdev, mindev, unit, part, controller, adaptor;
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
 	if (boothowto & RB_DFLTROOT ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
 		return;
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0]))
+	majdev = B_TYPE(bootdev);
+	if (majdev >= sizeof(devname) / sizeof(devname[0]))
 		return;
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	adaptor = B_ADAPTOR(bootdev);
+	controller = B_CONTROLLER(bootdev);
+	part = B_PARTITION(bootdev);
+	unit = B_UNIT(bootdev);
 	if (majdev == 0) {	/* MBA device */
 #if NMBA > 0
 		register struct mba_device *mbap;
@@ -1115,6 +1116,7 @@ setroot()
 
 		for (ubap = ubdinit; ubap->ui_driver; ubap++)
 			if (ubap->ui_alive && ubap->ui_slave == unit &&
+			   ubap->ui_ctlr == controller &&
 			   ubap->ui_ubanum == adaptor &&
 			   ubap->ui_driver->ud_dname[0] == devname[majdev][0] &&
 			   ubap->ui_driver->ud_dname[1] == devname[majdev][1])
