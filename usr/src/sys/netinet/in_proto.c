@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.10 (Berkeley) %G%
+ *	@(#)in_proto.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,14 +18,14 @@
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
-int	ip_output();
+int	ip_output(),ip_ctloutput();
 int	ip_init(),ip_slowtimo(),ip_drain();
 int	icmp_input();
 int	udp_input(),udp_ctlinput();
 int	udp_usrreq();
 int	udp_init();
 int	tcp_input(),tcp_ctlinput();
-int	tcp_usrreq();
+int	tcp_usrreq(),tcp_ctloutput();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
 int	rip_input(),rip_output();
 extern	int raw_usrreq();
@@ -52,17 +52,17 @@ struct protosw inetsw[] = {
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
 { SOCK_DGRAM,	&inetdomain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
-  udp_input,	0,		udp_ctlinput,	0,
+  udp_input,	0,		udp_ctlinput,	ip_ctloutput,
   udp_usrreq,
   udp_init,	0,		0,		0,
 },
 { SOCK_STREAM,	&inetdomain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
-  tcp_input,	0,		tcp_ctlinput,	0,
+  tcp_input,	0,		tcp_ctlinput,	tcp_ctloutput,
   tcp_usrreq,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,	0,
+  rip_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
 },
@@ -80,7 +80,7 @@ struct protosw inetsw[] = {
 #endif
 	/* raw wildcard */
 { SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,	0,
+  rip_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
 },
@@ -112,9 +112,10 @@ struct domain impdomain =
  * HYPERchannel protocol family: raw interface.
  */
 int	rhy_output();
+extern	struct domain hydomain;
 
 struct protosw hysw[] = {
-{ SOCK_RAW,	PF_HYLINK,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&hydomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		rhy_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
