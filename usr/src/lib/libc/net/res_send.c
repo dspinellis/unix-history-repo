@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.13 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -40,7 +40,7 @@ res_send(buf, buflen, answer, anslen)
 	int gotsomewhere = 0;
 	u_short id, len;
 	char *cp;
-	int dsmask;
+	fd_set dsmask;
 	struct timeval timeout;
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
@@ -179,7 +179,8 @@ res_send(buf, buflen, answer, anslen)
 				timeout.tv_sec = 1;
 			timeout.tv_usec = 0;
 wait:
-			dsmask = 1 << s;
+			FD_ZERO(&dsmask);
+			FD_SET(s, &dsmask);
 			n = select(s+1, &dsmask, (fd_set *)NULL,
 				(fd_set *)NULL, &timeout);
 			if (n < 0) {
