@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)int.c 1.2 %G%";
+static char sccsid[] = "@(#)int.c 1.3 %G%";
 
 /*
  * px - interpreter for Berkeley Pascal
@@ -92,7 +92,7 @@ main(ac,av)
 		}
 	if (pxhd.magicnum != MAGICNUM)
 		{
-		fprintf(stderr,"%s is not a Pascal program\n",file);
+		fprintf(stderr,"%s is not a Pascal interpreter file\n",file);
 		exit(1);
 		}
 
