@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -335,8 +335,7 @@ main(argc, argv, envp)
 		if (tTd(0, 4))
 			printf("canonical name: %s\n", jbuf);
 		p = newstr(jbuf);
-		if (ConfigLevel < 5)
-			define('w', p, CurEnv);
+		define('w', newstr(jbuf), CurEnv);	/* must be new string */
 		define('j', p, CurEnv);
 		setclass('w', p);
 
@@ -348,8 +347,6 @@ main(argc, argv, envp)
 				define('m', newstr(p), CurEnv);
 			setclass('w', jbuf);
 		}
-		if (ConfigLevel >= 5)
-			define('w', newstr(jbuf), CurEnv);
 
 		if (uname(&utsname) >= 0)
 			p = utsname.nodename;
@@ -606,6 +603,19 @@ main(argc, argv, envp)
 
 	if (OpMode == MD_FREEZE || readconfig)
 		readcf(ConfFile, safecf, CurEnv);
+
+	if (tTd(0, 1))
+	{
+		printf("SYSTEM IDENTITY (after readcf):\n");
+		printf("\t    (short domain name) $w = %s\n",
+			macvalue('w', CurEnv));
+		printf("\t(canonical domain name) $j = %s\n",
+			macvalue('j', CurEnv));
+		printf("\t       (subdomain name) $m = %s\n",
+			macvalue('m', CurEnv));
+		printf("\t            (node name) $k = %s\n",
+			macvalue('k', CurEnv));
+	}
 
 	/* Enforce use of local time (null string overrides this) */
 	if (TimeZoneSpec == NULL)
