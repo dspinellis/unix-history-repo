@@ -457,7 +457,7 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 #ifndef QUOTA
 	return (EOPNOTSUPP);
 #else
-	if (uid == -1)
+	if (uid == (uid_t)(-1))
 		uid = p->p_cred->p_ruid;
 	cmd = cmds >> SUBCMDSHIFT;
 
