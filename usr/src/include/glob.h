@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.2 (Berkeley) %G%
+ *	@(#)glob.h	5.3 (Berkeley) %G%
  */
 
 typedef struct {
@@ -32,4 +32,9 @@ typedef struct {
 #define	GLOB_NOSPACE	(-1)	/* malloc call failed */
 #define	GLOB_ABEND	(-2)	/* unignored error */
 
-void globfree();
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int glob __P((const char *, int, const int (*)(char *, int), glob_t *));
+void globfree __P((glob_t *));
+__END_DECLS

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vis.h	5.5 (Berkeley) %G%
+ *	@(#)vis.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -48,4 +48,6 @@ __BEGIN_DECLS
 char	*vis __P((char *, char, char, int));
 int	strvis __P((char *, const char *, int));
 int	strvisx __P((char *, const char *, size_t, int));
+int	strunvis __P((char *, const char *));
+int	unvis __P((u_char *, u_char, int *, int));
 __END_DECLS
