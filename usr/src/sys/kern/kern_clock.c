@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.51	83/01/17	*/
+/*	kern_clock.c	4.52	83/03/03	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -26,16 +26,23 @@
 #include "../h/gprof.h"
 #endif
 
-#
+#ifdef KGCLOCK
+extern int phz;
+#endif
+
 /*
  * Clock handling routines.
  *
- * This code is written for a machine with only one interval timer,
- * and does timing and resource utilization estimation statistically
- * based on the state of the machine hz times a second.  A machine
- * with proper clocks (running separately in user state, system state,
- * interrupt state and idle state) as well as a time-of-day clock
- * would allow a non-approximate implementation.
+ * This code is written to operate with two timers which run
+ * independently of each other. The main clock, running at hz
+ * times per second, is used to do scheduling and timeout calculations.
+ * The second timer does resource utilization estimation statistically
+ * based on the state of the machine phz times a second. Both functions
+ * can be performed by a single clock (ie hz == phz), however the 
+ * statistics will be much more prone to errors. Ideally a machine
+ * would have separate clocks measuring time spent in user state, system
+ * state, interrupt state, and idle state. These clocks would allow a non-
+ * approximate measure of resource utilization.
  */
 
 /*
@@ -44,6 +51,7 @@
  *	* Use the time-of-day clock on the VAX to keep more accurate time
  *	  than is possible by repeated use of the interval timer.
  *	* Allocate more timeout table slots when table overflows.
+ *	* Get all resource allocation to use second timer.
  */
 
 /* bump a timeval by a small number of usec's */
@@ -55,12 +63,10 @@
 	}
 
 /*
- * The (single) hardware interval timer.
- * We update the events relating to real time, and then
- * make a gross assumption: that the system has been in the
- * state it is in (user state, kernel state, interrupt state,
- * or idle state) for the entire last time interval, and
- * update statistics accordingly.
+ * The hz hardware interval timer.
+ * We update the events relating to real time.
+ * If this timer is also being used to gather statistics,
+ * we run through the statistics gathering routine as well.
  */
 /*ARGSUSED*/
 #ifdef vax
@@ -131,11 +137,6 @@ hardclock(regs)
 		 * This is approximate, but the lack of true interval
 		 * timers makes doing anything else difficult.
 		 */
-#ifdef GPROF
-		int k = pc - s_lowpc;
-		if (profiling < 2 && k < s_textsize)
-			kcount[k / (HISTFRACTION * sizeof (*kcount))]++;
-#endif
 		cpstate = CP_SYS;
 		if (noproc) {
 			if (BASEPRI(ps))
@@ -177,16 +178,6 @@ hardclock(regs)
 	}
 
 	/*
-	 * We maintain statistics shown by user-level statistics
-	 * programs:  the amount of time in each cpu state, and
-	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
-	 */
-	cp_time[cpstate]++;
-	for (s = 0; s < DK_NDRIVE; s++)
-		if (dk_busy&(1<<s))
-			dk_time[s]++;
-
-	/*
 	 * We adjust the priority of the current process.
 	 * The priority of a process gets worse as it accumulates
 	 * CPU time.  The cpu usage estimator (p_cpu) is increased here
@@ -218,6 +209,21 @@ hardclock(regs)
 	}
 
 	/*
+	 * If this is the only timer then we have to use it to
+	 * gather statistics.
+	 */
+#ifndef KGCLOCK
+	gatherstats(pc, ps);
+#else
+	/*
+	 * If the alternate clock has not made itself known then
+	 * we must gather the statistics.
+	 */
+	if (phz == 0)
+		gatherstats(pc, ps);
+#endif
+
+	/*
 	 * Increment the time-of-day, and schedule
 	 * processing of the callouts at a very low cpu priority,
 	 * so we don't keep the relatively high clock interrupt
@@ -225,6 +231,56 @@ hardclock(regs)
 	 */
 	bumptime(&time, tick);
 	setsoftclock();
+}
+
+/*
+ * Gather statistics on resource utilization.
+ *
+ * We make a gross assumption: that the system has been in the
+ * state it is in (user state, kernel state, interrupt state,
+ * or idle state) for the entire last time interval, and
+ * update statistics accordingly.
+ */
+gatherstats(pc, ps)
+	caddr_t pc;
+	int ps;
+{
+	int cpstate, s;
+
+	/*
+	 * Determine what state the cpu is in.
+	 */
+	if (USERMODE(ps)) {
+		/*
+		 * CPU was in user state.
+		 */
+		if (u.u_procp->p_nice > NZERO)
+			cpstate = CP_NICE;
+		else
+			cpstate = CP_USER;
+	} else {
+		/*
+		 * CPU was in system state.  If profiling kernel
+		 * increment a counter.
+		 */
+		cpstate = CP_SYS;
+		if (noproc && BASEPRI(ps))
+			cpstate = CP_IDLE;
+#ifdef GPROF
+		s = pc - s_lowpc;
+		if (profiling < 2 && s < s_textsize)
+			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
+#endif
+	}
+	/*
+	 * We maintain statistics shown by user-level statistics
+	 * programs:  the amount of time in each cpu state, and
+	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
+	 */
+	cp_time[cpstate]++;
+	for (s = 0; s < DK_NDRIVE; s++)
+		if (dk_busy&(1<<s))
+			dk_time[s]++;
 }
 
 /*
