@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.17 (Berkeley) %G%
+ *	@(#)iso.c	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -65,27 +65,8 @@ SOFTWARE.
 
 int	iso_interfaces = 0;		/* number of external interfaces */
 extern	struct ifnet loif;	/* loopback interface */
-int ether_output(), llc_rtrequest();
-
-
-/*
- * FUNCTION:		iso_init
- *
- * PURPOSE:			initialize the iso address family
- *
- * RETURNS:			nothing
- *
- * SIDE EFFECTS:	1) initializes the routing table.
- *
- *
- * NOTES:			
- */
-iso_init()
-{
-	if (rt_tables[AF_ISO] == 0) {
-		rn_inithead(rt_tables + AF_ISO, 48);
-	}
-}
+int	ether_output();
+void	llc_rtrequest();
 
 /*
  * FUNCTION:		iso_addrmatch1
@@ -599,7 +580,8 @@ iso_ifinit(ifp, ia, siso, scrub)
 	 * if this is its first address,
 	 * and to validate the address if necessary.
 	 */
-	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
+	if (ifp->if_ioctl &&
+				(error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, (caddr_t)ia))) {
 		splx(s);
 		ia->ia_addr = oldaddr;
 		return (error);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.28 (Berkeley) %G%
+ *	@(#)rtsock.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -774,7 +774,7 @@ kinfo_rtable(op, where, given, arg, needed)
  * Definitions of protocols supported in the ROUTE domain.
  */
 
-int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
+int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput(), route_init();
 extern	struct domain routedomain;		/* or at least forward */
 
 struct protosw routesw[] = {
@@ -788,5 +788,5 @@ struct protosw routesw[] = {
 int	unp_externalize(), unp_dispose();
 
 struct domain routedomain =
-    { PF_ROUTE, "route", 0, 0, 0,
+    { PF_ROUTE, "route", route_init, 0, 0,
       routesw, &routesw[sizeof(routesw)/sizeof(routesw[0])] };

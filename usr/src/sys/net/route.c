@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.29 (Berkeley) %G%
+ *	@(#)route.c	7.30 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -33,19 +33,20 @@
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
 
-static int rtinits_done = 0;
-struct radix_node *rn_match(), *rn_delete(), *rn_addroute();
-
-rtinitheads()
+rtable_init(table)
+void **table;
 {
-	extern struct radix_node_head *mask_rnhead;
-	if (rtinits_done == 0 &&
-#ifdef NS
-	    rn_inithead(&rt_tables[AF_NS], 16) &&
-#endif
-	    rn_inithead(&rt_tables[AF_INET], 32) &&
-	    (rt_tables[0] = mask_rnhead) != 0)
-		rtinits_done = 1;
+	struct domain *dom;
+	for (dom = domains; dom; dom = dom->dom_next)
+		if (dom->dom_rtattach)
+			dom->dom_rtattach(&table[dom->dom_family],
+							dom->dom_rtoffset);
+}
+
+route_init()
+{
+	rn_init();	/* initialize all zeroes, all ones, mask table */
+	rtable_init((void **)rt_tables);
 }
 
 /*
@@ -360,8 +361,6 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	struct sockaddr *ndst;
 #define senderr(x) { error = x ; goto bad; }
 
-	if (rtinits_done == 0)
-		rtinitheads();
 	if ((rnh = rt_tables[dst->sa_family]) == 0)
 		senderr(ESRCH);
 	if (flags & RTF_HOST)

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.15 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -207,7 +207,7 @@ struct mbuf *m0;
 {
 	register struct rtentry *rt, *nrt;
 	register struct mbuf *m = m0->m_next; /* m0 has calling sockaddr_x25 */
-	int x25_rtrequest();
+	void x25_rtrequest();
 
 	rt = rtalloc1(SA(&lcp->lcd_faddr), 0);
 	if (rt == 0) {
@@ -634,7 +634,6 @@ pk_init()
 	 * but contains no data of interest beyond 32
 	 */
 	struct radix_node *rn_addmask();
-	rn_inithead(&rt_tables[AF_CCITT], 32);
 	x25_dgram_sockmask =
 		SA(rn_addmask((caddr_t)&x25_dgmask, 0, 4)->rn_key);
 	if (x25_startproto) {

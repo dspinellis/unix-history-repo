@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_proto.c	7.4 (Berkeley) %G%
+ *	@(#)ns_proto.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,6 +12,7 @@
 #include "protosw.h"
 #include "domain.h"
 #include "mbuf.h"
+#include "net/radix.h"
 
 #include "ns.h"
 
@@ -63,5 +64,6 @@ struct protosw nssw[] = {
 
 struct domain nsdomain =
     { AF_NS, "network systems", 0, 0, 0, 
-      nssw, &nssw[sizeof(nssw)/sizeof(nssw[0])] };
+      nssw, &nssw[sizeof(nssw)/sizeof(nssw[0])], 0,
+      rn_inithead, 16, sizeof(struct sockaddr_ns)};
 
