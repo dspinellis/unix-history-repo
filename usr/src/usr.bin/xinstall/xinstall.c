@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,14 +50,14 @@ static char	*group, *owner,
 		pathbuf[MAXPATHLEN];
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	extern char	*optarg;
-	extern int	optind;
-	struct stat	from_sb, to_sb;
-	int	ch, no_target;
-	char	*to_name;
+	extern char *optarg;
+	extern int optind;
+	struct stat from_sb, to_sb;
+	int ch, no_target;
+	char *to_name;
 
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
@@ -132,12 +132,12 @@ main(argc, argv)
  */
 static
 install(from_name, to_name, isdir)
-	char	*from_name, *to_name;
-	int	isdir;
+	char *from_name, *to_name;
+	int isdir;
 {
-	struct stat	from_sb;
-	int	devnull, from_fd, to_fd;
-	char	*C, *rindex();
+	struct stat from_sb;
+	int devnull, from_fd, to_fd;
+	char *C, *rindex();
 
 	/* if try to install "/dev/null" to a directory, fails */
 	if (isdir || strcmp(from_name, "/dev/null")) {
@@ -200,15 +200,15 @@ install(from_name, to_name, isdir)
  */
 static
 strip(from_fd, from_name, to_fd, to_name)
-	register int	from_fd, to_fd;
-	char	*from_name, *to_name;
+	register int from_fd, to_fd;
+	char *from_name, *to_name;
 {
-	typedef struct exec	EXEC;
-	register long	size;
-	register int	n;
-	EXEC	head;
-	char	buf[MAXBSIZE];
-	off_t	lseek();
+	typedef struct exec EXEC;
+	register long size;
+	register int n;
+	EXEC head;
+	char buf[MAXBSIZE];
+	off_t lseek();
 
 	if (read(from_fd, (char *)&head, sizeof(head)) < 0 || N_BADMAG(head)) {
 		fprintf(stderr, "install: %s not in a.out format.\n", from_name);
@@ -252,11 +252,11 @@ strip(from_fd, from_name, to_fd, to_name)
  */
 static
 copy(from_fd, from_name, to_fd, to_name)
-	register int	from_fd, to_fd;
-	char	*from_name, *to_name;
+	register int from_fd, to_fd;
+	char *from_name, *to_name;
 {
-	register int	n;
-	char	buf[MAXBSIZE];
+	register int n;
+	char buf[MAXBSIZE];
 
 	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
 		if (write(to_fd, buf, n) != n) {
@@ -275,9 +275,9 @@ copy(from_fd, from_name, to_fd, to_name)
  */
 static
 atoo(str)
-	register char	*str;
+	register char *str;
 {
-	register int	val;
+	register int val;
 
 	for (val = 0; isdigit(*str); ++str)
 		val = val * 8 + *str - '0';
