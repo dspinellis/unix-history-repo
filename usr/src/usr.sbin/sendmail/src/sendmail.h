@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.71 (Berkeley) %G%
+ *	@(#)sendmail.h	8.72 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.71		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.72		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -794,7 +794,7 @@ struct prival
 **  Flags passed to putheader and putbody.
 */
 
-#define PF_NOBODYPART		0x0001	/* don't send the body part */
+#define PF_DELETEMIMEHDRS	0x0001	/* delete Content-Type: and C-T-E: */
 
 
 /*
