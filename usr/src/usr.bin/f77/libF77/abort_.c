@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)abort_.c	5.1	%G%
+ *	@(#)abort_.c	5.2	%G%
  */
 
 #include <stdio.h>
@@ -16,7 +16,7 @@ abort_()
 	_cleanup();
 	abort();
 }
-#else	vax
+#else	vax || tahoe
 abort_(msg,len)
 char *msg; int len;
 {
@@ -26,4 +26,4 @@ char *msg; int len;
 	fputc('\n', stderr);
 	f77_abort();
 }
-#endif	vax
+#endif	vax || tahoe

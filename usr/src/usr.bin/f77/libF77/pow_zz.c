@@ -3,10 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_zz.c	5.1	%G%
+ *	@(#)pow_zz.c	5.2	%G%
  */
 
 #include "complex"
+#ifdef tahoe
+#define cabs zabs
+#endif tahoe
 
 pow_zz(r,a,b)
 dcomplex *r, *a, *b;

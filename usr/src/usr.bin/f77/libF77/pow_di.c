@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_di.c	5.1	%G%
+ *	@(#)pow_di.c	5.2	%G%
  */
 
 double pow_di(ap, bp)
@@ -28,6 +28,9 @@ if(n != 0)
 		n = -n;
 		x = 1/x;
 		}
+	if (x == 0)
+		return(0);
+
 	for( ; ; )
 		{
 		if(n & 01)
