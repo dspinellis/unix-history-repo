@@ -1,4 +1,4 @@
-/*	dh.c	4.24	81/02/26	*/
+/*	dh.c	4.25	81/02/26	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -6,6 +6,7 @@
 /*
  * DH-11/DM-11 driver
  */
+#include "bk.h"
 #include "../h/param.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -353,10 +354,12 @@ dhrint(dh)
 				c = 0;
 			else
 				c = tun.t_intrc;
+#if NBK > 0
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
 			BKINPUT(c, tp);
 		} else
+#endif
 			(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 }

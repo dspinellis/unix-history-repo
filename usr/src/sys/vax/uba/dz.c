@@ -1,4 +1,4 @@
-/*	dz.c	4.17	%G%	*/
+/*	dz.c	4.18	%G%	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -8,6 +8,7 @@
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
+#include "bk.h"
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/tty.h"
@@ -247,10 +248,12 @@ dzrint(dz)
 			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
 			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
 				continue;
+#if NBK > 0
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
 			BKINPUT(c, tp);
 		} else
+#endif
 			(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 }
