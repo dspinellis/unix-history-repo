@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.2 %G%";
+static	char sccsid[] = "@(#)c21.c 4.3 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -419,11 +419,11 @@ mov:
 		r = isreg(regs[RT1]);
 		r1 = isreg(regs[RT2]);
 		dest(regs[RT2],p->subop);
- 		if (r>=0) {
- 			if (r1>=0) savereg(r1, regs[r]+1, p->subop);
- 			else if (p->op!=CVT) savereg(r, regs[RT2], p->subop);
- 		} else if (r1>=0) savereg(r1, regs[RT1], p->subop);
- 		else if (p->op!=CVT) setcon(regs[RT1], regs[RT2], p->subop);
+		if (r>=0) {
+			if (r1>=0) savereg(r1, regs[r]+1, p->subop);
+			else if (p->op!=CVT) savereg(r, regs[RT2], p->subop);
+		} else if (r1>=0) savereg(r1, regs[RT1], p->subop);
+		else if (p->op!=CVT) setcon(regs[RT1], regs[RT2], p->subop);
 		break;
 
 /* .rx,.wx */
@@ -645,7 +645,7 @@ register struct node *p;
 		/* check for  r  */
 		if (lastrand!=cp1 && 0<=(r=isreg(cp1)) && r<NUSE && uses[r]==0) {
 			uses[r]=p; cp2=regs[r]; *cp2++=p->subop;
- 			if (p->op==ASH && preg==(regs+RT1+1)) cp2[-1]=BYTE; /* stupid DEC */
+			if (p->op==ASH && preg==(regs+RT1+1)) cp2[-1]=BYTE; /* stupid DEC */
 			if (p->op==MOV || p->op==PUSH || p->op==CVT || p->op==MOVZ || p->op==COM || p->op==NEG) {
 				if (p->op==PUSH) cp1="-(sp)";
 				else {
@@ -656,8 +656,8 @@ register struct node *p;
 					if (p->op!=MOV) cp1=0;
 				}
 				if (cp1) while (*cp2++= *cp1++);
- 				else *cp2=0;
- 			} else *cp2=0;
+				else *cp2=0;
+			} else *cp2=0;
 			continue;
 		}
 		/* check for (r),(r)+,-(r),[r] */
