@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)readcf.c	5.32 (Berkeley) %G%";
 **				Args specify mailer parameters.
 **		Oxvalue		Set option x to value.
 **		Pname=value	Set precedence name to value.
+**		Vversioncode	Version level of configuration syntax.
 **
 **	Parameters:
 **		cfname -- control file name.
@@ -250,6 +251,10 @@ readcf(cfname)
 				}
 				*pv = newstr(q);
 			}
+			break;
+
+		  case 'V':		/* configuration syntax version */
+			ConfigLevel = atoi(&buf[1]);
 			break;
 
 		  default:
