@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.51 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.52 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -93,7 +93,8 @@ lfs_valloc(ap)
 		ip->i_size += fs->lfs_bsize;
 		vnode_pager_setsize(vp, (u_long)ip->i_size);
 		vnode_pager_uncache(vp);
-		LFS_UBWRITE(bp);
+		if (error = VOP_BWRITE(bp))
+			return (error);
 	}
 
 	/* Create a vnode to associate with the inode. */
@@ -147,7 +148,7 @@ lfs_vcreate(mp, ino, vpp)
 	(*vpp)->v_data = ip;
 	ip->i_vnode = *vpp;
 	ip->i_devvp = ump->um_devvp;
-	ip->i_flag = 0;
+	ip->i_flag = IMOD;
 	ip->i_dev = ump->um_dev;
 	ip->i_number = ip->i_din.di_inum = ino;
 	ip->i_lfs = ump->um_lfs;
@@ -160,6 +161,7 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_mode = 0;
 	ip->i_size = 0;
 	ip->i_blocks = 0;
+	++ump->um_lfs->lfs_uinodes;
 	return (0);
 }
 
@@ -180,12 +182,16 @@ lfs_vfree(ap)
 	struct lfs *fs;
 	daddr_t old_iaddr;
 	ino_t ino;
+	int error;
 
 	/* Get the inode number and file system. */
 	ip = VTOI(ap->a_pvp);
 	fs = ip->i_lfs;
 	ino = ip->i_number;
-
+	if (ip->i_flag & IMOD) {
+		--fs->lfs_uinodes;
+		ip->i_flag &= ~(IMOD | IACC | IUPD | ICHG);
+	}
 	/*
 	 * Set the ifile's inode entry to unused, increment its version number
 	 * and link it into the free chain.
@@ -196,7 +202,7 @@ lfs_vfree(ap)
 	++ifp->if_version;
 	ifp->if_nextfree = fs->lfs_free;
 	fs->lfs_free = ino;
-	LFS_UBWRITE(bp);
+	(void) VOP_BWRITE(bp);
 
 	if (old_iaddr != LFS_UNUSED_DADDR) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, old_iaddr), bp);
@@ -206,7 +212,7 @@ lfs_vfree(ap)
 			    datosn(fs, old_iaddr));
 #endif
 		sup->su_nbytes -= sizeof(struct dinode);
-		LFS_UBWRITE(bp);
+		(void) VOP_BWRITE(bp);
 	}
 
 	/* Set superblock modified bit and decrement file count. */
