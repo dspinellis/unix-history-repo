@@ -50,20 +50,18 @@ init_sys()
 }
 
 
-TerminalWrite(fd, buf, n)
-int	fd;
+TerminalWrite(buf, n)
 char	*buf;
 int	n;
 {
-    return write(fd, buf, n);
+    return write(tout, buf, n);
 }
 
-TerminalRead(fd, buf, n)
-int	fd;
+TerminalRead(buf, n)
 char	*buf;
 int	n;
 {
-    return read(fd, buf, n);
+    return read(tin, buf, n);
 }
 
 /*
@@ -163,8 +161,7 @@ TerminalRestoreState()
 
 
 void
-TerminalNewMode(fd_in, fd_out, f)
-int	fd_in, fd_out;		/* File descriptor */
+TerminalNewMode(f)
 register int f;
 {
     static int prevmode = 0;
@@ -265,16 +262,16 @@ register int f;
     default:
 	    return;
     }
-    ioctl(fd_in, TIOCSLTC, (char *)ltc);
-    ioctl(fd_in, TIOCSETC, (char *)tc);
-    ioctl(fd_in, TIOCSETP, (char *)&sb);
+    ioctl(tin, TIOCSLTC, (char *)ltc);
+    ioctl(tin, TIOCSETC, (char *)tc);
+    ioctl(tin, TIOCSETP, (char *)&sb);
 #if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
-    ioctl(fd_in, FIONBIO, (char *)&onoff);
-    ioctl(fd_out, FIONBIO, (char *)&onoff);
+    ioctl(tin, FIONBIO, (char *)&onoff);
+    ioctl(tout, FIONBIO, (char *)&onoff);
 #endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
 #if	defined(TN3270)
     if (noasynch == 0) {
-	ioctl(fd_in, FIOASYNC, (char *)&onoff);
+	ioctl(tin, FIOASYNC, (char *)&onoff);
     }
 #endif	/* defined(TN3270) */
 
@@ -332,14 +329,14 @@ int fd;
  * Various signal handling routines.
  */
 
-void
+static void
 deadpeer()
 {
 	setcommandmode();
 	longjmp(peerdied, -1);
 }
 
-void
+static void
 intr()
 {
     if (localchars) {
@@ -350,7 +347,7 @@ intr()
     longjmp(toplevel, -1);
 }
 
-void
+static void
 intr2()
 {
     if (localchars) {
@@ -359,7 +356,7 @@ intr2()
     }
 }
 
-void
+static void
 doescape()
 {
     command(0);
@@ -570,8 +567,7 @@ int poll;		/* If 0, then block until something to do */
      */
     if (FD_ISSET(tin, &ibits)) {
 	FD_CLR(tin, &ibits);
-	c = TerminalRead(tin, ttyiring.supply,
-			ring_empty_consecutive(&ttyiring));
+	c = TerminalRead(ttyiring.supply, ring_empty_consecutive(&ttyiring));
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {

@@ -50,7 +50,7 @@ int drop;
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
 	} else {
-	    n = TerminalWrite(tout, ttyoring.consume, n);
+	    n = TerminalWrite(ttyoring.consume, n);
 	}
     }
     if (n > 0) {
@@ -62,7 +62,7 @@ int drop;
 	if (n1 == n && n0 > n) {
 		n1 = n0 - n;
 		if (!drop)
-			n1 = TerminalWrite(tout, ttyoring.bottom, n1);
+			n1 = TerminalWrite(ttyoring.bottom, n1);
 		n += n1;
 	}
 	ring_consumed(&ttyoring, n);
@@ -102,12 +102,12 @@ getconnmode()
 void
 setconnmode()
 {
-    TerminalNewMode(tin, tout, getconnmode());
+    TerminalNewMode(getconnmode());
 }
 
 
 void
 setcommandmode()
 {
-    TerminalNewMode(tin, tout, 0);
+    TerminalNewMode(0);
 }
