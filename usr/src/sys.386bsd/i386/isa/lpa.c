@@ -45,6 +45,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00164
+ * --------------------         -----   ----------------------
+ *
+ * 01 June 93	Rodney W. Grimes	Made lpflag uniq now is lpaflag
+ *					Added timeout loop to lpa_port_test.
+ *					lpa_port_test should move to a common
+ *					routine..
+ *
  */
 
 /*
@@ -101,7 +112,8 @@
 #ifndef DEBUG
 #define lprintf
 #else
-#define lprintf		if (lpflag) printf
+#define lprintf		if (lpaflag) printf
+int lpaflag = 1;
 #endif
 
 int lpaprobe(), lpaattach();
@@ -139,11 +151,14 @@ struct lpa_softc {
 int
 lpa_port_test(short port, u_char data, u_char mask)
 	{
-	int	temp;
+	int	temp, timeout;
 
 	data = data & mask;
 	outb(port, data);
-	temp = inb(port) & mask;
+	timeout = 100;
+	do
+		temp = inb(port) & mask;
+	while (temp != data && --timeout);
 	lprintf("Port 0x%x\tout=%x\tin=%x\n", port, data, temp);
 	return (temp == data);
 	}
