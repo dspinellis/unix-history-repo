@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	8.4 (Berkeley) %G%
+ *	@(#)socket.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _SYS_SOCKET_H_
@@ -54,7 +54,7 @@
  */
 struct	linger {
 	int	l_onoff;		/* option on/off */
-	int	l_linger;		/* linger time */
+	int	l_linger;		/* linger time in seconds */
 };
 
 /*
