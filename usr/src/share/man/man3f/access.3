@@ -1,0 +1,43 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)access.3	5.1 (Berkeley) %G%
+.\"
+.TH ACCESS 3F "26 July 1983"
+.UC 5
+.SH NAME
+access \- determine accessability of a file
+.SH SYNOPSIS
+.B integer function access (name, mode)
+.br
+.B character*(*) name, mode
+.SH DESCRIPTION
+.I Access
+checks the given file,
+.I name,
+for accessability with respect to the caller according to
+.I mode.
+.I Mode
+may include in any order and in any combination one or more of:
+.LP
+.nf
+.ta 1i 2i
+	   \fBr\fR	test for read permission
+	   \fBw\fR	test for write permission
+	   \fBx\fR	test for execute permission
+	(blank)	test for existence
+.DT
+.fi
+.PP
+An error code is returned if either argument is illegal, or if the file
+can not be accessed in all of the specified modes.
+0 is returned if the specified access would be successful.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+access(2), perror(3F)
+.SH BUGS
+Pathnames can be no longer than MAXPATHLEN as defined in
+.RI < sys/param.h >.
