@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,12 +85,11 @@ config()
 			    (ep->s = strdup(t)) == NULL)
 				err(1, NULL);
 			queue_enter_tail(&qp->list, ep, ENTRY *, list);
-		} else while ((p = strtok(t + 1, " \t\n")) != NULL) {
+		} else for (++t; (p = strtok(t, " \t\n")) != NULL; t = NULL) {
 			if ((ep = malloc(sizeof(ENTRY))) == NULL ||
 			    (ep->s = strdup(p)) == NULL)
 				err(1, NULL);
 			queue_enter_tail(&qp->list, ep, ENTRY *, list);
-			t = NULL;
 		}
 	}
 }
