@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.16 (Berkeley) %G%
+ *	@(#)nameser.h	5.17 (Berkeley) %G%
  */
 
 /*
@@ -167,3 +167,38 @@ struct rrec {
 
 extern	u_short	_getshort();
 extern	u_long	_getlong();
+
+/*
+ * Inline versions of get/put short/long.
+ * Pointer is advanced; we assume that both arguments
+ * are lvalues and will already be in registers.
+ * cp MUST be u_char *.
+ */
+#define GETSHORT(s, cp) { \
+	(s) = *(cp)++ << 8; \
+	(s) |= *(cp)++; \
+}
+
+#define GETLONG(l, cp) { \
+	(l) = *(cp)++ << 8; \
+	(l) |= *(cp)++; (l) <<= 8; \
+	(l) |= *(cp)++; (l) <<= 8; \
+	(l) |= *(cp)++; \
+}
+
+
+#define PUTSHORT(s, cp) { \
+	*(cp)++ = (s) >> 8; \
+	*(cp)++ = (s); \
+}
+
+/*
+ * Warning: PUTLONG destroys its first argument.
+ */
+#define PUTLONG(l, cp) { \
+	(cp)[3] = l; \
+	(cp)[2] = (l >>= 8); \
+	(cp)[1] = (l >>= 8); \
+	(cp)[0] = l >> 8; \
+	(cp) += sizeof(u_long); \
+}
