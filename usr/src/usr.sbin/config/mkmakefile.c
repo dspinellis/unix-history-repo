@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -573,7 +573,7 @@ do_systemspec(f, fl, first)
 
 	fprintf(f, "%s: Makefile", fl->f_needs);
 	if (machine == MACHINE_VAX)
-		fprintf(f, " ${INLINE}", machinename);
+		fprintf(f, " ${INLINECMD}", machinename);
 	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
