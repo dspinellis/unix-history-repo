@@ -4,26 +4,27 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)buildboot	1.1 (Berkeley) %G%
+#	@(#)buildboot	1.2 (Berkeley) %G%
 #
-boot=dk5a
-boottype=eagle
+boot=dk2a
+boottype=xfd
+bootmnt=/tmp/mini
 DISTROOT=/nbsd
 
 date
 umount /dev/${boot}
-newfs -s 500 -i 32000 ${boot} ${boottype}
+newfs -s 1200 ${boot} ${boottype}
 fsck /dev/r${boot}
-mount /dev/${boot} /mnt
-cp $DISTROOT/stand/copy /mnt
-#cp $DISTROOT/stand/vdformat /mnt
-cp $DISTROOT/boot /mnt
-cp $DISTROOT/wcs /mnt
-cp $DISTROOT/fppwcs /mnt
-#cp $DISTROOT/poc /mnt
-#cp $DISTROOT/poc1 /mnt
-#cp $DISTROOT/poc2 /mnt
-#cp $DISTROOT/fppoc /mnt
+mount /dev/${boot} ${bootmnt}
+cp $DISTROOT/stand/copy ${bootmnt}
+#cp $DISTROOT/stand/vdformat ${bootmnt}
+cp $DISTROOT/boot ${bootmnt}
+cp $DISTROOT/wcs ${bootmnt}
+cp $DISTROOT/fppwcs ${bootmnt}
+#cp $DISTROOT/poc ${bootmnt}
+#cp $DISTROOT/poc1 ${bootmnt}
+#cp $DISTROOT/poc2 ${bootmnt}
+#cp $DISTROOT/fppoc ${bootmnt}
 sync
 umount /dev/${boot}
 fsck /dev/${boot}
