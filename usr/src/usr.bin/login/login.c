@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.32.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
