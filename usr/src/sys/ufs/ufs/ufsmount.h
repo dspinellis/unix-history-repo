@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	7.10 (Berkeley) %G%
+ *	@(#)ufsmount.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -39,28 +39,6 @@ struct ufsmount {
 	time_t	um_btime[MAXQUOTAS];		/* block quota time limit */
 	time_t	um_itime[MAXQUOTAS];		/* inode quota time limit */
 	char	um_qflags[MAXQUOTAS];		/* quota specific flags */
-
-	/*
-	 * The following is the inode switch.  It is intended to provide
-	 * the interface between the Unix File System semantics and the
-	 * on-disk allocation, layout and I/O.
-	 */
-	int	(*um_blkatoff) __P((struct inode *ip,
-		    off_t offset, char **res, struct buf **bpp));
-	int	(*um_write) __P((struct vnode *vp,
-		    struct uio *uio, int ioflag, struct ucred *cred));
-	int	(*um_iget) __P((struct inode *pip,
-		    ino_t ino, struct inode **ipp));
-	int	(*um_ialloc) __P((struct inode *pip,
-		    int mode, struct ucred *cred, struct inode **ipp));
-	void	(*um_ifree) __P((struct inode *pip, ino_t ino, int mode));
-	int	(*um_itrunc) __P((struct inode *oip, u_long length, int flags));
-	int	(*um_iupdat) __P((struct inode *ip,
-		    struct timeval *ta, struct timeval *tm, int waitfor));
-	int	(*um_bwrite)		/* XXX changes */
-		    __P((struct buf *bp));
-	int	(*um_bmap)		/* XXX changes */
-		    __P((struct inode *ip, daddr_t bn, daddr_t *bnp));
 };
 /*
  * Flags describing the state of quotas.
