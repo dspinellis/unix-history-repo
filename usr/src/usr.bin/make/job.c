@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1340,7 +1340,7 @@ JobStart (gn, flags, previous)
 	previous->flags &= ~ (JOB_FIRST|JOB_IGNERR|JOB_SILENT|JOB_REMOTE);
 	job = previous;
     } else {
-	job = (Job *) malloc (sizeof (Job));
+	job = (Job *) emalloc (sizeof (Job));
 	if (job == (Job *)NULL) {
 	    Punt("JobStart out of memory");
 	}
@@ -2095,7 +2095,7 @@ Job_Init (maxproc, maxlocal)
 	 * All default shells are located in _PATH_DEFSHELLDIR.
 	 */
 	shellName = commandShell->name;
-	shellPath = Str_Concat (_PATH_DEFSHELLDIR, shellName, STR_ADDSLASH);
+	shellPath = str_concat (_PATH_DEFSHELLDIR, shellName, STR_ADDSLASH);
     }
 
     if (commandShell->exit == (char *)NULL) {
@@ -2315,7 +2315,7 @@ Job_ParseShell (line)
     while (isspace (*line)) {
 	line++;
     }
-    words = Str_BreakString (line, " \t", "\n", &wordCount);
+    words = brk_string (line, &wordCount);
 
     bzero ((Address)&newShell, sizeof(newShell));
     
@@ -2352,7 +2352,6 @@ Job_ParseShell (line)
 		 } else {
 		     Parse_Error (PARSE_FATAL, "Unknown keyword \"%s\"",
 				  *argv);
-		     Str_FreeVec (wordCount, words);
 		     return (FAILURE);
 		 }
 		 fullSpec = TRUE;
@@ -2368,7 +2367,6 @@ Job_ParseShell (line)
 	 */
 	if (newShell.name == (char *)NULL) {
 	    Parse_Error (PARSE_FATAL, "Neither path nor name specified");
-	    Str_FreeVec (wordCount, words);
 	    return (FAILURE);
 	} else {
 	    commandShell = JobMatchShell (newShell.name);
@@ -2397,7 +2395,7 @@ Job_ParseShell (line)
 	if (!fullSpec) {
 	    commandShell = JobMatchShell (shellName);
 	} else {
-	    commandShell = (Shell *) malloc(sizeof(Shell));
+	    commandShell = (Shell *) emalloc(sizeof(Shell));
 	    *commandShell = newShell;
 	}
     }
