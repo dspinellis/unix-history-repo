@@ -6,14 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
-
-/*
- * C shell
- */
 
 /*
  * These routines perform variable substitution and quoting via ' and ".
@@ -24,8 +20,8 @@ static char sccsid[] = "@(#)dol.c	5.8 (Berkeley) %G%";
  * some QUOTEing may have occurred already, so we dont "trim()" here.
  */
 
-int	Dpeekc, Dpeekrd;		/* Peeks for DgetC and Dreadc */
-char	*Dcp, **Dvp;			/* Input vector for Dreadc */
+static int Dpeekc, Dpeekrd;	/* Peeks for DgetC and Dreadc */
+static Char *Dcp, **Dvp;	/* Input vector for Dreadc */
 
 #define	DEOF	-1
 
@@ -39,70 +35,136 @@ char	*Dcp, **Dvp;			/* Input vector for Dreadc */
  * words within this expansion, the count of remaining words, and the
  * information about any : modifier which is being applied.
  */
-char	*dolp;			/* Remaining chars from this word */
-char	**dolnxt;		/* Further words */
-int	dolcnt;			/* Count of further words */
-char	dolmod;			/* : modifier character */
-int	dolmcnt;		/* :gx -> 10000, else 1 */
+static Char *dolp;		/* Remaining chars from this word */
+static Char **dolnxt;		/* Further words */
+static int dolcnt;		/* Count of further words */
+static Char dolmod;		/* : modifier character */
+static int dolmcnt;		/* :gx -> 10000, else 1 */
+
+static void Dfix2();
+static Char *Dpack();
+static int Dword();
+static void dolerror();
+static int DgetC();
+static void Dgetdol();
+static void fixDolMod();
+static void setDolp();
+static void unDredc();
+static int Dredc();
+static void Dtestq();
+
 
 /*
  * Fix up the $ expansions and quotations in the
  * argument list to command t.
  */
+void
 Dfix(t)
-	register struct command *t;
+    register struct command *t;
 {
-	register char **pp;
-	register char *p;
+    register Char **pp;
+    register Char *p;
 
-	if (noexec)
+    if (noexec)
+	return;
+    /* Note that t_dcom isn't trimmed thus !...:q's aren't lost */
+    for (pp = t->t_dcom; p = *pp++;)
+	for (; *p; p++) {
+	    if (cmap(*p, _DOL | QUOTES)) {	/* $, \, ', ", ` */
+		Dfix2(t->t_dcom);	/* found one */
+		blkfree(t->t_dcom);
+		t->t_dcom = gargv;
+		gargv = 0;
 		return;
-	/* Note that t_dcom isn't trimmed thus !...:q's aren't lost */
-	for (pp = t->t_dcom; p = *pp++;)
-		while (*p)
-			if (cmap(*p++, _DOL|QUOTES)) {	/* $, \, ', ", ` */
-				Dfix2(t->t_dcom);	/* found one */
-				blkfree(t->t_dcom);
-				t->t_dcom = gargv;
-				gargv = 0;
-				return;
-			}
+	    }
+	}
 }
 
 /*
  * $ substitute one word, for i/o redirection
  */
-char *
+Char   *
 Dfix1(cp)
-	register char *cp;
+    register Char *cp;
 {
-	char *Dv[2];
+    Char   *Dv[2];
 
-	if (noexec)
-		return (0);
-	Dv[0] = cp; Dv[1] = NOSTR;
-	Dfix2(Dv);
-	if (gargc != 1) {
-		setname(cp);
-		bferr("Ambiguous");
-	}
-	cp = savestr(gargv[0]);
-	blkfree(gargv), gargv = 0;
-	return (cp);
+    if (noexec)
+	return (0);
+    Dv[0] = cp;
+    Dv[1] = NULL;
+    Dfix2(Dv);
+    if (gargc != 1) {
+	setname(short2str(cp));
+	stderror(ERR_NAME | ERR_AMBIG);
+    }
+    cp = Strsave(gargv[0]);
+    blkfree(gargv), gargv = 0;
+    return (cp);
 }
 
 /*
  * Subroutine to do actual fixing after state initialization.
  */
+static void
 Dfix2(v)
-	char **v;
+    Char  **v;
 {
-	ginit();			/* Initialize glob's area pointers */
-	Dvp = v; Dcp = "";		/* Setup input vector for Dreadc */
-	unDgetC(0); unDredc(0);		/* Clear out any old peeks (at error) */
-	dolp = 0; dolcnt = 0;		/* Clear out residual $ expands (...) */
-	while (Dword())
-		continue;
+    ginit();			/* Initialize glob's area pointers */
+    Dvp = v;
+    Dcp = STRNULL;		/* Setup input vector for Dreadc */
+    unDgetC(0);
+    unDredc(0);			/* Clear out any old peeks (at error) */
+    dolp = 0;
+    dolcnt = 0;			/* Clear out residual $ expands (...) */
+    while (Dword())
+	continue;
+}
+
+#define MAXWLEN (BUFSIZ - 4)
+/*
+ * Pack up more characters in this word
+ */
+static Char *
+Dpack(wbuf, wp)
+    Char   *wbuf, *wp;
+{
+    register int c;
+    register int i = MAXWLEN - (wp - wbuf);
+
+    for (;;) {
+	c = DgetC(DODOL);
+	if (c == '\\') {
+	    c = DgetC(0);
+	    if (c == DEOF) {
+		unDredc(c);
+		*wp = 0;
+		Gcat(STRNULL, wbuf);
+		return (NULL);
+	    }
+	    if (c == '\n')
+		c = ' ';
+	    else
+		c |= QUOTE;
+	}
+	if (c == DEOF) {
+	    unDredc(c);
+	    *wp = 0;
+	    Gcat(STRNULL, wbuf);
+	    return (NULL);
+	}
+	if (cmap(c, _SP | _NL | _Q | _Q1)) {	/* sp \t\n'"` */
+	    unDgetC(c);
+	    if (cmap(c, QUOTES))
+		return (wp);
+	    *wp++ = 0;
+	    Gcat(STRNULL, wbuf);
+	    return (NULL);
+	}
+	if (--i <= 0)
+	    stderror(ERR_WTOOLONG);
+	*wp++ = c;
+    }
 }
 
 /*
@@ -111,449 +173,477 @@ Dfix2(v)
  * here is that we don't get a newline to terminate our expansion.
  * Rather, DgetC will return a DEOF when we hit the end-of-input.
  */
+static int
 Dword()
 {
-	register int c, c1;
-	char wbuf[BUFSIZ];
-	register char *wp = wbuf;
-	register int i = BUFSIZ - 4;
-	register bool dolflg;
-	bool sofar = 0;
+    register int c, c1;
+    Char    wbuf[BUFSIZ];
+    register Char *wp = wbuf;
+    register int i = MAXWLEN;
+    register bool dolflg;
+    bool    sofar = 0, done = 0;
 
-loop:
+    while (!done) {
+	done = 1;
 	c = DgetC(DODOL);
 	switch (c) {
 
 	case DEOF:
-deof:
-		if (sofar == 0)
-			return (0);
-		/* finish this word and catch the code above the next time */
-		unDredc(c);
-		/* fall into ... */
+	    if (sofar == 0)
+		return (0);
+	    /* finish this word and catch the code above the next time */
+	    unDredc(c);
+	    /* fall into ... */
 
 	case '\n':
-		*wp = 0;
-		goto ret;
+	    *wp = 0;
+	    Gcat(STRNULL, wbuf);
+	    return (1);
 
 	case ' ':
 	case '\t':
-		goto loop;
+	    done = 0;
+	    break;
 
 	case '`':
-		/* We preserve ` quotations which are done yet later */
-		*wp++ = c, --i;
+	    /* We preserve ` quotations which are done yet later */
+	    *wp++ = c, --i;
 	case '\'':
 	case '"':
-		/*
-		 * Note that DgetC never returns a QUOTES character
-		 * from an expansion, so only true input quotes will
-		 * get us here or out.
-		 */
-		c1 = c;
-		dolflg = c1 == '"' ? DODOL : 0;
-		for (;;) {
-			c = DgetC(dolflg);
-			if (c == c1)
-				break;
-			if (c == '\n' || c == DEOF)
-				error("Unmatched %c", c1);
-			if ((c & (QUOTE|TRIM)) == ('\n' | QUOTE))
-				--wp, ++i;
-			if (--i <= 0)
-				goto toochars;
-			switch (c1) {
+	    /*
+	     * Note that DgetC never returns a QUOTES character from an
+	     * expansion, so only true input quotes will get us here or out.
+	     */
+	    c1 = c;
+	    dolflg = c1 == '"' ? DODOL : 0;
+	    for (;;) {
+		c = DgetC(dolflg);
+		if (c == c1)
+		    break;
+		if (c == '\n' || c == DEOF)
+		    stderror(ERR_UNMATCHED, c1);
+		if ((c & (QUOTE | TRIM)) == ('\n' | QUOTE))
+		    --wp, ++i;
+		if (--i <= 0)
+		    stderror(ERR_WTOOLONG);
+		switch (c1) {
 
-			case '"':
-				/*
-				 * Leave any `s alone for later.
-				 * Other chars are all quoted, thus `...`
-				 * can tell it was within "...".
-				 */
-				*wp++ = c == '`' ? '`' : c | QUOTE;
-				break;
+		case '"':
+		    /*
+		     * Leave any `s alone for later. Other chars are all
+		     * quoted, thus `...` can tell it was within "...".
+		     */
+		    *wp++ = c == '`' ? '`' : c | QUOTE;
+		    break;
 
-			case '\'':
-				/* Prevent all further interpretation */
-				*wp++ = c | QUOTE;
-				break;
+		case '\'':
+		    /* Prevent all further interpretation */
+		    *wp++ = c | QUOTE;
+		    break;
 
-			case '`':
-				/* Leave all text alone for later */
-				*wp++ = c;
-				break;
-			}
+		case '`':
+		    /* Leave all text alone for later */
+		    *wp++ = c;
+		    break;
 		}
-		if (c1 == '`')
-			*wp++ = '`', --i;
-		goto pack;		/* continue the word */
+	    }
+	    if (c1 == '`')
+		*wp++ = '`', --i;
+	    sofar = 1;
+	    if ((wp = Dpack(wbuf, wp)) == NULL)
+		return (1);
+	    else {
+		i = MAXWLEN - (wp - wbuf);
+		done = 0;
+	    }
+	    break;
 
 	case '\\':
-		c = DgetC(0);		/* No $ subst! */
-		if (c == '\n' || c == DEOF)
-			goto loop;
-		c |= QUOTE;
+	    c = DgetC(0);	/* No $ subst! */
+	    if (c == '\n' || c == DEOF) {
+		done = 0;
 		break;
+	    }
+	    c |= QUOTE;
+	    break;
 	}
-	unDgetC(c);
-pack:
-	sofar = 1;
-	/* pack up more characters in this word */
-	for (;;) {
-		c = DgetC(DODOL);
-		if (c == '\\') {
-			c = DgetC(0);
-			if (c == DEOF)
-				goto deof;
-			if (c == '\n')
-				c = ' ';
-			else
-				c |= QUOTE;
-		}
-		if (c == DEOF)
-			goto deof;
-		if (cmap(c, _SP|_NL|_Q|_Q1)) {		/* sp \t\n'"` */
-			unDgetC(c);
-			if (cmap(c, QUOTES))
-				goto loop;
-			*wp++ = 0;
-			goto ret;
-		}
-		if (--i <= 0)
-toochars:
-			error("Word too long");
-		*wp++ = c;
+	if (done) {
+	    unDgetC(c);
+	    sofar = 1;
+	    if ((wp = Dpack(wbuf, wp)) == NULL)
+		return (1);
+	    else {
+		i = MAXWLEN - (wp - wbuf);
+		done = 0;
+	    }
 	}
-ret:
-	Gcat("", wbuf);
-	return (1);
+    }
+    /* Really NOTREACHED */
+    return (0);
 }
+
 
 /*
  * Get a character, performing $ substitution unless flag is 0.
  * Any QUOTES character which is returned from a $ expansion is
  * QUOTEd so that it will not be recognized above.
  */
+static int
 DgetC(flag)
-	register int flag;
+    register int flag;
 {
-	register int c;
+    register int c;
 
 top:
-	if (c = Dpeekc) {
-		Dpeekc = 0;
-		return (c);
-	}
-	if (lap) {
-		c = *lap++ & (QUOTE|TRIM);
-		if (c == 0) {
-			lap = 0;
-			goto top;
-		}
-quotspec:
-		if (cmap(c, QUOTES))
-			return (c | QUOTE);
-		return (c);
-	}
-	if (dolp) {
-		if (c = *dolp++ & (QUOTE|TRIM))
-			goto quotspec;
-		if (dolcnt > 0) {
-			setDolp(*dolnxt++);
-			--dolcnt;
-			return (' ');
-		}
-		dolp = 0;
-	}
-	if (dolcnt > 0) {
-		setDolp(*dolnxt++);
-		--dolcnt;
-		goto top;
-	}
-	c = Dredc();
-	if (c == '$' && flag) {
-		Dgetdol();
-		goto top;
-	}
+    if (c = Dpeekc) {
+	Dpeekc = 0;
 	return (c);
+    }
+    if (lap) {
+	c = *lap++ & (QUOTE | TRIM);
+	if (c == 0) {
+	    lap = 0;
+	    goto top;
+	}
+quotspec:
+	if (cmap(c, QUOTES))
+	    return (c | QUOTE);
+	return (c);
+    }
+    if (dolp) {
+	if (c = *dolp++ & (QUOTE | TRIM))
+	    goto quotspec;
+	if (dolcnt > 0) {
+	    setDolp(*dolnxt++);
+	    --dolcnt;
+	    return (' ');
+	}
+	dolp = 0;
+    }
+    if (dolcnt > 0) {
+	setDolp(*dolnxt++);
+	--dolcnt;
+	goto top;
+    }
+    c = Dredc();
+    if (c == '$' && flag) {
+	Dgetdol();
+	goto top;
+    }
+    return (c);
 }
 
-char	*nulvec[] = { 0 };
-struct	varent nulargv = { nulvec, "argv", 0 };
+static Char *nulvec[] = {0};
+static struct varent nulargv = {nulvec, STRargv, 0};
+
+static void
+dolerror(s)
+    Char   *s;
+{
+    setname(short2str(s));
+    stderror(ERR_NAME | ERR_RANGE);
+}
 
 /*
  * Handle the multitudinous $ expansion forms.
  * Ugh.
  */
+static void
 Dgetdol()
 {
-	register char *np;
-	register struct varent *vp;
-	char name[20];
-	int c, sc;
-	int subscr = 0, lwb = 1, upb = 0;
-	bool dimen = 0, bitset = 0;
-	char wbuf[BUFSIZ];
+    register Char *np;
+    register struct varent *vp = NULL;
+    Char    name[4 * MAXVARLEN + 1];
+    int     c, sc;
+    int     subscr = 0, lwb = 1, upb = 0;
+    bool    dimen = 0, bitset = 0;
+    char    tnp;
+    Char    wbuf[BUFSIZ];
 
-	dolmod = dolmcnt = 0;
-	c = sc = DgetC(0);
-	if (c == '{')
-		c = DgetC(0);		/* sc is { to take } later */
-	if ((c & TRIM) == '#')
-		dimen++, c = DgetC(0);		/* $# takes dimension */
-	else if (c == '?')
-		bitset++, c = DgetC(0);		/* $? tests existence */
-	switch (c) {
-	
-	case '$':
-		if (dimen || bitset)
-			goto syntax;		/* No $?$, $#$ */
-		setDolp(doldol);
-		goto eatbrac;
+    dolmod = dolmcnt = 0;
+    c = sc = DgetC(0);
+    if (c == '{')
+	c = DgetC(0);		/* sc is { to take } later */
+    if ((c & TRIM) == '#')
+	dimen++, c = DgetC(0);	/* $# takes dimension */
+    else if (c == '?')
+	bitset++, c = DgetC(0);	/* $? tests existence */
+    switch (c) {
 
-	case '<'|QUOTE:
-		if (dimen || bitset)
-			goto syntax;		/* No $?<, $#< */
-		for (np = wbuf; read(OLDSTD, np, 1) == 1; np++) {
-			if (np >= &wbuf[BUFSIZ-1])
-				error("$< line too long");
-			if (*np <= 0 || *np == '\n')
-				break;
-		}
-		*np = 0;
-		/*
-		 * KLUDGE: dolmod is set here because it will
-		 * cause setDolp to call domod and thus to copy wbuf.
-		 * Otherwise setDolp would use it directly. If we saved
-		 * it ourselves, no one would know when to free it.
-		 * The actual function of the 'q' causes filename
-		 * expansion not to be done on the interpolated value.
-		 */
-		dolmod = 'q';
-		dolmcnt = 10000;
-		setDolp(wbuf);
-		goto eatbrac;
+    case '$':
+	if (dimen || bitset)
+	    stderror(ERR_SYNTAX);
+	setDolp(doldol);
+	goto eatbrac;
 
-	case DEOF:
-	case '\n':
-		goto syntax;
-
-	case '*':
-		(void) strcpy(name, "argv");
-		vp = adrof("argv");
-		subscr = -1;			/* Prevent eating [...] */
+    case '<' | QUOTE:
+	if (bitset)
+	    stderror(ERR_NOTALLOWED, "$?<");
+	if (dimen)
+	    stderror(ERR_NOTALLOWED, "$?#");
+	for (np = wbuf; read(OLDSTD, &tnp, 1) == 1; np++) {
+	    *np = tnp;
+	    if (np >= &wbuf[BUFSIZ - 1])
+		stderror(ERR_LTOOLONG);
+	    if (SIGN_EXTEND_CHAR(tnp) <= 0 || tnp == '\n')
 		break;
-
-	default:
-		np = name;
-		if (digit(c)) {
-			if (dimen)
-				goto syntax;	/* No $#1, e.g. */
-			subscr = 0;
-			do {
-				subscr = subscr * 10 + c - '0';
-				c = DgetC(0);
-			} while (digit(c));
-			unDredc(c);
-			if (subscr < 0)
-				goto oob;
-			if (subscr == 0) {
-				if (bitset) {
-					dolp = file ? "1" : "0";
-					goto eatbrac;
-				}
-				if (file == 0)
-					error("No file for $0");
-				setDolp(file);
-				goto eatbrac;
-			}
-			if (bitset)
-				goto syntax;
-			vp = adrof("argv");
-			if (vp == 0) {
-				vp = &nulargv;
-				goto eatmod;
-			}
-			break;
-		}
-		if (!alnum(c))
-			goto syntax;
-		for (;;) {
-			*np++ = c;
-			c = DgetC(0);
-			if (!alnum(c))
-				break;
-			if (np >= &name[sizeof name - 2])
-syntax:
-				error("Variable syntax");
-		}
-		*np++ = 0;
-		unDredc(c);
-		vp = adrof(name);
 	}
-	if (bitset) {
-		dolp = (vp || getenv(name)) ? "1" : "0";
-		goto eatbrac;
-	}
-	if (vp == 0) {
-		np = getenv(name);
-		if (np) {
-			addla(np);
-			goto eatbrac;
-		}
-		udvar(name);
-		/*NOTREACHED*/
-	}
-	c = DgetC(0);
-	upb = blklen(vp->vec);
-	if (dimen == 0 && subscr == 0 && c == '[') {
-		np = name;
-		for (;;) {
-			c = DgetC(DODOL);	/* Allow $ expand within [ ] */
-			if (c == ']')
-				break;
-			if (c == '\n' || c == DEOF)
-				goto syntax;
-			if (np >= &name[sizeof name - 2])
-				goto syntax;
-			*np++ = c;
-		}
-		*np = 0, np = name;
-		if (dolp || dolcnt)		/* $ exp must end before ] */
-			goto syntax;
-		if (!*np)
-			goto syntax;
-		if (digit(*np)) {
-			register int i = 0;
+	*np = 0;
+	/*
+	 * KLUDGE: dolmod is set here because it will cause setDolp to call
+	 * domod and thus to copy wbuf. Otherwise setDolp would use it
+	 * directly. If we saved it ourselves, no one would know when to free
+	 * it. The actual function of the 'q' causes filename expansion not to
+	 * be done on the interpolated value.
+	 */
+	dolmod = 'q';
+	dolmcnt = 10000;
+	setDolp(wbuf);
+	goto eatbrac;
 
-			while (digit(*np))
-				i = i * 10 + *np++ - '0';
-			if ((i < 0 || i > upb) && !index("-*", *np)) {
-oob:
-				setname(vp->v_name);
-				error("Subscript out of range");
-			}
-			lwb = i;
-			if (!*np)
-				upb = lwb, np = "*";
-		}
-		if (*np == '*')
-			np++;
-		else if (*np != '-')
-			goto syntax;
-		else {
-			register int i = upb;
+    case DEOF:
+    case '\n':
+	stderror(ERR_SYNTAX);
+	/* NOTREACHED */
+	break;
 
-			np++;
-			if (digit(*np)) {
-				i = 0;
-				while (digit(*np))
-					i = i * 10 + *np++ - '0';
-				if (i < 0 || i > upb)
-					goto oob;
-			}
-			if (i < lwb)
-				upb = lwb - 1;
-			else
-				upb = i;
-		}
-		if (lwb == 0) {
-			if (upb != 0)
-				goto oob;
-			upb = -1;
-		}
-		if (*np)
-			goto syntax;
-	} else {
-		if (subscr > 0)
-			if (subscr > upb)
-				lwb = 1, upb = 0;
-			else
-				lwb = upb = subscr;
-		unDredc(c);
-	}
-	if (dimen) {
-		char *cp = putn(upb - lwb + 1);
+    case '*':
+	(void) Strcpy(name, STRargv);
+	vp = adrof(STRargv);
+	subscr = -1;		/* Prevent eating [...] */
+	break;
 
-		addla(cp);
-		xfree(cp);
-	} else {
-eatmod:
+    default:
+	np = name;
+	if (Isdigit(c)) {
+	    if (dimen)
+		stderror(ERR_NOTALLOWED, "$#<num>");
+	    subscr = 0;
+	    do {
+		subscr = subscr * 10 + c - '0';
 		c = DgetC(0);
-		if (c == ':') {
-			c = DgetC(0), dolmcnt = 1;
-			if (c == 'g')
-				c = DgetC(0), dolmcnt = 10000;
-			if (!index("htrqxe", c))
-				error("Bad : mod in $");
-			dolmod = c;
-			if (c == 'q')
-				dolmcnt = 10000;
-		} else
-			unDredc(c);
-		dolnxt = &vp->vec[lwb - 1];
-		dolcnt = upb - lwb + 1;
-	}
-eatbrac:
-	if (sc == '{') {
-		c = Dredc();
-		if (c != '}')
-			goto syntax;
-	}
-}
-
-setDolp(cp)
-	register char *cp;
-{
-	register char *dp;
-
-	if (dolmod == 0 || dolmcnt == 0) {
-		dolp = cp;
+	    } while (Isdigit(c));
+	    unDredc(c);
+	    if (subscr < 0) {
+		dolerror(vp->v_name);
 		return;
+	    }
+	    if (subscr == 0) {
+		if (bitset) {
+		    dolp = ffile ? STR1 : STR0;
+		    goto eatbrac;
+		}
+		if (ffile == 0)
+		    stderror(ERR_DOLZERO);
+		fixDolMod();
+		setDolp(ffile);
+		goto eatbrac;
+	    }
+	    if (bitset)
+		stderror(ERR_DOLQUEST);
+	    vp = adrof(STRargv);
+	    if (vp == 0) {
+		vp = &nulargv;
+		goto eatmod;
+	    }
+	    break;
 	}
-	dp = domod(cp, dolmod);
-	if (dp) {
-		dolmcnt--;
-		addla(dp);
-		xfree(dp);
-	} else
-		addla(cp);
-	dolp = "";
-	if (err)
-		error(err);
+	if (!alnum(c))
+	    stderror(ERR_VARALNUM);
+	for (;;) {
+	    *np++ = c;
+	    c = DgetC(0);
+	    if (!alnum(c))
+		break;
+	    if (np >= &name[MAXVARLEN])
+		stderror(ERR_VARTOOLONG);
+	}
+	*np++ = 0;
+	unDredc(c);
+	vp = adrof(name);
+    }
+    if (bitset) {
+	dolp = (vp || getenv(short2str(name))) ? STR1 : STR0;
+	goto eatbrac;
+    }
+    if (vp == 0) {
+	np = str2short(getenv(short2str(name)));
+	if (np) {
+	    fixDolMod();
+	    setDolp(np);
+	    goto eatbrac;
+	}
+	udvar(name);
+	/* NOTREACHED */
+    }
+    c = DgetC(0);
+    upb = blklen(vp->vec);
+    if (dimen == 0 && subscr == 0 && c == '[') {
+	np = name;
+	for (;;) {
+	    c = DgetC(DODOL);	/* Allow $ expand within [ ] */
+	    if (c == ']')
+		break;
+	    if (c == '\n' || c == DEOF)
+		stderror(ERR_INCBR);
+	    if (np >= &name[sizeof(name) / sizeof(Char) - 2])
+		stderror(ERR_VARTOOLONG);
+	    *np++ = c;
+	}
+	*np = 0, np = name;
+	if (dolp || dolcnt)	/* $ exp must end before ] */
+	    stderror(ERR_EXPORD);
+	if (!*np)
+	    stderror(ERR_SYNTAX);
+	if (Isdigit(*np)) {
+	    int     i;
+
+	    for (i = 0; Isdigit(*np); i = i * 10 + *np++ - '0');
+	    if ((i < 0 || i > upb) && !any("-*", *np)) {
+		dolerror(vp->v_name);
+		return;
+	    }
+	    lwb = i;
+	    if (!*np)
+		upb = lwb, np = STRstar;
+	}
+	if (*np == '*')
+	    np++;
+	else if (*np != '-')
+	    stderror(ERR_MISSING, '-');
+	else {
+	    register int i = upb;
+
+	    np++;
+	    if (Isdigit(*np)) {
+		i = 0;
+		while (Isdigit(*np))
+		    i = i * 10 + *np++ - '0';
+		if (i < 0 || i > upb) {
+		    dolerror(vp->v_name);
+		    return;
+		}
+	    }
+	    if (i < lwb)
+		upb = lwb - 1;
+	    else
+		upb = i;
+	}
+	if (lwb == 0) {
+	    if (upb != 0) {
+		dolerror(vp->v_name);
+		return;
+	    }
+	    upb = -1;
+	}
+	if (*np)
+	    stderror(ERR_SYNTAX);
+    }
+    else {
+	if (subscr > 0)
+	    if (subscr > upb)
+		lwb = 1, upb = 0;
+	    else
+		lwb = upb = subscr;
+	unDredc(c);
+    }
+    if (dimen) {
+	Char   *cp = putn(upb - lwb + 1);
+
+	addla(cp);
+	xfree((ptr_t) cp);
+    }
+    else {
+eatmod:
+	fixDolMod();
+	dolnxt = &vp->vec[lwb - 1];
+	dolcnt = upb - lwb + 1;
+    }
+eatbrac:
+    if (sc == '{') {
+	c = Dredc();
+	if (c != '}')
+	    stderror(ERR_MISSING, '}');
+    }
 }
 
+static void
+fixDolMod()
+{
+    register int c;
+
+    c = DgetC(0);
+    if (c == ':') {
+	c = DgetC(0), dolmcnt = 1;
+	if (c == 'g')
+	    c = DgetC(0), dolmcnt = 10000;
+	if (!any("htrqxe", c))
+	    stderror(ERR_BADMOD, c);
+	dolmod = c;
+	if (c == 'q')
+	    dolmcnt = 10000;
+    }
+    else
+	unDredc(c);
+}
+
+static void
+setDolp(cp)
+    register Char *cp;
+{
+    register Char *dp;
+
+    if (dolmod == 0 || dolmcnt == 0) {
+	dolp = cp;
+	return;
+    }
+    dp = domod(cp, dolmod);
+    if (dp) {
+	dolmcnt--;
+	addla(dp);
+	xfree((ptr_t) dp);
+    }
+    else
+	addla(cp);
+    dolp = STRNULL;
+    if (seterr)
+	stderror(ERR_OLD);
+}
+
+static void
 unDredc(c)
-	int c;
+    int     c;
 {
 
-	Dpeekrd = c;
+    Dpeekrd = c;
 }
 
+static int
 Dredc()
 {
-	register int c;
+    register int c;
 
-	if (c = Dpeekrd) {
-		Dpeekrd = 0;
-		return (c);
-	}
-	if (Dcp && (c = *Dcp++))
-		return (c&(QUOTE|TRIM));
-	if (*Dvp == 0) {
-		Dcp = 0;
-		return (DEOF);
-	}
-	Dcp = *Dvp++;
-	return (' ');
+    if (c = Dpeekrd) {
+	Dpeekrd = 0;
+	return (c);
+    }
+    if (Dcp && (c = *Dcp++))
+	return (c & (QUOTE | TRIM));
+    if (*Dvp == 0) {
+	Dcp = 0;
+	return (DEOF);
+    }
+    Dcp = *Dvp++;
+    return (' ');
 }
 
+static void
 Dtestq(c)
-	register int c;
+    register int c;
 {
 
-	if (cmap(c, QUOTES))
-		gflag = 1;
+    if (cmap(c, QUOTES))
+	gflag = 1;
 }
 
 /*
@@ -561,140 +651,153 @@ Dtestq(c)
  * of the shell input up to EOF or a line the same as "term".
  * Unit 0 should have been closed before this call.
  */
+void
 heredoc(term)
-	char *term;
+    Char   *term;
 {
-	register int c;
-	char *Dv[2];
-	char obuf[BUFSIZ], lbuf[BUFSIZ], mbuf[BUFSIZ];
-	int ocnt, lcnt, mcnt;
-	register char *lbp, *obp, *mbp;
-	char **vp;
-	bool quoted;
+    register int c;
+    Char   *Dv[2];
+    Char    obuf[BUFSIZ], lbuf[BUFSIZ], mbuf[BUFSIZ];
+    int     ocnt, lcnt, mcnt;
+    register Char *lbp, *obp, *mbp;
+    Char  **vp;
+    bool    quoted;
+    char   *tmp;
 
-	if (creat(shtemp, 0600) < 0)
-		Perror(shtemp);
-	(void) close(0);
-	if (open(shtemp, 2) < 0) {
-		int oerrno = errno;
+    if (creat(tmp = short2str(shtemp), 0600) < 0)
+	stderror(ERR_SYSTEM, tmp, strerror(errno));
+    (void) close(0);
+    if (open(tmp, O_RDWR) < 0) {
+	int     oerrno = errno;
 
-		(void) unlink(shtemp);
-		errno = oerrno;
-		Perror(shtemp);
-	}
-	(void) unlink(shtemp);			/* 0 0 inode! */
-	Dv[0] = term; Dv[1] = NOSTR; gflag = 0;
-	trim(Dv); rscan(Dv, Dtestq); quoted = gflag;
-	ocnt = BUFSIZ; obp = obuf;
+	(void) unlink(tmp);
+	errno = oerrno;
+	stderror(ERR_SYSTEM, tmp, strerror(errno));
+    }
+    (void) unlink(tmp);		/* 0 0 inode! */
+    Dv[0] = term;
+    Dv[1] = NULL;
+    gflag = 0;
+    trim(Dv);
+    rscan(Dv, Dtestq);
+    quoted = gflag;
+    ocnt = BUFSIZ;
+    obp = obuf;
+    for (;;) {
+	/*
+	 * Read up a line
+	 */
+	lbp = lbuf;
+	lcnt = BUFSIZ - 4;
 	for (;;) {
-		/*
-		 * Read up a line
-		 */
-		lbp = lbuf; lcnt = BUFSIZ - 4;
-		for (;;) {
-			c = readc(1);		/* 1 -> Want EOF returns */
-			if (c < 0 || c == '\n')
-				break;
-			if (c &= TRIM) {
-				*lbp++ = c;
-				if (--lcnt < 0) {
-					setname("<<");
-					error("Line overflow");
-				} 
-			}
+	    c = readc(1);	/* 1 -> Want EOF returns */
+	    if (c < 0 || c == '\n')
+		break;
+	    if (c &= TRIM) {
+		*lbp++ = c;
+		if (--lcnt < 0) {
+		    setname("<<");
+		    stderror(ERR_NAME | ERR_OVERFLOW);
 		}
-		*lbp = 0;
-
-		/*
-		 * Check for EOF or compare to terminator -- before expansion
-		 */
-		if (c < 0 || eq(lbuf, term)) {
-			(void) write(0, obuf, BUFSIZ - ocnt);
-			(void) lseek(0, (off_t)0, 0);
-			return;
-		}
-
-		/*
-		 * If term was quoted or -n just pass it on
-		 */
-		if (quoted || noexec) {
-			*lbp++ = '\n'; *lbp = 0;
-			for (lbp = lbuf; c = *lbp++;) {
-				*obp++ = c;
-				if (--ocnt == 0) {
-					(void) write(0, obuf, BUFSIZ);
-					obp = obuf; ocnt = BUFSIZ;
-				}
-			}
-			continue;
-		}
-
-		/*
-		 * Term wasn't quoted so variable and then command
-		 * expand the input line
-		 */
-		Dcp = lbuf; Dvp = Dv + 1; mbp = mbuf; mcnt = BUFSIZ - 4;
-		for (;;) {
-			c = DgetC(DODOL);
-			if (c == DEOF)
-				break;
-			if ((c &= TRIM) == 0)
-				continue;
-			/* \ quotes \ $ ` here */
-			if (c =='\\') {
-				c = DgetC(0);
-				if (!index("$\\`", c))
-					unDgetC(c | QUOTE), c = '\\';
-				else
-					c |= QUOTE;
-			}
-			*mbp++ = c;
-			if (--mcnt == 0) {
-				setname("<<");
-				bferr("Line overflow");
-			}
-		}
-		*mbp++ = 0;
-
-		/*
-		 * If any ` in line do command substitution
-		 */
-		mbp = mbuf;
-		if (index(mbp, '`')) {
-			/*
-			 * 1 arg to dobackp causes substitution to be literal.
-			 * Words are broken only at newlines so that all blanks
-			 * and tabs are preserved.  Blank lines (null words)
-			 * are not discarded.
-			 */
-			vp = dobackp(mbuf, 1);
-		} else
-			/* Setup trivial vector similar to return of dobackp */
-			Dv[0] = mbp, Dv[1] = NOSTR, vp = Dv;
-
-		/*
-		 * Resurrect the words from the command substitution
-		 * each separated by a newline.  Note that the last
-		 * newline of a command substitution will have been
-		 * discarded, but we put a newline after the last word
-		 * because this represents the newline after the last
-		 * input line!
-		 */
-		for (; *vp; vp++) {
-			for (mbp = *vp; *mbp; mbp++) {
-				*obp++ = *mbp & TRIM;
-				if (--ocnt == 0) {
-					(void) write(0, obuf, BUFSIZ);
-					obp = obuf; ocnt = BUFSIZ;
-				}
-			}
-			*obp++ = '\n';
-			if (--ocnt == 0) {
-				(void) write(0, obuf, BUFSIZ);
-				obp = obuf; ocnt = BUFSIZ;
-			}
-		}
-		if (pargv)
-			blkfree(pargv), pargv = 0;
+	    }
 	}
+	*lbp = 0;
+
+	/*
+	 * Check for EOF or compare to terminator -- before expansion
+	 */
+	if (c < 0 || eq(lbuf, term)) {
+	    (void) write(0, short2str(obuf), (size_t) (BUFSIZ - ocnt));
+	    (void) lseek(0, 0l, L_SET);
+	    return;
+	}
+
+	/*
+	 * If term was quoted or -n just pass it on
+	 */
+	if (quoted || noexec) {
+	    *lbp++ = '\n';
+	    *lbp = 0;
+	    for (lbp = lbuf; c = *lbp++;) {
+		*obp++ = c;
+		if (--ocnt == 0) {
+		    (void) write(0, short2str(obuf), BUFSIZ);
+		    obp = obuf;
+		    ocnt = BUFSIZ;
+		}
+	    }
+	    continue;
+	}
+
+	/*
+	 * Term wasn't quoted so variable and then command expand the input
+	 * line
+	 */
+	Dcp = lbuf;
+	Dvp = Dv + 1;
+	mbp = mbuf;
+	mcnt = BUFSIZ - 4;
+	for (;;) {
+	    c = DgetC(DODOL);
+	    if (c == DEOF)
+		break;
+	    if ((c &= TRIM) == 0)
+		continue;
+	    /* \ quotes \ $ ` here */
+	    if (c == '\\') {
+		c = DgetC(0);
+		if (!any("$\\`", c))
+		    unDgetC(c | QUOTE), c = '\\';
+		else
+		    c |= QUOTE;
+	    }
+	    *mbp++ = c;
+	    if (--mcnt == 0) {
+		setname("<<");
+		stderror(ERR_NAME | ERR_OVERFLOW);
+	    }
+	}
+	*mbp++ = 0;
+
+	/*
+	 * If any ` in line do command substitution
+	 */
+	mbp = mbuf;
+	if (any(short2str(mbp), '`')) {
+	    /*
+	     * 1 arg to dobackp causes substitution to be literal. Words are
+	     * broken only at newlines so that all blanks and tabs are
+	     * preserved.  Blank lines (null words) are not discarded.
+	     */
+	    vp = dobackp(mbuf, 1);
+	}
+	else
+	    /* Setup trivial vector similar to return of dobackp */
+	    Dv[0] = mbp, Dv[1] = NULL, vp = Dv;
+
+	/*
+	 * Resurrect the words from the command substitution each separated by
+	 * a newline.  Note that the last newline of a command substitution
+	 * will have been discarded, but we put a newline after the last word
+	 * because this represents the newline after the last input line!
+	 */
+	for (; *vp; vp++) {
+	    for (mbp = *vp; *mbp; mbp++) {
+		*obp++ = *mbp & TRIM;
+		if (--ocnt == 0) {
+		    (void) write(0, short2str(obuf), BUFSIZ);
+		    obp = obuf;
+		    ocnt = BUFSIZ;
+		}
+	    }
+	    *obp++ = '\n';
+	    if (--ocnt == 0) {
+		(void) write(0, short2str(obuf), BUFSIZ);
+		obp = obuf;
+		ocnt = BUFSIZ;
+	    }
+	}
+	if (pargv)
+	    blkfree(pargv), pargv = 0;
+    }
 }

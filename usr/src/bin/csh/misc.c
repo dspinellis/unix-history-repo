@@ -6,222 +6,223 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
 
-/*
- * C Shell
- */
+static int renum();
 
-onlyread(cp)
-	char *cp;
+int
+any(s, c)
+    register char *s;
+    register int c;
 {
-	extern char end[];
-
-	return (cp < end);
+    if (!s)
+	return (0);		/* Check for nil pointer */
+    while (*s)
+	if (*s++ == c)
+	    return (1);
+    return (0);
 }
 
-xfree(cp)
-	char *cp;
+void
+setzero(cp, i)
+    char   *cp;
+    int     i;
 {
-	extern char end[];
-
-	if (cp >= end && cp < (char *) &cp)
-		free(cp);
+    if (i != 0)
+	do
+	    *cp++ = 0;
+	while (--i);
 }
 
-char *
-savestr(s)
-	register char *s;
+char   *
+strsave(s)
+    register char *s;
 {
-	char *n;
-	register char *p;
+    char   *n;
+    register char *p;
 
-	if (s == 0)
-		s = "";
-	for (p = s; *p++;)
-		;
-	n = p = xalloc((unsigned) (p - s));
-	while (*p++ = *s++)
-		;
-	return (n);
+    if (s == 0)
+	s = "";
+    for (p = s; *p++;);
+    n = p = (char *) xmalloc((size_t) ((p - s) * sizeof(char)));
+    while (*p++ = *s++);
+    return (n);
 }
 
-char *
-calloc(i, j)
-	register unsigned i;
-	unsigned j;
-{
-	char *cp;
-
-	i *= j;
-	cp = xalloc(i);
-	bzero(cp, (int)i);
-	return (cp);
-}
-
-nomem(i)
-	unsigned i;
-{
-#ifdef debug
-	static char *av[2] = {0, 0};
-#endif
-
-	child++;
-#ifndef debug
-	error("Out of memory");
-#ifdef lint
-	i = i;
-#endif
-#else
-	showall(av);
-	printf("i=%d: Out of memory\n", i);
-	chdir("/usr/bill/cshcore");
-	abort();
-#endif
-	return 0;		/* fool lint */
-}
-
-char **
+Char  **
 blkend(up)
-	register char **up;
+    register Char **up;
 {
 
-	while (*up)
-		up++;
-	return (up);
+    while (*up)
+	up++;
+    return (up);
 }
- 
+
+
+void
 blkpr(av)
-	register char **av;
+    register Char **av;
 {
 
-	for (; *av; av++) {
-		printf("%s", *av);
-		if (av[1])
-			printf(" ");
-	}
+    for (; *av; av++) {
+	xprintf("%s", short2str(*av));
+	if (av[1])
+	    xprintf(" ");
+    }
 }
 
+int
 blklen(av)
-	register char **av;
+    register Char **av;
 {
-	register int i = 0;
+    register int i = 0;
 
-	while (*av++)
-		i++;
-	return (i);
+    while (*av++)
+	i++;
+    return (i);
 }
 
-char **
+Char  **
 blkcpy(oav, bv)
-	char **oav;
-	register char **bv;
+    Char  **oav;
+    register Char **bv;
 {
-	register char **av = oav;
+    register Char **av = oav;
 
-	while (*av++ = *bv++)
-		continue;
-	return (oav);
+    while (*av++ = *bv++)
+	continue;
+    return (oav);
 }
 
-char **
+Char  **
 blkcat(up, vp)
-	char **up, **vp;
+    Char  **up, **vp;
 {
 
-	(void) blkcpy(blkend(up), vp);
-	return (up);
+    (void) blkcpy(blkend(up), vp);
+    return (up);
 }
 
+void
 blkfree(av0)
-	char **av0;
+    Char  **av0;
 {
-	register char **av = av0;
+    register Char **av = av0;
 
-	for (; *av; av++)
-		XFREE(*av)
-	XFREE((char *)av0)
+    if (!av0)
+	return;
+    for (; *av; av++)
+	xfree((ptr_t) * av);
+    xfree((ptr_t) av0);
 }
 
-char **
+Char  **
 saveblk(v)
-	register char **v;
+    register Char **v;
 {
-	register char **newv =
-		(char **) calloc((unsigned) (blklen(v) + 1), sizeof (char **));
-	char **onewv = newv;
+    register Char **newv =
+    (Char **) xcalloc((size_t) (blklen(v) + 1), sizeof(Char **));
+    Char  **onewv = newv;
 
-	while (*v)
-		*newv++ = savestr(*v++);
-	return (onewv);
+    while (*v)
+	*newv++ = Strsave(*v++);
+    return (onewv);
 }
 
-char *
+#ifdef notdef
+char   *
+strstr(s, t)
+    register char *s, *t;
+{
+    do {
+	register char *ss = s;
+	register char *tt = t;
+
+	do
+	    if (*tt == '\0')
+		return (s);
+	while (*ss++ == *tt++);
+    } while (*s++ != '\0');
+    return ((char *) 0);
+}
+
+#endif				/* notdef */
+
+#ifndef SHORT_STRINGS
+char   *
 strspl(cp, dp)
-	char *cp, *dp;
+    char   *cp, *dp;
 {
-	char *ep;
-	register char *p, *q;
+    char   *ep;
+    register char *p, *q;
 
-	for (p = cp; *p++;)
-		;
-	for (q = dp; *q++;)
-		;
-	ep = xalloc((unsigned) ((p - cp) + (q - dp) - 1));
-	for (p = ep, q = cp; *p++ = *q++;)
-		;
-	for (p--, q = dp; *p++ = *q++;)
-		;
-	return (ep);
+    if (!cp)
+	cp = "";
+    if (!dp)
+	dp = "";
+    for (p = cp; *p++;);
+    for (q = dp; *q++;);
+    ep = (char *) xmalloc((size_t) (((p - cp) + (q - dp) - 1) * sizeof(char)));
+    for (p = ep, q = cp; *p++ = *q++;);
+    for (p--, q = dp; *p++ = *q++;);
+    return (ep);
 }
 
-char **
+#endif
+
+Char  **
 blkspl(up, vp)
-	register char **up, **vp;
+    register Char **up, **vp;
 {
-	register char **wp =
-		(char **) calloc((unsigned) (blklen(up) + blklen(vp) + 1),
-			sizeof (char **));
+    register Char **wp =
+    (Char **) xcalloc((size_t) (blklen(up) + blklen(vp) + 1),
+		      sizeof(Char **));
 
-	(void) blkcpy(wp, up);
-	return (blkcat(wp, vp));
+    (void) blkcpy(wp, up);
+    return (blkcat(wp, vp));
 }
 
+Char
 lastchr(cp)
-	register char *cp;
+    register Char *cp;
 {
 
-	if (!*cp)
-		return (0);
-	while (cp[1])
-		cp++;
-	return (*cp);
+    if (!cp)
+	return (0);
+    if (!*cp)
+	return (0);
+    while (cp[1])
+	cp++;
+    return (*cp);
 }
 
 /*
  * This routine is called after an error to close up
  * any units which may have been left open accidentally.
  */
+void
 closem()
 {
-	register int f;
+    register int f;
 
-	for (f = 0; f < NOFILE; f++)
-		if (f != SHIN && f != SHOUT && f != SHDIAG && f != OLDSTD &&
-		    f != FSHTTY)
-			(void) close(f);
+    for (f = 0; f < NOFILE; f++)
+	if (f != SHIN && f != SHOUT && f != SHDIAG && f != OLDSTD &&
+	    f != FSHTTY)
+	    (void) close(f);
 }
 
+void
 donefds()
 {
 
-	(void) close(0);
-	(void) close(1);
-	(void) close(2);
-	didfds = 0;
+    (void) close(0);
+    (void) close(1);
+    (void) close(2);
+    didfds = 0;
 }
 
 /*
@@ -229,51 +230,54 @@ donefds()
  * If j is -1 then we just want to get i to a safe place,
  * i.e. to a unit > 2.  This also happens in dcopy.
  */
+int
 dmove(i, j)
-	register int i, j;
+    register int i, j;
 {
 
-	if (i == j || i < 0)
-		return (i);
-	if (j >= 0) {
-		(void) dup2(i, j);
-		return (j);
-	}
-	j = dcopy(i, j);
-	if (j != i)
-		(void) close(i);
+    if (i == j || i < 0)
+	return (i);
+    if (j >= 0) {
+	(void) dup2(i, j);
 	return (j);
+    }
+    j = dcopy(i, j);
+    if (j != i)
+	(void) close(i);
+    return (j);
 }
 
+int
 dcopy(i, j)
-	register int i, j;
+    register int i, j;
 {
 
-	if (i == j || i < 0 || j < 0 && i > 2)
-		return (i);
-	if (j >= 0) {
-		(void) dup2(i, j);
-		return (j);
-	}
-	(void) close(j);
-	return (renum(i, j));
+    if (i == j || i < 0 || j < 0 && i > 2)
+	return (i);
+    if (j >= 0) {
+	(void) dup2(i, j);
+	return (j);
+    }
+    (void) close(j);
+    return (renum(i, j));
 }
 
+static int
 renum(i, j)
-	register int i, j;
+    register int i, j;
 {
-	register int k = dup(i);
+    register int k = dup(i);
 
-	if (k < 0)
-		return (-1);
-	if (j == -1 && k > 2)
-		return (k);
-	if (k != j) {
-		j = renum(k, j);
-		(void) close(k);
-		return (j);
-	}
+    if (k < 0)
+	return (-1);
+    if (j == -1 && k > 2)
 	return (k);
+    if (k != j) {
+	j = renum(k, j);
+	(void) close(k);
+	return (j);
+    }
+    return (k);
 }
 
 /*
@@ -281,80 +285,91 @@ renum(i, j)
  * the first c arguments.  Used in "shift" commands
  * as well as by commands like "repeat".
  */
+void
 lshift(v, c)
-	register char **v;
-	register int c;
+    register Char **v;
+    register int c;
 {
-	register char **u = v;
+    register Char **u = v;
 
-	while (*u && --c >= 0)
-		xfree(*u++);
-	(void) blkcpy(v, u);
+    while (*u && --c >= 0)
+	xfree((ptr_t) * u++);
+    (void) blkcpy(v, u);
 }
 
+int
 number(cp)
-	char *cp;
+    Char   *cp;
 {
-
-	if (*cp == '-') {
-		cp++;
-		if (!digit(*cp++))
-			return (0);
-	}
-	while (*cp && digit(*cp))
-		cp++;
-	return (*cp == 0);
+    if (!cp)
+	return(0);
+    if (*cp == '-') {
+	cp++;
+	if (!Isdigit(*cp))
+	    return (0);
+	cp++;
+    }
+    while (*cp && Isdigit(*cp))
+	cp++;
+    return (*cp == 0);
 }
 
-char **
+Char  **
 copyblk(v)
-	register char **v;
+    register Char **v;
 {
-	register char **nv =
-		(char **) calloc((unsigned) (blklen(v) + 1), sizeof (char **));
+    Char  **nv = (Char **) xcalloc((size_t) (blklen(v) + 1), sizeof(Char **));
 
-	return (blkcpy(nv, v));
+    return (blkcpy(nv, v));
 }
 
-char *
+#ifndef SHORT_STRINGS
+char   *
 strend(cp)
-	register char *cp;
+    register char *cp;
 {
-
-	while (*cp)
-		cp++;
+    if (!cp)
 	return (cp);
+    while (*cp)
+	cp++;
+    return (cp);
 }
 
-char *
+#endif				/* SHORT_STRINGS */
+
+Char   *
 strip(cp)
-	char *cp;
+    Char   *cp;
 {
-	register char *dp = cp;
+    register Char *dp = cp;
 
-	while (*dp++ &= TRIM)
-		continue;
+    if (!cp)
 	return (cp);
+    while (*dp++ &= TRIM)
+	continue;
+    return (cp);
 }
 
+void
 udvar(name)
-	char *name;
+    Char   *name;
 {
 
-	setname(name);
-	bferr("Undefined variable");
+    setname(short2str(name));
+    stderror(ERR_NAME | ERR_UNDVAR);
 }
 
+int
 prefix(sub, str)
-	register char *sub, *str;
+    register Char *sub, *str;
 {
 
-	for (;;) {
-		if (*sub == 0)
-			return (1);
-		if (*str == 0)
-			return (0);
-		if (*sub++ != *str++)
-			return (0);
-	}
+    for (;;) {
+	if (*sub == 0)
+	    return (1);
+	if (*str == 0)
+	    return (0);
+	if (*sub++ != *str++)
+	    return (0);
+    }
 }
