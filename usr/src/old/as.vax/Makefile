@@ -92,7 +92,7 @@ DESTDIR =
 AS = /bin/as
 LD = /bin/ld
 
-DFLAGS= -DAS -DUNIX -DUNIXDEVEL -DFLEXNAMES
+DFLAGS= -DAS
 CFLAGS = -O $(DFLAGS)
 
 LDFLAGS = -O
@@ -107,7 +107,7 @@ astoks.h: astoks.H astokfix.awk
 	awk -f astokfix.awk < astoks.H > astoks.h
 
 aspseudo.o:	as.h astoks.h aspseudo.c instrs.h instrs.as
-	$(CC) -S $(CFLAGS) aspseudo.c
+	$(CC) -S $(DFLAGS) aspseudo.c
 	sh ./:rofix aspseudo.s
 	$(AS) -o aspseudo.o aspseudo.s
 	rm aspseudo.s
