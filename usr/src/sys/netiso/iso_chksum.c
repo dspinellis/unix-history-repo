@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_chksum.c	7.6 (Berkeley) %G%
+ *	@(#)iso_chksum.c	7.7 (Berkeley) %G%
  */
 
 /***********************************************************
