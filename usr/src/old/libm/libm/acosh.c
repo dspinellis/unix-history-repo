@@ -13,37 +13,38 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acosh.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)acosh.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* ACOSH(X)
  * RETURN THE INVERSE HYPERBOLIC COSINE OF X
  * DOUBLE PRECISION (VAX D FORMAT 56 BITS, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 2/16/85;
- * REVISED BY K.C. NG on 3/6/85, 3/24/85, 4/16/85.
+ * REVISED BY K.C. NG on 3/6/85, 3/24/85, 4/16/85, 8/17/85.
  *
  * Required system supported functions :
  *	sqrt(x)
  *
  * Required kernel function:
- *	L(x) 		...return log(1+x)
+ *	log1p(x) 		...return log(1+x)
  *
  * Method :
  *	Based on 
  *		acosh(x) = log [ x + sqrt(x*x-1) ]
  *	we have
- *		acosh(x) := L(x)+ln2,	if (x > 1.0E20); else		
- *		acosh(x) := L( sqrt(x-1) * (sqrt(x-1) + sqrt(x+1)) ) .
+ *		acosh(x) := log1p(x)+ln2,	if (x > 1.0E20); else		
+ *		acosh(x) := log1p( sqrt(x-1) * (sqrt(x-1) + sqrt(x+1)) ) .
  *	These formulae avoid the over/underflow complication.
  *
  * Special cases:
- *	acosh(x) is NAN with signal if x<1.
- *	acosh(NAN) is NAN without signal.
+ *	acosh(x) is NaN with signal if x<1.
+ *	acosh(NaN) is NaN without signal.
  *
  * Accuracy:
  *	acosh(x) returns the exact inverse hyperbolic cosine of x nearly 
- *	rounded. In a test run with 500,000 random arguments on a VAX, the
- *	maximum observed error was 3.20 ulps (units of the last place).
+ *	rounded. In a test run with 512,000 random arguments on a VAX, the
+ *	maximum observed error was 3.30 ulps (units of the last place) at
+ *	x=1.0070493753568216 .
  *
  * Constants:
  * The hexadecimal values are the intended ones for the following constants.
@@ -60,7 +61,7 @@ static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
 static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   ; /*Hex  2^-33   *  1.A39EF35793C76 */
@@ -69,14 +70,15 @@ ln2lo  =  1.9082149292705877000E-10   ; /*Hex  2^-33   *  1.A39EF35793C76 */
 double acosh(x)
 double x;
 {	
-	double L(),sqrt(),t,big=1.E20; /* big+1==big */
+	double log1p(),sqrt(),t,big=1.E20; /* big+1==big */
 
-    /* x is NaN */
-	if(x!=x) return(x);	
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 
-    /* return L(2x) for large x */
-	if(x>big) {t=L(x)+ln2lo; return(t+ln2hi);} 
+    /* return log1p(x) + log(2) if x is large */
+	if(x>big) {t=log1p(x)+ln2lo; return(t+ln2hi);} 
 
 	t=sqrt(x-1.0);
-	return(L(t*(t+sqrt(x+1.0))));
+	return(log1p(t*(t+sqrt(x+1.0))));
 }
