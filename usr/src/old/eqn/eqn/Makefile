@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	eqn
 CFLAGS+=-I. -I${.CURDIR}/../common_source
@@ -9,7 +9,7 @@ OBJS+=	e.o
 .PATH:	${.CURDIR}/../common_source
 YFLAGS+=-d
 MLINKS=	eqn.1 checkeq.1 eqn.1 neqn.1
-CLEANFILES+=e.c y.tab.h
+CLEANFILES+=e.c e.def y.tab.h
 
 e.c:
 	${YACC} ${YFLAGS} ${.CURDIR}/../common_source/e.y
