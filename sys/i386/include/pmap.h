@@ -42,7 +42,7 @@
  *
  *	from: hp300: @(#)pmap.h	7.2 (Berkeley) 12/16/90
  *	from: @(#)pmap.h	7.4 (Berkeley) 5/12/91
- * 	$Id: pmap.h,v 1.14 1994/05/25 11:18:50 davidg Exp $
+ * 	$Id: pmap.h,v 1.15 1994/06/07 17:44:20 davidg Exp $
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -275,7 +275,7 @@ extern void pmap_remove(struct pmap *, vm_offset_t, vm_offset_t);
 extern void pmap_protect(struct pmap *, vm_offset_t, vm_offset_t, vm_prot_t);
 extern void pmap_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
 extern void pmap_change_wiring(pmap_t, vm_offset_t, boolean_t);
-extern inline pt_entry_t const *pmap_pte(pmap_t, vm_offset_t);
+extern inline pt_entry_t * const pmap_pte(pmap_t, vm_offset_t);
 extern vm_offset_t pmap_extract(pmap_t, vm_offset_t);
 extern void pmap_copy(pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t);
 extern void pmap_collect(pmap_t);
