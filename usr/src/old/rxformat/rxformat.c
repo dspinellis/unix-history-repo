@@ -1,13 +1,16 @@
-/*	rxformat.c	4.2	83/04/28	*/
+/*	rxformat.c	4.3	83/05/08	*/
 
 #include <stdio.h>
 #include <sys/file.h>
 #include <errno.h>
 #include "/sys/vaxuba/rxreg.h"
 
+char devname[] = "/dev/rrx?a";
+
 /*
  * format floppy disks on RX02
  */
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -20,21 +23,26 @@ main(argc, argv)
 		if (strncmp(argv[1],"-d",2) != 0)
 			usage();
 		idens++;
-		filarg = 2;
+		filarg++;
 	}
-	if ((fd = open(argv[filarg], FRDWR, 0666)) < NULL) {
-		perror(argv[filarg]);
+	devname[8] = argv[filarg][7];
+	if ((fd = open(devname, FRDWR, 0600)) < NULL) {
+		perror(devname);
 		exit (0);
 	}
-	printf("Format %s to", *(argv[filarg]));
+	printf("Format %s to", argv[filarg]);
 	if (idens)
 		printf(" double density (y/n) ?");
 	else
 		printf(" single density (y/n) ?");
 	if (getchar() != 'y')
 		exit (0);
+	/* 
+	 * change the ioctl command when dkio.h has
+	 * been finished
+	 */
 	if (ioctl(fd, RXIOC_FORMAT, &idens) != NULL)
-		perror(argv[2]);
+		perror(devname);
 	close (fd);
 }
 
