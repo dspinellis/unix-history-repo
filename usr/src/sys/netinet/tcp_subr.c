@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.8 81/12/12 */
+/* tcp_subr.c 4.9 81/12/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -188,7 +188,8 @@ tcp_close(tp)
 	register struct tcpcb *tp;
 {
 	register struct tcpiphdr *t;
-	struct socket *so = tp->t_inpcb->inp_socket;
+	struct inpcb *inp = tp->t_inpcb;
+	struct socket *so = inp->inp_socket;
 
 COUNT(TCP_CLOSE);
 	t = tp->seg_next;
@@ -201,8 +202,9 @@ COUNT(TCP_CLOSE);
 	if (tp->t_ipopt)
 		(void) m_free(dtom(tp->t_ipopt));
 	(void) m_free(dtom(tp));
+	inp->inp_ppcb = 0;
+	in_pcbdisconnect(inp);
 	soisdisconnected(so);
-	in_pcbdisconnect(tp->t_inpcb);
 }
 
 tcp_drain()
